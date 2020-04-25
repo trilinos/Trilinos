@@ -5,9 +5,8 @@
 ################################################################################
 
 # Assert this script is sourced, not run!
-called=$_
-if [ "$called" == "$0" ] ; then
-  echo "This script '$0' is being called.  Instead, it must be sourced!"
+if [ "${BASH_SOURCE[0]}" == "${0}" ] ; then
+  echo "This script '${0}' is being called.  Instead, it must be sourced!"
   exit 1
 fi
 
@@ -57,7 +56,7 @@ fi
 source ${ATDM_CONFIG_SCRIPT_DIR}/utils/get_system_info.sh
 
 if [[ $ATDM_CONFIG_SYSTEM_NAME == "" ]] ; then
-  echo "Error, could not determine a system configuration, aborting env loading script!"
+  echo "Error, could not determine a system configuration for hostname='$realHostname', aborting env loading script!"
   return
 fi
 

@@ -85,12 +85,13 @@ struct FieldAccessFunctor{
   using value_type = typename ReductionOp::value_type;
   using reduction_op = ReductionOp;
   KOKKOS_FUNCTION
-  FieldAccessFunctor(Field f, ReductionOp r) :
-    field(f), bucket(nullptr), reduction(r), fm(Modifier()) {}
+  FieldAccessFunctor(Field f, ReductionOp r, const int comp = -1) :
+    field(f), bucket_id(0), reduction(r), fm(Modifier()), component(comp) {}
   KOKKOS_FUNCTION
   value_type operator()(const int i, const int j) const
   {
-    auto field_value = field.get(typename Mesh::MeshIndex{bucket, static_cast<unsigned>(i)},j);
+    const int comp_index = (component > -1) ? component : j;
+    auto field_value = field.get(typename stk::mesh::FastMeshIndex{bucket_id, static_cast<unsigned>(i)}, comp_index);
     auto value = fm(field_value);
     value_type input = reduction_value_type_from_field_value(value,i,reduction.reference());
     return input;
@@ -100,18 +101,20 @@ struct FieldAccessFunctor{
   KOKKOS_FUNCTION
   FieldAccessFunctor(const FieldAccessFunctor& rhs) = default;
   KOKKOS_FUNCTION
-  FieldAccessFunctor(const FieldAccessFunctor& rhs, const typename Mesh::BucketType* b, ReductionOp r)
-    : field(rhs.field), bucket(b), reduction(r), fm(Modifier()) {}
+  FieldAccessFunctor(const FieldAccessFunctor& rhs, unsigned b_id, ReductionOp r)
+    : field(rhs.field), bucket_id(b_id), reduction(r), fm(Modifier()), component(rhs.component) {}
   KOKKOS_FUNCTION
   int num_components(const int i) const {
-    stk::mesh::FastMeshIndex f = {bucket->bucket_id(), static_cast<unsigned>(i)};
+    if(component > -1) return 1;
+    stk::mesh::FastMeshIndex f = {bucket_id, static_cast<unsigned>(i)};
     unsigned nc = field.get_num_components_per_entity(f);
     return nc;
   }
   Field field;
-  const typename Mesh::BucketType* bucket;
+  unsigned bucket_id;
   ReductionOp reduction;
   Modifier fm;
+  const int component;
 };
 
 template <typename Mesh, typename Accessor>
@@ -142,7 +145,7 @@ struct ReductionTeamFunctor
     value_type my_value;
     accessor.reduction.init(my_value);
     ReductionOp reduction(my_value);
-    Accessor thread_local_accessor(accessor, &bucket, reduction);
+    Accessor thread_local_accessor(accessor, bucket.bucket_id(), reduction);
     Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team, 0u, numElements),
                             [&](int i, value_type& reduce){
       const int nc = thread_local_accessor.num_components(i);

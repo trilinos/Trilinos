@@ -82,13 +82,14 @@ namespace SEAMS {
 
   const char *do_exodus_info(char *filename, char *prefix)
   {
-    char *ret_string = NULL;
+    char *ret_string = nullptr;
 
     // Open the specified exodusII file, read the info records
     // then parse them as input to aprepro.
     int exoid = open_exodus_file(filename);
-    if (exoid < 0)
+    if (exoid < 0) {
       return "";
+    }
 
     int count = ex_inquire_int(exoid, EX_INQ_INFO);
 
@@ -120,21 +121,21 @@ namespace SEAMS {
       ex_close(exoid);
       return ret_string;
     }
-    else {
-      ex_close(exoid);
-      return "";
-    }
+
+    ex_close(exoid);
+    return "";
   }
 
   const char *do_exodus_info_range(char *filename, char *beg, char *end)
   {
-    char *ret_string = NULL;
+    char *ret_string = nullptr;
 
     // Open the specified exodusII file, read the info records
     // then parse them as input to aprepro.
     int exoid = open_exodus_file(filename);
-    if (exoid < 0)
+    if (exoid < 0) {
       return "";
+    }
 
     int count = ex_inquire_int(exoid, EX_INQ_INFO);
 
@@ -172,10 +173,9 @@ namespace SEAMS {
       ex_close(exoid);
       return ret_string;
     }
-    else {
-      ex_close(exoid);
-      return "";
-    }
+
+    ex_close(exoid);
+    return "";
   }
 
   const char *do_exodus_meta(char *filename)
@@ -185,8 +185,9 @@ namespace SEAMS {
     // variables for each item.
     // Examples include "node_count", "element_count", ...
     int exoid = open_exodus_file(filename);
-    if (exoid < 0)
+    if (exoid < 0) {
       return "";
+    }
 
     // read database parameters
     static char title[MAX_LINE_LENGTH + 1];

@@ -227,9 +227,17 @@ namespace Intrepid2
     //! Sets the current location.
     //! \param [in] location - the location as a 7-element array value.
     KOKKOS_INLINE_FUNCTION
-    void setLocation(const Kokkos::Array<int,7> location)
+    void setLocation(const Kokkos::Array<int,7> &location)
     {
       index_ = location;
+    }
+    
+    //! Sets the current location.
+    //! \param [in] location - the location as a 7-element array value.
+    KOKKOS_INLINE_FUNCTION
+    Kokkos::Array<int,7> & getLocation()
+    {
+      return index_;
     }
   };
 } // namespace Intrepid2

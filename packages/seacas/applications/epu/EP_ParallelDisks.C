@@ -45,7 +45,7 @@
 #endif
 
 /*****************************************************************************/
-Excn::ParallelDisks::ParallelDisks() : number_of_raids(0), raid_offset(0) {}
+Excn::ParallelDisks::ParallelDisks() = default;
 
 /*****************************************************************************/
 Excn::ParallelDisks::~ParallelDisks() = default;

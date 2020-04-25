@@ -54,7 +54,7 @@
 
 namespace Piro {
 
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+template <typename Scalar>
 class VelocityVerletSolver
     : public Thyra::ResponseOnlyModelEvaluatorBase<Scalar> {
 

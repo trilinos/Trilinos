@@ -52,6 +52,10 @@
 
 #cmakedefine HAVE_STK_CUDA
 
+#cmakedefine STK_KOKKOS_SIMD
+
+#cmakedefine STK_VOLATILE_SIMD
+
 /* Non-typical "not" macro for optional dependence on SEACASAprepro_lib (See
  * STK #17354) */
 #cmakedefine NOT_HAVE_STK_SEACASAPREPRO_LIB

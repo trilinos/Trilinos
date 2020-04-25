@@ -8,6 +8,8 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+ relaxation: inner sweeps = 1   [default]
+ relaxation: inner sparse-triangular solve = 0   [default]
  relaxation: zero starting solution = 1   [default]
  relaxation: backward mode = 0   [default]
  relaxation: use l1 = 0   [default]
@@ -59,6 +61,9 @@ aggregate qualities: good aggregate threshold = 100   [unused]
 aggregate qualities: file output = 0   [default]
 aggregate qualities: file base = agg_qualities   [default]
 aggregate qualities: check symmetry = 0   [unused]
+aggregate qualities: algorithm = forward   [default]
+aggregate qualities: zero threshold = 1e-12   [default]
+aggregate qualities: percentiles = {}   [default]
 
 aggregation: max agg size = -1   [default]
 aggregation: min agg size = 2   [default]
@@ -125,6 +130,8 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+ relaxation: inner sweeps = 1   [default]
+ relaxation: inner sparse-triangular solve = 0   [default]
  relaxation: zero starting solution = 1   [default]
  relaxation: backward mode = 0   [default]
  relaxation: use l1 = 0   [default]
@@ -176,6 +183,9 @@ aggregate qualities: good aggregate threshold = 100   [unused]
 aggregate qualities: file output = 0   [default]
 aggregate qualities: file base = agg_qualities   [default]
 aggregate qualities: check symmetry = 0   [unused]
+aggregate qualities: algorithm = forward   [default]
+aggregate qualities: zero threshold = 1e-12   [default]
+aggregate qualities: percentiles = {}   [default]
 
 aggregation: max agg size = -1   [default]
 aggregation: min agg size = 2   [default]

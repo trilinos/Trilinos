@@ -492,10 +492,9 @@ namespace Tpetra {
     using local_matrix_type =
       KokkosSparse::CrsMatrix<impl_scalar_type,
                               local_ordinal_type,
-                              execution_space,
+                              device_type,
                               void,
                               typename local_graph_type::size_type>;
-
 
     //@}
     //! @name Constructors and destructor
@@ -842,6 +841,14 @@ namespace Tpetra {
                                   const MultiVector<S2,LO2,GO2,N2> & B,
                                   MultiVector<S2,LO2,GO2,N2> & R);
 
+    // This friend declaration allows for batching of apply calls
+    template <class MatrixArray, class MultiVectorArray> 
+    friend void batchedApply(const MatrixArray &Matrices, 
+                             const typename std::remove_pointer<typename MultiVectorArray::value_type>::type & X,
+                             MultiVectorArray &Y,
+                             typename std::remove_pointer<typename MatrixArray::value_type>::type::scalar_type alpha,
+                             typename std::remove_pointer<typename MatrixArray::value_type>::type::scalar_type beta,
+                             Teuchos::RCP<Teuchos::ParameterList> params);
   public:
     //@}
     //! @name Methods for inserting, modifying, or removing entries
@@ -4550,6 +4557,7 @@ namespace Tpetra {
     sourceMatrix->exportAndFillComplete (destMatrix, rowExporter, domainExporter, domainMap, rangeMap, params);
     return destMatrix;
   }
+
 } // namespace Tpetra
 
 /**

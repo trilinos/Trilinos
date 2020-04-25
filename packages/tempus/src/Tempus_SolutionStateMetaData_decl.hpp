@@ -30,29 +30,6 @@ public:
   /// Default constructor.
   SolutionStateMetaData();
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  /// Constructor - Deprecated!
-  TEMPUS_DEPRECATED_MSG("Please use constructor with 21 arguments.")
-  SolutionStateMetaData(
-    const Scalar time,
-    const int    iStep,
-    const Scalar dt,
-    const Scalar errorAbs,
-    const Scalar errorRel,
-    const int    order,
-    const int    nFailures,
-    const int    nRunningFailures,
-    const int    nConsecutiveFailures,
-    const Scalar tolRel,
-    const Scalar tolAbs,
-    const Status solutionStatus,
-    const bool   output,
-    const bool   outputScreen,
-    const bool   isSynced,
-    const bool   isInterpolated,
-    const Scalar accuracy);
-#endif
-
   /// Constructor
   SolutionStateMetaData(
     const Scalar time,

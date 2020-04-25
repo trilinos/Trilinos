@@ -46,6 +46,7 @@
 #include "MueLu_Utilities_def.hpp"
 
 #include <string>
+#include <locale>
 
 #ifdef HAVE_MUELU_EPETRAEXT
 #include "EpetraExt_Transpose_RowMatrix.h"
@@ -61,12 +62,6 @@
 
 namespace MueLu {
 
-  /* Removes the following non-serializable data (A,P,R,Nullspace,Coordinates)
-     from level-specific sublists from inList
-     and moves it to nonSerialList.  Everything else is copied to serialList.
-     This function returns the level number of the highest level for which
-     non-serializable data was provided.
-  */
   long ExtractNonSerializableData(const Teuchos::ParameterList& inList, Teuchos::ParameterList& serialList, Teuchos::ParameterList& nonSerialList) {
     using Teuchos::ParameterList;
 
@@ -92,7 +87,7 @@ namespace MueLu {
         for (ParameterList::ConstIterator it2 = levelList.begin(); it2 != levelList.end(); it2++) {
           const std::string& name = it2->first;
           if (name == "A" || name == "P" || name == "R"  || name== "M" || name == "Mdiag" || name == "K" || name == "Nullspace" || name == "Coordinates"
-              || name == "Node Comm"
+              || name == "Node Comm" || name == "DualNodeID2PrimalNodeID"
 #ifdef HAVE_MUELU_INTREPID2 // For the IntrepidPCoarsenFactory
               || name == "pcoarsen: element to node map"
 #endif
@@ -322,6 +317,22 @@ bool IsParamValidVariable(const std::string& name)
        return baseComm;
 #endif
     }
+
+  std::string
+  lowerCase (const std::string& s)
+  {
+    typedef std::string::value_type char_t;
+    typedef std::ctype<char_t> facet_type;
+    const facet_type& facet = std::use_facet<facet_type> (std::locale ());
+
+    const std::string::size_type len = s.size ();
+    std::string s_lc (s);
+    for (std::string::size_type k = 0; k < len; ++k) {
+      s_lc[k] = facet.tolower (s[k]);
+    }
+
+    return s_lc;
+  }
 
 
 } // namespace MueLu

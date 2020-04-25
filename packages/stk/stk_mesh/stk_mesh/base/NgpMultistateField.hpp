@@ -41,6 +41,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/Field.hpp>
+#include <stk_mesh/base/FieldState.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
@@ -120,6 +121,30 @@ public:
     fieldNewState.modify_on_device();
   }
 
+  STK_FUNCTION
+  T& get_new(const stk::mesh::NgpMesh& ngpMesh, stk::mesh::Entity entity, int component) const
+  {
+    return get_field_new_state().get(ngpMesh, entity, component);
+  }
+
+  STK_FUNCTION
+  T& get_new(const stk::mesh::FastMeshIndex& entity, int component) const
+  {
+    return get_field_new_state().get(entity, component);
+  }
+
+  STK_FUNCTION
+  T get_old(stk::mesh::FieldState state, const stk::mesh::NgpMesh& ngpMesh, stk::mesh::Entity entity, int component) const
+  {
+    return get_field_old_state(state).get(ngpMesh, entity, component);
+  }
+
+  STK_FUNCTION
+  T get_old(stk::mesh::FieldState state, const stk::mesh::FastMeshIndex& entity, int component) const
+  {
+    return get_field_old_state(state).get(entity, component);
+  }
+
 private:
   void clear_sync_state()
   {
@@ -156,39 +181,6 @@ private:
   unsigned numOldStates;
   stk::mesh::NgpField<T> fieldNewState;
   stk::mesh::NgpConstField<T> fieldOldStates[MAX_NUM_FIELD_STATES];
-};
-
-template<typename T>
-class ConvenientNgpMultistateField : public NgpMultistateField<T>
-{
-public:
-  ConvenientNgpMultistateField(stk::mesh::BulkData& bulk, const stk::mesh::FieldBase &stkField) :
-    NgpMultistateField<T>(bulk, stkField)
-  {}
-
-  STK_FUNCTION
-  T& get_new(const stk::mesh::NgpMesh& ngpMesh, stk::mesh::Entity entity, int component) const
-  {
-    return NgpMultistateField<T>::get_field_new_state().get(ngpMesh, entity, component);
-  }
-
-  STK_FUNCTION
-  T get_old(stk::mesh::FieldState state, const stk::mesh::NgpMesh& ngpMesh, stk::mesh::Entity entity, int component) const
-  {
-    return NgpMultistateField<T>::get_field_old_state(state).get(ngpMesh, entity, component);
-  }
-
-  STK_FUNCTION
-  T& get_new(stk::mesh::NgpMesh::MeshIndex entity, int component) const
-  {
-    return NgpMultistateField<T>::get_field_new_state().get(entity, component);
-  }
-
-  STK_FUNCTION
-  T get_old(stk::mesh::FieldState state, stk::mesh::NgpMesh::MeshIndex entity, int component) const
-  {
-    return NgpMultistateField<T>::get_field_old_state(state).get(entity, component);
-  }
 };
 
 }

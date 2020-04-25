@@ -130,8 +130,19 @@ class SolutionHistory
 {
 public:
 
+  /// Default Contructor
+  SolutionHistory();
+
   /// Contructor
-  SolutionHistory(Teuchos::RCP<Teuchos::ParameterList> shPL = Teuchos::null);
+  SolutionHistory(
+    std::string                               name,
+    Teuchos::RCP<std::vector<Teuchos::RCP<SolutionState<Scalar> > > > history,
+    Teuchos::RCP<Interpolator<Scalar> >       interpolator,
+    StorageType                               storageType,
+    int                                       storageLimit);
+
+  /// Contructor (Slated for deprecation.  Use createSolutionHistory(shPL);)
+  SolutionHistory(Teuchos::RCP<Teuchos::ParameterList> shPL);
 
   /// Destructor
   ~SolutionHistory() {}
@@ -327,10 +338,22 @@ protected:
   Teuchos::RCP<SolutionState<Scalar> > workingState_; ///< The state being worked on
 };
 
-/// Nonmember constructor
+
+/// Nonmember constructor from a ParameterList
 template<class Scalar>
 Teuchos::RCP<SolutionHistory<Scalar> >
-solutionHistory(Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
+createSolutionHistoryPL(Teuchos::RCP<Teuchos::ParameterList> pList);
+
+/// Nonmember contructor from a SolutionState.
+template<class Scalar>
+Teuchos::RCP<SolutionHistory<Scalar> >
+createSolutionHistoryState(const Teuchos::RCP<SolutionState<Scalar> >& state);
+
+/// Nonmember contructor from a Thyra ModelEvaluator.
+template<class Scalar>
+Teuchos::RCP<SolutionHistory<Scalar> >
+createSolutionHistoryME(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model);
 
 
 } // namespace Tempus

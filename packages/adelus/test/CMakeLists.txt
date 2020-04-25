@@ -1,0 +1,3 @@
+IF(Adelus_ENABLE_ZCPLX OR Adelus_ENABLE_DREAL)
+  ADD_SUBDIRECTORY(vector_random)
+ENDIF()

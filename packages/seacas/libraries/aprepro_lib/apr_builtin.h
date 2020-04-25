@@ -148,9 +148,9 @@ namespace SEAMS {
   const char *do_output(char *filename);
   const char *do_append(char *filename);
   const char *do_error(char *error_string);
-  const char *do_get_date(void);
-  const char *do_get_iso_date(void);
-  const char *do_get_time(void);
+  const char *do_get_date();
+  const char *do_get_iso_date();
+  const char *do_get_time();
   const char *do_get_word(double n, char *string, char *delm);
   const char *do_file_to_string(char *filename);
   const char *do_extract(char *string, char *begin, char *end);

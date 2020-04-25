@@ -37,12 +37,7 @@ using Teuchos::getParametersFromXmlFile;
 using Tempus::StepperFactory;
 using Tempus::StepperExplicitRK;
 
-// Comment out any of the following tests to exclude from build/run.
-#define CONSTRUCTION
-#define STEPPERFACTORY_CONSTRUCTION
 
-
-#ifdef CONSTRUCTION
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(OperatorSplit, Default_Construction)
@@ -68,7 +63,7 @@ TEUCHOS_UNIT_TEST(OperatorSplit, Default_Construction)
   bool useFSAL              = stepper->getUseFSALDefault();
   std::string ICConsistency = stepper->getICConsistencyDefault();
   bool ICConsistencyCheck   = stepper->getICConsistencyCheckDefault();
-  int order = 2;
+  int order = 1;
 
   // Test the set functions.
   stepper->setObserver(obs);                           stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
@@ -94,11 +89,11 @@ TEUCHOS_UNIT_TEST(OperatorSplit, Default_Construction)
     order, order, order));
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
+  // Test stepper properties.
+  TEUCHOS_ASSERT(stepper->getOrder() == 1);
 }
-#endif // CONSTRUCTION
 
 
-#ifdef STEPPERFACTORY_CONSTRUCTION
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(OperatorSplit, StepperFactory_Construction)
@@ -124,7 +119,6 @@ TEUCHOS_UNIT_TEST(OperatorSplit, StepperFactory_Construction)
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
 }
-#endif // STEPPERFACTORY_CONSTRUCTION
 
 
 } // namespace Tempus_Test

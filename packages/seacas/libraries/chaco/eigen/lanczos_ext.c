@@ -524,7 +524,6 @@ int lanczos_ext(struct vtx_data **A,       /* sparse matrix in row linked list f
   if (maxj == 0) {
     return (1); /* see note on beta[0] and maxj above */
   }
-  else {
-    return (0);
-  }
+
+  return (0);
 }

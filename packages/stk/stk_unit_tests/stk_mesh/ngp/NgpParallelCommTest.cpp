@@ -21,7 +21,6 @@ using ValueViewType = Kokkos::View<double*, stk::mesh::MemSpace>;
 class ParallelDataExchangeSymPackUnpackHandler
 {
 public:
-  //STK_FUNCTION ParallelDataExchangeSymPackUnpackHandler(stk::mesh::NgpFieldManager & fieldManager)
   ParallelDataExchangeSymPackUnpackHandler(std::vector<std::vector<int>> & neighbors,
                                            ValueViewType & deviceValues)
     : m_neighbors(neighbors),
@@ -197,7 +196,7 @@ std::vector<std::vector<int>> get_neighbors(int pSize, int pRank)
   return neighbors;
 }
 
-NGP_TEST_F(NgpParallelComm, symmetricPackUnpack)
+NGP_TEST_F(NgpParallelComm, DISABLED_symmetricPackUnpack)
 {
   const int pSize = stk::parallel_machine_size(MPI_COMM_WORLD);
   const int pRank = stk::parallel_machine_rank(MPI_COMM_WORLD);

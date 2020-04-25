@@ -442,7 +442,7 @@ bool isSidesetSupported(const stk::mesh::BulkData &bulk, const stk::mesh::Entity
 }
 
 
-stk::mesh::FieldVector get_transient_fields(stk::mesh::MetaData &meta)
+stk::mesh::FieldVector get_transient_fields(const stk::mesh::MetaData &meta)
 {
     stk::mesh::FieldVector fields;
 
@@ -456,7 +456,7 @@ stk::mesh::FieldVector get_transient_fields(stk::mesh::MetaData &meta)
     return fields;
 }
 
-stk::mesh::FieldVector get_transient_fields(stk::mesh::MetaData &meta, const stk::mesh::EntityRank rank)
+stk::mesh::FieldVector get_transient_fields(const stk::mesh::MetaData &meta, const stk::mesh::EntityRank rank)
 {
     stk::mesh::FieldVector fields;
 

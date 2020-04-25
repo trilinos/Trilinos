@@ -671,6 +671,58 @@ class Test_setEnviron(unittest.TestCase):
                              test_ENV={'OMP_NUM_THREADS': '2'})
 
 
+    def test_buildEnv_passes_with_clang_701(self):
+        """Find the function"""
+        PR_name = 'Trilinos_pullrequest_clang_7.0.1'
+        expected_list = [mock.call('use', '/projects/sems/modulefiles/projects'),
+                         mock.call('load', 'sems-env'),
+                         mock.call('load', 'sems-git/2.10.1'),
+                         mock.call('load', 'sems-gcc/5.3.0'),
+                         mock.call('load', 'sems-clang/7.0.1'),
+                         mock.call('load', 'sems-openmpi/1.10.1'),
+                         mock.call('load', 'sems-python/2.7.9'),
+                         mock.call('load', 'sems-boost/1.63.0/base'),
+                         mock.call('load', 'sems-zlib/1.2.8/base'),
+                         mock.call('load', 'sems-hdf5/1.8.12/parallel'),
+                         mock.call('load', 'sems-netcdf/4.4.1/exo_parallel'),
+                         mock.call('load', 'sems-parmetis/4.0.3/parallel'),
+                         mock.call('load', 'sems-scotch/6.0.3/nopthread_64bit_parallel'),
+                         mock.call('load', 'sems-superlu/4.3/base'),
+                         mock.call('load', 'sems-cmake/3.12.2'),
+                         mock.call('load', 'atdm-env'),
+                         mock.call('load', 'atdm-ninja_fortran/1.7.2'),
+                         ]
+
+        self.buildEnv_passes(PR_name, expected_list,
+                             test_ENV={'OMP_NUM_THREADS': '2'})
+
+
+    def test_buildEnv_passes_with_clang_900(self):
+        """Find the function"""
+        PR_name = 'Trilinos_pullrequest_clang_9.0.0'
+        expected_list = [mock.call('use', '/projects/sems/modulefiles/projects'),
+                         mock.call('load', 'sems-env'),
+                         mock.call('load', 'sems-git/2.10.1'),
+                         mock.call('load', 'sems-gcc/5.3.0'),
+                         mock.call('load', 'sems-clang/9.0.0'),
+                         mock.call('load', 'sems-openmpi/1.10.1'),
+                         mock.call('load', 'sems-python/2.7.9'),
+                         mock.call('load', 'sems-boost/1.63.0/base'),
+                         mock.call('load', 'sems-zlib/1.2.8/base'),
+                         mock.call('load', 'sems-hdf5/1.8.12/parallel'),
+                         mock.call('load', 'sems-netcdf/4.4.1/exo_parallel'),
+                         mock.call('load', 'sems-parmetis/4.0.3/parallel'),
+                         mock.call('load', 'sems-scotch/6.0.3/nopthread_64bit_parallel'),
+                         mock.call('load', 'sems-superlu/4.3/base'),
+                         mock.call('load', 'sems-cmake/3.12.2'),
+                         mock.call('load', 'atdm-env'),
+                         mock.call('load', 'atdm-ninja_fortran/1.7.2'),
+                         ]
+
+        self.buildEnv_passes(PR_name, expected_list,
+                             test_ENV={'OMP_NUM_THREADS': '2'})
+
+
     def test_buildEnv_passes_with_cuda_92(self):
         """Find the function"""
         PR_name = 'Trilinos_pullrequest_cuda_9.2'

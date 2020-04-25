@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//               KokkosKernels 0.9: Linear Algebra and Graph Kernels
-//                 Copyright 2017 Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -35,11 +36,12 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact William McLendon (wcmclen@sandia.gov)
+// Questions? Contact Brian Kelley (bmkelle@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
 */
+
 #include <fstream>
 #include <ostream>
 
@@ -52,21 +54,15 @@
 
 namespace KokkosGraph {
 
-
-
 enum GraphColoringAlgorithmDistance2
 {
-    COLORING_D2_DEFAULT,             // Distance-2 Graph Coloring default algorithm
-    COLORING_D2_SERIAL,              // Distance-2 Graph Coloring (SERIAL)
-    COLORING_D2_MATRIX_SQUARED,      // Distance-2 Graph Coloring using Matrix Squared + D1 Coloring
-    COLORING_D2_SPGEMM,              // - Same as COLORING_D2_MATRIX_SQUARED
-    COLORING_D2,                     // Distance-2 Graph Coloring
-    COLORING_D2_VB,                  // Distance-2 Graph Coloring Vertex Based
-    COLORING_D2_VB_BIT,              // Distance-2 Graph Coloring Vertex Based BIT
-    COLORING_D2_VB_BIT_EF,           // Distance-2 Graph Coloring Vertex Based BIT + Edge Filtering
+    COLORING_D2_DEFAULT,     // Distance-2 Graph Coloring default algorithm
+    COLORING_D2_SERIAL,      // Distance-2 Graph Coloring (SERIAL)
+    COLORING_D2_VB,          // Distance-2 Graph Coloring Vertex Based
+    COLORING_D2_VB_BIT,      // Distance-2 Graph Coloring Vertex Based BIT
+    COLORING_D2_VB_BIT_EF,   // Distance-2 Graph Coloring Vertex Based BIT + Edge Filtering
+    COLORING_D2_NB_BIT       // Distance-2 Graph Coloring Net Based BIT
 };
-
-
 
 template<class size_type_,
          class color_t_,
@@ -130,8 +126,6 @@ class GraphColorDistance2Handle
     bool            is_coloring_called_before;
     nnz_lno_type    num_colors;
 
-
-
   public:
     /**
      * Default constructor
@@ -159,7 +153,7 @@ class GraphColorDistance2Handle
         this->set_defaults(this->coloring_algorithm_type);
 
         // Throw an error if PersistentMemSpace != TempMemSpace since we don't support them being different (for now).
-        if(!Kokkos::Impl::is_same<PersistentMemorySpace, TemporaryMemorySpace>::value)
+        if(!std::is_same<PersistentMemorySpace, TemporaryMemorySpace>::value)
         {
             std::string message = "Distance-2 Graph Coloring Handle does not currently support different mem spaces";
             Kokkos::Impl::throw_runtime_exception(message);
@@ -173,10 +167,10 @@ class GraphColorDistance2Handle
      * @param[in] col_algo Coloring algorithm, one of:
      *                     - COLORING_D2_DEFAULT
      *                     - COLORING_D2_SERIAL
-     *                     - COLORING_D2_MATRIX_SQUARED
      *                     - COLORING_D2_VB
      *                     - COLORING_D2_VB_BIT
      *                     - COLORING_D2_VB_BIT_EF
+     *                     - COLORING_D2_NB_BIT
      *
      *  @param[in] set_default_parameters Whether or not to reset the default parameters for the given algorithm.
      *                                    Default = true.
@@ -205,71 +199,77 @@ class GraphColorDistance2Handle
      *
      * This chooses the best algorithm based on the execution space:
      * - COLORING_D2_SERIAL if the execution space is SERIAL
-     * - COLORING_D2_VB_BIT otherwise
+     * - COLORING_D2_NB_BIT otherwise
      *
      */
+
     void choose_default_algorithm()
     {
+        bool found = false;
 #if defined(KOKKOS_ENABLE_SERIAL)
-        if(Kokkos::Impl::is_same<Kokkos::Serial, ExecutionSpace>::value)
+        if(std::is_same<Kokkos::Serial, ExecutionSpace>::value)
         {
             this->coloring_algorithm_type = COLORING_D2_SERIAL;
+            found = true;
 #ifdef VERBOSE
-            std::cout << "Serial Execution Space, Default Algorithm: COLORING_VB" << std::endl;
+            std::cout << "Serial Execution Space, Default Algorithm: COLORING_D2_SERIAL" << std::endl;
 #endif
         }
 #endif
 
 #if defined(KOKKOS_ENABLE_THREADS)
-        if(Kokkos::Impl::is_same<Kokkos::Threads, ExecutionSpace>::value)
+        if(std::is_same<Kokkos::Threads, ExecutionSpace>::value)
         {
-            this->coloring_algorithm_type = COLORING_D2_VB_BIT;
+            this->coloring_algorithm_type = COLORING_D2_NB_BIT;
+            found = true;
 #ifdef VERBOSE
-            std::cout << "PTHREAD Execution Space, Default Algorithm: COLORING_VB" << std::endl;
+            std::cout << "PTHREAD Execution Space, Default Algorithm: COLORING_D2_NB_BIT" << std::endl;
 #endif
         }
 #endif
 
 #if defined(KOKKOS_ENABLE_OPENMP)
-        if(Kokkos::Impl::is_same<Kokkos::OpenMP, ExecutionSpace>::value)
+        if(std::is_same<Kokkos::OpenMP, ExecutionSpace>::value)
         {
-            this->coloring_algorithm_type = COLORING_D2_VB_BIT;
+            this->coloring_algorithm_type = COLORING_D2_NB_BIT;
+            found = true;
 #ifdef VERBOSE
-            std::cout << "OpenMP Execution Space, Default Algorithm: COLORING_VB" << std::endl;
+            std::cout << "OpenMP Execution Space, Default Algorithm: COLORING_D2_NB_BIT" << std::endl;
 #endif
         }
 #endif
 
 #if defined(KOKKOS_ENABLE_CUDA)
-        if(Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace>::value)
+        if(std::is_same<Kokkos::Cuda, ExecutionSpace>::value)
         {
-            this->coloring_algorithm_type = COLORING_D2_VB_BIT;
+            this->coloring_algorithm_type = COLORING_D2_NB_BIT;
+            found = true;
 #ifdef VERBOSE
-            std::cout << "Cuda Execution Space, Default Algorithm: COLORING_VB" << std::endl;
+            std::cout << "Cuda Execution Space, Default Algorithm: COLORING_D2_NB_BIT" << std::endl;
 #endif
         }
 #endif
 
 #if defined(KOKKOS_ENABLE_QTHREAD)
-        if(Kokkos::Impl::is_same<Kokkos::Qthread, ExecutionSpace>::value)
+        if(std::is_same<Kokkos::Qthread, ExecutionSpace>::value)
         {
-            this->coloring_algorithm_type = COLORING_D2_VB_BIT;
+            this->coloring_algorithm_type = COLORING_D2_NB_BIT;
+            found = true;
 #ifdef VERBOSE
-            std::cout << "Qthread Execution Space, Default Algorithm: COLORING_VB" << std::endl;
+            std::cout << "Qthread Execution Space, Default Algorithm: COLORING_D2_NB_BIT" << std::endl;
 #endif
         }
 #endif
+        //Since this logic is based on checking every exec space, detect when a new one needs to be supported
+        if(!found)
+          throw std::logic_error("D2 coloring: default algorithm hasn't been chosen for the current execution space");
     }
 
 
     nnz_lno_type get_num_colors()
     {
         if(num_colors == 0)
-        {
-            typedef typename Kokkos::RangePolicy<ExecutionSpace> my_exec_space;
-            Kokkos::parallel_reduce(
-              "KokkosKernels::FindMax", my_exec_space(0, vertex_colors.extent(0)), ReduceMaxFunctor(vertex_colors), num_colors);
-        }
+          KokkosKernels::Impl::view_reduce_max<color_view_type, ExecutionSpace>(vertex_colors.extent(0), vertex_colors, num_colors);
         return num_colors;
     }
 
@@ -280,12 +280,11 @@ class GraphColorDistance2Handle
     {
         switch(col_algo)
         {
-            case COLORING_D2_MATRIX_SQUARED:
             case COLORING_D2_SERIAL:
-            case COLORING_D2:
             case COLORING_D2_VB:
             case COLORING_D2_VB_BIT:
             case COLORING_D2_VB_BIT_EF:
+            case COLORING_D2_NB_BIT:
                 this->tictoc                   = false;
                 this->vb_edge_filtering        = false;
                 this->vb_chunk_size            = 8;
@@ -335,7 +334,7 @@ class GraphColorDistance2Handle
     void set_verbose(const bool verbose_) { this->verbose = verbose_; }
     void set_coloring_time(const double& coloring_time_) { this->coloring_time = coloring_time_; }
     void set_max_number_of_iterations(const int& max_phases) { this->max_number_of_iterations = max_phases; }
-    void set_num_phases(const double& num_phases_) { this->num_phases = num_phases_; }
+    void set_num_phases(const int& num_phases_) { this->num_phases = num_phases_; }
 
     void add_to_overall_coloring_time(const double& coloring_time_) { this->overall_coloring_time += coloring_time_; }
     void add_to_overall_coloring_time_phase1(const double& coloring_time_)
@@ -475,44 +474,25 @@ class GraphColorDistance2Handle
         os << "}" << std::endl;
     }      // dump_graphviz (end)
 
-
-  private:
-    // -----------------------------------------
-    //  Helpers
-    // -----------------------------------------
-
-    // -----------------------------------------
-    //  Functors
-    // -----------------------------------------
-
-  public:
-    struct ReduceMaxFunctor
+    const char* getD2AlgorithmName() const
     {
-        color_view_type colors;
-        ReduceMaxFunctor(color_view_type cat) : colors(cat) {}
-
-        KOKKOS_INLINE_FUNCTION
-        void operator()(const nnz_lno_type& i, color_type& color_max) const
-        {
-            if(color_max < colors(i))
-                color_max = colors(i);
-        }
-
-        // max -plus semiring equivalent of "plus"
-        KOKKOS_INLINE_FUNCTION
-        void join(volatile color_type& dst, const volatile color_type& src) const
-        {
-            if(dst < src)
-            {
-                dst = src;
-            }
-        }
-
-        KOKKOS_INLINE_FUNCTION
-        void init(color_type& dst) const { dst = 0; }
-    };
-
-
+      switch(coloring_algorithm_type)
+      {
+        case COLORING_D2_DEFAULT:
+          return "COLORING_D2_DEFAULT";
+        case COLORING_D2_SERIAL:
+          return "COLORING_D2_SERIAL";
+        case COLORING_D2_VB:
+          return "COLORING_D2_VB";
+        case COLORING_D2_VB_BIT:
+          return "COLORING_D2_VB_BIT";
+        case COLORING_D2_VB_BIT_EF:
+          return "COLORING_D2_VB_BIT_EF";
+        case COLORING_D2_NB_BIT:
+          return "COLORING_D2_NB_BIT";
+      }
+      return "ERROR: unregistered algorithm";
+    }
 };      // class GraphColorDistance2Handle (end)
 
 }      // namespace KokkosGraph

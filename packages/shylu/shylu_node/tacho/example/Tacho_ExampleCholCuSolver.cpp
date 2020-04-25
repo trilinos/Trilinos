@@ -1,9 +1,7 @@
-#include "ShyLU_NodeTacho_config.h"
-
 #include <Kokkos_Core.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
-#include "Tacho.hpp"
+#include "Tacho_Internal.hpp"
 #include "Tacho_CommandLineParser.hpp"
 
 #if defined (KOKKOS_ENABLE_CUDA)
@@ -16,10 +14,12 @@ int main (int argc, char *argv[]) {
   CommandLineParser opts("This example program measure the performance of cuSolver on Kokkos::Cuda");
 
   bool verbose = true;
+  bool sanitize = false;
   std::string file = "test.mtx";
   int nrhs = 1;
 
   opts.set_option<bool>("verbose", "Flag for verbose printing", &verbose);
+  opts.set_option<bool>("sanitize", "Flag to sanitize input matrix (remove zeros)", &sanitize);
   opts.set_option<std::string>("file", "Input file (MatrixMarket SPD matrix)", &file);
   opts.set_option<int>("nrhs", "Number of RHS vectors", &nrhs);
 
@@ -58,7 +58,7 @@ int main (int argc, char *argv[]) {
         std::cout << "Failed in open the file: " << file << std::endl;
         return -1;
       }
-      Tacho::MatrixMarket<value_type>::read(file, h_A, verbose);
+      Tacho::MatrixMarket<value_type>::read(file, h_A, sanitize, verbose);
     }
     
     ///

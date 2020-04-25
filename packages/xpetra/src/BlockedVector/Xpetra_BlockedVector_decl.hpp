@@ -381,14 +381,14 @@ class BlockedVector
     ///          only valid as long as the Vector does not run of scope!
     template<class TargetDeviceType>
     typename Kokkos::Impl::if_c<
-      Kokkos::Impl::is_same<
+      std::is_same<
         typename dev_execution_space::memory_space,
         typename TargetDeviceType::memory_space>::value,
         typename dual_view_type::t_dev_um,
         typename dual_view_type::t_host_um>::type
     getLocalView () const
     {
-      if(Kokkos::Impl::is_same<typename host_execution_space::memory_space, typename TargetDeviceType::memory_space>::value)
+      if(std::is_same<typename host_execution_space::memory_space, typename TargetDeviceType::memory_space>::value)
       {
         return getHostLocalView();
       }
@@ -422,7 +422,7 @@ class BlockedVector
     /// \warning Be aware that the view on the Vector data is non-persisting, i.e.
     ///          only valid as long as the Vector does not run of scope!
     template<class TargetDeviceType>
-    typename Kokkos::Impl::if_c<Kokkos::Impl::is_same<typename dev_execution_space::memory_space,
+    typename Kokkos::Impl::if_c<std::is_same<typename dev_execution_space::memory_space,
                                                       typename TargetDeviceType::memory_space>::value,
                                 typename dual_view_type::t_dev_um,
                                 typename dual_view_type::t_host_um>::type

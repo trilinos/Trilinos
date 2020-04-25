@@ -32,7 +32,7 @@ ML_Epetra::EdgeMatrixFreePreconditioner::EdgeMatrixFreePreconditioner(Teuchos::R
 								      Teuchos::ArrayRCP<int> BCedges,
 								      const Teuchos::ParameterList &List,const bool ComputePrec):
   ML_Preconditioner(),
-  Prolongator_(0),InvDiagonal_(0),CoarseMatrix(0),CoarsePC(0),
+  Prolongator_(0),InvDiagonal_(0),CoarseMatrix(0),CoarsePC(0),CoarseNullspace_(0),
 #ifdef HAVE_ML_IFPACK
 Smoother_(0),
 #endif
@@ -102,6 +102,8 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool /*
   print_hierarchy= List_.get("print hierarchy",false);
   num_cycles  = List_.get("cycle applications",1);
 
+
+
   /* Sanity Checking*/
   int OperatorDomainPoints =  OperatorDomainMap().NumGlobalPoints();
   int OperatorRangePoints =  OperatorRangeMap().NumGlobalPoints();
@@ -133,7 +135,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool /*
 
     /* Build the prolongator */
     ML_CHK_ERR(BuildProlongator(*nullspace));
-
+     
     /* DEBUG: Output matrices */
     if(print_hierarchy)
       EpetraExt::RowMatrixToMatlabFile("prolongator.dat",*Prolongator_);
@@ -202,6 +204,24 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
     EpetraExt::RowMatrixToMatrixMarketFile("P2.dat",*P_epetra, "P", "P", true);
   }
 
+#if 0    
+  /* Get aggregate information for nullspace */
+  // NOTE: Should list the aggregate id for each row
+  int * aggr_info;
+  std::vector<int> dofs_per_agg(NumAggregates,0);
+  if(MLAggr) {
+    ML_Aggregate_Get_AggrMap(MLAggr,0,&aggr_info);
+    for(int i=0; i<TMT_Matrix_->NumMyRows(); i++)
+      dofs_per_agg[ aggr_info[i] ] ++;
+
+
+    printf("DEBUG CMS: dofs_per_agg: ");
+    for(int i=0; i<NumAggregates; i++)
+      printf("%d ",dofs_per_agg[i]);
+    printf("\n");
+  }
+#endif
+
   /* Create wrapper to do abs(T) */
   // NTS: Assume D0 has already been reindexed by now.
   ML_Operator* AbsD0_ML = ML_Operator_Create(ml_comm_);
@@ -235,6 +255,12 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
   vals2=new double[dim*AbsD0P->max_nz_per_row];
   int nonzeros;
 
+  /* EXPERIMENTAL: Normalize the aggregates */
+  // NOTE: If we're normalizing aggregates we're going to exploit the fact that Psparse
+  // is (a) not smoothed and (b) normalized.  This will enable us to get a plausible nullspace later on
+  bool normalize_aggregates=MLAggr && List_.get("edge matrix free: normalize aggregates",false);
+  if(verbose_ && !Comm_->MyPID() && normalize_aggregates) printf("EMFP: Normalizing aggregates\n");
+
   for(int i=0;i<Prolongator_->NumMyRows();i++){
     Psparse->ExtractMyRowView(i,ne1,vals1,idx1);
     nonzeros=0;
@@ -245,18 +271,42 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
         idx2[j*dim+k]=FineColMap.GID(idx1[j])*dim+k;
         //FIX: This works only because there's an implicit linear mapping which
         //we're exploiting.
+
         if(idx2[j*dim+k]==-1) printf("[%d] ERROR: idx1[j]=%d / idx1[j]*dim+k=%d does not have a GID!\n",Comm_->MyPID(),idx1[j],idx1[j]*dim+k);
         if(vals1[j]==0 ) vals2[j*dim+k]=0;
-        else vals2[j*dim+k]= nullspace[k][i] / nonzeros;
+        else vals2[j*dim+k]= normalize_aggregates ? (nullspace[k][i] * vals1[j] / 2.0) : (nullspace[k][i] / nonzeros);
       }/*end for*/
     }/*end for*/
     Prolongator_->InsertGlobalValues(EdgeRangeMap_->GID(i),dim*ne1,vals2,idx2);
   }/*end for*/
 
-
   /* FillComplete / OptimizeStorage for Prolongator*/
   Prolongator_->FillComplete(*CoarseMap_,*EdgeRangeMap_);
   Prolongator_->OptimizeStorage();
+
+  /* Build the coarse nullspace (only works if we're normalizing aggregates) */
+  bool build_coarse_nullspace= normalize_aggregates && List_.get("edge matrix free: explicit coarse nullspace",false);
+  if(build_coarse_nullspace) {    
+    if(verbose_ && !Comm_->MyPID()) printf("EMFP: Using explicit nullspace\n");
+    int Ncoarse = Prolongator_->DomainMap().NumMyElements();
+    CoarseNullspace_ = new double[Ncoarse*dim];
+    memset(CoarseNullspace_,0,Ncoarse*dim*sizeof(double));
+
+    // Use Psparse to migrate the constant and then split it up between dofs
+    Epetra_Vector ones(Psparse->RangeMap(),false), output(Psparse->DomainMap(),true);
+    Psparse->Multiply(true,ones,output);
+    for(int i=0; i<Psparse->DomainMap().NumMyElements(); i++) {
+      // Remember, the vector comes first
+      for(int j=0; j<dim; j++)
+        CoarseNullspace_[Ncoarse*j + i*dim + j] = 1.0;
+    }    
+    List_.sublist("edge matrix free: coarse").set("null space: dimension",dim);
+    List_.sublist("edge matrix free: coarse").set("null space: vectors",CoarseNullspace_);
+    List_.sublist("edge matrix free: coarse").set("null space: type","pre-computed");
+    List_.sublist("edge matrix free: coarse").set("null space: add default vectors",false);
+  }
+
+
 
   /* EXPERIMENTAL: Normalize Prolongator Columns */
   bool normalize_prolongator=List_.get("edge matrix free: normalize prolongator",false);
@@ -407,6 +457,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::DestroyPreconditioner(){
   if (InvDiagonal_) {delete InvDiagonal_; InvDiagonal_=0;}
   if (CoarsePC) {delete CoarsePC; CoarsePC=0;}
   if (CoarseMatrix) {delete CoarseMatrix; CoarseMatrix=0;}
+  if (CoarseNullspace_) {delete [] CoarseNullspace_; CoarseNullspace_=0;}
   if (CoarseMat_ML) {ML_Operator_Destroy(&CoarseMat_ML);CoarseMat_ML=0;}
   if (CoarseMap_) {delete CoarseMap_; CoarseMap_=0;}
 #ifdef HAVE_ML_IFPACK

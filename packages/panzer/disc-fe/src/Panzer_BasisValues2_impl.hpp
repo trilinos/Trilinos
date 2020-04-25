@@ -1201,7 +1201,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
         ots::modifyBasisByOrientation(drv_basis_scalar,
                                       drv_basis_scalar_tmp,
                                       drv_orts,
-                                      intrepid_basis);
+                                      intrepid_basis.getRawPtr());
       }
       if(build_weighted) {
         auto drv_basis_scalar = Kokkos::subview(weighted_basis_scalar.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL());
@@ -1214,7 +1214,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
         ots::modifyBasisByOrientation(drv_basis_scalar,
                                       drv_basis_scalar_tmp,
                                       drv_orts,
-                                      intrepid_basis);
+                                      intrepid_basis.getRawPtr());
       }
 
     }
@@ -1232,7 +1232,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
         ots::modifyBasisByOrientation(drv_grad_basis,
                                       drv_grad_basis_tmp,
                                       drv_orts,
-                                      intrepid_basis);
+                                      intrepid_basis.getRawPtr());
       }
       if(build_weighted) {
         auto drv_grad_basis = Kokkos::subview(weighted_grad_basis.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
@@ -1246,7 +1246,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
         ots::modifyBasisByOrientation(drv_grad_basis,
                                       drv_grad_basis_tmp,
                                       drv_orts,
-                                      intrepid_basis);
+                                      intrepid_basis.getRawPtr());
       }
     }
   }
@@ -1268,7 +1268,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
         ots::modifyBasisByOrientation(drv_basis_vector,
                                       drv_basis_vector_tmp,
                                       drv_orts,
-                                      intrepid_basis);
+                                      intrepid_basis.getRawPtr());
       }
       if(build_weighted) {
         auto drv_basis_vector = Kokkos::subview(weighted_basis_vector.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
@@ -1282,7 +1282,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
         ots::modifyBasisByOrientation(drv_basis_vector,
                                       drv_basis_vector_tmp,
                                       drv_orts,
-                                      intrepid_basis);
+                                      intrepid_basis.getRawPtr());
       }
     }
 
@@ -1298,7 +1298,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
         ots::modifyBasisByOrientation(drv_curl_basis_scalar,
                                       drv_curl_basis_scalar_tmp,
                                       drv_orts,
-                                      intrepid_basis);
+                                      intrepid_basis.getRawPtr());
       }
 
       if(build_weighted) {
@@ -1312,7 +1312,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
         ots::modifyBasisByOrientation(drv_curl_basis_scalar,
                                       drv_curl_basis_scalar_tmp,
                                       drv_orts,
-                                      intrepid_basis);
+                                      intrepid_basis.getRawPtr());
       }
     }
   }
@@ -1334,7 +1334,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
         ots::modifyBasisByOrientation(drv_basis_vector,
                                       drv_basis_vector_tmp,
                                       drv_orts,
-                                      intrepid_basis);
+                                      intrepid_basis.getRawPtr());
       }
       if(build_weighted) {
         auto drv_basis_vector = Kokkos::subview(weighted_basis_vector.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
@@ -1348,7 +1348,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
         ots::modifyBasisByOrientation(drv_basis_vector,
                                       drv_basis_vector_tmp,
                                       drv_orts,
-                                      intrepid_basis);
+                                      intrepid_basis.getRawPtr());
       }
     }
 
@@ -1365,7 +1365,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
         ots::modifyBasisByOrientation(drv_curl_basis_vector,
                                       drv_curl_basis_vector_tmp,
                                       drv_orts,
-                                      intrepid_basis);
+                                      intrepid_basis.getRawPtr());
       }
       if(build_weighted) {
         auto drv_curl_basis_vector = Kokkos::subview(weighted_curl_basis_vector.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
@@ -1379,7 +1379,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
         ots::modifyBasisByOrientation(drv_curl_basis_vector,
                                       drv_curl_basis_vector_tmp,
                                       drv_orts,
-                                      intrepid_basis);
+                                      intrepid_basis.getRawPtr());
       }
     }
   }
@@ -1400,7 +1400,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
         ots::modifyBasisByOrientation(drv_basis_vector,
                                       drv_basis_vector_tmp,
                                       drv_orts,
-                                      intrepid_basis);
+                                      intrepid_basis.getRawPtr());
       }
       if(build_weighted) {
         auto drv_basis_vector = Kokkos::subview(weighted_basis_vector.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
@@ -1414,7 +1414,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
         ots::modifyBasisByOrientation(drv_basis_vector,
                                       drv_basis_vector_tmp,
                                       drv_orts,
-                                      intrepid_basis);
+                                      intrepid_basis.getRawPtr());
       }
     }
     if (compute_derivatives) {
@@ -1429,7 +1429,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
         ots::modifyBasisByOrientation(drv_div_basis,
                                       drv_div_basis_tmp,
                                       drv_orts,
-                                      intrepid_basis);
+                                      intrepid_basis.getRawPtr());
       }
       if(build_weighted) {
         auto drv_div_basis = Kokkos::subview(weighted_div_basis.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL());
@@ -1442,7 +1442,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
         ots::modifyBasisByOrientation(drv_div_basis,
                                       drv_div_basis_tmp,
                                       drv_orts,
-                                      intrepid_basis);
+                                      intrepid_basis.getRawPtr());
       }
     }
   }

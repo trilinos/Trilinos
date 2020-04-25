@@ -505,7 +505,7 @@ template< class ExecutionSpace , BoxElemPart::ElemOrder Order , class Coordinate
           class CoeffFunctionType , class GatherScatterOp , class ScalarType >
 class ElementComputation
   < Kokkos::Example::BoxElemFixture< ExecutionSpace , Order , CoordinateMap >
-  , KokkosSparse::CrsMatrix< MatrixVectorScalarType , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >
+  , KokkosSparse::CrsMatrix< MatrixVectorScalarType , OrdinalType , Kokkos::Device<ExecutionSpace, typename ExecutionSpace::memory_space> , MemoryTraits , SizeType >
   , CoeffFunctionType
   , GatherScatterOp
   , ScalarType >
@@ -518,9 +518,10 @@ public:
   //------------------------------------
 
   typedef ExecutionSpace   execution_space ;
+  typedef Kokkos::Device<execution_space, typename execution_space::memory_space> DeviceType;
   typedef ScalarType       scalar_type ;
 
-  typedef KokkosSparse::CrsMatrix< MatrixVectorScalarType , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >  sparse_matrix_type ;
+  typedef KokkosSparse::CrsMatrix< MatrixVectorScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType >  sparse_matrix_type ;
   typedef typename sparse_matrix_type::StaticCrsGraphType                                       sparse_graph_type ;
   typedef typename sparse_matrix_type::values_type matrix_values_type ;
   typedef Kokkos::View< MatrixVectorScalarType* , Kokkos::LayoutLeft, execution_space > vector_type ;
@@ -992,7 +993,7 @@ template< class ExecutionSpace , BoxElemPart::ElemOrder Order , class Coordinate
           typename ScalarType , typename OrdinalType , class MemoryTraits , typename SizeType >
 class DirichletComputation<
   Kokkos::Example::BoxElemFixture< ExecutionSpace , Order , CoordinateMap > ,
-  KokkosSparse::CrsMatrix< ScalarType , OrdinalType , ExecutionSpace , MemoryTraits , SizeType > >
+  KokkosSparse::CrsMatrix< ScalarType , OrdinalType , Kokkos::Device<ExecutionSpace, typename ExecutionSpace::memory_space> , MemoryTraits , SizeType > >
 {
 public:
 
@@ -1001,9 +1002,10 @@ public:
   typedef typename node_coord_type::value_type                                 scalar_coord_type ;
 
   typedef ExecutionSpace   execution_space ;
+  typedef Kokkos::Device<execution_space, typename execution_space::memory_space> DeviceType;
   typedef ScalarType   scalar_type ;
 
-  typedef KokkosSparse::CrsMatrix< ScalarType , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >  sparse_matrix_type ;
+  typedef KokkosSparse::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType >  sparse_matrix_type ;
   typedef typename sparse_matrix_type::StaticCrsGraphType                                       sparse_graph_type ;
   typedef typename sparse_matrix_type::values_type matrix_values_type ;
   typedef Kokkos::View< scalar_type* , execution_space > vector_type ;

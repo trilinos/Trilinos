@@ -157,8 +157,8 @@ typedef std::map<std::pair<EntityRank, Selector>, BucketVector> SelectorBucketMa
 typedef std::vector<VolatileFastSharedCommMapOneRank> VolatileFastSharedCommMap;
 
 typedef std::map<EntityKey,std::set<int> > EntityToDependentProcessorsMap;
-typedef std::map<EntityKey,Entity>::const_iterator const_entity_iterator;
-typedef std::map<EntityKey,Entity>::iterator entity_iterator;
+typedef std::vector<std::pair<EntityKey,Entity> >::const_iterator const_entity_iterator;
+typedef std::vector<std::pair<EntityKey,Entity> >::iterator entity_iterator;
 
 typedef unsigned Ordinal;
 static const Ordinal InvalidOrdinal = static_cast<Ordinal>(-1); // std::numeric_limits<PartOrdinal>::max();
@@ -279,6 +279,8 @@ enum ConnectivityType
   DYNAMIC_CONNECTIVITY,
   INVALID_CONNECTIVITY_TYPE
 };
+
+constexpr unsigned INVALID_BUCKET_ID = std::numeric_limits<unsigned>::max();
 
 #define STK_16BIT_CONNECTIVITY_ORDINAL
 #ifdef STK_16BIT_CONNECTIVITY_ORDINAL

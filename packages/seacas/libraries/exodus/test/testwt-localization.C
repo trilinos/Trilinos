@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2017 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017, 2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,22 +33,16 @@
  *
  */
 
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include <numeric>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <string>
 #include <vector>
 
 #include "exodusII.h"
 #include "exodusII_int.h"
-
-#if __cplusplus > 199711L
-#define TOPTR(x) x.data()
-#else
-#define TOPTR(x) (x.empty() ? nullptr : &x[0])
-#endif
 
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
@@ -165,7 +159,7 @@ int main()
     z[i + num_nodes / 2] = 1.0;
   }
 
-  EXCHECK(ex_put_coord(exoid, TOPTR(x), TOPTR(y), TOPTR(z)));
+  EXCHECK(ex_put_coord(exoid, x.data(), y.data(), z.data()));
 
   const char *coord_names[3];
   coord_names[0] = "xcoor";
@@ -200,7 +194,7 @@ int main()
   block_names[1] = "block_20";
   block_names[2] = "block_30";
 
-  EXCHECK(ex_put_block_params(exoid, num_elem_blk, TOPTR(blocks)));
+  EXCHECK(ex_put_block_params(exoid, num_elem_blk, blocks.data()));
 
   /* Write element block names */
   for (int i = 0; i < num_elem_blk; i++) {
@@ -288,14 +282,14 @@ int main()
     }
 
     EXCHECK(
-        ex_put_var(exoid, whole_time_step, EX_GLOBAL, 1, 1, num_glo_vars, TOPTR(glob_var_vals)));
+        ex_put_var(exoid, whole_time_step, EX_GLOBAL, 1, 1, num_glo_vars, glob_var_vals.data()));
 
     // write nodal variables
     for (int k = 1; k <= num_nod_vars; k++) {
       for (int j = 0; j < num_nodes; j++) {
         nodal_var_vals[j] = (double)k + ((double)(j + 1) * time_value);
       }
-      EXCHECK(ex_put_var(exoid, whole_time_step, EX_NODAL, k, 1, num_nodes, TOPTR(nodal_var_vals)));
+      EXCHECK(ex_put_var(exoid, whole_time_step, EX_NODAL, k, 1, num_nodes, nodal_var_vals.data()));
     }
 
     // write element variables
@@ -305,7 +299,7 @@ int main()
           elem_var_vals[m] = (double)(k + 1) + (double)(j + 2) + ((double)(m + 1) * time_value);
         }
         EXCHECK(ex_put_var(exoid, whole_time_step, EX_ELEM_BLOCK, k, blocks[j].id,
-                           blocks[j].num_entry, TOPTR(elem_var_vals)));
+                           blocks[j].num_entry, elem_var_vals.data()));
       }
     }
 

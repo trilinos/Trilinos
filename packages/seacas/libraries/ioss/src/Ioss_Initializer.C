@@ -32,7 +32,6 @@
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_StandardElementTypes.h>
-#include <locale>
 #if defined IOSS_THREADSAFE
 #include <mutex>
 #endif

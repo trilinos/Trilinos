@@ -40,6 +40,7 @@ SET(ATDM_SE_PACKAGE_DISABLES
   STKDoc_tests
   STKExp
   Moertel
+  ShyLU_NodeTacho
   ShyLU_DD
   ShyLU
   Stokhos
@@ -65,9 +66,9 @@ IF (NOT ATDM_ENABLE_SPARC_SETTINGS)
   # at a time in an orderly fashion.
 ENDIF()
 
-IF (ATDM_USE_CUDA AND ATDM_COMPLEX)
+IF (ATDM_COMPLEX)
 
-  # Disable extra packages not being used by GEMMA in cuda+complex builds (see
+  # Disable extra packages not being used by GEMMA in complex builds (see
   # ATDV-263, ATDV-265)
   SET(ATDM_SE_PACKAGE_DISABLES
     ${ATDM_SE_PACKAGE_DISABLES}

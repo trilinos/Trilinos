@@ -16,10 +16,11 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 
-algorithm = "distance laplacian": threshold = 0.05, blocksize = 1
+algorithm = "distance laplacian" distance laplacian algorithm = "default": threshold = 0.05, blocksize = 1
 aggregation: drop tol = 0.05
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = distance laplacian
+aggregation: distance laplacian algo = default   [default]
 lightweight wrap = 1
 
 Lumping dropped entries
@@ -47,6 +48,9 @@ aggregate qualities: good aggregate threshold = 100   [unused]
 aggregate qualities: file output = 0   [default]
 aggregate qualities: file base = agg_qualities   [default]
 aggregate qualities: check symmetry = 0   [unused]
+aggregate qualities: algorithm = forward   [default]
+aggregate qualities: zero threshold = 1e-12   [default]
+aggregate qualities: percentiles = {}   [default]
 
 aggregation: max agg size = -1   [default]
 aggregation: min agg size = 2   [default]
@@ -121,10 +125,11 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 
-algorithm = "distance laplacian": threshold = 0.05, blocksize = 1
+algorithm = "distance laplacian" distance laplacian algorithm = "default": threshold = 0.05, blocksize = 1
 aggregation: drop tol = 0.05
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = distance laplacian
+aggregation: distance laplacian algo = default   [default]
 lightweight wrap = 1
 
 Lumping dropped entries
@@ -152,6 +157,9 @@ aggregate qualities: good aggregate threshold = 100   [unused]
 aggregate qualities: file output = 0   [default]
 aggregate qualities: file base = agg_qualities   [default]
 aggregate qualities: check symmetry = 0   [unused]
+aggregate qualities: algorithm = forward   [default]
+aggregate qualities: zero threshold = 1e-12   [default]
+aggregate qualities: percentiles = {}   [default]
 
 aggregation: max agg size = -1   [default]
 aggregation: min agg size = 2   [default]

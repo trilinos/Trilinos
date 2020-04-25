@@ -12,7 +12,7 @@ class BulkData;
 class DeviceMeshManager : public NgpMeshManager
 {
 public:
-  DeviceMeshManager(stk::mesh::BulkData & bulk);
+  DeviceMeshManager(const stk::mesh::BulkData & bulk);
   ~DeviceMeshManager() override;
 
   stk::mesh::NgpMesh & get_mesh() override;

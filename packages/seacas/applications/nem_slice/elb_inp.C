@@ -64,7 +64,7 @@
 namespace {
   void print_usage();
 
-  const std::string remove_extension(const std::string &filename)
+  std::string remove_extension(const std::string &filename)
   {
     // Strip off the extension
     size_t ind = filename.find_last_of('.', filename.size());
@@ -104,12 +104,14 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
                        Weight_Description<INT> *weight  /* Structure for weighting graph */
 )
 {
-  int         opt_let, iret, el_blk, wgt, max_dim = 0, i;
+  int         opt_let;
+  int         iret;
+  int         el_blk;
+  int         wgt;
+  int         max_dim = 0;
+  int         i;
   char *      sub_opt = nullptr, *value = nullptr, *cptr = nullptr, *cptr2 = nullptr;
   std::string ctemp;
-
-  extern char *optarg;
-  extern int   optind;
 
   /* see NOTE in elb.h about the order of the following array */
   const char *weight_subopts[] = {"none",  "read",       "eb",       "var_index",
@@ -714,7 +716,12 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
   char        inp_copy[MAX_INP_LINE];
   char *      cptr, *cptr2;
 
-  int  iret, el_blk, wgt, i, ilen, max_dim;
+  int  iret;
+  int  el_blk;
+  int  wgt;
+  int  i;
+  int  ilen;
+  int  max_dim;
   char tmpstr[2048];
   /*-----------------------------Execution Begins------------------------------*/
   if (!(inp_fd = fopen(ascii_inp_file.c_str(), "r"))) {
@@ -1376,9 +1383,15 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
   ex_entity_type type;
   char **        var_names;
   int            cnt;
-  int            exoid, cpu_ws = 0, io_ws = 0, nvars, tmp_vindx = 0;
+  int            exoid;
+  int            cpu_ws = 0;
+  int            io_ws  = 0;
+  int            nvars;
+  int            tmp_vindx = 0;
   float          version;
-  int            exid_inp, icpu_ws = 0, iio_ws = 0;
+  int            exid_inp;
+  int            icpu_ws = 0;
+  int            iio_ws  = 0;
   float          vers;
 
   /* Check that an input ExodusII file name was specified */

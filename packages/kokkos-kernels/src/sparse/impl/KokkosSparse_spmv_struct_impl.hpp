@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//               KokkosKernels 0.9: Linear Algebra and Graph Kernels
-//                 Copyright 2017 Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -140,7 +141,7 @@ struct SPMV_Struct_Functor {
   typedef typename team_policy::member_type                  team_member;
   typedef Kokkos::Details::ArithTraits<value_type>           ATV;
   typedef Kokkos::View<ordinal_type*, scratch_space,
-		       Kokkos::MemoryTraits<Kokkos::Unmanaged> > shared_ordinal_1d;
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > shared_ordinal_1d;
   using y_value_type = typename YVector::non_const_value_type;
 
   // Tags to perform SPMV on interior and boundaries
@@ -154,10 +155,10 @@ struct SPMV_Struct_Functor {
   struct exterior3DTag{};
 
   // Classic spmv params
-  const value_type alpha;
+  const y_value_type alpha;
   AMatrix  m_A;
   XVector m_x;
-  const value_type beta;
+  const y_value_type beta;
   YVector m_y;
 
   // Additional structured spmv params
@@ -166,19 +167,22 @@ struct SPMV_Struct_Functor {
   const int stencil_type;
   ordinal_type numInterior, numExterior;
   const int64_t rows_per_team;
+  const int64_t rows_per_team_ext;
 
   SPMV_Struct_Functor (const Kokkos::View<ordinal_type*, Kokkos::HostSpace> structure_,
-		       const int stencil_type_,
-                       const value_type alpha_,
+                       const int stencil_type_,
+                       const y_value_type alpha_,
                        const AMatrix m_A_,
                        const XVector m_x_,
-                       const value_type beta_,
+                       const y_value_type beta_,
                        const YVector m_y_,
-                       const int64_t rows_per_team_) :
+                       const int64_t rows_per_team_,
+                       const int64_t rows_per_team_ext_) :
     alpha (alpha_), m_A (m_A_), m_x (m_x_),
     beta (beta_), m_y (m_y_),
     stencil_type(stencil_type_),
-    rows_per_team (rows_per_team_)
+    rows_per_team (rows_per_team_),
+    rows_per_team_ext (rows_per_team_ext_)
   {
     static_assert (static_cast<int> (XVector::rank) == 1,
                    "XVector must be a rank 1 View.");
@@ -198,7 +202,7 @@ struct SPMV_Struct_Functor {
     }
   }
 
-  void compute(const int64_t worksets, const int team_size, const int vector_length) {
+  void compute_interior(const int64_t worksets, const int team_size, const int vector_length) {
 
     if(numDimensions == 1) {
       // Treat interior points using structured algorithm
@@ -210,21 +214,12 @@ struct SPMV_Struct_Functor {
                            Kokkos::Schedule<Kokkos::Static> > policy(1,1);
         if(team_size < 0) {
           policy = Kokkos::TeamPolicy<interior3ptTag, execution_space, Kokkos::Schedule<Kokkos::Static> >(worksets,Kokkos::AUTO,vector_length).
-	      set_scratch_size(0, Kokkos::PerTeam( shared_size ));
+              set_scratch_size(0, Kokkos::PerTeam( shared_size ));
         } else {
           policy = Kokkos::TeamPolicy<interior3ptTag, execution_space, Kokkos::Schedule<Kokkos::Static> >(worksets,team_size,vector_length).
-	      set_scratch_size(0, Kokkos::PerTeam( shared_size ));
+              set_scratch_size(0, Kokkos::PerTeam( shared_size ));
         }
         Kokkos::parallel_for("KokkosSparse::spmv_struct<NoTranspose,Static>: interior", policy, *this);
-      }
-
-      // Treat exterior points using unstructured algorithm
-      numExterior = 2;
-      if(numExterior > 0) {
-        Kokkos::RangePolicy<exterior1DTag,
-                            execution_space,
-                            Kokkos::Schedule<Kokkos::Static> > policy(0, numExterior);
-        Kokkos::parallel_for("KokkosSparse::spmv_struct<NoTranspose,Static>: exterior", policy, *this);
       }
 
     } else if(numDimensions == 2) {
@@ -232,85 +227,68 @@ struct SPMV_Struct_Functor {
       numInterior = (ni - 2)*(nj - 2);
       if(numInterior > 0) {
         if(stencil_type == 1) {
-	  size_t shared_size = shared_ordinal_1d::shmem_size(5);
+          size_t shared_size = shared_ordinal_1d::shmem_size(5);
           Kokkos::TeamPolicy<interior5ptTag,
                              execution_space,
                              Kokkos::Schedule<Kokkos::Static> > policy(1,1);
           if(team_size < 0) {
             policy = Kokkos::TeamPolicy<interior5ptTag, execution_space, Kokkos::Schedule<Kokkos::Static> >(worksets,Kokkos::AUTO,vector_length).
-	      set_scratch_size(0, Kokkos::PerTeam( shared_size ));
+              set_scratch_size(0, Kokkos::PerTeam( shared_size ));
           } else {
             policy = Kokkos::TeamPolicy<interior5ptTag, execution_space, Kokkos::Schedule<Kokkos::Static> >(worksets,team_size,vector_length).
-	      set_scratch_size(0, Kokkos::PerTeam( shared_size ));
+              set_scratch_size(0, Kokkos::PerTeam( shared_size ));
           }
           Kokkos::parallel_for("KokkosSparse::spmv_struct<NoTranspose,Static>: interior", policy, *this);
         } else if(stencil_type == 2) {
-	  size_t shared_size = shared_ordinal_1d::shmem_size(9);
+          size_t shared_size = shared_ordinal_1d::shmem_size(9);
           Kokkos::TeamPolicy<interior9ptTag,
                              execution_space,
-                             Kokkos::Schedule<Kokkos::Dynamic> > policy(1,1);
+                             Kokkos::Schedule<Kokkos::Static> > policy(1,1);
           if(team_size < 0) {
-            policy = Kokkos::TeamPolicy<interior9ptTag, execution_space, Kokkos::Schedule<Kokkos::Dynamic> >(worksets,Kokkos::AUTO,vector_length).
-	      set_scratch_size(0, Kokkos::PerTeam( shared_size ));
+            policy = Kokkos::TeamPolicy<interior9ptTag, execution_space, Kokkos::Schedule<Kokkos::Static> >(worksets,Kokkos::AUTO,vector_length).
+              set_scratch_size(0, Kokkos::PerTeam( shared_size ));
           } else {
-            policy = Kokkos::TeamPolicy<interior9ptTag, execution_space, Kokkos::Schedule<Kokkos::Dynamic> >(worksets,team_size,vector_length).
-	      set_scratch_size(0, Kokkos::PerTeam( shared_size ));
+            policy = Kokkos::TeamPolicy<interior9ptTag, execution_space, Kokkos::Schedule<Kokkos::Static> >(worksets,team_size,vector_length).
+              set_scratch_size(0, Kokkos::PerTeam( shared_size ));
           }
           Kokkos::parallel_for("KokkosSparse::spmv_struct<NoTranspose,Static>: interior", policy, *this);
         }
       }
 
-      // Treat exterior points using unstructured algorithm
-      numExterior = ni*nj - numInterior;
-      if(numExterior > 0) {
-        Kokkos::RangePolicy<exterior2DTag,
-                            execution_space,
-                            Kokkos::Schedule<Kokkos::Static> > policy(0, numExterior);
-        Kokkos::parallel_for("KokkosSparse::spmv_struct<NoTranspose,Static>: exterior", policy, *this);
-      }
     } else if(numDimensions == 3) {
       // Treat interior points using structured algorithm
       numInterior = (ni - 2)*(nj - 2)*(nk - 2);
       if(numInterior > 0) {
         if(stencil_type == 1) {
-	  size_t shared_size = shared_ordinal_1d::shmem_size(7);
+          size_t shared_size = shared_ordinal_1d::shmem_size(7);
           Kokkos::TeamPolicy<interior7ptTag,
                              execution_space,
                              Kokkos::Schedule<Kokkos::Static> > policy(1,1);
           if(team_size < 0) {
             policy = Kokkos::TeamPolicy<interior7ptTag, execution_space, Kokkos::Schedule<Kokkos::Static> >(worksets,Kokkos::AUTO,vector_length).
-	      set_scratch_size(0, Kokkos::PerTeam( shared_size ));
+              set_scratch_size(0, Kokkos::PerTeam( shared_size ));
           } else {
             policy = Kokkos::TeamPolicy<interior7ptTag, execution_space, Kokkos::Schedule<Kokkos::Static> >(worksets,team_size,vector_length).
-	      set_scratch_size(0, Kokkos::PerTeam( shared_size ));
+              set_scratch_size(0, Kokkos::PerTeam( shared_size ));
           }
           Kokkos::parallel_for("KokkosSparse::spmv_struct<NoTranspose,Static>: interior", policy, *this);
         } else if(stencil_type == 2) {
-	  size_t shared_size = shared_ordinal_1d::shmem_size(27);
+          size_t shared_size = shared_ordinal_1d::shmem_size(27);
           Kokkos::TeamPolicy<interior27ptTag,
                              execution_space,
-                             Kokkos::Schedule<Kokkos::Dynamic> > policy(1,1);
+                             Kokkos::Schedule<Kokkos::Static> > policy(1,1);
           if(team_size < 0) {
-            policy = Kokkos::TeamPolicy<interior27ptTag, execution_space, Kokkos::Schedule<Kokkos::Dynamic> >(worksets,Kokkos::AUTO,vector_length).
-	      set_scratch_size(0, Kokkos::PerTeam(shared_size));
+            policy = Kokkos::TeamPolicy<interior27ptTag, execution_space, Kokkos::Schedule<Kokkos::Static> >(worksets,Kokkos::AUTO,vector_length).
+              set_scratch_size(0, Kokkos::PerTeam(shared_size));
           } else {
-            policy = Kokkos::TeamPolicy<interior27ptTag, execution_space, Kokkos::Schedule<Kokkos::Dynamic> >(worksets,team_size,vector_length).
-	      set_scratch_size(0, Kokkos::PerTeam(shared_size));
+            policy = Kokkos::TeamPolicy<interior27ptTag, execution_space, Kokkos::Schedule<Kokkos::Static> >(worksets,team_size,vector_length).
+              set_scratch_size(0, Kokkos::PerTeam(shared_size));
           }
           Kokkos::parallel_for("KokkosSparse::spmv_struct<NoTranspose,Static>: interior", policy, *this);
         }
       }
-
-      // Treat exterior points using unstructured algorithm
-      numExterior = ni*nj*nk - numInterior;
-      if(numExterior > 0) {
-        Kokkos::RangePolicy<exterior3DTag,
-                            execution_space,
-                            Kokkos::Schedule<Kokkos::Static> > policy(0, numExterior);
-        Kokkos::parallel_for("KokkosSparse::spmv_struct<NoTranspose,Static>: exterior", policy, *this);
-      }
     }
-  }
+  } // compute_interior
 
   KOKKOS_INLINE_FUNCTION
   void operator() (const interior3ptTag&, const team_member& dev) const
@@ -318,9 +296,9 @@ struct SPMV_Struct_Functor {
     // Allocate and initialize columnOffsets array for the team
     shared_ordinal_1d columnOffsets(dev.team_scratch(0), 3);
     Kokkos::single(Kokkos::PerTeam(dev), [&] () {
-    	columnOffsets(0) = -1;
-    	columnOffsets(1) = 0;
-    	columnOffsets(2) = 1;
+        columnOffsets(0) = -1;
+        columnOffsets(1) = 0;
+        columnOffsets(2) = 1;
       });
     dev.team_barrier();
 
@@ -332,15 +310,15 @@ struct SPMV_Struct_Functor {
         rowIdx = interiorIdx + 1;
 
         const size_type rowOffset = m_A.graph.row_map(rowIdx);
-        const value_type* value_ptr = m_A.values.data() + rowOffset;
-	value_type sum = 0.0;
-	Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(dev, 3), [&] (const ordinal_type& idx, value_type& lclSum) {
-	    lclSum += *(value_ptr + idx)*m_x(rowIdx + columnOffsets(idx));
-	  }, sum);
+        y_value_type sum = 0.0;
+        Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(dev, 3), [&] (const ordinal_type& idx, y_value_type& lclSum) {
+            lclSum += (conjugate ? ATV::conj(m_A.values(rowOffset + idx)) : m_A.values(rowOffset + idx))
+              *m_x(rowIdx + columnOffsets(idx));
+          }, sum);
 
-	Kokkos::single(Kokkos::PerThread(dev), [&] () {
-	    m_y(rowIdx) = beta*m_y(rowIdx) + alpha*sum;
-	  });
+        Kokkos::single(Kokkos::PerThread(dev), [&] () {
+            m_y(rowIdx) = beta*m_y(rowIdx) + alpha*sum;
+          });
       });
   }
 
@@ -350,11 +328,11 @@ struct SPMV_Struct_Functor {
     // Allocate and initialize columnOffsets array for the team
     shared_ordinal_1d columnOffsets(dev.team_scratch(0), 5);
     Kokkos::single(Kokkos::PerTeam(dev), [&] () {
-    	columnOffsets(0) = -ni;
-    	columnOffsets(1) = -1;
-    	columnOffsets(2) = 0;
-    	columnOffsets(3) = 1;
-    	columnOffsets(4) = ni;
+        columnOffsets(0) = -ni;
+        columnOffsets(1) = -1;
+        columnOffsets(2) = 0;
+        columnOffsets(3) = 1;
+        columnOffsets(4) = ni;
       });
     dev.team_barrier();
 
@@ -367,16 +345,16 @@ struct SPMV_Struct_Functor {
         i = interiorIdx % (ni - 2);
         rowIdx = (j + 1)*ni + i + 1;
 
-        const size_type rowOffset = m_A.graph.row_map(rowIdx);
-        const value_type* value_ptr = m_A.values.data() + rowOffset;
-	value_type sum = 0.0;
-	Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(dev, 5), [&] (const ordinal_type& idx, value_type& lclSum) {
-	    lclSum += *(value_ptr + idx)*m_x(rowIdx + columnOffsets(idx));
-	  }, sum);
+        const size_type   rowOffset = m_A.graph.row_map(rowIdx);
+        y_value_type sum = 0.0;
+        Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(dev, 5), [&] (const ordinal_type& idx, y_value_type& lclSum) {
+            lclSum += (conjugate ? ATV::conj(m_A.values(rowOffset + idx)) : m_A.values(rowOffset + idx))
+              *m_x(rowIdx + columnOffsets(idx));
+          }, sum);
 
-	Kokkos::single(Kokkos::PerThread(dev), [&] () {
-	    m_y(rowIdx) = beta*m_y(rowIdx) + alpha*sum;
-	  });
+        Kokkos::single(Kokkos::PerThread(dev), [&] () {
+            m_y(rowIdx) = beta*m_y(rowIdx) + alpha*sum;
+          });
       });
   }
 
@@ -386,15 +364,15 @@ struct SPMV_Struct_Functor {
     // Allocate and initialize columnOffsets array for the team
     shared_ordinal_1d columnOffsets(dev.team_scratch(0), 9);
     Kokkos::single(Kokkos::PerTeam(dev), [&] () {
-    	columnOffsets(0) = -ni - 1;
-    	columnOffsets(1) = -ni;
-    	columnOffsets(2) = -ni + 1;
-    	columnOffsets(3) = -1;
-    	columnOffsets(4) = 0;
-    	columnOffsets(5) = 1;
-	columnOffsets(6) = ni - 1;
-	columnOffsets(7) = ni;
-	columnOffsets(8) = ni + 1;
+        columnOffsets(0) = -ni - 1;
+        columnOffsets(1) = -ni;
+        columnOffsets(2) = -ni + 1;
+        columnOffsets(3) = -1;
+        columnOffsets(4) = 0;
+        columnOffsets(5) = 1;
+        columnOffsets(6) = ni - 1;
+        columnOffsets(7) = ni;
+        columnOffsets(8) = ni + 1;
       });
     dev.team_barrier();
 
@@ -408,15 +386,15 @@ struct SPMV_Struct_Functor {
         rowIdx = (j + 1)*ni + i + 1;
 
         const size_type rowOffset = m_A.graph.row_map(rowIdx);
-        const value_type* value_ptr = &(m_A.values(rowOffset));
-	value_type sum = 0.0;
-	Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(dev, 9), [&] (const ordinal_type& idx, value_type& lclSum) {
-	    lclSum += *(value_ptr + idx)*m_x(rowIdx + columnOffsets(idx));
-	  }, sum);
+        y_value_type sum = 0.0;
+        Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(dev, 9), [&] (const ordinal_type& idx, y_value_type& lclSum) {
+            lclSum += (conjugate ? ATV::conj(m_A.values(rowOffset + idx)) : m_A.values(rowOffset + idx))
+              *m_x(rowIdx + columnOffsets(idx));
+          }, sum);
 
-	Kokkos::single(Kokkos::PerThread(dev), [&] () {
-	    m_y(rowIdx) = beta*m_y(rowIdx) + alpha*sum;
-	  });
+        Kokkos::single(Kokkos::PerThread(dev), [&] () {
+            m_y(rowIdx) = beta*m_y(rowIdx) + alpha*sum;
+          });
       });
   }
 
@@ -426,13 +404,13 @@ struct SPMV_Struct_Functor {
     // Allocate and initialize columnOffsets array for the team
     shared_ordinal_1d columnOffsets(dev.team_scratch(0), 7);
     Kokkos::single(Kokkos::PerTeam(dev), [&] () {
-    	columnOffsets(0) = -ni*nj;
-    	columnOffsets(1) = -ni;
-    	columnOffsets(2) = -1;
-    	columnOffsets(3) = 0;
-    	columnOffsets(4) = 1;
-    	columnOffsets(5) = ni;
-	columnOffsets(6) = ni*nj;
+        columnOffsets(0) = -ni*nj;
+        columnOffsets(1) = -ni;
+        columnOffsets(2) = -1;
+        columnOffsets(3) = 0;
+        columnOffsets(4) = 1;
+        columnOffsets(5) = ni;
+        columnOffsets(6) = ni*nj;
       });
     dev.team_barrier();
 
@@ -448,15 +426,15 @@ struct SPMV_Struct_Functor {
         rowIdx = (k + 1)*nj*ni + (j + 1)*ni + (i + 1);
 
         const size_type rowOffset = m_A.graph.row_map(rowIdx);
-        const value_type* value_ptr = &(m_A.values(rowOffset));
-	value_type sum = 0.0;
-	Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(dev, 7), [&] (const ordinal_type& idx, value_type& lclSum) {
-	    lclSum += *(value_ptr + idx)*m_x(rowIdx + columnOffsets(idx));
-	  }, sum);
+        y_value_type sum = 0.0;
+        Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(dev, 7), [&] (const ordinal_type& idx, y_value_type& lclSum) {
+            lclSum += (conjugate ? ATV::conj(m_A.values(rowOffset + idx)) : m_A.values(rowOffset + idx))
+              *m_x(rowIdx + columnOffsets(idx));
+          }, sum);
 
-	Kokkos::single(Kokkos::PerThread(dev), [&] () {
-	    m_y(rowIdx) = beta*m_y(rowIdx) + alpha*sum;
-	  });
+        Kokkos::single(Kokkos::PerThread(dev), [&] () {
+            m_y(rowIdx) = beta*m_y(rowIdx) + alpha*sum;
+          });
       });
   }
 
@@ -466,33 +444,33 @@ struct SPMV_Struct_Functor {
     // Allocate and initialize columnOffsets array for the team
     shared_ordinal_1d columnOffsets(dev.team_scratch(0), 27);
     Kokkos::single(Kokkos::PerTeam(dev), [&] () {
-    	columnOffsets(0)  = -ni*nj - ni - 1;
-    	columnOffsets(1)  = -ni*nj - ni;
-    	columnOffsets(2)  = -ni*nj - ni + 1;
-    	columnOffsets(3)  = -ni*nj - 1;
-    	columnOffsets(4)  = -ni*nj;
-    	columnOffsets(5)  = -ni*nj + 1;
-    	columnOffsets(6)  = -ni*nj + ni - 1;
-    	columnOffsets(7)  = -ni*nj + ni;
-    	columnOffsets(8)  = -ni*nj + ni + 1;
-    	columnOffsets(9)  = -ni - 1;
-    	columnOffsets(10) = -ni;
-    	columnOffsets(11) = -ni + 1;
-    	columnOffsets(12) = -1;
-    	columnOffsets(13) = 0;
-    	columnOffsets(14) = 1;
-    	columnOffsets(15) = ni - 1;
-    	columnOffsets(16) = ni;
-    	columnOffsets(17) = ni + 1;
-    	columnOffsets(18) = ni*nj - ni - 1;
-    	columnOffsets(19) = ni*nj - ni;
-    	columnOffsets(20) = ni*nj - ni + 1;
-    	columnOffsets(21) = ni*nj - 1;
-    	columnOffsets(22) = ni*nj;
-    	columnOffsets(23) = ni*nj + 1;
-    	columnOffsets(24) = ni*nj + ni - 1;
-    	columnOffsets(25) = ni*nj + ni;
-    	columnOffsets(26) = ni*nj + ni + 1;
+        columnOffsets(0)  = -ni*nj - ni - 1;
+        columnOffsets(1)  = -ni*nj - ni;
+        columnOffsets(2)  = -ni*nj - ni + 1;
+        columnOffsets(3)  = -ni*nj - 1;
+        columnOffsets(4)  = -ni*nj;
+        columnOffsets(5)  = -ni*nj + 1;
+        columnOffsets(6)  = -ni*nj + ni - 1;
+        columnOffsets(7)  = -ni*nj + ni;
+        columnOffsets(8)  = -ni*nj + ni + 1;
+        columnOffsets(9)  = -ni - 1;
+        columnOffsets(10) = -ni;
+        columnOffsets(11) = -ni + 1;
+        columnOffsets(12) = -1;
+        columnOffsets(13) = 0;
+        columnOffsets(14) = 1;
+        columnOffsets(15) = ni - 1;
+        columnOffsets(16) = ni;
+        columnOffsets(17) = ni + 1;
+        columnOffsets(18) = ni*nj - ni - 1;
+        columnOffsets(19) = ni*nj - ni;
+        columnOffsets(20) = ni*nj - ni + 1;
+        columnOffsets(21) = ni*nj - 1;
+        columnOffsets(22) = ni*nj;
+        columnOffsets(23) = ni*nj + 1;
+        columnOffsets(24) = ni*nj + ni - 1;
+        columnOffsets(25) = ni*nj + ni;
+        columnOffsets(26) = ni*nj + ni + 1;
       });
     dev.team_barrier();
 
@@ -509,116 +487,174 @@ struct SPMV_Struct_Functor {
 
         const size_type rowOffset = m_A.graph.row_map(rowIdx);
 
-	y_value_type sum(0.0);
+        y_value_type sum(0.0);
 #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
         for (ordinal_type idx = 0; idx < 27; ++idx) {
          sum += m_A.values(rowOffset + idx)*m_x(rowIdx + columnOffsets(idx));
         }
 #else
-        const value_type* value_ptr = &(m_A.values(rowOffset));
-	Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(dev, 27), [&] (const ordinal_type& idx, y_value_type& lclSum) {
-          lclSum += *(value_ptr + idx)*m_x(rowIdx + columnOffsets(idx));
+        Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(dev, 27), [&] (const ordinal_type& idx, y_value_type& lclSum) {
+            lclSum += (conjugate ? ATV::conj(m_A.values(rowOffset + idx)) : m_A.values(rowOffset + idx))
+              *m_x(rowIdx + columnOffsets(idx));
         }, sum);
 #endif
 
-	Kokkos::single(Kokkos::PerThread(dev), [&] () {
-	    m_y(rowIdx) = beta*m_y(rowIdx) + alpha*sum;
-	  });
+        Kokkos::single(Kokkos::PerThread(dev), [&] () {
+            m_y(rowIdx) = beta*m_y(rowIdx) + alpha*sum;
+          });
       });
   }
+
+  void compute_exterior(const int64_t worksets, const int team_size, const int vector_length) {
+    // Treat exterior points using unstructured algorithm
+    if(numDimensions == 1) {
+      numExterior = 2;
+      if(numExterior > 0) {
+        Kokkos::RangePolicy<exterior1DTag,
+                            execution_space,
+                            Kokkos::Schedule<Kokkos::Static> > policy(0, numExterior);
+        Kokkos::parallel_for("KokkosSparse::spmv_struct<NoTranspose,Static>: exterior", policy, *this);
+      }
+
+    } else if(numDimensions == 2) {
+      numExterior = 2*(nj + ni - 2);
+      if(numExterior > 0) {
+        Kokkos::TeamPolicy<exterior2DTag,
+                           execution_space,
+                           Kokkos::Schedule<Kokkos::Static> > policy(1, 1);
+        if(team_size < 0) {
+          policy = Kokkos::TeamPolicy<exterior2DTag,
+                                      execution_space,
+                                      Kokkos::Schedule<Kokkos::Static> >(worksets,Kokkos::AUTO,vector_length);
+        } else {
+          policy = Kokkos::TeamPolicy<exterior2DTag,
+                                      execution_space,
+                                      Kokkos::Schedule<Kokkos::Static> >(worksets,team_size,vector_length);
+        }
+        Kokkos::parallel_for("KokkosSparse::spmv_struct<NoTranspose,Static>: exterior", policy, *this);
+      }
+
+    } else if(numDimensions == 3) {
+      numExterior = ni*nj*nk - (ni - 2)*(nj - 2)*(nk - 2);
+      if(numExterior > 0) {
+        Kokkos::TeamPolicy<exterior3DTag,
+                           execution_space,
+                           Kokkos::Schedule<Kokkos::Static> > policy(1, 1);
+        if(team_size < 0) {
+          policy = Kokkos::TeamPolicy<exterior3DTag,
+                                      execution_space,
+                                      Kokkos::Schedule<Kokkos::Static> >(worksets,Kokkos::AUTO,vector_length);
+        } else {
+          policy = Kokkos::TeamPolicy<exterior3DTag,
+                                      execution_space,
+                                      Kokkos::Schedule<Kokkos::Static> >(worksets,team_size,vector_length);
+        }
+
+        Kokkos::parallel_for("KokkosSparse::spmv_struct<NoTranspose,Static>: exterior", policy, *this);
+      }
+    }
+  } // compute_exterior
 
   KOKKOS_INLINE_FUNCTION
   void operator() (const exterior1DTag&, const ordinal_type& exteriorIdx) const
   {
-    typedef typename YVector::non_const_value_type y_value_type_;
-
+    if(exteriorIdx >= numExterior) { return; }
     ordinal_type rowIdx = exteriorIdx*(ni - 1);
 
     const size_type rowOffset = m_A.graph.row_map(rowIdx);
     const ordinal_type row_length = static_cast<ordinal_type> (m_A.graph.row_map(rowIdx + 1) - rowOffset);
-    const value_type* value_ptr = &(m_A.values(rowOffset));
-    const ordinal_type* column_ptr = &(m_A.graph.entries(rowOffset));
-    y_value_type_ sum = 0;
-    for(ordinal_type entryIdx = 0; entryIdx < row_length; ++entryIdx) {
-      sum += (*(value_ptr + entryIdx))*m_x(*(column_ptr + entryIdx));
+    y_value_type sum = 0.0;
+    for(ordinal_type idx = 0; idx < row_length; ++idx) {
+      sum += (conjugate ? ATV::conj(m_A.values(rowOffset + idx)) : m_A.values(rowOffset + idx))
+              *m_x(m_A.graph.entries(rowOffset + idx));
     }
     m_y(rowIdx) = beta*m_y(rowIdx) + alpha*sum;
   }
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (const exterior2DTag&, const ordinal_type& exteriorIdx) const
+  void operator() (const exterior2DTag&, const team_member& dev) const
   {
-    typedef typename YVector::non_const_value_type y_value_type_;
-    const ordinal_type topFlag = exteriorIdx / (ni + 2*nj - 4);
-    const ordinal_type bottomFlag = static_cast<ordinal_type>((exteriorIdx / ni) == 0);
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(dev, 0, rows_per_team_ext), [&] (const ordinal_type& loop){
+        const ordinal_type exteriorIdx = static_cast<ordinal_type> ( dev.league_rank() ) * rows_per_team_ext + loop;
+        if(exteriorIdx >= numExterior) { return; }
+        const ordinal_type topFlag = exteriorIdx / (ni + 2*nj - 4);
+        const ordinal_type bottomFlag = static_cast<ordinal_type>((exteriorIdx / ni) == 0);
 
-    ordinal_type rowIdx = 0;
-    if(bottomFlag == 1) {
-      rowIdx = exteriorIdx;
-    } else if(topFlag == 1) {
-      rowIdx = exteriorIdx - (ni + 2*nj - 4)
-        + ni*(nj - 1);
-    } else {
-      ordinal_type edgeIdx = (exteriorIdx - ni) / 2;
-      ordinal_type edgeFlg = (exteriorIdx - ni) % 2;
-      rowIdx = (edgeIdx + 1)*ni + edgeFlg*(ni - 1);
-    }
-
-    const size_type rowOffset = m_A.graph.row_map(rowIdx);
-    const ordinal_type row_length = static_cast<ordinal_type> (m_A.graph.row_map(rowIdx + 1) - rowOffset);
-    const value_type* value_ptr = &(m_A.values(rowOffset));
-    const ordinal_type* column_ptr = &(m_A.graph.entries(rowOffset));
-    y_value_type_ sum = 0;
-    for(ordinal_type entryIdx = 0; entryIdx < row_length; ++entryIdx) {
-      sum += (*(value_ptr + entryIdx))*m_x(*(column_ptr + entryIdx));
-    }
-    m_y(rowIdx) = beta*m_y(rowIdx) + alpha*sum;
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  void operator() (const exterior3DTag&, const ordinal_type& exteriorIdx) const
-  {
-    typedef typename YVector::non_const_value_type y_value_type_;
-    const ordinal_type topFlag = static_cast<ordinal_type>(numExterior - exteriorIdx - 1 < ni*nj);
-    const ordinal_type bottomFlag = static_cast<ordinal_type>(exteriorIdx / (ni*nj) == 0);
-
-    ordinal_type rowIdx = 0;
-    if(bottomFlag == 1) {
-      rowIdx = exteriorIdx;
-    } else if(topFlag == 1) {
-      rowIdx = exteriorIdx - ni*nj - 2*(nk - 2)*(nj + ni - 2) + (nk - 1)*ni*nj;
-    } else {
-      ordinal_type k, rem;
-      k = (exteriorIdx - ni*nj) / (2*(ni - 1 + nj - 1));
-      rem = (exteriorIdx - ni*nj) % (2*(ni - 1 + nj - 1));
-      // ordinal_type frontFlg = static_cast<ordinal_type>(rem < ni);
-      // ordinal_type backFlg = static_cast<ordinal_type>(rem - ni - 2*(nj - 1) - 1 > 0);
-      if(rem < ni) {
-        rowIdx = (k + 1)*ni*nj + rem;
-      } else if(rem < ni + 2*(nj - 2)) {
-        ordinal_type edgeIdx = (rem - ni) / 2;
-        ordinal_type edgeFlg = (rem - ni) % 2;
-        if(edgeFlg == 0) {
-          rowIdx = (k + 1)*ni*nj + (edgeIdx + 1)*ni;
-        } else if(edgeFlg == 1) {
-          rowIdx = (k + 1)*ni*nj + (edgeIdx + 2)*ni - 1;
+        ordinal_type rowIdx = 0;
+        if(bottomFlag == 1) {
+          rowIdx = exteriorIdx;
+        } else if(topFlag == 1) {
+          rowIdx = exteriorIdx - (ni + 2*nj - 4)
+            + ni*(nj - 1);
+        } else {
+          ordinal_type edgeIdx = (exteriorIdx - ni) / 2;
+          ordinal_type edgeFlg = (exteriorIdx - ni) % 2;
+          rowIdx = (edgeIdx + 1)*ni + edgeFlg*(ni - 1);
         }
-      } else {
-        rowIdx = (k + 1)*ni*nj + rem - ni - 2*(nj - 2) + (nj - 1)*ni;
-      }
-    }
 
-    const size_type rowOffset = m_A.graph.row_map(rowIdx);
-    const ordinal_type row_length = static_cast<ordinal_type> (m_A.graph.row_map(rowIdx + 1) - rowOffset);
-    const value_type* value_ptr = &(m_A.values(rowOffset));
-    const ordinal_type* column_ptr = &(m_A.graph.entries(rowOffset));
-    y_value_type_ sum = 0;
-    for(ordinal_type entryIdx = 0; entryIdx < row_length; ++entryIdx) {
-      sum += (*(value_ptr + entryIdx))*m_x(*(column_ptr + entryIdx));
-    }
-    m_y(rowIdx) = beta*m_y(rowIdx) + alpha*sum;
+        const size_type rowOffset = m_A.graph.row_map(rowIdx);
+        const ordinal_type row_length = static_cast<ordinal_type> (m_A.graph.row_map(rowIdx + 1) - rowOffset);
+        y_value_type sum = 0;
+        Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(dev, row_length),
+                                [&] (const ordinal_type& idx, y_value_type& lclSum) {
+                                  lclSum += (conjugate ? ATV::conj(m_A.values(rowOffset + idx)) : m_A.values(rowOffset + idx))
+                                    *m_x(m_A.graph.entries(rowOffset + idx));
+                                }, sum);
+        Kokkos::single(Kokkos::PerThread(dev), [&] () {
+            m_y(rowIdx) = beta*m_y(rowIdx) + alpha*sum;
+          });
+      });
   }
-};
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const exterior3DTag&, const team_member& dev) const
+  {
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(dev, 0, rows_per_team_ext), [&] (const ordinal_type& loop){
+        const ordinal_type exteriorIdx = static_cast<ordinal_type> ( dev.league_rank() ) * rows_per_team_ext + loop;
+        if(exteriorIdx >= numExterior) { return; }
+        const ordinal_type topFlag = static_cast<ordinal_type>(numExterior - exteriorIdx - 1 < ni*nj);
+        const ordinal_type bottomFlag = static_cast<ordinal_type>(exteriorIdx / (ni*nj) == 0);
+
+        ordinal_type rowIdx = 0;
+        if(bottomFlag == 1) {
+          rowIdx = exteriorIdx;
+        } else if(topFlag == 1) {
+          rowIdx = exteriorIdx - ni*nj - 2*(nk - 2)*(nj + ni - 2) + (nk - 1)*ni*nj;
+        } else {
+          ordinal_type k, rem;
+          k = (exteriorIdx - ni*nj) / (2*(ni - 1 + nj - 1));
+          rem = (exteriorIdx - ni*nj) % (2*(ni - 1 + nj - 1));
+          // ordinal_type frontFlg = static_cast<ordinal_type>(rem < ni);
+          // ordinal_type backFlg = static_cast<ordinal_type>(rem - ni - 2*(nj - 1) - 1 > 0);
+          if(rem < ni) {
+            rowIdx = (k + 1)*ni*nj + rem;
+          } else if(rem < ni + 2*(nj - 2)) {
+            ordinal_type edgeIdx = (rem - ni) / 2;
+            ordinal_type edgeFlg = (rem - ni) % 2;
+            if(edgeFlg == 0) {
+              rowIdx = (k + 1)*ni*nj + (edgeIdx + 1)*ni;
+            } else if(edgeFlg == 1) {
+              rowIdx = (k + 1)*ni*nj + (edgeIdx + 2)*ni - 1;
+            }
+          } else {
+            rowIdx = (k + 1)*ni*nj + rem - ni - 2*(nj - 2) + (nj - 1)*ni;
+          }
+        }
+
+        const size_type rowOffset = m_A.graph.row_map(rowIdx);
+        const ordinal_type row_length = static_cast<ordinal_type> (m_A.graph.row_map(rowIdx + 1) - rowOffset);
+        y_value_type sum = 0;
+        Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(dev, row_length),
+                                [&] (const ordinal_type& idx, y_value_type& lclSum) {
+                                  lclSum += (conjugate ? ATV::conj(m_A.values(rowOffset + idx)) : m_A.values(rowOffset + idx))
+                                    *m_x(m_A.graph.entries(rowOffset + idx));
+                                }, sum);
+        Kokkos::single(Kokkos::PerThread(dev), [&] () {
+            m_y(rowIdx) = beta*m_y(rowIdx) + alpha*sum;
+          });
+      });
+  }
+}; // SPMV_Struct_Functor
 
 template<class execution_space>
 int64_t spmv_struct_launch_parameters(int64_t numInterior, int64_t nnz, int nnz_per_row,
@@ -645,7 +681,7 @@ int64_t spmv_struct_launch_parameters(int64_t numInterior, int64_t nnz, int nnz_
   #ifdef KOKKOS_ENABLE_CUDA
   if(team_size < 1) {
     if(std::is_same<Kokkos::Cuda,execution_space>::value)
-    { team_size = 256/vector_length; }
+    { team_size = 128 / vector_length; }
     else
     { team_size = 1; }
   }
@@ -662,7 +698,7 @@ int64_t spmv_struct_launch_parameters(int64_t numInterior, int64_t nnz, int nnz_
 
 
   return rows_per_team;
-}
+} // spmv_struct_launch_parameters
 
 template<class AMatrix,
          class XVector,
@@ -684,24 +720,30 @@ spmv_struct_beta_no_transpose (const int stencil_type,
     return;
   }
 
-  int team_size = -1;
   int vector_length = -1;
   int nnzPerRow = -1;
-  int64_t rows_per_thread = -1;
+  int team_size_int = -1;
+  int team_size_ext = -1;
+  int64_t rows_per_thread_int = -1;
+  int64_t rows_per_thread_ext = -1;
   int64_t numInteriorPts = 0;
+  int64_t numExteriorPts = 0;
 
   if(structure.extent(0) == 1) {
     numInteriorPts = structure(0) - 2;
+    numExteriorPts = 2;
     vector_length = 1;
   } else if(structure.extent(0) == 2) {
     numInteriorPts = (structure(1) - 2)*(structure(0) - 2);
+    numExteriorPts = 2*(structure(1) + structure(0) - 2);
     if(stencil_type == 1) {
       vector_length = 2;
     } else if(stencil_type == 2) {
-      vector_length = 4;
+      vector_length = 2;
     }
   } else if(structure.extent(0) == 3) {
     numInteriorPts = (structure(2) - 2)*(structure(1) - 2)*(structure(0) - 2);
+    numExteriorPts = structure(2)*structure(1)*structure(0) - numInteriorPts;
     if(stencil_type == 1) {
       vector_length = 2;
     } else if(stencil_type == 2) {
@@ -709,26 +751,28 @@ spmv_struct_beta_no_transpose (const int stencil_type,
     }
   }
 
-  int64_t rows_per_team = spmv_struct_launch_parameters<execution_space>(numInteriorPts,
-                                                                         A.nnz(),
-                                                                         nnzPerRow,
-                                                                         rows_per_thread,
-                                                                         team_size,
-                                                                         vector_length);
-  int64_t worksets = (numInteriorPts + rows_per_team - 1) / rows_per_team;
+  int64_t rows_per_team_int = spmv_struct_launch_parameters<execution_space>(numInteriorPts,
+                                                                             A.nnz(),
+                                                                             nnzPerRow,
+                                                                             rows_per_thread_int,
+                                                                             team_size_int,
+                                                                             vector_length);
+  int64_t worksets_interior = (numInteriorPts + rows_per_team_int - 1) / rows_per_team_int;
 
-  // std::cout << "worksets=" << worksets
-  //           << ", rows_per_team=" << rows_per_team
-  //           << ", team_size=" << team_size
-  //           << ",  vector_length=" << vector_length << std::endl;
+  int64_t rows_per_team_ext = spmv_struct_launch_parameters<execution_space>(numExteriorPts,
+                                                                             A.nnz(),
+                                                                             nnzPerRow,
+                                                                             rows_per_thread_ext,
+                                                                             team_size_ext,
+                                                                             vector_length);
+  int64_t worksets_exterior = (numExteriorPts + rows_per_team_ext - 1) / rows_per_team_ext;
 
-  SPMV_Struct_Functor<AMatrix,XVector,YVector,dobeta,conjugate> func(structure,
-								     stencil_type,
-								     alpha,A,x,beta,y,
-								     rows_per_team);
+  SPMV_Struct_Functor<AMatrix,XVector,YVector,dobeta,conjugate>
+    spmv_struct(structure, stencil_type, alpha,A,x,beta,y, rows_per_team_int, rows_per_team_ext);
 
-  func.compute(worksets, team_size, vector_length);
-}
+  spmv_struct.compute_interior(worksets_interior, team_size_int, vector_length);
+  spmv_struct.compute_exterior(worksets_exterior, team_size_ext, vector_length);
+} // spmv_struct_beta_no_transpose
 
 template<class AMatrix,
          class XVector,

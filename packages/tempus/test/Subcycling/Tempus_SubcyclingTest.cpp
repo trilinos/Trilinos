@@ -41,14 +41,6 @@ using Tempus::SolutionHistory;
 using Tempus::SolutionState;
 
 
-// Comment out any of the following tests to exclude from build/run.
-//#define TEST_PARAMETERLIST
-#define TEST_CONSTRUCTING_FROM_DEFAULTS
-#define TEST_SINCOS_ADAPT
-#define TEST_VANDERPOL_OPERATOR_SPLIT
-
-
-#ifdef TEST_PARAMETERLIST
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(Subcycling, ParameterList)
@@ -103,10 +95,8 @@ TEUCHOS_UNIT_TEST(Subcycling, ParameterList)
     TEST_ASSERT(pass)
   }
 }
-#endif // TEST_PARAMETERLIST
 
 
-#ifdef TEST_CONSTRUCTING_FROM_DEFAULTS
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(Subcycling, ConstructingFromDefaults)
@@ -148,7 +138,7 @@ TEUCHOS_UNIT_TEST(Subcycling, ConstructingFromDefaults)
   Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
     stepper->getModel()->getNominalValues();
   auto icSolution = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
-  auto icState = rcp(new Tempus::SolutionState<double>(icSolution));
+  auto icState = Tempus::createSolutionStateX(icSolution);
   icState->setTime    (timeStepControl->getInitTime());
   icState->setIndex   (timeStepControl->getInitIndex());
   icState->setTimeStep(0.0);  // dt for ICs are indicated by zero.
@@ -204,10 +194,8 @@ TEUCHOS_UNIT_TEST(Subcycling, ConstructingFromDefaults)
   TEST_FLOATING_EQUALITY(get_ele(*(x), 0), 0.882508, 1.0e-4 );
   TEST_FLOATING_EQUALITY(get_ele(*(x), 1), 0.570790, 1.0e-4 );
 }
-#endif // TEST_CONSTRUCTING_FROM_DEFAULTS
 
 
-#ifdef TEST_SINCOS_ADAPT
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(Subcycling, SinCosAdapt)
@@ -272,7 +260,7 @@ TEUCHOS_UNIT_TEST(Subcycling, SinCosAdapt)
     Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
       stepper->getModel()->getNominalValues();
     auto icSolution = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
-    auto icState = rcp(new Tempus::SolutionState<double>(icSolution));
+    auto icState = Tempus::createSolutionStateX(icSolution);
     icState->setTime    (timeStepControl->getInitTime());
     icState->setIndex   (timeStepControl->getInitIndex());
     icState->setTimeStep(0.0);  // dt for ICs are zero.
@@ -371,10 +359,8 @@ TEUCHOS_UNIT_TEST(Subcycling, SinCosAdapt)
 
   Teuchos::TimeMonitor::summarize();
 }
-#endif // TEST_SINCOS_ADAPT
 
 
-#ifdef TEST_VANDERPOL_OPERATOR_SPLIT
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(Subcycling, VanDerPolOperatorSplit)
@@ -467,7 +453,7 @@ TEUCHOS_UNIT_TEST(Subcycling, VanDerPolOperatorSplit)
       stepper->getModel()->getNominalValues();
     auto icX    = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
     auto icXDot = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot());
-    auto icState = rcp(new Tempus::SolutionState<double>(icX, icXDot));
+    auto icState = Tempus::createSolutionStateX(icX, icXDot);
     icState->setTime    (timeStepControl->getInitTime());
     icState->setIndex   (timeStepControl->getInitIndex());
     icState->setTimeStep(0.0);  // dt for ICs are zero.
@@ -538,7 +524,6 @@ TEUCHOS_UNIT_TEST(Subcycling, VanDerPolOperatorSplit)
 
   Teuchos::TimeMonitor::summarize();
 }
-#endif // TEST_VANDERPOL_OPERATOR_SPLIT
 
 
 } // namespace Tempus_Test

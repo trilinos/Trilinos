@@ -1,4 +1,4 @@
-// Copyright(C) 2008-2017 National Technology & Engineering Solutions
+// Copyright(C) 2008-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -40,23 +40,13 @@
 #include <cstdlib>        // for exit
 #include <vector>         // for vector
 
-template <typename INT>
-Node_Set<INT>::Node_Set()
-    : Exo_Entity(), num_dist_factors(0), nodes(nullptr), nodeIndex(nullptr), dist_factors(nullptr)
-{
-}
+template <typename INT> Node_Set<INT>::Node_Set() : Exo_Entity() {}
 
-template <typename INT>
-Node_Set<INT>::Node_Set(int file_id, size_t id)
-    : Exo_Entity(file_id, id), num_dist_factors(0), nodes(nullptr), nodeIndex(nullptr),
-      dist_factors(nullptr)
-{
-}
+template <typename INT> Node_Set<INT>::Node_Set(int file_id, size_t id) : Exo_Entity(file_id, id) {}
 
 template <typename INT>
 Node_Set<INT>::Node_Set(int file_id, size_t id, size_t nnodes, size_t ndfs)
-    : Exo_Entity(file_id, id, nnodes), num_dist_factors(ndfs), nodes(nullptr), nodeIndex(nullptr),
-      dist_factors(nullptr)
+    : Exo_Entity(file_id, id, nnodes), num_dist_factors(ndfs)
 {
 }
 

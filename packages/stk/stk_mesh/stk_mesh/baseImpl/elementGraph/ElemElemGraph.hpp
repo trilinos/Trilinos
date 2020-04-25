@@ -299,6 +299,7 @@ protected:
     ParallelInfoForGraphEdges m_parallelInfoForGraphEdges;
     std::vector<impl::LocalId> m_deleted_element_local_id_pool;
     std::vector<stk::topology> m_element_topologies;
+    bool m_any_shell_elements_exist;
     std::vector<int> m_deleted_elem_pool;
     size_t m_num_parallel_edges;
     impl::SparseGraph m_coincidentGraph;
@@ -455,44 +456,9 @@ void get_elements_with_larger_ids_connected_via_sidenodes(const stk::mesh::BulkD
                                                sideNodesOfReceivedElement, connectedElementDataVector);
 }
 
-inline impl::ElemSideToProcAndFaceId gather_element_side_ids_to_send(const stk::mesh::BulkData& bulkData)
-{
-    stk::mesh::EntityVector elements_to_communicate;
-    std::set<stk::mesh::Entity> element_set;
-    const stk::mesh::BucketVector& shared_node_buckets =
-            bulkData.get_buckets(stk::topology::NODE_RANK, bulkData.mesh_meta_data().globally_shared_part());
-    for(size_t i=0; i<shared_node_buckets.size(); ++i)
-    {
-        const stk::mesh::Bucket& bucket = *shared_node_buckets[i];
-        for(size_t node_index=0; node_index<bucket.size(); ++node_index)
-        {
-            stk::mesh::Entity node = bucket[node_index];
-            const stk::mesh::Entity* elements = bulkData.begin_elements(node);
-            unsigned num_elements = bulkData.num_elements(node);
-            for(unsigned element_index=0; element_index<num_elements; ++element_index)
-            {
-                if (bulkData.bucket(elements[element_index]).owned())
-                {
-                    element_set.insert(elements[element_index]);
-                }
-            }
-        }
-    }
-    elements_to_communicate.assign(element_set.begin(), element_set.end());
+impl::ElemSideToProcAndFaceId gather_element_side_ids_to_send(const stk::mesh::BulkData& bulkData);
 
-    return impl::build_element_side_ids_to_proc_map(bulkData, elements_to_communicate);
-}
-
-inline void fill_suggested_side_ids(stk::mesh::BulkData &bulkData, impl::ElemSideToProcAndFaceId& elements_to_communicate)
-{
-    impl::ElemSideToProcAndFaceId::iterator iter = elements_to_communicate.begin();
-    impl::ElemSideToProcAndFaceId::const_iterator end = elements_to_communicate.end();
-    for(; iter != end; ++iter)
-    {
-        stk::mesh::EntityId suggested_side_id = stk::mesh::impl::side_id_formula(bulkData.identifier(iter->first.entity), iter->first.side_id);
-        iter->second.side_id = suggested_side_id;
-    }
-}
+void fill_suggested_side_ids(stk::mesh::BulkData &bulkData, impl::ElemSideToProcAndFaceId& elements_to_communicate);
 
 } // end impl
 

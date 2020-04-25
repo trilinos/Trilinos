@@ -48,7 +48,7 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#if defined(HAVE_MUELU_STRATIMIKOS)
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_TPETRA)
 
 #include <Teuchos_ParameterList.hpp>
 
@@ -74,8 +74,10 @@ namespace MueLu {
   StratimikosSmoother<double, LocalOrdinal, GlobalOrdinal, Node>::StratimikosSmoother(const std::string type, const Teuchos::ParameterList& paramList)
   : type_(type)
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(type != "STRATIMIKOS", Exceptions::RuntimeError, "Stratimikos does not provide the solver '" << type_ << "'.");
-    SetParameterList(paramList);
+    bool isSupported = type == "STRATIMIKOS";
+    this->declareConstructionOutcome(!isSupported, "Stratimikos does not provide the smoother '" + type_ + "'.");
+    if (isSupported)
+      SetParameterList(paramList);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>

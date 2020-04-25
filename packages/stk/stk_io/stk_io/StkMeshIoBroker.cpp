@@ -212,7 +212,7 @@ void StkMeshIoBroker::remove_property_if_exists(const std::string &property_name
     m_propertyManager.erase(property_name);
 }
 
-stk::mesh::FieldBase const& StkMeshIoBroker::get_coordinate_field()
+stk::mesh::FieldBase const& StkMeshIoBroker::get_coordinate_field() const
 {
     stk::mesh::FieldBase const* coord_field = meta_data().coordinate_field();
     STKIORequire( coord_field != nullptr);
@@ -313,13 +313,13 @@ void StkMeshIoBroker::copy_property_manager(const Ioss::PropertyManager &propert
 size_t StkMeshIoBroker::add_mesh_database(const std::string &filename,
                                           const std::string &type,
                                           DatabasePurpose purpose,
-                                          Ioss::PropertyManager &properties)
+                                          const Ioss::PropertyManager &properties)
 {
     copy_property_manager(properties);
     return add_mesh_database(filename, type,purpose);
 }
 
-Teuchos::RCP<Ioss::Region> StkMeshIoBroker::get_input_io_region()
+Teuchos::RCP<Ioss::Region> StkMeshIoBroker::get_input_io_region() const
 {
     if (is_index_valid(m_inputFiles, m_activeMeshIndex)) {
         return m_inputFiles[m_activeMeshIndex]->get_input_io_region();
@@ -377,17 +377,17 @@ void StkMeshIoBroker::set_rank_name_vector(const std::vector<std::string> &rank_
     m_rankNames.insert( m_rankNames.end(),rank_names.begin(), rank_names.end());
 }
 
-bool StkMeshIoBroker::is_output_index_valid(size_t outputIndex)
+bool StkMeshIoBroker::is_output_index_valid(size_t outputIndex) const
 {
     return is_index_valid(m_outputFiles, outputIndex);
 }
 
-bool StkMeshIoBroker::is_input_index_valid(size_t inputIndex)
+bool StkMeshIoBroker::is_input_index_valid(size_t inputIndex) const
 {
     return is_index_valid(m_inputFiles, inputIndex);
 }
 
-std::string StkMeshIoBroker::get_output_filename(size_t outputIndex)
+std::string StkMeshIoBroker::get_output_filename(size_t outputIndex) const
 {
     if (!is_output_index_valid(outputIndex)) {
         return "";
@@ -569,7 +569,7 @@ void StkMeshIoBroker::flush_output() const
     }
 }
 
-int StkMeshIoBroker::write_defined_output_fields(size_t output_file_index, const stk::mesh::FieldState *state)
+int StkMeshIoBroker::write_defined_output_fields(size_t output_file_index, const stk::mesh::FieldState *state) const
 {
     validate_output_file_index(output_file_index);
     int current_output_step = m_outputFiles[output_file_index]->write_defined_output_fields(*m_bulkData, state);
@@ -578,7 +578,7 @@ int StkMeshIoBroker::write_defined_output_fields(size_t output_file_index, const
 
 int StkMeshIoBroker::write_defined_output_fields_for_selected_subset(size_t output_file_index,
                                                                      std::vector<stk::mesh::Part*>& selectOutputElementParts,
-                                                                     const stk::mesh::FieldState *state)
+                                                                     const stk::mesh::FieldState *state) const
 {
     validate_output_file_index(output_file_index);
     int current_output_step = m_outputFiles[output_file_index]->write_defined_output_fields_for_selected_subset(*m_bulkData,
@@ -865,7 +865,7 @@ bool StkMeshIoBroker::has_input_global(const std::string &globalVarName) const
     return internal_has_global(region, globalVarName);
 }
 
-void StkMeshIoBroker::get_global_variable_names(std::vector<std::string> &names)
+void StkMeshIoBroker::get_global_variable_names(std::vector<std::string> &names) const
 {
     validate_input_file_index(m_activeMeshIndex);
     m_inputFiles[m_activeMeshIndex]->get_global_variable_names(names);
@@ -873,14 +873,14 @@ void StkMeshIoBroker::get_global_variable_names(std::vector<std::string> &names)
 
 bool StkMeshIoBroker::get_global(const std::string &globalVarName,
                                  boost::any &value, stk::util::ParameterType::Type type,
-                                 bool abort_if_not_found)
+                                 bool abort_if_not_found) const
 {
     validate_input_file_index(m_activeMeshIndex);
     auto region = m_inputFiles[m_activeMeshIndex]->get_input_io_region();
     return internal_read_parameter(region, globalVarName, value, type, abort_if_not_found);
 }
 
-size_t StkMeshIoBroker::get_global_variable_length(const std::string& globalVarName)
+size_t StkMeshIoBroker::get_global_variable_length(const std::string& globalVarName) const
 {
     validate_input_file_index(m_activeMeshIndex);
     auto region = m_inputFiles[m_activeMeshIndex]->get_input_io_region();
@@ -894,7 +894,7 @@ size_t StkMeshIoBroker::get_global_variable_length(const std::string& globalVarN
 }
 
 bool StkMeshIoBroker::get_global(const std::string &globalVarName, std::vector<double> &globalVar,
-                                 bool abort_if_not_found)
+                                 bool abort_if_not_found) const
 {
     validate_input_file_index(m_activeMeshIndex);
     auto region = m_inputFiles[m_activeMeshIndex]->get_input_io_region();
@@ -903,7 +903,7 @@ bool StkMeshIoBroker::get_global(const std::string &globalVarName, std::vector<d
 }
 
 bool StkMeshIoBroker::get_global(const std::string &globalVarName, std::vector<int> &globalVar,
-                                 bool abort_if_not_found)
+                                 bool abort_if_not_found) const
 {
     validate_input_file_index(m_activeMeshIndex);
     auto region = m_inputFiles[m_activeMeshIndex]->get_input_io_region();
@@ -912,7 +912,7 @@ bool StkMeshIoBroker::get_global(const std::string &globalVarName, std::vector<i
 }
 
 bool StkMeshIoBroker::get_global(const std::string &globalVarName, int &globalVar,
-                                 bool abort_if_not_found)
+                                 bool abort_if_not_found) const
 {
     validate_input_file_index(m_activeMeshIndex);
     auto region = m_inputFiles[m_activeMeshIndex]->get_input_io_region();
@@ -921,7 +921,7 @@ bool StkMeshIoBroker::get_global(const std::string &globalVarName, int &globalVa
 }
 
 bool StkMeshIoBroker::get_global(const std::string &globalVarName, double &globalVar,
-                                 bool abort_if_not_found)
+                                 bool abort_if_not_found) const
 {
     validate_input_file_index(m_activeMeshIndex);
     auto region = m_inputFiles[m_activeMeshIndex]->get_input_io_region();
@@ -968,55 +968,55 @@ void StkMeshIoBroker::add_global(size_t output_file_index, const std::string &gl
 }
 
 void StkMeshIoBroker::write_global(size_t output_file_index, const std::string &globalVarName,
-                                   const boost::any &value, stk::util::ParameterType::Type type)
+                                   const boost::any &value, stk::util::ParameterType::Type type) const
 {
     validate_output_file_index(output_file_index);
     m_outputFiles[output_file_index]->write_global(globalVarName, value, type);
 }
 
-void StkMeshIoBroker::write_global(size_t output_file_index, const std::string &globalVarName, double globalVarData)
+void StkMeshIoBroker::write_global(size_t output_file_index, const std::string &globalVarName, double globalVarData) const
 {
     validate_output_file_index(output_file_index);
     m_outputFiles[output_file_index]->write_global(globalVarName, globalVarData);
 }
 
-void StkMeshIoBroker::write_global(size_t output_file_index, const std::string &globalVarName, int globalVarData)
+void StkMeshIoBroker::write_global(size_t output_file_index, const std::string &globalVarName, int globalVarData) const
 {
     validate_output_file_index(output_file_index);
     m_outputFiles[output_file_index]->write_global(globalVarName, globalVarData);
 }
 
-void StkMeshIoBroker::write_global(size_t output_file_index, const std::string &globalVarName, std::vector<double>& globalVarData)
+void StkMeshIoBroker::write_global(size_t output_file_index, const std::string &globalVarName, std::vector<double>& globalVarData) const
 {
     validate_output_file_index(output_file_index);
     m_outputFiles[output_file_index]->write_global(globalVarName, globalVarData);
 }
 
-void StkMeshIoBroker::write_global(size_t output_file_index, const std::string &globalVarName, std::vector<int>& globalVarData)
+void StkMeshIoBroker::write_global(size_t output_file_index, const std::string &globalVarName, std::vector<int>& globalVarData) const
 {
     validate_output_file_index(output_file_index);
     m_outputFiles[output_file_index]->write_global(globalVarName, globalVarData);
 }
 
-FieldNameToPartVector StkMeshIoBroker::get_nodal_var_names()
+FieldNameToPartVector StkMeshIoBroker::get_nodal_var_names() const
 {
     validate_input_file_index(m_activeMeshIndex);
     return m_inputFiles[m_activeMeshIndex]->get_var_names(Ioss::NODEBLOCK, meta_data());
 }
 
-FieldNameToPartVector StkMeshIoBroker::get_elem_var_names()
+FieldNameToPartVector StkMeshIoBroker::get_elem_var_names() const
 {
     validate_input_file_index(m_activeMeshIndex);
     return m_inputFiles[m_activeMeshIndex]->get_var_names(Ioss::ELEMENTBLOCK, meta_data());
 }
 
-FieldNameToPartVector StkMeshIoBroker::get_nodeset_var_names()
+FieldNameToPartVector StkMeshIoBroker::get_nodeset_var_names() const
 {
     validate_input_file_index(m_activeMeshIndex);
     return m_inputFiles[m_activeMeshIndex]->get_var_names(Ioss::NODESET, meta_data());
 }
 
-FieldNameToPartVector StkMeshIoBroker::get_sideset_var_names()
+FieldNameToPartVector StkMeshIoBroker::get_sideset_var_names() const
 {
     validate_input_file_index(m_activeMeshIndex);
     return m_inputFiles[m_activeMeshIndex]->get_var_names(Ioss::SIDESET, meta_data());
@@ -1132,7 +1132,7 @@ void StkMeshIoBroker::set_option_to_not_collapse_sequenced_fields()
     property_add(Ioss::Property("ENABLE_FIELD_RECOGNITION", "NO"));
 }
 
-int StkMeshIoBroker::get_num_time_steps()
+int StkMeshIoBroker::get_num_time_steps() const
 {
     int numTimeSteps = 0;
     Ioss::Region *ioRegion = get_input_io_region().get();
@@ -1143,7 +1143,7 @@ int StkMeshIoBroker::get_num_time_steps()
     return numTimeSteps;
 }
 
-std::vector<double> StkMeshIoBroker::get_time_steps()
+std::vector<double> StkMeshIoBroker::get_time_steps() const
 {
     int numTimeSteps = get_num_time_steps();
     std::vector<double> timeSteps;
@@ -1158,7 +1158,7 @@ std::vector<double> StkMeshIoBroker::get_time_steps()
     return timeSteps;
 }
 
-double StkMeshIoBroker::get_max_time()
+double StkMeshIoBroker::get_max_time() const
 {
     return get_input_io_region()->get_max_time().second;
 }
@@ -1179,7 +1179,7 @@ size_t StkMeshIoBroker::add_heartbeat_output(const std::string &filename, Heartb
     return m_heartbeat.size()-1;
 }
 
-int StkMeshIoBroker::check_integer_size_requirements_serial()
+int StkMeshIoBroker::check_integer_size_requirements_serial() const
 {
     // 1. If the INTEGER_SIZE_DB or _API property exists, then use its value no matter what...
     if (m_propertyManager.exists("INTEGER_SIZE_DB")) {
@@ -1212,7 +1212,7 @@ int StkMeshIoBroker::check_integer_size_requirements_serial()
     return 4;
 }
 
-int StkMeshIoBroker::check_integer_size_requirements_parallel()
+int StkMeshIoBroker::check_integer_size_requirements_parallel() const
 {
     // 3. If any entity count exceeds INT_MAX, then use 64-bit integers.
     if ( !Teuchos::is_null(m_bulkData) ) {
@@ -1248,7 +1248,7 @@ int StkMeshIoBroker::check_integer_size_requirements_parallel()
     return 4;
 }
 
-int StkMeshIoBroker::check_integer_size_requirements()
+int StkMeshIoBroker::check_integer_size_requirements() const
 {
     int serialSizeRequirement = check_integer_size_requirements_serial();
     int parallelSizeRequirement = check_integer_size_requirements_parallel();
@@ -1276,7 +1276,7 @@ void StkMeshIoBroker::add_info_records(size_t outputFileIndex, const std::vector
     region->add_information_records(infoRecords);
 }
 
-std::vector<QaRecord> StkMeshIoBroker::get_qa_records()
+std::vector<QaRecord> StkMeshIoBroker::get_qa_records() const
 {
     std::vector<QaRecord> qaRecords;
     Ioss::Region *region = get_input_io_region().get();
@@ -1286,7 +1286,7 @@ std::vector<QaRecord> StkMeshIoBroker::get_qa_records()
     return qaRecords;
 }
 
-std::vector<std::string> StkMeshIoBroker::get_info_records()
+std::vector<std::string> StkMeshIoBroker::get_info_records() const
 {
     Ioss::Region *region = get_input_io_region().get();
     return region->get_information_records();
@@ -1316,7 +1316,7 @@ void StkMeshIoBroker::set_attribute_field_ordering_stored_by_part_ordinal(const 
     attributeFieldOrderingByPartOrdinal = ordering;
 }
 
-void StkMeshIoBroker::fill_coordinate_frames(std::vector<int>& ids, std::vector<double>& coords, std::vector<char>& tags)
+void StkMeshIoBroker::fill_coordinate_frames(std::vector<int>& ids, std::vector<double>& coords, std::vector<char>& tags) const
 {
     Ioss::Region *ioregion = get_input_io_region().get();
     const Ioss::CoordinateFrameContainer& coordFrames = ioregion->get_coordinate_frames();
@@ -1335,7 +1335,7 @@ void StkMeshIoBroker::fill_coordinate_frames(std::vector<int>& ids, std::vector<
     }
 }
 
-Ioss::DatabaseIO *StkMeshIoBroker::get_input_database(size_t input_index)
+Ioss::DatabaseIO *StkMeshIoBroker::get_input_database(size_t input_index) const
 {
     if(is_input_index_valid(input_index)) {
         return m_inputFiles[input_index]->get_input_database().get();
@@ -1344,7 +1344,7 @@ Ioss::DatabaseIO *StkMeshIoBroker::get_input_database(size_t input_index)
     return nullptr;
 }
 
-Ioss::DatabaseIO *StkMeshIoBroker::get_output_database(size_t output_index)
+Ioss::DatabaseIO *StkMeshIoBroker::get_output_database(size_t output_index) const
 {
     if(is_output_index_valid(output_index)) {
         return m_outputFiles[output_index]->get_output_database();
@@ -1353,7 +1353,7 @@ Ioss::DatabaseIO *StkMeshIoBroker::get_output_database(size_t output_index)
     return nullptr;
 }
 
-bool StkMeshIoBroker::set_input_multistate_suffixes(size_t input_index, std::vector<std::string>& multiStateSuffixes)
+bool StkMeshIoBroker::set_input_multistate_suffixes(size_t input_index, const std::vector<std::string>& multiStateSuffixes)
 {
     if(is_input_index_valid(input_index)) {
         return m_inputFiles[input_index]->set_multistate_suffixes(multiStateSuffixes);
@@ -1362,7 +1362,7 @@ bool StkMeshIoBroker::set_input_multistate_suffixes(size_t input_index, std::vec
     return false;
 }
 
-bool StkMeshIoBroker::set_output_multistate_suffixes(size_t output_index, std::vector<std::string>& multiStateSuffixes)
+bool StkMeshIoBroker::set_output_multistate_suffixes(size_t output_index, const std::vector<std::string>& multiStateSuffixes)
 {
     if(is_output_index_valid(output_index)) {
         return m_outputFiles[output_index]->set_multistate_suffixes(multiStateSuffixes);
@@ -1371,7 +1371,7 @@ bool StkMeshIoBroker::set_output_multistate_suffixes(size_t output_index, std::v
     return false;
 }
 
-void StkMeshIoBroker::set_reference_input_region(size_t outputIndex, StkMeshIoBroker& inputBroker)
+void StkMeshIoBroker::set_reference_input_region(size_t outputIndex, const StkMeshIoBroker& inputBroker)
 {
     validate_output_file_index(outputIndex);
 
@@ -1379,7 +1379,7 @@ void StkMeshIoBroker::set_reference_input_region(size_t outputIndex, StkMeshIoBr
     m_outputFiles[outputIndex]->set_input_region(input_region);
 }
 
-bool StkMeshIoBroker::create_named_suffix_field_type(const std::string& type_name, std::vector<std::string>& suffices) const
+bool StkMeshIoBroker::create_named_suffix_field_type(const std::string& type_name, const std::vector<std::string>& suffices) const
 {
     return Ioss::VariableType::create_named_suffix_field_type(type_name, suffices);
 }
@@ -1413,7 +1413,7 @@ size_t StkMeshIoBroker::get_heartbeat_global_component_count(size_t heartbeat_fi
 
 std::vector<stk::mesh::Entity> StkMeshIoBroker::get_output_entities(size_t output_index,
                                                                     const stk::mesh::BulkData& bulk_data,
-                                                                    const std::string &name)
+                                                                    const std::string &name) const
 {
     std::vector<stk::mesh::Entity> entities;
 

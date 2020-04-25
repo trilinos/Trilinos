@@ -593,7 +593,7 @@ namespace Sacado {
       //! Assignment operator only valid for view storage
       template< typename S >
       KOKKOS_INLINE_FUNCTION
-      typename Kokkos::Impl::enable_if<( ! Kokkos::Impl::is_same<S,void>::value &&
+      typename std::enable_if<( ! std::is_same<S,void>::value &&
                                          Stokhos::is_ViewStorage<Storage>::value
                                        ), Vector >
         ::type const & operator = ( const Expr<S> & xx ) const
@@ -618,7 +618,7 @@ namespace Sacado {
       template< typename S >
       KOKKOS_INLINE_FUNCTION
       volatile
-      typename Kokkos::Impl::enable_if<( ! Kokkos::Impl::is_same<S,void>::value &&
+      typename std::enable_if<( ! std::is_same<S,void>::value &&
                                          Stokhos::is_ViewStorage<Storage>::value
                                        ), Vector >
         ::type const & operator = ( const Expr<S> & xx ) const volatile
@@ -2059,8 +2059,6 @@ public:
 
 #endif
 
-#endif // HAVE_STOKHOS_SACADO
-
 #include "Kokkos_NumericTraits.hpp"
 
 namespace Kokkos {
@@ -2085,5 +2083,7 @@ struct reduction_identity< Sacado::MP::Vector<Storage> > {
 };
 
 }
+
+#endif // HAVE_STOKHOS_SACADO
 
 #endif // SACADO_MP_VECTOR_HPP

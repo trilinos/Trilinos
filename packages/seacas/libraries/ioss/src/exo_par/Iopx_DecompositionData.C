@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -37,7 +37,7 @@
 #include <Ioss_ParallelUtils.h>   // for ParallelUtils, etc
 #include <Ioss_PropertyManager.h> // for PropertyManager
 #include <Ioss_Sort.h>
-#include <Ioss_Utils.h> // for TOPTR, Utils
+#include <Ioss_Utils.h>
 #include <exo_par/Iopx_DecompositionData.h>
 #include <exodus/Ioex_Utils.h>
 
@@ -194,8 +194,8 @@ namespace Iopx {
       }
 
       m_decomposition.show_progress("\tex_get_partial_coord");
-      ex_get_partial_coord(filePtr, decomp_node_offset() + 1, decomp_node_count(), TOPTR(x),
-                           TOPTR(y), TOPTR(z));
+      ex_get_partial_coord(filePtr, decomp_node_offset() + 1, decomp_node_count(), x.data(),
+                           y.data(), z.data());
 
       m_decomposition.calculate_element_centroids(x, y, z);
     }
@@ -258,7 +258,7 @@ namespace Iopx {
 
     std::vector<ex_block> ebs(block_count);
     std::vector<INT>      ids(block_count);
-    ex_get_ids(filePtr, EX_ELEM_BLOCK, TOPTR(ids));
+    ex_get_ids(filePtr, EX_ELEM_BLOCK, ids.data());
 
     size_t sum    = 0; // Size of adjacency vector.
     size_t offset = 0;
@@ -351,7 +351,7 @@ namespace Iopx {
         fmt::print(stderr, "Processor {} has {} elements on element block {}\n", m_processor,
                    overlap, id);
 #endif
-        ex_get_partial_conn(filePtr, EX_ELEM_BLOCK, id, blk_start, overlap, TOPTR(connectivity),
+        ex_get_partial_conn(filePtr, EX_ELEM_BLOCK, id, blk_start, overlap, connectivity.data(),
                             nullptr, nullptr);
         size_t el = 0;
         for (size_t elem = 0; elem < overlap; elem++) {
@@ -378,7 +378,7 @@ namespace Iopx {
 
     std::vector<ex_set> sets(set_count);
     std::vector<INT>    ids(set_count);
-    ex_get_ids(filePtr, set_type, TOPTR(ids));
+    ex_get_ids(filePtr, set_type, ids.data());
 
     for (size_t i = 0; i < set_count; i++) {
       entity_sets[i].id_               = ids[i];
@@ -389,7 +389,7 @@ namespace Iopx {
       sets[i].distribution_factor_list = nullptr;
     }
 
-    ex_get_sets(filePtr, sets.size(), TOPTR(sets));
+    ex_get_sets(filePtr, sets.size(), sets.data());
 
     // Get total length of nset entitylists...
     size_t entitylist_size = 0;
@@ -459,7 +459,7 @@ namespace Iopx {
           // * Broadcast data to other processors
           // * Each procesor extracts the entities it manages.
           m_decomposition.show_progress("\tBroadcast entitylist begin");
-          MPI_Bcast(TOPTR(entitylist), entitylist.size(), Ioss::mpi_type(INT(0)), root, comm_);
+          MPI_Bcast(entitylist.data(), entitylist.size(), Ioss::mpi_type(INT(0)), root, comm_);
           m_decomposition.show_progress("\tBroadcast entitylist end");
 
           // Each processor now has same list of entities in entitysets (i_beg ... i)
@@ -504,7 +504,7 @@ namespace Iopx {
       }
 
       std::vector<int> has_entitys(set_count * m_processorCount);
-      MPI_Allgather(TOPTR(has_entitys_local), has_entitys_local.size(), MPI_INT, TOPTR(has_entitys),
+      MPI_Allgather(has_entitys_local.data(), has_entitys_local.size(), MPI_INT, has_entitys.data(),
                     has_entitys_local.size(), MPI_INT, comm_);
 
       for (size_t i = 0; i < set_count; i++) {
@@ -582,7 +582,7 @@ namespace Iopx {
         df_valcon[2 * i + 1] = 1;
         if (node_sets[i].df_count() > 0) {
           std::vector<double> df(node_sets[i].df_count());
-          ex_get_set_dist_fact(filePtr, EX_NODE_SET, node_sets[i].id(), TOPTR(df));
+          ex_get_set_dist_fact(filePtr, EX_NODE_SET, node_sets[i].id(), df.data());
           double val       = df[0];
           df_valcon[2 * i] = val;
           for (size_t j = 1; j < node_sets[i].df_count(); j++) {
@@ -595,7 +595,7 @@ namespace Iopx {
     }
 
     // Tell other processors
-    MPI_Bcast(TOPTR(df_valcon), df_valcon.size(), MPI_DOUBLE, root, comm_);
+    MPI_Bcast(df_valcon.data(), df_valcon.size(), MPI_DOUBLE, root, comm_);
     for (size_t i = 0; i < set_count; i++) {
       node_sets[i].distributionFactorCount    = node_sets[i].ioss_count();
       node_sets[i].distributionFactorValue    = df_valcon[2 * i + 0];
@@ -636,7 +636,7 @@ namespace Iopx {
           std::vector<double> df(side_sets[i].df_count());
           // TODO: For large sideset, split into multiple reads to avoid
           //       peaking the memory
-          ex_get_set_dist_fact(filePtr, EX_SIDE_SET, side_sets[i].id(), TOPTR(df));
+          ex_get_set_dist_fact(filePtr, EX_SIDE_SET, side_sets[i].id(), df.data());
           double val       = df[0];
           df_valcon[3 * i] = val;
           for (size_t j = 1; j < side_sets[i].df_count(); j++) {
@@ -658,7 +658,7 @@ namespace Iopx {
             // communicating the entire list for all sidesets.  If not
             // constant, then we will have to communicate.
             std::vector<int> nodes_per_face(side_sets[i].file_count());
-            ex_get_side_set_node_count(filePtr, side_sets[i].id(), TOPTR(nodes_per_face));
+            ex_get_side_set_node_count(filePtr, side_sets[i].id(), nodes_per_face.data());
             int nod_per_face = nodes_per_face[0];
             for (size_t j = 1; j < nodes_per_face.size(); j++) {
               if (nodes_per_face[j] != nod_per_face) {
@@ -674,7 +674,7 @@ namespace Iopx {
 
     // Tell other processors
     m_decomposition.show_progress("\tBroadcast df_valcon begin");
-    MPI_Bcast(TOPTR(df_valcon), df_valcon.size(), MPI_DOUBLE, root, comm_);
+    MPI_Bcast(df_valcon.data(), df_valcon.size(), MPI_DOUBLE, root, comm_);
     m_decomposition.show_progress("\tBroadcast df_valcon end");
     for (size_t i = 0; i < set_count; i++) {
       side_sets[i].distributionFactorValue         = df_valcon[3 * i + 0];
@@ -711,7 +711,7 @@ namespace Iopx {
 
       // Broadcast this data to all other processors...
       m_decomposition.show_progress("\tBroadcast nodes_per_face begin");
-      MPI_Bcast(TOPTR(nodes_per_face), nodes_per_face.size(), MPI_INT, root, comm_);
+      MPI_Bcast(nodes_per_face.data(), nodes_per_face.size(), MPI_INT, root, comm_);
       m_decomposition.show_progress("\tBroadcast nodes_per_face end");
 
       // Each processor now has a list of the number of nodes per
@@ -744,27 +744,27 @@ namespace Iopx {
     if (field.get_name() == "mesh_model_coordinates_x") {
       m_decomposition.show_progress("\tex_get_partial_coord X");
       ierr = ex_get_partial_coord_component(filePtr, decomp_node_offset() + 1, decomp_node_count(),
-                                            1, TOPTR(tmp));
+                                            1, tmp.data());
       if (ierr >= 0) {
-        communicate_node_data(TOPTR(tmp), ioss_data, 1);
+        communicate_node_data(tmp.data(), ioss_data, 1);
       }
     }
 
     else if (field.get_name() == "mesh_model_coordinates_y") {
       m_decomposition.show_progress("\tex_get_partial_coord Y");
       ierr = ex_get_partial_coord_component(filePtr, decomp_node_offset() + 1, decomp_node_count(),
-                                            2, TOPTR(tmp));
+                                            2, tmp.data());
       if (ierr >= 0) {
-        communicate_node_data(TOPTR(tmp), ioss_data, 1);
+        communicate_node_data(tmp.data(), ioss_data, 1);
       }
     }
 
     else if (field.get_name() == "mesh_model_coordinates_z") {
       m_decomposition.show_progress("\tex_get_partial_coord Z");
       ierr = ex_get_partial_coord_component(filePtr, decomp_node_offset() + 1, decomp_node_count(),
-                                            3, TOPTR(tmp));
+                                            3, tmp.data());
       if (ierr >= 0) {
-        communicate_node_data(TOPTR(tmp), ioss_data, 1);
+        communicate_node_data(tmp.data(), ioss_data, 1);
       }
     }
 
@@ -796,7 +796,7 @@ namespace Iopx {
           return ierr;
         }
 
-        communicate_node_data(TOPTR(tmp), TOPTR(ioss_tmp), 1);
+        communicate_node_data(tmp.data(), ioss_tmp.data(), 1);
 
         size_t index = d;
         for (size_t i = 0; i < ioss_node_count(); i++) {
@@ -829,9 +829,9 @@ namespace Iopx {
 
     std::vector<INT> file_conn(count * nnpe);
     m_decomposition.show_progress("\tex_get_partial_conn");
-    ex_get_partial_conn(filePtr, EX_ELEM_BLOCK, id, offset + 1, count, TOPTR(file_conn), nullptr,
+    ex_get_partial_conn(filePtr, EX_ELEM_BLOCK, id, offset + 1, count, file_conn.data(), nullptr,
                         nullptr);
-    m_decomposition.communicate_block_data(TOPTR(file_conn), data, blk, nnpe);
+    m_decomposition.communicate_block_data(file_conn.data(), data, blk, nnpe);
 
     for (size_t i = 0; i < blk.iossCount * nnpe; i++) {
       data[i] = node_global_to_local(data[i]);
@@ -1110,11 +1110,11 @@ namespace Iopx {
       // Read the set data from the file..
       file_data.resize(set.file_count());
       m_decomposition.show_progress("\tex_get_var (set)");
-      ierr = ex_get_var(filePtr, step, type, var_index, id, set.file_count(), TOPTR(file_data));
+      ierr = ex_get_var(filePtr, step, type, var_index, id, set.file_count(), file_data.data());
     }
 
     if (ierr >= 0) {
-      communicate_set_data(TOPTR(file_data), TOPTR(ioss_data), set, 1);
+      communicate_set_data(file_data.data(), ioss_data.data(), set, 1);
     }
 
     return ierr;
@@ -1133,11 +1133,11 @@ namespace Iopx {
     if (m_processor == set.root_) {
       // Read the set data from the file..
       file_data.resize(set.file_count() * comp_count);
-      ierr = ex_get_attr(filePtr, type, id, TOPTR(file_data));
+      ierr = ex_get_attr(filePtr, type, id, file_data.data());
     }
 
     if (ierr >= 0) {
-      communicate_set_data(TOPTR(file_data), ioss_data, set, comp_count);
+      communicate_set_data(file_data.data(), ioss_data, set, comp_count);
     }
 
     return ierr;
@@ -1156,11 +1156,11 @@ namespace Iopx {
     if (m_processor == set.root_) {
       // Read the set data from the file..
       file_data.resize(set.file_count());
-      ierr = ex_get_one_attr(filePtr, type, id, attr_index, TOPTR(file_data));
+      ierr = ex_get_one_attr(filePtr, type, id, attr_index, file_data.data());
     }
 
     if (ierr >= 0) {
-      communicate_set_data(TOPTR(file_data), ioss_data, set, 1);
+      communicate_set_data(file_data.data(), ioss_data, set, 1);
     }
 
     return ierr;
@@ -1175,10 +1175,10 @@ namespace Iopx {
     std::vector<double> file_data(decomp_node_count());
     m_decomposition.show_progress("\tex_get_partial_var");
     int ierr = ex_get_partial_var(filePtr, step, EX_NODAL, var_index, id, decomp_node_offset() + 1,
-                                  decomp_node_count(), TOPTR(file_data));
+                                  decomp_node_count(), file_data.data());
 
     if (ierr >= 0) {
-      communicate_node_data(TOPTR(file_data), TOPTR(ioss_data), 1);
+      communicate_node_data(file_data.data(), ioss_data.data(), 1);
     }
     return ierr;
   }
@@ -1190,10 +1190,10 @@ namespace Iopx {
     m_decomposition.show_progress(__func__);
     std::vector<double> file_data(decomp_node_count() * comp_count);
     int                 ierr = ex_get_partial_attr(filePtr, EX_NODAL, id, decomp_node_offset() + 1,
-                                   decomp_node_count(), TOPTR(file_data));
+                                   decomp_node_count(), file_data.data());
 
     if (ierr >= 0) {
-      communicate_node_data(TOPTR(file_data), ioss_data, comp_count);
+      communicate_node_data(file_data.data(), ioss_data, comp_count);
     }
     return ierr;
   }
@@ -1205,10 +1205,10 @@ namespace Iopx {
     m_decomposition.show_progress(__func__);
     std::vector<double> file_data(decomp_node_count());
     int ierr = ex_get_partial_one_attr(filePtr, EX_NODAL, id, decomp_node_offset() + 1,
-                                       decomp_node_count(), attr_index, TOPTR(file_data));
+                                       decomp_node_count(), attr_index, file_data.data());
 
     if (ierr >= 0) {
-      communicate_node_data(TOPTR(file_data), ioss_data, 1);
+      communicate_node_data(file_data.data(), ioss_data, 1);
     }
     return ierr;
   }
@@ -1227,10 +1227,10 @@ namespace Iopx {
     std::vector<double> file_data(count);
     m_decomposition.show_progress("\tex_get_partial_var (elem)");
     int ierr = ex_get_partial_var(filePtr, step, EX_ELEM_BLOCK, var_index, id, offset + 1, count,
-                                  TOPTR(file_data));
+                                  file_data.data());
 
     if (ierr >= 0) {
-      m_decomposition.communicate_block_data(TOPTR(file_data), TOPTR(ioss_data), el_blocks[blk_seq],
+      m_decomposition.communicate_block_data(file_data.data(), ioss_data.data(), el_blocks[blk_seq],
                                              1);
     }
 
@@ -1248,10 +1248,10 @@ namespace Iopx {
     size_t offset  = get_block_element_offset(blk_seq);
 
     std::vector<double> file_data(count * comp_count);
-    int ierr = ex_get_partial_attr(filePtr, EX_ELEM_BLOCK, id, offset + 1, count, TOPTR(file_data));
+    int ierr = ex_get_partial_attr(filePtr, EX_ELEM_BLOCK, id, offset + 1, count, file_data.data());
 
     if (ierr >= 0) {
-      m_decomposition.communicate_block_data(TOPTR(file_data), ioss_data, el_blocks[blk_seq],
+      m_decomposition.communicate_block_data(file_data.data(), ioss_data, el_blocks[blk_seq],
                                              comp_count);
     }
 
@@ -1270,10 +1270,10 @@ namespace Iopx {
 
     std::vector<double> file_data(count);
     int ierr = ex_get_partial_one_attr(filePtr, EX_ELEM_BLOCK, id, offset + 1, count, attr_index,
-                                       TOPTR(file_data));
+                                       file_data.data());
 
     if (ierr >= 0) {
-      m_decomposition.communicate_block_data(TOPTR(file_data), ioss_data, el_blocks[blk_seq], 1);
+      m_decomposition.communicate_block_data(file_data.data(), ioss_data, el_blocks[blk_seq], 1);
     }
 
     return ierr;
@@ -1320,13 +1320,13 @@ namespace Iopx {
         std::vector<T> tmp(set.ioss_count());
         Ioss::Field    elem_field("ids", Ioss::Field::INTEGER, "scalar", Ioss::Field::MESH,
                                tmp.size());
-        get_set_mesh_var(filePtr, type, id, elem_field, TOPTR(tmp));
+        get_set_mesh_var(filePtr, type, id, elem_field, tmp.data());
         for (size_t i = 0; i < tmp.size(); i++) {
           ioss_data[2 * i] = tmp[i];
         }
         Ioss::Field side_field("sides", Ioss::Field::INTEGER, "scalar", Ioss::Field::MESH,
                                tmp.size());
-        get_set_mesh_var(filePtr, type, id, side_field, TOPTR(tmp));
+        get_set_mesh_var(filePtr, type, id, side_field, tmp.data());
         for (size_t i = 0; i < tmp.size(); i++) {
           ioss_data[2 * i + 1] = tmp[i];
         }
@@ -1343,13 +1343,13 @@ namespace Iopx {
         std::vector<T> tmp(set.ioss_count());
         Ioss::Field    elem_field("ids_raw", Ioss::Field::INTEGER, "scalar", Ioss::Field::MESH,
                                tmp.size());
-        get_set_mesh_var(filePtr, type, id, elem_field, TOPTR(tmp));
+        get_set_mesh_var(filePtr, type, id, elem_field, tmp.data());
         for (size_t i = 0; i < tmp.size(); i++) {
           ioss_data[2 * i] = tmp[i];
         }
         Ioss::Field side_field("sides", Ioss::Field::INTEGER, "scalar", Ioss::Field::MESH,
                                tmp.size());
-        get_set_mesh_var(filePtr, type, id, side_field, TOPTR(tmp));
+        get_set_mesh_var(filePtr, type, id, side_field, tmp.data());
         for (size_t i = 0; i < tmp.size(); i++) {
           ioss_data[2 * i + 1] = tmp[i];
         }
@@ -1379,7 +1379,7 @@ namespace Iopx {
       if (field.get_name() == "ids" || field.get_name() == "ids_raw") {
         file_data.resize(set.file_count());
         if (set.file_count() < max_size) {
-          ierr = ex_get_set(filePtr, type, id, TOPTR(file_data), nullptr);
+          ierr = ex_get_set(filePtr, type, id, file_data.data(), nullptr);
           if (ierr < 0) {
             Ioex::exodus_error(filePtr, __LINE__, __func__, __FILE__);
           }
@@ -1408,7 +1408,7 @@ namespace Iopx {
         if (type == EX_SIDE_SET) {
           file_data.resize(set.file_count());
           if (set.file_count() < max_size) {
-            ierr = ex_get_set(filePtr, type, id, nullptr, TOPTR(file_data));
+            ierr = ex_get_set(filePtr, type, id, nullptr, file_data.data());
             if (ierr < 0) {
               Ioex::exodus_error(filePtr, __LINE__, __func__, __FILE__);
             }
@@ -1455,7 +1455,7 @@ namespace Iopx {
         else {
           if (type == EX_NODE_SET) {
             file_data.resize(set_param[0].num_distribution_factor);
-            set_param[0].distribution_factor_list = TOPTR(file_data);
+            set_param[0].distribution_factor_list = file_data.data();
             ierr                                  = ex_get_sets(filePtr, 1, set_param);
             if (ierr < 0) {
               Ioex::exodus_error(filePtr, __LINE__, __func__, __FILE__);
@@ -1470,7 +1470,7 @@ namespace Iopx {
         assert(1 == 0 && "Unrecognized field name in get_set_mesh_var");
       }
     }
-    communicate_set_data(TOPTR(file_data), ioss_data, set, 1);
+    communicate_set_data(file_data.data(), ioss_data, set, 1);
 
     // Map global 0-based index to local 1-based index.
     if (field.get_name() == "ids" || field.get_name() == "ids_raw") {
@@ -1560,11 +1560,11 @@ namespace Iopx {
         set_param[0].type                     = EX_SIDE_SET;
         set_param[0].entry_list               = nullptr;
         set_param[0].extra_list               = nullptr;
-        set_param[0].distribution_factor_list = TOPTR(file_data);
+        set_param[0].distribution_factor_list = file_data.data();
         ierr                                  = ex_get_sets(filePtr, 1, set_param);
       }
       if (ierr >= 0) {
-        communicate_set_data(TOPTR(file_data), ioss_data, set, set.distributionFactorValsPerEntity);
+        communicate_set_data(file_data.data(), ioss_data, set, set.distributionFactorValsPerEntity);
       }
 
       return ierr;
@@ -1587,7 +1587,7 @@ namespace Iopx {
     // Get the node-count-per-face for all faces in this set...
     std::vector<int> nodes_per_face(set.file_count() + 1);
     if (m_processor == set.root_) {
-      ex_get_side_set_node_count(filePtr, set.id(), TOPTR(nodes_per_face));
+      ex_get_side_set_node_count(filePtr, set.id(), nodes_per_face.data());
       nodes_per_face[set.file_count()] = df_count;
     }
 
@@ -1597,7 +1597,7 @@ namespace Iopx {
     // so this will not cause a deadlock...
     if (m_processor != set.root_ && set.hasEntities[m_processor]) {
       MPI_Status status{};
-      int result = MPI_Recv(TOPTR(nodes_per_face), nodes_per_face.size(), MPI_INT, set.root_, 222,
+      int result = MPI_Recv(nodes_per_face.data(), nodes_per_face.size(), MPI_INT, set.root_, 222,
                             comm_, &status);
 
       if (result != MPI_SUCCESS) {
@@ -1613,7 +1613,7 @@ namespace Iopx {
       for (int i = m_processor + 1; i < m_processorCount; i++) {
         if (set.hasEntities[i]) {
           // Send same data to all active processors...
-          MPI_Send(TOPTR(nodes_per_face), nodes_per_face.size(), MPI_INT, i, 222, comm_);
+          MPI_Send(nodes_per_face.data(), nodes_per_face.size(), MPI_INT, i, 222, comm_);
         }
       }
     }
@@ -1629,7 +1629,7 @@ namespace Iopx {
       set_param[0].type                     = EX_SIDE_SET;
       set_param[0].entry_list               = nullptr;
       set_param[0].extra_list               = nullptr;
-      set_param[0].distribution_factor_list = TOPTR(file_data);
+      set_param[0].distribution_factor_list = file_data.data();
       ex_get_sets(filePtr, 1, set_param);
     }
 
@@ -1639,7 +1639,7 @@ namespace Iopx {
       file_data.resize(df_count);
       MPI_Status status{};
       int        result =
-          MPI_Recv(TOPTR(file_data), file_data.size(), MPI_DOUBLE, set.root_, 333, comm_, &status);
+          MPI_Recv(file_data.data(), file_data.size(), MPI_DOUBLE, set.root_, 333, comm_, &status);
 
       if (result != MPI_SUCCESS) {
         fmt::print(stderr,
@@ -1653,7 +1653,7 @@ namespace Iopx {
       for (int i = m_processor + 1; i < m_processorCount; i++) {
         if (set.hasEntities[i]) {
           // Send same data to all active processors...
-          MPI_Send(TOPTR(file_data), file_data.size(), MPI_DOUBLE, i, 333, comm_);
+          MPI_Send(file_data.data(), file_data.size(), MPI_DOUBLE, i, 333, comm_);
         }
       }
     }
@@ -1739,7 +1739,7 @@ namespace Iopx {
 
     // Now, tell the other processors how many nodes I will be sending
     // them (Nodes they own that I share with them)
-    MPI_Alltoall(TOPTR(snd_count), 1, MPI_LONG_LONG_INT, TOPTR(rcv_count), 1, MPI_LONG_LONG_INT,
+    MPI_Alltoall(snd_count.data(), 1, MPI_LONG_LONG_INT, rcv_count.data(), 1, MPI_LONG_LONG_INT,
                  comm_);
     m_decomposition.show_progress("\tCommunication 1 finished");
 

@@ -255,38 +255,39 @@ bool BucketLess::operator()( const unsigned * lhs ,
 
 //----------------------------------------------------------------------
 
-Bucket::Bucket( BulkData & arg_mesh ,
-                EntityRank arg_entity_rank,
-                const std::vector<unsigned> & arg_key,
-                size_t arg_capacity,
-                const ConnectivityMap& connectivity_map,
-                unsigned bucket_id
-                )
-  : m_mesh(arg_mesh)
-  , m_entity_rank(arg_entity_rank)
-  , m_topology()
-  , m_key(arg_key)
-  , m_capacity(arg_capacity)
-  , m_size(0)
-  , m_bucket_id(bucket_id)
-  , m_entities(arg_capacity)
-  , m_partition(nullptr)
-  , m_node_kind(INVALID_CONNECTIVITY_TYPE)
-  , m_edge_kind(INVALID_CONNECTIVITY_TYPE)
-  , m_face_kind(INVALID_CONNECTIVITY_TYPE)
-  , m_element_kind(INVALID_CONNECTIVITY_TYPE)
-  , m_fixed_node_connectivity()
-  , m_fixed_edge_connectivity()
-  , m_fixed_face_connectivity()
-  , m_fixed_element_connectivity()
-  , m_dynamic_node_connectivity(arg_entity_rank, &m_mesh)
-  , m_dynamic_edge_connectivity(arg_entity_rank, &m_mesh)
-  , m_dynamic_face_connectivity(arg_entity_rank, &m_mesh)
-  , m_dynamic_element_connectivity(arg_entity_rank, &m_mesh)
-  , m_dynamic_other_connectivity(arg_entity_rank, &m_mesh)
-  , m_owned(has_superset(*this, m_mesh.mesh_meta_data().locally_owned_part()))
-  , m_shared(has_superset(*this, m_mesh.mesh_meta_data().globally_shared_part()))
-  , m_aura(has_superset(*this, m_mesh.mesh_meta_data().aura_part()))
+Bucket::Bucket(BulkData & arg_mesh,
+               EntityRank arg_entity_rank,
+               const std::vector<unsigned> & arg_key,
+               size_t arg_capacity,
+               const ConnectivityMap& connectivity_map,
+               unsigned bucket_id)
+  : m_mesh(arg_mesh),
+    m_entity_rank(arg_entity_rank),
+    m_topology(),
+    m_key(arg_key),
+    m_capacity(arg_capacity),
+    m_size(0),
+    m_bucket_id(bucket_id),
+    m_ngp_bucket_id(INVALID_BUCKET_ID),
+    m_is_modified(true),
+    m_entities(arg_capacity),
+    m_partition(nullptr),
+    m_node_kind(INVALID_CONNECTIVITY_TYPE),
+    m_edge_kind(INVALID_CONNECTIVITY_TYPE),
+    m_face_kind(INVALID_CONNECTIVITY_TYPE),
+    m_element_kind(INVALID_CONNECTIVITY_TYPE),
+    m_fixed_node_connectivity(),
+    m_fixed_edge_connectivity(),
+    m_fixed_face_connectivity(),
+    m_fixed_element_connectivity(),
+    m_dynamic_node_connectivity(arg_entity_rank, &m_mesh),
+    m_dynamic_edge_connectivity(arg_entity_rank, &m_mesh),
+    m_dynamic_face_connectivity(arg_entity_rank, &m_mesh),
+    m_dynamic_element_connectivity(arg_entity_rank, &m_mesh),
+    m_dynamic_other_connectivity(arg_entity_rank, &m_mesh),
+    m_owned(has_superset(*this, m_mesh.mesh_meta_data().locally_owned_part())),
+    m_shared(has_superset(*this, m_mesh.mesh_meta_data().globally_shared_part())),
+    m_aura(has_superset(*this, m_mesh.mesh_meta_data().aura_part()))
 {
   ThrowAssertMsg(arg_capacity != 0, "Buckets should never have zero capacity");
 
@@ -641,6 +642,7 @@ size_t Bucket::get_others_index_count(size_type bucket_ordinal, EntityRank rank)
 
 void Bucket::initialize_slot(size_type ordinal, Entity entity)
 {
+  m_is_modified = true;
   m_entities[ordinal]    = entity;
   if (mesh().is_valid(entity)) {
     mesh().set_state(entity, Created);
@@ -654,6 +656,7 @@ int Bucket::parallel_owner_rank(size_type ordinal) const
 
 void Bucket::reset_entity_location(Entity entity, size_type to_ordinal, const FieldVector* fields)
 {
+  m_is_modified = true;
   Bucket & from_bucket = mesh().bucket(entity);
   const Bucket::size_type from_ordinal = mesh().bucket_ordinal(entity);
 
@@ -672,6 +675,7 @@ void Bucket::add_entity(Entity entity)
   ThrowAssert(!mesh().is_valid(entity) || mesh().bucket_ptr(entity) == nullptr);
   ThrowAssert(!mesh().is_valid(entity) || mesh().entity_rank(entity) == m_entity_rank);
 
+  m_is_modified = true;
   initialize_slot(m_size, entity);
 
   if (mesh().is_valid(entity)) {
@@ -706,6 +710,7 @@ void Bucket::remove_entity()
 {
   ThrowAssert(m_size > 0);
 
+  m_is_modified = true;
   mesh().remove_entity_field_data_callback(entity_rank(), bucket_id(), m_size-1);
   --m_size;
 
@@ -724,6 +729,7 @@ void Bucket::copy_entity(Entity entity)
   ThrowAssert(mesh().bucket_ptr(entity) != this);
   ThrowAssert(mesh().entity_rank(entity) == m_entity_rank);
 
+  m_is_modified = true;
   Bucket* old_bucket = mesh().bucket_ptr(entity);
   const Bucket::size_type old_ordinal = mesh().bucket_ordinal(entity);
 
@@ -800,6 +806,7 @@ void Bucket::overwrite_entity(size_type to_ordinal, Entity entity, const FieldVe
   ThrowAssert(mesh().bucket_ptr(entity) != nullptr);
   ThrowAssert(mesh().entity_rank(entity) == m_entity_rank);
 
+  m_is_modified = true;
   const MeshIndex from_index = m_mesh.mesh_index(entity);
   reset_entity_location(entity, to_ordinal, fields);
 

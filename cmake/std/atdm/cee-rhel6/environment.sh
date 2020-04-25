@@ -62,8 +62,8 @@ if [[ "${ATDM_CONFIG_ENABLE_STRONG_WARNINGS}" == "" ]] ; then
   export ATDM_CONFIG_ENABLE_STRONG_WARNINGS=1
 fi
 
-if [[ "$ATDM_CONFIG_COMPILER" == "CLANG-5.0.1_OPENMPI-1.10.2" ]]; then
-  module load sparc-dev/clang-5.0.1_openmpi-1.10.2
+if  [[ "$ATDM_CONFIG_COMPILER" == "CLANG-9.0.1_OPENMPI-4.0.2" ]]; then
+  module load sparc-dev/clang-9.0.1_openmpi-4.0.2
   export OMPI_CXX=`which clang++`
   export OMPI_CC=`which clang`
   export OMPI_FC=`which gfortran`
@@ -74,38 +74,6 @@ if [[ "$ATDM_CONFIG_COMPILER" == "CLANG-5.0.1_OPENMPI-1.10.2" ]]; then
     export ATDM_CONFIG_CXX_FLAGS="${ATDM_CONFIG_GNU_CXX_WARNINGS}"
   fi
   export ATDM_CONFIG_MKL_ROOT=${CBLAS_ROOT}
-
-elif [[ "$ATDM_CONFIG_COMPILER" == "CLANG-5.0.1_OPENMPI-4.0.2" ]]; then
-  module load sparc-dev/clang-5.0.1_openmpi-4.0.2
-  export OMPI_CXX=`which clang++`
-  export OMPI_CC=`which clang`
-  export OMPI_FC=`which gfortran`
-  export MPICC=`which mpicc`
-  export MPICXX=`which mpicxx`
-  export MPIF90=`which mpif90`
-  if [[ "$ATDM_CONFIG_ENABLE_STRONG_WARNINGS" == "1" ]]; then
-    export ATDM_CONFIG_CXX_FLAGS="${ATDM_CONFIG_GNU_CXX_WARNINGS}"
-  fi
-  export ATDM_CONFIG_MKL_ROOT=${CBLAS_ROOT}
-
-elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0_OPENMPI-1.10.2" ]] ; then
-  module load sparc-dev/gcc-7.2.0_openmpi-1.10.2
-  unset OMP_NUM_THREADS  # SPARC module sets these and we must unset!
-  unset OMP_PROC_BIND
-  unset OMP_PLACES
-  export OMPI_CXX=`which g++`
-  export OMPI_CC=`which gcc`
-  export OMPI_FC=`which gfortran`
-  export MPICC=`which mpicc`
-  export MPICXX=`which mpicxx`
-  export MPIF90=`which mpif90`
-  if [[ "$ATDM_CONFIG_ENABLE_STRONG_WARNINGS" == "1" ]]; then
-    export ATDM_CONFIG_CXX_FLAGS="${ATDM_CONFIG_GNU_CXX_WARNINGS}"
-  fi
-  export ATDM_CONFIG_MKL_ROOT=${CBLAS_ROOT}
-  export ATDM_CONFIG_MPI_EXEC=mpirun
-  export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG=-np
-  export ATDM_CONFIG_MPI_PRE_FLAGS="--bind-to;none"
 
 elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0_OPENMPI-4.0.2" ]] ; then
   module load sparc-dev/gcc-7.2.0_openmpi-4.0.2

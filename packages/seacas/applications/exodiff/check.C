@@ -1,4 +1,4 @@
-// Copyright(C) 2008-2017 National Technology & Engineering Solutions
+// Copyright(C) 2008-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -145,25 +145,28 @@ namespace {
     file1.Load_Nodal_Coordinates();
     file2.Load_Nodal_Coordinates();
 
-    double *x1 = (double *)file1.X_Coords();
-    double *y1 = x1, *z1 = x1;
+    const auto *  x1 = file1.X_Coords();
+    const double *y1 = x1;
+    const double *z1 = x1;
     if (file1.Dimension() > 1) {
-      y1 = (double *)file1.Y_Coords();
+      y1 = file1.Y_Coords();
     }
     if (file1.Dimension() > 2) {
-      z1 = (double *)file1.Z_Coords();
+      z1 = file1.Z_Coords();
     }
 
-    double *x2 = (double *)file2.X_Coords();
-    double *y2 = x2, *z2 = x2;
+    const auto *  x2 = file2.X_Coords();
+    const double *y2 = x2;
+    const double *z2 = x2;
     if (file2.Dimension() > 1) {
-      y2 = (double *)file2.Y_Coords();
+      y2 = file2.Y_Coords();
     }
     if (file2.Dimension() > 2) {
-      z2 = (double *)file2.Z_Coords();
+      z2 = file2.Z_Coords();
     }
 
-    double max = 0.0, norm;
+    double max = 0.0;
+    double norm;
     for (size_t n = 0; n < file1.Num_Nodes() && (is_same || interFace.show_all_diffs); ++n) {
       // Should this node be processed...
       if (node_map == nullptr || node_map[n] >= 0) {

@@ -105,10 +105,30 @@ namespace MueLu {
 #include "MueLu_UseShortNames.hpp"
   public:
     /*!
-     * This routine is used by the CreateE/TpetraPreconditioner routines.
-     * Adds the following non-serializable data (A,P,R,Nullspace,Coordinates) from level-specific sublist nonSerialList,
-     * calling AddNewLevel as appropriate.
-     */
+    \brief Add non-serializable data to Hierarchy
+
+    Add non-serializable data given level-specific sublist \c nonSerialList to the Hierarchy \c H.
+    Calling \c AddLevel() along the way, if necessary.
+
+    Non-serializable data to be added:
+    - Operator "A"
+    - Prolongator "P"
+    - Restrictor "R"
+    - "M"
+    - "Mdiag"
+    - "K"
+    - Nullspace information "Nullspace"
+    - Coordinate information "Coordinates"
+    - "Node Comm"
+    - Primal-to-dual node mapping "DualNodeID2PrimalNodeID"
+    - "pcoarsen: element to node map
+
+    This routine is used by the CreateXpetraPreconditioner() routine.
+
+    @param HM
+    @param H
+    @param nonSerialList Parameter list containing non-serializable data
+    */
     static void AddNonSerializableDataToHierarchy(HierarchyManager& HM, Hierarchy& H, const ParameterList& nonSerialList);
   };
 

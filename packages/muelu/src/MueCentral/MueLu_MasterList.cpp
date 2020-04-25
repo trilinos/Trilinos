@@ -188,6 +188,9 @@ namespace MueLu {
   "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"uncoupled\"/>"
   "<Parameter name=\"aggregation: ordering\" type=\"string\" value=\"natural\"/>"
   "<Parameter name=\"aggregation: drop scheme\" type=\"string\" value=\"classical\"/>"
+  "<Parameter name=\"aggregation: number of random vectors\" type=\"int\" value=\"10\"/>"
+  "<Parameter name=\"aggregation: number of times to pre or post smooth\" type=\"int\" value=\"10\"/>"
+  "<Parameter name=\"aggregation: penalty parameters\" type=\"Array(double)\" value=\"{12.,-.2,0,0,0} \"/>"
   "<Parameter name=\"aggregation: distance laplacian algo\" type=\"string\" value=\"default\"/>"
   "<Parameter name=\"aggregation: drop tol\" type=\"double\" value=\"0.0\"/>"
   "<Parameter name=\"aggregation: min agg size\" type=\"int\" value=\"2\"/>"
@@ -230,6 +233,9 @@ namespace MueLu {
   "<Parameter name=\"aggregate qualities: good aggregate threshold\" type=\"double\" value=\"100.0\"/>"
   "<Parameter name=\"aggregate qualities: file output\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregate qualities: file base\" type=\"string\" value=\"agg_qualities\"/>"
+  "<Parameter name=\"aggregate qualities: algorithm\" type=\"string\" value=\"forward\"/>"
+  "<Parameter name=\"aggregate qualities: zero threshold\" type=\"double\" value=\"1e-12\"/>"
+  "<Parameter name=\"aggregate qualities: percentiles\" type=\"Array(double)\" value=\"{}\"/>"
   "<ParameterList name=\"export data\"/>"
   "<Parameter name=\"print initial parameters\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"print unused parameters\" type=\"bool\" value=\"true\"/>"
@@ -551,6 +557,12 @@ namespace MueLu {
       
          ("aggregation: drop scheme","aggregation: drop scheme")
       
+         ("aggregation: number of random vectors","aggregation: number of random vectors")
+      
+         ("aggregation: number of times to pre or post smooth","aggregation: number of times to pre or post smooth")
+      
+         ("aggregation: penalty parameters","aggregation: penalty parameters")
+      
          ("aggregation: distance laplacian algo","aggregation: distance laplacian algo")
       
          ("aggregation: threshold","aggregation: drop tol")
@@ -634,6 +646,12 @@ namespace MueLu {
          ("aggregate qualities: file output","aggregate qualities: file output")
       
          ("aggregate qualities: file base","aggregate qualities: file base")
+      
+         ("aggregate qualities: algorithm","aggregate qualities: algorithm")
+      
+         ("aggregate qualities: zero threshold","aggregate qualities: zero threshold")
+      
+         ("aggregate qualities: percentiles","aggregate qualities: percentiles")
       
          ("export data","export data")
       

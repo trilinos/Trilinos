@@ -1,4 +1,4 @@
-// Copyright(C) 2009-2010-2017 National Technology & Engineering Solutions
+// Copyright(C) 2009-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -87,10 +87,10 @@ namespace {
 
 struct NodeInfo
 {
-  NodeInfo() : id(0), x(0.0), y(0.0), z(0.0) {}
+  NodeInfo() = default;
   NodeInfo(size_t id_, double x_, double y_, double z_) : id(id_), x(x_), y(y_), z(z_) {}
-  size_t id;
-  double x, y, z;
+  size_t id{0};
+  double x{0.0}, y{0.0}, z{0.0};
 
   bool operator==(const NodeInfo &other) const
   {
@@ -203,6 +203,8 @@ template <typename T, typename INT>
 int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */);
 
 namespace {
+  void sort_file_times(StringVector &input_files);
+
   void                         compress_white_space(char *str);
   void                         add_info_record(char *info_record, int size);
   template <typename INT> void put_mesh_summary(const Excn::Mesh<INT> &mesh);
@@ -373,7 +375,7 @@ int          main(int argc, char *argv[])
 
     debug_level = interFace.debug();
 
-    if ((debug_level & 64) != 0u) {
+    if ((debug_level & 64) != 0U) {
       ex_opts(EX_VERBOSE | EX_DEBUG);
     }
     else {
@@ -381,6 +383,10 @@ int          main(int argc, char *argv[])
     }
 
     int error = 0;
+
+    if (interFace.sort_times()) {
+      sort_file_times(interFace.inputFiles_);
+    }
 
     if (!Excn::ExodusFile::initialize(interFace)) {
       fmt::print(stderr, "ERROR: Problem initializing input and/or output files.\n");
@@ -2113,13 +2119,15 @@ namespace {
 
           // Get the parameters for this nodeset...
           if (ex_int64_status(id) & EX_BULK_INT64_API) {
-            int64_t node_count, df_count;
+            int64_t node_count;
+            int64_t df_count;
             ex_get_set_param(id, EX_NODE_SET, nodesets[p][i].id, &node_count, &df_count);
             nodesets[p][i].nodeCount = node_count;
             nodesets[p][i].dfCount   = df_count;
           }
           else {
-            int node_count, df_count;
+            int node_count;
+            int df_count;
             ex_get_set_param(id, EX_NODE_SET, nodesets[p][i].id, &node_count, &df_count);
             nodesets[p][i].nodeCount = node_count;
             nodesets[p][i].dfCount   = df_count;
@@ -3042,4 +3050,38 @@ namespace {
     }
     return max_ent;
   }
+
+  void sort_file_times(StringVector &input_files)
+  {
+    // Sort files based on minimum timestep time
+    std::vector<std::pair<double, std::string>> file_time_name;
+    file_time_name.reserve(input_files.size());
+    for (auto &filename : input_files) {
+      float version       = 0.0;
+      int   cpu_word_size = sizeof(float);
+      int   io_wrd_size   = 0;
+      int   exoid = ex_open(filename.c_str(), EX_READ, &cpu_word_size, &io_wrd_size, &version);
+      if (exoid < 0) {
+        fmt::print(stderr, "ERROR: Cannot open file '{}'\n", filename);
+        exit(EXIT_FAILURE);
+      }
+
+      int    nts  = ex_inquire_int(exoid, EX_INQ_TIME);
+      double time = 0.0;
+      if (nts > 0) {
+        ex_get_time(exoid, 1, &time);
+      }
+      file_time_name.emplace_back(time, filename);
+      ex_close(exoid);
+    }
+
+    std::sort(file_time_name.begin(), file_time_name.end());
+    input_files.clear();
+    input_files.reserve(file_time_name.size());
+
+    for (const auto &entry : file_time_name) {
+      input_files.push_back(entry.second);
+    }
+  }
+
 } // namespace
