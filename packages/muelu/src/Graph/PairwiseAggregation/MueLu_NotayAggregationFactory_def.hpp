@@ -206,7 +206,7 @@ namespace MueLu {
       MueLu::NotayUtils::RandomReorder(orderingVector);
 #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
     else if (ordering == O_CUTHILL_MCKEE) {
-      RCP<Xpetra::Vector<LO,LO,GO,NO> > rcmVector = Utilities_kokkos<SC,LO,GO,NO>::CuthillMcKee(*A);
+      RCP<Xpetra::Vector<LO,LO,GO,NO> > rcmVector = MueLu::Utilities_kokkos<SC,LO,GO,NO>::CuthillMcKee(*A);
       auto localVector = rcmVector->getData(0);
       for (LO i = 0; i < numRows; i++)
         orderingVector[i] = localVector[i];
