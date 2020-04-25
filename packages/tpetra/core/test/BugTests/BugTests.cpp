@@ -42,6 +42,7 @@
 */
 
 #include "Teuchos_UnitTestHarness.hpp"
+#include "Teuchos_Comm.hpp"
 #include "Tpetra_Core.hpp"
 #include "Tpetra_MatrixIO.hpp"
 #include "Tpetra_Map.hpp"
