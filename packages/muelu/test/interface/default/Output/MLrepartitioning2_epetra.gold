@@ -85,6 +85,7 @@ matrixmatrix: kernel params ->
 
 Build (MueLu::RepartitionHeuristicFactory)
 repartition: start level = 2   [default]
+repartition: use map = 0   [default]
 repartition: node repartition level = -1   [default]
 repartition: min rows per proc = 1000
 repartition: target rows per proc = 0   [default]
@@ -214,6 +215,7 @@ matrixmatrix: kernel params ->
 
 Build (MueLu::RepartitionHeuristicFactory)
 repartition: start level = 2   [default]
+repartition: use map = 0   [default]
 repartition: node repartition level = -1   [default]
 repartition: min rows per proc = 1000
 repartition: target rows per proc = 0   [default]
@@ -343,6 +345,7 @@ matrixmatrix: kernel params ->
 
 Build (MueLu::RepartitionHeuristicFactory)
 repartition: start level = 2   [default]
+repartition: use map = 0   [default]
 repartition: node repartition level = -1   [default]
 repartition: min rows per proc = 1000
 repartition: target rows per proc = 0   [default]
@@ -472,6 +475,7 @@ matrixmatrix: kernel params ->
 
 Build (MueLu::RepartitionHeuristicFactory)
 repartition: start level = 2   [default]
+repartition: use map = 0   [default]
 repartition: node repartition level = -1   [default]
 repartition: min rows per proc = 1000
 repartition: target rows per proc = 0   [default]
