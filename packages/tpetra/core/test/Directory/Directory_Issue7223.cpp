@@ -96,9 +96,9 @@ static int checkNotFound(GO gid, int proc) {
 }
 
 /////////////////////////////////////////////////////////////////////////////
-TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Directory, Test0, LO, GO )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Directory, Uniform, LO, GO )
 {
-  // Test 0 -- three IDs on every processor
+  // Test -- three IDs on every processor
   using map_t = Tpetra::Map<LO, GO>;
   using node_t = typename map_t::node_type;
   using dir_t = 
@@ -137,9 +137,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Directory, Test0, LO, GO )
 }
 
 /////////////////////////////////////////////////////////////////////////////
-TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Directory, Test1, LO, GO )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Directory, Replicate7223, LO, GO )
 {
-  // Test 1 -- two IDs on every even-numbered processor
+  // Test -- two IDs on every even-numbered processor
   // When run on seven processors, this test exhibits the same behavior
   // as seen in #7332
   using map_t = Tpetra::Map<LO, GO>;
@@ -183,9 +183,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Directory, Test1, LO, GO )
 }
 
 /////////////////////////////////////////////////////////////////////////////
-TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Directory, Test2, LO, GO )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Directory, EvenProcs, LO, GO )
 {
-  // Test 2 -- two IDs on every even-numbered processor
+  // Test -- two IDs on every even-numbered processor
   using map_t = Tpetra::Map<LO, GO>;
   using node_t = typename map_t::node_type;
   using dir_t = 
@@ -226,9 +226,54 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Directory, Test2, LO, GO )
 }
 
 /////////////////////////////////////////////////////////////////////////////
-TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Directory, Test3, LO, GO )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Directory, EvenProcsOffset, LO, GO )
 {
-  // Test 3 -- two IDs on every odd-numbered processor, starting with GID 72
+  // Test -- two IDs on every even-numbered processor, starting with GID 72
+  using map_t = Tpetra::Map<LO, GO>;
+  using node_t = typename map_t::node_type;
+  using dir_t = 
+        Tpetra::Details::DistributedContiguousDirectory<LO, GO, node_t>;
+
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+  int np = comm->getSize();
+  int me = comm->getRank();
+
+  size_t offset = 72;  // must be an even number for error check at end
+  if (me == 0) 
+    std::cout << "\nTest 3:  two IDs on each even-numbered processor; "
+              << "min GID is " << offset << std::endl;
+  size_t nMyIds = (!(me % 2) ? 2 : 0);
+
+  auto dummy = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+  Teuchos::RCP<const map_t> map = rcp(new map_t(dummy, nMyIds, offset, comm));
+  Teuchos::RCP<const dir_t> dir = rcp(new dir_t(*map));
+
+  size_t nIds = map->getGlobalNumElements();
+  Teuchos::Array<GO> gids(nIds+2);
+  Teuchos::Array<int> procs(nIds+2);
+  Teuchos::Array<LO> lids(nIds+2);
+
+  // Find location of all entries in Map, 
+  // plus two bad entries offset-1 and nIds+offset
+  for (size_t i = 0; i <= nIds; i++) gids[i] = Teuchos::as<GO>(i+offset);
+  gids[nIds+1] = offset-1;
+
+  dir->getEntries(*map, gids(), procs(), lids(), true);
+
+  int ierr = 0;
+  for (size_t i = 0; i < nIds; i++) {
+    ierr += checkProc(gids[i], procs[i], i - i%2);
+    ierr += checkLid(gids[i], lids[i], LO(i%2));
+  }
+  for (size_t i = nIds; i <= nIds+1; i++) 
+    ierr += checkNotFound(gids[i], procs[i]);
+
+  TEST_EQUALITY_CONST(ierr, 0);
+}
+/////////////////////////////////////////////////////////////////////////////
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Directory, OddProcsOffset, LO, GO )
+{
+  // Test -- two IDs on every odd-numbered processor, starting with GID 72
   using map_t = Tpetra::Map<LO, GO>;
   using node_t = typename map_t::node_type;
   using dir_t = 
@@ -272,9 +317,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Directory, Test3, LO, GO )
 }
   
 /////////////////////////////////////////////////////////////////////////////
-TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Directory, Test4, LO, GO )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Directory, OneProcOnly, LO, GO )
 {
-  // Test 4 -- only one processor has IDs; cycle among the processors
+  // Test -- only one processor has IDs; cycle among the processors
   using map_t = Tpetra::Map<LO, GO>;
   using node_t = typename map_t::node_type;
   using dir_t = 
@@ -317,9 +362,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Directory, Test4, LO, GO )
 }
   
 /////////////////////////////////////////////////////////////////////////////
-TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Directory, Test5, LO, GO )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Directory, EmptyMap, LO, GO )
 {
-  // Test 5 -- Empty directory:  no IDs on any processors
+  // Test -- Empty directory:  no IDs on any processors
   int ierr = 0;
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   int me = comm->getRank();
@@ -337,12 +382,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Directory, Test5, LO, GO )
 //
 
 #define UNIT_TEST_GROUP( LO, GO ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Directory, Test0, LO, GO ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Directory, Test1, LO, GO ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Directory, Test2, LO, GO ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Directory, Test3, LO, GO ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Directory, Test4, LO, GO ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Directory, Test5, LO, GO )
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Directory, Uniform, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Directory, Replicate7223, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Directory, EvenProcs, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Directory, EvenProcsOffset, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Directory, OddProcsOffset, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Directory, OneProcOnly, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Directory, EmptyMap, LO, GO )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
