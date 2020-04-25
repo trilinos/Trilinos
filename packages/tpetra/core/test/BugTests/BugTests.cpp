@@ -247,6 +247,7 @@ namespace {
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
+#ifdef HAVE_TPETRA_MPI
   TEUCHOS_UNIT_TEST( DistObject, BlockedViews )
   {
     using Teuchos::RCP;
@@ -337,5 +338,5 @@ namespace {
       TEST_FLOATING_EQUALITY(host_owned_and_shared(1,0),1.0,tol); // check owned entries only
     }
   }
-
+#endif
 }
