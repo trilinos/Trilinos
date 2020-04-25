@@ -321,6 +321,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Directory, Test5, LO, GO )
 {
   // Test 5 -- Empty directory:  no IDs on any processors
   int ierr = 0;
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+  int me = comm->getRank();
   if (me == 0) {
     std::cout << "\nTest 5:  Empty map; zero IDs on all processors" << std::endl;
     std::cout << "Empty maps are not considered distributed, so "
