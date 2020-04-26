@@ -41,47 +41,21 @@ if (${PROJECT_NAME}_TRIBITS_DIR) # TriBITS CMake Project
 
   TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_USE_LAPACK
       Compadre_USE_LAPACK
-      "Either Compadre_USE_LAPACK, Compadre_USE_MKL, or Compadre_USE_CUDA must be set to ON. LAPACK is default."
-      OFF )
-
-  TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_USE_MKL
-      Compadre_USE_MKL
-      "Either Compadre_USE_LAPACK, Compadre_USE_MKL, or Compadre_USE_CUDA must be set to ON. LAPACK is default."
+      "Either Compadre_USE_LAPACK or Compadre_USE_CUDA must be set to ON. LAPACK is default."
       OFF )
 
   TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_USE_CUDA
       Compadre_USE_CUDA
-      "Either Compadre_USE_LAPACK, Compadre_USE_MKL, or Compadre_USE_CUDA must be set to ON. LAPACK is default."
+      "Either Compadre_USE_LAPACK or Compadre_USE_CUDA must be set to ON. LAPACK is default."
       OFF )
 
   # ensure only one of Compadre_USE_LAPACK, Compadre_USE_MKL, or Compadre_USE_CUDA are ON
   if (Compadre_USE_LAPACK)
-    set(Compadre_USE_MKL OFF)
-    set(Compadre_USE_CUDA OFF)
-  elseif (Compadre_USE_MKL)
     set(Compadre_USE_CUDA OFF)
   endif() #if Compadre_USE_CUDA, all others already set to OFF
   # if all off (default), then set Compadre_USE_LAPACK to ON
-  if ((NOT(Compadre_USE_LAPACK) AND NOT(Compadre_USE_MKL)) AND NOT(Compadre_USE_CUDA))
+  if (NOT(Compadre_USE_LAPACK) AND NOT(Compadre_USE_CUDA))
     set(Compadre_USE_LAPACK ON)
-  endif()
-
-  # ensure TPL_ENABLE_*** configured consistent with Compadre_USE_***
-  if(Compadre_USE_LAPACK AND NOT(TPL_ENABLE_LAPACK))
-    set(Trilinos_ENABLE_Compadre OFF)
-    MESSAGE("Compadre_USE_LAPACK set to ON, but TPL_ENABLE_LAPACK=OFF.")
-  endif()
-  if(Compadre_USE_MKL AND NOT(TPL_ENABLE_MKL))
-    set(Trilinos_ENABLE_Compadre OFF)
-    MESSAGE("Compadre_USE_MKL set to ON, but TPL_ENABLE_MKL=OFF.")
-  endif()
-  if(Compadre_USE_CUDA AND NOT(TPL_ENABLE_CUSOLVER))
-    set(Trilinos_ENABLE_Compadre OFF)
-    MESSAGE("Compadre_USE_CUDA set to ON, but TPL_ENABLE_CUSOLVER=OFF.")
-  endif()
-  if(Compadre_USE_CUDA AND NOT(TPL_ENABLE_CUBLAS))
-    set(Trilinos_ENABLE_Compadre OFF)
-    MESSAGE("Compadre_USE_CUDA set to ON, but TPL_ENABLE_CUBLAS=OFF.")
   endif()
 
   set(Compadre_USE_MATLAB OFF CACHE BOOL "Don't use Matlab when building in Trilinos")
