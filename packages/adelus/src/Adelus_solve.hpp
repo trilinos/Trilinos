@@ -143,15 +143,13 @@ void back_solve6(ZDView& ZV)
   int my_col_id, my_row_id, id_temp;
   int dest_right, dest_left;
 
-  int blas_length;
-
 #ifdef GET_TIMING
   double t1,t2;
-  double allocviewtime,eliminaterhstime,bcastrowtime,updrhstime,sendrhstime,recvrhstime,copyrhstime;
+  double allocviewtime,eliminaterhstime,bcastrowtime,updrhstime,xchgrhstime;
   double totalsolvetime;
-#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
-  double copyhostpinnedtime;
-#endif
+//#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
+//  double copyhostpinnedtime;
+//#endif
 #endif
 
   MPI_Request msgrequest;
@@ -180,21 +178,22 @@ void back_solve6(ZDView& ZV)
   max_bytes = max_bytes*sizeof(ADELUS_DATA_TYPE)*my_rows;
 
 #ifdef GET_TIMING
-  allocviewtime=eliminaterhstime=bcastrowtime=updrhstime=sendrhstime=recvrhstime=copyrhstime=0.0;
-#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
-  copyhostpinnedtime=0.0;
-#endif
-#endif
+  allocviewtime=eliminaterhstime=bcastrowtime=updrhstime=xchgrhstime=0.0;
+//#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
+//  copyhostpinnedtime=0.0;
+//#endif
 
-#ifdef GET_TIMING
   t1 = MPI_Wtime();
 #endif
-  ViewMatrixType row1( "row1", one, nrhs );   // row1: diagonal row (temp variables)
-  ViewMatrixType row2( "row2", my_rows, max_bytes/sizeof(ADELUS_DATA_TYPE)/my_rows );
 
+  ViewMatrixType row1( "row1", one, nrhs );   // row1: diagonal row (temp variables)
+#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
+  View2DHostPinnType h_row2( "h_row2", my_rows, max_bytes/sizeof(ADELUS_DATA_TYPE)/my_rows );
+#else
+  ViewMatrixType row2( "row2", my_rows, max_bytes/sizeof(ADELUS_DATA_TYPE)/my_rows );
+#endif
 #if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
   View2DHostPinnType h_row1( "h_row1", one, nrhs );
-  View2DHostPinnType h_row2( "h_row2", my_rows, max_bytes/sizeof(ADELUS_DATA_TYPE)/my_rows );
   View2DHostPinnType h_rhs ( "h_rhs",  my_rows, nrhs );
 #endif
 
@@ -309,6 +308,9 @@ void back_solve6(ZDView& ZV)
       }
     }
 
+#ifdef GET_TIMING
+    t1 = MPI_Wtime();
+#endif
     if (j != 1-nprocs_row-extra) {
       dest[0] = dest_right;
       if (me != dest[0]) {
@@ -317,25 +319,16 @@ void back_solve6(ZDView& ZV)
 
 #if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
         MPI_Irecv(reinterpret_cast<char *>(h_row2.data()), bytes[0], MPI_CHAR, MPI_ANY_SOURCE, type[0], MPI_COMM_WORLD, &msgrequest);
-#else //CUDA-aware MPI
+#else
         MPI_Irecv(reinterpret_cast<char *>(  row2.data()), bytes[0], MPI_CHAR, MPI_ANY_SOURCE, type[0], MPI_COMM_WORLD, &msgrequest);
 #endif
 
         n_rhs_this = bytes[0]/sizeof(ADELUS_DATA_TYPE)/my_rows;
 
 #if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
-#ifdef GET_TIMING
-        t1 = MPI_Wtime();
-#endif
         Kokkos::deep_copy(subview(h_rhs, Kokkos::ALL(), Kokkos::make_pair(0, n_rhs_this)), subview(ZV, Kokkos::ALL(), Kokkos::make_pair(my_cols, my_cols+n_rhs_this)));
-#ifdef GET_TIMING
-        copyhostpinnedtime += (MPI_Wtime()-t1);
-#endif
 #endif
 
-#ifdef GET_TIMING
-        t1 = MPI_Wtime();
-#endif
         dest[1]  = dest_left;
         bytes[1] = n_rhs_this * sizeof(ADELUS_DATA_TYPE) * my_rows;
         type[1]  = SOROWTYPE+j;
@@ -345,40 +338,20 @@ void back_solve6(ZDView& ZV)
 #else //CUDA-aware MPI
         MPI_Send(reinterpret_cast<char *>(ZV.data()+my_rows*my_cols), bytes[1], MPI_CHAR, dest[1], type[1], MPI_COMM_WORLD);
 #endif
-#ifdef GET_TIMING
-        sendrhstime += (MPI_Wtime()-t1);
-#endif
 
-#ifdef GET_TIMING
-        t1 = MPI_Wtime();
-#endif
         MPI_Wait(&msgrequest,&msgstatus);
-#ifdef GET_TIMING
-        recvrhstime += (MPI_Wtime()-t1);
-#endif
 
-#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
-#ifdef GET_TIMING
-        t1 = MPI_Wtime();
-#endif
-        Kokkos::deep_copy(row2,h_row2);
-#ifdef GET_TIMING
-        copyhostpinnedtime += (MPI_Wtime()-t1);
-#endif
-#endif
-
-#ifdef GET_TIMING
-        t1 = MPI_Wtime();
-#endif
         // Copy row2 -> rhs
-        blas_length = n_rhs_this*my_rows;
-#ifdef KOKKOS_ENABLE_CUDA//Use memcpy for now, can use deep_copy in the future //deep_copy is slower than BLAS XCOPY
+        int blas_length = n_rhs_this*my_rows;
+#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)//Use memcpy for now, can use deep_copy in the future //deep_copy is slower than BLAS XCOPY
+        //Kokkos::deep_copy(subview(ZV, Kokkos::ALL(), Kokkos::make_pair(my_cols, my_cols+n_rhs_this)), subview(h_row2, Kokkos::ALL(), Kokkos::make_pair(0, n_rhs_this)));
+        cudaMemcpy(reinterpret_cast<ADELUS_DATA_TYPE *>(ZV.data()+my_rows*my_cols), reinterpret_cast<ADELUS_DATA_TYPE *>(h_row2.data()), blas_length*sizeof(ADELUS_DATA_TYPE), cudaMemcpyHostToDevice);
+#else
+#ifdef KOKKOS_ENABLE_CUDA
         cudaMemcpy(reinterpret_cast<ADELUS_DATA_TYPE *>(ZV.data()+my_rows*my_cols), reinterpret_cast<ADELUS_DATA_TYPE *>(row2.data()), blas_length*sizeof(ADELUS_DATA_TYPE), cudaMemcpyDeviceToDevice);
 #else
         memcpy(reinterpret_cast<ADELUS_DATA_TYPE *>(ZV.data()+my_rows*my_cols), reinterpret_cast<ADELUS_DATA_TYPE *>(row2.data()), blas_length*sizeof(ADELUS_DATA_TYPE));
 #endif
-#ifdef GET_TIMING
-        copyrhstime += (MPI_Wtime()-t1);
 #endif
       }
       on_col++;
@@ -387,6 +360,10 @@ void back_solve6(ZDView& ZV)
         act_col--;
       }
     }
+#ifdef GET_TIMING
+    xchgrhstime += (MPI_Wtime()-t1);
+#endif
+
   }
 
 #ifdef GET_TIMING
@@ -397,12 +374,10 @@ void back_solve6(ZDView& ZV)
   showtime("Time to eliminate rhs",&eliminaterhstime);
   showtime("Time to bcast temp row",&bcastrowtime);
   showtime("Time to update rhs",&updrhstime);
-  showtime("Time to send in rhs",&sendrhstime);
-  showtime("Time to recv rhs",&recvrhstime);
-#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
-  showtime("Time to copy host pinned mem <--> dev mem",&copyhostpinnedtime);   
-#endif
-  showtime("Time to copy rhs",&copyrhstime);
+//#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
+//  showtime("Time to copy host pinned mem <--> dev mem",&copyhostpinnedtime);   
+//#endif
+  showtime("Time to xchg rhs",&xchgrhstime);
   showtime("Total time in solve",&totalsolvetime);
 #endif
 }
