@@ -904,7 +904,7 @@ namespace MueLu {
         "SPARSE BLOCK RELAXATION", "SPARSE_BLOCK_RELAXATION", "SPARSEBLOCKRELAXATION",
         "LINESMOOTHING_BANDEDRELAXATION", "LINESMOOTHING_BANDED_RELAXATION", "LINESMOOTHING_BANDED RELAXATION",
         "LINESMOOTHING_TRIDIRELAXATION", "LINESMOOTHING_TRIDI_RELAXATION", "LINESMOOTHING_TRIDI RELAXATION",
-        "LINESMOOTHING_TRIDIAGONALRELAXATION", "LINESMOOTHING_TRIDIAGONAL_RELAXATION", "LINESMOOTHING_TRIDIAGONAL RELAXATION",             
+        "LINESMOOTHING_TRIDIAGONALRELAXATION", "LINESMOOTHING_TRIDIAGONAL_RELAXATION", "LINESMOOTHING_TRIDIAGONAL RELAXATION",
         "TOPOLOGICAL", "FAST_ILU", "FAST_IC", "FAST_ILDL"}).count(coarseType)) {
         coarseSmoother = rcp(new TrilinosSmoother(coarseType, coarseParams, overlap));
       } else {
@@ -1280,7 +1280,7 @@ namespace MueLu {
     // === Restriction: Nullspace Scaling ===
     if (paramList.isParameter("restriction: scale nullspace") && paramList.get<bool>("restriction: scale nullspace")) {
       RCP<TentativePFactory> tentPFactory = rcp(new TentativePFactory());
-      Teuchos::ParameterList tentPlist;  
+      Teuchos::ParameterList tentPlist;
       tentPlist.set("Nullspace name","Scaled Nullspace");
       tentPFactory->SetParameterList(tentPlist);
       tentPFactory->SetFactory("Aggregates",manager.GetFactory("Aggregates"));
@@ -1290,7 +1290,7 @@ namespace MueLu {
       R->SetFactory("P",tentPFactory);
     }
 
- 
+
   }
 
   // =====================================================================================================
@@ -1361,7 +1361,7 @@ namespace MueLu {
         switched = true;
       }
 #else
-# ifndef HAVE_MUELU_ZOLTAN
+# ifndef HAVE_MUELU_ZOLTAN2
       bool switched = false;
 # endif
 #endif
@@ -1419,7 +1419,7 @@ namespace MueLu {
         throw Exceptions::RuntimeError("Zoltan2 interface is not available");
 #endif
       }
-     
+
       partitioner->SetFactory("A",                    manager.GetFactory("A"));
       partitioner->SetFactory("number of partitions", manager.GetFactory("number of partitions"));
       if (useCoordinates_)
