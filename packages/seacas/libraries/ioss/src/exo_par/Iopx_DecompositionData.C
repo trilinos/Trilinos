@@ -54,10 +54,6 @@
 #include <numeric>  // for accumulate
 #include <utility>  // for pair, make_pair
 
-#if !defined(NO_PARMETIS_SUPPORT)
-#include <parmetis.h> // for ParMETIS_V3_Mesh2Dual, etc
-#endif
-
 #if !defined(NO_ZOLTAN_SUPPORT)
 #include <zoltan.h>     // for Zoltan_Initialize
 #include <zoltan_cpp.h> // for Zoltan

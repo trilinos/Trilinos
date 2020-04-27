@@ -85,6 +85,15 @@ namespace {
     return dist;
   }
 
+  bool check_valid_decomp_method(const std::string &method)
+  {
+    const auto& valid_methods = Ioss::valid_decomp_methods();
+    if (std::find(valid_methods.begin(), valid_methods.end(), method) != valid_methods.end()) {
+      return true;
+    }
+    return false;
+  }
+
   std::string get_decomposition_method(const Ioss::PropertyManager &properties, int my_processor)
   {
     std::string method = "LINEAR";
@@ -102,32 +111,14 @@ namespace {
       method = Ioss::Utils::uppercase(method);
     }
 
-    if (method != "LINEAR"
-#if !defined(NO_ZOLTAN_SUPPORT)
-        && method != "BLOCK" && method != "CYCLIC" && method != "RANDOM" && method != "RCB" &&
-        method != "RIB" && method != "HSFC"
-#endif
-#if !defined(NO_PARMETIS_SUPPORT)
-        && method != "KWAY" && method != "GEOM_KWAY" && method != "KWAY_GEOM" &&
-        method != "METIS_SFC"
-#endif
-    ) {
+    if (!check_valid_decomp_method(method)) {
       if (my_processor == 0) {
         fmt::print(stderr,
                    "ERROR: Invalid decomposition method specified: '{}'\n"
-                   "       Valid methods: LINEAR"
-#if !defined(NO_ZOLTAN_SUPPORT)
-                   ", BLOCK, CYCLIC, RANDOM, RCB, RIB, HSFC"
-#endif
-#if !defined(NO_PARMETIS_SUPPORT)
-                   ", KWAY, GEOM_KWAY, METIS_SFC"
-#endif
-                   "\n",
-                   method);
+		   "       Valid methods: {}\n", method, fmt::join(Ioss::valid_decomp_methods(), ", "));
       }
       exit(EXIT_FAILURE);
     }
-
     return method;
   }
 
@@ -180,6 +171,20 @@ namespace {
 
 namespace Ioss {
 
+  const std::vector<std::string> &valid_decomp_methods()
+  {
+    static const std::vector<std::string> valid_methods{
+      "LINEAR"
+#if !defined(NO_ZOLTAN_SUPPORT)
+	,"BLOCK", "CYCLIC", "RANDOM", "RCB", "RIB", "HSFC"
+#endif
+#if !defined(NO_PARMETIS_SUPPORT)
+      ,"KWAY", "KWAY_GEOM", "GEOM_KWAY", "METIS_SFC"
+#endif
+	};
+    return valid_methods;
+  }
+
   template Decomposition<int>::Decomposition(const Ioss::PropertyManager &props, MPI_Comm comm);
   template Decomposition<int64_t>::Decomposition(const Ioss::PropertyManager &props, MPI_Comm comm);
 
@@ -197,14 +202,6 @@ namespace Ioss {
     if (!m_showProgress) {
       Utils::check_set_bool_property(props, "ENABLE_TRACING", m_showProgress);
     }
-  }
-
-  template bool                Decomposition<int64_t>::needs_centroids() const;
-  template bool                Decomposition<int>::needs_centroids() const;
-  template <typename INT> bool Decomposition<INT>::needs_centroids() const
-  {
-    return (m_method == "RCB" || m_method == "RIB" || m_method == "HSFC" ||
-            m_method == "GEOM_KWAY" || m_method == "KWAY_GEOM" || m_method == "METIS_SFC");
   }
 
   template void Decomposition<int>::generate_entity_distributions(size_t globalNodeCount,
@@ -781,13 +778,19 @@ namespace Ioss {
         exit(EXIT_FAILURE);
       }
 
-      static_assert(sizeof(double) == sizeof(real_t),
-                    "Parmetis real_t size must match double size");
-
-      rc = ParMETIS_V3_PartGeomKway(element_dist, dual_xadj, dual_adjacency, elm_wgt, elm_wgt,
-                                    &wgt_flag, &num_flag, &ndims, (real_t *)m_centroids.data(),
-                                    &ncon, &nparts, tp_wgts.data(), ub_vec.data(), options.data(),
-                                    &edge_cuts, elem_partition, &m_comm);
+      if (sizeof(double) == sizeof(real_t)) {
+	rc = ParMETIS_V3_PartGeomKway(element_dist, dual_xadj, dual_adjacency, elm_wgt, elm_wgt,
+				      &wgt_flag, &num_flag, &ndims, (real_t *)m_centroids.data(),
+				      &ncon, &nparts, tp_wgts.data(), ub_vec.data(), options.data(),
+				      &edge_cuts, elem_partition, &m_comm);
+      }
+      else {
+	std::vector<real_t> centroids(m_centroids.begin(), m_centroids.end());
+	rc = ParMETIS_V3_PartGeomKway(element_dist, dual_xadj, dual_adjacency, elm_wgt, elm_wgt,
+				      &wgt_flag, &num_flag, &ndims, centroids.data(),
+				      &ncon, &nparts, tp_wgts.data(), ub_vec.data(), options.data(),
+				      &edge_cuts, elem_partition, &m_comm);
+      }
 
 #if IOSS_DEBUG_OUTPUT
       fmt::print(stderr, "Edge Cuts = {}\n", edge_cuts);
@@ -802,17 +805,22 @@ namespace Ioss {
       }
     }
     else if (m_method == "METIS_SFC") {
-      static_assert(sizeof(double) == sizeof(real_t),
-                    "Parmetis real_t size must match double size");
-
-      int rc = ParMETIS_V3_PartGeom(element_dist, &ndims, (real_t *)m_centroids.data(),
-                                    elem_partition, &m_comm);
-
+      int rc = METIS_OK;
+      if (sizeof(double) == sizeof(real_t)) {
+	rc = ParMETIS_V3_PartGeom(element_dist, &ndims, (real_t *)m_centroids.data(),
+				  elem_partition, &m_comm);
+      }
+      else {
+	std::vector<real_t> centroids(m_centroids.begin(), m_centroids.end());
+	rc = ParMETIS_V3_PartGeom(element_dist, &ndims, centroids.data(),
+				  elem_partition, &m_comm);
+      }
       if (rc != METIS_OK) {
         fmt::print(stderr, "ERROR: Problem during call to ParMETIS_V3_PartGeom decomposition\n");
         exit(EXIT_FAILURE);
       }
     }
+    m_centroids.clear();
   }
 #endif
 
