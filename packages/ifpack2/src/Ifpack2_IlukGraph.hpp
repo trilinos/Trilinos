@@ -527,9 +527,15 @@ void IlukGraph<GraphType>::initialize()
           Kokkos::RangePolicy<execution_space>(0, NumMyRows),
           KOKKOS_LAMBDA(const int i)
           {
-            numEntPerRow_d(i) = ceil(static_cast<double>(numEntPerRow_d(i)) * overalloc);
+            const auto numRowEnt = numEntPerRow_d(i);
+            numEntPerRow_d(i) = ceil(static_cast<double>((numRowEnt != 0 ? numRowEnt : 1)) * overalloc);
           });
       }
+      const int localInsertError = insertError ? 1 : 0;
+      int globalInsertError = 0;
+      reduceAll (* (OverlapGraph_->getRowMap ()->getComm ()), REDUCE_SUM, 1,
+                 &localInsertError, &globalInsertError);
+      insertError = globalInsertError > 0;
     }
   } while (insertError);  // do until all insertions complete successfully
 
