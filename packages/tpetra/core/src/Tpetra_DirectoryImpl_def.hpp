@@ -435,14 +435,16 @@ namespace Tpetra {
       LookupStatus res = AllIDsPresent;
 
       // Find the first initialized GID for search below
-      auto it = std::find_if(
-        allMinGIDs_.begin(),
-        allMinGIDs_.end()-1,
-        [](GO const gid) { return gid != noGIDsOnProc; }
-      );
+      int firstProcWithGIDs;
+      for (firstProcWithGIDs = 0; firstProcWithGIDs < numProcs;
+           firstProcWithGIDs++) {
+        if (allMinGIDs_[firstProcWithGIDs] != noGIDsOnProc) break;
+      }
 
       // If Map is empty, return invalid values for all requested lookups
-      if (it == allMinGIDs_.end()-1) {
+      // This case should not happen, as an empty Map is not considered
+      // Distributed.
+      if (firstProcWithGIDs == numProcs) {
         // No entries in Map
         res = (globalIDs.size() > 0) ? IDNotPresent : AllIDsPresent;
         std::fill(nodeIDs.begin(), nodeIDs.end(), -1);
@@ -451,12 +453,9 @@ namespace Tpetra {
         return res;
       }
 
-      // First non-empty processor
-      const auto firstProcWithGIDs = as<GO>(std::distance(allMinGIDs_.begin(),it));
-
       const GO one = as<GO> (1);
       const GO nOverP = as<GO> (map.getGlobalNumElements ()
-                              / as<global_size_t>(numProcs - firstProcWithGIDs));
+                      / as<global_size_t>(numProcs - firstProcWithGIDs));
 
       // Map is distributed but contiguous.
       typename ArrayView<int>::iterator procIter = nodeIDs.begin();
