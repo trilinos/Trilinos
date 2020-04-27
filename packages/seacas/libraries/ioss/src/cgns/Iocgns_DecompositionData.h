@@ -60,12 +60,6 @@
 
 #include <cgnslib.h>
 
-#if 0
-#if !defined(NO_PARMETIS_SUPPORT)
-#include <parmetis.h>
-#endif
-#endif
-
 #undef MPICPP
 #if !defined(NO_ZOLTAN_SUPPORT)
 #include <zoltan_cpp.h>
