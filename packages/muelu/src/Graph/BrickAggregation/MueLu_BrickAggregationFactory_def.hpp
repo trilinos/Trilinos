@@ -270,7 +270,6 @@ namespace MueLu {
         if(aggGID != MUELU_UNAGGREGATED) 
           vertex2AggId[LID] = AggG2L[aggGID];
           procWinner  [LID] = AggG2R[aggGID];
-        }
       }
     }
 
