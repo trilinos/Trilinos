@@ -2545,7 +2545,7 @@ void Assembler<Real>::setParallelStructure(Teuchos::ParameterList &parlist,
   matR1Graph_  = matJ1Graph_;
   matH11Graph_ = matJ1Graph_;
 
-  matJ2Graph_ = ROL::makePtr<Tpetra::CrsGraph<>>(myUniqueStateMap_, maxEntriesPerRow2);
+  matJ2Graph_ = ROL::makePtr<Tpetra::CrsGraph<>>(myUniqueStateMap_, std::max(maxEntriesPerRow1,maxEntriesPerRow2));
   for (int i=0; i<numCells_; ++i) {
     for (int j=0; j<numLocalDofs1; ++j) {
       matJ2Graph_->insertGlobalIndices(GO(cellDofs1(myCellIds_[i],j)),
