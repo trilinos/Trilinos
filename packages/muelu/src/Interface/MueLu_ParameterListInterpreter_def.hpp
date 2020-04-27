@@ -1016,6 +1016,9 @@ namespace MueLu {
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: brick y size", int, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: brick z size", int, aggParams);
       aggFactory->SetParameterList(aggParams);
+      // make sure that the aggregation factory has all necessary data
+      aggFactory->SetFactory("DofsPerNode", manager.GetFactory("Graph"));
+      aggFactory->SetFactory("Graph", manager.GetFactory("Graph"));
 
       if (levelID > 1) {
         // We check for levelID > 0, as in the interpreter aggFactory for

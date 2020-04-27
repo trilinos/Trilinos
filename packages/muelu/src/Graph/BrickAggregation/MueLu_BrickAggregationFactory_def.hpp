@@ -66,6 +66,7 @@
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_Utilities.hpp"
+#include "MueLu_GraphBase.hpp"
 
 namespace MueLu {
 
@@ -81,6 +82,8 @@ namespace MueLu {
 
     validParamList->set< RCP<const FactoryBase> >("A",           Teuchos::null, "Generating factory for matrix");
     validParamList->set< RCP<const FactoryBase> >("Coordinates", Teuchos::null, "Generating factory for coordinates");
+    validParamList->set< RCP<const FactoryBase> >("Graph"      , Teuchos::null, "Generating factory of the graph");
+    validParamList->set< RCP<const FactoryBase> >("DofsPerNode", null, "Generating factory for variable \'DofsPerNode\', usually the same as for \'Graph\'");
 
     return validParamList;
   }
@@ -88,6 +91,8 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
     Input(currentLevel, "A");
+    Input(currentLevel, "Graph");
+    Input(currentLevel, "DofsPerNode");
     Input(currentLevel, "Coordinates");
   }
 
@@ -142,7 +147,6 @@ namespace MueLu {
     typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> MultiVector_d;
 
     const ParameterList& pL = GetParameterList();
-
     RCP<MultiVector_d> coords = Get<RCP<MultiVector_d> >(currentLevel, "Coordinates");
     RCP<Matrix>        A      = Get< RCP<Matrix> >      (currentLevel, "A");
     RCP<const Map>     rowMap = A->getRowMap();
@@ -254,6 +258,22 @@ namespace MueLu {
         procWinner  [LID] = AggG2R[aggGID];
       }
     }
+
+#if 1
+    // Do not aggregate Dirichlet boundaries
+    RCP<const FactoryBase> graphFact = GetFactory("Graph");   
+    RCP<const GraphBase> graph = Get< RCP<GraphBase> >(currentLevel, "Graph");
+    ArrayRCP<const bool> dirichletBoundaryMap = graph->GetBoundaryNodeMap();
+    if (dirichletBoundaryMap != Teuchos::null) {
+      for (LO i = 0; i < (LO)dirichletBoundaryMap.size(); i++)
+        if (dirichletBoundaryMap[i] == true) {
+          vertex2AggId[i] = MUELU_UNAGGREGATED;
+          procWinner[i]   = MUELU_UNASSIGNED;
+        }
+    }
+#endif
+
+
 
     GO numGlobalRemote;
     MueLu_sumAll(comm, as<GO>(numRemote), numGlobalRemote);

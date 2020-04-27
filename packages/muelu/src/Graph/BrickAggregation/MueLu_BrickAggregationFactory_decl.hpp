@@ -63,6 +63,7 @@
 #include "MueLu_Aggregates_fwd.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Utilities_fwd.hpp"
+#include "MueLu_GraphBase.hpp"
 
 /*!
   @class BrickAggregationFactory
