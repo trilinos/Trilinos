@@ -95,8 +95,6 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
     Input(currentLevel, "A");
-    Input(currentLevel, "Graph");
-    Input(currentLevel, "DofsPerNode");
     Input(currentLevel, "Coordinates");
   }
 
