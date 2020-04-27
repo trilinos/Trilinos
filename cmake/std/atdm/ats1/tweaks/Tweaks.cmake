@@ -18,9 +18,18 @@ ATDM_SET_ENABLE(SEACASIoss_exodus32_to_exodus32_DISABLE ON)
 ATDM_SET_ENABLE(SEACASIoss_exodus32_to_exodus32_pnetcdf_DISABLE ON)
 ATDM_SET_ENABLE(SEACASIoss_exodus32_to_exodus64_DISABLE ON)
 
+# Disable muelu tests that fail to build due to
+# '"Kokkos::Compat" has no member "KokkosSerialWrapperNode"'
+#ATDM_SET_ENABLE(MueLu_Maxwell3D-Tpetra_MPI_4_DISABLE ON)
+#ATDM_SET_ENABLE(MueLu_Maxwell3D_EXE_DISABLE ON)
+
+#message("ATDM_NODE_TYPE=${ATDM_NODE_TYPE}")
+#message("ATDM_CONFIG_KOKKOS_ARCH=$ENV{ATDM_CONFIG_KOKKOS_ARCH}")
+##message("Kokkos_ARCH_HSW=${Kokkos_ARCH_HSW}")
+
 IF (ATDM_NODE_TYPE STREQUAL "OPENMP")
   # Disable tests for all OpenMP builds for this system
-  IF (Kokkos_ARCH_HSW)
+  IF ("$ENV{ATDM_CONFIG_KOKKOS_ARCH}" STREQUAL "HSW")
     # Disable SEACAS test that fails on mutrino (#2815)
     ATDM_SET_ENABLE(SEACASExodus_exodus_unit_tests_DISABLE ON)
   ENDIF()

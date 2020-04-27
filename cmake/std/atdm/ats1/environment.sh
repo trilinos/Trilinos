@@ -72,6 +72,9 @@ fi
 
 echo "Using ats1 compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE and KOKKOS_ARCH=$ATDM_CONFIG_KOKKOS_ARCH"
 
+# Exclude bad nodes.
+export ATDM_CONFIG_SBATCH_EXTRA_ARGS="$ATDM_CONFIG_SBATCH_EXTRA_ARGS --exclude=nid00022"
+
 export OMP_NUM_THREADS=2
 
 # Common modules and paths
