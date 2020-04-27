@@ -39,23 +39,12 @@ if (${PROJECT_NAME}_TRIBITS_DIR) # TriBITS CMake Project
       "Set to OFF if non-threadsafe version of LAPACK being used"
       ON )
 
-  TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_USE_LAPACK
-      Compadre_USE_LAPACK
-      "Either Compadre_USE_LAPACK or Compadre_USE_CUDA must be set to ON. LAPACK is default."
-      OFF )
-
-  TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_USE_CUDA
-      Compadre_USE_CUDA
-      "Either Compadre_USE_LAPACK or Compadre_USE_CUDA must be set to ON. LAPACK is default."
-      OFF )
-
-  # ensure only one of Compadre_USE_LAPACK, Compadre_USE_MKL, or Compadre_USE_CUDA are ON
-  if (Compadre_USE_LAPACK)
-    set(Compadre_USE_CUDA OFF)
-  endif() #if Compadre_USE_CUDA, all others already set to OFF
-  # if all off (default), then set Compadre_USE_LAPACK to ON
-  if (NOT(Compadre_USE_LAPACK) AND NOT(Compadre_USE_CUDA))
-    set(Compadre_USE_LAPACK ON)
+  if ("${TPL_ENABLE_CUDA}" STREQUAL "ON")
+      set(Compadre_USE_LAPACK OFF CACHE BOOL "Whether to use LAPACK")
+      set(Compadre_USE_CUDA   ON  CACHE BOOL "Whether to use CUDA")
+  else ()
+      set(Compadre_USE_LAPACK ON  CACHE BOOL "Whether to use LAPACK")
+      set(Compadre_USE_CUDA   OFF CACHE BOOL "Whether to use CUDA")
   endif()
 
   set(Compadre_USE_MATLAB OFF CACHE BOOL "Don't use Matlab when building in Trilinos")

@@ -100,7 +100,7 @@ void GMLS::applyTargetsToCoefficients(const member_type& teamMember, scratch_vec
 
     // GPU
     for (int e=0; e<num_evaluation_sites; ++e) {
-        for (int j=0; j<_operations.size(); ++j) {
+        for (int j=0; j<(int)_operations.size(); ++j) {
             for (int k=0; k<_lro_output_tile_size[j]; ++k) {
                 for (int m=0; m<_lro_input_tile_size[j]; ++m) {
                     int offset_index_jmke = getTargetOffsetIndexDevice(j,m,k,e);
