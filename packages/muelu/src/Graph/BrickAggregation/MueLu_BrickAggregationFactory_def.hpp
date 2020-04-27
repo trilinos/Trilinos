@@ -274,11 +274,11 @@ namespace MueLu {
     }
 
     // Sanity checks
-    for (LO LID = 0; LID < numPoints; LID++) {
+    /*    for (LO LID = 0; LID < numPoints; LID++) {
       TEUCHOS_TEST_FOR_EXCEPTION( (isDirichlet(LID)  && vertex2AggId[LID]!=GO_INVALID) ||
                                   (!isDirichlet(LID) && vertex2AggId[LID]==GO_INVALID),
                                   Exceptions::RuntimeError, "Dirichlet detection failed");
-    }
+                                  }*/
 
     GO numGlobalRemote;
     MueLu_sumAll(comm, as<GO>(numRemote), numGlobalRemote);
