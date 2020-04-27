@@ -54,6 +54,8 @@
 #endif
 
 namespace Ioss {
+  const std::vector<std::string> &valid_decomp_methods();
+
   class BlockDecompositionData
   {
   public:
@@ -160,7 +162,11 @@ namespace Ioss {
     size_t file_node_offset() const { return m_nodeOffset; }
     size_t file_elem_offset() const { return m_elementOffset; }
 
-    bool needs_centroids() const;
+    bool needs_centroids() const
+    {
+      return (m_method == "RCB" || m_method == "RIB" || m_method == "HSFC" ||
+              m_method == "GEOM_KWAY" || m_method == "KWAY_GEOM" || m_method == "METIS_SFC");
+    }
 
     void generate_entity_distributions(size_t globalNodeCount, size_t globalElementCount);
 
