@@ -179,7 +179,7 @@ namespace Ioss {
 	,"BLOCK", "CYCLIC", "RANDOM", "RCB", "RIB", "HSFC"
 #endif
 #if !defined(NO_PARMETIS_SUPPORT)
-	,"KWAY", "GEOM_KWAY", "METIS_SFC"
+      ,"KWAY", "KWAY_GEOM", "GEOM_KWAY", "METIS_SFC"
 #endif
 	};
     return valid_methods;
