@@ -63,7 +63,7 @@ function atdm_run_script_on_compute_node {
   if [ "${account_input}" != "" ] ; then
     account=${account_input}
   elif [[ "${ATDM_CONFIG_SBATCH_DEFAULT_ACCOUNT}" != "" ]] ; then
-    timeout=${ATDM_CONFIG_SBATCH_DEFAULT_ACCOUNT}
+    account=${ATDM_CONFIG_SBATCH_DEFAULT_ACCOUNT}
   else
     account=fy150090
   fi

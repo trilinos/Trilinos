@@ -26,6 +26,8 @@ export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG="--ntasks"
 # Ensure that no more than 36 tasks, per srun command, are launched.
 export ATDM_CONFIG_MPI_PRE_FLAGS="--mpi=pmi2;--ntasks-per-node;36"
 
+export ATDM_CONFIG_SBATCH_DEFAULT_ACCOUNT=IGNORED
+
 # Common sparc tpl path values
 sparc_tpl_prefix_path="/usr/projects/sparc/tpls"
 system_name="ats1"
