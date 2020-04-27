@@ -11,10 +11,6 @@ testAll() {
 
   ATDM_CONFIG_SYSTEM_DIR=${ATDM_CONFIG_SCRIPT_DIR}/ats1
 
-  ATDM_CONFIG_BUILD_NAME=default
-  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
-  ${_ASSERT_EQUALS_} INTEL-19.0.4_MPICH-7.7.6 ${ATDM_CONFIG_COMPILER}
-
   ATDM_CONFIG_BUILD_NAME=before-intel-19.0.4-mpich-7.7.6_after
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
   ${_ASSERT_EQUALS_} INTEL-19.0.4_MPICH-7.7.6 ${ATDM_CONFIG_COMPILER}
@@ -30,6 +26,10 @@ testAll() {
   ATDM_CONFIG_BUILD_NAME=before_intel-19-after
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
   ${_ASSERT_EQUALS_} INTEL-19.0.4_MPICH-7.7.6 ${ATDM_CONFIG_COMPILER}
+
+  ATDM_CONFIG_BUILD_NAME=default
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} INTEL-18.0.5_MPICH-7.7.6 ${ATDM_CONFIG_COMPILER}
 
   ATDM_CONFIG_BUILD_NAME=before-intel-after
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
