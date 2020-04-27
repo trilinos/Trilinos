@@ -718,7 +718,7 @@ void regionalToComposite(const std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdin
   return;
 } // regionalToComposite
 
-/*! \brief Compute the residual \f$r = b - Ax\f$
+/*! \brief Compute the residual \f$r = b - Ax\f$ using two rounds of communication
  *
  *  The residual is computed based on matrices and vectors in a regional layout.
  *  1. Compute y = A*x in regional layout.
@@ -770,12 +770,61 @@ computeResidual(Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, No
   return regRes;
 } // computeResidual
 
+/*! \brief Compute local data needed to perform a MatVec in region format
+
+ */
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+void SetupMatVec(const Teuchos::RCP<Xpetra::MultiVector<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> >& interfaceGIDsMV,
+                 const Teuchos::RCP<Xpetra::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> >& regionsPerGIDWithGhosts,
+                 const std::vector<Teuchos::RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > >& regionRowMap,
+                 const std::vector<Teuchos::RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > >& rowImportPerGrp,
+                 Teuchos::Array<LocalOrdinal>& regionMatVecLIDs,
+                 Teuchos::RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter) {
+#include "Xpetra_UseShortNamesOrdinal.hpp"
+
+  const LO  maxRegPerProc = static_cast<LO>(regionRowMap.size());
+  const LO  maxRegPerGID  = static_cast<LO>(regionsPerGIDWithGhosts->getNumVectors());
+  const int myRank        = regionRowMap[0]->getComm()->getRank();
+
+  interfaceGIDsMV->replaceMap(regionRowMap[0]);
+  Array<RCP<Xpetra::MultiVector<GO, LO, GO, NO> > > interfaceGIDsPerGrp(maxRegPerProc);
+  interfaceGIDsPerGrp[0] = interfaceGIDsMV;
+  sumInterfaceValues(interfaceGIDsPerGrp, regionRowMap, rowImportPerGrp);
+
+  Teuchos::Array<GO> regionMatVecGIDs;
+  Array<ArrayRCP<const LO> > regionsPerGIDWithGhostsData(maxRegPerGID);
+  Array<ArrayRCP<const GO> > interfaceGIDsData(maxRegPerGID);
+  for(LO regionIdx = 0; regionIdx < maxRegPerGID; ++regionIdx) {
+    regionsPerGIDWithGhostsData[regionIdx] = regionsPerGIDWithGhosts->getData(regionIdx);
+    interfaceGIDsData[regionIdx]           = interfaceGIDsPerGrp[0]->getData(regionIdx);
+
+    for(LO idx = 0; idx < static_cast<LO>(regionsPerGIDWithGhostsData[regionIdx].size()); ++idx) {
+      if((regionsPerGIDWithGhostsData[regionIdx][idx] != -1)
+         && (regionsPerGIDWithGhostsData[regionIdx][idx] != myRank)) {
+        regionMatVecLIDs.push_back(idx);
+        regionMatVecGIDs.push_back(interfaceGIDsData[regionIdx][idx]);
+      }
+    }
+  }
+
+  // std::cout << "p=" << myRank << " | regionMatVecGIDs: " << regionMatVecGIDs << std::endl;
+  // std::cout << "p=" << myRank << " | regionMatVecLIDs: " << regionMatVecLIDs << std::endl;
+
+  RCP<Map> regionInterfaceMap = Xpetra::MapFactory<LO,GO,Node>::Build(regionRowMap[0]->lib(),
+                                                          Teuchos::OrdinalTraits<GO>::invalid(),
+                                                          regionMatVecGIDs(),
+                                                          regionRowMap[0]->getIndexBase(),
+                                                          regionRowMap[0]->getComm());
+
+  regionInterfaceImporter = ImportFactory::Build(regionRowMap[0], regionInterfaceMap);
+
+} // SetupMatVec
+
 /*! \brief Compute a matrix vector product \f$Y = beta*Y + alpha*Ax\f$
  *
  *  The residual is computed based on matrices and vectors in a regional layout.
  *  1. Compute y = A*x in regional layout.
  *  2. Sum interface values of y to account for duplication of interface DOFs.
- *  3. Compute r = b - y
  */
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MatVec(const Scalar alpha,
@@ -814,6 +863,44 @@ void MatVec(const Scalar alpha,
   }
 
   tm = Teuchos::null;
-}
+} // MatVec
+
+/*! \brief Compute the residual \f$r = b - Ax\f$ with pre-computed communication patterns
+ *
+ *  The residual is computed based on matrices and vectors in a regional layout.
+ *  1. Compute and sum interface values of y = A*x in regional layout using the fast MatVev
+ *  2. Compute residual via r = b - y
+ */
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void
+computeResidual(Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& regRes, ///< residual (to be evaluated)
+                const Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > regX, ///< left-hand side (solution)
+                const Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > regB, ///< right-hand side (forcing term)
+                const std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > regionGrpMats, ///< matrix in region format
+                const Teuchos::ParameterList& params ///< parameter with fast MatVec parameters and pre-computed communication patterns
+    )
+{
+#include "Xpetra_UseShortNames.hpp"
+  using TST = Teuchos::ScalarTraits<Scalar>;
+  using Teuchos::TimeMonitor;
+
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(regX.size()>1, "Fast MatVec only implemented for one region per group.");
+
+  RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("computeResidual: use fast MatVec")));
+
+  // Get pre-communicated communication patterns for the fast MatVec
+  const Array<LocalOrdinal> regionInterfaceLIDs = params.get<Array<LO>>("Fast MatVec: interface LIDs");
+  const RCP<Import> regionInterfaceImporter = params.get<RCP<Import>>("Fast MatVec: interface importer");
+
+  // Step 1: Compute region version of y = Ax
+  RCP<Vector> aTimesX = VectorFactory::Build(regionGrpMats[0]->getRangeMap(), true);
+  MatVec(TST::one(), regionGrpMats[0], regX[0],
+      TST::zero(), regionInterfaceImporter, regionInterfaceLIDs, aTimesX);
+
+  // Step 2: Compute region version of r = b - y
+  regRes[0]->update(TST::one(), *regB[0], -TST::one(), *aTimesX, TST::zero());
+
+  tm = Teuchos::null;
+} // computeResidual
 
 #endif // MUELU_SETUPREGIONMATRIX_DEF_HPP

@@ -1047,14 +1047,17 @@ void createRegionData(const int numDimensions,
 } // createRegionData
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-void MakeRegionPerGIDWithGhosts(const Teuchos::RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > nodeMap,
-                                const Teuchos::RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > dofMap,
+void MakeRegionPerGIDWithGhosts(const Teuchos::RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& nodeMap,
+                                const Teuchos::RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& regionRowMap,
+                                const Teuchos::RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& rowImport,
                                 const int maxRegPerGID,
                                 const LocalOrdinal numDofsPerNode,
-                                const Teuchos::Array<LocalOrdinal> lNodesPerDir,
-                                const Teuchos::Array<GlobalOrdinal> sendGIDs,
-                                const Teuchos::Array<int> sendPIDs,
-                                Teuchos::RCP<Xpetra::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> >& regionsPerGID) {
+                                const Teuchos::Array<LocalOrdinal>&  lNodesPerDir,
+                                const Teuchos::Array<GlobalOrdinal>& sendGIDs,
+                                const Teuchos::Array<int>& sendPIDs,
+                                const Teuchos::Array<LocalOrdinal>& interfaceRegionLIDs,
+                                Teuchos::RCP<Xpetra::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> >& regionsPerGIDWithGhosts,
+                                Teuchos::RCP<Xpetra::MultiVector<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> >& interfaceGIDsMV) {
   using LO = LocalOrdinal;
   using GO = GlobalOrdinal;
   using NO = Node;
@@ -1062,9 +1065,14 @@ void MakeRegionPerGIDWithGhosts(const Teuchos::RCP<Xpetra::Map<LocalOrdinal, Glo
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
 
+  const RCP<const Xpetra::Map<LO,GO,NO> > dofMap       = rowImport->getSourceMap();
+  const RCP<const Xpetra::Map<LO,GO,NO> > quasiRegionRowMap = rowImport->getTargetMap();
   const int myRank = dofMap->getComm()->getRank();
 
-  regionsPerGID = Xpetra::MultiVectorFactory<LO, LO, GO, NO>::Build(dofMap, maxRegPerGID, false);
+  RCP<Xpetra::MultiVector<LO, LO, GO, NO> >regionsPerGID =
+    Xpetra::MultiVectorFactory<LO, LO, GO, NO>::Build(dofMap, maxRegPerGID, false);
+  regionsPerGIDWithGhosts =
+    Xpetra::MultiVectorFactory<LO, LO, GO, NO>::Build(quasiRegionRowMap, maxRegPerGID, false);
 
   { // Scope for regionsPerGIDView
     Array<ArrayRCP<LO> > regionsPerGIDView(maxRegPerGID);
@@ -1095,6 +1103,80 @@ void MakeRegionPerGIDWithGhosts(const Teuchos::RCP<Xpetra::Map<LocalOrdinal, Glo
       }
     }
   }
+
+  regionsPerGIDWithGhosts->doImport(*regionsPerGID, *rowImport, Xpetra::INSERT);
+
+  interfaceGIDsMV = Xpetra::MultiVectorFactory<GO, LO, GO, NO>::Build(quasiRegionRowMap, maxRegPerGID, false);
+  interfaceGIDsMV->putScalar(Teuchos::OrdinalTraits<GO>::zero());
+  const LO numRegionInterfaceLIDs = static_cast<LO>(interfaceRegionLIDs.size());
+  { // Scope for interfaceGIDsPerRegion
+    Array<ArrayRCP<LO> > regionsPerGIDWithGhostsData(maxRegPerGID);
+    Array<ArrayRCP<GO> > interfaceGIDsMVData(maxRegPerGID);
+    for(int regionIdx = 0; regionIdx < maxRegPerGID; ++regionIdx) {
+      regionsPerGIDWithGhostsData[regionIdx] = regionsPerGIDWithGhosts->getDataNonConst(regionIdx);
+      interfaceGIDsMVData[regionIdx] = interfaceGIDsMV->getDataNonConst(regionIdx);
+      for(LO idx = 0; idx < numRegionInterfaceLIDs; ++idx) {
+        LO LID = interfaceRegionLIDs[idx];
+        if(regionsPerGIDWithGhostsData[regionIdx][LID] == myRank) {
+          interfaceGIDsMVData[regionIdx][LID] = regionRowMap->getGlobalElement(LID);
+        }
+      }
+    }
+
+  }
+
 } // MakeRegionPerGIDWithGhosts
+
+/*!
+\brief Extract list of region GIDs of all interface DOFs from the region row map
+
+Starting from the known list of \c interfaceRegionLIDs, we know, which entries in the \c regionRowMap
+refert to interface DOFs, so we can grab them and stick them into the list of \c interfaceRegionGIDs.
+*/
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+void ExtractListOfInterfaceRegionGIDs(
+    std::vector<Teuchos::RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > >& regionRowMap,
+    const Teuchos::Array<LocalOrdinal>& interfaceRegionLIDs, Teuchos::Array<GlobalOrdinal>& interfaceRegionGIDs)
+{
+  interfaceRegionGIDs.resize(interfaceRegionLIDs.size());
+  for(LocalOrdinal interfaceIdx = 0; interfaceIdx < static_cast<LocalOrdinal>(interfaceRegionLIDs.size()); ++interfaceIdx) {
+    interfaceRegionGIDs[interfaceIdx] =
+      regionRowMap[0]->getGlobalElement(interfaceRegionLIDs[interfaceIdx]);
+  }
+} // ExtractListOfInterfaceRegionGIDs
+
+/*!
+\brief Constructing coarse level regionPerGIDWith rank from finer level
+
+The goal is to construct the coarse level without communication,
+but simply by following how nodes are aggregated in the prolongator.
+
+*/
+// template <class LocalOrdinal, class GlobalOrdinal, class Node>
+// void ComputeCoarseRegionPerGIDWithGhosts(const int maxRegPerGID, const LO currentLevel) {
+//   using GO = GlobalOrdinal;
+//   using LO = LocalOrdinal;
+
+//   Array<ArrayRCP<const LO> > regionPerGIDWithGhostsFine(maxRegPerGID);
+//   Array<ArrayRCP<LO> > regionPerGIDWithGhostsCoarse(maxRegPerGID);
+//   for(size_t idx = 0; idx < static_cast<size_t>(maxRegPerGID); ++idx) {
+//     regionPerGIDWithGhostsFine[idx]   = regionsPerGIDWithGhosts[currentLevel - 1]->getData(idx);
+//     regionPerGIDWithGhostsCoarse[idx] = regionsPerGIDWithGhosts[currentLevel]->getDataNonConst(idx);
+//   }
+
+//   for(size_t fineIdx = 0; fineIdx < numFineRegionNodes; ++fineIdx) {
+//     ArrayView<const LO> coarseRegionLID; // Should contain a single value
+//     ArrayView<const SC> dummyData;       // Should contain a single value
+//     regProlong[currentLevel][0]->getLocalRowView(fineIdx,
+//                                                  coarseRegionLID,
+//                                                  dummyData);
+//     out << "fineLID: " << fineIdx << ", coarseLID: " << coarseRegionLID[0] << ", PIDs: { ";
+//     for(size_t idx = 0; idx < static_cast<size_t>(maxRegPerGID); ++idx) {
+//       out << regionPerGIDWithGhostsFine[idx][fineIdx] << " ";
+//     }
+//     out << "}" << std::endl;
+//   }
+
+// } // ComputeCoarseRegionPerGIDWithGhosts
 
 #endif // MUELU_SETUPREGIONUTILITIES_HPP
