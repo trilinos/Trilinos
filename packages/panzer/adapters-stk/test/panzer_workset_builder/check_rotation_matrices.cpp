@@ -60,6 +60,7 @@ using Teuchos::rcp;
 #include "Panzer_IntrepidBasisFactory.hpp"
 #include "Panzer_IntegrationDescriptor.hpp"
 #include "Panzer_DOFManager.hpp"
+#include "Panzer_SubcellConnectivity.hpp"
 
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_CubeHexMeshFactory.hpp"
@@ -147,6 +148,7 @@ namespace panzer {
     const int num_cells         = num_real_cells + num_virtual_cells;
     
     const int faces_per_cell    = 6; // hexahedron
+    auto & face_connectivity    = workset.getFaceConnectivity();
     
     // sanity check on cell counts: should have 6 virtual, 1 owned
     TEST_EQUALITY(num_owned_cells,   1);
@@ -171,12 +173,29 @@ namespace panzer {
       // rule for virtual cells is that they have rotation matrices defined only on local face ordinal 0;
       // the rotation matrices for the other faces of the virtual cell should be all 0s.
       const bool is_virtual = (c >= num_real_cells);
+      int virtual_local_face_id = -1; // the virtual cell face that adjoins the real cell
+      
+      if (is_virtual)
+      {
+        // determine which face adjoins the real cell:
+        int face_ordinal = -1;
+        for (int local_face_id=0; local_face_id<faces_per_cell; local_face_id++)
+        {
+          face_ordinal = face_connectivity.subcellForCell(c, local_face_id);
+          if (face_ordinal >= 0)
+          {
+            virtual_local_face_id = local_face_id;
+            break;
+          }
+        }
+      }
+      
       for(int p=0;p<num_points;p++) {
         const int local_face_ordinal = p / points_per_face;
         bool expect_rotation_matrix = true; // if false, we expect all 0s
         if (is_virtual)
         {
-          expect_rotation_matrix = (local_face_ordinal == 0);
+          expect_rotation_matrix = (local_face_ordinal == virtual_local_face_id);
         }
         out << "Cell,Point = " << c << "," << p << std::endl;
         out << "   " << rot_matrices(c,p,0,0) << " " << rot_matrices(c,p,0,1) << " " << rot_matrices(c,p,0,2) << std::endl;
