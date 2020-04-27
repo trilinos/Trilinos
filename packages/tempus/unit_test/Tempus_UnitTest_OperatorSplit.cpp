@@ -105,7 +105,7 @@ TEUCHOS_UNIT_TEST(OperatorSplit, Default_Construction)
     order, order, order));
 #endif
   stepper = rcp(new Tempus::StepperOperatorSplit<double>(
-    models, subStepperList, modifier, useFSAL, ICConsistency, ICConsistencyCheck,order, order, order));
+    models, subStepperList, useFSAL, ICConsistency, ICConsistencyCheck,order, order, order,modifier));
 
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 

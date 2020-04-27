@@ -79,13 +79,13 @@ template<class Scalar>
 StepperOperatorSplit<Scalar>::StepperOperatorSplit(
   std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > appModels,
   std::vector<Teuchos::RCP<Stepper<Scalar> > > subStepperList,
-  const Teuchos::RCP<StepperOperatorSplitAppAction<Scalar> >& stepperOSAppAction,
   bool useFSAL,
   std::string ICConsistency,
   bool ICConsistencyCheck,
   int order,
   int orderMin,
-  int orderMax)
+  int orderMax,
+  const Teuchos::RCP<StepperOperatorSplitAppAction<Scalar> >& stepperOSAppAction)
 {
   this->setStepperType(        "Operator Split");
   this->setUseFSAL(            useFSAL);
@@ -97,7 +97,9 @@ StepperOperatorSplit<Scalar>::StepperOperatorSplit(
   this->setOrderMin(orderMin);
   this->setOrderMax(orderMax);
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   this->setObserver();
+#endif
   this->setAppAction(stepperOSAppAction);
 
   OpSpSolnHistory_ = rcp(new SolutionHistory<Scalar>());

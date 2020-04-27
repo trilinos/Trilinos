@@ -67,13 +67,13 @@ public:
   StepperOperatorSplit(
     std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > appModels,
     std::vector<Teuchos::RCP<Stepper<Scalar> > > subStepperList,
-    const Teuchos::RCP<StepperOperatorSplitAppAction<Scalar> >& stepperOSAppAction,
     bool useFSAL,
     std::string ICConsistency,
     bool ICConsistencyCheck,
     int order,
     int orderMin,
-    int orderMax);
+    int orderMax,
+    const Teuchos::RCP<StepperOperatorSplitAppAction<Scalar> >& stepperOSAppAction);
 
   /// \name Basic stepper methods
   //@{
