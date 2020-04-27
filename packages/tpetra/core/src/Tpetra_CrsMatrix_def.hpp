@@ -4733,6 +4733,9 @@ namespace Tpetra {
       os << *prefix << endl;
       std::cerr << os.str ();
     }
+    Details::ProfilingRegion region(
+      "Tpetra::CrsMatrix::fillCompete",
+      "fillCompete");
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (! this->isFillActive () || this->isFillComplete (), std::runtime_error,
@@ -4743,54 +4746,61 @@ namespace Tpetra {
     //
     // Read parameters from the input ParameterList.
     //
+    {
+      Details::ProfilingRegion region(
+	"Tpetra::CrsMatrix::fillCompete",
+	"ParameterList");
 
-    // If true, the caller promises that no process did nonlocal
-    // changes since the last call to fillComplete.
-    bool assertNoNonlocalInserts = false;
-    // If true, makeColMap sorts remote GIDs (within each remote
-    // process' group).
-    bool sortGhosts = true;
+      // If true, the caller promises that no process did nonlocal
+      // changes since the last call to fillComplete.
+      bool assertNoNonlocalInserts = false;
+      // If true, makeColMap sorts remote GIDs (within each remote
+      // process' group).
+      bool sortGhosts = true;
 
-    if (! params.is_null ()) {
-      assertNoNonlocalInserts = params->get ("No Nonlocal Changes",
-                                             assertNoNonlocalInserts);
-      if (params->isParameter ("sort column map ghost gids")) {
-        sortGhosts = params->get ("sort column map ghost gids", sortGhosts);
+      if (! params.is_null ()) {
+	assertNoNonlocalInserts = params->get ("No Nonlocal Changes",
+					       assertNoNonlocalInserts);
+	if (params->isParameter ("sort column map ghost gids")) {
+	  sortGhosts = params->get ("sort column map ghost gids", sortGhosts);
+	}
+	else if (params->isParameter ("Sort column Map ghost GIDs")) {
+	  sortGhosts = params->get ("Sort column Map ghost GIDs", sortGhosts);
+	}
       }
-      else if (params->isParameter ("Sort column Map ghost GIDs")) {
-        sortGhosts = params->get ("Sort column Map ghost GIDs", sortGhosts);
+      // We also don't need to do global assembly if there is only one
+      // process in the communicator.
+      const bool needGlobalAssemble = ! assertNoNonlocalInserts && numProcs > 1;
+      // This parameter only matters if this matrix owns its graph.
+      if (! this->myGraph_.is_null ()) {
+	this->myGraph_->sortGhostsAssociatedWithEachProcessor_ = sortGhosts;
       }
-    }
-    // We also don't need to do global assembly if there is only one
-    // process in the communicator.
-    const bool needGlobalAssemble = ! assertNoNonlocalInserts && numProcs > 1;
-    // This parameter only matters if this matrix owns its graph.
-    if (! this->myGraph_.is_null ()) {
-      this->myGraph_->sortGhostsAssociatedWithEachProcessor_ = sortGhosts;
-    }
 
-    if (! this->getCrsGraphRef ().indicesAreAllocated ()) {
-      if (this->hasColMap ()) { // use local indices
-        allocateValues(LocalIndices, GraphNotYetAllocated, verbose);
+      if (! this->getCrsGraphRef ().indicesAreAllocated ()) {
+	if (this->hasColMap ()) { // use local indices
+	  allocateValues(LocalIndices, GraphNotYetAllocated, verbose);
+	}
+	else { // no column Map, so use global indices
+	  allocateValues(GlobalIndices, GraphNotYetAllocated, verbose);
+	}
       }
-      else { // no column Map, so use global indices
-        allocateValues(GlobalIndices, GraphNotYetAllocated, verbose);
+      // Global assemble, if we need to.  This call only costs a single
+      // all-reduce if we didn't need global assembly after all.
+      if (needGlobalAssemble) {
+	this->globalAssemble ();
+      }
+      else {
+	TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+	  (numProcs == 1 && nonlocals_.size() > 0,
+	   std::runtime_error, "Cannot have nonlocal entries on a serial run.  "
+	   "An invalid entry (i.e., with row index not in the row Map) must have "
+	   "been submitted to the CrsMatrix.");
       }
     }
-    // Global assemble, if we need to.  This call only costs a single
-    // all-reduce if we didn't need global assembly after all.
-    if (needGlobalAssemble) {
-      this->globalAssemble ();
-    }
-    else {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (numProcs == 1 && nonlocals_.size() > 0,
-         std::runtime_error, "Cannot have nonlocal entries on a serial run.  "
-         "An invalid entry (i.e., with row index not in the row Map) must have "
-         "been submitted to the CrsMatrix.");
-    }
-
     if (this->isStaticGraph ()) {
+      Details::ProfilingRegion region(
+	"Tpetra::CrsMatrix::fillCompete",
+	"isStaticGraph");
       // FIXME (mfh 14 Nov 2016) In order to fix #843, I enable the
       // checks below only in debug mode.  It would be nicer to do a
       // local check, then propagate the error state in a deferred
@@ -4840,6 +4850,9 @@ namespace Tpetra {
       this->fillLocalMatrix (params);
     }
     else {
+      Details::ProfilingRegion region(
+	"Tpetra::CrsMatrix::fillCompete",
+	"isNotStaticGraph");
       // Set the graph's domain and range Maps.  This will clear the
       // Import if the domain Map has changed (is a different
       // pointer), and the Export if the range Map has changed (is a
@@ -4892,16 +4905,26 @@ namespace Tpetra {
       this->myGraph_->checkInternalState ();
     }
 
-    const bool callComputeGlobalConstants = params.get () == nullptr ||
-      params->get ("compute global constants", true);
-    if (callComputeGlobalConstants) {
-      this->computeGlobalConstants ();
+    {
+      Details::ProfilingRegion region(
+	"Tpetra::CrsMatrix::fillCompete",
+	"callComputeGlobalConstamnts");
+      const bool callComputeGlobalConstants = params.get () == nullptr ||
+	params->get ("compute global constants", true);
+      if (callComputeGlobalConstants) {
+	this->computeGlobalConstants ();
+      }
     }
 
     // FIXME (mfh 28 Aug 2014) "Preserve Local Graph" bool parameter no longer used.
 
     this->fillComplete_ = true; // Now we're fill complete!
-    this->checkInternalState ();
+    {
+      Details::ProfilingRegion region(
+	"Tpetra::CrsMatrix::fillCompete",
+	"checkInternalState");
+      this->checkInternalState ();
+    }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
