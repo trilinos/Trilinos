@@ -80,10 +80,6 @@ module load git/2.19.1
 export PATH=/projects/netpub/atdm/ninja-1.8.2/bin:$PATH
 module unload cray-mpich
 module load cray-mpich/7.7.6
-#enable? export PATH=/usr/projects/sparc/tools/ats1/clang-5.0.1/bin:$PATH
-#enable? export PATH=/usr/projects/sparc/tools/vvt:$PATH
-#enable? module load datawarp
-#enable? module load lustre-default
 module unload cray-libsci
 module unload gcc
 
@@ -151,11 +147,9 @@ export ATDM_CONFIG_LAPACK_LIBS="-L${CBLAS_ROOT}/mkl/lib/intel64;-L${CBLAS_ROOT}/
 export ATDM_CONFIG_BLAS_LIBS="-L${CBLAS_ROOT}/mkl/lib/intel64;-L${CBLAS_ROOT}/compiler/lib/intel64;-mkl;-lmkl_intel_lp64;-lmkl_intel_thread;-lmkl_core;-liomp5"
 
 # Boost 1.65.1 settings
-#enable? export PATH=${sparc_tpl_prefix_path}/${system_name}-${node_arch}/boost-1.65.1/00000000/${system_name}-${node_arch}_intel-19.0.4/bin:$PATH
 export BOOST_ROOT=${sparc_tpl_prefix_path}/${system_name}-${node_arch}/boost-1.65.1/00000000/${system_name}-${node_arch}_intel-19.0.4
 
 # Hdf5 1.10.5 settings
-#enable? export PATH=${sparc_tpl_prefix_path}/${system_name}-${node_arch}/hdf5-1.10.5/00000000/${system_name}-${node_arch}_intel-19.0.4_mpich-7.7.6/bin:$PATH
 export HDF5_ROOT=${sparc_tpl_prefix_path}/${system_name}-${node_arch}/hdf5-1.10.5/00000000/${system_name}-${node_arch}_intel-19.0.4_mpich-7.7.6
 export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
 #export ATDM_CONFIG_HDF5_NO_SYSTEM_PATHS=ON
@@ -165,21 +159,17 @@ export BINUTILS_ROOT="/usr"
 export ATDM_CONFIG_BINUTILS_LIBS="${BINUTILS_ROOT}/lib64/libbfd.a;-lz;${BINUTILS_ROOT}/lib64/libiberty.a"
 
 # Cgns settings
-#enable? export PATH=${sparc_tpl_prefix_path}/${system_name}-${node_arch}/cgns-c09a5cd/27e5681f1b74c679b5dcb337ac71036d16c47977/${system_name}-${node_arch}_intel-19.0.4_mpich-7.7.6/bin:$PATH
 export CGNS_ROOT=${sparc_tpl_prefix_path}/${system_name}-${node_arch}/cgns-c09a5cd/27e5681f1b74c679b5dcb337ac71036d16c47977/${system_name}-${node_arch}_intel-19.0.4_mpich-7.7.6
 export ATDM_CONFIG_CGNS_LIBRARY_NAMES="cgns"
 
 # Pnetcdf 1.10.0 settings
-#enable? export PATH=${sparc_tpl_prefix_path}/${system_name}-${node_arch}/pnetcdf-1.10.0/6144dc67b2041e4093063a04e89fc1e33398bd09/${system_name}-${node_arch}_intel-19.0.4_mpich-7.7.6/bin:$PATH
 export PNETCDF_ROOT=${sparc_tpl_prefix_path}/${system_name}-${node_arch}/pnetcdf-1.10.0/6144dc67b2041e4093063a04e89fc1e33398bd09/${system_name}-${node_arch}_intel-19.0.4_mpich-7.7.6
 
 # Netcdf 4.7.0 settings
-#enable? export PATH=${sparc_tpl_prefix_path}/${system_name}-${node_arch}/netcdf-4.7.0/58bc48d95be2cc9272a18488fea52e1be1f0b42a/${system_name}-${node_arch}_intel-19.0.4_mpich-7.7.6/bin:$PATH
 export NETCDF_ROOT=${sparc_tpl_prefix_path}/${system_name}-${node_arch}/netcdf-4.7.0/58bc48d95be2cc9272a18488fea52e1be1f0b42a/${system_name}-${node_arch}_intel-19.0.4_mpich-7.7.6
 export ATDM_CONFIG_NETCDF_LIBS="-L${BOOST_ROOT}/lib;-L${NETCDF_ROOT}/lib64;-L${PNETCDF_ROOT}/lib;-L${HDF5_ROOT}/lib;${BOOST_ROOT}/lib/libboost_program_options.a;${BOOST_ROOT}/lib/libboost_system.a;${NETCDF_ROOT}/lib64/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl;-lm"
 
 # Libhio 1.4.1.2 settings
-#enable? export PATH=${sparc_tpl_prefix_path}/${system_name}-${node_arch}/libhio-1.4.1.2/00000000/${system_name}-${node_arch}_intel-19.0.4_mpich-7.7.6/bin:$PATH
 export LIBHIO_ROOT=${sparc_tpl_prefix_path}/${system_name}-${node_arch}/libhio-1.4.1.2/00000000/${system_name}-${node_arch}_intel-19.0.4_mpich-7.7.6
 
 # Metis 4.0.3 settings
