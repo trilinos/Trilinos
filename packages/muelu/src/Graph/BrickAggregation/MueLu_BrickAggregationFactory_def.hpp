@@ -265,9 +265,10 @@ namespace MueLu {
     for (LO LID = 0; LID < numPoints; LID++) {
       if (revMap_.find(getRoot(LID)) != revMap_.end() && rowMap->isNodeGlobalElement(colMap->getGlobalElement(revMap_[getRoot(LID)]))) {
         GO aggGID = vertex2AggId[LID];
-        if(aggGID != MUELU_UNAGGREGATED) 
+        if(aggGID != MUELU_UNAGGREGATED) {
           vertex2AggId[LID] = AggG2L[aggGID];
           procWinner  [LID] = AggG2R[aggGID];
+        }
       }
     }
 
