@@ -146,7 +146,7 @@ void WorksetDetails::setupNeeds(Teuchos::RCP<const shards::CellTopology> cell_to
     if (iv->int_rule->getType() == panzer::IntegrationDescriptor::SURFACE)
     {
       // IntegrationValues2 doesn't know anything about virtual cells, so it sets up incorrect normals for those.
-      // What we want is for "face 0" of the virtual cell to have normals that are the negated real cell's normals.
+      // What we want is for the adjoining face of the virtual cell to have normals that are the negated real cell's normals.
       // we correct the normals here:
       auto num_real_cells = _num_owned_cells + _num_ghost_cells;
       const int space_dim      = cell_topology->getDimension();
@@ -156,7 +156,17 @@ void WorksetDetails::setupNeeds(Teuchos::RCP<const shards::CellTopology> cell_to
       for (int virtual_cell_ordinal=0; virtual_cell_ordinal<_num_virtual_cells; virtual_cell_ordinal++)
       {
         const panzer::LocalOrdinal virtual_cell = virtual_cell_ordinal+num_real_cells;
-        const int face_ordinal = _face_connectivity->subcellForCell(virtual_cell, 0);
+        int virtual_local_face_id = -1; // the virtual cell face that adjoins the real cell
+        int face_ordinal = -1;
+        for (int local_face_id=0; local_face_id<faces_per_cell; local_face_id++)
+        {
+          face_ordinal = _face_connectivity->subcellForCell(virtual_cell, local_face_id);
+          if (face_ordinal >= 0)
+          {
+            virtual_local_face_id = local_face_id;
+            break;
+          }
+        }
         if (face_ordinal >= 0)
         {
           const int first_cell_for_face = _face_connectivity->cellForSubcell(face_ordinal, 0);
@@ -166,8 +176,8 @@ void WorksetDetails::setupNeeds(Teuchos::RCP<const shards::CellTopology> cell_to
           TEUCHOS_ASSERT(real_cell < num_real_cells);
           for (int point_ordinal=0; point_ordinal<points_per_face; point_ordinal++)
           {
-            int virtual_cell_point = point_ordinal;
-            int real_cell_point = points_per_face * face_in_real_cell;
+            int virtual_cell_point = points_per_face * virtual_local_face_id + point_ordinal;
+            int real_cell_point = points_per_face * face_in_real_cell + point_ordinal;
             // the following arrays will be used to produce/store the rotation matrix below
             double normal[3], transverse[3], binormal[3];
             for(int i=0;i<3;i++)
@@ -193,17 +203,22 @@ void WorksetDetails::setupNeeds(Teuchos::RCP<const shards::CellTopology> cell_to
             }
           }
           // clear the other normals and rotation matrices for the virtual cell:
-          for (int point_ordinal=points_per_face; point_ordinal<points; point_ordinal++)
+          for (int local_face_id=0; local_face_id<faces_per_cell; local_face_id++)
           {
-            for (int dim=0; dim<space_dim; dim++)
+            if (local_face_id == virtual_local_face_id) continue;
+            for (int point_ordinal=0; point_ordinal<points_per_face; point_ordinal++)
             {
-              iv->surface_normals(virtual_cell,point_ordinal,dim) = 0.0;
-            }
-            for(int dim1=0; dim1<3; ++dim1)
-            {
-              for(int dim2=0; dim2<3; ++dim2)
+              int point = local_face_id * points_per_face + point_ordinal;
+              for (int dim=0; dim<space_dim; dim++)
               {
-                iv->surface_rotation_matrices(virtual_cell,point_ordinal,dim1,dim2) = 0;
+                iv->surface_normals(virtual_cell,point,dim) = 0.0;
+              }
+              for(int dim1=0; dim1<3; ++dim1)
+              {
+                for(int dim2=0; dim2<3; ++dim2)
+                {
+                  iv->surface_rotation_matrices(virtual_cell,point,dim1,dim2) = 0;
+                }
               }
             }
           }
