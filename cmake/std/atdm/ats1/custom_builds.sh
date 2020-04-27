@@ -12,7 +12,6 @@ if atdm_match_any_buildname_keyword \
      intel-19.0.4_mpich-7.7.6 \
      intel-19.0.4 \
      intel-19 \
-     default \
   ; then
   export ATDM_CONFIG_COMPILER=INTEL-19.0.4_MPICH-7.7.6
 # Note: matching "intel" below is dangerous. The user could easily make a typo
@@ -23,6 +22,7 @@ elif atdm_match_any_buildname_keyword \
        intel-18.0.5_mpich-7.7.6 \
        intel-18.0.5 \
        intel-18 \
+       default \
        intel \
   ; then
   export ATDM_CONFIG_COMPILER=INTEL-18.0.5_MPICH-7.7.6
@@ -33,8 +33,8 @@ else
   echo "***"
   echo "*** Supported compilers include:"
   echo "***"
-  echo "****  intel-19.0.4-mpich-7.7.6                  (intel-19, default)"
-  echo "****  intel-18.0.5-mpich-7.7.6                  (intel-18, intel)"
+  echo "****  intel-19.0.4-mpich-7.7.6                  (intel-19)"
+  echo "****  intel-18.0.5-mpich-7.7.6                  (intel-18, intel, default)"
   echo "***"
   return
 

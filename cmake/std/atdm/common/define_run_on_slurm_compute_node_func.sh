@@ -79,7 +79,7 @@ function atdm_run_script_on_compute_node {
   echo "Running '$script_to_run' using sbatch in the background ..."
   set -x
   sbatch --output=$output_file --wait -N1 ${ATDM_CONFIG_SBATCH_EXTRA_ARGS} \
-    --time=${timeout} -J $ATDM_CONFIG_BUILD_NAME ${script_to_run} &
+    --time=${timeout} -J $ATDM_CONFIG_BUILD_NAME --account=${account} ${script_to_run} &
   SBATCH_PID=$!
   set +x
 
