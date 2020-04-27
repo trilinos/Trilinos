@@ -105,7 +105,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Directory, Uniform, LO, GO )
         Tpetra::Details::DistributedContiguousDirectory<LO, GO, node_t>;
 
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
-  int np = comm->getSize();
   int me = comm->getRank();
 
   if (me == 0)
@@ -148,7 +147,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Directory, Replicate7223, LO, GO )
         Tpetra::Details::DistributedContiguousDirectory<LO, GO, node_t>;
 
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
-  int np = comm->getSize();
   int me = comm->getRank();
 
   if (me == 0) 
@@ -192,7 +190,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Directory, EvenProcs, LO, GO )
         Tpetra::Details::DistributedContiguousDirectory<LO, GO, node_t>;
 
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
-  int np = comm->getSize();
   int me = comm->getRank();
 
   if (me == 0)
@@ -235,7 +232,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Directory, EvenProcsOffset, LO, GO )
         Tpetra::Details::DistributedContiguousDirectory<LO, GO, node_t>;
 
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
-  int np = comm->getSize();
   int me = comm->getRank();
 
   size_t offset = 72;  // must be an even number for error check at end
@@ -280,7 +276,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Directory, OddProcsOffset, LO, GO )
         Tpetra::Details::DistributedContiguousDirectory<LO, GO, node_t>;
 
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
-  int np = comm->getSize();
   int me = comm->getRank();
 
   size_t offset = 72;  // must be an even number for error check at end
