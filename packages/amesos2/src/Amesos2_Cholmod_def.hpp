@@ -135,10 +135,6 @@ Cholmod<Matrix,Vector>::preOrdering_impl()
     std::runtime_error,
     "Amesos2 cholmod_l_analyze failure in Cholmod preOrdering_impl");
 
-  if(use_triangular_solves_) {
-    triangular_solve_preordering();
-  }
-
   return(0);
 }
 
@@ -172,6 +168,10 @@ Cholmod<Matrix,Vector>::symbolicFactorization_impl()
   TEUCHOS_TEST_FOR_EXCEPTION(info != 0,
     std::runtime_error,
     "Amesos2 cholmod_l_resymbol failure in Cholmod symbolicFactorization_impl");
+
+  if(use_triangular_solves_) {
+    triangular_solve_symbolic();
+  }
 
   return(0);
 }
@@ -219,7 +219,7 @@ Cholmod<Matrix,Vector>::numericFactorization_impl()
     "Amesos2 cholmod_l_factorize failure in Cholmod factorization");
 
   if(use_triangular_solves_) {
-    triangular_solve_factor();
+    triangular_solve_numeric();
   }
 
   return(info);
@@ -489,7 +489,7 @@ Cholmod<Matrix,Vector>::loadA_impl(EPhase current_phase)
 
 template <class Matrix, class Vector>
 void
-Cholmod<Matrix,Vector>::triangular_solve_preordering()
+Cholmod<Matrix,Vector>::triangular_solve_symbolic()
 {
 #ifdef HAVE_AMESOS2_TRIANGULAR_SOLVES
   // Create handles for U and U^T solves
@@ -508,14 +508,7 @@ Cholmod<Matrix,Vector>::triangular_solve_preordering()
   // set etree
   device_khL_.set_sptrsv_etree(host_trsv_etree_.data());
   device_khU_.set_sptrsv_etree(host_trsv_etree_.data());
-#endif
-}
 
-template <class Matrix, class Vector>
-void
-Cholmod<Matrix,Vector>::triangular_solve_factor()
-{
-#ifdef HAVE_AMESOS2_TRIANGULAR_SOLVES
   size_t ld_rhs = this->matrixA_->getGlobalNumRows();
   Kokkos::resize(host_trsv_perm_, ld_rhs);
   long *iperm = static_cast<long*>(data_.L->Perm);
@@ -531,7 +524,14 @@ Cholmod<Matrix,Vector>::triangular_solve_factor()
   // Do symbolic analysis
   KokkosSparse::Experimental::sptrsv_symbolic<long, kernel_handle_type>
     (&device_khL_, &device_khU_, data_.L, &data_.c);
+#endif
+}
 
+template <class Matrix, class Vector>
+void
+Cholmod<Matrix,Vector>::triangular_solve_numeric()
+{
+#ifdef HAVE_AMESOS2_TRIANGULAR_SOLVES
   // Do numerical compute
   KokkosSparse::Experimental::sptrsv_compute<long, kernel_handle_type>
     (&device_khL_, &device_khU_, data_.L, &data_.c);

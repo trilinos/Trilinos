@@ -300,8 +300,8 @@ private:
   bool is_contiguous_;
   bool use_triangular_solves_;
 
-  void triangular_solve_preordering();
-  void triangular_solve_factor();
+  void triangular_solve_symbolic();
+  void triangular_solve_numeric();
 
 public: // for GPU
   void triangular_solve() const; // Only for internal use - public to support kernels
