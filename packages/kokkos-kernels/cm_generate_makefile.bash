@@ -244,16 +244,14 @@ display_help_text() {
       echo "--release:                    Enable KokkosKernels Release Mode."
       echo "--kokkos-release:             Enable Kokkos Release Mode."
       echo ""
-      echo "--cxxflags=[FLAGS]            Overwrite CXXFLAGS for library build and test"
-      echo "                                build.  This will still set certain required"
-      echo "                                flags via KOKKOS_CXXFLAGS (such as -fopenmp,"
-      echo "                                --std=c++11, etc.)."
+      echo "--cxxflags=[FLAGS]            Overwrite CXXFLAGS for library build and test build"
+      echo "                                This will still set certain required"
+      echo "                                flags (such as -fopenmp, --std=c++11, etc.)."
       echo "--cxxstandard=[FLAGS]         Overwrite KOKKOS_CXX_STANDARD for library build and test"
       echo "                                c++11 (default), c++14, c++17, c++1y, c++1z, c++2a"
       echo "--ldflags=[FLAGS]             Overwrite LDFLAGS for library build and test"
       echo "                                build. This will still set certain required"
-      echo "                                flags via KOKKOS_LDFLAGS (such as -fopenmp,"
-      echo "                                -lpthread, etc.)."
+      echo "                                flags (such as -fopenmp, -lpthread, etc.)."
       echo "--with-gtest=/Path/To/Gtest:  Set path to gtest.  (Used in unit and performance"
       echo "                                tests.)"
       echo "--with-hwloc=/Path/To/Hwloc:  Set path to hwloc library."
@@ -290,6 +288,7 @@ display_help_text() {
       echo "                                Example: \"-lgfortran,-lma,-Wall\""
 #      echo "--with-hpx-options=[OPT]:     Additional options to HPX:"
 #      echo "                                enable_async_dispatch"
+      echo "--no-default-eti:  Do not include default ETI types for Kokkos Kernels"
       echo "--gcc-toolchain=/Path/To/GccRoot:  Set the gcc toolchain to use with clang (e.g. /usr)" 
       echo "--kokkos-make-j=[NUM]:        Set -j parallel level for kokkos install"
       echo "                                Default: j == 4"
@@ -303,6 +302,8 @@ KOKKOS_DO_EXAMPLES=OFF
 KOKKOSKERNELS_DO_TESTS=ON
 
 KOKKOS_MAKEINSTALL_J=4
+
+KERNELS_DEFAULT_ETI_OPTION=""
 
 while [[ $# > 0 ]]
 do
@@ -367,9 +368,11 @@ do
       GTEST_PATH="${key#*=}"
       ;;
     --with-hwloc*)
+      KOKKOS_HWLOC=ON
       HWLOC_PATH="${key#*=}"
       ;;
     --with-memkind*)
+      KOKKOS_MEMKIND=ON
       MEMKIND_PATH="${key#*=}"
       ;;
     --arch*)
@@ -390,6 +393,9 @@ do
       ;;
     --debug|-dbg)
       KOKKOSKERNELS_DEBUG=yes
+      ;;
+    --no-default-eti)
+      KERNELS_DEFAULT_ETI_OPTION="-DKokkosKernels_ADD_DEFAULT_ETI=OFF"
       ;;
     --kokkos-release)
       KOKKOS_RELEASE=yes
@@ -507,22 +513,40 @@ else
     COMPILER_CMD=-DCMAKE_CXX_COMPILER=$COMPILER
 fi
 
-echo "KOKKOS_DEBUG CHECK"
 if [ "$KOKKOS_DEBUG" == "yes" ]; then
     KOKKOS_BUILDTYPE_CMD=-DCMAKE_BUILD_TYPE=DEBUG
+    echo "KOKKOS_DEBUG CHECK"
 elif [ "$KOKKOS_RELEASE" == "yes" ]; then
     KOKKOS_BUILDTYPE_CMD=-DCMAKE_BUILD_TYPE=RELEASE
 else
     KOKKOS_BUILDTYPE_CMD=
 fi
 
-echo "KOKKOSKERNELS_DEBUG CHECK"
 if [ "$KOKKOSKERNELS_DEBUG" == "yes" ]; then
     KOKKOSKERNELS_BUILDTYPE_CMD=-DCMAKE_BUILD_TYPE=DEBUG
+    echo "KOKKOSKERNELS_DEBUG CHECK"
 elif [ "$KOKKOSKERNELS_RELEASE" == "yes" ]; then
     KOKKOSKERNELS_BUILDTYPE_CMD=-DCMAKE_BUILD_TYPE=RELEASE
 else
     KOKKOSKERNELS_BUILDTYPE_CMD=
+fi
+
+if [ "$KOKKOS_HWLOC" == "ON" ]; then
+    KOKKOS_HWLOC_CMD=-DKokkos_ENABLE_HWLOC=ON
+    if [ "$HWLOC_PATH" != "" ]; then
+      KOKKOS_HWLOC_PATH_CMD=-DHWLOC_ROOT=$HWLOC_PATH
+    fi
+else
+    KOKKOS_HWLOC_CMD=
+fi
+
+if [ "$KOKKOS_MEMKIND" == "ON" ]; then
+    KOKKOS_MEMKIND_CMD=-DKokkos_ENABLE_MEMKIND=ON
+    if [ "$MEMKIND_PATH" != "" ]; then
+      KOKKOS_MEMKIND_PATH_CMD=-DMEMKIND_ROOT=$MEMKIND_PATH
+    fi
+else
+    KOKKOS_MEMKIND_CMD=
 fi
 
 
@@ -615,10 +639,11 @@ cd ${KOKKOS_INSTALL_PATH}
 
 #KOKKOS_INSTALL_PATH="${PWD}"
 
+# Configure kokkos
 echo ""
-echo cmake $COMPILER_CMD  -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS}" -DCMAKE_EXE_LINKER_FLAGS="${KOKKOS_LDFLAGS}" -DCMAKE_INSTALL_PREFIX=${KOKKOS_INSTALL_PATH} ${KOKKOS_DEVICE_CMD} ${KOKKOS_ARCH_CMD} -DKokkos_ENABLE_TESTS=${KOKKOS_DO_TESTS} -DKokkos_ENABLE_EXAMPLES=${KOKKOS_DO_EXAMPLES} ${KOKKOS_OPTION_CMD} ${KOKKOS_CUDA_OPTION_CMD} -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_EXTENSIONS=OFF ${STANDARD_CMD} ${KOKKOS_BUILDTYPE_CMD} ${KOKKOS_PATH}
+echo cmake $COMPILER_CMD  -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS}" -DCMAKE_EXE_LINKER_FLAGS="${KOKKOS_LDFLAGS}" -DCMAKE_INSTALL_PREFIX=${KOKKOS_INSTALL_PATH} ${KOKKOS_DEVICE_CMD} ${KOKKOS_ARCH_CMD} -DKokkos_ENABLE_TESTS=${KOKKOS_DO_TESTS} -DKokkos_ENABLE_EXAMPLES=${KOKKOS_DO_EXAMPLES} ${KOKKOS_OPTION_CMD} ${KOKKOS_CUDA_OPTION_CMD} -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_EXTENSIONS=OFF ${STANDARD_CMD} ${KOKKOS_BUILDTYPE_CMD} ${KOKKOS_HWLOC_CMD} ${KOKKOS_HWLOC_PATH_CMD} ${KOKKOS_MEMKIND_CMD} ${KOKKOS_MEMKIND_PATH_CMD} ${KOKKOS_PATH}
 echo ""
-cmake $COMPILER_CMD  -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS//\"}" -DCMAKE_EXE_LINKER_FLAGS="${KOKKOS_LDFLAGS//\"}" -DCMAKE_INSTALL_PREFIX=${KOKKOS_INSTALL_PATH} ${KOKKOS_DEVICE_CMD} ${KOKKOS_ARCH_CMD} -DKokkos_ENABLE_TESTS=${KOKKOS_DO_TESTS} -DKokkos_ENABLE_EXAMPLES=${KOKKOS_DO_EXAMPLES} ${KOKKOS_OPTION_CMD} ${KOKKOS_CUDA_OPTION_CMD} -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_EXTENSIONS=OFF ${STANDARD_CMD} ${KOKKOS_BUILDTYPE_CMD} ${KOKKOS_PATH}
+cmake $COMPILER_CMD  -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS//\"}" -DCMAKE_EXE_LINKER_FLAGS="${KOKKOS_LDFLAGS//\"}" -DCMAKE_INSTALL_PREFIX=${KOKKOS_INSTALL_PATH} ${KOKKOS_DEVICE_CMD} ${KOKKOS_ARCH_CMD} -DKokkos_ENABLE_TESTS=${KOKKOS_DO_TESTS} -DKokkos_ENABLE_EXAMPLES=${KOKKOS_DO_EXAMPLES} ${KOKKOS_OPTION_CMD} ${KOKKOS_CUDA_OPTION_CMD} -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_EXTENSIONS=OFF ${STANDARD_CMD} ${KOKKOS_BUILDTYPE_CMD} ${KOKKOS_HWLOC_CMD} ${KOKKOS_HWLOC_PATH_CMD} ${KOKKOS_MEMKIND_CMD} ${KOKKOS_MEMKIND_PATH_CMD} ${KOKKOS_PATH}
 
 # Install kokkos library
 make install -j $KOKKOS_MAKEINSTALL_J
@@ -641,8 +666,9 @@ fi
 
 cd $STORE_KOKKOSKERNELS_BUILD_PATH
 
+# Configure kokkos-kernels
 echo ""
-echo cmake $COMPILER_CMD -DKokkos_DIR="${KOKKOS_FIND_PATH}" -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS}" -DCMAKE_INSTALL_PREFIX="${PREFIX}" -DKokkosKernels_ENABLE_TESTS=${KOKKOSKERNELS_DO_TESTS} ${KOKKOSKERNELS_SCALARS_CMD} ${KOKKOSKERNELS_ORDINALS_CMD} ${KOKKOSKERNELS_OFFSETS_CMD} ${KOKKOSKERNELS_LAYOUTS_CMD} ${KOKKOSKERNELS_TPLS_CMD} ${KOKKOSKERNELS_USER_TPL_PATH_CMD} ${KOKKOSKERNELS_USER_TPL_LIBNAME_CMD} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD} ${KOKKOSKERNELS_BUILDTYPE_CMD} ${KOKKOSKERNELS_SPACES_CMD} ${KOKKOSKERNELS_PATH}
+echo cmake $COMPILER_CMD -DKokkos_DIR="${KOKKOS_FIND_PATH}" -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS}" -DCMAKE_INSTALL_PREFIX="${PREFIX}" -DKokkosKernels_ENABLE_TESTS=${KOKKOSKERNELS_DO_TESTS} ${KOKKOSKERNELS_SCALARS_CMD} ${KOKKOSKERNELS_ORDINALS_CMD} ${KOKKOSKERNELS_OFFSETS_CMD} ${KOKKOSKERNELS_LAYOUTS_CMD} ${KOKKOSKERNELS_TPLS_CMD} ${KOKKOSKERNELS_USER_TPL_PATH_CMD} ${KOKKOSKERNELS_USER_TPL_LIBNAME_CMD} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD} ${KOKKOSKERNELS_BUILDTYPE_CMD} ${KOKKOSKERNELS_SPACES_CMD} ${KERNELS_DEFAULT_ETI_OPTION} ${KOKKOSKERNELS_PATH}
 echo ""
-cmake $COMPILER_CMD -DKokkos_DIR="${KOKKOS_FIND_PATH}" -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS//\"}" -DCMAKE_INSTALL_PREFIX="${PREFIX}" -DKokkosKernels_ENABLE_TESTS=${KOKKOSKERNELS_DO_TESTS} ${KOKKOSKERNELS_SCALARS_CMD} ${KOKKOSKERNELS_ORDINALS_CMD} ${KOKKOSKERNELS_OFFSETS_CMD} ${KOKKOSKERNELS_LAYOUTS_CMD} ${KOKKOSKERNELS_TPLS_CMD} ${KOKKOSKERNELS_USER_TPL_PATH_CMD} ${KOKKOSKERNELS_USER_TPL_LIBNAME_CMD} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD} ${KOKKOSKERNELS_BUILDTYPE_CMD} ${KOKKOSKERNELS_SPACES_CMD} ${KOKKOSKERNELS_PATH}
+cmake $COMPILER_CMD -DKokkos_DIR="${KOKKOS_FIND_PATH}" -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS//\"}" -DCMAKE_INSTALL_PREFIX="${PREFIX}" -DKokkosKernels_ENABLE_TESTS=${KOKKOSKERNELS_DO_TESTS} ${KOKKOSKERNELS_SCALARS_CMD} ${KOKKOSKERNELS_ORDINALS_CMD} ${KOKKOSKERNELS_OFFSETS_CMD} ${KOKKOSKERNELS_LAYOUTS_CMD} ${KOKKOSKERNELS_TPLS_CMD} ${KOKKOSKERNELS_USER_TPL_PATH_CMD} ${KOKKOSKERNELS_USER_TPL_LIBNAME_CMD} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD} ${KOKKOSKERNELS_BUILDTYPE_CMD} ${KOKKOSKERNELS_SPACES_CMD} ${KERNELS_DEFAULT_ETI_OPTION} ${KOKKOSKERNELS_PATH}
 

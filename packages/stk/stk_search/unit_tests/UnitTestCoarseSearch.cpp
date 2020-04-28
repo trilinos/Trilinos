@@ -33,7 +33,6 @@
 // 
 
 #include <unit_tests/UnitTestUtils.hpp>
-#include <unit_tests/MeshUtilsForBoundingVolumes.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 
 #include <gtest/gtest.h>
@@ -131,7 +130,7 @@ void testCoarseSearchForAlgorithm(stk::search::SearchMethod algorithm, MPI_Comm 
   expect_search_results(num_procs, proc_id, searchResults);
 }
 
-void testCoarseSearchForAlgorithmUsingFloatAABoxes(NewSearchMethod algorithm, MPI_Comm comm)
+void testCoarseSearchForAlgorithmUsingFloatAABoxes(stk::search::SearchMethod algorithm, MPI_Comm comm)
 {
   int num_procs = stk::parallel_machine_size(comm);
   int proc_id   = stk::parallel_machine_rank(comm);
@@ -160,7 +159,7 @@ void testCoarseSearchForAlgorithmUsingFloatAABoxes(NewSearchMethod algorithm, MP
 
   SearchResults searchResults;
 
-  coarse_search_new(local_domain, local_range, algorithm, comm, searchResults);
+  stk::search::coarse_search(local_domain, local_range, algorithm, comm, searchResults);
 
   expect_search_results(num_procs, proc_id, searchResults);
 }
@@ -172,7 +171,7 @@ TEST(stk_search, coarse_search_kdtree)
 
 TEST(stk_search, coarse_search_kdtree_using_float_aa_boxes)
 {
-    testCoarseSearchForAlgorithmUsingFloatAABoxes(KDTREE, MPI_COMM_WORLD);
+    testCoarseSearchForAlgorithmUsingFloatAABoxes(stk::search::KDTREE, MPI_COMM_WORLD);
 }
 
 void testIdentProcWithSearch(stk::search::SearchMethod searchMethod)

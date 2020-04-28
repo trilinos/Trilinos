@@ -12,13 +12,14 @@ echo "Using ARM ATSE compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_
 #
 
 if   [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" ]] \
+  || [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "TX2" ]] \
   || [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "" ]] \
   ; then
   export ATDM_CONFIG_KOKKOS_ARCH=ARMv8-TX2
 else
   echo
   echo "***"
-  echo "*** ERROR: Only one arch is supported this system!  Remove any arch keywords from build name '${ATDM_CONFIG_BUILD_NAME}'"
+  echo "*** ERROR: KOKKOS_ARCH='${ATDM_CONFIG_KOKKOS_ARCH}' was parsed from the the buildname '${ATDM_CONFIG_BUILD_NAME}'.  Only one KOKKOS_ARCH is supported for this system.  Please remove that KOKKOS_ARCH keyword from the buildname!"
   echo "***"
   return
 fi
@@ -106,7 +107,7 @@ export ATDM_CONFIG_CGNS_LIBRARY_NAMES="cgns"
 export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
 
 # NETCDF settings
-export ATDM_CONFIG_NETCDF_LIBS="-L${NETCDF_ROOT}/lib;-L${PNETCDF_ROOT}/lib;-L${HDF5_ROOT}/lib;${NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${ATDM_CONFIG_HDF5_LIBS}"
+export ATDM_CONFIG_NETCDF_LIBS="-L${NETCDF_ROOT}/lib;${NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${ATDM_CONFIG_HDF5_LIBS}"
 
 # BLAS settings
 export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-larmpl_lp64_mp;-larmflang;-lomp"

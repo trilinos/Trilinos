@@ -43,11 +43,8 @@ using Tempus::StepperFactory;
 using Tempus::StepperExplicitRK;
 
 // Comment out any of the following tests to exclude from build/run.
-#define CONSTRUCTION
-#define STEPPERFACTORY_CONSTRUCTION
 
 
-#ifdef CONSTRUCTION
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(ForwardEuler, Default_Construction)
@@ -78,18 +75,18 @@ TEUCHOS_UNIT_TEST(ForwardEuler, Default_Construction)
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
   // Full argument list construction.
   stepper = rcp(new Tempus::StepperForwardEuler<double>(
-    model, obs, useFSAL, ICConsistency, ICConsistencyCheck));   
+    model, obs, useFSAL, ICConsistency, ICConsistencyCheck));
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 #endif
   stepper = rcp(new Tempus::StepperForwardEuler<double>(
     model, useFSAL, ICConsistency, ICConsistencyCheck,modifier));
     TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
+  // Test stepper properties.
+  TEUCHOS_ASSERT(stepper->getOrder() == 1);
 }
-#endif // CONSTRUCTION
 
 
-#ifdef STEPPERFACTORY_CONSTRUCTION
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(ForwardEuler, StepperFactory_Construction)
@@ -97,10 +94,9 @@ TEUCHOS_UNIT_TEST(ForwardEuler, StepperFactory_Construction)
   auto model = rcp(new Tempus_Test::SinCosModel<double>());
   testFactoryConstruction("Forward Euler", model);
 }
-#endif // STEPPERFACTORY_CONSTRUCTION
 
 
-// ************************************************************                                    
+// ************************************************************
 // ************************************************************
 class StepperForwardEulerModifierTest
   : virtual public Tempus::StepperForwardEulerModifierBase<double>
@@ -177,7 +173,7 @@ TEUCHOS_UNIT_TEST(ForwardEuler, AppAction_Modifier)
     stepper->getModel()->getNominalValues();
   auto icSolution =
     rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
-  auto icState = rcp(new Tempus::SolutionState<double>(icSolution));
+  auto icState = Tempus::createSolutionStateX(icSolution);
   icState->setTime    (0.0);
   icState->setIndex   (0);
   icState->setTimeStep(0.0);
@@ -288,7 +284,7 @@ public:
       stepper->getModel()->getNominalValues();
   auto icSolution =
     rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
-  auto icState = rcp(new Tempus::SolutionState<double>(icSolution));
+  auto icState = Tempus::createSolutionStateX(icSolution);
   icState->setTime    (0.0);
   icState->setIndex   (0);
   icState->setTimeStep(0.0);
@@ -395,7 +391,7 @@ public:
       stepper->getModel()->getNominalValues();
   auto icSolution =
     rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
-  auto icState = rcp(new Tempus::SolutionState<double>(icSolution));
+  auto icState = Tempus::createSolutionStateX(icSolution);
   icState->setTime    (0.0);
   icState->setIndex   (0);
   icState->setTimeStep(0.0);

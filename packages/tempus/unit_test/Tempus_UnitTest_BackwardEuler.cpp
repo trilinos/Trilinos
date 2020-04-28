@@ -43,7 +43,7 @@ using Tempus::StepperFactory;
 
 // ************************************************************
 // ************************************************************
-TEUCHOS_UNIT_TEST(BackwardEuler, Construction)
+TEUCHOS_UNIT_TEST(BackwardEuler, Default_Construction)
 {
   auto model   = rcp(new Tempus_Test::SinCosModel<double>());
 
@@ -96,6 +96,9 @@ TEUCHOS_UNIT_TEST(BackwardEuler, Construction)
     model, solver, predictorStepper, useFSAL,
     ICConsistency, ICConsistencyCheck, zeroInitialGuess, modifier));
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+
+  // Test stepper properties.
+  TEUCHOS_ASSERT(stepper->getOrder() == 1);
 }
 
 
@@ -199,11 +202,13 @@ TEUCHOS_UNIT_TEST(BackwardEuler, AppAction_Modifier)
   solutionHistory->getWorkingState()->setTimeStep(dt);
   stepper->takeStep(solutionHistory);
 
+  // Testing that each ACTION_LOCATION has been called.
   TEST_COMPARE(modifier->testBEGIN_STEP, ==, true);
   TEST_COMPARE(modifier->testBEFORE_SOLVE, ==, true);
   TEST_COMPARE(modifier->testAFTER_SOLVE, ==, true);
   TEST_COMPARE(modifier->testEND_STEP, ==, true);
 
+  // Testing that values can be set through the Modifier.
   auto x = solutionHistory->getCurrentState()->getX();
   TEST_FLOATING_EQUALITY(modifier->testCurrentValue, get_ele(*(x), 0), 1.0e-15);
   x = solutionHistory->getWorkingState()->getX();
@@ -234,7 +239,7 @@ public:
   /// Destructor
   virtual ~StepperBackwardEulerObserverTest(){}
 
-  /// Observe BackwardEuler Stepper at end of takeStep.
+  /// Observe BackwardEuler Stepper at action location.
   virtual void observe(
     Teuchos::RCP<const Tempus::SolutionHistory<double> > sh,
     Teuchos::RCP<const Tempus::StepperBackwardEuler<double> > stepper,
@@ -305,11 +310,13 @@ TEUCHOS_UNIT_TEST(BackwardEuler, AppAction_Observer)
   solutionHistory->getWorkingState()->setTimeStep(dt);
   stepper->takeStep(solutionHistory);
 
+  // Testing that each ACTION_LOCATION has been called.
   TEST_COMPARE(observer->testBEGIN_STEP, ==, true);
   TEST_COMPARE(observer->testBEFORE_SOLVE, ==, true);
   TEST_COMPARE(observer->testAFTER_SOLVE, ==, true);
   TEST_COMPARE(observer->testEND_STEP, ==, true);
 
+  // Testing that values can be observed through the observer.
   auto x = solutionHistory->getCurrentState()->getX();
   TEST_FLOATING_EQUALITY(observer->testCurrentValue, get_ele(*(x), 0), 1.0e-15);
   x = solutionHistory->getWorkingState()->getX();
@@ -338,7 +345,7 @@ public:
   /// Destructor
   virtual ~StepperBackwardEulerModifierXTest(){}
 
-  /// Observe BackwardEuler Stepper at end of takeStep.
+  /// Modify BackwardEuler Stepper at action location.
   virtual void modify(
     Teuchos::RCP<Thyra::VectorBase<double> > x,
     const double time, const double dt,
@@ -407,11 +414,13 @@ TEUCHOS_UNIT_TEST(BackwardEuler, AppAction_ModifierX)
   solutionHistory->getWorkingState()->setTimeStep(dt);
   stepper->takeStep(solutionHistory);
 
+  // Testing that each ACTION_LOCATION has been called.
   TEST_COMPARE(modifierX->testX_BEGIN_STEP, ==, true);
   TEST_COMPARE(modifierX->testX_BEFORE_SOLVE, ==, true);
   TEST_COMPARE(modifierX->testX_AFTER_SOLVE, ==, true);
   TEST_COMPARE(modifierX->testXDOT_END_STEP, ==, true);
 
+  // Testing that values can be set through the Modifier.
   auto x = solutionHistory->getCurrentState()->getX();
   TEST_FLOATING_EQUALITY(modifierX->testX, get_ele(*(x), 0), 1.0e-15);
   // Temporary memory for xDot is not guarranteed to exist outside the Stepper.

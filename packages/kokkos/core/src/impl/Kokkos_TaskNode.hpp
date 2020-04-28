@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 2.0
-//              Copyright (2014) Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -307,7 +308,7 @@ class TaskNode
 
   template <class Function>
   KOKKOS_INLINE_FUNCTION void consume_wait_queue(Function&& f) {
-    KOKKOS_EXPECTS(not m_wait_queue.is_consumed());
+    KOKKOS_EXPECTS(!m_wait_queue.is_consumed());
     m_wait_queue.consume(std::forward<Function>(f));
   }
 
@@ -498,7 +499,7 @@ class RunnableTaskBase
   void acquire_predecessor_from(runnable_task_type& other) {
     KOKKOS_EXPECTS(m_predecessor == nullptr ||
                    other.m_predecessor == m_predecessor);
-    // since we're transfering, no need to modify the reference count
+    // since we're transferring, no need to modify the reference count
     m_predecessor       = other.m_predecessor;
     other.m_predecessor = nullptr;
   }
@@ -507,7 +508,7 @@ class RunnableTaskBase
   void acquire_predecessor_from(runnable_task_type& other) volatile {
     KOKKOS_EXPECTS(m_predecessor == nullptr ||
                    other.m_predecessor == m_predecessor);
-    // since we're transfering, no need to modify the reference count
+    // since we're transferring, no need to modify the reference count
     m_predecessor       = other.m_predecessor;
     other.m_predecessor = nullptr;
   }
@@ -619,7 +620,7 @@ class alignas(16) RunnableTask
   ~RunnableTask() = delete;
 
   KOKKOS_INLINE_FUNCTION
-  void update_scheduling_info(member_type& member) {
+  void update_scheduling_info(member_type& /*member*/) {
     // TODO @tasking @generalization DSH call a queue-specific hook here; for
     // now, this info is already updated elsewhere this->scheduling_info() =
     // member.scheduler().scheduling_info();
@@ -638,7 +639,7 @@ class alignas(16) RunnableTask
     this->functor_type::operator()(*member, *val);
   }
 
-  KOKKOS_FUNCTION static void destroy(task_base_type* root) {
+  KOKKOS_FUNCTION static void destroy(task_base_type* /*root*/) {
     // TaskResult<result_type>::destroy(root);
   }
 

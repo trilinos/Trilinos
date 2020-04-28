@@ -144,11 +144,12 @@ TRIBITS_ADD_EXECUTABLE(
 
 # Temporary hack until we can figure out how to pull in the defines
 # from the config file.
-SET_PROPERTY(
-  TARGET percept perceptX
-  PROPERTY COMPILE_DEFINITIONS STK_PERCEPT_LITE=0 STK_PERCEPT_USE_INTREPID
-)
-
-install_executable(perceptX)
+IF(TARGET perceptX)
+  SET_PROPERTY(
+    TARGET percept perceptX
+    PROPERTY COMPILE_DEFINITIONS STK_PERCEPT_LITE=0 STK_PERCEPT_USE_INTREPID
+  )
+  install_executable(perceptX)
+ENDIF()
 
 TRIBITS_PACKAGE_POSTPROCESS()

@@ -48,15 +48,7 @@ using Tempus::IntegratorBasic;
 using Tempus::SolutionHistory;
 using Tempus::SolutionState;
 
-// Comment out any of the following tests to exclude from build/run.
-#define TEST_BALL_PARABOLIC
-#define TEST_CONSTRUCTING_FROM_DEFAULTS
-#define TEST_SINCOS_SECONDORDER
-#define TEST_SINCOS_FIRSTORDER
-#define TEST_SINCOS_CD
 
-
-#ifdef TEST_BALL_PARABOLIC
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(HHTAlpha, BallParabolic)
@@ -120,10 +112,8 @@ TEUCHOS_UNIT_TEST(HHTAlpha, BallParabolic)
     "\n Test failed!  Max error = " << err << " > tolerance = " << tolerance << "\n!");
 
 }
-#endif // TEST_BALL_PARABOLIC
 
 
-#ifdef TEST_CONSTRUCTING_FROM_DEFAULTS
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(HHTAlpha, ConstructingFromDefaults)
@@ -214,10 +204,8 @@ TEUCHOS_UNIT_TEST(HHTAlpha, ConstructingFromDefaults)
   std::cout << "  =========================" << std::endl;
   TEST_FLOATING_EQUALITY(get_ele(*(x), 0), 0.144918, 1.0e-4 );
 }
-#endif // TEST_CONSTRUCTING_FROM_DEFAULTS
 
 
-#ifdef TEST_SINCOS_SECONDORDER
 // ************************************************************
 TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_SecondOrder)
 {
@@ -360,10 +348,8 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_SecondOrder)
   TEST_FLOATING_EQUALITY( xDotSlope,             order, 0.01   );
   TEST_FLOATING_EQUALITY( xDotErrorNorm[0],   0.104392, 1.0e-4 );
 }
-#endif // TEST_SINCOS_SECONDORDER
 
 
-#ifdef TEST_SINCOS_FIRSTORDER
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_FirstOrder)
@@ -508,10 +494,8 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_FirstOrder)
   TEST_FLOATING_EQUALITY( xDotErrorNorm[0], 0.393504, 1.0e-4 );
 
 }
-#endif // TEST_SINCOS_FIRSTORDER
 
 
-#ifdef TEST_SINCOS_CD
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_CD)
@@ -655,6 +639,6 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_CD)
   TEST_FLOATING_EQUALITY( xDotSlope,             order, 0.01   );
   TEST_FLOATING_EQUALITY( xDotErrorNorm[0],  0.0551522, 1.0e-4 );
 }
-#endif // TEST_SINCOS_CD
+
 
 }

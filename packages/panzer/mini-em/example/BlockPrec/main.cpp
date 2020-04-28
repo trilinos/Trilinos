@@ -723,6 +723,9 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     Teuchos::StackedTimer::OutputOptions options;
     options.output_fraction = options.output_histogram = options.output_minmax = true;
     stacked_timer->report(*out, comm, options);
+    auto xmlOut = stacked_timer->reportWatchrXML(std::string("MiniEM 3D RefMaxwell ") + std::to_string(comm->getSize()) + " ranks", comm);
+    if(xmlOut.length())
+      std::cout << "\nAlso created Watchr performance report " << xmlOut << '\n';
   } else
     Teuchos::TimeMonitor::summarize(*out,false,true,false,Teuchos::Union,"",true);
 

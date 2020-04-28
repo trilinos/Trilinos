@@ -398,6 +398,12 @@ namespace PAMGEN_NEVADA {
       //   static std::vector <Inline_Mesh_Desc *> InlineMeshDescVector;
       //   static int curr_inline_mesh;
       static std::stringstream echo_stream;
+
+    private:
+	std::vector <Partition *> sorted_partition_list;
+    public:
+	const std::vector<Partition *> & get_sorted_partition_list() const {return sorted_partition_list;}
+
   };
 
   Inline_Mesh_Desc* Parse_Inline_Mesh(std::string & file_name,

@@ -42,6 +42,10 @@
 #include <set>
 #include <string>  // for char_traits, string, etc
 #include <utility> // for pair
+#if defined(SEACAS_HAVE_MPI)
+#include <Ioss_Decomposition.h>
+#endif
+
 namespace {
 #if defined(IOSS_THREADSAFE)
   std::mutex m_;
@@ -137,12 +141,13 @@ void Ioss::IOFactory::show_configuration()
   fmt::print(stderr, "\nIOSS Library Version '{}'\n\n", Ioss::Version());
   NameList db_types;
   describe(&db_types);
-  fmt::print(stderr, "Supported database types:\n\t");
-  for (const auto &db_type : db_types) {
-    fmt::print(stderr, "{} ", db_type);
-  }
+  fmt::print(stderr, "Supported database types:\n\t{}\n", fmt::join(db_types, ", "));
 
-  fmt::print(stderr, "\n\nThird-Party Library Configuration Information:\n\n");
+#if defined(SEACAS_HAVE_MPI)
+  fmt::print(stderr, "\nSupported decomposition methods:\n\t{}\n", fmt::join(Ioss::valid_decomp_methods(), ", "));
+#endif
+
+  fmt::print(stderr, "\nThird-Party Library Configuration Information:\n\n");
 
   // Each database type may appear multiple times in the registry
   // due to aliasing (i.e. exodus, genesis, exodusII, ...)

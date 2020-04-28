@@ -16,7 +16,6 @@
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
   #include "Tempus_StepperRKObserverComposite.hpp"
 #endif
-#include "Tempus_StepperRKAppAction.hpp"
 
 
 namespace Tempus {
@@ -58,7 +57,7 @@ namespace Tempus {
  *
  *  \f{algorithm}{
  *  \renewcommand{\thealgorithm}{}
- *  \caption{Explcit RK with the application-action locations indicated.}
+ *  \caption{Explicit RK with the application-action locations indicated.}
  *  \begin{algorithmic}[1]
  *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
  *    \State $X \leftarrow x_{n-1}$ \Comment Set initial guess to last timestep.
@@ -112,12 +111,6 @@ public:
     virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
     { return this->stepperObserver_; }
 #endif
-    virtual void setAppAction(
-      Teuchos::RCP<StepperRKAppAction<Scalar> > appAction);
-
-    virtual Teuchos::RCP<StepperRKAppAction<Scalar> > getAppAction() const
-    { return stepperRKAppAction_; }
-
     virtual Teuchos::RCP<const RKButcherTableau<Scalar> > getTableau()
     { return tableau_; }
 
@@ -205,7 +198,6 @@ protected:
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
   Teuchos::RCP<StepperRKObserverComposite<Scalar> >      stepperObserver_;
 #endif
-  Teuchos::RCP<StepperRKAppAction<Scalar> >              stepperRKAppAction_;
 
   // For Embedded RK
   bool useEmbedded_;

@@ -218,6 +218,9 @@ namespace MueLu {
 
   private:
 
+    //!
+    bool constructionSuccessful_;
+
     //! ifpack2-specific key phrase that denote smoother type
     std::string type_;
 
