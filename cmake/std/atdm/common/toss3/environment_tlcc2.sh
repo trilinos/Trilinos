@@ -49,6 +49,7 @@ if [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
     module swap mkl/18.0.0.128 mkl/18.0.5.274
     module load gcc/4.9.3
     module unload sems-python/2.7.9
+    export BOOST_ROOT=$SEMS_BOOST_ROOT
     export HDF5_ROOT=$SEMS_HDF5_ROOT
     export NETCDF_ROOT=$SEMS_NETCDF_ROOT
     export PNETCDF_ROOT=$SEMS_NETCDF_ROOT
