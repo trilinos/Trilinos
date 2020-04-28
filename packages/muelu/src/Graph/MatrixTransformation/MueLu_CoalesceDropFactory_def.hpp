@@ -900,9 +900,9 @@ namespace MueLu {
                            }
                          );
 
-                for (LO colID = 0; colID < nnz; colID++) {
+		for (LO idxID =0; idxID<(LO)drop_vec.size(); idxID++) {
+                  LO col = indices[drop_vec[idxID].col];
 
-                  LO col = indices[colID];
 
                   // don't drop diagonal
                   if (row == col) {
@@ -911,7 +911,7 @@ namespace MueLu {
                     continue;
                   }
 
-                  if (!drop_vec[colID].drop) {
+                  if (!drop_vec[idxID].drop) {
                     columns[realnnz++] = col;
                     rownnz++;
                   } else {
