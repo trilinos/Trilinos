@@ -11,7 +11,10 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_StepperExplicit.hpp"
-#include "Tempus_StepperSubcyclingObserver.hpp"
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+  #include "Tempus_StepperSubcyclingObserver.hpp"
+#endif
+#include "Tempus_StepperSubcyclingAppAction.hpp"
 #include "Tempus_IntegratorBasic.hpp"
 
 
@@ -44,6 +47,7 @@ public:
   */
   StepperSubcycling();
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   /// Constructor
   StepperSubcycling(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
@@ -52,6 +56,16 @@ public:
     bool useFSAL,
     std::string ICConsistency,
     bool ICConsistencyCheck);
+#endif
+
+  /// Constructor                                                                       
+  StepperSubcycling(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<IntegratorBasic<Scalar> >& integrator,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    const Teuchos::RCP<StepperSubcyclingAppAction<Scalar> >& stepperSCAppAction);
 
   /// \name Basic stepper methods
   //@{
@@ -64,10 +78,18 @@ public:
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
       getModel(){return scIntegrator_->getStepper()->getModel();}
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE    
     virtual void setObserver(
       Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
     virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const;
+#endif
+
+    virtual void setAppAction(
+      Teuchos::RCP<StepperSubcyclingAppAction<Scalar> > appAction = Teuchos::null);
+
+    virtual Teuchos::RCP<StepperSubcyclingAppAction<Scalar> > getAppAction() const
+      { return stepperSCAppAction_; }
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
@@ -155,7 +177,10 @@ public:
 
 protected:
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   Teuchos::RCP<StepperSubcyclingObserver<Scalar> >  stepperSCObserver_;
+#endif
+  Teuchos::RCP<StepperSubcyclingAppAction<Scalar> > stepperSCAppAction_;
   Teuchos::RCP<IntegratorBasic<Scalar> >            scIntegrator_;
 
 };

@@ -957,8 +957,10 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
         // Virtual cell - create it!
         c0 = virtual_cell_index++;
 
-        // Our convention is that the virtual cell has a single face with lid 0
-        lidx0 = 0;
+        // We need the subcell_index to line up between real and virtual cell
+        // This way the face has the same geometry... though the face normal
+        // will point in the wrong direction
+        lidx0 = lidx1;
       }
       cell_to_face(c0,lidx0) = f;
 
@@ -968,8 +970,10 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
         // Virtual cell - create it!
         c1 = virtual_cell_index++;
 
-        // Our convention is that the virtual cell has a single face with lid 0
-        lidx1 = 0;
+        // We need the subcell_index to line up between real and virtual cell
+        // This way the face has the same geometry... though the face normal
+        // will point in the wrong direction
+        lidx1 = lidx0;
       }
       cell_to_face(c1,lidx1) = f;
 

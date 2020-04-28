@@ -728,6 +728,14 @@ namespace {
     myOut << "Make sure that Distributor output doesn't cause a hang" << endl;
     distributor.describe (out, Teuchos::VERB_EXTREME);
 
+    myOut << "Check getReverse(create=false)" << endl;
+    RCP<Distributor> revDistor = distributor.getReverse(false);
+    TEUCHOS_ASSERT(revDistor.is_null());
+
+    myOut << "Check getReverse(create=true)" << endl;
+    revDistor = distributor.getReverse();
+    TEUCHOS_ASSERT(!revDistor.is_null());
+
     myOut << "Check return value of createFromSends" << endl;
     TEST_EQUALITY(numRemoteIDs, as<size_t>(numImages));
 

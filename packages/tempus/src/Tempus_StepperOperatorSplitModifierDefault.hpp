@@ -1,0 +1,61 @@
+// @HEADER
+// ****************************************************************************
+//                Tempus: Copyright (2017) Sandia Corporation
+//
+// Distributed under BSD 3-clause license (See accompanying file Copyright.txt)
+// ****************************************************************************
+// @HEADER
+
+#ifndef Tempus_StepperOperatorSplitModifierDefault_hpp
+#define Tempus_StepperOperatorSplitModifierDefault_hpp
+
+#include "Tempus_config.hpp"
+#include "Tempus_SolutionHistory.hpp"
+#include "Tempus_StepperOperatorSplitModifierBase.hpp"
+
+
+namespace Tempus {
+
+/** \brief Default modifier for StepperOperatorSplit.
+ *
+ *  The default modifier provides no-op functionality for the modifier.
+ *  See StepperOperatorSplitModifierBase for details on the algorithm.
+ */
+template<class Scalar>
+class StepperOperatorSplitModifierDefault
+  : virtual public Tempus::StepperOperatorSplitModifierBase<Scalar>
+{
+public:
+
+  /// Constructor
+  StepperOperatorSplitModifierDefault(){}
+
+  /// Destructor
+  virtual ~StepperOperatorSplitModifierDefault(){}
+
+  /// Modify OperatorSplit Stepper.
+  virtual void modify(
+    Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
+    Teuchos::RCP<StepperOperatorSplit<Scalar> > /* stepper */,
+    const typename StepperOperatorSplitAppAction<Scalar>::ACTION_LOCATION actLoc)
+  {
+    switch(actLoc) {
+      case StepperOperatorSplitAppAction<Scalar>::BEGIN_STEP:
+      case StepperOperatorSplitAppAction<Scalar>::BEFORE_STEPPER:
+      case StepperOperatorSplitAppAction<Scalar>::AFTER_STEPPER:
+      case StepperOperatorSplitAppAction<Scalar>::END_STEP:
+      {
+        // No-op.
+        break;
+      }
+      default:
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+        "Error - unknown action location.\n");
+    }
+  }
+
+};
+
+} // namespace Tempus
+
+#endif // Tempus_StepperOperatorSplitModifierDefault_hpp

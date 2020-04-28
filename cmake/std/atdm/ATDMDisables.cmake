@@ -34,6 +34,7 @@ SET(ATDM_SE_PACKAGE_DISABLES
   Komplex
   FEI
   TriKota
+  Compadre
   STKClassic
   STKSearchUtil
   STKUnit_tests

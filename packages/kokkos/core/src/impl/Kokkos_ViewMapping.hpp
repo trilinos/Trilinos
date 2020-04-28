@@ -1286,7 +1286,7 @@ struct ViewOffset<
   /* Span of the range space */
   KOKKOS_INLINE_FUNCTION
   constexpr size_type span() const {
-    return m_stride * m_dim.N1 * m_dim.N2 * m_dim.N3 * m_dim.N4 * m_dim.N5 *
+    return (m_dim.N0>size_type(0)?m_stride:size_type(0)) * m_dim.N1 * m_dim.N2 * m_dim.N3 * m_dim.N4 * m_dim.N5 *
            m_dim.N6 * m_dim.N7;
   }
 
@@ -1882,7 +1882,7 @@ struct ViewOffset<
 
   /* Span of the range space */
   KOKKOS_INLINE_FUNCTION
-  constexpr size_type span() const { return m_dim.N0 * m_stride; }
+  constexpr size_type span() const { return size() > size_type(0) ? m_dim.N0 * m_stride : size_type(0) ; }
 
   KOKKOS_INLINE_FUNCTION constexpr bool span_is_contiguous() const {
     return m_stride == m_dim.N7 * m_dim.N6 * m_dim.N5 * m_dim.N4 * m_dim.N3 *

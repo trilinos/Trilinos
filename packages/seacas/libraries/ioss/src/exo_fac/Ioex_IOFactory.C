@@ -42,9 +42,15 @@
 #include <exodusII.h>
 #include <string> // for string
 
+#include <fmt/ostream.h>
+
 #include "Ioss_CodeTypes.h" // for MPI_Comm
 #include "Ioss_DBUsage.h"   // for DatabaseUsage
 #include "Ioss_IOFactory.h" // for IOFactory
+
+#if !defined(NO_PARMETIS_SUPPORT)
+#include <parmetis.h>
+#endif
 
 namespace Ioss {
   class DatabaseIO;
@@ -120,7 +126,23 @@ namespace Ioex {
       return new Iofx::DatabaseIO(nullptr, filename, db_usage, communicator, properties);
   }
 
-  void IOFactory::show_config() const { ex_print_config(); }
+  void IOFactory::show_config() const
+  {
+    ex_print_config();
+#if !defined(NO_PARMETIS_SUPPORT)
+    fmt::print(stderr, "\tParMetis Library Version: {}.{}.{} (Parallel Decomposition)\n"
+	       "\t\tInteger Size is {}, Real Size is {}\n\n",
+	       PARMETIS_MAJOR_VERSION, PARMETIS_MINOR_VERSION, PARMETIS_SUBMINOR_VERSION,
+	       IDXTYPEWIDTH, REALTYPEWIDTH);
+#else
+    fmt::print(stderr, "\tParMetis Library is NOT Available for Parallel Decomposition.\n\n");
+#endif
+#if !defined(NO_ZOLTAN_SUPPORT)
+  fmt::print(stderr, "\tZoltan Library is Available for Parallel Decomposition.\n\n");
+#else
+  fmt::print(stderr, "\tZoltan Library is NOT Available for Parallel Decomposition.\n\n");
+#endif
+  }
 } // namespace Ioex
 
 #if defined(SEACAS_HAVE_MPI) && !defined(NO_DOF_EXODUS_SUPPORT)
