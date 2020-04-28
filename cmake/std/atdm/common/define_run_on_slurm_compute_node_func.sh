@@ -16,13 +16,10 @@
 # ATDM_CONFIG_SBATCH_DEFAULT_ACCOUNT if != "".  Otherwise, a default is set
 # internally.
 #
-# If ATDM_CONFIG_KOKKOS_ARCH = "KNL", then:
-# ATDM_CONFIG_SBATCH_EXTRA_ARGS="$ATDM_CONFIG_SBATCH_EXTRA_ARGS -p knl -C cache --hint=multithread"
-#
 # The value of ATDM_CONFIG_SBATCH_EXTRA_ARGS is added to sbatch as follows:
 #   sbatch --output=$output_file --wait -N1 \
 #   ${ATDM_CONFIG_SBATCH_EXTRA_ARGS} --time=${timeout} \
-#   -J $ATDM_CONFIG_BUILD_NAME ${script_to_run} &
+#   -J $ATDM_CONFIG_BUILD_NAME --account=${account} ${script_to_run} &
 #
 # In this case, sbatch is used to run the script but it also sends ouptut to
 # STDOUT in real-time while it is running in addition to writing to the
