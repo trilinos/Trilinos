@@ -129,16 +129,33 @@ namespace MueLu {
       list = newList;
     }
 
+    std::map<std::string, MsgType> verbMap;
+    verbMap["none"]    = None;
+    verbMap["low"]     = Low;
+    verbMap["medium"]  = Medium;
+    verbMap["high"]    = High;
+    verbMap["extreme"] = Extreme;
+    verbMap["test"]    = Test;
+
+    std::string verbosityLevel = parameterList_.get<std::string>("verbosity", "medium");
+    verbosityLevel = lowerCase(verbosityLevel);
+
+    TEUCHOS_TEST_FOR_EXCEPTION(verbMap.count(verbosityLevel) == 0, Exceptions::RuntimeError,
+                               "Invalid verbosity level: \"" << verbosityLevel << "\"");
+    VerboseObject::SetDefaultVerbLevel(verbMap[verbosityLevel]);
+
     parameterList_             = list;
-    disable_addon_             = list.get("refmaxwell: disable addon",MasterList::getDefault<bool>("refmaxwell: disable addon"));
-    mode_                      = list.get("refmaxwell: mode",MasterList::getDefault<std::string>("refmaxwell: mode"));
-    use_as_preconditioner_     = list.get("refmaxwell: use as preconditioner",MasterList::getDefault<bool>("refmaxwell: use as preconditioner"));
-    dump_matrices_             = list.get("refmaxwell: dump matrices",MasterList::getDefault<bool>("refmaxwell: dump matrices"));
-    implicitTranspose_         = list.get("transpose: use implicit",MasterList::getDefault<bool>("transpose: use implicit"));
-    fuseProlongationAndUpdate_ = list.get("fuse prolongation and update",MasterList::getDefault<bool>("fuse prolongation and update"));
-    syncTimers_                = list.get("sync timers",false);
-    numItersH_                 = list.get("refmaxwell: num iters H",1);
-    numIters22_                = list.get("refmaxwell: num iters 22",1);
+    if (list.get("print initial parameters",MasterList::getDefault<bool>("print initial parameters")))
+      GetOStream(static_cast<MsgType>(Runtime1), 0) << list << std::endl;
+    disable_addon_             = list.get("refmaxwell: disable addon",         MasterList::getDefault<bool>("refmaxwell: disable addon"));
+    mode_                      = list.get("refmaxwell: mode",                  MasterList::getDefault<std::string>("refmaxwell: mode"));
+    use_as_preconditioner_     = list.get("refmaxwell: use as preconditioner", MasterList::getDefault<bool>("refmaxwell: use as preconditioner"));
+    dump_matrices_             = list.get("refmaxwell: dump matrices",         MasterList::getDefault<bool>("refmaxwell: dump matrices"));
+    implicitTranspose_         = list.get("transpose: use implicit",           MasterList::getDefault<bool>("transpose: use implicit"));
+    fuseProlongationAndUpdate_ = list.get("fuse prolongation and update",      MasterList::getDefault<bool>("fuse prolongation and update"));
+    syncTimers_                = list.get("sync timers",                       false);
+    numItersH_                 = list.get("refmaxwell: num iters H",           1);
+    numIters22_                = list.get("refmaxwell: num iters 22",          1);
 
     if(list.isSublist("refmaxwell: 11list"))
       precList11_     =  list.sublist("refmaxwell: 11list");
@@ -202,21 +219,6 @@ namespace MueLu {
     else
       timerLabel = "MueLu RefMaxwell: compute";
     RCP<Teuchos::TimeMonitor> tmCompute = getTimer(timerLabel);
-
-    std::map<std::string, MsgType> verbMap;
-    verbMap["none"]    = None;
-    verbMap["low"]     = Low;
-    verbMap["medium"]  = Medium;
-    verbMap["high"]    = High;
-    verbMap["extreme"] = Extreme;
-    verbMap["test"]    = Test;
-
-    VerbLevel oldVerbLevel = VerboseObject::GetDefaultVerbLevel();
-    std::string verbosityLevel = parameterList_.get<std::string>("verbosity", "medium");
-
-    TEUCHOS_TEST_FOR_EXCEPTION(verbMap.count(verbosityLevel) == 0, Exceptions::RuntimeError,
-                               "Invalid verbosity level: \"" << verbosityLevel << "\"");
-    VerboseObject::SetDefaultVerbLevel(verbMap[verbosityLevel]);
 
     ////////////////////////////////////////////////////////////////////////////////
     // Remove explicit zeros from matrices
@@ -714,6 +716,7 @@ namespace MueLu {
         dump(*R11_, "R11.m");
       }
 
+      VerbLevel verbosityLevel = VerboseObject::GetDefaultVerbLevel();
       if (!AH_.is_null()) {
         dump(*AH_, "AH.m");
         dumpCoords(*CoordsH_, "coordsH.m");
@@ -735,7 +738,7 @@ namespace MueLu {
         }
         SetProcRankVerbose(oldRank);
       }
-      VerboseObject::SetDefaultVerbLevel(verbMap[verbosityLevel]);
+      VerboseObject::SetDefaultVerbLevel(verbosityLevel);
 
     }
 
@@ -948,6 +951,7 @@ namespace MueLu {
 #endif
       }
 
+      VerbLevel verbosityLevel = VerboseObject::GetDefaultVerbLevel();
       if (!A22_.is_null()) {
         dump(*A22_, "A22.m");
         A22_->setObjectLabel("RefMaxwell (2,2)");
@@ -985,7 +989,7 @@ namespace MueLu {
         }
         SetProcRankVerbose(oldRank);
       }
-      VerboseObject::SetDefaultVerbLevel(verbMap[verbosityLevel]);
+      VerboseObject::SetDefaultVerbLevel(verbosityLevel);
 
     }
 
@@ -1169,8 +1173,6 @@ namespace MueLu {
     }
 
     describe(GetOStream(Runtime0));
-
-    VerboseObject::SetDefaultVerbLevel(oldVerbLevel);
 
 #ifdef HAVE_MUELU_CUDA
     if (parameterList_.get<bool>("refmaxwell: cuda profile setup", false)) cudaProfilerStop();
