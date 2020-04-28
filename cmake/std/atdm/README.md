@@ -766,7 +766,6 @@ For example, to configure, build and run the tests for say `MueLu` on
 
 ```
 $ cd <some_build_dir>/
-$ export ATDM_CONFIG_REGISTER_CUSTOM_CONFIG_DIR=$TRILINOS_DIR/cmake/std/atdm/mutrino
 
 $ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh mutrino-intel-opt-openmp
 

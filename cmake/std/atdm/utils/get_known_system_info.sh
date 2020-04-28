@@ -61,7 +61,7 @@ ATDM_KNOWN_SYSTEM_NAMES_LIST=(
   shiller
   ride
   ats1
-  mutrino   # Will be repalced by 'ats1'
+  mutrino   # Deprecated, to be repalced by 'ats1'
   waterman
   ats2
   van1-tx2
@@ -107,9 +107,6 @@ elif [[ $realHostname == "white"* ]] ; then
 elif [[ $realHostname == "ride"* ]] ; then
   hostnameMatch=ride
   hostnameMatchSystemName=ride
-elif [[ $realHostname == "mutrino"* || $HOST == "mutrino"* ]] ; then
-  hostnameMatch=mutrino
-  hostnameMatchSystemName=ats1
 elif [[ $realHostname == "waterman"* ]] ; then
   hostnameMatch=waterman
   hostnameMatchSystemName=waterman
@@ -136,6 +133,14 @@ fi
 # match order so, if no other match criteria is in play, then the first
 # matching system type will be selected.
 #
+
+# ATS-1 systems
+if [[ $realHostname == "mutrino"* || $HOST == "mutrino"* ]] ; then
+  systemNameTypeMatchedList+=(ats1)
+  systemNameTypeMatchedListHostNames[ats1]=mutrino
+  systemNameTypeMatchedList+=(mutrino)
+  systemNameTypeMatchedListHostNames[mutrino]=mutrino
+fi
 
 # ASTRA/Van1-Tx2 systems
 if [[ $SNLSYSTEM == "astra"* ]] ; then
