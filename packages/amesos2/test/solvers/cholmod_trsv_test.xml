@@ -53,6 +53,7 @@
 
       <ParameterList name="solver_params">
         <Parameter name="TriangularSolves" type="bool" value="true"/>
+        <Parameter name="SuperNodal" type="bool" value="true"/>
       </ParameterList>
     </ParameterList> <!-- end Cholmod -->
     <ParameterList name="all_solver_params">
@@ -101,6 +102,7 @@
 
       <ParameterList name="solver_params">
         <Parameter name="TriangularSolves" type="bool" value="true"/>
+        <Parameter name="SuperNodal" type="bool" value="true"/>
       </ParameterList>
     </ParameterList> <!-- end Cholmod -->
     <ParameterList name="all_solver_params">

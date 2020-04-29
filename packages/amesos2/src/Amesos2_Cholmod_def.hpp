@@ -61,14 +61,7 @@
 #include "Amesos2_Cholmod_decl.hpp"
 
 #ifdef HAVE_AMESOS2_TRIANGULAR_SOLVES
-  #include "KokkosSparse_sptrsv_cholmod.hpp"
-  // TODO: Fix up kernels options and then resolve all of this at config time.
-  #ifndef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
-    static_assert(false, "KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV is required for triangular solves.");
-  #endif // KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
-  #ifndef KOKKOSKERNELS_ENABLE_TPL_CHOLMOD
-    static_assert(false, "KOKKOSKERNELS_ENABLE_TPL_CHOLMOD is required for triangular solves.");
-  #endif // KOKKOSKERNELS_ENABLE_TPL_CHOLMOD
+#include "KokkosSparse_sptrsv_cholmod.hpp"
 #endif // HAVE_AMESOS2_TRIANGULAR_SOLVES
 
 namespace Amesos2 {
@@ -96,7 +89,7 @@ Cholmod<Matrix,Vector>::Cholmod(
   // This will require some kind of templating design in decl.hpp which uses the long type
   data_.c.itype = CHOLMOD_LONG; // required for long support
 
-  data_.c.supernodal = CHOLMOD_SUPERNODAL;
+  data_.c.supernodal = CHOLMOD_AUTO;
   data_.c.quick_return_if_not_posdef = 1;
 }
 
@@ -206,17 +199,17 @@ Cholmod<Matrix,Vector>::numericFactorization_impl()
   /* All processes should have the same error code */
   Teuchos::broadcast(*(this->matrixA_->getComm()), 0, &info);
 
-  TEUCHOS_TEST_FOR_EXCEPTION(info == 2,
+  TEUCHOS_TEST_FOR_EXCEPTION(info == CHOLMOD_OUT_OF_MEMORY,
     std::runtime_error,
-    "Memory allocation failure in Cholmod factorization");
+    "Amesos2 cholmod_l_factorize error code: CHOLMOD_OUT_OF_MEMORY");
 
-  TEUCHOS_TEST_FOR_EXCEPTION(info == 1,
+  TEUCHOS_TEST_FOR_EXCEPTION(info == CHOLMOD_NOT_POSDEF,
     std::runtime_error,
-    "Amesos2 cholmod_l_factorize is attempting to use Cholmod features that are not available yet.");
+    "Amesos2 cholmod_l_factorize error code: CHOLMOD_NOT_POSDEF.");
 
   TEUCHOS_TEST_FOR_EXCEPTION(info != 0,
     std::runtime_error,
-    "Amesos2 cholmod_l_factorize failure in Cholmod factorization");
+    "Amesos2 cholmod_l_factorize error code:" << info);
 
   if(use_triangular_solves_) {
     triangular_solve_numeric();
@@ -371,6 +364,9 @@ Cholmod<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Parameter
 #endif
 
   data_.c.useGPU = parameterList->get<int>("useGPU", default_gpu_setting);
+
+  bool bSuperNodal = parameterList->get<bool>("SuperNodal", false);
+  data_.c.supernodal = bSuperNodal ? CHOLMOD_SUPERNODAL : CHOLMOD_AUTO;
 }
 
 
@@ -416,6 +412,8 @@ Cholmod<Matrix,Vector>::getValidParameters_impl() const
     pl->set("TriangularSolves", false, "Whether to use triangular solves.");
 
     pl->set("IsContiguous", true, "Whether GIDs contiguous");
+
+    pl->set("SuperNodal", false, "Whether to use super nodal");
 
     valid_params = pl;
   }
