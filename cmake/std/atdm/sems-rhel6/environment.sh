@@ -185,6 +185,7 @@ export ATDM_CONFIG_USE_HWLOC=OFF
 export HWLOC_LIBS=-lhwloc
 
 export ZLIB_ROOT=${SEMS_ZLIB_ROOT}
+export BOOST_ROOT=${SEMS_BOOST_ROOT}
 export HDF5_ROOT=${SEMS_HDF5_ROOT}
 export NETCDF_ROOT=${SEMS_NETCDF_ROOT}
 if [[ "${SEMS_PNETCDF_ROOT}" == "" ]] ; then
