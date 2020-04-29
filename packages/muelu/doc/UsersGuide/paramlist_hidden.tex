@@ -266,6 +266,8 @@
         
 \cbb{repartition: start level}{int}{2}{Minimum level to run partitioner. \muelu does not rebalance levels finer than this one.}
         
+\cbb{repartition: use map}{bool}{false}{Instead of using a matrix, use a map to determine rebalancing heuristics. Obviously, this cannot evaluate nonzero imbalance.}
+        
 \cbb{repartition: node repartition level}{int}{-1}{Level on which to run node-level repartitioning (negative means don't).}
         
 \cbb{repartition: node id}{int}{-1}{Id of the current node (only used for node-level repartitioning).}
