@@ -199,6 +199,9 @@ namespace MueLu {
   "<Parameter name=\"aggregation: brick x size\" type=\"int\" value=\"2\"/>"
   "<Parameter name=\"aggregation: brick y size\" type=\"int\" value=\"2\"/>"
   "<Parameter name=\"aggregation: brick z size\" type=\"int\" value=\"2\"/>"
+  "<Parameter name=\"aggregation: brick x Dirichlet\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"aggregation: brick y Dirichlet\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"aggregation: brick z Dirichlet\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: max selected neighbors\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"aggregation: Dirichlet threshold\" type=\"double\" value=\"0.0\"/>"
   "<Parameter name=\"aggregation: deterministic\" type=\"bool\" value=\"false\"/>"
@@ -578,6 +581,12 @@ namespace MueLu {
          ("aggregation: brick y size","aggregation: brick y size")
       
          ("aggregation: brick z size","aggregation: brick z size")
+      
+         ("aggregation: brick x Dirichlet","aggregation: brick x Dirichlet")
+      
+         ("aggregation: brick y Dirichlet","aggregation: brick y Dirichlet")
+      
+         ("aggregation: brick z Dirichlet","aggregation: brick z Dirichlet")
       
          ("aggregation: max selected neighbors","aggregation: max selected neighbors")
       

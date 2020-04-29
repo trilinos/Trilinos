@@ -136,6 +136,7 @@ namespace MueLu {
     void Setup(const RCP<const Teuchos::Comm<int> >& comm, const RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> >& coords, const RCP<const Map>& map) const;
     RCP<container> Construct1DMap(const RCP<const Teuchos::Comm<int> >& comm, const ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& x) const;
 
+    bool        isDirichlet(LocalOrdinal LID) const;
     bool           isRoot  (LocalOrdinal LID) const;
     GlobalOrdinal getRoot  (LocalOrdinal LID) const;
     GlobalOrdinal getAggGID(LocalOrdinal LID) const;
@@ -150,6 +151,9 @@ namespace MueLu {
      int nx_, ny_, nz_;
     mutable
      int bx_, by_, bz_;
+    mutable 
+     bool dirichletX_,dirichletY_,dirichletZ_;
+    
     mutable
      std::map<GlobalOrdinal,GlobalOrdinal> revMap_;
   }; // class BrickAggregationFactory

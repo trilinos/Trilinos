@@ -51,6 +51,7 @@
 #include <Teuchos_DefaultMpiComm.hpp>
 #include <Teuchos_CommHelpers.hpp>
 #endif
+#include <Teuchos_OrdinalTraits.hpp>
 
 #include <Xpetra_Import.hpp>
 #include <Xpetra_ImportFactory.hpp>
@@ -66,6 +67,7 @@
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_Utilities.hpp"
+#include "MueLu_GraphBase.hpp"
 
 namespace MueLu {
 
@@ -77,10 +79,15 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregation: brick x size");
     SET_VALID_ENTRY("aggregation: brick y size");
     SET_VALID_ENTRY("aggregation: brick z size");
+    SET_VALID_ENTRY("aggregation: brick x Dirichlet");
+    SET_VALID_ENTRY("aggregation: brick y Dirichlet");
+    SET_VALID_ENTRY("aggregation: brick z Dirichlet");
 #undef  SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("A",           Teuchos::null, "Generating factory for matrix");
     validParamList->set< RCP<const FactoryBase> >("Coordinates", Teuchos::null, "Generating factory for coordinates");
+    validParamList->set< RCP<const FactoryBase> >("Graph"      , Teuchos::null, "Generating factory of the graph");
+    validParamList->set< RCP<const FactoryBase> >("DofsPerNode", null, "Generating factory for variable \'DofsPerNode\', usually the same as for \'Graph\'");
 
     return validParamList;
   }
@@ -142,11 +149,11 @@ namespace MueLu {
     typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> MultiVector_d;
 
     const ParameterList& pL = GetParameterList();
-
     RCP<MultiVector_d> coords = Get<RCP<MultiVector_d> >(currentLevel, "Coordinates");
     RCP<Matrix>        A      = Get< RCP<Matrix> >      (currentLevel, "A");
     RCP<const Map>     rowMap = A->getRowMap();
     RCP<const Map>     colMap = A->getColMap();
+    GO GO_INVALID = Teuchos::OrdinalTraits<GO>::invalid();
 
     RCP<const Teuchos::Comm<int> > comm = rowMap->getComm();
     int numProcs = comm->getSize();
@@ -157,6 +164,13 @@ namespace MueLu {
     bx_ = pL.get<int>("aggregation: brick x size");
     by_ = pL.get<int>("aggregation: brick y size");
     bz_ = pL.get<int>("aggregation: brick z size");
+
+    dirichletX_ = pL.get<bool>("aggregation: brick x Dirichlet");
+    dirichletY_ = pL.get<bool>("aggregation: brick y Dirichlet");
+    dirichletZ_ = pL.get<bool>("aggregation: brick z Dirichlet");
+    if(dirichletX_) GetOStream(Runtime0) << "Dirichlet boundaries in the x direction"<<std::endl;
+    if(dirichletY_) GetOStream(Runtime0) << "Dirichlet boundaries in the y direction"<<std::endl;
+    if(dirichletZ_) GetOStream(Runtime0) << "Dirichlet boundaries in the z direction"<<std::endl;
 
     if (numProcs > 1) {
       // TODO: deal with block size > 1  (see comments above)
@@ -195,6 +209,8 @@ namespace MueLu {
     std::set<GO> myAggGIDs, remoteAggGIDs;
     for (LO LID = 0; LID < numPoints; LID++) {
       GO aggGID = getAggGID(LID);
+      //      printf("[%d] (%d,%d,%d) => agg %d\n",LID,(int)(*xMap_)[x_[LID]],nDim_ > 1 ? (int)(*yMap_)[y_[LID]] : -1,nDim_ > 2 ? (int)(*zMap_)[z_[LID]] : -1,(int)aggGID);
+      if(aggGID == GO_INVALID) continue;
 
       if ((revMap_.find(getRoot(LID)) != revMap_.end()) && rowMap->isNodeGlobalElement(colMap->getGlobalElement(revMap_[getRoot(LID)]))) {
         // Root of the brick aggregate containing GID (<- LID) belongs to us
@@ -249,11 +265,19 @@ namespace MueLu {
     for (LO LID = 0; LID < numPoints; LID++) {
       if (revMap_.find(getRoot(LID)) != revMap_.end() && rowMap->isNodeGlobalElement(colMap->getGlobalElement(revMap_[getRoot(LID)]))) {
         GO aggGID = vertex2AggId[LID];
-
-        vertex2AggId[LID] = AggG2L[aggGID];
-        procWinner  [LID] = AggG2R[aggGID];
+        if(aggGID != MUELU_UNAGGREGATED) {
+          vertex2AggId[LID] = AggG2L[aggGID];
+          procWinner  [LID] = AggG2R[aggGID];
+        }
       }
     }
+
+    // Sanity checks
+    /*    for (LO LID = 0; LID < numPoints; LID++) {
+      TEUCHOS_TEST_FOR_EXCEPTION( (isDirichlet(LID)  && vertex2AggId[LID]!=GO_INVALID) ||
+                                  (!isDirichlet(LID) && vertex2AggId[LID]==GO_INVALID),
+                                  Exceptions::RuntimeError, "Dirichlet detection failed");
+                                  }*/
 
     GO numGlobalRemote;
     MueLu_sumAll(comm, as<GO>(numRemote), numGlobalRemote);
@@ -361,34 +385,76 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::isDirichlet(LocalOrdinal LID) const {
+    bool boundary = false;
+    if(dirichletX_  &&  ((*xMap_)[x_[LID]] == 0 || (*xMap_)[x_[LID]] == nx_-1) )
+      boundary = true;
+    if(nDim_ > 1 && dirichletY_  &&  ((*yMap_)[y_[LID]] == 0 || (*yMap_)[y_[LID]] == ny_-1) )
+      boundary = true;
+    if(nDim_ > 2 && dirichletZ_  &&  ((*zMap_)[z_[LID]] == 0 || (*zMap_)[z_[LID]] == nz_-1) )
+      boundary = true;
+    
+    return boundary;
+  }
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   GlobalOrdinal BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getRoot(LocalOrdinal LID) const {
-    int i = ((*xMap_)[x_[LID]]/bx_)*bx_ + (bx_-1)/2, j = 0, k = 0;
-    if (nDim_ > 1)
-      j = ((*yMap_)[y_[LID]]/by_)*by_ + (by_-1)/2;
+    // Corrections to ignore Dirichlet BCs
+    int xboost = dirichletX_ ? 1 : 0;
+    int yboost = dirichletY_ ? 1 : 0;
+    int zboost = dirichletZ_ ? 1 : 0;
+
+    int i = ((*xMap_)[x_[LID]]/bx_)*bx_ + (bx_-1)/2 + xboost, j = 0, k = 0;
+    if (nDim_ > 1) 
+      j = ((*yMap_)[y_[LID]]/by_)*by_ + (by_-1)/2 + yboost;    
     if (nDim_ > 2)
-      k = ((*zMap_)[z_[LID]]/bz_)*bz_ + (bz_-1)/2;
+      k = ((*zMap_)[z_[LID]]/bz_)*bz_ + (bz_-1)/2 + zboost;
 
     // Check if the actual root is outside of the domain. If it is, project the root to the domain
-    if (i > nx_) i = nx_;
-    if (j > ny_) j = ny_;
-    if (k > nz_) k = nz_;
+    if (i > nx_) i = nx_ - xboost;
+    if (j > ny_) j = ny_ - yboost;
+    if (k > nz_) k = nz_ - zboost;
 
     return k*ny_*nx_ + j*nx_ + i;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   GlobalOrdinal BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getAggGID(LocalOrdinal LID) const {
-    int naggx = nx_/bx_ + (nx_ % bx_ ? 1 : 0), naggy = 1;
-    int i = (*xMap_)[x_[LID]]/bx_, j = 0;
-    GlobalOrdinal k = 0;
-    if (nDim_ > 1) {
-      naggy = ny_/by_ + (ny_ % by_ ? 1 : 0);
-      j = (*yMap_)[y_[LID]]/by_;
-    }
-    if (nDim_ == 3)
-      k = (*zMap_)[z_[LID]]/bz_;
+    // Corrections to ignore Dirichlet BCs
+    int xboost = dirichletX_ ? 1 : 0;
+    int yboost = dirichletY_ ? 1 : 0;
+    int zboost = dirichletZ_ ? 1 : 0;
+    bool boundary = false;
 
-    return Teuchos::as<GlobalOrdinal>(k*naggy*naggx) + Teuchos::as<GlobalOrdinal>(j*naggx) + i;
+    int naggx = (nx_-2*xboost)/bx_ + ((nx_-2*xboost) % bx_ ? 1 : 0), naggy = 1;
+    int i = (*xMap_)[x_[LID]], j = nDim_>1 ? (*yMap_)[y_[LID]] : 0, k =  nDim_>2 ? (*zMap_)[z_[LID]] : 0;
+    int ii = (i-xboost)/bx_, jj = 0, kk = 0;
+
+    if( dirichletX_ && (i == 0 || i == nx_ - 1)) boundary = true;
+    if (nDim_ > 1) {
+      naggy = (ny_-2*yboost)/by_ + ( (ny_-2*yboost) % by_ ? 1 : 0);      
+      jj = (j-yboost)/by_;
+      if(dirichletY_ &&  (j == 0 || j == ny_ - 1)) boundary = true;
+    }
+
+    if (nDim_ > 2) {
+      kk = (k-zboost)/bz_;
+      if( dirichletZ_ && (k == 0 || k == nz_ - 1)) boundary = true;
+    }
+
+    /*
+    if(boundary)
+      printf("[%d] coord = (%d,%d,%d) {%d,%d} agg = (%d,%d,%d) {%d,%d} => agg %s\n",LID,i,j,k,nx_,ny_,ii,jj,kk,naggx,naggy,"BOUNDARY");
+    else
+      printf("[%d] coord = (%d,%d,%d) {%d,%d} agg = (%d,%d,%d) {%d,%d} => agg %d\n",LID,i,j,k,nx_,ny_,ii,jj,kk,naggx,naggy,kk*naggy*naggx + jj*naggx + ii);
+    */
+
+    if (boundary)
+      return Teuchos::OrdinalTraits<GlobalOrdinal>::invalid();
+    else
+      return Teuchos::as<GlobalOrdinal>(kk*naggy*naggx) + Teuchos::as<GlobalOrdinal>( jj*naggx) + ii;
+    
   }
 
 
