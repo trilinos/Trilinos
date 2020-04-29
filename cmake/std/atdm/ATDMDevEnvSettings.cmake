@@ -418,6 +418,7 @@ ENDIF()
 
 # Netcdf
 ATDM_SET_ENABLE(TPL_ENABLE_Netcdf ON)
+ATDM_SET_CACHE(NETCDF_ROOT "$ENV(NETCDF_ROOT)" CACHE FILEPATH)
 IF (ATDM_USE_SPARC_TPL_FIND_SETTINGS)
   # SPARC ATDM Trilinos configuration has SEACAS-customized FindNetCDF.cmake
   # module recurrsively find PNetCDF and HDF5 internally!
