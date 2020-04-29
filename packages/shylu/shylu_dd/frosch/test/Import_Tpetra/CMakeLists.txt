@@ -3,7 +3,7 @@ TRIBITS_ADD_EXECUTABLE(
 	SOURCES main.cpp
 )
 
-IF(ShyLU_DDFROSch_ENABLE_Epetra AND NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode")
+IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode")
 TRIBITS_ADD_TEST(
 test_import
 NAME test_import_EPETRA

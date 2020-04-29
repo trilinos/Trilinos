@@ -47,6 +47,7 @@
 
 namespace FROSch {
 
+    using namespace std;
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -102,7 +103,7 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    std::string IPOUHarmonicCoarseOperator<SC,LO,GO,NO>::description() const
+    string IPOUHarmonicCoarseOperator<SC,LO,GO,NO>::description() const
     {
         return "Interface Partition of Unity Coarse Operator";
     }
@@ -171,7 +172,7 @@ namespace FROSch {
         FROSCH_ASSERT(blockId<this->NumberOfBlocks_,"Block does not exist yet and can therefore not be reset.");
 
         if (this->Verbose_) {
-            std::cout << "\n\
+            cout << "\n\
 +----------------------------+\n\
 | IPOUHarmonicCoarseOperator |\n\
 |  Block " << blockId << "                   |\n\
@@ -179,9 +180,9 @@ namespace FROSch {
         }
 
         // Process the parameter list
-        std::stringstream blockIdStringstream;
+        stringstream blockIdStringstream;
         blockIdStringstream << blockId+1;
-        std::string blockIdString = blockIdStringstream.str();
+        string blockIdString = blockIdStringstream.str();
         RCP<ParameterList> coarseSpaceList = sublist(sublist(this->ParameterList_,"Blocks"),blockIdString.c_str());
 
         Verbosity verbosity = All;
@@ -235,12 +236,14 @@ namespace FROSch {
 
                 PartitionOfUnity_->removeDirichletNodes(dirichletBoundaryDofs());
 
+                interface = interior;
+
                 // Construct Interface and Interior index sets
-                this->GammaDofs_[blockId] = LOVecPtr(this->DofsPerNode_[blockId]*interior->getNumNodes());
+                this->GammaDofs_[blockId] = LOVecPtr(this->DofsPerNode_[blockId]*interface->getNumNodes());
                 this->IDofs_[blockId] = LOVecPtr(0);
                 for (UN k=0; k<this->DofsPerNode_[blockId]; k++) {
-                    for (UN i=0; i<interior->getNumNodes(); i++) {
-                        this->GammaDofs_[blockId][interior->getGammaDofID(i,k)] = interior->getLocalDofID(i,k);
+                    for (UN i=0; i<interface->getNumNodes(); i++) {
+                        this->GammaDofs_[blockId][interface->getGammaDofID(i,k)] = interface->getLocalDofID(i,k);
                     }
                 }
 
@@ -248,7 +251,7 @@ namespace FROSch {
             } else {
                 interfacePartitionOfUnity->removeDirichletNodes(dirichletBoundaryDofs(),nodeList);
                 interfacePartitionOfUnity->sortInterface(this->K_,nodeList);
-                
+
                 // Construct Interface and Interior index sets
                 this->GammaDofs_[blockId] = LOVecPtr(this->DofsPerNode_[blockId]*interface->getNumNodes());
                 this->IDofs_[blockId] = LOVecPtr(this->DofsPerNode_[blockId]*interior->getNumNodes());
@@ -260,8 +263,8 @@ namespace FROSch {
                         this->IDofs_[blockId][interior->getGammaDofID(i,k)] = interior->getLocalDofID(i,k);
                     }
                 }
-                
-                interfacePartitionOfUnity->computePartitionOfUnity(nodeList);                
+
+                interfacePartitionOfUnity->computePartitionOfUnity(nodeList);
                 PartitionOfUnity_ = interfacePartitionOfUnity;
             }
 
@@ -286,7 +289,7 @@ namespace FROSch {
 
             this->InterfaceCoarseSpaces_[blockId] = LocalPartitionOfUnityBasis_->getLocalPartitionOfUnitySpace();
             FROSCH_NOTIFICATION("FROSch::IPOUHarmonicCoarseOperator",this->Verbose_,"Need to build block coarse sizes for use in MueLu nullspace. This is not performed here yet.");
-            //if (this->Verbose_) {RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(std::cout)); this->MVPhiGamma_[blockId]->describe(*fancy,VERB_EXTREME);}
+            //if (this->Verbose_) {RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); this->MVPhiGamma_[blockId]->describe(*fancy,VERB_EXTREME);}
         }
 
         return 0;
