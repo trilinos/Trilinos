@@ -247,9 +247,15 @@ namespace {
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
-#ifdef HAVE_TPETRA_MPI
-  TEUCHOS_UNIT_TEST( DistObject, BlockedViews )
+  TEUCHOS_UNIT_TEST( DistObject, BlockedViews_7234 )
   {
+    // Test that replicates Trilinos issue #7234 
+    // https://github.com/trilinos/Trilinos/issues/7234
+    // On CUDA platforms, subviews of Kokkos::DualView did not perform properly
+    // when pointing to the end of a DualView, as the shared Vector does
+    // below.  See Kokkos issues #2981 and #2979 for more details
+    // https://github.com/kokkos/kokkos/issues/2981
+    // https://github.com/kokkos/kokkos/issues/2979
     using Teuchos::RCP;
     using Teuchos::rcp;
     using namespace Tpetra;
@@ -263,7 +269,7 @@ namespace {
     using TpetraExport = Tpetra::Export<LO,GO,NodeType>;
     using TpetraVec = Tpetra::Vector<double,LO,GO,NodeType>;
 
-    Teuchos::RCP<Teuchos::MpiComm<int> > comm = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
     const int rank = comm->getRank();
     const int size = comm->getSize();
 
@@ -338,5 +344,4 @@ namespace {
       TEST_FLOATING_EQUALITY(host_owned_and_shared(1,0),1.0,tol); // check owned entries only
     }
   }
-#endif
 }
