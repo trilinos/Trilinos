@@ -51,6 +51,7 @@ TemplateManager()
   // Determine number of types
   int sz = Sacado::mpl::size<TypeSeq>::value;
   objects.resize(sz);
+  disabled.resize(sz,false);
 }
 
 template <typename TypeSeq, typename BaseT, typename ObjectT>
@@ -65,7 +66,7 @@ void
 PHX::TemplateManager<TypeSeq,BaseT,ObjectT>::
 buildObjects(const BuilderOpT& builder)
 {
-  Sacado::mpl::for_each_no_kokkos<TypeSeq>(BuildObject<BuilderOpT>(objects,builder));
+  Sacado::mpl::for_each_no_kokkos<TypeSeq>(BuildObject<BuilderOpT>(objects,disabled,builder));
 }
 
 template <typename TypeSeq, typename BaseT, typename ObjectT>
@@ -151,4 +152,22 @@ end() const
 {
   return PHX::ConstTemplateIterator<TypeSeq,BaseT,ObjectT>(*this,
 							      objects.end());
+}
+
+template <typename TypeSeq, typename BaseT, typename ObjectT>
+template<typename ScalarT>
+void
+PHX::TemplateManager<TypeSeq,BaseT,ObjectT>::deleteType()
+{
+  int idx = Sacado::mpl::find<TypeSeq,ScalarT>::value;
+  objects[idx] = Teuchos::null;
+}
+
+template <typename TypeSeq, typename BaseT, typename ObjectT>
+template<typename ScalarT>
+void
+PHX::TemplateManager<TypeSeq,BaseT,ObjectT>::disableType()
+{
+  int idx = Sacado::mpl::find<TypeSeq,ScalarT>::value;
+  disabled[idx] = true;
 }
