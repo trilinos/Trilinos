@@ -58,3 +58,5 @@ unset ATDM_CONFIG_Kokkos_ENABLE_Cuda
 unset ATDM_CONFIG_Kokkos_ENABLE_Deprecated_Code
 unset ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG
 unset atdm_run_script_on_compute_node
+unset ATDM_CONFIG_Trilinos_LINK_SEARCH_START_STATIC
+unset ATDM_CONFIG_SBATCH_EXTRA_ARGS
