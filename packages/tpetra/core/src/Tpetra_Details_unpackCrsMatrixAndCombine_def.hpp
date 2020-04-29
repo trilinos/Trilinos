@@ -188,7 +188,7 @@ unpackRow(
 /// from a single (concatenated) (view of) char* directly into the
 /// row of the matrix.
 struct UnpackSparseRowsTag {};
-struct UnpackLongRowsTag {};
+struct UnpackDenseRowsTag {};
 
 template<class LocalMatrix, class LocalMap, class BufferDeviceType>
 struct UnpackCrsMatrixAndCombineFunctor {
@@ -225,7 +225,7 @@ struct UnpackCrsMatrixAndCombineFunctor {
   num_packets_per_lid_type num_packets_per_lid;
   import_lids_type import_lids;
   offsets_type offsets;
-  int_view_type long_rows;
+  int_view_type dense_rows;
 
   Tpetra::CombineMode combine_mode;
   size_t max_num_ent;
@@ -245,7 +245,7 @@ struct UnpackCrsMatrixAndCombineFunctor {
       const num_packets_per_lid_type& num_packets_per_lid_in,
       const import_lids_type& import_lids_in,
       const offsets_type& offsets_in,
-      const int_view_type& long_rows_in,
+      const int_view_type& dense_rows_in,
       const Tpetra::CombineMode combine_mode_in,
       const size_t max_num_ent_in,
       const bool unpack_pids_in,
@@ -257,7 +257,7 @@ struct UnpackCrsMatrixAndCombineFunctor {
     num_packets_per_lid(num_packets_per_lid_in),
     import_lids(import_lids_in),
     offsets(offsets_in),
-    long_rows(long_rows_in),
+    dense_rows(dense_rows_in),
     combine_mode(combine_mode_in),
     max_num_ent(max_num_ent_in),
     unpack_pids(unpack_pids_in),
@@ -289,7 +289,11 @@ struct UnpackCrsMatrixAndCombineFunctor {
   }
 
   KOKKOS_INLINE_FUNCTION void
-  join(const UnpackSparseRowsTag&, volatile value_type& dst, const volatile value_type& src) const
+  join(
+    const UnpackSparseRowsTag&,
+    volatile value_type& dst,
+    const volatile value_type& src
+  ) const
   {
     // `dst` should reflect the first (least) bad index and
     // all other associated error codes and data.  Thus, we need only
@@ -325,7 +329,7 @@ struct UnpackCrsMatrixAndCombineFunctor {
     const size_t num_bytes = num_packets_per_lid(i);
 
     // Only unpack data if there is a nonzero number of bytes.
-    if (num_bytes == 0 || long_rows(i) == 1) {
+    if (num_bytes == 0 || dense_rows(i) == 1) {
       return;
     }
 
@@ -408,7 +412,12 @@ struct UnpackCrsMatrixAndCombineFunctor {
       // duplicates in incoming LIDs list).
       const bool use_atomic_updates = atomic;
       num_modified += local_matrix.sumIntoValues(
-        import_lid, lids_raw, num_ent, vals_raw, matrix_has_sorted_rows, use_atomic_updates
+        import_lid,
+        lids_raw,
+        num_ent,
+        vals_raw,
+        matrix_has_sorted_rows,
+        use_atomic_updates
       );
     }
     else if (combine_mode == REPLACE) {
@@ -417,7 +426,12 @@ struct UnpackCrsMatrixAndCombineFunctor {
       // target matrix entries, so we never need atomic updates.
       const bool use_atomic_updates = false;
       num_modified += local_matrix.replaceValues(
-        import_lid, lids_raw, num_ent, vals_raw, matrix_has_sorted_rows, use_atomic_updates
+        import_lid,
+        lids_raw,
+        num_ent,
+        vals_raw,
+        matrix_has_sorted_rows,
+        use_atomic_updates
       );
     }
     else {
@@ -430,7 +444,11 @@ struct UnpackCrsMatrixAndCombineFunctor {
   }
 
   KOKKOS_INLINE_FUNCTION void
-  join(const UnpackLongRowsTag&, volatile value_type& dst, const volatile value_type& src) const
+  join(
+    const UnpackDenseRowsTag&,
+    volatile value_type& dst,
+    const volatile value_type& src
+  ) const
   {
     // `dst` should reflect the first (least) bad index and
     // all other associated error codes and data.  Thus, we need only
@@ -450,7 +468,7 @@ struct UnpackCrsMatrixAndCombineFunctor {
   }
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(const UnpackLongRowsTag&, const LO i, value_type& dst) const
+  void operator()(const UnpackDenseRowsTag&, const LO i, value_type& dst) const
   {
     using Kokkos::View;
     using Kokkos::subview;
@@ -466,7 +484,7 @@ struct UnpackCrsMatrixAndCombineFunctor {
     const size_t num_bytes = num_packets_per_lid(i);
 
     // Only unpack data if there is a nonzero number of bytes.
-    if (num_bytes == 0 || long_rows(i) != 1) {
+    if (num_bytes == 0 || dense_rows(i) != 1) {
       return;
     }
 
@@ -794,21 +812,24 @@ unpackAndCombineIntoCrsMatrix(
   // kernels - one for long rows and the other for all other rows. See
   // https://github.com/trilinos/Trilinos/issues/6603
   size_t threshold = Tpetra::Details::Behavior::longRowMinNumEntries();
-  const bool has_long_rows = max_num_ent > threshold;
+  const bool has_dense_rows = false;  // max_num_ent > threshold;
 
-  Kokkos::View<int*, DT> long_rows("Long rows mask", num_import_lids);
-  Kokkos::parallel_for(
+  Kokkos::View<int*, DT> dense_rows("Dense rows mask", num_import_lids);
+  LO num_dense_rows = 0;
+  Kokkos::parallel_reduce(
     num_import_lids,
-    KOKKOS_LAMBDA(int i){
+    KOKKOS_LAMBDA(const LO i, LO& num_dense){
       LO num_ent_LO = 0;
       if (num_packets_per_lid(i) > 0)
       {
         const char* const in_buf = imports.data() + offsets(i);
         (void) PackTraits<LO>::unpackValue(num_ent_LO, in_buf);
+        num_dense += 1;
       }
       const size_t num_ent = static_cast<size_t>(num_ent_LO);
-      long_rows[i] = (num_ent > threshold) ? 1 : 0;
-    }
+      dense_rows[i] = 0; // (num_ent > threshold) ? 1 : 0;
+    },
+    num_dense_rows
   );
 
   // Now do the actual unpack!
@@ -821,7 +842,7 @@ unpackAndCombineIntoCrsMatrix(
     num_packets_per_lid,
     import_lids,
     offsets,
-    long_rows,
+    dense_rows,
     combine_mode,
     max_num_ent,
     unpack_pids,
@@ -830,8 +851,8 @@ unpackAndCombineIntoCrsMatrix(
   );
 
   typename functor::value_type x;
-  using range_policy = Kokkos::RangePolicy<XS, Kokkos::IndexType<LO>, UnpackSparseRowsTag>;
-  Kokkos::parallel_reduce(range_policy(0, static_cast<LO>(num_import_lids)), f, x);
+  using policy = Kokkos::RangePolicy<XS, Kokkos::IndexType<LO>, UnpackSparseRowsTag>;
+  Kokkos::parallel_reduce(policy(0, static_cast<LO>(num_import_lids)), f, x);
   auto x_h = x.to_std_pair();
   TEUCHOS_TEST_FOR_EXCEPTION(
     x_h.first != 0,
@@ -840,11 +861,13 @@ unpackAndCombineIntoCrsMatrix(
     << x_h.first << " for the first bad row " << x_h.second
   );
 
-  if (has_long_rows)
+  if (has_dense_rows)
   {
     typename functor::value_type x;
-    using range_policy = Kokkos::RangePolicy<XS, Kokkos::IndexType<LO>, UnpackLongRowsTag>;
-    Kokkos::parallel_reduce(range_policy(0, static_cast<LO>(num_import_lids)), f, x);
+    // using policy = Kokkos::TeamPolicy<XS, Kokkos::IndexType<LO>, UnpackDenseRowsTag>;
+    // Kokkos::parallel_reduce(policy(num_dense_rows, Kokkos::AUTO), f, x);
+    using policy = Kokkos::RangePolicy<XS, Kokkos::IndexType<LO>, UnpackDenseRowsTag>;
+    Kokkos::parallel_reduce(policy(0, static_cast<LO>(num_import_lids)), f, x);
     auto x_h = x.to_std_pair();
     TEUCHOS_TEST_FOR_EXCEPTION(
       x_h.first != 0,
