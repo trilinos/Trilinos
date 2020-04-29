@@ -206,6 +206,7 @@ export ATDM_CONFIG_MPI_POST_FLAGS="-map-by;socket:PE=4"
 
 export ATDM_CONFIG_WORKSPACE_BASE_DEFAULT=/home/atdm-devops-admin/jenkins
 export ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE_DEFAULT=/home/atdm-devops-admin/trilinos_installs
+export ATDM_CONFIG_MAKE_INSTALL_GROUP_DEFAULT=wg-run-as-atdm-devops
 export ATDM_CONFIG_INSTALL_PBP_RUNNER_DEFAULT=/home/atdm-devops-admin/tools/run-as-atdm-devops-admin
 
 #

@@ -33,3 +33,6 @@ export ATDM_CONFIG_SLURM_DEFAULT_ACCOUNT=fy150090
 source $ATDM_SCRIPT_DIR/common/toss3/environment_new.sh
 
 export ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE_DEFAULT=/projects/atdm_devops/trilinos_installs/
+export ATDM_CONFIG_MAKE_INSTALL_GROUP_DEFAULT=wg-run-as-atdm-devops
+
+export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE
