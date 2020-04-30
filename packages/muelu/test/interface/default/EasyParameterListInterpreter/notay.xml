@@ -1,0 +1,5 @@
+<ParameterList name="MueLu">
+  <Parameter name="aggregation: type" type="string" value="notay"/>
+  <Parameter name="aggregation: Dirichlet threshold" type="double"  value="10.0"/>
+  <Parameter name="aggregation: ordering" type="string" value="natural"/>
+</ParameterList>
