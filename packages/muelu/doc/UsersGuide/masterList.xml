@@ -579,6 +579,15 @@
     </parameter>
 
     <parameter>
+      <name>aggregation: phase2a include root</name>
+      <type>bool</type>
+      <default>true</default>
+      <description>Whether the root node should be included in the aggregates formed in phase 2a.</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>aggregation: error on nodes with no on-rank neighbors</name>
       <type>bool</type>
       <default>false</default>
