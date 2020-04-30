@@ -141,6 +141,9 @@ namespace MueLu {
     GlobalOrdinal getRoot  (LocalOrdinal LID) const;
     GlobalOrdinal getAggGID(LocalOrdinal LID) const;
 
+    void getIJK(LocalOrdinal LID, int &i, int &j, int &k) const;
+    void getAggIJK(LocalOrdinal LID, int &i, int &j, int &k) const;
+
     mutable
      int nDim_;
     mutable
@@ -153,7 +156,9 @@ namespace MueLu {
      int bx_, by_, bz_;
     mutable 
      bool dirichletX_,dirichletY_,dirichletZ_;
-    
+    mutable 
+     int naggx_, naggy_, naggz_;
+
     mutable
      std::map<GlobalOrdinal,GlobalOrdinal> revMap_;
   }; // class BrickAggregationFactory
