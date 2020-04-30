@@ -211,6 +211,7 @@ namespace MueLu {
       GO aggGID = getAggGID(LID);
       //      printf("[%d] (%d,%d,%d) => agg %d\n",LID,(int)(*xMap_)[x_[LID]],nDim_ > 1 ? (int)(*yMap_)[y_[LID]] : -1,nDim_ > 2 ? (int)(*zMap_)[z_[LID]] : -1,(int)aggGID);
       if(aggGID == GO_INVALID) continue;
+      //      printf("[%d] getRoot = %d\n",(int)LID,(int)getRoot(LID));
 
       if ((revMap_.find(getRoot(LID)) != revMap_.end()) && rowMap->isNodeGlobalElement(colMap->getGlobalElement(revMap_[getRoot(LID)]))) {
         // Root of the brick aggregate containing GID (<- LID) belongs to us
@@ -219,7 +220,7 @@ namespace MueLu {
 
         if (isRoot(LID))
           aggregates->SetIsRoot(LID);
-
+	//	printf("[%d] initial vertex2AggId = %d\n",(int)LID,(int)vertex2AggId[LID]);
       } else {
         remoteAggGIDs.insert(aggGID);
       }
@@ -272,12 +273,6 @@ namespace MueLu {
       }
     }
 
-    // Sanity checks
-    /*    for (LO LID = 0; LID < numPoints; LID++) {
-      TEUCHOS_TEST_FOR_EXCEPTION( (isDirichlet(LID)  && vertex2AggId[LID]!=GO_INVALID) ||
-                                  (!isDirichlet(LID) && vertex2AggId[LID]==GO_INVALID),
-                                  Exceptions::RuntimeError, "Dirichlet detection failed");
-                                  }*/
 
     GO numGlobalRemote;
     MueLu_sumAll(comm, as<GO>(numRemote), numGlobalRemote);
@@ -320,6 +315,24 @@ namespace MueLu {
 
       revMap_[k*ny_*nx_ + j*nx_ + i] = ind;
     }
+
+   
+    // Get the number of aggregates in each direction, correcting for Dirichlet
+    int xboost = dirichletX_ ? 1 : 0;
+    int yboost = dirichletY_ ? 1 : 0;
+    int zboost = dirichletZ_ ? 1 : 0;
+    naggx_ = (nx_-2*xboost)/bx_ + ((nx_-2*xboost) % bx_ ? 1 : 0);
+
+    if(nDim_ > 1)
+      naggy_ = (ny_-2*yboost)/by_ + ( (ny_-2*yboost) % by_ ? 1 : 0);      
+    else 
+      naggy_ = 1;
+
+    if(nDim_ > 2)
+      naggz_ = (nz_-2*zboost)/bz_ + ( (nz_-2*zboost) % bz_ ? 1 : 0);   
+    else
+      naggz_ = 1;
+
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -375,11 +388,8 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::isRoot(LocalOrdinal LID) const {
-    int i = (*xMap_)[x_[LID]], j = 0, k = 0;
-    if (nDim_ > 1)
-      j = (*yMap_)[y_[LID]];
-    if (nDim_ > 2)
-      k = (*zMap_)[z_[LID]];
+    int i,j,k;
+    getIJK(LID,i,j,k);
 
     return (k*ny_*nx_ + j*nx_ + i) == getRoot(LID);
   }
@@ -387,11 +397,13 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::isDirichlet(LocalOrdinal LID) const {
     bool boundary = false;
-    if(dirichletX_  &&  ((*xMap_)[x_[LID]] == 0 || (*xMap_)[x_[LID]] == nx_-1) )
+    int i,j,k;
+    getIJK(LID,i,j,k);
+    if(             dirichletX_  &&  (i == 0 || i == nx_-1) )
       boundary = true;
-    if(nDim_ > 1 && dirichletY_  &&  ((*yMap_)[y_[LID]] == 0 || (*yMap_)[y_[LID]] == ny_-1) )
+    if(nDim_ > 1 && dirichletY_  &&  (j == 0 || j == ny_-1) )
       boundary = true;
-    if(nDim_ > 2 && dirichletZ_  &&  ((*zMap_)[z_[LID]] == 0 || (*zMap_)[z_[LID]] == nz_-1) )
+    if(nDim_ > 2 && dirichletZ_  &&  (k == 0 || k == nz_-1) )
       boundary = true;
     
     return boundary;
@@ -400,60 +412,70 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   GlobalOrdinal BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getRoot(LocalOrdinal LID) const {
-    // Corrections to ignore Dirichlet BCs
+    if(isDirichlet(LID))
+      return Teuchos::OrdinalTraits<GlobalOrdinal>::invalid();
+
+    int aggI,aggJ,aggK;
+    getAggIJK(LID,aggI,aggJ,aggK);
     int xboost = dirichletX_ ? 1 : 0;
     int yboost = dirichletY_ ? 1 : 0;
     int zboost = dirichletZ_ ? 1 : 0;
-
-    int i = ((*xMap_)[x_[LID]]/bx_)*bx_ + (bx_-1)/2 + xboost, j = 0, k = 0;
-    if (nDim_ > 1) 
-      j = ((*yMap_)[y_[LID]]/by_)*by_ + (by_-1)/2 + yboost;    
-    if (nDim_ > 2)
-      k = ((*zMap_)[z_[LID]]/bz_)*bz_ + (bz_-1)/2 + zboost;
-
-    // Check if the actual root is outside of the domain. If it is, project the root to the domain
-    if (i > nx_) i = nx_ - xboost;
-    if (j > ny_) j = ny_ - yboost;
-    if (k > nz_) k = nz_ - zboost;
+   
+    int i =             xboost + aggI*bx_ + (bx_-1)/2;
+    int j = (nDim_>1) ? yboost + aggJ*by_ + (by_-1)/2 : 0;
+    int k = (nDim_>2) ? zboost + aggK*bz_ + (bz_-1)/2 : 0;
 
     return k*ny_*nx_ + j*nx_ + i;
   }
 
+ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void  BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getIJK(LocalOrdinal LID, int &i, int &j, int &k) const {
+   i = (*xMap_)[x_[LID]]; 
+   j = (nDim_>1) ? (*yMap_)[y_[LID]] : 0;
+   k =  (nDim_>2) ? (*zMap_)[z_[LID]] : 0;
+  }
+
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  GlobalOrdinal BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getAggGID(LocalOrdinal LID) const {
-    // Corrections to ignore Dirichlet BCs
+  void  BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getAggIJK(LocalOrdinal LID, int &i, int &j, int &k) const {
     int xboost = dirichletX_ ? 1 : 0;
     int yboost = dirichletY_ ? 1 : 0;
     int zboost = dirichletZ_ ? 1 : 0;
+    int pointI, pointJ, pointK;
+    getIJK(LID,pointI,pointJ,pointK);
+    i = (pointI-xboost)/bx_;
+
+    if (nDim_ > 1) j = (pointJ-yboost)/by_;
+    else j = 0;
+
+    if (nDim_ > 2) k = (pointK-zboost)/bz_;
+    else k = 0;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  GlobalOrdinal BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getAggGID(LocalOrdinal LID) const {
     bool boundary = false;
 
-    int naggx = (nx_-2*xboost)/bx_ + ((nx_-2*xboost) % bx_ ? 1 : 0), naggy = 1;
-    int i = (*xMap_)[x_[LID]], j = nDim_>1 ? (*yMap_)[y_[LID]] : 0, k =  nDim_>2 ? (*zMap_)[z_[LID]] : 0;
-    int ii = (i-xboost)/bx_, jj = 0, kk = 0;
+    int i, j, k;
+    getIJK(LID,i,j,k);
+    int ii , jj, kk;
+    getAggIJK(LID,ii,jj,kk);
 
-    if( dirichletX_ && (i == 0 || i == nx_ - 1)) boundary = true;
-    if (nDim_ > 1) {
-      naggy = (ny_-2*yboost)/by_ + ( (ny_-2*yboost) % by_ ? 1 : 0);      
-      jj = (j-yboost)/by_;
-      if(dirichletY_ &&  (j == 0 || j == ny_ - 1)) boundary = true;
-    }
-
-    if (nDim_ > 2) {
-      kk = (k-zboost)/bz_;
-      if( dirichletZ_ && (k == 0 || k == nz_ - 1)) boundary = true;
-    }
+    if(              dirichletX_ && (i == 0 || i == nx_ - 1)) boundary = true;
+    if (nDim_ > 1 && dirichletY_ && (j == 0 || j == ny_ - 1)) boundary = true;
+    if (nDim_ > 2 && dirichletZ_ && (k == 0 || k == nz_ - 1)) boundary = true;
 
     /*
     if(boundary)
-      printf("[%d] coord = (%d,%d,%d) {%d,%d} agg = (%d,%d,%d) {%d,%d} => agg %s\n",LID,i,j,k,nx_,ny_,ii,jj,kk,naggx,naggy,"BOUNDARY");
+      printf("[%d] coord = (%d,%d,%d) {%d,%d,%d} agg = (%d,%d,%d) {%d,%d,%d} => agg %s\n",LID,i,j,k,nx_,ny_,nz_,ii,jj,kk,naggx_,naggy_,naggz_,"BOUNDARY");
     else
-      printf("[%d] coord = (%d,%d,%d) {%d,%d} agg = (%d,%d,%d) {%d,%d} => agg %d\n",LID,i,j,k,nx_,ny_,ii,jj,kk,naggx,naggy,kk*naggy*naggx + jj*naggx + ii);
+      printf("[%d] coord = (%d,%d,%d) {%d,%d,%d} agg = (%d,%d,%d) {%d,%d,%d} => agg %d\n",LID,i,j,k,nx_,ny_,nz_,ii,jj,kk,naggx_,naggy_,naggz_,kk*naggy_*naggx_ + jj*naggx_ + ii);
     */
 
     if (boundary)
       return Teuchos::OrdinalTraits<GlobalOrdinal>::invalid();
     else
-      return Teuchos::as<GlobalOrdinal>(kk*naggy*naggx) + Teuchos::as<GlobalOrdinal>( jj*naggx) + ii;
+      return Teuchos::as<GlobalOrdinal>(kk*naggy_*naggx_) + Teuchos::as<GlobalOrdinal>(jj*naggx_) + ii;
     
   }
 
