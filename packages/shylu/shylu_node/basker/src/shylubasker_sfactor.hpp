@@ -2169,12 +2169,12 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     //JDB: This needs to be fixed
     max_blk_size = BTF_C.nrow;
     
-    if(btf_tabs_offset == 0)
+    // though offset=0, we may still have left-over BLK factorization
+    //if(btf_tabs_offset == 0)
     {
       BASKER_ASSERT(num_threads > 0, "Basker btf_last_dense assert: num_threads > 0 failed");
       MALLOC_THREAD_1DARRAY(thread_array, num_threads);
     }
-
 
     for(Int i = 0 ; i < num_threads; i++)
     {

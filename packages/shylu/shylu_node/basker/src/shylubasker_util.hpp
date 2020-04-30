@@ -766,10 +766,10 @@ namespace BaskerNS
           0, 2, max_sep_size*2);
 
     } //end if btf_tabs_offset != 0
-    else
+    //else // though offset=0, there may be still BLK factorization
     {
-      if(btf_nblks > 1)
-      {
+      if(btf_nblks > 1 && btf_nblks > btf_tabs_offset)
+      { // if any left over for BLK factorization
         if(Options.btf == BASKER_TRUE)
         {
           Int iws_mult = thread_array[kid].iws_mult;
