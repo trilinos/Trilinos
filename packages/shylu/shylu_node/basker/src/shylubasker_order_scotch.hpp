@@ -426,7 +426,7 @@ namespace BaskerNS
     free(sg.peritab);
     free(sg.rangtab);
     free(sg.treetab);
-    free(is_nonleaf);
+    delete [] is_nonleaf;
 
     SCOTCH_stratExit(&strdat);
     SCOTCH_graphFree(&cgrafptr);
