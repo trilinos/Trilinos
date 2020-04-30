@@ -199,8 +199,4 @@ export EUCLID_ROOT=${sparc_tpl_prefix_path}/${system_name}-${node_arch}/euclid-2
 # Define and export atdm_run_script_on_compute_node
 source $ATDM_SCRIPT_DIR/common/define_run_on_slurm_compute_node_func.sh
 
-# Install-related stuff
-export ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE_DEFAULT=/projects/atdm_devops/trilinos_installs
-export ATDM_CONFIG_MAKE_INSTALL_GROUP_DEFAULT=wg-run-as-atdm-devops
-
 export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE

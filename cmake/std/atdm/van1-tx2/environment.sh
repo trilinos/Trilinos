@@ -145,10 +145,6 @@ export ATMD_CONFIG_MPI_USE_COMPILER_WRAPPERS=ON
 
 export ATDM_CONFIG_WCID_ACCOUNT_DEFAULT=fy150090
 
-# Install related
-export ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE_DEFAULT=/projects/atdm_devops/trilinos_installs
-export ATDM_CONFIG_MAKE_INSTALL_GROUP_DEFAULT=wg-run-as-atdm-devops
-
 #
 # Done
 #

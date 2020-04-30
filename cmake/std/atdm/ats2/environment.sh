@@ -255,10 +255,6 @@ export F77=mpifort
 export FC=mpifort
 export F90=mpifort
 
-# Install-related stuff
-export ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE_DEFAULT=/projects/atdm_devops/trilinos_installs/
-export ATDM_CONFIG_MAKE_INSTALL_GROUP_DEFAULT=wg-run-as-atdm-devops
-
 # System-info for what ATS-2 system we are using
 if [[ "${ATDM_CONFIG_KNOWN_HOSTNAME}" == "vortex" ]] ; then
   export ATDM_CONFIG_ATS2_LOGIN_NODE=vortex60
