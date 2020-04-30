@@ -289,9 +289,9 @@ namespace BaskerNS
     //    Entry absv, maxc; //NDE - warning: unsed maxc
     //Entry absv;
     double absv;
-
-    Int llnnz  = L.nnz;
-    Int uunnz  = U.nnz;
+    // Max number of nnz allowed/allocated
+    Int llnnz  = L.mnnz;
+    Int uunnz  = U.mnnz;
     //Entry maxv = (Entry) 0;
     double maxv = (double) 0;
 
