@@ -211,7 +211,7 @@ namespace MueLu {
       GO aggGID = getAggGID(LID);
       //      printf("[%d] (%d,%d,%d) => agg %d\n",LID,(int)(*xMap_)[x_[LID]],nDim_ > 1 ? (int)(*yMap_)[y_[LID]] : -1,nDim_ > 2 ? (int)(*zMap_)[z_[LID]] : -1,(int)aggGID);
       if(aggGID == GO_INVALID) continue;
-      printf("[%d] getRoot = %d\n",(int)LID,(int)getRoot(LID));
+      //      printf("[%d] getRoot = %d\n",(int)LID,(int)getRoot(LID));
 
       if ((revMap_.find(getRoot(LID)) != revMap_.end()) && rowMap->isNodeGlobalElement(colMap->getGlobalElement(revMap_[getRoot(LID)]))) {
         // Root of the brick aggregate containing GID (<- LID) belongs to us
@@ -220,7 +220,7 @@ namespace MueLu {
 
         if (isRoot(LID))
           aggregates->SetIsRoot(LID);
-	printf("[%d] initial vertex2AggId = %d\n",(int)LID,(int)vertex2AggId[LID]);
+	//	printf("[%d] initial vertex2AggId = %d\n",(int)LID,(int)vertex2AggId[LID]);
       } else {
         remoteAggGIDs.insert(aggGID);
       }
@@ -273,17 +273,6 @@ namespace MueLu {
       }
     }
 
-    for (LO LID = 0; LID < numPoints; LID++) {
-      printf("[%d] vertex2AggId = %d\n",(int)LID,(int)vertex2AggId[LID]);
-    }    
-
-
-    // Sanity checks
-    /*    for (LO LID = 0; LID < numPoints; LID++) {
-      TEUCHOS_TEST_FOR_EXCEPTION( (isDirichlet(LID)  && vertex2AggId[LID]!=GO_INVALID) ||
-                                  (!isDirichlet(LID) && vertex2AggId[LID]==GO_INVALID),
-                                  Exceptions::RuntimeError, "Dirichlet detection failed");
-                                  }*/
 
     GO numGlobalRemote;
     MueLu_sumAll(comm, as<GO>(numRemote), numGlobalRemote);
@@ -476,12 +465,12 @@ namespace MueLu {
     if (nDim_ > 1 && dirichletY_ && (j == 0 || j == ny_ - 1)) boundary = true;
     if (nDim_ > 2 && dirichletZ_ && (k == 0 || k == nz_ - 1)) boundary = true;
 
-  
+    /*
     if(boundary)
       printf("[%d] coord = (%d,%d,%d) {%d,%d,%d} agg = (%d,%d,%d) {%d,%d,%d} => agg %s\n",LID,i,j,k,nx_,ny_,nz_,ii,jj,kk,naggx_,naggy_,naggz_,"BOUNDARY");
     else
       printf("[%d] coord = (%d,%d,%d) {%d,%d,%d} agg = (%d,%d,%d) {%d,%d,%d} => agg %d\n",LID,i,j,k,nx_,ny_,nz_,ii,jj,kk,naggx_,naggy_,naggz_,kk*naggy_*naggx_ + jj*naggx_ + ii);
-    
+    */
 
     if (boundary)
       return Teuchos::OrdinalTraits<GlobalOrdinal>::invalid();
