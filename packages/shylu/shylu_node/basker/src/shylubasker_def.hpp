@@ -914,10 +914,12 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int, Entry, Exe_Space>::SetThreads(Int nthreads)
   {
-    //Need to test if power of 2.
-    if((nthreads != 1) && (nthreads%2 != 0))
+    //Need to test if power of nparts
+    //TODO: hard-coded to be two. It is also hard-coded in shylubasker_structs.hpp
+    double nparts = 2.0;
+    if (pow(nparts, log((double)nthreads)/log(nparts)) != nthreads)
     {
-      BASKER_ASSERT(0==1, "Basker SetThreads Assert: Number of thread error - not a multiple of 2");
+      BASKER_ASSERT(0==1, "Basker SetThreads Assert: Number of thread error - not a power of 2");
       //Set default 1
       num_threads = 1;
       return BASKER_ERROR;
