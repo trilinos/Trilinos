@@ -303,15 +303,6 @@ class RILUK:
   RILUK (const RILUK<MatrixType> & src);
 
  public:
-  /// \brief Clone preconditioner to a new node type.
-  ///
-  /// This method makes a deep copy of the original preconditioner
-  /// (and matrix), into objects with the Node type
-  /// <tt>NewMatrixType::node_type</tt>.
-  template <typename NewMatrixType>
-  Teuchos::RCP< RILUK< NewMatrixType > >
-  clone (const Teuchos::RCP<const NewMatrixType>& A_newnode) const;
-
   //! Destructor (declared virtual for memory safety).
   virtual ~RILUK ();
 
@@ -618,52 +609,6 @@ namespace detail {
     }
   };
 } // namespace detail
-
-template <class MatrixType>
-template <typename NewMatrixType>
-Teuchos::RCP<RILUK<NewMatrixType> >
-RILUK<MatrixType>::
-clone (const Teuchos::RCP<const NewMatrixType>& A_newnode) const
-{
-  using Teuchos::ParameterList;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-
-  typedef typename NewMatrixType::scalar_type new_scalar_type;
-  typedef typename NewMatrixType::local_ordinal_type new_local_ordinal_type;
-  typedef typename NewMatrixType::global_ordinal_type new_global_ordinal_type;
-  typedef typename NewMatrixType::node_type new_node_type;
-  typedef Tpetra::RowMatrix<new_scalar_type, new_local_ordinal_type,
-    new_global_ordinal_type, new_node_type> new_row_matrix_type;
-  typedef RILUK<new_row_matrix_type> new_riluk_type;
-
-  RCP<new_riluk_type> new_riluk = rcp (new new_riluk_type (A_newnode));
-
-  RCP<ParameterList> plClone = Teuchos::parameterList ();
-  plClone = detail::setLocalSolveParams<NewMatrixType, new_node_type>::setParams (plClone);
-
-  new_riluk->L_ = rcp(new crs_matrix_type(L_, Teuchos::Copy));
-  new_riluk->U_ = rcp(new crs_matrix_type(U_, Teuchos::Copy));
-  new_riluk->D_ = rcp(new crs_matrix_type(D_, Teuchos::Copy));
-
-  new_riluk->LevelOfFill_ = LevelOfFill_;
-  new_riluk->Overalloc_ = Overalloc_;
-
-  new_riluk->isAllocated_ = isAllocated_;
-  new_riluk->isInitialized_ = isInitialized_;
-  new_riluk->isComputed_ = isComputed_;
-
-  new_riluk->numInitialize_ = numInitialize_;
-  new_riluk->numCompute_ = numCompute_;
-  new_riluk->numApply_ =  numApply_;
-
-  new_riluk->RelaxValue_ = RelaxValue_;
-  new_riluk->Athresh_ = Athresh_;
-  new_riluk->Rthresh_ = Rthresh_;
-
-
-  return new_riluk;
-}
 
 } // namespace Ifpack2
 

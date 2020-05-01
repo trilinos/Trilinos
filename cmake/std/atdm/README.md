@@ -138,7 +138,7 @@ functionality could be supported in the future if needed.
 **`<compiler>`:** The following **lower case** `<build-name>` keywords specify
 the `<COMPILER>` variable include:
 
-* `default`: Auto-select the default compiler and version for the given system 
+* `default`: Auto-select the default compiler and version for the given system
 * `gnu`: Use the GCC compilers (`<COMPILER>=GNU`)
   - `gnu-4.9.3`: Use GNU GCC 4.9.3 compilers
   - `gnu-7.2.0`: Use GNU GCC 7.2.0 compilers
@@ -241,7 +241,7 @@ checking etc.):
 * `debug` or `dbg`: (`<BUILD_TYPE>=DEBUG`, DEFAULT)
   * Set `CMAKE_BULD_TYPE=DEBUG` (i.e. `-O0 -g` compiler options)
   * Turn **ON** runtime debug checking
-  * NOTE: This build supports running in a debugger. 
+  * NOTE: This build supports running in a debugger.
 
 <a name="pt"/>
 
@@ -328,7 +328,7 @@ which after installation can then be sourced by clients using:
 
 ```
 $ source <install-prefix>/load_matching_env.sh
-``` 
+```
 
 Sourcing this file loads the compilers, MPI, and TPLs and sets up the various
 `ATDM_CONG_` environment variables described above.  It also sets the
@@ -609,6 +609,7 @@ example, skip the configure, skip the build, skip running tests, etc.
 * <a href="#waterman">waterman</a>
 * <a href="#ats-2">ATS-2</a>
 * <a href="#astra-vanguard-arm-system">ASTRA (Vanguard ARM System)</a>
+* <a href="#ats-1">ATS-1</a>
 
 
 ### ride/white
@@ -754,6 +755,8 @@ $ salloc -N1 --time=0:20:00 --account=<YOUR_WCID> \
 
 ### mutrino
 
+The default environment on mutrino is now ats1. Please see 
+<a href="#ats-1">ATS-1</a>.
 Once logged on to 'mutrino', one can directly configure and build on the login
 node (being careful not to overload the node) using the `mutrino` env.  But to
 run the tests, one must run on the compute nodes using the `salloc` command.
@@ -764,7 +767,7 @@ For example, to configure, build and run the tests for say `MueLu` on
 ```
 $ cd <some_build_dir>/
 
-$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh intel-opt-openmp
+$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh mutrino-intel-opt-openmp
 
 $ cmake \
   -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake \
@@ -1064,7 +1067,7 @@ $ cmake -GNinja \
 # Get a node allocation and log on to launch node
 $ bsub -J <job-name> -W 6:00 -Is bash
 
-# Build on the allocated compute node 
+# Build on the allocated compute node
 $ lrun -n 1 make NP=32
 
 # Run the test suite from the launch node
@@ -1177,7 +1180,7 @@ $ cd <some_build_dir>/
 # List available environments
 $ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh help
 
-# Load hsw env and configure on the login node
+# Load arm env and configure on the login node
 $ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh arm-20.0
 $ cmake -G Ninja \
   -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake \
@@ -1244,6 +1247,65 @@ fail.)
   shell directly on a compute node using `srun ... bash' an` then run `mpirun`
   from there.
 
+### ATS-1
+
+Once logged onto a supported ATS-1 system (called system 'ats1')
+system like 'mutrino', one can build and configure on a login node.
+
+To configure, build and run the tests for the default `intel-19` build for
+`Kokkos` (after cloning Trilinos on the 'develop' branch), run the following
+from a login node on 'mutrino':
+
+```bash
+$ cd <some_build_dir>/
+
+# List available environments
+$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh ats1-help
+
+# Load HSW env and configure on the login node
+$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh intel-19
+$ cmake -G Ninja \
+  -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake \
+  -DTrilinos_ENABLE_TESTS=ON \
+  -DTrilinos_ENABLE_Tpetra=ON \
+  $TRILINOS_DIR
+
+$ make NP=8  # This is a shared node!
+
+# Get a node allocation and run ctest
+$ salloc -N 1 --time=2:00:00  -p short,batch --account=<YOUR_WCID> ctest -j1
+```
+
+One can also run tests in the background on a compute node using sbatch:
+```
+echo '#!/bin/bash' > do-test.sh
+echo 'ctest -j1' >> do-test.sh
+$ sbatch --output=do-test.out -N1 --time=2:00:00 -J ats1-do-test --account=<YOUR_WCID> do-test.sh
+```
+
+To drop to a compute node for an interactive session:
+```
+$ salloc -N1 --account=<YOUR_WCID>
+```
+
+To use the `ctest-s-local-test-driver.sh` script, one must set one's WCID
+account using:
+
+```
+$ export ATDM_CONFIG_WCID_ACCOUNT=<YOUR_WCID>
+```
+
+If `ATDM_CONFIG_WCID_ACCOUNT` is not set, then a default account will be used.
+(But if the user is not approved for that account, then the allocation will
+fail.)
+
+**NOTES:**
+- **IMPORTANT** Do not use anything but `ctest -j1` for running tests.
+- One cannot run more than one instance of srun at a time on a given compute node.
+- To get information on <YOUR_WCID> used above, there is a WC tool tab on
+  computing.sandia.gov.
+- CTest runs everything using the `srun` command and this must be run from
+  inside a `salloc` or `sbatch` allocation.
 
 ## Building and installing Trilinos for ATDM Applications
 

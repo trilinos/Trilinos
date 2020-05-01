@@ -92,10 +92,10 @@ namespace MueLu {
 
     char buf[256];
     if (avgVal && (paramList.is_null() || !paramList->isParameter("print abs") || paramList->get<bool>("print abs") == false))
-      sprintf(buf, "avg = %.2e,  dev = %5.1f%%,  min = %+6.1f%% (%4d),  max = %+6.1f%% (%4d)", avgVal,
-              (devVal/avgVal)*100, (minVal/avgVal-1)*100, minProc, (maxVal/avgVal-1)*100, maxProc);
+      sprintf(buf, "avg = %.2e,  dev = %5.1f%%,  min = %+6.1f%% (%8.2f on %4d),  max = %+6.1f%% (%8.2f on %4d)", avgVal,
+              (devVal/avgVal)*100, (minVal/avgVal-1)*100, as<double>(minVal), minProc, (maxVal/avgVal-1)*100, as<double>(maxVal), maxProc);
     else
-      sprintf(buf, "avg = %8.2f,  dev = %6.2f,  min = %6.1f  (%4d),  max = %6.1f  (%4d)", avgVal,
+      sprintf(buf, "avg = %8.2f,  dev = %6.2f,  min = %6.1f  (on %4d),  max = %6.1f  (on %4d)", avgVal,
               devVal, as<double>(minVal), minProc, as<double>(maxVal), maxProc);
     return buf;
   }
