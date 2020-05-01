@@ -95,6 +95,7 @@ namespace MueLu {
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
     SET_VALID_ENTRY("aggregation: pairwise: size");
+    SET_VALID_ENTRY("aggregation: pairwise: tie threshold");
     SET_VALID_ENTRY("aggregation: compute aggregate qualities");
     SET_VALID_ENTRY("aggregation: Dirichlet threshold");
     SET_VALID_ENTRY("aggregation: ordering");
@@ -336,11 +337,11 @@ namespace MueLu {
     const LO numRows    = aggStat.size();
     const int myRank    = A->getMap()->getComm()->getRank();
 
-
-    // FIXME: Anything w/i 1% is considered a tie
-    MT tie_criterion = .01;
-    MT tie_less = 1.0 - tie_criterion;
-    MT tie_more = 1.0 + tie_criterion;
+    // For finding "ties" where we fall back to the ordering.  Making this larger than
+    // hard zero substantially increases code robustness.
+    double tie_criterion = params.get<double>("aggregation: pairwise: tie threshold");
+    double tie_less = 1.0 - tie_criterion;
+    double tie_more = 1.0 + tie_criterion;
 
     // NOTE: Assumes 1 dof per node.  This constraint is enforced in Build(),
     // and so we're not doing again here.

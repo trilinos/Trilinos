@@ -777,6 +777,18 @@
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
+    <parameter>
+      <name>aggregation: pairwise: tie threshold</name>
+      <type>double</type>
+      <default>1e-6</default>
+      <description>Threshold for determining two potential pairwise
+      neighbors have identical values and then fall back on the
+      order.</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+
   </aggregation>
 
   <aggregate_qualities>
