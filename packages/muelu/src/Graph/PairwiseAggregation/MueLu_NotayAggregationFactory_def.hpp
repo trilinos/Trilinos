@@ -324,6 +324,7 @@ namespace MueLu {
       out = Teuchos::getFancyOStream(rcp(new Teuchos::oblackholestream()));
     }
 
+
     const SC SC_ZERO    = Teuchos::ScalarTraits<SC>::zero();
     const MT MT_ZERO    = Teuchos::ScalarTraits<MT>::zero();
     const MT MT_ONE     = Teuchos::ScalarTraits<MT>::one();
@@ -334,6 +335,12 @@ namespace MueLu {
     const MT kappa_init = kappa / (kappa - MT_TWO);
     const LO numRows    = aggStat.size();
     const int myRank    = A->getMap()->getComm()->getRank();
+
+
+    // FIXME: Anything w/i 1% is considered a tie
+    MT tie_criterion = .01;
+    MT tie_less = 1.0 - tie_criterion;
+    MT tie_more = 1.0 + tie_criterion;
 
     // NOTE: Assumes 1 dof per node.  This constraint is enforced in Build(),
     // and so we're not doing again here.
@@ -404,7 +411,11 @@ namespace MueLu {
 	  MT mu_top    = MT_TWO / ( MT_ONE / aii + MT_ONE / ajj);
 	  MT mu_bottom =  - aij + MT_ONE / ( MT_ONE / (aii - si) + MT_ONE / (ajj - sj) );
 	  MT mu = mu_top / mu_bottom;
-	  if (best_idx == LO_INVALID ||  mu < best_mu) {
+
+          // Modification: Explicitly check the tie criterion here
+          // FIXME: We need ordering_vector info for columns too
+	  if (best_idx == LO_INVALID ||  mu < best_mu * tie_less ||
+              (mu < best_mu*tie_more && orderingVector[col] < orderingVector[best_idx])) {
 	    best_mu  = mu;
 	    best_idx = col;
 	  }
