@@ -1152,8 +1152,6 @@ namespace Amesos2 {
       size_t nnz)
     {
         typedef typename cols_view_t::value_type ordinal_type;
-        typedef typename row_ptr_view_t::value_type size_type;
-
         typedef typename cols_view_t::execution_space exec_space_t;
 
         auto device_perm = Kokkos::create_mirror_view(exec_space_t(), perm);
