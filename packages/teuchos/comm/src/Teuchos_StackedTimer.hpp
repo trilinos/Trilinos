@@ -52,7 +52,8 @@
 #include <cassert>
 #include <chrono>
 #include <climits>
-#include <cstdlib> // for std::getenv
+#include <cstdlib> // for std::getenv and atoi
+#include <ctime> // for timestamp support
 #include <iostream>
 
 #if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
@@ -360,6 +361,10 @@ protected:
       return 0;
     }
 
+    /// Returns the level of the timer in the stack
+    unsigned level() const
+    {return level_;}
+
   protected:
     /**
      * \brief split a string into two parts split by a '@' if no '@' first gets the full string
@@ -467,6 +472,7 @@ public:
   explicit StackedTimer(const char *name, const bool start_base_timer = true)
     : timer_(0,name,nullptr,false),
       enable_verbose_(false),
+      verbose_timestamp_levels_(0), // 0 disables
       verbose_ostream_(Teuchos::rcpFromRef(std::cout))
   {
     top_ = &timer_;
@@ -476,6 +482,11 @@ public:
     auto check_verbose = std::getenv("TEUCHOS_ENABLE_VERBOSE_TIMERS");
     if (check_verbose != nullptr)
       enable_verbose_ = true;
+
+    auto check_timestamp = std::getenv("TEUCHOS_ENABLE_VERBOSE_TIMESTAMP_LEVELS");
+    if (check_timestamp != nullptr) {
+      verbose_timestamp_levels_ = std::atoi(check_timestamp);
+    }
   }
 
   /**
@@ -514,8 +525,24 @@ public:
       ::Kokkos::Profiling::pushRegion(name);
     }
 #endif
-    if (enable_verbose_)
-      *verbose_ostream_ << "STARTING: " << name << std::endl;
+    if (enable_verbose_) {
+      if (!verbose_timestamp_levels_) {
+        *verbose_ostream_ << "STARTING: " << name << std::endl;
+      }
+      // gcc 4.X is incomplete in c++11 standard - missing
+      // std::put_time. We'll disable this feature for gcc 4.
+#if !defined(__GNUC__) || ( defined(__GNUC__) && (__GNUC__ > 4) )
+      else if (top_ != nullptr) {
+        if ( top_->level() <= verbose_timestamp_levels_) {
+          auto now = std::chrono::system_clock::now();
+          auto now_time = std::chrono::system_clock::to_time_t(now);
+          auto gmt = gmtime(&now_time);
+          auto timestamp = std::put_time(gmt, "%Y-%m-%d %H:%M:%S");
+          *verbose_ostream_ << "STARTING: " << name << " LEVEL: " << top_->level() << " TIMESTAMP: " << timestamp << std::endl;
+        }
+      }
+#endif
+    }
   }
 
   /**
@@ -534,8 +561,25 @@ public:
       ::Kokkos::Profiling::popRegion();
     }
 #endif
-    if (enable_verbose_)
-      *verbose_ostream_ << "STOPPING: " << name << std::endl;
+    if (enable_verbose_) {
+      if (!verbose_timestamp_levels_) {
+        *verbose_ostream_ << "STOPPING: " << name << std::endl;
+      }
+      // gcc 4.X is incomplete in c++11 standard - missing
+      // std::put_time. We'll disable this feature for gcc 4.
+#if !defined(__GNUC__) || ( defined(__GNUC__) && (__GNUC__ > 4) )
+      // The stop adjusts the top level, need to adjust by +1 for printing
+      else if (top_ != nullptr) {
+        if ( (top_->level()+1) <= verbose_timestamp_levels_) {
+          auto now = std::chrono::system_clock::now();
+          auto now_time = std::chrono::system_clock::to_time_t(now);
+          auto gmt = gmtime(&now_time);
+          auto timestamp = std::put_time(gmt, "%Y-%m-%d %H:%M:%S");
+          *verbose_ostream_ << "STOPPING: " << name << " LEVEL: " << top_->level()+1 << " TIMESTAMP: " << timestamp << std::endl;
+        }
+      }
+#endif
+    }
   }
 
   /**
@@ -690,6 +734,9 @@ public:
   // If set to true, print timer start/stop to verbose ostream.
   void enableVerbose(const bool enable_verbose);
 
+  // Enable timestamps in verbose mode for the number of levels specified.
+  void enableVerboseTimestamps(const unsigned levels);
+
   // Set the ostream for verbose mode(defaults to std::cout).
   void setVerboseOstream(const Teuchos::RCP<std::ostream>& os);
 
@@ -739,6 +786,9 @@ protected:
 
   /// If set to true, prints to the debug ostream. At construction, default value is set from environment variable.
   bool enable_verbose_;
+
+  /// If set to a value greater than 0, verbose mode will print that many levels of timers with timestamps. A value of zero disables timestamps.
+  unsigned verbose_timestamp_levels_;
 
   /// For debugging, this is the ostream used for printing.
   Teuchos::RCP<std::ostream> verbose_ostream_;
