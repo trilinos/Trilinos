@@ -74,6 +74,8 @@ LinMoreAlgorithm_B<Real>::LinMoreAlgorithm_B(ParameterList &list,
   ROL::ParameterList &lmlist = trlist.sublist("Lin-More");
   minit_     = lmlist.get("Maximum Number of Minor Iterations",                        10);
   mu0_       = lmlist.get("Sufficient Decrease Parameter",                             1e-2);
+  spexp_     = lmlist.get("Relative Tolerance Exponent",                               1.0);
+  spexp_     = std::max(static_cast<Real>(1),std::min(spexp_,static_cast<Real>(2)));
   redlim_    = lmlist.sublist("Cauchy Point").get("Maximum Number of Reduction Steps", 10);
   explim_    = lmlist.sublist("Cauchy Point").get("Maximum Number of Expansion Steps", 10);
   alpha_     = lmlist.sublist("Cauchy Point").get("Initial Step Size",                 1.0);
@@ -206,7 +208,7 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
       // Run Truncated CG
       flagCG = 0; iterCG = 0;
       gfnormf = zero;
-      tol     = std::min(tol1_,tol2_*gfnorm);
+      tol     = std::min(tol1_,tol2_*std::pow(gfnorm,spexp_));
       stol    = tol; //zero;
       if (gfnorm > zero) {
         snorm = dtrpcg(*s,flagCG,iterCG,*gfree,x,
