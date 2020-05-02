@@ -358,6 +358,31 @@ value that might be passed in or set otherwise.  (This is a `FORCE`D cache
 variable set on `CMAKE_INSTALL_PREFIX` so this value will appear in the
 `CMakeCache.txt` file.)
 
+If permissions need to be set on a basdir of `CMAKE_INSTALL_PREFIX`, then one
+can set a base dir of this through:
+
+```
+$ export ATDM_CONFIG_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR=<install-base-dir>
+```
+
+where `<install-base-dir>` must be a base directory of `<install-prefix>`.  If
+not explicitly set in this way, then it is assumed to be whatever the set
+value is for `CMAKE_INSTALL_PREFIX`.
+
+By default, every file and directory created during the install under
+`<install-base-dir>` will be made explicitly group read/write and "other"
+readable.  (That can be changed by setting CMake Cache vars starting wtih
+`Trilinos_MAKE_INSTALL_`.)
+
+The owning group for everything under `<install-base-dir>` can be set using:
+
+```
+$ export ATDM_CONFIG_MAKE_INSTALL_GROUP=<owning-group>
+```
+
+Otherwise, the owning group will be set by the group sticky bit or by the
+default user's group (on systems that don't support the group sticky bit).
+
 The name of the installed script `load_matching_env.sh` can be changed at
 configure-time using the CMake cache variable:
 
