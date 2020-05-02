@@ -1493,9 +1493,12 @@ bool do_kokkos_test_with_types(const string& mm_file,
       *A2 = KokkosKernels::Impl::read_kokkos_crst_matrix<MAT>(path.c_str());
       auto vals = A2->values; // don't use RCP in kernel
       // perturb the values just a bit (element-wise square of first row)
+      auto row_map = A2->graph.row_map;
       Kokkos::RangePolicy<execution_space> policy(0, vals.size());
       Kokkos::parallel_for(policy, KOKKOS_LAMBDA(size_t i) {
-        vals(i) = vals(i) * vals(i);
+        if(i >= 0 && i < row_map(1)) { // just do 1st row right now
+          vals(i) = vals(i) * vals(i);
+        }
       });
       Kokkos::fill_random(*x2, random, Scalar(1));
       KokkosSparse::spmv(transpose?"T":"N", Scalar(1.0), *A2, *x2, Scalar(0.0), *b2);
