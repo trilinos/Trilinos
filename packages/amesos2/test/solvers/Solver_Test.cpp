@@ -314,12 +314,11 @@ bool do_mat_test(const ParameterList& parameters)
   bool complex = false;
   if( parameters.isParameter("complex") ){
     if( ! parameters.isType<bool>("complex") ){
-      *fos << "'complex' parameter type should be bool! ignoring..." << std::endl;
+      *fos << "'complex' parameter type should be bool! ignoring and leaving at default: " << complex << std::endl; // read complex to remove unused warning on cuda build
     } else {
       complex = parameters.get<bool>("complex");
     }
   }
-  (void) complex; // forestall warning for set but unused variable
 
   ParameterList solve_params("Amesos2");
   if( parameters.isSublist("all_solver_params") ){
@@ -1496,7 +1495,7 @@ bool do_kokkos_test_with_types(const string& mm_file,
       auto row_map = A2->graph.row_map;
       Kokkos::RangePolicy<execution_space> policy(0, vals.size());
       Kokkos::parallel_for(policy, KOKKOS_LAMBDA(size_t i) {
-        if(i >= 0 && i < row_map(1)) { // just do 1st row right now
+        if(i < row_map(1)) { // just do 1st row
           vals(i) = vals(i) * vals(i);
         }
       });
