@@ -203,13 +203,13 @@ int main(int argc, char **argv)
       /* Clear out name to make sure still getting same name */
       assemblies[i].name[0] = '\0';
 
-      assemblies[i].entity_list = &entity;
+      assemblies[i].entity_list = (int64_t*)&entity;
       EXCHECK(ex_get_assembly(exoid, &assemblies[i]));
-      printf("Assembly named '%s' has id %lld. It contains %d entities of type '%s'\n\t",
+      printf("Assembly named '%s' has id %" PRId64 ". It contains %d entities of type '%s'\n\t",
              assemblies[i].name, assemblies[i].id, assemblies[i].entity_count,
              ex_name_of_object(assemblies[i].type));
       for (int j = 0; j < assemblies[i].entity_count; j++) {
-        printf("%lld, ", entity[j]);
+        printf("%" PRId64 ", ", entity[j]);
       }
       printf("\n");
     }
@@ -224,7 +224,7 @@ int main(int argc, char **argv)
     }
     EXCHECK(ex_get_assemblies(exoid, assmbly));
     for (i = 0; i < num_assembly; i++) {
-      printf("Assembly named '%s' has id %lld. It contains %d entities of type '%s'\n",
+      printf("Assembly named '%s' has id %" PRId64 ". It contains %d entities of type '%s'\n",
              assmbly[i].name, assmbly[i].id, assmbly[i].entity_count,
              ex_name_of_object(assmbly[i].type));
     }
@@ -235,7 +235,7 @@ int main(int argc, char **argv)
     for (i = 0; i < num_assembly; i++) {
       memset(attr, 0, sizeof(ex_attribute) * 10);
       int att_count = ex_get_attribute_count(exoid, EX_ASSEMBLY, assmbly[i].id);
-      printf("Assembly named '%s' with id %lld. It contains %d attributes:\n", assmbly[i].name,
+      printf("Assembly named '%s' with id %" PRId64 ". It contains %d attributes:\n", assmbly[i].name,
              assmbly[i].id, att_count);
 
       ex_get_attribute_param(exoid, EX_ASSEMBLY, assmbly[i].id, attr);
@@ -306,7 +306,7 @@ int main(int argc, char **argv)
         for (int k = 0; k < num_assembly; k++) {
           EXCHECK(ex_get_reduction_vars(exoid, i + 1, EX_ASSEMBLY, assmbly[k].id, num_assembly_vars,
                                         var_values));
-          printf("Values for Assembly %lld at step %d: %f\t%f\t%f\t%f\n", assmbly[k].id, i + 1,
+          printf("Values for Assembly %" PRId64 " at step %d: %f\t%f\t%f\t%f\n", assmbly[k].id, i + 1,
                  var_values[0], var_values[1], var_values[2], var_values[3]);
         }
       }
