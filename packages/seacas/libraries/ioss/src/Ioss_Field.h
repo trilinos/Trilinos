@@ -83,7 +83,7 @@ namespace Ioss {
                       of the elements in a shell element block or the radius
                       of particles in a particle element block. */
       COMMUNICATION,
-      INFORMATION,
+      MESH_REDUCTION,
       REDUCTION, /**< A field which typically summarizes some transient data
                       about an entity. The size of this field is typically not
                       proportional to the number of entities in a GroupingEntity.

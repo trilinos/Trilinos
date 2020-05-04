@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2017 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -52,7 +52,7 @@
 namespace Ioss {
   class Field;
 }
-namespace Iopx {
+namespace Ioex {
 
   class DecompositionDataBase
   {
@@ -285,5 +285,5 @@ namespace Iopx {
   public:
     Ioss::Decomposition<INT> m_decomposition;
   };
-} // namespace Iopx
+} // namespace Ioex
 #endif

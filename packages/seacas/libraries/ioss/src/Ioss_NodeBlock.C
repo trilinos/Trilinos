@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -97,6 +97,8 @@ Ioss::NodeBlock::NodeBlock(Ioss::DatabaseIO *io_database, const std::string &my_
   fields.add(Ioss::Field("owning_processor", Ioss::Field::INT32, IOSS_SCALAR(), Ioss::Field::MESH,
                          node_count));
 }
+
+Ioss::NodeBlock::NodeBlock(const Ioss::NodeBlock &other) : Ioss::EntityBlock(other) {}
 
 Ioss::NodeBlock::~NodeBlock() = default;
 

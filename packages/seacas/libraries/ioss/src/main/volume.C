@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -41,8 +41,6 @@
 #include <string>      // for char_traits, operator<<
 #include <sys/types.h> // for int64_t
 #include <vector>      // for vector
-
-#define OUTPUT stderr
 
 namespace {
   void comp_grad12x(double *const grad_ptr, const double *const x, const double *const y,
@@ -199,7 +197,7 @@ void hex_volume_internal(Ioss::ElementBlock *block, const std::vector<double> &c
   size_t count = 0;
   for (size_t ielem = 0; ielem < nelem; ++ielem) {
     if (count++ >= nelem / 100) {
-      fmt::print(OUTPUT, ".");
+      fmt::print(Ioss::OUTPUT(), ".");
       count = 0;
     }
     for (size_t j = 0; j < 8; j++) {
@@ -216,7 +214,7 @@ void hex_volume_internal(Ioss::ElementBlock *block, const std::vector<double> &c
   size_t t2 = Ioss::Utils::timer();
 
   if (nelem > 0) {
-    fmt::print(OUTPUT,
+    fmt::print(Ioss::OUTPUT(),
                "\n{:12}\tMin volume = {:12}  Max volume = {:12}  Elements = {:12n}  Time/Elem = "
                "{:5.3f} micro-sec.\n",
                block->name(), *std::min_element(volume.begin(), volume.end()),
