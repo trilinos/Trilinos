@@ -504,7 +504,7 @@ const Ptr<Vector<Real>> NewOptimizationProblem<Real>::getPrimalOptimizationVecto
 template<typename Real>
 const Ptr<Vector<Real>> NewOptimizationProblem<Real>::getDualOptimizationVector(void) {
   finalize();
-  return xprim_;
+  return xdual_;
 }
 
 template<typename Real>
