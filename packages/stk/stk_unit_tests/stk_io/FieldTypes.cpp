@@ -610,8 +610,8 @@ std::string get_role_string(Ioss::Field::RoleType role)
       return "ATTRIBUTE";
     case Ioss::Field::RoleType::COMMUNICATION:
       return "COMMUNICATION";
-    case Ioss::Field::RoleType::INFORMATION:
-      return "INFORMATION";
+    case Ioss::Field::RoleType::MESH_REDUCTION:
+      return "MESH_REDUCTION";
     case Ioss::Field::RoleType::REDUCTION:
       return "REDUCTION";
     case Ioss::Field::RoleType::TRANSIENT:
