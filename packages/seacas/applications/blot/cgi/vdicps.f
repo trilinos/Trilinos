@@ -1,4 +1,4 @@
-C Copyright(C) 2009 National Technology & Engineering Solutions of
+C Copyright(C) 2009, 2020 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -368,8 +368,8 @@ C FIGURE MAXIMUM NDC VALUES XNDCMX AND YNDCMX.
       END IF
 C
 C SET SCALE FACTORS FOR NDC-TO-DEVICE MAPPING.
-      XSCALE=FLOAT(XDEVIC)/XNDCMX
-      YSCALE=FLOAT(YDEVIC)/YNDCMX
+      XSCALE=DBLE(XDEVIC)/XNDCMX
+      YSCALE=DBLE(YDEVIC)/YNDCMX
       IF (PGFORM .GT. 0) THEN
          YPAD = YPAD+280.
          XPAD = XPAD+360.

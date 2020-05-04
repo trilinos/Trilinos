@@ -95,7 +95,7 @@ C
 C
       ELSEIF (NWANT .EQ. 2) THEN
          NNODE = 2
-         NJUMP = NINT (FLOAT (KANG + 1) / 4.)
+         NJUMP = NINT (DBLE(KANG + 1) / 4.)
          INODE (1) = JUMPLP (MXND, MLN, LNODES, NSTART,
      &      NJUMP - 1)
          INODE (2) = JUMPLP (MXND, MLN, LNODES, NSTART,
@@ -103,8 +103,8 @@ C
 C
       ELSEIF (NWANT .EQ. 3) THEN
          NNODE = 3
-         NJUMP1 = NINT (FLOAT (KANG + 1) / 6.)
-         NJUMP2 = NINT (FLOAT (KANG + 1) / 2.)
+         NJUMP1 = NINT (DBLE(KANG + 1) / 6.)
+         NJUMP2 = NINT (DBLE(KANG + 1) / 2.)
          INODE (1) = JUMPLP (MXND, MLN, LNODES, NSTART,
      &      NJUMP1 - 1)
          INODE (2) = JUMPLP (MXND, MLN, LNODES, NSTART,

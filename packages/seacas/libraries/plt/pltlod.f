@@ -44,7 +44,7 @@ C=======================================================================
       LINE1 = ' '
       LINE = ' '
       IF (NUM.GE.0) THEN
-         WRITE (LINE,10,ERR=20) INT(FLOAT(J)*10.**NUM)
+         WRITE (LINE,10,ERR=20) INT(DBLE(J)*10.**NUM)
 
    10    FORMAT (I10)
 

@@ -70,7 +70,7 @@ C=======================================================================
       RMIN = 1.E20
       J = 1
       DO 2470 I = 1,5
-         NINTER = DELTA/ (FLOAT(I)*TENEXP)
+         NINTER = DELTA/ (DBLE(I)*TENEXP)
          TEMP = ABS(DESINT-NINTER)
          IF (TEMP.LT.RMIN) THEN
             J = I
@@ -78,7 +78,7 @@ C=======================================================================
          END IF
 
  2470 CONTINUE
-      INTER = FLOAT(J)
+      INTER = DBLE(J)
       IF (DELTA.EQ.0.) THEN
          INTER = 1.
       END IF

@@ -1,4 +1,4 @@
-C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
+C Copyright(C) 2009-2017, 2020 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -203,7 +203,7 @@ C ... Plotting of spheres starts here.
  118      continue
           smag = shade(ip)
           ICOL = MINCOL +
-     *      min(NCOL-1, max(1, NINT(SHADE(IP) * FLOAT(NCOL))))
+     *      min(NCOL-1, max(1, NINT(SHADE(IP) * DBLE(NCOL))))
           CALL GRCOLR (ICOL)
           CALL MPD2PG (4, XSI, YSI, 'S')
  120    continue
