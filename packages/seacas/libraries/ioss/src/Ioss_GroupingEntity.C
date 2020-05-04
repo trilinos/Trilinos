@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -75,6 +75,13 @@ Ioss::GroupingEntity::GroupingEntity(Ioss::DatabaseIO *io_database, const std::s
   }
 }
 
+Ioss::GroupingEntity::GroupingEntity(const Ioss::GroupingEntity &other)
+    : properties(other.properties), fields(other.fields), entityCount(other.entityCount),
+      entityName(other.entityName), attributeCount(other.attributeCount),
+      entityState(other.entityState), hash_(other.hash_)
+{
+}
+
 Ioss::GroupingEntity::~GroupingEntity()
 {
   // Only deleted by owning entity (Ioss::Region)
@@ -141,6 +148,12 @@ void Ioss::GroupingEntity::set_database(Ioss::DatabaseIO *io_database)
   database_ = io_database;
 }
 
+void Ioss::GroupingEntity::reset_database(Ioss::DatabaseIO *io_database)
+{
+  assert(io_database != nullptr); // Must be set to valid value
+  database_ = io_database;
+}
+
 // Discuss Data Object functions:
 // ---Affect the containing object:
 //    open(in string object_name, out ?)
@@ -194,6 +207,11 @@ Ioss::Property Ioss::GroupingEntity::get_implicit_property(const std::string &my
  */
 void Ioss::GroupingEntity::field_add(const Ioss::Field &new_field)
 {
+  if (new_field.get_role() == Ioss::Field::REDUCTION) {
+    fields.add(new_field);
+    return;
+  }
+
   size_t entity_size = entity_count();
   size_t field_size  = new_field.raw_count();
   if (field_size == 0 && entity_size != 0) {

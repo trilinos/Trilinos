@@ -1,4 +1,4 @@
-// Copyright(C) 2019 National Technology & Engineering Solutions
+// Copyright(C) 2019, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -147,7 +147,7 @@ namespace {
       }
       else {
         fmt::print(stderr, "\nERROR: Filename missing.\n");
-        options_.usage(std::cerr);
+        options_.usage(std::cout);
         return false;
       }
 
@@ -685,7 +685,7 @@ int main(int argc, char *argv[])
                                           zones, 0, interFace.verbose);
   }
 
-  region.output_summary(std::cout, false);
+  region.output_summary(std::cerr, false);
 
   size_t orig_zone_count = zones.size();
   Iocgns::Utils::decompose_model(zones, interFace.proc_count, 0, interFace.load_balance,

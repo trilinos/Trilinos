@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2017 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -44,8 +44,8 @@
 #include <string>
 #include <vector>
 
-// Contains code that is common between the file-per-processor (Iofx)
-// and parallel exodus (Iopx) and base exodus (Ioex) classes.
+// Contains code that is common between the file-per-processor and
+// parallel exodus and base exodus classes.
 
 namespace Ioss {
   class GroupingEntity;
@@ -74,6 +74,9 @@ namespace Ioex {
 
   const char *Version();
   bool        check_processor_info(int exodusFilePtr, int processor_count, int processor_id);
+
+  Ioss::EntityType map_exodus_type(ex_entity_type type);
+  ex_entity_type   map_exodus_type(Ioss::EntityType type);
 
   void update_last_time_attribute(int exodusFilePtr, double value);
   bool read_last_time_attribute(int exodusFilePtr, double *value);
@@ -124,5 +127,14 @@ namespace Ioex {
                                       Ioex::TopologyMap &    side_map,
                                       Ioss::SurfaceSplitType split_type,
                                       const std::string &    surface_name);
+
+  void                       write_reduction_attributes(int exoid, const Ioss::GroupingEntity *ge);
+  template <typename T> void write_reduction_attributes(int exoid, const std::vector<T *> &entities)
+  {
+    // For the entity, write all "reduction attributes"
+    for (const auto &ge : entities) {
+      write_reduction_attributes(exoid, ge);
+    }
+  }
 } // namespace Ioex
 #endif

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -55,6 +55,7 @@ namespace Ioss {
   {
   public:
     ElementSet(); // Used for template typing only
+    ElementSet(const ElementSet &) = default;
     ElementSet(DatabaseIO *io_database, const std::string &my_name, int64_t number_elements);
 
     std::string type_string() const override { return "ElementSet"; }

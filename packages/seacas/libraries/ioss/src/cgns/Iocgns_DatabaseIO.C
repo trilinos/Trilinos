@@ -683,13 +683,13 @@ namespace Iocgns {
       }
       if (status != CG_OK) {
         if (ok_count != 0 || util().parallel_size() <= 2) {
-          fmt::print(stderr, "[{}] CGNS Error: '{}'\n", myProcessor, cg_get_error());
+          fmt::print(errmsg, "[{}] CGNS Error: '{}'\n", myProcessor, cg_get_error());
         }
         else {
           // Since error on all processors, assume the same error on all and only print
           // the error from processor 0.
           if (myProcessor == 0) {
-            fmt::print(stderr, "CGNS Error: '{}'\n", cg_get_error());
+            fmt::print(errmsg, "CGNS Error: '{}'\n", cg_get_error());
           }
         }
       }
@@ -841,8 +841,8 @@ namespace Iocgns {
           set_block_offset(bbeg, bend, blocks, proc_block_map);
 
 #if IOSS_DEBUG_OUTPUT
-          fmt::print(stderr, "Range of blocks for {} is {} to {} Global I,J,K = {} {} {}\n", b.name,
-                     i, j - 1, b.glob_range[0], b.glob_range[1], b.glob_range[2]);
+          fmt::print(Ioss::DEBUG(), "Range of blocks for {} is {} to {} Global I,J,K = {} {} {}\n",
+                     b.name, i, j - 1, b.glob_range[0], b.glob_range[1], b.glob_range[2]);
 #endif
           // All processors need to know about it...
           for (int p = 0; p < proc_count; p++) {
@@ -884,8 +884,8 @@ namespace Iocgns {
 
 #if IOSS_DEBUG_OUTPUT
       for (const auto &b : resolved_blocks) {
-        fmt::print(stderr, "{} {} {} ({} {} {}) ({} {} {}) ({} {} {}) [{}]\n", b.name, b.proc,
-                   b.local_zone, b.range[0], b.range[1], b.range[2], b.glob_range[0],
+        fmt::print(Ioss::DEBUG(), "{} {} {} ({} {} {}) ({} {} {}) ({} {} {}) [{}]\n", b.name,
+                   b.proc, b.local_zone, b.range[0], b.range[1], b.range[2], b.glob_range[0],
                    b.glob_range[1], b.glob_range[2], b.offset[0], b.offset[1], b.offset[2],
                    b.face_adj);
       }
@@ -1396,8 +1396,9 @@ namespace Iocgns {
     CGCHECKM(cg_nbases(get_file_pointer(), &n_bases));
     if (n_bases != 1) {
       std::ostringstream errmsg;
-      fmt::print(errmsg,
-                 "CGNS: Too many bases; only support files with a single bases at this time");
+      fmt::print(
+          errmsg,
+          "ERROR: CGNS: Too many bases; only support files with a single bases at this time");
       IOSS_ERROR(errmsg);
     }
 
@@ -1508,8 +1509,8 @@ namespace Iocgns {
       const auto &I_map = m_globalToBlockLocalNodeMap[zone];
 
       for (auto J = I + 1; J != blocks.end(); J++) {
-        int                   dzone = (*J)->get_property("zone").get_int();
-        const auto &          J_map = m_globalToBlockLocalNodeMap[dzone];
+        int           dzone = (*J)->get_property("zone").get_int();
+        const auto &  J_map = m_globalToBlockLocalNodeMap[dzone];
         CGNSIntVector point_list;
         CGNSIntVector point_list_donor;
         for (size_t i = 0; i < J_map->size(); i++) {
@@ -2225,7 +2226,7 @@ namespace Iocgns {
       int64_t entity_count = sb->entity_count();
       if (num_to_get != entity_count) {
         std::ostringstream errmsg;
-        fmt::print("ERROR: Partial field input not yet implemented for side blocks");
+        fmt::print(errmsg, "ERROR: Partial field input not yet implemented for side blocks");
         IOSS_ERROR(errmsg);
       }
     }
@@ -2236,7 +2237,7 @@ namespace Iocgns {
 
         // TODO(gdsjaar): ? Possibly rewrite using cgi_read_int_data so can skip reading element
         // connectivity
-        int                   nodes_per_face = sb->topology()->number_nodes();
+        int           nodes_per_face = sb->topology()->number_nodes();
         CGNSIntVector elements(nodes_per_face * num_to_get); // Not needed, but can't skip
 
         // The parent information will be formatted as:
@@ -2928,8 +2929,8 @@ namespace Iocgns {
         //       of the nodes instead of the element/side info.
         // Get name from parent sideset...  This is name of the ZoneBC entry
         auto &name = sb->owner()->name();
-	// This is the name of the BC_t node 
-	auto sb_name = Iocgns::Utils::decompose_sb_name(sb->name());
+        // This is the name of the BC_t node
+        auto sb_name = Iocgns::Utils::decompose_sb_name(sb->name());
 
         CGNSIntVector point_range{cg_start, cg_end};
         CGCHECKM(cg_boco_write(get_file_pointer(), base, zone, name.c_str(), CG_FamilySpecified,
@@ -2944,7 +2945,7 @@ namespace Iocgns {
 
         sb->property_update("section", sect);
 
-        size_t                offset = m_zoneOffset[zone - 1];
+        size_t        offset = m_zoneOffset[zone - 1];
         CGNSIntVector parent(4 * num_to_get);
 
         if (field.get_type() == Ioss::Field::INT32) {
@@ -2976,9 +2977,8 @@ namespace Iocgns {
       else if (field.get_name() == "distribution_factors") {
         static bool warning_output = false;
         if (!warning_output) {
-          fmt::print(
-              stderr,
-              "IOSS: WARNING: For CGNS output, the sideset distribution factors are not output.\n");
+          fmt::print(Ioss::WARNING(),
+                     "For CGNS output, the sideset distribution factors are not output.\n");
           warning_output = true;
         }
         return 0;

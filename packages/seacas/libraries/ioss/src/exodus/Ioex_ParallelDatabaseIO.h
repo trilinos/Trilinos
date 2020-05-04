@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -31,17 +31,17 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // -*- Mode: c++ -*-
-#ifndef IOSS_Iopx_DatabaseIO_h
-#define IOSS_Iopx_DatabaseIO_h
+#ifndef IOSS_Ioex_ParallelDatabaseIO_h
+#define IOSS_Ioex_ParallelDatabaseIO_h
 
 #include <Ioss_CodeTypes.h>
-#include <Ioss_DBUsage.h>           // for DatabaseUsage
-#include <Ioss_Map.h>               // for Map
-#include <Ioss_State.h>             // for State
-#include <exodus/Ioex_DatabaseIO.h> // for DatabaseIO
-#include <exodusII.h>               // for ex_entity_type, etc
-#include <functional>               // for less
-#include <map>                      // for map, map<>::value_compare
+#include <Ioss_DBUsage.h>               // for DatabaseUsage
+#include <Ioss_Map.h>                   // for Map
+#include <Ioss_State.h>                 // for State
+#include <exodus/Ioex_BaseDatabaseIO.h> // for DatabaseIO
+#include <exodusII.h>                   // for ex_entity_type, etc
+#include <functional>                   // for less
+#include <map>                          // for map, map<>::value_compare
 #include <memory>
 #include <set>      // for set
 #include <stddef.h> // for size_t
@@ -50,14 +50,16 @@
 #include <time.h>   // for nullptr, time_t
 #include <utility>  // for pair
 #include <vector>   // for vector
-namespace Iopx {
+namespace Ioex {
   class DecompositionDataBase;
 }
-namespace Iopx {
+namespace Ioex {
   template <typename INT> class DecompositionData;
 }
 
 namespace Ioss {
+  class Assembly;
+  class Blob;
   class EntityBlock;
   class ElementTopology;
   class CommSet;
@@ -82,15 +84,16 @@ namespace Ioss {
 /** \brief A namespace for the decompose-on-the-fly version of the
  *  parallel exodus database format.
  */
-namespace Iopx {
-  class DatabaseIO : public Ioex::DatabaseIO
+namespace Ioex {
+  class ParallelDatabaseIO : public Ioex::BaseDatabaseIO
   {
   public:
-    DatabaseIO(Ioss::Region *region, const std::string &filename, Ioss::DatabaseUsage db_usage,
-               MPI_Comm communicator, const Ioss::PropertyManager &properties);
-    DatabaseIO(const DatabaseIO &from) = delete;
-    DatabaseIO &operator=(const DatabaseIO &from) = delete;
-    ~DatabaseIO();
+    ParallelDatabaseIO(Ioss::Region *region, const std::string &filename,
+                       Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
+                       const Ioss::PropertyManager &properties);
+    ParallelDatabaseIO(const ParallelDatabaseIO &from) = delete;
+    ParallelDatabaseIO &operator=(const ParallelDatabaseIO &from) = delete;
+    ~ParallelDatabaseIO();
 
     int  get_file_pointer() const override; // Open file and set exodusFilePtr.
     bool needs_shared_node_information() const override { return true; }
@@ -139,7 +142,10 @@ namespace Iopx {
                                size_t data_size) const override;
     int64_t get_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
-
+    int64_t get_field_internal(const Ioss::Assembly *sb, const Ioss::Field &field, void *data,
+                               size_t data_size) const override;
+    int64_t get_field_internal(const Ioss::Blob *sb, const Ioss::Field &field, void *data,
+                               size_t data_size) const override;
     int64_t put_field_internal(const Ioss::Region *reg, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
     int64_t put_field_internal(const Ioss::NodeBlock *nb, const Ioss::Field &field, void *data,
@@ -163,6 +169,10 @@ namespace Iopx {
     int64_t put_field_internal(const Ioss::SideSet *fs, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
     int64_t put_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
+                               size_t data_size) const override;
+    int64_t put_field_internal(const Ioss::Assembly *sb, const Ioss::Field &field, void *data,
+                               size_t data_size) const override;
+    int64_t put_field_internal(const Ioss::Blob *sb, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
     int64_t put_field_internal(const Ioss::StructuredBlock * /* sb */,
                                const Ioss::Field & /* field */, void * /* data */,
@@ -271,5 +281,5 @@ namespace Iopx {
 
     mutable bool metaDataWritten{false};
   };
-} // namespace Iopx
+} // namespace Ioex
 #endif
