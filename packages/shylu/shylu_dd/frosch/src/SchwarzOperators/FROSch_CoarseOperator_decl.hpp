@@ -78,7 +78,7 @@ namespace FROSch {
         using XMultiVectorPtr       = typename SchwarzOperator<SC,LO,GO,NO>::XMultiVectorPtr;
 
         using XImportPtrVecPtr      = typename SchwarzOperator<SC,LO,GO,NO>::XImportPtrVecPtr;
-        
+
         using XExportPtrVecPtr      = typename SchwarzOperator<SC,LO,GO,NO>::XExportPtrVecPtr;
 
         using ParameterListPtr      = typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr;
@@ -149,7 +149,7 @@ namespace FROSch {
         CommPtr CoarseSolveComm_;
 
         bool OnCoarseSolveComm_ = false;
-        
+
         int NumProcsCoarseSolve_ = 0;
 
         CoarseSpacePtr CoarseSpace_;

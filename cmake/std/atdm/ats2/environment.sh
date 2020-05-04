@@ -220,6 +220,7 @@ export ATDM_CONFIG_SPARC_TPL_BASE=/projects/sparc/tpls/ats2-${sparc_tpl_arch}
 sparc_tpl_base=${ATDM_CONFIG_SPARC_TPL_BASE}
 
 # Commont ROOT config variables
+export BOOST_ROOT=${sparc_tpl_base}/boost-1.65.1/00000000/${sparc_tpl_ext}
 export HDF5_ROOT=${sparc_tpl_base}/hdf5-1.10.5/00000000/${sparc_tpl_mpi_ext}
 export CGNS_ROOT=${sparc_tpl_base}/cgns-c09a5cd/27e5681f1b74c679b5dcb337ac71036d16c47977/${sparc_tpl_mpi_ext}
 export PNETCDF_ROOT=${sparc_tpl_base}/pnetcdf-1.10.0/6144dc67b2041e4093063a04e89fc1e33398bd09/${sparc_tpl_mpi_ext}
@@ -253,9 +254,6 @@ export CXX=mpicxx
 export F77=mpifort
 export FC=mpifort
 export F90=mpifort
-
-# Default install location
-export ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE_DEFAULT=/projects/atdm_devops/trilinos_installs/
 
 # System-info for what ATS-2 system we are using
 if [[ "${ATDM_CONFIG_KNOWN_HOSTNAME}" == "vortex" ]] ; then

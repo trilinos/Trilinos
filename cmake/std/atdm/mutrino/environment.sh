@@ -65,7 +65,7 @@ else
     echo "*** Combinations that are supported: "
     echo "*** > Intel compiler with KOKKOS_ARCH=HSW"
     echo "*** > Intel compiler with KOKKOS_ARCH=KNL"
-   echo "***"
+    echo "***"
     return
 fi
 
