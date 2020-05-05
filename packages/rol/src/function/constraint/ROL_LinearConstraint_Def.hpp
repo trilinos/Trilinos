@@ -41,53 +41,52 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_QUADRATIC_OBJECTIVE_H
-#define ROL_QUADRATIC_OBJECTIVE_H
-
-#include "ROL_Objective.hpp"
-#include "ROL_Vector.hpp"
-#include "ROL_Ptr.hpp"
-
-/** @ingroup func_group
-    \class ROL::QuadraticObjective
-    \brief Provides the interface to evaluate quadratic objective functions.
-
-    This class implements the quadratic objective function
-    \f[
-       f(x) = \frac{1}{2}\langle Hx, x\rangle_{\mathcal{X}^*,\mathcal{X}}
-            + \langle g,  x\rangle_{\mathcal{X}^*,\mathcal{X}}
-            + c
-    \f]
-    for fixed \f$H\in\mathcal{L}(\mathcal{X},\mathcal{X}^*)\f$,
-    \f$g\in\mathcal{X}^*\f$, and \f$c\in\mathbb{R}\f$.
-
-    ---
-*/
+#ifndef ROL_LINEARCONSTRAINT_DEF_H
+#define ROL_LINEARCONSTRAINT_DEF_H
 
 namespace ROL {
 
 template<typename Real>
-class QuadraticObjective : public Objective<Real> {
-private:
-  const Ptr<const LinearOperator<Real>> H_;
-  const Ptr<const Vector<Real>> g_;
-  const Real c_;
-  Ptr<Vector<Real>> tmp_;
+LinearConstraint<Real>::LinearConstraint(const Ptr<const LinearOperator<Real>> &A,
+                                         const Ptr<const Vector<Real>> &b) : A_(A), b_(b) {}
 
-public:
-  QuadraticObjective(const Ptr<const LinearOperator<Real>> &H,
-                     const Ptr<const Vector<Real>>         &g,
-                     Real                                   c = Real(0));
+template<typename Real>
+void LinearConstraint<Real>::update( const Vector<Real> &x, EUpdateType type, int iter ) {}
 
-  Real value( const Vector<Real> &x, Real &tol ) override;
-  void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) override;
-  void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) override;
-  void invHessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) override;
+template<typename Real>
+void LinearConstraint<Real>::update( const Vector<Real> &x, bool flag, int iter ) {}
 
-}; // class QuadraticObjective
+template<typename Real>
+void LinearConstraint<Real>::value(Vector<Real> &c, const Vector<Real> &x, Real &tol) {
+  A_->apply(c,x,tol);
+  c.plus(*b_);
+}
+
+template<typename Real>
+void LinearConstraint<Real>::applyJacobian(Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &x, Real &tol) {
+  A_->apply(jv,v,tol);
+}
+
+template<typename Real>
+void LinearConstraint<Real>::applyAdjointJacobian(Vector<Real> &ajv, const Vector<Real> &v, const Vector<Real> &x, Real &tol) {
+  A_->applyAdjoint(ajv,v,tol);
+}
+
+template<typename Real>
+void LinearConstraint<Real>::applyAdjointJacobian(Vector<Real> &ajv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &dualv, Real &tol) {
+  A_->applyAdjoint(ajv,v,tol);
+}
+
+template<typename Real>
+void LinearConstraint<Real>::applyAdjointHessian(Vector<Real> &ahuv, const Vector<Real> &u, const Vector<Real> &v, const Vector<Real> &x, Real &tol) {
+  ahuv.zero();
+}
+
+template<typename Real>
+Ptr<Vector<Real>> LinearConstraint<Real>::createRangeSpaceVector(void) const {
+  return b_->clone();
+}
 
 } // namespace ROL
-
-#include "ROL_QuadraticObjective_Def.hpp"
 
 #endif

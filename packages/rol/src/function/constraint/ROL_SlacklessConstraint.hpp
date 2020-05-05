@@ -55,62 +55,35 @@
 
 namespace ROL {
 
-template<class Real> 
+template<typename Real> 
 class SlacklessConstraint : public Constraint<Real> {
 private: 
   const Ptr<Constraint<Real>> con_;
 
-  Ptr<Vector<Real>> getOpt( Vector<Real> &xs ) const {
-    return dynamic_cast<PartitionedVector<Real>&>(xs).get(0);
-  }
-
-  Ptr<const Vector<Real>> getOpt( const Vector<Real> &xs ) const {
-    return dynamic_cast<const PartitionedVector<Real>&>(xs).get(0);
-  }
-
-  void zeroSlack( Vector<Real> &x ) const {
-    PartitionedVector<Real> &xpv
-      = dynamic_cast<PartitionedVector<Real>&>(x);
-    const int nvec = static_cast<int>(xpv.numVectors());
-    for (int i = 1; i < nvec; ++i) {
-      xpv.get(i)->zero();
-    }
-  } 
-
 public:
-  SlacklessConstraint( const Ptr<Constraint<Real>> &con ) : con_(con) {}
+  SlacklessConstraint( const Ptr<Constraint<Real>> &con );
  
-  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
-    con_->update( *getOpt(x), flag, iter );
-  }
-
-  void value(Vector<Real> &c, const Vector<Real> &x, Real &tol ) {
-    con_->value( c, *getOpt(x), tol );
-  }
-
-  void applyJacobian( Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    con_->applyJacobian( jv, *getOpt(v), *getOpt(x), tol );
-  }
-
-  void applyAdjointJacobian( Vector<Real> &ajv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &dualv, Real &tol ) {
-    zeroSlack(ajv);
-    con_->applyAdjointJacobian( *getOpt(ajv), v, *getOpt(x), dualv, tol );
-  }
-
-  void applyAdjointHessian( Vector<Real> &ahuv, const Vector<Real> &u, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    zeroSlack(ahuv);
-    con_->applyAdjointHessian( *getOpt(ahuv), u, *getOpt(v), *getOpt(x), tol );     
-  }
+  void update( const Vector<Real> &x, EUpdateType type, int iter = -1 ) override;
+  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) override;
+  void value(Vector<Real> &c, const Vector<Real> &x, Real &tol ) override;
+  void applyJacobian( Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) override;
+  void applyAdjointJacobian( Vector<Real> &ajv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &dualv, Real &tol ) override;
+  void applyAdjointHessian( Vector<Real> &ahuv, const Vector<Real> &u, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) override;
 
 // Definitions for parametrized (stochastic) constraint functions
 public:
-  void setParameter(const std::vector<Real> &param) {
-    Constraint<Real>::setParameter(param);
-    con_->setParameter(param);
-  }
+  void setParameter(const std::vector<Real> &param) override;
+
+private:
+  Ptr<Vector<Real>> getOpt( Vector<Real> &xs ) const;
+  Ptr<const Vector<Real>> getOpt( const Vector<Real> &xs ) const;
+  void zeroSlack( Vector<Real> &x ) const;
+
 }; // class SlacklessConstraint 
 
 } // namespace ROL
+
+#include "ROL_SlacklessConstraint_Def.hpp"
 
 #endif // ROL__SLACKLESSCONSTRAINT_HPP
 

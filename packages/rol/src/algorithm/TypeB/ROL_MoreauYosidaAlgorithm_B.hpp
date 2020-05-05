@@ -45,7 +45,7 @@
 #define ROL_MOREAUYOSIDAALGORITHM_B_H
 
 #include "ROL_Algorithm_B.hpp"
-#include "ROL_MoreauYosidaPenalty.hpp"
+#include "ROL_MoreauYosidaObjective.hpp"
 
 /** \class ROL::MoreauYosidaAlgorithm_B
     \brief Provides an interface to run the Moreau-Yosida algorithm.
@@ -78,17 +78,17 @@ private:
   using Algorithm_B<Real>::state_;
   using Algorithm_B<Real>::proj_;
 
-  void initialize(Vector<Real>              &x,
-                  const Vector<Real>        &g,
-                  MoreauYosidaPenalty<Real> &myobj,
-                  BoundConstraint<Real>     &bnd,
-                  Vector<Real>              &pwa,
+  void initialize(Vector<Real>                &x,
+                  const Vector<Real>          &g,
+                  MoreauYosidaObjective<Real> &myobj,
+                  BoundConstraint<Real>       &bnd,
+                  Vector<Real>                &pwa,
                   std::ostream &outStream = std::cout); 
 
-  void updateState(const Vector<Real> &x,
-                   MoreauYosidaPenalty<Real> &myobj,
-                   BoundConstraint<Real> &bnd,
-                   Vector<Real> &pwa,
+  void updateState(const Vector<Real>          &x,
+                   MoreauYosidaObjective<Real> &myobj,
+                   BoundConstraint<Real>       &bnd,
+                   Vector<Real>                &pwa,
                    std::ostream &outStream = std::cout);
 public:
 

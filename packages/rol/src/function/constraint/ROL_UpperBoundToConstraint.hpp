@@ -44,6 +44,7 @@
 #ifndef ROL_UPPER_BOUND_TO_CONSTRAINT_H
 #define ROL_UPPER_BOUND_TO_CONSTRAINT_H
 
+#include "ROL_BoundConstraint.hpp"
 #include "ROL_Constraint.hpp"
 
 /**  @ingroup func_group
@@ -53,43 +54,24 @@
 
 namespace ROL {
 
-template <class Real>
+template<typename Real>
 class UpperBoundToConstraint : public Constraint<Real> { 
 private:
-  ROL::Ptr<Vector<Real> > up_;
+  Ptr<Vector<Real>> up_;
 
 public:
-  UpperBoundToConstraint(BoundConstraint<Real> &bnd) {
-    up_ = bnd.getUpperBound()->clone();
-    up_->set(*bnd.getUpperBound());
-  }
+  UpperBoundToConstraint(BoundConstraint<Real> &bnd);
+  UpperBoundToConstraint(const Vector<Real> &up);
 
-  UpperBoundToConstraint(const Vector<Real> &up) {
-    up_ = up.clone();
-    up_->set(up);
-  }
-
-  void value(Vector<Real> &c, const Vector<Real> &x, Real &tol) {
-    c.set(*up_);
-    c.axpy(-1.0,x);
-  }
-
-  void applyJacobian(Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &x, Real &tol) {
-    jv.set(v);
-    jv.scale(-1.0);
-  }
-
-  void applyAdjointJacobian(Vector<Real> &ajv, const Vector<Real> &v, const Vector<Real> &x, Real &tol) {
-    ajv.set(v);
-    ajv.scale(-1.0);
-  }
-
+  void value(Vector<Real> &c, const Vector<Real> &x, Real &tol) override;
+  void applyJacobian(Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &x, Real &tol) override;
+  void applyAdjointJacobian(Vector<Real> &ajv, const Vector<Real> &v, const Vector<Real> &x, Real &tol) override;
   void applyAdjointHessian(Vector<Real> &ahuv, const Vector<Real> &u, const Vector<Real> &v,
-                     const Vector<Real> &x, Real &tol) {
-    ahuv.zero();
-  }
+                     const Vector<Real> &x, Real &tol) override;
 };
 
 }
+
+#include "ROL_UpperBoundToConstraint_Def.hpp"
 
 #endif

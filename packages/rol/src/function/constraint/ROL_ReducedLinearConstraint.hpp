@@ -63,7 +63,7 @@
 
 namespace ROL {
 
-template <class Real>
+template<typename Real>
 class ReducedLinearConstraint : public Constraint<Real> {
 private:
   const Ptr<Constraint<Real>>      con_;
@@ -74,39 +74,19 @@ private:
 public:
   ReducedLinearConstraint(const Ptr<Constraint<Real>> &con,
                           const Ptr<BoundConstraint<Real>> &bnd,
-                          const Ptr<const Vector<Real>> &x)
-    : con_(con), bnd_(bnd), x_(x), prim_(x->clone()) {}
+                          const Ptr<const Vector<Real>> &x);
 
-  void setX(const Ptr<const Vector<Real>> &x) {
-    x_ = x;
-  }
+  void setX(const Ptr<const Vector<Real>> &x);
 
-  void value(Vector<Real> &c, const Vector<Real> &x, Real &tol) {
-    const Real zero(0);
-    prim_->set(x);
-    bnd_->pruneActive(*prim_,*x_,zero);
-    con_->value(c,*prim_,tol);
-  }
-
-  void applyJacobian(Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &x, Real &tol) {
-    const Real zero(0);
-    prim_->set(v);
-    bnd_->pruneActive(*prim_,*x_,zero);
-    con_->applyJacobian(jv,*prim_,x,tol);
-  }
-
-  void applyAdjointJacobian(Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &x, Real &tol) {
-    const Real zero(0);
-    con_->applyAdjointJacobian(jv,v,x,tol);
-    bnd_->pruneActive(jv,*x_,zero);
-  }
-
+  void value(Vector<Real> &c, const Vector<Real> &x, Real &tol) override;
+  void applyJacobian(Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &x, Real &tol) override;
+  void applyAdjointJacobian(Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &x, Real &tol) override;
   void applyAdjointHessian(Vector<Real> &ahuv, const Vector<Real> &u, const Vector<Real> &v,
-                           const Vector<Real> &x, Real &tol) {
-    ahuv.zero();
-  }
+                           const Vector<Real> &x, Real &tol) override;
 }; // class ReducedLinearConstraint
 
 } // namespace ROL
+
+#include "ROL_ReducedLinearConstraint_Def.hpp"
 
 #endif // ROL_REDUCED_LINEAR_CONSTRAINT_H

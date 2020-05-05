@@ -41,53 +41,59 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_QUADRATIC_OBJECTIVE_H
-#define ROL_QUADRATIC_OBJECTIVE_H
-
-#include "ROL_Objective.hpp"
-#include "ROL_Vector.hpp"
-#include "ROL_Ptr.hpp"
-
-/** @ingroup func_group
-    \class ROL::QuadraticObjective
-    \brief Provides the interface to evaluate quadratic objective functions.
-
-    This class implements the quadratic objective function
-    \f[
-       f(x) = \frac{1}{2}\langle Hx, x\rangle_{\mathcal{X}^*,\mathcal{X}}
-            + \langle g,  x\rangle_{\mathcal{X}^*,\mathcal{X}}
-            + c
-    \f]
-    for fixed \f$H\in\mathcal{L}(\mathcal{X},\mathcal{X}^*)\f$,
-    \f$g\in\mathcal{X}^*\f$, and \f$c\in\mathbb{R}\f$.
-
-    ---
-*/
+#ifndef ROL_BOUND_TO_CONSTRAINT_H
+#define ROL_BOUND_TO_CONSTRAINT_H
 
 namespace ROL {
 
 template<typename Real>
-class QuadraticObjective : public Objective<Real> {
-private:
-  const Ptr<const LinearOperator<Real>> H_;
-  const Ptr<const Vector<Real>> g_;
-  const Real c_;
-  Ptr<Vector<Real>> tmp_;
+BoundToConstraint<Real>::BoundToConstraint(BoundConstraint<Real> &bnd) {
+  lo_ = makePtr<LowerBoundToConstraint<Real>>(bnd);
+  up_ = makePtr<UpperBoundToConstraint<Real>>(bnd);
+  tmp_ = x.clone();
+}
 
-public:
-  QuadraticObjective(const Ptr<const LinearOperator<Real>> &H,
-                     const Ptr<const Vector<Real>>         &g,
-                     Real                                   c = Real(0));
+template<typename Real>
+BoundToConstraint<Real>::BoundToConstraint(const Vector<Real> &lo, const Vector<Real> &up) {
+  lo_ = makePtr<LowerBoundToConstraint<Real>>(lo);
+  up_ = makePtr<UpperBoundToConstraint<Real>>(up);
+  tmp_ = lo.clone();
+}
 
-  Real value( const Vector<Real> &x, Real &tol ) override;
-  void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) override;
-  void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) override;
-  void invHessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) override;
+template<typename Real>
+void BoundToConstraint<Real>::value(Vector<Real> &c, const Vector<Real> &x, Real &tol) {
+  Vector<Real> &c0 = *(dynamic_cast<PartitionedVector<Real>&>(c).get(0));
+  Vector<Real> &c1 = *(dynamic_cast<PartitionedVector<Real>&>(c).get(1));
+  lo_->value(c0,x,tol);
+  up_->value(c1,x,tol);
+}
 
-}; // class QuadraticObjective
+template<typename Real>
+void BoundToConstraint<Real>::applyJacobian(Vector<Real> &jv,
+                   const Vector<Real> &v, const Vector<Real> &x, Real &tol) {
+  Vector<Real> &jv0 = *(dynamic_cast<PartitionedVector<Real>&>(jv).get(0));
+  Vector<Real> &jv1 = *(dynamic_cast<PartitionedVector<Real>&>(jv).get(1));
+  lo_->applyJacobian(jv0,v,x,tol);
+  up_->applyJacobian(jv1,v,x,tol);
+}
 
-} // namespace ROL
+template<typename Real>
+void BoundToConstraint<Real>::applyAdjointJacobian(Vector<Real> &ajv,
+                   const Vector<Real> &v, const Vector<Real> &x, Real &tol) {
+  const Vector<Real> &v0 = *(dynamic_cast<const PartitionedVector<Real>&>(v).get(0));
+  const Vector<Real> &v1 = *(dynamic_cast<const PartitionedVector<Real>&>(v).get(1));
+  lo_->applyAdjointJacobian(ajv,v0,x,tol);
+  up_->applyAdjointJacobian(*tmp_,v1,x,tol);
+  ajv.plus(*tmp_); 
+}
 
-#include "ROL_QuadraticObjective_Def.hpp"
+template<typename Real>
+void BoundToConstraint<Real>::applyAdjointHessian(Vector<Real> &ahuv,
+                   const Vector<Real> &u, const Vector<Real> &v,
+                   const Vector<Real> &x, Real &tol) {
+  ahuv.zero();
+}
+
+}
 
 #endif

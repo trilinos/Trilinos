@@ -85,12 +85,12 @@ MoreauYosidaAlgorithm_B<Real>::MoreauYosidaAlgorithm_B(ParameterList &list)
 }
 
 template<typename Real>
-void MoreauYosidaAlgorithm_B<Real>::initialize(Vector<Real>              &x,
-                                               const Vector<Real>        &g,
-                                               MoreauYosidaPenalty<Real> &myobj,
-                                               BoundConstraint<Real>     &bnd,
-                                               Vector<Real>              &pwa,
-                                               std::ostream              &outStream) {
+void MoreauYosidaAlgorithm_B<Real>::initialize(Vector<Real>                &x,
+                                               const Vector<Real>          &g,
+                                               MoreauYosidaObjective<Real> &myobj,
+                                               BoundConstraint<Real>       &bnd,
+                                               Vector<Real>                &pwa,
+                                               std::ostream                &outStream) {
   hasEcon_ = true;
   if (proj_ == nullPtr) {
     proj_ = makePtr<PolyhedralProjection<Real>>(makePtrFromRef(bnd));
@@ -106,11 +106,11 @@ void MoreauYosidaAlgorithm_B<Real>::initialize(Vector<Real>              &x,
 
 
 template<typename Real>
-void MoreauYosidaAlgorithm_B<Real>::updateState(const Vector<Real> &x,
-                                                MoreauYosidaPenalty<Real> &myobj,
-                                                BoundConstraint<Real> &bnd,
-                                                Vector<Real> &pwa,
-                                                std::ostream &outStream) {
+void MoreauYosidaAlgorithm_B<Real>::updateState(const Vector<Real>          &x,
+                                                MoreauYosidaObjective<Real> &myobj,
+                                                BoundConstraint<Real>       &bnd,
+                                                Vector<Real>                &pwa,
+                                                std::ostream                &outStream) {
   const Real one(1);
   Real zerotol = std::sqrt(ROL_EPSILON<Real>());
   // Update objective and constraint.
@@ -121,11 +121,12 @@ void MoreauYosidaAlgorithm_B<Real>::updateState(const Vector<Real> &x,
   //  myobj.update(x,UPDATE_ACCEPT,state_->iter);
   //}
   // Compute norm of the gradient of the Lagrangian
-  state_->value = myobj.value(x, zerotol);
-  myobj.gradient(*state_->gradientVec, x, zerotol);
+  state_->value = myobj.getObjectiveValue(x, zerotol);
+  myobj.getObjectiveGradient(*state_->gradientVec, x, zerotol);
+  //myobj.gradient(*state_->gradientVec, x, zerotol);
   //gnorm_ = state_->gradientVec->norm();
   pwa.set(x);
-  pwa.axpy(-one,myobj.getGradient()->dual());
+  pwa.axpy(-one,state_->gradientVec->dual());
   proj_->project(pwa,outStream);
   pwa.axpy(-one,x);
   gnorm_ = pwa.norm();
@@ -147,8 +148,8 @@ std::vector<std::string> MoreauYosidaAlgorithm_B<Real>::run( Vector<Real>       
   std::vector<std::string> output;
   Ptr<Vector<Real>> pwa = x.clone();
   // Initialize Moreau-Yosida data
-  MoreauYosidaPenalty<Real> myobj(makePtrFromRef(obj),makePtrFromRef(bnd),
-                                  x,state_->searchSize,updateMultiplier_,
+  MoreauYosidaObjective<Real> myobj(makePtrFromRef(obj),makePtrFromRef(bnd),
+                                  x,g,state_->searchSize,updateMultiplier_,
                                   updatePenalty_);
   initialize(x,g,myobj,bnd,*pwa,outStream);
   Ptr<Algorithm_U<Real>> algo;

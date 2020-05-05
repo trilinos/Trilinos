@@ -74,60 +74,34 @@
     ---
 */
 
-
 namespace ROL {
 
-template <class Real>
+template<typename Real>
 class ScalarLinearConstraint : public Constraint<Real> {
 private:
-  const Ptr<Vector<Real>> a_; ///< Dual vector defining hyperplane
-  const Real b_;              ///< Affine shift
+  const Ptr<const Vector<Real>> a_; ///< Dual vector defining hyperplane
+  const Real b_;                    ///< Affine shift
 
 public:
-  ScalarLinearConstraint(const Ptr<Vector<Real>> &a,
-                         const Real b)
-    : a_(a), b_(b) {}
+  ScalarLinearConstraint(const Ptr<const Vector<Real>> &a,
+                         const Real b);
 
-  void value(Vector<Real> &c, const Vector<Real> &x, Real &tol) {
-    SingletonVector<Real> &cc = dynamic_cast<SingletonVector<Real>&>(c);
-    cc.setValue(a_->dot(x.dual()) - b_);
-  }
-
+  void value(Vector<Real> &c, const Vector<Real> &x, Real &tol) override;
   void applyJacobian(Vector<Real> &jv, const Vector<Real> &v,
-               const Vector<Real> &x,  Real &tol) {
-    SingletonVector<Real> &jc = dynamic_cast<SingletonVector<Real>&>(jv);
-    jc.setValue(a_->dot(v.dual()));
-  }
-
+               const Vector<Real> &x,  Real &tol) override;
   void applyAdjointJacobian(Vector<Real> &ajv, const Vector<Real> &v,
-                      const Vector<Real> &x,   Real &tol) {
-    const SingletonVector<Real>&    vc = dynamic_cast<const SingletonVector<Real>&>(v);
-    ajv.set(*a_);
-    ajv.scale(vc.getValue());
-  }
-
+                      const Vector<Real> &x,   Real &tol) override;
   void applyAdjointHessian(Vector<Real> &ahuv, const Vector<Real> &u,
                      const Vector<Real> &v,    const Vector<Real> &x,
-                           Real &tol) {
-    ahuv.zero();
-  }
-
+                           Real &tol) override;
   std::vector<Real> solveAugmentedSystem(Vector<Real> &v1, Vector<Real> &v2,
                                    const Vector<Real> &b1, const Vector<Real> &b2,
-                                   const Vector<Real> &x,  Real &tol) {
-    SingletonVector<Real>&    v2c = dynamic_cast<SingletonVector<Real>&>(v2);
-    const SingletonVector<Real>&    b2c = dynamic_cast<const SingletonVector<Real>&>(b2);
-
-    v2c.setValue( (a_->dot(b1.dual()) - b2c.getValue() )/a_->dot(*a_) );
-    v1.set(b1.dual());
-    v1.axpy(-v2c.getValue(),a_->dual());
-
-    std::vector<Real> out;
-    return out;
-  }
+                                   const Vector<Real> &x,  Real &tol) override;
 
 }; // class ScalarLinearConstraint
 
 } // namespace ROL
+
+#include "ROL_ScalarLinearConstraint_Def.hpp"
 
 #endif

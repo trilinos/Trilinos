@@ -41,53 +41,59 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_QUADRATIC_OBJECTIVE_H
-#define ROL_QUADRATIC_OBJECTIVE_H
-
-#include "ROL_Objective.hpp"
-#include "ROL_Vector.hpp"
-#include "ROL_Ptr.hpp"
-
-/** @ingroup func_group
-    \class ROL::QuadraticObjective
-    \brief Provides the interface to evaluate quadratic objective functions.
-
-    This class implements the quadratic objective function
-    \f[
-       f(x) = \frac{1}{2}\langle Hx, x\rangle_{\mathcal{X}^*,\mathcal{X}}
-            + \langle g,  x\rangle_{\mathcal{X}^*,\mathcal{X}}
-            + c
-    \f]
-    for fixed \f$H\in\mathcal{L}(\mathcal{X},\mathcal{X}^*)\f$,
-    \f$g\in\mathcal{X}^*\f$, and \f$c\in\mathbb{R}\f$.
-
-    ---
-*/
+#ifndef ROL_UPPER_BOUND_TO_CONSTRAINT_DEF_H
+#define ROL_UPPER_BOUND_TO_CONSTRAINT_DEF_H
 
 namespace ROL {
 
 template<typename Real>
-class QuadraticObjective : public Objective<Real> {
-private:
-  const Ptr<const LinearOperator<Real>> H_;
-  const Ptr<const Vector<Real>> g_;
-  const Real c_;
-  Ptr<Vector<Real>> tmp_;
+UpperBoundToConstraint<Real>::UpperBoundToConstraint(BoundConstraint<Real> &bnd) {
+  up_ = bnd.getUpperBound()->clone();
+  up_->set(*bnd.getUpperBound());
+}
 
-public:
-  QuadraticObjective(const Ptr<const LinearOperator<Real>> &H,
-                     const Ptr<const Vector<Real>>         &g,
-                     Real                                   c = Real(0));
+template<typename Real>
+UpperBoundToConstraint<Real>::UpperBoundToConstraint(const Vector<Real> &up) {
+  up_ = up.clone();
+  up_->set(up);
+}
 
-  Real value( const Vector<Real> &x, Real &tol ) override;
-  void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) override;
-  void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) override;
-  void invHessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) override;
+template<typename Real>
+void UpperBoundToConstraint<Real>::value(Vector<Real> &c, const Vector<Real> &x, Real &tol) {
+  const Real one(1);
+  c.set(*up_);
+  c.axpy(-one,x);
+}
 
-}; // class QuadraticObjective
+template<typename Real>
+void UpperBoundToConstraint<Real>::applyJacobian(Vector<Real> &jv,
+                                                 const Vector<Real> &v,
+                                                 const Vector<Real> &x,
+                                                 Real &tol) {
+  const Real one(1);
+  jv.set(v);
+  jv.scale(-one);
+}
 
-} // namespace ROL
+template<typename Real>
+void UpperBoundToConstraint<Real>::applyAdjointJacobian(Vector<Real> &ajv,
+                                                        const Vector<Real> &v,
+                                                        const Vector<Real> &x,
+                                                        Real &tol) {
+  const Real one(1);
+  ajv.set(v);
+  ajv.scale(-one);
+}
 
-#include "ROL_QuadraticObjective_Def.hpp"
+template<typename Real>
+void UpperBoundToConstraint<Real>::applyAdjointHessian(Vector<Real> &ahuv,
+                                                       const Vector<Real> &u,
+                                                       const Vector<Real> &v,
+                                                       const Vector<Real> &x,
+                                                       Real &tol) {
+  ahuv.zero();
+}
+
+}
 
 #endif

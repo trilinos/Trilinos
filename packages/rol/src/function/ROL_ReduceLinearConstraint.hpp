@@ -94,7 +94,7 @@ public:
     : lcon_(lcon), x_(x) {
     nsop_ = makePtr<NullSpaceOperator<Real>>(lcon,x_,c);
     feasible(c);
-    storage_ = makePtr<SimController<Real>>();
+    storage_       = makePtr<SimController<Real>>();
   }
 
   const Ptr<Objective<Real>> transform(const Ptr<Objective<Real>> &obj) const {

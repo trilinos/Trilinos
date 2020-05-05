@@ -46,14 +46,28 @@
 
 */
 
-#include "ROL_HS41.hpp"
-#include "ROL_HS53.hpp"
-#include "ROL_HS55.hpp"
+#include "ROL_NullSpaceOperator.hpp"
 #include "ROL_Bounds.hpp"
-#include "ROL_PolyhedralProjectionFactory.hpp"
+#include "ROL_ScaledStdVector.hpp"
+#include "ROL_StdConstraint.hpp"
 
 #include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+
+template<typename Real>
+class con2d : public ROL::StdConstraint<Real> {
+public:
+  void value(std::vector<Real> &c, const std::vector<Real> &x, Real &tol) {
+    c[0] = x[0]+x[1];
+  }
+  void applyJacobian(std::vector<Real> &jv, const std::vector<Real> &v, const std::vector<Real> &x, Real &tol) {
+    jv[0] = v[0]+v[1];
+  }
+  void applyAdjointJacobian(std::vector<Real> &ajv, const std::vector<Real> &v, const std::vector<Real> &x, Real &tol) {
+    ajv[0] = v[0];
+    ajv[1] = v[0];
+  }
+};
 
 typedef double RealT;
 
@@ -75,140 +89,90 @@ int main(int argc, char *argv[]) {
 
   try {
     RealT tol = std::sqrt(ROL::ROL_EPSILON<RealT>());
-    RealT cnorm(0);
-    ROL::Ptr<ROL::Vector<RealT>>     sol, mul, x, lam, l, u, c;
-    ROL::Ptr<ROL::Objective<RealT>>  obj;
-    ROL::Ptr<ROL::Constraint<RealT>> con;
-    ROL::Ptr<ROL::BoundConstraint<RealT>> bnd;
-    ROL::Ptr<ROL::PolyhedralProjection<RealT>> proj;
-    ROL::ParameterList list;
-    list.sublist("General").set("Output Level",2);
-    std::vector<RealT> data;
+    RealT err(0);
+    ROL::Ptr<con2d<RealT>> con = ROL::makePtr<con2d<RealT>>();
 
-    *outStream << std::endl << "Hock and Schittkowski Problem #41" << std::endl << std::endl;
-    ROL::ZOO::getHS41<RealT> HS41;
-    obj = HS41.getObjective();
-    sol = HS41.getInitialGuess();
-    con = HS41.getEqualityConstraint();
-    mul = HS41.getEqualityMultiplier();
-    bnd = HS41.getBoundConstraint();
+    ROL::Ptr<std::vector<RealT>> yptr = ROL::makePtr<std::vector<RealT>>(2);
+    (*yptr)[0] = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
+    (*yptr)[1] = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
+    ROL::StdVector<RealT> y(yptr);
 
-    lam = mul->clone(); lam->set(*mul);
-    x   = sol->clone(); x->set(*sol);
-    l   = sol->clone(); l->zero();
-    u   = sol->clone(); u->setScalar(static_cast<RealT>(1));
-    c   = mul->dual().clone();
+    ROL::StdVector<RealT> r(1);
 
-    list.sublist("General").sublist("Polyhedral Projection").set("Type","Dai-Fletcher");
-    proj = ROL::PolyhedralProjectionFactory<RealT>(*sol,sol->dual(),bnd,con,*lam,*c,list);
-    proj->project(*x,*outStream);
+    ROL::Ptr<std::vector<RealT>> xptr = ROL::makePtr<std::vector<RealT>>(2);
+    (*xptr)[0] = (*yptr)[0];
+    (*xptr)[1] = (*yptr)[1];
+    ROL::StdVector<RealT> x(xptr);
 
-    con->value(*c,*x,tol);
-    cnorm = c->norm();
+    ROL::Ptr<std::vector<RealT>> Pxptr = ROL::makePtr<std::vector<RealT>>(2,0.0);
+    ROL::StdVector<RealT> Px(Pxptr);
 
-    data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();
-    *outStream << "  Initial:    x1 = " << data[0] << "  x2 = " << data[1]
-               << "  x3 = " << data[2] << std::endl;
-    data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(x)->getVector();
-    *outStream << "  Result:     x1 = " << data[0] << "  x2 = " << data[1]
-               << "  x3 = " << data[2] << std::endl;
-    data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(lam)->getVector();
-    *outStream << "  Multiplier: l1 = " << data[0] << std::endl;
+    ROL::NullSpaceOperator<RealT> ns0(con,x,r);
+    ns0.apply(Px,x,tol);
+ 
+    ROL::Ptr<std::vector<RealT>> x0ptr = ROL::makePtr<std::vector<RealT>>(2);
+    (*x0ptr)[0] = ((*yptr)[0]-(*yptr)[1])/static_cast<RealT>(2);
+    (*x0ptr)[1] = -(*x0ptr)[0];
+    ROL::StdVector<RealT> x0(x0ptr);
 
-    *outStream << std::endl;
-    *outStream << "  is equality feasible = " << (cnorm<=tol)        << std::endl
-               << "  are bounds feasible  = " << bnd->isFeasible(*x) << std::endl;
+    ROL::StdVector<RealT> e0(2);
 
-    errorFlag += !bnd->isFeasible(*x);
-    errorFlag += (cnorm > tol);
+    *outStream << std::setprecision(6) << std::scientific << std::endl;
+    *outStream << "   x[0] = " <<  (*xptr)[0] << "   x[1] = " <<  (*xptr)[1] << std::endl;
+    *outStream << "  Px[0] = " << (*Pxptr)[0] << "  Px[1] = " << (*Pxptr)[1] << std::endl;
+    *outStream << "  x*[0] = " << (*x0ptr)[0] << "  x*[1] = " << (*x0ptr)[1] << std::endl;
 
-    *outStream << std::endl << "Hock and Schittkowski Problem #53" << std::endl << std::endl;
-    ROL::ZOO::getHS53<RealT> HS53;
-    obj = HS53.getObjective();
-    sol = HS53.getInitialGuess();
-    con = HS53.getEqualityConstraint();
-    mul = HS53.getEqualityMultiplier();
-    bnd = HS53.getBoundConstraint();
+    e0.set(x0); e0.axpy(static_cast<RealT>(-1),Px);
+    err = e0.norm();
+    *outStream << "  Error in Euclidean Projection: " << err << std::endl;
 
-    lam = mul->clone(); lam->set(*mul);
-    x   = sol->clone(); x->set(*sol);
-    l   = sol->clone(); l->zero();
-    u   = sol->clone(); u->setScalar(static_cast<RealT>(1));
-    c   = mul->dual().clone();
+    e0.set(x); e0.axpy(static_cast<RealT>(-1),x0);
+    *outStream << "  ||x*-x||^2 = " << e0.norm() << std::endl;
 
-    list.sublist("General").sublist("Polyhedral Projection").set("Type","Dykstra");
-    proj = ROL::PolyhedralProjectionFactory<RealT>(*sol,sol->dual(),bnd,con,*lam,*c,list);
-    proj->project(*x,*outStream);
+    e0.set(x); e0.axpy(static_cast<RealT>(-1),Px);
+    *outStream << "  ||Px-x||^2 = " << e0.norm() << std::endl << std::endl;
 
-    con->value(*c,*x,tol);
-    cnorm = c->norm();
+    errorFlag += (err > tol);
 
-    data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();
-    *outStream << "  Initial:    x1 = " << data[0] << "  x2 = " << data[1]
-               << "  x3 = " << data[2] << "  x4 = " << data[3]
-               << "  x5 = " << data[4] << std::endl;
-    data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(x)->getVector();
-    *outStream << "  Result:     x1 = " << data[0] << "  x2 = " << data[1]
-               << "  x3 = " << data[2] << "  x4 = " << data[3]
-               << "  x5 = " << data[4] << std::endl;
-    data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(lam)->getVector();
-    *outStream << "  Multiplier: l1 = " << data[0] << "  l2 = " << data[1]
-               << "  l3 = " << data[2] << std::endl;
+    ROL::Ptr<std::vector<RealT>> dptr = ROL::makePtr<std::vector<RealT>>(2);
+    (*dptr)[0] = static_cast<RealT>(1)+static_cast<RealT>(2)*static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
+    (*dptr)[1] = static_cast<RealT>(1)+static_cast<RealT>(5)*static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
+ 
+    ROL::Ptr<std::vector<RealT>> x1ptr = ROL::makePtr<std::vector<RealT>>(2);
+    (*x1ptr)[0] = ((*dptr)[0]*(*yptr)[0]-(*dptr)[1]*(*yptr)[1])/((*dptr)[0]+(*dptr)[1]);
+    (*x1ptr)[1] = -(*x1ptr)[0];
+    ROL::PrimalScaledStdVector<RealT> x1(x1ptr,dptr);
+
+    ROL::Ptr<std::vector<RealT>> zptr = ROL::makePtr<std::vector<RealT>>(2);
+    (*zptr)[0] = (*yptr)[0];
+    (*zptr)[1] = (*yptr)[1];
+    ROL::PrimalScaledStdVector<RealT> z(zptr,dptr);
+
+    ROL::Ptr<std::vector<RealT>> Pzptr = ROL::makePtr<std::vector<RealT>>(2,0.0);
+    ROL::PrimalScaledStdVector<RealT> Pz(Pzptr,dptr);
+
+    ROL::NullSpaceOperator<RealT> ns1(con,z,r);
+    ns1.apply(Pz,z,tol);
+
+    ROL::Ptr<std::vector<RealT>> e1ptr = ROL::makePtr<std::vector<RealT>>(2);
+    ROL::PrimalScaledStdVector<RealT> e1(e1ptr,dptr);
 
     *outStream << std::endl;
-    *outStream << "  is equality feasible = " << (cnorm<=tol)        << std::endl
-               << "  are bounds feasible  = " << bnd->isFeasible(*x) << std::endl;
+    *outStream << "   x[0] = " <<  (*zptr)[0] << "   x[1] = " <<  (*zptr)[1] << std::endl;
+    *outStream << "  Px[0] = " << (*Pzptr)[0] << "  Px[1] = " << (*Pzptr)[1] << std::endl;
+    *outStream << "  x*[0] = " << (*x1ptr)[0] << "  x*[1] = " << (*x1ptr)[1] << std::endl;
 
-    errorFlag += !bnd->isFeasible(*x);
-    errorFlag += (cnorm > tol);
+    e1.set(x1); e1.axpy(static_cast<RealT>(-1),Pz);
+    err = e1.norm();
+    *outStream << "  Error in Euclidean Projection: " << err << std::endl;
 
-    *outStream << std::endl << "Hock and Schittkowski Problem #55" << std::endl << std::endl;
-    ROL::ZOO::getHS55<RealT> HS55;
-    obj = HS55.getObjective();
-    sol = HS55.getInitialGuess();
-    con = HS55.getEqualityConstraint();
-    mul = HS55.getEqualityMultiplier();
-    bnd = HS55.getBoundConstraint();
+    e1.set(z); e1.axpy(static_cast<RealT>(-1),x1);
+    *outStream << "  ||x*-x||^2 = " << e1.norm() << std::endl;
 
-    //ROL::Ptr<ROL::OptimizationProblem<RealT>> problem;
-    //ROL::Ptr<ROL::Vector<RealT>> xt;
-    //std::vector<ROL::Ptr<ROL::Vector<RealT>>> xv;
-    //HS55.get(problem,xt,xv);
-    //problem->check(*outStream);
+    e1.set(z); e1.axpy(static_cast<RealT>(-1),Pz);
+    *outStream << "  ||Px-x||^2 = " << e1.norm() << std::endl << std::endl;
 
-    lam = mul->clone(); lam->set(*mul);
-    x   = sol->clone(); x->set(*sol);
-    l   = sol->clone(); l->zero();
-    u   = sol->clone(); u->setScalar(static_cast<RealT>(1));
-    c   = mul->dual().clone();
-
-    list.sublist("General").sublist("Polyhedral Projection").set("Type","Semismooth Newton");
-    proj = ROL::PolyhedralProjectionFactory<RealT>(*sol,sol->dual(),bnd,con,*lam,*c,list);
-    proj->project(*x,*outStream);
-
-    con->value(*c,*x,tol);
-    cnorm = c->norm();
-
-    data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();
-    *outStream << "  Initial:    x1 = " << data[0] << "  x2 = " << data[1]
-               << "  x3 = " << data[2] << "  x4 = " << data[3]
-               << "  x5 = " << data[4] << "  x6 = " << data[5] << std::endl;
-    data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(x)->getVector();
-    *outStream << "  Result:     x1 = " << data[0] << "  x2 = " << data[1]
-               << "  x3 = " << data[2] << "  x4 = " << data[3]
-               << "  x5 = " << data[4] << "  x6 = " << data[5] << std::endl;
-    data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(lam)->getVector();
-    *outStream << "  Multiplier: l1 = " << data[0] << "  l2 = " << data[1]
-               << "  l3 = " << data[2] << "  l4 = " << data[3]
-               << "  l5 = " << data[4] << "  l6 = " << data[5] << std::endl;
-
-    *outStream << std::endl;
-    *outStream << "  is equality feasible = " << (cnorm<=tol)        << std::endl
-               << "  are bounds feasible  = " << bnd->isFeasible(*x) << std::endl;
-    *outStream << std::endl;
-
-    errorFlag += !bnd->isFeasible(*x);
-    errorFlag += (cnorm > tol);
+    errorFlag += (err > tol);
   }
   
   catch (std::logic_error& err) {

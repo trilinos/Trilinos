@@ -41,53 +41,26 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_QUADRATIC_OBJECTIVE_H
-#define ROL_QUADRATIC_OBJECTIVE_H
-
-#include "ROL_Objective.hpp"
-#include "ROL_Vector.hpp"
-#include "ROL_Ptr.hpp"
-
-/** @ingroup func_group
-    \class ROL::QuadraticObjective
-    \brief Provides the interface to evaluate quadratic objective functions.
-
-    This class implements the quadratic objective function
-    \f[
-       f(x) = \frac{1}{2}\langle Hx, x\rangle_{\mathcal{X}^*,\mathcal{X}}
-            + \langle g,  x\rangle_{\mathcal{X}^*,\mathcal{X}}
-            + c
-    \f]
-    for fixed \f$H\in\mathcal{L}(\mathcal{X},\mathcal{X}^*)\f$,
-    \f$g\in\mathcal{X}^*\f$, and \f$c\in\mathbb{R}\f$.
-
-    ---
-*/
+#ifndef ROL_OBJECTIVE_FSSOLVER_DEF_H
+#define ROL_OBJECTIVE_FSSOLVER_DEF_H
 
 namespace ROL {
 
 template<typename Real>
-class QuadraticObjective : public Objective<Real> {
-private:
-  const Ptr<const LinearOperator<Real>> H_;
-  const Ptr<const Vector<Real>> g_;
-  const Real c_;
-  Ptr<Vector<Real>> tmp_;
+Real Objective_FSsolver<Real>::value( const Vector<Real> &u, Real &tol ) {
+  return static_cast<Real>(0.5)*u.dot(u.dual());
+}
 
-public:
-  QuadraticObjective(const Ptr<const LinearOperator<Real>> &H,
-                     const Ptr<const Vector<Real>>         &g,
-                     Real                                   c = Real(0));
+template<typename Real>
+void Objective_FSsolver<Real>::gradient( Vector<Real> &g, const Vector<Real> &u, Real &tol ) {
+  g.set(u.dual());
+}
 
-  Real value( const Vector<Real> &x, Real &tol ) override;
-  void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) override;
-  void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) override;
-  void invHessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) override;
-
-}; // class QuadraticObjective
+template<typename Real>
+void Objective_FSsolver<Real>::hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &u, Real &tol ) {
+  hv.set(v.dual());
+}
 
 } // namespace ROL
-
-#include "ROL_QuadraticObjective_Def.hpp"
 
 #endif
