@@ -147,7 +147,7 @@ void DykstraProjection<Real>::project_Dykstra(Vector<Real> &x, std::ostream &str
   Real norm1(0), norm2(0), rnorm(0);
   p_->zero(); q_->zero();
   std::ios_base::fmtflags streamFlags(stream.flags());
-  if (verbosity_ > 1) {
+  if (verbosity_ > 2) {
     stream << std::scientific << std::setprecision(6);
     stream << std::endl;
     stream << " Polyhedral Projection using Dykstra's Algorithm" << std::endl;
@@ -178,7 +178,7 @@ void DykstraProjection<Real>::project_Dykstra(Vector<Real> &x, std::ostream &str
     // Robust Stopping Criteria for Dykstra's Algorithm
     // SISC Vol. 26, No. 4, 2005
     rnorm = std::sqrt(norm1*norm1 + norm2*norm2);
-    if (verbosity_ > 1) {
+    if (verbosity_ > 2) {
       stream << "  ";
       stream << std::setw(6)  << std::left << cnt;
       stream << std::setw(15) << std::left << norm1;
@@ -189,7 +189,7 @@ void DykstraProjection<Real>::project_Dykstra(Vector<Real> &x, std::ostream &str
     }
     if (rnorm <= ctol) break;
   }
-  if (verbosity_ > 1) {
+  if (verbosity_ > 2) {
     stream << std::endl;
   }
   if (rnorm > ctol) {
