@@ -50,15 +50,15 @@
 
 
 #if defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA )         && \
-  (!defined(KOKKOS_ENABLE_CUDA) || (8000 <= CUDA_VERSION)) && \
-    defined(KOKKOSKERNELS_INST_DOUBLE) || \
-    defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
+  (!defined(KOKKOS_ENABLE_CUDA) || (8000 <= CUDA_VERSION))
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU) && \
     defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
 
 #include "slu_ddefs.h"
+#include "slu_sdefs.h"
 #include "slu_zdefs.h"
+#include "slu_cdefs.h"
 // auxiliary functions from perf_test (e.g., pivoting, printing)
 #include "KokkosSparse_sptrsv_aux.hpp"
 
@@ -168,6 +168,25 @@ void factor_superlu (bool symm_mode, bool metis,
     dCreate_CompCol_Matrix (&A, nrow, nrow, nnz,
                             reinterpret_cast <double*> (nzvals_tran), colind_tran, rowptr_tran,
                             SLU_NC, SLU_D, SLU_GE);
+  } else if (std::is_same<scalar_type, float>::value == true) {
+    if (!symm_mode) {
+      sCompRow_to_CompCol (nrow, nrow, nnz,
+                           reinterpret_cast <float*> (nzvals), colind, rowptr,
+                           reinterpret_cast <float**> (&nzvals_tran), &colind_tran, &rowptr_tran);
+    }
+    sCreate_CompCol_Matrix (&A, nrow, nrow, nnz,
+                            reinterpret_cast <float*> (nzvals_tran), colind_tran, rowptr_tran,
+                            SLU_NC, SLU_D, SLU_GE);
+  } else if (std::is_same<scalar_type, std::complex<float>>::value == true ||
+             std::is_same<scalar_type, Kokkos::complex<float>>::value == true) {
+    if (!symm_mode) {
+      cCompRow_to_CompCol (nrow, nrow, nnz,
+                           reinterpret_cast <complex*> (nzvals), colind, rowptr,
+                           reinterpret_cast <complex**> (&nzvals_tran), &colind_tran, &rowptr_tran);
+    }
+    cCreate_CompCol_Matrix (&A, nrow, nrow, nnz,
+                            reinterpret_cast <complex*> (nzvals_tran), colind_tran, rowptr_tran,
+                            SLU_NC, SLU_Z, SLU_GE);
   } else if (std::is_same<scalar_type, std::complex<double>>::value == true ||
              std::is_same<scalar_type, Kokkos::complex<double>>::value == true) {
     if (!symm_mode) {
@@ -205,6 +224,13 @@ void factor_superlu (bool symm_mode, bool metis,
   int lwork = 0;
   if (std::is_same<scalar_type, double>::value == true) {
     dgstrf (&options, &AC, relax_size, panel_size, etree,
+            NULL, lwork, *perm_c, *perm_r, &L, &U, &Glu, &stat, &info);
+  } else if (std::is_same<scalar_type, float>::value == true) {
+    sgstrf (&options, &AC, relax_size, panel_size, etree,
+            NULL, lwork, *perm_c, *perm_r, &L, &U, &Glu, &stat, &info);
+  } else if (std::is_same<scalar_type, std::complex<float>>::value == true ||
+             std::is_same<scalar_type, Kokkos::complex<float>>::value == true) {
+    cgstrf (&options, &AC, relax_size, panel_size, etree,
             NULL, lwork, *perm_c, *perm_r, &L, &U, &Glu, &stat, &info);
   } else {
     zgstrf (&options, &AC, relax_size, panel_size, etree,
@@ -619,7 +645,6 @@ void print_help_sptrsv() {
 int main(int argc, char **argv) {
   std::vector<int> tests;
   std::string filename;
-  std::string scalarTypeString;
 
   int loop = 1;
   // use symmetric mode for SuperLU
@@ -641,6 +666,9 @@ int main(int argc, char **argv) {
   int relax_size = sp_ienv(2);
   // verbose
   bool verbose = true;
+  // scalar type
+  std::string char_scalar = "d";
+  std::string scalarTypeString = "(scalar_t = double)";
 
   if(argc == 1)
   {
@@ -717,6 +745,9 @@ int main(int argc, char **argv) {
       block_size = atoi(argv[++i]);
       continue;
     }
+    if((strcmp(argv[i],"--scalar-type")==0)) {
+      char_scalar = argv[++i];
+    }
     if((strcmp(argv[i],"--help")==0) || (strcmp(argv[i],"-h")==0)) {
       print_help_sptrsv();
       return 0;
@@ -730,24 +761,44 @@ int main(int argc, char **argv) {
 
   Kokkos::ScopeGuard kokkosScope (argc, argv);
 
-  // If eti-type complex<double> is enabled at compile time, this is what
-  // the perf_test will use
-  #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
-    using scalar_t = Kokkos::complex<double>;
+  int total_errors = 0;
+  if (char_scalar == "z") {
+    #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
     scalarTypeString = "(scalar_t = Kokkos::complex<double>)";
-  #else
-    // If eti-type double is enabled at compile time, this is what
-    // the perf_test will use
-    #if defined(KOKKOSKERNELS_INST_DOUBLE)
-      using scalar_t = double;
-      scalarTypeString = "(scalar_t = double)";
+    total_errors = test_sptrsv_perf<Kokkos::complex<double>> (tests, verbose, filename, symm_mode, metis, merge,
+                                                              invert_diag, invert_offdiag, u_in_csr, panel_size,
+                                                              relax_size, block_size, loop);
     #else
-      #error "Invalid type specified in KOKKOSKERNELS_SCALARS, supported types are \"double,complex<double>\""
+    std::cout << std::endl << " KOKKOSKERNELS_INST_COMPLEX_DOUBLE  is not enabled ** " << std::endl << std::endl;
     #endif
-  #endif
-  int total_errors = test_sptrsv_perf<scalar_t> (tests, verbose, filename, symm_mode, metis, merge,
-                                                 invert_diag, invert_offdiag, u_in_csr, panel_size,
-                                                 relax_size, block_size, loop);
+  } else if (char_scalar == "c") {
+    #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)
+    scalarTypeString = "(scalar_t = Kokkos::complex<float>)";
+    total_errors = test_sptrsv_perf<Kokkos::complex<float>> (tests, verbose, filename, symm_mode, metis, merge,
+                                                             invert_diag, invert_offdiag, u_in_csr, panel_size,
+                                                             relax_size, block_size, loop);
+    #else
+    std::cout << std::endl << " KOKKOSKERNELS_INST_COMPLEX_FLOAT  is not enabled ** " << std::endl << std::endl;
+    #endif
+  } else if (char_scalar == "d") {
+    #if defined(KOKKOSKERNELS_INST_DOUBLE)
+      scalarTypeString = "(scalar_t = double)";
+      total_errors = test_sptrsv_perf<double> (tests, verbose, filename, symm_mode, metis, merge,
+                                               invert_diag, invert_offdiag, u_in_csr, panel_size,
+                                               relax_size, block_size, loop);
+    #else
+    std::cout << std::endl << " KOKKOSKERNELS_INST_DOUBLE  is not enabled ** " << std::endl << std::endl;
+    #endif
+  } else if (char_scalar == "f") {
+    #if defined(KOKKOSKERNELS_INST_FLOAT)
+    scalarTypeString = "(scalar_t = float)";
+    total_errors = test_sptrsv_perf<float> (tests, verbose, filename, symm_mode, metis, merge,
+                                            invert_diag, invert_offdiag, u_in_csr, panel_size,
+                                            relax_size, block_size, loop);
+    #else
+    std::cout << std::endl << " KOKKOSKERNELS_INST_FLOAT  is not enabled ** " << std::endl << std::endl;
+    #endif
+  }
   if(total_errors == 0)
     std::cout << "Kokkos::SPTRSV Test: Passed " << scalarTypeString
               << std::endl << std::endl;

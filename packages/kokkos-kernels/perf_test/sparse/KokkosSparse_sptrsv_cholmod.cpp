@@ -91,9 +91,13 @@ cholmod_factor* factor_cholmod(const size_type nrow, const size_type nnz, scalar
   } else if (std::is_same<cholmod_int_type, int>::value == true) {
     A.itype = CHOLMOD_INT;
   }
-  A.xtype = CHOLMOD_REAL;
-  A.dtype = CHOLMOD_DOUBLE;
-
+  if (std::is_same<scalar_type, double>::value == true) {
+    A.xtype = CHOLMOD_REAL;
+    A.dtype = CHOLMOD_DOUBLE;
+  } else if (std::is_same<scalar_type, Kokkos::complex<double>>::value == true) {
+    A.xtype = CHOLMOD_COMPLEX;
+    A.dtype = CHOLMOD_DOUBLE;
+  }
   A.nrow = nrow;
   A.ncol = nrow;
   A.nzmax = nnz;
@@ -152,6 +156,8 @@ template<typename scalar_type>
 int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
 
   using STS = Kokkos::Details::ArithTraits<scalar_type>;
+  using mag_type = typename STS::mag_type;
+
   using cholmod_int_type = long;
   //using cholmod_int_type = int;
 
@@ -188,7 +194,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
   const scalar_type ONE (1.0);
 
   // tolerance
-  scalar_type tol = STS::epsilon();
+  mag_type tol = STS::epsilon();
 
   int num_failed = 0;
   std::cout << std::endl;
@@ -437,6 +443,8 @@ int main(int argc, char **argv)
   std::string filename;
 
   int loop = 1;
+  // scalar type
+  std::string char_scalar = "d";
 
   if(argc == 1)
   {
@@ -467,6 +475,9 @@ int main(int argc, char **argv)
       loop = atoi(argv[++i]);
       continue;
     }
+    if((strcmp(argv[i],"--scalar-type")==0)) {
+      char_scalar = argv[++i];
+    }
     if((strcmp(argv[i],"--help")==0) || (strcmp(argv[i],"-h")==0)) {
       print_help_sptrsv();
       return 0;
@@ -481,10 +492,21 @@ int main(int argc, char **argv)
   {
     // Cholmod may not support single, yet
     //int total_errors = test_sptrsv_perf<float>(tests, filename, loop);
-    // Kokkos::IO may not read complex?
-    //int total_errors = test_sptrsv_perf<Kokkos::complex<double>>(tests, filename, loop);
+    int total_errors = 0;
     Kokkos::ScopeGuard kokkosScope (argc, argv);
-    int total_errors = test_sptrsv_perf<double>(tests, filename, loop);
+    if (char_scalar == "z") {
+      #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
+      total_errors = test_sptrsv_perf<Kokkos::complex<double>>(tests, filename, loop);
+      #else
+      std::cout << std::endl << " KOKKOSKERNELS_INST_COMPLEX_DOUBLE  is not enabled ** " << std::endl << std::endl;
+      #endif
+    } else if (char_scalar == "d") {
+      #if defined(KOKKOSKERNELS_INST_DOUBLE)
+      total_errors = test_sptrsv_perf<double>(tests, filename, loop);
+      #else
+      std::cout << std::endl << " KOKKOSKERNELS_INST_DOUBLE  is not enabled ** " << std::endl << std::endl;
+      #endif
+    }
     if(total_errors == 0)
       std::cout << "Kokkos::SPTRSV Test: Passed" << std::endl << std::endl;
     else
