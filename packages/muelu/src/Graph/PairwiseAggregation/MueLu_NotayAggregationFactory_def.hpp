@@ -459,18 +459,18 @@ namespace MueLu {
 	  MT mu = mu_top / mu_bottom;
 
           // Modification: Explicitly check the tie criterion here
-	  if (best_idx == LO_INVALID ||  mu < best_mu * tie_less ||
-              (mu < best_mu*tie_more && orderingVector[col] < orderingVector[best_idx])) {
+	  if (mu > MT_ZERO && (best_idx == LO_INVALID || mu < best_mu * tie_less ||
+                                    (mu < best_mu*tie_more && orderingVector[col] < orderingVector[best_idx]))) {
 	    best_mu  = mu;
 	    best_idx = col;
             *out << "[" << current_idx << "] Column     UPDATED " << col << ": "
                  << "aii - si + ajj - sj = " << aii << " - " << si << " + " << ajj << " - " << sj
-                 << " = " << aii - si + ajj - sj << ", mu = " << mu << std::endl;            
+                 << " = " << aii - si + ajj - sj<< ", aij = "<<aij << ", mu = " << mu << std::endl;            
 	  }
           else {
           *out << "[" << current_idx << "] Column NOT UPDATED " << col << ": "
               << "aii - si + ajj - sj = " << aii << " - " << si << " + " << ajj << " - " << sj
-              << " = " << aii - si + ajj - sj << ", mu = " << mu << std::endl;
+               << " = " << aii - si + ajj - sj << ", aij = "<<aij<< ", mu = " << mu << std::endl;
           }
         }
         else {
@@ -602,25 +602,25 @@ namespace MueLu {
 
       LO bestIdx = Teuchos::OrdinalTraits<LO>::invalid();
       magnitude_type best_mu = Teuchos::ScalarTraits<magnitude_type>::zero();
-      const magnitude_type aii     = Kokkos::ArithTraits<value_type>::real(diagA_h(currentIdx));
-      const magnitude_type si      = Kokkos::ArithTraits<value_type>::real(rowSum_h(currentIdx));
+      const magnitude_type aii     = Teuchos::ScalarTraits<value_type>::real(diagA_h(currentIdx));
+      const magnitude_type si      = Teuchos::ScalarTraits<value_type>::real(rowSum_h(currentIdx));
       for(auto entryIdx = row_map_h(currentIdx); entryIdx < row_map_h(currentIdx + 1); ++entryIdx) {
         const LO colIdx = static_cast<LO>(entries_h(entryIdx));
         if(currentIdx == colIdx || localAggStat[colIdx] != READY || values_h(entryIdx) == KAT_zero || colIdx > numRows) {
           continue;
         }
 
-        const magnitude_type aij = Kokkos::ArithTraits<value_type>::real(values_h(entryIdx));
-        const magnitude_type ajj = Kokkos::ArithTraits<value_type>::real(diagA_h(colIdx));
-        const magnitude_type sj  = - Kokkos::ArithTraits<value_type>::real(rowSum_h(colIdx)); // NOTE: The ghostedRowSum vector here has has the sign flipped from Notay's S
+        const magnitude_type aij = Teuchos::ScalarTraits<value_type>::real(values_h(entryIdx));
+        const magnitude_type ajj = Teuchos::ScalarTraits<value_type>::real(diagA_h(colIdx));
+        const magnitude_type sj  = - Teuchos::ScalarTraits<value_type>::real(rowSum_h(colIdx)); // NOTE: The ghostedRowSum vector here has has the sign flipped from Notay's S
         if(aii - si + ajj - sj >= MT_zero) {
           const magnitude_type mu_top    = MT_two / ( MT_one/aii + MT_one/ajj );
           const magnitude_type mu_bottom = -aij + MT_one / (MT_one / (aii - si) + MT_one / (ajj - sj));
           const magnitude_type mu = mu_top / mu_bottom;
 
           // Modification: Explicitly check the tie criterion here
-	  if (bestIdx == LO_INVALID ||  mu < best_mu * tie_less ||
-              (mu < best_mu*tie_more && orderingVector[colIdx] < orderingVector[bestIdx])) {
+	  if (mu > MT_ZERO  && (bestIdx == LO_INVALID ||  mu < best_mu * tie_less ||
+                                (mu < best_mu*tie_more && orderingVector[colIdx] < orderingVector[bestIdx]))) {
             best_mu = mu;
             bestIdx = colIdx;
             *out << "[" << currentIdx << "] Column     UPDATED " << colIdx << ": "
