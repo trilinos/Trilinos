@@ -77,8 +77,18 @@ WorksetContainer::WorksetContainer(const WorksetContainer & wc)
   */
 void WorksetContainer::clear()
 {
-   worksets_.clear();
-   sideWorksets_.clear();
+   this->clearVolumeWorksets();
+   this->clearSideWorksets();
+}
+
+void WorksetContainer::clearVolumeWorksets()
+{
+  worksets_.clear();
+}
+
+void WorksetContainer::clearSideWorksets()
+{
+  sideWorksets_.clear();
 }
 
 void WorksetContainer::

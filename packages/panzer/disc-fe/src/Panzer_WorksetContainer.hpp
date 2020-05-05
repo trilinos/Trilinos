@@ -79,7 +79,7 @@ public:
      * map.
      *
      * \param[in] factory Factory to be used for constructing worksets
-     * \param[in] needs Workset needs mapped from the elemetn blocks
+     * \param[in] needs Workset needs mapped from the element blocks
      *                  (integration rules and basis values for each element block)
      */ 
    WorksetContainer(const Teuchos::RCP<const WorksetFactoryBase> & factory,
@@ -118,11 +118,25 @@ public:
      */
    void setNeeds(const std::string & eBlock,const WorksetNeeds & needs);
 
-   /** Clear all allocated worksets, maintain the workset factory and element to physics
-     * block map.
+   /** Clear all allocated worksets, maintain the workset factory and
+     * element to physics block map.
      */ 
    void clear();
 
+   /** Clear all allocated worksets for the volume assembly, maintain
+     * the workset factory, element to physics block map and side
+     * worksets. This is meant for cases where volume assembly is
+     * needed during setup, but during a run only side worksets are
+     * needed to adjust boundary conditions. This allows for
+     * significant memory savings.
+     */
+   void clearVolumeWorksets();
+
+   /** Clear all allocated worksets for the side assembly, maintain
+     * the workset factory, element to physics block map and volume
+     * worksets.
+     */
+   void clearSideWorksets();
 
    //! Look up an input physics block, throws an exception if it can not be found.
    const WorksetNeeds & lookupNeeds(const std::string & eBlock) const;

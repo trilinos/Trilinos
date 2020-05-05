@@ -28,6 +28,12 @@ export ATDM_CONFIG_ENABLE_SPARC_SETTINGS=ON
 export ATDM_CONFIG_USE_NINJA=ON
 
 export ATDM_CONFIG_BUILD_COUNT=40  # Assume building on a compute node!
+if [[ "${ATDM_CONFIG_BUILD_TYPE}" == "DEBUG" ]] ; then
+  export ATDM_CONFIG_PARALLEL_LINK_JOBS_LIMIT=20
+  # Above: The 'dbg' build on 'stria' is randomly failing the link of some ROL
+  # execuables due to running out of memory when using 40 parallel link jobs.
+  # Reducing this is to avoid that.  See CDOFA-117.
+fi
 
 if [[ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ]] ; then
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=16
