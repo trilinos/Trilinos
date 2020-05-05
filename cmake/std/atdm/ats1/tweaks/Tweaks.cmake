@@ -20,8 +20,8 @@ ATDM_SET_ENABLE(SEACASIoss_exodus32_to_exodus64_DISABLE ON)
 
 # Disable muelu tests that fail to build due to
 # '"Kokkos::Compat" has no member "KokkosSerialWrapperNode"'
-ATDM_SET_ENABLE(MueLu_Maxwell3D-Tpetra_MPI_4_DISABLE ON)
-ATDM_SET_ENABLE(MueLu_Maxwell3D_EXE_DISABLE ON)
+#ATDM_SET_ENABLE(MueLu_Maxwell3D-Tpetra_MPI_4_DISABLE ON)
+#ATDM_SET_ENABLE(MueLu_Maxwell3D_EXE_DISABLE ON)
 
 #message("ATDM_NODE_TYPE=${ATDM_NODE_TYPE}")
 #message("ATDM_CONFIG_KOKKOS_ARCH=$ENV{ATDM_CONFIG_KOKKOS_ARCH}")
