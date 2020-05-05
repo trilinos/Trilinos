@@ -97,6 +97,8 @@ public:
   /** \brief . */
   RCP<const Thyra::VectorSpaceBase<Scalar> > get_f_space() const;
   /** \brief . */
+  RCP<const Thyra::VectorSpaceBase<Scalar> > get_f_dual_space() const;
+  /** \brief . */
   RCP<Thyra::LinearOpBase<Scalar> > create_W_op() const;
   /** \brief . */
   RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > get_W_factory() const;
@@ -318,6 +320,17 @@ DiagonalImplicitRKModelEvaluator<Scalar>::get_f_space() const
       "Error, initializeDIRKModel must be called first!\n"
       );
   return daeModel_->get_f_space();
+}
+
+
+template<class Scalar>
+RCP<const Thyra::VectorSpaceBase<Scalar> >
+DiagonalImplicitRKModelEvaluator<Scalar>::get_f_dual_space() const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+      "Error, initializeDIRKModel must be called first!\n"
+      );
+  return daeModel_->get_f_dual_space();
 }
 
 

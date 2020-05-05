@@ -88,6 +88,9 @@ public:
     Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_f_space() const
       { return appModel_->get_f_space(); }
 
+    Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_f_dual_space() const
+      { return appModel_->get_f_dual_space(); }
+
     Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space(int p) const
       { return appModel_->get_p_space(p); };
 

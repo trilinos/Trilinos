@@ -305,6 +305,16 @@ private:
   Array<Array<DefaultDerivLinearOpSupport> > DgDp_default_op_support_;
   Array<Array<DefaultDerivMvAdjointSupport> > DgDp_default_mv_support_;
 
+  DefaultDerivLinearOpSupport hess_vec_prod_f_xx_default_op_support_;
+  Array<DefaultDerivLinearOpSupport> hess_vec_prod_f_xp_default_op_support_;
+  Array<DefaultDerivLinearOpSupport> hess_vec_prod_f_px_default_op_support_;
+  Array<Array<DefaultDerivLinearOpSupport> > hess_vec_prod_f_pp_default_op_support_;
+
+  Array<DefaultDerivLinearOpSupport> hess_vec_prod_g_xx_default_op_support_;
+  Array<Array<DefaultDerivLinearOpSupport> > hess_vec_prod_g_xp_default_op_support_;
+  Array<Array<DefaultDerivLinearOpSupport> > hess_vec_prod_g_px_default_op_support_;
+  Array<Array<Array<DefaultDerivLinearOpSupport> > > hess_vec_prod_g_pp_default_op_support_;
+
   bool default_W_support_;
 
   ModelEvaluatorBase::OutArgs<Scalar> prototypeOutArgs_;
@@ -681,7 +691,6 @@ void ModelEvaluatorDefaultBase<Scalar>::evalModel(
         outArgsImpl.set_W_op(W_op);
       }
     }
-
   }
 
   //
