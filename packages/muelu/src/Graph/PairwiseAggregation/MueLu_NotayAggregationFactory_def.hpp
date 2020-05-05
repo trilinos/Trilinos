@@ -619,7 +619,7 @@ namespace MueLu {
           const magnitude_type mu = mu_top / mu_bottom;
 
           // Modification: Explicitly check the tie criterion here
-	  if (mu > MT_ZERO  && (bestIdx == LO_INVALID ||  mu < best_mu * tie_less ||
+	  if (mu > MT_zero  && (bestIdx == LO_INVALID ||  mu < best_mu * tie_less ||
                                 (mu < best_mu*tie_more && orderingVector[colIdx] < orderingVector[bestIdx]))) {
             best_mu = mu;
             bestIdx = colIdx;
