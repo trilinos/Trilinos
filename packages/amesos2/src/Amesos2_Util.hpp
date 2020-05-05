@@ -1108,7 +1108,7 @@ namespace Amesos2 {
           if(i < size) {
             ordinal_type count = 0;
             const ordinal_type row = device_perm(i);
-            for(size_t k = row_ptr(row); k < row_ptr(row + 1); ++k) {
+            for(ordinal_type k = row_ptr(row); k < row_ptr(row + 1); ++k) {
               const ordinal_type j = device_peri(cols(k)); /// col in A
               count += (i >= j); /// lower triangular
             }
