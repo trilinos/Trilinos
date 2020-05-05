@@ -102,7 +102,7 @@ namespace UnpackAndCombineCrsMatrixImpl {
 ///   documentation of Map for requirements.
 template<class ST, class LO, class GO>
 KOKKOS_FUNCTION int
-unpackRow(
+unpack_row(
   const typename PackTraits<GO>::output_array_type& gids_out,
   const typename PackTraits<int>::output_array_type& pids_out,
   const typename PackTraits<ST>::output_array_type& vals_out,
@@ -123,8 +123,7 @@ unpackRow(
   const size_t num_ent_len = PackTraits<LO>::packValueCount(LO(0));
 
   const size_t gids_beg = num_ent_beg + num_ent_len;
-  const size_t gids_len =
-    num_ent * PackTraits<GO>::packValueCount(GO(0));
+  const size_t gids_len = num_ent * PackTraits<GO>::packValueCount(GO(0));
 
   const size_t pids_beg = gids_beg + gids_len;
   const size_t pids_len =
@@ -177,6 +176,107 @@ unpackRow(
   return 0; // no errors
 }
 
+/// \brief Unpack a single row, in parallel, of a CrsMatrix
+///
+/// \tparam ST The type of the numerical entries of the matrix.
+///   (You can use real-valued or complex-valued types here, unlike
+///   in Epetra, where the scalar type is always \c double.)
+/// \tparam LO The type of local indices.  See the
+///   documentation of Map for requirements.
+/// \tparam GO The type of global indices.  See the
+///   documentation of Map for requirements.
+template<class ST, class LO, class GO, class ExecutionSpace>
+KOKKOS_FUNCTION int
+unpack_rowp(
+  typename Kokkos::TeamPolicy<ExecutionSpace>::member_type team_member,
+  const typename PackTraits<GO>::output_array_type& gids_out,
+  const typename PackTraits<int>::output_array_type& pids_out,
+  const typename PackTraits<ST>::output_array_type& vals_out,
+  const char imports[],
+  const size_t offset,
+  const size_t /* num_bytes */,
+  const size_t num_ent,
+  const size_t num_bytes_per_value
+)
+{
+
+  if (num_ent == 0) {
+    // Empty rows always take zero bytes, to ensure sparsity.
+    return 0;
+  }
+  bool unpack_pids = pids_out.size() > 0;
+
+  const size_t num_ent_beg = offset;
+  const size_t num_ent_len = PackTraits<LO>::packValueCount(LO(0));
+
+  const size_t gids_beg = num_ent_beg + num_ent_len;
+  const size_t gids_len = num_ent * PackTraits<GO>::packValueCount(GO(0));
+
+  const size_t pids_beg = gids_beg + gids_len;
+  const size_t pids_len =
+    unpack_pids ?
+    size_t(num_ent * PackTraits<int>::packValueCount(int(0))) :
+    size_t(0);
+
+  const size_t vals_beg = gids_beg + gids_len + pids_len;
+  const size_t vals_len = num_ent * num_bytes_per_value;
+
+  const char* const num_ent_in = imports + num_ent_beg;
+  const char* const gids_in = imports + gids_beg;
+  const char* const pids_in = unpack_pids ? imports + pids_beg : nullptr;
+  const char* const vals_in = imports + vals_beg;
+
+  size_t num_bytes_out = 0;
+  LO num_ent_out;
+  num_bytes_out += PackTraits<LO>::unpackValue(num_ent_out, num_ent_in);
+  if (static_cast<size_t>(num_ent_out) != num_ent) {
+    return 20; // error code
+  }
+
+   size_t tot_bytes_unpacked = 0;
+   Kokkos::parallel_reduce(
+     Kokkos::TeamThreadRange(team_member, num_ent),
+     KOKKOS_LAMBDA(const LO& j, size_t& bytes_unpacked) {
+
+       size_t distance = 0;
+
+       GO gid_out;
+       distance = j * PackTraits<GO>::packValueCount(GO(0));
+       bytes_unpacked += PackTraits<GO>::unpackValue(
+         gid_out, gids_in + distance
+       );
+       gids_out(j) = gid_out;
+
+       if (unpack_pids) {
+         int pid_out;
+         distance = j * PackTraits<int>::packValueCount(int(0));
+         bytes_unpacked += PackTraits<int>::unpackValue(
+           pid_out, pids_in + distance
+         );
+         pids_out(j) = pid_out;
+       }
+
+       // assume that ST is default constructible
+       ST val_out;
+       distance = j * num_bytes_per_value;
+       bytes_unpacked += PackTraits<ST>::unpackValue(
+         val_out, vals_in + distance
+       );
+       vals_out(j) = val_out;
+     },
+     tot_bytes_unpacked
+   );
+
+   team_member.team_barrier();
+   num_bytes_out += tot_bytes_unpacked;
+
+  const size_t expected_num_bytes = num_ent_len + gids_len + pids_len + vals_len;
+  if (num_bytes_out != expected_num_bytes) {
+    return 24; // error code
+  }
+  return 0; // no errors
+}
+
 /// \brief Unpacks and combines a single row of the CrsMatrix.
 ///
 /// \tparam LocalMatrix KokkosSparse::CrsMatrix specialization.
@@ -213,6 +313,7 @@ struct UnpackCrsMatrixAndCombineFunctor {
   using scalar_view_type = Kokkos::View<ST*, DT>;
 
   using value_type = Kokkos::pair<int, LO>;
+  using member_type = typename Kokkos::TeamPolicy<XS>::member_type;
 
   static_assert(
     std::is_same<LO, typename local_matrix_type::ordinal_type>::value,
@@ -377,7 +478,7 @@ struct UnpackCrsMatrixAndCombineFunctor {
     vals_out_type vals_out = subview(vals_scratch, slice(a, b));
 
     // Unpack this row!
-    int unpack_err = unpackRow<ST,LO,GO>(
+    int unpack_err = unpack_row<ST, LO, GO>(
       gids_out,
       pids_out,
       vals_out,
@@ -468,7 +569,7 @@ struct UnpackCrsMatrixAndCombineFunctor {
   }
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(const UnpackDenseRowsTag&, const LO i, value_type& dst) const
+  void operator()(const UnpackDenseRowsTag&, member_type team_member, value_type& dst) const
   {
     using Kokkos::View;
     using Kokkos::subview;
@@ -481,7 +582,9 @@ struct UnpackCrsMatrixAndCombineFunctor {
     typedef View<GO*, DT, MemoryUnmanaged> gids_out_type;
     typedef View<ST*, DT, MemoryUnmanaged> vals_out_type;
 
+    const LO i = team_member.league_rank() * team_member.team_size() + team_member.team_rank();
     const size_t num_bytes = num_packets_per_lid(i);
+
 
     // Only unpack data if there is a nonzero number of bytes.
     if (num_bytes == 0 || dense_rows(i) != 1) {
@@ -532,7 +635,8 @@ struct UnpackCrsMatrixAndCombineFunctor {
     vals_out_type vals_out = subview(vals_scratch, slice(a, b));
 
     // Unpack this row!
-    int unpack_err = unpackRow<ST,LO,GO>(
+    int unpack_err = unpack_rowp<ST, LO, GO, XS>(
+      team_member,
       gids_out,
       pids_out,
       vals_out,
@@ -812,11 +916,12 @@ unpackAndCombineIntoCrsMatrix(
   // kernels - one for long rows and the other for all other rows. See
   // https://github.com/trilinos/Trilinos/issues/6603
   size_t threshold = Tpetra::Details::Behavior::longRowMinNumEntries();
-  const bool has_dense_rows = false;  // max_num_ent > threshold;
+  const bool has_dense_rows = max_num_ent > threshold;
 
   Kokkos::View<int*, DT> dense_rows("Dense rows mask", num_import_lids);
   LO num_dense_rows = 0;
   Kokkos::parallel_reduce(
+    "Determine dense rows",
     num_import_lids,
     KOKKOS_LAMBDA(const LO i, LO& num_dense){
       LO num_ent_LO = 0;
@@ -827,7 +932,7 @@ unpackAndCombineIntoCrsMatrix(
         num_dense += 1;
       }
       const size_t num_ent = static_cast<size_t>(num_ent_LO);
-      dense_rows[i] = 0; // (num_ent > threshold) ? 1 : 0;
+      dense_rows[i] = (num_ent > threshold) ? 1 : 0;
     },
     num_dense_rows
   );
@@ -850,24 +955,27 @@ unpackAndCombineIntoCrsMatrix(
     atomic
   );
 
-  typename functor::value_type x;
-  using policy = Kokkos::RangePolicy<XS, Kokkos::IndexType<LO>, UnpackSparseRowsTag>;
-  Kokkos::parallel_reduce(policy(0, static_cast<LO>(num_import_lids)), f, x);
-  auto x_h = x.to_std_pair();
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    x_h.first != 0,
-    std::runtime_error,
-    prefix << "UnpackCrsMatrixAndCombineFunctor reported error code "
-    << x_h.first << " for the first bad row " << x_h.second
-  );
+  { // unpack sparse rows
+    typename functor::value_type x;
+    using policy = Kokkos::RangePolicy<XS, Kokkos::IndexType<LO>, UnpackSparseRowsTag>;
+    Kokkos::parallel_reduce(policy(0, static_cast<LO>(num_import_lids)), f, x);
+    auto x_h = x.to_std_pair();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      x_h.first != 0,
+      std::runtime_error,
+      prefix << "UnpackCrsMatrixAndCombineFunctor reported error code "
+      << x_h.first << " for the first bad row " << x_h.second
+    );
+  }
 
   if (has_dense_rows)
   {
     typename functor::value_type x;
-    // using policy = Kokkos::TeamPolicy<XS, Kokkos::IndexType<LO>, UnpackDenseRowsTag>;
-    // Kokkos::parallel_reduce(policy(num_dense_rows, Kokkos::AUTO), f, x);
-    using policy = Kokkos::RangePolicy<XS, Kokkos::IndexType<LO>, UnpackDenseRowsTag>;
-    Kokkos::parallel_reduce(policy(0, static_cast<LO>(num_import_lids)), f, x);
+    using policy = Kokkos::TeamPolicy<XS, Kokkos::IndexType<LO>, UnpackDenseRowsTag>;
+    //Kokkos::parallel_reduce(policy(num_dense_rows, Kokkos::AUTO), f, x);
+    Kokkos::parallel_reduce(policy(num_dense_rows, Kokkos::AUTO), f, x);
+ //   using policy = Kokkos::RangePolicy<XS, Kokkos::IndexType<LO>, UnpackDenseRowsTag>;
+ //   Kokkos::parallel_reduce(policy(0, static_cast<LO>(num_import_lids)), f, x);
     auto x_h = x.to_std_pair();
     TEUCHOS_TEST_FOR_EXCEPTION(
       x_h.first != 0,
@@ -1189,7 +1297,7 @@ unpackAndCombineIntoCrsArrays2(
       vals_out_type vals_out = subview(tgt_vals, slice(start_row, end_row));
       pids_out_type pids_out = subview(tgt_pids, slice(start_row, end_row));
 
-      k_error += unpackRow<ST, LO, GO>(
+      k_error += unpack_row<ST, LO, GO>(
         gids_out,
         pids_out,
         vals_out,
