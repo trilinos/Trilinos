@@ -115,13 +115,23 @@ TRIBITS_ADD_TEST(
    NUM_MPI_PROCS 4
    )
 
- # Large performance-testing version of 3D BlockPrec_RefMaxwell
+ # Large performance-testing runs of 3D BlockPrec_RefMaxwell (4 and 16 ranks)
 TRIBITS_ADD_TEST(
    BlockPrec
-   NAME "MiniEM-BlockPrec_RefMaxwell_Performance"
+   NAME "MiniEM-BlockPrec_RefMaxwell_Performance_4"
    ARGS "--stacked-timer --solver=MueLu-RefMaxwell --numTimeSteps=3 --linAlgebra=Tpetra --inputFile=maxwell-large.xml"
    COMM mpi
    NUM_MPI_PROCS 4
+   CATEGORIES PERFORMANCE
+   RUN_SERIAL
+   )
+
+TRIBITS_ADD_TEST(
+   BlockPrec
+   NAME "MiniEM-BlockPrec_RefMaxwell_Performance_16"
+   ARGS "--stacked-timer --solver=MueLu-RefMaxwell --numTimeSteps=3 --linAlgebra=Tpetra --inputFile=maxwell-large.xml"
+   COMM mpi
+   NUM_MPI_PROCS 16
    CATEGORIES PERFORMANCE
    RUN_SERIAL
    )
