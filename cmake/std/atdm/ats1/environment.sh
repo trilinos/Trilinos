@@ -75,7 +75,7 @@ fi
 echo "Using ats1 compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE and KOKKOS_ARCH=$ATDM_CONFIG_KOKKOS_ARCH"
 
 # Exclude bad nodes.
-export ATDM_CONFIG_SBATCH_EXTRA_ARGS="$ATDM_CONFIG_SBATCH_EXTRA_ARGS --exclude=nid00022"
+export ATDM_CONFIG_SBATCH_EXTRA_ARGS="$ATDM_CONFIG_SBATCH_EXTRA_ARGS --exclude=nid00021,nid00020"
 
 export OMP_NUM_THREADS=2
 
@@ -92,9 +92,13 @@ if [[ "$ATDM_CONFIG_COMPILER" == "INTEL-19.0.4"* ]]; then
   module load gcc/8.2.0
   module unload intel
   module load intel/19.0.4
+  #sparc_tpl_ext=${system_name}-${node_arch}_intel-19.0.4
+  #sparc_tpl_mpi_ext=${system_name}-${node_arch}_intel-19.0.4_mpich-7.7.6
 elif [[ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.5"* ]]; then
   module unload intel
   module load intel/18.0.5
+  #sparc_tpl_ext=${system_name}-${node_arch}_intel-18.0.5
+  #sparc_tpl_mpi_ext=${system_name}-${node_arch}_intel-18.0.5_mpich-7.7.6
 else
   echo
   echo "***"
@@ -152,7 +156,7 @@ export ATDM_CONFIG_LAPACK_LIBS="-L${CBLAS_ROOT}/mkl/lib/intel64;-L${CBLAS_ROOT}/
 export ATDM_CONFIG_BLAS_LIBS="-L${CBLAS_ROOT}/mkl/lib/intel64;-L${CBLAS_ROOT}/compiler/lib/intel64;-mkl;-lmkl_intel_lp64;-lmkl_intel_thread;-lmkl_core;-liomp5"
 
 # Boost 1.65.1 settings
-export BOOST_ROOT=${sparc_tpl_prefix_path}/${system_name}-${node_arch}/boost-1.65.1/00000000/${system_name}-${node_arch}_intel-19.0.4
+export BOOST_ROOT=${sparc_tpl_prefix_path}/${system_name}-${node_arch}/boost-1.72.0/00000000/${system_name}-${node_arch}_intel-19.0.4
 
 # Hdf5 1.10.5 settings
 export HDF5_ROOT=${sparc_tpl_prefix_path}/${system_name}-${node_arch}/hdf5-1.10.5/00000000/${system_name}-${node_arch}_intel-19.0.4_mpich-7.7.6
@@ -164,14 +168,14 @@ export BINUTILS_ROOT="/usr"
 export ATDM_CONFIG_BINUTILS_LIBS="${BINUTILS_ROOT}/lib64/libbfd.a;-lz;${BINUTILS_ROOT}/lib64/libiberty.a"
 
 # Cgns settings
-export CGNS_ROOT=${sparc_tpl_prefix_path}/${system_name}-${node_arch}/cgns-c09a5cd/27e5681f1b74c679b5dcb337ac71036d16c47977/${system_name}-${node_arch}_intel-19.0.4_mpich-7.7.6
+export CGNS_ROOT=${sparc_tpl_prefix_path}/${system_name}-${node_arch}/cgns-c09a5cd/d313cc2f822078e47c7dbdee074ecb0431e573eb/${system_name}-${node_arch}_intel-19.0.4_mpich-7.7.6
 export ATDM_CONFIG_CGNS_LIBRARY_NAMES="cgns"
 
 # Pnetcdf 1.10.0 settings
-export PNETCDF_ROOT=${sparc_tpl_prefix_path}/${system_name}-${node_arch}/pnetcdf-1.10.0/6144dc67b2041e4093063a04e89fc1e33398bd09/${system_name}-${node_arch}_intel-19.0.4_mpich-7.7.6
+export PNETCDF_ROOT=${sparc_tpl_prefix_path}/${system_name}-${node_arch}/pnetcdf-1.12.1/6144dc67b2041e4093063a04e89fc1e33398bd09/${system_name}-${node_arch}_intel-19.0.4_mpich-7.7.6
 
 # Netcdf 4.7.0 settings
-export NETCDF_ROOT=${sparc_tpl_prefix_path}/${system_name}-${node_arch}/netcdf-4.7.0/58bc48d95be2cc9272a18488fea52e1be1f0b42a/${system_name}-${node_arch}_intel-19.0.4_mpich-7.7.6
+export NETCDF_ROOT=${sparc_tpl_prefix_path}/${system_name}-${node_arch}/netcdf-4.7.0/24baa07a3fa1ff9dbc8e70dc591ebbdec56783b2/${system_name}-${node_arch}_intel-19.0.4_mpich-7.7.6
 export ATDM_CONFIG_NETCDF_LIBS="-L${BOOST_ROOT}/lib;-L${NETCDF_ROOT}/lib64;-L${PNETCDF_ROOT}/lib;-L${HDF5_ROOT}/lib;${BOOST_ROOT}/lib/libboost_program_options.a;${BOOST_ROOT}/lib/libboost_system.a;${NETCDF_ROOT}/lib64/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl;-lm"
 
 # Libhio 1.4.1.2 settings
