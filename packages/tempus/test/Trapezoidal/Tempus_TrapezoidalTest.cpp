@@ -46,14 +46,7 @@ using Tempus::IntegratorBasic;
 using Tempus::SolutionHistory;
 using Tempus::SolutionState;
 
-// Comment out any of the following tests to exclude from build/run.
-#define TEST_PARAMETERLIST
-#define TEST_CONSTRUCTING_FROM_DEFAULTS
-#define TEST_SINCOS
-#define TEST_VANDERPOL
 
-
-#ifdef TEST_PARAMETERLIST
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(Trapezoidal, ParameterList)
@@ -104,10 +97,8 @@ TEUCHOS_UNIT_TEST(Trapezoidal, ParameterList)
     TEST_ASSERT(pass)
   }
 }
-#endif // TEST_PARAMETERLIST
 
 
-#ifdef TEST_CONSTRUCTING_FROM_DEFAULTS
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(Trapezoidal, ConstructingFromDefaults)
@@ -159,7 +150,7 @@ TEUCHOS_UNIT_TEST(Trapezoidal, ConstructingFromDefaults)
   auto icSoln = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
   auto icSolnDot =
     rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot());
-  auto icState = rcp(new Tempus::SolutionState<double>(icSoln,icSolnDot));
+  auto icState = Tempus::createSolutionStateX(icSoln,icSolnDot);
   icState->setTime    (timeStepControl->getInitTime());
   icState->setIndex   (timeStepControl->getInitIndex());
   icState->setTimeStep(0.0);
@@ -216,10 +207,8 @@ TEUCHOS_UNIT_TEST(Trapezoidal, ConstructingFromDefaults)
   TEST_FLOATING_EQUALITY(get_ele(*(x), 0), 0.841021, 1.0e-4 );
   TEST_FLOATING_EQUALITY(get_ele(*(x), 1), 0.541002, 1.0e-4 );
 }
-#endif // TEST_CONSTRUCTING_FROM_DEFAULTS
 
 
-#ifdef TEST_SINCOS
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(Trapezoidal, SinCos)
@@ -287,8 +276,10 @@ TEUCHOS_UNIT_TEST(Trapezoidal, SinCos)
       auto solnHistExact = rcp(new Tempus::SolutionHistory<double>());
       for (int i=0; i<solutionHistory->getNumStates(); i++) {
         double time_i = (*solutionHistory)[i]->getTime();
-        auto state = rcp(new Tempus::SolutionState<double>(
-            model->getExactSolution(time_i).get_x(),
+        auto state = Tempus::createSolutionStateX(
+          rcp_const_cast<Thyra::VectorBase<double> > (
+            model->getExactSolution(time_i).get_x()),
+          rcp_const_cast<Thyra::VectorBase<double> > (
             model->getExactSolution(time_i).get_x_dot()));
         state->setTime((*solutionHistory)[i]->getTime());
         solnHistExact->addState(state);
@@ -332,10 +323,8 @@ TEUCHOS_UNIT_TEST(Trapezoidal, SinCos)
 
   Teuchos::TimeMonitor::summarize();
 }
-#endif // TEST_SINCOS
 
 
-#ifdef TEST_VANDERPOL
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(Trapezoidal, VanDerPol)
@@ -416,7 +405,6 @@ TEUCHOS_UNIT_TEST(Trapezoidal, VanDerPol)
 
   Teuchos::TimeMonitor::summarize();
 }
-#endif // TEST_VANDERPOL
 
 
 } // namespace Tempus_Test

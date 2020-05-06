@@ -55,6 +55,7 @@
 #include <Tpetra_RowMatrix.hpp>
 
 #include <Ifpack2_Chebyshev.hpp>
+#include <Ifpack2_RILUK.hpp>
 #include <Ifpack2_Relaxation.hpp>
 #include <Ifpack2_ILUT.hpp>
 #include <Ifpack2_BlockRelaxation.hpp>
@@ -103,8 +104,9 @@ namespace MueLu {
                                                                             type_ == "LINESMOOTHING_BLOCK RELAXATION"        ||
                                                                             type_ == "LINESMOOTHING_BLOCKRELAXATION"         ||
                                                                             type_ == "TOPOLOGICAL");
-    TEUCHOS_TEST_FOR_EXCEPTION(!isSupported, Exceptions::RuntimeError, "Ifpack2 does not provide the smoother '" << type_ << "'.");
-    SetParameterList(paramList);
+    this->declareConstructionOutcome(!isSupported, "Ifpack2 does not provide the smoother '" + type_ + "'.");
+    if (isSupported)
+      SetParameterList(paramList);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -124,6 +126,11 @@ namespace MueLu {
     paramList.setParameters(list);
 
     RCP<ParameterList> precList = this->RemoveFactoriesFromList(this->GetParameterList());
+
+    if(!precList.is_null() && precList->isParameter("partitioner: type") && precList->get<std::string>("partitioner: type") == "linear" &&
+       !precList->isParameter("partitioner: local parts")) {
+      precList->set("partitioner: local parts", (int)A_->getNodeNumRows() / A_->GetFixedBlockSize());
+    }
 
     prec_->setParameters(*precList);
 
@@ -181,7 +188,6 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level& currentLevel) {
     FactoryMonitor m(*this, "Setup Smoother", currentLevel);
-
     A_ = Factory::Get< RCP<Matrix> >(currentLevel, "A");
 
     if      (type_ == "SCHWARZ")
@@ -659,7 +665,6 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupGeneric(Level& /* currentLevel */) {
     typedef Tpetra::RowMatrix<SC,LO,GO,NO> tRowMatrix;
-
     RCP<BlockedCrsMatrix> bA = rcp_dynamic_cast<BlockedCrsMatrix>(A_);
     if (!bA.is_null())
       A_ = bA->Merge();

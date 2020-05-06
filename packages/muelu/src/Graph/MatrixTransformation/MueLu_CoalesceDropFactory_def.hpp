@@ -737,15 +737,14 @@ namespace MueLu {
           for (LO row = 0; row < numRows; row++) {
             ArrayView<const LO> indices;
             indicesExtra.resize(0);
+	    bool isBoundary = false;
 
             if (blkSize == 1) {
-              ArrayView<const SC>     vals;
+	      ArrayView<const SC>     vals;
               A->getLocalRowView(row, indices, vals);
-
+	      isBoundary = pointBoundaryNodes[row];
             } else {
               // The amalgamated row is marked as Dirichlet iff all point rows are Dirichlet
-              bool isBoundary = false;
-              isBoundary = true;
               for (LO j = 0; j < blkSize; j++) {
                 if (!pointBoundaryNodes[row*blkSize+j]) {
                   isBoundary = false;
@@ -765,9 +764,9 @@ namespace MueLu {
             LO nnz = indices.size(), rownnz = 0;
 
             if (threshold != STS::zero()) {
-
               // default
               if (distanceLaplacianAlgo == defaultAlgo) {
+		/* Standard Distance Laplacian */
                 for (LO colID = 0; colID < nnz; colID++) {
 
                   LO col = indices[colID];
@@ -777,6 +776,10 @@ namespace MueLu {
                     rownnz++;
                     continue;
                   }
+
+		  // We do not want the distance Laplacian aggregating boundary nodes
+		  if(isBoundary) continue;
+
 
                   SC laplVal = STS::one() / MueLu::Utilities<real_type,LO,GO,NO>::Distance2(coordData, row, col);
                   real_type aiiajj = STS::magnitude(distanceLaplacianThreshold*distanceLaplacianThreshold * ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
@@ -790,6 +793,7 @@ namespace MueLu {
                   }
                 }
               } else {
+		/* Cut Algorithm */
                 struct DropTol {
 
                   DropTol()               = default;
@@ -823,6 +827,8 @@ namespace MueLu {
                     drop_vec.emplace_back( zero, one, colID, false);
                     continue;
                   }
+		  // We do not want the distance Laplacian aggregating boundary nodes
+		  if(isBoundary) continue;
 
                   SC laplVal = STS::one() / MueLu::Utilities<real_type,LO,GO,NO>::Distance2(coordData, row, col);
                   real_type aiiajj = STS::magnitude(ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
@@ -894,9 +900,9 @@ namespace MueLu {
                            }
                          );
 
-                for (LO colID = 0; colID < nnz; colID++) {
+		for (LO idxID =0; idxID<(LO)drop_vec.size(); idxID++) {
+                  LO col = indices[drop_vec[idxID].col];
 
-                  LO col = indices[colID];
 
                   // don't drop diagonal
                   if (row == col) {
@@ -905,7 +911,7 @@ namespace MueLu {
                     continue;
                   }
 
-                  if (!drop_vec[colID].drop) {
+                  if (!drop_vec[idxID].drop) {
                     columns[realnnz++] = col;
                     rownnz++;
                   } else {
@@ -922,7 +928,7 @@ namespace MueLu {
               }
             }
 
-            if (rownnz == 1) {
+            if ( rownnz == 1) {
               // If the only element remaining after filtering is diagonal, mark node as boundary
               // FIXME: this should really be replaced by the following
               //    if (indices.size() == 1 && indices[0] == row)

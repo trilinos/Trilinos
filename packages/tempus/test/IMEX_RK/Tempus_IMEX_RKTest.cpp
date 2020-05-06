@@ -36,12 +36,7 @@ using Tempus::IntegratorBasic;
 using Tempus::SolutionHistory;
 using Tempus::SolutionState;
 
-// Comment out any of the following tests to exclude from build/run.
-#define TEST_CONSTRUCTING_FROM_DEFAULTS
-#define TEST_VANDERPOL
 
-
-#ifdef TEST_CONSTRUCTING_FROM_DEFAULTS
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(IMEX_RK, ConstructingFromDefaults)
@@ -85,7 +80,7 @@ TEUCHOS_UNIT_TEST(IMEX_RK, ConstructingFromDefaults)
   Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
     stepper->getModel()->getNominalValues();
   auto icSolution = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
-  auto icState = rcp(new Tempus::SolutionState<double>(icSolution));
+  auto icState = Tempus::createSolutionStateX(icSolution);
   icState->setTime    (timeStepControl->getInitTime());
   icState->setIndex   (timeStepControl->getInitIndex());
   icState->setTimeStep(0.0);
@@ -105,7 +100,6 @@ TEUCHOS_UNIT_TEST(IMEX_RK, ConstructingFromDefaults)
   integrator->setStepperWStepper(stepper);
   integrator->setTimeStepControl(timeStepControl);
   integrator->setSolutionHistory(solutionHistory);
-  //integrator->setObserver(...);
   integrator->initialize();
 
 
@@ -132,10 +126,8 @@ TEUCHOS_UNIT_TEST(IMEX_RK, ConstructingFromDefaults)
   TEST_FLOATING_EQUALITY(get_ele(*(x), 0),  1.810210, 1.0e-4 );
   TEST_FLOATING_EQUALITY(get_ele(*(x), 1), -0.754602, 1.0e-4 );
 }
-#endif // TEST_CONSTRUCTING_FROM_DEFAULTS
 
 
-#ifdef TEST_VANDERPOL
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(IMEX_RK, VanDerPol)
@@ -176,9 +168,9 @@ TEUCHOS_UNIT_TEST(IMEX_RK, VanDerPol)
   stepperInitDt.push_back(0.05);
   stepperInitDt.push_back(0.05);
 
-  TEUCHOS_ASSERT( stepperTypes.size() == stepperOrders.size() ); 
-  TEUCHOS_ASSERT( stepperTypes.size() == stepperErrors.size() ); 
-  TEUCHOS_ASSERT( stepperTypes.size() == stepperInitDt.size() ); 
+  TEUCHOS_ASSERT( stepperTypes.size() == stepperOrders.size() );
+  TEUCHOS_ASSERT( stepperTypes.size() == stepperErrors.size() );
+  TEUCHOS_ASSERT( stepperTypes.size() == stepperInitDt.size() );
 
   std::vector<std::string>::size_type m;
   for(m = 0; m != stepperTypes.size(); m++) {
@@ -283,7 +275,6 @@ TEUCHOS_UNIT_TEST(IMEX_RK, VanDerPol)
   }
   //Teuchos::TimeMonitor::summarize();
 }
-#endif // TEST_VANDERPOL
 
 
 } // namespace Tempus_Test

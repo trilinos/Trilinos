@@ -35,62 +35,26 @@ using Teuchos::getParametersFromXmlFile;
 
 using Tempus::StepperFactory;
 
-// Comment out any of the following tests to exclude from build/run.
-#define CONSTRUCTION
-#define STEPPERFACTORY_CONSTRUCTION
 
-
-#ifdef CONSTRUCTION
 // ************************************************************
 // ************************************************************
-TEUCHOS_UNIT_TEST(SDIRK_2Stage3rdOrder, Construction)
+TEUCHOS_UNIT_TEST(SDIRK_2Stage3rdOrder, Default_Construction)
 {
-  auto model   = rcp(new Tempus_Test::SinCosModel<double>());
-
-  // Default construction.
   auto stepper = rcp(new Tempus::StepperSDIRK_2Stage3rdOrder<double>());
-  stepper->setModel(model);
-  stepper->initialize();
-  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  testDIRKAccessorsFullConstruction(stepper);
 
-
-  // Default values for construction.
-  auto obs    = rcp(new Tempus::StepperRKObserverComposite<double>());
-  auto solver = rcp(new Thyra::NOXNonlinearSolver());
-  solver->setParameterList(Tempus::defaultSolverParameters());
-
-  bool useFSAL              = stepper->getUseFSALDefault();
-  std::string ICConsistency = stepper->getICConsistencyDefault();
-  bool ICConsistencyCheck   = stepper->getICConsistencyCheckDefault();
-  bool useEmbedded          = stepper->getUseEmbeddedDefault();
-  bool zeroInitialGuess     = stepper->getZeroInitialGuess();
-  std::string gammaType     = "3rd Order A-stable";
-  double gamma              = 0.7886751345948128;
-
-  // Test the set functions.
-  stepper->setObserver(obs);                           stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-  stepper->setSolver(solver);                          stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-  stepper->setUseFSAL(useFSAL);                        stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-  stepper->setICConsistency(ICConsistency);            stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-  stepper->setICConsistencyCheck(ICConsistencyCheck);  stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-  stepper->setUseEmbedded(useEmbedded);                stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-  stepper->setZeroInitialGuess(zeroInitialGuess);      stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-
-  stepper->setGammaType(gammaType);                    stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-  stepper->setGamma(gamma);                            stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-
-
-  // Full argument list construction.
-  stepper = rcp(new Tempus::StepperSDIRK_2Stage3rdOrder<double>(
-    model, obs, solver, useFSAL, ICConsistency, ICConsistencyCheck,
-    useEmbedded, zeroInitialGuess, gammaType, gamma));
-  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  // Test stepper properties.
+  TEUCHOS_ASSERT(stepper->getOrder() == 3);
+  std::string gammaType = "3rd Order A-stable";
+  TEUCHOS_ASSERT(stepper->getGammaType() == gammaType);
+  double gamma          = 0.7886751345948128;
+  TEUCHOS_ASSERT(stepper->getGamma() == gamma);
+  stepper->setGammaType(gammaType); stepper->initialize(); TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setGamma(gamma);         stepper->initialize(); TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
 }
-#endif // CONSTRUCTION
 
 
-#ifdef STEPPERFACTORY_CONSTRUCTION
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(SDIRK_2Stage3rdOrder, StepperFactory_Construction)
@@ -98,7 +62,16 @@ TEUCHOS_UNIT_TEST(SDIRK_2Stage3rdOrder, StepperFactory_Construction)
   auto model = rcp(new Tempus_Test::SinCosModel<double>());
   testFactoryConstruction("SDIRK 2 Stage 3rd order", model);
 }
-#endif // STEPPERFACTORY_CONSTRUCTION
+
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(SDIRK_2Stage3rdOrder, AppAction)
+{
+  auto stepper = rcp(new Tempus::StepperSDIRK_2Stage3rdOrder<double>());
+  auto model = rcp(new Tempus_Test::SinCosModel<double>());
+  testRKAppAction(stepper, model, out, success);
+}
 
 
 } // namespace Tempus_Test

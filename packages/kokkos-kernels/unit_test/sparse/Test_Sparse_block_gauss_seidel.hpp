@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//               KokkosKernels 0.9: Linear Algebra and Graph Kernels
-//                 Copyright 2017 Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -94,7 +95,6 @@ int run_block_gauss_seidel_1(
   typedef KokkosKernelsHandle
       <size_type,lno_t, scalar_t,
       typename device::execution_space, typename device::memory_space,typename device::memory_space > KernelHandle;
-
   KernelHandle kh;
   kh.set_team_work_size(16);
   kh.set_shmem_size(shmem_size);
@@ -179,6 +179,7 @@ void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth
   srand(245);
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
 
+  typedef typename device::execution_space exec_space;
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
   typedef typename crsMat_t::StaticCrsGraphType::row_map_type::non_const_type lno_view_t;
@@ -186,13 +187,16 @@ void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth
   typedef typename Kokkos::Details::ArithTraits<scalar_t>::mag_type mag_t;
 
   lno_t numCols = numRows;
+
+  //Intentionally testing block_size that's not a multiple of #rows.
+  lno_t block_size = 7;
+
   crsMat_t crsmat = KokkosKernels::Impl::kk_generate_diagonally_dominant_sparse_matrix<crsMat_t>(numRows,numCols,nnz,row_size_variance, bandwidth);
 
   lno_view_t pf_rm;
   lno_nnz_view_t pf_e;
   scalar_view_t pf_v;
   size_t out_r, out_c;
-  int block_size = 7;
 
   //this makes consecutive 5 rows to have same columns.
   //it will add scalar 0's for those entries that does not exists.
@@ -219,10 +223,12 @@ void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth
   graph_t static_graph (bf_e, bf_rm);
   crsMat_t input_mat("CrsMatrix", but_c, bf_v, static_graph);
 
-  lno_t nv = ((crsmat2.numRows() / block_size)+1) * block_size;
+  lno_t nv = ((crsmat2.numRows() + block_size - 1) / block_size) * block_size;
 
-  const scalar_view_t solution_x("X", nv);
+  const scalar_view_t solution_x(Kokkos::ViewAllocateWithoutInitializing("X"), nv);
+  //create_x_vector operates on host mirror, then copies to device. But create_y does everything on device.
   create_x_vector(solution_x);
+  exec_space().fence();
   scalar_view_t y_vector = create_y_vector(crsmat2, solution_x);
   mag_t initial_norm_res = KokkosBlas::nrm2(solution_x);
 #ifdef gauss_seidel_testmore
@@ -278,6 +284,7 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth
   srand(245);
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
 
+  typedef typename device::execution_space exec_space;
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
   typedef typename crsMat_t::StaticCrsGraphType::row_map_type::non_const_type lno_view_t;
@@ -286,13 +293,16 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth
   typedef typename Kokkos::Details::ArithTraits<scalar_t>::mag_type mag_t;
 
   lno_t numCols = numRows;
+
+  //Intentionally testing block_size that's not a multiple of #rows.
+  lno_t block_size = 7;
+
   crsMat_t crsmat = KokkosKernels::Impl::kk_generate_diagonally_dominant_sparse_matrix<crsMat_t>(numRows,numCols,nnz,row_size_variance, bandwidth);
 
   lno_view_t pf_rm;
   lno_nnz_view_t pf_e;
   scalar_view_t pf_v;
   size_t out_r, out_c;
-  int block_size = 7;
 
   //this makes consecutive 5 rows to have same columns.
   //it will add scalar 0's for those entries that does not exists.
@@ -319,15 +329,17 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth
   graph_t static_graph (bf_e, bf_rm);
   crsMat_t input_mat("CrsMatrix", but_c, bf_v, static_graph);
 
-  lno_t nv = ((crsmat2.numRows() / block_size)+1) * block_size;
+  lno_t nv = ((crsmat2.numRows() + block_size - 1) / block_size) * block_size;
 
   //how many columns X/Y have
   constexpr lno_t numVecs = 2;
 
-  scalar_view2d_t solution_x("X", nv, numVecs);
+  scalar_view2d_t solution_x(Kokkos::ViewAllocateWithoutInitializing("X"), nv, numVecs);
   create_x_vector(solution_x);
   scalar_view2d_t y_vector = create_y_vector_mv(crsmat2, solution_x);
+  exec_space().fence();
   auto solution_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), solution_x);
+  //Need to fence before reading from solution_host
   std::vector<mag_t> initial_norms(numVecs);
   for(lno_t i = 0; i < numVecs; i++)
   {
@@ -378,6 +390,7 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth
             //double gs = timer1.seconds();
             //KokkosKernels::Impl::print_1Dview(x_vector);
             Kokkos::deep_copy(x_host, x_vector);
+            exec_space().fence();
             for(lno_t c = 0; c < numVecs; c++)
             {
               scalar_t sum = 0;

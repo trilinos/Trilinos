@@ -172,6 +172,53 @@ void Stepper<Scalar>::checkInitialized()
 }
 
 
+
+template<class Scalar>
+Teuchos::RCP<Thyra::VectorBase<Scalar> >
+Stepper<Scalar>::getStepperX(Teuchos::RCP<SolutionState<Scalar> > state)
+{
+  if (state->getX() != Teuchos::null) stepperX_ = state->getX();
+  // Else use temporary storage stepperX_ which should have been set in
+  // setInitialConditions().
+
+  TEUCHOS_TEST_FOR_EXCEPTION( stepperX_ == Teuchos::null, std::logic_error,
+    "Error - stepperX_ has not been set in setInitialConditions() or\n"
+    "        can not be set from the state!\n");
+
+  return stepperX_;
+}
+
+template<class Scalar>
+Teuchos::RCP<Thyra::VectorBase<Scalar> >
+Stepper<Scalar>::getStepperXDot(Teuchos::RCP<SolutionState<Scalar> > state)
+{
+  if (state->getXDot() != Teuchos::null) stepperXDot_ = state->getXDot();
+  // Else use temporary storage stepperXDot_ which should have been set in
+  // setInitialConditions().
+
+  TEUCHOS_TEST_FOR_EXCEPTION( stepperXDot_ == Teuchos::null, std::logic_error,
+    "Error - stepperXDot_ has not set in setInitialConditions() or\n"
+    "        can not be set from the state!\n");
+
+  return stepperXDot_;
+}
+
+template<class Scalar>
+Teuchos::RCP<Thyra::VectorBase<Scalar> >
+Stepper<Scalar>::getStepperXDotDot(Teuchos::RCP<SolutionState<Scalar> > state)
+{
+  if (state->getXDotDot() != Teuchos::null) stepperXDotDot_=state->getXDotDot();
+  // Else use temporary storage stepperXDotDot_ which should have been set in
+  // setInitialConditions().
+
+  TEUCHOS_TEST_FOR_EXCEPTION( stepperXDotDot_==Teuchos::null, std::logic_error,
+    "Error - stepperXDotDot_ has not set in setInitialConditions() or\n"
+    "        can not be set from the state!\n");
+
+  return stepperXDotDot_;
+}
+
+
 template<class Scalar>
 void Stepper<Scalar>::describe(Teuchos::FancyOStream        & out,
                                const Teuchos::EVerbosityLevel verbLevel) const
@@ -181,7 +228,10 @@ void Stepper<Scalar>::describe(Teuchos::FancyOStream        & out,
       << "  stepperType_        = " << stepperType_ << std::endl
       << "  useFSAL_            = " << Teuchos::toString(useFSAL_) << std::endl
       << "  ICConsistency_      = " << ICConsistency_ << std::endl
-      << "  ICConsistencyCheck_ = " << Teuchos::toString(ICConsistencyCheck_) << std::endl;
+      << "  ICConsistencyCheck_ = " << Teuchos::toString(ICConsistencyCheck_) << std::endl
+      << "  stepperX_           = " << stepperX_ << std::endl
+      << "  stepperXDot_        = " << stepperXDot_ << std::endl
+      << "  stepperXDotDot_     = " << stepperXDotDot_ << std::endl;
 }
 
 

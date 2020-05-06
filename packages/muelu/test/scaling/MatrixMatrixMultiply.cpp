@@ -209,7 +209,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
     options.print_warnings = false;
     timer->report(std::cout, comm, options);
 
-    auto xmlOut = timer->reportWatchrXML(std::string("MueLu_MatrixMatrix") + std::to_string(comm->getSize()), comm);
+    auto xmlOut = timer->reportWatchrXML(std::string("MueLu MatrixMatrix Multiply ") + std::to_string(comm->getSize()) + " ranks", comm);
     if(xmlOut.length())
       std::cout << "\nAlso created Watchr performance report " << xmlOut << '\n';
 

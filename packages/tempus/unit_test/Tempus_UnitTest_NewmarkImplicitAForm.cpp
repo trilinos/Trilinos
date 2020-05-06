@@ -36,15 +36,10 @@ using Teuchos::getParametersFromXmlFile;
 
 using Tempus::StepperFactory;
 
-// Comment out any of the following tests to exclude from build/run.
-#define CONSTRUCTION
-#define STEPPERFACTORY_CONSTRUCTION
 
-
-#ifdef CONSTRUCTION
 // ************************************************************
 // ************************************************************
-TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, Construction)
+TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, Default_Construction)
 {
   auto model = rcp(new Tempus_Test::HarmonicOscillatorModel<double>());
 
@@ -87,11 +82,11 @@ TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, Construction)
     schemeName, beta, gamma));
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
+  // Test stepper properties.
+  TEUCHOS_ASSERT(stepper->getOrder() == 2);
 }
-#endif // CONSTRUCTION
 
 
-#ifdef STEPPERFACTORY_CONSTRUCTION
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, StepperFactory_Construction)
@@ -99,7 +94,6 @@ TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, StepperFactory_Construction)
   auto model = rcp(new Tempus_Test::HarmonicOscillatorModel<double>());
   testFactoryConstruction("Newmark Implicit a-Form", model);
 }
-#endif // STEPPERFACTORY_CONSTRUCTION
 
 
 } // namespace Tempus_Test

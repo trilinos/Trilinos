@@ -12,7 +12,7 @@ fi
 
 echo "Using toss3 compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
 
-export ATDM_CONFIG_USE_NINJA=OFF
+export ATDM_CONFIG_USE_NINJA=ON
 export ATDM_CONFIG_BUILD_COUNT=8
 # export ATDM_CONFIG_CMAKE_JOB_POOL_LINK=2
 # NOTE: Above, currently setting CMAKE_JOB_POOL_LINK results in a build
@@ -37,7 +37,7 @@ fi
 if [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
     module load sems-intel/18.0.0
     module load sems-openmpi/1.10.5
-    module load sems-netcdf/4.4.1/exo_parallel
+    module load sems-netcdf/4.7.3/parallel
     module load sems-parmetis/4.0.3/64bit_parallel
     module load sems-scotch/6.0.3/nopthread_64bit_parallel
     module load sems-superlu/5.2.1/base
@@ -52,6 +52,7 @@ if [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
     export BOOST_ROOT=$SEMS_BOOST_ROOT
     export HDF5_ROOT=$SEMS_HDF5_ROOT
     export NETCDF_ROOT=$SEMS_NETCDF_ROOT
+    export PNETCDF_ROOT=$SEMS_NETCDF_ROOT
     export YAMLCPP_ROOT=$SEMS_YAML_CPP_ROOT
     export OMPI_CXX=`which icpc`
     export OMPI_CC=`which icc`
@@ -67,8 +68,8 @@ else
 fi
 
 export ATDM_CONFIG_USE_HWLOC=OFF
-export ATDM_CONFIG_HDF5_LIBS="-L${SEMS_HDF5_ROOT}/lib;${SEMS_HDF5_ROOT}/lib/libhdf5_hl.a;${SEMS_HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
-export ATDM_CONFIG_NETCDF_LIBS="-L${SEMS_BOOST_ROOT}/lib;-L${SEMS_NETCDF_ROOT}/lib;-L${PNETCDF_ROOT}/lib;-L${SEMS_HDF5_ROOT}/lib;${SEMS_BOOST_ROOT}/lib/libboost_program_options.a;${SEMS_BOOST_ROOT}/lib/libboost_system.a;${SEMS_NETCDF_ROOT}/lib/libnetcdf.a;${SEMS_NETCDF_ROOT}/lib/libpnetcdf.a;${SEMS_HDF5_ROOT}/lib/libhdf5_hl.a;${SEMS_HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl;-lcurl"
+export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
+export ATDM_CONFIG_NETCDF_LIBS="-L${NETCDF_ROOT}/lib;-L${HDF5_ROOT}/lib;${NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${ATDM_CONFIG_HDF5_LIBS};-lcurl"
 
 # not sure what below does.  It was in the original environment script
 #unset ATTB_ENV

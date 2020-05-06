@@ -59,6 +59,7 @@
 #
 TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   TrilinosFrameworkTests  commonTools/framework           PT
+  TrilinosATDMConfigTests cmake/std/atdm                  PT
   Gtest                 commonTools/gtest                 PT
   Kokkos                packages/kokkos                   PT
   Teuchos               packages/teuchos                  PT
@@ -108,6 +109,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   TriKota               packages/TriKota                  ST
   Intrepid              packages/intrepid                 PT
   Intrepid2             packages/intrepid2                PT
+  Compadre              packages/compadre                 ST
   STK                   packages/stk                      PT # Depends on boost
   Percept               packages/percept                  PT # Depends on boost
   SCORECapf_zoltan      SCOREC/zoltan                     ST
@@ -134,6 +136,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   WebTrilinos           packages/WebTrilinos              EX # Should be ST
   NewPackage            packages/new_package              EX # Should be ST
   Optika		packages/optika		          EX
+  Adelus                packages/adelus                   PT
   TrilinosCouplings     packages/trilinoscouplings        PT
   Pike                  packages/pike                     PT
   xSDKTrilinos          packages/xSDKTrilinos             ST
@@ -188,3 +191,4 @@ TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Isorropia Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Zoltan Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Teko Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Panzer Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Compadre Windows)

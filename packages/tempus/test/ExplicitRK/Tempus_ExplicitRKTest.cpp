@@ -36,15 +36,7 @@ using Tempus::IntegratorBasic;
 using Tempus::SolutionHistory;
 using Tempus::SolutionState;
 
-// Comment out any of the following tests to exclude from build/run.
-#define TEST_PARAMETERLIST
-#define TEST_CONSTRUCTING_FROM_DEFAULTS
-#define TEST_SINCOS
-#define TEST_EMBEDDED_VANDERPOL
-#define TEST_STAGE_NUMBER
 
-
-#ifdef TEST_PARAMETERLIST
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(ExplicitRK, ParameterList)
@@ -136,10 +128,8 @@ TEUCHOS_UNIT_TEST(ExplicitRK, ParameterList)
     }
   }
 }
-#endif // TEST_PARAMETERLIST
 
 
-#ifdef TEST_CONSTRUCTING_FROM_DEFAULTS
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(ExplicitRK, ConstructingFromDefaults)
@@ -179,7 +169,7 @@ TEUCHOS_UNIT_TEST(ExplicitRK, ConstructingFromDefaults)
   Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
     stepper->getModel()->getNominalValues();
   auto icSolution = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
-  auto icState = rcp(new Tempus::SolutionState<double>(icSolution));
+  auto icState = Tempus::createSolutionStateX(icSolution);
   icState->setTime    (timeStepControl->getInitTime());
   icState->setIndex   (timeStepControl->getInitIndex());
   icState->setTimeStep(0.0);
@@ -236,10 +226,8 @@ TEUCHOS_UNIT_TEST(ExplicitRK, ConstructingFromDefaults)
   TEST_FLOATING_EQUALITY(get_ele(*(x), 0), 0.841470, 1.0e-4 );
   TEST_FLOATING_EQUALITY(get_ele(*(x), 1), 0.540303, 1.0e-4 );
 }
-#endif // TEST_CONSTRUCTING_FROM_DEFAULTS
 
 
-#ifdef TEST_SINCOS
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
@@ -281,11 +269,11 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
   RKMethodErrors.push_back(4.16603e-05);
   RKMethodErrors.push_back(1.39383e-07);
   RKMethodErrors.push_back(4.16603e-05);
-  RKMethodErrors.push_back(0.00166645); 
+  RKMethodErrors.push_back(0.00166645);
   RKMethodErrors.push_back(4.16603e-05);
   //RKMethodErrors.push_back(3.85613e-07); // SSPERK54
   RKMethodErrors.push_back(0.00166644); // RK2
-                             
+
 
   TEST_ASSERT(RKMethods.size() == RKMethodErrors.size() );
 
@@ -366,8 +354,10 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
         auto solnHistExact = rcp(new Tempus::SolutionHistory<double>());
         for (int i=0; i<solutionHistory->getNumStates(); i++) {
           double time_i = (*solutionHistory)[i]->getTime();
-          auto state = rcp(new Tempus::SolutionState<double>(
-              model->getExactSolution(time_i).get_x(),
+          auto state = Tempus::createSolutionStateX(
+            rcp_const_cast<Thyra::VectorBase<double> > (
+              model->getExactSolution(time_i).get_x()),
+            rcp_const_cast<Thyra::VectorBase<double> > (
               model->getExactSolution(time_i).get_x_dot()));
           state->setTime((*solutionHistory)[i]->getTime());
           solnHistExact->addState(state);
@@ -417,10 +407,8 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
   }
   //Teuchos::TimeMonitor::summarize();
 }
-#endif // TEST_SINCOS
 
 
-#ifdef TEST_EMBEDDED_VANDERPOL
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(ExplicitRK, EmbeddedVanDerPol)
@@ -533,10 +521,8 @@ TEUCHOS_UNIT_TEST(ExplicitRK, EmbeddedVanDerPol)
 
   Teuchos::TimeMonitor::summarize();
 }
-#endif // TEST_EMBEDDED_VANDERPOL
 
 
-#ifdef TEST_STAGE_NUMBER
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(ExplicitRK, stage_number)
@@ -576,7 +562,7 @@ TEUCHOS_UNIT_TEST(ExplicitRK, stage_number)
   Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
     stepper->getModel()->getNominalValues();
   auto icSolution = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
-  auto icState = rcp(new Tempus::SolutionState<double>(icSolution));
+  auto icState = Tempus::createSolutionStateX(icSolution);
   icState->setTime    (timeStepControl->getInitTime());
   icState->setIndex   (timeStepControl->getInitIndex());
   icState->setTimeStep(0.0);
@@ -611,6 +597,6 @@ TEUCHOS_UNIT_TEST(ExplicitRK, stage_number)
     TEST_EQUALITY( stage_number, erk_stepper->getStageNumber());
   }
 }
-#endif // TEST_STAGE_NUMBER
+
 
 } // namespace Tempus_Test

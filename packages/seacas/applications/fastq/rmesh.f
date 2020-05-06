@@ -212,7 +212,7 @@ C
          DO 210 J = 2, M2
             KL = NPER + 2 - J
             KR = M1 + J
-            ETA = FLOAT (J - 1) / FLOAT (M2)
+            ETA = DBLE(J - 1) / DBLE(M2)
             OMETA = 1.0 - ETA
 C
 C  ROW LOOP
@@ -220,7 +220,7 @@ C
             DO 200 I = 2, M1
                KB = I
                KT = IZ1 + 1 - I
-               EPS = FLOAT (I - 1) / FLOAT (M1)
+               EPS = DBLE(I - 1) / DBLE(M1)
                OMEPS = 1.0 - EPS
                IM =  (J - 1) * M1P1 + I + NNNOLD
                XN (IM) =  (OMETA * X (KB)) + (ETA * X (KT)) +

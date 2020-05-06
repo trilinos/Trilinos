@@ -1,0 +1,670 @@
+
+after ex_open
+         I/O word size 8
+after ex_get_init_ext(exoid, &par), error = 0
+database parameters:
+title =  'This is a test'
+num_dim = 3
+num_assembly = 0
+num_blobs = 3
+num_nodes = 0
+num_edge = 0
+num_face = 0
+num_elem = 0
+num_elem_blk = 0
+num_node_sets = 0
+num_side_sets = 0
+after ex_get_blob(exoid, &blobs[i]), error = 0
+Blob named 'Tempus' has id 100. It contains 10 entries.
+	
+after ex_get_blob(exoid, &blobs[i]), error = 0
+Blob named 'IOSS' has id 200. It contains 20 entries.
+	
+after ex_get_blob(exoid, &blobs[i]), error = 0
+Blob named 'Solver' has id 300. It contains 15 entries.
+	
+after ex_get_blobs(exoid, blb), error = 0
+Blob named 'Tempus' has id 100. It contains 10 entries.
+Blob named 'IOSS' has id 200. It contains 20 entries.
+Blob named 'Solver' has id 300. It contains 15 entries.
+Blob named 'Tempus' with id 100. It contains 2 attributes:
+	Name: 'Scale', Type = 6, Value Count = 1
+		1.5
+	Name: 'Units', Type = 4, Value Count = 4
+		1	0	0	-1
+
+Blob named 'IOSS' with id 200. It contains 1 attributes:
+	Name: 'Offset', Type = 6, Value Count = 3
+		1.1	2.2	3.3
+
+Blob named 'Solver' with id 300. It contains 2 attributes:
+	Name: 'Dimension', Type = 2, Value Count = 7
+		l	e	n	g	t	h
+	Name: 'Offset', Type = 6, Value Count = 3
+		1.1	2.2	3.3
+
+GLOBAL contains 1 attributes:
+	Name: 'SOLID_MODEL', Type = 2, Value Count = 24
+after ex_get_reduction_variable_param(exoid, EX_BLOB, &num_red_vars), error = 0
+after ex_get_variable_param(exoid, EX_BLOB, &num_vars), error = 0
+after ex_get_reduction_variable_names(exoid, EX_BLOB, num_red_vars, var_names), error = 0
+There are  4 blob reduction variables; their names are :
+ 'Momentum_X'
+ 'Momentum_Y'
+ 'Momentum_Z'
+ 'Kinetic_Energy'
+after ex_get_variable_names(exoid, EX_BLOB, num_vars, var_names), error = 0
+There are  3 blob variables; their names are :
+ 'X'
+ 'XDOT'
+ 'XDDOT'
+There are  4 time steps in the database.
+after ex_get_time(exoid, i + 1, &time_value), error = 0
+Time at step 1 is 0.010000.
+after ex_get_reduction_vars(exoid, i + 1, EX_BLOB, blb[k].id, num_red_vars, var_values), error = 0
+Values for Blob 100 at step 1: 0.020000	0.030000	0.040000	0.050000
+after ex_get_var(exoid, i + 1, EX_BLOB, var_idx+1, blobs[k].id, blobs[k].num_entry, vals), error = 0
+0.020
+1.020
+2.020
+3.020
+4.020
+5.020
+6.020
+7.020
+8.020
+9.020
+after ex_get_var(exoid, i + 1, EX_BLOB, var_idx+1, blobs[k].id, blobs[k].num_entry, vals), error = 0
+0.030
+1.030
+2.030
+3.030
+4.030
+5.030
+6.030
+7.030
+8.030
+9.030
+after ex_get_var(exoid, i + 1, EX_BLOB, var_idx+1, blobs[k].id, blobs[k].num_entry, vals), error = 0
+0.040
+1.040
+2.040
+3.040
+4.040
+5.040
+6.040
+7.040
+8.040
+9.040
+after ex_get_reduction_vars(exoid, i + 1, EX_BLOB, blb[k].id, num_red_vars, var_values), error = 0
+Values for Blob 200 at step 1: 1.020000	1.030000	1.040000	1.050000
+after ex_get_var(exoid, i + 1, EX_BLOB, var_idx+1, blobs[k].id, blobs[k].num_entry, vals), error = 0
+0.030
+1.030
+2.030
+3.030
+4.030
+5.030
+6.030
+7.030
+8.030
+9.030
+10.030
+11.030
+12.030
+13.030
+14.030
+15.030
+16.030
+17.030
+18.030
+19.030
+after ex_get_var(exoid, i + 1, EX_BLOB, var_idx+1, blobs[k].id, blobs[k].num_entry, vals), error = 0
+0.040
+1.040
+2.040
+3.040
+4.040
+5.040
+6.040
+7.040
+8.040
+9.040
+10.040
+11.040
+12.040
+13.040
+14.040
+15.040
+16.040
+17.040
+18.040
+19.040
+after ex_get_var(exoid, i + 1, EX_BLOB, var_idx+1, blobs[k].id, blobs[k].num_entry, vals), error = 0
+0.050
+1.050
+2.050
+3.050
+4.050
+5.050
+6.050
+7.050
+8.050
+9.050
+10.050
+11.050
+12.050
+13.050
+14.050
+15.050
+16.050
+17.050
+18.050
+19.050
+after ex_get_reduction_vars(exoid, i + 1, EX_BLOB, blb[k].id, num_red_vars, var_values), error = 0
+Values for Blob 300 at step 1: 2.020000	2.030000	2.040000	2.050000
+after ex_get_var(exoid, i + 1, EX_BLOB, var_idx+1, blobs[k].id, blobs[k].num_entry, vals), error = 0
+0.040
+1.040
+2.040
+3.040
+4.040
+5.040
+6.040
+7.040
+8.040
+9.040
+10.040
+11.040
+12.040
+13.040
+14.040
+after ex_get_var(exoid, i + 1, EX_BLOB, var_idx+1, blobs[k].id, blobs[k].num_entry, vals), error = 0
+0.050
+1.050
+2.050
+3.050
+4.050
+5.050
+6.050
+7.050
+8.050
+9.050
+10.050
+11.050
+12.050
+13.050
+14.050
+after ex_get_var(exoid, i + 1, EX_BLOB, var_idx+1, blobs[k].id, blobs[k].num_entry, vals), error = 0
+0.060
+1.060
+2.060
+3.060
+4.060
+5.060
+6.060
+7.060
+8.060
+9.060
+10.060
+11.060
+12.060
+13.060
+14.060
+after ex_get_time(exoid, i + 1, &time_value), error = 0
+Time at step 2 is 0.020000.
+after ex_get_reduction_vars(exoid, i + 1, EX_BLOB, blb[k].id, num_red_vars, var_values), error = 0
+Values for Blob 100 at step 2: 0.040000	0.060000	0.080000	0.100000
+after ex_get_var(exoid, i + 1, EX_BLOB, var_idx+1, blobs[k].id, blobs[k].num_entry, vals), error = 0
+0.040
+1.040
+2.040
+3.040
+4.040
+5.040
+6.040
+7.040
+8.040
+9.040
+after ex_get_var(exoid, i + 1, EX_BLOB, var_idx+1, blobs[k].id, blobs[k].num_entry, vals), error = 0
+0.060
+1.060
+2.060
+3.060
+4.060
+5.060
+6.060
+7.060
+8.060
+9.060
+after ex_get_var(exoid, i + 1, EX_BLOB, var_idx+1, blobs[k].id, blobs[k].num_entry, vals), error = 0
+0.080
+1.080
+2.080
+3.080
+4.080
+5.080
+6.080
+7.080
+8.080
+9.080
+after ex_get_reduction_vars(exoid, i + 1, EX_BLOB, blb[k].id, num_red_vars, var_values), error = 0
+Values for Blob 200 at step 2: 1.040000	1.060000	1.080000	1.100000
+after ex_get_var(exoid, i + 1, EX_BLOB, var_idx+1, blobs[k].id, blobs[k].num_entry, vals), error = 0
+0.050
+1.050
+2.050
+3.050
+4.050
+5.050
+6.050
+7.050
+8.050
+9.050
+10.050
+11.050
+12.050
+13.050
+14.050
+15.050
+16.050
+17.050
+18.050
+19.050
+after ex_get_var(exoid, i + 1, EX_BLOB, var_idx+1, blobs[k].id, blobs[k].num_entry, vals), error = 0
+0.070
+1.070
+2.070
+3.070
+4.070
+5.070
+6.070
+7.070
+8.070
+9.070
+10.070
+11.070
+12.070
+13.070
+14.070
+15.070
+16.070
+17.070
+18.070
+19.070
+after ex_get_var(exoid, i + 1, EX_BLOB, var_idx+1, blobs[k].id, blobs[k].num_entry, vals), error = 0
+0.090
+1.090
+2.090
+3.090
+4.090
+5.090
+6.090
+7.090
+8.090
+9.090
+10.090
+11.090
+12.090
+13.090
+14.090
+15.090
+16.090
+17.090
+18.090
+19.090
+after ex_get_reduction_vars(exoid, i + 1, EX_BLOB, blb[k].id, num_red_vars, var_values), error = 0
+Values for Blob 300 at step 2: 2.040000	2.060000	2.080000	2.100000
+after ex_get_var(exoid, i + 1, EX_BLOB, var_idx+1, blobs[k].id, blobs[k].num_entry, vals), error = 0
+0.060
+1.060
+2.060
+3.060
+4.060
+5.060
+6.060
+7.060
+8.060
+9.060
+10.060
+11.060
+12.060
+13.060
+14.060
+after ex_get_var(exoid, i + 1, EX_BLOB, var_idx+1, blobs[k].id, blobs[k].num_entry, vals), error = 0
+0.080
+1.080
+2.080
+3.080
+4.080
+5.080
+6.080
+7.080
+8.080
+9.080
+10.080
+11.080
+12.080
+13.080
+14.080
+after ex_get_var(exoid, i + 1, EX_BLOB, var_idx+1, blobs[k].id, blobs[k].num_entry, vals), error = 0
+0.100
+1.100
+2.100
+3.100
+4.100
+5.100
+6.100
+7.100
+8.100
+9.100
+10.100
+11.100
+12.100
+13.100
+14.100
+after ex_get_time(exoid, i + 1, &time_value), error = 0
+Time at step 3 is 0.030000.
+after ex_get_reduction_vars(exoid, i + 1, EX_BLOB, blb[k].id, num_red_vars, var_values), error = 0
+Values for Blob 100 at step 3: 0.060000	0.090000	0.120000	0.150000
+after ex_get_var(exoid, i + 1, EX_BLOB, var_idx+1, blobs[k].id, blobs[k].num_entry, vals), error = 0
+0.060
+1.060
+2.060
+3.060
+4.060
+5.060
+6.060
+7.060
+8.060
+9.060
+after ex_get_var(exoid, i + 1, EX_BLOB, var_idx+1, blobs[k].id, blobs[k].num_entry, vals), error = 0
+0.090
+1.090
+2.090
+3.090
+4.090
+5.090
+6.090
+7.090
+8.090
+9.090
+after ex_get_var(exoid, i + 1, EX_BLOB, var_idx+1, blobs[k].id, blobs[k].num_entry, vals), error = 0
+0.120
+1.120
+2.120
+3.120
+4.120
+5.120
+6.120
+7.120
+8.120
+9.120
+after ex_get_reduction_vars(exoid, i + 1, EX_BLOB, blb[k].id, num_red_vars, var_values), error = 0
+Values for Blob 200 at step 3: 1.060000	1.090000	1.120000	1.150000
+after ex_get_var(exoid, i + 1, EX_BLOB, var_idx+1, blobs[k].id, blobs[k].num_entry, vals), error = 0
+0.070
+1.070
+2.070
+3.070
+4.070
+5.070
+6.070
+7.070
+8.070
+9.070
+10.070
+11.070
+12.070
+13.070
+14.070
+15.070
+16.070
+17.070
+18.070
+19.070
+after ex_get_var(exoid, i + 1, EX_BLOB, var_idx+1, blobs[k].id, blobs[k].num_entry, vals), error = 0
+0.100
+1.100
+2.100
+3.100
+4.100
+5.100
+6.100
+7.100
+8.100
+9.100
+10.100
+11.100
+12.100
+13.100
+14.100
+15.100
+16.100
+17.100
+18.100
+19.100
+after ex_get_var(exoid, i + 1, EX_BLOB, var_idx+1, blobs[k].id, blobs[k].num_entry, vals), error = 0
+0.130
+1.130
+2.130
+3.130
+4.130
+5.130
+6.130
+7.130
+8.130
+9.130
+10.130
+11.130
+12.130
+13.130
+14.130
+15.130
+16.130
+17.130
+18.130
+19.130
+after ex_get_reduction_vars(exoid, i + 1, EX_BLOB, blb[k].id, num_red_vars, var_values), error = 0
+Values for Blob 300 at step 3: 2.060000	2.090000	2.120000	2.150000
+after ex_get_var(exoid, i + 1, EX_BLOB, var_idx+1, blobs[k].id, blobs[k].num_entry, vals), error = 0
+0.080
+1.080
+2.080
+3.080
+4.080
+5.080
+6.080
+7.080
+8.080
+9.080
+10.080
+11.080
+12.080
+13.080
+14.080
+after ex_get_var(exoid, i + 1, EX_BLOB, var_idx+1, blobs[k].id, blobs[k].num_entry, vals), error = 0
+0.110
+1.110
+2.110
+3.110
+4.110
+5.110
+6.110
+7.110
+8.110
+9.110
+10.110
+11.110
+12.110
+13.110
+14.110
+after ex_get_var(exoid, i + 1, EX_BLOB, var_idx+1, blobs[k].id, blobs[k].num_entry, vals), error = 0
+0.140
+1.140
+2.140
+3.140
+4.140
+5.140
+6.140
+7.140
+8.140
+9.140
+10.140
+11.140
+12.140
+13.140
+14.140
+after ex_get_time(exoid, i + 1, &time_value), error = 0
+Time at step 4 is 0.040000.
+after ex_get_reduction_vars(exoid, i + 1, EX_BLOB, blb[k].id, num_red_vars, var_values), error = 0
+Values for Blob 100 at step 4: 0.080000	0.120000	0.160000	0.200000
+after ex_get_var(exoid, i + 1, EX_BLOB, var_idx+1, blobs[k].id, blobs[k].num_entry, vals), error = 0
+0.080
+1.080
+2.080
+3.080
+4.080
+5.080
+6.080
+7.080
+8.080
+9.080
+after ex_get_var(exoid, i + 1, EX_BLOB, var_idx+1, blobs[k].id, blobs[k].num_entry, vals), error = 0
+0.120
+1.120
+2.120
+3.120
+4.120
+5.120
+6.120
+7.120
+8.120
+9.120
+after ex_get_var(exoid, i + 1, EX_BLOB, var_idx+1, blobs[k].id, blobs[k].num_entry, vals), error = 0
+0.160
+1.160
+2.160
+3.160
+4.160
+5.160
+6.160
+7.160
+8.160
+9.160
+after ex_get_reduction_vars(exoid, i + 1, EX_BLOB, blb[k].id, num_red_vars, var_values), error = 0
+Values for Blob 200 at step 4: 1.080000	1.120000	1.160000	1.200000
+after ex_get_var(exoid, i + 1, EX_BLOB, var_idx+1, blobs[k].id, blobs[k].num_entry, vals), error = 0
+0.090
+1.090
+2.090
+3.090
+4.090
+5.090
+6.090
+7.090
+8.090
+9.090
+10.090
+11.090
+12.090
+13.090
+14.090
+15.090
+16.090
+17.090
+18.090
+19.090
+after ex_get_var(exoid, i + 1, EX_BLOB, var_idx+1, blobs[k].id, blobs[k].num_entry, vals), error = 0
+0.130
+1.130
+2.130
+3.130
+4.130
+5.130
+6.130
+7.130
+8.130
+9.130
+10.130
+11.130
+12.130
+13.130
+14.130
+15.130
+16.130
+17.130
+18.130
+19.130
+after ex_get_var(exoid, i + 1, EX_BLOB, var_idx+1, blobs[k].id, blobs[k].num_entry, vals), error = 0
+0.170
+1.170
+2.170
+3.170
+4.170
+5.170
+6.170
+7.170
+8.170
+9.170
+10.170
+11.170
+12.170
+13.170
+14.170
+15.170
+16.170
+17.170
+18.170
+19.170
+after ex_get_reduction_vars(exoid, i + 1, EX_BLOB, blb[k].id, num_red_vars, var_values), error = 0
+Values for Blob 300 at step 4: 2.080000	2.120000	2.160000	2.200000
+after ex_get_var(exoid, i + 1, EX_BLOB, var_idx+1, blobs[k].id, blobs[k].num_entry, vals), error = 0
+0.100
+1.100
+2.100
+3.100
+4.100
+5.100
+6.100
+7.100
+8.100
+9.100
+10.100
+11.100
+12.100
+13.100
+14.100
+after ex_get_var(exoid, i + 1, EX_BLOB, var_idx+1, blobs[k].id, blobs[k].num_entry, vals), error = 0
+0.140
+1.140
+2.140
+3.140
+4.140
+5.140
+6.140
+7.140
+8.140
+9.140
+10.140
+11.140
+12.140
+13.140
+14.140
+after ex_get_var(exoid, i + 1, EX_BLOB, var_idx+1, blobs[k].id, blobs[k].num_entry, vals), error = 0
+0.180
+1.180
+2.180
+3.180
+4.180
+5.180
+6.180
+7.180
+8.180
+9.180
+10.180
+11.180
+12.180
+13.180
+14.180
+after ex_close(exoid), error = 0

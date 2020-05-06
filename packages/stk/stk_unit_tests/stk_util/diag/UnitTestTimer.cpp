@@ -159,6 +159,8 @@ struct Object
 
 } // namespace <empty>
 
+constexpr double millisecTolerance = 1.e-2; //10 millis for robustness
+
 TEST(UnitTestTimer, UnitTest)
 {
   stk::diag::TimeBlock root_time_block(unitTestTimer());
@@ -169,27 +171,27 @@ TEST(UnitTestTimer, UnitTest)
   {
     static stk::diag::Timer lap_timer("One second Wall time twice", unitTestTimer());
     
-    stk::diag::TimeBlock _time(lap_timer);
+    stk::diag::TimeBlock _time(lap_timer);    
     double x = work(100);
     static_cast<void>(x);
     std::ostringstream oss;
     oss << x << std::endl;
-    
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
 
     lap_timer.lap();
     
     stk::diag::MetricTraits<stk::diag::WallTime>::Type lap_time = lap_timer.getMetric<stk::diag::WallTime>().getLap();
   
-    EXPECT_NEAR(0.01, lap_time, 1.0e-3);
+    EXPECT_NEAR(0.02, lap_time, millisecTolerance);
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
 
     lap_timer.stop();
     
     lap_time = lap_timer.getMetric<stk::diag::WallTime>().getLap();
   
-    EXPECT_NEAR(0.02, lap_time, 1.0e-3);
+    EXPECT_NEAR(0.04, lap_time, millisecTolerance);
   }
 
   {
@@ -280,18 +282,21 @@ TEST(UnitTestTimer, UnitTest)
     for (size_t j = 0; j < object_vector.size(); ++j) 
       lap_count += object_vector[j].m_timer.getMetric<stk::diag::LapCount>().getAccumulatedLap(false);
 
-    ASSERT_EQ(lap_count, stk::diag::MetricTraits<stk::diag::LapCount>::Type(0));
+    EXPECT_EQ(lap_count, stk::diag::MetricTraits<stk::diag::LapCount>::Type(0));
 
     for (size_t j = 0; j < object_vector.size(); ++j) 
       object_vector[j].run();
 
     stk::diag::printTimersTable(strout, unitTestTimer(), stk::diag::METRICS_ALL, false);    
 
+    //root node has 15, children node 7, grandchildren 3, greatgrandchildren 1
+    // 15 + 2*7 + 4*3 + 8*1 = 49 for laptimes that are cumulative
+    EXPECT_EQ(15u, object_vector[0].m_timer.getMetric<stk::diag::LapCount>().getAccumulatedLap());
     lap_count = 0;
     for (size_t j = 0; j < object_vector.size(); ++j) 
       lap_count += object_vector[j].m_timer.getMetric<stk::diag::LapCount>().getAccumulatedLap(false);
 
-    ASSERT_EQ(lap_count, stk::diag::MetricTraits<stk::diag::LapCount>::Type(object_vector.size()));
+    EXPECT_EQ(lap_count, stk::diag::MetricTraits<stk::diag::LapCount>::Type(49));
 
     for (size_t i = 1; i < 100; ++i) 
       for (size_t j = 0; j < object_vector.size(); ++j) 
@@ -303,7 +308,7 @@ TEST(UnitTestTimer, UnitTest)
     for (size_t j = 0; j < object_vector.size(); ++j) 
       lap_count += object_vector[j].m_timer.getMetric<stk::diag::LapCount>().getAccumulatedLap(false);
   
-    ASSERT_EQ(lap_count, stk::diag::MetricTraits<stk::diag::LapCount>::Type(100*object_vector.size()));
+    EXPECT_EQ(lap_count, stk::diag::MetricTraits<stk::diag::LapCount>::Type(4900));
 
     stk::diag::printTimersTable(strout, unitTestTimer(), stk::diag::METRICS_ALL, true);
 
@@ -345,4 +350,104 @@ TEST(UnitTestTimer, YuugeNumberOfTimers)
     }
 
     stk::diag::printTimersTable(strout, rootTimer, stk::diag::METRICS_ALL, false, MPI_COMM_WORLD);
+}
+
+TEST(UnitTestTimer, MultipleStarts)
+{
+  // To stk team: This fails also--seems like calling start or stop multiple times shouldn't break timers
+  stk::diag::TimerSet timerSet(TIMER_APP_3);
+  stk::diag::Timer rootTimer(stk::diag::createRootTimer("Root Timer", timerSet));
+  stk::diag::TimeBlock root_time_block(rootTimer);
+  stk::diag::Timer childTimer("Child Timer", rootTimer);
+
+  std::ostringstream strout;
+  
+  {
+    stk::diag::TimeBlock childBlock(childTimer);
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+  }
+  {
+    childTimer.start();
+    childTimer.start();
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    childTimer.stop();
+    childTimer.stop();
+  }
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  EXPECT_NEAR(childTimer.getMetric<stk::diag::WallTime>().getAccumulatedLap(), 0.04, millisecTolerance);
+  EXPECT_EQ(childTimer.getMetric<stk::diag::LapCount>().getAccumulatedLap(), 2u);
+  stk::diag::printTimersTable(strout, rootTimer, stk::diag::METRICS_ALL, false, MPI_COMM_WORLD);
+}
+
+TEST(UnitTestTimer, NestedTimers)
+{
+  stk::diag::TimerSet timerSet(TIMER_APP_3);
+  stk::diag::Timer rootTimer(stk::diag::createRootTimer("Root Timer", timerSet));
+  stk::diag::TimeBlock root_time_block(rootTimer);
+  stk::diag::Timer childTimer("Child Timer", rootTimer);
+  stk::diag::Timer grandChildTimer(" Grandchild Timer", childTimer);
+
+  std::ostringstream strout;
+  
+  {
+    stk::diag::TimeBlock childBlock(childTimer);
+    stk::diag::TimeBlock grandChildBlock(grandChildTimer);
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  }
+  {
+    stk::diag::TimeBlock lap_timer(grandChildTimer);
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  }
+  EXPECT_GE(childTimer.getMetric<stk::diag::WallTime>().getAccumulatedLap(), (0.1 - millisecTolerance));
+  EXPECT_EQ(childTimer.getMetric<stk::diag::LapCount>().getAccumulatedLap(), 2u);
+  stk::diag::printTimersTable(strout, rootTimer, stk::diag::METRICS_ALL, false, MPI_COMM_WORLD);
+}
+
+TEST(UnitTestTimer, ReferenceCounting)
+{
+  stk::diag::TimerSet timerSet(TIMER_APP_3);
+  stk::diag::Timer rootTimer(stk::diag::createRootTimer("Root Timer", timerSet));
+  stk::diag::TimeBlock root_time_block(rootTimer);
+  stk::diag::Timer childTimer("Child Timer", rootTimer);
+  stk::diag::Timer grandChildTimer("Grandchild Timer", childTimer);
+  stk::diag::Timer grandChildTimer2("Grandchild Timer 2", childTimer);
+
+  std::ostringstream strout;
+  
+  {
+    stk::diag::TimeBlock grandChildBlock(grandChildTimer);
+    stk::diag::TimeBlock grandChildBlock2(grandChildTimer);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+
+  EXPECT_GE(childTimer.getMetric<stk::diag::WallTime>().getAccumulatedLap(), 0.01);
+  EXPECT_EQ(childTimer.getMetric<stk::diag::LapCount>().getAccumulatedLap(), 1u);
+
+  {
+    stk::diag::TimeBlock grandChildBlock(grandChildTimer);
+    {
+      stk::diag::TimeBlock grandChildBlock2(grandChildTimer2);
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  EXPECT_GE(childTimer.getMetric<stk::diag::WallTime>().getAccumulatedLap(), 0.03);
+  EXPECT_EQ(childTimer.getMetric<stk::diag::LapCount>().getAccumulatedLap(), 2u);
+
+  {
+    stk::diag::TimeBlock childBlock(childTimer);
+    {
+      stk::diag::TimeBlock grandChildBlock(grandChildTimer);
+      {
+        stk::diag::TimeBlock grandChildBlock2(grandChildTimer2);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+      }
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  EXPECT_GE(childTimer.getMetric<stk::diag::WallTime>().getAccumulatedLap(), 0.06);
+  EXPECT_EQ(childTimer.getMetric<stk::diag::LapCount>().getAccumulatedLap(), 3u);
+
+  stk::diag::printTimersTable(strout, rootTimer, stk::diag::METRICS_ALL, false, MPI_COMM_WORLD);
 }

@@ -489,6 +489,15 @@ setKokkosExtendedDataTypeDimensions(const std::string & eblock,
     fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Tangent>(derivative_dimensions);
   }
 }
+//=======================================================================
+//=======================================================================
+void panzer::FieldManagerBuilder::clearVolumeFieldManagers(bool clearVolumeWorksets)
+{
+  phx_volume_field_managers_.clear();
+  volume_workset_desc_.clear();
+  if (clearVolumeWorksets)
+    worksetContainer_->clearVolumeWorksets();
+}
 
 //=======================================================================
 //=======================================================================

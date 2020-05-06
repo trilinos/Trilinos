@@ -181,8 +181,8 @@ C
                YMIN = MIN(YMIN, Y(I))
                YMAX = MAX(YMAX, Y(I))
   100       CONTINUE
-            XCEN = XCEN/FLOAT(NPNT)
-            YCEN = YCEN/FLOAT(NPNT)
+            XCEN = XCEN/DBLE(NPNT)
+            YCEN = YCEN/DBLE(NPNT)
             RADIUS = SQRT((XCEN - X(1))**2 + (YCEN - Y(1))**2)
             DO 110 I = 2, NPNT
                R = SQRT((XCEN - X(I))**2 + (YCEN - Y(I))**2)

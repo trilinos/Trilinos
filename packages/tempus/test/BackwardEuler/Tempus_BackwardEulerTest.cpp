@@ -47,16 +47,7 @@ using Tempus::IntegratorBasic;
 using Tempus::SolutionHistory;
 using Tempus::SolutionState;
 
-// Comment out any of the following tests to exclude from build/run.
-#define TEST_PARAMETERLIST
-#define TEST_CONSTRUCTING_FROM_DEFAULTS
-#define TEST_SINCOS
-#define TEST_CDR
-#define TEST_VANDERPOL
-#define TEST_OPT_INTERFACE
 
-
-#ifdef TEST_PARAMETERLIST
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(BackwardEuler, ParameterList)
@@ -109,10 +100,8 @@ TEUCHOS_UNIT_TEST(BackwardEuler, ParameterList)
     TEST_ASSERT(pass)
   }
 }
-#endif // TEST_PARAMETERLIST
 
 
-#ifdef TEST_CONSTRUCTING_FROM_DEFAULTS
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(BackwardEuler, ConstructingFromDefaults)
@@ -150,7 +139,7 @@ TEUCHOS_UNIT_TEST(BackwardEuler, ConstructingFromDefaults)
     stepper->getModel()->getNominalValues();
   auto icSolution =
     rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
-  auto icState = rcp(new Tempus::SolutionState<double>(icSolution));
+  auto icState = Tempus::createSolutionStateX(icSolution);
   icState->setTime    (timeStepControl->getInitTime());
   icState->setIndex   (timeStepControl->getInitIndex());
   icState->setTimeStep(0.0);
@@ -207,10 +196,8 @@ TEUCHOS_UNIT_TEST(BackwardEuler, ConstructingFromDefaults)
   TEST_FLOATING_EQUALITY(get_ele(*(x), 0), 0.798923, 1.0e-4 );
   TEST_FLOATING_EQUALITY(get_ele(*(x), 1), 0.516729, 1.0e-4 );
 }
-#endif // TEST_CONSTRUCTING_FROM_DEFAULTS
 
 
-#ifdef TEST_SINCOS
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(BackwardEuler, SinCos)
@@ -274,8 +261,10 @@ TEUCHOS_UNIT_TEST(BackwardEuler, SinCos)
       auto solnHistExact = rcp(new Tempus::SolutionHistory<double>());
       for (int i=0; i<solutionHistory->getNumStates(); i++) {
         double time_i = (*solutionHistory)[i]->getTime();
-        auto state = rcp(new Tempus::SolutionState<double>(
-            model->getExactSolution(time_i).get_x(),
+        auto state = Tempus::createSolutionStateX(
+          rcp_const_cast<Thyra::VectorBase<double> > (
+            model->getExactSolution(time_i).get_x()),
+          rcp_const_cast<Thyra::VectorBase<double> > (
             model->getExactSolution(time_i).get_x_dot()));
         state->setTime((*solutionHistory)[i]->getTime());
         solnHistExact->addState(state);
@@ -320,10 +309,8 @@ TEUCHOS_UNIT_TEST(BackwardEuler, SinCos)
 
   Teuchos::TimeMonitor::summarize();
 }
-#endif // TEST_SINCOS
 
 
-#ifdef TEST_CDR
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(BackwardEuler, CDR)
@@ -478,10 +465,8 @@ TEUCHOS_UNIT_TEST(BackwardEuler, CDR)
 
   Teuchos::TimeMonitor::summarize();
 }
-#endif // TEST_CDR
 
 
-#ifdef TEST_VANDERPOL
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(BackwardEuler, VanDerPol)
@@ -564,9 +549,8 @@ TEUCHOS_UNIT_TEST(BackwardEuler, VanDerPol)
 
   Teuchos::TimeMonitor::summarize();
 }
-#endif // TEST_VANDERPOL
 
-#ifdef TEST_OPT_INTERFACE
+
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(BackwardEuler, OptInterface)
@@ -731,7 +715,6 @@ TEUCHOS_UNIT_TEST(BackwardEuler, OptInterface)
 
   Teuchos::TimeMonitor::summarize();
 }
-#endif // TEST_OPT_INTERFACE
 
 
 } // namespace Tempus_Test

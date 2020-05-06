@@ -1,9 +1,9 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 // @HEADER
 // ************************************************************************
 //
-//        Phalanx: A Partial Differential Equation Field Evaluation 
+//        Phalanx: A Partial Differential Equation Field Evaluation
 //       Kernel for Flexible Management of Complex Dependency Chains
 //                    Copyright 2008 Sandia Corporation
 //
@@ -101,13 +101,16 @@ namespace PHX {
     template <typename BuilderOpT>
     struct BuildObject {
       std::vector< Teuchos::RCP<BaseT> >& objects;
+      std::vector< bool >& disabled;
       const BuilderOpT& builder;
       BuildObject(std::vector< Teuchos::RCP<BaseT> >& objects_,
+                  std::vector<bool>& disabled_,
 		  const BuilderOpT& builder_) :
-	objects(objects_), builder(builder_) {}
+	objects(objects_),disabled(disabled_),builder(builder_) {}
       template <typename T> void operator()(T) const {
 	int idx = Sacado::mpl::find<TypeSeq,T>::value;
-	objects[idx] = builder.template build<T>();
+        if (!disabled[idx])
+          objects[idx] = builder.template build<T>();
       }
     };
 
@@ -167,21 +170,31 @@ namespace PHX {
     typename PHX::TemplateManager<TypeSeq,BaseT,ObjectT>::iterator begin();
 
     //! Return an iterator that points to the first type object
-    typename PHX::TemplateManager<TypeSeq,BaseT,ObjectT>::const_iterator 
+    typename PHX::TemplateManager<TypeSeq,BaseT,ObjectT>::const_iterator
     begin() const;
 
     //! Return an iterator that points one past the last type object
     typename PHX::TemplateManager<TypeSeq,BaseT,ObjectT>::iterator end();
 
     //! Return an iterator that points one past the last type object
-    typename PHX::TemplateManager<TypeSeq,BaseT,ObjectT>::const_iterator 
+    typename PHX::TemplateManager<TypeSeq,BaseT,ObjectT>::const_iterator
     end() const;
+
+    //! Delete the underlying type. Used to clean out unused types.
+    template <typename BuilderOpT>
+    void deleteType();
+
+    //! Disable the type so that it is not allocated.
+    template <typename BuilderOpT>
+    void disableType();
 
   private:
 
     //! Stores array of rcp's to objects of each type
     std::vector< Teuchos::RCP<BaseT> > objects;
 
+    //! Set to true if the type should not be allocated
+    std::vector<bool> disabled;
   };
 
 }

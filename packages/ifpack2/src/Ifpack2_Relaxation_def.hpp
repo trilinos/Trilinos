@@ -241,20 +241,24 @@ Relaxation<MatrixType>::getValidParameters () const
 
     // Set a validator that automatically converts from the valid
     // string options to their enum values.
-    Array<std::string> precTypes (6);
+    Array<std::string> precTypes (8);
     precTypes[0] = "Jacobi";
     precTypes[1] = "Gauss-Seidel";
     precTypes[2] = "Symmetric Gauss-Seidel";
     precTypes[3] = "MT Gauss-Seidel";
     precTypes[4] = "MT Symmetric Gauss-Seidel";
     precTypes[5] = "Richardson";
-    Array<Details::RelaxationType> precTypeEnums (6);
+    precTypes[6] = "Two-stage Gauss-Seidel";
+    precTypes[7] = "Two-stage Symmetric Gauss-Seidel";
+    Array<Details::RelaxationType> precTypeEnums (8);
     precTypeEnums[0] = Details::JACOBI;
     precTypeEnums[1] = Details::GS;
     precTypeEnums[2] = Details::SGS;
     precTypeEnums[3] = Details::MTGS;
     precTypeEnums[4] = Details::MTSGS;
     precTypeEnums[5] = Details::RICHARDSON;
+    precTypeEnums[6] = Details::GS2;
+    precTypeEnums[7] = Details::SGS2;
     const std::string defaultPrecType ("Jacobi");
     setStringToIntegralParameter<Details::RelaxationType> ("relaxation: type",
       defaultPrecType, "Relaxation method", precTypes (), precTypeEnums (),
@@ -265,6 +269,16 @@ Relaxation<MatrixType>::getValidParameters () const
       rcp_implicit_cast<PEV> (rcp (new NonnegativeIntValidator));
     pl->set ("relaxation: sweeps", numSweeps, "Number of relaxation sweeps",
              rcp_const_cast<const PEV> (numSweepsValidator));
+
+    // number of inner sweeps for two-stage GS
+    const int numInnerSweeps = 1;
+    RCP<PEV> numInnerSweepsValidator =
+      rcp_implicit_cast<PEV> (rcp (new NonnegativeIntValidator));
+    pl->set ("relaxation: inner sweeps", numInnerSweeps, "Number of inner relaxation sweeps",
+             rcp_const_cast<const PEV> (numInnerSweepsValidator));
+    // specify if using sptrsv instead of inner-iterations
+    const bool innerSpTrsv = false;
+    pl->set ("relaxation: inner sparse-triangular solve", innerSpTrsv);
 
     const scalar_type dampingFactor = STS::one ();
     pl->set ("relaxation: damping factor", dampingFactor);
@@ -330,6 +344,8 @@ void Relaxation<MatrixType>::setParametersImpl (Teuchos::ParameterList& pl)
   const Details::RelaxationType precType =
     getIntegralValue<Details::RelaxationType> (pl, "relaxation: type");
   const int numSweeps = pl.get<int> ("relaxation: sweeps");
+  const int numInnerSweeps = pl.get<int> ("relaxation: inner sweeps");
+  const bool innerSpTrsv = pl.get<bool> ("relaxation: inner sparse-triangular solve");
   const ST dampingFactor = pl.get<ST> ("relaxation: damping factor");
   const bool zeroStartSol = pl.get<bool> ("relaxation: zero starting solution");
   const bool doBackwardGS = pl.get<bool> ("relaxation: backward mode");
@@ -350,6 +366,8 @@ void Relaxation<MatrixType>::setParametersImpl (Teuchos::ParameterList& pl)
   // "Commit" the changes, now that we've validated everything.
   PrecType_              = precType;
   NumSweeps_             = numSweeps;
+  NumInnerSweeps_        = numInnerSweeps;
+  InnerSpTrsv_           = innerSpTrsv;
   DampingFactor_         = dampingFactor;
   ZeroStartingSolution_  = zeroStartSol;
   DoBackwardGS_          = doBackwardGS;
@@ -563,9 +581,11 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
         ApplyInverseSGS(*Xcopy,Y);
         break;
       case Ifpack2::Details::MTSGS:
+      case Ifpack2::Details::SGS2:
         ApplyInverseMTSGS_CrsMatrix(*Xcopy,Y);
         break;
       case Ifpack2::Details::MTGS:
+      case Ifpack2::Details::GS2:
         ApplyInverseMTGS_CrsMatrix(*Xcopy,Y);
         break;
       case Ifpack2::Details::RICHARDSON:
@@ -652,7 +672,8 @@ void Relaxation<MatrixType>::initialize ()
       hasBlockCrsMatrix_ = ! A_bcrs.is_null ();
     }
 
-    if (PrecType_ == Details::MTGS || PrecType_ == Details::MTSGS) {
+    if (PrecType_ == Details::MTGS || PrecType_ == Details::MTSGS ||
+        PrecType_ == Details::GS2  || PrecType_ == Details::SGS2) {
       const crs_matrix_type* crsMat =
         dynamic_cast<const crs_matrix_type*> (A_.get());
       TEUCHOS_TEST_FOR_EXCEPTION
@@ -677,12 +698,19 @@ void Relaxation<MatrixType>::initialize ()
 
       this->mtKernelHandle_ = Teuchos::rcp (new mt_kernel_handle_type ());
       if (mtKernelHandle_->get_gs_handle () == nullptr) {
-        if(this->clusterSize_ == 1)
+        if (PrecType_ == Details::GS2 || PrecType_ == Details::SGS2)
+          mtKernelHandle_->create_gs_handle (KokkosSparse::GS_TWOSTAGE);
+        else if(this->clusterSize_ == 1)
           mtKernelHandle_->create_gs_handle ();
         else
           mtKernelHandle_->create_gs_handle (KokkosSparse::CLUSTER_DEFAULT, this->clusterSize_);
       }
       local_matrix_type kcsr = crsMat->getLocalMatrix ();
+      if (PrecType_ == Details::GS2 || PrecType_ == Details::SGS2) {
+        // set parameters for two-stage GS
+        mtKernelHandle_->set_gs_set_num_inner_sweeps (NumInnerSweeps_);
+        mtKernelHandle_->set_gs_twostage (!InnerSpTrsv_, A_->getNodeNumRows ());
+      }
 
       using KokkosSparse::Experimental::gauss_seidel_symbolic;
       gauss_seidel_symbolic<mt_kernel_handle_type,
@@ -1091,9 +1119,10 @@ void Relaxation<MatrixType>::compute ()
     // Teuchos::ScalarTraits when its template parameter is not a
     // floating-point type.  (Ifpack2 sometimes gets instantiated for
     // integer Scalar types.)
-    const IST oneOverMinDiagVal = (MinDiagonalValue_ == zero) ?
-      KAT::one () / static_cast<IST> (SmallTraits<scalar_type>::eps ()) :
-      KAT::one () / static_cast<IST> (MinDiagonalValue_);
+    IST oneOverMinDiagVal = KAT::one () / static_cast<IST> (SmallTraits<scalar_type>::eps ());
+    if ( MinDiagonalValue_ != zero) 
+      oneOverMinDiagVal = KAT::one () / static_cast<IST> (MinDiagonalValue_);
+      
     // It's helpful not to have to recompute this magnitude each time.
     const magnitude_type minDiagValMag = STS::magnitude (MinDiagonalValue_);
 
@@ -1283,8 +1312,11 @@ void Relaxation<MatrixType>::compute ()
       Diagonal_->sync_device ();
     }
 
-    if (PrecType_ == Ifpack2::Details::MTGS ||
-        PrecType_ == Ifpack2::Details::MTSGS) {
+    if (PrecType_ == Ifpack2::Details::MTGS  ||
+        PrecType_ == Ifpack2::Details::MTSGS ||
+        PrecType_ == Ifpack2::Details::GS2   ||
+        PrecType_ == Ifpack2::Details::SGS2) {
+
       //KokkosKernels GaussSeidel Initialization.
 
       const crs_matrix_type* crsMat =
@@ -2613,6 +2645,10 @@ std::string Relaxation<MatrixType>::description () const
     os << "MT Gauss-Seidel";
   } else if (PrecType_ == Ifpack2::Details::MTSGS) {
     os << "MT Symmetric Gauss-Seidel";
+  } else if (PrecType_ == Ifpack2::Details::GS2) {
+    os << "Two-stage Gauss-Seidel";
+  } else if (PrecType_ == Ifpack2::Details::SGS2) {
+    os << "Two-stage Symmetric Gauss-Seidel";
   }
   else {
     os << "INVALID";
@@ -2693,6 +2729,10 @@ describe (Teuchos::FancyOStream &out,
         out << "MT Gauss-Seidel";
       } else if (PrecType_ == Ifpack2::Details::MTSGS) {
         out << "MT Symmetric Gauss-Seidel";
+      } else if (PrecType_ == Ifpack2::Details::GS2) {
+        out << "Two-stage Gauss-Seidel";
+      } else if (PrecType_ == Ifpack2::Details::SGS2) {
+        out << "Two-stage Symmetric Gauss-Seidel";
       } else {
         out << "INVALID";
       }

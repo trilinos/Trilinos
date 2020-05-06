@@ -37,12 +37,7 @@ using Tempus::IntegratorBasic;
 using Tempus::SolutionHistory;
 using Tempus::SolutionState;
 
-// Comment out any of the following tests to exclude from build/run.
-#define TEST_CONSTRUCTING_FROM_DEFAULTS
-#define TEST_VANDERPOL
 
-
-#ifdef TEST_CONSTRUCTING_FROM_DEFAULTS
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(IMEX_RK_Partitioned, ConstructingFromDefaults)
@@ -90,7 +85,7 @@ TEUCHOS_UNIT_TEST(IMEX_RK_Partitioned, ConstructingFromDefaults)
   Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
     stepper->getModel()->getNominalValues();
   auto icSolution = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
-  auto icState = rcp(new Tempus::SolutionState<double>(icSolution));
+  auto icState = Tempus::createSolutionStateX(icSolution);
   icState->setTime    (timeStepControl->getInitTime());
   icState->setIndex   (timeStepControl->getInitIndex());
   icState->setTimeStep(0.0);
@@ -137,10 +132,8 @@ TEUCHOS_UNIT_TEST(IMEX_RK_Partitioned, ConstructingFromDefaults)
   TEST_FLOATING_EQUALITY(get_ele(*(x), 0),  1.810210, 1.0e-4 );
   TEST_FLOATING_EQUALITY(get_ele(*(x), 1), -0.754602, 1.0e-4 );
 }
-#endif // TEST_CONSTRUCTING_FROM_DEFAULTS
 
 
-#ifdef TEST_VANDERPOL
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(IMEX_RK_Partitioned, VanDerPol)
@@ -280,7 +273,6 @@ TEUCHOS_UNIT_TEST(IMEX_RK_Partitioned, VanDerPol)
   }
   Teuchos::TimeMonitor::summarize();
 }
-#endif // TEST_VANDERPOL
 
 
 } // namespace Tempus_Test

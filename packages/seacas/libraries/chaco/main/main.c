@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2017 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017, 2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -179,9 +179,9 @@ int main(void)
     eigtol = EIGEN_TOLERANCE;
     seed   = RANDOM_SEED;
 
-    INTERFACE(nvtxs, start, adjacency, vwgts, ewgts, x, y, z, outassignptr, outfileptr, assignment,
-              architecture, ndims_tot, mesh_dims, goal, global_method, local_method, rqi_flag, vmax,
-              ndims, eigtol, seed);
+    INTER_FACE(nvtxs, start, adjacency, vwgts, ewgts, x, y, z, outassignptr, outfileptr, assignment,
+               architecture, ndims_tot, mesh_dims, goal, global_method, local_method, rqi_flag,
+               vmax, ndims, eigtol, seed);
 
   skip:
     if (global_method == 3) {

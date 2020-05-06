@@ -51,6 +51,7 @@ TEST_CASE("number_width", "[number_width]")
   }
 }
 
+#if !defined __NVCC__
 TEST_CASE("str_equal", "[str_equal]")
 {
   REQUIRE(Ioss::Utils::str_equal("", ""));
@@ -205,3 +206,4 @@ TEST_CASE("format_id_list", "[format_id_list]")
     CHECK_THROWS(Ioss::Utils::format_id_list({1, 2, 3, 3, 4, 5, 6}));
   }
 }
+#endif

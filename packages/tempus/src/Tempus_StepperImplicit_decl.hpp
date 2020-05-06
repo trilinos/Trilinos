@@ -232,19 +232,23 @@ public:
   //@{
     virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
+
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel()
     {
       Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model;
       if (wrapperModel_ != Teuchos::null) model = wrapperModel_->getAppModel();
       return model;
     }
+
     virtual Teuchos::RCP<const WrapperModelEvaluator<Scalar> >
       getWrapperModel(){return wrapperModel_;}
 
     virtual void setDefaultSolver();
+
     /// Set solver.
     virtual void setSolver(
       Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
+
     virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
       { return solver_; }
 
@@ -254,6 +258,7 @@ public:
 
     /// Return alpha = d(xDot)/dx.
     virtual Scalar getAlpha(const Scalar dt) const = 0;
+
     /// Return beta  = d(x)/dx.
     virtual Scalar getBeta (const Scalar dt) const = 0;
 
@@ -289,23 +294,12 @@ public:
       zeroInitialGuess_ = zIG;
       this->isInitialized_ = false;
     }
+
     virtual bool getZeroInitialGuess() const { return zeroInitialGuess_; }
 
     virtual Scalar getInitTimeStep(
         const Teuchos::RCP<SolutionHistory<Scalar> >& /* solutionHistory */) const
       {return Scalar(1.0e+99);}
-
-    /// Set xDot for Stepper storage.
-    virtual void setStepperXDot(Teuchos::RCP<Thyra::VectorBase<Scalar> > xDot)
-      { stepperXDot_ = xDot; }
-
-    /// Get xDot from SolutionState or Stepper storage.
-    virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getStepperXDot(
-      Teuchos::RCP<SolutionState<Scalar> > state);
-
-    /// Get xDotDot from SolutionState or Stepper storage.
-    virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getStepperXDotDot(
-      Teuchos::RCP<SolutionState<Scalar> > state);
   //@}
 
   /// \name Overridden from Teuchos::Describable
@@ -324,10 +318,6 @@ protected:
   bool zeroInitialGuess_;
 
   Teuchos::RCP<StepperObserver<Scalar> >              stepperObserver_;
-
-  // RCP to state or temporary storage if needed.
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >            stepperXDot_;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >            stepperXDotDot_;
 };
 
 } // namespace Tempus

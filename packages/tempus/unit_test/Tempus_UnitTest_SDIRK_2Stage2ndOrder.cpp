@@ -35,60 +35,22 @@ using Teuchos::getParametersFromXmlFile;
 
 using Tempus::StepperFactory;
 
-// Comment out any of the following tests to exclude from build/run.
-#define CONSTRUCTION
-#define STEPPERFACTORY_CONSTRUCTION
 
-
-#ifdef CONSTRUCTION
 // ************************************************************
 // ************************************************************
-TEUCHOS_UNIT_TEST(SDIRK_2Stage2ndOrder, Construction)
+TEUCHOS_UNIT_TEST(SDIRK_2Stage2ndOrder, Default_Construction)
 {
-  auto model   = rcp(new Tempus_Test::SinCosModel<double>());
-
-  // Default construction.
   auto stepper = rcp(new Tempus::StepperSDIRK_2Stage2ndOrder<double>());
-  stepper->setModel(model);
-  stepper->initialize();
-  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  testDIRKAccessorsFullConstruction(stepper);
 
-
-  // Default values for construction.
-  auto obs    = rcp(new Tempus::StepperRKObserverComposite<double>());
-  auto solver = rcp(new Thyra::NOXNonlinearSolver());
-  solver->setParameterList(Tempus::defaultSolverParameters());
-
-  bool useFSAL              = stepper->getUseFSALDefault();
-  std::string ICConsistency = stepper->getICConsistencyDefault();
-  bool ICConsistencyCheck   = stepper->getICConsistencyCheckDefault();
-  bool useEmbedded          = stepper->getUseEmbeddedDefault();
-  bool zeroInitialGuess     = stepper->getZeroInitialGuess();
-  double gamma              = 0.2928932188134524;
-
-  // Test the set functions.
-  stepper->setObserver(obs);                           stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-  stepper->setSolver(solver);                          stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-  stepper->setUseFSAL(useFSAL);                        stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-  stepper->setICConsistency(ICConsistency);            stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-  stepper->setICConsistencyCheck(ICConsistencyCheck);  stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-  stepper->setUseEmbedded(useEmbedded);                stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-  stepper->setZeroInitialGuess(zeroInitialGuess);      stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-
-  stepper->setGamma(gamma);                            stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-
-
-  // Full argument list construction.
-  stepper = rcp(new Tempus::StepperSDIRK_2Stage2ndOrder<double>(
-    model, obs, solver, useFSAL, ICConsistency, ICConsistencyCheck,
-    useEmbedded, zeroInitialGuess, gamma));
-  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  // Test stepper properties.
+  TEUCHOS_ASSERT(stepper->getOrder() == 2);
+  TEUCHOS_ASSERT(stepper->getGamma() == 0.2928932188134524);
+  stepper->setGamma(0.5); stepper->initialize(); TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
 }
-#endif // CONSTRUCTION
 
 
-#ifdef STEPPERFACTORY_CONSTRUCTION
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(SDIRK_2Stage2ndOrder, StepperFactory_Construction)
@@ -96,7 +58,16 @@ TEUCHOS_UNIT_TEST(SDIRK_2Stage2ndOrder, StepperFactory_Construction)
   auto model = rcp(new Tempus_Test::SinCosModel<double>());
   testFactoryConstruction("SDIRK 2 Stage 2nd order", model);
 }
-#endif // STEPPERFACTORY_CONSTRUCTION
+
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(SDIRK_2Stage2ndOrder, AppAction)
+{
+  auto stepper = rcp(new Tempus::StepperSDIRK_2Stage2ndOrder<double>());
+  auto model = rcp(new Tempus_Test::SinCosModel<double>());
+  testRKAppAction(stepper, model, out, success);
+}
 
 
 } // namespace Tempus_Test

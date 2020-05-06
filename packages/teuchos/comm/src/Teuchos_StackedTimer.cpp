@@ -40,6 +40,7 @@
 #include "Teuchos_StackedTimer.hpp"
 #include <limits>
 #include <ctime>
+#include <cctype>
 #include <algorithm>
 #include <fstream>
 #include <sstream>
@@ -605,8 +606,35 @@ StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os,
   return total_time;
 }
 
+static void printXMLEscapedString(std::ostream& os, const std::string& str)
+{
+  for(char c : str)
+  {
+    switch(c)
+    {
+      case '<':
+        os << "&lt;";
+        break;
+      case '>':
+        os << "&gt;";
+        break;
+      case '\'':
+        os << "&apos;";
+        break;
+      case '"':
+        os << "&quot;";
+        break;
+      case '&':
+        os << "&amp;";
+        break;
+      default:
+        os << c;
+    }
+  }
+}
+
 double
-StackedTimer::printLevelXML (std::string prefix, int print_level, std::ostream& os, std::vector<bool> &printed, double parent_time)
+StackedTimer::printLevelXML (std::string prefix, int print_level, std::ostream& os, std::vector<bool> &printed, double parent_time, const std::string& rootName)
 {
   //Adding an extra indent level, since the <performance-report> header is at indent 0
   int indent = 4 * (print_level + 1);
@@ -626,12 +654,18 @@ StackedTimer::printLevelXML (std::string prefix, int print_level, std::ostream& 
     for (int j = 0; j < indent; j++)
       os << " ";
     bool leaf = split_names.first.length() > 0;
-    os << "<timing name=\"" << split_names.second << "\" value=\"" << sum_[i]/active_[i] << "\"";
+    os << "<timing name=\"";
+    if(level == 0 && rootName.length())
+      printXMLEscapedString(os, rootName);
+    else
+      printXMLEscapedString(os, split_names.second);
+    os << "\" value=\"" << sum_[i]/active_[i] << "\"";
     if(leaf)
       os << "/>\n";
     else
       os << ">\n";
     printed[i] = true;
+    //note: don't need to pass in prependRoot, since the recursive calls don't apply to the root level
     double sub_time = printLevelXML(flat_names_[i], print_level+1, os, printed, sum_[i]/active_[i]);
     // Print Remainder
     if (sub_time > 0 ) {
@@ -703,6 +737,8 @@ StackedTimer::reportXML(std::ostream &os, const std::string& datestamp, const st
 std::string
 StackedTimer::reportWatchrXML(const std::string& name, Teuchos::RCP<const Teuchos::Comm<int> > comm) {
   const char* rawWatchrDir = getenv("WATCHR_PERF_DIR");
+  const char* rawBuildName = getenv("WATCHR_BUILD_NAME");
+  //WATCHR_PERF_DIR is required (will also check nonempty below)
   if(!rawWatchrDir)
     return "";
   std::string watchrDir = rawWatchrDir;
@@ -711,6 +747,8 @@ StackedTimer::reportWatchrXML(const std::string& name, Teuchos::RCP<const Teucho
     //Output directory has not been set, so don't produce output.
     return "";
   }
+  //But the build name is optional (may be empty)
+  std::string buildName = rawBuildName ? rawBuildName : "";
   std::string datestamp;
   std::string timestamp;
   {
@@ -731,12 +769,30 @@ StackedTimer::reportWatchrXML(const std::string& name, Teuchos::RCP<const Teucho
   std::string fullFile;
   //only open the file on rank 0
   if(rank(*comm) == 0) {
-    fullFile = watchrDir + '/' + name + '_' + datestamp + ".xml";
+    std::string nameNoSpaces = name;
+    for(char& c : nameNoSpaces)
+    {
+      if(isspace(c))
+        c = '_';
+    }
+    if(buildName.length())
+    {
+      //In filename, replace all whitespace with underscores
+      std::string buildNameNoSpaces = buildName;
+      for(char& c : buildNameNoSpaces)
+      {
+        if(isspace(c))
+          c = '_';
+      }
+      fullFile = watchrDir + '/' + buildNameNoSpaces + "-" + nameNoSpaces + '_' + datestamp + ".xml";
+    }
+    else
+      fullFile = watchrDir + '/' + nameNoSpaces + '_' + datestamp + ".xml";
     std::ofstream os(fullFile);
     std::vector<bool> printed(flat_names_.size(), false);
     os << "<?xml version=\"1.0\"?>\n";
     os << "<performance-report date=\"" << timestamp << "\" name=\"nightly_run_" << datestamp << "\" time-units=\"seconds\">\n";
-    printLevelXML("", 0, os, printed, 0.0);
+    printLevelXML("", 0, os, printed, 0.0, buildName + ": " + name);
     os << "</performance-report>\n";
   }
   return fullFile;
@@ -744,6 +800,9 @@ StackedTimer::reportWatchrXML(const std::string& name, Teuchos::RCP<const Teucho
 
 void StackedTimer::enableVerbose(const bool enable_verbose)
 {enable_verbose_ = enable_verbose;}
+
+void StackedTimer::enableVerboseTimestamps(const unsigned levels)
+{verbose_timestamp_levels_ = levels;}
 
 void StackedTimer::setVerboseOstream(const Teuchos::RCP<std::ostream>& os)
 {verbose_ostream_ = os;}

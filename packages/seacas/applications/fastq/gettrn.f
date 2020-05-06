@@ -90,7 +90,7 @@ C  FOR THE FIRST TRIANGLE,
 C  FIND DISTANCES FROM CORNER TO CORNER,  AND CORNERS TO SIDE DIVISIONS
 C
       INT = I6 - I4
-      PROP = FLOAT (I6 - I5) / FLOAT (INT)
+      PROP = DBLE(I6 - I5) / DBLE(INT)
       XMID1 = X (I3) +  (PROP *  (X (I7) - X (I3)))
       YMID1 = Y (I3) +  (PROP *  (Y (I7) - Y (I3)))
       D1 = SQRT ( (X (I5) - X (I3)) **2 +  (Y (I5) - Y (I3)) **2)
@@ -124,7 +124,7 @@ C  FOR THE SECOND TRIANGLE,
 C  FIND DISTANCES FROM CORNER TO CORNER,  AND CORNERS TO SIDE DIVISIONS
 C
       INT = I6 - I4
-      PROP = FLOAT (NPER + 1 - I8) / FLOAT (INT)
+      PROP = DBLE(NPER + 1 - I8) / DBLE(INT)
       XMID2 = X (I3) +  (PROP *  (X (I7) - X (I3)))
       YMID2 = Y (I3) +  (PROP *  (Y (I7) - Y (I3)))
       D1 = SQRT ( (X (I3) - X (I1)) **2 +  (Y (I3) - Y (I1)) **2)

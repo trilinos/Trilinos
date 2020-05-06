@@ -94,8 +94,13 @@ size_t TpetraImport<LocalOrdinal,GlobalOrdinal,Node>::getNumRemoteIDs() const
 { XPETRA_MONITOR("TpetraImport::getNumRemoteIDs"); return import_->getNumRemoteIDs(); }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-void TpetraImport<LocalOrdinal,GlobalOrdinal,Node>::setDistributorParameters(const Teuchos::RCP<Teuchos::ParameterList> params) const
-{ XPETRA_MONITOR("TpetraImport::setDistributorParameters"); import_->getDistributor().setParameterList(params); }
+void TpetraImport<LocalOrdinal,GlobalOrdinal,Node>::setDistributorParameters(const Teuchos::RCP<Teuchos::ParameterList> params) const{
+  XPETRA_MONITOR("TpetraImport::setDistributorParameters");
+  import_->getDistributor().setParameterList(params);
+  auto revDistor = import_->getDistributor().getReverse(false);
+  if (!revDistor.is_null())
+    revDistor->setParameterList(params);
+}
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 ArrayView< const LocalOrdinal > TpetraImport<LocalOrdinal,GlobalOrdinal,Node>::getRemoteLIDs() const

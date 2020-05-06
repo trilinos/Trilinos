@@ -132,8 +132,8 @@ initializeSolutionHistory(Teuchos::RCP<SolutionState<Scalar> > state)
 
   if (state == Teuchos::null) {
     // Construct default IC from the application model
-    RCP<SolutionState<Scalar> > newState = rcp(new SolutionState<Scalar>(
-      stepper_->getModel(), stepper_->getDefaultStepperState(), Teuchos::null));
+    RCP<SolutionState<Scalar> > newState = createSolutionStateME(
+      stepper_->getModel(), stepper_->getDefaultStepperState());
 
     // Set SolutionState from TimeStepControl
     newState->setTime    (timeStepControl_->getInitTime());
@@ -187,8 +187,9 @@ initializeSolutionHistory(Scalar t0,
   else
     Thyra::assign(xdotdot.ptr(), *(xdotdot0));
 
-  RCP<SolutionState<Scalar> > newState = rcp(new SolutionState<Scalar>(
-    x0->clone_v(), xdot, xdotdot, stepper_->getDefaultStepperState()));
+  RCP<SolutionState<Scalar> > newState = createSolutionStateX(
+    x0->clone_v(), xdot, xdotdot);
+  newState->setStepperState(stepper_->getDefaultStepperState());
 
   // Set SolutionState from TimeStepControl
   newState->setTime    (t0);
@@ -703,43 +704,43 @@ IntegratorBasic<Scalar>::unsetParameterList()
 
 /// Non-member constructor
 template<class Scalar>
-Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic(
+Teuchos::RCP<IntegratorBasic<Scalar> > integratorBasic(
   Teuchos::RCP<Teuchos::ParameterList>                     pList,
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      model)
 {
-  Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integrator =
-    Teuchos::rcp(new Tempus::IntegratorBasic<Scalar>(pList, model));
+  Teuchos::RCP<IntegratorBasic<Scalar> > integrator =
+    Teuchos::rcp(new IntegratorBasic<Scalar>(pList, model));
   return(integrator);
 }
 
 /// Non-member constructor
 template<class Scalar>
-Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic(
+Teuchos::RCP<IntegratorBasic<Scalar> > integratorBasic(
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      model,
   std::string stepperType)
 {
-  Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integrator =
-    Teuchos::rcp(new Tempus::IntegratorBasic<Scalar>(model, stepperType));
+  Teuchos::RCP<IntegratorBasic<Scalar> > integrator =
+    Teuchos::rcp(new IntegratorBasic<Scalar>(model, stepperType));
   return(integrator);
 }
 
 /// Non-member constructor
 template<class Scalar>
-Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic()
+Teuchos::RCP<IntegratorBasic<Scalar> > integratorBasic()
 {
-  Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integrator =
-    Teuchos::rcp(new Tempus::IntegratorBasic<Scalar>());
+  Teuchos::RCP<IntegratorBasic<Scalar> > integrator =
+    Teuchos::rcp(new IntegratorBasic<Scalar>());
   return(integrator);
 }
 
 /// Non-member constructor
 template<class Scalar>
-Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic(
+Teuchos::RCP<IntegratorBasic<Scalar> > integratorBasic(
   Teuchos::RCP<Teuchos::ParameterList>                     pList,
   std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > models)
 {
-  Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integrator =
-    Teuchos::rcp(new Tempus::IntegratorBasic<Scalar>(pList, models));
+  Teuchos::RCP<IntegratorBasic<Scalar> > integrator =
+    Teuchos::rcp(new IntegratorBasic<Scalar>(pList, models));
   return(integrator);
 }
 

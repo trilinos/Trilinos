@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -58,8 +58,7 @@
 Ioss::SideBlock::SideBlock(Ioss::DatabaseIO *io_database, const std::string &my_name,
                            const std::string &side_type, const std::string &element_type,
                            size_t side_count)
-    : Ioss::EntityBlock(io_database, my_name, side_type, side_count), owner_(nullptr),
-      parentTopology_(nullptr), parentBlock_(nullptr), consistentSideNumber(-1)
+    : Ioss::EntityBlock(io_database, my_name, side_type, side_count)
 {
   parentTopology_ = ElementTopology::factory(element_type);
   assert(parentTopology_ != nullptr);
@@ -76,6 +75,12 @@ Ioss::SideBlock::SideBlock(Ioss::DatabaseIO *io_database, const std::string &my_
       Ioss::Field("element_side_raw", field_int_type(), "pair", Ioss::Field::MESH, side_count));
 
   // Distribution factors are optional...
+}
+
+Ioss::SideBlock::SideBlock(const Ioss::SideBlock &other)
+    : EntityBlock(other), parentTopology_(other.parentTopology_),
+      consistentSideNumber(other.consistentSideNumber)
+{
 }
 
 int64_t Ioss::SideBlock::internal_get_field_data(const Ioss::Field &field, void *data,

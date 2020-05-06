@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -51,11 +51,11 @@
 namespace Iodw {
   namespace Utils {
 
-    void msg(const std::string &m) { std::cout << m << std::endl; };
-    void msg(int m) { std::cout << m << std::endl; };
-    void msg(int64_t m) { std::cout << m << std::endl; };
-    void msg(double m) { std::cout << m << std::endl; };
-    void msg(float m) { std::cout << m << std::endl; };
+    void msg(const std::string &m) { std::cerr << m << "\n"; };
+    void msg(int m) { std::cerr << m << "\n"; };
+    void msg(int64_t m) { std::cerr << m << "\n"; };
+    void msg(double m) { std::cerr << m << "\n"; };
+    void msg(float m) { std::cerr << m << "\n"; };
 
     auto print_Property = [](Ioss::Property p) {
       auto type = p.get_type();
@@ -82,21 +82,20 @@ namespace Iodw {
 
     auto print_Field = [](Ioss::Field f) {
       size_t size = f.get_size();
-      std::cout << f.raw_count() << std::endl;
+      std::cerr << f.raw_count() << "\n";
     };
 
     void IossToDW::operator()(Ioss::DatabaseIO *dbi)
     {
       auto process_GroupingEntity = [](Ioss::Region *r, Ioss::GroupingEntity *entity) {
         msg("process GroupingEntity");
-        std::cout << "\t" << entity->type_string() << ", " << entity->name() << std::endl;
+        std::cerr << "\t" << entity->type_string() << ", " << entity->name() << "\n";
         {
           std::vector<std::string> descr;
           entity->property_describe(&descr);
           msg("\t\tproperties:");
           for (auto name : descr) {
-            std::cout << "\t\t\t" << r->name() << " * " << entity->name() << " * " << name
-                      << std::endl;
+            std::cerr << "\t\t\t" << r->name() << " * " << entity->name() << " * " << name << "\n";
             // print_Property(entity->get_property(name));
           }
         }
@@ -106,8 +105,7 @@ namespace Iodw {
           entity->field_describe(&descr);
           msg("\t\tfields:");
           for (auto name : descr) {
-            std::cout << "\t\t\t" << r->name() << " * " << entity->name() << " * " << name
-                      << std::endl;
+            std::cerr << "\t\t\t" << r->name() << " * " << entity->name() << " * " << name << "\n";
             // print_Field(entity->get_field(name));
           }
         }
@@ -126,7 +124,7 @@ namespace Iodw {
 
       RegionKeys keys;
 
-      std::cout << "IossToDW::operator(): " << dbi->get_filename() << std::endl;
+      std::cerr << "IossToDW::operator(): " << dbi->get_filename() << "\n";
       std::string   region_name("region");
       Ioss::Region *region = new Ioss::Region(dbi, region_name);
 

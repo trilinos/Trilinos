@@ -48,6 +48,10 @@
 SET(REQUIRED_HEADERS netcdf.h)
 SET(REQUIRED_LIBS_NAMES netcdf)
 
+IF (TPL_ENABLE_MPI)
+  SET(REQUIRED_LIBS_NAMES ${REQUIRED_LIBS_NAMES} pnetcdf)
+ENDIF()
+
 #
 # Second, search for Netcdf components (if allowed) using the standard
 # FIND_PACKAGE(NetCDF ...).
@@ -80,7 +84,11 @@ IF (Netcdf_ALLOW_PREFIND)
     set(TPL_Netcdf_INCLUDE_DIRS ${NetCDF_INCLUDE_DIRS} CACHE PATH
       "${DOCSTR} header files.")
   ENDIF()
-
+ELSE()
+  # Curl library is only required if DAP is enabled; should detect inside FindNetCDF.cmake,
+  # but that is not being called... SEMS has DAP enabled; many HPC systems don't, but they
+  # override these settings...
+  SET(REQUIRED_LIBS_NAMES ${REQUIRED_LIBS_NAMES} curl)
 ENDIF()
 
 #

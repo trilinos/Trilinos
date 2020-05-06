@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -33,6 +33,6 @@
 #ifndef IOSS_VERSION_H
 #define IOSS_VERSION_H
 namespace Ioss {
-  inline const char *Version() { return "2019-10-30"; }
+  inline const char *Version() { return "2020-04-27"; }
 } // namespace Ioss
 #endif

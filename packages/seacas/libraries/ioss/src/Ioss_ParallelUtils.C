@@ -101,7 +101,7 @@ void Ioss::ParallelUtils::add_environment_properties(Ioss::PropertyManager &prop
       bool        all_digit = value.find_first_not_of("0123456789") == std::string::npos;
 
       if (do_print && rank == 0) {
-        fmt::print(stderr, "IOSS: Adding property '{}' with value '{}'\n", prop, value);
+        fmt::print(Ioss::OUTPUT(), "IOSS: Adding property '{}' with value '{}'\n", prop, value);
       }
       if (all_digit) {
         int int_value = std::stoi(value);
@@ -527,7 +527,7 @@ void Ioss::ParallelUtils::progress(const std::string &output) const
 
   if (parallel_rank() == 0) {
     double diff = Utils::timer() - begin;
-    fmt::print(stderr, "  [{:.3f}] ({}MiB  {}MiB  {}MiB)\t{}\n", diff, min / MiB, max / MiB,
+    fmt::print(Ioss::DEBUG(), "  [{:.3f}] ({}MiB  {}MiB  {}MiB)\t{}\n", diff, min / MiB, max / MiB,
                avg / MiB, output);
   }
 }

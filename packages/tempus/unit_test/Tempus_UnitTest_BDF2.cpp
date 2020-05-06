@@ -36,14 +36,11 @@ using Teuchos::getParametersFromXmlFile;
 using Tempus::StepperFactory;
 
 // Comment out any of the following tests to exclude from build/run.
-#define CONSTRUCTION
-#define STEPPERFACTORY_CONSTRUCTION
 
 
-#ifdef CONSTRUCTION
 // ************************************************************
 // ************************************************************
-TEUCHOS_UNIT_TEST(BDF2, Construction)
+TEUCHOS_UNIT_TEST(BDF2, Default_Construction)
 {
   auto model = rcp(new Tempus_Test::SinCosModel<double>());
 
@@ -85,11 +82,11 @@ TEUCHOS_UNIT_TEST(BDF2, Construction)
     ICConsistency, ICConsistencyCheck, zeroInitialGuess));
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
+  // Test stepper properties.
+  TEUCHOS_ASSERT(stepper->getOrder() == 2);
 }
-#endif // CONSTRUCTION
 
 
-#ifdef STEPPERFACTORY_CONSTRUCTION
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(BDF2, StepperFactory_Construction)
@@ -97,7 +94,6 @@ TEUCHOS_UNIT_TEST(BDF2, StepperFactory_Construction)
   auto model = rcp(new Tempus_Test::SinCosModel<double>());
   testFactoryConstruction("BDF2", model);
 }
-#endif // STEPPERFACTORY_CONSTRUCTION
 
 
 } // namespace Tempus_Test
