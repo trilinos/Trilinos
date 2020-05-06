@@ -117,7 +117,7 @@ namespace Intrepid2 {
     KOKKOS_INLINE_FUNCTION
     Orientation();
 
-    KOKKOS_INLINE_FUNCTION
+    KOKKOS_DEFAULTED_FUNCTION
     Orientation(const Orientation &b) = default;
 
     KOKKOS_INLINE_FUNCTION
