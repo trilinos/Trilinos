@@ -113,6 +113,7 @@ Ptr<const AlgorithmState<Real>> NewOptimizationSolver<Real>::getAlgorithmState(v
     case TYPE_E:  return algoE_->getState();
     case TYPE_EB: return algoG_->getState();
     case TYPE_LAST:
+    default:
       ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
         "Error in NewOptimizationSolver::getAlgorithmState() : Unsupported problem type");
   }
@@ -126,6 +127,7 @@ void NewOptimizationSolver<Real>::reset(void) {
     case TYPE_E:  algoE_->reset(); break;
     case TYPE_EB: algoG_->reset(); break;
     case TYPE_LAST:
+    default:
       ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
         "Error in NewOptimizationSolver::reset() : Unsupported problem type");
   }
