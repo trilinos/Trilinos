@@ -189,12 +189,16 @@ namespace { // (anonymous)
     else {
       // This could throw invalid_argument or out_of_range.
       // Go ahead and let it do so.
-      const long long val = std::stoll(stringToUpper(varVal));
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (val < static_cast<long long>(0), std::out_of_range,
-         prefix << "Environment variable \""
-         << environmentVariableName << "\" is supposed to be a size, "
-         "but it has a negative integer value " << val << ".");
+      long long val = std::stoll(stringToUpper(varVal));
+      if (val < static_cast<long long>(0)) {
+        // If negative - user has requested threshold be lifted
+        return std::numeric_limits<size_t>::max();
+      }
+//      TEUCHOS_TEST_FOR_EXCEPTION
+//        (val < static_cast<long long>(0), std::out_of_range,
+//         prefix << "Environment variable \""
+//         << environmentVariableName << "\" is supposed to be a size, "
+//         "but it has a negative integer value " << val << ".");
       if (sizeof(long long) > sizeof(size_t)) {
         // It's hard to test this code, but I want to try writing it
         // at least, in case we ever have to run on 32-bit machines or

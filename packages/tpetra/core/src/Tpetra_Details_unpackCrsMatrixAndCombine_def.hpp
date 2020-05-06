@@ -929,10 +929,10 @@ unpackAndCombineIntoCrsMatrix(
       {
         const char* const in_buf = imports.data() + offsets(i);
         (void) PackTraits<LO>::unpackValue(num_ent_LO, in_buf);
-        num_dense += 1;
       }
       const size_t num_ent = static_cast<size_t>(num_ent_LO);
       dense_rows[i] = (num_ent > threshold) ? 1 : 0;
+      num_dense += dense_rows[i];
     },
     num_dense_rows
   );
