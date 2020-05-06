@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -57,7 +57,7 @@
 
 namespace {
   std::string codename;
-  std::string version = "5.0";
+  std::string version = "5.1";
 
   bool mem_stats = false;
 
@@ -69,9 +69,11 @@ namespace {
 int main(int argc, char *argv[])
 {
   int rank = 0;
+  int num_proc = 1;
 #ifdef SEACAS_HAVE_MPI
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &num_proc);
   ON_BLOCK_EXIT(MPI_Finalize);
 #endif
 
@@ -128,7 +130,13 @@ int main(int argc, char *argv[])
   double end = Ioss::Utils::timer();
 
   if (rank == 0 && !interFace.quiet) {
-    fmt::print(stderr, "\n\n\tTotal Execution time = {} seconds\n", end - begin);
+    if (num_proc > 1) {
+      fmt::print(stderr, "\n\n\tTotal Execution time = {:.5} seconds on {} processors.\n",
+		 end - begin, num_proc);
+    }
+    else {
+      fmt::print(stderr, "\n\n\tTotal Execution time = {:.5} seconds.\n", end - begin);
+    }
   }
   if (mem_stats) {
     int64_t MiB = 1024 * 1024;
@@ -365,7 +373,7 @@ namespace {
               fmt::print(stderr, "\tWriting step {:n} to {}\n", step_min + 1, filename);
             }
             else {
-              fmt::print("\tWriting steps {:n}..{:n} to {}\n", step_min + 1, step_max + 1,
+              fmt::print(stderr, "\tWriting steps {:n}..{:n} to {}\n", step_min + 1, step_max + 1,
                          filename);
             }
           }
@@ -474,6 +482,10 @@ namespace {
 
     if (!interFace.decomp_method.empty()) {
       properties.add(Ioss::Property("DECOMPOSITION_METHOD", interFace.decomp_method));
+    }
+
+    if (interFace.retain_empty_blocks) {
+      properties.add(Ioss::Property("RETAIN_EMPTY_BLOCKS", "YES"));
     }
     return properties;
   }

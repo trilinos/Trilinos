@@ -1,4 +1,4 @@
-C Copyright (C) 2009-2017 National Technology & Engineering Solutions
+C Copyright (C) 2009-2017, 2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -67,8 +67,8 @@ C=======================================================================
       REAL MAPP
       COMMON /STORAG/MEMORY(1000)
 
-      CALL VDSTFC(IFIX(DEFOUT(1)))
-      CALL VDSTBC(IFIX(DEFOUT(2)))
+      CALL VDSTFC(INT(DEFOUT(1)))
+      CALL VDSTBC(INT(DEFOUT(2)))
       CALL VDSTIN(DEFOUT(3))
       DEVP(1) = DEFOUT(1)
       DEVP(2) = DEFOUT(2)

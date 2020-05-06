@@ -90,7 +90,7 @@ C
   100 CONTINUE
 C
       IF (NUM .LE. 0) RETURN
-      ASPECT = RATSUM / FLOAT (NUM)
+      ASPECT = RATSUM / DBLE(NUM)
       ARFACT = AMIN1 (2.0 / ASPECT, 1.5)
 C
       RETURN

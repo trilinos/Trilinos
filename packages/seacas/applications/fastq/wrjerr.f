@@ -137,9 +137,9 @@ C
             CALL GETDUM (NNFLG (I), DUMMY, LEN)
             WRITE (*, 10080) NNFLG(I)
             CALL INQSTR ('FIXED DEGREE OF FREEDOM: ',TITLE)
-            READ (TITLE, '(I10)') IFIX
+            READ (TITLE, '(I10)') INT
             DO 140 J = J1, J2
-               WRITE (IUNIT, 10100, ERR = 290) NODES (J), IFIX
+               WRITE (IUNIT, 10100, ERR = 290) NODES (J), INT
   140       CONTINUE
   150    CONTINUE
       ENDIF

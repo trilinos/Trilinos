@@ -1,4 +1,4 @@
-// Copyright(C) 2016-2017 National Technology & Engineering Solutions of
+// Copyright(C) 2016-2017, 2020 National Technology & Engineering Solutions of
 // Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -62,6 +62,7 @@ public:
   int step_max() const { return stepMax_; }
   int step_interval() const { return stepInterval_; }
 
+  size_t max_files() const { return maxFiles_; }
   size_t partial() const { return partialReadCount_; }
   bool   contiguous_decomposition() const { return contig_; }
 
@@ -106,16 +107,24 @@ private:
   std::string outputPath_;
 
   size_t partialReadCount_{1000000000};
+  size_t maxFiles_{1020};
   int    processorCount_{1};
   int    debugLevel_{0};
   int    screenWidth_{0};
   int    stepMin_{1};
   int    stepMax_{1 << 30};
   int    stepInterval_{1};
-  bool   omitNodesets_{false};
-  bool   omitSidesets_{false};
-  bool   disableFieldRecognition_{false};
-  bool   contig_{false};
+
+public:
+  int  compressionLevel_{0};
+  bool shuffle_{false};
+  bool ints64Bit_{false};
+  bool netcdf4_{false};
+  bool netcdf5_{false};
+  bool disableFieldRecognition_{false};
+
+private:
+  bool contig_{false};
 
   Omissions blockOmissions_;
 

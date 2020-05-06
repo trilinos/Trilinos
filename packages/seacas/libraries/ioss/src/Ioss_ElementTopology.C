@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -158,7 +158,7 @@ unsigned int Ioss::ElementTopology::get_unique_id(const std::string &type)
   std::string  ltype    = Ioss::Utils::lowercase(type);
   auto         iter     = registry().find(ltype);
   if (iter == registry().end()) {
-    fmt::print(IOSS_WARNING, "WARNING: The topology type '{}' is not supported.\n", type);
+    fmt::print(Ioss::WARNING(), "The topology type '{}' is not supported.\n", type);
   }
   else {
     Ioss::ElementTopology *inst = (*iter).second;

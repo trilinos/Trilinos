@@ -30,6 +30,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <algorithm>
 #include <exception>
+#include <fmt/chrono.h>
 #include <fmt/ostream.h>
 #include <iomanip>
 #include <iostream>
@@ -194,7 +195,7 @@ namespace {
   }
 } // namespace
 
-std::string tsFormat = "[%H:%M:%S] ";
+std::string tsFormat = "[{:%H:%M:%S}] ";
 
 // prototypes
 
@@ -2797,19 +2798,10 @@ namespace {
       return std::string("");
     }
 
-    const int   length = 256;
-    static char time_string[length];
-
-    time_t     calendar_time = time(nullptr);
-    struct tm *local_time    = localtime(&calendar_time);
-
-    int error = strftime(time_string, length, format.c_str(), local_time);
-    if (error != 0) {
-      time_string[length - 1] = '\0';
-      return std::string(time_string);
-    }
-
-    return std::string("[ERROR]");
+    time_t      calendar_time = std::time(nullptr);
+    struct tm * local_time    = std::localtime(&calendar_time);
+    std::string time_string   = fmt::format(format, *local_time);
+    return time_string;
   }
 
   std::string format_time(double seconds)
@@ -2860,7 +2852,7 @@ namespace {
   }
 
   template <typename T, typename U>
-  void map_sideset_vars(U & /*unused*/, size_t /*unused*/, size_t /*unused*/,
+  void map_sideset_vars(U & /*unused*/, size_t /*unused*/,
                         std::vector<T> & /*unused*/, std::vector<T> & /*unused*/)
   {
     throw std::runtime_error("Internal Error.");
@@ -2868,7 +2860,7 @@ namespace {
 
   template <typename INT>
   void map_sideset_vars(Excn::SideSet<INT> &local_set, size_t entity_count,
-                        size_t glob_entity_count, std::vector<double> &values,
+                        std::vector<double> &values,
                         std::vector<double> &global_values)
   {
     // copy values to master nodeset value information
@@ -2881,19 +2873,19 @@ namespace {
 
   template <typename INT>
   void map_sideset_vars(Excn::SideSet<INT> &local_set, size_t entity_count,
-                        size_t glob_entity_count, std::vector<float> &values,
+                        std::vector<float> &values,
                         std::vector<float> &global_values)
   {
     // copy values to master nodeset value information
     for (size_t j = 0; j < entity_count; j++) {
       size_t global_loc = local_set.elemOrderMap[j];
-      SMART_ASSERT(global_loc < glob_entity_count);
+      SMART_ASSERT(global_loc < global_values.size());
       global_values[global_loc] = values[j];
     }
   }
 
   template <typename T, typename U>
-  void map_nodeset_vars(U & /*unused*/, size_t /*unused*/, size_t /*unused*/,
+  void map_nodeset_vars(U & /*unused*/, size_t /*unused*/,
                         std::vector<T> & /*unused*/, std::vector<T> & /*unused*/)
   {
     throw std::runtime_error("Internal Error.");
@@ -2901,7 +2893,7 @@ namespace {
 
   template <typename INT>
   void map_nodeset_vars(Excn::NodeSet<INT> &local_set, size_t entity_count,
-                        size_t glob_entity_count, std::vector<double> &values,
+                        std::vector<double> &values,
                         std::vector<double> &global_values)
   {
     // copy values to master nodeset value information
@@ -2914,7 +2906,7 @@ namespace {
 
   template <typename INT>
   void map_nodeset_vars(Excn::NodeSet<INT> &local_set, size_t entity_count,
-                        size_t glob_entity_count, std::vector<float> &values,
+                        std::vector<float> &values,
                         std::vector<float> &global_values)
   {
     // copy values to master nodeset value information
@@ -2974,12 +2966,12 @@ namespace {
                 break;
 
               case Excn::SSET:
-                map_sideset_vars(local_sets[p][lb], entity_count, global_sets[b].entity_count(),
+                map_sideset_vars(local_sets[p][lb], entity_count,
                                  values, master_values);
                 break;
 
               case Excn::NSET:
-                map_nodeset_vars(local_sets[p][lb], entity_count, global_sets[b].entity_count(),
+                map_nodeset_vars(local_sets[p][lb], entity_count,
                                  values, master_values);
                 break;
               default: break;

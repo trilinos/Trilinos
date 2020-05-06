@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -232,6 +232,21 @@ namespace Iogn {
         // Cast 'data' to correct size -- double
         auto *rdata = static_cast<double *>(data);
         m_generatedMesh->coordinates(rdata);
+      }
+      else if (field.get_name() == "mesh_model_coordinates_x") {
+        // Cast 'data' to correct size -- double
+        auto *rdata = static_cast<double *>(data);
+        m_generatedMesh->coordinates(1, rdata);
+      }
+      else if (field.get_name() == "mesh_model_coordinates_y") {
+        // Cast 'data' to correct size -- double
+        auto *rdata = static_cast<double *>(data);
+        m_generatedMesh->coordinates(2, rdata);
+      }
+      else if (field.get_name() == "mesh_model_coordinates_z") {
+        // Cast 'data' to correct size -- double
+        auto *rdata = static_cast<double *>(data);
+        m_generatedMesh->coordinates(3, rdata);
       }
 
       // NOTE: The implicit_ids field is ONLY provided for backward-

@@ -44,7 +44,7 @@ C
           QUADL = 1./SQRT(3.)
       END IF
 C
-      WT = 2.**NDIM / FLOAT(NQUAD)
+      WT = 2.**NDIM / DBLE(NQUAD)
       IF (NQUAD .EQ. 1) THEN
           XG(1,1) = 0.0
           XG(2,1) = 0.0

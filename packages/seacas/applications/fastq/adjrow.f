@@ -98,12 +98,12 @@ C
             NADJ1 = N2
             NADJ2 = N2
             TEPS = .95 * (PI -
-     &         ( (FLOAT(NLOOP - 2) * PI) / FLOAT (NLOOP)))
+     &         ( (DBLE(NLOOP - 2) * PI) / DBLE(NLOOP)))
             IF (TEPS .LE. EPS) EPS = TEPS
             GOTO 110
          ELSEIF (N2 .EQ. NADJ2) THEN
             TEPS = .95 * (PI -
-     &         ( (FLOAT(NLOOP - 2) * PI) / FLOAT (NLOOP)))
+     &         ( (DBLE(NLOOP - 2) * PI) / DBLE(NLOOP)))
             IF (TEPS .LE. EPS) EPS = TEPS
             GOTO 110
          ELSEIF (KOUNT .GT. NLOOP) THEN
@@ -163,7 +163,7 @@ C
 C  NOW SEE IF THIS PORTION OF THE ROW NEEDS ADJUSTED WITH A TUCK(S)
 C
          IF (KANG .GE. 1) THEN
-            RATIO = RATIO / FLOAT (KANG)
+            RATIO = RATIO / DBLE(KANG)
 C
 CC* MODIFIED BY: TED BLACKER
 CC* MODIFICATION DATE: 7/19/90
@@ -240,7 +240,7 @@ C
 C  NOW SEE IF THIS PORTION OF THE ROW NEEDS ADJUSTED WITH A WEDGE(S)
 C
          IF (KANG .GE. 1) THEN
-            RATIO = RATIO / FLOAT (KANG)
+            RATIO = RATIO / DBLE(KANG)
             IF ( ( ((RATIO .GT. WMIN1) .AND. (IDEPTH .GT. 1)) .OR.
      &         ((RATIO .GT. WMIN2) .AND. (IDEPTH .EQ. 1)) )
      &         .AND. (TANG .GT. 1.2217)) THEN

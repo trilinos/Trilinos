@@ -106,7 +106,7 @@ C=======================================================================
 
       IF (FIRST) THEN
          DO 2530 I = 1,8
-            LOGTAB(I) = LOG10(FLOAT(I+1))
+            LOGTAB(I) = LOG10(DBLE(I+1))
  2530    CONTINUE
          FIRST = .FALSE.
       END IF

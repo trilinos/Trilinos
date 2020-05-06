@@ -86,7 +86,7 @@ void check_split_assign(std::vector<Iocgns::StructuredZoneData *> &zones,
     }
 
     for (size_t i = 0; i < zones.size(); i++) {
-      CHECK(zones[i]->m_zone == i + 1);
+      CHECK(zones[i]->m_zone == int(i) + 1);
     }
 
     SECTION("assign_to_procs")

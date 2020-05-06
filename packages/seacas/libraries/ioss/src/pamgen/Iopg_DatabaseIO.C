@@ -79,8 +79,9 @@ namespace {
   // Output a message that the operation is unsupported and die...
   void unsupported(const char *operation)
   {
-    std::cerr << "ERROR: Unsupported functionality called: " << operation << '\n';
-    std::abort();
+    std::ostringstream errmsg;
+    errmsg << "ERROR: Unsupported functionality called: " << operation << '\n';
+    IOSS_ERROR(errmsg);
   }
 
   const size_t max_string_length = MAX_STR_LENGTH;
@@ -96,10 +97,8 @@ namespace {
   void pamgen_error(int exoid, int lineno, int /* processor */)
   {
     std::ostringstream errmsg;
-
     errmsg << "Pamgen error at line " << lineno << " in file '" << Version()
            << "' Please report to gdsjaar@sandia.gov if you need help.";
-
     IOSS_ERROR(errmsg);
   }
 } // namespace
@@ -292,7 +291,7 @@ namespace Iopg {
     nodeBlockCount = 1;
 
     if (nodeCount == 0) {
-      IOSS_WARNING << "No nodes were found in the model, file '" << decoded_filename() << "'";
+      Ioss::WARNING() << "No nodes were found in the model, file '" << decoded_filename() << "'";
     }
     else if (nodeCount < 0) {
       // NOTE: Code will not continue past this call...
@@ -303,7 +302,8 @@ namespace Iopg {
     }
 
     if (elementCount == 0) {
-      IOSS_WARNING << "No elements were found in the model, file: '" << decoded_filename() << "'";
+      Ioss::WARNING() << "No elements were found in the model, file: '" << decoded_filename()
+                      << "'";
     }
 
     if (elementCount < 0) {
@@ -886,8 +886,8 @@ namespace Iopg {
               block = get_region()->get_element_block(topo_or_block_name);
               if (block == nullptr) {
                 std::ostringstream errmsg;
-                std::cerr << "INTERNAL ERROR: Could not find element block '" << topo_or_block_name
-                          << "' Something is wrong in the Ioex::DatabaseIO class. Please report.\n";
+                errmsg << "INTERNAL ERROR: Could not find element block '" << topo_or_block_name
+                       << "' Something is wrong in the Iopg::DatabaseIO class. Please report.\n";
                 IOSS_ERROR(errmsg);
               }
               elem_topo = block->topology();

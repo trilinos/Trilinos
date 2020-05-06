@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -119,6 +119,13 @@ Ioss::DatabaseIO *Ioss::IOFactory::create(const std::string &type, const std::st
     auto                my_props(properties);
     Ioss::ParallelUtils pu(communicator);
     pu.add_environment_properties(my_props);
+    if (my_props.exists("SHOW_CONFIG")) {
+      static bool output = false;
+      if (!output && pu.parallel_rank() == 0) {
+	output = true;
+	show_configuration();
+      }
+    }
     Ioss::IOFactory *factory = (*iter).second;
     db                       = factory->make_IO(filename, db_usage, communicator, my_props);
   }
@@ -138,16 +145,16 @@ int Ioss::IOFactory::describe(NameList *names)
 
 void Ioss::IOFactory::show_configuration()
 {
-  fmt::print(stderr, "\nIOSS Library Version '{}'\n\n", Ioss::Version());
+  fmt::print(Ioss::OUTPUT(), "\nIOSS Library Version '{}'\n\n", Ioss::Version());
   NameList db_types;
   describe(&db_types);
-  fmt::print(stderr, "Supported database types:\n\t{}\n", fmt::join(db_types, ", "));
+  fmt::print(Ioss::OUTPUT(), "Supported database types:\n\t{}\n", fmt::join(db_types, ", "));
 
 #if defined(SEACAS_HAVE_MPI)
-  fmt::print(stderr, "\nSupported decomposition methods:\n\t{}\n", fmt::join(Ioss::valid_decomp_methods(), ", "));
+  fmt::print(Ioss::OUTPUT(), "\nSupported decomposition methods:\n\t{}\n", fmt::join(Ioss::valid_decomp_methods(), ", "));
 #endif
 
-  fmt::print(stderr, "\nThird-Party Library Configuration Information:\n\n");
+  fmt::print(Ioss::OUTPUT(), "\nThird-Party Library Configuration Information:\n\n");
 
   // Each database type may appear multiple times in the registry
   // due to aliasing (i.e. exodus, genesis, exodusII, ...)

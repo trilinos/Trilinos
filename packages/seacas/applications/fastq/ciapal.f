@@ -137,7 +137,7 @@ C
 C  MOVE THE NODE
 C
                RSUMW = 1.0/SUMW
-               RNUMK = 1.0/FLOAT (NUMK)
+               RNUMK = 1.0/DBLE(NUMK)
                FX = ALPHA * FX * RSUMW + BETA * SDX * RNUMK
                FY = ALPHA * FY * RSUMW + BETA * SDY * RNUMK
                DELX = RO * FX

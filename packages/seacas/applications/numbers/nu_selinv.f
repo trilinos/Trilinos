@@ -67,22 +67,22 @@ C      ILAST  = LOCRL (STMAX, NSTEP, ITMSEL, TIMES)
 C - Include tmin step
          II = -NINTV - 1
          II = MAX(1, II)
-         RINC = FLOAT(NBETWN) / FLOAT(II)
+         RINC = DBLE(NBETWN) / DBLE(II)
          IB = IFIRST
          IE = ILAST
       ELSE
          II = NINTV
-         RINC = FLOAT(NBETWN) / FLOAT(II)
+         RINC = DBLE(NBETWN) / DBLE(II)
          IB = IFIRST + INT(RINC + 0.5)
          IE = ILAST
       END IF
 
       NUMSEL = 0
-      RTIM = FLOAT(IB)
+      RTIM = DBLE(IB)
   100 CONTINUE
          ITMSEL(INT(RTIM+0.5)) = .TRUE.
          NUMSEL = NUMSEL + 1
-         RTIM = MIN( RTIM + RINC, FLOAT(IE))
+         RTIM = MIN( RTIM + RINC, DBLE(IE))
          IF (NUMSEL .LT. ABS(NINTV)) GO TO 100
       ITMSEL(ILAST) = .TRUE.
       STRA = ENGNOT(STMIN,2)

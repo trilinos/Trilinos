@@ -1194,7 +1194,7 @@ c
 c
 c          getting lightness is easy
 c
-      HLS(2) = FLOAT(ISUM)/FLOAT(MAXLIT)
+      HLS(2) = DBLE(ISUM)/DBLE(MAXLIT)
 c
 c          getting saturation is a little more difficult
 c
@@ -1202,9 +1202,9 @@ c
           HLS(3) = 0.
         ELSE
           IF(ISUM.LE.MAXVAL) THEN
-              HLS(3) = FLOAT(IDIF)/ISUM
+              HLS(3) = DBLE(IDIF)/ISUM
             ELSE
-              HLS(3) = FLOAT(IDIF)/(MAXLIT-ISUM)
+              HLS(3) = DBLE(IDIF)/(MAXLIT-ISUM)
             ENDIF
         ENDIF
 c
@@ -1308,7 +1308,7 @@ c
 c          f is the distance (0.-.999) along an edge between two major hues
 c
       F = HUE - IJUMP
-      INTEN = LIT*FLOAT(2*IMAXVAL+1)
+      INTEN = LIT*DBLE(2*IMAXVAL+1)
 c
 c          irange is the range a color may take on (i.e. maxval adjusted for
 c                 intensity
