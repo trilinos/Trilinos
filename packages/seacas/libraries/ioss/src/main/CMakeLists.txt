@@ -543,3 +543,25 @@ ENDIF()
 endif()
 
 ENDIF(TPL_ENABLE_CGNS)
+
+IF (TPL_ENABLE_MPI AND ${PROJECT_NAME}_ENABLE_Zoltan)
+TRIBITS_ADD_TEST(
+   io_info ARGS --config
+   NAME io_info_config_has_zoltan
+   NOEXEPREFIX NOEXESUFFIX
+   PASS_REGULAR_EXPRESSION "Zoltan Library is Available"
+   NUM_MPI_PROCS 1
+   COMM mpi serial
+  )
+ENDIF()
+
+IF (TPL_ENABLE_MPI AND TPL_ENABLE_ParMETIS)
+TRIBITS_ADD_TEST(
+   io_info ARGS --config
+   NAME io_info_config_has_parmetis
+   NOEXEPREFIX NOEXESUFFIX
+   PASS_REGULAR_EXPRESSION "ParMetis Library Version"
+   NUM_MPI_PROCS 1
+   COMM mpi serial
+  )
+ENDIF()

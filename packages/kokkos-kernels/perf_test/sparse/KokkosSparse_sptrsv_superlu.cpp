@@ -702,7 +702,7 @@ int main(int argc, char **argv) {
       using scalar_t = double;
       scalarTypeString = "(scalar_t = double)";
     #else
-      #error "Invalid type specified in KOKKOSKERNELS_SCALARS, supported types are "double,complex<double>""
+      #error "Invalid type specified in KOKKOSKERNELS_SCALARS, supported types are \"double,complex<double>\""
     #endif
   #endif
   int total_errors = test_sptrsv_perf<scalar_t> (tests, verbose, filename, symm_mode, metis, merge,

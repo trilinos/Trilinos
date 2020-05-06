@@ -567,3 +567,35 @@ int main( int argc, char* argv[] )
 #endif
   return return_val;
 }
+
+// gcc 4.X is incomplete in c++11 standard - missing
+// std::put_time. We'll disable this feature for gcc 4.
+#if !defined(__GNUC__) || ( defined(__GNUC__) && (__GNUC__ > 4) )
+TEUCHOS_UNIT_TEST(StackedTimer, VerboseTimestamps) {
+
+  Teuchos::StackedTimer timer("My Timer");
+
+  timer.enableVerbose(true);
+  timer.enableVerboseTimestamps(2);
+  std::ostringstream os;
+  timer.setVerboseOstream(Teuchos::rcpFromRef(os));
+
+  timer.start("L1");
+  timer.start("L2");
+  timer.start("L3");
+  timer.stop("L3");
+  timer.stop("L2");
+  timer.stop("L1");
+  timer.stopBaseTimer();
+
+  out << os.str() << std::endl;
+
+  TEST_ASSERT(os.str().find("TIMESTAMP:"));
+
+  // Printing restricted to first two levels, thrid level should not
+  // be printed.
+  TEST_ASSERT(os.str().find("L1") != std::string::npos);
+  TEST_ASSERT(os.str().find("L2") != std::string::npos);
+  TEST_ASSERT(os.str().find("L3") == std::string::npos);
+}
+#endif

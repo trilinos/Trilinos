@@ -10,7 +10,7 @@
 #define Tempus_StepperOperatorSplitObserver_hpp
 
 #include "Tempus_SolutionHistory.hpp"
-
+#include "Tempus_StepperObserver.hpp"
 
 namespace Tempus {
 

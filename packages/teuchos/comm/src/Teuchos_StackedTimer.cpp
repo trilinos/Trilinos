@@ -801,6 +801,9 @@ StackedTimer::reportWatchrXML(const std::string& name, Teuchos::RCP<const Teucho
 void StackedTimer::enableVerbose(const bool enable_verbose)
 {enable_verbose_ = enable_verbose;}
 
+void StackedTimer::enableVerboseTimestamps(const unsigned levels)
+{verbose_timestamp_levels_ = levels;}
+
 void StackedTimer::setVerboseOstream(const Teuchos::RCP<std::ostream>& os)
 {verbose_ostream_ = os;}
 
