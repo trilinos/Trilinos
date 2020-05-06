@@ -41,8 +41,8 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_AUGMENTEDLAGRANGIAN_H
-#define ROL_AUGMENTEDLAGRANGIAN_H
+#ifndef ROL_AUGMENTEDLAGRANGIANOBJECTIVE_H
+#define ROL_AUGMENTEDLAGRANGIANOBJECTIVE_H
 
 #include "ROL_Objective.hpp"
 #include "ROL_Constraint.hpp"
