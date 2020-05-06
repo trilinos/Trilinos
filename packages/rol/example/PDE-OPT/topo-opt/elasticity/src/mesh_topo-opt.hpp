@@ -41,6 +41,9 @@
 // ************************************************************************
 // @HEADER
 
+#ifndef MESHMANAGER_ELASTICITY_HPP
+#define MESHMANAGER_ELASTICITY_HPP
+
 #include "../../../TOOLS/meshmanager.hpp"
 
 template <class Real>
@@ -370,3 +373,5 @@ private:
   }
   
 }; // MeshManager_TopoOpt
+
+#endif

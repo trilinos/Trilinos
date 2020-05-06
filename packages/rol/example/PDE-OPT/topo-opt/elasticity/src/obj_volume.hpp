@@ -54,27 +54,21 @@
 template <class Real>
 class QoI_Volume_TopoOpt : public QoI<Real> {
 private:
-  const ROL::Ptr<FE<Real> > fe_;
-  const ROL::Ptr<FieldHelper<Real> > fieldHelper_;
-  ROL::Ptr<Intrepid::FieldContainer<Real> > ones_;
-  ROL::Ptr<Intrepid::FieldContainer<Real> > volFrac_;
+  const ROL::Ptr<FE<Real>> fe_;
+  ROL::Ptr<Intrepid::FieldContainer<Real>> ones_;
+  ROL::Ptr<Intrepid::FieldContainer<Real>> volFrac_;
 
 public:
-  QoI_Volume_TopoOpt(const ROL::Ptr<FE<Real> > &fe,
-                     const ROL::Ptr<FieldHelper<Real> > &fieldHelper,
-                     const Real v0 = 0.0)
-  : fe_(fe), fieldHelper_(fieldHelper) {
+  QoI_Volume_TopoOpt(const ROL::Ptr<FE<Real>> &fe,
+                     const Real v0 = Real(0))
+  : fe_(fe) {
     // Get relevant dimensions
     int c = fe_->cubPts()->dimension(0);
     int p = fe_->cubPts()->dimension(1);
     ones_ = ROL::makePtr<Intrepid::FieldContainer<Real>>(c,p);
     volFrac_ = ROL::makePtr<Intrepid::FieldContainer<Real>>(c,p);
-    for (int i = 0; i < c; ++i) {
-      for (int j = 0; j < p; ++j) {
-        (*ones_)(i,j) = static_cast<Real>(1);
-        (*volFrac_)(i,j) = v0;
-      }
-    }
+    ones_->initialize(static_cast<Real>(1));
+    volFrac_->initialize(v0);
   }
 
   Real value(ROL::Ptr<Intrepid::FieldContainer<Real> > & val,
@@ -87,14 +81,10 @@ public:
 
     // Initialize output val
     val = ROL::makePtr<Intrepid::FieldContainer<Real>>(c);
-
-    // Get components of the control
-    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > Z;
-    fieldHelper_->splitFieldCoeff(Z, z_coeff);
     // Evaluate on FE basis
-    ROL::Ptr<Intrepid::FieldContainer<Real> > valZ_eval
+    ROL::Ptr<Intrepid::FieldContainer<Real>> valZ_eval
       = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
-    fe_->evaluateValue(valZ_eval, Z[0]);
+    fe_->evaluateValue(valZ_eval, z_coeff);
     Intrepid::RealSpaceTools<Real>::subtract(*valZ_eval,*volFrac_);
 
     // Compute energy
@@ -116,21 +106,16 @@ public:
     // Get relevant dimensions
     int c = fe_->gradN()->dimension(0);
     int f = fe_->gradN()->dimension(1);
-    int d = fe_->gradN()->dimension(3);
 
     // Initialize output grad
-    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > G(d);
-    for (int i=0; i<d; ++i) {
-      G[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f);
-    }
+    grad = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f);
 
     // Compute gradient of energy
-    Intrepid::FunctionSpaceTools::integrate<Real>(*G[0],
+    Intrepid::FunctionSpaceTools::integrate<Real>(*grad,
                                                   *ones_,
-                                                  *(fe_->NdetJ()),
+                                                  *fe_->NdetJ(),
                                                   Intrepid::COMP_CPP, false);
 
-    fieldHelper_->combineFieldCoeff(grad, G);
   }
 
   void HessVec_11(ROL::Ptr<Intrepid::FieldContainer<Real> > & hess,

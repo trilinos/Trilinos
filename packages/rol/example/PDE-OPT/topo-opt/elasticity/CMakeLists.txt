@@ -17,23 +17,23 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     ADD_DIR_TO_NAME
   )
 
-  TRIBITS_ADD_EXECUTABLE(
-    example_02
-    SOURCES example_02.cpp
-    ADD_DIR_TO_NAME
-  )
-
-  TRIBITS_ADD_EXECUTABLE(
-    example_03
-    SOURCES example_03.cpp
-    ADD_DIR_TO_NAME
-  )
-
-  TRIBITS_ADD_EXECUTABLE(
-    example_04
-    SOURCES example_04.cpp
-    ADD_DIR_TO_NAME
-  )
+##  TRIBITS_ADD_EXECUTABLE(
+##    example_02
+##    SOURCES example_02.cpp
+##    ADD_DIR_TO_NAME
+##  )
+##
+##  TRIBITS_ADD_EXECUTABLE(
+##    example_03
+##    SOURCES example_03.cpp
+##    ADD_DIR_TO_NAME
+##  )
+##
+##  TRIBITS_ADD_EXECUTABLE(
+##    example_04
+##    SOURCES example_04.cpp
+##    ADD_DIR_TO_NAME
+##  )
 
 #  TRIBITS_ADD_EXECUTABLE(
 #    example_05
@@ -121,6 +121,7 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
       meshfiles/brick1.e
       meshfiles/brick2.txt
       meshfiles/brick2.e
+      meshfiles/Lbeam.jou
     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
     DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
   )

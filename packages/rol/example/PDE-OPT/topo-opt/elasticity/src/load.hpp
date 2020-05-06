@@ -131,7 +131,8 @@ public:
     }
     else if (ex == "2D Cantilever with 3 Loads" ||
              ex == "2D Carrier Plate"           ||
-             ex == "2D Wheel") {
+             ex == "2D Wheel"                   ||
+             ex == "3D L Beam") {
       loadMagnitude_.clear();
       loadPolar_.clear();
       loadAzimuth_.clear();

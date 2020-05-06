@@ -116,6 +116,10 @@ public:
       sidesets_.push_back(0);
       types_.push_back(0);
     }
+    else if (ex == "3D L Beam") {
+      sidesets_.push_back(0);
+      types_.push_back(0);
+    }
     else {
       // Grab sidesets
       Teuchos::Array<int> sidesets
@@ -191,9 +195,9 @@ public:
     }
   }
 
-  void applyJacobian2(std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > &J) const {
+  void applyJacobian2(std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> &J) const {
     const int d = J.size();
-    const int f = J[0][0]->dimension(1);
+    const int f = J[0][0]->dimension(2);
     const int numSideSets = sidesets_.size();
     if (numSideSets > 0) {
       for (int i = 0; i < numSideSets; ++i) {
@@ -208,9 +212,7 @@ public:
             for (int l = 0; l < numBdryDofs; ++l) {
               for (int m=0; m < f; ++m) {
                 for (int n=0; n < numConDim; ++n) {
-                  for (int p=0; p < d; ++p) {
-                    (*J[conDim[n]][p])(cidx,fidx_[j][l],m) = static_cast<Real>(0);
-                  }
+                  (*J[conDim[n]][0])(cidx,fidx_[j][l],m) = static_cast<Real>(0);
                 }
               }
             }
