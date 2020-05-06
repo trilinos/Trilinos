@@ -48,7 +48,7 @@ namespace ROL {
 
 template<typename Real>
 Real Objective_FSsolver<Real>::value( const Vector<Real> &u, Real &tol ) {
-  return static_cast<Real>(0.5)*u.dot(u.dual());
+  return static_cast<Real>(0.5)*u.dot(u);
 }
 
 template<typename Real>

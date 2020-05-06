@@ -41,63 +41,62 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_NONLINEARLEASTSQUARESOBJECTIVE_DEF_H
-#define ROL_NONLINEARLEASTSQUARESOBJECTIVE_DEF_H
+#ifndef ROL_CONSTRAINT_STATE_DEF_H
+#define ROL_CONSTRAINT_STATE_DEF_H
 
 namespace ROL {
 
 template<typename Real>
-NonlinearLeastSquaresObjective<Real>::NonlinearLeastSquaresObjective(const Ptr<Constraint<Real>> &con,
-                                                                     const Vector<Real> &optvec,
-                                                                     const Vector<Real> &convec,
-                                                                     const bool GNH)
-  : con_(con), GaussNewtonHessian_(GNH) {
-  c1_ = convec.clone(); c1dual_ = c1_->dual().clone();
-  c2_ = convec.clone();
-  x_  = optvec.dual().clone();
+SimConstraint<Real>::SimConstraint(const Ptr<Constraint_SimOpt<Real>> &con,
+                                   const Ptr<const Vector<Real>> &z,
+                                   bool inSolve) : con_(con), z_(z), inSolve_(inSolve), init_(false) {}
+
+template<typename Real>
+void SimConstraint<Real>::update( const Vector<Real> &u, bool flag, int iter ) {
+  con_->update_1(u,flag,iter);
+  //con_->update(u,*z_,flag,iter);
 }
 
 template<typename Real>
-void NonlinearLeastSquaresObjective<Real>::update( const Vector<Real> &x, EUpdateType type, int iter ) {
-  Real tol = std::sqrt(ROL_EPSILON<Real>());
-  con_->update(x,type,iter);
-  con_->value(*c1_,x,tol);
-  c1dual_->set(c1_->dual());
+void SimConstraint<Real>::update( const Vector<Real> &u, EUpdateType type, int iter ) {
+  if (inSolve_) con_->solve_update(u,*z_,type,iter);
+  else          con_->update_1(u,type,iter);
 }
 
 template<typename Real>
-void NonlinearLeastSquaresObjective<Real>::update( const Vector<Real> &x, bool flag, int iter ) {
-  Real tol = std::sqrt(ROL_EPSILON<Real>());
-  con_->update(x,flag,iter);
-  con_->value(*c1_,x,tol);
-  c1dual_->set(c1_->dual());
+void SimConstraint<Real>::value(Vector<Real> &c,const Vector<Real> &u,Real &tol) {
+  con_->value(c,u,*z_,tol);
 }
 
 template<typename Real>
-Real NonlinearLeastSquaresObjective<Real>::value( const Vector<Real> &x, Real &tol ) {
-  Real half(0.5);
-  return half*(c1_->dot(*c1_));
+void SimConstraint<Real>::applyJacobian(Vector<Real> &jv,const Vector<Real> &v,const Vector<Real> &u,Real &tol) {
+  con_->applyJacobian_1(jv,v,u,*z_,tol);
 }
 
 template<typename Real>
-void NonlinearLeastSquaresObjective<Real>::gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-  con_->applyAdjointJacobian(g,*c1dual_,x,tol);
+void SimConstraint<Real>::applyAdjointJacobian(Vector<Real> &ajv,const Vector<Real> &v,const Vector<Real> &u,Real &tol) {
+  con_->applyAdjointJacobian_1(ajv,v,u,*z_,tol);
 }
 
 template<typename Real>
-void NonlinearLeastSquaresObjective<Real>::hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-  con_->applyJacobian(*c2_,v,x,tol);
-  con_->applyAdjointJacobian(hv,c2_->dual(),x,tol);
-  if ( !GaussNewtonHessian_ ) {
-    con_->applyAdjointHessian(*x_,*c1dual_,v,x,tol);
-    hv.plus(*x_);
+void SimConstraint<Real>::applyAdjointHessian(Vector<Real> &ahwv,const Vector<Real> &w,const Vector<Real> &v,const Vector<Real> &u,Real &tol) {
+  con_->applyAdjointHessian_11(ahwv,w,v,u,*z_,tol);
+}
+
+template<typename Real>
+void SimConstraint<Real>::applyPreconditioner(Vector<Real> &pv,const Vector<Real> &v,const Vector<Real> &u,const Vector<Real> &g,Real &tol) {
+  if (!init_) {
+    ijv_ = u.clone();
+    init_ = true;
   }
+  con_->applyInverseJacobian_1(*ijv_,v,u,*z_,tol);
+  con_->applyInverseAdjointJacobian_1(pv,ijv_->dual(),u,*z_,tol);
 }
 
 template<typename Real>
-void NonlinearLeastSquaresObjective<Real>::setParameter(const std::vector<Real> &param) {
-  Objective<Real>::setParameter(param);
+void SimConstraint<Real>::setParameter(const std::vector<Real> &param) {
   con_->setParameter(param);
+  Constraint<Real>::setParameter(param);
 }
 
 } // namespace ROL

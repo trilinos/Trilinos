@@ -49,13 +49,18 @@
 #include "ROL_Types.hpp"
 #include <iostream>
 
-#include "ROL_NonlinearLeastSquaresObjective_SimOpt.hpp"
-#include "ROL_Constraint_State.hpp"
+namespace ROL {
+
+template <class Real>
+class Constraint_SimOpt;
+
+}
+
+#include "ROL_NonlinearLeastSquaresObjective.hpp"
+#include "ROL_SimConstraint.hpp"
 #include "ROL_Objective_FSsolver.hpp"
-#include "ROL_Algorithm.hpp"
-#include "ROL_TrustRegionStep.hpp"
-#include "ROL_CompositeStep.hpp"
-#include "ROL_ConstraintStatusTest.hpp"
+#include "ROL_TrustRegionAlgorithm_U.hpp"
+#include "ROL_AugmentedLagrangianAlgorithm_E.hpp"
 
 /** @ingroup func_group
     \class ROL::Constraint_SimOpt
@@ -178,8 +183,15 @@ public:
                 iter is the outer algorithm iterations count.
   */
   virtual void update_2( const Vector<Real> &z, bool flag = true, int iter = -1 ) {}
-  virtual void update_2( const Vector<Real> &z, EUpdateType, int iter = -1 ) {}
+  virtual void update_2( const Vector<Real> &z, EUpdateType type, int iter = -1 ) {}
 
+  /** \brief Update SimOpt constraint during solve (disconnected from optimization updates).
+  
+                @param[in]    x is the optimization variable
+                @param[in] type is the update type
+                @param[in] iter is the solver iteration count
+  */
+  virtual void solve_update( const Vector<Real> &u, const Vector<Real> &z, EUpdateType type, int iter = -1) {}
 
   /** \brief Evaluate the constraint operator \f$c:\mathcal{U}\times\mathcal{Z} \rightarrow \mathcal{C}\f$
              at \f$(u,z)\f$.
@@ -214,10 +226,9 @@ public:
                      Vector<Real> &u, 
                      const Vector<Real> &z,
                      Real &tol) {
-    if ( zero_ ) {
-      u.zero();
-    }
-    update(u,z,true);
+    if ( zero_ ) u.zero();
+    Ptr<std::ostream> stream = makeStreamPtr(std::cout, print_);
+    solve_update(u,z,UPDATE_INITIAL,0);
     value(c,u,z,tol);
     Real cnorm = c.norm();
     const Real ctol = std::min(atol_, rtol_*cnorm);
@@ -227,86 +238,76 @@ public:
         jv_   = u.clone();
         firstSolve_ = false;
       }
+      const Real one(1);
       Real alpha(1), tmp(0);
       int cnt = 0;
-      if ( print_ ) {
-        std::cout << "\n     Default Constraint_SimOpt::solve\n";
-        std::cout << "       ";
-        std::cout << std::setw(6)  << std::left << "iter";
-        std::cout << std::setw(15) << std::left << "rnorm";
-        std::cout << std::setw(15) << std::left << "alpha";
-        std::cout << "\n";
-      }
+      *stream << std::endl;
+      *stream << "     Default Constraint_SimOpt::solve" << std::endl;
+      *stream << "       ";
+      *stream << std::setw(6)  << std::left << "iter";
+      *stream << std::setw(15) << std::left << "rnorm";
+      *stream << std::setw(15) << std::left << "alpha";
+      *stream << std::endl;
       for (cnt = 0; cnt < maxit_; ++cnt) {
         // Compute Newton step
         applyInverseJacobian_1(*jv_,c,u,z,tol);
         unew_->set(u);
         unew_->axpy(-alpha, *jv_);
-        update_1(*unew_);
-        //update(*unew_,z);
+        solve_update(*unew_,z,UPDATE_TRIAL);
         value(c,*unew_,z,tol);
         tmp = c.norm();
         // Perform backtracking line search
-        while ( tmp > (1.0-decr_*alpha)*cnorm &&
+        while ( tmp > (one-decr_*alpha)*cnorm &&
                 alpha > stol_ ) {
           alpha *= factor_;
           unew_->set(u);
           unew_->axpy(-alpha,*jv_);
-          update_1(*unew_);
-          //update(*unew_,z);
+          solve_update(*unew_,z,UPDATE_TRIAL);
           value(c,*unew_,z,tol);
           tmp = c.norm();
         }
-        if ( print_ ) {
-          std::cout << "       ";
-          std::cout << std::setw(6)  << std::left << cnt;
-          std::cout << std::scientific << std::setprecision(6);
-          std::cout << std::setw(15) << std::left << tmp;
-          std::cout << std::scientific << std::setprecision(6);
-          std::cout << std::setw(15) << std::left << alpha;
-          std::cout << "\n";
-        }
+        *stream << "       ";
+        *stream << std::setw(6)  << std::left << cnt;
+        *stream << std::scientific << std::setprecision(6);
+        *stream << std::setw(15) << std::left << tmp;
+        *stream << std::scientific << std::setprecision(6);
+        *stream << std::setw(15) << std::left << alpha;
+        *stream << std::endl;
         // Update iterate
         cnorm = tmp;
         u.set(*unew_);
+        solve_update(u,z,UPDATE_ACCEPT,cnt);
         if (cnorm <= ctol) { // = covers the case of identically zero residual
           break;
         }
-        update(u,z,true);
-        alpha = 1.0;
+        alpha = one;
       }
     }
     if (solverType_==1 || (solverType_==3 && cnorm > ctol)) {
-      Ptr<Constraint_SimOpt<Real>> con = makePtrFromRef(*this);
-      Ptr<Objective<Real>> obj = makePtr<NonlinearLeastSquaresObjective_SimOpt<Real>>(con,u,z,c,true);
+      Ptr<Constraint<Real>> con = makePtr<SimConstraint<Real>>(makePtrFromRef(*this),makePtrFromRef(z),true);
+      Ptr<Objective<Real>>  obj = makePtr<NonlinearLeastSquaresObjective<Real>>(con,u,c,true);
       ParameterList parlist;
+      parlist.sublist("General").set("Output Level",1);
+      parlist.sublist("General").sublist("Krylov").set("Iteration Limit",100);
+      parlist.sublist("Step").sublist("Trust Region").set("Subproblem Solver","Truncated CG");
       parlist.sublist("Status Test").set("Gradient Tolerance",ctol);
       parlist.sublist("Status Test").set("Step Tolerance",stol_);
       parlist.sublist("Status Test").set("Iteration Limit",maxit_);
-      parlist.sublist("Step").sublist("Trust Region").set("Subproblem Solver","Truncated CG");
-      parlist.sublist("General").sublist("Krylov").set("Iteration Limit",100);
-      Ptr<Step<Real>>         step = makePtr<TrustRegionStep<Real>>(parlist);
-      Ptr<StatusTest<Real>> status = makePtr<StatusTest<Real>>(parlist);
-      Ptr<Algorithm<Real>>    algo = makePtr<Algorithm<Real>>(step,status,false);
-      algo->run(u,*obj,print_);
+      Ptr<Algorithm_U<Real>> algo = makePtr<TrustRegionAlgorithm_U<Real>>(parlist);
+      algo->run(u,*obj,*stream);
       value(c,u,z,tol);
     }
     if (solverType_==2 || (solverType_==4 && cnorm > ctol)) {
-      Ptr<Constraint_SimOpt<Real>> con = makePtrFromRef(*this);
-      Ptr<const Vector<Real>> zVec = makePtrFromRef(z);
-      Ptr<Constraint<Real>> conU
-        = makePtr<Constraint_State<Real>>(con,zVec);
-      Ptr<Objective<Real>> objU
-        = makePtr<Objective_FSsolver<Real>>();
+      Ptr<Constraint<Real>> con = makePtr<SimConstraint<Real>>(makePtrFromRef(*this),makePtrFromRef(z),true);
+      Ptr<Objective<Real>>  obj = makePtr<Objective_FSsolver<Real>>();
+      Ptr<Vector<Real>>       l = c.dual().clone();
       ParameterList parlist;
+      parlist.sublist("General").set("Output Level",1);
       parlist.sublist("Status Test").set("Constraint Tolerance",ctol);
       parlist.sublist("Status Test").set("Step Tolerance",stol_);
       parlist.sublist("Status Test").set("Iteration Limit",maxit_);
-      Ptr<Step<Real>>         step = makePtr<CompositeStep<Real>>(parlist);
-      Ptr<StatusTest<Real>> status = makePtr<ConstraintStatusTest<Real>>(parlist);
-      Ptr<Algorithm<Real>>    algo = makePtr<Algorithm<Real>>(step,status,false);
-      Ptr<Vector<Real>>          l = c.dual().clone();
-      algo->run(u,*l,*objU,*conU,print_);
+      Ptr<Algorithm_E<Real>> algo = makePtr<AugmentedLagrangianAlgorithm_E<Real>>(parlist);
+      algo->run(u,*obj,*con,*l,*stream);
       value(c,u,z,tol);
     }
     if (solverType_ > 4 || solverType_ < 0) {

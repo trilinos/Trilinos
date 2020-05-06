@@ -48,52 +48,36 @@
 
 namespace ROL {
 
-template <class Real>
-class Constraint_State : public Constraint<Real> {
+template<typename Real>
+class SimConstraint : public Constraint<Real> {
 private:
-  const ROL::Ptr<Constraint_SimOpt<Real> > con_;
-  const ROL::Ptr<const Vector<Real> > z_;
+  const Ptr<Constraint_SimOpt<Real>> con_;
+  const Ptr<const Vector<Real>> z_;
+  const bool inSolve_;
+  Ptr<Vector<Real>> ijv_;
+  bool init_;
 
 public:
-  Constraint_State(const ROL::Ptr<Constraint_SimOpt<Real> > &con,
-                   const ROL::Ptr<const Vector<Real> > &z) : con_(con), z_(z) {}
+  SimConstraint(const Ptr<Constraint_SimOpt<Real>> &con,
+                const Ptr<const Vector<Real>> &z,
+                bool inSolve = false);
 
-  void value(Vector<Real> &c,const Vector<Real> &u,Real &tol) {
-    con_->value(c,u,*z_,tol);
-  }
-
-  void applyJacobian(Vector<Real> &jv,const Vector<Real> &v,const Vector<Real> &u,Real &tol) {
-    con_->applyJacobian_1(jv,v,u,*z_,tol);
-  }
-
+  void update( const Vector<Real> &u, bool flag = true, int iter = -1 ) override;
+  void update( const Vector<Real> &u, EUpdateType type, int iter = -1 ) override;
+  void value(Vector<Real> &c,const Vector<Real> &u,Real &tol) override;
+  void applyJacobian(Vector<Real> &jv,const Vector<Real> &v,const Vector<Real> &u,Real &tol) override;
   using Constraint<Real>::applyAdjointJacobian;
-  void applyAdjointJacobian(Vector<Real> &ajv,const Vector<Real> &v,const Vector<Real> &u,Real &tol) {
-    con_->applyAdjointJacobian_1(ajv,v,u,*z_,tol);
-  }
-
-  void applyAdjointHessian(Vector<Real> &ahwv,const Vector<Real> &w,const Vector<Real> &v,const Vector<Real> &u,Real &tol) {
-    con_->applyAdjointHessian_11(ahwv,w,v,u,*z_,tol);
-  }
-
-  void update( const Vector<Real> &u, bool flag = true, int iter = -1 ) {
-    con_->update_1(u,flag,iter);
-    //con_->update(u,*z_,flag,iter);
-  }
-
-  void applyPreconditioner(Vector<Real> &pv,const Vector<Real> &v,const Vector<Real> &u,const Vector<Real> &g,Real &tol) {
-    ROL::Ptr<Vector<Real> > ijv = u.clone();
-    con_->applyInverseJacobian_1(*ijv,v,u,*z_,tol);
-    con_->applyInverseAdjointJacobian_1(pv,ijv->dual(),u,*z_,tol);
-  }
+  void applyAdjointJacobian(Vector<Real> &ajv,const Vector<Real> &v,const Vector<Real> &u,Real &tol) override;
+  void applyAdjointHessian(Vector<Real> &ahwv,const Vector<Real> &w,const Vector<Real> &v,const Vector<Real> &u,Real &tol) override;
+  void applyPreconditioner(Vector<Real> &pv,const Vector<Real> &v,const Vector<Real> &u,const Vector<Real> &g,Real &tol) override;
 
   // Definitions for parametrized (stochastic) equality constraints
-  void setParameter(const std::vector<Real> &param) {
-    con_->setParameter(param);
-    Constraint<Real>::setParameter(param);
-  }
+  void setParameter(const std::vector<Real> &param) override;
 
-}; // class Constraint_State
+}; // class SimConstraint
 
 } // namespace ROL
+
+#include "ROL_SimConstraint_Def.hpp"
 
 #endif
