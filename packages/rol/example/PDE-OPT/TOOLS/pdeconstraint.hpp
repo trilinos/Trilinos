@@ -759,6 +759,28 @@ public:
     update_2(z,flag,iter);
   }
 
+  // Do something smarter here
+  void update_1(const ROL::Vector<Real> &u, ROL::EUpdateType type, int iter = -1) {
+    computeJ1_ = true;
+    computeJ2_ = true;
+    computeJ3_ = true;
+  }
+
+  void update_2(const ROL::Vector<Real> &z, ROL::EUpdateType type, int iter = -1) {
+    computeJ1_ = true;
+    computeJ2_ = true;
+    computeJ3_ = true;
+  }
+
+  void update(const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, ROL::EUpdateType type, int iter = -1) {
+    update_1(u,type,iter);
+    update_2(z,type,iter);
+  }
+
+  void solve_update(const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, ROL::EUpdateType type, int iter = -1) {
+    update(u,z,type,iter);
+  }
+
   using ROL::Constraint_SimOpt<Real>::value;
   void value(ROL::Vector<Real> &c, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
     ROL::Ptr<Tpetra::MultiVector<> >       cf = getField(c);

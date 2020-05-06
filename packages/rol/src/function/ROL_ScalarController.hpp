@@ -42,36 +42,36 @@
 // @HEADER
 
 
-#ifndef ROL_SIMCONTROLLER_H
-#define ROL_SIMCONTROLLER_H
+#ifndef ROL_SCALARCONTROLLER_H
+#define ROL_SCALARCONTROLLER_H
 
-#include "ROL_Vector.hpp"
 #include "ROL_UpdateTypes.hpp"
 
 namespace ROL {
 
 template <class Real, class Key=std::vector<Real>>
-class SimController {
+class ScalarController {
 private:
   // Storage
-  std::map<Key,int>               indices_, indices_trial_, indices_temp_;
-  std::vector<bool>               flags_, flags_trial_, flags_temp_;
-  std::vector<Ptr<Vector<Real>>>  vectors_, vectors_trial_, vectors_temp_;
+  std::map<Key, int> indices_, indices_trial_, indices_temp_;
+  std::vector<bool>  flags_, flags_trial_, flags_temp_;
+  std::vector<Real>  scalars_, scalars_trial_, scalars_temp_;
   int maxIndex_, maxIndex_trial_, maxIndex_temp_;
 
   // Update flags
-  bool trial_, temp_;
   bool objUpdated_, conUpdated_;
+  bool temp_, trial_;
 
 public:
   /** \brief Constructor.
   */
-  SimController(void)
+  ScalarController(void)
     : maxIndex_(0), maxIndex_trial_(0), maxIndex_temp_(0),
-      trial_(false), temp_(false), objUpdated_(false), conUpdated_(false) { 
+      objUpdated_(false), conUpdated_(false),
+      temp_(false), trial_(false) { 
     indices_.clear(); indices_trial_.clear(); indices_temp_.clear();
-    flags_.clear();   flags_trial_.clear();   flags_temp_.clear();
-    vectors_.clear(); vectors_trial_.clear(); vectors_temp_.clear();
+    flags_.clear(); flags_trial_.clear(); flags_temp_.clear();
+    scalars_.clear(); scalars_trial_.clear(); scalars_temp_.clear();
   }
 
   void reset(bool flag = true) {
@@ -82,7 +82,7 @@ public:
     }
   }
 
-  /** \brief Objective function update for SimController storage.
+  /** \brief Update for SampledScalar storage.
   */
   void objectiveUpdate(bool flag = true) {
     if (!conUpdated_) {
@@ -97,7 +97,7 @@ public:
 
   /** \brief Equality constraint update for SimController storage.
   */
-  void equalityConstraintUpdate(bool flag = true) {
+  void constraintUpdate(bool flag = true) {
     if (!objUpdated_) {
       reset(flag);
     }
@@ -108,8 +108,6 @@ public:
     }
   }
 
-  /** \brief Objective function update for SimController storage.
-  */
   void objectiveUpdate(EUpdateType type) {
     if (!conUpdated_) {
       switch(type) {
@@ -127,8 +125,6 @@ public:
     }
   }
 
-  /** \brief Constraint update for SimController storage.
-  */
   void constraintUpdate(EUpdateType type) {
     if (!objUpdated_) {
       switch(type) {
@@ -148,43 +144,35 @@ public:
 
   /** \brief Return vector corresponding to input parameter.
   */
-  bool get(Vector<Real> &x, const Key &param) {
+  bool get(Real &x, const Key &param) {
     bool flag = false;
     if (!temp_) {
       if (trial_) {
-        flag = get(x,param,indices_trial_,flags_trial_,vectors_trial_,maxIndex_trial_);
+        flag = get(x,param,indices_trial_,flags_trial_,scalars_trial_,maxIndex_trial_);
       }
       else {
-        flag = get(x,param,indices_,flags_,vectors_,maxIndex_);
+        flag = get(x,param,indices_,flags_,scalars_,maxIndex_);
       }
     }
     else {
-      flag = get(x,param,indices_temp_,flags_temp_,vectors_temp_,maxIndex_temp_);
+      flag = get(x,param,indices_temp_,flags_temp_,scalars_temp_,maxIndex_temp_);
     }
     return flag;
   }
 
   /** \brief Set vector corresponding to input parameter.
   */
-  void set(const Vector<Real> &x, const Key &param) {
+  void set(const Real &x, const Key &param) {
     if (!temp_) {
       if (trial_) {
-        set(x,param,indices_trial_,flags_trial_,vectors_trial_,maxIndex_trial_);
+        set(x,param,indices_trial_,flags_trial_,scalars_trial_,maxIndex_trial_);
       }
       else {
-        set(x,param,indices_,flags_,vectors_,maxIndex_);
+        set(x,param,indices_,flags_,scalars_,maxIndex_);
       }
     }
     else {
-      set(x,param,indices_temp_,flags_temp_,vectors_temp_,maxIndex_temp_);
-    }
-  }
-
-  /** \brief Push the contents of *this into another SimController.
-  */
-  void push(SimController<Real,Key> &to) const {
-    for (auto it = indices_.begin(); it != indices_.end(); ++it) {
-      to.set(*vectors_[it->second],it->first);
+      set(x,param,indices_temp_,flags_temp_,scalars_temp_,maxIndex_temp_);
     }
   }
 
@@ -202,9 +190,8 @@ private:
     }
   }
 
-  bool get(Vector<Real> &x, const Key &param,
-           std::map<Key,int> &indices, std::vector<bool> &flags,
-           std::vector<Ptr<Vector<Real>>> &vectors, int &maxIndex) {
+  bool get(Real &x, const Key &param, std::map<Key,int> &indices,
+           std::vector<bool> &flags, std::vector<Real> &scalars, int &maxIndex) {
     int count = indices.count(param);
     bool flag = false;
     int index = maxIndex;
@@ -213,34 +200,32 @@ private:
       index = it->second;
       flag  = flags[index];
       if (flag) {
-        x.set(*vectors[index]);
+        x = scalars[index];
       }
     }
     else {
-      indices.insert(std::pair<Key,int>(param, index));
+      indices.insert(std::pair<Key, int>(param, index));
       flags.push_back(false);
-      vectors.push_back(x.clone()); 
+      scalars.push_back(static_cast<Real>(0)); 
       maxIndex++;
     }
     return flag;
   }
 
-  void set(const Vector<Real> &x,const Key &param,
-           std::map<Key,int> &indices, std::vector<bool> &flags,
-           std::vector<Ptr<Vector<Real>>> &vectors, int &maxIndex) {
+  void set(const Real &x, const Key &param, std::map<Key,int> &indices,
+           std::vector<bool> &flags, std::vector<Real> &scalars, int &maxIndex) {
     int count = indices.count(param);
     int index = maxIndex;
     if (count) {
       auto it = indices.find(param);
       index = it->second;
       flags[index] = true;
-      vectors[index]->set(x);
+      scalars[index] = x;
     }
     else {
-      indices.insert(std::pair<Key,int>(param, index));
+      indices.insert(std::pair<Key, int>(param, index));
       flags.push_back(true);
-      vectors.push_back(x.clone()); 
-      vectors[index]->set(x);
+      scalars.push_back(x); 
       maxIndex++;
     }
   }
@@ -248,10 +233,10 @@ private:
   void accept(void) {
     reset(true);
     for (auto it = indices_trial_.begin(); it != indices_trial_.end(); ++it) {
-      set(*vectors_trial_[it->second],it->first,indices_,flags_,vectors_,maxIndex_);
+      set(scalars_trial_[it->second],it->first,indices_,flags_,scalars_,maxIndex_);
     }
   }
-}; // class SimController
+}; // class SampledScalar
 
 } // namespace ROL
 

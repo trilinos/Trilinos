@@ -45,6 +45,7 @@
 #define ROL_PRIMALDUALRISK_H
 
 #include "ROL_OptimizationSolver.hpp"
+#include "ROL_NewOptimizationSolver.hpp"
 #include "ROL_PD_MeanSemiDeviation.hpp"
 #include "ROL_PD_MeanSemiDeviationFromTarget.hpp"
 #include "ROL_PD_CVaR.hpp"
@@ -82,11 +83,12 @@ private:
   Real update_;
   int  freq_;
 
-  Ptr<StochasticObjective<Real>> pd_objective_;
-  Ptr<Vector<Real>>              pd_vector_;
-  Ptr<BoundConstraint<Real>>     pd_bound_;
-  Ptr<Constraint<Real>>          pd_constraint_;
-  Ptr<OptimizationProblem<Real>> pd_problem_;
+  Ptr<StochasticObjective<Real>>    pd_objective_;
+  Ptr<Vector<Real>>                 pd_vector_;
+  Ptr<BoundConstraint<Real>>        pd_bound_;
+  Ptr<Constraint<Real>>             pd_constraint_;
+  Ptr<OptimizationProblem<Real>>    pd_problem_;
+  Ptr<NewOptimizationProblem<Real>> pd_problem_new_;
 
   int iter_, nfval_, ngrad_, ncval_;
   bool converged_;
@@ -195,6 +197,17 @@ public:
                                                       pd_bound_,
                                                       pd_constraint_,
                                                       input_->getMultiplierVector());
+    pd_problem_new_ = makePtr<NewOptimizationProblem<Real>>(pd_problem_->getObjective(),
+                                                            pd_problem_->getSolutionVector());
+    if (pd_problem_->getBoundConstraint() != nullPtr) {
+      if (pd_problem_->getBoundConstraint()->isActivated()) {
+        pd_problem_new_->addBoundConstraint(pd_problem_->getBoundConstraint());
+      }
+    }
+    if (pd_problem_->getConstraint() != nullPtr) {
+      pd_problem_new_->addConstraint("PD Constraint",pd_problem_->getConstraint(),
+                                     pd_problem_->getMultiplierVector());
+    }
   }
 
   void check(std::ostream &outStream = std::cout) {
@@ -207,11 +220,11 @@ public:
     nfval_ = 0; ncval_ = 0; ngrad_ = 0;
     // Output
     printHeader(outStream);
-    Ptr<OptimizationSolver<Real>> solver;
+    Ptr<NewOptimizationSolver<Real>> solver;
     for (iter_ = 0; iter_ < maxit_; ++iter_) {
       parlist_.sublist("Status Test").set("Gradient Tolerance",   gtol_);
       parlist_.sublist("Status Test").set("Constraint Tolerance", ctol_);
-      solver = makePtr<OptimizationSolver<Real>>(*pd_problem_, parlist_);
+      solver = makePtr<NewOptimizationSolver<Real>>(pd_problem_new_, parlist_);
       if (print_) {
         solver->solve(outStream);
       }

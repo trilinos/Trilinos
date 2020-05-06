@@ -74,19 +74,19 @@ private:
   uint size_;
   std::vector<int> statVec_;
 
-  Ptr<SampledScalar<Real>> values_;
-  Ptr<SampledScalar<Real>> gradvecs_;
-  Ptr<SampledVector<Real>> gradients_;
-  Ptr<SampledVector<Real>> hessvecs_;
+  Ptr<ScalarController<Real>> values_;
+  Ptr<ScalarController<Real>> gradvecs_;
+  Ptr<SimController<Real>> gradients_;
+  Ptr<SimController<Real>> hessvecs_;
 
   using RandVarFunctional<Real>::g_;
   using RandVarFunctional<Real>::hv_;
 
   void initializeCCRM(void) {
-    values_    = makePtr<SampledScalar<Real>>();
-    gradvecs_  = makePtr<SampledScalar<Real>>();
-    gradients_ = makePtr<SampledVector<Real>>();
-    hessvecs_  = makePtr<SampledVector<Real>>();
+    values_    = makePtr<ScalarController<Real>>();
+    gradvecs_  = makePtr<ScalarController<Real>>();
+    gradients_ = makePtr<SimController<Real>>();
+    hessvecs_  = makePtr<SimController<Real>>();
 
     RandVarFunctional<Real>::setStorage(values_,gradients_);
     RandVarFunctional<Real>::setHessVecStorage(gradvecs_,hessvecs_);
@@ -167,6 +167,13 @@ public:
     for (uint i = 0; i < size_; ++i) {
       risk_[i]->resetStorage(flag);
     }
+  }
+  void resetStorage(EUpdateType type) {
+    RandVarFunctional<Real>::resetStorage(type);
+    for (uint i = 0; i < size_; ++i) {
+      risk_[i]->resetStorage(type);
+    }
+    
   }
 
   void initialize(const Vector<Real> &x) {

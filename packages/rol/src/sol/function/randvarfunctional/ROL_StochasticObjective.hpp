@@ -169,6 +169,20 @@ public:
     return rvf_->computeStatistic(xstat);
   }
 
+  void update( const Vector<Real> &x, EUpdateType type, int iter = -1 ) {
+    Ptr<const Vector<Real>> x0 = getConstVector(x);
+    // Update random variable functional
+    rvf_->resetStorage(type);
+    // Update uncertain objective function
+    obj_->update(*x0,type,iter);
+    // Update samplers
+    vsampler_->update(*x0);
+    if ( type != UPDATE_TRIAL || type != UPDATE_REVERT ) {
+      gsampler_->update(*x0);
+      hsampler_->update(*x0);
+    }
+  }
+
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
     Ptr<const Vector<Real>> x0 = getConstVector(x);
     // Update random variable functional

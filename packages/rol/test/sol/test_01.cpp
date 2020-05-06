@@ -51,6 +51,7 @@
 #include "ROL_Types.hpp"
 
 #include "ROL_OptimizationSolver.hpp"
+#include "ROL_NewOptimizationSolver.hpp"
 #include "ROL_RiskMeasureFactory.hpp"
 #include "ROL_DeviationMeasureFactory.hpp"
 #include "ROL_RegretMeasureFactory.hpp"
@@ -112,10 +113,16 @@ void setUpAndSolve(ROL::ParameterList &list,
   x->zero();
   ROL::OptimizationProblem<RealT> problem(pObj,x,bnd);
   problem.setStochasticObjective(list,sampler);
+  ROL::Ptr<ROL::NewOptimizationProblem<RealT>>
+    newprob = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(problem.getObjective(),problem.getSolutionVector());
+  newprob->addBoundConstraint(problem.getBoundConstraint());
   outStream << "\nCheck Derivatives of Stochastic Objective Function\n";
-  problem.check(outStream);
-  ROL::OptimizationSolver<RealT> solver(problem,list);
+  //problem.check(outStream);
+  newprob->check(true,outStream);
+  ROL::NewOptimizationSolver<RealT> solver(newprob,list);
   solver.solve(outStream);
+  //ROL::OptimizationSolver<RealT> solver(problem,list);
+  //solver.solve(outStream);
 }
 
 void setRandomVector(std::vector<RealT> &x) {
@@ -141,6 +148,7 @@ int main(int argc, char* argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
+  bool print     = iprint > 0;
   ROL::Ptr<std::ostream> outStream;
   ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
@@ -159,6 +167,7 @@ int main(int argc, char* argv[]) {
     
     auto parlist = ROL::getParametersFromXmlFile( filename );
     ROL::ParameterList list = *parlist;
+    list.sublist("General").set("Output Level",print ? 1 : 0);
     /**********************************************************************************************/
     /************************* CONSTRUCT SOL COMPONENTS *******************************************/
     /**********************************************************************************************/

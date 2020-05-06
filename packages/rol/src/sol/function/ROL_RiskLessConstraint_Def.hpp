@@ -41,67 +41,58 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_NONLINEARLEASTSQUARESOBJECTIVE_DEF_H
-#define ROL_NONLINEARLEASTSQUARESOBJECTIVE_DEF_H
+#ifndef ROL_RISKLESS_CONSTRAINT_DEF_H
+#define ROL_RISKLESS_CONSTRAINT_DEF_H
 
 namespace ROL {
 
 template<typename Real>
-NonlinearLeastSquaresObjective<Real>::NonlinearLeastSquaresObjective(const Ptr<Constraint<Real>> &con,
-                                                                     const Vector<Real> &optvec,
-                                                                     const Vector<Real> &convec,
-                                                                     const bool GNH)
-  : con_(con), GaussNewtonHessian_(GNH) {
-  c1_ = convec.clone(); c1dual_ = c1_->dual().clone();
-  c2_ = convec.clone();
-  x_  = optvec.dual().clone();
+RiskLessConstraint<Real>::RiskLessConstraint(const Ptr<Constraint<Real>> &con)
+  : con_(con) {}
+
+template<typename Real>
+void RiskLessConstraint<Real>::update(const Vector<Real> &x, EUpdateType type, int iter) {
+  Ptr<const Vector<Real>> x0 = dynamic_cast<const RiskVector<Real>&>(x).getVector();
+  con_->update(*x0,type,iter);
 }
 
 template<typename Real>
-void NonlinearLeastSquaresObjective<Real>::update( const Vector<Real> &x, EUpdateType type, int iter ) {
-  Real tol = std::sqrt(ROL_EPSILON<Real>());
-  con_->update(x,type,iter);
-  con_->value(*c1_,x,tol);
-  c1dual_->set(c1_->dual());
+void RiskLessConstraint<Real>::update(const Vector<Real> &x, bool flag, int iter) {
+  Ptr<const Vector<Real>> x0 = dynamic_cast<const RiskVector<Real>&>(x).getVector();
+  con_->update(*x0,flag,iter);
 }
 
 template<typename Real>
-void NonlinearLeastSquaresObjective<Real>::update( const Vector<Real> &x, bool flag, int iter ) {
-  Real tol = std::sqrt(ROL_EPSILON<Real>());
-  con_->update(x,flag,iter);
-  con_->value(*c1_,x,tol);
-  c1dual_->set(c1_->dual());
+void RiskLessConstraint<Real>::value(Vector<Real> &c, const Vector<Real> &x, Real &tol) {
+  Ptr<const Vector<Real>> x0 = dynamic_cast<const RiskVector<Real>&>(x).getVector();
+  con_->value(c,*x0,tol);
 }
 
 template<typename Real>
-Real NonlinearLeastSquaresObjective<Real>::value( const Vector<Real> &x, Real &tol ) {
-  Real half(0.5);
-  return half*(c1_->dot(*c1_));
+void RiskLessConstraint<Real>::applyJacobian(Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &x, Real &tol) {
+  Ptr<const Vector<Real>> x0 = dynamic_cast<const RiskVector<Real>&>(x).getVector();
+  Ptr<const Vector<Real>> v0 = dynamic_cast<const RiskVector<Real>&>(v).getVector();
+  con_->applyJacobian(jv,*v0,*x0,tol);
 }
 
 template<typename Real>
-void NonlinearLeastSquaresObjective<Real>::gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-  con_->applyAdjointJacobian(g,*c1dual_,x,tol);
+void RiskLessConstraint<Real>::applyAdjointJacobian(Vector<Real> &ajv, const Vector<Real> &v, const Vector<Real> &x, Real &tol) {
+  Ptr<const Vector<Real>> x0 = dynamic_cast<const RiskVector<Real>&>(x).getVector();
+  Ptr<Vector<Real>> ajv0 = dynamic_cast<RiskVector<Real>&>(ajv).getVector();
+  con_->applyAdjointJacobian(*ajv0,v,*x0,tol);
 }
 
 template<typename Real>
-void NonlinearLeastSquaresObjective<Real>::hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-  con_->applyJacobian(*c2_,v,x,tol);
-  con_->applyAdjointJacobian(hv,c2_->dual(),x,tol);
-  if ( !GaussNewtonHessian_ ) {
-    con_->applyAdjointHessian(*x_,*c1dual_,v,x,tol);
-    hv.plus(*x_);
-  }
+void RiskLessConstraint<Real>::applyAdjointHessian(Vector<Real> &ahuv, const Vector<Real> &u, const Vector<Real> &v, const Vector<Real> &x, Real &tol) {
+  Ptr<const Vector<Real>> x0 = dynamic_cast<const RiskVector<Real>&>(x).getVector();
+  Ptr<const Vector<Real>> v0 = dynamic_cast<const RiskVector<Real>&>(v).getVector();
+  Ptr<Vector<Real>> ahuv0 = dynamic_cast<RiskVector<Real>&>(ahuv).getVector();
+  con_->applyAdjointHessian(*ahuv0,u,*v0,*x0,tol);
 }
 
 template<typename Real>
-void NonlinearLeastSquaresObjective<Real>::precond( Vector<Real> &Pv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-  con_->applyPreconditioner(Pv,v,x,x.dual(),tol);
-}
-
-template<typename Real>
-void NonlinearLeastSquaresObjective<Real>::setParameter(const std::vector<Real> &param) {
-  Objective<Real>::setParameter(param);
+void RiskLessConstraint<Real>::setParameter(const std::vector<Real> &param) {
+  Constraint<Real>::setParameter(param);
   con_->setParameter(param);
 }
 

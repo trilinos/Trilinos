@@ -204,6 +204,18 @@ public:
     isGradient2Computed_ = (flag ? false : isGradient2Computed_);
   }
 
+  void update( const Vector<Real> &u, const Vector<Real> &z, EUpdateType type, int iter = -1 ) {
+    int size = obj_vec_.size();
+    for (int i = 0; i < size; ++i) {
+      obj_vec_[i]->update(u,z,type,iter);
+    }
+    // Do something smarter here
+    isValueComputed_     = false;
+    isGradientComputed_  = false;
+    isGradient1Computed_ = false;
+    isGradient2Computed_ = false;
+  }
+
   Real value( const Vector<Real> &u, const Vector<Real> &z, Real &tol ) {
     computeValue(u,z,tol);
     return std_obj_->value(*obj_value_vec_,tol);
