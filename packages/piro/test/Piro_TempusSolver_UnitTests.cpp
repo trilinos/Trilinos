@@ -75,6 +75,8 @@
 
 #include <stdexcept>
 
+//#define DISABLE_SENS_TESTS
+
 using namespace Teuchos;
 using namespace Piro;
 using namespace Piro::Test;
@@ -379,6 +381,7 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, ObserveFinalSolution)
   TEST_FLOATING_EQUALITY(observer->lastStamp(), finalTime, tol);
 }
 
+#ifndef DISABLE_SENS_TESTS
 TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_DefaultSolutionSensitivity)
 {
   const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
@@ -662,39 +665,5 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_ResponseAndDefaultSensitivities)
     }
   }
 }
-TEUCHOS_UNIT_TEST(Piro_TempusSolver, ObserveInitialConditionWhenSensitivitiesRequested)
-{
-  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
-  const RCP<MockObserver<double> > observer(new MockObserver<double>);
-  const double timeStamp = 2.0;
-
-  const RCP<TempusSolver<double> > solver = solverNew(model, timeStamp, timeStamp, observer);
-
-  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
-  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
-  {
-    const int solutionResponseIndex = solver->Ng() - 1;
-    const int parameterIndex = 0;
-    const Thyra::MEB::Derivative<double> dxdp_deriv =
-      Thyra::create_DgDp_mv(*solver, solutionResponseIndex, parameterIndex, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
-    const RCP<Thyra::MultiVectorBase<double> > dxdp = dxdp_deriv.getMultiVector();
-    outArgs.set_DgDp(solutionResponseIndex, parameterIndex, dxdp_deriv);
-  }
-  solver->evalModel(inArgs, outArgs);
-
-  {
-    const RCP<const Thyra::VectorBase<double> > solution =
-      observer->lastSolution();
-
-    const RCP<const Thyra::VectorBase<double> > initialCondition =
-      model->getNominalValues().get_x();
-
-    TEST_COMPARE_FLOATING_ARRAYS(
-        arrayFromVector(*solution),
-        arrayFromVector(*initialCondition),
-        tol);
-  }
-
-  TEST_FLOATING_EQUALITY(observer->lastStamp(), timeStamp, tol);
-}
+#endif /* DISABLE_SENS_TESTS */
 #endif /* HAVE_PIRO_TEMPUS */
