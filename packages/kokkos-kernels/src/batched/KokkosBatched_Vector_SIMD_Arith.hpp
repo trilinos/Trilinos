@@ -4,6 +4,7 @@
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "Kokkos_Complex.hpp"
+#include "KokkosKernels_Macros.hpp"
 
 namespace KokkosBatched {
 
@@ -63,7 +64,7 @@ namespace KokkosBatched {
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
 #endif
-#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__) 
+#ifdef KOKKOSKERNELS_ENABLE_OMP_SIMD
 #pragma omp simd
 #endif
     for (int i=0;i<l;++i)
@@ -279,7 +280,7 @@ namespace KokkosBatched {
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
 #endif
-#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__) 
+#ifdef KOKKOSKERNELS_ENABLE_OMP_SIMD
 #pragma omp simd
 #endif
     for (int i=0;i<l;++i)
@@ -342,7 +343,7 @@ namespace KokkosBatched {
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
 #endif
-#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__) 
+#ifdef KOKKOSKERNELS_ENABLE_OMP_SIMD
 #pragma omp simd
 #endif
     for (int i=0;i<l;++i)
@@ -539,7 +540,7 @@ namespace KokkosBatched {
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
 #endif
-#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__) 
+#ifdef KOKKOSKERNELS_ENABLE_OMP_SIMD
 #pragma omp simd
 #endif
     for (int i=0;i<l;++i)
@@ -824,7 +825,7 @@ namespace KokkosBatched {
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
 #endif
-#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__) 
+#ifdef KOKKOSKERNELS_ENABLE_OMP_SIMD
 #pragma omp simd
 #endif
     for (int i=0;i<l;++i)
