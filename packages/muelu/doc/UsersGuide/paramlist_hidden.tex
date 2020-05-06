@@ -161,6 +161,10 @@
 \cbb{aggregation: pairwise: size}{int}{8}{Target size for pairwise aggregation.  The number
       of pairwise steps used will be log base-2 of this number.}
         
+\cbb{aggregation: pairwise: tie threshold}{double}{1e-6}{Threshold for determining two potential pairwise
+      neighbors have identical values and then fall back on the
+      order.}
+        
 \cbb{aggregate qualities: check symmetry}{bool}{false}{Whether to check symmetry and use nonsymmetric aggregate quality estimate if necessary.}
         
 \cbb{aggregate qualities: good aggregate threshold}{double}{100.0}{Maximum quality where aggregate is considered acceptable.}
