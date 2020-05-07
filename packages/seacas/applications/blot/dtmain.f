@@ -1,4 +1,4 @@
-C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
+C Copyright(C) 2009-2017, 2020 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -601,7 +601,7 @@ C      --Check if user wants to quit or get hardcopy for multiple time plot
          IF (MULTIM) THEN
 C         --Set color in case text is requested
             CALL UGRCOL (0, BLKCOL)
-            I = INT ((NPTIMX-1) / FLOAT(NVWTIM)) + 1
+            I = INT ((NPTIMX-1) / DBLE(NVWTIM)) + 1
             GOBCK = .FALSE.
             CALL GRPEND (.TRUE., .TRUE., NPLOT1, I, GOBCK, *100, *160)
          END IF

@@ -1,4 +1,4 @@
-C    Copyright(C) 2014-2017 National Technology & Engineering Solutions of
+C    Copyright(C) 2014-2017, 2020 National Technology & Engineering Solutions of
 C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -362,7 +362,7 @@ C
          IF (CPUIFC(.TRUE.)) GO TO 340
          I = MAPDXG(IJK)
          IF (NXK(1, I) .GT. 0) THEN
-            COLOR = FLOAT(MOD(MAT(I) + 1, 6) + 1)
+            COLOR = DBLE(MOD(MAT(I) + 1, 6) + 1)
             CALL PLTSTD (1, COLOR)
             IF (NXK(3, I) .EQ. 0) THEN
                JEND = 1
@@ -406,7 +406,7 @@ C
                   IF (HOLD .LT. 1.E7) GOTO 280
   270          CONTINUE
   280          CONTINUE
-               LOOKUP = INT((HOLD - IFIX(HOLD))*FLOAT(MAXKXN*NNXK))
+               LOOKUP = INT((HOLD - INT(HOLD))*DBLE(MAXKXN*NNXK))
                IF (LOOKUP .LE. 0) LOOKUP = 1
                IHOLD = LOOKUP
   290          CONTINUE

@@ -26,6 +26,7 @@ TRIBITS_ADD_EXECUTABLE(
   NOEXEPREFIX
   NOEXESUFFIX
   SOURCES struc_to_unstruc.C
+  INSTALLABLE
   )
 
 TRIBITS_ADD_EXECUTABLE(
@@ -33,6 +34,7 @@ TRIBITS_ADD_EXECUTABLE(
   NOEXEPREFIX
   NOEXESUFFIX
   SOURCES cgns_decomp.C
+  INSTALLABLE
   )
 ENDIF()
 
@@ -41,30 +43,42 @@ TRIBITS_ADD_EXECUTABLE(
   NOEXEPREFIX
   NOEXESUFFIX
   SOURCES cth_pressure_map.C vector3d.C
+  INSTALLABLE
   )
 TRIBITS_ADD_EXECUTABLE(
   io_shell
   NOEXEPREFIX
   NOEXESUFFIX
   SOURCES io_shell.C shell_interface.C
+  INSTALLABLE
   )
 TRIBITS_ADD_EXECUTABLE(
   shell_to_hex
   NOEXEPREFIX
   NOEXESUFFIX
   SOURCES shell_to_hex.C vector3d.C
+  INSTALLABLE
   )
 TRIBITS_ADD_EXECUTABLE(
   io_info
   NOEXEPREFIX
   NOEXESUFFIX
   SOURCES io_info_main.C
+  INSTALLABLE
+  )
+TRIBITS_ADD_EXECUTABLE(
+  io_modify
+  NOEXEPREFIX
+  NOEXESUFFIX
+  SOURCES io_modify.C modify_interface.C
+  INSTALLABLE
   )
 TRIBITS_ADD_EXECUTABLE(
   sphgen
   NOEXEPREFIX
   NOEXESUFFIX
   SOURCES sphgen.C
+  INSTALLABLE
   )
 
 TRIBITS_ADD_EXECUTABLE(
@@ -72,6 +86,7 @@ TRIBITS_ADD_EXECUTABLE(
   NOEXEPREFIX
   NOEXESUFFIX
   SOURCES skinner.C skinner_interface.C
+  INSTALLABLE
   )
 
 if (TPL_ENABLE_MPI)
@@ -141,6 +156,7 @@ IF (SEACASIoss_ENABLE_THREADSAFE)
     NOEXEPREFIX
     NOEXESUFFIX
     SOURCES io_shell_ts.C shell_interface.C
+    INSTALLABLE
     )
 
   SET(IOSHELL_ARG --in_type generated 10x10x10+shell:xXyYzZ+sideset:xXyY+times:2+variables:element,2,nodal,3,sideset,4)
@@ -195,17 +211,6 @@ TRIBITS_ADD_ADVANCED_TEST(pamgen_exodus_io_info
   COMM mpi serial
   )
 ENDIF()
-
-install_executable(cth_pressure_map)
-IF (TPL_ENABLE_CGNS)
-install_executable(struc_to_unstruc)
-install_executable(cgns_decomp)
-ENDIF()
-install_executable(io_shell)
-install_executable(shell_to_hex)
-install_executable(io_info)
-install_executable(sphgen)
-install_executable(skinner)
 
 IF (TPL_ENABLE_CGNS)
 

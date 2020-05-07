@@ -66,7 +66,7 @@ C=======================================================================
          ELSE
             STRA = 'Average'
          END IF
-         RSEL = FLOAT(NUMEQL (.TRUE., NUMEL, SELECT))
+         RSEL = DBLE(NUMEQL (.TRUE., NUMEL, SELECT))
       ELSE
          IF (DOABS) THEN
             STRA = 'Absolute value total of'

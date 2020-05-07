@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -35,6 +35,8 @@
 
 #include <cstdint> // for int64_t
 #include <string>  // for string
+#include <vector>
+
 namespace Ioss {
   class GroupingEntity;
 } // namespace Ioss
@@ -47,15 +49,24 @@ namespace Ioss {
   class Property
   {
   public:
-    enum BasicType { INVALID = -1, REAL, INTEGER, POINTER, STRING };
+    enum BasicType { INVALID = -1, REAL, INTEGER, POINTER, STRING, VEC_INTEGER, VEC_DOUBLE };
+    enum Origin {
+      INTERNAL = -1, //<! Property is for internal use
+      IMPLICIT, //<! Property is calculated on the fly based on current state of entity containing
+                // property
+      EXTERNAL, //<! Property was created by client
+      ATTRIBUTE //<! Property created from an Exodus or Database Attribute
+    };
 
-    Property();
-    Property(std::string name, int64_t value);
-    Property(std::string name, int value);
-    Property(std::string name, double value);
-    Property(std::string name, const std::string &value);
-    Property(std::string name, const char *value);
-    Property(std::string name, void *value);
+    Property() = default;
+    Property(std::string name, int64_t value, Origin origin = INTERNAL);
+    Property(std::string name, int value, Origin origin = INTERNAL);
+    Property(std::string name, double value, Origin origin = INTERNAL);
+    Property(std::string name, const std::string &value, Origin origin = INTERNAL);
+    Property(std::string name, const char *value, Origin origin = INTERNAL);
+    Property(std::string name, void *value, Origin origin = INTERNAL);
+    Property(std::string name, const std::vector<int> &value, Origin origin = INTERNAL);
+    Property(std::string name, const std::vector<double> &value, Origin origin = INTERNAL);
 
     // To set implicit property
     Property(const GroupingEntity *ge, std::string name, BasicType type);
@@ -65,22 +76,27 @@ namespace Ioss {
 
     ~Property();
 
-    std::string get_string() const;
-    int64_t     get_int() const;
-    double      get_real() const;
-    void *      get_pointer() const;
+    std::string         get_string() const;
+    int64_t             get_int() const;
+    double              get_real() const;
+    void *              get_pointer() const;
+    std::vector<double> get_vec_double() const;
+    std::vector<int>    get_vec_int() const;
+
+    void   set_origin(Origin origin) { origin_ = origin; }
+    Origin get_origin() const { return origin_; }
 
     /** \brief Tells whether the property is calculated, rather than stored.
      *
      * \returns True if property is calculated; False if it is stored directly.
      */
-    bool is_implicit() const { return isImplicit_; }
+    bool is_implicit() const { return origin_ == IMPLICIT; }
 
     /** \brief Tells whether the property is stored, rather than calculated.
      *
      * \returns True if property is stored directly; False if it is calculated.
      */
-    bool is_explicit() const { return !isImplicit_; }
+    bool is_explicit() const { return origin_ != IMPLICIT; }
 
     /** Tells whether the property has a valid type (currently REAL, INTEGER, POINTER, or STRING)
      *
@@ -108,26 +124,30 @@ namespace Ioss {
     BasicType get_type() const { return type_; }
 
   private:
-    std::string name_;
-    BasicType   type_;
+    std::string name_{};
+    BasicType   type_{INVALID};
+
+    /// True if property is calculated rather than stored.
+    /// False if property is stored in 'data_'
+    Origin origin_{INTERNAL};
 
     bool get_value(int64_t *value) const;
     bool get_value(double *value) const;
     bool get_value(std::string *value) const;
     bool get_value(void *&value) const;
+    bool get_value(std::vector<double> *value) const;
+    bool get_value(std::vector<int> *value) const;
 
-    /// True if property is calculated rather than stored.
-    /// False if property is stored in 'data_'
-    bool isImplicit_{false};
-
-    /// The actual value of the property.  Use 'type_' and 'storage_' to
+    /// The actual value of the property.  Use 'type_' to
     /// discriminate the actual type of the property.
     union Data {
       std::string *         sval;
-      void *                pval;
+      void *                pval{nullptr};
       const GroupingEntity *ge;
       double                rval;
       int64_t               ival;
+      std::vector<double> * dvec;
+      std::vector<int> *    ivec;
     };
     Data data_{};
   };

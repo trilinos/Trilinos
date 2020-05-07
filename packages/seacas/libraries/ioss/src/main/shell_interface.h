@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2017 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -105,6 +105,7 @@ namespace IOShell {
     bool delete_timesteps{false};
     bool minimize_open_files{false};
     bool disable_field_recognition{false};
+    bool retain_empty_blocks{false};
     // Put transient data for each timestep in separate file (EXPERIMENTAL)
     bool file_per_state{false};
     // Testing CGNS - defines zones in reverse order from input file.

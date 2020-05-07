@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -64,6 +64,8 @@ namespace Ioss {
     SideBlock(DatabaseIO *io_database, const std::string &my_name, const std::string &side_type,
               const std::string &element_type, size_t side_count);
 
+    SideBlock(const SideBlock &other);
+
     std::string type_string() const override { return "SideBlock"; }
     std::string short_type_string() const override { return "sideblock"; }
     std::string contains_string() const override { return "Element/Side pair"; }
@@ -113,14 +115,14 @@ namespace Ioss {
                                     size_t data_size) const override;
 
   private:
-    const SideSet *    owner_;
-    ElementTopology *  parentTopology_; // Topology of parent element (if any)
-    const EntityBlock *parentBlock_;
+    const SideSet *    owner_{nullptr};
+    ElementTopology *  parentTopology_{nullptr}; // Topology of parent element (if any)
+    const EntityBlock *parentBlock_{nullptr};
 
     // Pointer to the SideSet (if any) that contains this side block.
     std::vector<std::string> blockMembership{}; // What element blocks do the
                                                 // elements in this sideset belong to.
-    mutable int consistentSideNumber;
+    mutable int consistentSideNumber{-1};
   };
 } // namespace Ioss
 #endif

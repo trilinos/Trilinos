@@ -188,6 +188,7 @@ namespace Iogn {
     void coordinates(double *coord) const override;
     void coordinates(std::vector<double> &coord) const override;
     void coordinates(int component, std::vector<double> &xyz) const override;
+    void coordinates(int component, double *xyz) const override;
     void coordinates(std::vector<double> &x, std::vector<double> &y,
                      std::vector<double> &z) const override;
 
@@ -243,6 +244,7 @@ namespace Iogn {
     void coordinates(double *coord) const override;
     void coordinates(std::vector<double> &coord) const override;
     void coordinates(int component, std::vector<double> &xyz) const override;
+    void coordinates(int component, double *xyz) const override;
     void coordinates(std::vector<double> &x, std::vector<double> &y,
                      std::vector<double> &z) const override;
 

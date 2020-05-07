@@ -179,7 +179,7 @@ C=======================================================================
 
             END IF
 
-            XNEW = XMAJ + FLOAT(I)*MINTIC
+            XNEW = XMAJ + DBLE(I)*MINTIC
             IF (XNEW-FUDGE.LE.X) THEN
                GO TO 2260
 
@@ -473,7 +473,7 @@ C=======================================================================
 
             END IF
 
-            YNEW = YMAJ + FLOAT(I)*MINTIC
+            YNEW = YMAJ + DBLE(I)*MINTIC
             IF (YNEW-FUDGE.LE.Y) THEN
                GO TO 2390
 

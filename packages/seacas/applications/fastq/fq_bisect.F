@@ -1,4 +1,4 @@
-C    Copyright(C) 2014-2017 National Technology & Engineering Solutions of
+C    Copyright(C) 2014-2017, 2020 National Technology & Engineering Solutions of
 C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -196,7 +196,7 @@ C
      &         (COOR(2, J1) - COOR(2, J3))**2)
             D2 = SQRT((COOR(1, J2) - COOR(1, J3))**2 +
      &         (COOR(2, J2) - COOR(2, J3))**2)
-            NN1 = (FLOAT(NINT(L1))*D1)/(D1 + D2)
+            NN1 = (DBLE(NINT(L1))*D1)/(D1 + D2)
             NN1 = MAX0(1, NN1)
             NN2 = MAX0(1, NINT(L1) - NN1)
          END IF

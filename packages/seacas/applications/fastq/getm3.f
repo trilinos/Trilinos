@@ -119,16 +119,16 @@ C
 C  SPLIT THE SIDES INTO LOGICAL DIVISIONS
 C
 C      IF (M2 .EQ. M3)THEN
-C         M1A = (.5 * FLOAT (M1)) + .001
+C         M1A = (.5 * DBLE(M1)) + .001
 C         M1B = M1A
 C      ELSEIF (M2 .LT. M3)THEN
-C         FACT = FLOAT (M2 - 1) / FLOAT (M2 + M3 - 2)
+C         FACT = DBLE(M2 - 1) / DBLE(M2 + M3 - 2)
 C         M1A = FACT * M1 + .001
 C         M1A = MAX0 (M1A, 1)
 C         M1A = MIN0 (M1A, M1-1)
 C         M1B = M1 - M1A
 C      ELSE
-C         FACT = FLOAT (M3 - 1) / FLOAT (M2 + M3 - 2)
+C         FACT = DBLE(M3 - 1) / DBLE(M2 + M3 - 2)
 C         M1B = FACT * M1 + .001
 C         M1B = MAX0 (M1B, 1)
 C         M1B = MIN0 (M1B, M1-1)

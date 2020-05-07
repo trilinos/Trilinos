@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 2011-2017 National Technology & Engineering Solutions
+ * Copyright(C) 2011-2017, 2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -60,12 +60,14 @@
 
 #include "add_to_log.h" // for add_to_log
 #include "exodusII.h"   // for ex_get_variable_param, etc
+#include "fmt/chrono.h"
 #include "fmt/printf.h"
 #include "matio.h" // for Mat_VarCreate, Mat_VarFree, etc
 #include <cassert> // for assert
 #include <cstddef> // for size_t
 #include <cstdio>  // for fprintf, printf, sprintf, etc
 #include <cstdlib> // for free, calloc, exit
+#include <ctime>
 #if MATIO_VERSION < 151
 #error "MatIO Version 1.5.1 or greater is required"
 #endif
@@ -88,20 +90,11 @@ std::string time_stamp(const std::string &format)
   if (format == "") {
     return std::string("");
   }
+  auto  calendar_time = std::time(nullptr);
+  auto *local_time    = std::localtime(&calendar_time);
 
-  const int   length = 256;
-  static char time_string[length];
-
-  time_t     calendar_time = time(nullptr);
-  struct tm *local_time    = localtime(&calendar_time);
-
-  int error = strftime(time_string, length, format.c_str(), local_time);
-  if (error != 0) {
-    time_string[length - 1] = '\0';
-    return std::string(time_string);
-  }
-
-  return std::string("[ERROR]");
+  std::string time_string = fmt::format(format, *local_time);
+  return time_string;
 }
 
 void logger(const char *message)

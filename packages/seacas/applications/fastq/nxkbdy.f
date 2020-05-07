@@ -99,8 +99,8 @@ C
 C
 C  CALCULATE THE BEGINNING HASH VALUE
 C
-               HOLD = FLOAT (NODE1 + NODE2) * 3.1830989
-               LHASH = INT((HOLD-IFIX (HOLD)) * FLOAT (MDIM) + 1)
+               HOLD = DBLE(NODE1 + NODE2) * 3.1830989
+               LHASH = INT((HOLD-INT (HOLD)) * DBLE(MDIM) + 1)
                LKEEP = LHASH
 C
 C  FIRST-TIMERS CLAIM THE NODE

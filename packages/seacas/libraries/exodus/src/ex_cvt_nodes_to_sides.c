@@ -35,6 +35,7 @@
 
 #include "exodusII.h"     // for ex_err, ex_block, etc
 #include "exodusII_int.h" // for elem_blk_parm, EX_FATAL, etc
+#include <stdbool.h>
 
 static int64_t get_node(void_int *connect, size_t index, size_t int_size)
 {
@@ -272,6 +273,9 @@ int ex_cvt_nodes_to_sides(int exoid, void_int *num_elem_per_set, void_int *num_n
   EX_FUNC_ENTER();
   ex__check_valid_file_id(exoid, __func__);
 
+  EX_UNUSED(side_sets_elem_index);
+  EX_UNUSED(side_sets_node_index);
+
   /* first check if any side sets are specified */
   /* inquire how many side sets have been stored */
 
@@ -285,7 +289,7 @@ int ex_cvt_nodes_to_sides(int exoid, void_int *num_elem_per_set, void_int *num_n
 
   if (num_side_sets == 0) {
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no side sets defined in file id %d", exoid);
-    ex_err_fn(exoid, __func__, errmsg, EX_WARN);
+    ex_err_fn(exoid, __func__, errmsg, EX_NOENTITY);
     EX_FUNC_LEAVE(EX_WARN);
   }
 
@@ -441,7 +445,7 @@ int ex_cvt_nodes_to_sides(int exoid, void_int *num_elem_per_set, void_int *num_n
     goto cleanup;
   }
 
-  same_elem_type[0] = EX_TRUE;
+  same_elem_type[0] = true;
   if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
     elem_ctr = ((int64_t *)num_elem_per_set)[0];
     for (i = 0, k = 0; i < tot_num_ss_elem; i++) {
@@ -468,11 +472,11 @@ int ex_cvt_nodes_to_sides(int exoid, void_int *num_elem_per_set, void_int *num_n
         elem_ctr += ((int64_t *)num_elem_per_set)[++k];
 
         el_type           = elem_blk_parms[j].elem_type_val;
-        same_elem_type[k] = EX_TRUE;
+        same_elem_type[k] = true;
       }
 
       if (el_type != elem_blk_parms[j].elem_type_val) {
-        same_elem_type[k] = EX_FALSE;
+        same_elem_type[k] = false;
       }
     }
 
@@ -510,7 +514,7 @@ int ex_cvt_nodes_to_sides(int exoid, void_int *num_elem_per_set, void_int *num_n
 
       /* determine number of nodes per side */
       if (((((int64_t *)num_nodes_per_set)[k] % ((int64_t *)num_elem_per_set)[k]) == 0) &&
-          (same_elem_type[k] == EX_TRUE)) { /* all side set elements are same type */
+          (same_elem_type[k] == true)) { /* all side set elements are same type */
         node_ctr += ((int64_t *)num_nodes_per_set)[k] / ((int64_t *)num_elem_per_set)[k];
       }
       else {
@@ -546,11 +550,11 @@ int ex_cvt_nodes_to_sides(int exoid, void_int *num_elem_per_set, void_int *num_n
         elem_ctr += ((int *)num_elem_per_set)[++k];
 
         el_type           = elem_blk_parms[j].elem_type_val;
-        same_elem_type[k] = EX_TRUE;
+        same_elem_type[k] = true;
       }
 
       if (el_type != elem_blk_parms[j].elem_type_val) {
-        same_elem_type[k] = EX_FALSE;
+        same_elem_type[k] = false;
       }
     }
 

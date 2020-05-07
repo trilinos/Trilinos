@@ -231,7 +231,7 @@ C
          YSTART = COOR (2, J1)
          DO 120 I = 1, 100
             FM = SQRT (1.0+ (TCOEF * (XL+DELX) ) ** 2)
-            XR = - HALFW + FLOAT (I) * 2.0 * DELX
+            XR = - HALFW + DBLE(I) * 2.0 * DELX
             FR = SQRT (1.0+ (TCOEF * XR) ** 2)
             ARCOLD = ARCNOW
             ARCNOW = ARCNOW+DELX * (FL+4.0 * FM+FR) / 3.0

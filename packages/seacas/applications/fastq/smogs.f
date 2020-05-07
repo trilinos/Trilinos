@@ -95,8 +95,8 @@ C
 C
 C  REDEFINE THIS NODE - S COORDINATES
 C
-               SUMX = SUMX/FLOAT(KOUNT)
-               SUMY = SUMY/FLOAT(KOUNT)
+               SUMX = SUMX/DBLE(KOUNT)
+               SUMY = SUMY/DBLE(KOUNT)
                XDEL = RO*(SUMX - XN(NODE))
                YDEL = RO*(SUMY - YN(NODE))
                XN(NODE) = XN(NODE) + XDEL

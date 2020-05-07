@@ -134,7 +134,7 @@ C
         STOP
       END IF
 
-      DFF = 1.0/FLOAT (N - 1)
+      DFF = 1.0/DBLE(N - 1)
       IF (ABS (1.0 - FAC) .GT. 1.0E-6)
      &   DFF =  (FAC - 1.0)/ (FAC ** (N - 1) - 1.0)
 C
@@ -210,7 +210,7 @@ C  GENERATE FIRST SIDE OF CORNER
 C
   120       CONTINUE
             NA = KI
-            DFF = 1.0/FLOAT (NA - 1)
+            DFF = 1.0/DBLE(NA - 1)
             IF (ABS (1.0 - FAC) .GT. 1.0E-6)
      &         DFF =  (FAC - 1.0)/ (FAC ** (NA - 1) - 1.0)
             DEL = DA * DFF
@@ -224,7 +224,7 @@ C
 C  GENERATE SECOND SIDE OF CORNER
 C
             NB = N - KI + 1
-            DFF = 1.0/FLOAT (NB - 1)
+            DFF = 1.0/DBLE(NB - 1)
             IF (ABS (1.0 - FAC) .GT. 1.0E-6)
      &         DFF =  (FAC - 1.0)/ (FAC ** (NB - 1) - 1.0)
             DEL = DB * DFF
@@ -450,7 +450,7 @@ C
             DELX = 2.0 * HALFW/200.0
             DO 170 I = 1, 100
                FM = SQRT (1.0 + (TCOEF * (XL + DELX)) **2)
-               XR =  - HALFW + FLOAT (I) * 2.0 * DELX
+               XR =  - HALFW + DBLE(I) * 2.0 * DELX
                FR = SQRT (1.0 + (TCOEF * XR) **2)
                ARCOLD = ARCNOW
                ARCNOW = ARCNOW + DELX * (FL + 4.0 * FM + FR)/3.0

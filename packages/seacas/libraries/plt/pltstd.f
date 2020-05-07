@@ -1,4 +1,4 @@
-C Copyright (C) 2009-2017 National Technology & Engineering Solutions
+C Copyright (C) 2009-2017, 2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -92,7 +92,7 @@ C=======================================================================
          END IF
 
          ZZZBC = BUFF(1)
-         CALL VDSTBC(IFIX(BUFF(1)))
+         CALL VDSTBC(INT(BUFF(1)))
          DEVP(2) = BUFF(1)
 
       ELSE IF (INDX.EQ.3) THEN

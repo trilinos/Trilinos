@@ -30,8 +30,10 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include <Ioss_Assembly.h>
 #include <Ioss_ElementTopology.h>
 #include <Ioss_Region.h>
+#include <Ioss_SmartAssert.h>
 #include <Ioss_Utils.h>
 #include <Ioss_VariableType.h>
 #include <Ioss_Version.h>
@@ -137,6 +139,44 @@ namespace Ioex {
     }
   }
 
+  Ioss::EntityType map_exodus_type(ex_entity_type type)
+  {
+    switch (type) {
+    case EX_ASSEMBLY: return Ioss::ASSEMBLY;
+    case EX_BLOB: return Ioss::BLOB;
+    case EX_EDGE_BLOCK: return Ioss::EDGEBLOCK;
+    case EX_EDGE_SET: return Ioss::EDGESET;
+    case EX_ELEM_BLOCK: return Ioss::ELEMENTBLOCK;
+    case EX_ELEM_SET: return Ioss::ELEMENTSET;
+    case EX_FACE_BLOCK: return Ioss::FACEBLOCK;
+    case EX_FACE_SET: return Ioss::FACESET;
+    case EX_NODAL: return Ioss::NODEBLOCK;
+    case EX_NODE_SET: return Ioss::NODESET;
+    case EX_SIDE_SET: return Ioss::SIDESET;
+    case EX_GLOBAL: return Ioss::REGION;
+    default: return Ioss::INVALID_TYPE;
+    }
+  }
+
+  ex_entity_type map_exodus_type(Ioss::EntityType type)
+  {
+    switch (type) {
+    case Ioss::REGION: return EX_GLOBAL;
+    case Ioss::ASSEMBLY: return EX_ASSEMBLY;
+    case Ioss::BLOB: return EX_BLOB;
+    case Ioss::EDGEBLOCK: return EX_EDGE_BLOCK;
+    case Ioss::EDGESET: return EX_EDGE_SET;
+    case Ioss::ELEMENTBLOCK: return EX_ELEM_BLOCK;
+    case Ioss::ELEMENTSET: return EX_ELEM_SET;
+    case Ioss::FACEBLOCK: return EX_FACE_BLOCK;
+    case Ioss::FACESET: return EX_FACE_SET;
+    case Ioss::NODEBLOCK: return EX_NODAL;
+    case Ioss::NODESET: return EX_NODE_SET;
+    case Ioss::SIDESET: return EX_SIDE_SET;
+    default: return EX_INVALID;
+    }
+  }
+
   bool read_last_time_attribute(int exodusFilePtr, double *value)
   {
     // Check whether the "last_written_time" attribute exists.  If it does,
@@ -191,8 +231,8 @@ namespace Ioex {
       status = nc_get_att_int(exodusFilePtr, NC_GLOBAL, "processor_info", proc_info);
       if (status == NC_NOERR) {
         if (proc_info[0] != processor_count && proc_info[0] > 1) {
-          fmt::print(IOSS_WARNING,
-                     "WARNING: Processor decomposition count in file ({}) does not match current "
+          fmt::print(Ioss::WARNING(),
+                     "Processor decomposition count in file ({}) does not match current "
                      "processor "
                      "count ({}).\n",
                      proc_info[0], processor_count);
@@ -200,8 +240,8 @@ namespace Ioex {
         }
         if (proc_info[1] != processor_id) {
           fmt::print(
-              IOSS_WARNING,
-              "WARNING: This file was originally written on processor {}, but is now being read on "
+              Ioss::WARNING(),
+              "This file was originally written on processor {}, but is now being read on "
               "processor {}.\n"
               "This may cause problems if there is any processor-dependent data on the file.\n",
               proc_info[1], processor_id);
@@ -455,8 +495,8 @@ namespace Ioex {
           std::string tmp_name = Ioss::Utils::encode_entity_name(basename, name_id);
           if (tmp_name == buffer.data()) {
             std::string new_name = Ioss::Utils::encode_entity_name(basename, id);
-            fmt::print(IOSS_WARNING,
-                       "WARNING: The entity named '{}' has the id {} which does not match the "
+            fmt::print(Ioss::WARNING(),
+                       "The entity named '{}' has the id {} which does not match the "
                        "embedded id {}.\n"
                        "         This can cause issues later; the entity will be renamed to '{}' "
                        "(IOSS)\n\n",
@@ -677,4 +717,41 @@ namespace Ioex {
     }
   }
 
+  void write_reduction_attributes(int exoid, const Ioss::GroupingEntity *ge)
+  {
+    Ioss::NameList properties;
+    ge->property_describe(Ioss::Property::Origin::ATTRIBUTE, &properties);
+
+    auto type = Ioex::map_exodus_type(ge->type());
+    auto id   = (ge->property_exists("id")) ? ge->get_property("id").get_int() : 0;
+
+    double  rval = 0.0;
+    int64_t ival = 0;
+    for (const auto &property_name : properties) {
+      auto prop = ge->get_property(property_name);
+
+      switch (prop.get_type()) {
+      case Ioss::Property::BasicType::REAL:
+        rval = prop.get_real();
+        ex_put_double_attribute(exoid, type, id, property_name.c_str(), 1, &rval);
+        break;
+      case Ioss::Property::BasicType::INTEGER:
+        ival = prop.get_int();
+        ex_put_integer_attribute(exoid, type, id, property_name.c_str(), 1, &ival);
+        break;
+      case Ioss::Property::BasicType::STRING:
+        ex_put_text_attribute(exoid, type, id, property_name.c_str(), prop.get_string().c_str());
+        break;
+      case Ioss::Property::BasicType::VEC_INTEGER:
+        ex_put_integer_attribute(exoid, type, id, property_name.c_str(), prop.get_vec_int().size(),
+                                 prop.get_vec_int().data());
+        break;
+      case Ioss::Property::BasicType::VEC_DOUBLE:
+        ex_put_double_attribute(exoid, type, id, property_name.c_str(),
+                                prop.get_vec_double().size(), prop.get_vec_double().data());
+        break;
+      default:; // Do nothing
+      }
+    }
+  }
 } // namespace Ioex

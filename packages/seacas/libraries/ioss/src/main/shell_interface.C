@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2017 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -189,6 +189,11 @@ void IOShell::Interface::enroll_options()
                   "\t\tElements assigned randomly to processors in a way that preserves balance\n"
                   "\t\t(do *not* use for a real run)",
                   nullptr);
+
+  options_.enroll("external", Ioss::GetLongOption::NoValue,
+                  "Files are decomposed externally into a file-per-processor in a parallel run.",
+                  nullptr);
+
   options_.enroll(
       "add_processor_id_field", Ioss::GetLongOption::NoValue,
       "For CGNS, add a cell-centered field whose value is the processor id of that cell", nullptr);
@@ -213,10 +218,6 @@ void IOShell::Interface::enroll_options()
   options_.enroll("split_cyclic", Ioss::GetLongOption::MandatoryValue,
                   "If non-zero, then the `split_times` timesteps will be put into <$val> files and "
                   "then recycle filenames.",
-                  nullptr);
-
-  options_.enroll("external", Ioss::GetLongOption::NoValue,
-                  "Files are decomposed externally into a file-per-processor in a parallel run.",
                   nullptr);
 
   options_.enroll("minimize_open_files", Ioss::GetLongOption::NoValue,
@@ -269,6 +270,11 @@ void IOShell::Interface::enroll_options()
                   "Method used to split sidesets into homogeneous blocks\n"
                   "\t\tOptions are: TOPOLOGY, BLOCK, NO_SPLIT",
                   "TOPOLOGY");
+
+  options_.enroll("retain_empty_blocks", Ioss::GetLongOption::NoValue,
+                  "If any empty element blocks on input file, keep them and write to output file.\n"
+		  "\t\tDefault is to ignore empty blocks. based on basename and suffix.",
+                  nullptr);
 
 #ifdef SEACAS_HAVE_KOKKOS
   options_.enroll("data_storage", Ioss::GetLongOption::MandatoryValue,
@@ -326,8 +332,9 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("help") != nullptr) {
     options_.usage(std::cerr);
-    fmt::print(stderr, "\n\tCan also set options via IO_SHELL_OPTIONS environment variable."
-                       "\n\t->->-> Send email to gdsjaar@sandia.gov for io_shell support.<-<-<-\n");
+    fmt::print(stderr, "\n\tCan also set options via IO_SHELL_OPTIONS environment variable.\n\n");
+    fmt::print(stderr, "\t->->-> Send email to gdsjaar@sandia.gov for {} support.<-<-<-\n",
+               options_.program_name());
     exit(EXIT_SUCCESS);
   }
 
@@ -398,6 +405,10 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
     decomp_method = "RANDOM";
   }
 
+  if (options_.retrieve("external") != nullptr) {
+    decomp_method = "EXTERNAL";
+  }
+
   {
     const char *temp = options_.retrieve("serialize_io_size");
     if (temp != nullptr) {
@@ -424,10 +435,6 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
     }
   }
 
-  if (options_.retrieve("external") != nullptr) {
-    decomp_method = "EXTERNAL";
-  }
-
   minimize_open_files       = (options_.retrieve("minimize_open_files") != nullptr);
   debug                     = (options_.retrieve("debug") != nullptr);
   file_per_state            = (options_.retrieve("file_per_state") != nullptr);
@@ -440,6 +447,7 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
   delete_timesteps          = (options_.retrieve("delete_timesteps") != nullptr);
   lower_case_variable_names = (options_.retrieve("native_variable_names") == nullptr);
   disable_field_recognition = (options_.retrieve("disable_field_recognition") != nullptr);
+  retain_empty_blocks       = (options_.retrieve("retain_empty_blocks") != nullptr);
 
   {
     const char *temp = options_.retrieve("in_type");

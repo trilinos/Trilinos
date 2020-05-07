@@ -74,8 +74,8 @@ C  SUBREGION 1  -  SIDE 2
 C
          XDIF = XCEN2 - X (I2)
          YDIF = YCEN2 - Y (I2)
-         XINT = XDIF / FLOAT (NPER - I8 + 1)
-         YINT = YDIF / FLOAT (NPER - I8 + 1)
+         XINT = XDIF / DBLE(NPER - I8 + 1)
+         YINT = YDIF / DBLE(NPER - I8 + 1)
          DO 110 I = 1, NPER - I8
             KOUNT = KOUNT + 1
             XSUB (KOUNT) = XSUB (KOUNT - 1) + XINT
@@ -91,8 +91,8 @@ C  SUBREGION 1  -  SIDE 3
 C
          XDIF = X (I8) - XCEN2
          YDIF = Y (I8) - YCEN2
-         XINT = XDIF / FLOAT (I2 - I1)
-         YINT = YDIF / FLOAT (I2 - I1)
+         XINT = XDIF / DBLE(I2 - I1)
+         YINT = YDIF / DBLE(I2 - I1)
          DO 120 I = 1, I2 - I1 - 1
             KOUNT = KOUNT + 1
             XSUB (KOUNT) = XSUB (KOUNT - 1) + XINT
@@ -123,8 +123,8 @@ C  SUBREGION 2  -  SIDE 2
 C
          XDIF = XCEN2 - X (I8)
          YDIF = YCEN2 - Y (I8)
-         XINT = XDIF / FLOAT (I2 - I1)
-         YINT = YDIF / FLOAT (I2 - I1)
+         XINT = XDIF / DBLE(I2 - I1)
+         YINT = YDIF / DBLE(I2 - I1)
          DO 150 I = 1, I2 - I1 - 1
             KOUNT = KOUNT + 1
             XSUB (KOUNT) = XSUB (KOUNT - 1) + XINT
@@ -140,8 +140,8 @@ C  SUBREGION 2  -  SIDE 3
 C
          XDIF = XMID2 - XCEN2
          YDIF = YMID2 - YCEN2
-         XINT = XDIF / FLOAT (I3 - I2)
-         YINT = YDIF / FLOAT (I3 - I2)
+         XINT = XDIF / DBLE(I3 - I2)
+         YINT = YDIF / DBLE(I3 - I2)
          DO 160 I = 1, I3 - I2 - 1
             KOUNT = KOUNT + 1
             XSUB (KOUNT) = XSUB (KOUNT - 1) + XINT
@@ -157,8 +157,8 @@ C  SUBREGION 2  -  SIDE 4
 C
          XDIF = X (I7) - XMID2
          YDIF = Y (I7) - YMID2
-         XINT = XDIF / FLOAT (I2 - I1)
-         YINT = YDIF / FLOAT (I2 - I1)
+         XINT = XDIF / DBLE(I2 - I1)
+         YINT = YDIF / DBLE(I2 - I1)
          DO 170 I = 1, I2 - I1 - 1
             KOUNT = KOUNT + 1
             XSUB (KOUNT) = XSUB (KOUNT - 1) + XINT
@@ -175,8 +175,8 @@ C
          NIDSUB (KOUNT) = NID (I3)
          XDIF = XMID2 - X (I3)
          YDIF = YMID2 - Y (I3)
-         XINT = XDIF / FLOAT (NPER - I8 + 1)
-         YINT = YDIF / FLOAT (NPER - I8 + 1)
+         XINT = XDIF / DBLE(NPER - I8 + 1)
+         YINT = YDIF / DBLE(NPER - I8 + 1)
          DO 180 I = 2, NPER - I8 + 1
             KOUNT = KOUNT + 1
             XSUB (KOUNT) = XSUB (KOUNT - 1) + XINT
@@ -192,8 +192,8 @@ C  SUBREGION 3  -  SIDE 2
 C
          XDIF = XCEN2 - XMID2
          YDIF = YCEN2 - YMID2
-         XINT = XDIF / FLOAT (I3 - I2)
-         YINT = YDIF / FLOAT (I3 - I2)
+         XINT = XDIF / DBLE(I3 - I2)
+         YINT = YDIF / DBLE(I3 - I2)
          DO 190 I = 1, I3 - I2 - 1
             KOUNT = KOUNT + 1
             XSUB (KOUNT) = XSUB (KOUNT - 1) + XINT
@@ -209,8 +209,8 @@ C  SUBREGION 3  -  SIDE 3
 C
          XDIF = X (I2) - XCEN2
          YDIF = Y (I2) - YCEN2
-         XINT = XDIF / FLOAT (NPER - I8 + 1)
-         YINT = YDIF / FLOAT (NPER - I8 + 1)
+         XINT = XDIF / DBLE(NPER - I8 + 1)
+         YINT = YDIF / DBLE(NPER - I8 + 1)
          DO 200 I = 1, NPER - I8
             KOUNT = KOUNT + 1
             XSUB (KOUNT) = XSUB (KOUNT - 1) + XINT
@@ -241,8 +241,8 @@ C  SUBREGION 4  -  SIDE 3
 C
          XDIF = XCEN1 - X (I6)
          YDIF = YCEN1 - Y (I6)
-         XINT = XDIF / FLOAT (I5 - I4)
-         YINT = YDIF / FLOAT (I5 - I4)
+         XINT = XDIF / DBLE(I5 - I4)
+         YINT = YDIF / DBLE(I5 - I4)
          DO 230 I = 1, I5 - I4 - 1
             KOUNT = KOUNT + 1
             XSUB (KOUNT) = XSUB (KOUNT - 1) + XINT
@@ -258,8 +258,8 @@ C  SUBREGION 4  -  SIDE 4
 C
          XDIF = X (I4) - XCEN1
          YDIF = Y (I4) - YCEN1
-         XINT = XDIF / FLOAT (I6 - I5)
-         YINT = YDIF / FLOAT (I6 - I5)
+         XINT = XDIF / DBLE(I6 - I5)
+         YINT = YDIF / DBLE(I6 - I5)
          DO 240 I = 1, I6 - I5 - 1
             KOUNT = KOUNT + 1
             XSUB (KOUNT) = XSUB (KOUNT - 1) + XINT
@@ -281,8 +281,8 @@ C  SUBREGION 5  -  SIDE 2
 C
          XDIF = XMID1 - X (I7)
          YDIF = YMID1 - Y (I7)
-         XINT = XDIF / FLOAT (I5 - I4)
-         YINT = YDIF / FLOAT (I5 - I4)
+         XINT = XDIF / DBLE(I5 - I4)
+         YINT = YDIF / DBLE(I5 - I4)
          DO 260 I = 1, I5 - I4 - 1
             KOUNT = KOUNT + 1
             XSUB (KOUNT) = XSUB (KOUNT - 1) + XINT
@@ -298,8 +298,8 @@ C  SUBREGION 5  -  SIDE 3
 C
          XDIF = XCEN1 - XMID1
          YDIF = YCEN1 - YMID1
-         XINT = XDIF / FLOAT (I4 - I3)
-         YINT = YDIF / FLOAT (I4 - I3)
+         XINT = XDIF / DBLE(I4 - I3)
+         YINT = YDIF / DBLE(I4 - I3)
          DO 270 I = 1, I4 - I3 - 1
             KOUNT = KOUNT + 1
             XSUB (KOUNT) = XSUB (KOUNT - 1) + XINT
@@ -315,8 +315,8 @@ C  SUBREGION 5  -  SIDE 4
 C
          XDIF = X (I6) - XCEN1
          YDIF = Y (I6) - YCEN1
-         XINT = XDIF / FLOAT (I5 - I4)
-         YINT = YDIF / FLOAT (I5 - I4)
+         XINT = XDIF / DBLE(I5 - I4)
+         YINT = YDIF / DBLE(I5 - I4)
          DO 280 I = 1, I5 - I4 - 1
             KOUNT = KOUNT + 1
             XSUB (KOUNT) = XSUB (KOUNT - 1) + XINT
@@ -333,8 +333,8 @@ C
          NIDSUB (KOUNT) = 700000 + I6 - I5 + 1
          XDIF = X (I3) - XMID1
          YDIF = Y (I3) - YMID1
-         XINT = XDIF / FLOAT (I6 - I5)
-         YINT = YDIF / FLOAT (I6 - I5)
+         XINT = XDIF / DBLE(I6 - I5)
+         YINT = YDIF / DBLE(I6 - I5)
          DO 290 I = 1, I6 - I5 - 1
             KOUNT = KOUNT + 1
             XSUB (KOUNT) = XSUB (KOUNT - 1) + XINT
@@ -355,8 +355,8 @@ C  SUBREGION 6  -  SIDE 3
 C
          XDIF = XCEN1 - X (I4)
          YDIF = YCEN1 - Y (I4)
-         XINT = XDIF / FLOAT (I6 - I5)
-         YINT = YDIF / FLOAT (I6 - I5)
+         XINT = XDIF / DBLE(I6 - I5)
+         YINT = YDIF / DBLE(I6 - I5)
          DO 310 I = 1, I6 - I5 - 1
             KOUNT = KOUNT + 1
             XSUB (KOUNT) = XSUB (KOUNT - 1) + XINT
@@ -372,8 +372,8 @@ C  SUBREGION 6  -  SIDE 4
 C
          XDIF = XMID1 - XCEN1
          YDIF = YMID1 - YCEN1
-         XINT = XDIF / FLOAT (I4 - I3)
-         YINT = YDIF / FLOAT (I4 - I3)
+         XINT = XDIF / DBLE(I4 - I3)
+         YINT = YDIF / DBLE(I4 - I3)
          DO 320 I = 1, I4 - I3 - 1
             KOUNT = KOUNT + 1
             XSUB (KOUNT) = XSUB (KOUNT - 1) + XINT
