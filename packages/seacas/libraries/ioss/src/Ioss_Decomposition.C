@@ -85,7 +85,7 @@ namespace {
     return dist;
   }
 
-  bool check_valid_decomp_method(const std::string &method)
+  bool check_valid_decomp_method(const std::string &method) 
   {
     const auto& valid_methods = Ioss::valid_decomp_methods();
     if (std::find(valid_methods.begin(), valid_methods.end(), method) != valid_methods.end()) {
@@ -112,12 +112,11 @@ namespace {
     }
 
     if (!check_valid_decomp_method(method)) {
-      if (my_processor == 0) {
-        fmt::print(stderr,
-                   "ERROR: Invalid decomposition method specified: '{}'\n"
-		   "       Valid methods: {}\n", method, fmt::join(Ioss::valid_decomp_methods(), ", "));
-      }
-      exit(EXIT_FAILURE);
+      std::ostringstream errmsg;
+      fmt::print(errmsg,
+                 "ERROR: Invalid decomposition method specified: '{}'\n"
+                 "       Valid methods: {}\n", method, fmt::join(Ioss::valid_decomp_methods(), ", "));
+      IOSS_ERROR(errmsg);
     }
     return method;
   }
@@ -162,7 +161,7 @@ namespace {
     common_nodes = par_util.global_minmax(common_nodes, Ioss::ParallelUtils::DO_MIN);
 
 #if IOSS_DEBUG_OUTPUT
-    fmt::print(stderr, "Setting common_nodes to {}\n", common_nodes);
+    fmt::print(Ioss::DEBUG(), "Setting common_nodes to {}\n", common_nodes);
 #endif
     return common_nodes;
   }
@@ -179,7 +178,7 @@ namespace Ioss {
 	,"BLOCK", "CYCLIC", "RANDOM", "RCB", "RIB", "HSFC"
 #endif
 #if !defined(NO_PARMETIS_SUPPORT)
-      ,"KWAY", "KWAY_GEOM", "GEOM_KWAY", "METIS_SFC"
+	,"KWAY", "KWAY_GEOM", "GEOM_KWAY", "METIS_SFC"
 #endif
 	};
     return valid_methods;
@@ -316,13 +315,13 @@ namespace Ioss {
   {
     show_progress(__func__);
     if (m_processor == 0) {
-      fmt::print(stderr,
+      fmt::print(Ioss::OUTPUT(),
                  "\nIOSS: Using decomposition method '{}' for {:n} elements on {} processors.\n",
                  m_method, m_globalElementCount, m_processorCount);
 
       if ((size_t)m_processorCount > m_globalElementCount) {
-        fmt::print(stderr,
-                   "\nWARNING: Decomposing {} elements across {} processors will "
+        fmt::print(Ioss::WARNING(),
+                   "Decomposing {} elements across {} processors will "
                    "result in some processors with *NO* elements.\n",
                    m_globalElementCount, m_processorCount);
       }
@@ -439,7 +438,8 @@ namespace Ioss {
     }
 
 #if IOSS_DEBUG_OUTPUT
-    fmt::print(stderr, "Processor {} communicates {} nodes from and {} nodes to other processors\n",
+    fmt::print(Ioss::DEBUG(),
+               "Processor {} communicates {} nodes from and {} nodes to other processors\n",
                m_processor, sumr, sums);
 #endif
     // Build the list telling the other processors which of their nodes I will
@@ -647,14 +647,15 @@ namespace Ioss {
       if (m_globalElementCount >= INT_MAX || m_globalNodeCount >= INT_MAX ||
           m_pointer[m_elementCount] >= INT_MAX) {
         // Can't narrow...
+        std::ostringstream errmsg;
         fmt::print(
-            std::cerr,
+            errmsg,
             "ERROR: The metis/parmetis libraries being used with this application only support\n"
             "       32-bit integers, but the mesh being decomposed requires 64-bit integers.\n"
             "       You must either choose a different, non-metis decomposition method, or\n"
             "       rebuild your metis/parmetis libraries with 64-bit integer support.\n"
             "       Contact gdsjaar@sandia.gov for more details.\n");
-        exit(EXIT_FAILURE);
+        IOSS_ERROR(errmsg);
       }
       else {
         // Should be able to narrow...
@@ -721,7 +722,7 @@ namespace Ioss {
     show_progress("\tmetis_decompose Communication 2 finished");
 
 #if IOSS_DEBUG_OUTPUT
-    fmt::print(stderr, "Processor {}:\t{} local, {} imported and {} exported elements\n",
+    fmt::print(Ioss::DEBUG(), "Processor {}:\t{} local, {} imported and {} exported elements\n",
                m_processor, m_elementCount - exp_size, imp_size, exp_size);
 #endif
   }
@@ -757,12 +758,13 @@ namespace Ioss {
                                    &ncon, &common_nodes, &nparts, tp_wgts.data(), ub_vec.data(),
                                    options.data(), &edge_cuts, elem_partition, &m_comm);
 #if IOSS_DEBUG_OUTPUT
-      fmt::print(stderr, "Edge Cuts = {}\n", edge_cuts);
+      fmt::print(Ioss::DEBUG(), "Edge Cuts = {}\n", edge_cuts);
 #endif
       if (rc != METIS_OK) {
-        fmt::print(stderr, "ERROR: Problem during call to ParMETIS_V3_PartMeshKWay "
+        std::ostringstream errmsg;
+        fmt::print(errmsg, "ERROR: Problem during call to ParMETIS_V3_PartMeshKWay "
                            "decomposition\n");
-        exit(EXIT_FAILURE);
+        IOSS_ERROR(errmsg);
       }
     }
     else if (m_method == "GEOM_KWAY" || m_method == "KWAY_GEOM") {
@@ -773,9 +775,10 @@ namespace Ioss {
                                      &dual_xadj, &dual_adjacency, &m_comm);
 
       if (rc != METIS_OK) {
-        fmt::print(stderr,
+        std::ostringstream errmsg;
+        fmt::print(errmsg,
                    "ERROR: Problem during call to ParMETIS_V3_Mesh2Dual graph conversion\n");
-        exit(EXIT_FAILURE);
+        IOSS_ERROR(errmsg);
       }
 
       if (sizeof(double) == sizeof(real_t)) {
@@ -793,15 +796,16 @@ namespace Ioss {
       }
 
 #if IOSS_DEBUG_OUTPUT
-      fmt::print(stderr, "Edge Cuts = {}\n", edge_cuts);
+      fmt::print(Ioss::DEBUG(), "Edge Cuts = {}\n", edge_cuts);
 #endif
       METIS_Free(dual_xadj);
       METIS_Free(dual_adjacency);
 
       if (rc != METIS_OK) {
-        fmt::print(stderr,
+        std::ostringstream errmsg;
+        fmt::print(errmsg,
                    "ERROR: Problem during call to ParMETIS_V3_PartGeomKWay decomposition\n");
-        exit(EXIT_FAILURE);
+        IOSS_ERROR(errmsg);
       }
     }
     else if (m_method == "METIS_SFC") {
@@ -815,9 +819,11 @@ namespace Ioss {
 	rc = ParMETIS_V3_PartGeom(element_dist, &ndims, centroids.data(),
 				  elem_partition, &m_comm);
       }
+
       if (rc != METIS_OK) {
-        fmt::print(stderr, "ERROR: Problem during call to ParMETIS_V3_PartGeom decomposition\n");
-        exit(EXIT_FAILURE);
+        std::ostringstream errmsg;
+        fmt::print(errmsg, "ERROR: Problem during call to ParMETIS_V3_PartGeom decomposition\n");
+        IOSS_ERROR(errmsg);
       }
     }
     m_centroids.clear();
@@ -838,12 +844,13 @@ namespace Ioss {
 
     int lib_global_id_type_size = Zoltan_get_global_id_type(nullptr);
     if (lib_global_id_type_size != sizeof(ZOLTAN_ID_TYPE)) {
-      fmt::print(stderr,
+      std::ostringstream errmsg;
+      fmt::print(errmsg,
                  "ERROR: The compile-time ZOLTAN_ID_TYPE size ({}) does not match the run-time "
                  "ZOLTAN_ID_TYPE size ({}). There is an error in the build/link procedure for this "
                  "application.\n",
                  sizeof(ZOLTAN_ID_TYPE), lib_global_id_type_size);
-      exit(EXIT_FAILURE);
+      IOSS_ERROR(errmsg);
     }
 
     zz.Set_Param("NUM_GID_ENTRIES", std::to_string(num_global));
@@ -872,13 +879,14 @@ namespace Ioss {
                              export_global_ids, export_local_ids, export_procs, export_to_part);
 
     if (rc != ZOLTAN_OK) {
-      fmt::print(stderr, "ERROR: Problem during call to Zoltan LB_Partition.\n");
-      exit(EXIT_FAILURE);
+      std::ostringstream errmsg;
+      fmt::print(errmsg, "ERROR: Problem during call to Zoltan LB_Partition.\n");
+      IOSS_ERROR(errmsg);
     }
     show_progress("\tZoltan lb_partition finished");
 
 #if IOSS_DEBUG_OUTPUT
-    fmt::print(stderr, "Processor {}:\t{} local, {} imported and {} exported elements\n",
+    fmt::print(Ioss::DEBUG(), "Processor {}:\t{} local, {} imported and {} exported elements\n",
                m_processor, m_elementCount - num_export, num_import, num_export);
 #endif
 
@@ -895,8 +903,9 @@ namespace Ioss {
 
     if (num_global == 1) {
       if (num_export > 0 && export_procs == nullptr) {
-        fmt::print(stderr, "ERROR: Internal error in zoltan_decompose.  export_procs is null.\n");
-        exit(EXIT_FAILURE);
+        std::ostringstream errmsg;
+        fmt::print(errmsg, "ERROR: Internal error in zoltan_decompose.  export_procs is null.\n");
+        IOSS_ERROR(errmsg);
       }
 
       std::vector<std::pair<int, int>> export_map;
@@ -921,8 +930,9 @@ namespace Ioss {
     }
     else {
       if (num_export > 0 && export_procs == nullptr) {
-        fmt::print(stderr, "ERROR: Internal error in zoltan_decompose.  export_procs is null.\n");
-        exit(EXIT_FAILURE);
+        std::ostringstream errmsg;
+        fmt::print(errmsg, "ERROR: Internal error in zoltan_decompose.  export_procs is null.\n");
+        IOSS_ERROR(errmsg);
       }
       std::vector<std::pair<int, int64_t>> export_map;
       export_map.reserve(num_export);
@@ -1187,8 +1197,8 @@ namespace Ioss {
           nodes.push_back(i + m_nodeOffset);
           found_count++;
 #if IOSS_DEBUG_OUTPUT
-          fmt::print(stderr, "Processor {}:\tNode {} not connected to any elements\n", m_processor,
-                     i + m_nodeOffset + 1);
+          fmt::print(Ioss::DEBUG(), "Processor {}:\tNode {} not connected to any elements\n",
+                     m_processor, i + m_nodeOffset + 1);
 #endif
         }
       }
@@ -1217,7 +1227,7 @@ namespace Ioss {
 // Map that converts nodes from the global index (1-based) to a
 // local-per-processor index (1-based)
 #if IOSS_DEBUG_OUTPUT
-    fmt::print(stderr, "Processor {}:\tNode Count = {}\n", m_processor, nodes.size());
+    fmt::print(Ioss::DEBUG(), "Processor {}:\tNode Count = {}\n", m_processor, nodes.size());
 #endif
     nodeGTL.swap(nodes);
     for (size_t i = 0; i < nodeGTL.size(); i++) {
@@ -1344,7 +1354,8 @@ namespace Ioss {
       m_nodeCommMap[i] = node_global_to_local(m_nodeCommMap[i] + 1);
     }
 #if IOSS_DEBUG_OUTPUT
-    fmt::print(stderr, "Processor {} has {} shared nodes\n", m_processor, m_nodeCommMap.size() / 2);
+    fmt::print(Ioss::DEBUG(), "Processor {} has {} shared nodes\n", m_processor,
+               m_nodeCommMap.size() / 2);
 #endif
     show_progress(__func__);
   }

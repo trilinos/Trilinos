@@ -165,6 +165,12 @@ int ex_put_variable_names(int exoid, ex_entity_type obj_type, int num_vars, char
   case EX_NODAL:
     ex_put_var_names_int(exoid, "nodal", DIM_NUM_NOD_VAR, VAR_NAME_NOD_VAR, &varid);
     break;
+  case EX_ASSEMBLY:
+    ex_put_var_names_int(exoid, "assembly", DIM_NUM_ASSEMBLY_VAR, VAR_NAME_ASSEMBLY_VAR, &varid);
+    break;
+  case EX_BLOB:
+    ex_put_var_names_int(exoid, "blob", DIM_NUM_BLOB_VAR, VAR_NAME_BLOB_VAR, &varid);
+    break;
   case EX_EDGE_BLOCK:
     ex_put_var_names_int(exoid, "edge", DIM_NUM_EDG_VAR, VAR_NAME_EDG_VAR, &varid);
     break;

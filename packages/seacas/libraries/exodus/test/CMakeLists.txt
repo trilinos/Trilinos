@@ -102,6 +102,11 @@ IF ( NETCDF_NCDUMP_BINARY )
     testwt-compress
     testwt-results
     testwt-oned
+    testwt-assembly
+    testrd-assembly
+    test-add-assembly
+    testwt-blob
+    testrd-blob
   )
 
   IF (SEACASExodus_ENABLE_THREADSAFE)
@@ -138,6 +143,7 @@ IF ( NETCDF_NCDUMP_BINARY )
 
   FOREACH ( testName ${cbind_OLDTESTS} )
     TRIBITS_ADD_EXECUTABLE( ${testName} NOEXEPREFIX NOEXESUFFIX SOURCES ${testName}.c LINKER_LANGUAGE CXX)
+    set_property(TARGET ${testName} PROPERTY C_STANDARD 99)
   ENDFOREACH ( testName )
 
   TRIBITS_ADD_EXECUTABLE( testwt-localization NOEXEPREFIX NOEXESUFFIX SOURCES testwt-localization.C LINKER_LANGUAGE CXX)

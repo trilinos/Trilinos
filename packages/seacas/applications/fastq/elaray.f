@@ -109,30 +109,30 @@ C  CROSSES.  THE ARRAY IS LOGICALLY A SQUARE, BUT PHYSICALLY CAN BE
 C  RECTANGULAR SINCE THE X AND Y EXTREMES MAY FORM ANY SIZE RECTANGLE.
 C  ROWS FIRST IN THE ARRAY AND THEN COLUMNS.
 C
-      XDELTA = (XMAX - XMIN) / FLOAT (IDIVIS)
-      YDELTA = (YMAX - YMIN) / FLOAT (IDIVIS)
+      XDELTA = (XMAX - XMIN) / DBLE(IDIVIS)
+      YDELTA = (YMAX - YMIN) / DBLE(IDIVIS)
       KOUNT = 0
       DO 160 J = IDIVIS, 1, -1
          IF (J .EQ. 1) THEN
             YL = YMIN
          ELSE
-            YL = YMIN + (YDELTA * FLOAT(J - 1))
+            YL = YMIN + (YDELTA * DBLE(J - 1))
          ENDIF
          IF (J .EQ. IDIVIS) THEN
             YU = YMAX
          ELSE
-            YU = YMIN + (YDELTA * FLOAT(J))
+            YU = YMIN + (YDELTA * DBLE(J))
          ENDIF
          DO 150 I = 1, IDIVIS
             IF (I .EQ. 1) THEN
                XL = XMIN
             ELSE
-               XL = XMIN + (XDELTA * FLOAT(I - 1))
+               XL = XMIN + (XDELTA * DBLE(I - 1))
             ENDIF
             IF (I .EQ. IDIVIS) THEN
                XU = XMAX
             ELSE
-               XU = XMIN + (XDELTA * FLOAT(I))
+               XU = XMIN + (XDELTA * DBLE(I))
             ENDIF
             INDEX = ((IDIVIS - J + 1) * 10) + I
             LINKEG (1, INDEX) = KOUNT + 1

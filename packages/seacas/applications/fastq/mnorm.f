@@ -66,7 +66,7 @@ C
   100 CONTINUE
 C
       IF (NUML .LE. 0) RETURN
-      TOL = 1.25 * S / FLOAT (NUML)
+      TOL = 1.25 * S / DBLE(NUML)
       NUML = 0
       S = 0.0
       DO 110 L = 1, LLL
@@ -80,7 +80,7 @@ C
             ENDIF
          ENDIF
   110 CONTINUE
-      STDLEN = S / FLOAT (NUML)
+      STDLEN = S / DBLE(NUML)
 C
       RETURN
 C

@@ -17,8 +17,8 @@ TRIBITS_ADD_EXECUTABLE(
   LINKER_LANGUAGE Fortran
   SOURCES ${SOURCES}
   COMM serial mpi
+  INSTALLABLE
   )
-install_executable(mapvar-kd)
 
 TRIBITS_SUBPACKAGE_POSTPROCESS()
 

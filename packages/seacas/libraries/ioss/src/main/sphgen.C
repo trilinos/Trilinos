@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -56,7 +56,7 @@
 #include "Ioss_ScopeGuard.h"
 #include "Ioss_State.h"
 
-#define OUTPUT std::cerr
+#define DO_OUTPUT std::cerr
 
 // ========================================================================
 
@@ -166,43 +166,44 @@ int main(int argc, char *argv[])
     return (EXIT_FAILURE);
   }
 
-  OUTPUT << "Input:    '" << in_file << "', Type: " << in_type << '\n';
-  OUTPUT << "Output:   '" << out_file << "', Type: " << out_type << '\n';
-  OUTPUT << '\n';
+  DO_OUTPUT << "Input:    '" << in_file << "', Type: " << in_type << '\n';
+  DO_OUTPUT << "Output:   '" << out_file << "', Type: " << out_type << '\n';
+  DO_OUTPUT << '\n';
 
   create_sph(in_file, in_type, out_file, out_type, globals);
 
-  OUTPUT << "\n" << codename << " execution successful.\n";
+  DO_OUTPUT << "\n" << codename << " execution successful.\n";
   return EXIT_SUCCESS;
 }
 
 namespace {
   void show_usage(const std::string &prog)
   {
-    OUTPUT << "\nUSAGE: " << prog << " in_file out_file\n"
-           << "...or: " << prog << " command_file\n"
-           << "       version: " << version << "\n\n"
-           << "\tConverts all HEX element blocks to SPHERE element blocks\n"
-           << "\tand creates a nodeset for each element block containing the node at the center of "
-              "the sphere.\n"
-           << "\tignores all other element block types and deletes all existing nodesets.\n"
-           << "Options:\n"
-           << "\t--directory or -d {dir}  : specifies current working directory\n"
-           << "\t--input     or -i {file} : read input and output filename data from file\n"
-           << "\t--in_type {pamgen|generated|exodus} : set input type to the argument. Default "
-              "exodus\n"
-           << "\t--out_type {exodus} : set output type to the argument. Default exodus\n"
-           << "\t--scale_factor : radius = (volume/scale_factor)^1/3; default = 8.0\n"
-           << "\t\t which gives the half-side-length of a cube with that volume\n"
-           << "\t\t use 4*pi/3 = 4.18879 for the radius of a sphere with that volume.\n";
+    DO_OUTPUT
+        << "\nUSAGE: " << prog << " in_file out_file\n"
+        << "...or: " << prog << " command_file\n"
+        << "       version: " << version << "\n\n"
+        << "\tConverts all HEX element blocks to SPHERE element blocks\n"
+        << "\tand creates a nodeset for each element block containing the node at the center of "
+           "the sphere.\n"
+        << "\tignores all other element block types and deletes all existing nodesets.\n"
+        << "Options:\n"
+        << "\t--directory or -d {dir}  : specifies current working directory\n"
+        << "\t--input     or -i {file} : read input and output filename data from file\n"
+        << "\t--in_type {pamgen|generated|exodus} : set input type to the argument. Default "
+           "exodus\n"
+        << "\t--out_type {exodus} : set output type to the argument. Default exodus\n"
+        << "\t--scale_factor : radius = (volume/scale_factor)^1/3; default = 8.0\n"
+        << "\t\t which gives the half-side-length of a cube with that volume\n"
+        << "\t\t use 4*pi/3 = 4.18879 for the radius of a sphere with that volume.\n";
 
     Ioss::NameList db_types;
     Ioss::IOFactory::describe(&db_types);
-    OUTPUT << "\nSupports database types:\n\t";
+    DO_OUTPUT << "\nSupports database types:\n\t";
     for (Ioss::NameList::const_iterator IF = db_types.begin(); IF != db_types.end(); ++IF) {
-      OUTPUT << *IF << "  ";
+      DO_OUTPUT << *IF << "  ";
     }
-    OUTPUT << "\n\n";
+    DO_OUTPUT << "\n\n";
   }
 
   void create_sph(const std::string &inpfile, const std::string &input_type,
@@ -222,7 +223,7 @@ namespace {
     Ioss::Region region(dbi, "region_1");
 
     if (!region.get_nodesets().empty()) {
-      OUTPUT << " *** All nodesets will be replaced by element block nodesets\n";
+      DO_OUTPUT << " *** All nodesets will be replaced by element block nodesets\n";
     }
 
     //========================================================================

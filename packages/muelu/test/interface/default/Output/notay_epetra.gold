@@ -54,6 +54,7 @@ BuildIntermediateProlongator (MueLu::NotayAggregationFactory)
 BuildCoarseLocalMatrix (MueLu::NotayAggregationFactory)
 BuildFurtherAggregates (MueLu::NotayAggregationFactory)
 aggregation: pairwise: size = 8   [default]
+aggregation: pairwise: tie threshold = 1e-06   [default]
 aggregation: compute aggregate qualities = 0   [default]
 aggregation: Dirichlet threshold = 10
 aggregation: ordering = natural
@@ -105,13 +106,13 @@ presmoother ->
 ---                            Multigrid Summary                             ---
 --------------------------------------------------------------------------------
 Number of levels    = 2
-Operator complexity = 1.83
+Operator complexity = 1.00
 Smoother complexity = 0.00
 Cycle type          = V
 
 level  rows  nnz    nnz/row  c ratio  procs
   0  9999  29995  3.00                  1  
-  1  4985  24919  5.00     2.01         1  
+  1  40    118    2.95     249.97       1  
 
 Smoother (level 0) both : MueLu::IfpackSmoother{type = point relaxation stand-alone}
 

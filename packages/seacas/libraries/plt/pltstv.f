@@ -1,4 +1,4 @@
-C Copyright (C) 2009-2017 National Technology & Engineering Solutions
+C Copyright (C) 2009-2017, 2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -83,7 +83,7 @@ C=======================================================================
          ZZZLS = BUFF(1)
          VECTP(1) = BUFF(1)
          IF (BUFF(1).NE.0.) THEN
-            IBUFFT = IFIX(BUFF(1)) - 1
+            IBUFFT = INT(BUFF(1)) - 1
             CALL VDSTLS(IBUFFT)
          END IF
 

@@ -95,6 +95,7 @@ namespace MueLu {
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
     SET_VALID_ENTRY("aggregation: pairwise: size");
+    SET_VALID_ENTRY("aggregation: pairwise: tie threshold");
     SET_VALID_ENTRY("aggregation: compute aggregate qualities");
     SET_VALID_ENTRY("aggregation: Dirichlet threshold");
     SET_VALID_ENTRY("aggregation: ordering");
@@ -199,6 +200,10 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(1,Exceptions::RuntimeError,"Invalid ordering type");
     }
 
+    // Get an ordering vector
+    // NOTE: The orderingVector only orders *rows* of the matrix.  Off-proc columns
+    // will get ignored in the aggregation phases, so we don't need to worry about
+    // running off the end.
     Array<LO> orderingVector(numRows);
     for (LO i = 0; i < numRows; i++)
       orderingVector[i] = i;
@@ -241,34 +246,74 @@ namespace MueLu {
       // Compute the coarse local matrix and coarse row sum
       BuildCoarseLocalMatrix(intermediateP, coarseLocalA);
 
+      // Directly compute rowsum from A, rather than coarseA
       row_sum_type rowSum("rowSum", numLocalAggregates);
-      { // This should eventually become a function in kokkos-kernels or MueLu_Utilities.
+      {
+        std::vector<std::vector<LO> > agg2vertex(numLocalAggregates);
+        auto vertex2AggId = aggregates->GetVertex2AggId()->getData(0);
+        for(LO i=0; i<(LO)numRows; i++) {
+          if(aggStat[i] != AGGREGATED) 
+            continue;
+          LO agg=vertex2AggId[i];
+          agg2vertex[agg].push_back(i);
+        }
+        
         typename row_sum_type::HostMirror rowSum_h = Kokkos::create_mirror_view(rowSum);
-        typename local_matrix_type::row_map_type::HostMirror row_map_h
-          = Kokkos::create_mirror_view(coarseLocalA.graph.row_map);
-        Kokkos::deep_copy(row_map_h, coarseLocalA.graph.row_map);
-        typename local_matrix_type::values_type::HostMirror values_h
-          = Kokkos::create_mirror_view(coarseLocalA.values);
-        Kokkos::deep_copy(values_h, coarseLocalA.values);
-        for(LO rowIdx = 0; rowIdx < static_cast<LO>(coarseLocalA.numRows()); ++rowIdx) {
-          impl_scalar_type sum = Kokkos::ArithTraits<impl_scalar_type>::zero();
-          for(LO entryIdx = static_cast<LO>(row_map_h(rowIdx));
-              entryIdx < static_cast<LO>(row_map_h(rowIdx + 1));
-              ++entryIdx) {
-            sum += values_h(entryIdx);
+        for(LO i = 0; i < numRows; i++) {
+          // If not aggregated already, skip this guy
+          if(aggStat[i] != AGGREGATED)
+            continue;
+          int agg = vertex2AggId[i];
+          std::vector<LO> & myagg = agg2vertex[agg];
+
+          size_t nnz = A->getNumEntriesInLocalRow(i);
+          ArrayView<const LO> indices;
+          ArrayView<const SC> vals;
+          A->getLocalRowView(i, indices, vals);
+
+          SC mysum = Teuchos::ScalarTraits<Scalar>::zero();
+          for (LO colidx = 0; colidx < static_cast<LO>(nnz); colidx++) {
+            bool found = false;
+            if(indices[colidx] < numRows) {
+              for(LO j=0; j<(LO)myagg.size(); j++) 
+                if (vertex2AggId[indices[colidx]] == agg) 
+                  found=true;
+            }
+            if(!found) {
+              *out << "- ADDING col "<<indices[colidx]<<" = "<<vals[colidx] << std::endl;
+                mysum += vals[colidx];
+              }
+              else {
+              *out << "- NOT ADDING col "<<indices[colidx]<<" = "<<vals[colidx] << std::endl;
+              }
           }
-          rowSum_h(rowIdx) = sum;
+          
+          rowSum_h[agg] = mysum;
         }
         Kokkos::deep_copy(rowSum, rowSum_h);
-        // Kokkos::deep_copy(rowSum, Kokkos::ArithTraits<impl_scalar_type>::one());
       }
 
+      // Get local orderingVector
+      Array<LO> localOrderingVector(numRows);
+      for (LO i = 0; i < numRows; i++)
+        localOrderingVector[i] = i;
+      if (ordering == O_RANDOM)
+        MueLu::NotayUtils::RandomReorder(localOrderingVector);
+#if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+      else if (ordering == O_CUTHILL_MCKEE) {
+        RCP<Xpetra::Vector<LO,LO,GO,NO> > rcmVector = MueLu::Utilities_kokkos<SC,LO,GO,NO>::CuthillMcKee(*A);
+        auto localVector = rcmVector->getData(0);
+        for (LO i = 0; i < numRows; i++)
+          localOrderingVector[i] = localVector[i];
+      }
+#endif
+      
       // Compute new aggregates
       numLocalAggregates    = 0;
       numNonAggregatedNodes = static_cast<LO>(coarseLocalA.numRows());
       std::vector<LO> localAggStat(numNonAggregatedNodes, READY);
       localVertex2AggId.resize(numNonAggregatedNodes, -1);
-      BuildFurtherAggregates(pL, A, coarseLocalA, kappa, rowSum,
+      BuildFurtherAggregates(pL, A, localOrderingVector, coarseLocalA, kappa, rowSum,
                              localAggStat, localVertex2AggId,
                              numLocalAggregates, numNonAggregatedNodes);
 
@@ -324,6 +369,7 @@ namespace MueLu {
       out = Teuchos::getFancyOStream(rcp(new Teuchos::oblackholestream()));
     }
 
+
     const SC SC_ZERO    = Teuchos::ScalarTraits<SC>::zero();
     const MT MT_ZERO    = Teuchos::ScalarTraits<MT>::zero();
     const MT MT_ONE     = Teuchos::ScalarTraits<MT>::one();
@@ -335,11 +381,18 @@ namespace MueLu {
     const LO numRows    = aggStat.size();
     const int myRank    = A->getMap()->getComm()->getRank();
 
+    // For finding "ties" where we fall back to the ordering.  Making this larger than
+    // hard zero substantially increases code robustness.
+    double tie_criterion = params.get<double>("aggregation: pairwise: tie threshold");
+    double tie_less = 1.0 - tie_criterion;
+    double tie_more = 1.0 + tie_criterion;
+
     // NOTE: Assumes 1 dof per node.  This constraint is enforced in Build(),
     // and so we're not doing again here.
     // This should probably be fixed at some point.
 
     // Extract diagonal, rowsums, etc
+    // NOTE: The ghostedRowSum vector here has has the sign flipped from Notay's S
     RCP<Vector> ghostedDiag = MueLu::Utilities<SC,LO,GO,NO>::GetMatrixOverlappedDiagonal(*A);
     RCP<Vector> ghostedRowSum = MueLu::Utilities<SC,LO,GO,NO>::GetMatrixOverlappedDeletedRowsum(*A);
     RCP<RealValuedVector> ghostedAbsRowSum = MueLu::Utilities<SC,LO,GO,NO>::GetMatrixOverlappedAbsDeletedRowsum(*A);
@@ -370,6 +423,7 @@ namespace MueLu {
       }
     }
 
+
     // 2 : Iteration
     LO aggIndex = LO_ZERO;
     for(LO i = 0; i < numRows; i++) {
@@ -395,25 +449,32 @@ namespace MueLu {
         if(current_idx == col || aggStat[col] != READY || col > numRows || val == SC_ZERO)
           continue;
 
-
 	MT aij = STS::real(val);
 	MT ajj = STS::real(D[col]);
-	MT sj  = STS::real(S[col]);
+	MT sj  =  - STS::real(S[col]);  // NOTE: The ghostedRowSum vector here has has the sign flipped from Notay's S
 	if(aii - si + ajj - sj >= MT_ZERO) {
           // Modification: We assume symmetry here aij = aji
 	  MT mu_top    = MT_TWO / ( MT_ONE / aii + MT_ONE / ajj);
 	  MT mu_bottom =  - aij + MT_ONE / ( MT_ONE / (aii - si) + MT_ONE / (ajj - sj) );
 	  MT mu = mu_top / mu_bottom;
-	  if (best_idx == LO_INVALID ||  mu < best_mu) {
+
+          // Modification: Explicitly check the tie criterion here
+	  if (mu > MT_ZERO && (best_idx == LO_INVALID || mu < best_mu * tie_less ||
+                                    (mu < best_mu*tie_more && orderingVector[col] < orderingVector[best_idx]))) {
 	    best_mu  = mu;
 	    best_idx = col;
+            *out << "[" << current_idx << "] Column     UPDATED " << col << ": "
+                 << "aii - si + ajj - sj = " << aii << " - " << si << " + " << ajj << " - " << sj
+                 << " = " << aii - si + ajj - sj<< ", aij = "<<aij << ", mu = " << mu << std::endl;            
 	  }
-          *out << "[" << current_idx << "] Column SUCCESS " << col << ": "
+          else {
+          *out << "[" << current_idx << "] Column NOT UPDATED " << col << ": "
               << "aii - si + ajj - sj = " << aii << " - " << si << " + " << ajj << " - " << sj
-              << " = " << aii - si + ajj - sj << ", mu = " << mu << std::endl;
-	}
+               << " = " << aii - si + ajj - sj << ", aij = "<<aij<< ", mu = " << mu << std::endl;
+          }
+        }
         else {
-          *out << "[" << current_idx << "] Column FAILED " << col << ": "
+          *out << "[" << current_idx << "] Column     FAILED " << col << ": "
               << "aii - si + ajj - sj = " << aii << " - " << si << " + " << ajj << " - " << sj
               << " = " << aii - si + ajj - sj << std::endl;
         }
@@ -473,6 +534,7 @@ namespace MueLu {
   void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   BuildFurtherAggregates(const Teuchos::ParameterList& params,
                          const RCP<const Matrix>& A,
+                         const Teuchos::ArrayView<const LO> & orderingVector,
                          const typename Matrix::local_matrix_type& coarseA,
                          const typename Teuchos::ScalarTraits<Scalar>::magnitudeType kappa,
                          const Kokkos::View<typename Kokkos::ArithTraits<Scalar>::val_type*,
@@ -498,6 +560,13 @@ namespace MueLu {
     const magnitude_type MT_zero = Teuchos::ScalarTraits<magnitude_type>::zero();
     const magnitude_type MT_one  = Teuchos::ScalarTraits<magnitude_type>::one();
     const magnitude_type MT_two  = MT_one + MT_one;
+    const LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid() ;
+
+    // For finding "ties" where we fall back to the ordering.  Making this larger than
+    // hard zero substantially increases code robustness.
+    double tie_criterion = params.get<double>("aggregation: pairwise: tie threshold");
+    double tie_less = 1.0 - tie_criterion;
+    double tie_more = 1.0 + tie_criterion;
 
     typename row_sum_type::HostMirror rowSum_h = Kokkos::create_mirror_view(rowSum);
     Kokkos::deep_copy(rowSum_h, rowSum);
@@ -533,32 +602,40 @@ namespace MueLu {
 
       LO bestIdx = Teuchos::OrdinalTraits<LO>::invalid();
       magnitude_type best_mu = Teuchos::ScalarTraits<magnitude_type>::zero();
-      const magnitude_type aii     = Kokkos::ArithTraits<value_type>::abs(diagA_h(currentIdx));
-      const magnitude_type si      = Kokkos::ArithTraits<value_type>::abs(rowSum_h(currentIdx));
+      const magnitude_type aii     = Teuchos::ScalarTraits<value_type>::real(diagA_h(currentIdx));
+      const magnitude_type si      = Teuchos::ScalarTraits<value_type>::real(rowSum_h(currentIdx));
       for(auto entryIdx = row_map_h(currentIdx); entryIdx < row_map_h(currentIdx + 1); ++entryIdx) {
         const LO colIdx = static_cast<LO>(entries_h(entryIdx));
-        if(currentIdx == colIdx || localAggStat[colIdx] != READY || values_h(entryIdx) == KAT_zero) {
+        if(currentIdx == colIdx || localAggStat[colIdx] != READY || values_h(entryIdx) == KAT_zero || colIdx > numRows) {
           continue;
         }
 
-        const magnitude_type aij = Kokkos::ArithTraits<value_type>::abs(values_h(entryIdx));
-        const magnitude_type ajj = Kokkos::ArithTraits<value_type>::abs(diagA_h(colIdx));
-        const magnitude_type sj  = Kokkos::ArithTraits<value_type>::abs(rowSum_h(colIdx));
+        const magnitude_type aij = Teuchos::ScalarTraits<value_type>::real(values_h(entryIdx));
+        const magnitude_type ajj = Teuchos::ScalarTraits<value_type>::real(diagA_h(colIdx));
+        const magnitude_type sj  = - Teuchos::ScalarTraits<value_type>::real(rowSum_h(colIdx)); // NOTE: The ghostedRowSum vector here has has the sign flipped from Notay's S
         if(aii - si + ajj - sj >= MT_zero) {
           const magnitude_type mu_top    = MT_two / ( MT_one/aii + MT_one/ajj );
           const magnitude_type mu_bottom = -aij + MT_one / (MT_one / (aii - si) + MT_one / (ajj - sj));
           const magnitude_type mu = mu_top / mu_bottom;
-          if(bestIdx == Teuchos::OrdinalTraits<LO>::invalid() || mu < best_mu) {
+
+          // Modification: Explicitly check the tie criterion here
+	  if (mu > MT_zero  && (bestIdx == LO_INVALID ||  mu < best_mu * tie_less ||
+                                (mu < best_mu*tie_more && orderingVector[colIdx] < orderingVector[bestIdx]))) {
             best_mu = mu;
             bestIdx = colIdx;
+            *out << "[" << currentIdx << "] Column     UPDATED " << colIdx << ": "
+                 << "aii - si + ajj - sj = " << aii << " - " << si << " + " << ajj << " - " << sj
+                 << " = " << aii - si + ajj - sj << ", aij = "<<aij<<" mu = " << mu << std::endl;
           }
-          *out << "[" << currentIdx << "] Column SUCCESS " << colIdx << ": "
-               << "aii - si + ajj - sj = " << aii << " - " << si << " + " << ajj << " - " << sj
-               << " = " << aii - si + ajj - sj << ", mu = " << mu << std::endl;
+          else {
+            *out << "[" << currentIdx << "] Column NOT UPDATED " << colIdx << ": "
+                 << "aii - si + ajj - sj = " << aii << " - " << si << " + " << ajj << " - " << sj
+                 << " = " << aii - si + ajj - sj << ", aij = "<<aij<<", mu = " << mu << std::endl;
+          }
         } else {
-          *out << "[" << currentIdx << "] Column FAILED " << colIdx << ": "
-               << "aii - si + ajj - sj = " << aii << " - " << si << " + " << ajj << " - " << sj
-               << " = " << aii - si + ajj - sj << std::endl;
+            *out << "[" << currentIdx << "] Column      FAILED " << colIdx << ": "
+                 << "aii - si + ajj - sj = " << aii << " - " << si << " + " << ajj << " - " << sj
+                 << " = " << aii - si + ajj - sj << std::endl;
         }
       } // end loop over row entries
 

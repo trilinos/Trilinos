@@ -47,8 +47,6 @@
 #include <vector>    // for vector
 namespace Ioss {
   class Field;
-} // namespace Ioss
-namespace Ioss {
   class GroupingEntity;
   class Region;
   class SideBlock;
@@ -57,7 +55,6 @@ namespace Ioss {
 } // namespace Ioss
 
 #define IOSS_ERROR(errmsg) throw std::runtime_error((errmsg).str())
-#define IOSS_WARNING std::cerr
 
 namespace {
   // SEE: http://lemire.me/blog/2017/04/10/removing-duplicates-from-lists-quickly
@@ -84,7 +81,6 @@ namespace {
 } // namespace
 
 namespace Ioss {
-
   /* \brief Utility methods.
    */
   class Utils
@@ -93,11 +89,55 @@ namespace Ioss {
     Utils()  = default;
     ~Utils() = default;
 
+    /**
+     * \defgroup IossStreams Streams used for IOSS output
+     *@{
+     */
+    static std::ostream
+        *m_outputStream; ///< general informational output (very rare). Default std::cerr
+    static std::ostream *m_debugStream;   ///< debug output when requested. Default std::cerr
+    static std::ostream *m_warningStream; ///< IOSS warning output. Default std::cerr
+    static std::string m_preWarningText;  ///< is a string that prepends all warning message output.
+                                          ///< Default is "\nIOSS WARNING: "
+
+    /** \brief set the stream for all streams (output, debug, and warning) to the specified
+     * `out_stream`
+     */
+    static void set_all_streams(std::ostream &out_stream)
+    {
+      m_outputStream  = &out_stream;
+      m_debugStream   = &out_stream;
+      m_warningStream = &out_stream;
+    }
+
+    /** \brief set the output stream to the specified `output_stream`
+     */
+    static void set_output_stream(std::ostream &output_stream) { m_outputStream = &output_stream; }
+
+    /** \brief set the debug stream to the specified `debug_stream`
+     */
+    static void set_debug_stream(std::ostream &debug_stream) { m_debugStream = &debug_stream; }
+
+    /** \brief set the warning stream to the specified `warning_stream`
+     */
+    static void set_warning_stream(std::ostream &warning_stream)
+    {
+      m_warningStream = &warning_stream;
+    }
+
+    /** \brief set the pre-warning text
+     * Sets the text output prior to a warning to the specified text.
+     * Pass an empty string to disable this.  Default is `"\nIOSS WARNING: "`
+     */
+    static void set_pre_warning_text(const std::string &text) { m_preWarningText = text; }
+    /** @}*/
+
     static void check_dynamic_cast(const void *ptr)
     {
       if (ptr == nullptr) {
-        std::cerr << "INTERNAL ERROR: Invalid dynamic cast returned nullptr\n";
-        exit(EXIT_FAILURE);
+        std::ostringstream errmsg;
+        errmsg << "INTERNAL ERROR: Invalid dynamic cast returned nullptr\n";
+        IOSS_ERROR(errmsg);
       }
     }
 
@@ -144,13 +184,13 @@ namespace Ioss {
           return p - 1;
         }
       }
-      std::cerr << "FATAL ERROR: find_index_location. Searching for " << node << " in:\n";
+      std::ostringstream errmsg;
+      errmsg << "FATAL ERROR: find_index_location. Searching for " << node << " in:\n";
       for (auto idx : index) {
-        std::cerr << idx << ", ";
+        errmsg << idx << ", ";
       }
-      std::cerr << "\n";
-      assert(1 == 0); // Cannot happen...
-      return 0;
+      errmsg << "\n";
+      IOSS_ERROR(errmsg);
 #else
       return std::distance(index.begin(), std::upper_bound(index.begin(), index.end(), node)) - 1;
 #endif
@@ -479,5 +519,16 @@ namespace Ioss {
     static void copy_database(Ioss::Region &region, Ioss::Region &output_region,
                               Ioss::MeshCopyOptions &options);
   };
+
+  inline std::ostream &OUTPUT() { return *Utils::m_outputStream; }
+
+  inline std::ostream &DEBUG() { return *Utils::m_debugStream; }
+
+  inline std::ostream &WARNING()
+  {
+    *Utils::m_warningStream << Utils::m_preWarningText;
+    return *Utils::m_warningStream;
+  }
+
 } // namespace Ioss
 #endif

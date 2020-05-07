@@ -6,7 +6,7 @@ import os
 exodus.py v 1.13 (seacas-beta) is a python wrapper of some of the exodus library
 (Python 2 Version)
 
-Copyright(C) 2019 National Technology & Engineering Solutions of
+Copyright(C) 2019, 2020 National Technology & Engineering Solutions of
 Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 NTESS, the U.S. Government retains certain rights in this software.
 
@@ -3749,7 +3749,6 @@ class exodus:
     # --------------------------------------------------------------------
 
     def __ex_inquire_float(self, id):
-        val = c_int(0)
         dummy_char = create_string_buffer(MAX_LINE_LENGTH + 1)
         ret_float = c_float(0.0)
         if EXODUS_LIB.ex_int64_status(self.fileId) & EX_INQ_INT64_API:
@@ -3773,7 +3772,6 @@ class exodus:
     # --------------------------------------------------------------------
 
     def __ex_inquire_int(self, id):
-        val = c_longlong(0)
         val = EXODUS_LIB.ex_inquire_int(self.fileId, id)
         if val < 0:
             raise Exception(
