@@ -49,13 +49,13 @@ namespace ROL {
 template<typename Real>
 AffineTransformConstraint<Real>::AffineTransformConstraint(const Ptr<Constraint<Real>>       &con,
                                                            const Ptr<LinearConstraint<Real>> &acon,
-                                                           const Ptr<SimController<Real>>    &storage)
+                                                           const Ptr<VectorController<Real>> &storage)
   : con_(con), acon_(acon), storage_(storage) {
   primal_ = acon_->createRangeSpaceVector();
   Av_     = acon_->createRangeSpaceVector();
   dual_   = primal_->dual().clone();
   if (storage == nullPtr) {
-    storage_ = makePtr<SimController<Real>>();
+    storage_ = makePtr<VectorController<Real>>();
   }
 }
 
@@ -63,13 +63,13 @@ template<typename Real>
 AffineTransformConstraint<Real>::AffineTransformConstraint(const Ptr<Constraint<Real>>           &con,
                                                            const Ptr<const LinearOperator<Real>> &A,
                                                            const Ptr<const Vector<Real>>         &b,
-                                                           const Ptr<SimController<Real>>        &storage)
+                                                           const Ptr<VectorController<Real>>     &storage)
   : con_(con), acon_(makePtr<LinearConstraint<Real>>(A,b)), storage_(storage) {
   primal_ = acon_->createRangeSpaceVector();
   Av_     = acon_->createRangeSpaceVector();
   dual_   = primal_->dual().clone();
   if (storage == nullPtr) {
-    storage_ = makePtr<SimController<Real>>();
+    storage_ = makePtr<VectorController<Real>>();
   }
 }
 
@@ -81,7 +81,7 @@ void AffineTransformConstraint<Real>::update( const Vector<Real> &x, EUpdateType
 
 template<typename Real>
 void AffineTransformConstraint<Real>::update( const Vector<Real> &x, bool flag, int iter ) {
-  storage_->equalityConstraintUpdate(true);
+  storage_->constraintUpdate(true);
   con_->update(*transform(x),flag,iter);
 }
 

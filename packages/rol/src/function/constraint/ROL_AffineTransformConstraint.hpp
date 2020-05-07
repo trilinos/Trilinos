@@ -46,7 +46,7 @@
 
 #include "ROL_Constraint.hpp"
 #include "ROL_LinearConstraint.hpp"
-#include "ROL_SimController.hpp"
+#include "ROL_VectorController.hpp"
 
 /** @ingroup func_group
     \class ROL::AffineTransformConstraint
@@ -64,18 +64,18 @@ private:
   const Ptr<Constraint<Real>>       con_;
   const Ptr<LinearConstraint<Real>> acon_;
 
-  Ptr<SimController<Real>> storage_;
+  Ptr<VectorController<Real>> storage_;
   Ptr<Vector<Real>> primal_, dual_, Av_;
 
 public:
   virtual ~AffineTransformConstraint() {}
   AffineTransformConstraint(const Ptr<Constraint<Real>>       &con,
                             const Ptr<LinearConstraint<Real>> &acon,
-                            const Ptr<SimController<Real>>    &storage = nullPtr);
+                            const Ptr<VectorController<Real>> &storage = nullPtr);
   AffineTransformConstraint(const Ptr<Constraint<Real>>           &con,
                             const Ptr<const LinearOperator<Real>> &A,
                             const Ptr<const Vector<Real>>         &b,
-                            const Ptr<SimController<Real>>        &storage = nullPtr);
+                            const Ptr<VectorController<Real>>     &storage = nullPtr);
 
   void update( const Vector<Real> &x, EUpdateType type, int iter = -1 ) override;
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) override;

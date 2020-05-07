@@ -228,8 +228,8 @@ int main(int argc, char *argv[]) {
     bool storage     = parlist->sublist("Problem").get("Use state storage",true);
     std::string type = parlist->sublist("SOL").get("Stochastic Component Type","Risk Neutral");
     storage = (type == "Risk Neutral") ? false : storage;
-    ROL::Ptr<ROL::SimController<RealT> > stateStore
-      = ROL::makePtr<ROL::SimController<RealT>>();
+    ROL::Ptr<ROL::VectorController<RealT> > stateStore
+      = ROL::makePtr<ROL::VectorController<RealT>>();
     ROL::Ptr<ROL::Reduced_Objective_SimOpt<RealT> > cobjRed
       = ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT> >(cobj,
                      pdeWithFilter,stateStore,up,zp,pp,storage);

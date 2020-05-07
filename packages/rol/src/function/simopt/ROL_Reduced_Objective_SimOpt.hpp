@@ -46,7 +46,7 @@
 
 #include "ROL_Objective_SimOpt.hpp"
 #include "ROL_Constraint_SimOpt.hpp"
-#include "ROL_SimController.hpp"
+#include "ROL_VectorController.hpp"
 
 namespace ROL {
 
@@ -55,8 +55,8 @@ class Reduced_Objective_SimOpt : public Objective<Real> {
 private:
   const Ptr<Objective_SimOpt<Real>> obj_;          
   const Ptr<Constraint_SimOpt<Real>> con_; 
-  Ptr<SimController<Real>> stateStore_;
-  Ptr<SimController<Real>> adjointStore_;
+  Ptr<VectorController<Real>> stateStore_;
+  Ptr<VectorController<Real>> adjointStore_;
 
   // Primal vectors
   Ptr<Vector<Real>> state_;                              
@@ -127,7 +127,7 @@ public:
 
       @param[in] obj          is a pointer to a SimOpt objective function.
       @param[in] con          is a pointer to a SimOpt equality constraint.
-      @param[in] stateStore   is a pointer to a SimController object.
+      @param[in] stateStore   is a pointer to a VectorController object.
       @param[in] state        is a pointer to a state space vector, \f$\mathcal{U}\f$.
       @param[in] control      is a pointer to a optimization space vector, \f$\mathcal{Z}\f$.
       @param[in] adjoint      is a pointer to a dual constraint space vector, \f$\mathcal{C}^*\f$.
@@ -137,7 +137,7 @@ public:
   Reduced_Objective_SimOpt(
       const Ptr<Objective_SimOpt<Real>> &obj, 
       const Ptr<Constraint_SimOpt<Real>> &con, 
-      const Ptr<SimController<Real>> &stateStore, 
+      const Ptr<VectorController<Real>> &stateStore, 
       const Ptr<Vector<Real>> &state, 
       const Ptr<Vector<Real>> &control, 
       const Ptr<Vector<Real>> &adjoint,
@@ -149,7 +149,7 @@ public:
 
       @param[in] obj          is a pointer to a SimOpt objective function.
       @param[in] con          is a pointer to a SimOpt equality constraint.
-      @param[in] stateStore   is a pointer to a SimController object.
+      @param[in] stateStore   is a pointer to a VectorController object.
       @param[in] state        is a pointer to a state space vector, \f$\mathcal{U}\f$.
       @param[in] control      is a pointer to a optimization space vector, \f$\mathcal{Z}\f$.
       @param[in] adjoint      is a pointer to a dual constraint space vector, \f$\mathcal{C}^*\f$.
@@ -161,7 +161,7 @@ public:
   Reduced_Objective_SimOpt(
       const Ptr<Objective_SimOpt<Real>> &obj,
       const Ptr<Constraint_SimOpt<Real>> &con,
-      const Ptr<SimController<Real>> &stateStore, 
+      const Ptr<VectorController<Real>> &stateStore, 
       const Ptr<Vector<Real>> &state,
       const Ptr<Vector<Real>> &control, 
       const Ptr<Vector<Real>> &adjoint,

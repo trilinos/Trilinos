@@ -45,199 +45,24 @@
 #ifndef ROL_SCALARCONTROLLER_H
 #define ROL_SCALARCONTROLLER_H
 
-#include "ROL_UpdateTypes.hpp"
+#include "ROL_VectorController.hpp"
+#include "ROL_SingletonVector.hpp"
 
 namespace ROL {
 
 template <class Real, class Key=std::vector<Real>>
-class ScalarController {
-private:
-  // Storage
-  std::map<Key, int> indices_, indices_trial_, indices_temp_;
-  std::vector<bool>  flags_, flags_trial_, flags_temp_;
-  std::vector<Real>  scalars_, scalars_trial_, scalars_temp_;
-  int maxIndex_, maxIndex_trial_, maxIndex_temp_;
-
-  // Update flags
-  bool objUpdated_, conUpdated_;
-  bool temp_, trial_;
-
+class ScalarController : public VectorController<Real,Key> {
 public:
-  /** \brief Constructor.
-  */
-  ScalarController(void)
-    : maxIndex_(0), maxIndex_trial_(0), maxIndex_temp_(0),
-      objUpdated_(false), conUpdated_(false),
-      temp_(false), trial_(false) { 
-    indices_.clear(); indices_trial_.clear(); indices_temp_.clear();
-    flags_.clear(); flags_trial_.clear(); flags_temp_.clear();
-    scalars_.clear(); scalars_trial_.clear(); scalars_temp_.clear();
-  }
+  ScalarController(void);
 
-  void reset(bool flag = true) {
-    if ( flag ) {
-      for (auto it = indices_.begin(); it != indices_.end(); ++it) {
-        flags_[it->second] = false;
-      }
-    }
-  }
+  bool get(Real &x, const Key &param);
 
-  /** \brief Update for SampledScalar storage.
-  */
-  void objectiveUpdate(bool flag = true) {
-    if (!conUpdated_) {
-      reset(flag);
-    }
-    objUpdated_ = true;
-    if (conUpdated_ && objUpdated_) {
-      objUpdated_ = false;
-      conUpdated_ = false;
-    }
-  }
+  void set(Real x, const Key &param);
 
-  /** \brief Equality constraint update for SimController storage.
-  */
-  void constraintUpdate(bool flag = true) {
-    if (!objUpdated_) {
-      reset(flag);
-    }
-    conUpdated_ = true;
-    if (conUpdated_ && objUpdated_) {
-      objUpdated_ = false;
-      conUpdated_ = false;
-    }
-  }
-
-  void objectiveUpdate(EUpdateType type) {
-    if (!conUpdated_) {
-      switch(type) {
-        case UPDATE_INITIAL: temp_ = false; trial_ = false; reset(true);  break;
-        case UPDATE_TRIAL:   temp_ = false; trial_ = true;  resetTrial(); break;
-        case UPDATE_ACCEPT:  temp_ = false; trial_ = false; accept();     break;
-        case UPDATE_REVERT:  temp_ = false; trial_ = false;               break;
-        case UPDATE_TEMP:    temp_ = true;  trial_ = false; resetTemp();  break;
-      }
-    }
-    objUpdated_ = true;
-    if (conUpdated_ && objUpdated_) {
-      objUpdated_ = false;
-      conUpdated_ = false;
-    }
-  }
-
-  void constraintUpdate(EUpdateType type) {
-    if (!objUpdated_) {
-      switch(type) {
-        case UPDATE_INITIAL: temp_ = false; trial_ = false; reset(true);  break;
-        case UPDATE_TRIAL:   temp_ = false; trial_ = true;  resetTrial(); break;
-        case UPDATE_ACCEPT:  temp_ = false; trial_ = false; accept();     break;
-        case UPDATE_REVERT:  temp_ = false; trial_ = false;               break;
-        case UPDATE_TEMP:    temp_ = true;  trial_ = true;  resetTemp();  break;
-      }
-    }
-    conUpdated_ = true;
-    if (conUpdated_ && objUpdated_) {
-      objUpdated_ = false;
-      conUpdated_ = false;
-    }
-  }
-
-  /** \brief Return vector corresponding to input parameter.
-  */
-  bool get(Real &x, const Key &param) {
-    bool flag = false;
-    if (!temp_) {
-      if (trial_) {
-        flag = get(x,param,indices_trial_,flags_trial_,scalars_trial_,maxIndex_trial_);
-      }
-      else {
-        flag = get(x,param,indices_,flags_,scalars_,maxIndex_);
-      }
-    }
-    else {
-      flag = get(x,param,indices_temp_,flags_temp_,scalars_temp_,maxIndex_temp_);
-    }
-    return flag;
-  }
-
-  /** \brief Set vector corresponding to input parameter.
-  */
-  void set(const Real &x, const Key &param) {
-    if (!temp_) {
-      if (trial_) {
-        set(x,param,indices_trial_,flags_trial_,scalars_trial_,maxIndex_trial_);
-      }
-      else {
-        set(x,param,indices_,flags_,scalars_,maxIndex_);
-      }
-    }
-    else {
-      set(x,param,indices_temp_,flags_temp_,scalars_temp_,maxIndex_temp_);
-    }
-  }
-
-private:
-
-  void resetTrial(void) {
-    for (auto it = indices_trial_.begin(); it != indices_trial_.end(); ++it) {
-      flags_trial_[it->second] = false;
-    }
-  }
-
-  void resetTemp(void) {
-    for (auto it = indices_temp_.begin(); it != indices_temp_.end(); ++it) {
-      flags_temp_[it->second] = false;
-    }
-  }
-
-  bool get(Real &x, const Key &param, std::map<Key,int> &indices,
-           std::vector<bool> &flags, std::vector<Real> &scalars, int &maxIndex) {
-    int count = indices.count(param);
-    bool flag = false;
-    int index = maxIndex;
-    if (count) {
-      auto it = indices.find(param);
-      index = it->second;
-      flag  = flags[index];
-      if (flag) {
-        x = scalars[index];
-      }
-    }
-    else {
-      indices.insert(std::pair<Key, int>(param, index));
-      flags.push_back(false);
-      scalars.push_back(static_cast<Real>(0)); 
-      maxIndex++;
-    }
-    return flag;
-  }
-
-  void set(const Real &x, const Key &param, std::map<Key,int> &indices,
-           std::vector<bool> &flags, std::vector<Real> &scalars, int &maxIndex) {
-    int count = indices.count(param);
-    int index = maxIndex;
-    if (count) {
-      auto it = indices.find(param);
-      index = it->second;
-      flags[index] = true;
-      scalars[index] = x;
-    }
-    else {
-      indices.insert(std::pair<Key, int>(param, index));
-      flags.push_back(true);
-      scalars.push_back(x); 
-      maxIndex++;
-    }
-  }
-
-  void accept(void) {
-    reset(true);
-    for (auto it = indices_trial_.begin(); it != indices_trial_.end(); ++it) {
-      set(scalars_trial_[it->second],it->first,indices_,flags_,scalars_,maxIndex_);
-    }
-  }
-}; // class SampledScalar
+}; // class ScalarController
 
 } // namespace ROL
+
+#include "ROL_ScalarController_Def.hpp"
 
 #endif

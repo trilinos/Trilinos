@@ -3,7 +3,7 @@
 #define FEMDATA_H
 
 #include "ROL_Objective.hpp"
-#include "ROL_SimController.hpp"
+#include "ROL_VectorController.hpp"
 #include "../../TOOLS/assembler.hpp"
 #include "../../TOOLS/solver.hpp"
 #include "../../TOOLS/pdevector.hpp"

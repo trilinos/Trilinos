@@ -48,7 +48,7 @@
 #include "ROL_Objective.hpp"
 #include "ROL_SampleGenerator.hpp"
 #include "ROL_ScalarController.hpp"
-#include "ROL_SimController.hpp"
+#include "ROL_VectorController.hpp"
 
 namespace ROL {
 
@@ -71,7 +71,7 @@ private:
   //std::map<std::vector<Real>,Real> value_storage_;
   //std::map<std::vector<Real>,Ptr<Vector<Real>>> gradient_storage_;
   Ptr<ScalarController<Real>> value_storage_;
-  Ptr<SimController<Real>> gradient_storage_;
+  Ptr<VectorController<Real>> gradient_storage_;
 
   void initialize(const Vector<Real> &x) {
     if ( firstUpdate_ ) {
@@ -129,7 +129,7 @@ public:
       ValueSampler_(vsampler), GradientSampler_(gsampler), HessianSampler_(hsampler),
       firstUpdate_(true), storage_(storage) {
     value_storage_ = makePtr<ScalarController<Real>>();
-    gradient_storage_ = makePtr<SimController<Real>>();
+    gradient_storage_ = makePtr<VectorController<Real>>();
   }
 
   RiskNeutralObjective( const Ptr<Objective<Real>>       &pObj,
@@ -140,7 +140,7 @@ public:
       ValueSampler_(vsampler), GradientSampler_(gsampler), HessianSampler_(gsampler),
       firstUpdate_(true), storage_(storage) {
     value_storage_ = makePtr<ScalarController<Real>>();
-    gradient_storage_ = makePtr<SimController<Real>>();
+    gradient_storage_ = makePtr<VectorController<Real>>();
   }
 
   RiskNeutralObjective( const Ptr<Objective<Real>>       &pObj,
@@ -150,7 +150,7 @@ public:
       ValueSampler_(sampler), GradientSampler_(sampler), HessianSampler_(sampler),
       firstUpdate_(true), storage_(storage) {
     value_storage_ = makePtr<ScalarController<Real>>();
-    gradient_storage_ = makePtr<SimController<Real>>();
+    gradient_storage_ = makePtr<VectorController<Real>>();
   }
 
   void update( const Vector<Real> &x, EUpdateType type, int iter = -1 ) {

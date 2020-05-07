@@ -48,7 +48,7 @@
 #include "ROL_Ptr.hpp"
 #include "ROL_SampleGenerator.hpp"
 #include "ROL_ScalarController.hpp"
-#include "ROL_SimController.hpp"
+#include "ROL_VectorController.hpp"
 
 /** @ingroup stochastic_group 
     \class ROL::RandVarFunctional
@@ -82,9 +82,9 @@ private:
   bool storage_;
   bool storage_hessvec_;
   Ptr<ScalarController<Real>> value_storage_;
-  Ptr<SimController<Real>>    gradient_storage_;
+  Ptr<VectorController<Real>> gradient_storage_;
   Ptr<ScalarController<Real>> gradvec_storage_;
-  Ptr<SimController<Real>>    hessvec_storage_;
+  Ptr<VectorController<Real>> hessvec_storage_;
 
 protected:
   Real val_;
@@ -185,7 +185,7 @@ public:
         value_storage_    = makePtr<ScalarController<Real>>();
       }
       if (gradient_storage_ == nullPtr) {
-        gradient_storage_ = makePtr<SimController<Real>>();
+        gradient_storage_ = makePtr<VectorController<Real>>();
       }
     }
   }
@@ -198,20 +198,20 @@ public:
         gradvec_storage_ = makePtr<ScalarController<Real>>();
       }
       if (hessvec_storage_ == nullPtr) {
-        hessvec_storage_ = makePtr<SimController<Real>>();
+        hessvec_storage_ = makePtr<VectorController<Real>>();
       }
     }
   }
 
   virtual void setStorage(const Ptr<ScalarController<Real>> &value_storage,
-                          const Ptr<SimController<Real>> &gradient_storage) {
+                          const Ptr<VectorController<Real>> &gradient_storage) {
     value_storage_    = value_storage;
     gradient_storage_ = gradient_storage;
     useStorage(true);
   }
 
   virtual void setHessVecStorage(const Ptr<ScalarController<Real>> &gradvec_storage,
-                                 const Ptr<SimController<Real>> &hessvec_storage) {
+                                 const Ptr<VectorController<Real>> &hessvec_storage) {
     gradvec_storage_ = gradvec_storage;
     hessvec_storage_ = hessvec_storage;
     useHessVecStorage(true);

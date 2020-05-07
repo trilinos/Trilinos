@@ -59,8 +59,8 @@ Reduced_Objective_SimOpt<Real>::Reduced_Objective_SimOpt(
     storage_(storage), useFDhessVec_(useFDhessVec),
     updateFlag_(true), updateIter_(0), updateType_(UPDATE_INITIAL),
     newUpdate_(false) {
-  stateStore_   = makePtr<SimController<Real>>();
-  adjointStore_ = makePtr<SimController<Real>>();
+  stateStore_   = makePtr<VectorController<Real>>();
+  adjointStore_ = makePtr<VectorController<Real>>();
   state_        = state->clone();
   adjoint_      = adjoint->clone();
   state_sens_   = state->clone();
@@ -87,8 +87,8 @@ Reduced_Objective_SimOpt<Real>::Reduced_Objective_SimOpt(
     storage_(storage), useFDhessVec_(useFDhessVec),
     updateFlag_(true), updateIter_(0), updateType_(UPDATE_INITIAL),
     newUpdate_(false) {
-  stateStore_   = makePtr<SimController<Real>>();
-  adjointStore_ = makePtr<SimController<Real>>();
+  stateStore_   = makePtr<VectorController<Real>>();
+  adjointStore_ = makePtr<VectorController<Real>>();
   state_        = state->clone();
   adjoint_      = adjoint->clone();
   state_sens_   = state->clone();
@@ -103,7 +103,7 @@ template<typename Real>
 Reduced_Objective_SimOpt<Real>::Reduced_Objective_SimOpt(
     const Ptr<Objective_SimOpt<Real>> &obj, 
     const Ptr<Constraint_SimOpt<Real>> &con, 
-    const Ptr<SimController<Real>> &stateStore, 
+    const Ptr<VectorController<Real>> &stateStore, 
     const Ptr<Vector<Real>> &state, 
     const Ptr<Vector<Real>> &control, 
     const Ptr<Vector<Real>> &adjoint,
@@ -113,7 +113,7 @@ Reduced_Objective_SimOpt<Real>::Reduced_Objective_SimOpt(
     storage_(storage), useFDhessVec_(useFDhessVec),
     updateFlag_(true), updateIter_(0), updateType_(UPDATE_INITIAL),
     newUpdate_(false) {
-  adjointStore_ = makePtr<SimController<Real>>();
+  adjointStore_ = makePtr<VectorController<Real>>();
   state_        = state->clone();
   adjoint_      = adjoint->clone();
   state_sens_   = state->clone();
@@ -128,7 +128,7 @@ template<typename Real>
 Reduced_Objective_SimOpt<Real>::Reduced_Objective_SimOpt(
     const Ptr<Objective_SimOpt<Real>> &obj,
     const Ptr<Constraint_SimOpt<Real>> &con,
-    const Ptr<SimController<Real>> &stateStore, 
+    const Ptr<VectorController<Real>> &stateStore, 
     const Ptr<Vector<Real>> &state,
     const Ptr<Vector<Real>> &control, 
     const Ptr<Vector<Real>> &adjoint,
@@ -141,7 +141,7 @@ Reduced_Objective_SimOpt<Real>::Reduced_Objective_SimOpt(
     storage_(storage), useFDhessVec_(useFDhessVec),
     updateFlag_(true), updateIter_(0), updateType_(UPDATE_INITIAL),
     newUpdate_(false) {
-  adjointStore_ = makePtr<SimController<Real>>();
+  adjointStore_ = makePtr<VectorController<Real>>();
   state_        = state->clone();
   adjoint_      = adjoint->clone();
   state_sens_   = state->clone();

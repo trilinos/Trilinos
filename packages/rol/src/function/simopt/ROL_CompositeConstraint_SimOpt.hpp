@@ -45,7 +45,7 @@
 #define ROL_COMPOSITE_EQUALITY_CONSTRAINT_SIMOPT_H
 
 #include "ROL_Constraint_SimOpt.hpp"
-#include "ROL_SimController.hpp"
+#include "ROL_VectorController.hpp"
 
 /** @ingroup func_group
     \class ROL::CompositeConstraint_SimOpt
@@ -84,8 +84,8 @@ private:
   ROL::Ptr<Vector<Real> > primZ_;
   ROL::Ptr<Vector<Real> > dualZ_;
   ROL::Ptr<Vector<Real> > dualZ1_;
-  // State storage through SimController interface
-  ROL::Ptr<SimController<Real> > stateStore_;
+  // State storage through VectorController interface
+  ROL::Ptr<VectorController<Real> > stateStore_;
   // Update information
   bool updateFlag_;
   int updateIter_;
@@ -149,7 +149,7 @@ public:
     primZ_   = z.clone();
     dualZ_   = z.dual().clone();
     dualZ1_  = z.dual().clone();
-    stateStore_ = ROL::makePtr<SimController<Real>>();
+    stateStore_ = ROL::makePtr<VectorController<Real>>();
   }
 
   void update(const Vector<Real> &u, const Vector<Real> &z, bool flag = true, int iter = -1 ) {
@@ -170,7 +170,7 @@ public:
     updateFlag_ = flag;
     updateIter_ = iter;
     Real ctol = std::sqrt(ROL_EPSILON<Real>());
-    stateStore_->equalityConstraintUpdate(true);
+    stateStore_->constraintUpdate(true);
     solveConRed(z, ctol);
   }
 

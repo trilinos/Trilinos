@@ -49,13 +49,13 @@ namespace ROL {
 template<typename Real>
 AffineTransformObjective<Real>::AffineTransformObjective(const Ptr<Objective<Real>>        &obj,
                                                          const Ptr<LinearConstraint<Real>> &acon,
-                                                         const Ptr<SimController<Real>>    &storage)
+                                                         const Ptr<VectorController<Real>> &storage)
   : obj_(obj), acon_(acon), storage_(storage) {
   primal_ = acon_->createRangeSpaceVector();
   Av_     = acon_->createRangeSpaceVector();
   dual_   = primal_->dual().clone();
   if (storage == nullPtr) {
-    storage_ = makePtr<SimController<Real>>();
+    storage_ = makePtr<VectorController<Real>>();
   }
 }
 
@@ -63,13 +63,13 @@ template<typename Real>
 AffineTransformObjective<Real>::AffineTransformObjective(const Ptr<Objective<Real>>            &obj,
                                                          const Ptr<const LinearOperator<Real>> &A,
                                                          const Ptr<const Vector<Real>>         &b,
-                                                         const Ptr<SimController<Real>>        &storage)
+                                                         const Ptr<VectorController<Real>>     &storage)
   : obj_(obj), acon_(makePtr<LinearConstraint<Real>>(A,b)), storage_(storage) {
   primal_ = acon_->createRangeSpaceVector();
   Av_     = acon_->createRangeSpaceVector();
   dual_   = primal_->dual().clone();
   if (storage == nullPtr) {
-    storage_ = makePtr<SimController<Real>>();
+    storage_ = makePtr<VectorController<Real>>();
   }
 }
 

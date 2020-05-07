@@ -3,7 +3,7 @@
 #define MISFIT_ROBJ_H
 
 #include "ROL_Objective.hpp"
-#include "ROL_SimController.hpp"
+#include "ROL_VectorController.hpp"
 #include "femdata.hpp"
 
 template <class Real>
@@ -13,7 +13,7 @@ private:
   const ROL::Ptr<FEMdata<Real>> fem_;
 
   // Vector Storage
-  ROL::Ptr<ROL::SimController<Real>> stateStore_, adjointStore_;
+  ROL::Ptr<ROL::VectorController<Real>> stateStore_, adjointStore_;
   ROL::Ptr<ROL::Vector<Real>> state_, adjoint_, state_sens_, adjoint_sens_;
   ROL::Ptr<ROL::Vector<Real>> dualadjoint_;
 
@@ -27,8 +27,8 @@ public:
                    ROL::ParameterList            &list)
     : fem_(fem), nstat_(0), nadjo_(0), nsens_(0), nsadj_(0),
       nupda_(0), nfval_(0), ngrad_(0), nhess_(0), nprec_(0) {
-    stateStore_   = ROL::makePtr<ROL::SimController<Real>>();
-    adjointStore_ = ROL::makePtr<ROL::SimController<Real>>();
+    stateStore_   = ROL::makePtr<ROL::VectorController<Real>>();
+    adjointStore_ = ROL::makePtr<ROL::VectorController<Real>>();
 
     // Vector Storage
     state_        = fem_->createStateVector(list);

@@ -41,59 +41,82 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_AFFINE_TRANSFORM_OBJECTIVE_H
-#define ROL_AFFINE_TRANSFORM_OBJECTIVE_H
 
-#include "ROL_Objective.hpp"
-#include "ROL_LinearConstraint.hpp"
-#include "ROL_VectorController.hpp"
+#ifndef ROL_SIMCONTROLLER_H
+#define ROL_SIMCONTROLLER_H
 
-/** @ingroup func_group
-    \class ROL::AffineTransformObjective
-    \brief Compose an objective function with an affine transformation, i.e.,
-
-    \f[ F(x) = f(Ax+b). \f]
-
-*/
+#include "ROL_Vector.hpp"
+#include "ROL_UpdateTypes.hpp"
 
 namespace ROL {
 
-template<typename Real>
-class AffineTransformObjective : public Objective<Real> {
+template <class Real, class Key=std::vector<Real>>
+class VectorController {
 private:
-  const Ptr<Objective<Real>>        obj_;
-  const Ptr<LinearConstraint<Real>> acon_;
+  // Storage
+  std::map<Key,int>               indices_, indices_trial_, indices_temp_;
+  std::vector<bool>               flags_, flags_trial_, flags_temp_;
+  std::vector<Ptr<Vector<Real>>>  vectors_, vectors_trial_, vectors_temp_;
+  int maxIndex_, maxIndex_trial_, maxIndex_temp_;
 
-  Ptr<VectorController<Real>> storage_;
-  Ptr<Vector<Real>> primal_, dual_, Av_;
+  // Update flags
+  bool trial_, temp_;
+  bool objUpdated_, conUpdated_;
 
 public:
-  virtual ~AffineTransformObjective() {}
-  AffineTransformObjective(const Ptr<Objective<Real>>            &obj,
-                           const Ptr<const LinearOperator<Real>> &A,
-                           const Ptr<const Vector<Real>>         &b,
-                           const Ptr<VectorController<Real>>     &storage = nullPtr);
-  AffineTransformObjective(const Ptr<Objective<Real>>        &obj,
-                           const Ptr<LinearConstraint<Real>> &acon,
-                           const Ptr<VectorController<Real>> &storage = nullPtr);
+  /** \brief Constructor.
+  */
+  VectorController(void);
 
+  void reset(bool flag = true);
 
-  void update( const Vector<Real> &x, EUpdateType type, int iter = -1 ) override;
-  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) override;
-  Real value( const Vector<Real> &x, Real &tol ) override;
-  void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) override;
-  void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) override;
+  /** \brief Objective function update for VectorController storage.
+  */
+  void objectiveUpdate(bool flag = true);
 
-public:
-  void setParameter(const std::vector<Real> &param) override;
+  /** \brief Equality constraint update for VectorController storage.
+  */
+  void constraintUpdate(bool flag = true);
+
+  /** \brief Objective function update for VectorController storage.
+  */
+  void objectiveUpdate(EUpdateType type);
+
+  /** \brief Constraint update for VectorController storage.
+  */
+  void constraintUpdate(EUpdateType type);
+
+  /** \brief Return vector corresponding to input parameter.
+  */
+  bool get(Vector<Real> &x, const Key &param);
+
+  /** \brief Set vector corresponding to input parameter.
+  */
+  void set(const Vector<Real> &x, const Key &param);
+
+  /** \brief Push the contents of *this into another VectorController.
+  */
+  void push(VectorController<Real,Key> &to) const;
 
 private:
-  const Ptr<const Vector<Real>> transform(const Vector<Real> &x);
 
-}; // class AffineTransformObjective
+  void resetTrial(void);
+
+  void resetTemp(void);
+
+  bool get(Vector<Real> &x, const Key &param,
+           std::map<Key,int> &indices, std::vector<bool> &flags,
+           std::vector<Ptr<Vector<Real>>> &vectors, int &maxIndex);
+
+  void set(const Vector<Real> &x,const Key &param,
+           std::map<Key,int> &indices, std::vector<bool> &flags,
+           std::vector<Ptr<Vector<Real>>> &vectors, int &maxIndex);
+
+  void accept(void);
+}; // class VectorController
 
 } // namespace ROL
 
-#include "ROL_AffineTransformObjective_Def.hpp"
+#include "ROL_VectorController_Def.hpp"
 
-#endif // ROL_AFFINE_TRANSFORM_OBJECTIVE_H
+#endif

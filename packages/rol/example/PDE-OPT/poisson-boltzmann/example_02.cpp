@@ -253,8 +253,8 @@ int main(int argc, char *argv[]) {
       = ROL::makePtr<PDE_Objective<RealT>>(qoi_vec,std_obj,assembler);
     // Build reduced-space objective
     bool storage = parlist->sublist("Problem").get("Use state storage",true);
-    ROL::Ptr<ROL::SimController<RealT> > stateStore
-      = ROL::makePtr<ROL::SimController<RealT>>();
+    ROL::Ptr<ROL::VectorController<RealT> > stateStore
+      = ROL::makePtr<ROL::VectorController<RealT>>();
     ROL::Ptr<ROL::Reduced_Objective_SimOpt<RealT> > objReduced
       = ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(
                        obj,pdeWithDoping,stateStore,up,zp,pp,storage);

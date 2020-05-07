@@ -85,8 +85,8 @@ private:
 
   Ptr<ScalarController<Real>> values_;
   Ptr<ScalarController<Real>> gradvecs_;
-  Ptr<SimController<Real>> gradients_;
-  Ptr<SimController<Real>> hessvecs_;
+  Ptr<VectorController<Real>> gradients_;
+  Ptr<VectorController<Real>> hessvecs_;
 
   using RandVarFunctional<Real>::val_;
   using RandVarFunctional<Real>::gv_;
@@ -105,8 +105,8 @@ private:
   void initializeMV(void) {
     values_    = makePtr<ScalarController<Real>>();
     gradvecs_  = makePtr<ScalarController<Real>>();
-    gradients_ = makePtr<SimController<Real>>();
-    hessvecs_  = makePtr<SimController<Real>>();
+    gradients_ = makePtr<VectorController<Real>>();
+    hessvecs_  = makePtr<VectorController<Real>>();
 
     RandVarFunctional<Real>::setStorage(values_,gradients_);
     RandVarFunctional<Real>::setHessVecStorage(gradvecs_,hessvecs_);
@@ -207,14 +207,14 @@ public:
   }
 
   void setStorage(const Ptr<ScalarController<Real>> &value_storage,
-                  const Ptr<SimController<Real>> &gradient_storage) {
+                  const Ptr<VectorController<Real>> &gradient_storage) {
     values_    = value_storage;
     gradients_ = gradient_storage;
     RandVarFunctional<Real>::setStorage(values_,gradients_);
   }
 
   void setHessVecStorage(const Ptr<ScalarController<Real>> &gradvec_storage,
-                         const Ptr<SimController<Real>> &hessvec_storage) {
+                         const Ptr<VectorController<Real>> &hessvec_storage) {
     gradvecs_ = gradvec_storage;
     hessvecs_ = hessvec_storage;
     RandVarFunctional<Real>::setHessVecStorage(gradvecs_,hessvecs_);

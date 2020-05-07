@@ -65,7 +65,7 @@ private:
   const Ptr<Constraint<Real>> lcon_;
   const Ptr<Vector<Real>>     x_;
 
-  Ptr<SimController<Real>>     storage_;
+  Ptr<VectorController<Real>>  storage_;
   Ptr<NullSpaceOperator<Real>> nsop_;
 
   void feasible(const Ptr<const Vector<Real>> &c) {
@@ -94,7 +94,7 @@ public:
     : lcon_(lcon), x_(x) {
     nsop_ = makePtr<NullSpaceOperator<Real>>(lcon,x_,c);
     feasible(c);
-    storage_       = makePtr<SimController<Real>>();
+    storage_       = makePtr<VectorController<Real>>();
   }
 
   const Ptr<Objective<Real>> transform(const Ptr<Objective<Real>> &obj) const {

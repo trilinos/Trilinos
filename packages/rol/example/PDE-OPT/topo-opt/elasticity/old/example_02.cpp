@@ -246,8 +246,8 @@ int main(int argc, char *argv[]) {
 
     // Initialize Augmented Lagrangian functional.
     bool storage = parlist->sublist("Problem").get("Use state storage",true);
-    ROL::Ptr<ROL::SimController<RealT> > stateStore
-      = ROL::makePtr<ROL::SimController<RealT>>();
+    ROL::Ptr<ROL::VectorController<RealT> > stateStore
+      = ROL::makePtr<ROL::VectorController<RealT>>();
     ROL::Ptr<ROL::Reduced_Objective_SimOpt<RealT> > objRed
       = ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(obj,pdeWithFilter,
                                                               stateStore,up,zp,pp,

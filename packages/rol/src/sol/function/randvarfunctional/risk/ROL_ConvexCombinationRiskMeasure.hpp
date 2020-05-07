@@ -76,8 +76,8 @@ private:
 
   Ptr<ScalarController<Real>> values_;
   Ptr<ScalarController<Real>> gradvecs_;
-  Ptr<SimController<Real>> gradients_;
-  Ptr<SimController<Real>> hessvecs_;
+  Ptr<VectorController<Real>> gradients_;
+  Ptr<VectorController<Real>> hessvecs_;
 
   using RandVarFunctional<Real>::g_;
   using RandVarFunctional<Real>::hv_;
@@ -85,8 +85,8 @@ private:
   void initializeCCRM(void) {
     values_    = makePtr<ScalarController<Real>>();
     gradvecs_  = makePtr<ScalarController<Real>>();
-    gradients_ = makePtr<SimController<Real>>();
-    hessvecs_  = makePtr<SimController<Real>>();
+    gradients_ = makePtr<VectorController<Real>>();
+    hessvecs_  = makePtr<VectorController<Real>>();
 
     RandVarFunctional<Real>::setStorage(values_,gradients_);
     RandVarFunctional<Real>::setHessVecStorage(gradvecs_,hessvecs_);

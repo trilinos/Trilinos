@@ -217,13 +217,13 @@ public:
   }
 
   void setStorage(const Ptr<ScalarController<Real>> &value_storage,
-                  const Ptr<SimController<Real>> &gradient_storage) {
+                  const Ptr<VectorController<Real>> &gradient_storage) {
     RandVarFunctional<Real>::setStorage(value_storage,gradient_storage);
     mqq_->setStorage(value_storage,gradient_storage);
   }
 
   void setHessVecStorage(const Ptr<ScalarController<Real>> &gradvec_storage,
-                         const Ptr<SimController<Real>> &hessvec_storage) {
+                         const Ptr<VectorController<Real>> &hessvec_storage) {
     RandVarFunctional<Real>::setHessVecStorage(gradvec_storage,hessvec_storage);
     mqq_->setHessVecStorage(gradvec_storage,hessvec_storage);
   }

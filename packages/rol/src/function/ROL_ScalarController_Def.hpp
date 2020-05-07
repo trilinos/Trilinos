@@ -41,59 +41,29 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_AFFINE_TRANSFORM_OBJECTIVE_H
-#define ROL_AFFINE_TRANSFORM_OBJECTIVE_H
 
-#include "ROL_Objective.hpp"
-#include "ROL_LinearConstraint.hpp"
-#include "ROL_VectorController.hpp"
-
-/** @ingroup func_group
-    \class ROL::AffineTransformObjective
-    \brief Compose an objective function with an affine transformation, i.e.,
-
-    \f[ F(x) = f(Ax+b). \f]
-
-*/
+#ifndef ROL_SCALARCONTROLLER_DEF_H
+#define ROL_SCALARCONTROLLER_DEF_H
 
 namespace ROL {
 
-template<typename Real>
-class AffineTransformObjective : public Objective<Real> {
-private:
-  const Ptr<Objective<Real>>        obj_;
-  const Ptr<LinearConstraint<Real>> acon_;
+template <class Real, class Key>
+ScalarController<Real,Key>::ScalarController(void) : VectorController<Real,Key>() {}
 
-  Ptr<VectorController<Real>> storage_;
-  Ptr<Vector<Real>> primal_, dual_, Av_;
+template <class Real, class Key>
+bool ScalarController<Real,Key>::get(Real &x, const Key &param) {
+  SingletonVector<Real> xv(Real(0));
+  bool flag = VectorController<Real,Key>::get(xv,param);
+  x = xv.getValue();
+  return flag;
+}
 
-public:
-  virtual ~AffineTransformObjective() {}
-  AffineTransformObjective(const Ptr<Objective<Real>>            &obj,
-                           const Ptr<const LinearOperator<Real>> &A,
-                           const Ptr<const Vector<Real>>         &b,
-                           const Ptr<VectorController<Real>>     &storage = nullPtr);
-  AffineTransformObjective(const Ptr<Objective<Real>>        &obj,
-                           const Ptr<LinearConstraint<Real>> &acon,
-                           const Ptr<VectorController<Real>> &storage = nullPtr);
-
-
-  void update( const Vector<Real> &x, EUpdateType type, int iter = -1 ) override;
-  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) override;
-  Real value( const Vector<Real> &x, Real &tol ) override;
-  void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) override;
-  void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) override;
-
-public:
-  void setParameter(const std::vector<Real> &param) override;
-
-private:
-  const Ptr<const Vector<Real>> transform(const Vector<Real> &x);
-
-}; // class AffineTransformObjective
+template <class Real, class Key>
+void ScalarController<Real,Key>::set(Real x, const Key &param) {
+  SingletonVector<Real> xv(x);
+  VectorController<Real,Key>::set(xv,param);
+}
 
 } // namespace ROL
 
-#include "ROL_AffineTransformObjective_Def.hpp"
-
-#endif // ROL_AFFINE_TRANSFORM_OBJECTIVE_H
+#endif

@@ -3,7 +3,7 @@
 #define COMPLIANCE_ROBJ_H
 
 #include "ROL_Objective.hpp"
-#include "ROL_SimController.hpp"
+#include "ROL_VectorController.hpp"
 #include "ROL_SecantFactory.hpp"
 #include "../../../TOOLS/pde.hpp"
 #include "../../../TOOLS/assembler.hpp"
@@ -29,7 +29,7 @@ private:
   ROL::Ptr<Tpetra::MultiVector<>> F_data_, state_sens_data_;
   ROL::Ptr<Tpetra::MultiVector<>> dstat_data_, dctrl_data_;
   ROL::Ptr<ROL::Vector<Real>> state_, dctrl_;
-  ROL::Ptr<ROL::SimController<Real>> stateStore_;
+  ROL::Ptr<ROL::VectorController<Real>> stateStore_;
 
   bool storage_;
   Real cmpScale_;
@@ -78,7 +78,7 @@ public:
     dctrl_data_       = assembler_->createControlVector();
     state_            = ROL::makePtr<PDE_PrimalSimVector<Real>>(assembler_->createStateVector(),pde_,assembler_,list);
     dctrl_            = ROL::makePtr<PDE_DualOptVector<Real>>(dctrl_data_,pde_,assembler_,list);
-    stateStore_       = ROL::makePtr<ROL::SimController<Real>>();
+    stateStore_       = ROL::makePtr<ROL::VectorController<Real>>();
 
     storage_   = list.sublist("Problem").get("Use state storage", true);
     cmpScale_  = list.sublist("Problem").get("Compliance Scaling", 1.0);

@@ -241,8 +241,8 @@ int main(int argc, char *argv[]) {
       = ROL::makePtr<PDE_Objective<RealT>>(qoi_vec[0],assembler);
     ROL::Ptr<ROL::Objective_SimOpt<RealT> > objCtrl
       = ROL::makePtr<PDE_Objective<RealT>>(qoi_vec[1],assembler);
-    ROL::Ptr<ROL::SimController<RealT> > stateStore
-      = ROL::makePtr<ROL::SimController<RealT>>();
+    ROL::Ptr<ROL::VectorController<RealT> > stateStore
+      = ROL::makePtr<ROL::VectorController<RealT>>();
     ROL::Ptr<ROL::Reduced_Objective_SimOpt<RealT> > robj
       = ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(obj, con, stateStore, up, zp, pp, true, false);
 
