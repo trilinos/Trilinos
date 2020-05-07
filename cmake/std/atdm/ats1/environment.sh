@@ -59,6 +59,7 @@ elif [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "KNL" ]]; then
   export ATDM_CONFIG_MPI_POST_FLAGS="--hint=nomultithread;-c 4"
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=1
   export ATDM_CONFIG_SBATCH_EXTRA_ARGS="-p knl -C cache --hint=multithread"
+  export ATDM_CONFIG_BUILD_COUNT=8
 else
   echo
   echo "***"
