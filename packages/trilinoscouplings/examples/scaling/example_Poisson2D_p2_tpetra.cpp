@@ -1694,7 +1694,7 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
     if(solveType == "cg")
       solver = rcp(new Belos::PseudoBlockCGSolMgr<scalar_type, multivector_type, operator_type>(rcpFromRef(Problem), rcp(&belosList, false)));
     else if (solveType == "gmres") { 
-      solver = rcp(new Belos::PseudoBlockGMRESSolMgr<scalar_type, multivector_type, operator_type>(rcpFromRef(Problem), rcp(&belosList, false)));
+      solver = rcp(new Belos::PseudoBlockGmresSolMgr<scalar_type, multivector_type, operator_type>(rcpFromRef(Problem), rcp(&belosList, false)));
     }
     else if (solveType == "fixed point" || solveType == "fixed-point") {
       solver = rcp(new Belos::FixedPointSolMgr<scalar_type, multivector_type, operator_type>(rcpFromRef(Problem), rcp(&belosList, false)));   
