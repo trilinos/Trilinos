@@ -163,6 +163,7 @@ Piro::TransientSolver<Scalar>::createOutArgsImpl() const
 {
 #ifdef DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+  *out_ << "DEBUG num_p_, num_g_ = " << num_p_ << ", " << num_g_ << "\n";  
 #endif
   Thyra::ModelEvaluatorBase::OutArgsSetup<Scalar> outArgs;
   outArgs.setModelEvalDescription(this->description());
@@ -182,11 +183,17 @@ Piro::TransientSolver<Scalar>::createOutArgsImpl() const
       const Thyra::ModelEvaluatorBase::DerivativeSupport init_dxdp_support =
         initCondOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, initCondOutArgs.Ng() - 1, l);
       if (!init_dxdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
+#ifdef DEBUG_OUTPUT
+        *out_ << "DEBUG: init_dxdp_support = DERIV_MV_JACOBIAN_FORM\n"; 
+#endif
         // Ok to return early since only one parameter supported
         return outArgs;
       }
     }
 
+    // IKT, 5/6/2020: the following should not be needed for transient forward sensitivities
+    // but keeping for now.
+    //
     // Computing the DxDp sensitivity for a transient problem currently requires the evaluation of
     // the mutilivector-based, Jacobian-oriented DfDp derivatives of the underlying transient model.
     const Thyra::ModelEvaluatorBase::DerivativeSupport model_dfdp_support =
@@ -203,6 +210,10 @@ Piro::TransientSolver<Scalar>::createOutArgsImpl() const
         l,
         Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
 
+#ifdef DEBUG_OUTPUT
+        *out_ << "DEBUG: dgdp_support = DERIV_MV_JACOBIAN_FORM\n"; 
+#endif
+
     if (num_g_ > 0) {
       // Only one response supported
       const int j = 0;
@@ -216,9 +227,15 @@ Piro::TransientSolver<Scalar>::createOutArgsImpl() const
         Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support;
         if (model_dgdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
           dgdp_support.plus(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
+#ifdef DEBUG_OUTPUT
+          *out_ << "DEBUG: dgdp_support = DERIV_MV_JACOBIAN_FORM\n"; 
+#endif
         }
         if (model_dgdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP)) {
           dgdp_support.plus(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP);
+#ifdef DEBUG_OUTPUT
+          *out_ << "DEBUG: dgdp_support = DERIV_LINEAR_OP\n"; 
+#endif
         }
         outArgs.setSupports(
             Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,
@@ -321,13 +338,95 @@ Piro::TransientSolver<Scalar>::evalConvergedModel(
       Thyra::put_scalar(Teuchos::ScalarTraits<Scalar>::zero(), g_out.ptr());
       modelOutArgs.set_g(j, g_out);
     }
-  }
 
+    //IKT, 5/6/2020: not sure if the following is needed.
+    // Jacobian
+    bool jacobianRequired = false;
+    for (int j = 0; j <= num_g_; ++j) { // resize
+      for (int l = 0; l < num_p_; ++l) {
+        const Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support =
+          outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l);
+        if (!dgdp_support.none()) {
+          const Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdp_deriv =
+              outArgs.get_DgDp(j, l);
+          if (!dgdp_deriv.isEmpty()) 
+          {
+            jacobianRequired = true;
+          }
+        }
+      }
+      if (jacobianRequired) {
+        const RCP<Thyra::LinearOpWithSolveBase<Scalar> > jacobian = model_->create_W();
+        modelOutArgs.set_W(jacobian);
+      }
+    }
+  }
+    
+  // DgDx derivatives
+  for (int j = 0; j < num_g_; ++j) {
+    Thyra::ModelEvaluatorBase::DerivativeSupport dgdx_request;
+    for (int l = 0; l < num_p_; ++l) {
+      const Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support =
+        outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l);
+      if (!dgdp_support.none()) {
+        const Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdp_deriv =
+          outArgs.get_DgDp(j, l);
+        if (!dgdp_deriv.isEmpty()) {
+          const bool dgdp_mvGrad_required =
+            Teuchos::nonnull(dgdp_deriv.getMultiVector()) &&
+            dgdp_deriv.getMultiVectorOrientation() == Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM;
+          if (dgdp_mvGrad_required) {
+            dgdx_request.plus(Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM);
+          } 
+          else {
+            dgdx_request.plus(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP);
+          }
+        }
+      }
+    }
+
+    if (!dgdx_request.none()) {
+      Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdx_deriv;
+      if (dgdx_request.supports(Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM)) {
+        dgdx_deriv = Thyra::create_DgDx_mv(*model_, j, Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM);
+      } 
+      else if (dgdx_request.supports(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP)) {
+        dgdx_deriv = model_->create_DgDx_op(j);
+      }
+      modelOutArgs.set_DgDx(j, dgdx_deriv);
+    }
+  }
+    
+  // DgDp derivatives
+  for (int l = 0; l < num_p_; ++l) {
+    for (int j = 0; j < num_g_; ++j) {
+      const Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support =
+        outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l);
+      if (!dgdp_support.none()) {
+        const Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdp_deriv =
+            outArgs.get_DgDp(j, l);
+        Thyra::ModelEvaluatorBase::Derivative<Scalar> model_dgdp_deriv;
+        const RCP<Thyra::LinearOpBase<Scalar> > dgdp_op = dgdp_deriv.getLinearOp();
+        if (Teuchos::nonnull(dgdp_op)) {
+          model_dgdp_deriv = model_->create_DgDp_op(j, l);
+        } 
+        else {
+          model_dgdp_deriv = dgdp_deriv;
+        }
+        if (!model_dgdp_deriv.isEmpty()) {
+          modelOutArgs.set_DgDp(j, l, model_dgdp_deriv);
+        }
+      }
+    }
+  }
+    
   model_->evalModel(modelInArgs, modelOutArgs);
 
   // Return the final solution as an additional g-vector, if requested
-  const RCP<Thyra::VectorBase<Scalar> > gx_out = outArgs.get_g(num_g_);
+  RCP<Thyra::VectorBase<Scalar> > gx_out = outArgs.get_g(num_g_);
   if (Teuchos::nonnull(gx_out)) {
+    std::cout << "IKT modelInArgs = " << modelInArgs << "\n"; 
+    std::cout << "IKT modelInArgs.get_x() = " << modelInArgs.get_x() << "\n"; 
     Thyra::copy(*modelInArgs.get_x(), gx_out.ptr());
   }
 }
