@@ -20,9 +20,10 @@ atdm_run_script_on_compute_node \
   ${SBATCH_BUILD_TIME_LIMIT_MINUTES}
 
 # Run tests on either a KNL or HSW compute node
-export ATDM_CONFIG_SBATCH_EXTRA_ARGS="$atdm_config_sbatch_extra_args"
-echo "ATDM_CONFIG_SBATCH_EXTRA_ARGS = '${ATDM_CONFIG_SBATCH_EXTRA_ARGS}'"
-atdm_run_script_on_compute_node \
-  $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ats1/local-driver-test-on-allocation.sh \
-  $PWD/ctest-s-driver.out \
-  ${SBATCH_TEST_TIME_LIMIT_MINUTES} 
+# Per feedback in ATDV-347, disable running tests for now.
+#export ATDM_CONFIG_SBATCH_EXTRA_ARGS="$atdm_config_sbatch_extra_args"
+#echo "ATDM_CONFIG_SBATCH_EXTRA_ARGS = '${ATDM_CONFIG_SBATCH_EXTRA_ARGS}'"
+#atdm_run_script_on_compute_node \
+#  $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ats1/local-driver-test-on-allocation.sh \
+#  $PWD/ctest-s-driver.out \
+#  ${SBATCH_TEST_TIME_LIMIT_MINUTES} 
