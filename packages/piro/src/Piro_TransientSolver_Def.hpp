@@ -291,17 +291,13 @@ Piro::TransientSolver<Scalar>::setSensitivityMethod(const std::string sensitivit
   else if (sensitivity_method_string == "Forward") sensitivityMethod_ = FORWARD;
   else if (sensitivity_method_string == "Adjoint") sensitivityMethod_ = ADJOINT;
   else {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        true,
-        Teuchos::Exceptions::InvalidParameter,
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
         "\n Error! Piro::TransientSolver: invalid Sensitivity Method = " << sensitivity_method_string << "! \n" 
         << " Valid options for Sensitivity Method are 'None', 'Forward' and 'Adjoint'.\n");
   }
   //IKT, 5/8/2020: remove the following once we have support for adjoint sensitivities 
   if (sensitivityMethod_ == ADJOINT) {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        true,
-        Teuchos::Exceptions::InvalidParameter,
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
         "\n Error! Piro::TransientSolver: adjoint sentivities (Sensitivity Method = "
         << "Adjoint) are not yet supported!  Please set 'Sensitivity Method' to 'None' or 'Forward'.\n");
   }
@@ -461,70 +457,76 @@ Piro::TransientSolver<Scalar>::evalConvergedModel(
         true,
         Teuchos::Exceptions::InvalidParameter,
         "\n Error! Piro::TransientSolver: sensitivities with Tempus are not yet supported!");
-  
-    for (int l = 0; l < num_p_; ++l) {
-      for (int j = 0; j < num_g_; ++j) {
-        //Get DgDp and DgDx 
-        const Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support =
-           outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l);
-        if (!dgdp_support.none()) {
-          const Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdp_deriv = outArgs.get_DgDp(j, l);
-          if (!dgdp_deriv.isEmpty()) {
-            const Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdx_deriv = modelOutArgs.get_DgDx(j);
-            const RCP<const Thyra::MultiVectorBase<Scalar> > dgdx_mv = dgdx_deriv.getMultiVector();
-            RCP<const Thyra::LinearOpBase<Scalar> > dgdx_op = dgdx_deriv.getLinearOp();
-            if (Teuchos::is_null(dgdx_op)) {
-              //IKT FIXME: is this needed?
-              dgdx_op = Thyra::adjoint<Scalar>(dgdx_mv);
-            }
-            const RCP<Thyra::LinearOpBase<Scalar> > dgdp_op = dgdp_deriv.getLinearOp();
-            if (Teuchos::nonnull(dgdp_op)) {
-              const RCP<Thyra::DefaultAddedLinearOp<Scalar> > dgdp_op_downcasted =
-                     Teuchos::rcp_dynamic_cast<Thyra::DefaultAddedLinearOp<Scalar> >(dgdp_op);
-              TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(dgdp_op_downcasted), std::invalid_argument,
-                                         "Illegal operator for DgDp(" <<
-                                         "j = " << j << ", " << "index l = " << l << ")\n");
-              dgdp_op_downcasted->uninitialize();
-
-              /*const RCP<const Thyra::LinearOpBase<Scalar> > implicit_dgdp_op =
-                      Thyra::multiply<Scalar>(
-                        Thyra::scale<Scalar>(-Teuchos::ScalarTraits<Scalar>::one(), dgdx_op),
-                        minus_dxdp_op);
-
-              const RCP<const Thyra::LinearOpBase<Scalar> > model_dgdp_op = modelOutArgs.get_DgDp(j, l).getLinearOp();
-
-              Teuchos::Array<RCP<const Thyra::LinearOpBase<Scalar> > > op_args(2);
-              op_args[0] = model_dgdp_op;
-              op_args[1] = implicit_dgdp_op;
-              dgdp_op_downcasted->initialize(op_args);*/
-            }
-
-            /*const RCP<Thyra::MultiVectorBase<Scalar> > dgdp_mv = dgdp_deriv.getMultiVector();
-            if (Teuchos::nonnull(dgdp_mv)) {
-              if (dgdp_deriv.getMultiVectorOrientation() == Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM) {
-                if (Teuchos::nonnull(dxdp_mv)) {
-                  Thyra::apply(*dxdp_mv, Thyra::TRANS, *dgdx_mv, dgdp_mv.ptr(), Teuchos::ScalarTraits<Scalar>::one(),
-                                Teuchos::ScalarTraits<Scalar>::one());
-                } 
-                else {
-                  Thyra::apply(*minus_dxdp_mv, Thyra::TRANS, *dgdx_mv, dgdp_mv.ptr(), -Teuchos::ScalarTraits<Scalar>::one(),
-                           Teuchos::ScalarTraits<Scalar>::one());
+ 
+    switch(sensitivityMethod_) {
+      case FORWARD : //forward sensitivities 
+        //IKT FIXME: probably a lot of this can be reused for adjoint sensitivities.  Will clean up later, 
+        //when adjoint sensitivities are implemented. 
+        for (int l = 0; l < num_p_; ++l) {
+          for (int j = 0; j < num_g_; ++j) {
+            //Get DgDp and DgDx 
+            const Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support =
+               outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l);
+            if (!dgdp_support.none()) {
+              const Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdp_deriv = outArgs.get_DgDp(j, l);
+              if (!dgdp_deriv.isEmpty()) {
+                const Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdx_deriv = modelOutArgs.get_DgDx(j);
+                const RCP<const Thyra::MultiVectorBase<Scalar> > dgdx_mv = dgdx_deriv.getMultiVector();
+                RCP<const Thyra::LinearOpBase<Scalar> > dgdx_op = dgdx_deriv.getLinearOp();
+                if (Teuchos::is_null(dgdx_op)) {
+                  //IKT FIXME: is this needed?
+                  dgdx_op = Thyra::adjoint<Scalar>(dgdx_mv);
                 }
-              } 
-              else {
-                if (Teuchos::nonnull(dxdp_mv)) {
-                  Thyra::apply(*dgdx_op, Thyra::NOTRANS, *dxdp_mv, dgdp_mv.ptr(), Teuchos::ScalarTraits<Scalar>::one(),
-                               Teuchos::ScalarTraits<Scalar>::one());
+                const RCP<Thyra::LinearOpBase<Scalar> > dgdp_op = dgdp_deriv.getLinearOp();
+                if (Teuchos::nonnull(dgdp_op)) {
+                  //Case 1: DgDp, DgDx and DxDp are linear ops.  This corresponds to a non-scalar
+                  //response and distributed parameters.  Tempus::ForwardSensitivityIntegrator 
+                  //cannot return a LinearOp for DxDp (IKT FIXME: verify with Eric Phipps).  
+                  //Therefore this case is not relevant here.
+                  TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
+                    "\n Error! Piro::TransientSolver: DgDp = DERIV_LINEAR_OP is not supported with forward sensitivities!");
+                }
+
+                const RCP<Thyra::MultiVectorBase<Scalar> > dgdp_mv = dgdp_deriv.getMultiVector();
+                //IKT FIXME: get piroTempusIntegrator into this class, and implement getDxDp() routine in Piro::TempusIntegrator
+                //class.
+                //Get dxdp_mv from Tempus::ForwardIntegratorSensitivity class  
+                const RCP<Thyra::MultiVectorBase<Scalar> > dxdp_mv; // = piroTempusIntegrator->getDxDp();
+                //IKT, 5/10/20: throw error if dxdp_mv returned by Tempus is null.  Not sure if this can happen in practice or not...
+                if (dxdp_mv == Teuchos::null) {
+                  TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
+                    "\n Error! Piro::TransientSolver: DxDp returned by Tempus::IntegratorForwardSensitivity::getDxDp() routine is null!\n"); 
                 } 
-                else {
-                  Thyra::apply(*dgdx_op, Thyra::NOTRANS, *minus_dxdp_mv, dgdp_mv.ptr(), -Teuchos::ScalarTraits<Scalar>::one(),
-                               Teuchos::ScalarTraits<Scalar>::one());
+                if (Teuchos::nonnull(dgdp_mv)) {
+                  if (dgdp_deriv.getMultiVectorOrientation() == Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM) {
+                    //Case 2: DgDp = DERIV_MV_GRADIENT_FORM, DgDx is MV, DxDp is MV.
+                    //This corresponds to a scalar response and distributed parameters 
+                    //dxdp_mv = [dx/dp_mv]^T*dg/dx_mv + dg/dp_mv
+                    //IKT FIXME: need to understand the transpose...
+                    Thyra::apply(*dxdp_mv, Thyra::TRANS, *dgdx_mv, dgdp_mv.ptr(), Teuchos::ScalarTraits<Scalar>::one(),
+                                 Teuchos::ScalarTraits<Scalar>::one());
+                  } 
+                  else {
+                    //Case 3: DgDp = DERIV_MV_JACOBIAN_FORM (the alternate to DERIV_MV_GRADIENT_FORM for getMultiVectorOrientation),
+                    //DgDx = DERIV_LINEAR_OP and DxDp is MV 
+                    //IKT, 5/10/20: I'm a little confused here...  DgDp = DERIV_MV_JACOBIAN_OP corresponds to scalar responses and
+                    //scalar parameters, whereas DgDx = DERIV_LINEAR_OP corresponds to non-scalar responses.  Isn't this contradictory??
+                    //It seems we should have here the case when DgDx = DERIV_MV_GRADIENT_FORM instead of DERIV_LINEAR_OP
+                    //dxdp_mv = [dx/dp_op]^T*dg/dx_mv + dg/dp_mv
+                    Thyra::apply(*dgdx_op, Thyra::NOTRANS, *dxdp_mv, dgdp_mv.ptr(), Teuchos::ScalarTraits<Scalar>::one(),
+                                 Teuchos::ScalarTraits<Scalar>::one());
+                  }
                 }
               }
-            }*/
+            }
           }
         }
-      }
+        break; 
+    case ADJOINT: //adjoint sensitivities - not yet implemented 
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
+        "\n Error! Piro::TransientSolver: adjoint sentivities (Sensitivity Method = "
+        << "Adjoint) are not yet supported!  Please set 'Sensitivity Method' to 'None' or 'Forward'.\n");
+      break; 
     }
   }
 }
