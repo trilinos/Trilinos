@@ -225,7 +225,7 @@ int main(int argc, char *argv[]) {
 
     std::string rm = "Risk Measure", sr = "Spectral Risk";
     std::string dist = "Distribution", pf = "Plus Function";
-    parlist->sublist("SOL").set("Stochastic Component Type","Risk Averse");
+    parlist->sublist("SOL").set("Type","Risk Averse");
     parlist->sublist("SOL").sublist(rm).set("Name",sr);
     parlist->sublist("SOL").sublist(rm).sublist(sr).set("Print Quadrature to Screen",!myRank);
     parlist->sublist("SOL").sublist(rm).sublist(sr).sublist(dist).set("Name","Beta");

@@ -318,7 +318,7 @@ int main(int argc, char *argv[]) {
     /***************** SOLVE MEAN PLUS CVAR **********************************/
     /*************************************************************************/
     RealT tol(1e-8);
-    parlist->sublist("SOL").set("Stochastic Component Type","Risk Averse");
+    parlist->sublist("SOL").set("Type","Risk Averse");
     parlist->sublist("SOL").sublist("Risk Measure").set("Name","bPOE");
     parlist->sublist("SOL").sublist("Risk Measure").sublist("bPOE").set("Moment Order",2.0);
     for (int i = 0; i < N; ++i) {

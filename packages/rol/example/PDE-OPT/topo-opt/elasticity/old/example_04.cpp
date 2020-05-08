@@ -351,7 +351,7 @@ int main(int argc, char *argv[]) {
     /***************** SOLVE RISK NEUTRAL ************************************/
     /*************************************************************************/
     // Solve.
-    parlist->sublist("SOL").set("Stochastic Component Type","Risk Neutral");
+    parlist->sublist("SOL").set("Type","Risk Neutral");
     opt = ROL::makePtr<ROL::OptimizationProblem<RealT>>(objRed,zp,bnd);
     parlist->sublist("SOL").set("Initial Statistic",one);
     opt->setStochasticObjective(*parlist,sampler);
@@ -369,7 +369,7 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     const int N = parlist->sublist("Problem").get("Denominator for Convex Combination",8);
     RealT mu(0);
-    parlist->sublist("SOL").set("Stochastic Component Type","Risk Averse");
+    parlist->sublist("SOL").set("Type","Risk Averse");
     parlist->sublist("SOL").sublist("Risk Measure").set("Name","Quantile-Based Quadrangle");
     parlist->sublist("SOL").sublist("Risk Measure").sublist("Quantile-Based Quadrangle").set("Confidence Level",0.9);
     parlist->sublist("SOL").sublist("Risk Measure").sublist("Quantile-Based Quadrangle").set("Smoothing Parameter",1e-4);

@@ -281,11 +281,11 @@ int main(int argc, char *argv[]) {
     // Parameter lists
     std::vector<Teuchos::ParameterList> plvec(7,*parlist);
     // Mean value
-    plvec[0].sublist("SOL").set("Stochastic Component Type", "Mean Value");
+    plvec[0].sublist("SOL").set("Type", "Mean Value");
     // Risk neutral
-    plvec[1].sublist("SOL").set("Stochastic Component Type", "Risk Neutral");
+    plvec[1].sublist("SOL").set("Type", "Risk Neutral");
     // CVaR
-    plvec[2].sublist("SOL").set("Stochastic Component Type", "Risk Averse");
+    plvec[2].sublist("SOL").set("Type", "Risk Averse");
     plvec[2].sublist("SOL").sublist("Risk Measure").set("Name","CVaR");
     plvec[2].sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Confidence Level", 0.95);
     plvec[2].sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Convex Combination Parameter", 0.0);
@@ -294,7 +294,7 @@ int main(int argc, char *argv[]) {
     plvec[2].sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").sublist("Parabolic").set("Lower Bound", 0.0);
     plvec[2].sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").sublist("Parabolic").set("Upper Bound", 1.0);
     // Mixture of expectation and CVaR
-    plvec[3].sublist("SOL").set("Stochastic Component Type", "Risk Averse");
+    plvec[3].sublist("SOL").set("Type", "Risk Averse");
     plvec[3].sublist("SOL").sublist("Risk Measure").set("Name","CVaR");
     plvec[3].sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Confidence Level", 0.95);
     plvec[3].sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Convex Combination Parameter", 0.5);
@@ -303,16 +303,16 @@ int main(int argc, char *argv[]) {
     plvec[3].sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").sublist("Parabolic").set("Lower Bound", 0.0);
     plvec[3].sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").sublist("Parabolic").set("Upper Bound", 1.0);
     // Entropic risk
-    plvec[4].sublist("SOL").set("Stochastic Component Type", "Risk Averse");
+    plvec[4].sublist("SOL").set("Type", "Risk Averse");
     plvec[4].sublist("SOL").sublist("Risk Measure").set("Name","Entropic Risk");
     plvec[4].sublist("SOL").sublist("Risk Measure").sublist("Entropic Risk").set("Rate", 1.0);
     // bPOE
-    plvec[5].sublist("SOL").set("Stochastic Component Type", "Probability");
+    plvec[5].sublist("SOL").set("Type", "Probability");
     plvec[5].sublist("SOL").sublist("Probability").set("Name","bPOE");
     plvec[5].sublist("SOL").sublist("Probability").sublist("bPOE").set("Moment Order", 2.0);
     plvec[5].sublist("SOL").sublist("Probability").sublist("bPOE").set("Threshold", 6.0);
     // KL-divergence distributionally robust optimization
-    plvec[6].sublist("SOL").set("Stochastic Component Type", "Risk Averse");
+    plvec[6].sublist("SOL").set("Type", "Risk Averse");
     plvec[6].sublist("SOL").sublist("Risk Measure").set("Name","KL Divergence");
     plvec[6].sublist("SOL").sublist("Risk Measure").sublist("KL Divergence").set("Threshold", 0.1);
     

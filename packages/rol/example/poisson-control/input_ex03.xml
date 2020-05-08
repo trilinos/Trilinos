@@ -23,9 +23,9 @@
     </ParameterList>
 
     <Parameter name="Store Sampled Value and Gradient" type="bool" value="true" />
-    <Parameter name="Stochastic Component Type" type="string" value="Risk Averse"  />
+    <Parameter name="Type" type="string" value="Risk Averse"  />
     <!--
-    <Parameter name="Stochastic Component Type" type="string" value="Probability"  />
+    <Parameter name="Type" type="string" value="Probability"  />
     -->
     <ParameterList name="Risk Measure">
       <Parameter name="Name" type="string" value="CVaR"                            />

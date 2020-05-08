@@ -239,7 +239,7 @@ int main(int argc, char *argv[]) {
 
     // Initialize reduced compliance objective function.
     bool storage = parlist->sublist("Problem").get("Use state storage",true);
-    std::string type = parlist->sublist("SOL").get("Stochastic Component Type","Risk Neutral");
+    std::string type = parlist->sublist("SOL").get("Type","Risk Neutral");
     storage = (type == "Risk Neutral") ? false : storage;
     ROL::Ptr<ROL::VectorController<RealT> > stateStore
       = ROL::makePtr<ROL::VectorController<RealT>>();

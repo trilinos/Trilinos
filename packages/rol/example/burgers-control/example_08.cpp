@@ -210,7 +210,7 @@ int main(int argc, char *argv[]) {
     /************* INITIALIZE OPTIMIZATION PROBLEM ***************************/
     /*************************************************************************/
     ROL::ParameterList SOLlist;
-    SOLlist.sublist("SOL").set("Stochastic Component Type","Risk Averse");
+    SOLlist.sublist("SOL").set("Type","Risk Averse");
     SOLlist.sublist("SOL").set("Store Sampled Value and Gradient",storage);
     SOLlist.sublist("SOL").sublist("Risk Measure").set("Name","KL Divergence");
     SOLlist.sublist("SOL").sublist("Risk Measure").sublist("KL Divergence").set("Threshold",1.e-2);

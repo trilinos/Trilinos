@@ -64,7 +64,7 @@
 
   <!-- ===========  SOL PARAMETER SUBLIST  =========== -->
   <ParameterList name="SOL">
-    <Parameter name="Stochastic Component Type" type="string" value="Risk Neutral"   />
+    <Parameter name="Type" type="string" value="Risk Neutral"   />
   </ParameterList>
 
   <!-- ===========  SIMOPT SOLVER PARAMETER SUBLIST  =========== -->

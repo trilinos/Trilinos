@@ -360,7 +360,7 @@ int main(int argc, char *argv[]) {
     if ( alphaZero ) {
       alpha.erase(alpha.begin()); --N;
       // Solve.
-      parlist->sublist("SOL").set("Stochastic Component Type","Risk Neutral");
+      parlist->sublist("SOL").set("Type","Risk Neutral");
       opt = ROL::makePtr<ROL::OptimizationProblem<RealT>>(objRed,zp,bnd);
       parlist->sublist("SOL").set("Initial Statistic",one);
       opt->setStochasticObjective(*parlist,sampler);
@@ -377,7 +377,7 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** SOLVE MEAN PLUS CVAR **********************************/
     /*************************************************************************/
-    parlist->sublist("SOL").set("Stochastic Component Type","Risk Averse");
+    parlist->sublist("SOL").set("Type","Risk Averse");
     parlist->sublist("SOL").sublist("Risk Measure").set("Name","Quantile-Based Quadrangle");
     parlist->sublist("SOL").sublist("Risk Measure").sublist("Quantile-Based Quadrangle").set("Convex Combination Parameter",0.0);
     parlist->sublist("SOL").sublist("Risk Measure").sublist("Quantile-Based Quadrangle").set("Smoothing Parameter",1e-4);

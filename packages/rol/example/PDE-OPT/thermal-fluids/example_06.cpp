@@ -295,7 +295,7 @@ int main(int argc, char *argv[]) {
     if ( lambdaZero ) {
       lambda.erase(lambda.begin()); --N;
       // Solve.
-      parlist->sublist("SOL").set("Stochastic Component Type","Risk Neutral");
+      parlist->sublist("SOL").set("Type","Risk Neutral");
       opt = ROL::makePtr<ROL::OptimizationProblem<RealT>>(robj,zp);
       parlist->sublist("SOL").set("Initial Statistic",one);
       opt->setStochasticObjective(*parlist,sampler);
@@ -312,7 +312,7 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** SOLVE MEAN PLUS CVAR **********************************/
     /*************************************************************************/
-    parlist->sublist("SOL").set("Stochastic Component Type","Risk Averse");
+    parlist->sublist("SOL").set("Type","Risk Averse");
     parlist->sublist("SOL").sublist("Risk Measure").set("Name","CVaR");
     parlist->sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Confidence Level",alpha);
     parlist->sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Smoothing Parameter",1e-4);

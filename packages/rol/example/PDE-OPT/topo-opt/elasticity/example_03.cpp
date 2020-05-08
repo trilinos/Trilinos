@@ -383,7 +383,7 @@ int main(int argc, char *argv[]) {
     std::vector<RealT> vol;
     std::vector<RealT> var;
     bool derivCheck = parlist->sublist("Problem").get("Check derivatives",false);
-    parlist->sublist("SOL").set("Stochastic Component Type","Risk Averse");
+    parlist->sublist("SOL").set("Type","Risk Averse");
     parlist->sublist("SOL").sublist("Risk Measure").set("Name","CVaR");
     parlist->sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Smoothing Parameter",1e-4);
     parlist->sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").set("Name","Parabolic");
