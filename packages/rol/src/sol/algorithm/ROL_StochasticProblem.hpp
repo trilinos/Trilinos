@@ -97,18 +97,18 @@ public:
   /*** Set and remove methods for constraints ********************************/
   /***************************************************************************/
 
-  void setStochasticObjective(ParameterList                    &list,
-                              const Ptr<SampleGenerator<Real>> &fsampler,
-                              const Ptr<SampleGenerator<Real>> &gsampler = nullPtr,
-                              const Ptr<SampleGenerator<Real>> &hsampler = nullPtr);
-  void setStochasticConstraint(std::string                       name,
-                               ParameterList                    &list,
-                               const Ptr<SampleGenerator<Real>> &sampler,
-                               const Ptr<BatchManager<Real>>    &bman = nullPtr);
-  void setStochasticLinearConstraint(std::string                       name,
-                                     ParameterList                    &list,
-                                     const Ptr<SampleGenerator<Real>> &sampler,
-                                     const Ptr<BatchManager<Real>>    &bman = nullPtr);
+  void makeObjectiveStochastic(ParameterList                    &list,
+                               const Ptr<SampleGenerator<Real>> &fsampler,
+                               const Ptr<SampleGenerator<Real>> &gsampler = nullPtr,
+                               const Ptr<SampleGenerator<Real>> &hsampler = nullPtr);
+  void makeConstraintStochastic(std::string                       name,
+                                ParameterList                    &list,
+                                const Ptr<SampleGenerator<Real>> &sampler,
+                                const Ptr<BatchManager<Real>>    &bman = nullPtr);
+  void makeLinearConstraintStochastic(std::string                       name,
+                                      ParameterList                    &list,
+                                      const Ptr<SampleGenerator<Real>> &sampler,
+                                      const Ptr<BatchManager<Real>>    &bman = nullPtr);
   void resetStochasticObjective(void);
   void resetStochasticConstraint(std::string name);
   void resetStochasticLinearConstraint(std::string name);

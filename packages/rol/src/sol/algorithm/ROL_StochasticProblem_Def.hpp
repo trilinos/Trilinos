@@ -53,16 +53,16 @@ StochasticProblem<Real>::StochasticProblem(const Ptr<Objective<Real>> &obj,
   : NewOptimizationProblem<Real>(obj,x,g), needRiskLessObj_(true) {}
 
 template<typename Real>
-void StochasticProblem<Real>::setStochasticObjective(ParameterList                    &list,
-                                                     const Ptr<SampleGenerator<Real>> &fsampler,
-                                                     const Ptr<SampleGenerator<Real>> &gsampler,
-                                                     const Ptr<SampleGenerator<Real>> &hsampler) {
+void StochasticProblem<Real>::makeObjectiveStochastic(ParameterList                    &list,
+                                                      const Ptr<SampleGenerator<Real>> &fsampler,
+                                                      const Ptr<SampleGenerator<Real>> &gsampler,
+                                                      const Ptr<SampleGenerator<Real>> &hsampler) {
   // Throw an exception if problem has been finalized
   ROL_TEST_FOR_EXCEPTION(isFinalized(),std::invalid_argument,
-    ">>> ROL::StochasticProblem::setStochasticObjective: Cannot set stochastic objective after problem has been finalized!");
+    ">>> ROL::StochasticProblem::makeObjectiveStochastic: Cannot set stochastic objective after problem has been finalized!");
   // Throw an exception if the value sampler is null
   ROL_TEST_FOR_EXCEPTION(fsampler == nullPtr,std::invalid_argument,
-    ">>> ROL::StochasticProblem::setStochasticObjective: Objective function value sampler is null!");
+    ">>> ROL::StochasticProblem::makeObjectiveStochastic: Objective function value sampler is null!");
   // Store original objective function for reuse later
   ORIGINAL_obj_ = INPUT_obj_;
   // Check samplers
@@ -91,27 +91,27 @@ void StochasticProblem<Real>::setStochasticObjective(ParameterList              
   }
   else {
     ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
-      ">>> ROL::StochasticProblem::setStochasticObjective: Invalid stochastic optimization type!");
+      ">>> ROL::StochasticProblem::makeObjectiveStochastic: Invalid stochastic optimization type!");
   }
 }
 
 template<typename Real>
-void StochasticProblem<Real>::setStochasticConstraint(std::string                       name,
-                                                      ParameterList                    &list,
-                                                      const Ptr<SampleGenerator<Real>> &sampler,
-                                                      const Ptr<BatchManager<Real>>    &bman) {
+void StochasticProblem<Real>::makeConstraintStochastic(std::string                       name,
+                                                       ParameterList                    &list,
+                                                       const Ptr<SampleGenerator<Real>> &sampler,
+                                                       const Ptr<BatchManager<Real>>    &bman) {
   // Throw an exception if problem has been finalized
   ROL_TEST_FOR_EXCEPTION(isFinalized(),std::invalid_argument,
-    ">>> ROL::StochasticProblem::setStochasticConstraint: Cannot set stochastic constraint after problem has been finalized!");
+    ">>> ROL::StochasticProblem::makeConstraintStochastic: Cannot set stochastic constraint after problem has been finalized!");
   // Throw an exception if the value sampler is null
   ROL_TEST_FOR_EXCEPTION(sampler == nullPtr,std::invalid_argument,
-    ">>> ROL::StochasticProblem::setStochasticConstraint: Constraint sampler is null!");
+    ">>> ROL::StochasticProblem::makeConstraintStochastic: Constraint sampler is null!");
   // Store original constraint for reuse later
   auto it = INPUT_con_.find(name);
   ROL_TEST_FOR_EXCEPTION(it == INPUT_con_.end(),std::invalid_argument,
-    ">>> ROL::StochasticProblem::setStochasticConstraint: Constraint does not exist!");
+    ">>> ROL::StochasticProblem::makeConstraintStochastic: Constraint does not exist!");
   ROL_TEST_FOR_EXCEPTION(ORIGINAL_con_.find(name) != ORIGINAL_con_.end(),std::invalid_argument,
-    ">>> ROL::StochasticProblem::setStochasticConstraint: Constraint already set!");
+    ">>> ROL::StochasticProblem::makeConstraintStochastic: Constraint already set!");
   ORIGINAL_con_.insert({it->first,it->second});
   // Determine Stochastic Constraint Type
   std::string type = list.sublist("SOL").sublist(name).get("Type","Risk Neutral");
@@ -121,7 +121,7 @@ void StochasticProblem<Real>::setStochasticConstraint(std::string               
   Ptr<BoundConstraint<Real>> bnd = it->second.bounds;
   if ( type == "Risk Neutral" ) {
     ROL_TEST_FOR_EXCEPTION(bman == nullPtr,std::invalid_argument,
-      ">>> ROL::StochasticProblem::setStochasticConstraint: Risk neutral constraints need a valid BatchManager!");
+      ">>> ROL::StochasticProblem::makeConstraintStochastic: Risk neutral constraints need a valid BatchManager!");
     conList_.insert({name,std::pair<Ptr<ParameterList>,bool>(nullPtr,true)});
     bool storage = list.sublist("SOL").sublist("Objective").sublist("Risk Neutral").get("Use Storage",true);
     con = makePtr<RiskNeutralConstraint<Real>>(it->second.constraint,sampler,bman);
@@ -143,7 +143,7 @@ void StochasticProblem<Real>::setStochasticConstraint(std::string               
   else if ( type == "Risk Averse" || type == "Deviation" || type == "Error" ||
             type == "Regret"      || type == "Probability" ) {
     ROL_TEST_FOR_EXCEPTION(bnd == nullPtr,std::invalid_argument,
-      ">>> ROL::StochasticProblem::setStochasticConstraint: Stochastic constraints must be inequalities!");
+      ">>> ROL::StochasticProblem::makeConstraintStochastic: Stochastic constraints must be inequalities!");
     Ptr<ParameterList> clist = makePtr<ParameterList>();
     clist->sublist("SOL") = list.sublist("SOL").sublist(name);
     conList_.insert({name,std::pair<Ptr<ParameterList>,bool>(clist,false)});
@@ -155,29 +155,29 @@ void StochasticProblem<Real>::setStochasticConstraint(std::string               
   }
   else {
     ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
-      ">>> ROL::StochasticProblem::setStochasticConstraint: Invalid stochastic optimization type!");
+      ">>> ROL::StochasticProblem::makeConstraintStochastic: Invalid stochastic optimization type!");
   }
   if(bnd != nullPtr) NewOptimizationProblem<Real>::addConstraint(it->first,con,mul,bnd,res,true);
   else               NewOptimizationProblem<Real>::addConstraint(it->first,con,mul,res,true);
 }
 
 template<typename Real>
-void StochasticProblem<Real>::setStochasticLinearConstraint(std::string                       name,
+void StochasticProblem<Real>::makeLinearConstraintStochastic(std::string                       name,
                                                             ParameterList                    &list,
                                                             const Ptr<SampleGenerator<Real>> &sampler,
                                                             const Ptr<BatchManager<Real>>    &bman) {
   // Throw an exception if problem has been finalized
   ROL_TEST_FOR_EXCEPTION(isFinalized(),std::invalid_argument,
-    ">>> ROL::StochasticProblem::setStochasticLinearConstraint: Cannot set stochastic constraint after problem has been finalized!");
+    ">>> ROL::StochasticProblem::makeLinearConstraintStochastic: Cannot set stochastic constraint after problem has been finalized!");
   // Throw an exception if the value sampler is null                                
   ROL_TEST_FOR_EXCEPTION(sampler == nullPtr,std::invalid_argument,
-    ">>> ROL::StochasticProblem::setStochasticLinearConstraint: Constraint sampler is null!");
+    ">>> ROL::StochasticProblem::makeLinearConstraintStochastic: Constraint sampler is null!");
   // Store original constraint for reuse later
   auto it = INPUT_linear_con_.find(name);
   ROL_TEST_FOR_EXCEPTION(it == INPUT_linear_con_.end(),std::invalid_argument,
-    ">>> ROL::StochasticProblem::setStochasticLinearConstraint: Constraint does not exist!");
+    ">>> ROL::StochasticProblem::makeLinearConstraintStochastic: Constraint does not exist!");
   ROL_TEST_FOR_EXCEPTION(ORIGINAL_linear_con_.find(name) != ORIGINAL_linear_con_.end(),std::invalid_argument,
-      ">>> ROL::StochasticProblem::setStochasticLinearConstraint: Constraint already set!");
+      ">>> ROL::StochasticProblem::makeLinearConstraintStochastic: Constraint already set!");
   ORIGINAL_linear_con_.insert({it->first,it->second});
   // Determine Stochastic Constraint Type
   std::string type = list.sublist("SOL").sublist(name).get("Type","Risk Neutral");
@@ -187,7 +187,7 @@ void StochasticProblem<Real>::setStochasticLinearConstraint(std::string         
   Ptr<BoundConstraint<Real>> bnd = it->second.bounds;
   if ( type == "Risk Neutral" ) {
     ROL_TEST_FOR_EXCEPTION(bman == nullPtr,std::invalid_argument,
-      ">>> ROL::StochasticProblem::setStochasticLinearConstraint: Risk neutral constraints need a valid BatchManager!");
+      ">>> ROL::StochasticProblem::makeLinearConstraintStochastic: Risk neutral constraints need a valid BatchManager!");
     bool storage = list.sublist("SOL").sublist("Objective").sublist("Risk Neutral").get("Use Storage",true);
     con = makePtr<RiskNeutralConstraint<Real>>(it->second.constraint,sampler,bman);
   }
@@ -209,7 +209,7 @@ void StochasticProblem<Real>::setStochasticLinearConstraint(std::string         
   }
   else {
     ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
-      ">>> ROL::StochasticProblem::setStochasticLinearConstraint: Invalid stochastic optimization type!");
+      ">>> ROL::StochasticProblem::makeLinearConstraintStochastic: Invalid stochastic optimization type!");
   }
   if(bnd != nullPtr) NewOptimizationProblem<Real>::addLinearConstraint(it->first,con,mul,bnd,res,true);
   else               NewOptimizationProblem<Real>::addLinearConstraint(it->first,con,mul,res,true);

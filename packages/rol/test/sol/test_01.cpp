@@ -117,7 +117,7 @@ bool setUpAndSolve(ROL::ParameterList &list,
   ROL::Ptr<ROL::NewOptimizationProblem<RealT>>
     newprob = ROL::makePtr<ROL::StochasticProblem<RealT>>(pObj,x);
   if (bnd->isActivated()) newprob->addBoundConstraint(bnd);
-  ROL::dynamicPtrCast<ROL::StochasticProblem<RealT>>(newprob)->setStochasticObjective(list,sampler);
+  ROL::dynamicPtrCast<ROL::StochasticProblem<RealT>>(newprob)->makeObjectiveStochastic(list,sampler);
   outStream << "\nCheck Derivatives of Stochastic Objective Function\n";
   newprob->finalize(false,true,outStream);
   newprob->check(true,outStream);
