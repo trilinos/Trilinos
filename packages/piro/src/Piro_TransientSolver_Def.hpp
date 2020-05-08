@@ -83,7 +83,8 @@ Piro::TransientSolver<Scalar>::TransientSolver(
     model_(model),
     initialConditionModel_(icModel),
     num_p_(numParameters),
-    num_g_(model->Ng())
+    num_g_(model->Ng()),
+    sensitivityMethod_(NONE) 
 {
 #ifdef DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
@@ -286,8 +287,24 @@ template <typename Scalar>
 void 
 Piro::TransientSolver<Scalar>::setSensitivityMethod(const std::string sensitivity_method_string)
 {
-  if (sensitivity_method_string == "Forward") sensitivityMethod_ = FORWARD;
-  else if (sensitivity_method_string == "Adjoint") sensitivityMethod_ = ADJOINT; 
+  if (sensitivity_method_string == "None") sensitivityMethod_ = NONE; 
+  else if (sensitivity_method_string == "Forward") sensitivityMethod_ = FORWARD;
+  else if (sensitivity_method_string == "Adjoint") sensitivityMethod_ = ADJOINT;
+  else {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        true,
+        Teuchos::Exceptions::InvalidParameter,
+        "\n Error! Piro::TransientSolver: invalid Sensitivity Method = " << sensitivity_method_string << "! \n" 
+        << " Valid options for Sensitivity Method are 'None', 'Forward' and 'Adjoint'.\n");
+  }
+  //IKT, 5/8/2020: remove the following once we have support for adjoint sensitivities 
+  if (sensitivityMethod_ == ADJOINT) {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        true,
+        Teuchos::Exceptions::InvalidParameter,
+        "\n Error! Piro::TransientSolver: adjoint sentivities (Sensitivity Method = "
+        << "Adjoint) are not yet supported!  Please set 'Sensitivity Method' to 'None' or 'Forward'.\n");
+  }
 }
 
 template <typename Scalar>
@@ -304,28 +321,37 @@ Piro::TransientSolver<Scalar>::evalConvergedModel(
   using Teuchos::rcp;
   
   // Check if sensitivities are requested 
-  // IKT, 4/10/2020: not sure if the following will be needed or not... 
-  bool requestedSensitivities_ = false;
+  bool requestedSensitivities = false;
   for (int i=0; i<num_p_; i++) {
     for (int j=0; j<=num_g_; j++) {
       if (!outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, i).none() && !outArgs.get_DgDp(j,i).isEmpty()) {
-        requestedSensitivities_ = true;
+        requestedSensitivities = true;
         break;
       }
     }
   }
 
 #ifdef DEBUG_OUTPUT
-  *out_ << "DEBUG requestedSensitivities = " << requestedSensitivities_ << "\n";
+  *out_ << "DEBUG requestedSensitivities = " << requestedSensitivities << "\n";
 #endif 
-  if (requestedSensitivities_ == true) {
+  if (requestedSensitivities == true) {
+
+    if (sensitivityMethod_ == NONE) {
+
+      //If sensitivities are requested but 'Sensitivity Method' is set to 'None', throw an error.
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          true,
+          Teuchos::Exceptions::InvalidParameter,
+          "\n Error! Piro::TransientSolver: you have specified 'Sensitivity Method = None' yet the model supports suggest " 
+          << "sensitivities are requested.  Please change 'Sensitivity Method' to 'Forward' or 'Adjoint'\n");
+    }
     //
     *out_ << "\nE) Solve the forward problem with Sensitivities...\n";
     //
     TEUCHOS_TEST_FOR_EXCEPTION(
         true,
         Teuchos::Exceptions::InvalidParameter,
-        "\n Error! Piro::TempusSolver: sensitivities with Tempus are not yet supported!");
+        "\n Error! Piro::TransientSolver: sensitivities with Tempus are not yet supported!");
   }
 
   *out_ << "\nF) Calculate responses ...\n";
@@ -425,8 +451,6 @@ Piro::TransientSolver<Scalar>::evalConvergedModel(
   // Return the final solution as an additional g-vector, if requested
   RCP<Thyra::VectorBase<Scalar> > gx_out = outArgs.get_g(num_g_);
   if (Teuchos::nonnull(gx_out)) {
-    std::cout << "IKT modelInArgs = " << modelInArgs << "\n"; 
-    std::cout << "IKT modelInArgs.get_x() = " << modelInArgs.get_x() << "\n"; 
     Thyra::copy(*modelInArgs.get_x(), gx_out.ptr());
   }
 }

@@ -122,12 +122,11 @@ private:
   Teuchos::RCP<Teuchos::FancyOStream> out_;
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > initialConditionModel_;
-  bool requestedSensitivities_; 
 
   int num_p_;
   int num_g_;
 
-  enum SENS_METHOD {FORWARD, ADJOINT};
+  enum SENS_METHOD {NONE, FORWARD, ADJOINT};
   SENS_METHOD sensitivityMethod_;
 
 

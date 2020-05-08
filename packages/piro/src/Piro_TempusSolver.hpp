@@ -88,6 +88,7 @@ public:
       const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &timeStepSolver,
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
       Scalar finalTime,
+      const std::string sens_method = "None", 
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &initialConditionModel = Teuchos::null,
       Teuchos::EVerbosityLevel verbosityLevel = Teuchos::VERB_DEFAULT);
  
@@ -101,6 +102,7 @@ public:
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
       Scalar initialTime,
       Scalar finalTime,
+      const std::string sens_method = "None", 
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &initialConditionModel = Teuchos::null,
       Teuchos::EVerbosityLevel verbosityLevel = Teuchos::VERB_DEFAULT);
   //@}

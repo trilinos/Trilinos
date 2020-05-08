@@ -106,8 +106,11 @@ Piro::TempusSolver<Scalar>::TempusSolver(
     else model = Teuchos::rcp(new Piro::MatrixFreeDecorator<Scalar>(in_model));
     initialize(appParams, model);
   }
-  else
+  else {
     initialize(appParams, in_model);
+  }
+  std::string sens_method = appParams->get("Sensitivity Method","None");
+  this->setSensitivityMethod(sens_method); 
 }
 
 template <typename Scalar>
@@ -127,9 +130,6 @@ void Piro::TempusSolver<Scalar>::initialize(
   num_p_ = in_model->Np();
   num_g_ = in_model->Ng();
 
-  std::string sensitivity_method = appParams->get("Sensitivity Method","Forward");
-  this->setSensitivityMethod(sensitivity_method); 
- 
   //
   *out_ << "\nA) Get the base parameter list ...\n";
   //
@@ -314,6 +314,7 @@ Piro::TempusSolver<Scalar>::TempusSolver(
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &timeStepSolver,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &underlyingModel,
     Scalar finalTime,
+    const std::string sens_method, 
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &icModel,
     Teuchos::EVerbosityLevel verbosityLevel) :
   TransientSolver<Scalar>(underlyingModel, icModel), 
@@ -336,6 +337,8 @@ Piro::TempusSolver<Scalar>::TempusSolver(
   if (fwdStateStepper_->getModel() != underlyingModel) {
     fwdStateStepper_->setModel(underlyingModel);
   }
+  //IKT 5/8/2020, FIXME: we can eventually remove the following call.  It is here just for testing for now.
+  this->setSensitivityMethod(sens_method); 
 }
 
 template <typename Scalar>
@@ -346,6 +349,7 @@ Piro::TempusSolver<Scalar>::TempusSolver(
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &underlyingModel,
     Scalar initialTime,
     Scalar finalTime,
+    const std::string sens_method, 
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &icModel,
     Teuchos::EVerbosityLevel verbosityLevel) :
   TransientSolver<Scalar>(underlyingModel, icModel), 
@@ -376,6 +380,8 @@ Piro::TempusSolver<Scalar>::TempusSolver(
   if (fwdStateStepper_->getModel() != underlyingModel) {
     fwdStateStepper_->setModel(underlyingModel);
   }
+  //IKT 5/8/2020, FIXME: we can eventually remove the following call.  It is here just for testing for now.
+  this->setSensitivityMethod(sens_method); 
 }
 
 template <typename Scalar>
