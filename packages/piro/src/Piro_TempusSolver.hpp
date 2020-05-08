@@ -83,18 +83,19 @@ public:
 
   /** \brief Initialize using prebuilt objects. */
   TempusSolver(
-      const Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > &stateIntegrator,
+      const Teuchos::RCP<Piro::TempusIntegrator<Scalar> > &stateIntegrator,
       const Teuchos::RCP<Tempus::Stepper<Scalar> > &stateStepper,
       const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &timeStepSolver,
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
       Scalar finalTime,
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &initialConditionModel = Teuchos::null,
       Teuchos::EVerbosityLevel verbosityLevel = Teuchos::VERB_DEFAULT);
-  //@}
+ 
+ //@}
 
   /** \brief Initialize using prebuilt objects - supplying initial time value. */
   TempusSolver(
-      const Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > &stateIntegrator,
+      const Teuchos::RCP<Piro::TempusIntegrator<Scalar> > &stateIntegrator,
       const Teuchos::RCP<Tempus::Stepper<Scalar> > &stateStepper,
       const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &timeStepSolver,
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
@@ -171,7 +172,6 @@ private:
   /** \brief . */
   Teuchos::RCP<const Teuchos::ParameterList> getValidTempusParameters() const;
 
-  Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > fwdStateIntegrator_;
   Teuchos::RCP<Piro::TempusIntegrator<Scalar>> piroTempusIntegrator_; 
   Teuchos::RCP<Tempus::Stepper<Scalar> > fwdStateStepper_;
   Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > fwdTimeStepSolver_;

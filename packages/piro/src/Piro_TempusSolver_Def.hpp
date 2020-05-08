@@ -286,13 +286,10 @@ void Piro::TempusSolver<Scalar>::initialize(
     *out_ << "\nD) Create the stepper and integrator for the forward problem ...\n";
 
     //Create Tempus integrator with observer using tempusPL and model_.
-    fwdStateIntegrator_ = Tempus::integratorBasic<Scalar>(tempusPL, model_);
-    //IKT, FIXME: swap fwdStateIntegrator with piroTempusIntegrator_, once Piro::TempusIntegrator
-    //class is ready. 
     piroTempusIntegrator_ = Teuchos::rcp(new Piro::TempusIntegrator<Scalar>(tempusPL, model_)); 
 
     //Get stepper from integrator
-    fwdStateStepper_ = fwdStateIntegrator_->getStepper();
+    fwdStateStepper_ = piroTempusIntegrator_->getStepper();
 
     //Set observer
     supports_x_dotdot_ = model_->createInArgs().supports(Thyra::ModelEvaluatorBase::IN_ARG_x_dot_dot);
@@ -312,7 +309,7 @@ void Piro::TempusSolver<Scalar>::initialize(
 
 template <typename Scalar>
 Piro::TempusSolver<Scalar>::TempusSolver(
-    const Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > &stateIntegrator,
+    const Teuchos::RCP<Piro::TempusIntegrator<Scalar> > &stateIntegrator,
     const Teuchos::RCP<Tempus::Stepper<Scalar> > &stateStepper,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &timeStepSolver,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &underlyingModel,
@@ -320,7 +317,7 @@ Piro::TempusSolver<Scalar>::TempusSolver(
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &icModel,
     Teuchos::EVerbosityLevel verbosityLevel) :
   TransientSolver<Scalar>(underlyingModel, icModel), 
-  fwdStateIntegrator_(stateIntegrator),
+  piroTempusIntegrator_(stateIntegrator),
   fwdStateStepper_(stateStepper),
   fwdTimeStepSolver_(timeStepSolver),
   model_(underlyingModel),
@@ -343,7 +340,7 @@ Piro::TempusSolver<Scalar>::TempusSolver(
 
 template <typename Scalar>
 Piro::TempusSolver<Scalar>::TempusSolver(
-    const Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > &stateIntegrator,
+    const Teuchos::RCP<Piro::TempusIntegrator<Scalar> > &stateIntegrator,
     const Teuchos::RCP<Tempus::Stepper<Scalar> > &stateStepper,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &timeStepSolver,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &underlyingModel,
@@ -352,7 +349,7 @@ Piro::TempusSolver<Scalar>::TempusSolver(
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &icModel,
     Teuchos::EVerbosityLevel verbosityLevel) :
   TransientSolver<Scalar>(underlyingModel, icModel), 
-  fwdStateIntegrator_(stateIntegrator),
+  piroTempusIntegrator_(stateIntegrator),
   fwdStateStepper_(stateStepper),
   fwdTimeStepSolver_(timeStepSolver),
   model_(underlyingModel),
@@ -433,8 +430,8 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
   RCP<const Tempus::SolutionHistory<Scalar> > solutionHistory;
     
   *out_ << "T final requested: " << t_final_ << " \n";
-  fwdStateIntegrator_->advanceTime(t_final_);
-  double time = fwdStateIntegrator_->getTime();
+  piroTempusIntegrator_->advanceTime(t_final_);
+  double time = piroTempusIntegrator_->getTime();
   *out_ << "T final actual: " << time << "\n";
 
   if (abs(time-t_final_) > 1.0e-10) {
@@ -454,9 +451,9 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
     }
   }
 
-  finalSolution = fwdStateIntegrator_->getX();
+  finalSolution = piroTempusIntegrator_->getX();
 
-  solutionHistory = fwdStateIntegrator_->getSolutionHistory();
+  solutionHistory = piroTempusIntegrator_->getSolutionHistory();
   auto numStates = solutionHistory->getNumStates();
   solutionState = (*solutionHistory)[numStates-1];
   //Get final solution from solutionHistory.
@@ -540,7 +537,7 @@ template <typename Scalar>
 void Piro::TempusSolver<Scalar>::
 setStartTime(const Scalar start_time)
 {
-  Teuchos::RCP<const Tempus::TimeStepControl<Scalar> > tsc_const = fwdStateIntegrator_->getTimeStepControl();
+  Teuchos::RCP<const Tempus::TimeStepControl<Scalar> > tsc_const = piroTempusIntegrator_->getTimeStepControl();
   Teuchos::RCP<Tempus::TimeStepControl<Scalar> > tsc = Teuchos::rcp_const_cast<Tempus::TimeStepControl<Scalar> >(tsc_const); 
   tsc->setInitTime(start_time); 
 } 
@@ -549,7 +546,7 @@ template <typename Scalar>
 Scalar Piro::TempusSolver<Scalar>::
 getStartTime() const
 {
-  Teuchos::RCP<const Tempus::TimeStepControl<Scalar> > tsc = fwdStateIntegrator_->getTimeStepControl();
+  Teuchos::RCP<const Tempus::TimeStepControl<Scalar> > tsc = piroTempusIntegrator_->getTimeStepControl();
   Scalar start_time = tsc->getInitTime(); 
   return start_time; 
 } 
@@ -558,7 +555,7 @@ template <typename Scalar>
 void Piro::TempusSolver<Scalar>::
 setFinalTime(const Scalar final_time)
 {
-  Teuchos::RCP<const Tempus::TimeStepControl<Scalar> > tsc_const = fwdStateIntegrator_->getTimeStepControl();
+  Teuchos::RCP<const Tempus::TimeStepControl<Scalar> > tsc_const = piroTempusIntegrator_->getTimeStepControl();
   Teuchos::RCP<Tempus::TimeStepControl<Scalar> > tsc = Teuchos::rcp_const_cast<Tempus::TimeStepControl<Scalar> >(tsc_const); 
   t_final_ = final_time; 
   tsc->setFinalTime(final_time); 
@@ -568,7 +565,7 @@ template <typename Scalar>
 Scalar Piro::TempusSolver<Scalar>::
 getFinalTime() const
 {
-  Teuchos::RCP<const Tempus::TimeStepControl<Scalar> > tsc = fwdStateIntegrator_->getTimeStepControl();
+  Teuchos::RCP<const Tempus::TimeStepControl<Scalar> > tsc = piroTempusIntegrator_->getTimeStepControl();
   Scalar final_time = tsc->getFinalTime(); 
   return final_time; 
 } 
@@ -577,7 +574,7 @@ template <typename Scalar>
 void Piro::TempusSolver<Scalar>::
 setInitTimeStep(const Scalar init_time_step)
 {
-  Teuchos::RCP<const Tempus::TimeStepControl<Scalar> > tsc_const = fwdStateIntegrator_->getTimeStepControl();
+  Teuchos::RCP<const Tempus::TimeStepControl<Scalar> > tsc_const = piroTempusIntegrator_->getTimeStepControl();
   Teuchos::RCP<Tempus::TimeStepControl<Scalar> > tsc = Teuchos::rcp_const_cast<Tempus::TimeStepControl<Scalar> >(tsc_const); 
   tsc->setInitTimeStep(init_time_step); 
 } 
@@ -587,7 +584,7 @@ template <typename Scalar>
 Scalar Piro::TempusSolver<Scalar>::
 getInitTimeStep() const
 {
-  Teuchos::RCP<const Tempus::TimeStepControl<Scalar> > tsc = fwdStateIntegrator_->getTimeStepControl();
+  Teuchos::RCP<const Tempus::TimeStepControl<Scalar> > tsc = piroTempusIntegrator_->getTimeStepControl();
   auto init_time_step = tsc->getInitTimeStep(); 
   return init_time_step; 
 } 
@@ -598,19 +595,19 @@ setObserver()
   Teuchos::RCP<Tempus::IntegratorObserverBasic<Scalar> > observer = Teuchos::null;
   if (Teuchos::nonnull(piroObserver_)) {
     //Get solutionHistory from integrator
-    const Teuchos::RCP<const Tempus::SolutionHistory<Scalar> > solutionHistory = fwdStateIntegrator_->getSolutionHistory();
-    const Teuchos::RCP<const Tempus::TimeStepControl<Scalar> > timeStepControl = fwdStateIntegrator_->getTimeStepControl();
+    const Teuchos::RCP<const Tempus::SolutionHistory<Scalar> > solutionHistory = piroTempusIntegrator_->getSolutionHistory();
+    const Teuchos::RCP<const Tempus::TimeStepControl<Scalar> > timeStepControl = piroTempusIntegrator_->getTimeStepControl();
     //Create Tempus::IntegratorObserverBasic object
     observer = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<Scalar>(solutionHistory,
                                 timeStepControl, piroObserver_, supports_x_dotdot_, abort_on_fail_at_min_dt_));
   }
   if (Teuchos::nonnull(observer)) {
     //Set observer in integrator
-    fwdStateIntegrator_->getObserver()->clearObservers();
-    fwdStateIntegrator_->setObserver(observer);
+    piroTempusIntegrator_->clearObservers();
+    piroTempusIntegrator_->setObserver(observer);
     fwdStateStepper_->initialize();
     //Reinitialize everything in integrator class, since we have changed the observer.
-    fwdStateIntegrator_->initialize();
+    piroTempusIntegrator_->initialize();
   }
 }
 
@@ -621,7 +618,7 @@ setInitialState(Scalar t0,
       Teuchos::RCP<Thyra::VectorBase<Scalar> > xdot0,
       Teuchos::RCP<Thyra::VectorBase<Scalar> > xdotdot0) 
 {
-   fwdStateIntegrator_->initializeSolutionHistory(t0, x0, xdot0, xdotdot0); 
+   piroTempusIntegrator_->initializeSolutionHistory(t0, x0, xdot0, xdotdot0); 
    //Reset observer.  This is necessary for correct observation of solution
    //since initializeSolutionHistory modifies the solutionHistory object.
    setObserver(); 
@@ -640,7 +637,7 @@ template <typename Scalar>
 Teuchos::RCP<Tempus::SolutionHistory<Scalar> > Piro::TempusSolver<Scalar>::
 getSolutionHistory() const
 {
-  Teuchos::RCP<const Tempus::SolutionHistory<Scalar> > soln_history_const = fwdStateIntegrator_->getSolutionHistory();
+  Teuchos::RCP<const Tempus::SolutionHistory<Scalar> > soln_history_const = piroTempusIntegrator_->getSolutionHistory();
   Teuchos::RCP<Tempus::SolutionHistory<Scalar> > soln_history = Teuchos::rcp_const_cast<Tempus::SolutionHistory<Scalar> >(soln_history_const); 
   return soln_history;
 }
@@ -658,7 +655,7 @@ template <typename Scalar>
 Tempus::Status Piro::TempusSolver<Scalar>::
 getTempusIntegratorStatus() const
 {
-  return fwdStateIntegrator_->getStatus(); 
+  return piroTempusIntegrator_->getStatus(); 
 }
 
 

@@ -57,6 +57,7 @@
 #include "Piro_Test_ThyraSupport.hpp"
 #include "Piro_Test_WeakenedModelEvaluator.hpp"
 #include "Piro_Test_MockObserver.hpp"
+#include "Piro_TempusIntegrator.hpp"
 
 #include "MockModelEval_A.hpp"
 
@@ -124,7 +125,7 @@ const RCP<TempusSolver<double> > solverNew(
   tempusPL->sublist("Demo Stepper").set("Zero Initial Guess", false);
   tempusPL->sublist("Demo Stepper").set("Solver Name", "Demo Solver");
   tempusPL->sublist("Demo Stepper").sublist("Demo Solver").sublist("NOX").sublist("Direction").set("Method","Newton");
-  Teuchos::RCP<Tempus::IntegratorBasic<double> > integrator = Tempus::integratorBasic<double>(tempusPL, thyraModel);
+  Teuchos::RCP<Piro::TempusIntegrator<double> > integrator = Teuchos::rcp(new Piro::TempusIntegrator<double>(tempusPL, thyraModel));
   const RCP<Thyra::NonlinearSolverBase<double> > stepSolver = Teuchos::null;
 
   RCP<ParameterList> stepperPL = Teuchos::rcp(&(tempusPL->sublist("Demo Stepper")), false);
@@ -153,7 +154,7 @@ const RCP<TempusSolver<double> > solverNew(
   tempusPL->sublist("Demo Stepper").set("Zero Initial Guess", false);
   tempusPL->sublist("Demo Stepper").set("Solver Name", "Demo Solver");
   tempusPL->sublist("Demo Stepper").sublist("Demo Solver").sublist("NOX").sublist("Direction").set("Method","Newton");
-  Teuchos::RCP<Tempus::IntegratorBasic<double> > integrator = Tempus::integratorBasic<double>(tempusPL, thyraModel);
+  Teuchos::RCP<Piro::TempusIntegrator<double> > integrator = Teuchos::rcp(new Piro::TempusIntegrator<double>(tempusPL, thyraModel));
   const RCP<const Tempus::SolutionHistory<double> > solutionHistory = integrator->getSolutionHistory();
   const RCP<const Tempus::TimeStepControl<double> > timeStepControl = integrator->getTimeStepControl();
 
@@ -190,7 +191,7 @@ const RCP<TempusSolver<double> > solverNew(
   tempusPL->sublist("Demo Stepper").set("Zero Initial Guess", false);
   tempusPL->sublist("Demo Stepper").set("Solver Name", "Demo Solver");
   tempusPL->sublist("Demo Stepper").sublist("Demo Solver").sublist("NOX").sublist("Direction").set("Method","Newton");
-  Teuchos::RCP<Tempus::IntegratorBasic<double> > integrator = Tempus::integratorBasic<double>(tempusPL, thyraModel);
+  Teuchos::RCP<Piro::TempusIntegrator<double> > integrator = Teuchos::rcp(new Piro::TempusIntegrator<double>(tempusPL, thyraModel));
   const RCP<const Tempus::SolutionHistory<double> > solutionHistory = integrator->getSolutionHistory();
   const RCP<const Tempus::TimeStepControl<double> > timeStepControl = integrator->getTimeStepControl();
 

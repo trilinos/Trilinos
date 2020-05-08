@@ -57,7 +57,8 @@
 template <typename Scalar>
 Piro::TempusIntegrator<Scalar>::TempusIntegrator(Teuchos::RCP< Teuchos::ParameterList > pList, 
    const Teuchos::RCP< Thyra::ModelEvaluator< Scalar > > &model,
-   int sensitivities_requested) 
+   int sensitivities_requested) : 
+   out_(Teuchos::VerboseObjectBase::getDefaultOStream())
 {
 #ifdef DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
@@ -215,12 +216,16 @@ Piro::TempusIntegrator<Scalar>::clearObservers()
   if (basicIntegrator_ != Teuchos::null) {
     basicIntegrator_->getObserver()->clearObservers();
   }
-  if (fwdSensIntegrator_ != Teuchos::null) {
+  //IKT, FIXME: fwdSensIntegrator_->getObserver() has not routine 
+  //called clearObservers().  Look into.
+  /*if (fwdSensIntegrator_ != Teuchos::null) {
     fwdSensIntegrator_->getObserver()->clearObservers(); 
-  }
-  if (adjSensIntegrator_ != Teuchos::null) {
+  }*/
+  //IKT, FIXME: adjSensIntegrator_ has no routine getObserver().
+  //Look into.
+  /*if (adjSensIntegrator_ != Teuchos::null) {
     adjSensIntegrator_->getObserver()->clearObservers(); 
-  }
+  }*/
 }
 
 template <typename Scalar>
@@ -236,9 +241,11 @@ Piro::TempusIntegrator<Scalar>::setObserver(Teuchos::RCP<Tempus::IntegratorObser
   if (fwdSensIntegrator_ != Teuchos::null) {
     fwdSensIntegrator_->setObserver(obs); 
   }
-  if (adjSensIntegrator_ != Teuchos::null) {
+  //IKT, FIXME: adjSensIntegrator_ has no routine setObsever(obs)
+  //Look into.
+  /*if (adjSensIntegrator_ != Teuchos::null) {
     adjSensIntegrator_->setObserver(obs); 
-  }
+  }*/
 }
 
 template <typename Scalar>
@@ -254,9 +261,11 @@ Piro::TempusIntegrator<Scalar>::initialize()
   if (fwdSensIntegrator_ != Teuchos::null) {
     fwdSensIntegrator_->initialize(); 
   }
-  if (adjSensIntegrator_ != Teuchos::null) {
+  //IKT FIXME: adjSensIntegrator_ has no initialize() routine.
+  //Look into.
+  /*if (adjSensIntegrator_ != Teuchos::null) {
     adjSensIntegrator_->initialize(); 
-  }
+  }*/
 }
 
 template <typename Scalar>
