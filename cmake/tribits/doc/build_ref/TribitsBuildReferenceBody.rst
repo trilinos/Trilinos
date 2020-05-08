@@ -306,9 +306,10 @@ See the following use cases:
 * `Enable a set of packages`_
 * `Enable or disable tests for specific packages`_
 * `Enable to test all effects of changing a given package(s)`_
-* `Enable all packages with tests and examples`_
+* `Enable all packages (and optionally all tests)`_
 * `Disable a package and all its dependencies`_
 * `Remove all package enables in the cache`_
+
 
 Determine the list of packages that can be enabled
 ++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -375,8 +376,11 @@ as described above.
 Both of these variables are automatically enabled when
 `<Project>_VERBOSE_CONFIGURE`_ = ``ON``.
 
+
 Enable a set of packages
 ++++++++++++++++++++++++
+
+.. _<Project>_ENABLE_TESTS:
 
 To enable an SE package ``<TRIBITS_PACKAGE>`` (and optionally also its tests
 and examples), configure with::
@@ -429,6 +433,8 @@ that his will **not** result in the enable of the test suites for any packages
 that may only be implicitly enabled in order to build the explicitly enabled
 packages.
 
+.. _<TRIBITS_PACKAGE>_ENABLE_TESTS:
+
 If one wants to enable a package along with the enable of other packages, but
 not the test suite for that package, then when can disable the tests for that
 package by configuring with::
@@ -465,31 +471,39 @@ of their tests turned on.  Tests will not be enabled in packages that do not
 depend on ``<TRIBITS_PACKAGE>`` in this case.  This speeds up and robustifies
 pre-push testing.
 
-Enable all packages with tests and examples
-+++++++++++++++++++++++++++++++++++++++++++
 
-To enable all SE packages (and optionally also their tests and examples), add
-the configure options::
+Enable all packages (and optionally all tests)
+++++++++++++++++++++++++++++++++++++++++++++++
+
+To enable all defined packages and subpakages add the configure option::
 
   -D <Project>_ENABLE_ALL_PACKAGES=ON \
+
+To also optionally enable the tests and examples in all of those enabled
+packages, add the configure option::
+
   -D <Project>_ENABLE_TESTS=ON \
 
-Specific packages can be disabled with
+Specific packages can be disabled (i.e. "black-listed") by adding
 ``<Project>_ENABLE_<TRIBITS_PACKAGE>=OFF``.  This will also disable all
 packages that depend on ``<TRIBITS_PACKAGE>``.
 
-All examples are also enabled by default when setting
-``<Project>_ENABLE_TESTS=ON``.
+Note, all examples are also enabled by default when setting
+``<Project>_ENABLE_TESTS=ON`` (and so examples are considered a subset of the
+tests).
 
 By default, setting ``<Project>_ENABLE_ALL_PACKAGES=ON`` only enables primary
-tested (PT) code.  To have this also enable all secondary tested (ST) code,
-one must also set ``<Project>_ENABLE_SECONDARY_TESTED_CODE=ON``.
+tested (PT) packages and code.  To have this also enable all secondary tested
+(ST) packages and ST code in PT packages code, one must also set::
 
-NOTE: If the project is a "meta-project", then
-``<Project>_ENABLE_ALL_PACKAGES=ON`` may not enable *all* the SE packages
-but only the project's primary meta-project packages.  See `Package
-Dependencies and Enable/Disable Logic`_ and `TriBITS Dependency Handling
-Behaviors`_ for details.
+  -D <Project>_ENABLE_SECONDARY_TESTED_CODE=ON \
+
+NOTE: If this project is a "meta-project", then
+``<Project>_ENABLE_ALL_PACKAGES=ON`` may not enable *all* the SE packages but
+only the project's primary meta-project packages.  See `Package Dependencies
+and Enable/Disable Logic`_ and `TriBITS Dependency Handling Behaviors`_ for
+details.
+
 
 Disable a package and all its dependencies
 ++++++++++++++++++++++++++++++++++++++++++
@@ -1968,6 +1982,66 @@ Note that one should also disable any ctest tests that might use this
 executable as well with ``-D<fullTestName>_DISABLE=ON`` (see above).  This
 will result in the printing of a line for the executable target being disabled
 at configure time to CMake STDOUT.
+
+
+Disabling just the ctest tests but not the test executables
+-----------------------------------------------------------
+
+To allow the building of the tests and examples in a package (enabled either
+through setting `<Project>_ENABLE_TESTS`_ ``= ON`` or
+`<TRIBITS_PACKAGE>_ENABLE_TESTS`_ ``= ON``) but not actually define the ctest
+tests that will get run, configure with::
+
+  -D <TRIBITS_PACKAGE>_SKIP_CTEST_ADD_TEST=TRUE \
+
+(This has the effect of skipping calling the ``add_test()`` command in the
+CMake code for the package ``<TRIBITS_PACKAGE>``.)
+
+To avoid defining ctest tests for all of the enabled packages, configure
+with::
+
+  -D <Project>_SKIP_CTEST_ADD_TEST=TRUE \
+
+(The default for ``<TRIBITS_PACKAGE>_SKIP_CTEST_ADD_TEST`` for each TriBITS
+package ``<TRIBITS_PACKAGE>`` is set to the project-wide option
+``<Project>_SKIP_CTEST_ADD_TEST``.)
+
+One can also use these options to "white-list" and "black-list" the set of
+package tests that one will run, even if more test and example targets get
+built.  For example, enable the building of all test and example targets but
+only actually defining ctest tests for two specific packages
+(i.e. "white-listing"), one would configure with::
+
+  -D <Project>_ENABLE_ALL_PACKAGES=ON \
+  -D <Project>_ENABLE_TESTS=ON \
+  -D <Project>_SKIP_CTEST_ADD_TEST=TRUE \
+  -D <TRIBITS_PACKAGE_1>_SKIP_CTEST_ADD_TEST=FALSE \
+  -D <TRIBITS_PACKAGE_2>_SKIP_CTEST_ADD_TEST=FALSE \
+
+Alternatively, to enable the building of all test and example targets and
+allowing the ctest tests to be defined for all package except for specific
+packages (i.e. "black-listing"), one would configure with::
+
+  -D <Project>_ENABLE_ALL_PACKAGES=ON \
+  -D <Project>_ENABLE_TESTS=ON \
+  -D <TRIBITS_PACKAGE_1>_SKIP_CTEST_ADD_TEST=TRUE \
+  -D <TRIBITS_PACKAGE_2>_SKIP_CTEST_ADD_TEST=TRUE \
+
+This allows for building all of the test and example targets for the enabled
+packages but not defining ctest tests for any set of packages desired.  This
+allows setting up testing scenarios where one wants to test the building of
+all test-related targets but not actually running the tests with ctest for a
+subset of all of the enabled packages.  (This can be useful in cases where the
+tests are very expensive and one can't afford to run all of them given the
+testing budget, or when running tests on a given platform is very flaky, or
+when some packages have fragile or poor quality tests that don't port to new
+platforms very well.)
+
+NOTE: These options avoid having to pass specific sets of labels when running
+``ctest`` itself (such as when defining ``ctest -S <script>.cmake`` scripts)
+and instead the decisions as to the exact set of ctest tests to define is made
+at configure time.  Therefore, all of the decisions about what test targets
+should be build and which tests should be run can be made at configure time.
 
 
 Trace test addition or exclusion
