@@ -254,10 +254,13 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     "Disable (and printing warning) for enabled packages that have hard-disabled upstream dependencies.  Otherwise, is to raises a fatal configure failure." )
 
   SET_CACHE_ON_OFF_EMPTY( ${PROJECT_NAME}_ENABLE_TESTS ""
-    "Enable tests in all packages  (set to ON, OFF, or leave empty)." )
+    "Enable tests (execs and ctest add_test()) in all packages  (set to ON, OFF, or leave empty)." )
 
   SET_CACHE_ON_OFF_EMPTY(${PROJECT_NAME}_ENABLE_EXAMPLES ""
-    "Enable examples in all packages  (set to ON, OFF, or leave empty).  If left empty, then this will be set to ON if ${PROJECT_NAME}_ENABLE_TESTS=ON" )
+    "Enable examples (exec and ctest add_test()) in all packages  (set to ON, OFF, or leave empty).  If left empty, then this will be set to ON if ${PROJECT_NAME}_ENABLE_TESTS=ON" )
+
+  SET(${PROJECT_NAME}_SKIP_CTEST_ADD_TEST OFF CACHE BOOL
+    "Skipp ctest add_test() for all defined tests (but still build any enabled test or example executable targets)." )
 
   IF (${PROJECT_NAME}_ENABLE_TESTS AND ${PROJECT_NAME}_ENABLE_EXAMPLES STREQUAL "")
     MESSAGE(STATUS "Setting ${PROJECT_NAME}_ENABLE_EXAMPLES=ON because ${PROJECT_NAME}_ENABLE_TESTS=ON")
