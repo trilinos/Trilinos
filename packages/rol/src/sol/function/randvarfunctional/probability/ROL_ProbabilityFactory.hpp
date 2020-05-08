@@ -109,7 +109,7 @@ namespace ROL {
   }
 
   template<class Real>
-  inline Ptr<RandVarFunctional<Real> > ProbabilityFactory(ROL::ParameterList &parlist) {
+  inline Ptr<RandVarFunctional<Real>> ProbabilityFactory(ParameterList &parlist) {
     std::string prob = parlist.sublist("SOL").sublist("Probability").get("Name","bPOE");
     EProbability ed = StringToEProbability(prob);
     switch(ed) {

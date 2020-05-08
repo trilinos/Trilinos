@@ -41,39 +41,66 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_RANDVARFUNCTIONALFACTORY_HPP
-#define ROL_RANDVARFUNCTIONALFACTORY_HPP
-
-#include "ROL_RiskMeasureFactory.hpp"
-#include "ROL_DeviationMeasureFactory.hpp"
-#include "ROL_ErrorMeasureFactory.hpp"
-#include "ROL_RegretMeasureFactory.hpp"
-#include "ROL_ProbabilityFactory.hpp"
+#ifndef ROL_MEANVALUECONSTRAINT_DEF_HPP
+#define ROL_MEANVALUECONSTRAINT_DEF_HPP
 
 namespace ROL {
 
-  template<class Real>
-  inline Ptr<RandVarFunctional<Real> > RandVarFunctionalFactory(ROL::ParameterList &parlist) {
-    std::string type = parlist.sublist("SOL").get("Type","Risk Averse");
-    if (type == "Risk Averse") {
-      return RiskMeasureFactory<Real>(parlist);
-    }
-    else if (type == "Deviation") {
-      return DeviationMeasureFactory<Real>(parlist);
-    }
-    else if (type == "Error") {
-      return ErrorMeasureFactory<Real>(parlist);
-    }
-    else if (type == "Regret") {
-      return RegretMeasureFactory<Real>(parlist);
-    }
-    else if (type == "Probability") {
-      return ProbabilityFactory<Real>(parlist);
-    }
-    else {
-      ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
-        ">>> (ROL::RandVarFunctionalFactory): Invalid random variable functional type!");
+template<typename Real>
+MeanValueConstraint<Real>::MeanValueConstraint( const Ptr<Constraint<Real>>      &con,
+                                                const Ptr<SampleGenerator<Real>> &sampler)
+  : con_(con) {
+  std::vector<Real> param = computeSampleMean(sampler);
+  con_->setParameter(param);
+}
+
+template<typename Real>
+void MeanValueConstraint<Real>::update( const Vector<Real> &x, bool flag, int iter ) {
+  con_->update(x,flag,iter);
+}
+
+template<typename Real>
+void MeanValueConstraint<Real>::update( const Vector<Real> &x, EUpdateType type, int iter ) {
+  con_->update(x,type,iter);
+}
+
+template<typename Real>
+void MeanValueConstraint<Real>::value(Vector<Real> &c, const Vector<Real> &x, Real &tol ) {
+  con_->value(c,x,tol);
+}
+
+template<typename Real>
+void MeanValueConstraint<Real>::applyJacobian(Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &x, Real &tol) {
+  con_->applyJaobian(jv,v,x,tol);
+}
+
+template<typename Real>
+void MeanValueConstraint<Real>::applyAdjointJacobian(Vector<Real> &ajv, const Vector<Real> &v, const Vector<Real> &x, Real &tol) {
+  con_->applyAdjointJacobian(ajv,v,x,tol);
+}
+
+template<typename Real>
+void MeanValueConstraint<Real>::applyAdjointHessian(Vector<Real> &ahuv, const Vector<Real> &u, const Vector<Real> &v, const Vector<Real> &x, Real &tol) {
+  con_->applyAdjointHessian(ahuv,u,v,tol);
+}
+
+template<typename Real>
+std::vector<Real> MeanValueConstraint<Real>::computeSampleMean(const Ptr<SampleGenerator<Real>> &sampler) const {
+  // Compute mean value of inputs and set parameter in constraint
+  int dim = sampler->getMyPoint(0).size(), nsamp = sampler->numMySamples();
+  std::vector<Real> loc(dim), mean(dim), pt(dim);
+  Real wt(0);
+  for (int i = 0; i < nsamp; i++) {
+    pt = sampler->getMyPoint(i);
+    wt = sampler->getMyWeight(i);
+    for (int j = 0; j < dim; j++) {
+      loc[j] += wt*pt[j];
     }
   }
+  sampler->sumAll(&loc[0],&mean[0],dim);
+  return mean;
 }
+
+}
+
 #endif

@@ -79,7 +79,7 @@ private:
                     bool &activated) {
     lower.clear(); upper.clear();
     // Get stochastic optimization information
-    std::string optType = parlist.sublist("SOL").get("Stochastic Component Type","Risk Averse");
+    std::string optType = parlist.sublist("SOL").get("Type","Risk Averse");
     if ( optType == "Risk Averse" ||
          optType == "Deviation"   ||
          optType == "Regret"      ||

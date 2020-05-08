@@ -142,9 +142,9 @@ namespace ROL {
   }
 
   template<class Real>
-  inline Ptr<RandVarFunctional<Real> > DeviationMeasureFactory(ROL::ParameterList &parlist) {
-    std::string risk = parlist.sublist("SOL").sublist("Deviation Measure").get("Name","Variance");
-    EDeviationMeasure ed = StringToEDeviationMeasure(risk);
+  inline Ptr<RandVarFunctional<Real>> DeviationMeasureFactory(ParameterList &parlist) {
+    std::string deviation = parlist.sublist("SOL").sublist("Deviation Measure").get("Name","Variance");
+    EDeviationMeasure ed = StringToEDeviationMeasure(deviation);
     switch(ed) {
       case DEVIATIONMEASURE_MEANVARIANCEQUADRANGLE:
              return makePtr<ExpectationQuadDeviation<Real>>(makePtr<MeanVarianceQuadrangle<Real>>(parlist));
@@ -164,7 +164,7 @@ namespace ROL {
              return makePtr<ExpectationQuadDeviation<Real>>(makePtr<SmoothedWorstCaseQuadrangle<Real>>(parlist));
       default:
         ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
-                                   "Invalid deviation measure type " << risk << "!");
+                                   "Invalid deviation measure type " << deviation << "!");
     }
   }
 }

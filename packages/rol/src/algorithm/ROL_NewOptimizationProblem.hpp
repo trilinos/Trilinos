@@ -70,13 +70,6 @@ private:
   unsigned cnt_linear_econ_;
   unsigned cnt_linear_icon_;
 
-  Ptr<Objective<Real>>                                 INPUT_obj_;
-  Ptr<Vector<Real>>                                    INPUT_xprim_;
-  Ptr<Vector<Real>>                                    INPUT_xdual_;
-  Ptr<BoundConstraint<Real>>                           INPUT_bnd_;
-  std::unordered_map<std::string,ConstraintData<Real>> INPUT_con_;
-  std::unordered_map<std::string,ConstraintData<Real>> INPUT_linear_con_;
-
   ParameterList ppa_list_;
 
   Ptr<Objective<Real>>            obj_;
@@ -92,6 +85,15 @@ private:
   Ptr<ReduceLinearConstraint<Real>> rlc_;
 
   EProblem problemType_;
+
+protected:
+
+  Ptr<Objective<Real>>                                 INPUT_obj_;
+  Ptr<Vector<Real>>                                    INPUT_xprim_;
+  Ptr<Vector<Real>>                                    INPUT_xdual_;
+  Ptr<BoundConstraint<Real>>                           INPUT_bnd_;
+  std::unordered_map<std::string,ConstraintData<Real>> INPUT_con_;
+  std::unordered_map<std::string,ConstraintData<Real>> INPUT_linear_con_;
 
 public:
   virtual ~NewOptimizationProblem(void) {}
@@ -289,8 +291,12 @@ public:
       @param[in]     printToStream   determines whether to print to the supplied std::ostream
       @param[in,out] outStream       user supplied std::ostream
   */
-  void finalize(bool lumpConstraints = false, bool printToStream = false,
-                std::ostream &outStream = std::cout);
+  virtual void finalize(bool lumpConstraints = false, bool printToStream = false,
+                        std::ostream &outStream = std::cout);
+
+  /** \brief Indicate whether or no finalize has been called.
+  */
+  bool isFinalized(void) const;
 
   /** \brief Resume editting optimization problem after finalize has been called.
   */

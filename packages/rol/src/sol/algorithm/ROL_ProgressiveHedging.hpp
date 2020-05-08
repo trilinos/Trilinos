@@ -146,12 +146,13 @@ public:
     maxPen_       = (maxPen_ <= static_cast<Real>(0) ? ROL_INF<Real>() : maxPen_);
     penaltyParam_ = std::min(penaltyParam_,maxPen_);
     // Create progressive hedging vector
-    std::string type = parlist.sublist("SOL").get("Stochastic Component Type","Risk Neutral");
-    std::string prob = parlist.sublist("SOL").sublist("Probability").get("Name","bPOE");
+    ParameterList olist; olist.sublist("SOL") = parlist.sublist("SOL").sublist("Objective");
+    std::string type = olist.sublist("SOL").get("Type","Risk Neutral");
+    std::string prob = olist.sublist("SOL").sublist("Probability").get("Name","bPOE");
     hasStat_ = ((type=="Risk Averse") ||
                 (type=="Deviation")   ||
                 (type=="Probability" && prob=="bPOE"));
-    Ptr<ParameterList> parlistptr = makePtrFromRef<ParameterList>(parlist);
+    Ptr<ParameterList> parlistptr = makePtrFromRef<ParameterList>(olist);
     if (hasStat_) {
       ph_vector_  = makePtr<RiskVector<Real>>(parlistptr,
                                               input_->getSolutionVector());
@@ -163,7 +164,7 @@ public:
     ph_objective_ = makePtr<PH_Objective<Real>>(input_->getObjective(),
                                                 ph_vector_,
                                                 penaltyParam_,
-                                                parlist);
+                                                olist);
     // Create progressive hedging bound constraint
     if (hasStat_) {
       ph_bound_   = makePtr<RiskBoundConstraint<Real>>(parlistptr,

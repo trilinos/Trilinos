@@ -670,7 +670,7 @@ public:
                               const Ptr<SampleGenerator<Real>> &gsampler = nullPtr,
                               const Ptr<SampleGenerator<Real>> &hsampler = nullPtr) {
     // Determine Stochastic Objective Type
-    std::string type = parlist.sublist("SOL").get("Stochastic Component Type","Risk Neutral");
+    std::string type = parlist.sublist("SOL").get("Type","Risk Neutral");
     if ( type == "Risk Neutral" ) {
       bool storage = parlist.sublist("SOL").get("Store Sampled Value and Gradient",true);
       setRiskNeutralObjective(vsampler,gsampler,hsampler,storage);
@@ -775,7 +775,7 @@ public:
     }
     for (int i = 0; i < nc; ++i) {
       if (xsampler[i] != nullPtr) {
-        std::string type = parlist[i].sublist("SOL").get("Stochastic Component Type","Risk Neutral");
+        std::string type = parlist[i].sublist("SOL").get("Type","Risk Neutral");
         if ( type == "Risk Neutral" ) {
           setRiskNeutralEquality(xsampler[i],cbman[i],i);
         }
@@ -917,7 +917,7 @@ public:
     }
     for (int i = 0; i < nc; ++i) {
       if ( xsampler[i] != nullPtr ) {
-        std::string type = parlist[i].sublist("SOL").get("Stochastic Component Type","Risk Neutral");
+        std::string type = parlist[i].sublist("SOL").get("Type","Risk Neutral");
         if ( type == "Risk Neutral" ) {
           setRiskNeutralInequality(xsampler[i],cbman[i],i);
         }

@@ -107,7 +107,7 @@ int main(int argc, char* argv[]) {
     parlist.sublist("Status Test").set("Gradient Tolerance",1e-8);
     parlist.sublist("Status Test").set("Step Tolerance",    1e-12);
     parlist.sublist("Status Test").set("Iteration Limit",   100);
-    parlist.sublist("SOL").set("Stochastic Component Type","Error");
+    parlist.sublist("SOL").set("Type","Error");
     std::vector<std::vector<RealT>> coeff;
     for (ROL::EErrorMeasure ed = ROL::ERRORMEASURE_MEANVARIANCEQUADRANGLE; ed != ROL::ERRORMEASURE_LAST; ed++) {
       std::string name = ROL::EErrorMeasureToString(ed);

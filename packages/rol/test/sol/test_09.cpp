@@ -207,7 +207,7 @@ int main(int argc, char* argv[]) {
     int nQuadLo = 0, nQuadUp = 21, order = 0;
     std::vector<RealT> norm(nQuadUp-nQuadLo), obj(nQuadUp-nQuadLo);
     *outStream << "\nSPECTRAL RISK MEASURE\n";
-    list.sublist("SOL").set("Stochastic Component Type","Risk Averse");
+    list.sublist("SOL").set("Type","Risk Averse");
     list.sublist("SOL").sublist("Risk Measure").set("Name","Spectral Risk");
     std::vector<ROL::Ptr<std::vector<RealT>>> hist(nQuadUp-nQuadLo,ROL::nullPtr);
     std::vector<ROL::Ptr<ROL::StdVector<RealT>>> hvec(nQuadUp-nQuadLo,ROL::nullPtr);

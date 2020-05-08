@@ -59,39 +59,31 @@ NewOptimizationProblem<Real>::NewOptimizationProblem(const Ptr<Objective<Real>> 
     obj_(nullPtr), xprim_(nullPtr), xdual_(nullPtr), bnd_(nullPtr),
     con_(nullPtr), mul_(nullPtr), res_(nullPtr), proj_(nullPtr),
     problemType_(TYPE_U) {
-  INPUT_obj_ = obj;
+  INPUT_obj_   = obj;
   INPUT_xprim_ = x;
-  if (g==nullPtr) {
-    INPUT_xdual_ = x->dual().clone();
-  }
-  else {
-    INPUT_xdual_ = g;
-  }
-  INPUT_bnd_ = nullPtr;
+  INPUT_bnd_   = nullPtr;
   INPUT_con_.clear();
   INPUT_linear_con_.clear();
+  if (g==nullPtr) INPUT_xdual_ = x->dual().clone();
+  else            INPUT_xdual_ = g;
 }
 
 template<typename Real>
 void NewOptimizationProblem<Real>::addBoundConstraint(const Ptr<BoundConstraint<Real>> &bnd) {
-  if (!isFinalized_) {
-    INPUT_bnd_ = bnd;
-    hasBounds_ = true;
-  }
-  else {
-    throw Exception::NotImplemented(">>> ROL::NewOptimizationProblem: Cannot add bounds after problem is finalized!");
-  }
+  ROL_TEST_FOR_EXCEPTION(isFinalized_,std::invalid_argument,
+    ">>> ROL::NewOptimizationProblem: Cannot add bounds after problem is finalized!");
+
+  INPUT_bnd_ = bnd;
+  hasBounds_ = true;
 }
 
 template<typename Real>
 void NewOptimizationProblem<Real>::removeBoundConstraint(void) {
-  if (!isFinalized_) {
-    INPUT_bnd_ = nullPtr;
-    hasBounds_ = false;
-  }
-  else {
-    throw Exception::NotImplemented(">>> ROL::NewOptimizationProblem: Cannot remove bounds after problem is finalized!");
-  }
+  ROL_TEST_FOR_EXCEPTION(isFinalized_,std::invalid_argument,
+    ">>> ROL::NewOptimizationProblem: Cannot remove bounds after problem is finalized!");
+
+  INPUT_bnd_ = nullPtr;
+  hasBounds_ = false;
 }
 
 template<typename Real>
@@ -100,23 +92,18 @@ void NewOptimizationProblem<Real>::addConstraint(std::string                  na
                                                  const Ptr<Vector<Real>>     &emul,
                                                  const Ptr<Vector<Real>>     &eres,
                                                  bool                         reset) {
-  if (!isFinalized_) {
-    if (reset) {
-      INPUT_con_.clear();
-    }
-    auto it = INPUT_con_.find(name);
-    if (it == INPUT_con_.end()) {
-      INPUT_con_.insert({name,ConstraintData<Real>(econ,emul,eres)});
-      hasEquality_ = true;
-      cnt_econ_++;
-    }
-    else {
-      throw Exception::NotImplemented(">>> ROL::NewOptimizationProblem: Constraint names must be distinct!");
-    }
-  }
-  else {
-    throw Exception::NotImplemented(">>> ROL::NewOptimizationProblem: Cannot add constraint after problem is finalized!");
-  }
+  ROL_TEST_FOR_EXCEPTION(isFinalized_,std::invalid_argument,
+    ">>> ROL::NewOptimizationProblem: Cannot add constraint after problem is finalized!");
+
+  if (reset) INPUT_con_.clear();
+
+  auto it = INPUT_con_.find(name);
+  ROL_TEST_FOR_EXCEPTION(it != INPUT_con_.end(),std::invalid_argument,
+    ">>> ROL::NewOptimizationProblem: Constraint names must be distinct!");
+
+  INPUT_con_.insert({name,ConstraintData<Real>(econ,emul,eres)});
+  hasEquality_ = true;
+  cnt_econ_++;
 }
 
 template<typename Real>
@@ -126,48 +113,33 @@ void NewOptimizationProblem<Real>::addConstraint(std::string                    
                                                  const Ptr<BoundConstraint<Real>> &ibnd,
                                                  const Ptr<Vector<Real>>          &ires,
                                                  bool                              reset) {
-  if (!isFinalized_) {
-    if (reset) {
-      INPUT_con_.clear();
-    }
-    auto it = INPUT_con_.find(name);
-    if (it == INPUT_con_.end()) {
-      INPUT_con_.insert({name,ConstraintData<Real>(icon,imul,ires,ibnd)});
-      hasInequality_ = true;
-      cnt_icon_++;
-    }
-    else {
-      throw Exception::NotImplemented(">>> ROL::NewOptimizationProblem: Constraint names must be distinct!");
-    }
-  }
-  else {
-    throw Exception::NotImplemented(">>> ROL::NewOptimizationProblem: Cannot add constraint after problem is finalized!");
-  }
+  ROL_TEST_FOR_EXCEPTION(isFinalized_,std::invalid_argument,
+    ">>> ROL::NewOptimizationProblem: Cannot add constraint after problem is finalized!");
+
+  if (reset) INPUT_con_.clear();
+
+  auto it = INPUT_con_.find(name);
+  ROL_TEST_FOR_EXCEPTION(it != INPUT_con_.end(),std::invalid_argument,
+    ">>> ROL::NewOptimizationProblem: Constraint names must be distinct!");
+
+  INPUT_con_.insert({name,ConstraintData<Real>(icon,imul,ires,ibnd)});
+  hasInequality_ = true;
+  cnt_icon_++;
 }
 
 template<typename Real>
 void NewOptimizationProblem<Real>::removeConstraint(std::string name) {
-  if (!isFinalized_) {
-    auto it = INPUT_con_.find(name);
-    if (it!=INPUT_con_.end()) {
-      if (it->second.bounds==nullPtr) {
-        cnt_econ_--;
-      }
-      else {
-        cnt_icon_--;
-      }
-      INPUT_con_.erase(it);
-    }
-    if (cnt_econ_==0) {
-      hasEquality_ = false;
-    }
-    if (cnt_icon_==0) {
-      hasInequality_ = false;
-    }
+  ROL_TEST_FOR_EXCEPTION(isFinalized_,std::invalid_argument,
+    ">>> ROL::NewOptimizationProblem: Cannot remove constraint after problem is finalized!");
+
+  auto it = INPUT_con_.find(name);
+  if (it!=INPUT_con_.end()) {
+    if (it->second.bounds==nullPtr) cnt_econ_--;
+    else                            cnt_icon_--;
+    INPUT_con_.erase(it);
   }
-  else {
-    throw Exception::NotImplemented(">>> ROL::NewOptimizationProblem: Cannot remove constraint after problem is finalized!");
-  }
+  if (cnt_econ_==0) hasEquality_   = false;
+  if (cnt_icon_==0) hasInequality_ = false;
 }
 
 template<typename Real>
@@ -176,23 +148,18 @@ void NewOptimizationProblem<Real>::addLinearConstraint(std::string              
                                                        const Ptr<Vector<Real>>     &linear_emul,
                                                        const Ptr<Vector<Real>>     &linear_eres,
                                                        bool                         reset) {
-  if (!isFinalized_) {
-    if (reset) {
-      INPUT_linear_con_.clear();
-    }
-    auto it = INPUT_linear_con_.find(name);
-    if (it == INPUT_linear_con_.end()) {
-      INPUT_linear_con_.insert({name,ConstraintData<Real>(linear_econ,linear_emul,linear_eres)});
-      hasLinearEquality_ = true;
-      cnt_linear_econ_++;
-    }
-    else {
-      throw Exception::NotImplemented(">>> ROL::NewOptimizationProblem: Linear constraint names must be distinct!");
-    }
-  }
-  else {
-    throw Exception::NotImplemented(">>> ROL::NewOptimizationProblem: Cannot add linear constraint after problem is finalized!");
-  }
+  ROL_TEST_FOR_EXCEPTION(isFinalized_,std::invalid_argument,
+    ">>> ROL::NewOptimizationProblem: Cannot add linear constraint after problem is finalized!");
+
+  if (reset) INPUT_linear_con_.clear();
+
+  auto it = INPUT_linear_con_.find(name);
+  ROL_TEST_FOR_EXCEPTION(it != INPUT_linear_con_.end(),std::invalid_argument,
+    ">>> ROL::NewOptimizationProblem: Linear constraint names must be distinct!");
+
+  INPUT_linear_con_.insert({name,ConstraintData<Real>(linear_econ,linear_emul,linear_eres)});
+  hasLinearEquality_ = true;
+  cnt_linear_econ_++;
 }
 
 template<typename Real>
@@ -202,58 +169,41 @@ void NewOptimizationProblem<Real>::addLinearConstraint(std::string              
                                                        const Ptr<BoundConstraint<Real>> &linear_ibnd,
                                                        const Ptr<Vector<Real>>          &linear_ires,
                                                        bool                              reset) {
-  if (!isFinalized_) {
-    if (reset) {
-      INPUT_linear_con_.clear();
-    }
-    auto it = INPUT_linear_con_.find(name);
-    if (it == INPUT_linear_con_.end()) {
-      INPUT_linear_con_.insert({name,ConstraintData<Real>(linear_icon,linear_imul,linear_ires,linear_ibnd)});
-      hasLinearInequality_ = true;
-      cnt_linear_icon_++;
-    }
-    else {
-      throw Exception::NotImplemented(">>> ROL::NewOptimizationProblem: Linear constraint names must be distinct!");
-    }
-  }
-  else {
-    throw Exception::NotImplemented(">>> ROL::NewOptimizationProblem: Cannot add linear constraint after problem is finalized!");
-  }
+  ROL_TEST_FOR_EXCEPTION(isFinalized_,std::invalid_argument,
+    ">>> ROL::NewOptimizationProblem: Cannot add linear constraint after problem is finalized!");
+
+  if (reset) INPUT_linear_con_.clear();
+
+  auto it = INPUT_linear_con_.find(name);
+  ROL_TEST_FOR_EXCEPTION(it != INPUT_linear_con_.end(),std::invalid_argument,
+    ">>> ROL::NewOptimizationProblem: Linear constraint names must be distinct!");
+
+  INPUT_linear_con_.insert({name,ConstraintData<Real>(linear_icon,linear_imul,linear_ires,linear_ibnd)});
+  hasLinearInequality_ = true;
+  cnt_linear_icon_++;
 }
 
 template<typename Real>
 void NewOptimizationProblem<Real>::removeLinearConstraint(std::string name) {
-  if (!isFinalized_) {
-    auto it = INPUT_linear_con_.find(name);
-    if (it!=INPUT_linear_con_.end()) {
-      if (it->second.bounds==nullPtr) {
-        cnt_linear_econ_--;
-      }
-      else {
-        cnt_linear_icon_--;
-      }
-      INPUT_linear_con_.erase(it);
-    }
-    if (cnt_linear_econ_==0) {
-      hasLinearEquality_ = false;
-    }
-    if (cnt_linear_icon_==0) {
-      hasLinearInequality_ = false;
-    }
+  ROL_TEST_FOR_EXCEPTION(isFinalized_,std::invalid_argument,
+    ">>> ROL::NewOptimizationProblem: Cannot remove linear inequality after problem is finalized!");
+
+  auto it = INPUT_linear_con_.find(name);
+  if (it!=INPUT_linear_con_.end()) {
+    if (it->second.bounds==nullPtr) cnt_linear_econ_--;
+    else                            cnt_linear_icon_--;
+    INPUT_linear_con_.erase(it);
   }
-  else {
-    throw Exception::NotImplemented(">>> ROL::NewOptimizationProblem: Cannot remove linear inequality after problem is finalized!");
-  }
+  if (cnt_linear_econ_==0) hasLinearEquality_ = false;
+  if (cnt_linear_icon_==0) hasLinearInequality_ = false;
 }
 
 template<typename Real>
 void NewOptimizationProblem<Real>::setProjectionAlgorithm(ParameterList &list) {
-  if (!isFinalized_) {
-    ppa_list_ = list;
-  }
-  else {
-    throw Exception::NotImplemented(">>> ROL::NewOptimizationProblem: Cannot set polyhedral projection algorithm after problem is finalized!");
-  }
+  ROL_TEST_FOR_EXCEPTION(isFinalized_,std::invalid_argument,
+    ">>> ROL::NewOptimizationProblem: Cannot set polyhedral projection algorithm after problem is finalized!");
+
+  ppa_list_ = list;
 }
 
 template<typename Real>
@@ -699,6 +649,11 @@ void NewOptimizationProblem<Real>::check(bool printToStream, std::ostream &outSt
     checkLinearity(printToStream,outStream);
   }
   checkDerivatives(printToStream,outStream);
+}
+
+template<typename Real>
+bool NewOptimizationProblem<Real>::isFinalized(void) const {
+  return isFinalized_;
 }
 
 template<typename Real>

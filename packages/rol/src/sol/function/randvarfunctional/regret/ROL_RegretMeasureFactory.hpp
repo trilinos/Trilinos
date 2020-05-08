@@ -139,7 +139,7 @@ namespace ROL {
   }
 
   template<class Real>
-  inline Ptr<RandVarFunctional<Real> > RegretMeasureFactory(ROL::ParameterList &parlist) {
+  inline Ptr<RandVarFunctional<Real>> RegretMeasureFactory(ParameterList &parlist) {
     std::string regret = parlist.sublist("SOL").sublist("Regret Measure").get("Name","Mean Absolute Loss");
     ERegretMeasure ed = StringToERegretMeasure(regret);
     switch(ed) {

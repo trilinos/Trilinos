@@ -41,39 +41,36 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_RANDVARFUNCTIONALFACTORY_HPP
-#define ROL_RANDVARFUNCTIONALFACTORY_HPP
+#ifndef ROL_MEANVALUECONSTRAINT_HPP
+#define ROL_MEANVALUECONSTRAINT_HPP
 
-#include "ROL_RiskMeasureFactory.hpp"
-#include "ROL_DeviationMeasureFactory.hpp"
-#include "ROL_ErrorMeasureFactory.hpp"
-#include "ROL_RegretMeasureFactory.hpp"
-#include "ROL_ProbabilityFactory.hpp"
+#include "ROL_Constraint.hpp"
+#include "ROL_SampleGenerator.hpp"
 
 namespace ROL {
 
-  template<class Real>
-  inline Ptr<RandVarFunctional<Real> > RandVarFunctionalFactory(ROL::ParameterList &parlist) {
-    std::string type = parlist.sublist("SOL").get("Type","Risk Averse");
-    if (type == "Risk Averse") {
-      return RiskMeasureFactory<Real>(parlist);
-    }
-    else if (type == "Deviation") {
-      return DeviationMeasureFactory<Real>(parlist);
-    }
-    else if (type == "Error") {
-      return ErrorMeasureFactory<Real>(parlist);
-    }
-    else if (type == "Regret") {
-      return RegretMeasureFactory<Real>(parlist);
-    }
-    else if (type == "Probability") {
-      return ProbabilityFactory<Real>(parlist);
-    }
-    else {
-      ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
-        ">>> (ROL::RandVarFunctionalFactory): Invalid random variable functional type!");
-    }
-  }
+template<class Real>
+class MeanValueConstraint : public Constraint<Real> {
+private:
+  const Ptr<Constraint<Real>> con_;
+
+public:
+  MeanValueConstraint( const Ptr<Constraint<Real>>      &con,
+                       const Ptr<SampleGenerator<Real>> &sampler );
+
+  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) override;
+  void update( const Vector<Real> &x, EUpdateType type, int iter = -1 ) override;
+  void value(Vector<Real> &c, const Vector<Real> &x, Real &tol ) override;
+  void applyJacobian(Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &x, Real &tol) override;
+  void applyAdjointJacobian(Vector<Real> &ajv, const Vector<Real> &v, const Vector<Real> &x, Real &tol) override;
+  void applyAdjointHessian(Vector<Real> &ahuv, const Vector<Real> &u, const Vector<Real> &v, const Vector<Real> &x, Real &tol) override;
+
+private:
+  std::vector<Real> computeSampleMean(const Ptr<SampleGenerator<Real>> &sampler) const;
+};
+
 }
+
+#include "ROL_MeanValueConstraint_Def.hpp"
+
 #endif

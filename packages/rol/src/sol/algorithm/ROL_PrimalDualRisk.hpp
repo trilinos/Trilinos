@@ -127,50 +127,51 @@ public:
     // Get update parameters
     freq_         = parlist.sublist("SOL").sublist("Primal Dual Risk").get("Update Frequency", 0);
     // Create risk vector and risk-averse objective
-    std::string type = parlist.sublist("SOL").get("Stochastic Component Type", "Risk Averse");
+    ParameterList olist; olist.sublist("SOL") = parlist.sublist("SOL").sublist("Objective");
+    std::string type = olist.sublist("SOL").get("Type", "Risk Averse");
     if (type == "Risk Averse") {
-      name_ = parlist.sublist("SOL").sublist("Risk Measure").get("Name","CVaR");
+      name_ = olist.sublist("SOL").sublist("Risk Measure").get("Name","CVaR");
     }
     else if (type == "Probability") {
-      name_ = parlist.sublist("SOL").sublist("Probability"). get("Name","bPOE");
+      name_ = olist.sublist("SOL").sublist("Probability"). get("Name","bPOE");
     }
     else {
       std::stringstream message;
       message << ">>> " << type << " is not implemented!";
       throw Exception::NotImplemented(message.str());
     }
-    Ptr<ParameterList> parlistptr = makePtrFromRef<ParameterList>(parlist);
+    Ptr<ParameterList> parlistptr = makePtrFromRef<ParameterList>(olist);
     if (name_ == "CVaR") {
-      parlistptr->sublist("SOL").set("Stochastic Component Type","Risk Averse");
+      parlistptr->sublist("SOL").set("Type","Risk Averse");
       parlistptr->sublist("SOL").sublist("Risk Measure").set("Name","CVaR");
-      Real alpha = parlist.sublist("SOL").sublist("Risk Measure").sublist("CVaR").get("Convex Combination Parameter", 1.0);
-      Real beta  = parlist.sublist("SOL").sublist("Risk Measure").sublist("CVaR").get("Confidence Level",             0.9);
+      Real alpha = olist.sublist("SOL").sublist("Risk Measure").sublist("CVaR").get("Convex Combination Parameter", 1.0);
+      Real beta  = olist.sublist("SOL").sublist("Risk Measure").sublist("CVaR").get("Confidence Level",             0.9);
       rvf_ = makePtr<PD_CVaR<Real>>(alpha, beta);
     }
     else if (name_ == "Mean Plus Semi-Deviation") {
-      parlistptr->sublist("SOL").set("Stochastic Component Type","Risk Averse");
+      parlistptr->sublist("SOL").set("Type","Risk Averse");
       parlistptr->sublist("SOL").sublist("Risk Measure").set("Name","Mean Plus Semi-Deviation");
-      Real coeff = parlist.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Semi-Deviation").get("Coefficient", 0.5);
+      Real coeff = olist.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Semi-Deviation").get("Coefficient", 0.5);
       rvf_ = makePtr<PD_MeanSemiDeviation<Real>>(coeff);
     }
     else if (name_ == "Mean Plus Semi-Deviation From Target") {
-      parlistptr->sublist("SOL").set("Stochastic Component Type","Risk Averse");
+      parlistptr->sublist("SOL").set("Type","Risk Averse");
       parlistptr->sublist("SOL").sublist("Risk Measure").set("Name","Mean Plus Semi-Deviation From Target");
-      Real coeff  = parlist.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Semi-Deviation From Target").get("Coefficient", 0.5);
-      Real target = parlist.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Semi-Deviation From Target").get("Target", 1.0);
+      Real coeff  = olist.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Semi-Deviation From Target").get("Coefficient", 0.5);
+      Real target = olist.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Semi-Deviation From Target").get("Target", 1.0);
       rvf_ = makePtr<PD_MeanSemiDeviationFromTarget<Real>>(coeff, target);
     }
     else if (name_ == "HMCR") {
-      parlistptr->sublist("SOL").set("Stochastic Component Type","Risk Averse");
+      parlistptr->sublist("SOL").set("Type","Risk Averse");
       parlistptr->sublist("SOL").sublist("Risk Measure").set("Name","HMCR");
-      //Real alpha = parlist.sublist("SOL").sublist("Risk Measure").sublist("HMCR").get("Convex Combination Parameter", 1.0);
-      Real beta  = parlist.sublist("SOL").sublist("Risk Measure").sublist("HMCR").get("Confidence Level",             0.9);
+      //Real alpha = olist.sublist("SOL").sublist("Risk Measure").sublist("HMCR").get("Convex Combination Parameter", 1.0);
+      Real beta  = olist.sublist("SOL").sublist("Risk Measure").sublist("HMCR").get("Confidence Level",             0.9);
       rvf_ = makePtr<PD_HMCR2<Real>>(beta);
     }
     else if (name_ == "bPOE") {
-      parlistptr->sublist("SOL").set("Stochastic Component Type","Probability");
+      parlistptr->sublist("SOL").set("Type","Probability");
       parlistptr->sublist("SOL").sublist("Probability").set("Name","bPOE");
-      Real thresh = parlist.sublist("SOL").sublist("Probability").sublist("bPOE").get("Threshold", 1.0);
+      Real thresh = olist.sublist("SOL").sublist("Probability").sublist("bPOE").get("Threshold", 1.0);
       rvf_ = makePtr<PD_BPOE<Real>>(thresh);
     }
     else {
