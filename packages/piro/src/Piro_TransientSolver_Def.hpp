@@ -314,6 +314,14 @@ Piro::TransientSolver<Scalar>::getSensitivityMethod()
 
 template <typename Scalar>
 void 
+Piro::TransientSolver<Scalar>::setPiroTempusIntegrator(Teuchos::RCP<const Piro::TempusIntegrator<Scalar>> piroTempusIntegrator)
+{
+  piroTempusIntegrator_ = piroTempusIntegrator;
+}
+
+
+template <typename Scalar>
+void 
 Piro::TransientSolver<Scalar>::evalConvergedModel(
       const Thyra::ModelEvaluatorBase::InArgs<Scalar>& modelInArgs,
       const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const
@@ -342,28 +350,6 @@ Piro::TransientSolver<Scalar>::evalConvergedModel(
     if (g_out != Teuchos::null) {
       Thyra::put_scalar(Teuchos::ScalarTraits<Scalar>::zero(), g_out.ptr());
       modelOutArgs.set_g(j, g_out);
-    }
-
-    //IKT, 5/6/2020: not sure if the following is needed.
-    // Jacobian
-    bool jacobianRequired = false;
-    for (int j = 0; j <= num_g_; ++j) { // resize
-      for (int l = 0; l < num_p_; ++l) {
-        const Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support =
-          outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l);
-        if (!dgdp_support.none()) {
-          const Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdp_deriv =
-              outArgs.get_DgDp(j, l);
-          if (!dgdp_deriv.isEmpty()) 
-          {
-            jacobianRequired = true;
-          }
-        }
-      }
-      if (jacobianRequired) {
-        const RCP<Thyra::LinearOpWithSolveBase<Scalar> > jacobian = model_->create_W();
-        modelOutArgs.set_W(jacobian);
-      }
     }
   }
     
@@ -459,6 +445,7 @@ Piro::TransientSolver<Scalar>::evalConvergedModel(
         "\n Error! Piro::TransientSolver: sensitivities with Tempus are not yet supported!");
  
     switch(sensitivityMethod_) {
+
       case FORWARD : //forward sensitivities 
         //IKT FIXME: probably a lot of this can be reused for adjoint sensitivities.  Will clean up later, 
         //when adjoint sensitivities are implemented. 
@@ -488,10 +475,10 @@ Piro::TransientSolver<Scalar>::evalConvergedModel(
                 }
 
                 const RCP<Thyra::MultiVectorBase<Scalar> > dgdp_mv = dgdp_deriv.getMultiVector();
-                //IKT FIXME: get piroTempusIntegrator into this class, and implement getDxDp() routine in Piro::TempusIntegrator
-                //class.
                 //Get dxdp_mv from Tempus::ForwardIntegratorSensitivity class  
-                const RCP<Thyra::MultiVectorBase<Scalar> > dxdp_mv; // = piroTempusIntegrator->getDxDp();
+                const RCP<const Thyra::MultiVectorBase<Scalar> > dxdp_mv = piroTempusIntegrator_->getDxDp();
+                //IMPORTANT REMARK: we are currently NOT using DxdotDp and DxdotdotDp in transient sensitivities!  
+                //The capability to use them can be added at a later point in time, if desired. 
                 //IKT, 5/10/20: throw error if dxdp_mv returned by Tempus is null.  Not sure if this can happen in practice or not...
                 if (dxdp_mv == Teuchos::null) {
                   TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
@@ -522,6 +509,7 @@ Piro::TransientSolver<Scalar>::evalConvergedModel(
           }
         }
         break; 
+
     case ADJOINT: //adjoint sensitivities - not yet implemented 
       TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
         "\n Error! Piro::TransientSolver: adjoint sentivities (Sensitivity Method = "

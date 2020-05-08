@@ -314,3 +314,39 @@ Piro::TempusIntegrator<Scalar>::getStatus() const
   }
   return status; 
 }
+
+template <typename Scalar>
+Teuchos::RCP<const Thyra::MultiVectorBase<Scalar>> 
+Piro::TempusIntegrator<Scalar>::getDxDp() const
+{
+  if (fwdSensIntegrator_ != Teuchos::null) {
+    return fwdSensIntegrator_->getDxDp(); 
+  }
+  else {
+    return Teuchos::null; 
+  }
+}
+
+template <typename Scalar>
+Teuchos::RCP<const Thyra::MultiVectorBase<Scalar>> 
+Piro::TempusIntegrator<Scalar>::getDxdotDp() const
+{
+  if (fwdSensIntegrator_ != Teuchos::null) {
+    return fwdSensIntegrator_->getDxdotDp(); 
+  }
+  else {
+    return Teuchos::null; 
+  }
+}
+
+template <typename Scalar>
+Teuchos::RCP<const Thyra::MultiVectorBase<Scalar>> 
+Piro::TempusIntegrator<Scalar>::getDxdotdotDp() const
+{
+  if (fwdSensIntegrator_ != Teuchos::null) {
+    return fwdSensIntegrator_->getDxdotdotDp(); 
+  }
+  else {
+    return Teuchos::null; 
+  }
+}

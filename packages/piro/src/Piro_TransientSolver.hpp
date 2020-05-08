@@ -45,6 +45,7 @@
 
 #include "Piro_ConfigDefs.hpp"
 #include "Thyra_ResponseOnlyModelEvaluatorBase.hpp"
+#include "Piro_TempusIntegrator.hpp" 
 
 #include <map>
 #include <string>
@@ -94,6 +95,17 @@ public:
   /** \brief . */
   int num_g() const; 
 
+  /** \brief . */
+  int getSensitivityMethod(); 
+  //@}
+  
+  /** \name Setters for subbclasses */
+  /** \brief . */
+  void setSensitivityMethod(const std::string sensitivity_method_string);  
+  //@}
+
+  /** \brief . */
+  void setPiroTempusIntegrator(Teuchos::RCP<const Piro::TempusIntegrator<Scalar>> piroTempusIntegrator); 
   //@}
   
 protected:
@@ -106,13 +118,6 @@ protected:
       const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const;
   //@}
 
-  /** \brief . */
-  void setSensitivityMethod(const std::string sensitivity_method_string);  
-  //@}
-
-  /** \brief . */
-  int getSensitivityMethod(); 
-  //@}
 
 private:
   /** \name Overridden from Thyra::ModelEvaluatorDefaultBase. */
@@ -125,6 +130,7 @@ private:
   Teuchos::RCP<Teuchos::FancyOStream> out_;
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > initialConditionModel_;
+  Teuchos::RCP<const Piro::TempusIntegrator<Scalar>> piroTempusIntegrator_; 
 
   int num_p_;
   int num_g_;

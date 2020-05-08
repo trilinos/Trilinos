@@ -286,7 +286,8 @@ void Piro::TempusSolver<Scalar>::initialize(
     *out_ << "\nD) Create the stepper and integrator for the forward problem ...\n";
 
     //Create Tempus integrator with observer using tempusPL, model_ and sensitivity method 
-    piroTempusIntegrator_ = Teuchos::rcp(new Piro::TempusIntegrator<Scalar>(tempusPL, model_, this->getSensitivityMethod())); 
+    piroTempusIntegrator_ = Teuchos::rcp(new Piro::TempusIntegrator<Scalar>(tempusPL, model_, this->getSensitivityMethod()));
+    this->setPiroTempusIntegrator(piroTempusIntegrator_);  
 
     //Get stepper from integrator
     fwdStateStepper_ = piroTempusIntegrator_->getStepper();
@@ -337,8 +338,8 @@ Piro::TempusSolver<Scalar>::TempusSolver(
   if (fwdStateStepper_->getModel() != underlyingModel) {
     fwdStateStepper_->setModel(underlyingModel);
   }
-  //IKT 5/8/2020, FIXME: we can eventually remove the following call.  It is here just for testing for now.
   this->setSensitivityMethod(sens_method); 
+  this->setPiroTempusIntegrator(piroTempusIntegrator_);  
 }
 
 template <typename Scalar>
@@ -380,8 +381,8 @@ Piro::TempusSolver<Scalar>::TempusSolver(
   if (fwdStateStepper_->getModel() != underlyingModel) {
     fwdStateStepper_->setModel(underlyingModel);
   }
-  //IKT 5/8/2020, FIXME: we can eventually remove the following call.  It is here just for testing for now.
   this->setSensitivityMethod(sens_method); 
+  this->setPiroTempusIntegrator(piroTempusIntegrator_);  
 }
 
 template <typename Scalar>

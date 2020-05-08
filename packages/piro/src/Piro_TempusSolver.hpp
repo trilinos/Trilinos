@@ -46,15 +46,11 @@
 #include "Piro_ConfigDefs.hpp"
 #include "Thyra_ResponseOnlyModelEvaluatorBase.hpp"
 
-#include "Tempus_IntegratorBasic.hpp"
-#include "Tempus_IntegratorObserverBasic.hpp"
-
 #include "Piro_ObserverBase.hpp"
 
 #include "Piro_TempusStepperFactory.hpp"
 #include "Piro_TempusStepControlFactory.hpp"
 #include "Piro_TransientSolver.hpp"
-#include "Piro_TempusIntegrator.hpp" 
 
 #include <map>
 #include <string>
