@@ -44,8 +44,8 @@
 #ifndef ROL_PRIMALDUALRISK_H
 #define ROL_PRIMALDUALRISK_H
 
-#include "ROL_OptimizationSolver.hpp"
 #include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_StochasticObjective.hpp"
 #include "ROL_PD_MeanSemiDeviation.hpp"
 #include "ROL_PD_MeanSemiDeviationFromTarget.hpp"
 #include "ROL_PD_CVaR.hpp"
@@ -61,7 +61,7 @@ namespace ROL {
 template <class Real>
 class PrimalDualRisk {
 private:
-  const Ptr<OptimizationProblem<Real>> input_;
+  const Ptr<NewOptimizationProblem<Real>> input_;
   const Ptr<SampleGenerator<Real>> sampler_;
   Ptr<PD_RandVarFunctional<Real>> rvf_;
   ParameterList parlist_;
@@ -87,8 +87,7 @@ private:
   Ptr<Vector<Real>>                 pd_vector_;
   Ptr<BoundConstraint<Real>>        pd_bound_;
   Ptr<Constraint<Real>>             pd_constraint_;
-  Ptr<OptimizationProblem<Real>>    pd_problem_;
-  Ptr<NewOptimizationProblem<Real>> pd_problem_new_;
+  Ptr<NewOptimizationProblem<Real>> pd_problem_;
 
   int iter_, nfval_, ngrad_, ncval_;
   bool converged_;
@@ -96,7 +95,7 @@ private:
   std::string name_;
 
 public:
-  PrimalDualRisk(const Ptr<OptimizationProblem<Real>> &input,
+  PrimalDualRisk(const Ptr<NewOptimizationProblem<Real>> &input,
                  const Ptr<SampleGenerator<Real>> &sampler,
                  ParameterList &parlist)
     : input_(input), sampler_(sampler), parlist_(parlist),
@@ -128,12 +127,12 @@ public:
     freq_         = parlist.sublist("SOL").sublist("Primal Dual Risk").get("Update Frequency", 0);
     // Create risk vector and risk-averse objective
     ParameterList olist; olist.sublist("SOL") = parlist.sublist("SOL").sublist("Objective");
-    std::string type = olist.sublist("SOL").get("Type", "Risk Averse");
+    std::string type = olist.sublist("SOL").get<std::string>("Type");
     if (type == "Risk Averse") {
-      name_ = olist.sublist("SOL").sublist("Risk Measure").get("Name","CVaR");
+      name_ = olist.sublist("SOL").sublist("Risk Measure").get<std::string>("Name");
     }
     else if (type == "Probability") {
-      name_ = olist.sublist("SOL").sublist("Probability"). get("Name","bPOE");
+      name_ = olist.sublist("SOL").sublist("Probability"). get<std::string>("Name");
     }
     else {
       std::stringstream message;
@@ -180,7 +179,7 @@ public:
       throw Exception::NotImplemented(message.str());
     }
     pd_vector_    = makePtr<RiskVector<Real>>(parlistptr,
-                                              input_->getSolutionVector());
+                                              input_->getPrimalOptimizationVector());
     rvf_->setData(*sampler_, penaltyParam_);
     pd_objective_ = makePtr<StochasticObjective<Real>>(input_->getObjective(),
                                                        rvf_, sampler_, true);
@@ -193,26 +192,17 @@ public:
       pd_constraint_ = makePtr<RiskLessConstraint<Real>>(input_->getConstraint());
     }
     // Build primal-dual subproblems
-    pd_problem_  = makePtr<OptimizationProblem<Real>>(pd_objective_,
-                                                      pd_vector_,
-                                                      pd_bound_,
-                                                      pd_constraint_,
-                                                      input_->getMultiplierVector());
-    pd_problem_new_ = makePtr<NewOptimizationProblem<Real>>(pd_problem_->getObjective(),
-                                                            pd_problem_->getSolutionVector());
-    if (pd_problem_->getBoundConstraint() != nullPtr) {
-      if (pd_problem_->getBoundConstraint()->isActivated()) {
-        pd_problem_new_->addBoundConstraint(pd_problem_->getBoundConstraint());
-      }
+    pd_problem_ = makePtr<NewOptimizationProblem<Real>>(pd_objective_, pd_vector_);
+    if (pd_bound_->isActivated()) {
+      pd_problem_->addBoundConstraint(pd_bound_);
     }
-    if (pd_problem_->getConstraint() != nullPtr) {
-      pd_problem_new_->addConstraint("PD Constraint",pd_problem_->getConstraint(),
-                                     pd_problem_->getMultiplierVector());
+    if (pd_constraint_ != nullPtr) {
+      pd_problem_->addConstraint("PD Constraint",pd_constraint_,input_->getMultiplierVector());
     }
   }
 
   void check(std::ostream &outStream = std::cout) {
-    pd_problem_->check(outStream);
+    pd_problem_->check(true,outStream);
   }
 
   void run(std::ostream &outStream = std::cout) {
@@ -225,7 +215,7 @@ public:
     for (iter_ = 0; iter_ < maxit_; ++iter_) {
       parlist_.sublist("Status Test").set("Gradient Tolerance",   gtol_);
       parlist_.sublist("Status Test").set("Constraint Tolerance", ctol_);
-      solver = makePtr<NewOptimizationSolver<Real>>(pd_problem_new_, parlist_);
+      solver = makePtr<NewOptimizationSolver<Real>>(pd_problem_, parlist_);
       if (print_) {
         solver->solve(outStream);
       }
@@ -260,8 +250,8 @@ public:
         ctol_ = std::max(tolupdate_*ctol_, ctolmin_);
       }
     }
-    input_->getSolutionVector()->set(
-      *dynamicPtrCast<RiskVector<Real>>(pd_problem_->getSolutionVector())->getVector());
+    input_->getPrimalOptimizationVector()->set(
+      *dynamicPtrCast<RiskVector<Real>>(pd_problem_->getPrimalOptimizationVector())->getVector());
     // Output reason for termination
     if (iter_ >= maxit_) {
       outStream << "Maximum number of iterations exceeded" << std::endl;

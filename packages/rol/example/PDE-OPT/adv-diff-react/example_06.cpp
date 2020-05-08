@@ -188,12 +188,13 @@ int main(int argc, char *argv[]) {
     //}
 
     z->zero();
-    ROL::Ptr<ROL::OptimizationProblem<RealT>> problem
-      = ROL::makePtr<ROL::OptimizationProblem<RealT>>(objReduced, z, bnd);
+    ROL::Ptr<ROL::NewOptimizationProblem<RealT>> problem
+      = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(objReduced, z);
+    problem->addBoundConstraint(bnd);
     ROL::PrimalDualRisk<RealT> solver(problem, sampler, *parlist);
     bool checkDeriv = parlist->sublist("Problem").get("Check Derivatives",false);
     if ( checkDeriv ) {
-      problem->check(*outStream);
+      problem->check(true,*outStream);
       solver.check(*outStream);
     }
     solver.run(*outStream);
