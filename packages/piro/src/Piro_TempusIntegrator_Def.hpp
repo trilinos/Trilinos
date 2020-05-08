@@ -218,14 +218,14 @@ Piro::TempusIntegrator<Scalar>::clearObservers()
   if (basicIntegrator_ != Teuchos::null) {
     basicIntegrator_->getObserver()->clearObservers();
   }
-  //IKT, FIXME: fwdSensIntegrator_->getObserver() has not routine 
-  //called clearObservers().  Look into.
+  //IKT: fwdSensIntegrator and adjSensIntegrator do not support composite 
+  //observer so clearObservers() routine is not relevant.  If a 
+  //composite observer is ever added to these integrators, we'd need 
+  //to uncomment the code below 
   /*if (fwdSensIntegrator_ != Teuchos::null) {
     fwdSensIntegrator_->getObserver()->clearObservers(); 
-  }*/
-  //IKT, FIXME: adjSensIntegrator_ has no routine getObserver().
-  //Look into.
-  /*if (adjSensIntegrator_ != Teuchos::null) {
+  }
+  if (adjSensIntegrator_ != Teuchos::null) {
     adjSensIntegrator_->getObserver()->clearObservers(); 
   }*/
 }
