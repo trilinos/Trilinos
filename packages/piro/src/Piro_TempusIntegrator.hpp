@@ -99,7 +99,10 @@ public:
   // The following 3 routines are only for forward sensitivities
   Teuchos::RCP<const Thyra::MultiVectorBase<Scalar>> getDxDp() const;  	
   Teuchos::RCP<const Thyra::MultiVectorBase<Scalar>> getDxdotDp() const;  	
-  Teuchos::RCP<const Thyra::MultiVectorBase<Scalar>> getDxdotdotDp() const;  	
+  Teuchos::RCP<const Thyra::MultiVectorBase<Scalar>> getDxdotdotDp() const;
+
+  //The following routine is only for adjoint sensitivities 
+  Teuchos::RCP<const Thyra::MultiVectorBase<Scalar>> getDgDp() const; 
  
 private:
   

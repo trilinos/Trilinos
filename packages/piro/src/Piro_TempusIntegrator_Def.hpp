@@ -350,3 +350,16 @@ Piro::TempusIntegrator<Scalar>::getDxdotdotDp() const
     return Teuchos::null; 
   }
 }
+  
+
+template <typename Scalar>
+Teuchos::RCP<const Thyra::MultiVectorBase<Scalar>> 
+Piro::TempusIntegrator<Scalar>::getDgDp() const
+{
+  if (adjSensIntegrator_ != Teuchos::null) {
+    return adjSensIntegrator_->getDgDp(); 
+  }
+  else {
+    return Teuchos::null; 
+  }
+}
