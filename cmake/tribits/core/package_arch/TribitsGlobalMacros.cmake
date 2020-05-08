@@ -69,6 +69,7 @@ INCLUDE(RemoveGlobalDuplicates)
 INCLUDE(Split)
 INCLUDE(TimingUtils)
 INCLUDE(SetDefaultAndFromEnv) # Used by some call-back files
+INCLUDE(TribitsFilepathHelpers)
 
 # Standard CMake includes
 INCLUDE(CheckIncludeFileCXX)
@@ -189,6 +190,44 @@ ENDMACRO()
 
 
 #
+# Assert ${PROJECT_NAME}_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR set
+# correctly
+#
+
+FUNCTION(ASSERT_PROJECT_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR)
+
+  IF (
+      (NOT "${CMAKE_INSTALL_PREFIX}" STREQUAL "")
+       AND
+      (NOT "${${PROJECT_NAME}_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR}" STREQUAL "")
+    )
+    TRIBITS_DIR_IS_BASEDIR(
+      "${${PROJECT_NAME}_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR}"
+      "${CMAKE_INSTALL_PREFIX}"
+      isBaseDir)
+    IF (NOT isBaseDir)
+      MESSAGE(FATAL_ERROR
+        "\n"
+        "***\n"
+        "*** ERROR in ${PROJECT_NAME}_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR!\n"
+        "***\n"
+	"\n"
+	"${PROJECT_NAME}_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR=${${PROJECT_NAME}_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR}\n"
+        "\n"
+        "is not a strict base dir of:\n"
+	"\n"
+	"CMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}\n"
+        "\n"
+        "Either remove ${PROJECT_NAME}_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR from the cache or set it to be a base dir of CMAKE_INSTALL_PREFIX!\n"
+        "\n"
+        )
+    ENDIF()
+  ENDIF()
+
+ENDFUNCTION()
+
+
+#
 # Define all of the standard global package architecture options.
 #
 
@@ -273,27 +312,48 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     "Skip the Fortran/C++ compatibility test"
     OFF )
 
-  IF (NOT CMAKE_VERSION VERSION_LESS 3.11.0)
+  ADVANCED_SET(
+    ${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE
+    "${${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE_DEFAULT}"
+    CACHE BOOL
+    "If TRUE, the directory and file permissions on the installed directories and files will be set to world readable.  NOTE: Empty '' (the default) leaves default CMake permissions in place."
+    )
 
-    ADVANCED_SET(
-      ${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE
-      "${${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE_DEFAULT}"
-      CACHE BOOL
-      "If TRUE, the directory and file permissions on the installed directories and files will be set to world readable.  NOTE: Empty '' (the default) leaves default CMake permissions in place."
-      )
-  
-    IF ("${${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE_DEFAULT}" STREQUAL "")
+  ADVANCED_SET(
+    ${PROJECT_NAME}_MAKE_INSTALL_GROUP_WRITABLE ""
+    CACHE BOOL
+    "If TRUE, the directory and file permissions on the installed directories and files will be set to group-writable.  Setting to TRUE also implies ${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE=TRUE.  NOTE: Empty '' (the default) avoid adding the group write permission."
+    )
+
+  IF ("${${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE_DEFAULT}" STREQUAL "")
+    IF (${PROJECT_NAME}_MAKE_INSTALL_GROUP_WRITABLE)
+      SET(${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE_DEFAULT TRUE)
+    ELSE()
       SET(${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE_DEFAULT
         "${${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE}")
     ENDIF()
-    ADVANCED_SET(
-      ${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE
-      "${${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE_DEFAULT}"
-      CACHE BOOL
-      "If TRUE, the directory and file permissions on the installed directories and files will be set to group readable.  Setting ${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE=ON implies this is 'ON' as well.  NOTE: Empty '' (the default) leaves default CMake permissions in place."
-      )
-
   ENDIF()
+  ADVANCED_SET(
+    ${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE
+    "${${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE_DEFAULT}"
+    CACHE BOOL
+    "If TRUE, the directory and file permissions on the installed directories and files will be set to group readable.  Setting ${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE=ON implies this is 'ON' as well.  NOTE: Empty '' (the default) leaves default CMake permissions in place."
+    )
+
+  ADVANCED_SET(
+    ${PROJECT_NAME}_MAKE_INSTALL_GROUP ""
+    CACHE STRING
+    "If set, then the installed files and directories from ${PROJECT_NAME}_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR on down will be given over to this owning group.  The default is empty '' which means the default group will not be changed."
+    )
+
+  ADVANCED_SET(
+    ${PROJECT_NAME}_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR
+    "${CMAKE_INSTALL_PREFIX}"
+    CACHE FILEPATH
+    "Set the base path for which a recursive chmod and chgrp will be called to set the group and permissions after the install is complete.  The default directory is give by CMAKE_INSTALL_PREFIX."
+    )
+
+  ASSERT_PROJECT_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR()
 
   IF ("${${PROJECT_NAME}_SET_INSTALL_RPATH_DEFAULT}" STREQUAL "")
     SET(${PROJECT_NAME}_SET_INSTALL_RPATH_DEFAULT TRUE)
@@ -2888,10 +2948,13 @@ ENDMACRO()
 # Setup for installation
 #
 
-MACRO(TRIBITS_SETUP_FOR_INSTALLATION)
 
-  # Set up to install <Package>Config.cmake, <Project>Config.cmake, and export
-  # makefiles.
+# Set up to install <Package>Config.cmake, <Project>Config.cmake, and export
+# makefiles.
+FUNCTION(TRIBITS_ADD_PROJECT_EXPORT_FILE_INSTALL_TARGETS)
+
+  SET(tribits_install_src
+    "${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}")
 
   IF((${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES
       OR ${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES)
@@ -2907,7 +2970,7 @@ MACRO(TRIBITS_SETUP_FOR_INSTALLATION)
       # where was previously installed to warn and load the new file.
       SET(COMPATIBILITY_CONFIG_INCLUDE ${CMAKE_BINARY_DIR}/${PROJECT_NAME}Config.cmake)
       CONFIGURE_FILE(
-        ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsConfigInclude.cmake.in
+        "${tribits_install_src}/TribitsConfigInclude.cmake.in"
         ${COMPATIBILITY_CONFIG_INCLUDE}
         @ONLY
         )
@@ -2919,18 +2982,24 @@ MACRO(TRIBITS_SETUP_FOR_INSTALLATION)
 
   ENDIF()
 
-  # Create custom 'install/package_by_package' target
+ENDFUNCTION()
+
+
+# Create custom 'install_package_by_package' target
+FUNCTION(TRIBITS_ADD_INSTALL_PACKAGE_BY_PACKAGE_TARGET)
 
   SET(TRIBITS_ENABLED_PACKAGES_BINARY_DIRS)
   FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_PACKAGES})
     LIST(APPEND TRIBITS_ENABLED_PACKAGES_BINARY_DIRS "${${TRIBITS_PACKAGE}_BINARY_DIR}")
   ENDFOREACH()
 
+  SET(tribits_install_src
+    "${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}")
+
   CONFIGURE_FILE(
-    ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/cmake_pbp_install.cmake.in
+    "${tribits_install_src}/cmake_pbp_install.cmake.in"
     cmake_pbp_install.cmake
-    @ONLY
-    )
+    @ONLY )
 
   ADVANCED_SET(${PROJECT_NAME}_INSTALL_PBP_RUNNER "" CACHE FILEPATH
     "Program used to run cmake -P cmake_pbp_install.cmake to change user for 'install_package_by_package' target")
@@ -2940,6 +3009,22 @@ MACRO(TRIBITS_SETUP_FOR_INSTALLATION)
     ${CMAKE_COMMAND} -P cmake_pbp_install.cmake
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
     )
+
+ENDFUNCTION()
+
+
+MACRO(TRIBITS_SETUP_FOR_INSTALLATION)
+
+  # Set up to install <Package>Config.cmake, <Project>Config.cmake, and export
+  # makefiles.
+  TRIBITS_ADD_PROJECT_EXPORT_FILE_INSTALL_TARGETS()
+
+  # Set up for fixing group and permissions after the install
+  ADD_SUBDIRECTORY("${${PROJECT_NAME}_TRIBITS_DIR}/core/add_install_group_and_perms_fixups"
+    add_install_group_and_perms_fixups)
+
+  # Create custom 'install_package_by_package' target
+  TRIBITS_ADD_INSTALL_PACKAGE_BY_PACKAGE_TARGET()
 
 ENDMACRO()
 

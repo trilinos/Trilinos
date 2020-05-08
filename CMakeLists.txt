@@ -98,6 +98,7 @@ IF (${PROJECT_NAME}_INSTALL_TriBITS)
   INSTALL(
     DIRECTORY "${Trilinos_SOURCE_DIR}/cmake/tribits"
     DESTINATION "${${PROJECT_NAME}_INSTALL_LIB_DIR}/cmake"
+    PATTERN "*.pyc" EXCLUDE
     )
 ENDIF()
 

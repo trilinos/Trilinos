@@ -48,8 +48,8 @@
 #ifdef HAVE_SHYLU_DDFROSCH_THYRA
 namespace Thyra {
 
-    using namespace std;
     using namespace FROSch;
+    using namespace std;
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -57,7 +57,7 @@ namespace Thyra {
     template <class SC, class LO, class GO, class NO>
     FROSchLinearOp<SC,LO,GO,NO>::FROSchLinearOp()
     {
-        
+
     }
 
     template <class SC, class LO, class GO, class NO>
@@ -196,22 +196,22 @@ namespace Thyra {
 
         } else {
             FROSCH_ASSERT(false,"There is a problem with the underlying lib in FROSchLinearOp.");
-            //std::cout<<"Only Implemented for Epetra and Tpetra\n";
+            //cout<<"Only Implemented for Epetra and Tpetra\n";
         }
 
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
         if (this->bIsEpetra_) {
             RCP<MultiVectorBase<SC> > thyraX = rcp_const_cast<MultiVectorBase<SC> >(ThyraUtils<SC,LO,GO,NO>::toThyraMultiVector(xY));
-            
+
             using ThySpmdVecSpaceBase = SpmdVectorSpaceBase<SC> ;
             RCP<const ThySpmdVecSpaceBase> mpi_vs = rcp_dynamic_cast<const ThySpmdVecSpaceBase>(rcpFromPtr(Y_inout)->range());
-            
-            TEUCHOS_TEST_FOR_EXCEPTION(mpi_vs == null, std::logic_error, "Failed to cast Thyra::VectorSpaceBase to Thyra::SpmdVectorSpaceBase.");
+
+            TEUCHOS_TEST_FOR_EXCEPTION(mpi_vs == null, logic_error, "Failed to cast Thyra::VectorSpaceBase to Thyra::SpmdVectorSpaceBase.");
             const LO localOffset = ( mpi_vs != null ? mpi_vs->localOffset() : 0 );
             const LO localSubDim = ( mpi_vs != null ? mpi_vs->localSubDim() : rcpFromPtr(Y_inout)->range()->dim() );
-            
+
             RCP<DetachedMultiVectorView<SC> > thyData = rcp(new DetachedMultiVectorView<SC>(*rcpFromPtr(Y_inout),Range1D(localOffset,localOffset+localSubDim-1)));
-            
+
             // AH 08/14/2019 TODO: Is this necessary??
             for( size_t j = 0; j <xY->getNumVectors(); ++j) {
                 ArrayRCP< const SC > xpData = xY->getData(j); // access const data from Xpetra object

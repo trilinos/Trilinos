@@ -47,6 +47,7 @@
 
 namespace FROSch {
 
+    using namespace std;
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -118,13 +119,23 @@ namespace FROSch {
             this->PartitionOfUnityMaps_[0] = Roots_->getEntityMap();
         }
 
-        if (this->MpiComm_->getRank() == 0) {
-            std::cout << std::boolalpha << "\n\
-    ------------------------------------------------------------------------------\n\
-     RGDSW Interface Partition Of Unity (RGDSW IPOU)\n\
-    ------------------------------------------------------------------------------\n\
-      Roots                                      --- " << UseRoots_ << "\n\
-    ------------------------------------------------------------------------------\n" << std::noboolalpha;
+        if (this->Verbose_) {
+            cout
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << setw(89) << "-----------------------------------------------------------------------------------------"
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << "| "
+            << left << setw(74) << "RGDSW Interface Partition Of Unity " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")" << right
+            << " |"
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << setw(89) << "========================================================================================="
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << "| " << left << setw(41) << "Roots" << right
+            << " | " << setw(41) << boolalpha << UseRoots_ << noboolalpha
+            << " |"
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << setw(89) << "-----------------------------------------------------------------------------------------"
+            << endl;
         }
 
         // Build Partition Of Unity Vectors
