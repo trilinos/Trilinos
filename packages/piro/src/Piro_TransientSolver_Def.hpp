@@ -329,44 +329,18 @@ Piro::TransientSolver<Scalar>::evalConvergedModel(
   using Teuchos::RCP;
   using Teuchos::rcp;
   
-  // Check if sensitivities are requested 
-  bool requestedSensitivities = false;
-  for (int i=0; i<num_p_; i++) {
-    for (int j=0; j<=num_g_; j++) {
-      if (!outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, i).none() && !outArgs.get_DgDp(j,i).isEmpty()) {
-        requestedSensitivities = true;
-        break;
-      }
-    }
+  *out_ << "\nE) Calculate responses ...\n";
+
+  // Solution at convergence is the response at index num_g_
+  RCP<Thyra::VectorBase<Scalar> > gx_out = outArgs.get_g(num_g_);
+  if (Teuchos::nonnull(gx_out)) {
+    Thyra::copy(*modelInArgs.get_x(), gx_out.ptr());
   }
 
-#ifdef DEBUG_OUTPUT
-  *out_ << "DEBUG requestedSensitivities = " << requestedSensitivities << "\n";
-#endif 
-  if (requestedSensitivities == true) {
-
-    if (sensitivityMethod_ == NONE) {
-
-      //If sensitivities are requested but 'Sensitivity Method' is set to 'None', throw an error.
-      TEUCHOS_TEST_FOR_EXCEPTION(
-          true,
-          Teuchos::Exceptions::InvalidParameter,
-          "\n Error! Piro::TransientSolver: you have specified 'Sensitivity Method = None' yet the model supports suggest " 
-          << "sensitivities are requested.  Please change 'Sensitivity Method' to 'Forward' or 'Adjoint'\n");
-    }
-    //
-    *out_ << "\nE) Solve the forward problem with Sensitivities...\n";
-    //
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        true,
-        Teuchos::Exceptions::InvalidParameter,
-        "\n Error! Piro::TransientSolver: sensitivities with Tempus are not yet supported!");
-  }
-
-  *out_ << "\nF) Calculate responses ...\n";
-
-  // Deal with responses 
+  // Setup output for final evalution of underlying model
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> modelOutArgs = model_->createOutArgs();
+   
+  //Responses 
   for (int j=0; j<num_g_; j++) { 
     auto g_out = outArgs.get_g(j); 
     if (g_out != Teuchos::null) {
@@ -457,9 +431,100 @@ Piro::TransientSolver<Scalar>::evalConvergedModel(
     
   model_->evalModel(modelInArgs, modelOutArgs);
 
-  // Return the final solution as an additional g-vector, if requested
-  RCP<Thyra::VectorBase<Scalar> > gx_out = outArgs.get_g(num_g_);
-  if (Teuchos::nonnull(gx_out)) {
-    Thyra::copy(*modelInArgs.get_x(), gx_out.ptr());
+  // Check if sensitivities are requested 
+  bool requestedSensitivities = false;
+  for (int i=0; i<num_p_; i++) {
+    for (int j=0; j<=num_g_; j++) {
+      if (!outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, i).none() && !outArgs.get_DgDp(j,i).isEmpty()) {
+        requestedSensitivities = true;
+        break;
+      }
+    }
+  }
+
+  // Calculate response sensitivities
+  if (requestedSensitivities == true) {
+
+    if (sensitivityMethod_ == NONE) {
+
+      //If sensitivities are requested but 'Sensitivity Method' is set to 'None', throw an error.
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          true,
+          Teuchos::Exceptions::InvalidParameter,
+          "\n Error! Piro::TransientSolver: you have specified 'Sensitivity Method = None' yet the model supports suggest " 
+          << "sensitivities are requested.  Please change 'Sensitivity Method' to 'Forward' or 'Adjoint'\n");
+    }
+    //
+    *out_ << "\nF) Calculate response sensitivities...\n";
+    //
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        true,
+        Teuchos::Exceptions::InvalidParameter,
+        "\n Error! Piro::TransientSolver: sensitivities with Tempus are not yet supported!");
+  
+    for (int l = 0; l < num_p_; ++l) {
+      for (int j = 0; j < num_g_; ++j) {
+        //Get DgDp and DgDx 
+        const Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support =
+           outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l);
+        if (!dgdp_support.none()) {
+          const Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdp_deriv = outArgs.get_DgDp(j, l);
+          if (!dgdp_deriv.isEmpty()) {
+            const Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdx_deriv = modelOutArgs.get_DgDx(j);
+            const RCP<const Thyra::MultiVectorBase<Scalar> > dgdx_mv = dgdx_deriv.getMultiVector();
+            RCP<const Thyra::LinearOpBase<Scalar> > dgdx_op = dgdx_deriv.getLinearOp();
+            if (Teuchos::is_null(dgdx_op)) {
+              //IKT FIXME: is this needed?
+              dgdx_op = Thyra::adjoint<Scalar>(dgdx_mv);
+            }
+            const RCP<Thyra::LinearOpBase<Scalar> > dgdp_op = dgdp_deriv.getLinearOp();
+            if (Teuchos::nonnull(dgdp_op)) {
+              const RCP<Thyra::DefaultAddedLinearOp<Scalar> > dgdp_op_downcasted =
+                     Teuchos::rcp_dynamic_cast<Thyra::DefaultAddedLinearOp<Scalar> >(dgdp_op);
+              TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(dgdp_op_downcasted), std::invalid_argument,
+                                         "Illegal operator for DgDp(" <<
+                                         "j = " << j << ", " << "index l = " << l << ")\n");
+              dgdp_op_downcasted->uninitialize();
+
+              /*const RCP<const Thyra::LinearOpBase<Scalar> > implicit_dgdp_op =
+                      Thyra::multiply<Scalar>(
+                        Thyra::scale<Scalar>(-Teuchos::ScalarTraits<Scalar>::one(), dgdx_op),
+                        minus_dxdp_op);
+
+              const RCP<const Thyra::LinearOpBase<Scalar> > model_dgdp_op = modelOutArgs.get_DgDp(j, l).getLinearOp();
+
+              Teuchos::Array<RCP<const Thyra::LinearOpBase<Scalar> > > op_args(2);
+              op_args[0] = model_dgdp_op;
+              op_args[1] = implicit_dgdp_op;
+              dgdp_op_downcasted->initialize(op_args);*/
+            }
+
+            /*const RCP<Thyra::MultiVectorBase<Scalar> > dgdp_mv = dgdp_deriv.getMultiVector();
+            if (Teuchos::nonnull(dgdp_mv)) {
+              if (dgdp_deriv.getMultiVectorOrientation() == Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM) {
+                if (Teuchos::nonnull(dxdp_mv)) {
+                  Thyra::apply(*dxdp_mv, Thyra::TRANS, *dgdx_mv, dgdp_mv.ptr(), Teuchos::ScalarTraits<Scalar>::one(),
+                                Teuchos::ScalarTraits<Scalar>::one());
+                } 
+                else {
+                  Thyra::apply(*minus_dxdp_mv, Thyra::TRANS, *dgdx_mv, dgdp_mv.ptr(), -Teuchos::ScalarTraits<Scalar>::one(),
+                           Teuchos::ScalarTraits<Scalar>::one());
+                }
+              } 
+              else {
+                if (Teuchos::nonnull(dxdp_mv)) {
+                  Thyra::apply(*dgdx_op, Thyra::NOTRANS, *dxdp_mv, dgdp_mv.ptr(), Teuchos::ScalarTraits<Scalar>::one(),
+                               Teuchos::ScalarTraits<Scalar>::one());
+                } 
+                else {
+                  Thyra::apply(*dgdx_op, Thyra::NOTRANS, *minus_dxdp_mv, dgdp_mv.ptr(), -Teuchos::ScalarTraits<Scalar>::one(),
+                               Teuchos::ScalarTraits<Scalar>::one());
+                }
+              }
+            }*/
+          }
+        }
+      }
+    }
   }
 }
