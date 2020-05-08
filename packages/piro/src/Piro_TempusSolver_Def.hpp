@@ -287,6 +287,9 @@ void Piro::TempusSolver<Scalar>::initialize(
 
     //Create Tempus integrator with observer using tempusPL and model_.
     fwdStateIntegrator_ = Tempus::integratorBasic<Scalar>(tempusPL, model_);
+    //IKT, FIXME: swap fwdStateIntegrator with piroTempusIntegrator_, once Piro::TempusIntegrator
+    //class is ready. 
+    piroTempusIntegrator_ = Teuchos::rcp(new Piro::TempusIntegrator<Scalar>(tempusPL, model_)); 
 
     //Get stepper from integrator
     fwdStateStepper_ = fwdStateIntegrator_->getStepper();
