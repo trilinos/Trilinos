@@ -58,6 +58,8 @@
 #include "Kokkos_Core.hpp"
 #include "KokkosBlas3_gemm.hpp"
 
+#define IBM_MPI_WRKAROUND2
+
 extern int me;
 
 extern int ncols_matrix;  // number of cols in the matrix
@@ -113,7 +115,7 @@ void back_solve6(ZDView& ZV)
   typedef typename ZDView::device_type::memory_space memory_space;
   typedef Kokkos::View<value_type**, Kokkos::LayoutLeft, memory_space> ViewMatrixType;
 
-#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
+#if (defined(CUDA_HOST_PINNED_MPI) || defined(IBM_MPI_WRKAROUND2)) && defined(KOKKOS_ENABLE_CUDA)
   typedef Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::CudaHostPinnedSpace> View2DHostPinnType;//CudaHostPinnedSpace
 #endif
 
@@ -187,12 +189,12 @@ void back_solve6(ZDView& ZV)
 #endif
 
   ViewMatrixType row1( "row1", one, nrhs );   // row1: diagonal row (temp variables)
-#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
+#if (defined(CUDA_HOST_PINNED_MPI) || defined(IBM_MPI_WRKAROUND2)) && defined(KOKKOS_ENABLE_CUDA)
   View2DHostPinnType h_row2( "h_row2", my_rows, max_bytes/sizeof(ADELUS_DATA_TYPE)/my_rows );
 #else
   ViewMatrixType row2( "row2", my_rows, max_bytes/sizeof(ADELUS_DATA_TYPE)/my_rows );
 #endif
-#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
+#if (defined(CUDA_HOST_PINNED_MPI) || defined(IBM_MPI_WRKAROUND2)) && defined(KOKKOS_ENABLE_CUDA)
   View2DHostPinnType h_row1( "h_row1", one, nrhs );
   View2DHostPinnType h_rhs ( "h_rhs",  my_rows, nrhs );
 #endif
@@ -317,7 +319,7 @@ void back_solve6(ZDView& ZV)
         bytes[0] = max_bytes;
         type[0]  = SOROWTYPE+j;
 
-#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
+#if (defined(CUDA_HOST_PINNED_MPI) || defined(IBM_MPI_WRKAROUND2)) && defined(KOKKOS_ENABLE_CUDA)
         MPI_Irecv(reinterpret_cast<char *>(h_row2.data()), bytes[0], MPI_CHAR, MPI_ANY_SOURCE, type[0], MPI_COMM_WORLD, &msgrequest);
 #else
         MPI_Irecv(reinterpret_cast<char *>(  row2.data()), bytes[0], MPI_CHAR, MPI_ANY_SOURCE, type[0], MPI_COMM_WORLD, &msgrequest);
@@ -325,7 +327,7 @@ void back_solve6(ZDView& ZV)
 
         n_rhs_this = bytes[0]/sizeof(ADELUS_DATA_TYPE)/my_rows;
 
-#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
+#if (defined(CUDA_HOST_PINNED_MPI) || defined(IBM_MPI_WRKAROUND2)) && defined(KOKKOS_ENABLE_CUDA)
         Kokkos::deep_copy(subview(h_rhs, Kokkos::ALL(), Kokkos::make_pair(0, n_rhs_this)), subview(ZV, Kokkos::ALL(), Kokkos::make_pair(my_cols, my_cols+n_rhs_this)));
 #endif
 
@@ -333,7 +335,7 @@ void back_solve6(ZDView& ZV)
         bytes[1] = n_rhs_this * sizeof(ADELUS_DATA_TYPE) * my_rows;
         type[1]  = SOROWTYPE+j;
 
-#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
+#if (defined(CUDA_HOST_PINNED_MPI) || defined(IBM_MPI_WRKAROUND2)) && defined(KOKKOS_ENABLE_CUDA)
         MPI_Send(reinterpret_cast<char *>(h_rhs.data()), bytes[1], MPI_CHAR, dest[1], type[1], MPI_COMM_WORLD);
 #else //CUDA-aware MPI
         MPI_Send(reinterpret_cast<char *>(ZV.data()+my_rows*my_cols), bytes[1], MPI_CHAR, dest[1], type[1], MPI_COMM_WORLD);
@@ -343,7 +345,7 @@ void back_solve6(ZDView& ZV)
 
         // Copy row2 -> rhs
         int blas_length = n_rhs_this*my_rows;
-#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)//Use memcpy for now, can use deep_copy in the future //deep_copy is slower than BLAS XCOPY
+#if (defined(CUDA_HOST_PINNED_MPI) || defined(IBM_MPI_WRKAROUND2)) && defined(KOKKOS_ENABLE_CUDA)//Use memcpy for now, can use deep_copy in the future //deep_copy is slower than BLAS XCOPY
         //Kokkos::deep_copy(subview(ZV, Kokkos::ALL(), Kokkos::make_pair(my_cols, my_cols+n_rhs_this)), subview(h_row2, Kokkos::ALL(), Kokkos::make_pair(0, n_rhs_this)));
         cudaMemcpy(reinterpret_cast<ADELUS_DATA_TYPE *>(ZV.data()+my_rows*my_cols), reinterpret_cast<ADELUS_DATA_TYPE *>(h_row2.data()), blas_length*sizeof(ADELUS_DATA_TYPE), cudaMemcpyHostToDevice);
 #else
