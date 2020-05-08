@@ -129,24 +129,12 @@ namespace MueLu {
       list = newList;
     }
 
-    std::map<std::string, MsgType> verbMap;
-    verbMap["none"]    = None;
-    verbMap["low"]     = Low;
-    verbMap["medium"]  = Medium;
-    verbMap["high"]    = High;
-    verbMap["extreme"] = Extreme;
-    verbMap["test"]    = Test;
-
-    std::string verbosityLevel = parameterList_.get<std::string>("verbosity", "medium");
-    verbosityLevel = lowerCase(verbosityLevel);
-
-    TEUCHOS_TEST_FOR_EXCEPTION(verbMap.count(verbosityLevel) == 0, Exceptions::RuntimeError,
-                               "Invalid verbosity level: \"" << verbosityLevel << "\"");
-    VerboseObject::SetDefaultVerbLevel(verbMap[verbosityLevel]);
-
     parameterList_             = list;
-    if (list.get("print initial parameters",MasterList::getDefault<bool>("print initial parameters")))
-      GetOStream(static_cast<MsgType>(Runtime1), 0) << list << std::endl;
+    std::string verbosityLevel = parameterList_.get<std::string>("verbosity", "medium");
+    VerboseObject::SetDefaultVerbLevel(toVerbLevel(verbosityLevel));
+
+    if (parameterList_.get("print initial parameters",MasterList::getDefault<bool>("print initial parameters")))
+      GetOStream(static_cast<MsgType>(Runtime1), 0) << parameterList_ << std::endl;
     disable_addon_             = list.get("refmaxwell: disable addon",         MasterList::getDefault<bool>("refmaxwell: disable addon"));
     mode_                      = list.get("refmaxwell: mode",                  MasterList::getDefault<std::string>("refmaxwell: mode"));
     use_as_preconditioner_     = list.get("refmaxwell: use as preconditioner", MasterList::getDefault<bool>("refmaxwell: use as preconditioner"));
