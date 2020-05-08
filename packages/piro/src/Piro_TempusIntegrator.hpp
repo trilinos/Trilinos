@@ -66,7 +66,7 @@ public:
 
   /** \brief . */
   TempusIntegrator(Teuchos::RCP< Teuchos::ParameterList > pList, const Teuchos::RCP< Thyra::ModelEvaluator< Scalar > > &model,
-                   int sensitivities_requested = 0); 
+                   const int sens_method = 0); 
   
   Teuchos::RCP<Tempus::Stepper<Scalar>> getStepper() const; 
 
@@ -102,7 +102,7 @@ private:
   Teuchos::RCP<Tempus::IntegratorForwardSensitivity<Scalar> > fwdSensIntegrator_;
   Teuchos::RCP<Tempus::IntegratorAdjointSensitivity<Scalar> > adjSensIntegrator_;
   Teuchos::RCP<Teuchos::FancyOStream> out_; 
-
+  
 };
 
 }

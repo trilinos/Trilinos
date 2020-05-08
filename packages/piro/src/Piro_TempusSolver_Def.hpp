@@ -285,8 +285,8 @@ void Piro::TempusSolver<Scalar>::initialize(
     //
     *out_ << "\nD) Create the stepper and integrator for the forward problem ...\n";
 
-    //Create Tempus integrator with observer using tempusPL and model_.
-    piroTempusIntegrator_ = Teuchos::rcp(new Piro::TempusIntegrator<Scalar>(tempusPL, model_)); 
+    //Create Tempus integrator with observer using tempusPL, model_ and sensitivity method 
+    piroTempusIntegrator_ = Teuchos::rcp(new Piro::TempusIntegrator<Scalar>(tempusPL, model_, this->getSensitivityMethod())); 
 
     //Get stepper from integrator
     fwdStateStepper_ = piroTempusIntegrator_->getStepper();

@@ -110,6 +110,9 @@ protected:
   void setSensitivityMethod(const std::string sensitivity_method_string);  
   //@}
 
+  /** \brief . */
+  int getSensitivityMethod(); 
+  //@}
 
 private:
   /** \name Overridden from Thyra::ModelEvaluatorDefaultBase. */

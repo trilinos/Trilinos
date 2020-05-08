@@ -308,6 +308,15 @@ Piro::TransientSolver<Scalar>::setSensitivityMethod(const std::string sensitivit
 }
 
 template <typename Scalar>
+int 
+Piro::TransientSolver<Scalar>::getSensitivityMethod()
+{
+  //The correspondance b/w the enum SENS_METHOD and int is as follows:
+  //NONE = 0, FORWARD = 1, ADJOINT = 2 
+  return sensitivityMethod_; 
+}
+
+template <typename Scalar>
 void 
 Piro::TransientSolver<Scalar>::evalConvergedModel(
       const Thyra::ModelEvaluatorBase::InArgs<Scalar>& modelInArgs,
