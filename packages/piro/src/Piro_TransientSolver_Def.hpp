@@ -54,7 +54,7 @@
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_DefaultModelEvaluatorWithSolveFactory.hpp"
 
-#define DEBUG_OUTPUT
+//#define DEBUG_OUTPUT
 
 #include <string>
 #include <stdexcept>
@@ -438,15 +438,10 @@ Piro::TransientSolver<Scalar>::evalConvergedModel(
     }
     //
     *out_ << "\nF) Calculate response sensitivities...\n";
-    //
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        true,
-        Teuchos::Exceptions::InvalidParameter,
-        "\n Error! Piro::TransientSolver: sensitivities with Tempus are not yet supported!");
  
     switch(sensitivityMethod_) {
 
-      case FORWARD : //forward sensitivities 
+      case FORWARD : //forward sensitivities
         //IKT FIXME: probably a lot of this can be reused for adjoint sensitivities.  Will clean up later, 
         //when adjoint sensitivities are implemented. 
         for (int l = 0; l < num_p_; ++l) {
@@ -473,7 +468,6 @@ Piro::TransientSolver<Scalar>::evalConvergedModel(
                   TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
                     "\n Error! Piro::TransientSolver: DgDp = DERIV_LINEAR_OP is not supported with forward sensitivities!");
                 }
-
                 const RCP<Thyra::MultiVectorBase<Scalar> > dgdp_mv = dgdp_deriv.getMultiVector();
                 //Get dxdp_mv from Tempus::ForwardIntegratorSensitivity class  
                 const RCP<const Thyra::MultiVectorBase<Scalar> > dxdp_mv = piroTempusIntegrator_->getDxDp();

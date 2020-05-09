@@ -59,7 +59,7 @@
 #include "Piro_Test_MockObserver.hpp"
 #include "Piro_TempusIntegrator.hpp"
 
-#include "MockModelEval_A.hpp"
+#include "MockModelEval_A_Tpetra.hpp"
 
 #include "Thyra_EpetraModelEvaluator.hpp"
 #include "Thyra_ModelEvaluatorHelpers.hpp"
@@ -75,11 +75,12 @@
 #include "Teuchos_Tuple.hpp"
 
 #include <stdexcept>
-
+#include<mpi.h>
 
 using namespace Teuchos;
 using namespace Piro;
 using namespace Piro::Test;
+
 
 namespace Thyra {
   typedef ModelEvaluatorBase MEB;
@@ -87,25 +88,21 @@ namespace Thyra {
 
 // Setup support
 
-const RCP<EpetraExt::ModelEvaluator> epetraModelNew()
+const RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyraModelNew()
 {
 #ifdef HAVE_MPI
   const MPI_Comm comm = MPI_COMM_WORLD;
 #else /*HAVE_MPI*/
   const int comm = 0;
 #endif /*HAVE_MPI*/
-  return rcp(new MockModelEval_A(comm));
+  RCP<const Teuchos::Comm<int>> commT = rcp(new Teuchos::MpiComm<int> (comm)); 
+  return rcp(new MockModelEval_A_Tpetra(commT));
 }
 
-const RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyraModelNew(const RCP<EpetraExt::ModelEvaluator> &epetraModel)
-{
-  const RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory(new Thyra::AmesosLinearOpWithSolveFactory);
-  return epetraModelEvaluator(epetraModel, lowsFactory);
-}
 
 RCP<Thyra::ModelEvaluatorDefaultBase<double> > defaultModelNew()
 {
-  return thyraModelNew(epetraModelNew());
+  return thyraModelNew();
 }
 
 const RCP<TempusSolver<double> > solverNew(
@@ -222,38 +219,234 @@ Thyra::ModelEvaluatorBase::InArgs<double> getStaticNominalValues(const Thyra::Mo
 // Floating point tolerance
 const double tol = 1.0e-8;
 
-TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_Solution)
+TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_DefaultSolutionSensitivity)
 {
   const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
   const double finalTime = 0.0;
 
-  const RCP<TempusSolver<double> > solver = solverNew(model, finalTime, "None");
+  const RCP<TempusSolver<double> > solver = solverNew(model, finalTime, "Forward");
 
   const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
 
   Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
   const int solutionResponseIndex = solver->Ng() - 1;
-  const RCP<Thyra::VectorBase<double> > solution =
-    Thyra::createMember(solver->get_g_space(solutionResponseIndex));
-  outArgs.set_g(solutionResponseIndex, solution);
+  const int parameterIndex = 0;
+  const Thyra::MEB::Derivative<double> dxdp_deriv =
+    Thyra::create_DgDp_mv(*solver, solutionResponseIndex, parameterIndex, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
+  const RCP<Thyra::MultiVectorBase<double> > dxdp = dxdp_deriv.getMultiVector();
+  outArgs.set_DgDp(solutionResponseIndex, parameterIndex, dxdp_deriv);
+
+  solver->evalModel(inArgs, outArgs);
+  
+  const Array<Array<double> > expected = tuple(
+      Array<double>(tuple(0.0, 0.0, 0.0, 0.0)),
+      Array<double>(tuple(0.0, 0.0, 0.0, 0.0)));
+  TEST_EQUALITY(dxdp->domain()->dim(), expected.size());
+  for (int i = 0; i < expected.size(); ++i) {
+    TEST_EQUALITY(dxdp->range()->dim(), expected[i].size());
+    const Array<double> actual = arrayFromVector(*dxdp->col(i));
+    std::cout << "IKT i = " << i << "\n";  
+    for (int j=0; j<actual.size(); j++) {
+      std::cout << "  IKT j, actual, expected = " << j << ", " << actual[j] << ", " << expected[i][j] << "\n"; 
+    }
+    TEST_COMPARE_FLOATING_ARRAYS(actual, expected[i], tol);
+  }
+}
+
+TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_DefaultSolutionSensitivityOp)
+{
+  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
+  const double finalTime = 0.0;
+
+  const RCP<TempusSolver<double> > solver = solverNew(model, finalTime, "Forward");
+
+  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
+
+  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
+  const int solutionResponseIndex = solver->Ng() - 1;
+  const int parameterIndex = 0;
+  const Thyra::MEB::Derivative<double> dxdp_deriv =
+    solver->create_DgDp_op(solutionResponseIndex, parameterIndex);
+  const RCP<Thyra::LinearOpBase<double> > dxdp = dxdp_deriv.getLinearOp();
+  outArgs.set_DgDp(solutionResponseIndex, parameterIndex, dxdp_deriv);
 
   solver->evalModel(inArgs, outArgs);
 
-  const RCP<const Thyra::VectorBase<double> > initialCondition =
-    model->getNominalValues().get_x();
-
-  TEST_COMPARE_FLOATING_ARRAYS(
-      arrayFromVector(*solution),
-      arrayFromVector(*initialCondition),
-      tol);
+  const Array<Array<double> > expected = tuple(
+      Array<double>(tuple(0.0, 0.0, 0.0, 0.0)),
+      Array<double>(tuple(0.0, 0.0, 0.0, 0.0)));
+  TEST_EQUALITY(dxdp->domain()->dim(), expected.size());
+  for (int i = 0; i < expected.size(); ++i) {
+  TEST_EQUALITY(dxdp->range()->dim(), expected[i].size());
+    const Array<double> actual = arrayFromLinOp(*dxdp, i);
+    TEST_COMPARE_FLOATING_ARRAYS(actual, expected[i], tol);
+  }
 }
 
-
-TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_Response)
+TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_DefaultResponseSensitivity)
 {
   const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
 
   const int responseIndex = 0;
+  const int parameterIndex = 0;
+
+  const Thyra::MEB::Derivative<double> dgdp_deriv_expected =
+    Thyra::create_DgDp_mv(*model, responseIndex, parameterIndex, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
+  const RCP<const Thyra::MultiVectorBase<double> > dgdp_expected = dgdp_deriv_expected.getMultiVector();
+  {
+    const Thyra::MEB::InArgs<double> modelInArgs = getStaticNominalValues(*model);
+    Thyra::MEB::OutArgs<double> modelOutArgs = model->createOutArgs();
+    modelOutArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv_expected);
+    model->evalModel(modelInArgs, modelOutArgs);
+  }
+
+  const double finalTime = 0.0;
+  const RCP<TempusSolver<double> > solver = solverNew(model, finalTime, "Forward");
+
+  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
+
+  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
+  const Thyra::MEB::Derivative<double> dgdp_deriv =
+    Thyra::create_DgDp_mv(*solver, responseIndex, parameterIndex, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
+  const RCP<const Thyra::MultiVectorBase<double> > dgdp = dgdp_deriv.getMultiVector();
+  outArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv);
+
+  solver->evalModel(inArgs, outArgs);
+
+  TEST_EQUALITY(dgdp->domain()->dim(), dgdp_expected->domain()->dim());
+  TEST_EQUALITY(dgdp->range()->dim(), dgdp_expected->range()->dim());
+  for (int i = 0; i < dgdp_expected->domain()->dim(); ++i) {
+    const Array<double> actual = arrayFromVector(*dgdp->col(i));
+    const Array<double> expected = arrayFromVector(*dgdp_expected->col(i));
+    TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
+  }
+}
+
+TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_DefaultResponseSensitivity_NoDgDxMv)
+{
+  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model(
+    new WeakenedModelEvaluator_NoDgDxMv(defaultModelNew()));
+
+  const int responseIndex = 0;
+  const int parameterIndex = 0;
+
+  const Thyra::MEB::Derivative<double> dgdp_deriv_expected =
+    Thyra::create_DgDp_mv(*model, responseIndex, parameterIndex, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
+  const RCP<const Thyra::MultiVectorBase<double> > dgdp_expected = dgdp_deriv_expected.getMultiVector();
+  {
+    const Thyra::MEB::InArgs<double> modelInArgs = getStaticNominalValues(*model);
+    Thyra::MEB::OutArgs<double> modelOutArgs = model->createOutArgs();
+    modelOutArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv_expected);
+    model->evalModel(modelInArgs, modelOutArgs);
+  }
+
+  const double finalTime = 0.0;
+  const RCP<TempusSolver<double> > solver = solverNew(model, finalTime, "Forward");
+
+  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
+
+  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
+  const Thyra::MEB::Derivative<double> dgdp_deriv =
+    Thyra::create_DgDp_mv(*solver, responseIndex, parameterIndex, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
+  const RCP<const Thyra::MultiVectorBase<double> > dgdp = dgdp_deriv.getMultiVector();
+  outArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv);
+
+  solver->evalModel(inArgs, outArgs);
+  
+  TEST_EQUALITY(dgdp->domain()->dim(), dgdp_expected->domain()->dim());
+  TEST_EQUALITY(dgdp->range()->dim(), dgdp_expected->range()->dim());
+  for (int i = 0; i < dgdp_expected->domain()->dim(); ++i) {
+    const Array<double> actual = arrayFromVector(*dgdp->col(i));
+    const Array<double> expected = arrayFromVector(*dgdp_expected->col(i));
+    TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
+  }
+}
+
+TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_DefaultResponseSensitivityOp)
+{
+  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
+
+  const int responseIndex = 0;
+  const int parameterIndex = 0;
+
+  const Thyra::MEB::Derivative<double> dgdp_deriv_expected =
+    model->create_DgDp_op(responseIndex, parameterIndex);
+  const RCP<const Thyra::LinearOpBase<double> > dgdp_expected = dgdp_deriv_expected.getLinearOp();
+  {
+    const Thyra::MEB::InArgs<double> modelInArgs = getStaticNominalValues(*model);
+    Thyra::MEB::OutArgs<double> modelOutArgs = model->createOutArgs();
+    modelOutArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv_expected);
+    model->evalModel(modelInArgs, modelOutArgs);
+  }
+
+  const double finalTime = 0.0;
+  const RCP<TempusSolver<double> > solver = solverNew(model, finalTime, "Forward");
+
+  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
+
+  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
+  const Thyra::MEB::Derivative<double> dgdp_deriv =
+    solver->create_DgDp_op(responseIndex, parameterIndex);
+  const RCP<const Thyra::LinearOpBase<double> > dgdp = dgdp_deriv.getLinearOp();
+  outArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv);
+
+  solver->evalModel(inArgs, outArgs);
+
+  TEST_EQUALITY(dgdp->domain()->dim(), dgdp_expected->domain()->dim());
+  TEST_EQUALITY(dgdp->range()->dim(), dgdp_expected->range()->dim());
+  for (int i = 0; i < dgdp->domain()->dim(); ++i) {
+    const Array<double> actual = arrayFromLinOp(*dgdp, i);
+    const Array<double> expected = arrayFromLinOp(*dgdp_expected, i);
+    TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
+  }
+}
+
+TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_DefaultResponseSensitivityOp_NoDgDpMv)
+{
+  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model(
+      new WeakenedModelEvaluator_NoDgDpMv(defaultModelNew()));
+
+  const int responseIndex = 0;
+  const int parameterIndex = 0;
+
+  const Thyra::MEB::Derivative<double> dgdp_deriv_expected =
+    model->create_DgDp_op(responseIndex, parameterIndex);
+  const RCP<const Thyra::LinearOpBase<double> > dgdp_expected = dgdp_deriv_expected.getLinearOp();
+  {
+    const Thyra::MEB::InArgs<double> modelInArgs = getStaticNominalValues(*model);
+    Thyra::MEB::OutArgs<double> modelOutArgs = model->createOutArgs();
+    modelOutArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv_expected);
+    model->evalModel(modelInArgs, modelOutArgs);
+  }
+
+  const double finalTime = 0.0;
+  const RCP<TempusSolver<double> > solver = solverNew(model, finalTime, "Forward");
+
+  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
+
+  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
+  const Thyra::MEB::Derivative<double> dgdp_deriv =
+    solver->create_DgDp_op(responseIndex, parameterIndex);
+  const RCP<const Thyra::LinearOpBase<double> > dgdp = dgdp_deriv.getLinearOp();
+  outArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv);
+
+  solver->evalModel(inArgs, outArgs);
+
+  TEST_EQUALITY(dgdp->domain()->dim(), dgdp_expected->domain()->dim());
+  TEST_EQUALITY(dgdp->range()->dim(), dgdp_expected->range()->dim());
+  for (int i = 0; i < dgdp->domain()->dim(); ++i) {
+    const Array<double> actual = arrayFromLinOp(*dgdp, i);
+    const Array<double> expected = arrayFromLinOp(*dgdp_expected, i);
+    TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
+  }
+}
+
+TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_ResponseAndDefaultSensitivities)
+{
+  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
+
+  const int responseIndex = 0;
+  const int parameterIndex = 0;
 
   const RCP<Thyra::VectorBase<double> > expectedResponse =
     Thyra::createMember(model->get_g_space(responseIndex));
@@ -264,124 +457,53 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_Response)
     model->evalModel(modelInArgs, modelOutArgs);
   }
 
+  const Thyra::MEB::Derivative<double> dgdp_deriv_expected =
+    Thyra::create_DgDp_mv(*model, responseIndex, parameterIndex, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
+  const RCP<const Thyra::MultiVectorBase<double> > dgdp_expected = dgdp_deriv_expected.getMultiVector();
+  {
+    const Thyra::MEB::InArgs<double> modelInArgs = getStaticNominalValues(*model);
+    Thyra::MEB::OutArgs<double> modelOutArgs = model->createOutArgs();
+    modelOutArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv_expected);
+    model->evalModel(modelInArgs, modelOutArgs);
+  }
+
   const double finalTime = 0.0;
-  const RCP<TempusSolver<double> > solver = solverNew(model, finalTime, "None");
+  const RCP<TempusSolver<double> > solver = solverNew(model, finalTime, "Forward");
 
   const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
 
   Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
+
+  // Requesting response
   const RCP<Thyra::VectorBase<double> > response =
     Thyra::createMember(solver->get_g_space(responseIndex));
   outArgs.set_g(responseIndex, response);
 
+  // Requesting response sensitivity
+  const Thyra::MEB::Derivative<double> dgdp_deriv =
+    Thyra::create_DgDp_mv(*solver, responseIndex, parameterIndex, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
+  const RCP<const Thyra::MultiVectorBase<double> > dgdp = dgdp_deriv.getMultiVector();
+  outArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv);
+
+  // Run solver
   solver->evalModel(inArgs, outArgs);
 
-  const Array<double> expected = arrayFromVector(*expectedResponse);
-  const Array<double> actual = arrayFromVector(*response);
-  TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
-}
-
-TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_NoDfDpMv_NoSensitivity)
-{
-  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model(
-      new WeakenedModelEvaluator_NoDfDpMv(defaultModelNew()));
-
-  const double finalTime = 0.0;
-  const RCP<TempusSolver<double> > solver = solverNew(model, finalTime, "None");
-
-  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
-  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
-
-  const int responseIndex = 0;
-  const int solutionResponseIndex = solver->Ng() - 1;
-  const int parameterIndex = 0;
-
-  TEST_ASSERT(outArgs.supports(Thyra::MEB::OUT_ARG_DgDp, responseIndex, parameterIndex).none());
-  TEST_ASSERT(outArgs.supports(Thyra::MEB::OUT_ARG_DgDp, solutionResponseIndex, parameterIndex).none());
-
-  TEST_NOTHROW(solver->evalModel(inArgs, outArgs));
-}
-
-
-TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_NoDgDp_NoResponseSensitivity)
-{
-  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model(
-      new WeakenedModelEvaluator_NoDgDp(defaultModelNew()));
-
-  const double finalTime = 0.0;
-  const RCP<TempusSolver<double> > solver = solverNew(model, finalTime, "None");
-
-  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
-  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
-
-  const int responseIndex = 0;
-  const int solutionResponseIndex = solver->Ng() - 1;
-  const int parameterIndex = 0;
-
-  TEST_ASSERT(outArgs.supports(Thyra::MEB::OUT_ARG_DgDp, responseIndex, parameterIndex).none());
-  TEST_ASSERT(!outArgs.supports(Thyra::MEB::OUT_ARG_DgDp, solutionResponseIndex, parameterIndex).none());
-
-  TEST_NOTHROW(solver->evalModel(inArgs, outArgs));
-}
-
-
-TEUCHOS_UNIT_TEST(Piro_TempusSolver, ObserveInitialCondition)
-{
-  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
-  const RCP<MockObserver<double> > observer(new MockObserver<double>);
-  //IKT, FIXME: set to 2.0 instead of 0.0 -- does not work correctly in this case
-  const double timeStamp = 0.0;
-
-  const RCP<TempusSolver<double> > solver = solverNew(model, timeStamp, timeStamp, observer, "None");
-
-  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
-  const Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
-  solver->evalModel(inArgs, outArgs);
-
+  // Checking response
   {
-    const RCP<const Thyra::VectorBase<double> > solution =
-      observer->lastSolution();
-
-    const RCP<const Thyra::VectorBase<double> > initialCondition =
-      model->getNominalValues().get_x();
-
-    TEST_COMPARE_FLOATING_ARRAYS(
-        arrayFromVector(*solution),
-        arrayFromVector(*initialCondition),
-        tol);
+    const Array<double> expected = arrayFromVector(*expectedResponse);
+    const Array<double> actual = arrayFromVector(*response);
+    TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
   }
 
-  TEST_FLOATING_EQUALITY(observer->lastStamp(), timeStamp, tol);
+  // Checking sensitivity
+  {
+    TEST_EQUALITY(dgdp->domain()->dim(), dgdp_expected->domain()->dim());
+    TEST_EQUALITY(dgdp->range()->dim(), dgdp_expected->range()->dim());
+    for (int i = 0; i < dgdp_expected->domain()->dim(); ++i) {
+      const Array<double> actual = arrayFromVector(*dgdp->col(i));
+      const Array<double> expected = arrayFromVector(*dgdp_expected->col(i));
+      TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
+    }
+  }
 }
-
-
-TEUCHOS_UNIT_TEST(Piro_TempusSolver, ObserveFinalSolution)
-{
-  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
-  const RCP<MockObserver<double> > observer(new MockObserver<double>);
-  const double initialTime = 0.0;
-  const double finalTime = 0.1;
-  const double timeStepSize = 0.05;
-
-  const RCP<TempusSolver<double> > solver =
-    solverNew(model, initialTime, finalTime, timeStepSize, observer, "None");
-
-  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
-
-  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
-  const int solutionResponseIndex = solver->Ng() - 1;
-  const RCP<Thyra::VectorBase<double> > solution =
-    Thyra::createMember(solver->get_g_space(solutionResponseIndex));
-  outArgs.set_g(solutionResponseIndex, solution);
-
-  solver->evalModel(inArgs, outArgs);
-
-  TEST_COMPARE_FLOATING_ARRAYS(
-      arrayFromVector(*observer->lastSolution()),
-      arrayFromVector(*solution),
-      tol);
-
-  TEST_FLOATING_EQUALITY(observer->lastStamp(), finalTime, tol);
-}
-
 #endif /* HAVE_PIRO_TEMPUS */

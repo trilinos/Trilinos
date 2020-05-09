@@ -229,4 +229,26 @@ IF (Piro_ENABLE_Tempus)
     NUM_MPI_PROCS 1-4
     STANDARD_PASS_OUTPUT
   )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    TempusSolver_SensitivityUnitTestsT
+    SOURCES
+    Piro_TempusSolver_SensitivityUnitTestsT.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    Piro_Test_ThyraSupport.hpp
+    MockModelEval_A_Tpetra.hpp
+    MockModelEval_A_Tpetra.cpp
+    NUM_MPI_PROCS 1-4
+    STANDARD_PASS_OUTPUT
+  )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    TempusSolver_SensitivityUnitTests
+    SOURCES
+    Piro_TempusSolver_SensitivityUnitTests.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    Piro_Test_ThyraSupport.hpp
+    MockModelEval_A.hpp
+    MockModelEval_A.cpp
+    NUM_MPI_PROCS 1-4
+    STANDARD_PASS_OUTPUT
+  )
 ENDIF (Piro_ENABLE_Tempus)

@@ -48,7 +48,7 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_Assert.hpp"
 
-#define DEBUG_OUTPUT
+//#define DEBUG_OUTPUT
 
 #include <string>
 #include <stdexcept>
