@@ -157,8 +157,9 @@ void StochasticProblem<Real>::makeConstraintStochastic(std::string              
     ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
       ">>> ROL::StochasticProblem::makeConstraintStochastic: Invalid stochastic optimization type!");
   }
-  if(bnd != nullPtr) NewOptimizationProblem<Real>::addConstraint(it->first,con,mul,bnd,res,true);
-  else               NewOptimizationProblem<Real>::addConstraint(it->first,con,mul,res,true);
+  NewOptimizationProblem<Real>::removeConstraint(it->first);
+  if(bnd != nullPtr) NewOptimizationProblem<Real>::addConstraint(it->first,con,mul,bnd,res);
+  else               NewOptimizationProblem<Real>::addConstraint(it->first,con,mul,res);
 }
 
 template<typename Real>
@@ -211,8 +212,9 @@ void StochasticProblem<Real>::makeLinearConstraintStochastic(std::string        
     ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
       ">>> ROL::StochasticProblem::makeLinearConstraintStochastic: Invalid stochastic optimization type!");
   }
-  if(bnd != nullPtr) NewOptimizationProblem<Real>::addLinearConstraint(it->first,con,mul,bnd,res,true);
-  else               NewOptimizationProblem<Real>::addLinearConstraint(it->first,con,mul,res,true);
+  NewOptimizationProblem<Real>::removeLinearConstraint(it->first);
+  if(bnd != nullPtr) NewOptimizationProblem<Real>::addLinearConstraint(it->first,con,mul,bnd,res);
+  else               NewOptimizationProblem<Real>::addLinearConstraint(it->first,con,mul,res);
 }
 
 template<typename Real>
@@ -237,8 +239,9 @@ void StochasticProblem<Real>::resetStochasticConstraint(std::string name) {
     Ptr<Vector<Real>>          mul = it->second.multiplier;
     Ptr<Vector<Real>>          res = it->second.residual;
     Ptr<BoundConstraint<Real>> bnd = it->second.bounds;
-    if (bnd != nullPtr) NewOptimizationProblem<Real>::addConstraint(it->first,con,mul,bnd,res,true);
-    else                NewOptimizationProblem<Real>::addConstraint(it->first,con,mul,res,true);
+    NewOptimizationProblem<Real>::removeConstraint(it->first);
+    if (bnd != nullPtr) NewOptimizationProblem<Real>::addConstraint(it->first,con,mul,bnd,res);
+    else                NewOptimizationProblem<Real>::addConstraint(it->first,con,mul,res);
     conList_.erase(conList_.find(name));
     ORIGINAL_con_.erase(it);
   }
@@ -254,8 +257,9 @@ void StochasticProblem<Real>::resetStochasticLinearConstraint(std::string name) 
     Ptr<Vector<Real>>          mul = it->second.multiplier;
     Ptr<Vector<Real>>          res = it->second.residual;
     Ptr<BoundConstraint<Real>> bnd = it->second.bounds;
-    if (bnd != nullPtr) NewOptimizationProblem<Real>::setLinearConstraint(it->first,con,mul,res,bnd,true);
-    else                NewOptimizationProblem<Real>::setLinearConstraint(it->first,con,mul,res,true);
+    NewOptimizationProblem<Real>::removeLinearConstraint(it->first);
+    if (bnd != nullPtr) NewOptimizationProblem<Real>::addLinearConstraint(it->first,con,mul,res,bnd);
+    else                NewOptimizationProblem<Real>::addLinearConstraint(it->first,con,mul,res);
     ORIGINAL_linear_con_.erase(it);
   }
 }
@@ -357,8 +361,9 @@ void StochasticProblem<Real>::finalize(bool lumpConstraints, bool printToStream,
           Ptr<Vector<Real>>          mul = it->second.multiplier;
           Ptr<Vector<Real>>          res = it->second.residual;
           Ptr<BoundConstraint<Real>> bnd = it->second.bounds;
-          if (bnd != nullPtr) NewOptimizationProblem<Real>::addConstraint(it->first,con,mul,bnd,res,true);
-          else                NewOptimizationProblem<Real>::addConstraint(it->first,con,mul,res,true);
+          NewOptimizationProblem<Real>::removeConstraint(it->first);
+          if (bnd != nullPtr) NewOptimizationProblem<Real>::addConstraint(it->first,con,mul,bnd,res);
+          else                NewOptimizationProblem<Real>::addConstraint(it->first,con,mul,res);
         }
         cnt++;
       }
@@ -368,8 +373,9 @@ void StochasticProblem<Real>::finalize(bool lumpConstraints, bool printToStream,
         Ptr<Vector<Real>>          mul = it->second.multiplier;
         Ptr<Vector<Real>>          res = it->second.residual;
         Ptr<BoundConstraint<Real>> bnd = it->second.bounds;
-        if (bnd != nullPtr) NewOptimizationProblem<Real>::addLinearConstraint(it->first,con,mul,bnd,res,true);
-        else                NewOptimizationProblem<Real>::addLinearConstraint(it->first,con,mul,res,true);
+        NewOptimizationProblem<Real>::removeLinearConstraint(it->first);
+        if (bnd != nullPtr) NewOptimizationProblem<Real>::addLinearConstraint(it->first,con,mul,bnd,res);
+        else                NewOptimizationProblem<Real>::addLinearConstraint(it->first,con,mul,res);
       }
     }
     // Call default finalize
