@@ -2007,10 +2007,9 @@ package ``<TRIBITS_PACKAGE>`` is set to the project-wide option
 ``<Project>_SKIP_CTEST_ADD_TEST``.)
 
 One can also use these options to "white-list" and "black-list" the set of
-package tests that one will run, even if more test and example targets get
-built.  For example, enable the building of all test and example targets but
-only actually defining ctest tests for two specific packages
-(i.e. "white-listing"), one would configure with::
+package tests that one will run.  For example, to enable the building of all
+test and example targets but only actually defining ctest tests for two
+specific packages (i.e. "white-listing"), one would configure with::
 
   -D <Project>_ENABLE_ALL_PACKAGES=ON \
   -D <Project>_ENABLE_TESTS=ON \
@@ -2019,23 +2018,24 @@ only actually defining ctest tests for two specific packages
   -D <TRIBITS_PACKAGE_2>_SKIP_CTEST_ADD_TEST=FALSE \
 
 Alternatively, to enable the building of all test and example targets and
-allowing the ctest tests to be defined for all package except for specific
-packages (i.e. "black-listing"), one would configure with::
+allowing the ctest tests to be defined for all packages except for a couple of
+specific packages (i.e. "black-listing"), one would configure with::
 
   -D <Project>_ENABLE_ALL_PACKAGES=ON \
   -D <Project>_ENABLE_TESTS=ON \
   -D <TRIBITS_PACKAGE_1>_SKIP_CTEST_ADD_TEST=TRUE \
   -D <TRIBITS_PACKAGE_2>_SKIP_CTEST_ADD_TEST=TRUE \
 
-This allows for building all of the test and example targets for the enabled
-packages but not defining ctest tests for any set of packages desired.  This
-allows setting up testing scenarios where one wants to test the building of
-all test-related targets but not actually running the tests with ctest for a
-subset of all of the enabled packages.  (This can be useful in cases where the
-tests are very expensive and one can't afford to run all of them given the
-testing budget, or when running tests on a given platform is very flaky, or
-when some packages have fragile or poor quality tests that don't port to new
-platforms very well.)
+Using different values for ``<Project>_SKIP_CTEST_ADD_TEST`` and
+``<TRIBITS_PACKAGE>_SKIP_CTEST_ADD_TEST`` in this way allows for building all
+of the test and example targets for the enabled packages but not defining
+ctest tests for any set of packages desired.  This allows setting up testing
+scenarios where one wants to test the building of all test-related targets but
+not actually run the tests with ctest for a subset of all of the enabled
+packages.  (This can be useful in cases where the tests are very expensive and
+one can't afford to run all of them given the testing budget, or when running
+tests on a given platform is very flaky, or when some packages have fragile or
+poor quality tests that don't port to new platforms very well.)
 
 NOTE: These options avoid having to pass specific sets of labels when running
 ``ctest`` itself (such as when defining ``ctest -S <script>.cmake`` scripts)
