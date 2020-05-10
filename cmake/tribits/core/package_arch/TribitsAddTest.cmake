@@ -578,11 +578,11 @@ INCLUDE(TribitsAddTestHelpers)
 #
 # For example, one can set a dependency between two tests using::
 #
-#   TRIBITS_ADD_TEST_TEST( test_a [...]
-#      ADDED_TEST_NAME_OUT  test_a_TEST_NAME )
+#   TRIBITS_ADD_TEST( test_a [...]
+#      ADDED_TESTS_NAMES_OUT  test_a_TEST_NAME )
 #   
-#   TRIBITS_ADD_TEST_TEST( test_b [...]
-#      ADDED_TEST_NAME_OUT  test_z_TEST_NAME )
+#   TRIBITS_ADD_TEST( test_b [...]
+#      ADDED_TESTS_NAMES_OUT  test_z_TEST_NAME )
 #   
 #   IF (test_a_TEST_NAME AND test_b_TEST_NAME)
 #     SET_TESTS_PROPERTIES(${test_b_TEST_NAME}
