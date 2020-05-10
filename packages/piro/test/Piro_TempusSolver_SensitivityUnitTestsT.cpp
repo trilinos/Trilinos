@@ -245,10 +245,6 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_DefaultSolutionSensitivity)
   for (int i = 0; i < expected.size(); ++i) {
     TEST_EQUALITY(dxdp->range()->dim(), expected[i].size());
     const Array<double> actual = arrayFromVector(*dxdp->col(i));
-    std::cout << "IKT i = " << i << "\n";  
-    for (int j=0; j<actual.size(); j++) {
-      std::cout << "  IKT j, actual, expected = " << j << ", " << actual[j] << ", " << expected[i][j] << "\n"; 
-    }
     TEST_COMPARE_FLOATING_ARRAYS(actual, expected[i], tol);
   }
 }
@@ -358,85 +354,6 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_DefaultResponseSensitivity_NoDgDxM
   for (int i = 0; i < dgdp_expected->domain()->dim(); ++i) {
     const Array<double> actual = arrayFromVector(*dgdp->col(i));
     const Array<double> expected = arrayFromVector(*dgdp_expected->col(i));
-    TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
-  }
-}
-
-TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_DefaultResponseSensitivityOp)
-{
-  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
-
-  const int responseIndex = 0;
-  const int parameterIndex = 0;
-
-  const Thyra::MEB::Derivative<double> dgdp_deriv_expected =
-    model->create_DgDp_op(responseIndex, parameterIndex);
-  const RCP<const Thyra::LinearOpBase<double> > dgdp_expected = dgdp_deriv_expected.getLinearOp();
-  {
-    const Thyra::MEB::InArgs<double> modelInArgs = getStaticNominalValues(*model);
-    Thyra::MEB::OutArgs<double> modelOutArgs = model->createOutArgs();
-    modelOutArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv_expected);
-    model->evalModel(modelInArgs, modelOutArgs);
-  }
-
-  const double finalTime = 0.0;
-  const RCP<TempusSolver<double> > solver = solverNew(model, finalTime, "Forward");
-
-  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
-
-  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
-  const Thyra::MEB::Derivative<double> dgdp_deriv =
-    solver->create_DgDp_op(responseIndex, parameterIndex);
-  const RCP<const Thyra::LinearOpBase<double> > dgdp = dgdp_deriv.getLinearOp();
-  outArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv);
-
-  solver->evalModel(inArgs, outArgs);
-
-  TEST_EQUALITY(dgdp->domain()->dim(), dgdp_expected->domain()->dim());
-  TEST_EQUALITY(dgdp->range()->dim(), dgdp_expected->range()->dim());
-  for (int i = 0; i < dgdp->domain()->dim(); ++i) {
-    const Array<double> actual = arrayFromLinOp(*dgdp, i);
-    const Array<double> expected = arrayFromLinOp(*dgdp_expected, i);
-    TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
-  }
-}
-
-TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_DefaultResponseSensitivityOp_NoDgDpMv)
-{
-  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model(
-      new WeakenedModelEvaluator_NoDgDpMv(defaultModelNew()));
-
-  const int responseIndex = 0;
-  const int parameterIndex = 0;
-
-  const Thyra::MEB::Derivative<double> dgdp_deriv_expected =
-    model->create_DgDp_op(responseIndex, parameterIndex);
-  const RCP<const Thyra::LinearOpBase<double> > dgdp_expected = dgdp_deriv_expected.getLinearOp();
-  {
-    const Thyra::MEB::InArgs<double> modelInArgs = getStaticNominalValues(*model);
-    Thyra::MEB::OutArgs<double> modelOutArgs = model->createOutArgs();
-    modelOutArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv_expected);
-    model->evalModel(modelInArgs, modelOutArgs);
-  }
-
-  const double finalTime = 0.0;
-  const RCP<TempusSolver<double> > solver = solverNew(model, finalTime, "Forward");
-
-  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
-
-  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
-  const Thyra::MEB::Derivative<double> dgdp_deriv =
-    solver->create_DgDp_op(responseIndex, parameterIndex);
-  const RCP<const Thyra::LinearOpBase<double> > dgdp = dgdp_deriv.getLinearOp();
-  outArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv);
-
-  solver->evalModel(inArgs, outArgs);
-
-  TEST_EQUALITY(dgdp->domain()->dim(), dgdp_expected->domain()->dim());
-  TEST_EQUALITY(dgdp->range()->dim(), dgdp_expected->range()->dim());
-  for (int i = 0; i < dgdp->domain()->dim(); ++i) {
-    const Array<double> actual = arrayFromLinOp(*dgdp, i);
-    const Array<double> expected = arrayFromLinOp(*dgdp_expected, i);
     TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
   }
 }
