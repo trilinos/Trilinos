@@ -300,7 +300,7 @@ public:
 
   /** \brief Resume editting optimization problem after finalize has been called.
   */
-  void edit(void);
+  virtual void edit(void);
 
   /** \brief Transform the optimization variables to the native
              parameterization after an optimization algorithm has finished.

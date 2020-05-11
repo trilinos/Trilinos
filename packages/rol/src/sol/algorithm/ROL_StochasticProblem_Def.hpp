@@ -112,7 +112,7 @@ void StochasticProblem<Real>::makeConstraintStochastic(std::string              
     ">>> ROL::StochasticProblem::makeConstraintStochastic: Constraint does not exist!");
   ROL_TEST_FOR_EXCEPTION(ORIGINAL_con_.find(name) != ORIGINAL_con_.end(),std::invalid_argument,
     ">>> ROL::StochasticProblem::makeConstraintStochastic: Constraint already set!");
-  ORIGINAL_con_.insert({it->first,it->second});
+  ORIGINAL_con_.insert({name,it->second});
   // Determine Stochastic Constraint Type
   std::string type = list.sublist("SOL").sublist(name).get("Type","Risk Neutral");
   Ptr<Constraint<Real>>      con = it->second.constraint;
@@ -123,7 +123,6 @@ void StochasticProblem<Real>::makeConstraintStochastic(std::string              
     ROL_TEST_FOR_EXCEPTION(bman == nullPtr,std::invalid_argument,
       ">>> ROL::StochasticProblem::makeConstraintStochastic: Risk neutral constraints need a valid BatchManager!");
     conList_.insert({name,std::pair<Ptr<ParameterList>,bool>(nullPtr,true)});
-    bool storage = list.sublist("SOL").sublist("Objective").sublist("Risk Neutral").get("Use Storage",true);
     con = makePtr<RiskNeutralConstraint<Real>>(it->second.constraint,sampler,bman);
   }
   else if ( type == "Almost Sure" ) {
@@ -135,8 +134,8 @@ void StochasticProblem<Real>::makeConstraintStochastic(std::string              
       mvec[j] = mul->clone(); mvec[j]->set(*mul);
       rvec[j] = res->clone(); rvec[j]->set(*res);
     }
-    mul = makePtr<DualSimulatedVector<Real>>(mvec,sampler->getBatchManager,sampler);
-    res = makePtr<PrimalSimulatedVector<Real>>(rvec,sampler->getBatchManager,sampler);
+    mul = makePtr<DualSimulatedVector<Real>>(mvec,sampler->getBatchManager(),sampler);
+    res = makePtr<PrimalSimulatedVector<Real>>(rvec,sampler->getBatchManager(),sampler);
     if (bnd != nullPtr)
       bnd = makePtr<SimulatedBoundConstraint<Real>>(sampler, bnd);
   }
@@ -147,26 +146,26 @@ void StochasticProblem<Real>::makeConstraintStochastic(std::string              
     Ptr<ParameterList> clist = makePtr<ParameterList>();
     clist->sublist("SOL") = list.sublist("SOL").sublist(name);
     conList_.insert({name,std::pair<Ptr<ParameterList>,bool>(clist,false)});
-    con = makePtr<StochasticConstraint<Real>>(con,sampler,clist);
+    con = makePtr<StochasticConstraint<Real>>(it->second.constraint,sampler,*clist);
   }
   else if ( type == "Mean Value" ) {
     conList_.insert({name,std::pair<Ptr<ParameterList>,bool>(nullPtr,true)});
-    con = makePtr<MeanValueConstraint<Real>>(con,sampler);
+    con = makePtr<MeanValueConstraint<Real>>(it->second.constraint,sampler);
   }
   else {
     ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
       ">>> ROL::StochasticProblem::makeConstraintStochastic: Invalid stochastic optimization type!");
   }
-  NewOptimizationProblem<Real>::removeConstraint(it->first);
-  if(bnd != nullPtr) NewOptimizationProblem<Real>::addConstraint(it->first,con,mul,bnd,res);
-  else               NewOptimizationProblem<Real>::addConstraint(it->first,con,mul,res);
+  NewOptimizationProblem<Real>::removeConstraint(name);
+  if(bnd != nullPtr) NewOptimizationProblem<Real>::addConstraint(name,con,mul,bnd,res);
+  else               NewOptimizationProblem<Real>::addConstraint(name,con,mul,res);
 }
 
 template<typename Real>
 void StochasticProblem<Real>::makeLinearConstraintStochastic(std::string                       name,
-                                                            ParameterList                    &list,
-                                                            const Ptr<SampleGenerator<Real>> &sampler,
-                                                            const Ptr<BatchManager<Real>>    &bman) {
+                                                             ParameterList                    &list,
+                                                             const Ptr<SampleGenerator<Real>> &sampler,
+                                                             const Ptr<BatchManager<Real>>    &bman) {
   // Throw an exception if problem has been finalized
   ROL_TEST_FOR_EXCEPTION(isFinalized(),std::invalid_argument,
     ">>> ROL::StochasticProblem::makeLinearConstraintStochastic: Cannot set stochastic constraint after problem has been finalized!");
@@ -179,7 +178,7 @@ void StochasticProblem<Real>::makeLinearConstraintStochastic(std::string        
     ">>> ROL::StochasticProblem::makeLinearConstraintStochastic: Constraint does not exist!");
   ROL_TEST_FOR_EXCEPTION(ORIGINAL_linear_con_.find(name) != ORIGINAL_linear_con_.end(),std::invalid_argument,
       ">>> ROL::StochasticProblem::makeLinearConstraintStochastic: Constraint already set!");
-  ORIGINAL_linear_con_.insert({it->first,it->second});
+  ORIGINAL_linear_con_.insert({name,it->second});
   // Determine Stochastic Constraint Type
   std::string type = list.sublist("SOL").sublist(name).get("Type","Risk Neutral");
   Ptr<Constraint<Real>>      con = it->second.constraint;
@@ -189,7 +188,6 @@ void StochasticProblem<Real>::makeLinearConstraintStochastic(std::string        
   if ( type == "Risk Neutral" ) {
     ROL_TEST_FOR_EXCEPTION(bman == nullPtr,std::invalid_argument,
       ">>> ROL::StochasticProblem::makeLinearConstraintStochastic: Risk neutral constraints need a valid BatchManager!");
-    bool storage = list.sublist("SOL").sublist("Objective").sublist("Risk Neutral").get("Use Storage",true);
     con = makePtr<RiskNeutralConstraint<Real>>(it->second.constraint,sampler,bman);
   }
   else if ( type == "Almost Sure" ) {
@@ -200,21 +198,21 @@ void StochasticProblem<Real>::makeLinearConstraintStochastic(std::string        
       mvec[j] = mul->clone(); mvec[j]->set(*mul);
       rvec[j] = res->clone(); rvec[j]->set(*res);
     }
-    mul = makePtr<DualSimulatedVector<Real>>(mvec,sampler->getBatchManager,sampler);
-    res = makePtr<PrimalSimulatedVector<Real>>(rvec,sampler->getBatchManager,sampler);
+    mul = makePtr<DualSimulatedVector<Real>>(mvec,sampler->getBatchManager(),sampler);
+    res = makePtr<PrimalSimulatedVector<Real>>(rvec,sampler->getBatchManager(),sampler);
     if (bnd != nullPtr)
       bnd = makePtr<SimulatedBoundConstraint<Real>>(sampler, bnd);
   }
   else if ( type == "Mean Value" ) {
-    con = makePtr<MeanValueConstraint<Real>>(con,sampler);
+    con = makePtr<MeanValueConstraint<Real>>(it->second.constraint,sampler);
   }
   else {
     ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
       ">>> ROL::StochasticProblem::makeLinearConstraintStochastic: Invalid stochastic optimization type!");
   }
-  NewOptimizationProblem<Real>::removeLinearConstraint(it->first);
-  if(bnd != nullPtr) NewOptimizationProblem<Real>::addLinearConstraint(it->first,con,mul,bnd,res);
-  else               NewOptimizationProblem<Real>::addLinearConstraint(it->first,con,mul,res);
+  NewOptimizationProblem<Real>::removeLinearConstraint(name);
+  if(bnd != nullPtr) NewOptimizationProblem<Real>::addLinearConstraint(name,con,mul,bnd,res);
+  else               NewOptimizationProblem<Real>::addLinearConstraint(name,con,mul,res);
 }
 
 template<typename Real>
@@ -239,9 +237,9 @@ void StochasticProblem<Real>::resetStochasticConstraint(std::string name) {
     Ptr<Vector<Real>>          mul = it->second.multiplier;
     Ptr<Vector<Real>>          res = it->second.residual;
     Ptr<BoundConstraint<Real>> bnd = it->second.bounds;
-    NewOptimizationProblem<Real>::removeConstraint(it->first);
-    if (bnd != nullPtr) NewOptimizationProblem<Real>::addConstraint(it->first,con,mul,bnd,res);
-    else                NewOptimizationProblem<Real>::addConstraint(it->first,con,mul,res);
+    NewOptimizationProblem<Real>::removeConstraint(name);
+    if (bnd != nullPtr) NewOptimizationProblem<Real>::addConstraint(name,con,mul,bnd,res);
+    else                NewOptimizationProblem<Real>::addConstraint(name,con,mul,res);
     conList_.erase(conList_.find(name));
     ORIGINAL_con_.erase(it);
   }
@@ -257,9 +255,9 @@ void StochasticProblem<Real>::resetStochasticLinearConstraint(std::string name) 
     Ptr<Vector<Real>>          mul = it->second.multiplier;
     Ptr<Vector<Real>>          res = it->second.residual;
     Ptr<BoundConstraint<Real>> bnd = it->second.bounds;
-    NewOptimizationProblem<Real>::removeLinearConstraint(it->first);
-    if (bnd != nullPtr) NewOptimizationProblem<Real>::addLinearConstraint(it->first,con,mul,res,bnd);
-    else                NewOptimizationProblem<Real>::addLinearConstraint(it->first,con,mul,res);
+    NewOptimizationProblem<Real>::removeLinearConstraint(name);
+    if (bnd != nullPtr) NewOptimizationProblem<Real>::addLinearConstraint(name,con,mul,bnd,res);
+    else                NewOptimizationProblem<Real>::addLinearConstraint(name,con,mul,res);
     ORIGINAL_linear_con_.erase(it);
   }
 }
@@ -307,28 +305,29 @@ template<typename Real>
 void StochasticProblem<Real>::finalize(bool lumpConstraints, bool printToStream, std::ostream &outStream) {
   if (!NewOptimizationProblem<Real>::isFinalized()) {
     std::vector<Ptr<ParameterList>> conList;
-    std::vector<bool> riskLessCon;
-    bool flag(true), risk(!needRiskLessObj_);
+    bool flag(true);
+    risk_ = !needRiskLessObj_;
     int cnt(0);
+    needRiskLessCon_.clear();
     for (auto it = INPUT_con_.begin(); it != INPUT_con_.end(); ++it) {
       auto it2 = conList_.find(it->first);
       if (it2==conList_.end()) {
         conList.push_back(nullPtr);
-        riskLessCon.push_back(true);
+        needRiskLessCon_.push_back(true);
       }
       else {
         conList.push_back(std::get<0>(it2->second));
-        riskLessCon.push_back(std::get<1>(it2->second));
+        needRiskLessCon_.push_back(std::get<1>(it2->second));
         flag = std::get<1>(it2->second);
         if (!flag) {
           dynamicPtrCast<StochasticConstraint<Real>>(it->second.constraint)->setIndex(cnt);
-          risk = true;
+          risk_ = true;
         }
       }
       cnt++;
     }
     // Set objective function
-    if (risk) {
+    if (risk_) {
       if (needRiskLessObj_) {
         Ptr<Objective<Real>> obj = INPUT_obj_;
         INPUT_obj_ = makePtr<RiskLessObjective<Real>>(obj);
@@ -355,21 +354,41 @@ void StochasticProblem<Real>::finalize(bool lumpConstraints, bool printToStream,
       }
       // Set appropriate general constraints to be risk less
       cnt = 0;
+      std::unordered_map<std::string,ConstraintData<Real>> riskless_con;
       for (auto it = INPUT_con_.begin(); it != INPUT_con_.end(); ++it) {
-        if (riskLessCon[cnt]) {
+        if (needRiskLessCon_[cnt]) {
           Ptr<Constraint<Real>>      con = makePtr<RiskLessConstraint<Real>>(it->second.constraint);
           Ptr<Vector<Real>>          mul = it->second.multiplier;
           Ptr<Vector<Real>>          res = it->second.residual;
           Ptr<BoundConstraint<Real>> bnd = it->second.bounds;
-          NewOptimizationProblem<Real>::removeConstraint(it->first);
-          if (bnd != nullPtr) NewOptimizationProblem<Real>::addConstraint(it->first,con,mul,bnd,res);
-          else                NewOptimizationProblem<Real>::addConstraint(it->first,con,mul,res);
+          riskless_con.insert({it->first,ConstraintData<Real>(con,mul,res,bnd)});
+          if (ORIGINAL_con_.count(it->first) == size_t(0))
+            ORIGINAL_con_.insert({it->first,ConstraintData<Real>(it->second.constraint,mul,res,bnd)});
         }
         cnt++;
       }
+      for (auto it = riskless_con.begin(); it != riskless_con.end(); ++it) {
+        Ptr<Constraint<Real>>      con = it->second.constraint;
+        Ptr<Vector<Real>>          mul = it->second.multiplier;
+        Ptr<Vector<Real>>          res = it->second.residual;
+        Ptr<BoundConstraint<Real>> bnd = it->second.bounds;
+        NewOptimizationProblem<Real>::removeConstraint(it->first);
+        if (bnd != nullPtr) NewOptimizationProblem<Real>::addConstraint(it->first,con,mul,bnd,res);
+        else                NewOptimizationProblem<Real>::addConstraint(it->first,con,mul,res);
+      }
       // Set all linear constraints to be risk less
+      riskless_con.clear();
       for (auto it = INPUT_linear_con_.begin(); it != INPUT_linear_con_.end(); ++it) {
         Ptr<Constraint<Real>>      con = makePtr<RiskLessConstraint<Real>>(it->second.constraint);
+        Ptr<Vector<Real>>          mul = it->second.multiplier;
+        Ptr<Vector<Real>>          res = it->second.residual;
+        Ptr<BoundConstraint<Real>> bnd = it->second.bounds;
+        riskless_con.insert({it->first,ConstraintData<Real>(con,mul,res,bnd)});
+        if (ORIGINAL_linear_con_.count(it->first) == size_t(0))
+          ORIGINAL_linear_con_.insert({it->first,ConstraintData<Real>(it->second.constraint,mul,res,bnd)});
+      }
+      for (auto it = riskless_con.begin(); it != riskless_con.end(); ++it) {
+        Ptr<Constraint<Real>>      con = it->second.constraint;
         Ptr<Vector<Real>>          mul = it->second.multiplier;
         Ptr<Vector<Real>>          res = it->second.residual;
         Ptr<BoundConstraint<Real>> bnd = it->second.bounds;
@@ -381,6 +400,74 @@ void StochasticProblem<Real>::finalize(bool lumpConstraints, bool printToStream,
     // Call default finalize
     NewOptimizationProblem<Real>::finalize(lumpConstraints,printToStream,outStream);
   }
+}
+
+template<typename Real>
+void StochasticProblem<Real>::edit(void) {
+  NewOptimizationProblem<Real>::edit();
+
+  if (risk_) {
+    if (needRiskLessObj_ && ORIGINAL_obj_ != nullPtr) {
+      INPUT_obj_ = ORIGINAL_obj_;
+      ORIGINAL_obj_ = nullPtr;
+    }
+    if (ORIGINAL_xprim_ != nullPtr) INPUT_xprim_ = ORIGINAL_xprim_;
+    if (ORIGINAL_xdual_ != nullPtr) INPUT_xdual_ = ORIGINAL_xdual_;
+    if (ORIGINAL_bnd_   != nullPtr) INPUT_bnd_   = ORIGINAL_bnd_;
+    ORIGINAL_xprim_ = nullPtr;
+    ORIGINAL_xdual_ = nullPtr;
+    ORIGINAL_bnd_   = nullPtr;
+    size_t cnt = 0;
+
+    std::unordered_map<std::string,ConstraintData<Real>> riskless_con;
+    for (auto it = INPUT_con_.begin(); it != INPUT_con_.end(); ++it) {
+      if (needRiskLessCon_[cnt]) {
+        Ptr<Constraint<Real>>      con = it->second.constraint;
+        Ptr<Vector<Real>>          mul = it->second.multiplier;
+        Ptr<Vector<Real>>          res = it->second.residual;
+        Ptr<BoundConstraint<Real>> bnd = it->second.bounds;
+        riskless_con.insert({it->first,ConstraintData<Real>(con,mul,res,bnd)});
+      }
+      cnt++;
+    }
+    for (auto it = riskless_con.begin(); it != riskless_con.end(); ++it) {
+      auto it2 = ORIGINAL_con_.find(it->first);
+      if (it2 != ORIGINAL_con_.end()) {
+        Ptr<Constraint<Real>>      con = it2->second.constraint;
+        Ptr<Vector<Real>>          mul = it2->second.multiplier;
+        Ptr<Vector<Real>>          res = it2->second.residual;
+        Ptr<BoundConstraint<Real>> bnd = it2->second.bounds;
+        NewOptimizationProblem<Real>::removeConstraint(it2->first);
+        if (bnd != nullPtr) NewOptimizationProblem<Real>::addConstraint(it2->first,con,mul,bnd,res);
+        else                NewOptimizationProblem<Real>::addConstraint(it2->first,con,mul,res);
+        ORIGINAL_con_.erase(it2);
+      }
+    }
+    // Set all linear constraints to be risk less
+    riskless_con.clear();
+    for (auto it = INPUT_linear_con_.begin(); it != INPUT_linear_con_.end(); ++it) {
+      Ptr<Constraint<Real>>      con = it->second.constraint;
+      Ptr<Vector<Real>>          mul = it->second.multiplier;
+      Ptr<Vector<Real>>          res = it->second.residual;
+      Ptr<BoundConstraint<Real>> bnd = it->second.bounds;
+      riskless_con.insert({it->first,ConstraintData<Real>(con,mul,res,bnd)});
+    }
+    for (auto it = riskless_con.begin(); it != riskless_con.end(); ++it) {
+      auto it2 = ORIGINAL_linear_con_.find(it->first);
+      if (it2 != ORIGINAL_linear_con_.end()) {
+        Ptr<Constraint<Real>>      con = it2->second.constraint;
+        Ptr<Vector<Real>>          mul = it2->second.multiplier;
+        Ptr<Vector<Real>>          res = it2->second.residual;
+        Ptr<BoundConstraint<Real>> bnd = it2->second.bounds;
+        NewOptimizationProblem<Real>::removeLinearConstraint(it2->first);
+        if (bnd != nullPtr) NewOptimizationProblem<Real>::addLinearConstraint(it2->first,con,mul,bnd,res);
+        else                NewOptimizationProblem<Real>::addLinearConstraint(it2->first,con,mul,res);
+        ORIGINAL_linear_con_.erase(it2);
+      }
+    }
+  }
+  risk_ = false;
+  needRiskLessCon_.clear();
 }
 
 }  // namespace ROL

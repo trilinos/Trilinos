@@ -71,7 +71,7 @@ void MeanValueConstraint<Real>::value(Vector<Real> &c, const Vector<Real> &x, Re
 
 template<typename Real>
 void MeanValueConstraint<Real>::applyJacobian(Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &x, Real &tol) {
-  con_->applyJaobian(jv,v,x,tol);
+  con_->applyJacobian(jv,v,x,tol);
 }
 
 template<typename Real>
@@ -81,7 +81,7 @@ void MeanValueConstraint<Real>::applyAdjointJacobian(Vector<Real> &ajv, const Ve
 
 template<typename Real>
 void MeanValueConstraint<Real>::applyAdjointHessian(Vector<Real> &ahuv, const Vector<Real> &u, const Vector<Real> &v, const Vector<Real> &x, Real &tol) {
-  con_->applyAdjointHessian(ahuv,u,v,tol);
+  con_->applyAdjointHessian(ahuv,u,v,x,tol);
 }
 
 template<typename Real>

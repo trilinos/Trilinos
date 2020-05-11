@@ -54,9 +54,12 @@
 #include "ROL_MeanValueConstraint.hpp"
 #include "ROL_RiskNeutralConstraint.hpp"
 #include "ROL_StochasticConstraint.hpp"
+#include "ROL_SimulatedBoundConstraint.hpp"
 
 #include "ROL_RiskVector.hpp"
 #include "ROL_RiskBoundConstraint.hpp"
+#include "ROL_RiskLessObjective.hpp"
+#include "ROL_RiskLessConstraint.hpp"
 
 namespace ROL {
 
@@ -70,7 +73,8 @@ private:
   std::unordered_map<std::string,ConstraintData<Real>> ORIGINAL_con_;
   std::unordered_map<std::string,ConstraintData<Real>> ORIGINAL_linear_con_;
 
-  bool needRiskLessObj_;
+  bool needRiskLessObj_, risk_;
+  std::vector<bool> needRiskLessCon_;
   Ptr<ParameterList>                                                 objList_;
   std::unordered_map<std::string,std::pair<Ptr<ParameterList>,bool>> conList_;
 
@@ -121,6 +125,8 @@ public:
 
   void finalize(bool lumpConstraints = false, bool printToStream = false,
                 std::ostream &outStream = std::cout) override;
+
+  void edit(void) override;
 
 }; // class StochasticProblem
 
