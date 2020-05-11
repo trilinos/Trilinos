@@ -249,7 +249,7 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
                                  RCP<multivector_type> & uh,
                                  double & TotalErrorResidual,
                                  double & TotalErrorExactSol,
-                                 std::string &amgType
+				 std::string &amgType,
 				 std::string &solveType);
 
 

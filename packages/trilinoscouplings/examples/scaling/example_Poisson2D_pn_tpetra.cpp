@@ -448,6 +448,12 @@ int main(int argc, char *argv[]) {
   std::string matrixFilename;
   clp.setOption ("matrixFilename", &matrixFilename, "If nonempty, dump the "
 		  "generated matrix to that file in MatrixMarket format.");
+
+  // If coordsFilename is nonempty, dump the rhs to that file
+  // in MatrixMarket format.
+  std::string rhsFilename;
+  clp.setOption ("rhsFilename", &rhsFilename, "If nonempty, dump the "
+		  "generated rhs to that file in MatrixMarket format.");
   
   // If coordsFilename is nonempty, dump the coords to that file
   // in MatrixMarket format.
@@ -1398,6 +1404,9 @@ int main(int argc, char *argv[]) {
     typedef Tpetra::MatrixMarket::Writer<crs_matrix_type> writer_type;
     if (matrixFilename != "") {
       writer_type::writeSparseFile (matrixFilename, StiffMatrix);
+    }
+    if (rhsFilename != "") {
+      writer_type::writeDenseFile (rhsFilename, nCoord);
     }
     if (coordsFilename != "") {
       writer_type::writeDenseFile (coordsFilename, nCoord);
