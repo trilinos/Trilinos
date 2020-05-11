@@ -658,6 +658,11 @@ def run():
 
     parallel_level = compute_n()
 
+    if 'JENKINS_TEST_WEIGHT' in os.environ:
+        test_parallel_level = os.environ['JENKINS_TEST_WEIGHT']
+    else:
+        test_parallel_level = parallel_level
+
     build_name = generateBuildNameString(arguments)
 
     config_script = config_map[arguments.job_base_name]
@@ -672,6 +677,7 @@ def run():
                            '-Ddashboard_model=Experimental',
                            '-Ddashboard_track={}'.format(CDash_Track),
                            '-DPARALLEL_LEVEL={}'.format(parallel_level),
+                           '-DTEST_PARALLEL_LEVEL={}'.format(test_parallel_level),
                            '-Dbuild_dir={}/pull_request_test'.format(arguments.workspaceDir),
                            '-Dconfigure_script=' +
                                os.path.join(arguments.workspaceDir,
