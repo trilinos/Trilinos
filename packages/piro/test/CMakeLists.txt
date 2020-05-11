@@ -184,7 +184,7 @@ IF (Piro_ENABLE_NOX)
 	  input_problem1.xml input_problem2.xml input_coupled.xml
 	  input_problem1_sg.xml input_problem2_sg.xml input_coupled_sg.xml
 	  input_SGAnalysis.xml dakota_sg.in dakota_sg_target.txt
-          #input_Tempus_BackwardEuler_SinCos.xml 
+          input_Tempus_BackwardEuler_SinCos.xml 
     SOURCE_DIR   ${PACKAGE_SOURCE_DIR}/test
     SOURCE_PREFIX "_"
     EXEDEPS ${ThyraSolver_EXENAME} AnalysisDriver ${AnalysisDriverTpetra_EXENAME} UnitTests NOXSolver_UnitTests
@@ -246,15 +246,15 @@ IF (Piro_ENABLE_Tempus)
     NUM_MPI_PROCS 4
     STANDARD_PASS_OUTPUT
   )
-  #TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  #  TempusSolver_SensitivityUnitTestSinCos
-  #  SOURCES
-  #  Piro_TempusSolver_SensitivitySinCosTest.cpp
-  #  ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  #  Piro_Test_ThyraSupport.hpp
-  #  SinCosModel.cpp
-  #  SinCosModel.hpp
-  #  NUM_MPI_PROCS 1-4
-  #  STANDARD_PASS_OUTPUT
-  #)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    TempusSolver_SensitivityUnitTestSinCos
+    SOURCES
+    Piro_TempusSolver_SensitivitySinCosTest.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    Piro_Test_ThyraSupport.hpp
+    SinCosModel.cpp
+    SinCosModel.hpp
+    NUM_MPI_PROCS 1-4
+    STANDARD_PASS_OUTPUT
+  )
 ENDIF (Piro_ENABLE_Tempus)
