@@ -130,8 +130,13 @@ namespace MueLu {
     }
 
     parameterList_             = list;
-    std::string verbosityLevel = parameterList_.get<std::string>("verbosity", "medium");
+    std::string verbosityLevel = parameterList_.get<std::string>("verbosity", MasterList::getDefault<std::string>("verbosity"));
     VerboseObject::SetDefaultVerbLevel(toVerbLevel(verbosityLevel));
+    std::string outputFilename = parameterList_.get<std::string>("output filename", MasterList::getDefault<std::string>("output filename"));
+    if (outputFilename != "")
+      VerboseObject::SetMueLuOFileStream(outputFilename);
+    if (parameterList_.isType<Teuchos::RCP<Teuchos::FancyOStream> >("output stream"))
+      VerboseObject::SetMueLuOStream(parameterList_.get<Teuchos::RCP<Teuchos::FancyOStream> >("output stream"));
 
     if (parameterList_.get("print initial parameters",MasterList::getDefault<bool>("print initial parameters")))
       GetOStream(static_cast<MsgType>(Runtime1), 0) << parameterList_ << std::endl;

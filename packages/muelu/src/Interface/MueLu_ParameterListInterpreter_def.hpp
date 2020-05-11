@@ -328,6 +328,10 @@ namespace MueLu {
       VerboseObject::SetDefaultVerbLevel(this->verbosity_);
     }
 
+    MUELU_SET_VAR_2LIST(paramList, paramList, "output filename", std::string, outputFilename);
+    if (outputFilename != "")
+      VerboseObject::SetMueLuOFileStream(outputFilename);
+
     // Detect if we need to transfer coordinates to coarse levels. We do that iff
     //  - we use "distance laplacian" dropping on some level, or
     //  - we use a repartitioner on some level that needs coordinates
@@ -1962,6 +1966,9 @@ namespace MueLu {
         hieraList.remove("verbosity");
         this->verbosity_ = toVerbLevel(vl);
       }
+
+      if (hieraList.isParameter("output filename"))
+        VerboseObject::SetMueLuOFileStream(hieraList.get<std::string>("output filename"));
 
       if (hieraList.isParameter("dependencyOutputLevel"))
         this->graphOutputLevel_ = hieraList.get<int>("dependencyOutputLevel");

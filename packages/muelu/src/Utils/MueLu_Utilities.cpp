@@ -91,6 +91,7 @@ namespace MueLu {
 #ifdef HAVE_MUELU_INTREPID2 // For the IntrepidPCoarsenFactory
               || name == "pcoarsen: element to node map"
 #endif
+              || name == "output stream"
               )
           {
             nonSerialList.sublist(levelName).setEntry(name, it2->second);

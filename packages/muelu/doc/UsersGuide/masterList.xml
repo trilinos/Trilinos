@@ -26,6 +26,13 @@
     </parameter>
 
     <parameter>
+      <name>output filename</name>
+      <type>string</type>
+      <default>""</default>
+      <description>Write MueLu output to a file instead of std out. Empty value disables file output.</description>
+    </parameter>
+
+    <parameter>
       <name>number of equations</name>
       <type>int</type>
       <default>1</default>
