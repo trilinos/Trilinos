@@ -77,12 +77,30 @@ namespace Thyra {
 // Floating point tolerance
 const double tol = 1.0e-8;
 
-TEUCHOS_UNIT_TEST(Piro_TempusSolver, SinCos_ForwardSolutionSensitivity)
+void test_sincos_fsa(const bool use_combined_method,
+                     const bool use_dfdp_as_tangent,
+                     Teuchos::FancyOStream &out, bool &success)
 {
-  //IKT FIXME: the following 3 variables are hard-coded now.  Eventually, make them inputs.
-  const bool use_combined_method = false;  
-  const bool use_dfdp_as_tangent = false; 
-  const std::string sens_method = "Forward"; 
+  const std::string sens_method = "Forward";
+  std::string outfile_name; 
+  std::string errfile_name; 
+
+  if (use_combined_method == true) {
+    if (use_dfdp_as_tangent == true) {
+      outfile_name = "Tempus_BackwardEuler_SinCos_Sens_Combined_FSA_Tangent.dat"; 
+    }
+    else {
+      outfile_name = "Tempus_BackwardEuler_SinCos_Sens_Combined_FSA.dat"; 
+    }
+  }
+  else {
+    if (use_dfdp_as_tangent == true) {
+      outfile_name = "Tempus_BackwardEuler_SinCos_Sens_Staggered_FSA_Tangent.dat"; 
+    }
+    else {
+      outfile_name = "Tempus_BackwardEuler_SinCos_Sens_Staggered_FSA.dat"; 
+    }
+  }
 
   std::vector<double> StepSize;
   std::vector<double> ErrorNorm;
@@ -193,7 +211,7 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, SinCos_ForwardSolutionSensitivity)
     if (comm->getRank() == 0 && n == nTimeStepSizes-1) {
       typedef Thyra::DefaultMultiVectorProductVector<double> DMVPV;
 
-      std::ofstream ftmp("Tempus_BackwardEuler_SinCos_Sens.dat");
+      std::ofstream ftmp(outfile_name);
       RCP<const Tempus::SolutionHistory<double> > solutionHistory =
         integrator->getSolutionHistory();
       RCP< Thyra::MultiVectorBase<double> > DxDp_exact_plot =
@@ -260,7 +278,7 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, SinCos_ForwardSolutionSensitivity)
   TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.163653, 1.0e-4 );
 
   if (comm->getRank() == 0) {
-    std::ofstream ftmp("Tempus_BackwardEuler_SinCos_Sens-Error.dat");
+    std::ofstream ftmp(errfile_name);
     double error0 = 0.8*ErrorNorm[0];
     for (int n=0; n<nTimeStepSizes; n++) {
       ftmp << StepSize[n]  << "   " << ErrorNorm[n] << "   "
@@ -270,4 +288,25 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, SinCos_ForwardSolutionSensitivity)
   }
 
 }
+
+TEUCHOS_UNIT_TEST(Piro_TempusSolver, SinCos_Staggered_FSA)
+{
+  test_sincos_fsa(false, false, out, success);
+}
+
+TEUCHOS_UNIT_TEST(Piro_TempusSolver, SinCos_Staggered_FSA_Tangent)
+{
+  test_sincos_fsa(false, true, out, success);
+}
+
+TEUCHOS_UNIT_TEST(Piro_TempusSolver, SinCos_Combined_FSA)
+{
+  test_sincos_fsa(true, false, out, success);
+}
+
+TEUCHOS_UNIT_TEST(Piro_TempusSolver, SinCos_Combined_FSA_Tangent)
+{
+  test_sincos_fsa(true, true, out, success);
+}
+
 #endif /* HAVE_PIRO_TEMPUS */
