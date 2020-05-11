@@ -285,7 +285,7 @@ Piro::TempusIntegrator<Scalar>::initializeSolutionHistory(Scalar t0,
 #endif
   //IKT, Question: do forward and adjoint integrators need DxDp0, DxdotDp0, DxdotdotDp0??
   if (basicIntegrator_ != Teuchos::null) {
-    basicIntegrator_->initializeSolutionHistory(t0, x0, xdot0, xdotdot0, DxDp0, DxdotDp0, DxdotdotDp0); 
+    basicIntegrator_->initializeSolutionHistory(t0, x0, xdot0, xdotdot0); 
   }
   if (fwdSensIntegrator_ != Teuchos::null) {
     fwdSensIntegrator_->initializeSolutionHistory(t0, x0, xdot0, xdotdot0, DxDp0, DxdotDp0, DxdotdotDp0);

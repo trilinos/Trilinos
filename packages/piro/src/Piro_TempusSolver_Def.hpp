@@ -335,7 +335,6 @@ Piro::TempusSolver<Scalar>::TempusSolver(
 #ifdef DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  std::cout << "\n constructor1 IKT num_p_, num_g_ = " << num_p_ << ", " << num_g_ << "\n"; 
   if (fwdStateStepper_->getModel() != underlyingModel) {
     fwdStateStepper_->setModel(underlyingModel);
   }
@@ -371,7 +370,6 @@ Piro::TempusSolver<Scalar>::TempusSolver(
 #ifdef DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  std::cout << "\n constructor2 IKT num_p_, num_g_ = " << num_p_ << ", " << num_g_ << "\n"; 
   //IKT, 12/5/16: the following exception check is needed until setInitialCondition method
   //is added to the Tempus::IntegratorBasic class.
   if (initialTime > 0.0) {
