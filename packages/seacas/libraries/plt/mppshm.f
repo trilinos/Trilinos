@@ -69,8 +69,8 @@ C=======================================================================
       DO 2960 I = 1,193
          SVMAP(I,MAPDEP) = EQMAP(I)
  2960 CONTINUE
-      SVMAP(194,MAPDEP) = FLOAT(NCPLIN)
-      SVMAP(195,MAPDEP) = FLOAT(NCPLAN)
+      SVMAP(194,MAPDEP) = DBLE(NCPLIN)
+      SVMAP(195,MAPDEP) = DBLE(NCPLAN)
       RETURN
 
       END

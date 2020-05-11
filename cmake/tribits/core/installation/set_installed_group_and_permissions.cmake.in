@@ -1,0 +1,109 @@
+#!/bin/sh
+
+#
+# Configured inputs
+#
+
+# Base install dir and subdirs where last element in array gives CMAKE_INSTALL_PREFIX
+SET(projectInstallBaseDir "@PROJECT_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR@")
+SET(projectSubdirPathsArray "@PROJECT_SUBDIR_PATHS_ARRAY@")
+# Group and permissions
+SET(PROJECT_MAKE_INSTALL_GROUP "@PROJECT_MAKE_INSTALL_GROUP@")
+SET(PROJECT_MAKE_INSTALL_PERMS_CHANGE "@PROJECT_MAKE_INSTALL_PERMS_CHANGE@")
+
+#
+# Helper functions
+#
+
+SET(CHMOD_CHGRP_IDX 0)
+
+FUNCTION(ECHO_AND_RUN_CMND)
+  STRING(REPLACE ";" " " CMND_STR "${ARGN}")
+  MESSAGE(STATUS "${CHMOD_CHGRP_IDX}: Running: ${CMND_STR}")
+  EXECUTE_PROCESS(COMMAND ${ARGN} RESULT_VARIABLE RTN_CODE)
+  IF (NOT RTN_CODE EQUAL 0)
+    MESSAGE(SEND_ERROR "ERROR: Above command failed!")
+  ENDIF()
+ENDFUNCTION()
+
+FUNCTION(SET_DIR_OWNER_AND_PERMS  dirPath  recurseFlag)
+
+  EXECUTE_PROCESS(COMMAND stat -c %U "${dirPath}"
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    OUTPUT_VARIABLE  dirOwner)
+
+  IF (NOT "${dirOwner}" STREQUAL "${CURRENT_USER_RUNNING_INSTALL}")
+
+    MESSAGE(STATUS "${CHMOD_CHGRP_IDX}: NOTE: Not calling chgrp and chmod on ${dirPath} since owner '${dirOwner}' != current owner '${CURRENT_USER_RUNNING_INSTALL}'!")
+
+  ELSE()
+
+    IF (NOT "${PROJECT_MAKE_INSTALL_GROUP}" STREQUAL "")
+      ECHO_AND_RUN_CMND(
+        chgrp ${PROJECT_MAKE_INSTALL_GROUP} ${recurseFlag} "${dirPath}")
+    ENDIF()
+
+    IF (NOT "${PROJECT_MAKE_INSTALL_PERMS_CHANGE}" STREQUAL "")
+      ECHO_AND_RUN_CMND(
+        chmod ${PROJECT_MAKE_INSTALL_PERMS_CHANGE} ${recurseFlag} "${dirPath}")
+    ENDIF()
+
+  ENDIF()
+
+  MATH(EXPR CHMOD_CHGRP_IDX "${CHMOD_CHGRP_IDX}+1")
+  SET(CHMOD_CHGRP_IDX ${CHMOD_CHGRP_IDX} PARENT_SCOPE)
+
+ENDFUNCTION()
+
+#
+# Executable script
+#
+
+IF (EXISTS "${projectInstallBaseDir}")
+
+  EXECUTE_PROCESS(COMMAND whoami
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    OUTPUT_VARIABLE  CURRENT_USER_RUNNING_INSTALL)
+
+  LIST(LENGTH projectSubdirPathsArray numSubDirs)
+
+  # Get projectSubdirPathsArrayLessOne and CMAKE_INSTALL_PREFIX
+  SET(projectSubdirPathsArrayLessOne "${projectSubdirPathsArray}")
+  IF (numSubDirs GREATER 0)
+    LIST(REMOVE_AT projectSubdirPathsArrayLessOne -1)
+  ENDIF()
+
+  # Loop over base dirs and set group and permissions and set CMAKE_INSTALL_PREFIX
+  SET(dirPath "${projectInstallBaseDir}")
+  IF (numSubDirs EQUAL 0)
+    # The base dir is CMAKE_INSTALL_PREFIX
+    SET(CMAKE_INSTALL_PREFIX "${dirPath}")
+  ELSE()
+    # Non-recursive set of the group and permissions
+    SET_DIR_OWNER_AND_PERMS("${dirPath}" "")
+    FOREACH(subDirEle ${projectSubdirPathsArrayLessOne})
+      SET(dirPath "${dirPath}/${subDirEle}")
+      SET_DIR_OWNER_AND_PERMS("${dirPath}" "")
+    ENDFOREACH()
+    # Append last subdir which gives CMAKE_INSTALL_PREFIX
+    LIST(GET projectSubdirPathsArray -1 lastSubdir)
+    SET(CMAKE_INSTALL_PREFIX "${dirPath}/${lastSubdir}")
+ ENDIF()
+
+  # Recursive set of group and permsisions on CMAKE_INSTALL_PREFIX
+  SET_DIR_OWNER_AND_PERMS("${CMAKE_INSTALL_PREFIX}" "-R")
+
+ELSE()
+
+  MESSAGE(FATAL_ERROR
+    ""
+    "*** ERROR: The directory:"
+    "***"
+    "***   ${projectInstallBaseDir}"
+    "***"
+    "*** does not exist so can't fix group and permissions!"
+    "***"
+    ""
+    )
+
+ENDIF()

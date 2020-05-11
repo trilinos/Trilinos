@@ -40,7 +40,11 @@ using Tempus::StepperFactory;
 // ************************************************************
 TEUCHOS_UNIT_TEST(SDIRK_5Stage5thOrder, Default_Construction)
 {
-  testDIRKAccessorsFullConstruction("SDIRK 5 Stage 5th order");
+  auto stepper = rcp(new Tempus::StepperSDIRK_5Stage5thOrder<double>());
+  testDIRKAccessorsFullConstruction(stepper);
+
+  // Test stepper properties.
+  TEUCHOS_ASSERT(stepper->getOrder() == 5);
 }
 
 
@@ -69,7 +73,9 @@ TEUCHOS_UNIT_TEST(SDIRK_5Stage5thOrder, StageNumber)
 // ************************************************************
 TEUCHOS_UNIT_TEST(SDIRK_5Stage5thOrder, AppAction)
 {
-  testRKAppAction("SDIRK 5 Stage 5th order", out, success);
+  auto stepper = rcp(new Tempus::StepperSDIRK_5Stage5thOrder<double>());
+  auto model = rcp(new Tempus_Test::SinCosModel<double>());
+  testRKAppAction(stepper, model, out, success);
 }
 
 

@@ -661,10 +661,10 @@ namespace internal {
     Container &container_;
 
   protected:
-    void grow(std::size_t capacity) FMT_OVERRIDE
+    void grow(std::size_t pcapacity) FMT_OVERRIDE
     {
-      container_.resize(capacity);
-      this->set(&container_[0], capacity);
+      container_.resize(pcapacity);
+      this->set(&container_[0], pcapacity);
     }
 
   public:
@@ -1168,9 +1168,9 @@ public:
    Constructs a ``basic_format_context`` object. References to the arguments are
    stored in the object so make sure they have appropriate lifetimes.
    */
-  basic_format_context(OutputIt out, basic_format_args<basic_format_context> ctx_args,
+  basic_format_context(OutputIt p_out, basic_format_args<basic_format_context> ctx_args,
                        internal::locale_ref loc = internal::locale_ref())
-      : out_(out), args_(ctx_args), loc_(loc)
+      : out_(p_out), args_(ctx_args), loc_(loc)
   {
   }
 

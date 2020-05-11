@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -67,6 +67,9 @@ namespace Ioss {
 
     // Returns the names of all properties
     int describe(NameList *names) const;
+
+    // Returns the names of all properties or origin `origin`
+    int describe(Ioss::Property::Origin origin, NameList *names) const;
 
     size_t count() const;
 

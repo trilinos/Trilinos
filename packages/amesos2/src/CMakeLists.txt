@@ -444,17 +444,19 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_CUSOLVER)
-  APPEND_SET(HEADERS
-    Amesos2_cuSOLVER.hpp
-    Amesos2_cuSOLVER_decl.hpp
-    Amesos2_cuSOLVER_def.hpp
-    Amesos2_cuSOLVER_FunctionMap.hpp
-    Amesos2_cuSOLVER_TypeMap.hpp
-  )
+  IF (${PACKAGE_NAME}_ENABLE_CUSPARSE)
+    APPEND_SET(HEADERS
+      Amesos2_cuSOLVER.hpp
+      Amesos2_cuSOLVER_decl.hpp
+      Amesos2_cuSOLVER_def.hpp
+      Amesos2_cuSOLVER_FunctionMap.hpp
+      Amesos2_cuSOLVER_TypeMap.hpp
+    )
 
-  APPEND_SET(SOURCES
-    Amesos2_cuSOLVER.cpp
-  )
+    APPEND_SET(SOURCES
+      Amesos2_cuSOLVER.cpp
+    )
+  ENDIF()
 ENDIF()
 
 #

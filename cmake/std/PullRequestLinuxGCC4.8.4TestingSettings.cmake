@@ -30,6 +30,18 @@ set (ShyLU_DDFROSch_test_frosch_laplacian_epetra_2d_gdsw_MPI_4_DISABLE ON CACHE 
 set (ShyLU_DDFROSch_test_frosch_laplacian_epetra_2d_rgdsw_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
 set (ShyLU_DDFROSch_test_frosch_interfacesets_2D_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
 
+# Disable a single task scheduler test
+# According to #3276 and #7209, the openmp test only fails for the task scheduler. However, all tests for different 
+# execution space are also disabled as they share the same kokkos task scheduler code. The default task scheduler 
+# used in Tacho is Kokkos::TaskSchedulerMultiple and it is tested by PR tests.
+set (ShyLU_NodeTacho_Tacho_TestOpenMPDoubleTaskScheduler_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set (ShyLU_NodeTacho_Tacho_TestSerialDoubleTaskScheduler_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set (ShyLU_NodeTacho_Tacho_TestCudaDoubleTaskScheduler_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+
+set (ShyLU_NodeTacho_Tacho_TestOpenMPDoubleComplexTaskScheduler_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set (ShyLU_NodeTacho_Tacho_TestSerialDoubleComplexTaskScheduler_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set (ShyLU_NodeTacho_Tacho_TestCudaDoubleComplexTaskScheduler_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+
 # this build is different from the others in using static libraries
 set (BUILD_SHARED_LIBS OFF CACHE BOOL "Off by default for PR testing in GCC 4.8.4")
 

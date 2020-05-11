@@ -15,9 +15,8 @@ TRIBITS_ADD_EXECUTABLE(
 	NOEXEPREFIX
 	NOEXESUFFIX
 	SOURCES ${SOURCES}
+	INSTALLABLE
 )
-
-install_executable(aprepro)
 
 # Currently doesn't run on windows due to use of sed...
 if (${CMAKE_PROJECT_NAME}_ENABLE_TESTS)

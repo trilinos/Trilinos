@@ -65,7 +65,7 @@ C=======================================================================
       IF (LXSET('.',CH)) THEN
          IF (LXNUMB(FN,ND,CH)) THEN
             POSF = .TRUE.
-            PREDIG = PREDIG + FN*10.** (FLOAT(-ND))
+            PREDIG = PREDIG + FN*10.** (DBLE(-ND))
          END IF
 
       END IF

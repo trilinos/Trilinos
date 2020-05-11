@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2010, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -43,6 +43,8 @@
 #include <AdiosWrapper.h>
 
 namespace Ioss {
+  class Assembly;
+  class Blob;
   class GroupingEntity;
   class Region;
   class EntityBlock;
@@ -67,7 +69,7 @@ namespace Ioad {
     DatabaseIO(const DatabaseIO &from) = delete;
     DatabaseIO &operator=(const DatabaseIO &from) = delete;
 
-    const std::string get_format() const override {return "ADIOS2";}
+    const std::string get_format() const override { return "ADIOS2"; }
 
     bool begin__(Ioss::State state) override;
     bool end__(Ioss::State state) override;
@@ -88,6 +90,16 @@ namespace Ioad {
                                size_t data_size) const override;
     int64_t get_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field,
                                void *data, size_t data_size) const override
+    {
+      return -1;
+    }
+    int64_t get_field_internal(const Ioss::Assembly *sb, const Ioss::Field &field, void *data,
+                               size_t data_size) const override
+    {
+      return -1;
+    }
+    int64_t get_field_internal(const Ioss::Blob *sb, const Ioss::Field &field, void *data,
+                               size_t data_size) const override
     {
       return -1;
     }
@@ -138,6 +150,16 @@ namespace Ioad {
                                size_t data_size) const override;
     int64_t put_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field,
                                void *data, size_t data_size) const override
+    {
+      return -1;
+    }
+    int64_t put_field_internal(const Ioss::Assembly *sb, const Ioss::Field &field, void *data,
+                               size_t data_size) const override
+    {
+      return -1;
+    }
+    int64_t put_field_internal(const Ioss::Blob *sb, const Ioss::Field &field, void *data,
+                               size_t data_size) const override
     {
       return -1;
     }

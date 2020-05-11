@@ -1,4 +1,4 @@
-C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
+C Copyright(C) 2009-2017, 2020 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -47,10 +47,10 @@ C ... Saturation is used to pass in the minimum hue for some maps.
 
       ratio = (1.0 / huemin) ** (1.0 / (ncolors-1))
       do x = 0, ncolors-1
-        hue  = float(x) / float(ncolors)
+        hue  = dble(x) / dble(ncolors)
         ihue = int(ncolors*hue)
 C ... Linear hue map
-        hue  = float(ihue)/float(ncolors-1)
+        hue  = dble(ihue) / dble(ncolors-1)
         hue  = min(hue, 1.0)
 C ... Logarithmic hue map
         huel = huemin * ratio**x

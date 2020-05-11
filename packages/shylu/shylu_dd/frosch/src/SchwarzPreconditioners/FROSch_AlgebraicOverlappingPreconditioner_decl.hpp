@@ -46,7 +46,8 @@
 
 
 namespace FROSch {
-    
+
+    using namespace std;
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -96,7 +97,7 @@ namespace FROSch {
         virtual void describe(FancyOStream &out,
                               const EVerbosityLevel verbLevel=Describable::verbLevel_default) const;
 
-        virtual std::string description() const;
+        virtual string description() const;
 
         virtual int resetMatrix(ConstXMatrixPtr &k);
 

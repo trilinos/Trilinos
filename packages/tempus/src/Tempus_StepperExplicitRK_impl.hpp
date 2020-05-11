@@ -10,7 +10,6 @@
 #define Tempus_StepperExplicitRK_impl_hpp
 
 #include "Tempus_RKButcherTableau.hpp"
-#include "Tempus_StepperRKModifierDefault.hpp"
 
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Thyra_VectorStdOps.hpp"

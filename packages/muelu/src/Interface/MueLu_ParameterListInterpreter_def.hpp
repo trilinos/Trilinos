@@ -76,6 +76,7 @@
 #include "MueLu_GenericRFactory.hpp"
 #include "MueLu_LineDetectionFactory.hpp"
 #include "MueLu_MasterList.hpp"
+#include "MueLu_NotayAggregationFactory.hpp"
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_PatternFactory.hpp"
 #include "MueLu_PgPFactory.hpp"
@@ -904,7 +905,7 @@ namespace MueLu {
         "SPARSE BLOCK RELAXATION", "SPARSE_BLOCK_RELAXATION", "SPARSEBLOCKRELAXATION",
         "LINESMOOTHING_BANDEDRELAXATION", "LINESMOOTHING_BANDED_RELAXATION", "LINESMOOTHING_BANDED RELAXATION",
         "LINESMOOTHING_TRIDIRELAXATION", "LINESMOOTHING_TRIDI_RELAXATION", "LINESMOOTHING_TRIDI RELAXATION",
-        "LINESMOOTHING_TRIDIAGONALRELAXATION", "LINESMOOTHING_TRIDIAGONAL_RELAXATION", "LINESMOOTHING_TRIDIAGONAL RELAXATION",             
+        "LINESMOOTHING_TRIDIAGONALRELAXATION", "LINESMOOTHING_TRIDIAGONAL_RELAXATION", "LINESMOOTHING_TRIDIAGONAL RELAXATION",
         "TOPOLOGICAL", "FAST_ILU", "FAST_IC", "FAST_ILDL"}).count(coarseType)) {
         coarseSmoother = rcp(new TrilinosSmoother(coarseType, coarseParams, overlap));
       } else {
@@ -934,7 +935,7 @@ namespace MueLu {
 
     // Aggregation graph
     RCP<Factory> dropFactory;
-
+    
     if (MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "matlab")) {
 #ifdef HAVE_MUELU_MATLAB
       dropFactory = rcp(new SingleLevelMatlabFactory());
@@ -971,7 +972,7 @@ namespace MueLu {
 
     // Aggregation scheme
     MUELU_SET_VAR_2LIST(paramList, defaultList, "aggregation: type", std::string, aggType);
-    TEUCHOS_TEST_FOR_EXCEPTION(!strings({"uncoupled", "coupled", "brick", "matlab"}).count(aggType),
+    TEUCHOS_TEST_FOR_EXCEPTION(!strings({"uncoupled", "coupled", "brick", "matlab","notay"}).count(aggType),
         Exceptions::RuntimeError, "Unknown aggregation algorithm: \"" << aggType << "\". Please consult User's Guide.");
     #ifndef HAVE_MUELU_MATLAB
     if (aggType == "matlab")
@@ -996,6 +997,7 @@ namespace MueLu {
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 2a",           bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 2b",           bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 3",            bool, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: phase2a include root",      bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: preserve Dirichlet points", bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: error on nodes with no on-rank neighbors", bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: phase3 avoid singletons", bool, aggParams);
@@ -1015,6 +1017,9 @@ namespace MueLu {
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: brick x size", int, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: brick y size", int, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: brick z size", int, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: brick x Dirichlet", bool, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: brick y Dirichlet", bool, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: brick z Dirichlet", bool, aggParams);
       aggFactory->SetParameterList(aggParams);
 
       if (levelID > 1) {
@@ -1024,6 +1029,18 @@ namespace MueLu {
         aggFactory->SetFactory("Coordinates", this->GetFactoryManager(levelID-1)->GetFactory("Coordinates"));
       }
     }
+    else if (aggType == "notay") {
+      aggFactory = rcp(new NotayAggregationFactory());
+      ParameterList aggParams;
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: pairwise: size",             int, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: pairwise: tie threshold",    double, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: Dirichlet threshold",        double, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: ordering",                   std::string, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: compute aggregate qualities",bool, aggParams);
+      aggFactory->SetParameterList(aggParams);
+      aggFactory->SetFactory("DofsPerNode", manager.GetFactory("Graph"));
+      aggFactory->SetFactory("Graph", manager.GetFactory("Graph"));
+    }
 #ifdef HAVE_MUELU_MATLAB
     else if(aggType == "matlab") {
       ParameterList aggParams = paramList.sublist("aggregation: params");
@@ -1031,6 +1048,8 @@ namespace MueLu {
       aggFactory->SetParameterList(aggParams);
     }
 #endif
+
+
     manager.SetFactory("Aggregates", aggFactory);
 
     // Coarse map
@@ -1280,7 +1299,7 @@ namespace MueLu {
     // === Restriction: Nullspace Scaling ===
     if (paramList.isParameter("restriction: scale nullspace") && paramList.get<bool>("restriction: scale nullspace")) {
       RCP<TentativePFactory> tentPFactory = rcp(new TentativePFactory());
-      Teuchos::ParameterList tentPlist;  
+      Teuchos::ParameterList tentPlist;
       tentPlist.set("Nullspace name","Scaled Nullspace");
       tentPFactory->SetParameterList(tentPlist);
       tentPFactory->SetFactory("Aggregates",manager.GetFactory("Aggregates"));
@@ -1290,7 +1309,7 @@ namespace MueLu {
       R->SetFactory("P",tentPFactory);
     }
 
- 
+
   }
 
   // =====================================================================================================
@@ -1353,14 +1372,17 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(partName != "zoltan" && partName != "zoltan2", Exceptions::InvalidArgument,
                                  "Invalid partitioner name: \"" << partName << "\". Valid options: \"zoltan\", \"zoltan2\"");
 
-      bool switched = false;
-      (void)switched;
 #ifndef HAVE_MUELU_ZOLTAN
+      bool switched = false;
       if (partName == "zoltan") {
         this->GetOStream(Warnings0) << "Zoltan interface is not available, trying to switch to Zoltan2" << std::endl;
         partName = "zoltan2";
         switched = true;
       }
+#else
+# ifndef HAVE_MUELU_ZOLTAN2
+      bool switched = false;
+# endif
 #endif
 #ifndef HAVE_MUELU_ZOLTAN2
       if (partName == "zoltan2" && !switched) {
@@ -1416,7 +1438,7 @@ namespace MueLu {
         throw Exceptions::RuntimeError("Zoltan2 interface is not available");
 #endif
       }
-     
+
       partitioner->SetFactory("A",                    manager.GetFactory("A"));
       partitioner->SetFactory("number of partitions", manager.GetFactory("number of partitions"));
       if (useCoordinates_)

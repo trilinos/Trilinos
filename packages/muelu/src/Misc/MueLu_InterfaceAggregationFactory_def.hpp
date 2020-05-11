@@ -61,22 +61,12 @@ RCP<const ParameterList> InterfaceAggregationFactory<Scalar, LocalOrdinal, Globa
 {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-  validParamList->set<RCP<const FactoryBase>>("A", null, "Generating factory of A");
-  validParamList->set<RCP<const FactoryBase>>("Aggregates", null, "Generating factory of the Aggregates (for block 0,0)");
-  validParamList->set<RCP<const FactoryBase>>("DualNodeID2PrimalNodeID", null, "Generating factory of the DualNodeID2PrimalNodeID map");
+  validParamList->set<RCP<const FactoryBase>>("A", Teuchos::null, "Generating factory of A");
+  validParamList->set<RCP<const FactoryBase>>("Aggregates", Teuchos::null, "Generating factory of the Aggregates (for block 0,0)");
+  validParamList->set<RCP<const FactoryBase>>("DualNodeID2PrimalNodeID", Teuchos::null, "Generating factory of the DualNodeID2PrimalNodeID map");
 
   validParamList->set<LocalOrdinal>("number of DOFs per dual node", Teuchos::ScalarTraits<LocalOrdinal>::one(), "Number of DOFs per dual node");
 
-  /*
-    DualNodeID2PrimalNodeID represents the mapping between the Dual Node IDs to the Primal Node IDs.
-    This map makes one assumption: the number of dofs per dual node is a constant and has to be set in
-    the parameter list as "number of DOFs per dual node".
-
-    Layout of the std::map<key, value>:
-    - key: local ID of dual node
-    - value: local ID of primal node
-  */
-  validParamList->set<RCP<std::map<LocalOrdinal, LocalOrdinal>>>("DualNodeID2PrimalNodeID - level 0", null, "");
   return validParamList;
 }
 
@@ -86,7 +76,17 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Dec
   Input(currentLevel, "A");
   Input(currentLevel, "Aggregates");
 
-  if (currentLevel.GetLevelID() != 0)
+  if (currentLevel.GetLevelID() == 0)
+  {
+    if(currentLevel.IsAvailable("DualNodeID2PrimalNodeID", NoFactory::get())) {
+      currentLevel.DeclareInput("DualNodeID2PrimalNodeID", NoFactory::get(), this);
+    } else {
+      TEUCHOS_TEST_FOR_EXCEPTION(currentLevel.IsAvailable("DualNodeID2PrimalNodeID", NoFactory::get()),
+                                 Exceptions::RuntimeError,
+                                 "DualNodeID2PrimalNodeID was not provided by the user on level 0!");
+    }
+  }
+  else
   {
     Input(currentLevel, "DualNodeID2PrimalNodeID");
   }
@@ -114,15 +114,9 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
   RCP<Dual2Primal_type> lagr2dof;
 
   if (currentLevel.GetLevelID() == 0)
-  {
-    lagr2dof = pL.get<RCP<Dual2Primal_type>>("DualNodeID2PrimalNodeID - level 0");
-
-    TEUCHOS_TEST_FOR_EXCEPTION(lagr2dof.is_null(), std::runtime_error, prefix << " MueLu requires a provided DualNodeID2PrimalNodeID map on the finest level.");
-  }
+    lagr2dof = currentLevel.Get<RCP<Dual2Primal_type>>("DualNodeID2PrimalNodeID", NoFactory::get());
   else
-  {
     lagr2dof = Get<RCP<Dual2Primal_type>>(currentLevel, "DualNodeID2PrimalNodeID");
-  }
 
   const LocalOrdinal nDOFPerDualNode = pL.get<LocalOrdinal>("number of DOFs per dual node");
 

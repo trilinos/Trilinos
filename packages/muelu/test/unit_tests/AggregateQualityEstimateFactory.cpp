@@ -592,8 +592,8 @@ namespace MueLuTests {
 
 #define MUELU_ETI_GROUP(Scalar, LO, GO, Node)				\
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AggregateQualityEstimateFactory,Constructor,Scalar,LO,GO,Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AggregateQualityEstimateFactory,Poisson2D,Scalar,LO,GO,Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AggregateQualityEstimateFactory,AnisotropicDiffusion2D,Scalar,LO,GO,Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AggregateQualityEstimateFactory,Poisson2D,Scalar,LO,GO,Node)
+  //  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AggregateQualityEstimateFactory,AnisotropicDiffusion2D,Scalar,LO,GO,Node)
 
 
   //  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AggregateQualityEstimateFactory,ConvectionDiffusion2D,Scalar,LO,GO,Node) 

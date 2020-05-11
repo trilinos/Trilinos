@@ -44,15 +44,15 @@ if [ "$called" == "$0" ] ; then
 fi
 unset called
 
-# Assert that ATDM_CONFIG_BUILD_NAME is set!
 if [ -z "$ATDM_CONFIG_BUILD_NAME" ] ; then
   echo "Error, must set ATDM_CONFIG_BUILD_NAME in env!"
   return
 fi
 
-# Get ATDM_CONFIG_SCRIPT_DIR
 ATDM_UTILS_SCRIPT_DIR=`echo $BASH_SOURCE | sed "s/\(.*\)\/.*\.sh/\1/g"`
 export ATDM_CONFIG_SCRIPT_DIR=`readlink -f ${ATDM_UTILS_SCRIPT_DIR}/..`
+
+. ${ATDM_CONFIG_SCRIPT_DIR}/utils/define_atdm_match_keyword.sh
 
 echo "Setting compiler and build options for build-name '${ATDM_CONFIG_BUILD_NAME}'"
 
@@ -65,6 +65,11 @@ export ATDM_CONFIG_NODE_TYPE=SERIAL
 export ATDM_CONFIG_USE_OPENMP=OFF
 export ATDM_CONFIG_USE_CUDA=OFF
 export ATDM_CONFIG_USE_PTHREADS=OFF
+export ATDM_CONFIG_CUDA_RDC=OFF
+export ATDM_CONFIG_FPIC=OFF
+export ATDM_CONFIG_COMPLEX=OFF
+export ATDM_CONFIG_SHARED_LIBS=OFF
+export ATDM_CONFIG_PT_PACKAGES=OFF
 
 # Process system custom build logic
 export ATDM_CONFIG_CUSTOM_COMPILER_SET=0
@@ -76,64 +81,64 @@ fi
 # custom_builds.sh is supported below.  ToDo: Add support for customizing
 # other things as needed.
 
-# Set the compiler
+# Set ATDM_CONFIG_COMPILER
 if [[ "${ATDM_CONFIG_COMPILER}" != "DEFAULT" ]] ; then
   # Custom compile already set
   export ATDM_CONFIG_CUSTOM_COMPILER_SET=1
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"default" ]]; then
+elif atdm_match_buildname_keyword default; then
   export ATDM_CONFIG_COMPILER=DEFAULT
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-8.0"* ]]; then
+elif atdm_match_buildname_keyword cuda-8.0; then
   export ATDM_CONFIG_COMPILER=CUDA-8.0
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-9.0"* ]]; then
+elif atdm_match_buildname_keyword cuda-9.0; then
   export ATDM_CONFIG_COMPILER=CUDA-9.0
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-9.2-gnu-7.2.0"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-9.2_gnu-7.2.0"* ]]; then
+elif atdm_match_any_buildname_keyword cuda-9.2-gnu-7.2.0 cuda-9.2_gnu-7.2.0 \
+  ; then
   export ATDM_CONFIG_COMPILER=CUDA-9.2_GNU-7.2.0
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-9.2"* ]]; then
+elif atdm_match_buildname_keyword cuda-9.2; then
   export ATDM_CONFIG_COMPILER=CUDA-9.2
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.0-gnu-7.4.0"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.0_gnu-7.4.0"* ]]; then
+elif atdm_match_any_buildname_keyword cuda-10.0-gnu-7.4.0 cuda-10.0_gnu-7.4.0 \
+  ; then
   export ATDM_CONFIG_COMPILER=CUDA-10.0_GNU-7.4.0
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.1-gnu-7.2.0"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.1_gnu-7.2.0"* ]]; then
+elif atdm_match_any_buildname_keyword cuda-10.1-gnu-7.2.0 cuda-10.1_gnu-7.2.0 \
+  ; then
   export ATDM_CONFIG_COMPILER=CUDA-10.1_GNU-7.2.0
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.1"* ]]; then
+elif atdm_match_buildname_keyword cuda-10.1; then
   export ATDM_CONFIG_COMPILER=CUDA-10.1
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10"* ]]; then
+elif atdm_match_buildname_keyword cuda-10; then
   export ATDM_CONFIG_COMPILER=CUDA-10
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda"* ]]; then
+elif atdm_match_buildname_keyword cuda; then
   export ATDM_CONFIG_COMPILER=CUDA
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-4.8.4"* ]]; then
+elif atdm_match_buildname_keyword gnu-4.8.4; then
   export ATDM_CONFIG_COMPILER=GNU-4.8.4
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-4.9.3"* ]]; then
+elif atdm_match_buildname_keyword gnu-4.9.3; then
   export ATDM_CONFIG_COMPILER=GNU-4.9.3
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-6.1.0"* ]]; then
+elif atdm_match_buildname_keyword gnu-6.1.0; then
   export ATDM_CONFIG_COMPILER=GNU-6.1.0
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-7.2.0"* ]]; then
+elif atdm_match_buildname_keyword gnu-7.2.0; then
   export ATDM_CONFIG_COMPILER=GNU-7.2.0
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-7.4.0"* ]]; then
+elif atdm_match_buildname_keyword gnu-7.4.0; then
   export ATDM_CONFIG_COMPILER=GNU-7.4.0
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu"* ]]; then
+elif atdm_match_buildname_keyword gnu; then
   export ATDM_CONFIG_COMPILER=GNU
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"intel-17.0.1"* ]]; then
+elif atdm_match_buildname_keyword intel-17.0.1; then
  export ATDM_CONFIG_COMPILER=INTEL-17.0.1
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"intel-17"* ]]; then
+elif atdm_match_buildname_keyword intel-17; then
  export ATDM_CONFIG_COMPILER=INTEL-17.0.1
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"intel-18.0.2"* ]]; then
+elif atdm_match_buildname_keyword intel-18.0.2; then
  export ATDM_CONFIG_COMPILER=INTEL-18.0.2
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"intel-18.0.5"* ]]; then
+elif atdm_match_buildname_keyword intel-18.0.5; then
  export ATDM_CONFIG_COMPILER=INTEL-18.0.5
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"intel-18"* ]]; then
+elif atdm_match_buildname_keyword intel-18; then
  export ATDM_CONFIG_COMPILER=INTEL-18.0.5
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"intel"* ]]; then
+elif atdm_match_buildname_keyword intel; then
  export ATDM_CONFIG_COMPILER=INTEL
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"clang-3.9.0"* ]]; then
+elif atdm_match_buildname_keyword clang-3.9.0; then
   export ATDM_CONFIG_COMPILER=CLANG-3.9.0
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"clang-5.0.1"* ]]; then
+elif atdm_match_buildname_keyword clang-5.0.1; then
   export ATDM_CONFIG_COMPILER=CLANG-5.0.1
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"clang-7.0.1"* ]]; then
+elif atdm_match_buildname_keyword clang-7.0.1; then
   export ATDM_CONFIG_COMPILER=CLANG-7.0.1
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"clang"* ]]; then
+elif atdm_match_buildname_keyword clang; then
   export ATDM_CONFIG_COMPILER=CLANG
 else
   echo
@@ -145,99 +150,44 @@ fi
 # have the compiler keywords embedded in them.  For example we need to match
 # 'cuda-10.0-gnu-7.4.0' before we match 'gnu-7.4.0'.
 
-
-# Set the KOKKOS_ARCH
-if [[ $ATDM_CONFIG_BUILD_NAME == *"-AMDAVX"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=AMDAVX
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-ARMv8-ThunderX"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=ARMv8-ThunderX
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-ARMv80"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=ARMv80
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-ARMv81"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=ARMv81
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-BDW"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=BDW
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-BGQ"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=BGQ
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-HSW"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=HSW
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Kepler30"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=Kepler30
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Kepler32"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=Kepler32
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Kepler35"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=Kepler35
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Kepler37"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=Kepler37
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-KNC"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=KNC
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-KNL"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=KNL
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Maxwell50"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=Maxwell50
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Maxwell52"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=Maxwell52
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Maxwell53"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=Maxwell53
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Pascal60"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=Pascal60
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Pascal61"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=Pascal61
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Power7"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=Power7
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Power8"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=Power8
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Power9"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=Power9
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-SKX"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=SKX
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-SNB"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=SNB
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Volta70"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=Volta70
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Volta72"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=Volta72
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-WSM"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=WSM
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-TX2"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=ARMv8-TX2
-else
-  export ATDM_CONFIG_KOKKOS_ARCH=DEFAULT
-  if [[ $ATDM_CONFIG_VERBOSE == "1" ]] ; then
-    echo "No KOKKOS_ARCH specified so using system default"
+# Set ATDM_CONFIG_KOKKOS_ARCH
+export ATDM_CONFIG_KOKKOS_ARCH=DEFAULT
+. ${ATDM_UTILS_SCRIPT_DIR}/kokkos_arch_array.sh
+for kokkos_arch in ${kokkos_arch_array[@]} ; do
+  if atdm_match_buildname_keyword ${kokkos_arch}; then
+    export ATDM_CONFIG_KOKKOS_ARCH=${kokkos_arch}
+    break
   fi
-  # NOTE: <system_name>/environment.sh may set ATDM_CONFIG_KOKKOS_ARCH="" as
-  # an allowed value!
+done
+if   [[ $ATDM_CONFIG_KOKKOS_ARCH == "DEFAULT" ]] \
+  && [[ $ATDM_CONFIG_VERBOSE == "1" ]] \
+   ; then
+  echo "No KOKKOS_ARCH specified so using system default"
 fi
 
-# Set the optimization level
-# Defaults to debug
-if [[ $ATDM_CONFIG_BUILD_NAME == *"release-debug"* ]]; then
-  export ATDM_CONFIG_BUILD_TYPE=RELEASE-DEBUG;
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"release_debug"* ]]; then
-  export ATDM_CONFIG_BUILD_TYPE=RELEASE-DEBUG;
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"opt-dbg"* ]]; then
-  export ATDM_CONFIG_BUILD_TYPE=RELEASE-DEBUG;
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"opt_dbg"* ]]; then
-  export ATDM_CONFIG_BUILD_TYPE=RELEASE-DEBUG;
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"release"* ]]; then
-  export ATDM_CONFIG_BUILD_TYPE=RELEASE;
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"debug"* ]]; then
-  export ATDM_CONFIG_BUILD_TYPE=DEBUG;
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"opt"* ]]; then
-  export ATDM_CONFIG_BUILD_TYPE=RELEASE;
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"dbg"* ]]; then
-  export ATDM_CONFIG_BUILD_TYPE=DEBUG;
+# Set ATDM_CONFIG_BUILD_TYPE
+if atdm_match_any_buildname_keyword \
+    release-debug release_debug opt-dbg opt_dbg \
+  ; then
+  export ATDM_CONFIG_BUILD_TYPE=RELEASE-DEBUG
+elif atdm_match_any_buildname_keyword \
+  release opt \
+  ; then
+  export ATDM_CONFIG_BUILD_TYPE=RELEASE
+elif atdm_match_any_buildname_keyword \
+  debug dbg \
+  ; then
+  export ATDM_CONFIG_BUILD_TYPE=DEBUG
 fi
 
-# Set the node types default to serial
-export ATDM_CONFIG_NODE_TYPE=SERIAL
-if [[ $ATDM_CONFIG_BUILD_NAME == *"cuda"* ]]; then
+# Set the node type vars
+if   atdm_match_buildname_keyword cuda; then
   export ATDM_CONFIG_USE_CUDA=ON
   export ATDM_CONFIG_NODE_TYPE=CUDA
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"serial"* ]]; then
-  export ATDM_CONFIG_NODE_TYPE=SERIAL
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"pthread"* ]]; then
+elif atdm_match_buildname_keyword openmp; then
+  export ATDM_CONFIG_USE_OPENMP=ON
+  export ATDM_CONFIG_NODE_TYPE=OPENMP
+elif atdm_match_buildname_keyword pthread; then
   echo
   echo "***"
   echo "*** ERROR: The Kokkos Pthreads backend is no longer supported (see TRIL-272)!"
@@ -245,53 +195,38 @@ elif [[ $ATDM_CONFIG_BUILD_NAME == *"pthread"* ]]; then
   echo "***"
   echo
   return
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"openmp"* ]]; then
-  export ATDM_CONFIG_USE_OPENMP=ON
-  export ATDM_CONFIG_NODE_TYPE=OPENMP
+elif atdm_match_buildname_keyword serial; then
+  export ATDM_CONFIG_NODE_TYPE=SERIAL
 fi
-# NOTE: Above we move 'openmp' last to avoid clashing with 'openmpi' in the
-# build name!  So as long as the build name explicitly contains 'serial' or
-# 'cuda' or 'pthread', then that will be selected for the Kokkos backend.
-# Otherwise, if one fo these are not selected and 'openmpi' is present in the
-# build name, then the default Kokkos backend will become 'openmp'!
 
 # Use CUDA RDC or not
-export ATDM_CONFIG_CUDA_RDC=OFF
-if [[ $ATDM_CONFIG_BUILD_NAME == *"-no-rdc"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"_no-rdc"* ]]; then
+if   atdm_match_buildname_keyword no-rdc; then
   export ATDM_CONFIG_CUDA_RDC=OFF
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-rdc"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"_rdc"* ]]; then
+elif atdm_match_buildname_keyword rdc; then
   export ATDM_CONFIG_CUDA_RDC=ON
 fi
 
 # Use -fPIC or not
-export ATDM_CONFIG_FPIC=OFF
-if [[ $ATDM_CONFIG_BUILD_NAME == *"-fpic"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"_fpic"* ]]; then
+if atdm_match_buildname_keyword fpic; then
   export ATDM_CONFIG_FPIC=ON
 fi
 
 # Enable complex (double) data-types or not
-export ATDM_CONFIG_COMPLEX=OFF
-if [[ $ATDM_CONFIG_BUILD_NAME == *"no-complex"* ]]; then
+if atdm_match_buildname_keyword no-complex; then
   export ATDM_CONFIG_COMPLEX=OFF
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"complex"* ]]; then
+elif atdm_match_buildname_keyword complex; then
   export ATDM_CONFIG_COMPLEX=ON
 fi
 
 # Set 'static' or 'shared'
-export ATDM_CONFIG_SHARED_LIBS=OFF
-if [[ $ATDM_CONFIG_BUILD_NAME == *"shared"* ]]; then
+if atdm_match_buildname_keyword shared; then
   export ATDM_CONFIG_SHARED_LIBS=ON
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"static"* ]]; then
+elif atdm_match_buildname_keyword static; then
   export ATDM_CONFIG_SHARED_LIBS=OFF
 fi
 
 # Allow enable of all Primary Tested (pt) packages are not
-export ATDM_CONFIG_PT_PACKAGES=OFF
-if [[ $ATDM_CONFIG_BUILD_NAME == *"-pt" ]] || \
-  [[ $ATDM_CONFIG_BUILD_NAME == *"_pt" ]] ; then
+if atdm_match_buildname_keyword pt; then
   export ATDM_CONFIG_PT_PACKAGES=ON
 fi
 

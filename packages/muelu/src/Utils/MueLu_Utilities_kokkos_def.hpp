@@ -649,6 +649,8 @@ namespace MueLu {
     using local_graph_type  = typename local_matrix_type::staticcrsgraph_type;
     using lno_nnz_view_t    = typename local_graph_type::entries_type::non_const_type;
     using device            = typename local_graph_type::device_type;
+    using execution_space   = typename local_matrix_type::execution_space;
+    using ordinal_type      = typename local_matrix_type::ordinal_type;
 
     local_matrix_type localMatrix = Op.getLocalMatrix();
     using KernelHandle =  KokkosKernels::Experimental::KokkosKernelsHandle<typename local_graph_type::size_type, LocalOrdinal,Scalar,
@@ -662,9 +664,13 @@ namespace MueLu {
     RCP<Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > retval = 
       Xpetra::VectorFactory<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node>::Build(Op.getRowMap());
 
-    // Copy out data
+    // Copy out and reorder data
     auto view1D = Kokkos::subview(retval->template getLocalView<device>(),Kokkos::ALL (), 0);
-    Kokkos::deep_copy(view1D,rcmOrder);
+    Kokkos::parallel_for("Utilities_kokkos::ReverseCuthillMcKee",
+                         Kokkos::RangePolicy<ordinal_type, execution_space>(0, localMatrix.numRows()),
+                         KOKKOS_LAMBDA(const ordinal_type rowIdx) {
+                           view1D(rcmOrder(rowIdx)) = rowIdx;
+                         });
     return retval;
   }
   
@@ -674,6 +680,8 @@ namespace MueLu {
     using local_graph_type  = typename local_matrix_type::staticcrsgraph_type;
     using lno_nnz_view_t    = typename local_graph_type::entries_type::non_const_type;
     using device            = typename local_graph_type::device_type;
+    using execution_space   = typename local_matrix_type::execution_space;
+    using ordinal_type      = typename local_matrix_type::ordinal_type;
 
     local_matrix_type localMatrix = Op.getLocalMatrix();
     using KernelHandle =  KokkosKernels::Experimental::KokkosKernelsHandle<typename local_graph_type::size_type, LocalOrdinal,Scalar,
@@ -689,7 +697,11 @@ namespace MueLu {
 
     // Copy out data
     auto view1D = Kokkos::subview(retval->template getLocalView<device>(),Kokkos::ALL (), 0);
-    Kokkos::deep_copy(view1D,rcmOrder);
+    Kokkos::parallel_for("Utilities_kokkos::ReverseCuthillMcKee",
+                         Kokkos::RangePolicy<ordinal_type, execution_space>(0, localMatrix.numRows()),
+                         KOKKOS_LAMBDA(const ordinal_type rowIdx) {
+                           view1D(rcmOrder(rowIdx)) = rowIdx;
+                         });
     return retval;
   }
 

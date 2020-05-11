@@ -40,7 +40,11 @@ using Tempus::StepperFactory;
 // ************************************************************
 TEUCHOS_UNIT_TEST(DIRK_1Stage1stOrderRadauIA, Default_Construction)
 {
-  testDIRKAccessorsFullConstruction("RK Implicit 1 Stage 1st order Radau IA");
+  auto stepper = rcp(new Tempus::StepperDIRK_1Stage1stOrderRadauIA<double>());
+  testDIRKAccessorsFullConstruction(stepper);
+
+  // Test stepper properties.
+  TEUCHOS_ASSERT(stepper->getOrder() == 1);
 }
 
 
@@ -57,7 +61,9 @@ TEUCHOS_UNIT_TEST(DIRK_1Stage1stOrderRadauIA, StepperFactory_Construction)
 // ************************************************************
 TEUCHOS_UNIT_TEST(DIRK_1Stage1stOrderRadauIA, AppAction)
 {
-  testRKAppAction("RK Implicit 1 Stage 1st order Radau IA", out, success);
+  auto stepper = rcp(new Tempus::StepperDIRK_1Stage1stOrderRadauIA<double>());
+  auto model = rcp(new Tempus_Test::SinCosModel<double>());
+  testRKAppAction(stepper, model, out, success);
 }
 
 

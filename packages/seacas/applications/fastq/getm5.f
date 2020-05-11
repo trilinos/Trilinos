@@ -172,11 +172,11 @@ C
       D1 = SQRT((X(I2) - X(I1))**2 + (Y(I2) - Y(I1))**2)
       D2 = SQRT((X(I3) - X(I2))**2 + (Y(I3) - Y(I2))**2)
       D3 = SQRT((X(I1) - X(I3))**2 + (Y(I1) - Y(I3))**2)
-      D1A = FLOAT(M4B)*D1/FLOAT(M4)
+      D1A = DBLE(M4B)*D1/DBLE(M4)
       D1B = D1 - D1A
-      D2A = FLOAT(M1B)*D2/FLOAT(M1)
+      D2A = DBLE(M1B)*D2/DBLE(M1)
       D2B = D2 - D1A
-      D3A = FLOAT(M3B)*D3/FLOAT(M3)
+      D3A = DBLE(M3B)*D3/DBLE(M3)
       D3B = D3 - D3A
       XJ(1) = X(I1) + (X(I2) - X(I1))*D1A/D1
       YJ(1) = Y(I1) + (Y(I2) - Y(I1))*D1A/D1

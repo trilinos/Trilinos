@@ -278,9 +278,9 @@ C
       ELSE IF ((SCHSTR(J:J) .EQ. 'I') .OR.
      &   (SCHSTR(J:J) .EQ. 'i')) THEN
          IF (IISIGN .GE. 0) THEN
-            NIT = INT(FLOAT(NIT)*1.500 + 0.51)
+            NIT = INT(DBLE(NIT)*1.500 + 0.51)
          ELSE
-            NIT = INT(FLOAT(NIT)*.6667 + 0.51)
+            NIT = INT(DBLE(NIT)*.6667 + 0.51)
          END IF
          DOSMOO = .TRUE.
          WRITE(*, 10050) NIT

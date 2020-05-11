@@ -42,6 +42,7 @@
 */
 
 #include "Teuchos_UnitTestHarness.hpp"
+#include "Teuchos_Comm.hpp"
 #include "Tpetra_Core.hpp"
 #include "Tpetra_MatrixIO.hpp"
 #include "Tpetra_Map.hpp"
@@ -174,7 +175,7 @@ namespace {
   {
     // test bug where map test checks that maps are the same object, instead of checking that maps are equivalent
 
-    using std::endl;    
+    using std::endl;
     // mfh 06 Aug 2017: There was no obvious reason why this test
     // required LO=int and GO=int, nor did the original Bug 5129 bug
     // report depend on specific LO or GO types, so I relaxed this
@@ -188,7 +189,7 @@ namespace {
     // this still has to be bigger than LO
     typedef int GO;
 #endif // 1
-    
+
     RCP<const Comm<int> > comm = getDefaultComm();
     const bool verbose = Tpetra::Details::Behavior::verbose ();
     std::unique_ptr<std::string> prefix;
@@ -207,7 +208,7 @@ namespace {
       os << *prefix << "Create Maps" << endl;
       std::cerr << os.str ();
     }
-    
+
     RCP<const Map<LO,GO> > mapImportIn  = Tpetra::createUniformContigMap<LO,GO>(numGlobal, comm);
     RCP<const Map<LO,GO> > mapImportOut = Tpetra::createUniformContigMap<LO,GO>(numGlobal, comm);
     RCP<const Map<LO,GO> > mapIn        = Tpetra::createUniformContigMap<LO,GO>(numGlobal, comm);
@@ -245,6 +246,102 @@ namespace {
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
+
+  TEUCHOS_UNIT_TEST( DistObject, BlockedViews_7234 )
+  {
+    // Test that replicates Trilinos issue #7234 
+    // https://github.com/trilinos/Trilinos/issues/7234
+    // On CUDA platforms, subviews of Kokkos::DualView did not perform properly
+    // when pointing to the end of a DualView, as the shared Vector does
+    // below.  See Kokkos issues #2981 and #2979 for more details
+    // https://github.com/kokkos/kokkos/issues/2981
+    // https://github.com/kokkos/kokkos/issues/2979
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using namespace Tpetra;
+    using namespace Kokkos;
+    using GST = Tpetra::global_size_t;
+    using LO = int;
+    using GO = Tpetra::Map<>::global_ordinal_type;
+    using NodeType = Tpetra::Map<>::node_type;
+    using TpetraMap = Tpetra::Map<LO,GO,NodeType>;
+    using TpetraImport = Tpetra::Import<LO,GO,NodeType>;
+    using TpetraExport = Tpetra::Export<LO,GO,NodeType>;
+    using TpetraVec = Tpetra::Vector<double,LO,GO,NodeType>;
+
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+    const int rank = comm->getRank();
+    const int size = comm->getSize();
+
+    // Build the array: GIDs are BLOCKED - owned first, then shared
+    Teuchos::Array<GO> owned_gids;
+    Teuchos::Array<GO> shared_gids;
+    Teuchos::Array<GO> owned_and_shared_gids;
+    owned_gids.push_back(2*rank);
+    owned_gids.push_back(2*rank+1);
+    owned_and_shared_gids.push_back(2*rank);
+    owned_and_shared_gids.push_back(2*rank+1);
+    if (rank > 0) {
+      shared_gids.push_back(owned_gids[0]-1);
+      owned_and_shared_gids.push_back(shared_gids[0]);
+    }
+
+    out.setShowProcRank(true);
+    out.setOutputToRootOnly(rank);
+    out << "owned_map\n";
+    for (int i=0; i < owned_gids.size(); ++i)
+      out << i << " " << owned_gids[i] << std::endl;
+    out << "owned_and_shared_map\n";
+    for (int i=0; i < owned_and_shared_gids.size(); ++i)
+      out << i << " " << owned_and_shared_gids[i] << std::endl;
+    out.setOutputToRootOnly(0);
+
+    RCP<TpetraMap> owned_map = rcp(new TpetraMap(Teuchos::OrdinalTraits<GST>::invalid(),owned_gids,GO(0),comm));
+    RCP<TpetraMap> shared_map = rcp(new TpetraMap(Teuchos::OrdinalTraits<GST>::invalid(),shared_gids,GO(0),comm));
+    RCP<TpetraMap> owned_and_shared_map = rcp(new TpetraMap(Teuchos::OrdinalTraits<GST>::invalid(),owned_and_shared_gids,GO(0),comm));
+
+    bool zeroOut = true;
+    RCP<TpetraVec> owned_and_shared = rcp(new TpetraVec(owned_and_shared_map,zeroOut));
+    RCP<TpetraExport> exporter = rcp(new TpetraExport(shared_map,owned_map));
+    RCP<TpetraImport> importer = rcp(new TpetraImport(owned_map,shared_map));
+
+    // If we block the owned_and_shared, we can make the code much
+    // more efficient with subviews.
+    RCP<TpetraVec> owned = owned_and_shared->offsetViewNonConst(owned_map,0);
+    RCP<TpetraVec> shared = owned_and_shared->offsetViewNonConst(shared_map,owned->getLocalLength());
+
+    owned->putScalar(1.0);
+    shared->doImport(*owned, *importer, Tpetra::REPLACE);
+
+    shared->sync_host(); // sync device to host
+    auto host_shared = shared->getLocalViewHost();
+    const double tol = Teuchos::ScalarTraits<double>::eps() * 100.0;
+    if (rank > 0) {
+      TEST_FLOATING_EQUALITY(host_shared(0,0),1.0,tol);
+    }
+
+    owned->sync_host();
+    auto host_owned_and_shared = owned_and_shared->getLocalViewHost();
+    TEST_FLOATING_EQUALITY(host_owned_and_shared(0,0),1.0,tol);
+    TEST_FLOATING_EQUALITY(host_owned_and_shared(1,0),1.0,tol);
+    if (rank > 0) {
+      TEST_FLOATING_EQUALITY(host_owned_and_shared(2,0),1.0,tol);
+    }
+
+    // now test the export
+    owned->doExport(*shared, *exporter, Tpetra::ADD);
+
+    owned->sync_host(); // sync device to host
+    auto host_owned = owned->getLocalViewHost();
+    TEST_FLOATING_EQUALITY(host_owned(0,0),1.0,tol);
+    TEST_FLOATING_EQUALITY(host_owned_and_shared(0,0),1.0,tol); // check owned entries only
+    if (rank != size-1) {
+      TEST_FLOATING_EQUALITY(host_owned(1,0),2.0,tol);
+      TEST_FLOATING_EQUALITY(host_owned_and_shared(1,0),2.0,tol); // check owned entries only
+    }
+    else {
+      TEST_FLOATING_EQUALITY(host_owned(1,0),1.0,tol);
+      TEST_FLOATING_EQUALITY(host_owned_and_shared(1,0),1.0,tol); // check owned entries only
+    }
+  }
 }
-
-

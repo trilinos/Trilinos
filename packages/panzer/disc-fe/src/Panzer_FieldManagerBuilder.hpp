@@ -182,6 +182,9 @@ namespace panzer {
 
     void writeBCTextDependencyFiles(std::string filename_prefix) const;
 
+    //! Delete all volume field managers, retaining the BC ones.
+    void clearVolumeFieldManagers(bool clearVolumeWorksets = true);
+
   private:
     /** Build the BC field managers. This is the real deal, it correclty handles not having an equation set factory.
       */

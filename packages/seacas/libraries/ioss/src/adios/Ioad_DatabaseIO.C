@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2010, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -1328,7 +1328,7 @@ namespace Ioad {
     // // Also defines member variables of this class...
 
     if (nodeCount == 0) {
-      IOSS_WARNING << "No nodes were found in the model, file '" << decoded_filename() << "'\n";
+      Ioss::WARNING() << "No nodes were found in the model, file '" << decoded_filename() << "'\n";
     }
     else if (nodeCount < 0) {
       // NOTE: Code will not continue past this call...
@@ -1339,7 +1339,8 @@ namespace Ioad {
     }
 
     if (elementCount == 0) {
-      IOSS_WARNING << "No elements were found in the model, file: '" << decoded_filename() << "'\n";
+      Ioss::WARNING() << "No elements were found in the model, file: '" << decoded_filename()
+                      << "'\n";
     }
 
     if (elementCount < 0) {
@@ -1427,19 +1428,19 @@ namespace Ioad {
       IOSS_ERROR(errmsg);
     }
     else if (number_proc > number_proc_read) {
-      IOSS_WARNING << "This file was originally written on " << number_proc_read
-                   << " processors, but is now being read using " << number_proc
-                   << " processors.\n";
+      Ioss::WARNING() << "This file was originally written on " << number_proc_read
+                      << " processors, but is now being read using " << number_proc
+                      << " processors.\n";
     }
     if (rank < number_proc_read) {
       // Only get info for processors that actually have an id.
       unsigned long processor_id;
       get_data<unsigned long>(static_cast<void *>(&processor_id), Processor_id_meta);
       if (rank != processor_id) {
-        IOSS_WARNING << "This file was originally written on processor " << processor_id
-                     << ", but is now being read on processor " << rank
-                     << ". This may cause problems if there is any processor-dependent data on "
-                        "the file.\n";
+        Ioss::WARNING() << "This file was originally written on processor " << processor_id
+                        << ", but is now being read on processor " << rank
+                        << ". This may cause problems if there is any processor-dependent data on "
+                           "the file.\n";
       }
     }
   }
@@ -1621,7 +1622,7 @@ namespace Ioad {
         IOSS_ERROR(errmsg);
       }
       else {
-        IOSS_WARNING << "WARNING: The variable `" << encoded_name << "` was not found.\n";
+        Ioss::WARNING() << "The variable `" << encoded_name << "` was not found.\n";
       }
     }
   }

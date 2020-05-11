@@ -33,7 +33,7 @@
 #include <Ioss_DatabaseIO.h>    // for DatabaseIO
 #include <Ioss_ParallelUtils.h> // for ParallelUtils
 #include <Ioss_SerializeIO.h>
-#include <Ioss_Utils.h> // for IOSS_ERROR, IOSS_WARNING
+#include <Ioss_Utils.h> // for IOSS_ERROR, Ioss::WARNING()
 #include <fmt/ostream.h>
 #include <ostream> // for operator<<, etc
 #include <string>  // for char_traits
@@ -114,8 +114,8 @@ namespace Ioss {
   {
     IOSS_FUNC_ENTER(m_);
     if (s_rank != -1) {
-      fmt::print(IOSS_WARNING, "Mesh I/O serialization group factor cannot be changed "
-                               "once serialized I/O has begun");
+      fmt::print(Ioss::WARNING(), "Mesh I/O serialization group factor cannot be changed "
+                                  "once serialized I/O has begun");
     }
     else {
       s_groupFactor = factor;

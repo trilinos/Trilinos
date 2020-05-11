@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2010, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -63,36 +63,36 @@ namespace Ioad {
 
   void IOFactory::show_config() const
   {
-    fmt::print(stderr, "\tADIOS2 Library Version: {}.{}.{}\n", ADIOS2_VERSION_MAJOR,
+    fmt::print(Ioss::OUTPUT(), "\tADIOS2 Library Version: {}.{}.{}\n", ADIOS2_VERSION_MAJOR,
                ADIOS2_VERSION_MINOR, ADIOS2_VERSION_PATCH);
 #if defined(ADIOS2_HAVE_BZIP2)
-    fmt::print(stderr, "\t\tBZip2 (http://www.bzip.org/) compression enabled\n");
+    fmt::print(Ioss::OUTPUT(), "\t\tBZip2 (http://www.bzip.org/) compression enabled\n");
 #endif
 
 #if defined(ADIOS2_HAVE_ZFP)
-    fmt::print(stderr, "\t\tZFP (https://github.com/LLNL/zfp) compression enabled\n");
+    fmt::print(Ioss::OUTPUT(), "\t\tZFP (https://github.com/LLNL/zfp) compression enabled\n");
 #endif
 
 #if defined(ADIOS2_HAVE_SZ)
-    fmt::print(stderr, "\t\tSZ compression enabled\n");
+    fmt::print(Ioss::OUTPUT(), "\t\tSZ compression enabled\n");
 #endif
 
 #if defined(ADIOS2_HAVE_MPI)
-    fmt::print(stderr, "\t\tParallel (MPI) enabled\n");
+    fmt::print(Ioss::OUTPUT(), "\t\tParallel (MPI) enabled\n");
 #else
-    fmt::print(stderr, "\t\tParallel *NOT* enabled\n");
+    fmt::print(Ioss::OUTPUT(), "\t\tParallel *NOT* enabled\n");
 #endif
 
 #if defined(ADIOS2_HAVE_SST)
-    fmt::print(stderr, "\t\tStaging engine enabled\n");
+    fmt::print(Ioss::OUTPUT(), "\t\tStaging engine enabled\n");
 #else
-    fmt::print(stderr, "\t\tStaging engine *NOT* enabled\n");
+    fmt::print(Ioss::OUTPUT(), "\t\tStaging engine *NOT* enabled\n");
 #endif
 
 #if defined(ADIOS2_HAVE_HDF5)
-    fmt::print(stderr, "\t\tHDF5 (https://www.hdfgroup.org) engine enabled\n\n");
+    fmt::print(Ioss::OUTPUT(), "\t\tHDF5 (https://www.hdfgroup.org) engine enabled\n\n");
 #else
-    fmt::print(stderr, "\t\tHDF5 engine *NOT* enabled\n\n");
+    fmt::print(Ioss::OUTPUT(), "\t\tHDF5 engine *NOT* enabled\n\n");
 #endif
 
     /* #if defined(ADIOS2_HAVE_ZEROMQ) */

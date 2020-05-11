@@ -1,4 +1,4 @@
-C Copyright(C) 2011-2017 National Technology & Engineering Solutions of
+C Copyright(C) 2011-2017, 2020 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -90,14 +90,14 @@ C  SKIP CONTINUATION AND BOUNDARY LINES
          delmax = 0.0
          do 130 i=1, numnp
             if (.not. isbnd(i)) then
-               SUMX = xscr(i)/float(nscr(i))
-               SUMY = yscr(i)/float(nscr(i))
+               SUMX = xscr(i)/dble(nscr(i))
+               SUMY = yscr(i)/dble(nscr(i))
                XDEL = r0*(SUMX - X(i))
                YDEL = r0*(SUMY - Y(i))
                X(I) = X(I) + XDEL
                Y(I) = Y(I) + YDEL
                if (ndim .eq. 3) then
-                  sumz = zscr(i)/float(nscr(i))
+                  sumz = zscr(i)/dble(nscr(i))
                   zdel = r0*(sumz - z(i))
                   z(i) = z(i) + zdel
                else

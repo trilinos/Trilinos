@@ -70,6 +70,7 @@ project votd
     $(tpl-warnings)
     <include>$(seacas-root-inc)
     <address-model>64:<define>Build64
+    <architecture>power:<cxxflags>-Wno-psabi
   : usage-requirements
     <include>$(seacas-root-inc)
     <address-model>64:<define>Build64
@@ -118,6 +119,7 @@ local installed-end-user-files =
   txtexo
   io_shell
   io_info
+  io_modify
   shell_to_hex
   cth_pressure_map
   struc_to_unstruc
@@ -259,9 +261,6 @@ install install-user-lib
     mapvarlib
     aprepro_lib
     ioex
-    ioex_fac
-    iopx
-    iofx
     io_info_lib
     iocgns
     iopg
@@ -306,74 +305,18 @@ lib ioex
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-         [ glob $(seacas-root)/libraries/ioss/src/exodus/*.C ]
+         [ glob $(seacas-root)/libraries/ioss/src/exodus/*.[Cc] ]
     ]
     ioss
     exodus
     /tpl/netcdf//netcdf
+    /tpl/trilinos//zoltan
+    /tpl/parmetis//parmetis
   :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
         <file>$(seacas-root)/lib/libioex.a
-    ]
-  ;
-
-
-lib ioex_fac
-  :
-    [ ifdevbuild
-    # Any parameters within this 'ifdevbuild' block apply to development
-    # builds only and will not be present for user builds.
-         [ glob $(seacas-root)/libraries/ioss/src/exo_fac/*.C ]
-    ]
-    ioss
-    iopx
-    iofx
-  :
-    [ ifuserbuild
-    # Any parameters within this 'ifuserbuild' block apply to user
-    # builds only and will not be present for developer builds.
-        <file>$(seacas-root)/lib/libioex_fac.a
-    ]
-  ;
-
-
-lib iopx
-  :
-    [ ifdevbuild
-    # Any parameters within this 'ifdevbuild' block apply to development
-    # builds only and will not be present for user builds.
-        [ glob $(seacas-root)/libraries/ioss/src/exo_par/*.C ]
-    ]
-    ioex
-    /tpl/trilinos//zoltan
-    /tpl/parmetis//parmetis
-    exodus
-    /tpl/netcdf//netcdf
-  :
-    [ ifuserbuild
-    # Any parameters within this 'ifuserbuild' block apply to user
-    # builds only and will not be present for developer builds.
-        <file>$(seacas-root)/lib/libiopx.a
-    ]
-  ;
-
-lib iofx
-  :
-    [ ifdevbuild
-    # Any parameters within this 'ifdevbuild' block apply to development
-    # builds only and will not be present for user builds.
-        [ glob $(seacas-root)/libraries/ioss/src/exo_fpp/*.C ]
-    ]
-    ioex
-    exodus
-    /tpl/netcdf//netcdf
-  :
-    [ ifuserbuild
-    # Any parameters within this 'ifuserbuild' block apply to user
-    # builds only and will not be present for developer builds.
-        <file>$(seacas-root)/lib/libiofx.a
     ]
   ;
 
@@ -490,11 +433,8 @@ lib ioinit
     # builds only and will not be present for user builds.
         [ glob $(seacas-root)/libraries/ioss/src/init/*.C ]
     ]
-    ioex_fac
     iocgns
     ioex
-    iopx
-    iofx
     iopg
     iohb
     iogn
@@ -515,7 +455,7 @@ lib ioss
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-        [ glob $(seacas-root)/libraries/ioss/src/*.C ]
+        [ glob $(seacas-root)/libraries/ioss/src/*.[cC] ]
     ]
     /tpl/trilinos//zoltan
     /tpl/parmetis//parmetis
@@ -866,7 +806,9 @@ lib suplib_c
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-        [ glob $(seacas-root)/libraries/suplib_c/*.c ]
+    [ set.difference
+         [ glob $(seacas-root)/libraries/suplib_c/*.c ] :
+	        $(seacas-root)/libraries/suplib_c/XGetopt.c ]
     ]
   :
     [ ifdevbuild
@@ -1704,6 +1646,17 @@ exe io_info
   :
     $(seacas-root)/libraries/ioss/src/main/io_info_main.C
     io_info_lib
+    /mpi//mpi
+  :
+    <tag>@sierra-exec-tag
+  ;
+
+exe io_modify
+  :
+    $(seacas-root)/libraries/ioss/src/main/io_modify.C
+    $(seacas-root)/libraries/ioss/src/main/modify_interface.C
+    ioinit
+    ioex
     /mpi//mpi
   :
     <tag>@sierra-exec-tag

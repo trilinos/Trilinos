@@ -35,6 +35,7 @@
 
 #include <assert.h>
 #include <inttypes.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -125,7 +126,7 @@ void extract_connect(INT element_offset, INT num_elem, INT *elem_map, INT *conne
 void make_mesh(realtyp *x, realtyp *y, realtyp *z, INT *connect, INT map_origin,
                INT num_elements_1d);
 
-void parse_input(int argc, char *argv[], int *debug, INT *map_origin, INT *num_elements_1d,
+void parse_input(int argc, char *argv[], bool *debug, INT *map_origin, INT *num_elements_1d,
                  INT *num_domains, INT *num_nodal_fields, INT *num_global_fields,
                  INT *num_element_fields, INT *num_timesteps, char *file_name, int *exodus,
                  int *compression_level, int *shuffle, int *int64bit);
@@ -149,10 +150,10 @@ INT bin_search2(INT value, INT num, INT List[]);
 int main(int argc, char *argv[])
 {
   INT *connect;
-  int  debug = EX_FALSE; /* EX_TRUE, display debug information; EX_FALSE       */
+  bool debug = false; /* true, display debug information; false       */
   /* otherwise.                                 */
   static char file_name[MAX_STRING_LEN] = DEFAULT_FILE_NAME;
-  int         exodus                    = EX_TRUE;
+  int         exodus                    = true;
   INT         map_origin                = DEFAULT_MAP_ORIGIN;
   INT         num_domains               = DEFAULT_NUM_DOMAINS;
   INT         num_elements_1d;
@@ -217,7 +218,7 @@ int main(int argc, char *argv[])
 
 /***********************************************************************
  ***********************************************************************/
-void parse_input(int argc, char *argv[], int *debug, INT *map_origin, INT *num_elements_1d,
+void parse_input(int argc, char *argv[], bool *debug, INT *map_origin, INT *num_elements_1d,
                  INT *num_domains, INT *num_nodal_fields, INT *num_global_fields,
                  INT *num_element_fields, INT *num_timesteps, char *file_name, int *exodus,
                  int *compression_level, int *shuffle, int *int64bit)
@@ -262,7 +263,7 @@ void parse_input(int argc, char *argv[], int *debug, INT *map_origin, INT *num_e
       }
     }
     else if (strcmp("-d", argv[arg]) == 0) {
-      *debug = EX_TRUE;
+      *debug = true;
     }
     else if (strcmp("-f", argv[arg]) == 0) {
       if (++arg < argc) {
@@ -285,7 +286,7 @@ void parse_input(int argc, char *argv[], int *debug, INT *map_origin, INT *num_e
       }
     }
     else if (strcmp("-x", argv[arg]) == 0) {
-      *exodus = EX_TRUE;
+      *exodus = true;
     }
     else if ((strcmp("-h", argv[arg]) == 0) || (strcmp("-u", argv[arg]) == 0)) {
       printf("                                                                \n");
@@ -557,7 +558,7 @@ void write_exo_mesh(int debug, char *file_name, INT map_origin, INT num_nodes, I
       char *names[1] = {"hex"};
       INT   num_node_per_elem[1];
       INT   num_attr_per_block[1];
-      int   write_map       = num_domains > 1 ? EX_TRUE : EX_FALSE;
+      bool  write_map       = num_domains > 1 ? true : false;
       num_elem_per_block[0] = loc_num_elements;
       num_node_per_elem[0]  = NUM_NODES_PER_ELEM;
       num_attr_per_block[0] = 0;
