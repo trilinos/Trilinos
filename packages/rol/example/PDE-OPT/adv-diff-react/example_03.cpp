@@ -57,11 +57,11 @@
 #include <algorithm>
 //#include <fenv.h>
 
-#include "ROL_Algorithm.hpp"
+#include "ROL_NewOptimizationSolver.hpp"
 #include "ROL_Bounds.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
-#include "ROL_OptimizationProblem.hpp"
+#include "ROL_StochasticProblem.hpp"
 #include "ROL_TpetraTeuchosBatchManager.hpp"
 
 #include "../TOOLS/meshmanager.hpp"
@@ -212,8 +212,8 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** SOLVE OPTIMIZATION PROBLEM ****************************/
     /*************************************************************************/
-    ROL::Ptr<ROL::OptimizationProblem<RealT> > opt;
-    ROL::Ptr<ROL::Algorithm<RealT> > algo;
+    ROL::Ptr<ROL::StochasticProblem<RealT>> opt;
+    ROL::Ptr<ROL::NewOptimizationSolver<RealT>> solver;
     zp->zero();
 
     int nQuad = 11, nSmooth = 1, N(2);
@@ -226,31 +226,33 @@ int main(int argc, char *argv[]) {
     std::string rm = "Risk Measure", sr = "Spectral Risk";
     std::string dist = "Distribution", pf = "Plus Function";
     parlist->sublist("SOL").set("Type","Risk Averse");
-    parlist->sublist("SOL").sublist(rm).set("Name",sr);
-    parlist->sublist("SOL").sublist(rm).sublist(sr).set("Print Quadrature to Screen",!myRank);
-    parlist->sublist("SOL").sublist(rm).sublist(sr).sublist(dist).set("Name","Beta");
-    parlist->sublist("SOL").sublist(rm).sublist(sr).sublist(dist).sublist("Beta").set("Shape 1",5.0);
-    parlist->sublist("SOL").sublist(rm).sublist(sr).sublist(dist).sublist("Beta").set("Shape 2",2.0);
-    parlist->sublist("SOL").sublist(rm).sublist(sr).sublist(pf).sublist(dist).set("Name","Parabolic");
-    parlist->sublist("SOL").sublist(rm).sublist(sr).sublist(pf).sublist(dist).sublist("Parabolic").set("Lower Bound",-0.5);
-    parlist->sublist("SOL").sublist(rm).sublist(sr).sublist(pf).sublist(dist).sublist("Parabolic").set("Upper Bound", 0.5);
+    parlist->sublist("SOL").sublist("Objective").sublist(rm).set("Name",sr);
+    parlist->sublist("SOL").sublist("Objective").sublist(rm).sublist(sr).set("Print Quadrature to Screen",!myRank);
+    parlist->sublist("SOL").sublist("Objective").sublist(rm).sublist(sr).sublist(dist).set("Name","Beta");
+    parlist->sublist("SOL").sublist("Objective").sublist(rm).sublist(sr).sublist(dist).sublist("Beta").set("Shape 1",5.0);
+    parlist->sublist("SOL").sublist("Objective").sublist(rm).sublist(sr).sublist(dist).sublist("Beta").set("Shape 2",2.0);
+    parlist->sublist("SOL").sublist("Objective").sublist(rm).sublist(sr).sublist(pf).sublist(dist).set("Name","Parabolic");
+    parlist->sublist("SOL").sublist("Objective").sublist(rm).sublist(sr).sublist(pf).sublist(dist).sublist("Parabolic").set("Lower Bound",-0.5);
+    parlist->sublist("SOL").sublist("Objective").sublist(rm).sublist(sr).sublist(pf).sublist(dist).sublist("Parabolic").set("Upper Bound", 0.5);
     
     for (int i = 0; i < nQuad; ++i) {
       eps = eps0;
-      parlist->sublist("SOL").sublist(rm).sublist(sr).set("Number of Quadrature Points",N);
+      parlist->sublist("SOL").sublist("Objective").sublist(rm).sublist(sr).set("Number of Quadrature Points",N);
       for (int j = 0; j < nSmooth; ++j) {
-        parlist->sublist("SOL").sublist(rm).sublist(sr).sublist(pf).set("Smoothing Parameter",eps);
+        parlist->sublist("SOL").sublist("Objective").sublist(rm).sublist(sr).sublist(pf).set("Smoothing Parameter",eps);
         // Build stochastic optimization problem
-        opt = ROL::makePtr<ROL::OptimizationProblem<RealT>>(objReduced,zp,bnd);
-        parlist->sublist("SOL").set("Initial Statisitic", stat);
-        opt->setStochasticObjective(*parlist,sampler);
-        if (checkDeriv) {
-          opt->check(*outStream);
-        }
+        opt = ROL::makePtr<ROL::StochasticProblem<RealT>>(objReduced,zp);
+        opt->addBoundConstraint(bnd);
+        parlist->sublist("SOL").sublist("Objective").set("Initial Statisitic", stat);
+        opt->makeObjectiveStochastic(*parlist,sampler);
+        opt->finalize(false,true,*outStream);
+        if (checkDeriv) opt->check(true,*outStream);
         // Solve optimization problem
-        algo = ROL::makePtr<ROL::Algorithm<RealT>>("Trust Region",*parlist,false);
+        ROL::Ptr<ROL::NewOptimizationProblem<RealT>>
+          optnew = ROL::dynamicPtrCast<ROL::NewOptimizationProblem<RealT>>(opt);
+        solver = ROL::makePtr<ROL::NewOptimizationSolver<RealT>>(optnew,*parlist);
         std::clock_t timer = std::clock();
-        algo->run(*opt,true,*outStream);
+        solver->solve(*outStream);
         *outStream << "Optimization time: "
                    << static_cast<RealT>(std::clock()-timer)/static_cast<RealT>(CLOCKS_PER_SEC)
                    << " seconds." << std::endl << std::endl;

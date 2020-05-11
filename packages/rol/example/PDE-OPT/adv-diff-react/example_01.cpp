@@ -57,7 +57,8 @@
 #include "ROL_Algorithm.hpp"
 #include "ROL_TpetraMultiVector.hpp"
 #include "ROL_StdVector.hpp"
-#include "ROL_OptimizationProblem.hpp"
+#include "ROL_StochasticProblem.hpp"
+#include "ROL_NewOptimizationSolver.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_StdTeuchosBatchManager.hpp"
 #include "ROL_TpetraTeuchosBatchManager.hpp"
@@ -180,17 +181,21 @@ int main(int argc, char *argv[]) {
     int sdim  = 37;
     int nsamp = parlist->sublist("Problem").get("Number of Samples",100);
     std::vector<RealT> tmp = {-one, one};
-    std::vector<std::vector<RealT> > bounds(sdim,tmp);
-    ROL::Ptr<ROL::BatchManager<RealT> > bman
+    std::vector<std::vector<RealT>> bounds(sdim,tmp);
+    ROL::Ptr<ROL::BatchManager<RealT>> bman
       = ROL::makePtr<ROL::StdTeuchosBatchManager<RealT,int>>(comm);
       //= ROL::makePtr<ROL::TpetraTeuchosBatchManager<RealT>>(comm);
       //= ROL::makePtr<ROL::BatchManager<RealT>>();
-    ROL::Ptr<ROL::SampleGenerator<RealT> > sampler
+    ROL::Ptr<ROL::SampleGenerator<RealT>> sampler
       = ROL::makePtr<ROL::MonteCarloGenerator<RealT>>(nsamp,bounds,bman);
     // Build stochastic problem
-    ROL::OptimizationProblem<RealT> opt(objReduced,zp,bnd);
-    parlist->sublist("SOL").set("Initial Statistic",zero);
-    opt.setStochasticObjective(*parlist,sampler);
+    ROL::Ptr<ROL::StochasticProblem<RealT>>
+      opt = ROL::makePtr<ROL::StochasticProblem<RealT>>(objReduced,zp);
+    ROL::Ptr<ROL::NewOptimizationProblem<RealT>>
+      optnew = ROL::dynamicPtrCast<ROL::NewOptimizationProblem<RealT>>(opt);
+    opt->addBoundConstraint(bnd);
+    parlist->sublist("SOL").sublist("Objective").set("Initial Statistic",zero);
+    opt->makeObjectiveStochastic(*parlist,sampler);
 
     bool printMeanValueState = parlist->sublist("Problem").get("Print Mean Value State",false);
     if ( printMeanValueState ) {
@@ -223,21 +228,17 @@ int main(int argc, char *argv[]) {
       con->checkInverseAdjointJacobian_1(*up,*up,*up,*zp,true,*outStream);
       objReduced->checkGradient(*zp,*dzp,true,*outStream);
       objReduced->checkHessVec(*zp,*dzp,true,*outStream);
-      opt.check(*outStream);
+      opt->check(true,*outStream);
     }
 
     /*** Solve optimization problem. ***/
-    ROL::Ptr<ROL::Algorithm<RealT> > algo;
     bool useBundle = parlist->sublist("Problem").get("Is problem nonsmooth?",false);
-    if ( useBundle ) {
-      algo = ROL::makePtr<ROL::Algorithm<RealT>>("Bundle",*parlist,false);
-    }
-    else {
-      algo = ROL::makePtr<ROL::Algorithm<RealT>>("Trust Region",*parlist,false);
-    }
+    if ( useBundle ) parlist.sublist("Step").set("Type","Bundle");
+    else             parlist.sublist("Step").set("Type","Trust Region");{
+    ROL::NewOptimizationSolver<RealT> solver(optnew,*parlist);
     zp->zero(); // set zero initial guess
     std::clock_t timer = std::clock();
-    algo->run(opt,true,*outStream);
+    solver.solve(*outStream);
     *outStream << "Optimization time: "
                << static_cast<RealT>(std::clock()-timer)/static_cast<RealT>(CLOCKS_PER_SEC)
                << " seconds." << std::endl;

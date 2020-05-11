@@ -60,8 +60,8 @@
 #include "ROL_Bounds.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
-#include "ROL_OptimizationProblem.hpp"
-#include "ROL_OptimizationSolver.hpp"
+#include "ROL_StochasticProblem.hpp"
+#include "ROL_NewOptimizationSolver.hpp"
 #include "ROL_TpetraTeuchosBatchManager.hpp"
 
 #include "../TOOLS/meshmanager.hpp"
@@ -269,11 +269,12 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** SOLVE OPTIMIZATION PROBLEM ****************************/
     /*************************************************************************/
-    ROL::Ptr<ROL::OptimizationProblem<RealT>> opt;
-    ROL::Ptr<ROL::OptimizationSolver<RealT>>  solver;
+    ROL::Ptr<ROL::StochasticProblem<RealT>> opt;
+    ROL::Ptr<ROL::NewOptimizationSolver<RealT>>  solver;
 
     const int nruns = 7;
     bool checkDeriv = parlist->sublist("Problem").get("Check Derivatives",false);
+    bool outputSol  = parlist->sublist("Problem").get("Output Solution",false);
 
     // Run names
     std::vector<std::string> nvec = {"MV","RN","CVaR","MCVaR","ER","BP","KL"};
@@ -281,65 +282,68 @@ int main(int argc, char *argv[]) {
     // Parameter lists
     std::vector<Teuchos::ParameterList> plvec(7,*parlist);
     // Mean value
-    plvec[0].sublist("SOL").set("Type", "Mean Value");
+    plvec[0].sublist("SOL").sublist("Objective").set("Type", "Mean Value");
     // Risk neutral
-    plvec[1].sublist("SOL").set("Type", "Risk Neutral");
+    plvec[1].sublist("SOL").sublist("Objective").set("Type", "Risk Neutral");
     // CVaR
-    plvec[2].sublist("SOL").set("Type", "Risk Averse");
-    plvec[2].sublist("SOL").sublist("Risk Measure").set("Name","CVaR");
-    plvec[2].sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Confidence Level", 0.95);
-    plvec[2].sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Convex Combination Parameter", 0.0);
-    plvec[2].sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Smoothing Parameter", 1e-4);
-    plvec[2].sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").set("Name", "Parabolic");
-    plvec[2].sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").sublist("Parabolic").set("Lower Bound", 0.0);
-    plvec[2].sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").sublist("Parabolic").set("Upper Bound", 1.0);
+    plvec[2].sublist("SOL").sublist("Objective").set("Type", "Risk Averse");
+    plvec[2].sublist("SOL").sublist("Objective").sublist("Risk Measure").set("Name","CVaR");
+    plvec[2].sublist("SOL").sublist("Objective").sublist("Risk Measure").sublist("CVaR").set("Confidence Level", 0.95);
+    plvec[2].sublist("SOL").sublist("Objective").sublist("Risk Measure").sublist("CVaR").set("Convex Combination Parameter", 1.0);
+    plvec[2].sublist("SOL").sublist("Objective").sublist("Risk Measure").sublist("CVaR").set("Smoothing Parameter", 1e-4);
+    plvec[2].sublist("SOL").sublist("Objective").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").set("Name", "Parabolic");
+    plvec[2].sublist("SOL").sublist("Objective").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").sublist("Parabolic").set("Lower Bound", 0.0);
+    plvec[2].sublist("SOL").sublist("Objective").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").sublist("Parabolic").set("Upper Bound", 1.0);
     // Mixture of expectation and CVaR
-    plvec[3].sublist("SOL").set("Type", "Risk Averse");
-    plvec[3].sublist("SOL").sublist("Risk Measure").set("Name","CVaR");
-    plvec[3].sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Confidence Level", 0.95);
-    plvec[3].sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Convex Combination Parameter", 0.5);
-    plvec[3].sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Smoothing Parameter", 1e-4);
-    plvec[3].sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").set("Name", "Parabolic");
-    plvec[3].sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").sublist("Parabolic").set("Lower Bound", 0.0);
-    plvec[3].sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").sublist("Parabolic").set("Upper Bound", 1.0);
+    plvec[3].sublist("SOL").sublist("Objective").set("Type", "Risk Averse");
+    plvec[3].sublist("SOL").sublist("Objective").sublist("Risk Measure").set("Name","CVaR");
+    plvec[3].sublist("SOL").sublist("Objective").sublist("Risk Measure").sublist("CVaR").set("Confidence Level", 0.95);
+    plvec[3].sublist("SOL").sublist("Objective").sublist("Risk Measure").sublist("CVaR").set("Convex Combination Parameter", 0.5);
+    plvec[3].sublist("SOL").sublist("Objective").sublist("Risk Measure").sublist("CVaR").set("Smoothing Parameter", 1e-4);
+    plvec[3].sublist("SOL").sublist("Objective").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").set("Name", "Parabolic");
+    plvec[3].sublist("SOL").sublist("Objective").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").sublist("Parabolic").set("Lower Bound", 0.0);
+    plvec[3].sublist("SOL").sublist("Objective").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").sublist("Parabolic").set("Upper Bound", 1.0);
     // Entropic risk
-    plvec[4].sublist("SOL").set("Type", "Risk Averse");
-    plvec[4].sublist("SOL").sublist("Risk Measure").set("Name","Entropic Risk");
-    plvec[4].sublist("SOL").sublist("Risk Measure").sublist("Entropic Risk").set("Rate", 1.0);
+    plvec[4].sublist("SOL").sublist("Objective").set("Type", "Risk Averse");
+    plvec[4].sublist("SOL").sublist("Objective").sublist("Risk Measure").set("Name","Entropic Risk");
+    plvec[4].sublist("SOL").sublist("Objective").sublist("Risk Measure").sublist("Entropic Risk").set("Rate", 1.0);
     // bPOE
-    plvec[5].sublist("SOL").set("Type", "Probability");
-    plvec[5].sublist("SOL").sublist("Probability").set("Name","bPOE");
-    plvec[5].sublist("SOL").sublist("Probability").sublist("bPOE").set("Moment Order", 2.0);
-    plvec[5].sublist("SOL").sublist("Probability").sublist("bPOE").set("Threshold", 6.0);
+    plvec[5].sublist("SOL").sublist("Objective").set("Type", "Probability");
+    plvec[5].sublist("SOL").sublist("Objective").sublist("Probability").set("Name","bPOE");
+    plvec[5].sublist("SOL").sublist("Objective").sublist("Probability").sublist("bPOE").set("Moment Order", 2.0);
+    plvec[5].sublist("SOL").sublist("Objective").sublist("Probability").sublist("bPOE").set("Threshold", 6.0);
     // KL-divergence distributionally robust optimization
-    plvec[6].sublist("SOL").set("Type", "Risk Averse");
-    plvec[6].sublist("SOL").sublist("Risk Measure").set("Name","KL Divergence");
-    plvec[6].sublist("SOL").sublist("Risk Measure").sublist("KL Divergence").set("Threshold", 0.1);
+    plvec[6].sublist("SOL").sublist("Objective").set("Type", "Risk Averse");
+    plvec[6].sublist("SOL").sublist("Objective").sublist("Risk Measure").set("Name","KL Divergence");
+    plvec[6].sublist("SOL").sublist("Objective").sublist("Risk Measure").sublist("KL Divergence").set("Threshold", 0.1);
     
     RealT stat(1);
     for (int i = 0; i < nruns; ++i) {
       //zp->zero();
 
       // Build stochastic optimization problem
-      opt = ROL::makePtr<ROL::OptimizationProblem<RealT>>(objReduced,zp,bnd);
-      plvec[i].sublist("SOL").set("Initial Statistic", stat);
-      opt->setStochasticObjective(plvec[i],sampler);
-      if (checkDeriv) {
-        opt->check(*outStream);
-      }
+      opt = ROL::makePtr<ROL::StochasticProblem<RealT>>(objReduced,zp);
+      opt->addBoundConstraint(bnd);
+      plvec[i].sublist("SOL").sublist("Objective").set("Initial Statistic", stat);
+      opt->makeObjectiveStochastic(plvec[i],sampler);
+      opt->finalize(false,true,*outStream);
+      if (checkDeriv) opt->check(true,*outStream);
 
       // Solve optimization problem
       plvec[i].sublist("Step").set("Type","Trust Region");
-      solver = ROL::makePtr<ROL::OptimizationSolver<RealT>>(*opt,plvec[i]);
+      ROL::Ptr<ROL::NewOptimizationProblem<RealT>>
+        optnew = ROL::dynamicPtrCast<ROL::NewOptimizationProblem<RealT>>(opt);
+      solver = ROL::makePtr<ROL::NewOptimizationSolver<RealT>>(optnew,plvec[i]);
       std::clock_t timer = std::clock();
       solver->solve(*outStream);
-      stat = opt->getSolutionStatistic();
+      if (i>1) stat = opt->getSolutionStatistic();
+      else     stat = RealT(1);
       *outStream << "Optimization time: "
                  << static_cast<RealT>(std::clock()-timer)/static_cast<RealT>(CLOCKS_PER_SEC)
                  << " seconds." << std::endl << std::endl;
 
       // Output control to file
-      if ( myRank == 0 ) {
+      if ( myRank == 0 && outputSol ) {
         std::stringstream zname;
         zname << nvec[i] << "_control.txt";
         std::ofstream zfile;
@@ -353,12 +357,14 @@ int main(int argc, char *argv[]) {
       }
 
       // Build objective function distribution
-      int nsamp_dist = plvec[i].sublist("Problem").get("Number of Output Samples",100);
-      ROL::Ptr<ROL::SampleGenerator<RealT> > sampler_dist
-        = ROL::makePtr<ROL::MonteCarloGenerator<RealT>>(nsamp_dist,bounds,bman);
-      std::stringstream name;
-      name << "obj_samples_" << nvec[i] << ".txt";
-      print<RealT>(*objReduced,*zp,*sampler_dist,nsamp_dist,comm,name.str());
+      if (outputSol) {
+        int nsamp_dist = plvec[i].sublist("Problem").get("Number of Output Samples",100);
+        ROL::Ptr<ROL::SampleGenerator<RealT> > sampler_dist
+          = ROL::makePtr<ROL::MonteCarloGenerator<RealT>>(nsamp_dist,bounds,bman);
+        std::stringstream name;
+        name << "obj_samples_" << nvec[i] << ".txt";
+        print<RealT>(*objReduced,*zp,*sampler_dist,nsamp_dist,comm,name.str());
+      }
     }
   }
   catch (std::logic_error& err) {

@@ -56,7 +56,8 @@
 #include <algorithm>
 
 #include "ROL_Stream.hpp"
-#include "ROL_OptimizationSolver.hpp"
+#include "ROL_StochasticProblem.hpp"
+#include "ROL_NewOptimizationSolver.hpp"
 #include "ROL_UnaryFunctions.hpp"
 #include "ROL_Bounds.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
@@ -283,9 +284,14 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** BUILD STOCHASTIC PROBLEM ******************************/
     /*************************************************************************/
-    ROL::OptimizationProblem<RealT> opt(objReduced,zp,bnd);
+    ROL::Ptr<ROL::StochasticProblem<RealT>>
+      opt = ROL::Ptr<ROL::StochasticProblem<RealT>>(objReduced,zp);
+    ROL::Ptr<ROL::NewOptimizationProblem<RealT>>
+      newopt = ROL::dynamicPtrCast<ROL::NewOptimizationProblem<RealT>>(opt);
+    opt->addBoundConstraint(bnd);
     parlist->sublist("SOL").set("Initial Statistic", static_cast<RealT>(1));
-    opt.setStochasticObjective(*parlist,sampler);
+    opt->makeObjectiveStochastic(*parlist,sampler);
+    opt->finalize(false,true,*outStream);
 
     /*************************************************************************/
     /***************** RUN VECTOR AND DERIVATIVE CHECKS **********************/
@@ -326,14 +332,14 @@ int main(int argc, char *argv[]) {
       *outStream << "\n\nCheck Hessian of Reduced Objective Function\n";
       objReduced->checkHessVec(*zp,*dzp,true,*outStream);
 
-      opt.check(*outStream);
+      opt->check(true,*outStream);
     }
 
     /*************************************************************************/
     /***************** SOLVE OPTIMIZATION PROBLEM ****************************/
     /*************************************************************************/
     parlist->sublist("Step").set("Type","Trust Region");
-    ROL::OptimizationSolver<RealT> solver(opt,*parlist);
+    ROL::NewOptimizationSolver<RealT> solver(newopt,*parlist);
     zp->set(*rzp);
     std::clock_t timer = std::clock();
     solver.solve(*outStream);
