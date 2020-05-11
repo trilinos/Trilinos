@@ -5,7 +5,7 @@ if [ "${SBATCH_BUILD_TIME_LIMIT_MINUTES}" == "" ] ; then
 fi
 
 if [ "${SBATCH_TEST_TIME_LIMIT_MINUTES}" == "" ] ; then
-  export SBATCH_TEST_TIME_LIMIT_MINUTES=840 # Default 14 hour time limit
+  export SBATCH_TEST_TIME_LIMIT_MINUTES=780 # Default 13 hour time limit
 fi
 
 # Load environment on the login node
