@@ -336,8 +336,8 @@ int main(int argc, char *argv[]) {
       solver = ROL::makePtr<ROL::NewOptimizationSolver<RealT>>(optnew,plvec[i]);
       std::clock_t timer = std::clock();
       solver->solve(*outStream);
-      if (i>1) stat = opt->getSolutionStatistic();
-      else     stat = RealT(1);
+      try                       { stat = opt->getSolutionStatistic(); }
+      catch (std::exception &e) { stat = RealT(1);                    }
       *outStream << "Optimization time: "
                  << static_cast<RealT>(std::clock()-timer)/static_cast<RealT>(CLOCKS_PER_SEC)
                  << " seconds." << std::endl << std::endl;
