@@ -2045,8 +2045,9 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
     belosList.set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
     belosList.set("Output Frequency",      1);
     belosList.set("Output Style",          Belos::Brief);
-    //if (!scaleResidualHist)
-    belosList.set("Implicit Residual Scaling", "None");
+    bool scaleResidualHist = truel
+    if (!scaleResidualHist)
+      belosList.set("Implicit Residual Scaling", "None");
 
     // Create an iterative solver manager
     RCP< Belos::SolverManager<scalar_type, multivector_type, operator_type> > solver;
