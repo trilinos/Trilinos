@@ -2045,7 +2045,7 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
     belosList.set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
     belosList.set("Output Frequency",      1);
     belosList.set("Output Style",          Belos::Brief);
-    bool scaleResidualHist = truel
+    bool scaleResidualHist = true;
     if (!scaleResidualHist)
       belosList.set("Implicit Residual Scaling", "None");
 
