@@ -47,26 +47,12 @@
 #ifdef HAVE_PIRO_TEMPUS
 #include "Piro_TempusSolver.hpp"
 #include "Tempus_StepperFactory.hpp"
-#include "Piro_ObserverToTempusIntegrationObserverAdapter.hpp"
 #include "../../tempus/test/TestUtils/Tempus_ConvergenceTestUtils.hpp"
 
-#ifdef HAVE_PIRO_NOX
-#include "Piro_NOXSolver.hpp"
-#endif /* HAVE_PIRO_NOX */
-
 #include "Piro_Test_ThyraSupport.hpp"
-#include "Piro_Test_WeakenedModelEvaluator.hpp"
-#include "Piro_Test_MockObserver.hpp"
 #include "Piro_TempusIntegrator.hpp"
 
 #include "SinCosModel.hpp"
-
-#include "Thyra_EpetraModelEvaluator.hpp"
-#include "Thyra_ModelEvaluatorHelpers.hpp"
-
-#include "Thyra_DefaultNominalBoundsOverrideModelEvaluator.hpp"
-
-#include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
 
 #include "Teuchos_UnitTestHarness.hpp"
 

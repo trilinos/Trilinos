@@ -247,9 +247,9 @@ IF (Piro_ENABLE_Tempus)
     STANDARD_PASS_OUTPUT
   )
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    TempusSolver_SensitivityUnitTestSinCos
+    TempusSolver_SensitivitySinCosUnitTests
     SOURCES
-    Piro_TempusSolver_SensitivitySinCosTest.cpp
+    Piro_TempusSolver_SensitivitySinCosUnitTests.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
     Piro_Test_ThyraSupport.hpp
     SinCosModel.cpp
