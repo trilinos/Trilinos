@@ -77,6 +77,7 @@ private:
   std::vector<bool> needRiskLessCon_;
   Ptr<ParameterList>                                                 objList_;
   std::unordered_map<std::string,std::pair<Ptr<ParameterList>,bool>> conList_;
+  std::unordered_map<std::string,size_t> statMap_;
 
   using NewOptimizationProblem<Real>::INPUT_obj_;
   using NewOptimizationProblem<Real>::INPUT_xprim_;
@@ -118,6 +119,9 @@ public:
   void resetStochasticLinearConstraint(std::string name);
   void resetStochastic(void);
 
+  std::vector<Real> getObjectiveStatistic(void) const;
+  std::vector<Real> getConstraintStatistic(std::string name) const;
+  Real getSolutionStatistic(int comp = 0, std::string name = "") const;
 
   /***************************************************************************/
   /*** Finalize and edit methods *********************************************/

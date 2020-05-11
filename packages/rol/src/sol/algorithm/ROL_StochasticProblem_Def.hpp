@@ -302,13 +302,79 @@ void StochasticProblem<Real>::resetStochastic(void) {
 }
 
 template<typename Real>
+std::vector<Real> StochasticProblem<Real>::getObjectiveStatistic(void) const {
+  ROL_TEST_FOR_EXCEPTION(!isFinalized(),std::invalid_argument,
+    ">>> ROL::StochasticProblem::getObjectiveStatistic: Cannot get statistic if problem has not been finalized!");
+  try {
+    Ptr<std::vector<Real>> stat
+      = dynamicPtrCast<RiskVector<Real>>(INPUT_xprim_)->getStatistic();
+    if (stat != nullPtr) return *stat;
+    else                 return std::vector<Real>();
+  }
+  catch (std::exception &e) {
+    return std::vector<Real>();
+  }
+}
+
+template<typename Real>
+std::vector<Real> StochasticProblem<Real>::getConstraintStatistic(std::string name) const {
+  ROL_TEST_FOR_EXCEPTION(!isFinalized(),std::invalid_argument,
+    ">>> ROL::StochasticProblem::getConstraintStatistic: Cannot get statistic if problem has not been finalized!");
+  auto it = statMap_.find(name);
+  ROL_TEST_FOR_EXCEPTION(it==statMap_.end(),std::invalid_argument,
+    ">>> ROL::StochasticProblem::getConstraintStatistic: Constraint does not exist!");
+  try {
+    Ptr<std::vector<Real>> stat
+      = dynamicPtrCast<RiskVector<Real>>(INPUT_xprim_)->getStatistic(1,it->second);
+    if (stat != nullPtr) return *stat;
+    else                 return std::vector<Real>();
+  }
+  catch (std::exception &e) {
+    return std::vector<Real>();
+  }
+}
+
+template<typename Real>
+Real StochasticProblem<Real>::getSolutionStatistic(int comp, std::string name) const {
+  ROL_TEST_FOR_EXCEPTION(!isFinalized(),std::invalid_argument,
+    ">>> ROL::StochasticProblem::getConstraintStatistic: Cannot get statistic if problem has not been finalized!");
+  ROL_TEST_FOR_EXCEPTION(comp>1||comp<0,std::invalid_argument,
+    ">>> ROL::StochasticProblem::getSolutionStatistic: Component must be either 0 or 1!");
+  Real val(0);
+  if (comp == 0) {
+    try {
+      val = dynamicPtrCast<StochasticObjective<Real>>(INPUT_obj_)->computeStatistic(*INPUT_xprim_);
+    }
+    catch (std::exception &e) {
+      ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+        ">>> ROL::StochasticProblem::getSolutionStatistic: Objective does not have a computeStatistic function!");
+    }
+  }
+  else {
+    auto it = statMap_.find(name);
+    ROL_TEST_FOR_EXCEPTION(it==statMap_.end(),std::invalid_argument,
+      ">>> ROL::StochasticProblem::getSolutionStatistic: Constraint does not exist!");
+    try {
+      auto it2 = INPUT_con_.find(name);
+      val = dynamicPtrCast<StochasticConstraint<Real>>(it2->second.constraint)->computeStatistic(*INPUT_xprim_);
+    }
+    catch (std::exception &e) {
+      ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+        ">>> ROL::StochasticProblem::getSolutionStatistic: Constraint does not have a computeStatistic function!");
+    }
+  }
+  return val;
+}
+
+template<typename Real>
 void StochasticProblem<Real>::finalize(bool lumpConstraints, bool printToStream, std::ostream &outStream) {
   if (!NewOptimizationProblem<Real>::isFinalized()) {
     std::vector<Ptr<ParameterList>> conList;
     bool flag(true);
     risk_ = !needRiskLessObj_;
-    int cnt(0);
+    size_t cnt(0);
     needRiskLessCon_.clear();
+    statMap_.clear();
     for (auto it = INPUT_con_.begin(); it != INPUT_con_.end(); ++it) {
       auto it2 = conList_.find(it->first);
       if (it2==conList_.end()) {
@@ -324,6 +390,7 @@ void StochasticProblem<Real>::finalize(bool lumpConstraints, bool printToStream,
           risk_ = true;
         }
       }
+      statMap_.insert({it->first,cnt});
       cnt++;
     }
     // Set objective function
@@ -468,6 +535,7 @@ void StochasticProblem<Real>::edit(void) {
   }
   risk_ = false;
   needRiskLessCon_.clear();
+  statMap_.clear();
 }
 
 }  // namespace ROL
