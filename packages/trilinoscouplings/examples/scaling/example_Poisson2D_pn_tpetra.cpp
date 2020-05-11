@@ -1406,7 +1406,7 @@ int main(int argc, char *argv[]) {
       writer_type::writeSparseFile (matrixFilename, StiffMatrix);
     }
     if (rhsFilename != "") {
-      writer_type::writeDenseFile (rhsFilename, nCoord);
+      writer_type::writeDenseFile (rhsFilename, rhsVector);
     }
     if (coordsFilename != "") {
       writer_type::writeDenseFile (coordsFilename, nCoord);
