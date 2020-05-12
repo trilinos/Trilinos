@@ -156,6 +156,9 @@ public:
 
   Tempus::Status 
   getTempusIntegratorStatus() const;
+  
+  Teuchos::RCP<const Piro::TempusIntegrator<Scalar>> 
+  getPiroTempusIntegrator() const {return piroTempusIntegrator_;} 
 
 private:
   /** \name Overridden from Thyra::ModelEvaluatorDefaultBase. */

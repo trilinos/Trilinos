@@ -132,6 +132,13 @@ const RCP<TempusSolver<double> > solverNew(
   else if (sens_method == "Adjoint") sens_method_int = 2; 
   Teuchos::RCP<Piro::TempusIntegrator<double> > integrator 
       = Teuchos::rcp(new Piro::TempusIntegrator<double>(tempusPL, thyraModel, sens_method_int));
+  auto x0 =  thyraModel->getNominalValues().get_x(); 
+  const int num_param = thyraModel->get_p_space(0)->dim();
+  RCP<Thyra::MultiVectorBase<double> > DxDp0 =
+      Thyra::createMembers(thyraModel->get_x_space(), num_param);
+  DxDp0->assign(0.0); 
+  integrator->initializeSolutionHistory(0.0, x0, Teuchos::null, Teuchos::null,
+                                          DxDp0, Teuchos::null, Teuchos::null);
   const RCP<Thyra::NonlinearSolverBase<double> > stepSolver = Teuchos::null;
 
   RCP<ParameterList> stepperPL = Teuchos::rcp(&(tempusPL->sublist("Demo Stepper")), false);
@@ -167,6 +174,13 @@ const RCP<TempusSolver<double> > solverNew(
   else if (sens_method == "Adjoint") sens_method_int = 2; 
   Teuchos::RCP<Piro::TempusIntegrator<double> > integrator 
       = Teuchos::rcp(new Piro::TempusIntegrator<double>(tempusPL, thyraModel, sens_method_int));
+  auto x0 =  thyraModel->getNominalValues().get_x(); 
+  const int num_param = thyraModel->get_p_space(0)->dim();
+  RCP<Thyra::MultiVectorBase<double> > DxDp0 =
+      Thyra::createMembers(thyraModel->get_x_space(), num_param);
+  DxDp0->assign(0.0); 
+  integrator->initializeSolutionHistory(0.0, x0, Teuchos::null, Teuchos::null,
+                                          DxDp0, Teuchos::null, Teuchos::null);
   const RCP<const Tempus::SolutionHistory<double> > solutionHistory = integrator->getSolutionHistory();
   const RCP<const Tempus::TimeStepControl<double> > timeStepControl = integrator->getTimeStepControl();
 
@@ -240,6 +254,9 @@ const double tol = 1.0e-8;
 
 TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_DefaultSolutionSensitivity)
 {
+  Teuchos::RCP<Teuchos::FancyOStream> fos =
+      Teuchos::VerboseObjectBase::getDefaultOStream();
+
   const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
   const double finalTime = 0.0;
 
@@ -257,19 +274,34 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_DefaultSolutionSensitivity)
 
   solver->evalModel(inArgs, outArgs);
   
+  // Test if at 'Final Time'
+  double time = solver->getPiroTempusIntegrator()->getTime();
+  TEST_FLOATING_EQUALITY(time, 0.0, 1.0e-14);
+
   const Array<Array<double> > expected = tuple(
       Array<double>(tuple(0.0, 0.0, 0.0, 0.0)),
       Array<double>(tuple(0.0, 0.0, 0.0, 0.0)));
-  TEST_EQUALITY(dxdp->domain()->dim(), expected.size());
+  RCP<const Thyra::MultiVectorBase<double> > DxDp = solver->getPiroTempusIntegrator()->getDxDp();
+  //IKT, 5/11/2020: question for Eric: why is dxdp giving the wrong value here??  Need to call and 
+  //query getDxDp() to get right values of sensitivities.  Otherwise, it appears we get uninitialized values.
+  TEST_EQUALITY(DxDp->domain()->dim(), expected.size());
+
   for (int i = 0; i < expected.size(); ++i) {
-    TEST_EQUALITY(dxdp->range()->dim(), expected[i].size());
-    const Array<double> actual = arrayFromVector(*dxdp->col(i));
+    TEST_EQUALITY(DxDp->range()->dim(), expected[i].size());
+    const Array<double> actual = arrayFromVector(*DxDp->col(i));
+    /**fos << "IKT i = " << i << "\n";  
+    for (int j=0; j<actual.size(); j++) {
+      *fos << "  IKT j, actual, expected = " << j << ", " << actual[j] << ", " << expected[i][j] << "\n"; 
+    }*/
     TEST_COMPARE_FLOATING_ARRAYS(actual, expected[i], tol);
   }
 }
 
 TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_DefaultSolutionSensitivityOp)
 {
+  Teuchos::RCP<Teuchos::FancyOStream> fos =
+      Teuchos::VerboseObjectBase::getDefaultOStream();
+  
   const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
   const double finalTime = 0.0;
 
@@ -286,14 +318,25 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_DefaultSolutionSensitivityOp)
   outArgs.set_DgDp(solutionResponseIndex, parameterIndex, dxdp_deriv);
 
   solver->evalModel(inArgs, outArgs);
-
+  
+  // Test if at 'Final Time'
+  double time = solver->getPiroTempusIntegrator()->getTime();
+  TEST_FLOATING_EQUALITY(time, 0.0, 1.0e-14);
+  
   const Array<Array<double> > expected = tuple(
       Array<double>(tuple(0.0, 0.0, 0.0, 0.0)),
       Array<double>(tuple(0.0, 0.0, 0.0, 0.0)));
-  TEST_EQUALITY(dxdp->domain()->dim(), expected.size());
+  RCP<const Thyra::MultiVectorBase<double> > DxDp = solver->getPiroTempusIntegrator()->getDxDp();
+  //IKT, 5/11/2020: question for Eric: why is dxdp giving the wrong value here??  Need to call and 
+  //query getDxDp() to get right values of sensitivities.  Otherwise, it appears we get uninitialized values.
+  TEST_EQUALITY(DxDp->domain()->dim(), expected.size());
   for (int i = 0; i < expected.size(); ++i) {
   TEST_EQUALITY(dxdp->range()->dim(), expected[i].size());
-    const Array<double> actual = arrayFromLinOp(*dxdp, i);
+    const Array<double> actual = arrayFromLinOp(*DxDp, i);
+    /**fos << "IKT i = " << i << "\n";  
+    for (int j=0; j<actual.size(); j++) {
+      *fos << "  IKT j, actual, expected = " << j << ", " << actual[j] << ", " << expected[i][j] << "\n"; 
+    }*/
     TEST_COMPARE_FLOATING_ARRAYS(actual, expected[i], tol);
   }
 }
