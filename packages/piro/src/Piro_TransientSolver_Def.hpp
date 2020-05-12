@@ -477,6 +477,7 @@ Piro::TransientSolver<Scalar>::evalConvergedModel(
                   //cannot return a LinearOp for DxDp.  Therefore this case is not relevant here.
                   TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
                     "\n Error! Piro::TransientSolver: DgDp = DERIV_LINEAR_OP is not supported with forward sensitivities!");
+                }
                 //Cases 2 and 3 below correspond to scalar responses and scalar parameters.  These can happen
                 //with dgdp = DERIV_MV_GRADIENT_FORM and dgpg = DERIV_MV_JACOBIAN_FORM.  For 
                 //DERIV_MV_GRADIENT_FORM, the map is the responses, and the columns are the parameters; for 
