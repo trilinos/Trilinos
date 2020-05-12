@@ -382,6 +382,9 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_DefaultResponseSensitivity)
 
 TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_DefaultResponseSensitivity_NoDgDxMv)
 {
+  Teuchos::RCP<Teuchos::FancyOStream> fos =
+      Teuchos::VerboseObjectBase::getDefaultOStream();
+  
   const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model(
     new WeakenedModelEvaluator_NoDgDxMv(defaultModelNew()));
 
@@ -416,6 +419,7 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_DefaultResponseSensitivity_NoDgDxM
   for (int i = 0; i < dgdp_expected->domain()->dim(); ++i) {
     const Array<double> actual = arrayFromVector(*dgdp->col(i));
     const Array<double> expected = arrayFromVector(*dgdp_expected->col(i));
+    //*fos << "  IKT i, actual, expected = " << i << ", " << actual[i] << ", " << expected[i] << "\n"; 
     TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
   }
 }
@@ -423,6 +427,9 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_DefaultResponseSensitivity_NoDgDxM
 
 TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_ResponseAndDefaultSensitivities)
 {
+  Teuchos::RCP<Teuchos::FancyOStream> fos =
+      Teuchos::VerboseObjectBase::getDefaultOStream();
+  
   const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
 
   const int responseIndex = 0;
@@ -482,6 +489,7 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_ResponseAndDefaultSensitivities)
     for (int i = 0; i < dgdp_expected->domain()->dim(); ++i) {
       const Array<double> actual = arrayFromVector(*dgdp->col(i));
       const Array<double> expected = arrayFromVector(*dgdp_expected->col(i));
+      //*fos << "  IKT i, actual, expected = " << i << ", " << actual[i] << ", " << expected[i] << "\n"; 
       TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
     }
   }

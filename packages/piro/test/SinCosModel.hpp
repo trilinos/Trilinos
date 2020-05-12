@@ -55,6 +55,77 @@
 #include "Teuchos_ParameterList.hpp"
 
 
+/** \brief Sine-Cosine model problem from Tempus.
+  * This is a canonical Sine-Cosine differential equation
+  *   \f[
+  *   \mathbf{\ddot{x}}=-\mathbf{x}
+  *   \f]
+  * with a few enhancements. We start with the exact solution to the
+  * differential equation
+  *   \f{eqnarray*}{
+  *     x_{0}(t) & = & a+b*\sin((f/L)*t+\phi)\\
+  *     x_{1}(t) & = & b*(f/L)*\cos((f/L)*t+\phi)
+  *   \f}
+  * then the form of the model is
+  * \f{eqnarray*}{
+  *   \frac{d}{dt}x_{0}(t) & = & x_{1}(t)\\
+  *   \frac{d}{dt}x_{1}(t) & = & \left(\frac{f}{L}\right)^{2}(a-x_{0}(t))
+  * \f}
+  * where the default parameter values are \f$a=0\f$, \f$f=1\f$, and \f$L=1\f$,
+  * and the initial conditions
+  * \f{eqnarray*}{
+  *   x_{0}(t_{0}=0) & = & \gamma_{0}[=0]\\
+  *   x_{1}(t_{0}=0) & = & \gamma_{1}[=1]
+  * \f}
+  * determine the remaining coefficients
+  * \f{eqnarray*}{
+  *   \phi & = & \arctan(((f/L)/\gamma_{1})*(\gamma_{0}-a))-(f/L)*t_{0}[=0]\\
+  *   b & = & \gamma_{1}/((f/L)*cos((f/L)*t_{0}+\phi))[=1]
+  * \f}
+
+  * Therefore this model has three model parameters and two initial conditions
+  * which effect the exact solution as above.
+  * \f[
+  *   \mathbf{p}=(a,f,L)
+  * \f]
+  * \f[
+  *   \dot{\mathbf{x}}=\mathbf{F}(\mathbf{x},t,\mathbf{p})
+  * \f]
+  * where
+  * \f{eqnarray*}{
+  *   F_{0} & = & x_{1}\\
+  *   F_{1} & = & \left(\frac{f}{L}\right)^{2}(a-x_{0})
+  * \f}
+
+  * The exact sensitivities, \f$\mathbf{s}=\partial\mathbf{x}/\partial\mathbf{p}\f$,
+  * for the problem are specified as
+  * \f[
+  *   \mathbf{s}(t)=\left[\begin{array}{cc}
+                                                   *   1 & 0\\
+  *   \left(\frac{b}{L}\right)t\,\cos\left(\left(\frac{f}{L}\right)t+\phi\right) & \left(\frac{b}{L}\right)\cos\left(\left(\frac{f}{L}\right)t+\phi\right)-\frac{b\, f\, t}{L^{2}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right)\\
+  *   -\frac{b\, f\, t}{L^{2}}\cos\left(\left(\frac{f}{L}\right)t+\phi\right) & -\frac{b\, f}{L^{2}}\cos\left(\left(\frac{f}{L}\right)t+\phi\right)+\frac{b\, f^{2}\, t}{L^{3}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right)
+  *   \end{array}\right]
+  * \f]
+  * and for the default initial conditions, \f$\phi=0\f$ and \f$b=1\f$
+  * \f[
+  *   \mathbf{s}(t=0)=\left[\begin{array}{cc}
+  *   1 & 0\\
+  *   0 & \frac{b}{L}\\
+  *   0 & -\frac{f}{L^{2}}
+  *   \end{array}\right]
+  * \f]
+  * The time differentiated sensitivities, \f$\dot{\mathbf{s}}=\partial\mathbf{s}/\partial t=\partial/\partial t(\partial\mathbf{x}/\partial\mathbf{p})=\partial/\partial\mathbf{p}(\partial\mathbf{x}/\partial t)\f$
+  * are
+  * \f[
+  *   \dot{\mathbf{s}}(t)=\left[\begin{array}{cc}
+  *   0 & 0\\
+  *   \left(\frac{b}{L}\right)\cos\left(\left(\frac{f}{L}\right)t+\phi\right)-\frac{b\, f\, t}{L^{2}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right) & -\frac{2b\, f}{L^{2}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right)\left(\frac{b}{L}\right)-\frac{b\, f^{2}\, t}{L^{3}}\cos\left(\left(\frac{f}{L}\right)t+\phi\right)\\
+ *   -\frac{b\, f}{L^{2}}\cos\left(\left(\frac{f}{L}\right)t+\phi\right)+\frac{b\, f^{2}\, t}{L^{3}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right) & \frac{2b\, f^{2}}{L^{3}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right)+\frac{b\, f^{3}\, t}{L^{4}}\cos\left(\left(\frac{f}{L}\right)t+\phi\right)
+  *   \end{array}\right]
+  * \f]
+  */
+
+
 using LO = Tpetra::Map<>::local_ordinal_type;
 using GO = Tpetra::Map<>::global_ordinal_type;
 typedef Tpetra::Map<LO,GO>  Tpetra_Map;
