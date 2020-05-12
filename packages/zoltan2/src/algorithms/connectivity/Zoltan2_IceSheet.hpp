@@ -20,6 +20,7 @@
 */
 
 namespace Zoltan2{
+  enum IcePropVtxStatus {IceGrounded=-2,IceFloating=-1,IceHinged=0}; 
   /*! Utility function for detecting degenerate features of ice sheets
    *  
    *  \param (input) problemComm A Teuchos::RCP<const Teuchos::Comm<int>> representing the communicator for the problem.
@@ -30,12 +31,12 @@ namespace Zoltan2{
    *                        The IDs must be present in the overlap map of the current process if the ID is not owned by this process. Edges should not be specified more than once.
    *  \param (output) vertex_status is an output argument, and must have a size corresponding to the number of local vertices. After calling DetectDegenerateVertices, this ArrayView will be filled with an 
    *                        integer indicating the corresponding vertex's status. 
-   *                        -2 indicates a vertex has a sufficient connection to ground, and should be kept. 
-   *                        -1 indicates a vertex is floating and should be removed. 
-   *                        0 indicates a vertex is part of a floating hinge, and should be removed.
+   *                        Zoltan2::IceGrounded (-2) indicates a vertex has a sufficient connection to ground, and should be kept. 
+   *                        Zoltan2::IceFloating (-1) indicates a vertex is floating and should be removed. 
+   *                        Zoltan2::IceHinged   (0) indicates a vertex is part of a floating hinge, and should be removed.
    *  \param (output) hinge_vertices is an output argument, and must have a size corresponding to the number of local vertices.
-   *                        For a vertex with a vertex_status of 0, the entry in this array corresponds to the hinge vertex.
-   *                        If multiple hinges are chained together and removed, this entry will indicate the first hinge vertex that has a vertex_status of -2.
+   *                        For a vertex with a vertex_status of Zoltan2::IceHinged (0), the entry in this array corresponds to the hinge vertex.
+   *                        If multiple hinges are chained together and removed, this entry will indicate the first hinge vertex that has a vertex_status of Zoltan2::IceGrounded (-2).
    *                        Note: all of the entries contained in this ArrayView are valid global vertex identifiers. It is necessary to check the vertex_status before using this output.
    *
    */
@@ -44,7 +45,7 @@ namespace Zoltan2{
                                  const RCP<const Adapter> &adapter,
                                  const Teuchos::ArrayView<const bool> &basalFriction,
                                  const Teuchos::ArrayView<const typename Adapter::gno_t> &boundary_edges,
-	                         const Teuchos::ArrayView<int> &vertex_status,
+	                         const Teuchos::ArrayView<IcePropVtxStatus> &vertex_status,
 	                         const Teuchos::ArrayView<typename Adapter::gno_t> &hinge_vertices){
     typedef typename Adapter::base_adapter_t base_adapter_t;
     typedef typename Adapter::lno_t lno_t;
@@ -117,12 +118,9 @@ namespace Zoltan2{
     }
   
     //build nVtx + nGhosts size array of grounding flags
-    bool* grounding = new bool[nVtx+nGhosts];
-    for(size_t i = 0; i < nVtx+nGhosts; i++){
-      if(i < nVtx){
+    bool* grounding = new bool[nVtx];
+    for(size_t i = 0; i < nVtx; i++){
         grounding[i] = basalFriction[i];
-      }
-      else grounding[i] = false;
     }
 
   
@@ -141,23 +139,16 @@ namespace Zoltan2{
  
     //communicate boundary edges back to owning processors
     gno_t num_boundary_edges = boundary_edges.size()/2;
-    std::vector<int> owners_vec;
-    std::vector<gno_t> boundary_vec;
-    for(gno_t i = 0; i < num_boundary_edges*2; i++){
-      boundary_vec.push_back(boundary_edges[i]);
-      owners_vec.push_back(0);
-    }
-    Teuchos::ArrayView<gno_t> boundary = Teuchos::arrayViewFromVector(boundary_vec);
-    Teuchos::ArrayView<int> owners = Teuchos::arrayViewFromVector(owners_vec);
+    Teuchos::Array<int> owners(boundary_edges.size(),0);
   
     //get the owning process for each vertex in the boundary list
-    mapWithCopies->getRemoteIndexList(boundary,owners);
+    mapWithCopies->getRemoteIndexList(boundary_edges,owners());
     //store the number of processes for future use
     int nprocs = problemComm->getSize();
   
     //send boundary edges to any remote processes that own an endpoint
-    std::vector<int> sendcnts;
-    for(int i = 0; i < nprocs; i++) sendcnts.push_back(0);
+    Teuchos::Array<int> sendcnts(nprocs,0);
+    Teuchos::Array<int> recvcnts(nprocs,0);
     for(int i = 0; i < num_boundary_edges*2; i+= 2){
       if(owners[i] != -1){
         sendcnts[owners[i]] +=2;
@@ -166,17 +157,12 @@ namespace Zoltan2{
         sendcnts[owners[i+1]] +=2;
       }
     }
-    std::vector<int> recvcnts;
-    for(int i = 0; i < nprocs; i++) recvcnts.push_back(0);
     //send the number of vertex IDs to be sent.
-    Teuchos::ArrayView<const int> sendCount = Teuchos::arrayViewFromVector(sendcnts);
-    Teuchos::ArrayView<int> recvCount = Teuchos::arrayViewFromVector(recvcnts);
   
     //create sdispls and sentcount to build sendbuf
-    std::vector<int> sdispls;
-    sdispls.push_back(0);
-    for(int i = 1; i < nprocs; i++){
-      sdispls.push_back(sdispls[i-1] + sendcnts[i-1]);
+    Teuchos::Array<int> sdispls(nprocs+1, 0);
+    for(int i = 1; i < nprocs+1; i++){
+      sdispls[i] = sdispls[i-1] + sendcnts[i-1];
     }
 
     std::vector<int> sentcount;
@@ -186,32 +172,31 @@ namespace Zoltan2{
     int sendsize = 0;
     int recvsize = 0;
     for(int i = 0; i < nprocs; i++){
-      sendsize += sendCount[i];
-      recvsize += recvCount[i];
+      sendsize += sendcnts[i];
+      recvsize += recvcnts[i];
     }
   
-    std::vector<gno_t> sendbuf(sendsize,0);
+    Teuchos::Array<gno_t> sendbuf(sendsize,0);
     for(int i = 0; i > num_boundary_edges*2; i+=2){
       if(owners[i] != me){
         int proc_to_send = owners[i];
         int sendbufidx = sdispls[proc_to_send] + sentcount[proc_to_send];
         sentcount[proc_to_send] += 2;
-        sendbuf[sendbufidx++] = boundary[i];
-        sendbuf[sendbufidx++] = boundary[i+1];
+        sendbuf[sendbufidx++] = boundary_edges[i];
+        sendbuf[sendbufidx++] = boundary_edges[i+1];
       }
       if(owners[i+1] != me && owners[i] != owners[i+1]){
         int proc_to_send = owners[i];
         int sendbufidx = sdispls[proc_to_send] + sentcount[proc_to_send];
         sentcount[proc_to_send] += 2;
-        sendbuf[sendbufidx++] = boundary[i];
-        sendbuf[sendbufidx++] = boundary[i+1];
+        sendbuf[sendbufidx++] = boundary_edges[i];
+        sendbuf[sendbufidx++] = boundary_edges[i+1];
       }
     }
  
     //Do the final communication back to each remote process 
     Teuchos::ArrayRCP<gno_t> recvbuf;
-    Teuchos::ArrayView<const gno_t> sendBuf = Teuchos::arrayViewFromVector(sendbuf);
-    Zoltan2::AlltoAllv(*problemComm,*env,sendBuf,sendCount,recvbuf,recvCount);
+    Zoltan2::AlltoAllv<gno_t>(*problemComm,*env,sendbuf(),sendcnts(),recvbuf,recvcnts());
 
     //hash for the boundary-edge set
     struct pair_hash {
@@ -223,11 +208,11 @@ namespace Zoltan2{
     //create the set to see if we've counted this boundary edge before
     std::unordered_set<std::pair<gno_t,gno_t>,pair_hash> edge_set;
 
-    int* local_boundary_counts = new int[nVtx];
-    for(size_t i = 0; i < nVtx; i++){
-      local_boundary_counts[i] = 0;
-    }
-  
+    //int* local_boundary_counts = new int[nVtx];
+    //for(size_t i = 0; i < nVtx; i++){
+    //  local_boundary_counts[i] = 0;
+    //}
+    Teuchos::Array<int> local_boundary_counts(nVtx+1,0);
     //insert the local boundary edges into the set, small global endpoint first.
     for(int i = 0; i < num_boundary_edges*2; i+=2){
       if(owners[i] == me || owners[i+1] == me){
@@ -272,29 +257,25 @@ namespace Zoltan2{
     for(size_t i = 0; i < nEdge; i++){
       out_edges_lid[i] = mapWithCopies->getLocalElement(out_edges[i]);
     }
-    icePropGraph<typename map_t::local_ordinal_type>* g = new icePropGraph<typename map_t::local_ordinal_type>({nVtx, nEdge, out_edges_lid,out_offsets});
-    Zoltan2::iceSheetPropagation<map_t> prop(problemComm, map, mapWithCopies, g, local_boundary_counts, grounding, nVtx, nGhosts);
+    icePropGraph<typename map_t::local_ordinal_type> g = {nVtx, nEdge, out_edges_lid,out_offsets};
+    Zoltan2::iceSheetPropagation<map_t> prop(problemComm, map, mapWithCopies, &g, local_boundary_counts, grounding, nVtx, nGhosts);
     Teuchos::ArrayRCP<const IcePropVtxLabel<lno_t,gno_t>> labels = prop.propagate();
     
 
     //interpret the returned values
     
-    for(size_t i = 0; i < g->n; i++){
+    for(size_t i = 0; i < g.n; i++){
       IcePropVtxLabel<lno_t,gno_t> curr_node = labels[i];
-      gno_t gid = mapWithCopies->getGlobalElement(curr_node.id);
-      std::cout<<"Vertex "<<gid<<", First label="<<curr_node.first_label<<", first sender="<<curr_node.first_sender<<", first used="<<curr_node.first_used;
-      std::cout<<", second label="<<curr_node.second_label<<", second sender="<<curr_node.second_sender<<", second_used="<<curr_node.second_used<<"\n";
+      gno_t gid = mapWithCopies->getGlobalElement(curr_node.id); 
       IcePropGrounding_Status gs = curr_node.getGroundingStatus();
-      if(gs == ICEPROPGS_FULL) vertex_status[i] = -2;
+      if(gs == ICEPROPGS_FULL) vertex_status[i] = IceGrounded;
       else if(gs == ICEPROPGS_HALF){
-        vertex_status[i] =0;
+        vertex_status[i] =IceHinged;
         hinge_vertices[i] = curr_node.first_label;    
       } else { 
-        vertex_status[i] = -1;
+        vertex_status[i] = IceFloating;
       }
     }
-    delete [] local_boundary_counts;
-    delete g;
     delete [] grounding;
     delete out_edges_lid;
     

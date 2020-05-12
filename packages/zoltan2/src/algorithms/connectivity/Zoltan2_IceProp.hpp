@@ -33,7 +33,7 @@ public:
   //Constructor creates FEMultiVector of IcePropVertexLabels,
   //and initializes the labels according to the input grounding information.
   //It also sets the is_art flag on each label if the vertex is a potential articulation point.
-  iceSheetPropagation(const Teuchos::RCP<const Teuchos::Comm<int> > &comm_, Teuchos::RCP<const MAP> mapOwned_, Teuchos::RCP<const MAP> mapWithCopies_, icePropGraph<lno_t>* g_,int* boundary_flags, bool* grounding_flags,int localOwned,int localCopy):
+  iceSheetPropagation(const Teuchos::RCP<const Teuchos::Comm<int> > &comm_, Teuchos::RCP<const MAP> mapOwned_, Teuchos::RCP<const MAP> mapWithCopies_, icePropGraph<lno_t>* g_,Teuchos::Array<int> boundary_flags, bool* grounding_flags,int localOwned,int localCopy):
     me(comm_->getRank()), np(comm_->getSize()),
     nLocalOwned(localOwned), nLocalCopy(localCopy),
     nVec(1), comm(comm_),g(g_),mapOwned(mapOwned_),
@@ -45,13 +45,13 @@ public:
     femv->beginFill();
     //set the member variable that stores femv->getData(0);
     femvData = femv->getData(0);
-    for(lno_t i = 0; i < nLocalOwned + nLocalCopy; i++){
+    for(lno_t i = 0; i < nLocalOwned+nLocalCopy; i++){
       gno_t gid = mapWithCopies->getGlobalElement(i);
       label_t label(i);
-      if(boundary_flags[i] > 2 && i < nLocalOwned) {
+      if(i < nLocalOwned && boundary_flags[i] > 2) {
 	label.is_art = true;
       }
-      if(grounding_flags[i]){
+      if(i < nLocalOwned && grounding_flags[i]){
         label.first_label = gid;
         label.first_sender = gid;
         label.first_used=true;

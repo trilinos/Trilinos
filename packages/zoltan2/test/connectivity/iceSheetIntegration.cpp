@@ -166,7 +166,7 @@ int main(int argc, char** argv)
   std::cout<<me<<": calling the utility function\n";
   Teuchos::ArrayView<const bool> basalView = Teuchos::ArrayView<const bool>(basalFriction,nlocal);
   Teuchos::ArrayView<const gno_t> boundaryView = Teuchos::ArrayView<const gno_t>(boundaryEdges,2*numLocalBoundaryEdges);
-  std::vector<int> status_vec(nlocal,0);
+  std::vector<Zoltan2::IcePropVtxStatus> status_vec(nlocal,Zoltan2::IceFloating);
   std::vector<gno_t> hinge_vec(nlocal,0);
   Zoltan2::DetectDegenerateVertices<Zoltan2::XpetraCrsGraphAdapter<Zoltan2_TestingFramework::tcrsGraph_t> >(comm, inputGraphAdapter,basalView,boundaryView,
                                                                                                             Teuchos::arrayViewFromVector(status_vec),
