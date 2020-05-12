@@ -40,6 +40,8 @@
 */
 #include <numeric>
 
+#include "Kokkos_Core.hpp"
+
 #include "Tpetra_TestingUtilities.hpp"
 #include "TpetraCore_ETIHelperMacros.h"
 
@@ -560,6 +562,52 @@ get_timer_stats(const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
   return p1;
 }
 
+template<class local_ordinal, class global_ordinal, class node, class buffer_device>
+void
+time_single_row_unpack()
+{
+  std::vector<size_t> test_row_lengths{10, 100, 1000, 10000};
+  auto sizeof_int = sizeof(int);
+  for (auto test_row_length : test_row_lengths)
+  {
+    {
+      // Parallel kokkos unpack
+      Kokkos::View<int*, buffer_device> a("unpacked", test_row_length);
+      Kokkos::View<char*, buffer_device> c("packed", test_row_length * sizeof_int);
+      std::ostringstream os;
+      os << "Standalone test: parallel: " << test_row_length;
+      Teuchos::RCP<Teuchos::Time> st = Teuchos::TimeMonitor::getNewCounter(os.str());
+      Teuchos::TimeMonitor tm(*st);
+      Kokkos::parallel_for(
+        test_row_length,
+        KOKKOS_LAMBDA(const size_t i)
+        {
+          auto start_a = i;
+          auto start_c = i * sizeof_int;
+          memcpy(c.data() + start_c, a.data() + start_a, sizeof_int);
+        }
+      );
+    }
+
+    {
+      // memcpy
+      Kokkos::View<int*, buffer_device> a("unpacked", test_row_length);
+      Kokkos::View<char*, buffer_device> c("packed", test_row_length * sizeof_int);
+      std::ostringstream os;
+      os << "Standalone test: one row: " << test_row_length;
+      Teuchos::RCP<Teuchos::Time> st = Teuchos::TimeMonitor::getNewCounter(os.str());
+      Teuchos::TimeMonitor tm(*st);
+      Kokkos::parallel_for(
+        1,
+        KOKKOS_LAMBDA(const size_t i)
+        {
+          memcpy(c.data(), a.data(), test_row_length * sizeof_int);
+        }
+      );
+    }
+  }
+}
+
 } // namespace (anonymous)
 
 int
@@ -579,6 +627,8 @@ main(int argc, char* argv[])
 #  error "Tpetra: Must enable at least one Scalar type in {double, float} in order to build this test."
 #endif
 
+  Tpetra::Details::Behavior::disable_timing();
+
   RCP<Teuchos::oblackholestream> blackhole = rcp (new Teuchos::oblackholestream);
   Teuchos::GlobalMPISession mpi_session (&argc, &argv, blackhole.getRawPtr());
   RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
@@ -592,7 +642,7 @@ main(int argc, char* argv[])
   //
   // Default values of command-line options.
   //
-  int rows_per_rank = 100;
+  int rows_per_rank = 5000;
   int overlap = 5;
   int dense_rows = 5;
   Teuchos::CommandLineProcessor parser(false, true);
@@ -618,6 +668,8 @@ main(int argc, char* argv[])
   RCP<graph_type> g_shared;
   generate_graphs(comm, g_owned, g_shared, rows_per_rank, overlap, dense_rows);
 
+  Tpetra::Details::Behavior::enable_timing();
+
   using matrix_type = Tpetra::CrsMatrix<real, local_ordinal, global_ordinal, node_type>;
   RCP<matrix_type> m_owned = rcp(new matrix_type(g_owned));
   RCP<matrix_type> m_shared = rcp(new matrix_type(g_shared));
@@ -628,6 +680,10 @@ main(int argc, char* argv[])
     auto matrix = generate_matrix<matrix_type>(
       comm, g_owned, g_shared, rows_per_rank, overlap, dense_rows
     );
+
+    using dist_object_type = Tpetra::DistObject<char, local_ordinal, global_ordinal, node_type>;
+    using bdt = typename dist_object_type::buffer_device_type;
+    time_single_row_unpack<local_ordinal, global_ordinal, node_type, bdt>();
   }
 
   Teuchos::ParameterList p0("UnpackLongRows");

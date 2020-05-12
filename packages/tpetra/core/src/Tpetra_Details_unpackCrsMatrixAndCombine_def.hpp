@@ -327,6 +327,7 @@ struct UnpackCrsMatrixAndCombineFunctor {
   import_lids_type import_lids;
   offsets_type offsets;
   int_view_type dense_rows;
+  int_view_type dense_row_map;
 
   Tpetra::CombineMode combine_mode;
   size_t max_num_ent;
@@ -347,6 +348,7 @@ struct UnpackCrsMatrixAndCombineFunctor {
       const import_lids_type& import_lids_in,
       const offsets_type& offsets_in,
       const int_view_type& dense_rows_in,
+      const int_view_type& dense_row_map_in,
       const Tpetra::CombineMode combine_mode_in,
       const size_t max_num_ent_in,
       const bool unpack_pids_in,
@@ -359,6 +361,7 @@ struct UnpackCrsMatrixAndCombineFunctor {
     import_lids(import_lids_in),
     offsets(offsets_in),
     dense_rows(dense_rows_in),
+    dense_row_map(dense_row_map_in),
     combine_mode(combine_mode_in),
     max_num_ent(max_num_ent_in),
     unpack_pids(unpack_pids_in),
@@ -582,14 +585,14 @@ struct UnpackCrsMatrixAndCombineFunctor {
     typedef View<GO*, DT, MemoryUnmanaged> gids_out_type;
     typedef View<ST*, DT, MemoryUnmanaged> vals_out_type;
 
-    const LO i = team_member.league_rank() * team_member.team_size() + team_member.team_rank();
+    const LO league_rank = team_member.league_rank();
+    const LO i = dense_row_map(i);
     const size_t num_bytes = num_packets_per_lid(i);
 
 
     // Only unpack data if there is a nonzero number of bytes.
-    if (num_bytes == 0 || dense_rows(i) != 1) {
+    if (num_bytes == 0)
       return;
-    }
 
     // there is actually something in the row
     const LO import_lid = import_lids[i];
@@ -937,6 +940,14 @@ unpackAndCombineIntoCrsMatrix(
     num_dense_rows
   );
 
+  Kokkos::View<int*, DT> dense_row_map("Dense row map", num_dense_rows);
+  int j = 0;
+  for (size_t i=0; i<num_import_lids; i++) {
+    if (dense_rows(i) > 0)
+      dense_row_map(j++) = i;
+  }
+
+
   // Now do the actual unpack!
   const bool atomic = XS::concurrency() != 1;
   using functor = UnpackCrsMatrixAndCombineFunctor<LocalMatrix, LocalMap, BufferDeviceType>;
@@ -948,6 +959,7 @@ unpackAndCombineIntoCrsMatrix(
     import_lids,
     offsets,
     dense_rows,
+    dense_row_map,
     combine_mode,
     max_num_ent,
     unpack_pids,

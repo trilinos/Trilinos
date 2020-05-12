@@ -452,6 +452,15 @@ bool Behavior::timing (const char name[])
                                                         envVarName,
                                                         defaultValue);
 }
+
+void Behavior::enable_timing() {
+  BehaviorDetails::timingDisabled_ = false;
+}
+
+void Behavior::disable_timing() {
+  BehaviorDetails::timingDisabled_ = true;
+}
+
 } // namespace Details
 } // namespace Tpetra
 

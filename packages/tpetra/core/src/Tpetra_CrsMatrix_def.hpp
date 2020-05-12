@@ -4747,9 +4747,7 @@ namespace Tpetra {
     // Read parameters from the input ParameterList.
     //
     {
-      Details::ProfilingRegion region(
-	"Tpetra::CrsMatrix::fillCompete",
-	"ParameterList");
+      Details::ProfilingRegion region_fc("Tpetra::CrsMatrix::fillCompete", "ParameterList");
 
       // If true, the caller promises that no process did nonlocal
       // changes since the last call to fillComplete.
@@ -4798,9 +4796,7 @@ namespace Tpetra {
       }
     }
     if (this->isStaticGraph ()) {
-      Details::ProfilingRegion region(
-	"Tpetra::CrsMatrix::fillCompete",
-	"isStaticGraph");
+      Details::ProfilingRegion region_isg("Tpetra::CrsMatrix::fillCompete", "isStaticGraph");
       // FIXME (mfh 14 Nov 2016) In order to fix #843, I enable the
       // checks below only in debug mode.  It would be nicer to do a
       // local check, then propagate the error state in a deferred
@@ -4850,9 +4846,7 @@ namespace Tpetra {
       this->fillLocalMatrix (params);
     }
     else {
-      Details::ProfilingRegion region(
-	"Tpetra::CrsMatrix::fillCompete",
-	"isNotStaticGraph");
+      Details::ProfilingRegion region_insg("Tpetra::CrsMatrix::fillCompete", "isNotStaticGraph");
       // Set the graph's domain and range Maps.  This will clear the
       // Import if the domain Map has changed (is a different
       // pointer), and the Export if the range Map has changed (is a
@@ -4906,9 +4900,9 @@ namespace Tpetra {
     }
 
     {
-      Details::ProfilingRegion region(
-	"Tpetra::CrsMatrix::fillCompete",
-	"callComputeGlobalConstamnts");
+      Details::ProfilingRegion region_ccgc(
+        "Tpetra::CrsMatrix::fillCompete", "callComputeGlobalConstamnts"
+      );
       const bool callComputeGlobalConstants = params.get () == nullptr ||
 	params->get ("compute global constants", true);
       if (callComputeGlobalConstants) {
@@ -4920,9 +4914,9 @@ namespace Tpetra {
 
     this->fillComplete_ = true; // Now we're fill complete!
     {
-      Details::ProfilingRegion region(
-	"Tpetra::CrsMatrix::fillCompete",
-	"checkInternalState");
+      Details::ProfilingRegion region_cis(
+        "Tpetra::CrsMatrix::fillCompete", "checkInternalState"
+      );
       this->checkInternalState ();
     }
   }

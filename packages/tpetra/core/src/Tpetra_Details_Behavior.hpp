@@ -168,6 +168,12 @@ public:
   ///        "CrsGraph::insertLocalIndices".
   static bool timing (const char name[]);
 
+  /// \brief Disable timing, programatically
+  static void disable_timing();
+
+  /// \brief Enable timing, programatically
+  static void enable_timing();
+
   /// \brief Whether to assume that MPI is CUDA aware.
   ///
   /// An MPI implementation is "CUDA aware" if it can accept CUDA
