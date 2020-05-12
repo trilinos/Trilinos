@@ -1,9 +1,8 @@
-# Test problem that exposes a memory leak in MJ when num_global_parts==1
+# Test problem for #7351 that exposes an out-of-bounds array access in MJ when rectilinear = 1
 TRIBITS_ADD_TEST(
     test_driver
     NAME kuberry
     DIRECTORY ../..
-    NUM_MPI_PROCS 4
     COMM serial mpi
     ARGS
     "kuberry.xml"
@@ -13,6 +12,7 @@ TRIBITS_ADD_TEST(
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_kuberry
     SOURCE_FILES
+        kuberry.assign
         kuberry.xml
         kuberry.graph
         kuberry.coords
