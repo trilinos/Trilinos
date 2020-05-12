@@ -1472,12 +1472,15 @@ bool do_kokkos_test_with_types(const string& mm_file,
 
   uint64_t random_seed = 28713;
   Kokkos::Random_XorShift64_Pool<execution_space> random(random_seed);
+
+  Scalar Scalar1 = static_cast<Scalar>(1.0);
+  Scalar Scalar0 = static_cast<Scalar>(0.0);
   for( size_t i = 0; i < numRHS; ++i ){
     x[i] = rcp(new view_t(Kokkos::ViewAllocateWithoutInitializing("x"), num_rows, numVecs));
     b[i] = rcp(new view_t(Kokkos::ViewAllocateWithoutInitializing("b"), num_rows, numVecs));
     if(!bEmptyLoad) {
-      Kokkos::fill_random(*x[i], random, Scalar(1));
-      KokkosSparse::spmv(transpose?"T":"N", Scalar(1.0), *A, *x[i], Scalar(0.0), *b[i]);
+      Kokkos::fill_random(*x[i], random, -Scalar1, Scalar1); // -1.0 to 1.0 matches Tpetra randomize
+      KokkosSparse::spmv(transpose?"T":"N", Scalar1, *A, *x[i], Scalar0, *b[i]);
     }
   }
 
@@ -1499,8 +1502,8 @@ bool do_kokkos_test_with_types(const string& mm_file,
           vals(i) = vals(i) * vals(i);
         }
       });
-      Kokkos::fill_random(*x2, random, Scalar(1));
-      KokkosSparse::spmv(transpose?"T":"N", Scalar(1.0), *A2, *x2, Scalar(0.0), *b2);
+      Kokkos::fill_random(*x2, random, -Scalar1, Scalar1); // -1.0 to 1.0 matches Tpetra randomize
+      KokkosSparse::spmv(transpose?"T":"N", Scalar1, *A2, *x2, Scalar0, *b2);
     }
   } // else A2 is never read
 
