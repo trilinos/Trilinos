@@ -94,8 +94,8 @@ namespace Impl {
   template<typename T>
   struct BlockCrsRowStruct {
     T totalNumEntries, totalNumBytes, maxRowLength;
-    KOKKOS_INLINE_FUNCTION BlockCrsRowStruct() = default;
-    KOKKOS_INLINE_FUNCTION BlockCrsRowStruct(const BlockCrsRowStruct &b) = default;
+    KOKKOS_DEFAULTED_FUNCTION BlockCrsRowStruct() = default;
+    KOKKOS_DEFAULTED_FUNCTION BlockCrsRowStruct(const BlockCrsRowStruct &b) = default;
     KOKKOS_INLINE_FUNCTION BlockCrsRowStruct(const T& numEnt, const T& numBytes, const T& rowLength)
       : totalNumEntries(numEnt), totalNumBytes(numBytes), maxRowLength(rowLength) {}
   };
