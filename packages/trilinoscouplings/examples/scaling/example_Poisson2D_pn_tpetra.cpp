@@ -297,7 +297,7 @@ void Apply_Dirichlet_BCs(std::vector<int> &BCNodes, crs_matrix_type & A, multive
     \param  b                  [in]    right-hand-side vector
     \param  maxits             [in]    max iterations
     \param  tol                [in]    solver tolerance
-    \param  uh                 [out]   solution vector
+    \param  uh                 [in/out]   solution vector
     \param  TotalErrorResidual [out]   error residual
     \param  TotalErrorExactSol [out]   error in uh
 
@@ -1424,7 +1424,6 @@ int main(int argc, char *argv[]) {
   }
 
 
-
   // Run the solver
   std::string amgType("MueLu");
 
@@ -1548,6 +1547,12 @@ int main(int argc, char *argv[]) {
 
   int maxits = inputSolverList.get("Maximum Iterations",(int)100);
   double tol = inputSolverList.get("Convergence Tolerance",(double)1e-10);
+
+  if (amgList.isParameter("solve Ae=0")) {
+    rhsVector->scale(0.0);
+    femCoefficients->randomize();
+  }
+
 
   TestMultiLevelPreconditionerLaplace(probType, amgList,
                                       rcpFromRef(StiffMatrix),
@@ -1996,13 +2001,7 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
 {
 
   //  int mypid = A0->getComm()->getRank();
-  RCP<multivector_type> x = rcp(new multivector_type(xexact->getMap(),1));
-  //x.PutScalar(0.0);
-  //JJH FIXME solve Ax=0
-  if (amgList.isParameter("solve Ae=0")) {
-    b->scale(0.0);
-    x->randomize();
-  }
+  RCP<multivector_type>x = uh;
 
   linear_problem_type Problem(linear_problem_type(A0, x, b));
   RCP<multivector_type> lhs = Problem.getLHS();
@@ -2070,8 +2069,6 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
     //writer_type::writeDenseFile("sol.m", x);
     numIterations = solver->getNumIters();
   }
-
-  uh = lhs;
 
   ArrayRCP<const scalar_type> lhsdata = lhs->getData(0);
   ArrayRCP<const scalar_type> xexactdata = xexact->getData(0);
