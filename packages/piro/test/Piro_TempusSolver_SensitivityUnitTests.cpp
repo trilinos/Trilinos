@@ -282,8 +282,6 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_DefaultSolutionSensitivity)
       Array<double>(tuple(0.0, 0.0, 0.0, 0.0)),
       Array<double>(tuple(0.0, 0.0, 0.0, 0.0)));
   RCP<const Thyra::MultiVectorBase<double> > DxDp = solver->getPiroTempusIntegrator()->getDxDp();
-  //IKT, 5/11/2020: question for Eric: why is dxdp giving the wrong value here??  Need to call and 
-  //query getDxDp() to get right values of sensitivities.  Otherwise, it appears we get uninitialized values.
   TEST_EQUALITY(DxDp->domain()->dim(), expected.size());
 
   for (int i = 0; i < expected.size(); ++i) {
@@ -327,8 +325,6 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_DefaultSolutionSensitivityOp)
       Array<double>(tuple(0.0, 0.0, 0.0, 0.0)),
       Array<double>(tuple(0.0, 0.0, 0.0, 0.0)));
   RCP<const Thyra::MultiVectorBase<double> > DxDp = solver->getPiroTempusIntegrator()->getDxDp();
-  //IKT, 5/11/2020: question for Eric: why is dxdp giving the wrong value here??  Need to call and 
-  //query getDxDp() to get right values of sensitivities.  Otherwise, it appears we get uninitialized values.
   TEST_EQUALITY(DxDp->domain()->dim(), expected.size());
   for (int i = 0; i < expected.size(); ++i) {
   TEST_EQUALITY(dxdp->range()->dim(), expected[i].size());
