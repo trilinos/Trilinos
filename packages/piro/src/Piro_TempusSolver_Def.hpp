@@ -96,6 +96,8 @@ Piro::TempusSolver<Scalar>::TempusSolver(
 #ifdef DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
+  std::string sens_method = appParams->get("Sensitivity Method","None");
+  this->setSensitivityMethod(sens_method); 
   std::string jacobianSource = appParams->get("Jacobian Operator", "Have Jacobian");
   if (jacobianSource == "Matrix-Free") {
     Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model;
@@ -109,8 +111,6 @@ Piro::TempusSolver<Scalar>::TempusSolver(
   else {
     initialize(appParams, in_model);
   }
-  std::string sens_method = appParams->get("Sensitivity Method","None");
-  this->setSensitivityMethod(sens_method); 
 }
 
 template <typename Scalar>
@@ -139,9 +139,7 @@ void Piro::TempusSolver<Scalar>::initialize(
     RCP<Teuchos::ParameterList> tempusPL = sublist(appParams, "Tempus", true);
     abort_on_failure_ = tempusPL->get<bool>("Abort on Failure", true); 
 
-    //*out_ << "tempusPL = " << *tempusPL << "\n";
     RCP<Teuchos::ParameterList> integratorPL = sublist(tempusPL, "Tempus Integrator", true);
-    //*out_ << "integratorPL = " << *integratorPL << "\n";
     //IKT, 10/31/16, FIXME: currently there is no Verbosity Sublist in Tempus, but
     //Curt will add this at some point.  When this option is added, set Verbosity
     //based on that sublist, rather than hard-coding it here.
@@ -285,7 +283,7 @@ void Piro::TempusSolver<Scalar>::initialize(
     //
     *out_ << "\nD) Create the stepper and integrator for the forward problem ...\n";
 
-    //Create Tempus integrator with observer using tempusPL, model_ and sensitivity method 
+    //Create Tempus integrator with observer using tempusPL, model_ and sensitivity method
     piroTempusIntegrator_ = Teuchos::rcp(new Piro::TempusIntegrator<Scalar>(tempusPL, model_, this->getSensitivityMethod()));
     this->setPiroTempusIntegrator(piroTempusIntegrator_);  
 
