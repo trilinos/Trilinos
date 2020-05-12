@@ -332,7 +332,7 @@ Piro::TransientSolver<Scalar>::evalConvergedModel(
 #endif
   using Teuchos::RCP;
   using Teuchos::rcp;
-  
+
   *out_ << "\nE) Calculate responses ...\n";
 
   // Solution at convergence is the response at index num_g_
@@ -442,6 +442,16 @@ Piro::TransientSolver<Scalar>::evalConvergedModel(
     switch(sensitivityMethod_) {
 
       case FORWARD : //forward sensitivities
+      {
+        //Get dxdp_mv from Tempus::ForwardIntegratorSensitivity class  
+        const RCP<const Thyra::MultiVectorBase<Scalar> > dxdp_mv = piroTempusIntegrator_->getDxDp();
+        //IMPORTANT REMARK: we are currently NOT using DxdotDp and DxdotdotDp in transient sensitivities!  
+        //The capability to use them can be added at a later point in time, if desired. 
+        //IKT, 5/10/20: throw error if dxdp_mv returned by Tempus is null.  Not sure if this can happen in practice or not...
+        if (dxdp_mv == Teuchos::null) {
+           TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
+              "\n Error! Piro::TransientSolver: DxDp returned by Tempus::IntegratorForwardSensitivity::getDxDp() routine is null!\n"); 
+        } 
         //IKT FIXME: probably a lot of this can be reused for adjoint sensitivities.  Will clean up later, 
         //when adjoint sensitivities are implemented. 
         for (int l = 0; l < num_p_; ++l) {
@@ -469,15 +479,6 @@ Piro::TransientSolver<Scalar>::evalConvergedModel(
                     "\n Error! Piro::TransientSolver: DgDp = DERIV_LINEAR_OP is not supported with forward sensitivities!");
                 }
                 const RCP<Thyra::MultiVectorBase<Scalar> > dgdp_mv = dgdp_deriv.getMultiVector();
-                //Get dxdp_mv from Tempus::ForwardIntegratorSensitivity class  
-                const RCP<const Thyra::MultiVectorBase<Scalar> > dxdp_mv = piroTempusIntegrator_->getDxDp();
-                //IMPORTANT REMARK: we are currently NOT using DxdotDp and DxdotdotDp in transient sensitivities!  
-                //The capability to use them can be added at a later point in time, if desired. 
-                //IKT, 5/10/20: throw error if dxdp_mv returned by Tempus is null.  Not sure if this can happen in practice or not...
-                if (dxdp_mv == Teuchos::null) {
-                  TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
-                    "\n Error! Piro::TransientSolver: DxDp returned by Tempus::IntegratorForwardSensitivity::getDxDp() routine is null!\n"); 
-                } 
                 if (Teuchos::nonnull(dgdp_mv)) {
                   if (dgdp_deriv.getMultiVectorOrientation() == Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM) {
                     //Case 2: DgDp = DERIV_MV_GRADIENT_FORM, DgDx is MV, DxDp is MV.
@@ -503,7 +504,7 @@ Piro::TransientSolver<Scalar>::evalConvergedModel(
           }
         }
         break; 
-
+      }
     case ADJOINT: //adjoint sensitivities - not yet implemented 
       TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
         "\n Error! Piro::TransientSolver: adjoint sentivities (Sensitivity Method = "
