@@ -24,7 +24,11 @@ using Teuchos::rcp_dynamic_cast;
 // ************************************************************
 TEUCHOS_UNIT_TEST(ERK_3Stage3rdOrderHeun, Default_Construction)
 {
-  testExplicitRKAccessorsFullConstruction("RK Explicit 3 Stage 3rd order by Heun");
+  auto stepper = rcp(new Tempus::StepperERK_3Stage3rdOrderHeun<double>());
+  testExplicitRKAccessorsFullConstruction(stepper);
+
+  // Test stepper properties.
+  TEUCHOS_ASSERT(stepper->getOrder() == 3);
 }
 
 
@@ -41,7 +45,9 @@ TEUCHOS_UNIT_TEST(ERK_3Stage3rdOrderHeun, StepperFactory_Construction)
 // ************************************************************
 TEUCHOS_UNIT_TEST(ERK_3Stage3rdOrderHeun, AppAction)
 {
-  testRKAppAction("RK Explicit 3 Stage 3rd order by Heun", out, success);
+  auto stepper = rcp(new Tempus::StepperERK_3Stage3rdOrderHeun<double>());
+  auto model = rcp(new Tempus_Test::SinCosModel<double>());
+  testRKAppAction(stepper, model, out, success);
 }
 
 

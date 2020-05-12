@@ -99,6 +99,7 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregation: enable phase 2a");
     SET_VALID_ENTRY("aggregation: enable phase 2b");
     SET_VALID_ENTRY("aggregation: enable phase 3");
+    SET_VALID_ENTRY("aggregation: phase2a include root");
     SET_VALID_ENTRY("aggregation: preserve Dirichlet points");
     SET_VALID_ENTRY("aggregation: allow user-specified singletons");
     SET_VALID_ENTRY("aggregation: use interface aggregation");

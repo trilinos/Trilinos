@@ -114,8 +114,8 @@ C
 C
 C  REDEFINE THIS NODE-S COORDINATES
 C
-               SUMX = SUMX/(FLOAT(KS)*(2.0 - WFAC))
-               SUMY = SUMY/(FLOAT(KS)*(2.0 - WFAC))
+               SUMX = SUMX/(DBLE(KS)*(2.0 - WFAC))
+               SUMY = SUMY/(DBLE(KS)*(2.0 - WFAC))
                XDEL = RO*(SUMX-XN(NODE))
                YDEL = RO*(SUMY-YN(NODE))
                XN(NODE) = XN(NODE) + XDEL

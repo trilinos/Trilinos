@@ -95,7 +95,6 @@ void WorksetDetails::setupNeeds(Teuchos::RCP<const shards::CellTopology> cell_to
                                 const Kokkos::View<double***,PHX::Device> & cell_vertices,
                                 const panzer::WorksetNeeds & needs)
 {
-
   const size_t num_cells = cell_vertices.extent(0);
   const size_t num_vertices_per_cell = cell_vertices.extent(1);
   const size_t num_dims_per_vertex = cell_vertices.extent(2);
@@ -144,6 +143,88 @@ void WorksetDetails::setupNeeds(Teuchos::RCP<const shards::CellTopology> cell_to
     Teuchos::RCP<panzer::IntegrationValues2<double> > iv = Teuchos::rcp(new panzer::IntegrationValues2<double>("",true));
     iv->setupArrays(ir);
     iv->evaluateValues(cell_vertex_coordinates,num_cells);
+    if (iv->int_rule->getType() == panzer::IntegrationDescriptor::SURFACE)
+    {
+      // IntegrationValues2 doesn't know anything about virtual cells, so it sets up incorrect normals for those.
+      // What we want is for the adjoining face of the virtual cell to have normals that are the negated real cell's normals.
+      // we correct the normals here:
+      auto num_real_cells = _num_owned_cells + _num_ghost_cells;
+      const int space_dim      = cell_topology->getDimension();
+      const int faces_per_cell = cell_topology->getSubcellCount(space_dim-1);
+      const int points          = iv->surface_normals.extent_int(1);
+      const int points_per_face = points / faces_per_cell;
+      for (int virtual_cell_ordinal=0; virtual_cell_ordinal<_num_virtual_cells; virtual_cell_ordinal++)
+      {
+        const panzer::LocalOrdinal virtual_cell = virtual_cell_ordinal+num_real_cells;
+        int virtual_local_face_id = -1; // the virtual cell face that adjoins the real cell
+        int face_ordinal = -1;
+        for (int local_face_id=0; local_face_id<faces_per_cell; local_face_id++)
+        {
+          face_ordinal = _face_connectivity->subcellForCell(virtual_cell, local_face_id);
+          if (face_ordinal >= 0)
+          {
+            virtual_local_face_id = local_face_id;
+            break;
+          }
+        }
+        if (face_ordinal >= 0)
+        {
+          const int first_cell_for_face = _face_connectivity->cellForSubcell(face_ordinal, 0);
+          const panzer::LocalOrdinal other_side = (first_cell_for_face == virtual_cell) ? 1 : 0;
+          const panzer::LocalOrdinal real_cell = _face_connectivity->cellForSubcell(face_ordinal,other_side);
+          const panzer::LocalOrdinal face_in_real_cell = _face_connectivity->localSubcellForSubcell(face_ordinal,other_side);
+          TEUCHOS_ASSERT(real_cell < num_real_cells);
+          for (int point_ordinal=0; point_ordinal<points_per_face; point_ordinal++)
+          {
+            int virtual_cell_point = points_per_face * virtual_local_face_id + point_ordinal;
+            int real_cell_point = points_per_face * face_in_real_cell + point_ordinal;
+            // the following arrays will be used to produce/store the rotation matrix below
+            double normal[3], transverse[3], binormal[3];
+            for(int i=0;i<3;i++)
+            {
+              normal[i]=0.;
+              transverse[i]=0.;
+              binormal[i]=0.;
+            }
+            
+            for (int d=0; d<space_dim; d++)
+            {
+              const auto n_d = iv->surface_normals(real_cell,real_cell_point,d);
+              iv->surface_normals(virtual_cell,virtual_cell_point,d) = -n_d;
+              normal[d] = -n_d;
+            }
+            
+            panzer::IntegrationValues2<double>::convertNormalToRotationMatrix(normal,transverse,binormal);
+            
+            for(int dim=0; dim<3; ++dim){
+              iv->surface_rotation_matrices(virtual_cell,virtual_cell_point,0,dim) = normal[dim];
+              iv->surface_rotation_matrices(virtual_cell,virtual_cell_point,1,dim) = transverse[dim];
+              iv->surface_rotation_matrices(virtual_cell,virtual_cell_point,2,dim) = binormal[dim];
+            }
+          }
+          // clear the other normals and rotation matrices for the virtual cell:
+          for (int local_face_id=0; local_face_id<faces_per_cell; local_face_id++)
+          {
+            if (local_face_id == virtual_local_face_id) continue;
+            for (int point_ordinal=0; point_ordinal<points_per_face; point_ordinal++)
+            {
+              int point = local_face_id * points_per_face + point_ordinal;
+              for (int dim=0; dim<space_dim; dim++)
+              {
+                iv->surface_normals(virtual_cell,point,dim) = 0.0;
+              }
+              for(int dim1=0; dim1<3; ++dim1)
+              {
+                for(int dim2=0; dim2<3; ++dim2)
+                {
+                  iv->surface_rotation_matrices(virtual_cell,point,dim1,dim2) = 0;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
     _integrator_map[integration_description.getKey()] = iv;
 
     // We need to generate a integration rule - basis pair for each basis

@@ -117,6 +117,48 @@ namespace tacho {
       return 0;
     }
 
+    void exportUpperTriangularFactorsToCrsMatrix(std::vector<int> &rowBeginU,
+                                                 std::vector<int> &columnsU,
+                                                 std::vector<SX> &valuesU,
+                                                 std::vector<int> &perm) {
+      {
+        const auto perm_device = m_Solver.getPermutationVector();
+        auto perm_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), perm_device);
+        {
+          const int n = perm_host.extent(0);
+          perm.resize(n);
+          std::copy(perm_host.data(), perm_host.data()+n, perm.data());
+        }
+      }
+      
+      {
+        typename solver_type::crs_matrix_type A;
+        m_Solver.exportFactorsToCrsMatrix(A);
+
+        typename solver_type::crs_matrix_type_host A_host;
+        A_host.createMirror(A);
+        A_host.copy(A); 
+        {
+          const auto ap = A_host.RowPtr();
+          const int n = ap.extent(0);
+          rowBeginU.resize(n);
+          std::copy(ap.data(), ap.data()+n, rowBeginU.data());
+        }
+        {
+          const auto aj = A_host.Cols();
+          const int n = aj.extent(0);
+          columnsU.resize(n);
+          std::copy(aj.data(), aj.data()+n, columnsU.data());
+        }
+        {
+          const auto ax = A_host.Values();
+          const int n = ax.extent(0);
+          valuesU.resize(n);
+          std::copy(ax.data(), ax.data()+n, valuesU.data());
+        }
+      }
+    }
+
     void MySolve(int NRHS,
                  value_type_matrix &b, 
                  value_type_matrix &x)

@@ -75,7 +75,6 @@ public:
     bool ICConsistencyCheck,
     bool useEmbedded,
     const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
-
   {
     this->setStepperType("RK Forward Euler");
     this->setupTableau();
@@ -2045,6 +2044,8 @@ public:
     this->setupTableau();
   }
 
+  Scalar getGamma() { return gamma_; }
+
   std::string getDescription() const
   {
     std::ostringstream Description;
@@ -2375,6 +2376,9 @@ public:
     this->isInitialized_ = false;
     this->setupTableau();
   }
+
+  std::string getGammaType() { return gammaType_; }
+
   void setGamma(Scalar gamma)
   {
     if ( gammaType_ == "gamma" ) {
@@ -2383,6 +2387,8 @@ public:
     }
     this->isInitialized_ = false;
   }
+
+  Scalar getGamma() { return gamma_; }
 
   std::string getDescription() const
   {
@@ -2696,6 +2702,8 @@ public:
     this->isInitialized_ = false;
   }
 
+  Scalar getTheta() { return theta_; }
+
   std::string getDescription() const
   {
     std::ostringstream Description;
@@ -2856,6 +2864,8 @@ public:
     this->isInitialized_ = false;
     this->setupTableau();
   }
+
+  Scalar getTheta() { return theta_; }
 
   std::string getDescription() const
   {

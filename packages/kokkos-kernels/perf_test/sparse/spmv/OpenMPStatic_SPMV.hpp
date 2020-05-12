@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//               KokkosKernels 0.9: Linear Algebra and Graph Kernels
-//                 Copyright 2017 Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -44,45 +45,42 @@
 #ifndef OPENMP_STATIC_SPMV_HPP_
 #define OPENMP_STATIC_SPMV_HPP_
 
-template<typename AType, typename XType, typename YType, typename LocalOrdinal, typename Scalar>
-void openmp_static_matvec(AType A, XType x, YType y, int rows_per_thread, int team_size, int vector_length) {
+template<typename AType, typename XType, typename YType, typename Offset, typename Ordinal, typename Scalar>
+void openmp_static_matvec(AType A, XType x, YType y) {
 
   #define OMP_BENCH_RESTRICT __restrict__
 
-  const double s_a                                = 1.0;
-  const double s_b                                = 0.0;
+  const Scalar s_a(1.0);
+  const Scalar s_b(0.0);
 
-  const int rowCount                              = A.numRows();
-  const double* OMP_BENCH_RESTRICT x_ptr          = (double*) x.data();
-  double* OMP_BENCH_RESTRICT y_ptr                = (double*) y.data();
-  const double* OMP_BENCH_RESTRICT matrixCoeffs   = A.values.data();
-  const int* OMP_BENCH_RESTRICT matrixCols        = A.graph.entries.data();
-  const int* OMP_BENCH_RESTRICT matrixRowOffsets  = &A.graph.row_map(0);
-  
+  const Ordinal rowCount                             = A.numRows();
+  const Scalar* OMP_BENCH_RESTRICT x_ptr             = x.data();
+  Scalar* OMP_BENCH_RESTRICT y_ptr                   = y.data();
+  const Scalar* OMP_BENCH_RESTRICT matrixCoeffs      = A.values.data();
+  const Ordinal* OMP_BENCH_RESTRICT matrixCols       = A.graph.entries.data();
+  const Offset* OMP_BENCH_RESTRICT matrixRowOffsets  = &A.graph.row_map(0);
+
   #pragma omp parallel for
-  for(int row = 0; row < rowCount; ++row) {
-  
-  	const int rowStart = matrixRowOffsets[row];
-  	const int rowEnd   = matrixRowOffsets[row + 1];
-  	
-  	double sum = 0.0;
-  	
-  	for(int i = rowStart; i < rowEnd; ++i) {
-  		const int x_entry = matrixCols[i];
-  		const double alpha_MC = s_a * matrixCoeffs[i];
-  		sum += alpha_MC * x_ptr[x_entry];
-  	}
-  	
-  	if(0.0 == s_b) {
-  		y_ptr[row] = sum;
-  	} else {
-  		y_ptr[row] = s_b * y_ptr[row] + sum;
-  	}
-  
+  for(Ordinal row = 0; row < rowCount; ++row) {
+
+    const Offset rowStart = matrixRowOffsets[row];
+    const Offset rowEnd   = matrixRowOffsets[row + 1];
+
+    Scalar sum = 0.0;
+
+    for(Offset i = rowStart; i < rowEnd; ++i) {
+      const Ordinal x_entry = matrixCols[i];
+      const Scalar alpha_MC = s_a * matrixCoeffs[i];
+      sum += alpha_MC * x_ptr[x_entry];
+    }
+
+    if(0.0 == s_b)
+      y_ptr[row] = sum;
+    else
+      y_ptr[row] = s_b * y_ptr[row] + sum;
   }
 
   #undef OMP_BENCH_RESTRICT
-
 }
 
 #endif /* OPENMP_STATIC_SPMV_HPP_ */

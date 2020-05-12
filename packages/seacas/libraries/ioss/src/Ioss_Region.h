@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -49,6 +49,8 @@
 #include <utility>         // for pair
 #include <vector>          // for vector
 namespace Ioss {
+  class Assembly;
+  class Blob;
   class CommSet;
   class EdgeBlock;
   class EdgeSet;
@@ -68,6 +70,9 @@ namespace Ioss {
 namespace Ioss {
 
   class CoordinateFrame;
+
+  using AssemblyContainer = std::vector<Ioss::Assembly *>;
+  using BlobContainer     = std::vector<Ioss::Blob *>;
 
   using NodeBlockContainer    = std::vector<NodeBlock *>;
   using EdgeBlockContainer    = std::vector<EdgeBlock *>;
@@ -111,7 +116,7 @@ namespace Ioss {
     const std::string mesh_type_string() const;
     bool              node_major() const;
 
-    void output_summary(std::ostream &strm, bool do_transient = true);
+    void output_summary(std::ostream &strm, bool do_transient = true) const;
 
     bool supports_field_type(Ioss::EntityType fld_type) const;
 
@@ -174,7 +179,12 @@ namespace Ioss {
     bool add(ElementSet *elementset);
     bool add(CommSet *commset);
     bool add(StructuredBlock *structured_block);
+    bool add(Assembly *assembly);
+    bool add(Blob *blob);
     bool add(const CoordinateFrame &frame);
+
+    // Special purpose...
+    bool remove(Assembly *removal);
 
     const NodeBlockContainer &      get_node_blocks() const;
     const EdgeBlockContainer &      get_edge_blocks() const;
@@ -187,6 +197,8 @@ namespace Ioss {
     const ElementSetContainer &     get_elementsets() const;
     const CommSetContainer &        get_commsets() const;
     const StructuredBlockContainer &get_structured_blocks() const;
+    const AssemblyContainer &       get_assemblies() const;
+    const BlobContainer &           get_blobs() const;
     const CoordinateFrameContainer &get_coordinate_frames() const;
 
     // Retrieve the Grouping Entity with the specified name.
@@ -205,6 +217,12 @@ namespace Ioss {
     ElementSet *     get_elementset(const std::string &my_name) const;
     CommSet *        get_commset(const std::string &my_name) const;
     StructuredBlock *get_structured_block(const std::string &my_name) const;
+    Assembly *       get_assembly(const std::string &my_name) const;
+    Blob *           get_blob(const std::string &my_name) const;
+
+    // Not guaranteed to be efficient...
+    // Note that not all GroupingEntity's are guaranteed to have an 'id'...
+    GroupingEntity *get_entity(const int64_t id, EntityType io_type) const;
 
     const CoordinateFrame &get_coordinate_frame(int64_t id) const;
 
@@ -299,6 +317,8 @@ namespace Ioss {
     CommSetContainer           commSets;
     CoordinateFrameContainer   coordinateFrames;
     StructuredBlockContainer   structuredBlocks;
+    AssemblyContainer          assemblies;
+    BlobContainer              blobs;
     mutable StateTimeContainer stateTimes;
 
     int         currentState;

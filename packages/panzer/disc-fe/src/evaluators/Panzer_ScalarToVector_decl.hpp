@@ -81,8 +81,6 @@ protected:
   typedef Kokkos::View<const ScalarT**,typename PHX::DevLayout<ScalarT>::type,PHX::Device> KokkosScalarFields_t;
   Kokkos::View<KokkosScalarFields_t*> internal_scalar_fields;
 public:
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const size_t &cell) const;
 
   /**
    * \brief Tag only constructor for this class.

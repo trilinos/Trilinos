@@ -259,8 +259,8 @@ C
                      SUMY = SUMY + YN(NODES(J1)) + YN(NODES(J3))
      &                  - WFAC * YN(NODES(J2))
   120             CONTINUE
-                  SUMX = SUMX/(FLOAT(KS) * (2.0 - WFAC))
-                  SUMY = SUMY/(FLOAT(KS) * (2.0 - WFAC))
+                  SUMX = SUMX/(DBLE(KS) * (2.0 - WFAC))
+                  SUMY = SUMY/(DBLE(KS) * (2.0 - WFAC))
                   XDEL = (RO * ( SUMX - XN (NODE) ))
                   YDEL = (RO * ( SUMY - YN (NODE) ))
 C

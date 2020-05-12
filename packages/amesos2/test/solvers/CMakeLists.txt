@@ -8,6 +8,7 @@ TRIBITS_ADD_EXECUTABLE(
 
 ##### cuSOLVER Tests #####
 
+IF (${PACKAGE_NAME}_ENABLE_CUSPARSE)
 IF (${PACKAGE_NAME}_ENABLE_CUSOLVER)
 IF (${PACKAGE_NAME}_ENABLE_METIS)
 
@@ -26,6 +27,7 @@ IF (${PACKAGE_NAME}_ENABLE_METIS)
     COMM serial mpi
     )
 
+ENDIF()
 ENDIF()
 ENDIF()
 
@@ -154,6 +156,25 @@ IF (${PACKAGE_NAME}_ENABLE_Cholmod)
     NUM_MPI_PROCS 1
     COMM serial mpi
     )
+
+  IF (${PACKAGE_NAME}_ENABLE_TRIANGULAR_SOLVES)
+
+    TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCholmodTRSVFiles
+      SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+      SOURCE_FILES cholmod_trsv_test.xml
+      EXEDEPS Solver_Test
+      )
+
+    TRIBITS_ADD_TEST(
+      Solver_Test
+      NAME Cholmod_TriangularSolve_Solver_Test
+      ARGS "--xml-params=cholmod_trsv_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
+      STANDARD_PASS_OUTPUT
+      NUM_MPI_PROCS 1
+      COMM serial mpi
+      )
+
+  ENDIF()
 
 ENDIF()
 

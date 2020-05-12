@@ -335,12 +335,17 @@ MueLu::MueLu_AMGX_initialize_plugins();
 
   comm->barrier();
   Teuchos::RCP<Teuchos::StackedTimer> stacked_timer;
+  //Constructing the globalTimeMonitor should only be done if not using StackedTimer.
+  //This is because if a StackedTimer is already active, globalTimer will be become a sub-timer of the root.
+  RCP<TimeMonitor> globalTimeMonitor = Teuchos::null;
   if(useStackedTimer)
+  {
     stacked_timer = rcp(new Teuchos::StackedTimer("MueLu_Driver"));
-  Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
-
-  RCP<TimeMonitor> globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: S - Global Time")));
-  RCP<TimeMonitor> tm                = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1 - Matrix Build")));
+    Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
+  }
+  else
+    globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: S - Global Time")));
+  RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1 - Matrix Build")));
 
 
   RCP<Matrix>      A;
@@ -514,10 +519,11 @@ MueLu::MueLu_AMGX_initialize_plugins();
         const std::string filter = "";
 
         if (useStackedTimer) {
+          stacked_timer->stopBaseTimer();
           Teuchos::StackedTimer::OutputOptions options;
           options.output_fraction = options.output_histogram = options.output_minmax = true;
           stacked_timer->report(out2, comm, options);
-          auto xmlOut = stacked_timer->reportWatchrXML(std::string("MueLuDriver") + std::to_string(comm->getSize()), comm);
+          auto xmlOut = stacked_timer->reportWatchrXML(std::string("MueLu Setup-Solve ") + std::to_string(comm->getSize()) + " ranks", comm);
           if(xmlOut.length())
             std::cout << "\nAlso created Watchr performance report " << xmlOut << '\n';
         }

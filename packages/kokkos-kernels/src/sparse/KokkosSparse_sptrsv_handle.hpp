@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//               KokkosKernels 0.9: Linear Algebra and Graph Kernels
-//                 Copyright 2017 Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -57,15 +58,9 @@
 #define KOKKOSKERNELS_SPTRSV_CUDAGRAPHSUPPORT
 #endif
 
-#if defined(KOKKOSKERNELS_ENABLE_TPL_CBLAS)   && \
-    defined(KOKKOSKERNELS_ENABLE_TPL_LAPACKE) && \
-   (defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU) || \
-    defined(KOKKOSKERNELS_ENABLE_TPL_CHOLMOD))
-
  // Enable supernodal sptrsv
- #define KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
- #include <KokkosSparse_CrsMatrix.hpp>
-
+#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
+#include <KokkosSparse_CrsMatrix.hpp>
 #endif
 
 namespace KokkosSparse {
@@ -115,6 +110,7 @@ public:
   // entries type (managed memory)
   typedef typename Kokkos::View<nnz_lno_t *, HandleTempMemorySpace> nnz_lno_view_temp_t;
   typedef typename Kokkos::View<nnz_lno_t *, HandlePersistentMemorySpace> nnz_lno_view_t;
+  typedef typename Kokkos::View<nnz_lno_t *, Kokkos::HostSpace> hostspace_nnz_lno_view_t;
   typedef typename nnz_lno_view_t::HostMirror host_nnz_lno_view_t;
   typedef typename Kokkos::View<const nnz_lno_t *, HandlePersistentMemorySpace, Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess>> nnz_lno_unmanaged_view_t; // for rank1 subviews
  // typedef typename nnz_lno_persistent_work_view_t::HostMirror nnz_lno_persistent_work_host_view_t; //Host view type
@@ -217,26 +213,26 @@ public:
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
-  typedef typename execution_space::memory_space  supercols_memory_space;
+  using supercols_memory_space = TemporaryMemorySpace;
 
-  typedef Kokkos::DefaultHostExecutionSpace                      supercols_host_execution_space;
-  typedef typename supercols_host_execution_space::memory_space  supercols_host_memory_space;
+  using supercols_host_execution_space = Kokkos::DefaultHostExecutionSpace;
+  using supercols_host_memory_space = typename supercols_host_execution_space::memory_space;
 
-  typedef Kokkos::View<int*, supercols_memory_space>       integer_view_t;
-  typedef Kokkos::View<int*, supercols_host_memory_space>  integer_view_host_t;
+  using integer_view_t = Kokkos::View<int*, supercols_memory_space>;
+  using integer_view_host_t = Kokkos::View<int*, supercols_host_memory_space>;
 
-  typedef typename Kokkos::View<scalar_t*, memory_space> workspace_t;
-
-  //
-  typedef KokkosSparse::CrsMatrix<scalar_t, nnz_lno_t, supercols_host_execution_space, void, size_type> host_crsmat_t;
-  typedef KokkosSparse::CrsMatrix<scalar_t, nnz_lno_t,                execution_space, void, size_type> crsmat_t;
+  using workspace_t = typename Kokkos::View<scalar_t*, supercols_memory_space>;
 
   //
-  typedef typename host_crsmat_t::StaticCrsGraphType host_graph_t;
-  typedef typename      crsmat_t::StaticCrsGraphType      graph_t;
+  using host_crsmat_t = KokkosSparse::CrsMatrix<scalar_t, nnz_lno_t, supercols_host_execution_space, void, size_type>;
+  using crsmat_t      = KokkosSparse::CrsMatrix<scalar_t, nnz_lno_t,                execution_space, void, size_type>;
 
   //
-  typedef typename std::vector<crsmat_t> crsmat_list_t;
+  using host_graph_t = typename host_crsmat_t::StaticCrsGraphType;
+  using graph_t      = typename      crsmat_t::StaticCrsGraphType;
+
+  //
+  using crsmat_list_t = typename std::vector<crsmat_t>;
 #endif
 
 private:
@@ -254,9 +250,9 @@ private:
   // Symbolic: Level scheduling data
   signed_nnz_lno_view_t level_list;
   nnz_lno_view_t nodes_per_level;
-  host_nnz_lno_view_t hnodes_per_level; // NEW
+  hostspace_nnz_lno_view_t hnodes_per_level; // NEW
   nnz_lno_view_t nodes_grouped_by_level;
-  host_nnz_lno_view_t hnodes_grouped_by_level; // NEW
+  hostspace_nnz_lno_view_t hnodes_grouped_by_level; // NEW
   size_type nlevel;
 
   int team_size;
@@ -342,6 +338,7 @@ private:
 
   // 
   bool merge_supernodes;
+  bool invert_diagonal;
   bool invert_offdiagonal;
   int *etree;
 
@@ -415,6 +412,7 @@ public:
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
     , merge_supernodes (false)
+    , invert_diagonal (true)
     , invert_offdiagonal (false)
     , etree (nullptr)
     , sup_size_unblocked (100)
@@ -440,23 +438,28 @@ public:
 
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
   // set nsuper and supercols (# of supernodes, and map from supernode to column id
-  void set_supernodes (signed_integral_t nsuper_, int *supercols_, int *etree_) {
-    integer_view_host_t supercols_view = integer_view_host_t (supercols_, 1+nsuper_);
+  template<class input_int_type>
+  void set_supernodes (signed_integral_t nsuper_, input_int_type *supercols_, int *etree_) {
+    // set etree (just wrap etree in a view)
+    this->etree_host = integer_view_host_t (etree_, nsuper_);
+    // set supernodes (make a copy, from input_int_type to int)
+    integer_view_host_t supercols_view = integer_view_host_t ("supercols", 1+nsuper_);
+    for (signed_integral_t i = 0; i <= nsuper_; i++) {
+      supercols_view (i) = supercols_[i];
+    }
+
     set_supernodes (nsuper_, supercols_view, etree_);
   }
 
   void set_supernodes (signed_integral_t nsuper_, integer_view_host_t supercols_, int *etree_) {
-    int default_sup_size_unblocked_ = 100;
-    int default_sup_size_blocked_ = 200;
-    set_supernodes(nsuper_, supercols_, etree_, default_sup_size_unblocked_, default_sup_size_blocked_);
+    // set etree
+    this->etree_host = integer_view_host_t (etree_, nsuper_);
+    // set supernodes
+    set_supernodes(nsuper_, supercols_);
   }
 
-  void set_supernodes (signed_integral_t nsuper_, integer_view_host_t supercols_view, int *etree_,
-                       int sup_size_unblocked_, int sup_size_blocked_) {
+  void set_supernodes (signed_integral_t nsuper_, integer_view_host_t supercols_view) {
     this->nsuper = nsuper_;
-
-    // etree
-    this->etree_host = integer_view_host_t (etree_, nsuper_);
 
     // supercols
     integer_view_host_t supercols_subview (supercols_view.data (), 1+nsuper_);
@@ -471,8 +474,6 @@ public:
     this->work_offset = integer_view_t ("workoffset", nsuper_);
 
     // kernel type 
-    this->sup_size_unblocked = sup_size_unblocked_;
-    this->sup_size_blocked = sup_size_blocked_;
     this->diag_kernel_type_host = integer_view_host_t ("diag_kernel_type_host", nsuper_);
     this->diag_kernel_type = integer_view_t ("diag_kernel_type", nsuper_);
     this->kernel_type_host = integer_view_host_t ("kernel_type_host", nsuper_);
@@ -571,6 +572,15 @@ public:
 
   int* get_etree() {
     return this->etree;
+  }
+
+  // specify to invertt diagonal
+  void set_invert_diagonal(bool flag) {
+    this->invert_diagonal = flag;
+  }
+
+  bool get_invert_diagonal() {
+    return this->invert_diagonal;
   }
 
   // specify to apply the inverse of diagonal to the offdiagonal blocks
@@ -727,10 +737,14 @@ public:
       set_num_levels(0);
       level_list = signed_nnz_lno_view_t(Kokkos::ViewAllocateWithoutInitializing("level_list"), nrows_);
       Kokkos::deep_copy( level_list, signed_integral_t(-1) );
-      nodes_per_level =  nnz_lno_view_t("nodes_per_level", nrows_);
-      hnodes_per_level = Kokkos::create_mirror_view(nodes_per_level);
-      nodes_grouped_by_level = nnz_lno_view_t("nodes_grouped_by_level", nrows_);
-      hnodes_grouped_by_level = Kokkos::create_mirror_view(nodes_grouped_by_level);
+      //The host side views need to be initialized, but the device-side views don't.
+      //Symbolic computes on the host (and requires these are 0 initialized), and then copies to device.
+      hnodes_per_level = hostspace_nnz_lno_view_t("host nodes_per_level", nrows_);
+      hnodes_grouped_by_level = hostspace_nnz_lno_view_t("host nodes_grouped_by_level", nrows_);
+      nodes_per_level =  nnz_lno_view_t(
+          Kokkos::ViewAllocateWithoutInitializing("nodes_per_level"), nrows_);
+      nodes_grouped_by_level = nnz_lno_view_t(
+          Kokkos::ViewAllocateWithoutInitializing("nodes_grouped_by_level"), nrows_);
 
 #if 0
       std::cout << "  newinit_handle: level schedule allocs" << std::endl;
@@ -868,7 +882,7 @@ public:
   nnz_lno_view_t get_nodes_per_level() const { return nodes_per_level; }
 
   inline
-  host_nnz_lno_view_t get_host_nodes_per_level() const { 
+  hostspace_nnz_lno_view_t get_host_nodes_per_level() const { 
     return hnodes_per_level; 
   }
 
@@ -876,7 +890,7 @@ public:
   nnz_lno_view_t get_nodes_grouped_by_level() const { return nodes_grouped_by_level; }
 
   inline
-  host_nnz_lno_view_t get_host_nodes_grouped_by_level() const { return hnodes_grouped_by_level; }
+  hostspace_nnz_lno_view_t get_host_nodes_grouped_by_level() const { return hnodes_grouped_by_level; }
 
   KOKKOS_INLINE_FUNCTION
   size_type get_nrows() const { return nrows; }

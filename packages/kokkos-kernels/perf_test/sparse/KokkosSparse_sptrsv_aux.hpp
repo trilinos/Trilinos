@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//               KokkosKernels 0.9: Linear Algebra and Graph Kernels
-//                 Copyright 2017 Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -585,7 +586,7 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L, bool col_m
     // ==============================================
     // Benchmark
     // L-solve
-    double min_time = 1.0e32;
+    double min_time = 0.0;
     double max_time = 0.0;
     double ave_time = 0.0;
     Kokkos::fence();
@@ -613,8 +614,8 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L, bool col_m
         time = timer.seconds();
       }
       ave_time += time;
-      if(time > max_time) max_time = time;
-      if(time < min_time) min_time = time;
+      if(time > max_time || i == 0) max_time = time;
+      if(time < min_time || i == 0) min_time = time;
     }
     std::cout << " L-solve: loop = " << loop << std::endl;
     std::cout << "  LOOP_AVG_TIME:  " << ave_time/loop << std::endl;
@@ -622,7 +623,7 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L, bool col_m
     std::cout << "  LOOP_MIN_TIME:  " << min_time << std::endl << std::endl;
 
     // U-solve
-    min_time = 1.0e32;
+    min_time = 0.0;
     max_time = 0.0;
     ave_time = 0.0;
     Kokkos::fence();
@@ -650,8 +651,8 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L, bool col_m
         time = timer.seconds();
       }
       ave_time += time;
-      if(time > max_time) max_time = time;
-      if(time < min_time) min_time = time;
+      if(time > max_time || i == 0) max_time = time;
+      if(time < min_time || i == 0) min_time = time;
     }
     std::cout << " U-solve: loop = " << loop << std::endl;
     std::cout << "  LOOP_AVG_TIME:  " << ave_time/loop << std::endl;

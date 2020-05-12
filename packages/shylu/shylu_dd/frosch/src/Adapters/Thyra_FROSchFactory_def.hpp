@@ -48,6 +48,7 @@
 namespace Thyra {
 
     using namespace FROSch;
+    using namespace std;
     using namespace Teuchos;
     using namespace Thyra;
     using namespace Xpetra;
@@ -56,7 +57,7 @@ namespace Thyra {
     template <class SC, class LO, class GO, class NO>
     FROSchFactory<SC,LO,GO,NO>::FROSchFactory()
     {
-        
+
     }
 
     //-----------------------------------------------------------
@@ -114,7 +115,7 @@ namespace Thyra {
         XCrsMatrixPtr xpetraFwdCrsMatNonConst = rcp_const_cast<XCrsMatrix>(xpetraFwdCrsMat);
         XMatrixPtr ANonConst = rcp(new CrsMatrixWrap<SC,LO,GO,NO>(xpetraFwdCrsMatNonConst));
         ConstXMatrixPtr A = ANonConst.getConst();
-        
+
         CommPtr comm = A->getMap()->getComm();
         UnderlyingLib underlyingLib = A->getMap()->lib();
 
@@ -128,29 +129,29 @@ namespace Thyra {
 
         // Abstract SchwarzPreconditioner
         RCP<SchwarzPreconditioner<SC,LO,GO,NO> > SchwarzPreconditioner = null;
-        
+
         const bool startingOver = (thyra_precOp.is_null() || !paramList_->isParameter("Recycling") || !paramList_->get("Recycling",true));
-        
+
         if (startingOver) {
             FROSCH_ASSERT(paramList_->isParameter("FROSch Preconditioner Type"),"FROSch Preconditioner Type is not defined!");
-            
+
             if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("AlgebraicOverlappingPreconditioner")) {
                 // Extract the repeated map
                 ConstXMapPtr repeatedMap = extractRepeatedMap(comm,underlyingLib);
-                
+
                 RCP<AlgebraicOverlappingPreconditioner<SC,LO,GO,NO> > AOP(new AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>(A,paramList_));
-                
+
                 AOP->initialize(paramList_->get("Overlap",1),
                                 repeatedMap);
-                
+
                 SchwarzPreconditioner = AOP;
             } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("GDSWPreconditioner")) {
                 // Extract the repeated map
                 ConstXMapPtr repeatedMap = extractRepeatedMap(comm,underlyingLib);
-                
+
                 // Extract the coordinate list
                 ConstXMultiVectorPtr coordinatesList = extractCoordinatesList(comm,underlyingLib);
-                
+
                 // Extract the dof ordering
                 DofOrdering dofOrdering = NodeWise;
                 if (!paramList_->get("DofOrdering","NodeWise").compare("NodeWise")) {
@@ -162,24 +163,24 @@ namespace Thyra {
                 } else {
                     FROSCH_ASSERT(false,"ERROR: Specify a valid DofOrdering.");
                 }
-                
+
                 RCP<GDSWPreconditioner<SC,LO,GO,NO> > GP(new GDSWPreconditioner<SC,LO,GO,NO>(A,paramList_));
-                
+
                 GP->initialize(paramList_->get("Dimension",3),
                                paramList_->get("DofsPerNode",1),
                                dofOrdering,
                                paramList_->get("Overlap",1),
                                repeatedMap,
                                coordinatesList);
-                
+
                 SchwarzPreconditioner = GP;
             } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("RGDSWPreconditioner")) {
                 // Extract the repeated map
                 ConstXMapPtr repeatedMap = extractRepeatedMap(comm,underlyingLib);
-                
+
                 // Extract the coordinate list
                 ConstXMultiVectorPtr coordinatesList = extractCoordinatesList(comm,underlyingLib);
-                
+
                 // Extract the dof ordering
                 DofOrdering dofOrdering = NodeWise;
                 if (!paramList_->get("DofOrdering","NodeWise").compare("NodeWise")) {
@@ -191,37 +192,37 @@ namespace Thyra {
                 } else {
                     FROSCH_ASSERT(false,"ERROR: Specify a valid DofOrdering.");
                 }
-                
+
                 RCP<RGDSWPreconditioner<SC,LO,GO,NO> > RGP(new RGDSWPreconditioner<SC,LO,GO,NO>(A,paramList_));
-                
+
                 RGP->initialize(paramList_->get("Dimension",3),
                                 paramList_->get("DofsPerNode",1),
                                 dofOrdering,
                                 paramList_->get("Overlap",1),
                                 repeatedMap,
                                 coordinatesList);
-                
+
                 SchwarzPreconditioner = RGP;
             } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("OneLevelPreconditioner")) {
                 // Extract the repeated map
                 ConstXMapPtr repeatedMap = extractRepeatedMap(comm,underlyingLib);
-                
+
                 RCP<OneLevelPreconditioner<SC,LO,GO,NO> > OLP(new OneLevelPreconditioner<SC,LO,GO,NO>(A,paramList_));
-                
+
                 OLP->initialize(paramList_->get("Overlap",1),
                                 repeatedMap);
-                
+
                 SchwarzPreconditioner = OLP;
             } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("TwoLevelPreconditioner")) {
                 // Extract the repeated map
                 ConstXMapPtr repeatedMap = extractRepeatedMap(comm,underlyingLib);
-                
+
                 // Extract the null space
                 ConstXMultiVectorPtr nullSpaceBasis = extractNullSpace(comm,underlyingLib);
-                
+
                 // Extract the coordinate list
                 ConstXMultiVectorPtr coordinatesList = extractCoordinatesList(comm,underlyingLib);
-                
+
                 // Extract the dof ordering
                 DofOrdering dofOrdering = NodeWise;
                 if (!paramList_->get("DofOrdering","NodeWise").compare("NodeWise")) {
@@ -233,9 +234,9 @@ namespace Thyra {
                 } else {
                     FROSCH_ASSERT(false,"ERROR: Specify a valid DofOrdering.");
                 }
-                
+
                 RCP<TwoLevelPreconditioner<SC,LO,GO,NO> > TLP(new TwoLevelPreconditioner<SC,LO,GO,NO>(A,paramList_));
-                
+
                 TLP->initialize(paramList_->get("Dimension",3),
                                 paramList_->get("DofsPerNode",1),
                                 paramList_->get("Overlap",1),
@@ -243,13 +244,13 @@ namespace Thyra {
                                 coordinatesList,
                                 dofOrdering,
                                 repeatedMap);
-                
+
                 SchwarzPreconditioner = TLP;
             } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("TwoLevelBlockPreconditioner")) {
                 ConstXMapPtrVecPtr repeatedMaps = null;
                 UNVecPtr dofsPerNodeVector;
                 DofOrderingVecPtr dofOrderings;
-                
+
                 FROSCH_ASSERT(paramList_->isParameter("DofsPerNode Vector"),"Currently, TwoLevelBlockPreconditioner cannot be constructed without DofsPerNode Vector.");
                 FROSCH_ASSERT(paramList_->isParameter("DofOrdering Vector"),"Currently, TwoLevelBlockPreconditioner cannot be constructed without DofOrdering Vector.");
                 if (paramList_->isParameter("Repeated Map Vector")) {
@@ -261,50 +262,50 @@ namespace Thyra {
                         }
                     }
                     FROSCH_ASSERT(!repeatedMaps.is_null(),"FROSch::FROSchFactory : ERROR: repeatedMaps.is_null()");
-                    
+
                     dofsPerNodeVector = ExtractVectorFromParameterList<UN>(*paramList_,"DofsPerNode Vector");
                     dofOrderings = ExtractVectorFromParameterList<DofOrdering>(*paramList_,"DofOrdering Vector");
                 } else {
                     FROSCH_ASSERT(false,"Currently, TwoLevelBlockPreconditioner cannot be constructed without Repeated Maps.");
                 }
-                
+
                 FROSCH_ASSERT(repeatedMaps.size()==dofsPerNodeVector.size(),"RepeatedMaps.size()!=dofsPerNodeVector.size()");
                 FROSCH_ASSERT(repeatedMaps.size()==dofOrderings.size(),"RepeatedMaps.size()!=dofOrderings.size()");
-                
+
                 RCP<TwoLevelBlockPreconditioner<SC,LO,GO,NO> > TLBP(new TwoLevelBlockPreconditioner<SC,LO,GO,NO>(A,paramList_));
-                
+
                 TLBP->initialize(paramList_->get("Dimension",3),
                                  dofsPerNodeVector,
                                  dofOrderings,
                                  paramList_->get("Overlap",1),
                                  repeatedMaps);
-                
+
                 SchwarzPreconditioner = TLBP;
             } else {
                 FROSCH_ASSERT(false,"Thyra::FROSchFactory : ERROR: Preconditioner Type is unknown.");
             }
-            
+
             SchwarzPreconditioner->compute();
             //-----------------------------------------------
-            
+
             LinearOpBasePtr thyraPrecOp = null;
             //FROSCh_XpetraOP
             ConstVectorSpaceBasePtr thyraRangeSpace  = ThyraUtils<SC,LO,GO,NO>::toThyra(SchwarzPreconditioner->getRangeMap());
             ConstVectorSpaceBasePtr thyraDomainSpace = ThyraUtils<SC,LO,GO,NO>::toThyra(SchwarzPreconditioner->getDomainMap());
-            
+
             RCP<Operator<SC,LO,GO,NO> > xpOp = rcp_dynamic_cast<Operator<SC,LO,GO,NO> >(SchwarzPreconditioner);
-            
+
             thyraPrecOp = fROSchLinearOp<SC,LO,GO,NO>(thyraRangeSpace,thyraDomainSpace,xpOp,bIsEpetra,bIsTpetra);
-            
+
             TEUCHOS_TEST_FOR_EXCEPT(is_null(thyraPrecOp));
-            
+
             //Set SchwarzPreconditioner
-            defaultPrec->initializeUnspecified(thyraPrecOp);            
+            defaultPrec->initializeUnspecified(thyraPrecOp);
         } else {
             // cast to SchwarzPreconditioner
             RCP<FROSchLinearOp<SC,LO,GO,NO> > fROSch_LinearOp = rcp_dynamic_cast<FROSchLinearOp<SC,LO,GO,NO> >(thyra_precOp,true);
             RCP<Operator<SC,LO,GO,NO> > xpetraOp = fROSch_LinearOp->getXpetraOperator();
-            
+
             if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("AlgebraicOverlappingPreconditioner")) {
                 RCP<AlgebraicOverlappingPreconditioner<SC,LO,GO,NO> > AOP = rcp_dynamic_cast<AlgebraicOverlappingPreconditioner<SC,LO,GO,NO> >(xpetraOp, true);
                 AOP->resetMatrix(A);
@@ -370,7 +371,7 @@ namespace Thyra {
         TEUCHOS_TEST_FOR_EXCEPT(is_null(paramList));
         paramList_ = paramList;
     }
-    
+
     template<class SC, class LO,class GO, class NO>
     typename FROSchFactory<SC,LO,GO,NO>::ParameterListPtr FROSchFactory<SC,LO,GO,NO>::unsetParameterList()
     {
@@ -390,7 +391,7 @@ namespace Thyra {
     {
         return paramList_;
     }
-    
+
     template <class SC, class LO, class GO, class NO>
     typename FROSchFactory<SC,LO,GO,NO>::ConstParameterListPtr FROSchFactory<SC,LO,GO,NO>::getValidParameters() const
     {
@@ -401,13 +402,13 @@ namespace Thyra {
 
         return validPL;
     }
-   
+
     template <class SC, class LO, class GO, class NO>
-    std::string FROSchFactory<SC,LO,GO,NO>::description() const
+    string FROSchFactory<SC,LO,GO,NO>::description() const
     {
         return "FROSchFactory";
     }
-    
+
     template <class SC, class LO, class GO, class NO>
     typename FROSchFactory<SC,LO,GO,NO>::ConstXMapPtr FROSchFactory<SC,LO,GO,NO>::extractRepeatedMap(CommPtr comm,
                                                                                                      UnderlyingLib lib) const
@@ -418,7 +419,7 @@ namespace Thyra {
             if (repeatedMap.is_null()) {
                 if (lib==UseTpetra) { // If coordinatesList.is_null(), we look for Tpetra/Epetra RCPs
                     RCP<const Tpetra::Map<LO,GO,NO> > repeatedMapTmp = ExtractPtrFromParameterList<const Tpetra::Map<LO,GO,NO> >(*paramList_,"Repeated Map");
-                    
+
                     RCP<const TpetraMap<LO,GO,NO> > xTpetraRepeatedMap(new const TpetraMap<LO,GO,NO>(repeatedMapTmp));
                     repeatedMap = rcp_dynamic_cast<ConstXMap>(xTpetraRepeatedMap);
                 } else {
@@ -431,7 +432,7 @@ namespace Thyra {
         }
         return repeatedMap;
     }
-    
+
     template <class SC, class LO, class GO, class NO>
     typename FROSchFactory<SC,LO,GO,NO>::ConstXMultiVectorPtr FROSchFactory<SC,LO,GO,NO>::extractCoordinatesList(CommPtr comm,
                                                                                                                  UnderlyingLib lib) const
@@ -442,7 +443,7 @@ namespace Thyra {
             if (coordinatesList.is_null()) {
                 if (lib==UseTpetra) { // If coordinatesList.is_null(), we look for Tpetra/Epetra RCPs
                     RCP<Tpetra::MultiVector<SC,LO,GO,NO> > coordinatesListTmp = ExtractPtrFromParameterList<Tpetra::MultiVector<SC,LO,GO,NO> >(*paramList_,"Coordinates List");
-                    
+
                     RCP<const Xpetra::TpetraMultiVector<SC,LO,GO,NO> > xTpetraCoordinatesList(new const Xpetra::TpetraMultiVector<SC,LO,GO,NO>(coordinatesListTmp));
                     coordinatesList = rcp_dynamic_cast<ConstXMultiVector>(xTpetraCoordinatesList);
                 } else {
@@ -455,7 +456,7 @@ namespace Thyra {
         }
         return coordinatesList;
     }
-    
+
     template <class SC, class LO, class GO, class NO>
     typename FROSchFactory<SC,LO,GO,NO>::ConstXMultiVectorPtr FROSchFactory<SC,LO,GO,NO>::extractNullSpace(CommPtr comm,
                                                                                                            UnderlyingLib lib) const
@@ -466,7 +467,7 @@ namespace Thyra {
             if (nullSpaceBasis.is_null()) {
                 if (lib==UseTpetra) { // If nullSpaceBasis.is_null(), we look for Tpetra/Epetra RCPs
                     RCP<Tpetra::MultiVector<SC,LO,GO,NO> > nullSpaceBasisTmp = ExtractPtrFromParameterList<Tpetra::MultiVector<SC,LO,GO,NO> >(*paramList_,"Null Space");
-                    
+
                     RCP<const Xpetra::TpetraMultiVector<SC,LO,GO,NO> > xTpetraNullSpaceBasis(new const Xpetra::TpetraMultiVector<SC,LO,GO,NO>(nullSpaceBasisTmp));
                     nullSpaceBasis = rcp_dynamic_cast<ConstXMultiVector>(xTpetraNullSpaceBasis);
                 } else {
@@ -482,5 +483,3 @@ namespace Thyra {
 
 }
 #endif
-
-

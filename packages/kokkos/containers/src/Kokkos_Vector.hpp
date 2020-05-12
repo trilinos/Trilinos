@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 2.0
-//              Copyright (2014) Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -108,7 +109,7 @@ class vector : public DualView<Scalar*, LayoutLeft, Arg1Type> {
   void resize(size_t n, const Scalar& val) { assign(n, val); }
 
   void assign(size_t n, const Scalar& val) {
-    /* Resize if necessary (behavour of std:vector) */
+    /* Resize if necessary (behavior of std:vector) */
 
     if (n > span()) DV::resize(size_t(n * _extra_storage));
     _size = n;
@@ -117,12 +118,12 @@ class vector : public DualView<Scalar*, LayoutLeft, Arg1Type> {
 
     if (DV::template need_sync<typename DV::t_dev::device_type>()) {
       set_functor_host f(DV::h_view, val);
-      parallel_for(n, f);
+      parallel_for("Kokkos::vector::assign", n, f);
       typename DV::t_host::execution_space().fence();
       DV::template modify<typename DV::t_host::device_type>();
     } else {
       set_functor f(DV::d_view, val);
-      parallel_for(n, f);
+      parallel_for("Kokkos::vector::assign", n, f);
       typename DV::t_dev::execution_space().fence();
       DV::template modify<typename DV::t_dev::device_type>();
     }
@@ -233,7 +234,7 @@ class vector : public DualView<Scalar*, LayoutLeft, Arg1Type> {
 
   const_reference back() const { return DV::h_view(_size - 1); }
 
-  /* std::algorithms wich work originally with iterators, here they are
+  /* std::algorithms which work originally with iterators, here they are
    * implemented as member functions */
 
   size_t lower_bound(const size_t& start, const size_t& theEnd,

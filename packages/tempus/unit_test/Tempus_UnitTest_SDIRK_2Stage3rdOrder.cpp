@@ -40,7 +40,18 @@ using Tempus::StepperFactory;
 // ************************************************************
 TEUCHOS_UNIT_TEST(SDIRK_2Stage3rdOrder, Default_Construction)
 {
-  testDIRKAccessorsFullConstruction("SDIRK 2 Stage 3rd order");
+  auto stepper = rcp(new Tempus::StepperSDIRK_2Stage3rdOrder<double>());
+  testDIRKAccessorsFullConstruction(stepper);
+
+  // Test stepper properties.
+  TEUCHOS_ASSERT(stepper->getOrder() == 3);
+  std::string gammaType = "3rd Order A-stable";
+  TEUCHOS_ASSERT(stepper->getGammaType() == gammaType);
+  double gamma          = 0.7886751345948128;
+  TEUCHOS_ASSERT(stepper->getGamma() == gamma);
+  stepper->setGammaType(gammaType); stepper->initialize(); TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setGamma(gamma);         stepper->initialize(); TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+
 }
 
 
@@ -57,7 +68,9 @@ TEUCHOS_UNIT_TEST(SDIRK_2Stage3rdOrder, StepperFactory_Construction)
 // ************************************************************
 TEUCHOS_UNIT_TEST(SDIRK_2Stage3rdOrder, AppAction)
 {
-  testRKAppAction("SDIRK 2 Stage 3rd order", out, success);
+  auto stepper = rcp(new Tempus::StepperSDIRK_2Stage3rdOrder<double>());
+  auto model = rcp(new Tempus_Test::SinCosModel<double>());
+  testRKAppAction(stepper, model, out, success);
 }
 
 

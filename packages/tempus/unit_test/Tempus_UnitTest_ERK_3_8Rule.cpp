@@ -24,7 +24,11 @@ using Teuchos::rcp_dynamic_cast;
 // ************************************************************
 TEUCHOS_UNIT_TEST(ERK_3_8Rule, Default_Construction)
 {
-  testExplicitRKAccessorsFullConstruction("RK Explicit 3/8 Rule");
+  auto stepper = rcp(new Tempus::StepperERK_3_8Rule<double>());
+  testExplicitRKAccessorsFullConstruction(stepper);
+
+  // Test stepper properties.
+  TEUCHOS_ASSERT(stepper->getOrder() == 4);
 }
 
 
@@ -41,7 +45,9 @@ TEUCHOS_UNIT_TEST(ERK_3_8Rule, StepperFactory_Construction)
 // ************************************************************
 TEUCHOS_UNIT_TEST(ERK_3_8Rule, AppAction)
 {
-  testRKAppAction("RK Explicit 3/8 Rule", out, success);
+  auto stepper = rcp(new Tempus::StepperERK_3_8Rule<double>());
+  auto model = rcp(new Tempus_Test::SinCosModel<double>());
+  testRKAppAction(stepper, model, out, success);
 }
 
 

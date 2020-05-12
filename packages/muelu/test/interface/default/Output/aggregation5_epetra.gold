@@ -34,6 +34,9 @@ Using brick size: 3
 aggregation: brick x size = 3
 aggregation: brick y size = 2   [default]
 aggregation: brick z size = 2   [default]
+aggregation: brick x Dirichlet = 0   [default]
+aggregation: brick y Dirichlet = 0   [default]
+aggregation: brick z Dirichlet = 0   [default]
 
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
@@ -115,6 +118,9 @@ Using brick size: 3
 aggregation: brick x size = 3
 aggregation: brick y size = 2   [default]
 aggregation: brick z size = 2   [default]
+aggregation: brick x Dirichlet = 0   [default]
+aggregation: brick y Dirichlet = 0   [default]
+aggregation: brick z Dirichlet = 0   [default]
 
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace

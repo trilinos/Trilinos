@@ -625,7 +625,7 @@ public:
        //ThrowRequireMsg(false,"ERROR, update_buckets not supported for ngp::StaticMesh");
     }
 
-    STK_FUNCTION
+    KOKKOS_DEFAULTED_FUNCTION
     StaticMesh(const StaticMesh &) = default;
     STK_FUNCTION
     ~StaticMesh() {}

@@ -90,7 +90,7 @@ C
    10 CONTINUE
 
       SUMR(3) = RMEAN
-      SUMR(4) = SQRT(STDDEV / MAX(1.0, FLOAT(NUMSEL-1)))
+      SUMR(4) = SQRT(STDDEV / MAX(1.0, DBLE(NUMSEL-1)))
 
       ISUMR(1) = ISUMR(1) + IOFF
       ISUMR(2) = ISUMR(2) + IOFF

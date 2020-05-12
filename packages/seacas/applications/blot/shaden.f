@@ -1,4 +1,4 @@
-C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
+C Copyright(C) 2009-2017, 2020 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -180,7 +180,7 @@ C     minimum color = 1
       if (ncol .eq. 1) then
         icol = mincol + 1
       else
-        ICOL = MINCOL + min(NCOL-1, max(1, NINT(SMAG * FLOAT(NCOL))))
+        ICOL = MINCOL + min(NCOL-1, max(1, NINT(SMAG * DBLE(NCOL))))
       end if
 
       if (lstcol .ne. icol) then

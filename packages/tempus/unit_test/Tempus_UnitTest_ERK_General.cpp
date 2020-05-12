@@ -88,6 +88,8 @@ TEUCHOS_UNIT_TEST(ERK_General, Default_Construction)
     A, b, c, order, order, order, bstar, modifier));
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
+  // Test stepper properties.
+  TEUCHOS_ASSERT(stepper->getOrder() == 4);
 }
 
 
@@ -104,7 +106,9 @@ TEUCHOS_UNIT_TEST(ERK_General, StepperFactory_Construction)
 // ************************************************************
 TEUCHOS_UNIT_TEST(ERK_General, AppAction)
 {
-  testRKAppAction("General ERK", out, success);
+  auto stepper = rcp(new Tempus::StepperERK_General<double>());
+  auto model = rcp(new Tempus_Test::SinCosModel<double>());
+  testRKAppAction(stepper, model, out, success);
 }
 
 

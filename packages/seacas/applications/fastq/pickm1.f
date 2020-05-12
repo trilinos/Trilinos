@@ -118,7 +118,7 @@ C
       BADANG = AMAX1 (ANGLE (1), ANGLE (I2), ANGLE (I3), ANGLE (I4))
 C     
       MMAX = N / 2 - 1
-      AMAXEL = FLOAT (N / 4) * FLOAT ( (N + 2) / 4)
+      AMAXEL = DBLE(N / 4) * DBLE( (N + 2) / 4)
       DO 150 ISA = 1, NSA
          IF (SMANG (ISA) .LE. ATOL) THEN
             I1 = INDEX (ISA)
@@ -131,7 +131,7 @@ C
                I4 = I3 + M
                IF  (I4 .GT. N) I4 = I4 - N
                AFAC = ANGLE (I1) + ANGLE (I2) + ANGLE (I3) + ANGLE (I4)
-               ERAT = AMIN1 (AMAXEL / FLOAT (M * M2) ,  5.)
+               ERAT = AMIN1 (AMAXEL / DBLE(M * M2) ,  5.)
                EFAC =  (ERAT + 15.) / 16.
                GVAL = AFAC * EFAC
                IF (GVAL .LT. GBEST) THEN

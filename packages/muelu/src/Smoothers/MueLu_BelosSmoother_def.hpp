@@ -96,8 +96,9 @@ namespace MueLu {
 
     //   TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Belos does not provide the solver '" << type_ << "'.\nSupported Solvers: " << outString.str());
     // }
-    TEUCHOS_TEST_FOR_EXCEPTION(!solverSupported, Exceptions::RuntimeError, "Belos does not provide the solver '" << type_ << "'.");
-    SetParameterList(paramList);
+    this->declareConstructionOutcome(!solverSupported, "Belos does not provide the smoother '" + type_ + "'.");
+    if (solverSupported)
+      SetParameterList(paramList);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>

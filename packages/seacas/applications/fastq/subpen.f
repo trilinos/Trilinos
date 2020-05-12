@@ -70,8 +70,8 @@ C  PUT SIDE THREE INTO THE LIST
 C
       XDIF = XCEN - XSUB (KOUNT)
       YDIF = YCEN - YSUB (KOUNT)
-      XINT = XDIF / FLOAT (M1)
-      YINT = YDIF / FLOAT (M1)
+      XINT = XDIF / DBLE(M1)
+      YINT = YDIF / DBLE(M1)
       DO 110 I = 1, M1 - 1
          KOUNT = KOUNT + 1
          XSUB (KOUNT) = XSUB (KOUNT - 1) + XINT
@@ -92,8 +92,8 @@ C
       IF (ITRI2 .GT. 3)ITRI2 = ITRI2 - 3
       XDIF = X (IADD + 1) - XCEN
       YDIF = Y (IADD + 1) - YCEN
-      XINT = XDIF / FLOAT (M2)
-      YINT = YDIF / FLOAT (M2)
+      XINT = XDIF / DBLE(M2)
+      YINT = YDIF / DBLE(M2)
       DO 120 I = 1, M2 - 1
          KOUNT = KOUNT + 1
          XSUB (KOUNT) = XSUB (KOUNT - 1) + XINT

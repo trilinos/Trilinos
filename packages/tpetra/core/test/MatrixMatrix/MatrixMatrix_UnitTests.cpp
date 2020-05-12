@@ -751,7 +751,8 @@ mult_test_results jacobi_test(
 #ifdef HAVE_TPETRA_INST_OPENMP
     if(std::is_same<NT,Kokkos::Compat::KokkosOpenMPWrapperNode>::value) {
       Teuchos::ParameterList p;
-      p.set("openmp: jacobi algorithm","MSAK");
+      //p.set("openmp: jacobi algorithm","MSAK");
+      p.set("openmp: jacobi algorithm","KK");
       C2 = rcp(new Matrix_t(B->getRowMap(),0));
       Tpetra::MatrixMatrix::Jacobi<SC, LO, GO, NT>(omega,Dinv,*A,*B,*C2,true,"jacobi_test_msak",rcp(&p,false));
       done=true;
@@ -760,7 +761,8 @@ mult_test_results jacobi_test(
 #ifdef HAVE_TPETRA_INST_CUDA
     if(std::is_same<NT,Kokkos::Compat::KokkosCudaWrapperNode>::value) {
       Teuchos::ParameterList p;
-      p.set("cuda: jacobi algorithm","MSAK");
+      //p.set("cuda: jacobi algorithm","MSAK");
+      p.set("cuda: jacobi algorithm","KK");
       C2 = rcp(new Matrix_t(B->getRowMap(),0));
       Tpetra::MatrixMatrix::Jacobi<SC, LO, GO, NT>(omega,Dinv,*A,*B,*C2,true,"jacobi_test_msak",rcp(&p,false));
       done=true;
@@ -1044,9 +1046,24 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
       }
       TEST_COMPARE(results.epsilon, <, epsilon);
 
+      // Check if all diagonal entries are there, required for KokkosKernels Jacobi
+      bool diagExists = true;
+      auto rowMap = A->getRowMap();
+      Tpetra::Vector<MT, LO, GO, NT> diags(rowMap);
+      A->getLocalDiagCopy(diags);
+      size_t diagLength = rowMap->getNodeNumElements();
+      Teuchos::Array<MT> diagonal(diagLength);
+      diags.get1dCopy(diagonal());
+
+      for(size_t i = 0; i < diagLength; ++i) {
+	if(diagonal[i] == Teuchos::ScalarTraits<SC>::zero()) {
+	  diagExists = false;
+	  break;
+	}
+      }
 
       // Do we try Jacobi?
-      if (AT == false && BT == false && A->getDomainMap()->isSameAs(*A->getRangeMap())) {
+      if (diagExists && AT == false && BT == false && A->getDomainMap()->isSameAs(*A->getRangeMap())) {
         if (verbose)
           newOut << "Running jacobi test for " << currentSystem.name() << endl;
 
