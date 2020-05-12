@@ -8,14 +8,14 @@
 # Custom compiler selection logic
 
 if atdm_match_any_buildname_keyword \
-    clang-9.0.1-openmpi-4.0.2 \
-    clang-9.0.1_openmpi-4.0.2 \
+    clang-9.0.1-openmpi-4.0.3 \
+    clang-9.0.1_openmpi-4.0.3 \
     clang-9.0.1 \
     clang-9 \
     clang \
     default \
   ; then
-  export ATDM_CONFIG_COMPILER=CLANG-9.0.1_OPENMPI-4.0.2
+  export ATDM_CONFIG_COMPILER=CLANG-9.0.1_OPENMPI-4.0.3
   # Must list the default clang build last of all the 'clang' builds for
   # correct matching of of defaults
 
@@ -56,7 +56,7 @@ else
   echo "***"
   echo "*** Supported compilers include:"
   echo "***"
-  echo "****  clang-9.0.1-openmpi-4.0.2      (default, default clang)"
+  echo "****  clang-9.0.1-openmpi-4.0.3      (default, default clang)"
   echo "****  gnu-7.2.0-openmpi-4.0.2        (default gnu)"
   echo "****  intel-18.0.2-mpich2-3.2"
   echo "****  intel-19.0.3-intelmpi-2018.4   (default intel)"
