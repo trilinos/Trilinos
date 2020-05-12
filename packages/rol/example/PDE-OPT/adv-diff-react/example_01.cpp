@@ -75,7 +75,7 @@
 typedef double RealT;
 
 template<class Real>
-Real random(const ROL::Ptr<const Teuchos::Comm<int> > &commptr) {
+Real random(const ROL::Ptr<const Teuchos::Comm<int>> &commptr) {
   Real val = 0.0;
   if ( Teuchos::rank<int>(*commptr)==0 ) {
     val = (Real)rand()/(Real)RAND_MAX;
@@ -86,7 +86,7 @@ Real random(const ROL::Ptr<const Teuchos::Comm<int> > &commptr) {
 
 template<class Real>
 void randomize(std::vector<Real> &x,
-               const ROL::Ptr<const Teuchos::Comm<int> > &commptr) {
+               const ROL::Ptr<const Teuchos::Comm<int>> &commptr) {
   unsigned dim = x.size();
   for ( unsigned i = 0; i < dim; i++ ) {
     x[i] = random<Real>(commptr);
@@ -102,9 +102,9 @@ int main(int argc, char *argv[]) {
 
   /*** Initialize communicator. ***/
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &bhs);
-  ROL::Ptr<const Teuchos::Comm<int> > comm
+  ROL::Ptr<const Teuchos::Comm<int>> comm
     = Tpetra::getDefaultComm();
-  ROL::Ptr<const Teuchos::Comm<int> > serial_comm
+  ROL::Ptr<const Teuchos::Comm<int>> serial_comm
     = ROL::makePtr<Teuchos::SerialComm<int>>();
   const int myRank = comm->getRank();
   if ((iprint > 0) && (myRank == 0)) {
@@ -125,22 +125,22 @@ int main(int argc, char *argv[]) {
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     /*** Initialize main data structure. ***/
-    ROL::Ptr<PoissonData<RealT> > data
+    ROL::Ptr<PoissonData<RealT>> data
       = ROL::makePtr<PoissonData<RealT>>(serial_comm, parlist, outStream);
 
     /*** Build vectors and dress them up as ROL vectors. ***/
     const RealT zero(0), one(1);
-    ROL::Ptr<const Tpetra::Map<> > vecmap_u = data->getMatA()->getDomainMap();
-//    ROL::Ptr<const Tpetra::Map<> > vecmap_z = data->getMatB()->getDomainMap();
-    ROL::Ptr<const Tpetra::Map<> > vecmap_c = data->getMatA()->getRangeMap();
-    ROL::Ptr<Tpetra::MultiVector<> > u_ptr = ROL::makePtr<Tpetra::MultiVector<>>(vecmap_u, 1, true);
-//    ROL::Ptr<Tpetra::MultiVector<> > z_ptr = ROL::makePtr<Tpetra::MultiVector<>>(vecmap_z, 1, true);
-    ROL::Ptr<Tpetra::MultiVector<> > p_ptr = ROL::makePtr<Tpetra::MultiVector<>>(vecmap_u, 1, true);
-    ROL::Ptr<Tpetra::MultiVector<> > c_ptr = ROL::makePtr<Tpetra::MultiVector<>>(vecmap_c, 1, true);
-    ROL::Ptr<Tpetra::MultiVector<> > du_ptr = ROL::makePtr<Tpetra::MultiVector<>>(vecmap_u, 1, true);
-//    ROL::Ptr<Tpetra::MultiVector<> > dz_ptr = ROL::makePtr<Tpetra::MultiVector<>>(vecmap_z, 1, true);
-    ROL::Ptr<std::vector<RealT> > z_ptr  = ROL::makePtr<std::vector<RealT>>(9,one);
-    ROL::Ptr<std::vector<RealT> > dz_ptr = ROL::makePtr<std::vector<RealT>>(9,zero);
+    ROL::Ptr<const Tpetra::Map<>> vecmap_u = data->getMatA()->getDomainMap();
+//    ROL::Ptr<const Tpetra::Map<>> vecmap_z = data->getMatB()->getDomainMap();
+    ROL::Ptr<const Tpetra::Map<>> vecmap_c = data->getMatA()->getRangeMap();
+    ROL::Ptr<Tpetra::MultiVector<>> u_ptr = ROL::makePtr<Tpetra::MultiVector<>>(vecmap_u, 1, true);
+//    ROL::Ptr<Tpetra::MultiVector<>> z_ptr = ROL::makePtr<Tpetra::MultiVector<>>(vecmap_z, 1, true);
+    ROL::Ptr<Tpetra::MultiVector<>> p_ptr = ROL::makePtr<Tpetra::MultiVector<>>(vecmap_u, 1, true);
+    ROL::Ptr<Tpetra::MultiVector<>> c_ptr = ROL::makePtr<Tpetra::MultiVector<>>(vecmap_c, 1, true);
+    ROL::Ptr<Tpetra::MultiVector<>> du_ptr = ROL::makePtr<Tpetra::MultiVector<>>(vecmap_u, 1, true);
+//    ROL::Ptr<Tpetra::MultiVector<>> dz_ptr = ROL::makePtr<Tpetra::MultiVector<>>(vecmap_z, 1, true);
+    ROL::Ptr<std::vector<RealT>> z_ptr  = ROL::makePtr<std::vector<RealT>>(9,one);
+    ROL::Ptr<std::vector<RealT>> dz_ptr = ROL::makePtr<std::vector<RealT>>(9,zero);
     // Set all values to 1 in u, z and c.
     u_ptr->putScalar(one);
 //    z_ptr->putScalar(one);
@@ -151,30 +151,30 @@ int main(int argc, char *argv[]) {
     //dz_ptr->randomize();
     randomize<RealT>(*dz_ptr,comm);
     // Create ROL::TpetraMultiVectors.
-    ROL::Ptr<ROL::Vector<RealT> > up = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(u_ptr);
-//    ROL::Ptr<ROL::Vector<RealT> > zp = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(z_ptr);
-    ROL::Ptr<ROL::Vector<RealT> > pp = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(p_ptr);
-    ROL::Ptr<ROL::Vector<RealT> > cp = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(c_ptr);
-    ROL::Ptr<ROL::Vector<RealT> > dup = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(du_ptr);
-//    ROL::Ptr<ROL::Vector<RealT> > dzp = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(dz_ptr);
-    ROL::Ptr<ROL::Vector<RealT> > zp = ROL::makePtr<ROL::StdVector<RealT>>(z_ptr);
-    ROL::Ptr<ROL::Vector<RealT> > dzp = ROL::makePtr<ROL::StdVector<RealT>>(dz_ptr);
+    ROL::Ptr<ROL::Vector<RealT>> up = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(u_ptr);
+//    ROL::Ptr<ROL::Vector<RealT>> zp = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(z_ptr);
+    ROL::Ptr<ROL::Vector<RealT>> pp = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(p_ptr);
+    ROL::Ptr<ROL::Vector<RealT>> cp = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(c_ptr);
+    ROL::Ptr<ROL::Vector<RealT>> dup = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(du_ptr);
+//    ROL::Ptr<ROL::Vector<RealT>> dzp = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(dz_ptr);
+    ROL::Ptr<ROL::Vector<RealT>> zp = ROL::makePtr<ROL::StdVector<RealT>>(z_ptr);
+    ROL::Ptr<ROL::Vector<RealT>> dzp = ROL::makePtr<ROL::StdVector<RealT>>(dz_ptr);
     // Create ROL SimOpt vectors.
     ROL::Vector_SimOpt<RealT> x(up,zp);
     ROL::Vector_SimOpt<RealT> d(dup,dzp);
 
     /*** Build objective function, constraint and reduced objective function. ***/
-    ROL::Ptr<ROL::Objective_SimOpt<RealT> > obj
+    ROL::Ptr<ROL::Objective_SimOpt<RealT>> obj
       = ROL::makePtr<Objective_PDEOPT_Poisson<RealT>>(data, parlist);
-    ROL::Ptr<ROL::Constraint_SimOpt<RealT> > con
+    ROL::Ptr<ROL::Constraint_SimOpt<RealT>> con
       = ROL::makePtr<EqualityConstraint_PDEOPT_Poisson<RealT>>(data, parlist);
-    ROL::Ptr<ROL::Reduced_Objective_SimOpt<RealT> > objReduced
+    ROL::Ptr<ROL::Reduced_Objective_SimOpt<RealT>> objReduced
       = ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(obj, con, up, zp, pp);
-    ROL::Ptr<std::vector<RealT> > zlo_ptr = ROL::makePtr<std::vector<RealT>>(9,zero);
-    ROL::Ptr<std::vector<RealT> > zup_ptr = ROL::makePtr<std::vector<RealT>>(9,one);
-    ROL::Ptr<ROL::Vector<RealT> > zlop = ROL::makePtr<ROL::StdVector<RealT>>(zlo_ptr);
-    ROL::Ptr<ROL::Vector<RealT> > zupp = ROL::makePtr<ROL::StdVector<RealT>>(zup_ptr);
-    ROL::Ptr<ROL::BoundConstraint<RealT> > bnd
+    ROL::Ptr<std::vector<RealT>> zlo_ptr = ROL::makePtr<std::vector<RealT>>(9,zero);
+    ROL::Ptr<std::vector<RealT>> zup_ptr = ROL::makePtr<std::vector<RealT>>(9,one);
+    ROL::Ptr<ROL::Vector<RealT>> zlop = ROL::makePtr<ROL::StdVector<RealT>>(zlo_ptr);
+    ROL::Ptr<ROL::Vector<RealT>> zupp = ROL::makePtr<ROL::StdVector<RealT>>(zup_ptr);
+    ROL::Ptr<ROL::BoundConstraint<RealT>> bnd
       = ROL::makePtr<ROL::Bounds<RealT>>(zlop,zupp);
 
     /*** Build sampler ***/
@@ -258,7 +258,7 @@ int main(int argc, char *argv[]) {
     // Output expected state to file
     up->zero(); pp->zero(); dup->zero();
     RealT tol(1.e-8);
-    ROL::Ptr<ROL::BatchManager<RealT> > bman_Eu
+    ROL::Ptr<ROL::BatchManager<RealT>> bman_Eu
       = ROL::makePtr<ROL::TpetraTeuchosBatchManager<RealT>>(comm);
     std::vector<RealT> sample(sdim);
     std::stringstream name_samp;
@@ -283,7 +283,7 @@ int main(int argc, char *argv[]) {
     RealT val(0);
     int nsamp_dist = parlist->sublist("Problem").get("Number of Output Samples",100);
       //= ROL::makePtr<ROL::TpetraTeuchosBatchManager<RealT>>(comm);
-    ROL::Ptr<ROL::SampleGenerator<RealT> > sampler_dist
+    ROL::Ptr<ROL::SampleGenerator<RealT>> sampler_dist
       = ROL::makePtr<ROL::MonteCarloGenerator<RealT>>(nsamp_dist,bounds,bman);
     std::stringstream name;
     name << "obj_samples_" << bman->batchID() << ".txt";

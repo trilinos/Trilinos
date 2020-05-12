@@ -92,7 +92,7 @@ void print(ROL::Objective<Real> &obj,
            const ROL::Vector<Real> &z,
            ROL::SampleGenerator<Real> &sampler,
            const int ngsamp,
-           const ROL::Ptr<const Teuchos::Comm<int> > &comm,
+           const ROL::Ptr<const Teuchos::Comm<int>> &comm,
            const std::string &filename) {
   Real tol(1e-8);
   // Build objective function distribution
@@ -101,8 +101,8 @@ void print(ROL::Objective<Real> &obj,
   std::vector<double> gvalues(ngsamp), gzerovec(ngsamp, 0);
   std::vector<Real> sample = sampler.getMyPoint(0);
   int sdim = sample.size();
-  std::vector<std::vector<Real> > mysamples(sdim, myzerovec);
-  std::vector<std::vector<double> > gsamples(sdim, gzerovec);
+  std::vector<std::vector<Real>> mysamples(sdim, myzerovec);
+  std::vector<std::vector<double>> gsamples(sdim, gzerovec);
   for (int i = 0; i < nsamp; ++i) {
     sample = sampler.getMyPoint(i);
     obj.setParameter(sample);
@@ -114,8 +114,8 @@ void print(ROL::Objective<Real> &obj,
 
   // Send data to root processor
 #ifdef HAVE_MPI
-  ROL::Ptr<const Teuchos::MpiComm<int> > mpicomm
-    = ROL::dynamicPtrCast<const Teuchos::MpiComm<int> >(comm);
+  ROL::Ptr<const Teuchos::MpiComm<int>> mpicomm
+    = ROL::dynamicPtrCast<const Teuchos::MpiComm<int>>(comm);
   int nproc = Teuchos::size<int>(*mpicomm);
   std::vector<int> sampleCounts(nproc, 0), sampleDispls(nproc, 0);
   MPI_Gather(&nsamp,1,MPI_INT,&sampleCounts[0],1,MPI_INT,0,*(mpicomm->getRawMpiComm())());
@@ -159,9 +159,9 @@ int main(int argc, char *argv[]) {
 
   /*** Initialize communicator. ***/
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &bhs);
-  ROL::Ptr<const Teuchos::Comm<int> > comm
+  ROL::Ptr<const Teuchos::Comm<int>> comm
     = Tpetra::getDefaultComm();
-  ROL::Ptr<const Teuchos::Comm<int> > serial_comm
+  ROL::Ptr<const Teuchos::Comm<int>> serial_comm
     = ROL::makePtr<Teuchos::SerialComm<int>>();
   const int myRank = comm->getRank();
   if ((iprint > 0) && (myRank == 0)) {
@@ -188,23 +188,23 @@ int main(int argc, char *argv[]) {
     /***************** BUILD GOVERNING PDE ***********************************/
     /*************************************************************************/
     /*** Initialize main data structure. ***/
-    ROL::Ptr<MeshManager<RealT> > meshMgr
+    ROL::Ptr<MeshManager<RealT>> meshMgr
       = ROL::makePtr<MeshManager_stoch_adv_diff<RealT>>(*parlist);
     // Initialize PDE describing advection-diffusion equation
-    ROL::Ptr<PDE_stoch_adv_diff<RealT> > pde
+    ROL::Ptr<PDE_stoch_adv_diff<RealT>> pde
       = ROL::makePtr<PDE_stoch_adv_diff<RealT>>(*parlist);
-    ROL::Ptr<ROL::Constraint_SimOpt<RealT> > con
+    ROL::Ptr<ROL::Constraint_SimOpt<RealT>> con
       = ROL::makePtr<PDE_Constraint<RealT>>(pde,meshMgr,serial_comm,*parlist,*outStream);
-    ROL::Ptr<PDE_Constraint<RealT> > pdeCon
-      = ROL::dynamicPtrCast<PDE_Constraint<RealT> >(con);
-    const ROL::Ptr<Assembler<RealT> > assembler = pdeCon->getAssembler();
+    ROL::Ptr<PDE_Constraint<RealT>> pdeCon
+      = ROL::dynamicPtrCast<PDE_Constraint<RealT>>(con);
+    const ROL::Ptr<Assembler<RealT>> assembler = pdeCon->getAssembler();
 
     /*************************************************************************/
     /***************** BUILD VECTORS *****************************************/
     /*************************************************************************/
-    ROL::Ptr<Tpetra::MultiVector<> > u_ptr, p_ptr, du_ptr, r_ptr;
-    ROL::Ptr<std::vector<RealT> > z_ptr, dz_ptr, ez_ptr;
-    ROL::Ptr<ROL::Vector<RealT> > up, pp, dup, rp, zp, dzp, ezp;
+    ROL::Ptr<Tpetra::MultiVector<>> u_ptr, p_ptr, du_ptr, r_ptr;
+    ROL::Ptr<std::vector<RealT>> z_ptr, dz_ptr, ez_ptr;
+    ROL::Ptr<ROL::Vector<RealT>> up, pp, dup, rp, zp, dzp, ezp;
     // Create state vectors
     u_ptr  = assembler->createStateVector();
     p_ptr  = assembler->createStateVector();
@@ -234,25 +234,25 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** BUILD COST FUNCTIONAL *********************************/
     /*************************************************************************/
-    std::vector<ROL::Ptr<QoI<RealT> > > qoi_vec(2,ROL::nullPtr);
+    std::vector<ROL::Ptr<QoI<RealT>>> qoi_vec(2,ROL::nullPtr);
     qoi_vec[0] = ROL::makePtr<QoI_State_Cost_stoch_adv_diff<RealT>>(pde->getFE());
     qoi_vec[1] = ROL::makePtr<QoI_Control_Cost_stoch_adv_diff<RealT>>();
-    ROL::Ptr<StdObjective_stoch_adv_diff<RealT> > std_obj
+    ROL::Ptr<StdObjective_stoch_adv_diff<RealT>> std_obj
       = ROL::makePtr<StdObjective_stoch_adv_diff<RealT>>(*parlist);
-    ROL::Ptr<ROL::Objective_SimOpt<RealT> > obj
+    ROL::Ptr<ROL::Objective_SimOpt<RealT>> obj
       = ROL::makePtr<PDE_Objective<RealT>>(qoi_vec,std_obj,assembler);
-    ROL::Ptr<ROL::Reduced_Objective_SimOpt<RealT> > objReduced
+    ROL::Ptr<ROL::Reduced_Objective_SimOpt<RealT>> objReduced
       = ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(obj, con, up, zp, pp, true, false);
 
     /*************************************************************************/
     /***************** BUILD BOUND CONSTRAINT ********************************/
     /*************************************************************************/
-    ROL::Ptr<std::vector<RealT> > zlo_ptr = ROL::makePtr<std::vector<RealT>>(controlDim,0);
-    ROL::Ptr<std::vector<RealT> > zhi_ptr = ROL::makePtr<std::vector<RealT>>(controlDim,1);
-    ROL::Ptr<ROL::Vector<RealT> > zlop, zhip;
+    ROL::Ptr<std::vector<RealT>> zlo_ptr = ROL::makePtr<std::vector<RealT>>(controlDim,0);
+    ROL::Ptr<std::vector<RealT>> zhi_ptr = ROL::makePtr<std::vector<RealT>>(controlDim,1);
+    ROL::Ptr<ROL::Vector<RealT>> zlop, zhip;
     zlop = ROL::makePtr<PDE_OptVector<RealT>>(ROL::makePtr<ROL::StdVector<RealT>>(zlo_ptr));
     zhip = ROL::makePtr<PDE_OptVector<RealT>>(ROL::makePtr<ROL::StdVector<RealT>>(zhi_ptr));
-    ROL::Ptr<ROL::BoundConstraint<RealT> > bnd
+    ROL::Ptr<ROL::BoundConstraint<RealT>> bnd
       = ROL::makePtr<ROL::Bounds<RealT>>(zlop,zhip);
 
     /*************************************************************************/
@@ -260,10 +260,10 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     int nsamp = parlist->sublist("Problem").get("Number of Samples",100);
     std::vector<RealT> tmp = {-one,one};
-    std::vector<std::vector<RealT> > bounds(stochDim,tmp);
-    ROL::Ptr<ROL::BatchManager<RealT> > bman
+    std::vector<std::vector<RealT>> bounds(stochDim,tmp);
+    ROL::Ptr<ROL::BatchManager<RealT>> bman
       = ROL::makePtr<PDE_OptVector_BatchManager<RealT>>(comm);
-    ROL::Ptr<ROL::SampleGenerator<RealT> > sampler
+    ROL::Ptr<ROL::SampleGenerator<RealT>> sampler
       = ROL::makePtr<ROL::MonteCarloGenerator<RealT>>(nsamp,bounds,bman);
 
     /*************************************************************************/
@@ -359,7 +359,7 @@ int main(int argc, char *argv[]) {
       // Build objective function distribution
       if (outputSol) {
         int nsamp_dist = plvec[i].sublist("Problem").get("Number of Output Samples",100);
-        ROL::Ptr<ROL::SampleGenerator<RealT> > sampler_dist
+        ROL::Ptr<ROL::SampleGenerator<RealT>> sampler_dist
           = ROL::makePtr<ROL::MonteCarloGenerator<RealT>>(nsamp_dist,bounds,bman);
         std::stringstream name;
         name << "obj_samples_" << nvec[i] << ".txt";

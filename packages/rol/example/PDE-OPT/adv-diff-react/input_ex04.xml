@@ -4,11 +4,11 @@
     <Parameter name="Check Derivatives"          type="bool"    value="false" />
     <Parameter name="Control Cost"               type="double"  value="1e0"   />
     <Parameter name="State Cost"                 type="double"  value="1e5"   />
-    <Parameter name="Number of Samples"          type="int"     value="100"   />
-    <Parameter name="Number of Output Samples"   type="int"     value="10"    />
+    <Parameter name="Number of Samples"          type="int"     value="4000"  />
+    <Parameter name="Number of Output Samples"   type="int"     value="40000" />
     <Parameter name="Order of FE discretization" type="int"     value="1"     />
     <Parameter name="Print Mean Value State"     type="bool"    value="false" />
-    <Parameter name="Output Solution"            type="bool"    value="false" />
+    <Parameter name="Output Solution"            type="bool"    value="true"  />
   </ParameterList>
 
   <!-- ===========  GEOMETRY INPUT PARAMETER SUBLIST  =========== -->
@@ -17,8 +17,8 @@
     <Parameter name="Height"            type="double"  value="1.0"  />
     <Parameter name="X0"                type="double"  value="0.0"  />
     <Parameter name="Y0"                type="double"  value="0.0"  />
-    <Parameter name="NX"                type="int"     value="32"   />
-    <Parameter name="NY"                type="int"     value="32"   />
+    <Parameter name="NX"                type="int"     value="128"  />
+    <Parameter name="NY"                type="int"     value="128"  />
     <Parameter name="Partition type"    type="int"     value="1"    />
   </ParameterList>
 

@@ -158,8 +158,9 @@ int main(int argc, char* argv[]) {
       *outStream << "  Asset "        << i << ":"
                  << "  Lower Bound: " << li
                  << "  Upper Bound: " << ui << std::endl;
-      offset += static_cast<RealT>(1)/static_cast<RealT>(dim) * ui;
+      offset += ui / static_cast<RealT>(dim);
     }
+    offset *= static_cast<RealT>(0.35);
     ROL::Ptr<ROL::BatchManager<RealT>>
       bman = ROL::makePtr<ROL::BatchManager<RealT>>();
     ROL::Ptr<ROL::SampleGenerator<RealT>>
@@ -194,6 +195,8 @@ int main(int argc, char* argv[]) {
     problem->finalize(false,true,*outStream);
     problem->check(true,*outStream);
 
+    std::vector<std::pair<std::string,std::vector<RealT>>> sol;
+
     // Markowitz portfolio selection
     problem->edit();
     ROL::ParameterList objlist;
@@ -211,6 +214,7 @@ int main(int argc, char* argv[]) {
     errorFlag += (solver->getAlgorithmState()->statusFlag == ROL::EXITSTATUS_CONVERGED ? 0 : 1);
     printSolution(*x->getVector(),*outStream);
     ROL::Ptr<ROL::Vector<RealT>> xm = x->clone(); xm->set(*x);
+    sol.push_back({"Risk Neutral",*x->getVector()});
 
     // Markwotiz portfolio selection again
     problem->edit();
@@ -225,13 +229,18 @@ int main(int argc, char* argv[]) {
     printSolution(*x->getVector(),*outStream);
     xm->axpy(-1.0,*x);
     errorFlag += (xm->norm() > std::sqrt(ROL::ROL_EPSILON<RealT>()) ? 1 : 0);
+    sol.push_back({"Mean Value",*x->getVector()});
 
     // bPOE constrained portfolio selection
     problem->edit();
-    conlist.sublist("SOL").sublist("Loss").set("Type","Probability");
-    conlist.sublist("SOL").sublist("Loss").sublist("Probability").set("Name","bPOE");
-    conlist.sublist("SOL").sublist("Loss").sublist("Probability").sublist("bPOE").set("Threshold",0.0);
-    conlist.sublist("SOL").sublist("Loss").sublist("Probability").sublist("bPOE").set("Moment Order",2.0);
+    conlist.sublist("SOL").sublist("Loss").set("Type","Risk Averse");
+    conlist.sublist("SOL").sublist("Loss").sublist("Risk Measure").set("Name","CVaR");
+    conlist.sublist("SOL").sublist("Loss").sublist("Risk Measure").sublist("CVaR").set("Confidence Level",0.95);
+    conlist.sublist("SOL").sublist("Loss").sublist("Risk Measure").sublist("CVaR").set("Convex Combination Parameter",1.0);
+    conlist.sublist("SOL").sublist("Loss").sublist("Risk Measure").sublist("CVaR").set("Smoothing Parameter",1e-4);
+    conlist.sublist("SOL").sublist("Loss").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").set("Name","Parabolic");
+    conlist.sublist("SOL").sublist("Loss").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").sublist("Parabolic").set("Lower Bound",-0.5);
+    conlist.sublist("SOL").sublist("Loss").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").sublist("Parabolic").set("Upper Bound", 0.5);
     problem->removeLinearConstraint("Loss");
     problem->addConstraint("Loss",losscon,mul_losscon,bnd_losscon);
     problem->makeConstraintStochastic("Loss",conlist,sampler);
@@ -241,6 +250,16 @@ int main(int argc, char* argv[]) {
     solver->solve(*outStream);
     errorFlag += (solver->getAlgorithmState()->statusFlag == ROL::EXITSTATUS_CONVERGED ? 0 : 1);
     printSolution(*x->getVector(),*outStream);
+    sol.push_back({"bPOE",*x->getVector()});
+
+    *outStream << std::endl << std::scientific << std::setprecision(6);
+    for (auto it = sol.begin(); it != sol.end(); ++it) {
+      *outStream << "  ";
+      *outStream << std::setw(20) << std::left << std::get<0>(*it);
+      for (const auto& xi : std::get<1>(*it)) *outStream << std::setw(18) << std::left << xi;
+      *outStream << std::endl;
+    }
+    *outStream << std::endl;
 
   }
   catch (std::logic_error& err) {
@@ -255,148 +274,3 @@ int main(int argc, char* argv[]) {
 
   return 0;
 }
-
-//
-//
-//    // Test parametrized objective functions
-//    *outStream << "Check Derivatives of Parametrized Objective Function\n";
-//    pObj->setParameter(sampler->getMyPoint(0));
-//    pObj->checkGradient(*x,*d,true,*outStream);
-//    pObj->checkHessVec(*x,*d,true,*outStream);
-//    // Storage for solutions
-//    std::vector<std::tuple<std::string,std::string,std::vector<RealT>,bool>> solution;
-//    bool flag = false;
-//    /**********************************************************************************************/
-//    /************************* MEAN VALUE *********************************************************/
-//    /**********************************************************************************************/
-//    *outStream << "\nMean Value\n";
-//    list.sublist("SOL").sublist("Objective").set("Type","Mean Value"); 
-//    //setRandomVector(*x_ptr);
-//    flag = setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
-//    printSolution(*x_ptr,*outStream);
-//    solution.push_back(std::tuple<std::string,std::string,std::vector<RealT>,bool>("","Mean Value",*x_ptr,flag));
-//    /**********************************************************************************************/
-//    /************************* RISK NEUTRAL *******************************************************/
-//    /**********************************************************************************************/
-//    *outStream << "\nRisk Neutral\n";
-//    list.sublist("SOL").sublist("Objective").set("Type","Risk Neutral"); 
-//    //setRandomVector(*x_ptr);
-//    flag = setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
-//    printSolution(*x_ptr,*outStream);
-//    solution.push_back(std::tuple<std::string,std::string,std::vector<RealT>,bool>("","Risk Neutral",*x_ptr,flag));
-//    /**********************************************************************************************/
-//    /************************* RISK AVERSE ********************************************************/
-//    /**********************************************************************************************/
-//    for (ROL::ERiskMeasure er = ROL::RISKMEASURE_CVAR; er != ROL::RISKMEASURE_LAST; er++) {
-//      std::string name = ROL::ERiskMeasureToString(er);
-//      *outStream << std::endl << "Risk Averse: " << name << std::endl;
-//      list.sublist("SOL").sublist("Objective").set("Type","Risk Averse"); 
-//      list.sublist("SOL").sublist("Objective").sublist("Risk Measure").set("Name",name);
-//      if (er == ROL::RISKMEASURE_MEANDEVIATION           ||
-//          er == ROL::RISKMEASURE_MEANVARIANCE            ||
-//          er == ROL::RISKMEASURE_MEANDEVIATIONFROMTARGET ||
-//          er == ROL::RISKMEASURE_MEANVARIANCEFROMTARGET) {
-//        list.sublist("SOL").sublist("Objective").sublist("Risk Measure").sublist(name).set("Deviation Type","Absolute");
-//        //setRandomVector(*x_ptr);
-//        flag = setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
-//        printSolution(*x_ptr,*outStream);
-//        solution.push_back(std::tuple<std::string,std::string,std::vector<RealT>,bool>("Risk",name,*x_ptr,flag));
-//
-//        list.sublist("SOL").sublist("Objective").sublist("Risk Measure").sublist(name).set("Deviation Type","Upper");
-//        //setRandomVector(*x_ptr);
-//        flag = setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
-//        printSolution(*x_ptr,*outStream);
-//        solution.push_back(std::tuple<std::string,std::string,std::vector<RealT>,bool>("Risk",name,*x_ptr,flag));
-//      }
-//      else if (er == ROL::RISKMEASURE_CHEBYSHEVSPECTRAL) {
-//        list.sublist("SOL").sublist("Objective").sublist("Risk Measure").sublist(name).set("Weight Type",1);
-//        //setRandomVector(*x_ptr);
-//        flag = setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
-//        printSolution(*x_ptr,*outStream);
-//        solution.push_back(std::tuple<std::string,std::string,std::vector<RealT>,bool>("Risk",name,*x_ptr,flag));
-//
-//        list.sublist("SOL").sublist("Objective").sublist("Risk Measure").sublist(name).set("Weight Type",2);
-//        //setRandomVector(*x_ptr);
-//        flag = setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
-//        printSolution(*x_ptr,*outStream);
-//        solution.push_back(std::tuple<std::string,std::string,std::vector<RealT>,bool>("Risk",name,*x_ptr,flag));
-//
-//        list.sublist("SOL").sublist("Objective").sublist("Risk Measure").sublist(name).set("Weight Type",3);
-//        //setRandomVector(*x_ptr);
-//        flag = setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
-//        printSolution(*x_ptr,*outStream);
-//        solution.push_back(std::tuple<std::string,std::string,std::vector<RealT>,bool>("Risk",name,*x_ptr,flag));
-//      }
-//      else {
-//        //setRandomVector(*x_ptr);
-//        flag = setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
-//        printSolution(*x_ptr,*outStream);
-//        solution.push_back(std::tuple<std::string,std::string,std::vector<RealT>,bool>("Risk",name,*x_ptr,flag));
-//      }
-//    }
-//    /**********************************************************************************************/
-//    /************************* CONVEX COMBINATION OF RISK MEASURES ********************************/
-//    /**********************************************************************************************/
-//    *outStream << "\nRisk Averse: Convex Combination of Risk Measures\n";
-//    list.sublist("SOL").sublist("Objective").set("Type","Risk Averse"); 
-//    list.sublist("SOL").sublist("Objective").sublist("Risk Measure").set("Name","Convex Combination Risk Measure");
-//    //setRandomVector(*x_ptr);
-//    flag = setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
-//    printSolution(*x_ptr,*outStream);
-//    solution.push_back(std::tuple<std::string,std::string,std::vector<RealT>,bool>("Risk","Convex Combination of Risk Measures",*x_ptr,flag));
-//    /**********************************************************************************************/
-//    /************************* DEVIATION **********************************************************/
-//    /**********************************************************************************************/
-//    RealT tol = list.sublist("Status Test").get("Gradient Tolerance",1e-6);
-//    for (ROL::EDeviationMeasure ed = ROL::DEVIATIONMEASURE_MEANVARIANCEQUADRANGLE; ed != ROL::DEVIATIONMEASURE_LAST; ed++) {
-//      std::string name = ROL::EDeviationMeasureToString(ed);
-//      *outStream << std::endl << "Deviation: " << name << std::endl;
-//      list.sublist("SOL").sublist("Objective").set("Type","Deviation"); 
-//      list.sublist("SOL").sublist("Objective").sublist("Deviation Measure").set("Name",name);
-//      list.sublist("Status Test").set("Gradient Tolerance",tol);
-//      if (ed == ROL::DEVIATIONMEASURE_LOGQUANTILEQUADRANGLE)
-//        list.sublist("Status Test").set("Gradient Tolerance",std::max(1e-3,tol));
-//      //setRandomVector(*x_ptr);
-//      flag = setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
-//      printSolution(*x_ptr,*outStream);
-//      solution.push_back(std::tuple<std::string,std::string,std::vector<RealT>,bool>("Deviation",name,*x_ptr,flag));
-//    }
-//    /**********************************************************************************************/
-//    /************************* REGRET *************************************************************/
-//    /**********************************************************************************************/
-//    for (ROL::ERegretMeasure er = ROL::REGRETMEASURE_MEANABSOLUTELOSS; er != ROL::REGRETMEASURE_LAST; er++) {
-//      std::string name = ROL::ERegretMeasureToString(er);
-//      *outStream << std::endl << "Regret: " << name << std::endl;
-//      list.sublist("SOL").sublist("Objective").set("Type","Regret"); 
-//      list.sublist("SOL").sublist("Objective").sublist("Regret Measure").set("Name",name);
-//      //setRandomVector(*x_ptr);
-//      flag = setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
-//      printSolution(*x_ptr,*outStream);
-//      solution.push_back(std::tuple<std::string,std::string,std::vector<RealT>,bool>("Regret",name,*x_ptr,flag));
-//    }
-//    /**********************************************************************************************/
-//    /************************* PROBABILITY ********************************************************/
-//    /**********************************************************************************************/
-//    for (ROL::EProbability ep = ROL::PROBABILITY_BPOE; ep != ROL::PROBABILITY_LAST; ep++) {
-//      std::string name = ROL::EProbabilityToString(ep);
-//      *outStream << std::endl << "Probability: " << name << std::endl;
-//      list.sublist("SOL").sublist("Objective").set("Type","Probability"); 
-//      list.sublist("SOL").sublist("Objective").sublist("Probability").set("Name",name);
-//      //setRandomVector(*x_ptr);
-//      flag = setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
-//      printSolution(*x_ptr,*outStream);
-//      solution.push_back(std::tuple<std::string,std::string,std::vector<RealT>,bool>("Probability",name,*x_ptr,flag));
-//    }
-//
-//    *outStream << std::endl << std::scientific << std::setprecision(6);
-//    for (auto it = solution.begin(); it != solution.end(); ++it) {
-//      *outStream << "  ";
-//      *outStream << std::setw(20) << std::left << std::get<0>(*it);
-//      *outStream << std::setw(50) << std::left << std::get<1>(*it);
-//      for (unsigned i = 0; i < dim; ++i) {
-//        *outStream << std::setw(18) << std::left << (std::get<2>(*it))[i];
-//      }
-//      *outStream << std::setw(10) << std::left << (std::get<3>(*it) ? "CONVERGED" : "NOT CONVERGED");
-//      *outStream << std::endl;
-//    }
-//    *outStream << std::endl;

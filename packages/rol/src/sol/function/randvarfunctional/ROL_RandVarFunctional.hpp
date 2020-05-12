@@ -278,7 +278,7 @@ public:
   */
   virtual Real computeStatistic(const Ptr<const std::vector<Real>> &xstat) const {
     Real stat(0);
-    if (xstat != nullPtr) {
+    if (xstat != nullPtr && !xstat->empty()) {
       stat = (*xstat)[0];
     }
     return stat;
