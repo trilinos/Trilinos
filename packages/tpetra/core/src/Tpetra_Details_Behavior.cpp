@@ -288,6 +288,10 @@ namespace { // (anonymous)
 #endif // TPETRA_ASSUME_CUDA_AWARE_MPI
   }
 
+  constexpr bool hierarchicalUnpackDefault () {
+    return true;
+  }
+
 } // namespace (anonymous)
 
 bool Behavior::debug ()
@@ -459,6 +463,19 @@ void Behavior::enable_timing() {
 
 void Behavior::disable_timing() {
   BehaviorDetails::timingDisabled_ = true;
+}
+
+bool Behavior::hierarchicalUnpack ()
+{
+  constexpr char envVarName[] = "TPETRA_HIERARCHICAL_UNPACK";
+  constexpr bool defaultValue = hierarchicalUnpackDefault();
+
+  static bool value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariableAsBool (value_,
+                                                   initialized_,
+                                                   envVarName,
+                                                   defaultValue);
 }
 
 } // namespace Details

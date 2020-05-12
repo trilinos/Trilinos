@@ -220,6 +220,9 @@ public:
   /// separate question.
   static size_t longRowMinNumEntries ();
 
+  /// \brief Unpack rows of a matrix using hierarchical unpacking
+  static bool hierarchicalUnpack ();
+
   /// \brief Use Teuchos::Timer in Tpetra::ProfilingRegion
   ///
   /// This is disabled by default.  You may control this at run time via the
