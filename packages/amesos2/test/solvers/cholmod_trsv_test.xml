@@ -52,6 +52,8 @@
       </ParameterList>
 
       <ParameterList name="solver_params">
+        <Parameter name="TriangularSolves" type="bool" value="true"/>
+        <Parameter name="SuperNodal" type="bool" value="true"/>
       </ParameterList>
     </ParameterList> <!-- end Cholmod -->
     <ParameterList name="all_solver_params">
@@ -99,6 +101,14 @@
       </ParameterList>
 
       <ParameterList name="solver_params">
+        <Parameter name="TriangularSolves" type="bool" value="true"/>
+        <Parameter name="SuperNodal" type="bool" value="true"/>
+
+        <!-- SuperNodal + Complex + GPU causes intermittent failures. -->
+        <!-- Appears to tbe a Cholmod issue which will be reported. -->
+        <!-- When fixed, this line should be deleted to restore Cholmod GPU for TRSV complex. -->
+        <Parameter name="useGPU" type="int" value="0"/>
+
       </ParameterList>
     </ParameterList> <!-- end Cholmod -->
     <ParameterList name="all_solver_params">

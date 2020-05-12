@@ -329,40 +329,31 @@ void lower_tri_symbolic (TriSolveHandle &thandle, const RowMapType drow_map, con
           thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
 
   using size_type = typename TriSolveHandle::size_type;
-
-  using DeviceEntriesType = typename TriSolveHandle::nnz_lno_view_t;
-  using HostEntriesType = typename DeviceEntriesType::HostMirror;
-
-  using DeviceSignedEntriesType = typename TriSolveHandle::signed_nnz_lno_view_t;
-  using HostSignedEntriesType = typename DeviceSignedEntriesType::HostMirror;
-
   using signed_integral_t = typename TriSolveHandle::signed_integral_t;
-
   using integer_view_t = typename TriSolveHandle::integer_view_t;
   using integer_view_host_t = typename integer_view_t::HostMirror;
-
 
   // rowptr: pointer to begining of each row (CRS)
   auto row_map = Kokkos::create_mirror_view(drow_map);
   Kokkos::deep_copy(row_map, drow_map);
 
   // # of nodes per level
-  DeviceEntriesType dnodes_per_level = thandle.get_nodes_per_level ();
-  HostEntriesType nodes_per_level = thandle.get_host_nodes_per_level ();
+  auto dnodes_per_level = thandle.get_nodes_per_level ();
+  auto  nodes_per_level = thandle.get_host_nodes_per_level ();
 
   // node ids in each level
-  DeviceEntriesType dnodes_grouped_by_level = thandle.get_nodes_grouped_by_level ();
-  HostEntriesType nodes_grouped_by_level = thandle.get_host_nodes_grouped_by_level();
+  auto dnodes_grouped_by_level = thandle.get_nodes_grouped_by_level ();
+  auto  nodes_grouped_by_level = thandle.get_host_nodes_grouped_by_level();
 
   // map node id to level that this node belongs to
-  DeviceSignedEntriesType dlevel_list = thandle.get_level_list ();
-  HostSignedEntriesType level_list = Kokkos::create_mirror_view (dlevel_list);
+  auto dlevel_list = thandle.get_level_list ();
+  auto  level_list = Kokkos::create_mirror_view (dlevel_list);
 
   // type of kernels used at each level
   int size_unblocked = thandle.get_supernode_size_unblocked();
   //int size_blocked = thandle.get_supernode_size_blocked();
-  integer_view_host_t kernel_type_by_level = thandle.get_kernel_type_host ();
-  integer_view_host_t diag_kernel_type_by_level = thandle.get_diag_kernel_type_host ();
+  auto kernel_type_by_level = thandle.get_kernel_type_host ();
+  auto diag_kernel_type_by_level = thandle.get_diag_kernel_type_host ();
 
   // # of supernodal columns
   size_type nsuper = thandle.get_num_supernodes ();
@@ -370,7 +361,7 @@ void lower_tri_symbolic (TriSolveHandle &thandle, const RowMapType drow_map, con
 
   // workspace
   signed_integral_t max_lwork = 0;
-  integer_view_host_t work_offset_host = thandle.get_work_offset_host ();
+  auto work_offset_host = thandle.get_work_offset_host ();
   if (thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_NAIVE) {
     // >> Naive (sequential) version: going through supernodal column one at a time from 1 to nsuper
     // Set number of level equal to be the number of supernodal columns
@@ -428,8 +419,8 @@ void lower_tri_symbolic (TriSolveHandle &thandle, const RowMapType drow_map, con
       }
     }
 
-    signed_integral_t num_done = 0;
-    signed_integral_t level = 0;
+    size_type num_done = 0;
+    size_type level = 0;
     //#define profile_supernodal_etree
     #ifdef profile_supernodal_etree
     // min, max, tot size of supernodes
@@ -476,7 +467,7 @@ void lower_tri_symbolic (TriSolveHandle &thandle, const RowMapType drow_map, con
           #ifdef profile_supernodal_etree
           // gather static if requested
           signed_integral_t nscol = supercols[s+1] - supercols[s];
-          if (tot_nscol == 0) {
+          if (num_leave == 0) {
             max_nscol = nscol;
             min_nscol = nscol;
 
@@ -527,7 +518,8 @@ void lower_tri_symbolic (TriSolveHandle &thandle, const RowMapType drow_map, con
       }
       #ifdef profile_supernodal_etree
       std::cout << level <<  " : num_leave="
-                << num_leave << ", avg_nsrow=" << avg_nsrow << ", avg_nscol=" << avg_nscol 
+                << num_leave << ", nsrow=" << min_nsrow << ", " << avg_nsrow << ", " << max_nsrow 
+                             << ", nscol=" << min_nscol << ", " << avg_nscol << ", " << max_nscol
                 << ", kernel_type=" << diag_kernel_type_by_level (level)
                 << "(" << size_unblocked << "," << thandle.get_supernode_size_blocked() << ")" << std::endl;
       if (level == 0) {
@@ -770,38 +762,30 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
 
   using size_type = typename TriSolveHandle::size_type;
 
-  using DeviceEntriesType = typename TriSolveHandle::nnz_lno_view_t;
-  using HostEntriesType = typename DeviceEntriesType::HostMirror;
-
-  using DeviceSignedEntriesType = typename TriSolveHandle::signed_nnz_lno_view_t;
-  using HostSignedEntriesType = typename DeviceSignedEntriesType::HostMirror;
-
   using signed_integral_t = typename TriSolveHandle::signed_integral_t;
-
   using integer_view_t = typename TriSolveHandle::integer_view_t;
   using integer_view_host_t = typename integer_view_t::HostMirror;
-
 
   // rowptr: pointer to begining of each row (CRS)
   auto row_map = Kokkos::create_mirror_view(drow_map);
   Kokkos::deep_copy(row_map, drow_map);
 
   // # of nodes per level
-  DeviceEntriesType dnodes_per_level = thandle.get_nodes_per_level ();
-  HostEntriesType nodes_per_level = thandle.get_host_nodes_per_level ();
+  auto dnodes_per_level = thandle.get_nodes_per_level ();
+  auto  nodes_per_level = thandle.get_host_nodes_per_level ();
 
   // node ids in each level
-  DeviceEntriesType dnodes_grouped_by_level = thandle.get_nodes_grouped_by_level ();
-  HostEntriesType nodes_grouped_by_level = thandle.get_host_nodes_grouped_by_level();
+  auto dnodes_grouped_by_level = thandle.get_nodes_grouped_by_level ();
+  auto  nodes_grouped_by_level = thandle.get_host_nodes_grouped_by_level();
 
   // type of kernels used at each level
   int size_unblocked = thandle.get_supernode_size_unblocked();
-  integer_view_host_t kernel_type_by_level = thandle.get_kernel_type_host ();
-  integer_view_host_t diag_kernel_type_by_level = thandle.get_diag_kernel_type_host ();
+  auto kernel_type_by_level = thandle.get_kernel_type_host ();
+  auto diag_kernel_type_by_level = thandle.get_diag_kernel_type_host ();
 
   // map node id to level that this node belongs to
-  DeviceSignedEntriesType dlevel_list = thandle.get_level_list ();
-  HostSignedEntriesType level_list = Kokkos::create_mirror_view (dlevel_list);
+  auto dlevel_list = thandle.get_level_list ();
+  auto  level_list = Kokkos::create_mirror_view (dlevel_list);
 
   // # of supernodal columns
   size_type nsuper = thandle.get_num_supernodes ();
@@ -809,7 +793,7 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
 
   // workspace
   signed_integral_t max_lwork = 0;
-  integer_view_host_t work_offset_host = thandle.get_work_offset_host ();
+  auto work_offset_host = thandle.get_work_offset_host ();
   if (thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_NAIVE) {
     // >> Naive (sequential) version: going through supernodal column one at a time from 1 to nsuper
     // Set number of level equal to be the number of supernodal columns
@@ -871,11 +855,11 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
     //for (size_type s = 0; s <nsuper; s++) printf( " check[%d] = %d\n",s,check (s) );
 
     size_type nrows = thandle.get_nrows();
-    HostEntriesType inverse_nodes_per_level ("nodes_per_level", nrows);
-    HostEntriesType inverse_nodes_grouped_by_level ("nodes_grouped_by_level", nrows);
+    integer_view_host_t inverse_nodes_per_level ("nodes_per_level", nrows);
+    integer_view_host_t inverse_nodes_grouped_by_level ("nodes_grouped_by_level", nrows);
 
-    signed_integral_t num_done = 0;
-    signed_integral_t level = 0;
+    size_type num_done = 0;
+    size_type level = 0;
     #ifdef profile_supernodal_etree
     // min, max, tot size of supernodes
     signed_integral_t max_nsrow = 0;
@@ -993,7 +977,7 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
 
     // now invert the lists
     num_done = 0;
-    signed_integral_t num_level = level;
+    size_type num_level = level;
     for (level = 0; level < num_level; level ++) {
       signed_integral_t num_leave = inverse_nodes_per_level (num_level - level - 1);
       nodes_per_level (level) = num_leave;
