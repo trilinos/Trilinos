@@ -89,7 +89,7 @@ TrustRegionAlgorithm_U<Real>::TrustRegionAlgorithm_U( ParameterList &parlist,
   // Initialize Trust Region Subproblem Solver Object
   etr_       = StringToETrustRegionU(list.get("Subproblem Solver", "Dogleg"));  
   solver_    = TrustRegionUFactory<Real>(parlist);
-  verbosity_ = glist.get("Output Level", 1);
+  verbosity_ = glist.get("Output Level", 0);
   // Secant Information
   useSecantPrecond_ = glist.sublist("Secant").get("Use as Preconditioner", false);
   useSecantHessVec_ = glist.sublist("Secant").get("Use as Hessian",        false);

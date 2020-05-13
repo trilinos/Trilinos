@@ -277,9 +277,7 @@ public:
         cnorm = tmp;
         u.set(*unew_);
         solve_update(u,z,UPDATE_ACCEPT,cnt);
-        if (cnorm <= ctol) { // = covers the case of identically zero residual
-          break;
-        }
+        if (cnorm <= ctol) break; // = covers the case of identically zero residual
         alpha = one;
       }
     }

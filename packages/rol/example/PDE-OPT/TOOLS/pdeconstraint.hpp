@@ -781,6 +781,10 @@ public:
     update(u,z,type,iter);
   }
 
+  void solve(ROL::Vector<Real> &c, ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
+    ROL::Constraint_SimOpt<Real>::solve(c,u,z,tol);
+  }
+
   using ROL::Constraint_SimOpt<Real>::value;
   void value(ROL::Vector<Real> &c, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
     ROL::Ptr<Tpetra::MultiVector<> >       cf = getField(c);
