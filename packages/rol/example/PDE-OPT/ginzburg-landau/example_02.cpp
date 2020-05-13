@@ -259,8 +259,7 @@ int main(int argc, char *argv[]) {
     con->solve(*rp,*up,*zp,tol);
     pdecon->outputTpetraVector(u_ptr,"state_uncontrolled.txt");
     ROL::Ptr<Solution<RealT>> sol = ROL::makePtr<Solution_GinzburgLandau_ex02<RealT>>();
-    int cubdeg = std::max(5*parlist->sublist("Problem").get("Cubature Degree",2),10);
-    RealT err = assembler->computeStateError(u_ptr,sol,cubdeg,pde->getFieldHelper());
+    RealT err = assembler->computeStateError(u_ptr,sol,6,pde->getFieldHelper());
     *outStream << std::endl << "Error in uncontrolled state: " << err << std::endl;
 
     ROL::Ptr<ROL::NewOptimizationProblem<RealT>>
