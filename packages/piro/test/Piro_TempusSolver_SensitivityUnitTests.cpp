@@ -283,10 +283,6 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_DefaultSolutionSensitivity)
   for (int i = 0; i < expected.size(); ++i) {
     TEST_EQUALITY(DxDp->range()->dim(), expected[i].size());
     const Array<double> actual = arrayFromVector(*DxDp->col(i));
-    /**fos << "IKT i = " << i << "\n";  
-    for (int j=0; j<actual.size(); j++) {
-      *fos << "  IKT j, actual, expected = " << j << ", " << actual[j] << ", " << expected[i][j] << "\n"; 
-    }*/
     TEST_COMPARE_FLOATING_ARRAYS(actual, expected[i], tol);
   }
 }
@@ -325,10 +321,6 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_DefaultSolutionSensitivityOp)
   for (int i = 0; i < expected.size(); ++i) {
   TEST_EQUALITY(dxdp->range()->dim(), expected[i].size());
     const Array<double> actual = arrayFromLinOp(*DxDp, i);
-    /**fos << "IKT i = " << i << "\n";  
-    for (int j=0; j<actual.size(); j++) {
-      *fos << "  IKT j, actual, expected = " << j << ", " << actual[j] << ", " << expected[i][j] << "\n"; 
-    }*/
     TEST_COMPARE_FLOATING_ARRAYS(actual, expected[i], tol);
   }
 }
@@ -411,7 +403,6 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_DefaultResponseSensitivity_NoDgDxM
   for (int i = 0; i < dgdp_expected->domain()->dim(); ++i) {
     const Array<double> actual = arrayFromVector(*dgdp->col(i));
     const Array<double> expected = arrayFromVector(*dgdp_expected->col(i));
-    //*fos << "  IKT i, actual, expected = " << i << ", " << actual[i] << ", " << expected[i] << "\n"; 
     TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
   }
 }
@@ -481,7 +472,6 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_ResponseAndDefaultSensitivities)
     for (int i = 0; i < dgdp_expected->domain()->dim(); ++i) {
       const Array<double> actual = arrayFromVector(*dgdp->col(i));
       const Array<double> expected = arrayFromVector(*dgdp_expected->col(i));
-      //*fos << "  IKT i, actual, expected = " << i << ", " << actual[i] << ", " << expected[i] << "\n"; 
       TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
     }
   }
@@ -517,11 +507,6 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, ObserveInitialConditionWhenSensitivitiesReq
     const RCP<const Thyra::VectorBase<double> > initialCondition =
       model->getNominalValues().get_x();
 
-    /*const Array<double> actual = arrayFromVector(*solution);
-    const Array<double> expected = arrayFromVector(*initialCondition);
-    for (int i = 0; i < expected.size(); ++i) {
-      *fos << "  IKT i, actual, expected = " << i << ", " << actual[i] << ", " << expected[i] << "\n"; 
-    }*/
     TEST_COMPARE_FLOATING_ARRAYS(
         arrayFromVector(*solution),
         arrayFromVector(*initialCondition),
