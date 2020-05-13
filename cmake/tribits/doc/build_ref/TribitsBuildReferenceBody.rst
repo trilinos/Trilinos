@@ -961,35 +961,6 @@ NOTE: These options are ignored when using Makefiles or other CMake
 generators.  They only work for the Ninja generator.
 
 
-Enabling support for C++11
---------------------------
-
-To enable support for C++11 in packages that support C++11 (either optionally
-or required), configure with::
-
-  -D <Project>_ENABLE_CXX11=ON
-
-By default, the system will try to automatically find compiler flags that will
-enable C++11 features.  If it finds flags that allow a test C++11 program to
-compile, then it will an additional set of configure-time tests to see if
-several C++11 features are actually supported by the configured C++ compiler
-and support will be disabled if all of these features are not supported.
-
-In order to pre-set and/or override the C++11 compiler flags used, set the
-cache variable::
-
-  -D <Project>_CXX11_FLAGS="<compiler flags>"
-
-In order to enable C++11 but not have the default system set any flags for
-C++11, use::
-
-  -D <Project>_ENABLE_CXX11=ON
-  -D <Project>_CXX11_FLAGS=" "
-
-The empty space " " will result in the system assuming that no flags needs to
-be set.
-
-
 Enabling explicit template instantiation for C++
 ------------------------------------------------
 
