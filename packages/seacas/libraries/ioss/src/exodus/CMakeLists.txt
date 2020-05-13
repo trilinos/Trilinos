@@ -6,7 +6,7 @@ SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_GLOB(HEADERS ${DIR}/*.h)
 APPEND_GLOB(SOURCES ${DIR}/*.C)
 
-IF (NOT TPL_ENABLE_MPI)
+IF (NOT TPL_Netcdf_PARALLEL)
   LIST(REMOVE_ITEM SOURCES ${DIR}/Ioex_ParallelDatabaseIO.C ${DIR}/Ioex_DecompositionData.C)
   LIST(REMOVE_ITEM HEADERS ${DIR}/Ioex_ParallelDatabaseIO.h ${DIR}/Ioex_DecompositionData.h)
 ENDIF()
