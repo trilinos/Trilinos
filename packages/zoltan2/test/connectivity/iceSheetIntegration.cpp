@@ -99,11 +99,11 @@ int main(int argc, char** argv)
   
   Teuchos::RCP<const CrsGraph> crsgraph = Matrix->getCrsGraph();  
 
-  Teuchos::RCP<GraphAdapter> inputGraphAdapter = rcp(new GraphAdapter(crsgraph));
+  GraphAdapter inputGraphAdapter(crsgraph);
   
 
   //need to read in problem specific files here, start out with zeroed out arrays
-  size_t nlocal =  inputGraphAdapter->getLocalNumVertices();
+  size_t nlocal =  inputGraphAdapter.getLocalNumVertices();
   bool* basalFriction = new bool[nlocal];
 
   std::cout<<me<<": num local vtxIDs = "<<nlocal<<"\n";

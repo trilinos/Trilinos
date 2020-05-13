@@ -7,7 +7,7 @@
 #include<string>
 
 
-void read_edge_mesh(char* filename, int &n, unsigned &m, int*& srcs, int*& dsts, int*& grounded_flags, int ground_sensitivity){
+/*void read_edge_mesh(char* filename, int &n, unsigned &m, int*& srcs, int*& dsts, int*& grounded_flags, int ground_sensitivity){
   std::ifstream infile;
   std::string line;
   infile.open(filename);
@@ -94,7 +94,7 @@ void read_edge_mesh(char* filename, int &n, unsigned &m, int*& srcs, int*& dsts,
     delete [] final_ground_flags;
   }
   return;
-}
+}*/
 
 template<typename gno_t>
 void read_boundary_file(char *filename, size_t& num_edges, gno_t *& boundary_flags){

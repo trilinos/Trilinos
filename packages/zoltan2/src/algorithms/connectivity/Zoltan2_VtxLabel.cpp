@@ -50,8 +50,6 @@
 
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
-#warning "KDDKDD HELLO"
-
 #include "Tpetra_DistObject_decl.hpp"
 #include "Tpetra_DistObject_def.hpp"
 #include "Tpetra_MultiVector_decl.hpp"

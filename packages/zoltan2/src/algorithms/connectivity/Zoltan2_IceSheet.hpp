@@ -20,7 +20,6 @@
 */
 
 namespace Zoltan2{
-  enum IcePropVtxStatus {IceGrounded=-2,IceFloating=-1,IceHinged=0}; 
   /*! Utility function for detecting degenerate features of ice sheets
    *  
    *  \param (input) problemComm A Teuchos::RCP<const Teuchos::Comm<int>> representing the communicator for the problem.
@@ -42,7 +41,7 @@ namespace Zoltan2{
    */
   template<typename Adapter>
   void DetectDegenerateVertices( const RCP<const Comm<int>> &problemComm,
-                                 const RCP<const Adapter> &adapter,
+                                 const Adapter &adapter,
                                  const Teuchos::ArrayView<const bool> &basalFriction,
                                  const Teuchos::ArrayView<const typename Adapter::gno_t> &boundary_edges,
 	                         const Teuchos::ArrayView<IcePropVtxStatus> &vertex_status,
@@ -58,7 +57,7 @@ namespace Zoltan2{
     typedef Tpetra::Map<lno_t, gno_t> map_t;
     
     RCP<const Environment> env = rcp(new Environment(problemComm));
-    RCP<const base_adapter_t> b_adapter = adapter;
+    RCP<const base_adapter_t> b_adapter = rcpFromRef(adapter);
     modelFlag_t flags;
     flags.reset();
     
@@ -253,31 +252,21 @@ namespace Zoltan2{
 
     //convert adjacency array to use local identifiers instead of global.
   
-    typename map_t::local_ordinal_type* out_edges_lid = new typename map_t::local_ordinal_type[nEdge];
+    Teuchos::Array<typename map_t::local_ordinal_type> out_edges_lid(nEdge,0);
     for(size_t i = 0; i < nEdge; i++){
       out_edges_lid[i] = mapWithCopies->getLocalElement(out_edges[i]);
     }
-    icePropGraph<typename map_t::local_ordinal_type> g = {nVtx, nEdge, out_edges_lid,out_offsets};
-    Zoltan2::iceSheetPropagation<map_t> prop(problemComm, map, mapWithCopies, &g, local_boundary_counts, grounding, nVtx, nGhosts);
-    Teuchos::ArrayRCP<const IcePropVtxLabel<lno_t,gno_t>> labels = prop.propagate();
+    icePropGraph<typename map_t::local_ordinal_type, offset_t> local_graph = {nVtx, nEdge, out_edges_lid,offsets};
+    Zoltan2::iceSheetPropagation<typename map_t::local_ordinal_type, 
+                                 typename map_t::global_ordinal_type,
+                                 offset_t,
+                                 map_t> prop(problemComm, map, 
+                                                mapWithCopies, &local_graph, 
+                                                local_boundary_counts, 
+                                                grounding, nVtx, nGhosts);
+    prop.propagate(vertex_status, hinge_vertices);
     
-
-    //interpret the returned values
-    
-    for(size_t i = 0; i < g.n; i++){
-      IcePropVtxLabel<lno_t,gno_t> curr_node = labels[i];
-      gno_t gid = mapWithCopies->getGlobalElement(curr_node.id); 
-      IcePropGrounding_Status gs = curr_node.getGroundingStatus();
-      if(gs == ICEPROPGS_FULL) vertex_status[i] = IceGrounded;
-      else if(gs == ICEPROPGS_HALF){
-        vertex_status[i] =IceHinged;
-        hinge_vertices[i] = curr_node.first_label;    
-      } else { 
-        vertex_status[i] = IceFloating;
-      }
-    }
     delete [] grounding;
-    delete out_edges_lid;
     
   }
 

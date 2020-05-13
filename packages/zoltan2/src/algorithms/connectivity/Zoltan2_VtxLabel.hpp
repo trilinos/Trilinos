@@ -16,240 +16,236 @@
 
 namespace Zoltan2{
         
-        template<typename MAP>
-        class iceSheetPropagation;
-	//Graph datastructure that represents the local
-	//graph in ice sheet propagation problems
-        template<typename lno_t>
-	class icePropGraph {
-          public:
-            //n represents the number of vertices in the local graph
-            size_t n;
-            //m represents the number of edges in the local graph
-            size_t m;
-            //out_array is the adjacency array for each vertex
-            lno_t* out_array;
-            //out_degree_list is the offset array for indexing the out_array
-            lno_t* out_degree_list;
+  //Graph datastructure that represents the local
+  //graph in ice sheet propagation problems
+  template<typename lno_t,typename offset_t>
+  class icePropGraph {
+  public:
+    //n represents the number of vertices in the local graph
+    size_t nVtx;
+    //m represents the number of edges in the local graph
+    size_t nEdges;
+    //out_array is the adjacency array for each vertex
+    Teuchos::Array<lno_t> out_array;
+    //out_degree_list is the offset array for indexing the out_array
+    Teuchos::ArrayView<const offset_t> out_degree_list;
 
-            //member function to return the degree of a given vertex.
-            lno_t out_degree(lno_t vert){
-              return (out_degree_list[vert+1] - out_degree_list[vert]);
-            }
-            //member function to return the neighbors for a given vertex
-            lno_t* out_vertices(lno_t vert){
-              return (&out_array[out_degree_list[vert]]);
-            }
-        }; 
+    //member function to return the degree of a given vertex.
+    lno_t out_degree(lno_t vert){
+      return (out_degree_list[vert+1] - out_degree_list[vert]);
+    }
+    //member function to return the neighbors for a given vertex
+    lno_t* out_vertices(lno_t vert){
+      lno_t* raw_out_array = out_array.getRawPtr();
+      return (&raw_out_array[out_degree_list[vert]]);
+    }
+  }; 
         
 
-        //Enum that denotes
-	enum IcePropGrounding_Status {ICEPROPGS_FULL=2, ICEPROPGS_HALF=1, ICEPROPGS_NONE = 0};
-	// Struct representing a vertex label.
-	// We define our own "addition" for these labels.
-	// Later, we'll create a Tpetra::FEMultiVector of these labels.
-	template<typename lno_t, typename gno_t>
-	class IcePropVtxLabel {
-	public: 
-          //The local ID for the vertex represented by this label
-          lno_t id;
-          
-          //the global ID of a grounded vertex
-	  gno_t first_label;
-          
-          //the global ID of the vertex that sent the label
-	  gno_t first_sender;
-          
-          //this field indicates whether or not the first label is currently set
-          //(this is necessary for unsigned global types)
-          bool  first_used;
-          
-          //the global ID of a second grounded vertex
-	  gno_t second_label;
+  //Enum that denotes
+  enum IcePropGrounding_Status {ICEPROPGS_FULL=2, ICEPROPGS_HALF=1, ICEPROPGS_NONE = 0};
+  // Struct representing a vertex label.
+  // We define our own "addition" for these labels.
+  // Later, we'll create a Tpetra::FEMultiVector of these labels.
+  template<typename lno_t, typename gno_t>
+  class IcePropVtxLabel {
+  public: 
+    //The local ID for the vertex represented by this label
+    lno_t id;
+    
+    //the global ID of a grounded vertex
+    gno_t first_label;
+    
+    //the global ID of the vertex that sent the label
+    gno_t first_sender;
+    
+    //this field indicates whether or not the first label is currently set
+    //(this is necessary for unsigned global types)
+    bool  first_used;
+    
+    //the global ID of a second grounded vertex
+    gno_t second_label;
 
-          //the global ID of the vertex that sent the second identifier
-	  gno_t second_sender;
+    //the global ID of the vertex that sent the second identifier
+    gno_t second_sender;
 
-          //this field indicates whether of not the second label is currently set
-          //(this is necessary for unsigned global types)
-          bool  second_used;
+    //this field indicates whether of not the second label is currently set
+    //(this is necessary for unsigned global types)
+    bool  second_used;
 
-          //this field may potentially be used to find biconnected components
-          int bcc_name;
+    //this field will be used to find biconnected components
+    int bcc_name;
 
-          //this flag indicates whether or not this vertex is a potential articulation point
-	  bool is_art;
+    //this flag indicates whether or not this vertex is a potential articulation point
+    bool is_art;
 
-	  // Constructors
-	  IcePropVtxLabel(int idx_, int first_ = -1, int first_sender_ = -1, bool first_used_ = false, 
-                                    int second_ = -1, int second_sender_ = -1, bool second_used_ = false,
-                                    bool art_ = false, int bcc_name_ = -1) { 
-	    id = idx_;
-	    if(id == -1){
-		std::cout<<"A label's ID is -1\n";
-	    }
-	    first_label = first_;
-	    first_sender = first_sender_;
-            first_used = first_used_;
-	    second_label = second_;
-	    second_sender = second_sender_; 
-            second_used = second_used_;
-	    is_art = art_;
-            bcc_name = bcc_name_;
-	  }
-	  IcePropVtxLabel() {
-	    id = -1;
-	    first_label = -1;
-	    first_sender = -1;
-            first_used = false;
-	    second_label = -1;
-	    second_sender = -1;
-            second_used = false;
-	    is_art = false; 
-            bcc_name = -1;
-	  }
+    // Constructors
+    IcePropVtxLabel(int idx_, int first_ = -1, int first_sender_ = -1, bool first_used_ = false, 
+                              int second_ = -1, int second_sender_ = -1, bool second_used_ = false,
+                              bool art_ = false, int bcc_name_ = -1) { 
+      id = idx_;
+      first_label = first_;
+      first_sender = first_sender_;
+      first_used = first_used_;
+      second_label = second_;
+      second_sender = second_sender_; 
+      second_used = second_used_;
+      is_art = art_;
+      bcc_name = bcc_name_;
+    }
+    IcePropVtxLabel() {
+      id = -1;
+      first_label = -1;
+      first_sender = -1;
+      first_used = false;
+      second_label = -1;
+      second_sender = -1;
+      second_used = false;
+      is_art = false; 
+      bcc_name = -1;
+    }
 
-	  IcePropVtxLabel(volatile const IcePropVtxLabel& other){
-	    id = other.id;
-	    first_label = other.first_label;
-	    first_sender = other.first_sender;
-            first_used = other.first_used;
-	    second_label = other.second_label;
-	    second_sender = other.second_sender;
-            second_used = other.second_used;
-	    is_art = other.is_art;
-            bcc_name = other.bcc_name;
-	  }
-	  IcePropVtxLabel(const IcePropVtxLabel& other){
-	    id = other.id;
-	    first_label = other.first_label;
-	    first_sender = other.first_sender;
-            first_used = other.first_used;
-	    second_label = other.second_label;
-	    second_sender = other.second_sender;
-            second_used = other.second_used;
-	    is_art = other.is_art;
-            bcc_name = other.bcc_name;
-	  }
-	  // IcePropVtxLabel assignment
-          volatile IcePropVtxLabel operator=(const IcePropVtxLabel& other) volatile{
-	    id = other.id;
-	    first_label = other.first_label;
-	    first_sender = other.first_sender;
-            first_used = other.first_used;
-	    second_label = other.second_label;
-	    second_sender = other.second_sender;
-            second_used = other.second_used;
-	    is_art = other.is_art;
-            bcc_name = other.bcc_name;
-	    return *this; 
-	  }
+    IcePropVtxLabel(volatile const IcePropVtxLabel& other){
+      id = other.id;
+      first_label = other.first_label;
+      first_sender = other.first_sender;
+      first_used = other.first_used;
+      second_label = other.second_label;
+      second_sender = other.second_sender;
+      second_used = other.second_used;
+      is_art = other.is_art;
+      bcc_name = other.bcc_name;
+    }
+    IcePropVtxLabel(const IcePropVtxLabel& other){
+      id = other.id;
+      first_label = other.first_label;
+      first_sender = other.first_sender;
+      first_used = other.first_used;
+      second_label = other.second_label;
+      second_sender = other.second_sender;
+      second_used = other.second_used;
+      is_art = other.is_art;
+      bcc_name = other.bcc_name;
+    }
+    // IcePropVtxLabel assignment
+    volatile IcePropVtxLabel operator=(const IcePropVtxLabel& other) volatile{
+      id = other.id;
+      first_label = other.first_label;
+      first_sender = other.first_sender;
+      first_used = other.first_used;
+      second_label = other.second_label;
+      second_sender = other.second_sender;
+      second_used = other.second_used;
+      is_art = other.is_art;
+      bcc_name = other.bcc_name;
+      return *this; 
+    }
 
-          IcePropVtxLabel& operator=(const IcePropVtxLabel& other) {
-	    id = other.id;
-	    first_label = other.first_label;
-	    first_sender = other.first_sender;
-            first_used = other.first_used;
-	    second_label = other.second_label;
-	    second_sender = other.second_sender;
-            second_used = other.second_used;
-	    is_art = other.is_art;
-            bcc_name = other.bcc_name;
-	    return *this; 
-	  } 
+    IcePropVtxLabel& operator=(const IcePropVtxLabel& other) {
+      id = other.id;
+      first_label = other.first_label;
+      first_sender = other.first_sender;
+      first_used = other.first_used;
+      second_label = other.second_label;
+      second_sender = other.second_sender;
+      second_used = other.second_used;
+      is_art = other.is_art;
+      bcc_name = other.bcc_name;
+      return *this; 
+    } 
 
-	  // int assignment
-	  IcePropVtxLabel& operator=(const int& other) { 
-	    first_label = other;
-	    first_sender = other;
-            first_used = true;
-	    second_label = -1;
-	    second_sender = -1;
-            second_used = false;
-	    return *this;
-	  }
+    // int assignment
+    IcePropVtxLabel& operator=(const int& other) { 
+      first_label = other;
+      first_sender = other;
+      first_used = true;
+      second_label = -1;
+      second_sender = -1;
+      second_used = false;
+      return *this;
+    }
 
-          //stub overloads for FEMultiVector ETI
-          
-          friend IcePropVtxLabel operator- (const IcePropVtxLabel& neg){
-            IcePropVtxLabel ret;
-            return ret;
-          }
+    //stub overloads for FEMultiVector ETI
+    
+    friend IcePropVtxLabel operator- (const IcePropVtxLabel& neg){
+      IcePropVtxLabel ret;
+      return ret;
+    }
 
-          friend IcePropVtxLabel operator*(const IcePropVtxLabel& one, const IcePropVtxLabel& other){
-            IcePropVtxLabel ret;
-            return ret;
-          }
+    friend IcePropVtxLabel operator*(const IcePropVtxLabel& one, const IcePropVtxLabel& other){
+      IcePropVtxLabel ret;
+      return ret;
+    }
 
-          friend IcePropVtxLabel operator+(const IcePropVtxLabel& one, const IcePropVtxLabel& other){
-            IcePropVtxLabel ret;
-            return ret;
-          }
+    friend IcePropVtxLabel operator+(const IcePropVtxLabel& one, const IcePropVtxLabel& other){
+      IcePropVtxLabel ret;
+      return ret;
+    }
 
-          friend IcePropVtxLabel operator-(const IcePropVtxLabel& one, const IcePropVtxLabel& other){
-            IcePropVtxLabel ret;
-            return ret;
-          }
+    friend IcePropVtxLabel operator-(const IcePropVtxLabel& one, const IcePropVtxLabel& other){
+      IcePropVtxLabel ret;
+      return ret;
+    }
 
-          friend IcePropVtxLabel operator/(const IcePropVtxLabel& one, const IcePropVtxLabel& other){
-            IcePropVtxLabel ret;
-            return ret;
-          }
+    friend IcePropVtxLabel operator/(const IcePropVtxLabel& one, const IcePropVtxLabel& other){
+      IcePropVtxLabel ret;
+      return ret;
+    }
 
-          friend bool operator!=(const IcePropVtxLabel& lhs, const IcePropVtxLabel& rhs){
-            return !(lhs == rhs);
-          }
-          
-	  // += overload
-	  // for communicating copy's labels over processor boundaries.
-          IcePropVtxLabel& operator+=(const IcePropVtxLabel& copy) {
-            IcePropGrounding_Status owned_gs = getGroundingStatus();
-            IcePropGrounding_Status copy_gs = copy.getGroundingStatus();
-            //The only cases we care about are 
-            //owned	copy	
-            //NONE  <   HALF
-            //NONE  <	FULL
-            //HALF  ==	HALF
-            //HALF  <	FULL
-          
-	    //handles NONE < HALF, HALF < FULL
-            if(owned_gs < copy_gs){
-              first_label = copy.first_label;
-              first_sender = copy.first_sender;
-              first_used = copy.first_used;
-              second_label = copy.second_label;
-              second_sender = copy.second_sender;
-              second_used = copy.second_used;
-              bcc_name = copy.bcc_name;
-            //handles HALF == HALF
-            } else if(owned_gs == copy_gs && owned_gs == ICEPROPGS_HALF){
-              if(copy.first_label != first_label){
-                second_label = copy.first_label;
-                second_sender = copy.first_sender;
-                second_used = copy.first_used;
-              }
-            }
-            
-	    return *this;
-	  }
-	  
-	  // IcePropVtxLabel equality overload
-	  friend bool operator==(const IcePropVtxLabel& lhs, const IcePropVtxLabel& rhs) {
-	    return ((lhs.first_label == rhs.first_label)&&(lhs.first_sender == rhs.first_sender)&&(lhs.second_label == rhs.second_label)&&(lhs.second_sender == rhs.second_sender));
-	  }
-	  // int equality overload
-	  friend bool operator==(const IcePropVtxLabel& lhs, const int& rhs) {
-	    return ((lhs.first_label == rhs)&&(lhs.first_sender == rhs));
-	  }
-	  // output stream overload
-	  friend std::ostream& operator<<(std::ostream& os, const IcePropVtxLabel& a) {
-	    os<<a.id<<": "<< a.first_label<<", "<<a.first_sender<<"; "<<a.second_label<<", "<<a.second_sender;
-	    return os;
-	  }
-	  IcePropGrounding_Status getGroundingStatus() const {
-	    return (IcePropGrounding_Status)((first_used) + (second_used));
-	  }
-	};
+    friend bool operator!=(const IcePropVtxLabel& lhs, const IcePropVtxLabel& rhs){
+      return !(lhs == rhs);
+    }
+    
+    // += overload
+    // for communicating copy's labels over processor boundaries.
+    IcePropVtxLabel& operator+=(const IcePropVtxLabel& copy) {
+      IcePropGrounding_Status owned_gs = getGroundingStatus();
+      IcePropGrounding_Status copy_gs = copy.getGroundingStatus();
+      //The only cases we care about are 
+      //owned	copy	
+      //NONE  <   HALF
+      //NONE  <	FULL
+      //HALF  ==	HALF
+      //HALF  <	FULL
+    
+      //handles NONE < HALF, HALF < FULL
+      if(owned_gs < copy_gs){
+        first_label = copy.first_label;
+        first_sender = copy.first_sender;
+        first_used = copy.first_used;
+        second_label = copy.second_label;
+        second_sender = copy.second_sender;
+        second_used = copy.second_used;
+        bcc_name = copy.bcc_name;
+      //handles HALF == HALF
+      } else if(owned_gs == copy_gs && owned_gs == ICEPROPGS_HALF){
+        if(copy.first_label != first_label){
+          second_label = copy.first_label;
+          second_sender = copy.first_sender;
+          second_used = copy.first_used;
+        }
+      }
+      
+      return *this;
+    }
+    
+    // IcePropVtxLabel equality overload
+    friend bool operator==(const IcePropVtxLabel& lhs, const IcePropVtxLabel& rhs) {
+      return ((lhs.first_label == rhs.first_label)&&(lhs.first_sender == rhs.first_sender)&&(lhs.second_label == rhs.second_label)&&(lhs.second_sender == rhs.second_sender));
+    }
+    // int equality overload
+    friend bool operator==(const IcePropVtxLabel& lhs, const int& rhs) {
+      return ((lhs.first_label == rhs)&&(lhs.first_sender == rhs));
+    }
+    // output stream overload
+    friend std::ostream& operator<<(std::ostream& os, const IcePropVtxLabel& a) {
+      os<<a.id<<": "<< a.first_label<<", "<<a.first_sender<<"; "<<a.second_label<<", "<<a.second_sender;
+      return os;
+    }
+    IcePropGrounding_Status getGroundingStatus() const {
+      return (IcePropGrounding_Status)((first_used) + (second_used));
+    }
+  };
 
 }//end namespace Zoltan2
         
