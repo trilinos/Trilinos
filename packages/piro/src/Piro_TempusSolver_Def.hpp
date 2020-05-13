@@ -76,7 +76,6 @@
 #  include "Thyra_NonlinearSolver_NOX.hpp"
 #endif
 
-//#define DEBUG_OUTPUT
 
 #include <string>
 #include <stdexcept>
@@ -93,9 +92,6 @@ Piro::TempusSolver<Scalar>::TempusSolver(
   piroObserver_(piroObserver),
   supports_x_dotdot_(false)
 {
-#ifdef DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
   std::string sens_method_string = appParams->get("Sensitivity Method","None");
   this->setSensitivityMethod(sens_method_string); 
   sens_method_ = this->getSensitivityMethod(); 
@@ -119,9 +115,6 @@ void Piro::TempusSolver<Scalar>::initialize(
     const Teuchos::RCP<Teuchos::ParameterList> &appParams,
     const Teuchos::RCP< Thyra::ModelEvaluator<Scalar> > &in_model) 
 {
-#ifdef DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
   using Teuchos::ParameterList;
   using Teuchos::parameterList;
   using Teuchos::RCP;
@@ -331,9 +324,6 @@ Piro::TempusSolver<Scalar>::TempusSolver(
   solnVerbLevel_(verbosityLevel),
   isInitialized_(true)
 {
-#ifdef DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
   if (fwdStateStepper_->getModel() != underlyingModel) {
     fwdStateStepper_->setModel(underlyingModel);
   }
@@ -367,10 +357,6 @@ Piro::TempusSolver<Scalar>::TempusSolver(
   solnVerbLevel_(verbosityLevel),
   isInitialized_(true)
 {
-#ifdef DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
-
   if (fwdStateStepper_->getModel() != underlyingModel) {
     fwdStateStepper_->setModel(underlyingModel);
   }
@@ -384,9 +370,6 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
     const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
     const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const
 {
-#ifdef DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -668,12 +651,7 @@ Piro::tempusSolver(
     const Teuchos::RCP<Piro::ObserverBase<Scalar> > &piroObserver)
 {
   Teuchos::RCP<Teuchos::FancyOStream> out_(Teuchos::VerboseObjectBase::getDefaultOStream());
-#ifdef DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
-
   return Teuchos::rcp(new TempusSolver<Scalar>(appParams, in_model, piroObserver));
-
 }
 
 

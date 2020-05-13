@@ -288,14 +288,14 @@ TEUCHOS_UNIT_TEST( Piro, SGResponseStatisticsSensitivity )
     g_mean_index, p_index, 
     EpetraExt::ModelEvaluator::Derivative(
       dgdp_mean, 
-      EpetraExt::ModelEvaluator::DERIV_MV_GRADIENT_FORM
+      EpetraExt::ModelEvaluator::DERIV_TRANS_MV_BY_ROW
       )
     );
   sg_outArgs.set_DgDp(
     g_var_index, p_index, 
     EpetraExt::ModelEvaluator::Derivative(
       dgdp_var, 
-      EpetraExt::ModelEvaluator::DERIV_MV_GRADIENT_FORM
+      EpetraExt::ModelEvaluator::DERIV_TRANS_MV_BY_ROW
       )
     );
   

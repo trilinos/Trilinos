@@ -54,8 +54,6 @@
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_DefaultModelEvaluatorWithSolveFactory.hpp"
 
-//#define DEBUG_OUTPUT
-
 #include <string>
 #include <stdexcept>
 #include <iostream>
@@ -70,9 +68,7 @@ Piro::TransientSolver<Scalar>::TransientSolver(
   num_p_(model->Np()), 
   num_g_(model->Ng())
 {
-#ifdef DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
+  //Nothing to do
 }
 
 template <typename Scalar>
@@ -86,18 +82,13 @@ Piro::TransientSolver<Scalar>::TransientSolver(
     num_g_(model->Ng()),
     sensitivityMethod_(NONE) 
 {
-#ifdef DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
+  //Nothing to do
 }
 
 template<typename Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 Piro::TransientSolver<Scalar>::get_p_space(int l) const
 {
-#ifdef DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
   TEUCHOS_TEST_FOR_EXCEPTION(
       l >= num_p_ || l < 0,
       Teuchos::Exceptions::InvalidParameter,
@@ -112,9 +103,6 @@ template<typename Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 Piro::TransientSolver<Scalar>::get_g_space(int j) const
 {
-#ifdef DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
   TEUCHOS_TEST_FOR_EXCEPTION(
       j > num_g_ || j < 0,
       Teuchos::Exceptions::InvalidParameter,
@@ -134,9 +122,6 @@ template<typename Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
 Piro::TransientSolver<Scalar>::getNominalValues() const
 {
-#ifdef DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
   Thyra::ModelEvaluatorBase::InArgs<Scalar> result = this->createInArgs();
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> modelNominalValues = model_->getNominalValues();
   for (int l = 0; l < num_p_; ++l) {
@@ -149,9 +134,6 @@ template <typename Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
 Piro::TransientSolver<Scalar>::createInArgs() const
 {
-#ifdef DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
   Thyra::ModelEvaluatorBase::InArgsSetup<Scalar> inArgs;
   inArgs.setModelEvalDescription(this->description());
   inArgs.set_Np(num_p_);
@@ -162,10 +144,6 @@ template <typename Scalar>
 Thyra::ModelEvaluatorBase::OutArgs<Scalar>
 Piro::TransientSolver<Scalar>::createOutArgsImpl() const
 {
-#ifdef DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-  *out_ << "DEBUG num_p_, num_g_ = " << num_p_ << ", " << num_g_ << "\n";  
-#endif
   Thyra::ModelEvaluatorBase::OutArgsSetup<Scalar> outArgs;
   outArgs.setModelEvalDescription(this->description());
 
@@ -184,9 +162,6 @@ Piro::TransientSolver<Scalar>::createOutArgsImpl() const
       const Thyra::ModelEvaluatorBase::DerivativeSupport init_dxdp_support =
         initCondOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, initCondOutArgs.Ng() - 1, l);
       if (!init_dxdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
-#ifdef DEBUG_OUTPUT
-        *out_ << "DEBUG: init_dxdp_support = DERIV_MV_JACOBIAN_FORM\n"; 
-#endif
         // Ok to return early since only one parameter supported
         return outArgs;
       }
@@ -211,10 +186,6 @@ Piro::TransientSolver<Scalar>::createOutArgsImpl() const
         l,
         Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
 
-#ifdef DEBUG_OUTPUT
-        *out_ << "DEBUG: dgdp_support = DERIV_MV_JACOBIAN_FORM\n"; 
-#endif
-
     if (num_g_ > 0) {
       // Only one response supported
       const int j = 0;
@@ -228,15 +199,9 @@ Piro::TransientSolver<Scalar>::createOutArgsImpl() const
         Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support;
         if (model_dgdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
           dgdp_support.plus(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
-#ifdef DEBUG_OUTPUT
-          *out_ << "DEBUG: dgdp_support = DERIV_MV_JACOBIAN_FORM\n"; 
-#endif
         }
         if (model_dgdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP)) {
           dgdp_support.plus(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP);
-#ifdef DEBUG_OUTPUT
-          *out_ << "DEBUG: dgdp_support = DERIV_LINEAR_OP\n"; 
-#endif
         }
         outArgs.setSupports(
             Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,
@@ -326,10 +291,6 @@ Piro::TransientSolver<Scalar>::evalConvergedModel(
       const Thyra::ModelEvaluatorBase::InArgs<Scalar>& modelInArgs,
       const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const
 {
-#ifdef DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-  *out_ << "DEBUG sensitivityMethod = " << sensitivityMethod_ << "\n"; 
-#endif
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -440,6 +401,8 @@ Piro::TransientSolver<Scalar>::evalConvergedModel(
     *out_ << "\nF) Calculate response sensitivities...\n";
  
     switch(sensitivityMethod_) {
+      case: NONE: //no sensitivities
+        break; 
 
       case FORWARD : //forward sensitivities
       {

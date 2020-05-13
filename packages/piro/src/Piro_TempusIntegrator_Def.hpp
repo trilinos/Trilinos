@@ -48,8 +48,6 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_Assert.hpp"
 
-//#define DEBUG_OUTPUT
-
 #include <string>
 #include <stdexcept>
 #include <iostream>
@@ -60,9 +58,6 @@ Piro::TempusIntegrator<Scalar>::TempusIntegrator(Teuchos::RCP< Teuchos::Paramete
    const int sens_method) : 
    out_(Teuchos::VerboseObjectBase::getDefaultOStream())
 {
-#ifdef DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
   //The values of sens_method here go hand-in-hand with the enum type SENS_Method in 
   //Tempus::TransientSolver.  NONE = 0, FORWARD = 1, ADJOINT = 2.  
   //IKT FIXME: make sens_method an enum type
@@ -92,9 +87,6 @@ template <typename Scalar>
 Teuchos::RCP<Tempus::Stepper<Scalar>> 
 Piro::TempusIntegrator<Scalar>::getStepper() const
 {
-#ifdef DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
   Teuchos::RCP<Tempus::Stepper<Scalar>> stepper; 
   if (basicIntegrator_ != Teuchos::null) {
     stepper = basicIntegrator_->getStepper(); 
@@ -112,9 +104,6 @@ template <typename Scalar>
 bool 
 Piro::TempusIntegrator<Scalar>::advanceTime(const Scalar time_final)
 {
-#ifdef DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
   bool out; 
   if (basicIntegrator_ != Teuchos::null) {
     out = basicIntegrator_->advanceTime(time_final); 
@@ -132,9 +121,6 @@ template <typename Scalar>
 Scalar 
 Piro::TempusIntegrator<Scalar>::getTime() const
 {
-#ifdef DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
   Scalar time; 
   if (basicIntegrator_ != Teuchos::null) {
     time = basicIntegrator_->getTime(); 
@@ -152,9 +138,6 @@ template <typename Scalar>
 Teuchos::RCP<const Thyra::VectorBase<Scalar>> 
 Piro::TempusIntegrator<Scalar>::getX() const
 {
-#ifdef DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
   Teuchos::RCP<const Thyra::VectorBase<Scalar>> x; 
   if (basicIntegrator_ != Teuchos::null) {
     x = basicIntegrator_->getX(); 
@@ -172,9 +155,6 @@ template <typename Scalar>
 Teuchos::RCP<const Tempus::SolutionHistory<Scalar>> 
 Piro::TempusIntegrator<Scalar>::getSolutionHistory() const
 {
-#ifdef DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
   Teuchos::RCP<const Tempus::SolutionHistory<Scalar>> soln_history; 
   if (basicIntegrator_ != Teuchos::null) {
     soln_history = basicIntegrator_->getSolutionHistory(); 
@@ -192,9 +172,6 @@ template <typename Scalar>
 Teuchos::RCP<const Tempus::TimeStepControl<Scalar>> 
 Piro::TempusIntegrator<Scalar>::getTimeStepControl() const
 {
-#ifdef DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
   Teuchos::RCP<const Tempus::TimeStepControl<Scalar>> ts_control; 
   if (basicIntegrator_ != Teuchos::null) {
     ts_control = basicIntegrator_->getTimeStepControl(); 
@@ -212,9 +189,6 @@ template <typename Scalar>
 void 
 Piro::TempusIntegrator<Scalar>::clearObservers()
 {
-#ifdef DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
   if (basicIntegrator_ != Teuchos::null) {
     basicIntegrator_->getObserver()->clearObservers();
   }
@@ -234,9 +208,6 @@ template <typename Scalar>
 void 
 Piro::TempusIntegrator<Scalar>::setObserver(Teuchos::RCP<Tempus::IntegratorObserver<Scalar>> obs)
 {
-#ifdef DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
   if (basicIntegrator_ != Teuchos::null) {
     basicIntegrator_->setObserver(obs); 
   }
@@ -254,9 +225,6 @@ template <typename Scalar>
 void 
 Piro::TempusIntegrator<Scalar>::initialize()
 {
-#ifdef DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
   if (basicIntegrator_ != Teuchos::null) {
     basicIntegrator_->initialize();
   }
@@ -280,10 +248,6 @@ Piro::TempusIntegrator<Scalar>::initializeSolutionHistory(Scalar t0,
     Teuchos::RCP< const Thyra::MultiVectorBase< Scalar > > DxdotDp0,
     Teuchos::RCP< const Thyra::MultiVectorBase< Scalar > > DxdotdotDp0)
 {
-#ifdef DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
-  //IKT, Question: do forward and adjoint integrators need DxDp0, DxdotDp0, DxdotdotDp0??
   if (basicIntegrator_ != Teuchos::null) {
     basicIntegrator_->initializeSolutionHistory(t0, x0, xdot0, xdotdot0); 
   }
@@ -299,9 +263,6 @@ template <typename Scalar>
 Tempus::Status 
 Piro::TempusIntegrator<Scalar>::getStatus() const
 {
-#ifdef DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
   Tempus::Status status; 
   if (basicIntegrator_ != Teuchos::null) {
     status = basicIntegrator_->getStatus(); 
