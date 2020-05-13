@@ -540,9 +540,9 @@ namespace Amesos2 {
      */
     template<class view_t>
     static void create_CompCol_Matrix(SLU::SuperMatrix* A, int m, int n, int nnz,
-              Teuchos::Array<float> & convert_nzval, view_t & nzval,
-              int* rowind, int* colptr,
-				      SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
+          Teuchos::Array<float> & convert_nzval, view_t & nzval,
+          int* rowind, int* colptr,
+          SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
       // conversion not necessay - pass view data directly
       SLU::S::sCreate_CompCol_Matrix(A, m, n, nnz, nzval.data(), rowind, colptr,
@@ -553,8 +553,8 @@ namespace Amesos2 {
      * \brief Creates a Superlu CRS matrix using the appropriate function
      */
     static void create_CompRow_Matrix(SLU::SuperMatrix* A, int m, int n, 
-				      int nnz, float* nzval, int* rowind, int* colptr,
-				      SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
+          int nnz, float* nzval, int* rowind, int* colptr,
+          SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
       SLU::S::sCreate_CompRow_Matrix(A, m, n, nnz, nzval, rowind, colptr,
 				     stype, dtype, mtype);
@@ -571,9 +571,9 @@ namespace Amesos2 {
      */
     template<class view_t>
     static void create_Dense_Matrix(SLU::SuperMatrix* X, int m, int n,
-				    Teuchos::Array<float> & convert_x, view_t & x,
-            int ldx, SLU::Stype_t stype,
-				    SLU::Dtype_t dtype, SLU::Mtype_t mtype)
+          Teuchos::Array<float> & convert_x, view_t & x,
+          int ldx, SLU::Stype_t stype,
+          SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
       // conversion not necessay - pass view data directly
       SLU::S::sCreate_Dense_Matrix(X, m, n, x.data(), ldx, stype, dtype, mtype);
@@ -581,7 +581,7 @@ namespace Amesos2 {
 
     template<class view_t>
     static void convert_back_Dense_Matrix(
-            Teuchos::Array<float> & convert_x, view_t & x)
+          Teuchos::Array<float> & convert_x, view_t & x)
     {
       // conversion not necessay - pass view data directly
     }
@@ -698,9 +698,9 @@ namespace Amesos2 {
 
     template<class view_t>
     static void create_CompCol_Matrix(SLU::SuperMatrix* A, int m, int n, int nnz,
-              Teuchos::Array<double> & convert_nzval, view_t & nzval,
-              int* rowind, int* colptr,
-				      SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
+          Teuchos::Array<double> & convert_nzval, view_t & nzval,
+          int* rowind, int* colptr,
+          SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
       // conversion not necessay - pass view data directly
       SLU::D::dCreate_CompCol_Matrix(A, m, n, nnz, nzval.data(), rowind, colptr,
@@ -708,8 +708,8 @@ namespace Amesos2 {
     }
 
     static void create_CompRow_Matrix(SLU::SuperMatrix* A, int m, int n, 
-				      int nnz, double* nzval, int* rowind, int* colptr, 
-				      SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
+          int nnz, double* nzval, int* rowind, int* colptr,
+          SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
       SLU::D::dCreate_CompRow_Matrix(A, m, n, nnz, nzval, rowind, colptr,
 				     stype, dtype, mtype);
@@ -717,9 +717,9 @@ namespace Amesos2 {
 
     template<class view_t>
     static void create_Dense_Matrix(SLU::SuperMatrix* X, int m, int n,
-            Teuchos::Array<double> & convert_x, view_t & x,
-            int ldx, SLU::Stype_t stype,
-				    SLU::Dtype_t dtype, SLU::Mtype_t mtype)
+          Teuchos::Array<double> & convert_x, view_t & x,
+          int ldx, SLU::Stype_t stype,
+          SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
       // conversion not necessay - pass view data directly
       SLU::D::dCreate_Dense_Matrix(X, m, n, x.data(), ldx, stype, dtype, mtype);
@@ -727,7 +727,7 @@ namespace Amesos2 {
 
     template<class view_t>
     static void convert_back_Dense_Matrix(
-            Teuchos::Array<double> & convert_x, view_t & x)
+          Teuchos::Array<double> & convert_x, view_t & x)
     {
       // conversion not necessay - pass view data directly
     }
@@ -828,9 +828,9 @@ namespace Amesos2 {
 
     template<class view_t>
     static void create_CompCol_Matrix(SLU::SuperMatrix* A, int m, int n, int nnz,
-				      Teuchos::Array<SLU::C::complex> & convert_nzval, view_t & nzval,
-              int* rowind, int* colptr,
-				      SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
+          Teuchos::Array<SLU::C::complex> & convert_nzval, view_t & nzval,
+          int* rowind, int* colptr,
+          SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
       convert_nzval.resize(nnz);
       for(int i = 0; i < nnz; ++i) {
@@ -841,8 +841,8 @@ namespace Amesos2 {
     }
 
     static void create_CompRow_Matrix(SLU::SuperMatrix* A, int m, int n, int nnz,
-				      SLU::C::complex* nzval, int* rowind, int* colptr,
-				      SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
+          SLU::C::complex* nzval, int* rowind, int* colptr,
+          SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
       SLU::C::cCreate_CompRow_Matrix(A, m, n, nnz, nzval, rowind, colptr,
 				     stype, dtype, mtype);
@@ -850,9 +850,9 @@ namespace Amesos2 {
 
     template<class view_t>
     static void create_Dense_Matrix(SLU::SuperMatrix* X, int m, int n,
-				    Teuchos::Array<SLU::C::complex> & convert_x, view_t & x,
-            int ldx, SLU::Stype_t stype,
-				    SLU::Dtype_t dtype, SLU::Mtype_t mtype)
+          Teuchos::Array<SLU::C::complex> & convert_x, view_t & x,
+          int ldx, SLU::Stype_t stype,
+          SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
       convert_x.resize(m * n);
       int write_index = 0;
@@ -866,7 +866,7 @@ namespace Amesos2 {
 
     template<class view_t>
     static void convert_back_Dense_Matrix(
-            Teuchos::Array<SLU::C::complex> & convert_x, view_t & x)
+          Teuchos::Array<SLU::C::complex> & convert_x, view_t & x)
     {
       int read_index = 0;
       for(int j = 0; j < x.extent(1); ++j) {
@@ -969,9 +969,9 @@ namespace Amesos2 {
 
     template<class view_t>
     static void create_CompCol_Matrix(SLU::SuperMatrix* A, int m, int n, int nnz,
-				      Teuchos::Array<SLU::Z::doublecomplex> & convert_nzval, view_t & nzval,
-              int* rowind, int* colptr,
-				      SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
+          Teuchos::Array<SLU::Z::doublecomplex> & convert_nzval, view_t & nzval,
+          int* rowind, int* colptr,
+          SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
       convert_nzval.resize(nnz);
       for(int i = 0; i < nnz; ++i) {
@@ -987,8 +987,8 @@ namespace Amesos2 {
 
 
     static void create_CompRow_Matrix(SLU::SuperMatrix* A, int m, int n, int nnz,
-				      SLU::Z::doublecomplex* nzval, int* rowind, int* colptr,
-				      SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
+          SLU::Z::doublecomplex* nzval, int* rowind, int* colptr,
+          SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
       SLU::Z::zCreate_CompRow_Matrix(A, m, n, nnz, nzval, rowind, colptr,
 				     stype, dtype, mtype);
@@ -1000,9 +1000,9 @@ namespace Amesos2 {
 
     template<class view_t>
     static void create_Dense_Matrix(SLU::SuperMatrix* X, int m, int n,
-				    Teuchos::Array<SLU::Z::doublecomplex> & convert_x, view_t & x,
-            int ldx, SLU::Stype_t stype,
-				    SLU::Dtype_t dtype, SLU::Mtype_t mtype)
+          Teuchos::Array<SLU::Z::doublecomplex> & convert_x, view_t & x,
+          int ldx, SLU::Stype_t stype,
+          SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
       convert_x.resize(m * n);
       int write_index = 0;
@@ -1016,7 +1016,7 @@ namespace Amesos2 {
 
     template<class view_t>
     static void convert_back_Dense_Matrix(
-            Teuchos::Array<SLU::Z::doublecomplex> & convert_x, view_t & x)
+          Teuchos::Array<SLU::Z::doublecomplex> & convert_x, view_t & x)
     {
       int read_index = 0;
       for(int j = 0; j < x.extent(1); ++j) {
