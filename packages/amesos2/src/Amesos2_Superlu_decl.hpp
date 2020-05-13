@@ -97,6 +97,7 @@ public:
    * - the corresponding type to use for magnitude
    */
   typedef typename type_map::type                                  slu_type;
+  typedef typename type_map::convert_type                  slu_convert_type;
   typedef typename type_map::magnitude_type                  magnitude_type;
 
   typedef FunctionMap<Amesos2::Superlu,slu_type>               function_map;
@@ -273,6 +274,8 @@ private:
   // The following Arrays are persisting storage arrays for A, X, and B
   /// Stores the values of the nonzero entries for SuperLU
   host_value_type_array host_nzvals_view_;
+  Teuchos::Array<slu_convert_type> convert_nzvals_; // copy to SuperLU native array before calling SuperLU
+
   /// Stores the location in \c Ai_ and Aval_ that starts row j
   host_size_type_array host_rows_view_;
   /// Stores the row indices of the nonzero entries
@@ -283,10 +286,12 @@ private:
 
   /// Persisting 1D store for X
   mutable host_solve_array_t xValues_;
+  mutable Teuchos::Array<slu_convert_type> convert_xValues_; // copy to SuperLU native array before calling SuperLU
   int ldx_;
 
   /// Persisting 1D store for B
   mutable host_solve_array_t bValues_;
+  mutable Teuchos::Array<slu_convert_type> convert_bValues_; // copy to SuperLU native array before calling SuperLU
   int ldb_;
 
   /* Note: In the above, must use "Amesos2::Superlu" rather than

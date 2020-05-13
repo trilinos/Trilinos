@@ -424,10 +424,10 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
       SLU::Dtype_t dtype = type_map::dtype;
       int i_ld_rhs = as<int>(ld_rhs);
       function_map::create_Dense_Matrix(&(data_.B), i_ld_rhs, as<int>(nrhs),
-                                        bValues_.data(), i_ld_rhs,
+                                        convert_bValues_, bValues_, i_ld_rhs,
                                         SLU::SLU_DN, dtype, SLU::SLU_GE);
       function_map::create_Dense_Matrix(&(data_.X), i_ld_rhs, as<int>(nrhs),
-                                        xValues_.data(), i_ld_rhs,
+                                        convert_xValues_, xValues_, i_ld_rhs,
                                         SLU::SLU_DN, dtype, SLU::SLU_GE);
     }
 
@@ -463,6 +463,15 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
           &(data_.mem_usage), &(data_.stat), &ierr);
     }
 
+    }
+
+    // convert back to Kokkos views
+    {
+#ifdef HAVE_AMESOS2_TIMERS
+      Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
+#endif
+      function_map::convert_back_Dense_Matrix(convert_bValues_, bValues_);
+      function_map::convert_back_Dense_Matrix(convert_xValues_, xValues_);
     }
 
     // Cleanup X and B stores
@@ -791,10 +800,10 @@ Superlu<Matrix,Vector>::loadA_impl(EPhase current_phase)
                         std::runtime_error,
                         "Did not get the expected number of non-zero vals");
 
-    function_map::create_CompCol_Matrix( &(data_.A),
+    function_map::template create_CompCol_Matrix<host_value_type_array>( &(data_.A),
                                          this->globalNumRows_, this->globalNumCols_,
                                          nnz_ret,
-                                         host_nzvals_view_.data(),
+                                         convert_nzvals_, host_nzvals_view_,
                                          host_rows_view_.data(),
                                          host_col_ptr_view_.data(),
                                          SLU::SLU_NC, dtype, SLU::SLU_GE);
