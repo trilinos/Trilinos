@@ -62,14 +62,12 @@ public:
   /** \name Constructors/initializers */
   //@{
   /** \brief . */
-  explicit TransientSolver(const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&model, 
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &initialConditionModel = Teuchos::null); 
+  explicit TransientSolver(const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&model);  
 
   /** \brief . */
   TransientSolver(
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
-      int numParameters, 
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &initialConditionModel = Teuchos::null); 
+      int numParameters); 
   //@}
 
   /** \name Overridden from Thyra::ModelEvaluatorBase. */
@@ -129,7 +127,6 @@ private:
 
   Teuchos::RCP<Teuchos::FancyOStream> out_;
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;
-  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > initialConditionModel_;
   Teuchos::RCP<const Piro::TempusIntegrator<Scalar>> piroTempusIntegrator_; 
 
   int num_p_;

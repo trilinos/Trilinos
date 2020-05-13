@@ -85,7 +85,6 @@ public:
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
       Scalar finalTime,
       const std::string sens_method_string = "None", 
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &initialConditionModel = Teuchos::null,
       Teuchos::EVerbosityLevel verbosityLevel = Teuchos::VERB_DEFAULT);
  
  //@}
@@ -99,7 +98,6 @@ public:
       Scalar initialTime,
       Scalar finalTime,
       const std::string sens_method_string = "None", 
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &initialConditionModel = Teuchos::null,
       Teuchos::EVerbosityLevel verbosityLevel = Teuchos::VERB_DEFAULT);
   //@}
 
@@ -179,7 +177,6 @@ private:
 
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;
   Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyraModel_;
-  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > initialConditionModel_;
 
   Scalar t_initial_;
   Scalar t_final_;

@@ -60,11 +60,9 @@
 
 template <typename Scalar>
 Piro::TransientSolver<Scalar>::TransientSolver(
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model, 
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &icModel):
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model) :  
   out_(Teuchos::VerboseObjectBase::getDefaultOStream()),
   model_(model), 
-  initialConditionModel_(icModel),
   num_p_(model->Np()), 
   num_g_(model->Ng())
 {
@@ -73,11 +71,9 @@ Piro::TransientSolver<Scalar>::TransientSolver(
 
 template <typename Scalar>
 Piro::TransientSolver<Scalar>::TransientSolver(
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model, int numParameters, 
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &icModel) : 
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model, int numParameters) :  
     out_(Teuchos::VerboseObjectBase::getDefaultOStream()),
     model_(model),
-    initialConditionModel_(icModel),
     num_p_(numParameters),
     num_g_(model->Ng()),
     sensitivityMethod_(NONE) 
@@ -155,17 +151,6 @@ Piro::TransientSolver<Scalar>::createOutArgsImpl() const
   if (num_p_ > 0) {
     // Only one parameter supported
     const int l = 0;
-
-    if (Teuchos::nonnull(initialConditionModel_)) {
-      const Thyra::ModelEvaluatorBase::OutArgs<Scalar> initCondOutArgs =
-        initialConditionModel_->createOutArgs();
-      const Thyra::ModelEvaluatorBase::DerivativeSupport init_dxdp_support =
-        initCondOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, initCondOutArgs.Ng() - 1, l);
-      if (!init_dxdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
-        // Ok to return early since only one parameter supported
-        return outArgs;
-      }
-    }
 
     // IKT, 5/6/2020: the following should not be needed for transient forward sensitivities
     // but keeping for now.
@@ -401,7 +386,7 @@ Piro::TransientSolver<Scalar>::evalConvergedModel(
     *out_ << "\nF) Calculate response sensitivities...\n";
  
     switch(sensitivityMethod_) {
-      case: NONE: //no sensitivities
+      case NONE: //no sensitivities
         break; 
 
       case FORWARD : //forward sensitivities

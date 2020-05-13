@@ -308,14 +308,12 @@ Piro::TempusSolver<Scalar>::TempusSolver(
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &underlyingModel,
     Scalar finalTime,
     const std::string sens_method_string, 
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &icModel,
     Teuchos::EVerbosityLevel verbosityLevel) :
-  TransientSolver<Scalar>(underlyingModel, icModel), 
+  TransientSolver<Scalar>(underlyingModel), 
   piroTempusIntegrator_(stateIntegrator),
   fwdStateStepper_(stateStepper),
   fwdTimeStepSolver_(timeStepSolver),
   model_(underlyingModel),
-  initialConditionModel_(icModel),
   t_initial_(0.0),
   t_final_(finalTime),
   num_p_(model_->Np()),
@@ -341,14 +339,12 @@ Piro::TempusSolver<Scalar>::TempusSolver(
     Scalar initialTime,
     Scalar finalTime,
     const std::string sens_method_string, 
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &icModel,
     Teuchos::EVerbosityLevel verbosityLevel) :
-  TransientSolver<Scalar>(underlyingModel, icModel), 
+  TransientSolver<Scalar>(underlyingModel), 
   piroTempusIntegrator_(stateIntegrator),
   fwdStateStepper_(stateStepper),
   fwdTimeStepSolver_(timeStepSolver),
   model_(underlyingModel),
-  initialConditionModel_(icModel),
   t_initial_(initialTime),
   t_final_(finalTime),
   num_p_(model_->Np()),
@@ -379,23 +375,6 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
     state_ic.set_t(t_initial_);
   }
   
-  if (Teuchos::nonnull(initialConditionModel_)) {
-    // IKT, 4/10/20, FIXME: I don't understand this case...
-    // The initial condition depends on the parameter
-    // It is found by querying the auxiliary model evaluator as the last response
-    const RCP<Thyra::VectorBase<Scalar> > initialState = Thyra::createMember(model_->get_x_space());
-    {
-      Thyra::ModelEvaluatorBase::InArgs<Scalar> initCondInArgs = initialConditionModel_->createInArgs();
-      for (int l = 0; l < num_p_; ++l) {
-        initCondInArgs.set_p(l, inArgs.get_p(l));
-      }
-      Thyra::ModelEvaluatorBase::OutArgs<Scalar> initCondOutArgs = initialConditionModel_->createOutArgs();
-      initCondOutArgs.set_g(initCondOutArgs.Ng() - 1, initialState);
-      initialConditionModel_->evalModel(initCondInArgs, initCondOutArgs);
-    }
-    state_ic.set_x(initialState);
-  }
-
   // Set parameters as part of initial conditions
   for (int l = 0; l < num_p_; ++l) {
     auto p_in = inArgs.get_p(l); 
