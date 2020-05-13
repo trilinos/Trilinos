@@ -84,7 +84,7 @@ public:
       const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &timeStepSolver,
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
       Scalar finalTime,
-      const std::string sens_method = "None", 
+      const std::string sens_method_string = "None", 
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &initialConditionModel = Teuchos::null,
       Teuchos::EVerbosityLevel verbosityLevel = Teuchos::VERB_DEFAULT);
  
@@ -98,7 +98,7 @@ public:
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
       Scalar initialTime,
       Scalar finalTime,
-      const std::string sens_method = "None", 
+      const std::string sens_method_string = "None", 
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &initialConditionModel = Teuchos::null,
       Teuchos::EVerbosityLevel verbosityLevel = Teuchos::VERB_DEFAULT);
   //@}
@@ -212,6 +212,10 @@ private:
   //from Albany.  
   bool abort_on_fail_at_min_dt_;
 
+  int sens_method_; 
+  //sens_method = 0: No sensitivities
+  //sens_method = 1: Forward sensitivities
+  //sens_method = 2: Adjoint sensitivities 
 };
 
 /** \brief Non-member constructor function */

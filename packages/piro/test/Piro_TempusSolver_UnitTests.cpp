@@ -47,7 +47,6 @@
 #ifdef HAVE_PIRO_TEMPUS
 #include "Piro_TempusSolver.hpp"
 #include "Tempus_StepperFactory.hpp"
-//#include "Tempus_StepperBackwardEuler.hpp"
 #include "Piro_ObserverToTempusIntegrationObserverAdapter.hpp"
 
 #ifdef HAVE_PIRO_NOX
@@ -137,7 +136,6 @@ const RCP<TempusSolver<double> > solverNew(
 
   RCP<Tempus::StepperFactory<double> > sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
   const RCP<Tempus::Stepper<double> > stepper = sf->createStepper(stepperPL, thyraModel);
-  //const RCP<Tempus::Stepper<double> > stepper = rcp(new Tempus::StepperBackwardEuler<double>(thyraModel, stepperPL));
   return rcp(new TempusSolver<double>(integrator, stepper, stepSolver, thyraModel, finalTime, sens_method));
 }
 
@@ -175,7 +173,6 @@ const RCP<TempusSolver<double> > solverNew(
   RCP<ParameterList> stepperPL = Teuchos::rcp(&(tempusPL->sublist("Demo Stepper")), false);
   RCP<Tempus::StepperFactory<double> > sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
   const RCP<Tempus::Stepper<double> > stepper = sf->createStepper(stepperPL, thyraModel);
-  //const RCP<Tempus::Stepper<double> > stepper = rcp(new Tempus::StepperBackwardEuler<double>(thyraModel, stepperPL));
 
   return rcp(new TempusSolver<double>(integrator, stepper, stepSolver, thyraModel, initialTime, finalTime, sens_method));
 }
@@ -217,7 +214,6 @@ const RCP<TempusSolver<double> > solverNew(
   RCP<ParameterList> stepperPL = Teuchos::rcp(&(tempusPL->sublist("Demo Stepper")), false);
   RCP<Tempus::StepperFactory<double> > sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
   const RCP<Tempus::Stepper<double> > stepper = sf->createStepper(stepperPL, thyraModel);
-  //const RCP<Tempus::Stepper<double> > stepper = rcp(new Tempus::StepperBackwardEuler<double>(thyraModel, stepperPL));
 
   return rcp(new TempusSolver<double>(integrator, stepper, stepSolver, thyraModel, initialTime, finalTime, sens_method));
 }
@@ -343,8 +339,7 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, ObserveInitialCondition)
 {
   const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
   const RCP<MockObserver<double> > observer(new MockObserver<double>);
-  //IKT, FIXME: set to 2.0 instead of 0.0 -- does not work correctly in this case
-  const double timeStamp = 0.0;
+  const double timeStamp = 2.0;
 
   const RCP<TempusSolver<double> > solver = solverNew(model, timeStamp, timeStamp, observer, "None");
 

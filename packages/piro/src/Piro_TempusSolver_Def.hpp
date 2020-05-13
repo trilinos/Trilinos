@@ -96,8 +96,9 @@ Piro::TempusSolver<Scalar>::TempusSolver(
 #ifdef DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  std::string sens_method = appParams->get("Sensitivity Method","None");
-  this->setSensitivityMethod(sens_method); 
+  std::string sens_method_string = appParams->get("Sensitivity Method","None");
+  this->setSensitivityMethod(sens_method_string); 
+  sens_method_ = this->getSensitivityMethod(); 
   std::string jacobianSource = appParams->get("Jacobian Operator", "Have Jacobian");
   if (jacobianSource == "Matrix-Free") {
     Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model;
@@ -284,7 +285,7 @@ void Piro::TempusSolver<Scalar>::initialize(
     *out_ << "\nD) Create the stepper and integrator for the forward problem ...\n";
 
     //Create Tempus integrator with observer using tempusPL, model_ and sensitivity method
-    piroTempusIntegrator_ = Teuchos::rcp(new Piro::TempusIntegrator<Scalar>(tempusPL, model_, this->getSensitivityMethod()));
+    piroTempusIntegrator_ = Teuchos::rcp(new Piro::TempusIntegrator<Scalar>(tempusPL, model_, sens_method_));
     this->setPiroTempusIntegrator(piroTempusIntegrator_);  
 
     //Get stepper from integrator
@@ -313,7 +314,7 @@ Piro::TempusSolver<Scalar>::TempusSolver(
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &timeStepSolver,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &underlyingModel,
     Scalar finalTime,
-    const std::string sens_method, 
+    const std::string sens_method_string, 
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &icModel,
     Teuchos::EVerbosityLevel verbosityLevel) :
   TransientSolver<Scalar>(underlyingModel, icModel), 
@@ -336,7 +337,8 @@ Piro::TempusSolver<Scalar>::TempusSolver(
   if (fwdStateStepper_->getModel() != underlyingModel) {
     fwdStateStepper_->setModel(underlyingModel);
   }
-  this->setSensitivityMethod(sens_method); 
+  this->setSensitivityMethod(sens_method_string); 
+  sens_method_ = this->getSensitivityMethod(); 
   this->setPiroTempusIntegrator(piroTempusIntegrator_);  
 }
 
@@ -348,7 +350,7 @@ Piro::TempusSolver<Scalar>::TempusSolver(
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &underlyingModel,
     Scalar initialTime,
     Scalar finalTime,
-    const std::string sens_method, 
+    const std::string sens_method_string, 
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &icModel,
     Teuchos::EVerbosityLevel verbosityLevel) :
   TransientSolver<Scalar>(underlyingModel, icModel), 
@@ -368,18 +370,12 @@ Piro::TempusSolver<Scalar>::TempusSolver(
 #ifdef DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  //IKT, 12/5/16: the following exception check is needed until setInitialCondition method
-  //is added to the Tempus::IntegratorBasic class.
-  if (initialTime > 0.0) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
-      "\n Error in Piro::TempusSolver: the constructor employed does not support initialTime > 0.0.  " <<
-      "You have set initialTime = " << initialTime << "\n");
-  }
 
   if (fwdStateStepper_->getModel() != underlyingModel) {
     fwdStateStepper_->setModel(underlyingModel);
   }
-  this->setSensitivityMethod(sens_method); 
+  this->setSensitivityMethod(sens_method_string); 
+  sens_method_ = this->getSensitivityMethod(); 
   this->setPiroTempusIntegrator(piroTempusIntegrator_);  
 }
 
@@ -604,7 +600,7 @@ setObserver()
     const Teuchos::RCP<const Tempus::TimeStepControl<Scalar> > timeStepControl = piroTempusIntegrator_->getTimeStepControl();
     //Create Tempus::IntegratorObserverBasic object
     observer = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<Scalar>(solutionHistory,
-                                timeStepControl, piroObserver_, supports_x_dotdot_, abort_on_fail_at_min_dt_));
+                                timeStepControl, piroObserver_, supports_x_dotdot_, abort_on_fail_at_min_dt_, sens_method_));
   }
   if (Teuchos::nonnull(observer)) {
     //Set observer in integrator

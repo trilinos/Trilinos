@@ -47,7 +47,6 @@
 #ifdef HAVE_PIRO_TEMPUS
 #include "Piro_TempusSolver.hpp"
 #include "Tempus_StepperFactory.hpp"
-//#include "Tempus_StepperBackwardEuler.hpp"
 #include "Piro_ObserverToTempusIntegrationObserverAdapter.hpp"
 
 #ifdef HAVE_PIRO_NOX
@@ -145,7 +144,6 @@ const RCP<TempusSolver<double> > solverNew(
 
   RCP<Tempus::StepperFactory<double> > sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
   const RCP<Tempus::Stepper<double> > stepper = sf->createStepper(stepperPL, thyraModel);
-  //const RCP<Tempus::Stepper<double> > stepper = rcp(new Tempus::StepperBackwardEuler<double>(thyraModel, stepperPL));
   return rcp(new TempusSolver<double>(integrator, stepper, stepSolver, thyraModel, finalTime, sens_method));
 }
 
@@ -179,18 +177,17 @@ const RCP<TempusSolver<double> > solverNew(
   RCP<Thyra::MultiVectorBase<double> > DxDp0 =
       Thyra::createMembers(thyraModel->get_x_space(), num_param);
   DxDp0->assign(0.0); 
-  integrator->initializeSolutionHistory(0.0, x0, Teuchos::null, Teuchos::null,
+  integrator->initializeSolutionHistory(initialTime, x0, Teuchos::null, Teuchos::null,
                                           DxDp0, Teuchos::null, Teuchos::null);
   const RCP<const Tempus::SolutionHistory<double> > solutionHistory = integrator->getSolutionHistory();
   const RCP<const Tempus::TimeStepControl<double> > timeStepControl = integrator->getTimeStepControl();
 
-  const Teuchos::RCP<Tempus::IntegratorObserver<double> > tempusObserver = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<double>(solutionHistory, timeStepControl, observer));
+  const Teuchos::RCP<Tempus::IntegratorObserver<double> > tempusObserver = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<double>(solutionHistory, timeStepControl, observer, false, false, sens_method_int));
   integrator->setObserver(tempusObserver);
   const RCP<Thyra::NonlinearSolverBase<double> > stepSolver = Teuchos::null;
   RCP<ParameterList> stepperPL = Teuchos::rcp(&(tempusPL->sublist("Demo Stepper")), false);
   RCP<Tempus::StepperFactory<double> > sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
   const RCP<Tempus::Stepper<double> > stepper = sf->createStepper(stepperPL, thyraModel);
-  //const RCP<Tempus::Stepper<double> > stepper = rcp(new Tempus::StepperBackwardEuler<double>(thyraModel, stepperPL));
 
   return rcp(new TempusSolver<double>(integrator, stepper, stepSolver, thyraModel, initialTime, finalTime, sens_method));
 }
@@ -233,7 +230,6 @@ const RCP<TempusSolver<double> > solverNew(
   RCP<ParameterList> stepperPL = Teuchos::rcp(&(tempusPL->sublist("Demo Stepper")), false);
   RCP<Tempus::StepperFactory<double> > sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
   const RCP<Tempus::Stepper<double> > stepper = sf->createStepper(stepperPL, thyraModel);
-  //const RCP<Tempus::Stepper<double> > stepper = rcp(new Tempus::StepperBackwardEuler<double>(thyraModel, stepperPL));
 
   return rcp(new TempusSolver<double>(integrator, stepper, stepSolver, thyraModel, initialTime, finalTime, sens_method));
 }
@@ -490,4 +486,49 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_ResponseAndDefaultSensitivities)
     }
   }
 }
+
+TEUCHOS_UNIT_TEST(Piro_TempusSolver, ObserveInitialConditionWhenSensitivitiesRequested)
+{
+  Teuchos::RCP<Teuchos::FancyOStream> fos =
+      Teuchos::VerboseObjectBase::getDefaultOStream();
+  
+  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
+  const RCP<MockObserver<double> > observer(new MockObserver<double>);
+  const double timeStamp = 2.0;
+
+  const RCP<TempusSolver<double> > solver = solverNew(model, timeStamp, timeStamp, observer, "Forward");
+
+  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
+  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
+  {
+    const int solutionResponseIndex = solver->Ng() - 1;
+    const int parameterIndex = 0;
+    const Thyra::MEB::Derivative<double> dxdp_deriv =
+      Thyra::create_DgDp_mv(*solver, solutionResponseIndex, parameterIndex, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
+    const RCP<Thyra::MultiVectorBase<double> > dxdp = dxdp_deriv.getMultiVector();
+    outArgs.set_DgDp(solutionResponseIndex, parameterIndex, dxdp_deriv);
+  }
+  solver->evalModel(inArgs, outArgs);
+
+  {
+    const RCP<const Thyra::VectorBase<double> > solution =
+      observer->lastSolution();
+
+    const RCP<const Thyra::VectorBase<double> > initialCondition =
+      model->getNominalValues().get_x();
+
+    /*const Array<double> actual = arrayFromVector(*solution);
+    const Array<double> expected = arrayFromVector(*initialCondition);
+    for (int i = 0; i < expected.size(); ++i) {
+      *fos << "  IKT i, actual, expected = " << i << ", " << actual[i] << ", " << expected[i] << "\n"; 
+    }*/
+    TEST_COMPARE_FLOATING_ARRAYS(
+        arrayFromVector(*solution),
+        arrayFromVector(*initialCondition),
+        tol);
+  }
+
+  TEST_FLOATING_EQUALITY(observer->lastStamp(), timeStamp, tol);
+}
+
 #endif /* HAVE_PIRO_TEMPUS */

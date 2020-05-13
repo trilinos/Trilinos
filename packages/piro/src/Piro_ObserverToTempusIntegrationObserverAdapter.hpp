@@ -64,7 +64,8 @@ public:
     const Teuchos::RCP<const Tempus::TimeStepControl<Scalar> >& timeStepControl,
     const Teuchos::RCP<Piro::ObserverBase<Scalar> > &wrappedObserver,
     const bool supports_x_dotdot = false, 
-    const bool abort_on_fail_at_min_dt = false); 
+    const bool abort_on_fail_at_min_dt = false, 
+    const int sens_method = 0); 
 
   // Overridden from Tempus::IntegratorObserver
 
@@ -108,7 +109,11 @@ private:
   Teuchos::RCP<ObserverBase<Scalar> > wrappedObserver_;
   bool supports_x_dotdot_;
   Scalar previous_dt_; 
-  bool abort_on_fail_at_min_dt_; 
+  bool abort_on_fail_at_min_dt_;
+  int sens_method_; 
+  //sens_method = 0: No sensitivities
+  //sens_method = 1: Forward sensitivities
+  //sens_method = 2: Adjoint sensitivities 
 };
 
 } // namespace Piro
