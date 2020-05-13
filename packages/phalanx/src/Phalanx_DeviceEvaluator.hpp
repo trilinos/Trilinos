@@ -12,7 +12,7 @@ namespace PHX {
     using member_type = team_policy::member_type;
     using traits = Traits;
     
-    KOKKOS_FUNCTION virtual ~DeviceEvaluator() = default;
+    KOKKOS_DEFAULTED_FUNCTION virtual ~DeviceEvaluator() = default;
 
     //! Used to bind EvalData objects to functor
     KOKKOS_FUNCTION virtual void

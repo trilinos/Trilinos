@@ -45,6 +45,7 @@
 // @HEADER
 #include "MueLu_VerboseObject.hpp"
 
+#include <fstream>
 #ifdef HAVE_MPI
 #include <mpi.h>
 #endif
@@ -130,20 +131,37 @@ namespace MueLu {
 
   void VerboseObject::SetMueLuOStream(const Teuchos::RCP<Teuchos::FancyOStream>& mueluOStream) {
     mueluOStream->setOutputToRootOnly(-1);
-    GetMueLuOStream() = mueluOStream;
+    mueluOutputStream_ = mueluOStream;
+  }
+
+  void VerboseObject::SetMueLuOFileStream(const std::string& filename) {
+    std::string fn;
+#ifdef HAVE_MPI
+    int mpiStarted = 0; MPI_Initialized(&mpiStarted);
+    if (mpiStarted)     {
+      int procRank;
+      MPI_Comm_rank(MPI_COMM_WORLD, &procRank);
+      fn = filename + "." + std::to_string(procRank);
+    } else
+#endif
+      fn = filename;
+    RCP<std::ofstream> outFile(new std::ofstream(fn));
+    Teuchos::RCP<Teuchos::FancyOStream> fancyOutFile = Teuchos::fancyOStream(Teuchos::rcp_implicit_cast<std::ostream>(outFile));
+    SetMueLuOStream(fancyOutFile);
   }
 
   Teuchos::RCP<Teuchos::FancyOStream> VerboseObject::GetMueLuOStream() {
-    static Teuchos::RCP<Teuchos::FancyOStream> mueluOutputStream;
-    if (mueluOutputStream.get()==NULL) {
-      mueluOutputStream = fancyOStream(rcpFromRef(std::cout));
-      mueluOutputStream->setOutputToRootOnly(-1);
+    if (mueluOutputStream_.get()==NULL) {
+      mueluOutputStream_ = fancyOStream(rcpFromRef(std::cout));
+      mueluOutputStream_->setOutputToRootOnly(-1);
     }
-    return mueluOutputStream;
+    return mueluOutputStream_;
   }
 
   VerbLevel VerboseObject::globalVerbLevel_ = High; // Default global verbose level.
 
   RCP<Teuchos::FancyOStream> VerboseObject::blackHole_ = Teuchos::getFancyOStream(rcp(new Teuchos::oblackholestream()));
+
+  RCP<Teuchos::FancyOStream> VerboseObject::mueluOutputStream_ = Teuchos::null;
 
 } // namespace MueLu

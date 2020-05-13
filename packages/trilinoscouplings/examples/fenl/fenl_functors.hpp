@@ -423,7 +423,7 @@ struct LocalGatherScatterTraits {
 template <typename MultiVectorType>
 class ParamSensitivityGatherScatterOp {
 public:
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_DEFAULTED_FUNCTION
   ParamSensitivityGatherScatterOp() = default;
 
   KOKKOS_INLINE_FUNCTION
@@ -432,10 +432,10 @@ public:
     solution_dp(sol_dp), residual_dp(res_dp),
     num_p(solution_dp.extent(1)) {}
 
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_DEFAULTED_FUNCTION
   ParamSensitivityGatherScatterOp(const ParamSensitivityGatherScatterOp&) = default;
 
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_DEFAULTED_FUNCTION
   ParamSensitivityGatherScatterOp& operator=(const ParamSensitivityGatherScatterOp&) = default;
 
   template <typename VectorType, typename ScalarType>

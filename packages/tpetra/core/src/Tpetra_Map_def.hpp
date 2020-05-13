@@ -1645,7 +1645,6 @@ namespace Tpetra {
         Kokkos::RangePolicy<LO, typename DT::execution_space>
           range (static_cast<LO> (0), static_cast<LO> (lgMap.size ()));
         Kokkos::parallel_for (range, *this);
-        Kokkos::fence();
       }
 
       KOKKOS_INLINE_FUNCTION void operator () (const LO& lid) const {
@@ -1721,6 +1720,9 @@ namespace Tpetra {
         os << *prefix << "Copy lgMap to lgMapHost" << endl;
         std::cerr << os.str();
       }
+
+      Kokkos::fence(); // following create_mirror_view fails with CUDA_LAUNCH_BLOCKING=0 due to above FillLgMap parallel_for
+
       auto lgMapHost =
         Kokkos::create_mirror_view (Kokkos::HostSpace (), lgMap);
       Kokkos::deep_copy (lgMapHost, lgMap);

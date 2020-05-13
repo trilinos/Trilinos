@@ -139,6 +139,30 @@ public:
 
   //@}
 
+  /** Disable an evaluation type from AssemblyEngine_TemplateManager,
+      FieldManagerBuilder and PhysicsBlock objects. This will prevent
+      the allocation of unused resources.
+  */
+  template<typename EvalT>
+  void disableEvaluationType()
+  {
+    ae_tm_.template disableType<EvalT>();
+    auto idx = Sacado::mpl::find<panzer::Traits::EvalTypes,EvalT>::value;
+    active_evaluation_types_[idx] = false;
+  }
+
+  /** If set to false, disables building volume field managers to save
+      memory if not needed. Must be called BEFORE setupModel() is
+      called. Defaults to true.
+   */
+  void buildVolumeFieldManagers(const bool value);
+
+  /** If set to false, disables building bc field managers to save
+      memory if not needed. Must be called BEFORE setupModel() is
+      called. Defaults to true.
+   */
+  void buildBCFieldManagers(const bool value);
+
   void setupModel(const Teuchos::RCP<panzer::WorksetContainer> & wc,
                   const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
                   const std::vector<panzer::BC> & bcs,
@@ -681,6 +705,10 @@ private: // data members
 
   mutable bool oneTimeDirichletBeta_on_;
   mutable Scalar oneTimeDirichletBeta_;
+
+  bool build_volume_field_managers_;
+  bool build_bc_field_managers_;
+  std::vector<bool> active_evaluation_types_;
 };
 
 // Inline definition of the add response (its template on the builder type)

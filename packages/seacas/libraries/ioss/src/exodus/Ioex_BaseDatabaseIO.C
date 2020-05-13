@@ -93,7 +93,7 @@
 #if defined(BUILT_IN_SIERRA)
 #define GLOBALS_ARE_TRANSIENT 1
 #else
-#define GLOBALS_ARE_TRANSIENT 0
+#define GLOBALS_ARE_TRANSIENT 1
 #endif
 
 // ========================================================================
@@ -672,10 +672,10 @@ namespace Ioex {
         // Determine size of blob on each rank and offset from beginning of blob.
         size_t per_proc = bl.num_entry / parallel_size();
         size_t extra    = bl.num_entry % parallel_size();
-        size_t count    = per_proc + (myProcessor < extra ? 1 : 0);
+        size_t count    = per_proc + (myProcessor < (int)extra ? 1 : 0);
 
         size_t offset = 0;
-        if (myProcessor < extra) {
+        if (myProcessor < (int)extra) {
           offset = (per_proc + 1) * myProcessor;
         }
         else {

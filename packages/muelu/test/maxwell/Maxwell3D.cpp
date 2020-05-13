@@ -86,7 +86,7 @@ using Teuchos::TimeMonitor;
 #endif
 
 // Stratimikos
-#ifdef HAVE_MUELU_STRATIMIKOS
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
 // Thyra includes
 #include <Thyra_LinearOpWithSolveBase.hpp>
 #include <Thyra_VectorBase.hpp>
@@ -131,7 +131,7 @@ struct EpetraSolvers_Wrapper{
   }
 };
 
-
+#if defined(HAVE_MUELU_EPETRA)
 template<class GlobalOrdinal>
 struct EpetraSolvers_Wrapper<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> {
   static void Generate_ML_MaxwellPreconditioner(Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& SM,
@@ -141,7 +141,7 @@ struct EpetraSolvers_Wrapper<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSeri
                                                 Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<double>::coordinateType,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& coords,
                                                 Teuchos::ParameterList & mueluList,
                                                 Teuchos::RCP<Xpetra::Operator<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& mlopX) {
-#if defined(HAVE_MUELU_ML) and defined(HAVE_MUELU_EPETRA)
+#if defined(HAVE_MUELU_ML)
     typedef double SC;
     typedef int LO;
     typedef GlobalOrdinal GO;
@@ -196,7 +196,7 @@ struct EpetraSolvers_Wrapper<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSeri
                                                    Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<double>::coordinateType,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& coords,
                                                    Teuchos::ParameterList & mueluList,
                                                    Teuchos::RCP<Xpetra::Operator<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& mlopX) {
-#if defined(HAVE_MUELU_ML) and defined(HAVE_MUELU_EPETRA)
+#if defined(HAVE_MUELU_ML)
     typedef double SC;
     typedef int LO;
     typedef GlobalOrdinal GO;
@@ -246,6 +246,7 @@ struct EpetraSolvers_Wrapper<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSeri
 #endif
   }
 };
+#endif // HAVE_MUELU_EPETRA
 
 // Setup & solve wrappers struct
 // Because C++ doesn't support partial template specialization of functions.
@@ -293,7 +294,6 @@ bool SetupSolveWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std:
   std::string            precType        = *static_cast<std::string*>(inputs["precType"]);
   int                    numResolves     = *static_cast<int*>(inputs["numResolves"]);
 
-  Xpetra::UnderlyingLib  lib             = *static_cast<Xpetra::UnderlyingLib*>(inputs["lib"]);
   RCP<const Teuchos::Comm<int> > comm    = *static_cast<RCP<const Teuchos::Comm<int> >*>(inputs["comm"]);
   RCP<Teuchos::FancyOStream> out         = *static_cast<RCP<Teuchos::FancyOStream>*>(inputs["out"]);
 
@@ -410,7 +410,6 @@ bool SetupSolveWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std:
   std::string            precType        = *static_cast<std::string*>(inputs["precType"]);
   int                    numResolves     = *static_cast<int*>(inputs["numResolves"]);
 
-  Xpetra::UnderlyingLib  lib             = *static_cast<Xpetra::UnderlyingLib*>(inputs["lib"]);
   RCP<const Teuchos::Comm<int> > comm    = *static_cast<RCP<const Teuchos::Comm<int> >*>(inputs["comm"]);
   RCP<Teuchos::FancyOStream> out         = *static_cast<RCP<Teuchos::FancyOStream>*>(inputs["out"]);
 
@@ -425,15 +424,19 @@ bool SetupSolveWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std:
       preconditioner = rcp( new MueLu::RefMaxwell<SC,LO,GO,NO>(SM_Matrix,D0_Matrix,Ms_Matrix,M0inv_Matrix,
                                                                M1_Matrix,nullspace,coords,params) );
     }
+#ifdef HAVE_MUELU_EPETRA
     else if (precType=="ML-RefMaxwell") {
+      Xpetra::UnderlyingLib  lib = *static_cast<Xpetra::UnderlyingLib*>(inputs["lib"]);
       TEUCHOS_ASSERT(lib==Xpetra::UseEpetra);
       EpetraSolvers_Wrapper<SC, LO, GO, NO>::Generate_ML_RefMaxwellPreconditioner(SM_Matrix,D0_Matrix,Ms_Matrix,M0inv_Matrix,
                                                                                   M1_Matrix,nullspace,material,coords,params,preconditioner);
     } else if (precType=="ML-Maxwell") {
+      Xpetra::UnderlyingLib  lib = *static_cast<Xpetra::UnderlyingLib*>(inputs["lib"]);
       TEUCHOS_ASSERT(lib==Xpetra::UseEpetra);
       EpetraSolvers_Wrapper<SC, LO, GO, NO>::Generate_ML_MaxwellPreconditioner(SM_Matrix,D0_Matrix,Kn_Matrix,
                                                                                nullspace,coords,params,preconditioner);
     }
+#endif
 
 #ifdef HAVE_MUELU_TPETRA
     {
@@ -490,7 +493,7 @@ bool SetupSolveWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std:
     }
   }
 #endif // HAVE_MUELU_BELOS
-#ifdef HAVE_MUELU_STRATIMIKOS
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
   if (solverName == "Stratimikos") {
     // Build the rest of the Stratimikos list
     Teuchos::ParameterList stratimikosParams;
@@ -535,7 +538,7 @@ bool SetupSolveWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std:
     std::cout << status << std::endl;
 
     success = (status.solveStatus == Thyra::SOLVE_STATUS_CONVERGED);
-  } // HAVE_MUELU_STRATIMIKOS
+  } // HAVE_MUELU_STRATIMIKOS && HAVE_MUELU_THYRA
 #endif
   comm->barrier();
 

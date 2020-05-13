@@ -101,6 +101,9 @@ ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
   , solverFactory_(solverFactory)
   , oneTimeDirichletBeta_on_(false)
   , oneTimeDirichletBeta_(0.0)
+  , build_volume_field_managers_(true)
+  , build_bc_field_managers_(true)
+  , active_evaluation_types_(Sacado::mpl::size<panzer::Traits::EvalTypes>::value, true)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -153,6 +156,9 @@ ModelEvaluator(const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits>
   , solverFactory_(solverFactory)
   , oneTimeDirichletBeta_on_(false)
   , oneTimeDirichletBeta_(0.0)
+  , build_volume_field_managers_(true)
+  , build_bc_field_managers_(true)
+  , active_evaluation_types_(Sacado::mpl::size<panzer::Traits::EvalTypes>::value, true)
 {
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
@@ -380,6 +386,20 @@ panzer::ModelEvaluator<Scalar>::initializeNominalValues() const
 
 template <typename Scalar>
 void panzer::ModelEvaluator<Scalar>::
+buildVolumeFieldManagers(const bool value)
+{
+  build_volume_field_managers_ = value;
+}
+
+template <typename Scalar>
+void panzer::ModelEvaluator<Scalar>::
+buildBCFieldManagers(const bool value)
+{
+  build_bc_field_managers_ = value;
+}
+
+template <typename Scalar>
+void panzer::ModelEvaluator<Scalar>::
 setupModel(const Teuchos::RCP<panzer::WorksetContainer> & wc,
            const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
            const std::vector<panzer::BC> & bcs,
@@ -394,41 +414,65 @@ setupModel(const Teuchos::RCP<panzer::WorksetContainer> & wc,
 {
   // First: build residual assembly engine
   /////////////////////////////////////////////////////////////////////////////////////////////////
+  PANZER_FUNC_TIME_MONITOR_DIFF("panzer::ModelEvaluator::setupModel()",setupModel);
 
   {
     // 1. build Field manager builder
     /////////////////////////////////////////////////////////////////////////////////////////////////
 
-    Teuchos::RCP<panzer::FieldManagerBuilder> fmb = Teuchos::rcp(new panzer::FieldManagerBuilder);
-    fmb->setWorksetContainer(wc);
-    fmb->setupVolumeFieldManagers(physicsBlocks,volume_cm_factory,closure_models,*lof_,user_data);
-    fmb->setupBCFieldManagers(bcs,physicsBlocks,eqset_factory,bc_cm_factory,bc_factory,closure_models,*lof_,user_data);
+    Teuchos::RCP<panzer::FieldManagerBuilder> fmb;
+    {
+      PANZER_FUNC_TIME_MONITOR_DIFF("allocate FieldManagerBuilder",allocFMB);
+      fmb = Teuchos::rcp(new panzer::FieldManagerBuilder);
+      fmb->setActiveEvaluationTypes(active_evaluation_types_);
+    }
+    {
+      PANZER_FUNC_TIME_MONITOR_DIFF("fmb->setWorksetContainer()",setupWorksets);
+      fmb->setWorksetContainer(wc);
+    }
+    if (build_volume_field_managers_) {
+      PANZER_FUNC_TIME_MONITOR_DIFF("fmb->setupVolumeFieldManagers()",setupVolumeFieldManagers);
+      fmb->setupVolumeFieldManagers(physicsBlocks,volume_cm_factory,closure_models,*lof_,user_data);
+    }
+    if (build_bc_field_managers_) {
+      PANZER_FUNC_TIME_MONITOR_DIFF("fmb->setupBCFieldManagers()",setupBCFieldManagers);
+      fmb->setupBCFieldManagers(bcs,physicsBlocks,eqset_factory,bc_cm_factory,bc_factory,closure_models,*lof_,user_data);
+    }
 
     // Print Phalanx DAGs
     if (writeGraph){
-      fmb->writeVolumeGraphvizDependencyFiles(graphPrefix, physicsBlocks);
-      fmb->writeBCGraphvizDependencyFiles(graphPrefix+"BC_");
+      if (build_volume_field_managers_)
+        fmb->writeVolumeGraphvizDependencyFiles(graphPrefix, physicsBlocks);
+      if (build_bc_field_managers_)
+        fmb->writeBCGraphvizDependencyFiles(graphPrefix+"BC_");
     }
 
-    panzer::AssemblyEngine_TemplateBuilder builder(fmb,lof_);
-    ae_tm_.buildObjects(builder);
+    {
+      PANZER_FUNC_TIME_MONITOR_DIFF("AssemblyEngine_TemplateBuilder::buildObjects()",AETM_BuildObjects);
+      panzer::AssemblyEngine_TemplateBuilder builder(fmb,lof_);
+      ae_tm_.buildObjects(builder);
+    }
   }
 
   // Second: build the responses
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
-  responseLibrary_->initialize(wc,lof_->getRangeGlobalIndexer(),lof_);
+  {
+    PANZER_FUNC_TIME_MONITOR_DIFF("build response library",buildResponses);
 
-  buildResponses(physicsBlocks,eqset_factory,volume_cm_factory,closure_models,user_data,writeGraph,graphPrefix+"Responses_");
-  buildDistroParamDfDp_RL(wc,physicsBlocks,bcs,eqset_factory,bc_factory,volume_cm_factory,closure_models,user_data,writeGraph,graphPrefix+"Response_DfDp_");
-  buildDistroParamDgDp_RL(wc,physicsBlocks,bcs,eqset_factory,bc_factory,volume_cm_factory,closure_models,user_data,writeGraph,graphPrefix+"Response_DgDp_");
+    responseLibrary_->initialize(wc,lof_->getRangeGlobalIndexer(),lof_);
 
-  do_fd_dfdp_ = false;
-  fd_perturb_size_ = 1.0e-7;
-  if (me_params.isParameter("FD Forward Sensitivities"))
-    do_fd_dfdp_ = me_params.get<bool>("FD Forward Sensitivities");
-  if (me_params.isParameter("FD Perturbation Size"))
-    fd_perturb_size_ = me_params.get<double>("FD Perturbation Size");
+    buildResponses(physicsBlocks,eqset_factory,volume_cm_factory,closure_models,user_data,writeGraph,graphPrefix+"Responses_");
+    buildDistroParamDfDp_RL(wc,physicsBlocks,bcs,eqset_factory,bc_factory,volume_cm_factory,closure_models,user_data,writeGraph,graphPrefix+"Response_DfDp_");
+    buildDistroParamDgDp_RL(wc,physicsBlocks,bcs,eqset_factory,bc_factory,volume_cm_factory,closure_models,user_data,writeGraph,graphPrefix+"Response_DgDp_");
+
+    do_fd_dfdp_ = false;
+    fd_perturb_size_ = 1.0e-7;
+    if (me_params.isParameter("FD Forward Sensitivities"))
+      do_fd_dfdp_ = me_params.get<bool>("FD Forward Sensitivities");
+    if (me_params.isParameter("FD Perturbation Size"))
+      fd_perturb_size_ = me_params.get<double>("FD Perturbation Size");
+  }
 }
 
 template <typename Scalar>

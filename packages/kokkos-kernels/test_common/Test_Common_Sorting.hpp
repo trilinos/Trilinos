@@ -569,24 +569,34 @@ void testSortCRS(default_lno_t numRows, default_size_type nnz, bool doValues)
   Kokkos::deep_copy(rowmapHost, rowmap);
   Kokkos::deep_copy(entriesHost, entries);
   Kokkos::deep_copy(valuesHost, values);
+  struct ColValue
+  {
+    ColValue() {}
+    ColValue(lno_t c, scalar_t v) : col(c), val(v) {}
+    bool operator<(const ColValue& rhs) const
+    {
+      return col < rhs.col;
+    }
+    bool operator==(const ColValue& rhs) const
+    {
+      return col == rhs.col && val == rhs.val;
+    }
+    lno_t col;
+    scalar_t val;
+  };
   //sort one row at a time on host using STL.
   {
-    using ColValue = std::pair<lno_t, scalar_t>;
     for(lno_t i = 0; i < numRows; i++)
     {
       std::vector<ColValue> rowCopy;
       for(size_type j = rowmapHost(i); j < rowmapHost(i + 1); j++)
         rowCopy.emplace_back(entriesHost(j), valuesHost(j));
-      std::sort(rowCopy.begin(), rowCopy.end(),
-          [](const ColValue& lhs, const ColValue& rhs)
-          {
-            return lhs.first < rhs.first;
-          });
+      std::sort(rowCopy.begin(), rowCopy.end());
       //write sorted row back
       for(size_t j = 0; j < rowCopy.size(); j++)
       {
-        entriesHost(rowmapHost(i) + j) = rowCopy[j].first;
-        valuesHost(rowmapHost(i) + j) = rowCopy[j].second;
+        entriesHost(rowmapHost(i) + j) = rowCopy[j].col;
+        valuesHost(rowmapHost(i) + j) = rowCopy[j].val;
       }
     }
   }

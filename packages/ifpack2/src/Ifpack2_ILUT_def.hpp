@@ -703,6 +703,13 @@ void ILUT<MatrixType>::compute ()
     // Now allocate and fill the matrices
     Array<size_t> nnzPerRow(myNumRows);
 
+    // Make sure to release the old memory for L & U prior to recomputing to
+    // avoid bloating the high-water mark.
+    L_ = Teuchos::null;
+    U_ = Teuchos::null;
+    L_solver_->setMatrix(Teuchos::null);
+    U_solver_->setMatrix(Teuchos::null);
+
     for (local_ordinal_type row_i = 0 ; row_i < myNumRows ; ++row_i) {
       nnzPerRow[row_i] = L_tmp_idx[row_i].size();
     }

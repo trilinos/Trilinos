@@ -306,9 +306,10 @@ See the following use cases:
 * `Enable a set of packages`_
 * `Enable or disable tests for specific packages`_
 * `Enable to test all effects of changing a given package(s)`_
-* `Enable all packages with tests and examples`_
+* `Enable all packages (and optionally all tests)`_
 * `Disable a package and all its dependencies`_
 * `Remove all package enables in the cache`_
+
 
 Determine the list of packages that can be enabled
 ++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -375,8 +376,11 @@ as described above.
 Both of these variables are automatically enabled when
 `<Project>_VERBOSE_CONFIGURE`_ = ``ON``.
 
+
 Enable a set of packages
 ++++++++++++++++++++++++
+
+.. _<Project>_ENABLE_TESTS:
 
 To enable an SE package ``<TRIBITS_PACKAGE>`` (and optionally also its tests
 and examples), configure with::
@@ -429,6 +433,8 @@ that his will **not** result in the enable of the test suites for any packages
 that may only be implicitly enabled in order to build the explicitly enabled
 packages.
 
+.. _<TRIBITS_PACKAGE>_ENABLE_TESTS:
+
 If one wants to enable a package along with the enable of other packages, but
 not the test suite for that package, then when can disable the tests for that
 package by configuring with::
@@ -465,31 +471,39 @@ of their tests turned on.  Tests will not be enabled in packages that do not
 depend on ``<TRIBITS_PACKAGE>`` in this case.  This speeds up and robustifies
 pre-push testing.
 
-Enable all packages with tests and examples
-+++++++++++++++++++++++++++++++++++++++++++
 
-To enable all SE packages (and optionally also their tests and examples), add
-the configure options::
+Enable all packages (and optionally all tests)
+++++++++++++++++++++++++++++++++++++++++++++++
+
+To enable all defined packages and subpakages add the configure option::
 
   -D <Project>_ENABLE_ALL_PACKAGES=ON \
+
+To also optionally enable the tests and examples in all of those enabled
+packages, add the configure option::
+
   -D <Project>_ENABLE_TESTS=ON \
 
-Specific packages can be disabled with
+Specific packages can be disabled (i.e. "black-listed") by adding
 ``<Project>_ENABLE_<TRIBITS_PACKAGE>=OFF``.  This will also disable all
 packages that depend on ``<TRIBITS_PACKAGE>``.
 
-All examples are also enabled by default when setting
-``<Project>_ENABLE_TESTS=ON``.
+Note, all examples are also enabled by default when setting
+``<Project>_ENABLE_TESTS=ON`` (and so examples are considered a subset of the
+tests).
 
 By default, setting ``<Project>_ENABLE_ALL_PACKAGES=ON`` only enables primary
-tested (PT) code.  To have this also enable all secondary tested (ST) code,
-one must also set ``<Project>_ENABLE_SECONDARY_TESTED_CODE=ON``.
+tested (PT) packages and code.  To have this also enable all secondary tested
+(ST) packages and ST code in PT packages code, one must also set::
 
-NOTE: If the project is a "meta-project", then
-``<Project>_ENABLE_ALL_PACKAGES=ON`` may not enable *all* the SE packages
-but only the project's primary meta-project packages.  See `Package
-Dependencies and Enable/Disable Logic`_ and `TriBITS Dependency Handling
-Behaviors`_ for details.
+  -D <Project>_ENABLE_SECONDARY_TESTED_CODE=ON \
+
+NOTE: If this project is a "meta-project", then
+``<Project>_ENABLE_ALL_PACKAGES=ON`` may not enable *all* the SE packages but
+only the project's primary meta-project packages.  See `Package Dependencies
+and Enable/Disable Logic`_ and `TriBITS Dependency Handling Behaviors`_ for
+details.
+
 
 Disable a package and all its dependencies
 ++++++++++++++++++++++++++++++++++++++++++
@@ -945,35 +959,6 @@ of the RAM on a given system and crash the build.
 
 NOTE: These options are ignored when using Makefiles or other CMake
 generators.  They only work for the Ninja generator.
-
-
-Enabling support for C++11
---------------------------
-
-To enable support for C++11 in packages that support C++11 (either optionally
-or required), configure with::
-
-  -D <Project>_ENABLE_CXX11=ON
-
-By default, the system will try to automatically find compiler flags that will
-enable C++11 features.  If it finds flags that allow a test C++11 program to
-compile, then it will an additional set of configure-time tests to see if
-several C++11 features are actually supported by the configured C++ compiler
-and support will be disabled if all of these features are not supported.
-
-In order to pre-set and/or override the C++11 compiler flags used, set the
-cache variable::
-
-  -D <Project>_CXX11_FLAGS="<compiler flags>"
-
-In order to enable C++11 but not have the default system set any flags for
-C++11, use::
-
-  -D <Project>_ENABLE_CXX11=ON
-  -D <Project>_CXX11_FLAGS=" "
-
-The empty space " " will result in the system assuming that no flags needs to
-be set.
 
 
 Enabling explicit template instantiation for C++
@@ -1968,6 +1953,66 @@ Note that one should also disable any ctest tests that might use this
 executable as well with ``-D<fullTestName>_DISABLE=ON`` (see above).  This
 will result in the printing of a line for the executable target being disabled
 at configure time to CMake STDOUT.
+
+
+Disabling just the ctest tests but not the test executables
+-----------------------------------------------------------
+
+To allow the building of the tests and examples in a package (enabled either
+through setting `<Project>_ENABLE_TESTS`_ ``= ON`` or
+`<TRIBITS_PACKAGE>_ENABLE_TESTS`_ ``= ON``) but not actually define the ctest
+tests that will get run, configure with::
+
+  -D <TRIBITS_PACKAGE>_SKIP_CTEST_ADD_TEST=TRUE \
+
+(This has the effect of skipping calling the ``add_test()`` command in the
+CMake code for the package ``<TRIBITS_PACKAGE>``.)
+
+To avoid defining ctest tests for all of the enabled packages, configure
+with::
+
+  -D <Project>_SKIP_CTEST_ADD_TEST=TRUE \
+
+(The default for ``<TRIBITS_PACKAGE>_SKIP_CTEST_ADD_TEST`` for each TriBITS
+package ``<TRIBITS_PACKAGE>`` is set to the project-wide option
+``<Project>_SKIP_CTEST_ADD_TEST``.)
+
+One can also use these options to "white-list" and "black-list" the set of
+package tests that one will run.  For example, to enable the building of all
+test and example targets but only actually defining ctest tests for two
+specific packages (i.e. "white-listing"), one would configure with::
+
+  -D <Project>_ENABLE_ALL_PACKAGES=ON \
+  -D <Project>_ENABLE_TESTS=ON \
+  -D <Project>_SKIP_CTEST_ADD_TEST=TRUE \
+  -D <TRIBITS_PACKAGE_1>_SKIP_CTEST_ADD_TEST=FALSE \
+  -D <TRIBITS_PACKAGE_2>_SKIP_CTEST_ADD_TEST=FALSE \
+
+Alternatively, to enable the building of all test and example targets and
+allowing the ctest tests to be defined for all packages except for a couple of
+specific packages (i.e. "black-listing"), one would configure with::
+
+  -D <Project>_ENABLE_ALL_PACKAGES=ON \
+  -D <Project>_ENABLE_TESTS=ON \
+  -D <TRIBITS_PACKAGE_1>_SKIP_CTEST_ADD_TEST=TRUE \
+  -D <TRIBITS_PACKAGE_2>_SKIP_CTEST_ADD_TEST=TRUE \
+
+Using different values for ``<Project>_SKIP_CTEST_ADD_TEST`` and
+``<TRIBITS_PACKAGE>_SKIP_CTEST_ADD_TEST`` in this way allows for building all
+of the test and example targets for the enabled packages but not defining
+ctest tests for any set of packages desired.  This allows setting up testing
+scenarios where one wants to test the building of all test-related targets but
+not actually run the tests with ctest for a subset of all of the enabled
+packages.  (This can be useful in cases where the tests are very expensive and
+one can't afford to run all of them given the testing budget, or when running
+tests on a given platform is very flaky, or when some packages have fragile or
+poor quality tests that don't port to new platforms very well.)
+
+NOTE: These options avoid having to pass specific sets of labels when running
+``ctest`` itself (such as when defining ``ctest -S <script>.cmake`` scripts)
+and instead the decisions as to the exact set of ctest tests to define is made
+at configure time.  Therefore, all of the decisions about what test targets
+should be build and which tests should be run can be made at configure time.
 
 
 Trace test addition or exclusion
@@ -3037,6 +3082,7 @@ For more details, see the following subsections:
 * `Avoiding installing libraries and headers`_
 * `Installing the software`_
 
+
 Setting the install prefix
 --------------------------
 
@@ -3074,43 +3120,78 @@ WARNING: To overwrite default relative paths, you must use the data type
 current binary directory for the base path.  Otherwise, if you want to specify
 absolute paths, use the data type ``PATH`` as shown above.
 
-Setting install directory permissions
--------------------------------------
 
-By default, when installing with the ``install`` target, any directories
-created are given the default permissions for the user that runs the install
-command (just as if they typed ``mkdir <some-dir>``).  (On Unix/Linux systems,
-one can use ``umask`` and set the default group and the group sticky bit to
-control how directories are created.)  However, for versions of CMake 3.11.0+,
-CMake supports the CMake variable
-``CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS`` which will result in directory
-permissions according to these and not the user/system defaults.  To make this
-easier to use, the ``<Project>`` CMake build system defines the options::
+Setting install ownership and permissions
+-----------------------------------------
 
+By default, when installing with the ``install`` (or
+``install_package_by_package``) target, any files and directories created are
+given the default permissions for the user that runs the install command (just
+as if they typed ``mkdir <some-dir>`` or ``touch <some-file>``).  On most
+Unix/Linux systems, one can use ``umask`` to set default permissions and one
+can set the default group and the group sticky bit to control what groups owns
+the newly created files and directories.  However, some computer systems do
+not support the group sticky bit and there are cases where one wants or needs
+to provide different group ownership and write permissions.
+
+To control what group owns the install-created files and directories related
+to ``CMAKE_INSTALL_PREFIX`` and define the permissions on those, one can set
+one or more of the following options::
+
+  -D <Project>_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR=<install-base-dir> \
+  -D <Project>_MAKE_INSTALL_GROUP=[<owning-group>] \
   -D <Project>_MAKE_INSTALL_GROUP_READABLE=[TRUE|FALSE] \
+  -D <Project>_MAKE_INSTALL_GROUP_WRITABLE=[TRUE|FALSE] \
   -D <Project>_MAKE_INSTALL_WORLD_READABLE=[TRUE|FALSE] \
 
-that automatically sets up ``CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS``
-with the correct permissions according to these options when either of these
-two variables are set to non-empty.  To make the install group and world
-readable, set::
+(where ``<Project>_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR`` must be a
+base directory of ``CMAKE_INSTALL_PREFIX``).  This has the impact of both
+setting the built-in CMake variable
+``CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS`` with the correct permissions
+according to these and also triggers the automatic running of the recursive
+``chgrp`` and ``chmod`` commands starting from the directory
+``<install-base-dir>`` on down, after all of the other project files have been
+installed.  The directory set by
+``<Project>_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR`` and those below it
+may be created by the ``install`` command by CMake (as it may not exist before
+the install).  If ``<Project>_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR``
+is not given, then it is set internally to the same directory as
+``CMAKE_INSTALL_PREFIX``.
 
-  -D <Project>_MAKE_INSTALL_WORLD_READABLE=TRUE
+For an example, to configure for an install based on a dated base directory
+where a non-default group should own the installation and have group
+read/write permissions, and "others" only have read access, one would
+configure with::
 
-To make the install group readable but not world readable, set::
+  -D CMAKE_INSTALL_PREFIX=$HOME/2020-04-25/my-proj \
+  -D <Project>_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR=$HOME/2020-04-25 \
+  -D <Project>_MAKE_INSTALL_GROUP=some-other-group \
+  -D <Project>_MAKE_INSTALL_GROUP_WRITABLE=TRUE \
+  -D <Project>_MAKE_INSTALL_WORLD_READABLE=TRUE \
 
-  -D <Project>_MAKE_INSTALL_GROUP_READABLE=TRUE
+Using these settings, after all of the files and directories have been
+installed using the ``install`` or ``install_package_by_package`` build
+targets, the following commands are automatically run at the very end::
 
-(In that case, make sure and set the desired group in the base install
-directory and set the group sticky bit using ``chmod g+s <base-install-dir>``
-before running the ``install`` target.)
+  chgrp some-other-group $HOME/2020-04-25
+  chmod g+rwX,o+rX $HOME/2020-04-25
+  chgrp some-other-group -R $HOME/2020-04-25/my-proj
+  chmod g+rwX,o+rX -R $HOME/2020-04-25/my-proj
 
-When both of these variables are empty,
-``CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS`` is not set and therefore the
-default user/system directory permissions are used for new directories.  When
-the version of CMake is less than 3.11.0, then setting these variables and
-``CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS`` have no effect and the default
-user/system directory permissions are used.
+That allows the owning group ``some-other-group`` to later modify or delete
+the installation and allows all users to use the installation.
+
+NOTES:
+
+* Setting ``<Project>_MAKE_INSTALL_GROUP_WRITABLE=TRUE`` implies
+  ``<Project>_MAKE_INSTALL_GROUP_READABLE=TRUE``.
+
+* Non-recursive ``chgrp`` and ``chmod`` commands are run on the directories
+  above ``CMAKE_INSTALL_PREFIX``.  Recursive ``chgrp`` and ``chmod`` commands
+  are only run on the base ``CMAKE_INSTALL_PREFIX`` directory itself.  (This
+  avoids touching any files or directories not directly involved in this
+  install.)
+
 
 Setting install RPATH
 ---------------------

@@ -84,6 +84,10 @@ int ex_put_block_params(int exoid, size_t block_count, const struct ex_block *bl
   int fill = NC_FILL_CHAR;
 #endif
 
+  if (block_count == 0) {
+    return (EX_NOERR);
+  }
+
   EX_FUNC_ENTER();
   ex__check_valid_file_id(exoid, __func__);
 
@@ -136,10 +140,10 @@ int ex_put_block_params(int exoid, size_t block_count, const struct ex_block *bl
       ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
       EX_FUNC_LEAVE(EX_FATAL);
     }
-    if ((status = ex__get_dimension(exoid, dnumblk, ex_name_of_object(blocks[i].type), &num_blk,
-                                    &dimid, __func__)) != NC_NOERR) {
+    if ((status = ex__get_dimension(exoid, dnumblk, ex_name_of_object(last_type), &num_blk, &dimid,
+                                    __func__)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: No %ss defined in file id %d",
-               ex_name_of_object(blocks[i].type), exoid);
+               ex_name_of_object(last_type), exoid);
       ex_err_fn(exoid, __func__, errmsg, EX_LASTERR);
       EX_FUNC_LEAVE(EX_FATAL);
     }
