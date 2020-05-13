@@ -151,9 +151,13 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]] ; then
 
 fi
 
-# CMake and ninja
-module swap cmake/3.6.2 cmake/3.12.3
+# Ninja
 module load ninja/1.7.2
+
+# CMake
+#module swap cmake/3.6.2 cmake/3.12.3
+module unload cmake/3.6.2
+export PATH=/home/atdm-devops-admin/tools/waterman/cmake-3.17.2/bin:$PATH
 
 # HWLOC
 
