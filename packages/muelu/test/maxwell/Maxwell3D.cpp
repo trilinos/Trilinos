@@ -86,7 +86,7 @@ using Teuchos::TimeMonitor;
 #endif
 
 // Stratimikos
-#ifdef HAVE_MUELU_STRATIMIKOS
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
 // Thyra includes
 #include <Thyra_LinearOpWithSolveBase.hpp>
 #include <Thyra_VectorBase.hpp>
@@ -493,7 +493,7 @@ bool SetupSolveWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std:
     }
   }
 #endif // HAVE_MUELU_BELOS
-#ifdef HAVE_MUELU_STRATIMIKOS
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
   if (solverName == "Stratimikos") {
     // Build the rest of the Stratimikos list
     Teuchos::ParameterList stratimikosParams;
@@ -538,7 +538,7 @@ bool SetupSolveWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std:
     std::cout << status << std::endl;
 
     success = (status.solveStatus == Thyra::SOLVE_STATUS_CONVERGED);
-  } // HAVE_MUELU_STRATIMIKOS
+  } // HAVE_MUELU_STRATIMIKOS && HAVE_MUELU_THYRA
 #endif
   comm->barrier();
 
