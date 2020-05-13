@@ -5,6 +5,7 @@ ADD_SUBDIRECTORY(rectilinearRCB)
 ADD_SUBDIRECTORY(sacer4320)
 ADD_SUBDIRECTORY(miniem4669)
 ADD_SUBDIRECTORY(ordering)
+ADD_SUBDIRECTORY(kuberry)
 
 # command that copies files during build
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_input_files_for_driver

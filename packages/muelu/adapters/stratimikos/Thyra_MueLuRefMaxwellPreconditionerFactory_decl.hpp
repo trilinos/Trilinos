@@ -49,7 +49,7 @@
 
 #include <MueLu_ConfigDefs.hpp>
 
-#ifdef HAVE_MUELU_STRATIMIKOS
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
 
 // Stratimikos needs Thyra, so we don't need special guards for Thyra here
 #include "Thyra_DefaultPreconditioner.hpp"

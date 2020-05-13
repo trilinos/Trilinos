@@ -44,6 +44,7 @@ TRIBITS_ADD_TEST(
 	COMM mpi serial
 	NUM_MPI_PROCS 1
 	ARGS "CreateEdgeFace -pcab -pcset -pvpax"
+        ADDED_TESTS_NAMES_OUT CreateEdgeFaceWithConcatsAddedName
 )
 
 TRIBITS_ADD_TEST(
@@ -52,14 +53,13 @@ TRIBITS_ADD_TEST(
 	COMM mpi serial
 	NUM_MPI_PROCS 1
 	ARGS ReadEdgeFace
+        ADDED_TESTS_NAMES_OUT ReadEdgeFaceWithConcatsAddedName
 )
 
-# Should be a better way to do this, but...
-if (TPL_ENABLE_MPI)
-  set_property(TEST ${PACKAGE_NAME}_ReadEdgeFaceWithConcats_MPI_1 APPEND PROPERTY DEPENDS ${PACKAGE_NAME}_CreateEdgeFaceWithConcats_MPI_1)
-ELSE()
-  set_property(TEST ${PACKAGE_NAME}_ReadEdgeFaceWithConcats APPEND PROPERTY DEPENDS ${PACKAGE_NAME}_CreateEdgeFaceWithConcats)
-ENDIF()
+if (CreateEdgeFaceWithConcatsAddedName AND ReadEdgeFaceWithConcatsAddedName)
+  set_property(TEST ${ReadEdgeFaceWithConcatsAddedName}
+   APPEND PROPERTY DEPENDS ${CreateEdgeFaceWithConcatsAddedName})
+endif()
 
 # ===============================================
 

@@ -208,6 +208,10 @@ module load spectrum-mpi/2019.06.24
 # Prepend path to ninja after all of the modules are loaded
 export PATH=/projects/atdm_devops/vortex/ninja-fortran-1.8.2:$PATH
 
+# Prepend path to updated CMake 3.16.5
+module unload cmake/3.14.5
+export PATH=/projects/atdm_devops/vortex/cmake-3.16.5/bin:$PATH
+
 # ATDM specific config variables
 export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT}/lib;-llapack;-lgfortran;-lgomp"
 export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas;-lgfortran;-lgomp;-lm"

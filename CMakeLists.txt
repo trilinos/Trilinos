@@ -69,9 +69,6 @@ INCLUDE(${CMAKE_SOURCE_DIR}/ProjectName.cmake)
 # not in an include file :-(
 PROJECT(${PROJECT_NAME} NONE)
 
-# Set default C++ standard to C++11
-SET(Trilinos_ENABLE_CXX11_DEFAULT ON)
-
 #
 # B) Pull in the TriBITS system and execute
 #

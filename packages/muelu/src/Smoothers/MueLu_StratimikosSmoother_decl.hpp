@@ -55,7 +55,7 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_StratimikosSmoother_fwd.hpp"
 
-#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_TPETRA)
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_THYRA)
 
 #include <Tpetra_CrsMatrix.hpp>
 

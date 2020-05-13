@@ -151,9 +151,9 @@
 //#if defined(HAVE_TRINOSCOUPLINGS_BELOS) && defined(HAVE_TRILINOSCOUPLINGS_MUELU)
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
-#include <BelosBlockCGSolMgr.hpp>
 #include <BelosPseudoBlockCGSolMgr.hpp>
-#include <BelosBlockGmresSolMgr.hpp>
+#include <BelosPseudoBlockGmresSolMgr.hpp>
+#include <BelosFixedPointSolMgr.hpp>
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
 //#endif
@@ -297,7 +297,7 @@ void Apply_Dirichlet_BCs(std::vector<int> &BCNodes, crs_matrix_type & A, multive
     \param  b                  [in]    right-hand-side vector
     \param  maxits             [in]    max iterations
     \param  tol                [in]    solver tolerance
-    \param  uh                 [out]   solution vector
+    \param  uh                 [in/out]   solution vector
     \param  TotalErrorResidual [out]   error residual
     \param  TotalErrorExactSol [out]   error in uh
 
@@ -313,8 +313,9 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
                                  RCP<multivector_type> & uh,
                                  double & TotalErrorResidual,
                                  double & TotalErrorExactSol,
-                                 std::string &amgType);
-
+				 std::string &amgType,
+				  std::string &solveType);
+					
 
 
 /**********************************************************************************/
@@ -447,6 +448,12 @@ int main(int argc, char *argv[]) {
   std::string matrixFilename;
   clp.setOption ("matrixFilename", &matrixFilename, "If nonempty, dump the "
 		  "generated matrix to that file in MatrixMarket format.");
+
+  // If coordsFilename is nonempty, dump the rhs to that file
+  // in MatrixMarket format.
+  std::string rhsFilename;
+  clp.setOption ("rhsFilename", &rhsFilename, "If nonempty, dump the "
+		  "generated rhs to that file in MatrixMarket format.");
   
   // If coordsFilename is nonempty, dump the coords to that file
   // in MatrixMarket format.
@@ -1398,6 +1405,9 @@ int main(int argc, char *argv[]) {
     if (matrixFilename != "") {
       writer_type::writeSparseFile (matrixFilename, StiffMatrix);
     }
+    if (rhsFilename != "") {
+      writer_type::writeDenseFile (rhsFilename, rhsVector);
+    }
     if (coordsFilename != "") {
       writer_type::writeDenseFile (coordsFilename, nCoord);
     }
@@ -1407,6 +1417,12 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
   /*********************************** SOLVE ****************************************/
   /**********************************************************************************/
+  // Which Solver?
+  std::string solveType("cg");
+  if(inputSolverList.isParameter("solver")) {
+    solveType = inputSolverList.get<std::string>("solver");
+  }
+
 
   // Run the solver
   std::string amgType("MueLu");
@@ -1532,6 +1548,12 @@ int main(int argc, char *argv[]) {
   int maxits = inputSolverList.get("Maximum Iterations",(int)100);
   double tol = inputSolverList.get("Convergence Tolerance",(double)1e-10);
 
+  if (amgList.isParameter("solve Ae=0")) {
+    rhsVector->scale(0.0);
+    femCoefficients->randomize();
+  }
+
+
   TestMultiLevelPreconditionerLaplace(probType, amgList,
                                       rcpFromRef(StiffMatrix),
 				      nCoord,
@@ -1541,7 +1563,8 @@ int main(int argc, char *argv[]) {
 				      tol,
 				      femCoefficients,
                                       TotalErrorResidual,   TotalErrorExactSol,
-                                      amgType);
+                                      amgType,
+				      solveType);
 
   /**********************************************************************************/
   /**************************** CALCULATE ERROR *************************************/
@@ -1973,17 +1996,12 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
                                  RCP<multivector_type> & uh,
                                  double & TotalErrorResidual,
                                  double & TotalErrorExactSol,
-                                 std::string &amgType)
+				 std::string &amgType,
+				 std::string &solveType)
 {
 
   //  int mypid = A0->getComm()->getRank();
-  RCP<multivector_type> x = rcp(new multivector_type(xexact->getMap(),1));
-  //x.PutScalar(0.0);
-  //JJH FIXME solve Ax=0
-  if (amgList.isParameter("solve Ae=0")) {
-    b->scale(0.0);
-    x->randomize();
-  }
+  RCP<multivector_type>x = uh;
 
   linear_problem_type Problem(linear_problem_type(A0, x, b));
   RCP<multivector_type> lhs = Problem.getLHS();
@@ -2026,20 +2044,31 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
     belosList.set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
     belosList.set("Output Frequency",      1);
     belosList.set("Output Style",          Belos::Brief);
-    //if (!scaleResidualHist)
-    belosList.set("Implicit Residual Scaling", "None");
+    bool scaleResidualHist = true;
+    if (!scaleResidualHist)
+      belosList.set("Implicit Residual Scaling", "None");
 
     // Create an iterative solver manager
     RCP< Belos::SolverManager<scalar_type, multivector_type, operator_type> > solver;
-    solver = rcp(new Belos::PseudoBlockCGSolMgr   <scalar_type, multivector_type, operator_type>(rcpFromRef(Problem), rcp(&belosList, false)));
+    if(solveType == "cg")
+      solver = rcp(new Belos::PseudoBlockCGSolMgr<scalar_type, multivector_type, operator_type>(rcpFromRef(Problem), rcp(&belosList, false)));
+    else if (solveType == "gmres") { 
+      solver = rcp(new Belos::PseudoBlockGmresSolMgr<scalar_type, multivector_type, operator_type>(rcpFromRef(Problem), rcp(&belosList, false)));
+    }
+    else if (solveType == "fixed point" || solveType == "fixed-point") {
+      solver = rcp(new Belos::FixedPointSolMgr<scalar_type, multivector_type, operator_type>(rcpFromRef(Problem), rcp(&belosList, false)));   
+    }
+    else {
+      std::cout << "\nERROR:  Invalid solver '"<<solveType<<"'" << std::endl;
+      return EXIT_FAILURE;
+    }
+
 
     // Perform solve
     solver->solve();
     //writer_type::writeDenseFile("sol.m", x);
     numIterations = solver->getNumIters();
   }
-
-  uh = lhs;
 
   ArrayRCP<const scalar_type> lhsdata = lhs->getData(0);
   ArrayRCP<const scalar_type> xexactdata = xexact->getData(0);
