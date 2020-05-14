@@ -156,8 +156,6 @@ void test_sincos_fsa(const bool use_combined_method,
       .sublist("Time Step Control").get<double>("Initial Time");
     double tfinal = tempus_pl->sublist("Default Integrator")
       .sublist("Time Step Control").get<double>("Final Time");
-    double initdt = tempus_pl->sublist("Default Integrator")
-      .sublist("Time Step Control").get<double>("Initial Time Step");
     RCP<const Thyra::VectorBase<double> > x0 =
       model->getExactSolution(t0).get_x();
     const int num_param = model->get_p_space(0)->dim();
