@@ -160,7 +160,7 @@ IF (SEACASIoss_ENABLE_THREADSAFE)
     )
 
   SET(IOSHELL_ARG --in_type generated 10x10x10+shell:xXyYzZ+sideset:xXyY+times:2+variables:element,2,nodal,3,sideset,4)
-IF ($(TPL_ENABLE_MPI))
+IF (TPL_ENABLE_MPI)
   TRIBITS_ADD_ADVANCED_TEST(
     io_shell_ts
     TEST_0 NOEXEPREFIX NOEXESUFFIX EXEC io_shell_ts ARGS ${IOSHELL_ARG} gen-shell-ts.g
@@ -374,7 +374,7 @@ TRIBITS_ADD_ADVANCED_TEST(unstructured_cgns_to_exodus
   XHOSTTYPE Windows
   )
 
-IF ($(TPL_ENABLE_MPI))
+IF (TPL_ENABLE_MPI)
 TRIBITS_ADD_ADVANCED_TEST(structured_cgns_to_unstructured
    TEST_0 EXEC struc_to_unstruc ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/sparc1.cgns exodus_struc.e
      NOEXEPREFIX NOEXESUFFIX

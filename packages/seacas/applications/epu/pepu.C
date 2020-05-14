@@ -9,7 +9,7 @@
 // concatenates EXODUS/GENESIS output from parallel processors to a single file
 
 #include <exodusII.h>
-#ifdef PARALLEL_AWARE_EXODUS
+#ifdef SEACAS_HAVE_MPI
 #ifndef DISABLE_PARALLEL_EPU
 #define ENABLE_PARALLEL_EPU 1
 #endif
