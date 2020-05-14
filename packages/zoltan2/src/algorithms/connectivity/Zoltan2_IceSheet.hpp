@@ -22,30 +22,64 @@
 namespace Zoltan2{
   /*! Utility function for detecting degenerate features of ice sheets
    *  
-   *  \param (input) problemComm A Teuchos::RCP<const Teuchos::Comm<int>> representing the communicator for the problem.
-   *  \param (input) adapter A Teuchos::RCP<const GraphAdapter<>> representing the structure of the ice sheet mesh's bottom layer.
-   *  \param (input) basalFriction An ArrayView of boolean flags for each local vertex with true representing a grounded vertex and false representing a floating vertex.
-   *                        These indicies must be consistent with the local vertex identifiers for the input graph.
-   *  \param (input) boundary_edges An ArrayView of global vertex identifiers representing all of the edges that the current process knows about which are on the boundary between the ice and the water. 
-   *                        The IDs must be present in the overlap map of the current process if the ID is not owned by this process. Edges should not be specified more than once.
-   *  \param (output) vertex_status is an output argument, and must have a size corresponding to the number of local vertices. After calling DetectDegenerateVertices, this ArrayView will be filled with an 
-   *                        integer indicating the corresponding vertex's status. 
-   *                        Zoltan2::IceGrounded (-2) indicates a vertex has a sufficient connection to ground, and should be kept. 
-   *                        Zoltan2::IceFloating (-1) indicates a vertex is floating and should be removed. 
-   *                        Zoltan2::IceHinged   (0) indicates a vertex is part of a floating hinge, and should be removed.
-   *  \param (output) hinge_vertices is an output argument, and must have a size corresponding to the number of local vertices.
-   *                        For a vertex with a vertex_status of Zoltan2::IceHinged (0), the entry in this array corresponds to the hinge vertex.
-   *                        If multiple hinges are chained together and removed, this entry will indicate the first hinge vertex that has a vertex_status of Zoltan2::IceGrounded (-2).
-   *                        Note: all of the entries contained in this ArrayView are valid global vertex identifiers. It is necessary to check the vertex_status before using this output.
+   *  \param (input) problemComm A Teuchos::RCP<const Teuchos::Comm<int>> 
+   *                 representing the communicator for the problem.
+   *
+   *  \param (input) adapter A Teuchos::RCP<const GraphAdapter<>> 
+   *                 representing the structure of the ice sheet
+   *                 mesh's bottom layer.
+   *
+   *  \param (input) basalFriction An ArrayView of boolean flags for each 
+   *                 local vertex with true representing a grounded vertex 
+   *                 and false representing a floating vertex.
+   *                 These indicies must be consistent with the local vertex 
+   *                 identifiers for the input graph.
+   *
+   *  \param (input) boundary_edges An ArrayView of global vertex identifiers 
+   *                 representing all of the edges that the current process 
+   *                 knows about which are on the boundary between the ice and 
+   *                 the water. The IDs must be present in the overlap map of 
+   *                 the current process if the ID is not owned by this process.
+   *                 Edges should not be specified more than once, locally. 
+   *                 Edges may be specified more than once globally.
+   *
+   *  \param (output) vertex_status is an output argument, and must have a size 
+   *                  corresponding to the number of local vertices. After 
+   *                  calling DetectDegenerateVertices, this ArrayView will be 
+   *                  filled with an integer indicating the corresponding 
+   *                  vertex's status. 
+   *                        Zoltan2::IceGrounded (-2) indicates a vertex has 
+   *                        a sufficient connection to ground, and should be
+   *                        kept.
+   *
+   *                        Zoltan2::IceFloating (-1) indicates a vertex is 
+   *                        floating and should be removed. 
+   *
+   *                        Zoltan2::IceHinged   (0) indicates a vertex is 
+   *                        part of a floating hinge, and should be removed.
+   *
+   *  \param (output) hinge_vertices is an output argument, and must have a 
+   *                  size corresponding to the number of local vertices.
+   *                  For a vertex with a vertex_status of 
+   *                  Zoltan2::IceHinged(0), the entry in this array 
+   *                  corresponds to the hinge vertex. If multiple hinges 
+   *                  are chained together and removed, this entry will 
+   *                  indicate the first hinge vertex that has a vertex_status
+   *                  of Zoltan2::IceGrounded (-2). Note: all of the entries 
+   *                  contained in this ArrayView are valid global vertex 
+   *                  identifiers. It is necessary to check the vertex_status 
+   *                  before using this output.
    *
    */
   template<typename Adapter>
-  void DetectDegenerateVertices( const RCP<const Comm<int>> &problemComm,
-                                 const Adapter &adapter,
-                                 const Teuchos::ArrayView<const bool> &basalFriction,
-                                 const Teuchos::ArrayView<const typename Adapter::gno_t> &boundary_edges,
-	                         const Teuchos::ArrayView<IcePropVtxStatus> &vertex_status,
-	                         const Teuchos::ArrayView<typename Adapter::gno_t> &hinge_vertices){
+  void DetectDegenerateVertices( 
+       const RCP<const Comm<int>> &problemComm,
+       const Adapter &adapter,
+       const Teuchos::ArrayView<const bool> &basalFriction,
+       const Teuchos::ArrayView<const typename Adapter::gno_t> &boundary_edges,
+       const Teuchos::ArrayView<IcePropVtxStatus> &vertex_status,
+       const Teuchos::ArrayView<typename Adapter::gno_t> &hinge_vertices){
+
     typedef typename Adapter::base_adapter_t base_adapter_t;
     typedef typename Adapter::lno_t lno_t;
     typedef typename Adapter::gno_t gno_t;
@@ -65,8 +99,9 @@ namespace Zoltan2{
   
     env->debug(DETAILED_STATUS, "	building graph model");
     //const RCP<const GraphAdapter<user_t>> g_adapter = adapter;
-    RCP<const GraphModel<base_adapter_t>> model = rcp(new GraphModel<base_adapter_t>(b_adapter,env,
-			                                       problemComm, flags));
+    RCP<const GraphModel<base_adapter_t>> model = rcp(new 
+                                      GraphModel<base_adapter_t>(b_adapter,env,
+			                                  problemComm, flags));
     env->debug(DETAILED_STATUS, "	graph model built");
     
     //Get vertex GIDs, in a locally indexed array
@@ -87,7 +122,8 @@ namespace Zoltan2{
     typename map_t::local_ordinal_type* out_offsets = NULL;
     gno_t* global_ids = NULL;
     TPL_Traits<gno_t, const gno_t>::ASSIGN_ARRAY(&out_edges, adjs);
-    TPL_Traits<typename map_t::local_ordinal_type, const offset_t>::ASSIGN_ARRAY(&out_offsets, offsets);
+    TPL_Traits<typename map_t::local_ordinal_type, 
+               const offset_t>::ASSIGN_ARRAY(&out_offsets, offsets);
     TPL_Traits<gno_t, const gno_t>::ASSIGN_ARRAY(&global_ids, vtxIDs);
   
     //get the rank of the current process
@@ -134,7 +170,8 @@ namespace Zoltan2{
   
     //create the Tpetra map with copies
     Tpetra::global_size_t dummy_2 = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
-    RCP<const map_t > mapWithCopies = rcp(new map_t(dummy_2, gids, 0, problemComm));
+    RCP<const map_t > mapWithCopies = rcp(new map_t(dummy_2, gids, 0, 
+                                                    problemComm));
  
     //communicate boundary edges back to owning processors
     gno_t num_boundary_edges = boundary_edges.size()/2;
@@ -195,7 +232,8 @@ namespace Zoltan2{
  
     //Do the final communication back to each remote process 
     Teuchos::ArrayRCP<gno_t> recvbuf;
-    Zoltan2::AlltoAllv<gno_t>(*problemComm,*env,sendbuf(),sendcnts(),recvbuf,recvcnts());
+    Zoltan2::AlltoAllv<gno_t>(*problemComm,*env,sendbuf(),sendcnts(),
+                              recvbuf,recvcnts());
 
     //hash for the boundary-edge set
     struct pair_hash {
@@ -216,9 +254,11 @@ namespace Zoltan2{
     for(int i = 0; i < num_boundary_edges*2; i+=2){
       if(owners[i] == me || owners[i+1] == me){
         if(boundary_edges[i] < boundary_edges[i+1]){
-          edge_set.insert(std::make_pair(boundary_edges[i],boundary_edges[i+1]));
+          edge_set.insert(std::make_pair(boundary_edges[i],
+                                         boundary_edges[i+1]));
         } else {
-          edge_set.insert(std::make_pair(boundary_edges[i+1],boundary_edges[i]));
+          edge_set.insert(std::make_pair(boundary_edges[i+1],
+                                         boundary_edges[i]));
         }
       }
     }
@@ -229,18 +269,23 @@ namespace Zoltan2{
       }
     }
     
-    //use the received boundary edges, but check to make sure they haven't been used yet.
+    //use the received boundary edges, but check to make sure 
+    //they haven't been used yet.
     for(int i = 0; i < recvsize; i+=2){
-      //make sure the edge has not been used (if count returns 1 for one of these, the edge has been used)
-      if(edge_set.count(std::make_pair(recvbuf[i], recvbuf[i+1])) == 0 && edge_set.count(std::make_pair(recvbuf[i+1],recvbuf[i])) == 0){
-        //check which endpoints are owned locally, and set the boundary counts appropriately
+      //make sure the edge has not been used (if count returns 
+      //1 for one of these, the edge has been used)
+      if(edge_set.count(std::make_pair(recvbuf[i], recvbuf[i+1])) == 0 && 
+         edge_set.count(std::make_pair(recvbuf[i+1],recvbuf[i])) == 0){
+        //check which endpoints are owned locally, and set the boundary 
+        //counts appropriately
         if(map->getLocalElement(recvbuf[i]) != fail){
           local_boundary_counts[map->getLocalElement(recvbuf[i])]++;
         }
         if(map->getLocalElement(recvbuf[i+1]) != fail){
           local_boundary_counts[map->getLocalElement(recvbuf[i+1])]++;
         }
-        //add the received edge to the set, to ensure no received duplicates are counted
+        //add the received edge to the set, to ensure no received duplicates 
+        //are counted
         if(recvbuf[i] < recvbuf[i+1]){
           edge_set.insert(std::make_pair(recvbuf[i],recvbuf[i+1]));
         } else {
@@ -256,7 +301,8 @@ namespace Zoltan2{
     for(size_t i = 0; i < nEdge; i++){
       out_edges_lid[i] = mapWithCopies->getLocalElement(out_edges[i]);
     }
-    icePropGraph<typename map_t::local_ordinal_type, offset_t> local_graph = {nVtx, nEdge, out_edges_lid,offsets};
+    icePropGraph<typename map_t::local_ordinal_type, 
+                 offset_t> local_graph = {nVtx, nEdge, out_edges_lid,offsets};
     Zoltan2::iceSheetPropagation<typename map_t::local_ordinal_type, 
                                  typename map_t::global_ordinal_type,
                                  offset_t,

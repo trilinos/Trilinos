@@ -77,27 +77,11 @@ int main(int argc, char** argv)
   typedef Zoltan2_TestingFramework::tcrsGraph_t CrsGraph;
   typedef Zoltan2::XpetraCrsGraphAdapter<CrsGraph> GraphAdapter;
 
-  /*bool prepartition = false;
-  bool distribute = true;
-  if(argc >= 7){
-    string a = argv[6];
-    if(a == "prepartition"){
-      prepartition = true;
-    } else if( a == "singlenode"){
-      distribute = false;
-    }
-  }
-
-  if(argc >= 8){
-    string a = argv[7];
-    if( a == "prepartition"){
-      prepartition = true;
-    } else if(a == "singlenode"){
-      distribute = false;
-    }
-  }*/
-
-  Teuchos::RCP<UserInputForTests> uinput = rcp(new UserInputForTests(testFilePath,testFileName,comm, true, distribute));
+  Teuchos::RCP<UserInputForTests> uinput = 
+    rcp( new UserInputForTests(testFilePath,
+                               testFileName,
+                               comm, true, 
+                               distribute));
   
 
   Teuchos::RCP<SparseMatrix> Matrix;
@@ -113,7 +97,8 @@ int main(int argc, char** argv)
     zparams.set("algorithm","parmetis");
     zparams.set("imbalance_tolerance",1.05);
     zparams.set("partitioning_approach","partition");
-    Zoltan2::PartitioningProblem<SparseMatrixAdapter> zproblem(zadapter, &zparams);
+    Zoltan2::PartitioningProblem<SparseMatrixAdapter> zproblem(zadapter,
+                                                               &zparams);
     zproblem.solve();
    
     // print partition characteristics before and after
@@ -131,7 +116,8 @@ int main(int argc, char** argv)
     }
 
     Teuchos::RCP<SparseMatrix> newMatrix;
-    zadapter->applyPartitioningSolution(*Matrix, newMatrix, zproblem.getSolution());
+    zadapter->applyPartitioningSolution(*Matrix, newMatrix,
+                                        zproblem.getSolution());
   
     Matrix = newMatrix;
     delete zadapter;
@@ -142,7 +128,8 @@ int main(int argc, char** argv)
   GraphAdapter inputGraphAdapter(crsgraph);
   
 
-  //need to read in problem specific files here, start out with zeroed out arrays
+  //need to read in problem specific files here, 
+  //start out with zeroed out arrays
   size_t nlocal =  inputGraphAdapter.getLocalNumVertices();
   bool* basalFriction = new bool[nlocal];
 
@@ -154,14 +141,15 @@ int main(int argc, char** argv)
   size_t nglobal = 0;
   size_t num_global_boundary_edges = 0;
   if(me == 0){
-    read_grounded_file(groundFileName.c_str(),nglobal,grounded_flags_global);
-    read_boundary_file<gno_t>(boundaryFileName.c_str(),num_global_boundary_edges,boundary_edges_global);
+    read_grounded_file(groundFileName.c_str(), nglobal, grounded_flags_global);
+    read_boundary_file<gno_t>(boundaryFileName.c_str(),
+                             num_global_boundary_edges, boundary_edges_global);
     
   }
   
   //broadcast global array counts
-  Teuchos::broadcast<int,size_t>(*comm, 0,1,&nglobal);
-  Teuchos::broadcast<int,size_t>(*comm, 0,1,&num_global_boundary_edges);
+  Teuchos::broadcast<int,size_t>(*comm, 0, 1, &nglobal);
+  Teuchos::broadcast<int,size_t>(*comm, 0, 1, &num_global_boundary_edges);
   
   if(me != 0){
     grounded_flags_global.resize(nglobal);
@@ -169,8 +157,10 @@ int main(int argc, char** argv)
   }
 
   //broadcast the global arrays, to trim them down to local
-  Teuchos::broadcast<int,int>(*comm,0,nglobal,grounded_flags_global.getRawPtr());
-  Teuchos::broadcast<int,gno_t>(*comm,0,num_global_boundary_edges, boundary_edges_global.getRawPtr());
+  Teuchos::broadcast<int, int>(*comm, 0, nglobal,
+                              grounded_flags_global.getRawPtr());
+  Teuchos::broadcast<int, gno_t>(*comm, 0, num_global_boundary_edges, 
+                                 boundary_edges_global.getRawPtr());
  
   Teuchos::RCP<const CrsGraph::map_type> rowMap = crsgraph->getRowMap();
   int numLocalBoundaryEdges = 0;
@@ -181,7 +171,9 @@ int main(int argc, char** argv)
        numLocalBoundaryEdges++;
     }
   }
-  std::cout<<me<<": global_boundary_edges = "<<num_global_boundary_edges<<" localBoundaryEdges = "<<2*numLocalBoundaryEdges<<"\n";
+  std::cout<<me<<": global_boundary_edges = "<<num_global_boundary_edges;
+  std::cout<<" localBoundaryEdges = "<<2*numLocalBoundaryEdges<<"\n";
+
   Teuchos::Array<gno_t> boundaryEdges(2*numLocalBoundaryEdges,0);
   
   std::cout<<me<<": is done initializing local arrays\n";
@@ -195,16 +187,20 @@ int main(int argc, char** argv)
       edgecounter +=2;
     }
   }
+
   if(edgecounter > 2*numLocalBoundaryEdges) std::cout<<"Writing out of bounds on the boundary edges, by "<< edgecounter-2*numLocalBoundaryEdges<<" indices\n";
   std::cout<<me<<": is done building boundary edges\n";
+
   for(size_t i = 0; i < nlocal; i++){
     basalFriction[i] = grounded_flags_global[rowMap->getGlobalElement(i)];
   }
 
   std::cout<<me<<": calling the utility function\n";
   //This boolean array would not convert to an arrayView any other way.
-  Teuchos::ArrayView<const bool> basalView = Teuchos::ArrayView<const bool>(basalFriction,nlocal);
-  Teuchos::Array<Zoltan2::IcePropVtxStatus> status_arr(nlocal,Zoltan2::IceFloating);
+  Teuchos::ArrayView<const bool> basalView = 
+                          Teuchos::ArrayView<const bool>(basalFriction,nlocal);
+  Teuchos::Array<Zoltan2::IcePropVtxStatus> status_arr(nlocal,
+                                                       Zoltan2::IceFloating);
   Teuchos::Array<gno_t> hinge_arr(nlocal,0);
   Zoltan2::DetectDegenerateVertices<GraphAdapter>(comm, inputGraphAdapter,
                                                   basalView,boundaryEdges,
@@ -238,15 +234,18 @@ int main(int argc, char** argv)
   
   int local_mismatches = 0;
   for(size_t i = 0; i < nlocal; i++){
-    if((status_arr[i] > -2 && !ans_removed[rowMap->getGlobalElement(i)]) || (status_arr[i] == -2 && ans_removed[rowMap->getGlobalElement(i)])){
+    if((status_arr[i] > -2 && !ans_removed[rowMap->getGlobalElement(i)]) || 
+        (status_arr[i] == -2 && ans_removed[rowMap->getGlobalElement(i)])){
       local_mismatches++;
-      std::cout<<me<<": Found a mismatch, vertex "<<rowMap->getGlobalElement(i)+1<<"\n";
+      std::cout<<me<<": Found a mismatch, vertex ";
+      std::cout<<rowMap->getGlobalElement(i)+1<<"\n";
     }
   }
   
   //collect global mismatches
   int global_mismatches = 0;
-  Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_SUM, 1, &local_mismatches, &global_mismatches);
+  Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_SUM, 1, 
+                              &local_mismatches, &global_mismatches);
   //if there were any global mismatches, print FAIL; else print PASS
   if(me == 0 && global_mismatches){
     std::cout<<"FAIL "<<global_mismatches<<" mismatches\n";

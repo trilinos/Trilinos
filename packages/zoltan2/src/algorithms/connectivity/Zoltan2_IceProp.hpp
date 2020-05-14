@@ -71,23 +71,31 @@ public:
   //typedef typename MAP::global_ordinal_type gno_t;
   typedef IcePropVtxLabel<lno_t,gno_t> scalar_t;
   typedef IcePropVtxLabel<lno_t,gno_t> label_t;
-  typedef Tpetra::FEMultiVector<scalar_t,lno_t, gno_t> femv_t;	
+  typedef Tpetra::FEMultiVector<scalar_t,lno_t, gno_t> femv_t;
   
   std::queue<lno_t> artQueue;
   std::queue<lno_t> regQueue;
  	
   //Constructor creates FEMultiVector of IcePropVertexLabels,
   //and initializes the labels according to the input grounding information.
-  //It also sets the is_art flag on each label if the vertex is a potential articulation point.
-  iceSheetPropagation(const Teuchos::RCP<const Teuchos::Comm<int> > &comm_, Teuchos::RCP<const MAP> mapOwned_, Teuchos::RCP<const MAP> mapWithCopies_, icePropGraph<lno_t,offset_t>* g_,Teuchos::Array<int> boundary_flags, bool* grounding_flags,int localOwned,int localCopy):
+  //It also sets the is_art flag on each label if the vertex is a potential i
+  //articulation point.
+  iceSheetPropagation(const Teuchos::RCP<const Teuchos::Comm<int> > &comm_, 
+                      Teuchos::RCP<const MAP> mapOwned_, 
+                      Teuchos::RCP<const MAP> mapWithCopies_, 
+                      icePropGraph<lno_t,offset_t>* g_,
+                      Teuchos::Array<int> boundary_flags, 
+                      bool* grounding_flags,
+                      int localOwned,int localCopy):
     me(comm_->getRank()), np(comm_->getSize()),
     nLocalOwned(localOwned), nLocalCopy(localCopy),
     nVec(1), comm(comm_),local_graph(g_),mapOwned(mapOwned_),
     mapWithCopies(mapWithCopies_)
   {
     typedef Tpetra::Import<lno_t, gno_t> import_t;
-    Teuchos::RCP<import_t> importer = rcp(new import_t(mapOwned, mapWithCopies));
-    femv = rcp(new femv_t(mapOwned, importer, nVec, true)); 
+    Teuchos::RCP<import_t> importer = rcp(new import_t(mapOwned, 
+                                                       mapWithCopies));
+    femv = rcp(new femv_t(mapOwned, importer, nVec, true));
     femv->beginFill();
     //set the member variable that stores femv->getData(0);
     for(lno_t i = 0; i < nLocalOwned+nLocalCopy; i++){
@@ -170,7 +178,8 @@ public:
 	label_t curr_node = femvData[i];
 
         //if the current vertex is a potential articulation point, and FULL
-        if(curr_node.is_art && curr_node.getGroundingStatus() == ICEPROPGS_FULL){
+        if(curr_node.is_art && 
+           curr_node.getGroundingStatus() == ICEPROPGS_FULL){
           lno_t out_degree = local_graph->out_degree(curr_node.id);
           lno_t* outs = local_graph->out_vertices(curr_node.id);
 
@@ -178,7 +187,9 @@ public:
           //GID, then propagation is incomplete.
           for(int j = 0; j < out_degree; j++){
             label_t neighbor = femvData[outs[j]];
-            if(neighbor.getGroundingStatus() == ICEPROPGS_HALF && neighbor.first_label != mapWithCopies->getGlobalElement(curr_node.id) && neighbor.first_sender == mapWithCopies->getGlobalElement(curr_node.id)){
+            if(neighbor.getGroundingStatus() == ICEPROPGS_HALF && 
+               neighbor.first_label != mapWithCopies->getGlobalElement(curr_node.id) && 
+               neighbor.first_sender == mapWithCopies->getGlobalElement(curr_node.id)){
               regQueue.push(curr_node.id);
             }
           }
@@ -192,7 +203,8 @@ public:
       //propagation is complete
       int local_done = regQueue.empty();
       int done = 0;
-      Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_MIN,1, &local_done,&done);
+      Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_MIN,1, 
+                                  &local_done,&done);
       
       //if propagation is not complete, continue, otherwise stop the loop.
       if(done) break;
@@ -206,7 +218,8 @@ public:
           cleared.is_art = curr_node.is_art;
           femv->replaceLocalValue(i,0,cleared);
         }
-        if(curr_node.getGroundingStatus() == ICEPROPGS_FULL && curr_node.is_art){
+        if(curr_node.getGroundingStatus() == ICEPROPGS_FULL && 
+           curr_node.is_art){
           regQueue.push(curr_node.id);
         }
       }
@@ -235,7 +248,8 @@ public:
   //progress can be made.
   void bfs_prop(){
     //variable to store old vertex statuses for detecting changes later on
-    std::vector<IcePropGrounding_Status> old_statuses(nLocalOwned,ICEPROPGS_NONE);
+    std::vector<IcePropGrounding_Status> old_statuses(nLocalOwned,
+                                                      ICEPROPGS_NONE);
 
     //This loop is to make sure each process participates until 
     //each process is done propagating
@@ -258,7 +272,8 @@ public:
 	label_t curr_node = femvData[curr->front()];
         curr->pop();
         
-        //if the current node is a ghost, it shouldn't propagate out to its neighbors.
+        //if the current node is a ghost, it shouldn't propagate out to 
+        //its neighbors.
         if(curr_node.id >= nLocalOwned) continue;
         
         lno_t out_degree = local_graph->out_degree(curr_node.id);
@@ -312,10 +327,11 @@ public:
           }
         }
       }
-      //The changes from communication mean either queue may no longer be empty.
+      //The changes from communication mean either queue may no longer 
+      //be empty.
       int local_done = regQueue.empty() && artQueue.empty();
-      //this call makes sure that if any inter-processor communication changed labels
-      //we catch the changes and keep propagating them.
+      //this call makes sure that if any inter-processor communication 
+      //changed labels we catch the changes and keep propagating them.
       Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_MIN,1, &local_done,&done);
     }
     
@@ -324,7 +340,8 @@ public:
   
   //function that exchanges labels between two nodes
   //curr_node gives its labels to neighbor.
-  void giveLabels(IcePropVtxLabel<lno_t,gno_t>& curr_node, IcePropVtxLabel<lno_t,gno_t>& neighbor){
+  void giveLabels(IcePropVtxLabel<lno_t,gno_t>& curr_node, 
+                  IcePropVtxLabel<lno_t,gno_t>& neighbor){
     IcePropGrounding_Status curr_gs = curr_node.getGroundingStatus();
     IcePropGrounding_Status nbor_gs = neighbor.getGroundingStatus();
     //if the neighbor is full, we don't need to pass labels
@@ -333,7 +350,8 @@ public:
     if(curr_gs == ICEPROPGS_NONE) return;
     
     int curr_node_gid = mapWithCopies->getGlobalElement(curr_node.id);
-    //if the current node is full (and not an articulation point), pass both labels on
+    //if the current node is full (and not an articulation point), 
+    //pass both labels on
     if(curr_gs == ICEPROPGS_FULL && !curr_node.is_art){
       neighbor.first_label = curr_node.first_label;
       neighbor.first_sender = curr_node_gid;
@@ -371,7 +389,8 @@ public:
       } else if(nbor_gs == ICEPROPGS_HALF){
         //make sure you aren't giving a duplicate label, and that
         //you haven't sent a label to this neighbor before.
-        if(neighbor.first_label != curr_node.first_label && neighbor.first_sender != curr_node_gid){
+        if(neighbor.first_label != curr_node.first_label && 
+           neighbor.first_sender != curr_node_gid){
           neighbor.second_label = curr_node.first_label;
           neighbor.second_sender = curr_node_gid;
           neighbor.second_used = true;
@@ -400,11 +419,13 @@ public:
       //see how many articulation points all processors know about
       int globalArtPtCount = 0;
       int localArtPtCount = art_queue.size();
-      Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_SUM,1, &localArtPtCount,&globalArtPtCount);
+      Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_SUM,1, 
+                                  &localArtPtCount,&globalArtPtCount);
        
       //if none, no one is making progress, so ground two empty neighbors.
       if(globalArtPtCount == 0){
-        //search for a pair of empty vertices where one is ghosted on a processor
+        //search for a pair of empty vertices where one is ghosted on 
+        //a processor
         int foundGhostPair = 0;
         int ownedVtx = -1, ghostVtx = -1;
         for(int i = 0; i < nLocalOwned; i++){
@@ -431,14 +452,15 @@ public:
         int neighborProc = -1;
         int neighborSend = -1;
         if(foundGhostPair) neighborSend = me;
-        Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_MAX, 1, &neighborSend, &neighborProc);
+        Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_MAX, 1, 
+                                    &neighborSend, &neighborProc);
         
         //if neighborProc is me, I have to ground the neighbors.
         if(neighborProc == me){
           //replace local value with self-grounded vertex with new bcc_name
           label_t firstNeighbor = femvData[ownedVtx];
           label_t secondNeighbor = femvData[ghostVtx];
-          gno_t firstNeighbor_gid = mapWithCopies->getGlobalElement(firstNeighbor.id);          
+          gno_t firstNeighbor_gid = mapWithCopies->getGlobalElement(firstNeighbor.id);
 	  gno_t secondNeighbor_gid = mapWithCopies->getGlobalElement(secondNeighbor.id);
           firstNeighbor.first_label = firstNeighbor_gid;
           firstNeighbor.first_sender = firstNeighbor_gid;
@@ -454,7 +476,7 @@ public:
         } else if(neighborProc == -1){
           int foundEmptyPair = 0;
           lno_t vtx1 = -1, vtx2 = -1;
-          //if none are found, find any pair of empty vertices. (similar procedure)
+          //if none are found, find any pair of empty vertices.
           for(int i = 0; i < nLocalOwned; i++){
             if(femvData[i].getGroundingStatus() == ICEPROPGS_NONE){
               lno_t out_degree = local_graph->out_degree(i);
@@ -474,9 +496,11 @@ public:
           int emptyProc = -1;
           int emptySend = -1;
           if(foundEmptyPair) emptySend = me;
-          Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_MAX, 1, &emptySend, &emptyProc);
+          Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_MAX, 1, 
+                                      &emptySend, &emptyProc);
           
-          //if emptyProc is -1, no processor has a pair of empty neighboring vertices, so we can't do anything
+          //if emptyProc is -1, no processor has a pair of empty 
+          //neighboring vertices, so we can't do anything
           
           if(emptyProc == -1){
             femv->endFill();
@@ -603,7 +627,8 @@ private:
   int nVec;	    //number of vectors in multivector
   
   const Teuchos::RCP<const Teuchos::Comm<int> > comm; //MPI communicator
-  icePropGraph<lno_t,offset_t>* local_graph;	    //csr representation of vertices on this processor
+  icePropGraph<lno_t,offset_t>* local_graph;//csr representation of vertices 
+                                            //on this processor
 
   Teuchos::RCP<const MAP> mapOwned;       //Tpetra::Map including only owned
   Teuchos::RCP<const MAP> mapWithCopies;  //Tpetra::Map including owned

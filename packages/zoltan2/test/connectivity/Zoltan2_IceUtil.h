@@ -16,7 +16,8 @@
 //
 //where v1, v2, v3 and v4 are vertex identifiers.
 template<typename gno_t>
-void read_boundary_file(const char *filename, size_t& num_edges, Teuchos::Array<gno_t> & boundary_edges){
+void read_boundary_file(const char *filename, size_t& num_edges, 
+                        Teuchos::Array<gno_t> & boundary_edges){
   std::ifstream fin(filename);
   if(!fin){
     std::cout<<"Unable to open file "<<filename<<"\n";
@@ -51,7 +52,8 @@ void read_boundary_file(const char *filename, size_t& num_edges, Teuchos::Array<
 //
 //grounding can be a float or an integer, a zero value means floating,
 //nonzero means touching the ground.
-void read_grounded_file(const char* filename, size_t& nVtx, Teuchos::Array<int>& grounded_flags){
+void read_grounded_file(const char* filename, size_t& nVtx, 
+                        Teuchos::Array<int>& grounded_flags){
   std::ifstream fin(filename);
   if(!fin){
     std::cout<<"Unable to open "<<filename<<"\n";

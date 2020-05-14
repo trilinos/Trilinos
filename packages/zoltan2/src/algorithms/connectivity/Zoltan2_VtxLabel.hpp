@@ -43,7 +43,8 @@ namespace Zoltan2{
         
 
   //Enum that denotes
-  enum IcePropGrounding_Status {ICEPROPGS_FULL=2, ICEPROPGS_HALF=1, ICEPROPGS_NONE = 0};
+  enum IcePropGrounding_Status {ICEPROPGS_FULL=2, ICEPROPGS_HALF=1, 
+                                ICEPROPGS_NONE = 0};
   // Struct representing a vertex label.
   // We define our own "addition" for these labels.
   // Later, we'll create a Tpetra::FEMultiVector of these labels.
@@ -80,8 +81,10 @@ namespace Zoltan2{
     bool is_art;
 
     // Constructors
-    IcePropVtxLabel(int idx_, int first_ = -1, int first_sender_ = -1, bool first_used_ = false, 
-                              int second_ = -1, int second_sender_ = -1, bool second_used_ = false,
+    IcePropVtxLabel(int idx_, int first_ = -1, int first_sender_ = -1, 
+                              bool first_used_ = false, 
+                              int second_ = -1, int second_sender_ = -1, 
+                              bool second_used_ = false,
                               bool art_ = false, int bcc_name_ = -1) { 
       id = idx_;
       first_label = first_;
@@ -259,9 +262,13 @@ namespace Kokkos {
   namespace Details {
 
     template<>
-    class ArithTraits<Zoltan2::IcePropVtxLabel<Tpetra::Map<>::local_ordinal_type, Tpetra::Map<>::global_ordinal_type> > {  // specialized for IcePropVtxLabel struct
+    class ArithTraits<Zoltan2::IcePropVtxLabel<
+                      Tpetra::Map<>::local_ordinal_type,
+                      Tpetra::Map<>::global_ordinal_type> > { 
+                      // specialized for IcePropVtxLabel struct
     public:
-      typedef Zoltan2::IcePropVtxLabel<Tpetra::Map<>::local_ordinal_type,Tpetra::Map<>::global_ordinal_type> val_type;
+      typedef Zoltan2::IcePropVtxLabel<Tpetra::Map<>::local_ordinal_type,
+                                 Tpetra::Map<>::global_ordinal_type> val_type;
       typedef int mag_type;
     
       static const bool is_specialized = true;
@@ -309,17 +316,29 @@ namespace Kokkos {
 namespace Kokkos {
   
   template<class Generator>
-  struct rand<Generator, Zoltan2::IcePropVtxLabel<Tpetra::Map<>::local_ordinal_type, Tpetra::Map<>::global_ordinal_type> > {
-    typedef Zoltan2::IcePropVtxLabel<Tpetra::Map<>::local_ordinal_type, Tpetra::Map<>::global_ordinal_type> Scalar;
+  struct rand<Generator, Zoltan2::IcePropVtxLabel<
+                         Tpetra::Map<>::local_ordinal_type, 
+                         Tpetra::Map<>::global_ordinal_type> > {
+    typedef Zoltan2::IcePropVtxLabel<Tpetra::Map<>::local_ordinal_type, 
+                                    Tpetra::Map<>::global_ordinal_type> Scalar;
     //Max value returned by draw(Generator& gen)
     KOKKOS_INLINE_FUNCTION static Scalar max() { return Scalar();}
     //Returns a value between zero and max()
-    KOKKOS_INLINE_FUNCTION static Scalar draw(Generator& gen) {return Scalar();}
+    KOKKOS_INLINE_FUNCTION static Scalar draw(Generator& gen) {
+      return Scalar();
+    }
     //Returns a value between zero and range()
     //Note: for floating point values range can be larger than max()
-    KOKKOS_INLINE_FUNCTION static Scalar draw(Generator& gen, const Scalar& range){return Scalar();}
+    KOKKOS_INLINE_FUNCTION static Scalar draw(Generator& gen, 
+                                              const Scalar& range){
+      return Scalar();
+    }
     //Return value between start and end
-    KOKKOS_INLINE_FUNCTION static Scalar draw(Generator& gen, const Scalar& start, const Scalar& end){return Scalar();}
+    KOKKOS_INLINE_FUNCTION static Scalar draw(Generator& gen, 
+                                              const Scalar& start,
+                                              const Scalar& end){
+      return Scalar();
+    }
   };
 
 }
@@ -329,14 +348,20 @@ namespace Kokkos {
 // provided serialization of vtxLabel into char*.
 namespace Teuchos{
 template<typename Ordinal>
-struct SerializationTraits<Ordinal, Zoltan2::IcePropVtxLabel<Tpetra::Map<>::local_ordinal_type, Tpetra::Map<>::global_ordinal_type> >:
-       public Teuchos::DirectSerializationTraits<Ordinal, Zoltan2::IcePropVtxLabel<Tpetra::Map<>::local_ordinal_type, Tpetra::Map<>::global_ordinal_type> >
+struct SerializationTraits<Ordinal, Zoltan2::IcePropVtxLabel<
+                                      Tpetra::Map<>::local_ordinal_type, 
+                                      Tpetra::Map<>::global_ordinal_type> >:
+       public Teuchos::DirectSerializationTraits<Ordinal, 
+                   Zoltan2::IcePropVtxLabel<Tpetra::Map<>::local_ordinal_type, 
+                   Tpetra::Map<>::global_ordinal_type> >
 {};
 
 template <>
-struct ScalarTraits<Zoltan2::IcePropVtxLabel<Tpetra::Map<>::local_ordinal_type, Tpetra::Map<>::global_ordinal_type> > {
+struct ScalarTraits<Zoltan2::IcePropVtxLabel<Tpetra::Map<>::local_ordinal_type,
+                                        Tpetra::Map<>::global_ordinal_type> > {
   public:
-    typedef Zoltan2::IcePropVtxLabel<Tpetra::Map<>::local_ordinal_type, Tpetra::Map<>::global_ordinal_type> val_type;
+    typedef Zoltan2::IcePropVtxLabel<Tpetra::Map<>::local_ordinal_type, 
+                                  Tpetra::Map<>::global_ordinal_type> val_type;
     typedef Tpetra::Map<>::global_ordinal_type magnitudeType;
     
     static const bool isComplex = false;
