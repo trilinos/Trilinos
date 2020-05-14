@@ -135,9 +135,10 @@
 //#if defined(HAVE_TRINOSCOUPLINGS_BELOS) && defined(HAVE_TRILINOSCOUPLINGS_MUELU)
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
-#include <BelosBlockCGSolMgr.hpp>
 #include <BelosPseudoBlockCGSolMgr.hpp>
-#include <BelosBlockGmresSolMgr.hpp>
+#include <BelosPseudoBlockGmresSolMgr.hpp>
+#include <BelosFixedPointSolMgr.hpp>
+
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
 //#endif
@@ -248,7 +249,8 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
                                  RCP<multivector_type> & uh,
                                  double & TotalErrorResidual,
                                  double & TotalErrorExactSol,
-                                 std::string &amgType);
+				 std::string &amgType,
+				 std::string &solveType);
 
 
 
@@ -1052,6 +1054,12 @@ int main(int argc, char *argv[]) {
   /*********************************** SOLVE ****************************************/
   /**********************************************************************************/
 
+  // Which Solver?
+  std::string solveType("cg");
+  if(inputSolverList.isParameter("solver")) {
+    solveType = inputSolverList.get<std::string>("solver");
+  }
+
   // Run the solver
   std::string amgType("MueLu");
 
@@ -1062,6 +1070,7 @@ int main(int argc, char *argv[]) {
     amgList = inputSolverList.sublist("MueLu");
   else
     amgList = inputSolverList;
+
   std::string lev0List = "level 0";
   if (amgList.isSublist(lev0List)) {
     std::cout << "found \"" << lev0List << "\" sublist" << std::endl;
@@ -1145,7 +1154,8 @@ int main(int argc, char *argv[]) {
                                       interpolationMatrix, restrictionMatrix, exactNodalVals,
                                       rhsVector,            femCoefficients,
                                       TotalErrorResidual,   TotalErrorExactSol,
-                                      amgType);
+                                      amgType,
+				      solveType);
 
   /**********************************************************************************/
   /**************************** CALCULATE ERROR *************************************/
@@ -1577,7 +1587,8 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
                                  RCP<multivector_type> & uh,
                                  double & TotalErrorResidual,
                                  double & TotalErrorExactSol,
-                                 std::string &amgType)
+				 std::string &amgType,
+				 std::string &solveType)
 {
   int mypid = A0->getComm()->getRank();
   int maxIts = 100;
@@ -1680,14 +1691,18 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
 
     // Create an iterative solver manager
     RCP< Belos::SolverManager<scalar_type, multivector_type, operator_type> > solver;
-    solver = rcp(new Belos::PseudoBlockCGSolMgr   <scalar_type, multivector_type, operator_type>(rcpFromRef(Problem), rcp(&belosList, false)));
-    /*
-    if (solveType == "cg") {
-      solver = rcp(new Belos::PseudoBlockCGSolMgr   <scalar_type, MV, OP>(Problem, rcp(&belosList, false)));
-    } else if (solveType == "gmres") {
-      solver = rcp(new Belos::BlockGmresSolMgr<scalar_type, MV, OP>(Problem, rcp(&belosList, false)));
+    if(solveType == "cg")
+      solver = rcp(new Belos::PseudoBlockCGSolMgr<scalar_type, multivector_type, operator_type>(rcpFromRef(Problem), rcp(&belosList, false)));
+    else if (solveType == "gmres") { 
+      solver = rcp(new Belos::PseudoBlockGmresSolMgr<scalar_type, multivector_type, operator_type>(rcpFromRef(Problem), rcp(&belosList, false)));
     }
-    */
+    else if (solveType == "fixed point" || solveType == "fixed-point") {
+      solver = rcp(new Belos::FixedPointSolMgr<scalar_type, multivector_type, operator_type>(rcpFromRef(Problem), rcp(&belosList, false)));   
+    }
+    else {
+      std::cout << "\nERROR:  Invalid solver '"<<solveType<<"'" << std::endl;
+      return EXIT_FAILURE;
+    }
 
     // Perform solve
     solver->solve();

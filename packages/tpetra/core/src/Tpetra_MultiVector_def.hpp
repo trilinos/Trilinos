@@ -3919,9 +3919,11 @@ namespace Tpetra {
       const impl_scalar_type alpha_IST (alpha);
 
       ProfilingRegion regionGemm ("Tpetra::MV::multiply-call-gemm");
+
+      this->modify_device ();
+
       KokkosBlas::gemm (&ctransA, &ctransB, alpha_IST, A_sub, B_sub,
                         beta_local, C_sub);
-      Kokkos::fence();
     }
 
     if (! isConstantStride ()) {
@@ -3934,6 +3936,7 @@ namespace Tpetra {
 
     // If Case 2 then sum up *this and distribute it to all processes.
     if (Case2) {
+      Kokkos::fence();
       this->reduce ();
     }
   }
@@ -4182,6 +4185,17 @@ namespace Tpetra {
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   sync_host () {
     view_.sync_host ();
+
+    // This fence was motivated by the following specific situation:
+    // For transform Y to X:
+    //  Y.putScalar()    // acts on device
+    //  Y.sync_host()    // now need_sync_host() and need_sync_device() are false
+    //  transform (on device)
+    //  Y.sync_host()    // no modifications so no fence - this usually will be a fence
+    //  read Y           // crashes
+    // The expectation is that Tpetra developers would not normally be using sync_host
+    // so this fence should not be an issue for internal performance.
+    execution_space ().fence ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

@@ -132,6 +132,7 @@ void FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::beginFill()  {
   // Note: This does not throw an error since the on construction, the FECRS is in overlap mode.  Ergo, calling beginFill(),
   // like one should expect to do in a rational universe, should not cause an error.
   if(*activeCrsMatrix_ == FE_ACTIVE_OWNED) {
+    this->resumeFill();
     switchActiveCrsMatrix();
   }
   this->resumeFill();

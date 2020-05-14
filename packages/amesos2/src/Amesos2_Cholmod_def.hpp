@@ -60,6 +60,9 @@
 #include "Amesos2_SolverCore_def.hpp"
 #include "Amesos2_Cholmod_decl.hpp"
 
+#ifdef HAVE_AMESOS2_TRIANGULAR_SOLVES
+#include "KokkosSparse_sptrsv_cholmod.hpp"
+#endif // HAVE_AMESOS2_TRIANGULAR_SOLVES
 
 namespace Amesos2 {
 
@@ -73,34 +76,35 @@ Cholmod<Matrix,Vector>::Cholmod(
   , firstsolve(true)
   , skip_symfact(false)
   , map()
-  , is_contiguous_(true)
+  , is_contiguous_(true) // default is set by params
+  , use_triangular_solves_(false) // default is set by params
 {
-  CHOL::cholmod_l_start(&data_.c); // long form required for CUDA
-
-  // Always use GPU is possible - note this is called after cholmod_l_start.
-  // If we don't call this, it remains the default value of -1.
-  // Then GPU is only used if env variable CHOLMOD_USE_GPU is set to 1.
-  data_.c.useGPU = 1;
-  data_.c.nmethods = 9; // try all methods - did not explore this yet
-  data_.c.quick_return_if_not_posdef = 1;
-  data_.c.itype = CHOLMOD_LONG;
-
   data_.L = NULL;
   data_.Y = NULL;
   data_.E = NULL;
+
+  cholmod_l_start(&data_.c); // long form required for CUDA
+
+  // TODO: Add an option so we can support CHOLMOD_INT (if no GPU is required)
+  // This will require some kind of templating design in decl.hpp which uses the long type
+  data_.c.itype = CHOLMOD_LONG; // required for long support
+
+  data_.c.supernodal = CHOLMOD_AUTO;
+  data_.c.quick_return_if_not_posdef = 1;
 }
 
 
 template <class Matrix, class Vector>
 Cholmod<Matrix,Vector>::~Cholmod( )
 {
-  CHOL::cholmod_l_gpu_stats(&(data_.c));
+  // useful to check if GPU is being used, but very verbose
+  // cholmod_l_gpu_stats(&(data_.c));
 
-  CHOL::cholmod_l_free_factor(&(data_.L), &(data_.c));
-  CHOL::cholmod_l_free_dense(&(data_.Y), &data_.c);
-  CHOL::cholmod_l_free_dense(&(data_.E), &data_.c);
+  cholmod_l_free_factor(&(data_.L), &(data_.c));
+  cholmod_l_free_dense(&(data_.Y), &data_.c);
+  cholmod_l_free_dense(&(data_.E), &data_.c);
 
-  CHOL::cholmod_l_finish(&(data_.c));
+  cholmod_l_finish(&(data_.c));
 }
 
 template<class Matrix, class Vector>
@@ -113,7 +117,7 @@ Cholmod<Matrix,Vector>::preOrdering_impl()
 
   int info = 0;
 
-  data_.L = CHOL::cholmod_l_analyze(&data_.A, &(data_.c));
+  data_.L = cholmod_l_analyze(&data_.A, &(data_.c));
   info = data_.c.status;
   skip_symfact = true;
 
@@ -138,7 +142,9 @@ Cholmod<Matrix,Vector>::symbolicFactorization_impl()
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor symFactTimer(this->timers_.symFactTime_);
 #endif
-    CHOL::cholmod_l_resymbol (&data_.A, NULL, 0, true, data_.L, &(data_.c));
+
+    cholmod_l_resymbol (&data_.A, NULL, 0, true, data_.L, &(data_.c));
+
     info = data_.c.status;
   } else {
     /*
@@ -155,6 +161,10 @@ Cholmod<Matrix,Vector>::symbolicFactorization_impl()
   TEUCHOS_TEST_FOR_EXCEPTION(info != 0,
     std::runtime_error,
     "Amesos2 cholmod_l_resymbol failure in Cholmod symbolicFactorization_impl");
+
+  if(use_triangular_solves_) {
+    triangular_solve_symbolic();
+  }
 
   return(0);
 }
@@ -183,23 +193,27 @@ Cholmod<Matrix,Vector>::numericFactorization_impl()
   // Add print out of views here - need host conversion first
 #endif
 
-  CHOL::cholmod_l_factorize(&data_.A, data_.L, &(data_.c));
+  cholmod_l_factorize(&data_.A, data_.L, &(data_.c));
   info = data_.c.status;
 
   /* All processes should have the same error code */
   Teuchos::broadcast(*(this->matrixA_->getComm()), 0, &info);
 
-  TEUCHOS_TEST_FOR_EXCEPTION(info == 2,
+  TEUCHOS_TEST_FOR_EXCEPTION(info == CHOLMOD_OUT_OF_MEMORY,
     std::runtime_error,
-    "Memory allocation failure in Cholmod factorization");
+    "Amesos2 cholmod_l_factorize error code: CHOLMOD_OUT_OF_MEMORY");
 
-  TEUCHOS_TEST_FOR_EXCEPTION(info == 1,
+  TEUCHOS_TEST_FOR_EXCEPTION(info == CHOLMOD_NOT_POSDEF,
     std::runtime_error,
-    "Amesos2 cholmod_l_factorize is attempting to use Cholmod features that are not available yet.");
+    "Amesos2 cholmod_l_factorize error code: CHOLMOD_NOT_POSDEF.");
 
   TEUCHOS_TEST_FOR_EXCEPTION(info != 0,
     std::runtime_error,
-    "Amesos2 cholmod_l_factorize failure in Cholmod factorization");
+    "Amesos2 cholmod_l_factorize error code:" << info);
+
+  if(use_triangular_solves_) {
+    triangular_solve_numeric();
+  }
 
   return(info);
 }
@@ -219,39 +233,56 @@ Cholmod<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
     Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
 #endif
 
-    Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-      host_solve_array_t>::do_get(B, bValues_,
-          Teuchos::as<size_t>(ld_rhs),
-          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
-          this->rowIndexBase_);
-
     // In general we may want to write directly to the x space without a copy.
     // So we 'get' x which may be a direct view assignment to the MV.
-    Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-      host_solve_array_t>::do_get(X, xValues_,
-          Teuchos::as<size_t>(ld_rhs),
-          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
-          this->rowIndexBase_);
+    if(use_triangular_solves_) { // to device
+#ifdef HAVE_AMESOS2_TRIANGULAR_SOLVES
+      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+          device_solve_array_t>::do_get(B, device_bValues_,
+              Teuchos::as<size_t>(ld_rhs),
+              (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+              this->rowIndexBase_);
+        Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+          device_solve_array_t>::do_get(X, device_xValues_,
+              Teuchos::as<size_t>(ld_rhs),
+              (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+              this->rowIndexBase_);
+#endif
+    }
+    else { // to host
+      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+          host_solve_array_t>::do_get(B, host_bValues_,
+              Teuchos::as<size_t>(ld_rhs),
+              (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+              this->rowIndexBase_);
+        Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+          host_solve_array_t>::do_get(X, host_xValues_,
+              Teuchos::as<size_t>(ld_rhs),
+              (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+              this->rowIndexBase_);
+    }
+
   }
 
   int ierr = 0; // returned error code
 
 #ifdef HAVE_AMESOS2_TIMERS
-  Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
-#endif
-
-  function_map::cholmod_init_dense(Teuchos::as<long>(this->globalNumRows_),
-    Teuchos::as<int>(nrhs), Teuchos::as<int>(ld_rhs), bValues_.data(), &data_.b);
-  function_map::cholmod_init_dense(Teuchos::as<long>(this->globalNumRows_),
-    Teuchos::as<int>(nrhs), Teuchos::as<int>(ld_rhs), xValues_.data(), &data_.x);
-
-#ifdef HAVE_AMESOS2_TIMERS
   Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
 
-  CHOL::cholmod_dense *xtemp = &(data_.x);
-  CHOL::cholmod_l_solve2(CHOLMOD_A, data_.L, &data_.b, NULL,
-    &xtemp, NULL, &data_.Y, &data_.E, &data_.c);
+  if(use_triangular_solves_) {
+    triangular_solve();
+  }
+  else {
+    function_map::cholmod_init_dense(Teuchos::as<long>(this->globalNumRows_),
+      Teuchos::as<int>(nrhs), Teuchos::as<int>(ld_rhs), host_bValues_.data(), &data_.b);
+    function_map::cholmod_init_dense(Teuchos::as<long>(this->globalNumRows_),
+      Teuchos::as<int>(nrhs), Teuchos::as<int>(ld_rhs), host_xValues_.data(), &data_.x);
+
+    cholmod_dense *xtemp = &(data_.x);
+    cholmod_l_solve2(CHOLMOD_A, data_.L, &data_.b, NULL,
+      &(xtemp), NULL, &data_.Y, &data_.E, &data_.c);
+  }
 
   ierr = data_.c.status;
 
@@ -266,11 +297,22 @@ Cholmod<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif
 
-    Util::put_1d_data_helper_kokkos_view<
-      MultiVecAdapter<Vector>,host_solve_array_t>::do_put(X, xValues_,
-          Teuchos::as<size_t>(ld_rhs),
-          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
-          this->rowIndexBase_);
+    if(use_triangular_solves_) { // to device
+#ifdef HAVE_AMESOS2_TRIANGULAR_SOLVES
+      Util::put_1d_data_helper_kokkos_view<
+        MultiVecAdapter<Vector>,device_solve_array_t>::do_put(X, device_xValues_,
+            Teuchos::as<size_t>(ld_rhs),
+            (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+            this->rowIndexBase_);
+#endif
+    }
+    else { // to host
+      Util::put_1d_data_helper_kokkos_view<
+        MultiVecAdapter<Vector>,host_solve_array_t>::do_put(X, host_xValues_,
+            Teuchos::as<size_t>(ld_rhs),
+            (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+            this->rowIndexBase_);
+    }
   }
 
   return(ierr);
@@ -295,15 +337,36 @@ Cholmod<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Parameter
 
   RCP<const Teuchos::ParameterList> valid_params = getValidParameters_impl();
 
-  if( parameterList->isParameter("IsContiguous") ){
-    is_contiguous_ = parameterList->get<bool>("IsContiguous");
+  is_contiguous_ = parameterList->get<bool>("IsContiguous", true);
+  use_triangular_solves_ = parameterList->get<bool>("TriangularSolves", false);
+
+  if(use_triangular_solves_) {
+#ifndef HAVE_AMESOS2_TRIANGULAR_SOLVES
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+      "Calling for triangular solves but Amesos2_ENABLE_TRIANGULAR_SOLVES was not configured." );
+#endif
   }
 
   data_.c.dbound = parameterList->get<double>("dbound", 0.0);
   data_.c.prefer_upper = (parameterList->get<bool>("PreferUpper", true)) ? 1 : 0;
-  data_.c.print = parameterList->get<int>("print",3);
-  data_.c.nmethods = parameterList->get<int>("nmethods",0);
-  data_.c.useGPU = parameterList->get<int>("useGPU",1);
+  data_.c.print = parameterList->get<int>("print", 3);
+  data_.c.nmethods = parameterList->get<int>("nmethods", 0); // tries AMD and may try METIS if necessary and available
+
+  // useGPU = 1 means use GPU if possible - note this must be set after cholmod_l_start
+  // since cholmod_l_start sets it to the default value of -1.
+  // Setting to -1 means GPU is only used if env variable CHOLMOD_USE_GPU is set to 1.
+#ifdef KOKKOS_ENABLE_CUDA
+  const int default_gpu_setting = 1; // use gpu by default
+#else
+  // If building Trilinos with Cuda off, Cholmod can stil use GPU and the solver will still work.
+  // But that is likely not what was expected/wanted. If you do still want it, set the param to 1.
+  const int default_gpu_setting = 0; // use gpu by default
+#endif
+
+  data_.c.useGPU = parameterList->get<int>("useGPU", default_gpu_setting);
+
+  bool bSuperNodal = parameterList->get<bool>("SuperNodal", false);
+  data_.c.supernodal = bSuperNodal ? CHOLMOD_SUPERNODAL : CHOLMOD_AUTO;
 }
 
 
@@ -346,7 +409,11 @@ Cholmod<Matrix,Vector>::getValidParameters_impl() const
 
     pl->set("useGPU", -1, "1: Use GPU is 1, 0: Do not use GPU, -1: ENV CHOLMOD_USE_GPU set GPU usage.");
 
+    pl->set("TriangularSolves", false, "Whether to use triangular solves.");
+
     pl->set("IsContiguous", true, "Whether GIDs contiguous");
+
+    pl->set("SuperNodal", false, "Whether to use super nodal");
 
     valid_params = pl;
   }
@@ -418,6 +485,100 @@ Cholmod<Matrix,Vector>::loadA_impl(EPhase current_phase)
   return true;
 }
 
+template <class Matrix, class Vector>
+void
+Cholmod<Matrix,Vector>::triangular_solve_symbolic()
+{
+#ifdef HAVE_AMESOS2_TRIANGULAR_SOLVES
+  // Create handles for U and U^T solves
+  device_khL_.create_sptrsv_handle(
+    KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_ETREE, data_.L->n, true);
+  device_khU_.create_sptrsv_handle(
+    KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_ETREE, data_.L->n, false);
+
+  // extract etree and iperm from CHOLMOD
+  long *long_etree = static_cast<long*>(data_.c.Iwork) + 2 * data_.L->n;
+  Kokkos::resize(host_trsv_etree_, data_.L->nsuper);
+  for (size_t i = 0 ; i < data_.L->nsuper; ++i) { // convert long to int array for trsv API
+    host_trsv_etree_(i) = long_etree[i];
+  }
+
+  // set etree
+  device_khL_.set_sptrsv_etree(host_trsv_etree_.data());
+  device_khU_.set_sptrsv_etree(host_trsv_etree_.data());
+
+  size_t ld_rhs = this->matrixA_->getGlobalNumRows();
+  Kokkos::resize(host_trsv_perm_, ld_rhs);
+  long *iperm = static_cast<long*>(data_.L->Perm);
+  for (size_t i = 0; i < ld_rhs; i++) { // convert long to int array for trsv API
+    host_trsv_perm_(iperm[i]) = i;
+  }
+  deep_copy_or_assign_view(device_trsv_perm_, host_trsv_perm_); // will use device to permute
+
+  // set permutation
+  device_khL_.set_sptrsv_perm(host_trsv_perm_.data());
+  device_khU_.set_sptrsv_perm(host_trsv_perm_.data());
+
+  // Do symbolic analysis
+  KokkosSparse::Experimental::sptrsv_symbolic<long, kernel_handle_type>
+    (&device_khL_, &device_khU_, data_.L, &data_.c);
+#endif
+}
+
+template <class Matrix, class Vector>
+void
+Cholmod<Matrix,Vector>::triangular_solve_numeric()
+{
+#ifdef HAVE_AMESOS2_TRIANGULAR_SOLVES
+  // Do numerical compute
+  KokkosSparse::Experimental::sptrsv_compute<long, kernel_handle_type>
+    (&device_khL_, &device_khU_, data_.L, &data_.c);
+#endif // HAVE_AMESOS2_TRIANGULAR_SOLVE
+}
+
+template <class Matrix, class Vector>
+void
+Cholmod<Matrix,Vector>::triangular_solve() const
+{
+#ifdef HAVE_AMESOS2_TRIANGULAR_SOLVES
+  size_t ld_rhs = device_xValues_.extent(0);
+  size_t nrhs = device_xValues_.extent(1);
+
+  Kokkos::resize(device_trsv_rhs_, ld_rhs, nrhs);
+  Kokkos::resize(device_trsv_sol_, ld_rhs, nrhs);
+
+  // forward pivot
+  auto local_device_bValues = device_bValues_;
+  auto local_device_trsv_perm = device_trsv_perm_;
+  auto local_device_trsv_rhs = device_trsv_rhs_;
+  Kokkos::parallel_for(Kokkos::RangePolicy<DeviceExecSpaceType>(0, ld_rhs),
+    KOKKOS_LAMBDA(size_t j) {
+    for(size_t k = 0; k < nrhs; ++k) {
+      local_device_trsv_rhs(local_device_trsv_perm(j),k) = local_device_bValues(j,k);
+    }
+  });
+
+  for(size_t k = 0; k < nrhs; ++k) { // sptrsv_solve does not batch
+    auto sub_sol = Kokkos::subview(device_trsv_sol_, Kokkos::ALL, k);
+    auto sub_rhs = Kokkos::subview(device_trsv_rhs_, Kokkos::ALL, k);
+
+    // do L solve= - numeric (only rhs is modified) on the default device/host space
+    KokkosSparse::Experimental::sptrsv_solve(&device_khL_, sub_sol, sub_rhs);
+
+    // do L^T solve - numeric (only rhs is modified) on the default device/host space
+    KokkosSparse::Experimental::sptrsv_solve(&device_khU_, sub_rhs, sub_sol);
+  } // end loop over rhs vectors
+
+  // backward pivot
+  auto local_device_xValues = device_xValues_;
+  Kokkos::parallel_for(Kokkos::RangePolicy<DeviceExecSpaceType>(0, ld_rhs),
+    KOKKOS_LAMBDA(size_t j) {
+    for(size_t k = 0; k < nrhs; ++k) {
+      local_device_xValues(j,k) = local_device_trsv_rhs(local_device_trsv_perm(j),k);
+    }
+  });
+#endif // HAVE_AMESOS2_TRIANGULAR_SOLVE
+}
 
 template<class Matrix, class Vector>
 const char* Cholmod<Matrix,Vector>::name = "Cholmod";

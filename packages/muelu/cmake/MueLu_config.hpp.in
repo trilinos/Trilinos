@@ -65,6 +65,10 @@
 
 #cmakedefine HAVE_MUELU_TEKO
 
+#cmakedefine HAVE_MUELU_THYRA
+
+#cmakedefine HAVE_MUELU_THYRATPETRAADAPTERS
+
 #cmakedefine HAVE_MUELU_TPETRA
 
 /* Whether Tpetra is enabled with LocalOrdinal = int and GlobalOrdinal = int */

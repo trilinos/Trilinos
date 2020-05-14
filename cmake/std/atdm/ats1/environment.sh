@@ -28,6 +28,9 @@ export ATDM_CONFIG_MPI_PRE_FLAGS="--mpi=pmi2;--ntasks-per-node;36"
 
 export ATDM_CONFIG_SBATCH_DEFAULT_ACCOUNT=IGNORED
 
+# Assume we are building on a haswell compute node with 64 virtual cores
+export ATDM_CONFIG_BUILD_COUNT=64
+
 # Common sparc tpl path values
 sparc_tpl_prefix_path="/usr/projects/sparc/tpls"
 system_name="ats1"
@@ -42,8 +45,6 @@ if [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "HSW" ]]; then
   export ATDM_CONFIG_MPI_POST_FLAGS="-c 4"
   # If we have 1 MPI rank per srun command and 1 cpu per task, we can run up to 32 2-threaded tests "in parallel" on virtual cores.
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=1
-  # Assume we are building on a haswell compute node with 64 virtual cores
-  export ATDM_CONFIG_BUILD_COUNT=64
 elif [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "KNL" ]]; then
   node_arch="knl"
   module unload craype-haswell
@@ -57,9 +58,8 @@ elif [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "KNL" ]]; then
   # Allow now more than 34 virtual cores per task.
   export ATDM_CONFIG_MPI_POST_FLAGS="--hint=nomultithread;-c 4"
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=1
-  # Assume we are building on a KNL compute node with 272 virtual cores
-  export ATDM_CONFIG_BUILD_COUNT=272
   export ATDM_CONFIG_SBATCH_EXTRA_ARGS="-p knl -C cache --hint=multithread"
+  export ATDM_CONFIG_BUILD_COUNT=8
 else
   echo
   echo "***"

@@ -2866,7 +2866,7 @@ namespace {
     // copy values to master nodeset value information
     for (size_t j = 0; j < entity_count; j++) {
       size_t global_loc = local_set.elemOrderMap[j];
-      SMART_ASSERT(global_loc < glob_entity_count);
+      SMART_ASSERT(global_loc < global_values.size());
       global_values[global_loc] = values[j];
     }
   }
@@ -2899,7 +2899,7 @@ namespace {
     // copy values to master nodeset value information
     for (size_t j = 0; j < entity_count; j++) {
       size_t global_loc = local_set.nodeOrderMap[j];
-      SMART_ASSERT(global_loc < glob_entity_count);
+      SMART_ASSERT(global_loc < global_values.size());
       global_values[global_loc] = values[j];
     }
   }
@@ -2912,7 +2912,7 @@ namespace {
     // copy values to master nodeset value information
     for (size_t j = 0; j < entity_count; j++) {
       size_t global_loc = local_set.nodeOrderMap[j];
-      SMART_ASSERT(global_loc < glob_entity_count);
+      SMART_ASSERT(global_loc < global_values.size());
       global_values[global_loc] = values[j];
     }
   }
