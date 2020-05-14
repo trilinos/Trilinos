@@ -88,7 +88,7 @@ Piro::TransientSolver<Scalar>::get_p_space(int l) const
   TEUCHOS_TEST_FOR_EXCEPTION(
       l >= num_p_ || l < 0,
       Teuchos::Exceptions::InvalidParameter,
-      "\n Error in Piro::TransientSolver::get_p_map():  " <<
+      "\n Error in Piro::TransientSolver::get_p_space():  " <<
       "Invalid parameter index l = " <<
       l << "\n");
 
@@ -102,7 +102,7 @@ Piro::TransientSolver<Scalar>::get_g_space(int j) const
   TEUCHOS_TEST_FOR_EXCEPTION(
       j > num_g_ || j < 0,
       Teuchos::Exceptions::InvalidParameter,
-      "\n Error in Piro::TransientSolver::get_g_map():  " <<
+      "\n Error in Piro::TransientSolver::get_g_space():  " <<
       "Invalid response index j = " <<
       j << "\n");
 
@@ -148,51 +148,52 @@ Piro::TransientSolver<Scalar>::createOutArgsImpl() const
 
   const Thyra::ModelEvaluatorBase::OutArgs<Scalar> modelOutArgs = model_->createOutArgs();
 
-  if (num_p_ > 0) {
-    // Only one parameter supported
-    const int l = 0;
+  outArgs.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_f, modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_f));
 
-    // IKT, 5/6/2020: the following should not be needed for transient forward sensitivities
-    // but keeping for now.
-    //
-    // Computing the DxDp sensitivity for a transient problem currently requires the evaluation of
-    // the mutilivector-based, Jacobian-oriented DfDp derivatives of the underlying transient model.
-    const Thyra::ModelEvaluatorBase::DerivativeSupport model_dfdp_support =
-      modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DfDp, l);
-    if (!model_dfdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
-      // Ok to return early since only one parameter supported
-      return outArgs;
-    }
+  // Sensitivity support (Forward approach only, for now)
+  // Jacobian solver required for all sensitivities
+  if (modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_W)) {
+    for (int l = 0; l < num_p_; ++l) {
+      // Solution sensitivities: DxDp(l)
+      // DfDp(l) required
+      const Thyra::ModelEvaluatorBase::DerivativeSupport dfdp_support =
+        modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DfDp, l);
+      if (!dfdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
+        return outArgs;
+      }
+      const bool dxdp_linOpSupport =
+        dfdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP);
+      const bool dxdp_mvJacSupport =
+        dfdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
+      Thyra::ModelEvaluatorBase::DerivativeSupport dxdp_support;
+      if (dxdp_linOpSupport) {
+        dxdp_support.plus(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP);
+      }
+      if (dxdp_mvJacSupport) {
+        dxdp_support.plus(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
+      }
+      outArgs.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, num_g_, l, dxdp_support);
 
-    // Solution sensitivity
-    outArgs.setSupports(
-        Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,
-        num_g_,
-        l,
-        Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
-
-    if (num_g_ > 0) {
-      // Only one response supported
-      const int j = 0;
-
-      const Thyra::ModelEvaluatorBase::DerivativeSupport model_dgdx_support =
-        modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDx, j);
-      if (!model_dgdx_support.none()) {
-        const Thyra::ModelEvaluatorBase::DerivativeSupport model_dgdp_support =
-          modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l);
-        // Response sensitivity
-        Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support;
-        if (model_dgdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
-          dgdp_support.plus(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
+      // Response sensitivities: DgDp(j, l)
+      // DxDp(l) required
+      if (dxdp_linOpSupport || dxdp_mvJacSupport) {
+        for (int j = 0; j < num_g_; ++j) {
+          const Thyra::ModelEvaluatorBase::DerivativeSupport model_dgdx_support =
+          modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDx, j);
+          if (!model_dgdx_support.none()) {
+            const Thyra::ModelEvaluatorBase::DerivativeSupport model_dgdp_support =
+            modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l);
+           // Response sensitivity
+            Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support;
+            if (model_dgdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
+              dgdp_support.plus(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
+            }
+            if (model_dgdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP)) {
+              dgdp_support.plus(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP);
+            }
+            outArgs.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l, dgdp_support);
+          }
         }
-        if (model_dgdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP)) {
-          dgdp_support.plus(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP);
-        }
-        outArgs.setSupports(
-            Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,
-            j,
-            l,
-            dgdp_support);
       }
     }
   }
@@ -205,10 +206,25 @@ template <typename Scalar>
 Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
 Piro::TransientSolver<Scalar>::create_DgDp_op_impl(int j, int l) const
 {
-  TEUCHOS_ASSERT(j != num_g_);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      j > num_g_ || j < 0,
+      Teuchos::Exceptions::InvalidParameter,
+      "\n Error in Piro::TransientSolver::create_DgDp_op_impl():  " <<
+      "Invalid response index j = " <<
+      j << "\n");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      l >= num_p_ || l < 0,
+      Teuchos::Exceptions::InvalidParameter,
+      "\n Error in Piro::TransientSolver::create_DgDp_op_impl():  " <<
+      "Invalid parameter index l = " <<
+      l << "\n");
   const Teuchos::Array<Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > > dummy =
     Teuchos::tuple(Thyra::zero<Scalar>(this->get_g_space(j), this->get_p_space(l)));
-  return Teuchos::rcp(new Thyra::DefaultAddedLinearOp<Scalar>(dummy));
+  if (j == num_g_)  {
+    return Thyra::defaultMultipliedLinearOp<Scalar>(dummy);
+  } else {
+    return Teuchos::rcp(new Thyra::DefaultAddedLinearOp<Scalar>(dummy));
+  }
 }
 
 
