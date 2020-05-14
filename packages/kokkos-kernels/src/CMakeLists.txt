@@ -344,7 +344,7 @@ KOKKOSKERNELS_ADD_LIBRARY(
 # It does not seem to be possible to automatically have headers installed
 # in the correct subdirectory structure using HEADERS and ADD_LIBRARY with tribits
 # Force the specializations to be installed in a subdirectory
-APPEND_GLOB(HEADERS_GENERATED ${CMAKE_CURRENT_SOURCE_DIR}/impl/generated_specializations_hpp/*.hpp)
+APPEND_GLOB(HEADERS_GENERATED ${CMAKE_CURRENT_BINARY_DIR}/impl/generated_specializations_hpp/*.hpp)
 INSTALL(FILES ${HEADERS_GENERATED} DESTINATION ${KOKKOSKERNELS_HEADER_INSTALL_DIR}/generated_specializations_hpp/)
 
 IF (KOKKOSKERNELS_HAS_TRILINOS)
