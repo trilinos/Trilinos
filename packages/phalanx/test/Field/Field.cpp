@@ -55,6 +55,52 @@
 
 // From test/Utilities directory
 #include "Traits.hpp"
+// Functor to test accessors
+template<typename F1,typename F2,typename F3,typename F4,typename F5,typename F6,typename F7,
+	 typename CF1,typename CF2,typename CF3,typename CF4,typename CF5,typename CF6,typename CF7>
+struct TestAssignmentFunctor {
+
+  F1 f1_; F2 f2_; F3 f3_; F4 f4_; F5 f5_; F6 f6_; F7 f7_;
+  CF1 cf1_; CF2 cf2_; CF3 cf3_; CF4 cf4_; CF5 cf5_; CF6 cf6_; CF7 cf7_;
+
+  TestAssignmentFunctor(F1& f1,F2& f2,F3& f3,F4& f4,F5& f5, F6& f6, F7& f7,
+			CF1& cf1,CF2& cf2,CF3& cf3,CF4& cf4,CF5& cf5, CF6& cf6, CF7& cf7)
+    : f1_(f1),f2_(f2),f3_(f3),f4_(f4),f5_(f5),f6_(f6),f7_(f7),
+      cf1_(cf1),cf2_(cf2),cf3_(cf3),cf4_(cf4),cf5_(cf5),cf6_(cf6),cf7_(cf7)
+  {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const int i) const {
+    using size_type = std::size_t;
+
+    f1_(i) = cf1_(i);
+    f1_.access(i) = cf1_.access(i);
+    for (size_type j=0; j < f7_.extent(1); ++j) {
+      f2_(i,j) = cf2_(i,j);
+      f2_(i,j) = cf2_.access(i,j);
+      for (size_type k=0; k < f7_.extent(2); ++k) {
+	f3_(i,j,k) = cf3_(i,j,k);
+	f3_(i,j,k) = cf3_.access(i,j,k);
+	for (size_type l=0; l < f7_.extent(3); ++l) {
+	  f4_(i,j,k,l) = cf4_(i,j,k,l);
+	  f4_(i,j,k,l) = cf4_.access(i,j,k,l);
+	  for (size_type m=0; m < f7_.extent(4); ++m) {
+	    f5_(i,j,k,l,m) = cf5_(i,j,k,l,m);
+	    f5_(i,j,k,l,m) = cf5_.access(i,j,k,l,m);
+	    for (size_type n=0; n < f7_.extent(5); ++n) {
+	      f6_(i,j,k,l,m,n) = cf6_(i,j,k,l,m,n);
+	      f6_(i,j,k,l,m,n) = cf6_.access(i,j,k,l,m,n);
+	      for (size_type o=0; o < f7_.extent(6); ++o) {
+		f7_(i,j,k,l,m,n,o) = cf7_(i,j,k,l,m,n,o);
+		f7_(i,j,k,l,m,n,o) = cf7_.access(i,j,k,l,m,n,o);
+	      }
+	    }
+	  }
+	}
+      }
+    }
+  }
+};
 
 TEUCHOS_UNIT_TEST(field, all)
 {
@@ -105,7 +151,7 @@ TEUCHOS_UNIT_TEST(field, all)
     {
       RCP<PHX::FieldTag> t1 = rcp(new PHX::Tag<double>("test",node_scalar));
       Field<double,2> f1(t1); // rcp(tag) ctor
-      Field<double,2> f2; 
+      Field<double,2> f2;
       f2.setFieldTag(t1); // set rcp(tag)
       auto t2 = f1.fieldTagPtr(); // accessor
       auto t3 = f2.fieldTagPtr();
@@ -253,15 +299,6 @@ TEUCHOS_UNIT_TEST(field, all)
     Field<double,6> f6 = PHX::allocateUnmanagedField<double,6>("Test6",d6);
     Field<double,7> f7 = PHX::allocateUnmanagedField<double,7>("Test7",d7);
 
-    // Access last entry in contiguous array
-    f1(99) = 1.0;
-    f2(99,0) = 1.0;
-    f3(99,0,1) = 1.0;
-    f4(99,0,1,2) = 1.0;
-    f5(99,0,1,2,3) = 1.0;
-    f6(99,0,1,2,3,4) = 1.0;
-    f7(99,0,1,2,3,4,5) = 1.0;
-
     // Test const/ non-const versions
     const Field<double,1>& cf1 = f1;
     const Field<double,2>& cf2 = f2;
@@ -271,54 +308,29 @@ TEUCHOS_UNIT_TEST(field, all)
     const Field<double,6>& cf6 = f6;
     const Field<double,7>& cf7 = f7;
 
-    for (size_type i=0; i < f7.extent(0); ++i) {
-      f1(i) = cf1(i);
-      for (size_type j=0; j < f7.extent(1); ++j) {
-	f2(i,j) = cf2(i,j);
-	for (size_type k=0; k < f7.extent(2); ++k) {
-	  f3(i,j,k) = cf3(i,j,k);
-	  for (size_type l=0; l < f7.extent(3); ++l) {
-	    f4(i,j,k,l) = cf4(i,j,k,l);
-	    for (size_type m=0; m < f7.extent(4); ++m) {
-	      f5(i,j,k,l,m) = cf5(i,j,k,l,m);
-	      for (size_type n=0; n < f7.extent(5); ++n) {
-		f6(i,j,k,l,m,n) = cf6(i,j,k,l,m,n);
-		for (size_type o=0; o < f7.extent(6); ++o) {
-		  f7(i,j,k,l,m,n,o) = cf7(i,j,k,l,m,n,o);
-		}
-	      }
-	    }
-	  }
-	}
-      }
-    }
+    auto func = TestAssignmentFunctor<Field<double,1>,
+				      Field<double,2>,
+				      Field<double,3>,
+				      Field<double,4>,
+				      Field<double,5>,
+				      Field<double,6>,
+				      Field<double,7>,
+				      const Field<double,1>,
+				      const Field<double,2>,
+				      const Field<double,3>,
+				      const Field<double,4>,
+				      const Field<double,5>,
+				      const Field<double,6>,
+				      const Field<double,7>
+				      >(f1,f2,f3,f4,f5,f6,f7,
+					cf1,cf2,cf3,cf4,cf5,cf6,cf7);
+
+    Kokkos::parallel_for("TestAssignmentFunctor",
+			 Kokkos::RangePolicy<PHX::Device>(0,f7.extent(0)),
+			 func);
 
     cout << "passed!" << endl;
 
-    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // Check the access() function
-    for (size_type i=0; i < f7.extent(0); ++i) {
-      f1(i) = cf1.access(i);
-      for (size_type j=0; j < f7.extent(1); ++j) {
-	f2(i,j) = cf2.access(i,j);
-	for (size_type k=0; k < f7.extent(2); ++k) {
-	  f3(i,j,k) = cf3.access(i,j,k);
-	  for (size_type l=0; l < f7.extent(3); ++l) {
-	    f4(i,j,k,l) = cf4.access(i,j,k,l);
-	    for (size_type m=0; m < f7.extent(4); ++m) {
-	      f5(i,j,k,l,m) = cf5.access(i,j,k,l,m);
-	      for (size_type n=0; n < f7.extent(5); ++n) {
-		f6(i,j,k,l,m,n) = cf6.access(i,j,k,l,m,n);
-		for (size_type o=0; o < f7.extent(6); ++o) {
-		  f7(i,j,k,l,m,n,o) = cf7.access(i,j,k,l,m,n,o);
-		}
-	      }
-	    }
-	  }
-	}
-      }
-    }
- 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // check for const mdfield assignment from non-const factory
     // PHX::any.  the field manager always stores the non-const
@@ -347,27 +359,27 @@ TEUCHOS_UNIT_TEST(field, all)
     {
       // non-const view
       auto kva = a.get_static_view();
-      kva(0,0) = 1.0;
+      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),KOKKOS_LAMBDA(const int ){kva(0,0) = 1.0;});
       auto kvc = c.get_static_view();
-      kvc(0,0) = MyTraits::FadType(1.0);
+      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),KOKKOS_LAMBDA(const int ){kvc(0,0) = MyTraits::FadType(1.0);});
       // const view (view const, not const data)
       const auto const_kva = a.get_static_view();
-      const_kva(0,0) = 1.0;
+      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),KOKKOS_LAMBDA(const int ){const_kva(0,0) = 1.0;});
       const auto const_kvc = c.get_static_view();
-      const_kvc(0,0) = MyTraits::FadType(1.0);
+      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),KOKKOS_LAMBDA(const int ){const_kvc(0,0) = MyTraits::FadType(1.0);});
     }
     // Kokkos DynRankView accessors
     {
       // non-const view
       auto kva = a.get_view();
-      kva(0,0) = 1.0;
+      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),KOKKOS_LAMBDA(const int ){kva(0,0) = 1.0;});
       auto kvc = c.get_view();
-      kvc(0,0) = MyTraits::FadType(1.0);
+      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),KOKKOS_LAMBDA(const int ){kvc(0,0) = MyTraits::FadType(1.0);});
       // const view (view const, not const data)
       const Kokkos::DynRankView<double,PHX::Device> const_kva = a.get_view();
-      const_kva(0,0) = 1.0;
+      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),KOKKOS_LAMBDA(const int ){const_kva(0,0) = 1.0;});
       const auto const_kvc = c.get_view();
-      const_kvc(0,0) = MyTraits::FadType(1.0);
+      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),KOKKOS_LAMBDA(const int ){const_kvc(0,0) = MyTraits::FadType(1.0);});
     }
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
