@@ -5,6 +5,8 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include <Teuchos_ParameterList.hpp>
+#include <Teuchos_CommandLineProcessor.hpp>
+#include <Teuchos_Array.hpp>
 
 #include <Zoltan2_config.h>
 #include <Zoltan2_IceSheet.hpp>
@@ -26,7 +28,45 @@ int main(int argc, char** argv)
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   int me = comm->getRank();
   
+  Teuchos::CommandLineProcessor cmdp(false,false);
+  
+  string testFilePath = "./";
+  string testFileName = "";
+  string groundFileName = "";
+  string boundaryFileName = "";
+  string answerFileName = "";
+  bool prepartition = false;
+  bool distribute = true;
+  
+  cmdp.setOption("testFilePath",&testFilePath,
+                 "Path to the testing files."
+                 "Default is current directory.");
+  
+  cmdp.setOption("testFileName",&testFileName,
+                 "Filename of the mesh input."
+                 "Must be a MatrixMarket file.");
+ 
+  cmdp.setOption("groundFileName",&groundFileName,
+                  "Filename of grounding information."
+                  "Format is described in the README.");
+  
+  cmdp.setOption("boundaryFileName",&boundaryFileName,
+                 "Filename for boundary edge file."
+                 "Format is described in the README.");
 
+  cmdp.setOption("answerFileName",&answerFileName,
+                 "Filename for the expected result for validation."
+                 "Format is described in the README.");
+
+  cmdp.setOption("prepartition","noprepartition",&prepartition,
+                 "Boolean argument that determines whether the input gets "
+                 "prepartitioned. Default is false.");
+
+  cmdp.setOption("distribute","nodistribute",&distribute,
+                 "Boolean argument that determines whether the input is "
+                 "kept on a single node, or distributed to all ranks."
+                 "Default is true.");
+  cmdp.parse(argc,argv);
   string path = argv[1];
   string testData = argv[2];
   typedef Tpetra::CrsMatrix<>::scalar_type scalar_t;
@@ -37,7 +77,7 @@ int main(int argc, char** argv)
   typedef Zoltan2_TestingFramework::tcrsGraph_t CrsGraph;
   typedef Zoltan2::XpetraCrsGraphAdapter<CrsGraph> GraphAdapter;
 
-  bool prepartition = false;
+  /*bool prepartition = false;
   bool distribute = true;
   if(argc >= 7){
     string a = argv[6];
@@ -55,14 +95,14 @@ int main(int argc, char** argv)
     } else if(a == "singlenode"){
       distribute = false;
     }
-  }
+  }*/
 
-  Teuchos::RCP<UserInputForTests> uinput = rcp(new UserInputForTests(path,testData,comm, true,distribute));
+  Teuchos::RCP<UserInputForTests> uinput = rcp(new UserInputForTests(testFilePath,testFileName,comm, true, distribute));
   
 
   Teuchos::RCP<SparseMatrix> Matrix;
   Matrix = uinput->getUITpetraCrsMatrix();
-  
+#ifdef HAVE_ZOLTAN2_PARMETIS
   if(prepartition){  
     //partition the input matrix, to test noncontiguous vertex ID distributions
     SparseMatrixAdapter *zadapter;
@@ -96,7 +136,7 @@ int main(int argc, char** argv)
     Matrix = newMatrix;
     delete zadapter;
   }
-  
+#endif
   Teuchos::RCP<const CrsGraph> crsgraph = Matrix->getCrsGraph();  
 
   GraphAdapter inputGraphAdapter(crsgraph);
@@ -108,14 +148,14 @@ int main(int argc, char** argv)
 
   std::cout<<me<<": num local vtxIDs = "<<nlocal<<"\n";
 
-  int* grounded_flags_global;
-  gno_t* boundary_edges_global;
+  Teuchos::Array<int> grounded_flags_global;
+  Teuchos::Array<gno_t> boundary_edges_global;
 
   size_t nglobal = 0;
   size_t num_global_boundary_edges = 0;
   if(me == 0){
-    read_grounded_file(argv[3],nglobal,grounded_flags_global);
-    read_boundary_file<gno_t>(argv[4],num_global_boundary_edges,boundary_edges_global);
+    read_grounded_file(groundFileName.c_str(),nglobal,grounded_flags_global);
+    read_boundary_file<gno_t>(boundaryFileName.c_str(),num_global_boundary_edges,boundary_edges_global);
     
   }
   
@@ -124,13 +164,13 @@ int main(int argc, char** argv)
   Teuchos::broadcast<int,size_t>(*comm, 0,1,&num_global_boundary_edges);
   
   if(me != 0){
-    grounded_flags_global = new int[nglobal];
-    boundary_edges_global = new gno_t[num_global_boundary_edges];
+    grounded_flags_global.resize(nglobal);
+    boundary_edges_global.resize(num_global_boundary_edges);
   }
 
   //broadcast the global arrays, to trim them down to local
-  Teuchos::broadcast<int,int>(*comm,0,nglobal,grounded_flags_global);
-  Teuchos::broadcast<int,gno_t>(*comm,0,num_global_boundary_edges, boundary_edges_global);
+  Teuchos::broadcast<int,int>(*comm,0,nglobal,grounded_flags_global.getRawPtr());
+  Teuchos::broadcast<int,gno_t>(*comm,0,num_global_boundary_edges, boundary_edges_global.getRawPtr());
  
   Teuchos::RCP<const CrsGraph::map_type> rowMap = crsgraph->getRowMap();
   int numLocalBoundaryEdges = 0;
@@ -142,7 +182,7 @@ int main(int argc, char** argv)
     }
   }
   std::cout<<me<<": global_boundary_edges = "<<num_global_boundary_edges<<" localBoundaryEdges = "<<2*numLocalBoundaryEdges<<"\n";
-  gno_t* boundaryEdges = new gno_t[2*numLocalBoundaryEdges];
+  Teuchos::Array<gno_t> boundaryEdges(2*numLocalBoundaryEdges,0);
   
   std::cout<<me<<": is done initializing local arrays\n";
   int edgecounter = 0;
@@ -160,30 +200,30 @@ int main(int argc, char** argv)
   for(size_t i = 0; i < nlocal; i++){
     basalFriction[i] = grounded_flags_global[rowMap->getGlobalElement(i)];
   }
-  delete [] boundary_edges_global;
-  delete [] grounded_flags_global;
 
   std::cout<<me<<": calling the utility function\n";
+  //This boolean array would not convert to an arrayView any other way.
   Teuchos::ArrayView<const bool> basalView = Teuchos::ArrayView<const bool>(basalFriction,nlocal);
-  Teuchos::ArrayView<const gno_t> boundaryView = Teuchos::ArrayView<const gno_t>(boundaryEdges,2*numLocalBoundaryEdges);
-  std::vector<Zoltan2::IcePropVtxStatus> status_vec(nlocal,Zoltan2::IceFloating);
-  std::vector<gno_t> hinge_vec(nlocal,0);
-  Zoltan2::DetectDegenerateVertices<Zoltan2::XpetraCrsGraphAdapter<Zoltan2_TestingFramework::tcrsGraph_t> >(comm, inputGraphAdapter,basalView,boundaryView,
-                                                                                                            Teuchos::arrayViewFromVector(status_vec),
-                                                                                                            Teuchos::arrayViewFromVector(hinge_vec));  
+  Teuchos::Array<Zoltan2::IcePropVtxStatus> status_arr(nlocal,Zoltan2::IceFloating);
+  Teuchos::Array<gno_t> hinge_arr(nlocal,0);
+  Zoltan2::DetectDegenerateVertices<GraphAdapter>(comm, inputGraphAdapter,
+                                                  basalView,boundaryEdges,
+                                                  status_arr,hinge_arr);  
+
+  delete[] basalFriction;
+
   for(size_t i = 0; i < nlocal; i++){
-    if(status_vec[i] > -2){
+    if(status_arr[i] != Zoltan2::IceGrounded){
       std::cout<<me<<": removed vertex "<<rowMap->getGlobalElement(i)<<"\n";
     }
   }
   //read the answers and validate that we have the correct one.
   
-  gno_t* ans_removed = new gno_t[nglobal];
+  Teuchos::Array<gno_t> ans_removed(nglobal,0);
   if(me == 0){
-    for(size_t i = 0; i < nglobal;i++) ans_removed[i] = 0;
-    std::ifstream fin(argv[5]);
+    std::ifstream fin(answerFileName);
     if(!fin){
-      std::cout<<"Unable to open "<<argv[5]<<"\n";
+      std::cout<<"Unable to open "<<answerFileName<<"\n";
       exit(0);
     }
     int vertex = -1;
@@ -194,11 +234,11 @@ int main(int argc, char** argv)
     }
   }  
   
-  Teuchos::broadcast<int,gno_t>(*comm,0,nglobal,ans_removed);
+  Teuchos::broadcast<int,gno_t>(*comm,0,nglobal,ans_removed.getRawPtr());
   
   int local_mismatches = 0;
   for(size_t i = 0; i < nlocal; i++){
-    if((status_vec[i] > -2 && !ans_removed[rowMap->getGlobalElement(i)]) || (status_vec[i] == -2 && ans_removed[rowMap->getGlobalElement(i)])){
+    if((status_arr[i] > -2 && !ans_removed[rowMap->getGlobalElement(i)]) || (status_arr[i] == -2 && ans_removed[rowMap->getGlobalElement(i)])){
       local_mismatches++;
       std::cout<<me<<": Found a mismatch, vertex "<<rowMap->getGlobalElement(i)+1<<"\n";
     }

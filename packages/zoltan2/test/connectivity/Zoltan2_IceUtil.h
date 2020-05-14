@@ -6,181 +6,65 @@
 #include<sstream>
 #include<string>
 
-
-/*void read_edge_mesh(char* filename, int &n, unsigned &m, int*& srcs, int*& dsts, int*& grounded_flags, int ground_sensitivity){
-  std::ifstream infile;
-  std::string line;
-  infile.open(filename);
-  
-  //ignore the first line
-  std::getline(infile, line);
-
-  std::getline(infile, line);
-  int x = atoi(line.c_str());
-  line = line.substr(line.find(" "));
-  int y = atoi(line.c_str());
-  line = line.substr(line.find(" ", line.find_first_not_of(" ")));
-  //There is a third variable that is not used
-  //int z = atoi(line.c_str());
-
-  //initialize
-  n = x;
-  m = y*8;
-  //z is the number of floating boundary edges
-  
-  srcs = new int[m];
-  dsts = new int[m];
-  //ignore the next x lines
-  while(x-- > 0){
-    std::getline(infile, line);
-  }
-  std::getline(infile,line);
-
-  //create the final_ground_flags array, initially everything is floating
-  int* final_ground_flags = new int[n];
-  for(int i = 0; i < n; i++){
-    final_ground_flags[i] = 0;
-  }
-  unsigned edge_index = 0;
-  //for the next y lines
-  //read in the first 4 ints
-  //create 8 edges from thos ints, subtracting one from all values for 0-indexing
-  while(y-- > 0){
-    int node1 = atoi(line.c_str()) - 1;
-    line = line.substr(line.find(" "));
-    int node2 = atoi(line.c_str()) - 1;
-    line = line.substr(line.find(" ", line.find_first_not_of(" ")));
-    int node3 = atoi(line.c_str()) - 1;
-    line = line.substr(line.find(" ", line.find_first_not_of(" ")));
-    int node4 = atoi(line.c_str()) - 1;
-
-    //set the final grounding
-    int grounding = grounded_flags[node1] + grounded_flags[node2] + grounded_flags[node3] +grounded_flags[node4];
-    if(grounding >= ground_sensitivity){
-      final_ground_flags[node1] += grounded_flags[node1];
-      final_ground_flags[node2] += grounded_flags[node2];
-      final_ground_flags[node3] += grounded_flags[node3];
-      final_ground_flags[node4] += grounded_flags[node4];
-    }
-
-    srcs[edge_index] = node1;
-    dsts[edge_index++] = node2;
-    srcs[edge_index] = node2;
-    dsts[edge_index++] = node1;
-    srcs[edge_index] = node2;
-    dsts[edge_index++] = node3;
-    srcs[edge_index] = node3;
-    dsts[edge_index++] = node2;
-    srcs[edge_index] = node3;
-    dsts[edge_index++] = node4;
-    srcs[edge_index] = node4;
-    dsts[edge_index++] = node3;
-    srcs[edge_index] = node4;
-    dsts[edge_index++] = node1;
-    srcs[edge_index] = node1;
-    dsts[edge_index++] = node4;
-
-    std::getline(infile, line);
-  }
-  assert(edge_index == m);
-
-  infile.close();
-
-  //delete old grounding flags, and swap them for the new ones
-  if(ground_sensitivity > 1){
-    delete [] grounded_flags;
-    grounded_flags = final_ground_flags;
-  } else {
-    delete [] final_ground_flags;
-  }
-  return;
-}*/
-
+//function to read the boundary information from testing files
+//File format is:
+//two-word description
+//#edges
+//v1 v2
+//v3 v4
+//...
+//
+//where v1, v2, v3 and v4 are vertex identifiers.
 template<typename gno_t>
-void read_boundary_file(char *filename, size_t& num_edges, gno_t *& boundary_flags){
+void read_boundary_file(const char *filename, size_t& num_edges, Teuchos::Array<gno_t> & boundary_edges){
   std::ifstream fin(filename);
   if(!fin){
     std::cout<<"Unable to open file "<<filename<<"\n";
     exit(0);
   }
+  //the first two words are a description of the test,
+  //so we need to skip them
   std::string throwaway;
   fin>>throwaway>>throwaway;
-  int nodes, skip2, arrlength;
-  fin>>nodes>>skip2>>arrlength;
-  for(int i = 0; i <= nodes; i++){
-    std::getline(fin, throwaway);
-  }
-  for(int i = 0; i < skip2; i++){
-    std::getline(fin,throwaway);
-  }
-  boundary_flags = new gno_t[2*arrlength];
-  for(int i = 0; i < 2*arrlength; i++){
-    boundary_flags[i] = 0;
-  }
+  //this line gives the number of boundary edges
+  int arrlength;
+  fin>>arrlength;
+  
   num_edges = 2*arrlength;
   gno_t a, b;
   //get the list of boundary edges instead of flags representing articulation points,
   //the integration code takes a list of boundary edges.
-  int count = 0;
-  while(fin>>a>>b>>throwaway){
-    boundary_flags[count++] = a-1;
-    boundary_flags[count++] = b-1;
+  //int count = 0;
+  while(fin>>a>>b){
+    boundary_edges.push_back(a-1);
+    boundary_edges.push_back(b-1);
   }
 }
 
-void read_grounded_file(char* filename, size_t& n, int*& grounded_flags){
+//function to read the grounding information from the testing files
+//File format is:
+//#vertices
+//<grounding for vtx 0>
+//<grounding for vtx 1>
+//...
+//<grounding for vtx n>
+//
+//grounding can be a float or an integer, a zero value means floating,
+//nonzero means touching the ground.
+void read_grounded_file(const char* filename, size_t& nVtx, Teuchos::Array<int>& grounded_flags){
   std::ifstream fin(filename);
   if(!fin){
     std::cout<<"Unable to open "<<filename<<"\n";
     exit(0);
   }
   //the first number is the number of vertices
-  fin>>n;
-  grounded_flags = new int[n];
+  fin>>nVtx;
   //the rest of the numbers are basal friction data
-  for(size_t i = 0; i < n; i++){
-    grounded_flags[i] = 0;
+  for(size_t i = 0; i < nVtx; i++){
     float gnd;
     fin>>gnd;
-    grounded_flags[i] = (gnd > 0.0);
+    grounded_flags.push_back((gnd > 0.0));
   }
-}
-
-void create_csr(int n, unsigned m, int* srcs, int* dsts, int*& out_array, unsigned*& out_degree_list, int& max_degree_vert, double& avg_out_degree){
-  out_array = new int[m];
-  out_degree_list = new unsigned[n+1];
-  unsigned* temp_counts = new unsigned[n];
-
-  for(unsigned i = 0; i < m; ++i)
-    out_array[i] = 0;
-  for(int i = 0; i < n+1; ++i)
-    out_degree_list[i] = 0;
-  for(int i = 0; i < n; ++i)
-    temp_counts[i] = 0;
-
-  for(unsigned i = 0; i < m; ++i)
-    ++temp_counts[srcs[i]];
-  for(int i = 0; i < n; ++i)
-    out_degree_list[i+1] = out_degree_list[i] + temp_counts[i];
-  memcpy(temp_counts, out_degree_list, n*sizeof(int));
-  for(unsigned i = 0; i < m; ++i)
-    out_array[temp_counts[srcs[i]]++] = dsts[i];
-  delete [] temp_counts;
-
-  unsigned max_degree = 0;
-  max_degree_vert = -1;
-  avg_out_degree = 0.0;
-  for(int i = 0; i < n; ++i){
-    unsigned degree = out_degree_list[i+1] - out_degree_list[i];
-    avg_out_degree += (double) degree;
-    if(degree > max_degree) {
-      max_degree = degree;
-      max_degree_vert = i;
-    }
-  }
-  avg_out_degree /= (double)n;
-  assert(max_degree_vert >= 0);
-  assert(avg_out_degree >= 0.0);
 }
 
 #endif
