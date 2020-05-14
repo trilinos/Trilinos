@@ -1645,17 +1645,11 @@ def setTestDictAsMissing(testDict):
 #
 # The field 'status' will either be given either:
 #
-#   "Build not found on CDash"
+#   "Missing ALL"
 #
-# or
+# or will be:
 #
-#   "Build exists but no test results"
-#
-# ToDo: Change name of 'status' to 'build_missing_status' and add other
-# 'build_missing_status' values like:
-#
-#   "Build exists but no build results"
-#   "Build exists but no configure results"
+#   "Missing [update], [configure], [build], [tests]"
 #
 def getMissingExpectedBuildsList(buildsSearchableListOfDicts, expectedBuildsList):
   missingExpectedBuildsList = []
@@ -1667,7 +1661,7 @@ def getMissingExpectedBuildsList(buildsSearchableListOfDicts, expectedBuildsList
     if not buildSummaryDict:
       # No part of the expected build is found!
       missingExpectedBuildDict = copy.deepcopy(expectedBuildDict)
-      missingExpectedBuildDict.update({'status':"Build not found on CDash"})
+      missingExpectedBuildDict.update({'status':"Missing ALL"})
       #print("missingExpectedBuildDict = "+str(missingExpectedBuildDict))
       missingExpectedBuildsList.append(missingExpectedBuildDict)
     else:

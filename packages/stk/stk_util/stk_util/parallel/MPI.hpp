@@ -139,11 +139,11 @@ MPI_Datatype double_double_int_type();
 template <typename T, typename IdType=int64_t>
 struct Loc
 {
-  KOKKOS_INLINE_FUNCTION Loc() = default;
-  KOKKOS_INLINE_FUNCTION Loc(const Loc &) = default;
-  KOKKOS_INLINE_FUNCTION Loc(Loc &&) = default;
-  KOKKOS_INLINE_FUNCTION Loc & operator=(const Loc &) = default;
-  KOKKOS_INLINE_FUNCTION Loc & operator=(Loc &&) = default;
+  KOKKOS_DEFAULTED_FUNCTION Loc() = default;
+  KOKKOS_DEFAULTED_FUNCTION Loc(const Loc &) = default;
+  KOKKOS_DEFAULTED_FUNCTION Loc(Loc &&) = default;
+  KOKKOS_DEFAULTED_FUNCTION Loc & operator=(const Loc &) = default;
+  KOKKOS_DEFAULTED_FUNCTION Loc & operator=(Loc &&) = default;
   // Required to use with Kokkos::atomic_compare_exchange()
   KOKKOS_INLINE_FUNCTION Loc(const volatile Loc & loc) : m_value(loc.m_value), m_loc(loc.m_loc) {}
   KOKKOS_INLINE_FUNCTION Loc & operator=(const volatile Loc &rhs)

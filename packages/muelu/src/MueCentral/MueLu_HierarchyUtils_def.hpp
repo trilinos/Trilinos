@@ -192,6 +192,7 @@ namespace MueLu {
           TEUCHOS_TEST_FOR_EXCEPTION(name != "P" && name != "R"  && name != "K"  && name != "M" && name != "Mdiag" &&
                                      name != "Nullspace" && name != "Coordinates" && name != "pcoarsen: element to node map" && 
                                      name != "Node Comm" && name != "DualNodeID2PrimalNodeID" &&
+                                     name != "output stream" &&
                                      !IsParamValidVariable(name), Exceptions::InvalidArgument,
                                      std::string("MueLu::Utils::AddNonSerializableDataToHierarchy: user data parameter list contains unknown data type (") + name + ")");
           if( name == "P" || name == "R" || name == "K" || name == "M") {
@@ -226,6 +227,10 @@ namespace MueLu {
             level->Set(name, Teuchos::getValue<RCP<Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> > >(it2->second), NoFactory::get());
           }
 #endif
+          else if (name == "output stream")
+          {
+            H.SetMueLuOStream(Teuchos::getValue<RCP<Teuchos::FancyOStream> >(it2->second));
+          }
           else {
             //Custom variable
             size_t typeNameStart = name.find_first_not_of(' ');

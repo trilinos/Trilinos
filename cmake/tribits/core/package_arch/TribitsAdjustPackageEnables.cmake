@@ -1533,6 +1533,13 @@ MACRO(TRIBITS_ADD_OPTIONAL_PACKAGE_ENABLES PACKAGE_NAME)
        )
     SET_CACHE_ON_OFF_EMPTY( ${PACKAGE_NAME}_ENABLE_EXAMPLES "" ${DOCSTR} )
 
+    MULTILINE_SET(DOCSTR
+      "Build examples for the package ${PACKAGE_NAME}.  Set to 'ON', 'OFF', or leave empty ''"
+       " to allow for other logic to decide."
+       )
+    SET( ${PACKAGE_NAME}_SKIP_CTEST_ADD_TEST
+      "${${PROJECT_NAME}_SKIP_CTEST_ADD_TEST}" CACHE BOOL ${DOCSTR} )
+
   ELSE()
 
     IF (NOT DEFINED ${PACKAGE_NAME}_ENABLE_TESTS)

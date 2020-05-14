@@ -57,6 +57,9 @@
 #include "Amesos2_SolverCore.hpp"
 #include "Amesos2_Cholmod_FunctionMap.hpp"
 
+#ifdef HAVE_AMESOS2_TRIANGULAR_SOLVES
+#include "KokkosKernels_Handle.hpp"
+#endif
 
 namespace Amesos2 {
 
@@ -221,14 +224,16 @@ private:
 
   // struct holds all data necessary to make a cholmod factorization or solve call
   mutable struct CholData {
-    CHOL::cholmod_sparse A; 
-    CHOL::cholmod_dense x, b;
-    CHOL::cholmod_dense *Y, *E;
-    CHOL::cholmod_factor *L;
-    CHOL::cholmod_common c;
+    cholmod_sparse A;
+    cholmod_dense x, b;
+    cholmod_dense *Y, *E;
+    cholmod_factor *L;
+    cholmod_common c;
   } data_;
 
-  typedef Kokkos::DefaultHostExecutionSpace HostExecSpaceType;
+  typedef Kokkos::DefaultHostExecutionSpace                   HostExecSpaceType;
+  typedef typename HostExecSpaceType::memory_space             HostMemSpaceType;
+
   typedef long size_type;
   typedef long ordinal_type;
   typedef Kokkos::View<size_type*, HostExecSpaceType>       host_size_type_array;
@@ -248,12 +253,42 @@ private:
     host_solve_array_t;
 
   /// Persisting 1D store for X
-  mutable host_solve_array_t xValues_;
+  mutable host_solve_array_t host_xValues_;
   int ldx_;
 
   /// Persisting 1D store for B
-  mutable host_solve_array_t bValues_;
+  mutable host_solve_array_t host_bValues_;
   int ldb_;
+
+#ifdef HAVE_AMESOS2_TRIANGULAR_SOLVES
+
+  typedef Kokkos::DefaultExecutionSpace DeviceExecSpaceType;
+
+  #ifdef KOKKOS_ENABLE_CUDA
+    // solver will be UVM off even though Tpetra is CudaUVMSpace
+    typedef typename Kokkos::CudaSpace DeviceMemSpaceType;
+  #else
+    typedef typename DeviceExecSpaceType::memory_space DeviceMemSpaceType;
+  #endif
+
+  typedef Kokkos::View<chol_type**, Kokkos::LayoutLeft, DeviceMemSpaceType>
+    device_solve_array_t;
+  // For triangular solves we have both host and device versions of xValues and
+  // bValues because a parameter can turn it on or off.
+  mutable device_solve_array_t device_xValues_;
+  mutable device_solve_array_t device_bValues_;
+  typedef Kokkos::View<int*, HostMemSpaceType>                 host_int_array;
+  typedef Kokkos::View<int*, DeviceMemSpaceType>              device_int_array;
+  host_int_array host_trsv_etree_;
+  host_int_array host_trsv_perm_;
+  device_int_array device_trsv_perm_;
+  mutable device_solve_array_t device_trsv_rhs_;
+  mutable device_solve_array_t device_trsv_sol_;
+  typedef KokkosKernels::Experimental::KokkosKernelsHandle <size_type, ordinal_type, chol_type,
+    DeviceExecSpaceType, DeviceMemSpaceType, DeviceMemSpaceType> kernel_handle_type;
+  mutable kernel_handle_type device_khL_;
+  mutable kernel_handle_type device_khU_;
+#endif
 
   bool firstsolve;
   
@@ -263,6 +298,13 @@ private:
   Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > map;
 
   bool is_contiguous_;
+  bool use_triangular_solves_;
+
+  void triangular_solve_symbolic();
+  void triangular_solve_numeric();
+
+public: // for GPU
+  void triangular_solve() const; // Only for internal use - public to support kernels
 };                              // End class Cholmod
 
 

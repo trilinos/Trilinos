@@ -105,7 +105,7 @@ namespace MueLu {
       const bool writeZeroTimers  = false;
       const bool ignoreZeroTimers = true;
       const std::string filter    = timerName;
-      Teuchos::TimeMonitor::summarize(op->getRowMap()->getComm().ptr(), std::cout, alwaysWriteLocal, writeGlobalStats,
+      Teuchos::TimeMonitor::summarize(op->getRowMap()->getComm().ptr(), H->GetOStream(Statistics0), alwaysWriteLocal, writeGlobalStats,
                                       writeZeroTimers, Teuchos::Union, filter, ignoreZeroTimers);
     }
 
@@ -201,7 +201,7 @@ namespace MueLu {
       const bool writeZeroTimers  = false;
       const bool ignoreZeroTimers = true;
       const std::string filter    = timerName;
-      Teuchos::TimeMonitor::summarize(A->getRowMap()->getComm().ptr(), std::cout, alwaysWriteLocal, writeGlobalStats,
+      Teuchos::TimeMonitor::summarize(A->getRowMap()->getComm().ptr(), H->GetOStream(Statistics0), alwaysWriteLocal, writeGlobalStats,
                                       writeZeroTimers, Teuchos::Union, filter, ignoreZeroTimers);
     }
 

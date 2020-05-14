@@ -49,7 +49,7 @@ ENDIF()
 #
 # Stratimikos example
 #
-IF(${PACKAGE_NAME}_ENABLE_Stratimikos)
+IF(${PACKAGE_NAME}_ENABLE_Stratimikos AND ${PACKAGE_NAME}_ENABLE_Thyra)
 
   # build executable
   TRIBITS_ADD_EXECUTABLE(

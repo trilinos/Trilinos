@@ -323,22 +323,14 @@ namespace MueLu {
     // Set verbosity parameter
     VerbLevel oldVerbLevel = VerboseObject::GetDefaultVerbLevel();
     {
-      std::map<std::string, MsgType> verbMap;
-      verbMap["none"]    = None;
-      verbMap["low"]     = Low;
-      verbMap["medium"]  = Medium;
-      verbMap["high"]    = High;
-      verbMap["extreme"] = Extreme;
-      verbMap["test"]    = Test;
-
       MUELU_SET_VAR_2LIST(paramList, paramList, "verbosity", std::string, verbosityLevel);
-      verbosityLevel = lowerCase(verbosityLevel);
-
-      TEUCHOS_TEST_FOR_EXCEPTION(verbMap.count(verbosityLevel) == 0, Exceptions::RuntimeError,
-                                 "Invalid verbosity level: \"" << verbosityLevel << "\"");
-      this->verbosity_ = verbMap[verbosityLevel];
+      this->verbosity_ = toVerbLevel(verbosityLevel);
       VerboseObject::SetDefaultVerbLevel(this->verbosity_);
     }
+
+    MUELU_SET_VAR_2LIST(paramList, paramList, "output filename", std::string, outputFilename);
+    if (outputFilename != "")
+      VerboseObject::SetMueLuOFileStream(outputFilename);
 
     // Detect if we need to transfer coordinates to coarse levels. We do that iff
     //  - we use "distance laplacian" dropping on some level, or
@@ -1970,44 +1962,14 @@ namespace MueLu {
         this->Cycle_ = cycleMap[cycleType];
       }
 
-      //TODO Move this its own class or MueLu::Utils?
-      std::map<std::string, MsgType> verbMap;
-      //for developers
-      verbMap["errors"]         = Errors;
-      verbMap["warnings0"]      = Warnings0;
-      verbMap["warnings00"]     = Warnings00;
-      verbMap["warnings1"]      = Warnings1;
-      verbMap["perfWarnings"]   = PerfWarnings;
-      verbMap["runtime0"]       = Runtime0;
-      verbMap["runtime1"]       = Runtime1;
-      verbMap["runtimeTimings"] = RuntimeTimings;
-      verbMap["noTimeReport"]   = NoTimeReport;
-      verbMap["parameters0"]    = Parameters0;
-      verbMap["parameters1"]    = Parameters1;
-      verbMap["statistics0"]    = Statistics0;
-      verbMap["statistics1"]    = Statistics1;
-      verbMap["timings0"]       = Timings0;
-      verbMap["timings1"]       = Timings1;
-      verbMap["timingsByLevel"] = TimingsByLevel;
-      verbMap["external"]       = External;
-      verbMap["debug"]          = Debug;
-      verbMap["test"]           = Test;
-      //for users and developers
-      verbMap["none"]           = None;
-      verbMap["low"]            = Low;
-      verbMap["medium"]         = Medium;
-      verbMap["high"]           = High;
-      verbMap["extreme"]        = Extreme;
       if (hieraList.isParameter("verbosity")) {
         std::string vl = hieraList.get<std::string>("verbosity");
-        vl = lowerCase(vl);
         hieraList.remove("verbosity");
-        //TODO Move this to its own class or MueLu::Utils?
-        if (verbMap.find(vl) != verbMap.end())
-          this->verbosity_ = verbMap[vl];
-        else
-          TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::ParameterListInterpreter():: invalid verbosity level");
+        this->verbosity_ = toVerbLevel(vl);
       }
+
+      if (hieraList.isParameter("output filename"))
+        VerboseObject::SetMueLuOFileStream(hieraList.get<std::string>("output filename"));
 
       if (hieraList.isParameter("dependencyOutputLevel"))
         this->graphOutputLevel_ = hieraList.get<int>("dependencyOutputLevel");
