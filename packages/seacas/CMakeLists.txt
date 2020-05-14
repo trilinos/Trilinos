@@ -38,7 +38,7 @@ if (TPL_ENABLE_MPI)
          set(TPL_Netcdf_PARALLEL False CACHE BOOL "Is NetCDF library parallel enabled")
       endif()
    endif()
-   message(STATUS "TPL_Netcdf_PARALLLEL is ${TPL_Netcdf_PARALLEL}")
+   message(STATUS "TPL_Netcdf_PARALLEL is ${TPL_Netcdf_PARALLEL}")
 endif()
 
 set(SEACASExodus_ENABLE_STATIC_DEFAULT "OFF")
