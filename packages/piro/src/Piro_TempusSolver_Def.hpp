@@ -396,8 +396,11 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
   piroTempusIntegrator_->advanceTime(t_final_);
   double time = piroTempusIntegrator_->getTime();
   *out_ << "T final actual: " << time << "\n";
-
-  if (abs(time-t_final_)/abs(t_final_) > 1.0e-10) {
+ 
+  Scalar diff = 0.0; 
+  if (abs(t_final_) == 0) diff = abs(time-t_final_);
+  else diff = abs(time-t_final_)/abs(t_final_);  
+  if (diff > 1.0e-10) {
     if (abort_on_failure_ == true) {
       TEUCHOS_TEST_FOR_EXCEPTION(
         true,

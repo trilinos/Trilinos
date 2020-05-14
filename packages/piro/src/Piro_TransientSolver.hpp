@@ -46,6 +46,7 @@
 #include "Piro_ConfigDefs.hpp"
 #include "Thyra_ResponseOnlyModelEvaluatorBase.hpp"
 #include "Piro_TempusIntegrator.hpp" 
+#include "Piro_TempusHelpers.hpp" 
 
 #include <map>
 #include <string>
@@ -94,7 +95,7 @@ public:
   int num_g() const; 
 
   /** \brief . */
-  int getSensitivityMethod(); 
+  SENS_METHOD getSensitivityMethod(); 
   //@}
   
   /** \name Setters for subbclasses */
@@ -132,9 +133,7 @@ private:
   int num_p_;
   int num_g_;
 
-  enum SENS_METHOD {NONE, FORWARD, ADJOINT};
   SENS_METHOD sensitivityMethod_;
-
 
 };
 

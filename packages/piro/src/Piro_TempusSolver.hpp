@@ -51,6 +51,7 @@
 #include "Piro_TempusStepperFactory.hpp"
 #include "Piro_TempusStepControlFactory.hpp"
 #include "Piro_TransientSolver.hpp"
+#include "Piro_TempusHelpers.hpp" 
 
 #include <map>
 #include <string>
@@ -209,10 +210,7 @@ private:
   //from Albany.  
   bool abort_on_fail_at_min_dt_;
 
-  int sens_method_; 
-  //sens_method = 0: No sensitivities
-  //sens_method = 1: Forward sensitivities
-  //sens_method = 2: Adjoint sensitivities 
+  SENS_METHOD sens_method_; 
 };
 
 /** \brief Non-member constructor function */

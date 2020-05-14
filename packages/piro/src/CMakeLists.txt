@@ -130,6 +130,7 @@ ENDIF()
 ENDIF()
 IF (Piro_ENABLE_Tempus)
   APPEND_SET(HEADERS
+    Piro_TempusHelpers.hpp 
     Piro_TempusSolver.hpp
     Piro_TempusSolver_Def.hpp 
     Piro_TempusIntegrator.hpp

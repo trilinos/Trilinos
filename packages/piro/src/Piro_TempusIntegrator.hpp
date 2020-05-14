@@ -49,6 +49,7 @@
 #include "Tempus_IntegratorForwardSensitivity.hpp"
 #include "Tempus_IntegratorAdjointSensitivity.hpp"
 #include "Tempus_StepperObserverBasic.hpp"
+#include "Piro_TempusHelpers.hpp" 
 
 #include <map>
 #include <string>
@@ -66,7 +67,7 @@ public:
 
   /** \brief . */
   TempusIntegrator(Teuchos::RCP< Teuchos::ParameterList > pList, const Teuchos::RCP< Thyra::ModelEvaluator< Scalar > > &model,
-                   const int sens_method = 0); 
+                   const SENS_METHOD sens_method = NONE); 
   
   Teuchos::RCP<Tempus::Stepper<Scalar>> getStepper() const; 
 

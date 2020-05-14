@@ -59,6 +59,7 @@
 #include "Teuchos_Ptr.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_Tuple.hpp"
+#include "Piro_TempusHelpers.hpp" 
 
 #include <stdexcept>
 #include<mpi.h>
@@ -81,7 +82,7 @@ void test_sincos_fsa(const bool use_combined_method,
                      const bool use_dfdp_as_tangent,
                      Teuchos::FancyOStream &out, bool &success)
 {
-  const std::string sens_method = "Forward";
+  const std::string sens_method_string = "Forward";
   std::string outfile_name; 
   std::string errfile_name; 
 
@@ -114,10 +115,10 @@ void test_sincos_fsa(const bool use_combined_method,
   my_out->setProcRankAndSize(comm->getRank(), comm->getSize());
   my_out->setOutputToRootOnly(0);
   
-  int sens_method_int = 0;
-  if (sens_method == "None") sens_method_int = 0;
-  else if (sens_method == "Forward") sens_method_int = 1;
-  else if (sens_method == "Adjoint") sens_method_int = 2;
+  SENS_METHOD sens_method;
+  if (sens_method_string == "None") sens_method = Piro::NONE;
+  else if (sens_method_string == "Forward") sens_method = Piro::FORWARD;
+  else if (sens_method_string == "Adjoint") sens_method = Piro::ADJOINT;
 
   for (int n=0; n<nTimeStepSizes; n++) {
 
@@ -147,7 +148,7 @@ void test_sincos_fsa(const bool use_combined_method,
     tempus_pl->sublist("Default Integrator")
        .sublist("Time Step Control").set("Initial Time Step", dt);
     Teuchos::RCP<Piro::TempusIntegrator<double> > integrator 
-        = Teuchos::rcp(new Piro::TempusIntegrator<double>(tempus_pl, model, sens_method_int));
+        = Teuchos::rcp(new Piro::TempusIntegrator<double>(tempus_pl, model, sens_method));
     order = integrator->getStepper()->getOrder();
 
     // Initial Conditions
@@ -176,7 +177,7 @@ void test_sincos_fsa(const bool use_combined_method,
     RCP<Tempus::StepperFactory<double> > sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
     const RCP<Tempus::Stepper<double> > stepper = sf->createStepper(stepper_pl, model);
     const RCP<TempusSolver<double> > tempus_solver = 
-         rcp(new TempusSolver<double>(integrator, stepper, stepSolver, model, tfinal, sens_method));
+         rcp(new TempusSolver<double>(integrator, stepper, stepSolver, model, tfinal, sens_method_string));
 
     const Thyra::MEB::InArgs<double> inArgs = tempus_solver->getNominalValues();
     Thyra::MEB::OutArgs<double> outArgs = tempus_solver->createOutArgs();

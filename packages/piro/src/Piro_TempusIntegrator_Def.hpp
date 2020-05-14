@@ -55,27 +55,22 @@
 template <typename Scalar>
 Piro::TempusIntegrator<Scalar>::TempusIntegrator(Teuchos::RCP< Teuchos::ParameterList > pList, 
    const Teuchos::RCP< Thyra::ModelEvaluator< Scalar > > &model,
-   const int sens_method) : 
+   const SENS_METHOD sens_method) : 
    out_(Teuchos::VerboseObjectBase::getDefaultOStream())
 {
-  //The values of sens_method here go hand-in-hand with the enum type SENS_Method in 
-  //Tempus::TransientSolver.  NONE = 0, FORWARD = 1, ADJOINT = 2.  
-  //IKT FIXME: make sens_method an enum type
-  //IKT FIXME: remove duplicate integrators - should be able to just have 1 integrator rather than 3, and do 
-  //casts to figure out which one we need. 
-  if (sens_method == 0) {
+  if (sens_method == NONE) {
     //no sensitivities
     basicIntegrator_ = Tempus::integratorBasic<Scalar>(pList, model);
     fwdSensIntegrator_ = Teuchos::null; 
     adjSensIntegrator_ = Teuchos::null; 
   }
-  else if (sens_method == 1) {
+  else if (sens_method == FORWARD) {
     //forward sensitivities
     basicIntegrator_ = Teuchos::null;
     fwdSensIntegrator_ = Tempus::integratorForwardSensitivity<Scalar>(pList, model);
     adjSensIntegrator_ = Teuchos::null; 
   }
-  else if (sens_method == 2) {
+  else if (sens_method == ADJOINT) {
     //adjoint sensitivities
     basicIntegrator_ = Teuchos::null;
     fwdSensIntegrator_ = Teuchos::null; 
