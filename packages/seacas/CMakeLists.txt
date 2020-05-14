@@ -17,30 +17,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 
 set(${PROJECT_NAME}_C_Standard_DEFAULT c99)
 
-if (TPL_ENABLE_MPI)
-   if (NOT TPL_Netcdf_PARALLEL)  
-      ASSERT_DEFINED(TPL_Netcdf_INCLUDE_DIRS)
-      find_path(meta_path
-         NAMES "netcdf_meta.h"
-         HINTS ${TPL_Netcdf_INCLUDE_DIRS}
-         NO_DEFAULT_PATH)
-
-      if (meta_path)
-         # Search meta for NC_HAS_PARALLEL setting...
-         # Note that there is both NC_HAS_PARALLEL and NC_HAS_PARALLEL4, only want first...
-         file(STRINGS "${meta_path}/netcdf_meta.h" netcdf_par_string REGEX "NC_HAS_PARALLEL ")
-         string(REGEX MATCH "[01]" netcdf_par_val "${netcdf_par_string}")
-         if (netcdf_par_val EQUAL 1)
-            set(TPL_Netcdf_PARALLEL True CACHE BOOL "Is NetCDF library parallel enabled")
-         endif()
-      endif()
-      if (NOT TPL_Netcdf_PARALLEL)  
-         set(TPL_Netcdf_PARALLEL False CACHE BOOL "Is NetCDF library parallel enabled")
-      endif()
-   endif()
-   message(STATUS "TPL_Netcdf_PARALLEL is ${TPL_Netcdf_PARALLEL}")
-endif()
-
 set(SEACASExodus_ENABLE_STATIC_DEFAULT "OFF")
 if (${CMAKE_PROJECT_NAME} STREQUAL "SEACASProj")
   if (BUILD_SHARED_LIBS)
