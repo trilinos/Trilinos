@@ -178,6 +178,13 @@ public:
     assembler_->printMeshData(stream);
   }
 
+  void solveState(ROL::Vector<Real> &u, const ROL::Vector<Real> &z) {
+    update(z,ROL::UPDATE_TEMP);
+    ROL::Ptr<const Tpetra::MultiVector<>> z_data = getConstField(z);
+    ROL::Ptr<Tpetra::MultiVector<>>       u_data = getField(u);
+    solve_state_equation(u_data, z_data);
+  }
+
   Real value( const ROL::Vector<Real> &z, Real &tol ) {
     nfval_++;
     ROL::Ptr<const Tpetra::MultiVector<>> z_data = getConstField(z);

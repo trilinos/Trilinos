@@ -142,6 +142,11 @@ public:
     comp_->printToFile(*Fz_, stream, ufile, ffile);
   }
 
+  void solveState(ROL::Vector<Real> &u, const ROL::Vector<Real> &z) {
+    update(z,ROL::UPDATE_TEMP);
+    comp_->solveState(u,*Fz_);
+  }
+
   Real value( const ROL::Vector<Real> &z, Real &tol ) {
     nfval_++;
     return comp_->value(*Fz_,tol);

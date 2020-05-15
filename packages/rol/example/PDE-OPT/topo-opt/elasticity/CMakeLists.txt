@@ -17,12 +17,12 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     ADD_DIR_TO_NAME
   )
 
-##  TRIBITS_ADD_EXECUTABLE(
-##    example_02
-##    SOURCES example_02.cpp
-##    ADD_DIR_TO_NAME
-##  )
-##
+  TRIBITS_ADD_EXECUTABLE(
+    example_02
+    SOURCES example_02.cpp
+    ADD_DIR_TO_NAME
+  )
+
 ##  TRIBITS_ADD_EXECUTABLE(
 ##    example_03
 ##    SOURCES example_03.cpp
