@@ -120,12 +120,12 @@ public:
     int me = comm->getRank();
 
     // Precompute values needed for distribution 1 (linear row-wise)
-    gno_t nMyRows = nRows / np + (nRows % np > me);
+    gno_t nMyRows = nRows / np + (int(nRows % np) > me);
     gno_t myFirstRow = (me * (nRows / np) + std::min<gno_t>(nRows % np, me));
     gno_t myLastRow = myFirstRow + nMyRows - 1;
 
     // Precompute values needed for distribution 2 (linear column-wise)
-    gno_t nMyCols = nCols / np + (nCols % np > me);
+    gno_t nMyCols = nCols / np + (int(nCols % np) > me);
     gno_t myFirstCol = (me * (nCols / np) + std::min<gno_t>(nCols % np, me));
     gno_t myLastCol = myFirstCol + nMyCols - 1;
 
@@ -173,7 +173,8 @@ public:
     // Compute prefix sum in offsets array
     offsets.resize(rowIdx.size() + 1);
     offsets[0] = 0;
-    for (size_t row = 0; row < rowIdx.size(); row++)
+    size_t nRowIdx = size_t(rowIdx.size());
+    for (size_t row = 0; row < nRowIdx; row++)
       offsets[row+1] = offsets[row] + nPerRow[row];
   }
 
@@ -208,7 +209,8 @@ public:
 
     Teuchos::RCP<matrix_t> Amat = Teuchos::rcp(new matrix_t(rowMap, nPerRow()));
   
-    for (size_t r = 0; r < rowIdx.size(); r++) {
+    size_t nRowIdx = size_t(rowIdx.size());
+    for (size_t r = 0; r < nRowIdx; r++) {
       size_t tmp = offsets[r+1] - offsets[r];
       Amat->insertGlobalValues(rowIdx[r], 
                                colIdx(offsets[r],tmp), val(offsets[r],tmp));
