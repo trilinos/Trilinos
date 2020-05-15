@@ -935,15 +935,14 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
 
 template<typename ST, typename LO, typename GO, typename NT>
 void
-packCrsMatrixNew (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
-                  Kokkos::DualView<char*,
-                    typename DistObject<char, LO, GO, NT>::buffer_device_type>& exports,
-                  const Kokkos::DualView<size_t*,
-                    typename DistObject<char, LO, GO, NT>::buffer_device_type>& numPacketsPerLID,
-                  const Kokkos::DualView<const LO*,
-                    typename DistObject<char, LO, GO, NT>::buffer_device_type>& exportLIDs,
-                  size_t& constantNumPackets,
-                  Distributor& distor)
+packCrsMatrixNew(
+  const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
+  Kokkos::DualView<char*, typename DistObject<char, LO, GO, NT>::buffer_device_type>& exports,
+  const Kokkos::DualView<size_t*, typename DistObject<char, LO, GO, NT>::buffer_device_type>& numPacketsPerLID,
+  const Kokkos::DualView<const LO*, typename DistObject<char, LO, GO, NT>::buffer_device_type>& exportLIDs,
+  size_t& constantNumPackets,
+  Distributor& distor
+)
 {
   using device_type = typename CrsMatrix<ST, LO, GO, NT>::device_type;
   using buffer_device_type = typename DistObject<char, LO, GO, NT>::buffer_device_type;

@@ -349,6 +349,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackThenUnpackAndCombine, SC, LO, G
       ArrayView<const LO> B_indices;
       ArrayView<const SC> B_values;
       B->getLocalRowView(loc_row, B_indices, B_values);
+      std::cout << "A_values: " << A_values << "\n";
+      std::cout << "B_values: " << B_values << "\n";
+      std::cout << std::flush;
 
       TEST_EQUALITY( A_indices.size (), B_indices.size () );
 
