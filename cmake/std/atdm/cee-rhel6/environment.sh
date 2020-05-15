@@ -47,10 +47,6 @@ export ATDM_CONFIG_BUILD_COUNT=$ATDM_CONFIG_MAX_NUM_CORES_TO_USE
 
 module purge
 
-module load sparc-dev
-# NOTE: Above was reported needed by jhu on some CEE RHEL6 machine in order to
-# get NetCDF to load (#4662).
-
 # Warning options requested by Gemma team (which should hopefully also take
 # care of warnings required by the other ATDM APPs as well).  See #3178 and
 # #4221
