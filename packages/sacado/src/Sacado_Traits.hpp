@@ -365,6 +365,15 @@ namespace Sacado {
     static const T& eval(const T& x) { return x; }
   };
 
+  //! Specialization of Value for const types
+  template <typename T> struct Value<const T> {
+    typedef typename ValueType<T>::type value_type;
+    KOKKOS_INLINE_FUNCTION
+    static const value_type& eval(const T& x) {
+      return Value<T>::eval(x);
+    }
+  };
+
   //! Base template specification for %ScalarValue
   /*!
    * The %ScalarValue functor returns the base scalar value of an AD type,
@@ -373,6 +382,15 @@ namespace Sacado {
   template <typename T> struct ScalarValue {
     KOKKOS_INLINE_FUNCTION
     static const T& eval(const T& x) { return x; }
+  };
+
+  //! Specialization of ScalarValue for const types
+  template <typename T> struct ScalarValue<const T> {
+    typedef typename ScalarType<T>::type scalar_type;
+    KOKKOS_INLINE_FUNCTION
+    static const scalar_type& eval(const T& x) {
+      return ScalarValue<T>::eval(x);
+    }
   };
 
   //! Base template specification for marking constants
