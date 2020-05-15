@@ -417,13 +417,14 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
     }
   }
 
-  finalSolution = piroTempusIntegrator_->getX();
-
   solutionHistory = piroTempusIntegrator_->getSolutionHistory();
   auto numStates = solutionHistory->getNumStates();
   solutionState = (*solutionHistory)[numStates-1];
   //Get final solution from solutionHistory.
-  finalSolution = solutionState->getX();
+  typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
+  Teuchos::RCP<const Thyra::VectorBase<Scalar>> x = solutionState->getX(); 
+  Teuchos::RCP<const DMVPV> X = Teuchos::rcp_dynamic_cast<const DMVPV>(x);
+  finalSolution = (sens_method_ == NONE) ? x : X->getMultiVector()->col(0);
 
   if (Teuchos::VERB_MEDIUM <= solnVerbLevel_) {
     *out_ << "Final Solution\n" << *finalSolution << "\n";
