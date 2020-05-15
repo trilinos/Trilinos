@@ -81,6 +81,12 @@ void testTachoSolver(int numRows,
 
 
   ///
+  /// Export supernodes
+  ///
+  std::vector<int> supernodes;
+  solver.exportSupernodes(supernodes);
+
+  ///
   /// Export matrix and permutation vector
   ///
   std::vector<int> rowBeginU;

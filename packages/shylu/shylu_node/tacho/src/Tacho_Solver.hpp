@@ -171,6 +171,8 @@ namespace Tacho {
     ///
     /// get interface
     ///
+    ordinal_type       getNumSupernodes() const;
+    ordinal_type_array getSupernodes() const;
     ordinal_type_array getPermutationVector() const;
     ordinal_type_array getInversePermutationVector() const;
 
