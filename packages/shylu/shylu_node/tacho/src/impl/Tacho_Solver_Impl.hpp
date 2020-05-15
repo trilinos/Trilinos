@@ -176,6 +176,20 @@ namespace Tacho {
   /// get interface
   ///
   template<typename VT, typename ST>  
+  ordinal_type
+  Solver<VT,ST>
+  ::getNumSupernodes() const { 
+    return _nsupernodes;
+  } 
+
+  template<typename VT, typename ST>  
+  typename Solver<VT,ST>::ordinal_type_array
+  Solver<VT,ST>
+  ::getSupernodes() const { 
+    return _supernodes;
+  } 
+
+  template<typename VT, typename ST>  
   typename Solver<VT,ST>::ordinal_type_array
   Solver<VT,ST>
   ::getPermutationVector() const { 
