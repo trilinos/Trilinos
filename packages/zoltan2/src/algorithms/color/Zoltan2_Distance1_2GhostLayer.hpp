@@ -496,7 +496,7 @@ void AlgDistance1TwoGhostLayer<Adapter>::colorInterior(const size_t nVtx,
                        Kokkos::View<lno_t*,device_type> adjs_view,
                        Kokkos::View<offset_t*, device_type> offset_view,
                        Teuchos::RCP<femv_t> femv,
-                       bool recolor=false) {
+                       bool recolor) {
   using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle
       <size_t, lno_t, lno_t, execution_space, memory_space, memory_space>;
   KernelHandle kh;
