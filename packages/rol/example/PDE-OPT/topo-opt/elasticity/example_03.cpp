@@ -389,9 +389,9 @@ int main(int argc, char *argv[]) {
     Teuchos::Array<RealT> beta
       = Teuchos::getArrayFromStringParameter<RealT>(parlist->sublist("Problem"), "Confidence Levels");
     ROL::Ptr<ROL::StochasticProblem<RealT>> prob;
-    for (size_t i = 0; i < lambda.size(); ++i) {
+    for (int i = 0; i < lambda.size(); ++i) {
       parlist->sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Convex Combination Parameter",lambda[i]);
-      for (size_t j = 0; j < beta.size(); ++j) {
+      for (int j = 0; j < beta.size(); ++j) {
         if (cnt!=0) parlist->sublist("SOL").set("Initial Statistic",quantile[cnt]);
         *outStream << std::endl << "  lambda = " << lambda[i]
                    << "  beta = " << beta[j] << std::endl << std::endl;
