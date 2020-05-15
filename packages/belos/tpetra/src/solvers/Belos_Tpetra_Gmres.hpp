@@ -260,16 +260,13 @@ private:
   using dense_vector_type = Teuchos::SerialDenseVector<LO, SC>;
 
 public:
-  Gmres () :
-    Krylov<SC, MV, OP>::Krylov ()
-  {}
+  Gmres () = default;
 
   Gmres (const Teuchos::RCP<const OP>& A) :
     Krylov<SC, MV, OP>::Krylov (A)
   {}
 
-  virtual ~Gmres()
-  {}
+  virtual ~Gmres () = default;
 
   virtual void
   getParameters (Teuchos::ParameterList& params,
@@ -291,33 +288,28 @@ public:
   {
     Krylov<SC, MV, OP>::setParameters (params);
 
-    bool computeRitzValues = this->input_.computeRitzValues;
-    if (params.isParameter ("Compute Ritz Values")) {
-      computeRitzValues = params.get<bool> ("Compute Ritz Values");
-    }
+    bool computeRitzValues 
+      = params.get<bool> ("Compute Ritz Values", this->input_.computeRitzValues);
 
-    bool needToReortho = this->input_.needToReortho;
-    if (params.isParameter ("Reorthogonalize Blocks")) {
-      needToReortho = params.get<bool> ("Reorthogonalize Blocks");
-    }
+    bool needToReortho
+      = params.get<bool> ("Reorthogonalize Blocks", this->input_.needToReortho);
 
-    int resCycle = this->input_.resCycle;
-    if (params.isParameter ("Num Blocks")) {
-      resCycle = params.get<int> ("Num Blocks");
-      TEUCHOS_TEST_FOR_EXCEPTION
+    int resCycle = params.get<int> ("Num Blocks", this->input_.resCycle);
+    TEUCHOS_TEST_FOR_EXCEPTION
         (resCycle < 0, std::invalid_argument,
          "\"Num Blocks\" (restart length) = " << resCycle << " < 0.");
-    }
 
-    std::string orthoType (this->input_.orthoType);
-    if (params.isParameter ("Orthogonalization")) {
-      orthoType = params.get<std::string> ("Orthogonalization");
-    }
+    std::string orthoType
+      = params.get<std::string> ("Orthogonalization", this->input_.orthoType);
+
+    int maxOrthoSteps
+      = params.get<int> ("Max Orthogonalization Passes", this->input_.maxOrthoSteps);
 
     this->input_.computeRitzValues = computeRitzValues;
     this->input_.needToReortho = needToReortho;
     this->input_.resCycle = resCycle;
     this->input_.orthoType = orthoType;
+    this->input_.maxOrthoSteps = maxOrthoSteps;
   }
 
 private:
@@ -334,7 +326,11 @@ private:
       // Belos::OrthoManagerFactory here.
       Belos::OrthoManagerFactory<SC, MV, OP> factory;
       Teuchos::RCP<Belos::OutputManager<SC>> outMan; // can be null
-      Teuchos::RCP<Teuchos::ParameterList> params; // can be null
+      Teuchos::RCP<Teuchos::ParameterList> params;   // can be null
+      if (this->input_.maxOrthoSteps > 0) {
+        params = Teuchos::rcp (new Teuchos::ParameterList());
+        params->set ("maxNumOrthogPasses", this->input_.maxOrthoSteps);
+      }
       ortho_ = factory.makeMatOrthoManager (ortho, Teuchos::null, outMan, "Belos", params);
       TEUCHOS_TEST_FOR_EXCEPTION
         (ortho_.get () == nullptr, std::runtime_error, "Gmres: Failed to "
@@ -470,6 +466,9 @@ protected:
     const SC zero = STS::zero ();
     const SC one  = STS::one ();
 
+    // timers
+    Teuchos::RCP< Teuchos::Time > spmvTimer = Teuchos::TimeMonitor::getNewCounter ("Gmres::matrix-apply");
+
     // initialize output parameters
     SolverOutput<SC> output {};
     output.converged = false;
@@ -490,13 +489,20 @@ protected:
     mag_type b_norm;  // initial residual norm
     mag_type b0_norm; // initial residual norm, not left preconditioned
     mag_type r_norm;
-    vec_type R (B.getMap ());
-    vec_type MP (B.getMap ());
-    MV Q (B.getMap (), restart+1);
+    mag_type r_norm_imp;
+
+    bool zeroOut = false; // Kokkos::View:init can take a long time on GPU?
+    vec_type R (B.getMap (), zeroOut);
+    vec_type Y (B.getMap (), zeroOut);
+    vec_type MP (B.getMap (), zeroOut);
+    MV Q (B.getMap (), restart+1, zeroOut);
     vec_type P = * (Q.getVectorNonConst (0));
 
     // initial residual (making sure R = B - Ax)
-    A.apply (X, R);
+    {
+      Teuchos::TimeMonitor LocalTimer (*spmvTimer);
+      A.apply (X, R);
+    }
     R.update (one, B, -one);
     b0_norm = R.norm2 (); // residual norm, not-preconditioned
     if (input.precoSide == "left") {
@@ -537,41 +543,46 @@ protected:
     y[0] = SC {b_norm};
 
     // main loop
+    int iter = 0;
     while (output.numIters < input.maxNumIters && ! output.converged) {
       if (outPtr != nullptr) {
         *outPtr << "Restart cycle " << output.numRests << ":" << endl;
-      }
-      Indent indent2 (outPtr);
-      if (outPtr != nullptr) {
+        Indent indent2 (outPtr);
         *outPtr << output;
       }
 
-      int iter = 0;
       if (input.maxNumIters < output.numIters+restart) {
         restart = input.maxNumIters-output.numIters;
       }
 
       // restart cycle
-      for (iter = 0; iter < restart && metric > input.tol; ++iter) {
+      for (; iter < restart && metric > input.tol; ++iter) {
         if (outPtr != nullptr) {
           *outPtr << "Current iteration: iter=" << iter
                   << ", restart=" << restart
                   << ", metric=" << metric << endl;
+          Indent indent3 (outPtr);
         }
-        Indent indent3 (outPtr);
 
         // AP = A*P
         vec_type P  = * (Q.getVectorNonConst (iter));
         vec_type AP = * (Q.getVectorNonConst (iter+1));
         if (input.precoSide == "none") {
+          Teuchos::TimeMonitor LocalTimer (*spmvTimer);
           A.apply (P, AP);
         }
         else if (input.precoSide == "right") {
           M.apply (P, MP);
-          A.apply (MP, AP);
+          {
+            Teuchos::TimeMonitor LocalTimer (*spmvTimer);
+            A.apply (MP, AP);
+          }
         }
         else { // left
-          A.apply (P, MP);
+          {
+            Teuchos::TimeMonitor LocalTimer (*spmvTimer);
+            A.apply (P, MP);
+          }
           M.apply (MP, AP);
         }
         output.numIters++;
@@ -597,6 +608,12 @@ protected:
         }
       } // end of restart cycle
 
+      if (iter < restart) {
+        // save the old solution, just in case explicit residual norm failed the convergence test
+        Tpetra::deep_copy (Y, X);
+        blas.COPY (1+iter, y.values(), 1, h.values(), 1);
+      }
+      r_norm_imp = STS::magnitude (y (iter)); // save implicit residual norm
       if (iter > 0) {
         // Compute Ritz values, if requested
         if (input.computeRitzValues && output.numRests == 0) {
@@ -610,7 +627,6 @@ protected:
                    H.values(), H.stride(), y.values(), y.stride());
         Teuchos::Range1D cols(0, iter-1);
         Teuchos::RCP<const MV> Qj = Q.subView(cols);
-        //y.resize (iter);
         dense_vector_type y_iter (Teuchos::View, y.values (), iter);
         if (input.precoSide == "right") {
           //MVT::MvTimesMatAddMv (one, *Qj, y, zero, R);
@@ -625,35 +641,54 @@ protected:
         //y.resize (restart+1);
       }
       // Compute explicit unpreconditioned residual
-      P = * (Q.getVectorNonConst (0));
-      A.apply (X, P);
-      P.update (one, B, -one);
-      r_norm = P.norm2 (); // residual norm
+      {
+        Teuchos::TimeMonitor LocalTimer (*spmvTimer);
+        A.apply (X, R);
+      }
+      R.update (one, B, -one);
+      r_norm = R.norm2 (); // residual norm
       output.absResid = r_norm;
       output.relResid = r_norm / b0_norm;
+      if (outPtr != nullptr) {
+        *outPtr << "Implicit and explicit residual norms at restart: " << r_norm_imp << ", " << r_norm << endl;
+      }
 
       metric = this->getConvergenceMetric (r_norm, b0_norm, input);
       if (metric <= input.tol) {
         output.converged = true;
       }
       else if (output.numIters < input.maxNumIters) {
-        // Initialize starting vector for restart
-        if (input.precoSide == "left") {
-          Tpetra::deep_copy (R, P);
-          M.apply (R, P);
-          r_norm = P.norm2 (); // norm
+        // Restart, only if max inner-iteration was reached.
+        // Otherwise continue the inner-iteration.
+        if (iter >= restart) {
+          // Restart: Initialize starting vector for restart
+          iter = 0;
+          P = * (Q.getVectorNonConst (0));
+          if (input.precoSide == "left") {
+            M.apply (R, P);
+            r_norm = P.norm2 (); // norm
+          }
+          else {
+            // set the starting vector
+            Tpetra::deep_copy (P, R);
+          }
+          P.scale (one / r_norm);
+          y[0] = SC {r_norm};
+          for (int i=1; i < restart+1; i++) {
+            y[i] = STS::zero ();
+          }
+          output.numRests++;
         }
-        P.scale (one / r_norm);
-        y[0] = SC {r_norm};
-        for (int i=1; i < restart+1; i++) {
-          y[i] = STS::zero ();
+        else {
+          // reset to the old solution
+          Tpetra::deep_copy (X, Y);
+          blas.COPY (1+iter, h.values(), 1, y.values(), 1);
         }
-        output.numRests++;
       }
     }
 
     // return residual norm as B
-    Tpetra::deep_copy (B, P);
+    Tpetra::deep_copy (B, R);
 
     if (outPtr != nullptr) {
       *outPtr << "At end of solve:" << endl;

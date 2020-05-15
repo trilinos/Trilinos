@@ -96,6 +96,8 @@ namespace Iogs {
 
     ~DatabaseIO() override;
 
+    const std::string get_format() const override { return "Generated_Structured"; }
+
     // Check capabilities of input/output database...  Returns an
     // unsigned int with the supported Ioss::EntityTypes or'ed
     // together. If "return_value & Ioss::EntityType" is set, then the
@@ -136,8 +138,8 @@ namespace Iogs {
                                size_t data_size) const override;
     int64_t get_field_internal(const Ioss::FaceBlock *nb, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
-    int64_t get_field_internal(const Ioss::ElementBlock *eb, const Ioss::Field &field, void *data,
-                               size_t data_size) const override
+    int64_t get_field_internal(const Ioss::ElementBlock * /* eb */, const Ioss::Field & /* field */,
+                               void * /* data */, size_t /* data_size */) const override
     {
       return -1;
     }
@@ -158,6 +160,17 @@ namespace Iogs {
                                size_t data_size) const override;
     int64_t get_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
+    int64_t get_field_internal(const Ioss::Assembly* /*sb*/, const Ioss::Field & /*field*/,
+                               void * /*data*/, size_t /*data_size*/) const override
+    {
+      return 0;
+    }
+
+    int64_t get_field_internal(const Ioss::Blob * /*sb*/, const Ioss::Field & /*field*/,
+                               void * /*data*/, size_t /*data_size*/) const override
+    {
+      return 0;
+    }
 
     int64_t put_field_internal(const Ioss::Region *reg, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
@@ -183,16 +196,28 @@ namespace Iogs {
                                size_t data_size) const override;
     int64_t put_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
-    int64_t put_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field,
-                               void *data, size_t data_size) const override
+    int64_t put_field_internal(const Ioss::StructuredBlock * /* sb */,
+                               const Ioss::Field & /* field */, void * /* data */,
+                               size_t /* data_size */) const override
     {
       return -1;
+    }
+    int64_t put_field_internal(const Ioss::Assembly* /*sb*/, const Ioss::Field & /*field*/,
+                               void * /*data*/, size_t /*data_size*/) const override
+    {
+      return 0;
+    }
+
+    int64_t put_field_internal(const Ioss::Blob * /*sb*/, const Ioss::Field & /*field*/,
+                               void * /*data*/, size_t /*data_size*/) const override
+    {
+      return 0;
     }
 
     void add_transient_fields(Ioss::GroupingEntity *entity);
 
     GeneratedMesh *          m_generatedMesh{nullptr};
-    std::vector<std::string> m_sideset_names;
+    std::vector<std::string> m_sideset_names{};
 
     double currentTime{0.0};
     int    spatialDimension{3};

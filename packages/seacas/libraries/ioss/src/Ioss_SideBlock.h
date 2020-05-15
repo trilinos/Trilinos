@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -37,10 +37,11 @@
 #include <Ioss_EntityBlock.h> // for EntityBlock
 #include <Ioss_EntityType.h>  // for EntityType, etc
 #include <Ioss_Property.h>    // for Property
-#include <cstddef>            // for size_t
-#include <cstdint>            // for int64_t
-#include <string>             // for string
-#include <vector>             // for vector
+#include <Ioss_SideSet.h>
+#include <cstddef> // for size_t
+#include <cstdint> // for int64_t
+#include <string>  // for string
+#include <vector>  // for vector
 namespace Ioss {
   class DatabaseIO;
 } // namespace Ioss
@@ -49,9 +50,6 @@ namespace Ioss {
 } // namespace Ioss
 namespace Ioss {
   class Field;
-} // namespace Ioss
-namespace Ioss {
-  class SideSet;
 } // namespace Ioss
 
 namespace Ioss {
@@ -66,11 +64,15 @@ namespace Ioss {
     SideBlock(DatabaseIO *io_database, const std::string &my_name, const std::string &side_type,
               const std::string &element_type, size_t side_count);
 
+    SideBlock(const SideBlock &other);
+
     std::string type_string() const override { return "SideBlock"; }
     std::string short_type_string() const override { return "sideblock"; }
+    std::string contains_string() const override { return "Element/Side pair"; }
     EntityType  type() const override { return SIDEBLOCK; }
 
-    const SideSet *owner() const { return owner_; }
+    const SideSet *             owner() const { return owner_; }
+    const Ioss::GroupingEntity *contained_in() const override { return owner_; }
 
     void block_membership(std::vector<std::string> &block_members) override;
 
@@ -113,14 +115,14 @@ namespace Ioss {
                                     size_t data_size) const override;
 
   private:
-    const SideSet *    owner_;
-    ElementTopology *  parentTopology_; // Topology of parent element (if any)
-    const EntityBlock *parentBlock_;
+    const SideSet *    owner_{nullptr};
+    ElementTopology *  parentTopology_{nullptr}; // Topology of parent element (if any)
+    const EntityBlock *parentBlock_{nullptr};
 
     // Pointer to the SideSet (if any) that contains this side block.
-    std::vector<std::string> blockMembership; // What element blocks do the
-                                              // elements in this sideset belong to.
-    mutable int consistentSideNumber;
+    std::vector<std::string> blockMembership{}; // What element blocks do the
+                                                // elements in this sideset belong to.
+    mutable int consistentSideNumber{-1};
   };
 } // namespace Ioss
 #endif

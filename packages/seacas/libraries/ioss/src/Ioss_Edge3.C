@@ -40,6 +40,7 @@
 //------------------------------------------------------------------------
 // Define a variable type for storage of this elements connectivity
 namespace Ioss {
+  const char *Edge3::name = "edge3";
   class St_Edge3 : public ElementVariableType
   {
   public:
@@ -101,7 +102,7 @@ int Ioss::Edge3::number_edges_face(int face) const
   return Constants::nfaceedge;
 }
 
-Ioss::IntVector Ioss::Edge3::edge_connectivity(int edge_number) const
+Ioss::IntVector Ioss::Edge3::edge_connectivity(int /* edge_number */) const
 {
   Ioss::IntVector connectivity;
   return connectivity;

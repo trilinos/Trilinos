@@ -50,9 +50,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_WARN, etc
-#include "netcdf.h"       // for NC_NOERR, nc_def_var, etc
-#include <inttypes.h>     // for PRId64
-#include <stdio.h>
 
 /*!
  * defines the number of attributes.
@@ -81,14 +78,14 @@ int ex_put_attr_param(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, i
 #endif
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid, __func__);
+  ex__check_valid_file_id(exoid, __func__);
 
   /* Determine index of obj_id in obj_type id array */
   if (obj_type == EX_NODAL) {
     obj_id_ndx = 0;
   }
   else {
-    obj_id_ndx = ex_id_lkup(exoid, obj_type, obj_id);
+    obj_id_ndx = ex__id_lkup(exoid, obj_type, obj_id);
     if (obj_id_ndx <= 0) {
       ex_get_err(NULL, NULL, &status);
 
@@ -204,7 +201,7 @@ int ex_put_attr_param(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, i
     ex_err_fn(exoid, __func__, errmsg, status);
     goto error_ret; /* exit define mode and return */
   }
-  ex_compress_variable(exoid, varid, 2);
+  ex__compress_variable(exoid, varid, 2);
 
   /* inquire previously defined dimensions  */
   if ((status = nc_inq_dimid(exoid, DIM_STR_NAME, &strdim)) != NC_NOERR) {
@@ -229,12 +226,7 @@ int ex_put_attr_param(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, i
 #endif
 
   /* leave define mode  */
-  if ((status = nc_enddef(exoid)) != NC_NOERR) {
-    snprintf(errmsg, MAX_ERR_LENGTH,
-             "ERROR: failed to complete %s attribute parameter "
-             "definition in file id %d",
-             ex_name_of_object(obj_type), exoid);
-    ex_err_fn(exoid, __func__, errmsg, status);
+  if ((status = ex__leavedef(exoid, __func__)) != NC_NOERR) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -242,9 +234,6 @@ int ex_put_attr_param(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, i
 
 /* Fatal error: exit definition mode and return */
 error_ret:
-  if ((status = nc_enddef(exoid)) != NC_NOERR) { /* exit define mode */
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", exoid);
-    ex_err_fn(exoid, __func__, errmsg, status);
-  }
+  ex__leavedef(exoid, __func__);
   EX_FUNC_LEAVE(EX_FATAL);
 }

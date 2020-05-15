@@ -62,22 +62,22 @@ namespace Intrepid2 {
     try {                                                               \
       S ;                                                               \
     }                                                                   \
-    catch (std::logic_error err) {                                      \
+    catch (std::logic_error &err) {                                      \
       *outStream << "Expected Error ----------------------------------------------------------------\n"; \
       *outStream << err.what() << '\n';                                 \
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     };                                                                  
 
-    template<typename outputViewType,
+    template<typename OutputViewType,
              typename inputViewType,
              typename worksetViewType>
     struct F_mapToPhysicalFrame {
-      outputViewType _output;
+      OutputViewType _output;
       inputViewType _input;
       worksetViewType _workset;
 
       KOKKOS_INLINE_FUNCTION
-      F_mapToPhysicalFrame(outputViewType output_,
+      F_mapToPhysicalFrame(OutputViewType output_,
                            inputViewType input_,
                            worksetViewType workset_) 
         : _output(output_), 
@@ -102,17 +102,17 @@ namespace Intrepid2 {
       }
     };
 
-    template<typename outputViewType,
+    template<typename OutputViewType,
              typename inputViewType,
              typename worksetViewType>      
     struct F_mapToReferenceFrame {
-      outputViewType _output;
+      OutputViewType _output;
       inputViewType _input;
       worksetViewType _workset;
 
 
       KOKKOS_INLINE_FUNCTION
-      F_mapToReferenceFrame(outputViewType output_,
+      F_mapToReferenceFrame(OutputViewType output_,
                             inputViewType input_,
                             worksetViewType workset_) 
         : _output(output_), 
@@ -352,7 +352,7 @@ namespace Intrepid2 {
 
           
         }
-      } catch (std::logic_error err) {
+      } catch (std::logic_error &err) {
         //============================================================================================//
         // Wrap up test: check if the test broke down unexpectedly due to an exception                //
         //============================================================================================//

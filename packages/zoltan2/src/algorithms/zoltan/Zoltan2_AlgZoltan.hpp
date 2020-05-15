@@ -138,7 +138,7 @@ private:
   }
 
   void setCallbacksGraph(
-    const RCP<const GraphAdapter<user_t,userCoord_t> > &adp)
+    const RCP<const GraphAdapter<user_t,userCoord_t> > &/* adp */)
   {
     // std::cout << "NotReadyForGraphCallbacksYet" << std::endl;
     // TODO

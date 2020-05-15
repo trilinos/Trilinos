@@ -55,6 +55,7 @@ namespace Ioex {
 
     std::string      type_string() const override { return "SuperElement"; }
     std::string      short_type_string() const override { return "superelement"; }
+    std::string      contains_string() const override { return "Element"; }
     Ioss::EntityType type() const override { return Ioss::SUPERELEMENT; }
 
     // Handle implicit properties -- These are calcuated from data stored

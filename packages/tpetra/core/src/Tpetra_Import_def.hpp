@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
@@ -101,7 +99,7 @@ namespace Tpetra {
   void
   Import<LocalOrdinal,GlobalOrdinal,Node>::
   init (const Teuchos::RCP<const map_type>& source,
-        const Teuchos::RCP<const map_type>& target,
+        const Teuchos::RCP<const map_type>& /* target */,
         bool useRemotePIDs,
         Teuchos::Array<int> & remotePIDs,
         const Teuchos::RCP<Teuchos::ParameterList>& plist)
@@ -112,7 +110,6 @@ namespace Tpetra {
     using Teuchos::Ptr;
     using Teuchos::rcp;
     using std::endl;
-    using data_type = ImportExportData<LocalOrdinal,GlobalOrdinal,Node>;
     ProfilingRegion regionImportInit ("Tpetra::Import::init");
 
     std::unique_ptr<std::string> verbPrefix;
@@ -133,6 +130,8 @@ namespace Tpetra {
     if(!plist.is_null())
       label = plist->get("Timer Label",label);
     std::string prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:preIData: ");
+#else
+    (void)plist;
 #endif
     {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -295,10 +294,6 @@ namespace Tpetra {
 
     ArrayView<const GO> sourceGIDs = source->getNodeElementList ();
     ArrayView<const GO> targetGIDs = target->getNodeElementList ();
-    const size_type numSrcGids = sourceGIDs.size ();
-    const size_type numTgtGids = targetGIDs.size ();
-    const size_type numGids = std::min (numSrcGids, numTgtGids);
-    const LO LINVALID = Teuchos::OrdinalTraits<LO>::invalid ();
 
     Array<GO> tRemoteGIDs;
     if (this->verbose ()) {
@@ -361,6 +356,9 @@ namespace Tpetra {
         Array<LO>  newRemoteLIDs(indexIntoRemotePIDs-cnt);
         Array<int> newRemotePIDs(indexIntoRemotePIDs-cnt);
         cnt = 0;
+
+        Kokkos::fence(); // target->getLocalElement is UVM access
+
         for (size_type j = 0; j < indexIntoRemotePIDs; ++j)
           if(tRemotePIDs[j] != -1) {
             newRemoteGIDs[cnt] = tRemoteGIDs[j];
@@ -908,6 +906,9 @@ namespace Tpetra {
 
       typename decltype (this->TransferData_->exportLIDs_)::t_host
         exportLIDs (view_alloc_no_init ("exportLIDs"), numExportIDs);
+
+      Kokkos::fence(); // sourceMap->getLocalElement is UVm access
+
       for (size_type k = 0; k < numExportIDs; ++k) {
         exportLIDs[k] = sourceMap->getLocalElement (exportGIDs[k]);
       }
@@ -1009,6 +1010,9 @@ namespace Tpetra {
     const LO LINVALID = Teuchos::OrdinalTraits<LO>::invalid ();
     const LO numTgtLids = as<LO> (numTgtGids);
     LO numPermutes = 0;
+
+    Kokkos::fence(); // source.getLocalElement is UVM access
+
     for (LO tgtLid = numSameGids; tgtLid < numTgtLids; ++tgtLid) {
       const GO curTargetGid = rawTgtGids[tgtLid];
       // getLocalElement() returns LINVALID if the GID isn't in the
@@ -1084,11 +1088,10 @@ namespace Tpetra {
     using Teuchos::Array;
     using Teuchos::ArrayView;
     using std::endl;
-    using LO = LocalOrdinal;
     using GO = GlobalOrdinal;
     typedef typename Array<int>::difference_type size_type;
     const char tfecfFuncName[] = "setupExport: ";
-    const char suffix[ ] = "  Please report this bug to the Tpetra developers.";
+    const char suffix[] = "  Please report this bug to the Tpetra developers.";
 
     std::unique_ptr<std::string> prefix;
     if (this->verbose ()) {
@@ -1206,7 +1209,7 @@ namespace Tpetra {
         // Pack and resize remoteProcIDs, remoteGIDs, and remoteLIDs_.
         size_type numValidRemote = 0;
 #ifdef HAVE_TPETRA_DEBUG
-        ArrayView<GlobalOrdinal> remoteGIDsPtr = remoteGIDsView;
+        ArrayView<GO> remoteGIDsPtr = remoteGIDsView;
 #else
         GO* const remoteGIDsPtr = remoteGIDsView.getRawPtr ();
 #endif // HAVE_TPETRA_DEBUG
@@ -1287,8 +1290,7 @@ namespace Tpetra {
     // elements which it needs to send.
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     prefix2 = std::string("Tpetra ")+ label + std::string(":iport_ctor:setupExport:4 ");
-    MM.release();
-    MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix2)));
+    MM = Teuchos::null; MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix2)));
 #endif
 
     // NOTE (mfh 03 Mar 2014) This is now a candidate for a
@@ -1299,6 +1301,9 @@ namespace Tpetra {
       typename decltype (this->TransferData_->exportLIDs_)::t_host
         exportLIDs (view_alloc_no_init ("exportLIDs"), numExportIDs);
       ArrayView<const GO> expGIDs = exportGIDs ();
+
+      Kokkos::fence(); // source.getLocalElement is UVM access
+
       for (size_type k = 0; k < numExportIDs; ++k) {
         exportLIDs[k] = source.getLocalElement (expGIDs[k]);
       }
@@ -1537,6 +1542,9 @@ namespace Tpetra {
     // Convert the permute GIDs to permute-from LIDs in the source Map.
     Array<LO> permuteToLIDsUnion(numPermuteIDsUnion);
     Array<LO> permuteFromLIDsUnion(numPermuteIDsUnion);
+
+    Kokkos::fence(); // srcMap->getLocalElement is UVM access
+
     for (size_type k = 0; k < numPermuteIDsUnion; ++k) {
       size_type idx = numSameIDsUnion + k;
       permuteToLIDsUnion[k] = static_cast<LO>(idx);
@@ -1744,35 +1752,175 @@ namespace Tpetra {
     return unionImport;
   }
 
-
-
-
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
   Import<LocalOrdinal,GlobalOrdinal,Node>::
   createRemoteOnlyImport (const Teuchos::RCP<const map_type>& remoteTarget) const
   {
+    using ::Tpetra::Details::Behavior;
+    using ::Tpetra::Details::gathervPrint;
+    using Teuchos::outArg;
     using Teuchos::rcp;
-    using import_type = Import<LocalOrdinal,GlobalOrdinal,Node>;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::reduceAll;
+    using std::endl;
     using LO = LocalOrdinal;
+    using GO = GlobalOrdinal;
+    using import_type = Import<LocalOrdinal,GlobalOrdinal,Node>;
+
+    const char funcPrefix[] = "Tpetra::createRemoteOnlyImport: ";
+    int lclSuccess = 1;
+    int gblSuccess = 1;
+    const bool debug = Behavior::debug ();
 
     const size_t NumRemotes = this->getNumRemoteIDs ();
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      NumRemotes != remoteTarget->getNodeNumElements (),
-      std::runtime_error, "Tpetra::createRemoteOnlyImport: "
-      "remoteTarget map ID count doesn't match.");
+    std::unique_ptr<std::string> procPrefix;
+    Teuchos::RCP<const Teuchos::Comm<int>> comm;
+    if (debug) {
+      comm = remoteTarget.is_null () ? Teuchos::null :
+        remoteTarget->getComm ();
+      std::ostringstream os;
+      os << "Proc ";
+      if (comm.is_null ()) {
+        os << "?";
+      }
+      else {
+        os << comm->getRank ();
+      }
+      os << ": ";
+      procPrefix = std::unique_ptr<std::string> (new std::string (os.str ()));
+    }
+
+    if (debug) {
+      std::ostringstream lclErr;
+      if (remoteTarget.is_null ()) {
+        lclSuccess = -1;
+      }
+      else if (NumRemotes != remoteTarget->getNodeNumElements ()) {
+        lclSuccess = 0;
+        lclErr << *procPrefix << "getNumRemoteIDs() = " << NumRemotes
+               << " != remoteTarget->getNodeNumElements() = "
+               << remoteTarget->getNodeNumElements () << "." << endl;
+      }
+
+      if (comm.is_null ()) {
+        lclSuccess = gblSuccess;
+      }
+      else {
+        reduceAll (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (gblSuccess == -1, std::invalid_argument, funcPrefix
+         << "Input target Map is null on at least one process.");
+
+      if (gblSuccess != 1) {
+        if (comm.is_null ()) {
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (true, std::runtime_error, lclErr.str ());
+        }
+        else {
+          std::ostringstream gblErr;
+          gblErr << funcPrefix << endl;
+          gathervPrint (gblErr, lclErr.str (), *comm);
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (true, std::runtime_error, gblErr.str ());
+        }
+      }
+    }
 
     // Compute the new Remote LIDs
     Teuchos::ArrayView<const LO> oldRemoteLIDs = this->getRemoteLIDs ();
     Teuchos::Array<LO> newRemoteLIDs (NumRemotes);
     const map_type& tgtMap = * (this->getTargetMap ());
+    size_t badCount = 0;
+
+    std::unique_ptr<std::vector<size_t>> badIndices;
+    if (debug) {
+      badIndices = std::unique_ptr<std::vector<size_t>> (new std::vector<size_t>);
+    }
+
+    Kokkos::fence(); // remoteTarget->getLocalElement is UVM access
+
     for (size_t i = 0; i < NumRemotes; ++i) {
-      newRemoteLIDs[i] = remoteTarget->getLocalElement (tgtMap.getGlobalElement (oldRemoteLIDs[i]));
+      const LO oldLclInd = oldRemoteLIDs[i];
+      if (oldLclInd == Teuchos::OrdinalTraits<LO>::invalid ()) {
+        ++badCount;
+        if (debug) { badIndices->push_back (i); }
+        continue;
+      }
+      const GO gblInd = tgtMap.getGlobalElement (oldLclInd);
+      if (gblInd == Teuchos::OrdinalTraits<GO>::invalid ()) {
+        ++badCount;
+        if (debug) { badIndices->push_back (i); }
+        continue;
+      }
+      const LO newLclInd = remoteTarget->getLocalElement (gblInd);
+      if (newLclInd == Teuchos::OrdinalTraits<LO>::invalid ()) {
+        ++badCount;
+        if (debug) { badIndices->push_back (i); }
+        continue;
+      }
+      newRemoteLIDs[i] = newLclInd;
       // Now we make sure these guys are in sorted order (AztecOO-ML ordering)
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        i > 0 && newRemoteLIDs[i] < newRemoteLIDs[i-1],
-        std::runtime_error, "Tpetra::createRemoteOnlyImport: "
-        "this and remoteTarget order don't match.");
+      if (i > 0 && newRemoteLIDs[i] < newRemoteLIDs[i-1]) {
+        ++badCount;
+        if (debug) { badIndices->push_back (i); }
+      }
+    }
+
+    if (badCount != 0) {
+      lclSuccess = 0;
+    }
+
+    if (debug) {
+      if (comm.is_null ()) {
+        lclSuccess = gblSuccess;
+      }
+      else {
+        reduceAll (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+      }
+      std::ostringstream lclErr;
+      if (lclSuccess != 1) {
+        lclErr << *procPrefix << "Count of bad indices: " << badCount
+               << ", bad indices: [";
+        // TODO (mfh 04 Sep 2019) Limit the maximum number of bad
+        // indices to print.
+        for (size_t k = 0; k < badCount; ++k) {
+          const size_t badIndex = (*badIndices)[k];
+          lclErr << "(" << badIndex << ","
+                 << oldRemoteLIDs[badIndex] << ")";
+          if (k + size_t (1) < badCount) {
+            lclErr << ", ";
+          }
+        }
+        lclErr << "]" << endl;
+      }
+
+      if (gblSuccess != 1) {
+        std::ostringstream gblErr;
+        gblErr << funcPrefix << "this->getRemoteLIDs() has \"bad\" "
+          "indices on one or more processes.  \"Bad\" means that the "
+          "indices are invalid, they don't exist in the target Map, "
+          "they don't exist in remoteTarget, or they are not in "
+          "sorted order.  In what follows, I will show the \"bad\" "
+          "indices as (k, LID) pairs, where k is the zero-based "
+          "index of the LID in this->getRemoteLIDs()." << endl;
+        if (comm.is_null ()) {
+          gblErr << lclErr.str ();
+        }
+        else {
+          gathervPrint (gblErr, lclErr.str (), *comm);
+        }
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (true, std::runtime_error, gblErr.str ());
+      }
+    }
+    else { // not debug
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (lclSuccess == 0, std::runtime_error, funcPrefix
+         << "this->getRemoteLIDs() has " << badCount
+         << "ind" << (badCount == 1 ? "ex" : "ices")
+         << " \"bad\" indices on this process." << endl);
     }
 
     // Copy ExportPIDs and such

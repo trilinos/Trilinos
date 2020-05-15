@@ -11,20 +11,23 @@
 
 using namespace Tacho;
 
-typedef Kokkos::View<ValueType*,HostSpaceType> value_type_array_host;
-//typedef Kokkos::View<ValueType*,DeviceSpaceType> value_type_array_device;
+typedef Kokkos::View<ValueType*,HostDeviceType> value_type_array_host;
+//typedef Kokkos::View<ValueType*,DeviceType> value_type_array_device;
 
-typedef DenseMatrixView<ValueType,HostSpaceType> DenseMatrixViewHostType;
-//typedef DenseMatrixView<ValueType,DeviceSpaceType> DenseMatrixViewDeviceType;
+typedef TaskSchedulerType<typename HostDeviceType::execution_space> host_scheduler_type;
+typedef TaskSchedulerType<typename DeviceType::execution_space> scheduler_type;
 
-typedef DenseMatrixView<DenseMatrixViewHostType,HostSpaceType> DenseMatrixOfBlocksHostType;
-//typedef DenseMatrixView<DenseMatrixViewHostType,DeviceSpaceType> DenseMatrixOfBlocksDeviceType;
+typedef DenseMatrixView<ValueType,host_scheduler_type> DenseMatrixViewHostType;
+//typedef DenseMatrixView<ValueType,scheduler_type> DenseMatrixViewDeviceType;
+
+typedef DenseMatrixView<DenseMatrixViewHostType,host_scheduler_type> DenseMatrixOfBlocksHostType;
+//typedef DenseMatrixView<DenseMatrixViewHostType,scheduler_type> DenseMatrixOfBlocksDeviceType;
 
 TEST( DenseMatrixView, flat ) {
   TEST_BEGIN;
   const ordinal_type m = 10, n = 10;
 
-  Kokkos::View<ValueType*,HostSpaceType> a("a", m*n);
+  Kokkos::View<ValueType*,HostDeviceType> a("a", m*n);
   DenseMatrixViewHostType A;
 
   A.set_view(0, m,
@@ -49,7 +52,7 @@ TEST( DenseMatrixView, hier ) {
   TEST_BEGIN;
   const ordinal_type m = 5, n = 5, mb = 3;
 
-  Kokkos::View<ValueType*,HostSpaceType> a("a", m*n), a1("a1", m*n);
+  Kokkos::View<ValueType*,HostDeviceType> a("a", m*n), a1("a1", m*n);
   DenseMatrixViewHostType A;
 
   A.set_view(0, m,
@@ -66,7 +69,7 @@ TEST( DenseMatrixView, hier ) {
 
   const ordinal_type bm = (m/mb) + (m%mb>0), bn = (n/mb) + (n%mb>0);
 
-  Kokkos::View<DenseMatrixViewHostType*,HostSpaceType> hbuf("hbuf", bm*bn);  
+  Kokkos::View<DenseMatrixViewHostType*,HostDeviceType> hbuf("hbuf", bm*bn);  
   DenseMatrixOfBlocksHostType H;
 
   H.set_view(0, bm,
@@ -94,7 +97,7 @@ TEST( DenseMatrixView, memorypool ) {
   TEST_BEGIN;
   const ordinal_type m = 5, n = 5, mb = 3;
 
-  Kokkos::View<ValueType*,HostSpaceType> a("a", m*n), a1("a1", m*n);
+  Kokkos::View<ValueType*,HostDeviceType> a("a", m*n), a1("a1", m*n);
   DenseMatrixViewHostType A;
 
   A.set_view(0, m,
@@ -111,7 +114,7 @@ TEST( DenseMatrixView, memorypool ) {
 
   const ordinal_type bm = (m/mb) + (m%mb>0), bn = (n/mb) + (n%mb>0);
 
-  Kokkos::View<DenseMatrixViewHostType*,HostSpaceType> hbuf("hbuf", bm*bn);  
+  Kokkos::View<DenseMatrixViewHostType*,HostDeviceType> hbuf("hbuf", bm*bn);  
   DenseMatrixOfBlocksHostType H;
 
   H.set_view(0, bm,
@@ -121,7 +124,7 @@ TEST( DenseMatrixView, memorypool ) {
 
   setMatrixOfBlocks(H, m, n, mb);
 
-  Kokkos::MemoryPool<HostSpaceType> pool(typename HostSpaceType::memory_space(),
+  Kokkos::MemoryPool<HostDeviceType> pool(typename HostDeviceType::memory_space(),
                                          1024*sizeof(ValueType),
                                          1*sizeof(ValueType),
                                          1024*sizeof(ValueType),

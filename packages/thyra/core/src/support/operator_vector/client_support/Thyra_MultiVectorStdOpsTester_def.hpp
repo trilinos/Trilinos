@@ -66,14 +66,13 @@ template <class Scalar>
 bool MultiVectorStdOpsTester<Scalar>::checkStdOps(
   const VectorSpaceBase<Scalar>    &vecSpc
   ,std::ostream                    *out
-  ,const bool                      &dumpAll
+  ,const bool                      &/* dumpAll */
   )
 {
   using Teuchos::as;
   using Teuchos::ptr;
   using Teuchos::tuple;
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  typedef typename ST::magnitudeType ScalarMag;
+  using ST = Teuchos::ScalarTraits<Scalar>;
 
   if(out)
     *out << "\n*** Entering MultiVectorStdOpsTester<"<<ST::name()<<">::checkStdOps(...) ...\n"

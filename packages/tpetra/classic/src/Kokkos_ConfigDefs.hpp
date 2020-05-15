@@ -44,18 +44,5 @@
 
 #include "TpetraClassic_config.h"
 
-namespace Kokkos {
-  namespace Compat {
-    /// \struct NodeDevice
-    /// \tparam Node Kokkos (Classic) Node type
-    /// \brief Determine KokkosCore device type from KokkosClassic node type.
-    ///
-    /// \warning This struct is DEPRECATED and will be removed soon.
-    template <typename Node>
-    struct TPETRA_DEPRECATED NodeDevice {
-      typedef typename Node::device_type device_type;
-    };
-  }
-}
 
 #endif /* KOKKOS_CONFIGDEFS_HPP */

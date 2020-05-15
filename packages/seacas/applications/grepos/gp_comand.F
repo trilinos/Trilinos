@@ -1,23 +1,23 @@
 C Copyright(C) 2011-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C * Redistributions of source code must retain the above copyright
 C    notice, this list of conditions and the following disclaimer.
-C           
+C
 C * Redistributions in binary form must reproduce the above
 C   copyright notice, this list of conditions and the following
 C   disclaimer in the documentation and/or other materials provided
 C   with the distribution.
-C                         
+C
 C * Neither the name of NTESS nor the names of its
 C   contributors may be used to endorse or promote products derived
 C   from this software without specific prior written permission.
-C                                                 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -32,26 +32,26 @@ C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 C     -*- Mode: fortran -*-
 C=======================================================================
-      SUBROUTINE COMAND (NDBIN, EXECUT, 
+      SUBROUTINE COMAND (NDBIN, EXECUT,
      &  IDELB, NUMELB, NUMLNK, NUMATR,
      &  IDNPS, NNNPS, NDNPS, IXNNPS, IXDNPS,
      $  LTNNPS, FACNPS,
      &  IDESS, NEESS, NNESS, IXEESS, IXNESS,
      $  LTEESS, LTSESS, FACESS,
      &  XN, YN, ZN, XEXPL, YEXPL, ZEXPL, MODBLK,
-     *  ISATRB, ATRSCL, IEQUIV, MAPNOD, MAPEL, 
+     *  ISATRB, ATRSCL, IEQUIV, MAPNOD, MAPEL,
      $  IELBST, INPSST, IESSST,
      *  NQAREC, QAREC, NINFO, INFREC, BLKTYP,
      *  ebname, nsname, ssname, atname,
      *  namegv, nvargl, namenv, nvarnp, nameev, nvarel,
-     *  namemv, nvarns, namesv, nvarss, INOD2EL, 
-     *  SWPSS, SMOOTH, USRSUB, CENTRD, 
+     *  namemv, nvarns, namesv, nvarss, INOD2EL,
+     *  SWPSS, SMOOTH, USRSUB, CENTRD,
      &  NSTEPS, TIMES, ITIMST, A, IA, *)
 #if defined(__INTEL_COMPILER) && (__INTEL_COMPILER == 1300)
 cDEC$ OPTIMIZE:2
 #endif
 C=======================================================================
-      
+
 C     --*** COMAND *** (GREPOS) Input and process commands
 C     --   Written by Amy Gilkey - revised 05/09/88
 C     --   Modified by Greg Sjaardema - 02/06/89
@@ -76,9 +76,9 @@ C     --   Sets DOTRAN, NNREPL, NEREPL, DIM3, NRTRAN, D3TRAN, ZGRAD,
 C     --      CENTER, NUMCOL of /PARAMS/
 C     --   Sets XOFFS, YOFFS, ZOFFS of /XYZOFF/
 C     --   Sets ROT3D, ROTMAT, ROTCEN of /XYZROT/
-      
+
       PARAMETER (MAXFLD = 64)
-      
+
       include 'gp_params.blk'
       include 'gp_namlen.blk'
       include 'gp_dbnums.blk'
@@ -96,7 +96,7 @@ C     --   Sets ROT3D, ROTMAT, ROTCEN of /XYZROT/
       include 'gp_deform.blk'
       include 'gp_combine.blk'
       include 'gp_attrot.blk'
-      
+
       INTEGER IDELB(*)
       INTEGER NUMELB(*)
       INTEGER NUMLNK(*)
@@ -105,7 +105,7 @@ C     --   Sets ROT3D, ROTMAT, ROTCEN of /XYZROT/
       INTEGER IEQUIV(*), MAPNOD(*), MAPEL(*)
 
       logical glonod, absolute
-      
+
       INTEGER IDNPS(*), NNNPS(*), NDNPS(*), IXNNPS(*),
      $  IXDNPS(*), LTNNPS(*)
       REAL    FACNPS(*)
@@ -120,16 +120,16 @@ C     --   Sets ROT3D, ROTMAT, ROTCEN of /XYZROT/
       REAL ATRSCL(2,*)
       REAL A(*)
       INTEGER IA(*)
-      
+
       LOGICAL FFEXST, MATSTR, HELP
-      
+
       CHARACTER*(128) STRING
       CHARACTER*(mxlnln) INFREC(*)
       CHARACTER*(mxstln) QAREC(4,*)
       CHARACTER*(mxstln) BLKTYP(*)
       character*(maxnam) ebname(*), nsname(*), ssname(*),
      *  namenv(*), nameev(*), namemv(*), namegv(*), namesv(*), ATNAME(*)
-      
+
       INTEGER INOD2EL(*)
       CHARACTER*(256) CTEMP
       CHARACTER*8  STRA
@@ -144,7 +144,7 @@ C     --   Sets ROT3D, ROTMAT, ROTCEN of /XYZROT/
       LOGICAL      DOALLA, DOALLB, ISATRB, ATRWRN
 
       INTEGER      IRNG(3)
-      
+
       REAL RNUM(9)
       CHARACTER*20 RSTR(9)
 
@@ -152,10 +152,10 @@ C     --   Sets ROT3D, ROTMAT, ROTCEN of /XYZROT/
       SAVE FIRST
 
       CHARACTER*(mxstln) MYNAME
-      CHARACTER*(mxstln) CMDTBL(39), LISTBL(14)
+      CHARACTER*(mxstln) CMDTBL(41), LISTBL(15)
       SAVE CMDTBL, LISTBL
 C     --CMDTBL - the valid commands table
-      
+
 C     --Command table follows.  Remember to change the dimensioned size when
 C     --changing the table.
       DATA CMDTBL /
@@ -167,19 +167,20 @@ C     --changing the table.
      6  'SMOOTH  ',  'SWAP    ', 'USERSUBROUTINE', 'SNAP    ',
      7  'MOVE    ',  'WARP    ', 'EXECUTE ', 'COMBINE ', 'CENTROIDS',
      8  'UNDELETE',  'KEEP    ', 'EQUIVALENCE', 'DEFORM  ',
-     9  'ELEMENTIZE','ROTATE  ', 'MERGE   ', '        ' /
-      
+     9  'ELEMENTIZE','ROTATE  ', 'MERGE   ', 'TMIN    ', 'TMAX     ',
+     $  '        ' /
+
       DATA LISTBL /
      *  'SSETS   ', 'SIDESETS', 'NSETS   ', 'NODESETS', 'VARS    ',
      *  'VARIABLE', 'BLOCKS  ', 'MATERIAL', 'COMMANDS', 'INFORMATION',
-     *  'QA      ', 'TIMES   ', 'NAMES   ', '        '/
-      
+     *  'QA      ', 'TIMES   ', 'STEPS   ', 'NAMES   ', '        '/
+
       DATA MYNAME /'GREPOS'/
       DATA FIRST  /.TRUE./
 C     --Initialize
-      
+
       EXECUT = .FALSE.
-      
+
       LNAM = LENSTR(MYNAME)
       MBLK = MAX(NELBLK, NUMNPS)
       CALL INIREA ( MBLK, 0.0, XEXPL)
@@ -187,9 +188,9 @@ C     --Initialize
       IF (NDIM .EQ. 3) THEN
         CALL INIREA ( MBLK, 0.0, ZEXPL)
       END IF
-      
+
       CALL INIINT(NVARNP, 0, INOD2EL)
-      
+
 C...Initialize attribute rotation
       REVATT = .FALSE.
       ROTALL = .FALSE.
@@ -206,7 +207,7 @@ C...Initialize attribute scaling
       ATRWRN = .FALSE.
       CALL SCLATR(NELBLK, IDELB, NUMATR, 0, .TRUE., 0, .TRUE., 1.0,
      *  ATRSCL, .FALSE., .TRUE.)
-      
+
       if (FIRST) then
 C... Initialization code that should only be executed once
 
@@ -252,11 +253,11 @@ C...Initialize transformation variables
       XRAND = 0.0
       YRAND = 0.0
       ZRAND = 0.0
-      
+
       IWARP = 0
       MODBLK = 0
       IDEFST = 0
-      
+
       SPLOFF = .FALSE.
       SWPSS  = .FALSE.
       SMOOTH = .FALSE.
@@ -279,38 +280,38 @@ C...Initialize transformation variables
       ELSE
         ROTCEN(3) = 0.0
       END IF
-      
+
 C ... Initialize SNAP variables
       numsnp = 0
-      
+
  110  CONTINUE
-      
+
 C     --Read command line
-      
+
       WRITE (*, *)
       CALL FREFLD (0, 0, 'GREPOS> ', MAXFLD,
      &  IOSTAT, NUMFLD, INTYP, CFIELD, IFIELD, RFIELD)
       IF (IOSTAT .LT. 0) GOTO 430
       IF (NUMFLD .EQ. 0) GOTO 110
       INTYP(MIN(MAXFLD,NUMFLD)+1) = -999
-      
+
       IFLD = 1
       CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
       CALL ABRSTR (VERB, WORD, CMDTBL)
       IF (VERB .EQ. ' ') VERB = WORD
-      
+
 C     --Perform command
-      
+
       IF (VERB .EQ. '?') THEN
         CALL SHOCMD ('COMMANDS', CMDTBL)
         VERB = ' '
 C=======================================================================
       ELSE IF (VERB .EQ. 'OFFSET' .OR. VERB .EQ. 'SHIFT') THEN
-        
+
 C     ... Originally offset just asked for NDIM values.  It was changed
 C     to go by axis type (OFFSET Y 1.0). We do maintain compatibility
 C     and check for both types of input.
-        
+
         RMULT = 0.0
         IF ((INTYP(IFLD) .EQ. 0) .OR. ((CFIELD(IFLD) .GE. 'A')
      &    .AND. (CFIELD(IFLD) .LE. 'Z'))) THEN
@@ -369,7 +370,7 @@ C     ... Set for cumulative offsets/shifts
      &      'Z coordinate offset', ZOFFS, ZOFFS, *130)
         END IF
  130    CONTINUE
-        
+
 C=======================================================================
       ELSE IF (VERB .EQ. 'ADJUST') THEN
 C...  ADJUST {CENTER|MINIMUM|MAXIMUM} {X|Y|Z} adjustment
@@ -445,10 +446,10 @@ C
         END IF
  150    CONTINUE
         VERB = 'OFFSET'
-        
+
 C=======================================================================
       ELSE IF (VERB .EQ. 'LIMITS') THEN
-        call limits('Input Mesh Limits:', ndim, 
+        call limits('Input Mesh Limits:', ndim,
      &    xmin, xmax, ymin, ymax, zmin, zmax)
         VERB = ' '
 C=======================================================================
@@ -474,7 +475,7 @@ C=======================================================================
  170    CONTINUE
         MODBLK = 1
         VERB = ' '
-        
+
 C=======================================================================
       ELSE IF (VERB .EQ. 'ZERO') THEN
  180    CONTINUE
@@ -505,15 +506,15 @@ C=======================================================================
           END IF
           GOTO 180
         END IF
-        
+
  190    CONTINUE
-        
+
 C=======================================================================
       ELSE IF (VERB .EQ. 'SCALE') THEN
  200    CONTINUE
         IF (FFEXST (IFLD, INTYP)) THEN
           CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
-          
+
           IF (.NOT. MATSTR(WORD, 'ATTRIBUTE', 2) .AND.
      *      ISATRB .AND. .NOT. ATRWRN) THEN
             CALL PRTERR ('WARNING',
@@ -521,29 +522,29 @@ C=======================================================================
      *        'may also need scaling.')
             ATRWRN = .TRUE.
           END IF
-          
+
           IF (MATSTR (WORD, 'RESET', 1)) THEN
             XSCAL = 1.0
             YSCAL = 1.0
             ZSCAL = 1.0
-            
+
           ELSE IF (MATSTR (WORD, 'ALL', 2)) THEN
             CALL FFREAL (IFLD, INTYP, RFIELD,
      &        'model scale factor', 1.0, TSCAL, *230)
             XSCAL = XSCAL * ABS(TSCAL)
             YSCAL = YSCAL * ABS(TSCAL)
             ZSCAL = ZSCAL * ABS(TSCAL)
-            
+
           ELSE IF (WORD .EQ. 'X') THEN
             CALL FFREAL (IFLD, INTYP, RFIELD,
      &        'X scale factor', 1.0, TSCAL, *230)
             XSCAL = XSCAL * ABS(TSCAL)
-            
+
           ELSE IF (WORD .EQ. 'Y') THEN
             CALL FFREAL (IFLD, INTYP, RFIELD,
      &        'Y scale factor', 1.0, TSCAL, *230)
             YSCAL = YSCAL * ABS(TSCAL)
-            
+
           ELSE IF (WORD .EQ. 'Z') THEN
             IF (NDIM .EQ. 3) THEN
               CALL FFREAL (IFLD, INTYP, RFIELD,
@@ -553,7 +554,7 @@ C=======================================================================
               CALL PRTERR ('CMDERR',
      *          'Z allowed for 3D database only')
             END IF
-            
+
           ELSE IF (MATSTR(WORD, 'ATTRIBUTE', 2)) THEN
 C ... SCALE ATTRIBUTE {num|ALL} BLOCK {id|ALL} scale
 C ... SCALE ATTRIBUTE RESET
@@ -565,11 +566,11 @@ C ... See if next field is integer (id) or word ('all')
      *          'There are no attributes on this database')
               GO TO 230
             END IF
-            
+
             ATRWRN = .TRUE.
             DOALLA = .FALSE.
             DOALLB = .FALSE.
-            
+
             IF ((INTYP(IFLD) .EQ. 0) .OR. ((CFIELD(IFLD) .GE. 'A')
      &        .AND. (CFIELD(IFLD) .LE. 'Z'))) THEN
 C ... Field is character
@@ -591,7 +592,7 @@ C ... Field is Attribute number
               CALL FFINTG (IFLD, INTYP, IFIELD,
      $          'attribute ID', 0, IDATR, *420)
             END IF
-            
+
 C ... Next word should be 'BLOCK'
             CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
             IF (.NOT.(MATSTR (WORD, 'BLOCK', 1))) THEN
@@ -618,10 +619,10 @@ C ... Field is Attribute number
               CALL FFINTG (IFLD, INTYP, IFIELD,
      $          'block ID', 0, IDBLK, *420)
             END IF
-            
+
             CALL FFREAL (IFLD, INTYP, RFIELD,
      *        'attribute scale factor', 1.0, ASCALE, *230)
-            
+
 C ... Setup the scale and echo to the user
             CALL SCLATR(NELBLK, IDELB, NUMATR, IDATR, DOALLA,
      *        IDBLK, DOALLB, ASCALE, ATRSCL, .TRUE., .TRUE.)
@@ -658,9 +659,9 @@ C
           END IF
           GOTO 200
         END IF
-        
+
  230    CONTINUE
-        
+
 C=======================================================================
       ELSE IF (VERB .EQ. 'DEFORM') THEN
         IF (FFEXST (IFLD, INTYP)) THEN
@@ -676,9 +677,9 @@ C=======================================================================
             GOTO 235
           END IF
         END IF
-        
+
  235    CONTINUE
-        
+
 C=======================================================================
       ELSE IF (VERB .EQ. 'RANDOMIZE') THEN
  240    CONTINUE
@@ -766,12 +767,12 @@ C=======================================================================
           END IF
           GOTO 240
         END IF
-        
+
  270    CONTINUE
-        
+
 C=======================================================================
       ELSE IF (VERB .EQ. 'MIRROR') THEN
-        
+
  280    CONTINUE
         IF (FFEXST (IFLD, INTYP)) THEN
           CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
@@ -799,13 +800,13 @@ C=======================================================================
           END IF
           GOTO 280
         END IF
-        
+
  290    CONTINUE
-        
+
 C=======================================================================
       ELSE IF (VERB .EQ. 'REVOLVE' .OR. VERB .EQ. 'ROTATE') THEN
         DEGANG = ATAN2(0.0, -1.0) / 180.0
-        
+
  300    CONTINUE
         IF (FFEXST (IFLD, INTYP)) THEN
           CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
@@ -830,9 +831,9 @@ C=======================================================================
 
           ELSE IF (MATSTR(WORD, 'ATTRIBUTE', 2)) THEN
 C ... REVOLVE ATTRIBUTE {which} BLOCK {id|ALL}  {x|y|z} {angle}
-C ... REVOLVE ATTRIBUTE {which} TYPE {blk_type} 
+C ... REVOLVE ATTRIBUTE {which} TYPE {blk_type}
 C ... REVOLVE ATTRIBUTE RESET
-C ... Next field is integer (which) 
+C ... Next field is integer (which)
             VERB = ' '
             STRING = 'REVOLVE/ROTATE ATTRIBUTE {index} BLOCK {id|ALL}'
             IF (.NOT. ISATRB) THEN
@@ -840,7 +841,7 @@ C ... Next field is integer (which)
      *          'There are no attributes on this database')
               GO TO 320
             END IF
-            
+
             ROTALL = .FALSE.
             IF ((INTYP(IFLD) .EQ. 0) .OR. ((CFIELD(IFLD) .GE. 'A')
      &        .AND. (CFIELD(IFLD) .LE. 'Z'))) THEN
@@ -951,9 +952,9 @@ C ... End of "revolve attribute" parsing
           END IF
           GOTO 300
         END IF
-        
+
  320    CONTINUE
-        
+
 C=======================================================================
       ELSE IF (VERB .EQ. 'REVCEN') THEN
         CALL MINMAX (NUMNP, XN, XMIN, XMAX)
@@ -963,7 +964,7 @@ C=======================================================================
         ELSE
           ZMIN = 0.0
         END IF
-        
+
         CALL FFREAL (IFLD, INTYP, RFIELD,
      &    'X revolution center', XMIN, ROTCEN(1), *420)
         CALL FFREAL (IFLD, INTYP, RFIELD,
@@ -971,7 +972,7 @@ C=======================================================================
         IF (NDIM .EQ. 3) CALL FFREAL (IFLD, INTYP, RFIELD,
      &    'Z revolution center', ZMIN, ROTCEN(3), *420)
         IF (NDIM .EQ. 2) ROTCEN(3) = 0.0
-        
+
 C=======================================================================
       ELSE IF (VERB .EQ. 'LIST') THEN
         CALL ABRSTR (LISTYP, CFIELD(2), LISTBL)
@@ -994,9 +995,9 @@ C=======================================================================
             CALL SHOWFL ('N', NUMNPS, IDNPS, IA(KNNNS), IA(1), NSNAME)
           END IF
         ELSE IF (LISTYP .EQ.'VARS' .OR. LISTYP .EQ.'VARIABLE') THEN
-          CALL DBPINI ('TIS', NDBIN, TITLE, NDIM, NUMNP, NUMEL,
-     &      NELBLK, NUMNPS, LNPSNL, LNPSNL, NUMESS, LESSEL, LESSNL,
-     *      LESSNL, 0, 0, 0, ' ')
+          CALL DBPINI ('TISV', NDBIN, TITLE, NDIM, NUMNP, NUMEL,
+     &      NELBLK, NUMNPS, LNPSNL, LNPSNL, NUMESS, LESSEL, LESSDF,
+     *      NVARGL, NVARNP, NVAREL, NVARNS, NVARSS, ' ')
         ELSE IF (LISTYP .EQ.'BLOCKS' .OR. LISTYP .EQ.'MATERIAL') THEN
           CALL DBPELB ('N', NELBLK, IDELB, NUMELB, NUMLNK, NUMATR,
      &      BLKTYP, EBNAME, ATNAME, IDUM, IDUM, IDUM, IDUM)
@@ -1006,7 +1007,7 @@ C=======================================================================
           IF ((NQAREC .GT. 0) .OR. (NINFO .GT. 0)) THEN
             CALL DBPQA ('*', NQAREC, QAREC, NINFO, INFREC)
           END IF
-        ELSE IF (LISTYP .EQ. 'TIMES') THEN
+        ELSE IF (LISTYP .EQ. 'TIMES' .OR. LISTYP .EQ. 'STEPS') THEN
           if (nsteps .eq. 0) then
             CALL PRTERR ('CMDSPEC', 'No timesteps on database')
           else
@@ -1019,7 +1020,7 @@ C=======================================================================
               write (*, 10060) itim, times(itim), stra
 10060         FORMAT( 'Step ', i6, ', Time = ', 1pe12.5,1x, A)
  324        continue
-          end if   
+          end if
         ELSE IF (LISTYP .EQ. 'NAMES') THEN
           WRITE (*, 10070) 'Global:   ', (NAMEGV(I), I=1,NVARGL)
           WRITE (*, 10070) 'Nodal:    ', (NAMENV(I), I=1,NVARNP)
@@ -1032,13 +1033,13 @@ C=======================================================================
      &      // '" is an invalid or nonunique LIST option')
         END IF
         VERB = ' '
-        
+
       ELSE IF ((VERB .EQ. 'SHOW') .OR. (VERB .EQ. 'LIST')) THEN
         CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
         CALL ABRSTR (VERB, WORD, CMDTBL)
         CALL SHOW (VERB, WORD)
         VERB = ' '
-        
+
 C=======================================================================
 C NAME BLOCK|SIDESET|SSET|NODESET|NSET id newname
 C NAME ATTRIBUTE attindex BLOCK id newname
@@ -1062,7 +1063,7 @@ C NAME ATTRIBUTE attindex BLOCK id newname
         CALL FFINTG (IFLD, INTYP, IFIELD,
      $    'entity ID', 0, IDOLD, *420)
         if (itype .eq. 'A') then
-C.. Skip over 'block' and get block id 
+C.. Skip over 'block' and get block id
           CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
           CALL FFINTG (IFLD, INTYP, IFIELD,
      $      'block ID', 0, IDBLK, *420)
@@ -1090,7 +1091,7 @@ C=======================================================================
      *      'sideset|sset] VARIABLE [oldname] [newname]')
           go to 399
         end if
-        
+
         CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', OLDNM)
         CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', NEWNM)
 
@@ -1114,7 +1115,7 @@ C=======================================================================
 C=======================================================================
       ELSE IF (VERB .EQ. 'CHANGE') THEN
         CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
-        
+
         IF (MATSTR(WORD, 'TYPE', 2)) THEN
           CALL FFINTG (IFLD, INTYP, IFIELD,
      $      'block ID', 0, IDOLD, *420)
@@ -1132,9 +1133,9 @@ C ... See if next field is integer (id) or word ('all')
      *        'There are no sidesets on this database')
             GO TO 420
           END IF
-          
+
           DOALLA = .FALSE.
-          
+
           IF ((INTYP(IFLD) .EQ. 0) .OR. ((CFIELD(IFLD) .GE. 'A')
      &      .AND. (CFIELD(IFLD) .LE. 'Z'))) THEN
 C ... Field is character
@@ -1152,7 +1153,7 @@ C ... Field is sideset id
             CALL FFINTG (IFLD, INTYP, IFIELD,
      $        'sideset ID', 0, IDSET, *420)
           END IF
-          
+
 C ... Next word should be 'FACTOR' or an id
           IF ((INTYP(IFLD) .EQ. 0) .OR. ((CFIELD(IFLD) .GE. 'A')
      &      .AND. (CFIELD(IFLD) .LE. 'Z'))) THEN
@@ -1164,10 +1165,10 @@ C     ... Field is character
               CALL PRTERR('CMDREQ', STRING(:LENSTR(STRING)))
               GO TO 420
             END IF
-            
+
             CALL FFREAL (IFLD, INTYP, RFIELD,
      *        'distribution factor value', 1.0, AVALUE, *420)
-            
+
 C     ... Setup the scale and echo to the user
             if (DOALLA) then
               CALL INIREA (LESSNL, AVALUE, FACESS)
@@ -1199,9 +1200,9 @@ C ... See if next field is integer (id) or word ('all')
      *        'There are no nodesets on this database')
             GO TO 420
           END IF
-          
+
           DOALLA = .FALSE.
-          
+
           IF ((INTYP(IFLD) .EQ. 0) .OR. ((CFIELD(IFLD) .GE. 'A')
      &      .AND. (CFIELD(IFLD) .LE. 'Z'))) THEN
 C ... Field is character
@@ -1219,7 +1220,7 @@ C ... Field is nodeset id
             CALL FFINTG (IFLD, INTYP, IFIELD,
      $        'nodeset ID', 0, IDSET, *420)
           END IF
-          
+
 C ... Next word should be 'FACTOR' or an id
           IF ((INTYP(IFLD) .EQ. 0) .OR. ((CFIELD(IFLD) .GE. 'A')
      &      .AND. (CFIELD(IFLD) .LE. 'Z'))) THEN
@@ -1231,10 +1232,10 @@ C     ... Field is character
               CALL PRTERR('CMDREQ', STRING(:LENSTR(STRING)))
               GO TO 420
             END IF
-            
+
             CALL FFREAL (IFLD, INTYP, RFIELD,
      *        'distribution factor value', 1.0, AVALUE, *420)
-            
+
 C     ... Setup the scale and echo to the user
             if (DOALLA) then
               CALL INIREA (LNPSNL, AVALUE, FACNPS)
@@ -1249,7 +1250,7 @@ C     ... Setup the scale and echo to the user
               call inirea(ndnps(iss), avalue, facnps(ixdnps(iss)))
             ENDIF
           ELSE
-C     ... Changing id. Get the new id.             
+C     ... Changing id. Get the new id.
             CALL FFINTG (IFLD, INTYP, IFIELD, 'new ID', 0, IDNEW, *420)
             CALL NEWID ('N', IDNPS, NUMNPS, IDNEW, IDSET)
           END IF
@@ -1266,11 +1267,11 @@ C ... See if next field is integer (id) or word ('all')
      *        'There are no attributes on this database')
             GO TO 420
           END IF
-          
+
           ATRWRN = .TRUE.
           DOALLA = .FALSE.
           DOALLB = .FALSE.
-          
+
           IF ((INTYP(IFLD) .EQ. 0) .OR. ((CFIELD(IFLD) .GE. 'A')
      &      .AND. (CFIELD(IFLD) .LE. 'Z'))) THEN
 C ... Field is character
@@ -1292,7 +1293,7 @@ C ... Field is Attribute number
             CALL FFINTG (IFLD, INTYP, IFIELD,
      $        'attribute ID', 0, IDATR, *420)
           END IF
-          
+
 C ... Next word should be 'BLOCK'
           CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
           IF (.NOT.(MATSTR (WORD, 'BLOCK', 1))) THEN
@@ -1319,10 +1320,10 @@ C ... Field is Attribute number
             CALL FFINTG (IFLD, INTYP, IFIELD,
      $        'block ID', 0, IDBLK, *420)
           END IF
-          
+
           CALL FFREAL (IFLD, INTYP, RFIELD,
      *      'attribute value', 1.0, AVALUE, *420)
-          
+
 C ... Setup the scale and echo to the user
           CALL SCLATR(NELBLK, IDELB, NUMATR, IDATR, DOALLA,
      *      IDBLK, DOALLB, AVALUE, ATRSCL, .TRUE., .FALSE.)
@@ -1332,7 +1333,7 @@ C ... Setup the scale and echo to the user
      *      'old ID', 0, IDOLD, *420)
           CALL FFINTG (IFLD, INTYP, IFIELD,
      *      'new ID', 0, IDNEW, *420)
-          
+
           IF (MATSTR(WORD,'MATERIALS',1) .OR.
      &      MATSTR(WORD, 'BLOCKS',1)) THEN
             CALL NEWID ('M', IDELB, NELBLK, IDNEW, IDOLD)
@@ -1345,13 +1346,13 @@ C ... Setup the scale and echo to the user
           END IF
         END IF
         VERB = ' '
-        
+
 C=======================================================================
       ELSE IF (VERB .EQ. 'INCREMENT') THEN
         CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
         CALL FFINTG (IFLD, INTYP, IFIELD,
      *    'increment', 0, IDINC, *420)
-        
+
         IF (MATSTR(WORD,'MATERIALS',1) .OR.
      &    MATSTR(WORD, 'BLOCKS',1)) THEN
           CALL INCID ('M', IDELB, NELBLK, IDINC)
@@ -1379,7 +1380,7 @@ C     ... Syntax: MERGE {global|local} Node {node_1} into node {node_2}
         end if
 c ... skip 'node'
         CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
-        
+
 C ... Get the two nodes to be equivalenced...
         CALL FFINTG (IFLD, INTYP, IFIELD, 'Node1', 0, node1, *420)
 C ... Skip 'node into'
@@ -1398,8 +1399,8 @@ C ... Skip 'node into'
 C ... Grepos has requirement that the highest numbered node be removed
 C     in the equiv process.  However, in user specification, they want
 C     to specify which node is removed.  If it is the lower-numbered node,
-C     simply replace the coordinates of the higher numbered node with the 
-C     coordinates of the lower-numbered node.              
+C     simply replace the coordinates of the higher numbered node with the
+C     coordinates of the lower-numbered node.
           if (node1 .lt. node2) then
             if (IEQUIV(node2) .ne. node2) then
                 call prterr ('CMDERR',
@@ -1422,11 +1423,11 @@ C     coordinates of the lower-numbered node.
           EQTOLER = -1.0
         end if
         verb = ' '
-        
+
       ELSE IF (VERB .EQ. 'EQUIVALENCE') THEN
 C     ... Syntax: EQUIVALENCE tolerance
 C     ... Syntax: EQUIVALENCE RESET
-        
+
         IF ((INTYP(IFLD) .EQ. 0) .OR. ((CFIELD(IFLD) .GE. 'A')
      &    .AND. (CFIELD(IFLD) .LE. 'Z'))) THEN
 C     ... Field is character
@@ -1451,7 +1452,7 @@ C     ... Field is character
             EQUIV = .FALSE.
           END IF
         END IF
-        
+
 C=======================================================================
       ELSE IF (VERB .EQ. 'COMBINE') THEN
 C ... Syntax: COMBINE entity   RESET (Not Implemented yet)
@@ -1480,7 +1481,7 @@ C ... This should be the keyword 'WITH'
         end if
 
 C ... This should be the entity type. Must match WORD.
-C     Matching assumed, not checked.        
+C     Matching assumed, not checked.
         CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD2)
         if (.NOT. MATSTR(WORD2, WORD, 1)) THEN
           CALL PRTERR('CMDERR',
@@ -1617,7 +1618,7 @@ C ... Field is character
      &              // '" is an invalid DELETE NAME option')
                   GO TO 333
                 END IF
-                
+
               ELSE IF (MATSTR (WORD2, 'RESET', 2)) THEN
                 IF (MATSTR(WORD,'MATERIALS',1) .OR.
      &            MATSTR(WORD, 'BLOCKS',1)) THEN
@@ -1643,7 +1644,7 @@ C ... Field is character
      &              // '" is an invalid or nonunique DELETE option')
                   GO TO 333
                 END IF
-                
+
               ELSE
                 CALL PRTERR('CMDERR',
      *            'Expected keyword "ALL" or "RESET"')
@@ -1693,7 +1694,7 @@ C         --Store the range selected
         END IF
  333    CONTINUE
         VERB = ' '
-        
+
 C========================================================================
       ELSE IF (VERB .EQ. 'UNDELETE' .OR. VERB .EQ. 'KEEP') THEN
         CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
@@ -1725,7 +1726,7 @@ C ... Field is character
      &          // '" is an invalid or nonunique DELETE option')
               GO TO 336
             END IF
-            
+
           ELSE
             CALL PRTERR('CMDERR',
      *        'Expected keyword "ALL"')
@@ -1739,7 +1740,7 @@ C ... Field is character
 C         --Scan numeric range
             CALL FFVRNG (IFLD, INTYP, CFIELD, IFIELD,
      &        WORD, -1, IRNG, *336)
-            
+
 C         --Store the range selected
             DO I = IRNG(1), IRNG(2), IRNG(3)
               IF (MATSTR(WORD,'MATERIALS',1) .OR.
@@ -1764,13 +1765,13 @@ C         --Store the range selected
      &            // '" is an invalid or nonunique DELETE option')
               END IF
             END DO
-            
+
             GOTO 335
           END IF
         END IF
  336    CONTINUE
         VERB = ' '
-        
+
 C========================================================================
       ELSE IF (VERB .EQ. 'SWAP') THEN
         CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
@@ -1789,8 +1790,31 @@ C========================================================================
      &      // '" is an invalid or nonunique SWAP option')
         END IF
         VERB = ' '
-        
+
 C========================================================================
+      ELSE IF (VERB .EQ. 'TMIN') then
+         call ffreal (ifld, intyp, rfield,
+     $    'Minimum Time', 0, tmin, *345)
+         do itim = 1, nsteps
+            if (times(itim) .lt. tmin) then
+               itimst(itim) = 1
+            end if
+         end do
+ 345     continue
+        VERB = ' '
+C========================================================================
+      ELSE IF (VERB .EQ. 'TMAX') then
+         call ffreal (ifld, intyp, rfield,
+     $    'Maximum Time', 0, tmax, *346)
+         do itim = 1, nsteps
+            if (times(itim) .gt. tmax) then
+               itimst(itim) = 1
+            end if
+         end do
+ 346     continue
+        VERB = ' '
+C========================================================================
+
       ELSE IF (VERB .EQ. 'SMOOTH') then
         SMOOTH = .TRUE.
         call ffreal (ifld, intyp, rfield,
@@ -1799,9 +1823,9 @@ C========================================================================
      $    'Iterations', 100, NIT, *350)
         call ffreal (ifld, intyp, rfield,
      $    'Relaxation Factor', 1.0, R0, *350)
-        
+
  350    continue
-        
+
 C ... SNAP
 C========================================================================
       ELSE IF (VERB .EQ. 'SNAP') then
@@ -1817,21 +1841,21 @@ C========================================================================
               go to 370
             END IF
           END IF
-          
+
           if (ffexst(ifld, intyp)) then
             numsnp = numsnp + 1
             if (numsnp .gt. mxsnap) then
               call PRTERR('CMDERR', 'Too many snap sets specified')
               go to 370
             end if
-            
+
             ismtyp(numsnp) = ISNAP
             usnorm(numsnp) = PNORM
             snptol(numsnp) = 0.0
             gap(numsnp)    = 0.0
 C ... NOTE: This value is squared in snpnod, don't increase too big.
             delmax(numsnp) = 1.0e15
-            
+
             call ffintg (ifld, intyp, ifield,
      $        'sideset to snap nodes from', 0, IDSSSL(numsnp), *370)
             imat = locint(idsssl(numsnp), numess, idess)
@@ -1842,7 +1866,7 @@ C ... NOTE: This value is squared in snpnod, don't increase too big.
               NUMSNP = NUMSNP - 1
               GO TO 370
             END IF
-            
+
             CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
             IF (.NOT. MATSTR (WORD, 'TO', 1)) THEN
               CALL PRTERR('CMDERR',
@@ -1850,7 +1874,7 @@ C ... NOTE: This value is squared in snpnod, don't increase too big.
               NUMSNP = NUMSNP - 1
               GO TO 370
             END IF
-            
+
             call ffintg (ifld, intyp, ifield,
      $        'sideset to snap nodes to', 0, IDSSMA(numsnp), *370)
             imat = locint(idssma(numsnp), numess, idess)
@@ -1862,7 +1886,7 @@ C ... NOTE: This value is squared in snpnod, don't increase too big.
               GO TO 370
             END IF
           end if
-          
+
  360      CONTINUE
           IF (FFEXST (IFLD, INTYP)) THEN
             CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
@@ -1945,7 +1969,7 @@ C ... NOTE: This value is squared in snpnod, don't increase too big.
         end if
  370    CONTINUE
         VERB = 'SNAP'
-        
+
 C ... MOVE
 C========================================================================
       ELSE IF (VERB .EQ. 'MOVE') then
@@ -2031,21 +2055,21 @@ C ... Move the node...
               go to 390
             END IF
           END IF
-          
+
           if (ffexst(ifld, intyp)) then
             numsnp = numsnp + 1
             if (numsnp .gt. mxsnap) then
               call PRTERR('CMDERR', 'Too many snap sets specified')
               go to 390
             end if
-            
+
             ismtyp(numsnp) = IMOVE
             usnorm(numsnp) = PNORM
             snptol(numsnp) = 0.0
             gap(numsnp)    = 0.0
 C ... NOTE: This value is squared in snpnod, don't increase too big.
             delmax(numsnp) = 1.0e15
-            
+
             call ffintg (ifld, intyp, ifield,
      $        'sideset to move nodes from', 0, IDSSSL(numsnp), *390)
             imat = locint(idsssl(numsnp), numess, idess)
@@ -2057,7 +2081,7 @@ C ... NOTE: This value is squared in snpnod, don't increase too big.
               NUMSNP = NUMSNP - 1
               GO TO 390
             END IF
-            
+
             CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
             IF (.NOT. MATSTR (WORD, 'TO', 1)) THEN
               CALL PRTERR('CMDERR',
@@ -2065,7 +2089,7 @@ C ... NOTE: This value is squared in snpnod, don't increase too big.
               NUMSNP = NUMSNP - 1
               GO TO 390
             END IF
-            
+
             call ffintg (ifld, intyp, ifield,
      $        'sideset to move nodes to', 0, IDSSMA(numsnp), *390)
             imat = locint(idssma(numsnp), numess, idess)
@@ -2077,7 +2101,7 @@ C ... NOTE: This value is squared in snpnod, don't increase too big.
               GO TO 390
             END IF
           end if
-          
+
  380      CONTINUE
           IF (FFEXST (IFLD, INTYP)) THEN
             CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
@@ -2153,7 +2177,7 @@ C ... NOTE: This value is squared in snpnod, don't increase too big.
         end if
  390    CONTINUE
         VERB = 'MOVE'
-        
+
 C --- BEGINNING OF WARP
 C========================================================================
       ELSE IF (VERB .EQ. 'WARP') THEN
@@ -2162,10 +2186,10 @@ C========================================================================
      *      'Warp cannot be specified for 2D databases')
           GO TO 410
         END IF
-        
+
         CALL FFCHAR (IFLD, INTYP, CFIELD,
      *    'HELP', WORD)
-        
+
         IF (MATSTR(WORD, 'HELP', 1)) THEN
           CALL PRTERR ('CMDSPEC',
      *      'Syntax: WARP {XAXIS|YAXIS|ZAXIS|ORIGIN} RADIUS {radius}'//
@@ -2180,13 +2204,13 @@ C========================================================================
           IWARP = -3
         ELSE IF (MATSTR(WORD, 'ORIGIN', 1)) THEN
           IWARP = 1
-          
+
         ELSE
           CALL PRTERR ('CMDERR', 'Invalid WARP Option')
           IWARP = 0
           GO TO 410
         END IF
-        
+
  400    continue
         IF (FFEXST (IFLD, INTYP)) THEN
           CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
@@ -2220,7 +2244,7 @@ C========================================================================
         ELSE
           GO TO 410
         END IF
-        
+
  410    CONTINUE
         IF (IWARP .NE. 0) THEN
           if (wrpdis .le. 0.0) then
@@ -2234,17 +2258,17 @@ C========================================================================
             IWARP = 0
           end if
         END IF
-        
+
 C... User Subroutine
 C========================================================================
       ELSE IF (VERB .EQ. 'USERSUBROUTINE') then
         call ffonof (ifld, intyp, cfield, USRSUB, *420)
-        
+
 C... Convert nodal variable to element variable (average nodal quantities)
 C========================================================================
       ELSE IF (VERB .EQ. 'ELEMENTIZE') then
         CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
-        
+
         IF (MATSTR(WORD, 'HELP', 1)) THEN
           CALL PRTERR ('CMDSPEC',
      *      'Syntax: ELEMENTIZE {nodal_variable_name}')
@@ -2253,7 +2277,7 @@ C========================================================================
         END IF
 C ... Search for name in list of nodal variables.
         index = locstr(word, nvarnp, namenv)
-        
+
         if (index .eq. 0) then
           write (STRING,*) 'Could not find nodal variable ',
      *      word(:lenstr(word)),
@@ -2273,7 +2297,7 @@ C... Output element centroids
 C========================================================================
       ELSE IF (VERB .EQ. 'CENTROIDS') then
         call ffonof (ifld, intyp, cfield, CENTRD, *420)
-        
+
 C...  Help
 C========================================================================
       ELSE IF (VERB .EQ. 'HELP') THEN
@@ -2282,40 +2306,40 @@ C========================================================================
           CALL PRTERR('CMDREQ', 'Help is not available at this time')
         END IF
         VERB = ' '
-        
+
 C========================================================================
       ELSE IF ((VERB .EQ. 'END') .OR. (VERB .EQ. 'EXIT')) THEN
         CALL SCNEOF
         GOTO 430
-        
+
 C========================================================================
       ELSE IF (VERB .EQ. 'EXECUTE') THEN
         CALL SHOW(VERB, ' ')
         EXECUT = .TRUE.
         GOTO 430
-        
+
 C========================================================================
       ELSE IF (VERB .EQ. 'QUIT') THEN
         CALL SCNEOF
         RETURN 1
-        
+
 C========================================================================
       ELSE
         CALL PRTERR ('CMDERR', '"' // VERB(:LENSTR(VERB))
      &    // '" is an invalid command')
         VERB = ' '
       END IF
-      
+
  420  CONTINUE
-      
+
       IF (VERB .NE. ' ') THEN
         CALL SHOW (VERB, ' ')
       END IF
-      
+
       GOTO 110
-      
+
  430  CONTINUE
-      
+
       RETURN
       END
 
@@ -2353,5 +2377,3 @@ C ... TYPE = Node or Element
 
 10000  FORMAT (' No local ',A,' has global id equal to ',I10)
       END
-
-

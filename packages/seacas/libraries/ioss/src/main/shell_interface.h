@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2017 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -40,7 +40,7 @@
 #include <string>
 #include <vector>
 
-/** \brief A special namespace for the io_shell demonstration program interface.
+/** \brief A special namespace for the io_shell demonstration program interFace.
  */
 namespace IOShell {
   class Interface
@@ -63,7 +63,7 @@ namespace IOShell {
     std::string              outFiletype{"unknown"};
     std::string              groupName;
     std::string              decomp_method;
-    std::string              compose_output{"none"};
+    std::string              compose_output{"default"};
     double                   maximum_time{std::numeric_limits<double>::max()};
     double                   minimum_time{-std::numeric_limits<double>::max()};
     double                   append_time{std::numeric_limits<double>::max()};
@@ -105,8 +105,12 @@ namespace IOShell {
     bool delete_timesteps{false};
     bool minimize_open_files{false};
     bool disable_field_recognition{false};
-    bool file_per_state{
-        false}; // Put transient data for each timestep in separate file (EXPERMENTAL)
+    bool retain_empty_blocks{false};
+    // Put transient data for each timestep in separate file (EXPERIMENTAL)
+    bool file_per_state{false};
+    // Testing CGNS - defines zones in reverse order from input file.
+    bool reverse{false};
+    bool add_processor_id_field{false};
     char fieldSuffixSeparator{'_'};
   };
 } // namespace IOShell

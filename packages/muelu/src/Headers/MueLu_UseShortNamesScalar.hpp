@@ -5,8 +5,14 @@
 #ifdef MUELU_AGGREGATIONEXPORTFACTORY_SHORT
 typedef MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> AggregationExportFactory;
 #endif
+#ifdef MUELU_AGGREGATEQUALITYESTIMATEFACTORY_SHORT
+typedef MueLu::AggregateQualityEstimateFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> AggregateQualityEstimateFactory;
+#endif
 #ifdef MUELU_AMALGAMATIONFACTORY_SHORT
 typedef MueLu::AmalgamationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> AmalgamationFactory;
+#endif
+#ifdef MUELU_AMALGAMATIONFACTORY_KOKKOS_SHORT
+typedef MueLu::AmalgamationFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> AmalgamationFactory_kokkos;
 #endif
 #ifdef MUELU_AMESOS2SMOOTHER_SHORT
 typedef MueLu::Amesos2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> Amesos2Smoother;
@@ -16,6 +22,9 @@ typedef MueLu::AMGXOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> AMGXOperator
 #endif
 #ifdef MUELU_ALGEBRAICPERMUTATIONSTRATEGY_SHORT
 typedef MueLu::AlgebraicPermutationStrategy<Scalar,LocalOrdinal,GlobalOrdinal,Node> AlgebraicPermutationStrategy;
+#endif
+#ifdef MUELU_BELOSSMOOTHER_SHORT
+typedef MueLu::BelosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> BelosSmoother;
 #endif
 #ifdef MUELU_BLACKBOXPFACTORY_SHORT
 typedef MueLu::BlackBoxPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlackBoxPFactory;
@@ -119,6 +128,9 @@ typedef MueLu::GenericRFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> GenericRF
 #ifdef MUELU_GEOMETRICINTERPOLATIONPFACTORY_SHORT
 typedef MueLu::GeometricInterpolationPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> GeometricInterpolationPFactory;
 #endif
+#ifdef MUELU_GEOMETRICINTERPOLATIONPFACTORY_KOKKOS_SHORT
+typedef MueLu::GeometricInterpolationPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> GeometricInterpolationPFactory_kokkos;
+#endif
 #ifdef MUELU_GMRESSOLVER_SHORT
 typedef MueLu::GMRESSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node> GMRESSolver;
 #endif
@@ -133,6 +145,9 @@ typedef MueLu::HierarchyFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> Hierarch
 #endif
 #ifdef MUELU_HIERARCHYUTILS_SHORT
 typedef MueLu::HierarchyUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node> HierarchyUtils;
+#endif
+#ifdef MUELU_INTERFACEAGGREGATIONFACTORY_SHORT
+typedef MueLu::InterfaceAggregationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> InterfaceAggregationFactory;
 #endif
 #ifdef MUELU_IFPACK2SMOOTHER_SHORT
 typedef MueLu::Ifpack2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> Ifpack2Smoother;
@@ -163,6 +178,9 @@ typedef MueLu::MergedSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> MergedSmoo
 #endif
 #ifdef MUELU_MULTIVECTORTRANSFERFACTORY_SHORT
 typedef MueLu::MultiVectorTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> MultiVectorTransferFactory;
+#endif
+#ifdef MUELU_NOTAYAGGREGATIONFACTORY_SHORT
+typedef MueLu::NotayAggregationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> NotayAggregationFactory;
 #endif
 #ifdef MUELU_NULLSPACEFACTORY_SHORT
 typedef MueLu::NullspaceFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> NullspaceFactory;
@@ -239,6 +257,9 @@ typedef MueLu::SaPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> SaPFactory;
 #ifdef MUELU_SAPFACTORY_KOKKOS_SHORT
 typedef MueLu::SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> SaPFactory_kokkos;
 #endif
+#ifdef MUELU_SCALEDNULLSPACEFACTORY_SHORT
+typedef MueLu::ScaledNullspaceFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> ScaledNullspaceFactory;
+#endif
 #ifdef MUELU_SCHURCOMPLEMENTFACTORY_SHORT
 typedef MueLu::SchurComplementFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> SchurComplementFactory;
 #endif
@@ -266,11 +287,17 @@ typedef MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> SmootherF
 #ifdef MUELU_SMOOTHERPROTOTYPE_SHORT
 typedef MueLu::SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node> SmootherPrototype;
 #endif
+#ifdef MUELU_SMOOVECCOALESCEDROPFACTORY_SHORT
+typedef MueLu::SmooVecCoalesceDropFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> SmooVecCoalesceDropFactory;
+#endif
 #ifdef MUELU_SOLVERBASE_SHORT
 typedef MueLu::SolverBase<Scalar,LocalOrdinal,GlobalOrdinal,Node> SolverBase;
 #endif
 #ifdef MUELU_STEEPESTDESCENTSOLVER_SHORT
 typedef MueLu::SteepestDescentSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node> SteepestDescentSolver;
+#endif
+#ifdef MUELU_STRATIMIKOSSMOOTHER_SHORT
+typedef MueLu::StratimikosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> StratimikosSmoother;
 #endif
 #ifdef MUELU_STRUCTUREDAGGREGATIONFACTORY_SHORT
 typedef MueLu::StructuredAggregationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> StructuredAggregationFactory;

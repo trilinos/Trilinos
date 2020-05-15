@@ -56,7 +56,7 @@ C   --   INIT  - IN - .TRUE. iff the purpose of the call is to
 C   --            initialize the BLKCOL array and not to modify it.
 C   --   INLINE - IN/OUT - the parsed input lines for the log file
 C   --   IFLD, INTYP, IFIELD, CFIELD, - IN/OUT - the free-field reader
-C   --          index and charcter field.
+C   --          index and character field.
 C   --   BLKCOL - IN/OUT - the user selected colors of the element blocks.
 C   --                    BLKCOL(0) = 1 if the user defined material
 C   --                                colors should be used in mesh plots.
@@ -104,26 +104,22 @@ C *****************************************************************
 
       ELSE
 
-C              If there are no fields on the BLKCOL command line,
-C              toggle the ON/OFF flag.
-
+C        If there are no fields on the BLKCOL command line,
+C        toggle the ON/OFF flag.
          IF (INTYP(IFLD) .LE. -1) THEN
             BLKCOL(0) = -BLKCOL(0)
 
-C              Check for ON flag.
-
+C        Check for ON flag.
          ELSE IF (FFMATC (IFLD, INTYP, CFIELD, 'ON', 2)) THEN
             BLKCOL(0) = 1
             CALL FFADDC ('ON', INLINE(1))
 
-C              Check for OFF flag.
-
+C        Check for OFF flag.
          ELSE IF (FFMATC (IFLD, INTYP, CFIELD, 'OFF', 2)) THEN
             BLKCOL(0) = -1
             CALL FFADDC ('OFF', INLINE(1))
 
-C              Check for RESET flag.
-
+C        Check for RESET flag.
          ELSE IF (FFMATC (IFLD, INTYP, CFIELD, 'RESET', 2)) THEN
             CALL FFADDC ('RESET', INLINE(1))
             BLKCOL(0) = -1
@@ -138,7 +134,6 @@ C              Check for RESET flag.
 
 C                 Get numeric range identifying blocks whose colors
 C                 will be specified.
-
                NUMSPC = .FALSE.
   130          CONTINUE
 
@@ -148,7 +143,6 @@ C                 will be specified.
                NUMSPC = .TRUE.
 
 C                    Flag these blocks for color assignments.
-
                DO 140 I = IRNG(1), IRNG(2), IRNG(3)
                   IF (BLKCOL(I) .LT. 7) BLKCOL(I) = BLKCOL(I) + 10
   140          CONTINUE

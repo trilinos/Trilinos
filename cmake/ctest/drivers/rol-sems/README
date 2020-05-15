@@ -1,0 +1,14 @@
+These are ctest/cdash scripts for the ROL project.
+
+1) Use a clean copy of Trilinos as your source code for testing.
+
+2) Do NOT use your local development repo.
+
+3) Execute the scripts from a directory right above Trilinos.
+   For example, if your directory structure is
+
+   TEST/
+   ---- rol-trilinos/
+   --------- Trilinos/
+
+   then run the scripts in the rol-trilinos directory.

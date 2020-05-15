@@ -79,7 +79,7 @@ namespace MueLu {
     void CallBuild(Level& requestedLevel) const;
 
     //!
-    void CallDeclareInput(Level& requestedLevel) const { }
+    void CallDeclareInput(Level& /* requestedLevel */) const { }
 
     //@}
 

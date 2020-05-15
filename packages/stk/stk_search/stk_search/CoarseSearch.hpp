@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -34,9 +35,13 @@
 #ifndef stk_search_CoarseSearch_hpp
 #define stk_search_CoarseSearch_hpp
 
+#include <stk_util/stk_config.h>
+#include <stk_util/util/ReportHandler.hpp>
 #include <stk_search/IdentProc.hpp>
 #include <stk_search/BoundingBox.hpp>
+#if defined(STK_HAVE_BOOST)
 #include <stk_search/CoarseSearchBoostRTree.hpp>
+#endif
 #include <stk_search/CoarseSearchKdTree.hpp>
 #include <stk_search/SearchMethod.hpp>
 #include <vector>
@@ -49,37 +54,12 @@ inline
 std::ostream& operator<<(std::ostream &out, SearchMethod method)
 {
   switch( method )   {
+  case USE_DEPRECATED_BOOST_RTREE: // fall through
   case BOOST_RTREE:            out << "BOOST_RTREE"; break;
   case KDTREE:                 out << "KDTREE"; break;
   case MORTON_LINEARIZED_BVH:  out << "MORTON_LINEARIZED_BVH"; break;
   }
   return out;
-}
-
-// EXPERIMENTAL
-//
-// intersections returned will be those resulting from the (local) domain boxes
-// intersecting range boxes from the entire distributed set.  NEEDS TO BE CALLED
-// WITH EXPLICIT TEMPLATE ARGUMENTS.
-template <typename DomainBox, typename DomainIdent, typename RangeBox, typename RangeIdent>
-void coarse_search_nonIdentProc(
-                    std::vector<std::pair<DomainBox,DomainIdent> > const& domain,
-                    std::vector<std::pair<RangeBox,RangeIdent> >   const& range,
-                    SearchMethod                                          method,
-                    stk::ParallelMachine                                  comm,
-                    std::vector< std::pair< DomainIdent, RangeIdent> > &  intersections
-                  )
-{
-  switch( method )
-  {
-  case BOOST_RTREE:
-    coarse_search_boost_rtree_output_locally<DomainBox, DomainIdent, RangeBox, RangeIdent>(domain,range,comm,intersections);
-    break;
-  default:
-    std::cerr << "coarse_search(..) interface used does not support std::search::coarse_search_nonIdentProc(..) yet" << method << std::endl;
-    abort();
-    break;
-  }
 }
 
 // THIS MIGHT BE WHAT WE ACTUALLY WANT FOR THE INTERFACE.
@@ -102,6 +82,9 @@ void coarse_search(
 // boxes.  Optionally, also include intersections of distributed domain boxes
 // with distributed range boxes associated with this processor rank via
 // get_proc<RangeIdent>(.).
+// Note that the search results that are placed in the intersections result argument
+// are not sorted. If the caller needs this vector to be sorted, you must
+// call std::sort(intersections.begin(), intersections.end()) or similar.
 template <typename DomainBox, typename DomainIdent, typename RangeBox, typename RangeIdent>
 void coarse_search( std::vector<std::pair<DomainBox,DomainIdent> > const& domain,
                std::vector<std::pair<RangeBox,RangeIdent> >   const& range,
@@ -113,13 +96,18 @@ void coarse_search( std::vector<std::pair<DomainBox,DomainIdent> > const& domain
 {
   switch( method )
   {
+  case USE_DEPRECATED_BOOST_RTREE: // fall through
   case BOOST_RTREE:
 #ifndef __NVCC__
+#if defined(STK_HAVE_BOOST)
     coarse_search_boost_rtree(domain,range,comm,intersections,communicateRangeBoxInfo);
+#else
+    ThrowRequireMsg(false,"ERROR, the BOOST_RTREE option in stk_search requires that Trilinos was configured with TPL_ENABLE_Boost:BOOL=ON");
+#endif
     break;
 #endif
   case KDTREE:
-    coarse_search_kdtree(domain,range,comm,intersections,communicateRangeBoxInfo);
+    coarse_search_kdtree_driver(domain,range,comm,intersections,communicateRangeBoxInfo);
     break;
   default:
     std::cerr << "coarse_search(..) interface used does not support SearchMethod " << method << std::endl;

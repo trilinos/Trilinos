@@ -88,7 +88,10 @@ namespace MueLu {
 
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+template <class Scalar = DefaultScalar,
+        class LocalOrdinal = DefaultLocalOrdinal,
+        class GlobalOrdinal = DefaultGlobalOrdinal,
+        class Node = DefaultNode>
   class TogglePFactory : public PFactory {
 #undef MUELU_TOGGLEPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -121,7 +124,7 @@ namespace MueLu {
     /*!  @brief Build method.   */
     void Build(Level& fineLevel, Level &coarseLevel) const;
 
-    void BuildP(Level &fineLevel, Level &coarseLevel) const { /* empty */ };
+    void BuildP(Level &/* fineLevel */, Level &/* coarseLevel */) const { /* empty */ };
     //@}
 
     //@{

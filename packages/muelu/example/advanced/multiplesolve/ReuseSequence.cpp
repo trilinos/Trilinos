@@ -479,7 +479,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib,  int a
 
     RCP<Matrix>           A;
     RCP<const Map>        map;
-    RCP<RealValuedMultiVector>  coordinates;
+    RCP<RealValuedMultiVector> coordinates;
     RCP<MultiVector>      nullspace;
 
     tensor.setT(0);
@@ -493,7 +493,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib,  int a
     RCP<Vector> B = VectorFactory::Build(map);
     A->apply(*X, *B);
 
-    RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner(A, paramList, coordinates);
+    Teuchos::ParameterList userParamList = paramList.sublist("user data");
+    userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", coordinates);
+    RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner(A, paramList);
 
     for (size_t t = 1; t < numSteps; t++) {
       out << thinSeparator << " Step " << t << " " << thinSeparator << std::endl;
@@ -505,7 +507,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib,  int a
 
       tc = high_resolution_clock::now();
       if (solveType == "none")
-        H = MueLu::CreateXpetraPreconditioner(A, paramList, coordinates);
+        H = MueLu::CreateXpetraPreconditioner(A, paramList);
       else
         MueLu::ReuseXpetraPreconditioner(A, H);
       setup_time[k*numSteps + t] = duration_cast<duration<double>>(high_resolution_clock::now() - tc);

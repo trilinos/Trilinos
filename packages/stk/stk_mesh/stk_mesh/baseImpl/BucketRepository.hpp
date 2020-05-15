@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -42,6 +43,7 @@
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class FieldBase; } }
+namespace stk { namespace mesh { class EntitySorterBase; } }
 namespace stk { namespace mesh { namespace impl { class Partition; } } }
 namespace stk { namespace mesh { namespace utest { struct SyncToPartitions; } } }
 
@@ -78,7 +80,7 @@ public:
   {
     static const BucketVector emptyBucketVector;
 
-    if( rank < m_buckets.size() )
+    if( rank < static_cast<EntityRank>(m_buckets.size()) )
     {
       if (m_need_sync_from_partitions[rank])
       {
@@ -117,16 +119,14 @@ public:
 
   void add_entity_with_part_memberships(const Entity entity,
                                         const EntityRank arg_entity_rank,
-                                        const OrdinalVector &parts,
-                                        std::vector<unsigned>& scratchSpace);
+                                        const OrdinalVector &parts);
 
-  void change_entity_part_membership(const MeshIndex &meshIndex, const OrdinalVector &parts,
-                                     std::vector<unsigned>& scratchSpace);
+  void change_entity_part_membership(const MeshIndex &meshIndex, const OrdinalVector &parts);
 
   void remove_entity(const MeshIndex &meshIndex);
 
   Partition *get_or_create_partition(const EntityRank arg_entity_rank ,
-                                     const OrdinalVector &parts, std::vector<unsigned>& scratchSpace);
+                                     const OrdinalVector &parts);
 
   // For use by BulkData::internal_modification_end().
   void internal_modification_end();
@@ -137,8 +137,6 @@ public:
 
   // Used in unit tests.  Returns the current partitions.
   std::vector<Partition *> get_partitions(EntityRank rank) const;
-
-  const ConnectivityMap& connectivity_map() const { return m_connectivity_map; }
 
   bool being_destroyed() const { return m_being_destroyed; }
 

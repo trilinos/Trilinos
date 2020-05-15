@@ -50,9 +50,6 @@ public:
   /// Constructor
   TimeStepControl(Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
 
-  /// This is a copy constructor
-  TimeStepControl(const TimeStepControl<Scalar>& tsc);
-
   /// Destructor
   virtual ~TimeStepControl() {}
 
@@ -117,6 +114,8 @@ public:
       { return tscPL_->get<int>   ("Maximum Order"); }
     virtual std::string getStepType() const
       { return tscPL_->get<std::string>("Integrator Step Type"); }
+    virtual bool getOutputExactly() const
+      { return tscPL_->get<bool>("Output Exactly On Output Times"); }
     virtual std::vector<int> getOutputIndices() const
       { return outputIndices_; }
     virtual std::vector<Scalar> getOutputTimes() const
@@ -130,6 +129,10 @@ public:
       { return tscPL_->get<int>("Number of Time Steps"); }
     virtual Teuchos::RCP<TimeStepControlStrategyComposite<Scalar>>
        getTimeStepControlStrategy() const { return stepControlStrategy_;}
+    virtual int getOutputIndexInterval()
+      { return outputIndexInterval_;}
+    virtual double getOutputTimeInterval()
+      { return outputTimeInterval_;}
   //@}
 
   /// \name Set ParameterList values
@@ -160,6 +163,8 @@ public:
       { tscPL_->set<int>   ("Maximum Order"            , MaxOrder    ); }
     virtual void setStepType(std::string StepType)
       { tscPL_->set<std::string>("Integrator Step Type", StepType    ); }
+    virtual void setOutputExactly(bool OutputExactly)
+      { tscPL_->get<bool>("Output Exactly On Output Times", OutputExactly); }
     virtual void setOutputIndices(std::vector<int> OutputIndices)
       { outputIndices_ = OutputIndices;
         std::ostringstream ss;
@@ -169,11 +174,15 @@ public:
         tscPL_->set<std::string>("Output Index List", ss.str());
       }
     virtual void setOutputTimes(std::vector<Scalar> OutputTimes)
-      { outputTimes_ = OutputTimes;
+      {
+        outputTimes_ = OutputTimes;
         std::ostringstream ss;
-        std::copy(OutputTimes.begin(), OutputTimes.end()-1,
-                  std::ostream_iterator<Scalar>(ss, ","));
-        ss << OutputTimes.back();
+        ss << std::setprecision(16);
+        if (!outputTimes_.empty()) {
+          for (size_t i=0; i < outputTimes_.size()-1; ++i)
+            ss << outputTimes_[i] << ",";
+          ss << outputTimes_[outputTimes_.size()-1];
+        }
         tscPL_->set<std::string>("Output Time List", ss.str());
       }
     virtual void setMaxFailures(int MaxFailures)
@@ -182,6 +191,15 @@ public:
       { tscPL_->set<int>
         ("Maximum Number of Consecutive Stepper Failures", MaxConsecFailures); }
     virtual void setNumTimeSteps(int numTimeSteps);
+    virtual void setOutputIndexInterval(int OutputIndexInterval)
+      { tscPL_->set<int>("Output Index Interval",OutputIndexInterval);
+        outputIndexInterval_ = OutputIndexInterval; }
+    virtual void setOutputTimeInterval(double OutputTimeInterval)
+      { tscPL_->set<double>("Output Time Interval",OutputTimeInterval);
+        outputTimeInterval_ = OutputTimeInterval; }
+    virtual void setPrintDtChanges(bool printDtChanges)
+      { printDtChanges_ = printDtChanges; }
+    virtual bool getPrintDtChanges() const { return printDtChanges_; }
   //@}
 
 protected:
@@ -190,11 +208,15 @@ protected:
 
   std::vector<int>    outputIndices_;  ///< Vector of output indices.
   std::vector<Scalar> outputTimes_;    ///< Vector of output times.
+  int outputIndexInterval_;
+  double outputTimeInterval_;
 
   bool outputAdjustedDt_; ///< Flag indicating that dt was adjusted for output.
   Scalar dtAfterOutput_;  ///< dt to reinstate after output step.
 
   Teuchos::RCP<TimeStepControlStrategyComposite<Scalar>> stepControlStrategy_;
+
+  bool printDtChanges_;
 
 };
 } // namespace Tempus

@@ -306,7 +306,7 @@ int main(int argc, char *argv[])
     /* Reset the mesh data structure for next iteration. */
     if (iteration < Number_Iterations) {
       float twiddle = 0.01;
-      char str[4];
+      char str[32];
       /* Perturb coordinates of mesh */
       if (mesh.data_type == ZOLTAN_GRAPH)
         for (int i = 0; i < mesh.num_elems; i++) {

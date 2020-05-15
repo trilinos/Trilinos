@@ -73,15 +73,17 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  Vector (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source)
-    : base_type (source)
+  Vector (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
+          const Teuchos::DataAccess copyOrView)
+    : base_type (source, copyOrView)
   {}
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   Vector (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
-          const Teuchos::DataAccess copyOrView)
-    : base_type (source, copyOrView)
+          const Teuchos::RCP<const map_type>& map,
+          const local_ordinal_type rowOffset) :
+    base_type (source, map, rowOffset)
   {}
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -111,11 +113,6 @@ namespace Tpetra {
   Vector (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& X,
           const size_t j)
     : base_type (X, j)
-  {}
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  ~Vector ()
   {}
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -210,63 +207,6 @@ namespace Tpetra {
     return norm;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  typename Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mag_type
-  TPETRA_DEPRECATED
-  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  normWeighted (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& weights) const
-  {
-    using Kokkos::ALL;
-    using Kokkos::subview;
-    using Teuchos::Comm;
-    using Teuchos::RCP;
-    using Teuchos::reduceAll;
-    using Teuchos::REDUCE_SUM;
-    typedef Kokkos::Details::ArithTraits<impl_scalar_type> ATS;
-    typedef Kokkos::Details::ArithTraits<mag_type> ATM;
-    typedef Kokkos::View<mag_type, device_type> norm_view_type; // just one
-    const char tfecfFuncName[] = "normWeighted: ";
-
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! this->getMap ()->isCompatible (*weights.getMap ()), std::runtime_error,
-      "Vectors do not have compatible Maps:" << std::endl
-      << "this->getMap(): " << std::endl << *this->getMap()
-      << "weights.getMap(): " << std::endl << *weights.getMap() << std::endl);
-#else
-    const size_t lclNumRows = this->getLocalLength ();
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      lclNumRows != weights.getLocalLength (), std::runtime_error,
-      "Vectors do not have the same local length.");
-#endif // HAVE_TPETRA_DEBUG
-
-    norm_view_type lclNrm ("lclNrm"); // local norm
-    mag_type gblNrm = ATM::zero (); // return value
-
-    auto X_lcl = this->template getLocalView<device_type> ();
-    auto W_lcl = this->template getLocalView<device_type> ();
-    KokkosBlas::nrm2w_squared (lclNrm,
-                               subview (X_lcl, ALL (), 0),
-                               subview (W_lcl, ALL (), 0));
-    const mag_type OneOverN =
-      ATM::one () / static_cast<mag_type> (this->getGlobalLength ());
-    RCP<const Comm<int> > comm = this->getMap ().is_null () ?
-      Teuchos::null : this->getMap ()->getComm ();
-
-    if (! comm.is_null () && this->isDistributed ()) {
-      // Assume that MPI can access device memory.
-      reduceAll<int, mag_type> (*comm, REDUCE_SUM, 1, lclNrm.data (),
-                                &gblNrm);
-      gblNrm = ATM::sqrt (gblNrm * OneOverN);
-    }
-    else {
-      auto lclNrm_h = Kokkos::create_mirror_view (lclNrm);
-      Kokkos::deep_copy (lclNrm_h, lclNrm);
-      gblNrm = ATM::sqrt (ATS::magnitude (lclNrm_h()) * OneOverN);
-    }
-
-    return gblNrm;
-  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   std::string Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::

@@ -55,6 +55,7 @@
 
 #ifdef HAVE_XPETRA_TPETRA
 #include "Xpetra_TpetraMap.hpp"
+#include "Tpetra_Details_Behavior.hpp"
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -65,6 +66,15 @@
 // put these into test_same_as and test_is_compatible
 
 namespace {
+
+  bool mapDebugChecksEnabled()
+  {
+#ifdef HAVE_XPETRA_TPETRA
+    return Tpetra::Details::Behavior::debug("Map");
+#else
+    return false;
+#endif // HAVE_XPETRA_TPETRA
+  }
 
   bool testMpi = true;
   double errorTolSlack = 1e+1;
@@ -136,33 +146,286 @@ namespace {
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
-  // This test will only pass in a debug build of Tpetra (HAVE_TPETRA_DEBUG).
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Map, validConstructor3, M, LO, GO, N )
+  {
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#ifdef HAVE_XPETRA_TPETRA
+    // create Kokkos templates
+    typedef typename N::device_type device_type;
+    typedef typename device_type::execution_space execution_space;
+    // create a comm
+    auto comm = getDefaultComm();
+    const auto numProcs = comm->getSize();
+    const auto myRank    = comm->getRank();
+
+    const auto INVALID = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
+
+    // Uniform and contiguous map
+    {
+      const int numDofsPerProc = 2;
+      const int offset = myRank*numDofsPerProc;
+
+      Kokkos::View<GO*, typename N::device_type> indexList("Xpetra: Map indexList", numDofsPerProc);
+      Kokkos::parallel_for("Xpetra: Map unit test",
+                           Kokkos::RangePolicy<execution_space>(0, numDofsPerProc),
+                           KOKKOS_LAMBDA(const int i) {
+                             indexList(i) = GO (offset + i);
+                           });
+      M m(INVALID, indexList, 0, comm);
+
+      TEST_EQUALITY(m.getGlobalNumElements(),
+                    Teuchos::as<Xpetra::global_size_t>(numDofsPerProc*numProcs));
+
+      // All procs fail if any proc fails
+      int globalSuccess_int = -1;
+      reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
+      TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+
+      TEST_EQUALITY(m.getNodeNumElements(), Teuchos::as<size_t>(numDofsPerProc));
+
+      // All procs fail if any proc fails
+      globalSuccess_int = -1;
+      reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
+      TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+
+      TEST_EQUALITY(m.getMinGlobalIndex(), Teuchos::as<GO>(numDofsPerProc*myRank));
+
+      // All procs fail if any proc fails
+      globalSuccess_int = -1;
+      reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
+      TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+
+      TEST_EQUALITY(m.getMaxGlobalIndex(), Teuchos::as<GO>(numDofsPerProc*myRank + 1));
+
+      // All procs fail if any proc fails
+      globalSuccess_int = -1;
+      reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
+      TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+    }
+
+    // Uniform non-contiguous map
+    {
+      const int numDofsPerProc = 2;
+
+      Kokkos::View<GO*, typename N::device_type> indexList("Xpetra: Map indexList", numDofsPerProc);
+      Kokkos::parallel_for("Xpetra: Map unit test",
+                           Kokkos::RangePolicy<execution_space>(0, numDofsPerProc),
+                           KOKKOS_LAMBDA(const int i) {
+                             indexList(i) = GO (3*numProcs*i + myRank);
+                           });
+      M m(INVALID, indexList, 0, comm);
+
+      TEST_EQUALITY(m.getGlobalNumElements(),
+                    Teuchos::as<Xpetra::global_size_t>(numDofsPerProc*numProcs));
+
+      // All procs fail if any proc fails
+      int globalSuccess_int = -1;
+      reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
+      TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+
+      TEST_EQUALITY(m.getNodeNumElements(), Teuchos::as<size_t>(numDofsPerProc));
+
+      // All procs fail if any proc fails
+      globalSuccess_int = -1;
+      reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
+      TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+
+      TEST_EQUALITY(m.getMinGlobalIndex(), Teuchos::as<GO>(myRank));
+
+      // All procs fail if any proc fails
+      globalSuccess_int = -1;
+      reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
+      TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+
+      TEST_EQUALITY(m.getMaxGlobalIndex(), Teuchos::as<GO>(3*numProcs + myRank));
+
+      // All procs fail if any proc fails
+      globalSuccess_int = -1;
+      reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
+      TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+
+      std::cout << std::endl << "myRank=" << myRank
+                << ", getMinGlobalIndex=" << m.getMinGlobalIndex()
+                << ", getMaxGlobalIndex=" << m.getMaxGlobalIndex()
+                << std::endl;
+    }
+
+    // Non-uniform contiguous map
+    {
+      const int numDofsPerProc = myRank + 1;
+      GO offset = 0;
+      for(int rankIdx = 0; rankIdx < myRank; ++rankIdx) {
+        offset += rankIdx + 1;
+      }
+
+      Kokkos::View<GO*, typename N::device_type> indexList("Xpetra: Map indexList", numDofsPerProc);
+      Kokkos::parallel_for("Xpetra: Map unit test",
+                           Kokkos::RangePolicy<execution_space>(0, numDofsPerProc),
+                           KOKKOS_LAMBDA(const int i) {
+                             indexList(i) = GO (offset + i);
+                           });
+      M m(INVALID, indexList, 0, comm);
+
+      Xpetra::global_size_t globalNumElements = 0;
+      for(int rankIdx = 0; rankIdx < numProcs; ++rankIdx) {
+        globalNumElements += Teuchos::as<Xpetra::global_size_t>(rankIdx + 1);
+      }
+      TEST_EQUALITY(m.getGlobalNumElements(), globalNumElements);
+
+      // All procs fail if any proc fails
+      int globalSuccess_int = -1;
+      reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
+      TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+
+      TEST_EQUALITY(m.getNodeNumElements(), Teuchos::as<size_t>(numDofsPerProc));
+
+      // All procs fail if any proc fails
+      globalSuccess_int = -1;
+      reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
+      TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+
+      TEST_EQUALITY(m.getMinGlobalIndex(), Teuchos::as<GO>(offset));
+
+      // All procs fail if any proc fails
+      globalSuccess_int = -1;
+      reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
+      TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+
+      TEST_EQUALITY(m.getMaxGlobalIndex(), Teuchos::as<GO>(offset + myRank));
+
+      // All procs fail if any proc fails
+      globalSuccess_int = -1;
+      reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
+      TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+    }
+
+    // Non-uniform non-contiguous map
+    {
+      const int numDofsPerProc = myRank + 1;
+
+      Kokkos::View<GO*, typename N::device_type> indexList("Xpetra: Map indexList", numDofsPerProc);
+      Kokkos::parallel_for("Xpetra: Map unit test",
+                           Kokkos::RangePolicy<execution_space>(0, numDofsPerProc),
+                           KOKKOS_LAMBDA(const int i) {
+                             indexList(i) = GO (i*numProcs + myRank);
+                           });
+      M m(INVALID, indexList, 0, comm);
+
+      Xpetra::global_size_t globalNumElements = 0;
+      for(int rankIdx = 0; rankIdx < numProcs; ++rankIdx) {
+        globalNumElements += Teuchos::as<Xpetra::global_size_t>(rankIdx + 1);
+      }
+      TEST_EQUALITY(m.getGlobalNumElements(), globalNumElements);
+
+      // All procs fail if any proc fails
+      int globalSuccess_int = -1;
+      reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
+      TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+
+      TEST_EQUALITY(m.getNodeNumElements(), Teuchos::as<size_t>(numDofsPerProc));
+
+      // All procs fail if any proc fails
+      globalSuccess_int = -1;
+      reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
+      TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+
+      TEST_EQUALITY(m.getMinGlobalIndex(), Teuchos::as<GO>(myRank));
+
+      // All procs fail if any proc fails
+      globalSuccess_int = -1;
+      reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
+      TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+
+      TEST_EQUALITY(m.getMaxGlobalIndex(), Teuchos::as<GO>(myRank*(numProcs + 1)));
+
+      // All procs fail if any proc fails
+      globalSuccess_int = -1;
+      reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
+      TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+    }
+#endif
+#endif
+  }
+
+  // This test exercises Tpetra's debug-mode checks.
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Map, invalidConstructor1, M, LO, GO, N )
   {
-#ifdef HAVE_TPETRA_DEBUG
-    // create a comm
+    using Teuchos::outArg;
+    using Teuchos::REDUCE_MIN;
+    using std::endl;
+
+    if (! mapDebugChecksEnabled()) {
+      return;
+    }
+    int lclSuccess = 1;
+    int gblSuccess = 0;
+
+    const Xpetra::global_size_t GSTI =
+      Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
     Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
-    const Xpetra::global_size_t GSTI = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
+
+    const int totalNumTests = numImages > 1 ? 4 : 1;
+    int numPassedTests = 0;
+
     // bad constructor calls: (num global elements, index base)
     TEST_THROW(M map(GSTI,0,comm), std::invalid_argument);
-    if (numImages > 1) {
-      TEST_THROW(M map((myImageID == 0 ? GSTI : 0),0,comm), std::invalid_argument);
-      TEST_THROW(M map((myImageID == 0 ?  1 : 0),0,comm), std::invalid_argument);
-      TEST_THROW(M map(0,(myImageID == 0 ? 0 : 1), comm), std::invalid_argument);
+
+    lclSuccess = success ? 1 : 0;
+    reduceAll(*comm, REDUCE_MIN, lclSuccess, outArg(gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+    if (gblSuccess != 1) {
+      out << "Test " << (numPassedTests+1) << " of "
+          << totalNumTests << " passed" << endl;
     }
-    // All procs fail if any proc fails
-    int globalSuccess_int = -1;
-    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
-    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
-#endif // HAVE_TPETRA_DEBUG
+    ++numPassedTests;
+
+    if (numImages == 1) {
+      return;
+    }
+
+    TEST_THROW(M map((myImageID == 0 ? GSTI : 0),0,comm), std::invalid_argument);
+
+    lclSuccess = success ? 1 : 0;
+    reduceAll(*comm, REDUCE_MIN, lclSuccess, outArg(gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+    if (gblSuccess != 1) {
+      out << "Test " << (numPassedTests+1) << " of "
+          << totalNumTests << " passed" << endl;
+    }
+    ++numPassedTests;
+
+    TEST_THROW(M map((myImageID == 0 ?  1 : 0),0,comm), std::invalid_argument);
+
+    lclSuccess = success ? 1 : 0;
+    reduceAll(*comm, REDUCE_MIN, lclSuccess, outArg(gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+    if (gblSuccess != 1) {
+      out << "Test " << (numPassedTests+1) << " of "
+          << totalNumTests << " passed" << endl;
+    }
+    ++numPassedTests;
+
+    TEST_THROW(M map(0,(myImageID == 0 ? 0 : 1), comm), std::invalid_argument);
+
+    lclSuccess = success ? 1 : 0;
+    reduceAll(*comm, REDUCE_MIN, lclSuccess, outArg(gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+    if (gblSuccess != 1) {
+      out << "Test " << (numPassedTests+1) << " of "
+          << totalNumTests << " passed" << endl;
+    }
+    ++numPassedTests;
   }
 
-  // This test will only pass in a debug build of Tpetra (HAVE_TPETRA_DEBUG).
+  // This test exercises Tpetra's debug-mode checks.
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Map, invalidConstructor2, M, LO, GO, N )
   {
-#ifdef HAVE_TPETRA_DEBUG
+    if (! mapDebugChecksEnabled()) {
+      return;
+    }
+
     // create a comm
     Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
@@ -179,7 +442,6 @@ namespace {
     int globalSuccess_int = -1;
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
-#endif // HAVE_TPETRA_DEBUG
   }
 
 #if 0 // failing for epetra. Epetra does not throw
@@ -296,6 +558,13 @@ namespace {
     auto comm = getDefaultComm();
     const auto numProcs = comm->getSize();
     const auto myRank    = comm->getRank();
+
+    M testMap(1,0,comm);
+    Xpetra::UnderlyingLib lib = testMap.lib();
+    if (lib == Xpetra::UseEpetra) {
+      out << "Xpetra: localMap only valid when using Tpetra" << std::endl;
+      return;
+    }
 
     const auto INVALID = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
 
@@ -469,7 +738,10 @@ namespace {
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Map, ContigUniformMap,    M##LO##GO##N, LO, GO, N) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Map, validConstructor1,   M##LO##GO##N, LO, GO, N) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Map, validConstructor2,   M##LO##GO##N, LO, GO, N)
-  //TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Map, invalidConstructor3, M##LO##GO##N , LO, GO, N)
+
+// List of tests (which run on Tpetra only)
+#define XPT_MAP_INSTANT(LO,GO,N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Map, validConstructor3,   M##LO##GO##N, LO, GO, N)
 
 
 #if defined(HAVE_XPETRA_TPETRA)
@@ -481,6 +753,7 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 // no ordinal types as scalar for testing as some tests use ScalarTraits::eps...
 TPETRA_INSTANTIATE_LGN ( XPETRA_TPETRA_TYPES )
 TPETRA_INSTANTIATE_LGN ( XP_MAP_INSTANT )
+TPETRA_INSTANTIATE_LGN ( XPT_MAP_INSTANT )
 
 #endif
 

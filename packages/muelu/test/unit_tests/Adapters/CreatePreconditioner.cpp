@@ -44,6 +44,7 @@
 //
 // @HEADER
 #include <Teuchos_UnitTestHarness.hpp>
+#include <Teuchos_XMLParameterListHelpers.hpp>
 
 #include "MueLu_TestHelpers.hpp"
 #include "MueLu_Version.hpp"
@@ -74,15 +75,10 @@
 #include "MueLu_EpetraOperator.hpp"
 #endif
 
+// #endif
+
 namespace MueLuTests {
 
-// Ignore all deprecated declarations
-// We could have done that for every call to Create[ET]petraPreconditioner, but
-// it's a pain, there are 25+ of those.
-#ifdef __GNUC__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(PetraOperator, CreatePreconditioner, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
@@ -99,8 +95,6 @@ namespace MueLuTests {
     Xpetra::UnderlyingLib          lib  = TestHelpers::Parameters::getLib();
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
-    GO nx = 1000;
-
     std::string xmlFileName = "test.xml";
 
     if (lib == Xpetra::UseTpetra) {
@@ -112,6 +106,7 @@ namespace MueLuTests {
       typedef Tpetra::MultiVector<real_type,LO,GO,NO> dtpetra_multivector_type;
 
       // Matrix
+      GO nx = 1000;
       RCP<Matrix>     Op  = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nx * comm->getSize(), lib);
       RCP<const Map > map = Op->getRowMap();
 
@@ -143,59 +138,6 @@ namespace MueLuTests {
       out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
           Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
 
-      out << "Testing deprecated method" << std::endl;
-      tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(tpA, xmlFileName);
-      tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
-      out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
-          Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
-
-      xmlFileName = "testWithRebalance.xml";
-
-      RCP<dtpetra_multivector_type> tpcoordinates = MueLu::Utilities<real_type,LO,GO,NO>::MV2NonConstTpetraMV(coordinates);
-      RCP<tpetra_multivector_type>  tpnullspace   = Utils::MV2NonConstTpetraMV(nullspace);
-
-      out << "========== Create Preconditioner from xmlFile and coordinates ==========" << std::endl;
-      tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(RCP<tpetra_operator_type>(tpA), xmlFileName, tpcoordinates);
-      X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
-      tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
-      out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
-          Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
-
-      out << "Testing deprecated method" << std::endl;
-      tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(tpA, xmlFileName, tpcoordinates);
-      X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
-      tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
-      out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
-          Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
-
-      out << "========== Create Preconditioner from xmlFile, coordinates and nullspace ==========" << std::endl;
-      tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(RCP<tpetra_operator_type>(tpA), xmlFileName, tpcoordinates, tpnullspace);
-      X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
-      tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
-      out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
-          Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
-
-      out << "Testing deprecated method" << std::endl;
-      tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(tpA, xmlFileName, tpcoordinates, tpnullspace);
-      X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
-      tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
-      out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
-          Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
-
-      //Test interface with no ParameterList or XML filename provided.
-      out << "========== Create Preconditioner from coordinates and nullspace ==========" << std::endl;
-      tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(RCP<tpetra_operator_type>(tpA), tpcoordinates, tpnullspace);
-      X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
-      tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
-      out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
-          Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
-
-      out << "Testing deprecated method" << std::endl;
-      tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(tpA, tpcoordinates, tpnullspace);
-      X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
-      tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
-      out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
-          Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
 #endif
 
 #else
@@ -206,6 +148,7 @@ namespace MueLuTests {
 #ifdef HAVE_MUELU_EPETRA
 
       // Matrix
+      GO nx = 1000;
       RCP<Matrix>     Op  = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nx * comm->getSize(), lib);
       RCP<const Map > map = Op->getRowMap();
 
@@ -241,19 +184,19 @@ namespace MueLuTests {
       RCP<Epetra_MultiVector> epcoordinates = MueLu::Utilities<real_type,LO,GO,NO>::MV2NonConstEpetraMV(coordinates);
       RCP<Epetra_MultiVector> epnullspace   = Utils::MV2NonConstEpetraMV(nullspace);
 
-      eH = MueLu::CreateEpetraPreconditioner(epA, xmlFileName, epcoordinates);
+      Teuchos::ParameterList paramList;
+      Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *map->getComm());
+      Teuchos::ParameterList& userParamList = paramList.sublist("user data");
+      userParamList.set<RCP<Epetra_MultiVector> >("Coordinates", epcoordinates);
+      userParamList.set<RCP<Epetra_MultiVector> >("Nullspace", epnullspace);
+
+      eH = MueLu::CreateEpetraPreconditioner(epA, paramList);
 
       X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
       eH->Apply(*(Utils::MV2EpetraMV(RHS1)), *(Utils::MV2NonConstEpetraMV(X1)));
       out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
           Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
 
-      eH = MueLu::CreateEpetraPreconditioner(epA, xmlFileName, epcoordinates, epnullspace);
-
-      X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
-      eH->Apply(*(Utils::MV2EpetraMV(RHS1)), *(Utils::MV2NonConstEpetraMV(X1)));
-      out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
-          Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
 #endif
 
 #else
@@ -284,8 +227,6 @@ namespace MueLuTests {
     Xpetra::UnderlyingLib          lib  = TestHelpers::Parameters::getLib();
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
-    GO nx = 1000;
-
     Teuchos::ParameterList mylist;
     mylist.set("xml parameter file","test.xml");
 
@@ -294,6 +235,7 @@ namespace MueLuTests {
       typedef Tpetra::Operator<SC,LO,GO,NO> tpetra_operator_type;
 
       // Matrix
+      GO nx = 1000;
       RCP<Matrix>     Op  = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nx * comm->getSize(), lib);
       RCP<const Map > map = Op->getRowMap();
 
@@ -323,42 +265,23 @@ namespace MueLuTests {
       out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
           Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
 
-      out << "Testing deprecated method" << std::endl;
-      tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(tpA,mylist);
-      tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
-      out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
-          Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
-
       mylist.set("xml parameter file","testWithRebalance.xml");
 
       RCP<Tpetra::MultiVector<real_type,LO,GO,NO> > tpcoordinates = MueLu::Utilities<real_type,LO,GO,NO>::MV2NonConstTpetraMV(coordinates);
       RCP<Tpetra::MultiVector<SC,LO,GO,NO> > tpnullspace   = Utils::MV2NonConstTpetraMV(nullspace);
 
-      tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(RCP<tpetra_operator_type>(tpA), mylist, tpcoordinates);
+      std::string mueluXML = mylist.get("xml parameter file", "");
+      Teuchos::ParameterList mueluList;
+      Teuchos::updateParametersFromXmlFileAndBroadcast(mueluXML, Teuchos::Ptr<Teuchos::ParameterList>(&mueluList), *map->getComm());
+      Teuchos::ParameterList& userParamList = mueluList.sublist("user data");
+      userParamList.set<RCP<Tpetra::MultiVector<real_type,LO,GO,NO> > >("Coordinates", tpcoordinates);
+      userParamList.set<RCP<Tpetra::MultiVector<SC,LO,GO,NO> > >("Nullspace", tpnullspace);
+      tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(RCP<tpetra_operator_type>(tpA), mueluList);
       X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
       tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
       out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
           Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
 
-      out << "Testing deprecated method" << std::endl;
-      tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(tpA, mylist, tpcoordinates);
-      X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
-      tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
-      out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
-          Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
-
-      tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(RCP<tpetra_operator_type>(tpA), mylist, tpcoordinates, tpnullspace);
-      X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
-      tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
-      out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
-          Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
-
-      out << "Testing deprecated method" << std::endl;
-      tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(tpA, mylist, tpcoordinates, tpnullspace);
-      X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
-      tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
-      out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
-          Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
 #endif
 
 #else
@@ -368,6 +291,7 @@ namespace MueLuTests {
     } else if (lib == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_EPETRA
       // Matrix
+      GO nx = 1000;
       RCP<Matrix>     Op  = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nx * comm->getSize(), lib);
       RCP<const Map > map = Op->getRowMap();
 
@@ -403,19 +327,12 @@ namespace MueLuTests {
       RCP<Epetra_MultiVector> epcoordinates = MueLu::Utilities<real_type,LO,GO,NO>::MV2NonConstEpetraMV(coordinates);
       RCP<Epetra_MultiVector> epnullspace   = Utils::MV2NonConstEpetraMV(nullspace);
 
-      eH = MueLu::CreateEpetraPreconditioner(epA, mylist, epcoordinates);
+      Teuchos::ParameterList paramList = mylist;
+      Teuchos::ParameterList& userParamList = paramList.sublist("user data");
+      userParamList.set<RCP<Epetra_MultiVector> >("Coordinates", epcoordinates);
+      userParamList.set<RCP<Epetra_MultiVector> >("Nullspace", epnullspace);
+      eH = MueLu::CreateEpetraPreconditioner(epA, paramList);
 
-      X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
-      eH->Apply(*(Utils::MV2EpetraMV(RHS1)), *(Utils::MV2NonConstEpetraMV(X1)));
-      out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
-          Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
-
-      eH = MueLu::CreateEpetraPreconditioner(epA, mylist, epcoordinates, epnullspace);
-
-      X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
-      eH->Apply(*(Utils::MV2EpetraMV(RHS1)), *(Utils::MV2NonConstEpetraMV(X1)));
-      out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
-          Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
 #endif
 
 #else
@@ -439,15 +356,13 @@ namespace MueLuTests {
 
     using Teuchos::RCP;
     typedef MueLu::Utilities<SC,LO,GO,NO> Utils;
-    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType real_type;
+    typedef typename Teuchos::ScalarTraits<Scalar>::coordinateType real_type;
     typedef Xpetra::MultiVector<real_type,LO,GO,NO> dMultiVector;
 
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
 
     Xpetra::UnderlyingLib          lib  = TestHelpers::Parameters::getLib();
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-
-    GO nx = 972;
 
     for (int k = 0; k < 2; k++) {
       std::string xmlFileName;
@@ -461,6 +376,7 @@ namespace MueLuTests {
         int numPDEs=3;
 
         // Matrix
+        GO nx = 972;
         RCP<Matrix>     Op  = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nx * comm->getSize(), lib);
         RCP<const Map > map = Op->getRowMap();
 
@@ -498,26 +414,12 @@ namespace MueLuTests {
         RCP<Tpetra::MultiVector<real_type,LO,GO,NO> > tpcoordinates = MueLu::Utilities<real_type,LO,GO,NO>::MV2NonConstTpetraMV(coordinates);
         RCP<Tpetra::MultiVector<SC,LO,GO,NO> > tpnullspace   = Utils::MV2NonConstTpetraMV(nullspace);
 
-        RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(RCP<tpetra_operator_type>(tpA), xmlFileName, tpcoordinates);
-        tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
-        out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
-            Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
-
-        out << "Testing deprecated method" << std::endl;
-        tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(tpA, xmlFileName, tpcoordinates);
-        tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
-        out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
-            Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
-
-        tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(RCP<tpetra_operator_type>(tpA), xmlFileName, tpcoordinates, tpnullspace);
-        X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
-        tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
-        out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
-            Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
-
-        out << "Testing deprecated method" << std::endl;
-        tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(tpA, xmlFileName, tpcoordinates, tpnullspace);
-        X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
+        Teuchos::ParameterList paramList;
+        Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *tpA->getDomainMap()->getComm());
+        Teuchos::ParameterList& userParamList = paramList.sublist("user data");
+        userParamList.set<RCP<Tpetra::MultiVector<real_type,LO,GO,NO> > >("Coordinates", tpcoordinates);
+        userParamList.set<RCP<Tpetra::MultiVector<SC,LO,GO,NO> > >("Nullspace", tpnullspace);
+        RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(RCP<tpetra_operator_type>(tpA), paramList);
         tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
         out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
             Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
@@ -530,6 +432,7 @@ namespace MueLuTests {
         int numPDEs=3;
 
         // Matrix
+        GO nx = 972;
         RCP<Matrix>     Op  = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nx * comm->getSize(), lib);
         RCP<const Map > map = Op->getRowMap();
 
@@ -567,18 +470,20 @@ namespace MueLuTests {
         RCP<Epetra_MultiVector> epcoordinates = MueLu::Utilities<real_type,LO,GO,NO>::MV2NonConstEpetraMV(coordinates);
         RCP<Epetra_MultiVector> epnullspace   = Utils::MV2NonConstEpetraMV(nullspace);
 
-        RCP<MueLu::EpetraOperator> eH = MueLu::CreateEpetraPreconditioner(epA, xmlFileName, epcoordinates);
+        Teuchos::ParameterList paramList;
+        Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName,
+                                                         Teuchos::Ptr<Teuchos::ParameterList>(&paramList),
+                                                         *map->getComm());
+        paramList.set("use kokkos refactor", false); // Done to avoid having kokkos factories called with Epetra
+        Teuchos::ParameterList& userParamList = paramList.sublist("user data");
+        userParamList.set<RCP<Epetra_MultiVector> >("Coordinates", epcoordinates);
+        userParamList.set<RCP<Epetra_MultiVector> >("Nullspace",   epnullspace);
+        RCP<MueLu::EpetraOperator> eH = MueLu::CreateEpetraPreconditioner(epA, paramList);
 
         eH->Apply(*(Utils::MV2EpetraMV(RHS1)), *(Utils::MV2NonConstEpetraMV(X1)));
         out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
             Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
 
-        eH = MueLu::CreateEpetraPreconditioner(epA, xmlFileName, epcoordinates, epnullspace);
-
-        X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
-        eH->Apply(*(Utils::MV2EpetraMV(RHS1)), *(Utils::MV2NonConstEpetraMV(X1)));
-        out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
-            Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
 #else
         std::cout << "Skip PetraOperator::CreatePreconditioner_PDESystem: Epetra is not available" << std::endl;
 #endif
@@ -605,7 +510,6 @@ namespace MueLuTests {
     Xpetra::UnderlyingLib          lib  = TestHelpers::Parameters::getLib();
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
-    GO nx = 1000;
     std::string xmlFileName = "testReuse.xml";
 
     if (lib == Xpetra::UseTpetra) {
@@ -613,6 +517,7 @@ namespace MueLuTests {
       typedef Tpetra::Operator<SC,LO,GO,NO> tpetra_operator_type;
 
       // Matrix
+      GO nx = 1000;
       RCP<Matrix>     Op  = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nx * comm->getSize(), lib);
       RCP<const Map > map = Op->getRowMap();
 
@@ -635,12 +540,6 @@ namespace MueLuTests {
       out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
           Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
 
-      out << "Testing deprecated method" << std::endl;
-      tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(tpA, xmlFileName);
-      tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
-      out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
-          Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
-
       // Reuse preconditioner
       MueLu::ReuseTpetraPreconditioner(tpA, *tH);
 
@@ -655,6 +554,7 @@ namespace MueLuTests {
     } else if (lib == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_EPETRA
       // Matrix
+      GO nx = 1000;
       RCP<Matrix>     Op  = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nx * comm->getSize(), lib);
       RCP<const Map > map = Op->getRowMap();
 
@@ -672,7 +572,12 @@ namespace MueLuTests {
 
       RCP<Epetra_CrsMatrix> epA = MueLu::Utilities<SC,LO,GO,NO>::Op2NonConstEpetraCrs(Op);
 
-      RCP<MueLu::EpetraOperator> eH = MueLu::CreateEpetraPreconditioner(epA, xmlFileName);
+      Teuchos::ParameterList paramList;
+      Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName,
+                                                       Teuchos::Ptr<Teuchos::ParameterList>(&paramList),
+                                                       *map->getComm());
+      paramList.set("use kokkos refactor", false);
+      RCP<MueLu::EpetraOperator> eH = MueLu::CreateEpetraPreconditioner(epA, paramList);
 
       eH->Apply(*(Utils::MV2EpetraMV(RHS1)), *(Utils::MV2NonConstEpetraMV(X1)));
       out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
@@ -693,9 +598,6 @@ namespace MueLuTests {
       TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::InvalidArgument, "Unknown Xpetra lib");
     }
   }
-#ifdef __GNUC__
-#pragma GCC diagnostic pop
-#endif
 
 #  define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(PetraOperator, CreatePreconditioner, Scalar, LO, GO, Node) \
@@ -706,3 +608,5 @@ namespace MueLuTests {
 #include <MueLu_ETI_4arg.hpp>
 
 }//namespace MueLuTests
+
+// #endif

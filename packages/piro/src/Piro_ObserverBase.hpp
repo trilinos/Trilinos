@@ -43,6 +43,8 @@
 #ifndef PIRO_OBSERVERBASE_HPP
 #define PIRO_OBSERVERBASE_HPP
 
+#include <string>
+
 #include "Thyra_VectorBase.hpp"
 
 namespace Piro {
@@ -71,6 +73,9 @@ public:
 
   virtual void observeSolution(
       const Thyra::MultiVectorBase<Scalar> &solution, Scalar time);
+
+  virtual void parameterChanged(
+      const std::string& param);
 
   virtual ~ObserverBase() {}
 };
@@ -117,6 +122,14 @@ template <typename Scalar>
 void
 ObserverBase<Scalar>::observeSolution(
       const Thyra::MultiVectorBase<Scalar> &solution, Scalar time)
+{
+  // Nothing to do by default
+}
+
+template <typename Scalar>
+void
+ObserverBase<Scalar>::parameterChanged(
+      const std::string& param)
 {
   // Nothing to do by default
 }

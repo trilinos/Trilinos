@@ -265,6 +265,12 @@ DynamicConstraint_CheckInterface<Real> make_check( DynamicConstraint<Real>& con 
   return DynamicConstraint_CheckInterface<Real>(con);
 }
 
+template<typename Real>
+DynamicConstraint_CheckInterface<Real> make_check( DynamicConstraint<Real>& con, 
+                                                   TimeStamp<Real>& timeStamp ) {
+  return DynamicConstraint_CheckInterface<Real>(con,timeStamp);
+}
+
 } // namespace ROL
 
 

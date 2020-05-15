@@ -45,6 +45,8 @@
 #define ROL_OPTIMIZATIONSOLVER_HPP
 
 #include "ROL_Algorithm.hpp"
+#include "ROL_StepFactory.hpp"
+#include "ROL_StatusTestFactory.hpp"
 #include "ROL_OptimizationProblem.hpp"
 #include "ROL_CombinedStatusTest.hpp"
 
@@ -253,7 +255,6 @@ public:
       case TYPE_LAST:
         ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
           "Error in OptimizationSolver::solve() : Unsupported problem type");
-      break;
     }
 
     // TODO: Interrogate AlgorithmState and StatusTest to generate a return code
@@ -324,6 +325,35 @@ public:
   }
 
 }; // class OptimizationSolver
+
+
+template<typename Real>
+inline Ptr<OptimizationSolver<Real>>
+make_OptimizationSolver( OptimizationProblem<Real>& opt, 
+                         ParameterList& parlist ) {
+  return makePtr<OptimizationSolver<Real>>(opt,parlist);
+}
+
+template<typename Real>
+inline Ptr<OptimizationSolver<Real>>
+make_OptimizationSolver( const Ptr<OptimizationProblem<Real>>& opt, 
+                         ParameterList& parlist ) {
+  return makePtr<OptimizationSolver<Real>>(*opt,parlist);
+}
+
+template<typename Real>
+inline Ptr<OptimizationSolver<Real>>
+make_OptimizationSolver( OptimizationProblem<Real>& opt, 
+                         const Ptr<ParameterList>& parlist ) {
+  return makePtr<OptimizationSolver<Real>>(opt,*parlist);
+}
+
+template<typename Real>
+inline Ptr<OptimizationSolver<Real>>
+make_OptimizationSolver( const Ptr<OptimizationProblem<Real>>& opt, 
+                         const Ptr<ParameterList>& parlist ) {
+  return makePtr<OptimizationSolver<Real>>(*opt,*parlist);
+}
 
 } // namespace ROL
 

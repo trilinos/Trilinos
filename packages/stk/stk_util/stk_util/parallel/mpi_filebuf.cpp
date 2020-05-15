@@ -1,8 +1,9 @@
 /*
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -15,10 +16,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -54,10 +55,6 @@ enum { buffer_putback_length =   16 };
 
 // --------------------------------------------------------------------
 namespace {
-
-#if !defined(NOT_HAVE_STK_SEACASAPREPRO_LIB)
-  void add_aprepro_defines(SEAMS::Aprepro &aprepro, const std::string &defines);
-#endif
 
   double mpi_wall_time()
   {
@@ -199,7 +196,7 @@ mpi_filebuf * mpi_filebuf::open(
       SEAMS::Aprepro aprepro;
       aprepro.set_error_streams(&sierra::Env::output(), &sierra::Env::output(), &sierra::Env::output());
 
-      add_aprepro_defines(aprepro, aprepro_defines);
+      stk::add_aprepro_defines(aprepro, aprepro_defines);
 
       bool result = aprepro.parse_stream(infile);
       if (result) {
@@ -269,7 +266,7 @@ mpi_filebuf * mpi_filebuf::open(
 
     SEAMS::Aprepro aprepro;
 
-    add_aprepro_defines(aprepro, aprepro_defines);
+    stk::add_aprepro_defines(aprepro, aprepro_defines);
 
     bool result = aprepro.parse_stream(infile);
     if (result) {
@@ -636,7 +633,8 @@ int mpi_filebuf::sync()
 }
 
 #if !defined(NOT_HAVE_STK_SEACASAPREPRO_LIB)
-namespace {
+namespace stk
+{
   void add_aprepro_defines(SEAMS::Aprepro &aprepro, const std::string &defines)
   {
     // See if any variables were defined on the command line...
@@ -659,7 +657,7 @@ namespace {
 	    std::stringstream ss(define[1]);
 	    double d = 0;
 	    ss >> d;
-	    if (ss.fail()) {
+	    if (ss.fail() || !ss.eof()) {
 	      // Not a valid number; treat as a string
 	      aprepro.add_variable(define[0], define[1], immutable);
 	    } else {

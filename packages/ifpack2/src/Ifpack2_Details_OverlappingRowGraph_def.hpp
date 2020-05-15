@@ -88,12 +88,6 @@ OverlappingRowGraph<GraphType>::getComm () const
 }
   
 
-template<class GraphType>
-Teuchos::RCP<typename GraphType::node_type> 
-OverlappingRowGraph<GraphType>::getNode () const
-{
-  return nonoverlappingGraph_->getNode();
-}
   
 
 template<class GraphType>

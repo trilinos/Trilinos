@@ -1,8 +1,11 @@
 AggregationExportFactory
+AggregateQualityEstimateFactory
 AmalgamationFactory
+AmalgamationFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 Amesos2Smoother - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
 AMGXOperator - #if defined(HAVE_MUELU_AMGX)
 AlgebraicPermutationStrategy
+BelosSmoother - #if defined(HAVE_MUELU_BELOS)
 BlackBoxPFactory
 BlockedCoarseMapFactory
 BlockedCoordinatesTransferFactory
@@ -37,11 +40,13 @@ FineLevelInputDataFactory
 GeneralGeometricPFactory
 GenericRFactory
 GeometricInterpolationPFactory
+GeometricInterpolationPFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 GMRESSolver
 Hierarchy
 HierarchyManager
 HierarchyFactory
 HierarchyUtils
+InterfaceAggregationFactory
 Ifpack2Smoother - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
 IndefBlockedDiagonalSmoother
 IntrepidPCoarsenFactory - #ifdef HAVE_MUELU_INTREPID2
@@ -52,6 +57,7 @@ MatrixAnalysisFactory
 MergedBlockedMatrixFactory
 MergedSmoother
 MultiVectorTransferFactory
+NotayAggregationFactory
 NullspaceFactory
 NullspaceFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 NullspacePresmoothFactory
@@ -77,6 +83,7 @@ RepartitionHeuristicFactory - #ifdef HAVE_MPI
 RigidBodyModeFactory
 SaPFactory
 SaPFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+ScaledNullspaceFactory
 SchurComplementFactory
 SegregatedAFactory
 ShiftedLaplacian - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_BELOS) && defined(HAVE_MUELU_TPETRA_INST_INT_INT)
@@ -86,8 +93,10 @@ Smoother
 SmootherBase
 SmootherFactory
 SmootherPrototype
+SmooVecCoalesceDropFactory
 SolverBase
 SteepestDescentSolver
+StratimikosSmoother - #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_THYRA)
 StructuredAggregationFactory
 StructuredLineDetectionFactory
 SubBlockAFactory

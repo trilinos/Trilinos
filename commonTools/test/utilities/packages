@@ -13,7 +13,6 @@ STD_NAME: anasazi, DIR_NAME: anasazi
 STD_NAME: aristos, DIR_NAME: aristos
 STD_NAME: aztecoo, DIR_NAME: aztecoo
 STD_NAME: belos, DIR_NAME: belos
-STD_NAME: claps, DIR_NAME: claps
 STD_NAME: ctrilinos, DIR_NAME: CTrilinos
 STD_NAME: didasko, DIR_NAME: didasko
 STD_NAME: epetra, DIR_NAME: epetra

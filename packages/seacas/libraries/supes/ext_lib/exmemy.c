@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 2008-2017 National Technology & Engineering Solutions
+ * Copyright(C) 2008-2017, 2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -231,7 +231,6 @@ void exmemy(FTNINT *memreq, FTNINT *locblk, FTNINT *memrtn)
 }
 
 #ifdef TEST
-#include <assert.h>
 #include <stdio.h>
 
 int main(int argc, char **argv)
@@ -245,7 +244,7 @@ int main(int argc, char **argv)
 
   assert(sizeof(FTNREAL) == sizeof(FTNINT));
 
-  printf("Size of FORTRAN int/real  = %d bytes\n", sizeof(FTNINT));
+  printf("Size of FORTRAN int/real  = %lu bytes\n", sizeof(FTNINT));
 
   memreq = 10000000; /* 10 Million words */
   for (i = 0; i < 1000; i++) {

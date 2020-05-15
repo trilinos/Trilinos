@@ -422,7 +422,9 @@ public:
   //! @name I/O methods.
   //@{
   //! Print method.  Defines the behavior of the std::ostream << operator
-  virtual void print(std::ostream& os) const;
+
+  virtual std::ostream& print(std::ostream& os) const;
+
 
   //@}
 protected:
@@ -992,7 +994,7 @@ int SerialBandDenseMatrix<OrdinalType, ScalarType>::scale( const SerialBandDense
 }
 
 template<typename OrdinalType, typename ScalarType>
-void SerialBandDenseMatrix<OrdinalType, ScalarType>::print(std::ostream& os) const
+std::ostream& SerialBandDenseMatrix<OrdinalType, ScalarType>::print(std::ostream& os) const
 {
   os << std::endl;
   if(valuesCopied_)
@@ -1015,6 +1017,7 @@ void SerialBandDenseMatrix<OrdinalType, ScalarType>::print(std::ostream& os) con
       os << std::endl;
     }
   }
+  return os;
 }
 
 //----------------------------------------------------------------------------------------------------
@@ -1070,15 +1073,34 @@ void SerialBandDenseMatrix<OrdinalType, ScalarType>::copyMat(
   }
 }
 
-#ifndef TEUCHOS_HIDE_DEPRECATED_CODE
-/// \brief Print the given SerialBandDenseMatrix to the given output stream.
-template<typename OrdinalType, typename ScalarType>
-std::ostream& operator<< (std::ostream& os, const Teuchos::SerialBandDenseMatrix<OrdinalType, ScalarType>& obj)
+/// \brief Ostream manipulator for SerialBandDenseMatrix 
+template<typename OrdinalType, typename ScalarType> 
+struct SerialBandDenseMatrixPrinter {
+public:
+  const SerialBandDenseMatrix<OrdinalType,ScalarType> &obj; 
+  SerialBandDenseMatrixPrinter(
+        const SerialBandDenseMatrix<OrdinalType,ScalarType> &obj_in)
+      : obj(obj_in) {}
+};
+
+/// \brief Output SerialBandDenseMatrix object through its stream manipulator. 
+template<typename OrdinalType, typename ScalarType> 
+std::ostream&
+operator<<(std::ostream &out, 
+           const SerialBandDenseMatrixPrinter<OrdinalType,ScalarType> printer)
 {
-  obj.print (os);
-  return os;
+  printer.obj.print(out);
+  return out;
 }
-#endif
+
+/// \brief Return SerialBandDenseMatrix ostream manipulator Use as:
+template<typename OrdinalType, typename ScalarType> 
+SerialBandDenseMatrixPrinter<OrdinalType,ScalarType>
+printMat(const SerialBandDenseMatrix<OrdinalType,ScalarType> &obj) 
+{ 
+  return SerialBandDenseMatrixPrinter<OrdinalType,ScalarType>(obj); 
+}
+
 
 } // namespace Teuchos
 

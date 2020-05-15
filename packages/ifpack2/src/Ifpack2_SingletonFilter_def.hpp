@@ -149,12 +149,6 @@ SingletonFilter<MatrixType>::getComm() const
   return A_->getComm();
 }
 
-template<class MatrixType>
-Teuchos::RCP<typename MatrixType::node_type>
-SingletonFilter<MatrixType>::getNode() const
-{
-  return A_->getNode();
-}
 
 template<class MatrixType>
 Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,

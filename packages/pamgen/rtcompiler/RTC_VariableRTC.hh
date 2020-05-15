@@ -49,7 +49,7 @@ class Variable: public Value
   /**
    * setSize - Applies to arrays only, no-op here
    */
-  virtual void setSize(long size) {}
+  virtual void setSize(long /* size */) {}
 
   /**
    * evaluateSizeExpr - Applies to arrays only, no-op here

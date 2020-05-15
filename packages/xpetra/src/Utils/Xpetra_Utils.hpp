@@ -69,9 +69,6 @@ namespace Xpetra {
   Xpetra::LookupStatus   toXpetra(Tpetra::LookupStatus);
 
   //! Convert a Xpetra::OptimizeOption to a Tpetra::OptimizeOption.
-  Tpetra::ProfileType    toTpetra(Xpetra::ProfileType);
-
-  //! Convert a Xpetra::OptimizeOption to a Tpetra::OptimizeOption.
   Tpetra::OptimizeOption toTpetra(Xpetra::OptimizeOption);
 
   //! Convert a Xpetra::CombineMode to a Tpetra::CombineMode.
@@ -86,9 +83,6 @@ namespace Xpetra {
 
   //! Convert a Epetra return value to a Xpetra::LookupStatus.
   Xpetra::LookupStatus   toXpetra(int);
-
-  //! Convert a Xpetra::ProfileType to an Epetra StaticProfil boolean
-  bool                   toEpetra(Xpetra::ProfileType);
 
   //! Convert a Xpetra::OptimizeOption to an Epetra OptimizeDataStorage boolean
   bool                   toEpetra(Xpetra::OptimizeOption);

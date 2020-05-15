@@ -69,7 +69,7 @@ C=======================================================================
       PRTLEN = GETPRC() + 7
       WRITE(FMT1,20) PRTLEN, PRTLEN-7
       CALL SQZSTR(FMT1, LFMT)
-      WRITE(FMT, 35) 'I10', FMT1(:LFMT), FMT1(:LFMT), FMT1(:LFMT)
+      WRITE(FMT, 35) 'I12', FMT1(:LFMT), FMT1(:LFMT), FMT1(:LFMT)
 
       if (nout .gt. 0) then
         WRITE (nout, 10000)

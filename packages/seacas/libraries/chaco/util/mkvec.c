@@ -54,18 +54,12 @@ double *mkvec_ret(int nl, int nh)
   if (v == NULL) {
     return (NULL);
   }
-  else {
-    return (v - nl);
-  }
+
+  return (v - nl);
 }
 
 /* Free a double vector with range [nl..nh]. */
-void frvec(double *v, int nl)
-{
-
-  sfree((v + nl));
-  v = NULL;
-}
+void frvec(double *v, int nl) { sfree((v + nl)); }
 
 /* Allocates a float vector with range [nl..nh]. Dies. */
 float *mkvec_float(int nl, int nh)
@@ -85,15 +79,9 @@ float *mkvec_ret_float(int nl, int nh)
   if (v == NULL) {
     return (NULL);
   }
-  else {
-    return (v - nl);
-  }
+
+  return (v - nl);
 }
 
 /* Free a float vector with range [nl..nh]. */
-void frvec_float(float *v, int nl)
-{
-
-  sfree((v + nl));
-  v = NULL;
-}
+void frvec_float(float *v, int nl) { sfree((v + nl)); }

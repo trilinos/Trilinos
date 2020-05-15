@@ -9,6 +9,7 @@
 #ifndef Tempus_StepperForwardEulerObserver_hpp
 #define Tempus_StepperForwardEulerObserver_hpp
 
+#include "Tempus_StepperObserver.hpp"
 #include "Tempus_SolutionHistory.hpp"
 
 
@@ -45,18 +46,18 @@ public:
 
   /// Observe Stepper at beginning of takeStep.
   virtual void observeBeginTakeStep(
-    Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    Stepper<Scalar> & stepper){}
+    Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
+    Stepper<Scalar> & /* stepper */){}
 
   /// Observe Stepper before Explicit ME evaluation.
   virtual void observeBeforeExplicit(
-    Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    StepperForwardEuler<Scalar> & stepperFE){}
+    Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
+    StepperForwardEuler<Scalar> & /* stepperFE */){}
 
   /// Observe Stepper at end of takeStep.
   virtual void observeEndTakeStep(
-    Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    Stepper<Scalar> & stepper){}
+    Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
+    Stepper<Scalar> & /* stepper */){}
 };
 } // namespace Tempus
 #endif // Tempus_StepperForwardEulerObserver_hpp

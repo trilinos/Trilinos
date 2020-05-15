@@ -280,6 +280,10 @@ void DefaultMultiVectorLinearOpWithSolve<Scalar>::validateInitialize(
     THYRA_ASSERT_VEC_SPACES(
       "DefaultMultiVectorLinearOpWithSolve<Scalar>::initialize(lows,multiVecRange,multiVecDomain)",
       *lows->domain(), *multiVecDomain->getBlock(0) );
+#else
+  (void)lows;
+  (void)multiVecRange;
+  (void)multiVecDomain;
 #endif
 }
 

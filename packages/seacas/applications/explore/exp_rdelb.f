@@ -145,5 +145,5 @@ C ... Read element block names (if they exist)
   140 CONTINUE
       RETURN
 
-10000  FORMAT (5 (A, I10))
+10000  FORMAT (5 (A, I12))
       END

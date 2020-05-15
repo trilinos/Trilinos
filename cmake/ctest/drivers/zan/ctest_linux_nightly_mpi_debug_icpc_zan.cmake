@@ -67,7 +67,7 @@ SET(CTEST_TEST_TYPE Experimental)
 #SET(CTEST_TEST_TIMEOUT 900)
 SET(ENV{LD_LIBRARY_PATH} "$ENV{LD_LIBRARY_PATH}:/opt/intel/Compiler/11.1/064/lib/intel64:/opt/intel/Compiler/11.1/064/mkl/lib/em64t")
 
-#SET(Trilinos_PACKAGES Teuchos RTOp GlobiPack Thyra OptiPack Stratimikos Phalanx Rythmos)
+#SET(Trilinos_PACKAGES Teuchos RTOp Thyra Stratimikos Phalanx Rythmos)
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_Fortran:BOOL=ON"

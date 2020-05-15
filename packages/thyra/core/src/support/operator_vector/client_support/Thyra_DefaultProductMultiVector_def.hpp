@@ -734,7 +734,7 @@ void DefaultProductMultiVector<Scalar>::commitNonconstDetachedMultiVectorViewImp
 
 
 template<class Scalar>
-bool DefaultProductMultiVector<Scalar>::opSupportedImpl(EOpTransp M_trans) const
+bool DefaultProductMultiVector<Scalar>::opSupportedImpl(EOpTransp /* M_trans */) const
 {
   return true; // We can do it all!
 }

@@ -13,6 +13,7 @@
 #include "Thyra_VectorStdOps.hpp"
 
 #include "Tempus_IntegratorBasic.hpp"
+#include "Tempus_StepperFactory.hpp"
 #include "Tempus_StepperOperatorSplit.hpp"
 #include "Tempus_StepperForwardEuler.hpp"
 #include "Tempus_StepperBackwardEuler.hpp"
@@ -27,6 +28,8 @@
 namespace Tempus_Test {
 
 using Teuchos::RCP;
+using Teuchos::rcp;
+using Teuchos::rcp_const_cast;
 using Teuchos::ParameterList;
 using Teuchos::sublist;
 using Teuchos::getParametersFromXmlFile;
@@ -35,12 +38,7 @@ using Tempus::IntegratorBasic;
 using Tempus::SolutionHistory;
 using Tempus::SolutionState;
 
-// Comment out any of the following tests to exclude from build/run.
-#define TEST_CONSTRUCTING_FROM_DEFAULTS
-#define TEST_VANDERPOL
 
-
-#ifdef TEST_CONSTRUCTING_FROM_DEFAULTS
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(OperatorSplit, ConstructingFromDefaults)
@@ -54,22 +52,23 @@ TEUCHOS_UNIT_TEST(OperatorSplit, ConstructingFromDefaults)
 
   // Setup the explicit VanDerPol ModelEvaluator
   RCP<ParameterList> vdpmPL = sublist(pList, "VanDerPolModel", true);
-  RCP<VanDerPol_IMEX_ExplicitModel<double> > explicitModel =
-    Teuchos::rcp(new VanDerPol_IMEX_ExplicitModel<double>(vdpmPL));
+  auto explicitModel = rcp(new VanDerPol_IMEX_ExplicitModel<double>(vdpmPL));
 
   // Setup the implicit VanDerPol ModelEvaluator (reuse vdpmPL)
-  RCP<VanDerPol_IMEX_ImplicitModel<double> > implicitModel =
-    Teuchos::rcp(new VanDerPol_IMEX_ImplicitModel<double>(vdpmPL));
+  auto implicitModel = rcp(new VanDerPol_IMEX_ImplicitModel<double>(vdpmPL));
 
 
   // Setup Stepper for field solve ----------------------------
-  RCP<Tempus::StepperOperatorSplit<double> > stepper =
-    Teuchos::rcp(new Tempus::StepperOperatorSplit<double>());
+  auto stepper = rcp(new Tempus::StepperOperatorSplit<double>());
 
-  RCP<Tempus::StepperForwardEuler<double> > subStepper1 =
-    Teuchos::rcp(new Tempus::StepperForwardEuler<double>(explicitModel));
-  RCP<Tempus::StepperBackwardEuler<double> > subStepper2 =
-    Teuchos::rcp(new Tempus::StepperBackwardEuler<double>(implicitModel));
+  RCP<Tempus::StepperFactory<double> > sf =
+    Teuchos::rcp(new Tempus::StepperFactory<double>());
+
+  auto subStepper1 =
+    sf->createStepperForwardEuler(explicitModel, Teuchos::null);
+
+  auto subStepper2 =
+    sf->createStepperBackwardEuler(implicitModel, Teuchos::null);
 
   stepper->addStepper(subStepper1);
   stepper->addStepper(subStepper2);
@@ -77,8 +76,7 @@ TEUCHOS_UNIT_TEST(OperatorSplit, ConstructingFromDefaults)
 
 
   // Setup TimeStepControl ------------------------------------
-  RCP<Tempus::TimeStepControl<double> > timeStepControl =
-    Teuchos::rcp(new Tempus::TimeStepControl<double>());
+  auto timeStepControl = rcp(new Tempus::TimeStepControl<double>());
   ParameterList tscPL = pl->sublist("Demo Integrator")
                            .sublist("Time Step Control");
   timeStepControl->setStepType (tscPL.get<std::string>("Integrator Step Type"));
@@ -90,11 +88,10 @@ TEUCHOS_UNIT_TEST(OperatorSplit, ConstructingFromDefaults)
 
   // Setup initial condition SolutionState --------------------
   Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
-    stepper->getModel()->getNominalValues();
-  RCP<Thyra::VectorBase<double> > icSolution =
-    Teuchos::rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
-  RCP<Tempus::SolutionState<double> > icState =
-      Teuchos::rcp(new Tempus::SolutionState<double>(icSolution));
+  stepper->getModel()->getNominalValues();
+  auto icX    = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
+  auto icXDot = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot());
+  auto icState = Tempus::createSolutionStateX(icX, icXDot);
   icState->setTime    (timeStepControl->getInitTime());
   icState->setIndex   (timeStepControl->getInitIndex());
   icState->setTimeStep(0.0);
@@ -102,8 +99,7 @@ TEUCHOS_UNIT_TEST(OperatorSplit, ConstructingFromDefaults)
   icState->setSolutionStatus(Tempus::Status::PASSED);  // ICs are passing.
 
   // Setup SolutionHistory ------------------------------------
-  RCP<Tempus::SolutionHistory<double> > solutionHistory =
-    Teuchos::rcp(new Tempus::SolutionHistory<double>());
+  auto solutionHistory = rcp(new Tempus::SolutionHistory<double>());
   solutionHistory->setName("Forward States");
   solutionHistory->setStorageType(Tempus::STORAGE_TYPE_STATIC);
   solutionHistory->setStorageLimit(2);
@@ -142,10 +138,8 @@ TEUCHOS_UNIT_TEST(OperatorSplit, ConstructingFromDefaults)
   TEST_FLOATING_EQUALITY(get_ele(*(x), 0), -2.223910, 1.0e-4);
   TEST_FLOATING_EQUALITY(get_ele(*(x), 1),  0.565441, 1.0e-4);
 }
-#endif // TEST_CONSTRUCTING_FROM_DEFAULTS
 
 
-#ifdef TEST_VANDERPOL
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(OperatorSplit, VanDerPol)
@@ -167,15 +161,13 @@ TEUCHOS_UNIT_TEST(OperatorSplit, VanDerPol)
 
     // Setup the explicit VanDerPol ModelEvaluator
     RCP<ParameterList> vdpmPL = sublist(pList, "VanDerPolModel", true);
-    RCP<VanDerPol_IMEX_ExplicitModel<double> > explicitModel =
-      Teuchos::rcp(new VanDerPol_IMEX_ExplicitModel<double>(vdpmPL));
+    auto explicitModel = rcp(new VanDerPol_IMEX_ExplicitModel<double>(vdpmPL));
 
     // Setup the implicit VanDerPol ModelEvaluator (reuse vdpmPL)
-    RCP<VanDerPol_IMEX_ImplicitModel<double> > implicitModel =
-      Teuchos::rcp(new VanDerPol_IMEX_ImplicitModel<double>(vdpmPL));
+    auto implicitModel = rcp(new VanDerPol_IMEX_ImplicitModel<double>(vdpmPL));
 
     // Setup vector of models
-    std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<double> > > models;
+    std::vector<RCP<const Thyra::ModelEvaluator<double> > > models;
     models.push_back(explicitModel);
     models.push_back(implicitModel);
 
@@ -238,6 +230,6 @@ TEUCHOS_UNIT_TEST(OperatorSplit, VanDerPol)
 
   Teuchos::TimeMonitor::summarize();
 }
-#endif // TEST_VANDERPOL
+
 
 } // namespace Tempus_Test

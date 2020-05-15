@@ -38,11 +38,11 @@
 /*****************************************************************************/
 /* Function(s) contained in this file:
  *
- *     ex_leavedef()
- *     ne_id_lkup()
- *     ex_get_file_type()
- *     ex_put_nemesis_version()
- *     ne_check_file_version()
+ *     ex__leavedef()
+ *     ne__id_lkup()
+ *     ex__get_file_type()
+ *     ex__put_nemesis_version()
+ *     ne__check_file_version()
  *     ex_get_idx()
  *
  *****************************************************************************
@@ -54,29 +54,9 @@
 
 #include <exodusII.h>     // for ex_err, etc
 #include <exodusII_int.h> // for EX_FATAL, EX_NOERR, etc
-#include <netcdf.h>       // for NC_NOERR, nc_inq_varid, etc
-#include <stddef.h>       // for size_t
-#include <stdio.h>
-#include <stdlib.h>    // for malloc
-#include <string.h>    // for strcpy, strlen
-#include <sys/types.h> // for int64_t
 
 /* Global variables */
 char *ne_ret_string;
-
-int ex_leavedef(int exoid, const char *call_rout)
-{
-  char errmsg[MAX_ERR_LENGTH];
-  int  status;
-
-  if ((status = nc_enddef(exoid)) != NC_NOERR) {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to end define mode for file id %d", exoid);
-    ex_err_fn(exoid, call_rout, errmsg, status);
-
-    return (EX_FATAL);
-  }
-  return (EX_NOERR);
-}
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -84,7 +64,7 @@ int ex_leavedef(int exoid, const char *call_rout)
 /* Note: This function assumes a 1-d vector of data for "ne_var_name".
  */
 /*****************************************************************************/
-int ne_id_lkup(int exoid, const char *ne_var_name, int64_t *idx, ex_entity_id ne_var_id)
+int ne__id_lkup(int exoid, const char *ne_var_name, int64_t *idx, ex_entity_id ne_var_id)
 {
   int       status;
   int       varid, ndims, dimid[1], ret = -1;
@@ -156,7 +136,7 @@ int ne_id_lkup(int exoid, const char *ne_var_name, int64_t *idx, ex_entity_id ne
 /* This function retrieves the file type from a Nemesis file.
  */
 /*****************************************************************************/
-int ex_get_file_type(int exoid, char *ftype)
+int ex__get_file_type(int exoid, char *ftype)
 {
   int status;
   int varid;
@@ -184,10 +164,10 @@ int ex_get_file_type(int exoid, char *ftype)
 
   /* Set the appropriate character */
   if (lftype == 0) {
-    strcpy(ftype, "p");
+    ex_copy_string(ftype, "p", 2);
   }
   else if (lftype == 1) {
-    strcpy(ftype, "s");
+    ex_copy_string(ftype, "s", 2);
   }
 
   EX_FUNC_LEAVE(EX_NOERR);
@@ -199,7 +179,7 @@ int ex_get_file_type(int exoid, char *ftype)
 /* This function outputs the Nemesis version information to the file.
  */
 /*****************************************************************************/
-int ex_put_nemesis_version(int exoid)
+int ex__put_nemesis_version(int exoid)
 {
   int   status;
   float file_ver, api_ver;
@@ -241,7 +221,7 @@ int ex_put_nemesis_version(int exoid)
 /* This function checks that the version info is correct.
  */
 /*****************************************************************************/
-int ne_check_file_version(int exoid)
+int ne__check_file_version(int exoid)
 {
 #if 0
   float  file_ver;
@@ -268,6 +248,7 @@ int ne_check_file_version(int exoid)
   }
   EX_FUNC_LEAVE(EX_NOERR);
 #else
+  EX_UNUSED(exoid);
   return EX_NOERR;
 #endif
 }

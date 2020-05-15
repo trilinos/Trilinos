@@ -92,6 +92,8 @@ namespace panzer
     using panzer::EvaluatorStyle;
     using panzer::IP;
     using PHX::DataLayout;
+    using PHX::Device;
+    using PHX::DevLayout;
     using PHX::MDField;
     using std::invalid_argument;
     using std::logic_error;
@@ -100,9 +102,9 @@ namespace panzer
     using Teuchos::RCP;
 
     // Ensure the input makes sense.
-    TEUCHOS_TEST_FOR_EXCEPTION(resNames.size() != 3, invalid_argument,
-      "Error:  Integrator_GradBasisCrossVector called with the number of "    \
-      "residual names not equal to three.")
+    TEUCHOS_TEST_FOR_EXCEPTION(numDims_ != 3, invalid_argument, "Error:  "    \
+      "Integrator_GradBasisCrossVector called with the number of residual "   \
+      "names not equal to three.")
     for (const auto& name : resNames)
       TEUCHOS_TEST_FOR_EXCEPTION(name == "", invalid_argument, "Error:  "     \
         "Integrator_GradBasisCrossVector called with an empty residual name.")
@@ -120,9 +122,10 @@ namespace panzer
         tmpVecDL->extent(2) < ir.dl_vector->extent(2), logic_error,
         "Error:  Integrator_GradBasisCrossVector:  Dimension of space "       \
         "exceeds dimension of Vector Data Layout.")
-        TEUCHOS_TEST_FOR_EXCEPTION(numDims_ != static_cast<int>(vecDL->extent(2)), logic_error,
-        "Error:  Integrator_GradBasisCrossVector:  The vector must be the "   \
-        "same length as the number of residuals.")
+      TEUCHOS_TEST_FOR_EXCEPTION(numDims_ !=
+        static_cast<int>(vecDL->extent(2)), logic_error, "Error:  "           \
+        "Integrator_GradBasisCrossVector:  The vector must be the same "      \
+        "length as the number of residuals.")
     } // end if (not vecDL.is_null())
     TEUCHOS_TEST_FOR_EXCEPTION(numGradDims_ > numDims_, logic_error,
       "Error:  Integrator_GradBasisCrossVector:  The vector must have at "    \
@@ -134,22 +137,25 @@ namespace panzer
 
     // Create the fields that we're either contributing to or evaluating
     // (storing).
-    fields_.clear();
-    for (const auto& name : resNames)
+    fields_ = Kokkos::View<PHX::MDField<ScalarT, Cell, BASIS>*>("Integrator_GradBasisCrossVector::fields_", resNames.size());
+
     {
-      MDField<ScalarT, Cell, BASIS> res(name, basis.functional);
-      fields_.push_back(res);
+      int i=0;
+      for (const auto& name : resNames)
+        fields_(i++) = MDField<ScalarT, Cell, BASIS>(name, basis.functional);
     } // end loop over resNames
-    for (const auto& field : fields_)
+    for (std::size_t i=0; i< fields_.extent(0); ++i) {
+      const auto& field = fields_(i);
       if (evalStyle_ == EvaluatorStyle::CONTRIBUTES)
         this->addContributedField(field);
       else // if (evalStyle_ == EvaluatorStyle::EVALUATES)
         this->addEvaluatedField(field);
-
+    }
     // Add the dependent field multipliers, if there are any.
     int i = 0;
     fieldMults_.resize(fmNames.size());
-    kokkosFieldMults_ = View<View<const ScalarT**,typename PHX::DevLayout<ScalarT>::type,PHX::Device>*>(
+    kokkosFieldMults_ = View<View<const ScalarT**,
+      typename DevLayout<ScalarT>::type, Device>*>(
       "GradBasisCrossVector::KokkosFieldMultipliers", fmNames.size());
     for (const auto& name : fmNames)
     {
@@ -164,9 +170,9 @@ namespace panzer
     else // if (evalStyle_ == EvaluatorStyle::EVALUATES)
       n += "EVALUATES";
     n += "):  {";
-    for (size_t j=0; j < fields_.size() - 1; ++j)
+    for (size_t j=0; j < fields_.extent(0) - 1; ++j)
       n += fields_[j].fieldTag().name() + ", ";
-    n += fields_.back().fieldTag().name() + "}";
+    n += fields_(fields_.extent(0)-1).fieldTag().name() + "}";
     this->setName(n);
   } // end of Constructor
 
@@ -222,7 +228,7 @@ namespace panzer
     // Get the Kokkos::Views of the field multipliers.
     for (size_t i(0); i < fieldMults_.size(); ++i)
       kokkosFieldMults_(i) = fieldMults_[i].get_static_view();
-    Device::fence();
+    Device().fence();
 
     // Determine the index in the Workset bases for our particular basis name.
     basisIndex_ = getBasisIndex(basisName_, (*sd.worksets_)[0], this->wda);
@@ -311,9 +317,9 @@ namespace panzer
       {
         for (int qp(0); qp < numQP; ++qp)
         {
-          tmp[Y] = multiplier_ * kokkosFieldMults_(0)(cell, qp) * 
+          tmp[Y] = multiplier_ * kokkosFieldMults_(0)(cell, qp) *
             vector_(cell, qp, Y);
-          tmp[Z] = multiplier_ * kokkosFieldMults_(0)(cell, qp) * 
+          tmp[Z] = multiplier_ * kokkosFieldMults_(0)(cell, qp) *
             vector_(cell, qp, Z);
           for (int basis(0); basis < numBases; ++basis)
           {
@@ -326,11 +332,11 @@ namespace panzer
       {
         for (int qp(0); qp < numQP; ++qp)
         {
-          tmp[X] = multiplier_ * kokkosFieldMults_(0)(cell, qp) * 
+          tmp[X] = multiplier_ * kokkosFieldMults_(0)(cell, qp) *
             vector_(cell, qp, X);
-          tmp[Y] = multiplier_ * kokkosFieldMults_(0)(cell, qp) * 
+          tmp[Y] = multiplier_ * kokkosFieldMults_(0)(cell, qp) *
             vector_(cell, qp, Y);
-          tmp[Z] = multiplier_ * kokkosFieldMults_(0)(cell, qp) * 
+          tmp[Z] = multiplier_ * kokkosFieldMults_(0)(cell, qp) *
             vector_(cell, qp, Z);
           for (int basis(0); basis < numBases; ++basis)
           {
@@ -345,9 +351,9 @@ namespace panzer
       {
         for (int qp(0); qp < numQP; ++qp)
         {
-          tmp[X] = multiplier_ * kokkosFieldMults_(0)(cell, qp) * 
+          tmp[X] = multiplier_ * kokkosFieldMults_(0)(cell, qp) *
             vector_(cell, qp, X);
-          tmp[Y] = multiplier_ * kokkosFieldMults_(0)(cell, qp) * 
+          tmp[Y] = multiplier_ * kokkosFieldMults_(0)(cell, qp) *
             vector_(cell, qp, Y);
           tmp[Z] = multiplier_ * kokkosFieldMults_(0)(cell, qp) *
             vector_(cell, qp, Z);

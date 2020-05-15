@@ -69,6 +69,7 @@
 #include "MueLu_FilteredAFactory_fwd.hpp"
 #include "MueLu_GenericRFactory_fwd.hpp"
 #include "MueLu_LineDetectionFactory_fwd.hpp"
+#include "MueLu_NotayAggregationFactory_fwd.hpp"
 #include "MueLu_NullspaceFactory_fwd.hpp"
 #include "MueLu_PatternFactory_fwd.hpp"
 #include "MueLu_PgPFactory_fwd.hpp"
@@ -110,7 +111,10 @@
 
 namespace MueLu {
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar = DefaultScalar,
+            class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class ParameterListInterpreter :
     public HierarchyManager<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
 #undef MUELU_PARAMETERLISTINTERPRETER_SHORT
@@ -213,7 +217,7 @@ namespace MueLu {
     void UpdateFactoryManager_Aggregation_TentativeP(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
                                                      int levelID, std::vector<keep_pair>& keeps) const;
     void UpdateFactoryManager_Restriction(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
-                                        int levelID, std::vector<keep_pair>& keeps) const;
+                                          int levelID, std::vector<keep_pair>& keeps) const;
     void UpdateFactoryManager_RAP(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
                                   int levelID, std::vector<keep_pair>& keeps) const;
     void UpdateFactoryManager_Coordinates(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,

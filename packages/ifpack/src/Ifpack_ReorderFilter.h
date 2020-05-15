@@ -126,32 +126,32 @@ public:
 		    Epetra_MultiVector& Y) const;
 
   //! Applies the inverse of \c this operator (not implemented).
-  virtual int ApplyInverse(const Epetra_MultiVector& X,
-			   Epetra_MultiVector& Y) const
+  virtual int ApplyInverse(const Epetra_MultiVector& /* X */,
+			   Epetra_MultiVector& /* Y */) const
   {
     return(-1);
   }
 
   //! Inverse of row sums (not implemented).
-  virtual int InvRowSums(Epetra_Vector& x) const
+  virtual int InvRowSums(Epetra_Vector& /* x */) const
   {
     return(-1);
   }
 
   //! Left scale of the matrix (not implemented).
-  virtual int LeftScale(const Epetra_Vector& x)
+  virtual int LeftScale(const Epetra_Vector& /* x */)
   {
     return(-1);
   }
 
   //! Inverse of column sums (not implemented).
-  virtual int InvColSums(Epetra_Vector& x) const
+  virtual int InvColSums(Epetra_Vector& /* x */) const
   {
     return(-1);
   }
 
   //! Right scale of the matrix (not implemented).
-  virtual int RightScale(const Epetra_Vector& x) 
+  virtual int RightScale(const Epetra_Vector& /* x */) 
   {
     return(-1);
   }

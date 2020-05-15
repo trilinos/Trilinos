@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2017 National Technology & Engineering Solutions
+ * Copyright (C) 2009-2017, 2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -35,12 +35,11 @@
 /* mdcgi - multiple simultaneous devices routines for cgi  */
 #include "mdcgi.h"
 #include "stdtyp.h"
-#include "stdtyp.h" // for anything
 #include <stdio.h>  // for fprintf, stderr, NULL
 /******************************************************************************/
-/*									      */
-/*	Global variables						      */
-/*									      */
+/*                                                                            */
+/*      Global variables                                                      */
+/*                                                                            */
 /******************************************************************************/
 
 /* these are shared with sdcgi.c, and are defined there */
@@ -55,19 +54,19 @@ static int       num_oldest = 0;             /* # surfs in oldest_surfs */
 static anything *oldest_surfs[MAX_SURFACES]; /* states of oldest surfaces */
 
 /******************************************************************************/
-/*									      */
-/*	Added functions to allow for multiple simultaneous devices	      */
-/*									      */
+/*                                                                            */
+/*      Added functions to allow for multiple simultaneous devices            */
+/*                                                                            */
 /******************************************************************************/
 
 /******************************************************************************/
-/*									      */
-/*	xcoon - turn output on for a cgi display surface.		      */
-/*   Note: it is not an error to turn output on for a surface which is	      */
-/*	already on.							      */
-/*   Note: it is an error to turn output on for a surface which is not	      */
-/*	initialized. 							      */
-/*									      */
+/*                                                                            */
+/*      xcoon - turn output on for a cgi display surface.                     */
+/*   Note: it is not an error to turn output on for a surface which is        */
+/*      already on.                                                           */
+/*   Note: it is an error to turn output on for a surface which is not        */
+/*      initialized.                                                          */
+/*                                                                            */
 /******************************************************************************/
 #if defined(ADDC_)
 void xcoon_(anything **surface_id) /* which surface to turn output on for*/
@@ -118,9 +117,9 @@ void xcoon(anything **surface_id) /* which surface to turn output on for*/
 } /* end xcoon */
 
 /******************************************************************************/
-/*									      */
-/*	xcact - initialize and activate a cgi display surface		      */
-/*									      */
+/*                                                                            */
+/*      xcact - initialize and activate a cgi display surface                 */
+/*                                                                            */
 /******************************************************************************/
 #if defined(ADDC_)
 void xcact_(void (*device_fn)(), anything **p_surface_id)
@@ -191,25 +190,25 @@ void xcact(void (*device_fn)(), anything **p_surface_id)
 } /* end xcact */
 
 /******************************************************************************/
-/*									      */
-/*	xcooff - turn output off for a display surface			      */
-/*   Note: it is not an error to turn off a surface which is		      */
-/*	already off.							      */
-/*   Note: it is an error to turn off a surface which is not active.	      */
-/*									      */
+/*                                                                            */
+/*      xcooff - turn output off for a display surface                        */
+/*   Note: it is not an error to turn off a surface which is                  */
+/*      already off.                                                          */
+/*   Note: it is an error to turn off a surface which is not active.          */
+/*                                                                            */
 /******************************************************************************/
 
 /******************************************************************************/
-/*									      */
-/*	xcdact - deactivate a cgi display surface			      */
-/*	Note: it is an error to deactivate a surface which is not active.     */
-/*									      */
+/*                                                                            */
+/*      xcdact - deactivate a cgi display surface                             */
+/*      Note: it is an error to deactivate a surface which is not active.     */
+/*                                                                            */
 /******************************************************************************/
 
 /******************************************************************************/
-/*									      */
-/*	xcsol - set solicitation surface				      */
-/*									      */
+/*                                                                            */
+/*      xcsol - set solicitation surface                                      */
+/*                                                                            */
 /******************************************************************************/
 #if defined(ADDC_)
 void xcsol_(anything **surface_id)

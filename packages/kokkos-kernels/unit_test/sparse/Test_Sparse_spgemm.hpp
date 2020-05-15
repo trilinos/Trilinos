@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//               KokkosKernels 0.9: Linear Algebra and Graph Kernels
-//                 Copyright 2017 Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -59,6 +60,8 @@
 
 #include<KokkosKernels_IOUtils.hpp>
 
+//This file contains the matrix for test_issue402
+#include "matrixIssue402.hpp"
 
 //const char *input_filename = "sherman1.mtx";
 //const char *input_filename = "Si2.mtx";
@@ -109,8 +112,6 @@ int run_spgemm(crsMat_t input_mat, crsMat_t input_mat2, KokkosSparse::SPGEMMAlgo
   bool equal = num_rows_2 == num_cols_1;
   if (!equal) return 1;
 
-
-
   lno_view_t row_mapC ("non_const_lnow_row", num_rows_1 + 1);
   lno_nnz_view_t  entriesC;
   scalar_view_t valuesC;
@@ -131,10 +132,8 @@ int run_spgemm(crsMat_t input_mat, crsMat_t input_mat2, KokkosSparse::SPGEMMAlgo
   );
 
   size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
-  if (c_nnz_size){
-    entriesC = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
-    valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
-  }
+  entriesC = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
+  valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
   spgemm_numeric(
       &kh,
       num_rows_1,
@@ -154,10 +153,8 @@ int run_spgemm(crsMat_t input_mat, crsMat_t input_mat2, KokkosSparse::SPGEMMAlgo
       valuesC
   );
 
-
   graph_t static_graph (entriesC, row_mapC);
-  crsMat_t crsmat("CrsMatrix", num_cols_2, valuesC, static_graph);
-  result = crsmat;
+  result = crsMat_t("CrsMatrix", num_cols_2, valuesC, static_graph);
   kh.destroy_spgemm_handle();
 
   return 0;
@@ -170,11 +167,11 @@ bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2){
   typedef typename graph_t::entries_type::non_const_type   lno_nnz_view_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
 
-  size_t nrows1 = output_mat1.graph.row_map.extent(0);
+  size_t nrows1 = output_mat1.numRows();
   size_t nentries1 = output_mat1.graph.entries.extent(0) ;
   size_t nvals1 = output_mat1.values.extent(0);
 
-  size_t nrows2 = output_mat2.graph.row_map.extent(0);
+  size_t nrows2 = output_mat2.numRows();
   size_t nentries2 = output_mat2.graph.entries.extent(0) ;
   size_t nvals2 = output_mat2.values.extent(0);
 
@@ -226,11 +223,12 @@ bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2){
   is_identical = KokkosKernels::Impl::kk_is_identical_view
       <typename graph_t::row_map_type, typename graph_t::row_map_type, typename lno_view_t::value_type,
       typename device::execution_space>(output_mat1.graph.row_map, output_mat2.graph.row_map, 0);
-  //KokkosKernels::Impl::kk_print_1Dview(output_mat2.graph.row_map);
 
   if (!is_identical) {
     std::cout << "rowmaps are different." << std::endl;
+    std::cout << "Actual rowmap:\n";
     KokkosKernels::Impl::kk_print_1Dview(output_mat1.graph.row_map);
+    std::cout << "Correct rowmap (SPGEMM_DEBUG):\n";
     KokkosKernels::Impl::kk_print_1Dview(output_mat2.graph.row_map);
     return false;
   }
@@ -283,16 +281,17 @@ void test_spgemm(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_v
   lno_t numCols = numRows;
   crsMat_t input_mat = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(numRows,numCols,nnz,row_size_variance, bandwidth);
 
-
   crsMat_t output_mat2;
   run_spgemm<crsMat_t, device>(input_mat, input_mat, SPGEMM_DEBUG, output_mat2);
 
-  SPGEMMAlgorithm algorithms [] = {SPGEMM_KK_MEMORY, SPGEMM_KK_SPEED, SPGEMM_KK_MEMSPEED, /*SPGEMM_CUSPARSE, */SPGEMM_MKL};
+  std::vector<SPGEMMAlgorithm> algorithms = {SPGEMM_KK_MEMORY, SPGEMM_KK_SPEED, SPGEMM_KK_MEMSPEED};
 
-  for (int ii = 0; ii < 4; ++ii){
+#ifdef HAVE_KOKKOSKERNELS_MKL
+  algorithms.push_back(SPGEMM_MKL);
+#endif
 
-    SPGEMMAlgorithm spgemm_algorithm = algorithms[ii];
-
+  for (auto spgemm_algorithm : algorithms)
+  {
     const uint64_t max_integer = 2147483647;
     std::string algo = "UNKNOWN";
     bool is_expected_to_fail = false;
@@ -308,15 +307,12 @@ void test_spgemm(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_v
 
     case SPGEMM_MKL:
       algo = "SPGEMM_MKL";
-#if !defined(HAVE_KOKKOSKERNELS_MKL) && !defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
-      is_expected_to_fail = true;
-#endif
       //MKL requires scalar to be either float or double
-      if (!(Kokkos::Impl::is_same<float,scalar_t>::value || Kokkos::Impl::is_same<double,scalar_t>::value)){
+      if (!(std::is_same<float,scalar_t>::value || std::is_same<double,scalar_t>::value)){
         is_expected_to_fail = true;
       }
       //mkl requires local ordinals to be int.
-      if (!(Kokkos::Impl::is_same<int,lno_t>::value)){
+      if (!(std::is_same<int,lno_t>::value)){
         is_expected_to_fail = true;
       }
       //if size_type is larger than int, mkl casts it to int.
@@ -340,7 +336,7 @@ void test_spgemm(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_v
       algo = "SPGEMM_KK_MEMORY";
       break;
     default:
-      break;
+      algo = "!!! UNKNOWN ALGO !!!";
     }
 
     Kokkos::Impl::Timer timer1;
@@ -380,11 +376,82 @@ void test_spgemm(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_v
   //device::execution_space::finalize();
 }
 
+template <typename scalar_t, typename lno_t, typename size_type, typename device>
+void test_issue402()
+{
+  using namespace Test;
+  typedef CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
 
+  //this specific matrix (from a circuit simulation) reliably replicated issue #402 (incorrect/crashing SPGEMM KKMEM)
+  typedef typename crsMat_t::StaticCrsGraphType graph_t;
+  typedef typename graph_t::row_map_type::non_const_type lno_view_t;
+  typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
+  typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
+  const lno_t numRows = 1813;
+  const size_type nnz = 11156;
+  lno_view_t Arowmap("A rowmap", numRows + 1);
+  lno_nnz_view_t Aentries("A entries", nnz);
+  scalar_view_t Avalues("A values", nnz);
+  //Read out the matrix from the header file "matrixIssue402.hpp"
+  {
+    auto rowmapHost = Kokkos::create_mirror_view(Arowmap);
+    auto entriesHost = Kokkos::create_mirror_view(Aentries);
+    auto valuesHost = Kokkos::create_mirror_view(Avalues);
+    for(lno_t i = 0; i < numRows + 1; i++)
+      rowmapHost(i) = MatrixIssue402::rowmap[i];
+    for(size_type i = 0; i < nnz; i++)
+    {
+      entriesHost(i) = MatrixIssue402::entries[i];
+      valuesHost(i) = MatrixIssue402::values[i];
+    }
+    Kokkos::deep_copy(Arowmap, rowmapHost);
+    Kokkos::deep_copy(Aentries, entriesHost);
+    Kokkos::deep_copy(Avalues, valuesHost);
+  }
+  crsMat_t A("A", numRows, numRows, nnz, Avalues, Arowmap, Aentries);
+  //compute explicit transpose: the bug was replicated by computing AA'
+  lno_view_t Browmap("B = A^T rowmap", numRows + 1);
+  lno_nnz_view_t Bentries("B = A^T entries", nnz);
+  scalar_view_t Bvalues("B = A^T values", nnz);
+  KokkosKernels::Impl::transpose_matrix<
+    lno_view_t, lno_nnz_view_t, scalar_view_t,
+    lno_view_t, lno_nnz_view_t, scalar_view_t,
+    lno_view_t, typename device::execution_space>
+      (numRows, numRows, Arowmap, Aentries, Avalues, Browmap, Bentries, Bvalues);
+  crsMat_t B("B=A^T", numRows, numRows, nnz, Bvalues, Browmap, Bentries);
+  crsMat_t Cgold;
+  run_spgemm<crsMat_t, device>(A, B, SPGEMM_DEBUG, Cgold);
+  crsMat_t C;
+  bool success = true;
+  std::string errMsg;
+  try
+  {
+    int res = run_spgemm<crsMat_t, device>(A, B, SPGEMM_KK_MEMORY, C);
+    if(res)
+      throw "run_spgemm returned error code";
+  }
+  catch(const char *message) {
+    errMsg = message;
+    success = false;
+  }
+  catch (std::string message) {
+    errMsg = message;
+    success = false;
+  }
+  catch (std::exception& e) {
+    errMsg = e.what();
+    success = false;
+  }
+  EXPECT_TRUE(success) << "KKMEM still has issue 402 bug! Error message:\n" << errMsg << '\n';
+  bool correctResult = is_same_matrix<crsMat_t, device>(C, Cgold);
+  EXPECT_TRUE(correctResult) << "KKMEM still has issue 402 bug; C=AA' is incorrect!\n";
+}
 
 #define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
 TEST_F( TestCategory, sparse ## _ ## spgemm ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
   test_spgemm<SCALAR,ORDINAL,OFFSET,DEVICE>(10000, 10000 * 30, 500, 10); \
+  test_spgemm<SCALAR,ORDINAL,OFFSET,DEVICE>(0, 0, 10, 10); \
+  test_issue402<SCALAR,ORDINAL,OFFSET,DEVICE>(); \
 }
 
 //test_spgemm<SCALAR,ORDINAL,OFFSET,DEVICE>(50000, 50000 * 30, 100, 10);

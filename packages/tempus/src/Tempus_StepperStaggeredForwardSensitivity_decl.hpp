@@ -27,9 +27,17 @@ namespace Tempus {
  */
 template<class Scalar>
 class StepperStaggeredForwardSensitivity :
-    virtual public Tempus::Stepper<Scalar>
+    virtual public Tempus::Stepper<Scalar>,
+    virtual public Teuchos::ParameterListAcceptor
 {
 public:
+
+  /** \brief Default constructor.
+   *
+   *  - Requires subsequent setModel() and initialize() calls before calling
+   *    takeStep().
+  */
+  StepperStaggeredForwardSensitivity();
 
   /// Constructor
   /*!
@@ -72,31 +80,27 @@ public:
   //@{
     virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
-    virtual void setNonConstModel(
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel);
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel();
 
-    virtual void setSolver(std::string solverName);
     virtual void setSolver(
-      Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null);
-    virtual void setSolver(
-      Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
+      Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver = Teuchos::null);
     virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
     { return stateStepper_->getSolver(); }
 
     /// Set Observer
     virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null){}
+      Teuchos::RCP<StepperObserver<Scalar> > /* obs */ = Teuchos::null){}
 
-    /// Initialize during construction and after changing input parameters.
-    virtual void initialize();
+    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
+    { return Teuchos::null; }
+
+    /// Set the initial conditions and make them consistent.
+    virtual void setInitialConditions (
+      const Teuchos::RCP<SolutionHistory<Scalar> >& /* solutionHistory */){}
 
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
-
-    virtual std::string getStepperType() const
-     { return stepperPL_->get<std::string>("Stepper Type"); }
 
     /// Get a default (initial) StepperState
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> >
@@ -105,7 +109,7 @@ public:
     virtual Scalar getOrderMin() const {return stateStepper_->getOrderMin();}
     virtual Scalar getOrderMax() const {return stateStepper_->getOrderMax();}
     virtual Scalar getInitTimeStep(
-        const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) const
+        const Teuchos::RCP<SolutionHistory<Scalar> >& /* solutionHistory */) const
       {return Scalar(1.0e+99);}
 
     virtual bool isExplicit()         const
@@ -120,11 +124,28 @@ public:
               sensitivityStepper_->isOneStepMethod();}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
 
+    virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}
+
+    virtual void setUseFSAL(bool a) {stepperPL_->set<bool>("Use FSAL", a);}
+    virtual bool getUseFSAL() const
+      {return stepperPL_->get<bool>("Use FSAL", false);}
+
+    virtual void setICConsistency(std::string s)
+      {stepperPL_->set<std::string>("Initial Condition Consistency", s);}
+    virtual std::string getICConsistency() const
+      {return stepperPL_->get<std::string>("Initial Condition Consistency",
+                                           "None");}
+
+    virtual void setICConsistencyCheck(bool c)
+      {stepperPL_->set<bool>("Initial Condition Consistency Check", c);}
+    virtual bool getICConsistencyCheck() const
+      {return stepperPL_->get<bool>("Initial Condition Consistency Check",
+                                    false);}
   //@}
 
-  /// Pass initial guess to Newton solver (only relevant for explicit schemes)
-  virtual void setInitialGuess(Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
-     {initial_guess_ = initial_guess;}
+    /// Pass initial guess to Newton solver
+    virtual void setInitialGuess(
+      Teuchos::RCP<const Thyra::VectorBase<Scalar> > /* initial_guess */){}
 
   /// \name ParameterList methods
   //@{
@@ -137,22 +158,25 @@ public:
 
   /// \name Overridden from Teuchos::Describable
   //@{
-    virtual std::string description() const;
+    virtual std::string description() const
+    { return "StepperStaggeredForwardSensitivity"; }
     virtual void describe(Teuchos::FancyOStream        & out,
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
+  virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
+
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
 
-private:
+  virtual Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const
+  { return stepperPL_; }
 
-  /// Default Constructor -- not allowed
-  StepperStaggeredForwardSensitivity();
+private:
 
   void setParams(const Teuchos::RCP<Teuchos::ParameterList> & pl,
                  const Teuchos::RCP<Teuchos::ParameterList> & spl);
 
-private:
+protected:
 
   Teuchos::RCP<Teuchos::ParameterList>               stepperPL_;
   Teuchos::RCP<Teuchos::ParameterList>               sensPL_;
@@ -164,7 +188,7 @@ private:
   Teuchos::RCP<SolutionHistory<Scalar> > sensSolutionHistory_;
   bool reuse_solver_;
   bool force_W_update_;
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;
+
 };
 
 } // namespace Tempus

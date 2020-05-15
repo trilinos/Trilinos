@@ -51,7 +51,7 @@ C   --
 C   --Parameters:
 C   --   INLINE - IN/OUT - the parsed input lines for the log file
 C   --   IFLD, INTYP, IFIELD, CFIELD, - IN/OUT - the free-field reader
-C   --          index and charcter field.
+C   --          index and character field.
 C   --   RESET - IN - =.TRUE. if call is only to reset the linethickness
 C   --                        parameter.
 C   --                 .FALSE. if call is to set the parameters.
@@ -131,7 +131,7 @@ C                       Real value specified for line thickness
                         IF ((TKSPCR .LT. 0.0)  .OR.
      &                     (TKSPCR .GT. 1000.)) THEN
                            WRITE (*, 10010) TKSPCR
-10010                       FORMAT (1X, E12.6, ' not a valid line ',
+10010                       FORMAT (1X, E12.5, ' not a valid line ',
      &                        'thickness specification.  It must',
      &                        ' be ''THIN'','/1x, '''MEDIUM'',',
      &                        ' ''THICK'', or a value between',

@@ -52,6 +52,7 @@
 
 namespace Ifpack2 {
 
+
 bool supportsUnsymmetric (const std::string& prec_type)
 {
   bool result = false;

@@ -106,7 +106,7 @@ C   --   VARNP - IN - the nodal variables for the time step
       RETURN
 
  20   FORMAT('1PE',I2.2,'.',I2.2)
- 30   FORMAT('(1X, ''Node'', I10, 5 (2X, ',A,'), :, /,',
+ 30   FORMAT('(1X, ''Node'', I12, 5 (2X, ',A,'), :, /,',
      $     '(15X, 5 (2X, ',A,')))')
 10000 FORMAT (/, 1X, 'NODAL TIME STEP VARIABLES')
 10005 FORMAT (1X, 'Nodal ids are Global')

@@ -372,7 +372,7 @@ C         --State will be <0 if error occurred, >0 if too many points
 10000        FORMAT (' PAINT ERROR - please contact',
      &         ' SEACAS@sandia.gov with this information:',
      &         /, 3X, 3I3, SP, I3,
-     &         2X, SP, 4 (1X, E9.3), 2X, 2 (1X, E9.3), /)
+     &         2X, SP, 4 (1X, E9.2), 2X, 2 (1X, E9.2), /)
          END IF
 
 C      --Paint enclosed area

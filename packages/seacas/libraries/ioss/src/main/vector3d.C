@@ -35,7 +35,7 @@
 #include "vector3d.h"
 
 //----------------------------------------------------------------------------
-vector3d::vector3d() : x(0.0), y(0.0), z(0.0) {}
+vector3d::vector3d() = default;
 
 //----------------------------------------------------------------------------
 vector3d::vector3d(double X, double Y, double Z) : x(X), y(Y), z(Z) {}
@@ -53,7 +53,7 @@ void vector3d::set(double X, double Y, double Z)
   z = Z;
 }
 
-void vector3d::set(double location[3])
+void vector3d::set(const double location[3])
 {
   x = location[0];
   y = location[1];

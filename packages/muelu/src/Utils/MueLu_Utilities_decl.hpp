@@ -96,9 +96,11 @@ class Epetra_Vector;
 
 #ifdef HAVE_MUELU_TPETRA
 #include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_FECrsMatrix.hpp>
 #include <Tpetra_RowMatrixTransposer.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_MultiVector.hpp>
+#include <Tpetra_FEMultiVector.hpp>
 #include <Xpetra_TpetraCrsMatrix_fwd.hpp>
 #include <Xpetra_TpetraMultiVector_fwd.hpp>
 #endif
@@ -128,10 +130,20 @@ namespace MueLu {
   RCP<Xpetra::Matrix<SC, LO, GO, NO> >
   TpetraCrs_To_XpetraMatrix(const Teuchos::RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> >& Atpetra);
 
+  template<typename SC,typename LO,typename GO,typename NO>
+  RCP<Xpetra::Matrix<SC, LO, GO, NO> >
+  TpetraFECrs_To_XpetraMatrix(const Teuchos::RCP<Tpetra::FECrsMatrix<SC, LO, GO, NO> >& Atpetra);
 
   template<typename SC,typename LO,typename GO,typename NO>
   RCP<Xpetra::MultiVector<SC, LO, GO, NO> >
-  TpetraCrs_To_XpetraMultiVector(const Teuchos::RCP<Tpetra::MultiVector<SC, LO, GO, NO> >& Vtpetra);
+  TpetraMultiVector_To_XpetraMultiVector(const Teuchos::RCP<Tpetra::MultiVector<SC, LO, GO, NO> >& Vtpetra);
+
+  template<typename SC,typename LO,typename GO,typename NO>
+  RCP<Xpetra::MultiVector<SC, LO, GO, NO> >
+  TpetraFEMultiVector_To_XpetraMultiVector(const Teuchos::RCP<Tpetra::FEMultiVector<SC, LO, GO, NO> >& Vtpetra);
+
+  template<typename SC,typename LO,typename GO,typename NO>
+  void leftRghtDofScalingWithinNode(const Xpetra::Matrix<SC,LO,GO,NO> & Atpetra, size_t blkSize, size_t nSweeps, Teuchos::ArrayRCP<SC> & rowScaling, Teuchos::ArrayRCP<SC> & colScaling);
 #endif
 
   /*!
@@ -142,9 +154,9 @@ namespace MueLu {
     go away, while others should be moved to Xpetra.
     */
   template <class Scalar,
-  class LocalOrdinal  = int,
-  class GlobalOrdinal = LocalOrdinal,
-  class Node          = KokkosClassic::DefaultNode::DefaultNodeType>
+            class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class Utilities : public UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
 #undef MUELU_UTILITIES_SHORT
     //#include "MueLu_UseShortNames.hpp"
@@ -351,10 +363,10 @@ namespace MueLu {
         try {
           const EpetraCrsMatrix& tmp_ECrsMtx = dynamic_cast<const EpetraCrsMatrix&>(*crsOp.getCrsMatrix());
           return *tmp_ECrsMtx.getEpetra_CrsMatrix();
-        } catch (std::bad_cast) {
+        } catch (std::bad_cast&) {
           throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::EpetraCrsMatrix failed");
         }
-      } catch (std::bad_cast) {
+      } catch (std::bad_cast&) {
         throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
       }
     }
@@ -364,10 +376,10 @@ namespace MueLu {
         try {
           EpetraCrsMatrix& tmp_ECrsMtx = dynamic_cast<EpetraCrsMatrix&>(*crsOp.getCrsMatrix());
           return *tmp_ECrsMtx.getEpetra_CrsMatrixNonConst();
-        } catch (std::bad_cast) {
+        } catch (std::bad_cast&) {
           throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::EpetraCrsMatrix failed");
         }
-      } catch (std::bad_cast) {
+      } catch (std::bad_cast&) {
         throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
       }
     }
@@ -475,10 +487,10 @@ namespace MueLu {
         try {
           const Xpetra::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& tmp_ECrsMtx = dynamic_cast<const Xpetra::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>&>(*crsOp.getCrsMatrix());
           return *tmp_ECrsMtx.getTpetra_CrsMatrix();
-        } catch (std::bad_cast) {
+        } catch (std::bad_cast&) {
           throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::TpetraCrsMatrix failed");
         }
-      } catch (std::bad_cast) {
+      } catch (std::bad_cast&) {
         throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
       }
 #endif
@@ -493,10 +505,10 @@ namespace MueLu {
         try {
           Xpetra::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& tmp_ECrsMtx = dynamic_cast<Xpetra::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>&>(*crsOp.getCrsMatrix());
           return *tmp_ECrsMtx.getTpetra_CrsMatrixNonConst();
-        } catch (std::bad_cast) {
+        } catch (std::bad_cast&) {
           throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::TpetraCrsMatrix failed");
         }
-      } catch (std::bad_cast) {
+      } catch (std::bad_cast&) {
         throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
       }
 #endif
@@ -700,7 +712,7 @@ namespace MueLu {
 #endif
     }
 
-    static void MyOldScaleMatrix_Epetra (Matrix& Op, const Teuchos::ArrayRCP<Scalar>& scalingVector, bool doFillComplete, bool doOptimizeStorage) {
+    static void MyOldScaleMatrix_Epetra (Matrix& Op, const Teuchos::ArrayRCP<Scalar>& scalingVector, bool /* doFillComplete */, bool /* doOptimizeStorage */) {
 #ifdef HAVE_MUELU_EPETRA
       try {
         //const Epetra_CrsMatrix& epOp = Utilities<double,int,int>::Op2NonConstEpetraCrs(Op);
@@ -730,7 +742,7 @@ namespace MueLu {
         Note: Currently, an error is thrown if the matrix isn't a Tpetra::CrsMatrix or Epetra_CrsMatrix.
         In principle, however, we could allow any Epetra_RowMatrix because the Epetra transposer does.
     */
-    static RCP<Matrix> Transpose(Matrix& Op, bool optimizeTranspose = false,const std::string & label = std::string(),const Teuchos::RCP<Teuchos::ParameterList> &params=Teuchos::null) {
+    static RCP<Matrix> Transpose(Matrix& Op, bool /* optimizeTranspose */ = false,const std::string & label = std::string(),const Teuchos::RCP<Teuchos::ParameterList> &params=Teuchos::null) {
       switch (Op.getRowMap()->lib()) {
         case Xpetra::UseTpetra: {
 #ifdef HAVE_MUELU_TPETRA
@@ -744,7 +756,17 @@ namespace MueLu {
               // Compute the transpose A of the Tpetra matrix tpetraOp.
               RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A;
               Tpetra::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> transposer(rcpFromRef(tpetraOp),label);
-              A = transposer.createTranspose(params);
+
+              {
+                using Teuchos::ParameterList;
+                using Teuchos::rcp;
+                RCP<ParameterList> transposeParams = params.is_null () ?
+                  rcp (new ParameterList) :
+                  rcp (new ParameterList (*params));
+                transposeParams->set ("sort", false);
+                A = transposer.createTranspose(transposeParams);
+              }
+
               RCP<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > AA   = rcp(new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(A));
               RCP<CrsMatrix>                                                           AAA  = rcp_implicit_cast<CrsMatrix>(AA);
               RCP<Matrix>                                                              AAAA = rcp( new CrsMatrixWrap(AAA));
@@ -873,10 +895,34 @@ namespace MueLu {
 
 
 
-  /*! Removes the following non-serializable data (A,P,R,Nullspace,Coordinates) from level-specific sublists from inList
-    and moves it to nonSerialList.  Everything else is copied to serialList.  This function returns the level number of the highest level
-    for which non-serializable data was provided.
-    */
+  /*!
+  \brief Extract non-serializable data from level-specific sublists and move it to a separate parameter list
+
+  Look through the level-specific sublists form \c inList, extract non-serializable data and move it to \c nonSerialList.
+  Everything else is copied to the \c serialList.
+
+  \note Data is considered "non-serializable" if it is not the same on every rank/processor.
+
+  Non-serializable data to be moved:
+  - Operator "A"
+  - Prolongator "P"
+  - Restrictor "R"
+  - "M"
+  - "Mdiag"
+  - "K"
+  - Nullspace information "Nullspace"
+  - Coordinate information "Coordinates"
+  - "Node Comm"
+  - Primal-to-dual node mapping "DualNodeID2PrimalNodeID"
+  - "pcoarsen: element to node map
+
+  @param[in] inList List with all input parameters/data as provided by the user
+  @param[out] serialList All serializable data from the input list
+  @param[out] nonSerialList All non-serializable, i.e. rank-specific data from the input list
+
+  @return This function returns the level number of the highest level for which non-serializable data was provided.
+
+  */
   long ExtractNonSerializableData(const Teuchos::ParameterList& inList, Teuchos::ParameterList& serialList, Teuchos::ParameterList& nonSerialList);
 
 
@@ -936,6 +982,134 @@ namespace MueLu {
     return rcp(new XCrsMatrixWrap(Atmp));
   }
 
+  /*! \fn leftRghtDofScalingWithinNode
+    @brief Helper function computes 2k left/right matrix scaling coefficients for PDE system with k x k blocks
+
+    Heuristic algorithm computes rowScaling and colScaling so that one can effectively derive matrices
+    rowScalingMatrix and colScalingMatrix such that the abs(rowsums) and abs(colsums) of 
+
+              rowScalingMatrix * Amat * colScalingMatrix 
+
+    are roughly constant. If D = diag(rowScalingMatrix), then
+
+       D(i:blkSize:end) = rowScaling(i)   for i=1,..,blkSize .
+   
+    diag(colScalingMatrix) is defined analogously. This function only computes rowScaling/colScaling.
+    You will need to copy them into a tpetra vector to use tpetra functions such as leftScale() and rightScale()
+    via some kind of loop such as 
+
+    rghtScaleVec = Teuchos::rcp(new Tpetra::Vector<SC,LO,GO,NO>(tpetraMat->getColMap()));
+    rghtScaleData  = rghtScaleVec->getDataNonConst(0);
+    size_t itemp = 0;
+    for (size_t i = 0; i < tpetraMat->getColMap()->getNodeNumElements(); i++) {
+      rghtScaleData[i] = rghtDofPerNodeScale[itemp++];
+      if (itemp == blkSize) itemp = 0; 
+    }   
+    followed by tpetraMat->rightScale(*rghtScaleVec);
+
+    TODO move this function to an Xpetra utility file
+    */
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void leftRghtDofScalingWithinNode(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & Amat, size_t blkSize, size_t nSweeps, Teuchos::ArrayRCP<Scalar> & rowScaling, Teuchos::ArrayRCP<Scalar> & colScaling) { 
+
+     LocalOrdinal     nBlks = (Amat.getRowMap()->getNodeNumElements())/blkSize;
+  
+     Teuchos::ArrayRCP<Scalar>   rowScaleUpdate(blkSize);
+     Teuchos::ArrayRCP<Scalar>   colScaleUpdate(blkSize);
+  
+  
+     for (size_t i = 0; i < blkSize; i++) rowScaling[i] = 1.0;
+     for (size_t i = 0; i < blkSize; i++) colScaling[i] = 1.0;
+  
+     for (size_t k = 0; k < nSweeps; k++) {
+       LocalOrdinal row = 0;
+       for (size_t i = 0; i < blkSize; i++) rowScaleUpdate[i] = 0.0;
+  
+       for (LocalOrdinal i = 0; i < nBlks; i++) {
+         for (size_t j = 0; j < blkSize; j++) {
+           Teuchos::ArrayView<const LocalOrdinal> cols;
+           Teuchos::ArrayView<const Scalar> vals;
+           Amat.getLocalRowView(row, cols, vals);
+  
+           for (size_t kk = 0; kk < Teuchos::as<size_t>(vals.size()); kk++) {
+             size_t modGuy = (cols[kk]+1)%blkSize;
+             if (modGuy == 0) modGuy = blkSize;
+             modGuy--;
+             rowScaleUpdate[j] += rowScaling[j]*(Teuchos::ScalarTraits<Scalar>::magnitude(vals[kk]))*colScaling[modGuy];
+           }
+           row++;
+         }
+       }
+       // combine information across processors
+       Teuchos::ArrayRCP<Scalar>   tempUpdate(blkSize);
+       Teuchos::reduceAll(*(Amat.getRowMap()->getComm()), Teuchos::REDUCE_SUM, (LocalOrdinal) blkSize, rowScaleUpdate.getRawPtr(), tempUpdate.getRawPtr());
+       for (size_t i = 0; i < blkSize; i++) rowScaleUpdate[i] = tempUpdate[i];
+  
+       /* We want to scale by sqrt(1/rowScaleUpdate), but we'll         */
+       /* normalize things by the minimum rowScaleUpdate. That is, the  */
+       /* largest scaling is always one (as normalization is arbitrary).*/
+  
+       Scalar minUpdate = Teuchos::ScalarTraits<Scalar>::magnitude((rowScaleUpdate[0]/rowScaling[0])/rowScaling[0]);
+  
+       for (size_t i = 1; i < blkSize; i++) {
+          Scalar  temp = (rowScaleUpdate[i]/rowScaling[i])/rowScaling[i]; 
+          if ( Teuchos::ScalarTraits<Scalar>::magnitude(temp) < Teuchos::ScalarTraits<Scalar>::magnitude(minUpdate)) 
+            minUpdate = Teuchos::ScalarTraits<Scalar>::magnitude(temp);
+       }
+       for (size_t i = 0; i < blkSize; i++) rowScaling[i] *= sqrt(minUpdate / rowScaleUpdate[i]);
+  
+       row = 0;
+       for (size_t i = 0; i < blkSize; i++) colScaleUpdate[i] = 0.0;
+  
+       for (LocalOrdinal i = 0; i < nBlks; i++) {
+         for (size_t j = 0; j < blkSize; j++) {
+           Teuchos::ArrayView<const LocalOrdinal> cols;
+           Teuchos::ArrayView<const Scalar> vals;
+           Amat.getLocalRowView(row, cols, vals);
+           for (size_t kk = 0; kk < Teuchos::as<size_t>(vals.size()); kk++) {
+             size_t modGuy = (cols[kk]+1)%blkSize;
+             if (modGuy == 0) modGuy = blkSize;
+             modGuy--;
+             colScaleUpdate[modGuy] += colScaling[modGuy]* (Teuchos::ScalarTraits<Scalar>::magnitude(vals[kk])) *rowScaling[j];
+           }
+           row++;
+         }
+       }
+       Teuchos::reduceAll(*(Amat.getRowMap()->getComm()), Teuchos::REDUCE_SUM, (LocalOrdinal) blkSize, colScaleUpdate.getRawPtr(), tempUpdate.getRawPtr());
+       for (size_t i = 0; i < blkSize; i++) colScaleUpdate[i] = tempUpdate[i];
+  
+       /* We want to scale by sqrt(1/colScaleUpdate), but we'll         */
+       /* normalize things by the minimum colScaleUpdate. That is, the  */
+       /* largest scaling is always one (as normalization is arbitrary).*/
+  
+          
+       minUpdate = Teuchos::ScalarTraits<Scalar>::magnitude((colScaleUpdate[0]/colScaling[0])/colScaling[0]);
+  
+       for (size_t i = 1; i < blkSize; i++) {
+          Scalar  temp = (colScaleUpdate[i]/colScaling[i])/colScaling[i]; 
+          if ( Teuchos::ScalarTraits<Scalar>::magnitude(temp) < Teuchos::ScalarTraits<Scalar>::magnitude(minUpdate)) 
+            minUpdate = Teuchos::ScalarTraits<Scalar>::magnitude(temp);
+       }
+       for (size_t i = 0; i < blkSize; i++) colScaling[i] *= sqrt(minUpdate/colScaleUpdate[i]);
+     }
+  }
+
+  /*! \fn TpetraCrs_To_XpetraMatrix
+    @brief Helper function to convert a Tpetra::FECrsMatrix to an Xpetra::Matrix
+    TODO move this function to an Xpetra utility file
+    */
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  TpetraFECrs_To_XpetraMatrix(const Teuchos::RCP<Tpetra::FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Atpetra) {
+    typedef typename Tpetra::FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::crs_matrix_type tpetra_crs_matrix_type;
+    typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> XTCrsMatrix;
+    typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>       XCrsMatrix;
+    typedef Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>   XCrsMatrixWrap;
+
+    RCP<XCrsMatrix> Atmp = rcp(new XTCrsMatrix(rcp_dynamic_cast<tpetra_crs_matrix_type>(Atpetra)));
+    return rcp(new XCrsMatrixWrap(Atmp));
+  }
+
   /*! \fn TpetraMultiVector_To_XpetraMultiVector
     @brief Helper function to convert a Tpetra::MultiVector to an Xpetra::MultiVector
     TODO move this function to an Xpetra utility file
@@ -945,6 +1119,19 @@ namespace MueLu {
   TpetraMultiVector_To_XpetraMultiVector(const Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Vtpetra) {
     return rcp(new Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Vtpetra));
   }
+
+  /*! \fn TpetraFEMultiVector_To_XpetraMultiVector
+  @brief Helper function to convert a Tpetra::FEMultiVector to an Xpetra::MultiVector
+    TODO move this function to an Xpetra utility file
+    */
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  TpetraFEMultiVector_To_XpetraMultiVector(const Teuchos::RCP<Tpetra::FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Vtpetra) {
+    typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
+    RCP<const MV> Vmv = Teuchos::rcp_dynamic_cast<const MV>(Vtpetra);
+    return rcp(new Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Vmv));
+  }
+
 #endif
 
   //! Little helper function to convert non-string types to strings
@@ -993,6 +1180,9 @@ namespace MueLu {
 
   // Generates a communicator whose only members are other ranks of the baseComm on my node
   Teuchos::RCP<const Teuchos::Comm<int> > GenerateNodeComm(RCP<const Teuchos::Comm<int> > & baseComm, int &NodeId, const int reductionFactor);
+
+  // Lower case string
+  std::string lowerCase (const std::string& s);
 
 } //namespace MueLu
 

@@ -51,15 +51,17 @@ Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::ObserverToTempusIntegr
     const Teuchos::RCP<const Tempus::SolutionHistory<Scalar> >& solutionHistory,
     const Teuchos::RCP<const Tempus::TimeStepControl<Scalar> >& timeStepControl,
     const Teuchos::RCP<Piro::ObserverBase<Scalar> > &wrappedObserver,
-    const bool supports_x_dotdot)
+    const bool supports_x_dotdot, const bool abort_on_fail_at_min_dt)
     : solutionHistory_(solutionHistory),
       timeStepControl_(timeStepControl),
       out_(Teuchos::VerboseObjectBase::getDefaultOStream()),
       wrappedObserver_(wrappedObserver),
-      supports_x_dotdot_(supports_x_dotdot)
+      supports_x_dotdot_(supports_x_dotdot),
+      abort_on_fail_at_min_dt_(abort_on_fail_at_min_dt) 
 {
   //Currently, sensitivities are not supported in Tempus.
   hasSensitivities_ = false;
+  previous_dt_ = 0.0;
 }
 
 template <typename Scalar>
@@ -200,9 +202,24 @@ template <typename Scalar>
 void
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeTimeStep()
 {
+  Scalar current_dt; 
+  if (Teuchos::nonnull(solutionHistory_->getWorkingState())) {
+    current_dt = solutionHistory_->getWorkingState()->getTimeStep();
+  }
+  else {
+    current_dt = solutionHistory_->getCurrentState()->getTimeStep();
+  }
+  
   //Don't observe solution if step failed to converge
   if ((solutionHistory_->getWorkingState() != Teuchos::null) &&
      (solutionHistory_->getWorkingState()->getSolutionStatus() == Tempus::Status::FAILED)) {
+    Scalar min_dt = timeStepControl_->getMinTimeStep(); 
+    if ((previous_dt_ == current_dt) && (previous_dt_ == min_dt)) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter, 
+        "\n Error!  Time integration FAILURE!  Time integrator has failed using Minimum Time Step = " << min_dt << "\n" 
+        << "and is unable to reduce time step further.\n");  
+    }
+    previous_dt_ = current_dt; 
     return;
   }
 
@@ -230,5 +247,6 @@ Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeTimeStep()
   else {
     wrappedObserver_->observeSolution(*solution, time);
   }
+  previous_dt_ = current_dt; 
 }
 

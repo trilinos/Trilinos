@@ -141,15 +141,14 @@ namespace Sacado {
 
 } // namespace Sacado
 
+//
 // Define Teuchos traits classes
-#ifdef HAVE_SACADO_TEUCHOS
+//
+
+// Promotion traits
+#ifdef HAVE_SACADO_TEUCHOSNUMERICS
 #include "Teuchos_PromotionTraits.hpp"
-#include "Teuchos_ScalarTraits.hpp"
-#include "Sacado_Fad_ScalarTraitsImp.hpp"
-
 namespace Teuchos {
-
-  //! Specialization of %Teuchos::PromotionTraits to SimpleFad types
   template <typename ValueT>
   struct PromotionTraits< Sacado::Fad::SimpleFad<ValueT>,
                           Sacado::Fad::SimpleFad<ValueT> > {
@@ -158,35 +157,42 @@ namespace Teuchos {
     promote;
   };
 
-  //! Specialization of %Teuchos::PromotionTraits to SimpleFad types
   template <typename ValueT, typename R>
   struct PromotionTraits< Sacado::Fad::SimpleFad<ValueT>, R > {
     typedef typename Sacado::Promote< Sacado::Fad::SimpleFad<ValueT>, R >::type
     promote;
   };
 
-  //! Specialization of %Teuchos::PromotionTraits to SimpleFad types
   template <typename L, typename ValueT>
   struct PromotionTraits< L, Sacado::Fad::SimpleFad<ValueT> > {
   public:
     typedef typename Sacado::Promote< L, Sacado::Fad::SimpleFad<ValueT> >::type
     promote;
   };
+}
+#endif
 
-  //! Specializtion of $Teuchos::ScalarTraits
+// Scalar traits
+#ifdef HAVE_SACADO_TEUCHOSCORE
+#include "Sacado_Fad_ScalarTraitsImp.hpp"
+namespace Teuchos {
   template <typename ValueT>
   struct ScalarTraits< Sacado::Fad::SimpleFad<ValueT> > :
     public Sacado::Fad::ScalarTraitsImp< Sacado::Fad::SimpleFad<ValueT> >
   {};
+}
+#endif
 
-  //! Specialization of %Teuchos::SerializationTraits
+// Serialization traits
+#ifdef HAVE_SACADO_TEUCHOSCOMM
+#include "Sacado_Fad_SerializationTraitsImp.hpp"
+namespace Teuchos {
   template <typename Ordinal, typename ValueT>
   struct SerializationTraits<Ordinal, Sacado::Fad::SimpleFad<ValueT> > :
     public Sacado::Fad::SerializationTraitsImp< Ordinal,
                                                 Sacado::Fad::SimpleFad<ValueT> >
   {};
 
-  //! Specialization of %Teuchos::ValueTypeSerializer
   template <typename Ordinal, typename ValueT>
   struct ValueTypeSerializer<Ordinal, Sacado::Fad::SimpleFad<ValueT> > :
     public Sacado::Fad::SerializerImp< Ordinal,
@@ -201,6 +207,6 @@ namespace Teuchos {
       Base(vs, sz) {}
   };
 }
-#endif // HAVE_SACADO_TEUCHOS
+#endif
 
 #endif // SACADO_FAD_SIMPLEFADTRAITS_HPP

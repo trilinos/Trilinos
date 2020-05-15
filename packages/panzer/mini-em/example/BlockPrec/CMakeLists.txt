@@ -7,12 +7,15 @@ SET(BLOCK_PREC_SOURCES
 TRIBITS_ADD_EXECUTABLE(
   BlockPrec
   SOURCES ${BLOCK_PREC_SOURCES}
+  CATEGORIES BASIC PERFORMANCE
   )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyBlockPrecFiles
   SOURCE_FILES
   maxwell.xml maxwell2D.xml
   maxwell-blob-R0.xml maxwell-blob-R1.xml maxwell-blob-R2.xml maxwell-blob-R3.xml maxwell-blob-R4.xml
+  maxwell-bdot-small.xml maxwell-bdot-medium.xml maxwell-bdot-large.xml
+  maxwell-exterior-small.xml maxwell-exterior-medium.xml maxwell-exterior-large.xml
   solverAugmentation.xml solverAugmentationEpetra.xml
   solverCG.xml
   solverMueLuRefMaxwell.xml solverMueLuRefMaxwell2D.xml solverMueLuRefMaxwellEpetra.xml
@@ -22,6 +25,35 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyBlockPrecFiles
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
   )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyBlockPrecPerfFiles
+  SOURCE_FILES
+  maxwell-large.xml
+  solverMueLuRefMaxwell.xml solverMueLuRefMaxwell2D.xml solverMueLuRefMaxwellEpetra.xml
+  solverMueLuRefMaxwellOpenMP.xml solverMueLuRefMaxwellCuda.xml
+  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+  DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
+  CATEGORIES PERFORMANCE
+  )
+
+# rather than list all files like above, I glob all xmls
+FILE(GLOB ${PACKAGE_NAME}_InputFiles *.xml)
+
+# allow the user to override the install location and
+# provide a simple defintion for the default
+# EXAMPLE_INSTALL_DIR/Panzer/
+IF (NOT DEFINED ${PACKAGE_NAME}_INSTALL_PREFIX)
+  SET(${PACKAGE_NAME}_INSTALL_PREFIX "${${PROJECT_NAME}_INSTALL_EXAMPLE_DIR}/${PACKAGE_NAME}/")
+ELSE()
+  # inform the user where it will go, since they overrode the default
+  PRINT_VAR(${PACKAGE_NAME}_INSTALL_PREFIX)
+ENDIF()
+
+INSTALL(FILES ${${PACKAGE_NAME}_InputFiles}
+        DESTINATION ${${PACKAGE_NAME}_INSTALL_PREFIX}
+       )
+INSTALL(TARGETS "${PACKAGE_NAME}_BlockPrec"
+        COMPONENT ${PACKAGE_NAME} RUNTIME DESTINATION ${${PACKAGE_NAME}_INSTALL_PREFIX})
 
 #################################################
 # Augmentation solver
@@ -42,23 +74,24 @@ TRIBITS_ADD_TEST(
    NUM_MPI_PROCS 4
    )
 
-IF(NOT Kokkos_ENABLE_Cuda AND NOT Kokkos_ENABLE_OpenMP AND MueLu_ENABLE_Epetra)
+IF(NOT Kokkos_ENABLE_CUDA AND NOT Kokkos_ENABLE_OPENMP AND MueLu_ENABLE_Epetra AND NOT HAVE_TPETRA_INST_INT_LONG_LONG AND HAVE_TPETRA_INST_INT_INT)
+ # We want GlobalOrdinal=int. Panzer picks long long, if it is available, and otherwise Tpetra's default.
 
-  TRIBITS_ADD_TEST(
-    BlockPrec
-    NAME "MiniEM-BlockPrec_Augmentation_Epetra"
-    ARGS "--solver=Augmentation --numTimeSteps=1 --linAlgebra=Epetra"
-    COMM serial mpi
-    NUM_MPI_PROCS 1
-    )
+ TRIBITS_ADD_TEST(
+   BlockPrec
+   NAME "MiniEM-BlockPrec_Augmentation_Epetra"
+   ARGS "--solver=Augmentation --numTimeSteps=1 --linAlgebra=Epetra"
+   COMM serial mpi
+   NUM_MPI_PROCS 1
+   )
 
-  TRIBITS_ADD_TEST(
-    BlockPrec
-    NAME "MiniEM-BlockPrec_Augmentation_Epetra"
-    ARGS "--solver=Augmentation --numTimeSteps=1 --linAlgebra=Epetra"
-    COMM mpi
-    NUM_MPI_PROCS 4
-    )
+ TRIBITS_ADD_TEST(
+   BlockPrec
+   NAME "MiniEM-BlockPrec_Augmentation_Epetra"
+   ARGS "--solver=Augmentation --numTimeSteps=1 --linAlgebra=Epetra"
+   COMM mpi
+   NUM_MPI_PROCS 4
+   )
 
 ENDIF()
 
@@ -82,7 +115,28 @@ TRIBITS_ADD_TEST(
    NUM_MPI_PROCS 4
    )
 
-IF(NOT Kokkos_ENABLE_Cuda AND NOT Kokkos_ENABLE_OpenMP)
+ # Large performance-testing runs of 3D BlockPrec_RefMaxwell (4 and 16 ranks)
+TRIBITS_ADD_TEST(
+   BlockPrec
+   NAME "MiniEM-BlockPrec_RefMaxwell_Performance_4"
+   ARGS "--stacked-timer --solver=MueLu-RefMaxwell --numTimeSteps=3 --linAlgebra=Tpetra --inputFile=maxwell-large.xml"
+   COMM mpi
+   NUM_MPI_PROCS 4
+   CATEGORIES PERFORMANCE
+   RUN_SERIAL
+   )
+
+TRIBITS_ADD_TEST(
+   BlockPrec
+   NAME "MiniEM-BlockPrec_RefMaxwell_Performance_16"
+   ARGS "--stacked-timer --solver=MueLu-RefMaxwell --numTimeSteps=3 --linAlgebra=Tpetra --inputFile=maxwell-large.xml"
+   COMM mpi
+   NUM_MPI_PROCS 16
+   CATEGORIES PERFORMANCE
+   RUN_SERIAL
+   )
+
+IF(NOT Kokkos_ENABLE_CUDA AND NOT Kokkos_ENABLE_OPENMP)
 
   TRIBITS_ADD_TEST(
     BlockPrec
@@ -94,30 +148,31 @@ IF(NOT Kokkos_ENABLE_Cuda AND NOT Kokkos_ENABLE_OpenMP)
 
 ENDIF()
 
-IF(NOT Kokkos_ENABLE_Cuda AND NOT Kokkos_ENABLE_OpenMP AND MueLu_ENABLE_Epetra)
+IF(NOT Kokkos_ENABLE_CUDA AND NOT Kokkos_ENABLE_OPENMP AND MueLu_ENABLE_Epetra AND NOT HAVE_TPETRA_INST_INT_LONG_LONG AND HAVE_TPETRA_INST_INT_INT)
+ # We want GlobalOrdinal=int. Panzer picks long long, if it is available, and otherwise Tpetra's default.
 
-  TRIBITS_ADD_TEST(
-    BlockPrec
-    NAME "MiniEM-BlockPrec_RefMaxwell_Epetra"
-    ARGS "--solver=MueLu-RefMaxwell --numTimeSteps=1 --linAlgebra=Epetra"
-    COMM serial mpi
-    NUM_MPI_PROCS 1
-    )
+ TRIBITS_ADD_TEST(
+   BlockPrec
+   NAME "MiniEM-BlockPrec_RefMaxwell_Epetra"
+   ARGS "--solver=MueLu-RefMaxwell --numTimeSteps=1 --linAlgebra=Epetra"
+   COMM serial mpi
+   NUM_MPI_PROCS 1
+   )
 
-  TRIBITS_ADD_TEST(
-    BlockPrec
-    NAME "MiniEM-BlockPrec_RefMaxwell_Epetra"
-    ARGS "--solver=MueLu-RefMaxwell --numTimeSteps=1 --linAlgebra=Epetra"
-    COMM mpi
-    NUM_MPI_PROCS 4
-    )
+ TRIBITS_ADD_TEST(
+   BlockPrec
+   NAME "MiniEM-BlockPrec_RefMaxwell_Epetra"
+   ARGS "--solver=MueLu-RefMaxwell --numTimeSteps=1 --linAlgebra=Epetra"
+   COMM mpi
+   NUM_MPI_PROCS 4
+   )
 
 ENDIF()
 
 #################################################
 # ML RefMaxwell solver
 
-IF (NOT Kokkos_ENABLE_Cuda AND ${PACKAGE_NAME}_ENABLE_ML AND MueLu_ENABLE_Epetra)
+IF (NOT Kokkos_ENABLE_CUDA AND ${PACKAGE_NAME}_ENABLE_ML AND MueLu_ENABLE_Epetra)
 
   TRIBITS_ADD_TEST(
     BlockPrec

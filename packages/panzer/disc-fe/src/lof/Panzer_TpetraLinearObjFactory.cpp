@@ -48,5 +48,4 @@
 
 #include "Panzer_NodeType.hpp"
 
-// template class panzer::TpetraLinearObjFactory<panzer::Traits,double,int,int>;
-template class panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64>;
+template class panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal>;

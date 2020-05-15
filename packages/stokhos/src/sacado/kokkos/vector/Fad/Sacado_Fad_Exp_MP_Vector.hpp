@@ -1097,8 +1097,9 @@ namespace Sacado {
         if (sz1 > 0 && sz2 > 0)
           return if_then_else( expr1.val(j) == val_type(0.0), val_type(0.0), val_type((expr2.dx(i,j)*log(expr1.val(j))+expr2.val(j)*expr1.dx(i,j)/expr1.val(j))*pow(expr1.val(j),expr2.val(j))) );
         else if (sz1 > 0)
-          // Use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x), check for b == 0 case
-          return if_then_else( expr2.val(j) == val_type(0.0), val_type(0.0), val_type(expr2.val(j)*expr1.dx(i,j)*pow(expr1.val(j),expr2.val(j)-val_type(1.0))) );
+          // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
+          // It seems less accurate and caused convergence problems in some codes
+          return if_then_else( expr1.val(j) == val_type(0.0), val_type(0.0), val_type(expr2.val(j)*expr1.dx(i,j)/expr1.val(j)*pow(expr1.val(j),expr2.val(j))) );
         else
           return if_then_else( expr1.val(j) == val_type(0.0), val_type(0.0), val_type(expr2.dx(i,j)*log(expr1.val(j))*pow(expr1.val(j),expr2.val(j))) );
       }
@@ -1159,15 +1160,17 @@ namespace Sacado {
       KOKKOS_INLINE_FUNCTION
       val_type dx(int i, int j) const {
         using std::pow;
-        // Use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x), check for b == 0 case
-        return if_then_else( c.fastAccessCoeff(j) == val_type(0.0), val_type(0.0), val_type(c.fastAccessCoeff(j)*expr1.dx(i,j)*pow(expr1.val(j),c.fastAccessCoeff(j)-val_type(1.0))) );
+        // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
+        // It seems less accurate and caused convergence problems in some codes
+        return if_then_else( expr1.val(j) == val_type(0.0), val_type(0.0), val_type(c.fastAccessCoeff(j)*expr1.dx(i,j)/expr1.val(j)*pow(expr1.val(j),c.fastAccessCoeff(j))) );
       }
 
       KOKKOS_INLINE_FUNCTION
       val_type fastAccessDx(int i, int j) const {
         using std::pow;
-        // Use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x), check for b == 0 case
-        return if_then_else( c.fastAccessCoeff(j) == val_type(0.0), val_type(0.0), val_type(c.fastAccessCoeff(j)*expr1.fastAccessDx(i,j)*pow(expr1.val(j),c.fastAccessCoeff(j)-val_type(1.0))) );
+        // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
+        // It seems less accurate and caused convergence problems in some codes
+        return if_then_else( expr1.val(j) == val_type(0.0), val_type(0.0), val_type(c.fastAccessCoeff(j)*expr1.fastAccessDx(i,j)/expr1.val(j)*pow(expr1.val(j),c.fastAccessCoeff(j))) );
       }
 
     protected:
@@ -1293,8 +1296,9 @@ namespace Sacado {
         if (sz1 > 0 && sz2 > 0)
           return expr1.val(j) == val_type(0.0) ? val_type(0.0) : val_type((expr2.dx(i,j)*log(expr1.val(j))+expr2.val(j)*expr1.dx(i,j)/expr1.val(j))*pow(expr1.val(j),expr2.val(j)));
         else if (sz1 > 0)
-          // Use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x), check for b == 0 case
-          return expr2.val(j) == val_type(0.0) ? val_type(0.0) : val_type(expr2.val(j)*expr1.dx(i,j)*pow(expr1.val(j),expr2.val(j)-val_type(1.0)));
+          // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
+          // It seems less accurate and caused convergence problems in some codes
+          return expr1.val(j) == val_type(0.0) ? val_type(0.0) : val_type(expr2.val(j)*expr1.dx(i,j)/expr1.val(j)*pow(expr1.val(j),expr2.val(j)));
         else
           return expr1.val(j) == val_type(0.0) ? val_type(0.0) : val_type(expr2.dx(i,j)*log(expr1.val(j))*pow(expr1.val(j),expr2.val(j)));
       }
@@ -1355,15 +1359,17 @@ namespace Sacado {
       KOKKOS_INLINE_FUNCTION
       val_type dx(int i, int j) const {
         using std::pow;
-        // Use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x), check for b == 0 case
-        return c.fastAccessCoeff(j) == val_type(0.0) ? val_type(0.0) : val_type(c.fastAccessCoeff(j)*expr1.dx(i,j)*pow(expr1.val(j),c.fastAccessCoeff(j)-val_type(1.0)));
+        // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
+        // It seems less accurate and caused convergence problems in some codes
+        return expr1.val(j) == val_type(0.0) ? val_type(0.0) : val_type(c.fastAccessCoeff(j)*expr1.dx(i,j)/expr1.val(j)*pow(expr1.val(j),c.fastAccessCoeff(j)));
       }
 
       KOKKOS_INLINE_FUNCTION
       val_type fastAccessDx(int i, int j) const {
         using std::pow;
-        // Use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x), check for b == 0 case
-        return c.fastAccessCoeff(j) == val_type(0.0) ? val_type(0.0) : val_type(c.fastAccessCoeff(j)*expr1.fastAccessDx(i,j)*pow(expr1.val(j),c.fastAccessCoeff(j)-val_type(1.0)));
+        // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
+        // It seems less accurate and caused convergence problems in some codes
+        return expr1.val(j) == val_type(0.0) ? val_type(0.0) : val_type(c.fastAccessCoeff(j)*expr1.fastAccessDx(i,j)/expr1.val(j)*pow(expr1.val(j),c.fastAccessCoeff(j)));
       }
 
     protected:

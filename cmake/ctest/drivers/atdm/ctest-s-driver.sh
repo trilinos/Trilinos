@@ -9,15 +9,16 @@ echo "  ==> `date`"
 echo
 
 echo "Loading env and running ctest -S comamnd to configure, build, and test ..."
-
-source ${WORKSPACE}/Trilinos/cmake/ctest/drivers/atdm/utils/create-src-and-build-dir.sh
+echo
 
 source ${WORKSPACE}/Trilinos/cmake/ctest/drivers/atdm/utils/setup_env.sh
+
+source ${WORKSPACE}/Trilinos/cmake/ctest/drivers/atdm/utils/create-src-and-build-dir.sh
 
 echo
 echo "Running: ctest -V -S $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-driver.cmake ..."
 
-ctest -V -S \
+ctest -V $ATDM_CONFIG_CTEST_REGEX -S \
   $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-driver.cmake
 ATDM_TCD_CTEST_S_RETURN_CODE=$?
 

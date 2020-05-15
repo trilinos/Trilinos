@@ -145,7 +145,11 @@ int main(int argc, char* argv[]) {
     pObj->checkHessVec(x1,d,true,*outStream);
     obj->checkGradient(x1,d,true,*outStream);
     obj->checkHessVec(x1,d,true,*outStream);
-    ROL::Algorithm<RealT> algors("Trust Region", *parlist);
+    ROL::Ptr<ROL::Step<RealT>>
+      steprs = ROL::makePtr<ROL::TrustRegionStep<RealT>>(*parlist);
+    ROL::Ptr<ROL::StatusTest<RealT>>
+      statusrs = ROL::makePtr<ROL::StatusTest<RealT>>(*parlist);
+    ROL::Algorithm<RealT> algors(steprs,statusrs,false);
     algors.run(z, *obj, true, *outStream);
     /**********************************************************************************************/
     /****************** CONSTRUCT SIMULATED CONSTRAINT AND VECTORS ********************************/
@@ -235,7 +239,11 @@ int main(int argc, char* argv[]) {
     *outStream << std::endl << "TESTING SimulatedObjective" << std::endl;
     simobj.checkGradient(x, v, true, *outStream);
     simobj.checkHessVec(x, v, true, *outStream);
-    ROL::Algorithm<RealT> algo("Composite Step", *parlist);
+    ROL::Ptr<ROL::Step<RealT>>
+      step = ROL::makePtr<ROL::CompositeStep<RealT>>(*parlist);
+    ROL::Ptr<ROL::StatusTest<RealT>>
+      status = ROL::makePtr<ROL::ConstraintStatusTest<RealT>>(*parlist);
+    ROL::Algorithm<RealT> algo(step,status,false);
     vu->zero();
     algo.run(x, *vu, simobj, simcon, true, *outStream);
 
@@ -250,7 +258,7 @@ int main(int argc, char* argv[]) {
     }
 
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

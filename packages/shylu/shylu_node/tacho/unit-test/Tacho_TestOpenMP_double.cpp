@@ -3,11 +3,6 @@
 #include <Kokkos_Core.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
-typedef Kokkos::DefaultHostExecutionSpace HostSpaceType;
-typedef Kokkos::OpenMP DeviceSpaceType;
-typedef double ValueType;
-typedef double MagnitudeType;
-
 static const std::string MM_TEST_FILE="test_double";
 
 #define TEST_BEGIN
@@ -15,6 +10,14 @@ static const std::string MM_TEST_FILE="test_double";
 
 #define __TACHO_TEST_OPENMP__
 #include "ShyLU_NodeTacho_config.h"
+#include "Tacho_Util.hpp"
+
+typedef typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type HostDeviceType;
+typedef typename Tacho::UseThisDevice<Kokkos::OpenMP>::device_type DeviceType;
+
+typedef double ValueType;
+typedef double MagnitudeType;
+
 #include "Tacho_Test.hpp"
 
 using namespace Tacho;
@@ -23,9 +26,13 @@ int main (int argc, char *argv[]) {
 
   Kokkos::initialize(argc, argv);
 
+  TEST_BEGIN;
+
   const bool detail = false;
-  printExecSpaceConfiguration<DeviceSpaceType>("DeviceSpace", detail);
-  printExecSpaceConfiguration<HostSpaceType>  ("HostSpace",   detail);
+  printExecSpaceConfiguration<typename DeviceType::execution_space>("DeviceSpace", detail);
+  printExecSpaceConfiguration<typename HostDeviceType::execution_space>("HostSpace",   detail);
+
+  TEST_END;
 
   ::testing::InitGoogleTest(&argc, argv);
   const int r_val = RUN_ALL_TESTS();

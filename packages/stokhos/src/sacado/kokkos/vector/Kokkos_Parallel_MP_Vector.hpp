@@ -69,6 +69,8 @@ struct MPVectorWorkConfig {
                       const size_t team_,
                       const size_t shared_ = 0 ) :
     range(range_), team(team_), shared(shared_) {}
+
+  ExecSpace space() const { return ExecSpace(); }
 };
 
 namespace Impl {
@@ -144,6 +146,8 @@ template< class FunctorType >
 class ParallelFor< FunctorType , MPVectorWorkConfig< Cuda > > {
 public:
 
+  typedef Kokkos::RangePolicy< Cuda > Policy;
+
   const FunctorType m_functor ;
   const MPVectorWorkConfig< Cuda > m_config;
   const Cuda::size_type m_work ;
@@ -194,7 +198,7 @@ public:
     const dim3 grid( nblock , 1 , 1 );
 
     const Cuda::size_type shared = m_config.shared;
-    CudaParallelLaunch< ParallelFor >( *this , grid , block , shared );
+    CudaParallelLaunch< ParallelFor >( *this , grid , block , shared , Policy().space().impl_internal_space_instance(), false );
   }
 };
 

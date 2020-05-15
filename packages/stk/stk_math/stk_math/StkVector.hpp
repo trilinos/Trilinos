@@ -1,6 +1,7 @@
 /*--------------------------------------------------------------------*/
-/*    Copyright 2002 Sandia Corporation.                              */
-/*    Under the terms of Contract DE-AC04-94AL85000, there is a       */
+/*    Copyright 2002 - 2008, 2010, 2011 National Technology &         */
+/*    Engineering Solutions of Sandia, LLC (NTESS). Under the terms   */
+/*    of Contract DE-NA0003525 with NTESS, there is a                 */
 /*    non-exclusive license for use of this work by or on behalf      */
 /*    of the U.S. Government.  Export of this program may require     */
 /*    a license from the United States Government.                    */
@@ -15,6 +16,8 @@
 #include <ostream>
 #include <iterator>
 #include <cassert>
+#include <iomanip>
+#include <sstream>
 #include <string>
 #include <limits>
 
@@ -79,19 +82,20 @@ typedef typename std::array<REAL,DIM>::iterator iterator;
     return out;
   }
 
-  std::string to_string() const
+  std::string to_string(int precision) const
   {
-      std::string output;
+      std::ostringstream output;
       for ( size_t i=0; i<DIM; i++)
       {
-          output += std::to_string(vec[i]);
+          output << std::setprecision(precision) << vec[i];
           if ( i != DIM-1 )
-              output += " ";
+              output << " ";
       }
-      return output;
+      return output.str();
   }
 
   unsigned dimension() const { return DIM; }
+
   unsigned size() const { return DIM; }
 
   iterator begin();
@@ -275,6 +279,7 @@ inline typename Vec<REAL,DIM>::const_iterator Vec<REAL,DIM>::end() const
 typedef Vec<double,3> Vector3d;
 typedef Vec<double,2> Vector2d;
 typedef Vec<double,1> Vector1d;
+typedef Vec<float,2> Float2d;
 typedef Vec<float,3> Float3d;
 
 }} 

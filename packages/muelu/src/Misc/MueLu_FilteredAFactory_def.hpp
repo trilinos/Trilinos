@@ -113,7 +113,7 @@ namespace MueLu {
       filteredA->fillComplete(fillCompleteParams);
 
     } else {
-      filteredA = MatrixFactory::Build(A->getRowMap(), A->getColMap(), A->getNodeMaxNumRowEntries(), Xpetra::StaticProfile);
+      filteredA = MatrixFactory::Build(A->getRowMap(), A->getColMap(), A->getNodeMaxNumRowEntries());
 
       BuildNew(*A, *G, lumping, *filteredA);
 
@@ -163,7 +163,7 @@ namespace MueLu {
     Array<SC>           vals;
 #endif
 
-    Array<char> filter(blkSize * G.GetImportMap()->getNodeNumElements(), 0);
+    Array<char> filter( A.getColMap()->getNodeNumElements(), 0);
 
     size_t numGRows = G.GetNodeNumVertices();
     for (size_t i = 0; i < numGRows; i++) {

@@ -55,15 +55,16 @@ private:
   }
 
 public:
-  PDEOPT_BranchHelper_PEBBL(const Real tol = 1e-6)
-    : ROL::StdBranchHelper_PEBBL<Real>(tol) {}
+  PDEOPT_BranchHelper_PEBBL(const Real tol = 1e-6, const int method = 0)
+    : ROL::StdBranchHelper_PEBBL<Real>(tol, method) {}
 
   PDEOPT_BranchHelper_PEBBL(const PDEOPT_BranchHelper_PEBBL &BH)
     : ROL::StdBranchHelper_PEBBL<Real>(BH) {}
 
-  int getMyIndex(const ROL::Vector<Real> &x) const {
+  //int getMyIndex(const ROL::Vector<Real> &x) const {
+  int getMyIndex(const ROL::Vector<Real> &x, const ROL::Vector &g) const {
     // Use Std implementation
-    return ROL::StdBranchHelper_PEBBL<Real>::getMyIndex(*getParameter(x));
+    return ROL::StdBranchHelper_PEBBL<Real>::getMyIndex(*getParameter(x),*getParameter(g));
   }
 
   void getMyNumFrac(int &nfrac, Real &integralityMeasure,

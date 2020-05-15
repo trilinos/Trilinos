@@ -14,14 +14,14 @@ if [ "$ATDM_CONFIG_COMPILER" == "DEFAULT" ] ; then
   export ATDM_CONFIG_COMPILER=GNU-7.2.0
 elif [[ "$ATDM_CONFIG_COMPILER" == "CLANG"* ]]; then
   if [[ "$ATDM_CONFIG_COMPILER" == "CLANG" ]] ; then
-    export ATDM_CONFIG_COMPILER=CLANG-3.9.0
-  elif [[ "$ATDM_CONFIG_COMPILER" != "CLANG-3.9.0" ]] ; then
+    export ATDM_CONFIG_COMPILER=CLANG-7.0.1
+  elif [[ "$ATDM_CONFIG_COMPILER" != "CLANG-7.0.1" ]] ; then
     echo
     echo "***"
     echo "*** ERROR: CLANG COMPILER=$ATDM_CONFIG_COMPILER is not supported!"
     echo "*** Only CLANG compilers supported on this system are:"
-    echo "***   clang (defaults to clang-3.9.0)"
-    echo "***   clang-3.9.0"
+    echo "***   clang (defaults to clang-7.0.1)"
+    echo "***   clang-7.0.1"
     echo "***"
     return
   fi
@@ -40,14 +40,16 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "GNU"* ]]; then
   fi
 elif [[ "$ATDM_CONFIG_COMPILER" == "INTEL"* ]]; then
   if [[ "$ATDM_CONFIG_COMPILER" == "INTEL" ]] ; then
-    export ATDM_CONFIG_COMPILER=INTEL-17.0.1
-  elif [[ "$ATDM_CONFIG_COMPILER" != "INTEL-17.0.1" ]] ; then
+    export ATDM_CONFIG_COMPILER=INTEL-18.0.5
+  elif [[ "$ATDM_CONFIG_COMPILER" != "INTEL-17.0.1" ]] \
+    && [[ "$ATDM_CONFIG_COMPILER" != "INTEL-18.0.5" ]]; then
     echo
     echo "***"
     echo "*** ERROR: INTEL COMPILER=$ATDM_CONFIG_COMPILER is not supported!"
     echo "*** Only INTEL compilers supported on this system are:"
-    echo "***   intel (defaults to intel-17.0.1)"
+    echo "***   intel (defaults to intel-18.0.5)"
     echo "***   intel-17.0.1"
+    echo "***   intel-18.0.5"
     echo "***"
     return
   fi
@@ -99,6 +101,17 @@ fi
 export ATDM_CONFIG_BUILD_COUNT=$ATDM_CONFIG_MAX_NUM_CORES_TO_USE
 # NOTE: Use as many build processes and there are cores by default.
 
+if [[ "${SEMS_MODULEFILES_ROOT}" == "" ]] ; then
+  if [[ -d /projects/sems/modulefiles ]] ; then
+    echo "NOTE: SEMS modules not defined, loading their definition!"
+    module use /projects/sems/modulefiles/projects
+    export SEMS_MODULEFILES_ROOT=/projects/sems/modulefiles
+  else
+    echo "ERROR: The SEMS modules are not defined and default location does not exist!"
+    return
+  fi
+fi
+
 module purge
 module load sems-env
 module load sems-git/2.10.1
@@ -106,7 +119,12 @@ module load sems-git/2.10.1
 module load sems-cmake/3.12.2
 module load sems-ninja_fortran/1.8.2
 
-if [[ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ]] ; then
+if [[ "$ATDM_CONFIG_NODE_TYPE" == "CUDA" ]] ; then
+  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=4
+  # We just need to be super conservative by default when using a GPU.  If
+  # users want to use more MPI processes, then can override this with
+  # ATDM_CONFIG_CTEST_PARALLEL_LEVEL_OVERRIDE.
+elif [[ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ]] ; then
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=$(($ATDM_CONFIG_MAX_NUM_CORES_TO_USE/2))
   export OMP_NUM_THREADS=2
   # NOTE: With hyper-threading enabled, you can run as many threads as there
@@ -126,30 +144,55 @@ else
   export OMP_NUM_THREADS=1
 fi
 
-if [[ "$ATDM_CONFIG_COMPILER" == "CLANG-3.9.0" ]] ; then
+if [[ "$ATDM_CONFIG_COMPILER" == "CLANG-7.0.1" ]] ; then
+  module load sems-clang/7.0.1
+  export OMPI_CXX=`which clang++`
+  export OMPI_CC=`which clang`
+  export OMPI_FC=`which gfortran`
+  export ATDM_CONFIG_LAPACK_LIBS="/usr/lib64/liblapack.so.3"
+  export ATDM_CONFIG_BLAS_LIBS="/usr/lib64/libblas.so.3"
+elif [[ "$ATDM_CONFIG_COMPILER" == "CLANG-3.9.0" ]] ; then
   module load sems-clang/3.9.0
   export OMPI_CXX=`which clang++`
   export OMPI_CC=`which clang`
   export OMPI_FC=`which gfortran`
-  export LAPACK_ROOT=/usr/lib64/atlas
-  export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT};-llapack"
-  export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas"
+  export ATDM_CONFIG_LAPACK_LIBS="/usr/lib64/liblapack.so.3"
+  export ATDM_CONFIG_BLAS_LIBS="/usr/lib64/libblas.so.3"
 elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0" ]] ; then
   module load sems-gcc/7.2.0
   export OMPI_CXX=`which g++`
   export OMPI_CC=`which gcc`
   export OMPI_FC=`which gfortran`
-  export LAPACK_ROOT=/usr/lib64/atlas
-  export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT};-llapack"
-  export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas"
+  export ATDM_CONFIG_LAPACK_LIBS="/usr/lib64/liblapack.so.3"
+  export ATDM_CONFIG_BLAS_LIBS="/usr/lib64/libblas.so.3"
 elif [[ "$ATDM_CONFIG_COMPILER" == "INTEL-17.0.1" ]] ; then
   module load sems-intel/17.0.1
+  module load atdm-env
+  module load atdm-mkl/18.0.5
   export OMPI_CXX=`which icpc`
   export OMPI_CC=`which icc`
   export OMPI_FC=`which ifort`
-  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SEMS_INTEL_ROOT/mkl/lib/intel64/
   export ATDM_CONFIG_LAPACK_LIBS="-mkl"
   export ATDM_CONFIG_BLAS_LIBS="-mkl"
+  export LM_LICENSE_FILE=28518@cee-infra009.sandia.gov
+  if [[ "${ATDM_CONFIG_LM_LICENSE_FILE_OVERRIDE}" != "" ]] ; then
+    export LM_LICENSE_FILE=${ATDM_CONFIG_LM_LICENSE_FILE_OVERRIDE}
+  fi
+elif [[ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.5" ]] ; then
+  module load sems-gcc/7.2.0
+  module load sems-intel/18.0.5
+  module load atdm-env
+  module load atdm-mkl/18.0.5
+  export ATDM_CONFIG_CXX_FLAGS="-D_GLIBCXX_USE_CXX11_ABI=0"
+  export OMPI_CXX=`which icpc`
+  export OMPI_CC=`which icc`
+  export OMPI_FC=`which ifort`
+  export ATDM_CONFIG_LAPACK_LIBS="-mkl"
+  export ATDM_CONFIG_BLAS_LIBS="-mkl"
+  export LM_LICENSE_FILE=28518@cee-infra009.sandia.gov
+  if [[ "${ATDM_CONFIG_LM_LICENSE_FILE_OVERRIDE}" != "" ]] ; then
+    export LM_LICENSE_FILE=${ATDM_CONFIG_LM_LICENSE_FILE_OVERRIDE}
+  fi
 elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2" ]] ; then
   module load sems-gcc/7.2.0
   module load sems-cuda/9.2
@@ -160,12 +203,12 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2" ]] ; then
   fi
   export OMPI_CC=`which gcc`
   export OMPI_FC=`which gfortran`
-  export LAPACK_ROOT=/usr/lib64/atlas
-  export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT};-llapack"
-  export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas"
-  # Needed for some Tpetra UVM stuff
+  export ATDM_CONFIG_LAPACK_LIBS="/usr/lib64/liblapack.so.3"
+  export ATDM_CONFIG_BLAS_LIBS="/usr/lib64/libblas.so.3"
+  # some Trilinos tests require this to run correctly
   export CUDA_LAUNCH_BLOCKING=1
   export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
+  export KOKKOS_NUM_DEVICES=2
 else
   echo
   echo "***"
@@ -175,11 +218,36 @@ else
 fi
 
 module load sems-openmpi/1.10.1
-module load sems-netcdf/4.4.1/exo_parallel
-module load sems-hdf5/1.8.12/parallel
+module load sems-netcdf/4.7.3/parallel
+module load sems-hdf5/1.10.6/parallel
 module load sems-zlib/1.2.8/base
 module load sems-boost/1.59.0/base
+module unload sems-python/2.7.9
 module load sems-superlu/4.3/base
+
+if [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]] && \
+  [[ "${ATDM_CONFIG_COMPLEX}" == "ON" ]] && \
+  [[ "${ATDM_CONFIG_SHARED_LIBS}" == "ON" ]] ; then
+  export ATDM_CONFIG_USE_NINJA=OFF
+  export ATDM_CONFIG_CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS=OFF
+fi
+# NOTE: The reason for the above logic is that 'nvcc' can't handle *.rsp
+# response files that CMake switches to when the command-lines become too long
+# and there is no way to turn off the usage of response files with the CMake
+# Ninja generator as of CMake 3.14.0.  The problem is that when CUDA and
+# complex are enabled and shared libs are used, 'nvcc' is used to create the
+# kokkoskernels shared lib which has a ton of object files which triggers
+# internal CMake logic to condense these down into a single kokkoskernels.rsp
+# file that it passes to 'nvcc' to create the kokkoskernels library.  When the
+# CMake-generated *.rsp file is passed to 'nvcc', it does not know how to
+# process it and it gives the error "No input files specified".  The
+# workaround is to switch to the CMake Makefile generator which allows and
+# turning off the usage of response files for the list of object files (and
+# 'nvcc' seems to be able to handle this long command-line in this case).
+# Note that we don't yet need to switch to use the CMake Makefile generator
+# for 'static' builds since 'ar' is used to create the kokkoskernels lib which
+# does not seem to have a problem with the creation of this lib.  (See
+# TRIL-255 and TRIL-264.)
 
 if [[ "${ATDM_CONFIG_SHARED_LIBS}" == "ON" ]] ; then
   ATDM_CONFIG_TPL_LIB_EXT=so
@@ -191,11 +259,18 @@ export ATDM_CONFIG_USE_HWLOC=OFF
 export HWLOC_LIBS=-lhwloc
 
 export BOOST_ROOT=${SEMS_BOOST_ROOT}
+
 export HDF5_ROOT=${SEMS_HDF5_ROOT}
 export NETCDF_ROOT=${SEMS_NETCDF_ROOT}
+if [[ "${SEMS_PNETCDF_ROOT}" == "" ]] ; then
+  export PNETCDF_ROOT=${NETCDF_ROOT}
+else
+  export PNETCDF_ROOT=${SEMS_PNETCDF_ROOT}
+fi
 
-export ATDM_CONFIG_HDF5_LIBS="-L${SEMS_HDF5_ROOT}/lib;${SEMS_HDF5_ROOT}/lib/libhdf5_hl.a;${SEMS_HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
-export ATDM_CONFIG_NETCDF_LIBS="-L${SEMS_BOOST_ROOT}/lib;-L${SEMS_NETCDF_ROOT}/lib;-L${SEMS_NETCDF_ROOT}/lib;-L${SEMS_PNETCDF_ROOT}/lib;-L${SEMS_HDF5_ROOT}/lib;${SEMS_BOOST_ROOT}/lib/libboost_program_options.${ATDM_CONFIG_TPL_LIB_EXT};${SEMS_BOOST_ROOT}/lib/libboost_system.${ATDM_CONFIG_TPL_LIB_EXT};${SEMS_NETCDF_ROOT}/lib/libnetcdf.a;${SEMS_NETCDF_ROOT}/lib/libpnetcdf.a;${SEMS_HDF5_ROOT}/lib/libhdf5_hl.a;${SEMS_HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl;-lcurl"
+export ATDM_CONFIG_HDF5_LIBS="${HDF5_ROOT}/lib/libhdf5_hl.${ATDM_CONFIG_TPL_LIB_EXT};${HDF5_ROOT}/lib/libhdf5.${ATDM_CONFIG_TPL_LIB_EXT};${SEMS_ZLIB_ROOT}/lib/libz.${ATDM_CONFIG_TPL_LIB_EXT};-ldl"
+
+export ATDM_CONFIG_NETCDF_LIBS="${SEMS_NETCDF_ROOT}/lib/libnetcdf.${ATDM_CONFIG_TPL_LIB_EXT};${PNETCDF_ROOT}/lib/libpnetcdf.a;${ATDM_CONFIG_HDF5_LIBS};-lcurl"
 
 # NOTE: SEMS does not provide the correct *.so files for NetCDF so we can't
 # use them in a shared lib build :-(

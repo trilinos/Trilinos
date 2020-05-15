@@ -98,4 +98,17 @@ namespace PHX {
     this->addContributedField(tag);
   }
 
+  template<typename EvalT,typename Traits>
+  void MockDAG<EvalT,Traits>::unshared(const std::string& n)
+  {
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+
+    RCP<PHX::MDALayout<CELL,BASIS>> dl = 
+      rcp(new PHX::MDALayout<CELL,BASIS>("H-Grad",100,4));
+    RCP<PHX::Tag<typename EvalT::ScalarT>> tag =
+      Teuchos::rcp(new PHX::Tag<typename EvalT::ScalarT>(n,dl));
+    this->addUnsharedField(tag);
+  }
+
 } 

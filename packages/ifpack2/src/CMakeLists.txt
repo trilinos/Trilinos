@@ -199,6 +199,7 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     BlockRelaxation
     BorderedOperator
     Chebyshev
+    Container
     BandedContainer
     DenseContainer
     Diagonal
@@ -221,10 +222,12 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     ContainerFactory
     TriDiContainer
     Details::Chebyshev
+    Details::ChebyshevKernel
     Details::DenseSolver
     Details::Factory
     Details::LinearSolver
     Details::OneLevelFactory
+    Details::ScaledDampedResidual
     Details::TriDiSolver
     Experimental::RBILUK
     )
@@ -232,9 +235,6 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     APPEND_GLOBAL_SET(IFPACK2_ETI_CLASSES
       Details::Amesos2Wrapper
       )
-  ENDIF()
-  IF(Ifpack2_ENABLE_DEPRECATED_CODE)
-    APPEND_GLOBAL_SET(IFPACK2_ETI_CLASSES Krylov)
   ENDIF()
   IF(${PACKAGE_NAME}_ENABLE_Experimental_KokkosKernels_Features)
     APPEND_GLOBAL_SET(IFPACK2_ETI_CLASSES BlockTriDiContainer)
@@ -368,4 +368,5 @@ TRIBITS_ADD_LIBRARY(
 #
 # Make a trivial change here if you want CMake to run, due to changes
 # you make to files in Ifpack2.  Here is another such change.
+# Behold, I make another change, and another, and another.
 #

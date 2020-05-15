@@ -62,6 +62,7 @@ namespace MueLu {
   IfpackSmoother<Node>::IfpackSmoother(std::string const & type, Teuchos::ParameterList const & paramList, LO const &overlap)
     : type_(type), overlap_(overlap)
   {
+    this->declareConstructionOutcome(false, "");
     SetParameterList(paramList);
   }
 
@@ -141,7 +142,7 @@ namespace MueLu {
         lambdaMax = Teuchos::getValue<Scalar>(this->GetParameter(maxEigString));
         this->GetOStream(Statistics1) << maxEigString << " (cached with smoother parameter list) = " << lambdaMax << std::endl;
 
-      } catch (Teuchos::Exceptions::InvalidParameterName) {
+      } catch (Teuchos::Exceptions::InvalidParameterName&) {
         lambdaMax = A_->GetMaxEigenvalueEstimate();
 
         if (lambdaMax != -1.0) {
@@ -157,7 +158,7 @@ namespace MueLu {
       try {
         ratio = Teuchos::getValue<Scalar>(this->GetParameter(eigRatioString));
 
-      } catch (Teuchos::Exceptions::InvalidParameterName) {
+      } catch (Teuchos::Exceptions::InvalidParameterName&) {
         this->SetParameter(eigRatioString, ParameterEntry(ratio));
       }
 
@@ -232,6 +233,14 @@ namespace MueLu {
       }
 
     } // if (type_ == "LINESMOOTHING_BANDEDRELAXATION")
+
+    // If we're using a linear partitioner and haven't set the # local parts, set it to match the operator's block size
+    ParameterList precList = this->GetParameterList();
+    if(precList.isParameter("partitioner: type") && precList.get<std::string>("partitioner: type") == "linear" &&
+       !precList.isParameter("partitioner: local parts")) {
+      precList.set("partitioner: local parts", (int)A_->getNodeNumRows() / A_->GetFixedBlockSize());
+    }
+       
 
     RCP<Epetra_CrsMatrix> epA = Utilities::Op2NonConstEpetraCrs(A_);
 

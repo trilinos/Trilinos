@@ -46,7 +46,12 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_CrsMatrixMultiplyOp.hpp"
 #include "Tpetra_Details_getNumDiags.hpp"
+#include "Tpetra_Details_extractBlockDiagonal.hpp"
+#include "Tpetra_Details_scaleBlockDiagonal.hpp"
+#include "Tpetra_Apply_Helpers.hpp"
+#include "TpetraUtils_MatrixGenerator.hpp"
 #include <type_traits> // std::is_same
+
 
 // TODO: add test where some nodes have zero rows
 // TODO: add test where non-"zero" graph is used to build matrix; if no values are added to matrix, the operator effect should be zero. This tests that matrix values are initialized properly.
@@ -139,20 +144,7 @@ namespace {
   using Tpetra::RowMatrix;
   using Tpetra::Import;
   using Tpetra::global_size_t;
-  using Tpetra::createNonContigMapWithNode;
-  using Tpetra::createUniformContigMapWithNode;
   using Tpetra::createContigMapWithNode;
-  using Tpetra::createLocalMapWithNode;
-  using Tpetra::createCrsMatrix;
-  using Tpetra::ProfileType;
-  using Tpetra::StaticProfile;
-  using Tpetra::DynamicProfile;
-  using Tpetra::OptimizeOption;
-  using Tpetra::DoOptimizeStorage;
-  using Tpetra::DoNotOptimizeStorage;
-  using Tpetra::GloballyDistributed;
-  using Tpetra::INSERT;
-
 
   double errorTolSlack = 1e+1;
   std::string filedir;
@@ -369,7 +361,8 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,1,comm);
     const Scalar SZERO = ScalarTraits<Scalar>::zero();
     {
-      MAT matrix(map,map,0,DynamicProfile);
+      Tpetra::ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE;
+      MAT matrix(map,map,1,pftype);
       TEST_EQUALITY_CONST( matrix.isFillActive(),   true );
       TEST_EQUALITY_CONST( matrix.isFillComplete(), false );
       matrix.insertLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0) );
@@ -404,7 +397,8 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       TEST_THROW( matrix.fillComplete(),        std::runtime_error );
     }
     {
-      MAT matrix(map,map,0,DynamicProfile);
+      Tpetra::ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE;
+      MAT matrix(map,map,1,pftype);
       TEST_EQUALITY_CONST( matrix.isFillActive(),   true );
       TEST_EQUALITY_CONST( matrix.isFillComplete(), false );
       matrix.insertLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0) );
@@ -613,7 +607,8 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     auto map = createContigMapWithNode<LO, GO, Node> (INVALID, 1, comm);
 
     // construct matrix
-    CrsMatrix<Scalar,LO,GO,Node> A (map, map, 0, DynamicProfile);
+    Tpetra::ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE;
+    CrsMatrix<Scalar,LO,GO,Node> A (map, map, 1, pftype);
     A.insertLocalValues (0, tuple<LO> (0), tuple<Scalar> (STS::zero ()));
     A.fillComplete (map, map);
 
@@ -623,6 +618,488 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     B.replaceLocalValues (0, tuple<LO> (0), tuple<Scalar> (STS::one ()));
     B.fillComplete (map, map);
   }
+
+ ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, ExtractBlockDiagonal, LO, GO, Scalar, Node )
+  {
+    typedef ScalarTraits<Scalar> ST;
+    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
+    typedef MultiVector<Scalar,LO,GO,Node> MV;
+    typedef typename ST::magnitudeType Mag;
+    typedef ScalarTraits<Mag> MT;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    Scalar SC_one = ST::one();
+
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+    const size_t numImages = comm->getSize();
+
+    const size_t numLocal = 10;
+    const size_t numVecs  = 5;
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
+    MV mvrand(map,numVecs,false), mvres(map,numVecs,false);
+    mvrand.randomize();
+
+    // create the identity matrix, via three arrays constructor
+    ArrayRCP<size_t> rowptr(numLocal+1);
+    ArrayRCP<LO>     colind(numLocal); // one unknown per row
+    ArrayRCP<Scalar> values(numLocal); // one unknown per row
+
+    for(size_t i=0; i<numLocal; i++){
+      rowptr[i] = i;
+      colind[i] = Teuchos::as<LO>(i);
+      values[i] = ScalarTraits<Scalar>::one();
+    }
+    rowptr[numLocal]=numLocal;
+
+    RCP<CrsMatrix<Scalar,LO,GO,Node> > eye = rcp(new MAT(map,map,0));
+    TEST_NOTHROW( eye->setAllValues(rowptr,colind,values) );
+    TEST_NOTHROW( eye->expertStaticFillComplete(map,map) );
+
+    // Now, rip out some diagonals.
+    RCP<MV> diag1 = rcp(new MV(map,1));  diag1->putScalar(SC_one);
+    RCP<MV> diag2 = rcp(new MV(map,2));  diag2->putScalar(SC_one);
+    RCP<MV> diag5 = rcp(new MV(map,5));  diag5->putScalar(SC_one);
+
+    Tpetra::Details::extractBlockDiagonal(*eye,*diag1);
+    Tpetra::Details::extractBlockDiagonal(*eye,*diag2);
+    Tpetra::Details::extractBlockDiagonal(*eye,*diag5);
+
+    // Check norms
+    Array<Mag> norms1(1), norms2(2), norms5(5);
+    diag1->norm1(norms1());
+    diag2->norm1(norms2());
+    diag5->norm1(norms5());
+
+    Array<Mag> cmp1(1), cmp2(2), cmp5(5);
+    cmp1[0] = numLocal*numImages;
+    cmp2[0] = numLocal*numImages/2;
+    cmp2[1] = numLocal*numImages/2;
+
+    cmp5[0] = numLocal*numImages/5;
+    cmp5[1] = numLocal*numImages/5;
+    cmp5[2] = numLocal*numImages/5;
+    cmp5[3] = numLocal*numImages/5;
+    cmp5[4] = numLocal*numImages/5;
+
+    if (ST::isOrdinal) {
+      TEST_COMPARE_ARRAYS(norms1,cmp1);
+      TEST_COMPARE_ARRAYS(norms2,cmp2);
+      TEST_COMPARE_ARRAYS(norms5,cmp5);
+    } else {
+      TEST_COMPARE_FLOATING_ARRAYS(norms1,cmp1,MT::zero());
+      TEST_COMPARE_FLOATING_ARRAYS(norms2,cmp2,MT::zero());
+      TEST_COMPARE_FLOATING_ARRAYS(norms5,cmp5,MT::zero());
+    }
+  }
+
+ ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, ScaleBlockDiagonal, LO, GO, Scalar, Node )
+  {
+    typedef ScalarTraits<Scalar> ST;
+    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
+    typedef MultiVector<Scalar,LO,GO,Node> MV;
+    typedef typename ST::magnitudeType Mag;
+    typedef ScalarTraits<Mag> MT;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    Scalar SC_one = ST::one();
+
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+    const size_t numImages = comm->getSize();
+
+    const size_t numLocal = 10;
+    const size_t numVecs  = 5;
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
+    MV mvrand(map,numVecs,false), mvres(map,numVecs,false);
+    mvrand.randomize();
+
+    // create the identity matrix, via three arrays constructor
+    ArrayRCP<size_t> rowptr(numLocal+1);
+    ArrayRCP<LO>     colind(numLocal); // one unknown per row
+    ArrayRCP<Scalar> values(numLocal); // one unknown per row
+
+    for(size_t i=0; i<numLocal; i++){
+      rowptr[i] = i;
+      colind[i] = Teuchos::as<LO>(i);
+      values[i] = SC_one + SC_one;
+    }
+    rowptr[numLocal]=numLocal;
+
+    RCP<CrsMatrix<Scalar,LO,GO,Node> > eye2 = rcp(new MAT(map,map,0));
+    TEST_NOTHROW( eye2->setAllValues(rowptr,colind,values) );
+    TEST_NOTHROW( eye2->expertStaticFillComplete(map,map) );
+
+    // Now, rip out some diagonals.
+    RCP<MV> diag1 = rcp(new MV(map,1));  diag1->putScalar(SC_one);
+    RCP<MV> diag2 = rcp(new MV(map,2));  diag2->putScalar(SC_one);
+    RCP<MV> diag5 = rcp(new MV(map,5));  diag5->putScalar(SC_one);
+
+    Tpetra::Details::extractBlockDiagonal(*eye2,*diag1);
+    Tpetra::Details::extractBlockDiagonal(*eye2,*diag2);
+    Tpetra::Details::extractBlockDiagonal(*eye2,*diag5);
+
+    // Now, let's rescale some vectors
+    RCP<MV> toScale1 = rcp(new MV(map,2)); toScale1->putScalar(SC_one);
+    RCP<MV> toScale2 = rcp(new MV(map,2)); toScale2->putScalar(SC_one);
+    RCP<MV> toScale5 = rcp(new MV(map,2)); toScale5->putScalar(SC_one);
+
+    Tpetra::Details::inverseScaleBlockDiagonal(*diag1,true,*toScale1);
+    Tpetra::Details::inverseScaleBlockDiagonal(*diag2,false,*toScale2);
+    Tpetra::Details::inverseScaleBlockDiagonal(*diag5,false,*toScale5);
+
+    // Check norms
+    Array<Mag> norms1(2), norms2(2), norms5(2);
+    toScale1->norm1(norms1());
+    toScale2->norm1(norms2());
+    toScale5->norm1(norms5());
+
+    Array<Mag> cmp1(2), cmp2(2), cmp5(2);
+    cmp1[0] = numLocal*numImages / 2;
+    cmp1[1] = numLocal*numImages / 2;
+
+    cmp2[0] = numLocal*numImages / 2;
+    cmp2[1] = numLocal*numImages / 2;
+
+    cmp5[0] = numLocal*numImages / 2;
+    cmp5[1] = numLocal*numImages / 2;
+
+    if (ST::isOrdinal) {
+      TEST_COMPARE_ARRAYS(norms1,cmp1);
+      TEST_COMPARE_ARRAYS(norms2,cmp2);
+      TEST_COMPARE_ARRAYS(norms5,cmp5);
+    } else {
+      TEST_COMPARE_FLOATING_ARRAYS(norms1,cmp1,MT::zero());
+      TEST_COMPARE_FLOATING_ARRAYS(norms2,cmp2,MT::zero());
+      TEST_COMPARE_FLOATING_ARRAYS(norms5,cmp5,MT::zero());
+    }
+
+  }
+
+ ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, ScaleBlockDiagonal_Forward, LO, GO, Scalar, Node )
+  {
+    typedef ScalarTraits<Scalar> ST;
+    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
+    typedef MultiVector<Scalar,LO,GO,Node> MV;
+    typedef typename ST::magnitudeType Mag;
+    typedef ScalarTraits<Mag> MT;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    Scalar SC_one = ST::one();
+
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+    const size_t numImages = comm->getSize();
+
+    const size_t numLocal = 8;
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
+
+    // create block lower-triangular, via three arrays constructor
+    ArrayRCP<size_t> rowptr(numLocal+1);
+    ArrayRCP<LO>     colind((int)(1.5*numLocal)); // 1.5 unknowns per row
+    ArrayRCP<Scalar> values((int)(1.5*numLocal)); // 1.5 two unknowns per row
+
+    int nnz=0;
+    for(size_t i=0; i<numLocal; i++){
+      rowptr[i] = nnz;
+      if(i%2 == 0) {
+        // Diagonal entry only (2)
+        colind[nnz] = Teuchos::as<LO>(i);
+        values[nnz] = SC_one + SC_one;
+        nnz++;
+      }
+      else {
+        // Sub-diagonal entry (-1) and diagonal entry (2)
+        colind[nnz] = Teuchos::as<LO>(i-1);
+        values[nnz] = - SC_one;
+        nnz++;
+        colind[nnz] = Teuchos::as<LO>(i);
+        values[nnz] = SC_one + SC_one;
+        nnz++;
+      }
+
+    }
+    rowptr[numLocal]=nnz;
+
+    RCP<CrsMatrix<Scalar,LO,GO,Node> > blockTri = rcp(new MAT(map,map,0));
+    TEST_NOTHROW( blockTri->setAllValues(rowptr,colind,values) );
+    TEST_NOTHROW( blockTri->expertStaticFillComplete(map,map) );
+
+    // Now, rip out some diagonals.
+    RCP<MV> diag2 = rcp(new MV(map,2));  diag2->putScalar(SC_one);
+    RCP<MV> diag4 = rcp(new MV(map,4));  diag4->putScalar(SC_one);
+
+    Tpetra::Details::extractBlockDiagonal(*blockTri,*diag2);
+    Tpetra::Details::extractBlockDiagonal(*blockTri,*diag4);
+
+    // Make some vectors
+    RCP<MV> toScale2 = rcp(new MV(map,1));
+    RCP<MV> toScale4 = rcp(new MV(map,1)); 
+    auto v2 = toScale2->getDataNonConst(0);
+    auto v4 = toScale4->getDataNonConst(0);
+    for(size_t i=0; i<numLocal; i++){
+      if(i%2 == 0) {
+        v2[i] = SC_one;
+        v4[i] = SC_one;
+      }
+      else {        
+        v2[i] = SC_one+SC_one;
+        v4[i] = SC_one+SC_one;
+      }
+    }    
+    
+    // Scale some vectors
+    Tpetra::Details::inverseScaleBlockDiagonal(*diag2,false,*toScale2);
+    Tpetra::Details::inverseScaleBlockDiagonal(*diag4,false,*toScale4);
+
+    Kokkos::fence();
+
+    // Check norms
+    Array<Mag> norms2(1), norms4(1);
+    toScale2->norm1(norms2());
+    toScale4->norm1(norms4());
+
+    Array<Mag> cmp2(1), cmp4(1);
+    cmp2[0] = 0.875*numLocal*numImages;
+    cmp4[0] = 0.875*numLocal*numImages;
+
+    if (ST::isOrdinal) {
+      TEST_COMPARE_ARRAYS(norms2,cmp2);
+      TEST_COMPARE_ARRAYS(norms4,cmp4);
+    } else {
+      TEST_COMPARE_FLOATING_ARRAYS(norms2,cmp2,100*MT::eps());
+      TEST_COMPARE_FLOATING_ARRAYS(norms4,cmp4,100*MT::eps());
+    }
+
+  }
+
+
+ ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, ScaleBlockDiagonal_Transpose, LO, GO, Scalar, Node )
+  {
+    typedef ScalarTraits<Scalar> ST;
+    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
+    typedef MultiVector<Scalar,LO,GO,Node> MV;
+    typedef typename ST::magnitudeType Mag;
+    typedef ScalarTraits<Mag> MT;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    Scalar SC_one = ST::one();
+
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+    const size_t numImages = comm->getSize();
+
+    const size_t numLocal = 8;
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
+
+    // create block lower-triangular, via three arrays constructor
+    ArrayRCP<size_t> rowptr(numLocal+1);
+    ArrayRCP<LO>     colind((int)(1.5*numLocal)); // 1.5 unknowns per row
+    ArrayRCP<Scalar> values((int)(1.5*numLocal)); // 1.5 two unknowns per row
+
+    int nnz=0;
+    for(size_t i=0; i<numLocal; i++){
+      rowptr[i] = nnz;
+      if(i%2 == 0) {
+        // Diagonal entry only (2)
+        colind[nnz] = Teuchos::as<LO>(i);
+        values[nnz] = SC_one + SC_one;
+        nnz++;
+      }
+      else {
+        // Sub-diagonal entry (-1) and diagonal entry (2)
+        colind[nnz] = Teuchos::as<LO>(i-1);
+        values[nnz] = - SC_one;
+        nnz++;
+        colind[nnz] = Teuchos::as<LO>(i);
+        values[nnz] = SC_one + SC_one;
+        nnz++;
+      }
+
+    }
+    rowptr[numLocal]=nnz;
+
+    RCP<CrsMatrix<Scalar,LO,GO,Node> > blockTri = rcp(new MAT(map,map,0));
+    TEST_NOTHROW( blockTri->setAllValues(rowptr,colind,values) );
+    TEST_NOTHROW( blockTri->expertStaticFillComplete(map,map) );
+
+    // Now, rip out some diagonals.
+    RCP<MV> diag2 = rcp(new MV(map,2));  diag2->putScalar(SC_one);
+    RCP<MV> diag4 = rcp(new MV(map,4));  diag4->putScalar(SC_one);
+
+    Tpetra::Details::extractBlockDiagonal(*blockTri,*diag2);
+    Tpetra::Details::extractBlockDiagonal(*blockTri,*diag4);
+
+    // Make some vectors
+    RCP<MV> toScale2 = rcp(new MV(map,1));
+    RCP<MV> toScale4 = rcp(new MV(map,1)); 
+    auto v2 = toScale2->getDataNonConst(0);
+    auto v4 = toScale4->getDataNonConst(0);
+    for(size_t i=0; i<numLocal; i++){
+      if(i%2 == 0) {
+        v2[i] = SC_one;
+        v4[i] = SC_one;
+      }
+      else {        
+        v2[i] = SC_one+SC_one;
+        v4[i] = SC_one+SC_one;
+      }
+    }    
+
+    // Now, let's rescale some vectors
+    Tpetra::Details::inverseScaleBlockDiagonal(*diag2,true,*toScale2);
+    Tpetra::Details::inverseScaleBlockDiagonal(*diag4,true,*toScale4);
+
+    Kokkos::fence();
+
+    // Check norms
+    Array<Mag> norms2(1), norms4(1);
+    toScale2->norm1(norms2());
+    toScale4->norm1(norms4());
+
+    Array<Mag> cmp2(1), cmp4(1);
+    cmp2[0] = numLocal*numImages;
+    cmp4[0] = numLocal*numImages;
+
+    if (ST::isOrdinal) {
+      TEST_COMPARE_ARRAYS(norms2,cmp2);
+      TEST_COMPARE_ARRAYS(norms4,cmp4);
+    } else {
+      TEST_COMPARE_FLOATING_ARRAYS(norms2,cmp2,100*MT::eps());
+      TEST_COMPARE_FLOATING_ARRAYS(norms4,cmp4,100*MT::eps());
+    }
+
+  }
+
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, ApplyHelpers, LO, GO, Scalar, Node )
+  {
+    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
+    //    typedef  Operator<Scalar,LO,GO,Node> OP;
+    typedef ScalarTraits<Scalar> ST;
+    typedef MultiVector<Scalar,LO,GO,Node> MV;
+    typedef Map<LO,GO,Node> MAP;
+    typedef typename ST::magnitudeType Mag;
+    using values_type = typename MAT::local_matrix_type::values_type;
+    using range_policy = Kokkos::RangePolicy<typename Node::device_type::execution_space>;
+
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+    int numRanks = comm->getSize();
+
+    Scalar ZERO = ST::zero(), ONE = ST::one();
+    Mag MT_ZERO = Teuchos::ScalarTraits<Mag>::zero();
+    int nsize=100;
+
+    /* Create the identity matrix, three rows per proc */
+    RCP<MAT> A1 = Tpetra::Utils::MatrixGenerator<MAT>::generate_miniFE_matrix(nsize, comm);
+    if(!A1->isFillComplete()) A1->fillComplete();
+    RCP<const MAP> map = A1->getRowMap();
+
+    /* Now take the same thing, but multiply the entries by 2*/
+    values_type A1_values = A1->getLocalMatrix().values;
+    values_type A2_values("values",A1_values.extent(0));
+    Kokkos::parallel_for( range_policy(0,A1_values.extent(0)),KOKKOS_LAMBDA(const int i){
+        A2_values[i] = A1_values[i] + A1_values[i];
+      });
+
+    RCP<MAT> A2 = rcp(new MAT(map,A1->getColMap(),A1->getLocalMatrix().graph.row_map,A1->getLocalMatrix().graph.entries,A2_values));
+    A2->expertStaticFillComplete(A1->getDomainMap(),A1->getRangeMap(),A1->getGraph()->getImporter(),A1->getGraph()->getExporter());
+
+    /* Allocate multivectors */
+    MV X(map,2), Y1a(map,2), Y1b(map,2), Y2a(map,2), Y2b(map,2), compare(map,2);
+    Array<Mag> norm(2), exact(2,MT_ZERO);
+    X.putScalar(ONE);
+
+    // Do a std::vector version 
+    {
+      Y1a.putScalar(ZERO);Y1b.putScalar(ZERO);
+      Y2a.putScalar(ZERO);Y2b.putScalar(ZERO);
+
+      std::vector<MAT*> matrices = {A1.get(),A2.get()};
+      std::vector<MV*>  outvec   = {&Y1b,&Y2b};
+
+      // Comparison guy
+      A1->apply(X,Y1a);
+      A2->apply(X,Y2a);
+
+      // Apply Helpers
+      Tpetra::batchedApply(matrices,X,outvec);
+     
+      // Compare
+      compare.update(ONE,Y1a,-ONE,Y1b,ZERO);
+      compare.norm1(norm());
+      if (ST::isOrdinal) {TEST_COMPARE_ARRAYS(exact,norm);}
+      else{TEST_COMPARE_FLOATING_ARRAYS(exact,norm,2.0*testingTol<Mag>());}
+
+      compare.update(ONE,Y2a,-ONE,Y2b,ZERO);
+      compare.norm1(norm());
+      if (ST::isOrdinal) {TEST_COMPARE_ARRAYS(exact,norm);}
+      else {TEST_COMPARE_FLOATING_ARRAYS(exact,norm,2.0*testingTol<Mag>());}
+    }
+
+    // Do a std::vector version w/ a nice combination of options
+    std::vector<Scalar> alpha = {ONE+ONE, ONE, ZERO};
+    std::vector<Scalar> beta  = {ONE+ONE, ONE, ZERO};
+    for(int i=0; i<(int)alpha.size(); i++) {
+      for(int j=0; j<(int)beta.size(); j++) {
+        Teuchos::RCP<Teuchos::ParameterList> params = Teuchos::rcp(new Teuchos::ParameterList());
+        Y1a.putScalar(ZERO);Y1b.putScalar(ZERO);
+        Y2a.putScalar(ZERO);Y2b.putScalar(ZERO);
+        
+        std::vector<MAT*> matrices = {A1.get(),A2.get()};
+        std::vector<MV*>  outvec   = {&Y1b,&Y2b};
+        
+        // Comparison guy
+        A1->apply(X,Y1a,Teuchos::NO_TRANS,alpha[i],beta[j]);
+        A2->apply(X,Y2a,Teuchos::NO_TRANS,alpha[i],beta[j]);
+      
+        // Apply Helpers
+        Tpetra::batchedApply(matrices,X,outvec,alpha[i],beta[j],params);
+      
+        // Check to make sure this guy decided we can batch appropriately
+        bool did_we_batch = params->get<bool>("can batch");
+        bool should_we_batch = (numRanks>1)?true:false;
+        TEST_EQUALITY(did_we_batch,should_we_batch);
+        
+        // Compare
+        compare.update(ONE,Y1a,-ONE,Y1b,ZERO);
+        compare.norm1(norm());
+        if (ST::isOrdinal) {TEST_COMPARE_ARRAYS(exact,norm);}
+        else{TEST_COMPARE_FLOATING_ARRAYS(exact,norm,2.0*testingTol<Mag>());}
+        
+        compare.update(ONE,Y2a,-ONE,Y2b,ZERO);
+        compare.norm1(norm());
+        if (ST::isOrdinal) {TEST_COMPARE_ARRAYS(exact,norm);}
+        else {TEST_COMPARE_FLOATING_ARRAYS(exact,norm,2.0*testingTol<Mag>());}
+      }
+    }
+
+    // Teuchos::Array version
+    // Do a std::vector version 
+    {
+      Y1a.putScalar(ZERO);Y2a.putScalar(ZERO);
+      Y1b.putScalar(ZERO);Y2b.putScalar(ZERO);
+
+      Teuchos::Array<MAT*> matrices(2); matrices[0]=A1.get(); matrices[1]=A2.get();
+      Teuchos::Array<MV*>  outvec(2);   outvec[0]=&Y1b; outvec[1]=&Y2b;
+
+      // Comparison guy
+      A1->apply(X,Y1a);
+      A2->apply(X,Y2a);
+
+      // Apply Helpers
+      Tpetra::batchedApply(matrices,X,outvec);
+
+      // Compare
+      compare.update(ONE,Y1a,-ONE,Y1b,ZERO);
+      compare.norm1(norm());
+      if (ST::isOrdinal) {TEST_COMPARE_ARRAYS(exact,norm);}
+      else{TEST_COMPARE_FLOATING_ARRAYS(exact,norm,2.0*testingTol<Mag>());}
+
+      compare.update(ONE,Y2a,-ONE,Y2b,ZERO);
+      compare.norm1(norm());
+      if (ST::isOrdinal) {TEST_COMPARE_ARRAYS(exact,norm);}
+      else {TEST_COMPARE_FLOATING_ARRAYS(exact,norm,2.0*testingTol<Mag>());}
+    }
+
+  }
+
 
 //
 // INSTANTIATIONS
@@ -634,10 +1111,19 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Typedefs,          LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ThreeArraysESFC,   LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, SetAllValues,      LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, GraphOwnedByFirstMatrixSharedBySecond, LO, GO, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, GraphOwnedByFirstMatrixSharedBySecond, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ExtractBlockDiagonal,      LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ApplyHelpers,      LO, GO, SCALAR, NODE )  
+
+#define UNIT_TEST_GROUP_NO_ORDINAL_SCALAR( SCALAR, LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ScaleBlockDiagonal,      LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ScaleBlockDiagonal_Forward,     LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ScaleBlockDiagonal_Transpose,     LO, GO, SCALAR, NODE )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
   TPETRA_INSTANTIATE_SLGN( UNIT_TEST_GROUP )
+
+  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( UNIT_TEST_GROUP_NO_ORDINAL_SCALAR )
 
 }

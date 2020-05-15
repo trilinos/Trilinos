@@ -48,7 +48,7 @@
 #include "Phalanx_Evaluator_Derived.hpp"
 #include "Phalanx_MDField.hpp"
 
-/** \brief Simple test evalautor
+/** \brief Simple test evaluator
 
     This class is used to test the EvaluatorUnitTester object.
 */

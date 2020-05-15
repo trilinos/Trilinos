@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -41,9 +41,9 @@
 #include <mpi.h>
 #endif
 
-#define OUTPUT std::cerr
 #undef NDEBUG
 #include <Ioss_ConcreteVariableType.h>
+#include <Ioss_ScopeGuard.h>
 #include <cassert>
 #include <exodus/Ioex_SuperElement.h>
 
@@ -51,13 +51,14 @@ int main(int argc, char *argv[])
 {
 #ifdef SEACAS_HAVE_MPI
   MPI_Init(&argc, &argv);
+  ON_BLOCK_EXIT(MPI_Finalize);
 #endif
 
   Ioss::StorageInitializer initialize_storage;
 
   std::string input_file = std::string(argv[argc - 1]);
   if (input_file == "") {
-    OUTPUT << "Error: No input file specified\n";
+    std::cerr << "Error: No input file specified\n";
     return (EXIT_FAILURE);
   }
 
@@ -100,9 +101,6 @@ int main(int argc, char *argv[])
   assert(kr_size == numDOF * numDOF);
   assert(mr_size == numDOF * numDOF);
 
-  OUTPUT << "\nSIERRA execution successful." << '\n';
-#ifdef SEACAS_HAVE_MPI
-  MPI_Finalize();
-#endif
+  std::cerr << "\nSIERRA execution successful." << '\n';
   return EXIT_SUCCESS;
 }

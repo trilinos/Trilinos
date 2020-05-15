@@ -159,10 +159,10 @@ void coarsen(
         twptr  = term_wgts[j];
         ctwptr = new_term_wgts[j];
         for (i = 1; i <= nvtxs; i++) {
-          if (twptr[i] > .5) {
+          if (twptr[i] > 0.5f) {
             ctwptr[i] = 1;
           }
-          else if (twptr[i] < -.5) {
+          else if (twptr[i] < -0.5f) {
             ctwptr[i] = -1;
           }
           else {
@@ -336,7 +336,7 @@ void coarsen(
       /* Solve extended eigen problem */
 
       /* If not coarsening ewgts, then need care with term_wgts. */
-      if (!using_ewgts && term_wgts[1] != NULL && step != 0) {
+      if (!using_ewgts && step != 0) {
         twptr      = smalloc((nvtxs + 1) * (nsets - 1) * sizeof(float));
         twptr_save = twptr;
         for (j = 1; j < nsets; j++) {
@@ -348,10 +348,10 @@ void coarsen(
           twptr  = term_wgts[j];
           ctwptr = new_term_wgts[j];
           for (i = 1; i <= nvtxs; i++) {
-            if (twptr[i] > .5) {
+            if (twptr[i] > 0.5f) {
               ctwptr[i] = 1;
             }
-            else if (twptr[i] < -.5) {
+            else if (twptr[i] < -0.5f) {
               ctwptr[i] = -1;
             }
             else {

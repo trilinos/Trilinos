@@ -179,7 +179,7 @@ C=======================================================================
 
             END IF
 
-            XNEW = XMAJ + FLOAT(I)*MINTIC
+            XNEW = XMAJ + DBLE(I)*MINTIC
             IF (XNEW-FUDGE.LE.X) THEN
                GO TO 2260
 
@@ -285,7 +285,7 @@ C=======================================================================
          END IF
 
          XNUM = XNUM + INTER
- 2240    GO TO 2230
+         GO TO 2230
 
  2250    CONTINUE
          IF (PLTNER(XMAJ,X+XLENG) .AND. NUMSIZ.GT.0.0) THEN
@@ -473,7 +473,7 @@ C=======================================================================
 
             END IF
 
-            YNEW = YMAJ + FLOAT(I)*MINTIC
+            YNEW = YMAJ + DBLE(I)*MINTIC
             IF (YNEW-FUDGE.LE.Y) THEN
                GO TO 2390
 
@@ -592,7 +592,7 @@ C=======================================================================
          END IF
 
          XNUM = XNUM + INTER
- 2370    GO TO 2360
+         GO TO 2360
 
  2380    CONTINUE
          IF (PLTNER(YMAJ,Y+YLENG) .AND. NUMSIZ.GT.0.0) THEN
@@ -715,7 +715,7 @@ C=======================================================================
          CALL SIORPT('PLTAXS','Invalid axis type - '//TTYPE,2)
       END IF
 
- 2190 IF (.NOT. (.TRUE.)) GO TO 2180
+      IF (.NOT. (.TRUE.)) GO TO 2180
  2200 CONTINUE
       CALL PLTRET
       CALL PLTRED

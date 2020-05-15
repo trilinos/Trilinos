@@ -46,7 +46,7 @@
 #include "Teuchos_Assert.hpp"
 #include "Phalanx_DataLayout.hpp"
 
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_TpetraLinearObjContainer.hpp"
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
@@ -66,7 +66,7 @@
 template<typename TRAITS,typename LO,typename GO,typename NodeT>
 panzer::GatherSolution_Tpetra<panzer::Traits::Residual, TRAITS,LO,GO,NodeT>::
 GatherSolution_Tpetra(
-  const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
+  const Teuchos::RCP<const panzer::GlobalIndexer> & indexer,
   const Teuchos::ParameterList& p)
   : globalIndexer_(indexer)
   , has_tangent_fields_(false)
@@ -218,7 +218,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 template<typename TRAITS,typename LO,typename GO,typename NodeT>
 panzer::GatherSolution_Tpetra<panzer::Traits::Tangent, TRAITS,LO,GO,NodeT>::
 GatherSolution_Tpetra(
-  const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
+  const Teuchos::RCP<const panzer::GlobalIndexer> & indexer,
   const Teuchos::ParameterList& p)
   : globalIndexer_(indexer)
   , has_tangent_fields_(false)
@@ -242,6 +242,9 @@ GatherSolution_Tpetra(
     gatherFields_[fd] =
       PHX::MDField<ScalarT,Cell,NODE>(names[fd],basis->functional);
     this->addEvaluatedField(gatherFields_[fd]);
+    // Don't allow for sharing so that we can avoid zeroing out the
+    // off-diagonal values of the FAD derivative array.
+    this->addUnsharedField(gatherFields_[fd].fieldTag().clone());
   }
 
   // Setup dependent tangent fields if requested
@@ -389,7 +392,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 template<typename TRAITS,typename LO,typename GO,typename NodeT>
 panzer::GatherSolution_Tpetra<panzer::Traits::Jacobian, TRAITS,LO,GO,NodeT>::
 GatherSolution_Tpetra(
-  const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
+  const Teuchos::RCP<const panzer::GlobalIndexer> & indexer,
   const Teuchos::ParameterList& p)
   : globalIndexer_(indexer)
 {
@@ -416,6 +419,9 @@ GatherSolution_Tpetra(
     PHX::MDField<ScalarT,Cell,NODE> f(names[fd],basis->functional);
     gatherFields_[fd] = f;
     this->addEvaluatedField(gatherFields_[fd]);
+    // Don't allow for sharing so that we can avoid zeroing out the
+    // off-diagonal values of the FAD derivative array.
+    this->addUnsharedField(gatherFields_[fd].fieldTag().clone());
   }
 
   // figure out what the first active name is
@@ -429,7 +435,7 @@ GatherSolution_Tpetra(
     this->setName(n);
   }
   else {
-    std::string n = "GatherSolution (Tpetra): "+firstName+" ("+PHX::typeAsString<EvalT>()+") ";
+    std::string n = "GatherSolution (Tpetra): "+firstName+" ("+PHX::print<EvalT>()+") ";
     this->setName(n);
   }
 }

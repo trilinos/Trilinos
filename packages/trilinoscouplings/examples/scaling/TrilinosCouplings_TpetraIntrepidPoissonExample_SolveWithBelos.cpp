@@ -77,7 +77,6 @@ cloneAndSolveWithBelos (
   const Teuchos::ScalarTraits<ST>::magnitudeType& tol,
   const int maxNumIters,
   const int num_steps,
-  const Teuchos::RCP<CloneNode>& clone_node,
   const Teuchos::RCP<multivector_type>& X,
   const Teuchos::RCP<const sparse_matrix_type>& A,
   const Teuchos::RCP<const multivector_type>& B,
@@ -102,9 +101,9 @@ cloneAndSolveWithBelos (
   RCP<clone_multi_vector_type> B_clone, X_clone;
   {
     TEUCHOS_FUNC_TIME_MONITOR_DIFF("Clone System", clone_system);
-    A_clone = A->clone(clone_node, plClone);
-    B_clone = B->clone(clone_node);
-    X_clone = X->clone(clone_node);
+    A_clone = rcp(new clone_sparse_matrix_type(A, Teuchos::Copy));
+    B_clone = rcp(new clone_multi_vector_type(B, Teuchos::Copy));
+    X_clone = rcp(new clone_multi_vector_type(X, Teuchos::Copy));
   }
 
   // Clone preconditioner(s)
@@ -116,12 +115,12 @@ cloneAndSolveWithBelos (
     if (M_left != Teuchos::null && prec_type == "MueLu") {
       RCP< const MueLu::TpetraOperator<ST,LO,GO,Node> > M_muelu =
         rcp_dynamic_cast<const MueLu::TpetraOperator<ST,LO,GO,Node> >(M_left);
-      M_left_clone = M_muelu->clone<CloneNode> (clone_node);
+      M_left_clone = rcp(new clone_operator_type(M_muelu));
     }
     if (M_right != Teuchos::null && prec_type == "MueLu") {
       RCP< const MueLu::TpetraOperator<ST,LO,GO,Node> > M_muelu =
         rcp_dynamic_cast<const MueLu::TpetraOperator<ST,LO,GO,Node> >(M_right);
-      M_right_clone = M_muelu->clone<CloneNode> (clone_node);
+      M_right_clone = rcp(new clone_operator_type(M_muelu));
     }
 #else
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -142,7 +141,7 @@ cloneAndSolveWithBelos (
   // Copy X_clone back into X
   {
     TEUCHOS_FUNC_TIME_MONITOR_DIFF("Clone Solution", clone_sol);
-    RCP<multivector_type> X_host = X_clone->clone(X->getMap()->getNode());
+    RCP<multivector_type> X_host = rcp(new multivector_type(X_clone, Teuchos::Copy));
     X->update(1.0, *X_host, 0.0);
   }
 }

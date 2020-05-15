@@ -111,7 +111,7 @@ public:
   /// Get current time
   virtual Scalar getTime() const override;
   /// Get current index
-  virtual Scalar getIndex() const override;
+  virtual int getIndex() const override;
   /// Get Status
   virtual Status getStatus() const override;
   /// Get the Stepper
@@ -123,6 +123,7 @@ public:
   virtual Teuchos::RCP<const SolutionHistory<Scalar> > getSolutionHistory() const override;
    /// Get the TimeStepControl
   virtual Teuchos::RCP<const TimeStepControl<Scalar> > getTimeStepControl() const override;
+  virtual Teuchos::RCP<TimeStepControl<Scalar> > getNonConstTimeStepControl() override;
   virtual Teuchos::RCP<Teuchos::Time> getIntegratorTimer() const override
   {return state_integrator_->getIntegratorTimer();}
   virtual Teuchos::RCP<Teuchos::Time> getStepperTimer() const override
@@ -131,7 +132,7 @@ public:
   //@}
 
   /// Set the initial state from Thyra::VectorBase(s)
-  virtual void setInitialState(
+  virtual void initializeSolutionHistory(
     Scalar t0,
     Teuchos::RCP<const Thyra::VectorBase<Scalar> > x0,
     Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdot0 = Teuchos::null,

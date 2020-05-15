@@ -1,4 +1,4 @@
-/*	$NetBSD: getline.c,v 1.1.1.1 2011/05/12 20:46:50 christos Exp $	*/
+/*      $NetBSD: getline.c,v 1.1.1.1 2011/05/12 20:46:50 christos Exp $ */
 
 /*-
  * Copyright (c) 2011 The NetBSD Foundation, Inc.
@@ -33,6 +33,14 @@
 #include <stdio.h>  // for NULL, FILE, feof, fgetc, etc
 #include <stdlib.h> // for malloc, realloc
 #include <unistd.h> // for ssize_t
+
+#if defined(_MSC_VER)
+#ifdef _WIN64
+#define ssize_t __int64
+#else
+#define ssize_t long
+#endif
+#endif
 
 ssize_t getdelim(char **buf, size_t *bufsiz, int delimiter, FILE *fp)
 {

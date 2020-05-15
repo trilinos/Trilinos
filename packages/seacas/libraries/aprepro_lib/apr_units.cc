@@ -152,7 +152,7 @@ var_init cgs_ev[] =
     {"m"    ,  100.},
     {"sec"  ,    1.},
     {"kg"   , 1000.}, 
-    {"degK" ,    1./ 11605.},
+    {"degK" ,    1./ 11604.5221},
     {"rad"  ,    1.}, 
     {nullptr, 0}
   };
@@ -605,7 +605,7 @@ void load_conversion(var_init *base, svar_init *label)
   define_var("degF",   5./9. * degK, Tout); 
   define_var("degR",   5./9. * degK, Tout);
   define_var("rankine",5./9. * degK, Tout);
-  define_var("eV",     11605 * degK, Tout);
+  define_var("eV",     11604.5221 * degK, Tout);
 
   // Angular 
   if (echo != 0) { 

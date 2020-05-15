@@ -149,7 +149,8 @@ namespace {
     // The following should all pass at compile time
     TEST_ASSERT( (is_same<double, ADAPT::scalar_t>::value) );
     TEST_ASSERT( (is_same<int,    ADAPT::local_ordinal_t>::value) );
-    TEST_ASSERT( (is_same<int,    ADAPT::global_ordinal_t>::value) );
+    // mfh 23 Apr 2019: I have removed the requirement that
+    // ADAPT::global_ordinal_t == int.
     TEST_ASSERT( (is_same<Node,   ADAPT::node_t>::value) );
     TEST_ASSERT( (is_same<size_t, ADAPT::global_size_t>::value) );
     TEST_ASSERT( (is_same<MV,     ADAPT::multivec_t>::value) );
@@ -211,7 +212,7 @@ namespace {
     Array<double> copy(numVectors*numLocal*numprocs);
 
     get_1d_copy_helper<ADAPT,double>::do_get(ptrInArg(*adapter), copy(),
-					     numLocal*numprocs, Amesos2::ROOTED);
+                                             numLocal*numprocs, Amesos2::ROOTED);
 
     // Just rank==0 process has global copy of mv data, check against an import
     int my_elements = 0;
@@ -236,11 +237,11 @@ namespace {
     copy.clear();
     copy.resize(numVectors*numLocal);
     mv->Random();
-    
+
     mv->ExtractCopy(original.getRawPtr(),mv->MyLength());
     get_1d_copy_helper<ADAPT,double>::do_get(ptrInArg(*adapter), copy(),
-					     numLocal, Amesos2::DISTRIBUTED);
-    
+                                             numLocal, Amesos2::DISTRIBUTED);
+
     // Check that the values remain the same
     TEST_COMPARE_ARRAYS( original, copy );
 
@@ -282,15 +283,15 @@ namespace {
     size_t my_num_rows = OrdinalTraits<size_t>::zero();
     if ( numprocs > 1 ){
       if ( rank < 2 ){
-	my_num_rows = total_rows / 2;
+        my_num_rows = total_rows / 2;
       }
       // If we have an odd number of rows, rank=0 gets the remainder
       if ( rank == 0 ) my_num_rows += total_rows % 2;
     } else {
       my_num_rows = total_rows;
     }
-    const Tpetra::Map<int,int> redist_map(total_rows, my_num_rows, 0,
-                                          to_teuchos_comm(rcp(comm,false)));
+    const Tpetra::Map<> redist_map(total_rows, my_num_rows, 0,
+                                   to_teuchos_comm(rcp(comm,false)));
 
     // Get first the global data copy
     get_1d_copy_helper<ADAPT,double>::do_get(ptrInArg(*adapter),
@@ -367,16 +368,16 @@ namespace {
 
     // distribute rank 0's data
     put_1d_data_helper<ADAPT,double>::do_put(outArg(*adapter), original(),
-					     numLocal*numprocs,
-					     Amesos2::ROOTED);
+                                             numLocal*numprocs,
+                                             Amesos2::ROOTED);
 
     // Send rank 0's array to everyone else
     comm->Broadcast(original.getRawPtr(), original.size(), 0);
-    
+
     // Now have everyone get a copy from the multivector adapter
     get_1d_copy_helper<ADAPT,double>::do_get(ptrInArg(*adapter), copy(),
-					     numLocal*numprocs,
-					     Amesos2::GLOBALLY_REPLICATED);
+                                             numLocal*numprocs,
+                                             Amesos2::GLOBALLY_REPLICATED);
 
     // Check that the values are the same
     TEST_COMPARE_ARRAYS( original, copy );

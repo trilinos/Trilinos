@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
@@ -128,11 +126,11 @@ namespace Tpetra {
 
   /*! Allocation profile for matrix/graph entries */
   enum ProfileType {
-    StaticProfile,  /*!< Single, static allocation (strict and more efficient) */
-    DynamicProfile  /*!< Multiple, dynamic allocations (flexibile, but less efficient) */
+    StaticProfile
   };
 
-  /*! Optimize storage option */
+#define TPETRA_DEFAULT_PROFILE_TYPE Tpetra::StaticProfile
+/*! Optimize storage option */
   enum OptimizeOption {
     DoOptimizeStorage,   /*!< Indicates that storage should be optimized */
     DoNotOptimizeStorage /*!< Indicates that storage should not be optimized */
@@ -210,12 +208,6 @@ namespace Tpetra {
 
 //! Namespace for %Tpetra example classes and methods
 namespace TpetraExamples {
-}
-
-namespace Tpetra {
-  //! Namespace for %Tpetra Reduction/Tranformation Interface
-  namespace RTI {
-  }
 }
 
 namespace Tpetra {

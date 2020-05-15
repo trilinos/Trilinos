@@ -102,6 +102,7 @@
       <Parameter name="Coordinates"                         type="string"   value="myProlongatorFact"/>
       <Parameter name="gNodesPerDim"                        type="string"   value="myCoordTransferFact"/>
       <Parameter name="lNodesPerDim"                        type="string"   value="myCoordTransferFact"/>
+      <Parameter name="numDimensions"                       type="string"   value="myProlongatorFact"/>
     </ParameterList>
   </ParameterList>
 

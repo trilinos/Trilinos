@@ -94,7 +94,7 @@ C  THE SMALLEST
 C
          SMANG (NSA + 1) = ANGLE (J)
          INDEX (NSA + 1) = J
-         DO 110 II = 1, NSA
+         DO II = 1, NSA
             I = NSA + 1 - II
             IF  (SMANG (I + 1) .GE. SMANG (I)) GO TO 120
             TEMP = SMANG (I)
@@ -102,7 +102,8 @@ C
             SMANG (I) = SMANG (I + 1)
             INDEX (I) = INDEX (I + 1)
             SMANG (I + 1) = TEMP
-  110       INDEX (I + 1) = ITEMP
+            INDEX (I + 1) = ITEMP
+         end do
   120    CONTINUE
 C
   130 CONTINUE

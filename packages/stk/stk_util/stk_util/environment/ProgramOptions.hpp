@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -34,7 +35,8 @@
 #ifndef STK_UTIL_ENVIRONMENT_PROGRAMOPTIONS_HPP
 #define STK_UTIL_ENVIRONMENT_PROGRAMOPTIONS_HPP
 
-#include <boost/program_options.hpp>
+#include <stk_util/environment/OptionsSpecification.hpp>
+#include <stk_util/environment/ParsedOptions.hpp>
 
 namespace stk {
 
@@ -44,25 +46,25 @@ namespace stk {
 ///
 
 /**
- * @brief Function <b>get_options_description</b> accesses a singleton used to store the command
- * line option descriptions for the boost::program_options library.  This option
- * descriptions should be populated with options by each module using <b>Bootstrap</b>
- * object callback functions.  This allows modules to populate these prior to main's
- * execution of the boost::parse_command_line() functions.
+ * @brief Function <b>get_options_specification</b> accesses a singleton used to store command
+ * line option descriptions.  This options specification should be populated with options by each
+ *  module using <b>Bootstrap</b> object callback functions.
+ *  This allows modules to populate these prior to main's
+ *  execution of the stk::parse_command_line_args() functions.
  *
- * @return	        an <b>boost::program_options::options_description</b> reference to the
+ * @return	        a <b>stk::OptionsSpecification</b> reference to the
  *                      program options to be used for all command line option descriptions.
  */
-boost::program_options::options_description &get_options_description();
+OptionsSpecification& get_options_specification();
 
 /**
- * @brief Function <b>get_variables_map</b> accesses a singleton used to store the variables parsed from
- * the line option descriptions.
+ * @brief Function <b>get_parsed_options</b> accesses a singleton used to store
+ * the variables parsed from the line option descriptions.
  *
- * @return	        an <b>boost::program_options::variable_map</b> reference to the
+ * @return	        an <b>stk::ParsedOptions</b> reference to the
  *                      program options to be used for all command line option descriptions.
  */
-boost::program_options::variables_map &get_variables_map();
+ParsedOptions& get_parsed_options();
 
 ///
 /// @}
@@ -71,3 +73,4 @@ boost::program_options::variables_map &get_variables_map();
 } // namespace stk
 
 #endif // STK_UTIL_ENVIRONMENT_PROGRAMOPTIONS_HPP
+

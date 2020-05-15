@@ -55,7 +55,6 @@
 #include <Xpetra_MultiVectorFactory_fwd.hpp>
 #include <Xpetra_Operator_fwd.hpp>
 
-#include <Xpetra_Cloner.hpp>
 #include <MueLu_SmootherCloner.hpp>
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
@@ -97,10 +96,10 @@ namespace MueLu {
     restrictors, and coarse level discretizations.  Additionally, this class contains
     an apply method that supports V and W cycles.
   */
-  template <class Scalar        = Xpetra::Operator<>::scalar_type,
-            class LocalOrdinal  = typename Xpetra::Operator<Scalar>::local_ordinal_type,
-            class GlobalOrdinal = typename Xpetra::Operator<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node          = typename Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+  template <class Scalar = DefaultScalar,
+            class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class Hierarchy : public BaseClass {
 #undef MUELU_HIERARCHY_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -146,16 +145,19 @@ namespace MueLu {
     //!
     static CycleType             GetDefaultCycle()                                     { return MasterList::getDefault<std::string>("cycle type") == "V" ? VCYCLE : WCYCLE; }
     static bool                  GetDefaultImplicitTranspose()                         { return MasterList::getDefault<bool>("transpose: use implicit");  }
+    static bool                  GetDefaultFuseProlongationAndUpdate()                 { return MasterList::getDefault<bool>("fuse prolongation and update"); }
     static Xpetra::global_size_t GetDefaultMaxCoarseSize()                             { return MasterList::getDefault<int>("coarse: max size");   }
     static int                   GetDefaultMaxLevels()                                 { return MasterList::getDefault<int>("max levels");     }
     static bool                  GetDefaultPRrebalance()                               { return MasterList::getDefault<bool>("repartition: rebalance P and R");   }
 
     Xpetra::global_size_t        GetMaxCoarseSize() const                              { return maxCoarseSize_; }
     bool                         GetImplicitTranspose() const                          { return implicitTranspose_; }
+    bool                         GetFuseProlongationAndUpdate() const                  { return fuseProlongationAndUpdate_; }
 
     void                         SetMaxCoarseSize(Xpetra::global_size_t maxCoarseSize) { maxCoarseSize_ = maxCoarseSize; }
     void                         SetPRrebalance(bool doPRrebalance)                    { doPRrebalance_ = doPRrebalance; }
     void                         SetImplicitTranspose(const bool& implicit)            { implicitTranspose_ = implicit; }
+    void                         SetFuseProlongationAndUpdate(const bool& fuse)        { fuseProlongationAndUpdate_ = fuse; }
 
     //@}
 
@@ -192,6 +194,8 @@ namespace MueLu {
 
     //! Helper function
     void CheckLevel(Level& level, int levelID);
+
+    void SetMatvecParams(RCP<ParameterList> matvecParams);
 
     //! Multi-level setup phase: build a new level of the hierarchy.
     /*!  This method is aimed to be used in a loop building the hierarchy level by level. See Hierarchy::Setup(manager, startLevel, numDesiredLevels) for an example of usage.
@@ -301,7 +305,7 @@ namespace MueLu {
     //@{
 
     //! Return a simple one-line description of this object.
-    std::string description() const; 
+    std::string description() const;
 
     /*! @brief Print the Hierarchy with some verbosity level to a FancyOStream object.
 
@@ -311,7 +315,7 @@ namespace MueLu {
     void describe(Teuchos::FancyOStream& out, const VerbLevel verbLevel = Default) const;
     void describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_HIGH) const;
 
-    // Hierarchy::print is local hierarchy function, thus the statistics can be different from global ones
+    //! Hierarchy::print is local hierarchy function, thus the statistics can be different from global ones
     void print(std::ostream& out = std::cout, const VerbLevel verbLevel = (MueLu::Parameters | MueLu::Statistics0)) const;
 
     /*! Indicate whether the multigrid method is a preconditioner or a solver.
@@ -328,14 +332,10 @@ namespace MueLu {
       dumpFile_  = filename;
     }
 
-    template<class Node2>
-    Teuchos::RCP< Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
-    clone (const RCP<Node2> &node2) const;
-
     void setlib(Xpetra::UnderlyingLib inlib) { lib_ = inlib; }
     Xpetra::UnderlyingLib lib() { return lib_; }
 
-    // force recreation of cached description_ next time description() is called: 
+    //! force recreation of cached description_ next time description() is called:
     void ResetDescription() {
       description_ = "";
     }
@@ -355,41 +355,48 @@ namespace MueLu {
     //! Container for Level objects
     Array<RCP<Level> > Levels_;
 
-    // We replace coordinates GIDs to make them consistent with matrix GIDs,
-    // even if user does not do that.  Ideally, though, we should completely
-    // remove any notion of coordinate GIDs, and deal only with LIDs, assuming
-    // that they are consistent with matrix block IDs
+    //! We replace coordinates GIDs to make them consistent with matrix GIDs,
+    //! even if user does not do that.  Ideally, though, we should completely
+    //! remove any notion of coordinate GIDs, and deal only with LIDs, assuming
+    //! that they are consistent with matrix block IDs
     void ReplaceCoordinateMap(Level& level);
 
-    // Minimum size of a matrix on any level. If we fall below that, we stop
-    // the coarsening
+    //! Minimum size of a matrix on any level. If we fall below that, we stop
+    //! the coarsening
     Xpetra::global_size_t maxCoarseSize_;
 
-    // Potential speed up of the setup by skipping R construction, and using
-    // transpose matrix-matrix product for RAP
+    //! Potential speed up of the setup by skipping R construction, and using
+    //! transpose matrix-matrix product for RAP
     bool implicitTranspose_;
 
-    // Potential speed up of the setup by skipping rebalancing of P and R, and
-    // doing extra import during solve
+    //! Potential speed up of the solve by fusing prolongation and update steps.
+    //! This can lead to more iterations to round-off error accumulation.
+    bool fuseProlongationAndUpdate_;
+
+    //! Potential speed up of the setup by skipping rebalancing of P and R, and
+    //! doing extra import during solve
     bool doPRrebalance_;
 
-    // Hierarchy may be used in a standalone mode, or as a preconditioner
+    //! Hierarchy may be used in a standalone mode, or as a preconditioner
     bool isPreconditioner_;
 
-    // V- or W-cycle
+    //! V- or W-cycle
     CycleType Cycle_;
 
-    // Scaling factor to be applied to coarse grid correction.
+    //! Scaling factor to be applied to coarse grid correction.
     double scalingFactor_;
 
-    // Epetra/Tpetra mode
+    //! Epetra/Tpetra mode
     Xpetra::UnderlyingLib lib_;
 
-    // cache description to avoid recreating in each call to description() - use ResetDescription() to force recreation in Setup, SetupRe, etc.
+    //! cache description to avoid recreating in each call to description() - use ResetDescription() to force recreation in Setup, SetupRe, etc.
     mutable std::string description_ = ""; // mutable so that we can lazily initialize in description(), which is declared const
 
-    //! Graph dumping
-    // If enabled, we dump the graph on a specified level into a specified file
+    /*!
+    @brief Graph dumping
+
+    If enabled, we dump the graph on a specified level into a specified file
+    */
     bool isDumpingEnabled_;
     int  dumpLevel_;
     std::string dumpFile_;
@@ -397,72 +404,15 @@ namespace MueLu {
     //! Convergece rate
     MagnitudeType rate_;
 
-    // Level managers used during the Setup
+    //! Level managers used during the Setup
     Array<RCP<const FactoryManagerBase> > levelManagers_;
 
-    // Caching (Multi)Vectors used in Hierarchy::Iterate()
+    //! Caching (Multi)Vectors used in Hierarchy::Iterate()
     int sizeOfAllocatedLevelMultiVectors_;
     Array<RCP<MultiVector> > residual_, coarseRhs_, coarseX_, coarseImport_, coarseExport_, correction_;
-    
+
 
   }; //class Hierarchy
-
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  template<typename Node2>
-  Teuchos::RCP<Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
-  Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  clone (const Teuchos::RCP<Node2> &node2) const {
-    typedef Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node2>           New_H_Type;
-    typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2>      CloneOperator;
-    typedef MueLu::SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal, Node2> CloneSmoother;
-
-    Teuchos::RCP<New_H_Type> new_h = Teuchos::rcp(new New_H_Type());
-    new_h->Levels_.resize(this->GetNumLevels());
-    new_h->maxCoarseSize_     = maxCoarseSize_;
-    new_h->implicitTranspose_ = implicitTranspose_;
-    new_h->isPreconditioner_  = isPreconditioner_;
-    new_h->isDumpingEnabled_  = isDumpingEnabled_;
-    new_h->dumpLevel_         = dumpLevel_;
-    new_h->dumpFile_          = dumpFile_;
-
-    RCP<SmootherBase>  Pre, Post;
-    RCP<CloneSmoother> clonePre, clonePost;
-    RCP<CloneOperator> cloneA, cloneR, cloneP;
-    RCP<Operator>      A, R, P;
-    for (int i = 0; i < GetNumLevels(); i++) {
-      RCP<Level> level      = this->Levels_[i];
-      RCP<Level> clonelevel = rcp(new Level());
-
-      if (level->IsAvailable("A")) {
-        A      = level->template Get<RCP<Operator> >("A");
-        cloneA = Xpetra::clone<Scalar, LocalOrdinal, GlobalOrdinal, Node, Node2>(*A, node2);
-        clonelevel->template Set<RCP<CloneOperator> >("A", cloneA);
-      }
-      if (level->IsAvailable("R")){
-        R      = level->template Get<RCP<Operator> >("R");
-        cloneR = Xpetra::clone<Scalar, LocalOrdinal, GlobalOrdinal, Node, Node2>(*R, node2);
-        clonelevel->template Set<RCP<CloneOperator> >("R", cloneR);
-      }
-      if (level->IsAvailable("P")){
-        P      = level->template Get<RCP<Operator> >("P");
-        cloneP = Xpetra::clone<Scalar, LocalOrdinal, GlobalOrdinal, Node, Node2>(*P,  node2);
-        clonelevel->template Set<RCP<CloneOperator> >("P", cloneP);
-      }
-      if (level->IsAvailable("PreSmoother")){
-        Pre      = level->template Get<RCP<SmootherBase> >("PreSmoother");
-        clonePre = MueLu::clone<Scalar, LocalOrdinal, GlobalOrdinal, Node, Node2> (Pre, cloneA, node2);
-        clonelevel->template Set<RCP<CloneSmoother> >("PreSmoother", clonePre);
-      }
-      if (level->IsAvailable("PostSmoother")){
-        Post      = level->template Get<RCP<SmootherBase> >("PostSmoother");
-        clonePost = MueLu::clone<Scalar, LocalOrdinal, GlobalOrdinal, Node, Node2> (Post, cloneA, node2);
-        clonelevel-> template Set<RCP<CloneSmoother> >("PostSmoother", clonePost);
-      }
-      new_h->Levels_[i] = clonelevel;
-    }
-
-    return new_h;
-  }
 
 } //namespace MueLu
 

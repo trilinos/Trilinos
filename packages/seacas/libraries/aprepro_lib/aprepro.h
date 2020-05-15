@@ -51,13 +51,18 @@
 #define math_errhandling MATH_ERRNO
 #endif
 
+#if defined(_MSC_VER)
+#include <io.h>
+#define isatty _isatty
+#endif
+
 /** The SEAMS namespace is used to encapsulate the three parser classes
  * SEAMS::Parser, SEAMS::Scanner and SEAMS::Aprepro */
 namespace SEAMS {
 
   struct array
   {
-    std::vector<double> data;
+    std::vector<double> data{};
     int                 rows{0};
     int                 cols{0};
 
@@ -68,9 +73,9 @@ namespace SEAMS {
 
   struct symrec
   {
-    std::string name;
-    std::string syntax;
-    std::string info;
+    std::string name{};
+    std::string syntax{};
+    std::string info{};
     int         type;
     bool        isInternal;
     struct value
@@ -90,7 +95,7 @@ namespace SEAMS {
       double (*fnctptr_ddddc)(double, double, double, double, char *){nullptr};
       double (*fnctptr_dddddd)(double, double, double, double, double, double){nullptr};
       double (*fnctptr_a)(const array *){nullptr};
-      std::string svar;
+      std::string svar{};
       const char *(*strfnct)(){nullptr};
       const char *(*strfnct_c)(char *){nullptr};
       const char *(*strfnct_d)(double){nullptr};
@@ -104,6 +109,7 @@ namespace SEAMS {
       array *(*arrfnct_c)(const char *){nullptr};
       array *(*arrfnct_cc)(const char *, const char *){nullptr};
       array *(*arrfnct_cd)(const char *, double){nullptr};
+      array *(*arrfnct_ddd)(double, double, double){nullptr};
       array *(*arrfnct_dd)(double, double){nullptr};
       array *(*arrfnct_d)(double){nullptr};
       array *(*arrfnct_a)(const array *){nullptr};
@@ -130,8 +136,8 @@ namespace SEAMS {
   /* Global options */
   struct aprepro_options
   {
-    std::string include_path;
-    std::string include_file;
+    std::string include_path{};
+    std::string include_file{};
     bool        end_on_exit{false};
     bool        warning_msg{true};
     bool        info_msg{false};
@@ -205,23 +211,23 @@ namespace SEAMS {
     std::string version() const;
 
     /** Invoke the scanner and parser for a stream.
-     * @param in	input stream
-     * @param in_name	stream name for error messages
-     * @return		true if successfully parsed
+     * @param in        input stream
+     * @param in_name   stream name for error messages
+     * @return          true if successfully parsed
      */
     bool parse_stream(std::istream &in, const std::string &in_name = "stream input");
 
     /** Invoke the scanner and parser on an input string.
-     * @param input	input string
-     * @param sname	stream name for error messages
-     * @return		true if successfully parsed
+     * @param input     input string
+     * @param sname     stream name for error messages
+     * @return          true if successfully parsed
      */
     bool parse_string(const std::string &input, const std::string &sname = "string stream");
 
     /** Invoke the scanner and parser on a vector of strings.
-     * @param input	vector of input strings
-     * @param sname	stream name for error messages
-     * @return		true if successfully parsed
+     * @param input     vector of input strings
+     * @param sname     stream name for error messages
+     * @return          true if successfully parsed
      */
     bool parse_strings(const std::vector<std::string> &input, const std::string &sname);
 
@@ -239,17 +245,17 @@ namespace SEAMS {
 
     /** Invoke the scanner and parser on a file. Use parse_stream with a
      * std::ifstream if detection of file reading errors is required.
-     * @param filename	input file name
-     * @return		true if successfully parsed
+     * @param filename  input file name
+     * @return          true if successfully parsed
      */
     bool parse_file(const std::string &filename);
 
     void statistics(std::ostream *out = nullptr) const;
 
     aprepro_options      ap_options;
-    std::stack<file_rec> ap_file_list;
+    std::stack<file_rec> ap_file_list{};
 
-    std::stack<std::ostream *> outputStream;
+    std::stack<std::ostream *> outputStream{};
 
     SEAMS::symrec *getsym(const char *sym_name) const;
     SEAMS::symrec *getsym(const std::string &sym_name) const;
@@ -294,11 +300,11 @@ namespace SEAMS {
 
   private:
     void                  init_table(const char *comment);
-    std::vector<symrec *> sym_table;
-    std::ostringstream    parsingResults;
+    std::vector<symrec *> sym_table{};
+    std::ostringstream    parsingResults{};
 
     // Input stream used with parse_string_interactive
-    std::istringstream stringInput;
+    std::istringstream stringInput{};
 
     bool           stringInteractive{false};
     class Scanner *stringScanner{nullptr};
@@ -308,7 +314,7 @@ namespace SEAMS {
     std::ostream *warningStream{&std::cerr};
 
     // For substitution history.
-    std::vector<history_data> history;
+    std::vector<history_data> history{};
 
     mutable int parseErrorCount{0};
 

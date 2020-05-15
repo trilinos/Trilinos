@@ -292,9 +292,24 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     ::Xpetra::Parameters xpetraParameters(clp);
 
     bool useKokkos = false;
-#if defined(HAVE_MUELU_KOKKOS_REFACTOR) && defined(HAVE_MUELU_KOKKOS_REFACTOR_USE_BY_DEFAULT)
-    useKokkos = true;
+    if(lib == Xpetra::UseTpetra) {
+#if !defined(HAVE_MUELU_KOKKOS_REFACTOR)
+      useKokkos = false;
+#else
+# ifdef HAVE_MUELU_SERIAL
+      if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosSerialWrapperNode).name())
+        useKokkos = false;
+# endif
+# ifdef HAVE_MUELU_OPENMP
+      if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosOpenMPWrapperNode).name())
+        useKokkos = true;
+# endif
+# ifdef HAVE_MUELU_CUDA
+      if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
+        useKokkos = true;
+# endif
 #endif
+    }
     clp.setOption("kokkosRefactor", "noKokkosRefactor", &useKokkos, "use kokkos refactor");
 
     switch (clp.parse(argc, argv)) {
@@ -362,6 +377,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       mueluList.set("verbosity",                           "test");
       mueluList.set("coarse: max size",                    100);
       mueluList.set("use kokkos refactor",                 useKokkos);
+      mueluList.set("aggregation: deterministic",          useKokkos);
 
       ParameterListInterpreter mueLuFactory(mueluList);
       RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
@@ -406,6 +422,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       mueluList.set("verbosity",          "test");
       mueluList.set("coarse: max size",   100);
       mueluList.set("use kokkos refactor", useKokkos);
+      mueluList.set("aggregation: deterministic", useKokkos);
       ParameterList& level0 = mueluList.sublist("level 0");
       level0.set("Coordinates", coordinates0);
       ParameterList& level1 = mueluList.sublist("level 1");
@@ -437,6 +454,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       mueluList.set("max levels",                 4);
       mueluList.set("coarse: max size",           100);
       mueluList.set("use kokkos refactor", useKokkos);
+      mueluList.set("aggregation: deterministic", useKokkos);
       ParameterList& level0 = mueluList.sublist("level 0");
       level0.set("Coordinates", coordinates0);
       ParameterList& level1 = mueluList.sublist("level 1");
@@ -467,6 +485,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       mueluList.set("transpose: use implicit",    true);
       mueluList.set("max levels",                 2);
       mueluList.set("use kokkos refactor", useKokkos);
+      mueluList.set("aggregation: deterministic", useKokkos);
       ParameterList& level0 = mueluList.sublist("level 0");
       level0.set("Coordinates", coordinates0);
       ParameterList& level1 = mueluList.sublist("level 1");

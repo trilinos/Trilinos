@@ -47,7 +47,7 @@
 PyTrilinos.LOCA.LAPACK is the python interface to namespace LAPACK of
 the Trilinos continuation algorithm package LOCA:
 
-    http://trilinos.sandia.gov/packages/nox
+    https://trilinos.org/docs/dev/packages/nox/doc/html/index.html
 
 The purpose of LOCA.LAPACK is to provide ***.  The python version of
 LOCA.LAPACK supports the following classes:
@@ -64,6 +64,12 @@ LOCA.LAPACK supports the following classes:
 // LOCA include files
 #include "PyTrilinos_LOCA_Headers.hpp"
 %}
+
+// Include LOCA documentation
+#if SWIG_VERSION < 0x040000
+%feature("autodoc", "1");
+%include "LOCA_dox.i"
+#endif
 
 // Ignore/renames
 %rename(Print) *::print() const;

@@ -159,7 +159,11 @@ int main(int argc, char* argv[]) {
       obj->checkGradient(x1R,dR,true,*outStream);
     //obj->checkHessVec(x1,d,true,*outStream);
       obj->checkHessVec(x1R,dR,true,*outStream);
-    ROL::Algorithm<RealT> algors("Trust Region", *parlist);
+    ROL::Ptr<ROL::Step<RealT>>
+      steprs = ROL::makePtr<ROL::TrustRegionStep<RealT>>(*parlist);
+    ROL::Ptr<ROL::StatusTest<RealT>>
+      statusrs = ROL::makePtr<ROL::StatusTest<RealT>>(*parlist);
+    ROL::Algorithm<RealT> algors(steprs,statusrs,false);
     //algors.run(z, *obj, true, *outStream);
     algors.run(zR, *obj, true, *outStream);
     /**********************************************************************************************/
@@ -214,11 +218,23 @@ int main(int argc, char* argv[]) {
     simobj.checkGradient(x, v, true, *outStream);
     simobj.checkHessVec(x, v, true, *outStream);
 
-    ROL::Algorithm<RealT> algo("Composite Step", *parlist);
-    ROL::Algorithm<RealT> algo2("Composite Step", *parlist);
-    ROL::Algorithm<RealT> algo3("Composite Step", *parlist);
-    ROL::Algorithm<RealT> algo4("Composite Step", *parlist);
-    ROL::Algorithm<RealT> algo5("Composite Step", *parlist);
+    ROL::Ptr<ROL::Step<RealT>> step1, step2, step3, step4, step5;
+    ROL::Ptr<ROL::StatusTest<RealT>> status1, status2, status3, status4, status5;
+    step1 = ROL::makePtr<ROL::CompositeStep<RealT>>(*parlist);
+    step2 = ROL::makePtr<ROL::CompositeStep<RealT>>(*parlist);
+    step3 = ROL::makePtr<ROL::CompositeStep<RealT>>(*parlist);
+    step4 = ROL::makePtr<ROL::CompositeStep<RealT>>(*parlist);
+    step5 = ROL::makePtr<ROL::CompositeStep<RealT>>(*parlist);
+    status1 = ROL::makePtr<ROL::ConstraintStatusTest<RealT>>(*parlist);
+    status2 = ROL::makePtr<ROL::ConstraintStatusTest<RealT>>(*parlist);
+    status3 = ROL::makePtr<ROL::ConstraintStatusTest<RealT>>(*parlist);
+    status4 = ROL::makePtr<ROL::ConstraintStatusTest<RealT>>(*parlist);
+    status5 = ROL::makePtr<ROL::ConstraintStatusTest<RealT>>(*parlist);
+    ROL::Algorithm<RealT> algo(step1,status1,false);
+    ROL::Algorithm<RealT> algo2(step2,status2,false);
+    ROL::Algorithm<RealT> algo3(step3,status3,false);
+    ROL::Algorithm<RealT> algo4(step4,status4,false);
+    ROL::Algorithm<RealT> algo5(step5,status5,false);
     vu->zero();
     for ( int i = 0; i < nx+2; i++ ) {
       (*zvec_ptr)[i] = initZ;
@@ -247,11 +263,15 @@ int main(int argc, char* argv[]) {
     ROL::Ptr<ROL::Vector<RealT> > rfz = rxfz.getVector();
     ROL::StdVector<RealT> &rfz_std = dynamic_cast<ROL::StdVector<RealT>&>(*rfz);
     z->set(rfz_std);
-    ROL::Algorithm<RealT> algors2("Trust Region", *parlist);
+    ROL::Ptr<ROL::Step<RealT>>
+      steprs2 = ROL::makePtr<ROL::TrustRegionStep<RealT>>(*parlist);
+    ROL::Ptr<ROL::StatusTest<RealT>>
+      statusrs2 = ROL::makePtr<ROL::StatusTest<RealT>>(*parlist);
+    ROL::Algorithm<RealT> algors2(steprs2,statusrs2,false);
     algors2.run(zR, *obj, true, *outStream);
 
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

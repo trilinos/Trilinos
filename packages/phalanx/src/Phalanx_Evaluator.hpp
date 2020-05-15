@@ -112,6 +112,10 @@ namespace PHX {
     virtual const std::vector< Teuchos::RCP<FieldTag> >&
     dependentFields() const = 0;
 
+    //! Returns vector of fields that are not allowed to share memory with other fields.
+    virtual const std::vector< Teuchos::RCP<FieldTag> >&
+    unsharedFields() const = 0;
+
     //! Evaluate all fields that the provider supplies.
     /*!
         Input:
@@ -174,7 +178,7 @@ namespace PHX {
     virtual void bindField(const PHX::FieldTag& ft, const PHX::any& f) = 0;
 
     /** @name Device DAG Methods
-        Methods required for optional Device DAG cpability. The Device DAG capability allows for the entire DAG to be evaluated on device from a single kernel launch with a Kokkos::parallel_for. This capability requires that evalautors implement a stripped down PHX::DeviceEvaluator inside the standard evalautor that is suitable for constructing and executing on all device architectures of interest.
+        Methods required for optional Device DAG cpability. The Device DAG capability allows for the entire DAG to be evaluated on device from a single kernel launch with a Kokkos::parallel_for. This capability requires that evaluators implement a stripped down PHX::DeviceEvaluator inside the standard evaluator that is suitable for constructing and executing on all device architectures of interest.
     */
     /// @{
     
@@ -186,6 +190,9 @@ namespace PHX {
 
     //! Call dtor and delete device memory. Only used for Device DAG support
     virtual void deleteDeviceEvaluator(PHX::DeviceEvaluator<Traits>* e) const = 0;
+
+    /// Print the field values for all fields in the evaluator.
+    virtual void printFieldValues(std::ostream& os) const = 0;
 
     // @}
 

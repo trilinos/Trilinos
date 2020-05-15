@@ -49,7 +49,7 @@ namespace Ioss {
   class X : public VariableType                                                                    \
   {                                                                                                \
   public:                                                                                          \
-    std::string label(int which, const char suffix_sep = '_') const;                               \
+    std::string label(int which, const char suffix_sep = '_') const override;                      \
     static void factory();                                                                         \
                                                                                                    \
   protected:                                                                                       \
@@ -84,9 +84,7 @@ namespace Ioss {
 
   protected:
     Scalar();
-
-  private:
-    Scalar(const Scalar &);
+    Scalar(const Scalar &) = delete;
   };
 
   MAKE_CLASS(Vector_2D);

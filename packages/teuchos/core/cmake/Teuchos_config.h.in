@@ -109,7 +109,8 @@
 
 #cmakedefine HAVE_TEUCHOS_COMPLEX
 
-#cmakedefine HAVE_TEUCHOS_LONG_LONG_INT
+// This exists only for backwards compatibility.
+#define HAVE_TEUCHOS_LONG_LONG_INT 1
 
 #cmakedefine HAVE_TEUCHOS_DEBUG
 

@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -48,14 +49,6 @@
 #endif
 
 #include <stk_util/util/FeatureTest.hpp>
-
-#include <math.h>
-#include <sstream>
-#include <iomanip>
-#include <algorithm>
-#include <functional>
-#include <stdexcept>
-#include <limits>
 
 #include <memory>
 
@@ -350,6 +343,8 @@ private:
    *        specified name.
    */
   TimerImpl *addSubtimer(const std::string &name, TimerMask timer_mask, const TimerSet &timer_set);
+  TimerImpl & child_notifies_of_start();
+  TimerImpl & child_notifies_of_stop();
 
 private:
   std::string           m_name;                 ///< Name of the timer
@@ -357,6 +352,8 @@ private:
   TimerImpl *           m_parentTimer;          ///< Parent timer
   mutable double        m_subtimerLapCount;     ///< Sum of subtimer lap counts and m_lapCount
   unsigned              m_lapStartCount;        ///< Number of pending lap stops
+  unsigned              m_activeChildCount;     ///< How many children timers have been started
+  bool                  m_childCausedStart;     ///< Was this timer started because a child was started?
 
   TimerList             m_subtimerList;         ///< List of subordinate timers
 
@@ -409,6 +406,8 @@ TimerImpl::TimerImpl(
     m_parentTimer(parent_timer),
     m_subtimerLapCount(0.0),
     m_lapStartCount(0),
+    m_activeChildCount(0),
+    m_childCausedStart(false),
     m_subtimerList(),
     m_timerSet(timer_set)
 {}
@@ -471,6 +470,8 @@ void
 TimerImpl::reset()
 {
   m_lapStartCount = 0;
+  m_childCausedStart = false;
+  m_activeChildCount = 0;
 
   m_lapCount.reset();
   m_cpuTime.reset();
@@ -524,6 +525,8 @@ TimerImpl::start()
       m_MPICount.m_lapStop = m_MPICount.m_lapStart = value_now<MPICount>();
       m_MPIByteCount.m_lapStop = m_MPIByteCount.m_lapStart = value_now<MPIByteCount>();
       m_heapAlloc.m_lapStop = m_heapAlloc.m_lapStart = value_now<HeapAlloc>();
+      if(m_parentTimer)
+        m_parentTimer->child_notifies_of_start();
     }
   }
 
@@ -547,6 +550,28 @@ TimerImpl::lap()
   return *this;
 }
 
+TimerImpl & TimerImpl::child_notifies_of_start()
+{
+  //Start only if not already started and this isn't a root timer
+  if(m_lapStartCount == 0 && m_parentTimer) 
+  {
+    start();
+    m_childCausedStart = true;
+  }
+  m_activeChildCount++;
+
+  return *this;
+}
+
+TimerImpl & TimerImpl::child_notifies_of_stop()
+{
+  m_activeChildCount--;
+  if(m_activeChildCount == 0 && m_childCausedStart)
+  {
+    stop();
+  }
+  return *this;
+}
 
 TimerImpl &
 TimerImpl::stop()
@@ -555,6 +580,8 @@ TimerImpl::stop()
     if (--m_lapStartCount <= 0) {
       m_lapStartCount = 0;
       m_lapCount.m_lapStop++;
+      m_childCausedStart = false;
+      m_activeChildCount = 0;
 
       m_cpuTime.m_lapStop = value_now<CPUTime>();
       m_wallTime.m_lapStop = value_now<WallTime>();
@@ -568,6 +595,8 @@ TimerImpl::stop()
       m_MPICount.addLap();
       m_MPIByteCount.addLap();
       m_heapAlloc.addLap();
+      if(m_parentTimer)
+        m_parentTimer->child_notifies_of_stop();
     }
   }
 

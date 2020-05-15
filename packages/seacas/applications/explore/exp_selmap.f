@@ -70,8 +70,8 @@ C ... TYPE = Node or Element
       end if
       RETURN
 
-10000  FORMAT (' No local ',A,' has global id equal to ',I10)
-10030  format (1x, 3x, 'Global ',A,I10,' is local ',A,I10)
+10000  FORMAT (' No local ',A,' has global id equal to ',I12)
+10030  format (1x, 3x, 'Global ',A,I12,' is local ',A,I12)
       END
 
 

@@ -137,7 +137,9 @@ int main(int narg, char *arg[])
   Epetra_CrsMatrix *A = new Epetra_CrsMatrix(Copy, *rowMap, &nnzPerRow[0], false);
 
   // Insert the nonzeros.
+#ifndef NDEBUG
   int info;
+#endif
   ITYPE sum = 0;
   for (int i=0; i < nMyRows; i++) {
     if (nnzPerRow[i]) {
@@ -148,14 +150,20 @@ int main(int narg, char *arg[])
         if (nnzPerRow[i] == 3) std::cout << jv[sum+2];
         std::cout << std::endl;
       }
-      info = A->InsertGlobalValues(iv[sum],nnzPerRow[i],&vv[sum],&jv[sum]);
+#ifndef NDEBUG
+      info =
+#endif
+      A->InsertGlobalValues(iv[sum],nnzPerRow[i],&vv[sum],&jv[sum]);
       assert(info==0);
       sum += nnzPerRow[i];
     }
   }
 
   // Finish up
-  info = A->FillComplete();
+#ifndef NDEBUG
+  info =
+#endif
+  A->FillComplete();
   assert(info==0);
   if (verbose) A->Print(std::cout);
 

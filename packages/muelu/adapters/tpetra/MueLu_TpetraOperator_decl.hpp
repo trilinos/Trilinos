@@ -71,7 +71,10 @@ namespace MueLu {
     //@{
 
     //! Constructor
-    TpetraOperator(const RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& H) : Hierarchy_(H) { }
+    TpetraOperator(const RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Op) : Operator_(Op){ }
+
+    //! Constructor
+    TpetraOperator(const RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& H) : Hierarchy_(H){ }
 
     //! Destructor.
     virtual ~TpetraOperator() { }
@@ -98,22 +101,20 @@ namespace MueLu {
     //! Indicates whether this operator supports applying the adjoint operator.
     bool hasTransposeApply() const;
 
-    template <class NewNode>
-    Teuchos::RCP< TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, NewNode> >
-    clone(const RCP<NewNode>& new_node) const {
-      return Teuchos::rcp (new TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, NewNode> (Hierarchy_->template clone<NewNode> (new_node)));
-    }
-
     //! @name MueLu specific
     //@{
 
     //! Direct access to the underlying MueLu::Hierarchy.
     RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> > GetHierarchy() const;
 
+    //! Direct access to the underlying MueLu::Operator
+    RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > GetOperator() const;
+
     //@}
 
   private:
     RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Hierarchy_;
+    RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Operator_;
 
   };
 

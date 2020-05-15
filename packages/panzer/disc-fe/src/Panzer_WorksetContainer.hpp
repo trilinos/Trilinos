@@ -56,7 +56,7 @@
 namespace panzer {
 
 // forward declaration
-class UniqueGlobalIndexerBase;
+class GlobalIndexer;
 
 /** \brief Class that provides access to worksets on
   * each element block and side set.
@@ -79,7 +79,7 @@ public:
      * map.
      *
      * \param[in] factory Factory to be used for constructing worksets
-     * \param[in] needs Workset needs mapped from the elemetn blocks
+     * \param[in] needs Workset needs mapped from the element blocks
      *                  (integration rules and basis values for each element block)
      */ 
    WorksetContainer(const Teuchos::RCP<const WorksetFactoryBase> & factory,
@@ -118,11 +118,25 @@ public:
      */
    void setNeeds(const std::string & eBlock,const WorksetNeeds & needs);
 
-   /** Clear all allocated worksets, maintain the workset factory and element to physics
-     * block map.
+   /** Clear all allocated worksets, maintain the workset factory and
+     * element to physics block map.
      */ 
    void clear();
 
+   /** Clear all allocated worksets for the volume assembly, maintain
+     * the workset factory, element to physics block map and side
+     * worksets. This is meant for cases where volume assembly is
+     * needed during setup, but during a run only side worksets are
+     * needed to adjust boundary conditions. This allows for
+     * significant memory savings.
+     */
+   void clearVolumeWorksets();
+
+   /** Clear all allocated worksets for the side assembly, maintain
+     * the workset factory, element to physics block map and volume
+     * worksets.
+     */
+   void clearSideWorksets();
 
    //! Look up an input physics block, throws an exception if it can not be found.
    const WorksetNeeds & lookupNeeds(const std::string & eBlock) const;
@@ -136,7 +150,7 @@ public:
    /** Set the global indexer. This is used solely for accessing the
      * orientations.
      */
-   void setGlobalIndexer(const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & ugi);
+   void setGlobalIndexer(const Teuchos::RCP<const panzer::GlobalIndexer> & ugi);
 
    /** Add a basis to the worksets (if required). If reuqired this will clear
      * the workset reconstructing all the arrays. Add to all element blocks.
@@ -153,7 +167,7 @@ private:
      * global indexer. If an exception is raised, saying it wasn't null then this method
      * has been previously called.
      */
-   void applyOrientations(const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & ugi);
+   void applyOrientations(const Teuchos::RCP<const panzer::GlobalIndexer> & ugi);
 
    /** Using the stored global indexer, set the orientations for a volume workset on a
      * specified element block.
@@ -202,7 +216,7 @@ private:
 
    std::size_t worksetSize_;
 
-   Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> globalIndexer_;
+   Teuchos::RCP<const panzer::GlobalIndexer> globalIndexer_;
 
    Teuchos::RCP<std::vector<Intrepid2::Orientation> >  orientations_;
 };

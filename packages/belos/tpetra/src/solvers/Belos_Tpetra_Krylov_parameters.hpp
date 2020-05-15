@@ -50,13 +50,15 @@ public:
   mag_type tol = STM::squareroot (STS::eps ());
   int maxNumIters = 1000;
   int resCycle = 30;
-  int stepSize = 1;
+  int stepSize = 5;
   bool needToScale = true;
   bool needToReortho = false;
+  int maxOrthoSteps = 0;
   std::string orthoType {"ICGS"};
   std::string precoType {"none"};
   std::string precoSide {"none"};
   bool computeRitzValues = false;
+  bool computeRitzValuesOnFly = true;
 };
 
 // The default constructor creates output corresponding to "solving

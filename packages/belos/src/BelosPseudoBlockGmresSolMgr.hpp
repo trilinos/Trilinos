@@ -208,8 +208,9 @@ namespace Belos {
      *   bigger than the "Block Size" parameter.
      * - "Orthogonalization" (\c std::string): The desired
      *   orthogonalization method.  Currently accepted values are
-     *   "DGKS", "ICGS", and "IMGS".  Please refer to Belos'
-     *   documentation for more details.
+     *   "DGKS", "ICGS", "IMGS", and optionally "TSQR" (depending on
+     *   build settings).  Please refer to Belos' documentation for
+     *   more details.
      *
      * For an explanation of "implicit" vs. "explicit" residuals,
      * please see the documentation of isLOADetected().  The
@@ -365,6 +366,9 @@ namespace Belos {
     ///   call this method immediately after calling \c solve().
     bool isLOADetected() const override { return loaDetected_; }
 
+    //! Return the residual status test
+    const StatusTestResNorm<ScalarType,MV,OP> *
+    getResidualStatusTest() const { return impConvTest_.getRawPtr(); }
     //@}
 
     //! @name Set methods
@@ -502,7 +506,7 @@ namespace Belos {
     static constexpr const char * impResScale_default_ = "Norm of Preconditioned Initial Residual";
     static constexpr const char * expResScale_default_ = "Norm of Initial Residual";
     static constexpr const char * label_default_ = "Belos";
-    static constexpr const char * orthoType_default_ = "DGKS";
+    static constexpr const char * orthoType_default_ = "ICGS";
     static constexpr std::ostream * outputStream_default_ = &std::cout;
 
     // Current solver values.
@@ -1137,7 +1141,7 @@ PseudoBlockGmresSolMgr<ScalarType,MV,OP>::getValidParameters() const
     pl->set("Timer Label", static_cast<const char *>(label_default_),
       "The string to use as a prefix for the timer labels.");
     pl->set("Orthogonalization", static_cast<const char *>(orthoType_default_),
-      "The type of orthogonalization to use: DGKS, ICGS, IMGS.");
+      "The type of orthogonalization to use.");
     pl->set("Orthogonalization Constant",static_cast<MagnitudeType>(DefaultSolverParameters::orthoKappa),
       "The constant used by DGKS orthogonalization to determine\n"
       "whether another step of classical Gram-Schmidt is necessary.");
@@ -1213,13 +1217,28 @@ bool PseudoBlockGmresSolMgr<ScalarType,MV,OP>::checkStatusTest() {
   }
 
   if (nonnull(userConvStatusTest_) ) {
-    // Override the overall convergence test with the users convergence test
-    convTest_ = Teuchos::rcp(
-      new StatusTestCombo_t( comboType_, convTest_, userConvStatusTest_ ) );
-    // brief output style not compatible with more general combinations
-    //outputStyle_ = Belos::General;
-    // NOTE: Above, you have to run the other convergence tests also because
-    // the logic in this class depends on it.  This is very unfortunate.
+    // Check if this is a combination of several StatusTestResNorm objects
+    Teuchos::RCP<StatusTestCombo_t> tmpComboTest = Teuchos::rcp_dynamic_cast<StatusTestCombo_t>(userConvStatusTest_);
+    if (tmpComboTest != Teuchos::null) {
+      std::vector<Teuchos::RCP<StatusTest<ScalarType,MV,OP> > > tmpVec = tmpComboTest->getStatusTests();
+      comboType_ = tmpComboTest->getComboType();
+      const int numResTests = static_cast<int>(tmpVec.size());
+      auto newConvTest = Teuchos::rcp(new StatusTestCombo_t(comboType_));
+      newConvTest->addStatusTest(convTest_);
+      for (int j = 0; j < numResTests; ++j) {
+        newConvTest->addStatusTest(tmpVec[j]);
+      }
+      convTest_ = newConvTest;
+    }
+    else{
+      // Override the overall convergence test with the users convergence test
+      convTest_ = Teuchos::rcp(
+        new StatusTestCombo_t( comboType_, convTest_, userConvStatusTest_ ) );
+      // brief output style not compatible with more general combinations
+      //outputStyle_ = Belos::General;
+      // NOTE: Above, you have to run the other convergence tests also because
+      // the logic in this class depends on it.  This is very unfortunate.
+    }
   }
 
   sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );

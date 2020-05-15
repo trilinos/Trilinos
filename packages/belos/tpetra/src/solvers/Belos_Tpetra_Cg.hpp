@@ -15,15 +15,13 @@ private:
   using base_type = Krylov<SC, MV, OP>;
 
 public:
-  Cg () :
-    base_type::Krylov ()
-  {}
+  Cg () = default;
 
   Cg (const Teuchos::RCP<const OP>& A) :
     base_type::Krylov (A)
   {}
 
-  virtual ~Cg () {}
+  virtual ~Cg () = default;
 
 protected:
   using vec_type = typename base_type::vec_type;

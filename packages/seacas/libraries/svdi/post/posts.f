@@ -114,7 +114,7 @@ C
 C          VARIABLES TO HANDLE COLOR
 C
       INTEGER NEXTFC, NEXTBC
-      INTEGER CSPOT, INDEXS(256), NXTDEX
+      INTEGER CSPOT, INDICES(256), NXTDEX
       INTEGER NUMCLR, COLMAP(0:255), INVMAP(0:255)
       REAL RGB(3,256), TABLE(3,0:255), VECTOR(7)
       LOGICAL BATCH, DRAWN, FIRST
@@ -145,8 +145,8 @@ C                - of the color table.
 C RGB(3,256)     - When doing a batch update of the color table, this array is
 C                  used to hold the color entries which can be sent to the
 C                  device, i.e. those entries for which COLMAP is not -1.
-C INDEXS(256)    - The color table indexes associated with the entries in RGB.
-C CSPOT          - The next open spot in RGB and INDEXS.
+C INDICES(256)    - The color table indexes associated with the entries in RGB.
+C CSPOT          - The next open spot in RGB and INDICES.
 C VECTOR(7)      - Used to find out the default foregound and background
 C                  colors from VDIQOS and to reinitialize the system at a
 C                  new file id.
@@ -210,7 +210,7 @@ C
 C          CHECK FOR MOVE OR DRAW
 C
       IF(OPCODE.GE.128) GOTO 20
-          XCOORD = FLOAT(256*OPCODE+COUNT)*SCALE
+          XCOORD = DBLE(256*OPCODE+COUNT)*SCALE
           CALL PPBTR(8,OPCODE,NOEOF)
           CALL PPBTR(8,COUNT,NOEOF)
           IF(.NOT.TWODIM) CALL PPBTR(16,OPCODE,NOEOF)
@@ -222,7 +222,7 @@ C
 C          IF OPCODE < 128 THEN MOVE, ELSE DRAW A POINT OR LINE
 C
           IF(OPCODE.LT.128) THEN
-              YCOORD = FLOAT(256*OPCODE+COUNT)*SCALE
+              YCOORD = DBLE(256*OPCODE+COUNT)*SCALE
               CALL VDMOVA(XCOORD,YCOORD)
             ELSE
 C
@@ -243,7 +243,7 @@ C
 C          OK, MAKE A SMUDGE OF SOME SORT
 C
               DRAWN = .TRUE.
-              YCOORD = FLOAT(256*(OPCODE-128)+COUNT)*SCALE
+              YCOORD = DBLE(256*(OPCODE-128)+COUNT)*SCALE
               IF(MARKER) THEN
                   CALL VDPNTA(XCOORD,YCOORD)
                 ELSE
@@ -326,9 +326,9 @@ C
          CALL PPBTR(16,INTEGR,NOEOF)
          CALL PPBTR(16,IFRACT,NOEOF)
          IF(INTEGR.GE.32768) THEN
-               ARGS(I) = -(FLOAT(INTEGR-32768) + IFRACT/32768.)
+               ARGS(I) = -(DBLE(INTEGR-32768) + IFRACT/32768.)
             ELSE
-               ARGS(I) = FLOAT(INTEGR) + IFRACT/32768.
+               ARGS(I) = DBLE(INTEGR) + IFRACT/32768.
             ENDIF
   330 CONTINUE
       GOTO 350
@@ -503,7 +503,7 @@ C
          IF(.NOT.BATCH) THEN
                CALL VDSTCO(1,COLMAP(INDEX),TABLE(1,INDEX),0)
             ELSE
-               INDEXS(CSPOT) = COLMAP(INDEX)
+               INDICES(CSPOT) = COLMAP(INDEX)
                RGB(1,CSPOT) = TABLE(1,INDEX)
                RGB(2,CSPOT) = TABLE(2,INDEX)
                RGB(3,CSPOT) = TABLE(3,INDEX)
@@ -590,10 +590,10 @@ C
  4401 CALL PPBTR(16,OPCODE,NOEOF)
       IF(OPCODE.GE.32768)GOTO 4410
         NPTS = NPTS + 1
-        XARRAY(NPTS) = FLOAT(OPCODE) * SCALE
+        XARRAY(NPTS) = DBLE(OPCODE) * SCALE
         CALL PPBTR(16,OPCODE,NOEOF)
          IF(OPCODE.GE.32768)GOTO 4410
-         YARRAY(NPTS) = FLOAT(OPCODE) * SCALE
+         YARRAY(NPTS) = DBLE(OPCODE) * SCALE
          GOTO 4401
 C
 C          IF IT'S AN OPCODE BUT ISN'T = AB (END OF POLYGON COMMAND),
@@ -703,7 +703,7 @@ C
 C          C8 -- SEND COLOR TABLE / END BATCH UPDATE
 C
  7300 BATCH = .FALSE.
-      IF(CSPOT.GT.1) CALL VDSTCO(CSPOT-1,INDEXS,RGB,0)
+      IF(CSPOT.GT.1) CALL VDSTCO(CSPOT-1,INDICES,RGB,0)
       CSPOT = 1
       GOTO 3
 C

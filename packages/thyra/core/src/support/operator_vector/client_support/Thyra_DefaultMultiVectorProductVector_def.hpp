@@ -227,6 +227,8 @@ bool DefaultMultiVectorProductVector<Scalar>::blockIsConst(const int k) const
 {
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( k, 0, numBlocks_ );
+#else
+  (void)k;
 #endif
   return multiVec_.isConst();
 }
@@ -401,7 +403,7 @@ void DefaultMultiVectorProductVector<Scalar>::releaseDetachedVectorViewImpl(
 
 template <class Scalar>
 void DefaultMultiVectorProductVector<Scalar>::acquireNonconstDetachedVectorViewImpl(
-  const Range1D& rng_in, RTOpPack::SubVectorView<Scalar>* sub_vec
+  const Range1D& /* rng_in */, RTOpPack::SubVectorView<Scalar>* /* sub_vec */
   )
 {
   TEUCHOS_TEST_FOR_EXCEPT("ToDo: Implement DefaultMultiVectorProductVector<Scalar>::acquireNonconstDetachedVectorViewImpl(...)!");
@@ -410,7 +412,7 @@ void DefaultMultiVectorProductVector<Scalar>::acquireNonconstDetachedVectorViewI
 
 template <class Scalar>
 void DefaultMultiVectorProductVector<Scalar>::commitNonconstDetachedVectorViewImpl(
-  RTOpPack::SubVectorView<Scalar>* sub_vec
+  RTOpPack::SubVectorView<Scalar>* /* sub_vec */
   )
 {
   TEUCHOS_TEST_FOR_EXCEPT("ToDo: Implement DefaultMultiVectorProductVector<Scalar>::commitNonconstDetachedVectorViewImpl(...)!");
@@ -419,7 +421,7 @@ void DefaultMultiVectorProductVector<Scalar>::commitNonconstDetachedVectorViewIm
 
 template <class Scalar>
 void DefaultMultiVectorProductVector<Scalar>::setSubVectorImpl(
-  const RTOpPack::SparseSubVectorT<Scalar>& sub_vec
+  const RTOpPack::SparseSubVectorT<Scalar>& /* sub_vec */
   )
 {
   TEUCHOS_TEST_FOR_EXCEPT("ToDo: Implement DefaultMultiVectorProductVector<Scalar>::setSubVector(...)!");

@@ -99,16 +99,19 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregation: enable phase 2a");
     SET_VALID_ENTRY("aggregation: enable phase 2b");
     SET_VALID_ENTRY("aggregation: enable phase 3");
+    SET_VALID_ENTRY("aggregation: phase2a include root");
     SET_VALID_ENTRY("aggregation: preserve Dirichlet points");
     SET_VALID_ENTRY("aggregation: allow user-specified singletons");
     SET_VALID_ENTRY("aggregation: use interface aggregation");
     SET_VALID_ENTRY("aggregation: error on nodes with no on-rank neighbors");
     SET_VALID_ENTRY("aggregation: phase3 avoid singletons");
+    SET_VALID_ENTRY("aggregation: compute aggregate qualities");
 #undef  SET_VALID_ENTRY
 
     // general variables needed in AggregationFactory
     validParamList->set< RCP<const FactoryBase> >("Graph",       null, "Generating factory of the graph");
     validParamList->set< RCP<const FactoryBase> >("DofsPerNode", null, "Generating factory for variable \'DofsPerNode\', usually the same as for \'Graph\'");
+    validParamList->set< RCP<const FactoryBase> >("AggregateQualities", null, "Generating factory for variable \'AggregateQualities\'");
 
     // special variables necessary for OnePtAggregationAlgorithm
     validParamList->set< std::string >           ("OnePt aggregate map name",         "", "Name of input map for single node aggregates. (default='')");
@@ -156,6 +159,10 @@ namespace MueLu {
       } else {
         Input(currentLevel, "nodeOnInterface");
       }
+    }
+
+    if (pL.get<bool>("aggregation: compute aggregate qualities")) {
+	Input(currentLevel, "AggregateQualities");
     }
   }
 
@@ -289,6 +296,10 @@ namespace MueLu {
     aggregates->ComputeAggregateSizes(true/*forceRecompute*/);
 
     Set(currentLevel, "Aggregates", aggregates);
+
+    if (pL.get<bool>("aggregation: compute aggregate qualities")) {
+	RCP<Xpetra::MultiVector<double,LO,GO,Node>> aggQualities = Get<RCP<Xpetra::MultiVector<double,LO,GO,Node>>>(currentLevel, "AggregateQualities");
+    }
 
     GetOStream(Statistics1) << aggregates->description() << std::endl;
   }

@@ -77,7 +77,7 @@ namespace LOCA {
        * This class is derived from the
        * LOCA::TurningPoint::MooreSpence::AbstractGroup
        * and declares several pure virtual methods compute various
-       * derivatives of \f$w^TJn\f$ for a given \f$w\f$ and \f$n\f$.  Default
+       * derivatives of \f$ w^TJn\f$ for a given \f$ w\f$ and \f$ n\f$.  Default
        * implementations for the derivatives using finite differencing are
        * implemented in the
        * LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup.

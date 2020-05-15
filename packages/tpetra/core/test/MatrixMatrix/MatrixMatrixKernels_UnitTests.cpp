@@ -166,7 +166,11 @@ getIdentityMatrixWithMap (Teuchos::FancyOStream& out,
   return identityMatrix;
 }
 
-
+template<class Matrix_t>
+RCP<Matrix_t>
+copyMatrix(RCP<Matrix_t> &A) {
+ return rcp(new Matrix_t(*A,Teuchos::Copy));
+}
 
 typedef struct add_test_results_struct{
   double correctNorm;
@@ -615,21 +619,17 @@ mult_test_results multiply_reuse_test(
   computedC1->leftScale (*leftScaling);
   computedC1->rightScale(*rightScaling);
 
-  // NOTE (mfh 05 Jun 2016) This may even be null.  It exists at this
-  // point only for the syntax.
-  RCP<NT> node = map->getNode ();
-
   // As = leftScaling * op(A) =
   //   leftScaling * A, if AT=false
   //   A*leftScaling,   if AT=true
-  RCP<Matrix_t> As = A->clone(node);
+  RCP<Matrix_t> As = copyMatrix(A);
   if (AT == false) As->leftScale (*leftScaling);
   else             As->rightScale(*leftScaling);
 
   // Bs = op(B) * rightScaling =
   //   B * rightScaling, if BT=false
   //   rightScaling*B,   if BT=true
-  RCP<Matrix_t> Bs = B->clone(node);
+  RCP<Matrix_t> Bs = copyMatrix(B);
   if (BT == false) Bs->rightScale(*rightScaling);
   else             Bs->leftScale (*rightScaling);
 
@@ -738,11 +738,7 @@ mult_test_results jacobi_reuse_test(
   computedC1->rightScale(*rightScaling);
 
   // Bs = B * rightScaling
-
-  // NOTE (mfh 05 Jun 2016) This may even be null.  It exists at this
-  // point only for the syntax.
-  RCP<NT> node = map->getNode ();
-  RCP<Matrix_t> Bs = B->clone(node);
+  RCP<Matrix_t> Bs = copyMatrix(B);
   Bs->rightScale(*rightScaling);
 
   // computedC2 = (I - Dinv*A)*Bs

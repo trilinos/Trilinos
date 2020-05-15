@@ -128,7 +128,7 @@ public:
   virtual Scalar getTime() const override
     { return integrator_->getTime(); }
   /// Get current index
-  virtual Scalar getIndex() const override
+  virtual int getIndex() const override
     { return integrator_->getIndex(); }
   /// Get Status
   virtual Status getStatus() const override
@@ -144,12 +144,12 @@ public:
   virtual void setStepperWStepper(Teuchos::RCP<Stepper<Scalar> > stepper)
     { integrator_->setStepperWStepper(stepper); }
   /// Set the initial state which has the initial conditions
-  virtual void setInitialState(
+  virtual void initializeSolutionHistory(
     Teuchos::RCP<SolutionState<Scalar> > state = Teuchos::null)
-    { integrator_->setInitialState(state); }
+    { integrator_->initializeSolutionHistory(state); }
 
   /// Set the initial state from Thyra::VectorBase(s)
-  virtual void setInitialState(
+  virtual void initializeSolutionHistory(
     Scalar t0,
     Teuchos::RCP<const Thyra::VectorBase<Scalar> > x0,
     Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdot0 = Teuchos::null,
@@ -168,6 +168,8 @@ public:
   /// Get the TimeStepControl
   virtual Teuchos::RCP<const TimeStepControl<Scalar> > getTimeStepControl() const override
     { return integrator_->getTimeStepControl(); }
+  virtual Teuchos::RCP<TimeStepControl<Scalar> > getNonConstTimeStepControl() override
+    { return integrator_->getNonConstTimeStepControl(); }
   /// Set the TimeStepControl
   virtual void setTimeStepControl(
     Teuchos::RCP<TimeStepControl<Scalar> > tsc = Teuchos::null)
@@ -243,21 +245,21 @@ protected:
 
 /// Non-member constructor
 template<class Scalar>
-Teuchos::RCP<Tempus::IntegratorForwardSensitivity<Scalar> >
+Teuchos::RCP<IntegratorForwardSensitivity<Scalar> >
 integratorForwardSensitivity(
   Teuchos::RCP<Teuchos::ParameterList>                pList,
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
 
 /// Non-member constructor
 template<class Scalar>
-Teuchos::RCP<Tempus::IntegratorForwardSensitivity<Scalar> >
+Teuchos::RCP<IntegratorForwardSensitivity<Scalar> >
 integratorForwardSensitivity(
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
   std::string stepperType);
 
 /// Non-member constructor
 template<class Scalar>
-Teuchos::RCP<Tempus::IntegratorForwardSensitivity<Scalar> >
+Teuchos::RCP<IntegratorForwardSensitivity<Scalar> >
 integratorForwardSensitivity();
 
 } // namespace Tempus

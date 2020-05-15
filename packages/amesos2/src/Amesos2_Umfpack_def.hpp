@@ -63,9 +63,10 @@ Umfpack<Matrix,Vector>::Umfpack(
   , nzvals_()                   // initialize to empty arrays
   , rowind_()
   , colptr_()
+  , is_contiguous_(true)
 {
-  data_.Symbolic = 0;
-  data_.Numeric = 0;
+  data_.Symbolic = NULL;
+  data_.Numeric = NULL;
 }
 
 
@@ -158,10 +159,20 @@ Umfpack<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
     Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
     Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
 #endif
-    Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
-                             umfpack_type>::do_get(B, bValues(),
-                                               as<size_t>(ld_rhs),
-                                               ROOTED, this->rowIndexBase_);
+    if ( is_contiguous_ == true ) {
+      Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
+                               umfpack_type>::do_get(B, bValues(),
+                                                     as<size_t>(ld_rhs),
+                                                     ROOTED, 
+                                                     this->rowIndexBase_);
+    } 
+    else {
+      Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
+                               umfpack_type>::do_get(B, bValues(),
+                                                     as<size_t>(ld_rhs),
+                                                     CONTIGUOUS_AND_ROOTED, 
+                                                     this->rowIndexBase_);
+    }
   }
 
   int UmfpackRequest = this->control_.useTranspose_ ? UMFPACK_At : UMFPACK_A;
@@ -208,10 +219,20 @@ Umfpack<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif
 
-    Util::put_1d_data_helper<
-      MultiVecAdapter<Vector>,umfpack_type>::do_put(X, xValues(),
-                                         as<size_t>(ld_rhs),
-                                         ROOTED, this->rowIndexBase_);
+    if ( is_contiguous_ == true ) {
+      Util::put_1d_data_helper<
+        MultiVecAdapter<Vector>,umfpack_type>::do_put(X, xValues(),
+                                                      as<size_t>(ld_rhs),
+                                                      ROOTED, 
+                                                      this->rowIndexBase_);
+    }
+    else {
+      Util::put_1d_data_helper<
+        MultiVecAdapter<Vector>,umfpack_type>::do_put(X, xValues(),
+                                                      as<size_t>(ld_rhs),
+                                                      CONTIGUOUS_AND_ROOTED, 
+                                                      this->rowIndexBase_);
+    }
   }
 
   return(ierr);
@@ -238,6 +259,10 @@ Umfpack<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Parameter
   using Teuchos::ParameterEntryValidator;
 
   RCP<const Teuchos::ParameterList> valid_params = getValidParameters_impl();
+
+  if( parameterList->isParameter("IsContiguous") ){
+    is_contiguous_ = parameterList->get<bool>("IsContiguous");
+  }
 }
 
 
@@ -249,6 +274,8 @@ Umfpack<Matrix,Vector>::getValidParameters_impl() const
 
   if( is_null(valid_params) ){
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+
+    pl->set("IsContiguous", true, "Whether GIDs contiguous");
 
     valid_params = pl;
   }
@@ -285,12 +312,23 @@ Umfpack<Matrix,Vector>::loadA_impl(EPhase current_phase)
     TEUCHOS_TEST_FOR_EXCEPTION( this->rowIndexBase_ != this->columnIndexBase_,
                         std::runtime_error,
                         "Row and column maps have different indexbase ");
-    Util::get_ccs_helper<
-    MatrixAdapter<Matrix>,umfpack_type,int,int>::do_get(this->matrixA_.ptr(),
-                                                    nzvals_(), rowind_(),
-                                                    colptr_(), nnz_ret, ROOTED,
-                                                    ARBITRARY,
-                                                    this->rowIndexBase_);
+    if ( is_contiguous_ == true ) {
+      Util::get_ccs_helper<
+      MatrixAdapter<Matrix>,umfpack_type,int,int>::do_get(this->matrixA_.ptr(),
+                                                          nzvals_(), rowind_(),
+                                                          colptr_(), nnz_ret, 
+                                                          ROOTED,
+                                                          ARBITRARY,
+                                                          this->rowIndexBase_);
+    } else {
+      Util::get_ccs_helper<
+      MatrixAdapter<Matrix>,umfpack_type,int,int>::do_get(this->matrixA_.ptr(),
+                                                          nzvals_(), rowind_(),
+                                                          colptr_(), nnz_ret, 
+                                                          CONTIGUOUS_AND_ROOTED,
+                                                          ARBITRARY,
+                                                          this->rowIndexBase_);
+    }
   }
 
   return true;

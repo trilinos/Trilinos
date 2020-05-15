@@ -32,16 +32,21 @@ unsigned get_num_local_elems(const stk::mesh::BulkData& bulkData)
         return count_selected_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData.buckets(stk::topology::ELEM_RANK));
 }
 
-void fill_topologies(const stk::mesh::BulkData& bulkData,
+bool fill_topologies(const stk::mesh::BulkData& bulkData,
                      const stk::mesh::impl::ElementLocalIdMapper & localMapper,
                      std::vector<stk::topology>& element_topologies)
 {
+    bool areAnyElementsShells = false;
     const stk::mesh::BucketVector & elemBuckets = bulkData.get_buckets(stk::topology::ELEM_RANK, bulkData.mesh_meta_data().locally_owned_part());
     for(const stk::mesh::Bucket* bucket : elemBuckets) {
+        if (bucket->topology().is_shell()) {
+            areAnyElementsShells = true;
+        }
         for(stk::mesh::Entity element : *bucket) {
             element_topologies[localMapper.entity_to_local(element)] = bucket->topology();
         }
     }
+    return areAnyElementsShells;
 }
 
 ElemSideToProcAndFaceId build_element_side_ids_to_proc_map(const stk::mesh::BulkData& bulkData,
@@ -49,22 +54,15 @@ ElemSideToProcAndFaceId build_element_side_ids_to_proc_map(const stk::mesh::Bulk
 {
     ElemSideToProcAndFaceId elem_side_comm;
     stk::mesh::EntityVector side_nodes;
-    std::vector<stk::mesh::EntityKey> keys;
     std::vector<int> sharing_procs;
-    for(size_t i=0;i<elements_to_communicate.size();++i)
+    for(stk::mesh::Entity elem : elements_to_communicate)
     {
-        stk::mesh::Entity elem = elements_to_communicate[i];
         stk::topology elem_top = bulkData.bucket(elem).topology();
         unsigned num_sides = elem_top.num_sides();
         for(unsigned side=0;side<num_sides;++side)
         {
             fill_element_side_nodes_from_topology(bulkData, elem, side, side_nodes);
-            keys.resize(side_nodes.size());
-            for(size_t j=0;j<keys.size();++j)
-            {
-                keys[j] = bulkData.entity_key(side_nodes[j]);
-            }
-            bulkData.shared_procs_intersection(keys, sharing_procs);
+            bulkData.shared_procs_intersection(side_nodes, sharing_procs);
             for (int proc: sharing_procs) {
                 elem_side_comm.insert(std::pair<EntitySidePair, ProcFaceIdPair>(EntitySidePair(elem, side), ProcFaceIdPair(proc,0)));
             }
@@ -83,7 +81,7 @@ void fill_element_side_nodes_from_topology(const stk::mesh::BulkData& bulkData, 
 
     localElemSideNodes.resize(num_nodes_this_side);
 
-    localElemTopology.side_nodes(localElemNodes, side_index, localElemSideNodes.begin());
+    localElemTopology.side_nodes(localElemNodes, side_index, localElemSideNodes.data());
 }
 
 bool does_element_have_side(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element)
@@ -327,7 +325,7 @@ stk::mesh::Entity connect_side_to_element(stk::mesh::BulkData& bulkData, stk::me
     stk::mesh::EntityVector side_nodes;
     fill_element_side_nodes_from_topology(bulkData, element, side_ordinal, side_nodes);
     stk::mesh::EntityVector permuted_side_nodes(side_top.num_nodes());
-    side_top.permutation_nodes(side_nodes, side_permutation, permuted_side_nodes.begin());
+    side_top.permutation_nodes(side_nodes.data(), side_permutation, permuted_side_nodes.data());
     for(size_t i=0;i<permuted_side_nodes.size();++i)
     {
         bulkData.declare_relation(side, permuted_side_nodes[i], i);

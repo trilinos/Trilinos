@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
- // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- // the U.S. Government retains certain rights in this software.
- // 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
  // Redistribution and use in source and binary forms, with or without
  // modification, are permitted provided that the following conditions are
  // met:
@@ -14,10 +15,10 @@
  //       disclaimer in the documentation and/or other materials provided
  //       with the distribution.
  // 
- //     * Neither the name of Sandia Corporation nor the names of its
- //       contributors may be used to endorse or promote products derived
- //       from this software without specific prior written permission.
- // 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
  // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -186,7 +187,7 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, stk::Pa
   std::vector<INT> ids;
   nb->get_field_data("ids", ids);
 
-  stk::mesh::Part& nodePart = bulk.mesh_meta_data().get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::NODE));
+  stk::mesh::Part& nodePart = bulk.mesh_meta_data().get_topology_root_part(stk::topology::NODE);
   stk::mesh::PartVector nodeParts = {&nodePart};
 
   std::vector<stk::mesh::Entity> nodes;
@@ -212,13 +213,13 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::MetaData &meta);
 template <typename INT>
 void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
 {
-  const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
+  const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
 
   stk::mesh::EntityVector elems;
   stk::mesh::Permutation perm = stk::mesh::Permutation::INVALID_PERMUTATION;
   stk::mesh::OrdinalVector scratch1, scratch2, scratch3;
 
-  stk::mesh::Part& nodePart = bulk.mesh_meta_data().get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::NODE));
+  stk::mesh::Part& nodePart = bulk.mesh_meta_data().get_topology_root_part(stk::topology::NODE);
   stk::mesh::PartVector nodeParts = {&nodePart};
 
   const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
@@ -265,6 +266,7 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
   }
 }
 
+void process_nodesets_without_distribution_factors(Ioss::Region &region, stk::mesh::MetaData &meta);
 void process_nodesets(Ioss::Region &region, stk::mesh::MetaData &meta);
 template <typename INT>
 void process_nodesets(Ioss::Region &region, stk::mesh::BulkData &bulk)
@@ -272,7 +274,7 @@ void process_nodesets(Ioss::Region &region, stk::mesh::BulkData &bulk)
     // Should only process nodes that have already been defined via the element
     // blocks connectivity lists.
     const Ioss::NodeSetContainer& node_sets = region.get_nodesets();
-    const stk::mesh::MetaData &meta = stk::mesh::MetaData::get(bulk);
+    const stk::mesh::MetaData &meta = bulk.mesh_meta_data();
 
     for(Ioss::NodeSetContainer::const_iterator it = node_sets.begin();
             it != node_sets.end(); ++it) {

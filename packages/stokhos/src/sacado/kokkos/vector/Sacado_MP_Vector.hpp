@@ -190,7 +190,7 @@ namespace Sacado {
       /*!
        * May not intialize the coefficient array.
        */
-      KOKKOS_INLINE_FUNCTION
+      KOKKOS_DEFAULTED_FUNCTION
       Vector() = default;
 
       //! Constructor with supplied value \c x
@@ -220,7 +220,7 @@ namespace Sacado {
       Vector(const storage_type& ss) : s(ss) {}
 
       //! Copy constructor
-      KOKKOS_INLINE_FUNCTION
+      KOKKOS_DEFAULTED_FUNCTION
       Vector(const Vector& x) = default;
 
       //! Copy constructor
@@ -266,7 +266,7 @@ namespace Sacado {
       Vector(std::initializer_list<value_type> l) : s(l.size(), l.begin()) {}
 
       //! Destructor
-      KOKKOS_INLINE_FUNCTION
+      KOKKOS_DEFAULTED_FUNCTION
       ~Vector() = default;
 
       //! Initialize coefficients to value
@@ -593,7 +593,7 @@ namespace Sacado {
       //! Assignment operator only valid for view storage
       template< typename S >
       KOKKOS_INLINE_FUNCTION
-      typename Kokkos::Impl::enable_if<( ! Kokkos::Impl::is_same<S,void>::value &&
+      typename std::enable_if<( ! std::is_same<S,void>::value &&
                                          Stokhos::is_ViewStorage<Storage>::value
                                        ), Vector >
         ::type const & operator = ( const Expr<S> & xx ) const
@@ -618,7 +618,7 @@ namespace Sacado {
       template< typename S >
       KOKKOS_INLINE_FUNCTION
       volatile
-      typename Kokkos::Impl::enable_if<( ! Kokkos::Impl::is_same<S,void>::value &&
+      typename std::enable_if<( ! std::is_same<S,void>::value &&
                                          Stokhos::is_ViewStorage<Storage>::value
                                        ), Vector >
         ::type const & operator = ( const Expr<S> & xx ) const volatile
@@ -2009,6 +2009,7 @@ namespace Sacado{
 } // namespace Sacado
 
 #include "Sacado_MP_Vector_ops.hpp"
+#include "Stokhos_MP_Vector_MaskTraits.hpp"
 
 #if STOKHOS_ALIGN_MEMORY
 
@@ -2058,8 +2059,6 @@ public:
 
 #endif
 
-#endif // HAVE_STOKHOS_SACADO
-
 #include "Kokkos_NumericTraits.hpp"
 
 namespace Kokkos {
@@ -2084,5 +2083,7 @@ struct reduction_identity< Sacado::MP::Vector<Storage> > {
 };
 
 }
+
+#endif // HAVE_STOKHOS_SACADO
 
 #endif // SACADO_MP_VECTOR_HPP

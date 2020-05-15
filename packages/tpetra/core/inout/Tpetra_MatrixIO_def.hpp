@@ -51,74 +51,11 @@
 namespace Tpetra {
 namespace Utils {
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void
-generateMatrix (const Teuchos::RCP<Teuchos::ParameterList> &plist,
-                const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-                const Teuchos::RCP<Node> &node,
-                Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &A)
-{
-  using Teuchos::as;
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
-
-  TEUCHOS_TEST_FOR_EXCEPTION( plist == Teuchos::null, std::runtime_error,
-      "Tpetra::Utils::generateMatrix(): ParameterList is null.");
-  TEUCHOS_TEST_FOR_EXCEPTION( Teuchos::isParameterType<std::string>(*plist,"mat_type") == false, std::runtime_error,
-      "Tpetra::Utils::generateMatrix(): ParameterList did not contain string parameter ""mat_type"".");
-  std::string mat_type = plist->get<std::string>("mat_type");
-  if (mat_type == "Lap3D") {
-    // 3D Laplacian, grid is a cube with dimension gridSize x gridSize x gridSize
-    const GlobalOrdinal gridSize = as<GlobalOrdinal>(plist->get<int>("gridSize",100));
-    const GlobalOrdinal gS2 = gridSize*gridSize;
-    const GlobalOrdinal numRows = gS2*gridSize;
-    Teuchos::RCP<map_type> rowMap;
-    if (node.is_null ()) {
-      rowMap = Teuchos::rcp (new map_type (static_cast<global_size_t> (numRows),
-                                           static_cast<GlobalOrdinal> (0),
-                                           comm, GloballyDistributed));
-    }
-    else {
-      rowMap = Teuchos::rcp (new map_type (static_cast<global_size_t> (numRows),
-                                           static_cast<GlobalOrdinal> (0),
-                                           comm, GloballyDistributed, node));
-    }
-    A = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowMap,7,Tpetra::StaticProfile));
-    // fill matrix, one row at a time
-    Teuchos::Array<GlobalOrdinal> neighbors;
-    Teuchos::Array<Scalar> values(7, -ST::one());
-    values[0] = (Scalar)6;
-    for (GlobalOrdinal r = rowMap->getMinGlobalIndex(); r <= rowMap->getMaxGlobalIndex(); ++r) {
-      neighbors.clear();
-      neighbors.push_back(r); // add diagonal
-      GlobalOrdinal ixy, iz, ix, iy;  // (x,y,z) coords and index in xy plane
-      ixy = r%gS2;
-      iz = (r - ixy)/gS2;
-      ix = ixy%gridSize;
-      iy = (ixy - ix)/gridSize;
-      //
-      if ( ix != 0 )          neighbors.push_back( r-1 );
-      if ( ix != gridSize-1 ) neighbors.push_back( r+1 );
-      if ( iy != 0 )          neighbors.push_back( r-gridSize );
-      if ( iy != gridSize-1 ) neighbors.push_back( r+gridSize );
-      if ( iz != 0 )          neighbors.push_back( r-gS2 );
-      if ( iz != gridSize-1 ) neighbors.push_back( r+gS2 );
-      A->insertGlobalValues( r, neighbors(), values(0,neighbors.size()) );
-    }
-    A->fillComplete();
-  }
-  else {
-    TEUCHOS_TEST_FOR_EXCEPTION( true, std::runtime_error,
-        "Tpetra::Utils::generateMatrix(): ParameterList specified unsupported ""mat_type"".");
-  }
-}
-
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
 readHBMatrix (const std::string &filename,
               const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-              const Teuchos::RCP<Node> &node,
               Teuchos::RCP< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &A,
               Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap,
               const Teuchos::RCP<Teuchos::ParameterList> &params)
@@ -227,16 +164,9 @@ readHBMatrix (const std::string &filename,
   broadcast(*comm,0,&numCols);
   // create map with uniform partitioning
   if (rowMap == Teuchos::null) {
-    if (node.is_null ()) {
-      rowMap = Teuchos::rcp (new map_type (static_cast<global_size_t> (numRows),
-                                           static_cast<GlobalOrdinal> (0),
-                                           comm, GloballyDistributed));
-    }
-    else {
-      rowMap = Teuchos::rcp (new map_type (static_cast<global_size_t> (numRows),
-                                           static_cast<GlobalOrdinal> (0),
-                                           comm, GloballyDistributed, node));
-    }
+    rowMap = Teuchos::rcp (new map_type (static_cast<global_size_t> (numRows),
+                                         static_cast<GlobalOrdinal> (0),
+                                         comm, GloballyDistributed));
   }
   else {
     TEUCHOS_TEST_FOR_EXCEPTION( rowMap->getGlobalNumElements() != (global_size_t)numRows, std::runtime_error,
@@ -244,13 +174,10 @@ readHBMatrix (const std::string &filename,
     TEUCHOS_TEST_FOR_EXCEPTION( rowMap->isDistributed() == false && comm->getSize() > 1, std::runtime_error,
         "Tpetra::Utils::readHBMatrix(): specified map is not distributed.");
   }
-  Teuchos::ArrayRCP<size_t> myNNZ;
-  if (rowMap->getNodeNumElements()) {
-    myNNZ = Teuchos::arcp<size_t>(rowMap->getNodeNumElements());
-  }
+  Teuchos::Array<size_t> myNNZ (rowMap->getNodeNumElements ());
   if (myRank == 0) {
     LocalOrdinal numRowsAlreadyDistributed = rowMap->getNodeNumElements();
-    std::copy(nnzPerRow.begin(), nnzPerRow.begin()+numRowsAlreadyDistributed,myNNZ);
+    std::copy(nnzPerRow.begin(), nnzPerRow.begin()+numRowsAlreadyDistributed, myNNZ.begin());
     for (int p=1; p < Teuchos::size(*comm); ++p) {
       size_t numRowsForP;
       Teuchos::receive(*comm,p,&numRowsForP);
@@ -274,16 +201,16 @@ readHBMatrix (const std::string &filename,
     domMap = rowMap;
   }
   else {
-    if (node.is_null ()) {
-      domMap = createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numCols,comm);
-    }
-    else {
-      domMap = createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numCols,comm,node);
-    }
+    domMap = createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numCols,comm);
   }
-  A = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowMap,myNNZ,Tpetra::StaticProfile));
+  A = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowMap, myNNZ (), Tpetra::StaticProfile));
   // free this locally, A will keep it allocated as long as it is needed by A (up until allocation of nonzeros)
-  myNNZ = Teuchos::null;
+  {
+    // Classic idiom for freeing an std::vector; resize doesn't
+    // promise deallocation.
+    Teuchos::Array<size_t> empty;
+    std::swap (myNNZ, empty);
+  }
   if (myRank == 0 && numNZ > 0) {
     for (int r=0; r < numRows; ++r) {
       const LocalOrdinal nnz = rowptrs[r+1] - rowptrs[r];
@@ -300,6 +227,8 @@ readHBMatrix (const std::string &filename,
   rowptrs = Teuchos::null;
   A->fillComplete(domMap,rowMap,params);
 }
+
+
 } // namespace Utils
 } // namespace Tpetra
 
@@ -309,20 +238,15 @@ readHBMatrix (const std::string &filename,
 // Must be expanded from within the Tpetra::Utils namespace!
 //
 
+
 #define TPETRA_MATRIXIO_INSTANT(SCALAR,LO,GO,NODE) \
   template void \
   readHBMatrix< SCALAR, LO, GO, NODE > (const std::string&, \
                                         const Teuchos::RCP<const Teuchos::Comm<int> > &, \
-                                        const Teuchos::RCP< NODE > &, \
                                         Teuchos::RCP<CrsMatrix< SCALAR, LO, GO, NODE > >&, \
                                         Teuchos::RCP<const Tpetra::Map< LO, GO, NODE> >, \
-                                        const Teuchos::RCP<Teuchos::ParameterList>& ); \
-  \
-  template void \
-  generateMatrix< SCALAR, LO, GO, NODE> (const Teuchos::RCP<Teuchos::ParameterList>&, \
-                                         const Teuchos::RCP<const Teuchos::Comm<int> > &, \
-                                         const Teuchos::RCP< NODE > &,\
-                                         Teuchos::RCP<CrsMatrix< SCALAR, LO, GO, NODE > >& );
+                                        const Teuchos::RCP<Teuchos::ParameterList>& ); 
+
 
 
 #endif

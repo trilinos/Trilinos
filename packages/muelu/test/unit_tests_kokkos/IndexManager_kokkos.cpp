@@ -123,14 +123,6 @@ namespace MueLuTests {
     typedef typename IndexManager_kokkos::memory_space memory_space;
 
     Kokkos::fence();
-    std::cout << "getCoarseNodesData" << std::endl;
-
-    Array<GO> coarseNodeCoarseGIDs;
-    Array<GO> coarseNodeFineGIDs;
-    myIndexManager->getCoarseNodesData(coords->getMap(), coarseNodeCoarseGIDs,
-                                       coarseNodeFineGIDs);
-
-    Kokkos::fence();
     std::cout << "Allocate host views before performing checks" << std::endl;
 
     typename Kokkos::View<const int[3], memory_space>::HostMirror coarseRate_h
@@ -162,12 +154,6 @@ namespace MueLuTests {
         if(lCoarseNodesPerDir_h(dim)                      != 3)                     {chk = -1;}
       }
 
-      GO cnfGIDs[27] = {0, 2, 4, 10, 12, 14, 20, 22, 24,
-                        50, 52, 54, 60, 62, 64, 70, 72, 74,
-                        100, 102, 104, 110, 112, 114, 120, 122, 124};
-      for(int coarseIdx = 0; coarseIdx < myIndexManager->getNumCoarseNodes(); ++coarseIdx) {
-        if(coarseNodeFineGIDs[coarseIdx]    != cnfGIDs[coarseIdx])                  {chk = -1;}
-      }
     } else if(comm->getSize() == 4) {
       if(comm->getRank() == 0) {
         if(myIndexManager->getNumLocalFineNodes()       != 45)                      {chk = -1;}
@@ -177,10 +163,6 @@ namespace MueLuTests {
           if(lFineNodesPerDir_h(dim)                        != lFNPD[dim])          {chk = -1;}
           if(lCoarseNodesPerDir_h(dim)                      != lCNPD[dim])          {chk = -1;}
         }
-        GO  cnfGIDs[12] = {0, 2, 6, 8, 18, 20, 24, 26, 36, 38, 42, 44};
-        for(int coarseIdx = 0; coarseIdx < myIndexManager->getNumCoarseNodes(); ++coarseIdx) {
-          if(coarseNodeFineGIDs[coarseIdx]   != cnfGIDs[coarseIdx])                 {chk = -1;}
-        }
       } else if(comm->getRank() == 1) {
         if(myIndexManager->getNumLocalFineNodes()       != 30)                      {chk = -1;}
         if(myIndexManager->getNumCoarseNodes()     != 12)                      {chk = -1;}
@@ -188,10 +170,6 @@ namespace MueLuTests {
         for(int dim = 0; dim < 3; ++dim) {
           if(lFineNodesPerDir_h(dim)                        != lFNPD[dim])          {chk = -1;}
           if(lCoarseNodesPerDir_h(dim)                      != lCNPD[dim])          {chk = -1;}
-        }
-        GO  cnfGIDs[12] = {45, 46, 49, 50, 57, 58, 61, 62, 69, 70, 73, 74};
-        for(int coarseIdx = 0; coarseIdx < myIndexManager->getNumCoarseNodes(); ++coarseIdx) {
-          if(coarseNodeFineGIDs[coarseIdx]   != cnfGIDs[coarseIdx])                 {chk = -1;}
         }
       } else if(comm->getRank() == 2) {
         if(myIndexManager->getNumLocalFineNodes()       != 30)                      {chk = -1;}
@@ -201,10 +179,6 @@ namespace MueLuTests {
           if(lFineNodesPerDir_h(dim)                        != lFNPD[dim])          {chk = -1;}
           if(lCoarseNodesPerDir_h(dim)                      != lCNPD[dim])          {chk = -1;}
         }
-        GO  cnfGIDs[12] = {75, 77, 78, 80, 87, 89, 90, 92, 99, 101, 102, 104};
-        for(int coarseIdx = 0; coarseIdx < myIndexManager->getNumCoarseNodes(); ++coarseIdx) {
-          if(coarseNodeFineGIDs[coarseIdx]   != cnfGIDs[coarseIdx])                 {chk = -1;}
-        }
       } else if(comm->getRank() == 3) {
         if(myIndexManager->getNumLocalFineNodes()       != 20)                      {chk = -1;}
         if(myIndexManager->getNumCoarseNodes()     != 12)                      {chk = -1;}
@@ -212,10 +186,6 @@ namespace MueLuTests {
         for(int dim = 0; dim < 3; ++dim) {
           if(lFineNodesPerDir_h(dim)                        != lFNPD[dim])          {chk = -1;}
           if(lCoarseNodesPerDir_h(dim)                      != lCNPD[dim])          {chk = -1;}
-        }
-        GO  cnfGIDs[12] = {105, 106, 107, 108, 113, 114, 115, 116, 121, 122, 123, 124};
-        for(int coarseIdx = 0; coarseIdx < myIndexManager->getNumCoarseNodes(); ++coarseIdx) {
-          if(coarseNodeFineGIDs[coarseIdx]   != cnfGIDs[coarseIdx])                 {chk = -1;}
         }
       }
     }

@@ -51,7 +51,6 @@
 #include "BelosBlockGmresSolMgr.hpp"
 
 // I/O for Harwell-Boeing files
-#define HIDE_TPETRA_INOUT_IMPLEMENTATIONS
 #include <Tpetra_MatrixIO.hpp>
 
 #include <Teuchos_CommandLineProcessor.hpp>
@@ -88,9 +87,7 @@ int main(int argc, char *argv[]) {
 
     int MyPID = 0;
 
-    typedef Tpetra::Map<>::node_type Node;
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
-    RCP<Node> node; // only for type deduction; null ok
     //
     // Get test parameters from command-line processor
     //
@@ -100,6 +97,7 @@ int main(int argc, char *argv[]) {
     int numrhs = 1;      // total number of right-hand sides to solve for
     int blocksize = 1;   // blocksize used by solver
     int maxiters = -1;   // maximum number of iterations for solver to use
+    std::string ortho("DGKS"); // orthogonalization type
     std::string filename("bcsstk14.hb");
     MT tol = 1.0e-5;     // relative residual tolerance
 
@@ -112,6 +110,7 @@ int main(int argc, char *argv[]) {
     cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
     cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 := adapted to problem/block size).");
     cmdp.setOption("block-size",&blocksize,"Block size to be used by the Gmres solver.");
+    cmdp.setOption("ortho-type",&ortho,"Orthogonalization type, either DGKS, ICGS or IMGS (or TSQR if enabled)");
     if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
       return -1;
     }
@@ -133,7 +132,7 @@ int main(int argc, char *argv[]) {
     // Get the data from the HB file and build the Map,Matrix
     //
     RCP<CrsMatrix<ST> > A;
-    Tpetra::Utils::readHBMatrix(filename,comm,node,A);
+    Tpetra::Utils::readHBMatrix(filename,comm,A);
     RCP<const Tpetra::Map<> > map = A->getDomainMap();
 
     // Create initial vectors
@@ -157,8 +156,8 @@ int main(int argc, char *argv[]) {
     belosList.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
     belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
     belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
-    belosList.set( "Flexible Gmres", true );               // DON'T DO THIS IN PRACTICE, it is not true.  
-                                                           // Just make sure the solver doesn't error out.
+    belosList.set( "Orthogonalization", ortho );           // Orthogonalization type
+
     int verbLevel = Belos::Errors + Belos::Warnings;
     if (debug) {
       verbLevel += Belos::Debug;

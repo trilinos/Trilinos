@@ -63,8 +63,7 @@
 
 namespace panzer {
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-class UniqueGlobalIndexer; //forward declaration
+class GlobalIndexer; //forward declaration
 
 /** \brief Gathers solution values from the Newton solution vector into
     the nodal fields of the field manager
@@ -95,10 +94,10 @@ class GatherSolution_Tpetra<panzer::Traits::Residual,TRAITS,LO,GO,NodeT>
 
 public:
 
-  GatherSolution_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer) :
+  GatherSolution_Tpetra(const Teuchos::RCP<const panzer::GlobalIndexer> & indexer) :
      globalIndexer_(indexer) {}
 
-  GatherSolution_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
+  GatherSolution_Tpetra(const Teuchos::RCP<const panzer::GlobalIndexer> & indexer,
                         const Teuchos::ParameterList& p);
 
   void postRegistrationSetup(typename TRAITS::SetupData d,
@@ -122,7 +121,7 @@ private:
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
-  Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer_;
+  Teuchos::RCP<const panzer::GlobalIndexer> globalIndexer_;
   std::vector<int> fieldIds_; // field IDs needing mapping
 
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
@@ -158,10 +157,10 @@ class GatherSolution_Tpetra<panzer::Traits::Tangent,TRAITS,LO,GO,NodeT>
 
 public:
 
-  GatherSolution_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer) :
+  GatherSolution_Tpetra(const Teuchos::RCP<const panzer::GlobalIndexer> & indexer) :
      globalIndexer_(indexer) {}
 
-  GatherSolution_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
+  GatherSolution_Tpetra(const Teuchos::RCP<const panzer::GlobalIndexer> & indexer,
                         const Teuchos::ParameterList& p);
 
   void postRegistrationSetup(typename TRAITS::SetupData d,
@@ -182,7 +181,7 @@ private:
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
-  Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer_;
+  Teuchos::RCP<const panzer::GlobalIndexer> globalIndexer_;
   std::vector<int> fieldIds_; // field IDs needing mapping
 
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
@@ -210,10 +209,10 @@ class GatherSolution_Tpetra<panzer::Traits::Jacobian,TRAITS,LO,GO,NodeT>
     public panzer::CloneableEvaluator  {
 
 public:
-  GatherSolution_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer) :
+  GatherSolution_Tpetra(const Teuchos::RCP<const panzer::GlobalIndexer> & indexer) :
      globalIndexer_(indexer) {}
 
-  GatherSolution_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
+  GatherSolution_Tpetra(const Teuchos::RCP<const panzer::GlobalIndexer> & indexer,
                         const Teuchos::ParameterList& p);
 
   void postRegistrationSetup(typename TRAITS::SetupData d,
@@ -242,7 +241,7 @@ private:
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
-  Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer_;
+  Teuchos::RCP<const panzer::GlobalIndexer> globalIndexer_;
   std::vector<int> fieldIds_; // field IDs needing mapping
 
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;

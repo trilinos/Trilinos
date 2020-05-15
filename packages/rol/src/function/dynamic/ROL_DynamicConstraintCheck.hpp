@@ -56,14 +56,38 @@ namespace ROL {
 
 template<typename Real>
 struct DynamicConstraintCheck {
- 
-  static void check( DynamicConstraint<Real>& con,
+
+   static void check( DynamicConstraint<Real>& con,
                      ValidateFunction<Real>& validator,
                      const Vector<Real>& uo,
                      const Vector<Real>& un,
                      const Vector<Real>& z,
                      const std::vector<std::string>& methods ) {
+
+    auto con_check = make_check( con );
+    check( con_check, validator, uo, un, z, methods );
+
+  }
+
+  static void check( DynamicConstraint<Real>& con,
+                     ValidateFunction<Real>& validator,
+                     const Vector<Real>& uo,
+                     const Vector<Real>& un,
+                     const Vector<Real>& z,
+                     TimeStamp<Real>& timeStamp,
+                     const std::vector<std::string>& methods ) {
  
+    auto con_check = make_check( con, timeStamp );
+    check( con_check, validator, uo, un, z, methods );
+  }
+
+  static void check( DynamicConstraint_CheckInterface<Real>& con_check, 
+                     ValidateFunction<Real>& validator,
+                     const Vector<Real>& uo,
+                     const Vector<Real>& un,
+                     const Vector<Real>& z,
+                     const std::vector<std::string>& methods ) {
+
     auto c  = uo.clone();
     auto vu = uo.clone();
     auto vz = z.clone();
@@ -73,10 +97,6 @@ struct DynamicConstraintCheck {
     vu->randomize();
     vz->randomize();
     l->randomize();
-
-    //std::ostream& os = validator.getStream();
-
-    auto con_check = make_check( con );
 
     auto update_uo = con_check.update_uo( un, z );
     auto update_un = con_check.update_un( uo, z );

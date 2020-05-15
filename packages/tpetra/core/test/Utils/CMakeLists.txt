@@ -40,6 +40,44 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Behavior
+  SOURCES
+    behavior
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CombineMode
+  SOURCES
+    CombineMode
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  copyConvert
+  SOURCES copyConvert
+  ARGS ${ARGS}
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  copyOffsets
+  SOURCES copyOffsets
+  ARGS ${ARGS}
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   createMirrorView
   SOURCES
     createMirrorView
@@ -61,33 +99,73 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
+# This test comes with its own main() function.
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  copyConvert
+  StaticView
   SOURCES
-    copyConvert
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  ARGS ${ARGS}
+    StaticView
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Behavior
+  TpetraUtils_crsUtils
   SOURCES
-    behavior
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    TpetraUtils_crsUtils
+  ARGS ""
+  COMM serial mpi
+  NUM_MPI_PROCS 1-4
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  withLocalAccess_generic
+  SOURCES
+    withLocalAccess_generic
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CheckMemoryType
+  SOURCES
+    CheckMemoryType
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  CombineMode
+  verbosePrintArray
   SOURCES
-    CombineMode
+    verbosePrintArray
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE(
+  createPrefix
+  SOURCES
+    createPrefix
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  )
+# In an MPI build, I'd like at least 2 processes, in order to test
+# that the string prefix for verbose output includes the right rank
+# and doesn't just print 0.
+TRIBITS_ADD_TEST(
+  createPrefix
+  NAME createPrefix_MPI
+  COMM mpi
+  NUM_MPI_PROCS 2
+  STANDARD_PASS_OUTPUT
+  )
+TRIBITS_ADD_TEST(
+  createPrefix
+  NAME createPrefix_no_MPI
+  COMM serial
   STANDARD_PASS_OUTPUT
   )

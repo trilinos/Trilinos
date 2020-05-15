@@ -60,12 +60,14 @@ namespace panzer
 namespace partitioning_utilities
 {
 
-template<typename LO, typename GO>
 void
-setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase<LO,GO> & parent_info,
-                      const std::vector<LO> & owned_parent_cells,
-                      panzer::LocalMeshInfoBase<LO,GO> & sub_info)
+setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase & parent_info,
+                      const std::vector<panzer::LocalOrdinal> & owned_parent_cells,
+                      panzer::LocalMeshInfoBase & sub_info)
 {
+  using GO = panzer::GlobalOrdinal;
+  using LO = panzer::LocalOrdinal;
+
   PANZER_FUNC_TIME_MONITOR_DIFF("panzer::partitioning_utilities::setupSubLocalMeshInfo",setupSLMI);
   // The goal of this function is to fill a LocalMeshInfoBase (sub_info) with
   // a subset of cells from a given parent LocalMeshInfoBase (parent_info)
@@ -315,92 +317,62 @@ setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase<LO,GO> & parent_info,
 
 }
 
-
-
-
-
-template<typename LO, typename GO>
 void
-splitMeshInfo(const panzer::LocalMeshInfoBase<LO,GO> & mesh_info,
+splitMeshInfo(const panzer::LocalMeshInfoBase & mesh_info,
               const int splitting_size,
-              std::vector<panzer::LocalMeshPartition<LO,GO> > & partitions)
+              std::vector<panzer::LocalMeshPartition> & partitions)
 {
 
+  using LO = panzer::LocalOrdinal;
+
   // Make sure the splitting size makes sense
-  TEUCHOS_ASSERT(splitting_size != 0);
+  TEUCHOS_ASSERT((splitting_size > 0) or (splitting_size == WorksetSizeType::ALL_ELEMENTS));
 
-  // This is not a partitioning scheme.
-  // This just breaks the mesh_info into equally sized chunks and ignores connectivity
-  // This means that the cells in the partition probably won't be nearby each other - leads to an excess of ghost cells
+  // Default partition size
+  const LO base_partition_size = std::min(mesh_info.num_owned_cells, (splitting_size > 0) ? splitting_size : mesh_info.num_owned_cells);
 
-  const LO num_owned_cells = mesh_info.num_owned_cells;
+  // Cells to partition
+  std::vector<LO> partition_cells;
+  partition_cells.resize(base_partition_size);
 
-  if(splitting_size < 0){
+  // Create the partitions
+  LO cell_count = 0;
+  while(cell_count < mesh_info.num_owned_cells){
 
-    // Just one chunk
-    std::vector<LO> partition_cells;
-    partition_cells.reserve(mesh_info.num_owned_cells);
-    for(LO i=0;i<mesh_info.num_owned_cells;++i){
-      partition_cells.push_back(i);
-    }
+    LO partition_size = base_partition_size;
+    if(cell_count + partition_size > mesh_info.num_owned_cells)
+      partition_size = mesh_info.num_owned_cells - cell_count;
 
-    // It seems this can happen
-    if(partition_cells.size() > 0){
-      partitions.push_back(panzer::LocalMeshPartition<LO,GO>());
-      setupSubLocalMeshInfo(mesh_info,partition_cells,partitions.back());
-    }
+    // Error check for a null partition - this should never happen by design
+    TEUCHOS_ASSERT(partition_size != 0);
 
-  } else {
+    // In the final partition, we need to reduce the size of partition_cells
+    if(partition_size != base_partition_size)
+      partition_cells.resize(partition_size);
 
-    std::vector<LO> partition_cells;
-    partition_cells.reserve(splitting_size);
+    // Set the partition indexes - not really a partition, just a chunk of cells
+    for(LO i=0; i<partition_size; ++i)
+      partition_cells[i] = cell_count+i;
 
-    // There should be at least one partition
-    const LO num_partitions = mesh_info.num_owned_cells / splitting_size + ((mesh_info.num_owned_cells % splitting_size == 0) ? 0 : 1);
+    // Create an empty partition
+    partitions.push_back(panzer::LocalMeshPartition());
 
-    LO partition_start_index = 0;
-    for(LO partition=0;partition<num_partitions;++partition){
+    // Fill the empty partition
+    partitioning_utilities::setupSubLocalMeshInfo(mesh_info,partition_cells,partitions.back());
 
-      // Make sure end of partition maxes out at num_owned_cells
-      const LO partition_end_index = std::min(partition_start_index + splitting_size, num_owned_cells);
-
-      partition_cells.resize(partition_end_index - partition_start_index,-1);
-      for(int i=partition_start_index;i<partition_end_index;++i){
-        partition_cells[i] = i;
-      }
-
-      // It seems this can happen
-      if(partition_cells.size() > 0){
-        partitions.push_back(panzer::LocalMeshPartition<LO,GO>());
-        setupSubLocalMeshInfo(mesh_info,partition_cells,partitions.back());
-      }
-
-      partition_start_index = partition_end_index;
-    }
-
+    // Update the cell count
+    cell_count += partition_size;
   }
 
 }
 
-template<typename LO, typename GO>
-void
-partitionMeshInfo(const panzer::LocalMeshInfoBase<LO,GO>& /* mesh_info */,
-                 const size_t /* requested_partition_size */,
-                 std::vector<panzer::LocalMeshPartition<LO,GO>>& /* partitions */)
-{
-  // Not yet sure how to do this
-  TEUCHOS_ASSERT(false);
 }
 
-}
-
-template <typename LO, typename GO>
 void
-generateLocalMeshPartitions(const panzer::LocalMeshInfo<LO,GO> & mesh_info,
+generateLocalMeshPartitions(const panzer::LocalMeshInfo & mesh_info,
                             const panzer::WorksetDescriptor & description,
-                            std::vector<panzer::LocalMeshPartition<LO,GO> > & partitions)
+                            std::vector<panzer::LocalMeshPartition> & partitions)
 {
-
   // We have to make sure that the partitioning is possible
   TEUCHOS_ASSERT(description.getWorksetSize() != panzer::WorksetSizeType::CLASSIC_MODE);
   TEUCHOS_ASSERT(description.getWorksetSize() != 0);
@@ -424,10 +396,10 @@ generateLocalMeshPartitions(const panzer::LocalMeshInfo<LO,GO> & mesh_info,
     if(sideset_map.find(sideset_name) == sideset_map.end())
       return;
 
-    const panzer::LocalMeshSidesetInfo<LO,GO> & sideset_info = sideset_map.at(sideset_name);
+    const panzer::LocalMeshSidesetInfo & sideset_info = sideset_map.at(sideset_name);
 
     // Partitioning is not important for sidesets
-    panzer::partitioning_utilities::splitMeshInfo<LO,GO>(sideset_info, description.getWorksetSize(), partitions);
+    panzer::partitioning_utilities::splitMeshInfo(sideset_info, description.getWorksetSize(), partitions);
 
     for(auto & partition : partitions){
       partition.sideset_name = sideset_name;
@@ -442,16 +414,13 @@ generateLocalMeshPartitions(const panzer::LocalMeshInfo<LO,GO> & mesh_info,
       return;
 
     // Grab the element block we're interested in
-    const panzer::LocalMeshBlockInfo<LO,GO> & block_info = mesh_info.element_blocks.at(element_block_name);
+    const panzer::LocalMeshBlockInfo & block_info = mesh_info.element_blocks.at(element_block_name);
 
     if(description.getWorksetSize() == panzer::WorksetSizeType::ALL_ELEMENTS){
       // We only have one partition describing the entire local mesh
       panzer::partitioning_utilities::splitMeshInfo(block_info, -1, partitions);
     } else {
       // We need to partition local mesh
-
-      // TODO: This needs to be used, but first needs to be written
-      //panzer::partitioning_utilities::partitionMeshInfo<LO,GO>(block_info, description.getWorksetSize(), partitions);
 
       // FIXME: Until the above function is fixed, we will use this hack - this will lead to horrible partitions
       panzer::partitioning_utilities::splitMeshInfo(block_info, description.getWorksetSize(), partitions);
@@ -467,32 +436,3 @@ generateLocalMeshPartitions(const panzer::LocalMeshInfo<LO,GO> & mesh_info,
 }
 
 }
-
-
-template
-void
-panzer::partitioning_utilities::setupSubLocalMeshInfo<int,int>(const panzer::LocalMeshInfoBase<int,int> & parent_info,
-                                                               const std::vector<int> & owned_parent_cells,
-                                                               panzer::LocalMeshInfoBase<int,int> & sub_info);
-
-#ifndef PANZER_ORDINAL64_IS_INT
-template
-void
-panzer::partitioning_utilities::setupSubLocalMeshInfo<int,panzer::Ordinal64>(const panzer::LocalMeshInfoBase<int,panzer::Ordinal64> & parent_info,
-                                                                             const std::vector<int> & owned_parent_cells,
-                                                                             panzer::LocalMeshInfoBase<int,panzer::Ordinal64> & sub_info);
-#endif
-
-template
-void
-panzer::generateLocalMeshPartitions<int,int>(const panzer::LocalMeshInfo<int,int> & mesh_info,
-                                             const panzer::WorksetDescriptor & description,
-                                             std::vector<panzer::LocalMeshPartition<int,int> > & partitions);
-
-#ifndef PANZER_ORDINAL64_IS_INT
-template
-void
-panzer::generateLocalMeshPartitions<int,panzer::Ordinal64>(const panzer::LocalMeshInfo<int,panzer::Ordinal64> & mesh_info,
-                                                           const panzer::WorksetDescriptor & description,
-                                                           std::vector<panzer::LocalMeshPartition<int,panzer::Ordinal64> > & partitions);
-#endif

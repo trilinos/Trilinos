@@ -53,6 +53,7 @@
 #include <Zoltan2_InputTraits.hpp>
 #include <Zoltan2_Standards.hpp>
 
+#include <Xpetra_TpetraCrsGraph.hpp>
 #include <Xpetra_TpetraCrsMatrix.hpp>
 #include <Xpetra_TpetraVector.hpp>
 #include <Tpetra_Vector.hpp>
@@ -158,12 +159,12 @@ struct XpetraTraits<Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> >
     Tpetra::Import<lno_t, gno_t, node_t> importer(smap, tmap);
 
     // target matrix
-    // Chris Siefert proposed using the following to make migration 
-    // more efficient.  
+    // Chris Siefert proposed using the following to make migration
+    // more efficient.
     // By default, the Domain and Range maps are the same as in "from".
-    // As in the original code, we instead set them both to tmap.  
+    // As in the original code, we instead set them both to tmap.
     // The assumption is a square matrix.
-    // TODO:  what about rectangular matrices?  
+    // TODO:  what about rectangular matrices?
     // TODO:  Should choice of domain/range maps be an option to this function?
 
     // KDD 3/7/16:  disabling Chris' new code to avoid dashboard failures;
@@ -178,7 +179,7 @@ struct XpetraTraits<Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> >
     ////
     //int oldNumElts = smap->getNodeNumElements();
     //int newNumElts = numLocalRows;
-    
+
     //// number of non zeros in my new rows
     //typedef Tpetra::Vector<scalar_t, lno_t, gno_t, node_t> vector_t;
     //vector_t numOld(smap);  // TODO These vectors should have scalar=size_t,
@@ -188,7 +189,7 @@ struct XpetraTraits<Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> >
         //scalar_t(from.getNumEntriesInLocalRow(lid)));
     //}
     //numNew.doImport(numOld, importer, Tpetra::INSERT);
-   
+
     // TODO Could skip this copy if could declare vector with scalar=size_t.
     //ArrayRCP<size_t> nnz(newNumElts);
     //if (newNumElts > 0){
@@ -197,7 +198,7 @@ struct XpetraTraits<Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> >
         //nnz[lid] = static_cast<size_t>(ptr[lid]);
       //}
     //}
-    
+
     //RCP<tmatrix_t> M = rcp(new tmatrix_t(tmap, nnz, Tpetra::StaticProfile));
     //M->doImport(from, importer, Tpetra::INSERT);
     //M->fillComplete();
@@ -260,12 +261,12 @@ struct XpetraTraits<Epetra_CrsMatrix>
 
 
     // target matrix
-    // Chris Siefert proposed using the following to make migration 
-    // more efficient.  
+    // Chris Siefert proposed using the following to make migration
+    // more efficient.
     // By default, the Domain and Range maps are the same as in "from".
-    // As in the original code, we instead set them both to tmap.  
+    // As in the original code, we instead set them both to tmap.
     // The assumption is a square matrix.
-    // TODO:  what about rectangular matrices?  
+    // TODO:  what about rectangular matrices?
     // TODO:  Should choice of domain/range maps be an option to this function?
 
     RCP<Epetra_CrsMatrix> M = rcp(new Epetra_CrsMatrix(from, importer,
@@ -290,7 +291,7 @@ struct XpetraTraits<Epetra_CrsMatrix>
     //   nnz[lid] = static_cast<int>(numNew[lid]);
     // }
     //
-    // RCP<Epetra_CrsMatrix> M = 
+    // RCP<Epetra_CrsMatrix> M =
     //     rcp(new Epetra_CrsMatrix(::Copy, tmap, nnz.getRawPtr(), true));
     // M->Import(from, importer, Insert);
     // M->FillComplete();
@@ -462,7 +463,7 @@ struct XpetraTraits<Tpetra::CrsGraph<lno_t, gno_t, node_t> >
     }
 
     // target graph
-    RCP<tgraph_t> G = rcp(new tgraph_t(tmap, nnz_size_t, Tpetra::StaticProfile));
+    RCP<tgraph_t> G = rcp(new tgraph_t(tmap, nnz_size_t(), Tpetra::StaticProfile));
 
     G->doImport(from, importer, Tpetra::INSERT);
     G->fillComplete();

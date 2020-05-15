@@ -1519,7 +1519,7 @@ bool ML_NOX::ML_Nox_Preconditioner::Set_Smoothers()
    else if ( (ml_fsmoothertype_ == "MLS") || (ml_fsmoothertype_ == "Cheby")) 
      ML_Gen_Smoother_Cheby(ml_,0,ML_BOTH,30.,nsmooth_fine_);
    else if (ml_fsmoothertype_ == "AmesosKLU")
-     ML_Gen_Smoother_Amesos(ml_,0,ML_AMESOS_KLU,-1,0.0);
+     ML_Gen_Smoother_Amesos(ml_,0,ML_AMESOS_KLU,-1,0.0,1);
    else
    {
      cout << "**ERR**: ML_Nox_Preconditioner::ML_Nox_compute_Jacobian_Linearpreconditioner:\n"
@@ -1588,7 +1588,7 @@ bool ML_NOX::ML_Nox_Preconditioner::Set_Smoothers()
       else if ((ml_smoothertype_ == "MLS")||(ml_smoothertype_ == "Cheby"))
         ML_Gen_Smoother_Cheby(ml_,i,ML_BOTH,30.,nsmooth_);
       else if (ml_smoothertype_ == "AmesosKLU")
-        ML_Gen_Smoother_Amesos(ml_,i,ML_AMESOS_KLU,-1,0.0);
+        ML_Gen_Smoother_Amesos(ml_,i,ML_AMESOS_KLU,-1,0.0,1);
       else
       {
         cout << "**ERR**: ML_Nox_Preconditioner::ML_Nox_compute_Jacobian_Linearpreconditioner:\n"
@@ -1598,7 +1598,7 @@ bool ML_NOX::ML_Nox_Preconditioner::Set_Smoothers()
    }
    // choose a coarse grid solver
    if (ml_coarsesolve_ == "AmesosKLU")
-      ML_Gen_Smoother_Amesos(ml_,ml_coarsestlev_,ML_AMESOS_KLU,-1,0.0);
+      ML_Gen_Smoother_Amesos(ml_,ml_coarsestlev_,ML_AMESOS_KLU,-1,0.0,1);
    else if (ml_coarsesolve_ == "SGS")
       ML_Gen_Smoother_SymGaussSeidel(ml_,ml_coarsestlev_,ML_BOTH,nsmooth_coarse_,1.);
    else if (ml_coarsesolve_ == "Jacobi")

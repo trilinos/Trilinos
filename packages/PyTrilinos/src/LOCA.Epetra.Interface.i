@@ -47,7 +47,7 @@
 PyTrilinos.LOCA.Epetra.Interface is the python interface to namespace
 Epetra::Interface of the Trilinos continuation algorithm package LOCA:
 
-    http://trilinos.sandia.gov/packages/nox
+    https://trilinos.org/docs/dev/packages/nox/doc/html/index.html
 
 The purpose of LOCA.Epetra.Interface is to provide a concrete Epetra
 implementation of LOCA interfaces.  The python version of
@@ -70,7 +70,6 @@ LOCA.Epetra.Interface supports the following classes:
 
 %module(package      = "PyTrilinos.LOCA.Epetra",
 	directors    = "1",
-	autodoc      = "1",
 	implicitconv = "1",
 	docstring    = %loca_epetra_interface_docstring) Interface
 
@@ -108,8 +107,10 @@ LOCA.Epetra.Interface supports the following classes:
 %include "exception.i"
 
 // Include LOCA documentation
+#if SWIG_VERSION < 0x040000
 %feature("autodoc", "1");
 %include "LOCA_dox.i"
+#endif
 
 // Director exception handling
 %feature("director:except")

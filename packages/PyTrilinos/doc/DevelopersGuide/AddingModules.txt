@@ -9,21 +9,6 @@ here are the necessary steps.
    the package name to attribute ``LIB_OPTIONAL_DEP_PACKAGES``.  It is
    important that packages be listed in build order.
 
-#. If your package uses nested namespaces, then the python interface
-   should use corresponding nested modules.  To partially facilitate
-   this, within the ``src/PyTrilinos`` directory, make a directory with your
-   package name.  Repeat for nested namespaces.
-
-   In ``src/PyTrilinos/CMakeLists.txt``, you will find logic such as::
-
-      # The NOX module employs namespaces, so include the NOX directory
-      IF(${PACKAGE_NAME}_ENABLE_NOX)
-        ADD_SUBDIRECTORY(NOX)
-      ENDIF(${PACKAGE_NAME}_ENABLE_NOX)
-
-   Add similar logic for your code.  In each nested directory, create
-   a new ``CMakeLists.txt`` file and provide similar logic.
-
 #. In the top-level ``CMakeLists.txt`` file, you will find a series of
    if-blocks that look like this::
 
@@ -37,34 +22,25 @@ here are the necessary steps.
    logic for the ``NOX`` package if your package supports nested
    namespaces (sub-modules).
 
+#. If your package uses nested namespaces, then the python interface
+   should use corresponding nested modules.  Supporting this
+   infrastructure is detailed in the section .. _`Nested Modules`.
+
 #. If your package will require compiled code that will be archived in
    the ``pytrilinos`` shared library, add the headers and sources to
    ``src/CMakeLists.txt``, using the existing if-blocks as a guide.
-
-#. If your package supports nested namespaces (sub-modules), then in
-   ``src/CMakeLists.txt``, find the loop prefaced with the comment::
-
-      # Loop over the PyTrilinos-enabled Trilinos modules and define the
-      # swig-generated PyTrilinos extension modules
-
-   Within this loop, find the section that begins::
-
-      # Choosing the Trilinos libraries to link against, the python module
-      # to byte-compile and the installation rules requires a little bit
-      # of logic.
-
-   Use the existing if-blocks below this comment to provide a template
-   to add logic to support your sub-modules.
 
 #. Add your package by writing the required SWIG interface files.  For
    a standard PACKAGE, it will be in the file
 
       ``PACKAGE.i``
 
-   For a package that supports nested namespaces, the primary SWIG
-   interface file will be named::
+   For a sub-module within a package that supports nested namespaces,
+   the SWIG interface file will be named::
 
-      ``PACKAGE___init__.i``
+      ``PACKAGE.NAMESPACE.i``
 
-   In both cases, of course, ``PACKAGE`` will be replaced with your
-   package name.
+   where ``NAMESPACE`` is the namespace and nested namespaces are
+   handled with additional ``.`` characters in the file name.  In both
+   cases, of course, ``PACKAGE`` will be replaced with your package
+   name.

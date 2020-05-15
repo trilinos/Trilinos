@@ -96,7 +96,7 @@ C
       DIMENSION LINKSC (2, MR)
       DIMENSION N (29), XDUM (2), YDUM (2)
 C
-      CHARACTER*72 DUMMY, SCHEME, DEFSCH, TITLE, DEV1*3, CDUMMY*4
+      CHARACTER*72 DUMMY, SCHEME, DEFSCH, TITLE, DEV1*3
       CHARACTER*8 DATE, TIME, VERSN*10
 C
       LOGICAL LABP, LABL, LABR, AXISD, LABMD, LABI, LABF
@@ -140,8 +140,8 @@ C
       IF (TEST) THEN
          WRITE (12, 10000)'IN;SP6;;IP - 5710, -10060, 15710, 10060;'
          WRITE (12, 10010)
-     &      'SC', IFIX (XX1*1000), ', ', IFIX (YY1*1000), ', ',
-     &      IFIX (XX2*1000), ', ', IFIX (YY2*1000), ';'
+     &      'SC', INT (XX1*1000), ', ', INT (YY1*1000), ', ',
+     &      INT (XX2*1000), ', ', INT (YY2*1000), ';'
       ENDIF
       IF (AXISD) THEN
          XDUM (1) = XX1 -  (XDIMR*.05)
@@ -274,8 +274,8 @@ C
                      IF (TEST) THEN
                         CALL PLTD2G (X1, Y1, XR, YR)
                         CALL PLTG2D (X1, Y1, XR, YR)
-                        WRITE (12, 10020)'PU;PA', IFIX (XR*1000.),
-     &                     ', ', IFIX (YR*1000.), ';LB',
+                        WRITE (12, 10020)'PU;PA', INT (XR*1000.),
+     &                     ', ', INT (YR*1000.), ';LB',
      &                     DUMMY (1:LEN), CHAR (3)
                      ENDIF
                      CALL PLTXTH (X1, Y1, DUMMY (1:LEN))
@@ -395,8 +395,8 @@ C
                            CALL STRLNG (SCHEME (IPNTR), LEN)
                            IF (TEST) THEN
                               CALL PLTD2G (X1, Y1, XR, YR)
-                              WRITE (12, 10020)'PU;PA', IFIX (XR*1000.),
-     &                           ', ', IFIX (YR*1000.), ';LB',
+                              WRITE (12, 10020)'PU;PA', INT (XR*1000.),
+     &                           ', ', INT (YR*1000.), ';LB',
      &                           SCHEME (IPNTR) (1:LEN), CHAR (3)
                            ENDIF
                            CALL PLTXTH (X1, Y1, SCHEME (IPNTR) (1:LEN))
@@ -404,8 +404,8 @@ C
                            CALL STRLNG (DEFSCH, LEN)
                            IF (TEST) THEN
                               CALL PLTD2G (X1, Y1, XR, YR)
-                              WRITE (12, 10020)'PU;PA', IFIX (XR*1000.),
-     &                           ', ', IFIX (YR*1000.), ';LB',
+                              WRITE (12, 10020)'PU;PA', INT (XR*1000.),
+     &                           ', ', INT (YR*1000.), ';LB',
      &                           DEFSCH (1:LEN), CHAR (3)
                            ENDIF
                            CALL PLTXTH (X1, Y1, DEFSCH (1:LEN))

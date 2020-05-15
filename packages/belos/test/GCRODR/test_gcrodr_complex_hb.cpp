@@ -157,12 +157,12 @@ int main(int argc, char *argv[]) {
     // *****************(can be user specified)******************
     int maxits = dim/blocksize; // maximum number of iterations to run
     int numBlocks = 100;
-    int numRecycledBlocks = 80;
+    int numRecycledBlocks = 20;
     int numIters1, numIters2, numIters3;
     ParameterList belosList;
     belosList.set( "Maximum Iterations", maxits );         // Maximum number of iterations allowed
     belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
-    belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
+    belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails + Belos::TimingDetails);
     belosList.set( "Num Blocks", numBlocks );
     belosList.set( "Num Recycled Blocks", numRecycledBlocks );
     // Construct the right-hand side and solution multivectors.
@@ -214,16 +214,13 @@ int main(int argc, char *argv[]) {
         norm_failure = true;
       }
     }
-    // Setup new rhs, perform solve
-    MVT::MvRandom( *soln );
-    OPT::Apply( *A, *soln, *rhs );
+    // Resolve linear system with same rhs and recycled space
     MVT::MvInit( *soln, zero );
     solver.reset(Belos::Problem);
     ret = solver.solve();
     numIters2=solver.getNumIters();
-    // Setup new rhs, perform solve
-    MVT::MvRandom( *soln );
-    OPT::Apply( *A, *soln, *rhs );
+
+    // Resolve linear system (again) with same rhs and recycled space
     MVT::MvInit( *soln, zero );
     solver.reset(Belos::Problem);
     ret = solver.solve();
@@ -234,7 +231,7 @@ int main(int argc, char *argv[]) {
     delete [] rowind;
     delete [] cvals;
     // Test for failures
-    if ( ret!=Belos::Converged || norm_failure || numIters1 < numIters2 || numIters1 < numIters3 ) {
+    if ( ret!=Belos::Converged || norm_failure || numIters1 < numIters2 || numIters2 < numIters3 ) {
       success = false;
       if (proc_verbose)
         std::cout << "End Result: TEST FAILED" << std::endl;

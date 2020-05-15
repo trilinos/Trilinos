@@ -18,7 +18,7 @@ namespace phx_example {
   {
     auto host_f = Kokkos::create_mirror_view(f);
     Kokkos::deep_copy(host_f,f);
-    PHX::exec_space::fence();
+    typename PHX::exec_space().fence();
     
     std::ostream* os = &std::cout;
     std::ofstream ofs;
@@ -52,7 +52,7 @@ namespace phx_example {
     auto host_graph = Kokkos::create_mirror(J.graph); // deep_copies automagically
     Kokkos::deep_copy(host_f,f);
     Kokkos::deep_copy(host_J_vals,J.values);
-    PHX::exec_space::fence();
+    typename PHX::exec_space().fence();
 
     std::ostream* os = &std::cout;
     std::ofstream ofs;

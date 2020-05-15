@@ -60,6 +60,7 @@
 #include "ROL_ScaledStdVector.hpp"
 
 #include "ROL_Bounds.hpp"
+#include "ROL_AugmentedLagrangianStep.hpp"
 #include "ROL_AugmentedLagrangian.hpp"
 #include "ROL_Algorithm.hpp"
 #include "ROL_Elementwise_Reduce.hpp"
@@ -252,9 +253,13 @@ int main(int argc, char *argv[]) {
     }
 
     /*** Run optimization ***/
+    ROL::Ptr<ROL::Step<RealT>>
+      step = ROL::makePtr<ROL::AugmentedLagrangianStep<RealT>>(*parlist);
+    ROL::Ptr<ROL::StatusTest<RealT>>
+      status = ROL::makePtr<ROL::ConstraintStatusTest<RealT>>(*parlist);
     ROL::AugmentedLagrangian<RealT> augLag(opt.getObjective(),volcon,*vc_lamp,1.0,
                                           *opt.getSolutionVector(),*vcp,*parlist);
-    ROL::Algorithm<RealT> algo("Augmented Lagrangian",*parlist,false);
+    ROL::Algorithm<RealT> algo(step,status,false);
     std::clock_t timer = std::clock();
     algo.run(*opt.getSolutionVector(),*vc_lamp,augLag,*volcon,*opt.getBoundConstraint(),true,*outStream);
     *outStream << "Optimization time: "
@@ -291,7 +296,7 @@ int main(int argc, char *argv[]) {
                << static_cast<RealT>(std::clock()-timer_print)/static_cast<RealT>(CLOCKS_PER_SEC)
                << " seconds." << std::endl;
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

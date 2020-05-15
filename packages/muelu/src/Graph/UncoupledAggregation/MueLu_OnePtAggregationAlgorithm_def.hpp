@@ -69,12 +69,12 @@
 namespace MueLu {
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-OnePtAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::OnePtAggregationAlgorithm(RCP<const FactoryBase> const &graphFact)
+OnePtAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::OnePtAggregationAlgorithm(RCP<const FactoryBase> const &/* graphFact */)
 {
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-void OnePtAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
+void OnePtAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(Teuchos::ParameterList const & /* params */, GraphBase const & graph, Aggregates & aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
   Monitor m(*this, "BuildAggregates");
 
   const LocalOrdinal nRows = graph.GetNodeNumVertices();

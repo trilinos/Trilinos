@@ -3,6 +3,8 @@
         
 \cbb{verbosity}{string}{"high"}{Control of the amount of printed information. Possible values: see Table~\ref{t:verbosity_types}.}
         
+\cbb{output filename}{string}{""}{Write MueLu output to a file instead of std out. Empty value disables file output.}
+        
 \cbb{number of equations}{int}{1}{Number of PDE equations at each grid node. Only constant block size is considered.}
         
 \cbb{max levels}{int}{10}{Maximum number of levels in a hierarchy.}
@@ -10,6 +12,8 @@
 \cbb{cycle type}{string}{"V"}{Multigrid cycle type. Possible values: "V", "W".}
         
 \cbb{coarse grid correction scaling factor}{double}{1.0}{Scaling factor to be applied to the coarse grid correction. This only affects the solve phase.}
+        
+\cbb{fuse prolongation and update}{bool}{false}{Fuse prolongation and update into one kernel call. Due to round-off error accumulation, this can in some cases result in slightly higher iteration counts. This only affects the solve phase.}
         
 \cbb{problem: symmetric}{bool}{true}{Symmetry of a problem. This setting affects the construction of a restrictor. If set to true, the restrictor is set to be the transpose of a prolongator. If set to false, underlying multigrid algorithm makes the decision.}
         
@@ -21,6 +25,8 @@
 \cbb{parameterlist: syntax}{string}{muelu}{Syntax of ParameterList to use.  This should either be "muelu" or "ml." }
         
 \cbb{hierarchy label}{string}{""}{Label for the hierarchy. Is applied to timer labels.}
+        
+\cba{matvec params}{\parameterlist}{Pass parameters to the underlying linear algebra}
         
 \cbb{smoother: pre or post}{string}{"both"}{Pre- and post-smoother combination. Possible values: "pre" (only pre-smoother), "post" (only post-smoother), "both" (both pre-and post-smoothers), "none" (no smoothing).}
         
@@ -56,7 +62,15 @@
         
 \cbb{aggregation: ordering}{string}{"natural"}{Node ordering strategy. Possible values: "natural" (local index order), "graph" (filtered graph breadth-first order), "random" (random local index order).}
         
-\cbb{aggregation: drop scheme}{string}{"classical"}{Connectivity dropping scheme for a graph used in aggregation. Possible values: "classical", "distance laplacian".}
+\cbb{aggregation: drop scheme}{string}{"classical"}{Connectivity dropping scheme for a graph used in aggregation. Possible values: "classical", "distance laplacian", "unsupported vector smoothing".}
+        
+\cbb{aggregation: number of random vectors}{int}{10}{Determines how many random vectors are smoothed when "unsupported vector smoothing" used.}
+        
+\cbb{aggregation: number of times to pre or post smooth}{int}{10}{Determines how many times presmoother (or postsmoother if no presmoother set) is invoked when "unsupported vector smoothing" used. Each invocation may include several smoother sweeps.}
+        
+\cbb{aggregation: penalty parameters}{Array(double)}{{12.,-.2,0,0,0} }{Defines a polynomial coef[0] + coef[1]*i + coef[2]*i^2 + coef[3]*i^3 + coef[4]*i^4 that models the cost of having i nonzeros per row when  "unsupported vector smoothing" used.}
+        
+\cbb{aggregation: distance laplacian algo}{string}{"default"}{Type of sub-algorithm for "distance laplacian" dropping. Possible values: "default", "unscaled cut", "scaled cut".}
         
 \cbb{aggregation: drop tol}{double}{0.0}{Connectivity dropping threshold for a graph used in aggregation.}
         
@@ -64,17 +78,30 @@
         
 \cbb{aggregation: max agg size}{int}{-1}{Maximum size of an aggregate (-1 means unlimited).}
         
+\cbb{aggregation: compute aggregate qualities}{bool}{false}{Whether to compute aggregate quality estimates.}
+        
 \cbb{aggregation: brick x size}{int}{2}{Number of points for x axis in "brick" aggregation (limited to 3).}
         
 \cbb{aggregation: brick y size}{int}{2}{Number of points for y axis in "brick" aggregation (limited to 3).}
         
 \cbb{aggregation: brick z size}{int}{2}{Number of points for z axis in "brick" aggregation (limited to 3).}
         
+\cbb{aggregation: brick x Dirichlet}{bool}{false}{Asserts that Dirichlet conditions are applied in
+        the x-direction and the Dirichlet DOFs are not aggregated.}
+        
+\cbb{aggregation: brick y Dirichlet}{bool}{false}{Asserts that Dirichlet conditions are applied in
+        the y-direction and the Dirichlet DOFs are not aggregated.}
+        
+\cbb{aggregation: brick z Dirichlet}{bool}{false}{Asserts that Dirichlet conditions are applied in
+        the z-direction and the Dirichlet DOFs are not aggregated.}
+        
 \cbb{aggregation: max selected neighbors}{int}{0}{Maximum number of neighbor nodes that are already aggregated. If a new aggregate has some neighbors that are already aggregated, this node probably can be added to one of these aggregates. We don't need a new one.}
         
 \cbb{aggregation: Dirichlet threshold}{double}{0.0}{Threshold for determining whether entries are zero during Dirichlet row detection.}
         
-\cbb{aggregation: phase 1 algorithm}{string}{Serial}{Choice of algorithm for aggregation phase 1.}
+\cbb{aggregation: deterministic}{bool}{false}{Boolean indicating whether or not aggregation will be run deterministically in the kokkos refactored path (only used in uncoupled aggregation).}
+        
+\cbb{aggregation: coloring algorithm}{string}{serial}{Choice of distance 2 coloring algorithm used by Uncoupled Aggregation. Currently set by defulat to COLORING_D2_SERIAL.}
         
 \cbb{aggregation: enable phase 1}{bool}{true}{Turn on/off phase 1 of aggregation}
         
@@ -83,6 +110,8 @@
 \cbb{aggregation: enable phase 2b}{bool}{true}{Turn on/off phase 2b of aggregation}
         
 \cbb{aggregation: enable phase 3}{bool}{true}{Turn on/off phase 3 of aggregation}
+        
+\cbb{aggregation: phase2a include root}{bool}{true}{Whether the root node should be included in the aggregates formed in phase 2a.}
         
 \cbb{aggregation: error on nodes with no on-rank neighbors}{bool}{false}{Causes phase 3 aggregation to throw an error for
       non-Dirichlet nodes that have no on-rank neighbors.  This only
@@ -131,6 +160,30 @@
         
 \cbb{aggregation: coarsening order}{int}{0}{The interpolation order used while constructing these aggregates, this value will be passed to the prolongator factory.}
         
+\cbb{aggregation: pairwise: size}{int}{8}{Target size for pairwise aggregation.  The number
+      of pairwise steps used will be log base-2 of this number.}
+        
+\cbb{aggregation: pairwise: tie threshold}{double}{1e-6}{Threshold for determining two potential pairwise
+      neighbors have identical values and then fall back on the
+      order.}
+        
+\cbb{aggregate qualities: check symmetry}{bool}{false}{Whether to check symmetry and use nonsymmetric aggregate quality estimate if necessary.}
+        
+\cbb{aggregate qualities: good aggregate threshold}{double}{100.0}{Maximum quality where aggregate is considered acceptable.}
+        
+\cbb{aggregate qualities: file output}{bool}{false}{Whether to output files containing the aggregate qualities.}
+        
+\cbb{aggregate qualities: file base}{string}{agg_qualities}{Base of filename for aggregate quality output.}
+        
+\cbb{aggregate qualities: algorithm}{string}{forward}{Which aggregate qualtiy algorithm to use:
+      ``forward'' or ``reverse.''  The forward algorithm uses the
+      ``A'' matrix in the denominator of the generalized eigenvalue
+      problem.  The reverse algorithm uses it in the numerator.}
+        
+\cbb{aggregate qualities: zero threshold}{double}{1e-12}{The zero threshold for the reverse algorithm.}
+        
+\cbb{aggregate qualities: percentiles}{Array(double)}{{}}{Percentiles of aggregate qualities to report (in a [0,1] range).}
+        
 \cba{export data}{\parameterlist}{Exporting a subset of the hierarchy data in a
       file. Currently, the list can contain any of the following parameter
       names (``A'', ``P'', ``R'', ``Nullspace'', ``Coordinates'') of type \texttt{string}
@@ -146,6 +199,8 @@
 \cbb{print unused parameters}{bool}{true}{Print parameters unused during a hierarchy construction.}
         
 \cbb{transpose: use implicit}{bool}{false}{Use implicit transpose for the restriction operator.}
+        
+\cbb{restriction: scale nullspace}{bool}{false}{Block-diagonally scale (based on number of PDEs) the nullspace for the restriction only.}
         
 \cbb{use kokkos refactor}{bool}{false}{Switch on the new \kokkos based version for on-node parallelism.}
         
@@ -207,6 +262,8 @@
         
 \cbb{tentative: calculate qr}{bool}{true}{If false, skip local QR decomposition phase of smoothed aggregation.}
         
+\cbb{tentative: constant column sums}{bool}{false}{If true, scale the column sums to one (before applying nullspace).}
+        
 \cbb{tentative: build coarse coordinates}{bool}{true}{If false, skip the calculation of coarse coordinates.}
         
 \cbb{repartition: enable}{bool}{false}{Rebalancing on/off switch.}
@@ -216,6 +273,8 @@
 \cba{repartition: params}{\parameterlist}{Partitioner parameters. \muelu passes them directly to the appropriate package library. In particular, this allows to choose a partitioning algorithm from \zoltan{} or \zoltan2{} or from external packages such as \parmetis{}.}
         
 \cbb{repartition: start level}{int}{2}{Minimum level to run partitioner. \muelu does not rebalance levels finer than this one.}
+        
+\cbb{repartition: use map}{bool}{false}{Instead of using a matrix, use a map to determine rebalancing heuristics. Obviously, this cannot evaluate nonzero imbalance.}
         
 \cbb{repartition: node repartition level}{int}{-1}{Level on which to run node-level repartitioning (negative means don't).}
         
@@ -245,6 +304,8 @@
         
 \cbb{repartition: use subcommunicators}{bool}{true}{Use subcommunicators on coarser levels.}
         
+\cbb{rap: relative diagonal floor}{Array(double)}{{}}{Will boost diagonals on A matrices to the given floor.}
+        
 \cbb{rap: fix zero diagonals}{bool}{false}{Set zero diagonals on coarse grids to one.}
         
 \cbb{rap: fix zero diagonals threshold}{double}{0.}{Threshold at which diagonal entry is considered zero.}
@@ -255,6 +316,10 @@
       vector (representing the matrix diagonal)}
         
 \cbb{rap: shift low storage}{bool}{false}{Use the low-storage version of the rap: shift}
+        
+\cbb{rap: shift array}{Array(double)}{{}}{Effective shift at each level to use in the RAPShiftFactory (the string must be interpretable as an array by Teuchos).}
+        
+\cbb{rap: cfl array}{Array(double)}{{}}{Effective CFl at each level to use in the RAPShiftFactory (the string must be interpretable as an array by Teuchos).  }
         
 \cbb{rap: algorithm}{string}{galerkin}{Whether to use the Galerkin RAP or the Shift version}
         
@@ -274,4 +339,20 @@ optimized neighbor discovery for Importer construction.}
 \cba{amgx:params}{\parameterlist}{Sublist for listing AMGX configuration parameters}
         
 \cbb{debug: graph level}{int}{-1}{Output dependency graph.}
+        
+\cbb{refmaxwell: mode}{string}{"additive"}{Specifying the order of solve of the block system. Allowed values are: "additive" (default), "121", "212", "1", "2"}
+        
+\cbb{refmaxwell: disable addon}{bool}{true}{Specifing whether the addon should be built for stabilization}
+        
+\cba{refmaxwell: 11list}{\parameterlist}{Specifies the multigrid solver for the 11 block}
+        
+\cba{refmaxwell: 22list}{\parameterlist}{Specifies the multigrid solver for the 22 block}
+        
+\cbb{refmaxwell: use as preconditioner}{bool}{false}{Assume zero initial guess}
+        
+\cbb{refmaxwell: dump matrices}{bool}{false}{Dump matrices to disk.}
+        
+\cbb{refmaxwell: subsolves on subcommunicators}{bool}{false}{Redistribute the two subsolves to disjoint sub-communicators (so that the additive solve can occur in parallel).}
+        
+\cbb{refmaxwell: ratio AH / A22 subcommunicators}{double}{1.0}{Ratio for the split into sub-communicators.}
         

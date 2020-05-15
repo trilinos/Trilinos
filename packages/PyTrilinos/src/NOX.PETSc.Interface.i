@@ -47,7 +47,7 @@
 PyTrilinos.NOX.PETSc.Interface is the python interface to the
 PETSc::Interface namespace of the Trilinos package NOX:
 
-    http://trilinos.sandia.gov/packages/nox
+    https://trilinos.org/docs/dev/packages/nox/doc/html/index.html
 
 The purpose of NOX.PETSc.Interface is to provide base classes the
 user should derive from in order to define the nonlinear function to
@@ -61,7 +61,6 @@ NOX.Epetra.Interface provides the following user-level class:
 
 %module(package      = "PyTrilinos.NOX.PETSc",
 	directors    = "1",
-	autodoc      = "1",
 	implicitconv = "1",
 	docstring    = %nox_petsc_interface_docstring) Interface
 
@@ -88,7 +87,10 @@ NOX.Epetra.Interface provides the following user-level class:
 %include "petsc4py/petsc4py.i"
 
 // Include NOX documentation
+#if SWIG_VERSION < 0x040000
+%feature("autodoc", "1");
 %include "NOX_dox.i"
+#endif
 
 // STL support
 %include "stl.i"

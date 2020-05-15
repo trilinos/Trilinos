@@ -259,7 +259,7 @@ print(std::ostream& os) const
 {
   os << "Gram-Schmidt basis of order " << p << ", dimension " << d 
      << ", and size " << sz << ".  Matrix coefficients:\n";
-  os << gs_mat << std::endl;
+  os << printMat(gs_mat) << std::endl;
   os << "Basis vector norms (squared):\n\t";
   for (ordinal_type i=0; i<sz; i++)
     os << norms[i] << " ";

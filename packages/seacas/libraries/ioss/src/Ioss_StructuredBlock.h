@@ -43,7 +43,7 @@
 #include <cassert>
 #include <string>
 
-#if defined(SEACAS_HAVE_CGNS) && !defined(SIERRA_PARALLEL_MPI)
+#if defined(SEACAS_HAVE_CGNS) && !defined(BUILT_IN_SIERRA)
 #include <cgnstypes.h>
 using INT = cgsize_t;
 #else
@@ -84,12 +84,12 @@ namespace Ioss {
     // Return number of cell faces in the BC
     size_t get_face_count() const;
 
-    std::string m_bcName;
-    std::string m_famName;
+    std::string m_bcName{};
+    std::string m_famName{};
 
     // These are potentially subsetted due to parallel decompositions...
-    Ioss::IJK_t m_rangeBeg;
-    Ioss::IJK_t m_rangeEnd;
+    Ioss::IJK_t m_rangeBeg{};
+    Ioss::IJK_t m_rangeEnd{};
 
     mutable int m_face{-1};
 
@@ -121,9 +121,11 @@ namespace Ioss {
 
     std::string type_string() const override { return "StructuredBlock"; }
     std::string short_type_string() const override { return "structuredblock"; }
+    std::string contains_string() const override { return "Cell"; }
     EntityType  type() const override { return STRUCTUREDBLOCK; }
 
     const Ioss::NodeBlock &get_node_block() const { return m_nodeBlock; }
+    Ioss::NodeBlock &      get_node_block() { return m_nodeBlock; }
 
     /** \brief Does block contain any cells
      */

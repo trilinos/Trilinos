@@ -55,18 +55,18 @@ namespace Intrepid2 {
     /**
        \brief Functor for scalarMultiply see Intrepid2::ArrayTools for more
     */
-    template<typename outputViewType,
+    template<typename OutputViewType,
              typename inputLeftViewType,
              typename inputRightViewType,
              bool equalRank,
              bool reciprocal>
     struct F_scalarMultiply {
-            outputViewType _output;
+            OutputViewType _output;
       const inputLeftViewType _inputLeft;
       const inputRightViewType _inputRight;
 
       KOKKOS_INLINE_FUNCTION
-      F_scalarMultiply(outputViewType output_,
+      F_scalarMultiply(OutputViewType output_,
                        inputLeftViewType inputLeft_,
                        inputRightViewType inputRight_)
         : _output(output_),
@@ -80,7 +80,7 @@ namespace Intrepid2 {
         const auto val = _inputLeft(cl , pt%_inputLeft.extent(1));
         
         //const ordinal_type cp[2] = { cl, pt };
-        //ViewAdapter<2,outputViewType> out(cp, _output);
+        //ViewAdapter<2,OutputViewType> out(cp, _output);
         auto out = Kokkos::subview(_output, cl, pt, Kokkos::ALL(), Kokkos::ALL());
         if (equalRank) {
           //const ViewAdapter<2,inputRightViewType> right(cp, _inputRight);
@@ -104,7 +104,7 @@ namespace Intrepid2 {
         const auto val = _inputLeft(cl , pt%_inputLeft.extent(1));
 
         //const ordinal_type cfp[3] = { cl, bf, pt };
-        //ViewAdapter<3,outputViewType> out(cfp, _output);
+        //ViewAdapter<3,OutputViewType> out(cfp, _output);
         auto out = Kokkos::subview(_output, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL());
         if (equalRank) {
           //const ViewAdapter<3,inputRightViewType> right(cfp, _inputRight);          
@@ -176,16 +176,12 @@ namespace Intrepid2 {
     typedef Kokkos::DynRankView<inputFieldValueType,inputFieldProperties...> inputFieldViewType;
 
     typedef typename ExecSpace< typename inputDataViewType::execution_space , SpT >::ExecSpaceType ExecSpaceType;
-
-    const ordinal_type
-      C = outputFields.extent(0),
-      F = outputFields.extent(1),
-      P = outputFields.extent(2);
     
     using range_policy_type = Kokkos::Experimental::MDRangePolicy
         < ExecSpaceType, Kokkos::Experimental::Rank<3>, Kokkos::IndexType<ordinal_type> >;
+
     const range_policy_type policy( { 0, 0, 0 },
-                                    { C, F, P } );
+                                    { /*C*/ outputFields.extent(0), /*F*/ outputFields.extent(1), /*P*/ outputFields.extent(2) } );
     
     const bool equalRank = ( outputFields.rank() == inputFields.rank() );
     if (equalRank) 
@@ -261,14 +257,12 @@ namespace Intrepid2 {
 
     typedef typename ExecSpace< typename inputDataLeftViewType::execution_space , SpT >::ExecSpaceType ExecSpaceType;
 
-    const ordinal_type
-      C = outputData.extent(0),
-      P = outputData.extent(1);
     
     using range_policy_type = Kokkos::Experimental::MDRangePolicy
       < ExecSpaceType, Kokkos::Experimental::Rank<2>, Kokkos::IndexType<ordinal_type> >;
+
     const range_policy_type policy( { 0, 0 },
-                                    { C, P } );
+                                    { /*C*/ outputData.extent(0), /*P*/ outputData.extent(1) } );
 
     const bool equalRank = ( outputData.rank() == inputDataRight.rank() );    
     if (equalRank) 

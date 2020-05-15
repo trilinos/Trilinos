@@ -134,7 +134,12 @@ int main(int argc, char *argv[])
     RCP<PHX::DataLayout> grad_qp_layout = rcp(new Layout("DL<CELL,QP,DIM>"));
     RCP<PHX::DataLayout> basis_layout = rcp(new Layout("DL<CELL,BASIS>"));
     RCP<PHX::DataLayout> scatter_layout = rcp(new Layout("DL<SCATTER>"));
-    
+    RCP<PHX::DataLayout> src_layout = rcp(new Layout("DL<CELL,QP>"));
+
+    // For unit testing, force a user defined layout that is not optimal on every device type
+    Teuchos::rcp_dynamic_cast<Layout>(grad_qp_layout,true)->setKokkosLayout(PHX::DataLayout::KokkosLayoutType::Left);
+    Teuchos::rcp_dynamic_cast<Layout>(src_layout,true)->setKokkosLayout(PHX::DataLayout::KokkosLayoutType::Left);
+
     PHX::FieldManager<MyTraits> fm;
     {
       std::vector<PHX::index_size_type> derivative_dimensions;
@@ -181,9 +186,9 @@ int main(int argc, char *argv[])
 
     // source term
     {
-      RCP<Constant<Residual,MyTraits>> r = rcp(new Constant<Residual,MyTraits>("s_dot",qp_layout,5.0));
+      RCP<Constant<Residual,MyTraits>> r = rcp(new Constant<Residual,MyTraits>("s_dot",src_layout,5.0));
       fm.registerEvaluator<Residual>(r);
-      RCP<Constant<Jacobian,MyTraits>> j = rcp(new Constant<Jacobian,MyTraits>("s_dot",qp_layout,5.0));
+      RCP<Constant<Jacobian,MyTraits>> j = rcp(new Constant<Jacobian,MyTraits>("s_dot",src_layout,5.0));
       fm.registerEvaluator<Jacobian>(j);
     }
     
@@ -210,12 +215,12 @@ int main(int argc, char *argv[])
       s_r << "residual_" << eq;
       
       RCP<IntegrateSourceTerm<Residual,MyTraits>> r =
-        rcp(new IntegrateSourceTerm<Residual,MyTraits>(s.str(),qp_layout,s_r.str(),basis_layout));
+        rcp(new IntegrateSourceTerm<Residual,MyTraits>(s.str(),src_layout,s_r.str(),basis_layout));
 
       fm.registerEvaluator<Residual>(r);
       
       RCP<IntegrateSourceTerm<Jacobian,MyTraits>> j =
-        rcp(new IntegrateSourceTerm<Jacobian,MyTraits>(s.str(),qp_layout,s_r.str(),basis_layout));
+        rcp(new IntegrateSourceTerm<Jacobian,MyTraits>(s.str(),src_layout,s_r.str(),basis_layout));
 
       fm.registerEvaluator<Jacobian>(j);
     }
@@ -304,12 +309,12 @@ int main(int argc, char *argv[])
     Kokkos::parallel_for(x.extent(0),KOKKOS_LAMBDA (const int& i) {x(i)=static_cast<double>(i);});
     Kokkos::deep_copy(f,0.0);
     RCP<Time> residual_eval_time = TimeMonitor::getNewTimer("Residual Evaluation Time");
-    PHX::exec_space::fence();
+    typename PHX::exec_space().fence();
     if (p.doResidual()) {
       TimeMonitor tm_r(*residual_eval_time);
       for (const auto& workset : worksets)
         fm.evaluateFields<Residual>(workset);
-      PHX::exec_space::fence();
+      typename PHX::exec_space().fence();
     }
 
     if (p.printResidual())
@@ -319,12 +324,12 @@ int main(int argc, char *argv[])
     Kokkos::deep_copy(f,0.0);
     Kokkos::deep_copy(J.values,0.0);
     RCP<Time> jacobian_eval_time = TimeMonitor::getNewTimer("Jacobian Evaluation Time");
-    PHX::exec_space::fence();
+    typename PHX::exec_space().fence();
     if (p.doJacobian()) {
       TimeMonitor tm_r(*jacobian_eval_time);
       for (const auto& workset : worksets)
         fm.evaluateFields<Jacobian>(workset);
-      PHX::exec_space::fence();
+      typename PHX::exec_space().fence();
     }
 
     if (p.printJacobian())

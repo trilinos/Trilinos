@@ -114,7 +114,7 @@ static void factor2
     /* compute the inverse of P from symbolic analysis.  Will be updated to
      * become the inverse of the numerical factorization when the factorization
      * is done, for use in KLU_refactor */
-#ifndef NDEBUG
+#ifndef NDEBUGKLU2
     for (k = 0 ; k < n ; k++)
     {
         Pinv [k] = EMPTY ;
@@ -125,7 +125,7 @@ static void factor2
         ASSERT (P [k] >= 0 && P [k] < n) ;
         Pinv [P [k]] = k ;
     }
-#ifndef NDEBUG
+#ifndef NDEBUGKLU2
     for (k = 0 ; k < n ; k++) ASSERT (Pinv [k] != EMPTY) ;
 #endif
 
@@ -156,7 +156,7 @@ static void factor2
         }
     }
 
-#ifndef NDEBUG
+#ifndef NDEBUGKLU2
     if (scale > 0)
     {
         for (k = 0 ; k < n ; k++) PRINTF (("Rs [%d] %g\n", k, Rs [k])) ;
@@ -339,7 +339,7 @@ static void factor2
     Numeric->max_unz_block = max_unz_block ;
 
     /* compute the inverse of Pnum */
-#ifndef NDEBUG
+#ifndef NDEBUGKLU2
     for (k = 0 ; k < n ; k++)
     {
         Pinv [k] = EMPTY ;
@@ -350,7 +350,7 @@ static void factor2
         ASSERT (Pnum [k] >= 0 && Pnum [k] < n) ;
         Pinv [Pnum [k]] = k ;
     }
-#ifndef NDEBUG
+#ifndef NDEBUGKLU2
     for (k = 0 ; k < n ; k++) ASSERT (Pinv [k] != EMPTY) ;
 #endif
 
@@ -382,7 +382,7 @@ static void factor2
     PRINTF (("\n------------------- Off diagonal entries, new:\n")) ;
     ASSERT (KLU_valid (n, Offp, Offi, Offx)) ;
 
-#ifndef NDEBUG
+#ifndef NDEBUGKLU2
     {
         PRINTF (("\n ############# KLU_BTF_FACTOR done, nblocks %d\n",nblocks));
         Entry ss, *Udiag = Numeric->Udiag ;

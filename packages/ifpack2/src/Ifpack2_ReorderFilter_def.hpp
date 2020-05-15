@@ -95,12 +95,6 @@ Teuchos::RCP<const Teuchos::Comm<int> > ReorderFilter<MatrixType>::getComm() con
 }
 
 
-template<class MatrixType>
-Teuchos::RCP<typename ReorderFilter<MatrixType>::node_type>
-ReorderFilter<MatrixType>::getNode () const
-{
-  return A_->getNode ();
-}
 
 
 template<class MatrixType>

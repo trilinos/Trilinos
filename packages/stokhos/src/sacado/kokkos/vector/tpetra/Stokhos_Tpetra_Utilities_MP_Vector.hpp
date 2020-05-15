@@ -83,7 +83,7 @@ namespace Stokhos {
     // Create new map
     RCP<Map> flat_map =
       rcp(new Map(flat_num_global_entries, flat_element_list(),
-                  flat_index_base, map.getComm(), map.getNode()));
+                  flat_index_base, map.getComm()));
 
     return flat_map;
   }
@@ -457,7 +457,13 @@ namespace Stokhos {
     typedef typename FlatVector::dual_view_type flat_view_type;
 
     // Create flattenend view using special reshaping view assignment operator
-    flat_view_type flat_vals = vec.getDualView();
+    flat_view_type flat_vals (vec.getLocalViewDevice(), vec.getLocalViewHost());
+    if (vec.need_sync_device ()) {
+      flat_vals.modify_host ();
+    }
+    else if (vec.need_sync_host ()) {
+      flat_vals.modify_device ();
+    }
 
     // Create flat vector
     RCP<FlatVector> flat_vec = rcp(new FlatVector(flat_map, flat_vals));
@@ -487,7 +493,13 @@ namespace Stokhos {
     typedef typename FlatVector::dual_view_type flat_view_type;
 
     // Create flattenend view using special reshaping view assignment operator
-    flat_view_type flat_vals = vec.getDualView();
+    flat_view_type flat_vals (vec.getLocalViewDevice(), vec.getLocalViewHost());
+    if (vec.need_sync_device ()) {
+      flat_vals.modify_host ();
+    }
+    else if (vec.need_sync_host ()) {
+      flat_vals.modify_device ();
+    }
 
     // Create flat vector
     RCP<FlatVector> flat_vec = rcp(new FlatVector(flat_map, flat_vals));

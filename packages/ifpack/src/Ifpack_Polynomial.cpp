@@ -784,8 +784,8 @@ PowerMethod(const int MaximumIterations,  double& lambda_max)
 //==============================================================================
 #ifdef HAVE_IFPACK_EPETRAEXT
 int Ifpack_Polynomial::
-CG(const int MaximumIterations,
-   double& lambda_min, double& lambda_max)
+CG(const int /* MaximumIterations */,
+   double& /* lambda_min */, double& /* lambda_max */)
 {
   IFPACK_CHK_ERR(-1);// NTS: This always seems to yield errors in AztecOO, ergo,
                      // I turned it off.

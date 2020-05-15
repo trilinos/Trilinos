@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2017 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -52,6 +52,8 @@
 #include <exodusII.h>
 #endif
 
+#include "Ioss_Assembly.h"
+#include "Ioss_Blob.h"
 #include "Ioss_CommSet.h"
 #include "Ioss_CoordinateFrame.h"
 #include "Ioss_DBUsage.h"
@@ -77,19 +79,15 @@
 
 #include <cassert>
 
-#include "info_interface.h"
-
-#define OUTPUT std::cout
-
 namespace Ioss {
 
   // internal to io_info
-  void io_info_file_info(const Info::Interface &interface);
-  void io_info_group_info(Info::Interface &interface);
+  void io_info_file_info(const Info::Interface &interFace);
+  void io_info_group_info(Info::Interface &interFace);
 
   // for external calls
-  void io_info_set_db_properties(const Info::Interface &interface, Ioss::DatabaseIO *dbi);
-  void io_info_file_info(const Info::Interface &interface, Ioss::Region &region);
+  void io_info_set_db_properties(const Info::Interface &interFace, Ioss::DatabaseIO *dbi);
+  void io_info_file_info(const Info::Interface &interFace, Ioss::Region &region);
 } // namespace Ioss
 
 #endif

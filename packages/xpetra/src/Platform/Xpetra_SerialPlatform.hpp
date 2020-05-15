@@ -77,8 +77,6 @@ namespace Xpetra {
     //! Comm Instance
     const Teuchos::RCP< const Teuchos::SerialComm<int> > getComm() const;
 
-    //! Get Get a node for parallel computation.
-    const Teuchos::RCP<Node> getNode() const;
 
     //@}
   private:
@@ -103,11 +101,6 @@ namespace Xpetra {
     return comm_;
   }
 
-  template<class Node>
-  const Teuchos::RCP< Node >
-  SerialPlatform<Node>::getNode() const {
-    return Teuchos::null;
-  }
 
 } // namespace Xpetra
 

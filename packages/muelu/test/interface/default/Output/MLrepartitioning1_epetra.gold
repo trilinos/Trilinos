@@ -25,6 +25,7 @@ algorithm = "classical": threshold = 0, blocksize = 1
 aggregation: drop tol = 0   [default]
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
+aggregation: distance laplacian algo = default   [default]
 lightweight wrap = 1   [default]
 
 BuildAggregates (Phase - (Dirichlet))
@@ -40,11 +41,13 @@ aggregation: enable phase 1 = 1   [default]
 aggregation: enable phase 2a = 1   [default]
 aggregation: enable phase 2b = 1   [default]
 aggregation: enable phase 3 = 1   [default]
+aggregation: phase2a include root = 1   [default]
 aggregation: preserve Dirichlet points = 0   [unused]
 aggregation: allow user-specified singletons = 0   [default]
 aggregation: use interface aggregation = 0   [default]
 aggregation: error on nodes with no on-rank neighbors = 0   [default]
 aggregation: phase3 avoid singletons = 0   [default]
+aggregation: compute aggregate qualities = 0   [default]
 OnePt aggregate map name =    [default]
 OnePt aggregate map factory =    [default]
 Interface aggregate map name =    [default]
@@ -57,6 +60,8 @@ Domain GID offsets = {0}   [default]
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+tentative: constant column sums = 0   [default]
+Nullspace name = Nullspace   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -73,6 +78,7 @@ matrixmatrix: kernel params ->
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0
 matrixmatrix: kernel params -> 
@@ -80,6 +86,7 @@ matrixmatrix: kernel params ->
 
 Build (MueLu::RepartitionHeuristicFactory)
 repartition: start level = 2   [default]
+repartition: use map = 0   [default]
 repartition: node repartition level = -1   [default]
 repartition: min rows per proc = 512
 repartition: target rows per proc = 0   [default]
@@ -149,6 +156,7 @@ algorithm = "classical": threshold = 0, blocksize = 1
 aggregation: drop tol = 0   [default]
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
+aggregation: distance laplacian algo = default   [default]
 lightweight wrap = 1   [default]
 
 BuildAggregates (Phase - (Dirichlet))
@@ -164,11 +172,13 @@ aggregation: enable phase 1 = 1   [default]
 aggregation: enable phase 2a = 1   [default]
 aggregation: enable phase 2b = 1   [default]
 aggregation: enable phase 3 = 1   [default]
+aggregation: phase2a include root = 1   [default]
 aggregation: preserve Dirichlet points = 0   [unused]
 aggregation: allow user-specified singletons = 0   [default]
 aggregation: use interface aggregation = 0   [default]
 aggregation: error on nodes with no on-rank neighbors = 0   [default]
 aggregation: phase3 avoid singletons = 0   [default]
+aggregation: compute aggregate qualities = 0   [default]
 OnePt aggregate map name =    [default]
 OnePt aggregate map factory =    [default]
 Interface aggregate map name =    [default]
@@ -181,6 +191,8 @@ Domain GID offsets = {0}   [default]
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+tentative: constant column sums = 0   [default]
+Nullspace name = Nullspace   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -197,6 +209,7 @@ matrixmatrix: kernel params ->
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0
 matrixmatrix: kernel params -> 
@@ -204,6 +217,7 @@ matrixmatrix: kernel params ->
 
 Build (MueLu::RepartitionHeuristicFactory)
 repartition: start level = 2   [default]
+repartition: use map = 0   [default]
 repartition: node repartition level = -1   [default]
 repartition: min rows per proc = 512
 repartition: target rows per proc = 0   [default]
@@ -273,6 +287,7 @@ algorithm = "classical": threshold = 0, blocksize = 1
 aggregation: drop tol = 0   [default]
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
+aggregation: distance laplacian algo = default   [default]
 lightweight wrap = 1   [default]
 
 BuildAggregates (Phase - (Dirichlet))
@@ -288,11 +303,13 @@ aggregation: enable phase 1 = 1   [default]
 aggregation: enable phase 2a = 1   [default]
 aggregation: enable phase 2b = 1   [default]
 aggregation: enable phase 3 = 1   [default]
+aggregation: phase2a include root = 1   [default]
 aggregation: preserve Dirichlet points = 0   [unused]
 aggregation: allow user-specified singletons = 0   [default]
 aggregation: use interface aggregation = 0   [default]
 aggregation: error on nodes with no on-rank neighbors = 0   [default]
 aggregation: phase3 avoid singletons = 0   [default]
+aggregation: compute aggregate qualities = 0   [default]
 OnePt aggregate map name =    [default]
 OnePt aggregate map factory =    [default]
 Interface aggregate map name =    [default]
@@ -305,6 +322,8 @@ Domain GID offsets = {0}   [default]
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+tentative: constant column sums = 0   [default]
+Nullspace name = Nullspace   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -321,6 +340,7 @@ matrixmatrix: kernel params ->
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0
 matrixmatrix: kernel params -> 
@@ -328,6 +348,7 @@ matrixmatrix: kernel params ->
 
 Build (MueLu::RepartitionHeuristicFactory)
 repartition: start level = 2   [default]
+repartition: use map = 0   [default]
 repartition: node repartition level = -1   [default]
 repartition: min rows per proc = 512
 repartition: target rows per proc = 0   [default]
@@ -397,6 +418,7 @@ algorithm = "classical": threshold = 0, blocksize = 1
 aggregation: drop tol = 0   [default]
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
+aggregation: distance laplacian algo = default   [default]
 lightweight wrap = 1   [default]
 
 BuildAggregates (Phase - (Dirichlet))
@@ -412,11 +434,13 @@ aggregation: enable phase 1 = 1   [default]
 aggregation: enable phase 2a = 1   [default]
 aggregation: enable phase 2b = 1   [default]
 aggregation: enable phase 3 = 1   [default]
+aggregation: phase2a include root = 1   [default]
 aggregation: preserve Dirichlet points = 0   [unused]
 aggregation: allow user-specified singletons = 0   [default]
 aggregation: use interface aggregation = 0   [default]
 aggregation: error on nodes with no on-rank neighbors = 0   [default]
 aggregation: phase3 avoid singletons = 0   [default]
+aggregation: compute aggregate qualities = 0   [default]
 OnePt aggregate map name =    [default]
 OnePt aggregate map factory =    [default]
 Interface aggregate map name =    [default]
@@ -429,6 +453,8 @@ Domain GID offsets = {0}   [default]
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+tentative: constant column sums = 0   [default]
+Nullspace name = Nullspace   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -445,6 +471,7 @@ matrixmatrix: kernel params ->
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0
 matrixmatrix: kernel params -> 
@@ -452,6 +479,7 @@ matrixmatrix: kernel params ->
 
 Build (MueLu::RepartitionHeuristicFactory)
 repartition: start level = 2   [default]
+repartition: use map = 0   [default]
 repartition: node repartition level = -1   [default]
 repartition: min rows per proc = 512
 repartition: target rows per proc = 0   [default]
@@ -521,6 +549,7 @@ algorithm = "classical": threshold = 0, blocksize = 1
 aggregation: drop tol = 0   [default]
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
+aggregation: distance laplacian algo = default   [default]
 lightweight wrap = 1   [default]
 
 BuildAggregates (Phase - (Dirichlet))
@@ -536,11 +565,13 @@ aggregation: enable phase 1 = 1   [default]
 aggregation: enable phase 2a = 1   [default]
 aggregation: enable phase 2b = 1   [default]
 aggregation: enable phase 3 = 1   [default]
+aggregation: phase2a include root = 1   [default]
 aggregation: preserve Dirichlet points = 0   [unused]
 aggregation: allow user-specified singletons = 0   [default]
 aggregation: use interface aggregation = 0   [default]
 aggregation: error on nodes with no on-rank neighbors = 0   [default]
 aggregation: phase3 avoid singletons = 0   [default]
+aggregation: compute aggregate qualities = 0   [default]
 OnePt aggregate map name =    [default]
 OnePt aggregate map factory =    [default]
 Interface aggregate map name =    [default]
@@ -553,6 +584,8 @@ Domain GID offsets = {0}   [default]
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+tentative: constant column sums = 0   [default]
+Nullspace name = Nullspace   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -569,6 +602,7 @@ matrixmatrix: kernel params ->
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0
 matrixmatrix: kernel params -> 
@@ -576,6 +610,7 @@ matrixmatrix: kernel params ->
 
 Build (MueLu::RepartitionHeuristicFactory)
 repartition: start level = 2   [default]
+repartition: use map = 0   [default]
 repartition: node repartition level = -1   [default]
 repartition: min rows per proc = 512
 repartition: target rows per proc = 0   [default]

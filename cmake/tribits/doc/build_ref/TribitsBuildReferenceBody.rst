@@ -39,19 +39,19 @@ snapshot of TriBITS), then install CMake with::
   $ cd <some-scratch-space>/
   $ export TRIBITS_BASE_DIR=<project-base-dir>/cmake/tribits
   $ $TRIBITS_BASE_DIR/devtools_install/install-cmake.py \
-     --install-dir=<INSTALL_BASE_DIR> \
+     --install-dir-base=<INSTALL_BASE_DIR> --cmake-version=X.Y.Z \
      --do-all
 
 This will result in cmake and related CMake tools being installed in
-``<INSTALL_BASE_DIR>/bin/`` (see the instructions printed at the end on how to
-update your ``PATH`` env var).
+``<INSTALL_BASE_DIR>/cmake-X.Y.Z/bin/`` (see the instructions printed at the
+end on how to update your ``PATH`` env var).
 
 To get help for installing CMake with this script use::
 
   $ $TRIBITS_BASE_DIR/devtools_install/install-cmake.py --help
 
-NOTE: you will want to read the help message about how to use sudo to
-install in a privileged location (like the default ``/usr/local/bin``).
+NOTE: you will want to read the help message about how to install CMake to
+share with other users and maintainers and how to install with sudo if needed.
 
 
 Installing Ninja from Source
@@ -306,9 +306,10 @@ See the following use cases:
 * `Enable a set of packages`_
 * `Enable or disable tests for specific packages`_
 * `Enable to test all effects of changing a given package(s)`_
-* `Enable all packages with tests and examples`_
+* `Enable all packages (and optionally all tests)`_
 * `Disable a package and all its dependencies`_
 * `Remove all package enables in the cache`_
+
 
 Determine the list of packages that can be enabled
 ++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -375,8 +376,11 @@ as described above.
 Both of these variables are automatically enabled when
 `<Project>_VERBOSE_CONFIGURE`_ = ``ON``.
 
+
 Enable a set of packages
 ++++++++++++++++++++++++
+
+.. _<Project>_ENABLE_TESTS:
 
 To enable an SE package ``<TRIBITS_PACKAGE>`` (and optionally also its tests
 and examples), configure with::
@@ -429,6 +433,8 @@ that his will **not** result in the enable of the test suites for any packages
 that may only be implicitly enabled in order to build the explicitly enabled
 packages.
 
+.. _<TRIBITS_PACKAGE>_ENABLE_TESTS:
+
 If one wants to enable a package along with the enable of other packages, but
 not the test suite for that package, then when can disable the tests for that
 package by configuring with::
@@ -465,31 +471,39 @@ of their tests turned on.  Tests will not be enabled in packages that do not
 depend on ``<TRIBITS_PACKAGE>`` in this case.  This speeds up and robustifies
 pre-push testing.
 
-Enable all packages with tests and examples
-+++++++++++++++++++++++++++++++++++++++++++
 
-To enable all SE packages (and optionally also their tests and examples), add
-the configure options::
+Enable all packages (and optionally all tests)
+++++++++++++++++++++++++++++++++++++++++++++++
+
+To enable all defined packages and subpakages add the configure option::
 
   -D <Project>_ENABLE_ALL_PACKAGES=ON \
+
+To also optionally enable the tests and examples in all of those enabled
+packages, add the configure option::
+
   -D <Project>_ENABLE_TESTS=ON \
 
-Specific packages can be disabled with
+Specific packages can be disabled (i.e. "black-listed") by adding
 ``<Project>_ENABLE_<TRIBITS_PACKAGE>=OFF``.  This will also disable all
 packages that depend on ``<TRIBITS_PACKAGE>``.
 
-All examples are also enabled by default when setting
-``<Project>_ENABLE_TESTS=ON``.
+Note, all examples are also enabled by default when setting
+``<Project>_ENABLE_TESTS=ON`` (and so examples are considered a subset of the
+tests).
 
 By default, setting ``<Project>_ENABLE_ALL_PACKAGES=ON`` only enables primary
-tested (PT) code.  To have this also enable all secondary tested (ST) code,
-one must also set ``<Project>_ENABLE_SECONDARY_TESTED_CODE=ON``.
+tested (PT) packages and code.  To have this also enable all secondary tested
+(ST) packages and ST code in PT packages code, one must also set::
 
-NOTE: If the project is a "meta-project", then
-``<Project>_ENABLE_ALL_PACKAGES=ON`` may not enable *all* the SE packages
-but only the project's primary meta-project packages.  See `Package
-Dependencies and Enable/Disable Logic`_ and `TriBITS Dependency Handling
-Behaviors`_ for details.
+  -D <Project>_ENABLE_SECONDARY_TESTED_CODE=ON \
+
+NOTE: If this project is a "meta-project", then
+``<Project>_ENABLE_ALL_PACKAGES=ON`` may not enable *all* the SE packages but
+only the project's primary meta-project packages.  See `Package Dependencies
+and Enable/Disable Logic`_ and `TriBITS Dependency Handling Behaviors`_ for
+details.
+
 
 Disable a package and all its dependencies
 ++++++++++++++++++++++++++++++++++++++++++
@@ -921,33 +935,30 @@ than 3.7.0 will not work since features were added to CMake 3.7.0+ that allow
 for the generation of these makefiles.
 
 
-Enabling support for C++11
---------------------------
+Limiting parallel compile and link jobs for Ninja builds
+--------------------------------------------------------
 
-To enable support for C++11 in packages that support C++11 (either optionally
-or required), configure with::
+When the CMake generator Ninja is used (i.e. ``-GNinja``), one can limit the
+number of parallel jobs that are used for compiling object files by setting::
 
-  -D <Project>_ENABLE_CXX11=ON
+  -D <Project>_PARALLEL_COMPILE_JOBS_LIMIT=<N>
 
-By default, the system will try to automatically find compiler flags that will
-enable C++11 features.  If it finds flags that allow a test C++11 program to
-compile, then it will an additional set of configure-time tests to see if
-several C++11 features are actually supported by the configured C++ compiler
-and support will be disabled if all of these features are not supported.
+and/or limit the number of parallel jobs that are used for linking libraries
+and executables by setting::
 
-In order to pre-set and/or override the C++11 compiler flags used, set the
-cache variable::
+  -D <Project>_PARALLEL_LINK_JOBS_LIMIT=<M>
 
-  -D <Project>_CXX11_FLAGS="<compiler flags>"
+where ``<N>`` and ``<M>`` are integers like ``20`` and ``4``.  If these are
+not set, then the number of parallel jobs will be determined by the ``-j<P>``
+argument passed to ``ninja -j<P>`` or by ninja automatically according to
+machine load when running ``ninja``.
 
-In order to enable C++11 but not have the default system set any flags for
-C++11, use::
+Limiting the number of link jobs can be useful, for example, for certain
+builds of large projects where linking many jobs in parallel can consume all
+of the RAM on a given system and crash the build.
 
-  -D <Project>_ENABLE_CXX11=ON
-  -D <Project>_CXX11_FLAGS=" "
-
-The empty space " " will result in the system assuming that no flags needs to
-be set.
+NOTE: These options are ignored when using Makefiles or other CMake
+generators.  They only work for the Ninja generator.
 
 
 Enabling explicit template instantiation for C++
@@ -1897,10 +1908,35 @@ configure time by setting::
 
   -D <fullTestName>_DISABLE=ON
 
-where ``<fulltestName>`` must exactly match the test listed out by ``ctest
--N``.  Of course specific tests can also be excluded from ``ctest`` using the
-``-E`` argument.  This will result in the printing of a line for the excluded
-test when `Trace test addition or exclusion`_ is enabled.
+where ``<fullTestName>`` must exactly match the test listed out by ``ctest
+-N``.  This will result in the printing of a line for the excluded test when
+`Trace test addition or exclusion`_ is enabled and the test wil not be added
+with ``add_test()`` and therefore CTest (and CDash) will never see the
+disabled test.
+
+Another approach to disable a test is the set the ctest property ``DISABLED``
+and print and a message at configure time by setting::
+
+  -D <fullTestName>_SET_DISABLED_AND_MSG="<messageWhyDisabled>"
+
+In this case, the test will still be added with ``add_test()`` and seen by
+CTest, but CTest will not run the test locally but will mark it as "Not Run"
+(and post to CDash as "Not Run" tests with test details "Not Run (Disabled)"
+in processes where tests get posted to CDash).  Also, ``<messageWhyDisabled>``
+will get printed to STDOUT when CMake is run to configure the project and
+``-D<Project>_TRACE_ADD_TEST=ON`` is set.
+
+Also, note that if a test is currently disabled using the ``DISABLED`` option
+in the CMakeLists.txt file, then that ``DISABLE`` property can be removed by
+configuring with::
+
+  -D <fullTestName>_SET_DISABLED_AND_MSG=FALSE
+
+(or any value that CMake evaluates to FALSE like "FALSE", "false", "NO", "no",
+"", etc.).
+
+Also note that other specific defined tests can also be excluded using the
+``ctest -E`` argument.
 
 
 Disabling specific test executable builds
@@ -1915,8 +1951,68 @@ where ``<exeTargetName>`` is the name of the target in the build system.
 
 Note that one should also disable any ctest tests that might use this
 executable as well with ``-D<fullTestName>_DISABLE=ON`` (see above).  This
-will result in the printing of a line for the executable target being
-disabled.
+will result in the printing of a line for the executable target being disabled
+at configure time to CMake STDOUT.
+
+
+Disabling just the ctest tests but not the test executables
+-----------------------------------------------------------
+
+To allow the building of the tests and examples in a package (enabled either
+through setting `<Project>_ENABLE_TESTS`_ ``= ON`` or
+`<TRIBITS_PACKAGE>_ENABLE_TESTS`_ ``= ON``) but not actually define the ctest
+tests that will get run, configure with::
+
+  -D <TRIBITS_PACKAGE>_SKIP_CTEST_ADD_TEST=TRUE \
+
+(This has the effect of skipping calling the ``add_test()`` command in the
+CMake code for the package ``<TRIBITS_PACKAGE>``.)
+
+To avoid defining ctest tests for all of the enabled packages, configure
+with::
+
+  -D <Project>_SKIP_CTEST_ADD_TEST=TRUE \
+
+(The default for ``<TRIBITS_PACKAGE>_SKIP_CTEST_ADD_TEST`` for each TriBITS
+package ``<TRIBITS_PACKAGE>`` is set to the project-wide option
+``<Project>_SKIP_CTEST_ADD_TEST``.)
+
+One can also use these options to "white-list" and "black-list" the set of
+package tests that one will run.  For example, to enable the building of all
+test and example targets but only actually defining ctest tests for two
+specific packages (i.e. "white-listing"), one would configure with::
+
+  -D <Project>_ENABLE_ALL_PACKAGES=ON \
+  -D <Project>_ENABLE_TESTS=ON \
+  -D <Project>_SKIP_CTEST_ADD_TEST=TRUE \
+  -D <TRIBITS_PACKAGE_1>_SKIP_CTEST_ADD_TEST=FALSE \
+  -D <TRIBITS_PACKAGE_2>_SKIP_CTEST_ADD_TEST=FALSE \
+
+Alternatively, to enable the building of all test and example targets and
+allowing the ctest tests to be defined for all packages except for a couple of
+specific packages (i.e. "black-listing"), one would configure with::
+
+  -D <Project>_ENABLE_ALL_PACKAGES=ON \
+  -D <Project>_ENABLE_TESTS=ON \
+  -D <TRIBITS_PACKAGE_1>_SKIP_CTEST_ADD_TEST=TRUE \
+  -D <TRIBITS_PACKAGE_2>_SKIP_CTEST_ADD_TEST=TRUE \
+
+Using different values for ``<Project>_SKIP_CTEST_ADD_TEST`` and
+``<TRIBITS_PACKAGE>_SKIP_CTEST_ADD_TEST`` in this way allows for building all
+of the test and example targets for the enabled packages but not defining
+ctest tests for any set of packages desired.  This allows setting up testing
+scenarios where one wants to test the building of all test-related targets but
+not actually run the tests with ctest for a subset of all of the enabled
+packages.  (This can be useful in cases where the tests are very expensive and
+one can't afford to run all of them given the testing budget, or when running
+tests on a given platform is very flaky, or when some packages have fragile or
+poor quality tests that don't port to new platforms very well.)
+
+NOTE: These options avoid having to pass specific sets of labels when running
+``ctest`` itself (such as when defining ``ctest -S <script>.cmake`` scripts)
+and instead the decisions as to the exact set of ctest tests to define is made
+at configure time.  Therefore, all of the decisions about what test targets
+should be build and which tests should be run can be made at configure time.
 
 
 Trace test addition or exclusion
@@ -2133,9 +2229,12 @@ packages from a file, configure with::
   -D<Project>_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Continuous
 
 Specifying extra repositories through an extra repos file allows greater
-flexibility in the specification of extra repos.  This is not helpful for a
-basic configure of the project but is useful in automated testing using the
-``TribitsCTestDriverCore.cmake`` script and the ``checkin-test.py`` script.
+flexibility in the specification of extra repos.  This is not needed for a
+basic configure of the project but is useful in generating version information
+using `<Project>_GENERATE_VERSION_DATE_FILES`_ and
+`<Project>_GENERATE_REPO_VERSION_FILE`_ as well as in automated testing using
+the ctest -S scripts with the ``TRIBITS_CTEST_DRIVER()`` function and the
+``checkin-test.py`` tool.
 
 The valid values of ``<Project>_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE`` include
 ``Continuous``, ``Nightly``, and ``Experimental``.  Only repositories listed
@@ -2296,19 +2395,93 @@ NOTES:
 * One would only want to limit the export files generated for very large
   projects where the cost my be high for doing so.
 
+.. _<Project>_GENERATE_REPO_VERSION_FILE:
 
 Generating a project repo version file
 --------------------------------------
 
-In development mode working with local git repos for the project sources, on
-can generate a <Project>RepoVersion.txt file which lists all of the repos and
-their current versions using::
+When working with local git repos for the project sources, one can generate a
+``<Project>RepoVersion.txt`` file which lists all of the repos and their
+current versions using::
 
    -D <Project>_GENERATE_REPO_VERSION_FILE=ON
 
-This will cause a <Project>RepoVersion.txt file to get created in the binary
-directory, get installed in the install directory, and get included in the
-source distribution tarball.
+This will cause a ``<Project>RepoVersion.txt`` file to get created in the
+binary directory, get installed in the install directory, and get included in
+the source distribution tarball.
+
+NOTE: If the base ``.git/`` directory is missing, then no
+``<Project>RepoVersion.txt`` file will get generated and a ``NOTE`` message is
+printed to cmake STDOUT.
+
+.. _<Project>_GENERATE_VERSION_DATE_FILES:
+
+Generating git version date files
+---------------------------------
+
+When working with local git repos for the project sources, one can generate
+the files ``VersionDate.cmake`` and ``<Project>_version_date.h`` in the build
+directory by setting::
+
+   -D <Project>_GENERATE_VERSION_DATE_FILES=ON
+
+These files are generated in the build directory and the file
+``<Project>_version_date.h`` is installed in the installation directory.  (In
+addition, these files are also generated for each extra repository that are
+also version-controlled repos, see `<Project>_EXTRAREPOS_FILE`_.)
+
+These files contain ``<PROJECT_NAME_UC>_VERSION_DATE`` which is a 10-digit
+date-time version integer.  This integer is created by first using git to
+extract the commit date for ``HEAD`` using the command::
+
+  env TZ=GMT git log --format="%cd" --date=iso-local -1 HEAD
+
+which returns the date and time for the commit date of ``HEAD`` in the form::
+
+  "YYYY-MM-DD hh:mm:ss +0000"
+
+This git commit date is then is used to create a 10-digit date/time integer of
+the form::
+
+  YYYYMMDDhh
+
+This 10-digit integer is set to a CMake variable
+``<PROJECT_NAME_UC>_VERSION_DATE`` in the generated ``VersionDate.cmake`` file
+and a C/C++ preprocessor macro ``<PROJECT_NAME_UC>_VERSION_DATE`` in the
+generated ``<Project>_version_date.h`` header file.
+
+This 10-digit date/time integer ``YYYYMMDDhh`` will fit in a signed 32-bit
+integer with a maximum value of ``2^32 / 2 - 1`` = ``2147483647``.  Therefore,
+the maximum date that can be handled is the year 2147 with the max date/time
+of ``2147 12 31 23`` = ``2147123123``.
+
+The file ``<Project>_version_date.h`` is meant to be included by downstream
+codes to determine the version of ``<Project>`` being used and allows
+``<PROJECT_NAME_UC>_VERSION_DATE`` to be used in C/C++ ``ifdefs`` like::
+
+  #if defined(<PROJECT_NAME_UC>_VERSION_DATE) && <PROJECT_NAME_UC>_VERSION_DATE >= 2019032704
+    /* The version is newer than 2019-03-27 04:00:00 UTC */
+    ...
+  #else
+    /* The version is older than 2019-03-27 04:00:00 UTC */
+    ...
+  #endif
+
+This allows downstream codes to know the fine-grained version of <Project> at
+configure and build time to adjust for the addition of new features,
+deprecation of code, or breaks in backward compatibility (which occur in
+specific commits with unique commit dates).
+
+NOTE: If the branch is not hard-reset then the first-parent commits on that
+branch will have monotonically increasing git commit dates (adjusted for UTC).
+This assumption is required for the correct usage of the
+``<PROJECT_NAME_UC>_VERSION_DATE`` macro as demonstrated above.
+
+NOTE: If the base ``.git/`` directory is missing or the version of git is not
+2.10.0 or greater (needed for the ``--date=iso-local`` argument), then the
+``<Project>_version_date.h`` file will still get generated but will have an
+undefined macro ``<PROJECT_NAME_UC>_VERSION_DATE`` and a ``NOTE`` message will
+be printed to cmake STDOUT.
 
 
 CMake configure-time development mode and debug checking
@@ -2319,11 +2492,12 @@ To turn off CMake configure-time development-mode checking, set::
   -D <Project>_ENABLE_DEVELOPMENT_MODE=OFF
 
 This turns off a number of CMake configure-time checks for the <Project>
-TriBITS/CMake files including checking the package dependencies.  These checks
-can be expensive and may also not be appropriate for a tarball release of the
-software.  However, this also turns off strong compiler warnings so this is
-not recommended by default (see `<TRIBITS_PACKAGE>_DISABLE_STRONG_WARNINGS`_).
-For a release of <Project> this option is set OFF by default.
+TriBITS/CMake files including checking the package dependencies and other
+usage of TriBITS.  These checks can be expensive and may also not be
+appropriate for a tarball release of the software.  However, this also turns
+off strong compiler warnings so this is not recommended by default (see
+`<TRIBITS_PACKAGE>_DISABLE_STRONG_WARNINGS`_).  For a release of <Project>
+this option is set OFF by default.
 
 One of the CMake configure-time debug-mode checks performed as part of
 ``<Project>_ENABLE_DEVELOPMENT_MODE=ON`` is to assert the existence of TriBITS
@@ -2331,16 +2505,16 @@ package directories.  In development mode, the failure to find a package
 directory is usually a programming error (i.e. a miss-spelled package
 directory name).  But in a tarball release of the project, package directories
 may be purposefully missing (see `Creating a tarball of the source tree`_) and
-must be ignored.  When building from a reduced tarball created from the
+must be ignored.  When building from a reduced source tarball created from the
 development sources, set::
 
   -D <Project>_ASSERT_MISSING_PACKAGES=OFF
 
-Setting this off will cause the TriBITS CMake configure to simply ignore any
-missing packages and turn off all dependencies on these missing packages.
+Setting this ``OFF`` will cause the TriBITS CMake configure to simply ignore
+any missing packages and turn off all dependencies on these missing packages.
 
 Another type of checking is for optional inserted/external packages
-(e.g. packages who's source can optionally be included in and is flagged with
+(e.g. packages who's source can optionally be included and is flagged with
 ``TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()``).  Any of these package
 directories that are missing result in the packages being silently ignored by
 default.  However, notes on what missing packages are being ignored can
@@ -2351,6 +2525,24 @@ printed by configuring with::
 These warnings (starting with 'NOTE', not 'WARNING' that would otherwise
 trigger warnings in CDash) about missing inserted/external packages will print
 regardless of the setting for ``<Project>_ASSERT_MISSING_PACKAGES``.
+
+Finally, ``<Project>_ENABLE_DEVELOPMENT_MODE=ON`` results in a number of
+checks for invalid usage of TriBITS in the project's ``CMakeList.txt`` files
+and will abort configure with a fatal error on the first check failure. This
+is appropriate for development mode when a project is clean of all such
+invalid usage patterns but there are times when it makes sense to report these
+check failures in different ways (such as when upgrading TriBITS in a project
+that has some invalid usage patterns that just happen work but may be
+disallowed in future versions of TriBITS).  To change how these invalid usage
+checks are handled, set::
+
+  -D <Project>_ASSERT_CORRECT_TRIBITS_USAGE=<check-mode>
+
+where ``<check-mode>`` can be 'FATAL_ERROR', 'SEND_ERROR', 'WARNING', or
+'IGNORE'.
+
+For ``<Project>_ENABLE_DEVELOPMENT_MODE=OFF``, the default for
+``<Project>_ASSERT_CORRECT_TRIBITS_USAGE`` is actually set to ``IGNORE``.
 
 
 Building (Makefile generator)
@@ -2890,6 +3082,7 @@ For more details, see the following subsections:
 * `Avoiding installing libraries and headers`_
 * `Installing the software`_
 
+
 Setting the install prefix
 --------------------------
 
@@ -2926,6 +3119,79 @@ WARNING: To overwrite default relative paths, you must use the data type
 ``STRING`` for the cache variables.  If you don't, then CMake will use the
 current binary directory for the base path.  Otherwise, if you want to specify
 absolute paths, use the data type ``PATH`` as shown above.
+
+
+Setting install ownership and permissions
+-----------------------------------------
+
+By default, when installing with the ``install`` (or
+``install_package_by_package``) target, any files and directories created are
+given the default permissions for the user that runs the install command (just
+as if they typed ``mkdir <some-dir>`` or ``touch <some-file>``).  On most
+Unix/Linux systems, one can use ``umask`` to set default permissions and one
+can set the default group and the group sticky bit to control what groups owns
+the newly created files and directories.  However, some computer systems do
+not support the group sticky bit and there are cases where one wants or needs
+to provide different group ownership and write permissions.
+
+To control what group owns the install-created files and directories related
+to ``CMAKE_INSTALL_PREFIX`` and define the permissions on those, one can set
+one or more of the following options::
+
+  -D <Project>_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR=<install-base-dir> \
+  -D <Project>_MAKE_INSTALL_GROUP=[<owning-group>] \
+  -D <Project>_MAKE_INSTALL_GROUP_READABLE=[TRUE|FALSE] \
+  -D <Project>_MAKE_INSTALL_GROUP_WRITABLE=[TRUE|FALSE] \
+  -D <Project>_MAKE_INSTALL_WORLD_READABLE=[TRUE|FALSE] \
+
+(where ``<Project>_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR`` must be a
+base directory of ``CMAKE_INSTALL_PREFIX``).  This has the impact of both
+setting the built-in CMake variable
+``CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS`` with the correct permissions
+according to these and also triggers the automatic running of the recursive
+``chgrp`` and ``chmod`` commands starting from the directory
+``<install-base-dir>`` on down, after all of the other project files have been
+installed.  The directory set by
+``<Project>_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR`` and those below it
+may be created by the ``install`` command by CMake (as it may not exist before
+the install).  If ``<Project>_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR``
+is not given, then it is set internally to the same directory as
+``CMAKE_INSTALL_PREFIX``.
+
+For an example, to configure for an install based on a dated base directory
+where a non-default group should own the installation and have group
+read/write permissions, and "others" only have read access, one would
+configure with::
+
+  -D CMAKE_INSTALL_PREFIX=$HOME/2020-04-25/my-proj \
+  -D <Project>_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR=$HOME/2020-04-25 \
+  -D <Project>_MAKE_INSTALL_GROUP=some-other-group \
+  -D <Project>_MAKE_INSTALL_GROUP_WRITABLE=TRUE \
+  -D <Project>_MAKE_INSTALL_WORLD_READABLE=TRUE \
+
+Using these settings, after all of the files and directories have been
+installed using the ``install`` or ``install_package_by_package`` build
+targets, the following commands are automatically run at the very end::
+
+  chgrp some-other-group $HOME/2020-04-25
+  chmod g+rwX,o+rX $HOME/2020-04-25
+  chgrp some-other-group -R $HOME/2020-04-25/my-proj
+  chmod g+rwX,o+rX -R $HOME/2020-04-25/my-proj
+
+That allows the owning group ``some-other-group`` to later modify or delete
+the installation and allows all users to use the installation.
+
+NOTES:
+
+* Setting ``<Project>_MAKE_INSTALL_GROUP_WRITABLE=TRUE`` implies
+  ``<Project>_MAKE_INSTALL_GROUP_READABLE=TRUE``.
+
+* Non-recursive ``chgrp`` and ``chmod`` commands are run on the directories
+  above ``CMAKE_INSTALL_PREFIX``.  Recursive ``chgrp`` and ``chmod`` commands
+  are only run on the base ``CMAKE_INSTALL_PREFIX`` directory itself.  (This
+  avoids touching any files or directories not directly involved in this
+  install.)
+
 
 Setting install RPATH
 ---------------------
@@ -3163,28 +3429,80 @@ To install the software, type::
 
   $ make install
 
-Note that CMake actually puts in the build dependencies for installed targets
-so in some cases you can just type ``make -j<N> install`` and it will also
-build the software before installing.  However, it is advised to always build
-and test the software first before installing with::
+Note that by default CMake actually puts in the build dependencies for
+installed targets so in some cases you can just type ``make -j<N> install``
+and it will also build the software before installing (but this can be
+disabled by setting ``-DCMAKE_SKIP_INSTALL_ALL_DEPENDENCY=ON``).  It is
+advised to always build and test the software first before installing with::
 
   $ make -j<N> && ctest -j<N> && make -j<N> install
 
 This will ensure that everything is built correctly and all tests pass before
 installing.
 
-**WARNING:** When using shared libraries, one must be careful to avoid the
-error **"RegularExpression::compile(): Expression too big."** when using RPATH
-and when RPATH gets stripped out on install.  To avoid this error, use the
-shortest build directory you can, like::
+If there are build failures in any packages and one wants to still install the
+packages that do build correctly, then configure with::
 
-  $HOME/<Project>_BUILD/
+  -DCMAKE_SKIP_INSTALL_ALL_DEPENDENCY=ON
 
-This has been shown to allow even the most complex TriBITS-based CMake
-projects to successfully install and avoid this error.
+and run the custom install target::
 
-NOTE: This problem has been resolved in CMake versions 3.6.0+ and does not
-require a short build directory path.
+  $ make install_package_by_package
+
+This will ensure that every package that builds correctly will get installed.
+(The default 'install' target aborts on the first file install failure.)
+
+
+Installation Testing
+====================
+
+The CMake project <Project> has built-in support for testing an installation
+of itself using its own tests and examples.  The way it works is to configure,
+build, and install just the libraries and header files using::
+
+  $ mkdir BUILD_LIBS
+  $ cd BUILD_LIBS/
+
+  $ cmake \
+    -DCMAKE_INSTLAL_PREFIX=<install-dir> \
+    -D<Project>_ENABLE_ALL_PACKAGES=ON \
+    -D<Project>_ENABLE_TESTS=OFF \
+    [other options] \
+    <projectDir>
+
+  $ make -j16 install   # or ninja -j16
+
+and then create a different build directory to configure and build just the
+tests and examples (not the libraries) against the pre-installed libraries and
+header files using::
+
+  $ mkdir BUILD_TESTS
+  $ cd BUILD_TESTS/
+
+  $ cmake \
+    -D<Project>_ENABLE_ALL_PACKAGES=ON \
+    -D<Project>_ENABLE_TESTS=ON \
+    -D<Project>_ENABLE_INSTALLATION_TESTING=ON \
+    -D<Project>_INSTALLATION_DIR=<install-dir> \
+    [other options] \
+    <projectDir>
+
+  $ make -j16  # or ninja -j16
+
+  $ ctest -j16
+
+If that second project builds and all the tests pass, then the project was
+installed correctly.  This uses the project's own tests and examples to test
+the installation of the project.  The library source and header files are
+unused in the second project build.  In fact, you can delete them and ensure
+that they are not used in the build and testing of the tests and examples!
+
+This can also be used for testing backward compatibility of the project (or
+perhaps for a subset of packages).  In this case, build and install the
+libraries and header files for a newer version of the project and then
+configure, build, and run the tests and examples for an older version of the
+project sources pointing to the installed header files and libraries from the
+newer version.
 
 
 Packaging

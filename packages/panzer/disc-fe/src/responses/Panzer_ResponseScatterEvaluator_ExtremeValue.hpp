@@ -50,7 +50,7 @@
 #include "Panzer_Dimension.hpp"
 #include "Panzer_CellData.hpp"
 #include "Panzer_Response_ExtremeValue.hpp"
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
@@ -72,7 +72,7 @@ public:
 template <typename LO,typename GO>
 class ExtremeValueScatter : public ExtremeValueScatterBase {
 public:
-   ExtremeValueScatter(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & globalIndexer)
+   ExtremeValueScatter(const Teuchos::RCP<const panzer::GlobalIndexer> & globalIndexer)
      : globalIndexer_(globalIndexer) { }
 
    void scatterDerivative(const PHX::MDField<const panzer::Traits::Jacobian::ScalarT,panzer::Cell> & cellExtremeValue,
@@ -81,7 +81,7 @@ public:
                          Teuchos::ArrayRCP<double> & dgdx) const;
 private:
  
-   Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer_;
+   Teuchos::RCP<const panzer::GlobalIndexer> globalIndexer_;
 };
 
 /** This class handles responses with values aggregated

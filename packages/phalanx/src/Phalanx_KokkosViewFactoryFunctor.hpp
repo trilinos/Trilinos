@@ -3,7 +3,7 @@
 
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Phalanx_KokkosViewFactory.hpp"
-#include "Phalanx_TypeStrings.hpp"
+#include "Phalanx_Print.hpp"
 #include "Phalanx_any.hpp"
 #include <string>
 #include <typeinfo>
@@ -31,8 +31,20 @@ namespace PHX {
     void operator()(ScalarT t) const
     {
       if (tag_.dataTypeInfo() == typeid(t)) {
-	PHX::KokkosViewFactory<ScalarT,PHX::Device> factory;
-	fields_[tag_.identifier()] = factory.buildView(tag_,extended_dimensions_);
+        using LT = PHX::DataLayout::KokkosLayoutType;
+        const auto layout = tag_.dataLayout().kokkosLayout();
+        if (layout == LT::Default) {
+          PHX::KokkosViewFactory<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device> factory;
+          fields_[tag_.identifier()] = factory.buildView(tag_,extended_dimensions_);
+        }
+        else if (layout == LT::Left) {
+          PHX::KokkosViewFactory<ScalarT,Kokkos::LayoutLeft,PHX::Device> factory;
+          fields_[tag_.identifier()] = factory.buildView(tag_,extended_dimensions_);
+        }
+        else {
+          PHX::KokkosViewFactory<ScalarT,Kokkos::LayoutRight,PHX::Device> factory;
+          fields_[tag_.identifier()] = factory.buildView(tag_,extended_dimensions_);
+        }
       }
     }
     

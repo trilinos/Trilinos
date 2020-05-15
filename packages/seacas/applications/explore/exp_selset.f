@@ -59,7 +59,7 @@ C=======================================================================
       call pckstr(1, stra)
       MSG = STRA(:lenstr(stra)) // ' ' // VALNAM // ' selected'
       call prterr('CMDSPEC', MSG)
-10000 format(I10)
+10000 format(I12)
       RETURN
       END
 

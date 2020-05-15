@@ -214,6 +214,12 @@ DynamicObjective_CheckInterface<Real> make_check( DynamicObjective<Real>& obj ) 
   return DynamicObjective_CheckInterface<Real>( obj );
 }
 
+template<typename Real>
+DynamicObjective_CheckInterface<Real> make_check( DynamicObjective<Real>& obj, 
+                                                  TimeStamp<Real>& ts ) {
+  return DynamicObjective_CheckInterface<Real>( obj, ts );
+}
+
 
 } // namespace ROL
 

@@ -1,6 +1,7 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,9 +15,9 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 //
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -83,7 +84,6 @@
 #include "boost/any.hpp"                             // for any_cast, any
 #include "stk_io/DatabasePurpose.hpp"                // for DatabasePurpose, etc
 #include "stk_io/MeshField.hpp"                      // for MeshField, etc
-#include "stk_io/SidesetUpdater.hpp"
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"                  // for Entity
 #include "stk_mesh/base/FieldBase.hpp"               // for FieldBase
@@ -124,7 +124,7 @@ Ioss::DatabaseIO *OutputFile::get_output_database()
     return m_region->get_database();
 }
 
-bool OutputFile::set_multistate_suffixes(std::vector<std::string>& multiStateSuffixes)
+bool OutputFile::set_multistate_suffixes(const std::vector<std::string>& multiStateSuffixes)
 {
     if(nullptr != m_multiStateSuffixes) {
         delete m_multiStateSuffixes;
@@ -147,6 +147,7 @@ void OutputFile::setup_output_params(OutputParams &params) const
     params.set_output_selector(stk::topology::NODE_RANK, m_outputSelector[stk::topology::NODE_RANK].get());
     params.set_output_selector(stk::topology::EDGE_RANK, m_outputSelector[stk::topology::EDGE_RANK].get());
     params.set_output_selector(stk::topology::FACE_RANK, m_outputSelector[stk::topology::FACE_RANK].get());
+    params.set_skin_mesh_selector(m_skinMeshSelector.get());
     params.set_output_selector(stk::topology::ELEM_RANK, m_outputSelector[stk::topology::ELEM_RANK].get());
     params.set_sort_stk_parts_by_name(sort_stk_parts_by_name);
     params.set_use_nodeset_for_block_node_fields(m_useNodesetForBlockNodesFields);
@@ -155,8 +156,8 @@ void OutputFile::setup_output_params(OutputParams &params) const
     params.set_use_part_id_for_output(m_usePartIdForOutput);
     params.set_has_ghosting(m_hasGhosting);
     params.set_has_adaptivity(m_hasAdaptivity);
-    params.set_is_skin_mesh(m_isSkinMesh);
     params.set_additional_attribute_fields(m_additionalAttributeFields);
+    params.set_is_restart(m_dbPurpose == stk::io::WRITE_RESTART);
 }
 
 void OutputFile::set_input_region(const Ioss::Region *input_region)
@@ -232,7 +233,7 @@ std::vector<stk::mesh::Entity> OutputFile::get_output_entities(const stk::mesh::
     } else if(type == Ioss::NODESET) {
         part_type = stk::topology::NODE_RANK;
     } else if(type == Ioss::ELEMENTBLOCK) {
-        part_type = stk::topology::ELEMENT_RANK;
+        part_type = params.has_skin_mesh_selector() ? meta.side_rank() : stk::topology::ELEMENT_RANK;
     } else if(type == Ioss::SIDESET) {
         part = meta.get_part(name);
         ThrowRequireMsg(nullptr != part, "Could not find a sideset with name: " + name);
@@ -742,6 +743,14 @@ void OutputFile::set_output_selector(stk::topology::rank_t rank, Teuchos::RCP<st
     m_outputSelector[rank] = my_selector;
 }
 
+void OutputFile::set_skin_mesh_selector(Teuchos::RCP<stk::mesh::Selector> my_selector)
+{
+    ThrowErrorMsgIf(m_meshDefined,
+                    "ERROR: On region named " << m_region->name() <<
+                    " the subset_selector cannot be changed after the mesh has already been written.");
+    m_skinMeshSelector = my_selector;
+}
+
 bool OutputFile::use_nodeset_for_block_nodes_fields() const
 {
     return m_useNodesetForBlockNodesFields;
@@ -816,12 +825,7 @@ void OutputFile::has_adaptivity(bool hasAdaptivity)
 
 bool OutputFile::is_skin_mesh() const
 {
-    return m_isSkinMesh;
-}
-
-void OutputFile::is_skin_mesh(bool skinMesh)
-{
-    m_isSkinMesh = skinMesh;
+    return m_skinMeshSelector.get() != nullptr;
 }
 
 } // namespace impl

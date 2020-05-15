@@ -126,5 +126,5 @@ C ... Read the element variables (if any)
 
       RETURN
 
-10000  FORMAT (5 (A, I10))
+10000  FORMAT (5 (A, I12))
       END

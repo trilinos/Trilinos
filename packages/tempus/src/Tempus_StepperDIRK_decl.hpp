@@ -10,10 +10,13 @@
 #define Tempus_StepperDIRK_decl_hpp
 
 #include "Tempus_config.hpp"
+#include "Tempus_StepperRKBase.hpp"
 #include "Tempus_RKButcherTableau.hpp"
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluator.hpp"
-#include "Tempus_StepperDIRKObserver.hpp"
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+  #include "Tempus_StepperRKObserverComposite.hpp"
+#endif
 
 
 namespace Tempus {
@@ -61,56 +64,122 @@ namespace Tempus {
  *  methods (see StepperExplicitRK for additional details).
  *
  *  <b> Algorithm </b>
- *  The single-timestep algorithm for DIRK is,
- *   - for \f$i = 1 \ldots s\f$ do
- *     - if \f$a_{ii} = 0\f$
- *       - \f$X_i \leftarrow x_{n-1}
- *                + \Delta t\,\sum_{j=1}^{i-1} a_{ij}\,\dot{X}_j\f$
- *       - Evaluate \f$\bar{f}(X_{i},t_{n-1}+c_{i}\Delta t)\f$
- *       - \f$\dot{X}_i \leftarrow \bar{f}(X_i,t_{n-1}+c_i\Delta t)\f$
- *     - else
- *       - \f$\tilde{X} =
- *           x_{n-1} +\Delta t \sum_{j=1}^{i-1} a_{ij}\,\dot{X}_{j}\f$
- *       - Define \f$\dot{X}_i \leftarrow
- *                              \frac{X_{i} - \tilde{X}}{a_{ii} \Delta t}\f$
- *       - Solve \f$f(\dot{x} =
- *           \dot{X}_i,X_i,t_{n-1}+c_{i}\Delta t)=0\f$ for \f$X_i\f$
- *       - \f$\dot{X}_i \leftarrow \frac{X_{i} - \tilde{X}}{a_{ii} \Delta t}\f$
- *   - end for
- *   - \f$x_n \leftarrow x_{n-1} + \Delta t\,\sum_{i=1}^{s}b_i\,\dot{X}_i\f$
- *   - Solve \f$f(\dot{x}_n,x_n,t_n)=0\f$ for \f$\dot{x}_n\f$ [Optional]
+ *  The single-timestep algorithm for DIRK is
+ *
+ *  \f{algorithm}{
+ *  \renewcommand{\thealgorithm}{}
+ *  \caption{DIRK with the application-action locations indicated.}
+ *  \begin{algorithmic}[1]
+ *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
+ *    \If {``Reset initial guess.''}
+ *      \State $X \leftarrow x_{n-1}$
+ *        \Comment{Reset initial guess to last timestep.}
+ *    \EndIf
+ *    \For {$i = 0 \ldots s-1$}
+ *      \If { $a_{k,i} = 0 \;\forall k = (i+1,\ldots, s-1)$, $b(i) = 0$, $b^\ast(i) = 0$}
+ *        \State $\dot{X}_i \leftarrow 0$
+ *          \Comment{Not needed for later calculations.}
+ *        \State {\bf continue}
+ *      \EndIf
+ *      \State $\tilde{X} \leftarrow
+ *                      x_{n-1} +\Delta t \sum_{j=1}^{i-1} a_{ij}\,\dot{X}_{j}$
+ *      \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STAGE)}
+ *      \If {$a_{ii} = 0$}             \Comment{Explicit stage.}
+ *        \If {$i=0$ and ``Use FSAL''} \Comment{Save an evaluation?}
+ *          \State $\dot{X}_0 \leftarrow \dot{X}_{s-1}$
+ *            \Comment{Use $\dot{X}_{s-1}$ from $n-1$ time step.}
+ *        \Else
+ *          \State $\dot{X}_i \leftarrow \bar{f}(\tilde{X},t_{n-1}+c_i\Delta t)$
+ *        \EndIf
+ *      \Else                          \Comment{Implicit stage.}
+ *        \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_SOLVE)}
+ *        \If {``Zero initial guess.''}
+ *          \State $X \leftarrow 0$
+ *            \Comment{Else use previous stage value as initial guess.}
+ *        \EndIf
+ *        \State Solve $\mathcal{F}_i(
+ *                      \dot{X}_i = \frac{X - \tilde{X}}{a_{ii} \Delta t},
+ *                      X, t_{n-1}+c_{i}\Delta t) = 0$ for $X$
+ *        \State {\it appAction.execute(solutionHistory, stepper, AFTER\_SOLVE)}
+ *        \State $\dot{X}_i \leftarrow \frac{X - \tilde{X}}{a_{ii} \Delta t}$
+ *      \EndIf
+ *      \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}
+ *      \State {\it appAction.execute(solutionHistory, stepper, END\_STAGE)}
+ *    \EndFor
+ *    \State $x_n \leftarrow x_{n-1} + \Delta t\,\sum_{i=0}^{s-1}b_i\,\dot{X}_i$
+ *    \If {``Embedded''}  \Comment{Compute the local truncation error estimate.}
+ *      \State $\mathbf{e} \leftarrow
+ *                         \sum_{i=0}^{s-1} (b_i-b^\ast_i)\Delta t\,\dot{X}_i$
+ *      \State $\tilde{\mathbf{e}} \leftarrow
+ *             \mathbf{e}/(a_{tol} + \max(\|x_n\|, \|x_{n-1}\|)r_{tol})$
+ *      \State $e_n \leftarrow \|\tilde{\mathbf{e}}\|_\infty$
+ *    \EndIf
+ *    \State {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
+ *  \end{algorithmic}
+ *  \f}
+ *
+ *  The First-Step-As-Last (FSAL) principle is not needed with DIRK, but
+ *  maybe useful if the first stage is explicit (EDIRK) (e.g., Trapezoidal
+ *  Method).  The default is to set useFSAL=false.
+ *
+ *  <b> Iteration Matrix, \f$W\f$.</b>
+ *  Recalling that the definition of the iteration matrix, \f$W\f$, is
+ *  \f[
+ *    W = \alpha \frac{\partial \mathcal{F}_n}{\partial \dot{x}_n}
+ *      + \beta  \frac{\partial \mathcal{F}_n}{\partial x_n},
+ *  \f]
+ *  where \f$ \alpha \equiv \frac{\partial \dot{x}_n(x_n) }{\partial x_n}, \f$
+ *  and \f$ \beta \equiv \frac{\partial x_n}{\partial x_n} = 1\f$. For the stage
+ *  solutions, we have
+ *  \f[
+ *    \mathcal{F}_i = \dot{X}_{i} - \bar{f}(X_{i},t_{n-1}+c_{i}\Delta t) =0.
+ *  \f]
+ *  where \f$\mathcal{F}_n \rightarrow \mathcal{F}_i\f$,
+ *  \f$x_n \rightarrow X_{i}\f$, and
+ *  \f$\dot{x}_n(x_n) \rightarrow \dot{X}_{i}(X_{i})\f$.
+ *  The time derivative for the DIRK stages is
+ *  \f[
+ *    \dot{X}_{i}(X_{i}) = \frac{X_{i} - \tilde{X}}{a_{ii} \Delta t},
+ *  \f]
+ *  and we can determine that
+ *  \f$ \alpha = \frac{1}{a_{ii} \Delta t} \f$
+ *  and \f$ \beta = 1 \f$, and therefore write
+ *  \f[
+ *    W = \frac{1}{a_{ii} \Delta t}
+ *        \frac{\partial \mathcal{F}_i}{\partial \dot{X}_i}
+ *      + \frac{\partial \mathcal{F}_i}{\partial X_i}.
+ *  \f]
  */
 template<class Scalar>
-class StepperDIRK : virtual public Tempus::StepperImplicit<Scalar>
+class StepperDIRK : virtual public Tempus::StepperImplicit<Scalar>,
+                    virtual public Tempus::StepperRKBase<Scalar>
 {
 public:
-  /// Constructor to use default Stepper parameters.
-  StepperDIRK(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    std::string stepperType = "SDIRK 2 Stage 2nd order");
-
-  /// Constructor to specialize Stepper parameters.
-  StepperDIRK(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    Teuchos::RCP<Teuchos::ParameterList> pList);
-
-  /// Constructor for StepperFactory.
-  StepperDIRK(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    std::string stepperType, Teuchos::RCP<Teuchos::ParameterList> pList);
 
   /// \name Basic stepper methods
   //@{
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
     virtual void setObserver(
       Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
-    virtual void setTableau(std::string stepperType);
+    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
+    { return this->stepperObserver_; }
+#endif
+    virtual Teuchos::RCP<const RKButcherTableau<Scalar> > getTableau()
+    { return tableau_; }
 
-    virtual void setTableau(
-      Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
-
-    /// Initialize during construction and after changing input parameters.
+    /// Initialize after construction and changing input parameters.
     virtual void initialize();
+
+    /// Set the initial conditions and make them consistent.
+    virtual void setInitialConditions (
+      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
+
+    /// Set parameter so that the initial guess is reset at the beginning of each timestep.
+    virtual void setResetInitialGuess(bool reset_guess)
+      { resetGuess_ = reset_guess; }
+    virtual bool getResetInitialGuess() const
+      { return resetGuess_; }
 
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(
@@ -118,14 +187,14 @@ public:
 
     /// Get a default (initial) StepperState
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> >getDefaultStepperState();
-    virtual Scalar getOrder()    const{return DIRK_ButcherTableau_->order();}
-    virtual Scalar getOrderMin() const{return DIRK_ButcherTableau_->orderMin();}
-    virtual Scalar getOrderMax() const{return DIRK_ButcherTableau_->orderMax();}
+    virtual Scalar getOrder()    const{return tableau_->order();}
+    virtual Scalar getOrderMin() const{return tableau_->orderMin();}
+    virtual Scalar getOrderMax() const{return tableau_->orderMax();}
 
     virtual bool isExplicit() const
     {
-      const int numStages = DIRK_ButcherTableau_->numStages();
-      Teuchos::SerialDenseMatrix<int,Scalar> A = DIRK_ButcherTableau_->A();
+      const int numStages = tableau_->numStages();
+      Teuchos::SerialDenseMatrix<int,Scalar> A = tableau_->A();
       bool isExplicit = false;
       for (int i=0; i<numStages; ++i) if (A(i,i) == 0.0) isExplicit = true;
       return isExplicit;
@@ -135,56 +204,92 @@ public:
       {return isExplicit() and isImplicit();}
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
+
+    virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}
+
+    void getValidParametersBasicDIRK(
+      Teuchos::RCP<Teuchos::ParameterList> pl) const;
+
+    virtual std::string getDescription() const = 0;
   //@}
 
-  /// Pass initial guess to Newton solver
-  virtual void setInitialGuess(
-    Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
-    {initial_guess_ = initial_guess;}
+  std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > >& getStageXDot() {return stageXDot_;};
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >& getXTilde() {return xTilde_;};
 
-  /// \name ParameterList methods
-  //@{
-    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl);
-    Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
-    Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
-    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
-    Teuchos::RCP<Teuchos::ParameterList> getDefaultParameters() const;
-  //@}
+  /// Return alpha = d(xDot)/dx.
+  virtual Scalar getAlpha(const Scalar dt) const
+  {
+    const Teuchos::SerialDenseMatrix<int,Scalar> & A=tableau_->A();
+    return Scalar(1.0)/(dt*A(0,0));  // Getting the first diagonal coeff!
+  }
+  /// Return beta  = d(x)/dx.
+  virtual Scalar getBeta (const Scalar   ) const { return Scalar(1.0); }
+
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
   /// \name Overridden from Teuchos::Describable
   //@{
-    virtual std::string description() const;
     virtual void describe(Teuchos::FancyOStream        & out,
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
-private:
+  virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
 
-  /// Default Constructor -- not allowed
-  StepperDIRK();
+  /// \name Accessors methods
+  //@{
+    /** \brief Use embedded if avialable. */
+    virtual void setUseEmbedded(bool a) { useEmbedded_ = a; }
+    virtual bool getUseEmbedded() const { return useEmbedded_; }
+    virtual bool getUseEmbeddedDefault() const { return false; }
+  //@}
+
 
 protected:
 
-  std::string                                            description_;
+  /// Default setup for constructor.
+  virtual void setupDefault();
 
-  Teuchos::RCP<const RKButcherTableau<Scalar> >          DIRK_ButcherTableau_;
+  /// Setup for constructor.
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+  virtual void setup(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& wrapperModel,
+    const Teuchos::RCP<StepperRKObserver<Scalar> >& obs,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool useEmbedded,
+    bool zeroInitialGuess);
+#endif
+  virtual void setup(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& wrapperModel,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool useEmbedded,
+    bool zeroInitialGuess,
+    const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction);
+
+  virtual void setupTableau() = 0;
+
+  Teuchos::RCP<RKButcherTableau<Scalar> >                tableau_;
 
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > stageXDot_;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >               stageX_;
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               xTilde_;
 
-  Teuchos::RCP<StepperObserver<Scalar> >                 stepperObserver_;
-  Teuchos::RCP<StepperDIRKObserver<Scalar> >             stepperDIRKObserver_;
-
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >               ee_;
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+  Teuchos::RCP<StepperRKObserverComposite<Scalar> >      stepperObserver_;
+#endif
 
   // For Embedded RK
+  bool useEmbedded_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >               ee_;
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               abs_u0;
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               abs_u;
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               sc;
 
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> >         initial_guess_;
-
+  bool resetGuess_ = true;
 };
 
 

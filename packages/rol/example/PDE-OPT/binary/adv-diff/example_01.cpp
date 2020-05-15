@@ -91,8 +91,10 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::OptimizationProblemFactory<RealT>> factory;
     ROL::Ptr<ROL::BranchHelper_PEBBL<RealT>> bHelper;
     if (!useQP) {
+      RealT intTol = parlist->sublist("Problem").get("Integrality Tolerance",1e-6);
+      int method = parlist->sublist("Problem").get("Branching Method",0);
       factory = ROL::makePtr<BinaryAdvDiffFactory<RealT>>(*parlist,comm,outStream);
-      bHelper = ROL::makePtr<PDEOPT_BranchHelper_PEBBL<RealT>>();
+      bHelper = ROL::makePtr<PDEOPT_BranchHelper_PEBBL<RealT>>(intTol,method);
     }
     else {
       factory = ROL::makePtr<BinaryAdvDiffQPFactory<RealT>>(*parlist,comm,outStream);
@@ -111,7 +113,7 @@ int main(int argc, char *argv[]) {
     //}
     //*outStream << std::endl;
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

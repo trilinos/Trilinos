@@ -43,6 +43,7 @@
 #include "Stokhos_UnitTestHelpers.hpp"
 
 #include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
+#include "Stokhos_Ensemble_Sizes.hpp"
 #include "Kokkos_CrsMatrix_MP_Vector.hpp"
 #include "Kokkos_CrsMatrix_MP_Vector_Cuda.hpp"
 
@@ -344,14 +345,14 @@ struct AddDiagonalValuesAtomicKernel {
   }
 };
 
-const unsigned VectorSize = 16;  // Currently must be a multiple of 8 based on
-                                 // alignment assumptions for SFS
+const unsigned VectorSize = STOKHOS_DEFAULT_ENSEMBLE_SIZE;
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   Kokkos_CrsMatrix_MP, ReplaceValues, MatrixScalar )
 {
   typedef typename MatrixScalar::ordinal_type Ordinal;
-  typedef typename MatrixScalar::execution_space Device;
+  typedef typename MatrixScalar::execution_space execution_space;
+  typedef Kokkos::Device<execution_space, typename execution_space::memory_space> Device;
   typedef KokkosSparse::CrsMatrix<MatrixScalar,Ordinal,Device> Matrix;
 
   // Build diagonal matrix
@@ -370,7 +371,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   Kokkos_CrsMatrix_MP, SumIntoValues, MatrixScalar )
 {
   typedef typename MatrixScalar::ordinal_type Ordinal;
-  typedef typename MatrixScalar::execution_space Device;
+  typedef typename MatrixScalar::execution_space execution_space;
+  typedef Kokkos::Device<execution_space, typename execution_space::memory_space> Device;
   typedef KokkosSparse::CrsMatrix<MatrixScalar,Ordinal,Device> Matrix;
 
   // Build diagonal matrix
@@ -389,7 +391,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   Kokkos_CrsMatrix_MP, SumIntoValuesAtomic, MatrixScalar )
 {
   typedef typename MatrixScalar::ordinal_type Ordinal;
-  typedef typename MatrixScalar::execution_space Device;
+  typedef typename MatrixScalar::execution_space execution_space;
+  typedef Kokkos::Device<execution_space, typename execution_space::memory_space> Device;
   typedef KokkosSparse::CrsMatrix<MatrixScalar,Ordinal,Device> Matrix;
 
   // Build diagonal matrix
@@ -444,9 +447,10 @@ bool test_embedded_vector(const typename VectorType::ordinal_type nGrid,
   typedef typename VectorType::value_type scalar_type;
   typedef typename VectorType::storage_type storage_type;
   typedef typename storage_type::execution_space execution_space;
+  typedef Kokkos::Device<execution_space, typename execution_space::memory_space> device_type;
   typedef Kokkos::LayoutRight Layout;
   typedef Kokkos::View< VectorType*, Layout, execution_space > block_vector_type;
-  typedef KokkosSparse::CrsMatrix< VectorType, ordinal_type, execution_space > block_matrix_type;
+  typedef KokkosSparse::CrsMatrix< VectorType, ordinal_type, device_type > block_matrix_type;
   typedef typename block_matrix_type::StaticCrsGraphType matrix_graph_type;
   typedef typename block_matrix_type::values_type matrix_values_type;
 

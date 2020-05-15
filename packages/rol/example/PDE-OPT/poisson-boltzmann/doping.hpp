@@ -52,17 +52,19 @@
 template <class Real>
 class Doping {
 private:
+  typedef Tpetra::Map<>::global_ordinal_type GO;  
+
   const ROL::Ptr<FE<Real> > fe_;
   const ROL::Ptr<Intrepid::FieldContainer<Real> > cellNodes_;
   const ROL::Ptr<Intrepid::FieldContainer<int> > cellDofs_;
-  const Teuchos::Array<int> cellIds_;
+  const Teuchos::Array<GO> cellIds_;
   Real a_, b_, wx_, wy_;
 
 public:
   Doping(const ROL::Ptr<FE<Real> > &fe,
          const ROL::Ptr<Intrepid::FieldContainer<Real> > & cellNodes,
          const ROL::Ptr<Intrepid::FieldContainer<int> > & cellDofs,
-         const Teuchos::Array<int> & cellIds,
+         const Teuchos::Array<GO> & cellIds,
          Teuchos::ParameterList &parlist)
     : fe_(fe), cellNodes_(cellNodes), cellDofs_(cellDofs), cellIds_(cellIds) {
     // Get parameters from parameter list
@@ -108,10 +110,12 @@ public:
 template <class Real>
 class DopingBounds {
 private:
+  typedef Tpetra::Map<>::global_ordinal_type GO;  
+
   const ROL::Ptr<FE<Real> > fe_;
   const ROL::Ptr<Intrepid::FieldContainer<Real> > cellNodes_;
   const ROL::Ptr<Intrepid::FieldContainer<int> > cellDofs_;
-  const Teuchos::Array<int> cellIds_;
+  const Teuchos::Array<GO> cellIds_;
   Real a_, b_, wx_, wy_, lo_, hi_;
   bool useConstant_;
 
@@ -119,7 +123,7 @@ public:
   DopingBounds(const ROL::Ptr<FE<Real> > &fe,
                const ROL::Ptr<Intrepid::FieldContainer<Real> > & cellNodes,
                const ROL::Ptr<Intrepid::FieldContainer<int> > & cellDofs,
-               const Teuchos::Array<int> & cellIds,
+               const Teuchos::Array<GO> & cellIds,
                Teuchos::ParameterList &parlist)
     : fe_(fe), cellNodes_(cellNodes), cellDofs_(cellDofs), cellIds_(cellIds) {
     // Get parameters from parameter list

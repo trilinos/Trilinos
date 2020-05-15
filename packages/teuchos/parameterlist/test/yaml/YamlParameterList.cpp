@@ -167,7 +167,7 @@ namespace TeuchosTests
       "    </ParameterList>\n"
       "    <ParameterList name=\"Discretization\">\n"
       "      <Parameter name=\"Node Set Associations\" type=\"TwoDArray(string)\" value=\"2x2:{1, 2, top, bottom}\"/>\n"
-      "      <Parameter name=\"Bool-looking String\" type=\"string\" value=\"TRUE\"/>\n"
+      "      <Parameter name=\"Bool-looking String\" type=\"string\" value=\"TRUE\" docString=\"my docString\"/>\n"
       "    </ParameterList>\n"
       "  </ParameterList>\n";
     RCP<ParameterList> xmlParams = Teuchos::getParametersFromXmlString(xmlString);

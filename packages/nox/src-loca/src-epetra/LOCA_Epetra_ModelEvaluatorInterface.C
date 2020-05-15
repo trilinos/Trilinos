@@ -63,9 +63,9 @@ LOCA::Epetra::ModelEvaluatorInterface::
 ModelEvaluatorInterface(
            const Teuchos::RCP<LOCA::GlobalData>& global_data,
            const Teuchos::RCP<EpetraExt::ModelEvaluator>& m,
-           double perturb) :
+           double in_perturb) :
   NOX::Epetra::ModelEvaluatorInterface(m),
-  LOCA::DerivUtils(global_data, perturb),
+  LOCA::DerivUtils(global_data, in_perturb),
   param_vec(*(m->get_p_init(0))),
   loca_param_vec(),
   x_dot(NULL),
@@ -136,7 +136,7 @@ computeF(const Epetra_Vector& x, Epetra_Vector& F, const FillType fillFlag)
 // *****************************************************************
 // *****************************************************************
 bool LOCA::Epetra::ModelEvaluatorInterface::
-computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
+computeJacobian(const Epetra_Vector& x, Epetra_Operator& inJac)
 {
   // Create inargs
   EpetraExt::ModelEvaluator::InArgs inargs = model_->createInArgs();
@@ -158,7 +158,7 @@ computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
   EpetraExt::ModelEvaluator::OutArgs outargs = model_->createOutArgs();
   EpetraExt::ModelEvaluator::Evaluation<Epetra_Vector> eval_f;
   outargs.set_f(eval_f);
-  outargs.set_W(Teuchos::rcp(&Jac, false));
+  outargs.set_W(Teuchos::rcp(&inJac, false));
 
   model_->evalModel(inargs, outargs);
 

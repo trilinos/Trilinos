@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -305,6 +305,11 @@ namespace Iogn {
     virtual int64_t nodeset_node_count_proc(int64_t id) const;
 
     /**
+     * Return string (quad4 or tri3) giving face topology of sidesets in model
+     */
+    virtual std::string get_sideset_topology() const;
+
+    /**
      * Return number of sidesets in the entire model.
      */
     virtual int64_t sideset_count() const;
@@ -445,6 +450,7 @@ namespace Iogn {
      * if a rotation is defined.
      */
     virtual void coordinates(int component, std::vector<double> &xyz) const;
+    virtual void coordinates(int component, double *xyz) const;
 
     /**
      * Return the list of nodes in nodeset 'id' on this processor.

@@ -27,6 +27,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ArrayRCP.hpp"
+#include "ml_RefMaxwell_Utils.h"
 
 #ifdef HAVE_ML_IFPACK
 #include "Ifpack_Chebyshev.h"
@@ -97,7 +98,7 @@ namespace ML_Epetra
     int ReComputePreconditioner(){return(-1);}
 
     //! Apply the inverse of the preconditioner to an Epetra_MultiVector (NOT AVAILABLE)
-    int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+    int Apply(const Epetra_MultiVector& /* X */, Epetra_MultiVector& /* Y */) const {
       return(-1);}
 
     //! Apply the preconditioner to RHS B to get result X (X is also initial guess)
@@ -110,7 +111,7 @@ namespace ML_Epetra
     int DestroyPreconditioner();
 
     //! Sets use transpose (not implemented).
-    int SetUseTranspose(bool UseTranspose){return(-1);}
+    int SetUseTranspose(bool /* UseTranspose */){return(-1);}
 
     //! Returns the infinity norm (not implemented).
     double NormInf() const {return(0.0);};
@@ -140,9 +141,6 @@ namespace ML_Epetra
 
     //! Sets up the Chebyshev smoother
     int SetupSmoother();
-
-    //! Build the edge nullspace
-    Epetra_MultiVector * BuildNullspace();
 
     //! Build the edge-to-vector-node prolongator described in Bochev, Hu, Siefert and Tuminaro (2006).
     int BuildProlongator(const Epetra_MultiVector & nullspace);
@@ -190,10 +188,13 @@ namespace ML_Epetra
     ML_Operator * CoarseMat_ML;
 
     //! Coarse data objects
-    Teuchos::Array<double> CoarseXcoord_, CoarseYcoord_, CoarseZcoord_;
+    ML_Epetra::CoordPack CoarseCoord_;
 
     //! Level 2+ Preconditioner
     MultiLevelPreconditioner * CoarsePC;
+
+    //! Coarse nullspace (slung in consecutive ML ordering)
+    double *CoarseNullspace_;
 
 #ifdef HAVE_ML_IFPACK
     //! Ifpack Chebyshev Smoother

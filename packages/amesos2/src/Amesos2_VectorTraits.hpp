@@ -50,11 +50,9 @@
 #include <Tpetra_MultiVector.hpp>
 
 
-#ifdef HAVE_TPETRA_INST_INT_INT
 #ifdef HAVE_AMESOS2_EPETRA
 #  include <Epetra_MultiVector.h>
 // and perhaps some others later...
-#endif
 #endif
 
 namespace Amesos2 {
@@ -85,21 +83,33 @@ namespace Amesos2 {
     typedef typename multivector_type::impl_scalar_type  ptr_scalar_type; // TODO Make this a pointer
   };
 
-#ifdef HAVE_TPETRA_INST_INT_INT
+  template < typename Scalar,
+             typename ExecutionSpace >
+  struct VectorTraits<
+    Kokkos::View<Scalar**,Kokkos::LayoutLeft,ExecutionSpace> > {
+    typedef Scalar scalar_t;
+    typedef int local_ordinal_t;
+    typedef Tpetra::Map<>::global_ordinal_type global_ordinal_t;
+    typedef Tpetra::Map<>::node_type node_t;
+
+    typedef Kokkos::View<Scalar**,Kokkos::LayoutLeft,ExecutionSpace>  multivector_type;
+    typedef Scalar  ptr_scalar_type; // TODO Make this a pointer
+  };
+
+
 #ifdef HAVE_AMESOS2_EPETRA
 
   template <>
   struct VectorTraits<Epetra_MultiVector> {
     typedef double scalar_t;
     typedef int local_ordinal_t;
-    typedef int global_ordinal_t;
+    typedef Tpetra::Map<>::global_ordinal_type global_ordinal_t;
     typedef Tpetra::Map<>::node_type node_t;
 
     typedef Epetra_MultiVector multivector_type;
     typedef double ptr_scalar_type; // TODO Make this a pointer
   };
 
-#endif
 #endif
 
 }

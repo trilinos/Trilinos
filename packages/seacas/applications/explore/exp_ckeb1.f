@@ -81,7 +81,7 @@ C   --   NODUSE - OUT - scratch array to determine whether all nodes used by an 
            NODE = LINK(I,NE)
            IF (NODE .LE. NUMNP) THEN
 C ... Note that if NODE is out of range, the error message above will have
-C     already been printed, so we dont print anything here.
+C     already been printed, so we don't print anything here.
              NODUSE(NODE) = 1
            END IF
  90      CONTINUE
@@ -97,11 +97,11 @@ C     already been printed, so we dont print anything here.
   110 CONTINUE
       RETURN
 
-10000  FORMAT (/, 1X, '     #  elem      ', A, ' for block #', I10,
-     &   ',', I10, ' = ID')
-10010  FORMAT (1X, I10, I10, 5X, 6I10, :, /,
-     &   (26X, 6I10))
-10020    FORMAT('ELEMENT CONNECTIVITY ERROR: Found ',I10,
+10000  FORMAT (/, 1X, '     #  elem      ', A, ' for block #', I12,
+     &   ',', I12, ' = ID')
+10010  FORMAT (1X, I12, I12, 5X, 6I12, :, /,
+     &   (26X, 6I12))
+10020    FORMAT('ELEMENT CONNECTIVITY ERROR: Found ',I12,
      $      ' errors in element connectivity check for element block '
      $      , i10)
       END

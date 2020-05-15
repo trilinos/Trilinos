@@ -31,6 +31,8 @@
 #include <stk_unit_test_utils/GetMeshSpec.hpp>
 
 #include <stk_io/StkMeshIoBroker.hpp>
+#include <stk_io/FillMesh.hpp>
+#include <stk_io/WriteMesh.hpp>
 
 #include <iostream>
 #include <unistd.h>                     // for unlink
@@ -91,7 +93,7 @@ TEST(StkIo, write_stk_mesh_to_file)
         {
             stk::mesh::Part * const part = *i;
 
-            if(NULL != part->attribute<Ioss::GroupingEntity>()) // this means it is an io_part
+            if(stk::io::is_part_io_part(*part)) // this means it is an io_part
             {
                 if(part->primary_entity_rank() == stk::topology::NODE_RANK)
                 {
@@ -168,7 +170,7 @@ TEST(StkIo, write_stk_mesh_to_file)
         {
             stk::mesh::Part * const part = *i;
 
-            if(NULL != part->attribute<Ioss::GroupingEntity>()) // this means it is an io_part
+            if(stk::io::is_part_io_part(*part)) // this means it is an io_part
             {
                 if(part->primary_entity_rank() == stk::topology::ELEMENT_RANK)
                 {
@@ -260,7 +262,8 @@ TEST(StkIo, check_memory)
         size_t current_usage3 = 0, hwm_usage3 = 0;
         current_usage3 = stk::get_memory_usage_now();
         print_memory(current_usage3, hwm_usage3);
-        EXPECT_LE(current_usage2, current_usage3);
+        size_t padDueToMemNoise = 8192;
+        EXPECT_LE(current_usage2, (current_usage3+padDueToMemNoise));
     }
 }
 
@@ -375,6 +378,31 @@ TEST_F(StkIoResultsOutput, reconstruct_on_creating_sideset)
     EXPECT_EQ(1, entry.side);
 
     EXPECT_FALSE( stk::io::should_reconstruct_sideset(bulk, surface_part) );
+}
+
+TEST(TestStkIo, readWrite)
+{
+    std::string meshSpec = stk::unit_test_util::get_option("--mesh", "none specified");
+    if (meshSpec == "none specified") {
+        if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0) {
+            std::cout<<"No mesh specified, exiting."<<std::endl;
+        }
+        return;
+    }
+
+    std::string autoDecomp = stk::unit_test_util::get_option("--auto-decomp", "false");
+
+    stk::mesh::MetaData meta;
+    stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD, stk::mesh::BulkData::NO_AUTO_AURA);
+
+    if (autoDecomp == "false") {
+        stk::io::fill_mesh(meshSpec, bulk);
+    }
+    else {
+        stk::io::fill_mesh_with_auto_decomp(meshSpec, bulk);
+    }
+
+    stk::io::write_mesh("readWriteTest.exo", bulk);
 }
 
 }

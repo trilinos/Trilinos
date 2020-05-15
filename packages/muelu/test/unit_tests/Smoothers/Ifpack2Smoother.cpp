@@ -160,6 +160,9 @@ namespace MueLuTests {
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
 
+      using magnitude_type = typename Teuchos::ScalarTraits<SC>::magnitudeType;
+      using TMT            = Teuchos::ScalarTraits<magnitude_type>;
+
       if (Teuchos::ScalarTraits<Scalar>::name().find("complex") != std::string::npos) {
         out << "Skipping Tpetra for SC type \"complex\"" << std::endl;
         return;
@@ -175,7 +178,7 @@ namespace MueLuTests {
 
       typename Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
       const typename Teuchos::ScalarTraits<SC>::magnitudeType expectedNorm = 5.269156e-01;
-      TEST_FLOATING_EQUALITY(residualNorms, expectedNorm, 1e-7);  // Compare to residual reported by ML
+      TEST_FLOATING_EQUALITY(residualNorms, expectedNorm, (1e-7 < TMT::eps() ? 10*TMT::eps() : 1e-7));  // Compare to residual reported by ML
 
     }
   } // Chebyshev
@@ -189,15 +192,16 @@ namespace MueLuTests {
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
 
       //FIXME this will probably fail in parallel b/c it becomes block Jacobi
+      using magnitude_type = typename Teuchos::ScalarTraits<SC>::magnitudeType;
 
       Teuchos::ParameterList paramList;
       Ifpack2Smoother smoother("ILUT",paramList);
 
-      typename Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = testApply_A125_X0_RandomRHS(smoother, out, success);
+      magnitude_type residualNorms = testApply_A125_X0_RandomRHS(smoother, out, success);
 
       RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
       if (comm->getSize() == 1) {
-        TEST_EQUALITY(residualNorms < 1e-10, true);
+        TEST_EQUALITY(residualNorms < 100*Teuchos::ScalarTraits<magnitude_type>::eps(), true);
       } else {
         out << "Pass/Fail is only checked in serial." << std::endl;
       }
@@ -352,7 +356,7 @@ namespace MueLuTests {
     }
   } // banded
 
-  // Make sure Ifpack2's Banded relaxation actually gets called
+  // Make sure Ifpack2's TriDi relaxation actually gets called
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Ifpack2Smoother, TriDiRelaxation, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include <MueLu_UseShortNames.hpp>
@@ -424,6 +428,37 @@ namespace MueLuTests {
     }
   } // tridi
 
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Ifpack2Smoother, BlockRelaxation_Autosize, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType magnitude_type;
+    MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
+      Teuchos::ParameterList matrixParams, ifpack2Params;
+
+      matrixParams.set("matrixType","Laplace1D");
+      matrixParams.set("nx",(GlobalOrdinal)20);// needs to be even
+      Teuchos::RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildMatrix(matrixParams,Xpetra::UseTpetra);
+      A->SetFixedBlockSize(2);
+
+      ifpack2Params.set("partitioner: type","linear");
+      Ifpack2Smoother smoother("BLOCK RELAXATION",ifpack2Params);
+      
+
+      Level level; TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(level);
+      level.Set("A", A);
+      smoother.Setup(level);
+
+
+      TEST_EQUALITY(1,1);
+    }
+  } // banded
+
+
+
+
 #define MUELU_ETI_GROUP(SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,NotSetup,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,HardCodedResult_GaussSeidel,SC,LO,GO,NO) \
@@ -432,7 +467,8 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,HardCodedResult_ILU,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,ILU_TwoSweeps,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,BandedRelaxation,SC,LO,GO,NO) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,TriDiRelaxation,SC,LO,GO,NO)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,TriDiRelaxation,SC,LO,GO,NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,BlockRelaxation_Autosize,SC,LO,GO,NO)
 
 #include <MueLu_ETI_4arg.hpp>
 

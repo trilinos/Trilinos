@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//               KokkosKernels 0.9: Linear Algebra and Graph Kernels
-//                 Copyright 2017 Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -109,9 +110,9 @@ namespace Impl{
     typedef typename viennacl::compressed_matrix<value_type>::handle_type it;
     typedef typename viennacl::compressed_matrix<value_type>::value_type vt;
 
-    if ((Kokkos::Impl::is_same<idx, int>::value && Kokkos::Impl::is_same<typename KernelHandle::size_type, int>::value )||
-        (Kokkos::Impl::is_same<idx, unsigned int>::value && Kokkos::Impl::is_same<typename KernelHandle::size_type, unsigned int>::value ) ||
-        (Kokkos::Impl::is_same<idx, it>::value && Kokkos::Impl::is_same<typename KernelHandle::size_type, it>::value )
+    if ((std::is_same<idx, int>::value && std::is_same<typename KernelHandle::size_type, int>::value )||
+        (std::is_same<idx, unsigned int>::value && std::is_same<typename KernelHandle::size_type, unsigned int>::value ) ||
+        (std::is_same<idx, it>::value && std::is_same<typename KernelHandle::size_type, it>::value )
         ){
 
       unsigned int * a_xadj = (unsigned int *)row_mapA.data();
@@ -160,7 +161,7 @@ namespace Impl{
 
       Kokkos::Impl::Timer timer1;
       viennacl::compressed_matrix<value_type> C = viennacl::linalg::prod(A, B);
-      MyExecSpace::fence();
+      MyExecSpace().fence();
 
       if (verbose)
       std::cout << "Actual VIENNACL SPMM Time:" << timer1.seconds() << std::endl;
@@ -187,11 +188,11 @@ namespace Impl{
           //row_mapC = typename cin_row_index_view_type::non_const_type(Kokkos::ViewAllocateWithoutInitializing("rowmapC"), c_rows + 1);
           entriesC = typename cin_nonzero_index_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("EntriesC") , cnnz);
           valuesC = typename cin_nonzero_value_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("valuesC") ,  cnnz);
-	  MyExecSpace::fence();
+	  MyExecSpace().fence();
           KokkosKernels::Impl::copy_vector<unsigned int const *, typename cin_row_index_view_type::non_const_type, MyExecSpace> (m + 1, rows_start, row_mapC);
           KokkosKernels::Impl::copy_vector<unsigned int const *, typename cin_nonzero_index_view_type::non_const_type, MyExecSpace> (cnnz, columns, entriesC);
           KokkosKernels::Impl::copy_vector<value_type   const *, typename cin_nonzero_value_view_type::non_const_type, MyExecSpace> (cnnz, values, valuesC);
-          MyExecSpace::fence();
+          MyExecSpace().fence();
 
 
           double copy_time_d = copy_time.seconds();
@@ -205,6 +206,13 @@ namespace Impl{
       throw std::runtime_error ("VIENNACL requires local ordinals to be integer.\n");
     }
 #else
+    (void)handle;
+    (void)m;          (void)n;          (void)k;
+    (void)row_mapA;   (void)row_mapB;   (void)row_mapC;
+    (void)entriesA;   (void)entriesB;   (void)entriesC;
+    (void)valuesA;    (void)valuesB;    (void)valuesC;
+    (void)transposeA; (void)transposeB;
+    (void)verbose;
     throw std::runtime_error ("VIENNACL IS NOT DEFINED\n");
     //return;
 #endif

@@ -69,7 +69,7 @@ namespace MueLu {
   // calling AddNewLevel as appropriate.
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddNonSerializableDataToHierarchy(HierarchyManager& HM, Hierarchy& H, const ParameterList& paramList) {
-    typedef typename Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,
+    typedef typename Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType,
                                          LocalOrdinal, GlobalOrdinal, Node> realvaluedmultivector_type;
 
     for (ParameterList::ConstIterator it = paramList.begin(); it != paramList.end(); it++) {
@@ -94,7 +94,7 @@ namespace MueLu {
           const std::string& name = it2->first;
           TEUCHOS_TEST_FOR_EXCEPTION(name != "A" && name != "P" && name != "R" && name != "K"  && name != "M" && name != "Mdiag" &&
                                      name != "Nullspace" && name != "Coordinates" && name != "pcoarsen: element to node map" &&
-                                     name != "Node Comm" &&
+                                     name != "Node Comm" && name != "DualNodeID2PrimalNodeID" &&
                                      !IsParamMuemexVariable(name), Exceptions::InvalidArgument,
                                      std::string("MueLu::Utils::AddNonSerializableDataToHierarchy: parameter list contains unknown data type(") + name + ")");
 
@@ -131,7 +131,11 @@ namespace MueLu {
             level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
             level->Set(name, Teuchos::getValue<RCP<const Teuchos::Comm<int> > >(it2->second), NoFactory::get());
           }
-
+          else if(name == "DualNodeID2PrimalNodeID")
+          {
+            level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
+            level->Set(name, Teuchos::getValue<RCP<std::map<LO, LO>>>(it2->second), NoFactory::get());
+          }
 #ifdef HAVE_MUELU_INTREPID2
           else if (name == "pcoarsen: element to node map")
           {
@@ -187,7 +191,8 @@ namespace MueLu {
           const std::string& name = it2->first;
           TEUCHOS_TEST_FOR_EXCEPTION(name != "P" && name != "R"  && name != "K"  && name != "M" && name != "Mdiag" &&
                                      name != "Nullspace" && name != "Coordinates" && name != "pcoarsen: element to node map" && 
-                                     name != "Node Comm" &&
+                                     name != "Node Comm" && name != "DualNodeID2PrimalNodeID" &&
+                                     name != "output stream" &&
                                      !IsParamValidVariable(name), Exceptions::InvalidArgument,
                                      std::string("MueLu::Utils::AddNonSerializableDataToHierarchy: user data parameter list contains unknown data type (") + name + ")");
           if( name == "P" || name == "R" || name == "K" || name == "M") {
@@ -210,6 +215,11 @@ namespace MueLu {
             level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
             level->Set(name, Teuchos::getValue<RCP<const Teuchos::Comm<int> > >(it2->second), NoFactory::get());
           }
+          else if(name == "DualNodeID2PrimalNodeID")
+          {
+            level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
+            level->Set(name, Teuchos::getValue<RCP<std::map<LO, LO>>>(it2->second), NoFactory::get());
+          }
 #ifdef HAVE_MUELU_INTREPID2
           else if (name == "pcoarsen: element to node map")
           {
@@ -217,6 +227,10 @@ namespace MueLu {
             level->Set(name, Teuchos::getValue<RCP<Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> > >(it2->second), NoFactory::get());
           }
 #endif
+          else if (name == "output stream")
+          {
+            H.SetMueLuOStream(Teuchos::getValue<RCP<Teuchos::FancyOStream> >(it2->second));
+          }
           else {
             //Custom variable
             size_t typeNameStart = name.find_first_not_of(' ');
@@ -230,6 +244,8 @@ namespace MueLu {
               level->Set(varName, Teuchos::getValue<RCP<Matrix> >(it2->second), NoFactory::get());
             else if(typeName == "multivector")
               level->Set(varName, Teuchos::getValue<RCP<MultiVector> >(it2->second), NoFactory::get());
+            else if(typeName == "vector")
+              level->Set(varName, Teuchos::getValue<RCP<Vector> >(it2->second), NoFactory::get());
             else if(typeName == "map")
               level->Set(varName, Teuchos::getValue<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > >(it2->second), NoFactory::get());
             else if(typeName == "ordinalvector")

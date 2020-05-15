@@ -1,6 +1,7 @@
-// Copyright (c) 2015, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,9 +15,9 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 //
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -91,20 +92,31 @@ public :
 
   virtual ~TransferCopyByIdStkMeshAdapter() {}
 
-  const double* field_data(const Mesh_ID & id, const unsigned field_index) const
+  const void* field_data(const Mesh_ID & id, const unsigned field_index) const
   {
     EntityKey key(static_cast<EntityKey::entity_key_t>(id));
     const mesh::Entity entity = m_mesh.get_entity(key);
     stk::mesh::FieldBase* field=m_transfer_fields[field_index];
-    return static_cast<const double*>(stk::mesh::field_data(*field, entity));
+    return reinterpret_cast<const void*>(stk::mesh::field_data(*field, entity));
   }
 
-  double* field_data(const Mesh_ID & id, const unsigned field_index)
+  void* field_data(const Mesh_ID & id, const unsigned field_index)
   {
     EntityKey key(static_cast<EntityKey::entity_key_t>(id));
     const mesh::Entity entity = m_mesh.get_entity(key);
     stk::mesh::FieldBase* field=m_transfer_fields[field_index];
-    return static_cast<double*>(stk::mesh::field_data(*field, entity));
+    return reinterpret_cast<void*>(stk::mesh::field_data(*field, entity));
+  }
+
+  std::string field_name(const unsigned field_index) const
+  {
+    ThrowRequireMsg(field_index < m_transfer_fields.size(),
+                    "P" << m_mesh.parallel_rank() <<
+                    " stk::transfer::StkMeshAdapter Error, attempt to access invalid field index [" << field_index <<
+                    "] in get_field_name(const unsigned field_index) is invalid!");
+
+    stk::mesh::FieldBase* field=m_transfer_fields[field_index];
+    return field->name();
   }
 
   stk::mesh::FieldBase* get_field(const unsigned field_index)
@@ -124,7 +136,7 @@ public :
     const mesh::Entity entity    = m_mesh.get_entity(key);
     const mesh::FieldBase &field = *m_transfer_fields[field_index];
 
-    return stk::mesh::field_scalars_per_entity(field,entity);
+    return stk::mesh::field_bytes_per_entity(field, entity);
   }
 
   unsigned num_fields() const
@@ -185,6 +197,42 @@ public :
       }
     }
   }
+
+  DataTypeKey::data_t get_field_type(const unsigned fieldIndex) const
+  { 
+    ThrowRequireMsg(fieldIndex < m_transfer_fields.size(),
+                    "P" << m_mesh.parallel_rank() <<
+                    " stk::transfer::StkMeshAdapter Error, attempt to access invalid field index [" << fieldIndex <<
+                    "] in get_field_type(const unsigned fieldIndex) is invalid!");
+
+    stk::mesh::FieldBase* field=m_transfer_fields[fieldIndex];
+
+    DataTypeKey::data_t dataType( DataTypeKey::data_t::INVALID_TYPE );
+
+ 
+    if(field->type_is<unsigned>()) {
+      dataType = DataTypeKey::data_t::UNSIGNED_INTEGER;
+    }
+    else if(field->type_is<int>()) {
+      dataType = DataTypeKey::data_t::INTEGER;
+    }
+    else if(field->type_is<int64_t>()) {
+      dataType = DataTypeKey::data_t::LONG_INTEGER;
+    }
+    else if(field->type_is<uint64_t>()) {
+      dataType = DataTypeKey::data_t::UNSIGNED_INTEGER_64;
+    }
+    else if(field->type_is<double>()) {
+      dataType = DataTypeKey::data_t::DOUBLE;
+    }
+    else if(field->type_is<long double>()) {
+      dataType = DataTypeKey::data_t::LONG_DOUBLE;
+    } else {
+      ThrowRequireMsg(false, "Unsupported data type");
+    }
+    return dataType;
+  }
+   
 
 private:
   stk::mesh::BulkData & m_mesh;

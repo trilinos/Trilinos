@@ -1,4 +1,4 @@
-// Copyright(C) 2008-2017 National Technology & Engineering Solutions
+// Copyright(C) 2008-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -31,32 +31,22 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#include "ED_SystemInterface.h" // for ERROR, SystemInterface, etc
+#include "ED_SystemInterface.h" // for SystemInterface, etc
 #include "exodusII.h"           // for ex_set, etc
-#include "iqsort.h"             // for index_qsort
+#include "fmt/format.h"
+#include "iqsort.h" // for index_qsort
 #include "node_set.h"
 #include "smart_assert.h" // for SMART_ASSERT
 #include <cstdlib>        // for exit
-#include <iostream>       // for operator<<, ostream, etc
 #include <vector>         // for vector
 
-template <typename INT>
-Node_Set<INT>::Node_Set()
-    : Exo_Entity(), num_dist_factors(0), nodes(nullptr), nodeIndex(nullptr), dist_factors(nullptr)
-{
-}
+template <typename INT> Node_Set<INT>::Node_Set() : Exo_Entity() {}
 
-template <typename INT>
-Node_Set<INT>::Node_Set(int file_id, size_t id)
-    : Exo_Entity(file_id, id), num_dist_factors(0), nodes(nullptr), nodeIndex(nullptr),
-      dist_factors(nullptr)
-{
-}
+template <typename INT> Node_Set<INT>::Node_Set(int file_id, size_t id) : Exo_Entity(file_id, id) {}
 
 template <typename INT>
 Node_Set<INT>::Node_Set(int file_id, size_t id, size_t nnodes, size_t ndfs)
-    : Exo_Entity(file_id, id, nnodes), num_dist_factors(ndfs), nodes(nullptr), nodeIndex(nullptr),
-      dist_factors(nullptr)
+    : Exo_Entity(file_id, id, nnodes), num_dist_factors(ndfs)
 {
 }
 
@@ -137,7 +127,7 @@ template <typename INT> void Node_Set<INT>::load_nodes(const INT *node_map) cons
     for (size_t i = 0; i < numEntity; i++) {
       nodeIndex[i] = i;
     }
-    if (interface.nsmap_flag) {
+    if (interFace.nsmap_flag) {
       index_qsort(nodes, nodeIndex, numEntity);
     }
   }
@@ -159,15 +149,6 @@ template <typename INT> void Node_Set<INT>::Free_Distribution_Factors() const
     delete[] dist_factors;
     dist_factors = nullptr;
   }
-}
-
-template <typename INT> void Node_Set<INT>::Display(std::ostream &s)
-{
-  Check_State();
-  s << "Node_Set<INT>::Display_Stats()  Exodus node set ID = " << id_ << '\n'
-    << "                              number of nodes = " << numEntity << '\n'
-    << "               number of distribution factors = " << num_dist_factors << '\n'
-    << "                          number of variables = " << var_count() << '\n';
 }
 
 template <typename INT> int Node_Set<INT>::Check_State() const
@@ -193,7 +174,7 @@ template <typename INT> void Node_Set<INT>::entity_load_params()
   int err = ex_get_sets(fileId, 1, &sets[0]);
 
   if (err < 0) {
-    ERROR("Failed to get nodeset parameters for nodeset " << id_ << ". !  Aborting...\n");
+    Error(fmt::format("Failed to get nodeset parameters for nodeset {}. !  Aborting...\n", id_));
     exit(1);
   }
 

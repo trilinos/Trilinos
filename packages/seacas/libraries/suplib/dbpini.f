@@ -89,10 +89,10 @@ C   --   NVAREL - IN - the number of element variables (if OPTION)
          WRITE (*, 10000, IOSTAT=IDUM)
      &      NDIM, NUMNP, NUMEL, NELBLK
 10000     FORMAT (
-     &      /, 1X, 'Number of coordinates per node       =', I10
-     &      /, 1X, 'Number of nodes                      =', I10
-     &      /, 1X, 'Number of elements                   =', I10
-     &      /, 1X, 'Number of element blocks             =', I10
+     &      /, 1X, 'Number of coordinates per node       =', I12
+     &      /, 1X, 'Number of nodes                      =', I12
+     &      /, 1X, 'Number of elements                   =', I12
+     &      /, 1X, 'Number of element blocks             =', I12
      &      )
       END IF
 
@@ -105,8 +105,8 @@ C   --   NVAREL - IN - the number of element variables (if OPTION)
      &         NUMNPS
          END IF
 10010     FORMAT (
-     &      /, 1X, 'Number of node sets                  =', I10, :
-     &      /, 1X, '   Length of node list               =', I10
+     &      /, 1X, 'Number of node sets                  =', I12, :
+     &      /, 1X, '   Length of node list               =', I12
      &      )
          IF (NUMESS .GT. 0) THEN
             WRITE (*, 10020, IOSTAT=IDUM)
@@ -116,19 +116,19 @@ C   --   NVAREL - IN - the number of element variables (if OPTION)
      &         NUMESS
          END IF
 10020     FORMAT
-     &      (  1X, 'Number of side sets                  =', I10 :
-     &      /, 1X, '   Length of element list            =', I10
-     &      /, 1X, '   Length of node list               =', I10
+     &      (  1X, 'Number of side sets                  =', I12 :
+     &      /, 1X, '   Length of element list            =', I12
+     &      /, 1X, '   Length of node list               =', I12
      &      )
       END IF
 
       IF ((OPTION .EQ. '*') .OR. (INDEX (OPTION, 'V') .GT. 0)) THEN
          WRITE (*, 10030, IOSTAT=IDUM) NVARHI, NVARGL, NVARNP, NVAREL
 10030     FORMAT (
-     &      /, 1X, 'Number of history variables          =', I10
-     &      /, 1X, 'Number of global variables           =', I10
-     &      /, 1X, 'Number of variables at each node     =', I10
-     &      /, 1X, 'Number of variables at each element  =', I10
+     &      /, 1X, 'Number of history variables          =', I12
+     &      /, 1X, 'Number of global variables           =', I12
+     &      /, 1X, 'Number of variables at each node     =', I12
+     &      /, 1X, 'Number of variables at each element  =', I12
      &      )
       END IF
 

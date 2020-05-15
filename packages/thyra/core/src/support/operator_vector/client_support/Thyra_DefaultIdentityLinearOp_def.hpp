@@ -136,7 +136,7 @@ std::string DefaultIdentityLinearOp<Scalar>::description() const
 
 
 template<class Scalar>
-bool DefaultIdentityLinearOp<Scalar>::opSupportedImpl(EOpTransp M_trans) const
+bool DefaultIdentityLinearOp<Scalar>::opSupportedImpl(EOpTransp /* M_trans */) const
 {
   return true;
 }
@@ -157,6 +157,8 @@ void DefaultIdentityLinearOp<Scalar>::applyImpl(
   THYRA_ASSERT_LINEAR_OP_MULTIVEC_APPLY_SPACES(
     "DefaultIdentityLinearOp<Scalar>::apply(...)", *this, M_trans, X, &*Y
     );
+#else
+  (void)M_trans;
 #endif // TEUCHOS_DEBUG  
   Thyra::linear_combination<Scalar>(
     tuple<Scalar>(alpha)(),

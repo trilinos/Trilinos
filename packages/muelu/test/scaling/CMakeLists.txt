@@ -29,17 +29,42 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PAC
   SET(${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK YES)
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_Galeri)
+
 IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK OR ${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK)
 
   TRIBITS_ADD_EXECUTABLE(
     Driver
     SOURCES Driver.cpp
     COMM serial mpi
+    CATEGORIES BASIC PERFORMANCE
     )
 
+  # Do a simple weak scaling experiment (4x ranks and 4x grid size)
+  TRIBITS_ADD_TEST(
+    Driver
+    NAME SetupSolve_Performance_1
+    COMM mpi
+    ARGS "--stacked-timer --nx=120 --ny=120 --nz=120 --matrixType=Laplace3D"
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION "Belos converged"
+    RUN_SERIAL
+    CATEGORIES PERFORMANCE
+  )
+
+  TRIBITS_ADD_TEST(
+    Driver
+    NAME SetupSolve_Performance_4
+    COMM mpi
+    ARGS "--stacked-timer --nx=240 --ny=240 --nz=120 --matrixType=Laplace3D"
+    NUM_MPI_PROCS 4
+    PASS_REGULAR_EXPRESSION "Belos converged"
+    RUN_SERIAL
+    CATEGORIES PERFORMANCE
+  )
+
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Driver_cp
-    SOURCE_FILES scaling.xml scaling.yaml scaling-complex.xml scaling-withglobalconstants.xml scaling-complex-withglobalconstants.xml circ_nsp_dependency.xml isorropia.xml iso_poisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml conchas_milestone_zoltan2_complex.xml sa_with_ilu.xml sa_with_Ifpack2_line_detection.xml rap.xml smoother.xml smoother_complex.xml tripleMatrixProduct.xml scaling-ml.xml elasticity3D.xml amgx.json amgx.xml scaling-with-rerun.xml
+    SOURCE_FILES scaling.xml scaling.yaml scaling-complex.xml scaling-withglobalconstants.xml scaling-complex-withglobalconstants.xml circ_nsp_dependency.xml isorropia.xml iso_poisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml conchas_milestone_zoltan2_complex.xml sa_with_ilu.xml sa_with_Ifpack2_line_detection.xml rap.xml smoother.xml smoother_complex.xml tripleMatrixProduct.xml scaling-ml.xml elasticity3D.xml amgx.json amgx.xml scaling-with-rerun.xml scaling_distance2_agg.xml smooVec.mm smooVecCoalesce.xml pairwise.xml
+    CATEGORIES BASIC PERFORMANCE
    )
 
  TRIBITS_ADD_EXECUTABLE(
@@ -64,7 +89,30 @@ TRIBITS_ADD_EXECUTABLE(
   MatrixMatrixMultiply
   SOURCES MatrixMatrixMultiply.cpp
   COMM mpi
+  CATEGORIES BASIC PERFORMANCE
   )
+
+TRIBITS_ADD_TEST(
+  MatrixMatrixMultiply
+  NAME MatrixMultiply_Performance_1
+  COMM mpi
+  ARGS "--timings --seed=12345 --minrows=8000 --maxrows=10000 --nmults=5"
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  RUN_SERIAL
+  CATEGORIES PERFORMANCE
+)
+
+TRIBITS_ADD_TEST(
+  MatrixMatrixMultiply
+  NAME MatrixMultiply_Performance_4
+  COMM mpi
+  ARGS "--timings --seed=12345 --minrows=8000 --maxrows=10000 --nmults=5"
+  NUM_MPI_PROCS 4
+  STANDARD_PASS_OUTPUT
+  RUN_SERIAL
+  CATEGORIES PERFORMANCE
+)
 
 # not very elegant. The best would probably to make Reuse.cpp work for both Epetra and Tpetra
 IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
@@ -106,13 +154,13 @@ IF (${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK)
 
 ENDIF()
 
-ENDIF() # Galeri
+
 
 #
 # Tests
 #
 
-IF (${PACKAGE_NAME}_ENABLE_Galeri)
+
 
 IF (${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK AND (NOT Xpetra_INT_LONG_LONG))
 
@@ -131,7 +179,7 @@ IF (${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK AND (NOT Xpetra_INT_LONG_LONG))
       ARGS "--linAlgebra=Epetra --xml=scaling-with-rerun.xml"
       NUM_MPI_PROCS 4
       COMM mpi # HAVE_MPI required
-      )    
+      )
 
     TRIBITS_ADD_TEST(
       Driver
@@ -259,6 +307,14 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
 
       TRIBITS_ADD_TEST(
         Driver
+        NAME "DriverTpetraSingleReduceCG"
+        ARGS "--linAlgebra=Tpetra --xml=scaling.xml --belosType=\"TPETRA CG SINGLE REDUCE\""
+        NUM_MPI_PROCS 4
+        COMM mpi # HAVE_MPI required
+        )
+
+      TRIBITS_ADD_TEST(
+        Driver
         NAME "DriverTpetraYaml"
         ARGS "--linAlgebra=Tpetra --yaml=scaling.yaml"
         NUM_MPI_PROCS 4
@@ -272,6 +328,17 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
         NUM_MPI_PROCS 4
         COMM mpi # HAVE_MPI required
         )
+
+      IF(${PACKAGE_NAME}_ENABLE_Kokkos_Refactor)
+        TRIBITS_ADD_TEST(
+          Driver
+          NAME "DriverTpetra_Distance2Coloring"
+          ARGS "--linAlgebra=Tpetra --xml=scaling_distance2_agg.xml"
+          NUM_MPI_PROCS 4
+          COMM mpi # HAVE_MPI required
+          )
+      ENDIF()
+
     ENDIF()
 
     TRIBITS_ADD_TEST(
@@ -357,6 +424,15 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
       NUM_MPI_PROCS 4
       COMM serial mpi
       )
+    TRIBITS_ADD_TEST(
+      ReadMatrix
+      NAME "SmooVecCoalesce"
+      ARGS "--linAlgebra=Tpetra --matrixfile=smooVec.mm --xml=smooVecCoalesce.xml --numpdes=3"
+      NUM_MPI_PROCS 3
+      COMM mpi
+      )
+
+
   ENDIF()
 
 ENDIF()
@@ -375,7 +451,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Tpetra)
       SOURCES MMKernelDriver.cpp
       COMM serial mpi
       )
-  
+
 
     TRIBITS_ADD_TEST(
       MMKernelDriver
@@ -390,7 +466,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Tpetra)
       SOURCES JacobiKernelDriver.cpp
       COMM serial mpi
       )
-  
+
 
     TRIBITS_ADD_TEST(
       JacobiKernelDriver
@@ -405,7 +481,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Tpetra)
       SOURCES TwoMatrixMMKernelDriver.cpp
       COMM serial mpi
       )
-  
+
 
     TRIBITS_ADD_TEST(
       TwoMatrixMMKernelDriver
@@ -415,22 +491,15 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Tpetra)
       COMM serial mpi
       )
 
-    TRIBITS_ADD_EXECUTABLE(
-      MatvecKernelDriver
-      SOURCES MatvecKernelDriver.cpp
-      COMM serial mpi
-      )
-  
-
-    TRIBITS_ADD_TEST(
-      MatvecKernelDriver
-      NAME "MatvecKernelDriver"
-      ARGS "--linAlgebra=Tpetra"
-      NUM_MPI_PROCS 1
-      COMM serial mpi
-      )
   ENDIF()
 ENDIF()
 
 
-ENDIF() # Galeri
+# remove this from Experimental it requires Galeri + Tpetra
+IF (${PACKAGE_NAME}_ENABLE_Tpetra)
+  TRIBITS_ADD_EXECUTABLE(
+    MatvecKernelDriver
+    SOURCES MatvecKernelDriver.cpp
+    COMM serial mpi
+    )
+ENDIF()

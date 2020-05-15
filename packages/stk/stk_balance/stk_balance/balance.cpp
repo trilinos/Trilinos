@@ -1,16 +1,53 @@
+ // Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
+ // Redistribution and use in source and binary forms, with or without
+ // modification, are permitted provided that the following conditions are
+ // met:
+ //
+ //     * Redistributions of source code must retain the above copyright
+ //       notice, this list of conditions and the following disclaimer.
+ //
+ //     * Redistributions in binary form must reproduce the above
+ //       copyright notice, this list of conditions and the following
+ //       disclaimer in the documentation and/or other materials provided
+ //       with the distribution.
+ //
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
+ // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ // A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ // OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ // SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ // LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ // DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #include <vector>
+
+#include "mesh/BalanceMesh.hpp"
 
 #include "balance.hpp"
 #include "balanceUtils.hpp"               // for BalanceSettings, etc
 #include "fixSplitCoincidentElements.hpp"
+#include "internal/DetectAndFixMechanisms.hpp"
 #include "internal/LastStepFieldWriter.hpp"
 #include "internal/balanceCoincidentElements.hpp"
+#include "internal/balanceCommandLine.hpp"
 #include "internal/privateDeclarations.hpp"  // for callZoltan1, etc
-#include "stk_balance/internal/DetectAndFixMechanisms.hpp"
-#include "stk_balance/internal/TransientFieldTransferById.hpp"
+#include "internal/NodeBalancer.hpp"
 #include "stk_io/StkIoUtils.hpp"
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
 #include "stk_mesh/base/Comm.hpp"
+#include "stk_tools/transfer_utils/TransientFieldTransferById.hpp"
 #include "stk_util/diag/StringUtil.hpp"
 #include "stk_util/parallel/ParallelReduce.hpp"
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowRequireMsg
@@ -26,52 +63,70 @@ namespace balance
 {
 
 namespace {
-    std::string construct_coloring_part_name(int color)
-    {
-        std::ostringstream oss;
-        oss << get_coloring_part_base_name() << "_" << color;
-        return oss.str();
-    }
-
     bool check_if_mesh_has_coloring(const stk::mesh::MetaData& meta)
     {
-        const stk::mesh::PartVector& parts = meta.get_parts();
-        const std::string& coloringPartBaseName = get_coloring_part_base_name();
-        const unsigned length = coloringPartBaseName.length();
-        for (const stk::mesh::Part* part : parts)
-        {
-            std::string partSubName = part->name().substr(0, length);
-            if (!sierra::case_strcmp(partSubName, coloringPartBaseName))
-            {
-                return true;
-            }
-        }
-        return false;
+        stk::mesh::PartVector coloringParts;
+        fill_coloring_parts(meta, coloringParts);
+        return !coloringParts.empty();
     }
 
     void move_entities_to_coloring_part(stk::mesh::BulkData& bulk,
                                         const stk::mesh::EntityRank rank,
+                                        const stk::mesh::Part& rootTopologyPart,
                                         const stk::mesh::impl::LocalIdMapper& localIds,
                                         int* coloredGraphVertices)
     {
 
         stk::mesh::MetaData& meta = bulk.mesh_meta_data();
-        bulk.modification_begin();
         stk::mesh::EntityVector entities;
-        stk::mesh::get_selected_entities(meta.locally_owned_part(), bulk.buckets(rank), entities);
+        stk::mesh::Selector entitySelector = meta.locally_owned_part() & rootTopologyPart;
+        stk::mesh::get_selected_entities(entitySelector, bulk.buckets(rank), entities);
+        std::vector<stk::mesh::PartVector> addParts;
+        std::vector<stk::mesh::PartVector> removeParts;
         for(stk::mesh::Entity entity : entities)
         {
             if(localIds.does_entity_have_local_id(entity))
             {
                 unsigned localId = localIds.entity_to_local(entity);
                 int color = coloredGraphVertices[localId];
-                std::string partName = construct_coloring_part_name(color);
+                std::string partName = construct_coloring_part_name(color, rootTopologyPart);
                 stk::mesh::Part* colorPart = meta.get_part(partName);
                 ThrowRequireMsg(nullptr != colorPart, "Color Part for " << bulk.entity_key(entity) << " cannot be null!");
-                bulk.change_entity_parts(entity, stk::mesh::PartVector {colorPart}, {});
+                addParts.push_back({colorPart});
+                removeParts.push_back({});
             }
         }
-        bulk.modification_end();
+        bulk.batch_change_entity_parts(entities, addParts, removeParts);
+    }
+
+    stk::mesh::FieldBase* get_coloring_field(const stk::mesh::MetaData& meta, const stk::mesh::Part& rootTopologyPart)
+    {
+        stk::mesh::FieldBase* colorField = nullptr;
+        colorField = meta.get_field(stk::topology::ELEMENT_RANK, rootTopologyPart.topology().name() + "coloring");
+        return colorField;
+    }
+
+    void update_color_fields(stk::mesh::BulkData& bulk,
+                             const stk::mesh::EntityRank rank,
+                             const stk::mesh::Part& rootTopologyPart,
+                             const stk::mesh::impl::LocalIdMapper& localIds,
+                             int* coloredGraphVertices)
+    {
+        stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+        stk::mesh::FieldBase* colorField = get_coloring_field(meta, rootTopologyPart);
+        ThrowRequireMsg(colorField != nullptr, "Root topology part not supported, created after I/O for topology " << rootTopologyPart.topology().name());
+
+        stk::mesh::EntityVector entities;
+        stk::mesh::get_selected_entities(rootTopologyPart, bulk.buckets(rank), entities);
+        for(stk::mesh::Entity entity : entities)
+        {
+            if(localIds.does_entity_have_local_id(entity))
+            {
+                unsigned localId = localIds.entity_to_local(entity);
+                int* colorData = static_cast<int*>(stk::mesh::field_data(*colorField, entity));
+                *colorData = coloredGraphVertices[localId];
+            }
+        }
     }
 
     void fill_coloring_set(int* coloredGraphVertices, size_t numColoredGraphVertices, std::set<int>& colors)
@@ -94,15 +149,29 @@ namespace {
         return globalMaxColor;
     }
 
-    void create_coloring_parts(stk::mesh::MetaData& meta, const std::set<int>& colors)
+    void create_coloring_parts(stk::mesh::MetaData& meta, const stk::mesh::Part& rootTopologyPart, const std::set<int>& colors)
     {
         int globalMaxColor = get_max_color(meta, colors);
         for(int color = 1; color <= globalMaxColor; ++color)
         {
-            std::string partName = construct_coloring_part_name(color);
+            std::string partName = construct_coloring_part_name(color, rootTopologyPart);
             meta.declare_part(partName);
         }
     }
+}
+
+std::string get_selected_part_name(const stk::mesh::Part& part)
+{
+  std::string partName = "";
+  partName += part.name() + "_";
+  return partName;
+}
+
+std::string construct_coloring_part_name(const int color, const stk::mesh::Part& part)
+{
+    std::ostringstream oss;
+    oss << get_coloring_part_base_name() << "_" << get_selected_part_name(part) << color;
+    return oss.str();
 }
 
 bool loadBalance(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData, unsigned numSubdomainsToCreate, const std::vector<stk::mesh::Selector>& selectors)
@@ -153,77 +222,164 @@ bool loadBalance(const BalanceSettings& balanceSettings, stk::mesh::BulkData& st
     return (num_global_entity_migrations > 0);
 }
 
-bool colorMesh(const BalanceSettings& balanceSettings, stk::mesh::BulkData& bulk, const std::vector<stk::mesh::Selector>& selectors)
+bool colorMesh(const BalanceSettings& balanceSettings, stk::mesh::BulkData& bulk, const stk::mesh::PartVector& parts)
 {
-    ThrowRequireMsg(balanceSettings.getGraphOption() == BalanceSettings::COLORING, "colorMesh must be called with COLORING Setting");
+    ThrowRequireMsg(balanceSettings.getGraphOption() == BalanceSettings::COLOR_MESH ||
+                    balanceSettings.getGraphOption() == BalanceSettings::COLOR_MESH_BY_TOPOLOGY ||
+                    balanceSettings.getGraphOption() == BalanceSettings::COLOR_MESH_AND_OUTPUT_COLOR_FIELDS,
+                    "colorMesh must be called with COLOR_MESH or COLOR_MESH_BY_TOPOLOGY Setting");
+
+    internal::logMessage(bulk.parallel(), "Start Coloring Mesh");
 
     stk::mesh::MetaData& meta = bulk.mesh_meta_data();
     ThrowRequireMsg(!check_if_mesh_has_coloring(meta), "Mesh has already been colored!");
 
     const stk::mesh::EntityRank rank = stk::topology::ELEM_RANK;
-    stk::mesh::impl::LocalIdMapper localIds(bulk, rank);
 
-    Teuchos::ParameterList params("stk_balance coloring");
+    Teuchos::ParameterList params("stk_balance coloring mesh");
 
-    std::vector<int> adjacencyProcs;
+    int totalNumColors = 0;
+    for (stk::mesh::Part* part : parts)
+    {
+      internal::logMessage(bulk.parallel(), "Coloring Part: " + part->name());
+      std::vector<int> adjacencyProcs;
+      stk::mesh::Selector selector = *part;
+      stk::mesh::impl::LocalIdMapper localIds(bulk, rank, selector);
 
-    Zoltan2ParallelGraph zoltan2Graph;
-    zoltan2Graph.fillZoltan2AdapterDataFromStkMesh(bulk,
-                                                   balanceSettings,
-                                                   adjacencyProcs,
-                                                   selectors.size() == 0 ? meta.locally_owned_part() : selectors[0],
-                                                   localIds);
+      Zoltan2ParallelGraph zoltan2Graph;
+      zoltan2Graph.fillZoltan2AdapterDataFromStkMesh(bulk,
+                                                     balanceSettings,
+                                                     adjacencyProcs,
+                                                     selector,
+                                                     localIds);
 
-    std::vector<size_t> counts;
-    stk::mesh::comm_mesh_counts(bulk, counts);
-    zoltan2Graph.set_num_global_elements(counts[rank]);
+      std::vector<size_t> counts;
+      stk::mesh::comm_mesh_counts(bulk, counts, &selector);
+      zoltan2Graph.set_num_global_elements(counts[rank]);
 
-    zoltan2Graph.set_spatial_dim(meta.spatial_dimension());
-    StkMeshZoltanAdapter stkMeshAdapter(zoltan2Graph);
+      zoltan2Graph.set_spatial_dim(meta.spatial_dimension());
+      StkMeshZoltanAdapter stkMeshAdapter(zoltan2Graph);
 
-    Zoltan2::ColoringProblem<StkMeshZoltanAdapter> problem(&stkMeshAdapter, &params);
+      Zoltan2::ColoringProblem<StkMeshZoltanAdapter> problem(&stkMeshAdapter, &params);
 
-    std::srand(bulk.parallel_rank());
-    problem.solve();
+      std::srand(bulk.parallel_rank());
+      internal::logMessage(bulk.parallel(), "Solving graph for colors");
+      problem.solve();
 
-    Zoltan2::ColoringSolution<StkMeshZoltanAdapter> *soln = problem.getSolution();
+      Zoltan2::ColoringSolution<StkMeshZoltanAdapter> *soln = problem.getSolution();
 
-    size_t numColoredGraphVertices = soln->getColorsSize();
-    int* coloredGraphVertices = soln->getColors();
+      size_t numColoredGraphVertices = soln->getColorsSize();
+      int* coloredGraphVertices = soln->getColors();
 
-    std::set<int> colors;
-    fill_coloring_set(coloredGraphVertices, numColoredGraphVertices, colors);
+      std::set<int> colors;
+      fill_coloring_set(coloredGraphVertices, numColoredGraphVertices, colors);
 
-    create_coloring_parts(meta, colors);
+      create_coloring_parts(meta, *part, colors);
 
-    move_entities_to_coloring_part(bulk, rank, localIds, coloredGraphVertices);
-    return colors.size() > 0;
+      internal::logMessage(bulk.parallel(), "Moving entities to coloring part");
+      move_entities_to_coloring_part(bulk, rank, *part, localIds, coloredGraphVertices);
+
+      if (balanceSettings.getGraphOption() == BalanceSettings::COLOR_MESH_AND_OUTPUT_COLOR_FIELDS)
+      {
+          update_color_fields(bulk, rank, *part, localIds, coloredGraphVertices);
+      }
+      totalNumColors += colors.size();
+    }
+    internal::logMessage(bulk.parallel(), "Finish coloring");
+    return totalNumColors > 0;
 }
 
-bool balanceStkMesh(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData)
+bool internalBalanceStkMesh(const BalanceSettings& balanceSettings, BalanceMesh& mesh, const std::vector<stk::mesh::Selector>& selectors)
 {
-    std::vector<stk::mesh::Selector> selectors = {stkMeshBulkData.mesh_meta_data().locally_owned_part()};
-    return balanceStkMesh(balanceSettings, stkMeshBulkData, selectors);
-}
-
-bool balanceStkMesh(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData, const std::vector<stk::mesh::Selector>& selectors)
-{
-  if( balanceSettings.getGraphOption() == BalanceSettings::LOADBALANCE )
+  if( balanceSettings.getGraphOption() == BalanceSettings::LOAD_BALANCE )
   {
-    return loadBalance(balanceSettings, stkMeshBulkData, stkMeshBulkData.parallel_size(), selectors);
-  }
-
-  if( balanceSettings.getGraphOption() == BalanceSettings::COLORING )
-  {
-    return colorMesh(balanceSettings, stkMeshBulkData, selectors);
+    return loadBalance(balanceSettings, mesh.get_bulk(), mesh.get_bulk().parallel_size(), selectors);
   }
   return false;
 }
 
-void run_static_stk_balance_with_settings(stk::io::StkMeshIoBroker &stkInput, stk::mesh::BulkData &inputBulk, const std::string& outputFilename, MPI_Comm comm, stk::balance::BalanceSettings& graphOptions)
+bool internalBalanceStkMesh(const BalanceSettings& balanceSettings, BalanceMesh& mesh)
+{
+  std::vector<stk::mesh::Selector> selectors = {mesh.get_bulk().mesh_meta_data().locally_owned_part()};
+  return internalBalanceStkMesh(balanceSettings, mesh, selectors);
+}
+
+bool balanceStkMesh(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData, const std::vector<stk::mesh::Selector>& selectors)
+{
+  ExternalMesh mesh(stkMeshBulkData);
+  return internalBalanceStkMesh(balanceSettings, mesh, selectors);
+}
+
+bool balanceStkMesh(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData)
+{
+  ExternalMesh mesh(stkMeshBulkData);
+  return internalBalanceStkMesh(balanceSettings, mesh);
+}
+
+bool balanceStkMeshNodes(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData)
+{
+    if ((balanceSettings.getGraphOption() == BalanceSettings::LOAD_BALANCE) && balanceSettings.useNodeBalancer())
+    {
+      internal::NodeBalancer nodeBalancer(stkMeshBulkData);
+      return nodeBalancer.balance_node_entities(balanceSettings.getNodeBalancerTargetLoadBalance(),
+                                                balanceSettings.getNodeBalancerMaxIterations());
+    }
+    return false;
+}
+
+bool colorStkMesh(const BalanceSettings& colorSettings, stk::mesh::BulkData& stkMeshBulkData)
+{
+    if (colorSettings.getGraphOption() == BalanceSettings::COLOR_MESH )
+    {
+      return colorMesh(colorSettings, stkMeshBulkData, {&(stkMeshBulkData.mesh_meta_data().locally_owned_part())});
+    }
+    else if (colorSettings.getGraphOption() == BalanceSettings::COLOR_MESH_BY_TOPOLOGY || colorSettings.getGraphOption() == BalanceSettings::COLOR_MESH_AND_OUTPUT_COLOR_FIELDS)
+    {
+      stk::mesh::PartVector rootTopologyParts = get_root_topology_parts_for_rank(stkMeshBulkData, stk::topology::ELEMENT_RANK);
+      return colorMesh(colorSettings, stkMeshBulkData, rootTopologyParts);
+    }
+    return false;
+}
+
+void fill_coloring_parts(const stk::mesh::MetaData& meta, stk::mesh::PartVector& coloringParts)
+{
+    coloringParts.clear();
+    const stk::mesh::PartVector& parts = meta.get_parts();
+    const std::string& coloringPartBaseName = get_coloring_part_base_name();
+    const unsigned length = coloringPartBaseName.length();
+    for (stk::mesh::Part* part : parts)
+    {
+        std::string partSubName = part->name().substr(0, length);
+        if (!sierra::case_strcmp(partSubName, coloringPartBaseName))
+        {
+            coloringParts.push_back(part);
+        }
+    }
+}
+
+void fill_coloring_parts_with_topology(const stk::mesh::MetaData& meta, const stk::topology topo, stk::mesh::PartVector& coloringParts)
+{
+    coloringParts.clear();
+    const stk::mesh::PartVector& parts = meta.get_parts();
+    const std::string& coloringPartBaseName = get_coloring_part_base_name();
+    const std::string coloringTopoPartBaseName = coloringPartBaseName + "_" + meta.get_topology_root_part(topo).name();
+    const unsigned length = coloringTopoPartBaseName.length();
+    for (stk::mesh::Part* part : parts)
+    {
+        std::string partSubName = part->name().substr(0, length);
+        if (!sierra::case_strcmp(partSubName, coloringTopoPartBaseName))
+        {
+            coloringParts.push_back(part);
+        }
+    }
+}
+
+void run_static_stk_balance_with_settings(stk::io::StkMeshIoBroker &stkInput, BalanceMesh& inputMesh, const std::string& outputFilename, MPI_Comm comm, stk::balance::BalanceSettings& graphOptions)
 {
     stk::mesh::MetaData metaB;
     stk::mesh::BulkData bulkB(metaB, comm);
+
+    stk::mesh::BulkData& inputBulk = inputMesh.get_bulk();
 
     stk::mesh::BulkData *balancedBulk = nullptr;
     if(stk::io::get_transient_fields(inputBulk.mesh_meta_data()).empty())
@@ -237,13 +393,14 @@ void run_static_stk_balance_with_settings(stk::io::StkMeshIoBroker &stkInput, st
         balancedBulk = &bulkB;
     }
 
-    stk::balance::balanceStkMesh(graphOptions, *balancedBulk);
+    ExternalMesh balancedMesh(*balancedBulk);
+    stk::balance::internalBalanceStkMesh(graphOptions, balancedMesh);
 
     stk::io::StkMeshIoBroker stkOutput;
     stkOutput.set_bulk_data(*balancedBulk);
     stkOutput.set_attribute_field_ordering_stored_by_part_ordinal(stkInput.get_attribute_field_ordering_stored_by_part_ordinal());
 
-    stk::balance::internal::TransientFieldTransferById transfer(stkInput, stkOutput);
+    stk::transfer_utils::TransientFieldTransferById transfer(stkInput, stkOutput);
     transfer.transfer_and_write_transient_fields(outputFilename);
 
     internal::logMessage(inputBulk.parallel(), "Finished writing output mesh");
@@ -279,22 +436,33 @@ void read_mesh_with_auto_decomp(stk::io::StkMeshIoBroker & stkIo,
     }
 }
 
+void initial_decomp_and_balance(BalanceMesh& mesh,
+                                stk::balance::BalanceSettings& graphOptions,
+                                const std::string& exodusFilename,
+                                const std::string& outputFilename,
+                                const std::string & initialDecompMethod)
+{
+    stk::io::StkMeshIoBroker stkInput;
+    stkInput.property_add(Ioss::Property("DECOMPOSITION_METHOD", initialDecompMethod));
+
+    internal::logMessage(mesh.get_bulk().parallel(), "Reading mesh and performing initial decomposition");
+    read_mesh_with_auto_decomp(stkInput, exodusFilename, mesh.get_bulk(), graphOptions);
+
+    make_mesh_consistent_with_parallel_mesh_rule1(mesh.get_bulk());
+    run_static_stk_balance_with_settings(stkInput, mesh, outputFilename, mesh.get_bulk().parallel(), graphOptions);
+}
+
 void initial_decomp_and_balance(stk::mesh::BulkData &bulk,
                                 stk::balance::BalanceSettings& graphOptions,
                                 const std::string& exodusFilename,
-                                const std::string& outputFilename)
+                                const std::string& outputFilename,
+                                const std::string & initialDecompMethod)
 {
-    stk::io::StkMeshIoBroker stkInput;
-    stkInput.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RIB"));
-
-    internal::logMessage(bulk.parallel(), "Reading mesh and performing initial decomposition");
-    read_mesh_with_auto_decomp(stkInput, exodusFilename, bulk, graphOptions);
-
-    make_mesh_consistent_with_parallel_mesh_rule1(bulk);
-    run_static_stk_balance_with_settings(stkInput, bulk, outputFilename, bulk.parallel(), graphOptions);
+  ExternalMesh mesh(bulk);
+  initial_decomp_and_balance(mesh, graphOptions, exodusFilename, outputFilename, initialDecompMethod);
 }
 
-void run_stk_balance_with_settings(const std::string& outputFilename, const std::string& exodusFilename, MPI_Comm comm, stk::balance::BalanceSettings& graphOptions)
+void run_stk_balance_with_settings(const std::string& outputFilename, const std::string& exodusFilename, MPI_Comm comm, stk::balance::BalanceSettings& balanceSettings)
 {
     const std::string trimmedInputName = (exodusFilename.substr(0,2) == "./") ? exodusFilename.substr(2) : exodusFilename;
     const std::string trimmedOutputName = (outputFilename.substr(0,2) == "./") ? outputFilename.substr(2) : outputFilename;
@@ -305,28 +473,74 @@ void run_stk_balance_with_settings(const std::string& outputFilename, const std:
                      <<") == output-file, doing nothing. Specify outputDirectory if you "
                      <<"wish to copy the input-file to an output-file of the same name.");
 
-    stk::mesh::MetaData meta;
-    stk::mesh::BulkData bulk(meta, comm);
-    initial_decomp_and_balance(bulk, graphOptions, exodusFilename, outputFilename);
+    const std::string initialDecompMethod = "RIB";
+
+    InternalMesh mesh(comm, balanceSettings.getCoordinateFieldName());
+
+    initial_decomp_and_balance(mesh, balanceSettings, exodusFilename, outputFilename, balanceSettings.getInitialDecompMethod());
 }
 
-void run_stk_rebalance(const std::string& outputDirectory, const std::string& exodusFilename, stk::balance::AppTypeDefaults appType, MPI_Comm comm)
+StkBalanceSettings create_balance_settings(const stk::balance::ParsedOptions & options)
 {
-    stk::balance::GraphCreationSettings graphOptions;
+  StkBalanceSettings balanceSettings;
+  SearchToleranceType searchToleranceType = ABSOLUTE;
 
-    if (appType == stk::balance::SD_DEFAULTS)
-    {
-        graphOptions.setShouldFixSpiders(true);
+  if (options.is_option_provided(stk::balance::ParsedOptions::APP_TYPE)) {
+    if (options.appTypeDefaults == stk::balance::SD_DEFAULTS) {
+      balanceSettings.setShouldFixSpiders(true);
     }
-    else if (appType == stk::balance::SM_DEFAULTS)
-    {
-        graphOptions.setEdgeWeightForSearch(3.0);
-        graphOptions.setVertexWeightMultiplierForVertexInSearch(10.0);
-        graphOptions.setToleranceFunctionForFaceSearch(std::make_shared<stk::balance::SecondShortestEdgeFaceSearchTolerance>());
+    else if (options.appTypeDefaults == stk::balance::SM_DEFAULTS) {
+      balanceSettings.setEdgeWeightForSearch(3.0);
+      balanceSettings.setVertexWeightMultiplierForVertexInSearch(10.0);
+      balanceSettings.setToleranceFunctionForFaceSearch(
+            std::make_shared<stk::balance::SecondShortestEdgeFaceSearchTolerance>());
+      searchToleranceType = RELATIVE;
     }
+  }
 
-    std::string outputFilename = outputDirectory + "/" + exodusFilename;
-    run_stk_balance_with_settings(outputFilename, exodusFilename, comm, graphOptions);
+  if (options.is_option_provided(stk::balance::ParsedOptions::CONTACT_SEARCH)) {
+    balanceSettings.setIncludeSearchResultsInGraph(options.useContactSearch);
+  }
+
+  if (options.is_option_provided(stk::balance::ParsedOptions::FACE_SEARCH_ABS_TOL)) searchToleranceType = ABSOLUTE;
+  if (options.is_option_provided(stk::balance::ParsedOptions::FACE_SEARCH_REL_TOL)) searchToleranceType = RELATIVE;
+
+  if (searchToleranceType == ABSOLUTE) {
+    const double tolerance = options.is_option_provided(stk::balance::ParsedOptions::FACE_SEARCH_ABS_TOL) ?
+                             options.faceSearchAbsTol : stk::balance::defaultFaceSearchTolerance;
+    balanceSettings.setToleranceForFaceSearch(tolerance);
+  }
+  else if (searchToleranceType == RELATIVE) {
+    if (options.is_option_provided(stk::balance::ParsedOptions::FACE_SEARCH_REL_TOL)) {
+      balanceSettings.setToleranceFunctionForFaceSearch(
+            std::make_shared<stk::balance::SecondShortestEdgeFaceSearchTolerance>(options.faceSearchRelTol));
+    }
+    else {
+      balanceSettings.setToleranceFunctionForFaceSearch(
+            std::make_shared<stk::balance::SecondShortestEdgeFaceSearchTolerance>());
+    }
+  }
+
+  if (options.is_option_provided(stk::balance::ParsedOptions::DECOMP_METHOD)) {
+    balanceSettings.setDecompMethod(options.decompMethod);
+  }
+
+  if (options.is_option_provided(stk::balance::ParsedOptions::INITIAL_DECOMP_METHOD)) {
+    balanceSettings.setInitialDecompMethod(options.initialDecompMethod);
+  }
+
+  return balanceSettings;
+}
+
+void run_stk_rebalance(const stk::balance::ParsedOptions& options,  MPI_Comm comm)
+{
+    const std::string& outputDirectory = options.outputDirectory;
+    const std::string& inputFile = options.m_inFile;
+
+    StkBalanceSettings balanceSettings = create_balance_settings(options);
+
+    std::string outputFilename = construct_output_file_name(outputDirectory, inputFile);
+    run_stk_balance_with_settings(outputFilename, inputFile, comm, balanceSettings);
 }
 
 }

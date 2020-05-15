@@ -1,8 +1,12 @@
 #!/bin/bash
 
-package="Xpetra"
+#FIXME JHU 22-Apr-2019 Until ETI is complete, don't run this script.
+exit
 
-for classList in *.classList
+package="Xpetra"
+classListDir=../ClassList
+
+for classList in ${classListDir}/*.classList
   do
   i=$(basename $classList .classList)
 

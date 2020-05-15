@@ -1,4 +1,3 @@
-
 //
 // ***********************************************************************
 //
@@ -49,6 +48,7 @@
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
 #include <Xpetra_Matrix.hpp>
+#include <Xpetra_MatrixUtils.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 
@@ -60,6 +60,7 @@
 #include "MueLu_FactoryManager.hpp"
 
 #include "MueLu_AggregationExportFactory.hpp"
+#include "MueLu_AggregateQualityEstimateFactory.hpp"
 #include "MueLu_BrickAggregationFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_CoarseMapFactory.hpp"
@@ -75,6 +76,7 @@
 #include "MueLu_GenericRFactory.hpp"
 #include "MueLu_LineDetectionFactory.hpp"
 #include "MueLu_MasterList.hpp"
+#include "MueLu_NotayAggregationFactory.hpp"
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_PatternFactory.hpp"
 #include "MueLu_PgPFactory.hpp"
@@ -84,8 +86,10 @@
 #include "MueLu_RebalanceTransferFactory.hpp"
 #include "MueLu_RepartitionFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
+#include "MueLu_ScaledNullspaceFactory.hpp"
 #include "MueLu_SemiCoarsenPFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
+#include "MueLu_SmooVecCoalesceDropFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_TogglePFactory.hpp"
 #include "MueLu_ToggleCoordinatesTransferFactory.hpp"
@@ -212,7 +216,7 @@ namespace MueLu {
     if      (paramList  .isParameter(paramName)) listWrite.set(paramName, paramList  .get<paramType>(paramName)); \
     else if (defaultList.isParameter(paramName)) listWrite.set(paramName, defaultList.get<paramType>(paramName)); \
   } \
-  catch(Teuchos::Exceptions::InvalidParameterType) { \
+  catch(Teuchos::Exceptions::InvalidParameterType&) { \
     TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true, Teuchos::Exceptions::InvalidParameterType, \
                                         "Error: parameter \"" << paramName << "\" must be of type " << Teuchos::TypeNameTraits<paramType>::name()); \
   } \
@@ -256,14 +260,20 @@ namespace MueLu {
     // Check for Kokkos
 #if !defined(HAVE_MUELU_KOKKOS_REFACTOR)
     useKokkos_ = false;
-#elif defined(HAVE_MUELU_KOKKOS_REFACTOR_USE_BY_DEFAULT)
-    ParameterList tempList("tempList");
-    tempList.set("use kokkos refactor",true);
-    MUELU_SET_VAR_2LIST(paramList, tempList, "use kokkos refactor", bool, useKokkos);
-    useKokkos_ = useKokkos;
 #else
-    MUELU_SET_VAR_2LIST(paramList, paramList, "use kokkos refactor", bool, useKokkos);
-    useKokkos_ = useKokkos;
+# ifdef HAVE_MUELU_SERIAL
+    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosSerialWrapperNode).name())
+      useKokkos_ = false;
+# endif
+# ifdef HAVE_MUELU_OPENMP
+    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosOpenMPWrapperNode).name())
+      useKokkos_ = true;
+# endif
+# ifdef HAVE_MUELU_CUDA
+    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
+      useKokkos_ = true;
+# endif
+    (void)MUELU_TEST_AND_SET_VAR(paramList, "use kokkos refactor", bool, useKokkos_);
 #endif
 
     // Check for timer synchronization
@@ -313,21 +323,14 @@ namespace MueLu {
     // Set verbosity parameter
     VerbLevel oldVerbLevel = VerboseObject::GetDefaultVerbLevel();
     {
-      std::map<std::string, MsgType> verbMap;
-      verbMap["none"]    = None;
-      verbMap["low"]     = Low;
-      verbMap["medium"]  = Medium;
-      verbMap["high"]    = High;
-      verbMap["extreme"] = Extreme;
-      verbMap["test"]    = Test;
-
       MUELU_SET_VAR_2LIST(paramList, paramList, "verbosity", std::string, verbosityLevel);
-
-      TEUCHOS_TEST_FOR_EXCEPTION(verbMap.count(verbosityLevel) == 0, Exceptions::RuntimeError,
-                                 "Invalid verbosity level: \"" << verbosityLevel << "\"");
-      this->verbosity_ = verbMap[verbosityLevel];
+      this->verbosity_ = toVerbLevel(verbosityLevel);
       VerboseObject::SetDefaultVerbLevel(this->verbosity_);
     }
+
+    MUELU_SET_VAR_2LIST(paramList, paramList, "output filename", std::string, outputFilename);
+    if (outputFilename != "")
+      VerboseObject::SetMueLuOFileStream(outputFilename);
 
     // Detect if we need to transfer coordinates to coarse levels. We do that iff
     //  - we use "distance laplacian" dropping on some level, or
@@ -414,10 +417,17 @@ namespace MueLu {
     // Detect if we use implicit transpose
     changedImplicitTranspose_ = MUELU_TEST_AND_SET_VAR(paramList, "transpose: use implicit", bool, this->implicitTranspose_);
 
+    // Detect if we use fuse prolongation and update
+    MUELU_TEST_AND_SET_VAR(paramList, "fuse prolongation and update", bool, this->fuseProlongationAndUpdate_);
+
+    if (paramList.isSublist("matvec params"))
+      this->matvecParams_ = Teuchos::parameterList(paramList.sublist("matvec params"));
+
     // Create default manager
     // FIXME: should it be here, or higher up
     RCP<FactoryManager> defaultManager = rcp(new FactoryManager());
     defaultManager->SetVerbLevel(this->verbosity_);
+    defaultManager->SetKokkosRefactor(useKokkos_);
 
     // We will ignore keeps0
     std::vector<keep_pair> keeps0;
@@ -492,6 +502,7 @@ namespace MueLu {
     }
 
     VerboseObject::SetDefaultVerbLevel(oldVerbLevel);
+
   }
 
 
@@ -849,7 +860,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   UpdateFactoryManager_CoarseSolvers(ParameterList& paramList, const ParameterList& defaultList,
-                                     FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const
+                                     FactoryManager& manager, int /* levelID */, std::vector<keep_pair>& /* keeps */) const
   {
     // FIXME: should custom coarse solver check default list too?
     bool isCustomCoarseSolver =
@@ -886,7 +897,7 @@ namespace MueLu {
         "SPARSE BLOCK RELAXATION", "SPARSE_BLOCK_RELAXATION", "SPARSEBLOCKRELAXATION",
         "LINESMOOTHING_BANDEDRELAXATION", "LINESMOOTHING_BANDED_RELAXATION", "LINESMOOTHING_BANDED RELAXATION",
         "LINESMOOTHING_TRIDIRELAXATION", "LINESMOOTHING_TRIDI_RELAXATION", "LINESMOOTHING_TRIDI RELAXATION",
-        "LINESMOOTHING_TRIDIAGONALRELAXATION", "LINESMOOTHING_TRIDIAGONAL_RELAXATION", "LINESMOOTHING_TRIDIAGONAL RELAXATION",             
+        "LINESMOOTHING_TRIDIAGONALRELAXATION", "LINESMOOTHING_TRIDIAGONAL_RELAXATION", "LINESMOOTHING_TRIDIAGONAL RELAXATION",
         "TOPOLOGICAL", "FAST_ILU", "FAST_IC", "FAST_ILDL"}).count(coarseType)) {
         coarseSmoother = rcp(new TrilinosSmoother(coarseType, coarseParams, overlap));
       } else {
@@ -916,7 +927,7 @@ namespace MueLu {
 
     // Aggregation graph
     RCP<Factory> dropFactory;
-
+    
     if (MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "matlab")) {
 #ifdef HAVE_MUELU_MATLAB
       dropFactory = rcp(new SingleLevelMatlabFactory());
@@ -925,13 +936,23 @@ namespace MueLu {
 #else
       throw std::runtime_error("Cannot use MATLAB evolutionary strength-of-connection - MueLu was not configured with MATLAB support.");
 #endif
-    } else {
+    } else if (MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "unsupported vector smoothing")) {
+      dropFactory =   rcp(new MueLu::SmooVecCoalesceDropFactory<SC,LO,GO,NO>());
+      ParameterList dropParams;
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop scheme",             std::string, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: number of random vectors", int, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: number of times to pre or post smooth", int, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: penalty parameters", Teuchos::Array<double>, dropParams);
+      dropFactory->SetParameterList(dropParams);
+    }
+    else {
       MUELU_KOKKOS_FACTORY_NO_DECL(dropFactory, CoalesceDropFactory, CoalesceDropFactory_kokkos);
       ParameterList dropParams;
       dropParams.set("lightweight wrap", true);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop scheme",     std::string, dropParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop tol",             double, dropParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: Dirichlet threshold",  double, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop scheme",             std::string, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop tol",                     double, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: Dirichlet threshold",          double, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: distance laplacian algo", std::string, dropParams);
       if (useKokkos_) {
         MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use lumping",      bool, dropParams);
         MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse graph",      bool, dropParams);
@@ -943,7 +964,7 @@ namespace MueLu {
 
     // Aggregation scheme
     MUELU_SET_VAR_2LIST(paramList, defaultList, "aggregation: type", std::string, aggType);
-    TEUCHOS_TEST_FOR_EXCEPTION(!strings({"uncoupled", "coupled", "brick", "matlab"}).count(aggType),
+    TEUCHOS_TEST_FOR_EXCEPTION(!strings({"uncoupled", "coupled", "brick", "matlab","notay"}).count(aggType),
         Exceptions::RuntimeError, "Unknown aggregation algorithm: \"" << aggType << "\". Please consult User's Guide.");
     #ifndef HAVE_MUELU_MATLAB
     if (aggType == "matlab")
@@ -961,14 +982,18 @@ namespace MueLu {
       if(useKokkos_) {
         //if not using kokkos refactor Uncoupled, there is no algorithm option (always Serial)
         MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: phase 1 algorithm",  std::string, aggParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: deterministic",             bool, aggParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: coloring algorithm", std::string, aggParams);
       }
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 1",            bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 2a",           bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 2b",           bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 3",            bool, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: phase2a include root",      bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: preserve Dirichlet points", bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: error on nodes with no on-rank neighbors", bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: phase3 avoid singletons", bool, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: compute aggregate qualities",              bool, aggParams);
       aggFactory->SetParameterList(aggParams);
       // make sure that the aggregation factory has all necessary data
       aggFactory->SetFactory("DofsPerNode", manager.GetFactory("Graph"));
@@ -984,6 +1009,9 @@ namespace MueLu {
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: brick x size", int, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: brick y size", int, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: brick z size", int, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: brick x Dirichlet", bool, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: brick y Dirichlet", bool, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: brick z Dirichlet", bool, aggParams);
       aggFactory->SetParameterList(aggParams);
 
       if (levelID > 1) {
@@ -993,6 +1021,18 @@ namespace MueLu {
         aggFactory->SetFactory("Coordinates", this->GetFactoryManager(levelID-1)->GetFactory("Coordinates"));
       }
     }
+    else if (aggType == "notay") {
+      aggFactory = rcp(new NotayAggregationFactory());
+      ParameterList aggParams;
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: pairwise: size",             int, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: pairwise: tie threshold",    double, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: Dirichlet threshold",        double, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: ordering",                   std::string, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: compute aggregate qualities",bool, aggParams);
+      aggFactory->SetParameterList(aggParams);
+      aggFactory->SetFactory("DofsPerNode", manager.GetFactory("Graph"));
+      aggFactory->SetFactory("Graph", manager.GetFactory("Graph"));
+    }
 #ifdef HAVE_MUELU_MATLAB
     else if(aggType == "matlab") {
       ParameterList aggParams = paramList.sublist("aggregation: params");
@@ -1000,12 +1040,34 @@ namespace MueLu {
       aggFactory->SetParameterList(aggParams);
     }
 #endif
+
+
     manager.SetFactory("Aggregates", aggFactory);
 
     // Coarse map
     MUELU_KOKKOS_FACTORY(coarseMap, CoarseMapFactory, CoarseMapFactory_kokkos);
     coarseMap->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
     manager.SetFactory("CoarseMap", coarseMap);
+
+    // Aggregate qualities
+    if (MUELU_TEST_PARAM_2LIST(paramList, defaultList, "aggregation: compute aggregate qualities", bool, true)) {
+        RCP<Factory> aggQualityFact = rcp(new AggregateQualityEstimateFactory());
+        ParameterList aggQualityParams;
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: good aggregate threshold", double,      aggQualityParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: file output",              bool,        aggQualityParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: file base",                std::string, aggQualityParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: check symmetry",           bool,        aggQualityParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: algorithm",                std::string, aggQualityParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: zero threshold",           double,      aggQualityParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: percentiles", Teuchos::Array<double>,aggQualityParams);
+
+        aggQualityFact->SetParameterList(aggQualityParams);
+        manager.SetFactory("AggregateQualities", aggQualityFact);
+
+        assert(aggType == "uncoupled");
+        aggFactory->SetFactory("AggregateQualities", aggQualityFact);
+    }
+
 
     // Tentative P
     MUELU_KOKKOS_FACTORY(Ptent, TentativePFactory, TentativePFactory_kokkos);
@@ -1033,7 +1095,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   UpdateFactoryManager_RAP(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager,
-                           int levelID, std::vector<keep_pair>& keeps) const
+                           int /* levelID */, std::vector<keep_pair>& keeps) const
   {
     if (paramList.isParameter("A") && !paramList.get<RCP<Matrix> >("A").is_null()) {
       // We have user matrix A
@@ -1053,10 +1115,14 @@ namespace MueLu {
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "rap: shift", double, RAPparams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "rap: shift diagonal M", bool, RAPparams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "rap: shift low storage", bool, RAPparams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "rap: shift array", Teuchos::Array<double>, RAPparams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "rap: cfl array", Teuchos::Array<double>, RAPparams);
 
     } else {
       RAP = rcp(new RAPFactory());
     }
+
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "rap: relative diagonal floor", Teuchos::Array<double>, RAPparams);
 
     if (paramList.isSublist("matrixmatrix: kernel params"))
       RAPparams.sublist("matrixmatrix: kernel params", false) = paramList.sublist("matrixmatrix: kernel params");
@@ -1064,7 +1130,14 @@ namespace MueLu {
       RAPparams.sublist("matrixmatrix: kernel params", false) = defaultList.sublist("matrixmatrix: kernel params");
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "transpose: use implicit", bool, RAPparams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "rap: fix zero diagonals", bool, RAPparams);
-    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "rap: triple product", bool, RAPparams);
+
+    // if "rap: triple product" has not been set and algorithm is "unsmoothed" switch triple product on
+    if (!paramList.isParameter("rap: triple product") &&
+        paramList.isType<std::string>("multigrid algorithm") &&
+        paramList.get<std::string>("multigrid algorithm") == "unsmoothed")
+      paramList.set("rap: triple product", true);
+    else
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "rap: triple product", bool, RAPparams);
 
     try {
       if (paramList.isParameter("aggregation: allow empty prolongator columns")) {
@@ -1076,7 +1149,7 @@ namespace MueLu {
         RAPparams.set("RepairMainDiagonal", defaultList.get<bool>("aggregation: allow empty prolongator columns"));
       }
 
-    } catch (Teuchos::Exceptions::InvalidParameterType) {
+    } catch (Teuchos::Exceptions::InvalidParameterType&) {
       TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true, Teuchos::Exceptions::InvalidParameterType,
           "Error: parameter \"aggregation: allow empty prolongator columns\" must be of type " << Teuchos::TypeNameTraits<bool>::name());
     }
@@ -1136,12 +1209,12 @@ namespace MueLu {
   }
 
   // =====================================================================================================
-  // ======================================= Restriction =================================================
+  // ======================================= Coordinates =================================================
   // =====================================================================================================
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  UpdateFactoryManager_Coordinates(ParameterList& paramList, const ParameterList& defaultList,
-                                   FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const
+  UpdateFactoryManager_Coordinates(ParameterList& paramList, const ParameterList& /* defaultList */,
+                                   FactoryManager& manager, int /* levelID */, std::vector<keep_pair>& /* keeps */) const
   {
     bool have_userCO = false;
     if (paramList.isParameter("Coordinates") && !paramList.get<RCP<MultiVector> >("Coordinates").is_null())
@@ -1169,12 +1242,12 @@ namespace MueLu {
   }
 
   // =====================================================================================================
-  // ======================================= Restriction =================================================
+  // =========================================== Restriction =============================================
   // =====================================================================================================
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  UpdateFactoryManager_Restriction(ParameterList& paramList, const ParameterList& defaultList,
-                                   FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const
+  UpdateFactoryManager_Restriction(ParameterList& paramList, const ParameterList& defaultList , FactoryManager& manager,
+                                 int levelID, std::vector<keep_pair>& /* keeps */) const
   {
     MUELU_SET_VAR_2LIST(paramList, defaultList, "multigrid algorithm", std::string, multigridAlgo);
     bool have_userR = false;
@@ -1182,6 +1255,7 @@ namespace MueLu {
       have_userR = true;
 
     // === Restriction ===
+    RCP<Factory> R;
     if (!this->implicitTranspose_) {
       MUELU_SET_VAR_2LIST(paramList, defaultList, "problem: symmetric", bool, isSymmetric);
 
@@ -1203,7 +1277,6 @@ namespace MueLu {
         if (have_userR) {
           manager.SetFactory("R", NoFactory::getRCP());
         } else {
-          RCP<Factory> R;
           if (isSymmetric)  R = rcp(new TransPFactory());
           else              R = rcp(new GenericRFactory());
 
@@ -1211,9 +1284,24 @@ namespace MueLu {
           manager.SetFactory("R", R);
         }
 
-      } else {
-        manager.SetFactory("R", Teuchos::null);
-      }
+    } else {
+      manager.SetFactory("R", Teuchos::null);
+    }
+
+    // === Restriction: Nullspace Scaling ===
+    if (paramList.isParameter("restriction: scale nullspace") && paramList.get<bool>("restriction: scale nullspace")) {
+      RCP<TentativePFactory> tentPFactory = rcp(new TentativePFactory());
+      Teuchos::ParameterList tentPlist;
+      tentPlist.set("Nullspace name","Scaled Nullspace");
+      tentPFactory->SetParameterList(tentPlist);
+      tentPFactory->SetFactory("Aggregates",manager.GetFactory("Aggregates"));
+      tentPFactory->SetFactory("CoarseMap",manager.GetFactory("CoarseMap"));
+
+      if(R.is_null())   R = rcp(new TransPFactory());
+      R->SetFactory("P",tentPFactory);
+    }
+
+
   }
 
   // =====================================================================================================
@@ -1276,14 +1364,17 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(partName != "zoltan" && partName != "zoltan2", Exceptions::InvalidArgument,
                                  "Invalid partitioner name: \"" << partName << "\". Valid options: \"zoltan\", \"zoltan2\"");
 
-      bool switched = false;
-      (void)switched;
 #ifndef HAVE_MUELU_ZOLTAN
+      bool switched = false;
       if (partName == "zoltan") {
         this->GetOStream(Warnings0) << "Zoltan interface is not available, trying to switch to Zoltan2" << std::endl;
         partName = "zoltan2";
         switched = true;
       }
+#else
+# ifndef HAVE_MUELU_ZOLTAN2
+      bool switched = false;
+# endif
 #endif
 #ifndef HAVE_MUELU_ZOLTAN2
       if (partName == "zoltan2" && !switched) {
@@ -1339,7 +1430,7 @@ namespace MueLu {
         throw Exceptions::RuntimeError("Zoltan2 interface is not available");
 #endif
       }
-     
+
       partitioner->SetFactory("A",                    manager.GetFactory("A"));
       partitioner->SetFactory("number of partitions", manager.GetFactory("number of partitions"));
       if (useCoordinates_)
@@ -1424,8 +1515,8 @@ namespace MueLu {
   // =====================================================================================================
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  UpdateFactoryManager_Nullspace(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager,
-                                 int levelID, std::vector<keep_pair>& keeps, RCP<Factory> & nullSpaceFactory) const
+  UpdateFactoryManager_Nullspace(ParameterList& paramList, const ParameterList& /* defaultList */, FactoryManager& manager,
+                                 int /* levelID */, std::vector<keep_pair>& /* keeps */, RCP<Factory> & nullSpaceFactory) const
   {
     // Nullspace
     MUELU_KOKKOS_FACTORY(nullSpace, NullspaceFactory, NullspaceFactory_kokkos);
@@ -1439,6 +1530,13 @@ namespace MueLu {
       manager.SetFactory("Nullspace", nullSpace);
     }
     nullSpaceFactory = nullSpace;
+
+    if (paramList.isParameter("restriction: scale nullspace") && paramList.get<bool>("restriction: scale nullspace")) {
+      RCP<ScaledNullspaceFactory> scaledNSfactory = rcp(new ScaledNullspaceFactory());
+      scaledNSfactory->SetFactory("Nullspace",nullSpaceFactory);
+      manager.SetFactory("Scaled Nullspace",scaledNSfactory);
+    }
+
   }
 
   // =====================================================================================================
@@ -1447,7 +1545,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   UpdateFactoryManager_SemiCoarsen(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager,
-                                   int levelID, std::vector<keep_pair>& keeps) const
+                                   int /* levelID */, std::vector<keep_pair>& /* keeps */) const
   {
     // === Semi-coarsening ===
     RCP<SemiCoarsenPFactory>  semicoarsenFactory = Teuchos::null;
@@ -1558,7 +1656,7 @@ namespace MueLu {
   // =====================================================================================================
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  UpdateFactoryManager_SA(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
+  UpdateFactoryManager_SA(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager, int /* levelID */, std::vector<keep_pair>& keeps) const {
     // Smoothed aggregation
     MUELU_KOKKOS_FACTORY(P, SaPFactory, SaPFactory_kokkos);
     ParameterList Pparams;
@@ -1609,7 +1707,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   UpdateFactoryManager_Emin(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager,
-                            int levelID, std::vector<keep_pair>& keeps) const
+                            int /* levelID */, std::vector<keep_pair>& /* keeps */) const
   {
     MUELU_SET_VAR_2LIST(paramList, defaultList, "emin: pattern", std::string, patternType);
     MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
@@ -1650,8 +1748,8 @@ namespace MueLu {
   // =====================================================================================================
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  UpdateFactoryManager_PG(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager,
-                          int levelID, std::vector<keep_pair>& keeps) const
+  UpdateFactoryManager_PG(ParameterList& /* paramList */, const ParameterList& /* defaultList */, FactoryManager& manager,
+                          int /* levelID */, std::vector<keep_pair>& /* keeps */) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(this->implicitTranspose_, Exceptions::RuntimeError,
         "Implicit transpose not supported with Petrov-Galerkin smoothed transfer operators: Set \"transpose: use implicit\" to false!\n" \
@@ -1670,14 +1768,17 @@ namespace MueLu {
   // =====================================================================================================
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  UpdateFactoryManager_Matlab(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager,
-                              int levelID, std::vector<keep_pair>& keeps) const {
+  UpdateFactoryManager_Matlab(ParameterList& paramList, const ParameterList& /* defaultList */, FactoryManager& manager,
+                              int /* levelID */, std::vector<keep_pair>& /* keeps */) const {
 #ifdef HAVE_MUELU_MATLAB
     ParameterList Pparams = paramList.sublist("transfer: params");
     auto P = rcp(new TwoLevelMatlabFactory());
     P->SetParameterList(Pparams);
     P->SetFactory("P", manager.GetFactory("Ptent"));
     manager.SetFactory("P", P);
+#else
+    (void)paramList;
+    (void)manager;
 #endif
   }
 
@@ -1836,6 +1937,15 @@ namespace MueLu {
         hieraList.remove("transpose: use implicit");
       }
 
+      if (hieraList.isParameter("fuse prolongation and update")) {
+        this->fuseProlongationAndUpdate_ = hieraList.get<bool>("fuse prolongation and update");
+        hieraList.remove("fuse prolongation and update");
+      }
+
+      if (hieraList.isSublist("matvec params"))
+        this->matvecParams_ = Teuchos::parameterList(hieraList.sublist("matvec params"));
+
+
       if (hieraList.isParameter("coarse grid correction scaling factor")) {
         this->scalingFactor_ = hieraList.get<double>("coarse grid correction scaling factor");
         hieraList.remove("coarse grid correction scaling factor");
@@ -1852,43 +1962,14 @@ namespace MueLu {
         this->Cycle_ = cycleMap[cycleType];
       }
 
-      //TODO Move this its own class or MueLu::Utils?
-      std::map<std::string, MsgType> verbMap;
-      //for developers
-      verbMap["Errors"]         = Errors;
-      verbMap["Warnings0"]      = Warnings0;
-      verbMap["Warnings00"]     = Warnings00;
-      verbMap["Warnings1"]      = Warnings1;
-      verbMap["PerfWarnings"]   = PerfWarnings;
-      verbMap["Runtime0"]       = Runtime0;
-      verbMap["Runtime1"]       = Runtime1;
-      verbMap["RuntimeTimings"] = RuntimeTimings;
-      verbMap["NoTimeReport"]   = NoTimeReport;
-      verbMap["Parameters0"]    = Parameters0;
-      verbMap["Parameters1"]    = Parameters1;
-      verbMap["Statistics0"]    = Statistics0;
-      verbMap["Statistics1"]    = Statistics1;
-      verbMap["Timings0"]       = Timings0;
-      verbMap["Timings1"]       = Timings1;
-      verbMap["TimingsByLevel"] = TimingsByLevel;
-      verbMap["External"]       = External;
-      verbMap["Debug"]          = Debug;
-      verbMap["Test"]           = Test;
-      //for users and developers
-      verbMap["None"]           = None;
-      verbMap["Low"]            = Low;
-      verbMap["Medium"]         = Medium;
-      verbMap["High"]           = High;
-      verbMap["Extreme"]        = Extreme;
       if (hieraList.isParameter("verbosity")) {
         std::string vl = hieraList.get<std::string>("verbosity");
         hieraList.remove("verbosity");
-        //TODO Move this to its own class or MueLu::Utils?
-        if (verbMap.find(vl) != verbMap.end())
-          this->verbosity_ = verbMap[vl];
-        else
-          TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::ParameterListInterpreter():: invalid verbosity level");
+        this->verbosity_ = toVerbLevel(vl);
       }
+
+      if (hieraList.isParameter("output filename"))
+        VerboseObject::SetMueLuOFileStream(hieraList.get<std::string>("output filename"));
 
       if (hieraList.isParameter("dependencyOutputLevel"))
         this->graphOutputLevel_ = hieraList.get<int>("dependencyOutputLevel");
@@ -2143,13 +2224,22 @@ namespace MueLu {
           ParameterList groupList = paramList1; // copy because list temporally modified (remove 'id')
           groupList.remove("group");
 
+          bool setKokkosRefactor = false;
+          bool kokkosRefactor = useKokkos_;
+          if (groupList.isParameter("use kokkos refactor")) {
+            kokkosRefactor = groupList.get<bool>("use kokkos refactor");
+            groupList.remove("use kokkos refactor");
+            setKokkosRefactor = true;
+          }
+
           FactoryMap groupFactoryMap;
           BuildFactoryMap(groupList, factoryMapIn, groupFactoryMap, factoryManagers);
 
           // do not store groupFactoryMap in factoryMapOut
           // Create a factory manager object from groupFactoryMap
-          RCP<FactoryManagerBase> m = rcp(new FactoryManager(groupFactoryMap));
-
+          RCP<FactoryManager> m = rcp(new FactoryManager(groupFactoryMap));
+          if (setKokkosRefactor)
+            m->SetKokkosRefactor(kokkosRefactor);
           factoryManagers[paramName] = m;
 
         } else {
@@ -2177,6 +2267,10 @@ namespace MueLu {
             << "You may want to check \"number of equations\" (or \"PDE equations\" for factory style list) parameter." << std::endl;
 
       A.SetFixedBlockSize(blockSize_, dofOffset_);
+
+#ifdef HAVE_MUELU_DEBUG
+      MatrixUtils::checkLocalRowMapMatchesColMap(A);
+#endif // HAVE_MUELU_DEBUG
 
     } catch (std::bad_cast& e) {
       this->GetOStream(Warnings0) << "Skipping setting block size as the operator is not a matrix" << std::endl;

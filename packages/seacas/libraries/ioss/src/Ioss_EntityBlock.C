@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -36,6 +36,7 @@
 #include <Ioss_Field.h>
 #include <Ioss_Property.h>
 #include <cstddef>
+#include <fmt/ostream.h>
 #include <ostream>
 #include <string>
 
@@ -55,7 +56,7 @@
  */
 Ioss::EntityBlock::EntityBlock(Ioss::DatabaseIO *io_database, const std::string &my_name,
                                const std::string &entity_type, size_t entity_cnt)
-    : Ioss::GroupingEntity(io_database, my_name, entity_cnt), idOffset(0)
+    : Ioss::GroupingEntity(io_database, my_name, entity_cnt)
 
 {
   // The 'true' means it is ok for the factory to return
@@ -64,8 +65,8 @@ Ioss::EntityBlock::EntityBlock(Ioss::DatabaseIO *io_database, const std::string 
   topology_ = ElementTopology::factory(entity_type, true);
   if (topology_ == nullptr) {
     std::ostringstream errmsg;
-    errmsg << "ERROR: The topology type '" << entity_type << "' is not supported"
-           << " on " << name() << " in file " << io_database->get_filename();
+    fmt::print(errmsg, "ERROR: The topology type '{}' is not supported on '{}' in file '{}'",
+               entity_type, name(), io_database->get_filename());
     IOSS_ERROR(errmsg);
   }
 

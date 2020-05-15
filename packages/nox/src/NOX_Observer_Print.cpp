@@ -108,7 +108,7 @@ void NOX::ObserverPrint::printStep(const NOX::Solver::Generic& solver)
   os.precision(precision);
   os.setf(std::ios::left|std::ios::scientific);
   auto& grp = solver.getSolutionGroup();
-  if (not grp.isF())
+  if (!grp.isF())
     const_cast<NOX::Abstract::Group&>(grp).computeF();
   os << grp.getNormF();
 

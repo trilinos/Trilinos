@@ -129,7 +129,7 @@ public:
      *
      * \note The default implementation does nothing.
      */
-   virtual void initializeFromParameterList(const Teuchos::ParameterList & settings)
+   virtual void initializeFromParameterList(const Teuchos::ParameterList & /* settings */)
    { }
 
    /** \brief Request the additional parameters this preconditioner factory
@@ -162,7 +162,7 @@ public:
      *
      * \note The default implementation returns true (it does nothing!).
      */
-   virtual bool updateRequestedParameters(const Teuchos::ParameterList & pl)
+   virtual bool updateRequestedParameters(const Teuchos::ParameterList & /* pl */)
    { return true; }
    
    //@}

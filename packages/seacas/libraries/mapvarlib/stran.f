@@ -96,7 +96,7 @@ C
      &                 IERR)
           ELSE
 C
-C Make needed adjustments to element varaible data and
+C Make needed adjustments to element variable data and
 C write element vars out to EXODUS data base
 C
 C ELMASS is special

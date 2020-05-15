@@ -162,8 +162,11 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
     RCP<sparse_matrix_type> adjsMatrix;
 
     // Construct Tpetra::CrsGraph objects.
+    Array<size_t> rowlens(LocalNumIDs);
+    for (size_t localElement = 0; localElement < LocalNumIDs; localElement++)
+      rowlens[localElement] = offsets[localElement+1] - offsets[localElement];
     adjsMatrix = rcp (new sparse_matrix_type (sourcetargetMapG,//oneToOneSTMap,
-                                              0));
+                                              rowlens()));
 
     Array<nonzero_t> justOneA(maxcols, 1);
     ArrayView<const gno_t> adjacencyIdsAV(adjacencyIds, offsets[LocalNumIDs]);

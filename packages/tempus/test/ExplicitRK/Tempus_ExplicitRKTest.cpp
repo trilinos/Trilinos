@@ -14,7 +14,7 @@
 #include "Thyra_VectorStdOps.hpp"
 
 #include "Tempus_IntegratorBasic.hpp"
-#include "Tempus_StepperExplicitRK.hpp"
+#include "Tempus_StepperFactory.hpp"
 
 #include "../TestModels/SinCosModel.hpp"
 #include "../TestModels/VanDerPolModel.hpp"
@@ -26,6 +26,8 @@
 namespace Tempus_Test {
 
 using Teuchos::RCP;
+using Teuchos::rcp;
+using Teuchos::rcp_const_cast;
 using Teuchos::ParameterList;
 using Teuchos::sublist;
 using Teuchos::getParametersFromXmlFile;
@@ -34,21 +36,12 @@ using Tempus::IntegratorBasic;
 using Tempus::SolutionHistory;
 using Tempus::SolutionState;
 
-// Comment out any of the following tests to exclude from build/run.
-#define TEST_PARAMETERLIST
-#define TEST_CONSTRUCTING_FROM_DEFAULTS
-#define TEST_SINCOS
-#define TEST_EMBEDDED_VANDERPOL
 
-
-#ifdef TEST_PARAMETERLIST
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(ExplicitRK, ParameterList)
 {
   std::vector<std::string> RKMethods;
-  RKMethods.push_back("Bogacki-Shampine 3(2) Pair");
-  RKMethods.push_back("Merson 4(5) Pair");
   RKMethods.push_back("General ERK");
   RKMethods.push_back("RK Forward Euler");
   RKMethods.push_back("RK Explicit 4 Stage");
@@ -58,8 +51,11 @@ TEUCHOS_UNIT_TEST(ExplicitRK, ParameterList)
   RKMethods.push_back("RK Explicit 3 Stage 3rd order");
   RKMethods.push_back("RK Explicit 3 Stage 3rd order TVD");
   RKMethods.push_back("RK Explicit 3 Stage 3rd order by Heun");
-  RKMethods.push_back("RK Explicit 2 Stage 2nd order by Runge");
+  RKMethods.push_back("RK Explicit Midpoint");
   RKMethods.push_back("RK Explicit Trapezoidal");
+  RKMethods.push_back("Heuns Method");
+  RKMethods.push_back("Bogacki-Shampine 3(2) Pair");
+  RKMethods.push_back("Merson 4(5) Pair");
 
   for(std::vector<std::string>::size_type m = 0; m != RKMethods.size(); m++) {
 
@@ -73,8 +69,7 @@ TEUCHOS_UNIT_TEST(ExplicitRK, ParameterList)
 
     // Setup the SinCosModel
     RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
-    RCP<SinCosModel<double> > model =
-      Teuchos::rcp(new SinCosModel<double>(scm_pl));
+    auto model = rcp(new SinCosModel<double>(scm_pl));
 
     // Set the Stepper
     RCP<ParameterList> tempusPL  = sublist(pList, "Tempus", true);
@@ -83,6 +78,10 @@ TEUCHOS_UNIT_TEST(ExplicitRK, ParameterList)
     } else {
       tempusPL->sublist("Demo Stepper").set("Stepper Type", RKMethods[m]);
     }
+
+    // Set IC consistency to default value.
+    tempusPL->sublist("Demo Stepper")
+                 .set("Initial Condition Consistency", "None");
 
     // Test constructor IntegratorBasic(tempusPL, model)
     {
@@ -93,10 +92,17 @@ TEUCHOS_UNIT_TEST(ExplicitRK, ParameterList)
       if (RKMethods[m] == "General ERK")
         stepperPL = sublist(tempusPL, "Demo Stepper 2", true);
       RCP<ParameterList> defaultPL =
-        integrator->getStepper()->getDefaultParameters();
+        Teuchos::rcp_const_cast<Teuchos::ParameterList>(
+          integrator->getStepper()->getValidParameters());
       defaultPL->remove("Description");
 
-      TEST_ASSERT(haveSameValues(*stepperPL, *defaultPL, true));
+      bool pass = haveSameValues(*stepperPL, *defaultPL, true);
+      if (!pass) {
+        std::cout << std::endl;
+        std::cout << "stepperPL -------------- \n" << *stepperPL << std::endl;
+        std::cout << "defaultPL -------------- \n" << *defaultPL << std::endl;
+      }
+      TEST_ASSERT(pass)
     }
 
     // Test constructor IntegratorBasic(model, stepperType)
@@ -108,17 +114,22 @@ TEUCHOS_UNIT_TEST(ExplicitRK, ParameterList)
       if (RKMethods[m] == "General ERK")
         stepperPL = sublist(tempusPL, "Demo Stepper 2", true);
       RCP<ParameterList> defaultPL =
-        integrator->getStepper()->getDefaultParameters();
+        Teuchos::rcp_const_cast<Teuchos::ParameterList>(
+          integrator->getStepper()->getValidParameters());
       defaultPL->remove("Description");
 
-      TEST_ASSERT(haveSameValues(*stepperPL, *defaultPL, true))
+      bool pass = haveSameValues(*stepperPL, *defaultPL, true);
+      if (!pass) {
+        std::cout << std::endl;
+        std::cout << "stepperPL -------------- \n" << *stepperPL << std::endl;
+        std::cout << "defaultPL -------------- \n" << *defaultPL << std::endl;
+      }
+      TEST_ASSERT(pass)
     }
   }
 }
-#endif // TEST_PARAMETERLIST
 
 
-#ifdef TEST_CONSTRUCTING_FROM_DEFAULTS
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(ExplicitRK, ConstructingFromDefaults)
@@ -133,16 +144,18 @@ TEUCHOS_UNIT_TEST(ExplicitRK, ConstructingFromDefaults)
   // Setup the SinCosModel
   RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
   //RCP<SinCosModel<double> > model = sineCosineModel(scm_pl);
-  RCP<SinCosModel<double> > model =
-    Teuchos::rcp(new SinCosModel<double>(scm_pl));
+  auto model = rcp(new SinCosModel<double>(scm_pl));
 
   // Setup Stepper for field solve ----------------------------
-  RCP<Tempus::StepperExplicitRK<double> > stepper =
-    Teuchos::rcp(new Tempus::StepperExplicitRK<double>(model));
+  RCP<Tempus::StepperFactory<double> > sf =
+    Teuchos::rcp(new Tempus::StepperFactory<double>());
+  RCP<Tempus::Stepper<double> > stepper =
+    sf->createStepper("RK Explicit 4 Stage");
+  stepper->setModel(model);
+  stepper->initialize();
 
   // Setup TimeStepControl ------------------------------------
-  RCP<Tempus::TimeStepControl<double> > timeStepControl =
-    Teuchos::rcp(new Tempus::TimeStepControl<double>());
+  auto timeStepControl = rcp(new Tempus::TimeStepControl<double>());
   ParameterList tscPL = pl->sublist("Demo Integrator")
                            .sublist("Time Step Control");
   timeStepControl->setStepType (tscPL.get<std::string>("Integrator Step Type"));
@@ -155,10 +168,8 @@ TEUCHOS_UNIT_TEST(ExplicitRK, ConstructingFromDefaults)
   // Setup initial condition SolutionState --------------------
   Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
     stepper->getModel()->getNominalValues();
-  RCP<Thyra::VectorBase<double> > icSolution =
-    Teuchos::rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
-  RCP<Tempus::SolutionState<double> > icState =
-      Teuchos::rcp(new Tempus::SolutionState<double>(icSolution));
+  auto icSolution = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
+  auto icState = Tempus::createSolutionStateX(icSolution);
   icState->setTime    (timeStepControl->getInitTime());
   icState->setIndex   (timeStepControl->getInitIndex());
   icState->setTimeStep(0.0);
@@ -166,8 +177,7 @@ TEUCHOS_UNIT_TEST(ExplicitRK, ConstructingFromDefaults)
   icState->setSolutionStatus(Tempus::Status::PASSED);  // ICs are passing.
 
   // Setup SolutionHistory ------------------------------------
-  RCP<Tempus::SolutionHistory<double> > solutionHistory =
-    Teuchos::rcp(new Tempus::SolutionHistory<double>());
+  auto solutionHistory = rcp(new Tempus::SolutionHistory<double>());
   solutionHistory->setName("Forward States");
   solutionHistory->setStorageType(Tempus::STORAGE_TYPE_STATIC);
   solutionHistory->setStorageLimit(2);
@@ -216,15 +226,14 @@ TEUCHOS_UNIT_TEST(ExplicitRK, ConstructingFromDefaults)
   TEST_FLOATING_EQUALITY(get_ele(*(x), 0), 0.841470, 1.0e-4 );
   TEST_FLOATING_EQUALITY(get_ele(*(x), 1), 0.540303, 1.0e-4 );
 }
-#endif // TEST_CONSTRUCTING_FROM_DEFAULTS
 
 
-#ifdef TEST_SINCOS
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
 {
   std::vector<std::string> RKMethods;
+  RKMethods.push_back("General ERK");
   RKMethods.push_back("RK Forward Euler");
   RKMethods.push_back("RK Explicit 4 Stage");
   RKMethods.push_back("RK Explicit 3/8 Rule");
@@ -233,13 +242,19 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
   RKMethods.push_back("RK Explicit 3 Stage 3rd order");
   RKMethods.push_back("RK Explicit 3 Stage 3rd order TVD");
   RKMethods.push_back("RK Explicit 3 Stage 3rd order by Heun");
-  RKMethods.push_back("RK Explicit 2 Stage 2nd order by Runge");
+  RKMethods.push_back("RK Explicit Midpoint");
   RKMethods.push_back("RK Explicit Trapezoidal");
+  RKMethods.push_back("Heuns Method");
   RKMethods.push_back("Bogacki-Shampine 3(2) Pair");
-  RKMethods.push_back("General ERK");
+  RKMethods.push_back("Merson 4(5) Pair"); // slope = 3.87816
   RKMethods.push_back("General ERK Embedded");
-  //RKMethods.push_back("Merson 4(5) Pair"); // slope = 3.87816
+  RKMethods.push_back("SSPERK22");
+  RKMethods.push_back("SSPERK33");
+  //RKMethods.push_back("SSPERK54");  // slope = 3.94129
+  RKMethods.push_back("RK2");  // slope = 3.94129
+
   std::vector<double> RKMethodErrors;
+  RKMethodErrors.push_back(8.33251e-07);
   RKMethodErrors.push_back(0.051123);
   RKMethodErrors.push_back(8.33251e-07);
   RKMethodErrors.push_back(8.33251e-07);
@@ -250,10 +265,17 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
   RKMethodErrors.push_back(4.16603e-05);
   RKMethodErrors.push_back(0.00166645);
   RKMethodErrors.push_back(0.00166645);
+  RKMethodErrors.push_back(0.00166645);
   RKMethodErrors.push_back(4.16603e-05);
-  RKMethodErrors.push_back(8.33251e-07);
+  RKMethodErrors.push_back(1.39383e-07);
   RKMethodErrors.push_back(4.16603e-05);
-  //RKMethodErrors.push_back(1.39383e-07);
+  RKMethodErrors.push_back(0.00166645);
+  RKMethodErrors.push_back(4.16603e-05);
+  //RKMethodErrors.push_back(3.85613e-07); // SSPERK54
+  RKMethodErrors.push_back(0.00166644); // RK2
+
+
+  TEST_ASSERT(RKMethods.size() == RKMethodErrors.size() );
 
   for(std::vector<std::string>::size_type m = 0; m != RKMethods.size(); m++) {
 
@@ -280,8 +302,7 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
       // Setup the SinCosModel
       RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
       //RCP<SinCosModel<double> > model = sineCosineModel(scm_pl);
-      RCP<SinCosModel<double> > model =
-        Teuchos::rcp(new SinCosModel<double>(scm_pl));
+      auto model = rcp(new SinCosModel<double>(scm_pl));
 
       // Set the Stepper
       RCP<ParameterList> pl = sublist(pList, "Tempus", true);
@@ -304,10 +325,10 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
       // Initial Conditions
       // During the Integrator construction, the initial SolutionState
       // is set by default to model->getNominalVales().get_x().  However,
-      // the application can set it also by integrator->setInitialState.
+      // the application can set it also by integrator->initializeSolutionHistory.
       RCP<Thyra::VectorBase<double> > x0 =
         model->getNominalValues().get_x()->clone_v();
-      integrator->setInitialState(0.0, x0);
+      integrator->initializeSolutionHistory(0.0, x0);
 
       // Integrate to timeMax
       bool integratorStatus = integrator->advanceTime();
@@ -330,14 +351,14 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
           integrator->getSolutionHistory();
         writeSolution("Tempus_"+RKMethod+"_SinCos.dat", solutionHistory);
 
-        RCP<Tempus::SolutionHistory<double> > solnHistExact =
-          Teuchos::rcp(new Tempus::SolutionHistory<double>());
+        auto solnHistExact = rcp(new Tempus::SolutionHistory<double>());
         for (int i=0; i<solutionHistory->getNumStates(); i++) {
-          double time = (*solutionHistory)[i]->getTime();
-          RCP<Tempus::SolutionState<double> > state =
-            Teuchos::rcp(new Tempus::SolutionState<double>(
-              model->getExactSolution(time).get_x(),
-              model->getExactSolution(time).get_x_dot()));
+          double time_i = (*solutionHistory)[i]->getTime();
+          auto state = Tempus::createSolutionStateX(
+            rcp_const_cast<Thyra::VectorBase<double> > (
+              model->getExactSolution(time_i).get_x()),
+            rcp_const_cast<Thyra::VectorBase<double> > (
+              model->getExactSolution(time_i).get_x_dot()));
           state->setTime((*solutionHistory)[i]->getTime());
           solnHistExact->addState(state);
         }
@@ -354,13 +375,13 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
       solutionsDot.push_back(solutionDot);
       if (n == nTimeStepSizes-1) {  // Add exact solution last in vector.
         StepSize.push_back(0.0);
-        auto solution = Thyra::createMember(model->get_x_space());
-        Thyra::copy(*(model->getExactSolution(time).get_x()),solution.ptr());
-        solutions.push_back(solution);
-        auto solutionDot = Thyra::createMember(model->get_x_space());
+        auto solutionExact = Thyra::createMember(model->get_x_space());
+        Thyra::copy(*(model->getExactSolution(time).get_x()),solutionExact.ptr());
+        solutions.push_back(solutionExact);
+        auto solutionDotExact = Thyra::createMember(model->get_x_space());
         Thyra::copy(*(model->getExactSolution(time).get_x_dot()),
-                    solutionDot.ptr());
-        solutionsDot.push_back(solutionDot);
+                    solutionDotExact.ptr());
+        solutionsDot.push_back(solutionDotExact);
       }
     }
 
@@ -374,8 +395,11 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
                     solutions,    xErrorNorm,    xSlope,
                     solutionsDot, xDotErrorNorm, xDotSlope);
 
-    TEST_FLOATING_EQUALITY( xSlope,                    order, 0.01   );
-    TEST_FLOATING_EQUALITY( xErrorNorm[0], RKMethodErrors[m], 1.0e-4 );
+    double order_tol = 0.01;
+    if (RKMethods[m] == "Merson 4(5) Pair") order_tol = 0.04;
+
+    TEST_FLOATING_EQUALITY( xSlope,                    order, order_tol );
+    TEST_FLOATING_EQUALITY( xErrorNorm[0], RKMethodErrors[m],    1.0e-4 );
     // xDot not yet available for ExplicitRK methods.
     //TEST_FLOATING_EQUALITY( xDotSlope,                 order, 0.01   );
     //TEST_FLOATING_EQUALITY( xDotErrorNorm[0],      0.0486418, 1.0e-4 );
@@ -383,10 +407,8 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
   }
   //Teuchos::TimeMonitor::summarize();
 }
-#endif // TEST_SINCOS
 
 
-#ifdef TEST_EMBEDDED_VANDERPOL
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(ExplicitRK, EmbeddedVanDerPol)
@@ -414,8 +436,7 @@ TEUCHOS_UNIT_TEST(ExplicitRK, EmbeddedVanDerPol)
 
      // Setup the VanDerPolModel
      RCP<ParameterList> vdpm_pl = sublist(pList, "VanDerPolModel", true);
-     RCP<VanDerPolModel<double> > model =
-        Teuchos::rcp(new VanDerPolModel<double>(vdpm_pl));
+     auto model = rcp(new VanDerPolModel<double>(vdpm_pl));
 
 
      // Set the Integrator and Stepper
@@ -488,10 +509,10 @@ TEUCHOS_UNIT_TEST(ExplicitRK, EmbeddedVanDerPol)
      //RCP<const Thyra::VectorBase<double> > x_exact_plot;
      for (int i=0; i<nStates; i++) {
         RCP<const SolutionState<double> > solutionState = (*solutionHistory)[i];
-        double time = solutionState->getTime();
+        double time_i = solutionState->getTime();
         RCP<const Thyra::VectorBase<double> > x_plot = solutionState->getX();
-        //x_exact_plot = model->getExactSolution(time).get_x();
-        ftmp << time << "   "
+        //x_exact_plot = model->getExactSolution(time_i).get_x();
+        ftmp << time_i << "   "
            << Thyra::get_ele(*(x_plot), 0) << "   "
            << Thyra::get_ele(*(x_plot), 1) << "   " << std::endl;
      }
@@ -500,6 +521,82 @@ TEUCHOS_UNIT_TEST(ExplicitRK, EmbeddedVanDerPol)
 
   Teuchos::TimeMonitor::summarize();
 }
-#endif // TEST_EMBEDDED_VANDERPOL
+
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(ExplicitRK, stage_number)
+{
+  double dt = 0.1;
+
+  // Read params from .xml file
+  RCP<ParameterList> pList =
+    getParametersFromXmlFile("Tempus_ExplicitRK_SinCos.xml");
+  RCP<ParameterList> pl = sublist(pList, "Tempus", true);
+
+  // Setup the SinCosModel
+  RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
+  //RCP<SinCosModel<double> > model = sineCosineModel(scm_pl);
+  auto model = rcp(new SinCosModel<double>(scm_pl));
+
+  // Setup Stepper for field solve ----------------------------
+  RCP<Tempus::StepperFactory<double> > sf =
+    Teuchos::rcp(new Tempus::StepperFactory<double>());
+  RCP<Tempus::Stepper<double> > stepper =
+    sf->createStepper("RK Explicit 4 Stage");
+  stepper->setModel(model);
+  stepper->initialize();
+
+  // Setup TimeStepControl ------------------------------------
+  auto timeStepControl = rcp(new Tempus::TimeStepControl<double>());
+  ParameterList tscPL = pl->sublist("Demo Integrator")
+                           .sublist("Time Step Control");
+  timeStepControl->setStepType (tscPL.get<std::string>("Integrator Step Type"));
+  timeStepControl->setInitIndex(tscPL.get<int>   ("Initial Time Index"));
+  timeStepControl->setInitTime (tscPL.get<double>("Initial Time"));
+  timeStepControl->setFinalTime(tscPL.get<double>("Final Time"));
+  timeStepControl->setInitTimeStep(dt);
+  timeStepControl->initialize();
+
+  // Setup initial condition SolutionState --------------------
+  Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
+    stepper->getModel()->getNominalValues();
+  auto icSolution = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
+  auto icState = Tempus::createSolutionStateX(icSolution);
+  icState->setTime    (timeStepControl->getInitTime());
+  icState->setIndex   (timeStepControl->getInitIndex());
+  icState->setTimeStep(0.0);
+  icState->setOrder   (stepper->getOrder());
+  icState->setSolutionStatus(Tempus::Status::PASSED);  // ICs are passing.
+
+  // Setup SolutionHistory ------------------------------------
+  auto solutionHistory = rcp(new Tempus::SolutionHistory<double>());
+  solutionHistory->setName("Forward States");
+  solutionHistory->setStorageType(Tempus::STORAGE_TYPE_STATIC);
+  solutionHistory->setStorageLimit(2);
+  solutionHistory->addState(icState);
+
+  // Setup Integrator -----------------------------------------
+  RCP<Tempus::IntegratorBasic<double> > integrator =
+    Tempus::integratorBasic<double>();
+  integrator->setStepperWStepper(stepper);
+  integrator->setTimeStepControl(timeStepControl);
+  integrator->setSolutionHistory(solutionHistory);
+  //integrator->setObserver(...);
+  integrator->initialize();
+
+  // get the RK stepper
+  auto erk_stepper = Teuchos::rcp_dynamic_cast<Tempus::StepperExplicitRK<double>  >(stepper,true);
+
+  TEST_EQUALITY( -1 , erk_stepper->getStageNumber());
+  const std::vector<int> ref_stageNumber = { 1, 4, 8, 10, 11, -1, 5};
+  for(auto stage_number : ref_stageNumber) {
+    // set the stage number
+    erk_stepper->setStageNumber(stage_number);
+    // make sure we are getting the correct stage number
+    TEST_EQUALITY( stage_number, erk_stepper->getStageNumber());
+  }
+}
+
 
 } // namespace Tempus_Test

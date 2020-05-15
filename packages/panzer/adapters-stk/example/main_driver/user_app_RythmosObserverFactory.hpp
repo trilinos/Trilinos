@@ -72,7 +72,7 @@ namespace user_app {
     
     Teuchos::RCP<Rythmos::IntegrationObserverBase<double> >
     buildRythmosObserver(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
-			 const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & dof_manager,
+			 const Teuchos::RCP<const panzer::GlobalIndexer> & dof_manager,
 			 const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> >& lof) const
     {
       // all done?

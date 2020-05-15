@@ -80,8 +80,8 @@ C
          BUFF (3) = XSTART
          BUFF (5) = XINT
       ELSE
-         BUFF (3) = XSTART *  (10. ** FLOAT (IXEXP))
-         BUFF (5) = XINT *  (10. ** FLOAT (IXEXP))
+         BUFF (3) = XSTART *  (10. ** DBLE(IXEXP))
+         BUFF (5) = XINT *  (10. ** DBLE(IXEXP))
       ENDIF
       BUFF (4) = X (2)
       BUFF (6) = 1.
@@ -90,8 +90,8 @@ C
          BUFF (8) = YSTART
          BUFF (10) = YINT
       ELSE
-         BUFF (8) = YSTART *  (10. ** FLOAT (IYEXP))
-         BUFF (10) = YINT *  (10. ** FLOAT (IYEXP))
+         BUFF (8) = YSTART *  (10. ** DBLE(IYEXP))
+         BUFF (10) = YINT *  (10. ** DBLE(IYEXP))
       ENDIF
       BUFF (9) = Y (2)
       BUFF (11) = 1

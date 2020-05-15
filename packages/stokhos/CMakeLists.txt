@@ -30,12 +30,25 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Ensemble_Reduction
   "Enable reduction across across ensemble components."
   OFF )
 
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  Stokhos_ENABLE_CXX11
-  HAVE_STOKHOS_CXX11
-  "Enable C++11 support in Stokhos."
-  "${${PROJECT_NAME}_ENABLE_CXX11}"
-  )
+IF(NOT HAVE_STOKHOS_ENSEMBLE_REDUCT AND NOT Stokhos_ENABLE_CUDA)
+  TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Ensemble_GEMV
+    HAVE_STOKHOS_ENSEMBLE_GEMV
+    "Enable optimized ensemble GEMV implementation."
+    ON )
+ELSE()
+  TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Ensemble_GEMV
+    HAVE_STOKHOS_ENSEMBLE_GEMV
+    "Enable optimized ensemble GEMV implementation."
+    OFF )
+ENDIF()
+
+IF(HAVE_STOKHOS_ENSEMBLE_GEMV)
+  SET(Stokhos_Ensemble_GEMV_Cache_Size 180224 CACHE INTEGER "Cache size used in the ensemble GEMV")
+  SET(Stokhos_Ensemble_GEMV_Team_Size 1 CACHE INTEGER "Team size used in the ensemble GEMV")
+ENDIF()
+
+# FIXME: Remove this hard-coded setting.  We always have C++11 now.
+SET(HAVE_STOKHOS_CXX11 ON)
 
 SET(Stokhos_ENABLE_Ensemble_Scalar_Type_Default OFF)
 IF(Stokhos_ENABLE_Sacado)
@@ -57,6 +70,34 @@ IF(Stokhos_ENABLE_Ensemble_Scalar_Type AND NOT Stokhos_ENABLE_Sacado)
 ENDIF()
 IF(Stokhos_ENABLE_PCE_Scalar_Type AND NOT Stokhos_ENABLE_Sacado)
   MESSAGE(FATAL_ERROR "PCE scalar type cannot be enabled unless Sacado is enabled!")
+ENDIF()
+
+# List of ensemble sizes to explicitly instantiate
+IF(Stokhos_ENABLE_Ensemble_Scalar_Type)
+  SET(Stokhos_ETI_Ensemble_Sizes "16" CACHE STRING "List of ensemble sizes for explicit instantiation")
+  MESSAGE("-- Enabling ensemble sizes ${Stokhos_ETI_Ensemble_Sizes}")
+  LIST(LENGTH Stokhos_ETI_Ensemble_Sizes Stokhos_ETI_Num_Ensemble_Sizes)
+  IF(Stokhos_ETI_Num_Ensemble_Sizes EQUAL 0)
+    MESSAGE(FATAL_ERROR "Must have at least one ensemble size when enabling ensemble scalar type")
+  ENDIF()
+  # default ensemble size for tests is the first one but user can override
+  LIST(GET Stokhos_ETI_Ensemble_Sizes 0 Stokhos_ETI_Default_Ensemble_Size_Default)
+  SET(Stokhos_ETI_Default_Ensemble_Size "${Stokhos_ETI_Default_Ensemble_Size_Default}" CACHE STRING "Default ensemble size to use for testing")
+  MESSAGE("-- Ensemble size for testing is ${Stokhos_ETI_Default_Ensemble_Size}")
+  SET(STOKHOS_DEFAULT_ENSEMBLE_SIZE ${Stokhos_ETI_Default_Ensemble_Size})
+
+  # Make list of enabled ensemble sizes suitable for iteration/searching
+  SET(STOKHOS_MPL_ENSEMBLE_SIZES "typedef Sacado::mpl::vector< ")
+  FOREACH(ENSEMBLE_SIZE ${Stokhos_ETI_Ensemble_Sizes})
+    STRING(APPEND STOKHOS_MPL_ENSEMBLE_SIZES "Sacado::mpl::integral_c<unsigned,${ENSEMBLE_SIZE}>, ")
+  ENDFOREACH()
+  # Strip last ","
+  STRING(LENGTH "${STOKHOS_MPL_ENSEMBLE_SIZES}" ENSEMBLE_LEN)
+  MATH(EXPR ENSEMBLE_LEN "${ENSEMBLE_LEN}-2")
+  STRING(SUBSTRING "${STOKHOS_MPL_ENSEMBLE_SIZES}" 0 ${ENSEMBLE_LEN} STOKHOS_MPL_ENSEMBLE_SIZES)
+  STRING(APPEND STOKHOS_MPL_ENSEMBLE_SIZES " > ETI_Ensemble_Sizes;")
+  SET(HAVE_STOKHOS_ENSEMBLE_SIZES "${Stokhos_ETI_Ensemble_Sizes}")
+  CONFIGURE_FILE(cmake/Stokhos_Ensemble_Sizes.hpp.in src/Stokhos_Ensemble_Sizes.hpp)
 ENDIF()
 
 # Check if immintrin.h is available

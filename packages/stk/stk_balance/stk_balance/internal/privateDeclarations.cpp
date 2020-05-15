@@ -5,10 +5,13 @@
 #include <stk_balance/internal/StkGeometricMethodViaZoltan.hpp>
 #include <stk_balance/internal/MxNutils.hpp>
 #include <stk_balance/internal/StkBalanceUtils.hpp>
+#include <stk_balance/internal/SideGeometry.hpp>
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/SkinMesh.hpp>
 #include <stk_mesh/base/FieldBase.hpp>  // for field_data
+#include <stk_mesh/base/GetEntities.hpp>  // for field_data
+#include "stk_mesh/base/FEMHelpers.hpp"
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 
 #include <stk_mesh/base/Comm.hpp>
@@ -19,16 +22,18 @@
 #include <stk_util/util/human_bytes.hpp>
 #include <stk_util/util/ReportHandler.hpp>
 #include <stk_util/environment/WallTime.hpp>
+#include <stk_util/environment/LogWithTimeAndMemory.hpp>
 #include <stk_util/diag/StringUtil.hpp>
 #include <zoltan.h>
 #include <Zoltan2_Version.hpp>
 #include <map>
 
-#include <stk_mesh/base/SkinBoundary.hpp>
+#include "stk_mesh/base/FieldParallel.hpp"
+#include "stk_tools/mesh_tools/CustomAura.hpp"
 #include <stk_mesh/base/SideSetEntry.hpp>
+#include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_mesh/base/SkinMeshUtil.hpp>
 #include <stk_util/environment/Env.hpp>
-#include "stk_mesh/base/FieldParallel.hpp"
 
 namespace stk {
 namespace balance {
@@ -151,7 +156,7 @@ unsigned get_local_id(const stk::mesh::impl::LocalIdMapper& localIds, stk::mesh:
     return localIds.entity_to_local(entity);
 }
 
-void addBoxForFace(stk::mesh::BulkData &stkMeshBulkData, stk::mesh::Entity face, const double eps, BoxVectorWithStkId &faceBoxes, const stk::mesh::FieldBase* coord)
+void addBoxForFace(stk::mesh::BulkData &stkMeshBulkData, stk::mesh::Entity face, const double eps, SearchBoxIdentProcs &faceBoxes, const stk::mesh::FieldBase* coord)
 {
 
     unsigned numElements = stkMeshBulkData.num_elements(face);
@@ -167,8 +172,12 @@ void addBoxForFace(stk::mesh::BulkData &stkMeshBulkData, stk::mesh::Entity face,
     }
 }
 
-void addEdgeAndVertexWeightsForSearchResult(stk::mesh::BulkData& stkMeshBulkData, const BalanceSettings &balanceSettings, stk::mesh::EntityId element1Id,
-        stk::mesh::EntityId element2Id, unsigned owningProcElement2, std::vector<GraphEdge>& graphEdges)
+void addEdgeAndVertexWeightsForSearchResult(stk::mesh::BulkData& stkMeshBulkData,
+                                            const BalanceSettings &balanceSettings,
+                                            stk::mesh::EntityId element1Id,
+                                            stk::mesh::EntityId element2Id,
+                                            unsigned owningProcElement2,
+                                            std::vector<GraphEdge>& graphEdges)
 {
     stk::mesh::EntityKey entityKeyElement1(stk::topology::ELEMENT_RANK, element1Id);
     stk::mesh::Entity element1 = stkMeshBulkData.get_entity(entityKeyElement1);
@@ -194,45 +203,390 @@ void addEdgeAndVertexWeightsForSearchResult(stk::mesh::BulkData& stkMeshBulkData
     }
 }
 
-void createGraphEdgesUsingBBSearch(stk::mesh::BulkData& stkMeshBulkData, const BalanceSettings &balanceSettings, std::vector<GraphEdge>& graphEdges,
-                                   const stk::mesh::Selector& searchSelector)
+void
+addSearchResultsToGraphEdges(stk::mesh::BulkData & bulk,
+                             const BalanceSettings & balanceSettings,
+                             const SearchElemPairs & searchResults,
+                             std::vector<GraphEdge> & graphEdges)
 {
-    std::ostringstream os;
-    size_t max = 0, min = 0, avg = 0;
-    stk::get_max_min_avg(stkMeshBulkData.parallel(), graphEdges.size(), max, min, avg);
-    os << "Starting search, have following distribution of graph edges: min=" << min << ", avg=" << avg << ", max=" << max;
-    logMessage(stkMeshBulkData.parallel(), os.str());
-    os.str("");
+  for (const auto & searchResult : searchResults) {
+    stk::mesh::EntityId element1id = searchResult.first.id();
+    stk::mesh::EntityId element2id = searchResult.second.id();
+    stk::mesh::Entity element1 = bulk.get_entity(stk::topology::ELEM_RANK, element1id);
+    int owningProcElement2 = searchResult.second.proc();
 
-    StkSearchResults searchResults = stk::balance::internal::getSearchResultsForFacesParticles(stkMeshBulkData, balanceSettings, searchSelector);
+    double edge_weight = balanceSettings.getGraphEdgeWeightForSearch();
+    graphEdges.push_back(GraphEdge(element1, element2id, owningProcElement2, edge_weight, true));
+  }
+}
 
-    stk::get_max_min_avg(stkMeshBulkData.parallel(), searchResults.size(), max, min, avg);
-    os << "Finished search, have following distribution of search results: min=" << min << ", avg=" << avg << ", max=" << max;
-    logMessage(stkMeshBulkData.parallel(), os.str());
-    os.str("");
+void filterOutNonLocalResults(const stk::mesh::BulkData & bulk, SearchElemPairs & searchResults)
+{
+  const int myRank = bulk.parallel_rank();
+  size_t numFiltered = 0;
 
-    for(size_t i = 0; i < searchResults.size(); i++)
-    {
-        stk::mesh::EntityId element1Id = searchResults[i].first.id();
-        stk::mesh::EntityId element2Id = searchResults[i].second.id();
-        int owningProcElement1 = searchResults[i].first.proc();
-        int owningProcElement2 = searchResults[i].second.proc();
+  for (const auto & searchResult : searchResults) {
+    if (searchResult.first.proc() == myRank) {
+      searchResults[numFiltered] = searchResult;
+      numFiltered++;
+    }
+  }
 
-        ThrowRequireWithSierraHelpMsg(owningProcElement1 == stkMeshBulkData.parallel_rank() || owningProcElement2 == stkMeshBulkData.parallel_rank());
+  searchResults.resize(numFiltered);
+}
 
-        if ( owningProcElement1 == stkMeshBulkData.parallel_rank() )
-        {
-            addEdgeAndVertexWeightsForSearchResult(stkMeshBulkData, balanceSettings, element1Id, element2Id, owningProcElement2, graphEdges);
-        }
-        else
-        {
-            addEdgeAndVertexWeightsForSearchResult(stkMeshBulkData, balanceSettings, element2Id, element1Id, owningProcElement1, graphEdges);
-        }
+void filterOutConnectedElements(const stk::mesh::BulkData & bulk, SearchElemPairs & searchResults)
+{
+  size_t numFiltered = 0;
+
+  for (const auto & searchResult : searchResults) {
+    stk::mesh::Entity element1 = bulk.get_entity(stk::topology::ELEM_RANK, searchResult.first.id());
+    stk::mesh::Entity element2 = bulk.get_entity(stk::topology::ELEM_RANK, searchResult.second.id());
+    int owningProcElement1 = searchResult.first.proc();
+    int owningProcElement2 = searchResult.second.proc();
+
+    ThrowRequireWithSierraHelpMsg(owningProcElement1 == bulk.parallel_rank() ||
+                                  owningProcElement2 == bulk.parallel_rank());
+
+    int numIntersections = 0;
+
+    if (element1 == element2) {
+      numIntersections = 1;
+    }
+    else if (bulk.is_valid(element1) && bulk.is_valid(element2)) {
+      numIntersections = internal::getNumSharedNodesBetweenElements(bulk, element1, element2);
     }
 
-    stk::get_max_min_avg(stkMeshBulkData.parallel(), graphEdges.size(), max, min, avg);
-    os << "After search, have following distribution of graph edges: min=" << min << ", avg=" << avg << ", max=" << max;
-    logMessage(stkMeshBulkData.parallel(), os.str());
+    if (numIntersections == 0) {
+      searchResults[numFiltered] = searchResult;
+      numFiltered++;
+    }
+  }
+
+  searchResults.resize(numFiltered);
+}
+
+stk::mesh::OrdinalVector getExposedSideOrdinals(const stk::mesh::BulkData & bulk, stk::mesh::EntityId elemId)
+{
+  stk::mesh::OrdinalVector exposedSideOrdinals;
+
+  const stk::mesh::ElemElemGraph & graph = bulk.get_face_adjacent_element_graph();
+  const stk::mesh::Entity element = bulk.get_entity(stk::topology::ELEM_RANK, elemId);
+  const stk::topology elemTopology = bulk.bucket(element).topology();
+
+  for (stk::mesh::Ordinal sideOrd = 0; sideOrd < elemTopology.num_sides(); ++sideOrd) {
+    if (!graph.is_connected_to_other_element_via_side_ordinal(element, sideOrd)) {
+      exposedSideOrdinals.push_back(sideOrd);
+    }
+  }
+
+  return exposedSideOrdinals;
+}
+
+struct SideInfo {
+  SideInfo()
+    : sideTopology(stk::topology::INVALID_TOPOLOGY),
+      sideSearchTolerance(0.0)
+  {}
+
+  SideInfo(stk::topology::topology_t _sideTopology,
+           double _sideSearchTolerance,
+           const std::vector<stk::math::Vector3d> & _nodeCoordinates)
+    : sideTopology(_sideTopology),
+      sideSearchTolerance(_sideSearchTolerance),
+      nodeCoordinates(_nodeCoordinates)
+  {}
+
+  ~SideInfo() = default;
+
+  stk::topology::topology_t sideTopology;
+  double sideSearchTolerance;
+  std::vector<stk::math::Vector3d> nodeCoordinates;
+};
+
+using SideInfoMap = std::map<stk::mesh::EntityId, std::vector<SideInfo>>;
+using SideGeometryPtr = std::unique_ptr<SideGeometry>;
+
+bool is_line_side(const stk::topology::topology_t & t)
+{
+  return (t == stk::topology::LINE_2) || (t == stk::topology::LINE_3);
+}
+
+bool is_point_side(const stk::topology::topology_t & t)
+{
+  return t == stk::topology::NODE;
+}
+
+SideGeometryPtr makeSideGeometry(const SideInfo & sideInfo)
+{
+  if (stk::is_quad_side(sideInfo.sideTopology)) {
+    return SideGeometryPtr(new QuadGeometry(sideInfo.nodeCoordinates[0],
+                                              sideInfo.nodeCoordinates[1],
+                                              sideInfo.nodeCoordinates[2],
+                                              sideInfo.nodeCoordinates[3]));
+  }
+  else if (stk::is_tri_side(sideInfo.sideTopology)) {
+    return SideGeometryPtr(new TriGeometry(sideInfo.nodeCoordinates[0],
+                                             sideInfo.nodeCoordinates[1],
+                                             sideInfo.nodeCoordinates[2]));
+  }
+  else if (is_line_side(sideInfo.sideTopology)) {
+    return SideGeometryPtr(new LineGeometry(sideInfo.nodeCoordinates[0],
+                                            sideInfo.nodeCoordinates[1]));
+  }
+  else if (is_point_side(sideInfo.sideTopology)) {
+    return SideGeometryPtr(new PointGeometry(sideInfo.nodeCoordinates[0]));
+  }
+  else {
+    ThrowErrorMsg("Unsupported side topology: " << stk::topology(sideInfo.sideTopology).name());
+    return SideGeometryPtr();
+  }
+}
+
+bool isAdjacent(const SideInfoMap & sideInfoMap,
+                const SearchElemPair & elemPair)
+{
+  stk::mesh::EntityId element1Id = elemPair.first.id();
+  stk::mesh::EntityId element2Id = elemPair.second.id();
+  const std::vector<SideInfo> & sides1 = sideInfoMap.at(element1Id);
+  const std::vector<SideInfo> & sides2 = sideInfoMap.at(element2Id);
+
+  for (const SideInfo & sideInfo1 : sides1) {
+    const SideGeometryPtr side1 = makeSideGeometry(sideInfo1);
+    const double tol1 = sideInfo1.sideSearchTolerance;
+
+    for (const SideInfo & sideInfo2 : sides2) {
+      const SideGeometryPtr side2 = makeSideGeometry(sideInfo2);
+      const double tol2 = sideInfo2.sideSearchTolerance;
+
+      if (side1->are_nodes_close_to_side(*side2, tol1) || side2->are_nodes_close_to_side(*side1, tol2)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+std::vector<stk::math::Vector3d> nodeCoordinates(const stk::mesh::EntityVector& sideNodes,
+                                                        const stk::mesh::FieldBase& coords,
+                                                        int spatialDim)
+{
+    std::vector<stk::math::Vector3d> nodeCoordinates;
+    for (const stk::mesh::Entity & node : sideNodes) {
+        if (spatialDim == 3) {
+            nodeCoordinates.emplace_back(reinterpret_cast<double*>(stk::mesh::field_data(coords, node)));
+        }
+        else if (spatialDim == 2) {
+            double* nodeFieldData = reinterpret_cast<double*>(stk::mesh::field_data(coords, node));
+            nodeCoordinates.emplace_back(nodeFieldData[0], nodeFieldData[1], 0.0);
+        }
+        else {
+            ThrowErrorMsg("Problem dimensionality " << spatialDim << " not supported");
+        }
+    }
+    return nodeCoordinates;
+}
+
+std::vector<SideInfo> getElementExposedFaceInfo(const stk::mesh::BulkData & bulk,
+                                                const BalanceSettings & balanceSettings,
+                                                stk::mesh::EntityId elementId)
+{
+  stk::mesh::OrdinalVector sideOrdinals = getExposedSideOrdinals(bulk, elementId);
+  stk::mesh::Entity element = bulk.get_entity(stk::topology::ELEM_RANK, elementId);
+  const stk::mesh::FieldBase & coords = *bulk.mesh_meta_data().coordinate_field();
+  int spatialDim = bulk.mesh_meta_data().spatial_dimension();
+  const stk::topology elemTopology = bulk.bucket(element).topology();
+
+  stk::mesh::EntityVector sideNodes;
+  std::vector<SideInfo> sideInfoVec;
+
+  for (unsigned ord : sideOrdinals) {
+    const stk::topology sideTopology = elemTopology.side_topology(ord);
+    stk::mesh::get_subcell_nodes(bulk, element, bulk.mesh_meta_data().side_rank(), ord, sideNodes);
+    const double tol = balanceSettings.getToleranceForFaceSearch(bulk, coords,
+                                                                 sideNodes.data(), sideNodes.size());
+
+    sideInfoVec.emplace_back(sideTopology, tol, nodeCoordinates(sideNodes, coords, spatialDim));
+  }
+
+  return sideInfoVec;
+}
+
+std::vector<SideInfo> getParticleSideInfo(const stk::mesh::BulkData & bulk,
+                                          const BalanceSettings & balanceSettings,
+                                          stk::mesh::EntityId elementId)
+{
+  stk::mesh::Entity element = bulk.get_entity(stk::topology::ELEM_RANK, elementId);
+  const stk::mesh::FieldBase & coords = *bulk.mesh_meta_data().coordinate_field();
+  int spatialDim = bulk.mesh_meta_data().spatial_dimension();
+
+  const stk::topology sideTopology = stk::topology::NODE;
+  const double tol = balanceSettings.getAbsoluteToleranceForParticleSearch(element);
+  const stk::mesh::Entity node = bulk.begin_nodes(element)[0];
+
+  std::vector<SideInfo> sideInfoVec;
+  sideInfoVec.emplace_back(sideTopology, tol, nodeCoordinates({node}, coords, spatialDim));
+
+  return sideInfoVec;
+}
+
+std::vector<SideInfo> getElementExposedSideInfo(const stk::mesh::BulkData & bulk,
+                                                const BalanceSettings & balanceSettings,
+                                                stk::mesh::EntityId elementId)
+{
+  stk::mesh::Entity element = bulk.get_entity(stk::topology::ELEM_RANK, elementId);
+  const stk::topology elemTopology = bulk.bucket(element).topology();
+
+  if (elemTopology == stk::topology::PARTICLE) {
+    return getParticleSideInfo(bulk, balanceSettings, elementId);
+  }
+  else {
+    return getElementExposedFaceInfo(bulk, balanceSettings, elementId);
+  }
+}
+
+void insertSideInfoIfNew(const stk::mesh::BulkData & bulk,
+                         const BalanceSettings & balanceSettings,
+                         SideInfoMap & sideInfoMap,
+                         stk::mesh::EntityId elemId)
+{
+  if (sideInfoMap.count(elemId) == 0) {
+    sideInfoMap.emplace(std::make_pair(elemId, getElementExposedSideInfo(bulk, balanceSettings, elemId)));
+  }
+}
+
+void insertLocalSideInfo(const stk::mesh::BulkData & bulk,
+                         const BalanceSettings & balanceSettings,
+                         const SearchElemPairs & searchResults,
+                         SideInfoMap & sideInfoMap)
+{
+  for (const SearchElemPair & elemPair : searchResults) {
+    insertSideInfoIfNew(bulk, balanceSettings, sideInfoMap, elemPair.first.id());
+    if (elemPair.second.proc() == bulk.parallel_rank()) {
+      insertSideInfoIfNew(bulk, balanceSettings, sideInfoMap, elemPair.second.id());
+    }
+  }
+}
+
+void packNonLocalSideInfo(const stk::mesh::BulkData & bulk,
+                          stk::CommSparse & comm,
+                          const SearchElemPairs & searchResults,
+                          const SideInfoMap & sideInfoMap)
+{
+  for (const SearchElemPair & elemPair : searchResults) {
+    const int secondProc = elemPair.second.proc();
+    if (secondProc != bulk.parallel_rank()) {
+      const std::vector<SideInfo> & firstSideInfo = sideInfoMap.at(elemPair.first.id());
+
+      comm.send_buffer(secondProc).pack<stk::mesh::EntityId>(elemPair.first.id());
+      comm.send_buffer(secondProc).pack<unsigned>(firstSideInfo.size());
+      for (const SideInfo & sideInfo : firstSideInfo) {
+        comm.send_buffer(secondProc).pack<stk::topology::topology_t>(sideInfo.sideTopology);
+        comm.send_buffer(secondProc).pack<double>(sideInfo.sideSearchTolerance);
+        comm.send_buffer(secondProc).pack<unsigned>(sideInfo.nodeCoordinates.size());
+        for (const stk::math::Vector3d & nodeCoords : sideInfo.nodeCoordinates) {
+          comm.send_buffer(secondProc).pack<stk::math::Vector3d>(nodeCoords);
+        }
+      }
+    }
+  }
+}
+
+void unpackAndInsertNonLocalSideInfo(const stk::mesh::BulkData & bulk,
+                                     stk::CommSparse & comm,
+                                     SideInfoMap & sideInfoMap)
+{
+  for (int proc = 0; proc < bulk.parallel_size(); ++proc) {
+    while (comm.recv_buffer(proc).remaining()) {
+      stk::mesh::EntityId id;
+      unsigned numSides;
+      comm.recv_buffer(proc).unpack(id);
+      comm.recv_buffer(proc).unpack(numSides);
+      std::vector<SideInfo> elementSideInfo(numSides);
+
+      for (SideInfo & si : elementSideInfo) {
+        unsigned numSideNodes;
+        comm.recv_buffer(proc).unpack(si.sideTopology);
+        comm.recv_buffer(proc).unpack(si.sideSearchTolerance);
+        comm.recv_buffer(proc).unpack(numSideNodes);
+        si.nodeCoordinates.resize(numSideNodes);
+        for (stk::math::Vector3d & nodeCoords : si.nodeCoordinates) {
+          comm.recv_buffer(proc).unpack(nodeCoords);
+        }
+      }
+      sideInfoMap[id] = elementSideInfo;
+    }
+  }
+}
+
+SideInfoMap fillSideInfo(const stk::mesh::BulkData & bulk,
+                         const BalanceSettings & balanceSettings,
+                         const SearchElemPairs & searchResults)
+{
+  SideInfoMap sideInfoMap;
+
+  insertLocalSideInfo(bulk, balanceSettings, searchResults, sideInfoMap);
+
+  stk::CommSparse comm(bulk.parallel());
+
+  stk::pack_and_communicate(comm, [&](){
+    packNonLocalSideInfo(bulk, comm, searchResults, sideInfoMap);
+  });
+
+  unpackAndInsertNonLocalSideInfo(bulk, comm, sideInfoMap);
+
+  return sideInfoMap;
+}
+
+void filterOutNonAdjacentElements(const stk::mesh::BulkData & bulk,
+                                  const BalanceSettings & balanceSettings,
+                                  SearchElemPairs & searchResults)
+{
+  SideInfoMap sideInfoMap = fillSideInfo(bulk, balanceSettings, searchResults);
+
+  size_t numFiltered = 0;
+
+  for (const SearchElemPair & elemPair : searchResults) {
+    if (isAdjacent(sideInfoMap, elemPair)) {
+      searchResults[numFiltered] = elemPair;
+      numFiltered++;
+    }
+  }
+
+  searchResults.resize(numFiltered);
+}
+
+void printGraphEdgeCounts(const stk::mesh::BulkData& stkMeshBulkData,
+                          size_t edgeCounts,
+                          const std::string& message)
+{
+  std::ostringstream os;
+  size_t max = 0, min = 0, avg = 0;
+  stk::get_max_min_avg(stkMeshBulkData.parallel(), edgeCounts, max, min, avg);
+
+  os << message << ", have following distribution of graph edges: min="
+     << min << ", avg=" << avg << ", max=" << max;
+
+  logMessage(stkMeshBulkData.parallel(), os.str());
+}
+
+void addGraphEdgesUsingBBSearch(stk::mesh::BulkData & stkMeshBulkData,
+                                const BalanceSettings & balanceSettings,
+                                std::vector<GraphEdge> & graphEdges,
+                                const stk::mesh::Selector & searchSelector)
+{
+  printGraphEdgeCounts(stkMeshBulkData, graphEdges.size(), "Starting search");
+
+  SearchElemPairs searchResults = getBBIntersectionsForFacesParticles(stkMeshBulkData, balanceSettings, searchSelector);
+  printGraphEdgeCounts(stkMeshBulkData, searchResults.size(), "Finished search");
+
+  filterOutNonLocalResults(stkMeshBulkData, searchResults);
+  filterOutConnectedElements(stkMeshBulkData, searchResults);
+  filterOutNonAdjacentElements(stkMeshBulkData, balanceSettings, searchResults);
+
+  addSearchResultsToGraphEdges(stkMeshBulkData, balanceSettings, searchResults, graphEdges);
+  printGraphEdgeCounts(stkMeshBulkData, graphEdges.size(), "After search");
 }
 
 std::vector<int> getLocalIdsOfEntitiesNotSelected(const stk::mesh::BulkData &stkMeshBulkData, stk::mesh::Selector selector, const stk::mesh::impl::LocalIdMapper& localIds)
@@ -285,95 +639,44 @@ void fillEntityCentroid(const stk::mesh::BulkData &stkMeshBulkData, const stk::m
     }
 }
 
-void fill_list_of_entities_to_send_for_aura_like_ghosting(stk::mesh::BulkData& bulkData, stk::mesh::EntityProcVec &entitiesToGhost)
+int num_connected_beams(const stk::mesh::BulkData& bulk,
+                             stk::mesh::Entity node)
 {
-    const stk::mesh::BucketVector& buckets = bulkData.get_buckets(stk::topology::NODE_RANK, bulkData.mesh_meta_data().globally_shared_part());
-    for(const stk::mesh::Bucket *bucket : buckets)
-    {
-        for(stk::mesh::Entity shared_node : *bucket)
-        {
-            unsigned num_elements = bulkData.num_elements(shared_node);
-            const stk::mesh::Entity* elements = bulkData.begin_elements(shared_node);
-            for(unsigned i=0;i<num_elements;++i)
-            {
-                if(bulkData.bucket(elements[i]).owned())
-                {
-                    std::vector<int> comm_shared_procs;
-                    bulkData.comm_shared_procs(bulkData.entity_key(shared_node), comm_shared_procs);
-                    for(int proc : comm_shared_procs )
-                    {
-                        entitiesToGhost.push_back(stk::mesh::EntityProc(elements[i], proc));
-                    }
-                }
-            }
-        }
+  const unsigned numElems = bulk.num_elements(node);
+  const stk::mesh::Entity* elems = bulk.begin_elements(node);
+
+  int numBeams = 0;
+  for(unsigned elemIndex=0; elemIndex<numElems; ++elemIndex) {
+    if (bulk.bucket(elems[elemIndex]).topology() == stk::topology::BEAM_2) {
+      ++numBeams;
     }
+  }
+
+  return numBeams;
 }
 
-void fill_connectivity_count_field(stk::mesh::BulkData & stkMeshBulkData, const BalanceSettings & balanceSettings)
+void fill_connectivity_count_field(stk::mesh::BulkData & bulk, const BalanceSettings & balanceSettings)
 {
     if (balanceSettings.shouldFixSpiders()) {
-        const stk::mesh::Field<int> * connectivityCountField = balanceSettings.getSpiderConnectivityCountField(stkMeshBulkData);
+        const stk::mesh::Field<int> * connectivityCountField = balanceSettings.getSpiderConnectivityCountField(bulk);
+        const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
 
-        stk::mesh::Selector beamNodesSelector(stkMeshBulkData.mesh_meta_data().locally_owned_part() &
-                                              stkMeshBulkData.mesh_meta_data().get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::BEAM_2)));
-        const stk::mesh::BucketVector &buckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, beamNodesSelector);
-
-        for (stk::mesh::Bucket * bucket : buckets) {
-            for (stk::mesh::Entity node : *bucket) {
-                int * connectivityCount = stk::mesh::field_data(*connectivityCountField, node);
-                const unsigned numElements = stkMeshBulkData.num_elements(node);
-                const stk::mesh::Entity *element = stkMeshBulkData.begin_elements(node);
-                for (unsigned i = 0; i < numElements; ++i) {
-                    if (stkMeshBulkData.bucket(element[i]).topology() == stk::topology::BEAM_2) {
-                        (*connectivityCount)++;
-                    }
-                }
-            }
+        stk::mesh::Selector selectBeamNodes(meta.locally_owned_part() &
+                                              meta.get_topology_root_part(stk::topology::BEAM_2));
+        stk::mesh::EntityVector nodes;
+        mesh::get_selected_entities(selectBeamNodes, bulk.buckets(stk::topology::NODE_RANK), nodes);
+        for(stk::mesh::Entity node : nodes) {
+            int * connectivityCount = stk::mesh::field_data(*connectivityCountField, node);
+            *connectivityCount = num_connected_beams(bulk, node);
         }
 
-        stk::mesh::communicate_field_data(stkMeshBulkData, {connectivityCountField});
-    }
-}
-
-stk::mesh::Ghosting * create_custom_ghosting(stk::mesh::BulkData & stkMeshBulkData, const BalanceSettings & balanceSettings)
-{
-    stk::mesh::Ghosting * customAura = nullptr;
-    if (!stkMeshBulkData.is_automatic_aura_on())
-    {
-        stkMeshBulkData.modification_begin();
-
-        customAura = &stkMeshBulkData.create_ghosting("customAura");
-        stk::mesh::EntityProcVec entitiesToGhost;
-        fill_list_of_entities_to_send_for_aura_like_ghosting(stkMeshBulkData, entitiesToGhost);
-        stkMeshBulkData.change_ghosting(*customAura, entitiesToGhost);
-
-        stkMeshBulkData.modification_end();
-    }
-
-    return customAura;
-}
-
-void destroy_custom_ghosting(stk::mesh::BulkData & stkMeshBulkData, stk::mesh::Ghosting * customAura)
-{
-    if (nullptr != customAura)
-    {
-        stkMeshBulkData.modification_begin();
-        stkMeshBulkData.destroy_ghosting(*customAura);
-        stkMeshBulkData.modification_end();
+        stk::mesh::communicate_field_data(bulk, {connectivityCountField});
     }
 }
 
 void logMessage(MPI_Comm communicator, const std::string &message)
 {
-    static double startTime = stk::wall_time();
-    double now = stk::wall_time();
-
-    size_t hwm_max = 0, hwm_min = 0, hwm_avg = 0;
-    stk::get_memory_high_water_mark_across_processors(communicator, hwm_max, hwm_min, hwm_avg);
-
-    sierra::Env::outputP0() << "[time:" << std::fixed << std::setprecision(3) << std::setw(10) << now-startTime << " s, hwm:"
-              << std::setfill(' ') << std::right << std::setw(8) << stk::human_bytes(hwm_avg) << "] "<< message << std::endl;
+    stk::log_with_time_and_memory(communicator, message);
 }
 
 
@@ -392,11 +695,6 @@ void fill_zoltan2_graph(const BalanceSettings& balanceSettings,
                                                    localIds);
 
     logMessage(stkMeshBulkData.parallel(), "Finished filling in graph data");
-}
-
-bool is_geometric_method(const std::string method)
-{
-    return (method=="rcb" || method=="rib" || method=="multijagged");
 }
 
 
@@ -532,10 +830,15 @@ Teuchos::ParameterList getGraphBasedParameters(const BalanceSettings& balanceSet
     }
 
     // should not hurt other methods, only affects RCB.
-    Teuchos::ParameterList &zparams = params.sublist("zoltan_parameters", false);
-    zparams.set("debug_level", "0");
-//    zparams.set("LB_METHOD", "PHG");
-//    zparams.set("LB_APPROACH", "PARTITION");
+    Teuchos::ParameterList &zparams = params.sublist("zoltan_parameters",false);
+    zparams.set("debug_level","0");
+    zparams.set("LB_APPROACH","PARTITION");
+    zparams.set("LB_METHOD","GRAPH");
+    zparams.set("GRAPH_PACKAGE","ParMETIS");
+    zparams.set("GRAPH_SYMMETRIZE","None");
+    zparams.set("PARMETIS_METHOD","PartKway");
+    //zparams.set("PARMETIS_METHOD","AdaptiveRepart");
+    //zparams.set("PARMETIS_ITR",1000);
     return params;
 }
 
@@ -572,43 +875,49 @@ bool shouldOmitSpiderElement(const stk::mesh::BulkData & stkMeshBulkData,
     return omitConnection;
 }
 
-void fix_spider_elements(const BalanceSettings & balanceSettings, stk::mesh::BulkData & stkMeshBulkData)
+bool found_element_at_end_of_leg(int newOwner, const stk::mesh::BulkData & bulk)
 {
-    stk::mesh::Ghosting * customAura = create_custom_ghosting(stkMeshBulkData, balanceSettings);
+  return (newOwner < bulk.parallel_size());
+}
 
-    stk::mesh::MetaData & meta = stkMeshBulkData.mesh_meta_data();
-    const stk::mesh::Field<int> & beamConnectivityCountField = *balanceSettings.getSpiderConnectivityCountField(stkMeshBulkData);
+void fix_spider_elements(const BalanceSettings & balanceSettings, stk::mesh::BulkData & bulk)
+{
+    stk::mesh::Ghosting * customAura = stk::tools::create_custom_aura(bulk, bulk.mesh_meta_data().globally_shared_part(), "customAura");
+
+    stk::mesh::MetaData & meta = bulk.mesh_meta_data();
+    const stk::mesh::Field<int> & beamConnectivityCountField = *balanceSettings.getSpiderConnectivityCountField(bulk);
 
     stk::mesh::EntityVector beams;
     stk::mesh::Part & beamPart = meta.get_topology_root_part(stk::topology::BEAM_2);
-    stk::mesh::get_selected_entities(beamPart & meta.locally_owned_part(), stkMeshBulkData.buckets(stk::topology::ELEM_RANK), beams);
+    stk::mesh::get_selected_entities(beamPart & meta.locally_owned_part(), bulk.buckets(stk::topology::ELEM_RANK), beams);
 
     stk::mesh::EntityProcVec beamsToMove;
     for (stk::mesh::Entity beam : beams) {
-        if (isElementPartOfSpider(stkMeshBulkData, beamConnectivityCountField, beam)) {
-            const stk::mesh::Entity* nodes = stkMeshBulkData.begin_nodes(beam);
+        if (isElementPartOfSpider(bulk, beamConnectivityCountField, beam)) {
+            const stk::mesh::Entity* nodes = bulk.begin_nodes(beam);
             const int node1ConnectivityCount = *stk::mesh::field_data(beamConnectivityCountField, nodes[0]);
             const int node2ConnectivityCount = *stk::mesh::field_data(beamConnectivityCountField, nodes[1]);
 
             const stk::mesh::Entity endNode = (node1ConnectivityCount < node2ConnectivityCount) ? nodes[0] : nodes[1];
-            const stk::mesh::Entity* elements = stkMeshBulkData.begin_elements(endNode);
-            const unsigned numElements = stkMeshBulkData.num_elements(endNode);
-            int newOwner = stkMeshBulkData.parallel_size() - 1;
+            const stk::mesh::Entity* elements = bulk.begin_elements(endNode);
+            const unsigned numElements = bulk.num_elements(endNode);
+            int newOwner = std::numeric_limits<int>::max();
+
             for (unsigned i = 0; i < numElements; ++i) {
-                if (stkMeshBulkData.bucket(elements[i]).topology() != stk::topology::BEAM_2) {
-                    newOwner = std::min(newOwner, stkMeshBulkData.parallel_owner_rank(elements[i]));
+                if (bulk.bucket(elements[i]).topology() != stk::topology::BEAM_2) {
+                    newOwner = std::min(newOwner, bulk.parallel_owner_rank(elements[i]));
                 }
             }
 
-            if (newOwner != stkMeshBulkData.parallel_rank()) {
+            if (found_element_at_end_of_leg(newOwner, bulk) && (newOwner != bulk.parallel_rank())) {
                 beamsToMove.push_back(std::make_pair(beam, newOwner));
             }
         }
     }
 
-    destroy_custom_ghosting(stkMeshBulkData, customAura);
+    stk::tools::destroy_custom_aura(bulk, customAura);
 
-    stkMeshBulkData.change_entity_owner(beamsToMove);
+    bulk.change_entity_owner(beamsToMove);
 }
 
 void keep_spiders_on_original_proc(stk::mesh::BulkData &bulk, const stk::balance::BalanceSettings & balanceSettings, DecompositionChangeList &changeList)
@@ -763,23 +1072,43 @@ void fill_decomp_using_parmetis(const BalanceSettings& balanceSettings, const in
     #endif
 }
 
-void calculateGeometricOrGraphBasedDecomp(const BalanceSettings& balanceSettings, const int numSubdomainsToCreate, stk::mesh::EntityProcVec &decomp, stk::mesh::BulkData& stkMeshBulkData, const std::vector<stk::mesh::Selector>& selectors)
+bool is_geometric_method(const std::string& method)
+{
+  return (method=="rcb" ||
+          method=="rib" ||
+          method=="multijagged");
+}
+
+bool is_graph_based_method(const std::string& method)
+{
+  return (method == "parmetis");
+}
+
+void calculateGeometricOrGraphBasedDecomp(const BalanceSettings& balanceSettings,
+                                              const int numSubdomainsToCreate,
+                                              stk::mesh::EntityProcVec &decomp,
+                                              stk::mesh::BulkData& stkMeshBulkData,
+                                              const std::vector<stk::mesh::Selector>& selectors)
 {
     ThrowRequireWithSierraHelpMsg(numSubdomainsToCreate > 0);
-    ThrowRequireWithSierraHelpMsg(is_geometric_method(balanceSettings.getDecompMethod()) || balanceSettings.getDecompMethod()=="parmetis" || balanceSettings.getDecompMethod()=="zoltan");
+    ThrowRequireWithSierraHelpMsg(is_geometric_method(balanceSettings.getDecompMethod()) ||
+                                  is_graph_based_method(balanceSettings.getDecompMethod()));
 
-    if(is_geometric_method(balanceSettings.getDecompMethod()))
+    if (is_geometric_method(balanceSettings.getDecompMethod()))
     {
         stk::mesh::impl::LocalIdMapper localIds(stkMeshBulkData, stk::topology::ELEM_RANK);
-        fill_decomp_using_geometric_method(balanceSettings, numSubdomainsToCreate, decomp, stkMeshBulkData, selectors, localIds);
+        fill_decomp_using_geometric_method(balanceSettings, numSubdomainsToCreate,
+                                           decomp, stkMeshBulkData, selectors, localIds);
     }
-    else if (balanceSettings.getDecompMethod()=="parmetis" || balanceSettings.getDecompMethod()=="zoltan")
+    else if (is_graph_based_method(balanceSettings.getDecompMethod()))
     {
-        stk::mesh::Ghosting * customAura = internal::create_custom_ghosting(stkMeshBulkData, balanceSettings);
+        stk::mesh::Ghosting * customAura = stk::tools::create_custom_aura(stkMeshBulkData,
+                                                                          stkMeshBulkData.mesh_meta_data().globally_shared_part(),
+                                                                          "customAura");
         stk::mesh::impl::LocalIdMapper localIds(stkMeshBulkData, stk::topology::ELEM_RANK);
         internal::fill_connectivity_count_field(stkMeshBulkData, balanceSettings);
         fill_decomp_using_parmetis(balanceSettings, numSubdomainsToCreate, decomp, stkMeshBulkData, selectors, localIds);
-        internal::destroy_custom_ghosting(stkMeshBulkData, customAura);
+        stk::tools::destroy_custom_aura(stkMeshBulkData, customAura);
     }
 }
 

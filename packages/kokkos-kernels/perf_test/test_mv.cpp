@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//               KokkosKernels 0.9: Linear Algebra and Graph Kernels
-//                 Copyright 2017 Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -101,7 +102,7 @@ void test_mv_dot(int size, int numVecs, int loop)
   h_vector_type h_b = h_a;
 
   MV_Dot(a,x,y);
-  execution_space::fence();
+  execution_space().fence();
 
   Kokkos::deep_copy(h_a,a);
   double errorsum=0;
@@ -116,7 +117,7 @@ void test_mv_dot(int size, int numVecs, int loop)
   clock_gettime(CLOCK_REALTIME,&starttime);
   for(int i=0;i<loop;i++)
     MV_Dot(a,x,y);
-  execution_space::fence();
+  execution_space().fence();
   clock_gettime(CLOCK_REALTIME,&endtime);
   double time = endtime.tv_sec - starttime.tv_sec + 1.0 * (endtime.tv_nsec - starttime.tv_nsec) / 1000000000;
 
@@ -152,7 +153,7 @@ void test_mv_add(int size, int numVecs, int loop)
   Kokkos::deep_copy(y,h_y);
   Kokkos::deep_copy(a,h_a);
   MV_Add(r,a,x,a,y);
-  execution_space::fence();
+  execution_space().fence();
 
   Kokkos::deep_copy(h_rd,r);
   for(int k=0;k<numVecs;k++){
@@ -176,7 +177,7 @@ void test_mv_add(int size, int numVecs, int loop)
   clock_gettime(CLOCK_REALTIME,&starttime);
   for(int i=0;i<loop;i++)
     MV_Add(r,a,x,a,y);
-  execution_space::fence();
+  execution_space().fence();
   clock_gettime(CLOCK_REALTIME,&endtime);
   double time = endtime.tv_sec - starttime.tv_sec + 1.0 * (endtime.tv_nsec - starttime.tv_nsec) / 1000000000;
 
@@ -207,7 +208,7 @@ void test_mv_mulscalar(int size, int numVecs, int loop)
   Kokkos::deep_copy(x,h_x);
   Kokkos::deep_copy(a,h_a);
   MV_MulScalar(r,a,x);
-  execution_space::fence();
+  execution_space().fence();
 
   Kokkos::deep_copy(h_rd,r);
   for(int k=0;k<numVecs;k++){
@@ -231,7 +232,7 @@ void test_mv_mulscalar(int size, int numVecs, int loop)
   clock_gettime(CLOCK_REALTIME,&starttime);
   for(int i=0;i<loop;i++)
 	  MV_MulScalar(r,a,x);
-  execution_space::fence();
+  execution_space().fence();
   clock_gettime(CLOCK_REALTIME,&endtime);
   double time = endtime.tv_sec - starttime.tv_sec + 1.0 * (endtime.tv_nsec - starttime.tv_nsec) / 1000000000;
 

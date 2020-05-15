@@ -14,6 +14,8 @@ IF (NOT ${PACKAGE_NAME}_ENABLE_Epetra AND NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
   MESSAGE(FATAL_ERROR "Neither Epetra nor Tpetra are enabled.  MueLu requires at least one of them to be enabled.")
 ENDIF()
 
+ASSERT_DEFINED(Xpetra_ENABLE_Epetra)
+ASSERT_DEFINED(Xpetra_ENABLE_Tpetra)
 ASSERT_DEFINED(Xpetra_INT_LONG_LONG)
 ASSERT_DEFINED(Xpetra_ENABLE_Experimental)
 ASSERT_DEFINED(Xpetra_ENABLE_Kokkos_Refactor)
@@ -31,16 +33,11 @@ if (${PACKAGE_NAME}_ENABLE_Tpetra)
   ASSERT_DEFINED(Teuchos_ENABLE_COMPLEX)
 ENDIF()
 
-# JJH: pulled this logic from Tpetra.  Comments below about CUDA are from Tpetra developers.
-# This is redundant, since MueLu also requires Kokkos, and Kokkos requires C++11.
-# "I left a special case for CUDA because I'm not sure whether TriBITS
-# counts C++11 as enabled in that case; please feel free to revise if
-# you know better."
-ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_CXX11)
-ASSERT_DEFINED(TPL_ENABLE_CUDA)
-IF (NOT ${PROJECT_NAME}_ENABLE_CXX11 AND NOT TPL_ENABLE_CUDA)
-  MESSAGE(FATAL_ERROR "MueLu requires that C++11 support in Trilinos be enabled.  This should happen automatically if your compiler is C++11 compliant.")
-ENDIF ()
+# You can only get Avatar one way
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_AvatarT)
+IF( TPL_ENABLE_AVATAR AND ${PACKAGE_NAME}_ENABLE_AvatarT)
+  MESSAGE(FATAL_ERROR "MueLu does not support Avatar being built both as a TPL and as an external package.")
+ENDIF()
 
 IF ((CMAKE_CXX_COMPILER_ID MATCHES "GNU") AND (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "4.7") AND NOT TPL_ENABLE_CUDA)
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-local-typedefs")
@@ -57,9 +54,53 @@ ENDIF()
 TRIBITS_ADD_DEBUG_OPTION()
 TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_DEPRECATED_CODE
+  HAVE_${PACKAGE_NAME_UC}_DEPRECATED_CODE
+  "Whether MueLu enables deprecated code (that is, anything marked with the MUELU_DEPRECATED macro) at compile time.  Default is ON (deprecated code enabled).  If OFF, then deprecated code does not exist."
+  YES
+)
+IF (HAVE_${PACKAGE_NAME_UC}_DEPRECATED_CODE)
+  MESSAGE(STATUS "MueLu: Enabling deprecated code")
+ELSE ()
+  MESSAGE(STATUS "MueLu: Disabling deprecated code")
+ENDIF ()
+
+IF (NOT ${PACKAGE_NAME}_ENABLE_DEPRECATED_CODE AND ${PACKAGE_NAME}_ENABLE_DEPRECATED_TESTS)
+  MESSAGE(FATAL_ERROR "MueLu: You cannot enable deprecated tests when deprecated codes is disabled!")
+ENDIF ()
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_DEPRECATED_TESTS
+  HAVE_${PACKAGE_NAME_UC}_DEPRECATED_TESTS
+  "Whether MueLu compiles and run tests (or areas of a test) that contain deprecated code (that is, anything marked with the MUELU_DEPRECATED macro).  Default is OFF (deprecated tests disabled).  If ON, then deprecated tests are compiled and tested."
+  NO
+)
+
+IF (HAVE_${PACKAGE_NAME_UC}_DEPRECATED_TESTS)
+  MESSAGE(STATUS "MueLu: Enabling deprecated tests")
+ENDIF ()
+
 IF (${PACKAGE_NAME}_ENABLE_Epetra AND NOT ${PACKAGE_NAME}_ENABLE_EpetraExt)
   MESSAGE(FATAL_ERROR "You have enabled Epetra, but not EpetraExt. MueLu requires that either both are enabled, or both are disabled. Please either disable Epetra, or enable EpetraExt.")
 ENDIF()
+
+
+# If you want MueLu Epetra, you need Xpetra Epetra
+ASSERT_DEFINED(Xpetra_ENABLE_Epetra)
+IF (NOT Xpetra_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Epetra)
+  MESSAGE(FATAL_ERROR "MueLu Epetra support requires Xpetra Epetra support")
+ENDIF()
+
+# If you want MueLu Epetra, you need Xpetra Tpetra
+ASSERT_DEFINED(Xpetra_ENABLE_Tpetra)
+IF (NOT Xpetra_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Tpetra)
+  MESSAGE(FATAL_ERROR "MueLu Tpetra support requires Xpetra Tpetra support")
+ENDIF()
+
+# Need to do this because Xpetra_ENABLE_Epetra might have been disabled after
+# HAVE_MUELU_EPETRA was first set automatically
+GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_EPETRA ${${PACKAGE_NAME}_ENABLE_Epetra})
 
 # Disable Ifpack2 if Tpetra is off
 IF (NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
@@ -78,7 +119,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental AND NOT Xpetra_ENABLE_Experimental)
 ENDIF ()
 
 IF (${PACKAGE_NAME}_ENABLE_Experimental)
-  MESSAGE(STATUS "Enabling MueLu experimental code")
+  MESSAGE(STATUS "MueLu: Enabling experimental code")
 ENDIF()
 
 # Enable additive variant
@@ -190,16 +231,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "Enable Xpetra code refactored to use Kokkos."
   ${Kokkos_Refactor_On_By_Default})
 
-# Define option to use code that is refactored to use Kokkos by
-# default. This is useful for running all non-unit tests with Kokkos
-# without having to set "use kokkos refactor" in all parameter lists.
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor_Use_By_Default
-  HAVE_${PACKAGE_NAME_UC}_KOKKOS_REFACTOR_USE_BY_DEFAULT
-  "Use MueLu code refactored to use Kokkos by default."
-  NO)
-
-
 IF (${PACKAGE_NAME}_ENABLE_Kokkos_Refactor AND NOT Xpetra_ENABLE_Kokkos_Refactor)
   MESSAGE(FATAL_ERROR "Kokkos Refactor in MueLu requires one to also enable Kokkos Refactor in Xpetra (-DXpetra_ENABLE_Kokkos_Refactor:BOOL=ON).")
 ENDIF()
@@ -216,8 +247,10 @@ GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_TEKO ${${PACKAGE_NAME}_ENABLE_Teko})
 # - MueLu_ENABLE_EXPLICIT_INSTANTIATION
 # - Enabling/disabling of scalar/ordinal types is controlled by Tpetra
 
-IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
+GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_DEFAULT_GO_LONG OFF)
+GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_DEFAULT_GO_LONGLONG OFF)
 
+IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   # <double, int, int>
   # Examples and tests need at least this one, also if Epetra is enabled
   IF(Tpetra_INST_DOUBLE AND Tpetra_INST_INT_INT)
@@ -286,17 +319,27 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_INST_FLOAT_INT_INT OFF)
   ENDIF()
 
-  MESSAGE(STATUS "${PACKAGE_NAME} ETI support enabled")
-  MESSAGE(STATUS "<float,   int, int>       : ${${PACKAGE_NAME}_INST_FLOAT_INT_INT}")
-  MESSAGE(STATUS "<double,  int, int>       : ${${PACKAGE_NAME}_INST_DOUBLE_INT_INT}")
-  MESSAGE(STATUS "<double,  int, long>      : ${${PACKAGE_NAME}_INST_DOUBLE_INT_LONGINT}")
-  MESSAGE(STATUS "<double,  int, long long> : ${${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT}")
-  MESSAGE(STATUS "<complex, int, int>       : ${${PACKAGE_NAME}_INST_COMPLEX_INT_INT}")
+  MESSAGE(STATUS "${PACKAGE_NAME}: Enabling ETI support")
+  MESSAGE(STATUS "   <float,   int, int>       : ${${PACKAGE_NAME}_INST_FLOAT_INT_INT}")
+  MESSAGE(STATUS "   <double,  int, int>       : ${${PACKAGE_NAME}_INST_DOUBLE_INT_INT}")
+  MESSAGE(STATUS "   <double,  int, long>      : ${${PACKAGE_NAME}_INST_DOUBLE_INT_LONGINT}")
+  MESSAGE(STATUS "   <double,  int, long long> : ${${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT}")
+  MESSAGE(STATUS "   <complex, int, int>       : ${${PACKAGE_NAME}_INST_COMPLEX_INT_INT}")
+
+  # GO preference: int > long long > long
+  IF(NOT ${${PACKAGE_NAME}_INST_DOUBLE_INT_INT})
+    # No GO=int (first choice for default)
+    IF(NOT ${${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT})
+      #No GO=long long (second choice), must use long
+      GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_DEFAULT_GO_LONG ON)
+    ELSE()
+      GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_DEFAULT_GO_LONGLONG ON)
+    ENDIF()
+  ENDIF()
 
   # If Tpetra is enabled, determine which Nodes are used
   IF (${PACKAGE_NAME}_ENABLE_Tpetra)
     GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_SERIAL  ${Tpetra_INST_SERIAL})
-    GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_PTHREAD ${Tpetra_INST_PTHREAD})
     GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_OPENMP  ${Tpetra_INST_OPENMP})
     GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_CUDA    ${Tpetra_INST_CUDA})
   ENDIF()
@@ -304,10 +347,9 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     # If Epetra is active, always activate SerialNode
     GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_SERIAL ON)
   ENDIF ()
-  MESSAGE(STATUS "HAVE_${PACKAGE_NAME_UC}_SERIAL       : ${HAVE_${PACKAGE_NAME_UC}_SERIAL}")
-  MESSAGE(STATUS "HAVE_${PACKAGE_NAME_UC}_PTHREAD      : ${HAVE_${PACKAGE_NAME_UC}_PTHREAD}")
-  MESSAGE(STATUS "HAVE_${PACKAGE_NAME_UC}_OPENMP       : ${HAVE_${PACKAGE_NAME_UC}_OPENMP}")
-  MESSAGE(STATUS "HAVE_${PACKAGE_NAME_UC}_CUDA         : ${HAVE_${PACKAGE_NAME_UC}_CUDA}")
+  MESSAGE(STATUS "   HAVE_${PACKAGE_NAME_UC}_SERIAL       : ${HAVE_${PACKAGE_NAME_UC}_SERIAL}")
+  MESSAGE(STATUS "   HAVE_${PACKAGE_NAME_UC}_OPENMP       : ${HAVE_${PACKAGE_NAME_UC}_OPENMP}")
+  MESSAGE(STATUS "   HAVE_${PACKAGE_NAME_UC}_CUDA         : ${HAVE_${PACKAGE_NAME_UC}_CUDA}")
 ELSE()
   # ETI is turned off
 
@@ -318,6 +360,8 @@ ELSE()
     # If Epetra only is active, only activate SerialNode by default
     GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_SERIAL  ON)
   ENDIF()
+
+  # With ETI off, free to leave int as the default GO
 ENDIF()
 
 # HAVE_MUELU_COMPLEX=ON iff:
@@ -388,6 +432,11 @@ if(TPL_ENABLE_MATLAB)
   IF(NOT ${PACKAGE_NAME}_ENABLE_Epetra OR NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
       MESSAGE(FATAL_ERROR "Muemex interfaces require \"-D${PACKAGE_NAME}_ENABLE_Epetra:BOOL=ON\" and \"-D${PACKAGE_NAME}_ENABLE_Tpetra:BOOL=ON\".")
   ENDIF()
+
+  IF(NOT Tpetra_INST_INT_INT OR  Tpetra_INST_INT_LONG OR Tpetra_INST_INT_LONG_LONG)
+    MESSAGE(FATAL_ERROR "Muemex interfaces require that Tpetra only be instantiated with Tpetra_INST_INT_INT, not Tpetra_INST_INT_LONG or Tpetra_INST_INT_LONG_LONG")
+  ENDIF()
+
 ENDIF()
 
 if(TPL_ENABLE_MATLAB)

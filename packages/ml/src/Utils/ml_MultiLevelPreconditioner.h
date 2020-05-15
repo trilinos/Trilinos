@@ -158,6 +158,12 @@ namespace ML_Epetra
                        Teuchos::RCP<std::vector<double> > &params,
                        bool Overwrite=true);
 
+  //! Sets defaults for classical amg
+  int SetDefaultsClassicalAMG(Teuchos::ParameterList & List,
+                      Teuchos::RCP<std::vector<int> > &options,
+                       Teuchos::RCP<std::vector<double> > &params,
+                       bool Overwrite=true);
+
   //! Reads in parameter list options from file.
   int ReadXML(const std::string &FileName, Teuchos::ParameterList &List,
                    const Epetra_Comm &Comm);
@@ -168,7 +174,8 @@ namespace ML_Epetra
 
   ML_SA_FAMILY,         /*< Smoothed aggregation solver including EMIN,NSA */
   ML_MAXWELL,           /*< Old Maxwell solver */
-  ML_COMPOSITE          /*< Composite AMG: block diagonal prolongator */
+  ML_COMPOSITE,         /*< Composite AMG: block diagonal prolongator */
+  ML_CLASSICAL_FAMILY   /*< Classical AMG */
   };
 
 /*!
@@ -438,7 +445,7 @@ public:
   //@{ \name Mathematical functions.
 
   //! Apply the inverse of the preconditioner to an Epetra_MultiVector (NOT AVAILABLE)
-  int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+  int Apply(const Epetra_MultiVector& /* X */, Epetra_MultiVector& /* Y */) const {
     return(-1);}
 
   //! Apply the preconditioner to an Epetra_MultiVector X, puts the result in Y
@@ -473,9 +480,10 @@ public:
 
   /*! @brief Recompute the preconditioner (not implemented for Maxwell).
 
-    @param[in] keepFineLevelSmoother : If true, the fine level smoother is not recomputed.  This is useful
-    if the smoother is expensive to create, e.g., an incomplete factorization, and the fine level matrix
-    has not changed.
+    @param keepFineLevelSmoother (In) : If true, the fine level
+    smoother is not recomputed.  This is useful if the smoother is
+    expensive to create, e.g., an incomplete factorization, and the
+    fine level matrix has not changed.
   */
   int ReComputePreconditioner(bool keepFineLevelSmoother=false);
 
@@ -497,7 +505,7 @@ public:
   int SetOwnership(bool ownership){ ownership_ = ownership; return(-1);};
 
   //! Sets use transpose (not implemented).
-  int SetUseTranspose(bool useTranspose){return(-1);}
+  int SetUseTranspose(bool /* useTranspose */){return(-1);}
 
   //! Returns the infinity norm (not implemented).
   double NormInf() const {return(0.0);};
@@ -645,11 +653,11 @@ public:
 private:
 
   //! Copy constructor (NOT DEFINED)
-  MultiLevelPreconditioner(const MultiLevelPreconditioner & rhs)
+  MultiLevelPreconditioner(const MultiLevelPreconditioner & /* rhs */)
   {};
 
   //! operator = (NOT DEFINED)
-  MultiLevelPreconditioner & operator = (const MultiLevelPreconditioner & rhs)
+  MultiLevelPreconditioner & operator = (const MultiLevelPreconditioner & /* rhs */)
   {
     return *this;
   };
@@ -767,6 +775,10 @@ private:
 
   //! ML_Aggregate, contains aggregate information
   ML_Aggregate* agg_;
+
+  //! ML_AMG, contains amg family informatin
+  ML_AMG* amg_;
+
   //! Label for this object
   char* Label_;
   //! User-provided label for identifying preconditioner ctor/dtor, in the case

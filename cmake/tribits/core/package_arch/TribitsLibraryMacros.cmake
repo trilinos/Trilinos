@@ -47,6 +47,7 @@ INCLUDE(AppendStringVar)
 INCLUDE(PrependGlobalSet)
 INCLUDE(RemoveGlobalDuplicates)
 INCLUDE(TribitsGeneralMacros)
+INCLUDE(TribitsReportInvalidTribitsUsage)
 INCLUDE(SetAndIncDirs)
 
 ###
@@ -415,8 +416,8 @@ ENDFUNCTION()
 # By default, an install target for the library is created using
 # ``INSTALL(TARGETS <libTargetName> ...)`` to install into the directory
 # ``${CMAKE_INSTALL_PREFIX}/lib/`` (actual install directory is given by
-# ``${PROJECT}_INSTALL_LIB_DIR``, see `Setting the install prefix at configure
-# time`_).  However, this install target will not get created if
+# ``${PROJECT}_INSTALL_LIB_DIR``, see `Setting the install prefix`_).
+# However, this install target will not get created if
 # `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_ is ``FASLE`` and
 # ``BUILD_SHARD_LIBS=OFF``.  But when ``BUILD_SHARD_LIBS=ON``, the install
 # target will get added.  Also, this install target will *not* get added if
@@ -429,10 +430,9 @@ ENDFUNCTION()
 # `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_ is ``FASLE``.  If this
 # install target is added, then the headers get installed into the flat
 # directory ``${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/`` (default is
-# ``${CMAKE_INSTALL_PREFIX}/include/``, see `Setting the install prefix at
-# configure time`_).  If ``HEADERS_INSTALL_SUBDIR`` is set, then the headers
-# will be installed under
-# ``${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/<headerssubdir>/``.
+# ``${CMAKE_INSTALL_PREFIX}/include/``, see `Setting the install prefix`_).
+# If ``HEADERS_INSTALL_SUBDIR`` is set, then the headers will be installed
+# under ``${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/<headerssubdir>/``.
 #
 # Note that an install target will *not* get created for the headers listed in
 # ``NOINSTALLHEADERS``.
@@ -483,12 +483,14 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
     # This is a subpackage being processed
 
     IF(NOT ${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_CALLED)
-      MESSAGE(FATAL_ERROR "Must call TRIBITS_SUBPACKAGE() before TRIBITS_ADD_LIBRARY()"
+      TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
+        "Must call TRIBITS_SUBPACKAGE() before TRIBITS_ADD_LIBRARY()"
         " in ${CURRENT_SUBPACKAGE_CMAKELIST_FILE}")
     ENDIF()
 
     IF(${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_POSTPROCESS_CALLED)
-      MESSAGE(FATAL_ERROR "Must call TRIBITS_ADD_LIBRARY() before "
+      TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
+        "Must call TRIBITS_ADD_LIBRARY() before "
         " TRIBITS_SUBPACKAGE_POSTPROCESS() in ${CURRENT_SUBPACKAGE_CMAKELIST_FILE}")
     ENDIF()
 
@@ -497,12 +499,14 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
     # This is a package being processed
 
     IF(NOT ${PACKAGE_NAME}_TRIBITS_PACKAGE_DECL_CALLED)
-      MESSAGE(FATAL_ERROR "Must call TRIBITS_PACKAGE() or TRIBITS_PACKAGE_DECL() before"
+      TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
+        "Must call TRIBITS_PACKAGE() or TRIBITS_PACKAGE_DECL() before"
         " TRIBITS_ADD_LIBRARY() in ${TRIBITS_PACKAGE_CMAKELIST_FILE}")
     ENDIF()
 
     IF(${PACKAGE_NAME}_TRIBITS_PACKAGE_POSTPROCESS_CALLED)
-      MESSAGE(FATAL_ERROR "Must call TRIBITS_ADD_LIBRARY() before "
+      TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
+        "Must call TRIBITS_ADD_LIBRARY() before "
         " TRIBITS_PACKAGE_POSTPROCESS() in ${TRIBITS_PACKAGE_CMAKELIST_FILE}")
     ENDIF()
 
@@ -671,7 +675,7 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
           " ${${PACKAGE_NAME}_SOURCE_DIR}/cmake/Dependencies.cmake")
         # ToDo: Turn the above to FATAL_ERROR after dropping deprecated code
       ELSEIF (NOT LIB_IN_SE_PKG AND TARGET ${PREFIXED_LIB} ) # PARSE_TESTONLY=TRUE/FALSE
-        MESSAGE(WARNING "WARNING: '${LIB}' in DEPSLIBS is not"
+        MESSAGE(WARNING "WARNING: '${LIB}' in DEPLIBS is not"
           " a lib in this SE package but is a library defined in the current"
           " cmake project!  Such usage is  deprecated (and"
           " will result in a configure error soon).  If this is a library in"
@@ -682,7 +686,7 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
           " this SE package's dependencies file"
           " ${${PACKAGE_NAME}_SOURCE_DIR}/cmake/Dependencies.cmake")
       ELSEIF (NOT LIB_IN_SE_PKG AND NOT TARGET ${PREFIXED_LIB} )
-        MESSAGE(WARNING "WARNING: '${LIB}' in DEPSLIBS is not"
+        MESSAGE(WARNING "WARNING: '${LIB}' in DEPLIBS is not"
           " a lib defined in the current cmake project!  Such usage is deprecated (and"
           " will result in a configure error soon).  If this is an external"
           " lib you are trying to link in, it should likely be handled as a TriBITS"
@@ -859,6 +863,10 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
 
     TARGET_LINK_LIBRARIES(${LIBRARY_NAME}  ${LINK_LIBS})
 
+    IF (${PROJECT_NAME}_CXX_STANDARD_FEATURE)
+      TARGET_COMPILE_FEATURES(${LIBRARY_NAME} PUBLIC "${${PROJECT_NAME}_CXX_STANDARD_FEATURE}")
+    ENDIF ()
+
     # Add to the install target
 
     SET(INSTALL_LIB ON)
@@ -934,7 +942,9 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
       REMOVE_GLOBAL_DUPLICATES(${PACKAGE_NAME}_LIBRARY_DIRS)
       REMOVE_GLOBAL_DUPLICATES(${PACKAGE_NAME}_LIBRARIES)
 
-      GLOBAL_SET(${PACKAGE_NAME}_HAS_NATIVE_LIBRARIES TRUE)
+      IF (INSTALL_LIB)
+        GLOBAL_SET(${PACKAGE_NAME}_HAS_NATIVE_LIBRARIES_TO_INSTALL TRUE)
+      ENDIF()
 
     ELSE()
 

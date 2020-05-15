@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//               KokkosKernels 0.9: Linear Algebra and Graph Kernels
-//                 Copyright 2017 Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -56,15 +57,15 @@ template <typename KernelHandle,
 void spgemm_debug_symbolic(
     KernelHandle *handle,
     typename KernelHandle::nnz_lno_t m,
-    typename KernelHandle::nnz_lno_t n,
+    typename KernelHandle::nnz_lno_t /* n */,
     typename KernelHandle::nnz_lno_t k,
     alno_row_view_t_ row_mapA,
     alno_nnz_view_t_ entriesA,
 
-    bool transposeA,
+    bool /* transposeA */,
     blno_row_view_t_ row_mapB,
     blno_nnz_view_t_ entriesB,
-    bool transposeB,
+    bool /* transposeB */,
     clno_row_view_t_ row_mapC
     ){
   typename alno_row_view_t_::HostMirror h_rma = Kokkos::create_mirror_view (row_mapA);
@@ -151,19 +152,19 @@ template <typename KernelHandle,
   typename clno_nnz_view_t_,
   typename cscalar_nnz_view_t_>
 void spgemm_debug_numeric(
-    KernelHandle *handle,
+    KernelHandle * /* handle */,
     typename KernelHandle::nnz_lno_t m,
-    typename KernelHandle::nnz_lno_t n,
+    typename KernelHandle::nnz_lno_t /* n */,
     typename KernelHandle::nnz_lno_t k,
     alno_row_view_t_ row_mapA,
     alno_nnz_view_t_ entriesA,
     ascalar_nnz_view_t_ valuesA,
 
-    bool transposeA,
+    bool /* transposeA */,
     blno_row_view_t_ row_mapB,
     blno_nnz_view_t_ entriesB,
     bscalar_nnz_view_t_ valuesB,
-    bool transposeB,
+    bool /* transposeB */,
     clno_row_view_t_ row_mapC,
     clno_nnz_view_t_ entriesC,
     cscalar_nnz_view_t_ valuesC

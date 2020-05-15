@@ -71,10 +71,10 @@ namespace MueLu {
     @brief Applies permutation to restriction operators.
     @ingroup MueLuTransferClasses
   */
-  template <class Scalar = Xpetra::Matrix<>::scalar_type,
-            class LocalOrdinal = typename Xpetra::Matrix<Scalar>::local_ordinal_type,
-            class GlobalOrdinal = typename Xpetra::Matrix<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node = typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+  template <class Scalar = DefaultScalar,
+            class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class RebalanceBlockRestrictionFactory : public TwoLevelFactoryBase {
 #undef MUELU_REBALANCEBLOCKRESTRICTIONFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"

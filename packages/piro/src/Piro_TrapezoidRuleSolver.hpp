@@ -57,7 +57,7 @@
 
 namespace Piro {
 
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+template <typename Scalar>
 class TrapezoidDecorator
     : public Thyra::ModelEvaluatorDelegatorBase<Scalar> {
 
@@ -115,7 +115,7 @@ class TrapezoidDecorator
 
 };
 
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+template <typename Scalar>
 class TrapezoidRuleSolver
     : public Thyra::ResponseOnlyModelEvaluatorBase<Scalar> {
 
@@ -168,7 +168,7 @@ private:
 
    //These are set in the constructor and used in evalModel
    mutable Teuchos::RCP<Teuchos::ParameterList> appParams;
-   Teuchos::RCP<Piro::TrapezoidDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > model;
+   Teuchos::RCP<Piro::TrapezoidDecorator<Scalar> > model;
    Teuchos::RCP<Piro::ObserverBase<Scalar> > observer;
    Teuchos::RCP<Thyra::AdaptiveSolutionManager> solMgr;
    Teuchos::RCP<Teuchos::FancyOStream> out;

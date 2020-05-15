@@ -65,7 +65,8 @@ namespace Zoltan2{
 
 ////////////////////////////////////////////////////////////////////////
 
-/*! \brief MappingProblem enables mapping of a partition (either computed or input) to MPI ranks.
+/*! \brief MappingProblem enables mapping of a partition (either 
+ *  computed or input) to MPI ranks.
  *
  *  The MappingProblem is the core of the Zoltan2 mappin API.
  *  Based on the the user's input and parameters, the MappingProblem
@@ -103,7 +104,8 @@ public:
    */
   MappingProblem(Adapter *A_, Teuchos::ParameterList *p_,
                  const Teuchos::RCP<const Teuchos::Comm<int> > &ucomm_,
-                 partsoln_t *partition_ = NULL, MachineRep *machine_ = NULL) : 
+                 partsoln_t *partition_ = NULL, 
+                 MachineRep *machine_ = NULL) : 
     Problem<Adapter>(A_, p_, ucomm_) 
   {
     HELLO;
@@ -115,10 +117,12 @@ public:
    */
   MappingProblem(Adapter *A_, Teuchos::ParameterList *p_, 
                  MPI_Comm mpicomm_,
-                 partsoln_t *partition_ = NULL, MachineRep *machine_ = NULL) :
+                 partsoln_t *partition_ = NULL, 
+                 MachineRep *machine_   = NULL) :
   MappingProblem(A_, p_,
-                 rcp<const Comm<int> >(new Teuchos::MpiComm<int>(
-                                           Teuchos::opaqueWrapper(mpicomm_))),
+                 rcp<const Comm<int> >(
+                    new Teuchos::MpiComm<int>(
+                        Teuchos::opaqueWrapper(mpicomm_))),
                  partition_, machine_)
   {}
 #endif
@@ -134,10 +138,11 @@ public:
   //          the previous solution, even though the parameters
   //          may have been changed.
   //
-  //  For the sake of performance, we ask the caller to set \c updateInputData
-  //  to false if he/she is computing a new solution using the same input data,
-  //  but different problem parameters, than that which was used to compute
-  //  the most recent solution.
+  //  For the sake of performance, we ask the caller to set 
+  //  \c updateInputData
+  //  to false if he/she is computing a new solution using the same 
+  //  input data, but different problem parameters, than that which was 
+  //  used to compute the most recent solution.
   
   void solve(bool updateInputData=true); 
 
@@ -145,7 +150,8 @@ public:
   */
   static void getValidParameters(ParameterList & pl)
   {
-    MachineRepresentation <typename Adapter::scalar_t,typename Adapter::part_t>::getValidParameters(pl);
+    MachineRepresentation <typename Adapter::scalar_t, 
+        typename Adapter::part_t>::getValidParameters(pl);
     RCP<Teuchos::StringValidator> mapping_algorithm_Validator =
       Teuchos::rcp( new Teuchos::StringValidator(
         Teuchos::tuple<std::string>( "geometric", "default", "block" )));
@@ -160,7 +166,8 @@ public:
 
     // bool parameter
     pl.set("divide_prime_first", false,
-        "When partitioning into-non power of two, whether to partition for nonpowers of two at the beginning, or at the end",
+        "When partitioning into-non power of two, whether to partition for "
+        "nonpowers of two at the beginning, or at the end",
         Environment::getBoolValidator());
 
     //TODO: This should be positive integer validator.
@@ -168,7 +175,9 @@ public:
         "The number of MPI ranks per node",
         Environment::getAnyIntValidator());
     pl.set("reduce_best_mapping", true,
-        "If true, nodes will calculate different mappings with rotations, and best one will be reduced. If not, the result will be the one with longest dimension partitioning.",
+        "If true, nodes will calculate different mappings with rotations, and best "
+        "one will be reduced. If not, the result will be the one with longest "
+        "dimension partitioning.",
         Environment::getBoolValidator());
   }
 
@@ -281,34 +290,41 @@ void MappingProblem<Adapter, MachineRep>::solve(bool newData)
     else if (algName == "geometric") {
 
       bool is_input_distributed = true;
-      const Teuchos::ParameterEntry *pe_input_adapter = pl.getEntryPtr("distributed_input_adapter");
-      if (pe_input_adapter) is_input_distributed = pe_input_adapter->getValue<bool>(&is_input_distributed);
+      const Teuchos::ParameterEntry *pe_input_adapter = 
+        pl.getEntryPtr("distributed_input_adapter");
+      if (pe_input_adapter) 
+        is_input_distributed = pe_input_adapter->getValue<bool>(&is_input_distributed);
 
 
       int ranks_per_node = 1;
       pe_input_adapter = pl.getEntryPtr("ranks_per_node");
-      if (pe_input_adapter) ranks_per_node = pe_input_adapter->getValue<int>(&ranks_per_node);
+      if (pe_input_adapter) 
+        ranks_per_node = pe_input_adapter->getValue<int>(&ranks_per_node);
 
       bool divide_prime_first = false;
       pe_input_adapter = pl.getEntryPtr("divide_prime_first");
-      if (pe_input_adapter) divide_prime_first = pe_input_adapter->getValue<bool>(&divide_prime_first);
+      if (pe_input_adapter) 
+        divide_prime_first = pe_input_adapter->getValue<bool>(&divide_prime_first);
 
       bool reduce_best_mapping = true;
       pe_input_adapter = pl.getEntryPtr("reduce_best_mapping");
-      if (pe_input_adapter) reduce_best_mapping = pe_input_adapter->getValue<bool>(&reduce_best_mapping);
-
-
-
+      if (pe_input_adapter) 
+        reduce_best_mapping = pe_input_adapter->getValue<bool>(&reduce_best_mapping);
+      
       this->algorithm_ = 
             rcp(new CoordinateTaskMapper<Adapter,part_t>(this->comm_,
                                                          machine, 
                                                          this->inputAdapter_,
                                                          partition,
                                                          this->envConst_,
-                                                         is_input_distributed, ranks_per_node, divide_prime_first, reduce_best_mapping));
-      this->soln = rcp(new mapsoln_t(this->env_, this->comm_, this->algorithm_));
-      this->algorithm_->map(this->soln);
+                                                         is_input_distributed, 
+                                                         ranks_per_node, 
+                                                         divide_prime_first, 
+                                                         reduce_best_mapping));
 
+      this->soln = rcp(new mapsoln_t(this->env_, this->comm_, this->algorithm_));
+
+      this->algorithm_->map(this->soln);
     }
     else {
       // Add other mapping methods here
@@ -387,9 +403,9 @@ MappingProblem(
 }
 
 
-In general, the applyPartitioningSolution method should take an 
-optional MappingSolution.
+// In general, the applyPartitioningSolution method should take an 
+// optional MappingSolution.
 
-Should MappingSolution provide a re-numbered communicator reflecting the new mapping?
+// Should MappingSolution provide a re-numbered communicator reflecting the new mapping?
 
 #endif

@@ -75,10 +75,10 @@ public:
   }
 
 private:
-  DoubleVector(const DoubleVector& rhs)
+  DoubleVector(const DoubleVector& /* rhs */)
   {}
 
-  DoubleVector& operator=(const DoubleVector& rhs)
+  DoubleVector& operator=(const DoubleVector& /* rhs */)
   {
     return(*this);
   }
@@ -333,7 +333,7 @@ public:
     return(*this);
   }
 
-  bool operator==(const MultiVector& rhs) const
+  bool operator==(const MultiVector& /* rhs */) const
   {
     return(false);
   }
@@ -939,6 +939,8 @@ private:
     if ((i < 0) || (i >= GetMyLength()))
       ML_THROW("Requested component " + GetString(i) +
                ", while MyLength() = " + GetString(GetMyLength()), -1);
+#else
+    (void)i;
 #endif
   }
 
@@ -949,6 +951,8 @@ private:
     if (v < 0 || v >= GetNumVectors())
       ML_THROW("Requested vector " + GetString(v) +
                ", while NumVectors() = " + GetString(GetNumVectors()), -1);
+#else
+    (void)v;
 #endif
   }
 

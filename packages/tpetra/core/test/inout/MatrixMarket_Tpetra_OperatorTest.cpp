@@ -451,7 +451,7 @@ createSymRealSmall (const Teuchos::RCP<const Tpetra::Map<LocalOrdinalType, Globa
   const size_t myNumElts = (myRank == 0) ?
     static_cast<size_t> (globalNumElts) : static_cast<size_t> (0);
   RCP<const map_type> gatherRowMap = computeGatherMap (rowMap, rcpFromRef (out), dbg);
-  matrix_type A_gather (gatherRowMap, static_cast<size_t> (0));
+  matrix_type A_gather (gatherRowMap, 3);
 
   if (myRank == 0) {
     Array<GO> ind (3);

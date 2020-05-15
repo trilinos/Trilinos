@@ -295,14 +295,14 @@ namespace Xpetra {
     ///          only valid as long as the multivector does not run of scope!
     template<class TargetDeviceType>
     typename Kokkos::Impl::if_c<
-      Kokkos::Impl::is_same<
+      std::is_same<
         typename dual_view_type::t_dev_um::execution_space::memory_space,
         typename TargetDeviceType::memory_space>::value,
         typename dual_view_type::t_dev_um,
         typename dual_view_type::t_host_um>::type
     getLocalView () const {
       typename Kokkos::Impl::if_c<
-            Kokkos::Impl::is_same<
+            std::is_same<
               typename dual_view_type::t_dev_um::execution_space::memory_space,
               typename TargetDeviceType::memory_space>::value,
               typename dual_view_type::t_dev_um,
@@ -543,7 +543,7 @@ namespace Xpetra {
     }
 
     //! Print the object with the given verbosity level to a FancyOStream.
-    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const {
+    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel /* verbLevel */=Teuchos::Describable::verbLevel_default) const {
       XPETRA_MONITOR("EpetraMultiVectorT::describe");
       vec_->Print(out);
     }
@@ -665,7 +665,7 @@ namespace Xpetra {
     ///          only valid as long as the multivector does not run of scope!
     template<class TargetDeviceType>
     typename Kokkos::Impl::if_c<
-      Kokkos::Impl::is_same<
+      std::is_same<
         typename dual_view_type::t_dev_um::execution_space::memory_space,
         typename TargetDeviceType::memory_space>::value,
         typename dual_view_type::t_dev_um,
@@ -957,7 +957,7 @@ namespace Xpetra {
     }
 
     //! Print the object with the given verbosity level to a FancyOStream.
-    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const {
+    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel /* verbLevel */=Teuchos::Describable::verbLevel_default) const {
       XPETRA_MONITOR("EpetraMultiVectorT::describe");
       vec_->Print(out);
     }
@@ -1079,7 +1079,7 @@ namespace Xpetra {
     ///          only valid as long as the multivector does not run of scope!
     template<class TargetDeviceType>
     typename Kokkos::Impl::if_c<
-      Kokkos::Impl::is_same<
+      std::is_same<
         typename dual_view_type::t_dev_um::execution_space::memory_space,
         typename TargetDeviceType::memory_space>::value,
         typename dual_view_type::t_dev_um,

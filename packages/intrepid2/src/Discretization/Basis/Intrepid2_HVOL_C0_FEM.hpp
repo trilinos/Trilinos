@@ -65,11 +65,11 @@ namespace Intrepid2 {
       */
       template<EOperator opType>
       struct Serial {
-        template<typename outputViewType,
+        template<typename OutputViewType,
                  typename inputViewType>
         KOKKOS_INLINE_FUNCTION
         static void
-        getValues(       outputViewType output,
+        getValues(       OutputViewType output,
                    const inputViewType input );
 
       };
@@ -124,16 +124,16 @@ namespace Intrepid2 {
   }
 
    /** \class  Intrepid2::Basis_HVOL_C0_FEM
-       \brief  Implementation of the default HVOL-compatible FEM contstant basis on triangle, quadrilateral, hexahedral and tetrahedral cells.
+       \brief  Implementation of the default HVOL-compatible FEM contstant basis on triangle, quadrilateral, hexahedron and tetrahedron cells.
   */
   template<typename ExecSpaceType = void,
            typename outputValueType = double,
            typename pointValueType = double>
   class Basis_HVOL_C0_FEM : public Basis<ExecSpaceType,outputValueType,pointValueType> {
   public:
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_1d_host ordinal_type_array_1d_host;
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_2d_host ordinal_type_array_2d_host;
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_3d_host ordinal_type_array_3d_host;
+    using OrdinalTypeArray1DHost = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray1DHost;
+    using OrdinalTypeArray2DHost = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray2DHost;
+    using OrdinalTypeArray3DHost = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray3DHost;
 
     /** \brief Constructor.
      */
@@ -143,16 +143,16 @@ namespace Intrepid2 {
      */
     Basis_HVOL_C0_FEM(const shards::CellTopology cellTopo);
 
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::outputViewType outputViewType;
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::pointViewType  pointViewType;
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::scalarViewType scalarViewType;
+    using OutputViewType = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OutputViewType;
+    using PointViewType  = typename Basis<ExecSpaceType,outputValueType,pointValueType>::PointViewType;
+    using ScalarViewType = typename Basis<ExecSpaceType,outputValueType,pointValueType>::ScalarViewType;
 
     using Basis<ExecSpaceType,outputValueType,pointValueType>::getValues;
 
     virtual
     void
-    getValues(       outputViewType outputValues,
-               const pointViewType  inputPoints,
+    getValues(       OutputViewType outputValues,
+               const PointViewType  inputPoints,
                const EOperator operatorType = OPERATOR_VALUE ) const {
 #ifdef HAVE_INTREPID2_DEBUG
       // Verify arguments
@@ -170,7 +170,7 @@ namespace Intrepid2 {
 
     virtual
     void
-    getDofCoords( scalarViewType dofCoords ) const {
+    getDofCoords( ScalarViewType dofCoords ) const {
 #ifdef HAVE_INTREPID2_DEBUG
       // Verify rank of output array.
       INTREPID2_TEST_FOR_EXCEPTION( dofCoords.rank() != 2, std::invalid_argument,
@@ -187,7 +187,7 @@ namespace Intrepid2 {
 
     virtual
     void
-    getDofCoeffs( scalarViewType dofCoeffs ) const {
+    getDofCoeffs( ScalarViewType dofCoeffs ) const {
 #ifdef HAVE_INTREPID2_DEBUG
       // Verify rank of output array.
       INTREPID2_TEST_FOR_EXCEPTION( dofCoeffs.rank() != 1, std::invalid_argument,

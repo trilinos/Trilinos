@@ -40,7 +40,7 @@
 #include <algorithm> // for max, min
 #include <cfloat>    // for FLT_MAX
 #include <cstddef>   // for size_t
-#include <iostream>  // for operator<<, cout, ostream, etc
+#include <fmt/format.h>
 
 namespace {
   template <typename INT>
@@ -128,7 +128,9 @@ void match_node_xyz(RegionVector &part_mesh, double tolerance, std::vector<INT> 
   }
   else {
     std::vector<INT> dummy;
-    eliminate_omitted_nodes(part_mesh, dummy, local_node_map);
+    bool             fill_global = false;
+    eliminate_omitted_nodes(part_mesh, dummy, local_node_map, fill_global);
+    SMART_ASSERT(dummy.empty());
 
     // The local_node_map is not quite in the correct format after the
     // call to 'eliminate_omitted_nodes'.  We need all non-omitted
@@ -188,7 +190,7 @@ void match_node_xyz(RegionVector &part_mesh, double tolerance, std::vector<INT> 
 
       double epsilon = (delta[X] + delta[Y] + delta[Z]) / 1.0e3;
       if (epsilon < 0.0) {
-        std::cout << "Parts " << ip << " and " << jp << " do not overlap.\n";
+        fmt::print("Parts {} and {} do not overlap.\n", ip, jp);
         continue;
       }
 
@@ -285,7 +287,7 @@ namespace {
                                std::fabs(j_coord[3 * jj + 1] - i_coord[3 * ii + 1]),
                                std::fabs(j_coord[3 * jj + 2] - i_coord[3 * ii + 2]));
 
-        if (float(distance) <= epsilon) {
+        if (float(distance) <= float(epsilon)) {
           if (distance < dmin) {
             dmin      = distance;
             node_dmin = j;
@@ -323,15 +325,15 @@ namespace {
         }
       }
     }
-    std::cout << "\nNumber of nodes matched                   = " << match << "\n";
-    std::cout << "Number of comparisons                     = " << compare << "\n";
-    std::cout << "Tolerance used for matching               = " << epsilon << "\n";
-    if (dismax > -FLT_MAX) {
-      std::cout << "Maximum distance between matched nodes    = " << dismax << "\n";
+    fmt::print("\nNumber of nodes matched                   = {}\n", match);
+    fmt::print("Number of comparisons                     = {}\n", compare);
+    fmt::print("Tolerance used for matching               = {}\n", epsilon);
+    if (dismax > double(-FLT_MAX)) {
+      fmt::print("Maximum distance between matched nodes    = {}\n", dismax);
     }
-    if (g_dismin < FLT_MAX) {
-      std::cout << "Minimum distance between nonmatched nodes = " << g_dismin << "\n";
+    if (g_dismin < double(FLT_MAX)) {
+      fmt::print("Minimum distance between nonmatched nodes = {}\n", g_dismin);
     }
-    std::cout << "\n";
+    fmt::print("\n");
   }
 } // namespace

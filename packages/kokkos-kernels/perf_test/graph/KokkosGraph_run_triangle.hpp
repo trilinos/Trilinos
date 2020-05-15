@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//               KokkosKernels 0.9: Linear Algebra and Graph Kernels
-//                 Copyright 2017 Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -152,7 +153,7 @@ struct Flush {
   void run() {
     double sum = 0;
     Kokkos::parallel_reduce("KokkosGraph::PerfTest::Flush", Kokkos::RangePolicy<SpaceType>(0,BufSize/sizeof(double)), *this, sum);
-    SpaceType::fence();
+    SpaceType().fence();
     std::cout << "Flush sum:" << sum << std::endl;
     FILE *fp = fopen("/dev/null", "w");
     fprintf(fp, "%f\n", sum);
@@ -341,7 +342,7 @@ void run_experiment(
 
       size_t num_triangles = 0;
       KokkosKernels::Impl::kk_reduce_view< Kokkos::View <size_t *,ExecSpace>, ExecSpace>(rowmap_size, row_mapC, num_triangles);
-      ExecSpace::fence();
+      ExecSpace().fence();
 
       symbolic_time = timer1.seconds();
       std::cout << "num_triangles:" << num_triangles << std::endl;

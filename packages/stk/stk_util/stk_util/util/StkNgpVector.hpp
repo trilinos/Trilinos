@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
- // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- // the U.S. Government retains certain rights in this software.
- // 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
  // Redistribution and use in source and binary forms, with or without
  // modification, are permitted provided that the following conditions are
  // met:
@@ -14,10 +15,10 @@
  //       disclaimer in the documentation and/or other materials provided
  //       with the distribution.
  // 
- //     * Neither the name of Sandia Corporation nor the names of its
- //       contributors may be used to endorse or promote products derived
- //       from this software without specific prior written permission.
- // 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
  // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -101,6 +102,32 @@ public:
         return deviceVals(i);
     }
 
+protected:
+#ifdef KOKKOS_ENABLE_CUDA
+  using DeviceSpace = Kokkos::CudaSpace;
+#else
+  using DeviceSpace = Kokkos::HostSpace;
+#endif
+public:
+    template <class Device>
+    STK_FUNCTION Datatype & get(
+      typename std::enable_if<
+        std::is_same<typename Device::execution_space, DeviceSpace::execution_space>::value,
+        size_t>::type i) const
+    {
+      return deviceVals(i);
+    }
+#ifdef KOKKOS_ENABLE_CUDA
+    template <class Device>
+    STK_FUNCTION Datatype & get(
+      typename std::enable_if<
+        !std::is_same<typename Device::execution_space, DeviceSpace::execution_space>::value,
+        size_t>::type i) const
+    {
+      return hostVals(i);
+    }
+#endif
+
     void push_back(Datatype val)
     {
         if(mSize >= capacity())
@@ -119,11 +146,6 @@ public:
     }
 
 protected:
-#ifdef KOKKOS_ENABLE_CUDA
-  using DeviceSpace = Kokkos::CudaSpace;
-#else
-  using DeviceSpace = Kokkos::HostSpace;
-#endif
   typedef Kokkos::View<Datatype *, DeviceSpace> DeviceType;
     typedef typename DeviceType::HostMirror HostType;
 
@@ -137,7 +159,7 @@ private:
     DeviceType deviceVals;
     HostType hostVals;
 
-    const char *get_default_name() { return "UnnamedStkVector"; }
+    static const char *get_default_name() { return "UnnamedStkVector"; }
 
     size_t get_push_back_increase_size() const
     {

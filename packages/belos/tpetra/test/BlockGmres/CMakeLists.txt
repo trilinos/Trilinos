@@ -24,11 +24,30 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   )
 
+ASSERT_DEFINED(Belos_ENABLE_TSQR)
+IF (Belos_ENABLE_TSQR)
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Tpetra_BlockGMRES_hb_TSQR_test
+  SOURCES test_bl_gmres_hb.cpp
+  ARGS "--verbose --num-rhs=3 --block-size=3 --ortho-type=TSQR"
+  COMM serial mpi
+  )
+ENDIF()
+
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Tpetra_BlockFGMRES_hb_test
+  SOURCES test_bl_fgmres_hb.cpp
+  ARGS "--verbose"
+  COMM serial mpi
+  )
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Tpetra_HybridGMRES_hb_test
   SOURCES test_hybrid_gmres_hb.cpp
   ARGS "--verbose --max-degree=10 --poly-type=Arnoldi"
        "--verbose --max-degree=10 --poly-type=Gmres"
+       "--verbose --max-degree=10 --poly-type=Roots"
   COMM serial mpi
   )
 

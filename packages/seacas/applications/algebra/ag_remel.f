@@ -73,7 +73,7 @@ C              Loop over cumulative number of elements in element block IELB
                DO 120 IEL = IXELB(IELB-1)+1, IXELB(IELB)
 C                 increment number of elements to output
                   NUMELO = NUMELO + 1
-C                 Indicies of the zoomed elements
+C                 Indices of the zoomed elements
                   IXELEM(NUMELO) = IEL
   120          CONTINUE
             END IF

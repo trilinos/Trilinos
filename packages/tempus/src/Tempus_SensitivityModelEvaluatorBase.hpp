@@ -39,16 +39,16 @@ public:
 
   //! Set solution history from forward state evaluation (for interpolation)
   virtual void setForwardSolutionHistory(
-    const Teuchos::RCP<const Tempus::SolutionHistory<Scalar> >& sh) {}
+    const Teuchos::RCP<const Tempus::SolutionHistory<Scalar> >& /* sh */) {}
 
   //! Set solution state from forward state evaluation (for frozen state)
     virtual void setForwardSolutionState(
-      const Teuchos::RCP<const Tempus::SolutionState<Scalar> >& s) {}
+      const Teuchos::RCP<const Tempus::SolutionState<Scalar> >& /* s */) {}
 
   //! Set the solver of the underlying model if you want to reuse it
   virtual void setSolver(
-    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
-    const bool force_W_update) {}
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& /* solver */,
+    const bool /* force_W_update */) {}
 };
 
 } // namespace Tempus

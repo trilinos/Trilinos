@@ -181,13 +181,14 @@ namespace Intrepid2 {
   class Basis_HGRAD_TRI_Cn_FEM
     : public Basis<ExecSpaceType,outputValueType,pointValueType> {
   public:
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_1d_host ordinal_type_array_1d_host;
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_2d_host ordinal_type_array_2d_host;
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_3d_host ordinal_type_array_3d_host;
+    using OrdinalTypeArray1DHost = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray1DHost;
+    using OrdinalTypeArray2DHost = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray2DHost;
+    using OrdinalTypeArray3DHost = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray3DHost;
 
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::outputViewType outputViewType;
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::pointViewType  pointViewType;
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::scalarViewType  scalarViewType;
+    using OutputViewType = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OutputViewType;
+    using PointViewType  = typename Basis<ExecSpaceType,outputValueType,pointValueType>::PointViewType;
+    using ScalarViewType = typename Basis<ExecSpaceType,outputValueType,pointValueType>::ScalarViewType;
+
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::scalarType  scalarType;
 
   private:
@@ -206,8 +207,8 @@ namespace Intrepid2 {
 
     virtual
     void
-    getValues(       outputViewType outputValues,
-                     const pointViewType  inputPoints,
+    getValues(       OutputViewType outputValues,
+                     const PointViewType  inputPoints,
                      const EOperator operatorType = OPERATOR_VALUE) const {
 #ifdef HAVE_INTREPID2_DEBUG
       Intrepid2::getValues_HGRAD_Args(outputValues,
@@ -226,7 +227,7 @@ namespace Intrepid2 {
 
     virtual
     void
-    getDofCoords( scalarViewType dofCoords ) const {
+    getDofCoords( ScalarViewType dofCoords ) const {
 #ifdef HAVE_INTREPID2_DEBUG
       // Verify rank of output array.
       INTREPID2_TEST_FOR_EXCEPTION( dofCoords.rank() != 2, std::invalid_argument,
@@ -243,7 +244,7 @@ namespace Intrepid2 {
 
     virtual
     void
-    getDofCoeffs( scalarViewType dofCoeffs ) const {
+    getDofCoeffs( ScalarViewType dofCoeffs ) const {
 #ifdef HAVE_INTREPID2_DEBUG
       // Verify rank of output array.
       INTREPID2_TEST_FOR_EXCEPTION( dofCoeffs.rank() != 1, std::invalid_argument,
@@ -269,12 +270,12 @@ namespace Intrepid2 {
     }
 
     void
-    getVandermondeInverse( scalarViewType vinv ) const {
+    getVandermondeInverse( ScalarViewType vinv ) const {
       // has to be same rank and dimensions
       Kokkos::deep_copy(vinv, this->vinv_);
     }
 
-    Kokkos::DynRankView<typename scalarViewType::const_value_type,ExecSpaceType>
+    Kokkos::DynRankView<typename ScalarViewType::const_value_type,ExecSpaceType>
     getVandermondeInverse() const {
       return vinv_;
     }

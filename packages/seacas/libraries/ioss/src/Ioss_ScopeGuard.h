@@ -56,11 +56,11 @@ class ScopeGuardImplBase
 
 protected:
   ~ScopeGuardImplBase() = default;
-  ScopeGuardImplBase(const ScopeGuardImplBase &other) throw() : dismissed_(other.dismissed_)
+  ScopeGuardImplBase(const ScopeGuardImplBase &other) : dismissed_(other.dismissed_)
   {
     other.Dismiss();
   }
-  template <typename J> static void SafeExecute(J &j) throw()
+  template <typename J> static void SafeExecute(J &j)
   {
     if (!j.dismissed_) {
       try {
@@ -74,18 +74,21 @@ protected:
   mutable bool dismissed_;
 
 public:
-  ScopeGuardImplBase() throw() : dismissed_(false) {}
-  void Dismiss() const throw() { dismissed_ = true; }
+  ScopeGuardImplBase() : dismissed_(false) {}
+  void Dismiss() const { dismissed_ = true; }
 };
 
 // typedef const ScopeGuardImplBase& ScopeGuard;
-__attribute__((unused)) typedef const ScopeGuardImplBase &ScopeGuard;
+#ifndef _MSC_VER
+__attribute__((unused))
+#endif
+typedef const ScopeGuardImplBase &ScopeGuard;
 
 template <typename F> class ScopeGuardImpl0 : public ScopeGuardImplBase
 {
 public:
   static ScopeGuardImpl0<F> MakeGuard(F fun) { return ScopeGuardImpl0<F>(fun); }
-  ~ScopeGuardImpl0() throw() { SafeExecute(*this); }
+  ~ScopeGuardImpl0() { SafeExecute(*this); }
   void Execute() { fun_(); }
 
 protected:
@@ -102,7 +105,7 @@ template <typename F, typename P1> class ScopeGuardImpl1 : public ScopeGuardImpl
 {
 public:
   static ScopeGuardImpl1<F, P1> MakeGuard(F fun, P1 p1) { return ScopeGuardImpl1<F, P1>(fun, p1); }
-  ~ScopeGuardImpl1() throw() { SafeExecute(*this); }
+  ~ScopeGuardImpl1() { SafeExecute(*this); }
   void Execute() { fun_(p1_); }
 
 protected:
@@ -123,7 +126,7 @@ public:
   {
     return ScopeGuardImpl2<F, P1, P2>(fun, p1, p2);
   }
-  ~ScopeGuardImpl2() throw() { SafeExecute(*this); }
+  ~ScopeGuardImpl2() { SafeExecute(*this); }
   void Execute() { fun_(p1_, p2_); }
 
 protected:
@@ -147,7 +150,7 @@ public:
   {
     return ScopeGuardImpl3<F, P1, P2, P3>(fun, p1, p2, p3);
   }
-  ~ScopeGuardImpl3() throw() { SafeExecute(*this); }
+  ~ScopeGuardImpl3() { SafeExecute(*this); }
   void Execute() { fun_(p1_, p2_, p3_); }
 
 protected:
@@ -173,7 +176,7 @@ public:
   {
     return ObjScopeGuardImpl0<Obj, MemFun>(obj, memFun);
   }
-  ~ObjScopeGuardImpl0() throw() { SafeExecute(*this); }
+  ~ObjScopeGuardImpl0() { SafeExecute(*this); }
   void Execute() { (obj_.*memFun_)(); }
 
 protected:
@@ -208,7 +211,7 @@ public:
   {
     return ObjScopeGuardImpl1<Obj, MemFun, P1>(obj, memFun, p1);
   }
-  ~ObjScopeGuardImpl1() throw() { SafeExecute(*this); }
+  ~ObjScopeGuardImpl1() { SafeExecute(*this); }
   void Execute() { (obj_.*memFun_)(p1_); }
 
 protected:
@@ -246,7 +249,7 @@ public:
   {
     return ObjScopeGuardImpl2<Obj, MemFun, P1, P2>(obj, memFun, p1, p2);
   }
-  ~ObjScopeGuardImpl2() throw() { SafeExecute(*this); }
+  ~ObjScopeGuardImpl2() { SafeExecute(*this); }
   void Execute() { (obj_.*memFun_)(p1_, p2_); }
 
 protected:

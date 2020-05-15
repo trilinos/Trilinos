@@ -48,6 +48,7 @@
 #include <vector>
 #include <functional>
 #include <unordered_map>
+#include "Phalanx_config.hpp"
 #include "Phalanx_Evaluator.hpp"
 #include "Phalanx_Field.hpp"
 #include "Phalanx_MDField.hpp"
@@ -77,29 +78,23 @@ namespace PHX {
 
     virtual void addEvaluatedField(const PHX::FieldTag& ft);
 
-    template<typename DataT,
-	     typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	     typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-    void addEvaluatedField(const PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,
-			   Tag4,Tag5,Tag6,Tag7>& f);
+    template<typename DataT,typename...Props>
+    void addEvaluatedField(const PHX::MDField<DataT,Props...>& f);
 
-    template<typename DataT,int Rank>
-    void addEvaluatedField(const PHX::Field<DataT,Rank>& f);
+    template<typename DataT,int Rank,typename Layout>
+    void addEvaluatedField(const PHX::Field<DataT,Rank,Layout>& f);
 
-    template<typename DataT,typename... Properties>
+    template<typename DataT,typename... Props>
     void addEvaluatedField(const PHX::FieldTag& ft,
-                           const Kokkos::View<DataT,Properties...>& f);
-    
+                           const Kokkos::View<DataT,Props...>& f);
+
     virtual void addContributedField(const PHX::FieldTag& ft);
 
-    template<typename DataT,
-	     typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	     typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-    void addContributedField(const PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,
-                             Tag4,Tag5,Tag6,Tag7>& f);
+    template<typename DataT,typename...Props>
+    void addContributedField(const PHX::MDField<DataT,Props...>& f);
 
-    template<typename DataT,int Rank>
-    void addContributedField(const PHX::Field<DataT,Rank>& f);
+    template<typename DataT,int Rank,typename Layout>
+    void addContributedField(const PHX::Field<DataT,Rank,Layout>& f);
 
     template<typename DataT,typename... Properties>
     void addContributedField(const PHX::FieldTag& ft,
@@ -108,21 +103,15 @@ namespace PHX {
     virtual void addDependentField(const PHX::FieldTag& ft);
 
     // DEPRECATED: use new const version below
-    template<typename DataT,
-	     typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	     typename Tag4, typename Tag5, typename Tag6, typename Tag7>
+    template<typename DataT,typename...Props>
     PHALANX_DEPRECATED
-    void addDependentField(const PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,
-			   Tag4,Tag5,Tag6,Tag7>& f);
+    void addDependentField(const PHX::MDField<DataT,Props...>& f);
 
-    template<typename DataT,
-	     typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	     typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-    void addDependentField(const PHX::MDField<const DataT,Tag0,Tag1,Tag2,Tag3,
-			   Tag4,Tag5,Tag6,Tag7>& f);
+    template<typename DataT,typename...Props>
+    void addDependentField(const PHX::MDField<const DataT,Props...>& f);
 
-    template<typename DataT,int Rank>
-    void addDependentField(const PHX::Field<const DataT,Rank>& f);
+    template<typename DataT,int Rank,typename Layout>
+    void addDependentField(const PHX::Field<const DataT,Rank,Layout>& f);
 
     /** Add dependent field using raw Kokkos::View, DataT must be const. 
 
@@ -138,6 +127,12 @@ namespace PHX {
     void addDependentField(const PHX::FieldTag& ft,
                            const Kokkos::View<DataT,Properties...>& f);
 
+    /** Tells the field manager to NOT share this field's memory with
+        any other field. Typically used for performance (e.g. don't
+        have to zero out off diagonal components of derivative array).
+    */
+    void addUnsharedField(const Teuchos::RCP<PHX::FieldTag>& ft);
+
     virtual void setName(const std::string& name);
 
     virtual void 
@@ -152,6 +147,9 @@ namespace PHX {
 
     virtual const std::vector< Teuchos::RCP<FieldTag> >& 
     dependentFields() const override;
+
+    virtual const std::vector< Teuchos::RCP<FieldTag> >&
+    unsharedFields() const override;
 
     virtual void evaluateFields(typename Traits::EvalData d) override = 0;
 
@@ -179,6 +177,8 @@ namespace PHX {
 
     virtual void deleteDeviceEvaluator(PHX::DeviceEvaluator<Traits>* e) const override;
 
+    virtual void printFieldValues(std::ostream& os) const override;
+
   private:
 
     std::vector< Teuchos::RCP<FieldTag> > evaluated_;
@@ -186,6 +186,8 @@ namespace PHX {
     std::vector< Teuchos::RCP<FieldTag> > contributed_;
 
     std::vector< Teuchos::RCP<FieldTag> > required_;
+
+    std::vector< Teuchos::RCP<FieldTag> > unshared_;
 
     std::string name_;
 
@@ -195,6 +197,15 @@ namespace PHX {
      *  std::unordered_multimap instead of std::unordered_map.
      */
     std::unordered_multimap<std::string,std::function<void(const PHX::any& f)>> field_binders_;
+
+#ifdef PHX_DEBUG
+    /** \brief Functors that print evaluator fields. Note
+     *  that two MDFields might point to the same underlying field in
+     *  a single evaluator. For this reason we use
+     *  std::unordered_multimap instead of std::unordered_map.
+     */
+    std::unordered_multimap<std::string,std::function<void(std::ostream& os)>> field_printers_;
+#endif
   };
 
 }

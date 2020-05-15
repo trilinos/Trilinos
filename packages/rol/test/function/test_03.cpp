@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
 
   }
 
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
 
 
   }; // end try

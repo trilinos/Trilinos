@@ -102,6 +102,9 @@ main (int argc, char *argv[])
 #ifdef HAVE_TRILINOSCOUPLINGS_MUELU
   typedef TpetraIntrepidPoissonExample::LO LO;
   typedef TpetraIntrepidPoissonExample::GO GO;
+#else
+  typedef TpetraIntrepidPoissonExample::sparse_matrix_type::local_ordinal_type LO;
+  typedef TpetraIntrepidPoissonExample::sparse_matrix_type::global_ordinal_type GO;
 #endif // HAVE_TRILINOSCOUPLINGS_MUELU
   typedef TpetraIntrepidPoissonExample::Node Node;
   typedef TpetraIntrepidPoissonExample::MT MT;
@@ -116,7 +119,6 @@ main (int argc, char *argv[])
     Teuchos::oblackholestream blackHole;
     Tpetra::ScopeGuard mpiSession (&argc, &argv);
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
-    RCP<Node> node; // OK to be null
 
     const int myRank = comm->getRank ();
     //const int numProcs = comm->getSize ();
@@ -265,7 +267,7 @@ main (int argc, char *argv[])
       {
         TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Assembly", total_assembly);
         makeMatrixAndRightHandSide (A, B, X_exact, X, coordsArray, lNodesPerDim,
-                                    comm, node, meshInput, out, err, verbose, debug);
+                                    comm, meshInput, out, err, verbose, debug);
       }
       for(int dim = 0; dim < 3; ++dim) {coordArrayView[dim] = coordsArray[dim]();}
       Coordinates = Teuchos::rcp(new realmultivector_type(A->getRowMap(), coordArrayView(), 3));
@@ -298,6 +300,7 @@ main (int argc, char *argv[])
       // Setup preconditioner
       std::string prec_type = inputList.get ("Preconditioner", "None");
       RCP<operator_type> M;
+      RCP<operator_type> opA(A);
       {
         TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Preconditioner Setup", total_prec);
 
@@ -310,9 +313,9 @@ main (int argc, char *argv[])
               Teuchos::ParameterList& userParamList = mueluParams.sublist(userName);
               userParamList.set<RCP<realmultivector_type> >("Coordinates", Coordinates);
               userParamList.set<Teuchos::Array<LO> >("Array<LO> lNodesPerDim", lNodesPerDim);
-              M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A,mueluParams,mueluParams);
+              M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(opA, mueluParams);
             } else {
-              M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A);
+              M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(opA);
             }
           }
 #else // NOT HAVE_TRILINOSCOUPLINGS_MUELU

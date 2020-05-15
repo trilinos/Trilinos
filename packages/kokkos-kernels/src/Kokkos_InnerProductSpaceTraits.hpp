@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//               KokkosKernels 0.9: Linear Algebra and Graph Kernels
-//                 Copyright 2017 Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -160,8 +161,8 @@ public:
   /// complex.  In that case, see the partial specialization for
   /// Kokkos::complex below to see our convention for which input gets
   /// conjugated.
-  static KOKKOS_FORCEINLINE_FUNCTION dot_type
-  dot (const val_type& x, const val_type& y) {
+  static KOKKOS_FORCEINLINE_FUNCTION
+  dot_type dot (const val_type& x, const val_type& y) {
     return x * y;
   }
 };
@@ -196,8 +197,8 @@ public:
   mag_type norm (const val_type& x) {
     return ArithTraits<val_type>::abs (x);
   }
-  static KOKKOS_FORCEINLINE_FUNCTION dot_type
-  dot (const val_type& x, const val_type& y) {
+  static KOKKOS_FORCEINLINE_FUNCTION
+  dot_type dot (const val_type& x, const val_type& y) {
     return Kokkos::conj (x) * y;
   }
 };
@@ -290,6 +291,66 @@ struct InnerProductSpaceTraits<qd_real>
   }
 };
 #endif // HAVE_KOKKOS_QD
+
+template<class ResultType, class InputType1, class InputType2>
+KOKKOS_INLINE_FUNCTION void
+updateDot(ResultType& sum, const InputType1& x, const InputType2& y)
+{
+  // FIXME (mfh 22 Jan 2020) We should actually pick the type with the
+  // greater precision.
+  sum += InnerProductSpaceTraits<InputType1>::dot(x, y);
+}
+
+KOKKOS_INLINE_FUNCTION void
+updateDot(double& sum, const double x, const double y)
+{
+  sum += x * y;
+}
+
+KOKKOS_INLINE_FUNCTION void
+updateDot(double& sum, const float x, const float y)
+{
+  sum += x * y;
+}
+
+// This exists because complex<float> += complex<double> is not defined.
+KOKKOS_INLINE_FUNCTION void
+updateDot(Kokkos::complex<double>& sum,
+          const Kokkos::complex<float> x,
+          const Kokkos::complex<float> y)
+{
+  const auto tmp = Kokkos::conj(x) * y;
+  sum += Kokkos::complex<double>(tmp.real(), tmp.imag());
+}
+
+// This exists in case people call the overload of KokkosBlas::dot
+// that takes an output View, and the output View has element type
+// Kokkos::complex<float>.
+KOKKOS_INLINE_FUNCTION void
+updateDot(Kokkos::complex<float>& sum,
+          const Kokkos::complex<float> x,
+          const Kokkos::complex<float> y)
+{
+  sum += Kokkos::conj(x) * y;
+}
+
+// This exists because Kokkos::complex<double> =
+// Kokkos::complex<float> is not defined.
+template<class Out, class In>
+struct CastPossiblyComplex {
+  static Out cast(const In& x) {
+    return x;
+  }
+};
+
+template<class OutReal, class InReal>
+struct CastPossiblyComplex<Kokkos::complex<OutReal>, Kokkos::complex<InReal>>
+{
+  static Kokkos::complex<OutReal>
+  cast (const Kokkos::complex<InReal>& x) {
+    return {static_cast<OutReal>(x.real()), static_cast<OutReal>(x.imag())};
+  }
+};
 
 } // namespace Details
 } // namespace Kokkos

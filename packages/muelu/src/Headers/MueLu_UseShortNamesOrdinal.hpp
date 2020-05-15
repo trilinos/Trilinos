@@ -41,6 +41,9 @@ typedef MueLu::AggregationStructuredAlgorithm_kokkos<LocalOrdinal,GlobalOrdinal,
 #ifdef MUELU_AMALGAMATIONINFO_SHORT
 typedef MueLu::AmalgamationInfo<LocalOrdinal,GlobalOrdinal,Node> AmalgamationInfo;
 #endif
+#ifdef MUELU_AMALGAMATIONINFO_KOKKOS_SHORT
+typedef MueLu::AmalgamationInfo_kokkos<LocalOrdinal,GlobalOrdinal,Node> AmalgamationInfo_kokkos;
+#endif
 #ifdef MUELU_COUPLEDAGGREGATIONCOMMHELPER_SHORT
 typedef MueLu::CoupledAggregationCommHelper<LocalOrdinal,GlobalOrdinal,Node> CoupledAggregationCommHelper;
 #endif
@@ -67,6 +70,9 @@ typedef MueLu::IndexManager_kokkos<LocalOrdinal,GlobalOrdinal,Node> IndexManager
 #endif
 #ifdef MUELU_INTERFACEAGGREGATIONALGORITHM_SHORT
 typedef MueLu::InterfaceAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node> InterfaceAggregationAlgorithm;
+#endif
+#ifdef MUELU_INTERFACEMAPPINGTRANSFERFACTORY_SHORT
+typedef MueLu::InterfaceMappingTransferFactory<LocalOrdinal,GlobalOrdinal,Node> InterfaceMappingTransferFactory;
 #endif
 #ifdef MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_SHORT
 typedef MueLu::IsolatedNodeAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node> IsolatedNodeAggregationAlgorithm;

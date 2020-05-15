@@ -1,9 +1,48 @@
-// @HEADER BEGIN
-// @HEADER END
+// @HEADER
+// ***********************************************************************
+//
+//                    Teuchos: Common Tools Package
+//                 Copyright (2004) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// ***********************************************************************
+// @HEADER
 
 #include "Teuchos_StackedTimer.hpp"
 #include <limits>
+#include <ctime>
+#include <cctype>
 #include <algorithm>
+#include <fstream>
 #include <sstream>
 
 namespace Teuchos {
@@ -56,6 +95,11 @@ StackedTimer::LevelTimer::findBaseTimer(const std::string &name) const {
 BaseTimer::TimeInfo
 StackedTimer::LevelTimer::findTimer(const std::string &name, bool& found) {
   BaseTimer::TimeInfo t;
+  auto full_name = get_full_name();
+  if (full_name.size() > name.size())
+    return t;
+  if ( strncmp(full_name.c_str(), name.c_str(), full_name.size()))
+    return t;
   if (get_full_name() == name) {
     t = BaseTimer::TimeInfo(this);
     found = true;
@@ -94,11 +138,16 @@ StackedTimer::collectRemoteData(Teuchos::RCP<const Teuchos::Comm<int> > comm, co
   updates_.resize(num_names);
   active_.resize(num_names);
 
-  if (options.output_minmax || options.output_histogram) {
+  if (options.output_minmax || options.output_histogram || options.output_proc_minmax) {
     min_.resize(num_names);
     max_.resize(num_names);
     if ( options.output_minmax )
       sum_sq_.resize(num_names);
+  }
+
+  if (options.output_proc_minmax) {
+    procmin_.resize(num_names);
+    procmax_.resize(num_names);
   }
 
 
@@ -137,8 +186,31 @@ StackedTimer::collectRemoteData(Teuchos::RCP<const Teuchos::Comm<int> > comm, co
   reduce(used.getRawPtr(), active_.getRawPtr(), num_names, REDUCE_SUM, 0, *comm);
 
   if (min_.size()) {
-    reduceAll(*comm, REDUCE_MIN, num_names, time.getRawPtr(), min_.getRawPtr());
     reduceAll(*comm, REDUCE_MAX, num_names, time.getRawPtr(), max_.getRawPtr());
+    for (int i=0;i<num_names;++i)
+      if (!used[i])
+        time[i] = max_[i];
+    reduceAll(*comm, REDUCE_MIN, num_names, time.getRawPtr(), min_.getRawPtr());
+    for (int i=0;i<num_names;++i)
+      if (!used[i])
+        time[i] = 0.;
+    if (procmin_.size()) {
+      Array<int> procmin(num_names);
+      Array<int> procmax(num_names);
+      int commRank = comm->getRank();
+      for (int i=0;i<num_names; ++i) {
+        if (used[i] && (min_[i]==time[i]))
+          procmin[i] = commRank;
+        else
+          procmin[i] = -1;
+        if (used[i] && (max_[i]==time[i]))
+          procmax[i] = commRank;
+        else
+          procmax[i] = -1;
+      }
+      reduceAll(*comm, REDUCE_MAX, num_names, procmin.getRawPtr(), procmin_.getRawPtr());
+      reduceAll(*comm, REDUCE_MAX, num_names, procmax.getRawPtr(), procmax_.getRawPtr());
+    }
   }
 
   if (options.output_histogram) {
@@ -150,7 +222,8 @@ StackedTimer::collectRemoteData(Teuchos::RCP<const Teuchos::Comm<int> > comm, co
       if (used[i]) {
         int bin=(time[i]- min_[i])/dh;
         bins[i] = std::max(std::min(bin,options.num_histogram-1) , 0);
-      }
+      } else
+        bins[i] = -1;
     }
     // Recycle the used array for the temp bin array
     for (int j=0; j<options.num_histogram; ++j){
@@ -192,6 +265,8 @@ StackedTimer::computeColumnWidthsForAligment(std::string prefix,
   double total_time = 0.0;
 
   for (int i=0; i<flat_names_.size(); ++i ) {
+    if (sum_[i]/active_[i] <= options.drop_time)
+      continue;
     if (printed[i])
       continue;
     int level = std::count(flat_names_[i].begin(), flat_names_[i].end(), '@');
@@ -252,6 +327,20 @@ StackedTimer::computeColumnWidthsForAligment(std::string prefix,
         if (active_[i] <= 1)
           os << "}";
         alignments_.max_ = std::max(alignments_.max_,os.str().size());
+      }
+      if (procmin_.size()) {
+        std::ostringstream os;
+        os << ", proc min=" << procmin_[i];
+        if (active_[i] <= 1)
+          os << "}";
+        alignments_.procmin_ = std::min(alignments_.procmin_,os.str().size());
+      }
+      if (procmax_.size()) {
+        std::ostringstream os;
+        os << ", proc max=" << procmax_[i];
+        if (active_[i] <= 1)
+          os << "}";
+        alignments_.procmax_ = std::max(alignments_.procmax_,os.str().size());
       }
       if (active_[i]>1) {
         std::ostringstream os;
@@ -314,6 +403,9 @@ StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os,
   double total_time = 0.0;
 
   for (int i=0; i<flat_names_.size(); ++i ) {
+    if (sum_[i]/active_[i] <= options.drop_time) {
+      continue;
+    }
     if (printed[i])
       continue;
     int level = std::count(flat_names_[i].begin(), flat_names_[i].end(), '@');
@@ -390,6 +482,24 @@ StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os,
           os << std::left << std::setw(alignments_.max_);
         os << tmp.str();
       }
+      if (procmin_.size()) {
+        std::ostringstream tmp;
+        tmp <<", proc min="<<procmin_[i];
+        if (active_[i] <= 1)
+          tmp << "}";
+        if (options.align_columns)
+          os << std::left << std::setw(alignments_.procmin_);
+        os << tmp.str();
+      }
+      if (procmax_.size()) {
+        std::ostringstream tmp;
+        tmp <<", proc max="<<procmax_[i];
+        if (active_[i] <= 1)
+          tmp << "}";
+        if (options.align_columns)
+          os << std::left << std::setw(alignments_.procmax_);
+        os << tmp.str();
+      }
       if (active_[i]>1) {
         std::ostringstream tmp;
         tmp << ", std dev="<<sqrt(std::max<double>(sum_sq_[i]-sum_[i]*sum_[i]/active_[i],0.0)/(active_[i]-1));
@@ -427,7 +537,7 @@ StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os,
         os << " ";
     }
 
-    if (not options.print_names_before_values) {
+    if (! options.print_names_before_values) {
       std::ostringstream tmp;
       tmp << " ";
       for (int l=0; l<level; ++l) {
@@ -467,7 +577,7 @@ StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os,
         tmp << " - "<< (sum_[i]/active_[i]- sub_time)/(sum_[i]/active_[i])*100 << "%";
         os << tmp.str();
       }
-      if (not options.print_names_before_values) {
+      if (! options.print_names_before_values) {
         {
           size_t offset = 0;
           offset += alignments_.count_;
@@ -496,6 +606,84 @@ StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os,
   return total_time;
 }
 
+static void printXMLEscapedString(std::ostream& os, const std::string& str)
+{
+  for(char c : str)
+  {
+    switch(c)
+    {
+      case '<':
+        os << "&lt;";
+        break;
+      case '>':
+        os << "&gt;";
+        break;
+      case '\'':
+        os << "&apos;";
+        break;
+      case '"':
+        os << "&quot;";
+        break;
+      case '&':
+        os << "&amp;";
+        break;
+      default:
+        os << c;
+    }
+  }
+}
+
+double
+StackedTimer::printLevelXML (std::string prefix, int print_level, std::ostream& os, std::vector<bool> &printed, double parent_time, const std::string& rootName)
+{
+  //Adding an extra indent level, since the <performance-report> header is at indent 0
+  int indent = 4 * (print_level + 1);
+
+  double total_time = 0.0;
+
+  for (int i=0; i<flat_names_.size(); ++i ) {
+    if (printed[i])
+      continue;
+    int level = std::count(flat_names_[i].begin(), flat_names_[i].end(), '@');
+    if ( level != print_level)
+      continue;
+    auto split_names = getPrefix(flat_names_[i]);
+    if ( prefix != split_names.first)
+      continue;
+    // Output the indentation level
+    for (int j = 0; j < indent; j++)
+      os << " ";
+    bool leaf = split_names.first.length() > 0;
+    os << "<timing name=\"";
+    if(level == 0 && rootName.length())
+      printXMLEscapedString(os, rootName);
+    else
+      printXMLEscapedString(os, split_names.second);
+    os << "\" value=\"" << sum_[i]/active_[i] << "\"";
+    if(leaf)
+      os << "/>\n";
+    else
+      os << ">\n";
+    printed[i] = true;
+    //note: don't need to pass in prependRoot, since the recursive calls don't apply to the root level
+    double sub_time = printLevelXML(flat_names_[i], print_level+1, os, printed, sum_[i]/active_[i]);
+    // Print Remainder
+    if (sub_time > 0 ) {
+      for (int j = 0; j < indent + 4; j++)
+        os << " ";
+      os << "<timing name=\"Remainder\" value=\"" << (sum_[i]/active_[i] - sub_time) << "\"/>\n";
+    }
+    if(!leaf)
+    {
+      for (int j = 0; j < indent; j++)
+        os << " ";
+      os << "</timing>\n";
+    }
+    total_time += sum_[i]/active_[i];
+  }
+  return total_time;
+}
+
 void
 StackedTimer::report(std::ostream &os, Teuchos::RCP<const Teuchos::Comm<int> > comm, OutputOptions options) {
   flatten();
@@ -512,7 +700,7 @@ StackedTimer::report(std::ostream &os, Teuchos::RCP<const Teuchos::Comm<int> > c
       os << "Teuchos::StackedTimer::report() - max_levels manually set to " << options.max_levels
          << ". \nTo print more levels, increase value of OutputOptions::max_levels." << std::endl;
     }
-    if (not options.print_names_before_values and not options.align_columns) {
+    if ( (! options.print_names_before_values) && (! options.align_columns)) {
       options.align_columns = true;
       if (options.print_warnings)
         os << "Teuchos::StackedTimer::report() - option print_names_before_values=false "
@@ -529,5 +717,94 @@ StackedTimer::report(std::ostream &os, Teuchos::RCP<const Teuchos::Comm<int> > c
     printLevel("", 0, os, printed, 0., options);
   }
 }
+
+void
+StackedTimer::reportXML(std::ostream &os, const std::string& datestamp, const std::string& timestamp, Teuchos::RCP<const Teuchos::Comm<int> > comm)
+{
+  flatten();
+  merge(comm);
+  OutputOptions defaultOptions;
+  collectRemoteData(comm, defaultOptions);
+  if (rank(*comm) == 0 ) {
+    std::vector<bool> printed(flat_names_.size(), false);
+    os << "<?xml version=\"1.0\"?>\n";
+    os << "<performance-report date=\"" << timestamp << "\" name=\"nightly_run_" << datestamp << "\" time-units=\"seconds\">\n";
+    printLevelXML("", 0, os, printed, 0.0);
+    os << "</performance-report>\n";
+  }
+}
+
+std::string
+StackedTimer::reportWatchrXML(const std::string& name, Teuchos::RCP<const Teuchos::Comm<int> > comm) {
+  const char* rawWatchrDir = getenv("WATCHR_PERF_DIR");
+  const char* rawBuildName = getenv("WATCHR_BUILD_NAME");
+  //WATCHR_PERF_DIR is required (will also check nonempty below)
+  if(!rawWatchrDir)
+    return "";
+  std::string watchrDir = rawWatchrDir;
+  if(!watchrDir.length())
+  {
+    //Output directory has not been set, so don't produce output.
+    return "";
+  }
+  //But the build name is optional (may be empty)
+  std::string buildName = rawBuildName ? rawBuildName : "";
+  std::string datestamp;
+  std::string timestamp;
+  {
+    char buf[256];
+    time_t t;
+    struct tm* tstruct;
+    time(&t);
+    tstruct = gmtime(&t);
+    strftime(buf, 256, "%Y_%m_%d", tstruct);
+    datestamp = buf;
+    strftime(buf, 256, "%FT%H:%M:%S", tstruct);
+    timestamp = buf;
+  }
+  flatten();
+  merge(comm);
+  OutputOptions defaultOptions;
+  collectRemoteData(comm, defaultOptions);
+  std::string fullFile;
+  //only open the file on rank 0
+  if(rank(*comm) == 0) {
+    std::string nameNoSpaces = name;
+    for(char& c : nameNoSpaces)
+    {
+      if(isspace(c))
+        c = '_';
+    }
+    if(buildName.length())
+    {
+      //In filename, replace all whitespace with underscores
+      std::string buildNameNoSpaces = buildName;
+      for(char& c : buildNameNoSpaces)
+      {
+        if(isspace(c))
+          c = '_';
+      }
+      fullFile = watchrDir + '/' + buildNameNoSpaces + "-" + nameNoSpaces + '_' + datestamp + ".xml";
+    }
+    else
+      fullFile = watchrDir + '/' + nameNoSpaces + '_' + datestamp + ".xml";
+    std::ofstream os(fullFile);
+    std::vector<bool> printed(flat_names_.size(), false);
+    os << "<?xml version=\"1.0\"?>\n";
+    os << "<performance-report date=\"" << timestamp << "\" name=\"nightly_run_" << datestamp << "\" time-units=\"seconds\">\n";
+    printLevelXML("", 0, os, printed, 0.0, buildName + ": " + name);
+    os << "</performance-report>\n";
+  }
+  return fullFile;
+}
+
+void StackedTimer::enableVerbose(const bool enable_verbose)
+{enable_verbose_ = enable_verbose;}
+
+void StackedTimer::enableVerboseTimestamps(const unsigned levels)
+{verbose_timestamp_levels_ = levels;}
+
+void StackedTimer::setVerboseOstream(const Teuchos::RCP<std::ostream>& os)
+{verbose_ostream_ = os;}
 
 } //namespace Teuchos

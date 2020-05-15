@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -44,6 +45,8 @@
 #include <cstdio>                       // for NULL, EOF, FILE
 #include <ios>                          // for streambuf, ios_base, etc
 #include <string>                       // for string, streamsize
+
+namespace SEAMS{ class Aprepro; }
 
 //: Specialize the ANSI Standard C++ streambuf class
 //: for a parallel file buffer.  The actual file is
@@ -150,5 +153,12 @@ inline void mpi_filebuf::get_buffer( const char * & b , size_t & n ) const
 { b = comm_buffer ; n = (const_cast<mpi_filebuf*>(this))->pptr() - comm_buffer ; }
 
 inline double mpi_filebuf::wtime() const { return comm_time ; }
+
+#if !defined(NOT_HAVE_STK_SEACASAPREPRO_LIB)
+namespace stk
+{
+  void add_aprepro_defines(SEAMS::Aprepro &aprepro, const std::string &defines);
+}
+#endif
 
 #endif // STK_UTIL_PARALLEL_MPI_FILEBUF_HPP

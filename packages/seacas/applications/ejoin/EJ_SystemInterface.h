@@ -79,8 +79,9 @@ public:
   const Omissions &nset_omissions() const { return nsetOmissions_; }
   const Omissions &sset_omissions() const { return ssetOmissions_; }
 
-  //! Dumps representation of data in this class to cerr
+  const std::string &block_prefix() const { return blockPrefix_; }
 
+  //! Dumps representation of data in this class to cerr
   static void show_version();
 
   // Make this private eventually...
@@ -119,8 +120,7 @@ private:
   bool useNetcdf4_{false};
   bool ignoreElementIds_{false};
 
-  std::string elementStatusVariable_;
-  std::string nodalStatusVariable_;
+  std::string blockPrefix_{std::string("p")};
 
   vector3d offset_;
   double   tolerance_{0.0};

@@ -135,6 +135,7 @@ struct DeviceForNode2< Kokkos::Compat::KokkosDeviceWrapperNode<Device> > {
 }
 
 #include "Tpetra_Details_PackTraits.hpp"
+#include "Tpetra_Details_ScalarViewTraits.hpp"
 
 namespace Tpetra {
 namespace Details {
@@ -142,40 +143,27 @@ namespace Details {
 /// \brief Partial specialization of PackTraits for Sacado's PCE UQ type.
 ///
 /// \tparam S The underlying scalar type in the PCE UQ type.
-/// \tparam D The Kokkos "device" type.
-template<typename S, typename D>
-struct PackTraits< Sacado::UQ::PCE<S>, D > {
-  typedef Sacado::UQ::PCE<S> value_type;
-  typedef typename D::execution_space execution_space;
-  typedef D device_type;
-  typedef typename execution_space::size_type size_type;
+template<class S>
+struct PackTraits<Sacado::UQ::PCE<S>> {
+  using value_type = Sacado::UQ::PCE<S>;
 
   /// \brief Whether the number of bytes required to pack one instance
   ///   of \c value_type is fixed at compile time.
   static const bool compileTimeSize = false;
 
-  typedef Kokkos::View<const char*, device_type, Kokkos::MemoryUnmanaged> input_buffer_type;
-  typedef Kokkos::View<char*, device_type, Kokkos::MemoryUnmanaged> output_buffer_type;
-  typedef Kokkos::View<const value_type*, device_type, Kokkos::MemoryUnmanaged> input_array_type;
-  typedef Kokkos::View<value_type*, device_type, Kokkos::MemoryUnmanaged> output_array_type;
+  using input_buffer_type = Kokkos::View<const char*, Kokkos::AnonymousSpace>;
+  using output_buffer_type = Kokkos::View<char*, Kokkos::AnonymousSpace>;
+  using input_array_type = Kokkos::View<const value_type*, Kokkos::AnonymousSpace>;
+  using output_array_type = Kokkos::View<value_type*, Kokkos::AnonymousSpace>;
 
-  typedef typename value_type::value_type scalar_value_type;
-  typedef PackTraits< scalar_value_type, device_type > SPT;
-  typedef typename SPT::input_array_type scalar_input_array_type;
-  typedef typename SPT::output_array_type scalar_output_array_type;
+  using scalar_value_type = typename value_type::value_type;
+  using SPT = PackTraits<scalar_value_type>;
+  using scalar_input_array_type = typename SPT::input_array_type;
+  using scalar_output_array_type = typename SPT::output_array_type;
 
   KOKKOS_INLINE_FUNCTION
   static size_t numValuesPerScalar (const value_type& x) {
     return x.size ();
-  }
-
-  static Kokkos::View<value_type*, device_type>
-  allocateArray (const value_type& x, const size_t numEnt, const std::string& label = "")
-  {
-    typedef Kokkos::View<value_type*, device_type> view_type;
-
-    const size_type numVals = numValuesPerScalar (x);
-    return view_type (label, static_cast<size_type> (numEnt), numVals);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -184,7 +172,7 @@ struct PackTraits< Sacado::UQ::PCE<S>, D > {
              const value_type inBuf[],
              const size_t numEnt)
   {
-    typedef Kokkos::pair<int, size_t> return_type;
+    using return_type = Kokkos::pair<int, size_t>;
     size_t numBytes = 0;
     int errorCode = 0;
 
@@ -232,7 +220,7 @@ struct PackTraits< Sacado::UQ::PCE<S>, D > {
                const char inBuf[],
                const size_t numEnt)
   {
-    typedef Kokkos::pair<int, size_t> return_type;
+    using return_type = Kokkos::pair<int, size_t>;
     size_t numBytes = 0;
     int errorCode = 0;
 
@@ -242,7 +230,7 @@ struct PackTraits< Sacado::UQ::PCE<S>, D > {
     else {
       // Check whether output array is contiguously allocated based on the size
       // of the first entry.  We have a simpler method to unpack in this case
-      const size_type scalar_size = numValuesPerScalar (outBuf[0]);
+      const size_t scalar_size = numValuesPerScalar (outBuf[0]);
       const scalar_value_type* last_coeff = outBuf[numEnt - 1].coeff ();
       const scalar_value_type* last_coeff_expected =
         outBuf[0].coeff () + (numEnt - 1) * scalar_size;
@@ -308,42 +296,55 @@ struct PackTraits< Sacado::UQ::PCE<S>, D > {
   }
 }; // struct PackTraits
 
+/// \brief Partial specialization of ScalarViewTraits
+///   for Sacado's PCE UQ type.
+///
+/// \tparam S The underlying scalar type in the PCE UQ type.
+/// \tparam D The Kokkos "device" type.
+template<typename S, typename D>
+struct ScalarViewTraits<Sacado::UQ::PCE<S>, D> {
+  using value_type = Sacado::UQ::PCE<S>;
+  using device_type = D;
+
+  static Kokkos::View<value_type*, device_type>
+  allocateArray (const value_type& x,
+                 const size_t numEnt,
+                 const std::string& label = "")
+  {
+    const size_t numVals = PackTraits<value_type>::numValuesPerScalar (x);
+    using view_type = Kokkos::View<value_type*, device_type>;
+    return view_type (label, numEnt, numVals);
+  }
+};
+
 } // namespace Details
 } // namespace Tpetra
 
 namespace Kokkos {
   template <class S, class L, class G, class N>
   size_t dimension_scalar(const Tpetra::MultiVector<S,L,G,N>& mv) {
-    typedef Tpetra::MultiVector<S,L,G,N> MV;
-    typedef typename MV::dual_view_type dual_view_type;
-    typedef typename dual_view_type::t_dev device_type;
-    typedef typename dual_view_type::t_host host_type;
-    dual_view_type dual_view = mv.getDualView();
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    if (dual_view.modified_host() > dual_view.modified_device())
-      return dimension_scalar(dual_view.template view<device_type>());
-#else
-    if ( dual_view.need_sync_device() )
-    { return dimension_scalar(dual_view.template view<device_type>()); }
-#endif
-    return dimension_scalar(dual_view.template view<host_type>());
+    if ( mv.need_sync_device() ) {
+      // NOTE (mfh 02 Apr 2019) This doesn't look right.  Shouldn't I
+      // want the most recently updated View, which in this case would
+      // be the host View?  However, this is what I found when I
+      // changed these lines not to call deprecated code, so I'm
+      // leaving it.
+      return dimension_scalar(mv.getLocalViewDevice());
+    }
+    return dimension_scalar(mv.getLocalViewHost());
   }
 
   template <class S, class L, class G, class N>
   size_t dimension_scalar(const Tpetra::Vector<S,L,G,N>& v) {
-    typedef Tpetra::Vector<S,L,G,N> V;
-    typedef typename V::dual_view_type dual_view_type;
-    typedef typename dual_view_type::t_dev device_type;
-    typedef typename dual_view_type::t_host host_type;
-    dual_view_type dual_view = v.getDualView();
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    if (dual_view.modified_host() > dual_view.modified_device())
-      return dimension_scalar(dual_view.template view<device_type>());
-#else
-    if ( dual_view.need_sync_device() )
-    { return dimension_scalar(dual_view.template view<device_type>()); }
-#endif
-    return dimension_scalar(dual_view.template view<host_type>());
+    if ( v.need_sync_device() ) {
+      // NOTE (mfh 02 Apr 2019) This doesn't look right.  Shouldn't I
+      // want the most recently updated View, which in this case would
+      // be the host View?  However, this is what I found when I
+      // changed these lines not to call deprecated code, so I'm
+      // leaving it.
+      return dimension_scalar(v.getLocalViewDevice());
+    }
+    return dimension_scalar(v.getLocalViewHost());
   }
 }
 

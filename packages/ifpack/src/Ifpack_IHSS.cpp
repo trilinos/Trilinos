@@ -245,10 +245,10 @@ std::ostream& Ifpack_IHSS::Print(std::ostream& os) const{
 }
 
 
-double Ifpack_IHSS::Condest(const Ifpack_CondestType CT,
-                             const int MaxIters,
-                             const double Tol,
-                             Epetra_RowMatrix* Matrix_in){
+double Ifpack_IHSS::Condest(const Ifpack_CondestType /* CT */,
+                             const int /* MaxIters */,
+                             const double /* Tol */,
+                             Epetra_RowMatrix* /* Matrix_in */){
   return -1.0;
 }
 

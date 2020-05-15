@@ -858,6 +858,8 @@ void DefaultBlockedLinearOp<Scalar>::assertBlockFillIsActive(
 {
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPT(!(blockFillIsActive_==wantedValue));
+#else
+  (void)wantedValue;
 #endif
 }
 
@@ -888,6 +890,9 @@ void DefaultBlockedLinearOp<Scalar>::assertBlockRowCol(
       ,"Error, j="<<j<<" does not fall in the range [0,"<<numColBlocks_-1<<"]!"
       );
   }
+#else
+  (void)i;
+  (void)j;
 #endif
 }
 

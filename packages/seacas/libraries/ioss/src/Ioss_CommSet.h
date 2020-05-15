@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -53,9 +53,11 @@ namespace Ioss {
   public:
     CommSet(DatabaseIO *io_database, const std::string &my_name, const std::string &entity_type,
             size_t entity_cnt);
+    CommSet(const CommSet &) = default;
 
     std::string type_string() const override { return "CommSet"; }
     std::string short_type_string() const override { return "commlist"; }
+    std::string contains_string() const override { return "Entity/Processor pair"; }
     EntityType  type() const override { return COMMSET; }
 
     // Handle implicit properties -- These are calcuated from data stored

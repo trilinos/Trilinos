@@ -1,18 +1,8 @@
-#include "ShyLU_NodeTacho_config.h"
-
 #include <Kokkos_Core.hpp>
 #include <Kokkos_DualView.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
-#include "Tacho_Util.hpp"
-#include "Tacho_DenseMatrixView.hpp"
-#include "Tacho_DenseFlopCount.hpp"
-
-#include "Tacho_Chol_ByBlocks.hpp"
-#include "Tacho_Gemm_ByBlocks.hpp"
-#include "Tacho_Herk_ByBlocks.hpp"
-#include "Tacho_Trsm_ByBlocks.hpp"
-
+#include "Tacho_Internal.hpp"
 #include "Tacho_CommandLineParser.hpp" 
 
 #ifdef TACHO_HAVE_MKL
@@ -24,7 +14,25 @@ using namespace Tacho;
 #define PRINT_TIMER                                                     \
   printf("  Time \n");                                                  \
   printf("       byblocks/reference (speedup):                   %10.6f\n", t_reference/t_byblocks); \
+  printf("  Task Scheduler (%s) \n", scheduler_name);                   \
+  printf("       allocation count                                %10d\n", sched.queue().allocation_count());\
   printf("\n");                                                         
+
+/// select a kokkos task scheudler
+/// - TaskScheduler, TaskSchedulerMultiple, ChaseLevTaskScheduler
+#if defined(TACHO_USE_TASKSCHEDULER)
+template<typename T> using TaskSchedulerType = Kokkos::TaskScheduler<T>;
+static const char * scheduler_name = "TaskScheduler";
+#endif
+#if defined(TACHO_USE_TASKSCHEDULER_MULTIPLE)
+template<typename T> using TaskSchedulerType = Kokkos::TaskSchedulerMultiple<T>;
+static const char * scheduler_name = "TaskSchedulerMultiple";
+#endif
+#if defined(TACHO_USE_CHASELEV_TASKSCHEDULER)
+template<typename T> using TaskSchedulerType = Kokkos::ChaseLevTaskScheduler<T>;
+static const char * scheduler_name = "ChaseLevTaskScheduler";
+#endif
+
 
 int main (int argc, char *argv[]) {
   CommandLineParser opts("This example program measure the performance of dense-by-blocks on Kokkos::OpenMP");  
@@ -53,33 +61,35 @@ int main (int argc, char *argv[]) {
   typedef double value_type;
   typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
   typedef Kokkos::DefaultExecutionSpace exec_space;
-  //typedef Kokkos::DefaultHostExecutionSpace exec_space;
   typedef Kokkos::DefaultHostExecutionSpace host_exec_space;
+
+  typedef TaskSchedulerType<     exec_space> scheduler_type; 
+  typedef TaskSchedulerType<host_exec_space> host_scheduler_type; 
 
   printExecSpaceConfiguration<host_exec_space>("Default HostSpace");
   printExecSpaceConfiguration<     exec_space>("Default DeviceSpace");
+  printf("Scheduler Type = %s\n", scheduler_name);
 
   int r_val = 0;
   const double eps = std::numeric_limits<double>::epsilon()*10000;  
   {
-    typedef DenseMatrixView<value_type,exec_space>               DenseMatrixViewType;
-    typedef DenseMatrixView<DenseMatrixViewType,exec_space>      DenseMatrixOfBlocksType;
+    typedef DenseMatrixView<value_type,scheduler_type>               DenseMatrixViewType;
+    typedef DenseMatrixView<DenseMatrixViewType,scheduler_type>      DenseMatrixOfBlocksType;
 
-    typedef DenseMatrixView<value_type,host_exec_space>          DenseMatrixViewHostType;
-    typedef DenseMatrixView<DenseMatrixViewType,host_exec_space> DenseMatrixOfBlocksHostType;
+    typedef DenseMatrixView<value_type,host_scheduler_type>          DenseMatrixViewHostType;
+    typedef DenseMatrixView<DenseMatrixViewType,host_scheduler_type> DenseMatrixOfBlocksHostType;
 
     Kokkos::Impl::Timer timer;
 
-    typedef Kokkos::TaskScheduler<exec_space> sched_type;
-    sched_type sched;
+    scheduler_type sched;
 
-    typedef TaskFunctor_Chol<sched_type,DenseMatrixOfBlocksType,
+    typedef TaskFunctor_Chol<scheduler_type,DenseMatrixOfBlocksType,
       Uplo::Upper,Algo::ByBlocks> task_functor_chol;
-    typedef TaskFunctor_Trsm<sched_type,double,DenseMatrixOfBlocksType,
+    typedef TaskFunctor_Trsm<scheduler_type,double,DenseMatrixOfBlocksType,
       Side::Left,Uplo::Upper,Trans::ConjTranspose,Diag::NonUnit,Algo::ByBlocks> task_functor_trsm;
-    typedef TaskFunctor_Gemm<sched_type,double,DenseMatrixOfBlocksType,
+    typedef TaskFunctor_Gemm<scheduler_type,double,DenseMatrixOfBlocksType,
       Trans::NoTranspose,Trans::NoTranspose,Algo::ByBlocks> task_functor_gemm;
-    typedef TaskFunctor_Herk<sched_type,double,DenseMatrixOfBlocksType,
+    typedef TaskFunctor_Herk<scheduler_type,double,DenseMatrixOfBlocksType,
       Uplo::Upper,Trans::ConjTranspose,Algo::ByBlocks> task_functor_herk;
 
     const ordinal_type max_functor_size = 4*sizeof(task_functor_gemm);
@@ -105,12 +115,12 @@ int main (int argc, char *argv[]) {
       std::cout << "min_block_size = " << min_block_size << "\n";
       std::cout << "max_block_size = " << max_block_size << "\n";
       std::cout << "superblock_size = " << superblock_size << "\n";
-      
-      sched = sched_type(typename sched_type::memory_space(),
-                         (size_t)task_queue_capacity,
-                         (unsigned)min_block_size,
-                         (unsigned)max_block_size,
-                         (unsigned)superblock_size);
+
+      sched = scheduler_type(typename scheduler_type::memory_space(),
+                             (size_t)task_queue_capacity,
+                             (unsigned)min_block_size,
+                             (unsigned)max_block_size,
+                             (unsigned)superblock_size);
     }
 
     const ordinal_type dry = -2, niter = 3;
@@ -137,7 +147,7 @@ int main (int argc, char *argv[]) {
       
       // test matrix generation
       {
-        sub_a.modify<host_exec_space>();
+        sub_a.modify_host();
 
         Kokkos::deep_copy(sub_a.h_view, 0);
         DenseMatrixViewHostType A;
@@ -155,8 +165,8 @@ int main (int argc, char *argv[]) {
 
       // reference 
       {
-        sub_a. sync  <host_exec_space>();
-        sub_a1.modify<host_exec_space>();
+        sub_a. sync_host();
+        sub_a1.modify_host();
         
         DenseMatrixViewHostType A;
         A.set_view(m, m);
@@ -173,8 +183,8 @@ int main (int argc, char *argv[]) {
       
       // dense by blocks
       {
-        sub_a. sync  <exec_space>();
-        sub_a2.modify<exec_space>();
+        sub_a. sync_device();
+        sub_a2.modify_device();
 
         DenseMatrixViewType A;
         A.set_view(m, m);
@@ -191,30 +201,30 @@ int main (int argc, char *argv[]) {
         DA.attach_buffer(1, bm, ha.d_view.data());
         
         {          
-          ha.modify<host_exec_space>();
+          ha.modify_host();
           
           setMatrixOfBlocks(HA, m, m, mb);
           attachBaseBuffer(HA, A.data(), A.stride_0(), A.stride_1());
 
-          ha.sync<exec_space>();
+          ha.sync_device();
           
           for (ordinal_type iter=dry;iter<niter;++iter) {
             Kokkos::deep_copy(sub_a2.d_view, sub_a.d_view);
 
             timer.reset();
             Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
-                               task_functor_chol(sched, DA));
+                               task_functor_chol(DA));
             Kokkos::wait(sched);
             t_byblocks += (iter >=0)*timer.seconds();
           }
           t_byblocks /= niter;
-          //clearFutureOfBlocks(HA);
+          clearFutureOfBlocks(HA);
         }
       }
 
       {
-        a1.sync<host_exec_space>();
-        a2.sync<host_exec_space>();
+        a1.sync_host();
+        a2.sync_host();
 
         double diff = 0.0, norm = 0.0;
         for (ordinal_type p=0;p<(m*m);++p) {
@@ -252,8 +262,8 @@ int main (int argc, char *argv[]) {
       auto sub_a2 = Kokkos::subview(a2, range_type(0,m*m));
 
       {
-        sub_a. modify<host_exec_space>();
-        sub_a1.modify<host_exec_space>();
+        sub_a. modify_host();
+        sub_a1.modify_host();
 
         DenseMatrixViewHostType A, B;
         A.set_view(m, m);
@@ -265,15 +275,15 @@ int main (int argc, char *argv[]) {
         randomize(A);
         randomize(B);
 
-        sub_a2.modify<exec_space>();
+        sub_a2.modify_device();
         Kokkos::deep_copy(sub_a2.d_view, sub_a1.h_view);
       }
 
       // reference 
       {
-        sub_a. sync  <host_exec_space>();
-        sub_a1.sync  <host_exec_space>();
-        sub_a1.modify<host_exec_space>();
+        sub_a. sync_host();
+        sub_a1.sync_host();
+        sub_a1.modify_host();
 
         DenseMatrixViewHostType A, B;
         A.set_view(m, m);
@@ -294,9 +304,9 @@ int main (int argc, char *argv[]) {
       
       // dense by blocks
       {
-        sub_a. sync  <exec_space>();
-        sub_a2.sync  <exec_space>();
-        sub_a2.modify<exec_space>();
+        sub_a. sync_device();
+        sub_a2.sync_device();
+        sub_a2.modify_device();
 
         DenseMatrixViewType A, B;
         A.set_view(m, m);
@@ -307,8 +317,8 @@ int main (int argc, char *argv[]) {
 
         const ordinal_type bm = (m/mb) + (m%mb>0);
 
-        ha.modify<host_exec_space>();
-        hb.modify<host_exec_space>();
+        ha.modify_host();
+        hb.modify_host();
 
         DenseMatrixOfBlocksHostType HA, HB;
 
@@ -324,8 +334,8 @@ int main (int argc, char *argv[]) {
         setMatrixOfBlocks(HB, m, m, mb);
         attachBaseBuffer(HB, B.data(), B.stride_0(), B.stride_1());
         
-        ha.sync<exec_space>();
-        hb.sync<exec_space>();
+        ha.sync_device();
+        hb.sync_device();
 
         DenseMatrixOfBlocksType DA, DB;
         
@@ -339,19 +349,19 @@ int main (int argc, char *argv[]) {
           const double alpha = -1.0;
           for (ordinal_type iter=dry;iter<niter;++iter) {
             timer.reset();
-            auto ff = Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
-                                         task_functor_trsm(sched, alpha, DA, DB));
+            Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
+                               task_functor_trsm(alpha, DA, DB));
             Kokkos::wait(sched);
             t_byblocks += (iter >=0)*timer.seconds();
           }
           t_byblocks /= niter;
-          //clearFutureOfBlocks(HB);
+          clearFutureOfBlocks(HB);
         }
       }
       
       {
-        a1.sync<host_exec_space>();
-        a2.sync<host_exec_space>();
+        a1.sync_host();
+        a2.sync_host();
 
         double diff = 0.0, norm = 0.0;
         for (ordinal_type p=0;p<(m*m);++p) {
@@ -385,11 +395,10 @@ int main (int argc, char *argv[]) {
       auto sub_b  = Kokkos::subview(b,  range_type(0,m*m));
       auto sub_a1 = Kokkos::subview(a1, range_type(0,m*m));
       auto sub_a2 = Kokkos::subview(a2, range_type(0,m*m));
-
       {
-        sub_a. modify<host_exec_space>();
-        sub_b. modify<host_exec_space>();
-        sub_a1.modify<host_exec_space>();
+        sub_a. modify_host();
+        sub_b. modify_host();
+        sub_a1.modify_host();
         
         DenseMatrixViewHostType A, B, C;
         A.set_view(m, m);
@@ -405,16 +414,16 @@ int main (int argc, char *argv[]) {
         randomize(B);
         randomize(C);
 
-        sub_a2.modify<exec_space>();
+        sub_a2.modify_device();
         Kokkos::deep_copy(sub_a2.d_view, sub_a1.h_view);
       }
 
       // reference 
       {
-        sub_a. sync  <host_exec_space>();
-        sub_b. sync  <host_exec_space>();
-        sub_a1.sync  <host_exec_space>();
-        sub_a1.modify<host_exec_space>();
+        sub_a. sync_host();
+        sub_b. sync_host();
+        sub_a1.sync_host();
+        sub_a1.modify_host();
 
         DenseMatrixViewType A, B, C;
         A.set_view(m, m);
@@ -439,10 +448,10 @@ int main (int argc, char *argv[]) {
       
       // dense by blocks
       {
-        sub_a. sync  <exec_space>();
-        sub_b. sync  <exec_space>();
-        sub_a2.sync  <exec_space>();
-        sub_a2.modify<exec_space>();
+        sub_a. sync_device();
+        sub_b. sync_device();
+        sub_a2.sync_device();
+        sub_a2.modify_device();
 
         DenseMatrixViewType A, B, C;
         A.set_view(m, m);
@@ -456,9 +465,9 @@ int main (int argc, char *argv[]) {
 
         const ordinal_type bm = (m/mb) + (m%mb>0);
 
-        ha.modify<host_exec_space>();
-        hb.modify<host_exec_space>();
-        hc.modify<host_exec_space>();
+        ha.modify_host();
+        hb.modify_host();
+        hc.modify_host();
 
         DenseMatrixOfBlocksHostType HA, HB, HC;
 
@@ -480,9 +489,9 @@ int main (int argc, char *argv[]) {
         setMatrixOfBlocks(HC, m, m, mb);
         attachBaseBuffer(HC, C.data(), C.stride_0(), C.stride_1());
 
-        ha.sync<exec_space>();
-        hb.sync<exec_space>();
-        hc.sync<exec_space>();
+        ha.sync_device();
+        hb.sync_device();
+        hc.sync_device();
         
         DenseMatrixOfBlocksType DA, DB, DC;
         
@@ -500,18 +509,18 @@ int main (int argc, char *argv[]) {
           for (ordinal_type iter=dry;iter<niter;++iter) {
             timer.reset();
             Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
-                               task_functor_gemm(sched, alpha, DA, DB, beta, DC));
+                               task_functor_gemm(alpha, DA, DB, beta, DC));
             Kokkos::wait(sched);
             t_byblocks += (iter >=0)*timer.seconds();
           }
           t_byblocks /= niter;
-          //clearFutureOfBlocks(HC);
+          clearFutureOfBlocks(HC);
         }
       }
       
       {
-        a1.sync<host_exec_space>();
-        a2.sync<host_exec_space>();
+        a1.sync_host();
+        a2.sync_host();
 
         double diff = 0.0, norm = 0.0;
         for (ordinal_type p=0;p<(m*m);++p) {
@@ -544,8 +553,8 @@ int main (int argc, char *argv[]) {
       auto sub_a2 = Kokkos::subview(a2, range_type(0,m*m));
 
       {
-        sub_a. modify<host_exec_space>();
-        sub_a1.modify<host_exec_space>();
+        sub_a. modify_host();
+        sub_a1.modify_host();
         
         DenseMatrixViewHostType A, C;
         A.set_view(m, m);
@@ -557,15 +566,15 @@ int main (int argc, char *argv[]) {
         randomize(A);
         randomize(C);
 
-        sub_a2.modify<exec_space>();
+        sub_a2.modify_device();
         Kokkos::deep_copy(sub_a2.d_view, sub_a1.h_view);
       }
 
       // reference 
       {
-        sub_a. sync  <host_exec_space>();
-        sub_a1.sync  <host_exec_space>();
-        sub_a1.modify<host_exec_space>();
+        sub_a. sync_host();
+        sub_a1.sync_host();
+        sub_a1.modify_host();
 
         DenseMatrixViewType A, C;
         A.set_view(m, m);
@@ -587,9 +596,9 @@ int main (int argc, char *argv[]) {
       
       // dense by blocks
       {
-        sub_a. sync  <exec_space>();
-        sub_a2.sync  <exec_space>();
-        sub_a2.modify<exec_space>();
+        sub_a. sync_device();
+        sub_a2.sync_device();
+        sub_a2.modify_device();
 
         DenseMatrixViewType A, C;
         A.set_view(m, m);
@@ -600,8 +609,8 @@ int main (int argc, char *argv[]) {
 
         const ordinal_type bm = (m/mb) + (m%mb>0);
 
-        ha.modify<host_exec_space>();
-        hc.modify<host_exec_space>();
+        ha.modify_host();
+        hc.modify_host();
 
         DenseMatrixOfBlocksHostType HA, HC;
 
@@ -617,8 +626,8 @@ int main (int argc, char *argv[]) {
         setMatrixOfBlocks(HC, m, m, mb);
         attachBaseBuffer(HC, C.data(), C.stride_0(), C.stride_1());
 
-        ha.sync<exec_space>();
-        hc.sync<exec_space>();
+        ha.sync_device();
+        hc.sync_device();
         
         DenseMatrixOfBlocksType DA, DC;
         
@@ -633,18 +642,18 @@ int main (int argc, char *argv[]) {
           for (ordinal_type iter=dry;iter<niter;++iter) {
             timer.reset();
             Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
-                               task_functor_herk(sched, alpha, DA, beta, DC));
+                               task_functor_herk(alpha, DA, beta, DC));
             Kokkos::wait(sched);
             t_byblocks += (iter >=0)*timer.seconds();
           }
           t_byblocks /= niter;
-          //clearFutureOfBlocks(HC);
+          clearFutureOfBlocks(HC);
         }
       }
       
       {
-        a1.sync<host_exec_space>();
-        a2.sync<host_exec_space>();
+        a1.sync_host();
+        a2.sync_host();
 
         double diff = 0.0, norm = 0.0;
         for (ordinal_type p=0;p<(m*m);++p) {

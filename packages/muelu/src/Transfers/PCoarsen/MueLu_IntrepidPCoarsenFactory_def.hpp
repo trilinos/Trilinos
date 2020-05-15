@@ -543,6 +543,7 @@ void GenerateRepresentativeBasisNodes(const Basis & basis, const SCFieldContaine
 
  basis.getValues(LoValues, ReferenceNodeLocations , Intrepid2::OPERATOR_VALUE);
 
+ Kokkos::fence(); // for kernel in getValues
 
 #if 0
   printf("** LoValues[%d,%d] **\n",(int)numFieldsLo,(int)numFieldsHi);
@@ -603,12 +604,14 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
   FC LoValues_at_HiDofs("LoValues_at_HiDofs",numFieldsLo,numFieldsHi);
   lo_basis.getValues(LoValues_at_HiDofs, hi_DofCoords, Intrepid2::OPERATOR_VALUE);
 
+  Kokkos::fence(); // for kernel in getValues
+
   typedef typename Teuchos::ScalarTraits<SC>::halfPrecision SClo;
   typedef typename Teuchos::ScalarTraits<SClo>::magnitudeType MT;
   MT effective_zero = Teuchos::ScalarTraits<MT>::eps();
 
   // Allocate P
-  P = rcp(new CrsMatrixWrap(hi_map,lo_colMap,0)); //FIXLATER: Need faster fill
+  P = rcp(new CrsMatrixWrap(hi_map,lo_colMap,numFieldsHi)); //FIXLATER: Need faster fill
   RCP<CrsMatrix> Pcrs   = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
 
   // Slow-ish fill
@@ -659,12 +662,14 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
   FC LoValues_at_HiDofs("LoValues_at_HiDofs",numFieldsLo,numFieldsHi);
   lo_basis.getValues(LoValues_at_HiDofs, hi_DofCoords, Intrepid2::OPERATOR_VALUE);
 
+  Kokkos::fence(); // for kernel in getValues
+
   typedef typename Teuchos::ScalarTraits<SC>::halfPrecision SClo;
   typedef typename Teuchos::ScalarTraits<SClo>::magnitudeType MT;
   MT effective_zero = Teuchos::ScalarTraits<MT>::eps();
 
   // Allocate P
-  P = rcp(new CrsMatrixWrap(hi_map,lo_colMap,0)); //FIXLATER: Need faster fill
+  P = rcp(new CrsMatrixWrap(hi_map,lo_colMap,numFieldsHi)); //FIXLATER: Need faster fill
   RCP<CrsMatrix> Pcrs   = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
 
   // Slow-ish fill
@@ -713,7 +718,7 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
 
 /*********************************************************************************************************/
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
+  void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &/* coarseLevel */) const {
     Input(fineLevel, "A");
     Input(fineLevel, "pcoarsen: element to node map");
     Input(fineLevel, "Nullspace");

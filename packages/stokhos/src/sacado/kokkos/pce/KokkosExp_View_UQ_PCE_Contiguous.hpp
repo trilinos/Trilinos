@@ -481,7 +481,7 @@ struct DeepCopyNonContiguous
     output( arg_out ), input( arg_in )
   {
     parallel_for( output.extent(0) , *this );
-    execution_space::fence();
+    execution_space().fence();
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -540,7 +540,7 @@ void deep_copy( const View<DT,DP...> & dst ,
   else {
 
     // If views are in the same memory space, copy component-wise
-    if ( Impl::is_same< typename dst_type::memory_space ,
+    if ( std::is_same< typename dst_type::memory_space ,
                         typename src_type::memory_space >::value ) {
       Experimental::Impl::DeepCopyNonContiguous< dst_type , src_type >( dst , src );
     }
@@ -1243,7 +1243,7 @@ public:
 
   //----------------------------------------
 
-  KOKKOS_INLINE_FUNCTION ~ViewMapping() = default ;
+  KOKKOS_DEFAULTED_FUNCTION ~ViewMapping() = default ;
   KOKKOS_INLINE_FUNCTION ViewMapping() :
     m_impl_handle(),
     m_impl_offset(),
@@ -1252,11 +1252,11 @@ public:
     m_is_contiguous(true)
     {}
 
-  KOKKOS_INLINE_FUNCTION ViewMapping( const ViewMapping & ) = default ;
-  KOKKOS_INLINE_FUNCTION ViewMapping & operator = ( const ViewMapping & ) = default ;
+  KOKKOS_DEFAULTED_FUNCTION ViewMapping( const ViewMapping & ) = default ;
+  KOKKOS_DEFAULTED_FUNCTION ViewMapping & operator = ( const ViewMapping & ) = default ;
 
-  KOKKOS_INLINE_FUNCTION ViewMapping( ViewMapping && ) = default ;
-  KOKKOS_INLINE_FUNCTION ViewMapping & operator = ( ViewMapping && ) = default ;
+  KOKKOS_DEFAULTED_FUNCTION ViewMapping( ViewMapping && ) = default ;
+  KOKKOS_DEFAULTED_FUNCTION ViewMapping & operator = ( ViewMapping && ) = default ;
 
   template< class ... P >
   KOKKOS_INLINE_FUNCTION
@@ -1282,6 +1282,11 @@ public:
 #endif
       m_is_contiguous = this->is_data_contiguous();
     }
+
+  /**\brief  Assign data */
+  KOKKOS_INLINE_FUNCTION
+  void assign_data( pointer_type arg_ptr )
+  { m_impl_handle.set( arg_ptr, m_impl_offset.span(), m_sacado_size ); }
 
   //----------------------------------------
   /*  Allocate and construct mapped array.
@@ -1381,6 +1386,7 @@ class ViewMapping< DstTraits , SrcTraits ,
 public:
 
   enum { is_assignable = true };
+  enum { is_assignable_data_type = true };
 
   typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
   typedef ViewMapping< DstTraits , typename DstTraits::specialize >  DstType ;
@@ -1467,6 +1473,7 @@ class ViewMapping< DstTraits , SrcTraits ,
 public:
 
   enum { is_assignable = true };
+  enum { is_assignable_data_type = true };
 
   typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
   typedef ViewMapping< DstTraits , typename DstTraits::specialize >  DstType ;
@@ -1577,6 +1584,7 @@ class ViewMapping< DstTraits , SrcTraits ,
 public:
 
   enum { is_assignable = true };
+  enum { is_assignable_data_type = true };
 
   typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
   typedef ViewMapping< DstTraits , typename DstTraits::specialize >  DstType ;
@@ -1918,7 +1926,7 @@ struct StokhosViewFill< OutputView ,
         config, ScalarKernel<vector_length>(output, input.fastAccessCoeff(0)) );
     else
       parallel_for( config, PCEKernel<vector_length>(output, input) );
-    execution_space::fence();
+    execution_space().fence();
   }
 
   StokhosViewFill( const OutputView & output , const scalar_type & input )
@@ -1938,7 +1946,7 @@ struct StokhosViewFill< OutputView ,
     Kokkos::TeamPolicy< execution_space > config( league_size, team_size );
 
     parallel_for( config, ScalarKernel<vector_length>(output, input) );
-    execution_space::fence();
+    execution_space().fence();
   }
 
 };

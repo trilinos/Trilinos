@@ -51,10 +51,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_NOERR, etc
-#include "netcdf.h"       // for NC_NOERR, nc_enddef, etc
-#include <stddef.h>       // for size_t
-#include <stdio.h>
-#include <sys/types.h> // for int64_t
 
 /*!
  * writes out a portion of the entity numbering map to the database;
@@ -79,9 +75,9 @@ int ex_put_partial_id_map(int exoid, ex_entity_type map_type, int64_t start_enti
   const char *vmap        = NULL;
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid, __func__);
+  ex__check_valid_file_id(exoid, __func__);
 
-  if (num_entities == 0 && !ex_is_parallel(exoid)) {
+  if (num_entities == 0 && !ex__is_parallel(exoid)) {
     EX_FUNC_LEAVE(EX_NOERR);
   }
 
@@ -164,12 +160,10 @@ int ex_put_partial_id_map(int exoid, ex_entity_type map_type, int64_t start_enti
       }
       goto error_ret; /* exit define mode and return */
     }
-    ex_compress_variable(exoid, mapid, 1);
+    ex__compress_variable(exoid, mapid, 1);
 
     /* leave define mode  */
-    if ((status = nc_enddef(exoid)) != NC_NOERR) {
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition in file id %d", exoid);
-      ex_err_fn(exoid, __func__, errmsg, status);
+    if ((status = ex__leavedef(exoid, __func__)) != NC_NOERR) {
       EX_FUNC_LEAVE(EX_FATAL);
     }
   }
@@ -200,10 +194,6 @@ int ex_put_partial_id_map(int exoid, ex_entity_type map_type, int64_t start_enti
 
 /* Fatal error: exit definition mode and return */
 error_ret:
-  if ((status = nc_enddef(exoid)) != NC_NOERR) /* exit define mode */
-  {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", exoid);
-    ex_err_fn(exoid, __func__, errmsg, status);
-  }
+  ex__leavedef(exoid, __func__);
   EX_FUNC_LEAVE(EX_FATAL);
 }

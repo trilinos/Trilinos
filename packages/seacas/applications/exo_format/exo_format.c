@@ -61,13 +61,18 @@ char *filename;
 
 int main(int argc, char *argv[])
 {
-  int   c1, c2, c3, c4;
+  int   c1;
+  int   c2;
+  int   c3;
+  int   c4;
   FILE *fid;
 
-  int j, k;
+  size_t j;
+  size_t k;
 
   int   exoid;
-  int   CPU_word_size, IO_word_size;
+  int   CPU_word_size;
+  int   IO_word_size;
   float version;
   int   file_size;
   int   netcdf_based    = 0;
@@ -91,6 +96,7 @@ int main(int argc, char *argv[])
 
   if (argv[1][0] == '-') {
     if (argv[1][1] == 'c') {
+      fprintf(stderr, "\nExodus Configuration Information:\n");
       ex_print_config();
     }
     fn_idx = 2;
@@ -129,10 +135,12 @@ int main(int argc, char *argv[])
 
   if (exoid < 0) {
     if (netcdf_based) {
-      (void)fprintf(stderr, "         %s is a NetCDF file, but not a valid EXODUS file\n", filename);
+      (void)fprintf(stderr, "         %s is a NetCDF file, but not a valid EXODUS file\n",
+                    filename);
     }
     else if (hdf5_based) {
-      (void)fprintf(stderr, "         %s is an HDF5 file, but not a valid EXODUS file.\n", filename);
+      (void)fprintf(stderr, "         %s is an HDF5 file, but not a valid EXODUS file.\n",
+                    filename);
     }
     exit(NOT_EXODUSII);
   }
@@ -170,7 +178,7 @@ int main(int argc, char *argv[])
   else {
     fprintf(stderr, "\t\tFloating point data are stored as 64-bit doubles\n");
   }
-  max_name_length = ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
+  max_name_length = (int)ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
   fprintf(stderr, "\n\t\tMaximum name length is %d\n\n", max_name_length);
 
   if (file_size == 0) {
@@ -229,7 +237,7 @@ int main(int argc, char *argv[])
     printf("ex_close failed");
   }
 
-  version = version + 0.00005;
+  version += 0.00005F;
   sprintf(cversion, "%4.2f", version);
 
   k = strlen(cversion);

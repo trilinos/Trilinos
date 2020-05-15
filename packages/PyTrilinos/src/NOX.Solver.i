@@ -47,7 +47,7 @@
 PyTrilinos.NOX.Solver is the python interface to the Solver namespace
 of the Trilinos package NOX:
 
-    http://trilinos.sandia.gov/packages/nox
+    https://trilinos.org/docs/dev/packages/nox/doc/html/index.html
 
 The purpose of NOX.Solver is to provide solver manager classes for
 NOX.  NOX.Solver provides the following user-level classes:
@@ -69,7 +69,6 @@ in addition to the following factory function:
 %enddef
 
 %module(package      = "PyTrilinos.NOX",
-	autodoc      = "1",
 	implicitconv = "1",
 	docstring    = %nox_solver_docstring) Solver
 
@@ -102,7 +101,10 @@ in addition to the following factory function:
 %include "exception.i"
 
 // Include NOX documentation
+#if SWIG_VERSION < 0x040000
+%feature("autodoc", "1");
 %include "NOX_dox.i"
+#endif
 
 // General ignore directives
 %ignore operator<<(ostream &, NOX::StatusTest::StatusType );

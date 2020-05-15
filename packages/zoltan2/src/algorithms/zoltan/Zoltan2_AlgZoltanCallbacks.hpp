@@ -123,8 +123,8 @@ static void zoltanObjList(void *data, int nGidEnt, int nLidEnt,
 ///////////////////////
 // ZOLTAN_PART_MULTI_FN
 template <typename Adapter>
-static void zoltanParts(void *data, int nGidEnt, int nLidEnt, int nObj,
-                        ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
+static void zoltanParts(void *data, int /* nGidEnt */, int nLidEnt, int nObj,
+                        ZOLTAN_ID_PTR /* gids */, ZOLTAN_ID_PTR lids,
                         int *parts, int *ierr)
 {
   typedef typename Adapter::lno_t lno_t;
@@ -153,8 +153,8 @@ static int zoltanNumGeom(void *data, int *ierr)
 ///////////////////////
 // ZOLTAN_GEOM_MULTI_FN
 template <typename Adapter>
-static void zoltanGeom(void *data, int nGidEnt, int nLidEnt, int nObj,
-                       ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
+static void zoltanGeom(void *data, int /* nGidEnt */, int nLidEnt, int nObj,
+                       ZOLTAN_ID_PTR /* gids */, ZOLTAN_ID_PTR lids,
                        int nDim, double *coords, int *ierr)
 {
   typedef typename Adapter::lno_t lno_t;
@@ -202,7 +202,7 @@ static void zoltanHGSizeCS_withGraphAdapter(void *data,
 // ZOLTAN_HG_CS_FN
 template <typename Adapter>
 static void zoltanHGCS_withGraphAdapter(void *data, int nGidEnt, int nLists, 
-                                        int nPins, int format, 
+                                        int /* nPins */, int /* format */, 
                                         ZOLTAN_ID_PTR listIds, int *listIdx,
                                         ZOLTAN_ID_PTR pinIds, int *ierr
 )
@@ -277,7 +277,7 @@ static void zoltanHGEdgeWts_withGraphAdapter(
   int nGidEnt, 
   int nLidEnt, 
   int nEdges, 
-  int eWgtDim, 
+  int /* eWgtDim */, 
   ZOLTAN_ID_PTR edgeGids, 
   ZOLTAN_ID_PTR edgeLids, 
   float *edgeWgts,

@@ -92,13 +92,11 @@ void splarax(double *          result, /* result of matrix vector multiplication
     }
   }
   else { /* Vertex weights */
-    if (vwsqrt != NULL) {
-      wrkpntr  = work;
-      vecpntr  = vec;
-      vwsqpntr = vwsqrt;
-      for (i = n; i; i--) {
-        *(++wrkpntr) = *(++vecpntr) / *(++vwsqpntr);
-      }
+    wrkpntr  = work;
+    vecpntr  = vec;
+    vwsqpntr = vwsqrt;
+    for (i = n; i; i--) {
+      *(++wrkpntr) = *(++vecpntr) / *(++vwsqpntr);
     }
 
     if (mat[1]->ewgts == NULL) { /* No edge weights. */
@@ -131,12 +129,10 @@ void splarax(double *          result, /* result of matrix vector multiplication
       perturb(result, work);
     }
 
-    if (vwsqrt != NULL) {
-      respntr  = result;
-      vwsqpntr = vwsqrt;
-      for (i = n; i; i--) {
-        *(++respntr) /= *(++vwsqpntr);
-      }
+    respntr  = result;
+    vwsqpntr = vwsqrt;
+    for (i = n; i; i--) {
+      *(++respntr) /= *(++vwsqpntr);
     }
   }
 }
@@ -197,13 +193,11 @@ void splarax_float(float *           result, /* result of matrix vector multipli
     }
   }
   else { /* Vertex weights */
-    if (vwsqrt != NULL) {
-      wrkpntr  = work;
-      vecpntr  = vec;
-      vwsqpntr = vwsqrt;
-      for (i = n; i; i--) {
-        *(++wrkpntr) = *(++vecpntr) / *(++vwsqpntr);
-      }
+    wrkpntr  = work;
+    vecpntr  = vec;
+    vwsqpntr = vwsqrt;
+    for (i = n; i; i--) {
+      *(++wrkpntr) = *(++vecpntr) / *(++vwsqpntr);
     }
 
     if (mat[1]->ewgts == NULL) { /* No edge weights. */
@@ -236,12 +230,10 @@ void splarax_float(float *           result, /* result of matrix vector multipli
       perturb_float(result, work);
     }
 
-    if (vwsqrt != NULL) {
-      respntr  = result;
-      vwsqpntr = vwsqrt;
-      for (i = n; i; i--) {
-        *(++respntr) /= *(++vwsqpntr);
-      }
+    respntr  = result;
+    vwsqpntr = vwsqrt;
+    for (i = n; i; i--) {
+      *(++respntr) /= *(++vwsqpntr);
     }
   }
 }

@@ -178,7 +178,7 @@ public:
                  int num_objs,
                  ZOLTAN_ID_PTR global_ids,
                  int *rank,
-                 int * iperm )
+                 int * /* iperm */ )
   {
     return Order(  num_gid_entries, num_objs, global_ids,
 		  (ZOLTAN_ID_PTR)rank);

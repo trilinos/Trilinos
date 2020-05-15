@@ -47,7 +47,6 @@
 #include "KokkosBatched_Test_BlockCrs_Util.hpp"
 
 namespace KokkosBatched {
-  using namespace Experimental;
   namespace Test {
 
     struct RangeTag {};

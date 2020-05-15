@@ -144,7 +144,7 @@ void tLSCIntegrationTest_tpetra::loadStableSystem()
       RCP<Tpetra::Vector<ST,LO,GO,NT> > vfull, temp;
  
       // read in rhs file 
-      vfull = Tpetra::MatrixMarket::Reader<Tpetra::Vector<ST,LO,GO,NT> >::readVectorFile("./data/lsc_rhs.mm",GetComm_tpetra(),Teuchos::null,fullMap_);
+      vfull = Tpetra::MatrixMarket::Reader<Tpetra::Vector<ST,LO,GO,NT> >::readVectorFile("./data/lsc_rhs.mm",GetComm_tpetra(),fullMap_);
 
       temp = rcp(new Tpetra::Vector<ST,LO,GO,NT>(sA_->getRangeMap()));
       temp->doExport(*vfull,exporter,Tpetra::INSERT);
@@ -156,7 +156,7 @@ void tLSCIntegrationTest_tpetra::loadStableSystem()
       RCP<Tpetra::Vector<ST,LO,GO,NT> > vfull, temp;
  
       // read in exact solution file 
-      vfull = Tpetra::MatrixMarket::Reader<Tpetra::Vector<ST,LO,GO,NT> >::readVectorFile("./data/lsc_exact_2.mm",GetComm_tpetra(),Teuchos::null,fullMap_);
+      vfull = Tpetra::MatrixMarket::Reader<Tpetra::Vector<ST,LO,GO,NT> >::readVectorFile("./data/lsc_exact_2.mm",GetComm_tpetra(),fullMap_);
 
       temp = rcp(new Tpetra::Vector<ST,LO,GO,NT>(sA_->getRangeMap()));
       temp->doExport(*vfull,exporter,Tpetra::INSERT);

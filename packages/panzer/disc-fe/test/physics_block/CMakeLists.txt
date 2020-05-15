@@ -10,7 +10,7 @@ SET(UNIT_TEST_DRIVER
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   physics_block
-  SOURCES physics_block.cpp UnitTest_UniqueGlobalIndexer.cpp ${UNIT_TEST_DRIVER}
+  SOURCES physics_block.cpp UnitTest_GlobalIndexer.cpp ${UNIT_TEST_DRIVER}
   NUM_MPI_PROCS 1
   )
   

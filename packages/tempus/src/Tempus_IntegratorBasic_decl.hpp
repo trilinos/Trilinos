@@ -89,7 +89,7 @@ public:
     virtual Scalar getTime() const override
     {return solutionHistory_->getCurrentTime();}
     /// Get current index
-    virtual Scalar getIndex() const override
+    virtual int getIndex() const override
     {return solutionHistory_->getCurrentIndex();}
     /// Get Status
     virtual Status getStatus() const override
@@ -98,17 +98,17 @@ public:
     virtual Teuchos::RCP<Stepper<Scalar> > getStepper() const override
     {return stepper_;}
     /// Set the Stepper
-    virtual void setStepper(Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model);
+    virtual void setStepper(Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model);
     /// Set the Stepper
     virtual void setStepper(
       std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > models);
     /// Set the Stepper
     virtual void setStepperWStepper(Teuchos::RCP<Stepper<Scalar> > stepper);
     /// Set the initial state which has the initial conditions
-    virtual void setInitialState(
+    virtual void initializeSolutionHistory(
       Teuchos::RCP<SolutionState<Scalar> > state = Teuchos::null);
     /// Set the initial state from Thyra::VectorBase(s)
-    virtual void setInitialState(Scalar t0,
+    virtual void initializeSolutionHistory(Scalar t0,
       Teuchos::RCP<const Thyra::VectorBase<Scalar> > x0,
       Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdot0 = Teuchos::null,
       Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdotdot0 = Teuchos::null);
@@ -120,6 +120,8 @@ public:
       Teuchos::RCP<SolutionHistory<Scalar> > sh = Teuchos::null);
     /// Get the TimeStepControl
     virtual Teuchos::RCP<const TimeStepControl<Scalar> > getTimeStepControl() const override
+      {return timeStepControl_;}
+    virtual Teuchos::RCP<TimeStepControl<Scalar> > getNonConstTimeStepControl() override
       {return timeStepControl_;}
     /// Set the TimeStepControl
     virtual void setTimeStepControl(
@@ -158,6 +160,18 @@ public:
 
     //virtual Teuchos::RCP<Teuchos::Time> getIntegratorTimer() const
       //{return integratorTimer_;}
+
+    virtual void setScreenOutputIndexInterval(int i)
+    { integratorPL_->set("Screen Output Index Interval", i); }
+
+    virtual int getScreenOutputIndexInterval() const
+    { return integratorPL_->get<int>("Screen Output Index Interval"); }
+
+    virtual void setScreenOutputIndexList(std::string s)
+    { integratorPL_->set("Screen Output Index List", s); }
+
+    virtual std::string getScreenOutputIndexList() const
+    { return integratorPL_->get<std::string>("Screen Output Index List", ""); }
   //@}
 
   /// Parse when screen output should be executed
@@ -205,23 +219,23 @@ protected:
 
 /// Non-member constructor
 template<class Scalar>
-Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic(
+Teuchos::RCP<IntegratorBasic<Scalar> > integratorBasic(
   Teuchos::RCP<Teuchos::ParameterList>                pList,
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
 
 /// Non-member constructor
 template<class Scalar>
-Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic(
+Teuchos::RCP<IntegratorBasic<Scalar> > integratorBasic(
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
   std::string stepperType);
 
 /// Non-member constructor
 template<class Scalar>
-Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic();
+Teuchos::RCP<IntegratorBasic<Scalar> > integratorBasic();
 
 /// Non-member constructor
 template<class Scalar>
-Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic(
+Teuchos::RCP<IntegratorBasic<Scalar> > integratorBasic(
   Teuchos::RCP<Teuchos::ParameterList>                pList,
   std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > models);
 

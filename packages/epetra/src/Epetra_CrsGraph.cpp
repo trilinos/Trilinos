@@ -1875,7 +1875,7 @@ int Epetra_CrsGraph::MakeIndicesLocal(const Epetra_BlockMap& domainMap, const Ep
 //==============================================================================
 int Epetra_CrsGraph::OptimizeStorage() {
   int NumIndices;
-  const int numMyBlockRows = NumMyBlockRows();
+  int numMyBlockRows = NumMyBlockRows();
 
   Epetra_CrsGraphData::IndexData<int>& Data = CrsGraphData_->Data<int>();
 
@@ -1938,7 +1938,7 @@ int Epetra_CrsGraph::OptimizeStorage() {
 
     if (!(StaticProfile())) {
 #ifdef EPETRA_HAVE_OMP
-#pragma omp parallel for default(none) shared(indexOffset,all_indices,indices)
+#pragma omp parallel for default(none) shared(indexOffset,all_indices,indices,numMyBlockRows)
 #endif
       for(int i = 0; i < numMyBlockRows; i++) {
   int numColIndices = indexOffset[i+1] - indexOffset[i];
@@ -1978,7 +1978,7 @@ int Epetra_CrsGraph::OptimizeStorage() {
       int * indexOffset = CrsGraphData_->IndexOffset_.Values();
 
 #ifdef EPETRA_HAVE_OMP
-#pragma omp parallel for default(none) shared(indexOffset,old_all_indices,new_all_indices)
+#pragma omp parallel for default(none) shared(indexOffset,old_all_indices,new_all_indices,numMyBlockRows)
 #endif
      for(int i = 0; i < numMyBlockRows; i++) {
        int numColIndices = indexOffset[i+1] - indexOffset[i];

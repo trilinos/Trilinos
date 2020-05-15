@@ -279,7 +279,7 @@ private:
   {}
 
   //! operator= (should never be used)
-  Ifpack_IHSS& operator=(const Ifpack_IHSS& RHS)
+  Ifpack_IHSS& operator=(const Ifpack_IHSS& /* RHS */)
   {
     return(*this);
   }

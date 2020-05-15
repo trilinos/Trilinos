@@ -51,14 +51,16 @@
 #include "Thyra_TpetraThyraWrappers.hpp"
 
 
-typedef Tpetra::Map<int,int>  Tpetra_Map;
-typedef Tpetra::Vector<double,int,int>  Tpetra_Vector;
-typedef Tpetra::MultiVector<double,int,int>  Tpetra_MultiVector;
-typedef Tpetra::Operator<double,int,int>  Tpetra_Operator;
-typedef Tpetra::CrsGraph<int,int>  Tpetra_CrsGraph;
-typedef Tpetra::CrsMatrix<double,int,int>  Tpetra_CrsMatrix;
+using LO = Tpetra::Map<>::local_ordinal_type;
+using GO = Tpetra::Map<>::global_ordinal_type;
+typedef Tpetra::Map<LO,GO>  Tpetra_Map;
+typedef Tpetra::Vector<double,LO,GO>  Tpetra_Vector;
+typedef Tpetra::MultiVector<double,LO,GO>  Tpetra_MultiVector;
+typedef Tpetra::Operator<double,LO,GO>  Tpetra_Operator;
+typedef Tpetra::CrsGraph<LO,GO>  Tpetra_CrsGraph;
+typedef Tpetra::CrsMatrix<double,LO,GO>  Tpetra_CrsMatrix;
 typedef Thyra::TpetraOperatorVectorExtraction<
-    double, int, int> ConverterT;
+    double, LO, GO> ConverterT;
 
 /** \brief Concrete Tpetra-based Model Evaluator
  *
@@ -67,8 +69,8 @@ typedef Thyra::TpetraOperatorVectorExtraction<
  * find (p_0,p_1) that minimizes
  * g = 0.5*(Sum(x)-Sum(p)-12)^2 + 0.5*(p0-1)^2
  * subject to:
- * f_0 = (x_0)^2 - p_0 = 0
- * f_i = x_i^2 - (i+p_1)^2 (for i != 0), for i = 1,2,3,4
+ * f_0 = (x_0)^3 - p_0 = 0
+ * f_i = x_i^3 - (i+3)*(i+p_1)^2 for i != 0
  *
  * solution is p = (1,3).
  */

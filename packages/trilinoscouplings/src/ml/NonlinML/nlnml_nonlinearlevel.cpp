@@ -295,8 +295,14 @@ fineJac_(fineJac)
  *----------------------------------------------------------------------*/
 NLNML::NLNML_NonlinearLevel::~NLNML_NonlinearLevel()
 {
-  if (thislevel_ag_) ML_Aggregate_Destroy(&thislevel_ag_); thislevel_ag_ = NULL;
-  if (thislevel_ml_) ML_Destroy(&thislevel_ml_);           thislevel_ml_ = NULL;
+  if (thislevel_ag_) {
+    ML_Aggregate_Destroy(&thislevel_ag_);
+    thislevel_ag_ = NULL;
+  }
+  if (thislevel_ml_) {
+    ML_Destroy(&thislevel_ml_);
+    thislevel_ml_ = NULL;
+  }
   return;
 }
 
@@ -337,7 +343,7 @@ bool NLNML::NLNML_NonlinearLevel::Set_Smoother(ML* ml, ML_Aggregate* ag,
   else if (smoothertype == "Jacobi")
     ML_Gen_Smoother_Jacobi(thislevel_ml,0,ML_BOTH,nsmooth,0.2);
   else if (smoothertype == "AmesosKLU")
-    ML_Gen_Smoother_Amesos(thislevel_ml,0,ML_AMESOS_KLU,-1,0.0);
+    ML_Gen_Smoother_Amesos(thislevel_ml,0,ML_AMESOS_KLU,-1,0.0,1);
   else if ((smoothertype == "MLS")||(smoothertype == "Cheby"))
     ML_Gen_Smoother_Cheby(thislevel_ml,0,ML_BOTH,30.,nsmooth);
   else if (smoothertype == "BSGS")
@@ -509,11 +515,12 @@ bool NLNML::NLNML_NonlinearLevel::Iterate(Epetra_Vector* f,
   else
   {
      returnstatus = false;
-     if (Comm().MyPID() == 0)
+     if (Comm().MyPID() == 0) {
         //cout << "ML (level " << level_ << "): ***WRN*** NOX returned unknown status, Norm(F)="
         //     << norm2 << "\n"; fflush(stdout);
         printf("nlnML (level %d): ***WRN*** NOX: return status unknown, Norm(F)=%12.8e , Failed\n",level_,norm2);
         fflush(stdout);
+     }
   }
 
   // reset number of calls to coarseinterface->computeF

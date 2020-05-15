@@ -83,7 +83,7 @@ class AddO : public Operator
   AddO() : Operator("+", false, 6, true) {}
 
   void performOp(Value* arg1, Value* arg2, ScalarNumber<double>& store);
-  void performOp(Value* arg, ScalarNumber<double>& store) {assert(0);}
+  void performOp(Value* /* arg */, ScalarNumber<double>& /* store */) {assert(0);}
 };
 
 class SubtractO : public Operator
@@ -92,7 +92,7 @@ class SubtractO : public Operator
   SubtractO() : Operator("-", false, 6, true) {}
 
   void performOp(Value* arg1, Value* arg2, ScalarNumber<double>& store);
-  void performOp(Value* arg, ScalarNumber<double>& store) {assert(0);}
+  void performOp(Value* /* arg */, ScalarNumber<double>& /* store */) {assert(0);}
 };
 
 class MultiplyO : public Operator
@@ -101,7 +101,7 @@ class MultiplyO : public Operator
   MultiplyO() : Operator("*", false, 7, true) {}
 
   void performOp(Value* arg1, Value* arg2, ScalarNumber<double>& store);
-  void performOp(Value* arg, ScalarNumber<double>& store) {assert(0);}
+  void performOp(Value* /* arg */, ScalarNumber<double>& /* store */) {assert(0);}
 };
 
 class DivideO : public Operator
@@ -110,7 +110,7 @@ class DivideO : public Operator
   DivideO() : Operator("/", false, 7, true) {}
 
   void performOp(Value* arg1, Value* arg2, ScalarNumber<double>& store);
-  void performOp(Value* arg, ScalarNumber<double>& store) {assert(0);}
+  void performOp(Value* /* arg */, ScalarNumber<double>& /* store */) {assert(0);}
 };
 
 class EqualityO : public Operator
@@ -119,7 +119,7 @@ class EqualityO : public Operator
   EqualityO() : Operator("==", false, 3, true) {}
 
   void performOp(Value* arg1, Value* arg2, ScalarNumber<double>& store);
-  void performOp(Value* arg, ScalarNumber<double>& store) {assert(0);}
+  void performOp(Value* /* arg */, ScalarNumber<double>& /* store */) {assert(0);}
 };
 
 class GreaterO : public Operator
@@ -128,7 +128,7 @@ class GreaterO : public Operator
   GreaterO() : Operator(">", false, 4, true) {}
 
   void performOp(Value* arg1, Value* arg2, ScalarNumber<double>& store);
-  void performOp(Value* arg, ScalarNumber<double>& store) {assert(0);}
+  void performOp(Value* /* arg */, ScalarNumber<double>& /* store */) {assert(0);}
 };
 
 class LessO : public Operator
@@ -137,7 +137,7 @@ class LessO : public Operator
   LessO() : Operator("<", false, 4, true) {}
 
   void performOp(Value* arg1, Value* arg2, ScalarNumber<double>& store);
-  void performOp(Value* arg, ScalarNumber<double>& store) {assert(0);}
+  void performOp(Value* /* arg */, ScalarNumber<double>& /* store */) {assert(0);}
 };
 
 class GreaterEqualO : public Operator
@@ -146,7 +146,7 @@ class GreaterEqualO : public Operator
   GreaterEqualO() : Operator(">=", false, 4, true) {}
 
   void performOp(Value* arg1, Value* arg2, ScalarNumber<double>& store);
-  void performOp(Value* arg, ScalarNumber<double>& store) {assert(0);}
+  void performOp(Value* /* arg */, ScalarNumber<double>& /* store */) {assert(0);}
 };
 
 class LessEqualO : public Operator
@@ -155,7 +155,7 @@ class LessEqualO : public Operator
   LessEqualO() : Operator("<=", false, 4, true) {}
 
   void performOp(Value* arg1, Value* arg2, ScalarNumber<double>& store);
-  void performOp(Value* arg, ScalarNumber<double>& store) {assert(0);}
+  void performOp(Value* /* arg */, ScalarNumber<double>& /* store */) {assert(0);}
 };
 
 class AssignmentO : public Operator
@@ -164,7 +164,7 @@ class AssignmentO : public Operator
   AssignmentO() : Operator("=", false, 0, false) {}
 
   void performOp(Value* arg1, Value* arg2, ScalarNumber<double>& store);
-  void performOp(Value* arg, ScalarNumber<double>& store) {assert(0);}
+  void performOp(Value* /* arg */, ScalarNumber<double>& /* store */) {assert(0);}
 };
 
 class LogicOrO : public Operator
@@ -173,7 +173,7 @@ class LogicOrO : public Operator
   LogicOrO() : Operator("||", false, 1, true) {}
 
   void performOp(Value* arg1, Value* arg2, ScalarNumber<double>& store);
-  void performOp(Value* arg, ScalarNumber<double>& store) {assert(0);}
+  void performOp(Value* /* arg */, ScalarNumber<double>& /* store */) {assert(0);}
 };
 
 class LogicAndO : public Operator
@@ -182,7 +182,7 @@ class LogicAndO : public Operator
   LogicAndO() : Operator("&&", false, 2, true) {}
 
   void performOp(Value* arg1, Value* arg2, ScalarNumber<double>& store);
-  void performOp(Value* arg, ScalarNumber<double>& store) {assert(0);}
+  void performOp(Value* /* arg */, ScalarNumber<double>& /* store */) {assert(0);}
 };
 
 class InEqualityO : public Operator
@@ -191,7 +191,7 @@ class InEqualityO : public Operator
   InEqualityO() : Operator("!=", false, 3, true) {}
 
   void performOp(Value* arg1, Value* arg2, ScalarNumber<double>& store);
-  void performOp(Value* arg, ScalarNumber<double>& store) {assert(0);}
+  void performOp(Value* /* arg */, ScalarNumber<double>& /* store */) {assert(0);}
 };
 
 class ModuloO : public Operator
@@ -200,7 +200,7 @@ class ModuloO : public Operator
   ModuloO() : Operator("%", false, 7, true) {}
 
   void performOp(Value* arg1, Value* arg2, ScalarNumber<double>& store);
-  void performOp(Value* arg, ScalarNumber<double>& store) {assert(0);}
+  void performOp(Value* /* arg */, ScalarNumber<double>& /* store */) {assert(0);}
 };
 
 class ExponentO : public Operator
@@ -209,7 +209,7 @@ class ExponentO : public Operator
   ExponentO() : Operator("^", false, 8, false) {}
 
   void performOp(Value* arg1, Value* arg2, ScalarNumber<double>& store);
-  void performOp(Value* arg, ScalarNumber<double>& store) {assert(0);}
+  void performOp(Value* /* arg */, ScalarNumber<double>& /* store */) {assert(0);}
 };
 
 //Important - OpenParen, CloseParen, and ArrayInit are structural operators,
@@ -219,8 +219,8 @@ class OpenParenO : public Operator
  public:
   OpenParenO() : Operator("(", false, 0, true) {}
 
-  void performOp(Value* arg1, Value* arg2, ScalarNumber<double>& store) {assert(0);}
-  void performOp(Value* arg, ScalarNumber<double>& store) {assert(0);}
+  void performOp(Value* /* arg1 */, Value* /* arg2 */, ScalarNumber<double>& /* store */) {assert(0);}
+  void performOp(Value* /* arg */, ScalarNumber<double>& /* store */) {assert(0);}
 };
 
 class CloseParenO : public Operator
@@ -228,8 +228,8 @@ class CloseParenO : public Operator
  public:
   CloseParenO() : Operator(")", false, 0, true) {}
 
-  void performOp(Value* arg1, Value* arg2, ScalarNumber<double>& store){assert(0);}
-  void performOp(Value* arg, ScalarNumber<double>& store) {assert(0);}
+  void performOp(Value* /* arg1 */, Value* /* arg2 */, ScalarNumber<double>& /* store */){assert(0);}
+  void performOp(Value* /* arg */, ScalarNumber<double>& /* store */) {assert(0);}
 };
 
 class ArrayInitO : public Operator
@@ -237,8 +237,8 @@ class ArrayInitO : public Operator
  public:
   ArrayInitO() : Operator("init", false, 0, true) {}
 
-  void performOp(Value* arg1, Value* arg2, ScalarNumber<double>& store){assert(0);}
-  void performOp(Value* arg, ScalarNumber<double>& store) {assert(0);}
+  void performOp(Value* /* arg1 */, Value* /* arg2 */, ScalarNumber<double>& /* store */){assert(0);}
+  void performOp(Value* /* arg */, ScalarNumber<double>& /* store */) {assert(0);}
 };
 
 class NegationO : public Operator
@@ -246,7 +246,7 @@ class NegationO : public Operator
  public:
   NegationO() : Operator("_", true, 11, false) {}
 
-  void performOp(Value* arg1, Value* arg2, ScalarNumber<double>& store) {assert(0);}
+  void performOp(Value* /* arg1 */, Value* /* arg2 */, ScalarNumber<double>& /* store */) {assert(0);}
   void performOp(Value* arg, ScalarNumber<double>& store);
 };
 
@@ -255,7 +255,7 @@ class LogicNotO : public Operator
  public:
   LogicNotO() : Operator("!", true, 11, false) {}
 
-  void performOp(Value* arg1, Value* arg2, ScalarNumber<double>& store) {assert(0);}
+  void performOp(Value* /* arg1 */, Value* /* arg2 */, ScalarNumber<double>& /* store */) {assert(0);}
   void performOp(Value* arg, ScalarNumber<double>& store);
 };
 

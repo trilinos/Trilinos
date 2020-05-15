@@ -619,7 +619,6 @@ namespace Sacado {							\
 TEUCHOS_BLAS_FAD_SPEC(Sacado::Fad::DFad)
 TEUCHOS_BLAS_SFAD_SPEC(Sacado::Fad::SFad)
 TEUCHOS_BLAS_SFAD_SPEC(Sacado::Fad::SLFad)
-TEUCHOS_BLAS_FAD_SPEC(Sacado::Fad::DMFad)
 TEUCHOS_BLAS_FAD_SPEC(Sacado::Fad::DVFad)
 TEUCHOS_BLAS_FAD_SPEC(Sacado::ELRFad::DFad)
 TEUCHOS_BLAS_SFAD_SPEC(Sacado::ELRFad::SFad)

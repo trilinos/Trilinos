@@ -279,11 +279,11 @@ private:
   virtual void SetLabel();
 
   //! Copy constructor (PRIVATE, should not be used)
-  Ifpack_Krylov(const Ifpack_Krylov& rhs)
+  Ifpack_Krylov(const Ifpack_Krylov& /* rhs */)
   {}
 
   //! operator = (PRIVATE, should not be used)
-  Ifpack_Krylov& operator=(const Ifpack_Krylov& rhs)
+  Ifpack_Krylov& operator=(const Ifpack_Krylov& /* rhs */)
   {
     return(*this);
   }

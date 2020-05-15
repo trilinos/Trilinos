@@ -53,15 +53,16 @@ void test_sincos_fsa(const std::string& method_name,
   RKMethods.push_back("RK Explicit 3 Stage 3rd order");
   RKMethods.push_back("RK Explicit 3 Stage 3rd order TVD");
   RKMethods.push_back("RK Explicit 3 Stage 3rd order by Heun");
-  RKMethods.push_back("RK Explicit 2 Stage 2nd order by Runge");
+  RKMethods.push_back("RK Explicit Midpoint");
   RKMethods.push_back("RK Explicit Trapezoidal");
+  RKMethods.push_back("Heuns Method");
   RKMethods.push_back("General ERK");
 
   // Check that method_name is valid
   if (method_name != "") {
     auto it = std::find(RKMethods.begin(), RKMethods.end(), method_name);
     TEUCHOS_TEST_FOR_EXCEPTION(it == RKMethods.end(), std::logic_error,
-                               "Invalid RK method name " << method_name);
+      "Invalid RK method name '" << method_name << "'");
   }
 
   std::vector<double> RKMethodErrors;
@@ -76,6 +77,7 @@ void test_sincos_fsa(const std::string& method_name,
     RKMethodErrors.push_back(0.000261896);
     RKMethodErrors.push_back(0.00934377);
     RKMethodErrors.push_back(0.00934377);
+    RKMethodErrors.push_back(0.00934377);
     RKMethodErrors.push_back(6.88637e-06);
   }
   else {
@@ -88,6 +90,7 @@ void test_sincos_fsa(const std::string& method_name,
     RKMethodErrors.push_back(9.64964e-05);
     RKMethodErrors.push_back(0.000144616);
     RKMethodErrors.push_back(0.00826159);
+    RKMethodErrors.push_back(0.00710492);
     RKMethodErrors.push_back(0.00710492);
     RKMethodErrors.push_back(2.1915e-05);
   }
@@ -167,7 +170,7 @@ void test_sincos_fsa(const std::string& method_name,
       for (int i=0; i<num_param; ++i)
         Thyra::assign(DxDp0->col(i).ptr(),
                       *(model->getExactSensSolution(i, t0).get_x()));
-      integrator->setInitialState(t0, x0, Teuchos::null, Teuchos::null,
+      integrator->initializeSolutionHistory(t0, x0, Teuchos::null, Teuchos::null,
                                   DxDp0, Teuchos::null, Teuchos::null);
 
       // Integrate to timeMax
@@ -203,7 +206,7 @@ void test_sincos_fsa(const std::string& method_name,
         for (int i=0; i<solutionHistory->getNumStates(); i++) {
           RCP<const SolutionState<double> > solutionState =
             (*solutionHistory)[i];
-          double time = solutionState->getTime();
+          double time_i = solutionState->getTime();
           RCP<const DMVPV> x_prod_plot =
             Teuchos::rcp_dynamic_cast<const DMVPV>(solutionState->getX());
           RCP<const Thyra::VectorBase<double> > x_plot =
@@ -211,12 +214,12 @@ void test_sincos_fsa(const std::string& method_name,
           RCP<const Thyra::MultiVectorBase<double> > DxDp_plot =
             x_prod_plot->getMultiVector()->subView(Teuchos::Range1D(1,num_param));
           RCP<const Thyra::VectorBase<double> > x_exact_plot =
-            model->getExactSolution(time).get_x();
+            model->getExactSolution(time_i).get_x();
           for (int j=0; j<num_param; ++j)
             Thyra::assign(DxDp_exact_plot->col(j).ptr(),
-                          *(model->getExactSensSolution(j, time).get_x()));
+                          *(model->getExactSensSolution(j, time_i).get_x()));
           ftmp << std::fixed << std::setprecision(7)
-               << time
+               << time_i
                << std::setw(11) << get_ele(*(x_plot), 0)
                << std::setw(11) << get_ele(*(x_plot), 1);
           for (int j=0; j<num_param; ++j)

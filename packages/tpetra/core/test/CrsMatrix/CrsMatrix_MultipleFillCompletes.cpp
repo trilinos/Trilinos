@@ -105,14 +105,6 @@ namespace {
       }
 
       if (myRank == 0) {
-        cerr << "  Test that insertGlobalValues throws if out of room" << endl;
-      }
-      {
-        GO r = map->getMinGlobalIndex();
-        TEST_THROW( matrix.insertGlobalValues(r,tuple(r),tuple(ST::one())), std::runtime_error );
-      }
-
-      if (myRank == 0) {
         cerr << "  Test that the matrix is not yet fill complete room" << endl;
       }
       TEST_EQUALITY_CONST( matrix.isFillComplete(), false );
@@ -202,5 +194,3 @@ namespace {
   TPETRA_INSTANTIATE_SLGN( UNIT_TEST_GROUP )
 
 }
-
-

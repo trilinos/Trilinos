@@ -281,9 +281,7 @@ void rec_median_k(struct vtx_data **graph,        /* data structure with vertex 
       }
     }
 
-    if (sub_graph != NULL) {
-      sfree(sub_graph);
-    }
+    sfree(sub_graph);
     sfree(loc2glob);
     for (i = 1; i < ndims; i++) {
       sfree(sub_vals[i]);

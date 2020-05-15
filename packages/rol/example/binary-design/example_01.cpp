@@ -46,9 +46,11 @@
 */
 
 #include "ROL_Algorithm.hpp"
+#include "ROL_ConstraintStatusTest.hpp"
+#include "ROL_CompositeStep.hpp"
 #include "ROL_StdVector.hpp"
-
 #include "ROL_Stream.hpp"
+
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
@@ -235,7 +237,11 @@ int main(int argc, char *argv[]) {
     std::string paramfile = "input.xml";
     auto parlist = ROL::getParametersFromXmlFile(paramfile);
 
-    ROL::Algorithm<RealT> algo("Composite Step",*parlist);
+    ROL::Ptr<ROL::Step<RealT>>
+      step = ROL::makePtr<ROL::CompositeStep<RealT>>(*parlist);
+    ROL::Ptr<ROL::StatusTest<RealT>>
+      status = ROL::makePtr<ROL::ConstraintStatusTest<RealT>>(*parlist);
+    ROL::Algorithm<RealT> algo(step,status,false);
 
     // Test objective
     obj->checkGradient(*x, *d, true, *outStream);
@@ -264,7 +270,7 @@ int main(int argc, char *argv[]) {
     *outStream << "]\n";
 
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

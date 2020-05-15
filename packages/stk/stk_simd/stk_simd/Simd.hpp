@@ -1,7 +1,43 @@
-// Copyright 2013 Sandia Corporation, Albuquerque, NM.
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
-#ifndef STK_SIMD_FUNCTIONS_H
-#define STK_SIMD_FUNCTIONS_H
+#ifndef STK_SIMD_SIMD_HPP
+#define STK_SIMD_SIMD_HPP
+
+#ifndef STK_BUILT_IN_SIERRA
+#include <STK_Trilinos_config.h>
+#endif
 
 #include "stk_simd/SimdConfig.hpp" // IWYU pragma: export
 #include <iostream>
@@ -9,8 +45,11 @@
 #include <stk_math/StkMath.hpp>
 
 #define STK_HAVE_SIMD
+#define SIMD_NAMESPACE kokkos_simd
 
-#if defined ( STK_SIMD_AVX512 )
+#if defined ( STK_KOKKOS_SIMD )
+#include "disimd/DISimd.hpp"
+#elif defined ( STK_SIMD_AVX512 )
 #include "avx512/Avx512.hpp"
 #elif defined ( STK_SIMD_AVX )
 #include "avx/Avx.hpp"
@@ -435,4 +474,4 @@ void store_array(float* const to, const Float* const from, const int numValid) {
 } // namespace simd
 } // namespace stk
 
-#endif // #ifndef SIMD_H__
+#endif // #ifndef STK_SIMD_SIMD_HPP

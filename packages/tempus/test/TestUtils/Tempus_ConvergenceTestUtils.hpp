@@ -195,8 +195,11 @@ void writeOrderError(
   std::vector<Scalar> & xDotDotErrorNorm,
   Scalar & xDotDotSlope)
 {
-  Scalar order = stepper->getOrder();
-  int lastElem = solutions.size()-1;     // Last element is the reference soln.
+  if ( solutions.empty() ) {
+    std::cout << "No solutions to write out!\n" << std::endl;
+    return;
+  }
+  std::size_t lastElem = solutions.size()-1;  // Last element is the ref soln.
   std::vector<Scalar> dt;
 
   auto ref_solution = solutions[lastElem];
@@ -231,6 +234,7 @@ void writeOrderError(
     xDotDotSlope = computeLinearRegressionLogLog<Scalar>(dt, xDotDotErrorNorm);
   }
 
+  Scalar order = stepper->getOrder();
   std::cout << "  Stepper = " << stepper->description() << std::endl;
   std::cout << "  =================================" << std::endl;
   std::cout << "  Expected Order = " << order        << std::endl;
@@ -243,7 +247,7 @@ void writeOrderError(
 
   std::ofstream ftmp(filename);
   Scalar factor = 0.0;
-  for (int n=0; n<lastElem; n++) {
+  for (std::size_t n=0; n<lastElem; n++) {
     factor = 0.8*(pow(dt[n]/dt[0], order));
     ftmp << dt[n]
          << "   " << xErrorNorm[n]       << "   " << factor*xErrorNorm[0];

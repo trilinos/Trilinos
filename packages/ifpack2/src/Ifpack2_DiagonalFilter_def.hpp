@@ -101,11 +101,6 @@ Teuchos::RCP<const Teuchos::Comm<int> > DiagonalFilter<MatrixType>::getComm() co
   return A_->getComm();
 }
 
-template<class MatrixType>
-Teuchos::RCP <typename MatrixType::node_type> DiagonalFilter<MatrixType>::getNode() const
-{
-  return A_->getNode();
-}
 
 template<class MatrixType>
 Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,

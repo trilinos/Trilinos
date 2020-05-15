@@ -1,6 +1,7 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,9 +15,9 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 //
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -42,25 +43,19 @@
 #include <stdexcept>                    // for logic_error, runtime_error
 #include <algorithm>                    // for sort
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
-#include <stk_mesh/base/FieldParallel.hpp>  // for communicate_field_data, etc
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities, etc
 #include <stk_mesh/base/FieldParallel.hpp>
 #include <stk_mesh/base/CreateEdges.hpp>
 
-#include <stk_unit_tests/stk_mesh_fixtures/BoxFixture.hpp>  // for BoxFixture
-#include <stk_unit_tests/stk_mesh_fixtures/HexFixture.hpp>  // for HexFixture, etc
-#include <stk_unit_tests/stk_mesh_fixtures/QuadFixture.hpp>  // for QuadFixture
-#include <stk_unit_tests/stk_mesh_fixtures/RingFixture.hpp>  // for RingFixture
-#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
-#include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceSum, etc
-#include <stk_util/parallel/CommSparse.hpp>  // for Reduce, ReduceSum, etc
-#include <gtest/gtest.h>
-#include <string>                       // for string, basic_string, etc
-#include <stk_unit_tests/stk_mesh/UnitTestRingFixture.hpp>  // for test_shift_ring
-#include <stk_unit_tests/stk_mesh/Setup8Quad4ProcMesh.hpp>
-#include <stk_unit_test_utils/getOption.h>
-#include <utility>                      // for pair
-#include <vector>                       // for vector, etc
+#include "Setup8Quad4ProcMesh.hpp"
+#include "UnitTestCEO2Elem.hpp"
+#include "UnitTestCEO3Elem.hpp"
+#include "UnitTestCEO4ElemEdge.hpp"
+#include "UnitTestCEO4ElemRotate.hpp"
+#include "UnitTestCEO8Elem.hpp"
+#include "UnitTestCEOCommonUtils.hpp"
+#include "UnitTestRingFixture.hpp"  // for test_shift_ring
+#include "stk_io/StkMeshIoBroker.hpp"
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket, has_superset
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
@@ -70,26 +65,30 @@
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData, entity_rank_names, etc
 #include "stk_mesh/base/Part.hpp"       // for Part
 #include "stk_mesh/base/Relation.hpp"
-#include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 #include "stk_mesh/base/Selector.hpp"   // for Selector, operator|
 #include "stk_mesh/base/Types.hpp"      // for EntityProc, EntityVector, etc
-#include <stk_mesh/base/FieldBLAS.hpp>  // for stk::mesh::field_fill
-#include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
+#include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_unit_test_utils/stk_mesh_fixtures/BoxFixture.hpp"  // for BoxFixture
+#include "stk_unit_test_utils/stk_mesh_fixtures/HexFixture.hpp"  // for HexFixture, etc
+#include "stk_unit_test_utils/stk_mesh_fixtures/QuadFixture.hpp"  // for QuadFixture
+#include "stk_unit_test_utils/stk_mesh_fixtures/RingFixture.hpp"  // for RingFixture
 #include "stk_util/util/PairIter.hpp"   // for PairIter
-#include "stk_io/StkMeshIoBroker.hpp"
+#include <gtest/gtest.h>
 #include <stk_mesh/base/Comm.hpp>
+#include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
+#include <stk_mesh/base/FieldBLAS.hpp>  // for stk::mesh::field_fill
+#include <stk_mesh/base/MeshUtils.hpp>
 #include <stk_unit_test_utils/BulkDataTester.hpp>
 #include <stk_unit_test_utils/FaceTestingUtils.hpp>
-#include "UnitTestCEOCommonUtils.hpp"
-#include "UnitTestCEO2Elem.hpp"
-#include "UnitTestCEO3Elem.hpp"
-#include "UnitTestCEO4ElemEdge.hpp"
-#include "UnitTestCEO4ElemRotate.hpp"
-#include "UnitTestCEO8Elem.hpp"
-#include <stk_mesh/base/MeshUtils.hpp>
+#include <stk_unit_test_utils/getOption.h>
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
+#include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceSum, etc
+#include <string>                       // for string, basic_string, etc
+#include <utility>                      // for pair
+#include <vector>                       // for vector, etc
 
 namespace stk
 {
@@ -116,10 +115,6 @@ using stk::mesh::EntityRank;
 using stk::mesh::fixtures::RingFixture;
 using stk::mesh::fixtures::BoxFixture;
 
-const EntityRank NODE_RANK = stk::topology::NODE_RANK;
-const EntityRank FACE_RANK = stk::topology::FACE_RANK;
-const EntityRank ELEM_RANK = stk::topology::ELEM_RANK;
-
 //====================
 extern int gl_argc;
 extern char** gl_argv;
@@ -131,7 +126,7 @@ void donate_one_element(stk::unit_test_util::BulkDataTester & mesh)
 {
     const int p_rank = mesh.parallel_rank();
 
-    Selector select_owned(MetaData::get(mesh).locally_owned_part());
+    Selector select_owned(mesh.mesh_meta_data().locally_owned_part());
 
     std::vector<size_t> before_count;
     std::vector<size_t> after_count;
@@ -214,7 +209,8 @@ void donate_all_shared_nodes(stk::unit_test_util::BulkDataTester & mesh)
 {
     const int p_rank = mesh.parallel_rank();
 
-    const Selector select_used = MetaData::get(mesh).locally_owned_part() | MetaData::get(mesh).globally_shared_part();
+    const MetaData& meta = mesh.mesh_meta_data();
+    const Selector select_used = meta.locally_owned_part() | meta.globally_shared_part();
 
     std::vector<size_t> before_count;
     std::vector<size_t> after_count;
@@ -1605,7 +1601,7 @@ TEST(BulkData, testFamilyTreeGhosting)
 
     MetaData meta_data(spatial_dim, entity_rank_names);
     const unsigned nodes_per_elem = 4, nodes_per_side = 2;
-    Part &elem_part = meta_data.declare_part_with_topology("elem_part", stk::topology::QUAD_4);
+    Part &elem_part = meta_data.declare_part_with_topology("elem_part", stk::topology::QUAD_4_2D);
     meta_data.commit();
     BulkData mesh(meta_data, pm);
     int p_rank = mesh.parallel_rank();
@@ -1857,7 +1853,7 @@ void testParallelSideCreation(stk::mesh::BulkData::AutomaticAuraOption autoAuraO
     const EntityRank side_rank = stk::topology::EDGE_RANK;
 
     stk::mesh::Part& side_part = meta_data.declare_part_with_topology("side_part", stk::topology::LINE_2);
-    stk::mesh::Part& elem_part = meta_data.declare_part_with_topology("elem_part", stk::topology::QUAD_4);
+    stk::mesh::Part& elem_part = meta_data.declare_part_with_topology("elem_part", stk::topology::QUAD_4_2D);
 
     meta_data.commit();
 
@@ -2039,7 +2035,7 @@ TEST(BulkData, test_get_entities )
     hf.generate_mesh();
     const stk::mesh::BulkData &mesh = hf.m_bulk_data;
 
-    Selector select_owned(MetaData::get(mesh).locally_owned_part());
+    Selector select_owned(mesh.mesh_meta_data().locally_owned_part());
     const stk::mesh::BucketVector &bucket_ptrs = mesh.get_buckets(stk::topology::NODE_RANK, select_owned);
     stk::mesh::EntityVector entities;
     mesh.get_entities(stk::topology::NODE_RANK, select_owned, entities);
@@ -3153,59 +3149,6 @@ TEST(BulkData, ModificationEnd)
     }
 }
 
-TEST(BulkData, set_parallel_owner_rank_but_not_comm_lists)
-{
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    int numProcs = stk::parallel_machine_size(communicator);
-
-    if (numProcs != 1){
-        return;
-    }
-
-    const int spatialDim = 3;
-    stk::mesh::MetaData stkMeshMetaData(spatialDim);
-    stk::unit_test_util::BulkDataTester mesh(stkMeshMetaData, communicator);
-    std::string exodusFileName = stk::unit_test_util::get_option("-i", "generated:1x1x1|sideset:xXyYzZ");
-    {
-        stk::io::StkMeshIoBroker exodusFileReader(communicator);
-        exodusFileReader.set_bulk_data(mesh);
-        exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
-        exodusFileReader.create_input_mesh();
-        exodusFileReader.populate_bulk_data();
-        //int index = exodusFileReader.create_output_mesh("1x1x1.exo", stk::io::WRITE_RESULTS);
-        //exodusFileReader.write_output_mesh(index);
-    }
-    std::vector<Entity> modified_entities;
-    mesh.modification_begin();
-    mesh.modification_end();
-    modified_entities.push_back(mesh.get_entity(stk::topology::NODE_RANK, 1));
-    int destProc = 12;
-    mesh.my_set_parallel_owner_rank_but_not_comm_lists(mesh.get_entity(NODE_RANK, 1), destProc);
-
-    EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), CEOUtils::STATE_OWNED, destProc));
-    EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), CEOUtils::STATE_MESH_MODIFIED));
-    EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 2), CEOUtils::STATE_MESH_UNCHANGED));
-    EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), CEOUtils::STATE_MESH_UNCHANGED));
-    EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), CEOUtils::STATE_MESH_UNCHANGED));
-    EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), CEOUtils::STATE_MESH_UNCHANGED));
-    EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 6), CEOUtils::STATE_MESH_UNCHANGED));
-    EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 7), CEOUtils::STATE_MESH_UNCHANGED));
-    EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 8), CEOUtils::STATE_MESH_UNCHANGED));
-
-    EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 1), CEOUtils::STATE_MESH_MODIFIED));
-
-    EXPECT_TRUE(check_state(mesh, EntityKey(FACE_RANK, 11), CEOUtils::STATE_MESH_MODIFIED));
-    EXPECT_TRUE(check_state(mesh, EntityKey(FACE_RANK, 14), CEOUtils::STATE_MESH_MODIFIED));
-    EXPECT_TRUE(check_state(mesh, EntityKey(FACE_RANK, 15), CEOUtils::STATE_MESH_MODIFIED));
-
-    EXPECT_TRUE(check_state(mesh, EntityKey(FACE_RANK, 12), CEOUtils::STATE_MESH_UNCHANGED));
-    EXPECT_TRUE(check_state(mesh, EntityKey(FACE_RANK, 13), CEOUtils::STATE_MESH_UNCHANGED));
-    EXPECT_TRUE(check_state(mesh, EntityKey(FACE_RANK, 16), CEOUtils::STATE_MESH_UNCHANGED));
-
-    mesh.state(mesh.get_entity(NODE_RANK, 1));
-}
-
-
 TEST(BulkData, resolve_ownership_of_modified_entities_trivial)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
@@ -3240,17 +3183,17 @@ TEST(BulkData, resolve_ownership_of_modified_entities_trivial)
     }
     mesh.my_resolve_ownership_of_modified_entities(modified_entities);
     if (myRank == 0) {
-        EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), CEOUtils::STATE_OWNED, 0));
-        EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), CEOUtils::STATE_OWNED, 1));
+        EXPECT_TRUE(check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_OWNED, 0));
+        EXPECT_TRUE(check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), CEOUtils::STATE_OWNED, 1));
     }
     else if (myRank == 1) {
-        EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), CEOUtils::STATE_OWNED, 0));
-        EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), CEOUtils::STATE_OWNED, 1));
-        EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 13), CEOUtils::STATE_OWNED, 2));
+        EXPECT_TRUE(check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_OWNED, 0));
+        EXPECT_TRUE(check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), CEOUtils::STATE_OWNED, 1));
+        EXPECT_TRUE(check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_OWNED, 2));
     }
     else {
-        EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), CEOUtils::STATE_OWNED, 1));
-        EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 13), CEOUtils::STATE_OWNED, 2));
+        EXPECT_TRUE(check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), CEOUtils::STATE_OWNED, 1));
+        EXPECT_TRUE(check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_OWNED, 2));
     }
 }
 
@@ -4358,7 +4301,7 @@ TEST(BulkData, show_how_one_could_add_a_shared_node)
             {
                owner = std::min(owner, procs[j]);
             }
-            bulk.my_fix_up_ownership(shared_modified[i], owner);
+            bulk.my_internal_change_owner_in_comm_data(shared_modified[i], owner);
         }
 
         ASSERT_NO_THROW(bulk.modification_end());

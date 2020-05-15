@@ -431,7 +431,7 @@ int nway_kl(struct vtx_data **graph,       /* data structure for graph */
 
       /* Set up the linked list of moved vertices. */
       bestptr->next = NULL;
-      bestptr->prev = (struct bilist *)(unsigned long)bestto;
+      bestptr->prev = (struct bilist *)(unsigned long long)bestto;
       *endlist      = bestptr;
       endlist       = &(bestptr->next);
 
@@ -488,7 +488,7 @@ int nway_kl(struct vtx_data **graph,       /* data structure for graph */
       improved += bestg;
       for (i = 1; i <= beststep; i++) {
         vtx    = ((int)(bptr - listspace[0])) / size;
-        bestto = (int)(unsigned long)bptr->prev;
+        bestto = (int)(unsigned long long)bptr->prev;
         startweight[bestto] += graph[vtx]->vwgt;
         startweight[-sets[vtx] - 1] -= graph[vtx]->vwgt;
         sets[vtx] = bestto;

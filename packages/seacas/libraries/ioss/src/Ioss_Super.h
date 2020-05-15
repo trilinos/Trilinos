@@ -49,7 +49,7 @@ namespace Ioss {
   {
 
   public:
-    static constexpr const char *name = "super";
+    static const char *name;
 
     static void factory();
     ~Super() override;
@@ -84,7 +84,7 @@ namespace Ioss {
   protected:
   private:
     int                        nodeCount;
-    Ioss::ElementVariableType *storageType;
+    Ioss::ElementVariableType *storageType{};
     Super(const Super &) = delete;
   };
 } // namespace Ioss

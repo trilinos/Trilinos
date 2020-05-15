@@ -34,4 +34,42 @@ void ReorderedLinearOp::implicitApply(const MultiVector & x, MultiVector & y,
    Thyra::apply(*blockedOp_,Thyra::NOTRANS,*reorderX,reorderY.ptr(),alpha,beta);
 }
 
+void ReorderedLinearOp::describe(Teuchos::FancyOStream & out_arg,
+                                 const Teuchos::EVerbosityLevel verbLevel) const
+{
+  using Teuchos::RCP;
+  using Teuchos::OSTab;
+
+  RCP<Teuchos::FancyOStream> out = rcp(&out_arg,false);
+  OSTab tab(out);
+  switch(verbLevel) {
+     case Teuchos::VERB_DEFAULT:
+     case Teuchos::VERB_LOW:
+        *out << this->description() << std::endl;
+        break;
+     case Teuchos::VERB_MEDIUM:
+     case Teuchos::VERB_HIGH:
+     case Teuchos::VERB_EXTREME:
+        {
+           *out << Teuchos::Describable::description() << "{"
+                << "rangeDim=" << this->range()->dim()
+                << ",domainDim=" << this->domain()->dim()
+                << "}\n";
+           {
+              OSTab tab(out);
+              *out << "[Blocked Op] = ";
+              *out << Teuchos::describe(*blockedOp_,verbLevel);
+           }
+           {
+              OSTab tab(out);
+              *out << "[Blocked Manager] = ";
+              *out << mgr_->toString() << std::endl;
+           }
+           break;
+        }
+     default:
+        TEUCHOS_TEST_FOR_EXCEPT(true); // Should never get here!
+  }
+}
+
 } // end namespace Teko

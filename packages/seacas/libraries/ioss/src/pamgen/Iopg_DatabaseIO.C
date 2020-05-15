@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -79,8 +79,9 @@ namespace {
   // Output a message that the operation is unsupported and die...
   void unsupported(const char *operation)
   {
-    std::cerr << "ERROR: Unsupported functionality called: " << operation << '\n';
-    std::abort();
+    std::ostringstream errmsg;
+    errmsg << "ERROR: Unsupported functionality called: " << operation << '\n';
+    IOSS_ERROR(errmsg);
   }
 
   const size_t max_string_length = MAX_STR_LENGTH;
@@ -91,17 +92,13 @@ namespace {
                                       Iopg::TopologyMap &    side_map,
                                       Ioss::SurfaceSplitType split_type);
 
-  int get_file_pointer() { return 0; }
-
   const char *Version() { return "Iopg_DatabaseIO.C 2010/09/22"; }
 
   void pamgen_error(int exoid, int lineno, int /* processor */)
   {
     std::ostringstream errmsg;
-
     errmsg << "Pamgen error at line " << lineno << " in file '" << Version()
            << "' Please report to gdsjaar@sandia.gov if you need help.";
-
     IOSS_ERROR(errmsg);
   }
 } // namespace
@@ -211,7 +208,7 @@ namespace Iopg {
       }
     }
     else {
-      std::ifstream f(get_filename().c_str());
+      std::ifstream f(get_filename());
       if (!f) {
         std::ostringstream errmsg;
         errmsg << "Error opening file '" << get_filename() << "'.";
@@ -294,7 +291,7 @@ namespace Iopg {
     nodeBlockCount = 1;
 
     if (nodeCount == 0) {
-      IOSS_WARNING << "No nodes were found in the model, file '" << decoded_filename() << "'";
+      Ioss::WARNING() << "No nodes were found in the model, file '" << decoded_filename() << "'";
     }
     else if (nodeCount < 0) {
       // NOTE: Code will not continue past this call...
@@ -305,7 +302,8 @@ namespace Iopg {
     }
 
     if (elementCount == 0) {
-      IOSS_WARNING << "No elements were found in the model, file: '" << decoded_filename() << "'";
+      Ioss::WARNING() << "No elements were found in the model, file: '" << decoded_filename()
+                      << "'";
     }
 
     if (elementCount < 0) {
@@ -612,6 +610,7 @@ namespace Iopg {
         get_region()->add(nodeset);
 
         get_region()->add_alias(nodeset_name, Ioss::Utils::encode_entity_name("nodelist", id));
+        get_region()->add_alias(nodeset_name, Ioss::Utils::encode_entity_name("nodeset", id));
       }
     }
   }
@@ -651,8 +650,8 @@ namespace Iopg {
         }
 
         int error =
-            im_ne_get_cmap_params(get_file_pointer(), TOPTR(nodeCmapIds), TOPTR(nodeCmapNodeCnts),
-                                  TOPTR(elemCmapIds), TOPTR(elemCmapElemCnts), myProcessor);
+            im_ne_get_cmap_params(get_file_pointer(), nodeCmapIds.data(), nodeCmapNodeCnts.data(),
+                                  elemCmapIds.data(), elemCmapElemCnts.data(), myProcessor);
         if (error < 0)
           pamgen_error(get_file_pointer(), __LINE__, myProcessor);
 
@@ -682,7 +681,7 @@ namespace Iopg {
   {
     // This function creates all sidesets (surfaces) for a
     // model.  Note that a side set contains 1 or more side
-    // blocks which are homogenous (same topology). In serial execution,
+    // blocks which are homogeneous (same topology). In serial execution,
     // this is fairly straightforward since there are no null sets and
     // we have all the information we need. (...except see below for
     // surface evolution).
@@ -730,9 +729,9 @@ namespace Iopg {
         get_region()->add_alias(side_set_name, Ioss::Utils::encode_entity_name("surface", id));
         get_region()->add_alias(side_set_name, Ioss::Utils::encode_entity_name("sideset", id));
 
-        //	  split_type = SPLIT_BY_ELEMENT_BLOCK;
-        //	  split_type = SPLIT_BY_TOPOLOGIES;
-        //	  split_type = SPLIT_BY_DONT_SPLIT;
+        //        split_type = SPLIT_BY_ELEMENT_BLOCK;
+        //        split_type = SPLIT_BY_TOPOLOGIES;
+        //        split_type = SPLIT_BY_DONT_SPLIT;
 
         // Determine how many side blocks compose this side set.
         error = im_ex_get_side_set_param(get_file_pointer(), id, &number_sides,
@@ -857,8 +856,8 @@ namespace Iopg {
             const Ioss::ElementTopology *side_topo          = (*I).first.second;
             assert(side_topo != nullptr);
 #if 0
-	    if (side_topo->parametric_dimension() == topology_dimension-1 ||
-		split_type == Ioss::SPLIT_BY_DONT_SPLIT ) {
+            if (side_topo->parametric_dimension() == topology_dimension-1 ||
+                split_type == Ioss::SPLIT_BY_DONT_SPLIT ) {
 #else
             if (true) {
 #endif
@@ -887,8 +886,8 @@ namespace Iopg {
               block = get_region()->get_element_block(topo_or_block_name);
               if (block == nullptr) {
                 std::ostringstream errmsg;
-                std::cerr << "INTERNAL ERROR: Could not find element block '" << topo_or_block_name
-                          << "' Something is wrong in the Ioex::DatabaseIO class. Please report.\n";
+                errmsg << "INTERNAL ERROR: Could not find element block '" << topo_or_block_name
+                       << "' Something is wrong in the Iopg::DatabaseIO class. Please report.\n";
                 IOSS_ERROR(errmsg);
               }
               elem_topo = block->topology();
@@ -1108,7 +1107,7 @@ int64_t DatabaseIO::get_field_internal(const Ioss::ElementBlock *eb, const Ioss:
       // Handle the MESH fields required for an ExodusII file model.
       // (The 'genesis' portion)
 
-      if (field.get_name() == "connectivity") {
+      if (field.get_name() == "connectivity" || field.get_name() == "connectivity_raw") {
         int element_nodes = eb->get_property("topology_node_count").get_int();
         assert(field.raw_storage()->component_count() == element_nodes);
 
@@ -1120,7 +1119,9 @@ int64_t DatabaseIO::get_field_internal(const Ioss::ElementBlock *eb, const Ioss:
             pamgen_error(get_file_pointer(), __LINE__, myProcessor);
 
           // Now, map the nodes in the connectivity from local to global ids
-          get_node_map().map_data(data, field, num_to_get * element_nodes);
+          if (field.get_name() == "connectivity") {
+            get_node_map().map_data(data, field, num_to_get * element_nodes);
+          }
         }
       }
       else if (field.get_name() == "ids") {
@@ -1329,7 +1330,7 @@ int64_t DatabaseIO::get_field_internal(const Ioss::SideBlock *fb, const Ioss::Fi
         }
         else {
           Ioss::IntVector is_valid_side;
-          Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, 4, element, TOPTR(sides),
+          Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, 4, element, sides.data(),
                                                       number_sides, get_region());
           size_t ieb = 0;
           for (int iel = 0; iel < number_sides; iel++) {
@@ -1378,8 +1379,8 @@ int64_t DatabaseIO::get_field_internal(const Ioss::SideBlock *fb, const Ioss::Fi
         }
         else {
           Ioss::IntVector is_valid_side;
-          Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, 4, TOPTR(element),
-                                                      TOPTR(sides), number_sides, get_region());
+          Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, 4, element.data(),
+                                                      sides.data(), number_sides, get_region());
 
           size_t index = 0;
           for (int iel = 0; iel < number_sides; iel++) {
@@ -1560,8 +1561,8 @@ const Ioss::Map &DatabaseIO::get_element_map() const
   return elemMap;
 }
 
-void DatabaseIO::compute_block_membership(Ioss::SideBlock *         sideblock,
-                                          std::vector<std::string> &block_membership) const
+void DatabaseIO::compute_block_membership__(Ioss::SideBlock *         sideblock,
+                                            std::vector<std::string> &block_membership) const
 {
   Ioss::IntVector block_ids(elementBlockCount);
   if (elementBlockCount == 1) {
@@ -1624,7 +1625,7 @@ int DatabaseIO::get_side_connectivity(const Ioss::SideBlock *fb, int id, int, in
   //----
 
   Ioss::IntVector is_valid_side;
-  Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, 4, TOPTR(element), TOPTR(side),
+  Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, 4, element.data(), side.data(),
                                               number_sides, get_region());
 
   Ioss::IntVector     elconnect;

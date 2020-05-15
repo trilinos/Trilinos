@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -32,24 +32,22 @@
 
 #include <Ioss_EntityType.h> // for EntityType, etc
 #include <Ioss_Hex8.h>
+#include <Ioss_Utils.h>
 #include <algorithm>
 #include <cassert> // for assert
 #include <cmath>   // for atan2, cos, sin
 #include <cstdlib> // for nullptr, exit, etc
-#include <cstring> // for memcpy
+#include <fmt/ostream.h>
 #include <gen_struc/Iogs_GeneratedMesh.h>
-#include <iomanip>  // for operator<<, setw
-#include <iostream> // for operator<<, basic_ostream, etc
 #include <numeric>
 #include <string>
-#include <string>      // for string, operator==, etc
 #include <sys/types.h> // for ssize_t
 #include <tokenize.h>  // for tokenize
 #include <vector>      // for vector
 
 namespace Iogs {
-  GeneratedMesh::GeneratedMesh(int64_t num_x, int64_t num_y, int64_t num_z, int proc_count,
-                               int my_proc)
+  GeneratedMesh::GeneratedMesh(int64_t /*num_x */, int64_t /* num_y */, int64_t /* num_z */,
+                               int proc_count, int my_proc)
       : processorCount(proc_count), myProcessor(my_proc)
   {
     initialize();
@@ -68,18 +66,10 @@ namespace Iogs {
     // First 'group' is the interval specification -- IxJxK
     auto tokens = Ioss::tokenize(groups[0], "x");
     assert(tokens.size() == 3);
-    numX = std::stoi(tokens[0]);
-    numY = std::stoi(tokens[1]);
-    numZ = std::stoi(tokens[2]);
+    numX = std::stoll(tokens[0]);
+    numY = std::stoll(tokens[1]);
+    numZ = std::stoll(tokens[2]);
 
-    if (numX <= 0 || numY <= 0 || numZ <= 0) {
-      if (myProcessor == 0) {
-        std::cerr << "ERROR: (Iogs::GeneratedMesh::GeneratedMesh)\n"
-                  << "       All interval counts must be greater than 0.\n"
-                  << "       numX = " << numX << ", numY = " << numY << ", numZ = " << numZ << "\n";
-      }
-      std::exit(EXIT_FAILURE);
-    }
     initialize();
     parse_options(groups);
   }
@@ -91,15 +81,15 @@ namespace Iogs {
   void GeneratedMesh::initialize()
   {
     if (processorCount > numZ) {
-      if (myProcessor == 0) {
-        std::cerr << "ERROR: (Iogs::GeneratedMesh::initialize)\n"
-                  << "       The number of mesh intervals in the Z direction (" << numZ << ")\n"
-                  << "       must be at least as large as the number of processors ("
-                  << processorCount << ").\n"
-                  << "       The current parameters do not meet that requirement. Execution will "
-                     "terminate.\n";
-      }
-      std::exit(EXIT_FAILURE);
+      std::ostringstream errmsg;
+      fmt::print(errmsg,
+                 "ERROR: ({})\n"
+                 "       The number of mesh intervals in the Z direction ({})\n"
+                 "       must be at least as large as the number of processors ({}).\n"
+                 "       The current parameters do not meet that requirement. Execution will "
+                 "terminate.\n",
+                 __func__, numZ, processorCount);
+      IOSS_ERROR(errmsg);
     }
 
     if (processorCount > 1) {
@@ -156,12 +146,13 @@ namespace Iogs {
     // specified later in the option list, you may not get the
     // desired bounding box.
     if (numX == 0 || numY == 0 || numZ == 0) {
-      if (myProcessor == 0) {
-        std::cerr << "ERROR: (Iogs::GeneratedMesh::set_bbox)\n"
-                  << "       All interval counts must be greater than 0.\n"
-                  << "       numX = " << numX << ", numY = " << numY << ", numZ = " << numZ << "\n";
-      }
-      std::exit(EXIT_FAILURE);
+      std::ostringstream errmsg;
+      fmt::print(errmsg,
+                 "ERROR: ({})\n"
+                 "       All interval counts must be greater than 0.\n"
+                 "       numX = {}, numY = {}, numZ = {}\n",
+                 __func__, numX, numY, numZ);
+      IOSS_ERROR(errmsg);
     }
 
     double x_range = xmax - xmin;
@@ -209,7 +200,10 @@ namespace Iogs {
           case 'Y': add_sideset(PY); break;
           case 'z': add_sideset(MZ); break;
           case 'Z': add_sideset(PZ); break;
-          default: std::cerr << "ERROR: Unrecognized sideset location option '" << opt << "'.";
+          default:
+            std::ostringstream errmsg;
+            fmt::print(errmsg, "ERROR: Unrecognized sideset location option '{}'.", opt);
+            IOSS_ERROR(errmsg);
           }
         }
       }
@@ -242,7 +236,7 @@ namespace Iogs {
         Ioss::Int64Vector Zs;
         numZ = 0;
         for (size_t j = 0; j < processorCount; j++) {
-          Zs.push_back(std::stoi(tokens[j]));
+          Zs.push_back(std::stoll(tokens[j]));
           numZ += Zs[j];
         }
         myNumZ   = Zs[myProcessor];
@@ -278,7 +272,7 @@ namespace Iogs {
       }
 
       else if (option[0] == "times") {
-        timestepCount = std::stoi(option[1]);
+        timestepCount = std::stoll(option[1]);
       }
 
       else if (option[0] == "variables") {
@@ -296,27 +290,27 @@ namespace Iogs {
       }
 
       else if (option[0] == "help") {
-        std::cerr << "\nValid Options for GeneratedMesh parameter string:\n"
-                  << "\tIxJxK -- specifies intervals; must be first option. Ex: 4x10x12\n"
-                  << "\toffset:xoff, yoff, zoff\n"
-                  << "\tscale: xscl, yscl, zscl\n"
-                  << "\tzdecomp:n1,n2,n3,...,n#proc\n"
-                  << "\tbbox: xmin, ymin, zmin, xmax, ymax, zmax\n"
-                  << "\trotate: axis,angle,axis,angle,...\n"
-                  << "\tsideset:xXyYzZ (specifies which plane to apply sideset)\n"
-                  << "\tvariables:type,count,...  "
-                     "type=global|element|node|nodal|sideset|surface\n"
-                  << "\ttimes:count (number of timesteps to generate)\n"
-                  << "\tshow -- show mesh parameters\n"
-                  << "\thelp -- show this list\n\n";
+        fmt::print(Ioss::OUTPUT(),
+                   "\nValid Options for GeneratedMesh parameter string:\n"
+                   "\tIxJxK -- specifies intervals; must be first option. Ex: 4x10x12\n"
+                   "\toffset:xoff, yoff, zoff\n"
+                   "\tscale: xscl, yscl, zscl\n"
+                   "\tzdecomp:n1,n2,n3,...,n#proc\n"
+                   "\tbbox: xmin, ymin, zmin, xmax, ymax, zmax\n"
+                   "\trotate: axis,angle,axis,angle,...\n"
+                   "\tsideset:xXyYzZ (specifies which plane to apply sideset)\n"
+                   "\tvariables:type,count,...  "
+                   "type=global|element|node|nodal|sideset|surface\n"
+                   "\ttimes:count (number of timesteps to generate)\n"
+                   "\tshow -- show mesh parameters\n"
+                   "\thelp -- show this list\n\n");
       }
 
       else if (option[0] == "show") {
         show_parameters();
       }
-
       else {
-        std::cerr << "ERROR: Unrecognized option '" << option[0] << "'.  It will be ignored.\n";
+        fmt::print(Ioss::WARNING(), "Unrecognized option '{}'.  It will be ignored.\n", option[0]);
       }
     }
   }
@@ -324,28 +318,30 @@ namespace Iogs {
   void GeneratedMesh::show_parameters() const
   {
     if (myProcessor == 0) {
-      std::cerr << "\nMesh Parameters:\n"
-                << "\tIntervals: " << numX << " by " << numY << " by " << numZ << "\n"
-                << "\tX = " << sclX << " * (0.." << numX << ") + " << offX << "\tRange: " << offX
-                << " <= X <= " << offX + numX * sclX << "\n"
-                << "\tY = " << sclY << " * (0.." << numY << ") + " << offY << "\tRange: " << offY
-                << " <= Y <= " << offY + numY * sclY << "\n"
-                << "\tZ = " << sclZ << " * (0.." << numZ << ") + " << offZ << "\tRange: " << offZ
-                << " <= Z <= " << offZ + numZ * sclZ << "\n\n"
-                << "\tNode Count (total)    = " << std::setw(9) << node_count() << "\n"
-                << "\tElement Count (total) = " << std::setw(9) << element_count() << "\n"
-                << "\tBlock Count           = " << std::setw(9) << structured_block_count() << "\n"
-                << "\tSideSet Count         = " << std::setw(9) << sideset_count() << "\n\n"
-                << "\tTimestep Count        = " << std::setw(9) << timestep_count() << "\n\n";
+      fmt::print(Ioss::OUTPUT(),
+                 "\nMesh Parameters:\n"
+                 "\tIntervals: {} by {} by {}\n"
+                 "\tX = {} * (0..{}) + {}\tRange: {} <= X <= {}\n"
+                 "\tY = {} * (0..{}) + {}\tRange: {} <= Y <= {}\n"
+                 "\tZ = {} * (0..{}) + {}\tRange: {} <= Z <= {}\n\n"
+                 "\tNode Count (total) = {:12n}\n"
+                 "\tCell Count (total) = {:12n}\n"
+                 "\tBlock Count        = {:12n}\n"
+                 "\tSideSet Count      = {:12n}\n"
+                 "\tTimestep Count     = {:12n}\n\n",
+                 numX, numY, numZ, sclX, numX, offX, offX, offX + numX * sclX, sclY, numY, offY,
+                 offY, offY + numY * sclY, sclZ, numZ, offZ, offZ, offZ + numZ * sclZ, node_count(),
+                 element_count(), structured_block_count(), sideset_count(), timestep_count());
+
       if (doRotation) {
-        std::cerr << "\tRotation Matrix: \n\t" << std::scientific;
+        fmt::print(Ioss::OUTPUT(), "\tRotation Matrix: \n\t");
         for (auto &elem : rotmat) {
           for (double jj : elem) {
-            std::cerr << std::setw(14) << jj << "\t";
+            fmt::print(Ioss::OUTPUT(), "{:14.e}\t", jj);
           }
-          std::cerr << "\n\t";
+          fmt::print(Ioss::OUTPUT(), "\n\t");
         }
-        std::cerr << std::fixed << "\n";
+        fmt::print(Ioss::OUTPUT(), "\n");
       }
     }
   }
@@ -675,14 +671,12 @@ namespace Iogs {
     y.reserve(count);
     z.reserve(count);
 
-    int64_t k = 0;
     for (size_t m = myStartZ; m < myStartZ + myNumZ + 1; m++) {
       for (size_t i = 0; i < numY + 1; i++) {
         for (size_t j = 0; j < numX + 1; j++) {
           x.push_back(sclX * static_cast<double>(j) + offX);
           y.push_back(sclY * static_cast<double>(i) + offY);
           z.push_back(sclZ * static_cast<double>(m) + offZ);
-          ++k;
         }
       }
     }
@@ -742,7 +736,7 @@ namespace Iogs {
     }
   }
 
-  void GeneratedMesh::coordinates(int component, int zone, double *xyz) const
+  void GeneratedMesh::coordinates(int component, int /* zone */, double *xyz) const
   {
     assert(!doRotation);
     /* create global coordinates */
@@ -878,9 +872,11 @@ namespace Iogs {
       variableCount[Ioss::SIDEBLOCK] = count;
     }
     else {
-      std::cerr << "ERROR: (Iogs::GeneratedMesh::set_variable_count)\n"
-                << "       Unrecognized variable type '" << type << "'. Valid types are:\n"
-                << "       global, element, node, nodal, surface, sideset.\n";
+      fmt::print(Ioss::WARNING(),
+                 "(Iogs::GeneratedMesh::set_variable_count)\n"
+                 "       Unrecognized variable type '{}'. Valid types are:\n"
+                 "       global, element, node, nodal, surface, sideset.\n",
+                 type);
     }
   }
 
@@ -911,8 +907,7 @@ namespace Iogs {
       n3 = 2;
     }
     else {
-      std::cerr << "\nInvalid axis specification '" << axis
-                << "'. Valid options are 'x', 'y', or 'z'\n";
+      fmt::print("\nInvalid axis specification '{}'. Valid options are 'x', 'y', or 'z'\n", axis);
       return;
     }
 

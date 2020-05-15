@@ -91,8 +91,6 @@
 
 #include <iostream>
 
-typedef int LO;
-typedef int GO;
 using Teuchos::RCP;
 using Teuchos::Array;
 using Teuchos::ArrayView;
@@ -111,9 +109,9 @@ namespace {
     panzer_stk::SquareQuadMeshFactory factory; 
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
-    RCP<panzer::ConnManager<LO,GO> > conn = rcp(new panzer_stk::STKConnManager<GO>(mesh));
+    RCP<panzer::ConnManager> conn = rcp(new panzer_stk::STKConnManager(mesh));
 
-    RCP<panzer::DOFManager<LO,GO> > my_DOFManager = Teuchos::rcp(new panzer::DOFManager<LO,GO>());
+    RCP<panzer::DOFManager> my_DOFManager = Teuchos::rcp(new panzer::DOFManager());
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
     my_DOFManager->setConnManager(conn,MPI_COMM_WORLD);
 
@@ -146,9 +144,9 @@ namespace {
 
     TEST_EQUALITY(my_DOFManager->getNumFields(), 3);
 
-    const std::vector<GO> & vel_offests = my_DOFManager->getGIDFieldOffsets("eblock-0_0",0); 
-    const std::vector<GO> & tem_offests = my_DOFManager->getGIDFieldOffsets("eblock-0_0",1); 
-    const std::vector<GO> & rad_offests = my_DOFManager->getGIDFieldOffsets("eblock-0_0",2); 
+    const std::vector<int> & vel_offests = my_DOFManager->getGIDFieldOffsets("eblock-0_0",0); 
+    const std::vector<int> & tem_offests = my_DOFManager->getGIDFieldOffsets("eblock-0_0",1); 
+    const std::vector<int> & rad_offests = my_DOFManager->getGIDFieldOffsets("eblock-0_0",2); 
 
     TEST_EQUALITY(vel_offests.size(),tem_offests.size());
     TEST_EQUALITY(tem_offests.size(),rad_offests.size());
@@ -165,9 +163,9 @@ namespace {
     panzer_stk::SquareQuadMeshFactory factory; 
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
-    RCP<panzer::ConnManager<LO,GO> > conn = rcp(new panzer_stk::STKConnManager<GO>(mesh));
+    RCP<panzer::ConnManager> conn = rcp(new panzer_stk::STKConnManager(mesh));
 
-    RCP<panzer::DOFManager<LO,GO> > my_DOFManager = Teuchos::rcp(new panzer::DOFManager<LO,GO>());
+    RCP<panzer::DOFManager> my_DOFManager = Teuchos::rcp(new panzer::DOFManager());
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
     my_DOFManager->setConnManager(conn,MPI_COMM_WORLD);
 
@@ -318,9 +316,9 @@ namespace {
     panzer_stk::SquareQuadMeshFactory factory; 
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
-    RCP<panzer::ConnManager<int,int> > conn = rcp(new panzer_stk::STKConnManager<int>(mesh));
+    RCP<panzer::ConnManager> conn = rcp(new panzer_stk::STKConnManager(mesh));
 
-    RCP<panzer::DOFManager<int,int> > my_DOFManager = Teuchos::rcp(new panzer::DOFManager<int,int>());
+    RCP<panzer::DOFManager> my_DOFManager = Teuchos::rcp(new panzer::DOFManager());
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
     my_DOFManager->setConnManager(conn,MPI_COMM_WORLD);
 
@@ -340,8 +338,8 @@ namespace {
 
     my_DOFManager->buildGlobalUnknowns();
 
-    std::vector<int> myo;
-    std::vector<int> myog;
+    std::vector<panzer::GlobalOrdinal> myo;
+    std::vector<panzer::GlobalOrdinal> myog;
 
     my_DOFManager->getOwnedIndices(myo);
     my_DOFManager->getOwnedAndGhostedIndices(myog);
@@ -367,9 +365,9 @@ namespace {
     panzer_stk::SquareQuadMeshFactory factory; 
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
-    RCP<panzer::ConnManager<int,int> > conn = rcp(new panzer_stk::STKConnManager<int>(mesh));
+    RCP<panzer::ConnManager> conn = rcp(new panzer_stk::STKConnManager(mesh));
 
-    RCP<panzer::DOFManager<int,int> > my_DOFManager = Teuchos::rcp(new panzer::DOFManager<int,int>());
+    RCP<panzer::DOFManager> my_DOFManager = Teuchos::rcp(new panzer::DOFManager());
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
     my_DOFManager->setConnManager(conn,MPI_COMM_WORLD);
 
@@ -392,7 +390,7 @@ namespace {
     for (size_t b = 0; b < block_names.size(); ++b) {
       const std::vector<int> & myElements = conn->getElementBlock(block_names[b]);
       for (size_t e = 0; e < myElements.size(); ++e) {
-        std::vector<int> acquiredGIDs;
+        std::vector<panzer::GlobalOrdinal> acquiredGIDs;
         my_DOFManager->getElementGIDs(myElements[e],acquiredGIDs);
         //Now we need to make sure that acquiredGIDs form sets.
         for (size_t i = 0; i < acquiredGIDs.size(); ++i) {
@@ -419,9 +417,9 @@ namespace {
     panzer_stk::SquareQuadMeshFactory factory; 
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
-    RCP<panzer::ConnManager<int,int> > conn = rcp(new panzer_stk::STKConnManager<int>(mesh));
+    RCP<panzer::ConnManager> conn = rcp(new panzer_stk::STKConnManager(mesh));
 
-    RCP<panzer::DOFManager<int,int> > my_DOFManager = Teuchos::rcp(new panzer::DOFManager<int,int>());
+    RCP<panzer::DOFManager> my_DOFManager = Teuchos::rcp(new panzer::DOFManager());
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
     my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
 
@@ -450,7 +448,7 @@ namespace {
     for (size_t b = 0; b < block_names.size(); ++b) {
       const std::vector<int> & myElements = conn->getElementBlock(block_names[b]);
       for (size_t e = 0; e < myElements.size(); ++e) {
-        std::vector<int> acquiredGIDs;
+        std::vector<panzer::GlobalOrdinal> acquiredGIDs;
         my_DOFManager->getElementGIDs(myElements[e],acquiredGIDs);
         for (size_t i = 0; i < names.size(); ++i) {
           const std::vector<int> offsets = my_DOFManager->getGIDFieldOffsets(block_names[b],my_DOFManager->getFieldNum(names[i]));
@@ -496,9 +494,9 @@ namespace {
     panzer_stk::CubeTetMeshFactory factory; 
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
-    RCP<panzer::ConnManager<int,int> > conn = rcp(new panzer_stk::STKConnManager<int>(mesh));
+    RCP<panzer::ConnManager> conn = rcp(new panzer_stk::STKConnManager(mesh));
 
-    RCP<panzer::DOFManager<int,int> > my_DOFManager = Teuchos::rcp(new panzer::DOFManager<int,int>());
+    RCP<panzer::DOFManager> my_DOFManager = Teuchos::rcp(new panzer::DOFManager());
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
     my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
 
@@ -518,8 +516,8 @@ namespace {
 
     my_DOFManager->buildGlobalUnknowns();
 
-    std::vector<int> myo;
-    std::vector<int> myog;
+    std::vector<panzer::GlobalOrdinal> myo;
+    std::vector<panzer::GlobalOrdinal> myog;
 
     my_DOFManager->getOwnedIndices(myo);
     my_DOFManager->getOwnedAndGhostedIndices(myog);
@@ -546,9 +544,9 @@ namespace {
     panzer_stk::CubeTetMeshFactory factory; 
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
-    RCP<panzer::ConnManager<int,int> > conn = rcp(new panzer_stk::STKConnManager<int>(mesh));
+    RCP<panzer::ConnManager> conn = rcp(new panzer_stk::STKConnManager(mesh));
 
-    RCP<panzer::DOFManager<int,int> > my_DOFManager = Teuchos::rcp(new panzer::DOFManager<int,int>());
+    RCP<panzer::DOFManager> my_DOFManager = Teuchos::rcp(new panzer::DOFManager());
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
     my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
 
@@ -573,7 +571,7 @@ namespace {
     for (size_t b = 0; b < block_names.size(); ++b) {
       const std::vector<int> & myElements = conn->getElementBlock(block_names[b]);
       for (size_t e = 0; e < myElements.size(); ++e) {
-        std::vector<int> acquiredGIDs;
+        std::vector<panzer::GlobalOrdinal> acquiredGIDs;
         my_DOFManager->getElementGIDs(myElements[e],acquiredGIDs);
         //Now we need to make sure that acquiredGIDs form sets.
         for (size_t i = 0; i < acquiredGIDs.size(); ++i) {
@@ -601,9 +599,9 @@ namespace {
     panzer_stk::CubeTetMeshFactory factory; 
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
-    RCP<panzer::ConnManager<int,int> > conn = rcp(new panzer_stk::STKConnManager<int>(mesh));
+    RCP<panzer::ConnManager> conn = rcp(new panzer_stk::STKConnManager(mesh));
 
-    RCP<panzer::DOFManager<int,int> > my_DOFManager = Teuchos::rcp(new panzer::DOFManager<int,int>());
+    RCP<panzer::DOFManager> my_DOFManager = Teuchos::rcp(new panzer::DOFManager());
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
     my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
 
@@ -634,7 +632,7 @@ namespace {
     for (size_t b = 0; b < block_names.size(); ++b) {
       const std::vector<int> & myElements = conn->getElementBlock(block_names[b]);
       for (size_t e = 0; e < myElements.size(); ++e) {
-        std::vector<int> acquiredGIDs;
+        std::vector<panzer::GlobalOrdinal> acquiredGIDs;
         my_DOFManager->getElementGIDs(myElements[e],acquiredGIDs);
         for (size_t i = 0; i < names.size(); ++i) {
           const std::vector<int> offsets = my_DOFManager->getGIDFieldOffsets(block_names[b],my_DOFManager->getFieldNum(names[i]));
@@ -676,9 +674,9 @@ namespace {
     panzer_stk::SquareQuadMeshFactory factory; 
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
-    RCP<panzer::ConnManager<LO,GO> > conn = rcp(new panzer_stk::STKConnManager<GO>(mesh));
+    RCP<panzer::ConnManager> conn = rcp(new panzer_stk::STKConnManager(mesh));
 
-    RCP<panzer::DOFManager<LO,GO> > my_DOFManager = Teuchos::rcp(new panzer::DOFManager<LO,GO>());
+    RCP<panzer::DOFManager> my_DOFManager = Teuchos::rcp(new panzer::DOFManager());
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
     my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
 

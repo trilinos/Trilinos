@@ -106,7 +106,7 @@ C=======================================================================
 
       IF (FIRST) THEN
          DO 2530 I = 1,8
-            LOGTAB(I) = LOG10(FLOAT(I+1))
+            LOGTAB(I) = LOG10(DBLE(I+1))
  2530    CONTINUE
          FIRST = .FALSE.
       END IF
@@ -312,7 +312,7 @@ C=======================================================================
 
          END IF
 
- 2590    GO TO 2580
+         GO TO 2580
 
  2600    CONTINUE
          IF (PLTNER(XNEW,X+XLENG) .AND. NUMSZM.GT.0.0 .AND.
@@ -709,7 +709,7 @@ C=======================================================================
 
          END IF
 
- 2640    GO TO 2630
+        GO TO 2630
 
  2650    CONTINUE
          IF (PLTNER(YNEW,Y+YLENG) .AND. NUMSIZ.GT.0.0 .AND.
@@ -869,7 +869,7 @@ C=======================================================================
          CALL SIORPT('PLTLAX','Invalid axis type - '//TTYPE,2)
       END IF
 
- 2560 IF (.NOT. (.TRUE.)) GO TO 2550
+      IF (.NOT. (.TRUE.)) GO TO 2550
  2570 CONTINUE
       CALL PLTRET
       CALL PLTRED

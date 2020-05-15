@@ -54,12 +54,15 @@ namespace SEAMS {
   double do_atand(double x);
   double do_atanh(double x);
   double do_ceil(double x);
+  double do_cbrt(double x);
   double do_cos(double x);
   double do_cosd(double x);
   double do_cosh(double x);
   double do_d2r(double x);
   double do_dim(double x, double y);
   double do_dist(double x1, double y1, double x2, double y2);
+  double do_erf(double x);
+  double do_erfc(double x);
   double do_exp(double x);
   double do_expm1(double x);
   double do_fabs(double x);
@@ -72,6 +75,7 @@ namespace SEAMS {
   double do_log10(double x);
   double do_max(double x, double y);
   double do_min(double x, double y);
+  double do_pow(double x, double y);
   double do_r2d(double x);
   double do_rand(double xl, double xh);
   double do_srand(double seed);
@@ -93,6 +97,7 @@ namespace SEAMS {
   double do_word_count(char *string, char *delm);
   double do_find_word(char *word, char *string, char *delm);
   double do_lgamma(double val);
+  double do_tgamma(double val);
   double do_juldayhms(double mon, double day, double year, double h, double mi, double se);
   double do_julday(double mon, double day, double year);
   double do_log1p(double x);
@@ -143,9 +148,9 @@ namespace SEAMS {
   const char *do_output(char *filename);
   const char *do_append(char *filename);
   const char *do_error(char *error_string);
-  const char *do_get_date(void);
-  const char *do_get_iso_date(void);
-  const char *do_get_time(void);
+  const char *do_get_date();
+  const char *do_get_iso_date();
+  const char *do_get_time();
   const char *do_get_word(double n, char *string, char *delm);
   const char *do_file_to_string(char *filename);
   const char *do_extract(char *string, char *begin, char *end);
@@ -167,6 +172,8 @@ namespace SEAMS {
   array *do_csv_array1(const char *filename);
   array *do_csv_array2(const char *filename, const char *comment);
   array *do_make_array(double rows, double cols);
+  array *do_make_array_init(double rows, double cols, double init);
+  array *do_linear_array(double init, double final, double count);
   array *do_identity(double size);
   array *do_transpose(const array *a);
   array *do_array_from_string(const char *string, const char *delm);

@@ -119,8 +119,6 @@ public:
   //! The matrix's communicator.
   virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
-  //! The matrix's Node instance.
-  virtual Teuchos::RCP<node_type> getNode () const;
 
   //! Returns the Map that describes the row distribution in this matrix.
   virtual Teuchos::RCP<const map_type> getRowMap() const;

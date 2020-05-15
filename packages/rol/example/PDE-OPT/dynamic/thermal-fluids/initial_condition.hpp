@@ -53,10 +53,12 @@
 template <class Real>
 class PotentialFlow {
 private:
+  typedef Tpetra::Map<>::global_ordinal_type GO; 
+
   const ROL::Ptr<FE<Real>> feVel_, fePrs_, feThr_;
   const ROL::Ptr<Intrepid::FieldContainer<Real>> cellNodes_;
   const ROL::Ptr<Intrepid::FieldContainer<int>> cellDofs_;
-  const Teuchos::Array<int> cellIds_;
+  const Teuchos::Array<GO> cellIds_;
   const ROL::Ptr<FieldHelper<Real>> fieldHelper_;
   Real cx_, cy_, r_;
 
@@ -66,7 +68,7 @@ public:
                 const ROL::Ptr<FE<Real>> &feThr,
                 const ROL::Ptr<Intrepid::FieldContainer<Real>> &cellNodes,
                 const ROL::Ptr<Intrepid::FieldContainer<int>> &cellDofs,
-                const Teuchos::Array<int> &cellIds,
+                const Teuchos::Array<GO> &cellIds,
                 const ROL::Ptr<FieldHelper<Real>> &fieldHelper,
                 ROL::ParameterList &parlist)
     : feVel_(feVel), fePrs_(fePrs), feThr_(feThr),
@@ -79,7 +81,7 @@ public:
   }
 
   Real evalVelocity(const std::vector<Real> &x, const int dir) const {
-    const Real zero(0), one(1), two(2);
+    const Real one(1);
     Real px  = x[0] - cx_;
     Real py  = x[1] - cy_;
     Real rad = std::sqrt(std::pow(px,2) + std::pow(py,2));

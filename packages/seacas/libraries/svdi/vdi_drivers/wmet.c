@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2017 National Technology & Engineering Solutions
+ * Copyright (C) 2009-2017, 2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -42,18 +42,17 @@
 #if defined(CRAY)
 #include <sys/types.h>
 #endif
-#include <stdlib.h>
 #include <sys/file.h>
 #include <unistd.h>
 
 /*
  * SUN DEC/ULTRIX ALLIANT : C routines must have underscores
- * SGI CONVEX		  : C routines must have underscores
+ * SGI CONVEX             : C routines must have underscores
  *
  * VAX HP IBM/aix         : C routines do not have underscores
  *
  * CRAY/UNICOS            : C routines must be capitalized,
- *			      and no underscores
+ *                            and no underscores
  */
 
 #if defined(CRAY)

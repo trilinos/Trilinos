@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//               KokkosKernels 0.9: Linear Algebra and Graph Kernels
-//                 Copyright 2017 Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -151,7 +152,7 @@ public:
         Kokkos::parallel_for( "kokkos-kernels/example/fenl: NodeNodeGraph" , elem_node_id.extent(0) , *this );
       }
 
-      execution_space::fence();
+      execution_space().fence();
       results.ratio = (double)node_node_set.size() / (double)node_node_set.span();
       results.fill_node_set = wall_clock.seconds();
       //--------------------------------
@@ -178,14 +179,14 @@ public:
       //--------------------------------
       // Fill graph's entries from the (node,node) set.
 
-      execution_space::fence();
+      execution_space().fence();
       results.scan_node_count = wall_clock.seconds();
 
       wall_clock.reset();
       phase = FILL_GRAPH_ENTRIES ;
       Kokkos::parallel_for( node_node_set.span() , *this );
 
-      execution_space::fence();
+      execution_space().fence();
       results.fill_graph_entries = wall_clock.seconds();
 
       //--------------------------------
@@ -202,7 +203,7 @@ public:
 
       Kokkos::parallel_for( node_count , *this );
 
-      execution_space::fence();
+      execution_space().fence();
       results.sort_graph_entries = wall_clock.seconds();
 
       //--------------------------------
@@ -212,7 +213,7 @@ public:
       elem_graph = ElemGraphType("elem_graph", elem_node_id.extent(0) );
       Kokkos::parallel_for( elem_node_id.extent(0) , *this );
 
-      execution_space::fence();
+      execution_space().fence();
       results.fill_element_graph = wall_clock.seconds();
     }
 
@@ -502,7 +503,7 @@ public:
       Kokkos::deep_copy( row_count , 0u );
       Kokkos::parallel_for( elem_node_id.extent(0) , *this );
 
-      execution_space::fence();
+      execution_space().fence();
 
       //--------------------------------
       // Done with the temporary sets and arrays
@@ -516,7 +517,7 @@ public:
       phase = SORT_GRAPH_ENTRIES ;
       Kokkos::parallel_for( residual.extent(0) , *this );
 
-      execution_space::fence();
+      execution_space().fence();
 
       phase = GATHER_FILL ;
     }

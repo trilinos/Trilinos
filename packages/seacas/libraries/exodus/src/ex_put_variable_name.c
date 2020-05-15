@@ -52,8 +52,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_WARN, etc
-#include "netcdf.h"       // for nc_inq_varid, NC_NOERR
-#include <stdio.h>
 
 /*!
 \ingroup ResultsData
@@ -74,12 +72,14 @@ int ex_put_variable_name(int exoid, ex_entity_type obj_type, int var_num, const 
 
   EX_FUNC_ENTER();
 
-  ex_check_valid_file_id(exoid, __func__);
+  ex__check_valid_file_id(exoid, __func__);
 
   /* inquire previously defined variables  */
   switch (obj_type) {
   case EX_GLOBAL: vname = VAR_NAME_GLO_VAR; break;
   case EX_NODAL: vname = VAR_NAME_NOD_VAR; break;
+  case EX_ASSEMBLY: vname = VAR_NAME_ASSEMBLY_VAR; break;
+  case EX_BLOB: vname = VAR_NAME_BLOB_VAR; break;
   case EX_EDGE_BLOCK: vname = VAR_NAME_EDG_VAR; break;
   case EX_FACE_BLOCK: vname = VAR_NAME_FAC_VAR; break;
   case EX_ELEM_BLOCK: vname = VAR_NAME_ELE_VAR; break;
@@ -103,8 +103,7 @@ int ex_put_variable_name(int exoid, ex_entity_type obj_type, int var_num, const 
   }
 
   /* write EXODUS variable name */
-  status =
-      ex_put_name_internal(exoid, varid, var_num - 1, var_name, obj_type, "variable", __func__);
+  status = ex__put_name(exoid, varid, var_num - 1, var_name, obj_type, "variable", __func__);
 
   EX_FUNC_LEAVE(status);
 }

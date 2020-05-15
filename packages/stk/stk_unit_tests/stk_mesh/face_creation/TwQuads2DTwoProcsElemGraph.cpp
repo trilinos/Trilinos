@@ -1,12 +1,12 @@
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_unit_test_utils/unittestMeshUtils.hpp>
+#include "FaceCreatorFixture.hpp"
+#include <stk_io/IossBridge.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
-#include <stk_unit_tests/stk_mesh_fixtures/QuadFixture.hpp>
-#include <stk_io/IossBridge.hpp>
-#include <stk_unit_test_utils/BulkDataTester.hpp>
-#include "FaceCreatorFixture.hpp"
+#include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
+#include <stk_unit_test_utils/BulkDataTester.hpp>
+#include <stk_unit_test_utils/stk_mesh_fixtures/QuadFixture.hpp>
+#include <stk_unit_test_utils/unittestMeshUtils.hpp>
 
 namespace
 {

@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -44,7 +45,7 @@ namespace mesh {
 void Ghosting::send_list( std::vector< EntityProc > & v ) const
 {
   for ( const EntityCommListInfo& commListInfo : m_mesh.internal_comm_list() ) {
-    if ( commListInfo.owner == m_mesh.parallel_rank() ) {
+    if ( m_mesh.parallel_owner_rank(commListInfo.entity) == m_mesh.parallel_rank() ) {
       for ( PairIterEntityComm ec = m_mesh.internal_entity_comm_map(commListInfo.key) ; ! ec.empty() ; ++ec ) {
         if ( ec->ghost_id == m_ordinal ) {
           v.push_back( EntityProc( commListInfo.entity , ec->proc ) );
@@ -57,7 +58,7 @@ void Ghosting::send_list( std::vector< EntityProc > & v ) const
 void Ghosting::receive_list( std::vector<EntityKey> & v ) const
 {
   for ( const EntityCommListInfo& commListInfo : m_mesh.internal_comm_list() ) {
-    if ( commListInfo.owner != m_mesh.parallel_rank() ) {
+    if ( m_mesh.parallel_owner_rank(commListInfo.entity) != m_mesh.parallel_rank() ) {
       for ( PairIterEntityComm ec = m_mesh.internal_entity_comm_map(commListInfo.key) ; ! ec.empty() ; ++ec ) {
         if ( ec->ghost_id == m_ordinal ) {
           v.push_back(commListInfo.key);
@@ -75,7 +76,7 @@ std::ostream& Ghosting::operator<<(std::ostream& out) const
   out << "  Locally owned entities ghosted on other processors (send list):\n";
 
   for ( const EntityCommListInfo& commListInfo : m_mesh.internal_comm_list() ) {
-    if ( commListInfo.owner == m_mesh.parallel_rank() ) {
+    if ( m_mesh.parallel_owner_rank(commListInfo.entity) == m_mesh.parallel_rank() ) {
       for ( PairIterEntityComm ec = m_mesh.internal_entity_comm_map(commListInfo.key) ; ! ec.empty() ; ++ec ) {
         if ( ec->ghost_id == m_ordinal ) {
           out << "    ";
@@ -89,12 +90,12 @@ std::ostream& Ghosting::operator<<(std::ostream& out) const
 
   out << "  Entities ghosted on this processor from the owner (recv list):\n";
   for ( const EntityCommListInfo& commListInfo : m_mesh.internal_comm_list() ) {
-    if ( commListInfo.owner != m_mesh.parallel_rank() ) {
+    if ( m_mesh.parallel_owner_rank(commListInfo.entity) != m_mesh.parallel_rank() ) {
       for ( PairIterEntityComm ec = m_mesh.internal_entity_comm_map(commListInfo.key); !ec.empty(); ++ec ) {
         if ( ec->ghost_id == m_ordinal ) {
           out << "    ";
           out << commListInfo.key.id();
-          out << ", owner of ghost is " << commListInfo.owner
+          out << ", owner of ghost is " << m_mesh.parallel_owner_rank(commListInfo.entity)
               << ", status is: " << m_mesh.state(commListInfo.entity) << "\n";
         }
       }

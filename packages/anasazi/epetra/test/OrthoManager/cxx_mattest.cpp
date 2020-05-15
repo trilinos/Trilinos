@@ -474,12 +474,6 @@ int testProjectAndNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
       theMX = tuple(lclMX1);
       C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)) );
     }
-    else if ( (t && 3) == 2 ) {
-      // X2
-      theX = tuple(X2);
-      theMX = tuple(lclMX2);
-      C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
-    }
     else {
       // X1 and X2, and the reverse.
       theX = tuple(X1,X2);
@@ -558,67 +552,6 @@ int testProjectAndNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
         C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[1]) ) );
       }
 
-      // do we run the reversed input?
-      if ( (t && 3) == 3 ) {
-        // copies of S,MS
-        Scopy = MVT::CloneCopy(*S);
-        if (lclMS != Teuchos::null) {
-          MScopy = MVT::CloneCopy(*lclMS);
-        }
-        // randomize this data, it should be overwritten
-        Anasazi::randomSDM(*B);
-        for (unsigned int i=0; i<C.size(); i++) {
-          Anasazi::randomSDM(*C[i]);
-        }
-        // flip the inputs
-        theX = tuple( theX[1], theX[0] );
-        theMX = tuple( theMX[1], theMX[0] );
-        // run test
-        ret = OM->projectAndNormalizeMat(*Scopy,theX,C,B,MScopy,theMX);
-        sout << "projectAndNormalizeMat() returned rank " << ret << endl;
-        if (ret == 0) {
-          sout << "   Cannot continue." << endl;
-          numerr++;
-          break;
-        }
-        ret_out.push_back(ret);
-        // projectAndNormalizeMat() is only required to return a
-        // basis of rank "ret"
-        // this is what we will test:
-        //   the first "ret" columns in Scopy, MScopy
-        //   the first "ret" rows in B
-        // save just the parts that we want
-        // we allocate S and MS for each test, so we can save these as views
-        // however, save copies of the C and B
-        if (ret < sizeS) {
-          vector<int> ind(ret);
-          for (int i=0; i<ret; i++) {
-            ind[i] = i;
-          }
-          S_outs.push_back( MVT::CloneView(*Scopy,ind) );
-          if (MScopy != null) {
-            MS_outs.push_back( MVT::CloneView(*MScopy,ind) );
-          }
-          else {
-            MS_outs.push_back( Teuchos::null );
-          }
-          B_outs.push_back( rcp( new SerialDenseMatrix<int,ST>(Teuchos::Copy,*B,ret,sizeS) ) );
-        }
-        else {
-          S_outs.push_back( Scopy );
-          MS_outs.push_back( MScopy );
-          B_outs.push_back( rcp( new SerialDenseMatrix<int,ST>(*B) ) );
-        }
-        C_outs.push_back( Array<RCP<SerialDenseMatrix<int,ST> > >() );
-        // reverse the Cs to compensate for the reverse projectors
-        C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[1]) ) );
-        C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[0]) ) );
-        // flip the inputs back
-        theX = tuple( theX[1], theX[0] );
-        theMX = tuple( theMX[1], theMX[0] );
-      }
-
-
       // test all outputs for correctness
       for (unsigned int o=0; o<S_outs.size(); o++) {
         // MS == M*S
@@ -661,13 +594,13 @@ int testProjectAndNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
           if (err > ATOL*TOL) {
             sout << "S\n" << *S << endl;
             sout << "S_out\n" << *S_outs[o] << endl;
-            sout << "B_out\n" << *B_outs[o] << endl;
+            sout << "B_out\n" << printMat(*B_outs[o]) << endl;
             if (C_outs[o].size() > 0) {
               sout << "X1\n" << *X1 << endl;
-              sout << "C_out[1]\n" << *C_outs[o][0] << endl;
+              sout << "C_out[1]\n" << printMat(*C_outs[o][0]) << endl;
               if (C_outs[o].size() > 1) {
                 sout << "X22n" << *X2 << endl;
-                sout << "C_out[2]\n" << *C_outs[o][1] << endl;
+                sout << "C_out[2]\n" << printMat(*C_outs[o][1]) << endl;
               }
             }
           }
@@ -958,12 +891,6 @@ int testProjectMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
       theMX = tuple(lclMX1);
       C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)) );
     }
-    else if ( (t && 3) == 2 ) {
-      // X2
-      theX = tuple(X2);
-      theMX = tuple(lclMX2);
-      C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
-    }
     else {
       // X1 and X2, and the reverse.
       theX = tuple(X1,X2);
@@ -1007,37 +934,6 @@ int testProjectMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
       }
       if (C.size() > 1) {
         C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[1]) ) );
-      }
-
-      // do we run the reversed input?
-      if ( (t && 3) == 3 ) {
-        // copies of S,MS
-        Scopy = MVT::CloneCopy(*S);
-        if (lclMS != Teuchos::null) {
-          MScopy = MVT::CloneCopy(*lclMS);
-        }
-        // randomize this data, it should be overwritten
-        for (unsigned int i=0; i<C.size(); i++) {
-          Anasazi::randomSDM(*C[i]);
-        }
-        // flip the inputs
-        theX = tuple( theX[1], theX[0] );
-        theMX = tuple( theMX[1], theMX[0] );
-        // run test
-        OM->projectMat(*Scopy,theX,C,MScopy,theMX);
-        // we allocate S and MS for each test, so we can save these as views
-        // however, save copies of the C
-        S_outs.push_back( Scopy );
-        MS_outs.push_back( MScopy );
-        // we are in a special case: P_X1 and P_X2, so we know we applied
-        // two projectors, and therefore have two C[i]
-        C_outs.push_back( Array<RCP<SerialDenseMatrix<int,ST> > >() );
-        // reverse the Cs to compensate for the reverse projectors
-        C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[1]) ) );
-        C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[0]) ) );
-        // flip the inputs back
-        theX = tuple( theX[1], theX[0] );
-        theMX = tuple( theMX[1], theMX[0] );
       }
 
       // test all outputs for correctness

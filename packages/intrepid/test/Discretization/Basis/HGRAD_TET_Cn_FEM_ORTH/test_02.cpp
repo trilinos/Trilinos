@@ -236,11 +236,8 @@ int main(int argc, char *argv[]) {
 
 
   try {
-#ifdef KOKKOS_ENABLE_CUDA //to reduce test time for CUDA
-    int max_order=1;
-#else
-    int max_order = 7;                                                                  // max total order of polynomial solution
-#endif
+    int max_order = 7;
+
     DefaultCubatureFactory<double>  cubFactory;                                         // create factory
     shards::CellTopology cell(shards::getCellTopologyData< shards::Tetrahedron<> >());  // create parent cell topology
     shards::CellTopology side(shards::getCellTopologyData< shards::Triangle<> >());     // create relevant subcell (side) topology
@@ -535,7 +532,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Catch unexpected errors
-  catch (std::logic_error err) {
+  catch (const std::logic_error & err) {
     *outStream << err.what() << "\n\n";
     errorFlag = -1000;
   };

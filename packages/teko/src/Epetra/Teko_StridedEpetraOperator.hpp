@@ -115,10 +115,10 @@ public:
    // attribute set methods
    
    // don't use transpose...ever!
-   virtual int SetUseTranspose(bool useTranspose)
+   virtual int SetUseTranspose(bool /* useTranspose */)
    { return -1; }
 
-   virtual int ApplyInverse(const Epetra_MultiVector &X, Epetra_MultiVector &Y) const
+   virtual int ApplyInverse(const Epetra_MultiVector &/* X */, Epetra_MultiVector &/* Y */) const
    { TEUCHOS_ASSERT(false); return -1; }
 
    virtual double NormInf() const
@@ -130,10 +130,8 @@ public:
    virtual const Epetra_Comm & Comm() const { return fullContent_->Comm(); }
 
    
-   #ifndef Teko_DEBUG_OFF
    //! Helps perform sanity checks
    bool testAgainstFullOperator(int count,double tol) const;
-   #endif
 
 protected:
    // gooey center of this shell

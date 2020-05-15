@@ -106,18 +106,18 @@ TEUCHOS_UNIT_TEST(tCloneLOF, epetra)
    int myRank = eComm->MyPID();
    int numProc = eComm->NumProc();
 
-   RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager<int>(myRank,numProc));
+   RCP<ConnManager> connManager = rcp(new unit_test::ConnManager(myRank,numProc));
 
    RCP<const FieldPattern> patternC1
          = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
-   RCP<panzer::DOFManager<int,int> > indexer = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManager> indexer = rcp(new panzer::DOFManager());
    indexer->setConnManager(connManager,MPI_COMM_WORLD);
    indexer->addField("U",patternC1);
    indexer->addField("V",patternC1);
    indexer->buildGlobalUnknowns();
 
-   RCP<panzer::DOFManager<int,int> > control_indexer = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManager> control_indexer = rcp(new panzer::DOFManager());
    control_indexer->setConnManager(connManager,MPI_COMM_WORLD);
    control_indexer->addField("Z",patternC1);
    control_indexer->buildGlobalUnknowns();
@@ -131,7 +131,7 @@ TEUCHOS_UNIT_TEST(tCloneLOF, epetra)
    RCP<const BlockedEpetraLinearObjFactory<Traits,int> > ep_control_lof 
        = rcp_dynamic_cast<const BlockedEpetraLinearObjFactory<Traits,int> >(control_lof);
 
-   std::vector<int> control_owned;
+   std::vector<panzer::GlobalOrdinal> control_owned;
    control_indexer->getOwnedIndices(control_owned);
 
    TEST_ASSERT(ep_control_lof->getMap(0)->SameAs(*ep_lof->getMap(0)));
@@ -156,14 +156,14 @@ TEUCHOS_UNIT_TEST(tCloneLOF, blocked_epetra)
    int myRank = eComm->MyPID();
    int numProc = eComm->NumProc();
 
-   RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager<int>(myRank,numProc));
+   RCP<ConnManager> connManager = rcp(new unit_test::ConnManager(myRank,numProc));
 
    RCP<const FieldPattern> patternC1
          = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
    RCP<const FieldPattern> patternC2
          = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::exec_space,double,double> >();
 
-   RCP<panzer::BlockedDOFManager<int,int> > indexer = rcp(new panzer::BlockedDOFManager<int,int>());
+   RCP<panzer::BlockedDOFManager> indexer = rcp(new panzer::BlockedDOFManager());
    {
      std::vector<std::vector<std::string> > fieldOrder(2);
 
@@ -177,7 +177,7 @@ TEUCHOS_UNIT_TEST(tCloneLOF, blocked_epetra)
      indexer->buildGlobalUnknowns();
    }
 
-   RCP<panzer::BlockedDOFManager<int,int> > control_indexer = rcp(new panzer::BlockedDOFManager<int,int>());
+   RCP<panzer::BlockedDOFManager> control_indexer = rcp(new panzer::BlockedDOFManager());
    {
      std::vector<std::vector<std::string> > fieldOrder(1);
      control_indexer->setConnManager(connManager,MPI_COMM_WORLD);
@@ -189,9 +189,9 @@ TEUCHOS_UNIT_TEST(tCloneLOF, blocked_epetra)
      patternC2->print(out);
 
      {
-     std::vector<int> gids;
-     control_indexer->getFieldDOFManagers()[0]->getOwnedIndices(gids);
-     out << "GIDs 0 = " << gids.size() << std::endl;
+       std::vector<panzer::GlobalOrdinal> gids;
+       control_indexer->getFieldDOFManagers()[0]->getOwnedIndices(gids);
+       out << "GIDs 0 = " << gids.size() << std::endl;
      }
    }
 
@@ -252,14 +252,14 @@ TEUCHOS_UNIT_TEST(tCloneLOF, blocked_epetra_nonblocked_domain)
    int myRank = eComm->MyPID();
    int numProc = eComm->NumProc();
 
-   RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager<int>(myRank,numProc));
+   RCP<ConnManager> connManager = rcp(new unit_test::ConnManager(myRank,numProc));
 
    RCP<const FieldPattern> patternC1
          = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
    RCP<const FieldPattern> patternC2
          = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::exec_space,double,double> >();
 
-   RCP<panzer::BlockedDOFManager<int,int> > indexer = rcp(new panzer::BlockedDOFManager<int,int>());
+   RCP<panzer::BlockedDOFManager> indexer = rcp(new panzer::BlockedDOFManager());
    {
      std::vector<std::vector<std::string> > fieldOrder(2);
 
@@ -273,7 +273,7 @@ TEUCHOS_UNIT_TEST(tCloneLOF, blocked_epetra_nonblocked_domain)
      indexer->buildGlobalUnknowns();
    }
 
-   RCP<panzer::DOFManager<int,int> > control_indexer = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManager> control_indexer = rcp(new panzer::DOFManager());
    {
      control_indexer->setConnManager(connManager,MPI_COMM_WORLD);
      control_indexer->addField("Z",patternC1);

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -40,17 +40,11 @@
 #include <cstdint>               // for int64_t
 #include <string>                // for string
 #include <vector>                // for vector
-namespace Ioss {
-  class DatabaseIO;
-} // namespace Ioss
-namespace Ioss {
-  class Field;
-} // namespace Ioss
-namespace Ioss {
-  class SideBlock;
-} // namespace Ioss
 
 namespace Ioss {
+  class DatabaseIO;
+  class Field;
+  class SideBlock;
 
   using SideBlockContainer = std::vector<SideBlock *>;
 
@@ -60,10 +54,12 @@ namespace Ioss {
   {
   public:
     SideSet(DatabaseIO *io_database, const std::string &my_name);
+    SideSet(const SideSet &);
     ~SideSet() override;
 
     std::string type_string() const override { return "SideSet"; }
     std::string short_type_string() const override { return "surface"; }
+    std::string contains_string() const override { return "Element/Side pair"; }
     EntityType  type() const override { return SIDESET; }
 
     bool                      add(SideBlock *side_block);

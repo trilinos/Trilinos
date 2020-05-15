@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 2009-2017 National Technology & Engineering Solutions
+ * Copyright(C) 2009-2017, 2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -32,7 +32,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #if !defined(__CYGWIN__)
@@ -100,7 +99,9 @@ void addlog(char *name, int len)
   uname(&sys_info);
 
   snprintf(log_string, LEN, "%s %s %s %.3fu %.3fs 0:00.00 0.0%% 0+0k 0+0io 0pf+0w %s\n", codename,
-           username, time_string, u_time, s_time, sys_info.nodename);
+           username, time_string, u_time, s_time, sys_info.nodename) < 0
+      ? abort()
+      : (void)0;
 
   /* Now try to find the $ACCESS/etc/audit.log file */
   /* Don't need to try too hard since information is not critical; just useful */

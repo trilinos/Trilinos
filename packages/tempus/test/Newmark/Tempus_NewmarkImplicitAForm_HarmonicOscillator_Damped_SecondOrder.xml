@@ -38,6 +38,9 @@
     <ParameterList name="Default Stepper">
 
       <Parameter name="Stepper Type"   type="string" value="Newmark Implicit a-Form"/>
+      <Parameter name="Use FSAL"       type="bool" value="true"/>
+      <Parameter name="Initial Condition Consistency" type="string" value="Consistent"/>
+      <Parameter name="Initial Condition Consistency Check" type="bool" value="false"/>
       <Parameter name="Zero Initial Guess" type="bool" value="0"/>
       <ParameterList name="Newmark Parameters">
         <Parameter name="Scheme Name"    type="string" value="Average Acceleration"/>

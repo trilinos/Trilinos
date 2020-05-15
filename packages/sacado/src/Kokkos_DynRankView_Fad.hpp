@@ -167,7 +167,7 @@ struct DynRankDimTraits<Kokkos::Impl::ViewSpecializeSacadoFad> {
   // Compute the rank of the view from the nonzero layout arguments and possible hidden dim
   template <typename Layout, typename ... P>
   KOKKOS_INLINE_FUNCTION
-  static size_t computeRank( const ViewCtorProp<P...>& prop, const Layout& layout )
+  static size_t computeRank( const ViewCtorProp<P...>& /* prop */, const Layout& layout )
   {
     size_t rank = computeRank( layout.dimension[0]
                       , layout.dimension[1]
@@ -804,6 +804,7 @@ class ViewMapping< DstTraits , SrcTraits ,
 public:
 
   enum { is_assignable = true };
+  enum { is_assignable_data_type = true };
 
   typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
   typedef ViewMapping< DstTraits , typename DstTraits::specialize >  DstType ;
@@ -881,6 +882,7 @@ class ViewMapping< DstTraits , SrcTraits ,
 public:
 
   enum { is_assignable = true };
+  enum { is_assignable_data_type = true };
 
   typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
   typedef ViewMapping< DstTraits , typename DstTraits::specialize >  DstType ;

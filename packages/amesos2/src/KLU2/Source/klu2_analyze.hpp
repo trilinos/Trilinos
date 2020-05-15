@@ -92,7 +92,7 @@ static Int analyze_worker       /* returns KLU_OK or < 0 if error */
     }
 
     /* compute the inverse of Pbtf */
-#ifndef NDEBUG
+#ifndef NDEBUGKLU2
     for (k = 0 ; k < n ; k++)
     {
         P [k] = EMPTY ;
@@ -105,7 +105,7 @@ static Int analyze_worker       /* returns KLU_OK or < 0 if error */
         ASSERT (Pbtf [k] >= 0 && Pbtf [k] < n) ;
         Pinv [Pbtf [k]] = k ;
     }
-#ifndef NDEBUG
+#ifndef NDEBUGKLU2
     for (k = 0 ; k < n ; k++) ASSERT (Pinv [k] != EMPTY) ;
 #endif
     nzoff = 0 ;

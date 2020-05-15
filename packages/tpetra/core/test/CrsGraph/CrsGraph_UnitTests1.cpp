@@ -35,20 +35,17 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 */
 
-#include <Tpetra_ConfigDefs.hpp>
-#include <Tpetra_CrsGraph.hpp>
-#include <Tpetra_TestingUtilities.hpp>
+#include "Tpetra_TestingUtilities.hpp"
+#include "Tpetra_CrsGraph.hpp"
+#include "Tpetra_Map.hpp"
 #include <type_traits> // std::is_same
 
 namespace { // (anonymous)
   using Tpetra::TestingUtilities::getDefaultComm;
-  using Tpetra::DynamicProfile;
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
   using Teuchos::arcp;
@@ -135,12 +132,6 @@ namespace { // (anonymous)
       // create static-profile graph, fill-complete without inserting
       // (and therefore, without allocating)
       GRAPH graph(map,1,StaticProfile);
-      graph.fillComplete();
-    }
-    {
-      // create dynamic-profile graph, fill-complete without inserting
-      // (and therefore, without allocating)
-      GRAPH graph(map,1,DynamicProfile);
       graph.fillComplete();
     }
 
@@ -439,71 +430,6 @@ namespace { // (anonymous)
   }
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, ActiveFill, LO, GO , Node )
-  {
-    using Teuchos::Comm;
-    using Teuchos::outArg;
-    using Teuchos::RCP;
-    using Teuchos::REDUCE_MIN;
-    using Teuchos::reduceAll;
-    typedef Tpetra::CrsGraph<LO, GO, Node> GRAPH;
-    typedef Tpetra::Map<LO, GO, Node> map_type;
-
-    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
-    // get a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
-    // create Map
-    RCP<const map_type> map = rcp (new map_type (INVALID, 1, 0, comm));
-    RCP<ParameterList> params = parameterList();
-    {
-      GRAPH graph(map,map,0,DynamicProfile);
-      TEST_EQUALITY_CONST( graph.isFillActive(),   true );
-      TEST_EQUALITY_CONST( graph.isFillComplete(), false );
-      graph.insertLocalIndices( 0, tuple<LO>(0) );
-      //
-      params->set("Optimize Storage",false);
-      graph.fillComplete(params);
-      TEST_EQUALITY_CONST( graph.isFillActive(),   false );
-      TEST_EQUALITY_CONST( graph.isFillComplete(), true );
-      TEST_THROW( graph.insertLocalIndices( 0, tuple<LO>(0) ), std::runtime_error );
-      TEST_THROW( graph.removeLocalIndices( 0 ),               std::runtime_error );
-      TEST_THROW( graph.globalAssemble(),                      std::runtime_error );
-      TEST_THROW( graph.fillComplete(),                        std::runtime_error );
-    }
-    {
-      GRAPH graph(map,map,0,DynamicProfile);
-      TEST_EQUALITY_CONST( graph.isFillActive(),   true );
-      TEST_EQUALITY_CONST( graph.isFillComplete(), false );
-      graph.insertLocalIndices( 0, tuple<LO>(0) );
-      //
-      params->set("Optimize Storage",false);
-      graph.fillComplete(params);
-      TEST_EQUALITY_CONST( graph.isFillActive(),   false );
-      TEST_EQUALITY_CONST( graph.isFillComplete(), true );
-      //
-      graph.resumeFill();
-      TEST_EQUALITY_CONST( graph.isFillActive(),   true );
-      TEST_EQUALITY_CONST( graph.isFillComplete(), false );
-      TEST_NOTHROW( graph.insertLocalIndices( 0, tuple<LO>(0) ) );
-      //
-      TEST_NOTHROW( graph.fillComplete()                        );
-      TEST_EQUALITY_CONST( graph.isFillActive(),   false );
-      TEST_EQUALITY_CONST( graph.isFillComplete(), true );
-    }
-
-    int lclSuccess = success ? 1 : 0;
-    int gblSuccess = 1;
-    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-
-    if (gblSuccess == 1) {
-      out << "Succeeded on all processes!" << endl;
-    } else {
-      out << "FAILED on at least one process!" << endl;
-    }
-    TEST_EQUALITY_CONST(gblSuccess, 1);
-  }
-
-  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, Typedefs, LO, GO , Node )
   {
     using Teuchos::Comm;
@@ -635,6 +561,28 @@ namespace { // (anonymous)
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, StaticProfileMultiInsert, LO, GO, Node)
+  {
+    typedef Tpetra::CrsGraph<LO, GO, Node> graph_type;
+    typedef Tpetra::Map<LO, GO, Node> map_type;
+
+    const GST Invalid = Teuchos::OrdinalTraits<GST>::invalid();
+    RCP<const Comm<int>> comm = getDefaultComm();
+
+    const size_t num_local = 1;
+    RCP<const map_type> row_map = rcp(new map_type(Invalid, num_local, 0, comm));
+    RCP<graph_type> G = rcp(new graph_type(row_map, 1, StaticProfile));
+    auto row = row_map->getGlobalElement(0);
+    G->insertGlobalIndices(row, tuple<GO>(row, row, row, row));
+    G->insertGlobalIndices(row, tuple<GO>(row, row, row, row));
+    G->fillComplete();
+
+    // All procs fail if any node fails
+    int globalSuccess_int = -1;
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int));
+    TEST_EQUALITY_CONST(globalSuccess_int, 0);
+  }
+
 //
 // INSTANTIATIONS
 //
@@ -648,15 +596,13 @@ namespace { // (anonymous)
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, EmptyFillComplete, LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, Typedefs,          LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, Bug20100622K,      LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, ActiveFill,        LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, SortingTests,      LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, TwoArraysESFC,     LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, SetAllIndices,     LO, GO, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, SetAllIndices,     LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, StaticProfileMultiInsert, LO, GO, NODE )
 
     TPETRA_ETI_MANGLING_TYPEDEFS()
 
     TPETRA_INSTANTIATE_LGN( UNIT_TEST_GROUP_DEBUG_AND_RELEASE )
 
 } // namespace (anonymous)
-
-

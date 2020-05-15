@@ -96,7 +96,7 @@ public:
   /// Get current time
   virtual Scalar getTime() const override;
   /// Get current index
-  virtual Scalar getIndex() const override;
+  virtual int getIndex() const override;
   /// Get Status
   virtual Status getStatus() const override;
   /// Get the Stepper
@@ -108,6 +108,7 @@ public:
   virtual Teuchos::RCP<const SolutionHistory<Scalar> > getSolutionHistory() const override;
    /// Get the TimeStepControl
   virtual Teuchos::RCP<const TimeStepControl<Scalar> > getTimeStepControl() const override;
+  virtual Teuchos::RCP<TimeStepControl<Scalar> > getNonConstTimeStepControl() override;
   /// Returns the IntegratorTimer_ for this Integrator
   virtual Teuchos::RCP<Teuchos::Time> getIntegratorTimer() const override
   { return state_integrator_->getIntegratorTimer();}
@@ -117,7 +118,7 @@ public:
   //@}
 
   /// Set the initial state from Thyra::VectorBase(s)
-  virtual void setInitialState(
+  virtual void initializeSolutionHistory(
     Scalar t0,
     Teuchos::RCP<const Thyra::VectorBase<Scalar> > x0,
     Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdot0 = Teuchos::null,
@@ -157,7 +158,7 @@ public:
 protected:
 
   // Create sensitivity model evaluator from application model
-  Teuchos::RCP<Tempus::AdjointAuxSensitivityModelEvaluator<Scalar> >
+  Teuchos::RCP<AdjointAuxSensitivityModelEvaluator<Scalar> >
   createAdjointModel(
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
     const Teuchos::RCP<Teuchos::ParameterList>& inputPL);
@@ -167,7 +168,7 @@ protected:
     const Teuchos::RCP<const SolutionHistory<Scalar> >& adjoint_solution_history);
 
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;
-  Teuchos::RCP<Tempus::AdjointAuxSensitivityModelEvaluator<Scalar> > adjoint_model_;
+  Teuchos::RCP<AdjointAuxSensitivityModelEvaluator<Scalar> > adjoint_model_;
   Teuchos::RCP<IntegratorBasic<Scalar> > state_integrator_;
   Teuchos::RCP<IntegratorBasic<Scalar> > adjoint_integrator_;
   Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory_;
@@ -183,14 +184,14 @@ protected:
 
 /// Non-member constructor
 template<class Scalar>
-Teuchos::RCP<Tempus::IntegratorAdjointSensitivity<Scalar> >
+Teuchos::RCP<IntegratorAdjointSensitivity<Scalar> >
 integratorAdjointSensitivity(
   Teuchos::RCP<Teuchos::ParameterList>                pList,
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
 
 /// Non-member constructor
 template<class Scalar>
-Teuchos::RCP<Tempus::IntegratorAdjointSensitivity<Scalar> >
+Teuchos::RCP<IntegratorAdjointSensitivity<Scalar> >
 integratorAdjointSensitivity();
 
 } // namespace Tempus

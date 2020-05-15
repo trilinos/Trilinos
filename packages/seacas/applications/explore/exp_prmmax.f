@@ -219,10 +219,10 @@ C   --Update the min/max number
   110 CONTINUE
       RETURN
 10000  FORMAT (/, 1X, 'Variable ', A, ' for ', A,
-     &   :, ', number =', I10)
+     &   :, ', number =', I12)
 10010  FORMAT (4X, 'All values = ', 1PE17.10)
-10020  FORMAT (1X, I10, ' ', A, '(s) = ', 1PE17.10, :
-     &   ', first at step ', I10)
-10030  FORMAT (1X, I10, ' ', A, '(s) = ', 1PE17.10,
-     &   ', first at ', A, I10, :, ' of step ', I10)
+10020  FORMAT (1X, I12, ' ', A, '(s) = ', 1PE17.10, :
+     &   ', first at step ', I12)
+10030  FORMAT (1X, I12, ' ', A, '(s) = ', 1PE17.10,
+     &   ', first at ', A, I12, :, ' of step ', I12)
       END

@@ -257,7 +257,7 @@ Kokkos::initialize();
       *outStream << "\n";
     }  // end for cellCt
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error &err) {
     *outStream << err.what() << "\n";
     errorFlag = -1;
   };

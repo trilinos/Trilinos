@@ -5,9 +5,6 @@
 /* Define whether Tpetra enables deprecated code at compile time. */
 #cmakedefine TPETRA_ENABLE_DEPRECATED_CODE
 
-/* define if new form of std::count is supported */
-#cmakedefine HAVE_STD_NEW_COUNT_SYNTAX
-
 /* Define if want to build with epetra enabled */
 #cmakedefine HAVE_TPETRACORE_EPETRA
 #ifdef HAVE_TPETRACORE_EPETRA
@@ -59,7 +56,7 @@
    The HAVE_TPETRA_TSQR macro tells you whether it is safe to use TSQR
    in Tpetra (and downstream packages).  TSQR is enabled by default in
    Tpetra if KokkosTSQR is enabled, but users may turn off TSQR by
-   setting Tpetra_ENABLE_TSQR to OFF. */
+   setting TpetraCore_ENABLE_TSQR to OFF. */
 #cmakedefine HAVE_TPETRACORE_TPETRATSQR
 #ifdef HAVE_TPETRACORE_TPETRATSQR
 #  define HAVE_TPETRA_KOKKOSTSQR
@@ -69,14 +66,15 @@
 /* Define when building TpetraCore with TSQR enabled.  TSQR is enabled
    by default in TpetraCore if the TpetraTSQR subpackage is enabled.
    Users may turn off TSQR even if TpetraTSQR is enabled, by setting
-   Tpetra_ENABLE_TSQR to OFF. */
+   TpetraCore_ENABLE_TSQR to OFF. */
 #cmakedefine HAVE_TPETRA_TSQR
 
 /* Define when enabling the Murmur hash function in Tpetra */
 #cmakedefine TPETRA_USE_MURMUR_HASH
 
-/* Define when enabling KokkosContainers in Tpetra */
+/* Tpetra timers */
 #cmakedefine HAVE_TPETRA_MMM_TIMINGS
+#cmakedefine HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
 /* Define when enabling KokkosCore in Tpetra */
 #cmakedefine HAVE_TPETRACORE_KOKKOSCORE
@@ -108,6 +106,9 @@
 #  define HAVE_TPETRACORE_KOKKOSMPICOMM
 #  define HAVE_TPETRA_KOKKOSMPICOMM
 #endif // HAVE_TPETRACORE_TEUCHOSKOKKOSCOMM
+
+/* Define when enabling TeuchosNumerics in TpetraCore */
+#cmakedefine HAVE_TPETRACORE_TEUCHOSNUMERICS
 
 /* Define when enabling Kokkos::View DistObject in Tpetra */
 #cmakedefine TPETRA_ENABLE_KOKKOS_DISTOBJECT
@@ -164,11 +165,6 @@
 #cmakedefine HAVE_TPETRA_CUDA
 
 #cmakedefine HAVE_TPETRA_THREADED_MKL
-
-#cmakedefine HAVE_TPETRACORE_RTI
-#ifdef HAVE_TPETRACORE_RTI
-#  define HAVE_TPETRA_RTI
-#endif // HAVE_TPETRACORE_RTI
 
 #cmakedefine HAVE_TPETRA_BCRS_DO_POINT_IMPORT
 

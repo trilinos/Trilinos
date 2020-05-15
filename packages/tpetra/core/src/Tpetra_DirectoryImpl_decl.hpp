@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
@@ -45,7 +43,6 @@
 /// \file Tpetra_DirectoryImpl_decl.hpp
 /// \brief Declaration of implementation details of Tpetra::Directory.
 
-#include <Tpetra_ConfigDefs.hpp>
 #include "Tpetra_TieBreak.hpp"
 #include "Tpetra_Map_fwd.hpp"
 
@@ -65,7 +62,7 @@
 #  define HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX 1
 #endif // HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
 
-#include <Tpetra_Details_FixedHashTable_decl.hpp>
+#include "Tpetra_Details_FixedHashTable_decl.hpp"
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 // Forward declaration of Teuchos::Comm
@@ -99,7 +96,9 @@ namespace Tpetra {
       /// may <i>not</i> keep a reference to the Map.  This prevents
       /// circular references, since the Map itself owns the
       /// Directory.
-      Directory ();
+      Directory () = default;
+
+      virtual ~Directory () = default;
 
       /// Find process IDs and (optionally) local IDs for the given global IDs.
       ///
@@ -167,27 +166,21 @@ namespace Tpetra {
       typedef Directory<LocalOrdinal, GlobalOrdinal, NodeType> base_type;
       typedef typename base_type::map_type map_type;
 
+      //! Constructor (that takes no arguments).
+      ReplicatedDirectory () = default;
+
       //! Constructor (that takes a Map).
       ReplicatedDirectory (const map_type& map);
 
-      //! Constructor (that takes no arguments).
-      ReplicatedDirectory ();
+      ~ReplicatedDirectory () override = default;
 
-      virtual bool isOneToOne (const Teuchos::Comm<int>& comm) const;
-
-      template <class Node2>
-      Directory<LocalOrdinal,GlobalOrdinal,Node2>*
-      clone (const ::Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node2>& cloneMap) const
-      {
-        typedef ReplicatedDirectory<LocalOrdinal,GlobalOrdinal,Node2> Dir2;
-        return new Dir2 (cloneMap);
-      }
+      bool isOneToOne (const Teuchos::Comm<int>& comm) const override;
 
       //! @name Implementation of Teuchos::Describable.
       //@{
 
       //! A one-line human-readable description of this object.
-      std::string description () const;
+      std::string description () const override;
       //@}
     protected:
       //! Find process IDs and (optionally) local IDs for the given global IDs.
@@ -196,11 +189,11 @@ namespace Tpetra {
                       const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs,
                       const Teuchos::ArrayView<int> &nodeIDs,
                       const Teuchos::ArrayView<LocalOrdinal> &localIDs,
-                      const bool computeLIDs) const;
+                      const bool computeLIDs) const override;
 
     private:
       //! The number of process(es) in the input Map's communicator.
-      const int numProcs_;
+      const int numProcs_ = 0;
     };
 
 
@@ -219,33 +212,23 @@ namespace Tpetra {
       // This friend declaration lets us implement clone().
       template <class LO, class GO, class N> friend class ContiguousUniformDirectory;
 
-      //! Empty constructor for use by clone()
-      ContiguousUniformDirectory () {}
-
     public:
       typedef Directory<LocalOrdinal, GlobalOrdinal, NodeType> base_type;
       typedef typename base_type::map_type map_type;
 
-      //! Constructor.
+      ContiguousUniformDirectory () = default;
       ContiguousUniformDirectory (const map_type& map);
+      ~ContiguousUniformDirectory () override = default;
 
-      virtual bool isOneToOne (const Teuchos::Comm<int>&) const {
+      bool isOneToOne (const Teuchos::Comm<int>&) const override {
         return true;
-      }
-
-      template <class Node2>
-      Directory<LocalOrdinal,GlobalOrdinal,Node2>*
-      clone (const ::Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node2>& cloneMap) const
-      {
-        typedef ContiguousUniformDirectory<LocalOrdinal,GlobalOrdinal,Node2> Dir2;
-        return new Dir2 (cloneMap);
       }
 
       //! @name Implementation of Teuchos::Describable.
       //@{
 
       //! A one-line human-readable description of this object.
-      std::string description () const;
+      std::string description () const override;
       //@}
 
     protected:
@@ -255,7 +238,7 @@ namespace Tpetra {
                       const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs,
                       const Teuchos::ArrayView<int> &nodeIDs,
                       const Teuchos::ArrayView<LocalOrdinal> &localIDs,
-                      const bool computeLIDs) const;
+                      const bool computeLIDs) const override;
     };
 
 
@@ -267,40 +250,23 @@ namespace Tpetra {
     private:
       template <class LO, class GO, class N> friend class DistributedContiguousDirectory;
 
-      //! Empty constructor for use by clone()
-      DistributedContiguousDirectory () {}
-
     public:
       typedef Directory<LocalOrdinal, GlobalOrdinal, NodeType> base_type;
       typedef typename base_type::map_type map_type;
 
-      //! Constructor.
+      DistributedContiguousDirectory () = default;
       DistributedContiguousDirectory (const map_type& map);
+      ~DistributedContiguousDirectory () override = default;
 
-      virtual bool isOneToOne (const Teuchos::Comm<int>&) const {
+      bool isOneToOne (const Teuchos::Comm<int>&) const override {
         return true;
-      }
-
-      template <class Node2>
-      Directory<LocalOrdinal,GlobalOrdinal,Node2>*
-      clone (const ::Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node2>& cloneMap) const
-      {
-        typedef DistributedContiguousDirectory<LocalOrdinal,GlobalOrdinal,Node2> Dir2;
-        Dir2* dir = new Dir2 (cloneMap);
-        try {
-          dir->allMinGIDs_ = allMinGIDs_;
-        } catch (std::exception& e) {
-          delete dir; // clean up just in case assignment throws (it shouldn't)
-          throw;
-        }
-        return dir;
       }
 
       //! @name Implementation of Teuchos::Describable.
       //@{
 
       //! A one-line human-readable description of this object.
-      std::string description () const;
+      std::string description () const override;
       //@}
 
     protected:
@@ -310,7 +276,7 @@ namespace Tpetra {
                       const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs,
                       const Teuchos::ArrayView<int> &nodeIDs,
                       const Teuchos::ArrayView<LocalOrdinal> &localIDs,
-                      const bool computeLIDs) const;
+                      const bool computeLIDs) const override;
 
     private:
       /// \brief Minimum global ID for each process in the communicator.
@@ -321,8 +287,10 @@ namespace Tpetra {
       ///
       /// This array has map_->getComm ()->getSize ()+1 entries.  Entry
       /// i contains the minimum global identifier (GID) of process i in
-      /// map_'s communicator.  The last entry contains the maximum GID
-      /// in the directory.
+      /// map_'s communicator.  Note that on processors with no Map entries,
+      /// this array will store std::numeric_limits<GlobalOrdinal>::max().
+      /// Thus, this array is not necessarily monotonically non-decreasing.
+      /// The last entry contains the maximum GID in the directory.
       ///
       /// The directory uses this array to map from GID to process ID,
       /// when the GIDs are distributed contiguously in increasing order
@@ -345,59 +313,27 @@ namespace Tpetra {
     class DistributedNoncontiguousDirectory :
       public Directory<LocalOrdinal, GlobalOrdinal, NodeType> {
     private:
-      template <class LO, class GO, class N> friend class DistributedNoncontiguousDirectory;
-      //! Private constructor for post-contruction initialization in clone()
-      DistributedNoncontiguousDirectory () {}
+      template <class LO, class GO, class N>
+      friend class DistributedNoncontiguousDirectory;
 
     public:
       typedef Tpetra::Details::TieBreak<LocalOrdinal, GlobalOrdinal> tie_break_type;
-      typedef Directory<LocalOrdinal, GlobalOrdinal, NodeType> base_type;
-      typedef typename base_type::map_type map_type;
+      using base_type = Directory<LocalOrdinal, GlobalOrdinal, NodeType>;
+      using map_type = typename base_type::map_type;
 
-      //! Constructor.
+      DistributedNoncontiguousDirectory () = default;
       DistributedNoncontiguousDirectory (const map_type& map);
-
-      //! Constructor.
       DistributedNoncontiguousDirectory (const map_type& map,
                                          const tie_break_type& tie_break);
+      ~DistributedNoncontiguousDirectory () override = default;
 
-      virtual bool isOneToOne (const Teuchos::Comm<int>& comm) const;
-
-      template <class Node2>
-      Directory<LocalOrdinal,GlobalOrdinal,Node2>*
-      clone (const ::Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node2>& cloneMap) const
-      {
-        using Teuchos::RCP;
-        typedef DistributedNoncontiguousDirectory<LocalOrdinal,GlobalOrdinal,Node2> Dir2;
-        typedef ::Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node2> output_map_type;
-        Dir2* dir = new Dir2 (cloneMap);
-
-        // This method returns a raw pointer.  Thus, take care to
-        // check whether intermediate operations succeed, so that we
-        // don't leak memory if they don't.
-        RCP<const output_map_type> outDirMap;
-        try {
-          outDirMap = directoryMap_->template clone<Node2> (cloneMap.getNode ());
-        }
-        catch (...) {
-          outDirMap = Teuchos::null; // deallocate
-          throw;
-        }
-
-        dir->directoryMap_ = outDirMap;
-        dir->PIDs_ = PIDs_;
-        dir->LIDs_ = LIDs_;
-        dir->lidToPidTable_ = lidToPidTable_;
-        dir->lidToLidTable_ = lidToLidTable_;
-        dir->useHashTables_ = useHashTables_;
-        return dir;
-      }
+      bool isOneToOne (const Teuchos::Comm<int>& comm) const override;
 
       //! @name Implementation of Teuchos::Describable.
       //@{
 
       //! A one-line human-readable description of this object.
-      std::string description () const;
+      std::string description () const override;
       //@}
     protected:
       //! Find process IDs and (optionally) local IDs for the given global IDs.
@@ -406,7 +342,7 @@ namespace Tpetra {
                       const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs,
                       const Teuchos::ArrayView<int> &nodeIDs,
                       const Teuchos::ArrayView<LocalOrdinal> &localIDs,
-                      const bool computeLIDs) const;
+                      const bool computeLIDs) const override;
     private:
       /// \brief Initialization routine that unifies the implementation of
       ///        the two constructors

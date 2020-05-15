@@ -76,9 +76,9 @@ namespace MueLu {
 
   */
 
-  template <class LocalOrdinal = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template<class LocalOrdinal = DefaultLocalOrdinal,
+           class GlobalOrdinal = DefaultGlobalOrdinal,
+           class Node = DefaultNode>
   class IsolatedNodeAggregationAlgorithm :
     public MueLu::AggregationAlgorithmBase<LocalOrdinal,GlobalOrdinal,Node> {
 #undef MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_SHORT
@@ -89,7 +89,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    IsolatedNodeAggregationAlgorithm(const RCP<const FactoryBase>& graphFact = Teuchos::null) { }
+    IsolatedNodeAggregationAlgorithm(const RCP<const FactoryBase>& /* graphFact */ = Teuchos::null) { }
 
     //! Destructor.
     virtual ~IsolatedNodeAggregationAlgorithm() { }

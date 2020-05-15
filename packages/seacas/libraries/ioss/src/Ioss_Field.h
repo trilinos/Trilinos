@@ -83,7 +83,12 @@ namespace Ioss {
                       of the elements in a shell element block or the radius
                       of particles in a particle element block. */
       COMMUNICATION,
-      INFORMATION,
+      MESH_REDUCTION, /**< A field which summarizes some non-transient data
+                         about an entity (\sa REDUCTION). This could be an
+                         offset applied to an element block, or the units
+                         system of a model or the name of the solid model
+                         which this entity is modelling... */
+      INFORMATION = MESH_REDUCTION,
       REDUCTION, /**< A field which typically summarizes some transient data
                       about an entity. The size of this field is typically not
                       proportional to the number of entities in a GroupingEntity.
@@ -100,15 +105,16 @@ namespace Ioss {
 
     // Create a field named 'name' that contains values of type 'type'
     // in a storage format of type 'storage'.  There are 'value_count'
-    // items in the field.
+    // items in the field. If `value_count==0`, then the correct size
+    // will be set when the field is added to a `GroupingEntity`
     Field(std::string name, BasicType type, const std::string &storage, RoleType role,
-          size_t value_count, size_t index = 0);
+          size_t value_count = 0, size_t index = 0);
 
     Field(std::string name, BasicType type, const std::string &storage, int copies, RoleType role,
-          size_t value_count, size_t index = 0);
+          size_t value_count = 0, size_t index = 0);
 
     Field(std::string name, BasicType type, const VariableType *storage, RoleType role,
-          size_t value_count, size_t index = 0);
+          size_t value_count = 0, size_t index = 0);
 
     // Create a field from another field.
     Field(const Field & /*from*/);

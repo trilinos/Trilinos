@@ -5,79 +5,85 @@ SET(UTILS_SOURCES
   ${PACKAGE_SOURCE_DIR}/test/utils/Sacado_RandomImp.hpp
 )
 
-# All of these tests use the Teuchos test harness, and therefore Teuchos
+# All of these tests use the Teuchos test harness, and therefore TeuchosCore
 # must be enabled
-IF (Sacado_ENABLE_Teuchos)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    FadSerializationTests
-    SOURCES Fad_SerializationTests.cpp ${UTILS_SOURCES}
-    ARGS
-    COMM serial mpi
-    NUM_MPI_PROCS 1
-    STANDARD_PASS_OUTPUT
-  )
+IF (Sacado_ENABLE_TeuchosCore)
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    TaySerializationTests
-    SOURCES Tay_SerializationTests.cpp ${UTILS_SOURCES}
-    ARGS
-    COMM serial mpi
-    NUM_MPI_PROCS 1
-    STANDARD_PASS_OUTPUT
-    XHOSTTYPE Windows Windows_NT
-  )
+  IF (Sacado_ENABLE_TeuchosComm)
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      FadSerializationTests
+      SOURCES Fad_SerializationTests.cpp ${UTILS_SOURCES}
+      ARGS
+      COMM serial mpi
+      NUM_MPI_PROCS 1
+      STANDARD_PASS_OUTPUT
+      )
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    FadCommTests
-    SOURCES Fad_CommTests.cpp Fad_CommTests.hpp ${UTILS_SOURCES}
-    ARGS
-    COMM serial mpi
-    STANDARD_PASS_OUTPUT
-  )
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      TaySerializationTests
+      SOURCES Tay_SerializationTests.cpp ${UTILS_SOURCES}
+      ARGS
+      COMM serial mpi
+      NUM_MPI_PROCS 1
+      STANDARD_PASS_OUTPUT
+      XHOSTTYPE Windows Windows_NT
+      )
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    ELRFadCommTests
-    SOURCES ELRFad_CommTests.cpp Fad_CommTests.hpp ${UTILS_SOURCES}
-    ARGS
-    COMM serial mpi
-    STANDARD_PASS_OUTPUT
-  )
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      FadCommTests
+      SOURCES Fad_CommTests.cpp Fad_CommTests.hpp ${UTILS_SOURCES}
+      ARGS
+      COMM serial mpi
+      STANDARD_PASS_OUTPUT
+      )
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    CacheFadCommTests
-    SOURCES CacheFad_CommTests.cpp Fad_CommTests.hpp ${UTILS_SOURCES}
-    ARGS
-    COMM serial mpi
-    STANDARD_PASS_OUTPUT
-  )
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      ELRFadCommTests
+      SOURCES ELRFad_CommTests.cpp Fad_CommTests.hpp ${UTILS_SOURCES}
+      ARGS
+      COMM serial mpi
+      STANDARD_PASS_OUTPUT
+      )
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    ELRCacheFadCommTests
-    SOURCES ELRCacheFad_CommTests.cpp Fad_CommTests.hpp ${UTILS_SOURCES}
-    ARGS
-    COMM serial mpi
-    STANDARD_PASS_OUTPUT
-  )
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      CacheFadCommTests
+      SOURCES CacheFad_CommTests.cpp Fad_CommTests.hpp ${UTILS_SOURCES}
+      ARGS
+      COMM serial mpi
+      STANDARD_PASS_OUTPUT
+      )
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    TayCommTests
-    SOURCES Tay_CommTests.cpp Tay_CommTests.hpp ${UTILS_SOURCES}
-    ARGS
-    COMM serial mpi
-    STANDARD_PASS_OUTPUT
-    XHOSTTYPE Windows Windows_NT
-  )
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      ELRCacheFadCommTests
+      SOURCES ELRCacheFad_CommTests.cpp Fad_CommTests.hpp ${UTILS_SOURCES}
+      ARGS
+      COMM serial mpi
+      STANDARD_PASS_OUTPUT
+      )
+
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      TayCommTests
+      SOURCES Tay_CommTests.cpp Tay_CommTests.hpp ${UTILS_SOURCES}
+      ARGS
+      COMM serial mpi
+      STANDARD_PASS_OUTPUT
+      XHOSTTYPE Windows Windows_NT
+      )
+
+  ENDIF()
 
   IF (Sacado_ENABLE_KokkosCore)
 
-    IF (Kokkos_ENABLE_Serial)
-      TRIBITS_ADD_EXECUTABLE_AND_TEST(
-        Fad_Kokkos_CommTests_Serial
-        SOURCES Fad_Kokkos_CommTests_Serial.cpp Fad_CommTests.hpp ${UTILS_SOURCES}
-        ARGS
-        COMM serial mpi
-        STANDARD_PASS_OUTPUT
-        )
+    IF (Kokkos_ENABLE_SERIAL)
+      IF (Sacado_ENABLE_TeuchosKokkosComm)
+        TRIBITS_ADD_EXECUTABLE_AND_TEST(
+          Fad_Kokkos_CommTests_Serial
+          SOURCES Fad_Kokkos_CommTests_Serial.cpp Fad_CommTests.hpp ${UTILS_SOURCES}
+          ARGS
+          COMM serial mpi
+          STANDARD_PASS_OUTPUT
+          )
+      ENDIF()
 
       TRIBITS_ADD_EXECUTABLE_AND_TEST(
         FadKokkosTests_Serial
@@ -107,14 +113,16 @@ IF (Sacado_ENABLE_Teuchos)
         )
     ENDIF ()
 
-    IF (Kokkos_ENABLE_Pthread)
-      TRIBITS_ADD_EXECUTABLE_AND_TEST(
-        Fad_Kokkos_CommTests_Threads
-        SOURCES Fad_Kokkos_CommTests_Threads.cpp Fad_CommTests.hpp ${UTILS_SOURCES}
-        ARGS
-        COMM serial mpi
-        STANDARD_PASS_OUTPUT
-        )
+    IF (Kokkos_ENABLE_PTHREAD)
+      IF (Sacado_ENABLE_TeuchosKokkosComm)
+        TRIBITS_ADD_EXECUTABLE_AND_TEST(
+          Fad_Kokkos_CommTests_Threads
+          SOURCES Fad_Kokkos_CommTests_Threads.cpp Fad_CommTests.hpp ${UTILS_SOURCES}
+          ARGS
+          COMM serial mpi
+          STANDARD_PASS_OUTPUT
+          )
+      ENDIF()
 
       TRIBITS_ADD_EXECUTABLE_AND_TEST(
         FadKokkosTests_Threads
@@ -147,14 +155,16 @@ IF (Sacado_ENABLE_Teuchos)
         )
     ENDIF()
 
-    IF (Kokkos_ENABLE_OpenMP)
-      TRIBITS_ADD_EXECUTABLE_AND_TEST(
-        Fad_Kokkos_CommTests_OpenMP
-        SOURCES Fad_Kokkos_CommTests_OpenMP.cpp Fad_CommTests.hpp ${UTILS_SOURCES}
-        ARGS
-        COMM serial mpi
-        STANDARD_PASS_OUTPUT
-        )
+    IF (Kokkos_ENABLE_OPENMP)
+      IF (Sacado_ENABLE_TeuchosKokkosComm)
+        TRIBITS_ADD_EXECUTABLE_AND_TEST(
+          Fad_Kokkos_CommTests_OpenMP
+          SOURCES Fad_Kokkos_CommTests_OpenMP.cpp Fad_CommTests.hpp ${UTILS_SOURCES}
+          ARGS
+          COMM serial mpi
+          STANDARD_PASS_OUTPUT
+          )
+      ENDIF()
 
       TRIBITS_ADD_EXECUTABLE_AND_TEST(
         FadKokkosTests_OpenMP
@@ -187,14 +197,16 @@ IF (Sacado_ENABLE_Teuchos)
         )
     ENDIF()
 
-    IF (Kokkos_ENABLE_Cuda)
-      TRIBITS_ADD_EXECUTABLE_AND_TEST(
-        Fad_Kokkos_CommTests_Cuda
-        SOURCES Fad_Kokkos_CommTests_Cuda.cpp Fad_CommTests.hpp ${UTILS_SOURCES}
-        ARGS
-        COMM serial mpi
-        STANDARD_PASS_OUTPUT
-        )
+    IF (Kokkos_ENABLE_CUDA)
+      IF (Sacado_ENABLE_TeuchosKokkosComm)
+        TRIBITS_ADD_EXECUTABLE_AND_TEST(
+          Fad_Kokkos_CommTests_Cuda
+          SOURCES Fad_Kokkos_CommTests_Cuda.cpp Fad_CommTests.hpp ${UTILS_SOURCES}
+          ARGS
+          COMM serial mpi
+          STANDARD_PASS_OUTPUT
+          )
+      ENDIF()
 
       TRIBITS_ADD_EXECUTABLE_AND_TEST(
         FadKokkosTests_Cuda
@@ -268,29 +280,54 @@ IF (Sacado_ENABLE_Teuchos)
 
   ENDIF()
 
-  IF (Sacado_ENABLE_CXX11)
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      PromoteTests
-      SOURCES PromoteTests.cpp
-      ARGS
-      COMM serial mpi
-      NUM_MPI_PROCS 1
-      STANDARD_PASS_OUTPUT
-      )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    PromoteTests
+    SOURCES PromoteTests.cpp
+    ARGS
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+    )
 
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      MPLTests
-      SOURCES MPLTests.cpp
-      ARGS
-      COMM serial mpi
-      NUM_MPI_PROCS 1
-      STANDARD_PASS_OUTPUT
-      )
-  ENDIF()
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    MPLTests
+    SOURCES MPLTests.cpp
+    ARGS
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    ConditionalReturnTypeTest
+    SOURCES ConditionalReturnTypeTest.cpp
+    ARGS
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+    )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ConversionTests
     SOURCES ConversionTests.cpp
+    ARGS
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    MoveTests
+    SOURCES MoveTests.cpp
+    ARGS
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    TernaryExprTests
+    SOURCES TernaryExprTests.cpp
     ARGS
     COMM serial mpi
     NUM_MPI_PROCS 1

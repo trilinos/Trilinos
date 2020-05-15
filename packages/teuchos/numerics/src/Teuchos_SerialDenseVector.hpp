@@ -210,7 +210,7 @@ namespace Teuchos {
   //! @name I/O methods.
   //@{
     //! Print method.  Define the behavior of the std::ostream << operator inherited from the Object class.
-    virtual void print(std::ostream& os) const;
+    std::ostream& print(std::ostream& os) const;
   //@}
 };
 
@@ -281,7 +281,7 @@ namespace Teuchos {
   }
 
   template<typename OrdinalType, typename ScalarType>
-  void SerialDenseVector<OrdinalType, ScalarType>::print(std::ostream& os) const
+  std::ostream& SerialDenseVector<OrdinalType, ScalarType>::print(std::ostream& os) const
   {
     os << std::endl;
     if(this->valuesCopied_)
@@ -297,6 +297,7 @@ namespace Teuchos {
       }
       os << std::endl;
     }
+    return os;
   }
 
   //----------------------------------------------------------------------------------------------------
@@ -338,6 +339,35 @@ namespace Teuchos {
 #endif
     return(this->values_[index]);
   }
+
+/// \brief Ostream manipulator for SerialDenseVector 
+template<typename OrdinalType, typename ScalarType>
+struct SerialDenseVectorPrinter {
+public:
+  const SerialDenseVector<OrdinalType,ScalarType> &obj;
+  SerialDenseVectorPrinter(
+        const SerialDenseVector<OrdinalType,ScalarType> &obj_in)
+      : obj(obj_in) {}
+};
+
+/// \brief Output SerialDenseVector object through its stream manipulator. 
+template<typename OrdinalType, typename ScalarType>
+std::ostream&
+operator<<(std::ostream &out,
+           const SerialDenseVectorPrinter<OrdinalType,ScalarType> printer)
+{
+  printer.obj.print(out);
+  return out;
+}
+
+/// \brief Return SerialDenseVector ostream manipulator Use as:
+template<typename OrdinalType, typename ScalarType>
+SerialDenseVectorPrinter<OrdinalType,ScalarType>
+printMat(const SerialDenseVector<OrdinalType,ScalarType> &obj)
+{
+  return SerialDenseVectorPrinter<OrdinalType,ScalarType>(obj);
+}
+
 
 } // namespace Teuchos
 

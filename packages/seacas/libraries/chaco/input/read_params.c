@@ -153,7 +153,7 @@ void read_params(FILE *pfile /* file with new user parameters */
   extern double EWGT_RATIO_MAX; /* if so, max allowed ewgt/nvtxs */
 
 #if 0
-    extern int PROJECTION_AXIS;	  /* direction to compress geometry */
+    extern int PROJECTION_AXIS;   /* direction to compress geometry */
 #endif
   extern int   EXPERT;           /* expert user or not? */
   extern int   VERTEX_SEPARATOR; /* find vertex instead of edge separator? */
@@ -577,9 +577,8 @@ static int read_double(char *  ptr, /* pointer to string to parse */
   if (nvals != 1) {
     return (FALSE);
   }
-  else {
-    return (TRUE);
-  }
+
+  return (TRUE);
 }
 
 static int read_long(char *ptr, /* pointer to string to parse */
@@ -596,9 +595,8 @@ static int read_long(char *ptr, /* pointer to string to parse */
   if (nvals != 1) {
     return (FALSE);
   }
-  else {
-    return (TRUE);
-  }
+
+  return (TRUE);
 }
 
 static int read_string(char *ptr, /* pointer to string to parse */

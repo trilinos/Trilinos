@@ -54,7 +54,7 @@ C
      &   LINKS, LINKR, IBAD, ALPHA)
 C***********************************************************************
 C
-C  SUBROUTINE ERASE = ERASES A POINT,  AND ALL DATA DEPENDANT ON THAT
+C  SUBROUTINE ERASE = ERASES A POINT,  AND ALL DATA DEPENDENT ON THAT
 C                     POINT  (I.E. LINES,  SIDES,  OR REGIONS)
 C
 C***********************************************************************

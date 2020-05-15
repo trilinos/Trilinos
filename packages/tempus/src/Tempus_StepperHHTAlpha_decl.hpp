@@ -36,16 +36,36 @@ namespace Tempus {
  * parameters are not allowed at the present time.  Also, note that, like
  * the Newmark Beta stepper, the linear solve for the explicit version of
  * this scheme has not been optimized (the mass matrix is not lumped).
+ *
+ *  The First-Step-As-Last (FSAL) principle is not used with the
+ *  HHT-Alpha method.
  */
 template<class Scalar>
 class StepperHHTAlpha : virtual public Tempus::StepperImplicit<Scalar>
 {
 public:
 
+  /** \brief Default constructor.
+   *
+   *  Requires subsequent setModel(), setSolver() and initialize()
+   *  calls before calling takeStep().
+  */
+  StepperHHTAlpha();
+
   /// Constructor
   StepperHHTAlpha(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
+    const Teuchos::RCP<StepperObserver<Scalar> >& obs,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool zeroInitialGuess,
+    std::string schemeName,
+    Scalar beta,
+    Scalar gamma,
+    Scalar alpha_f_,
+    Scalar alpha_m_);
 
   /// \name Basic stepper methods
   //@{
@@ -53,18 +73,18 @@ public:
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
 
     virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null){}
+      Teuchos::RCP<StepperObserver<Scalar> > /* obs */ = Teuchos::null){}
 
-    /// Initialize during construction and after changing input parameters.
-    virtual void initialize();
+    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
+    { return Teuchos::null; }
+
+    /// Set the initial conditions and make them consistent.
+    virtual void setInitialConditions (
+      const Teuchos::RCP<SolutionHistory<Scalar> >& /* solutionHistory */){}
 
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
-
-    /// Pass initial guess to Newton solver (only relevant for implicit solvers) 
-    virtual void setInitialGuess(Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
-       {initial_guess_ = initial_guess;}
 
     /// Get a default (initial) StepperState
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState();
@@ -81,70 +101,73 @@ public:
       {return isExplicit() and isImplicit();}
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
+
+    virtual OrderODE getOrderODE()   const {return SECOND_ORDER_ODE;}
   //@}
 
-  /// \name ParameterList methods
-  //@{
-    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl);
-    Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
-    Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
-    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
-    Teuchos::RCP<Teuchos::ParameterList> getDefaultParameters() const;
-  //@}
+  /// Return W_xDotxDot_coeff = d(xDotDot)/d(x).
+  virtual Scalar getW_xDotDot_coeff (const Scalar dt) const
+    { return Scalar(1.0)/(beta_*dt*dt); }
+  /// Return alpha = d(xDot)/d(x).
+  virtual Scalar getAlpha(const Scalar dt) const { return gamma_/(beta_*dt); }
+  /// Return beta  = d(x)/d(x).
+  virtual Scalar getBeta (const Scalar ) const { return Scalar(1.0); }
+
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
   /// \name Overridden from Teuchos::Describable
   //@{
-    virtual std::string description() const;
     virtual void describe(Teuchos::FancyOStream        & out,
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
-    void predictVelocity(Thyra::VectorBase<Scalar>& vPred,
+  virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
+
+  void predictVelocity(Thyra::VectorBase<Scalar>& vPred,
+                           const Thyra::VectorBase<Scalar>& v,
+                           const Thyra::VectorBase<Scalar>& a,
+                           const Scalar dt) const;
+
+  void predictDisplacement(Thyra::VectorBase<Scalar>& dPred,
+                             const Thyra::VectorBase<Scalar>& d,
                              const Thyra::VectorBase<Scalar>& v,
                              const Thyra::VectorBase<Scalar>& a,
                              const Scalar dt) const;
 
-    void predictDisplacement(Thyra::VectorBase<Scalar>& dPred,
-                               const Thyra::VectorBase<Scalar>& d,
-                               const Thyra::VectorBase<Scalar>& v,
-                               const Thyra::VectorBase<Scalar>& a,
-                               const Scalar dt) const;
+  void predictVelocity_alpha_f(Thyra::VectorBase<Scalar>& vPred,
+                               const Thyra::VectorBase<Scalar>& v) const;
 
-    void predictVelocity_alpha_f(Thyra::VectorBase<Scalar>& vPred,
-                                 const Thyra::VectorBase<Scalar>& v) const;
+  void predictDisplacement_alpha_f(Thyra::VectorBase<Scalar>& dPred,
+                                   const Thyra::VectorBase<Scalar>& d) const;
 
-    void predictDisplacement_alpha_f(Thyra::VectorBase<Scalar>& dPred,
-                                     const Thyra::VectorBase<Scalar>& d) const;
+  void correctAcceleration(Thyra::VectorBase<Scalar>& a_n_plus1,
+                            const Thyra::VectorBase<Scalar>& a_n) const;
 
-    void correctAcceleration(Thyra::VectorBase<Scalar>& a_n_plus1,
-                              const Thyra::VectorBase<Scalar>& a_n) const;
+  void correctVelocity(Thyra::VectorBase<Scalar>& v,
+                           const Thyra::VectorBase<Scalar>& vPred,
+                           const Thyra::VectorBase<Scalar>& a,
+                           const Scalar dt) const;
 
-    void correctVelocity(Thyra::VectorBase<Scalar>& v,
-                             const Thyra::VectorBase<Scalar>& vPred,
+  void correctDisplacement(Thyra::VectorBase<Scalar>& d,
+                             const Thyra::VectorBase<Scalar>& dPred,
                              const Thyra::VectorBase<Scalar>& a,
                              const Scalar dt) const;
 
-    void correctDisplacement(Thyra::VectorBase<Scalar>& d,
-                               const Thyra::VectorBase<Scalar>& dPred,
-                               const Thyra::VectorBase<Scalar>& a,
-                               const Scalar dt) const;
+  void setSchemeName(std::string schemeName);
+  void setBeta(Scalar beta);
+  void setGamma(Scalar gamma);
+  void setAlphaF(Scalar alpha_f);
+  void setAlphaM(Scalar alpha_m);
 
 private:
 
-  /// Default Constructor -- not allowed
-  StepperHHTAlpha();
-
-private:
-
+  std::string schemeName_;
   Scalar beta_;
   Scalar gamma_;
   Scalar alpha_f_;
   Scalar alpha_m_;
 
   Teuchos::RCP<Teuchos::FancyOStream> out_;
-
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;
-
 
 };
 } // namespace Tempus

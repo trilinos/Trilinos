@@ -40,6 +40,7 @@
 //------------------------------------------------------------------------
 // Define a variable type for storage of this elements connectivity
 namespace Ioss {
+  const char *Wedge12::name = "wedge12";
   class St_Wedge12 : public ElementVariableType
   {
   public:
@@ -118,12 +119,11 @@ int Ioss::Wedge12::number_nodes_edge(int edge) const
   if (edge == 0) {
     return -1;
   }
-  else if (edge <= 6) {
+  if (edge <= 6) {
     return 3;
   }
-  else {
-    return 2;
-  }
+
+  return 2;
 }
 
 int Ioss::Wedge12::number_nodes_face(int face) const

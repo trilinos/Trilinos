@@ -154,7 +154,7 @@ C ... Check whether all nodes have been specified in an elements connectivity.
          call sqzstr(stra, lstra)
          CALL PRTERR ('CMDSPEC', STRA(:lstra))
       end if
-10020 FORMAT('NODE USE ERROR: Found ',I10,
+10020 FORMAT('NODE USE ERROR: Found ',I12,
      $     ' nodes that are not connected to any elements.')
       RETURN
       END

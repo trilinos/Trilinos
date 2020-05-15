@@ -95,7 +95,7 @@ public:
      * \returns New linear operator that functions as the inverse
      *          of <code>linearOp</code>.
      */
-   virtual InverseLinearOp buildInverse(const LinearOp & linearOp,const LinearOp & precOp) const
+   virtual InverseLinearOp buildInverse(const LinearOp & linearOp,const LinearOp & /* precOp */) const
    { return buildInverse(linearOp); }
 
    #if 0
@@ -158,7 +158,7 @@ public:
      *                        rebuilt using the <code>source</code>
      *                        object.
      */
-   virtual void rebuildInverse(const LinearOp & source,const LinearOp & precOp,InverseLinearOp & dest) const
+   virtual void rebuildInverse(const LinearOp & source,const LinearOp & /* precOp */,InverseLinearOp & dest) const
    { rebuildInverse(source,dest); }
 
    /** \brief A function that permits inspection of the parameters used to create
@@ -204,7 +204,7 @@ public:
      *
      * \note The default implementation returns true (it does nothing!).
      */
-   virtual bool updateRequestedParameters(const Teuchos::ParameterList & pl)
+   virtual bool updateRequestedParameters(const Teuchos::ParameterList & /* pl */)
    { return true; }
 
    //! Set the request handler with pointers to the appropriate callbacks
@@ -257,7 +257,7 @@ public:
      * \returns New linear operator that functions as the inverse
      *          of <code>linearOp</code>.
      */
-   virtual InverseLinearOp buildInverse(const LinearOp & linearOp) const
+   virtual InverseLinearOp buildInverse(const LinearOp & /* linearOp */) const
    { return Teuchos::rcp_const_cast<Thyra::LinearOpBase<double> >(this->inverse_); }
 
    /** \brief Pass in an already constructed inverse operator. Update
@@ -274,7 +274,7 @@ public:
      *                        rebuilt using the <code>source</code>
      *                        object.
      */
-   virtual void rebuildInverse(const LinearOp & source,InverseLinearOp & dest) const
+   virtual void rebuildInverse(const LinearOp & /* source */,InverseLinearOp & /* dest */) const
    { }
 
    /** \brief A function that permits inspection of the parameters used to create

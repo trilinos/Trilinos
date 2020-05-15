@@ -53,6 +53,7 @@
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_ConstraintFactory.hpp"
+#include "MueLu_AggregateQualityEstimateFactory.hpp"
 #include "MueLu_CoordinatesTransferFactory.hpp"
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_LineDetectionFactory.hpp"
@@ -64,6 +65,7 @@
 #include "MueLu_RepartitionHeuristicFactory.hpp"
 #include "MueLu_RepartitionFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
+#include "MueLu_ScaledNullspaceFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
@@ -71,8 +73,11 @@
 #include "MueLu_UncoupledAggregationFactory.hpp"
 #include "MueLu_HybridAggregationFactory.hpp"
 #include "MueLu_ZoltanInterface.hpp"
+#include "MueLu_InterfaceMappingTransferFactory.hpp"
+#include "MueLu_InterfaceAggregationFactory.hpp"
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
+#include "MueLu_AmalgamationFactory_kokkos.hpp"
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 #include "MueLu_CoarseMapFactory_kokkos.hpp"
 #include "MueLu_CoordinatesTransferFactory_kokkos.hpp"
@@ -159,6 +164,8 @@ namespace MueLu {
         factory->SetFactory("Nullspace", GetFactory("Ptent"));
         return SetAndReturnDefaultFactory(varName, factory);
       }
+      if (varName == "Scaled Nullspace")                return SetAndReturnDefaultFactory(varName, rcp(new ScaledNullspaceFactory()));
+
       if (varName == "Coordinates")                     return GetFactory("Ptent");
       if (varName == "Node Comm")                       return GetFactory("Ptent");
 
@@ -184,8 +191,9 @@ namespace MueLu {
       if (varName == "repartition: heuristic target rows per process") return GetFactory("number of partitions");
 
       if (varName == "Graph")                           return MUELU_KOKKOS_FACTORY(varName, CoalesceDropFactory, CoalesceDropFactory_kokkos);
-      if (varName == "UnAmalgamationInfo")              return SetAndReturnDefaultFactory(varName, rcp(new AmalgamationFactory())); //GetFactory("Graph"));
+      if (varName == "UnAmalgamationInfo")              return MUELU_KOKKOS_FACTORY(varName, AmalgamationFactory, AmalgamationFactory_kokkos);
       if (varName == "Aggregates")                      return MUELU_KOKKOS_FACTORY(varName, UncoupledAggregationFactory, UncoupledAggregationFactory_kokkos);
+      if (varName == "AggregateQualities")       return SetAndReturnDefaultFactory(varName, rcp(new AggregateQualityEstimateFactory()));
       if (varName == "CoarseMap")                       return MUELU_KOKKOS_FACTORY(varName, CoarseMapFactory, CoarseMapFactory_kokkos);
       if (varName == "DofsPerNode")                     return GetFactory("Graph");
       if (varName == "Filtering")                       return GetFactory("Graph");
@@ -197,6 +205,7 @@ namespace MueLu {
       if (varName == "K")                               return GetFactory("A");
       if (varName == "M")                               return GetFactory("A");
       if (varName == "Mdiag")                           return GetFactory("A");
+      if (varName == "cfl-based shift array")           return GetFactory("A");
 
       // Same factory for both Pre and Post Smoother. Factory for key "Smoother" can be set by users.
       if (varName == "PreSmoother")                     return GetFactory("Smoother");
@@ -218,6 +227,8 @@ namespace MueLu {
       }
       if (varName == "CoarseSolver")                    return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(rcp(new DirectSolver()), Teuchos::null)));
 
+      if (varName == "DualNodeID2PrimalNodeID")         return SetAndReturnDefaultFactory(varName, rcp(new InterfaceMappingTransferFactory()));
+      if (varName == "CoarseDualNodeID2PrimalNodeID")   return SetAndReturnDefaultFactory(varName, rcp(new InterfaceAggregationFactory()));
 #ifdef HAVE_MUELU_INTREPID2
       // If we're asking for it, find who made P
       if (varName == "pcoarsen: element to node map")                      return GetFactory("P");
@@ -231,7 +242,7 @@ namespace MueLu {
   const RCP<const FactoryBase> FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetAndReturnDefaultFactory(const std::string& varName, const RCP<const FactoryBase>& factory) const {
     TEUCHOS_TEST_FOR_EXCEPTION(factory.is_null(), Exceptions::RuntimeError, "The default factory for building '" << varName << "' is null");
 
-    GetOStream(Runtime1) << "Using default factory (" << factory->description() << ") for building '" << varName << "'." << std::endl;
+    GetOStream(Runtime1) << "Using default factory (" << factory->ShortClassName() <<"["<<factory->GetID()<<"] "<< ") for building '" << varName << "'." << std::endl;
 
     defaultFactoryTable_[varName] = factory;
 
@@ -245,12 +256,33 @@ namespace MueLu {
     Teuchos::FancyOStream& fancy = GetOStream(Debug);
 
     fancy << "Users factory table (factoryTable_):" << std::endl;
-    for (it = factoryTable_.begin(); it != factoryTable_.end(); it++)
-      fancy << "  " << it->first << " -> " << Teuchos::toString(it->second.get()) << std::endl;
+    for (it = factoryTable_.begin(); it != factoryTable_.end(); it++) {
+      fancy << "  " << it->first << " -> ";
+      if (it->second.get() == NoFactory::get()) fancy << "NoFactory";
+      else if (!it->second.get()) fancy<< "NULL";
+      else {
+        fancy << it->second.get()->ShortClassName()<<"["<<it->second.get()->GetID()<<"]";
+#ifdef HAVE_MUELU_DEBUG
+        fancy<<"("<<Teuchos::toString(it->second.get()) <<")";
+#endif
+      }
+      fancy<< std::endl;
+    }
 
     fancy << "Default factory table (defaultFactoryTable_):" << std::endl;
-    for (it = defaultFactoryTable_.begin(); it != defaultFactoryTable_.end(); it++)
-      fancy << "  " << it->first << " -> " << Teuchos::toString(it->second.get()) << std::endl;
+    for (it = defaultFactoryTable_.begin(); it != defaultFactoryTable_.end(); it++) {
+      fancy << "  " << it->first << " -> ";
+      if (it->second.get() == NoFactory::get()) fancy << "NoFactory";
+      else if (!it->second.get()) fancy<< "NULL";
+      else {
+        fancy << it->second.get()->ShortClassName()<<"["<<it->second.get()->GetID()<<"]";
+#ifdef HAVE_MUELU_DEBUG
+        fancy<<"("<<Teuchos::toString(it->second.get()) <<")";
+#endif
+      }
+      fancy<< std::endl;
+    }
+
   }
 
 #ifdef HAVE_MUELU_DEBUG

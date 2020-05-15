@@ -81,7 +81,7 @@ OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
     A_->getComm()->getSize() == 1, std::runtime_error,
     "Ifpack2::OverlappingRowMatrix: Matrix must be "
     "distributed over more than one MPI process.");
-  
+
   RCP<const crs_graph_type> A_crsGraph = A_->getCrsGraph ();
   const size_t numMyRowsA = A_->getNodeNumRows ();
   const global_ordinal_type global_invalid =
@@ -93,9 +93,12 @@ OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
   RCP<crs_graph_type>  TmpGraph;
   RCP<import_type>     TmpImporter;
   RCP<const map_type>  RowMap, ColMap;
+  ExtHaloStarts_.resize(OverlapLevel_+1);
 
   // The big import loop
   for (int overlap = 0 ; overlap < OverlapLevel_ ; ++overlap) {
+    ExtHaloStarts_[overlap] = (size_t) ExtElements.size();
+
     // Get the current maps
     if (overlap == 0) {
       RowMap = A_->getRowMap ();
@@ -144,7 +147,9 @@ OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
       TmpGraph->doImport (*A_crsGraph, *TmpImporter, Tpetra::INSERT);
       TmpGraph->fillComplete (A_->getDomainMap (), TmpMap);
     }
-  }
+  } // end overlap loop
+  ExtHaloStarts_[OverlapLevel_] = (size_t) ExtElements.size();
+
 
   // build the map containing all the nodes (original
   // matrix + extended matrix)
@@ -159,7 +164,7 @@ OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
   RowMap_ = rcp (new map_type (global_invalid, mylist (),
                                Teuchos::OrdinalTraits<global_ordinal_type>::zero (),
                                A_->getComm ()));
-  Importer_ = rcp (new import_type (A_->getRowMap (), RowMap_));  
+  Importer_ = rcp (new import_type (A_->getRowMap (), RowMap_));
   ColMap_ = RowMap_;
 
   // now build the map corresponding to all the external nodes
@@ -168,7 +173,7 @@ OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
                                Teuchos::OrdinalTraits<global_ordinal_type>::zero (),
                                A_->getComm ()));
   ExtImporter_ = rcp (new import_type (A_->getRowMap (), ExtMap_));
-  
+
   {
     RCP<crs_matrix_type> ExtMatrix_nc =
       rcp (new crs_matrix_type (ExtMap_, ColMap_, 0));
@@ -222,7 +227,7 @@ OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
   Values_.resize (MaxNumEntries_);
 }
 
-  
+
 template<class MatrixType>
 Teuchos::RCP<const Teuchos::Comm<int> >
 OverlappingRowMatrix<MatrixType>::getComm () const
@@ -231,12 +236,6 @@ OverlappingRowMatrix<MatrixType>::getComm () const
 }
 
 
-template<class MatrixType>
-Teuchos::RCP<typename MatrixType::node_type>
-OverlappingRowMatrix<MatrixType>::getNode () const
-{
-  return A_->getNode();
-}
 
 
 template<class MatrixType>
@@ -557,13 +556,8 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
        scalar_type alpha,
        scalar_type beta) const
 {
-  using Teuchos::ArrayRCP;
-  using Teuchos::as;
-  typedef scalar_type RangeScalar;
-  typedef scalar_type DomainScalar;
-  typedef Teuchos::ScalarTraits<RangeScalar> STRS;
   using MV = Tpetra::MultiVector<scalar_type, local_ordinal_type,
-				 global_ordinal_type, node_type>;
+                                 global_ordinal_type, node_type>;
   TEUCHOS_TEST_FOR_EXCEPTION
     (X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
      "Ifpack2::OverlappingRowMatrix::apply: X.getNumVectors() = "
@@ -585,13 +579,13 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   }
 
   const auto& rowMap0 = * (A_->getRowMap ());
-  const auto& colMap0 = * (A_->getColMap ());  
+  const auto& colMap0 = * (A_->getColMap ());
   MV X_0 (X, mode == Teuchos::NO_TRANS ? colMap0 : rowMap0, 0);
   MV Y_0 (Y, mode == Teuchos::NO_TRANS ? rowMap0 : colMap0, 0);
   A_->localApply (X_0, Y_0, mode, alpha, beta);
 
   const auto& rowMap1 = * (ExtMatrix_->getRowMap ());
-  const auto& colMap1 = * (ExtMatrix_->getColMap ());  
+  const auto& colMap1 = * (ExtMatrix_->getColMap ());
   MV X_1 (X, mode == Teuchos::NO_TRANS ? colMap1 : rowMap1, 0);
   MV Y_1 (Y, mode == Teuchos::NO_TRANS ? rowMap1 : colMap1, A_->getNodeNumRows ());
   ExtMatrix_->localApply (X_1, Y_1, mode, alpha, beta);
@@ -840,6 +834,19 @@ Teuchos::RCP<const Tpetra::RowMatrix<typename MatrixType::scalar_type, typename 
 OverlappingRowMatrix<MatrixType>::getUnderlyingMatrix() const
 {
   return A_;
+}
+
+template<class MatrixType>
+Teuchos::RCP<const Tpetra::RowMatrix<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type> >
+OverlappingRowMatrix<MatrixType>::getExtMatrix() const
+{
+  return ExtMatrix_;
+}
+
+template<class MatrixType>
+Teuchos::ArrayView<const size_t> OverlappingRowMatrix<MatrixType>::getExtHaloStarts() const
+{
+  return ExtHaloStarts_();
 }
 
 

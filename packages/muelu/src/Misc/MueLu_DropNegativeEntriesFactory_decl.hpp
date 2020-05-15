@@ -65,7 +65,10 @@ namespace MueLu {
     Do not use this kind of filtering for regular PDEs unless you have very good reasons.
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar = DefaultScalar,
+            class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class DropNegativeEntriesFactory : public SingleLevelFactoryBase {
 #undef MUELU_DROPNEGATIVEENTRIESFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"

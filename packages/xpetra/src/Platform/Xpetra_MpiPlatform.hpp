@@ -85,8 +85,6 @@ namespace Xpetra {
     //! Comm Instance
     Teuchos::RCP< const Teuchos::Comm<int> > getComm() const;
 
-    //! Get a Kokkos Node instance.
-    Teuchos::RCP<Node> getNode() const;
 
     //@}
 
@@ -119,9 +117,6 @@ namespace Xpetra {
     return comm_;
   }
 
-  template <class Node>
-  Teuchos::RCP<Node> MpiPlatform<Node>::getNode() const
-  {  return Teuchos::null; }
 
 } // namespace Xpetra
 

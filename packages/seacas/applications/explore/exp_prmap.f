@@ -64,7 +64,7 @@ C ... True if map is one-to-one
          WRITE (*, 10010) TYPE
       END IF
 
-      WRITE (STRA, '(I10)', IOSTAT=IDUM) NUMEL
+      WRITE (STRA, '(I12)', IOSTAT=IDUM) NUMEL
       CALL SQZSTR (STRA, LSTRA)
       WRITE (FMT, '(''(I'', I1, '')'')', IOSTAT=IDUM) LSTRA
 
@@ -102,7 +102,7 @@ C ... Check for 1-1 mapping
 
 10000  FORMAT (/, 1X, A,' NUMBER MAP')
 10010  FORMAT (/, 1X, A,' Number Map:')
-10020  FORMAT (1X, 3X, A, '..', A, 3X, 8I10)
+10020  FORMAT (1X, 3X, A, '..', A, 3X, 8I12)
 10030  format (1x, 3x, 'Map does not modify local ',
      &   A, ' ids (X maps to X)')
       END

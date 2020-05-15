@@ -232,17 +232,17 @@ public:
    virtual int GetNumBlocks() const { return 0; }
 
    //! Set the number of subblocks (this one does nothing b/c its a leaf)
-   virtual void SetNumBlocks(int sz) {}
+   virtual void SetNumBlocks(int /* sz */) {}
 
    //! Set the sub block, this does nothing b/c its a leaf
-   virtual void SetBlock(int blockIndex,int reorder) { }
+   virtual void SetBlock(int /* blockIndex */,int /* reorder */) { }
 
    //! Get a particular subblock...this returns null
-   virtual const Teuchos::RCP<BlockReorderManager> GetBlock(int blockIndex)
+   virtual const Teuchos::RCP<BlockReorderManager> GetBlock(int /* blockIndex */)
    { return Teuchos::null; }
 
    //! Get a particular subblock...this returns null
-   virtual const Teuchos::RCP<const BlockReorderManager> GetBlock(int blockIndex) const
+   virtual const Teuchos::RCP<const BlockReorderManager> GetBlock(int /* blockIndex */) const
    { return Teuchos::null; }
 
    //! Get the the index that is stored in this block

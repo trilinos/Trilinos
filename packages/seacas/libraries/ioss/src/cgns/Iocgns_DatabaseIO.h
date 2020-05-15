@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -36,18 +36,22 @@
 #include <Ioss_CodeTypes.h>
 #include <Ioss_DBUsage.h>    // for DatabaseUsage
 #include <Ioss_DatabaseIO.h> // for DatabaseIO
-#include <Ioss_IOFactory.h>  // for IOFactory
-#include <Ioss_Map.h>        // for Map
-#include <Ioss_State.h>      // for State
-#include <cstddef>           // for size_t
-#include <cstdint>           // for int64_t
-#include <iostream>          // for ostream
+#include <Ioss_FaceGenerator.h>
+#include <Ioss_IOFactory.h> // for IOFactory
+#include <Ioss_Map.h>       // for Map
+#include <Ioss_State.h>     // for State
+#include <cstddef>          // for size_t
+#include <cstdint>          // for int64_t
+#include <iostream>         // for ostream
 #include <map>
 #include <string> // for string
 
+#include <cgns/Iocgns_Defines.h>
 #include <cgnslib.h>
 
 namespace Ioss {
+  class Assembly;
+  class Blob;
   class CommSet;
   class EdgeBlock;
   class EdgeSet;
@@ -90,6 +94,8 @@ namespace Iocgns {
 
     ~DatabaseIO() override;
 
+    const std::string get_format() const override { return "CGNS"; }
+
     // This isn't quite true since a CGNS library with cgsize_t == 64-bits can read
     // a file with 32-bit ints. However,...
     int int_byte_size_db() const override { return CG_SIZEOF_SIZE; }
@@ -100,6 +106,8 @@ namespace Iocgns {
     void read_meta_data__() override;
     void write_meta_data();
     void write_results_meta_data();
+
+    int get_file_pointer() const override;
 
   private:
     void openDatabase__() const override;
@@ -116,7 +124,7 @@ namespace Iocgns {
     void   create_structured_block(int base, int zone, size_t &num_node);
     void   create_structured_block_fpp(int base, int zone, size_t &num_node);
     size_t finalize_structured_blocks();
-    void   finalize_database() override;
+    void   finalize_database() const override;
     void   get_step_times__() override;
 
     void create_unstructured_block(int base, int zone, size_t &num_node);
@@ -148,6 +156,20 @@ namespace Iocgns {
                                size_t data_size) const override;
     int64_t get_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
+    int64_t get_field_internal(const Ioss::Assembly * /*sb*/, const Ioss::Field & /*field*/,
+                               void * /*data*/, size_t /*data_size*/) const override
+    {
+      return 0;
+    }
+
+    int64_t get_field_internal(const Ioss::Blob * /*sb*/, const Ioss::Field & /*field*/,
+                               void * /*data*/, size_t /*data_size*/) const override
+    {
+      return 0;
+    }
+
+    int64_t get_field_internal_sub_nb(const Ioss::NodeBlock *nb, const Ioss::Field &field,
+                                      void *data, size_t data_size) const;
 
     int64_t put_field_internal(const Ioss::Region *region, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
@@ -175,26 +197,42 @@ namespace Iocgns {
                                size_t data_size) const override;
     int64_t put_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field,
                                void *data, size_t data_size) const override;
+    int64_t put_field_internal(const Ioss::Assembly * /*sb*/, const Ioss::Field & /*field*/,
+                               void * /*data*/, size_t /*data_size*/) const override
+    {
+      return 0;
+    }
+
+    int64_t put_field_internal(const Ioss::Blob * /*sb*/, const Ioss::Field & /*field*/,
+                               void * /*data*/, size_t /*data_size*/) const override
+    {
+      return 0;
+    }
+
+    int64_t put_field_internal_sub_nb(const Ioss::NodeBlock *nb, const Ioss::Field &field,
+                                      void *data, size_t data_size) const;
 
     // ID Mapping functions.
     const Ioss::Map &get_map(entity_type type) const;
     const Ioss::Map &get_map(Ioss::Map &entity_map, int64_t entityCount, int64_t file_offset,
                              int64_t file_count, entity_type type) const;
 
-    int         get_file_pointer() const;
+  private:
     mutable int m_cgnsFilePtr{-1};
 
-    int m_flushInterval{0}; // Default is no flushing after each timestep
-    int m_currentVertexSolutionIndex     = 0;
-    int m_currentCellCenterSolutionIndex = 0;
+    int          m_flushInterval{0}; // Default is no flushing after each timestep
+    int          m_currentVertexSolutionIndex     = 0;
+    int          m_currentCellCenterSolutionIndex = 0;
+    mutable bool m_dbFinalized                    = false;
 
     mutable std::vector<size_t> m_zoneOffset; // Offset for local zone/block element ids to global.
     mutable std::vector<size_t>
-                                       m_bcOffset; // The BC Section element offsets in unstructured output.
-    mutable std::vector<double>        m_timesteps;
-    std::vector<std::vector<cgsize_t>> m_blockLocalNodeMap;
-    std::map<std::string, int>         m_zoneNameMap;
-    mutable std::map<int, Ioss::Map *> m_globalToBlockLocalNodeMap;
+                                                          m_bcOffset; // The BC Section element offsets in unstructured output.
+    mutable std::vector<double>                           m_timesteps;
+    std::vector<CGNSIntVector>                            m_blockLocalNodeMap;
+    std::map<std::string, int>                            m_zoneNameMap;
+    mutable std::map<int, Ioss::Map *>                    m_globalToBlockLocalNodeMap;
+    mutable std::map<std::string, Ioss::FaceUnorderedSet> m_boundaryFaces;
   };
 } // namespace Iocgns
 #endif

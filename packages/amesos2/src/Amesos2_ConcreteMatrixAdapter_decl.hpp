@@ -2,7 +2,7 @@
 //
 // ***********************************************************************
 //
-//           Amesos2: Templated Direct Sparse Solver Package 
+//           Amesos2: Templated Direct Sparse Solver Package
 //                  Copyright 2011 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -53,11 +53,10 @@ namespace Amesos2 {
 }
 
 #include "Amesos2_TpetraCrsMatrix_MatrixAdapter_decl.hpp"
+#include "Amesos2_KokkosCrsMatrix_MatrixAdapter_decl.hpp"
 
-#ifdef HAVE_TPETRA_INST_INT_INT
 #ifdef HAVE_AMESOS2_EPETRA
 #  include "Amesos2_EpetraCrsMatrix_MatrixAdapter_decl.hpp"
 #endif
-#endif
 
-#endif	// AMESOS2_CONCRETEMATRIXADAPTER_DECL_HPP
+#endif  // AMESOS2_CONCRETEMATRIXADAPTER_DECL_HPP

@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//               KokkosKernels 0.9: Linear Algebra and Graph Kernels
-//                 Copyright 2017 Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -254,11 +255,11 @@ void KokkosSPGEMM
 
   //calculate how many flops per row is performed
   Kokkos::parallel_reduce( team_count_policy_t(a_row_cnt / team_row_chunk_size  + 1 , suggested_team_size, suggested_vector_size), pcnnnz, overall_flops);
-  MyExecSpace::fence();
+  MyExecSpace().fence();
 
   //do a parallel prefix sum
   KokkosKernels::Impl::exclusive_parallel_prefix_sum<row_lno_temp_work_view_t, MyExecSpace>(a_row_cnt+1, c_flop_rowmap);
-  MyExecSpace::fence();
+  MyExecSpace().fence();
 
   std::cout << "overall_flops:" << overall_flops << std::endl;
 
@@ -277,7 +278,7 @@ void KokkosSPGEMM
   //fill the hypergraph values.
   //indices of nnzs for a and b nets, for c nets, the row and column index.
   Kokkos::parallel_for( team_fill_policy_t(a_row_cnt / team_row_chunk_size  + 1 , suggested_team_size, suggested_vector_size), pcnnnz);
-  MyExecSpace::fence();
+  MyExecSpace().fence();
 }
 
 template <typename HandleType,

@@ -34,7 +34,7 @@
 // ***********************************************************************
 // @HEADER
 
-/* Debug routines for klu.  Only used when NDEBUG is not defined at
+/* Debug routines for klu.  Only used when NDEBUGKLU2 is not defined at
  * compile-time.
  */
 
@@ -43,7 +43,7 @@
 
 #include "klu2_internal.h"
 
-#ifndef NDEBUG
+#ifndef NDEBUGKLU2
 
 /* ========================================================================== */
 /* === KLU_valid ============================================================ */

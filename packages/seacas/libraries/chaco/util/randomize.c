@@ -40,16 +40,13 @@ void randomize(int *array, int n)
 /* array of integer values */
 /* number of values */
 {
-  double value; /* random value */
-  int    index; /* array index to swap with */
-  int    temp;  /* holds value being swapped */
-  int    i;     /* loop counter */
+  int    i; /* loop counter */
   double drandom(void);
 
   for (i = 1; i <= n; i++) {
-    value        = drandom();
-    index        = n * value + 1;
-    temp         = array[i];
+    double value = drandom();
+    int    index = n * value + 1;
+    int    temp  = array[i];
     array[i]     = array[index];
     array[index] = temp;
   }

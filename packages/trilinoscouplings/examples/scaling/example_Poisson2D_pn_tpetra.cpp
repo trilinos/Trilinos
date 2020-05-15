@@ -134,6 +134,11 @@
 #  include "MueLu_HierarchyManager.hpp"
 #  include "MueLu_FactoryManagerBase.hpp"
 #  include "MueLu_CreateTpetraPreconditioner.hpp"
+// MueLu/Avatar Includes
+#ifdef HAVE_TRILINOSCOUPLINGS_AVATAR
+#  include "MueLu_AvatarInterface.hpp"
+#endif
+
 #endif // HAVE_TRILINOSCOUPLINGS_MUELU
 
 #ifdef HAVE_INTREPID_KOKKOSCORE
@@ -146,9 +151,9 @@
 //#if defined(HAVE_TRINOSCOUPLINGS_BELOS) && defined(HAVE_TRILINOSCOUPLINGS_MUELU)
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
-#include <BelosBlockCGSolMgr.hpp>
 #include <BelosPseudoBlockCGSolMgr.hpp>
-#include <BelosBlockGmresSolMgr.hpp>
+#include <BelosPseudoBlockGmresSolMgr.hpp>
+#include <BelosFixedPointSolMgr.hpp>
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
 //#endif
@@ -167,13 +172,40 @@ using Teuchos::ParameterList;
 // for debugging
 #define zwrap(x) (std::abs(x)<1e-10 ? 0.0 : x)
 
+// Statistics for machine learning
+const int NUM_STATISTICS = 8;
+std::vector<double> local_stat_max(NUM_STATISTICS);
+std::vector<double> local_stat_min(NUM_STATISTICS);
+std::vector<double> local_stat_sum(NUM_STATISTICS);
+
+
+// Disable the full set of problem statistics
+const bool use_new_problem_stats = true;
+
+struct fecomp{
+  bool operator () ( topo_entity* x,  topo_entity*  y )const
+  {
+    if(x->sorted_local_node_ids < y->sorted_local_node_ids)return true;
+    return false;
+  }
+};
+
+template<class FC>
+double distance2(const FC & coord, int n1, int n2) {
+  double dist = 0.0;
+  for(int i=0; i<coord.dimension(1); i++)
+    dist += (coord(n2,i) -coord(n1,i)) * (coord(n2,i) -coord(n1,i));
+  return sqrt(dist);
+}
+
+
 /*********************************************************/
 /*                     Typedefs                          */
 /*********************************************************/
 typedef double scalar_type;
 typedef Teuchos::ScalarTraits<scalar_type> ScalarTraits;
-typedef int local_ordinal_type;
-typedef int global_ordinal_type;
+using local_ordinal_type = Tpetra::Map<>::local_ordinal_type;
+using global_ordinal_type = Tpetra::Map<>::global_ordinal_type;
 typedef KokkosClassic::DefaultNode::DefaultNodeType NO;
 typedef Sacado::Fad::SFad<double,2>      Fad2; //# ind. vars fixed at 2
 typedef Intrepid::FunctionSpaceTools     IntrepidFSTools;
@@ -181,6 +213,7 @@ typedef Intrepid::RealSpaceTools<double> IntrepidRSTools;
 typedef Intrepid::CellTools<double>      IntrepidCTools;
 
 typedef Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,NO>    operator_type;
+typedef Tpetra::CrsGraph<local_ordinal_type,global_ordinal_type,NO>   crs_graph_type;
 typedef Tpetra::CrsMatrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>   crs_matrix_type;
 typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,NO>      vector_type;
 typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,NO> multivector_type;
@@ -206,11 +239,20 @@ typedef MueLu::TpetraOperator<scalar_type,local_ordinal_type,global_ordinal_type
     Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MAX, in, Teuchos::outArg(out))
 
 
+double myDistance2(const multivector_type &v, int i0, int i1) {
+ const size_t numVectors = v.getNumVectors();
+ double distance = 0.0;
+ for (size_t j=0; j<numVectors; j++) {
+   distance += (v.getData(j)[i0]-v.getData(j)[i1])*(v.getData(j)[i0]-v.getData(j)[i1]);
+ }
+ return distance;
+}
+
 // forward declarations
 void PromoteMesh_Pn_Kirby(const int degree,  const EPointType & pointType, const FieldContainer<int> & P1_elemToNode, const FieldContainer<double> & P1_nodeCoord, const FieldContainer<double> & P1_edgeCoord,  const FieldContainer<int> & P1_elemToEdge,  const FieldContainer<int> & P1_elemToEdgeOrient, const FieldContainer<int> & P1_nodeOnBoundary,
                           FieldContainer<int> & Pn_elemToNode, FieldContainer<double> & Pn_nodeCoord,FieldContainer<int> & Pn_nodeOnBoundary, std::vector<int> &Pn_edgeNodes, std::vector<int> &Pn_cellNodes);
 
-void GenerateEdgeEnumeration(const FieldContainer<int> & elemToNode, const FieldContainer<double> & nodeCoord, FieldContainer<int> & elemToEdge, FieldContainer<int> & elemToEdgeOrient, FieldContainer<double> & edgeCoord);
+void GenerateEdgeEnumeration(const FieldContainer<int> & elemToNode, const FieldContainer<double> & nodeCoord, FieldContainer<int> & elemToEdge, FieldContainer<int> & elemToEdgeOrient, FieldContainer<int> & edgeToNode, FieldContainer<double> & edgeCoord);
 
 void CreateP1MeshFromPnMesh(const int degree, const FieldContainer<int> & P2_elemToNode, FieldContainer<int> &aux_P1_elemToNode);
 
@@ -223,7 +265,7 @@ void CreateLinearSystem(int numWorkSets,
                         RCP<Basis<double,FieldContainer<double> > > &myBasis_rcp,
                         FieldContainer<double> const &HGBGrads,
                         FieldContainer<double> const &HGBValues,
-                        std::vector<int>       const &globalNodeIds,
+                        std::vector<global_ordinal_type>       const &globalNodeIds,
                         crs_matrix_type &StiffMatrix,
                         RCP<multivector_type> &rhsVector,
                         std::string &msg
@@ -250,9 +292,12 @@ void Apply_Dirichlet_BCs(std::vector<int> &BCNodes, crs_matrix_type & A, multive
     \param  ProblemType        [in]    problem type
     \param  MLList             [in]    ML parameter list
     \param  A                  [in]    discrete operator matrix
+    \param  nCoord             [in]    Nodal Coordinates
     \param  xexact             [in]    exact solution
     \param  b                  [in]    right-hand-side vector
-    \param  uh                 [out]   solution vector
+    \param  maxits             [in]    max iterations
+    \param  tol                [in]    solver tolerance
+    \param  uh                 [in/out]   solution vector
     \param  TotalErrorResidual [out]   error residual
     \param  TotalErrorExactSol [out]   error in uh
 
@@ -260,13 +305,17 @@ void Apply_Dirichlet_BCs(std::vector<int> &BCNodes, crs_matrix_type & A, multive
 int TestMultiLevelPreconditionerLaplace(char ProblemType[],
                                  ParameterList   & AMGList,
                                  RCP<crs_matrix_type>   const & A,
+                                 RCP<multivector_type> & nCoord,
                                  RCP<multivector_type> const & xexact,
                                  RCP<multivector_type> & b,
+				 int maxits,
+				 double tol,	
                                  RCP<multivector_type> & uh,
                                  double & TotalErrorResidual,
                                  double & TotalErrorExactSol,
-                                 std::string &amgType);
-
+				 std::string &amgType,
+				  std::string &solveType);
+					
 
 
 /**********************************************************************************/
@@ -383,7 +432,8 @@ int main(int argc, char *argv[]) {
   int MyPID = Comm->getRank();
 
   Teuchos::CommandLineProcessor clp(false);
-
+  Teuchos::ParameterList problemStatistics;
+  
   RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Pamgen Setup")));
 
   std::string optMeshFile = "Poisson2D.xml";
@@ -393,6 +443,24 @@ int main(int argc, char *argv[]) {
   bool optPrintTimings = false;
   clp.setOption("timings", "notimings",  &optPrintTimings,      "print timer summary");
 
+  // If matrixFilename is nonempty, dump the matrix to that file
+  // in MatrixMarket format.
+  std::string matrixFilename;
+  clp.setOption ("matrixFilename", &matrixFilename, "If nonempty, dump the "
+		  "generated matrix to that file in MatrixMarket format.");
+
+  // If coordsFilename is nonempty, dump the rhs to that file
+  // in MatrixMarket format.
+  std::string rhsFilename;
+  clp.setOption ("rhsFilename", &rhsFilename, "If nonempty, dump the "
+		  "generated rhs to that file in MatrixMarket format.");
+  
+  // If coordsFilename is nonempty, dump the coords to that file
+  // in MatrixMarket format.
+  std::string coordsFilename;
+  clp.setOption ("coordsFilename", &coordsFilename, "If nonempty, dump the "
+		  "generated coordinates to that file in MatrixMarket format.");
+  
   switch (clp.parse(argc, argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
     case Teuchos::CommandLineProcessor::PARSE_ERROR:
@@ -487,8 +555,18 @@ int main(int argc, char *argv[]) {
 
   // Get dimensions
   int P1_numNodesPerElem = P1_cellType.getNodeCount();
+  int P1_numEdgesPerElem = P1_cellType.getEdgeCount();
+  int P1_numNodesPerEdge = 2; // for any rational universe
   int spaceDim = P1_cellType.getDimension();
   int dim = 2;
+
+
+  // Build reference element edge to node map
+  FieldContainer<int> refEdgeToNode(P1_numEdgesPerElem, P1_numNodesPerEdge);
+  for (int i=0; i<P1_numEdgesPerElem; i++){
+    refEdgeToNode(i,0)=P1_cellType.getNodeMap(1, i, 0);
+    refEdgeToNode(i,1)=P1_cellType.getNodeMap(1, i, 1);
+  }
 
   /**********************************************************************************/
   /******************************* GENERATE MESH ************************************/
@@ -689,15 +767,159 @@ int main(int argc, char *argv[]) {
   }
   delete [] sideSetIds;
 
-  tm.reset();
-  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Getting cubature")));
 
-  // Enumerate edges 
+ // Enumerate edges 
   // NOTE: Only correct in serial
   FieldContainer<int> P1_elemToEdge(numElems,4);// Because quads
   FieldContainer<int> P1_elemToEdgeOrient(numElems,4);
   FieldContainer<double> P1_edgeCoord(1,dim);//will be resized  
-  GenerateEdgeEnumeration(P1_elemToNode, P1_nodeCoord, P1_elemToEdge,P1_elemToEdgeOrient,P1_edgeCoord);
+  FieldContainer<int> P1_edgeToNode(1,2);//will be resized
+  GenerateEdgeEnumeration(P1_elemToNode, P1_nodeCoord, P1_elemToEdge,P1_elemToEdgeOrient,P1_edgeToNode,P1_edgeCoord);
+ 
+
+  tm.reset();
+  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Mesh Statistics")));
+
+/**********************************************************************************/
+/****************************** STATISTICS (Part I) *******************************/
+/**********************************************************************************/
+  // Statistics: Compute max / min of sigma parameter, mesh information
+  // Put the current statistics into their own functions so this looks less awful
+  double edge_length_max = 0;
+  double edge_length_min = 0;
+  double diag_length_max = 0;
+  double diag_length_min = 0;
+  double maxmin_ratio    = 0;
+  double diag_ratio      = 0;
+  double stretch         = 0;
+  double taper           = 0;
+  double skew            = 0;
+
+  double dist1           = 0.0;
+  double dist2           = 0.0;
+  double dist3           = 0.0;
+  double dist4           = 0.0;
+ 
+  int edge = P1_elemToEdge(0, 0);
+  int node1 = P1_edgeToNode(edge, 0);
+  int node2 = P1_edgeToNode(edge, 1);
+  double dist = 0;
+  static const int NUM_NODE_PAIRS = 2;
+  int diag_nodes1[] = {0, 1};
+  int diag_nodes2[] = {2, 3};
+
+  double x0 = 0.0;
+  double x1 = 0.0;
+  double x2 = 0.0;
+  double x3 = 0.0;
+  double y0 = 0.0;
+  double y1 = 0.0;
+  double y2 = 0.0;
+  double y3 = 0.0;
+  double e3 = 0.0;
+  double f3 = 0.0;
+
+  // Intialize
+  for(int i=0; i<NUM_STATISTICS; i++) {
+    local_stat_max[i] = 0.0;
+    local_stat_min[i] = std::numeric_limits<double>::max();
+    local_stat_sum[i] = 0.0;
+  }
+
+  for(int i=0; i<numElems; i++) {
+    // 0 - Material property
+    local_stat_max[0] = 1.0; 
+    local_stat_min[0] = 1.0; 
+    local_stat_sum[0] += 1.0;
+    
+    edge = P1_elemToEdge(i, 0);
+    node1 = P1_edgeToNode(edge, 0);
+    node2 = P1_edgeToNode(edge, 1);
+    
+    // 1 - Max/min edge - ratio of max to min edge length
+    edge_length_max = distance2(P1_nodeCoord, node1, node2);
+    edge_length_min = edge_length_max;
+    for (int j=0; j<P1_numEdgesPerElem; j++) {
+      edge = P1_elemToEdge(i,j);
+      node1 = P1_edgeToNode(edge,0);
+      node2 = P1_edgeToNode(edge,1);
+      dist = distance2(P1_nodeCoord,node1,node2);
+      edge_length_max = std::max(edge_length_max,dist);
+      edge_length_min = std::min(edge_length_min,dist);
+    }
+    maxmin_ratio = edge_length_max / edge_length_min;
+    local_stat_max[1] = std::max(local_stat_max[1],maxmin_ratio);
+    local_stat_min[1] = std::min(local_stat_min[1],maxmin_ratio);
+    local_stat_sum[1] += maxmin_ratio;
+   
+    // 2 - det of cell Jacobian (later)
+
+    // 3 - Stretch
+    diag_length_max = distance2(P1_nodeCoord, P1_elemToNode(i, diag_nodes1[0]),
+                                           P1_elemToNode(i, diag_nodes2[0]));
+    diag_length_min = distance2(P1_nodeCoord, P1_elemToNode(i, diag_nodes1[0]),
+                                           P1_elemToNode(i, diag_nodes2[0]));
+    for (int j=0; j<NUM_NODE_PAIRS; j++) {
+      node1 = P1_elemToNode(i, diag_nodes1[j]);
+      node2 = P1_elemToNode(i, diag_nodes2[j]);
+      dist = distance2(P1_nodeCoord, node1, node2);
+      diag_length_max = std::max(diag_length_max, dist);
+      diag_length_min = std::min(diag_length_min, dist);
+    }
+    stretch = sqrt(3) * edge_length_min / diag_length_max;
+    diag_ratio = diag_length_min / diag_length_max;
+    local_stat_max[3] = std::max(local_stat_max[3], stretch);
+    local_stat_min[3] = std::min(local_stat_min[3], stretch);
+    local_stat_sum[3] += stretch;
+
+    // 4 - Diagonal Ratio
+    local_stat_max[4] = std::max(local_stat_max[4], diag_ratio);
+    local_stat_min[4] = std::min(local_stat_min[4], diag_ratio);
+    local_stat_sum[4] += diag_ratio;
+
+    // 5 - Inverse Taper
+    int opposite_edges1[2][2] = {{0, 1}, {0, 3}};
+    int opposite_edges2[2][2] = {{2, 3}, {1, 2}};
+    dist1 = distance2(P1_nodeCoord, P1_elemToNode(i, opposite_edges1[0][0]), P1_elemToNode(i, opposite_edges1[0][1]));
+    dist2 = distance2(P1_nodeCoord, P1_elemToNode(i, opposite_edges2[0][0]), P1_elemToNode(i, opposite_edges2[0][1]));
+    dist3 = distance2(P1_nodeCoord, P1_elemToNode(i, opposite_edges1[1][0]), P1_elemToNode(i, opposite_edges1[1][1]));
+    dist4 = distance2(P1_nodeCoord, P1_elemToNode(i, opposite_edges2[1][0]), P1_elemToNode(i, opposite_edges2[1][1]));
+    taper = std::max(dist1/dist2, dist2/dist1);
+    taper = std::max(taper, dist3/dist4);
+    taper = std::max(taper, dist4/dist3);
+    local_stat_max[5] = std::max(local_stat_max[5], taper);
+    local_stat_min[5] = std::min(local_stat_min[5], taper);
+    local_stat_sum[5] += taper;
+
+
+    // 6 - Skew
+    // See "Quadrilateral and hexagonal shape parameters" - Robinson, J. 1994
+    x0 = P1_nodeCoord(P1_elemToNode(i, 0), 0);
+    x1 = P1_nodeCoord(P1_elemToNode(i, 1), 0);
+    x2 = P1_nodeCoord(P1_elemToNode(i, 2), 0);
+    x3 = P1_nodeCoord(P1_elemToNode(i, 3), 0);
+
+    y0 = P1_nodeCoord(P1_elemToNode(i, 0), 1);
+    y1 = P1_nodeCoord(P1_elemToNode(i, 1), 1);
+    y2 = P1_nodeCoord(P1_elemToNode(i, 2), 1);
+    y3 = P1_nodeCoord(P1_elemToNode(i, 3), 1);
+
+    e3 = 0.25 * (x0-x1+x2-x3);
+    f3 = 0.25 * (-y0-y1+y2+y3);
+    skew = e3 / f3;
+    local_stat_max[6] = std::max(local_stat_max[4], skew);
+    local_stat_min[6] = std::min(local_stat_max[4], skew);
+    local_stat_sum[6] += skew;
+
+
+  }
+
+
+/**********************************************************************************/
+  tm.reset();
+  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Getting cubature")));
+
+  
 
 
   // Generate higher order mesh
@@ -721,9 +943,9 @@ int main(int argc, char *argv[]) {
 
   // Only works in serial
   std::vector<bool>Pn_nodeIsOwned(Pn_numNodes,true);
-  std::vector<int>Pn_globalNodeIds(Pn_numNodes);
+  std::vector<global_ordinal_type>Pn_globalNodeIds(Pn_numNodes);
   for(int i=0; i<Pn_numNodes; i++)
-    Pn_globalNodeIds[i]=i;
+    Pn_globalNodeIds[i]=static_cast<global_ordinal_type>(i);
 
   std::vector<double> Pn_nodeCoordx(Pn_numNodes);
   std::vector<double> Pn_nodeCoordy(Pn_numNodes);
@@ -859,11 +1081,11 @@ int main(int argc, char *argv[]) {
 
   // Build a list of the OWNED global ids...
   // NTS: will need to switch back to long long
-  std::vector<int> Pn_ownedGIDs(Pn_ownedNodes);
+  std::vector<global_ordinal_type> Pn_ownedGIDs(Pn_ownedNodes);
   int oidx=0;
   for(int i=0;i<numNodes;i++)
     if(Pn_nodeIsOwned[i]){
-      Pn_ownedGIDs[oidx]=(int)Pn_globalNodeIds[i];
+      Pn_ownedGIDs[oidx]=(global_ordinal_type)Pn_globalNodeIds[i];
       oidx++;
     }
 
@@ -871,17 +1093,17 @@ int main(int argc, char *argv[]) {
   int P1_ownedNodes=0;
   for(int i=0;i<P1_numNodes;i++)
     if(P1_nodeIsOwned[i]) P1_ownedNodes++;
-  std::vector<int> P1_ownedGIDs(P1_ownedNodes);
+  std::vector<global_ordinal_type> P1_ownedGIDs(P1_ownedNodes);
   oidx=0;
   for(int i=0;i<P1_numNodes;i++)
     if(P1_nodeIsOwned[i]){
-      P1_ownedGIDs[oidx]=(int)P1_globalNodeIds[i];
+      P1_ownedGIDs[oidx]=(global_ordinal_type)P1_globalNodeIds[i];
       oidx++;
     }
   //TODO JJH 8-June-2016 need to populate edge and elem seed nodes
 
   //seed points for block relaxation
-  ArrayRCP<global_ordinal_type> nodeSeeds(Pn_numNodes,INVALID_LO);
+  ArrayRCP<int> nodeSeeds(Pn_numNodes,INVALID_LO);
   //unknowns at mesh nodes
   oidx=0;
   for(int i=0;i<P1_numNodes;i++) {
@@ -893,13 +1115,13 @@ int main(int argc, char *argv[]) {
   int numNodeSeeds = oidx;
 
   //unknowns on edges
-  ArrayRCP<global_ordinal_type> edgeSeeds(Pn_numNodes,INVALID_LO);
+  ArrayRCP<int> edgeSeeds(Pn_numNodes,INVALID_LO);
   for (size_t i=0; i<Pn_edgeNodes.size(); ++i)
     edgeSeeds[Pn_edgeNodes[i]] = i;
   int numEdgeSeeds = Pn_edgeNodes.size();
 
   //unknowns in cell interiors
-  ArrayRCP<global_ordinal_type> cellSeeds(Pn_numNodes,INVALID_LO);
+  ArrayRCP<int> cellSeeds(Pn_numNodes,INVALID_LO);
   for (size_t i=0; i<Pn_cellNodes.size(); ++i)
     cellSeeds[Pn_cellNodes[i]] = i;
   int numCellSeeds = Pn_cellNodes.size();
@@ -934,40 +1156,21 @@ int main(int argc, char *argv[]) {
 
   tm = Teuchos::null;
 
-#ifdef DUMP_DATA_OLD
   /**********************************************************************************/
-  /**** PUT COORDINATES AND NODAL VALUES IN ARRAYS FOR OUTPUT (FOR PLOTTING ONLY) ***/
+  /**** COOORDINATES FOR DISTANCE LAPLACIAN                                       ***/
   /**********************************************************************************/
 
   // Put coordinates in multivector for output
-  Epetra_MultiVector nCoord(globalMapG,dim);
-  Epetra_MultiVector nBound(globalMapG,1);
+  RCP<multivector_type> nCoord = rcp(new multivector_type(globalMapG,dim));
 
   int indOwned = 0;
-  for (int inode=0; inode<numNodes; inode++) {
-    if (nodeIsOwned[inode]) {
-      nCoord[0][indOwned]=nodeCoord(inode,0);
-      nCoord[1][indOwned]=nodeCoord(inode,1);
-      nBound[0][indOwned]=nodeOnBoundary(inode);
+  for (int inode=0; inode<Pn_numNodes; inode++) {
+    if (Pn_nodeIsOwned[inode]) {
+      nCoord->getDataNonConst(0)[indOwned]=nodeCoord(inode,0);
+      nCoord->getDataNonConst(1)[indOwned]=nodeCoord(inode,1);
       indOwned++;
     }
   }
-  EpetraExt::MultiVectorToMatrixMarketFile("coords.dat",nCoord,0,0,false);
-  EpetraExt::MultiVectorToMatrixMarketFile("nodeOnBound.dat",nBound,0,0,false);
-
-  // Put element to node mapping in multivector for output
-  Epetra_Map   globalMapElem(numElemsGlobal, numElems, 0, Comm);
-  Epetra_MultiVector elem2nodeMV(globalMapElem, numNodesPerElem);
-  for (int ielem=0; ielem<numElems; ielem++) {
-    for (int inode=0; inode<numNodesPerElem; inode++) {
-      elem2nodeMV[inode][ielem]=globalNodeIds[elemToNode(ielem,inode)];
-    }
-  }
-  EpetraExt::MultiVectorToMatrixMarketFile("elem2node.dat",elem2nodeMV,0,0,false);
-
-  if(MyPID==0) {Time.ResetStartTime();}
-
-#endif
 
   /**********************************************************************************/
   /************************** DIRICHLET BC SETUP ************************************/
@@ -1043,7 +1246,6 @@ int main(int argc, char *argv[]) {
   /********************* ASSEMBLE OVER MULTIPLE PROCESSORS **************************/
   /**********************************************************************************/
 
-  StiffMatrix.fillComplete();
   printf("Example: StiffMatrix (ra,ro,co,do) = (%d,%d,%d,%d)\n",
 	 (int)StiffMatrix.getRangeMap()->getGlobalNumElements(),
 	 (int)StiffMatrix.getRowMap()->getGlobalNumElements(),
@@ -1108,12 +1310,64 @@ int main(int argc, char *argv[]) {
                      msg
                      );
 
+
+/**********************************************************************************/
+/***************************** STATISTICS (Part III) ******************************/
+/**********************************************************************************/
+  std::vector<double> global_stat_max(NUM_STATISTICS),global_stat_min(NUM_STATISTICS), global_stat_sum(NUM_STATISTICS);
+  Teuchos::reduceAll(*Comm,Teuchos::REDUCE_MIN,NUM_STATISTICS,local_stat_min.data(),global_stat_min.data());
+  Teuchos::reduceAll(*Comm,Teuchos::REDUCE_MAX,NUM_STATISTICS,local_stat_max.data(),global_stat_max.data());
+  Teuchos::reduceAll(*Comm,Teuchos::REDUCE_SUM,NUM_STATISTICS,local_stat_sum.data(),global_stat_sum.data());
+  // NOTE: All output properties should be unitless if we want to compare across problems.
+  // NOTE: Should the mean be weighted by cell volume?  That is not currently done.
+
+  // 0 - Material property
+  problemStatistics.set("sigma: min/mean",global_stat_min[0]/global_stat_sum[0]*numElemsGlobal);
+  problemStatistics.set("sigma: max/mean",global_stat_max[0]/global_stat_sum[0]*numElemsGlobal);
+
+  // 1 - Max/min edge ratio
+  problemStatistics.set("element edge ratio: min",global_stat_min[1]);
+  problemStatistics.set("element edge ratio: max",global_stat_max[1]);
+  problemStatistics.set("element edge ratio: mean",global_stat_sum[1] / numElemsGlobal);
+
+  // 2 - det of cell Jacobian (later)
+  problemStatistics.set("element det jacobian: min/mean",global_stat_min[2]/global_stat_sum[2]*numElemsGlobal);
+  problemStatistics.set("element det jacobian: max/mean",global_stat_max[2]/global_stat_sum[2]*numElemsGlobal);
+
+  if(use_new_problem_stats) {
+    // 3 - Stretch
+    problemStatistics.set("Stretch max", global_stat_max[3]);
+    problemStatistics.set("Stretch min", global_stat_min[3]);
+    problemStatistics.set("Stretch mean", global_stat_sum[3] / numElemsGlobal);
+
+    // 4 - Diagonal Ratio
+    problemStatistics.set("Diagonal Ratio max", global_stat_max[4]);
+    problemStatistics.set("Diagonal Ratio min", global_stat_min[4]);
+    problemStatistics.set("Diagonal Ratio mean", global_stat_sum[4]/numElemsGlobal);
+
+    // 5 - Inverse Taper
+    problemStatistics.set("Inverse Taper max", global_stat_max[5]);
+    problemStatistics.set("Inverse Taper min", global_stat_min[5]);
+    problemStatistics.set("Inverse Taper mean", global_stat_sum[5] / numElemsGlobal);
+    
+    // 6 - Skew
+    problemStatistics.set("Skew max", global_stat_max[6]);
+    problemStatistics.set("Skew min", global_stat_min[6]);
+    problemStatistics.set("Skew mean", global_stat_sum[6] / numElemsGlobal);
+
+    // 7 - Lapl Diag
+    problemStatistics.set("Lapl Diag max", global_stat_max[7]);
+    problemStatistics.set("Lapl Diag min", global_stat_min[7]);
+    problemStatistics.set("Lapl Diag mean", global_stat_sum[7] / StiffMatrix.getGlobalNumEntries());
+  }
+
+  // Print Problem Statistics
+  std::cout<<"*** Problem Statistics ***\n"<<problemStatistics<<std::endl;
+
+
   /**********************************************************************************/
   /********************* ASSEMBLE OVER MULTIPLE PROCESSORS **************************/
   /**********************************************************************************/
-
-  StiffMatrix_aux.fillComplete();
-
   tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Adjust global matrix and rhs due to BCs")));
 
@@ -1145,9 +1399,30 @@ int main(int argc, char *argv[]) {
 
   tm = Teuchos::null;
 
+  // Optionally dump the matrix and/or its coords to files.
+  {
+    typedef Tpetra::MatrixMarket::Writer<crs_matrix_type> writer_type;
+    if (matrixFilename != "") {
+      writer_type::writeSparseFile (matrixFilename, StiffMatrix);
+    }
+    if (rhsFilename != "") {
+      writer_type::writeDenseFile (rhsFilename, rhsVector);
+    }
+    if (coordsFilename != "") {
+      writer_type::writeDenseFile (coordsFilename, nCoord);
+    }
+  }
+
+
   /**********************************************************************************/
   /*********************************** SOLVE ****************************************/
   /**********************************************************************************/
+  // Which Solver?
+  std::string solveType("cg");
+  if(inputSolverList.isParameter("solver")) {
+    solveType = inputSolverList.get<std::string>("solver");
+  }
+
 
   // Run the solver
   std::string amgType("MueLu");
@@ -1270,12 +1545,26 @@ int main(int argc, char *argv[]) {
     level1.set("Nullspace",xnullspace);
   }
 
+  int maxits = inputSolverList.get("Maximum Iterations",(int)100);
+  double tol = inputSolverList.get("Convergence Tolerance",(double)1e-10);
+
+  if (amgList.isParameter("solve Ae=0")) {
+    rhsVector->scale(0.0);
+    femCoefficients->randomize();
+  }
+
+
   TestMultiLevelPreconditionerLaplace(probType, amgList,
                                       rcpFromRef(StiffMatrix),
+				      nCoord,
 				      exactNodalVals,
-                                      rhsVector,            femCoefficients,
+                                      rhsVector,            
+				      maxits,
+				      tol,
+				      femCoefficients,
                                       TotalErrorResidual,   TotalErrorExactSol,
-                                      amgType);
+                                      amgType,
+				      solveType);
 
   /**********************************************************************************/
   /**************************** CALCULATE ERROR *************************************/
@@ -1293,7 +1582,7 @@ int main(int argc, char *argv[]) {
 
   // Import solution onto current processor
   //int numNodesGlobal = globalMapG.NumGlobalElements();
-  RCP<driver_map_type>  solnMap = rcp(new driver_map_type(static_cast<int>(numNodesGlobal), static_cast<int>(numNodesGlobal), 0, Comm));
+  RCP<driver_map_type>  solnMap = rcp(new driver_map_type(static_cast<Tpetra::global_size_t>(numNodesGlobal), static_cast<size_t>(numNodesGlobal), 0, Comm));
   Tpetra::Import<local_ordinal_type, global_ordinal_type, NO> solnImporter(globalMapG,solnMap);
   multivector_type  uCoeff(solnMap,1);
   uCoeff.doImport(*femCoefficients, solnImporter, Tpetra::INSERT);
@@ -1518,13 +1807,13 @@ template<typename Scalar>
 const Scalar exactSolution(const Scalar& x, const Scalar& y) {
 
   // Patch test: bi-linear function is in the FE space and should be recovered
-  //  return 1. + x + y + x*y;
+    return 1. + x + y + x*y;
 
   // Analytic solution with homogeneous Dirichlet boundary data
-  //return sin(M_PI*x)*sin(M_PI*y)**exp(x+y);
+  //  return sin(M_PI*x)*sin(M_PI*y)**exp(x+y);
 
   // Analytic solution with inhomogeneous Dirichlet boundary data
-  return exp(x + y )/(1. + x*y);
+  //  return exp(x + y )/(1. + x*y);
 }
 
 
@@ -1699,24 +1988,20 @@ void evaluateExactSolutionGrad(ArrayOut &       exactSolutionGradValues,
 int TestMultiLevelPreconditionerLaplace(char ProblemType[],
                                  ParameterList   & amgList,
                                  RCP<crs_matrix_type> const &A0,
+                                 RCP<multivector_type> & nCoord,
                                  RCP<multivector_type> const & xexact,
                                  RCP<multivector_type> & b,
+				 int maxIts,
+				 double tol,	
                                  RCP<multivector_type> & uh,
                                  double & TotalErrorResidual,
                                  double & TotalErrorExactSol,
-                                 std::string &amgType)
+				 std::string &amgType,
+				 std::string &solveType)
 {
 
   //  int mypid = A0->getComm()->getRank();
-  int maxIts = 100;
-  double tol =1e-10;
-  RCP<multivector_type> x = rcp(new multivector_type(xexact->getMap(),1));
-  //x.PutScalar(0.0);
-  //JJH FIXME solve Ax=0
-  if (amgList.isParameter("solve Ae=0")) {
-    b->scale(0.0);
-    x->randomize();
-  }
+  RCP<multivector_type>x = uh;
 
   linear_problem_type Problem(linear_problem_type(A0, x, b));
   RCP<multivector_type> lhs = Problem.getLHS();
@@ -1742,6 +2027,7 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
 
     // Multigrid Hierarchy, the easy way  
     RCP<operator_type> A0op = A0;
+    amgList.sublist("user data").set("Coordinates",nCoord);
     Teuchos::RCP<muelu_tpetra_operator> M = MueLu::CreateTpetraPreconditioner<scalar_type,local_ordinal_type,global_ordinal_type,NO>(A0op, amgList);
     Problem.setRightPrec(M);
 
@@ -1758,20 +2044,31 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
     belosList.set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
     belosList.set("Output Frequency",      1);
     belosList.set("Output Style",          Belos::Brief);
-    //if (!scaleResidualHist)
-    belosList.set("Implicit Residual Scaling", "None");
+    bool scaleResidualHist = true;
+    if (!scaleResidualHist)
+      belosList.set("Implicit Residual Scaling", "None");
 
     // Create an iterative solver manager
     RCP< Belos::SolverManager<scalar_type, multivector_type, operator_type> > solver;
-    solver = rcp(new Belos::PseudoBlockCGSolMgr   <scalar_type, multivector_type, operator_type>(rcpFromRef(Problem), rcp(&belosList, false)));
+    if(solveType == "cg")
+      solver = rcp(new Belos::PseudoBlockCGSolMgr<scalar_type, multivector_type, operator_type>(rcpFromRef(Problem), rcp(&belosList, false)));
+    else if (solveType == "gmres") { 
+      solver = rcp(new Belos::PseudoBlockGmresSolMgr<scalar_type, multivector_type, operator_type>(rcpFromRef(Problem), rcp(&belosList, false)));
+    }
+    else if (solveType == "fixed point" || solveType == "fixed-point") {
+      solver = rcp(new Belos::FixedPointSolMgr<scalar_type, multivector_type, operator_type>(rcpFromRef(Problem), rcp(&belosList, false)));   
+    }
+    else {
+      std::cout << "\nERROR:  Invalid solver '"<<solveType<<"'" << std::endl;
+      return EXIT_FAILURE;
+    }
+
 
     // Perform solve
     solver->solve();
     //writer_type::writeDenseFile("sol.m", x);
     numIterations = solver->getNumIters();
   }
-
-  uh = lhs;
 
   ArrayRCP<const scalar_type> lhsdata = lhs->getData(0);
   ArrayRCP<const scalar_type> xexactdata = xexact->getData(0);
@@ -1820,7 +2117,7 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
 /*********************************************************************************************************/
 
 
-void GenerateEdgeEnumeration(const FieldContainer<int> & elemToNode, const FieldContainer<double> & nodeCoord, FieldContainer<int> & elemToEdge, FieldContainer<int> & elemToEdgeOrient, FieldContainer<double> & edgeCoord) {
+void GenerateEdgeEnumeration(const FieldContainer<int> & elemToNode, const FieldContainer<double> & nodeCoord, FieldContainer<int> & elemToEdge, FieldContainer<int> & elemToEdgeOrient, FieldContainer<int> & edgeToNode, FieldContainer<double> & edgeCoord) {
   // Not especially efficient, but effective... at least in serial!
   
   int numElems        = elemToNode.dimension(0);
@@ -1875,6 +2172,18 @@ void GenerateEdgeEnumeration(const FieldContainer<int> & elemToNode, const Field
         edgeCoord(elemToEdge(i,j),k) = (nodeCoord(n0,k)+nodeCoord(n1,k))/2.0;
     }
   }
+
+  // Edge to Node connectivity
+  edgeToNode.resize(num_edges,2);
+  for(int i=0; i<numElems; i++) {
+    for(int j=0; j<4; j++) {      
+      int lo = std::min(elemToNode(i,edge_node0_id[j]),elemToNode(i,edge_node1_id[j]));
+      int hi = std::max(elemToNode(i,edge_node0_id[j]),elemToNode(i,edge_node1_id[j]));
+      edgeToNode(elemToEdge(i,j),0) = lo;
+      edgeToNode(elemToEdge(i,j),1) = hi;
+    }
+  }
+
   
   //#define DEBUG_EDGE_ENUMERATION
 #ifdef DEBUG_EDGE_ENUMERATION
@@ -2170,7 +2479,7 @@ void CreateLinearSystem(int numWorksets,
                         RCP<Basis<double,FieldContainer<double> > >&myBasis_rcp,
                         FieldContainer<double> const &HGBGrads,
                         FieldContainer<double> const &HGBValues,
-                        std::vector<int>       const &globalNodeIds,
+                        std::vector<global_ordinal_type>       const &globalNodeIds,
                         crs_matrix_type &StiffMatrix,
                         RCP<multivector_type> &rhsVector,
                         std::string &msg
@@ -2359,6 +2668,26 @@ void CreateLinearSystem(int numWorksets,
     IntrepidFSTools::integrate<double>(worksetRHS,                             // f.(u)*J*w
                                        worksetSourceTerm,
                                        worksetHGBValuesWeighted,  COMP_BLAS);
+
+    /**********************************************************************************/
+    /***************************** STATISTICS (Part II) ******************************/
+    /**********************************************************************************/
+    for(int i=0; i<worksetSize; i++) {
+      // 0 - Material property
+      // 1 - Max/min edge - ratio of max to min edge length
+      // 2 - det of cell Jacobian (later)
+      double elementdetJ = 0.0, elementWeight=0.0;
+      for(int j=0; j<numCubPoints; j++) {
+        elementdetJ   += worksetJacobDet(i,j) * worksetCubWeights(i,j);
+        elementWeight += worksetCubWeights(i,j);
+      }
+      double detJ = elementdetJ / elementWeight;
+      local_stat_max[2] = std::max(local_stat_max[2],detJ);
+      local_stat_min[2] = std::min(local_stat_min[2],detJ);
+      local_stat_sum[2] += detJ;
+    }
+
+
 #ifdef DEBUG_OUTPUT      
       printf("*** worksetSourceTerm ***\n");
       for(int i=0; i<worksetSize; i++)
@@ -2452,6 +2781,69 @@ void CreateLinearSystem(int numWorksets,
 
   }// *** workset loop ***
 
+  StiffMatrix.fillComplete();
+
+/**********************************************************************************/
+/***************************** STATISTICS (Part IIb) ******************************/
+/**********************************************************************************/
+  Teuchos::RCP<const crs_graph_type> gl_StiffGraph = StiffMatrix.getCrsGraph();
+  Teuchos::RCP<const driver_map_type> rowMap = gl_StiffGraph->getRowMap();
+  Teuchos::RCP<multivector_type> coordsOwnedPlusShared;
+
+  RCP<multivector_type> nCoord= rcp(new multivector_type(rowMap,2));
+  {
+    auto nCoordD = nCoord->get2dViewNonConst();
+    for (int inode=0; inode<nodeCoord.dimension(0); inode++) {
+      nCoordD[0][inode]=nodeCoord(inode,0);
+      nCoordD[1][inode]=nodeCoord(inode,1);
+    }  
+  }
+
+  if (!(gl_StiffGraph->getImporter().is_null())) {
+    coordsOwnedPlusShared = rcp(new multivector_type(gl_StiffGraph->getColMap(), 3, true));
+    coordsOwnedPlusShared->doImport(*nCoord, *gl_StiffGraph->getImporter(), Tpetra::CombineMode::ADD, false);
+  }
+  else {
+    coordsOwnedPlusShared = nCoord;
+  }
+
+  vector_type laplDiagOwned(rowMap, true);
+  Teuchos::ArrayView<const local_ordinal_type> indices;
+  Teuchos::ArrayView<const scalar_type> values;
+  size_t numOwnedRows = rowMap->getNodeNumElements();
+  for (size_t row=0; row<numOwnedRows; row++) {
+    StiffMatrix.getLocalRowView(row, indices, values);
+    size_t numIndices = indices.size();
+    for (size_t j=0; j<numIndices; j++) {
+      size_t col = indices[j];
+      if (row == col) continue;
+      laplDiagOwned.sumIntoLocalValue(row, 1/myDistance2(*coordsOwnedPlusShared, row, col));
+    }
+  }
+  Teuchos::RCP<vector_type> laplDiagOwnedPlusShared;
+  if (!gl_StiffGraph->getImporter().is_null()) {
+    laplDiagOwnedPlusShared = rcp(new vector_type(gl_StiffGraph->getColMap(), true));
+    laplDiagOwnedPlusShared->doImport(laplDiagOwned, *gl_StiffGraph->getImporter(), Tpetra::CombineMode::ADD, false);
+  }
+  else {
+    laplDiagOwnedPlusShared = rcp(&laplDiagOwned, false);
+  }
+  for (size_t row=0; row<numOwnedRows; row++) {
+    StiffMatrix.getLocalRowView(row, indices, values);
+    size_t numIndices = indices.size();
+    for(size_t j=0; j<numIndices; j++) {
+      size_t col = indices[j];
+      if (row==col) continue;
+      double laplVal = 1.0 / myDistance2(*coordsOwnedPlusShared, row, col);
+      double aiiajj = std::abs(laplDiagOwnedPlusShared->getData()[row]*laplDiagOwnedPlusShared->getData()[col]);
+      double aij = laplVal * laplVal;
+      double ratio = sqrt(aij / aiiajj);
+      local_stat_max[7] = std::max(local_stat_max[7], ratio);
+      local_stat_min[7] = std::min(local_stat_min[7], ratio);
+      local_stat_sum[7] += ratio;
+    }
+  }
+
 } //CreateLinearSystem
 
 /*********************************************************************************************************/
@@ -2507,6 +2899,7 @@ void GenerateIdentityCoarsening_pn_to_p1(const FieldContainer<int> & Pn_elemToNo
   }
   R->fillComplete(Pn_map,P1_map_aux);
   */
+
 }
 
 
@@ -2521,12 +2914,12 @@ void Apply_Dirichlet_BCs(std::vector<int> &BCNodes, crs_matrix_type & A, multive
   A.resumeFill();
 
   for(int i=0; i<N; i++) {
-    int lrid = BCNodes[i];
+    local_ordinal_type lrid = BCNodes[i];
 
     xdata[lrid]=bdata[lrid] = solndata[lrid];
 
     size_t numEntriesInRow = A.getNumEntriesInLocalRow(lrid);
-    Array<global_ordinal_type> cols(numEntriesInRow);
+    Array<local_ordinal_type> cols(numEntriesInRow);
     Array<scalar_type> vals(numEntriesInRow);
     A.getLocalRowCopy(lrid, cols(), vals(), numEntriesInRow);
     

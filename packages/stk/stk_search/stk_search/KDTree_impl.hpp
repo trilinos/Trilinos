@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
- // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- // the U.S. Government retains certain rights in this software.
- // 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
  // Redistribution and use in source and binary forms, with or without
  // modification, are permitted provided that the following conditions are
  // met:
@@ -14,10 +15,10 @@
  //       disclaimer in the documentation and/or other materials provided
  //       with the distribution.
  // 
- //     * Neither the name of Sandia Corporation nor the names of its
- //       contributors may be used to endorse or promote products derived
- //       from this software without specific prior written permission.
- // 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
  // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -123,7 +124,7 @@ static inline void split_boxes_threaded(const int num_boxes, const stk::search::
   }
 
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+: global_center_x, global_center_y, global_center_z, moment_x, moment_y, moment_z) schedule(static) default(none) num_threads(numThreadsToUse)
+#pragma omp parallel for reduction(+: global_center_x, global_center_y, global_center_z, moment_x, moment_y, moment_z) schedule(static) default(none) num_threads(numThreadsToUse) firstprivate(boxes, num_boxes)
 #endif
   for(int ibox = 0; ibox < num_boxes; ++ibox) {
     float centroid[3];
@@ -815,7 +816,7 @@ inline void create_hierarchy(ObjectBoundingBoxHierarchy_T<RangeBoxType> *hierarc
   std::vector< std::pair<float,int> > centroid_y(num_boxes);
   std::vector< std::pair<float,int> > centroid_z(num_boxes);
 #ifdef _OPENMP
-#pragma omp parallel for schedule(static) default(none) shared(centroid_x, centroid_y, centroid_z, boxes)
+#pragma omp parallel for schedule(static) default(none) shared(centroid_x, centroid_y, centroid_z, boxes) firstprivate(num_boxes)
 #endif
   for(int ibox = 0; ibox < num_boxes; ++ibox) {
     float centroid[3];
@@ -836,7 +837,7 @@ inline void create_hierarchy(ObjectBoundingBoxHierarchy_T<RangeBoxType> *hierarc
 
 #ifdef _OPENMP
 
-#pragma omp parallel for schedule(static) default(none) shared(centroid_x, centroid_y, centroid_z, index_array0, index_array1, index_array2)
+#pragma omp parallel for schedule(static) default(none) shared(centroid_x, centroid_y, centroid_z, index_array0, index_array1, index_array2) firstprivate(num_boxes)
 #endif
   for(int ibox = 0; ibox < num_boxes; ++ibox) {
     index_array0[ibox] = centroid_x[ibox].second;
@@ -1023,7 +1024,7 @@ void create_hierarchy_partial(ObjectBoundingBoxHierarchy_T<RangeBoxType> *const 
   //  Resort the boxes based off of the master array.  First use the new master_sindex array to story a mapping between old box 
   //  positions and new box positions.
   //
-#pragma omp parallel for schedule(static) default(none) shared(master_index, master_sindex)
+#pragma omp parallel for schedule(static) default(none) shared(master_index, master_sindex) firstprivate(scratch_boxes_start_ptr, boxes_start_ptr, num_boxes)
   for(int ibox = 0; ibox < num_boxes; ++ibox) {
     //  NKC, try memcopy
     const int index = master_index[ibox];
@@ -1035,7 +1036,7 @@ void create_hierarchy_partial(ObjectBoundingBoxHierarchy_T<RangeBoxType> *const 
   //  Use at most just four threads here, one starting from the left and one from the right,
   //  can't think of any better way to exploit threading for this particular case
   //
-#pragma omp parallel sections default(none) shared(master_sindex, sub_index1, sub_sindex1, sub_index2, sub_sindex2)
+#pragma omp parallel sections default(none) shared(master_sindex, sub_index1, sub_sindex1, sub_index2, sub_sindex2) firstprivate(left_child_size, num_boxes)
   {
   #pragma omp section
     {
@@ -1099,11 +1100,11 @@ void create_hierarchy_partial(ObjectBoundingBoxHierarchy_T<RangeBoxType> *const 
   //
   //  Update the master index to be correct with the new box ordering
   //
-#pragma omp parallel for schedule(static) default(none) shared(master_sindex)
+#pragma omp parallel for schedule(static) default(none) shared(master_sindex) firstprivate(left_child_size)
   for(int ibox = 0; ibox < left_child_size; ++ibox) {
     master_sindex[ibox] = ibox;
   }
-#pragma omp parallel for schedule(static) default(none) shared(master_sindex)
+#pragma omp parallel for schedule(static) default(none) shared(master_sindex) firstprivate(left_child_size, num_boxes)
   for(int ibox = left_child_size; ibox < num_boxes; ++ibox) {
     master_sindex[ibox] = ibox - left_child_size;
   }
@@ -1254,7 +1255,7 @@ inline void create_hierarchy_fork_threaded(ObjectBoundingBoxHierarchy_T<RangeBox
   //  need to remain in sorted order and are partioned with the below code.
   //
 
-#pragma omp parallel for schedule(static) num_threads(numThreadsToUse) default(none) shared(master_index, master_sindex)
+#pragma omp parallel for schedule(static) num_threads(numThreadsToUse) default(none) shared(master_index, master_sindex) firstprivate(num_boxes, scratch_boxes_start_ptr, boxes_start_ptr)
   for(int ibox = 0; ibox < num_boxes; ++ibox) {
     const int index = master_index[ibox];
     scratch_boxes_start_ptr[ibox] = boxes_start_ptr[index];
@@ -1265,7 +1266,7 @@ inline void create_hierarchy_fork_threaded(ObjectBoundingBoxHierarchy_T<RangeBox
   //  Use at most just four threads here, one starting fro the left and one from the right of each of the lists
   //  can't think of any better way to exploit threading any more for this particular operation
   //
-#pragma omp parallel sections num_threads(numThreadsToUse) default(none) shared(master_sindex, sub_index1, sub_sindex1, sub_index2, sub_sindex2)
+#pragma omp parallel sections num_threads(numThreadsToUse) default(none) shared(master_sindex, sub_index1, sub_sindex1, sub_index2, sub_sindex2) firstprivate(left_child_size, num_boxes)
   {
   #pragma omp section
     {
@@ -1329,11 +1330,11 @@ inline void create_hierarchy_fork_threaded(ObjectBoundingBoxHierarchy_T<RangeBox
   //
   //  Update the master index to be correct with the new box ordering
   //
-#pragma omp parallel for schedule(static) num_threads(numThreadsToUse) default(none) shared(master_sindex)
+#pragma omp parallel for schedule(static) num_threads(numThreadsToUse) default(none) shared(master_sindex) firstprivate(left_child_size)
   for(int ibox = 0; ibox < left_child_size; ++ibox) {
     master_sindex[ibox] = ibox;
   }
-#pragma omp parallel for schedule(static) num_threads(numThreadsToUse) default(none) shared(master_sindex)
+#pragma omp parallel for schedule(static) num_threads(numThreadsToUse) default(none) shared(master_sindex) firstprivate(left_child_size, num_boxes)
   for(int ibox = left_child_size; ibox < num_boxes; ++ibox) {
     master_sindex[ibox] = ibox - left_child_size;
   }
@@ -1350,7 +1351,7 @@ inline void create_hierarchy_fork_threaded(ObjectBoundingBoxHierarchy_T<RangeBox
   int rightNumThreads = numThreadsToUse/2;
   int leftNumThreads = numThreadsToUse-rightNumThreads;
 
-#pragma omp parallel sections num_threads(2) default(none), shared(leftNumThreads, rightNumThreads)
+#pragma omp parallel sections num_threads(2) default(none), shared(leftNumThreads, rightNumThreads) firstprivate(hierarchy_start_ptr, scratch_boxes_start_ptr, boxes_start_ptr, left_child_size, sindex_array0_t_start_ptr, sindex_array1_t_start_ptr, sindex_array2_t_start_ptr, index_array0_t_start_ptr, index_array1_t_start_ptr, index_array2_t_start_ptr, right_child_offset1, right_child_size)
   {
 #pragma omp section
     {
@@ -1422,7 +1423,7 @@ inline void ProximitySearchTree_T<RangeBoxType>::SearchForOverlap(const DomainBo
  template<typename DomainBox>
    inline void ProximitySearchTree_T<RangeBoxType>::SearchForOverlap(const DomainBox&           searchObject,
                                                                                           std::vector<int>&          returnIndexList,
-                                                                                          std::vector<RangeBoxType>& returnBoxList) {
+                                                                                          std::vector<RangeBoxType>& returnBoxList) const {
    returnIndexList.clear();
    returnBoxList.clear();
    if(m_tree.empty()) {
@@ -1452,7 +1453,7 @@ inline void ProximitySearchTree_T<RangeBoxType>::SearchForOverlap(const DomainBo
 
 template<typename RangeBoxType>
 template<typename DomainBox>
-inline bool ProximitySearchTree_T<RangeBoxType>::AnyOverlap(const DomainBox& searchObject) {
+inline bool ProximitySearchTree_T<RangeBoxType>::AnyOverlap(const DomainBox& searchObject) const {
   if(m_tree.empty()) {
     return false;
   } else {

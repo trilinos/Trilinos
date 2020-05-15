@@ -67,9 +67,7 @@ namespace Compat {
 namespace KokkosClassic {
 
   namespace Details {
-    template <class NodeType>
-    Teuchos::RCP<NodeType> getNode() { return Teuchos::null; }
-  } //namespace Details
+} //namespace Details
 
   class DefaultNode {
     public:

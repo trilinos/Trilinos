@@ -231,13 +231,13 @@ public:
    virtual void setSymmetric(bool isSymmetric) = 0;
 
    //! Initialize from a parameter list
-   virtual void initializeFromParameterList(const Teuchos::ParameterList & pl,const InverseLibrary & invLib) {}
+   virtual void initializeFromParameterList(const Teuchos::ParameterList & /* pl */,const InverseLibrary & /* invLib */) {}
 
    //! For assiting in construction of the preconditioner
    virtual Teuchos::RCP<Teuchos::ParameterList> getRequestedParameters() const { return Teuchos::null;}
 
    //! For assiting in construction of the preconditioner
-   virtual bool updateRequestedParameters(const Teuchos::ParameterList & pl) { return true; }
+   virtual bool updateRequestedParameters(const Teuchos::ParameterList & /* pl */) { return true; }
 
    //! This method sets the request handler for this object
    void setRequestHandler(const Teuchos::RCP<RequestHandler> & rh)

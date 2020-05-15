@@ -46,6 +46,7 @@
 
 #include "Thyra_SpmdVectorSpaceDefaultBase.hpp"
 #include "Tpetra_Map.hpp"
+#include "Tpetra_MultiVector.hpp"
 
 
 namespace Thyra {
@@ -86,6 +87,11 @@ public:
     ) const;
   /** \brief . */
   RCP< const VectorSpaceBase<Scalar> > clone() const;
+
+  /** \brief Get the embedded Tpetra::Map. */
+  RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
+  getTpetraMap() const;
+
   //@}
 
 protected:
@@ -99,6 +105,14 @@ protected:
   /** \brief . */
   RCP<MultiVectorBase<Scalar> >
   createMembers(int numMembers) const;
+
+public:
+
+  RCP<MultiVectorBase<Scalar> >
+  createCachedMembersView( const RTOpPack::SubMultiVectorView<Scalar> &raw_mv ) const;
+
+  RCP<const MultiVectorBase<Scalar> >
+  createCachedMembersView( const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv ) const;
 
   //@}
 
@@ -120,6 +134,8 @@ private:
   // Private data members
 
   RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > tpetraMap_;
+  mutable RCP<TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tpetraDomainSpace_;
+  mutable RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tpetraMV_;
   // The only reason Thyra needs this comm_ object is because Thyra
   // uses Ordinal as the Comm template parameter, while Tpetra uses
   // int.  Ordinal is some 64-bit type, which doesn't make any sense,
@@ -137,7 +153,7 @@ private:
 }; // end class TpetraVectorSpace
 
 
-/** \brief Nonmember consturctor that creats a serial vector space.
+/** \brief Nonmember constructor that creats a serial vector space.
  *
  * \relates TpetraVectorSpace
  */

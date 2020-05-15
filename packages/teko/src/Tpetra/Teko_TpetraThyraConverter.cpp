@@ -273,7 +273,7 @@ void thyraVSToTpetraMap(std::vector<GO> & myIndicies, int blockOffset, const Thy
 }
 
 // From a Thyra vector space create a compatable Tpetra_Map
-const RCP<Tpetra::Map<LO,GO,NT> > thyraVSToTpetraMap(const Thyra::VectorSpaceBase<ST> & vs,const RCP<const Teuchos::Comm<Thyra::Ordinal> > & comm)
+const RCP<Tpetra::Map<LO,GO,NT> > thyraVSToTpetraMap(const Thyra::VectorSpaceBase<ST> & vs,const RCP<const Teuchos::Comm<Thyra::Ordinal> > & /* comm */)
 {
    int localDim = 0;
    std::vector<GO> myGIDs;

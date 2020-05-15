@@ -119,13 +119,6 @@ DropFilter<MatrixType>::getComm () const
   return A_->getComm ();
 }
 
-//==========================================================================
-template<class MatrixType>
-Teuchos::RCP<typename MatrixType::node_type>
-DropFilter<MatrixType>::getNode () const
-{
-  return A_->getNode ();
-}
 
 //==========================================================================
 template<class MatrixType>

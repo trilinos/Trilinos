@@ -1,4 +1,4 @@
-C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
+C Copyright(C) 2009-2017, 2020 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -192,7 +192,7 @@ C  Blue-brown-red spectrum (DEFAULT)
             ELSE
               NEWCOL = NUMCOL(1,ICURDV) - 1
               DO 10 I = 0, NEWCOL
-                FRAC = FLOAT(I) / FLOAT(NEWCOL)
+                FRAC = DBLE(I) / DBLE(NEWCOL)
                 ISEG = INT (FRAC * 4)
                 REM = FRAC * 4 - ISEG
                 XRED   = SRED(ISEG)
@@ -288,7 +288,7 @@ C
 C  Interpolate on color number, not color values.
 C  For a spectrum with less than 224 colors, choose
 C  equally-spaced color numbers from the range 255-32
-                  FRAC = FLOAT(I) / FLOAT(NEWCOL)
+                  FRAC = DBLE(I) / DBLE(NEWCOL)
                   NC=NINT(255.-FRAC*223.)
                   CALL PLTCOL (8+I, RRED(NC), RGREEN(NC), RBLUE(NC))
   100          CONTINUE

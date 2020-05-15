@@ -47,7 +47,7 @@
 PyTrilinos.Amesos is the python interface to the Trilinos direct
 linear solver package Amesos:
 
-    http://trilinos.sandia.gov/packages/amesos
+    https://trilinos.org/docs/dev/packages/amesos/doc/html/index.html
 
 The purpose of Amesos is to provide a common interface to a variety of
 third-party direct solvers, made compatible with PyTrilinos.Epetra.
@@ -74,7 +74,6 @@ exAmesos_Factory.py.
 %enddef
 
 %module(package   = "PyTrilinos",
-	autodoc   = "1",
 	docstring = %amesos_docstring) Amesos
 
 %{
@@ -109,11 +108,11 @@ exAmesos_Factory.py.
 // Standard exception handling
 %include "exception.i"
 
-// Auto-documentation feature
-%feature("autodoc", "1");
-
 // Include Amesos documentation
+#if SWIG_VERSION < 0x040000
+%feature("autodoc", "1");
 %include "Amesos_dox.i"
+#endif
 
 // SWIG library include files
 %include "stl.i"

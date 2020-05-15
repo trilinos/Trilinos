@@ -34,18 +34,15 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ***********************************************************************
 // @HEADER
 
 #ifndef TEUCHOS_PERFORMANCEMONITORBASE_H
 #define TEUCHOS_PERFORMANCEMONITORBASE_H
 
-/*! \file Teuchos_PerformanceMonitorBase.hpp
-  \brief Provides common capabilities for collecting and reporting
-  performance data across processors
-*/
+/// \file Teuchos_PerformanceMonitorBase.hpp
+/// \brief Common capabilities for collecting and reporting
+///   performance data collectively across MPI processes.
 
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_Array.hpp"
@@ -157,7 +154,7 @@ namespace Teuchos
   class PerformanceMonitorBase
   {
   public:
-    /** \brief Construct with a counter. */
+    //! Construct with a counter.
     PerformanceMonitorBase(T& counter_in, bool reset=false)
       : counter_(counter_in), isRecursiveCall_(counter_.isRunning())
     {
@@ -165,11 +162,14 @@ namespace Teuchos
       counter_.incrementNumCalls ();
     }
 
+    //! Default constructor is deleted, since it would be unsafe.
+    PerformanceMonitorBase () = delete;
+
     /// \brief Destructor.
     ///
     /// The destructor for the base class does nothing.  We provide a
     /// virtual destructor for memory safety of derived classes.
-    virtual ~PerformanceMonitorBase() {}
+    virtual ~PerformanceMonitorBase() = default;
 
     /** \brief Create a new counter with the specified name and add it
      *   to a global set of counters of this type.
@@ -198,9 +198,9 @@ namespace Teuchos
     ///   happen if the format() method below is called twice by
     ///   different threads.
     static void freeTableFormat () {
-      if (format_ != NULL) {
+      if (format_ != nullptr) {
         delete format_;
-        format_ = NULL;
+        format_ = nullptr;
       }
     }
 
@@ -214,9 +214,9 @@ namespace Teuchos
     ///   happen if the counters() method below is called twice by
     ///   different threads.
     static void freeCounters () {
-      if (counters_ != NULL) {
+      if (counters_ != nullptr) {
         delete counters_;
-        counters_ = NULL;
+        counters_ = nullptr;
       }
     }
 
@@ -231,7 +231,7 @@ namespace Teuchos
     ///   twice by different threads.
     static TableFormat& format ()
     {
-      if (format_ == NULL) {
+      if (format_ == nullptr) {
         format_ = new TableFormat ();
         // It _is_ possible for atexit() to fail (e.g., because it ran
         // out of memory for storing callbacks).  We could throw an
@@ -240,8 +240,8 @@ namespace Teuchos
         static_cast<void>( atexit(freeTableFormat) );
       }
       TEUCHOS_TEST_FOR_EXCEPTION(
-        format_ == NULL, std::logic_error, "Teuchos::PerformanceMonitorBase::"
-        "format: Should never get here!  format_ is NULL.");
+        format_ == nullptr, std::logic_error, "Teuchos::PerformanceMonitorBase::"
+        "format: Should never get here!  format_ is nullptr.");
 
       return *format_;
     }
@@ -262,35 +262,12 @@ namespace Teuchos
     /// would be returned by counters()).
     static void clearCounters ();
 
-    /// \brief "Forget" about all counters created with getNewCounter().
-    ///
-    /// This removes all counters from the current list of counters
-    /// (as would be returned by counters()).
-    ///
-    /// \warning This method is DEPRECATED, because the name is
-    ///   inaccurate (the template parameter of PerformanceMonitorBase
-    ///   may be any kind of performance counter, not just a timer).
-    ///   Use clearCounters() instead.
-    static TEUCHOS_DEPRECATED void clearTimers ();
-
     /// \brief "Forget" about any counters with the given name.
     ///
     /// If one or more counters with the given name was created using
     /// getNewCounter(), calling this method with that name will
     /// remove them from the global list of counters.
     static void clearCounter (const std::string& name);
-
-    /// \brief "Forget" about any counters with the given name.
-    ///
-    /// If one or more counters with the given name was created using
-    /// getNewCounter(), calling this method with that name will
-    /// remove them from the global list of counters.
-    ///
-    /// \warning This method is DEPRECATED, because the name is
-    ///   inaccurate (the template parameter of PerformanceMonitorBase
-    ///   may be any kind of performance counter, not just a timer).
-    ///   Use clearCounter() instead.
-    static TEUCHOS_DEPRECATED void clearTimer (const std::string& name);
 
   protected:
 
@@ -314,7 +291,7 @@ namespace Teuchos
     /// \warning This method is not reentrant.
     static std::map<std::string, RCP<T> >& counters ()
     {
-      if (counters_ == NULL) {
+      if (counters_ == nullptr) {
         counters_ = new std::map<std::string, RCP<T> > ();
         // It _is_ possible for atexit() to fail (e.g., because it ran
         // out of memory for storing callbacks).  We could throw an
@@ -323,8 +300,8 @@ namespace Teuchos
         static_cast<void>( atexit(freeCounters) );
       }
       TEUCHOS_TEST_FOR_EXCEPTION(
-        counters_ == NULL, std::logic_error, "Teuchos::PerformanceMonitorBase::"
-        "counters: Should never get here!  counters_ is NULL.");
+        counters_ == nullptr, std::logic_error, "Teuchos::PerformanceMonitorBase::"
+        "counters: Should never get here!  counters_ is nullptr.");
 
       return *counters_;
     }
@@ -345,11 +322,11 @@ namespace Teuchos
 
   template<class T>
   TableFormat*
-  PerformanceMonitorBase<T>::format_ = NULL;
+  PerformanceMonitorBase<T>::format_ = nullptr;
 
   template<class T>
   std::map<std::string, RCP<T> >*
-  PerformanceMonitorBase<T>::counters_ = NULL;
+  PerformanceMonitorBase<T>::counters_ = nullptr;
 
   template<class T>
   RCP<T>
@@ -422,20 +399,6 @@ namespace Teuchos
   PerformanceMonitorBase<T>::clearCounter (const std::string& name)
   {
     counters ().erase (name);
-  }
-
-  template<class T>
-  void
-  PerformanceMonitorBase<T>::clearTimer (const std::string& name)
-  {
-    clearCounter (name);
-  }
-
-  template<class T>
-  void
-  PerformanceMonitorBase<T>::clearTimers ()
-  {
-    clearCounters ();
   }
 
   template<class T>

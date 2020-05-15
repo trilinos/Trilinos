@@ -104,7 +104,7 @@ namespace Xpetra {
   // This non-member templated function exists so that the matrix-matrix multiply will compile if Epetra, Tpetra, and ML are enabled.
   template<class SC,class LO,class GO,class NO>
   RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> >
-  Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap (RCP<Epetra_CrsMatrix> &epAB) {
+  Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap (RCP<Epetra_CrsMatrix> &/* epAB */) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
       "Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap cannot be used with Scalar != double, LocalOrdinal != int, GlobalOrdinal != int");
     TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
@@ -278,12 +278,15 @@ namespace Xpetra {
 
 
     /*! @brief Save matrix to file in Matrix Market format. */
-    static void Write(const std::string& fileName, const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Op) {
+    static void Write(const std::string& fileName, const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Op, const bool &writeAllMaps = false) {
 
       Write("rowmap_"    + fileName, *(Op.getRowMap()));
-      Write("colmap_"    + fileName, *(Op.getColMap()));
-      Write("domainmap_" + fileName, *(Op.getDomainMap()));
-      Write("rangemap_"  + fileName, *(Op.getRangeMap()));
+      if ( !Op.getDomainMap()->isSameAs(*(Op.getRowMap())) || writeAllMaps )
+        Write("domainmap_" + fileName, *(Op.getDomainMap()));
+      if ( !Op.getRangeMap()->isSameAs(*(Op.getRowMap())) || writeAllMaps )
+        Write("rangemap_"  + fileName, *(Op.getRangeMap()));
+      if ( !Op.getColMap()->isSameAs(*(Op.getDomainMap())) || writeAllMaps )
+        Write("colmap_"    + fileName, *(Op.getColMap()));
 
       const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>& crsOp =
           dynamic_cast<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>&>(Op);
@@ -342,7 +345,7 @@ namespace Xpetra {
 
 
     /*! @brief Save matrix to file in Matrix Market format. */
-    static void WriteBlockedCrsMatrix(const std::string& fileName, const Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Op) {
+    static void WriteBlockedCrsMatrix(const std::string& fileName, const Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Op, const bool &writeAllMaps = false) {
       typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                     XpMap;
       typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>  XpMapExtractor;
       //typedef Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>        XpCrsMat;
@@ -357,7 +360,7 @@ namespace Xpetra {
           if(m != Teuchos::null) { // skip empty blocks
             TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<const XpCrsMatWrap>(m) == Teuchos::null, Xpetra::Exceptions::BadCast,
               "Sub block matrix (" << r << "," << c << ") is not of type CrsMatrixWrap.");
-            XpIO::Write(fileName + toString(r) + toString(c) + ".m", *m);
+            XpIO::Write(fileName + toString(r) + toString(c) + ".m", *m, writeAllMaps);
           }
         }
       }
@@ -405,12 +408,9 @@ namespace Xpetra {
 
           typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
 
-          //RCP<Node> node = Xpetra::DefaultPlatform::getDefaultPlatform().getNode();
-          Teuchos::ParameterList pl = Teuchos::ParameterList();
-          RCP<Node> node = rcp(new Node(pl));
           bool callFillComplete = true;
 
-          RCP<sparse_matrix_type> tA = reader_type::readSparseFile(fileName, comm, node, callFillComplete);
+          RCP<sparse_matrix_type> tA = reader_type::readSparseFile(fileName, comm, callFillComplete);
 
           if (tA.is_null())
             throw Exceptions::RuntimeError("The Tpetra::CrsMatrix returned from readSparseFile() is null.");
@@ -442,7 +442,8 @@ namespace Xpetra {
         RCP<Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >    colMap = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, n, (myRank == 0 ? n : 0), indexBase, comm), domainMap = colMap;
         RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A   = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(rowMap, colMap, 1);
 
-        TEUCHOS_TEST_FOR_EXCEPTION(sizeof(int) != sizeof(GO), Exceptions::RuntimeError, "Incompatible sizes");
+        //2019-06-07 JHU I don't see why this should matter.
+        //TEUCHOS_TEST_FOR_EXCEPTION(sizeof(int) != sizeof(GO), Exceptions::RuntimeError, "Incompatible sizes");
 
         if (myRank == 0) {
           Teuchos::Array<GlobalOrdinal> inds;
@@ -563,7 +564,8 @@ namespace Xpetra {
 
         RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A = Xpetra::MatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap, colMap, 1);
 
-        TEUCHOS_TEST_FOR_EXCEPTION(sizeof(int) != sizeof(GO), Exceptions::RuntimeError, "Incompatible sizes");
+        //2019-06-07 JHU I don't see why this should matter.
+        //TEUCHOS_TEST_FOR_EXCEPTION(sizeof(int) != sizeof(GO), Exceptions::RuntimeError, "Incompatible sizes");
 
         Teuchos::ArrayView<const GlobalOrdinal> rowElements = rowMap->getNodeElementList();
         Teuchos::ArrayView<const GlobalOrdinal> colElements = colMap->getNodeElementList();
@@ -611,7 +613,7 @@ namespace Xpetra {
         typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>            multivector_type;
 
         RCP<const map_type>   temp = toTpetra(map);
-        RCP<multivector_type> TMV  = reader_type::readDenseFile(fileName,map->getComm(),map->getNode(),temp);
+        RCP<multivector_type> TMV  = reader_type::readDenseFile(fileName,map->getComm(),temp);
         RCP<MultiVector>      rmv  = Xpetra::toXpetra(TMV);
         return rmv;
 #else
@@ -632,9 +634,7 @@ namespace Xpetra {
         typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> sparse_matrix_type;
         typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type>                          reader_type;
 
-        RCP<Node> node = rcp(new Node());
-
-        RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > tMap = reader_type::readMapFile(fileName, comm, node);
+        RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > tMap = reader_type::readMapFile(fileName, comm);
         if (tMap.is_null())
           throw Exceptions::RuntimeError("The Tpetra::Map returned from readSparseFile() is null.");
 
@@ -854,12 +854,15 @@ namespace Xpetra {
 
 
     /*! @brief Save matrix to file in Matrix Market format. */
-    static void Write(const std::string& fileName, const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Op) {
+    static void Write(const std::string& fileName, const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Op, const bool &writeAllMaps = false) {
 
       Write("rowmap_"    + fileName, *(Op.getRowMap()));
-      Write("colmap_"    + fileName, *(Op.getColMap()));
-      Write("domainmap_" + fileName, *(Op.getDomainMap()));
-      Write("rangemap_"  + fileName, *(Op.getRangeMap()));
+      if ( !Op.getDomainMap()->isSameAs(*(Op.getRowMap())) || writeAllMaps )
+        Write("domainmap_" + fileName, *(Op.getDomainMap()));
+      if ( !Op.getRangeMap()->isSameAs(*(Op.getRowMap())) || writeAllMaps )
+        Write("rangemap_"  + fileName, *(Op.getRangeMap()));
+      if ( !Op.getColMap()->isSameAs(*(Op.getDomainMap())) || writeAllMaps )
+        Write("colmap_"    + fileName, *(Op.getColMap()));
 
       const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>& crsOp =
           dynamic_cast<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>&>(Op);
@@ -922,7 +925,7 @@ namespace Xpetra {
     } //WriteLocal
 
     /*! @brief Save matrix to file in Matrix Market format. */
-    static void WriteBlockedCrsMatrix(const std::string& fileName, const Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Op) {
+    static void WriteBlockedCrsMatrix(const std::string& fileName, const Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Op, const bool &writeAllMaps = false) {
       typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                     XpMap;
       typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>  XpMapExtractor;
       //typedef Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>        XpCrsMat;
@@ -937,7 +940,7 @@ namespace Xpetra {
           if(m != Teuchos::null) { // skip empty blocks
             TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<const XpCrsMatWrap>(m) == Teuchos::null, Xpetra::Exceptions::BadCast,
               "Sub block matrix (" << r << "," << c << ") is not of type CrsMatrixWrap.");
-            XpIO::Write(fileName + toString(r) + toString(c) + ".m", *m);
+            XpIO::Write(fileName + toString(r) + toString(c) + ".m", *m, writeAllMaps);
           }
         }
       }
@@ -989,12 +992,9 @@ namespace Xpetra {
 
           typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
 
-          //RCP<Node> node = Xpetra::DefaultPlatform::getDefaultPlatform().getNode();
-          Teuchos::ParameterList pl = Teuchos::ParameterList();
-          RCP<Node> node = rcp(new Node(pl));
           bool callFillComplete = true;
 
-          RCP<sparse_matrix_type> tA = reader_type::readSparseFile(fileName, comm, node, callFillComplete);
+          RCP<sparse_matrix_type> tA = reader_type::readSparseFile(fileName, comm, callFillComplete);
 
           if (tA.is_null())
             throw Exceptions::RuntimeError("The Tpetra::CrsMatrix returned from readSparseFile() is null.");
@@ -1027,7 +1027,8 @@ namespace Xpetra {
         RCP<Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >    colMap = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, n, (myRank == 0 ? n : 0), indexBase, comm), domainMap = colMap;
         RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A   = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(rowMap, colMap, 1);
 
-        TEUCHOS_TEST_FOR_EXCEPTION(sizeof(int) != sizeof(GlobalOrdinal), Exceptions::RuntimeError, "Incompatible sizes");
+        //2019-06-07 JHU I don't see why this should matter.
+        //TEUCHOS_TEST_FOR_EXCEPTION(sizeof(int) != sizeof(GlobalOrdinal), Exceptions::RuntimeError, "Incompatible sizes");
 
         if (myRank == 0) {
           Teuchos::Array<GlobalOrdinal> inds;
@@ -1152,7 +1153,8 @@ namespace Xpetra {
 
         RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A = Xpetra::MatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap, colMap, 1);
 
-        TEUCHOS_TEST_FOR_EXCEPTION(sizeof(int) != sizeof(GlobalOrdinal), Exceptions::RuntimeError, "Incompatible sizes");
+        //2019-06-07 JHU I don't see why this should matter.
+        //TEUCHOS_TEST_FOR_EXCEPTION(sizeof(int) != sizeof(GlobalOrdinal), Exceptions::RuntimeError, "Incompatible sizes");
 
         Teuchos::ArrayView<const GlobalOrdinal> rowElements = rowMap->getNodeElementList();
         Teuchos::ArrayView<const GlobalOrdinal> colElements = colMap->getNodeElementList();
@@ -1212,7 +1214,7 @@ namespace Xpetra {
         typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>            multivector_type;
 
         RCP<const map_type>   temp = toTpetra(map);
-        RCP<multivector_type> TMV  = reader_type::readDenseFile(fileName,map->getComm(),map->getNode(),temp);
+        RCP<multivector_type> TMV  = reader_type::readDenseFile(fileName,map->getComm(),temp);
         RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >      rmv  = Xpetra::toXpetra(TMV);
         return rmv;
 # endif
@@ -1252,9 +1254,7 @@ namespace Xpetra {
         typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> sparse_matrix_type;
         typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type>                          reader_type;
 
-        RCP<Node> node = rcp(new Node());
-
-        RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > tMap = reader_type::readMapFile(fileName, comm, node);
+        RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > tMap = reader_type::readMapFile(fileName, comm);
         if (tMap.is_null())
           throw Exceptions::RuntimeError("The Tpetra::Map returned from readSparseFile() is null.");
 

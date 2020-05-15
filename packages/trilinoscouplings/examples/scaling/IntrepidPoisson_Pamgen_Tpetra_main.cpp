@@ -122,7 +122,6 @@ main (int argc, char *argv[])
     Teuchos::oblackholestream blackHole;
     Tpetra::ScopeGuard mpiSession (&argc, &argv);
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
-    RCP<Node> node; // OK to be null; just needed for type deduction; eventually remove this
 
     const int myRank = comm->getRank ();
     //const int numProcs = comm->getSize ();
@@ -181,6 +180,12 @@ main (int argc, char *argv[])
     cmdp.setOption ("matrixFilename", &matrixFilename, "If nonempty, dump the "
                     "generated matrix to that file in MatrixMarket format.");
 
+    // If coordsFilename is nonempty, dump the coords to that file
+    // in MatrixMarket format.
+    std::string coordsFilename;
+    cmdp.setOption ("coordsFilename", &coordsFilename, "If nonempty, dump the "
+                    "generated coordinates to that file in MatrixMarket format.");
+
     // If rowMapFilename is nonempty, dump the matrix's row Map to
     // that file in MatrixMarket format.
     std::string rowMapFilename;
@@ -192,8 +197,8 @@ main (int argc, char *argv[])
     bool exitAfterAssembly = false;
     cmdp.setOption ("exitAfterAssembly", "dontExitAfterAssembly",
                     &exitAfterAssembly, "If true, exit after building the "
-                    "sparse matrix and dense right-hand side vector.  If either"
-                    " --matrixFilename or --rowMapFilename are nonempty strings"
+                    "sparse matrix and dense right-hand side vector.  If "
+                    " --matrixFilename --coordsFilename or --rowMapFilename are nonempty strings"
                     ", dump the matrix resp. row Map to their respective files "
                     "before exiting.");
 
@@ -203,9 +208,7 @@ main (int argc, char *argv[])
                     &exitAfterPrecond, "If true, exit after building the "
                     "preconditioner.");
 
-
-     // If matrixFilename is nonempty, dump the matrix to that file
-    // in MatrixMarket format.
+    // Number of rebuilds of the MueLu hierarchy
     int numMueluRebuilds=0;
     cmdp.setOption ("rebuild", &numMueluRebuilds, "Number of times to rebuild the MueLu hierarchy.");
 
@@ -268,7 +271,7 @@ main (int argc, char *argv[])
       RCP<multivector_type> coords;
       {
         TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Assembly", total_assembly);
-        makeMatrixAndRightHandSide (A, B, X_exact, X, coords, node_sigma, comm, node, meshInput, inputList, problemStatistics,
+        makeMatrixAndRightHandSide (A, B, X_exact, X, coords, node_sigma, comm, meshInput, inputList, problemStatistics,
                                     out, err, verbose, debug);
       }
 
@@ -280,6 +283,9 @@ main (int argc, char *argv[])
         typedef Tpetra::MatrixMarket::Writer<sparse_matrix_type> writer_type;
         if (matrixFilename != "") {
           writer_type::writeSparseFile (matrixFilename, A);
+        }
+        if (coordsFilename != "") {
+          writer_type::writeDenseFile (coordsFilename, coords);
         }
         if (rowMapFilename != "") {
           writer_type::writeMapFile (rowMapFilename, * (A->getRowMap ()));
@@ -304,11 +310,12 @@ main (int argc, char *argv[])
       // Setup preconditioner
       std::string prec_type = inputList.get ("Preconditioner", "None");
       RCP<operator_type> M;
+      RCP<operator_type> opA(A);
       {
         TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Preconditioner Setup", total_prec);
 
         if (prec_type == "MueLu") {
-#ifdef HAVE_TRILINOSCOUPLINGS_MUELU         
+#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
 #ifdef HAVE_TRILINOSCOUPLINGS_AVATAR
           // If we have Avatar, then let's use it
           if (inputList.isSublist("Avatar-MueLu")) {
@@ -323,6 +330,8 @@ main (int argc, char *argv[])
             *out<<"*** Avatar Setup ***"<<std::endl;
             avatar.Setup();
             avatar.SetMueLuParameters(problemFeatures,mueluParams, true);
+            //  Do this twice to make sure this guy is re-callable.
+            avatar.SetMueLuParameters(problemFeatures,mueluParams, true);
 
             *out<<"*** Updated MueLu Parameters ***\n"<<mueluParams<<std::endl;
             avatar.Cleanup();
@@ -332,9 +341,9 @@ main (int argc, char *argv[])
 	    if (inputList.isSublist("MueLu")) {
 	      ParameterList mueluParams = inputList.sublist("MueLu");
               mueluParams.sublist("user data").set("Coordinates",coords);
-              M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A,mueluParams);
+              M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(opA,mueluParams);
             } else {
-              M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A);
+              M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(opA);
             }
           }
 #else // NOT HAVE_TRILINOSCOUPLINGS_MUELU

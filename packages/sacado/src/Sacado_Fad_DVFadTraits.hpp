@@ -147,15 +147,14 @@ namespace Sacado {
 
 } // namespace Sacado
 
+//
 // Define Teuchos traits classes
-#ifdef HAVE_SACADO_TEUCHOS
+//
+
+// Promotion traits
+#ifdef HAVE_SACADO_TEUCHOSNUMERICS
 #include "Teuchos_PromotionTraits.hpp"
-#include "Teuchos_ScalarTraits.hpp"
-#include "Sacado_Fad_ScalarTraitsImp.hpp"
-
 namespace Teuchos {
-
-  //! Specialization of %Teuchos::PromotionTraits to DVFad types
   template <typename ValueT>
   struct PromotionTraits< Sacado::Fad::DVFad<ValueT>,
                           Sacado::Fad::DVFad<ValueT> > {
@@ -164,28 +163,31 @@ namespace Teuchos {
     promote;
   };
 
-  //! Specialization of %Teuchos::PromotionTraits to DVFad types
   template <typename ValueT, typename R>
   struct PromotionTraits< Sacado::Fad::DVFad<ValueT>, R > {
     typedef typename Sacado::Promote< Sacado::Fad::DVFad<ValueT>, R >::type
     promote;
   };
 
-  //! Specialization of %Teuchos::PromotionTraits to DVFad types
   template <typename L, typename ValueT>
   struct PromotionTraits< L, Sacado::Fad::DVFad<ValueT> > {
   public:
     typedef typename Sacado::Promote< L, Sacado::Fad::DVFad<ValueT> >::type
     promote;
   };
+}
+#endif
 
-  //! Specializtion of %Teuchos::ScalarTraits
+// Scalar traits
+#ifdef HAVE_SACADO_TEUCHOSCORE
+#include "Sacado_Fad_ScalarTraitsImp.hpp"
+namespace Teuchos {
   template <typename ValueT>
   struct ScalarTraits< Sacado::Fad::DVFad<ValueT> > :
     public Sacado::Fad::ScalarTraitsImp< Sacado::Fad::DVFad<ValueT> >
   {};
 }
-#endif // HAVE_SACADO_TEUCHOS
+#endif
 
 #endif // SACADO_NEW_FAD_DESIGN_IS_DEFAULT
 

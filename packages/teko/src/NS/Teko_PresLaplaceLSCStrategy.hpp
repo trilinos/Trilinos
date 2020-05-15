@@ -128,7 +128,7 @@ public:
    // virtual LinearOp getInvAlphaD(const BlockedLinearOp & A,BlockPreconditionerState & state) const;
    virtual LinearOp getOuterStabilization(const BlockedLinearOp & A,BlockPreconditionerState & state) const;
 
-   virtual LinearOp getInnerStabilization(const BlockedLinearOp & A,BlockPreconditionerState & state) const
+   virtual LinearOp getInnerStabilization(const BlockedLinearOp & /* A */,BlockPreconditionerState & /* state */) const
    { return Teuchos::null; }
 
    /** Get the inverse mass matrix.

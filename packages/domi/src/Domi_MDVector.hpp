@@ -761,7 +761,7 @@ public:
    * on this non-contiguous MDVector.
    */
   template< class LocalOrdinal,
-            class GlobalOrdinal = LocalOrdinal >
+            class GlobalOrdinal = TpetraGOType>
   Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal > >
   getTpetraVectorView() const;
 
@@ -783,7 +783,7 @@ public:
    * transform.
    */
   template < class LocalOrdinal,
-             class GlobalOrdinal = LocalOrdinal >
+             class GlobalOrdinal = TpetraGOType>
   Teuchos::RCP< Tpetra::MultiVector< Scalar,
                                      LocalOrdinal,
                                      GlobalOrdinal > >
@@ -795,7 +795,7 @@ public:
    * order to be expressed as a Tpetra::Vector.
    */
   template< class LocalOrdinal,
-            class GlobalOrdinal = LocalOrdinal >
+            class GlobalOrdinal = TpetraGOType>
   Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal > >
   getTpetraVectorCopy() const;
 
@@ -812,7 +812,7 @@ public:
    * equal 1.
    */
   template < class LocalOrdinal,
-             class GlobalOrdinal = LocalOrdinal >
+             class GlobalOrdinal = TpetraGOType>
   Teuchos::RCP< Tpetra::MultiVector< Scalar,
                                      LocalOrdinal,
                                      GlobalOrdinal > >
@@ -2287,7 +2287,7 @@ getTpetraMultiVectorView() const
   for (int axis = 1; axis < newMdMap->numDims(); ++axis)
     stride *= newMdMap->getLocalDim(axis,true);
   TEUCHOS_TEST_FOR_EXCEPTION(
-    stride*numVectors > Teuchos::OrdinalTraits<GlobalOrdinal>::max(),
+    (long long int)(stride*numVectors) > Teuchos::OrdinalTraits<GlobalOrdinal>::max(),
     MapOrdinalError,
     "Buffer size " << stride*numVectors << " is too large for Tpetra "
     "GlobalOrdinal = " << typeid(GlobalOrdinal).name() );

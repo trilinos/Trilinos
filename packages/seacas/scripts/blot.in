@@ -61,7 +61,7 @@ exit 1
 
 function show_device {
  echo " "
- tempA=`find ${ACCESS}/bin -name ${codename}${sep}\* |grep -v ${codename}.o |sed -e s:${ACCESS}/bin/${codename}${sep}::`
+ tempA=`find ${ACCESS_BIN} -name ${codename}${sep}\* |grep -v ${codename}.o |sed -e s:${ACCESS_BIN}/${codename}${sep}::`
  echo "Standard options for 'device':"
  echo "${txtgrn}" $tempA "${txtrst}"
  echo " "
@@ -101,7 +101,19 @@ function abspath() {
 }
 
 codename=blot
-ACCESS=@ACCESSDIR@
+
+# If 'getopt.seacas' in same path as this script, then use that as the setting for ACCESS
+# Assumes that blot_x11, ... will also be in same directory
+pushd $(dirname "${0}") > /dev/null
+basedir=$(pwd -P)
+popd > /dev/null
+if [ -x ${basedir}/getopt.seacas ]; then
+    ACCESS_BIN=$basedir
+elif [ "$ACCESS" == "" ]; then
+    ACCESS_BIN=@ACCESSDIR@/bin
+else
+    ACCESS_BIN=${ACCESS}/bin
+fi
 sep=@SEPARATOR@
 
 # Text color variables
@@ -128,7 +140,7 @@ device="x11"
 
 export EXT04=NO
 
-GETOPT=${ACCESS}/bin/getopt.seacas
+GETOPT=${ACCESS_BIN}/getopt.seacas
 
 TEMP=`${GETOPT} -o aoidhbps -a --long nomap:,ps_option:,device:,input:,hardcopy:,basename:,aprepro,help,show_filename -n 'blot' -- "$@"`
 
@@ -214,9 +226,9 @@ then
     export DUAL_FILENAME="${filename}.cps"
 fi
 
-if [ ! -x "${ACCESS}/bin/${codename}${sep}${device}" ]
+if [ ! -x "${ACCESS_BIN}/${codename}${sep}${device}" ]
 then
-   echo "${txtred}ERROR: ${ACCESS}/bin/${codename}${sep}${device} does not exist.${txtrst}"
+   echo "${txtred}ERROR: ${ACCESS_BIN}/${codename}${sep}${device} does not exist.${txtrst}"
    echo "    Contact gdsjaar@sandia.gov if you need this device;"
    echo "    otherwise use one of the supported devices:"
    show_device
@@ -227,7 +239,7 @@ fi
 abspath ${FOR011}
 
 # Run the code
-if ${ACCESS}/bin/${codename}${sep}${device} ${ps_option} ${nomap_option} ${caption} -basename ${filename} ${FOR011}
+if ${ACCESS_BIN}/${codename}${sep}${device} ${ps_option} ${nomap_option} ${caption} -basename ${filename} ${FOR011}
 then
   echo "${txtgrn}BLOT Successful Execution${txtrst}"
 fi

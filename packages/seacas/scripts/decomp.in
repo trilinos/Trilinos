@@ -302,11 +302,12 @@ do_viz=""
 curdir=`pwd`
 use64=""
 
-ACCESS=@ACCESSDIR@
+if [ "$ACCESS" == "" ]
+then
+    ACCESS=@ACCESSDIR@
+fi
 
 # See if the path to the script is in ${ACCESS}/bin/decomp.
-# If not, then assume we are running in the cmake build directory
-# and update the paths to nem_slice and nem_spread accordingly...
 pushd $(dirname "${0}") > /dev/null
 basedir=$(pwd -P)
 popd > /dev/null
@@ -315,7 +316,18 @@ instdir=$(pwd -P)
 popd > /dev/null
 # Use "pwd -P" for the path without links. man bash for more info.
 
-if [ "${basedir}" == "${instdir}" ] ; then
+# Several options for execution:
+# 1. If nem_slice and nem_spread are in same directory as script, use that path.
+# 2. Check location specified by ${ACCESS} environment variable to see if decomp, nem_slice, nem_spread
+#   -- If ACCESS specified by environment variable, else
+#   -- Use hard-wired value above.
+# 3. If not, then assume we are running in the cmake build directory
+#    and update the paths to nem_slice and nem_spread accordingly...
+
+if [ -x ${basedir}/nem_slice -a -x ${basedir}/nem_spread ]; then
+  NEM_SLICE=${basedir}/nem_slice
+  NEM_SPREAD=${basedir}/nem_spread
+elif [ "${basedir}" == "${instdir}" ] ; then
   NEM_SLICE=${ACCESS}/bin/nem_slice
   NEM_SPREAD=${ACCESS}/bin/nem_spread
 else

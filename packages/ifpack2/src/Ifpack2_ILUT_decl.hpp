@@ -151,7 +151,7 @@ public:
   explicit ILUT (const Teuchos::RCP<const row_matrix_type>& A);
 
   //! Destructor
-  virtual ~ILUT();
+  virtual ~ILUT () = default;
 
   //@}
   //! \name Methods for setting up and computing the incomplete factorization
@@ -307,7 +307,7 @@ public:
   double getApplyTime() const;
 
   //! Get a rough estimate of cost per iteration
-  size_t getNodeSmootherComplexity() const;  
+  size_t getNodeSmootherComplexity() const;
 
 
   /// \brief The level of fill.

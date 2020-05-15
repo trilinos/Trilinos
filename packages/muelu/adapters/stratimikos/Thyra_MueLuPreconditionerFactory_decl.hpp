@@ -49,7 +49,7 @@
 
 #include <MueLu_ConfigDefs.hpp>
 
-#ifdef HAVE_MUELU_STRATIMIKOS
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
 
 // Stratimikos needs Thyra, so we don't need special guards for Thyra here
 #include "Thyra_DefaultPreconditioner.hpp"
@@ -220,7 +220,7 @@ namespace Thyra {
     /** \brief . */
     void initializePrec(const Teuchos::RCP<const LinearOpSourceBase<Scalar> >& fwdOpSrc,
                         PreconditionerBase<Scalar>* prec,
-                        const ESupportSolveUse supportSolveUse
+                        const ESupportSolveUse /* supportSolveUse */
                        ) const {
       using Teuchos::rcp_dynamic_cast;
 
@@ -371,7 +371,15 @@ namespace Thyra {
         }
 #endif
         // build a new MueLu hierarchy
-        H = MueLu::CreateXpetraPreconditioner(A, paramList, coordinates, nullspace);
+        const std::string userName = "user data";
+        Teuchos::ParameterList& userParamList = paramList.sublist(userName);
+        if(Teuchos::nonnull(coordinates)) {
+          userParamList.set<RCP<XpMultVecDouble> >("Coordinates", coordinates);
+        }
+        if(Teuchos::nonnull(nullspace)) {
+          userParamList.set<RCP<XpMultVec> >("Nullspace", nullspace);
+        }
+        H = MueLu::CreateXpetraPreconditioner(A, paramList);
 
       } else {
         // reuse old MueLu hierarchy stored in MueLu Tpetra/Epetra operator and put in new matrix

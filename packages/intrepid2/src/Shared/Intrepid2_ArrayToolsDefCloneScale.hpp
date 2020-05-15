@@ -56,15 +56,15 @@ namespace Intrepid2 {
     /**
       \brief Functor for clone see Intrepid2::ArrayTools for more
     */ 
-    template<typename outputViewType,
+    template<typename OutputViewType,
              typename inputViewType,
              ordinal_type valRank>
     struct F_clone {
-            outputViewType _output;
+            OutputViewType _output;
       const inputViewType _input;
 
       KOKKOS_INLINE_FUNCTION
-      F_clone(outputViewType output_,
+      F_clone(OutputViewType output_,
               inputViewType input_)
         : _output(output_),
           _input(input_) {}
@@ -147,34 +147,29 @@ namespace Intrepid2 {
     }
 #endif
 
-    typedef Kokkos::DynRankView<outputValueType,outputProperties...> outputViewType;
+    typedef Kokkos::DynRankView<outputValueType,outputProperties...> OutputViewType;
     typedef Kokkos::DynRankView<inputValueType, inputProperties...>  inputViewType; 
     typedef typename ExecSpace< typename inputViewType::execution_space , SpT >::ExecSpaceType ExecSpaceType;
     
     using range_policy_type = Kokkos::Experimental::MDRangePolicy
       < ExecSpaceType, Kokkos::Experimental::Rank<3>, Kokkos::IndexType<ordinal_type> >;
-    
-    const ordinal_type
-      C = output.extent(0),
-      F = output.extent(1),
-      P = output.extent(2);
-    
+
     range_policy_type policy( { 0, 0, 0 },
-                              { C, F, P } );
+                              { /*C*/ output.extent(0), /*F*/ output.extent(1), /*P*/ output.extent(2) } );
     const ordinal_type valRank = output.rank() - 3;
     switch (valRank) {
     case 0: {
-      typedef FunctorArrayTools::F_clone<outputViewType,inputViewType,0> FunctorType;
+      typedef FunctorArrayTools::F_clone<OutputViewType,inputViewType,0> FunctorType;
       Kokkos::parallel_for( policy, FunctorType(output, input) );
       break;
     }
     case 1: {
-      typedef FunctorArrayTools::F_clone<outputViewType,inputViewType,1> FunctorType;
+      typedef FunctorArrayTools::F_clone<OutputViewType,inputViewType,1> FunctorType;
       Kokkos::parallel_for( policy, FunctorType(output, input) );
       break;
     }
     case 2: {
-      typedef FunctorArrayTools::F_clone<outputViewType,inputViewType,2> FunctorType;
+      typedef FunctorArrayTools::F_clone<OutputViewType,inputViewType,2> FunctorType;
       Kokkos::parallel_for( policy, FunctorType(output, input) );
       break;
     }
@@ -200,33 +195,29 @@ namespace Intrepid2 {
     }
 #endif
 
-    typedef Kokkos::DynRankView<outputValueType,outputProperties...> outputViewType;
+    typedef Kokkos::DynRankView<outputValueType,outputProperties...> OutputViewType;
     typedef Kokkos::DynRankView<inputValueType, inputProperties...>  inputViewType; 
     typedef typename ExecSpace< typename inputViewType::execution_space , SpT >::ExecSpaceType ExecSpaceType;
     
     using range_policy_type = Kokkos::Experimental::MDRangePolicy
       < ExecSpaceType, Kokkos::Experimental::Rank<2>, Kokkos::IndexType<ordinal_type> >;
     
-    const ordinal_type
-      C = output.extent(0),
-      P = output.extent(1);
-    
     range_policy_type policy( { 0, 0 },
-                              { C, P } );
+                              { /*C*/ output.extent(0), /*P*/ output.extent(1) } );
     const ordinal_type valRank = output.rank() - 2;
     switch (valRank) {
     case 0: {
-      typedef FunctorArrayTools::F_clone<outputViewType,inputViewType,0> FunctorType;
+      typedef FunctorArrayTools::F_clone<OutputViewType,inputViewType,0> FunctorType;
       Kokkos::parallel_for( policy, FunctorType(output, input) );
       break;
     }
     case 1: {
-      typedef FunctorArrayTools::F_clone<outputViewType,inputViewType,1> FunctorType;
+      typedef FunctorArrayTools::F_clone<OutputViewType,inputViewType,1> FunctorType;
       Kokkos::parallel_for( policy, FunctorType(output, input) );
       break;
     }
     case 2: {
-      typedef FunctorArrayTools::F_clone<outputViewType,inputViewType,2> FunctorType;
+      typedef FunctorArrayTools::F_clone<OutputViewType,inputViewType,2> FunctorType;
       Kokkos::parallel_for( policy, FunctorType(output, input) );
       break;
     }

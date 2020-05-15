@@ -39,6 +39,8 @@
 #include "Sacado_Fad_Exp_Ops_Fwd.hpp"
 #include "Sacado_cmath.hpp"
 
+#include "Sacado_mpl_has_equal_to.hpp"
+
 #if defined(HAVE_SACADO_KOKKOSCORE)
 #include "Kokkos_Atomic.hpp"
 #include "impl/Kokkos_Error.hpp"
@@ -64,7 +66,7 @@ namespace Sacado {                                                      \
       typedef ExprSpecDefault expr_spec_type;                           \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
-      OP(const T& expr_) : expr(expr_)  {}                              \
+      explicit OP(const T& expr_) : expr(expr_)  {}                     \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       int size() const { return expr.size(); }                          \
@@ -230,11 +232,10 @@ FAD_UNARYOP_MACRO(sinh,
                   expr.fastAccessDx(i)* cosh(expr.val()))
 FAD_UNARYOP_MACRO(tanh,
                   TanhOp,
-                  using std::tanh; using std::cosh;,
+                  using std::tanh;,
                   tanh(expr.val()),
-                  expr.dx(i)/( cosh(expr.val())* cosh(expr.val())),
-                  expr.fastAccessDx(i) /
-                    ( cosh(expr.val())* cosh(expr.val())))
+                  expr.dx(i)*(value_type(1)-tanh(expr.val())*tanh(expr.val())),
+                  expr.fastAccessDx(i)*(value_type(1)-tanh(expr.val())*tanh(expr.val())))
 FAD_UNARYOP_MACRO(acosh,
                   ACoshOp,
                   using std::acosh; using std::sqrt;,
@@ -742,8 +743,9 @@ namespace Sacado {
         if (sz1 > 0 && sz2 > 0)
           return if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type((expr2.dx(i)*log(expr1.val())+expr2.val()*expr1.dx(i)/expr1.val())*pow(expr1.val(),expr2.val())) );
         else if (sz1 > 0)
-          // Use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x), check for b == 0 case
-          return if_then_else( expr2.val() == value_type(0.0) || expr1.val() == value_type(0.0), value_type(0.0), value_type(expr2.val()*expr1.dx(i)*pow(expr1.val(),expr2.val()-scalar_type(1.0))) );
+          // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
+          // It seems less accurate and caused convergence problems in some codes
+          return if_then_else(expr1.val() == value_type(0.0), value_type(0.0), value_type(expr2.val()*expr1.dx(i)/expr1.val()*pow(expr1.val(),expr2.val())) );
         else
           return if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type(expr2.dx(i)*log(expr1.val())*pow(expr1.val(),expr2.val())) );
       }
@@ -796,17 +798,17 @@ namespace Sacado {
       KOKKOS_INLINE_FUNCTION
       value_type dx(int i) const {
         using std::pow;
-        // Use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x), check for b == 0 case
-        // Use scalar_type in (b-1) to prevent promoting to Fad when nesting
-        return if_then_else( c == scalar_type(0.0) || expr1.val() == value_type(0.0), value_type(0.0), value_type(c*expr1.dx(i)*pow(expr1.val(),c-scalar_type(1.0))) );
+        // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
+        // It seems less accurate and caused convergence problems in some codes
+        return if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type(c*expr1.dx(i)/expr1.val()*pow(expr1.val(),c)) );
       }
 
       KOKKOS_INLINE_FUNCTION
       value_type fastAccessDx(int i) const {
         using std::pow;
-        // Use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x), check for b == 0 case
-        // Use scalar_type in (b-1) to prevent promoting to Fad when nesting
-        return if_then_else( c == scalar_type(0.0) || expr1.val() == value_type(0.0), value_type(0.0), value_type(c*expr1.fastAccessDx(i)*pow(expr1.val(),c-scalar_type(1.0))) );
+        // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
+        // It seems less accurate and caused convergence problems in some codes
+        return if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type(c*expr1.fastAccessDx(i)/expr1.val()*pow(expr1.val(),c)) );
       }
 
     protected:
@@ -916,8 +918,9 @@ namespace Sacado {
         if (sz1 > 0 && sz2 > 0)
           return expr1.val() == value_type(0.0) ? value_type(0.0) : value_type((expr2.dx(i)*log(expr1.val())+expr2.val()*expr1.dx(i)/expr1.val())*pow(expr1.val(),expr2.val()));
         else if (sz1 > 0)
-          // Use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x), check for b == 0 case
-          return expr2.val() == value_type(0.0) || expr1.val() == value_type(0.0) ? value_type(0.0) : value_type(expr2.val()*expr1.dx(i)*pow(expr1.val(),expr2.val()-scalar_type(1.0)));
+          // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
+          // It seems less accurate and caused convergence problems in some codes
+          return expr1.val() == value_type(0.0) ? value_type(0.0) : value_type(expr2.val()*expr1.dx(i)/expr1.val()*pow(expr1.val(),expr2.val()));
         else
           return expr1.val() == value_type(0.0) ? value_type(0.0) : value_type(expr2.dx(i)*log(expr1.val())*pow(expr1.val(),expr2.val()));
       }
@@ -970,17 +973,17 @@ namespace Sacado {
       KOKKOS_INLINE_FUNCTION
       value_type dx(int i) const {
         using std::pow;
-        // Use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x), check for b == 0 case
-        // Use scalar_type in (b-1) to prevent promoting to Fad when nesting
-        return c == scalar_type(0.0) || expr1.val() == value_type(0.0) ? value_type(0.0) : value_type(c*expr1.dx(i)*pow(expr1.val(),c-scalar_type(1.0)));
+        // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
+        // It seems less accurate and caused convergence problems in some codes
+        return expr1.val() == value_type(0.0) ? value_type(0.0) : value_type(c*expr1.dx(i)/expr1.val()*pow(expr1.val(),c));
       }
 
       KOKKOS_INLINE_FUNCTION
       value_type fastAccessDx(int i) const {
         using std::pow;
-        // Use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x), check for b == 0 case
-        // Use scalar_type in (b-1) to prevent promoting to Fad when nesting
-        return c == scalar_type(0.0) || expr1.val() == value_type(0.0) ? value_type(0.0) : value_type(c*expr1.fastAccessDx(i)*pow(expr1.val(),c-scalar_type(1.0)));
+        // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
+        // It seems less accurate and caused convergence problems in some codes
+        return expr1.val() == value_type(0.0) ? value_type(0.0) : value_type(c*expr1.fastAccessDx(i)/expr1.val()*pow(expr1.val(),c));
       }
 
     protected:
@@ -1437,10 +1440,21 @@ namespace Sacado {
 namespace Sacado {
   namespace Fad {
   namespace Exp {
-    template <typename T1, typename T2 = T1>
-    struct ConditionalReturnType {
+  namespace Impl {
+    // Helper trait to determine return type of logical comparison operations
+    // (==, !=, ...), usually bool but maybe something else for SIMD types.
+    // Need to use SFINAE to restrict to types that define == operator in the
+    // conditional overloads below, otherwise instantiating ConditionaReturnType
+    // may fail during overload resolution.
+    template <typename T1, typename T2 = T1,
+              bool = mpl::has_equal_to<T1,T2>::value>
+    struct ConditionalReturnType {};
+
+    template <typename T1, typename T2>
+    struct ConditionalReturnType<T1,T2,true> {
       typedef decltype( std::declval<T1>() == std::declval<T2>() ) type;
     };
+  }
   }
   }
 }
@@ -1454,8 +1468,8 @@ namespace Sacado {                                                      \
     typename mpl::enable_if_c<                                          \
        IsFadExpr<T1>::value && IsFadExpr<T2>::value &&                  \
        ExprLevel<T1>::value == ExprLevel<T2>::value,                    \
-       typename ConditionalReturnType<typename T1::value_type,          \
-                                      typename T2::value_type>::type    \
+       typename Impl::ConditionalReturnType<typename T1::value_type,    \
+                                            typename T2::value_type>::type \
        >::type                                                          \
     operator OP (const T1& expr1, const T2& expr2)                      \
     {                                                                   \
@@ -1464,7 +1478,7 @@ namespace Sacado {                                                      \
                                                                         \
     template <typename T2>                                              \
     KOKKOS_INLINE_FUNCTION                                              \
-    typename ConditionalReturnType<typename T2::value_type>::type       \
+    typename Impl::ConditionalReturnType<typename T2::value_type>::type \
     operator OP (const typename T2::value_type& a,                      \
                  const Expr<T2>& expr2)                                 \
     {                                                                   \
@@ -1473,7 +1487,7 @@ namespace Sacado {                                                      \
                                                                         \
     template <typename T1>                                              \
     KOKKOS_INLINE_FUNCTION                                              \
-    typename ConditionalReturnType<typename T1::value_type>::type       \
+    typename Impl::ConditionalReturnType<typename T1::value_type>::type \
     operator OP (const Expr<T1>& expr1,                                 \
                  const typename T1::value_type& b)                      \
     {                                                                   \

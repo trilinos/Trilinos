@@ -103,10 +103,10 @@ public:
   }
 
   //! Computes the condition number estimate, returns its value.
-  virtual double Condest(const Ifpack_CondestType CT = Ifpack_Cheap,
-                         const int MaxIters = 1550,
-                         const double Tol = 1e-9,
-                         Epetra_RowMatrix* matrix = 0)
+  virtual double Condest(const Ifpack_CondestType /* CT */ = Ifpack_Cheap,
+                         const int /* MaxIters */ = 1550,
+                         const double /* Tol */ = 1e-9,
+                         Epetra_RowMatrix* /* matrix */ = 0)
   {
     return(-1.0);
   }

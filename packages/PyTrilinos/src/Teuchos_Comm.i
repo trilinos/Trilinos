@@ -610,40 +610,17 @@ else:
 MpiComm = MpiComm_int
 %}
 
-///////////////////////////////////////////
-// Teuchos.DefaultComm support under MPI //
-///////////////////////////////////////////
-%pythoncode
-%{
-
-class DefaultComm:
-    "Encapsulate the default global communicator"
-    __defaultComm = MpiComm(mpiCommunicator)
-    @classmethod
-    def getComm(cls):
-        "Return the default global communicator"
-        return cls.__defaultComm
-%}
-
-#else
-
-////////////////////////////////////////////////////////////////////////////////
-// The following code is implemented if HAVE_MPI is not defined
-////////////////////////////////////////////////////////////////////////////////
-
-/////////////////////////////////////////////
-// Teuchos.DefaultComm support without MPI //
-/////////////////////////////////////////////
-%pythoncode
-%{
-
-class DefaultComm:
-    "Encapsulate the default global communicator"
-    __defaultComm = SerialComm()
-    @classmethod
-    def getComm(cls):
-        "Return the default global communicator"
-        return cls.__defaultComm
-%}
-
 #endif
+
+/////////////////////////////////
+// Teuchos.DefaultComm support //
+/////////////////////////////////
+#define MPI_VERSION 3
+%warnfilter(302) Teuchos::Details::mpiFreeDefaultComm;
+%warnfilter(302) Teuchos::Details::mpiFreeDefaultSerialComm;
+%include "Teuchos_DefaultComm.hpp"
+%template(DefaultComm_int) Teuchos::DefaultComm<int>;
+%pythoncode
+%{
+DefaultComm = DefaultComm_int
+%}

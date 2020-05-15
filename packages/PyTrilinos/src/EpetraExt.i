@@ -47,7 +47,7 @@
 PyTrilinos.EpetraExt is the python interface to the Trilinos linear
 algebra services extension package EpetraExt:
 
-    http://trilinos.sandia.gov/packages/epetraext
+    https://trilinos.org/docs/dev/packages/epetraext/doc/html/index.html
 
 The purpose of EpetraExt is to provide various extensions to Epetra
 that were not considered appropriate for the Epetra package.  These
@@ -128,11 +128,11 @@ example subdirectory of the PyTrilinos package:
 // Standard exception handling
 %include "exception.i"
 
-// Auto-documentation feature
-%feature("autodoc", "1");
-
 // Include EpetraExt documentation
+#if SWIG_VERSION < 0x040000
+%feature("autodoc", "1");
 %include "EpetraExt_dox.i"
+#endif
 
 // C++ STL support
 %include "stl.i"

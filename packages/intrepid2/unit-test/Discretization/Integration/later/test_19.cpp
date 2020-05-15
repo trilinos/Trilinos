@@ -298,7 +298,7 @@ Kokkos::initialize();
       *outStream << std::right << std::setw(104) << "^^^^---FAILURE!\n";
     }
   }
-  catch (std::logic_error err) {    
+  catch (std::logic_error &err) {    
     *outStream << err.what() << "\n";
     errorFlag = -1;
   };  

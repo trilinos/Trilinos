@@ -18,17 +18,16 @@
 
 using namespace Tacho;
 
-typedef Kokkos::View<ValueType*,HostSpaceType>   value_type_array_host;
-typedef Kokkos::View<ValueType*,DeviceSpaceType> value_type_array;
-typedef Kokkos::TaskScheduler<DeviceSpaceType>   sched_type;
+typedef TaskSchedulerType<typename DeviceType::execution_space> scheduler_type;
+typedef TaskSchedulerType<typename HostDeviceType::execution_space> host_scheduler_type;
 
 typedef ArithTraits<ValueType> ats;
 
-typedef DenseMatrixView<ValueType,HostSpaceType>   DenseMatrixViewTypeHost;
-typedef DenseMatrixView<ValueType,DeviceSpaceType> DenseMatrixViewType;
+typedef DenseMatrixView<ValueType,host_scheduler_type> DenseMatrixViewTypeHost;
+typedef DenseMatrixView<ValueType,scheduler_type> DenseMatrixViewType;
 
-typedef DenseMatrixView<DenseMatrixViewType,HostSpaceType>   DenseMatrixOfBlocksTypeHost;
-typedef DenseMatrixView<DenseMatrixViewType,DeviceSpaceType> DenseMatrixOfBlocksType;
+typedef DenseMatrixView<DenseMatrixViewType,host_scheduler_type>   DenseMatrixOfBlocksTypeHost;
+typedef DenseMatrixView<DenseMatrixViewType,scheduler_type> DenseMatrixOfBlocksType;
 
 
 TEST( DenseByBlocks, ldl ) {
@@ -46,12 +45,12 @@ TEST( DenseByBlocks, chol ) {
   
   // a  : referece with lapack
   // a1 : byblocks with partitioned matrices
-  Kokkos::DualView<ValueType*,DeviceSpaceType> a("a", m*m), a1("a1", m*m);
+  Kokkos::DualView<ValueType*,typename DeviceType::execution_space> a("a", m*m), a1("a1", m*m);
   
   // reference lapack 
   {
     DenseMatrixViewTypeHost A;
-    a.modify<HostSpaceType>();
+    a.modify_host();
 
     A.set_view(m, m);
     A.attach_buffer(1, m, a.h_view.data());
@@ -66,7 +65,7 @@ TEST( DenseByBlocks, chol ) {
       }
     }
 
-    a1.modify<DeviceSpaceType>();
+    a1.modify_device();
     
     Kokkos::deep_copy(a1.d_view, a.h_view);
   
@@ -81,10 +80,10 @@ TEST( DenseByBlocks, chol ) {
     A.set_view(m, m);
     A.attach_buffer(1, m, a1.d_view.data());
 
-    a1.sync<DeviceSpaceType>();
+    a1.sync_device();
 
-    Kokkos::DualView<DenseMatrixViewType*,DeviceSpaceType> h("h", bm*bm);
-    h.modify<HostSpaceType>();
+    Kokkos::DualView<DenseMatrixViewType*,typename DeviceType::execution_space> h("h", bm*bm);
+    h.modify_host();
 
     DenseMatrixOfBlocksTypeHost H;
     H.set_view(bm, bm);  
@@ -94,7 +93,7 @@ TEST( DenseByBlocks, chol ) {
     D.set_view(bm, bm);  
     D.attach_buffer(1, bm, h.d_view.data());
 
-    typedef TaskFunctor_Chol<sched_type,DenseMatrixOfBlocksType,
+    typedef TaskFunctor_Chol<scheduler_type,DenseMatrixOfBlocksType,
                              Uplo::Upper,
                              Algo::ByBlocks> TaskFunctorChol;
     
@@ -106,23 +105,23 @@ TEST( DenseByBlocks, chol ) {
       num_superblock  = 4,
       superblock_size = task_queue_span/num_superblock;
     
-    sched_type sched(typename sched_type::memory_space(),
-                     task_queue_span,
-                     min_block_size,
-                     max_block_size,
-                     superblock_size);
+    scheduler_type sched(typename scheduler_type::memory_space(),
+                         task_queue_span,
+                         min_block_size,
+                         max_block_size,
+                         superblock_size);
 
     setMatrixOfBlocks(H, m, m, mb);
     attachBaseBuffer(H, A.data(), A.stride_0(), A.stride_1());
 
-    h.sync<DeviceSpaceType>();
+    h.sync_device();
 
     
     Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
-                       TaskFunctorChol(sched, D));
+                       TaskFunctorChol(D));
     Kokkos::wait(sched);
 
-    a1.sync<HostSpaceType>();
+    a1.sync_host();
     clearFutureOfBlocks(H);
   }
 
@@ -147,16 +146,16 @@ TEST( DenseByBlocks, gemm ) {
 
   // c  : result from reference blas
   // c1 : result from partitioned matrices
-  Kokkos::DualView<ValueType*,DeviceSpaceType> a("a", m*k), b("b", k*n), c("c", m*n), c1("c1", m*n);
+  Kokkos::DualView<ValueType*,typename DeviceType::execution_space> a("a", m*k), b("b", k*n), c("c", m*n), c1("c1", m*n);
 
 
   // reference blas
   {
     DenseMatrixViewTypeHost A, B, C;
 
-    a.modify<HostSpaceType>();
-    b.modify<HostSpaceType>();
-    c.modify<HostSpaceType>();
+    a.modify_host();
+    b.modify_host();
+    c.modify_host();
 
     A.set_view(m, k);
     A.attach_buffer(1, m, a.h_view.data());
@@ -179,7 +178,7 @@ TEST( DenseByBlocks, gemm ) {
     randomize(B);
     randomize(C);
 
-    c1.modify<DeviceSpaceType>();
+    c1.modify_device();
 
     Kokkos::deep_copy(c1.d_view, c.h_view);
 
@@ -205,16 +204,16 @@ TEST( DenseByBlocks, gemm ) {
     C.set_view(m, n);
     C.attach_buffer(1, m, c1.d_view.data());
 
-    a.sync<DeviceSpaceType>();
-    b.sync<DeviceSpaceType>();
-    c1.sync<DeviceSpaceType>();
+    a.sync_device();
+    b.sync_device();
+    c1.sync_device();
 
     const ordinal_type 
       bm = (m/mb) + (m%mb>0),
       bn = (n/mb) + (n%mb>0),
       bk = (k/mb) + (k%mb>0);
     
-    Kokkos::DualView<DenseMatrixViewType*,DeviceSpaceType> ha("ha", bm*bk), hb("hb", bk*bn), hc("hc", bm*bn);
+    Kokkos::DualView<DenseMatrixViewType*,typename DeviceType::execution_space> ha("ha", bm*bk), hb("hb", bk*bn), hc("hc", bm*bn);
 
     DenseMatrixOfBlocksTypeHost HA, HB, HC;
 
@@ -236,11 +235,11 @@ TEST( DenseByBlocks, gemm ) {
     DB.attach_buffer(1, bk, hb.d_view.data());
     DC.attach_buffer(1, bm, hc.d_view.data());
     
-    typedef TaskFunctor_Gemm<sched_type,double,DenseMatrixOfBlocksType,
+    typedef TaskFunctor_Gemm<scheduler_type,double,DenseMatrixOfBlocksType,
                              Trans::NoTranspose,Trans::NoTranspose,
                              Algo::ByBlocks> TaskFunctorGemm_NT_NT;
     
-    typedef TaskFunctor_Gemm<sched_type,double,DenseMatrixOfBlocksType,
+    typedef TaskFunctor_Gemm<scheduler_type,double,DenseMatrixOfBlocksType,
                              Trans::ConjTranspose,Trans::NoTranspose,
                              Algo::ByBlocks> TaskFunctorGemm_CT_NT;
 
@@ -252,15 +251,15 @@ TEST( DenseByBlocks, gemm ) {
       num_superblock  = 4,
       superblock_size = task_queue_span/num_superblock;
     
-    sched_type sched(typename sched_type::memory_space(),
-                     task_queue_span,
-                     min_block_size,
-                     max_block_size,
-                     superblock_size);
+    scheduler_type sched(typename scheduler_type::memory_space(),
+                         task_queue_span,
+                         min_block_size,
+                         max_block_size,
+                         superblock_size);
 
-    ha.modify<HostSpaceType>();
-    hb.modify<HostSpaceType>();
-    hc.modify<HostSpaceType>();
+    ha.modify_host();
+    hb.modify_host();
+    hc.modify_host();
 
     setMatrixOfBlocks(HA, m, k, mb);
     setMatrixOfBlocks(HB, k, n, mb);
@@ -270,19 +269,19 @@ TEST( DenseByBlocks, gemm ) {
     attachBaseBuffer(HB, B.data(), B.stride_0(), B.stride_1());
     attachBaseBuffer(HC, C.data(), C.stride_0(), C.stride_1());
 
-    ha.sync<DeviceSpaceType>();
-    hb.sync<DeviceSpaceType>();
-    hc.sync<DeviceSpaceType>();
+    ha.sync_device();
+    hb.sync_device();
+    hc.sync_device();
     
     Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
-                       TaskFunctorGemm_NT_NT(sched, alpha, DA, DB, beta, DC));
+                       TaskFunctorGemm_NT_NT(alpha, DA, DB, beta, DC));
     Kokkos::wait(sched);
 
     Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
-                       TaskFunctorGemm_CT_NT(sched, alpha, DA, DB, beta, DC));
+                       TaskFunctorGemm_CT_NT(alpha, DA, DB, beta, DC));
     Kokkos::wait(sched);
 
-    c1.sync<HostSpaceType>();
+    c1.sync_host();
     clearFutureOfBlocks(HC);
   }
 
@@ -308,14 +307,14 @@ TEST( DenseByBlocks, herk ) {
 
   // c  : result from reference blas
   // c1 : result from byblocks
-  Kokkos::DualView<ValueType*,DeviceSpaceType> a("a", k*n), c("c", n*n), c1("c1", n*n);
+  Kokkos::DualView<ValueType*,typename DeviceType::execution_space> a("a", k*n), c("c", n*n), c1("c1", n*n);
 
   // referece: blas herk
   {
     DenseMatrixViewTypeHost A, C;
 
-    a.modify<HostSpaceType>();
-    c.modify<HostSpaceType>();
+    a.modify_host();
+    c.modify_host();
 
     A.set_view(k, n);
     A.attach_buffer(1, k, a.h_view.data());
@@ -334,7 +333,7 @@ TEST( DenseByBlocks, herk ) {
     randomize(A);
     randomize(C);
 
-    c1.modify<DeviceSpaceType>();
+    c1.modify_device();
 
     Kokkos::deep_copy(c1.d_view, c.h_view);
 
@@ -353,14 +352,14 @@ TEST( DenseByBlocks, herk ) {
     C.set_view(n, n);
     C.attach_buffer(1, n, c1.d_view.data());
 
-    a.sync<DeviceSpaceType>();
-    c1.sync<DeviceSpaceType>();
+    a.sync_device();
+    c1.sync_device();
 
     const ordinal_type 
       bn = (n/mb) + (n%mb>0),
       bk = (k/mb) + (k%mb>0);
     
-    Kokkos::DualView<DenseMatrixViewType*,DeviceSpaceType> ha("ha", bk*bn), hc("hc", bn*bn);
+    Kokkos::DualView<DenseMatrixViewType*,typename DeviceType::execution_space> ha("ha", bk*bn), hc("hc", bn*bn);
 
     DenseMatrixOfBlocksTypeHost HA, HC;
 
@@ -378,7 +377,7 @@ TEST( DenseByBlocks, herk ) {
     DA.attach_buffer(1, bk, ha.d_view.data());
     DC.attach_buffer(1, bn, hc.d_view.data());
     
-    typedef TaskFunctor_Herk<sched_type,double,DenseMatrixOfBlocksType,
+    typedef TaskFunctor_Herk<scheduler_type,double,DenseMatrixOfBlocksType,
                              Uplo::Upper,Trans::ConjTranspose,
                              Algo::ByBlocks> TaskFunctorHerk_U_CT;
 
@@ -390,14 +389,14 @@ TEST( DenseByBlocks, herk ) {
       num_superblock  = 4,
       superblock_size = task_queue_span/num_superblock;
     
-    sched_type sched(typename sched_type::memory_space(),
-                     task_queue_span,
-                     min_block_size,
-                     max_block_size,
-                     superblock_size);
+    scheduler_type sched(typename scheduler_type::memory_space(), 
+                         task_queue_span,
+                         min_block_size,
+                         max_block_size,
+                         superblock_size);
     
-    ha.modify<HostSpaceType>();
-    hc.modify<HostSpaceType>();
+    ha.modify_host();
+    hc.modify_host();
 
     setMatrixOfBlocks(HA, k, n, mb);
     setMatrixOfBlocks(HC, n, n, mb);
@@ -405,15 +404,15 @@ TEST( DenseByBlocks, herk ) {
     attachBaseBuffer(HA, A.data(), A.stride_0(), A.stride_1());
     attachBaseBuffer(HC, C.data(), C.stride_0(), C.stride_1());
     
-    ha.sync<DeviceSpaceType>();
-    hc.sync<DeviceSpaceType>();
-    c1.modify<DeviceSpaceType>();
+    ha.sync_device();
+    hc.sync_device();
+    c1.modify_device();
 
     Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
-                       TaskFunctorHerk_U_CT(sched, alpha, DA, beta, DC));
+                       TaskFunctorHerk_U_CT(alpha, DA, beta, DC));
     Kokkos::wait(sched);
 
-    c1.sync<HostSpaceType>();
+    c1.sync_host();
     clearFutureOfBlocks(HC);
   }
 
@@ -447,14 +446,14 @@ TEST( DenseByBlocks, trsm ) {
 
   // b  : result from reference blas
   // b1 : result from byblocks
-  Kokkos::DualView<ValueType*,DeviceSpaceType> a("a", m*m), b("c", m*n), b1("c1", m*n);
+  Kokkos::DualView<ValueType*,typename DeviceType::execution_space> a("a", m*m), b("c", m*n), b1("c1", m*n);
 
   // reference blas
   {
     DenseMatrixViewTypeHost A, B;
 
-    a.modify<HostSpaceType>();
-    b.modify<HostSpaceType>();
+    a.modify_host();
+    b.modify_host();
 
     A.set_view(m, m);
     A.attach_buffer(1, m, a.h_view.data());
@@ -473,7 +472,7 @@ TEST( DenseByBlocks, trsm ) {
     randomize(A);
     randomize(B);
 
-    b1.modify<DeviceSpaceType>();
+    b1.modify_device();
 
     Kokkos::deep_copy(b1.d_view, b.h_view);
     
@@ -493,14 +492,14 @@ TEST( DenseByBlocks, trsm ) {
     B.set_view(m, n);
     B.attach_buffer(1, m, b1.d_view.data());
 
-    a.sync<DeviceSpaceType>();
-    b1.sync<DeviceSpaceType>();
+    a.sync_device();
+    b1.sync_device();
     
     const ordinal_type 
       bm = (m/mb) + (m%mb>0),
       bn = (n/mb) + (n%mb>0);
 
-    Kokkos::DualView<DenseMatrixViewType*,DeviceSpaceType> ha("ha", bm*bm), hb("hb", bm*bn);
+    Kokkos::DualView<DenseMatrixViewType*,typename DeviceType::execution_space> ha("ha", bm*bm), hb("hb", bm*bn);
 
     DenseMatrixOfBlocksTypeHost HA, HB;
 
@@ -518,10 +517,10 @@ TEST( DenseByBlocks, trsm ) {
     DA.attach_buffer(1, bm, ha.d_view.data());
     DB.attach_buffer(1, bm, hb.d_view.data());
     
-    typedef TaskFunctor_Trsm<sched_type,double,DenseMatrixOfBlocksType,
+    typedef TaskFunctor_Trsm<scheduler_type,double,DenseMatrixOfBlocksType,
                              Side::Left,Uplo::Upper,Trans::ConjTranspose,Diag::NonUnit,
                              Algo::ByBlocks> TaskFunctorTrsm_L_U_CT_ND;
-    typedef TaskFunctor_Trsm<sched_type,double,DenseMatrixOfBlocksType,
+    typedef TaskFunctor_Trsm<scheduler_type,double,DenseMatrixOfBlocksType,
                              Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,
                              Algo::ByBlocks> TaskFunctorTrsm_L_U_NT_ND;
     
@@ -533,14 +532,14 @@ TEST( DenseByBlocks, trsm ) {
       num_superblock  = 4,
       superblock_size = task_queue_span/num_superblock;
     
-    sched_type sched(typename sched_type::memory_space(),
-                     task_queue_span,
-                     min_block_size,
-                     max_block_size,
-                     superblock_size);
+    scheduler_type sched(typename scheduler_type::memory_space(),
+                         task_queue_span,
+                         min_block_size,
+                         max_block_size,
+                         superblock_size);
 
-    ha.modify<HostSpaceType>();
-    hb.modify<HostSpaceType>();
+    ha.modify_host();
+    hb.modify_host();
 
     setMatrixOfBlocks(HA, m, m, mb);
     setMatrixOfBlocks(HB, m, n, mb);
@@ -548,18 +547,18 @@ TEST( DenseByBlocks, trsm ) {
     attachBaseBuffer(HA, A.data(), A.stride_0(), A.stride_1());
     attachBaseBuffer(HB, B.data(), B.stride_0(), B.stride_1());
 
-    ha.sync<DeviceSpaceType>();
-    hb.sync<DeviceSpaceType>();
+    ha.sync_device();
+    hb.sync_device();
     
     Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
-                       TaskFunctorTrsm_L_U_CT_ND(sched, alpha, DA, DB));
+                       TaskFunctorTrsm_L_U_CT_ND(alpha, DA, DB));
     Kokkos::wait(sched);
     
     Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
-                       TaskFunctorTrsm_L_U_NT_ND(sched, alpha, DA, DB));
+                       TaskFunctorTrsm_L_U_NT_ND(alpha, DA, DB));
     Kokkos::wait(sched);
 
-    b1.sync<HostSpaceType>();
+    b1.sync_host();
     clearFutureOfBlocks(HB);
   }
   
@@ -603,7 +602,7 @@ TEST( DenseByBlocks, trsm ) {
 //     num_superblock  = 1,
 //     superblock_size = span/num_superblock;
     
-//   Kokkos::MemoryPool<HostSpaceType> pool(typename HostSpaceType::memory_space(),
+//   Kokkos::MemoryPool<HostDeviceType> pool(typename HostDeviceType::memory_space(),
 //                                          span,
 //                                          min_block_size,
 //                                          max_block_size,

@@ -138,12 +138,13 @@ C
 C  Zero matrix
 C
  6    CONTINUE
-      DO 10 I = 1,4
-      DO 10 J = 1,4
-        S(I,J) = 0.D+00
-   10 CONTINUE
+      DO I = 1,4
+         DO J = 1,4
+            S(I,J) = 0.D+00
+         end do
+      end do
 C
-C Branch on coplanar data vs truely 3-d data
+C Branch on coplanar data vs truly 3-d data
 C
       IF (ICOP .EQ. 1)THEN
 C

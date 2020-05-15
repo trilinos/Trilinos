@@ -44,6 +44,7 @@
 #include "Stokhos_UnitTestHelpers.hpp"
 
 #include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
+#include "Stokhos_Ensemble_Sizes.hpp"
 #include "Sacado.hpp"
 #include "Sacado_Fad_MP_Vector.hpp"
 
@@ -89,7 +90,7 @@ checkVectorView(const ViewType& v,
 
   // For static, layout left, sacado dimension becomes first dimension
   // instead of last
-  bool is_right = Kokkos::Impl::is_same< typename ViewType::array_layout,
+  bool is_right = std::is_same< typename ViewType::array_layout,
                                          Kokkos::LayoutRight >::value;
   if (is_right || !view_type::is_contiguous) {
     num_rows = h_a.extent(0);
@@ -213,7 +214,7 @@ struct ApplyView<DataType,NoLayout,ExecutionSpace> {
 //
 
 const int global_num_rows = 11;
-const int global_ensemble_size = 8;
+const int global_ensemble_size = STOKHOS_DEFAULT_ENSEMBLE_SIZE;
 const int global_fad_size = 5;
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_Fad_MP, Size, Scalar, Layout )

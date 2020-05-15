@@ -74,7 +74,7 @@ NeumannSeriesPreconditionerFactory<ScalarT>::NeumannSeriesPreconditionerFactory(
 
 //! is this operator compatiable with the preconditioner factory?
 template <typename ScalarT>
-bool NeumannSeriesPreconditionerFactory<ScalarT>::isCompatible(const Thyra::LinearOpSourceBase<ScalarT> &fwdOpSrc) const
+bool NeumannSeriesPreconditionerFactory<ScalarT>::isCompatible(const Thyra::LinearOpSourceBase<ScalarT> &/* fwdOpSrc */) const
 {
    return true;
 }
@@ -97,7 +97,7 @@ RCP<Thyra::PreconditionerBase<ScalarT> > NeumannSeriesPreconditionerFactory<Scal
 template <typename ScalarT>
 void NeumannSeriesPreconditionerFactory<ScalarT>::initializePrec(const RCP<const Thyra::LinearOpSourceBase<ScalarT> > & fwdOpSrc,
                     Thyra::PreconditionerBase<ScalarT> * prec,
-                    const Thyra::ESupportSolveUse supportSolveUse) const
+                    const Thyra::ESupportSolveUse /* supportSolveUse */) const
 {
    using Thyra::scale;
    using Thyra::add;
@@ -141,8 +141,8 @@ void NeumannSeriesPreconditionerFactory<ScalarT>::initializePrec(const RCP<const
 //! wipe clean a already initialized preconditioner object
 template <typename ScalarT>
 void NeumannSeriesPreconditionerFactory<ScalarT>::uninitializePrec(Thyra::PreconditionerBase<ScalarT> * prec, 
-                      RCP<const Thyra::LinearOpSourceBase<ScalarT> > * fwdOpSrc,
-                      Thyra::ESupportSolveUse *supportSolveUse) const
+                      RCP<const Thyra::LinearOpSourceBase<ScalarT> > * /* fwdOpSrc */,
+                      Thyra::ESupportSolveUse * /* supportSolveUse */) const
 {
    Thyra::DefaultPreconditioner<ScalarT> & dPrec = Teuchos::dyn_cast<Thyra::DefaultPreconditioner<ScalarT> >(*prec);
  

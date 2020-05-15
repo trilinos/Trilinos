@@ -121,7 +121,7 @@ getTime() const
 }
 
 template<class Scalar>
-Scalar
+int
 IntegratorPseudoTransientForwardSensitivity<Scalar>::
 getIndex() const
 {
@@ -184,8 +184,16 @@ getTimeStepControl() const
 }
 
 template<class Scalar>
+Teuchos::RCP<TimeStepControl<Scalar> >
+IntegratorPseudoTransientForwardSensitivity<Scalar>::
+getNonConstTimeStepControl()
+{
+  return state_integrator_->getNonConstTimeStepControl();
+}
+
+template<class Scalar>
 void IntegratorPseudoTransientForwardSensitivity<Scalar>::
-setInitialState(Scalar t0,
+initializeSolutionHistory(Scalar t0,
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > x0,
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdot0,
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdotdot0,
@@ -227,8 +235,8 @@ setInitialState(Scalar t0,
   else
     assign(Xdotdot->getNonconstMultiVector().ptr(), *DxdotdotDp0);
 
-  state_integrator_->setInitialState(t0, x0, xdot0, xdotdot0);
-  sens_integrator_->setInitialState(t0, X, Xdot, Xdotdot);
+  state_integrator_->initializeSolutionHistory(t0, x0, xdot0, xdotdot0);
+  sens_integrator_->initializeSolutionHistory(t0, X, Xdot, Xdotdot);
 }
 
 template<class Scalar>
@@ -476,10 +484,10 @@ buildSolutionHistory()
       x_dot_dot = multiVectorProductVector(prod_space, x_dot_dot_mv);
     }
 
-    RCP<SolutionState<Scalar> > prod_state =
-      rcp(new SolutionState<Scalar>(state->getMetaData()->clone(),
-                                    x, x_dot, x_dot_dot,
-                                    state->getStepperState()->clone()));
+    RCP<SolutionState<Scalar> > prod_state = state->clone();
+    prod_state->setX(x);
+    prod_state->setXDot(x_dot);
+    prod_state->setXDotDot(x_dot_dot);
     solutionHistory_->addState(prod_state);
   }
 
@@ -528,10 +536,10 @@ buildSolutionHistory()
       x_dot_dot = multiVectorProductVector(prod_space, x_dot_dot_mv);
     }
 
-    RCP<SolutionState<Scalar> > prod_state =
-      rcp(new SolutionState<Scalar>(state->getMetaData()->clone(),
-                                    x, x_dot, x_dot_dot,
-                                    state->getStepperState()->clone()));
+    RCP<SolutionState<Scalar> > prod_state = state->clone();
+    prod_state->setX(x);
+    prod_state->setXDot(x_dot);
+    prod_state->setXDotDot(x_dot_dot);
     solutionHistory_->addState(prod_state);
   }
 }

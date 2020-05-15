@@ -5,28 +5,23 @@
 #include <SL_tokenize.h> // for tokenize
 #include <algorithm>     // for sort, find, transform
 #include <cctype>        // for tolower
-#include <cstddef>       // for size_t
-#include <cstdlib>       // for exit, strtod, strtoul, abs, etc
-#include <cstring>       // for strchr, strlen
-#include <iosfwd>        // for ostream
-#include <iostream>      // for operator<<, basic_ostream, etc
-#include <utility>       // for pair, make_pair
-#include <vector>        // for vector
+#include <copyright.h>
+#include <cstddef> // for size_t
+#include <cstdlib> // for exit, strtod, strtoul, abs, etc
+#include <cstring> // for strchr, strlen
+#include <fmt/format.h>
+#include <iosfwd>  // for ostream
+#include <utility> // for pair, make_pair
+#include <vector>  // for vector
 
 namespace {
-  int case_strcmp(const std::string &s1, const std::string &s2)
+  bool str_equal(const std::string &s1, const std::string &s2)
   {
-    const char *c1 = s1.c_str();
-    const char *c2 = s2.c_str();
-    for (;; c1++, c2++) {
-      if (std::tolower(*c1) != std::tolower(*c2)) {
-        return (std::tolower(*c1) - std::tolower(*c2));
-      }
-      if (*c1 == '\0') {
-        return 0;
-      }
-    }
+    return (s1.size() == s2.size()) &&
+           std::equal(s1.begin(), s1.end(), s2.begin(),
+                      [](char a, char b) { return std::tolower(a) == std::tolower(b); });
   }
+
   void parse_variable_names(const char *tokens, StringIdVector *variable_list);
   void parse_variable_names(const char *tokens, StringIdVector *variable_list);
   void parse_offset(const char *tokens, vector3d *offset);
@@ -104,21 +99,30 @@ void SystemInterface::enroll_options()
 
 #if 0
   options_.enroll("match_elem_ids", GetLongOption::NoValue,
-		  "Combine elements if their global ids match and they are compatible.\n"
-		  "\t\tCompatible = same element type, nodes of the two elements match",
-		  nullptr);
+                  "Combine elements if their global ids match and they are compatible.\n"
+                  "\t\tCompatible = same element type, nodes of the two elements match",
+                  nullptr);
 
   options_.enroll("match_element_coordinates", GetLongOption::NoValue,
-		  "Combine elements if their centroids are within tolerance distance\n"
-		  "\t\tand they are compatible (same element type, nodes match).",
-		  nullptr);
+                  "Combine elements if their centroids are within tolerance distance\n"
+                  "\t\tand they are compatible (same element type, nodes match).",
+                  nullptr);
 #endif
 
   options_.enroll("tolerance", GetLongOption::MandatoryValue,
                   "Maximum distance between two nodes to be considered colocated.", nullptr);
 
+  options_.enroll(
+      "block_prefix", GetLongOption::MandatoryValue,
+      "Prefix used on the input block names of second and subsequent meshes to make them\n"
+      "\t\tunique.  Default is 'p'.  Example: block1, p1_block1, p2_block1.",
+      "p");
+
   options_.enroll("offset", GetLongOption::MandatoryValue,
-                  "Comma-separated x,y,z offset for coordinates of second mesh.", nullptr);
+                  "Comma-separated x,y,z offset for coordinates of second and subsequent meshes.\n"
+                  "\t\tThe offset will be multiplied by the part number-1 so:\n"
+                  "\t\tP1: no offset; P2: 1x, 1y, 1z; P3: 2x, 2y, 2z; P(n+1): nx, ny, nz",
+                  nullptr);
 
   options_.enroll("steps", GetLongOption::MandatoryValue,
                   "Specify subset of timesteps to transfer to output file.\n"
@@ -195,8 +199,8 @@ bool SystemInterface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("help") != nullptr) {
     options_.usage();
-    std::cerr << "\n\tCan also set options via EJOIN_OPTIONS environment variable.\n";
-    std::cerr << "\n\t->->-> Send email to gdsjaar@sandia.gov for ejoin support.<-<-<-\n";
+    fmt::print(stderr, "\n\tCan also set options via EJOIN_OPTIONS environment variable.\n"
+                       "\n\t->->-> Send email to gdsjaar@sandia.gov for ejoin support.<-<-<-\n");
     exit(EXIT_SUCCESS);
   }
 
@@ -206,38 +210,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
   }
 
   if (options_.retrieve("copyright") != nullptr) {
-    std::cerr << "\n"
-              << "Copyright(C) 2010-2017 National Technology & Engineering Solutions\n"
-              << "of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with\n"
-              << "NTESS, the U.S. Government retains certain rights in this software.\n"
-              << "\n"
-              << "Redistribution and use in source and binary forms, with or without\n"
-              << "modification, are permitted provided that the following conditions are\n"
-              << "met:\n"
-              << "\n"
-              << "    * Redistributions of source code must retain the above copyright\n"
-              << "      notice, this list of conditions and the following disclaimer.\n"
-              << "\n"
-              << "    * Redistributions in binary form must reproduce the above\n"
-              << "      copyright notice, this list of conditions and the following\n"
-              << "      disclaimer in the documentation and/or other materials provided\n"
-              << "      with the distribution.\n"
-              << "\n"
-              << "    * Neither the name of NTESS nor the names of its\n"
-              << "      contributors may be used to endorse or promote products derived\n"
-              << "      from this software without specific prior written permission.\n"
-              << "\n"
-              << "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n"
-              << "\" AS IS \" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
-              << "LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\n"
-              << "A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\n"
-              << "OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\n"
-              << "SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\n"
-              << "LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\n"
-              << "DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\n"
-              << "THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
-              << "(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\n"
-              << "OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n";
+    fmt::print("{}", copyright("2010-2019"));
     exit(EXIT_SUCCESS);
   }
 
@@ -251,7 +224,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
     }
   }
   else {
-    std::cerr << "\nERROR: no files specified\n\n";
+    fmt::print(stderr, "\nERROR: no files specified\n\n");
     return false;
   }
 
@@ -264,9 +237,11 @@ bool SystemInterface::parse_options(int argc, char **argv)
   // Get options from environment variable also...
   char *options = getenv("EJOIN_OPTIONS");
   if (options != nullptr) {
-    std::cerr
-        << "\nThe following options were specified via the EJOIN_OPTIONS environment variable:\n"
-        << "\t" << options << "\n\n";
+    fmt::print(
+        stderr,
+        "\nThe following options were specified via the EJOIN_OPTIONS environment variable:\n"
+        "\t{}\n\n",
+        options);
     options_.parse(options, options_.basename(*argv));
   }
 
@@ -274,6 +249,13 @@ bool SystemInterface::parse_options(int argc, char **argv)
     const char *temp = options_.retrieve("output");
     if (temp != nullptr) {
       outputName_ = temp;
+    }
+  }
+
+  {
+    const char *temp = options_.retrieve("block_prefix");
+    if (temp != nullptr) {
+      blockPrefix_ = temp;
     }
   }
 
@@ -331,7 +313,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
   {
     const char *temp = options_.retrieve("omit_nodesets");
     if (temp != nullptr) {
-      if (case_strcmp("ALL", temp) == 0) {
+      if (str_equal("ALL", temp)) {
         omitNodesets_ = true;
       }
       else {
@@ -346,7 +328,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
   {
     const char *temp = options_.retrieve("omit_sidesets");
     if (temp != nullptr) {
-      if (case_strcmp("ALL", temp) == 0) {
+      if (str_equal("ALL", temp)) {
         omitSidesets_ = true;
       }
       else {
@@ -520,7 +502,7 @@ void SystemInterface::parse_step_option(const char *tokens)
       stepMax_      = abs(vals[1]);
       stepInterval_ = abs(vals[2]);
     }
-    else if (case_strcmp("LAST", tokens) == 0) {
+    else if (str_equal("LAST", tokens)) {
       stepMin_ = stepMax_ = -1;
     }
     else {
@@ -532,10 +514,10 @@ void SystemInterface::parse_step_option(const char *tokens)
 
 void SystemInterface::show_version()
 {
-  std::cout << "EJoin"
-            << "\n"
-            << "\t(A code for merging Exodus II databases; with or without results data.)\n"
-            << "\t(Version: " << qainfo[2] << ") Modified: " << qainfo[1] << '\n';
+  fmt::print("EJoin\n"
+             "\t(A code for merging Exodus II databases; with or without results data.)\n"
+             "\t(Version: {}) Modified: {}\n",
+             qainfo[2], qainfo[1]);
 }
 
 namespace {
@@ -549,11 +531,6 @@ namespace {
   }
 
   using StringVector = std::vector<std::string>;
-  bool string_id_sort(const std::pair<std::string, int> &t1, const std::pair<std::string, int> &t2)
-  {
-    return t1.first < t2.first || (!(t2.first < t1.first) && t1.second < t2.second);
-  }
-
   void parse_variable_names(const char *tokens, StringIdVector *variable_list)
   {
     // Break into tokens separated by ","
@@ -584,7 +561,11 @@ namespace {
         ++I;
       }
       // Sort the list...
-      std::sort(variable_list->begin(), variable_list->end(), string_id_sort);
+      std::sort(
+          variable_list->begin(), variable_list->end(),
+          [](const std::pair<std::string, size_t> &t1, const std::pair<std::string, size_t> &t2) {
+            return t1.first < t2.first || (!(t2.first < t1.first) && t1.second < t2.second);
+          });
     }
   }
 
@@ -598,7 +579,8 @@ namespace {
       // At this point, var_list should contain 1,2,or 3 strings
       // corresponding to the x, y, and z coordinate offsets.
       if (var_list.size() != 3) {
-        std::cerr << "ERROR: Incorrect number of offset components specified--3 required.\n\n";
+        fmt::print(stderr,
+                   "ERROR: Incorrect number of offset components specified--3 required.\n\n");
         offset->x = offset->y = offset->z = 0.0;
         return;
       }
@@ -659,9 +641,10 @@ namespace {
           list->push_back(part_num);
         }
         else {
-          std::cerr << "ERROR: Bad syntax (" << part
-                    << ") specifying part number. Use 'p'+ part_number\n"
-                    << "       For example -info_records p1,p2,p7\n";
+          fmt::print(stderr,
+                     "ERROR: Bad syntax ({}) specifying part number. Use 'p'+ part_number\n"
+                     "       For example -info_records p1,p2,p7\n",
+                     part);
           exit(EXIT_FAILURE);
         }
         ++I;
@@ -672,8 +655,8 @@ namespace {
   void parse_omissions(const char *tokens, Omissions *omissions, const std::string &basename,
                        bool require_ids)
   {
-    //	to Omit block id 1,3,4 from part 1; block 2 3 4 from part 2;
-    //	and block 8 from part5, specify
+    //  to Omit block id 1,3,4 from part 1; block 2 3 4 from part 2;
+    //  and block 8 from part5, specify
     // '-omit_blocks p1:1:3:4,p2:2:3:4,p5:8'
 
     // Break into tokens separated by "," Each token will then be a
@@ -703,13 +686,15 @@ namespace {
     while (I != part_block_list.end()) {
       StringVector part_block = SLIB::tokenize(*I, ":");
       if (part_block.empty() || (part_block[0][0] != 'p' && part_block[0][0] != 'P')) {
-        std::cerr << "ERROR: Bad syntax specifying the part number.  Use 'p' + part number\n"
-                  << "       For example -omit_blocks p1:1:2:3,p2:2:3:4\n";
+        fmt::print(stderr, "ERROR: Bad syntax specifying the part number.  Use 'p' + part number\n"
+                           "       For example -omit_blocks p1:1:2:3,p2:2:3:4\n");
         exit(EXIT_FAILURE);
       }
       if (require_ids && part_block.size() == 1) {
-        std::cerr << "ERROR: No block ids were found following the part specification.\n"
-                  << "       for part " << part_block[0] << "\n";
+        fmt::print(stderr,
+                   "ERROR: No block ids were found following the part specification.\n"
+                   "       for part {}\n",
+                   part_block[0]);
         exit(EXIT_FAILURE);
       }
 

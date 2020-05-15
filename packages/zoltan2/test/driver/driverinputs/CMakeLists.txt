@@ -3,7 +3,9 @@ ADD_SUBDIRECTORY(glaze)
 ADD_SUBDIRECTORY(glaze2)
 ADD_SUBDIRECTORY(rectilinearRCB)
 ADD_SUBDIRECTORY(sacer4320)
+ADD_SUBDIRECTORY(miniem4669)
 ADD_SUBDIRECTORY(ordering)
+ADD_SUBDIRECTORY(kuberry)
 
 # command that copies files during build
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_input_files_for_driver
@@ -11,6 +13,8 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_input_files_for_driver
         input_template.xml
         rcbTest.xml
         multiJaggedTest.xml
+        multiJaggedPremigrateTest.xml
+        multijaggedVwgt2Test.xml
         GeomGenWeight.txt
         chacoGraphMetricsTest.xml
         chacoGraphMetricsTestNoDistribute.xml
@@ -43,6 +47,8 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_input_files_for_driver
         pulpVwgtTest.xml
         pulpTestNoDistrib.xml
         pulpVwgtTestNoDistrib.xml
+        xtrapulpVwgtTest2.xml 
+        xtrapulpVwgtTest2NoDistrib.xml
         test578.xml
         zoltanGraphAdapter.xml
         zoltanGraphAdapterVwgt.xml

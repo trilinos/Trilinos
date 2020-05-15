@@ -53,10 +53,7 @@
  *****************************************************************************/
 
 #include "exodusII.h"     // for ex_err, etc
-#include "exodusII_int.h" // for EX_FATAL, ex_id_lkup, etc
-#include "netcdf.h"       // for nc_inq_varid, NC_NOERR
-#include <inttypes.h>     // for PRId64
-#include <stdio.h>
+#include "exodusII_int.h" // for EX_FATAL, ex__id_lkup, etc
 
 /*!
  * writes the name of the specified entity to the database. The entity
@@ -76,9 +73,15 @@ int ex_put_name(int exoid, ex_entity_type obj_type, ex_entity_id entity_id, cons
   const char *vobj;
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid, __func__);
+  ex__check_valid_file_id(exoid, __func__);
 
   switch (obj_type) {
+  case EX_ASSEMBLY:
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: Assembly name is written using `ex_put_assembly()` function");
+    ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
+    EX_FUNC_LEAVE(EX_FATAL);
+    break;
   case EX_EDGE_BLOCK: vobj = VAR_NAME_ED_BLK; break;
   case EX_FACE_BLOCK: vobj = VAR_NAME_FA_BLK; break;
   case EX_ELEM_BLOCK: vobj = VAR_NAME_EL_BLK; break;
@@ -104,7 +107,7 @@ int ex_put_name(int exoid, ex_entity_type obj_type, ex_entity_id entity_id, cons
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  ent_ndx = ex_id_lkup(exoid, obj_type, entity_id);
+  ent_ndx = ex__id_lkup(exoid, obj_type, entity_id);
 
   if (ent_ndx == -EX_LOOKUPFAIL) { /* could not find the element block id */
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: %s id %" PRId64 " not found in file id %d",
@@ -121,7 +124,7 @@ int ex_put_name(int exoid, ex_entity_type obj_type, ex_entity_id entity_id, cons
   }
 
   /* write EXODUS entityname */
-  status = ex_put_name_internal(exoid, varid, ent_ndx - 1, name, obj_type, "", __func__);
+  status = ex__put_name(exoid, varid, ent_ndx - 1, name, obj_type, "", __func__);
 
   EX_FUNC_LEAVE(status);
 }

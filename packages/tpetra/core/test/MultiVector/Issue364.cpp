@@ -165,16 +165,12 @@ namespace { // (anonymous)
 
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MultiVector, DualViewNoncontig, Node )
   {
-    typedef typename Tpetra::MultiVector<>::scalar_type Scalar;
-    typedef typename Tpetra::MultiVector<>::local_ordinal_type LO;
-    typedef typename Tpetra::MultiVector<>::global_ordinal_type GO;
-    typedef typename Tpetra::MultiVector<>::device_type DT;
-    typedef typename DT::memory_space dev_memory_space;
-    typedef Tpetra::Map<LO, GO, Node> map_type;
-    typedef Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
-    typedef typename MV::impl_scalar_type IST;
-    typedef typename Kokkos::View<IST**, DT>::HostMirror::memory_space
-      host_memory_space;
+    using Scalar = typename Tpetra::MultiVector<>::scalar_type;
+    using LO = typename Tpetra::MultiVector<>::local_ordinal_type;
+    using GO = typename Tpetra::MultiVector<>::global_ordinal_type;
+    using map_type = Tpetra::Map<LO, GO, Node>;
+    using MV = Tpetra::MultiVector<Scalar, LO, GO, Node>;
+    using IST = typename MV::impl_scalar_type;
 
     const IST ONE = Kokkos::Details::ArithTraits<IST>::one ();
 
@@ -363,7 +359,7 @@ namespace { // (anonymous)
         auto X_lcl_j_1d = Kokkos::subview (X_lcl_j_2d, Kokkos::ALL (), 0);
 
         // auto X_copy_j = X_copy.getVector (j);
-        // auto X_copy_lcl_j_2d = X_copy_j->template getLocalView<dev_memory_space> ();
+        // auto X_copy_lcl_j_2d = X_copy_j->getLocalViewDevice ();
         // auto X_copy_lcl_j_1d = Kokkos::subview (X_copy_lcl_j_2d, Kokkos::ALL (), 0);
 
         const bool eq = vectorsEqual (X_sub_lcl_j_1d, X_lcl_j_1d);

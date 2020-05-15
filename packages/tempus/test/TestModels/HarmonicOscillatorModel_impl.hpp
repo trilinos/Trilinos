@@ -25,20 +25,20 @@ namespace Tempus_Test {
 
 template<class Scalar>
 HarmonicOscillatorModel<Scalar>::
-HarmonicOscillatorModel(Teuchos::RCP<Teuchos::ParameterList> pList_):
+HarmonicOscillatorModel(Teuchos::RCP<Teuchos::ParameterList> pList_, const bool use_accel_IC):
  out_(Teuchos::VerboseObjectBase::getDefaultOStream())
 {
   isInitialized_ = false;
   setParameterList(pList_);
-  *out_ << "\n\nDamping coeff c = " << c_ << "\n"; 
-  *out_ << "Forcing coeff f = " << f_ << "\n"; 
+  *out_ << "\n\nDamping coeff c = " << c_ << "\n";
+  *out_ << "Forcing coeff f = " << f_ << "\n";
   *out_ << "x coeff k = " << k_ << "\n";
   *out_ << "Mass coeff m = " << m_ << "\n";
-  //Divide all coefficients by m_ 
-  k_ /= m_; 
-  f_ /= m_; 
-  c_ /= m_; 
-  m_ = 1.0; 
+  //Divide all coefficients by m_
+  k_ /= m_;
+  f_ /= m_;
+  c_ /= m_;
+  m_ = 1.0;
   //Set up space and initial guess for solution vector
   vecLength_ = 1;
   x_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(vecLength_);
@@ -52,9 +52,14 @@ HarmonicOscillatorModel(Teuchos::RCP<Teuchos::ParameterList> pList_):
   //is computed correctly using displacement and velocity ICs
   //inside 2nd order steppers.
   //Thyra::put_scalar(f_-c_, x_dot_dot_vec_.ptr());
-  //Instead of real IC, putting arbitrary, incorrect IC to check correctness
-  //in stepper involving calculation of a IC.
-  Thyra::put_scalar(7.0, x_dot_dot_vec_.ptr());
+  if (use_accel_IC == true) {
+    Thyra::put_scalar(-2.0, x_dot_dot_vec_.ptr());
+  }
+  else {
+    //Instead of real IC, putting arbitrary, incorrect IC to check correctness
+    //in stepper involving calculation of a IC.
+    Thyra::put_scalar(7.0, x_dot_dot_vec_.ptr());
+  }
 
   //Set up responses
   numResponses_ = 1;
@@ -78,14 +83,14 @@ getExactSolution(double t) const
   { // scope to delete DetachedVectorView
     Thyra::DetachedVectorView<Scalar> exact_x_view(*exact_x);
     if (k_ == 0) {
-      if (c_ == 0) 
+      if (c_ == 0)
         exact_x_view[0] = t*(1.0+0.5*f_*t);
-      else 
-        exact_x_view[0] = (c_-f_)/(c_*c_)*(1.0-exp(-c_*t)) 
-                          + f_*t/c_; 
+      else
+        exact_x_view[0] = (c_-f_)/(c_*c_)*(1.0-exp(-c_*t))
+                          + f_*t/c_;
     }
     else {
-      exact_x_view[0] = 1.0/sqrt(k_)*sin(sqrt(k_)*t) + f_/k_*(1.0-cos(sqrt(k_)*t)); 
+      exact_x_view[0] = 1.0/sqrt(k_)*sin(sqrt(k_)*t) + f_/k_*(1.0-cos(sqrt(k_)*t));
     }
   }
   inArgs.set_x(exact_x);
@@ -93,13 +98,13 @@ getExactSolution(double t) const
   { // scope to delete DetachedVectorView
     Thyra::DetachedVectorView<Scalar> exact_x_dot_view(*exact_x_dot);
     if (k_ == 0) {
-      if (c_ == 0) 
+      if (c_ == 0)
         exact_x_dot_view[0] = 1.0+f_*t;
       else
-        exact_x_dot_view[0] = (c_-f_)/c_*exp(-c_*t)+f_/c_; 
+        exact_x_dot_view[0] = (c_-f_)/c_*exp(-c_*t)+f_/c_;
     }
     else {
-      exact_x_dot_view[0] = cos(sqrt(k_)*t) + f_/sqrt(k_)*sin(sqrt(k_)*t); 
+      exact_x_dot_view[0] = cos(sqrt(k_)*t) + f_/sqrt(k_)*sin(sqrt(k_)*t);
     }
   }
   inArgs.set_x_dot(exact_x_dot);
@@ -107,13 +112,13 @@ getExactSolution(double t) const
   { // scope to delete DetachedVectorView
     Thyra::DetachedVectorView<Scalar> exact_x_dot_dot_view(*exact_x_dot_dot);
     if (k_ == 0) {
-      if (c_ == 0) 
+      if (c_ == 0)
         exact_x_dot_dot_view[0] = f_;
-      else 
-        exact_x_dot_dot_view[0] = (f_-c_)*exp(-c_*t); 
+      else
+        exact_x_dot_dot_view[0] = (f_-c_)*exp(-c_*t);
     }
     else {
-      exact_x_dot_dot_view[0] = f_*cos(sqrt(k_)*t) - sqrt(k_)*sin(sqrt(k_)*t); 
+      exact_x_dot_dot_view[0] = f_*cos(sqrt(k_)*t) - sqrt(k_)*sin(sqrt(k_)*t);
     }
   }
   inArgs.set_x_dot_dot(exact_x_dot_dot);
@@ -244,9 +249,9 @@ evalModelImpl(
   RCP<VectorBase<Scalar> > g_out = outArgs.get_g(0);
   const RCP<Thyra::LinearOpBase<Scalar> > W_out = outArgs.get_W_op();
 
-  Scalar neg_sign = 1.0; 
-  //Explicit ODE 
-  if (inArgs.get_x_dot_dot().is_null()) neg_sign = -1.0; 
+  Scalar neg_sign = 1.0;
+  //Explicit ODE
+  if (inArgs.get_x_dot_dot().is_null()) neg_sign = -1.0;
 
   //Populate residual and Jacobian
   if (f_out != Teuchos::null) {
@@ -267,7 +272,6 @@ evalModelImpl(
       }
     }
     if (x_in != Teuchos::null) {
-      Thyra::ConstDetachedVectorView<Scalar> x_in_view( *x_in);
       for (int i=0; i<myVecLength; i++) {
         f_out_view[i] += neg_sign*k_*x_in_view[i];
       }
@@ -305,7 +309,7 @@ HarmonicOscillatorModel<Scalar>::
 get_p_space(int l) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-                     "\n Error!  HarmonicOscillatorModel::get_p_space() is not supported!\n"); 
+                     "\n Error!  HarmonicOscillatorModel::get_p_space() is not supported!\n");
   return Teuchos::null;
 }
 
@@ -315,7 +319,7 @@ HarmonicOscillatorModel<Scalar>::
 get_p_names(int l) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-                     "\n Error!  HarmonicOscillatorModel::get_p_names() is not supported!\n"); 
+                     "\n Error!  HarmonicOscillatorModel::get_p_names() is not supported!\n");
   return Teuchos::null;
 }
 
@@ -404,7 +408,7 @@ setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
   }
   if ((k_ > 0.0) && (c_ != 0.0)) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-      "Error: HarmonicOscillator model only supports x coeff k > 0 when Damping coeff c = 0.  You have " 
+      "Error: HarmonicOscillator model only supports x coeff k > 0 when Damping coeff c = 0.  You have "
       << "specified x coeff k = " << k_ << " and Damping coeff c = " << c_ << ".\n");
   }
 }

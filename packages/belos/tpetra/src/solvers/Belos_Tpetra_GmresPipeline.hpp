@@ -25,6 +25,7 @@ private:
   using vec_type = typename Krylov<SC, MV, OP>::vec_type;
   using device_type = typename MV::device_type;
   using dot_type = typename MV::dot_type;
+  using dot_view_type = Kokkos::View<dot_type*, device_type>;
 
 public:
   GmresPipeline () :
@@ -39,8 +40,7 @@ public:
     this->input_.computeRitzValues = true;
   }
 
-  virtual ~GmresPipeline ()
-  {}
+  virtual ~GmresPipeline () = default;
 
 private:
   SolverOutput<SC>
@@ -61,6 +61,9 @@ private:
     const mag_type tolOrtho = mag_type (10.0) * STM::squareroot (eps);
     const bool computeRitzValues = input.computeRitzValues;
 
+    // timers
+    Teuchos::RCP< Teuchos::Time > spmvTimer = Teuchos::TimeMonitor::getNewCounter ("GmresPipeline::matrix-apply");
+
     // initialize output parameters
     SolverOutput<SC> output {};
     output.converged = false;
@@ -72,19 +75,27 @@ private:
     mag_type b_norm; // initial residual norm
     mag_type b0_norm; // initial residual norm, not left-preconditioned
     mag_type r_norm;
+    mag_type r_norm_imp = -STM::one ();
     dense_matrix_type  G (restart+1, restart+1, true);
     dense_matrix_type  H (restart+1, restart, true);
     dense_vector_type  y (restart+1, true);
+    dense_vector_type  h (restart+1, true);
     std::vector<mag_type> cs (restart);
     std::vector<SC> sn (restart);
-    MV  Q (B.getMap (), restart+1);
-    MV  V (B.getMap (), restart+1);
+
+    bool zeroOut = false; // Kokkos::View:init can take a long time on GPU?
+    MV  Q (B.getMap (), restart+1, zeroOut);
+    MV  V (B.getMap (), restart+1, zeroOut);
+    vec_type R (B.getMap (), zeroOut);
+    vec_type Y (B.getMap (), zeroOut);
+    vec_type MZ (B.getMap (), zeroOut);
     vec_type Z = * (V.getVectorNonConst (0));
-    vec_type R (B.getMap ());
-    vec_type MZ (B.getMap ());
 
     // initial residual (making sure R = B - Ax)
-    A.apply (X, R);
+    {
+      Teuchos::TimeMonitor LocalTimer (*spmvTimer);
+      A.apply (X, R);
+    }
     R.update (one, B, -one);
     // TODO: this should be idot?
     b0_norm = STM::squareroot (STS::real (R.dot (R))); // initial residual norm, no preconditioned
@@ -126,8 +137,7 @@ private:
 
     // for idot
     std::shared_ptr<Tpetra::Details::CommRequest> req;
-    Kokkos::View<dot_type*, device_type> vals ("results[numVecs]",
-                                               restart+1);
+    dot_view_type vals ("results[numVecs]", restart+1);
     auto vals_h = Kokkos::create_mirror_view (vals);
 
     // Initialize starting vector
@@ -136,35 +146,44 @@ private:
     y[0] = r_norm;
 
     // Main loop
+    int iter = 0;
     mag_type metric = 2*input.tol; // to make sure to hit the first synch
     while (output.numIters < input.maxNumIters && ! output.converged) {
-      int iter = 0;
-      if (input.maxNumIters < output.numIters+restart) {
-        restart = input.maxNumIters-output.numIters;
+      if (iter == 0) {
+        if (input.maxNumIters < output.numIters+restart) {
+          restart = input.maxNumIters-output.numIters;
+        }
+
+        // Normalize initial vector
+        MVT::MvScale (Z, one/std::sqrt(G(0, 0)));
+
+        // Copy initial vector
+        vec_type AP = * (Q.getVectorNonConst (0));
+        Tpetra::deep_copy (AP, Z);
       }
 
-      // Normalize initial vector
-      MVT::MvScale (Z, one/std::sqrt(G(0, 0)));
-
-      // Copy initial vector
-      vec_type AP = * (Q.getVectorNonConst (0));
-      Tpetra::deep_copy (AP, Z);
-
       // Restart cycle
-      for (iter = 0; iter < restart+ell && metric > input.tol; ++iter) {
+      for (; iter < restart+ell && metric > input.tol; ++iter) {
         if (iter < restart) {
           // W = A*Z
           vec_type Z = * (V.getVectorNonConst (iter));
           vec_type W = * (V.getVectorNonConst (iter+1));
           if (input.precoSide == "none") {
+            Teuchos::TimeMonitor LocalTimer (*spmvTimer);
             A.apply (Z, W);
           }
           else if (input.precoSide == "right") {
             M.apply (Z, MZ);
-            A.apply (MZ, W);
+            {
+              Teuchos::TimeMonitor LocalTimer (*spmvTimer);
+              A.apply (MZ, W);
+            }
           }
           else {
-            A.apply (Z, MZ);
+            {
+              Teuchos::TimeMonitor LocalTimer (*spmvTimer);
+              A.apply (Z, MZ);
+            }
             M.apply (MZ, W);
           }
           // Shift for Newton basis, explicitly for the first iter
@@ -177,12 +196,20 @@ private:
           output.numIters ++;
         }
         int k = iter+1 - ell; // we synch idot from k-th iteration
+        if (outPtr != nullptr && k > 0) {
+          *outPtr << "Current iteration: iter=" << iter
+                  << ", restart=" << restart
+                  << ", metric=" << metric << endl;
+          Indent indent3 (outPtr);
+        }
 
         // Compute G and H
         if (k >= 0) {
           if (k > 0) {
             req->wait (); // wait for idot
-            Kokkos::deep_copy (vals_h, vals);
+            auto v_iter = Kokkos::subview(vals, std::pair<int, int>(0, iter+1));
+            auto h_iter = Kokkos::subview(vals_h, std::pair<int, int>(0, iter+1));
+            Kokkos::deep_copy (h_iter, v_iter);
 
             for (int i = 0; i <= iter; i++) {
               G(i, k) = vals_h[i];
@@ -195,7 +222,7 @@ private:
             if (computeRitzValues) {
               //H(k-1, k-1) += output.getRitzValue((k-1)%ell);
               const complex_type theta = output.ritzValues[(k-1)%ell];
-              UpdateNewton<SC, MV>::updateNewtonH(k-1, H, theta);
+              UpdateNewton<SC, MV>::updateNewtonH (k-1, H, theta);
             }
 
             // Fix H
@@ -212,8 +239,8 @@ private:
           if (k > 0) {
             // Orthogonalize V(:, k), k = iter+1-ell
             vec_type AP = * (Q.getVectorNonConst (k));
-            Teuchos::Range1D index_prev(0, k-1);
-            const MV Qprev = * (Q.subView(index_prev));
+            Teuchos::Range1D index_prev (0, k-1);
+            const MV Qprev = * (Q.subView (index_prev));
             dense_matrix_type g_prev (Teuchos::View, G, k, 1, 0, k);
 
             MVT::MvTimesMatAddMv (-one, Qprev, g_prev, one, AP);
@@ -225,8 +252,8 @@ private:
           // Apply change-of-basis to W
           vec_type W = * (V.getVectorNonConst (iter+1));
           if (k > 0) {
-            Teuchos::Range1D index_prev(ell, iter);
-            const MV Zprev = * (V.subView(index_prev));
+            Teuchos::Range1D index_prev (ell, iter);
+            const MV Zprev = * (V.subView (index_prev));
 
             dense_matrix_type h_prev (Teuchos::View, H, k, 1, 0, k-1);
             MVT::MvTimesMatAddMv (-one, Zprev, h_prev, one, W);
@@ -266,11 +293,20 @@ private:
           Teuchos::Range1D index_prev(0, iter+1);
           const MV Qprev  = * (Q.subView(index_prev));
 
+          dot_view_type v_iter = Kokkos::subview(vals, std::pair<int, int>(0, iter+2));
           vec_type W = * (V.getVectorNonConst (iter+1));
-          req = Tpetra::idot (vals, Qprev, W);
+          req = Tpetra::idot (v_iter, Qprev, static_cast<const MV&> (W));
         }
       } // End of restart cycle
-      if (iter > 0) {
+
+      if (iter < restart+ell) {
+        // save the old solution, just in case explicit residual norm failed the convergence test
+        Tpetra::deep_copy (Y, X);
+        blas.COPY (1+iter, y.values(), 1, h.values(), 1);
+      }
+      if (iter >= ell) {
+        r_norm_imp = STS::magnitude (y (iter - ell)); // save implicit residual norm
+
         // Update solution
         blas.TRSM (Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI,
                    Teuchos::NO_TRANS, Teuchos::NON_UNIT_DIAG,
@@ -281,8 +317,6 @@ private:
         y.resize (iter);
         if (input.precoSide == "right") {
           dense_vector_type y_iter (Teuchos::View, y.values (), iter-ell);
-
-          //MVT::MvTimesMatAddMv (one, *Qj, y, zero, R);
           MVT::MvTimesMatAddMv (one, *Qj, y_iter, zero, R);
           M.apply (R, MZ);
           X.update (one, MZ, one);
@@ -294,34 +328,67 @@ private:
         y.resize (restart+1);
       }
       // Compute real residual
-      Z = * (V.getVectorNonConst (0));
-      A.apply (X, Z);
-      Z.update (one, B, -one);
-      r_norm = Z.norm2 (); // residual norm
+      {
+        Teuchos::TimeMonitor LocalTimer (*spmvTimer);
+        A.apply (X, R);
+      }
+      R.update (one, B, -one);
+      // TODO: compute residual norm with all-reduce, should be idot?
+      r_norm = R.norm2 ();
       output.absResid = r_norm;
       output.relResid = r_norm / b_norm;
+      if (outPtr != nullptr) {
+        *outPtr << "Implicit and explicit residual norms at restart: " << r_norm_imp << ", " << r_norm << endl;
+      }
+
       // Convergence check (with explicitly computed residual norm)
       metric = this->getConvergenceMetric (r_norm, b_norm, input);
       if (metric <= input.tol) {
         output.converged = true;
       }
       else if (output.numIters < input.maxNumIters) {
-        // Initialize starting vector for restart
-        if (input.precoSide == "left") {
-          Tpetra::deep_copy (R, Z);
-          M.apply (R, Z);
+        // Restart, only if max inner-iteration was reached.
+        // Otherwise continue the inner-iteration.
+        if (iter >= restart+ell) {
+          // Restart: Initialize starting vector for restart
+          iter = 0;
+          Z = * (V.getVectorNonConst (0));
+          if (input.precoSide == "left") {
+            M.apply (R, Z);
+            r_norm = STS::real (Z.dot (Z)); //norm2 (); // residual norm
+          }
+          else {
+            // set the starting vector
+            Tpetra::deep_copy (Z, R);
+          }
+          G(0, 0) = r_norm;
+          r_norm = STM::squareroot (r_norm);
+          //Z.scale (one / r_norm);
+          y[0] = r_norm;
+          for (int i=1; i < restart+1; ++i) {
+            y[i] = zero;
+          }
+          // Restart
+          output.numRests ++;
         }
-        // TODO: recomputing all-reduce, should be idot?
-        r_norm = STS::real (Z.dot (Z)); //norm2 (); // residual norm
-        G(0, 0) = r_norm;
-        r_norm = STM::squareroot (r_norm);
-        //Z.scale (one / r_norm);
-        y[0] = r_norm;
-        for (int i=1; i < restart+1; ++i) {
-          y[i] = zero;
+        else {
+          // reset to the old solution
+          Tpetra::deep_copy (X, Y);
+          blas.COPY (1+iter, h.values(), 1, y.values(), 1);
+          {
+            // Copy the new vector
+            vec_type AP = * (Q.getVectorNonConst (iter));
+            Tpetra::deep_copy (AP, * (V.getVectorNonConst (iter)));
+
+            // Start all-reduce to compute G(:, iter)
+            // [Q(:,1:k-1), V(:,k:iter)]'*W
+            Teuchos::Range1D index_prev(0, iter);
+            const MV Qprev  = * (Q.subView(index_prev));
+
+            vec_type W = * (V.getVectorNonConst (iter));
+            req = Tpetra::idot (vals, Qprev, static_cast<const MV&> (W));
+          }
         }
-        // Restart
-        output.numRests ++;
       }
     }
 

@@ -109,10 +109,11 @@ test_mpvector_spmv(const int ensemble_length,
   typedef typename storage_type::value_type value_type;
   typedef typename storage_type::ordinal_type ordinal_type;
   typedef typename storage_type::execution_space execution_space;
+  typedef Kokkos::Device<execution_space, typename execution_space::memory_space> device_type;
   typedef Sacado::MP::Vector<StorageType> VectorType;
   typedef Kokkos::LayoutRight Layout;
   typedef Kokkos::View< VectorType*, Layout, execution_space > vector_type;
-  typedef KokkosSparse::CrsMatrix< VectorType, ordinal_type, execution_space > matrix_type;
+  typedef KokkosSparse::CrsMatrix< VectorType, ordinal_type, device_type > matrix_type;
   typedef typename matrix_type::StaticCrsGraphType matrix_graph_type;
   typedef typename matrix_type::values_type matrix_values_type;
 
@@ -162,12 +163,12 @@ test_mpvector_spmv(const int ensemble_length,
   // One iteration to warm up
   Stokhos::multiply( matrix, x, y, tag );
 
-  execution_space::fence();
+  execution_space().fence();
   Kokkos::Impl::Timer clock ;
   for (int iter = 0; iter < iterCount; ++iter) {
     Stokhos::multiply( matrix, x, y, tag );
   }
-  execution_space::fence();
+  execution_space().fence();
 
   const double seconds_per_iter = clock.seconds() / ((double) iterCount );
   const double flops = 1.0e-9 * 2.0 * graph_length * ensemble_length;
@@ -191,8 +192,9 @@ test_scalar_spmv(const int ensemble_length,
   typedef ScalarType value_type;
   typedef OrdinalType ordinal_type;
   typedef Device execution_space;
+  typedef Kokkos::Device<execution_space, typename execution_space::memory_space> device_type;
   typedef Kokkos::View< value_type*, execution_space > vector_type;
-  typedef KokkosSparse::CrsMatrix< value_type, ordinal_type, execution_space > matrix_type;
+  typedef KokkosSparse::CrsMatrix< value_type, ordinal_type, device_type > matrix_type;
   typedef typename matrix_type::StaticCrsGraphType matrix_graph_type;
   typedef typename matrix_type::values_type matrix_values_type;
 
@@ -239,14 +241,14 @@ test_scalar_spmv(const int ensemble_length,
     }
   }
 
-  execution_space::fence();
+  execution_space().fence();
   Kokkos::Impl::Timer clock ;
   for (int iter = 0; iter < iterCount; ++iter) {
     for (int e=0; e<ensemble_length; ++e) {
       KokkosSparse::spmv( "N" , value_type(1.0), matrix[e], x[e] , value_type(0.0), y[e]);
     }
   }
-  execution_space::fence();
+  execution_space().fence();
 
   const double seconds_per_iter = clock.seconds() / ((double) iterCount );
   const double flops = 1.0e-9 * 2.0 * graph_length * ensemble_length;

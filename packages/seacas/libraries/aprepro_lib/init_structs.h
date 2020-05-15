@@ -207,6 +207,14 @@ struct array_cd_init
   const char *description;
 };
 
+struct array_ddd_init
+{
+  const char *fname;
+  SEAMS::array *(*fnct)(double, double, double);
+  const char *syntax;
+  const char *description;
+};
+
 struct array_dd_init
 {
   const char *fname;

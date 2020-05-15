@@ -11,7 +11,7 @@
 #include "Panzer_ConnManager.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_DOFManager.hpp"
-#include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
+#include "Panzer_GlobalIndexer_Utilities.hpp"
 #include "Panzer_Workset.hpp"
 
 #include <Tpetra_CrsGraph.hpp>
@@ -21,9 +21,9 @@
 namespace panzer {
 class FaceToElems{
 public:
-  typedef int LocalOrdinal;
-  typedef int GlobalOrdinal;
-  FaceToElems(Teuchos::RCP<panzer::ConnManager<int,int> > conn);
+  using LocalOrdinal = panzer::LocalOrdinal;
+  using GlobalOrdinal = panzer::GlobalOrdinal;
+  FaceToElems(Teuchos::RCP<panzer::ConnManager> conn);
 
   LocalOrdinal numberBoundaryFaces() {return num_boundary_faces_;}
 
@@ -31,7 +31,7 @@ public:
 
   void getNormal(LocalOrdinal ielem, int iface, std::vector<double> &normal);
 protected:
-  Teuchos::RCP<panzer::ConnManager<int,int> > conn_;
+  Teuchos::RCP<panzer::ConnManager> conn_;
 
   int dimension_;
   int num_blocks_;

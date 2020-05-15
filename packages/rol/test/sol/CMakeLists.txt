@@ -129,6 +129,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ADD_DIR_TO_NAME
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  checkPrimalDualRisk
+  SOURCES test_15.cpp
+  ARGS PrintItAll
+  NUM_MPI_PROCS 1
+  PASS_REGULAR_EXPRESSION "TEST PASSED"
+  ADD_DIR_TO_NAME
+  )
+
 TRIBITS_COPY_FILES_TO_BINARY_DIR(
   solDataCopy
   SOURCE_FILES
@@ -140,6 +149,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(
     input_11.xml
     input_12.xml
     input_14.xml
+    input_15.xml
     points.txt
     weights.txt
   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"

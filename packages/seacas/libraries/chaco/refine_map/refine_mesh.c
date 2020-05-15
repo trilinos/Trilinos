@@ -73,7 +73,8 @@ int refine_mesh(struct vtx_data **comm_graph,   /* graph for communication requi
   double                find_maxdeg();
   double                compute_mesh_edata();
 
-  void compute_mesh_vdata(), init_mesh_edata(), mergesort();
+  void ch_mergesort(double *vals, int nvals, int *indices, int *space);
+  void compute_mesh_vdata(), init_mesh_edata();
   void update_mesh_vdata(), update_mesh_edata();
 
   error = 1;
@@ -105,7 +106,7 @@ int refine_mesh(struct vtx_data **comm_graph,   /* graph for communication requi
 
   edata   = smalloc_ret((nwires + 1) * sizeof(struct refine_edata));
   desires = smalloc_ret(nwires * sizeof(double));
-  if (vdata == NULL || desires == NULL) {
+  if (desires == NULL) {
     goto skip;
   }
 
@@ -126,7 +127,7 @@ int refine_mesh(struct vtx_data **comm_graph,   /* graph for communication requi
     goto skip;
   }
 
-  mergesort(desires, nwires, indices, space);
+  ch_mergesort(desires, nwires, indices, space);
 
   sfree(space);
   sfree(desires);

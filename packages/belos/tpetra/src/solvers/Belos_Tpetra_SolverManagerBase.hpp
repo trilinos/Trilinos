@@ -41,7 +41,7 @@ public:
     }
   }
 
-  virtual ~SolverManagerBase () {}
+  virtual ~SolverManagerBase () = default;
 
   const linear_problem_type& getProblem () const override {
     const char prefix[] = "SolverManagerBase::getProblem: ";

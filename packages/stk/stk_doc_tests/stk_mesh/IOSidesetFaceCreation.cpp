@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -64,11 +65,11 @@ bool is_positive_permutation(stk::mesh::BulkData & mesh,
     for (unsigned face_node_count=0; face_node_count < mesh.num_nodes(face); ++face_node_count) {
         face_nodes[face_node_count] = mesh.begin_nodes(face)[face_node_count];
     }
-    std::pair<bool, unsigned> permutation = stk::mesh::side_equivalent(mesh, hex, face_ordinal, face_nodes.data());
+    stk::EquivalentPermutation permutation = stk::mesh::side_equivalent(mesh, hex, face_ordinal, face_nodes.data());
 
-    bool is_a_valid_permutation = permutation.first;
+    bool is_a_valid_permutation = permutation.is_equivalent;
     EXPECT_TRUE(is_a_valid_permutation);
-    bool is_positive_permutation = permutation.second < faceTopology.num_positive_permutations();
+    bool is_positive_permutation = permutation.permutation_number < faceTopology.num_positive_permutations();
     return is_positive_permutation;
 }
 

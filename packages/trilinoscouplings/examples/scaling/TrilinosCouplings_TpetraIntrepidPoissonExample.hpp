@@ -81,8 +81,8 @@ namespace TpetraIntrepidPoissonExample {
 //
 typedef double ST;
 typedef int    LO;
-typedef int    GO;
-typedef Tpetra::Map<>::node_type  Node;
+typedef Tpetra::Map<>::global_ordinal_type GO;
+typedef Tpetra::Map<>::node_type           Node;
 
 //
 // mfh 19 Apr 2012: If you want to change the template parameters of
@@ -162,7 +162,6 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
                             Teuchos::RCP<multivector_type> & coords,
                             Teuchos::RCP<vector_type>& node_sigma,
                             const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                            const Teuchos::RCP<Node>& node,
                             const std::string& meshInput,
                             Teuchos::ParameterList & inputList,
                             Teuchos::ParameterList & problemStatistics,
@@ -180,7 +179,6 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
                             Teuchos::RCP<multivector_type> & coords,
                             Teuchos::RCP<vector_type>& node_sigma,
                             const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                            const Teuchos::RCP<Node>& node,
                             const std::string& meshInput,
                             Teuchos::ParameterList & inputList,
                             Teuchos::ParameterList & problemStatistics,

@@ -11,11 +11,31 @@ SET(SOURCES "")
 
 FILE(GLOB SOURCES *.cpp)
 
-SET(LIBRARIES shyluchol)
+SET(LIBRARIES tacho)
 
 IF (TACHO_HAVE_KOKKOS_TASK)
+
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    Tacho_TestUtil
+    Tacho_TestUtilTaskScheduler
+    TARGET_DEFINES -DTACHO_USE_TASKSCHEDULER
+    NOEXEPREFIX
+    SOURCES Tacho_TestUtil.cpp
+    ARGS PrintItAll
+    NUM_MPI_PROCS 1
+    FAIL_REGULAR_EXPRESSION "  FAILED  "
+  )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Tacho_TestUtilTaskSchedulerMultiple
+    TARGET_DEFINES -DTACHO_USE_TASKSCHEDULER_MULTIPLE
+    NOEXEPREFIX
+    SOURCES Tacho_TestUtil.cpp
+    ARGS PrintItAll
+    NUM_MPI_PROCS 1
+    FAIL_REGULAR_EXPRESSION "  FAILED  "
+  )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Tacho_TestUtilChaseLevTaskScheduler
+    TARGET_DEFINES -DTACHO_USE_CHASELEV_TASKSCHEDULER
     NOEXEPREFIX
     SOURCES Tacho_TestUtil.cpp
     ARGS PrintItAll
@@ -23,9 +43,10 @@ IF (TACHO_HAVE_KOKKOS_TASK)
     FAIL_REGULAR_EXPRESSION "  FAILED  "
   )
 
-  IF(Kokkos_ENABLE_Serial)
+  IF(Kokkos_ENABLE_SERIAL)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      Tacho_TestSerial_double
+      Tacho_TestSerialDoubleTaskScheduler
+      TARGET_DEFINES -DTACHO_USE_TASKSCHEDULER
       NOEXEPREFIX
       SOURCES Tacho_TestSerial_double.cpp
       ARGS PrintItAll
@@ -33,38 +54,134 @@ IF (TACHO_HAVE_KOKKOS_TASK)
       FAIL_REGULAR_EXPRESSION "  FAILED  "
     )
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      Tacho_TestSerial_dcomplex
+      Tacho_TestSerialDoubleTaskSchedulerMultiple
+      TARGET_DEFINES -DTACHO_USE_TASKSCHEDULER_MULTIPLE
+      NOEXEPREFIX
+      SOURCES Tacho_TestSerial_double.cpp
+      ARGS PrintItAll
+      NUM_MPI_PROCS 1
+      FAIL_REGULAR_EXPRESSION "  FAILED  "
+    )
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      Tacho_TestSerialDoubleChaseLevTaskScheduler
+      TARGET_DEFINES -DTACHO_USE_CHASELEV_TASKSCHEDULER
+      NOEXEPREFIX
+      SOURCES Tacho_TestSerial_double.cpp
+      ARGS PrintItAll
+      NUM_MPI_PROCS 1
+      FAIL_REGULAR_EXPRESSION "  FAILED  "
+    )
+
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      Tacho_TestSerialDoubleComplexTaskScheduler
+      TARGET_DEFINES -DTACHO_USE_TASKSCHEDULER
       NOEXEPREFIX
       SOURCES Tacho_TestSerial_dcomplex.cpp
       ARGS PrintItAll
       NUM_MPI_PROCS 1
       FAIL_REGULAR_EXPRESSION "  FAILED  "
     )
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      Tacho_TestSerialDoubleComplexTaskSchedulerMultiple
+      TARGET_DEFINES -DTACHO_USE_TASKSCHEDULER_MULTIPLE
+      NOEXEPREFIX
+      SOURCES Tacho_TestSerial_dcomplex.cpp
+      ARGS PrintItAll
+      NUM_MPI_PROCS 1
+      FAIL_REGULAR_EXPRESSION "  FAILED  "
+    )
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      Tacho_TestSerialDoubleComplexChaseLevTaskScheduler
+      TARGET_DEFINES -DTACHO_USE_CHASELEV_TASKSCHEDULER
+      NOEXEPREFIX
+      SOURCES Tacho_TestSerial_dcomplex.cpp
+      ARGS PrintItAll
+      NUM_MPI_PROCS 1
+      FAIL_REGULAR_EXPRESSION "  FAILED  "
+    )
+
   ENDIF()
   
-  IF(Kokkos_ENABLE_OpenMP)
+  IF(Kokkos_ENABLE_OPENMP)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      Tacho_TestOpenMP_double
+      Tacho_TestOpenMPDoubleTaskScheduler
+      TARGET_DEFINES -DTACHO_USE_TASKSCHEDULER
       NOEXEPREFIX
       SOURCES Tacho_TestOpenMP_double.cpp
       ARGS PrintItAll
       NUM_MPI_PROCS 1
       FAIL_REGULAR_EXPRESSION "  FAILED  "
     )
-  
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      Tacho_TestOpenMP_dcomplex
+      Tacho_TestOpenMPDoubleTaskSchedulerMultiple
+      TARGET_DEFINES -DTACHO_USE_TASKSCHEDULER_MULTIPLE
+      NOEXEPREFIX
+      SOURCES Tacho_TestOpenMP_double.cpp
+      ARGS PrintItAll
+      NUM_MPI_PROCS 1
+      FAIL_REGULAR_EXPRESSION "  FAILED  "
+    )
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      Tacho_TestOpenMPDoubleChaseLevTaskScheduler
+      TARGET_DEFINES -DTACHO_USE_CHASELEV_TASKSCHEDULER
+      NOEXEPREFIX
+      SOURCES Tacho_TestOpenMP_double.cpp
+      ARGS PrintItAll
+      NUM_MPI_PROCS 1
+      FAIL_REGULAR_EXPRESSION "  FAILED  "
+    )
+
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      Tacho_TestOpenMPDoubleComplexTaskScheduler
+      TARGET_DEFINES -DTACHO_USE_TASKSCHEDULER
       NOEXEPREFIX
       SOURCES Tacho_TestOpenMP_dcomplex.cpp
       ARGS PrintItAll
       NUM_MPI_PROCS 1
       FAIL_REGULAR_EXPRESSION "  FAILED  "
-    )  
+    )
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      Tacho_TestOpenMPDoubleComplexTaskSchedulerMultiple
+      TARGET_DEFINES -DTACHO_USE_TASKSCHEDULER_MULTIPLE
+      NOEXEPREFIX
+      SOURCES Tacho_TestOpenMP_dcomplex.cpp
+      ARGS PrintItAll
+      NUM_MPI_PROCS 1
+      FAIL_REGULAR_EXPRESSION "  FAILED  "
+    )
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      Tacho_TestOpenMPDoubleComplexChaseLevTaskScheduler
+      TARGET_DEFINES -DTACHO_USE_CHASELEV_TASKSCHEDULER
+      NOEXEPREFIX
+      SOURCES Tacho_TestOpenMP_dcomplex.cpp
+      ARGS PrintItAll
+      NUM_MPI_PROCS 1
+      FAIL_REGULAR_EXPRESSION "  FAILED  "
+    )
   ENDIF()
 
-  IF(Kokkos_ENABLE_Cuda)
+  IF(Kokkos_ENABLE_CUDA)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      Tacho_TestCuda_double
+      Tacho_TestCudaDoubleTaskScheduler
+      TARGET_DEFINES -DTACHO_USE_TASKSCHEDULER
+      NOEXEPREFIX
+      SOURCES Tacho_TestCuda_double.cpp
+      ARGS PrintItAll
+      NUM_MPI_PROCS 1
+      FAIL_REGULAR_EXPRESSION "  FAILED  "
+    )
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      Tacho_TestCudaDoubleTaskSchedulerMultiple
+      TARGET_DEFINES -DTACHO_USE_TASKSCHEDULER_MULTIPLE
+      NOEXEPREFIX
+      SOURCES Tacho_TestCuda_double.cpp
+      ARGS PrintItAll
+      NUM_MPI_PROCS 1
+      FAIL_REGULAR_EXPRESSION "  FAILED  "
+    )
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      Tacho_TestCudaDoubleChaseLevTaskScheduler
+      TARGET_DEFINES -DTACHO_USE_CHASELEV_TASKSCHEDULER
       NOEXEPREFIX
       SOURCES Tacho_TestCuda_double.cpp
       ARGS PrintItAll
@@ -73,7 +190,26 @@ IF (TACHO_HAVE_KOKKOS_TASK)
     )
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      Tacho_TestCuda_dcomplex
+      Tacho_TestCudaDoubleComplexTaskScheduler
+      TARGET_DEFINES -DTACHO_USE_TASKSCHEDULER
+      NOEXEPREFIX
+      SOURCES Tacho_TestCuda_dcomplex.cpp
+      ARGS PrintItAll
+      NUM_MPI_PROCS 1
+      FAIL_REGULAR_EXPRESSION "  FAILED  "
+    )
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      Tacho_TestCudaDoubleComplexTaskSchedulerMultiple
+      TARGET_DEFINES -DTACHO_USE_TASKSCHEDULER_MULTIPLE
+      NOEXEPREFIX
+      SOURCES Tacho_TestCuda_dcomplex.cpp
+      ARGS PrintItAll
+      NUM_MPI_PROCS 1
+      FAIL_REGULAR_EXPRESSION "  FAILED  "
+    )
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      Tacho_TestCudaDoubleComplexChaseLevTaskScheduler
+      TARGET_DEFINES -DTACHO_USE_CHASELEV_TASKSCHEDULER
       NOEXEPREFIX
       SOURCES Tacho_TestCuda_dcomplex.cpp
       ARGS PrintItAll

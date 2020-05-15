@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2017 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017, 2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -34,13 +34,10 @@
  */
 
 #include "exodusII.h"     // for ex_err, etc
-#include "exodusII_int.h" // for EX_FATAL, ex_comp_ws, etc
-#include "netcdf.h"       // for NC_NOERR, etc
-#include <stddef.h>       // for size_t
-#include <stdio.h>
+#include "exodusII_int.h" // for EX_FATAL, ex__comp_ws, etc
 
 /*!
-
+\ingroup ResultsData
 The function ex_get_time() reads the time value for a specified time
 step.
 
@@ -81,14 +78,20 @@ error = ex_get_time (exoid, n, &time_value);
 
 int ex_get_time(int exoid, int time_step, void *time_value)
 {
-  int                  status;
-  int                  varid;
-  size_t               start[1];
-  char                 errmsg[MAX_ERR_LENGTH];
-  struct ex_file_item *file = NULL;
+  int                   status;
+  int                   varid;
+  size_t                start[1];
+  char                  errmsg[MAX_ERR_LENGTH];
+  struct ex__file_item *file = NULL;
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid, __func__);
+
+  file = ex__find_file_item(exoid);
+  if (!file) {
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unknown file id %d.", exoid);
+    ex_err_fn(exoid, __func__, errmsg, EX_BADFILEID);
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
 
   int num_time_steps = ex_inquire_int(exoid, EX_INQ_TIME);
 
@@ -115,7 +118,6 @@ int ex_get_time(int exoid, int time_step, void *time_value)
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  file  = ex_find_file_item(exoid);
   varid = file->time_varid;
   if (varid < 0) {
     /* inquire previously defined variable */
@@ -131,7 +133,7 @@ int ex_get_time(int exoid, int time_step, void *time_value)
   /* read time value */
   start[0] = --time_step;
 
-  if (ex_comp_ws(exoid) == 4) {
+  if (ex__comp_ws(exoid) == 4) {
     status = nc_get_var1_float(exoid, varid, start, time_value);
   }
   else {

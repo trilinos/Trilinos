@@ -71,7 +71,7 @@ namespace Xpetra {
   template <class Scalar,
             class LocalOrdinal,
             class GlobalOrdinal,
-            class Node>
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class CrsMatrixUtils {
 #undef XPETRA_CRSMATRIXUTILS_SHORT
 

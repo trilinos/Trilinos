@@ -168,7 +168,7 @@ stk::mesh::EntityVector get_sides(stk::mesh::BulkData &bulkData, const stk::mesh
 }
 
 
-void fill_sideset(const stk::mesh::Part& sidesetPart, stk::mesh::BulkData& bulkData, stk::mesh::Selector elementSelector)
+void fill_sideset(const stk::mesh::Part& sidesetPart, stk::mesh::BulkData& bulkData, const stk::mesh::Selector& elementSelector)
 {
     stk::mesh::SideSet *sideSet = nullptr;
     if(sidesetPart.subsets().empty()) {
@@ -181,6 +181,9 @@ void fill_sideset(const stk::mesh::Part& sidesetPart, stk::mesh::BulkData& bulkD
             sideSet = &bulkData.create_sideset(parentPart);
 
         stk::mesh::EntityVector sides = get_sides(bulkData, parentPart);
+        std::vector<stk::mesh::SideSetEntry> newSides;
+        newSides.reserve(sides.size());
+
         for(stk::mesh::Entity side : sides)
         {
             unsigned numElements = bulkData.num_elements(side);
@@ -191,13 +194,12 @@ void fill_sideset(const stk::mesh::Part& sidesetPart, stk::mesh::BulkData& bulkD
                 bool isOwned = bulkData.bucket(elements[i]).owned();
                 bool isSelected = elementSelector(bulkData.bucket(elements[i]));
                 if(isOwned && isSelected) {
-                    (*sideSet).add(stk::mesh::SideSetEntry{elements[i], ordinals[i]});
+                    newSides.emplace_back(elements[i], ordinals[i]);
                 }
             }
         }
 
-        if(sidesetExists)
-            stk::util::sort_and_unique(*sideSet);
+        sideSet->add(newSides);
     }
 }
 
@@ -440,7 +442,7 @@ bool isSidesetSupported(const stk::mesh::BulkData &bulk, const stk::mesh::Entity
 }
 
 
-stk::mesh::FieldVector get_transient_fields(stk::mesh::MetaData &meta)
+stk::mesh::FieldVector get_transient_fields(const stk::mesh::MetaData &meta)
 {
     stk::mesh::FieldVector fields;
 
@@ -454,7 +456,7 @@ stk::mesh::FieldVector get_transient_fields(stk::mesh::MetaData &meta)
     return fields;
 }
 
-stk::mesh::FieldVector get_transient_fields(stk::mesh::MetaData &meta, const stk::mesh::EntityRank rank)
+stk::mesh::FieldVector get_transient_fields(const stk::mesh::MetaData &meta, const stk::mesh::EntityRank rank)
 {
     stk::mesh::FieldVector fields;
 
@@ -475,11 +477,12 @@ stk::mesh::FieldVector get_transient_fields(stk::mesh::MetaData &meta, const stk
 const stk::mesh::Part& get_sideset_parent(const stk::mesh::Part& sidesetPart)
 {
     for(stk::mesh::Part * part : sidesetPart.supersets()) {
+        bool hasValidId  = (part->id() != stk::mesh::Part::INVALID_ID);
         bool hasSameId   = (part->id() == sidesetPart.id());
         bool hasSameRank = (part->primary_entity_rank() == sidesetPart.primary_entity_rank());
         bool isIoPart    = stk::io::is_part_io_part(*part);
 
-        if(hasSameId && hasSameRank && isIoPart) {
+        if(hasValidId && hasSameId && hasSameRank && isIoPart) {
             return *part;
         }
     }
@@ -722,7 +725,8 @@ std::pair<size_t, Ioss::Field::BasicType> get_io_parameter_size_and_type(const s
 
 std::pair<bool,bool> is_positive_sideset_polarity(const stk::mesh::BulkData &bulk,
                                                   const stk::mesh::Part& sideSetPart,
-                                                  stk::mesh::Entity face)
+                                                  stk::mesh::Entity face,
+                                                  const stk::mesh::Part* activePart)
 {
     std::pair<bool,bool> returnValue(false,false);
 
@@ -751,9 +755,16 @@ std::pair<bool,bool> is_positive_sideset_polarity(const stk::mesh::BulkData &bul
 
     stk::mesh::Entity foundElem;
 
+    stk::mesh::Selector activeSelector = (activePart == nullptr) ? bulk.mesh_meta_data().universal_part() : *activePart;
+
     for(unsigned i=0; i<numSideElements; ++i)
     {
         stk::mesh::Entity elem = sideElements[i];
+
+        if (!activeSelector(bulk.bucket(elem))) {
+            continue;
+        }
+
         const stk::mesh::Entity * elem_sides = bulk.begin(elem, sideRank);
         stk::mesh::ConnectivityOrdinal const * side_ordinal = bulk.begin_ordinals(elem, sideRank);
         stk::mesh::Permutation const * side_permutations = bulk.begin_permutations(elem, sideRank);
@@ -802,25 +813,30 @@ std::pair<bool,bool> is_positive_sideset_polarity(const stk::mesh::BulkData &bul
     return returnValue;
 }
 
-std::pair<bool,bool> is_positive_sideset_face_polarity(const stk::mesh::BulkData &bulk, stk::mesh::Entity face)
+std::pair<bool,bool> is_positive_sideset_face_polarity(const stk::mesh::BulkData &bulk, stk::mesh::Entity face,
+                                                      const stk::mesh::Part* activePart)
 {
     std::pair<bool,bool> returnValue(false,false);
+
     std::vector<const stk::mesh::Part*> sidesetParts = stk::io::get_sideset_io_parts(bulk, face);
 
     if(sidesetParts.size() == 0) {
         return returnValue;
     }
 
-    returnValue = stk::io::is_positive_sideset_polarity(bulk, *sidesetParts[0], face);
+    returnValue = stk::io::is_positive_sideset_polarity(bulk, *sidesetParts[0], face, activePart);
 
-    for(unsigned i=1; i<sidesetParts.size(); ++i)
-    {
-        const stk::mesh::Part* sidesetPart = sidesetParts[i];
-        std::pair<bool,bool> partPolarity = stk::io::is_positive_sideset_polarity(bulk, *sidesetPart, face);
-
-        ThrowRequireMsg(partPolarity == returnValue,
-                        "Polarity for face: " << bulk.identifier(face) << " on sideset: "
-                                              << sidesetParts[0]->name()  << " does not match that on sideset: " << sidesetPart->name());
+    if (sidesetParts.size() > 1) {
+        stk::mesh::Selector activeSelector = activePart == nullptr ? bulk.mesh_meta_data().universal_part() : *activePart;
+        for(unsigned i=1; i<sidesetParts.size(); ++i)
+        {
+            const stk::mesh::Part* sidesetPart = sidesetParts[i];
+            std::pair<bool,bool> partPolarity = stk::io::is_positive_sideset_polarity(bulk, *sidesetPart, face, activePart);
+    
+            ThrowRequireMsg(partPolarity == returnValue,
+                            "Polarity for face: " << bulk.identifier(face) << " on sideset: "
+                                                  << sidesetParts[0]->name()  << " does not match that on sideset: " << sidesetPart->name());
+        }
     }
 
     return returnValue;
@@ -864,7 +880,7 @@ stk::mesh::Selector construct_sideset_selector(stk::io::OutputParams &params)
 
 std::string construct_parallel_filename(const std::string &baseFilename, int numSubdomains, int subdomainIndex)
 {
-    int width = std::log10(static_cast<double>(numSubdomains - 1))+1;
+    int width = std::log10(static_cast<double>(numSubdomains))+1;
     std::ostringstream os;
     os << baseFilename << "." << numSubdomains << "." << std::setfill('0') << std::setw(width) << subdomainIndex;
     return os.str();
@@ -872,6 +888,8 @@ std::string construct_parallel_filename(const std::string &baseFilename, int num
 
 std::string construct_filename_for_serial_or_parallel(const std::string &baseFilename, int numSubdomains, int subdomainIndex)
 {
+    ThrowRequire(numSubdomains > 0);
+    ThrowRequire(subdomainIndex >=0 && subdomainIndex<numSubdomains);
     if(numSubdomains == 1)
         return baseFilename;
     return stk::io::construct_parallel_filename(baseFilename, numSubdomains, subdomainIndex);

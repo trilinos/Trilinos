@@ -47,7 +47,7 @@
 PyTrilinos.NOX.StatusTest is the python interface to the namespace
 StatusTest in Trilinos package NOX:
 
-    http://trilinos.sandia.gov/packages/nox
+    https://trilinos.org/docs/dev/packages/nox/doc/html/index.html
 
 The purpose of NOX.StatusTest is to provide clompletely flexible
 specification of stopping tests for NOX algorithms.
@@ -66,7 +66,6 @@ NOX.StatusTest provides the following user-level classes:
 %enddef
 
 %module(package      = "PyTrilinos.NOX",
-	autodoc      = "1",
 	implicitconv = "1",
 	docstring    = %nox_statustest_docstring) StatusTest
 
@@ -90,11 +89,11 @@ NOX.StatusTest provides the following user-level classes:
 // Standard exception handling
 %include "exception.i"
 
-// Auto-documentation feature
-%feature("autodoc", "1");
-
 // Include NOX documentation
+#if SWIG_VERSION < 0x040000
+%feature("autodoc", "1");
 %include "NOX_dox.i"
+#endif
 
 // SWIG library include files
 %include "stl.i"

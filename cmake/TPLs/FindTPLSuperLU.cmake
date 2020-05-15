@@ -56,7 +56,7 @@
 
 TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( SuperLU
   REQUIRED_HEADERS supermatrix.h slu_ddefs.h
-  REQUIRED_LIBS_NAMES "superlu superlu_3.0 superlu_4.0 superlu_4.1 superlu_4.2 superlu_4.3 superlu_5.0 superlu_5.1.1"
+  REQUIRED_LIBS_NAMES "superlu superlu_3.0 superlu_4.0 superlu_4.1 superlu_4.2 superlu_4.3 superlu_5.0 superlu_5.1.1 superlu_5.2.1"
   )
 
 include(CheckCSourceCompiles)

@@ -70,9 +70,9 @@ namespace PAMGEN_NEVADA {
       long long Check_Spans();
 
       virtual void calculateSize(
-          long long & total_el_count,
-          long long & total_node_count,
-          long long & total_edge_count
+          long long & /* total_el_count */,
+          long long & /* total_node_count */,
+          long long & /* total_edge_count */
           )
       {
       };
@@ -328,10 +328,10 @@ namespace PAMGEN_NEVADA {
       // private:
       virtual long long Calc_Coord_Vectors();
       virtual void Populate_Coords(
-          double * coords,
-          std::vector<long long> & global_node_vector,
-          std::map <long long, long long> & global_node_map,
-          long long num_nodes
+          double * /* coords */,
+          std::vector<long long> & /* global_node_vector */,
+          std::map <long long, long long> & /* global_node_map */,
+          long long /* num_nodes */
           )
       {};
 
@@ -398,6 +398,12 @@ namespace PAMGEN_NEVADA {
       //   static std::vector <Inline_Mesh_Desc *> InlineMeshDescVector;
       //   static int curr_inline_mesh;
       static std::stringstream echo_stream;
+
+    private:
+	std::vector <Partition *> sorted_partition_list;
+    public:
+	const std::vector<Partition *> & get_sorted_partition_list() const {return sorted_partition_list;}
+
   };
 
   Inline_Mesh_Desc* Parse_Inline_Mesh(std::string & file_name,

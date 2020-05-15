@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -38,6 +38,7 @@
 #include <Ioss_SideSet.h>
 #include <algorithm>
 #include <cstddef>
+#include <fmt/ostream.h>
 #include <string>
 #include <vector>
 
@@ -45,7 +46,7 @@
 #include "Ioss_PropertyManager.h"
 
 namespace {
-  const std::string id_str() { return std::string("id"); }
+  std::string id_str() { return std::string("id"); }
   void check_for_duplicate_names(const Ioss::SideSet *sset, const Ioss::SideBlock *side_block)
   {
     const std::string &name = side_block->name();
@@ -64,12 +65,12 @@ namespace {
       if (old_ge->property_exists(id_str())) {
         id2 = old_ge->get_property(id_str()).get_int();
       }
-      errmsg << "\nERROR: There are multiple side blocks with the same name "
-             << "defined in side set '" << sset->name() << "' in the database file '" << filename
-             << "'.\n"
-             << "\tBoth " << side_block->type_string() << " " << id1 << " and "
-             << old_ge->type_string() << " " << id2 << " are named '" << name
-             << "'.  All names must be unique.";
+      fmt::print(errmsg,
+                 "\nERROR: There are multiple side blocks with the same name "
+                 "defined in side set '{}' in the database file '{}'.\n"
+                 "\tBoth {} {} and {} {} are named '{}'.  All names must be unique.",
+                 sset->name(), filename, side_block->type_string(), id1, old_ge->type_string(), id2,
+                 name);
       IOSS_ERROR(errmsg);
     }
   }
@@ -89,6 +90,14 @@ Ioss::SideSet::SideSet(Ioss::DatabaseIO *io_database, const std::string &my_name
 {
   properties.add(Ioss::Property(this, "side_block_count", Ioss::Property::INTEGER));
   properties.add(Ioss::Property(this, "block_count", Ioss::Property::INTEGER));
+}
+
+Ioss::SideSet::SideSet(const Ioss::SideSet &other) : Ioss::GroupingEntity(other)
+{
+  for (const auto &block : other.sideBlocks) {
+    Ioss::SideBlock *sb = new Ioss::SideBlock(*block);
+    add(sb);
+  }
 }
 
 Ioss::SideSet::~SideSet()

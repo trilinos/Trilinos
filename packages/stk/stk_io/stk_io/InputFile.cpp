@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -33,6 +34,7 @@
 
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
+#include <stk_util/stk_config.h>
 #include <stk_io/InputFile.hpp>
 #include <math.h>                                  // for fmod
 #include <stddef.h>                                // for size_t
@@ -132,7 +134,7 @@ namespace stk {
       Ioss::DatabaseUsage db_usage = Ioss::READ_MODEL;
       if (m_db_purpose == stk::io::READ_RESTART)
         db_usage = Ioss::READ_RESTART;
-        
+
       stk::util::filename_substitution(mesh_filename);
       m_database = Teuchos::rcp(Ioss::IOFactory::create(mesh_type, mesh_filename,
 							db_usage, communicator,
@@ -254,7 +256,7 @@ namespace stk {
       m_region->field_describe(Ioss::Field::TRANSIENT, &names);
     }
 
-    FieldNameToPartVector InputFile::get_var_names(Ioss::EntityType type, stk::mesh::MetaData& meta)
+    FieldNameToPartVector InputFile::get_var_names(Ioss::EntityType type, const stk::mesh::MetaData& meta)
     {
         return stk::io::get_var_names(*m_region.get(), type, meta);
     }
@@ -362,7 +364,7 @@ namespace stk {
           // Now handle the non-subsetted fields...
 
           // Check universal_part() NODE_RANK first...
-          const stk::mesh::MetaData &meta = stk::mesh::MetaData::get(bulk);
+          const stk::mesh::MetaData &meta = bulk.mesh_meta_data();
           {
               if (f->entity_rank() == stk::topology::NODE_RANK) {
                   build_field_part_associations(mf, meta.universal_part(), stk::topology::NODE_RANK,
@@ -524,7 +526,7 @@ namespace stk {
     {
         Ioss::Region *region = m_region.get();
         size_t num_missing_fields = 0;
-        const stk::mesh::MetaData &meta = stk::mesh::MetaData::get(bulk);
+        const stk::mesh::MetaData &meta = bulk.mesh_meta_data();
 
         for (auto &mesh_field : m_fields)
         {
@@ -587,6 +589,11 @@ namespace stk {
                 if (nullptr != missingFields)
                 {
                     add_missing_fields(missingFields, missingFieldCollector);
+                }
+                else {
+                    for (auto missingField : missingFieldCollector) {
+                        std::cout << "Missing field: " << missingField.second->db_name() << std::endl;
+                    }
                 }
             }
         }
@@ -653,7 +660,7 @@ namespace stk {
         // Now handle the non-subsetted fields...
 
         // Check universal_part() NODE_RANK first...
-        const stk::mesh::MetaData &meta = stk::mesh::MetaData::get(bulk);
+        const stk::mesh::MetaData &meta = bulk.mesh_meta_data();
         {
             std::vector<stk::io::MeshField>::iterator I = m_fields.begin();
             while (I != m_fields.end()) {

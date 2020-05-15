@@ -119,11 +119,8 @@ class ConnCallback { public: virtual void buildConnectivity(const FieldPattern &
        |      |      |      |      |
        +------+------+------+------+
   */
-template <typename GO>
-class ConnManager : public virtual panzer::ConnManager<int,GO> {
+class ConnManager : public virtual panzer::ConnManager {
 public:
-   typedef int LocalOrdinal;
-   typedef GO GlobalOrdinal;
 
    ConnManager(int rank,int procCount);
 
@@ -141,7 +138,7 @@ public:
      *
      * \param[in] fp Field pattern to build connectivity for
      */
-   virtual Teuchos::RCP<panzer::ConnManagerBase<int> > noConnectivityClone() const
+   virtual Teuchos::RCP<panzer::ConnManager> noConnectivityClone() const
    { return Teuchos::rcp(new ConnManager(procRank_,2)); }
 
    /** Get ID connectivity for a particular element

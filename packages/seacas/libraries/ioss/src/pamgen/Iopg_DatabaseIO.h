@@ -30,8 +30,8 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef SIERRA_Iopg_DatabaseIO_h
-#define SIERRA_Iopg_DatabaseIO_h
+#ifndef IOSS_Iopg_DatabaseIO_h
+#define IOSS_Iopg_DatabaseIO_h
 
 #include "Ioss_State.h" // for State
 #include <Ioss_CodeTypes.h>
@@ -45,6 +45,8 @@
 #include <vector>            // for vector
 
 namespace Ioss {
+  class Assembly;
+  class Blob;
   class CommSet;
   class EdgeBlock;
   class EdgeSet;
@@ -87,6 +89,8 @@ namespace Iopg {
     DatabaseIO &operator=(const DatabaseIO &from) = delete;
     ~DatabaseIO();
 
+    const std::string get_format() const override { return "PamGen"; }
+
     // Check capabilities of input/output database...  Returns an
     // unsigned int with the supported Ioss::EntityTypes or'ed
     // together. If "return_value & Ioss::EntityType" is set, then the
@@ -101,8 +105,8 @@ namespace Iopg {
     std::string title() const { return databaseTitle; }
     int         maximum_symbol_length() const override { return 32; }
 
-    void compute_block_membership(Ioss::SideBlock *         efblock,
-                                  std::vector<std::string> &block_membership) const;
+    void compute_block_membership__(Ioss::SideBlock *         efblock,
+                                    std::vector<std::string> &block_membership) const override;
 
   private:
     void read_meta_data__() override;
@@ -172,6 +176,17 @@ namespace Iopg {
     {
       return 0;
     }
+    int64_t get_field_internal(const Ioss::Assembly * /*sb*/, const Ioss::Field & /*field*/,
+                               void * /*data*/, size_t /*data_size*/) const override
+    {
+      return 0;
+    }
+
+    int64_t get_field_internal(const Ioss::Blob * /*sb*/, const Ioss::Field & /*field*/,
+                               void * /*data*/, size_t /*data_size*/) const override
+    {
+      return 0;
+    }
 
     int64_t put_field_internal(const Ioss::Region *reg, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
@@ -217,6 +232,17 @@ namespace Iopg {
     {
       return 0;
     }
+    int64_t put_field_internal(const Ioss::Assembly * /*sb*/, const Ioss::Field & /*field*/,
+                               void * /*data*/, size_t /*data_size*/) const override
+    {
+      return 0;
+    }
+
+    int64_t put_field_internal(const Ioss::Blob * /*sb*/, const Ioss::Field & /*field*/,
+                               void * /*data*/, size_t /*data_size*/) const override
+    {
+      return 0;
+    }
 
     std::string databaseTitle;
 
@@ -236,4 +262,4 @@ namespace Iopg {
     int             commsetElemCount{0};
   };
 } // namespace Iopg
-#endif // SIERRA_Iopg_DatabaseIO_h
+#endif // IOSS_Iopg_DatabaseIO_h

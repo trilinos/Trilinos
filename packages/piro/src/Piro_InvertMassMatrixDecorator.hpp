@@ -51,18 +51,9 @@
 #include "Thyra_ModelEvaluatorDefaultBase.hpp"
 #include "Piro_config.hpp"
 
-#ifdef ALBANY_BUILD
-#include "Kokkos_DefaultNode.hpp"
-#endif
-
 namespace Piro {
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal = int, typename GlobalOrdinal = LocalOrdinal,
-          typename Node = KokkosClassic::DefaultNode::DefaultNodeType>
-#else
 template<typename Scalar>
-#endif
 class InvertMassMatrixDecorator
     : public Thyra::ModelEvaluatorDefaultBase<Scalar>
 {

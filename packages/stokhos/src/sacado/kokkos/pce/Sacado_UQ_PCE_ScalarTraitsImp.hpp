@@ -42,8 +42,6 @@
 #ifndef SACADO_UQ_PCE_SCALARTRAITSIMP_HPP
 #define SACADO_UQ_PCE_SCALARTRAITSIMP_HPP
 
-#ifdef HAVE_SACADO_TEUCHOS
-
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_SerializationTraits.hpp"
 #include "Teuchos_RCP.hpp"
@@ -456,7 +454,5 @@ namespace Sacado {
   } // namespace UQ
 
 } // namespace Sacado
-
-#endif // HAVE_SACADO_TEUCHOS
 
 #endif // SACADO_FAD_SCALARTRAITSIMP_HPP

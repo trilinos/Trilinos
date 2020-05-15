@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -167,7 +168,7 @@ struct create_face_impl
                       m_count_faces++;
 
                       PartVector add_parts;
-                      add_parts.push_back( & mesh.mesh_meta_data().get_cell_topology_root_part( get_cell_topology( faceTopology)));
+                      add_parts.push_back( & mesh.mesh_meta_data().get_topology_root_part(faceTopology) );
 
                       face = mesh.declare_solo_side(face_id, add_parts);
                       m_face_map[permuted_face_nodes] = face;
@@ -193,7 +194,7 @@ struct create_face_impl
               else { //
                   topology faceTopology = elemTopology.face_topology(side_ordinal);
                   stk::mesh::Entity elem = m_bucket[ielem];
-                  stk::mesh::Part & face_topology_part = mesh.mesh_meta_data().get_cell_topology_root_part( get_cell_topology( faceTopology));
+                  stk::mesh::Part & face_topology_part = mesh.mesh_meta_data().get_topology_root_part(faceTopology);
                   stk::mesh::Entity new_face = stk::mesh::impl::get_or_create_face_at_element_side(
                           mesh, elem, side_ordinal, m_available_ids[m_count_faces], stk::mesh::PartVector(1,&face_topology_part));
                   if (mesh.identifier(new_face) == m_available_ids[m_count_faces]) {

@@ -47,7 +47,7 @@
 PyTrilinos.Pliris is the python interface to the Trilinos package
 Pliris, an LU solver for dense matrices:
 
-    http://trilinos.sandia.gov/packages/pliris
+    https://trilinos.org/docs/dev/packages/pliris/doc/html/index.html
 
 The purpose of Pliris is to provide an object-oriented interface to an
 LU solver for dense matrices on parallel platforms. These matrices are
@@ -58,9 +58,15 @@ python version of the Pliris package supports the following class:
 "
 %enddef
 
-%module(package   = "PyTrilinos",
-	autodoc   = "1",
-	docstring = %pliris_docstring) Pliris
+%define %pliris_importcode
+"
+from . import _Pliris
+"
+%enddef
+
+%module(package      = "PyTrilinos",
+        moduleimport = %pliris_importcode,
+	docstring    = %pliris_docstring) Pliris
 
 %{
 // PyTrilinos configuration
@@ -81,9 +87,6 @@ python version of the Pliris package supports the following class:
 #endif
 %}
 
-// Auto-documentation feature
-%feature("autodoc", "1");
-
 // C++ STL support.  If the wrapped class uses standard template
 // library containers, the following %include wraps the containers
 // and makes certain conversions seamless, such as between std::string
@@ -93,7 +96,10 @@ python version of the Pliris package supports the following class:
 using std::string;
 
 // Include Pliris documentation
+// #if SWIG_VERSION < 0x040000
+// %feature("autodoc", "1");
 // %include "Pliris_dox.i"
+// #endif
 
 // External Trilinos modules
 #ifdef HAVE_PYTRILINOS_EPETRA

@@ -64,34 +64,12 @@ namespace Piro {
      );
   //@}
 
-  //! \name Package-specific Thyra analysis drivers
-  //! \brief The package-specific routines are called by the top-level driver.
-  //@{
-  //! \brief Performs analysis of a solved model using MOOCHO.
-  //! \details Requires that the MOOCHO package is available.
-  //! \ingroup Piro_Thyra_analysis_driver_grp
-  int PerformMoochoAnalysis(
-     Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
-     Teuchos::ParameterList& moochoParams,
-     Teuchos::RCP< Thyra::VectorBase<double> >& p
-     );
-
   //! \brief Performs analysis of a solved model using Dakota via %TriKota.
   //! \details Requires that the %TriKota package is available.
   //! \ingroup Piro_Thyra_analysis_driver_grp
   int PerformDakotaAnalysis(
      Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
      Teuchos::ParameterList& dakotaParams,
-     Teuchos::RCP< Thyra::VectorBase<double> >& p
-     );
-
-  //! \brief Performs analysis of a solved model using Optipack.
-  //! \details Requires that the OptiPack package is available.
-  //! \ingroup Piro_Thyra_analysis_driver_grp
-  int PerformOptiPackAnalysis(
-     Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
-     Teuchos::ParameterList& optipackParams,
-     Teuchos::ParameterList& globipackParams,
      Teuchos::RCP< Thyra::VectorBase<double> >& p
      );
 

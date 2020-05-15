@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
- // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- // the U.S. Government retains certain rights in this software.
- // 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
  // Redistribution and use in source and binary forms, with or without
  // modification, are permitted provided that the following conditions are
  // met:
@@ -14,10 +15,10 @@
  //       disclaimer in the documentation and/or other materials provided
  //       with the distribution.
  // 
- //     * Neither the name of Sandia Corporation nor the names of its
- //       contributors may be used to endorse or promote products derived
- //       from this software without specific prior written permission.
- // 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
  // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -43,6 +44,7 @@ namespace stk { namespace mesh { class MetaData; }}
 namespace stk { namespace mesh { class BulkData; }}
 namespace stk { namespace mesh { class FieldBase; }}
 namespace stk { namespace mesh { class Bucket; }}
+namespace stk { namespace io { class StkMeshIoBroker; }}
 
 namespace stk {
 namespace balance {
@@ -52,6 +54,7 @@ class MtoNRebalancer
 {
 public:
     MtoNRebalancer(stk::mesh::BulkData &bulkData, stk::mesh::Field<double> &targetField, const stk::balance::BalanceSettings &graphSettings, int num_target_procs);
+    MtoNRebalancer(stk::io::StkMeshIoBroker& ioBroker, stk::mesh::Field<double> &targetField, const stk::balance::BalanceSettings &graphSettings, int num_target_procs);
     virtual ~MtoNRebalancer();
 
     void generate_n_proc_decomp();
@@ -59,6 +62,11 @@ public:
     stk::io::EntitySharingInfo get_node_sharing_info(unsigned subdomain);
     void create_subdomain_and_write(const std::string &filename, unsigned subdomain, int global_num_nodes, int global_num_elems, const stk::io::EntitySharingInfo &nodeSharingInfo, int numSteps = -1, double timeStep = 0.0);
     bool does_this_proc_own_subdomain(unsigned subdomainOwner);
+
+    stk::mesh::MetaData& get_meta();
+    stk::mesh::BulkData& get_bulk();
+
+    int get_num_target_subdomains();
 
 private:
     void move_entities_into_mapped_subdomain_parts(const std::vector<unsigned>& mappings);
@@ -68,10 +76,7 @@ private:
     void add_owned_entities_from_bucket_using_target_decomp_field(const stk::mesh::Bucket& bucket, size_t subdomain_num, stk::mesh::EntityVector& entities);
     void add_entities_from_bucket_using_target_decomp_field(const stk::mesh::Bucket& bucket, size_t subdomain_num, stk::mesh::EntityVector& entities);
     void store_off_target_proc_on_elements_before_moving_subdomains();
-    stk::mesh::MetaData& get_meta();
-    stk::mesh::BulkData& get_bulk();
 
-private:
     MtoNRebalancer( const MtoNRebalancer& other );
     MtoNRebalancer& operator=( const MtoNRebalancer& other );
 

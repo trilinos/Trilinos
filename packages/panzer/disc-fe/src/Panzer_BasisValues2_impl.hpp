@@ -56,10 +56,10 @@ namespace panzer {
 
 template <typename Scalar>
 void panzer::BasisValues2<Scalar>::
-evaluateValues(const PHX::MDField<Scalar,IP,Dim,void,void,void,void,void,void> & cub_points,
-               const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac,
-               const PHX::MDField<Scalar,Cell,IP,void,void,void,void,void,void> & jac_det,
-               const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv,
+evaluateValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,
+               const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac,
+               const PHX::MDField<Scalar,Cell,IP> & jac_det,
+               const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac_inv,
                const int in_num_cells)
 {
   PHX::MDField<Scalar,Cell,IP> weighted_measure;
@@ -70,10 +70,10 @@ evaluateValues(const PHX::MDField<Scalar,IP,Dim,void,void,void,void,void,void> &
 
 template <typename Scalar>
 void panzer::BasisValues2<Scalar>::
-evaluateValues(const PHX::MDField<Scalar,IP,Dim,void,void,void,void,void,void> & cub_points,
-               const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac,
-               const PHX::MDField<Scalar,Cell,IP,void,void,void,void,void,void> & jac_det,
-               const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv,
+evaluateValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,
+               const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac,
+               const PHX::MDField<Scalar,Cell,IP> & jac_det,
+               const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac_inv,
                const PHX::MDField<Scalar,Cell,IP> & weighted_measure,
                const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates,
                bool use_vertex_coordinates,
@@ -307,10 +307,10 @@ evaluateBasisCoordinates(const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coord
 
 template <typename Scalar>
 void panzer::BasisValues2<Scalar>::
-evaluateValues(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void> & cub_points,
-               const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac,
-               const PHX::MDField<Scalar,Cell,IP,void,void,void,void,void,void> & jac_det,
-               const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv,
+evaluateValues(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
+               const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac,
+               const PHX::MDField<Scalar,Cell,IP> & jac_det,
+               const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac_inv,
                const PHX::MDField<Scalar,Cell,IP> & weighted_measure,
                const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates,
                bool use_vertex_coordinates,
@@ -342,8 +342,8 @@ evaluateValues(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void> &
 
 template <typename Scalar>
 void panzer::BasisValues2<Scalar>::
-evaluateValues_Const(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void> & cub_points,
-                     const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv,
+evaluateValues_Const(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
+                     const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac_inv,
                      const PHX::MDField<Scalar,Cell,IP> & weighted_measure,
                      const int in_num_cells)
 {
@@ -427,9 +427,9 @@ evaluateValues_Const(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,v
 
 template <typename Scalar>
 void panzer::BasisValues2<Scalar>::
-evaluateValues_HVol(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void> & cub_points,
-                    const PHX::MDField<Scalar,Cell,IP,void,void,void,void,void,void> & jac_det,
-                    const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & /* jac_inv */,
+evaluateValues_HVol(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
+                    const PHX::MDField<Scalar,Cell,IP> & jac_det,
+                    const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & /* jac_inv */,
                     const PHX::MDField<Scalar,Cell,IP> & weighted_measure,
                     const int in_num_cells)
 {
@@ -492,8 +492,8 @@ evaluateValues_HVol(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,vo
 
 template <typename Scalar>
 void panzer::BasisValues2<Scalar>::
-evaluateValues_HGrad(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void> & cub_points,
-                     const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv,
+evaluateValues_HGrad(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
+                     const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac_inv,
                      const PHX::MDField<Scalar,Cell,IP> & weighted_measure,
                      const int in_num_cells)
 {
@@ -576,10 +576,10 @@ evaluateValues_HGrad(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,v
 
 template <typename Scalar>
 void panzer::BasisValues2<Scalar>::
-evaluateValues_HCurl(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void> & cub_points,
-               const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac,
-               const PHX::MDField<Scalar,Cell,IP,void,void,void,void,void,void> & jac_det,
-               const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv,
+evaluateValues_HCurl(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
+               const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac,
+               const PHX::MDField<Scalar,Cell,IP> & jac_det,
+               const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac_inv,
                      const PHX::MDField<Scalar,Cell,IP> & weighted_measure,
                      const int in_num_cells)
 {
@@ -695,9 +695,9 @@ evaluateValues_HCurl(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,v
 
 template <typename Scalar>
 void panzer::BasisValues2<Scalar>::
-evaluateValues_HDiv(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void> & cub_points,
-                    const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac,
-                    const PHX::MDField<Scalar,Cell,IP,void,void,void,void,void,void> & jac_det,
+evaluateValues_HDiv(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
+                    const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac,
+                    const PHX::MDField<Scalar,Cell,IP> & jac_det,
                     const PHX::MDField<Scalar,Cell,IP> & weighted_measure,
                     const int in_num_cells)
 {
@@ -779,54 +779,29 @@ evaluateValues_HDiv(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,vo
 
 }
 
+template <typename Scalar>
+void panzer::BasisValues2<Scalar>::
+evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
+                 const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac,
+                 const PHX::MDField<Scalar,Cell,IP> & jac_det,
+                 const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac_inv)
+{
 
+  PHX::MDField<Scalar,Cell,NODE,Dim> vertex_coordinates;
+  const int in_num_cells = jac.extent(0);
+  evaluateValuesCV(cub_points,jac,jac_det,jac_inv,vertex_coordinates,false,in_num_cells);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+}
 
 template <typename Scalar>
 void panzer::BasisValues2<Scalar>::
-evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void> & cell_cub_points,
-                 const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac,
-                 const PHX::MDField<Scalar,Cell,IP,void,void,void,void,void,void> & jac_det,
-                 const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv)
+evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim> & cell_cub_points,
+                 const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac,
+                 const PHX::MDField<Scalar,Cell,IP> & jac_det,
+                 const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac_inv,
+                 const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates,
+                 bool use_vertex_coordinates,
+                 const int in_num_cells)
 {
   MDFieldArrayFactory af("",ddims_,true);
 
@@ -1061,6 +1036,11 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void>
 
   } // cell loop
 
+  if(use_vertex_coordinates) {
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(elmtspace == PureBasis::CONST,"panzer::BasisValues2::evaluateValues : Const basis cannot have basis coordinates.");
+    evaluateBasisCoordinates(vertex_coordinates);
+  }
+
 }
 
 template <typename Scalar>
@@ -1203,7 +1183,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
   for (size_t i=0; i < drv_orts.size(); ++i)
     host_drv_orts(i) = orientations[i];
   Kokkos::deep_copy(drv_orts,host_drv_orts);
-  PHX::Device::fence();
+  typename PHX::Device().fence();
 
   ///
   /// HGRAD elements
@@ -1221,7 +1201,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
         ots::modifyBasisByOrientation(drv_basis_scalar,
                                       drv_basis_scalar_tmp,
                                       drv_orts,
-                                      intrepid_basis);
+                                      intrepid_basis.getRawPtr());
       }
       if(build_weighted) {
         auto drv_basis_scalar = Kokkos::subview(weighted_basis_scalar.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL());
@@ -1234,7 +1214,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
         ots::modifyBasisByOrientation(drv_basis_scalar,
                                       drv_basis_scalar_tmp,
                                       drv_orts,
-                                      intrepid_basis);
+                                      intrepid_basis.getRawPtr());
       }
 
     }
@@ -1252,7 +1232,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
         ots::modifyBasisByOrientation(drv_grad_basis,
                                       drv_grad_basis_tmp,
                                       drv_orts,
-                                      intrepid_basis);
+                                      intrepid_basis.getRawPtr());
       }
       if(build_weighted) {
         auto drv_grad_basis = Kokkos::subview(weighted_grad_basis.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
@@ -1266,7 +1246,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
         ots::modifyBasisByOrientation(drv_grad_basis,
                                       drv_grad_basis_tmp,
                                       drv_orts,
-                                      intrepid_basis);
+                                      intrepid_basis.getRawPtr());
       }
     }
   }
@@ -1288,7 +1268,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
         ots::modifyBasisByOrientation(drv_basis_vector,
                                       drv_basis_vector_tmp,
                                       drv_orts,
-                                      intrepid_basis);
+                                      intrepid_basis.getRawPtr());
       }
       if(build_weighted) {
         auto drv_basis_vector = Kokkos::subview(weighted_basis_vector.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
@@ -1302,7 +1282,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
         ots::modifyBasisByOrientation(drv_basis_vector,
                                       drv_basis_vector_tmp,
                                       drv_orts,
-                                      intrepid_basis);
+                                      intrepid_basis.getRawPtr());
       }
     }
 
@@ -1318,7 +1298,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
         ots::modifyBasisByOrientation(drv_curl_basis_scalar,
                                       drv_curl_basis_scalar_tmp,
                                       drv_orts,
-                                      intrepid_basis);
+                                      intrepid_basis.getRawPtr());
       }
 
       if(build_weighted) {
@@ -1332,7 +1312,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
         ots::modifyBasisByOrientation(drv_curl_basis_scalar,
                                       drv_curl_basis_scalar_tmp,
                                       drv_orts,
-                                      intrepid_basis);
+                                      intrepid_basis.getRawPtr());
       }
     }
   }
@@ -1354,7 +1334,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
         ots::modifyBasisByOrientation(drv_basis_vector,
                                       drv_basis_vector_tmp,
                                       drv_orts,
-                                      intrepid_basis);
+                                      intrepid_basis.getRawPtr());
       }
       if(build_weighted) {
         auto drv_basis_vector = Kokkos::subview(weighted_basis_vector.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
@@ -1368,7 +1348,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
         ots::modifyBasisByOrientation(drv_basis_vector,
                                       drv_basis_vector_tmp,
                                       drv_orts,
-                                      intrepid_basis);
+                                      intrepid_basis.getRawPtr());
       }
     }
 
@@ -1385,7 +1365,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
         ots::modifyBasisByOrientation(drv_curl_basis_vector,
                                       drv_curl_basis_vector_tmp,
                                       drv_orts,
-                                      intrepid_basis);
+                                      intrepid_basis.getRawPtr());
       }
       if(build_weighted) {
         auto drv_curl_basis_vector = Kokkos::subview(weighted_curl_basis_vector.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
@@ -1399,7 +1379,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
         ots::modifyBasisByOrientation(drv_curl_basis_vector,
                                       drv_curl_basis_vector_tmp,
                                       drv_orts,
-                                      intrepid_basis);
+                                      intrepid_basis.getRawPtr());
       }
     }
   }
@@ -1420,7 +1400,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
         ots::modifyBasisByOrientation(drv_basis_vector,
                                       drv_basis_vector_tmp,
                                       drv_orts,
-                                      intrepid_basis);
+                                      intrepid_basis.getRawPtr());
       }
       if(build_weighted) {
         auto drv_basis_vector = Kokkos::subview(weighted_basis_vector.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
@@ -1434,7 +1414,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
         ots::modifyBasisByOrientation(drv_basis_vector,
                                       drv_basis_vector_tmp,
                                       drv_orts,
-                                      intrepid_basis);
+                                      intrepid_basis.getRawPtr());
       }
     }
     if (compute_derivatives) {
@@ -1449,7 +1429,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
         ots::modifyBasisByOrientation(drv_div_basis,
                                       drv_div_basis_tmp,
                                       drv_orts,
-                                      intrepid_basis);
+                                      intrepid_basis.getRawPtr());
       }
       if(build_weighted) {
         auto drv_div_basis = Kokkos::subview(weighted_div_basis.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL());
@@ -1462,7 +1442,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
         ots::modifyBasisByOrientation(drv_div_basis,
                                       drv_div_basis_tmp,
                                       drv_orts,
-                                      intrepid_basis);
+                                      intrepid_basis.getRawPtr());
       }
     }
   }

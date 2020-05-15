@@ -49,6 +49,7 @@
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_Core.hpp>
+#include <Tpetra_Details_residual.hpp>
 #include <MatrixMarket_Tpetra.hpp>
 
 #include <Teuchos_Array.hpp>
@@ -104,7 +105,6 @@ namespace {
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalType, GlobalOrdinalType, ScalarType, NodeType )
 {
   using Tpetra::createContigMapWithNode;
-  using Tpetra::createNonContigMapWithNode;
   using Tpetra::createMultiVector;
   using Tpetra::global_size_t;
   using Tpetra::Map;
@@ -427,8 +427,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
   }
 
   // Compute initial residual R = B - A * X and ||R||_2.
-  matrix->apply (*X, *R); // R = A * X
-  R->update (STS::one(), *B, -STS::one()); // R = 1*B - 1*R
+  Tpetra::Details::residual(*matrix,*X,*B,*R);
   residNorms[0] = norm2 (*R);
 
   if (debug) {
@@ -500,8 +499,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
 
     // Compute the new residual R = B - A * X.  This is not part of
     // Gauss-Seidel itself, but we use it to measure convergence.
-    matrix->apply (*X, *R); // R = A * X
-    R->update (STS::one(), *B, -STS::one()); // R = 1*B - 1*R
+    Tpetra::Details::residual(*matrix,*X,*B,*R);
     residNorms[iter+1] = norm2 (*R);
 
     X_norm = norm2 (*X);
@@ -579,7 +577,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, reorderedGaussSeidelSerial, LocalOrdinalType, GlobalOrdinalType, ScalarType, NodeType )
 {
   using Tpetra::createContigMapWithNode;
-  using Tpetra::createNonContigMapWithNode;
   using Tpetra::createMultiVector;
   using Tpetra::global_size_t;
   using Tpetra::Map;
@@ -834,8 +831,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, reorderedGaussSeidelSerial, LocalO
 
 
   // Compute initial residual R = B - A * X and ||R||_2.
-  matrix->apply (*X, *R); // R = A * X
-  R->update (STS::one(), *B, -STS::one()); // R = 1*B - 1*R
+  Tpetra::Details::residual(*matrix,*X,*B,*R);
   residNorms[0] = norm2 (*R);
 
   // Compute norms of X, D, and B.
@@ -894,8 +890,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, reorderedGaussSeidelSerial, LocalO
 
     // Compute the new residual R = B - A * X.  This is not part of
     // Gauss-Seidel itself, but we use it to measure convergence.
-    matrix->apply (*X, *R); // R = A * X
-    R->update (STS::one(), *B, -STS::one()); // R = 1*B - 1*R
+    Tpetra::Details::residual(*matrix,*X,*B,*R);
     residNorms[iter+1] = norm2 (*R);
 
     X_norm = norm2 (*X);

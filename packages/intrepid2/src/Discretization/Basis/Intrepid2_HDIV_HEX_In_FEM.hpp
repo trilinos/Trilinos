@@ -158,9 +158,9 @@ namespace Intrepid2 {
   }
 
   /** \class  Intrepid2::Basis_HDIV_HEX_In_FEM
-      \brief  Implementation of the default H(div)-compatible FEM basis on Hexahedral cell
+      \brief  Implementation of the default H(div)-compatible FEM basis on Hexahedron cell
 
-              Implements Raviart-Thomas basis of degree n on the reference Hexahedral cell. The basis has
+              Implements Raviart-Thomas basis of degree n on the reference Hexahedron cell. The basis has
               cardinality 3(n+1)n^2 and spans a INCOMPLETE polynomial space.
 
   */
@@ -170,25 +170,25 @@ namespace Intrepid2 {
   class Basis_HDIV_HEX_In_FEM
     : public Basis<ExecSpaceType,outputValueType,pointValueType> {
   public:
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_1d_host ordinal_type_array_1d_host;
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_2d_host ordinal_type_array_2d_host;
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_3d_host ordinal_type_array_3d_host;
+    using OrdinalTypeArray1DHost = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray1DHost;
+    using OrdinalTypeArray2DHost = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray2DHost;
+    using OrdinalTypeArray3DHost = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray3DHost;
 
     /** \brief  Constructor.
      */
     Basis_HDIV_HEX_In_FEM(const ordinal_type order,
                           const EPointType   pointType = POINTTYPE_EQUISPACED);
 
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::outputViewType outputViewType;
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::pointViewType  pointViewType;
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::scalarViewType scalarViewType;
+    using OutputViewType = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OutputViewType;
+    using PointViewType  = typename Basis<ExecSpaceType,outputValueType,pointValueType>::PointViewType;
+    using ScalarViewType = typename Basis<ExecSpaceType,outputValueType,pointValueType>::ScalarViewType;
 
     using Basis<ExecSpaceType,outputValueType,pointValueType>::getValues;
 
     virtual
     void
-    getValues(       outputViewType outputValues,
-               const pointViewType  inputPoints,
+    getValues(       OutputViewType outputValues,
+               const PointViewType  inputPoints,
                const EOperator operatorType = OPERATOR_VALUE ) const {
 #ifdef HAVE_INTREPID2_DEBUG
       Intrepid2::getValues_HDIV_Args(outputValues,
@@ -208,7 +208,7 @@ namespace Intrepid2 {
 
     virtual
     void
-    getDofCoords( scalarViewType dofCoords ) const {
+    getDofCoords( ScalarViewType dofCoords ) const {
 #ifdef HAVE_INTREPID2_DEBUG
       // Verify rank of output array.
       INTREPID2_TEST_FOR_EXCEPTION( dofCoords.rank() != 2, std::invalid_argument,
@@ -226,7 +226,7 @@ namespace Intrepid2 {
       
   virtual
   void
-  getDofCoeffs( scalarViewType dofCoeffs ) const {
+  getDofCoeffs( ScalarViewType dofCoeffs ) const {
 #ifdef HAVE_INTREPID2_DEBUG
     // Verify rank of output array.
     INTREPID2_TEST_FOR_EXCEPTION( dofCoeffs.rank() != 2, std::invalid_argument,
@@ -256,7 +256,7 @@ namespace Intrepid2 {
   private:
 
     /** \brief inverse of Generalized Vandermonde matrix (isotropic order) */
-    Kokkos::DynRankView<typename scalarViewType::value_type,ExecSpaceType> vinvLine_, vinvBubble_;
+    Kokkos::DynRankView<typename ScalarViewType::value_type,ExecSpaceType> vinvLine_, vinvBubble_;
   };
 
 }// namespace Intrepid2

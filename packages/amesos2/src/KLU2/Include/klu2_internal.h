@@ -52,15 +52,15 @@
 /* ========================================================================== */
 /* make sure debugging and printing is turned off */
 
-#ifndef NDEBUG
-#define NDEBUG
+#ifndef NDEBUGKLU2
+#define NDEBUGKLU2
 #endif
 #ifndef NPRINT
 #define NPRINT
 #endif
 
 /* To enable debugging and assertions, uncomment this line:
- #undef NDEBUG
+ #undef NDEBUGKLU2
  */
 
 /* To enable diagnostic printing, uncomment this line:
@@ -75,7 +75,7 @@
 #include <math.h>
 
 #undef ASSERT
-#ifndef NDEBUG
+#ifndef NDEBUGKLU2
 #define ASSERT(a) assert(a)
 #else
 #define ASSERT(a)

@@ -71,7 +71,7 @@ namespace Ioss {
 namespace Iohb {
   class Layout;
 
-  enum Format { DEFAULT = 0, SPYHIS = 1 };
+  enum Format { DEFAULT = 0, SPYHIS = 1, TEXT, TS_TEXT, CSV, TS_CSV };
 
   class IOFactory : public Ioss::IOFactory
   {
@@ -94,6 +94,8 @@ namespace Iohb {
     DatabaseIO &operator=(const DatabaseIO &from) = delete;
 
     ~DatabaseIO() override;
+
+    const std::string get_format() const override {return "HeartBeat";}
 
     // Check capabilities of input/output database...  Returns an
     // unsigned int with the supported Ioss::EntityTypes or'ed
@@ -133,10 +135,7 @@ namespace Iohb {
     int64_t get_field_internal(const Ioss::ElementBlock *eb, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
     int64_t get_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field,
-                               void *data, size_t data_size) const override
-    {
-      return -1;
-    }
+                               void *data, size_t data_size) const override;
     int64_t get_field_internal(const Ioss::SideBlock *fb, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
     int64_t get_field_internal(const Ioss::NodeSet *ns, const Ioss::Field &field, void *data,
@@ -151,6 +150,17 @@ namespace Iohb {
                                size_t data_size) const override;
     int64_t get_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
+    int64_t get_field_internal(const Ioss::Assembly* /*sb*/, const Ioss::Field & /*field*/,
+                               void * /*data*/, size_t /*data_size*/) const override
+    {
+      return 0;
+    }
+
+    int64_t get_field_internal(const Ioss::Blob * /*sb*/, const Ioss::Field & /*field*/,
+                               void * /*data*/, size_t /*data_size*/) const override
+    {
+      return 0;
+    }
 
     int64_t put_field_internal(const Ioss::Region *region, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
@@ -177,9 +187,17 @@ namespace Iohb {
     int64_t put_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
     int64_t put_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field,
-                               void *data, size_t data_size) const override
+                               void *data, size_t data_size) const override;
+    int64_t put_field_internal(const Ioss::Assembly* /*sb*/, const Ioss::Field & /*field*/,
+                               void * /*data*/, size_t /*data_size*/) const override
     {
-      return -1;
+      return 0;
+    }
+
+    int64_t put_field_internal(const Ioss::Blob * /*sb*/, const Ioss::Field & /*field*/,
+                               void * /*data*/, size_t /*data_size*/) const override
+    {
+      return 0;
     }
 
     time_t timeLastFlush_{0};
@@ -189,12 +207,13 @@ namespace Iohb {
     Layout *      layout_{nullptr};
     Layout *      legend_{nullptr};
 
-    std::string tsFormat{"[%H:%M:%S]"};
+    std::string defaultTsFormat{"[%H:%M:%S]"};
+    std::string tsFormat{};
     std::string separator_{", "};
     int         precision_{5};
     int         fieldWidth_{0};
-    bool        showLabels{false};
-    bool        showLegend{true};
+    bool        showLabels{true};
+    bool        showLegend{false};
     bool        appendOutput{false};
     bool        addTimeField{false};
 

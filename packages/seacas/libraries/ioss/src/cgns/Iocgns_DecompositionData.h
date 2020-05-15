@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2017 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -35,14 +35,23 @@
 #define IOCGNS_DECOMPOSITONDATA_H
 
 #include <string>
-#include <unordered_map>
 #include <vector>
+
+#define USE_ROBIN
+#if defined USE_STD
+#include <unordered_map>
+#elif defined USE_HOPSCOTCH
+#include <hash/bhopscotch_map.h>
+#elif defined USE_ROBIN
+#include <hash/robin_map.h>
+#endif
 
 #include <cstddef>
 #include <cstdint>
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_Decomposition.h>
+#include <Ioss_FaceGenerator.h>
 #include <Ioss_Field.h>
 #include <Ioss_MeshType.h>
 #include <Ioss_PropertyManager.h>
@@ -80,13 +89,13 @@ namespace Iocgns {
   class DecompositionDataBase
   {
   public:
-    DecompositionDataBase(MPI_Comm comm) {}
+    DecompositionDataBase() {}
 
     virtual ~DecompositionDataBase();
-    virtual void   decompose_model(int serFilePtr, int filePtr, Ioss::MeshType mesh_type) = 0;
-    virtual size_t ioss_node_count() const                                                = 0;
-    virtual size_t ioss_elem_count() const                                                = 0;
-    virtual int    int_size() const                                                       = 0;
+    virtual void   decompose_model(int filePtr, Ioss::MeshType mesh_type) = 0;
+    virtual size_t ioss_node_count() const                                = 0;
+    virtual size_t ioss_elem_count() const                                = 0;
+    virtual int    int_size() const                                       = 0;
 
     virtual int    spatial_dimension() const = 0;
     virtual size_t global_node_count() const = 0;
@@ -104,7 +113,7 @@ namespace Iocgns {
     virtual void get_node_coordinates(int filePtr, double *ioss_data,
                                       const Ioss::Field &field) const = 0;
 
-    void get_block_connectivity(int filePtr, void *data, int blk_seq) const;
+    void get_block_connectivity(int filePtr, void *data, int blk_seq, bool raw_ids = false) const;
 
     void get_element_field(int filePtr, int solution_index, int blk_seq, int field_index,
                            double *data) const;
@@ -130,7 +139,15 @@ namespace Iocgns {
 
     // Maps nodes shared between zones.
     // TODO: Currently each processor has same map; need to figure out how to reduce size
-    std::unordered_map<cgsize_t, cgsize_t> m_zoneSharedMap;
+#if defined USE_STD
+    using ZoneSharedMap = std::unordered_map<cgsize_t, cgsize_t>;
+#elif defined USE_HOPSCOTCH
+    //    using ZoneSharedMap = tsl::hopscotch_map<cgsize_t, cgsize_t>;
+    using ZoneSharedMap = tsl::bhopscotch_map<cgsize_t, cgsize_t>;
+#elif defined USE_ROBIN
+    using ZoneSharedMap = tsl::robin_map<cgsize_t, cgsize_t>;
+#endif
+    ZoneSharedMap m_zoneSharedMap;
   };
 
   template <typename INT> class DecompositionData : public DecompositionDataBase
@@ -141,7 +158,7 @@ namespace Iocgns {
 
     int int_size() const { return sizeof(INT); }
 
-    void decompose_model(int serFilePtr, int filePtr, Ioss::MeshType mesh_type);
+    void decompose_model(int filePtr, Ioss::MeshType mesh_type);
 
     int spatial_dimension() const { return m_decomposition.m_spatialDimension; }
 
@@ -164,7 +181,8 @@ namespace Iocgns {
       m_decomposition.communicate_element_data(file_data, ioss_data, comp_count);
     }
 
-    void communicate_set_data(INT *file_data, INT *ioss_data, const Ioss::SetDecompositionData &set,
+    template <typename T>
+    void communicate_set_data(T *file_data, T *ioss_data, const Ioss::SetDecompositionData &set,
                               size_t comp_count) const
     {
       m_decomposition.communicate_set_data(file_data, ioss_data, set, comp_count);
@@ -183,7 +201,7 @@ namespace Iocgns {
       m_decomposition.communicate_block_data(file_data, ioss_data, block, comp_count);
     }
 
-    void get_block_connectivity(int filePtr, INT *data, int blk_seq) const;
+    void get_block_connectivity(int filePtr, INT *data, int blk_seq, bool raw_ids) const;
 
     void get_element_field(int filePtr, int solution_index, int blk_seq, int field_index,
                            double *data) const;
@@ -196,7 +214,7 @@ namespace Iocgns {
                                   INT *data) const;
 
   private:
-    void decompose_structured(int serFilePtr, int filePtr);
+    void decompose_structured(int filePtr);
     void decompose_unstructured(int filePtr);
 
     void get_sideset_data(int filePtr);
@@ -250,6 +268,8 @@ namespace Iocgns {
 
     double      m_loadBalanceThreshold{1.4};
     std::string m_lineDecomposition{};
+
+    mutable std::map<int, Ioss::FaceUnorderedSet> m_boundaryFaces;
 
   public:
     Ioss::Decomposition<INT> m_decomposition;

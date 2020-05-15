@@ -72,7 +72,7 @@ ML_Epetra::GradDivPreconditioner::~GradDivPreconditioner()
 
 // ================================================ ====== ==== ==== == =
 // Print the individual operators in the multigrid hierarchy.
-void ML_Epetra::GradDivPreconditioner::Print(int whichHierarchy){
+void ML_Epetra::GradDivPreconditioner::Print(int /* whichHierarchy */){
   //HAQ
   //  if(IsComputePreconditionerOK_ && FacePC && whichHierarchy==11) FacePC->Print(-1);
   //  if(IsComputePreconditionerOK_ && EdgePC && whichHierarchy==22) EdgePC->Print(-1);
@@ -81,7 +81,7 @@ void ML_Epetra::GradDivPreconditioner::Print(int whichHierarchy){
 
 // ================================================ ====== ==== ==== == =
 // Computes the preconditioner
-int ML_Epetra::GradDivPreconditioner::ComputePreconditioner(const bool CheckFiltering)
+int ML_Epetra::GradDivPreconditioner::ComputePreconditioner(const bool /* CheckFiltering */)
 {
 #ifdef ML_TIMING
   double t_time_start, t_time_curr, t_diff[5];

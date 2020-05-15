@@ -17,6 +17,7 @@
 #include <stk_mesh/base/SkinMesh.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_mesh/base/CreateFaces.hpp>
+#include <stk_mesh/base/SkinMeshUtil.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraphImpl.hpp>
 
@@ -38,11 +39,10 @@
 #include "stk_unit_test_utils/unittestMeshUtils.hpp"
 #include <stk_unit_test_utils/MeshFixture.hpp>
 
-#include <stk_unit_tests/stk_mesh/SetupKeyholeMesh.hpp>
-
-#include <stk_unit_tests/stk_mesh_fixtures/QuadFixture.hpp>  // for QuadFixture
-#include <stk_unit_tests/stk_mesh_fixtures/heterogeneous_mesh.hpp>
-#include <stk_unit_tests/stk_mesh_fixtures/degenerate_mesh.hpp>
+#include "SetupKeyholeMesh.hpp"
+#include <stk_unit_test_utils/stk_mesh_fixtures/QuadFixture.hpp>  // for QuadFixture
+#include <stk_unit_test_utils/stk_mesh_fixtures/degenerate_mesh.hpp>
+#include <stk_unit_test_utils/stk_mesh_fixtures/heterogeneous_mesh.hpp>
 
 #include "BulkDataElementGraphTester.hpp"
 #include "ElementGraphTester.hpp"
@@ -1140,8 +1140,6 @@ TEST(ElementGraph, create_faces_using_element_graph_parallel)
         unsigned num_faces = entity_counts[side_rank];
         EXPECT_EQ(21u, num_faces);
 
-        stk::io::write_mesh("out.exo", bulkData);
-
         if (stk::parallel_machine_rank(comm) == 0)
         {
             for(size_t i=0;i<wall_times.size();++i)
@@ -1298,8 +1296,6 @@ TEST(ElementGraph, compare_performance_create_faces)
 
             double elapsed_time = stk::wall_time() - wall_time_start;
 
- //           stk::io::write_mesh("out.exo", bulkData, bulkData.parallel());
-
             std::vector<size_t> counts;
             stk::mesh::comm_mesh_counts(bulkData, counts);
 
@@ -1410,7 +1406,6 @@ TEST(ElementGraph, test_element_death)
 
             stk::mesh::Part& active = meta.declare_part("active", stk::topology::ELEMENT_RANK);
             stk::io::fill_mesh(filename, bulkData);
-            stk::io::write_mesh("orig.exo", bulkData);
 
             double start_graph = stk::wall_time();
 
@@ -1470,9 +1465,6 @@ TEST(ElementGraph, test_element_death)
             }
 
             std::cerr << os.str();
-
-            stk::mesh::Selector activeSelector(active);
-            stk::io::write_mesh_subset("out.exo", bulkData, activeSelector);
         }
     }
 }
@@ -1733,6 +1725,7 @@ TEST(ElementDeath, test_element_death_with_restart)
             elementDeathTest.kill_element(2);
             elementDeathTest.verify_mesh_after_killing_element_2();
         }
+        stk::unit_test_util::delete_mesh("elemDeathRestartFile.exo");
     }
 }
 
@@ -4668,6 +4661,58 @@ int get_side_from_element1_to_element2(const impl::ElementGraph &elem_graph,
     return side;
 }
 //EndDocExample1
+
+void add_elem3_on_proc_1(stk::mesh::BulkData& bulk)
+{
+  stk::mesh::Part& block1 = *bulk.mesh_meta_data().get_part("block_1");
+  stk::mesh::PartVector parts = {&block1};
+
+  bulk.modification_begin();
+ 
+  if (bulk.parallel_rank() == 1)
+  {
+    stk::mesh::EntityId elemId = 3;
+
+    stk::mesh::EntityIdVector nodeIds = {6, 13, 14, 8, 10, 15, 16, 12};
+    stk::mesh::declare_element(bulk, parts, elemId, nodeIds);
+  }
+
+  bulk.modification_end();
+}
+
+TEST(ElemGraph, get_all_sides_sideset_including_ghosts)
+{
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
+    if(stk::parallel_machine_size(comm)==2)
+    {
+      {
+        stk::mesh::MetaData meta(3);
+        stk::mesh::BulkData bulk(meta, comm, stk::mesh::BulkData::AUTO_AURA);
+        stk::io::fill_mesh("generated:1x1x2", bulk);
+        add_elem3_on_proc_1(bulk);
+
+        bool includeAuraElementSides = true;
+        std::vector<stk::mesh::SideSetEntry> sides = stk::mesh::SkinMeshUtil::get_all_sides_sideset(bulk, meta.universal_part(), includeAuraElementSides);
+        EXPECT_EQ(16u, sides.size());
+      }
+      {
+        stk::mesh::MetaData meta(3);
+        stk::mesh::BulkData bulk(meta, comm, stk::mesh::BulkData::AUTO_AURA);
+        stk::io::fill_mesh("generated:1x2x2", bulk);
+        bool includeAuraElementSides = true;
+        std::vector<stk::mesh::SideSetEntry> sides = stk::mesh::SkinMeshUtil::get_all_sides_sideset(bulk, meta.universal_part(), includeAuraElementSides);
+        EXPECT_EQ(20u, sides.size());
+      }
+      {
+        stk::mesh::MetaData meta(3);
+        stk::mesh::BulkData bulk(meta, comm, stk::mesh::BulkData::AUTO_AURA);
+        stk::io::fill_mesh("generated:2x2x2", bulk);
+        bool includeAuraElementSides = true;
+        std::vector<stk::mesh::SideSetEntry> sides = stk::mesh::SkinMeshUtil::get_all_sides_sideset(bulk, meta.universal_part(), includeAuraElementSides);
+        EXPECT_EQ(36u, sides.size());
+      }
+    }
+}
 
 TEST(ElemGraph, test_initial_graph_creation_with_deactivated_elements)
 {

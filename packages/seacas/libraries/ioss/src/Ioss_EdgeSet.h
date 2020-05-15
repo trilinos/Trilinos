@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -55,10 +55,12 @@ namespace Ioss {
   {
   public:
     EdgeSet(); // Used for template typing only
+    EdgeSet(const EdgeSet &) = default;
     EdgeSet(DatabaseIO *io_database, const std::string &my_name, int64_t number_edges);
 
     std::string type_string() const override { return "EdgeSet"; }
     std::string short_type_string() const override { return "edgelist"; }
+    std::string contains_string() const override { return "Edge"; }
     EntityType  type() const override { return EDGESET; }
 
     // Handle implicit properties -- These are calcuated from data stored

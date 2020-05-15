@@ -108,7 +108,10 @@ namespace MueLu {
 
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar = DefaultScalar,
+            class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class VisualizationHelpers {
 #undef MUELU_VISUALIZATIONHELPERS_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -154,6 +157,7 @@ namespace MueLu {
 
     static void doGraphEdges(std::vector<int>& vertices, std::vector<int>& geomSizes, Teuchos::RCP<GraphBase>& G, Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> & fx, Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> & fy, Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> & fz);
 
+    static int ccw(const myVec2& a, const myVec2& b, const myVec2& c);
     static myVec3 crossProduct(myVec3 v1, myVec3 v2);
     static double dotProduct(myVec2 v1, myVec2 v2);
     static double dotProduct(myVec3 v1, myVec3 v2);

@@ -87,12 +87,12 @@ template <typename MatrixStorage,
           typename OutputStorage,
           typename ... OutputP,
           typename Update>
-class MPMultiply< KokkosSparse::CrsMatrix<Sacado::MP::Vector<MatrixStorage>,
+class MPMultiply< KokkosSparse::CrsMatrix<const Sacado::MP::Vector<MatrixStorage>,
                                     MatrixOrdinal,
-                                    Kokkos::Cuda,
+                                    Kokkos::Device<Kokkos::Cuda, typename Kokkos::Cuda::memory_space>,
                                     MatrixMemory,
                                     MatrixSize>,
-                  Kokkos::View< Sacado::MP::Vector<InputStorage>*,
+                  Kokkos::View< const Sacado::MP::Vector<InputStorage>*,
                                 InputP... >,
                   Kokkos::View< Sacado::MP::Vector<OutputStorage>*,
                                 OutputP... >,
@@ -106,18 +106,18 @@ public:
   typedef Sacado::MP::Vector<InputStorage> InputVectorValue;
   typedef Sacado::MP::Vector<OutputStorage> OutputVectorValue;
 
-  typedef typename Kokkos::Cuda Device;
-  typedef Device execution_space;
+  typedef Kokkos::Device<Kokkos::Cuda, typename Kokkos::Cuda::memory_space> Device;
+  typedef typename Device::execution_space execution_space;
   typedef typename execution_space::size_type size_type;
 
-  typedef KokkosSparse::CrsMatrix<MatrixValue,
+  typedef KokkosSparse::CrsMatrix<const MatrixValue,
                             MatrixOrdinal,
-                            execution_space,
+                            Device,
                             MatrixMemory,
                             MatrixSize> matrix_type;
   typedef typename matrix_type::values_type matrix_values_type;
   typedef typename matrix_type::StaticCrsGraphType matrix_graph_type;
-  typedef Kokkos::View< InputVectorValue*,
+  typedef Kokkos::View< const InputVectorValue*,
                         InputP... > input_vector_type;
   typedef Kokkos::View< OutputVectorValue*,
                         OutputP... > output_vector_type;
@@ -334,12 +334,12 @@ template <typename MatrixStorage,
           typename OutputStorage,
           typename ... OutputP,
           typename Update>
-class MPMultiply< KokkosSparse::CrsMatrix<Sacado::MP::Vector<MatrixStorage>,
+class MPMultiply< KokkosSparse::CrsMatrix<const Sacado::MP::Vector<MatrixStorage>,
                                     MatrixOrdinal,
-                                    Kokkos::Cuda,
+                                    Kokkos::Device<Kokkos::Cuda, typename Kokkos::Cuda::memory_space>,
                                     MatrixMemory,
                                     MatrixSize>,
-                  Kokkos::View< Sacado::MP::Vector<InputStorage>**,
+                  Kokkos::View< const Sacado::MP::Vector<InputStorage>**,
                                 InputP... >,
                   Kokkos::View< Sacado::MP::Vector<OutputStorage>**,
                                 OutputP... >,
@@ -353,19 +353,19 @@ public:
   typedef Sacado::MP::Vector<InputStorage> InputVectorValue;
   typedef Sacado::MP::Vector<OutputStorage> OutputVectorValue;
 
-  typedef typename Kokkos::Cuda Device;
-  typedef Device execution_space;
+  typedef Kokkos::Device<Kokkos::Cuda, typename Kokkos::Cuda::memory_space> Device;
+  typedef typename Device::execution_space execution_space;
   typedef typename execution_space::size_type size_type;
 
 
-  typedef KokkosSparse::CrsMatrix<MatrixValue,
+  typedef KokkosSparse::CrsMatrix<const MatrixValue,
                             MatrixOrdinal,
-                            execution_space,
+                            Device,
                             MatrixMemory,
                             MatrixSize> matrix_type;
   typedef typename matrix_type::values_type matrix_values_type;
   typedef typename matrix_type::StaticCrsGraphType matrix_graph_type;
-  typedef Kokkos::View< InputVectorValue**,
+  typedef Kokkos::View< const InputVectorValue**,
                         InputP... > input_vector_type;
   typedef Kokkos::View< OutputVectorValue**,
                         OutputP... > output_vector_type;

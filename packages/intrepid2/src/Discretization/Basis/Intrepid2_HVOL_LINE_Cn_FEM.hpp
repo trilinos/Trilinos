@@ -177,25 +177,25 @@ namespace Intrepid2 {
   class Basis_HVOL_LINE_Cn_FEM
     : public Basis<ExecSpaceType,outputValueType,pointValueType> {
   public:
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_1d_host ordinal_type_array_1d_host;
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_2d_host ordinal_type_array_2d_host;
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_3d_host ordinal_type_array_3d_host;
+    using OrdinalTypeArray1DHost = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray1DHost;
+    using OrdinalTypeArray2DHost = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray2DHost;
+    using OrdinalTypeArray3DHost = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray3DHost;
 
     /** \brief  Constructor.
      */
     Basis_HVOL_LINE_Cn_FEM(const ordinal_type order,
                             const EPointType   pointType = POINTTYPE_EQUISPACED);  
 
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::outputViewType outputViewType;
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::pointViewType  pointViewType;
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::scalarViewType  scalarViewType;
+    using OutputViewType = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OutputViewType;
+    using PointViewType  = typename Basis<ExecSpaceType,outputValueType,pointValueType>::PointViewType;
+    using ScalarViewType = typename Basis<ExecSpaceType,outputValueType,pointValueType>::ScalarViewType;
 
     using Basis<ExecSpaceType,outputValueType,pointValueType>::getValues;
 
     virtual
     void
-    getValues(       outputViewType outputValues,
-               const pointViewType  inputPoints,
+    getValues(       OutputViewType outputValues,
+               const PointViewType  inputPoints,
                const EOperator operatorType = OPERATOR_VALUE ) const {
 #ifdef HAVE_INTREPID2_DEBUG
       Intrepid2::getValues_HVOL_Args(outputValues,
@@ -214,7 +214,7 @@ namespace Intrepid2 {
 
     virtual
     void
-    getDofCoords( scalarViewType dofCoords ) const {
+    getDofCoords( ScalarViewType dofCoords ) const {
 #ifdef HAVE_INTREPID2_DEBUG
       // Verify rank of output array.
       INTREPID2_TEST_FOR_EXCEPTION( dofCoords.rank() != 2, std::invalid_argument,
@@ -231,7 +231,7 @@ namespace Intrepid2 {
 
     virtual
     void
-    getDofCoeffs( scalarViewType dofCoeffs ) const {
+    getDofCoeffs( ScalarViewType dofCoeffs ) const {
 #ifdef HAVE_INTREPID2_DEBUG
       // Verify rank of output array.
       INTREPID2_TEST_FOR_EXCEPTION( dofCoeffs.rank() != 1, std::invalid_argument,
@@ -244,7 +244,7 @@ namespace Intrepid2 {
     }
 
     void
-    getVandermondeInverse( scalarViewType vinv ) const {
+    getVandermondeInverse( ScalarViewType vinv ) const {
       // has to be same rank and dimensions
       Kokkos::deep_copy(vinv, this->vinv_);      
     }
@@ -259,7 +259,7 @@ namespace Intrepid2 {
 
     /** \brief inverse of Generalized Vandermonde matrix, whose columns store the expansion
                coefficients of the nodal basis in terms of phis_ */
-    Kokkos::DynRankView<typename scalarViewType::value_type,ExecSpaceType> vinv_;
+    Kokkos::DynRankView<typename ScalarViewType::value_type,ExecSpaceType> vinv_;
   };
 
 }// namespace Intrepid2

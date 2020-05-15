@@ -983,9 +983,6 @@ are set.  This file in Trilinos looked like::
     
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${KOKKOS_CXX_FLAGS}")
     
-      MESSAGE("-- " "Skip adding flags for C++11 because Kokkos flags does that ...")
-      SET(${PROJECT_NAME}_CXX11_FLAGS " ")
-    
       MESSAGE("-- " "Skip adding flags for OpenMP because Kokkos flags does that ...")
       SET(OpenMP_CXX_FLAGS_OVERRIDE " ")
     
@@ -2337,7 +2334,9 @@ proceeds through the call to `TRIBITS_PROJECT()`_.
 |       * ``INCLUDE(<optFile>)``
 |   3)  Set variables ``CMAKE_HOST_SYSTEM_NAME`` and ``${PROJECT_NAME}_HOSTNAME``
 |       (both of these can be overridden in the cache by the user)
-|   4)  Find Python (sets ``PYTHON_EXECUTABLE``, see `Python Support`_)
+|   4)  Find some optional command-line tools:
+|       a)  Find Python (sets ``PYTHON_EXECUTABLE``, see `Python Support`_)
+|       b)  Find Git (sets ``GIT_EXECUTABLE`` and ``GIT_VERSION_STRING``)
 |   5)  ``INCLUDE(`` `<projectDir>/Version.cmake`_ ``)``
 |   6)  Define primary TriBITS options and read in the list of extra repositories
 |       (calls ``TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS()``)
@@ -3663,12 +3662,18 @@ In more detail, these rules/behaviors are:
 
 22) **TriBITS auto-enables/disables done using non-cache local variables**:
     TriBITS setting (or overrides) of enable/disable cache variables are done
-    by setting local non-cache variables at the top project-level scope.  This
-    is done so they don't get set in the cache and so that the same dependency
+    by setting local non-cache variables at the top project-level scope
+    (i.e. the ``<projectDir>/CMakeLists.txt`` file scope).  This is done so
+    they don't get set in the cache and so that the same dependency
     enable/disable logic is redone, from scratch, with each re-configure.
     This results in the same enable/disable logic output as for the initial
     configure.  This is to avoid confusion by the user about why some SE
     packages and TPLs are enabled and some are not on subsequent reconfigures.
+    However, this implementation choice must be understood when one wants to
+    go about tweaking these TriBITS enable/disable variables as described in
+    `How to check for and tweak TriBITS "ENABLE" cache variables`_ and `How to
+    tweak downstream TriBITS "ENABLE" variables during package
+    configuration`_.
 
 TriBITS prints out a lot of information about the enable/disable logic as it
 applies the above rules/behaviors.  For a large TriBITS project with lots of
@@ -5935,10 +5940,10 @@ as::
 A twist on this use case is for a package that only builds as a TriBITS
 package inside of some larger TriBITS project and not as its own TriBITS CMake
 project.  In this case, some slight changes are needed to this example but the
-basic approach is nearly identical.  One still needs a ``if()`` statement at
-the top of first ``CMakeLists.txt`` file (this time for the package) and the
-macro ``include_tribits_build()`` needs to be defined at the top of that file
-as well.  Then every ``CMakeLists.txt`` file in subdirectories just calls
+basic approach is nearly identical.  One still needs an ``if()`` statement at
+the top of the first ``CMakeLists.txt`` file (this time for the package) and
+the macro ``include_tribits_build()`` needs to be defined at the top of that
+file as well.  Then every ``CMakeLists.txt`` file in subdirectories just calls
 ``include_tribits_build()``.  That is it.
 
 
@@ -6035,6 +6040,52 @@ the SE package and TPLs enables and disables (see `Package Dependencies and
 Enable/Disable Logic`_).  Also, these files get processed in `Reduced Package
 Dependency Processing`_ as well so they get processed in all contexts where
 enable/disable logic is applied.
+
+How to tweak downstream TriBITS "ENABLE" variables during package configuration
+-------------------------------------------------------------------------------
+
+There are cases where one may need to enable or disable some feature that
+TriBITS may have enabled by default (such as in "Adjust SE package and TPLs
+enables and disables" in `Full Processing of TriBITS Project Files`_) and that
+decision can only be made while processing a package's
+`<packageDir>/CMakeLists.txt`_ file. (And therefore the logic for this disable
+cannot be performed in the ``ProjectDependenciesSetup.cmake`` or
+``RepositoryDependenciesSetup.cmake`` files as described in `How to check for
+and tweak TriBITS "ENABLE" cache variables`_ which are processed before the
+enabled packages are configured.)  Also, there are cases where it is necessary
+to make this change visible to downstream packages such as when
+``<DownstreamPackageB>`` support of some feature depends on
+``<DownstreamPackageA>`` support for that same feature.  Examples include
+optional support of an upstream package in a downstream package
+``<DownstreamPackage>_ENABLE_<UpstreamPackage>`` or for support for an
+optional TPL in a downstream package ``<DownstreamPackage>_ENABLE_<TPL>``.
+But other examples may include variables that are not optional TriBITS package
+and TPL enables (such as support for a given data-type that may impact
+multiple packages).
+
+When the internal configuration of a package (i.e. while processing its
+``<packageDir>/CMakeLists.txt`` file) determines that an optional feature
+``<XXX>_ENABLE_<YYY>`` must be enabled or disabled with and will change the
+value previously set (e.g. during the "Adjust SE package and TPLs enables and
+disables" stage), one cannot use a simple ``SET()`` statement.  Changing the
+value of an ``<XXX>_ENABLE_<YYY>`` variable inside a package's
+``<packageDir>/CMakeLists.txt`` file using a raw ``SET(<XXX>_ENABLE_<YYY>
+<newValue>)`` statement only changes the variable's value inside the package's
+scope, but all other packages will see the old value of
+``<XXX>_ENABLE_<YYY>``.  To correctly change the value of one of these
+variables, instead use `DUAL_SCOPE_SET()`_ from the top-level
+``<packageDir>/CMakeLists.txt`` file.  This sets the value in both the
+base-level (global) project scope and in the local scope of
+``<packageDir>/CMakeLists.txt``.  (But this does **not** change the value of a
+cache variable ``<XXX>_ENABLE_<YYY>`` that may have been set by the user or
+some other means; see `TriBITS auto-enables/disables done using non-cache
+local variables`_.)  Any downstream package (configured after processing
+``<packageDir>/CMakeLists.txt``) will see the new value ``<XXX>_ENABLE_<YYY>
+STREQUAL <val>``.  It is also strongly recommended that a message or warning
+be printed to CMake STDOUT using ``MESSAGE(["NOTE: "|WARNING] "<message>")``
+when globally changing an ENABLE variable. The user may have set it
+explicitly, and they should know exactly why and where their choice is being
+overridden.
 
 
 How to set up multi-repository support
@@ -6454,7 +6505,6 @@ Processing of TriBITS Project Files`_.  This is executed by the TriBITS macro
 * ``INCLUDE(`` `<projectDir>/cmake/ProjectCompilerPostConfig.cmake`_ ``)``
 * Find Perl (sets ``PERL_EXECUTABLE``)
 * Determine mixed language C/Fortran linking
-* Set up C++11 (`${PROJECT_NAME}_ENABLE_CXX11`_)
 * Set up OpenMP (with ``FIND_PACKAGE(OpenMP)``)
 * Set up optional Windows support
 * Find Doxygen (sets ``DOXYGEN_EXECUTABLE``)
@@ -6463,6 +6513,69 @@ Processing of TriBITS Project Files`_.  This is executed by the TriBITS macro
 At the completion of this part of the processing, the TriBITS CMake project is
 ready to compile code.  All of the major variables set as part of this process
 are printed to the ``cmake`` stdout when the project is configured.
+
+
+Installation considerations
+---------------------------
+
+For the most part, installation is pretty straightforward with a TriBITS-based
+CMake project.  TriBITS automatically puts in appropriate default
+``install()`` commands to install header files, libraries, executables, and
+other commonly installed artifacts (such as TriBITS-autogenerated
+``<Package>Config.cmake`` files).  And packages can add their own custom
+``install()`` commands to install items under ``CMAKE_INSTALL_PREFIX`` (or the
+subdirs under ``CMAKE_INSTALL_PREFIX`` mentioned in `Setting the install
+prefix`_).  However, there are some special situations that need to be
+addressed and some tweaks to built-in CMake support that need to be made.
+
+One issue that can occur is that there are cases where a Unix/Linux system is
+set up not to honor the group sticky bit and therefore one cannot control what
+group owns the created installed files and directories (i.e. the default group
+will be used).  Also, there are cases were one cannot easily control the
+default file or directory creation permissions using ``umask``.  And there are
+cases where one would like to recursively install a set of directories and
+files where some of these files may be scripts that need to have the execute
+permission set on them for them to work.  The only to flexiable accomplish
+that with CMake (if one does not know the exist list of those files or
+extensions of those files) is to pass in the ``SOURCE_PERMISSIONS`` option to
+the ``install(DIRECTORY ...)`` command.  An example of this is shown in:
+
+* ``TribitsExampleProject/packages/with_subpackages/b/CMakeLists.txt``
+
+that has::
+
+  INSTALL( DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/stuff"
+    DESTINATION "${CMAKE_INSTALL_PREFIX}/share/${PACKAGE_NAME}"
+    USE_SOURCE_PERMISSIONS PATTERN "*~" EXCLUDE )
+
+In this case, CMake will preserve the execute permission on any of the scripts
+contained under the ``stuff/`` subdirectory but ``group`` and ``other``
+permissions will not be set based on ``umask`` or the default CMake install
+permissions.  Instead, these permissions are set based on the source directory
+permissions (which is often set to ``700`` or ``rwx------``).
+
+To address cases like this, TriBITS can automatically run ``chgrp`` and
+``chmod`` on the created files and directories that are created during the
+``install`` target as described in `Setting install ownership and
+permissions`_.  This is completely automatic and requires nothing for the
+TriBITS Project developers to do to enable support for this (other than to
+note the below warning).
+
+**WARNING**: Do not add any ``install()`` commands after the
+`TRIBITS_PROJECT()`_ command completes.  Otherwise, any extra files or
+directories will not have their group and permissions fixed by these special
+TriBITS-added ``chgrp`` and ``chmod`` commands run at install time.  Instead,
+try to put all ``install()`` commands inside of a package's
+`<packageDir>/CMakeLists.txt`_ file.  Currently, there really is no good place
+to add repo-level or project-level ``install()`` commands.  But if one had to
+sneak them in, they could add various ``install()`` commands to files like
+`<projectDir>/CMakeLists.txt`_ (before the ``TRIBITS_PROJECT_()`` command),
+`<repoDir>/cmake/CallbackSetupExtraOptions.cmake`_,
+`<projectDir>/cmake/CallbackDefineProjectPackaging.cmake`_ and/or
+`<repoDir>/cmake/CallbackDefineRepositoryPackaging.cmake`_.  (Note that
+install commands from the former two files are run before install commands for
+the enabled packages while install commands from the latter two files are run
+after.)
 
 
 RPATH Handling
@@ -8014,6 +8127,7 @@ be documented in `TribitsBuildReference`_.
 The global project-level TriBITS options for which defaults can be provided by
 a given TriBITS project are:
 
+* `${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE`_
 * `${PROJECT_NAME}_C_Standard`_
 * `${PROJECT_NAME}_CHECK_FOR_UNPARSED_ARGUMENTS`_
 * `${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE_APPEND`_
@@ -8022,7 +8136,6 @@ a given TriBITS project are:
 * `${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES`_
 * `${PROJECT_NAME}_ELEVATE_ST_TO_PT`_
 * `${PROJECT_NAME}_ENABLE_CPACK_PACKAGING`_
-* `${PROJECT_NAME}_ENABLE_CXX11`_
 * `${PROJECT_NAME}_ENABLE_CXX`_
 * `${PROJECT_NAME}_ENABLE_C`_
 * `${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE`_
@@ -8032,8 +8145,12 @@ a given TriBITS project are:
 * `${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE`_
 * `${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION`_
 * `${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES`_
+* `${PROJECT_NAME}_GENERATE_VERSION_DATE_FILES`_
 * `${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE`_
 * `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_
+* `${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE`_
+* `${PROJECT_NAME}_MAKE_INSTALL_GROUP_WRITABLE`_
+* `${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE`_
 * `${PROJECT_NAME}_MUST_FIND_ALL_TPL_LIBS`_
 * `${PROJECT_NAME}_REQUIRES_PYTHON`_
 * `${PROJECT_NAME}_SET_INSTALL_RPATH`_
@@ -8049,6 +8166,26 @@ a given TriBITS project are:
 * `PythonInterp_FIND_VERSION`_
 
 These options are described below.
+
+.. _${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE:
+
+**${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE**
+
+  The CMake cache variable ``${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE`` is
+  used to define how some invalid TriBITS usage checks are handled.  The valid
+  values include 'FATAL_ERROR', 'SEND_ERROR', 'WARNING', and 'IGNORE'.  The
+  default value is 'FATAL_ERROR' for a project when
+  ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE=ON``, which is best for
+  development mode for a project that currently has no invalid usage patterns.
+  The default is 'IGNORE' when
+  ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE=OFF``.  But a project with some
+  existing invalid usage patterns might want to set, for example, a default of
+  'WARNING' in order to allow for a smooth upgrade of TriBITS.  To do so,
+  set::
+
+    SET(${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE_DEFAULT WARNING)
+
+  in the project's base `<projectDir>/ProjectName.cmake`_ file.
 
 .. _${PROJECT_NAME}_C_Standard:
 
@@ -8236,17 +8373,6 @@ These options are described below.
 
     SET(${PROJECT_NAME}_ENABLE_CPACK_PACKAGING_DEFAULT ON)
 
-.. _${PROJECT_NAME}_ENABLE_CXX11:
-  
-**${PROJECT_NAME}_ENABLE_CXX11**
-  
-  If ``${PROJECT_NAME}_ENABLE_CXX11`` is ``ON``, then C++ compiler options
-  that turn on C++11 support will be searched for.  By default, TriBITS sets
-  this to ``OFF`` for all systems.  However, if project requires C++11 support
-  by default, then the project should set the default:
-  
-    SET(${PROJECT_NAME}_ENABLE_CXX11_DEFAULT TRUE)
-
 .. _${PROJECT_NAME}_ENABLE_CXX:
   
 **${PROJECT_NAME}_ENABLE_CXX**
@@ -8354,14 +8480,16 @@ These options are described below.
   then ``<PackageName>Config.cmake`` files are created at configure time in
   the build tree and installed into the install tree.  These files are used by
   external CMake projects to pull in the list of compilers, compiler options,
-  include directories and libraries.  The TriBITS default is ``ON`` but a
+  include directories and libraries.  The TriBITS default is ``OFF`` but a
   project can change the default by setting, for example::
 
-    SET(${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES_DEFAULT OFF)
+    SET(${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES_DEFAULT ON)
 
-  A project would want to turn off the creation and installation of
+  A project would want to leave off the creation and installation of
   ``<PackageName>Config.cmake`` files if it was only installing and providing
   executables (see `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_).
+  However, if it is wanting to provide libraries for other projects to use,
+  then it should turn on the default generation of these files.
 
 .. _${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE:
 
@@ -8390,20 +8518,6 @@ These options are described below.
 
     SET(${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION_DEFAULT FALSE)
 
-.. _${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE:
-
-**${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE**
-
-  If ``${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE`` is ``ON``, then the file
-  ``<Project>RepoVersion.txt`` will get generated as a byproduct of
-  configuring with CMake.  See `Multi-Repository Support`_ and
-  `<Project>_GENERATE_REPO_VERSION_FILE`_.  The default is ``OFF`` but the
-  project can change that by setting::
-
-    SET(${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE_DEFAULT ON)
-
-  in the `<projectDir>/ProjectName.cmake`_ file.
-
 .. _${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES:
 
 **${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES**
@@ -8423,6 +8537,35 @@ These options are described below.
 
   is so that the necessary data-structures are generated in order to use the
   function `TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES()`_.
+
+.. _${PROJECT_NAME}_GENERATE_VERSION_DATE_FILES:
+
+**${PROJECT_NAME}_GENERATE_VERSION_DATE_FILES**
+
+  If ``${PROJECT_NAME}_GENERATE_VERSION_DATE_FILES`` is ``ON``, then the files
+  ``VersionDate.cmake`` and ``<RepoName>_version_date.h`` will get generated
+  and the generated file ``<RepoName>_version_date.h`` will get installed for
+  each TriBITS version-controlled repository when the local directories are
+  git repositories.  The default is ``OFF`` but the project can change that by
+  setting::
+
+    SET(${PROJECT_NAME}_GENERATE_VERSION_DATE_FILES ON)
+
+  in the `<projectDir>/ProjectName.cmake`_ file.
+
+.. _${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE:
+
+**${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE**
+
+  If ``${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE`` is ``ON``, then the file
+  ``<Project>RepoVersion.txt`` will get generated as a byproduct of
+  configuring with CMake.  See `Multi-Repository Support`_ and
+  `<Project>_GENERATE_REPO_VERSION_FILE`_.  The default is ``OFF`` but the
+  project can change that by setting::
+
+    SET(${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE_DEFAULT ON)
+
+  in the `<projectDir>/ProjectName.cmake`_ file.
   
 .. _${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS:
 
@@ -8449,6 +8592,41 @@ These options are described below.
   
     SET(${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT  OFF)
 
+.. _${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE:
+
+.. _${PROJECT_NAME}_MAKE_INSTALL_GROUP_WRITABLE:
+
+.. _${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE:
+
+**${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE**
+**${PROJECT_NAME}_MAKE_INSTALL_GROUP_WRITABLE**
+**${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE**
+
+  Determines the permissions for directories and files created during the
+  execution of the of the ``install`` and ``isntall_package_by_package``
+  targets.
+
+  To make the created directories by only group readable for the project by
+  default, set::
+
+    SET(${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE_DEFAULT TRUE)
+
+  To make the created directories by only group writable (and readable) for
+  the project by default, set::
+
+    SET(${PROJECT_NAME}_MAKE_INSTALL_WORLD_WRITABLE_DEFAULT TRUE)
+
+  To make the created directories by world readable for the project by
+  default, set::
+
+    SET(${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE_DEFAULT TRUE)
+
+  On non-Windows systems, these set permissions for all files and directories
+  from the the user-set base directory
+  ``${PROJECT_NAME}_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR`` on down.
+  For more details see `Installation considerations`_.
+
+  These defaults can be set in the `<projectDir>/ProjectName.cmake`_ file.
 
 .. _${PROJECT_NAME}_MUST_FIND_ALL_TPL_LIBS:
 
@@ -8507,8 +8685,8 @@ These options are described below.
     SET(${PROJECT_NAME}_SHOW_TEST_START_END_DATE_TIME_DEFAULT ON)
 
   The implementation of this feature currently uses ``EXECUTE_PROCESS(date)``
-  and therefore will only work on many (but perhaps not all) Linux/Unix/Mac
-  systems and not Windows systems.
+  and therefore will work on many (but perhaps not all) Linux/Unix/Mac systems
+  and not on Windows systems.
 
   NOTE: In a future version of CTest, this option may turn on start and end
   date/time for regular tests added with `TRIBITS_ADD_TEST()`_ (which uses a
@@ -9107,7 +9285,9 @@ Below is a snapshot of the output from ``install_devtools.py --help``.
 
 .. _make dashboard: TribitsBuildReference.html#dashboard-submissions
 
-.. _Setting the install prefix at configure time: TribitsBuildReference.html#setting-the-install-prefix-at-configure-time
+.. _Setting the install prefix: TribitsBuildReference.html#setting-the-install-prefix
+
+.. _Setting install ownership and permissions: TribitsBuildReference.html#setting-install-ownership-and-permissions
 
 .. _TRIBITS_2ND_CTEST_DROP_SITE: TribitsBuildReference.html#tribits-2nd-ctest-drop-site
 

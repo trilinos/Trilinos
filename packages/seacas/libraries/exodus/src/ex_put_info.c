@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2017 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017, 2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -35,14 +35,12 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, DIM_NUM_INFO, etc
-#include "netcdf.h"       // for NC_NOERR, nc_enddef, etc
-#include <stddef.h>       // for size_t
-#include <stdio.h>
-#include <string.h> // for strlen, NULL
 
 /*!
+\ingroup Utilities
+
 The function ex_put_info() writes information records to the
-database. The records are MAX_LINE_LENGTH-character strings.
+database. The records are #MAX_LINE_LENGTH character strings.
 
 In case of an error, ex_put_info() returns a negative number;
 a warning will return a positive number. Possible causes of errors
@@ -111,7 +109,7 @@ int ex_put_info(int exoid, int num_info, char *info[])
   int rootid = exoid & EX_FILE_ID_MASK;
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid, __func__);
+  ex__check_valid_file_id(exoid, __func__);
 
   /* only do this if there are records */
   if (num_info > 0) {
@@ -164,13 +162,11 @@ int ex_put_info(int exoid, int num_info, char *info[])
         ex_err_fn(exoid, __func__, errmsg, status);
         goto error_ret; /* exit define mode and return */
       }
-      ex_compress_variable(rootid, varid, 3);
+      ex__set_compact_storage(rootid, varid);
+      ex__compress_variable(rootid, varid, 3);
 
       /*   leave define mode  */
-      if ((status = nc_enddef(rootid)) != NC_NOERR) {
-        snprintf(errmsg, MAX_ERR_LENGTH,
-                 "ERROR: failed to complete info record definition in file id %d", rootid);
-        ex_err_fn(exoid, __func__, errmsg, status);
+      if ((status = ex__leavedef(rootid, __func__)) != NC_NOERR) {
         EX_FUNC_LEAVE(EX_FATAL);
       }
     }
@@ -201,7 +197,7 @@ int ex_put_info(int exoid, int num_info, char *info[])
         }
       }
     }
-    else if (ex_is_parallel(rootid)) {
+    else if (ex__is_parallel(rootid)) {
       /* All processors need to call nc_put_vara_text in case in a global
        * collective mode */
       char dummy[] = " ";
@@ -216,9 +212,6 @@ int ex_put_info(int exoid, int num_info, char *info[])
 
 /* Fatal error: exit definition mode and return */
 error_ret:
-  if ((status = nc_enddef(rootid)) != NC_NOERR) { /* exit define mode */
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", rootid);
-    ex_err_fn(exoid, __func__, errmsg, status);
-  }
+  ex__leavedef(rootid, __func__);
   EX_FUNC_LEAVE(EX_FATAL);
 }

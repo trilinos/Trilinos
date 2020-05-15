@@ -6,9 +6,35 @@ TRIBITS_ADD_EXECUTABLE(
   )
 
 
+##### cuSOLVER Tests #####
+
+IF (${PACKAGE_NAME}_ENABLE_CUSPARSE)
+IF (${PACKAGE_NAME}_ENABLE_CUSOLVER)
+IF (${PACKAGE_NAME}_ENABLE_METIS)
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestcuSolverFiles
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+    SOURCE_FILES cuSOLVER_test.xml
+    EXEDEPS Solver_Test
+    )
+
+  TRIBITS_ADD_TEST(
+    Solver_Test
+    NAME cuSOLVER_Solver_Test
+    ARGS "--xml-params=cuSOLVER_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 1
+    COMM serial mpi
+    )
+
+ENDIF()
+ENDIF()
+ENDIF()
+
+
 ##### KLU2 Tests #####
 
-##IF (${PACKAGE_NAME}_ENABLE_KLU2 AND NOT ${PROJECT_NAME}_ENABLE_DEBUG AND NOT KOKKOS_ENABLE_DEBUG)
+##IF (${PACKAGE_NAME}_ENABLE_KLU2 AND NOT ${PROJECT_NAME}_ENABLE_DEBUG AND NOT Kokkos_ENABLE_DEBUG)
 IF (${PACKAGE_NAME}_ENABLE_KLU2)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
     KLU2_UnitTests
@@ -108,6 +134,47 @@ IF (${PACKAGE_NAME}_ENABLE_ShyLU_NodeTacho)
     NUM_MPI_PROCS 1 # Need to determine if we want more MPI when not running OpenMP with threads
     COMM serial mpi
     )
+
+ENDIF()
+
+##### CHOLMOD Tests #####
+
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Cholmod)
+IF (${PACKAGE_NAME}_ENABLE_Cholmod)
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCholmodFiles
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+    SOURCE_FILES cholmod_test.xml
+    EXEDEPS Solver_Test
+    )
+
+  TRIBITS_ADD_TEST(
+    Solver_Test
+    NAME Cholmod_Solver_Test
+    ARGS "--xml-params=cholmod_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 1
+    COMM serial mpi
+    )
+
+  IF (${PACKAGE_NAME}_ENABLE_TRIANGULAR_SOLVES)
+
+    TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCholmodTRSVFiles
+      SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+      SOURCE_FILES cholmod_trsv_test.xml
+      EXEDEPS Solver_Test
+      )
+
+    TRIBITS_ADD_TEST(
+      Solver_Test
+      NAME Cholmod_TriangularSolve_Solver_Test
+      ARGS "--xml-params=cholmod_trsv_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
+      STANDARD_PASS_OUTPUT
+      NUM_MPI_PROCS 1
+      COMM serial mpi
+      )
+
+  ENDIF()
 
 ENDIF()
 
@@ -227,8 +294,7 @@ ENDIF()
 
 ##### MUMPS Tests ####
 #MUMPS requires int/int type
-IF (Tpetra_INST_INT_INT)
-IF (${PACKAGE_NAME}_ENABLE_MUMPS)
+IF (${PACKAGE_NAME}_ENABLE_MUMPS AND Tpetra_INST_INT_INT)
    TRIBITS_ADD_EXECUTABLE_AND_TEST(
    MUMPS_UnitTests
    SOURCES
@@ -237,7 +303,6 @@ IF (${PACKAGE_NAME}_ENABLE_MUMPS)
    COMM serial mpi
    STANDARD_PASS_OUTPUT
    )
-ENDIF()
 ENDIF()
 
 

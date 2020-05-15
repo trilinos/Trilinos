@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
- // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- // the U.S. Government retains certain rights in this software.
- // 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
  // Redistribution and use in source and binary forms, with or without
  // modification, are permitted provided that the following conditions are
  // met:
@@ -14,10 +15,10 @@
  //       disclaimer in the documentation and/or other materials provided
  //       with the distribution.
  // 
- //     * Neither the name of Sandia Corporation nor the names of its
- //       contributors may be used to endorse or promote products derived
- //       from this software without specific prior written permission.
- // 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
  // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -51,6 +52,8 @@ class FaceSearchTolerance;
 typedef std::vector<int> ElementDecomposition;
 typedef stk::mesh::Field<double> DoubleFieldType;
 
+constexpr double defaultFaceSearchTolerance = 0.0001;
+
 class DecompositionChangeList
 {
 public:
@@ -74,13 +77,15 @@ public:
 class BalanceSettings
 {
 public:
-    BalanceSettings() {}
+    BalanceSettings();
     virtual ~BalanceSettings() {}
 
     enum GraphOption
     {
-        LOADBALANCE = 0,
-        COLORING
+        LOAD_BALANCE = 0,
+        COLOR_MESH,
+        COLOR_MESH_BY_TOPOLOGY,
+        COLOR_MESH_AND_OUTPUT_COLOR_FIELDS,
     };
 
     virtual size_t getNumNodesRequiredForConnection(stk::topology element1Topology, stk::topology element2Topology) const;
@@ -91,14 +96,17 @@ public:
 
     // Graph (parmetis) based options only
     virtual bool includeSearchResultsInGraph() const;
+    virtual void setIncludeSearchResultsInGraph(bool doContactSearch);
 
     virtual double getToleranceForFaceSearch(const stk::mesh::BulkData & mesh,
                                              const stk::mesh::FieldBase & coordField,
                                              const stk::mesh::Entity * faceNodes,
                                              const unsigned numFaceNodes) const;
     virtual void setToleranceFunctionForFaceSearch(std::shared_ptr<stk::balance::FaceSearchTolerance> faceSearchTolerance);
+    virtual bool isConstantFaceSearchTolerance() const;
 
     virtual double getToleranceForParticleSearch() const;
+    virtual double getAbsoluteToleranceForParticleSearch(stk::mesh::Entity particle) const;
     virtual double getGraphEdgeWeightForSearch() const;
     virtual bool getEdgesForParticlesUsingSearch() const;
     virtual double getVertexWeightMultiplierForVertexInSearch() const;
@@ -114,6 +122,9 @@ public:
 
     virtual void setDecompMethod(const std::string& method) ;
     virtual std::string getDecompMethod() const ;
+
+    virtual void setInitialDecompMethod(const std::string& method) ;
+    virtual std::string getInitialDecompMethod() const ;
 
     virtual std::string getCoordinateFieldName() const ;
 
@@ -136,69 +147,93 @@ public:
     virtual bool shouldFixSpiders() const;
     virtual std::string getSpiderConnectivityCountFieldName() const;
     virtual const stk::mesh::Field<int> * getSpiderConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const;
+    virtual bool useLocalIds() const;
+
+    virtual bool useNodeBalancer() const;
+    virtual double getNodeBalancerTargetLoadBalance() const;
+    virtual unsigned getNodeBalancerMaxIterations() const;
+
+private:
+    std::string initialDecompMethod;
 };
 
-class BasicGeomtricSettings : public BalanceSettings
+class BasicGeometricSettings : public BalanceSettings
 {
+public:
     virtual std::string getDecompMethod() const { return "rcb"; }
 };
 
 class GraphCreationSettings : public BalanceSettings
 {
 public:
-    GraphCreationSettings(): GraphCreationSettings(0.0001, 3, 15, "parmetis", 5.0)
+    GraphCreationSettings(): GraphCreationSettings(defaultFaceSearchTolerance, 3, 15, "parmetis", 5.0)
     {}
 
     GraphCreationSettings(double faceSearchTol, double particleSearchTol, double edgeWeightSearch, const std::string& decompMethod, double multiplierVWSearch)
-                           : mToleranceForFaceSearch(faceSearchTol),
-                             mToleranceForParticleSearch(particleSearchTol),
-                             edgeWeightForSearch (edgeWeightSearch),
-                             method(decompMethod),
-                             vertexWeightMultiplierForVertexInSearch(multiplierVWSearch),
-                             m_UseConstantToleranceForFaceSearch(true),
-                             m_shouldFixSpiders(false),
-                             m_spiderConnectivityCountField(nullptr)
+      : mToleranceForFaceSearch(faceSearchTol),
+        mToleranceForParticleSearch(particleSearchTol),
+        edgeWeightForSearch (edgeWeightSearch),
+        method(decompMethod),
+        vertexWeightMultiplierForVertexInSearch(multiplierVWSearch),
+        m_UseConstantToleranceForFaceSearch(true),
+        m_shouldFixSpiders(false),
+        m_spiderConnectivityCountField(nullptr),
+        m_includeSearchResultInGraph(true),
+        m_useNodeBalancer(false),
+        m_nodeBalancerTargetLoadBalance(1.0),
+        m_nodeBalancerMaxIterations(5)
     {}
 
-    virtual ~GraphCreationSettings() {}
+    virtual ~GraphCreationSettings() = default;
 
-    size_t getNumNodesRequiredForConnection(stk::topology element1Topology, stk::topology element2Topology) const;
+    size_t getNumNodesRequiredForConnection(stk::topology element1Topology, stk::topology element2Topology) const override;
 
-    virtual double getGraphEdgeWeightForSearch() const;
+    virtual double getGraphEdgeWeightForSearch() const override;
 
-    virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const;
+    virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const override;
 
-    virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index = 0) const;
+    virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index = 0) const override;
 
-    virtual int getGraphVertexWeight(stk::topology type) const;
+    virtual int getGraphVertexWeight(stk::topology type) const override;
 
-    virtual GraphOption getGraphOption() const;
-    virtual bool includeSearchResultsInGraph() const ;
-    virtual double getToleranceForParticleSearch() const ;
+    virtual GraphOption getGraphOption() const override;
+    virtual bool includeSearchResultsInGraph() const override;
+    virtual void setIncludeSearchResultsInGraph(bool doContactSearch) override;
+    virtual double getToleranceForParticleSearch() const override;
 
     virtual double getToleranceForFaceSearch(const stk::mesh::BulkData & mesh,
                                              const stk::mesh::FieldBase & coordField,
                                              const stk::mesh::Entity * faceNodes,
-                                             const unsigned numFaceNodes) const;
-    virtual void setToleranceFunctionForFaceSearch(std::shared_ptr<stk::balance::FaceSearchTolerance> faceSearchTolerance);
+                                             const unsigned numFaceNodes) const override;
+    virtual void setToleranceFunctionForFaceSearch(std::shared_ptr<stk::balance::FaceSearchTolerance> faceSearchTolerance) override;
+    virtual bool isConstantFaceSearchTolerance() const override;
 
-    virtual bool getEdgesForParticlesUsingSearch() const ;
-    virtual double getVertexWeightMultiplierForVertexInSearch() const ;
-    virtual std::string getDecompMethod() const ;
+    virtual bool getEdgesForParticlesUsingSearch() const override;
+    virtual double getVertexWeightMultiplierForVertexInSearch() const override;
+    virtual std::string getDecompMethod() const override;
 
-    virtual void setDecompMethod(const std::string& input_method);
+    virtual void setDecompMethod(const std::string& input_method) override;
     virtual void setToleranceForFaceSearch(double tol);
-    virtual void setToleranceForParticleSearch(double tol) ;
-    virtual void setEdgeWeightForSearch(double w) ;
-    virtual void setVertexWeightMultiplierForVertexInSearch(double w) ;
+    virtual void setToleranceForParticleSearch(double tol);
+    virtual void setEdgeWeightForSearch(double w);
+    virtual void setVertexWeightMultiplierForVertexInSearch(double w);
     virtual void setShouldFixSpiders(bool fixSpiders);
 
     virtual bool shouldFixMechanisms() const override;
     virtual bool shouldFixSpiders() const override;
     virtual const stk::mesh::Field<int> * getSpiderConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const override;
 
+    virtual void setUseNodeBalancer(bool useBalancer);
+    virtual void setNodeBalancerTargetLoadBalance(double targetLoadBalance);
+    virtual void setNodeBalancerMaxIterations(unsigned maxIterations);
+
+    virtual bool useNodeBalancer() const override;
+    virtual double getNodeBalancerTargetLoadBalance() const override;
+    virtual unsigned getNodeBalancerMaxIterations() const override;
+
 protected:
     int getConnectionTableIndex(stk::topology elementTopology) const;
+    int getEdgeWeightTableIndex(stk::topology elementTopology) const;
     double mToleranceForFaceSearch;
     double mToleranceForParticleSearch;
     double edgeWeightForSearch;
@@ -208,6 +243,10 @@ protected:
     bool m_shouldFixSpiders;
     mutable const stk::mesh::Field<int> * m_spiderConnectivityCountField;
     std::shared_ptr<stk::balance::FaceSearchTolerance> m_faceSearchToleranceFunction;
+    bool m_includeSearchResultInGraph;
+    bool m_useNodeBalancer;
+    double m_nodeBalancerTargetLoadBalance;
+    unsigned m_nodeBalancerMaxIterations;
 };
 
 class GraphCreationSettingsWithCustomTolerances : public GraphCreationSettings
@@ -224,21 +263,40 @@ public:
     virtual bool setVertexWeightsBasedOnNumberAdjacencies() const { return true; }
 };
 
+class StkBalanceSettings : public GraphCreationSettings
+{
+public:
+    StkBalanceSettings()
+      : GraphCreationSettings()
+    {}
+
+    ~StkBalanceSettings() = default;
+
+    std::string getCoordinateFieldName() const override {
+      return "balance_coordinates";
+    }
+};
+
 class BasicZoltan2Settings : public GraphCreationSettings
 {
 public:
     BasicZoltan2Settings()
-      : GraphCreationSettings(0.0005, 0.3, 100.0, "rcb", 6.0) {}
-    virtual bool includeSearchResultsInGraph() const { return false; }
+      : GraphCreationSettings(0.0005, 0.3, 100.0, "rcb", 6.0) 
+      {
+        m_includeSearchResultInGraph = false;
+      }
     virtual bool getEdgesForParticlesUsingSearch() const { return true; }
 };
 
 class UserSpecifiedVertexWeightsSetting : public GraphCreationSettings
 {
 public:
+    UserSpecifiedVertexWeightsSetting()
+    {
+      m_includeSearchResultInGraph = false;
+    }
     virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const { return 1.0; }
     virtual bool areVertexWeightsProvidedInAVector() const { return true; }
-    virtual bool includeSearchResultsInGraph() const { return false; }
     void setVertexWeights(const std::vector<double>& weights) { vertex_weights = weights; }
     virtual std::vector<double> getVertexWeightsViaVector() const { return vertex_weights; }
     virtual int getGraphVertexWeight(stk::topology type) const { return 1; }
@@ -270,13 +328,15 @@ public:
                               const double defaultWeight = 0.0)
       : m_stkMeshBulkData(stkMeshBulkData),
         m_weightField(weightField),
-        m_defaultWeight(defaultWeight) { }
+        m_defaultWeight(defaultWeight) 
+        { 
+            m_includeSearchResultInGraph = false;
+        }
     virtual ~FieldVertexWeightSettings() = default;
 
     virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const { return 1.0; }
     virtual bool areVertexWeightsProvidedInAVector() const { return false; }
     virtual bool areVertexWeightsProvidedViaFields() const { return true; }
-    virtual bool includeSearchResultsInGraph() const { return false; }
     virtual int getGraphVertexWeight(stk::topology type) const { return 1; }
     virtual double getImbalanceTolerance() const { return 1.05; }
     virtual void setDecompMethod(const std::string& input_method) { method = input_method;}
@@ -301,35 +361,39 @@ protected:
     std::string method = std::string("parmetis");
 };
 
-class MultipleCriteriaSettings : public stk::balance::GraphCreationSettings
+class MultipleCriteriaSettings : public GraphCreationSettings
 {
 public:
     MultipleCriteriaSettings(const std::vector<const stk::mesh::Field<double>*> critFields,
                              const double default_weight = 0.0)
       : m_critFields(critFields), m_defaultWeight(default_weight)
-    { }
+    { 
+        m_includeSearchResultInGraph = false;
+    }
 
     MultipleCriteriaSettings(double faceSearchTol, double particleSearchTol, double edgeWeightSearch,
                              const std::string& decompMethod, double multiplierVWSearch,
                              const std::vector<const stk::mesh::Field<double>*> critFields,
                              bool includeSearchResults, const double default_weight = 0.0)
       : GraphCreationSettings(faceSearchTol, particleSearchTol, edgeWeightSearch, decompMethod, multiplierVWSearch),
-        m_critFields(critFields), m_includeSearchResults(includeSearchResults), m_defaultWeight(default_weight)
-    { }
+        m_critFields(critFields), m_defaultWeight(default_weight)
+    { 
+        m_includeSearchResultInGraph = includeSearchResults;
+    }
 
     virtual ~MultipleCriteriaSettings() = default;
 
-    virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const { return 1.0; }
-    virtual bool areVertexWeightsProvidedViaFields() const { return true; }
-    virtual bool includeSearchResultsInGraph() const { return m_includeSearchResults; }
-    virtual int getGraphVertexWeight(stk::topology type) const { return 1; }
-    virtual double getImbalanceTolerance() const { return 1.05; }
-    virtual int getNumCriteria() const { return m_critFields.size(); }
-    virtual bool isMultiCriteriaRebalance() const { return true;}
+    virtual double getGraphEdgeWeight(stk::topology element1Topology,
+      stk::topology element2Topology) const override { return 1.0; }
+    virtual bool areVertexWeightsProvidedViaFields() const override { return true; }
+    virtual int getGraphVertexWeight(stk::topology type) const override { return 1; }
+    virtual double getImbalanceTolerance() const override { return 1.05; }
+    virtual int getNumCriteria() const override { return m_critFields.size(); }
+    virtual bool isMultiCriteriaRebalance() const override { return true;}
     virtual bool isIncrementalRebalance() const override { return true; }
 
 
-    virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index) const
+    virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index) const override
     {
         ThrowRequireWithSierraHelpMsg(criteria_index>=0 && static_cast<size_t>(criteria_index)<m_critFields.size());
         const double *weight = stk::mesh::field_data(*m_critFields[criteria_index], entity);
@@ -348,20 +412,29 @@ protected:
     MultipleCriteriaSettings() = default;
     MultipleCriteriaSettings(const MultipleCriteriaSettings&) = delete;
     MultipleCriteriaSettings& operator=(const MultipleCriteriaSettings&) = delete;
-
     const std::vector<const stk::mesh::Field<double>*> m_critFields;
-    bool m_includeSearchResults = false;
     const double m_defaultWeight;
 };
 
-class BasicColoringSettings : public stk::balance::BalanceSettings
+class BasicColoringSettings : public BalanceSettings
 {
 public:
     BasicColoringSettings() {}
 
     virtual GraphOption getGraphOption() const
     {
-        return BalanceSettings::COLORING;
+        return BalanceSettings::COLOR_MESH;
+    }
+};
+
+class BasicColoringByTopologySettings : public BalanceSettings
+{
+public:
+    BasicColoringByTopologySettings() {}
+
+    virtual GraphOption getGraphOption() const
+    {
+        return BalanceSettings::COLOR_MESH_BY_TOPOLOGY;
     }
 };
 
@@ -409,6 +482,9 @@ inline bool operator==(const GraphEdge &a, const GraphEdge &b)
 
 const std::string& get_coloring_part_base_name();
 stk::mesh::Part* get_coloring_part(const stk::mesh::BulkData& bulk, const stk::mesh::Entity& entity);
+
+stk::mesh::PartVector get_root_topology_parts_for_rank(const stk::mesh::BulkData& bulk, stk::mesh::EntityRank rank);
+
 }
 }
 #endif

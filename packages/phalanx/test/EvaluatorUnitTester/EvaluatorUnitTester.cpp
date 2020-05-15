@@ -45,8 +45,7 @@
 #include "Phalanx_DataLayout_MDALayout.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
 #include "Phalanx_FieldManager.hpp"
-#include "Phalanx_TypeStrings.hpp"
-#include "Phalanx_DimTag.hpp"
+#include "Phalanx_Print.hpp"
 #include "Phalanx_Evaluator_UnmanagedFieldDummy.hpp"
 #include "Phalanx_Evaluator_UnitTester.hpp"
 #include "Phalanx_MDField_UnmanagedAllocator.hpp"
@@ -63,17 +62,10 @@
 
 #include "MyTraits.hpp"
 
-PHX_DIM_TAG_DECLARATION(CELL)
-PHX_DIM_TAG_IMPLEMENTATION(CELL)
-
-PHX_DIM_TAG_DECLARATION(QP)
-PHX_DIM_TAG_IMPLEMENTATION(QP)
-
-PHX_DIM_TAG_DECLARATION(DIM)
-PHX_DIM_TAG_IMPLEMENTATION(DIM)
-
-PHX_DIM_TAG_DECLARATION(R)
-PHX_DIM_TAG_IMPLEMENTATION(R)
+PHX_EXTENT(CELL)
+PHX_EXTENT(QP)
+PHX_EXTENT(DIM)
+PHX_EXTENT(R)
 
 // requires the dim tags defined above
 #include "SimpleEvaluator.hpp"
@@ -103,8 +95,8 @@ TEUCHOS_UNIT_TEST(evaluator_unit_tester, simple)
   c.deep_copy(3.0);
   Kokkos::fence();
 
-  PHX::EvalautorUnitTester<EvalType,MyTraits> tester;
-  tester.setEvalautorToTest(e);
+  PHX::EvaluatorUnitTester<EvalType,MyTraits> tester;
+  tester.setEvaluatorToTest(e);
   tester.setDependentFieldValues(b);
   tester.setDependentFieldValues(c);
   tester.testEvaluator(num_cells,num_cells,num_cells,num_cells);
@@ -140,8 +132,8 @@ TEUCHOS_UNIT_TEST(evaluator_unit_tester, DuplicateField)
   c.deep_copy(3.0);
   Kokkos::fence();
 
-  PHX::EvalautorUnitTester<EvalType,MyTraits> tester;
-  tester.setEvalautorToTest(e);
+  PHX::EvaluatorUnitTester<EvalType,MyTraits> tester;
+  tester.setEvaluatorToTest(e);
   tester.setDependentFieldValues(b);
   tester.setDependentFieldValues(c);
   tester.testEvaluator(num_cells,num_cells,num_cells,num_cells);
@@ -191,8 +183,8 @@ TEUCHOS_UNIT_TEST(evaluator_unit_tester, AllRanks)
   f6.deep_copy(6.0);
   Kokkos::fence();
 
-  PHX::EvalautorUnitTester<EvalType,MyTraits> tester;
-  tester.setEvalautorToTest(e);
+  PHX::EvaluatorUnitTester<EvalType,MyTraits> tester;
+  tester.setEvaluatorToTest(e);
   tester.setDependentFieldValues(f1);
   tester.setDependentFieldValues(f2);
   tester.setDependentFieldValues(f3);

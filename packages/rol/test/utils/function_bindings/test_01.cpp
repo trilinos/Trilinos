@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
     flag = smt->test(*outStream);
     errorFlag += (flag ? 0 : 1);
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

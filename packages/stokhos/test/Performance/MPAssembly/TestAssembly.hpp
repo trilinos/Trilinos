@@ -150,7 +150,7 @@ Perf fenl_assembly(
 
   //------------------------------------
 
-  const int print_flag = use_print && Kokkos::Impl::is_same< Kokkos::HostSpace , typename Device::memory_space >::value ;
+  const int print_flag = use_print && std::is_same< Kokkos::HostSpace , typename Device::memory_space >::value ;
 
   const int comm_rank = comm->getRank();
   const int comm_size = comm->getSize();
@@ -258,18 +258,18 @@ Perf fenl_assembly(
 
     //--------------------------------
 
-    Device::fence();
+    Device().fence();
     wall_clock.reset();
 
     comm_nodal_import( nodal_solution );
 
-    Device::fence();
+    Device().fence();
     perf.import_time = wall_clock.seconds();
 
     //--------------------------------
     // Element contributions to residual and jacobian
 
-    Device::fence();
+    Device().fence();
     wall_clock.reset();
 
     Kokkos::deep_copy( nodal_residual , Scalar(0) );
@@ -282,7 +282,7 @@ Perf fenl_assembly(
 
     dirichlet.apply();
 
-    Device::fence();
+    Device().fence();
     perf.fill_time = wall_clock.seconds();
 
     //--------------------------------
@@ -380,7 +380,7 @@ struct PerformanceDriverOp {
     ensemble_vector_type ensemble_residual;
     Kokkos::Example::FENL::DeviceConfig ensemble_dev_config = dev_config;
 #if defined( KOKKOS_ENABLE_CUDA )
-    const bool is_cuda = Kokkos::Impl::is_same<Device,Kokkos::Cuda>::value;
+    const bool is_cuda = std::is_same<Device,Kokkos::Cuda>::value;
 #else
     const bool is_cuda = false ;
 #endif

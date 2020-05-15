@@ -60,7 +60,6 @@
 #define EX_TEST_INDIV_SIDESET
 
 #include "exodusII.h"
-#include "netcdf.h"
 #include <stdio.h>
 #include <stdlib.h>
 int main(int argc, char **argv)

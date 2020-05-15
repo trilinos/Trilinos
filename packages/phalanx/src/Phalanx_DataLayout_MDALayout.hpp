@@ -157,6 +157,8 @@ namespace PHX {
 
     virtual PHX::Device::size_type size() const override;
 
+    virtual PHX::DataLayout::KokkosLayoutType kokkosLayout() const override;
+
     virtual std::string identifier() const override;
 
     virtual void print(std::ostream& os, int offset) const override;
@@ -183,7 +185,7 @@ namespace PHX {
 
   private:
 
-    std::vector<const char*> m_dim_name;
+    std::vector<std::string> m_dim_name;
 
     PHX::Device::size_type m_dim_size[Rank];
 

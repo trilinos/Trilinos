@@ -138,6 +138,27 @@ public:
     ids = map_->getNodeElementList().getRawPtr();
   }
 
+  void getIDsKokkosView(
+    Kokkos::View<const gno_t *, typename node_t::device_type> &ids) const {
+    if (map_->lib() == Xpetra::UseTpetra) {
+      const xt_mvector_t *tvector =
+        dynamic_cast<const xt_mvector_t *>(vector_.get());
+      ids = tvector->getTpetra_MultiVector()->getMap()->getMyGlobalIndices();
+    }
+    else if (map_->lib() == Xpetra::UseEpetra) {
+#if defined(HAVE_ZOLTAN2_EPETRA) && defined(HAVE_XPETRA_EPETRA)
+      // this will call getIDsView to get raw ptr and create a view from it
+      return BaseAdapter<User>::getIDsKokkosView(ids);
+#else
+      throw std::logic_error("Epetra requested, but Trilinos is not "
+                           "built with Epetra");
+#endif
+    }
+    else {
+      throw std::logic_error("getIDsKokkosView called but not on Tpetra or Epetra!");
+    }
+  }
+
   int getNumWeightsPerID() const { return numWeights_;}
 
   void getWeightsView(const scalar_t *&weights, int &stride, int idx) const
@@ -154,6 +175,24 @@ public:
     weights_[idx].getStridedList(length, weights, stride);
   }
 
+  void getWeightsKokkos2dView(Kokkos::View<scalar_t **,
+    typename node_t::device_type> &wgt) const {
+    typedef Kokkos::View<scalar_t**, typename node_t::device_type> view_t;
+    wgt = view_t("wgts", vector_->getLocalLength(), numWeights_);
+    typename view_t::HostMirror host_wgt = Kokkos::create_mirror_view(wgt);
+    for(int idx = 0; idx < numWeights_; ++idx) {
+      const scalar_t * weights;
+      size_t length;
+      int stride;
+      weights_[idx].getStridedList(length, weights, stride);
+      size_t fill_index = 0;
+      for(size_t n = 0; n < length; n += stride) {
+        host_wgt(fill_index++,idx) = weights[n];
+      }
+    }
+    Kokkos::deep_copy(wgt, host_wgt);
+  }
+
   ////////////////////////////////////////////////////
   // The VectorAdapter interface.
   ////////////////////////////////////////////////////
@@ -161,6 +200,11 @@ public:
   int getNumEntriesPerID() const {return vector_->getNumVectors();}
 
   void getEntriesView(const scalar_t *&elements, int &stride, int idx=0) const;
+
+  void getEntriesKokkosView(
+    // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
+    Kokkos::View<scalar_t **, Kokkos::LayoutLeft,
+    typename node_t::device_type> & elements) const;
 
   template <typename Adapter>
     void applyPartitioningSolution(const User &in, User *&out,
@@ -272,6 +316,48 @@ template <typename User>
   }
   else{
     throw std::logic_error("invalid underlying lib");
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////
+template <typename User>
+  void XpetraMultiVectorAdapter<User>::getEntriesKokkosView(
+    // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
+    Kokkos::View<scalar_t **, Kokkos::LayoutLeft, typename node_t::device_type> & elements) const
+{
+  if (map_->lib() == Xpetra::UseTpetra){
+      const xt_mvector_t *tvector =
+        dynamic_cast<const xt_mvector_t *>(vector_.get());
+    // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
+    Kokkos::View<scalar_t **, Kokkos::LayoutLeft, typename node_t::device_type> view2d =
+      tvector->getTpetra_MultiVector()->template getLocalView<node_t>();
+    elements = view2d;
+  }
+  else if (map_->lib() == Xpetra::UseEpetra){
+#if defined(HAVE_ZOLTAN2_EPETRA) && defined(HAVE_XPETRA_EPETRA)
+    typedef Xpetra::EpetraMultiVectorT<gno_t,node_t> xe_mvector_t;
+    const xe_mvector_t *evector =
+      dynamic_cast<const xe_mvector_t *>(vector_.get());
+    elements =
+      Kokkos::View<scalar_t **, Kokkos::LayoutLeft, typename node_t::device_type>
+      ("elements", evector->getLocalLength(), evector->getNumVectors());
+    if(evector->getLocalLength() > 0) {
+      for(size_t idx = 0; idx < evector->getNumVectors(); ++idx) {
+        const scalar_t * ptr;
+        int stride;
+        getEntriesView(ptr, stride, idx);
+        for(size_t n = 0; n < evector->getLocalLength(); ++n) {
+          elements(n, idx) = ptr[n];
+        }
+      }
+    }
+#else
+    throw std::logic_error("Epetra requested, but Trilinos is not "
+                           "built with Epetra");
+#endif
+  }
+  else {
+    throw std::logic_error("getEntriesKokkosView called but not using Tpetra or Epetra!");
   }
 }
 

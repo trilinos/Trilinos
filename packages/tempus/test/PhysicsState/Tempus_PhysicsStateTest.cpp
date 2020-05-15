@@ -70,21 +70,19 @@ TEUCHOS_UNIT_TEST(PhysicsState, SinCos)
       Tempus::integratorBasic<double>(pl, model);
 
     // Replace Tempus::StepperForwardEuler with
-    // Tempus_Test::PhysicsStateTest_StepperForwardEuler
-    RCP<ParameterList> stepperPL =
-      integrator->getStepper()->getNonconstParameterList();
+    // Tempus_Test::StepperPhysicsStateTest
     Teuchos::RCP<Tempus::Stepper<double> > physicsStepper = Teuchos::rcp(
-      new PhysicsStateTest_StepperForwardEuler<double>(model, stepperPL));
+      new StepperPhysicsStateTest<double>(model));
     integrator->setStepperWStepper(physicsStepper);
     order = integrator->getStepper()->getOrder();
 
     // Initial Conditions
     // During the Integrator construction, the initial SolutionState
     // is set by default to model->getNominalVales().get_x().  However,
-    // the application can set it also by integrator->setInitialState.
+    // the application can set it also by integrator->initializeSolutionHistory.
     RCP<Thyra::VectorBase<double> > x0 =
       model->getNominalValues().get_x()->clone_v();
-    integrator->setInitialState(0.0, x0);
+    integrator->initializeSolutionHistory(0.0, x0);
 
 
     // Replace Tempus::PhysicsState with
@@ -125,10 +123,10 @@ TEUCHOS_UNIT_TEST(PhysicsState, SinCos)
       RCP<const Thyra::VectorBase<double> > x_exact_plot;
       for (int i=0; i<solutionHistory->getNumStates(); i++) {
         RCP<const SolutionState<double> > solutionState = (*solutionHistory)[i];
-        double time = solutionState->getTime();
+        double time_i = solutionState->getTime();
         RCP<const Thyra::VectorBase<double> > x_plot = solutionState->getX();
-        x_exact_plot = model->getExactSolution(time).get_x();
-        ftmp << time << "   "
+        x_exact_plot = model->getExactSolution(time_i).get_x();
+        ftmp << time_i << "   "
              << Thyra::get_ele(*(x_plot), 0) << "   "
              << Thyra::get_ele(*(x_plot), 1) << "   "
              << Thyra::get_ele(*(x_exact_plot), 0) << "   "

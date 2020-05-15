@@ -14,6 +14,8 @@ ADD_SUBDIRECTORIES(
   CrsMatrix
   Directory
   Distributor
+  FECrsGraph
+  FECrsMatrix
   FEMultiVector
   HashTable
   ImportExport
@@ -23,12 +25,12 @@ ADD_SUBDIRECTORIES(
   MatrixMatrix
   Merge
   MultiVector
-  MultiVectorFiller
   Node
   PerformanceCGSolve
   Sort
   Utils
   RowMatrixTransposer
+  Tsqr
   TypeStack
   )
 

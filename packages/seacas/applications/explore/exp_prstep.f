@@ -59,7 +59,7 @@ C   --   NSTEPS - IN - the number of time steps
       LSTRA = LENSTR (STRA)
       CALL NUMSTR (1, NPREC, TIME, RSTR, LRSTR)
       WRITE (STRB, 10000, IOSTAT=IDUM) NCSTEP, NSTEPS
-10000  FORMAT (I10, ' of ', I10)
+10000  FORMAT (I12, ' of ', I12)
       CALL SQZSTR (STRB, LSTRB)
       IF (NOUT .GT. 0) THEN
          WRITE (NOUT, *)

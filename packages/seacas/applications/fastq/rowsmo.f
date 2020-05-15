@@ -90,7 +90,7 @@ C
 C***********************************************************************
 C
 C  VARIABLES USED:
-C     WFAC = WEIGTH (0. = LAPLACIAN, 1. = ISOPARAMETRIC)
+C     WFAC = WEIGHT (0. = LAPLACIAN, 1. = ISOPARAMETRIC)
 C     NIT  = THE MAX NUMBER OF ITERATIONS TO DO.
 C     EPS  = MINIMUM DISTANCE NODES MUST MOVE TO CONTINUE ITERATIONS
 C     RO   = AN UNDER- OR OVER-RELAXATION FACTOR (NORMALLY 1.0)
@@ -259,8 +259,8 @@ C
                      SUMY = SUMY + YN(NODES(J1)) + YN(NODES(J3))
      &                  - WFAC * YN(NODES(J2))
   120             CONTINUE
-                  SUMX = SUMX/(FLOAT(KS) * (2.0 - WFAC))
-                  SUMY = SUMY/(FLOAT(KS) * (2.0 - WFAC))
+                  SUMX = SUMX/(DBLE(KS) * (2.0 - WFAC))
+                  SUMY = SUMY/(DBLE(KS) * (2.0 - WFAC))
                   XDEL = (RO * ( SUMX - XN (NODE) ))
                   YDEL = (RO * ( SUMY - YN (NODE) ))
 C

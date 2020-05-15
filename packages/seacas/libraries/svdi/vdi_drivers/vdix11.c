@@ -549,7 +549,6 @@ int *justif;
   unsigned long        valuemask;
   unsigned int         d_width, d_height;
   char *               geometry = NULL;
-  int                  geom_result;
   XSetWindowAttributes setwinattr;
   XWMHints             wmhints;
   XSizeHints           hints;
@@ -600,8 +599,9 @@ int *justif;
   ypos     = .3 * d_height;
   /* use user-supplied default geometry if available */
   geometry = XGetDefault(display, "svdi", "Geometry");
-  if (geometry)
-    geom_result = XParseGeometry(geometry, &xpos, &ypos, &x_width, &x_height);
+  if (geometry) {
+    XParseGeometry(geometry, &xpos, &ypos, &x_width, &x_height);
+  }
   window_id = XCreateWindow(display, RootWindow(display, screen), xpos, ypos, x_width, x_height, 3,
                             0, InputOutput, CopyFromParent, valuemask, &setwinattr);
 

@@ -237,7 +237,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ComputeRowBasedOmega(Level& fineLevel, Level &coarseLevel, const RCP<Matrix>& A, const RCP<Matrix>& P0, const RCP<Matrix>& DinvAP0, RCP<Vector > & RowBasedOmega) const {
+  void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ComputeRowBasedOmega(Level& /* fineLevel */, Level &coarseLevel, const RCP<Matrix>& A, const RCP<Matrix>& P0, const RCP<Matrix>& DinvAP0, RCP<Vector > & RowBasedOmega) const {
     FactoryMonitor m(*this, "PgPFactory::ComputeRowBasedOmega", coarseLevel);
 
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
@@ -303,7 +303,7 @@ namespace MueLu {
 
         // compute D^{-1} * A * D^{-1} * A * P0
         bool doFillComplete=true;
-        bool optimizeStorage=false;
+        bool optimizeStorage=true;
         Teuchos::ArrayRCP<Scalar> diagA = Utilities::GetMatrixDiagonal(*A);
         RCP<Matrix> DinvADinvAP0 = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*A, false, *DinvAP0, false, GetOStream(Statistics2), doFillComplete, optimizeStorage);
         Utilities::MyOldScaleMatrix(*DinvADinvAP0, diagA, true, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
@@ -686,7 +686,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level &fineLevel, Level &coarseLevel) const {
+  void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level &/* fineLevel */, Level &/* coarseLevel */) const {
     std::cout << "TODO: remove me" << std::endl;
   }
 

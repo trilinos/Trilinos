@@ -7,7 +7,7 @@
 
 
 /*****************************************************************************/
-int im_ex_get_init (int   im_exoid,
+int im_ex_get_init (int   /* im_exoid */,
 		    char *title,
 		    int  *num_dim,
 		    int  *num_nodes,
@@ -32,7 +32,7 @@ int im_ex_get_init (int   im_exoid,
 }
 
 /*****************************************************************************/
-int im_ex_inquire (int   exoid,
+int im_ex_inquire (int   /* exoid */,
 		   int   req_info,
 		   int  *ret_int,
 		   float *ret_float,
@@ -182,7 +182,7 @@ int im_ex_inquire (int   exoid,
 }
 
 /*****************************************************************************/
-int im_ex_get_coord (int exoid,
+int im_ex_get_coord (int /* exoid */,
 		     void *x_coor,
 		     void *y_coor,
 		     void *z_coor)
@@ -209,7 +209,7 @@ int im_ex_get_coord (int exoid,
 }
 
 /*****************************************************************************/
-int im_ex_get_coord_names (int    exoid,
+int im_ex_get_coord_names (int    /* exoid */,
 			   char **coord_names)
 /*****************************************************************************/
 {
@@ -226,7 +226,7 @@ int im_ex_get_coord_names (int    exoid,
 }
 
 /*****************************************************************************/
-int im_ex_get_map (int  exoid, int *elem_map)
+int im_ex_get_map (int  /* exoid */, int *elem_map)
 /*****************************************************************************/
 {
   ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
@@ -240,7 +240,7 @@ int im_ex_get_map (int  exoid, int *elem_map)
 }
 
 /*****************************************************************************/
-int im_ex_get_elem_num_map (int  exoid,
+int im_ex_get_elem_num_map (int  /* exoid */,
 			    int *elem_map)
 /*****************************************************************************/
 {
@@ -256,7 +256,7 @@ int im_ex_get_elem_num_map (int  exoid,
 }
 
 /*****************************************************************************/
-int im_ex_get_node_num_map (int  exoid,
+int im_ex_get_node_num_map (int  /* exoid */,
 			    int *node_map)
 /*****************************************************************************/
 {
@@ -272,7 +272,7 @@ int im_ex_get_node_num_map (int  exoid,
 }
 
 /*****************************************************************************/
-int im_ex_get_elem_blk_ids (int  exoid, int *ids)
+int im_ex_get_elem_blk_ids (int  /* exoid */, int *ids)
 /*****************************************************************************/
 {
   ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
@@ -287,7 +287,7 @@ int im_ex_get_elem_blk_ids (int  exoid, int *ids)
 }
 
 /*****************************************************************************/
-int im_ex_get_elem_block (int   exoid,
+int im_ex_get_elem_block (int   /* exoid */,
 			  int   elem_blk_id,
 			  char *elem_type,
 			  int  *num_elem_this_blk, 
@@ -336,7 +336,7 @@ int im_ex_get_elem_block (int   exoid,
 // }
 
 /*****************************************************************************/
-int im_ex_get_elem_conn (int   exoid,
+int im_ex_get_elem_conn (int   /* exoid */,
 			 int   elem_blk_id,
 			 int  *connect)
 /*****************************************************************************/
@@ -364,7 +364,7 @@ int im_ex_get_elem_conn (int   exoid,
 }
 
 /*****************************************************************************/
-int im_ex_get_node_set_ids (int  exoid,
+int im_ex_get_node_set_ids (int  /* exoid */,
 			    int *ids)
 /*****************************************************************************/
 {
@@ -411,7 +411,7 @@ int get_ns_index(int nsid)
 }
 
 /*****************************************************************************/
-int im_ex_get_side_set_ids (int  exoid,
+int im_ex_get_side_set_ids (int  /* exoid */,
 			    int *ids)
 /*****************************************************************************/
 {
@@ -425,7 +425,7 @@ int im_ex_get_side_set_ids (int  exoid,
 }
 
 /*****************************************************************************/
-int im_ex_get_node_set_param (int exoid,
+int im_ex_get_node_set_param (int /* exoid */,
 			      int node_set_id,
 			      int * num_nodes_in_set,
 			      int * num_dist_in_set)
@@ -447,7 +447,7 @@ int im_ex_get_node_set_param (int exoid,
 }
 
 /*****************************************************************************/
-int im_ex_get_side_set_param (int exoid,
+int im_ex_get_side_set_param (int /* exoid */,
 			      int side_set_id,
 			      int * num_side_in_set,
 			      int * num_dist_in_set)
@@ -469,7 +469,7 @@ int im_ex_get_side_set_param (int exoid,
 }
 
 /*****************************************************************************/
-int im_ex_get_node_set (int   exoid,
+int im_ex_get_node_set (int   /* exoid */,
 			int   node_set_id,
 			int  *node_set_node_list)
 /*****************************************************************************/
@@ -490,7 +490,7 @@ int im_ex_get_node_set (int   exoid,
 }
 
 /*****************************************************************************/
-int im_ex_get_side_set (int   exoid,
+int im_ex_get_side_set (int   /* exoid */,
 			int   side_set_id,
 			int  *side_set_elem_list,
 			int  *side_set_side_list)
@@ -515,7 +515,7 @@ int im_ex_get_side_set (int   exoid,
 }
 
 /*****************************************************************************/
-int im_ex_get_side_set_node_list(int exoid,
+int im_ex_get_side_set_node_list(int /* exoid */,
 				 int side_set_id,
 				 int *side_set_node_cnt_list,
 				 int *side_set_node_list)
@@ -543,7 +543,7 @@ int im_ex_get_side_set_node_list(int exoid,
 }
 
 /*****************************************************************************/
-int im_ex_get_qa (int exoid,
+int im_ex_get_qa (int /* exoid */,
 		  char *qa_record[][4])
 /*****************************************************************************/
 {
@@ -566,7 +566,7 @@ int im_ex_get_qa (int exoid,
 }
 
 /*****************************************************************************/
-int im_ex_get_info (int exoid, char **info)
+int im_ex_get_info (int /* exoid */, char **info)
 /*****************************************************************************/
 {
   ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
@@ -583,7 +583,7 @@ int im_ex_get_info (int exoid, char **info)
   return 0;
 }
 /*****************************************************************************/
-int im_ex_get_elem_blk_parent_mesh (int  exoid, int *ids)
+int im_ex_get_elem_blk_parent_mesh (int  /* exoid */, int *ids)
 /*****************************************************************************/
 {
   ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
@@ -598,7 +598,7 @@ int im_ex_get_elem_blk_parent_mesh (int  exoid, int *ids)
 }
 
 /*****************************************************************************/
-int im_ex_get_ns_parent_mesh (int  exoid, int *ids)
+int im_ex_get_ns_parent_mesh (int  /* exoid */, int *ids)
 /*****************************************************************************/
 {
   ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
@@ -612,7 +612,7 @@ int im_ex_get_ns_parent_mesh (int  exoid, int *ids)
   return 0;
 }
 /*****************************************************************************/
-int im_ex_get_ss_parent_mesh (int  exoid, int *ids)
+int im_ex_get_ss_parent_mesh (int  /* exoid */, int *ids)
 /*****************************************************************************/
 {
   ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;

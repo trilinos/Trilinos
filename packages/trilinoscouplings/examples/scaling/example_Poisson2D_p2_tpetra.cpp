@@ -135,9 +135,10 @@
 //#if defined(HAVE_TRINOSCOUPLINGS_BELOS) && defined(HAVE_TRILINOSCOUPLINGS_MUELU)
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
-#include <BelosBlockCGSolMgr.hpp>
 #include <BelosPseudoBlockCGSolMgr.hpp>
-#include <BelosBlockGmresSolMgr.hpp>
+#include <BelosPseudoBlockGmresSolMgr.hpp>
+#include <BelosFixedPointSolMgr.hpp>
+
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
 //#endif
@@ -159,8 +160,8 @@ using Teuchos::ParameterList;
 /*********************************************************/
 typedef double scalar_type;
 typedef Teuchos::ScalarTraits<scalar_type> ScalarTraits;
-typedef int local_ordinal_type;
-typedef int global_ordinal_type;
+using local_ordinal_type = Tpetra::Map<>::local_ordinal_type;
+using global_ordinal_type = Tpetra::Map<>::global_ordinal_type;
 typedef KokkosClassic::DefaultNode::DefaultNodeType NO;
 typedef Sacado::Fad::SFad<double,2>      Fad2; //# ind. vars fixed at 2
 typedef Intrepid::FunctionSpaceTools     IntrepidFSTools;
@@ -205,7 +206,7 @@ void CreateLinearSystem(int numWorkSets,
                         FieldContainer<double> const &cubWeights,
                         FieldContainer<double> const &HGBGrads,
                         FieldContainer<double> const &HGBValues,
-                        std::vector<int>       const &globalNodeIds,
+                        std::vector<global_ordinal_type>       const &globalNodeIds,
                         shards::CellTopology const &cellType,
                         crs_matrix_type &StiffMatrix,
                         RCP<multivector_type> &rhsVector,
@@ -248,7 +249,8 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
                                  RCP<multivector_type> & uh,
                                  double & TotalErrorResidual,
                                  double & TotalErrorExactSol,
-                                 std::string &amgType);
+				 std::string &amgType,
+				 std::string &solveType);
 
 
 
@@ -690,7 +692,7 @@ int main(int argc, char *argv[]) {
 
   // Only works in serial
   std::vector<bool>P2_nodeIsOwned(P2_numNodes,true);
-  std::vector<int>P2_globalNodeIds(P2_numNodes);
+  std::vector<global_ordinal_type>P2_globalNodeIds(P2_numNodes);
   for(int i=0; i<P2_numNodes; i++)
     P2_globalNodeIds[i]=i;
 
@@ -764,11 +766,11 @@ int main(int argc, char *argv[]) {
 
   // Build a list of the OWNED global ids...
   // NTS: will need to switch back to long long
-  std::vector<int> P2_ownedGIDs(P2_ownedNodes);
+  std::vector<global_ordinal_type> P2_ownedGIDs(P2_ownedNodes);
   int oidx=0;
   for(int i=0;i<numNodes;i++)
     if(P2_nodeIsOwned[i]){
-      P2_ownedGIDs[oidx]=(int)P2_globalNodeIds[i];
+      P2_ownedGIDs[oidx]=(global_ordinal_type)P2_globalNodeIds[i];
       oidx++;
     }
 
@@ -776,11 +778,11 @@ int main(int argc, char *argv[]) {
   int P1_ownedNodes=0;
   for(int i=0;i<P1_numNodes;i++)
     if(P1_nodeIsOwned[i]) P1_ownedNodes++;
-  std::vector<int> P1_ownedGIDs(P1_ownedNodes);
+  std::vector<global_ordinal_type> P1_ownedGIDs(P1_ownedNodes);
   oidx=0;
   for(int i=0;i<P1_numNodes;i++)
     if(P1_nodeIsOwned[i]){
-      P1_ownedGIDs[oidx]=(int)P1_globalNodeIds[i];
+      P1_ownedGIDs[oidx]=(global_ordinal_type)P1_globalNodeIds[i];
       //nodeSeeds[oidx] = (int)P1_globalNodeIds[i];
       oidx++;
     }
@@ -1052,6 +1054,12 @@ int main(int argc, char *argv[]) {
   /*********************************** SOLVE ****************************************/
   /**********************************************************************************/
 
+  // Which Solver?
+  std::string solveType("cg");
+  if(inputSolverList.isParameter("solver")) {
+    solveType = inputSolverList.get<std::string>("solver");
+  }
+
   // Run the solver
   std::string amgType("MueLu");
 
@@ -1062,6 +1070,7 @@ int main(int argc, char *argv[]) {
     amgList = inputSolverList.sublist("MueLu");
   else
     amgList = inputSolverList;
+
   std::string lev0List = "level 0";
   if (amgList.isSublist(lev0List)) {
     std::cout << "found \"" << lev0List << "\" sublist" << std::endl;
@@ -1145,7 +1154,8 @@ int main(int argc, char *argv[]) {
                                       interpolationMatrix, restrictionMatrix, exactNodalVals,
                                       rhsVector,            femCoefficients,
                                       TotalErrorResidual,   TotalErrorExactSol,
-                                      amgType);
+                                      amgType,
+				      solveType);
 
   /**********************************************************************************/
   /**************************** CALCULATE ERROR *************************************/
@@ -1577,7 +1587,8 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
                                  RCP<multivector_type> & uh,
                                  double & TotalErrorResidual,
                                  double & TotalErrorExactSol,
-                                 std::string &amgType)
+				 std::string &amgType,
+				 std::string &solveType)
 {
   int mypid = A0->getComm()->getRank();
   int maxIts = 100;
@@ -1613,7 +1624,7 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
     RCP<Xpetra::Matrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>> mueluA = MueLu::TpetraCrs_To_XpetraMatrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>(A0);
     // Multigrid Hierarchy
     crs_matrix_type * A1;
-    RCP<Xpetra::Matrix <scalar_type> > xA1;
+    RCP<Xpetra::Matrix <scalar_type, local_ordinal_type, global_ordinal_type> > xA1;
     bool userCoarseA = false;
     if (amgList.isParameter("user coarse matrix")) {
       A1=amgList.get<crs_matrix_type*>("user coarse matrix");
@@ -1622,7 +1633,7 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
       userCoarseA = true;
     }
     MueLu::ParameterListInterpreter<scalar_type> mueLuFactory(amgList);
-    RCP<MueLu::Hierarchy<scalar_type> > H = mueLuFactory.CreateHierarchy();
+    RCP<MueLu::Hierarchy<scalar_type,local_ordinal_type,global_ordinal_type> > H = mueLuFactory.CreateHierarchy();
     H->setVerbLevel(Teuchos::VERB_HIGH);
     H->GetLevel(0)->Set("A", mueluA);
     MueLu::FactoryManager<scalar_type,local_ordinal_type,global_ordinal_type,NO> M1, M2;
@@ -1680,14 +1691,18 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
 
     // Create an iterative solver manager
     RCP< Belos::SolverManager<scalar_type, multivector_type, operator_type> > solver;
-    solver = rcp(new Belos::PseudoBlockCGSolMgr   <scalar_type, multivector_type, operator_type>(rcpFromRef(Problem), rcp(&belosList, false)));
-    /*
-    if (solveType == "cg") {
-      solver = rcp(new Belos::PseudoBlockCGSolMgr   <scalar_type, MV, OP>(Problem, rcp(&belosList, false)));
-    } else if (solveType == "gmres") {
-      solver = rcp(new Belos::BlockGmresSolMgr<scalar_type, MV, OP>(Problem, rcp(&belosList, false)));
+    if(solveType == "cg")
+      solver = rcp(new Belos::PseudoBlockCGSolMgr<scalar_type, multivector_type, operator_type>(rcpFromRef(Problem), rcp(&belosList, false)));
+    else if (solveType == "gmres") { 
+      solver = rcp(new Belos::PseudoBlockGmresSolMgr<scalar_type, multivector_type, operator_type>(rcpFromRef(Problem), rcp(&belosList, false)));
     }
-    */
+    else if (solveType == "fixed point" || solveType == "fixed-point") {
+      solver = rcp(new Belos::FixedPointSolMgr<scalar_type, multivector_type, operator_type>(rcpFromRef(Problem), rcp(&belosList, false)));   
+    }
+    else {
+      std::cout << "\nERROR:  Invalid solver '"<<solveType<<"'" << std::endl;
+      return EXIT_FAILURE;
+    }
 
     // Perform solve
     solver->solve();
@@ -1968,7 +1983,7 @@ void CreateLinearSystem(int numWorksets,
                         FieldContainer<double> const &cubWeights,
                         FieldContainer<double> const &HGBGrads,
                         FieldContainer<double> const &HGBValues,
-                        std::vector<int>       const &globalNodeIds,
+                        std::vector<global_ordinal_type>       const &globalNodeIds,
                         shards::CellTopology const &cellType,
                         crs_matrix_type &StiffMatrix,
                         RCP<multivector_type> &rhsVector,
@@ -2278,12 +2293,12 @@ void Apply_Dirichlet_BCs(std::vector<int> &BCNodes, crs_matrix_type & A, multive
   A.resumeFill();
 
   for(int i=0; i<N; i++) {
-    int lrid = BCNodes[i];
+    local_ordinal_type lrid = BCNodes[i];
 
     xdata[lrid]=bdata[lrid] = solndata[lrid];
 
     size_t numEntriesInRow = A.getNumEntriesInLocalRow(lrid);
-    Array<global_ordinal_type> cols(numEntriesInRow);
+    Array<local_ordinal_type> cols(numEntriesInRow);
     Array<scalar_type> vals(numEntriesInRow);
     A.getLocalRowCopy(lrid, cols(), vals(), numEntriesInRow);
 

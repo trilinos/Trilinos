@@ -98,7 +98,7 @@ namespace LOCA {
              const Teuchos::RCP<LOCA::DerivUtils>& deriv);
 
       /*!
-       * Compute \f$\partial F/\partial p\f$ for each parameter \f$p\f$
+       * Compute \f$\partial F/\partial p\f$ for each parameter \f$ p\f$
        * indexed by paramIDs.  The first column of \em dfdp holds F,
        * which is valid if \em isValidF is true.  Otherwise F must be
        * computed.

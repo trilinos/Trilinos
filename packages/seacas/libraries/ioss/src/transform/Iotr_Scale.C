@@ -50,7 +50,7 @@ namespace Iotr {
 
   Ioss::Transform *Scale_Factory::make(const std::string & /*unused*/) const { return new Scale(); }
 
-  Scale::Scale() {}
+  Scale::Scale() = default;
 
   void Scale::set_property(const std::string & /*name*/, int value) { intMultiplier = value; }
 
@@ -70,7 +70,7 @@ namespace Iotr {
     int    components = field.transformed_storage()->component_count();
 
     if (field.get_type() == Ioss::Field::REAL) {
-      double *rdata = static_cast<double *>(data);
+      auto *rdata = static_cast<double *>(data);
 
       for (size_t i = 0; i < count * components; i++) {
         rdata[i] *= realMultiplier;

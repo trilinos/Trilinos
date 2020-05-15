@@ -152,8 +152,7 @@ private:
   int MyPID;              // Process number
   int NumProc;            // Total number of processes
 
-  int NumSpecies;         // Number of unknowns owned by this process
-  enum { NUMSPECIES = 2}; // Needed for SGI build
+  static constexpr int NumSpecies = 2;
   int NumMyNodes;         // Number of nodes owned by this process
   int NumMyUnknowns;      // Number of unknowns owned by this process
   int NumGlobalUnknowns;  // Total Number of unknowns

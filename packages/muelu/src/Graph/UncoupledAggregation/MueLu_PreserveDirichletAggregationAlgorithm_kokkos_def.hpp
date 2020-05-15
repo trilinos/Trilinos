@@ -63,34 +63,58 @@
 namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void PreserveDirichletAggregationAlgorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(Teuchos::ParameterList const & params, LWGraph_kokkos const & graph, Aggregates_kokkos & aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
+  void PreserveDirichletAggregationAlgorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
+  BuildAggregates(Teuchos::ParameterList const & params,
+                  LWGraph_kokkos const & graph,
+                  Aggregates_kokkos & aggregates,
+                  Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space>& aggStat,
+                  LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");
+    using local_ordinal_type = typename LWGraph_kokkos::local_ordinal_type;
 
-    bool preserve = params.get<bool>("aggregation: preserve Dirichlet points");
+    // Extract parameters and data from:
+    // 1) the parameter list
+    const bool preserve = params.get<bool>("aggregation: preserve Dirichlet points");
 
-    const LO  numRows = graph.GetNodeNumVertices();
-    const int myRank  = graph.GetComm()->getRank();
+    // 2) the amalgamated graph
+    const LO  numNodes  = graph.GetNodeNumVertices();
+    const int myRank    = graph.GetComm()->getRank();
 
-    ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
-    ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()  ->getDataNonConst(0);
+    // 3) the aggregates
+    auto vertex2AggId   = aggregates.GetVertex2AggId()->template getLocalView<memory_space>();
+    auto procWinner     = aggregates.GetProcWinner()  ->template getLocalView<memory_space>();
 
-    LO numLocalAggregates = aggregates.GetNumAggregates();
+    // A view is needed to count on the fly the current number of local aggregates
+    Kokkos::View<LO, memory_space> aggCount("aggCount");
+    if(preserve) {
+      Kokkos::deep_copy(aggCount, aggregates.GetNumAggregates());
+    }
+    Kokkos::parallel_for("MueLu - PreserveDirichlet: tagging ignored nodes",
+                         Kokkos::RangePolicy<local_ordinal_type, execution_space>(0, numNodes),
+                         KOKKOS_LAMBDA(const local_ordinal_type nodeIdx) {
+                           if (aggStat(nodeIdx) == BOUNDARY) {
+                             aggStat(nodeIdx) = IGNORED;
+                             const LO aggIdx = Kokkos::atomic_fetch_add(&aggCount(), 1);
 
-    for (LO i = 0; i < numRows; i++)
-      if (aggStat[i] == BOUNDARY) {
-        aggStat[i] = IGNORED;
-        numNonAggregatedNodes--;
+                             if (preserve) {
+                               // aggregates.SetIsRoot(nodeIdx);
 
-        if (preserve) {
-          aggregates.SetIsRoot(i);
-
-          vertex2AggId[i] = numLocalAggregates++;
-          procWinner  [i] = myRank;
-        }
-      }
+                               vertex2AggId(nodeIdx, 0) = aggIdx;
+                               procWinner(nodeIdx, 0)   = myRank;
+                             }
+                           }
+                         });
+    typename Kokkos::View<LO, memory_space>::HostMirror aggCount_h
+      = Kokkos::create_mirror_view(aggCount);
+    Kokkos::deep_copy(aggCount_h, aggCount);
+    // In this phase the number of new aggregates is the same
+    // as the number of newly aggregated nodes.
+    numNonAggregatedNodes -= (aggCount_h() - aggregates.GetNumAggregates());
 
     // update aggregate object
-    aggregates.SetNumAggregates(numLocalAggregates);
+    if(preserve) {
+      aggregates.SetNumAggregates(aggCount_h());
+    }
   }
 
 } // end namespace

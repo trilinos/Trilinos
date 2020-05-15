@@ -144,7 +144,7 @@ namespace MueLu {
         @param B right-hand side
         @param InitialGuessIsZero This option has no effect with this smoother
     */
-    void Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero = false) const;
+    void Apply(MultiVector& X, const MultiVector& B, bool /* InitialGuessIsZero */ = false) const;
 
     //@}
 
@@ -195,7 +195,7 @@ namespace MueLu {
   //! This function simplifies the usage of AmesosSmoother objects inside of templates as templates do not have to be specialized for <double, int, int> (see DirectSolver for an example).
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-  GetAmesosSmoother (const std::string& type = "", const Teuchos::ParameterList& paramList = Teuchos::ParameterList ()) {
+  GetAmesosSmoother (const std::string& /* type */ = "", const Teuchos::ParameterList& /* paramList */ = Teuchos::ParameterList ()) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
                                "AmesosSmoother cannot be used with Scalar != double, LocalOrdinal != int, GlobalOrdinal != int");
     TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);

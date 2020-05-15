@@ -66,7 +66,7 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void GenericRFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
+  void GenericRFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &/* fineLevel */, Level &coarseLevel) const {
     RCP<const FactoryBase> PFact1 = GetFactory("P");
     if (PFact1 == Teuchos::null) { PFact1 = coarseLevel.GetFactoryManager()->GetFactory("P"); }
     RCP<PFactory> PFact = Teuchos::rcp_const_cast<PFactory>(rcp_dynamic_cast<const PFactory>(PFact1));;
@@ -89,7 +89,7 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void GenericRFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level & fineLevel, Level & coarseLevel) const {
+  void GenericRFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level & /* fineLevel */, Level & coarseLevel) const {
     FactoryMonitor m(*this, "Call prolongator factory for calculating restrictor", coarseLevel);
 
     RCP<const FactoryBase> PFact1 = GetFactory("P");

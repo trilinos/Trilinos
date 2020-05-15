@@ -56,9 +56,9 @@
 
 namespace Xpetra {
 
-  template <class LocalOrdinal = Map<>::local_ordinal_type,
-            class GlobalOrdinal = typename Map<LocalOrdinal>::global_ordinal_type,
-            class Node = typename Map<LocalOrdinal, GlobalOrdinal>::node_type>
+  template <class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class Import
     : public Teuchos::Describable
   {
@@ -110,6 +110,9 @@ namespace Xpetra {
 
     //! The Target Map used to construct this Import object.
     virtual Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getTargetMap() const = 0;
+
+    //! Set parameters on the underlying object
+    virtual void setDistributorParameters(const Teuchos::RCP<Teuchos::ParameterList> params) const = 0;
 
     //@}
 

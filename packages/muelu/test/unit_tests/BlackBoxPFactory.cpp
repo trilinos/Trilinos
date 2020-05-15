@@ -739,8 +739,7 @@ namespace MueLuTests {
   } // Prolongator
 
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlackBoxPFactory, BBPoisson, Scalar, LocalOrdinal,
-                                    GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlackBoxPFactory, BBPoisson, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
@@ -790,7 +789,6 @@ namespace MueLuTests {
 
     // Set paramters needed by the factories
     Pfact->SetParameter("Coarsen", Teuchos::ParameterEntry(std::string("{2,2,2}")));
-    Pfact->SetParameter("axisPermutation", Teuchos::ParameterEntry(std::string("{0,1,2}")));
     Pfact->SetParameter("stencil type", Teuchos::ParameterEntry(std::string("reduced")));
     Pfact->SetParameter("block strategy", Teuchos::ParameterEntry(std::string("coupled")));
 

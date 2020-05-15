@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -70,6 +71,25 @@ std::string format_time(double t, const char *format = "%b %e %Y %H:%M:%S");
 /// <H3>Signals and Long Jump</H3>
 ///
 namespace Env {
+
+/**
+ * @ingroup EnvRuntimeInformationDetail
+ * @brief Member function <b>wall_now</b> returns the epoch as a double precision
+ * value in seconds to "millisecond" accuracy.
+ *
+ * @return a <b>double</b> ...
+ */
+double wall_now();
+
+
+/**
+ * @ingroup EnvRuntimeInformationDetail
+ * @brief Member function <b>cpu_now</b> returns the accumlated cpu time for the
+ * process as a double precision value in seconds to "millisecond" accuracy.
+ *
+ * @return a <b>double</b> ...
+ */
+double cpu_now();
 
 static const std::string PARAM_ON = "on";  ///< Option value when command line option specified without a parameter
 
@@ -189,25 +209,6 @@ const std::string &startup_date();
  */
 double start_time();
 
-
-/**
- * @ingroup EnvRuntimeInformationDetail
- * @brief Member function <b>wall_now</b> returns the epoch as a double precision
- * value in seconds to "millisecond" accuracy.
- *
- * @return a <b>double</b> ...
- */
-double wall_now();
-
-
-/**
- * @ingroup EnvRuntimeInformationDetail
- * @brief Member function <b>cpu_now</b> returns the accumlated cpu time for the
- * process as a double precision value in seconds to "millisecond" accuracy.
- *
- * @return a <b>double</b> ...
- */
-double cpu_now();
 
 
 /**

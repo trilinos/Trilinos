@@ -270,8 +270,6 @@ long long Inline_Mesh_Desc::Decompose(std::set <long long> & global_el_ids){
     std::cout << "Inline_Mesh_Desc::Decompose()" << std::endl;
   
 
-  std::vector <Partition *> sorted_partition_list;
-
 if(inline_decomposition_type == PROCESSOR_LAYOUT){
 
   long long remaining_cuts[3];
@@ -1402,7 +1400,7 @@ void Inline_Mesh_Desc::get_l_i_j_k_from_element_number(long long el,
 //! A utility function to build up required bookkeeping objects.
 /****************************************************************************/
 void Inline_Mesh_Desc::get_l_i_j_k_from_node_number(long long nn,
-								 long long & l,
+								 long long & /* l */,
 								 long long & i,
 								 long long & j,
 								 long long & k)
@@ -1415,7 +1413,7 @@ void Inline_Mesh_Desc::get_l_i_j_k_from_node_number(long long nn,
 }
 
 /****************************************************************************/
-long long Inline_Mesh_Desc::get_element_number_from_l_i_j_k( long long  l,
+long long Inline_Mesh_Desc::get_element_number_from_l_i_j_k( long long  /* l */,
 						       long long  i,
 						       long long  j,
 						       long long  k)
@@ -1447,7 +1445,7 @@ long long Inline_Mesh_Desc::get_element_number_from_l_i_j_k( long long  l,
 }
 
 /****************************************************************************/
-long long Inline_Mesh_Desc::get_node_number_from_l_i_j_k( long long  l,
+long long Inline_Mesh_Desc::get_node_number_from_l_i_j_k( long long  /* l */,
 							  long long  i,
 							  long long  j,
 							  long long  k)

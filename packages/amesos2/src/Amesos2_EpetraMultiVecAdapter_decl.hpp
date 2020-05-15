@@ -2,7 +2,7 @@
 //
 // ***********************************************************************
 //
-//           Amesos2: Templated Direct Sparse Solver Package 
+//           Amesos2: Templated Direct Sparse Solver Package
 //                  Copyright 2011 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -47,7 +47,7 @@
   \date   Tue Jul 20 23:34:52 CDT 2010
 
   \brief  Amesos2::MultiVecAdapter specialization for the
-	  Epetra_MultiVector class.
+          Epetra_MultiVector class.
 */
 
 #ifndef AMESOS2_EPETRA_MULTIVEC_ADAPTER_DECL_HPP
@@ -63,6 +63,7 @@
 #include <Epetra_MultiVector.h>
 
 #include "Amesos2_MultiVecAdapter_decl.hpp"
+#include "Amesos2_Kokkos_View_Copy_Assign.hpp"
 
 namespace Amesos2 {
 
@@ -79,15 +80,15 @@ namespace Amesos2 {
     // public type definitions
     typedef double                                                scalar_t;
     typedef int                                            local_ordinal_t;
-    typedef int                                           global_ordinal_t;
+    typedef Tpetra::Map<>::global_ordinal_type            global_ordinal_t;
     typedef size_t                                           global_size_t;
-    typedef Tpetra::Map<>::node_type  node_t;
+    typedef Tpetra::Map<>::node_type                                node_t;
     typedef Epetra_MultiVector                                  multivec_t;
 
     friend Teuchos::RCP<MultiVecAdapter<multivec_t> > createMultiVecAdapter<>(Teuchos::RCP<multivec_t>);
     friend Teuchos::RCP<const MultiVecAdapter<multivec_t> > createConstMultiVecAdapter<>(Teuchos::RCP<const multivec_t>);
 
-  
+
     static const char* name;
 
 
@@ -102,11 +103,10 @@ namespace Amesos2 {
      */
     MultiVecAdapter( const Teuchos::RCP<multivec_t>& m );
 
-  
+
   public:
 
-    ~MultiVecAdapter()
-    { }
+    ~MultiVecAdapter() = default;
 
 
     /// Checks whether this multi-vector is local to the calling node.
@@ -177,13 +177,34 @@ namespace Amesos2 {
      *  Each multi-vector is \c lda apart in memory.
      */
     void get1dCopy( const Teuchos::ArrayView<scalar_t>& A,
-		    size_t lda,
-		    Teuchos::Ptr<
-		    const Tpetra::Map<local_ordinal_t,
-		    global_ordinal_t,
-		    node_t> > distribution_map,
+                    size_t lda,
+                    Teuchos::Ptr<
+                    const Tpetra::Map<local_ordinal_t,
+                    global_ordinal_t,
+                    node_t> > distribution_map,
         EDistribution distribution) const;
 
+    template<typename KV>
+    void get1dCopy_kokkos_view( KV & A,
+                    size_t lda,
+                    Teuchos::Ptr<
+                      const Tpetra::Map<local_ordinal_t,
+                      global_ordinal_t,
+                      node_t> > distribution_map,
+                    EDistribution distribution) const {
+      Kokkos::View<double**, Kokkos::LayoutLeft, Kokkos::HostSpace> host_new_data;
+      get1dCopy_kokkos_view_host(host_new_data, lda, distribution_map, distribution);
+      deep_copy_or_assign_view(A, host_new_data);
+    }
+
+    void get1dCopy_kokkos_view_host(
+                    Kokkos::View<scalar_t**, Kokkos::LayoutLeft, Kokkos::HostSpace> & new_data,
+                    size_t lda,
+                    Teuchos::Ptr<
+                      const Tpetra::Map<local_ordinal_t,
+                      global_ordinal_t,
+                      node_t> > distribution_map,
+                    EDistribution) const;
 
     /**
      * \brief Extracts a 1 dimensional view of this multi-vector's data
@@ -216,14 +237,37 @@ namespace Amesos2 {
      * \param newVals The values to be exported into the global space.
      */
     void put1dData( const Teuchos::ArrayView<const scalar_t>& new_data,
-		    size_t lda,
-		    Teuchos::Ptr<
-		    const Tpetra::Map<local_ordinal_t,
-		    global_ordinal_t,
-		    node_t> > source_map,
+                    size_t lda,
+                    Teuchos::Ptr<
+                    const Tpetra::Map<local_ordinal_t,
+                    global_ordinal_t,
+                    node_t> > source_map,
         EDistribution distribution );
 
+    template<typename KV>
+    void put1dData_kokkos_view(
+                    KV & new_data,
+                    size_t lda,
+                      Teuchos::Ptr<
+                      const Tpetra::Map<local_ordinal_t,
+                      global_ordinal_t,
+                      node_t> > source_map,
+                    EDistribution distribution ) {
+      Kokkos::View<scalar_t**, Kokkos::LayoutLeft, Kokkos::HostSpace> host_new_data(
+        Kokkos::ViewAllocateWithoutInitializing("host_new_data"),
+        new_data.extent(0), new_data.extent(1));
+      Kokkos::deep_copy(host_new_data, new_data);
+      put1dData_kokkos_view_host(host_new_data, lda, source_map, distribution);
+    }
 
+    void put1dData_kokkos_view_host(
+                    Kokkos::View<scalar_t**, Kokkos::LayoutLeft, Kokkos::HostSpace> & new_data,
+                    size_t lda,
+                    Teuchos::Ptr<
+                    const Tpetra::Map<local_ordinal_t,
+                    global_ordinal_t,
+                    node_t> > source_map,
+        EDistribution distribution );
 
     /// Get a short description of this adapter class
     std::string description() const;

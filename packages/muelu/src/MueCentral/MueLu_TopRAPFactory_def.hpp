@@ -35,7 +35,7 @@ namespace MueLu {
   { }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  TopRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TopRAPFactory(RCP<const FactoryManagerBase> parentFactoryManagerFine, RCP<const FactoryManagerBase> parentFactoryManagerCoarse) :
+  TopRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TopRAPFactory(RCP<const FactoryManagerBase> /* parentFactoryManagerFine */, RCP<const FactoryManagerBase> parentFactoryManagerCoarse) :
     PFact_ (parentFactoryManagerCoarse->GetFactory("P")),
     RFact_ (parentFactoryManagerCoarse->GetFactory("R")),
     AcFact_(parentFactoryManagerCoarse->GetFactory("A"))
@@ -45,14 +45,14 @@ namespace MueLu {
   TopRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~TopRAPFactory() { }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void TopRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level & fineLevel, Level & coarseLevel) const {
+  void TopRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level & /* fineLevel */, Level & coarseLevel) const {
     if (PFact_  != Teuchos::null)                                       coarseLevel.DeclareInput("P", PFact_.get());
     if (RFact_  != Teuchos::null)                                       coarseLevel.DeclareInput("R", RFact_.get());
     if ((AcFact_ != Teuchos::null) && (AcFact_ != NoFactory::getRCP())) coarseLevel.DeclareInput("A", AcFact_.get());
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void TopRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level & fineLevel, Level & coarseLevel) const {
+  void TopRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level & /* fineLevel */, Level & coarseLevel) const {
     if ((PFact_ != Teuchos::null) && (PFact_ != NoFactory::getRCP())) {
       RCP<Operator> oP = coarseLevel.Get<RCP<Operator> >("P", PFact_.get());
       RCP<Matrix>    P = rcp_dynamic_cast<Matrix>(oP);

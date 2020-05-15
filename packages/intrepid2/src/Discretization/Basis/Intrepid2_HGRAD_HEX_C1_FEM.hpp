@@ -101,11 +101,11 @@ namespace Intrepid2 {
       */
       template<EOperator opType>
       struct Serial {
-        template<typename outputViewType,
+        template<typename OutputViewType,
                  typename inputViewType>
         KOKKOS_INLINE_FUNCTION
         static void
-        getValues(       outputViewType output,
+        getValues(       OutputViewType output,
                    const inputViewType input );
         
       };
@@ -144,6 +144,7 @@ namespace Intrepid2 {
           }
           case OPERATOR_GRAD :
           case OPERATOR_D2 :
+          case OPERATOR_D3 :
           case OPERATOR_MAX : {
             auto       output = Kokkos::subview( _outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
             const auto input  = Kokkos::subview( _inputPoints,                 pt, Kokkos::ALL() );
@@ -154,6 +155,7 @@ namespace Intrepid2 {
             INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
                                       opType != OPERATOR_GRAD &&
                                       opType != OPERATOR_D2 &&
+                                      opType != OPERATOR_D3 &&
                                       opType != OPERATOR_MAX,
                                       ">>> ERROR: (Intrepid2::Basis_HGRAD_HEX_C1_FEM::Serial::getValues) operator is not supported");
           }
@@ -168,24 +170,24 @@ namespace Intrepid2 {
            typename pointValueType = double>
   class Basis_HGRAD_HEX_C1_FEM : public Basis<ExecSpaceType,outputValueType,pointValueType> {
   public:
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_1d_host ordinal_type_array_1d_host;
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_2d_host ordinal_type_array_2d_host;
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_3d_host ordinal_type_array_3d_host;
+    using OrdinalTypeArray1DHost = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray1DHost;
+    using OrdinalTypeArray2DHost = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray2DHost;
+    using OrdinalTypeArray3DHost = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray3DHost;
 
     /** \brief  Constructor.
      */
     Basis_HGRAD_HEX_C1_FEM();
 
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::outputViewType outputViewType;
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::pointViewType  pointViewType;
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::scalarViewType  scalarViewType;
+    using OutputViewType = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OutputViewType;
+    using PointViewType  = typename Basis<ExecSpaceType,outputValueType,pointValueType>::PointViewType;
+    using ScalarViewType = typename Basis<ExecSpaceType,outputValueType,pointValueType>::ScalarViewType;
 
     using Basis<ExecSpaceType,outputValueType,pointValueType>::getValues;
 
     virtual
     void
-    getValues(       outputViewType outputValues,
-               const pointViewType  inputPoints,
+    getValues(       OutputViewType outputValues,
+               const PointViewType  inputPoints,
                const EOperator operatorType = OPERATOR_VALUE ) const {
 #ifdef HAVE_INTREPID2_DEBUG
       // Verify arguments
@@ -203,7 +205,7 @@ namespace Intrepid2 {
 
     virtual
     void
-    getDofCoords( scalarViewType dofCoords ) const {
+    getDofCoords( ScalarViewType dofCoords ) const {
 #ifdef HAVE_INTREPID2_DEBUG
       // Verify rank of output array.
       INTREPID2_TEST_FOR_EXCEPTION( dofCoords.rank() != 2, std::invalid_argument,
@@ -220,7 +222,7 @@ namespace Intrepid2 {
 
     virtual
     void
-    getDofCoeffs( scalarViewType dofCoeffs ) const {
+    getDofCoeffs( ScalarViewType dofCoeffs ) const {
 #ifdef HAVE_INTREPID2_DEBUG
       // Verify rank of output array.
       INTREPID2_TEST_FOR_EXCEPTION( dofCoeffs.rank() != 1, std::invalid_argument,

@@ -161,8 +161,7 @@ public:
       affects only the Apply() and ApplyInverse() methods.  If the implementation of this interface
       does not support transpose use, this method should return a value of -1.
 
-     \param
-     UseTranspose_in - (In) If true, multiply by the transpose of operator, otherwise just use operator.
+     \param UseTranspose_in - (In) If true, multiply by the transpose of operator, otherwise just use operator.
 
      \return Always returns 0.
   */
@@ -323,7 +322,7 @@ private:
   {};
 
   //! operator= (should never be used)
-  Ifpack_ILUT& operator=(const Ifpack_ILUT& RHS)
+  Ifpack_ILUT& operator=(const Ifpack_ILUT& /* RHS */)
   {
     return(*this);
   }

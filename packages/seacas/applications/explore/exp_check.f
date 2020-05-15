@@ -87,6 +87,7 @@ C
      *  MAPEL, MAPND)
 
  240  CONTINUE
+      CALL MDDEL ('ISCR')
       CALL MDDEL ('ICHECK')
       CALL MDDEL ('RCHECK')
 
@@ -110,4 +111,3 @@ C
 10000 FORMAT (1X, 5A)
       return
       end
-

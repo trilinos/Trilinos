@@ -52,7 +52,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_EpetraLinearObjContainer.hpp"
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
@@ -70,8 +70,8 @@
 
 template<typename TRAITS,typename LO,typename GO>
 panzer::ScatterDirichletResidual_Epetra<panzer::Traits::Residual, TRAITS,LO,GO>::
-ScatterDirichletResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
-                                const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & /* cIndexer */,
+ScatterDirichletResidual_Epetra(const Teuchos::RCP<const GlobalIndexer> & indexer,
+                                const Teuchos::RCP<const panzer::GlobalIndexer> & /* cIndexer */,
                                 const Teuchos::ParameterList& p)
    : globalIndexer_(indexer)
    , globalDataKey_("Residual Scatter Container")
@@ -252,8 +252,8 @@ evaluateFields(typename TRAITS::EvalData workset)
 
 template<typename TRAITS,typename LO,typename GO>
 panzer::ScatterDirichletResidual_Epetra<panzer::Traits::Tangent, TRAITS,LO,GO>::
-ScatterDirichletResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
-                                const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & /* cIndexer */,
+ScatterDirichletResidual_Epetra(const Teuchos::RCP<const GlobalIndexer> & indexer,
+                                const Teuchos::RCP<const panzer::GlobalIndexer> & /* cIndexer */,
                                 const Teuchos::ParameterList& p)
    : globalIndexer_(indexer)
    , globalDataKey_("Residual Scatter Container")
@@ -469,8 +469,8 @@ evaluateFields(typename TRAITS::EvalData workset)
 
 template<typename TRAITS,typename LO,typename GO>
 panzer::ScatterDirichletResidual_Epetra<panzer::Traits::Jacobian, TRAITS,LO,GO>::
-ScatterDirichletResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
-                                const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & cIndexer,
+ScatterDirichletResidual_Epetra(const Teuchos::RCP<const GlobalIndexer> & indexer,
+                                const Teuchos::RCP<const panzer::GlobalIndexer> & cIndexer,
                                 const Teuchos::ParameterList& p)
    : globalIndexer_(indexer)
    , colGlobalIndexer_(cIndexer) 

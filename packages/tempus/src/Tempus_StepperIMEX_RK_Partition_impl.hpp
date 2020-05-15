@@ -9,7 +9,6 @@
 #ifndef Tempus_StepperIMEX_RK_Partition_impl_hpp
 #define Tempus_StepperIMEX_RK_Partition_impl_hpp
 
-#include "Tempus_RKButcherTableauBuilder.hpp"
 #include "Tempus_config.hpp"
 #include "Tempus_StepperFactory.hpp"
 #include "Tempus_WrapperModelEvaluatorPairPartIMEX_Basic.hpp"
@@ -25,167 +24,239 @@ template<class Scalar> class StepperFactory;
 
 
 template<class Scalar>
-StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-  std::string stepperType)
+StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition()
 {
-  this->setTableaus(Teuchos::null, stepperType);
-  this->setModel(appModel);
-  this->initialize();
+  this->setStepperType(        "Partitioned IMEX RK SSP2");
+  this->setUseFSAL(            this->getUseFSALDefault());
+  this->setICConsistency(      this->getICConsistencyDefault());
+  this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
+  this->setZeroInitialGuess(   false);
+
+  this->setStageNumber(-1);
+
+  this->setTableaus("Partitioned IMEX RK SSP2");
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+  this->setObserver();
+#endif
+  this->setAppAction(Teuchos::null);
+  this->setDefaultSolver();
 }
 
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
 template<class Scalar>
 StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-  Teuchos::RCP<Teuchos::ParameterList> pList)
-{
-  this->setTableaus(pList, "Partitioned IMEX RK SSP2");
-  this->setParameterList(pList);
-  this->setModel(appModel);
-  this->initialize();
-}
-
-
-template<class Scalar>
-StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+  const Teuchos::RCP<StepperObserver<Scalar> >& obs,
+  const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+  bool useFSAL,
+  std::string ICConsistency,
+  bool ICConsistencyCheck,
+  bool zeroInitialGuess,
   std::string stepperType,
-  Teuchos::RCP<Teuchos::ParameterList> pList)
+  Teuchos::RCP<const RKButcherTableau<Scalar> > explicitTableau,
+  Teuchos::RCP<const RKButcherTableau<Scalar> > implicitTableau,
+  Scalar order)
 {
-  this->setTableaus(pList, stepperType);
-  this->setParameterList(pList);
-  this->setModel(appModel);
-  this->initialize();
+  this->setStepperType(        stepperType);
+  this->setUseFSAL(            useFSAL);
+  this->setICConsistency(      ICConsistency);
+  this->setICConsistencyCheck( ICConsistencyCheck);
+  this->setZeroInitialGuess(   zeroInitialGuess);
+
+  this->setStageNumber(-1);
+
+  this->setExplicitTableau(explicitTableau);
+  this->setImplicitTableau(implicitTableau);
+  this->setObserver(obs);
+  this->setAppAction(Teuchos::null);
+  this->setSolver(solver);
+
+  if (appModel != Teuchos::null) {
+    this->setModel(appModel);
+    this->initialize();
+  }
+}
+#endif
+template<class Scalar>
+StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+  const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+  bool useFSAL,
+  std::string ICConsistency,
+  bool ICConsistencyCheck,
+  bool zeroInitialGuess,
+  const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction,
+  std::string stepperType,
+  Teuchos::RCP<const RKButcherTableau<Scalar> > explicitTableau,
+  Teuchos::RCP<const RKButcherTableau<Scalar> > implicitTableau,
+  Scalar order)
+{
+  this->setStepperType(        stepperType);
+  this->setUseFSAL(            useFSAL);
+  this->setICConsistency(      ICConsistency);
+  this->setICConsistencyCheck( ICConsistencyCheck);
+  this->setZeroInitialGuess(   zeroInitialGuess);
+  this->setOrder(              order);
+
+  this->setStageNumber(-1);
+
+  this->setExplicitTableau(explicitTableau);
+  this->setImplicitTableau(implicitTableau);
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+  this->setObserver(Teuchos::null);
+#endif
+  this->setAppAction(stepperRKAppAction);
+  this->setSolver(solver);
+
+  if (appModel != Teuchos::null) {
+    this->setModel(appModel);
+    this->initialize();
+  }
 }
 
 
 template<class Scalar>
 void StepperIMEX_RK_Partition<Scalar>::setTableaus(
-  Teuchos::RCP<Teuchos::ParameterList> pList,
-  std::string stepperType)
+  std::string stepperType,
+  Teuchos::RCP<const RKButcherTableau<Scalar> > explicitTableau,
+  Teuchos::RCP<const RKButcherTableau<Scalar> > implicitTableau)
 {
-  if (stepperType == "") {
-    if (pList == Teuchos::null)
-      stepperType = "Partitioned IMEX RK SSP2";
-    else
-      stepperType = pList->get<std::string>("Stepper Type",
-                                            "Partitioned IMEX RK SSP2");
-  }
+  if (stepperType == "") stepperType = "Partitioned IMEX RK SSP2";
 
   if (stepperType == "Partitioned IMEX RK 1st order") {
     {
       // Explicit Tableau
-      Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-      pl->setName("IMEX-RK Explicit Stepper");
-      pl->set<std::string>("Stepper Type", "General ERK");
+      typedef Teuchos::ScalarTraits<Scalar> ST;
+      int NumStages = 2;
+      Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
+      Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
+      Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
+      const Scalar one = ST::one();
+      const Scalar zero = ST::zero();
 
-      // Tableau ParameterList
-      Teuchos::RCP<Teuchos::ParameterList> tableauPL = Teuchos::parameterList();
-      tableauPL->set<std::string>("A", "0.0 0.0; 1.0 0.0");
-      tableauPL->set<std::string>("b", "1.0 0.0");
-      tableauPL->set<std::string>("c", "0.0 1.0");
-      tableauPL->set<int>("order", 1);
-      pl->set("Tableau", *tableauPL);
+      // Fill A:
+      A(0,0) = zero; A(0,1) = zero;
+      A(1,0) =  one; A(1,1) = zero;
 
-      this->setExplicitTableau("General ERK", pl);
+      // Fill b:
+      b(0) = one; b(1) = zero;
+
+      // Fill c:
+      c(0) = zero; c(1) = one;
+
+      int order = 1;
+
+      auto expTableau = Teuchos::rcp(new RKButcherTableau<Scalar>(
+        "Explicit Tableau - Partitioned IMEX RK 1st order",
+        A,b,c,order,order,order));
+
+      this->setExplicitTableau(expTableau);
     }
     {
       // Implicit Tableau
-      Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-      pl->setName("IMEX-RK Implicit Stepper");
-      pl->set<std::string>("Stepper Type", "General DIRK");
-      pl->set("Solver Name", "");
+      typedef Teuchos::ScalarTraits<Scalar> ST;
+      int NumStages = 2;
+      Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
+      Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
+      Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
+      const Scalar one = ST::one();
+      const Scalar zero = ST::zero();
 
-      // Tableau ParameterList
-      Teuchos::RCP<Teuchos::ParameterList> tableauPL = Teuchos::parameterList();
-      tableauPL->set<std::string>("A", "0.0 0.0; 0.0 1.0");
-      tableauPL->set<std::string>("b", "0.0 1.0");
-      tableauPL->set<std::string>("c", "0.0 1.0");
-      tableauPL->set<int>("order", 1);
-      pl->set("Tableau", *tableauPL);
+      // Fill A:
+      A(0,0) = zero; A(0,1) = zero;
+      A(1,0) = zero; A(1,1) =  one;
 
-      this->setImplicitTableau("General DIRK", pl);
+      // Fill b:
+      b(0) = zero; b(1) = one;
+
+      // Fill c:
+      c(0) = zero; c(1) = one;
+
+      int order = 1;
+
+      auto impTableau = Teuchos::rcp(new RKButcherTableau<Scalar>(
+        "Implicit Tableau - Partitioned IMEX RK 1st order",
+        A,b,c,order,order,order));
+
+      this->setImplicitTableau(impTableau);
     }
-    description_ = stepperType;
-    order_ = 1;
+    this->setStepperType("Partitioned IMEX RK 1st order");
+    this->setOrder(1);
 
   } else if (stepperType == "Partitioned IMEX RK SSP2") {
-    typedef Teuchos::ScalarTraits<Scalar> ST;
     // Explicit Tableau
-    this->setExplicitTableau("RK Explicit Trapezoidal", Teuchos::null);
+    auto stepperERK = Teuchos::rcp(new StepperERK_Trapezoidal<Scalar>());
+    this->setExplicitTableau(stepperERK->getTableau());
 
     // Implicit Tableau
-    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    pl->set<std::string>("Stepper Type", "SDIRK 2 Stage 3rd order");
-    pl->set("Solver Name", "");
-    const Scalar one = ST::one();
-    Scalar gamma = one - one/ST::squareroot(2*one);
-    pl->set<double>("gamma",gamma);
-    this->setImplicitTableau("SDIRK 2 Stage 3rd order", pl);
+    auto stepperSDIRK = Teuchos::rcp(new StepperSDIRK_2Stage3rdOrder<Scalar>());
+    stepperSDIRK->setGammaType("2nd Order L-stable");
+    this->setImplicitTableau(stepperSDIRK->getTableau());
 
-    description_ = stepperType;
-    order_ = 2;
+    this->setStepperType("Partitioned IMEX RK SSP2");
+    this->setOrder(2);
+
   } else if (stepperType == "Partitioned IMEX RK ARS 233") {
-    using std::to_string;
     typedef Teuchos::ScalarTraits<Scalar> ST;
+    int NumStages = 3;
+    Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
     const Scalar one = ST::one();
-    const Scalar gammaN = (3*one+ST::squareroot(3*one))/(6*one);
-    std::string gamma      = to_string(        gammaN);
-    std::string one_gamma  = to_string(1.0-    gammaN);
-    std::string one_2gamma = to_string(1.0-2.0*gammaN);
-    std::string two_2gamma = to_string(2.0-2.0*gammaN);
-    std::string gamma_one  = to_string(        gammaN-1.0);
+    const Scalar zero = ST::zero();
+    const Scalar onehalf = ST::one()/(2*ST::one());
+    const Scalar gamma = (3*one+ST::squareroot(3*one))/(6*one);
     {
       // Explicit Tableau
-      Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-      pl->setName("IMEX-RK Explicit Stepper");
-      pl->set<std::string>("Stepper Type", "General ERK");
+      // Fill A:
+      A(0,0) =        zero; A(0,1) =            zero; A(0,2) = zero;
+      A(1,0) =       gamma; A(1,1) =            zero; A(1,2) = zero;
+      A(2,0) = (gamma-1.0); A(2,1) = (2.0-2.0*gamma); A(2,2) = zero;
 
-      // Tableau ParameterList
-      Teuchos::RCP<Teuchos::ParameterList> tableauPL = Teuchos::parameterList();
-      tableauPL->set<std::string>("A",
-        "0.0 0.0 0.0; "+gamma+" 0.0 0.0; "+gamma_one+" "+two_2gamma+" 0.0");
-      tableauPL->set<std::string>("b", "0.0 0.5 0.5");
-      tableauPL->set<std::string>("c", "0.0 "+gamma+" "+one_gamma);
-      tableauPL->set<int>("order", 2);
-      pl->set("Tableau", *tableauPL);
+      // Fill b:
+      b(0) = zero; b(1) = onehalf; b(2) = onehalf;
 
-      this->setExplicitTableau("General ERK", pl);
+      // Fill c:
+      c(0) = zero; c(1) = gamma; c(2) = one-gamma;
+
+      int order = 2;
+
+      auto expTableau = Teuchos::rcp(new RKButcherTableau<Scalar>(
+        "Explicit Tableau - Partitioned IMEX RK ARS 233",
+        A,b,c,order,order,order));
+
+      this->setExplicitTableau(expTableau);
     }
     {
       // Implicit Tableau
-      Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-      pl->setName("IMEX-RK Implicit Stepper");
-      pl->set<std::string>("Stepper Type", "General DIRK");
-      pl->set("Solver Name", "");
+      // Fill A:
+      A(0,0) = zero; A(0,1) =            zero; A(0,2) =  zero;
+      A(1,0) = zero; A(1,1) =           gamma; A(1,2) =  zero;
+      A(2,0) = zero; A(2,1) = (1.0-2.0*gamma); A(2,2) = gamma;
 
-      // Tableau ParameterList
-      Teuchos::RCP<Teuchos::ParameterList> tableauPL = Teuchos::parameterList();
-      tableauPL->set<std::string>("A",
-        "0.0 0.0 0.0; 0.0 "+gamma+" 0.0; 0.0 "+one_2gamma+" "+gamma);
-      tableauPL->set<std::string>("b", "0.0 0.5 0.5");
-      tableauPL->set<std::string>("c", "0.0 "+gamma+" "+one_gamma);
-      tableauPL->set<int>("order", 3);
-      pl->set("Tableau", *tableauPL);
+      // Fill b:
+      b(0) = zero; b(1) = onehalf; b(2) = onehalf;
 
-      this->setImplicitTableau("General DIRK", pl);
+      // Fill c:
+      c(0) = zero; c(1) = gamma; c(2) = one-gamma;
+
+      int order = 3;
+
+      auto impTableau = Teuchos::rcp(new RKButcherTableau<Scalar>(
+        "Implicit Tableau - Partitioned IMEX RK ARS 233",
+        A,b,c,order,order,order));
+
+      this->setImplicitTableau(impTableau);
     }
-    description_ = stepperType;
-    order_ = 3;
+    this->setStepperType("Partitioned IMEX RK ARS 233");
+    this->setOrder(3);
 
   } else if (stepperType == "General Partitioned IMEX RK") {
-    Teuchos::RCP<Teuchos::ParameterList> explicitPL = Teuchos::rcp(
-      new Teuchos::ParameterList(pList->sublist("IMEX-RK Explicit Stepper")));
-
-    Teuchos::RCP<Teuchos::ParameterList> implicitPL = Teuchos::rcp(
-      new Teuchos::ParameterList(pList->sublist("IMEX-RK Implicit Stepper")));
-
-    // TODO: should probably check the order of the tableau match
-    this->setExplicitTableau("General ERK",  explicitPL);
-    this->setImplicitTableau("General DIRK", implicitPL);
-    description_ = stepperType;
-    order_ = pList->get<int>("overall order", 0);
+    this->setExplicitTableau(explicitTableau);
+    this->setImplicitTableau(implicitTableau);
+    this->setStepperType("General Partitioned IMEX RK");
+    this->setOrder(1);
 
   } else {
     TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
@@ -212,19 +283,8 @@ void StepperIMEX_RK_Partition<Scalar>::setTableaus(
     << "    number of stages = " << explicitTableau_->numStages() << "\n"
     << "  Implicit tableau = " << implicitTableau_->description() << "\n"
     << "    number of stages = " << implicitTableau_->numStages() << "\n");
-}
 
-
-template<class Scalar>
-void StepperIMEX_RK_Partition<Scalar>::setExplicitTableau(
-  std::string stepperType,
-  Teuchos::RCP<Teuchos::ParameterList> pList)
-{
-  explicitTableau_ = createRKBT<Scalar>(stepperType,pList);
-  TEUCHOS_TEST_FOR_EXCEPTION(explicitTableau_->isImplicit() == true,
-    std::logic_error,
-       "Error - Received an implicit Tableau for setExplicitTableau()!\n"
-    << "  Stepper Type = " << stepperType << "\n");
+  this->isInitialized_ = false;
 }
 
 
@@ -234,25 +294,11 @@ void StepperIMEX_RK_Partition<Scalar>::setExplicitTableau(
 {
   TEUCHOS_TEST_FOR_EXCEPTION(explicitTableau->isImplicit() == true,
     std::logic_error,
-       "Error - Received an implicit Tableau for setExplicitTableau()!\n"
-    << "  explicitTableau = " << explicitTableau->description() << "\n");
+    "Error - Received an implicit Tableau for setExplicitTableau()!\n" <<
+    "        Tableau = " << explicitTableau->description() << "\n");
   explicitTableau_ = explicitTableau;
-}
 
-
-template<class Scalar>
-void StepperIMEX_RK_Partition<Scalar>::setImplicitTableau(
-  std::string stepperType,
-  Teuchos::RCP<Teuchos::ParameterList> pList)
-{
-  implicitTableau_ = createRKBT<Scalar>(stepperType,pList);
-  //Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  //Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  //implicitTableau_->describe(*out,verbLevel);
-  TEUCHOS_TEST_FOR_EXCEPTION( implicitTableau_->isDIRK() != true,
-    std::logic_error,
-       "Error - Did not receive a DIRK Tableau for setImplicitTableau()!\n"
-    << "  Stepper Type = " << stepperType << "\n");
+  this->isInitialized_ = false;
 }
 
 
@@ -260,11 +306,13 @@ template<class Scalar>
 void StepperIMEX_RK_Partition<Scalar>::setImplicitTableau(
   Teuchos::RCP<const RKButcherTableau<Scalar> > implicitTableau)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION( implicitTableau_->isDIRK() != true,
+  TEUCHOS_TEST_FOR_EXCEPTION( implicitTableau->isDIRK() != true,
     std::logic_error,
-       "Error - Did not receive a DIRK Tableau for setImplicitTableau()!\n"
-    << "  implicitTableau = " << implicitTableau->description() << "\n");
+    "Error - Did not receive a DIRK Tableau for setImplicitTableau()!\n" <<
+    "        Tableau = " << implicitTableau->description() << "\n");
   implicitTableau_ = implicitTableau;
+
+  this->isInitialized_ = false;
 }
 
 template<class Scalar>
@@ -286,6 +334,8 @@ void StepperIMEX_RK_Partition<Scalar>::setModel(
     "  Likely have given the wrong ModelEvaluator to this Stepper.\n");
 
   setModelPair(modelPairIMEX);
+
+  this->isInitialized_ = false;
 }
 
 /** \brief Create WrapperModelPairIMEX from user-supplied ModelEvaluator pair.
@@ -302,12 +352,14 @@ void StepperIMEX_RK_Partition<Scalar>::setModelPair(
     wrapperModelPairIMEX =
     Teuchos::rcp_dynamic_cast<WrapperModelEvaluatorPairPartIMEX_Basic<Scalar> >
       (this->wrapperModel_);
-  this->validExplicitODE    (mePairIMEX->getExplicitModel());
-  this->validImplicitODE_DAE(mePairIMEX->getImplicitModel());
+  validExplicitODE    (mePairIMEX->getExplicitModel());
+  validImplicitODE_DAE(mePairIMEX->getImplicitModel());
   wrapperModelPairIMEX = mePairIMEX;
   wrapperModelPairIMEX->initialize();
 
   this->wrapperModel_ = wrapperModelPairIMEX;
+
+  this->isInitialized_ = false;
 }
 
 /** \brief Create WrapperModelPairIMEX from explicit/implicit ModelEvaluators.
@@ -320,58 +372,59 @@ void StepperIMEX_RK_Partition<Scalar>::setModelPair(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& explicitModel,
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& implicitModel)
 {
-  this->validExplicitODE    (explicitModel);
-  this->validImplicitODE_DAE(implicitModel);
+  validExplicitODE    (explicitModel);
+  validImplicitODE_DAE(implicitModel);
   this->wrapperModel_ = Teuchos::rcp(
     new WrapperModelEvaluatorPairPartIMEX_Basic<Scalar>(
                                              explicitModel, implicitModel));
+
+  this->isInitialized_ = false;
 }
 
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
 template<class Scalar>
 void StepperIMEX_RK_Partition<Scalar>::setObserver(
   Teuchos::RCP<StepperObserver<Scalar> > obs)
 {
-  if (obs == Teuchos::null) {
-    // Create default observer, otherwise keep current observer.
-    if (stepperObserver_ == Teuchos::null) {
-      stepperIMEX_RKPartObserver_ =
-        Teuchos::rcp(new StepperIMEX_RKPartObserver<Scalar>());
-      stepperObserver_ =
-        Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> >
-          (stepperIMEX_RKPartObserver_);
-     }
+  if (this->stepperObserver_ == Teuchos::null)
+     this->stepperObserver_  =
+        Teuchos::rcp(new StepperRKObserverComposite<Scalar>());
+
+  if (( obs == Teuchos::null ) and (this->stepperObserver_->getSize() >0 ) )
+    return;
+
+  if (( obs == Teuchos::null ) and (this->stepperObserver_->getSize() == 0) )
+     obs = Teuchos::rcp(new StepperRKObserver<Scalar>());
+
+    // Check that this casts to prevent a runtime error if it doesn't
+  if (Teuchos::rcp_dynamic_cast<StepperRKObserver<Scalar> > (obs) != Teuchos::null) {
+    this->stepperObserver_->addObserver(
+         Teuchos::rcp_dynamic_cast<StepperRKObserver<Scalar> > (obs, true) );
   } else {
-    stepperObserver_ = obs;
-    stepperIMEX_RKPartObserver_ =
-      Teuchos::rcp_dynamic_cast<StepperIMEX_RKPartObserver<Scalar> >
-        (stepperObserver_);
+    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::OSTab ostab(out,0,"setObserver");
+    *out << "Tempus::StepperIMEX_RK_Partition::setObserver: Warning: An observer has been provided that";
+    *out << " does not support Tempus::StepperRKObserver. This observer WILL NOT be added.";
+    *out << " In the future, this will result in a runtime error!" << std::endl;
   }
+
+  this->isInitialized_ = false;
 }
+#endif
 
 
 template<class Scalar>
 void StepperIMEX_RK_Partition<Scalar>::initialize()
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    (explicitTableau_ == Teuchos::null) || (implicitTableau_ == Teuchos::null),
-    std::logic_error,
-    "Error - Need to set the Butcher Tableaus, setTableaus(), before calling "
-    "StepperIMEX_RK_Partition::initialize()\n");
-
   Teuchos::RCP<WrapperModelEvaluatorPairPartIMEX_Basic<Scalar> >
     wrapperModelPairIMEX =
     Teuchos::rcp_dynamic_cast<WrapperModelEvaluatorPairPartIMEX_Basic<Scalar> >
       (this->wrapperModel_);
   TEUCHOS_TEST_FOR_EXCEPTION( wrapperModelPairIMEX == Teuchos::null,
     std::logic_error,
-    "Error - Need to set the model, setModel(), before calling "
+    "Error - Can not cast the wrapper Model Evaluator to a IMEX Model Pair."
     "StepperIMEX_RK_Partition::initialize()\n");
-
-  this->setTableaus(this->stepperPL_);
-  this->setParameterList(this->stepperPL_);
-  this->setSolver();
-  this->setObserver();
 
   // Initialize the stage vectors
   const int numStages = explicitTableau_->numStages();
@@ -389,6 +442,56 @@ void StepperIMEX_RK_Partition<Scalar>::initialize()
   xTilde_ = Thyra::createMember(wrapperModelPairIMEX->
                                 getImplicitModel()->get_x_space());
   assign(xTilde_.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
+
+  StepperImplicit<Scalar>::initialize();
+}
+
+
+template<class Scalar>
+void StepperIMEX_RK_Partition<Scalar>::setInitialConditions(
+  const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
+{
+  using Teuchos::RCP;
+
+  int numStates = solutionHistory->getNumStates();
+
+  TEUCHOS_TEST_FOR_EXCEPTION(numStates < 1, std::logic_error,
+    "Error - setInitialConditions() needs at least one SolutionState\n"
+    "        to set the initial condition.  Number of States = " << numStates);
+
+  if (numStates > 1) {
+    RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::OSTab ostab(out,1,"StepperIMEX_RK::setInitialConditions()");
+    *out << "Warning -- SolutionHistory has more than one state!\n"
+         << "Setting the initial conditions on the currentState.\n"<<std::endl;
+  }
+
+  RCP<SolutionState<Scalar> > initialState = solutionHistory->getCurrentState();
+  RCP<Thyra::VectorBase<Scalar> > x = initialState->getX();
+
+  // Use x from inArgs as ICs, if needed.
+  auto inArgs = this->wrapperModel_->getNominalValues();
+  if (x == Teuchos::null) {
+    TEUCHOS_TEST_FOR_EXCEPTION( (x == Teuchos::null) &&
+      (inArgs.get_x() == Teuchos::null), std::logic_error,
+      "Error - setInitialConditions() needs the ICs from the SolutionHistory\n"
+      "        or getNominalValues()!\n");
+
+    x = Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(inArgs.get_x());
+    initialState->setX(x);
+  }
+
+
+  // Perform IC Consistency
+  std::string icConsistency = this->getICConsistency();
+  TEUCHOS_TEST_FOR_EXCEPTION(icConsistency != "None", std::logic_error,
+    "Error - setInitialConditions() requested a consistency of '"
+             << icConsistency << "'.\n"
+    "        But only 'None' is available for IMEX-RK!\n");
+
+  TEUCHOS_TEST_FOR_EXCEPTION( this->getUseFSAL(), std::logic_error,
+    "Error - The First-Step-As-Last (FSAL) principle is not "
+         << "available for IMEX-RK.  Set useFSAL=false.\n");
 }
 
 
@@ -467,6 +570,8 @@ template<class Scalar>
 void StepperIMEX_RK_Partition<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
+  this->checkInitialized();
+
   using Teuchos::RCP;
   using Teuchos::SerialDenseMatrix;
   using Teuchos::SerialDenseVector;
@@ -481,7 +586,13 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
       "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
       "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
 
-    stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+    this->stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
+#endif
+    RCP<StepperIMEX_RK_Partition<Scalar> > thisStepper = Teuchos::rcpFromRef(*this);
+    this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
+      StepperRKAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
+
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     const Scalar dt = workingState->getTimeStep();
@@ -511,8 +622,10 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
 
     // Compute stage solutions
     for (int i = 0; i < numStages; ++i) {
-      if (!Teuchos::is_null(stepperIMEX_RKPartObserver_))
-        stepperIMEX_RKPartObserver_->observeBeginStage(solutionHistory, *this);
+      this->setStageNumber(i);
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+      this->stepperObserver_->observeBeginStage(solutionHistory, *this);
+#endif
 
       Thyra::assign(stageY.ptr(),
         *(wrapperModelPairIMEX->getExplicitOnlyVector(currentState->getX())));
@@ -531,6 +644,9 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
           Thyra::Vp_StV(xTilde_.ptr(), -dt*A   (i,j), *(stageGx_[j]));
       }
 
+      this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
+        StepperRKAppAction<Scalar>::ACTION_LOCATION::BEGIN_STAGE);
+
       Scalar ts    = time + c(i)*dt;
       Scalar tHats = time + cHat(i)*dt;
       if (A(i,i) == Teuchos::ScalarTraits<Scalar>::zero()) {
@@ -543,14 +659,15 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
           assign(stageGx_[i].ptr(), Teuchos::ScalarTraits<Scalar>::zero());
         } else {
           Thyra::assign(stageX.ptr(), *xTilde_);
-          if (!Teuchos::is_null(stepperIMEX_RKPartObserver_))
-            stepperIMEX_RKPartObserver_->
-              observeBeforeImplicitExplicitly(solutionHistory, *this);
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+          this->stepperObserver_->observeBeforeImplicitExplicitly(solutionHistory, *this);
+#endif
           evalImplicitModelExplicitly(stageX, stageY, ts, dt, i, stageGx_[i]);
         }
       } else {
         // Implicit stage for the ImplicitODE_DAE
-        Scalar alpha = 1.0/(dt*A(i,i));
+        const Scalar alpha = Scalar(1.0)/(dt*A(i,i));
+        const Scalar beta  = Scalar(1.0);
 
         // Setup TimeDerivative
         RCP<TimeDerivative<Scalar> > timeDer =
@@ -571,14 +688,17 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
         if (inArgs.supports(MEB::IN_ARG_t        )) inArgs.set_t        (ts);
         if (inArgs.supports(MEB::IN_ARG_step_size)) inArgs.set_step_size(dt);
         if (inArgs.supports(MEB::IN_ARG_alpha    )) inArgs.set_alpha    (alpha);
-        if (inArgs.supports(MEB::IN_ARG_beta     )) inArgs.set_beta     (1.0);
+        if (inArgs.supports(MEB::IN_ARG_beta     )) inArgs.set_beta     (beta);
         if (inArgs.supports(MEB::IN_ARG_stage_number))
           inArgs.set_stage_number(i);
 
         wrapperModelPairIMEX->setForSolve(timeDer, inArgs, outArgs);
 
-        if (!Teuchos::is_null(stepperIMEX_RKPartObserver_))
-          stepperIMEX_RKPartObserver_->observeBeforeSolve(solutionHistory, *this);
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+        this->stepperObserver_->observeBeforeSolve(solutionHistory, *this);
+#endif
+        this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
+          StepperRKAppAction<Scalar>::ACTION_LOCATION::BEFORE_SOLVE);
 
         this->solver_->setModel(wrapperModelPairIMEX);
         sStatus = this->solveImplicitODE(stageX);
@@ -586,18 +706,27 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
 
         wrapperModelPairIMEX->setUseImplicitModel(false);
 
-        if (!Teuchos::is_null(stepperIMEX_RKPartObserver_))
-          stepperIMEX_RKPartObserver_->observeAfterSolve(solutionHistory, *this);
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+        this->stepperObserver_->observeAfterSolve(solutionHistory, *this);
+#endif
+        this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
+          StepperRKAppAction<Scalar>::ACTION_LOCATION::AFTER_SOLVE);
 
         // Update contributions to stage values
         Thyra::V_StVpStV(stageGx_[i].ptr(), -alpha, *stageX, alpha, *xTilde_);
       }
 
-      if (!Teuchos::is_null(stepperIMEX_RKPartObserver_))
-        stepperIMEX_RKPartObserver_->observeBeforeExplicit(solutionHistory,*this);
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+      this->stepperObserver_->observeBeforeExplicit(solutionHistory, *this);
+#endif
+      this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
+        StepperRKAppAction<Scalar>::ACTION_LOCATION::BEFORE_EXPLICIT_EVAL);
       evalExplicitModel(stageZ_, tHats, dt, i, stageF_[i]);
-      if (!Teuchos::is_null(stepperIMEX_RKPartObserver_))
-        stepperIMEX_RKPartObserver_->observeEndStage(solutionHistory, *this);
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+      this->stepperObserver_->observeEndStage(solutionHistory, *this);
+#endif
+      this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
+        StepperRKAppAction<Scalar>::ACTION_LOCATION::END_STAGE);
     }
 
     // Sum for solution: y_n = y_n-1 - dt*Sum{ bHat(i)*fy(i)            }
@@ -615,8 +744,15 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
     if (pass == true) workingState->setSolutionStatus(Status::PASSED);
     else              workingState->setSolutionStatus(Status::FAILED);
     workingState->setOrder(this->getOrder());
-    stepperObserver_->observeEndTakeStep(solutionHistory, *this);
+    workingState->computeNorms(currentState);
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+    this->stepperObserver_->observeEndTakeStep(solutionHistory, *this);
+#endif
+    this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
+      StepperRKAppAction<Scalar>::ACTION_LOCATION::END_STEP);
   }
+  // reset the stage number
+  this->setStageNumber(-1);
   return;
 }
 
@@ -632,15 +768,8 @@ StepperIMEX_RK_Partition<Scalar>::
 getDefaultStepperState()
 {
   Teuchos::RCP<Tempus::StepperState<Scalar> > stepperState =
-    rcp(new StepperState<Scalar>(description()));
+    rcp(new StepperState<Scalar>(this->getStepperType()));
   return stepperState;
-}
-
-
-template<class Scalar>
-std::string StepperIMEX_RK_Partition<Scalar>::description() const
-{
-  return(description_);
 }
 
 
@@ -649,24 +778,89 @@ void StepperIMEX_RK_Partition<Scalar>::describe(
    Teuchos::FancyOStream               &out,
    const Teuchos::EVerbosityLevel      verbLevel) const
 {
-  out << description() << "::describe:" << std::endl
-      << "wrapperModelPairIMEX = " << this->wrapperModel_->description()
-      << std::endl;
+  out << std::endl;
+  Stepper<Scalar>::describe(out, verbLevel);
+  StepperImplicit<Scalar>::describe(out, verbLevel);
+
+  out << "--- StepperIMEX_RK_Partition ---\n";
+  out << "  explicitTableau_   = " << explicitTableau_ << std::endl;
+  if (verbLevel == Teuchos::VERB_HIGH)
+   explicitTableau_->describe(out, verbLevel);
+  out << "  implicitTableau_   = " << implicitTableau_ << std::endl;
+  if (verbLevel == Teuchos::VERB_HIGH)
+   implicitTableau_->describe(out, verbLevel);
+  out << "  xTilde_            = " << xTilde_  << std::endl;
+  out << "  stageZ_            = " << stageZ_  << std::endl;
+  out << "  stageF_.size()     = " << stageF_.size() << std::endl;
+  int numStages = stageF_.size();
+  for (int i=0; i<numStages; ++i)
+    out << "    stageF_["<<i<<"] = " << stageF_[i] << std::endl;
+  out << "  stageGx_.size()    = " << stageGx_.size() << std::endl;
+  numStages = stageGx_.size();
+  for (int i=0; i<numStages; ++i)
+    out << "    stageGx_["<<i<<"] = " << stageGx_[i] << std::endl;
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+  out << "  stepperObserver_   = " << stepperObserver_ << std::endl;
+#endif
+  out << "  stepperRKAppAction_= " << this->stepperRKAppAction_ << std::endl;
+  out << "  order_             = " << order_ << std::endl;
+  out << "--------------------------------" << std::endl;
 }
 
 
-template <class Scalar>
-void StepperIMEX_RK_Partition<Scalar>::setParameterList(
-  const Teuchos::RCP<Teuchos::ParameterList> & pList)
+template<class Scalar>
+bool StepperIMEX_RK_Partition<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
 {
-  if (pList == Teuchos::null) {
-    // Create default parameters if null, otherwise keep current parameters.
-    if (this->stepperPL_ == Teuchos::null) this->stepperPL_ = this->getDefaultParameters();
-  } else {
-    this->stepperPL_ = pList;
+  bool isValidSetup = true;
+
+  if ( !Stepper<Scalar>::isValidSetup(out) ) isValidSetup = false;
+
+  Teuchos::RCP<WrapperModelEvaluatorPairIMEX<Scalar> > wrapperModelPairIMEX =
+    Teuchos::rcp_dynamic_cast<WrapperModelEvaluatorPairIMEX<Scalar> >(
+      this->wrapperModel_);
+
+  if ( wrapperModelPairIMEX->getExplicitModel() == Teuchos::null) {
+    isValidSetup = false;
+    out << "The explicit ModelEvaluator is not set!\n";
   }
-  // Can not validate because of optional Parameters.
-  //stepperPL_->validateParametersAndSetDefaults(*this->getValidParameters());
+
+  if ( wrapperModelPairIMEX->getImplicitModel() == Teuchos::null) {
+    isValidSetup = false;
+    out << "The implicit ModelEvaluator is not set!\n";
+  }
+
+  if (this->wrapperModel_ == Teuchos::null) {
+    isValidSetup = false;
+    out << "The wrapper ModelEvaluator is not set!\n";
+  }
+
+  if (this->solver_ == Teuchos::null) {
+    isValidSetup = false;
+    out << "The solver is not set!\n";
+  }
+
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+  if (stepperObserver_ == Teuchos::null) {
+    isValidSetup = false;
+    out << "The stepper observer is not set!\n";
+  }
+#endif
+  if (this->stepperRKAppAction_ == Teuchos::null) {
+    isValidSetup = false;
+    out << "The AppAction is not set!\n";
+  }
+
+  if ( explicitTableau_ == Teuchos::null ) {
+    isValidSetup = false;
+    out << "The explicit tableau is not set!\n";
+  }
+
+  if ( implicitTableau_ == Teuchos::null ) {
+    isValidSetup = false;
+    out << "The implicit tableau is not set!\n";
+  }
+
+  return isValidSetup;
 }
 
 
@@ -675,45 +869,17 @@ Teuchos::RCP<const Teuchos::ParameterList>
 StepperIMEX_RK_Partition<Scalar>::getValidParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  pl->setName("Default Stepper - IMEX RK SSP2");
-  pl->set("Stepper Type", "IMEX RK SSP2");
-  pl->set("Zero Initial Guess", false);
-  pl->set("Solver Name", "",
-    "Name of ParameterList containing the solver specifications.");
-
-  return pl;
-}
-
-template <class Scalar>
-Teuchos::RCP<Teuchos::ParameterList>
-StepperIMEX_RK_Partition<Scalar>::getDefaultParameters() const
-{
-  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  pl->setName("Default Stepper - IMEX RK SSP2");
-  pl->set<std::string>("Stepper Type", "IMEX RK SSP2");
-  pl->set<bool>       ("Zero Initial Guess", false);
+  pl->setName("Default Stepper - Partitioned IMEX RK SSP2");
+  pl->set<std::string>("Stepper Type", "Partitioned IMEX RK SSP2");
+  getValidParametersBasic(pl, this->getStepperType());
+  pl->set<bool>("Initial Condition Consistency Check",
+                this->getICConsistencyCheckDefault());
   pl->set<std::string>("Solver Name", "Default Solver");
-  Teuchos::RCP<Teuchos::ParameterList> solverPL=this->defaultSolverParameters();
+  pl->set<bool>       ("Zero Initial Guess", false);
+  Teuchos::RCP<Teuchos::ParameterList> solverPL = defaultSolverParameters();
   pl->set("Default Solver", *solverPL);
 
   return pl;
-}
-
-template <class Scalar>
-Teuchos::RCP<Teuchos::ParameterList>
-StepperIMEX_RK_Partition<Scalar>::getNonconstParameterList()
-{
-  return(this->stepperPL_);
-}
-
-
-template <class Scalar>
-Teuchos::RCP<Teuchos::ParameterList>
-StepperIMEX_RK_Partition<Scalar>::unsetParameterList()
-{
-  Teuchos::RCP<Teuchos::ParameterList> temp_plist = this->stepperPL_;
-  this->stepperPL_ = Teuchos::null;
-  return(temp_plist);
 }
 
 

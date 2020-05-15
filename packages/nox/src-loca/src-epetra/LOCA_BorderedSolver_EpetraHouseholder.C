@@ -415,27 +415,27 @@ NOX::Abstract::Group::ReturnType
 LOCA::BorderedSolver::EpetraHouseholder::apply(
               const NOX::Abstract::MultiVector& X,
               const NOX::Abstract::MultiVector::DenseMatrix& Y,
-              NOX::Abstract::MultiVector& U,
-              NOX::Abstract::MultiVector::DenseMatrix& V) const
+              NOX::Abstract::MultiVector& inU,
+              NOX::Abstract::MultiVector::DenseMatrix& inV) const
 {
   // Compute J*X
-  NOX::Abstract::Group::ReturnType status = op->apply(X, U);
+  NOX::Abstract::Group::ReturnType status = op->apply(X, inU);
 
   // Compute J*X + A*Y
   if (!isZeroA)
-    U.update(Teuchos::NO_TRANS, 1.0, *A, Y, 1.0);
+    inU.update(Teuchos::NO_TRANS, 1.0, *A, Y, 1.0);
 
   // Compute B^T*X
   if (!isZeroB)
-    constraints->multiplyDX(1.0, X, V);
+    constraints->multiplyDX(1.0, X, inV);
 
   // Compute B^T*X + C*Y
   if (!isZeroC) {
     int e;
     if (isZeroB)
-      e = V.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, *C, Y, 0.0);
+      e = inV.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, *C, Y, 0.0);
     else
-      e = V.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, *C, Y, 1.0);
+      e = inV.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, *C, Y, 1.0);
     if (e < 0)
       status = NOX::Abstract::Group::Failed;
   }
@@ -447,27 +447,27 @@ NOX::Abstract::Group::ReturnType
 LOCA::BorderedSolver::EpetraHouseholder::applyTranspose(
               const NOX::Abstract::MultiVector& X,
               const NOX::Abstract::MultiVector::DenseMatrix& Y,
-              NOX::Abstract::MultiVector& U,
-              NOX::Abstract::MultiVector::DenseMatrix& V) const
+              NOX::Abstract::MultiVector& inU,
+              NOX::Abstract::MultiVector::DenseMatrix& inV) const
 {
   // Compute J*X
-  NOX::Abstract::Group::ReturnType status = op->applyTranspose(X, U);
+  NOX::Abstract::Group::ReturnType status = op->applyTranspose(X, inU);
 
   // Compute J*X + B*Y
   if (!isZeroA)
-    constraints->addDX(Teuchos::NO_TRANS, 1.0, Y, 1.0, U);
+    constraints->addDX(Teuchos::NO_TRANS, 1.0, Y, 1.0, inU);
 
   // Compute A^T*X
   if (!isZeroB)
-    X.multiply(1.0, *A, V);
+    X.multiply(1.0, *A, inV);
 
   // Compute A^T*X + C^T*Y
   if (!isZeroC) {
     int e;
     if (isZeroB)
-      e = V.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, *C, Y, 0.0);
+      e = inV.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, *C, Y, 0.0);
     else
-      e = V.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, *C, Y, 1.0);
+      e = inV.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, *C, Y, 1.0);
     if (e < 0)
       status = NOX::Abstract::Group::Failed;
   }
@@ -687,21 +687,21 @@ LOCA::BorderedSolver::EpetraHouseholder::solve(
   // Create a row-matrix version of P if J is a row matrix
   Teuchos::RCP<Epetra_RowMatrix> jac_rowmatrix =
     Teuchos::rcp_dynamic_cast<Epetra_RowMatrix>(epetraOp);
-  Teuchos::RCP<Epetra_Operator> op;
+  Teuchos::RCP<Epetra_Operator> tmpOp;
   if (jac_rowmatrix != Teuchos::null) {
-    op = Teuchos::rcp(new LOCA::Epetra::LowRankUpdateRowMatrix(globalData,
-                                   jac_rowmatrix,
-                                   epetra_U,
-                                   epetra_V,
-                                   false,
-                                   includeUV));
+    tmpOp = Teuchos::rcp(new LOCA::Epetra::LowRankUpdateRowMatrix(globalData,
+                                                                  jac_rowmatrix,
+                                                                  epetra_U,
+                                                                  epetra_V,
+                                                                  false,
+                                                                  includeUV));
   }
   else
-    op = Teuchos::rcp(new LOCA::Epetra::LowRankUpdateOp(globalData,
-                            epetraOp,
-                            epetra_U,
-                            epetra_V,
-                            false));
+    tmpOp = Teuchos::rcp(new LOCA::Epetra::LowRankUpdateOp(globalData,
+                                                           epetraOp,
+                                                           epetra_U,
+                                                           epetra_V,
+                                                           false));
 
   // Overwrite J with J + U*V^T if it's a CRS matrix and we aren't
   // using P for the preconditioner
@@ -715,7 +715,7 @@ LOCA::BorderedSolver::EpetraHouseholder::solve(
 
   // Set operator in solver to compute preconditioner
   if (use_P_For_Prec)
-    linSys->setJacobianOperatorForSolve(op);
+    linSys->setJacobianOperatorForSolve(tmpOp);
   else
     linSys->setJacobianOperatorForSolve(epetraOp);
 
@@ -733,7 +733,7 @@ LOCA::BorderedSolver::EpetraHouseholder::solve(
   }
 
   // Set operator for P in solver
-  linSys->setJacobianOperatorForSolve(op);
+  linSys->setJacobianOperatorForSolve(tmpOp);
 
   // Set preconditioner
   Teuchos::RCP<Epetra_Operator> prec_op;
@@ -741,10 +741,10 @@ LOCA::BorderedSolver::EpetraHouseholder::solve(
   if (precMethod == SMW) {
     epetraPrecOp = linSys->getGeneratedPrecOperator();
     prec_op = Teuchos::rcp(new LOCA::Epetra::LowRankUpdateOp(globalData,
-                                 epetraPrecOp,
-                                 epetra_U,
-                                 epetra_V,
-                                 true));
+                                                             epetraPrecOp,
+                                                             epetra_U,
+                                                             epetra_V,
+                                                             true));
     linSys->setPrecOperatorForSolve(prec_op);
   }
 
@@ -764,8 +764,8 @@ LOCA::BorderedSolver::EpetraHouseholder::solve(
       status = NOX::Abstract::Group::NotConverged;
     finalStatus =
       globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
-                                 finalStatus,
-                                 callingFunction);
+                                                             finalStatus,
+                                                             callingFunction);
   }
 
   qrFact.applyCompactWY(house_p, *house_x, T, Y, X, isZeroG, false, false);
@@ -876,9 +876,9 @@ LOCA::BorderedSolver::EpetraHouseholder::solveTranspose(
   // Create a row-matrix version of P if J^T is a row matrix
   Teuchos::RCP<Epetra_RowMatrix> jac_trans_rowmatrix =
     Teuchos::rcp_dynamic_cast<Epetra_RowMatrix>(jac_trans);
-  Teuchos::RCP<Epetra_Operator> op;
+  Teuchos::RCP<Epetra_Operator> tmpOp;
   if (jac_trans_rowmatrix != Teuchos::null)
-    op = Teuchos::rcp(new LOCA::Epetra::LowRankUpdateRowMatrix(
+    tmpOp = Teuchos::rcp(new LOCA::Epetra::LowRankUpdateRowMatrix(
                               globalData,
                               jac_trans_rowmatrix,
                               epetra_U,
@@ -886,7 +886,7 @@ LOCA::BorderedSolver::EpetraHouseholder::solveTranspose(
                               false,
                               includeUV));
   else
-    op = Teuchos::rcp(new LOCA::Epetra::LowRankUpdateOp(globalData,
+    tmpOp = Teuchos::rcp(new LOCA::Epetra::LowRankUpdateOp(globalData,
                             jac_trans,
                             epetra_U,
                             epetra_V,
@@ -904,7 +904,7 @@ LOCA::BorderedSolver::EpetraHouseholder::solveTranspose(
 
    // Set operator in solver to compute preconditioner
   if (use_P_For_Prec)
-    tls_strategy->setJacobianTransposeOperator(op);
+    tls_strategy->setJacobianTransposeOperator(tmpOp);
   else
     tls_strategy->setJacobianTransposeOperator(jac_trans);
 
@@ -922,7 +922,7 @@ LOCA::BorderedSolver::EpetraHouseholder::solveTranspose(
   }
 
   // Set operator for P in transpose solver
-  tls_strategy->setJacobianTransposeOperator(op);
+  tls_strategy->setJacobianTransposeOperator(tmpOp);
 
   // Set preconditioner
   Teuchos::RCP<Epetra_Operator> prec_op;
@@ -974,8 +974,8 @@ NOX::Abstract::Group::ReturnType
 LOCA::BorderedSolver::EpetraHouseholder::computeUV(
                 const NOX::Abstract::MultiVector::DenseMatrix& Y1,
                 const NOX::Abstract::MultiVector& Y2,
-                const NOX::Abstract::MultiVector::DenseMatrix& T,
-                const NOX::Abstract::MultiVector& A,
+                const NOX::Abstract::MultiVector::DenseMatrix& inT,
+                const NOX::Abstract::MultiVector& inA,
                 NOX::Abstract::MultiVector& UU,
                 NOX::Abstract::MultiVector& VV,
                 bool use_jac_transpose)
@@ -991,8 +991,8 @@ LOCA::BorderedSolver::EpetraHouseholder::computeUV(
                    UU_epetra.getEpetraMultiVector());
   epetraOp->SetUseTranspose(use_trans);
 
-  UU.update(Teuchos::NO_TRANS, 1.0, A, Y1, 1.0);
-  VV.update(Teuchos::TRANS, 1.0, Y2, T, 0.0);
+  UU.update(Teuchos::NO_TRANS, 1.0, inA, Y1, 1.0);
+  VV.update(Teuchos::TRANS, 1.0, Y2, inT, 0.0);
 
   if (status == 0)
     return NOX::Abstract::Group::Ok;

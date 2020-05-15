@@ -39,10 +39,11 @@ export ATDM_CONFIG_MPI_EXEC="/opt/slurm/bin/srun"
 export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG="--ntasks"
 export ATDM_CONFIG_MPI_PRE_FLAGS="--mpi=pmi2;--ntasks-per-node;36"
 
-export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=8
-# NOTE: Using -j8 instead of -j16 for ctest is to try to avoid 'srun' "Job
-# <jobid> step creation temporarily disabled" failures on 'mutrino' (see
-# TRIL-214).
+export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=1
+# Using --hint=nomultithread seems to only allow one srun command to run at at
+# time while the others wait.  Threfore, you might as well just run with one
+# ctest process.  This should avoid the false timeouts and failures to start
+# srun we have been seeing for months on mutrino.
 
 if [ "$ATDM_CONFIG_COMPILER" == "INTEL" ] && [ "$ATDM_CONFIG_KOKKOS_ARCH" == "HSW"  ]; then
     module use /projects/EMPIRE/mutrino/tpls/hsw/modulefiles
@@ -64,22 +65,22 @@ else
     echo "*** Combinations that are supported: "
     echo "*** > Intel compiler with KOKKOS_ARCH=HSW"
     echo "*** > Intel compiler with KOKKOS_ARCH=KNL"
-   echo "***"
+    echo "***"
     return
 fi
 
 # Load the modules (can't purge)
 module load devpack/20180124/cray/7.6.2/intel/17.0.4
 module load gcc/4.9.3
-module load cmake/3.9.0
+module load cmake/3.14.6
 
 # No RPATH for static builds
 export ATDM_CONFIG_CMAKE_SKIP_INSTALL_RPATH=ON
-# ToDo: Make above contingent on 'static' or 'shared' 
+# ToDo: Make above contingent on 'static' or 'shared'
 
 # Use manually installed cmake and ninja to allow usage of ninja and
 # all-at-once mode
-export PATH=/projects/netpub/atdm/cmake-3.11.4/bin:/projects/netpub/atdm/ninja-1.8.2/bin:$PATH
+export PATH=/projects/netpub/atdm/ninja-1.8.2/bin:$PATH
 
 # Set MPI wrappers
 export MPICXX=`which CC`
@@ -92,8 +93,11 @@ export ATDM_CONFIG_BLAS_LIBS="-mkl"
 
 export ATDM_CONFIG_USE_HWLOC=OFF
 
+if [[ "${PNETCDF_ROOT}" == "" ]] ; then
+  export PNETCDF_ROOT=${NETCDF_ROOT}
+fi
 export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
-export ATDM_CONFIG_NETCDF_LIBS="-L${BOOST_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${PNETCDF_ROOT}/lib;-L${HDF5_ROOT}/lib;${BOOST_ROOT}/lib/libboost_program_options.a;${BOOST_ROOT}/lib/libboost_system.a;${NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl;-lm"
+export ATDM_CONFIG_NETCDF_LIBS="-L${NETCDF_ROOT}/lib;${NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${ATDM_CONFIG_HDF5_LIBS};-lm"
 
 export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE
 
@@ -152,7 +156,7 @@ function atdm_run_script_on_compute_node {
   else
     account=${account_input}
   fi
-  
+
   if [ -e $output_file ] ; then
     echo "Remove existing file $output_file"
     rm $output_file
@@ -167,11 +171,11 @@ function atdm_run_script_on_compute_node {
   else
    echo
    echo "***"
-   echo "*** ERROR: Invalid value ATDM_CONFIG_KOKKOS_ARCH=${ATDM_CONFIG_KOKKOS_ARCH} specified!" 
+   echo "*** ERROR: Invalid value ATDM_CONFIG_KOKKOS_ARCH=${ATDM_CONFIG_KOKKOS_ARCH} specified!"
    echo "***"
    return
   fi
- 
+
   echo
   echo "Running '$script_to_run' using sbatch in the background ..."
   set -x
@@ -179,22 +183,22 @@ function atdm_run_script_on_compute_node {
     --time=${timeout} -J $ATDM_CONFIG_BUILD_NAME ${script_to_run} &
   SBATCH_PID=$!
   set +x
-  
+
   echo
   echo "Tailing output file $output_file in the background ..."
   set -x
   tail -f $output_file &
   TAIL_BID=$!
   set +x
-  
+
   echo
   echo "Waiting for SBATCH_PID=$SBATCH_PID ..."
   wait $SBATCH_PID
-  
+
   echo
   echo "Kill TAIL_BID=$TAIL_BID"
   kill -s 9 $TAIL_BID
-  
+
   echo
   echo "Finished running ${script_to_run}!"
   echo

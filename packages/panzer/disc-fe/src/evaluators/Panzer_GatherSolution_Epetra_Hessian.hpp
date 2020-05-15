@@ -75,11 +75,11 @@ namespace panzer
        *
        *  Simply saves the input `indexer` as this object's `globalIndexer_`.
        *
-       *  \param[in] indexer The `UniqueGlobalIndexer` that handles the global
+       *  \param[in] indexer The `GlobalIndexer` that handles the global
        *                     unknown numbering.
        */
       GatherSolution_Epetra(
-        const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO, GO>>& indexer)
+        const Teuchos::RCP<const panzer::GlobalIndexer>& indexer)
         :
         globalIndexer_(indexer)
       {
@@ -91,13 +91,13 @@ namespace panzer
        *  Saves the input `indexer` as this object's `globalIndexer_`,
        *  allocates fields, and determines the first active name.
        *
-       *  \param[in] indexer The `UniqueGlobalIndexer` that handles the global
+       *  \param[in] indexer The `GlobalIndexer` that handles the global
        *                     unknown numbering.
        *  \param[in] p       A `ParameterList` used as input for
        *                     `GatherSolution_Input`.
        */
       GatherSolution_Epetra(
-        const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO, GO>>& indexer,
+        const Teuchos::RCP<const panzer::GlobalIndexer>& indexer,
         const Teuchos::ParameterList& p);
 
       /**
@@ -184,7 +184,7 @@ namespace panzer
        *  \brief Maps the local (field, element, basis) triplet to a global ID
        *         for scattering.
        */
-      Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO, GO>> globalIndexer_;
+      Teuchos::RCP<const panzer::GlobalIndexer> globalIndexer_;
 
       /**
        *  \brief A list of the names of the fields to be gathered.

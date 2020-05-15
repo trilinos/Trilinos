@@ -119,6 +119,12 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "Turn on timers in Ifpack2::BlockTriDiContainer."
   NO )
 
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_BlockTriDiContainer_Small_Scalar
+  HAVE_IFPACK2_BLOCKTRIDICONTAINER_SMALL_SCALAR
+  "Enable small scalar in Ifpack2::BlockTriDiContainer."
+  OFF )
+
 #
 # C) Add the libraries, tests, and examples
 #

@@ -143,10 +143,14 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Status Test").set("Step Tolerance",1.e-16);
     parlist->sublist("Status Test").set("Iteration Limit",1000);
     // Declare ROL algorithm pointer.
-    ROL::Ptr<ROL::Algorithm<RealT> > algo;
+    ROL::Ptr<ROL::Algorithm<RealT>>  algo;
+    ROL::Ptr<ROL::Step<RealT>>       step;
+    ROL::Ptr<ROL::StatusTest<RealT>> status;
 
     // Run optimization with Composite Step.
-    algo = ROL::makePtr<ROL::Algorithm<RealT>>("Composite Step",*parlist,false);
+    step   = ROL::makePtr<ROL::CompositeStep<RealT>>(*parlist);
+    status = ROL::makePtr<ROL::ConstraintStatusTest<RealT>>(*parlist);
+    algo   = ROL::makePtr<ROL::Algorithm<RealT>>(step,status,false);
     RealT zerotol = std::sqrt(ROL::ROL_EPSILON<RealT>());
     z.zero();
     con.solve(c,u,z,zerotol);
@@ -156,7 +160,9 @@ int main(int argc, char *argv[]) {
     zCS->set(z);
 
     // Run Optimization with Trust-Region algorithm.
-    algo = ROL::makePtr<ROL::Algorithm<RealT>>("Trust Region",*parlist,false);
+    step   = ROL::makePtr<ROL::TrustRegionStep<RealT>>(*parlist);
+    status = ROL::makePtr<ROL::StatusTest<RealT>>(*parlist);
+    algo   = ROL::makePtr<ROL::Algorithm<RealT>>(step,status,false);
     z.zero();
     algo->run(z,robj,true,*outStream);
 
@@ -165,7 +171,7 @@ int main(int argc, char *argv[]) {
     err->set(*zCS); err->axpy(-1.,z);
     errorFlag += ((err->norm()) > 1.e-8) ? 1 : 0;
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

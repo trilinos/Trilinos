@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -41,6 +42,8 @@
 #include <sys/types.h>                  // for int64_t
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <map>                          // for map, map<>::value_compare
+#include <stk_util/stk_config.h>
+#include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/EntityKey.hpp>  // for EntityKey
 #include <stk_mesh/base/Part.hpp>       // for Part
 #include <stk_mesh/base/Selector.hpp>   // for Selector
@@ -57,6 +60,7 @@
 #include "Shards_CellTopology.hpp"      // for operator<, CellTopology
 #include "Shards_CellTopologyTraits.hpp"  // for getCellTopologyData
 #include "stk_mesh/base/DataTraits.hpp"  // for DataTraits (ptr only), etc
+#include <stk_mesh/base/Field.hpp>
 #include "stk_mesh/base/FieldBase.hpp"  // for FieldBase
 #include "stk_mesh/base/FieldState.hpp"  // for ::MaximumFieldStates, etc
 #include "stk_mesh/baseImpl/PartImpl.hpp"  // for PartImpl
@@ -73,6 +77,8 @@ namespace stk { namespace mesh { class MetaData; } }
 namespace stk {
 namespace mesh {
 
+typedef Field<double, stk::mesh::Cartesian> CoordinatesField;
+
 /** \addtogroup stk_mesh_module
  *  \{
  */
@@ -86,21 +92,16 @@ print_entity_key( const MetaData & meta_data, const EntityKey & key );
 
 bool is_topology_root_part(const Part & part);
 
-/** set a cell_topology on a part */
-void set_cell_topology( Part &part, const shards::CellTopology cell_topology);
+/** set a stk::topology on a part */
+void set_topology(Part &part, stk::topology topology);
 
-/** set a cell_topology on a part */
-template<class Topology>
-inline void set_cell_topology(Part & part)
+template<stk::topology::topology_t Topology>
+inline void set_topology(Part & part)
 {
-  stk::mesh::set_cell_topology(part, shards::CellTopology(shards::getCellTopologyData<Topology>()));
+  stk::mesh::set_topology(part, stk::topology::topology_type<Topology>());
 }
 
 stk::topology get_topology(const MetaData& meta_data, EntityRank entity_rank, const std::pair<const unsigned*, const unsigned*>& supersets);
-
-
-/** set a stk::topology on a part */
-void set_topology(Part &part, stk::topology topology);
 
 /** get the stk::topology given a Shards Cell Topology */
 stk::topology get_topology(shards::CellTopology shards_topology, unsigned spatial_dimension = 3);
@@ -154,8 +155,6 @@ public:
   inline static MetaData & get( const FieldBase & field ) { return field.meta_data(); }
 
   static const MetaData & get( const BulkData & bulk_data );
-  static const MetaData & get( const Bucket & bucket );
-  static const MetaData & get( const Ghosting & ghost );
 
   /** \brief  Construct a meta data manager to own parts and fields.  */
   explicit MetaData(size_t spatial_dimension, const std::vector<std::string>& rank_names = std::vector<std::string>());
@@ -271,17 +270,18 @@ public:
   Part &declare_part_with_topology( const std::string &name, stk::topology::topology_t topology, bool arg_force_no_induce = false )
   {
     ThrowRequireMsg(is_initialized(),"MetaData::declare_part: initialize() must be called before this function");
-    Part* root_part = nullptr;
+
     stk::topology topo = topology;
     if (topo.is_super_topology()) {
-        root_part = &get_cell_topology_root_part(register_super_cell_topology(topo));
+      if (!has_topology_root_part(topo)) {
+        register_topology(topo);
+      }
     }
-    else {
-        root_part = &get_cell_topology_root_part(stk::mesh::get_cell_topology(topology));
-    }
-    EntityRank primary_entity_rank = root_part->primary_entity_rank();
+
+    Part & root_part = get_topology_root_part(topo);
+    EntityRank primary_entity_rank = root_part.primary_entity_rank();
     Part & part = declare_part(name, primary_entity_rank, arg_force_no_induce);
-    declare_part_subset(*root_part, part);
+    declare_part_subset(root_part, part);
     return part;
   }
 
@@ -320,7 +320,9 @@ public:
   /** \brief initialize
    *
    */
-  void initialize(size_t spatial_dimension, const std::vector<std::string> &rank_names = std::vector<std::string>());
+  void initialize(size_t spatial_dimension,
+                  const std::vector<std::string> &rank_names = std::vector<std::string>(),
+                  const std::string & coordinate_field_name = std::string());
 
   bool is_initialized() const
   { return !m_entity_rank_names.empty(); }
@@ -381,9 +383,12 @@ public:
    */
   FieldBase* get_field( stk::mesh::EntityRank entity_rank, const std::string& name ) const;
 
+  std::string coordinate_field_name() const;
+  void set_coordinate_field_name(const std::string & coordFieldName);
+
   /** \brief  Get/Set the coordinate field */
-  FieldBase const* coordinate_field() const;
-  void set_coordinate_field(FieldBase* coord_field) { m_coord_field = coord_field; }
+  const FieldBase * coordinate_field() const;
+  void set_coordinate_field(FieldBase* coord_field);
 
   /** \brief  Get all defined fields */
   const FieldVector & get_fields() const {
@@ -462,6 +467,12 @@ public:
   /** \brief  Query if the meta data manager is committed */
   bool is_commit() const { return m_commit ; }
 
+  /** \brief  Allow late field registration */
+  void enable_late_fields() { m_are_late_fields_enabled = true; }
+
+  /** \brief  Query if late fields are allowed */
+  bool are_late_fields_enabled() const { return m_are_late_fields_enabled; }
+
   /** \} */
   //------------------------------------
 
@@ -505,36 +516,18 @@ public:
                                   const unsigned   arg_first_dimension ,
                                   const void*      arg_init_value = NULL );
 
-  /** \brief This function is used to register new cell topologies and their associated ranks with MetaData.
-   * Currently, several shards Cell Topologies are registered with appropriate ranks at initialization time.
-   * See:  internal_declare_known_cell_topology_parts for the whole list.
-   *
-   * Note:  This function also creates the root cell topology part which is accessible from get_cell_topology_root_part
+  /** \brief  Register a new topology with MetaData and create the corresponding
+   *          root topology part.
    */
-  void register_cell_topology(const shards::CellTopology cell_topology, EntityRank in_entity_rank);
-
   Part& register_topology(stk::topology stkTopo);
-
-  shards::CellTopology register_super_cell_topology(stk::topology t);
-
-  /** \brief Return the root cell topology part associated with the given cell topology.
-   * This Part is created in register_cell_topology
-   */
-
-  Part &get_cell_topology_root_part(const shards::CellTopology cell_topology) const;
 
   /** \brief Return the topology part given a stk::topology.
    */
   Part &get_topology_root_part(stk::topology topology) const;
 
-  /** \brief Return the cell topology associated with the given part.
-   * The cell topology is set on a part through part subsetting with the root
-   * cell topology part.
-   */
-  shards::CellTopology get_cell_topology( const Part & part) const;
-  stk::topology get_topology(const Part & part) const;
+  bool has_topology_root_part(stk::topology topology) const;
 
-  shards::CellTopology get_cell_topology( const std::string & topology_name) const;
+  stk::topology get_topology(const Part & part) const;
 
   void dump_all_meta_info(std::ostream& out = std::cout) const;
 
@@ -594,12 +587,11 @@ private:
 
   void assign_topology(Part& part, stk::topology stkTopo);
 
-  void assign_cell_topology( Part & part, shards::CellTopology topo);
-
   // Members
 
   BulkData* m_bulk_data;
   bool   m_commit ;
+  bool   m_are_late_fields_enabled;
   impl::PartRepository m_part_repo ;
   CSet   m_attributes ;
 
@@ -609,10 +601,11 @@ private:
   Part * m_aura_part ;
 
   impl::FieldRepository        m_field_repo ;
+  mutable std::string m_coord_field_name;
   mutable FieldBase* m_coord_field;
 
   std::vector< std::string >   m_entity_rank_names ;
-  std::vector<shards::CellTopologyManagedData*> m_created_topologies;
+  std::vector<shards::CellTopologyManagedData*> m_created_topologies;  // Delete after 2019-07-18
 
   unsigned m_spatial_dimension;
   SurfaceBlockMap m_surfaceToBlock;
@@ -1135,7 +1128,7 @@ MetaData::remove_attribute( FieldBase & field , const T * attribute )
 inline
 bool MetaData::check_rank(EntityRank rank) const
 {
-  return rank < m_entity_rank_names.size();
+  return rank < static_cast<EntityRank>(m_entity_rank_names.size());
 }
 
 inline

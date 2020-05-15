@@ -165,7 +165,7 @@ double Tevec(double *alpha, /* vector of Lanczos scalars */
 /* Keep this code around in case we have problems with the
    bidirectional recurrence. */
 
-/* 	Backward recurrence
+/*      Backward recurrence
         s[j] = 1.0;
 
         if (j == 1) {
@@ -183,7 +183,7 @@ double Tevec(double *alpha, /* vector of Lanczos scalars */
         residual = fabs(residual) / ch_normalize(s,1,j);
 */
 
-/* 	Forward recurrence
+/*      Forward recurrence
         s[1] = 1.0;
 
         if (j == 1) {

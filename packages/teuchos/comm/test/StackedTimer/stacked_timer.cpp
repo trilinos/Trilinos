@@ -73,6 +73,8 @@ TEUCHOS_UNIT_TEST(StackedTimer, Basic)
   const int myRank = Teuchos::rank(*comm);
 
   Teuchos::StackedTimer timer("My New Timer");
+  timer.enableVerbose(true);
+  timer.setVerboseOstream(Teuchos::rcpFromRef(std::cout));
   timer.start("Total Time");
   {
     for (int i=0; i < 10; ++i) {
@@ -94,13 +96,13 @@ TEUCHOS_UNIT_TEST(StackedTimer, Basic)
           std::this_thread::sleep_for(std::chrono::milliseconds{50});
           TEST_ASSERT((timer.findTimer("My New Timer@Total Time@Solve@Rank 0 ONLY")).running);
           timer.stop(label);
-          TEST_ASSERT(not (timer.findTimer("My New Timer@Total Time@Solve@Rank 0 ONLY")).running);
+          TEST_ASSERT(!(timer.findTimer("My New Timer@Total Time@Solve@Rank 0 ONLY")).running);
         } else {
           timer.start("Not Rank 0");
           std::this_thread::sleep_for(std::chrono::milliseconds{50});
           TEST_ASSERT((timer.findTimer("My New Timer@Total Time@Solve@Not Rank 0")).running);
           timer.stop("Not Rank 0");
-          TEST_ASSERT(not (timer.findTimer("My New Timer@Total Time@Solve@Not Rank 0")).running);
+          TEST_ASSERT(!(timer.findTimer("My New Timer@Total Time@Solve@Not Rank 0")).running);
         }
       }
       timer.stop("Solve");
@@ -170,7 +172,7 @@ TEUCHOS_UNIT_TEST(StackedTimer, Basic)
       std::smatch regexSMatch;
       std::regex timerName(std::get<0>(check));
       std::regex_search(line,regexSMatch,timerName);
-      TEST_ASSERT(not regexSMatch.empty());
+      TEST_ASSERT(!regexSMatch.empty());
 
       // Split string to get time and count
       std::regex delimiter(":\\s|\\s\\[|\\]\\s");
@@ -206,7 +208,32 @@ TEUCHOS_UNIT_TEST(StackedTimer, Basic)
   TEST_EQUALITY(options.print_names_before_values,true);
   out << "\n### Printing aligned_column with timers names on right ###" << std::endl;
   options.print_names_before_values = false;
-  timer.report(out, comm, options);
+  // Make sure neither report() nor reportXML() have side effects that change the output:
+  // calling them any number of times with no new starts/stops and the same OutputOptions
+  // should produce identical output.
+  //
+  // This is very important as performance tests will
+  // typically call both report() and reportWatchrXML().
+  std::string reportOut;
+  {
+    std::ostringstream reportOut1;
+    timer.report(reportOut1, comm, options);
+    std::ostringstream reportOut2;
+    timer.report(reportOut2, comm, options);
+    reportOut = reportOut1.str();
+    TEST_EQUALITY(reportOut, reportOut2.str());
+  }
+  std::string reportXmlOut;
+  {
+    std::ostringstream reportOut1;
+    timer.reportXML(reportOut1, "2020_01_01", "2020-01-01T01:02:03", comm);
+    std::ostringstream reportOut2;
+    timer.reportXML(reportOut2, "2020_01_01", "2020-01-01T01:02:03", comm);
+    reportXmlOut = reportOut1.str();
+    TEST_EQUALITY(reportXmlOut, reportOut2.str());
+  }
+  out << reportOut << '\n';
+  out << reportXmlOut << '\n';
 }
 
 TEUCHOS_UNIT_TEST(StackedTimer, UnitTestSupport)
@@ -362,6 +389,118 @@ TEUCHOS_UNIT_TEST(StackedTimer, TimeMonitorInteroperability)
   timer->report(out, comm, options);
 }
 
+TEUCHOS_UNIT_TEST(StackedTimer, drop_time)
+{
+
+  Teuchos::StackedTimer timer("L0");
+  timer.start("L1a");
+  timer.start("L2a");
+  timer.stop("L2a");
+  timer.start("L2b");
+  timer.stop("L2b");
+  timer.stop("L1a");
+  timer.start("L1b");
+  timer.start("L2c");
+  timer.stop("L2c");
+  timer.start("L2d");
+  timer.stop("L2d");
+  timer.stop("L1b");
+  timer.stopBaseTimer();
+
+  const_cast<Teuchos::BaseTimer*>(timer.findBaseTimer("L0"))->setAccumulatedTime(5.0);
+  const_cast<Teuchos::BaseTimer*>(timer.findBaseTimer("L0@L1a"))->setAccumulatedTime(3.0);
+  const_cast<Teuchos::BaseTimer*>(timer.findBaseTimer("L0@L1a@L2a"))->setAccumulatedTime(0.4);
+  const_cast<Teuchos::BaseTimer*>(timer.findBaseTimer("L0@L1a@L2b"))->setAccumulatedTime(1.01);
+  const_cast<Teuchos::BaseTimer*>(timer.findBaseTimer("L0@L1b"))->setAccumulatedTime(0.1);
+  const_cast<Teuchos::BaseTimer*>(timer.findBaseTimer("L0@L1b@L2c"))->setAccumulatedTime(0.05);
+  const_cast<Teuchos::BaseTimer*>(timer.findBaseTimer("L0@L1b@L2d"))->setAccumulatedTime(0.04);
+
+  const Teuchos::RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
+  const int myRank = Teuchos::rank(*comm);
+  Teuchos::StackedTimer::OutputOptions options;
+  options.drop_time = 1.0;
+
+  out << "\n### Printing default report ###" << std::endl;
+  options.output_histogram=true;
+  options.num_histogram=3;
+  options.output_fraction=true;
+  timer.report(out, comm, options);
+  {
+    std::ostringstream os;
+    timer.report(os, comm, options);
+    if (myRank == 0) {
+      TEST_ASSERT(os.str().find("L2a") == std::string::npos); // should be dropped
+      TEST_ASSERT(os.str().find("L2b") != std::string::npos); // should be printed
+      TEST_ASSERT(os.str().find("L1b") == std::string::npos); // should be dropped
+    }
+  }
+
+  out << "\n### Printing aligned_column with timers names on left ###" << std::endl;
+  options.align_columns = true;
+  timer.report(out, comm, options);
+  {
+    std::ostringstream os;
+    timer.report(os, comm, options);
+    if (myRank == 0) {
+      TEST_ASSERT(os.str().find("L2a") == std::string::npos); // should be dropped
+      TEST_ASSERT(os.str().find("L2b") != std::string::npos); // should be printed
+      TEST_ASSERT(os.str().find("L1b") == std::string::npos); // should be dropped
+    }
+  }
+
+  out << "\n### Printing aligned_column with timers names on right ###" << std::endl;
+  options.align_columns = false;
+  options.print_names_before_values = false;
+  timer.report(out, comm, options);
+  {
+    std::ostringstream os;
+    timer.report(os, comm, options);
+    if (myRank == 0) {
+      TEST_ASSERT(os.str().find("L2a") == std::string::npos); // should be dropped
+      TEST_ASSERT(os.str().find("L2b") != std::string::npos); // should be printed
+      TEST_ASSERT(os.str().find("L1b") == std::string::npos); // should be dropped
+    }
+  }
+}
+
+TEUCHOS_UNIT_TEST(StackedTimer, proc_minmax)
+{
+
+  Teuchos::StackedTimer timer("L0");
+  timer.stopBaseTimer();
+
+  const Teuchos::RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
+  if (comm->getSize() < 2)
+    return;
+  const int myRank = Teuchos::rank(*comm);
+
+  if (myRank == 0)
+    const_cast<Teuchos::BaseTimer*>(timer.findBaseTimer("L0"))->setAccumulatedTime(1.0);
+  else if (myRank == 1)
+    const_cast<Teuchos::BaseTimer*>(timer.findBaseTimer("L0"))->setAccumulatedTime(5.0);
+  else
+    const_cast<Teuchos::BaseTimer*>(timer.findBaseTimer("L0"))->setAccumulatedTime(2.0);
+
+  Teuchos::StackedTimer::OutputOptions options;
+
+  out << "\n### Printing default report ###" << std::endl;
+  options.output_minmax=true;
+  options.output_proc_minmax=true;
+  options.output_histogram=true;
+  options.num_histogram=3;
+  options.output_fraction=true;
+  timer.report(out, comm, options);
+  {
+    std::ostringstream os;
+    timer.report(os, comm, options);
+    if (myRank == 0) {
+      TEST_ASSERT(os.str().find("proc min=0") != std::string::npos);
+      TEST_ASSERT(os.str().find("proc max=1") != std::string::npos);
+    }
+  }
+}
+
+
 // Overlapping timers are not allowed in a StackedTimer, but are in
 // TimeMonitor. Since StackedTimer is automatically used in
 // TimeMonitor by default, we have seen this error - a throw from the
@@ -428,3 +567,35 @@ int main( int argc, char* argv[] )
 #endif
   return return_val;
 }
+
+// gcc 4.X is incomplete in c++11 standard - missing
+// std::put_time. We'll disable this feature for gcc 4.
+#if !defined(__GNUC__) || ( defined(__GNUC__) && (__GNUC__ > 4) )
+TEUCHOS_UNIT_TEST(StackedTimer, VerboseTimestamps) {
+
+  Teuchos::StackedTimer timer("My Timer");
+
+  timer.enableVerbose(true);
+  timer.enableVerboseTimestamps(2);
+  std::ostringstream os;
+  timer.setVerboseOstream(Teuchos::rcpFromRef(os));
+
+  timer.start("L1");
+  timer.start("L2");
+  timer.start("L3");
+  timer.stop("L3");
+  timer.stop("L2");
+  timer.stop("L1");
+  timer.stopBaseTimer();
+
+  out << os.str() << std::endl;
+
+  TEST_ASSERT(os.str().find("TIMESTAMP:"));
+
+  // Printing restricted to first two levels, thrid level should not
+  // be printed.
+  TEST_ASSERT(os.str().find("L1") != std::string::npos);
+  TEST_ASSERT(os.str().find("L2") != std::string::npos);
+  TEST_ASSERT(os.str().find("L3") == std::string::npos);
+}
+#endif

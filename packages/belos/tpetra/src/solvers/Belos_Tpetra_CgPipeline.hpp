@@ -15,15 +15,13 @@ private:
   using base_type = Krylov<SC, MV, OP>;
 
 public:
-  CgPipeline () :
-    base_type::Krylov ()
-  {}
+  CgPipeline () = default;
 
   CgPipeline (const Teuchos::RCP<const OP>& A) :
     base_type::Krylov (A)
   {}
 
-  virtual ~CgPipeline () {}
+  virtual ~CgPipeline () = default;
 
 protected:
   using vec_type = typename base_type::vec_type;

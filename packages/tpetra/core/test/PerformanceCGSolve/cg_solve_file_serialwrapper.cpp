@@ -41,7 +41,7 @@
 // @HEADER
 */
 
-#include "cg-solve_file.hpp"
+#include "cg_solve_file.hpp"
 
 #if defined(HAVE_TPETRA_INST_SERIAL)
 int run_serialwrapper(int& argc, char* argv[]) {

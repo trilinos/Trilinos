@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -36,152 +37,176 @@
 
 #include <map>
 #include <vector>
-
-#include <boost/mpl/assert.hpp>
-#include <boost/mpl/size.hpp>
-#include <boost/mpl/at.hpp>
+#include <type_traits>
 
 using namespace stk;
 using namespace stk::topology_detail;
 
-#ifndef KOKKOS_ENABLE_CUDA
-
-using namespace boost;
-
 namespace {
 
-template <typename TopologyData, typename PermutationVector, unsigned NumNodes, unsigned Permutation = 0, unsigned NumPermutations = mpl::size<PermutationVector>::value>
-struct check_permutations
+template <stk::topology::topology_t Topology>
+typename std::enable_if<(topology_data<Topology>::num_edges > 0), bool>::type check_edge_node_offsets()
 {
-  static const bool value =    (NumNodes == mpl::size< typename mpl::at_c<PermutationVector,Permutation>::type>::value)
-                            && check_permutations<TopologyData,PermutationVector,NumNodes,Permutation+1>::value;
+  using TopologyData = topology_data<Topology>;
+  bool edge_node_ordinals = true;
 
-  BOOST_MPL_ASSERT_MSG(   value
-                        , PERMUTATION_NODE_ORDINALS_NUM_NODES_ERROR
-                        , (TopologyData)
-                      );
+  unsigned totalEdgeNodeOffset = 0;
+  EXPECT_EQ(totalEdgeNodeOffset, TopologyData::edge_node_ordinals_offsets[0]);
+  edge_node_ordinals &= (0 == TopologyData::edge_node_ordinals_offsets[0]);
 
-};
+  for (unsigned edge = 0; edge < TopologyData::num_edges; ++edge) {
+    stk::topology edgeTopo = stk::topology(Topology).edge_topology();
+    unsigned numEdgeNodes = edgeTopo.num_nodes();
+    totalEdgeNodeOffset += numEdgeNodes;
 
-template <typename TopologyData, typename PermutationVector, unsigned NumNodes, unsigned Permutation>
-struct check_permutations<TopologyData,PermutationVector,NumNodes,Permutation,Permutation>
+    EXPECT_EQ(totalEdgeNodeOffset, TopologyData::edge_node_ordinals_offsets[edge+1]);
+    edge_node_ordinals &= (totalEdgeNodeOffset == TopologyData::edge_node_ordinals_offsets[edge+1]);
+  }
+
+  unsigned ordinalVectorLength = sizeof(TopologyData::edge_node_ordinals_vector) / sizeof(*TopologyData::edge_node_ordinals_vector);
+  EXPECT_EQ(totalEdgeNodeOffset, ordinalVectorLength);
+  edge_node_ordinals &= (totalEdgeNodeOffset == ordinalVectorLength);
+
+  return edge_node_ordinals;
+}
+
+template <stk::topology::topology_t Topology>
+typename std::enable_if<(topology_data<Topology>::num_edges == 0), bool>::type check_edge_node_offsets()
 {
-  static const bool value = true;
-};
+  return true;
+}
 
 
-
-template <typename TopologyData, unsigned Face = 0, unsigned NumFaces = TopologyData::num_faces >
-struct check_faces
+template <stk::topology::topology_t Topology>
+typename std::enable_if<(topology_data<Topology>::num_faces > 0), bool>::type check_face_topology()
 {
+  using TopologyData = topology_data<Topology>;
+  bool face_topology = true;
 
-  typedef typename mpl::at_c<typename TopologyData::face_topology_vector, Face>::type face_topology_;
-  typedef topology_data< face_topology_::value > face_topology;
+  unsigned faceTopologyVectorLength = sizeof(TopologyData::face_topology_vector) / sizeof(*TopologyData::face_topology_vector);
+  face_topology = (stk::topology(Topology).num_faces() == faceTopologyVectorLength);
+  EXPECT_EQ(stk::topology(Topology).num_faces(), faceTopologyVectorLength);
 
-  typedef typename mpl::at_c<typename TopologyData::face_node_ordinals_vector, Face>::type face_nodes;
+  return face_topology;
+}
 
-  static const bool value =    (face_topology::num_nodes == mpl::size< face_nodes >::value)
-                            && check_faces<TopologyData,Face+1>::value;
-
-  BOOST_MPL_ASSERT_MSG(   value
-                        , FACE_NODE_ORDINALS_NUM_NODES_ERROR
-                        , (TopologyData)
-                      );
-
-};
-
-template <typename TopologyData, unsigned Face>
-struct check_faces<TopologyData,Face,Face>
+template <stk::topology::topology_t Topology>
+typename std::enable_if<(topology_data<Topology>::num_faces == 0), bool>::type check_face_topology()
 {
-  static const bool value = true;
-};
+  return true;
+}
 
-template <typename TopologyData>
-struct validate_topology_data
+
+template <stk::topology::topology_t Topology>
+typename std::enable_if<(topology_data<Topology>::num_faces > 0), bool>::type check_face_node_offsets()
 {
-  static const bool edge_node_ordinals = TopologyData::num_edges == mpl::size<typename TopologyData::edge_node_ordinals_vector>::value;
-  BOOST_MPL_ASSERT_MSG(   edge_node_ordinals
-                        , EDGE_NODE_ORDINALS_SIZE_ERROR
-                        , (TopologyData)
-                      );
+  using TopologyData = topology_data<Topology>;
+  bool face_node_ordinals = true;
+  unsigned totalFaceNodeOffset = 0;
 
-  static const bool face_topology = TopologyData::num_faces == mpl::size<typename TopologyData::face_topology_vector>::value;
-  BOOST_MPL_ASSERT_MSG(   face_topology
-                        , FACE_TOPOLOGY_SIZE_ERROR
-                        , (TopologyData)
-                      );
+  EXPECT_EQ(totalFaceNodeOffset, TopologyData::face_node_ordinals_offsets[0]);
+  face_node_ordinals &= (0 == TopologyData::face_node_ordinals_offsets[0]);
 
-  static const bool face_node_ordinals = TopologyData::num_faces == mpl::size<typename TopologyData::face_node_ordinals_vector>::value;
-  BOOST_MPL_ASSERT_MSG(   face_node_ordinals
-                        , FACE_NODE_ORDINALS_SIZE_ERROR
-                        , (TopologyData)
-                      );
+  for (unsigned face = 0; face < TopologyData::num_faces; ++face) {
+    stk::topology faceTopo = stk::topology(Topology).face_topology(face);
+    unsigned numFaceNodes = faceTopo.num_nodes();
+    totalFaceNodeOffset += numFaceNodes;
 
-  static const bool permutation_node_ordinals = TopologyData::num_permutations == mpl::size<typename TopologyData::permutation_node_ordinals_vector>::value;
-  BOOST_MPL_ASSERT_MSG(   permutation_node_ordinals
-                        , PERMUTATION_NODE_ORDINALS_SIZE_ERROR
-                        , (TopologyData)
-                      );
+    EXPECT_EQ(totalFaceNodeOffset, TopologyData::face_node_ordinals_offsets[face+1]);
+    face_node_ordinals &= (totalFaceNodeOffset == TopologyData::face_node_ordinals_offsets[face+1]);
+  }
 
-  static const bool check_permutations_nodes = check_permutations<TopologyData, typename TopologyData::permutation_node_ordinals_vector, TopologyData::num_nodes>::value;
+  unsigned ordinalVectorLength = sizeof(TopologyData::face_node_ordinals_vector) / sizeof(*TopologyData::face_node_ordinals_vector);
+  EXPECT_EQ(totalFaceNodeOffset, ordinalVectorLength);
+  face_node_ordinals &= (totalFaceNodeOffset == ordinalVectorLength);
 
-  static const bool check_face_nodes = check_faces<TopologyData>::value;
+  return face_node_ordinals;
+}
 
-  static const bool value =    edge_node_ordinals
-                            && face_topology
-                            && face_node_ordinals
-                            && permutation_node_ordinals
-                            && check_permutations_nodes
-                            && check_face_nodes
-                           ;
+template <stk::topology::topology_t Topology>
+typename std::enable_if<(topology_data<Topology>::num_faces == 0), bool>::type check_face_node_offsets()
+{
+  return true;
+}
 
-};
+
+template <stk::topology::topology_t Topology>
+typename std::enable_if<((topology_data<Topology>::num_faces > 0) && (topology_data<Topology>::num_nodes > 0)), bool>::type check_permutation_node_offsets()
+{
+  using TopologyData = topology_data<Topology>;
+
+  unsigned permutationVectorLength = sizeof(TopologyData::permutation_node_ordinals_vector) / sizeof(*TopologyData::permutation_node_ordinals_vector);
+  unsigned numPermutations = permutationVectorLength / TopologyData::num_nodes;
+  bool permutation_node_ordinals = (TopologyData::num_permutations == numPermutations);
+  EXPECT_EQ(stk::topology(Topology).num_permutations(), numPermutations);
+
+  return permutation_node_ordinals;
+}
+
+template <stk::topology::topology_t Topology>
+typename std::enable_if<((topology_data<Topology>::num_faces == 0) || (topology_data<Topology>::num_nodes == 0)), bool>::type check_permutation_node_offsets()
+{
+  return true;
+}
+
+
+template <stk::topology::topology_t Topology>
+bool validate_topology_data()
+{
+  return  (   check_edge_node_offsets<Topology>()
+           && check_face_topology<Topology>()
+           && check_face_node_offsets<Topology>()
+           && check_permutation_node_offsets<Topology>()
+           );
+}
 
 } //unnamed namespace
 
 TEST( stk_topology, validate_topology)
 {
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::NODE          > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::LINE_2        > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::LINE_3        > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::TRI_3         > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::TRI_4         > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::TRI_6         > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::QUAD_4        > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::QUAD_8        > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::QUAD_9        > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::PARTICLE      > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::LINE_2_1D     > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::LINE_3_1D     > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::BEAM_2        > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::BEAM_3        > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::SHELL_LINE_2  > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::SHELL_LINE_3  > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::TRI_3_2D      > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::TRI_4_2D      > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::TRI_6_2D      > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::QUAD_4_2D     > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::QUAD_8_2D     > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::QUAD_9_2D     > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::SHELL_TRI_3   > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::SHELL_TRI_4   > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::SHELL_TRI_6   > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::SHELL_QUAD_4  > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::SHELL_QUAD_8  > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::SHELL_QUAD_9  > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::TET_4         > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::TET_8         > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::TET_10        > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::TET_11        > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::PYRAMID_5     > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::PYRAMID_13    > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::PYRAMID_14    > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::WEDGE_6       > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::WEDGE_15      > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::WEDGE_18      > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::HEX_8         > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::HEX_20        > >::value == true );
-  EXPECT_TRUE( validate_topology_data< topology_data< topology::HEX_27        > >::value == true );
+  EXPECT_TRUE( validate_topology_data< topology::NODE          >() );
+  EXPECT_TRUE( validate_topology_data< topology::LINE_2        >() );
+  EXPECT_TRUE( validate_topology_data< topology::LINE_3        >() );
+  EXPECT_TRUE( validate_topology_data< topology::TRI_3         >() );
+  EXPECT_TRUE( validate_topology_data< topology::TRI_4         >() );
+  EXPECT_TRUE( validate_topology_data< topology::TRI_6         >() );
+  EXPECT_TRUE( validate_topology_data< topology::QUAD_4        >() );
+  EXPECT_TRUE( validate_topology_data< topology::QUAD_8        >() );
+  EXPECT_TRUE( validate_topology_data< topology::QUAD_9        >() );
+  EXPECT_TRUE( validate_topology_data< topology::PARTICLE      >() );
+  EXPECT_TRUE( validate_topology_data< topology::LINE_2_1D     >() );
+  EXPECT_TRUE( validate_topology_data< topology::LINE_3_1D     >() );
+  EXPECT_TRUE( validate_topology_data< topology::BEAM_2        >() );
+  EXPECT_TRUE( validate_topology_data< topology::BEAM_3        >() );
+  EXPECT_TRUE( validate_topology_data< topology::SHELL_LINE_2  >() );
+  EXPECT_TRUE( validate_topology_data< topology::SHELL_LINE_3  >() );
+  EXPECT_TRUE( validate_topology_data< topology::SPRING_2      >() );
+  EXPECT_TRUE( validate_topology_data< topology::SPRING_3      >() );
+  EXPECT_TRUE( validate_topology_data< topology::TRI_3_2D      >() );
+  EXPECT_TRUE( validate_topology_data< topology::TRI_4_2D      >() );
+  EXPECT_TRUE( validate_topology_data< topology::TRI_6_2D      >() );
+  EXPECT_TRUE( validate_topology_data< topology::QUAD_4_2D     >() );
+  EXPECT_TRUE( validate_topology_data< topology::QUAD_8_2D     >() );
+  EXPECT_TRUE( validate_topology_data< topology::QUAD_9_2D     >() );
+  EXPECT_TRUE( validate_topology_data< topology::SHELL_TRI_3   >() );
+  EXPECT_TRUE( validate_topology_data< topology::SHELL_TRI_4   >() );
+  EXPECT_TRUE( validate_topology_data< topology::SHELL_TRI_6   >() );
+  EXPECT_TRUE( validate_topology_data< topology::SHELL_QUAD_4  >() );
+  EXPECT_TRUE( validate_topology_data< topology::SHELL_QUAD_8  >() );
+  EXPECT_TRUE( validate_topology_data< topology::SHELL_QUAD_9  >() );
+  EXPECT_TRUE( validate_topology_data< topology::TET_4         >() );
+  EXPECT_TRUE( validate_topology_data< topology::TET_8         >() );
+  EXPECT_TRUE( validate_topology_data< topology::TET_10        >() );
+  EXPECT_TRUE( validate_topology_data< topology::TET_11        >() );
+  EXPECT_TRUE( validate_topology_data< topology::PYRAMID_5     >() );
+  EXPECT_TRUE( validate_topology_data< topology::PYRAMID_13    >() );
+  EXPECT_TRUE( validate_topology_data< topology::PYRAMID_14    >() );
+  EXPECT_TRUE( validate_topology_data< topology::WEDGE_6       >() );
+  EXPECT_TRUE( validate_topology_data< topology::WEDGE_15      >() );
+  EXPECT_TRUE( validate_topology_data< topology::WEDGE_18      >() );
+  EXPECT_TRUE( validate_topology_data< topology::HEX_8         >() );
+  EXPECT_TRUE( validate_topology_data< topology::HEX_20        >() );
+  EXPECT_TRUE( validate_topology_data< topology::HEX_27        >() );
 
   // check that the permutations define the same sides
   for (stk::topology topo = stk::topology::BEGIN_TOPOLOGY; topo < stk::topology::END_TOPOLOGY; ++topo) {
@@ -196,25 +221,25 @@ TEST( stk_topology, validate_topology)
         std::vector<unsigned> tmp_side_nodes(side_topo.num_nodes());
         std::vector<unsigned> side_nodes(tmp_side_nodes.size());
 
-        topo.side_node_ordinals(side, tmp_side_nodes.begin());
-        unsigned side_perm = side_topo.lexicographical_smallest_permutation(tmp_side_nodes);
-        side_topo.permutation_nodes(tmp_side_nodes, side_perm, side_nodes.begin());
+        topo.side_node_ordinals(side, tmp_side_nodes.data());
+        unsigned side_perm = side_topo.lexicographical_smallest_permutation(tmp_side_nodes.data());
+        side_topo.permutation_nodes(tmp_side_nodes.data(), side_perm, side_nodes.data());
 
         side_map[side_nodes] = 0;
       }
 
       std::vector<unsigned> nodes(topo.num_nodes());
       for (unsigned perm = 0; perm < num_permutations; ++perm) {
-        topo.permutation_node_ordinals(perm, nodes.begin());
+        topo.permutation_node_ordinals(perm, nodes.data());
 
         for (unsigned side=0; side < num_sides; ++side) {
           stk::topology side_topo = topo.side_topology(side);
           std::vector<unsigned> tmp_side_nodes(side_topo.num_nodes());
           std::vector<unsigned> side_nodes(tmp_side_nodes.size());
 
-          topo.side_nodes(nodes, side, tmp_side_nodes.begin());
-          unsigned side_perm = side_topo.lexicographical_smallest_permutation(tmp_side_nodes);
-          side_topo.permutation_nodes(tmp_side_nodes, side_perm, side_nodes.begin());
+          topo.side_nodes(nodes.data(), side, tmp_side_nodes.data());
+          unsigned side_perm = side_topo.lexicographical_smallest_permutation(tmp_side_nodes.data());
+          side_topo.permutation_nodes(tmp_side_nodes.data(), side_perm, side_nodes.data());
 
           side_map[side_nodes] += 1;
         }
@@ -239,8 +264,6 @@ TEST( stk_topology, validate_topology)
     }
   }
 }
-
-#endif
 
 TEST( stk_topology, verify_3D_topology)
 {

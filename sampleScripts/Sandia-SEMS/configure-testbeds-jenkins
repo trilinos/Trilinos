@@ -70,7 +70,7 @@ cmake \
 -D DART_TESTING_TIMEOUT:STRING=200 \
 -D Trilinos_WARNINGS_AS_ERRORS_FLAGS:STRING="" \
 -D Trilinos_ENABLE_CXX11=ON \
-  -D Trilinos_CXX11_FLAGS:STRING="--std=c++11" \
+  -D Trilinos_CXX11_FLAGS:STRING="--std=c++11 -expt-extended-lambda" \
 \
 -D TPL_ENABLE_MPI=ON \
   -D MPI_EXEC_POST_NUMPROCS_FLAGS:STRING="-bind-to;socket;-map-by;socket" \

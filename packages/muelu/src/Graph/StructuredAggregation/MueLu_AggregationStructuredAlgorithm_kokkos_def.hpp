@@ -67,7 +67,7 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void AggregationStructuredAlgorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
-  BuildAggregates(const Teuchos::ParameterList& params, const LWGraph_kokkos& graph,
+  BuildAggregates(const Teuchos::ParameterList& /* params */, const LWGraph_kokkos& graph,
                   Aggregates_kokkos& aggregates,
                   Kokkos::View<unsigned*, memory_space>& aggStat,
                   LO& numNonAggregatedNodes) const {
@@ -109,8 +109,7 @@ namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void AggregationStructuredAlgorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
   BuildGraph(const LWGraph_kokkos& graph, RCP<IndexManager_kokkos>& geoData, const LO dofsPerNode,
-             RCP<CrsGraph>& myGraph, RCP<const Map>& coarseCoordinatesFineMap,
-             RCP<const Map>& coarseCoordinatesMap) const {
+             RCP<CrsGraph>& myGraph) const {
     Monitor m(*this, "BuildGraphP");
 
     RCP<Teuchos::FancyOStream> out;
@@ -120,8 +119,6 @@ namespace MueLu {
     } else {
       out = Teuchos::getFancyOStream(rcp(new Teuchos::oblackholestream()));
     }
-
-    typedef typename CrsGraph::local_graph_type local_graph_type;
 
     // Compute the number of coarse points needed to interpolate quantities to a fine point
     int numInterpolationPoints = 0;
@@ -195,25 +192,8 @@ namespace MueLu {
                                Teuchos::OrdinalTraits<GO>::invalid(),
                                numCoarseNodes,
                                graph.GetDomainMap()->getIndexBase(),
-                               graph.GetDomainMap()->getComm(),
-                               graph.GetDomainMap()->getNode());
+                               graph.GetDomainMap()->getComm());
     domainMap = colMap;
-
-    Array<GO> coarseNodeCoarseGIDs(numCoarseNodes);
-    Array<GO> coarseNodeFineGIDs(numCoarseNodes);
-    geoData->getCoarseNodesData(graph.GetDomainMap(), coarseNodeCoarseGIDs, coarseNodeFineGIDs);
-    coarseCoordinatesMap = MapFactory::Build(graph.GetDomainMap()->lib(),
-                                             Teuchos::OrdinalTraits<GO>::invalid(),
-                                             numCoarseNodes,
-                                             graph.GetDomainMap()->getIndexBase(),
-                                             graph.GetDomainMap()->getComm(),
-                                             graph.GetDomainMap()->getNode());
-    coarseCoordinatesFineMap = MapFactory::Build(graph.GetDomainMap()->lib(),
-                                                 Teuchos::OrdinalTraits<GO>::invalid(),
-                                                 coarseNodeFineGIDs(),
-                                                 graph.GetDomainMap()->getIndexBase(),
-                                                 graph.GetDomainMap()->getComm(),
-                                                 graph.GetDomainMap()->getNode());
 
     myGraph = CrsGraphFactory::Build(myLocalGraph, graph.GetDomainMap(), colMap,
                                      colMap, graph.GetDomainMap());

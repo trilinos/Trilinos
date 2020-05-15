@@ -72,9 +72,9 @@
 #ifdef HAVE_TPETRA
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Util.hpp"
-typedef Tpetra::Details::DefaultTypes::local_ordinal_type  TpetraLOType;
-typedef Tpetra::Details::DefaultTypes::global_ordinal_type TpetraGOType;
-typedef Tpetra::Details::DefaultTypes::node_type           TpetraNodeType;
+typedef typename Tpetra::Map<>::local_ordinal_type  TpetraLOType;
+typedef typename Tpetra::Map<>::global_ordinal_type  TpetraGOType;
+typedef typename Tpetra::Map<>::node_type TpetraNodeType;
 #endif
 
 namespace Domi
@@ -1245,7 +1245,6 @@ getTpetraAxisMap(int axis,
     "invalid axis index = " << axis << " (number of dimensions = " <<
     numDims() << ")");
 #endif
-  int num_dims = numDims();
   Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm =
     _mdComm->getTeuchosComm();
   Teuchos::Array< GlobalOrdinal > elements(getLocalDim(axis,withCommPad));

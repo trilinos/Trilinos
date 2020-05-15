@@ -47,7 +47,7 @@
 PyTrilinos.ML is the python interface to the Trilinos multi-level
 preconditioner package ML/MLAPI:
 
-    http://trilinos.sandia.gov/packages/ml
+    https://trilinos.org/docs/dev/packages/ml/doc/html/index.html
 
 The purpose of ML is to provide multilevel preconditioners to
 Trilinos.
@@ -80,7 +80,6 @@ example subdirectory of the PyTrilinos package:
 
 %module(package   = "PyTrilinos",
 	directors = "1",
-	autodoc   = "1",
 	docstring = %ml_docstring) ML
 
 %{
@@ -123,11 +122,11 @@ example subdirectory of the PyTrilinos package:
 // Standard exception handling
 %include "exception.i"
 
-// Auto-documentation feature
-%feature("autodoc", "1");
-
 // Include ML documentation
+#if SWIG_VERSION < 0x040000
+%feature("autodoc", "1");
 %include "ML_dox.i"
+#endif
 
 // SWIG NumPy interface file
 %include "numpy.i"

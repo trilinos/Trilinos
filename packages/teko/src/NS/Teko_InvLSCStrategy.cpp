@@ -156,22 +156,22 @@ void InvLSCStrategy::buildState(BlockedLinearOp & A,BlockPreconditionerState & s
 }
 
 // functions inherited from LSCStrategy
-LinearOp InvLSCStrategy::getInvBQBt(const BlockedLinearOp & A,BlockPreconditionerState & state) const
+LinearOp InvLSCStrategy::getInvBQBt(const BlockedLinearOp & /* A */,BlockPreconditionerState & state) const
 {
    return state.getInverse("invBQBtmC");
 }
 
-LinearOp InvLSCStrategy::getInvBHBt(const BlockedLinearOp & A,BlockPreconditionerState & state) const
+LinearOp InvLSCStrategy::getInvBHBt(const BlockedLinearOp & /* A */,BlockPreconditionerState & state) const
 {
    return state.getInverse("invBHBtmC");
 }
 
-LinearOp InvLSCStrategy::getInvF(const BlockedLinearOp & A,BlockPreconditionerState & state) const
+LinearOp InvLSCStrategy::getInvF(const BlockedLinearOp & /* A */,BlockPreconditionerState & state) const
 {
    return state.getInverse("invF");
 }
 
-LinearOp InvLSCStrategy::getOuterStabilization(const BlockedLinearOp & A,BlockPreconditionerState & state) const
+LinearOp InvLSCStrategy::getOuterStabilization(const BlockedLinearOp & /* A */,BlockPreconditionerState & state) const
 {
    LSCPrecondState * lscState = dynamic_cast<LSCPrecondState*>(&state);
    TEUCHOS_ASSERT(lscState!=0);
@@ -180,7 +180,7 @@ LinearOp InvLSCStrategy::getOuterStabilization(const BlockedLinearOp & A,BlockPr
    return lscState->aiD_;
 }
 
-LinearOp InvLSCStrategy::getInvMass(const BlockedLinearOp & A,BlockPreconditionerState & state) const
+LinearOp InvLSCStrategy::getInvMass(const BlockedLinearOp & /* A */,BlockPreconditionerState & state) const
 {
    LSCPrecondState * lscState = dynamic_cast<LSCPrecondState*>(&state);
    TEUCHOS_ASSERT(lscState!=0);

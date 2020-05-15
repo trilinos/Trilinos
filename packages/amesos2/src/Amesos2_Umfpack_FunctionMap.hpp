@@ -157,7 +157,7 @@ namespace Amesos2 {
     const double Control [UMFPACK_CONTROL],
     double Info [UMFPACK_INFO])
     {
-      return umfpack_zi_solve(sys, Ap, Ai,
+      return ::umfpack_zi_solve(sys, Ap, Ai,
         stdComplexToUmfpackDoubleConversion(Ax), NULL,
         stdComplexToUmfpackDoubleConversion(X), NULL,
         stdComplexToUmfpackDoubleConversion(B), NULL,

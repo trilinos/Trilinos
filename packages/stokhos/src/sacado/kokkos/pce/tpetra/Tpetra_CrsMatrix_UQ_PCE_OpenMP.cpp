@@ -42,7 +42,7 @@
 #include "TpetraCore_config.h"
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
-#include "Stokhos_Tpetra_ETI_Helpers_UQ_PCE.hpp"
+#include "Stokhos_Tpetra_ETI_Helpers_UQ_PCE_OpenMP.hpp"
 
 #include "Tpetra_CrsMatrix_UQ_PCE.hpp"
 #include "Tpetra_CrsMatrix_UQ_PCE_def.hpp"
@@ -55,14 +55,8 @@
 #define TPETRA_LOCAL_INST_N_2(N) \
   INSTANTIATE_TPETRA_UQ_PCE_N(TPETRA_CRSMATRIX_INSTANT, N)
 
-TPETRA_ETI_MANGLING_TYPEDEFS()
+INSTANTIATE_TPETRA_UQ_PCE(TPETRA_LOCAL_INST_N_1)
 
-namespace Tpetra {
-
-  INSTANTIATE_TPETRA_UQ_PCE_OPENMP(TPETRA_LOCAL_INST_N_1)
-
-  INSTANTIATE_TPETRA_UQ_PCE_OPENMP(TPETRA_LOCAL_INST_N_2)
-
-} // namespace Tpetra
+INSTANTIATE_TPETRA_UQ_PCE(TPETRA_LOCAL_INST_N_2)
 
 #endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION

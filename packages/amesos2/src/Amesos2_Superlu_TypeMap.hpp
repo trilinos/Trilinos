@@ -166,11 +166,12 @@ namespace Teuchos {
  *
  * @{
  */
-template <typename TypeFrom>
-class ValueTypeConversionTraits<SLU::C::complex, TypeFrom>
+
+template <>
+class ValueTypeConversionTraits<SLU::C::complex, std::complex<float>>
 {
 public:
-  static SLU::C::complex convert( const TypeFrom t )
+  static SLU::C::complex convert( const std::complex<float> t )
     {
       SLU::C::complex ret;
       ret.r = Teuchos::as<float>(t.real());
@@ -178,7 +179,28 @@ public:
       return( ret );
     }
 
-  static SLU::C::complex safeConvert( const TypeFrom t )
+  static SLU::C::complex safeConvert( const std::complex<float> t )
+    {
+      SLU::C::complex ret;
+      ret.r = Teuchos::as<float>(t.real());
+      ret.i = Teuchos::as<float>(t.imag());
+      return( ret );
+    }
+};
+
+template <>
+class ValueTypeConversionTraits<SLU::C::complex, std::complex<double>>
+{
+public:
+  static SLU::C::complex convert( const std::complex<double> t )
+    {
+      SLU::C::complex ret;
+      ret.r = Teuchos::as<float>(t.real());
+      ret.i = Teuchos::as<float>(t.imag());
+      return( ret );
+    }
+
+  static SLU::C::complex safeConvert( const std::complex<double> t )
     {
       SLU::C::complex ret;
       ret.r = Teuchos::as<float>(t.real());
@@ -188,11 +210,11 @@ public:
 };
 
 
-template <typename TypeFrom>
-class ValueTypeConversionTraits<SLU::Z::doublecomplex, TypeFrom>
+template <>
+class ValueTypeConversionTraits<SLU::Z::doublecomplex, std::complex<float>>
 {
 public:
-  static SLU::Z::doublecomplex convert( const TypeFrom t )
+  static SLU::Z::doublecomplex convert( const std::complex<float> t )
     {
       SLU::Z::doublecomplex ret;
       ret.r = Teuchos::as<double>(t.real());
@@ -200,7 +222,28 @@ public:
       return( ret );
     }
 
-  static SLU::Z::doublecomplex safeConvert( const TypeFrom t )
+  static SLU::Z::doublecomplex safeConvert( const std::complex<float> t )
+    {
+      SLU::Z::doublecomplex ret;
+      ret.r = Teuchos::as<double>(t.real());
+      ret.i = Teuchos::as<double>(t.imag());
+      return( ret );
+    }
+};
+
+template <>
+class ValueTypeConversionTraits<SLU::Z::doublecomplex, std::complex<double>>
+{
+public:
+  static SLU::Z::doublecomplex convert( const std::complex<double> t )
+    {
+      SLU::Z::doublecomplex ret;
+      ret.r = Teuchos::as<double>(t.real());
+      ret.i = Teuchos::as<double>(t.imag());
+      return( ret );
+    }
+
+  static SLU::Z::doublecomplex safeConvert( const std::complex<double> t )
     {
       SLU::Z::doublecomplex ret;
       ret.r = Teuchos::as<double>(t.real());
@@ -211,48 +254,93 @@ public:
 
 
 // Also convert from SLU types
-template <typename TypeTo>
-class ValueTypeConversionTraits<TypeTo, SLU::C::complex>
+
+template <>
+class ValueTypeConversionTraits<std::complex<float>, SLU::C::complex>
 {
 public:
-  static TypeTo convert( const SLU::C::complex t )
+  static std::complex<float> convert( const SLU::C::complex t )
     {
-      typedef typename TypeTo::value_type value_type;
+      typedef typename std::complex<float>::value_type value_type;
       value_type ret_r = Teuchos::as<value_type>( t.r );
       value_type ret_i = Teuchos::as<value_type>( t.i );
-      return ( TypeTo( ret_r, ret_i ) );
+      return ( std::complex<float>( ret_r, ret_i ) );
     }
 
   // No special checks for safe Convert
-  static TypeTo safeConvert( const SLU::C::complex t )
+  static std::complex<float> safeConvert( const SLU::C::complex t )
     {
-      typedef typename TypeTo::value_type value_type;
+      typedef typename std::complex<float>::value_type value_type;
       value_type ret_r = Teuchos::as<value_type>( t.r );
       value_type ret_i = Teuchos::as<value_type>( t.i );
-      return ( TypeTo( ret_r, ret_i ) );
+      return ( std::complex<float>( ret_r, ret_i ) );
+    }
+};
+
+template <>
+class ValueTypeConversionTraits<std::complex<double>, SLU::C::complex>
+{
+public:
+  static std::complex<double> convert( const SLU::C::complex t )
+    {
+      typedef typename std::complex<double>::value_type value_type;
+      value_type ret_r = Teuchos::as<value_type>( t.r );
+      value_type ret_i = Teuchos::as<value_type>( t.i );
+      return ( std::complex<double>( ret_r, ret_i ) );
+    }
+
+  // No special checks for safe Convert
+  static std::complex<double> safeConvert( const SLU::C::complex t )
+    {
+      typedef typename std::complex<double>::value_type value_type;
+      value_type ret_r = Teuchos::as<value_type>( t.r );
+      value_type ret_i = Teuchos::as<value_type>( t.i );
+      return ( std::complex<double>( ret_r, ret_i ) );
     }
 };
 
 
-template <typename TypeTo>
-class ValueTypeConversionTraits<TypeTo, SLU::Z::doublecomplex>
+template <>
+class ValueTypeConversionTraits<std::complex<float>, SLU::Z::doublecomplex>
 {
 public:
-  static TypeTo convert( const SLU::Z::doublecomplex t )
+  static std::complex<float> convert( const SLU::Z::doublecomplex t )
     {
-      typedef typename TypeTo::value_type value_type;
+      typedef typename std::complex<float>::value_type value_type;
       value_type ret_r = Teuchos::as<value_type>( t.r );
       value_type ret_i = Teuchos::as<value_type>( t.i );
-      return ( TypeTo( ret_r, ret_i ) );
+      return ( std::complex<float>( ret_r, ret_i ) );
     }
 
   // No special checks for safe Convert
-  static TypeTo safeConvert( const SLU::Z::doublecomplex t )
+  static std::complex<float> safeConvert( const SLU::Z::doublecomplex t )
     {
-      typedef typename TypeTo::value_type value_type;
+      typedef typename std::complex<float>::value_type value_type;
       value_type ret_r = Teuchos::as<value_type>( t.r );
       value_type ret_i = Teuchos::as<value_type>( t.i );
-      return ( TypeTo( ret_r, ret_i ) );
+      return ( std::complex<float>( ret_r, ret_i ) );
+    }
+};
+
+template <>
+class ValueTypeConversionTraits<std::complex<double>, SLU::Z::doublecomplex>
+{
+public:
+  static std::complex<double> convert( const SLU::Z::doublecomplex t )
+    {
+      typedef typename std::complex<double>::value_type value_type;
+      value_type ret_r = Teuchos::as<value_type>( t.r );
+      value_type ret_i = Teuchos::as<value_type>( t.i );
+      return ( std::complex<double>( ret_r, ret_i ) );
+    }
+
+  // No special checks for safe Convert
+  static std::complex<double> safeConvert( const SLU::Z::doublecomplex t )
+    {
+      typedef typename std::complex<double>::value_type value_type;
+      value_type ret_r = Teuchos::as<value_type>( t.r );
+      value_type ret_i = Teuchos::as<value_type>( t.i );
+      return ( std::complex<double>( ret_r, ret_i ) );
     }
 };
 

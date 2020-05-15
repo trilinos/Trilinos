@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -33,7 +34,7 @@
 
 #include <gtest/gtest.h>
 #include <unit_tests/UnitTestUtils.hpp>
-#include <unit_tests/MeshUtilsForBoundingVolumes.hpp>
+#include "MeshUtilsForBoundingVolumes.hpp"
 #include <stk_unit_test_utils/getOption.h>
 
 namespace
@@ -76,7 +77,7 @@ struct Options
      std::string mSphereFile;
      std::string mVolumeFile;
      bool mCommunicateRangeBoxes;
-     NewSearchMethod mSearchMethod;
+     stk::search::SearchMethod mSearchMethod;
      bool mSpheresFirstThenBoxes;
      bool mTestToGetGoldResults;
 
@@ -102,15 +103,11 @@ struct Options
      void setSearchMethod()
      {
          std::string optionString = "-method";
-         mSearchMethod = BOOST_RTREE;
-         std::string searchString = stk::unit_test_util::get_option(optionString, "boost");
-         if ( searchString == "octree")
+         mSearchMethod = stk::search::KDTREE;
+         std::string searchString = stk::unit_test_util::get_option(optionString, "gtk");
+         if ( searchString != "gtk" && searchString != "kdtree")
          {
-             ThrowRequireMsg(false, "search method octree deprecated");
-         }
-         else if ( searchString == "gtk" )
-         {
-             mSearchMethod = KDTREE;
+             ThrowRequireMsg(false, "unrecognized search method");
          }
      }
 
@@ -168,13 +165,13 @@ void printOptions(const Options& options)
         std::cerr << "Sphere file: " << options.mSphereFile << std::endl;
         std::cerr << "Volume file: " << options.mVolumeFile << std::endl;
         std::cerr << "Search Method: ";
-        if (options.mSearchMethod == KDTREE )
+        if (options.mSearchMethod == stk::search::KDTREE )
         {
             std::cerr << "KDTREE" << std::endl;
         }
         else
         {
-            std::cerr << "BOOST" << std::endl;
+            ThrowRequireMsg(false,"Unrecognized search method "<<options.mSearchMethod);
         }
     }
 }
@@ -196,11 +193,11 @@ TEST(NaluPerformance, BoxSphereIntersections)
 
     if ( options.mSpheresFirstThenBoxes )
     {
-        stk::search::coarse_search(spheres, domainBoxes, mapSearchMethodToStk(options.mSearchMethod), comm, searchResults, options.mCommunicateRangeBoxes);
+        stk::search::coarse_search(spheres, domainBoxes, options.mSearchMethod, comm, searchResults, options.mCommunicateRangeBoxes);
     }
     else
     {
-        stk::search::coarse_search(domainBoxes, spheres, mapSearchMethodToStk(options.mSearchMethod), comm, searchResults, options.mCommunicateRangeBoxes);
+        stk::search::coarse_search(domainBoxes, spheres, options.mSearchMethod, comm, searchResults, options.mCommunicateRangeBoxes);
     }
 
     double elapsedTime = stk::wall_time() - startTime;
@@ -265,11 +262,11 @@ TEST(NaluPerformance, BoxBoxIntersections)
 
     if ( options.mSpheresFirstThenBoxes )
     {
-        coarse_search_new(spheres, domainBoxes, options.mSearchMethod, comm, searchResults);
+        stk::search::coarse_search(spheres, domainBoxes, options.mSearchMethod, comm, searchResults);
     }
     else
     {
-        coarse_search_new(domainBoxes, spheres, options.mSearchMethod, comm, searchResults);
+        stk::search::coarse_search(domainBoxes, spheres, options.mSearchMethod, comm, searchResults);
     }
 
     double elapsedTime = stk::wall_time() - startTime;
@@ -308,7 +305,7 @@ TEST(NaluPerformance, BoxBoxIntersections)
         }
     }
 }
-
+ 
 TEST(stkSearch, boxSphereIntersection)
 {
     FloatBox box(0,0,0,1,1,1);

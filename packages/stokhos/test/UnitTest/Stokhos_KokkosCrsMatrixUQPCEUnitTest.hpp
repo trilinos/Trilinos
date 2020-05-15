@@ -342,7 +342,6 @@ struct ReplaceDiagonalValuesKernel {
       Kokkos::create_mirror_view(matrix.values);
     Kokkos::deep_copy(host_matrix_values, matrix.values);
     const ordinal_type nrow = matrix.numRows();
-    const ordinal_type pce_size = Kokkos::dimension_scalar(host_matrix_values);
     bool success = true;
     value_type val_expected(Kokkos::cijk(matrix.values));
     for (ordinal_type row=0; row<nrow; ++row) {
@@ -392,7 +391,6 @@ struct AddDiagonalValuesKernel {
       Kokkos::create_mirror_view(matrix.values);
     Kokkos::deep_copy(host_matrix_values, matrix.values);
     const ordinal_type nrow = matrix.numRows();
-    const ordinal_type pce_size = Kokkos::dimension_scalar(host_matrix_values);
     bool success = true;
     value_type val_expected(Kokkos::cijk(matrix.values));
     for (ordinal_type row=0; row<nrow; ++row) {
@@ -443,7 +441,6 @@ struct AddDiagonalValuesAtomicKernel {
       Kokkos::create_mirror_view(matrix.values);
     Kokkos::deep_copy(host_matrix_values, matrix.values);
     const ordinal_type nrow = matrix.numRows();
-    const ordinal_type pce_size = Kokkos::dimension_scalar(host_matrix_values);
     bool success = true;
     value_type val_expected(Kokkos::cijk(matrix.values));
     for (ordinal_type row=0; row<nrow; ++row) {

@@ -133,7 +133,7 @@ void InverseFactoryOperator::buildInverseOperator(const Teuchos::RCP<const Tpetr
    TEUCHOS_ASSERT(firstBuildComplete_==true);
 }
 
-void InverseFactoryOperator::buildInverseOperator(const Teuchos::RCP<Tpetra::Operator<ST,LO,GO,NT> > & A,bool clear)
+void InverseFactoryOperator::buildInverseOperator(const Teuchos::RCP<Tpetra::Operator<ST,LO,GO,NT> > & A,bool /* clear */)
 {
    setConstFwdOp_ = false;
 

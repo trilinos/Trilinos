@@ -491,8 +491,8 @@ int Ifpack_ICT::ApplyInverse(const Epetra_MultiVector& X,
 }
 //=============================================================================
 // This function finds X such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
-int Ifpack_ICT::Apply(const Epetra_MultiVector& X,
-                      Epetra_MultiVector& Y) const
+int Ifpack_ICT::Apply(const Epetra_MultiVector& /* X */,
+                      Epetra_MultiVector& /* Y */) const
 {
 
   IFPACK_CHK_ERR(-98);

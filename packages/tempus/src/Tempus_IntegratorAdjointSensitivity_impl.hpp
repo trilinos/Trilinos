@@ -29,6 +29,15 @@ IntegratorAdjointSensitivity(
   model_ = model;
   setParameterList(inputPL);
   state_integrator_ = integratorBasic<Scalar>(inputPL, model_);
+
+  TEUCHOS_TEST_FOR_EXCEPTION( getStepper()->getUseFSAL(), std::logic_error,
+    "Error - IntegratorAdjointSensitivity(): Cannot use FSAL with\n"
+    "        IntegratorAdjointSensitivity, because the state and adjoint\n"
+    "        integrators require ModelEvaluator evaluation in the\n"
+    "        constructor to make the initial conditions consistent.\n"
+    "        For the adjoint integrator, this requires special construction\n"
+    "        which has not been implemented yet.\n");
+
   adjoint_model_ = createAdjointModel(model_, inputPL);
   adjoint_integrator_ = integratorBasic<Scalar>(inputPL, adjoint_model_);
 }
@@ -122,7 +131,7 @@ advanceTime(const Scalar timeFinal)
   }
 
   // Run sensitivity integrator and get solution
-  adjoint_integrator_->setInitialState(Scalar(0.0), adjoint_init);
+  adjoint_integrator_->initializeSolutionHistory(Scalar(0.0), adjoint_init);
   bool sens_status = adjoint_integrator_->advanceTime(timeFinal);
   RCP<const SolutionHistory<Scalar> > adjoint_solution_history =
     adjoint_integrator_->getSolutionHistory();
@@ -218,7 +227,7 @@ getTime() const
 }
 
 template<class Scalar>
-Scalar
+int
 IntegratorAdjointSensitivity<Scalar>::
 getIndex() const
 {
@@ -281,16 +290,24 @@ getTimeStepControl() const
 }
 
 template<class Scalar>
+Teuchos::RCP<TimeStepControl<Scalar> >
+IntegratorAdjointSensitivity<Scalar>::
+getNonConstTimeStepControl()
+{
+  return state_integrator_->getNonConstTimeStepControl();
+}
+
+template<class Scalar>
 void IntegratorAdjointSensitivity<Scalar>::
-setInitialState(Scalar t0,
+initializeSolutionHistory(Scalar t0,
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > x0,
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdot0,
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdotdot0,
   Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > DxDp0,
-  Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > DxdotDp0,
-  Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > DxdotdotDp0)
+  Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > /* DxdotDp0 */,
+  Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > /* DxdotdotDp0 */)
 {
-  state_integrator_->setInitialState(t0, x0, xdot0, xdotdot0);
+  state_integrator_->initializeSolutionHistory(t0, x0, xdot0, xdotdot0);
   dxdp_init_ = DxDp0;
 }
 
@@ -407,7 +424,7 @@ getNonconstParameterList()
 }
 
 template <class Scalar>
-Teuchos::RCP<Tempus::AdjointAuxSensitivityModelEvaluator<Scalar> >
+Teuchos::RCP<AdjointAuxSensitivityModelEvaluator<Scalar> >
 IntegratorAdjointSensitivity<Scalar>::
 createAdjointModel(
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
@@ -502,34 +519,34 @@ buildSolutionHistory(
     }
     RCP<VectorBase<Scalar> > x_dot_dot_b = x_dot_dot;
 
-    RCP<SolutionState<Scalar> > prod_state =
-      rcp(new SolutionState<Scalar>(forward_state->getMetaData()->clone(),
-                                    x_b, x_dot_b, x_dot_dot_b,
-                                    forward_state->getStepperState()->clone(),
-                                    Teuchos::null));
+    RCP<SolutionState<Scalar> > prod_state = forward_state->clone();
+    prod_state->setX(x_b);
+    prod_state->setXDot(x_dot_b);
+    prod_state->setXDotDot(x_dot_dot_b);
+    prod_state->setPhysicsState(Teuchos::null);
     solutionHistory_->addState(prod_state);
   }
 }
 
 /// Non-member constructor
 template<class Scalar>
-Teuchos::RCP<Tempus::IntegratorAdjointSensitivity<Scalar> >
+Teuchos::RCP<IntegratorAdjointSensitivity<Scalar> >
 integratorAdjointSensitivity(
   Teuchos::RCP<Teuchos::ParameterList>                     pList,
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      model)
 {
-  Teuchos::RCP<Tempus::IntegratorAdjointSensitivity<Scalar> > integrator =
-    Teuchos::rcp(new Tempus::IntegratorAdjointSensitivity<Scalar>(pList, model));
+  Teuchos::RCP<IntegratorAdjointSensitivity<Scalar> > integrator =
+    Teuchos::rcp(new IntegratorAdjointSensitivity<Scalar>(pList, model));
   return(integrator);
 }
 
 /// Non-member constructor
 template<class Scalar>
-Teuchos::RCP<Tempus::IntegratorAdjointSensitivity<Scalar> >
+Teuchos::RCP<IntegratorAdjointSensitivity<Scalar> >
 integratorAdjointSensitivity()
 {
-  Teuchos::RCP<Tempus::IntegratorAdjointSensitivity<Scalar> > integrator =
-    Teuchos::rcp(new Tempus::IntegratorAdjointSensitivity<Scalar>());
+  Teuchos::RCP<IntegratorAdjointSensitivity<Scalar> > integrator =
+    Teuchos::rcp(new IntegratorAdjointSensitivity<Scalar>());
   return(integrator);
 }
 

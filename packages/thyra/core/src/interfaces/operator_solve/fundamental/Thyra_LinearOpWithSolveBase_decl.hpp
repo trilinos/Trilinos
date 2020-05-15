@@ -466,8 +466,8 @@ protected:
   virtual bool solveSupportsImpl(EOpTransp transp) const;
 
   /** \brief Virtual implementation of <tt>solveSupports()</tt>. */
-  virtual bool solveSupportsNewImpl(EOpTransp transp,
-    const Ptr<const SolveCriteria<Scalar> > solveCriteria
+  virtual bool solveSupportsNewImpl(EOpTransp /* transp */,
+    const Ptr<const SolveCriteria<Scalar> > /* solveCriteria */
     ) const
     {
       TEUCHOS_TEST_FOR_EXCEPT(true);

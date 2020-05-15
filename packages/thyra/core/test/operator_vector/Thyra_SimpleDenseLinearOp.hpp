@@ -85,7 +85,7 @@ protected:
     { return mv_->domain(); }
 
   /** \brief . */
-  virtual bool opSupportedImpl(Thyra::EOpTransp M_trans) const
+  virtual bool opSupportedImpl(Thyra::EOpTransp /* M_trans */) const
     { return true; }
 
   /** \brief . */

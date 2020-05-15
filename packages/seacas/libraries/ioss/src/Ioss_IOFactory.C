@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -34,11 +34,18 @@
 #include <Ioss_IOFactory.h>
 #include <Ioss_ParallelUtils.h>
 #include <Ioss_Utils.h> // for IOSS_ERROR
-#include <cstddef>      // for nullptr
-#include <map>          // for _Rb_tree_iterator, etc
-#include <ostream>      // for operator<<, basic_ostream, etc
-#include <string>       // for char_traits, string, etc
-#include <utility>      // for pair
+#include <Ioss_Version.h>
+#include <cstddef> // for nullptr
+#include <fmt/ostream.h>
+#include <map>     // for _Rb_tree_iterator, etc
+#include <ostream> // for basic_ostream, etc
+#include <set>
+#include <string>  // for char_traits, string, etc
+#include <utility> // for pair
+#if defined(SEACAS_HAVE_MPI)
+#include <Ioss_Decomposition.h>
+#endif
+
 namespace {
 #if defined(IOSS_THREADSAFE)
   std::mutex m_;
@@ -94,20 +101,17 @@ Ioss::DatabaseIO *Ioss::IOFactory::create(const std::string &type, const std::st
   if (iter == registry()->end()) {
     if (registry()->empty()) {
       std::ostringstream errmsg;
-      errmsg << "ERROR: No database types have been registered.\n"
-             << "       Was Ioss::Init::Initializer() called?\n\n";
+      fmt::print(errmsg, "ERROR: No database types have been registered.\n"
+                         "       Was Ioss::Init::Initializer() called?\n\n");
       IOSS_ERROR(errmsg);
     }
     else {
       std::ostringstream errmsg;
-      errmsg << "ERROR: The database type '" << type << "' is not supported.\n";
-      NameList db_types;
+      fmt::print(errmsg, "ERROR: The database type '{}' is not supported.\n", type);
+      Ioss::NameList db_types;
       describe__(registry(), &db_types);
-      errmsg << "\nSupported database types:\n\t";
-      for (Ioss::NameList::const_iterator IF = db_types.begin(); IF != db_types.end(); ++IF) {
-        errmsg << *IF << "  ";
-      }
-      errmsg << "\n\n";
+      fmt::print(errmsg, "\nSupported database types:\n\t{}\n\n",
+                 fmt::join(db_types.begin(), db_types.end(), " "));
       IOSS_ERROR(errmsg);
     }
   }
@@ -115,6 +119,13 @@ Ioss::DatabaseIO *Ioss::IOFactory::create(const std::string &type, const std::st
     auto                my_props(properties);
     Ioss::ParallelUtils pu(communicator);
     pu.add_environment_properties(my_props);
+    if (my_props.exists("SHOW_CONFIG")) {
+      static bool output = false;
+      if (!output && pu.parallel_rank() == 0) {
+	output = true;
+	show_configuration();
+      }
+    }
     Ioss::IOFactory *factory = (*iter).second;
     db                       = factory->make_IO(filename, db_usage, communicator, my_props);
   }
@@ -130,6 +141,33 @@ int Ioss::IOFactory::describe(NameList *names)
 {
   IOSS_FUNC_ENTER(m_);
   return describe__(registry(), names);
+}
+
+void Ioss::IOFactory::show_configuration()
+{
+  fmt::print(Ioss::OUTPUT(), "\nIOSS Library Version '{}'\n\n", Ioss::Version());
+  NameList db_types;
+  describe(&db_types);
+  fmt::print(Ioss::OUTPUT(), "Supported database types:\n\t{}\n", fmt::join(db_types, ", "));
+
+#if defined(SEACAS_HAVE_MPI)
+  fmt::print(Ioss::OUTPUT(), "\nSupported decomposition methods:\n\t{}\n", fmt::join(Ioss::valid_decomp_methods(), ", "));
+#endif
+
+  fmt::print(Ioss::OUTPUT(), "\nThird-Party Library Configuration Information:\n\n");
+
+  // Each database type may appear multiple times in the registry
+  // due to aliasing (i.e. exodus, genesis, exodusII, ...)
+  // Iterate registry and get only print config for a single
+  // instance...
+  std::set<IOFactory *> unique_facs;
+
+  for (const auto &db : *registry()) {
+    auto result = unique_facs.insert(db.second);
+    if (result.second) {
+      db.second->show_config();
+    }
+  }
 }
 
 Ioss::IOFactory::IOFactory(const std::string &type)

@@ -3,7 +3,7 @@
 #include <stk_util/stk_config.h>
 
 // restrict this file to only build if KokkosCore is enabled
-#ifdef HAVE_STK_KokkosCore
+#ifdef STK_HAVE_KOKKOSCORE
 
 #include <Kokkos_Core.hpp>
 

@@ -72,7 +72,9 @@ namespace NOX {
       Matrix() : p(0), q(0), entries() {}
 
       //! Create a m x n matrix with all entries zero
-      Matrix(int m, int n) : p(m), q(n), entries(m*n) {}
+      Matrix(int m, int n) :
+        // Compute size as size_t to avoid overflow for large matrices.
+        p(m), q(n), entries(size_t(m)*size_t(n)) {}
 
       //! Copy constructor
       Matrix(const Matrix& a) :

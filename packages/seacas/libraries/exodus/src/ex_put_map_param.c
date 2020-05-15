@@ -49,10 +49,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, etc
-#include "netcdf.h"       // for NC_NOERR, nc_def_var, etc
-#include <assert.h>       // for assert
-#include <stdio.h>
-#include <stdlib.h> // for free, malloc
 
 /*!
  * defines the number of node and element maps. It is more efficient
@@ -78,7 +74,7 @@ int ex_put_map_param(int exoid, int num_node_maps, int num_elem_maps)
 #endif
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid, __func__);
+  ex__check_valid_file_id(exoid, __func__);
 
   if (ex_int64_status(exoid) & EX_IDS_INT64_DB) {
     id_type = NC_INT64;
@@ -178,7 +174,7 @@ int ex_put_map_param(int exoid, int num_node_maps, int num_elem_maps)
           }
           goto error_ret; /* exit define mode and return */
         }
-        ex_compress_variable(exoid, varid, 1);
+        ex__compress_variable(exoid, varid, 1);
       }
     }
 
@@ -247,15 +243,12 @@ int ex_put_map_param(int exoid, int num_node_maps, int num_elem_maps)
           }
           goto error_ret; /* exit define mode and return */
         }
-        ex_compress_variable(exoid, varid, 1);
+        ex__compress_variable(exoid, varid, 1);
       }
     }
 
     /* leave define mode */
-    if ((status = nc_enddef(exoid)) != NC_NOERR) {
-      snprintf(errmsg, MAX_ERR_LENGTH,
-               "ERROR: failed to complete variable definitions in file id %d", exoid);
-      ex_err_fn(exoid, __func__, errmsg, status);
+    if ((status = ex__leavedef(exoid, __func__)) != NC_NOERR) {
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
@@ -300,10 +293,6 @@ int ex_put_map_param(int exoid, int num_node_maps, int num_elem_maps)
 
 /* Fatal error: exit definition mode and return */
 error_ret:
-  if ((status = nc_enddef(exoid)) != NC_NOERR) /* exit define mode */
-  {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", exoid);
-    ex_err_fn(exoid, __func__, errmsg, status);
-  }
+  ex__leavedef(exoid, __func__);
   EX_FUNC_LEAVE(EX_FATAL);
 }

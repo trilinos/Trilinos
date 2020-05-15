@@ -498,15 +498,17 @@ setupInOutArgs_() const
     return;
   }
 
+  using Teuchos::RCP;
+  typedef Thyra::ModelEvaluatorBase MEB;
   {
     // Set up prototypical InArgs
-    Thyra::ModelEvaluatorBase::InArgsSetup<Scalar> inArgs;
+    MEB::InArgsSetup<Scalar> inArgs;
     inArgs.setModelEvalDescription(this->description());
-    inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_t );
-    inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_x );
-    inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_beta );
-    inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_x_dot );
-    inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_alpha );
+    inArgs.setSupports( MEB::IN_ARG_t );
+    inArgs.setSupports( MEB::IN_ARG_x );
+    inArgs.setSupports( MEB::IN_ARG_beta );
+    inArgs.setSupports( MEB::IN_ARG_x_dot );
+    inArgs.setSupports( MEB::IN_ARG_alpha );
     if (acceptModelParams_) {
       inArgs.set_Np(Np_);
     }
@@ -515,18 +517,18 @@ setupInOutArgs_() const
 
   {
     // Set up prototypical OutArgs
-    Thyra::ModelEvaluatorBase::OutArgsSetup<Scalar> outArgs;
+    MEB::OutArgsSetup<Scalar> outArgs;
     outArgs.setModelEvalDescription(this->description());
-    outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_f );
-    outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_W_op );
+    outArgs.setSupports( MEB::OUT_ARG_f );
+    outArgs.setSupports( MEB::OUT_ARG_W_op );
     if (acceptModelParams_) {
       outArgs.set_Np_Ng(Np_,Ng_);
-      outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_DfDp,0,
-                           Thyra::ModelEvaluatorBase::DERIV_MV_BY_COL );
-      outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,0,0,
-                           Thyra::ModelEvaluatorBase::DERIV_MV_BY_COL );
-      outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_DgDx,0,
-                           Thyra::ModelEvaluatorBase::DERIV_TRANS_MV_BY_ROW );
+      outArgs.setSupports( MEB::OUT_ARG_DfDp,0,
+                           MEB::DERIV_MV_BY_COL );
+      outArgs.setSupports( MEB::OUT_ARG_DgDp,0,0,
+                           MEB::DERIV_MV_BY_COL );
+      outArgs.setSupports( MEB::OUT_ARG_DgDx,0,
+                           MEB::DERIV_TRANS_MV_BY_ROW );
     }
     outArgs_ = outArgs;
   }
@@ -536,7 +538,7 @@ setupInOutArgs_() const
   if (haveIC_)
   {
     nominalValues_.set_t(t0_ic_);
-    const Teuchos::RCP<Thyra::VectorBase<Scalar> > x_ic = createMember(x_space_);
+    const RCP<Thyra::VectorBase<Scalar> > x_ic = createMember(x_space_);
     { // scope to delete DetachedVectorView
       Thyra::DetachedVectorView<Scalar> x_ic_view( *x_ic );
       x_ic_view[0] = a_+b_*sin((f_/L_)*t0_ic_+phi_);
@@ -544,7 +546,7 @@ setupInOutArgs_() const
     }
     nominalValues_.set_x(x_ic);
     if (acceptModelParams_) {
-      const Teuchos::RCP<Thyra::VectorBase<Scalar> > p_ic = createMember(p_space_);
+      const RCP<Thyra::VectorBase<Scalar> > p_ic = createMember(p_space_);
       {
         Thyra::DetachedVectorView<Scalar> p_ic_view( *p_ic );
         p_ic_view[0] = a_;
@@ -553,7 +555,7 @@ setupInOutArgs_() const
       }
       nominalValues_.set_p(0,p_ic);
     }
-    const Teuchos::RCP<Thyra::VectorBase<Scalar> > x_dot_ic = createMember(x_space_);
+    const RCP<Thyra::VectorBase<Scalar> > x_dot_ic = createMember(x_space_);
     { // scope to delete DetachedVectorView
       Thyra::DetachedVectorView<Scalar> x_dot_ic_view( *x_dot_ic );
       x_dot_ic_view[0] = b_*(f_/L_)*cos((f_/L_)*t0_ic_+phi_);
@@ -624,7 +626,7 @@ getValidParameters() const
     Teuchos::setDoubleParameter(
         "IC t0", 0.0, "Initial time t0", &*pl);
     Teuchos::setIntParameter(
-        "Number of Time Step Sizes", 1, "Number time step sizes for convergence study", &*pl);  
+        "Number of Time Step Sizes", 1, "Number time step sizes for convergence study", &*pl);
     validPL = pl;
   }
   return validPL;

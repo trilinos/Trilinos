@@ -68,12 +68,12 @@ bool EpetraOperatorViewExtractorStd::isCompatible( const LinearOpBase<double> &f
 
 
 void EpetraOperatorViewExtractorStd::getNonconstEpetraOpView(
-  const RCP<LinearOpBase<double> > &fwdOp,
-  const Ptr<RCP<Epetra_Operator> > &epetraOp,
-  const Ptr<EOpTransp> &epetraOpTransp,
-  const Ptr<EApplyEpetraOpAs> &epetraOpApplyAs,
-  const Ptr<EAdjointEpetraOp> &epetraOpAdjointSupport,
-    const Ptr<double> &epetraOpScalar
+  const RCP<LinearOpBase<double> > &/* fwdOp */,
+  const Ptr<RCP<Epetra_Operator> > &/* epetraOp */,
+  const Ptr<EOpTransp> &/* epetraOpTransp */,
+  const Ptr<EApplyEpetraOpAs> &/* epetraOpApplyAs */,
+  const Ptr<EAdjointEpetraOp> &/* epetraOpAdjointSupport */,
+    const Ptr<double> &/* epetraOpScalar */
   ) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(true);

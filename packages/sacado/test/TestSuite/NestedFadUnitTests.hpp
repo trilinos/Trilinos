@@ -354,20 +354,15 @@ public:
     b = 0.0;
     c = pow(a, b);
     cc.val() = FadType(n2,1.0);
-#ifdef SACADO_NEW_FAD_DESIGN_IS_DEFAULT
-    for (int i=0; i<n1; ++i)
-      cc.fastAccessDx(i) = 0.0;
-#else
     for (int i=0; i<n1; ++i)
       cc.fastAccessDx(i) = FadType(n2,0.0);
-#endif
     COMPARE_NESTED_FADS(c, cc);
 
     // Constant scalar b == 0
     c = pow(a, b.val());
     cc.val() = FadType(n2,1.0);
     for (int i=0; i<n1; ++i)
-      cc.fastAccessDx(i) = 0.0;
+      cc.fastAccessDx(i) = FadType(n2,0.0);
     COMPARE_NESTED_FADS(c, cc);
     c = pow(a, b.val().val());
     COMPARE_NESTED_FADS(c, cc);

@@ -321,7 +321,7 @@ private:
   {};
 
   //! operator= (should never be used)
-  Ifpack_IKLU& operator=(const Ifpack_IKLU& RHS)
+  Ifpack_IKLU& operator=(const Ifpack_IKLU& /* RHS */)
   {
     return(*this);
   }

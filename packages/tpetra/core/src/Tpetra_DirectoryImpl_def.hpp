@@ -34,25 +34,23 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
-#ifndef __Tpetra_DirectoryImpl_def_hpp
-#define __Tpetra_DirectoryImpl_def_hpp
+#ifndef TPETRA_DIRECTORYIMPL_DEF_HPP
+#define TPETRA_DIRECTORYIMPL_DEF_HPP
 
 /// \file Tpetra_DirectoryImpl_def.hpp
 /// \brief Definition of implementation details of Tpetra::Directory.
 
-#include <Tpetra_DirectoryImpl_decl.hpp>
-#include <Tpetra_Distributor.hpp>
-#include <Tpetra_Map.hpp>
-#include <Tpetra_TieBreak.hpp>
-
-#include <Tpetra_Details_FixedHashTable.hpp>
-#include <Tpetra_HashTable.hpp>
+#include "Tpetra_Distributor.hpp"
+#include "Tpetra_Map.hpp"
+#include "Tpetra_TieBreak.hpp"
+#include "Tpetra_Util.hpp"
+#include "Tpetra_Details_FixedHashTable.hpp"
 #include "Teuchos_Comm.hpp"
+#include <memory>
+#include <sstream>
 
 // FIXME (mfh 16 Apr 2013) GIANT HACK BELOW
 #ifdef HAVE_TPETRACORE_MPI
@@ -62,10 +60,6 @@
 
 namespace Tpetra {
   namespace Details {
-    template<class LO, class GO, class NT>
-    Directory<LO, GO, NT>::
-    Directory () {}
-
     template<class LO, class GO, class NT>
     LookupStatus
     Directory<LO, GO, NT>::
@@ -108,13 +102,6 @@ namespace Tpetra {
     ReplicatedDirectory<LO, GO, NT>::
     ReplicatedDirectory (const map_type& map) :
       numProcs_ (map.getComm ()->getSize ())
-    {}
-
-
-    template<class LO, class GO, class NT>
-    ReplicatedDirectory<LO, GO, NT>::
-    ReplicatedDirectory () :
-      numProcs_ (0) // to be set later
     {}
 
 
@@ -367,7 +354,7 @@ namespace Tpetra {
       // Put the max cap at the end.  Adding one lets us write loops
       // over the global IDs with the usual strict less-than bound.
       allMinGIDs_[numProcs] = map.getMaxAllGlobalIndex ()
-        + Teuchos::OrdinalTraits<GO>::one ();
+                            + Teuchos::OrdinalTraits<GO>::one ();
     }
 
     template<class LO, class GO, class NT>
@@ -443,9 +430,32 @@ namespace Tpetra {
 
       RCP<const Teuchos::Comm<int> > comm = map.getComm ();
       const int numProcs = comm->getSize ();
-      const global_size_t nOverP = map.getGlobalNumElements () / numProcs;
       const LO LINVALID = Teuchos::OrdinalTraits<LO>::invalid();
+      const GO noGIDsOnProc = std::numeric_limits<GO>::max();
       LookupStatus res = AllIDsPresent;
+
+      // Find the first initialized GID for search below
+      int firstProcWithGIDs;
+      for (firstProcWithGIDs = 0; firstProcWithGIDs < numProcs;
+           firstProcWithGIDs++) {
+        if (allMinGIDs_[firstProcWithGIDs] != noGIDsOnProc) break;
+      }
+
+      // If Map is empty, return invalid values for all requested lookups
+      // This case should not happen, as an empty Map is not considered
+      // Distributed.
+      if (firstProcWithGIDs == numProcs) {
+        // No entries in Map
+        res = (globalIDs.size() > 0) ? IDNotPresent : AllIDsPresent;
+        std::fill(nodeIDs.begin(), nodeIDs.end(), -1);
+        if (computeLIDs)
+          std::fill(localIDs.begin(), localIDs.end(), LINVALID);
+        return res;
+      }
+
+      const GO one = as<GO> (1);
+      const GO nOverP = as<GO> (map.getGlobalNumElements ()
+                      / as<global_size_t>(numProcs - firstProcWithGIDs));
 
       // Map is distributed but contiguous.
       typename ArrayView<int>::iterator procIter = nodeIDs.begin();
@@ -455,34 +465,50 @@ namespace Tpetra {
         LO LID = LINVALID; // Assume not found until proven otherwise
         int image = -1;
         GO GID = *gidIter;
-        // Guess uniform distribution and start a little above it
-        // TODO: replace by a binary search
+        // Guess uniform distribution (TODO: maybe replace by a binary search)
+        // We go through all this trouble to avoid overflow and
+        // signed / unsigned casting mistakes (that were made in
+        // previous versions of this code).
         int curRank;
-        { // We go through all this trouble to avoid overflow and
-          // signed / unsigned casting mistakes (that were made in
-          // previous versions of this code).
-          const GO one = as<GO> (1);
-          const GO two = as<GO> (2);
-          const GO nOverP_GID = as<GO> (nOverP);
-          const GO lowerBound = GID / std::max(nOverP_GID, one) + two;
-          curRank = as<int>(std::min(lowerBound, as<GO>(numProcs - 1)));
+        const GO firstGuess = firstProcWithGIDs + GID / std::max(nOverP, one);
+        curRank = as<int>(std::min(firstGuess, as<GO>(numProcs - 1)));
+
+        // This while loop will stop because 
+        // allMinGIDs_[np] == global num elements
+        while (allMinGIDs_[curRank] == noGIDsOnProc) curRank++;
+
+        bool badGID = false;
+        while (curRank >= firstProcWithGIDs && GID < allMinGIDs_[curRank]) {
+          curRank--;
+          while (curRank >= firstProcWithGIDs && 
+                 allMinGIDs_[curRank] == noGIDsOnProc) curRank--;
         }
-        bool found = false;
-        while (curRank >= 0 && curRank < numProcs) {
-          if (allMinGIDs_[curRank] <= GID) {
-            if (GID < allMinGIDs_[curRank + 1]) {
-              found = true;
+        if (curRank < firstProcWithGIDs) {
+          // GID is lower than all GIDs in map
+          badGID = true;
+        }
+        else if (curRank == numProcs) {
+          // GID is higher than all GIDs in map
+          badGID = true;
+        }
+        else {
+          // we have the lower bound; now limit from above
+          int above = curRank + 1;
+          while (allMinGIDs_[above] == noGIDsOnProc) above++;
+
+          while (GID >= allMinGIDs_[above]) {
+            curRank = above;
+            if (curRank == numProcs) {
+              // GID is higher than all GIDs in map
+              badGID = true;
               break;
             }
-            else {
-              curRank++;
-            }
-          }
-          else {
-            curRank--;
+            above++;
+            while (allMinGIDs_[above] == noGIDsOnProc) above++;
           }
         }
-        if (found) {
+
+        if (!badGID) {
           image = curRank;
           LID = as<LO> (GID - allMinGIDs_[image]);
         }
@@ -581,7 +607,7 @@ namespace Tpetra {
       // the index base.  The index base should be separate from the
       // minimum GID.
       directoryMap_ = rcp (new map_type (numGlobalEntries, minAllGID, comm,
-                                         GloballyDistributed, map.getNode ()));
+                                         GloballyDistributed));
       // The number of Directory elements that my process owns.
       const size_t dir_numMyEntries = directoryMap_->getNodeNumElements ();
 
@@ -954,11 +980,47 @@ namespace Tpetra {
       using Teuchos::ArrayView;
       using Teuchos::as;
       using Teuchos::RCP;
+      using Teuchos::toString;
+      using Details::Behavior;
+      using Details::verbosePrintArray;
       using std::cerr;
       using std::endl;
-      typedef typename Array<GO>::size_type size_type;
+      using size_type = typename Array<GO>::size_type;
+      const char funcPrefix[] = "Tpetra::"
+        "DistributedNoncontiguousDirectory::getEntriesImpl: ";
+      const char errSuffix[] =
+        "  Please report this bug to the Tpetra developers.";
 
       RCP<const Teuchos::Comm<int> > comm = map.getComm ();
+      const bool verbose = Behavior::verbose ("Directory") ||
+        Behavior::verbose ("Tpetra::Directory");
+      const size_t maxNumToPrint = verbose ?
+        Behavior::verbosePrintCountThreshold() : size_t(0);
+
+      std::unique_ptr<std::string> procPrefix;
+      if (verbose) {
+        std::ostringstream os;
+        os << "Proc ";
+        if (map.getComm ().is_null ()) {
+          os << "?";
+        }
+        else {
+          os << map.getComm ()->getRank ();
+        }
+        os << ": ";
+        procPrefix = std::unique_ptr<std::string>(
+          new std::string(os.str()));
+        os << funcPrefix << "{";
+        verbosePrintArray(os, globalIDs, "GIDs", maxNumToPrint);
+        os << ", ";
+        verbosePrintArray(os, nodeIDs, "PIDs", maxNumToPrint);
+        os << ", ";
+        verbosePrintArray(os, localIDs, "LIDs", maxNumToPrint);
+        os << ", computeLIDs: "
+           << (computeLIDs ? "true" : "false") << "}" << endl;
+        cerr << os.str ();
+      }
+
       const size_t numEntries = globalIDs.size ();
       const LO LINVALID = Teuchos::OrdinalTraits<LO>::invalid();
       LookupStatus res = AllIDsPresent;
@@ -976,7 +1038,21 @@ namespace Tpetra {
 
       // Get directory locations for the requested list of entries.
       Array<int> dirImages (numEntries);
+      if (verbose) {
+        std::ostringstream os;
+        os << *procPrefix << "Call directoryMap_->getRemoteIndexList"
+           << endl;
+        cerr << os.str ();
+      }
       res = directoryMap_->getRemoteIndexList (globalIDs, dirImages ());
+      if (verbose) {
+        std::ostringstream os;
+        os << *procPrefix << "Director Map getRemoteIndexList out ";
+        verbosePrintArray(os, dirImages, "PIDs", maxNumToPrint);
+        os << endl;
+        cerr << os.str ();
+      }
+
       // Check for unfound globalIDs and set corresponding nodeIDs to -1
       size_t numMissing = 0;
       if (res == IDNotPresent) {
@@ -993,7 +1069,23 @@ namespace Tpetra {
 
       Array<GO> sendGIDs;
       Array<int> sendImages;
+      if (verbose) {
+        std::ostringstream os;
+        os << *procPrefix << "Call Distributor::createFromRecvs"
+           << endl;
+        cerr << os.str ();
+      }
       distor.createFromRecvs (globalIDs, dirImages (), sendGIDs, sendImages);
+      if (verbose) {
+        std::ostringstream os;
+        os << *procPrefix << "Distributor::createFromRecvs result: "
+           << "{";
+        verbosePrintArray(os, sendGIDs, "sendGIDs", maxNumToPrint);
+        os << ", ";
+        verbosePrintArray(os, sendImages, "sendPIDs", maxNumToPrint);
+        os << "}" << endl;
+        cerr << os.str ();
+      }
       const size_type numSends = sendGIDs.size ();
 
       //
@@ -1043,55 +1135,70 @@ namespace Tpetra {
         size_type exportsIndex = 0;
 
         if (useHashTables_) {
+          if (verbose) {
+            std::ostringstream os;
+            os << *procPrefix << "Pack exports (useHashTables_ true)"
+               << endl;
+            cerr << os.str ();
+          }
           for (size_type gidIndex = 0; gidIndex < numSends; ++gidIndex) {
             const GO curGID = sendGIDs[gidIndex];
             // Don't use as() here (see above note).
             exports[exportsIndex++] = static_cast<global_size_t> (curGID);
             const LO curLID = directoryMap_->getLocalElement (curGID);
-            TEUCHOS_TEST_FOR_EXCEPTION(curLID == LINVALID, std::logic_error,
-              Teuchos::typeName (*this) << "::getEntriesImpl(): The Directory "
-              "Map's global index " << curGID << " does not have a corresponding "
-              "local index.  Please report this bug to the Tpetra developers.");
+            TEUCHOS_TEST_FOR_EXCEPTION
+              (curLID == LINVALID, std::logic_error, funcPrefix <<
+               "Directory Map's global index " << curGID << " lacks "
+               "a corresponding local index." << errSuffix);
             // Don't use as() here (see above note).
-            exports[exportsIndex++] = static_cast<global_size_t> (lidToPidTable_->get (curLID));
+            exports[exportsIndex++] =
+              static_cast<global_size_t> (lidToPidTable_->get (curLID));
             if (computeLIDs) {
               // Don't use as() here (see above note).
-              exports[exportsIndex++] = static_cast<global_size_t> (lidToLidTable_->get (curLID));
+              exports[exportsIndex++] =
+                static_cast<global_size_t> (lidToLidTable_->get (curLID));
             }
           }
-        } else {
+        }
+        else {
+          if (verbose) {
+            std::ostringstream os;
+            os << *procPrefix << "Pack exports (useHashTables_ false)"
+               << endl;
+            cerr << os.str ();
+          }
           for (size_type gidIndex = 0; gidIndex < numSends; ++gidIndex) {
             const GO curGID = sendGIDs[gidIndex];
             // Don't use as() here (see above note).
             exports[exportsIndex++] = static_cast<global_size_t> (curGID);
             const LO curLID = directoryMap_->getLocalElement (curGID);
-            TEUCHOS_TEST_FOR_EXCEPTION(curLID == LINVALID, std::logic_error,
-              Teuchos::typeName (*this) << "::getEntriesImpl(): The Directory "
-              "Map's global index " << curGID << " does not have a corresponding "
-              "local index.  Please report this bug to the Tpetra developers.");
+            TEUCHOS_TEST_FOR_EXCEPTION
+              (curLID == LINVALID, std::logic_error, funcPrefix <<
+               "Directory Map's global index " << curGID << " lacks "
+               "a corresponding local index." << errSuffix);
             // Don't use as() here (see above note).
-            exports[exportsIndex++] = static_cast<global_size_t> (PIDs_[curLID]);
+            exports[exportsIndex++] =
+              static_cast<global_size_t> (PIDs_[curLID]);
             if (computeLIDs) {
               // Don't use as() here (see above note).
-              exports[exportsIndex++] = static_cast<global_size_t> (LIDs_[curLID]);
+              exports[exportsIndex++] =
+                static_cast<global_size_t> (LIDs_[curLID]);
             }
           }
         }
 
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          exportsIndex > exports.size (), std::logic_error,
-          Teuchos::typeName (*this) << "::getEntriesImpl(): On Process " <<
-          comm->getRank () << ", exportsIndex = " << exportsIndex <<
-          " > exports.size() = " << exports.size () <<
-          ".  Please report this bug to the Tpetra developers.");
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (exportsIndex > exports.size (), std::logic_error,
+           funcPrefix << "On Process " << comm->getRank () << ", "
+           "exportsIndex = " << exportsIndex << " > exports.size() = "
+           << exports.size () << "." << errSuffix);
       }
 
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        numEntries < numMissing, std::logic_error,
-        Teuchos::typeName (*this) << "::getEntriesImpl(): On Process "
-        << comm->getRank () << ", numEntries = " << numEntries
-        << " < numMissing = " << numMissing
-        << ".  Please report this bug to the Tpetra developers.");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (numEntries < numMissing, std::logic_error, funcPrefix <<
+         "On Process " << comm->getRank () << ", numEntries = " <<
+         numEntries << " < numMissing = " << numMissing << "." <<
+         errSuffix);
 
       //
       // mfh 13 Nov 2012: See note above on conversions between
@@ -1121,7 +1228,22 @@ namespace Tpetra {
       // FIXME (mfh 20 Mar 2014) One could overlap the sort2() below
       // with communication, by splitting this call into doPosts and
       // doWaits.  The code is still correct in this form, however.
+      if (verbose) {
+        std::ostringstream os;
+        os << *procPrefix << "Call doPostsAndWaits: {"
+           << "packetSize: " << packetSize << ", ";
+        verbosePrintArray(os, exports, "exports", maxNumToPrint);
+        os << "}" << endl;
+        cerr << os.str ();
+      }
       distor.doPostsAndWaits (exports ().getConst (), packetSize, imports ());
+      if (verbose) {
+        std::ostringstream os;
+        os << *procPrefix << "doPostsAndWaits result: ";
+        verbosePrintArray(os, imports, "imports", maxNumToPrint);
+        os << endl;
+        cerr << os.str ();
+      }
 
       Array<GO> sortedIDs (globalIDs); // deep copy (for later sorting)
       Array<GO> offset (numEntries); // permutation array (sort2 output)
@@ -1129,23 +1251,32 @@ namespace Tpetra {
         offset[ii] = ii;
       }
       sort2 (sortedIDs.begin(), sortedIDs.begin() + numEntries, offset.begin());
+      if (verbose) {
+        std::ostringstream os;
+        os << *procPrefix;
+        verbosePrintArray(os, sortedIDs, "sortedIDs", maxNumToPrint);
+        os << ", ";
+        verbosePrintArray(os, offset, "offset", maxNumToPrint);
+        os << endl;
+        cerr << os.str ();
+      }
 
       size_t importsIndex = 0;
-      //typename Array<global_size_t>::iterator ptr = imports.begin();
-      typedef typename Array<GO>::iterator IT;
 
       // we know these conversions are in range, because we loaded this data
+      //
+      // Don't use as() for conversions here; we know they are in range.
       for (size_t i = 0; i < numRecv; ++i) {
-        // Don't use as() here (see above note).
         const GO curGID = static_cast<GO> (imports[importsIndex++]);
-        std::pair<IT, IT> p1 = std::equal_range (sortedIDs.begin(), sortedIDs.end(), curGID);
+        auto p1 = std::equal_range (sortedIDs.begin(),
+                                    sortedIDs.end(), curGID);
         if (p1.first != p1.second) {
           const size_t j = p1.first - sortedIDs.begin();
-          // Don't use as() here (see above note).
-          nodeIDs[offset[j]] = static_cast<int> (imports[importsIndex++]);
+          nodeIDs[offset[j]] =
+            static_cast<int> (imports[importsIndex++]);
           if (computeLIDs) {
-            // Don't use as() here (see above note).
-            localIDs[offset[j]] = static_cast<LO> (imports[importsIndex++]);
+            localIDs[offset[j]] =
+              static_cast<LO> (imports[importsIndex++]);
           }
           if (nodeIDs[offset[j]] == -1) {
             res = IDNotPresent;
@@ -1153,18 +1284,22 @@ namespace Tpetra {
         }
       }
 
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        static_cast<size_t> (importsIndex) > static_cast<size_t> (imports.size ()),
-        std::logic_error,
-        "Tpetra::Details::DistributedNoncontiguousDirectory::getEntriesImpl: "
-        "On Process " << comm->getRank () << ": importsIndex = " <<
-        importsIndex << " > imports.size() = " << imports.size () << ".  "
-        "numRecv: " << numRecv << ", packetSize: " << packetSize << ", "
-        "numEntries (# GIDs): " << numEntries << ", numMissing: " << numMissing
-        << ": distor.getTotalReceiveLength(): "
-        << distor.getTotalReceiveLength () << ".  Please report this bug to "
-        "the Tpetra developers.");
-
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (size_t (importsIndex) > size_t (imports.size ()),
+         std::logic_error, funcPrefix << "On Process " <<
+         comm->getRank () << ": importsIndex = " << importsIndex
+         << " > imports.size() = " << imports.size () << ".  "
+         "numRecv: " << numRecv
+         << ", packetSize: " << packetSize << ", "
+         "numEntries (# GIDs): " << numEntries
+         << ", numMissing: " << numMissing
+         << ": distor.getTotalReceiveLength(): "
+         << distor.getTotalReceiveLength () << "." << errSuffix);
+      if (verbose) {
+        std::ostringstream os;
+        os << *procPrefix << funcPrefix << "Done!" << endl;
+        cerr << os.str ();
+      }
       return res;
     }
 
@@ -1189,13 +1324,15 @@ namespace Tpetra {
 //
 // Explicit instantiation macro
 //
-// Must be expanded from within the Tpetra::Details namespace!
+// Must be expanded from within the Tpetra namespace!
 //
-#define TPETRA_DIRECTORY_IMPL_INSTANT(LO,GO,NODE)                     \
-  template class Directory< LO , GO , NODE >;                         \
-  template class ReplicatedDirectory< LO , GO , NODE >;               \
-  template class ContiguousUniformDirectory< LO, GO, NODE >;          \
-  template class DistributedContiguousDirectory< LO , GO , NODE >;    \
-  template class DistributedNoncontiguousDirectory< LO , GO , NODE >; \
+#define TPETRA_DIRECTORYIMPL_INSTANT(LO,GO,NODE) \
+  namespace Details { \
+    template class Directory< LO , GO , NODE >; \
+    template class ReplicatedDirectory< LO , GO , NODE >; \
+    template class ContiguousUniformDirectory< LO, GO, NODE >; \
+    template class DistributedContiguousDirectory< LO , GO , NODE >; \
+    template class DistributedNoncontiguousDirectory< LO , GO , NODE >; \
+  }
 
-#endif // __Tpetra_DirectoryImpl_def_hpp
+#endif // TPETRA_DIRECTORYIMPL_DEF_HPP

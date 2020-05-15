@@ -60,7 +60,7 @@
 #include "Panzer_ConnManager.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_DOFManager.hpp"
-#include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
+#include "Panzer_GlobalIndexer_Utilities.hpp"
 
 #include "CartesianConnManager.hpp"
 
@@ -72,7 +72,7 @@ using Teuchos::rcpFromRef;
 namespace panzer {
 namespace unit_test {
 
-typedef CartesianConnManager<int,Ordinal64>::Triplet<Ordinal64> Triplet;
+typedef CartesianConnManager<int,panzer::GlobalOrdinal>::Triplet<panzer::GlobalOrdinal> Triplet;
 
 typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 
@@ -86,7 +86,7 @@ RCP<const panzer::FieldPattern> buildFieldPattern()
 }
 
 std::string getElementBlock(const Triplet & element,
-                                    const CartesianConnManager<int,Ordinal64> & connManager)
+                                    const CartesianConnManager<int,panzer::GlobalOrdinal> & connManager)
                                     
 {
   int localElmtId = connManager.computeLocalElementIndex(element); 
@@ -95,8 +95,8 @@ std::string getElementBlock(const Triplet & element,
 
 TEUCHOS_UNIT_TEST(tCartesianDOFMgr, threed)
 {
-  typedef CartesianConnManager<int,Ordinal64> CCM;
-  typedef panzer::DOFManager<int,Ordinal64> DOFManager;
+  typedef CartesianConnManager<int,panzer::GlobalOrdinal> CCM;
+  typedef panzer::DOFManager<int,panzer::GlobalOrdinal> DOFManager;
 
   // build global (or serial communicator)
   #ifdef HAVE_MPI
@@ -109,7 +109,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr, threed)
   int rank = comm.getRank(); // processor rank
 
   // mesh description
-  Ordinal64 nx = 10, ny = 7, nz = 4;
+  panzer::GlobalOrdinal nx = 10, ny = 7, nz = 4;
   int px = np, py = 1, pz = 1;
   int bx =  1, by = 2, bz = 1;
 
@@ -196,7 +196,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr, threed)
     std::string eblock_py = getElementBlock(Triplet(element.x,element.y+1,element.z),*connManager);
     std::string eblock_pz = getElementBlock(Triplet(element.x,element.y,element.z+1),*connManager);
 
-    std::vector<Ordinal64> gids, gids_px, gids_py, gids_pz;
+    std::vector<panzer::GlobalOrdinal> gids, gids_px, gids_py, gids_pz;
 
     dofManager->getElementGIDs(   localElmtId,   gids);
     dofManager->getElementGIDs(localElmtId_px,gids_px);
@@ -210,7 +210,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr, threed)
 
       TEST_EQUALITY(offsets.first.size(),offsets_n.first.size());
 
-      std::vector<Ordinal64> gid_sub, gid_sub_px;
+      std::vector<panzer::GlobalOrdinal> gid_sub, gid_sub_px;
       for(std::size_t i=0;i<offsets.first.size();i++) {
         gid_sub.push_back(gids[offsets.first[i]]);
         gid_sub_px.push_back(gids_px[offsets_n.first[i]]);
@@ -230,7 +230,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr, threed)
 
       TEST_EQUALITY(offsets.first.size(),offsets_n.first.size());
 
-      std::vector<Ordinal64> gid_sub, gid_sub_py;
+      std::vector<panzer::GlobalOrdinal> gid_sub, gid_sub_py;
       for(std::size_t i=0;i<offsets.first.size();i++) {
         gid_sub.push_back(gids[offsets.first[i]]);
         gid_sub_py.push_back(gids_py[offsets_n.first[i]]);
@@ -250,7 +250,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr, threed)
 
       TEST_EQUALITY(offsets.first.size(),offsets_n.first.size());
 
-      std::vector<Ordinal64> gid_sub, gid_sub_pz;
+      std::vector<panzer::GlobalOrdinal> gid_sub, gid_sub_pz;
       for(std::size_t i=0;i<offsets.first.size();i++) {
         gid_sub.push_back(gids[offsets.first[i]]);
         gid_sub_pz.push_back(gids_pz[offsets_n.first[i]]);
@@ -282,7 +282,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr, threed)
     TEST_ASSERT(localElmtId_l>=0);
     TEST_ASSERT(localElmtId_r>=0);
 
-    std::vector<Ordinal64> gids_l, gids_r;
+    std::vector<panzer::GlobalOrdinal> gids_l, gids_r;
     dofManager->getElementGIDs(   localElmtId_l,   gids_l);
     dofManager->getElementGIDs(   localElmtId_r,   gids_r);
 
@@ -295,7 +295,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr, threed)
     TEST_EQUALITY(offsets_l.first.size(),offsets_r.first.size());
 
     out << "Elements L/R " << localElmtId_l << " " << localElmtId_r << std::endl;
-    std::vector<Ordinal64> gid_sub_l, gid_sub_r;
+    std::vector<panzer::GlobalOrdinal> gid_sub_l, gid_sub_r;
     for(std::size_t i=0;i<offsets_l.first.size();i++) {
       gid_sub_l.push_back(gids_l[offsets_l.first[i]]);
       gid_sub_r.push_back(gids_r[offsets_r.first[i]]);
@@ -311,7 +311,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr, threed)
 
     // recieve right, check 
     if(rank!=np-1) {
-      std::vector<Ordinal64> gid_remote(gid_sub_r.size(),-1);
+      std::vector<panzer::GlobalOrdinal> gid_remote(gid_sub_r.size(),-1);
       Teuchos::receive(comm,rank+1,Teuchos::as<int>(gid_sub_r.size()),&gid_remote[0]);
 
       for(std::size_t i=0;i<gid_sub_r.size();i++)

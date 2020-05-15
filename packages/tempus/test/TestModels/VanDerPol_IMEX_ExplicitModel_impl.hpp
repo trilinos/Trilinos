@@ -441,7 +441,6 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
         DfDp_out_view(1,0) += dxdp(0,0)/eps;
       }
     }
-    const RCP<Thyra::LinearOpBase<Scalar> > W_out = outArgs.get_W_op();
     if (!is_null(W_out)) {
       if (useProductVector_ == false) {
         RCP<Thyra::MultiVectorBase<Scalar> > W =

@@ -71,6 +71,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     SET(BUILD_DIR_NAME ${COMM_TYPE}-${BUILD_TYPE}_${BUILD_NAME_DETAILS})
   ENDIF()
 
+  SET(Trilinos_REPOSITORY_LOCATION_NIGHTLY_DEFAULT "git@github.com:muelu/Trilinos.git")
 
   SET(CTEST_DASHBOARD_ROOT  "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )
   SET(CTEST_NOTES_FILES     "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
@@ -102,6 +103,11 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
   SET_DEFAULT(COMPILER_VERSION "$ENV{SEMS_COMPILER_NAME}-$ENV{SEMS_COMPILER_VERSION}")
 
+  # Options for valgrind, if needed
+  SET(CTEST_MEMORYCHECK_COMMAND_OPTIONS
+      "--leak-check=full --gen-suppressions=all --error-limit=no --log-file=nightly_suppressions.txt" ${CTEST_MEMORYCHECK_COMMAND_OPTIONS} )
+
+
   # Ensure that MPI is on for all parallel builds that might be run.
   IF(COMM_TYPE STREQUAL MPI)
 
@@ -112,8 +118,6 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
             "-DMPI_EXEC_POST_NUMPROCS_FLAGS:STRING=--bind-to\\\;socket\\\;--map-by\\\;socket"
        )
 
-    SET(CTEST_MEMORYCHECK_COMMAND_OPTIONS
-        "--gen-suppressions=all --error-limit=no --log-file=nightly_suppressions.txt" ${CTEST_MEMORYCHECK_COMMAND_OPTIONS} )
 
   ELSE()
 

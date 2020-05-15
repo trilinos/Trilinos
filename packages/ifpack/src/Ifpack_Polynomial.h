@@ -337,11 +337,11 @@ private:
   virtual void SetLabel();
 
   //! Copy constructor (PRIVATE, should not be used)
-  Ifpack_Polynomial(const Ifpack_Polynomial& rhs)
+  Ifpack_Polynomial(const Ifpack_Polynomial& /* rhs */)
   {}
 
   //! operator = (PRIVATE, should not be used)
-  Ifpack_Polynomial& operator=(const Ifpack_Polynomial& rhs)
+  Ifpack_Polynomial& operator=(const Ifpack_Polynomial& /* rhs */)
   {
     return(*this);
   }

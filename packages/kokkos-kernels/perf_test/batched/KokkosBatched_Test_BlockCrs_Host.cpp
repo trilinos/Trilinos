@@ -28,20 +28,20 @@
 #define KOKKOSBATCHED_USE_BLOCKED_ALGO 1
 
 #if defined (KOKKOSBATCHED_USE_UNBLOCKED_ALGO)
-typedef KokkosBatched::Experimental::Algo::LU::Unblocked   AlgoLU;
-typedef KokkosBatched::Experimental::Algo::Trsm::Unblocked AlgoTrsm;
-typedef KokkosBatched::Experimental::Algo::Gemm::Unblocked AlgoGemm;
+typedef KokkosBatched::Algo::LU::Unblocked   AlgoLU;
+typedef KokkosBatched::Algo::Trsm::Unblocked AlgoTrsm;
+typedef KokkosBatched::Algo::Gemm::Unblocked AlgoGemm;
 
-typedef KokkosBatched::Experimental::Algo::Trsv::Unblocked AlgoTrsv;
-typedef KokkosBatched::Experimental::Algo::Gemv::Unblocked AlgoGemv;
+typedef KokkosBatched::Algo::Trsv::Unblocked AlgoTrsv;
+typedef KokkosBatched::Algo::Gemv::Unblocked AlgoGemv;
 #endif
 #if defined (KOKKOSBATCHED_USE_BLOCKED_ALGO)
-typedef KokkosBatched::Experimental::Algo::LU::Blocked   AlgoLU;
-typedef KokkosBatched::Experimental::Algo::Trsm::Blocked AlgoTrsm;
-typedef KokkosBatched::Experimental::Algo::Gemm::Blocked AlgoGemm;
+typedef KokkosBatched::Algo::LU::Blocked   AlgoLU;
+typedef KokkosBatched::Algo::Trsm::Blocked AlgoTrsm;
+typedef KokkosBatched::Algo::Gemm::Blocked AlgoGemm;
 
-typedef KokkosBatched::Experimental::Algo::Trsv::Blocked AlgoTrsv;
-typedef KokkosBatched::Experimental::Algo::Gemv::Blocked AlgoGemv;
+typedef KokkosBatched::Algo::Trsv::Blocked AlgoTrsv;
+typedef KokkosBatched::Algo::Gemv::Blocked AlgoGemv;
 #endif
 
 #include "KokkosBatched_Test_BlockCrs.hpp"
@@ -61,7 +61,7 @@ int main (int argc, char *argv[]) {
                RangeTagOper = 0 };
 
   // vector type
-  typedef Experimental::Vector<SIMD<Test::scalar_type>,VectorLength> VectorType;  
+  typedef Vector<SIMD<Test::scalar_type>,VectorLength> VectorType;  
 
   // Unit tests
   bool profile = false;

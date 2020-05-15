@@ -115,12 +115,6 @@ Teuchos::RCP<const Teuchos::Comm<int> > SparsityFilter<MatrixType>::getComm() co
   return A_->getComm();
 }
 
-//==========================================================================
-template<class MatrixType>
-Teuchos::RCP <typename MatrixType::node_type> SparsityFilter<MatrixType>::getNode() const
-{
-  return A_->getNode();
-}
 
 //==========================================================================
 template<class MatrixType>

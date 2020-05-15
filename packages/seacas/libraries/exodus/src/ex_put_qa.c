@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2017 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017, 2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -35,15 +35,12 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, DIM_NUM_QA, etc
-#include "netcdf.h"       // for NC_NOERR, nc_inq_dimid, etc
-#include <stddef.h>       // for size_t
-#include <stdio.h>
-#include <string.h> // for strlen, NULL
 
 /*!
+\ingroup Utilities
 
 The function ex_put_qa() writes the QA records to the database. Each
-QA record contains four MAX_STR_LENGTH-byte character
+QA record contains four #MAX_STR_LENGTH byte character
 strings. The character strings are:
 
  -  the analysis code name
@@ -101,7 +98,7 @@ int ex_put_qa(int exoid, int num_qa_records, char *qa_record[][4])
   EX_FUNC_ENTER();
   int rootid = exoid & EX_FILE_ID_MASK;
 
-  ex_check_valid_file_id(exoid, __func__);
+  ex__check_valid_file_id(exoid, __func__);
 
   /* only do this if there are records */
 
@@ -168,12 +165,10 @@ int ex_put_qa(int exoid, int num_qa_records, char *qa_record[][4])
         ex_err_fn(exoid, __func__, errmsg, status);
         goto error_ret; /* exit define mode and return */
       }
+      ex__set_compact_storage(rootid, varid);
 
       /*   leave define mode  */
-      if ((status = nc_enddef(rootid)) != NC_NOERR) {
-        snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition in file id %d",
-                 rootid);
-        ex_err_fn(exoid, __func__, errmsg, status);
+      if ((status = ex__leavedef(rootid, __func__)) != NC_NOERR) {
         EX_FUNC_LEAVE(EX_FATAL);
       }
     }
@@ -209,7 +204,7 @@ int ex_put_qa(int exoid, int num_qa_records, char *qa_record[][4])
         }
       }
     }
-    else if (ex_is_parallel(rootid)) {
+    else if (ex__is_parallel(rootid)) {
       /* In case we are in a collective mode, all processors need to call */
       const char dummy[] = " ";
       for (i = 0; i < num_qa_records; i++) {
@@ -225,9 +220,6 @@ int ex_put_qa(int exoid, int num_qa_records, char *qa_record[][4])
 
 /* Fatal error: exit definition mode and return */
 error_ret:
-  if ((status = nc_enddef(rootid)) != NC_NOERR) { /* exit define mode */
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", rootid);
-    ex_err_fn(exoid, __func__, errmsg, status);
-  }
+  ex__leavedef(rootid, __func__);
   EX_FUNC_LEAVE(EX_FATAL);
 }

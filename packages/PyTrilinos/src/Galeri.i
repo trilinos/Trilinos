@@ -47,7 +47,7 @@
 PyTrilinos.Galeri is the python interface to the Trilinos example
 matrix package Galeri:
 
-    http://trilinos.sandia.gov/packages/galeri
+    https://trilinos.org/docs/dev/packages/galeri/doc/html/index.html
 
 The purpose of Galeri is to provide a set of example matrices
 distributed across a set of common processor decompositions for
@@ -76,7 +76,6 @@ example subdirectory of the PyTrilinos package:
 %enddef
 
 %module(package   = "PyTrilinos",
-	autodoc   = "1",
 	docstring = %galeri_docstring) Galeri
 
 %{
@@ -108,11 +107,11 @@ example subdirectory of the PyTrilinos package:
 // Standard exception handling
 %include "exception.i"
 
-// Turn on autodocumentation
-%feature("autodoc", "1");
-
 // Include Galeri documentation
+#if SWIG_VERSION < 0x040000
+%feature("autodoc", "1");
 %include "Galeri_dox.i"
+#endif
 
 // Typemap support for STL
 %include "stl.i"

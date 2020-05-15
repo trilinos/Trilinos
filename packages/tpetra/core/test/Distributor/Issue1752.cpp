@@ -259,7 +259,7 @@ TEUCHOS_UNIT_TEST(Distributor, ReverseDistributeToNonuniformMap)
   import_type importer(unique_map, default_map);
 
   // Matrix built with default map
-  matrix_type default_mtx_fwd(default_map, 3, Tpetra::DynamicProfile);
+  matrix_type default_mtx_fwd(default_map, 3, Tpetra::StaticProfile);
 
   // Do a forward import (an import operation using an Import plan) from the
   // unique matrix to the default matrix.  i.e., communicate entries
@@ -286,7 +286,7 @@ TEUCHOS_UNIT_TEST(Distributor, ReverseDistributeToNonuniformMap)
   }
 
   // Matrix built with default map
-  matrix_type default_mtx_rev(default_map, 3, Tpetra::DynamicProfile);
+  matrix_type default_mtx_rev(default_map, 3, Tpetra::StaticProfile);
 
   // Do a reverse mode import (an import operation using an Export plan) from the
   // unique matrix to the default matrix.  i.e., communicate entries

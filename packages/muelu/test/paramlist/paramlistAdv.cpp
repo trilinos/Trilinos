@@ -11,6 +11,9 @@ namespace MueLu {
   // Note: There is something in Teuchos/Optika to deal with such cases. I haven't figured out yet how to use it.
   // See for instance: http://trilinos.sandia.gov/packages/docs/r10.2/packages/optika/browser/doc/html/test_2dependencyandexec_2main_8cpp-source.html
 
+  using Teuchos::RCP;
+  using Teuchos::ParameterList;
+
   class ParameterListAcceptorAdvImpl: public ParameterListAcceptorImpl {
 
     public:

@@ -73,7 +73,7 @@ C     A      = LARGE ARRAY FOR VARIABLE DIMENSIONING
 C              NOTE: FOR DYNAMIC VARIABLE DIMENSIONING, THE ROUTINES
 C              WILL WORK AS CONFIGURED - THE SWITCH TO NORMAL VARIABLE
 C              DIMENSIONING IS NOTED IN THE CODE AS IT IS NEEDED.
-C              DYNAMIC VARIABLE DIMENSIONING IS NOT MACHINE INDEPENDANT.
+C              DYNAMIC VARIABLE DIMENSIONING IS NOT MACHINE INDEPENDENT.
 C     MERGE  = .TRUE. IF TWO DATA FILES ARE TO BE MERGED
 C     NOROOM = .TRUE. IF MORE ROOM IS NEEDED TO INPUT THE DATA
 C     BATCH  = .TRUE. IF THE PROGRAM IS BEING RUN IN BATCH MODE
@@ -568,10 +568,10 @@ C
             MLOLD = ML
             MSOLD = MS
             MROLD = MR
-            MP = NINT(FLOAT(MP)*1.5000001)
-            ML = NINT(FLOAT(ML)*1.5000001)
-            MS = NINT(FLOAT(MS)*1.5000001)
-            MR = NINT(FLOAT(MR)*1.5000001)
+            MP = NINT(DBLE(MP)*1.5000001)
+            ML = NINT(DBLE(ML)*1.5000001)
+            MS = NINT(DBLE(MS)*1.5000001)
+            MR = NINT(DBLE(MR)*1.5000001)
             CALL MDLONG ('IPOINT', K(1), MP)
             CALL MDLONG ('COOR', K(2), MP*2)
             CALL MDLONG ('IPBOUN', K(3), MP)
@@ -711,10 +711,10 @@ C
             MLOLD = ML
             MSOLD = MS
             MROLD = MR
-            MP = NINT(FLOAT(MP)*1.5000001)
-            ML = NINT(FLOAT(ML)*1.5000001)
-            MS = NINT(FLOAT(MS)*1.5000001)
-            MR = NINT(FLOAT(MR)*1.5000001)
+            MP = NINT(DBLE(MP)*1.5000001)
+            ML = NINT(DBLE(ML)*1.5000001)
+            MS = NINT(DBLE(MS)*1.5000001)
+            MR = NINT(DBLE(MR)*1.5000001)
             CALL MDLONG ('IPOINT', K(1), MP)
             CALL MDLONG ('COOR', K(2), MP*2)
             CALL MDLONG ('IPBOUN', K(3), MP)
@@ -954,10 +954,10 @@ C
                MLOLD = ML
                MSOLD = MS
                MROLD = MR
-               MP = NINT(FLOAT(MP)*RATIO)
-               ML = NINT(FLOAT(ML)*RATIO)
-               MS = NINT(FLOAT(MS)*RATIO)
-               MR = NINT(FLOAT(MR)*RATIO)
+               MP = NINT(DBLE(MP)*RATIO)
+               ML = NINT(DBLE(ML)*RATIO)
+               MS = NINT(DBLE(MS)*RATIO)
+               MR = NINT(DBLE(MR)*RATIO)
                CALL MDLONG ('IPOINT', K(1), MP)
                CALL MDLONG ('COOR', K(2), MP*2)
                CALL MDLONG ('IPBOUN', K(3), MP)

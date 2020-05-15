@@ -42,10 +42,6 @@
 
 #include "Panzer_FaceToElement.hpp"
 #include "Panzer_FaceToElement_impl.hpp"
-
 #include "PanzerCore_config.hpp"
 
-template class panzer::FaceToElement<int,int>;
-#ifndef PANZER_ORDINAL64_IS_INT
-template class panzer::FaceToElement<int,panzer::Ordinal64>;
-#endif
+template class panzer::FaceToElement<int,panzer::GlobalOrdinal>;

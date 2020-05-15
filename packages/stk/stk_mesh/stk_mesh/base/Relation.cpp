@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -57,17 +58,6 @@ Relation::RawRelationType & Relation::RawRelationType::operator =(const Relation
 }
 
 //----------------------------------------------------------------------
-
-std::ostream &
-operator << ( std::ostream & s , const Relation & rel )
-{
-  Entity const e = rel.entity();
-
-  s << "[" << rel.relation_ordinal() << "]->(" << rel.entity_rank()
-    << ", " << e.local_offset() << ")";
-
-  return s ;
-}
 
 namespace {
 
@@ -142,56 +132,14 @@ void get_entities_through_relations(
 
 void get_entities_through_relations(
   const BulkData& mesh,
-  const Entity* entities_begin ,
-  const Entity* entities_end ,
-        EntityRank              entities_related_rank ,
-        std::vector<Entity> & entities_related )
-{
-  entities_related.clear();
-
-  if ( entities_begin != entities_end ) {
-
-    int num_rels = mesh.num_connectivity(entities_begin[0], entities_related_rank);
-    Entity const* rel_entities = mesh.begin(entities_begin[0], entities_related_rank);
-
-    get_entities_through_relations(mesh, rel_entities, rel_entities + num_rels,
-                                   entities_begin+1, entities_end, entities_related);
-  }
-}
-
-void get_entities_through_relations(
-  const BulkData& mesh,
   const std::vector<Entity> & entities ,
         EntityRank              entities_related_rank ,
         std::vector<Entity> & entities_related )
 {
-  entities_related.clear();
-
-  if ( ! entities.empty() ) {
-
-    const Entity* i = entities.data();
-    const Entity* j = i+entities.size();
-
-    int num_rels = mesh.num_connectivity(*i, entities_related_rank);
-    Entity const* rel_entities = mesh.begin(*i, entities_related_rank);
-
-    ++i;
-    get_entities_through_relations(mesh, rel_entities, rel_entities + num_rels, i, j, entities_related);
-  }
+  impl::find_entities_these_nodes_have_in_common(mesh, entities_related_rank,
+                                                 entities.size(), entities.data(),
+                                                 entities_related);
 }
-
-//----------------------------------------------------------------------
-
-
-void get_part_ordinals_to_induce_on_lower_ranks_except_for_omits(const BulkData       & mesh,
-                             const Entity           entity_from,
-                             const OrdinalVector  & omit,
-                                   EntityRank       entity_rank_to,
-                                   OrdinalVector  & induced_parts)
-{
-    impl::get_part_ordinals_to_induce_on_lower_ranks_except_for_omits(mesh,entity_from,omit,entity_rank_to,induced_parts);
-}
-
 
 //----------------------------------------------------------------------
 

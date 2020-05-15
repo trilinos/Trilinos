@@ -79,7 +79,8 @@ public:
   /// Set parameters for application implicit ModelEvaluator solve.
   virtual void setForSolve(Teuchos::RCP<TimeDerivative<Scalar> > timeDer,
     Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs,
-    Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs) = 0;
+    Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs,
+    EVALUATION_TYPE evaluationType = SOLVE_FOR_X) = 0;
 };
 
 } // namespace Tempus

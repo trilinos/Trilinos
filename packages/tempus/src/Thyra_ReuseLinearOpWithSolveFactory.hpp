@@ -358,8 +358,8 @@ template<class Scalar>
 void
 ReuseLinearOpWithSolveFactory<Scalar>::
 setPreconditionerFactory(
-  const RCP<PreconditionerFactoryBase<Scalar> > &precFactory,
-  const std::string &precFactoryName
+  const RCP<PreconditionerFactoryBase<Scalar> > &/* precFactory */,
+  const std::string &/* precFactoryName */
   )
 {
 }
@@ -375,8 +375,8 @@ getPreconditionerFactory() const
 template<class Scalar>
 void ReuseLinearOpWithSolveFactory<Scalar>::
 unsetPreconditionerFactory(
-  RCP<PreconditionerFactoryBase<Scalar> > *precFactory,
-  std::string *precFactoryName
+  RCP<PreconditionerFactoryBase<Scalar> > * /* precFactory */,
+  std::string * /* precFactoryName */
   )
 {
 }

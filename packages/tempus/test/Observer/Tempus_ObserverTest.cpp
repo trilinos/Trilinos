@@ -16,6 +16,11 @@
 #include "Tempus_IntegratorObserverLogging.hpp"
 #include "Tempus_IntegratorObserverComposite.hpp"
 
+#include "Tempus_StepperExplicitRK.hpp"
+
+#include "Tempus_StepperRKObserverLogging.hpp"
+#include "Tempus_StepperRKObserverComposite.hpp"
+
 #include "../TestModels/SinCosModel.hpp"
 #include "../TestModels/VanDerPolModel.hpp"
 #include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
@@ -33,6 +38,7 @@ using Teuchos::getParametersFromXmlFile;
 using Tempus::IntegratorBasic;
 using Tempus::SolutionHistory;
 using Tempus::SolutionState;
+
 
 
 // ************************************************************
@@ -151,7 +157,8 @@ TEUCHOS_UNIT_TEST(Observer, IntegratorObserverLogging)
   Teuchos::TimeMonitor::summarize();
 }
 
-TEUCHOS_UNIT_TEST( Observer, IntegratorObserverComposite) {
+TEUCHOS_UNIT_TEST( Observer, IntegratorObserverComposite)
+{
 
   // Read params from .xml file
   RCP<ParameterList> pList =

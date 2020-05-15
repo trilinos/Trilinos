@@ -15,6 +15,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_sacer4320
     SOURCE_FILES
         sacer.xml
         sacer.graph
+        sacer.assign
         sacer.coords
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
     DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}

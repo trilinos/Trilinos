@@ -10,6 +10,56 @@ TRIBITS_ADD_ADVANCED_TEST( ProjectCiFileChangeLogic_UnitTests
   )
 
 
+TRIBITS_ADD_ADVANCED_TEST( clean_all_jobs_UnitTests
+  OVERALL_WORKING_DIRECTORY TEST_NAME
+  OVERALL_NUM_MPI_PROCS 1
+  EXCLUDE_IF_NOT_TRUE TFW_Python_Testing
+  TEST_0 CMND ${PYTHON_EXECUTABLE} 
+    ARGS ${CMAKE_CURRENT_SOURCE_DIR}/clean_workspace/unittests/test_clean_all_jobs.py -v
+    PASS_REGULAR_EXPRESSION "OK"
+  )
+
+
+TRIBITS_ADD_ADVANCED_TEST( clean_sentinel_UnitTests
+  OVERALL_WORKING_DIRECTORY TEST_NAME
+  OVERALL_NUM_MPI_PROCS 1
+  EXCLUDE_IF_NOT_TRUE TFW_Python_Testing
+  TEST_0 CMND ${PYTHON_EXECUTABLE} 
+    ARGS ${CMAKE_CURRENT_SOURCE_DIR}/clean_workspace/unittests/test_clean_sentinel.py -v
+    PASS_REGULAR_EXPRESSION "OK"
+  )
+
+
+TRIBITS_ADD_ADVANCED_TEST( clean_workspace_UnitTests
+  OVERALL_WORKING_DIRECTORY TEST_NAME
+  OVERALL_NUM_MPI_PROCS 1
+  EXCLUDE_IF_NOT_TRUE TFW_Python_Testing
+  TEST_0 CMND ${PYTHON_EXECUTABLE} 
+    ARGS ${CMAKE_CURRENT_SOURCE_DIR}/clean_workspace/unittests/test_clean_workspace.py -v
+    PASS_REGULAR_EXPRESSION "OK"
+  )
+
+
+TRIBITS_ADD_ADVANCED_TEST( PullRequestLinuxDriverMerge_UnitTests
+  OVERALL_WORKING_DIRECTORY TEST_NAME
+  OVERALL_NUM_MPI_PROCS 1
+  EXCLUDE_IF_NOT_TRUE TFW_Python_Testing
+  TEST_0 CMND ${PYTHON_EXECUTABLE} 
+    ARGS ${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/std/unittests/TestPullRequestLinuxDriverMerge.py -v
+    PASS_REGULAR_EXPRESSION "OK"
+  )
+
+
+TRIBITS_ADD_ADVANCED_TEST( PullRequestLinuxDriverTest_UnitTests
+  OVERALL_WORKING_DIRECTORY TEST_NAME
+  OVERALL_NUM_MPI_PROCS 1
+  EXCLUDE_IF_NOT_TRUE TFW_Python_Testing
+  TEST_0 CMND ${PYTHON_EXECUTABLE} 
+    ARGS ${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/std/unittests/TestPullRequestLinuxDriverTest.py -v
+    PASS_REGULAR_EXPRESSION "OK"
+  )
+
+
 FUNCTION(create_get_changed_trilinos_packages_test  TEST_POSTFIX
   FILES_CHANGED
   CHANGED_PACKAGES_FULL_LIST
@@ -75,8 +125,8 @@ create_get_changed_trilinos_packages_test(ProjectsList_TeuchosCore
 
 create_get_changed_trilinos_packages_test(cmake_std_atdm_TeuchosCore_PyTrilinos
   "cmake/std/atdm/anything\npackages/teuchos/core/CMakeLists.txt\npackages/PyTrilinos/anything"
-  "TeuchosCore,PyTrilinos"
-  "TeuchosCore"
+  "TrilinosATDMConfigTests,TeuchosCore,PyTrilinos"
+  "TrilinosATDMConfigTests,TeuchosCore"
   "Setting Trilinos_ENABLE_TeuchosCore = ON"
   )
   # The above test ensures that cmake/std/atdm/ changes don't trigger global
@@ -85,12 +135,13 @@ create_get_changed_trilinos_packages_test(cmake_std_atdm_TeuchosCore_PyTrilinos
 
 create_get_changed_trilinos_packages_test(cmake_std_atdm
   "cmake/std/atdm/anything\ncmake/std/atdm/shiller/tweaks/INTEL-RELEASE-OPENMP-HSW.cmake"
-  ""
-  ""
-  "-- NOTE: No packages are being enabled!"
+  "TrilinosATDMConfigTests"
+  "TrilinosATDMConfigTests"
+  "Setting Trilinos_ENABLE_TrilinosATDMConfigTests = ON"
   )
-  # The above test ensures that changes that don't anything are handled
-  # smoothly
+  # The above test ensures changes to just cmake/std/atdm/ triggers the enable
+  # of only the TrilinosATDMConfigTests package and does not trigger the
+  # enable of every package.
 
 
 TRIBITS_PACKAGE_POSTPROCESS()

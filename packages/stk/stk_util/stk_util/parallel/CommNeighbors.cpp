@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -49,35 +50,6 @@ namespace stk {
 //-----------------------------------------------------------------------
 
 #if defined( STK_HAS_MPI )
-
-#ifdef STK_MPI_SUPPORTS_NEIGHBOR_COMM
-#undef STK_MPI_SUPPORTS_NEIGHBOR_COMM
-#endif
-
-#if MPI_VERSION >= 3
-#define STK_MPI_SUPPORTS_NEIGHBOR_COMM
-#endif
-
-#ifdef OMPI_MAJOR_VERSION
-//OpenMPI 3.1.x seems to have a bug in the MPI_Neighbor* functions.
-#if OMPI_MAJOR_VERSION == 3 && OMPI_MINOR_VERSION == 1
-#undef STK_MPI_SUPPORTS_NEIGHBOR_COMM
-#endif
-//OpenMPI 2.x.y doesn't seem to support MPI_Neighbor* functions either...
-#if OMPI_MAJOR_VERSION == 2
-#undef STK_MPI_SUPPORTS_NEIGHBOR_COMM
-#endif
-
-#endif
-
-//the MPI_Neighbor functions seem to be unacceptably slow with intel mpi
-#ifdef I_MPI_VERSION
-#undef STK_MPI_SUPPORTS_NEIGHBOR_COMM
-#endif
-
-#ifdef __INTEL_COMPILER
-#undef STK_MPI_SUPPORTS_NEIGHBOR_COMM
-#endif
 
 void CommNeighbors::rank_error( const char * method , int p ) const
 {
@@ -134,16 +106,11 @@ CommNeighbors::CommNeighbors( stk::ParallelMachine comm, const std::vector<int>&
 {
   m_send.resize(m_size);
   m_recv.resize(m_size);
-#ifdef OMPI_MAJOR_VERSION
-#if OMPI_MAJOR_VERSION < 2
-//if open-mpi version 1.10, MPI_Neighbor_* functions can't handle
-//empty send/recv lists.
   if (neighbor_procs.empty()) {
+    //at least some MPI_Neighbor_* implementations can't handle empty neighbor lists.
     m_send_procs.push_back(m_rank);
     m_recv_procs.push_back(m_rank);
   }
-#endif
-#endif
   stk::util::sort_and_unique(m_send_procs);
   stk::util::sort_and_unique(m_recv_procs);
 
@@ -174,13 +141,9 @@ CommNeighbors::CommNeighbors( stk::ParallelMachine comm, const std::vector<int>&
   std::vector<int> symmNeighbors = m_send_procs;
   symmNeighbors.insert(symmNeighbors.end(), m_recv_procs.begin(), m_recv_procs.end());
   stk::util::sort_and_unique(symmNeighbors);
-#ifdef OMPI_MAJOR_VERSION
-#if OMPI_MAJOR_VERSION < 2
   if (symmNeighbors.empty()) {
     symmNeighbors.push_back(m_rank);
   }
-#endif
-#endif
   m_send_procs = symmNeighbors;
   m_recv_procs = symmNeighbors;
 
@@ -352,6 +315,15 @@ void CommNeighbors::communicate()
   old_communicate(m_comm, m_send_procs, m_recv_procs, m_send, m_recv);
 
 #endif
+}
+
+void CommNeighbors::reset_buffers() {
+  for(auto&& s : m_send) {
+    s.resize(0);
+  }
+  for(auto&& r : m_recv) {
+    r.resize(0);
+  }
 }
 
 #endif

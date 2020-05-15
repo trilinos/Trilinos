@@ -6,7 +6,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 IF (Stokhos_ENABLE_EpetraExt AND Stokhos_ENABLE_KokkosContainers)
 
   SET(CUDA_SOURCES "")
-  IF (Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_Cuda AND Stokhos_ENABLE_CUSPARSE)
+  IF (Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_CUDA AND Stokhos_ENABLE_CUSPARSE)
     SET(CUDA_SOURCES TestCuda.cpp)
   ELSE()
     SET(CUDA_SOURCES TestCudaStub.cpp)
@@ -20,7 +20,7 @@ IF (Stokhos_ENABLE_EpetraExt AND Stokhos_ENABLE_KokkosContainers)
     COMM serial mpi
     )
 
-  IF(Kokkos_ENABLE_Pthread)
+  IF(Kokkos_ENABLE_PTHREAD)
     TRIBITS_ADD_EXECUTABLE(
       SPMVHostScaling
       SOURCES TestStochastic.hpp

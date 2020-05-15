@@ -1,6 +1,7 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,9 +15,9 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 //
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -125,6 +126,16 @@ public:
         return is_valid_rank(rank) ? (nullptr != m_outputSelector[rank]) : false;
     }
 
+    const stk::mesh::Selector *get_skin_mesh_selector() const {
+        return m_skinMeshSelector;
+    }
+    void set_skin_mesh_selector(const stk::mesh::Selector *skin_mesh_selector) {
+        m_skinMeshSelector = skin_mesh_selector;
+    }
+    bool has_skin_mesh_selector() const {
+        return nullptr != m_skinMeshSelector;
+    }
+
     bool get_sort_stk_parts_by_name() const {
         return m_sortStkPartsByName;
     }
@@ -174,11 +185,11 @@ public:
         m_hasAdaptivity = hasAdaptivity;
     }
 
-    bool get_is_skin_mesh() const {
-        return m_isSkinMesh;
+    bool get_is_restart() const {
+        return m_isRestart;
     }
-    void set_is_skin_mesh(const bool skinMesh) {
-        m_isSkinMesh = skinMesh;
+    void set_is_restart(const bool restart) {
+        m_isRestart = restart;
     }
 
     const std::vector<stk::io::FieldAndName>& get_additional_attribute_fields() const {
@@ -206,6 +217,7 @@ private:
     const stk::mesh::Selector *m_subsetSelector = nullptr;
     const stk::mesh::Selector *m_sharedSelector = nullptr;
     const stk::mesh::Selector *m_outputSelector[stk::topology::ELEM_RANK+1];
+    const stk::mesh::Selector *m_skinMeshSelector = nullptr;
     bool m_sortStkPartsByName = false;
     bool m_useNodesetForBlockNodeFields = true;
     bool m_useNodesetForSidesetNodeFields = true;
@@ -213,7 +225,7 @@ private:
     bool m_usePartIdForOutput = true;
     bool m_hasGhosting = false;
     bool m_hasAdaptivity = false;
-    bool m_isSkinMesh = false;
+    bool m_isRestart = false;
     std::vector<stk::io::FieldAndName> m_additionalAttributeFields;
 };
 

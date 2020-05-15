@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -49,17 +50,30 @@ namespace shards { class ArrayDimTag; }
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class Part; } }
-
-
+namespace stk { namespace mesh { class NgpFieldBase; } }
 
 namespace stk {
 namespace mesh {
-
-
 namespace impl {
 
 class FieldBaseImpl {
 public:
+  FieldBaseImpl(MetaData                   * arg_mesh_meta_data,
+                stk::topology::rank_t        arg_entity_rank,
+                unsigned                     arg_ordinal,
+                const std::string          & arg_name,
+                const DataTraits           & arg_traits,
+                unsigned                     arg_rank,
+                const shards::ArrayDimTag  * const * arg_dim_tags,
+                unsigned                     arg_number_of_states,
+                FieldState                   arg_this_state);
+
+  ~FieldBaseImpl();
+
+  FieldBaseImpl() = delete;
+  FieldBaseImpl(const FieldBase &) = delete;
+  FieldBaseImpl(const FieldBaseImpl &) = delete;
+  FieldBaseImpl & operator=(const FieldBaseImpl &) = delete;
 
   MetaData & meta_data() const {
     return *m_meta_data ;
@@ -153,19 +167,19 @@ public:
     }
   }
 
-  FieldBaseImpl(
-      MetaData                   * arg_mesh_meta_data ,
-      stk::topology::rank_t        arg_entity_rank ,
-      unsigned                     arg_ordinal ,
-      const std::string          & arg_name ,
-      const DataTraits           & arg_traits ,
-      unsigned                     arg_rank,
-      const shards::ArrayDimTag  * const * arg_dim_tags,
-      unsigned                     arg_number_of_states ,
-      FieldState                   arg_this_state
-      );
+  void modify_on_host() const;
+  void modify_on_device() const;
+  void sync_to_host() const;
+  void sync_to_device() const;
 
-  ~FieldBaseImpl();
+  NgpFieldBase * get_ngp_field() const;
+  void set_ngp_field(NgpFieldBase * ngpField) const;
+
+  size_t num_syncs_to_host() const;
+  size_t num_syncs_to_device() const;
+
+  void increment_num_syncs_to_host() const;
+  void increment_num_syncs_to_device() const;
 
 private:
 
@@ -187,12 +201,10 @@ private:
   const shards::ArrayDimTag  * m_dim_tags[ MaximumFieldDimension ];
   void*                        m_initial_value;
   unsigned                     m_initial_value_num_bytes;
+  mutable NgpFieldBase       * m_ngpField;
+  mutable size_t               m_numSyncsToHost;
+  mutable size_t               m_numSyncsToDevice;
 
-  //disallow copy and default constructors
-  FieldBaseImpl();
-  FieldBaseImpl( const FieldBase & );
-  FieldBaseImpl( const FieldBaseImpl & );
-  FieldBaseImpl & operator = ( const FieldBaseImpl & );
 };
 
 

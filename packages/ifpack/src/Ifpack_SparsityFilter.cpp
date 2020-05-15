@@ -222,8 +222,8 @@ Multiply(bool TransA, const Epetra_MultiVector& X,
 
 //==============================================================================
 int Ifpack_SparsityFilter::
-Solve(bool Upper, bool Trans, bool UnitDiagonal,
-      const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+Solve(bool /* Upper */, bool /* Trans */, bool /* UnitDiagonal */,
+      const Epetra_MultiVector& /* X */, Epetra_MultiVector& /* Y */) const
 {
   IFPACK_CHK_ERR(-98);
 }
@@ -238,7 +238,7 @@ Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
 //==============================================================================
 int Ifpack_SparsityFilter::
-ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+ApplyInverse(const Epetra_MultiVector& /* X */, Epetra_MultiVector& /* Y */) const
 {
   IFPACK_CHK_ERR(-98);
 }

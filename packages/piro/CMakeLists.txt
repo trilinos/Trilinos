@@ -29,7 +29,6 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND NOT NOX_ENABLE_Epetra)
   MESSAGE(FATAL_ERROR "Piro configuration error: Enabling Epetra in Piro also requires that Epetra be enabled in NOX (-DNOX_ENABLE_Epetra:BOOL=ON)")
 ENDIF()
 
-
 #
 # C) Add the libraries, tests, and examples
 #
