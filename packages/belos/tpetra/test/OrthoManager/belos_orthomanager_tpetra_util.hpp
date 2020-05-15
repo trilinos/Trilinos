@@ -235,7 +235,7 @@ namespace Belos {
               // sparse row, zero-index).  We do this by iterating over
               // all the columns of the matrix.
               int curNonzeroIndex = 0;
-              for (int c = 0; c < numCols; ++c)
+              for (global_ordinal_type c = 0; c < global_ordinal_type(numCols); ++c)
                 {
                   for (int colnnz = 0; colnnz < colptr[c+1] - colptr[c]; ++colnnz)
                     {
