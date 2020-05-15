@@ -10,7 +10,7 @@ INCLUDE_DIRECTORIES(
 
 FILE(GLOB SOURCES src/ex_*.c)
 
-if (${TPL_Netcdf_PARALLEL})
+if (TPL_Netcdf_PARALLEL)
    SET(PARALLEL_AWARE_EXODUS ON)
 endif()
 
