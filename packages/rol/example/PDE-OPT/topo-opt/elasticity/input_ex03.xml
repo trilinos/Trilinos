@@ -16,9 +16,15 @@
     <Parameter name="Minimum Density"                    type="double" value="1e-4"        />
     <Parameter name="Maximum Density"                    type="double" value="1.0"         />
     <Parameter name="Minimization Type"                  type="string" value="Compliance"  />
-    <Parameter name="Compliance Scaling"                 type="double" value="2.2e-2"      />
+    <Parameter name="Compliance Scaling"                 type="double" value="1.0"         />
+    <Parameter name="Normalize Compliance"               type="bool"   value="true"        />
+    <Parameter name="Output Frequency"                   type="int"    value="0"           />
+    <Parameter name="Use Basic Update"                   type="bool"   value="false"       />
     <!-- Volume Minimization -->
     <Parameter name="Compliance Factor"                  type="double" value="2.0"         />
+    <Parameter name="Initial Density"                    type="double" value="0.4"         />
+    <Parameter name="Use Volume Equality Constraint"     type="bool"   value="true"        />
+    <Parameter name="Hessian Approximation"              type="string" value="None"        />
     <!-- Compliance Minimization -->
     <Parameter name="Volume Fraction"                    type="double" value="0.4"         />
     <!-- Total Minimization -->
@@ -27,12 +33,18 @@
     <Parameter name="SIMP Power"                         type="double" value="3.0"         />
     <Parameter name="Use Filter"                         type="bool"   value="true"        />
     <Parameter name="Filter Radius"                      type="double" value="0.1"         />
+    <Parameter name="Use Projection"                     type="bool"   value="false"       />
+    <Parameter name="Projection Parameter"               type="double" value="1e0"         />
+    <Parameter name="Projection Threshold"               type="double" value="0.5"         />
     <!-- Phase Field -->
     <Parameter name="Use Phase Field"                    type="bool"   value="false"       />
     <Parameter name="Phase Field Penalty Parameter"      type="double" value="1e-5"        />
     <Parameter name="Phase Field Energy Objective Scale" type="double" value="1e-4"        />
     <!-- Finite Element Information -->
     <Parameter name="Cubature Degree"                    type="int"    value="2"           />
+    <Parameter name="Basis Order"                        type="int"    value="1"           />
+    <Parameter name="Filter Basis Order"                 type="int"    value="1"           />
+    <Parameter name="Density Basis Order"                type="int"    value="0"           />
     <!-- Stochastic Information -->
     <Parameter name="Number of samples"                  type="int"    value="4"           />
     <Parameter name="Number of output samples"           type="int"    value="4"           />
@@ -112,6 +124,7 @@
   <ParameterList name="General">
     <Parameter name="Variable Objective Function"            type="bool"   value="false" />
     <Parameter name="Scale for Epsilon Active Sets"          type="double" value="1.0"   />
+    <Parameter name="Output Level"                           type="int"    value="1"     />
     <!-- ===========  USE INEXACT OBJECTIVE OR DERIVATIVES  =========== -->
     <Parameter name="Inexact Objective Function"             type="bool" value="false" />
     <Parameter name="Inexact Gradient"                       type="bool" value="false" />
@@ -134,6 +147,16 @@
       <Parameter name="Absolute Tolerance" type="double" value="1.e-4"               />
       <Parameter name="Relative Tolerance" type="double" value="1.e-2"               />
       <Parameter name="Iteration Limit"    type="int"    value="20"                  />
+    </ParameterList>
+
+    <!-- ===========  POLYHEDRAL PROJECTION INPUTS  =========== -->
+    <ParameterList name="Polyhedral Projection">
+      <Parameter name="Type"               type="string" value="Dai-Fletcher" />
+      <Parameter name="Iteration Limit"    type="int"    value="1000"         />
+      <!--
+      <Parameter name="Absolute Tolerance" type="double" value="1.e-4"   />
+      <Parameter name="Relative Tolerance" type="double" value="1.e-2"   />
+      -->
     </ParameterList>
   </ParameterList>
 
@@ -179,7 +202,7 @@
     <!-- ===========  TRUST REGION  =========== -->
     <ParameterList name="Trust Region">
       <Parameter name="Subproblem Solver"                    type="string" value="Truncated CG" />
-      <Parameter name="Subproblem Model"                     type="string" value="Kelley-Sachs" />
+      <Parameter name="Subproblem Model"                     type="string" value="Lin-More"     />
       <Parameter name="Initial Radius"                       type="double" value="100.0"        />
       <Parameter name="Maximum Radius"                       type="double" value="5.e8"         />
       <Parameter name="Step Acceptance Threshold"            type="double" value="0.05"         />
@@ -189,6 +212,24 @@
       <Parameter name="Radius Shrinking Rate (Positive rho)" type="double" value="0.25"         />
       <Parameter name="Radius Growing Rate"                  type="double" value="2.5"          />
       <Parameter name="Safeguard Size"                       type="double" value="1.e1"         />
+      <ParameterList name="Lin-More">
+        <Parameter name="Maximum Number of Minor Iterations" type="int"    value="10"   />
+        <Parameter name="Sufficient Decrease Parameter"      type="double" value="1e-2" />
+        <Parameter name="Relative Tolerance Exponent"        type="double" value="1.1"  />
+        <ParameterList name="Cauchy Point">
+          <Parameter name="Maximum Number of Reduction Steps" type="int"    value="10"    />
+          <Parameter name="Maximum Number of Expansion Steps" type="int"    value="10"    />
+          <Parameter name="Initial Step Size"                 type="double" value="1.0"   />
+          <Parameter name="Normalize Initial Step Size"       type="bool"   value="true"  />
+          <Parameter name="Reduction Rate"                    type="double" value="0.1"   />
+          <Parameter name="Expansion Rate"                    type="double" value="5.0"   />
+          <Parameter name="Decrease Tolerance"                type="double" value="1e-8"  />
+        </ParameterList>
+        <ParameterList name="Projected Search">
+          <Parameter name="Backtracking Rate"       type="double" value="0.5"  />
+          <Parameter name="Maximum Number of Steps" type="int"    value="20"   />
+        </ParameterList>
+      </ParameterList>
 
       <!-- ===========  CONTROLS FOR INEXACTNESS  =========== -->
       <ParameterList name="Inexact">
@@ -298,10 +339,11 @@
 
   <!-- ===========  STATUS TEST SUBLIST  =========== -->
   <ParameterList name="Status Test">
-    <Parameter name="Gradient Tolerance"   type="double" value="1.e-3"    />
-    <Parameter name="Constraint Tolerance" type="double" value="1.e-5"    />
-    <Parameter name="Step Tolerance"       type="double" value="-1.e-14"  />
-    <Parameter name="Iteration Limit"      type="int"    value="40"       />
+    <Parameter name="Gradient Tolerance"      type="double" value="1.e-3"    />
+    <Parameter name="Constraint Tolerance"    type="double" value="1.e-5"    />
+    <Parameter name="Step Tolerance"          type="double" value="-1.e-14"  />
+    <Parameter name="Iteration Limit"         type="int"    value="40"       />
+    <Parameter name="Use Relative Tolerances" type="bool"   value="true"     />
   </ParameterList>
 </ParameterList>
 

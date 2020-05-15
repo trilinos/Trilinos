@@ -18,7 +18,7 @@
     <Parameter name="Minimization Type"                  type="string" value="Compliance" />
     <Parameter name="Compliance Scaling"                 type="double" value="1.0"        />
     <Parameter name="Normalize Compliance"               type="bool"   value="true"       />
-    <Parameter name="Output Frequency"                   type="int"    value="1"          />
+    <Parameter name="Output Frequency"                   type="int"    value="0"          />
     <Parameter name="Use Basic Update"                   type="bool"   value="false"      />
     <!-- Volume Minimization -->
     <Parameter name="Compliance Factor"                  type="double" value="2.0"        />
