@@ -40,14 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PIRO_TEMPUSHELPERS_H
-#define PIRO_TEMPUSHELPERS_H
-
-
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_RCP.hpp"
-
-#include <functional>
+#ifndef PIRO_HELPERS_H
+#define PIRO_HELPERS_H
 
 namespace Piro {
 
@@ -55,4 +49,4 @@ namespace Piro {
 
 } // namespace Piro
 
-#endif /*PIRO_TEMPUSHELPERS_H*/
+#endif /*PIRO_HELPERS_H*/

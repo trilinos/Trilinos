@@ -45,7 +45,7 @@
 
 #include "Tempus_IntegratorObserverBasic.hpp"
 
-#include "Piro_TempusHelpers.hpp" 
+#include "Piro_Helpers.hpp" 
 #include "Piro_ObserverBase.hpp"
 
 #include "Teuchos_RCP.hpp"
