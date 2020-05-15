@@ -72,6 +72,9 @@ PROJECT(${PROJECT_NAME} NONE)
 # Set default C++ standard to C++11
 SET(Trilinos_ENABLE_CXX11_DEFAULT ON)
 
+## set an env so we know we are in configure
+set(ENV{CMAKE_IS_IN_CONFIGURE_MODE} 1)
+
 #
 # B) Pull in the TriBITS system and execute
 #
