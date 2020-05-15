@@ -53,8 +53,7 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
     void colorInterior(const size_t nVtx,
                        Kokkos::View<lno_t*,device_type> adjs_view,
                        Kokkos::View<offset_t*, device_type> offset_view,
-                       Teuchos::RCP<femv_t> femv,
-                       bool recolor);
+                       Teuchos::RCP<femv_t> femv);
     
     RCP<const base_adapter_t> adapter;
     RCP<GraphModel<base_adapter_t> > model;
@@ -320,7 +319,7 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
       for(Teuchos_Ordinal i = 0; i < adjs.size(); i++) host_adjs(i) = adjs[i];
 
       //give the entire local graph to KokkosKernels to color
-      this->colorInterior(n_local, host_adjs, host_offsets, femv,false);
+      this->colorInterior(n_local, host_adjs, host_offsets, femv);
 
       //communicate the initial coloring.
       femv->switchActiveMultiVector();
@@ -427,7 +426,7 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
         if(distributedRounds < 100) vertsPerRound[distributedRounds++] = recoloringSize(0);
        
         //recolor using KokkosKernels' coloring function 
-        this->colorInterior(femv_colors.size(), dist_adjs, dist_offsets, femv, true);
+        this->colorInterior(femv_colors.size(), dist_adjs, dist_offsets, femv);
         recoloringSize(0) = 0;
         
         //communicate the new colors
@@ -495,17 +494,13 @@ template<typename Adapter>
 void AlgDistance1TwoGhostLayer<Adapter>::colorInterior(const size_t nVtx,
                        Kokkos::View<lno_t*,device_type> adjs_view,
                        Kokkos::View<offset_t*, device_type> offset_view,
-                       Teuchos::RCP<femv_t> femv,
-                       bool recolor) {
+                       Teuchos::RCP<femv_t> femv) {
   using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle
       <size_t, lno_t, lno_t, execution_space, memory_space, memory_space>;
   KernelHandle kh;
   
-  if(recolor){
-    kh.create_graph_coloring_handle(KokkosGraph::COLORING_VBBIT);
-  } else {
-    kh.create_graph_coloring_handle(KokkosGraph::COLORING_DEFAULT);
-  }
+  kh.create_graph_coloring_handle(KokkosGraph::COLORING_DEFAULT);
+  
   Kokkos::View<int**, Kokkos::LayoutLeft> femvColors = femv->template getLocalView<memory_space>();
   Kokkos::View<int*, device_type> sv = subview(femvColors, Kokkos::ALL, 0);
   kh.get_graph_coloring_handle()->set_vertex_colors(sv);

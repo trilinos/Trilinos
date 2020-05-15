@@ -2902,7 +2902,7 @@ public:
     nnz_lno_temp_work_view_t color_set ("color_set", this->nv); //initialized with zero.
     //initialize colors, color bans
     Kokkos::parallel_for ("KokkosGraph::GraphColoring::initColors",
-        my_exec_space (0, this->nv) , init_colors (kok_colors, color_ban, numInitialColors));
+        my_exec_space (0, this->nv) , init_colors (kok_colors, color_ban, numInitialColors, color_set));
     //std::cout << "nv:" << this->nv << " init_colors" << std::endl;
 
     //worklist
@@ -3125,14 +3125,14 @@ public:
     color_view_type kokcolors;
     color_temp_work_view_type color_ban; //colors
     color_t hash; //the number of colors to be assigned initially.
-
+    nnz_lno_temp_work_view_t color_set;
     //the value to initialize the color_ban_. We avoid using the first bit representing the sign.
     //Therefore if idx is int, it can represent 32-1 colors. Use color_set to represent more.
     color_t color_ban_init_val;
 
 
-    init_colors (color_view_type colors,color_temp_work_view_type color_ban_,color_t hash_):
-      kokcolors(colors), color_ban(color_ban_), hash(hash_){
+    init_colors (color_view_type colors,color_temp_work_view_type color_ban_,color_t hash_, nnz_lno_temp_work_view_t color_set_):
+      kokcolors(colors), color_ban(color_ban_), hash(hash_),color_set(color_set_){
       color_t tmp = 1;
       color_ban_init_val = tmp <<( sizeof(color_t) * 8 -1);
     }
@@ -3141,7 +3141,12 @@ public:
     void operator()(const size_type &ii) const {
       //set colors based on their indices.
       color_t tmp1 = 1;
-      kokcolors(ii) = tmp1 << (ii % hash);
+      if(kokcolors(ii) > 0){
+        color_t colorsize = sizeof(color_t) * 8 - 1;
+        color_set(ii) = (kokcolors(ii) - 1) / colorsize;
+        kokcolors(ii) = 1 << ((kokcolors(ii) - 1) % colorsize);
+      }
+      //kokcolors(ii) = tmp1 << (ii % hash);
       color_ban(ii) = color_ban_init_val;
     }
   };
