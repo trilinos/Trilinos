@@ -136,16 +136,8 @@ public:
     RCP<Teuchos::StringValidator> color_method_Validator = Teuchos::rcp(
       new Teuchos::StringValidator(
         Teuchos::tuple<std::string>( "SerialGreedy","Hybrid","2GL" )));
-    pl.set("color_method", "SerialGreedy", "coloring algorithm",
+     pl.set("color_method", "SerialGreedy", "coloring algorithm",
      color_method_Validator);
-    pl.set("Hybrid_batch_size",-1,"Batch size for distributed coloring, default is all verts",
-     Environment::getAnyIntValidator());
-    RCP<Teuchos::StringValidator> kokkos_interior_Validator = Teuchos::rcp(
-      new Teuchos::StringValidator(
-        Teuchos::tuple<std::string>( "true", "false")));
-    pl.set("Kokkos_only_interior","false",
-     "Controls whether the entire local graph is colored with Kokkos, or only interior verts",
-     kokkos_interior_Validator);
   }
 
   //!  \brief Direct the problem to create a solution.
@@ -160,8 +152,6 @@ public:
   //          may have been changed.
   //
   //  For the sake of performance, we ask the caller to set \c updateInputData
-  //  to false if he/she is computing a new solution using the same input data,
-  //  but different problem parameters, than that which was used to compute
   //  the most recent solution.
   
   void solve(bool updateInputData=true); 
@@ -214,15 +204,13 @@ void ColoringProblem<Adapter>::solve(bool newData)
   {
       //new stuff using Kokkos and Gebremedhin-Manne-Boman framework for hybrid architectures
       //this->inputAdapter_ is the adapter passed to this problem
-      printf("Do the hybrid algorithm\n"); 
-      AlgHybridGMB<Adapter> alg(this->inputAdapter_, this->params_,
+      AlgHybridGM<Adapter> alg(this->inputAdapter_, this->params_,
                                 this->env_, this->comm_);
       alg.color(this->solution_);
   } 
   else if (method.compare("2GL") == 0)
   {
-      printf("Do the two layer ghost method\n");
-      AlgDistance1TwoGhostLayer<Adapter> alg(this->inputAdapter_, this->params_,
+      AlgHybrid2GL<Adapter> alg(this->inputAdapter_, this->params_,
                                              this->env_, this->comm_);
       alg.color(this->solution_);  
   }

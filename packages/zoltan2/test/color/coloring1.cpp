@@ -336,8 +336,6 @@ int main(int narg, char** arg)
   Teuchos::ParameterList params;
   params.set("color_choice", colorMethod);
   params.set("color_method", colorAlg);
-  params.set("Hybrid_batch_size",batchSize);
-  params.set("Kokkos_only_interior",kokkosOnlyInterior);
   //params.set("balance_colors", balanceColors); // TODO
 
   ////// Create an input adapter for the Tpetra matrix.

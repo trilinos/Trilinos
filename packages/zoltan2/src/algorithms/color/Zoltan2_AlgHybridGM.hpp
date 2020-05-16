@@ -23,14 +23,16 @@
 #include "KokkosGraph_Distance1ColorHandle.hpp"
 
 //////////////////////////////////////////////
-//! \file Zoltan2_AlgHybridGMB.hpp
-//! \brief A hybrid version of the framework proposed by Gebremedhin, Manne, 
-//!        and Boman
+//! \file Zoltan2_AlgHybridGM.hpp
+//! \brief A hybrid version of the framework proposed by Gebremedhin, Manne in
+//!        "Scalable parallel graph coloring algorithms", 
+//!          Concurrency: Practice and Experience, 2000
+//!  
 
 namespace Zoltan2 {
 
 template <typename Adapter>
-class AlgHybridGMB : public Algorithm<Adapter>
+class AlgHybridGM : public Algorithm<Adapter>
 {
   public:
   
@@ -85,7 +87,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
     
   public:
     //constructor for the  hybrid distributed distance-1 algorithm
-    AlgHybridGMB(
+    AlgHybridGM(
       const RCP<const base_adapter_t> &adapter_, 
       const RCP<Teuchos::ParameterList> &pl_,
       const RCP<Environment> &env_,
@@ -397,7 +399,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
 };
 
 template <typename Adapter>
-void AlgHybridGMB<Adapter>::buildModel(modelFlag_t &flags){
+void AlgHybridGM<Adapter>::buildModel(modelFlag_t &flags){
   flags.set(REMOVE_SELF_EDGES);
   
   this->env->debug(DETAILED_STATUS, "   building graph model");

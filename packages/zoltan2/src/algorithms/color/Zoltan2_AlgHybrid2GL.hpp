@@ -32,7 +32,7 @@
 namespace Zoltan2{
 
 template <typename Adapter>
-class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
+class AlgHybrid2GL : public Algorithm<Adapter> {
 
   public:
     
@@ -63,7 +63,7 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
     int numColors;
 
   public:
-    AlgDistance1TwoGhostLayer(
+    AlgHybrid2GL(
       const RCP<const base_adapter_t> &adapter_,
       const RCP<Teuchos::ParameterList> &pl_,
       const RCP<Environment> &env_,
@@ -579,7 +579,7 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
 }; //end class
 
 template <typename Adapter>
-void AlgDistance1TwoGhostLayer<Adapter>::buildModel(modelFlag_t &flags){
+void AlgHybrid2GL<Adapter>::buildModel(modelFlag_t &flags){
   flags.set(REMOVE_SELF_EDGES);
   
   this->env->debug(DETAILED_STATUS, "   building graph model");
@@ -589,7 +589,7 @@ void AlgDistance1TwoGhostLayer<Adapter>::buildModel(modelFlag_t &flags){
 }
 
 template<typename Adapter>
-void AlgDistance1TwoGhostLayer<Adapter>::colorInterior(const size_t nVtx,
+void AlgHybrid2GL<Adapter>::colorInterior(const size_t nVtx,
                        Kokkos::View<lno_t*,device_type> adjs_view,
                        Kokkos::View<offset_t*, device_type> offset_view,
                        Teuchos::RCP<femv_t> femv) {
