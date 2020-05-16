@@ -84,8 +84,8 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
                                    RCP<const map_t> mapOwned,
                                    std::vector< gno_t>& adjs_2GL,
                                    std::vector< offset_t>& offsets_2GL) {
-      std::vector<int> sendcounts(comm->getSize(),0);
-      std::vector<gno_t> sdispls(comm->getSize()+1,0);
+      Teuchos::Array<int> sendcounts(comm->getSize(),0);
+      Teuchos::Array<gno_t> sdispls(comm->getSize()+1,0);
       //loop through owners, count how many vertices we'll send to each processor
       for(size_t i = 0; i < owners.size(); i++){
         if(owners[i] != comm->getRank()&& owners[i] !=-1) sendcounts[owners[i]]++;
@@ -113,25 +113,25 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
       }
       
       //communicate GIDs to owners
-      Teuchos::ArrayView<int> sendcounts_view = Teuchos::arrayViewFromVector(sendcounts);
-      Teuchos::ArrayView<gno_t> sendbuf_view = Teuchos::arrayViewFromVector(sendbuf);
+      //Teuchos::ArrayView<int> sendcounts_view = Teuchos::arrayViewFromVector(sendcounts);
+      //Teuchos::ArrayView<gno_t> sendbuf_view = Teuchos::arrayViewFromVector(sendbuf);
       Teuchos::ArrayRCP<gno_t>  recvbuf;
-      std::vector<int> recvcounts(comm->getSize(),0);
-      Teuchos::ArrayView<int> recvcounts_view = Teuchos::arrayViewFromVector(recvcounts);
-      Zoltan2::AlltoAllv<gno_t>(*comm, *env, sendbuf_view, sendcounts_view, recvbuf, recvcounts_view);
+      Teuchos::Array<int> recvcounts(comm->getSize(),0);
+      //Teuchos::ArrayView<int> recvcounts_view = Teuchos::arrayViewFromVector(recvcounts);
+      Zoltan2::AlltoAllv<gno_t>(*comm, *env, sendbuf, sendcounts, recvbuf, recvcounts);
       
       //replace entries in recvGIDs with their degrees
       gno_t recvcounttotal = 0;
-      std::vector<int> rdispls(comm->getSize()+1,0);
+      Teuchos::Array<int> rdispls(comm->getSize()+1,0);
       for(size_t i = 1; i<recvcounts.size()+1; i++){
         rdispls[i] = rdispls[i-1] + recvcounts[i-1];
         recvcounttotal += recvcounts[i-1];
       }
       //send back the degrees to the requesting processes,
       //build the adjacency counts
-      std::vector<offset_t> sendDegrees(recvcounttotal,0);
+      Teuchos::Array<offset_t> sendDegrees(recvcounttotal,0);
       gno_t adj_len = 0;
-      std::vector<int> adjsendcounts(comm->getSize(),0);
+      Teuchos::Array<int> adjsendcounts(comm->getSize(),0);
       for(int i = 0; i < comm->getSize(); i++){
         adjsendcounts[i] = 0;
         for(int j = rdispls[i]; j < rdispls[i+1]; j++){
@@ -143,15 +143,88 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
         }
       }
       //communicate the degrees back to the requesting processes
-      Teuchos::ArrayView<offset_t> sendDegrees_view = Teuchos::arrayViewFromVector(sendDegrees);
+      //Teuchos::ArrayView<offset_t> sendDegrees_view = Teuchos::arrayViewFromVector(sendDegrees);
       Teuchos::ArrayRCP<offset_t> recvDegrees;
-      std::vector<int> recvDegreesCount(comm->getSize(),0);
-      Teuchos::ArrayView<int> recvDegreesCount_view = Teuchos::arrayViewFromVector(recvDegreesCount);
-      Zoltan2::AlltoAllv<offset_t>(*comm, *env, sendDegrees_view, recvcounts_view, recvDegrees, recvDegreesCount_view);
+      Teuchos::Array<int> recvDegreesCount(comm->getSize(),0);
+      //Teuchos::ArrayView<int> recvDegreesCount_view = Teuchos::arrayViewFromVector(recvDegreesCount);
+      Zoltan2::AlltoAllv<offset_t>(*comm, *env, sendDegrees, recvcounts, recvDegrees, recvDegreesCount);
      
+      //calculate number of rounds of AlltoAllv's that are necessary on this process
+      int rounds = 1;
+      for(int i = 0; i < comm->getSize(); i++){
+        if(adjsendcounts[i]*sizeof(gno_t)/ INT_MAX > rounds){
+	  rounds = (adjsendcounts[i]*sizeof(gno_t)/INT_MAX)+1;
+	}
+      }
+
+      //see what the max number of rounds will be globally
+      int max_rounds = 0;
+      Teuchos::reduceAll<int>(*comm, Teuchos::REDUCE_MAX, 1, &rounds, &max_rounds);
+      
+      Teuchos::Array<Teuchos::Array<gno_t> > per_proc_round_adj_sums;
+      Teuchos::Array<Teuchos::Array<gno_t> > per_proc_round_vtx_sums;
+      per_proc_round_adj_sums.resize(max_rounds+1,Teuchos::Array<gno_t>(comm->getSize(),0));
+      per_proc_round_vtx_sums.resize(max_rounds+1,Teuchos::Array<gno_t>(comm->getSize(),0));
+      
+      for(int proc_to_send = 0; proc_to_send < comm->getSize(); proc_to_send++){
+        int curr_round = 0;
+	for(int j = sdispls[proc_to_send]; j < sdispls[proc_to_send+1]; j++){
+	  if((per_proc_round_adj_sums[curr_round][proc_to_send] + recvDegrees[j])*sizeof(gno_t) > INT_MAX){
+	    curr_round++;
+	  }
+	  per_proc_round_adj_sums[curr_round][proc_to_send] += recvDegrees[j];
+	  per_proc_round_vtx_sums[curr_round][proc_to_send]++;
+	}
+      }
+
+      Teuchos::Array<Teuchos::Array<Teuchos::Array<gno_t> > > recv_GID_per_proc_per_round;
+      recv_GID_per_proc_per_round.resize(max_rounds+1);
+      for(int i = 0; i < max_rounds; i++){
+	recv_GID_per_proc_per_round[i].resize(comm->getSize());
+        for(int j = 0; j < comm->getSize(); j++){
+          recv_GID_per_proc_per_round[i][j].resize(sendcounts[j],0);
+        }
+      }
+      
+      std::cout<<comm->getRank()<<" finished constructing recv_GID_per_proc_per_round\n";
+
+      for(int i = 0; i < comm->getSize(); i++){
+        int curr_round = 0;
+	int curr_idx = 0;
+	for(int j = sdispls[i]; j < sdispls[i+1]; j++){
+	  if(curr_idx > per_proc_round_vtx_sums[curr_round][i]){
+	    curr_round++;
+	    curr_idx = 0;
+	  }
+	  if(comm->getRank()==0) std::cout<<comm->getRank()<<" curr_round("<<curr_round<<") >= max_rounds("<<max_rounds<<"\n";
+	  recv_GID_per_proc_per_round[curr_round][i][curr_idx++] = j;
+	}
+      }
+      
+      std::cout<<comm->getRank()<<" finished assigning recv_GID_per_proc_per_round\n";
+
+      Teuchos::Array<gno_t> final_gid_arr(sendcount,0);
+      Teuchos::Array<offset_t> final_degree_arr(sendcount,0);
+      gno_t reorder_idx = 0;
+      for(int i = 0; i < max_rounds; i++){
+        for(int j = 0; j < comm->getSize(); j++){
+	  for(int k = 0; k < per_proc_round_vtx_sums[i][j]; k++){
+	    final_gid_arr[reorder_idx] = sendbuf[recv_GID_per_proc_per_round[i][j][k]];
+	    final_degree_arr[reorder_idx++] = recvDegrees[recv_GID_per_proc_per_round[i][j][k]];
+	  }
+	}
+      }
+     
+      std::cout<<comm->getRank()<<" finished reorganizing GIDs\n";
+
+      //remap the GIDs so we receive the adjacencies in the same order as the current process's LIDs
+      for(gno_t i = 0; i < sendcount; i++){
+        ownedPlusGhosts[i+offsets.size()-1] = final_gid_arr[i];
+      }
+
       //construct offsets with the received vertex degrees
-      std::vector<offset_t> ghost_offsets(sendcount+1,0);
-      std::vector<lno_t> send_adjs(adj_len,0);
+      Teuchos::Array<offset_t> ghost_offsets(sendcount+1,0);
+      Teuchos::Array<lno_t> send_adjs(adj_len,0);
       for(int i = 1; i < sendcount+1; i++){
         ghost_offsets[i] = ghost_offsets[i-1] + recvDegrees[i-1];
       }
@@ -169,19 +242,44 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
       for(int i = 0; i < recvDegrees.size(); i++){
         recvadjscount+= recvDegrees[i];
       }
-      //communicate adjacencies back to requesting processes
-      Teuchos::ArrayView<lno_t> send_adjs_view = Teuchos::arrayViewFromVector(send_adjs);
-      Teuchos::ArrayView<int> adjsendcounts_view = Teuchos::arrayViewFromVector(adjsendcounts);
-      Teuchos::ArrayRCP<lno_t> ghost_adjs;
-      std::vector<int> adjrecvcounts(recvadjscount+sendcounts.size(),0);
-      Teuchos::ArrayView<int> adjsrecvcounts_view = Teuchos::arrayViewFromVector(adjrecvcounts);
-      Zoltan2::AlltoAllv<lno_t>(*comm, *env, send_adjs_view, adjsendcounts_view, ghost_adjs, adjsrecvcounts_view);
 
-      //build the adjacencies and offsets for the second ghost layer
-      for(offset_t i = 0; i < recvadjscount; i ++){
-        adjs_2GL.push_back(ghost_adjs[i]);
+      Teuchos::Array<gno_t> curr_idx_per_proc(comm->getSize(),0);
+      for(int i = 0; i < comm->getSize(); i++) curr_idx_per_proc[i] = rdispls[i];
+      for(int round = 0; round < max_rounds; round++){
+        Teuchos::Array<gno_t> send_adj;
+	Teuchos::Array<int> send_adj_counts(comm->getSize(),0);
+	for(int curr_proc=0; curr_proc < comm->getSize(); curr_proc++){
+	  gno_t curr_adj_sum = 0;
+	  while( curr_idx_per_proc[curr_proc] < rdispls[curr_proc+1]){
+	    lno_t lid = mapOwned->getLocalElement(recvbuf[curr_idx_per_proc[curr_proc]++]);
+	    if((curr_adj_sum + (offsets[lid+1] - offsets[lid]))*sizeof(gno_t) >= INT_MAX){
+	      break;
+	    }
+	    curr_adj_sum += (offsets[lid+1] - offsets[lid]);
+	    for(offset_t j = offsets[lid]; j < offsets[lid+1]; j++){
+	      send_adj.push_back(adjs[j]);
+	    }
+	  }
+	  send_adj_counts[curr_proc] = curr_adj_sum;
+	}
+
+        //communicate adjacencies back to requesting processes
+        //Teuchos::ArrayView<lno_t> send_adjs_view = Teuchos::arrayViewFromVector(send_adjs);
+        //Teuchos::ArrayView<int> adjsendcounts_view = Teuchos::arrayViewFromVector(adjsendcounts);
+        Teuchos::ArrayRCP<gno_t> ghost_adjs;
+	gno_t recv_adjs_count = 0;
+	for(int i = 0; i < comm->getSize(); i++){
+	  recv_adjs_count += per_proc_round_adj_sums[round][i];
+	}
+        Teuchos::Array<int> adjrecvcounts(comm->getSize(),0);
+        //Teuchos::ArrayView<int> adjsrecvcounts_view = Teuchos::arrayViewFromVector(adjrecvcounts);
+        Zoltan2::AlltoAllv<gno_t>(*comm, *env, send_adj, send_adj_counts , ghost_adjs, adjrecvcounts);
+
+        //build the adjacencies and offsets for the second ghost layer
+        for(offset_t i = 0; i < ghost_adjs.size(); i ++){
+          adjs_2GL.push_back(ghost_adjs[i]);
+        }
       }
-      
       for(int i = 0; i < sendcount+1; i++){
         offsets_2GL.push_back(ghost_offsets[i]);
       }
