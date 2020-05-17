@@ -50,7 +50,6 @@
 #include "netcdf_meta.h"
 #if NC_HAS_PARALLEL
 #ifndef PARALLEL_AWARE_EXODUS
-#define PARALLEL_AWARE_EXODUS
 #endif
 #endif
 #endif
