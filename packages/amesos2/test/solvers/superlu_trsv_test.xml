@@ -25,30 +25,7 @@
       <!-- Next test Tpetra objects -->
       <ParameterList name="tpetra">
 	<!-- these `run*' sublist names are arbitrary -->
-	<ParameterList name="run0">
-	  <Parameter name="Scalar" type="string" value="float"/>
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="long long int"/>
-	  <!-- The `Node' parameter is not yet supported -->
-	</ParameterList>
-	<ParameterList name="run1 - single iterrefine">
-	  <Parameter name="Scalar" type="string" value="float"/>
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="long long int"/>
-	  <!-- Optional parameter list whose values override those in the "solver_params" parameter list -->
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="IterRefine" type="string" value="SLU_SINGLE"/>
-	  </ParameterList>
-	</ParameterList>
-	<ParameterList name="run2 - double iterrefine">
-	  <Parameter name="Scalar" type="string" value="float"/>
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="long long int"/>
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="IterRefine" type="string" value="SLU_DOUBLE"/>
-	  </ParameterList>
-	</ParameterList>
-	<ParameterList name="run3">
+	<ParameterList name="run-tpetra-double">
 	  <Parameter name="Scalar" type="string" value="double"/>
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
 	  <Parameter name="GlobalOrdinal" type="string" value="long long int"/>
@@ -69,21 +46,6 @@
         </ParameterList>
         <ParameterList name="run_cudauvmoff_double">
           <Parameter name="Scalar" type="string" value="double"/>
-          <Parameter name="LocalOrdinal" type="string" value="int"/>
-          <Parameter name="Node" type="string" value="cudauvmoff"/>
-        </ParameterList>
-        <ParameterList name="run_serial_float">
-          <Parameter name="Scalar" type="string" value="float"/>
-          <Parameter name="LocalOrdinal" type="string" value="int"/>
-          <Parameter name="Node" type="string" value="serial"/>
-        </ParameterList>
-        <ParameterList name="run_cuda_float">
-          <Parameter name="Scalar" type="string" value="float"/>
-          <Parameter name="LocalOrdinal" type="string" value="int"/>
-          <Parameter name="Node" type="string" value="cuda"/>
-        </ParameterList>
-        <ParameterList name="run_cudauvmoff_float">
-          <Parameter name="Scalar" type="string" value="float"/>
           <Parameter name="LocalOrdinal" type="string" value="int"/>
           <Parameter name="Node" type="string" value="cudauvmoff"/>
         </ParameterList>
