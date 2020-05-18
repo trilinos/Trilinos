@@ -136,7 +136,7 @@
 #include "Amesos2_Cholmod.hpp"
 #endif
 
-#ifdef HAVE_AMESOS2_CUSOLVER
+#if defined (HAVE_AMESOS2_CUSOLVER) && defined (HAVE_AMESOS2_CUSPARSE)
 #include "Amesos2_cuSOLVER.hpp"
 #endif
 
