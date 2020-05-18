@@ -45,6 +45,7 @@
 #define ROL_ALGORITHM_E_FACTORY_H
 
 #include "ROL_AugmentedLagrangianAlgorithm_E.hpp"
+#include "ROL_FletcherAlgorithm_E.hpp"
 #include "ROL_Types.hpp"
 
 namespace ROL {
@@ -56,6 +57,7 @@ namespace ROL {
  */
 enum EAlgorithmE{
   ALGORITHM_E_AUGMENTEDLAGRANGIAN = 0,
+  ALGORITHM_E_FLETCHER,
   ALGORITHM_E_LAST
 };
 
@@ -63,6 +65,7 @@ inline std::string EAlgorithmEToString(EAlgorithmE alg) {
   std::string retString;
   switch(alg) {
     case ALGORITHM_E_AUGMENTEDLAGRANGIAN: retString = "Augmented Lagrangian"; break;
+    case ALGORITHM_E_FLETCHER:            retString = "Fletcher";             break;
     case ALGORITHM_E_LAST:                retString = "Last Type (Dummy)";    break;
     default:                              retString = "INVALID EAlgorithmE";
   }
@@ -75,7 +78,8 @@ inline std::string EAlgorithmEToString(EAlgorithmE alg) {
     \return 1 if the argument is a valid AlgorithmE; 0 otherwise.
   */
 inline int isValidAlgorithmE(EAlgorithmE alg){
-  return( (alg == ALGORITHM_E_AUGMENTEDLAGRANGIAN)   ||
+  return( (alg == ALGORITHM_E_AUGMENTEDLAGRANGIAN) ||
+          (alg == ALGORITHM_E_FLETCHER)            ||
           (alg == ALGORITHM_E_LAST)
         );
 }
@@ -115,6 +119,7 @@ inline Ptr<Algorithm_E<Real>> AlgorithmEFactory(ParameterList &parlist) {
   EAlgorithmE ealg = StringToEAlgorithmE(parlist.sublist("Step").get("Type","Augmented Lagrangian"));
   switch(ealg) {
     case ALGORITHM_E_AUGMENTEDLAGRANGIAN: return makePtr<AugmentedLagrangianAlgorithm_E<Real>>(parlist);
+    case ALGORITHM_E_FLETCHER:            return makePtr<FletcherAlgorithm_E<Real>>(parlist);
     default:                              return nullPtr;
   }
 }
