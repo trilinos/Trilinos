@@ -154,6 +154,7 @@ INCLUDE_DIRECTORIES(${DIR}
                     ${DIR}/TypeG
                     ${DIR}/TypeU
                     ${DIR}/TypeG/augmentedlagrangian/
+                    ${DIR}/TypeG/fletcher
                     ${DIR}/TypeG/interiorpoint
                     ${DIR}/TypeG/moreauyosida
                     ${DIR}/TypeU/bundle
@@ -166,6 +167,7 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp
                     ${DIR}/TypeG/*.hpp
                     ${DIR}/TypeU/*.hpp
                     ${DIR}/TypeG/augmentedlagrangian/*.hpp
+                    ${DIR}/TypeG/fletcher/*.hpp
                     ${DIR}/TypeG/interiorpoint/*.hpp
                     ${DIR}/TypeG/moreauyosida/*.hpp
                     ${DIR}/TypeU/bundle/*.hpp
