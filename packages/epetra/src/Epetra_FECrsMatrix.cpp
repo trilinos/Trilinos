@@ -315,6 +315,80 @@ Epetra_FECrsMatrix::~Epetra_FECrsMatrix()
   DeleteMemory();
 }
 
+void Epetra_FECrsMatrix::Print(std::ostream& os) const
+{
+  Epetra_CrsMatrix::Print(os);
+
+  if (ignoreNonLocalEntries_ || RowMap().Comm().NumProc()==1) return;
+
+  int MyPID = RowMap().Comm().MyPID();
+  int NumProc = RowMap().Comm().NumProc();
+
+  if (useNonlocalMatrix_) {
+    if (MyPID==0) {
+      os << "[FECrsMatrix] Nonlocal matrix:\n";
+    }
+    nonlocalMatrix_->Print(os);
+    return;
+  }
+
+  if (MyPID==0) {
+    os << "[FECrsMatrix] Nonlocal rows:\n";
+    os.width(8);
+    os <<  "   Processor ";
+    os.width(10);
+    os <<  "   Row Index ";
+    os.width(10);
+    os <<  "   Col Index ";
+    os.width(20);
+    os <<  "   Value     ";
+    os << std::endl;
+  }
+  for (int iproc=0; iproc < NumProc; iproc++) {
+    if (MyPID==iproc) {
+      if(RowMap().GlobalIndicesInt()) {
+        const int nnr = nonlocalRows_int_.size();
+        for (int i=0; i<nnr; ++i) {
+          const int Row = nonlocalRows_int_[i];
+          const int ncols = nonlocalCols_int_[i].size();;
+          for (int j=0; j<ncols; ++j) {
+            os.width(8);
+            os <<  MyPID ; os << "    ";
+            os.width(10);
+            os <<  Row ; os << "    ";
+            os.width(10);
+            os <<  nonlocalCols_int_[i][j]; os << "    ";
+            os.width(20);
+            os <<  nonlocalCoefs_[i][j]; os << "    ";
+            os << std::endl;
+          }
+        }
+      } else {
+        const int nnr = nonlocalRows_LL_.size();
+        for (int i=0; i<nnr; ++i) {
+          const int Row = nonlocalRows_LL_[i];
+          const int ncols = nonlocalCols_LL_[i].size();;
+          for (int j=0; j<ncols; ++j) {
+            os.width(8);
+            os <<  MyPID ; os << "    ";
+            os.width(10);
+            os <<  Row ; os << "    ";
+            os.width(10);
+            os <<  nonlocalCols_LL_[i][j]; os << "    ";
+            os.width(20);
+            os <<  nonlocalCoefs_[i][j]; os << "    ";
+            os << std::endl;
+          }
+        }
+      }
+    }
+    // Do a few global ops to give I/O a chance to complete
+    RowMap().Comm().Barrier();
+    RowMap().Comm().Barrier();
+    RowMap().Comm().Barrier();
+  }
+}
+
 //----------------------------------------------------------------------------
 void Epetra_FECrsMatrix::DeleteMemory()
 {
