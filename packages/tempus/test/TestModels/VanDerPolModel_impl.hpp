@@ -351,7 +351,7 @@ setupInOutArgs_() const
     if (acceptModelParams_) {
       outArgs.set_Np_Ng(Np_,Ng_);
       outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_DfDp,0,
-                           Thyra::ModelEvaluatorBase::DERIV_MV_BY_COL );
+                           Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM );
     }
     outArgs_ = outArgs;
   }
