@@ -225,7 +225,7 @@ export ATDM_CONFIG_NETCDF_LIBS="-L${NETCDF_ROOT}/lib;-L${HDF5_ROOT}/lib;${NETCDF
 
 # Use manually installed cmake and ninja to try to avoid module loading
 # problems (see TRIL-208)
-export PATH=/ascldap/users/rabartl/install/white-ride/cmake-3.11.2/bin:/ascldap/users/rabartl/install/white-ride/ninja-1.8.2/bin:$PATH
+export PATH=/home/atdm-devops-admin/tools/ride/cmake-3.17.2/bin:/home/rabartl/install/white-ride/ninja-1.8.2/bin:$PATH
 
 # Set MPI wrappers
 export MPICC=`which mpicc`
