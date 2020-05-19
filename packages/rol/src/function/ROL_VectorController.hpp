@@ -86,6 +86,27 @@ public:
   */
   void constraintUpdate(EUpdateType type);
 
+  /** \brief Check if vector associated with provided key is allocated.
+  */
+  bool isNull(const Key &param) const;
+
+  /** \brief Check if vector has been computed.
+  */
+  bool isComputed(const Key &param) const;
+
+  /** \brief Allocate the vector associated with provided key.
+  */
+  void allocate(const Vector<Real> &x, const Key &param);
+
+  /** \brief Set the vector associated with provided key.  This assumes
+      the vector data will be changed.
+  */
+  const Ptr<Vector<Real>> set(const Key &param);
+
+  /** \brief Return the vector associated with provided key.
+  */
+  const Ptr<const Vector<Real>> get(const Key &param) const;
+
   /** \brief Return vector corresponding to input parameter.
   */
   bool get(Vector<Real> &x, const Key &param);
@@ -104,13 +125,30 @@ private:
 
   void resetTemp(void);
 
+  bool isNull(const Key &param, const std::map<Key,int> &indices) const;
+
+  bool isComputed(const Key &param, const std::map<Key,int> &indices,
+           const std::vector<bool> &flags) const;
+
+  void allocate(const Vector<Real> &x, const Key &param,
+           std::map<Key,int> &indices, std::vector<bool> &flags,
+           std::vector<Ptr<Vector<Real>>> &vectors, int &maxIndex) const;
+
+  const Ptr<const Vector<Real>> get(const Key &param,
+           const std::map<Key,int> &indices, const std::vector<bool> &flags,
+           const std::vector<Ptr<Vector<Real>>> &vectors, const int &maxIndex) const;
+
+  const Ptr<Vector<Real>> set(const Key &param,
+           std::map<Key,int> &indices, std::vector<bool> &flags,
+           std::vector<Ptr<Vector<Real>>> &vectors, int &maxIndex) const;
+
   bool get(Vector<Real> &x, const Key &param,
            std::map<Key,int> &indices, std::vector<bool> &flags,
-           std::vector<Ptr<Vector<Real>>> &vectors, int &maxIndex);
+           std::vector<Ptr<Vector<Real>>> &vectors, int &maxIndex) const;
 
-  void set(const Vector<Real> &x,const Key &param,
+  void set(const Vector<Real> &x, const Key &param,
            std::map<Key,int> &indices, std::vector<bool> &flags,
-           std::vector<Ptr<Vector<Real>>> &vectors, int &maxIndex);
+           std::vector<Ptr<Vector<Real>>> &vectors, int &maxIndex) const;
 
   void accept(void);
 }; // class VectorController

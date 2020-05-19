@@ -49,6 +49,7 @@
 #include "ROL_Vector.hpp"
 #include "ROL_Types.hpp"
 #include "ROL_Ptr.hpp"
+#include "ROL_ScalarController.hpp"
 #include <iostream>
 
 /** @ingroup func_group
@@ -67,7 +68,6 @@ private:
   const Ptr<Objective<Real>> obj_;
   const Ptr<BoundConstraint<Real>> bnd_;
 
-  Ptr<Vector<Real>> g_;
   Ptr<Vector<Real>> l_;
   Ptr<Vector<Real>> u_;
   Ptr<Vector<Real>> l1_;
@@ -81,10 +81,10 @@ private:
   Ptr<Vector<Real>> lam_;
   Ptr<Vector<Real>> tmp_;
 
+  Ptr<ScalarController<Real,int>> fval_;
+  Ptr<VectorController<Real,int>> gradient_;
+
   Real mu_;
-  Real fval_;
-  bool isValueComputed_;
-  bool isGradComputed_;
   bool isPenEvaluated_;
   int nfval_;
   int ngrad_;
@@ -133,7 +133,9 @@ private:
 
   void initialize(const Vector<Real> &x,
                   const Vector<Real> &g) {
-    g_    = g.clone();
+    fval_     = makePtr<ScalarController<Real,int>>();
+    gradient_ = makePtr<VectorController<Real,int>>();
+
     l_    = x.clone();
     l1_   = x.clone();
     dl1_  = g.clone();
@@ -165,7 +167,6 @@ public:
                       const bool updateMultiplier = true,
                       const bool updatePenalty = true)
     : obj_(obj), bnd_(bnd), mu_(mu),
-      fval_(0), isValueComputed_(false), isGradComputed_(false),
       isPenEvaluated_(false), nfval_(0), ngrad_(0),
       updateMultiplier_(updateMultiplier), updatePenalty_(updatePenalty) {
     initialize(x,g);
@@ -189,7 +190,6 @@ public:
                       const Vector<Real> &g,
                       ParameterList &parlist)
     : obj_(obj), bnd_(bnd),
-      fval_(0), isValueComputed_(false), isGradComputed_(false),
       isPenEvaluated_(false), nfval_(0), ngrad_(0) {
     initialize(x,g);
     ParameterList &list = parlist.sublist("Step").sublist("Moreau-Yosida Penalty");
@@ -256,19 +256,23 @@ public:
   }
 
   Real getObjectiveValue(const Vector<Real> &x, Real &tol) {
-    if (!isValueComputed_) {
-      fval_ = obj_->value(x,tol); nfval_++;
-      isValueComputed_ = true;
+    int key(0);
+    Real val(0);
+    bool isComputed = fval_->get(val,key);
+    if (!isComputed) {
+      val = obj_->value(x,tol); nfval_++;
+      fval_->set(val,key);
     }
-    return fval_;
+    return val;
   }
 
   void getObjectiveGradient(Vector<Real> &g, const Vector<Real> &x, Real &tol) {
-    if (!isGradComputed_) {
-      obj_->gradient(*g_,x,tol); ngrad_++;
-      isGradComputed_ = true;
+    int key(0);
+    bool isComputed = gradient_->get(g,key);
+    if (!isComputed) {
+      obj_->gradient(g,x,tol); ngrad_++;
+      gradient_->set(g,key);
     }
-    g.set(*g_);
   }
 
   int getNumberFunctionEvaluations(void) {
@@ -288,13 +292,10 @@ public:
   */
   void update( const Vector<Real> &x, EUpdateType type, int iter = -1 ) {
     obj_->update(x,type,iter);
+    fval_->objectiveUpdate(type);
+    gradient_->objectiveUpdate(type);
     // Need to do something smart here
-    isValueComputed_ = false;
-    isGradComputed_  = false;
     isPenEvaluated_  = false;
-    //isValueComputed_ = false;
-    //isGradComputed_  = (flag && iter>0) ? false : isGradComputed_;
-    //isPenEvaluated_  = false;
   }
 
   /** \brief Compute value.
@@ -305,9 +306,8 @@ public:
   */
   Real value( const Vector<Real> &x, Real &tol ) {
     // Compute objective function value
-    fval_ = getObjectiveValue(x,tol);
+    Real fval = getObjectiveValue(x,tol);
     // Add value of the Moreau-Yosida penalty
-    Real fval = fval_;
     if ( bnd_->isActivated() ) {
       const Real half(0.5);
       computePenalty(x);

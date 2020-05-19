@@ -126,6 +126,85 @@ void VectorController<Real,Key>::constraintUpdate(EUpdateType type) {
 }
 
 template <class Real, class Key>
+bool VectorController<Real,Key>::isNull(const Key &param) const {
+  if (!temp_) {
+    if (trial_) {
+      return isNull(param,indices_trial_);
+    }
+    else {
+      return isNull(param,indices_);
+    }
+  }
+  else {
+    return isNull(param,indices_temp_);
+  }
+  return false;
+}
+
+template <class Real, class Key>
+bool VectorController<Real,Key>::isComputed(const Key &param) const {
+  if (!temp_) {
+    if (trial_) {
+      return isComputed(param,indices_trial_,flags_trial_);
+    }
+    else {
+      return isComputed(param,indices_,flags_);
+    }
+  }
+  else {
+    return isComputed(param,indices_temp_,flags_temp_);
+  }
+  return false;
+}
+
+template <class Real, class Key>
+void VectorController<Real,Key>::allocate(const Vector<Real> &x, const Key &param) {
+  if (!temp_) {
+    if (trial_) {
+      allocate(x,param,indices_trial_,flags_trial_,vectors_trial_,maxIndex_trial_);
+    }
+    else {
+      allocate(x,param,indices_,flags_,vectors_,maxIndex_);
+    }
+  }
+  else {
+    allocate(x,param,indices_temp_,flags_temp_,vectors_temp_,maxIndex_temp_);
+  }
+}
+
+template <class Real, class Key>
+const Ptr<const Vector<Real>> VectorController<Real,Key>::get(const Key &param) const {
+  if (!temp_) {
+    if (trial_) {
+      return get(param,indices_trial_,flags_trial_,vectors_trial_,maxIndex_trial_);
+    }
+    else {
+      return get(param,indices_,flags_,vectors_,maxIndex_);
+    }
+  }
+  else {
+    return get(param,indices_temp_,flags_temp_,vectors_temp_,maxIndex_temp_);
+  }
+  return nullPtr;
+}
+
+template <class Real, class Key>
+const Ptr<Vector<Real>> VectorController<Real,Key>::set(const Key &param) {
+  if (!temp_) {
+    if (trial_) {
+      return set(param,indices_trial_,flags_trial_,vectors_trial_,maxIndex_trial_);
+    }
+    else {
+      return set(param,indices_,flags_,vectors_,maxIndex_);
+    }
+  }
+  else {
+    return set(param,indices_temp_,flags_temp_,vectors_temp_,maxIndex_temp_);
+  }
+  return nullPtr;
+}
+
+template <class Real, class Key>
 bool VectorController<Real,Key>::get(Vector<Real> &x, const Key &param) {
   bool flag = false;
   if (!temp_) {
@@ -179,9 +258,71 @@ void VectorController<Real,Key>::resetTemp(void) {
 }
 
 template <class Real, class Key>
+bool VectorController<Real,Key>::isNull(const Key &param,
+         const std::map<Key,int> &indices) const {
+  return (indices.count(param)==0);
+}
+
+template <class Real, class Key>
+bool VectorController<Real,Key>::isComputed(const Key &param,
+         const std::map<Key,int> &indices, const std::vector<bool> &flags) const {
+  if (indices.count(param)>0) {
+    auto it = indices.find(param);
+    return flags[it->second];
+  }
+  return false;
+}
+
+template <class Real, class Key>
+void VectorController<Real,Key>::allocate(const Vector<Real> &x, const Key &param,
+         std::map<Key,int> &indices, std::vector<bool> &flags,
+         std::vector<Ptr<Vector<Real>>> &vectors, int &maxIndex) const {
+  if (isNull(param,indices)) {
+    int index = maxIndex;
+    indices.insert(std::pair<Key,int>(param, index));
+    flags.push_back(false);
+    vectors.push_back(x.clone()); 
+    maxIndex++;
+  }
+}
+
+template <class Real, class Key>
+const Ptr<const Vector<Real>> VectorController<Real,Key>::get(const Key &param,
+         const std::map<Key,int> &indices, const std::vector<bool> &flags,
+         const std::vector<Ptr<Vector<Real>>> &vectors, const int &maxIndex) const {
+  int count = indices.count(param);
+  int index = maxIndex;
+  if (count) {
+    auto it = indices.find(param);
+    index = it->second;
+    return vectors[index];
+  }
+  return nullPtr;
+}
+
+template <class Real, class Key>
+const Ptr<Vector<Real>> VectorController<Real,Key>::set(const Key &param,
+         std::map<Key,int> &indices, std::vector<bool> &flags,
+         std::vector<Ptr<Vector<Real>>> &vectors, int &maxIndex) const {
+  ROL_TEST_FOR_EXCEPTION(isNull(param,indices),std::logic_error,
+    ">>> ROL::VectorController::set : Vector has not been allocated!");
+  ROL_TEST_FOR_EXCEPTION(isComputed(param,indices,flags),std::logic_error,
+    ">>> ROL::VectorController::set : Vector is already computed!");
+  int count = indices.count(param);
+  int index = maxIndex;
+  if (count) {
+    auto it = indices.find(param);
+    index = it->second;
+    flags[index] = true;
+    return vectors[index];
+  }
+  return nullPtr;
+}
+
+template <class Real, class Key>
 bool VectorController<Real,Key>::get(Vector<Real> &x, const Key &param,
          std::map<Key,int> &indices, std::vector<bool> &flags,
-         std::vector<Ptr<Vector<Real>>> &vectors, int &maxIndex) {
+         std::vector<Ptr<Vector<Real>>> &vectors, int &maxIndex) const {
   int count = indices.count(param);
   bool flag = false;
   int index = maxIndex;
@@ -205,7 +346,7 @@ bool VectorController<Real,Key>::get(Vector<Real> &x, const Key &param,
 template <class Real, class Key>
 void VectorController<Real,Key>::set(const Vector<Real> &x,const Key &param,
          std::map<Key,int> &indices, std::vector<bool> &flags,
-         std::vector<Ptr<Vector<Real>>> &vectors, int &maxIndex) {
+         std::vector<Ptr<Vector<Real>>> &vectors, int &maxIndex) const {
   int count = indices.count(param);
   int index = maxIndex;
   if (count) {

@@ -50,6 +50,7 @@
 #include "ROL_Vector.hpp"
 #include "ROL_Types.hpp"
 #include "ROL_Ptr.hpp"
+#include "ROL_ScalarController.hpp"
 #include <iostream>
 
 /** @ingroup func_group
@@ -98,9 +99,9 @@ private:
   Ptr<Vector<Real>> primConVector_;
 
   // Objective and constraint evaluations
-  Real fval_;
-  Ptr<Vector<Real>> gradient_;
-  Ptr<Vector<Real>> conValue_;
+  Ptr<ScalarController<Real,int>> fval_;
+  Ptr<VectorController<Real,int>> gradient_;
+  Ptr<VectorController<Real,int>> conValue_;
 
   // Objective function and constraint scaling
   Real fscale_;
@@ -115,11 +116,6 @@ private:
   bool scaleLagrangian_;
   int HessianApprox_;
 
-  // Flags to recompute quantities
-  bool isValueComputed_;
-  bool isGradientComputed_;
-  bool isConstraintComputed_;
-
 public:
   AugmentedLagrangianObjective(const Ptr<Objective<Real>> &obj,
                                const Ptr<Constraint<Real>> &con,
@@ -129,15 +125,16 @@ public:
                                const Vector<Real> &dualConVec,
                                ParameterList &parlist)
     : obj_(obj), con_(con), penaltyParameter_(penaltyParameter),
-      fval_(0), fscale_(1), cscale_(1), nfval_(0), ngval_(0), ncval_(0),
-      isValueComputed_(false), isGradientComputed_(false), isConstraintComputed_(false) {
+      fscale_(1), cscale_(1), nfval_(0), ngval_(0), ncval_(0) {
+
+    fval_     = makePtr<ScalarController<Real,int>>();
+    gradient_ = makePtr<VectorController<Real,int>>();
+    conValue_ = makePtr<VectorController<Real,int>>();
 
     multiplier_    = dualConVec.clone();
     dualOptVector_ = dualOptVec.clone();
     dualConVector_ = dualConVec.clone();
     primConVector_ = primConVec.clone();
-    gradient_      = dualOptVec.clone();
-    conValue_      = primConVec.clone();
 
     ParameterList& sublist = parlist.sublist("Step").sublist("Augmented Lagrangian");
     scaleLagrangian_ = sublist.get("Use Scaled Augmented Lagrangian", false);
@@ -153,28 +150,25 @@ public:
                                const bool scaleLagrangian,
                                const int HessianApprox)
     : obj_(obj), con_(con), penaltyParameter_(penaltyParameter),
-      fval_(0), fscale_(1), cscale_(1), nfval_(0), ngval_(0), ncval_(0),
-      scaleLagrangian_(scaleLagrangian), HessianApprox_(HessianApprox),
-      isValueComputed_(false), isGradientComputed_(false), isConstraintComputed_(false) {
+      fscale_(1), cscale_(1), nfval_(0), ngval_(0), ncval_(0),
+      scaleLagrangian_(scaleLagrangian), HessianApprox_(HessianApprox) {
+
+    fval_     = makePtr<ScalarController<Real,int>>();
+    gradient_ = makePtr<VectorController<Real,int>>();
+    conValue_ = makePtr<VectorController<Real,int>>();
 
     multiplier_    = dualConVec.clone();
     dualOptVector_ = dualOptVec.clone();
     dualConVector_ = dualConVec.clone();
     primConVector_ = primConVec.clone();
-    gradient_      = dualOptVec.clone();
-    conValue_      = primConVec.clone();
   }
 
   void update( const Vector<Real> &x, EUpdateType type, int iter = -1 ) {
     obj_->update(x,type,iter);
     con_->update(x,type,iter);
-    // Need to do something smart here
-    isValueComputed_ = false;
-    isGradientComputed_ = false;
-    isConstraintComputed_ = false;
-    //isValueComputed_ = ((flag || (!flag && iter < 0)) ? false : isValueComputed_);
-    //isGradientComputed_ = ((flag || (!flag && iter < 0)) ? false : isGradientComputed_);
-    //isConstraintComputed_ = ((flag || (!flag && iter < 0)) ? false : isConstraintComputed_);
+    fval_->objectiveUpdate(type);
+    gradient_->objectiveUpdate(type);
+    conValue_->objectiveUpdate(type);
   }
 
   void setScaling(const Real fscale = 1.0, const Real cscale = 1.0) {
@@ -246,31 +240,34 @@ public:
 
   // Return objective function value
   Real getObjectiveValue(const Vector<Real> &x, Real &tol) {
-    // Evaluate objective function value
-    if ( !isValueComputed_ ) {
-      fval_ = obj_->value(x,tol); nfval_++;
-      isValueComputed_ = true;
+    Real val(0);
+    int key(0);
+    bool isComputed = fval_->get(val,key);
+    if ( !isComputed ) {
+      val = obj_->value(x,tol); nfval_++;
+      fval_->set(val,key);
     }
-    return fval_;
+    return val;
   }
 
+  // Compute objective function gradient
   const Ptr<const Vector<Real>> getObjectiveGradient(const Vector<Real> &x, Real &tol) {
-    // Compute objective function gradient
-    if ( !isGradientComputed_ ) {
-      obj_->gradient(*gradient_,x,tol); ngval_++;
-      isGradientComputed_ = true;
+    int key(0);
+    if (!gradient_->isComputed(key)) {
+      if (gradient_->isNull(key)) gradient_->allocate(*dualOptVector_,key);
+      obj_->gradient(*gradient_->set(key),x,tol); ngval_++;
     }
-    return gradient_;
+    return gradient_->get(key);
   }
 
   // Return constraint value
   const Ptr<const Vector<Real>> getConstraintVec(const Vector<Real> &x, Real &tol) {
-    if ( !isConstraintComputed_ ) {
-      // Evaluate constraint
-      con_->value(*conValue_,x,tol); ncval_++;
-      isConstraintComputed_ = true;
+    int key(0);
+    if (!conValue_->isComputed(key)) {
+      if (conValue_->isNull(key)) conValue_->allocate(*primConVector_,key);
+      con_->value(*conValue_->set(key),x,tol); ncval_++;
     }
-    return conValue_;
+    return conValue_->get(key);
   }
 
   // Return total number of constraint evaluations

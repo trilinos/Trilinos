@@ -47,6 +47,7 @@
 #include "ROL_Objective.hpp"
 #include "ROL_BoundConstraint.hpp"
 #include "ROL_ParameterList.hpp"
+#include "ROL_ScalarController.hpp"
 
 /** @ingroup func_group
     \class ROL::PrimalInteriorPointObjective
@@ -71,7 +72,6 @@ private:
   const Ptr<const Vector<Real>>    lo_;
   const Ptr<const Vector<Real>>    up_;
 
-  Ptr<Vector<Real>> g_;       // Gradient of penalized objective
   Ptr<Vector<Real>> maskL_;   // Elements are 1 when xl>-INF, zero for xl =-INF
   Ptr<Vector<Real>> maskU_;   // Elements are 1 when xu< INF, zero for xu = INF
   Ptr<Vector<Real>> maskL0_;  // Elements are 1 when xl>-INF and xu = INF, zero for xl =-INF
@@ -83,13 +83,12 @@ private:
                               // contribution is unbounded below on the feasible set
   Real kappaD_;               // Linear damping coefficient
   Real mu_;                   // Penalty parameter
-  Real fval_;                 // Unpenalized objective value
+
+  Ptr<ScalarController<Real,int>> fval_;
+  Ptr<VectorController<Real,int>> gradient_;
 
   int nfval_;
   int ngrad_;
-
-  bool isValueComputed_;
-  bool isGradientComputed_;
 
   // x <- f(x) = { log(x) if x >  0
   //             { -inf   if x <= 0
@@ -143,6 +142,9 @@ private:
   void initialize(const Vector<Real> &x, const Vector<Real> &g) {
     const Real zero(0), one(1);
 
+    fval_     = makePtr<ScalarController<Real,int>>();
+    gradient_ = makePtr<VectorController<Real,int>>();
+
     // Determine the index sets where the
     ValueSet isBoundedBelow( ROL_NINF<Real>(), ValueSet::GREATER_THAN, one, zero );
     ValueSet isBoundedAbove( ROL_INF<Real>(),  ValueSet::LESS_THAN,    one, zero );
@@ -151,7 +153,6 @@ private:
     maskU_ = x.clone(); maskU_->applyBinary(isBoundedAbove,*up_);
 
     pwa_ = x.clone();
-    g_   = g.clone();
 
     if( useLinearDamping_ ) {
       maskL0_ = x.clone();
@@ -178,8 +179,7 @@ public:
                           const Real mu )
     : obj_(obj), bnd_(bnd), lo_(bnd->getLowerBound()), up_(bnd->getUpperBound()),
       useLinearDamping_(useLinearDamping), kappaD_(kappaD), mu_(mu),
-      nfval_(0), ngrad_(0),
-      isValueComputed_(false), isGradientComputed_(false) {
+      nfval_(0), ngrad_(0) {
     initialize(x,g);
   }
 
@@ -189,8 +189,7 @@ public:
                           const Vector<Real>               &g,
                           ParameterList                    &parlist )
     : obj_(obj), bnd_(bnd), lo_(bnd->getLowerBound()), up_(bnd->getUpperBound()),
-      nfval_(0), ngrad_(0),
-      isValueComputed_(false), isGradientComputed_(false) {
+      nfval_(0), ngrad_(0) {
     ParameterList &iplist = parlist.sublist("Step").sublist("Primal Dual Interior Point");
     ParameterList &lblist = iplist.sublist("Barrier Objective");
 
@@ -202,19 +201,23 @@ public:
   }
 
   Real getObjectiveValue(const Vector<Real> &x, Real &tol) {
-    if (!isValueComputed_) {
-      fval_ = obj_->value(x,tol); nfval_++;
-      isValueComputed_ = true;
+    int key(0);
+    Real val(0);
+    bool isComputed = fval_->get(val,key);
+    if (!isComputed) {
+      val = obj_->value(x,tol); nfval_++;
+      fval_->set(val,key);
     }
-    return fval_;
+    return val;
   }
 
   const Ptr<const Vector<Real>> getObjectiveGradient(const Vector<Real> &x, Real &tol) {
-    if (!isGradientComputed_) {
-      obj_->gradient(*g_,x,tol); ngrad_++;
-      isGradientComputed_ = true;
+    int key(0);
+    if (!gradient_->isComputed(key)) {
+      if (gradient_->isNull(key)) gradient_->allocate(x.dual(),key);
+      obj_->gradient(*gradient_->set(key),x,tol); ngrad_++;
     }
-    return g_;
+    return gradient_->get(key);
   }
 
   int getNumberFunctionEvaluations(void) const {
@@ -231,11 +234,8 @@ public:
 
   void update( const Vector<Real> &x, EUpdateType type, int iter = -1 ) {
     obj_->update(x,type,iter);
-    // Need to do something smart here
-    isValueComputed_ = false;
-    isGradientComputed_ = false;
-    //isValueComputed_ = ((flag || (!flag && iter < 0)) ? false : isValueComputed_);
-    //isGradientComputed_ = ((flag || (!flag && iter < 0)) ? false : isGradientComputed_);
+    fval_->objectiveUpdate(type);
+    gradient_->objectiveUpdate(type);
   }
 
   Real value( const Vector<Real> &x, Real &tol ) {
