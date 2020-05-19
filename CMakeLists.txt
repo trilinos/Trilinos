@@ -69,6 +69,9 @@ INCLUDE(${CMAKE_SOURCE_DIR}/ProjectName.cmake)
 # not in an include file :-(
 PROJECT(${PROJECT_NAME} NONE)
 
+## set an env so we know we are in configure
+set(ENV{CMAKE_IS_IN_CONFIGURE_MODE} 1)
+
 #
 # B) Pull in the TriBITS system and execute
 #
