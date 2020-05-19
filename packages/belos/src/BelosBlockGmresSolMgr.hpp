@@ -150,7 +150,7 @@ public:
    *   - "Num Blocks" - a \c int specifying the number of blocks allocated for the Krylov basis. Default: 300
    *   - "Maximum Iterations" - a \c int specifying the maximum number of iterations the underlying solver is allowed to perform. Default: 1000
    *   - "Maximum Restarts" - a \c int specifying the maximum number of restarts the underlying solver is allowed to perform. Default: 20
-   *   - "Orthogonalization" - a \c std::string specifying the desired orthogonalization:  DGKS, ICGS, and IMGS. Default: "DGKS"
+   *   - "Orthogonalization" - a \c std::string specifying the desired orthogonalization:  DGKS, ICGS, and IMGS. Default: "ICGS"
    *   - "Verbosity" - a sum of MsgType specifying the verbosity. Default: Belos::Errors
    *   - "Output Style" - a OutputType specifying the style of output. Default: Belos::General
    *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence. Default: 1e-8
@@ -332,7 +332,7 @@ private:
   static constexpr const char * impResScale_default_ = "Norm of Preconditioned Initial Residual";
   static constexpr const char * expResScale_default_ = "Norm of Initial Residual";
   static constexpr const char * label_default_ = "Belos";
-  static constexpr const char * orthoType_default_ = "DGKS";
+  static constexpr const char * orthoType_default_ = "ICGS";
   static constexpr std::ostream * outputStream_default_ = &std::cout;
 
   // Current solver values.
