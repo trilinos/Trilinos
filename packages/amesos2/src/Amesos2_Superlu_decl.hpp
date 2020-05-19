@@ -57,7 +57,7 @@
 #include "Amesos2_SolverCore.hpp"
 #include "Amesos2_Superlu_FunctionMap.hpp"
 
-#ifdef HAVE_AMESOS2_TRIANGULAR_SOLVES
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
 #include "KokkosKernels_Handle.hpp"
 #endif
 
@@ -262,7 +262,7 @@ private:
     host_mag_array R;
     host_mag_array C;
 
-#ifdef HAVE_AMESOS2_TRIANGULAR_SOLVES
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
     host_int_array parents;
 #endif
 
@@ -303,7 +303,7 @@ private:
   mutable Teuchos::Array<slu_convert_type> convert_bValues_; // copy to SuperLU native array before calling SuperLU
   int ldb_;
 
-#ifdef HAVE_AMESOS2_TRIANGULAR_SOLVES
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
   typedef Kokkos::DefaultExecutionSpace DeviceExecSpaceType;
 
   #ifdef KOKKOS_ENABLE_CUDA

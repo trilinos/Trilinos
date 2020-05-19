@@ -42,7 +42,7 @@
 //@HEADER
 */
 
-// Note this file is essentially a copy of KokkosSparse_sptrsv.hpp and may be
+// Note this file is essentially a copy of KokkosSparse_sptrsv_superlu.hpp and may be
 // temporary. It was added because Amesos2 currently namespaces the superlu
 // includes. The only change to this file is to add the SLU:: namespace prefix.
 // TODO: Make necessary modifications so we don't duplicate this code.

@@ -60,9 +60,9 @@
 #include "Amesos2_SolverCore_def.hpp"
 #include "Amesos2_Superlu_decl.hpp"
 
-#ifdef HAVE_AMESOS2_TRIANGULAR_SOLVES
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
 #include "Amesos2_Superlu_TRSV.hpp"
-#endif // HAVE_AMESOS2_TRIANGULAR_SOLVES
+#endif
 
 namespace Amesos2 {
 
@@ -394,7 +394,7 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
     // In general we may want to write directly to the x space without a copy.
     // So we 'get' x which may be a direct view assignment to the MV.
     if(use_triangular_solves_) { // to device
-#ifdef HAVE_AMESOS2_TRIANGULAR_SOLVES
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
       Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
         device_solve_array_t>::do_get(X, device_xValues_,
             as<size_t>(ld_rhs),
@@ -429,7 +429,7 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
   // in above get_1d_copy_helper_kokkos_view - whether is was copy or assign.
   if(data_.equed != 'N') {
     if(use_triangular_solves_) { // to device
-#ifdef HAVE_AMESOS2_TRIANGULAR_SOLVES
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
       device_solve_array_t copyB(Kokkos::ViewAllocateWithoutInitializing("copyB"),
         device_bValues_.extent(0), device_bValues_.extent(1));
       Kokkos::deep_copy(copyB, device_bValues_);
@@ -547,7 +547,7 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
 #endif
 
   if(use_triangular_solves_) { // to device
-#ifdef HAVE_AMESOS2_TRIANGULAR_SOLVES
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
     Util::put_1d_data_helper_kokkos_view<
       MultiVecAdapter<Vector>,device_solve_array_t>::do_put(X, device_xValues_,
           as<size_t>(ld_rhs),
@@ -664,9 +664,9 @@ Superlu<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Parameter
   use_triangular_solves_ = parameterList->get<bool>("Enable_KokkosKernels_TriangularSolves", false);
 
   if(use_triangular_solves_) {
-#ifndef HAVE_AMESOS2_TRIANGULAR_SOLVES
+#if not defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) || not defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
-      "Calling for triangular solves but Amesos2_ENABLE_TRIANGULAR_SOLVES was not configured." );
+      "Calling for triangular solves but KokkosKernels_ENABLE_SUPERNODAL_SPTRSV and KokkosKernels_ENABLE_TPL_SUPERLU were not configured." );
 #endif
   }
 }
@@ -880,7 +880,7 @@ template <class Matrix, class Vector>
 void
 Superlu<Matrix,Vector>::triangular_solve_factor()
 {
-#ifdef HAVE_AMESOS2_TRIANGULAR_SOLVES
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
   size_t ld_rhs = this->matrixA_->getGlobalNumRows();
 
   // convert etree to parents
@@ -951,7 +951,7 @@ template <class Matrix, class Vector>
 void
 Superlu<Matrix,Vector>::triangular_solve() const
 {
-#ifdef HAVE_AMESOS2_TRIANGULAR_SOLVES
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
   size_t ld_rhs = device_xValues_.extent(0);
   size_t nrhs = device_xValues_.extent(1);
 
