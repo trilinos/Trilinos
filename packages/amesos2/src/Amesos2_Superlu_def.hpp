@@ -61,7 +61,13 @@
 #include "Amesos2_Superlu_decl.hpp"
 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
-#include "Amesos2_Superlu_TRSV.hpp"
+// TODO: This 'using namespace SLU' is not a good thing.
+// It was added because kernels does not namespace SuperLU but Amesos2 does.
+// Declaring the namespace SLU allows us to reuse that file without duplication.
+// We need to determine a uniform system to avoid this this but for now, at least
+// this issue is only present when TRSV is enabled.
+using namespace SLU;
+#include "KokkosSparse_sptrsv_superlu.hpp"
 #endif
 
 namespace Amesos2 {
