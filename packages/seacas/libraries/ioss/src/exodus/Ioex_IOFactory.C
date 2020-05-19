@@ -33,7 +33,7 @@
 #include <exodus/Ioex_IOFactory.h> // for Ioex IOFactory
 #include <exodus/Ioex_DatabaseIO.h> // for Ioex DatabaseIO
 
-#if defined(SEACAS_HAVE_MPI)
+#if defined(PARALLEL_AWARE_EXODUS)
 #include <exodus/Ioex_ParallelDatabaseIO.h> // for Ioex ParallelDatabaseIO
 #endif
 #include <tokenize.h>
@@ -54,7 +54,7 @@ namespace Ioss {
   class DatabaseIO;
 } // namespace Ioss
 
-#if defined(SEACAS_HAVE_MPI)
+#if defined(PARALLEL_AWARE_EXODUS)
 namespace {
   std::string check_decomposition_property(const Ioss::PropertyManager &properties,
                                            Ioss::DatabaseUsage          db_usage);
@@ -76,7 +76,7 @@ namespace Ioex {
     Ioss::IOFactory::alias("exodus", "exodusii");
     Ioss::IOFactory::alias("exodus", "exodusII");
     Ioss::IOFactory::alias("exodus", "genesis");
-#if defined(SEACAS_HAVE_MPI)
+#if defined(PARALLEL_AWARE_EXODUS)
     Ioss::IOFactory::alias("exodus", "dof_exodus");
     Ioss::IOFactory::alias("exodus", "dof");
 #endif
@@ -86,7 +86,7 @@ namespace Ioex {
                                        MPI_Comm                     communicator,
                                        const Ioss::PropertyManager &properties) const
   {
-#if defined(SEACAS_HAVE_MPI)
+#if defined(PARALLEL_AWARE_EXODUS)
     // The "exodus" and "parallel_exodus" databases can both be accessed
     // from this factory.  The "parallel_exodus" is returned only if the following
     // are true:
@@ -142,7 +142,7 @@ namespace Ioex {
   }
 } // namespace Ioex
 
-#if defined(SEACAS_HAVE_MPI)
+#if defined(PARALLEL_AWARE_EXODUS)
 namespace {
   std::string check_decomposition_property(const Ioss::PropertyManager &properties,
                                            Ioss::DatabaseUsage          db_usage)
