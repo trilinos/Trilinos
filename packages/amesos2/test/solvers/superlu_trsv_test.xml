@@ -54,7 +54,7 @@
       <ParameterList name="solver_params">
 	<Parameter name="ColPerm" type="string" value="COLAMD"/>
 	<Parameter name="IterRefine" type="string" value="NOREFINE"/>
-        <Parameter name="TriangularSolves" type="bool" value="true"/>
+        <Parameter name="Enable_KokkosKernels_TriangularSolves" type="bool" value="true"/>
         <Parameter name="Equil" type="bool" value="false"/>
       </ParameterList>
     </ParameterList> <!-- end SuperLU -->
@@ -123,7 +123,7 @@
       </ParameterList>
 
       <ParameterList name="solver_params">
-        <Parameter name="TriangularSolves" type="bool" value="true"/>
+        <Parameter name="Enable_KokkosKernels_TriangularSolves" type="bool" value="true"/>
         <Parameter name="Equil" type="bool" value="false"/>
       </ParameterList>
 

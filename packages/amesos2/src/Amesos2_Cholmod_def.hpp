@@ -338,7 +338,7 @@ Cholmod<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Parameter
   RCP<const Teuchos::ParameterList> valid_params = getValidParameters_impl();
 
   is_contiguous_ = parameterList->get<bool>("IsContiguous", true);
-  use_triangular_solves_ = parameterList->get<bool>("TriangularSolves", false);
+  use_triangular_solves_ = parameterList->get<bool>("Enable_KokkosKernels_TriangularSolves", false);
 
   if(use_triangular_solves_) {
 #ifndef HAVE_AMESOS2_TRIANGULAR_SOLVES
@@ -409,7 +409,7 @@ Cholmod<Matrix,Vector>::getValidParameters_impl() const
 
     pl->set("useGPU", -1, "1: Use GPU is 1, 0: Do not use GPU, -1: ENV CHOLMOD_USE_GPU set GPU usage.");
 
-    pl->set("TriangularSolves", false, "Whether to use triangular solves.");
+    pl->set("Enable_KokkosKernels_TriangularSolves", false, "Whether to use triangular solves.");
 
     pl->set("IsContiguous", true, "Whether GIDs contiguous");
 
