@@ -99,6 +99,7 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   ShyLUbasker->Options.amd_dom       = BASKER_TRUE;
   ShyLUbasker->Options.transpose     = BASKER_FALSE;
   ShyLUbasker->Options.verbose_matrix_out = BASKER_FALSE;
+  ShyLUbasker->Options.use_sequential_diag_facto = BASKER_FALSE;
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
   num_threads = Kokkos::OpenMP::max_hardware_threads();
 #else
@@ -515,7 +516,10 @@ ShyLUBasker<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Param
     {
       ShyLUbasker->Options.transpose = parameterList->get<bool>("transpose");
     }
-
+  if(parameterList->isParameter("use_sequential_diag_facto"))
+    {
+      ShyLUbasker->Options.use_sequential_diag_facto = parameterList->get<bool>("use_sequential_diag_facto");
+    }
 }
 
 template <class Matrix, class Vector>
@@ -557,6 +561,8 @@ ShyLUBasker<Matrix,Vector>::getValidParameters_impl() const
 	      "Use CAMD on ND blocks (Not Supported)");
       pl->set("transpose", false,
 	      "Solve the transpose A");
+      pl->set("use_sequential_diag_facto", false,
+	      "Use sequential algorithm to factor each diagonal block");
       valid_params = pl;
     }
   return valid_params;

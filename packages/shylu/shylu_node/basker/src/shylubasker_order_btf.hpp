@@ -34,7 +34,6 @@ namespace BaskerNS
 			                        ((double)1/num_threads) + 
                               ((double)BASKER_BTF_IMBALANCE)) );
 
-
     #ifdef BASKER_DEBUG_ORDER_BTF
     printf("Total schedul size: %ld \n", (long)total_work_estimate);
     printf("Break schedule size: %ld \n", (long)break_size);
@@ -625,7 +624,7 @@ namespace BaskerNS
       //  (blk_idx > 1))
 
       //Continue to be in btf
-      if( (blk_work < break_size) && (blk_idx > 1) )
+      if( (Options.use_sequential_diag_facto || blk_work < break_size) && (blk_idx > 1) )
       {
       #ifdef BASKER_DEBUG_ORDER_BTF
         printf("Basker: continue with fine structure btf blocks\n");
@@ -639,13 +638,16 @@ namespace BaskerNS
       else if( blk_work >= break_size )
       {
       #ifdef BASKER_DEBUG_ORDER_BTF
-        printf("Basker: break due to size\n");
+        printf("Basker: break due to size (%d > %d)\n",blk_work,break_size);
       #endif
         move_fwd = BASKER_FALSE;
       }
       //break due to end i.e. no 'large' BTF_A block for ND; only fine BTF structure
       else if(blk_idx == 1)
       {
+      #ifdef BASKER_DEBUG_ORDER_BTF
+        printf("Basker: last block\n");
+      #endif
         //printf("break last blk\n");
         blk_idx = 0;
         t_size = t_size + blk_size;
