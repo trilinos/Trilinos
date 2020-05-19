@@ -83,8 +83,8 @@ public:
 
       ---
   */
-  NewOptimizationSolver( Ptr<NewOptimizationProblem<Real>> &opt,
-                         ParameterList                     &list );
+  NewOptimizationSolver( const Ptr<NewOptimizationProblem<Real>> &opt,
+                         ParameterList                           &list );
 
   /** \brief Returns iteration history as a vector of strings.
 

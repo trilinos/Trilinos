@@ -186,8 +186,6 @@ int main(int argc, char* argv[]) {
     // Build optimization problem
     ROL::Ptr<ROL::StochasticProblem<RealT>>
       problem = ROL::makePtr<ROL::StochasticProblem<RealT>>(loss,x);
-    ROL::Ptr<ROL::NewOptimizationProblem<RealT>>
-      newprob = ROL::staticPtrCast<ROL::NewOptimizationProblem<RealT>>(problem);
     problem->addLinearConstraint("Budget",budget,mul_budget);
     problem->addLinearConstraint("Loss",losscon,mul_losscon,bnd_losscon);
 
@@ -209,7 +207,7 @@ int main(int argc, char* argv[]) {
     problem->finalize(false,true,*outStream);
     problem->check(true,*outStream);
     ROL::Ptr<ROL::NewOptimizationSolver<RealT>>
-      solver = ROL::makePtr<ROL::NewOptimizationSolver<RealT>>(newprob,*parlist);
+      solver = ROL::makePtr<ROL::NewOptimizationSolver<RealT>>(problem,*parlist);
     solver->solve(*outStream);
     errorFlag += (solver->getAlgorithmState()->statusFlag == ROL::EXITSTATUS_CONVERGED ? 0 : 1);
     printSolution(*x->getVector(),*outStream);
@@ -223,12 +221,12 @@ int main(int argc, char* argv[]) {
     problem->makeLinearConstraintStochastic("Loss",conlist,sampler);
     problem->finalize(false,true,*outStream);
     problem->check(true,*outStream);
-    solver = ROL::makePtr<ROL::NewOptimizationSolver<RealT>>(newprob,*parlist);
+    solver = ROL::makePtr<ROL::NewOptimizationSolver<RealT>>(problem,*parlist);
     solver->solve(*outStream);
     errorFlag += (solver->getAlgorithmState()->statusFlag == ROL::EXITSTATUS_CONVERGED ? 0 : 1);
     printSolution(*x->getVector(),*outStream);
     xm->axpy(-1.0,*x);
-    errorFlag += (xm->norm() > std::sqrt(ROL::ROL_EPSILON<RealT>()) ? 1 : 0);
+    errorFlag += (xm->norm() > 100.0*std::sqrt(ROL::ROL_EPSILON<RealT>()) ? 1 : 0);
     sol.push_back({"Mean Value",*x->getVector()});
 
     // bPOE constrained portfolio selection
@@ -246,7 +244,7 @@ int main(int argc, char* argv[]) {
     problem->makeConstraintStochastic("Loss",conlist,sampler);
     problem->finalize(false,true,*outStream);
     problem->check(true,*outStream);
-    solver = ROL::makePtr<ROL::NewOptimizationSolver<RealT>>(newprob,*parlist);
+    solver = ROL::makePtr<ROL::NewOptimizationSolver<RealT>>(problem,*parlist);
     solver->solve(*outStream);
     errorFlag += (solver->getAlgorithmState()->statusFlag == ROL::EXITSTATUS_CONVERGED ? 0 : 1);
     printSolution(*x->getVector(),*outStream);

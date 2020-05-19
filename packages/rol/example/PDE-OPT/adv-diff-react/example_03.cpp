@@ -241,9 +241,7 @@ int main(int argc, char *argv[]) {
         opt->finalize(false,true,*outStream);
         if (checkDeriv) opt->check(true,*outStream);
         // Solve optimization problem
-        ROL::Ptr<ROL::NewOptimizationProblem<RealT>>
-          optnew = ROL::dynamicPtrCast<ROL::NewOptimizationProblem<RealT>>(opt);
-        solver = ROL::makePtr<ROL::NewOptimizationSolver<RealT>>(optnew,*parlist);
+        solver = ROL::makePtr<ROL::NewOptimizationSolver<RealT>>(opt,*parlist);
         std::clock_t timer = std::clock();
         solver->solve(*outStream);
         *outStream << "Optimization time: "

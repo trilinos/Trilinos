@@ -189,6 +189,7 @@ int main(int argc, char *argv[]) {
       parlist->sublist("Step").set("Type","Trust Region");
       optProb = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(robj, zp);
     }
+    optProb->finalize(false,true,*outStream);
     ROL::NewOptimizationSolver<RealT> optSolver(optProb, *parlist);
     optSolver.solve(*outStream);
 

@@ -331,9 +331,7 @@ int main(int argc, char *argv[]) {
 
       // Solve optimization problem
       plvec[i].sublist("Step").set("Type","Trust Region");
-      ROL::Ptr<ROL::NewOptimizationProblem<RealT>>
-        optnew = ROL::dynamicPtrCast<ROL::NewOptimizationProblem<RealT>>(opt);
-      solver = ROL::makePtr<ROL::NewOptimizationSolver<RealT>>(optnew,plvec[i]);
+      solver = ROL::makePtr<ROL::NewOptimizationSolver<RealT>>(opt,plvec[i]);
       std::clock_t timer = std::clock();
       solver->solve(*outStream);
       try                       { stat = opt->getSolutionStatistic(); }

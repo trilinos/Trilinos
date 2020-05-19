@@ -47,8 +47,8 @@
 namespace ROL {
 
 template<typename Real>
-NewOptimizationSolver<Real>::NewOptimizationSolver( Ptr<NewOptimizationProblem<Real>> &opt,
-                                                    ParameterList                     &list )
+NewOptimizationSolver<Real>::NewOptimizationSolver( const Ptr<NewOptimizationProblem<Real>> &opt,
+                                                    ParameterList                           &list )
   : opt_(opt), problemType_(opt_->getProblemType()) {
   switch (problemType_) {
     case TYPE_U:  algoU_ = AlgorithmUFactory<Real>(list); break;

@@ -286,8 +286,6 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     ROL::Ptr<ROL::StochasticProblem<RealT>>
       opt = ROL::Ptr<ROL::StochasticProblem<RealT>>(objReduced,zp);
-    ROL::Ptr<ROL::NewOptimizationProblem<RealT>>
-      newopt = ROL::dynamicPtrCast<ROL::NewOptimizationProblem<RealT>>(opt);
     opt->addBoundConstraint(bnd);
     parlist->sublist("SOL").set("Initial Statistic", static_cast<RealT>(1));
     opt->makeObjectiveStochastic(*parlist,sampler);
@@ -339,7 +337,7 @@ int main(int argc, char *argv[]) {
     /***************** SOLVE OPTIMIZATION PROBLEM ****************************/
     /*************************************************************************/
     parlist->sublist("Step").set("Type","Trust Region");
-    ROL::NewOptimizationSolver<RealT> solver(newopt,*parlist);
+    ROL::NewOptimizationSolver<RealT> solver(opt,*parlist);
     zp->set(*rzp);
     std::clock_t timer = std::clock();
     solver.solve(*outStream);

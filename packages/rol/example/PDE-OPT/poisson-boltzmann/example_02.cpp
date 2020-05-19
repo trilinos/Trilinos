@@ -332,10 +332,8 @@ int main(int argc, char *argv[]) {
     /***************** SOLVE OPTIMIZATION PROBLEM ****************************/
     /*************************************************************************/
     parlist->sublist("Step").set("Type","Trust Region");
-    ROL::Ptr<ROL::NewOptimizationProblem<RealT>>
-      optnew = ROL::dynamicPtrCast<ROL::NewOptimizationProblem<RealT>>(opt);
     opt->finalize(false,true,*outStream);
-    ROL::NewOptimizationSolver<RealT> solver(optnew,*parlist);
+    ROL::NewOptimizationSolver<RealT> solver(opt,*parlist);
     zp->set(*rzp);
     std::clock_t timer = std::clock();
     solver.solve(*outStream);

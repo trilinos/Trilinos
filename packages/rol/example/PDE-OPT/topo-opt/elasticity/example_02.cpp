@@ -398,9 +398,7 @@ int main(int argc, char *argv[]) {
 
     // Solve optimization problem.
     Teuchos::Time algoTimer("Algorithm Time", true);
-    ROL::Ptr<ROL::NewOptimizationProblem<RealT>>
-      probnew = ROL::dynamicPtrCast<ROL::NewOptimizationProblem<RealT>>(prob);
-    ROL::NewOptimizationSolver<RealT> solver(probnew,*parlist);
+    ROL::NewOptimizationSolver<RealT> solver(prob,*parlist);
     solver.solve(*outStream);
     algoTimer.stop();
     *outStream << "Total optimization time = " << algoTimer.totalElapsedTime() << " seconds.\n";
