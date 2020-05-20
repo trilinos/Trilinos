@@ -56,7 +56,7 @@ KelleySachsAlgorithm_B<Real>::KelleySachsAlgorithm_B(ParameterList &list,
   ParameterList &trlist = list.sublist("Step").sublist("Trust Region");
   // Trust-Region Parameters
   state_->searchSize = trlist.get("Initial Radius",            -1.0);
-  delMax_ = trlist.get("Maximum Radius",                       1.e8);
+  delMax_ = trlist.get("Maximum Radius",                       ROL_INF<Real>());
   eta0_   = trlist.get("Step Acceptance Threshold",            0.05);
   eta1_   = trlist.get("Radius Shrinking Threshold",           0.05);
   eta2_   = trlist.get("Radius Growing Threshold",             0.9);

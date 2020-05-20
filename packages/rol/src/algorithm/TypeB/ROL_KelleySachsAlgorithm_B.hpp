@@ -62,7 +62,7 @@ private:
   Ptr<TrustRegionModel_U<Real>> model_;  ///< Container for trust-region model
 
   // TRUST REGION PARAMETERS
-  Real delMax_; ///< Maximum trust-region radius (default: 1e8)
+  Real delMax_; ///< Maximum trust-region radius (default: ROL_INF)
   Real eta0_;   ///< Step acceptance threshold (default: 0.05)
   Real eta1_;   ///< Radius decrease threshold (default: 0.05)
   Real eta2_;   ///< Radius increase threshold (default: 0.9)

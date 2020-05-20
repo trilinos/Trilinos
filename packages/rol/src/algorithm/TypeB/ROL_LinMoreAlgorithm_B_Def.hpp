@@ -56,7 +56,7 @@ LinMoreAlgorithm_B<Real>::LinMoreAlgorithm_B(ParameterList &list,
   ParameterList &trlist = list.sublist("Step").sublist("Trust Region");
   // Trust-Region Parameters
   state_->searchSize = trlist.get("Initial Radius",            -1.0);
-  delMax_    = trlist.get("Maximum Radius",                       1.e8);
+  delMax_    = trlist.get("Maximum Radius",                       ROL_INF<Real>());
   eta0_      = trlist.get("Step Acceptance Threshold",            0.05);
   eta1_      = trlist.get("Radius Shrinking Threshold",           0.05);
   eta2_      = trlist.get("Radius Growing Threshold",             0.9);
@@ -301,7 +301,7 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
       state_->value = ftrial;
       obj.update(x,UPDATE_ACCEPT,state_->iter);
       // Increase trust-region radius
-      if (rho >= eta2_) state_->searchSize *= gamma2_;
+      if (rho >= eta2_) state_->searchSize = std::min(gamma2_*state_->searchSize, delMax_);
       // Compute gradient at new iterate
       dwa1->set(*state_->gradientVec);
       obj.gradient(*state_->gradientVec,x,tol0);

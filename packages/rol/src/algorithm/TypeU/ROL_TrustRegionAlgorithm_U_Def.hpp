@@ -60,7 +60,7 @@ TrustRegionAlgorithm_U<Real>::TrustRegionAlgorithm_U( ParameterList &parlist,
   ParameterList &slist = parlist.sublist("Step");
   ParameterList &list  = slist.sublist("Trust Region");
   state_->searchSize = list.get("Initial Radius",            static_cast<Real>(-1));
-  delMax_ = list.get("Maximum Radius",                       static_cast<Real>(1.e8));
+  delMax_ = list.get("Maximum Radius",                       ROL_INF<Real>());
   eta0_   = list.get("Step Acceptance Threshold",            static_cast<Real>(0.05));
   eta1_   = list.get("Radius Shrinking Threshold",           static_cast<Real>(0.05));
   eta2_   = list.get("Radius Growing Threshold",             static_cast<Real>(0.9));
@@ -233,7 +233,7 @@ std::vector<std::string> TrustRegionAlgorithm_U<Real>::run( Vector<Real>       &
       state_->value = ftrial;
       obj.update(x,UPDATE_ACCEPT,state_->iter);
       // Increase trust-region radius
-      if (rho >= eta2_) state_->searchSize *= gamma2_;
+      if (rho >= eta2_) state_->searchSize = std::min(gamma2_*state_->searchSize, delMax_);
       // Compute gradient at new iterate
       gvec->set(*state_->gradientVec);
       computeGradient(x,obj);
