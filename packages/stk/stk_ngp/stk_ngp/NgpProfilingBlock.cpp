@@ -13,7 +13,7 @@
 // profiling interface at configure time.  There's no good reason for
 // this as far as I know, but it's possible.
 #if defined(KOKKOS_ENABLE_PROFILING)
-#include <impl/Kokkos_Profiling_Interface.hpp>
+#include <impl/Kokkos_Profiling.hpp>
 #endif // defined(KOKKOS_ENABLE_PROFILING)
 
 namespace ngp
