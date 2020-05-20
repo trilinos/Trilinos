@@ -45,10 +45,11 @@
 #define ROL_PDEOPT_BRANCHHELPER_PEBBL_H
 
 #include "ROL_StdBranchHelper_PEBBL.hpp"
+#include "ROL_TpetraBranchHelper_PEBBL.hpp"
 #include "transform.hpp"
 
 template <class Real>
-class PDEOPT_BranchHelper_PEBBL : public ROL::StdBranchHelper_PEBBL<Real> {
+class Std_AdvDiff_BranchHelper_PEBBL : public ROL::StdBranchHelper_PEBBL<Real> {
 private:
   ROL::Ptr<const ROL::StdVector<Real>> getParameter(const ROL::Vector<Real> &x) const {
     try {
@@ -60,10 +61,10 @@ private:
   }
 
 public:
-  PDEOPT_BranchHelper_PEBBL(const Real tol = 1e-6, const int method = 0)
+  Std_AdvDiff_BranchHelper_PEBBL(const Real tol = 1e-6, const int method = 0)
     : ROL::StdBranchHelper_PEBBL<Real>(tol, method) {}
 
-  PDEOPT_BranchHelper_PEBBL(const PDEOPT_BranchHelper_PEBBL &BH)
+  Std_AdvDiff_BranchHelper_PEBBL(const Std_AdvDiff_BranchHelper_PEBBL &BH)
     : ROL::StdBranchHelper_PEBBL<Real>(BH) {}
 
   //int getMyIndex(const ROL::Vector<Real> &x) const {
@@ -79,9 +80,46 @@ public:
   }
 
   ROL::Ptr<ROL::Transform_PEBBL<Real>> createTransform(void) const {
-    return ROL::makePtr<PDEOPT_Transform_PEBBL<Real>>();
+    return ROL::makePtr<Std_AdvDiff_Transform_PEBBL<Real>>();
   }
 
-}; // class PDEOPT_BranchHelper_PEBBL
+}; // class Std_AdvDiff_BranchHelper_PEBBL
+
+template <class Real>
+class Tpetra_AdvDiff_BranchHelper_PEBBL : public ROL::TpetraBranchHelper_PEBBL<Real> {
+private:
+  ROL::Ptr<const ROL::TpetraMultiVector<Real>> getData(const ROL::Vector<Real> &x) const {
+    try {
+      return ROL::makePtrFromRef(dynamic_cast<const ROL::TpetraMultiVector<Real>&>(x));
+    }
+    catch (std::exception &e) {
+      return dynamic_cast<const PDE_OptVector<Real>&>(x).getField();
+    }
+  }
+
+public:
+  Tpetra_AdvDiff_BranchHelper_PEBBL(const Real tol = 1e-6, const int method = 0)
+    : ROL::TpetraBranchHelper_PEBBL<Real>(tol, method) {}
+
+  Tpetra_AdvDiff_BranchHelper_PEBBL(const Tpetra_AdvDiff_BranchHelper_PEBBL &BH)
+    : ROL::TpetraBranchHelper_PEBBL<Real>(BH) {}
+
+  //int getMyIndex(const ROL::Vector<Real> &x) const {
+  int getMyIndex(const ROL::Vector<Real> &x, const ROL::Vector<Real> &g) const {
+    // Use Std implementation
+    return ROL::TpetraBranchHelper_PEBBL<Real>::getMyIndex(*getData(x),*getData(g));
+  }
+
+  void getMyNumFrac(int &nfrac, Real &integralityMeasure,
+                    const ROL::Vector<Real> &x) const {
+    // Use Std implementation
+    ROL::TpetraBranchHelper_PEBBL<Real>::getMyNumFrac(nfrac, integralityMeasure, *getData(x));
+  }
+
+  ROL::Ptr<ROL::Transform_PEBBL<Real>> createTransform(void) const {
+    return ROL::makePtr<Tpetra_AdvDiff_Transform_PEBBL<Real>>();
+  }
+
+}; // class Tpetra_AdvDiff_BranchHelper_PEBBL
 
 #endif

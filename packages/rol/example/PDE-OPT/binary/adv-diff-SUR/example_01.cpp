@@ -54,7 +54,7 @@
 
 #include "ROL_Stream.hpp"
 #include "ROL_ParameterList.hpp"
-#include "ROL_OptimizationSolver.hpp"
+#include "ROL_NewOptimizationSolver.hpp"
 #include "opfactory.hpp"
 #include "hilbert.hpp"
 
@@ -86,8 +86,8 @@ int main(int argc, char *argv[]) {
     /***************** BUILD OPTIMIZATION PROBLEM ****************************/
     /*************************************************************************/
     ROL::Ptr<BinaryAdvDiffFactory<RealT>> factory;
-    ROL::Ptr<ROL::OptimizationProblem<RealT>> problem;
-    ROL::Ptr<ROL::OptimizationSolver<RealT>> solver;
+    ROL::Ptr<ROL::OptimizationProblem_PEBBL<RealT>> problem;
+    ROL::Ptr<ROL::NewOptimizationSolver<RealT>> solver;
     ROL::Ptr<ROL::Vector<RealT>> z, omega, uomega, uz, du;
     RealT err(0);
     int order = parlist->sublist("Problem").get("Hilbert Curve Order",6);
@@ -101,10 +101,11 @@ int main(int argc, char *argv[]) {
       /***************** SOLVE OPTIMIZATION PROBLEM ****************************/
       /*************************************************************************/
       problem = factory->build();
-      if (checkDeriv) problem->check(*outStream);
-      solver = ROL::makePtr<ROL::OptimizationSolver<RealT>>(*problem, *parlist);
+      problem->finalize(false,true,*outStream);
+      if (checkDeriv) problem->check(true,*outStream);
+      solver = ROL::makePtr<ROL::NewOptimizationSolver<RealT>>(problem, *parlist);
       solver->solve(*outStream);
-      z = problem->getSolutionVector();
+      z = problem->getPrimalOptimizationVector();
       factory->getState(uz,z);
 
       // Sum Up Rounding

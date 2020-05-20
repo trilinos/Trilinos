@@ -45,19 +45,19 @@
 #define OPFACTORY_BINARY_ELASTICITY_HPP
 
 #include "ROL_Bounds.hpp"
-#include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_OptimizationProblemFactory.hpp"
 
-#include "../../TOOLS/pdeconstraint.hpp"
-#include "../../TOOLS/pdeobjective.hpp"
 #include "../../TOOLS/pdevector.hpp"
 #include "../../TOOLS/meshreader.hpp"
-#include "src/obj_compliance.hpp"
-#include "src/con_volume.hpp"
 #include "src/mesh_topo-opt.hpp"
 #include "src/pde_elasticity.hpp"
-#include "src/bilinearpdeconstraint.hpp"
-#include "src/femdata.hpp"
+#include "src/pde_filter.hpp"
+#include "src/pde_selection.hpp"
+#include "src/obj_volume.hpp"
+#include "src/compliance_robj.hpp"
+#include "src/filtered_compliance_robj.hpp"
+#include "src/con_selection.hpp"
+#include "src/volume_con.hpp"
 
 template<class Real>
 class ElasticityFactory : public ROL::OptimizationProblemFactory<Real> {
@@ -66,213 +66,121 @@ private:
   ROL::Ptr<const Teuchos::Comm<int>> comm_;
   ROL::Ptr<std::ostream>             os_;
 
-  ROL::Ptr<MeshManager<Real>>             mesh_;
-  ROL::Ptr<PDE_Elasticity<Real>>          pde_;
-  ROL::Ptr<Bilinear_PDE_Constraint<Real>> con_;
-  ROL::Ptr<Assembler<Real>>               assembler_;
-  ROL::Ptr<FEM_Data<Real>>                fem_;
-  ROL::Ptr<ROL::Vector<Real>>             u_, z_, p_, r_;
+  ROL::Ptr<MeshManager<Real>>         mesh_;
+  ROL::Ptr<PDE_Elasticity<Real>>      pde_;
+  ROL::Ptr<MultiMat_PDE_Filter<Real>> filter_;
+  bool useFilter_;
 
-  Real cmpScaling_;
-  bool storage_;
-  int M_, N_, T_, dim_, probDim_;
+  ROL::Ptr<PDE_Selection<Real>>        spde_;
+  ROL::Ptr<Selection_Constraint<Real>> scon_;
+  ROL::Ptr<Assembler<Real>>            sassembler_;
+  ROL::Ptr<ROL::Vector<Real>>          smul_;
+  ROL::Ptr<ROL::Vector<Real>>          sup_;
+  ROL::Ptr<ROL::BoundConstraint<Real>> sbnd_;
+
+  ROL::Ptr<QoI_Weight<Real>>           vqoi_;
+  ROL::Ptr<Volume_Constraint<Real>>    vcon_;
+  ROL::Ptr<ROL::Vector<Real>>          vmul_;
+  ROL::Ptr<ROL::Vector<Real>>          vup_;
+  ROL::Ptr<ROL::BoundConstraint<Real>> vbnd_;
+
+  bool useIneq_;
+
+  ROL::Ptr<ROL::Vector<Real>> z_, zlo_, zup_;
+  ROL::Ptr<ROL::Bounds<Real>> bnd_;
 
 public:
   ElasticityFactory(ROL::ParameterList                 &pl,
               const ROL::Ptr<const Teuchos::Comm<int>> &comm,
               const ROL::Ptr<std::ostream>             &os)
     : pl_(pl), comm_(comm), os_(os) {
-    std::vector<Real> ym = ROL::getArrayFromStringParameter<Real>(pl.sublist("Problem"), "Young's Modulus");
-    probDim_    = pl.sublist("Problem").get("Problem Dimension", 2);
-    cmpScaling_ = pl.sublist("Problem").get("Compliance Scaling", 1e0);
-    storage_    = pl.sublist("Problem").get("Use Storage",true);
-    M_          = pl.sublist("Problem").get("Number of Horizontal Cells",10);
-    N_          = pl.sublist("Problem").get("Number of Vertical Cells",20);
-    T_          = ym.size();
-    dim_        = M_*N_*T_;
+    // Elasticity PDE
+    int probDim = pl_.sublist("Problem").get("Problem Dimension",2);
+    TEUCHOS_TEST_FOR_EXCEPTION(probDim<2||probDim>3, std::invalid_argument,
+      ">>> PDE-OPT/binary/elasticity/example_01.cpp: Problem dim is not 2 or 3!");
+    if (probDim == 2)      mesh_ = ROL::makePtr<MeshManager_TopoOpt<Real>>(pl_);
+    else if (probDim == 3) mesh_ = ROL::makePtr<MeshReader<Real>>(pl_);
+    pde_ = ROL::makePtr<PDE_Elasticity<Real>>(pl_);
 
-    if (probDim_ == 2) {
-      mesh_ = ROL::makePtr<MeshManager_TopoOpt<Real>>(pl_);
-    } else if (probDim_ == 3) {
-      mesh_ = ROL::makePtr<MeshReader<Real>>(pl_);
+    useFilter_ = pl.sublist("Problem").get("Use Filter",true);
+    if (useFilter_) {
+      filter_ = ROL::makePtr<MultiMat_PDE_Filter<Real>>(pl_);
+      pde_->setDensityFields(filter_->getFields());
     }
-    else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
-        ">>> PDE-OPT/binary/elasticity/example_01.cpp: Problem dim is not 2 or 3!");
+
+    // Selection constraint
+    spde_ = ROL::makePtr<PDE_Selection<Real>>(pl_);
+    scon_ = ROL::makePtr<Selection_Constraint<Real>>(spde_, mesh_, comm_, pl_, *os_);
+    sassembler_ = scon_->getAssembler();
+    smul_ = ROL::makePtr<PDE_DualSimVector<Real>>(sassembler_->createStateVector(),spde_,sassembler_,pl_);
+    sup_  = smul_->dual().clone(); sup_->setScalar(static_cast<Real>(0));
+    sbnd_ = ROL::makePtr<ROL::Bounds<Real>>(*sup_,false);
+    useIneq_ = pl_.sublist("Problem").get("Use Inequality", false);
+
+    // Create density vector
+    z_ = ROL::makePtr<PDE_PrimalOptVector<Real>>(sassembler_->createControlVector(),spde_,sassembler_,pl_);
+    z_->setScalar(static_cast<Real>(1));
+    bool inDens = pl_.sublist("Problem").get("Input Density",false);
+    if (inDens) {
+      std::string inDensName = pl_.sublist("Problem").get("Input Density Name","density.txt");
+      ROL::Ptr<Tpetra::MultiVector<>> zdata = ROL::dynamicPtrCast<ROL::TpetraMultiVector<Real>>(z_)->getVector();
+      sassembler_->inputTpetraVector(zdata, inDensName);
     }
-    pde_       = ROL::makePtr<PDE_Elasticity<Real>>(pl_);
-    fem_       = ROL::makePtr<FEM_Data<Real>>(pde_,mesh_,comm_,pl_,*os_);
-    assembler_ = fem_->getAssembler();
+
+    // Volume constraint
+    vqoi_ = ROL::makePtr<QoI_Weight<Real>>(spde_->getDensityFE(), spde_->getDensityFieldInfo(), pl_);
+    vcon_ = ROL::makePtr<Volume_Constraint<Real>>(vqoi_,sassembler_,z_);
+    vmul_ = ROL::makePtr<ROL::SingletonVector<Real>>();
+    vup_  = vmul_->dual().clone(); vup_->setScalar(static_cast<Real>(0));
+    vbnd_ = ROL::makePtr<ROL::Bounds<Real>>(*vup_,false);
+
+    // Density bound vectors
+    zlo_ = z_->clone(); zlo_->setScalar(static_cast<Real>(0));
+    zup_ = z_->clone(); zup_->setScalar(static_cast<Real>(1));
+    bnd_ = ROL::makePtr<ROL::Bounds<Real>>(zlo_,zup_);
+  }
+
+  ROL::Ptr<ROL::OptimizationProblem_PEBBL<Real>> build(void) override {
+    ROL::Ptr<ROL::OptimizationProblem_PEBBL<Real>>
+      problem = ROL::makePtr<ROL::OptimizationProblem_PEBBL<Real>>(buildObjective(),buildSolutionVector());
+    problem->addBoundConstraint(bnd_);
+    ROL::Ptr<ROL::Vector<Real>> smul = smul_->clone();
+    if (useIneq_) problem->addLinearConstraint("Selection",scon_,smul,sbnd_);
+    else          problem->addLinearConstraint("Selection",scon_,smul);
+    ROL::Ptr<ROL::Vector<Real>> vmul = vmul_->clone();
+    problem->addLinearConstraint("Weight",vcon_,vmul,vbnd_);
+    problem->setProjectionAlgorithm(pl_);
+    return problem;
   }
 
   void check(void) {
-    if (con_ == ROL::nullPtr) {
-      update();
-    }
-    ROL::Ptr<ROL::Vector<Real>> ru = u_->clone(); ru->randomize();
-    ROL::Ptr<ROL::Vector<Real>> rz = z_->clone(); rz->randomize();
-    ROL::Ptr<ROL::Vector<Real>> rp = p_->clone(); rp->randomize();
-    ROL::Ptr<ROL::Vector<Real>> rv = u_->clone(); rv->randomize();
-    ROL::Ptr<ROL::Vector<Real>> rr = r_->clone(); rr->randomize();
-
-    *os_ << std::endl;
-    rr = r_->clone(); rr->randomize();
-    con_->checkSolve(*ru,*rz,*rr,true,*os_);
-
-    *os_ << std::endl;
-    rv = u_->clone(); rv->randomize();
-    rr = r_->clone(); rr->randomize();
-    con_->checkApplyJacobian_1(*ru,*rz,*rv,*rr,true,*os_);
-
-    *os_ << std::endl;
-    rv = u_->clone(); rv->randomize();
-    rr = r_->clone(); rr->randomize();
-    con_->checkInverseJacobian_1(*rr,*rv,*ru,*rz,true,*os_);
-
-    *os_ << std::endl;
-    rv = u_->clone(); rv->randomize();
-    rr = r_->clone(); rr->randomize();
-    con_->checkInverseAdjointJacobian_1(*rr,*rv,*ru,*rz,true,*os_);
-
-    *os_ << std::endl;
-    rv = z_->clone(); rv->randomize();
-    rr = r_->clone(); rr->randomize();
-    con_->checkApplyJacobian_2(*ru,*rz,*rv,*rr,true,*os_);
-
-    *os_ << std::endl;
-    rv = u_->clone(); rv->randomize();
-    rr = r_->clone(); rr->randomize();
-    con_->checkApplyAdjointHessian_11(*ru,*rz,*rp,*rv,*rr,true,*os_);
-    
-    *os_ << std::endl;
-    rv = z_->clone(); rv->randomize();
-    rr = u_->clone(); rr->randomize();
-    con_->checkApplyAdjointHessian_21(*ru,*rz,*rp,*rv,*rr,true,*os_);
-
-    *os_ << std::endl;
-    rv = u_->clone(); rv->randomize();
-    rr = z_->clone(); rr->randomize();
-    con_->checkApplyAdjointHessian_12(*ru,*rz,*rp,*rv,*rr,true,*os_);
-
-    *os_ << std::endl;
-    rv = z_->clone(); rv->randomize();
-    rr = z_->clone(); rr->randomize();
-    con_->checkApplyAdjointHessian_22(*ru,*rz,*rp,*rv,*rr,true,*os_);
-  }
-
-  void update(void) {
-    //con_ = ROL::makePtr<PDE_Constraint<Real>>(pde_,mesh_,comm_,pl_,*os_);
-    con_ = ROL::makePtr<Bilinear_PDE_Constraint<Real>>(fem_,pl_,*os_);
-    con_->setSolveParameters(pl_);
-
-    ROL::Ptr<Tpetra::MultiVector<>> u_ptr, p_ptr, r_ptr;
-    u_ptr = assembler_->createStateVector();
-    p_ptr = assembler_->createStateVector();
-    r_ptr = assembler_->createResidualVector();
-    u_ = ROL::makePtr<PDE_PrimalSimVector<Real>>(u_ptr,pde_,assembler_,pl_);
-    p_ = ROL::makePtr<PDE_PrimalSimVector<Real>>(p_ptr,pde_,assembler_,pl_);
-    r_ = ROL::makePtr<PDE_DualSimVector<Real>>(r_ptr,pde_,assembler_,pl_);
-    z_ = ROL::makePtr<ROL::StdVector<Real>>(dim_);
+    build()->check(true,*os_);
   }
 
   ROL::Ptr<ROL::Objective<Real>> buildObjective(void) {
-    ROL::Ptr<QoI<Real>> qoi
-      = ROL::makePtr<QoI_Compliance_TopoOpt<Real>>(pde_->getFE(),
-                                                   pde_->getLoad(),
-                                                   pde_->getBdryFE(),
-                                                   pde_->getBdryCellLocIds(),
-                                                   pde_->getTraction(),
-                                                   pde_->getFieldHelper(),
-                                                   cmpScaling_);
-    ROL::Ptr<ROL::Objective_SimOpt<Real>> obj
-      = ROL::makePtr<PDE_Objective<Real>>(qoi,assembler_);
-    return ROL::makePtr<ROL::Reduced_Objective_SimOpt<Real>>(obj, con_, u_, z_, p_, storage_, false);
+    if (useFilter_)
+      return ROL::makePtr<Filtered_Compliance_Objective<Real>>(pde_, filter_, mesh_, comm_, pl_, *os_);
+    else
+      return ROL::makePtr<Compliance_Objective<Real>>(pde_, mesh_, comm_, pl_, *os_);
   }
 
   ROL::Ptr<ROL::Vector<Real>> buildSolutionVector(void) {
-    return z_;
+    ROL::Ptr<ROL::Vector<Real>> z = z_->clone();
+    z->set(*z_);
+    return z;
   }
 
-  ROL::Ptr<ROL::BoundConstraint<Real>> buildBoundConstraint(void) {
-    ROL::Ptr<ROL::Vector<Real>> zlop, zhip;
-    zlop = ROL::makePtr<ROL::StdVector<Real>>(dim_,static_cast<Real>(0));
-    zhip = ROL::makePtr<ROL::StdVector<Real>>(dim_,static_cast<Real>(1));
-    return ROL::makePtr<ROL::Bounds<Real>>(zlop,zhip);
-  }
-
-  ROL::Ptr<ROL::Constraint<Real>> buildEqualityConstraint(void) {
-    bool useIneq = pl_.sublist("Problem").get("Use Inequality", false);
-    if (!useIneq) {
-      return ROL::makePtr<Selection_TopoOpt<Real>>(pl_);
+  void print(const ROL::Vector<Real> &z) {
+    if (useFilter_) {
+      ROL::Ptr<Filtered_Compliance_Objective<Real>>
+        obj = ROL::makePtr<Filtered_Compliance_Objective<Real>>(pde_, filter_, mesh_, comm_, pl_, *os_);
+      obj->printToFile(*dynamic_cast<const ROL::PartitionedVector<Real>&>(z).get(0),*os_);
     }
-    return ROL::nullPtr;
-  }
-
-  ROL::Ptr<ROL::Vector<Real>> buildEqualityMultiplier(void) {
-    bool useIneq = pl_.sublist("Problem").get("Use Inequality", false);
-    if (!useIneq) {
-      return ROL::makePtr<ROL::StdVector<Real>>(M_*N_,static_cast<Real>(0));
+    else {
+      ROL::Ptr<Compliance_Objective<Real>>
+        obj = ROL::makePtr<Compliance_Objective<Real>>(pde_, mesh_, comm_, pl_, *os_);
+      obj->printToFile(*dynamic_cast<const ROL::PartitionedVector<Real>&>(z).get(0),*os_);
     }
-    return ROL::nullPtr;
-  }
-
-  ROL::Ptr<ROL::Constraint<Real>> buildInequalityConstraint(void) {
-    //return ROL::nullPtr;
-    bool useIneq = pl_.sublist("Problem").get("Use Inequality", false);
-    if (!useIneq) {
-      return ROL::makePtr<Volume_TopoOpt<Real>>(pl_);
-    }
-    std::vector<ROL::Ptr<ROL::Constraint<Real>>> icon(2);
-    icon[0] = ROL::makePtr<Volume_TopoOpt<Real>>(pl_);
-    icon[1] = ROL::makePtr<Selection_TopoOpt<Real>>(pl_);
-    return ROL::makePtr<ROL::Constraint_Partitioned<Real>>(icon,true);
-  }
-
-  ROL::Ptr<ROL::Vector<Real>> buildInequalityMultiplier(void) {
-    //return ROL::nullPtr;
-    bool useIneq = pl_.sublist("Problem").get("Use Inequality", false);
-    if (!useIneq) {
-      return ROL::makePtr<ROL::StdVector<Real>>(dim_,static_cast<Real>(0));
-    }
-    std::vector<ROL::Ptr<ROL::Vector<Real>>> imul(2);
-    imul[0] = ROL::makePtr<ROL::StdVector<Real>>(dim_,static_cast<Real>(0));
-    imul[1] = ROL::makePtr<ROL::StdVector<Real>>(M_*N_,static_cast<Real>(0));
-    return ROL::makePtr<ROL::PartitionedVector<Real>>(imul);
-  }
-
-  ROL::Ptr<ROL::BoundConstraint<Real>> buildInequalityBoundConstraint(void) {
-    //return ROL::nullPtr;
-    bool useIneq = pl_.sublist("Problem").get("Use Inequality", false);
-    if (!useIneq) {
-      ROL::Ptr<ROL::Vector<Real>> iup;
-      iup = ROL::makePtr<ROL::StdVector<Real>>(dim_,static_cast<Real>(0));
-      return ROL::makePtr<ROL::Bounds<Real>>(*iup,false);
-    }
-    std::vector<ROL::Ptr<ROL::Vector<Real>>> ivec(2);
-    std::vector<ROL::Ptr<ROL::BoundConstraint<Real>>> ibnd(2);
-    ivec[0] = ROL::makePtr<ROL::StdVector<Real>>(dim_,static_cast<Real>(0));
-    ivec[1] = ROL::makePtr<ROL::StdVector<Real>>(M_*N_,static_cast<Real>(0));
-    ibnd[0] = ROL::makePtr<ROL::Bounds<Real>>(*ivec[0],false);
-    ibnd[1] = ROL::makePtr<ROL::Bounds<Real>>(*ivec[1],false);
-    return ROL::makePtr<ROL::BoundConstraint_Partitioned<Real>>(ibnd,ivec);
-  }
-
-  void print(void) const {
-    Real tol(1e-8);
-    con_->printMeshData(*os_);
-    //con_->solve(*r_,*u_,*z_,tol);
-    //con_->outputTpetraVector(ROL::staticPtrCast<ROL::
-    std::vector<Real> &z = *ROL::staticPtrCast<ROL::StdVector<Real>>(z_)->getVector();
-    std::ofstream file;
-    file.open("design.txt");
-    for (int i = 0; i < M_; ++i) {
-      for (int j = 0; j < N_; ++j) {
-        for (int k = 0; k < T_; ++k) {
-          file << i << "  " << j << "  " << k << "  " << z[i+M_*(j+N_*k)] << std::endl;
-        }
-      }
-    }
-    file.close();
   }
 };
 

@@ -9,7 +9,7 @@
 #include <pebbl/utilib/DoubleVector.h>
 #include <pebbl/misc/chunkAlloc.h>
 
-#include "ROL_OptimizationSolver.hpp"
+#include "ROL_NewOptimizationSolver.hpp"
 #include "ROL_OptimizationProblemFactory.hpp"
 #include "ROL_BranchHelper_PEBBL.hpp"
 #include "ROL_Constraint_PEBBL.hpp"
@@ -94,7 +94,7 @@ public:
   ROL_PEBBL_Branching(const Ptr<OptimizationProblemFactory<Real>> &factory,
                       const Ptr<ParameterList>                    &parlist,
                       const Ptr<BranchHelper_PEBBL<Real>>         &bHelper,
-                      const int                                    verbosity = 0,
+                      int                                          verbosity = 0,
                       const Ptr<std::ostream>                     &outStream = nullPtr)
     : factory_(factory), parlist_(parlist), bHelper_(bHelper),
       verbosity_(verbosity), outStream_(outStream) {}
@@ -133,8 +133,8 @@ protected:
   Ptr<Transform_PEBBL<Real>>  ptrans_;
   Ptr<Objective<Real>> tobj_;
   Ptr<Constraint<Real>> tcon_;
-  Ptr<OptimizationProblem<Real>> problem_, problem0_;
-  Ptr<OptimizationSolver<Real>> solver_;
+  Ptr<OptimizationProblem_PEBBL<Real>> problem_, problem0_;
+  Ptr<NewOptimizationSolver<Real>> solver_;
   Ptr<Vector<Real>> solution_, rndSolution_;
   Ptr<Vector<Real>> multiplier_;
   Ptr<Vector<Real>> gradient_, dwa_;
@@ -162,10 +162,11 @@ public:
       hasConstraint_(false),
       verbosity_(verbosity), outStream_(outStream) {
     problem0_   = branching_->getProblemFactory()->build();
-    solution_   = problem0_->getSolutionVector()->clone();
-    solution_->set(*problem0_->getSolutionVector());
-    rndSolution_= problem0_->getSolutionVector()->clone();
-    rndSolution_->set(*problem0_->getSolutionVector());
+    problem_    = branching_->getProblemFactory()->build();
+    solution_   = problem0_->getPrimalOptimizationVector()->clone();
+    rndSolution_= problem0_->getPrimalOptimizationVector()->clone();
+    solution_->set(*problem0_->getPrimalOptimizationVector());
+    rndSolution_->set(*problem0_->getPrimalOptimizationVector());
     rndSolution_->applyUnary(rnd);
     gradient_   = solution_->dual().clone();
     dwa_        = gradient_->clone();
@@ -185,6 +186,7 @@ public:
       verbosity_(rpbs.verbosity_), outStream_(rpbs.outStream_) {
     branchSubAsChildOf(this);
     problem0_   = rpbs.branching_->getProblemFactory()->build();
+    problem_    = rpbs.branching_->getProblemFactory()->build();
     solution_   = rpbs.solution_->clone();
     solution_->set(*rpbs.solution_);
     rndSolution_ = rpbs.rndSolution_->clone();
@@ -215,50 +217,32 @@ public:
       *outStream_ << std::endl << "In boundCompuation" << std::endl;
     }
     // Get base optimization solver parameters
-    const Ptr<ParameterList> parlist
-      = branching_->getSolverParameters();
+    const Ptr<ParameterList>
+      parlist = branching_->getSolverParameters();
     // Set fixed constraint
-    ptrans_->add(fixed_);
-    // Set solution and multiplier vectors
-    Real tol = static_cast<Real>(1e-10);
-    ptrans_->value(*solution_,*solution_,tol);
-    if (verbosity_ > 2) {
-      *outStream_ << std::endl << "After apply transformation" << std::endl;
-      solution_->print(*outStream_);
-      *outStream_ << std::endl;
+    problem_->edit();
+    problem_->deleteTransformation();
+    if (!fixed_.empty()) {
+      ptrans_->add(fixed_);
+      problem_->setTransformation(ptrans_);
+      //Ptr<Constraint_PEBBL<Real>> con = makePtr<Constraint_PEBBL<Real>>();
+      //con->add(fixed_);
+      //Ptr<Vector<Real>> mul = con->makeConstraintVector();
+      //problem_->addLinearConstraint("Integer",con,mul);
     }
-    // Construct new optimization problem from problem0_
-    tobj_ = makePtr<TransformedObjective_PEBBL<Real>>(
-              problem0_->getObjective(),ptrans_);
-    if (hasConstraint_) {
-      multiplier_->set(*problem0_->getMultiplierVector());
-      tcon_ = makePtr<TransformedConstraint_PEBBL<Real>>(
-                problem0_->getConstraint(),ptrans_);
-      problem_ = makePtr<OptimizationProblem<Real>>(tobj_,
-                                                    solution_,
-                                                    problem0_->getBoundConstraint(),
-                                                    tcon_,
-                                                    multiplier_);
-    }
-    else {
-      problem_ = makePtr<OptimizationProblem<Real>>(tobj_,
-                                                    solution_,
-                                                    problem0_->getBoundConstraint());
-    }
+    problem_->setProjectionAlgorithm(*parlist);
+    if (verbosity_ > 0) problem_->finalize(false,true,*outStream_);
+    else                problem_->finalize(false,false);
+
     // Construct optimization solver
-    solver_ = makePtr<OptimizationSolver<Real>>(*problem_,*parlist);
+    solver_ = makePtr<NewOptimizationSolver<Real>>(problem_,*parlist);
     // Solve optimization problem
     if (verbosity_ > 0) {
       if (verbosity_ > 3) {
-        problem_->check(*outStream_);
+        problem_->check(true,*outStream_);
       }
       solver_->solve(*outStream_);
-      ptrans_->value(*solution_,*problem_->getSolutionVector(),tol);
-      if (verbosity_ > 2) {
-        *outStream_ << std::endl << "  ";
-        solution_->print(*outStream_);
-        *outStream_ << std::endl;
-      }
+      //ptrans_->value(*solution_,*problem_->getSolutionVector(),tol);
       if (verbosity_ > 1) {
         *outStream_ << "  Problem ID:           " << id.serial << std::endl;
       }
@@ -267,11 +251,19 @@ public:
       solver_->solve();
     }
     // Get objective function value and status
+    Real tol = static_cast<Real>(1e-10);
     Ptr<const AlgorithmState<Real>> state = solver_->getAlgorithmState();
     Real value = state->value;
+    ptrans_->value(*solution_,*state->iterateVec,tol);
+    if (hasConstraint_) multiplier_->set(*state->lagmultVec);
     EExitStatus statusFlag = state->statusFlag;
     if (statusFlag != EXITSTATUS_CONVERGED) {
       throw Exception::NotImplemented(">>> ROL_PEBBL_Interface::boundComputation : Bound problem did not converge!");
+    }
+    if (verbosity_ > 2) {
+      *outStream_ << std::endl << "  ";
+      solution_->print(*outStream_);
+      *outStream_ << std::endl;
     }
     if (value > static_cast<Real>(bound)) {
       if (verbosity_ > 1) {
@@ -291,7 +283,7 @@ public:
     setState(bounded);
   }
 
-  pebbl::branchSub* makeChild(int whichChild = anyChild) {
+  virtual pebbl::branchSub* makeChild(int whichChild = anyChild) {
     if (whichChild == anyChild) {
       throw Exception::NotImplemented(">>> ROL_PEBBL_BranchSub::makeChild: whichChild is equal to anyChild!");
     }
@@ -310,7 +302,7 @@ public:
     Real tol(std::sqrt(ROL_EPSILON<Real>()));
     rndSolution_->set(*solution_);
     rndSolution_->applyUnary(rnd);
-    problem0_->getObjective()->update(*rndSolution_);
+    problem0_->getObjective()->update(*rndSolution_,UPDATE_TEMP);
     Real val = problem0_->getObjective()->value(*rndSolution_,tol);
     branching_->foundSolution(new ROL_PEBBL_Solution<Real>(*rndSolution_,val));
   }
@@ -322,13 +314,12 @@ public:
 
   int splitComputation() {
     Real tol(std::sqrt(ROL_EPSILON<Real>()));
-    tobj_->gradient(*gradient_,*solution_,tol);
+    problem_->getObjective()->gradient(*gradient_,*solution_,tol);
     if (hasConstraint_) {
-      tcon_->applyAdjointJacobian(*dwa_,*multiplier_,*solution_,tol);
+      problem_->getConstraint()->applyAdjointJacobian(*dwa_,*multiplier_,*solution_,tol);
       gradient_->plus(*dwa_);
     }
     index_ = bHelper_->getIndex(*solution_, *gradient_);
-    //index_ = bHelper_->getIndex(*solution_);
     if (verbosity_ > 1) {
       std::ios_base::fmtflags flags(outStream_->flags());
       *outStream_ << std::scientific << std::setprecision(3);

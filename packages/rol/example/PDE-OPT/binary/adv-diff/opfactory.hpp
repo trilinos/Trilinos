@@ -83,6 +83,22 @@ public:
     dim_ = nx*ny;
   }
 
+  ROL::Ptr<ROL::OptimizationProblem_PEBBL<Real>> build(void) {
+    update();
+    ROL::Ptr<ROL::Objective<Real>>       obj  = buildObjective();
+    ROL::Ptr<ROL::Vector<Real>>          x    = buildSolutionVector();
+    ROL::Ptr<ROL::BoundConstraint<Real>> bnd  = buildBoundConstraint();
+    ROL::Ptr<ROL::Constraint<Real>>      icon = buildConstraint();
+    ROL::Ptr<ROL::Vector<Real>>          imul = buildMultiplier();
+    ROL::Ptr<ROL::BoundConstraint<Real>> ibnd = buildSlackBoundConstraint();
+    ROL::Ptr<ROL::OptimizationProblem_PEBBL<Real>>
+      problem = ROL::makePtr<ROL::OptimizationProblem_PEBBL<Real>>(obj,x);
+    problem->addBoundConstraint(bnd);
+    if (ibnd==ROL::nullPtr) problem->addLinearConstraint("Budget",icon,imul);
+    else                    problem->addLinearConstraint("Budget",icon,imul,ibnd);
+    return problem;
+  }
+
   void update(void) {
     mesh_      = ROL::makePtr<MeshManager_adv_diff<Real>>(pl_);
     pde_       = ROL::makePtr<PDE_adv_diff<Real>>(pl_);
@@ -122,46 +138,21 @@ public:
     return ROL::makePtr<ROL::Bounds<Real>>(zlop,zhip);
   }
 
-  ROL::Ptr<ROL::Constraint<Real>> buildEqualityConstraint(void) {
+  ROL::Ptr<ROL::Constraint<Real>> buildConstraint(void) {
     bool useIneq  = pl_.sublist("Problem").get("Use Inequality", false);
-    if (!useIneq) {
-      Real budget = pl_.sublist("Problem").get("Control Cost", 4.0);
-      ROL::Ptr<QoI<Real>> qoi
-        = ROL::makePtr<QoI_Control_Cost_adv_diff<Real>>(budget);
-      return ROL::makePtr<IntegralOptConstraint<Real>>(qoi,assembler_);
-    }
-    return ROL::nullPtr;
+    Real budget(0);
+    if (!useIneq) budget = pl_.sublist("Problem").get("Control Cost", 4.0);
+    ROL::Ptr<QoI<Real>> qoi
+      = ROL::makePtr<QoI_Control_Cost_adv_diff<Real>>(budget);
+    return ROL::makePtr<IntegralOptConstraint<Real>>(qoi,assembler_);
   }
 
-  ROL::Ptr<ROL::Vector<Real>> buildEqualityMultiplier(void) {
-    bool useIneq  = pl_.sublist("Problem").get("Use Inequality", false);
-    if (!useIneq) {
-      return ROL::makePtr<ROL::StdVector<Real>>(1,0.0);
-    }
-    return ROL::nullPtr;
+  ROL::Ptr<ROL::Vector<Real>> buildMultiplier(void) {
+    return ROL::makePtr<ROL::StdVector<Real>>(1,0.0);
   }
 
-  ROL::Ptr<ROL::Constraint<Real>> buildInequalityConstraint(void) {
-    bool useIneq  = pl_.sublist("Problem").get("Use Inequality", false);
-    if (useIneq) {
-      Real budget   = static_cast<Real>(0);
-      ROL::Ptr<QoI<Real>> qoi
-        = ROL::makePtr<QoI_Control_Cost_adv_diff<Real>>(budget);
-      return ROL::makePtr<IntegralOptConstraint<Real>>(qoi,assembler_);
-    }
-    return ROL::nullPtr;
-  }
-
-  ROL::Ptr<ROL::Vector<Real>> buildInequalityMultiplier(void) {
-    bool useIneq  = pl_.sublist("Problem").get("Use Inequality", false);
-    if (useIneq) {
-      return ROL::makePtr<ROL::StdVector<Real>>(1,0.0);
-    }
-    return ROL::nullPtr;
-  }
-
-  ROL::Ptr<ROL::BoundConstraint<Real>> buildInequalityBoundConstraint(void) {
-    bool useIneq  = pl_.sublist("Problem").get("Use Inequality", false);
+  ROL::Ptr<ROL::BoundConstraint<Real>> buildSlackBoundConstraint(void) {
+    bool useIneq = pl_.sublist("Problem").get("Use Inequality", false);
     if (useIneq) {
       Real budget = pl_.sublist("Problem").get("Control Cost", 4.0);
       ROL::Ptr<ROL::Vector<Real>> klop, khip;
@@ -182,54 +173,24 @@ private:
 
   ROL::Ptr<BinaryAdvDiffFactory<Real>> factory_;
   ROL::Ptr<extractQP<Real>> extract_;
-  ROL::Ptr<ROL::OptimizationProblem<Real>> problem_;
 
 public:
   BinaryAdvDiffQPFactory(ROL::ParameterList                 &pl,
                    const ROL::Ptr<const Teuchos::Comm<int>> &comm,
                    const ROL::Ptr<std::ostream>             &os)
-    : pl_(pl), comm_(comm), os_(os) {}
-
-  void update(void) {
+    : pl_(pl), comm_(comm), os_(os) {
     factory_ = ROL::makePtr<BinaryAdvDiffFactory<Real>>(pl_,comm_,os_);
+  }
+
+  ROL::Ptr<ROL::OptimizationProblem_PEBBL<Real>> build(void) {
     factory_->update();
-    bool useIneq  = pl_.sublist("Problem").get("Use Inequality", false);
-    if (useIneq) {
-      extract_ = ROL::makePtr<extractQP<Real>>(factory_->buildObjective(),
-                                               factory_->buildSolutionVector(),
-                                               factory_->buildBoundConstraint(),
-                                               factory_->buildInequalityConstraint(),
-                                               factory_->buildInequalityMultiplier(),
-                                               factory_->buildInequalityBoundConstraint());
-    }
-    else {
-      extract_ = ROL::makePtr<extractQP<Real>>(factory_->buildObjective(),
-                                               factory_->buildSolutionVector(),
-                                               factory_->buildBoundConstraint(),
-                                               factory_->buildEqualityConstraint(),
-                                               factory_->buildEqualityMultiplier());
-    }
-    problem_ = (*extract_)();
-  }
-
-  ROL::Ptr<ROL::Objective<Real>> buildObjective(void) {
-    return problem_->getObjective();
-  }
-
-  ROL::Ptr<ROL::Vector<Real>> buildSolutionVector(void) {
-    return problem_->getSolutionVector();
-  }
-
-  ROL::Ptr<ROL::BoundConstraint<Real>> buildBoundConstraint(void) {
-    return problem_->getBoundConstraint();
-  }
-
-  ROL::Ptr<ROL::Constraint<Real>> buildEqualityConstraint(void) {
-    return problem_->getConstraint();
-  }
-
-  ROL::Ptr<ROL::Vector<Real>> buildEqualityMultiplier(void) {
-    return problem_->getMultiplierVector();
+    extract_ = ROL::makePtr<extractQP<Real>>(factory_->buildObjective(),
+                                             factory_->buildSolutionVector(),
+                                             factory_->buildBoundConstraint(),
+                                             factory_->buildConstraint(),
+                                             factory_->buildMultiplier(),
+                                             factory_->buildSlackBoundConstraint());
+    return (*extract_)();
   }
 };
   

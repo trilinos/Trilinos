@@ -13,6 +13,9 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
   # Need ROL_TpetraTeuchosBatchManager.hpp
   INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/tpetra/src/sol)
 
+  # Need ROL_TpetraTeuchosBatchManager.hpp
+  INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/tpetra/src/pebbl)
+
   # Need ROL_Teuchos_LinearOperator.hpp
   INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/teuchos/src/function)
 
@@ -50,7 +53,8 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
       input_ex01.xml
       sensor.txt
       run.sh
-      plotPEBBL.m
+      plotresultsC0.m
+      plot.sh
     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
     DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
   )

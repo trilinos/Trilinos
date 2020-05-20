@@ -41,42 +41,40 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_PDEOPT_BRANCHHELPER_PEBBL_H
-#define ROL_PDEOPT_BRANCHHELPER_PEBBL_H
+#ifndef ROL_PDEOPT_MULTIMAT_TRANSFORM_PEBBL_H
+#define ROL_PDEOPT_MULTIMAT_TRANSFORM_PEBBL_H
 
-#include "ROL_StdBranchHelper_PEBBL.hpp"
-#include "transform.hpp"
+#include "ROL_StdTransform_PEBBL.hpp"
+#include "ROL_TpetraTransform_PEBBL.hpp"
+#include "../../TOOLS/pdevector.hpp"
 
 template <class Real>
-class PDEOPT_BranchHelper_PEBBL : public ROL::StdBranchHelper_PEBBL<Real> {
+class Tpetra_MultiMat_Transform_PEBBL : public ROL::TpetraTransform_PEBBL<Real> {
 private:
-  ROL::Ptr<const ROL::StdVector<Real>> getParameter(const ROL::Vector<Real> &x) const {
-    return dynamic_cast<const PDE_OptVector<Real>&>(x).getParameter();
+  ROL::Ptr<ROL::TpetraMultiVector<Real>> getData(ROL::Vector<Real> &x) const {
+    try {
+      return ROL::makePtrFromRef(dynamic_cast<ROL::TpetraMultiVector<Real>&>(x));
+    }
+    catch (std::exception &e) {
+      return dynamic_cast<PDE_OptVector<Real>&>(x).getField();
+    }
   }
 
 public:
-  PDEOPT_BranchHelper_PEBBL(const Real tol = 1e-6, const int method = 0)
-    : ROL::StdBranchHelper_PEBBL<Real>(tol, method) {}
+  Tpetra_MultiMat_Transform_PEBBL(void)
+    : ROL::TpetraTransform_PEBBL<Real>() {}
 
-  PDEOPT_BranchHelper_PEBBL(const PDEOPT_BranchHelper_PEBBL &BH)
-    : ROL::StdBranchHelper_PEBBL<Real>(BH) {}
+  Tpetra_MultiMat_Transform_PEBBL(const Tpetra_MultiMat_Transform_PEBBL &T)
+    : ROL::TpetraTransform_PEBBL<Real>(T) {}
 
-  //int getMyIndex(const ROL::Vector<Real> &x) const {
-  int getMyIndex(const ROL::Vector<Real> &x, const ROL::Vector<Real> &g) const {
-    // Use Std implementation
-    return ROL::StdBranchHelper_PEBBL<Real>::getMyIndex(*getParameter(x),*getParameter(g));
+  void pruneVector(ROL::Vector<Real> &c) {
+    ROL::TpetraTransform_PEBBL<Real>::pruneVector(*getData(c));
   }
 
-  void getMyNumFrac(int &nfrac, Real &integralityMeasure,
-                    const ROL::Vector<Real> &x) const {
-    // Use Std implementation
-    ROL::StdBranchHelper_PEBBL<Real>::getMyNumFrac(nfrac, integralityMeasure, *getParameter(x));
+  void shiftVector(ROL::Vector<Real> &c) {
+    ROL::TpetraTransform_PEBBL<Real>::shiftVector(*getData(c));
   }
 
-  ROL::Ptr<ROL::Transform_PEBBL<Real>> createTransform(void) const {
-    return ROL::makePtr<PDEOPT_Transform_PEBBL<Real>>();
-  }
-
-}; // class PDEOPT_BranchHelper_PEBBL
+}; // class Tpetra_MultiMat_Transform_PEBBL
 
 #endif

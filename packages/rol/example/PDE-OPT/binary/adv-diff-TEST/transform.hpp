@@ -45,10 +45,11 @@
 #define ROL_PDEOPT_TRANSFORM_PEBBL_H
 
 #include "ROL_StdTransform_PEBBL.hpp"
+#include "ROL_TpetraTransform_PEBBL.hpp"
 #include "../../TOOLS/pdevector.hpp"
 
 template <class Real>
-class PDEOPT_Transform_PEBBL : public ROL::StdTransform_PEBBL<Real> {
+class Std_AdvDiff_Transform_PEBBL : public ROL::StdTransform_PEBBL<Real> {
 private:
   ROL::Ptr<ROL::StdVector<Real>> getParameter(ROL::Vector<Real> &x) const {
     try {
@@ -60,10 +61,10 @@ private:
   }
 
 public:
-  PDEOPT_Transform_PEBBL(void)
+  Std_AdvDiff_Transform_PEBBL(void)
     : ROL::StdTransform_PEBBL<Real>() {}
 
-  PDEOPT_Transform_PEBBL(const PDEOPT_Transform_PEBBL &T)
+  Std_AdvDiff_Transform_PEBBL(const Std_AdvDiff_Transform_PEBBL &T)
     : ROL::StdTransform_PEBBL<Real>(T) {}
 
   void pruneVector(ROL::Vector<Real> &c) {
@@ -74,6 +75,35 @@ public:
     ROL::StdTransform_PEBBL<Real>::shiftVector(*getParameter(c));
   }
 
-}; // class PDEOPT_Transform_PEBBL
+}; // class Std_AdvDiff_Transform_PEBBL
+
+template <class Real>
+class Tpetra_AdvDiff_Transform_PEBBL : public ROL::TpetraTransform_PEBBL<Real> {
+private:
+  ROL::Ptr<ROL::TpetraMultiVector<Real>> getData(ROL::Vector<Real> &x) const {
+    try {
+      return ROL::makePtrFromRef(dynamic_cast<ROL::TpetraMultiVector<Real>&>(x));
+    }
+    catch (std::exception &e) {
+      return dynamic_cast<PDE_OptVector<Real>&>(x).getField();
+    }
+  }
+
+public:
+  Tpetra_AdvDiff_Transform_PEBBL(void)
+    : ROL::TpetraTransform_PEBBL<Real>() {}
+
+  Tpetra_AdvDiff_Transform_PEBBL(const Tpetra_AdvDiff_Transform_PEBBL &T)
+    : ROL::TpetraTransform_PEBBL<Real>(T) {}
+
+  void pruneVector(ROL::Vector<Real> &c) {
+    ROL::TpetraTransform_PEBBL<Real>::pruneVector(*getData(c));
+  }
+
+  void shiftVector(ROL::Vector<Real> &c) {
+    ROL::TpetraTransform_PEBBL<Real>::shiftVector(*getData(c));
+  }
+
+}; // class Tpetra_AdvDiff_Transform_PEBBL
 
 #endif

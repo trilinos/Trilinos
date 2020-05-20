@@ -79,6 +79,14 @@ public:
                  const ROL::Ptr<std::ostream>             &os)
     : pl_(pl), comm_(comm), os_(os) {}
 
+  ROL::Ptr<ROL::OptimizationProblem_PEBBL<Real>> build(void) {
+    update();
+    ROL::Ptr<ROL::OptimizationProblem_PEBBL<Real>>
+      problem = ROL::makePtr<ROL::OptimizationProblem_PEBBL<Real>>(buildObjective(),buildSolutionVector());
+    problem->addBoundConstraint(buildBoundConstraint());
+    return problem;
+  }
+
   void update(void) {
     mesh_      = ROL::makePtr<MeshManager_adv_diff<Real>>(pl_);
     pde_       = ROL::makePtr<PDE_adv_diff<Real>>(pl_);
@@ -142,26 +150,6 @@ public:
     zhip->setScalar(static_cast<Real>(1));
     return ROL::makePtr<ROL::Bounds<Real>>(zlop,zhip);
     //return ROL::nullPtr;
-  }
-
-  ROL::Ptr<ROL::Constraint<Real>> buildEqualityConstraint(void) {
-    return ROL::nullPtr;
-  }
-
-  ROL::Ptr<ROL::Vector<Real>> buildEqualityMultiplier(void) {
-    return ROL::nullPtr;
-  }
-
-  ROL::Ptr<ROL::Constraint<Real>> buildInequalityConstraint(void) {
-    return ROL::nullPtr;
-  }
-
-  ROL::Ptr<ROL::Vector<Real>> buildInequalityMultiplier(void) {
-    return ROL::nullPtr;
-  }
-
-  ROL::Ptr<ROL::BoundConstraint<Real>> buildInequalityBoundConstraint(void) {
-    return ROL::nullPtr;
   }
 
   void getState(ROL::Ptr<ROL::Vector<Real>> &u, const ROL::Ptr<ROL::Vector<Real>> &z) const {

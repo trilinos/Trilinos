@@ -45,6 +45,8 @@
 #define ROL_PDEOPT_BRANCHING_PEBBL_H
 
 #include "ROL_PEBBL_Interface.hpp"
+#include "../../TOOLS/pdevector.hpp"
+#include "hilbert.hpp"
 
 template<class Real>
 class ADVDIFF_BranchSub;
@@ -53,6 +55,7 @@ template<class Real>
 class ADVDIFF_Branching : public ROL::ROL_PEBBL_Branching<Real> {
 private:
   const int method_;
+  const bool useTpetra_;
   ROL::Ptr<ROL::Vector<Real>> z0_;
 
   using ROL::ROL_PEBBL_Branching<Real>::verbosity_;
@@ -67,12 +70,12 @@ public:
                     const ROL::Ptr<std::ostream>                          &outStream = ROL::nullPtr,
                     int                                                    method = 0)
     : ROL::ROL_PEBBL_Branching<Real>::ROL_PEBBL_Branching(factory,parlist,bHelper,verbosity,outStream),
-      method_(method) {
+      method_(method), useTpetra_(factory->controlType()) {
     z0_ = factory->buildSolutionVector();
   }
 
   pebbl::branchSub* blankSub() {
-    return new ADVDIFF_BranchSub<Real>(ROL::makePtrFromRef<ADVDIFF_Branching<Real>>(*this),verbosity_,outStream_,method_);
+    return new ADVDIFF_BranchSub<Real>(useTpetra_,ROL::makePtrFromRef<ADVDIFF_Branching<Real>>(*this),verbosity_,outStream_,method_);
   }
 
 //  pebbl::solution* iniitalGuess() {
@@ -83,9 +86,12 @@ public:
 template <class Real>
 class ADVDIFF_BranchSub : public ROL::ROL_PEBBL_BranchSub<Real> {
 private:
+  const bool useTpetra_;
   const int method_;
   std::string methodName_;
 
+  using ROL::ROL_PEBBL_BranchSub<Real>::anyChild;
+  using ROL::ROL_PEBBL_BranchSub<Real>::index_;
   using ROL::ROL_PEBBL_BranchSub<Real>::branching_;
   using ROL::ROL_PEBBL_BranchSub<Real>::problem0_;
   using ROL::ROL_PEBBL_BranchSub<Real>::solution_;
@@ -95,47 +101,52 @@ private:
 
   void round(ROL::Vector<Real> &rx, const ROL::Vector<Real> &x, Real t) const {
     rx.set(x);
-    ROL::Ptr<std::vector<Real>> data = getParameter(rx);
+    Teuchos::ArrayView<Real> data = getData(rx);
     Real val(0);
-    for (auto it = data->begin(); it != data->end(); ++it) {
+    for (auto it = data.begin(); it != data.end(); ++it) {
       val = *it;
       *it = (val < t ? std::floor(val) : std::ceil(val));
     }
   }
 
-  ROL::Ptr<const std::vector<Real>> getParameter(const ROL::Vector<Real> &x) const {
-    try {
-      return dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
+  Teuchos::ArrayView<Real> getData(ROL::Vector<Real> &x) const {
+    if (useTpetra_) {
+      try {
+        return (dynamic_cast<ROL::TpetraMultiVector<Real>&>(x).getVector()->getDataNonConst(0))();
+      }
+      catch (std::exception &e) {
+        return (dynamic_cast<PDE_OptVector<Real>&>(x).getField()->getVector()->getDataNonConst(0))();
+      }
     }
-    catch (std::exception &e) {
-      return dynamic_cast<const PDE_OptVector<Real>&>(x).getParameter()->getVector();
-    }
-  }
-
-  ROL::Ptr<std::vector<Real>> getParameter(ROL::Vector<Real> &x) const {
-    try {
-      return dynamic_cast<ROL::StdVector<Real>&>(x).getVector();
-    }
-    catch (std::exception &e) {
-      return dynamic_cast<PDE_OptVector<Real>&>(x).getParameter()->getVector();
+    else {
+      int size = x.dimension();
+      try {
+        return Teuchos::ArrayView<Real>(dynamic_cast<ROL::StdVector<Real>&>(x).getVector()->data(),size);
+      }
+      catch (std::exception &e) {
+        return Teuchos::ArrayView<Real>(dynamic_cast<PDE_OptVector<Real>&>(x).getParameter()->getVector()->data(),size);
+      }
     }
   }
 
 public:
-  ADVDIFF_BranchSub(const ROL::Ptr<ROL::ROL_PEBBL_Branching<Real>> &branching,
+  ADVDIFF_BranchSub(bool useTpetra,
+                    const ROL::Ptr<ROL::ROL_PEBBL_Branching<Real>> &branching,
                     int verbosity = 0,
                     const ROL::Ptr<std::ostream> &outStream = ROL::nullPtr,
                     int method = 0)
-    : ROL::ROL_PEBBL_BranchSub<Real>(branching, verbosity, outStream), method_(method) {
+    : ROL::ROL_PEBBL_BranchSub<Real>(branching, verbosity, outStream), useTpetra_(useTpetra), method_(method) {
     switch (method_) {
       case 1:  methodName_ = "Mass Preserving Rounding"; break;
       case 2:  methodName_ = "Objective Gap Rounding";   break;
+      case 3:  methodName_ = "Sum Up Rounding";          break;
       default: methodName_ = "Naive Rounding";
     }
   }
 
   ADVDIFF_BranchSub(const ADVDIFF_BranchSub &rpbs)
-    : ROL::ROL_PEBBL_BranchSub<Real>(rpbs), method_(rpbs.method_) {}
+    : ROL::ROL_PEBBL_BranchSub<Real>(rpbs), useTpetra_(rpbs.useTpetra_),
+      method_(rpbs.method_), methodName_(rpbs.methodName_) {}
 
   void incumbentHeuristic() {
     Real tol = std::sqrt(ROL::ROL_EPSILON<Real>());
@@ -143,16 +154,16 @@ public:
     if (method_==1) { // mass preserving rounding
       const Real zero(0), one(1);
       rndSolution_->set(*solution_);
-      ROL::Ptr<std::vector<Real>> data = getParameter(*rndSolution_);
+      Teuchos::ArrayView<Real> data = getData(*rndSolution_);
       std::map<Real,size_t> sdata;
       Real sum(0);
-      for (size_t i = 0; i < data->size(); ++i) {
-        sdata.insert(std::pair<Real,size_t>((*data)[i],i));
-        sum += (*data)[i];
+      for (size_t i = 0; i < static_cast<size_t>(data.size()); ++i) {
+        sdata.insert(std::pair<Real,size_t>(data[i],i));
+        sum += data[i];
       }
       int rsum = static_cast<int>(std::round(sum)), psum(0);
       for (auto it = sdata.rbegin(); it != sdata.rend(); ++it) {
-        (*data)[it->second] = (psum < rsum ? one : zero);
+        data[it->second] = (psum < rsum ? one : zero);
         t = (psum < rsum ? it->first : t);
         psum++;
       }
@@ -165,12 +176,12 @@ public:
       // Evaluate at c
       c = a + invphi2 * h;
       round(*rndSolution_,*solution_,c);
-      problem0_->getObjective()->update(*rndSolution_);
+      problem0_->getObjective()->update(*rndSolution_,ROL::UPDATE_TEMP);
       fc = problem0_->getObjective()->value(*rndSolution_,tol);
       // Evaluate at d
       d = a + invphi * h;
       round(*rndSolution_,*solution_,d);
-      problem0_->getObjective()->update(*rndSolution_);
+      problem0_->getObjective()->update(*rndSolution_,ROL::UPDATE_TEMP);
       fd = problem0_->getObjective()->value(*rndSolution_,tol);
       while (std::abs(c-d) > itol) {
         h *= invphi;
@@ -180,7 +191,7 @@ public:
           fd = fc;
           c  = a + invphi2 * h;
           round(*rndSolution_,*solution_,c);
-          problem0_->getObjective()->update(*rndSolution_);
+          problem0_->getObjective()->update(*rndSolution_,ROL::UPDATE_TEMP);
           fc = problem0_->getObjective()->value(*rndSolution_,tol);
         }
         else {
@@ -189,18 +200,62 @@ public:
           fc = fd;
           d  = a + invphi * h;
           round(*rndSolution_,*solution_,d);
-          problem0_->getObjective()->update(*rndSolution_);
+          problem0_->getObjective()->update(*rndSolution_,ROL::UPDATE_TEMP);
           fd = problem0_->getObjective()->value(*rndSolution_,tol);
         }
       }
       t = static_cast<Real>(0.5)*(a+b);
       round(*rndSolution_,*solution_,t);
     }
+    else if (method_==3) { // Sum up rounding
+      const Real zero(0), one(1);
+      rndSolution_->set(*solution_);
+      Teuchos::ArrayView<Real> data = getData(*rndSolution_);
+      const int n = data.size();
+      const int m = (std::log2(n)-1)/2;
+      Real g1(0), g2(0);
+      if (n == std::pow(2,2*m+1)) { // Use Hilbert curves if n = 2^{2m+1}
+        const int nx = std::pow(2,m+1);
+        const int ny = std::pow(2,m);
+        int x(0), y(0), ind(0);
+        // Domain [0,1]x[0,1]
+        for (int j = 0; j < 2; ++j) {
+          for (int i = 0; i < ny*ny; ++i) {
+            hilbert::d2xy(m,i,x,y);
+            ind = x + y*nx + j*ny;
+            g1 += data[ind];
+            g2 += one - data[ind];
+            if (g1 >= g2) {
+              data[ind] = one;
+              g1 -= one;
+            }
+            else {
+              data[ind] = zero;
+              g2 -= one;
+            }
+          }
+        }
+      }
+      else { // Otherwise use native ordering of cells
+        for (int i = 0; i < n; ++i) {
+          g1 += data[i];
+          g2 += one - data[i];
+          if (g1 >= g2) {
+            data[i] = one;
+            g1 -= one;
+          }
+          else {
+            data[i] = zero;
+            g2 -= one;
+          }
+        }
+      }
+    }
     else { // naive rounding
       t = static_cast<Real>(0.5);
       round(*rndSolution_,*solution_,t);
     }
-    problem0_->getObjective()->update(*rndSolution_);
+    problem0_->getObjective()->update(*rndSolution_,ROL::UPDATE_TEMP);
     val = problem0_->getObjective()->value(*rndSolution_,tol);
     branching_->foundSolution(new ROL::ROL_PEBBL_Solution<Real>(*rndSolution_,val));
     if (verbosity_ > 0) {
@@ -208,7 +263,18 @@ public:
       *outStream_ << "  Incumbent Value:    " << val  << std::endl;
       *outStream_ << "  Rounding Threshold: " << t    << std::endl;
     }
-  };
+  }
+
+  pebbl::branchSub* makeChild(int whichChild = anyChild) override {
+    if (whichChild == anyChild) {
+      throw ROL::Exception::NotImplemented(">>> ROL_PEBBL_BranchSub::makeChild: whichChild is equal to anyChild!");
+    }
+    ADVDIFF_BranchSub<Real>* child
+      = new ADVDIFF_BranchSub<Real>(*this);
+    child->updateFixed(index_,
+      (whichChild==0 ? static_cast<Real>(1) : static_cast<Real>(0)));
+    return child;
+  }
 
 }; // class ADVDIFF_BranchSub
 

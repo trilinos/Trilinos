@@ -99,7 +99,7 @@ int main(int argc, char* argv[]) {
     /************************* CONSTRUCT CONSTRAINT ***********************************************/
     /**********************************************************************************************/
     int budget = 3;
-    ROL::Ptr<ROL::Constraint<RealT> > econ
+    ROL::Ptr<ROL::Constraint<RealT>> econ
       = ROL::makePtr<Constraint_SimpleBinary<RealT>>(budget);
     /**********************************************************************************************/
     /************************* CONSTRUCT BOUND CONSTRAINT *****************************************/
@@ -113,9 +113,13 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     /************************* SOLVE **************************************************************/
     /**********************************************************************************************/
-    ROL::OptimizationProblem<RealT> problem(obj,x,bnd,econ,emul);
-    problem.check(*outStream);
-    ROL::OptimizationSolver<RealT> solver(problem,*parlist);
+    ROL::Ptr<ROL::NewOptimizationProblem<RealT>>
+      problem = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(obj,x);
+    problem->addBoundConstraint(bnd);
+    problem->addLinearConstraint("Linear",econ,emul);
+    problem->finalize(false,true,*outStream);
+    problem->check(true,*outStream);
+    ROL::NewOptimizationSolver<RealT> solver(problem,*parlist);
     *outStream << "Solve problem with no fixed binary variables"
                << std::endl << std::endl;
     clock_t start = clock();
@@ -150,9 +154,13 @@ int main(int argc, char* argv[]) {
       = ROL::makePtr<ROL::TransformedConstraint_PEBBL<RealT>>(econ,trans_bin);
     ROL::Ptr<ROL::TransformedObjective_PEBBL<RealT>> obj_trans
       = ROL::makePtr<ROL::TransformedObjective_PEBBL<RealT>>(obj,trans_bin);
-    ROL::OptimizationProblem<RealT> problem_bin(obj_trans,xbin,bnd,econ_trans,emul);
-    problem_bin.check(*outStream);
-    ROL::OptimizationSolver<RealT> solver_bin(problem_bin,*parlist);
+    ROL::Ptr<ROL::NewOptimizationProblem<RealT>>
+      problem_bin = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(obj_trans,xbin);
+    problem_bin->addBoundConstraint(bnd);
+    problem_bin->addLinearConstraint("Linear",econ_trans,emul);
+    problem_bin->finalize(false,true,*outStream);
+    problem_bin->check(true,*outStream);
+    ROL::NewOptimizationSolver<RealT> solver_bin(problem_bin,*parlist);
     *outStream << "Solve problem with {2,5} set to 0 and {3,9} set to 1"
                << std::endl << std::endl;
     clock_t start_bin = clock();

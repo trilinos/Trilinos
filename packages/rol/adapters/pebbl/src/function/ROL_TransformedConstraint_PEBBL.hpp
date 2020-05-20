@@ -103,6 +103,15 @@ public:
     con_->update(*Tx_,flag,iter);
   }
 
+  void update( const Vector<Real> &x, EUpdateType type, int iter = -1 ) {
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
+    isTransformed_ = false;
+    initialize(x);
+    Tx_->zero(); Tv_->zero(); dx_->zero();
+    transform(x,tol);
+    con_->update(*Tx_,type,iter);
+  }
+
   void value(Vector<Real> &c,
        const Vector<Real> &x,
              Real &tol) {

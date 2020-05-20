@@ -45,7 +45,7 @@
 #define ROL_OPTIMIZATIONPROBLEMFACTORY_H
 
 #include "ROL_Ptr.hpp"
-#include "ROL_OptimizationProblem.hpp"
+#include "ROL_OptimizationProblem_PEBBL.hpp"
 
 /** @ingroup func_group
     \class ROL::OptimizationProblemFactory
@@ -65,43 +65,7 @@ class OptimizationProblemFactory {
 public:
   virtual ~OptimizationProblemFactory(void) {}
 
-  virtual Ptr<Objective<Real>>       buildObjective(void) = 0;
-  virtual Ptr<Vector<Real>>          buildSolutionVector(void) = 0;
-
-  virtual Ptr<BoundConstraint<Real>> buildBoundConstraint(void) {
-    return nullPtr;
-  }
-
-  virtual Ptr<Constraint<Real>>      buildEqualityConstraint(void) {
-    return nullPtr;
-  }
-  virtual Ptr<Vector<Real>>          buildEqualityMultiplier(void) {
-    return nullPtr;
-  }
-
-  virtual Ptr<Constraint<Real>>      buildInequalityConstraint(void) {
-    return nullPtr;
-  }
-  virtual Ptr<Vector<Real>>          buildInequalityMultiplier(void) {
-    return nullPtr;
-  }
-  virtual Ptr<BoundConstraint<Real>> buildInequalityBoundConstraint(void) {
-    return nullPtr;
-  }
-
-  virtual void update(void) {}
-
-  Ptr<OptimizationProblem<Real>> build(void) {
-    update();
-    return makePtr<OptimizationProblem<Real>>(buildObjective(),
-                                              buildSolutionVector(),
-                                              buildBoundConstraint(),
-                                              buildEqualityConstraint(),
-                                              buildEqualityMultiplier(),
-                                              buildInequalityConstraint(),
-                                              buildInequalityMultiplier(),
-                                              buildInequalityBoundConstraint());
-  }
+  virtual Ptr<OptimizationProblem_PEBBL<Real>> build(void) = 0;
 
 }; // class OptimizationProblemFactory
 

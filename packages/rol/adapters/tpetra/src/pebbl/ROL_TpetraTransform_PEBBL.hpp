@@ -41,42 +41,59 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_PDEOPT_BRANCHHELPER_PEBBL_H
-#define ROL_PDEOPT_BRANCHHELPER_PEBBL_H
+#ifndef ROL_TPETRATRANSFORM_PEBBL_H
+#define ROL_TPETRATRANSFORM_PEBBL_H
 
-#include "ROL_StdBranchHelper_PEBBL.hpp"
-#include "transform.hpp"
+#include "ROL_Transform_PEBBL.hpp"
+#include "ROL_TpetraMultiVector.hpp"
+
+/** @ingroup func_group
+    \class ROL::TpetraTransform_PEBBL
+    \brief Defines the pebbl transform operator interface for TpetraMultiVectors.
+
+    ROL's pebbl constraint interface is designed to set individual components
+    of a vector to a fixed value.  The range space is the same as the domain.
+
+    ---
+*/
+
+
+namespace ROL {
 
 template <class Real>
-class PDEOPT_BranchHelper_PEBBL : public ROL::StdBranchHelper_PEBBL<Real> {
+class TpetraTransform_PEBBL : public Transform_PEBBL<Real> {
 private:
-  ROL::Ptr<const ROL::StdVector<Real>> getParameter(const ROL::Vector<Real> &x) const {
-    return dynamic_cast<const PDE_OptVector<Real>&>(x).getParameter();
+  Ptr<Tpetra::MultiVector<>> getData(Vector<Real> &x) const {
+    return dynamic_cast<TpetraMultiVector<Real>&>(x).getVector();
   }
+
+ using Transform_PEBBL<Real>::map_; 
 
 public:
-  PDEOPT_BranchHelper_PEBBL(const Real tol = 1e-6, const int method = 0)
-    : ROL::StdBranchHelper_PEBBL<Real>(tol, method) {}
+  TpetraTransform_PEBBL(void)
+    : Transform_PEBBL<Real>() {}
 
-  PDEOPT_BranchHelper_PEBBL(const PDEOPT_BranchHelper_PEBBL &BH)
-    : ROL::StdBranchHelper_PEBBL<Real>(BH) {}
+  TpetraTransform_PEBBL(const TpetraTransform_PEBBL &T)
+    : Transform_PEBBL<Real>(T) {}
 
-  //int getMyIndex(const ROL::Vector<Real> &x) const {
-  int getMyIndex(const ROL::Vector<Real> &x, const ROL::Vector<Real> &g) const {
-    // Use Std implementation
-    return ROL::StdBranchHelper_PEBBL<Real>::getMyIndex(*getParameter(x),*getParameter(g));
+  void pruneVector(Vector<Real> &c) {
+    Teuchos::ArrayView<Real> cview = (getData(c)->getDataNonConst(0))();
+    typename std::map<int,Real>::iterator it;
+    for (it=map_.begin(); it!=map_.end(); ++it) {
+      cview[it->first] = static_cast<Real>(0);
+    }
   }
 
-  void getMyNumFrac(int &nfrac, Real &integralityMeasure,
-                    const ROL::Vector<Real> &x) const {
-    // Use Std implementation
-    ROL::StdBranchHelper_PEBBL<Real>::getMyNumFrac(nfrac, integralityMeasure, *getParameter(x));
+  void shiftVector(Vector<Real> &c) {
+    Teuchos::ArrayView<Real> cview = (getData(c)->getDataNonConst(0))();
+    typename std::map<int,Real>::iterator it;
+    for (it=map_.begin(); it!=map_.end(); ++it) {
+      cview[it->first] = it->second;
+    }
   }
 
-  ROL::Ptr<ROL::Transform_PEBBL<Real>> createTransform(void) const {
-    return ROL::makePtr<PDEOPT_Transform_PEBBL<Real>>();
-  }
+}; // class TpetraTransform_PEBBL
 
-}; // class PDEOPT_BranchHelper_PEBBL
+} // namespace ROL
 
 #endif
