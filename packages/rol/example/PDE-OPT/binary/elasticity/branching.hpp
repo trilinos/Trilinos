@@ -86,6 +86,7 @@ private:
   int T_;
   std::string methodName_;
   ROL::Ptr<ROL::Vector<Real>> c_;
+  ROL::Ptr<ROL::Constraint<Real>> con_;
 
   using ROL::ROL_PEBBL_BranchSub<Real>::anyChild;
   using ROL::ROL_PEBBL_BranchSub<Real>::index_;
@@ -149,13 +150,20 @@ public:
     std::vector<Real> ym = ROL::getArrayFromStringParameter<Real>(parlist->sublist("Problem"), "Young's Modulus");
     T_ = ym.size();
     methodName_ = "Default";
-    c_ = problem0_->getMultiplierVector()->dual().clone();
+    if (problem0_->getConstraint()==ROL::nullPtr) {
+      c_   = problem0_->getPolyhedralProjection()->getResidual()->clone();
+      con_ = problem0_->getPolyhedralProjection()->getLinearConstraint();
+    }
+    else {
+      c_   = problem0_->getResidualVector()->clone();
+      con_ = problem0_->getConstraint();
+    }
   }
 
   MultiMat_BranchSub(const MultiMat_BranchSub &rpbs)
     : ROL::ROL_PEBBL_BranchSub<Real>(rpbs),
       method_(rpbs.method_), ctol_(rpbs.ctol_), T_(rpbs.T_), methodName_(rpbs.methodName_),
-      c_(rpbs.c_->clone()) {}
+      c_(rpbs.c_->clone()), con_(rpbs.con_) {}
 
   void incumbentHeuristic() {
     Real tol = std::sqrt(ROL::ROL_EPSILON<Real>());
@@ -183,15 +191,14 @@ public:
         }
       }
       zeroSlack(*rndSolution_);
-      problem0_->getConstraint()->update(*rndSolution_);
-      problem0_->getConstraint()->value(*c_,*rndSolution_,tol);
+      con_->value(*c_,*rndSolution_,tol);
       setSlack(*rndSolution_,*c_);
-      problem0_->getConstraint()->value(*c_,*rndSolution_,tol);
+      con_->value(*c_,*rndSolution_,tol);
       cnorm = c_->norm();
       cnt++;
       if (cnorm < ctol_) break;
       if (verbosity_ > 1) {
-        *outStream_ << "  cnt = " << cnt << "  cnorm = " << cnorm << std::endl;
+        *outStream_ << "  cnt = " << cnt << "  infeasibility = " << cnorm << std::endl;
       }
     }
     problem0_->getObjective()->update(*rndSolution_);

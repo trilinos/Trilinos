@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
       xfile.open(xname.str());
       yfile.open(yname.str());
       int x(0), y(0);
-      for (unsigned j = 0; j < n*n; ++j) {
+      for (int j = 0; j < n*n; ++j) {
         zfile << zdata[j] << std::endl;
         ofile << odata[j] << std::endl;
         hilbert::d2xy(i+1, j, x, y);

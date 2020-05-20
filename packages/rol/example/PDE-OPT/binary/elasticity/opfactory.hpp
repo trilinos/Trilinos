@@ -75,13 +75,13 @@ private:
   ROL::Ptr<Selection_Constraint<Real>> scon_;
   ROL::Ptr<Assembler<Real>>            sassembler_;
   ROL::Ptr<ROL::Vector<Real>>          smul_;
-  ROL::Ptr<ROL::Vector<Real>>          sup_;
+  ROL::Ptr<ROL::Vector<Real>>          slo_, sup_;
   ROL::Ptr<ROL::BoundConstraint<Real>> sbnd_;
 
   ROL::Ptr<QoI_Weight<Real>>           vqoi_;
   ROL::Ptr<Volume_Constraint<Real>>    vcon_;
   ROL::Ptr<ROL::Vector<Real>>          vmul_;
-  ROL::Ptr<ROL::Vector<Real>>          vup_;
+  ROL::Ptr<ROL::Vector<Real>>          vlo_, vup_;
   ROL::Ptr<ROL::BoundConstraint<Real>> vbnd_;
 
   bool useIneq_;
@@ -113,8 +113,9 @@ public:
     scon_ = ROL::makePtr<Selection_Constraint<Real>>(spde_, mesh_, comm_, pl_, *os_);
     sassembler_ = scon_->getAssembler();
     smul_ = ROL::makePtr<PDE_DualSimVector<Real>>(sassembler_->createStateVector(),spde_,sassembler_,pl_);
+    slo_  = smul_->dual().clone(); slo_->setScalar(static_cast<Real>(-1));
     sup_  = smul_->dual().clone(); sup_->setScalar(static_cast<Real>(0));
-    sbnd_ = ROL::makePtr<ROL::Bounds<Real>>(*sup_,false);
+    sbnd_ = ROL::makePtr<ROL::Bounds<Real>>(slo_,sup_);
     useIneq_ = pl_.sublist("Problem").get("Use Inequality", false);
 
     // Create density vector
@@ -125,14 +126,19 @@ public:
       std::string inDensName = pl_.sublist("Problem").get("Input Density Name","density.txt");
       ROL::Ptr<Tpetra::MultiVector<>> zdata = ROL::dynamicPtrCast<ROL::TpetraMultiVector<Real>>(z_)->getVector();
       sassembler_->inputTpetraVector(zdata, inDensName);
+//      ROL::Ptr<ROL::Vector<Real>> zr = z_->clone(); zr->randomize(-0.1,0.1);
+//      z_->plus(*zr);
     }
 
     // Volume constraint
+    Real tol(std::sqrt(ROL::ROL_EPSILON<Real>()));
+    ROL::Ptr<ROL::Vector<Real>> z0 = z_->clone(); z0->zero();
     vqoi_ = ROL::makePtr<QoI_Weight<Real>>(spde_->getDensityFE(), spde_->getDensityFieldInfo(), pl_);
     vcon_ = ROL::makePtr<Volume_Constraint<Real>>(vqoi_,sassembler_,z_);
     vmul_ = ROL::makePtr<ROL::SingletonVector<Real>>();
+    vlo_  = vmul_->dual().clone(); vcon_->value(*vlo_,*z0,tol);
     vup_  = vmul_->dual().clone(); vup_->setScalar(static_cast<Real>(0));
-    vbnd_ = ROL::makePtr<ROL::Bounds<Real>>(*vup_,false);
+    vbnd_ = ROL::makePtr<ROL::Bounds<Real>>(vlo_,vup_);
 
     // Density bound vectors
     zlo_ = z_->clone(); zlo_->setScalar(static_cast<Real>(0));
@@ -147,8 +153,11 @@ public:
     ROL::Ptr<ROL::Vector<Real>> smul = smul_->clone();
     if (useIneq_) problem->addLinearConstraint("Selection",scon_,smul,sbnd_);
     else          problem->addLinearConstraint("Selection",scon_,smul);
+    //if (useIneq_) problem->addConstraint("Selection",scon_,smul,sbnd_);
+    //else          problem->addConstraint("Selection",scon_,smul);
     ROL::Ptr<ROL::Vector<Real>> vmul = vmul_->clone();
     problem->addLinearConstraint("Weight",vcon_,vmul,vbnd_);
+    //problem->addConstraint("Weight",vcon_,vmul,vbnd_);
     problem->setProjectionAlgorithm(pl_);
     return problem;
   }
