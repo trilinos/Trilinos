@@ -225,9 +225,13 @@ public:
     if (!fixed_.empty()) {
       ptrans_->add(fixed_);
       problem_->setTransformation(ptrans_);
+      //problem_->finalize(false,false);
+      //problem_->edit();
+      //problem_->deleteTransformation();
       //Ptr<Constraint_PEBBL<Real>> con = makePtr<Constraint_PEBBL<Real>>();
       //con->add(fixed_);
       //Ptr<Vector<Real>> mul = con->makeConstraintVector();
+      //problem_->removeLinearConstraint("Integer");
       //problem_->addLinearConstraint("Integer",con,mul);
     }
     problem_->setProjectionAlgorithm(*parlist);
@@ -254,7 +258,7 @@ public:
     Real tol = static_cast<Real>(1e-10);
     Ptr<const AlgorithmState<Real>> state = solver_->getAlgorithmState();
     Real value = state->value;
-    ptrans_->value(*solution_,*state->iterateVec,tol);
+    if (!fixed_.empty()) ptrans_->value(*solution_,*state->iterateVec,tol);
     if (hasConstraint_) multiplier_->set(*state->lagmultVec);
     EExitStatus statusFlag = state->statusFlag;
     if (statusFlag != EXITSTATUS_CONVERGED) {
