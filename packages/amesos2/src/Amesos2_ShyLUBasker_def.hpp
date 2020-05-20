@@ -99,6 +99,8 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   ShyLUbasker->Options.amd_dom       = BASKER_TRUE;
   ShyLUbasker->Options.transpose     = BASKER_FALSE;
   ShyLUbasker->Options.verbose_matrix_out = BASKER_FALSE;
+
+  ShyLUbasker->Options.user_fill     = (double)BASKER_FILL_USER;
   ShyLUbasker->Options.use_sequential_diag_facto = BASKER_FALSE;
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
   num_threads = Kokkos::OpenMP::max_hardware_threads();
@@ -520,6 +522,10 @@ ShyLUBasker<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Param
     {
       ShyLUbasker->Options.use_sequential_diag_facto = parameterList->get<bool>("use_sequential_diag_facto");
     }
+  if(parameterList->isParameter("user_fill"))
+    {
+      ShyLUbasker->Options.user_fill = parameterList->get<double>("user_fill");
+    }
 }
 
 template <class Matrix, class Vector>
@@ -563,6 +569,8 @@ ShyLUBasker<Matrix,Vector>::getValidParameters_impl() const
 	      "Solve the transpose A");
       pl->set("use_sequential_diag_facto", false,
 	      "Use sequential algorithm to factor each diagonal block");
+      pl->set("user_fill", (double)BASKER_FILL_USER,
+	      "User-provided padding for the fill ratio");
       valid_params = pl;
     }
   return valid_params;

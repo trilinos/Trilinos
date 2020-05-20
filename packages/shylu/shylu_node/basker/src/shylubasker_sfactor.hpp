@@ -2146,7 +2146,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
           lblk_size,
           btf_tabs(i),
           lblk_size,
-          (btf_blk_nnz(i)+lblk_size)*BASKER_BTF_NNZ_OVER);    
+          (btf_blk_nnz(i)+lblk_size)*(BASKER_BTF_NNZ_OVER+Options.user_fill));
 
       //For pruning
       LBTF(i-btf_tabs_offset).init_pend();
@@ -2156,7 +2156,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
           lblk_size,
           btf_tabs(i),
           lblk_size,
-          (btf_blk_nnz(i)+lblk_size)*BASKER_BTF_NNZ_OVER);
+          (btf_blk_nnz(i)+lblk_size)*(BASKER_BTF_NNZ_OVER+Options.user_fill));
       //(.5*lblk_size*lblk_size)+lblk_size);
 
       //will have to do the fill in nfactor
