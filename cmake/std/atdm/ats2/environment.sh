@@ -81,7 +81,7 @@ module load cmake/3.14.5
 # Load compiler modules, TPL modules, and point to SPARC TPL install base dirs
 #
 
-if [[ "$ATDM_CONFIG_COMPILER" == *"GNU-7.3.1_SPMPI-2019.06.24" ]]; then
+if [[ "$ATDM_CONFIG_COMPILER" == *"GNU-7.3.1_SPMPI-rolling" ]]; then
   module load gcc/7.3.1
   module load lapack/3.8.0-gcc-4.9.3
 
@@ -101,13 +101,13 @@ if [[ "$ATDM_CONFIG_COMPILER" == *"GNU-7.3.1_SPMPI-2019.06.24" ]]; then
 
   if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_"* ]]; then
     sparc_tpl_ext=ats2-${sparc_tpl_arch}_cuda-10.1.243_gcc-7.3.1
-    sparc_tpl_mpi_ext=ats2-${sparc_tpl_arch}_cuda-10.1.243_gcc-7.3.1_spmpi-2019.06.24
+    sparc_tpl_mpi_ext=ats2-${sparc_tpl_arch}_cuda-10.1.243_gcc-7.3.1_spmpi-rolling
   else
     sparc_tpl_ext=ats2-${sparc_tpl_arch}_gcc-7.3.1
-    sparc_tpl_mpi_ext=ats2-${sparc_tpl_arch}_gcc-7.3.1_spmpi-2019.06.24
+    sparc_tpl_mpi_ext=ats2-${sparc_tpl_arch}_gcc-7.3.1_spmpi-rolling
   fi
 
-elif [[ "$ATDM_CONFIG_COMPILER" == *"XL-2019.08.20_SPMPI-2019.06.24_DISABLED" ]]; then
+elif [[ "$ATDM_CONFIG_COMPILER" == *"XL-2019.08.20_SPMPI-rolling_DISABLED" ]]; then
   module load xl/2019.08.20
   module load lapack/3.8.0-xl-2019.08.20
   module load gmake/4.2.1
@@ -132,10 +132,10 @@ elif [[ "$ATDM_CONFIG_COMPILER" == *"XL-2019.08.20_SPMPI-2019.06.24_DISABLED" ]]
   if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_"* ]]; then
     export LD_LIBRARY_PATH=${BINUTILS_ROOT}/rh/lib/gcc/ppc64le-redhat-linux/7:${LD_LIBRARY_PATH}
     sparc_tpl_ext=ats2-${sparc_tpl_arch}_cuda-10.1.243_xl-2019.08.20
-    sparc_tpl_mpi_ext=ats2-${sparc_tpl_arch}_cuda-10.1.243_xl-2019.08.20_spmpi-2019.06.24
+    sparc_tpl_mpi_ext=ats2-${sparc_tpl_arch}_cuda-10.1.243_xl-2019.08.20_spmpi-rolling
   else
     sparc_tpl_ext=ats2-${sparc_tpl_arch}_xl-2019.08.20
-    sparc_tpl_mpi_ext=ats2-${sparc_tpl_arch}_xl-2019.08.20_spmpi-2019.06.24
+    sparc_tpl_mpi_ext=ats2-${sparc_tpl_arch}_xl-2019.08.20_spmpi-rolling
   fi
 
 else
@@ -203,7 +203,7 @@ fi
 #
 
 # Common module - requires compiler to be loaded first
-module load spectrum-mpi/2019.06.24
+module load spectrum-mpi/rolling
 
 # Prepend path to ninja after all of the modules are loaded
 export PATH=/projects/atdm_devops/vortex/ninja-fortran-1.8.2:$PATH
