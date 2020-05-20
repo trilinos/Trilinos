@@ -95,7 +95,6 @@ template <typename ViewTypeA, typename ViewTypeB, typename ViewTypeC>
 void
 run_mat_vec_deriv(const ViewTypeA& A, const ViewTypeB& b, const ViewTypeC& c)
 {
-  typedef typename ViewTypeC::value_type scalar_type;
   typedef typename ViewTypeC::execution_space execution_space;
 
   const int m = A.extent(0);

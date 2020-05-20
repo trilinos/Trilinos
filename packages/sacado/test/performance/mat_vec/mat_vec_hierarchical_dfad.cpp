@@ -96,7 +96,7 @@ void run_mat_vec_hierarchical_dfad_scratch(
   const size_t bytes = TmpScratchSpace::shmem_size(TeamSize,p);
   Kokkos::parallel_for(
     policy.set_scratch_size(0, Kokkos::PerTeam(bytes)),
-    KOKKOS_LAMBDA (const typename Policy::member_type& team) {
+    KOKKOS_LAMBDA (const team_member& team) {
       const int team_rank = team.team_rank();
       const int team_size = team.team_size();
       TmpScratchSpace t(team.team_scratch(0), team_size, p);

@@ -378,8 +378,6 @@ void check_residual(const FluxView& flux, const WgbView& wgb,
                     const SrcView& src, const WbsView& wbs,
                     const ResidualView& residual)
 {
-  typedef typename ResidualView::execution_space execution_space;
-
   // Generate gold residual
   auto residual_gold = compute_gold_residual(flux, wgb, src, wbs);
 

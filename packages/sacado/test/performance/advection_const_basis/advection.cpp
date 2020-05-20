@@ -167,8 +167,8 @@ void run_analytic_team(const FluxView& flux, const WgbView& wgb,
 
   const size_t num_cells = wgb.extent(0);
   const int num_basis    = wgb.extent(1);
-  const int num_points   = wgb.extent(2);
-  const int num_dim      = wgb.extent(3);
+  /*const*/ int num_points   = wgb.extent(2);
+  /*const*/ int num_dim      = wgb.extent(3);
 
   const size_t bytes     = 2*tmp_scratch_type::shmem_size();
   policy_type policy(num_cells,num_basis,32);
