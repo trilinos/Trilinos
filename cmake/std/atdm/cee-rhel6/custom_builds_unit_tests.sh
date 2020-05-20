@@ -42,23 +42,23 @@ testAll() {
 
   ATDM_CONFIG_BUILD_NAME=before_gnu-7.2.0-openmpi-4.0.3-after
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
-  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPILER} GNU-7.2.0_OPENMPI-4.0.2
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPILER} GNU-7.2.0_OPENMPI-4.0.3
 
   ATDM_CONFIG_BUILD_NAME=before_gnu-7.2.0_openmpi-4.0.3-after
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
-  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPILER} GNU-7.2.0_OPENMPI-4.0.2
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPILER} GNU-7.2.0_OPENMPI-4.0.3
 
   ATDM_CONFIG_BUILD_NAME=before_gnu-7.2.0-after
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
-  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPILER} GNU-7.2.0_OPENMPI-4.0.2
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPILER} GNU-7.2.0_OPENMPI-4.0.3
 
   ATDM_CONFIG_BUILD_NAME=before_gnu-7-after
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
-  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPILER} GNU-7.2.0_OPENMPI-4.0.2
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPILER} GNU-7.2.0_OPENMPI-4.0.3
 
   ATDM_CONFIG_BUILD_NAME=before_gnu-after
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
-  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPILER} GNU-7.2.0_OPENMPI-4.0.2
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPILER} GNU-7.2.0_OPENMPI-4.0.3
 
   # Check that 'gnus' does not match 'gnu'! (Shows true keyword matching is
   # working)
