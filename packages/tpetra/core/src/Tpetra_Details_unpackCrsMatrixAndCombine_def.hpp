@@ -462,7 +462,7 @@ struct UnpackCrsMatrixAndCombineFunctor {
     else if (num_entries_in_row >= (batch_no + 1) * batch_size)
       num_entries_in_batch = batch_size;
     else
-      num_entries_in_batch = num_entries_in_row - batch_size;
+      num_entries_in_batch = num_entries_in_row - batch_no * batch_size;
 
     // Get subviews in to the scratch arrays.  The token returned from acquire
     // is an integer in [0, tokens.size()).  It is used to grab a unique (to
@@ -632,7 +632,7 @@ struct UnpackCrsMatrixAndCombineFunctor {
     else if (num_entries_in_row >= (batch_no + 1) * batch_size)
       num_entries_in_batch = batch_size;
     else
-      num_entries_in_batch = num_entries_in_row - batch_size;
+      num_entries_in_batch = num_entries_in_row - batch_no * batch_size;
 
     // Get subviews in to the scratch arrays.  The token returned from acquire
     // is an integer in [0, tokens.size()).  It is used to grab a unique (to

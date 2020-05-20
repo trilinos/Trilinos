@@ -112,6 +112,7 @@ generate_graphs(
   using gsize_t = Tpetra::global_size_t;
   const gsize_t global_rows = rows_per_rank * procs + dense_rows;
 
+  INFO("GENERATING GRAPHS\n");
   // one-to-one map for entries on my rank
   RCP<map_type> owned_map;
   {
@@ -282,6 +283,7 @@ generate_graphs(
   }
   owned->fillComplete();
 
+  INFO("GENERATING GRAPHS DONE\n");
 }
 
 
@@ -309,6 +311,7 @@ generate_matrix(
   auto const rank = comm->getRank();
   auto const procs = comm->getSize();
 
+  INFO("GENERATING MATRIX\n");
   using gsize_t = Tpetra::global_size_t;
   const gsize_t global_rows = rows_per_rank * procs + dense_rows;
 
@@ -322,8 +325,10 @@ generate_matrix(
 
   auto shared_map = g_shared->getRowMap();
   auto mtx_shared = rcp(new matrix_type(g_shared));
+  INFO("MATRIX CREATED\n");
 
   {
+    INFO("FILLING MATRIX\n");
     RCP<Time> stage = TimeMonitor::getNewCounter("UnpackLongRows::fill");
     TimeMonitor tm(*stage);
 
@@ -444,9 +449,11 @@ generate_matrix(
         );
       }
     }
+    INFO("MATRIX FILLED\n");
   }
 
   {
+    INFO("FILLING DENSE ROWS\n");
     RCP<Time> stage = TimeMonitor::getNewCounter("UnpackLongRows::fill_dense_rows");
     TimeMonitor tm(*stage);
 
@@ -499,6 +506,7 @@ generate_matrix(
         mtx_shared->sumIntoLocalValues(local_row, local_columns(), values());
       }
     }
+    INFO("DENSE ROWS FILLED\n");
   }
   comm->barrier();
 
@@ -509,6 +517,7 @@ generate_matrix(
   //
   // Since only the target Map is one-to-one, we have to use an Export.
   {
+    INFO("EXPORTING\n");
     RCP<Time> stage = TimeMonitor::getNewCounter("UnpackLongRows::export");
     TimeMonitor tm(*stage);
     using export_type = typename matrix_type::export_type;
@@ -516,13 +525,17 @@ generate_matrix(
     comm->barrier();
 
     mtx_owned->doExport(*mtx_shared, exporter, Tpetra::ADD);
+    INFO("EXPORT DONE\n");
   }
   {
+    INFO("CALLING FILLCOMPLETE\n");
     RCP<Time> stage = TimeMonitor::getNewCounter("UnpackLongRows::fill_complete");
     TimeMonitor tm(*stage);
     mtx_owned->fillComplete();
+    INFO("FILLCOMPLETE DONE\n");
   }
 
+  INFO("GENERATING MATRIX DONE\n");
   return mtx_owned;
 }
 
