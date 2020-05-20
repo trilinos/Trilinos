@@ -10,6 +10,16 @@
 
 .. _Ninja: https://ninja-build.org
 
+.. _CMake Ninja Fortran Support: https://cmake.org/cmake/help/latest/generator/Ninja.html
+
+.. _CTest Resource Allocation System: https://cmake.org/cmake/help/latest/manual/ctest.1.html#resource-allocation
+
+.. _CTest Resource Specification File: https://cmake.org/cmake/help/latest/manual/ctest.1.html#ctest-resource-specification-file
+
+.. _CTest Resource Allocation Environment Variables: https://cmake.org/cmake/help/latest/manual/ctest.1.html#environment-variables
+
+.. _RESOURCE_GROUPS: https://cmake.org/cmake/help/latest/prop_test/RESOURCE_GROUPS.html#prop_test:RESOURCE_GROUPS
+
 
 
 Getting set up to use CMake
@@ -50,7 +60,7 @@ To get help for installing CMake with this script use::
 
   $ $TRIBITS_BASE_DIR/devtools_install/install-cmake.py --help
 
-NOTE: you will want to read the help message about how to install CMake to
+NOTE: You will want to read the help message about how to install CMake to
 share with other users and maintainers and how to install with sudo if needed.
 
 
@@ -69,10 +79,17 @@ The Kitware fork of Ninja at:
 
 provides releases of Ninja that allows CMake 3.7.0+ to build Fortran code with
 Ninja.  For example, the Kitware Ninja release ``1.7.2.git.kitware.dyndep-1``
-works with Fortran.
+works with Fortran.  As of Ninja 1.10+, Fortran support is part of the
+official Google-maintained version of Ninja as can be obtained from:
 
-Ninja is easy to install from source.  It is a simple ``configure
---prefix=<dir>``, ``make`` and ``make install``.
+  https://github.com/ninja-build/ninja/releases
+
+and as of CMake 3.17+, cmake will recognize native Fortran support for Ninja
+1.10+ (see `CMake Ninja Fortran Support`_).
+
+Ninja is easy to install from source on almost any machine.  On Unix/Linux
+systems it is as simple as ``configure --prefix=<dir>``, ``make`` and ``make
+install``.
 
 
 Getting CMake Help
@@ -1881,8 +1898,16 @@ NOTES:
   Python is enabled.
 
 
+Test-related configuration settings
+-----------------------------------
+
+Many options can be set at configure time to determine what tests are enabled
+and how they are run.  The following subsections described these various
+settings.
+
+
 Enabling different test categories
-----------------------------------
+++++++++++++++++++++++++++++++++++
 
 To turn on a set a given set of tests by test category, set::
 
@@ -1901,7 +1926,7 @@ and don't nest with the other categories.
 
 
 Disabling specific tests
-------------------------
+++++++++++++++++++++++++
 
 Any TriBITS-added ctest test (i.e. listed in ``ctest -N``) can be disabled at
 configure time by setting::
@@ -1940,7 +1965,7 @@ Also note that other specific defined tests can also be excluded using the
 
 
 Disabling specific test executable builds
------------------------------------------
++++++++++++++++++++++++++++++++++++++++++
 
 Any TriBITS-added executable (i.e. listed in ``make help``) can be disabled
 from being built by setting::
@@ -1956,7 +1981,7 @@ at configure time to CMake STDOUT.
 
 
 Disabling just the ctest tests but not the test executables
------------------------------------------------------------
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 To allow the building of the tests and examples in a package (enabled either
 through setting `<Project>_ENABLE_TESTS`_ ``= ON`` or
@@ -2016,7 +2041,7 @@ should be build and which tests should be run can be made at configure time.
 
 
 Trace test addition or exclusion
---------------------------------
+++++++++++++++++++++++++++++++++
 
 To see what tests get added and see those that don't get added for various
 reasons, configure with::
@@ -2032,7 +2057,7 @@ arguments).
 
 
 Enable advanced test start and end times and timing blocks
-----------------------------------------------------------
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 For tests added using ``TRIBITS_ADD_ADVANCED_TEST()``, one can see start and
 end times for the tests and the timing for each ``TEST_<IDX>`` block in the
@@ -2047,8 +2072,9 @@ systems and not native Windows systems.
 
 .. _DART_TESTING_TIMEOUT:
 
+
 Setting test timeouts at configure time
----------------------------------------
++++++++++++++++++++++++++++++++++++++++
 
 A maximum default time limit (timeout) for all the tests can be set at
 configure time using the cache variable::
@@ -2094,8 +2120,9 @@ NOTES:
 
 .. _<Project>_SCALE_TEST_TIMEOUT:
 
+
 Scaling test timeouts at configure time
----------------------------------------
++++++++++++++++++++++++++++++++++++++++
 
 The global default test timeout `DART_TESTING_TIMEOUT`_ as well as all of the
 timeouts for the individual tests that have their own timeout set (through the
@@ -2133,6 +2160,118 @@ NOTES:
   ``DartConfiguration.tcl`` file (which is directly read by ``ctest``) will be
   scaled.  (This ensures that running configure over and over again will not
   increase ``DART_TESTING_TIMEOUT`` or ``TimeOut`` with each new configure.)
+
+
+Spreading out and limiting tests running on GPUs
+++++++++++++++++++++++++++++++++++++++++++++++++
+
+For CUDA builds (i.e. ``TPL_ENABLE_CUDA=ON``) with tests that run on a single
+node which has multiple GPUs, there are settings that can help ``ctest``
+spread out the testing load over all of the GPUs and limit the number of
+kernels that can run at the same time on a single GPU.
+
+To instruct ``ctest`` to spread out the load on multiple GPUs, one can set the
+following configure-time options::
+
+  -D TPL_ENABLE_CUDA=ON \
+  -D <Project>_AUTOGENERATE_TEST_RESOURCE_FILE=ON \
+  -D <Project>_CUDA_NUM_GPUS=<num-gpus> \
+  -D <Project>_CUDA_SLOTS_PER_GPU=<slots-per-gpu> \
+
+This will cause a file ``ctest_resources.json`` to get generated in the base
+build directory that CTest will use to spread out the work across the
+``<num-gpus>`` GPUs with a maximum of ``<slots-per-gpu>`` processes running
+kernels on any one GPU.  (This uses the `CTest Resource Allocation System`_
+first added in CMake 3.16 and made more usable in CMake 3.18.)
+
+For example, when running on one node on a system with 4 GPUs per node
+(allowing 5 kernels to run at a time on a single GPU) one would configure
+with::
+
+  -D TPL_ENABLE_CUDA=ON \
+  -D <Project>_AUTOGENERATE_TEST_RESOURCE_FILE=ON \
+  -D <Project>_CUDA_NUM_GPUS=4 \
+  -D <Project>_CUDA_SLOTS_PER_GPU=5 \
+
+This allows, for example, up to 5 tests using 4-rank MPI jobs, or 10 tests
+using 2-rank MPI jobs, or 20 tests using 1-rank MPI jobs, to run at the same
+time (or any combination of tests that add up to 20 or less total MPI
+processes to run a the same time).  But a single 21-rank or above MPI test job
+would not be allowed to run and would be listed as "Not Run" because it would
+have required more than ``<slots-per-gpu> = 5`` MPI processes running kernels
+at one time on a single GPU.  (Therefore, one must set ``<slots-per-gpu>``
+large enough to allow all of the defined tests to run or one should avoid
+defining tests that require too many slots for available GPUs.)
+
+The CTest implementation uses a breath-first approach to spread out the work
+across all the available GPUs before adding more work for each GPU.  For
+example, when running two 2-rank MPI tests at the same time (e.g. using
+``ctest -j4``) in the above example, CTest will instruct these tests at
+runtime to spread out across all 4 GPUs and therefore run the CUDA kernels for
+just one MPI process on each GPU.  But when running four 2-rank MPI tests at
+the same time (e.g. using ``ctest -j8``), then each of the 4 GPUs would get
+the work of two MPI processes (i.e. running two kernels at a time on each of
+the 4 GPUs).
+
+One can also manually create a `CTest Resource Specification File`_ and point
+to it by setting::
+
+  -D TPL_ENABLE_CUDA=ON \
+  -D CTEST_RESOURCE_SPEC_FILE=<file-path> \
+
+In all cases, ctest will not spread out and limit running on the GPUs unless
+``TPL_ENABLE_CUDA=ON`` is set which causes TriBITS to add the
+`RESOURCE_GROUPS`_ test property to each test.
+
+NOTES:
+
+* This setup assumes that a single MPI process will run just one kernel on its
+  assigned GPU and therefore take up one GPU "slot".  So a 2-rank MPI test
+  will take up 2 total GPU "slots" (either on the same or two different GPUs,
+  as determined by CTest).
+
+* The underlying test executables/scripts themselves must be set up to read in
+  the `CTest Resource Allocation Environment Variables`_ set specifically by
+  ``ctest`` on the fly for each test and then must run on the specific GPUs
+  specified in those environment variables.  (If the project is using a Kokkos
+  back-end implementation for running CUDA code on the GPU then this will work
+  automatically since Kokkos is set up to automatically look for these
+  CTest-set environment variables.  Without this CTest and TriBITS
+  implementation, when running 2-rank MPI tests on a node with 4 GPUs, Kokkos
+  would just utilize the first two GPUs and leave the other two GPUs idle.
+  One when running 1-rank MPI tests, Kokkos would only utilize the first GPU
+  and leave the last three GPUs idle.)
+
+* The option ``<Project>_AUTOGENERATE_TEST_RESOURCE_FILE=ON`` sets the
+  built-in CMake variable ``CTEST_RESOURCE_SPEC_FILE`` to point to the
+  generated file ``ctest_resources.json`` in the build directory.
+
+* One can avoid setting the CMake cache variables
+  ``<Project>_AUTOGENERATE_TEST_RESOURCE_FILE`` or
+  ``CTEST_RESOURCE_SPEC_FILE`` at configure time and can instead directly pass
+  the path to the `CTest Resource Specification File`_ directly into ``ctest``
+  using the command-line option ``--resource-spec-file`` or the
+  ``ctest_test()`` function argument ``RESOURCE_SPEC_FILE`` (when using a
+  ``ctest -S`` script driver).  (This allows using CMake 3.16+ since support
+  for the ``CTEST_RESOURCE_SPEC_FILE`` cache variable was not added until
+  CMake 3.18.)
+
+* A patched version of CMake 3.17 can be used to get built-in CMake/CTest
+  support for the ``CTEST_RESOURCE_SPEC_FILE`` cache variable, as installed
+  using the TriBITS-provided ``install-cmake.py`` command (using option
+  ``--cmake-version=3.17``, see `Installing CMake from source [developers and
+  experienced users]`_).  This avoids needing to explicitly pass the ctest
+  resource file to ``ctest`` at runtime for CMake/CTest versions [3.16, 3.18).
+
+* **WARNING:** This currently only works for a single node, not multiple
+  nodes.  (CTest needs to be extended to work correctly for multiple nodes
+  where each node has multiple GPUs.  Alternatively, TriBITS could be extended
+  to make this work for multiple nodes but will require considerable work and
+  will need to closely interact with the MPI launcher to control what nodes
+  are run on for each MPI job/test.)
+
+* **WARNING:** This feature is still evolving in CMake/CTest and TriBITS and
+  therefore the input options and behavior of this may change in the future.
 
 
 Enabling support for coverage testing
