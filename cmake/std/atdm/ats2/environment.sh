@@ -130,7 +130,7 @@ fi
 
 if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_"* ]]; then
 
-  sparc-dev/cuda-10.1.243_gcc-7.3.1_spmpi-rolling
+  module load sparc-dev/cuda-10.1.243_gcc-7.3.1_spmpi-rolling
   export CUDA_BIN_PATH=$CUDA_HOME
 
   # OpenMPI Settings
