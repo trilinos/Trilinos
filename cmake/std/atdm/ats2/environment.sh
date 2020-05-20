@@ -19,7 +19,6 @@ if [[ "$ATDM_CONFIG_COMPILER" == "GNU"* || \
   if [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" || \
     "$ATDM_CONFIG_KOKKOS_ARCH" == "Power9" ]] ; then
     export ATDM_CONFIG_KOKKOS_ARCH=Power9
-    sparc_tpl_arch=pwr9
   else
     echo
     echo "***"
@@ -34,7 +33,6 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]] ; then
     "$ATDM_CONFIG_KOKKOS_ARCH" == "Power9" || \
     "$ATDM_CONFIG_KOKKOS_ARCH" == "Volta70" ]] ; then
     export ATDM_CONFIG_KOKKOS_ARCH=Power9,Volta70
-    sparc_tpl_arch=v100
   else
     echo
     echo "***"
@@ -115,11 +113,6 @@ elif [[ "$ATDM_CONFIG_COMPILER" == *"XL-2019.08.20_SPMPI-rolling_DISABLED" ]]; t
 
   if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_"* ]]; then
     export LD_LIBRARY_PATH=${BINUTILS_ROOT}/rh/lib/gcc/ppc64le-redhat-linux/7:${LD_LIBRARY_PATH}
-    sparc_tpl_ext=ats2-${sparc_tpl_arch}_cuda-10.1.243_xl-2019.08.20
-    sparc_tpl_mpi_ext=ats2-${sparc_tpl_arch}_cuda-10.1.243_xl-2019.08.20_spmpi-rolling
-  else
-    sparc_tpl_ext=ats2-${sparc_tpl_arch}_xl-2019.08.20
-    sparc_tpl_mpi_ext=ats2-${sparc_tpl_arch}_xl-2019.08.20_spmpi-rolling
   fi
 
 else
@@ -138,6 +131,7 @@ fi
 if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_"* ]]; then
 
   sparc-dev/cuda-10.1.243_gcc-7.3.1_spmpi-rolling
+  export CUDA_BIN_PATH=$CUDA_HOME
 
   # OpenMPI Settings
   # NOTE: the below export overrides the value set by the module load above
