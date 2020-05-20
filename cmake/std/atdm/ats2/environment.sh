@@ -75,37 +75,13 @@ fi
 
 # Load common modules for all builds
 module load git/2.20.0
-module load cmake/3.14.5
 
 #
 # Load compiler modules, TPL modules, and point to SPARC TPL install base dirs
 #
 
 if [[ "$ATDM_CONFIG_COMPILER" == *"GNU-7.3.1_SPMPI-rolling" ]]; then
-  module load gcc/7.3.1
-  module load lapack/3.8.0-gcc-4.9.3
-
-  export CBLAS_ROOT=/usr/tcetmp/packages/lapack/lapack-3.8.0-gcc-4.9.3
-  export LAPACK_ROOT=/usr/tcetmp/packages/lapack/lapack-3.8.0-gcc-4.9.3
-  export COMPILER_ROOT=/usr/tce/packages/gcc/gcc-7.3.1
-  export SPARC_HDF5=hdf5-1.10.5
-
-  # eharvey: TODO: remove COMPILER_ROOT and other unused exports below.
-  export PATH=${COMPILER_ROOT}/bin:${PATH}
-  export LD_LIBRARY_PATH=${COMPILER_ROOT}/lib:${LD_LIBRARY_PATH}
-  export BINUTILS_ROOT=${COMPILER_ROOT}
-  export LIBRARY_PATH=${BINUTILS_ROOT}/lib
-  export LIBRARY_PATH=${CBLAS_ROOT}/lib:${LIBRARY_PATH}
-  export INCLUDE=${BINUTILS_ROOT}/include:${INCLUDE}
-  export CPATH=${BINUTILS_ROOT}/include:${CPATH}
-
-  if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_"* ]]; then
-    sparc_tpl_ext=ats2-${sparc_tpl_arch}_cuda-10.1.243_gcc-7.3.1
-    sparc_tpl_mpi_ext=ats2-${sparc_tpl_arch}_cuda-10.1.243_gcc-7.3.1_spmpi-rolling
-  else
-    sparc_tpl_ext=ats2-${sparc_tpl_arch}_gcc-7.3.1
-    sparc_tpl_mpi_ext=ats2-${sparc_tpl_arch}_gcc-7.3.1_spmpi-rolling
-  fi
+  module load sparc-dev/gcc-7.3.1_spmpi-rolling
 
 elif [[ "$ATDM_CONFIG_COMPILER" == *"XL-2019.08.20_SPMPI-rolling_DISABLED" ]]; then
   module load xl/2019.08.20
@@ -153,21 +129,17 @@ fi
 
 if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_"* ]]; then
 
-  module load cuda/10.1.243
+  sparc-dev/cuda-10.1.243_gcc-7.3.1_spmpi-rolling
 
   # OpenMPI Settings
+  # NOTE: the below export overrides the value set by the module load above
   export OMPI_CXX=${ATDM_CONFIG_NVCC_WRAPPER}
   if [ ! -x "$OMPI_CXX" ]; then
       echo "No nvcc_wrapper found"
       return
   fi
-  export OMPI_CC=`which gcc`
-  export OMPI_FC=`which gfortran`
-  export LLNL_USE_OMPI_VARS="y"
 
   # CUDA Settings
-  export CUDA_LAUNCH_BLOCKING=1
-  export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
   if [[ ! -d /tmp/${USER} ]] ; then
     echo "Creating /tmp/${USER} for nvcc wrapper!"
     mkdir /tmp/${USER}
@@ -202,14 +174,11 @@ fi
 # Final setup for all build configurations
 #
 
-# Common module - requires compiler to be loaded first
-module load spectrum-mpi/rolling
-
 # Prepend path to ninja after all of the modules are loaded
 export PATH=/projects/atdm_devops/vortex/ninja-fortran-1.8.2:$PATH
 
 # Prepend path to updated CMake 3.16.5
-module unload cmake/3.14.5
+module unload cmake
 export PATH=/projects/atdm_devops/vortex/cmake-3.16.5/bin:$PATH
 
 # ATDM specific config variables
@@ -218,20 +187,6 @@ export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas;-lgfortran;-lgomp;-lm"
 
 # NOTE: Invalid libbfd.so requires below for Trilinos to compile
 export ATDM_CONFIG_BINUTILS_LIBS="${BINUTILS_ROOT}/lib/libbfd.a;-lz;${BINUTILS_ROOT}/lib/libiberty.a"
-
-export ATDM_CONFIG_SPARC_TPL_BASE=/projects/sparc/tpls/ats2-${sparc_tpl_arch}
-
-sparc_tpl_base=${ATDM_CONFIG_SPARC_TPL_BASE}
-
-# Commont ROOT config variables
-export BOOST_ROOT=${sparc_tpl_base}/boost-1.65.1/00000000/${sparc_tpl_ext}
-export HDF5_ROOT=${sparc_tpl_base}/hdf5-1.10.5/00000000/${sparc_tpl_mpi_ext}
-export CGNS_ROOT=${sparc_tpl_base}/cgns-c09a5cd/27e5681f1b74c679b5dcb337ac71036d16c47977/${sparc_tpl_mpi_ext}
-export PNETCDF_ROOT=${sparc_tpl_base}/pnetcdf-1.10.0/6144dc67b2041e4093063a04e89fc1e33398bd09/${sparc_tpl_mpi_ext}
-export NETCDF_ROOT=${sparc_tpl_base}/netcdf-4.7.0/58bc48d95be2cc9272a18488fea52e1be1f0b42a/${sparc_tpl_mpi_ext}
-export PARMETIS_ROOT=${sparc_tpl_base}/parmetis-4.0.3/00000000/${sparc_tpl_mpi_ext}
-export METIS_ROOT=${sparc_tpl_base}/parmetis-4.0.3/00000000/${sparc_tpl_mpi_ext}
-export SUPERLUDIST_ROOT=${sparc_tpl_base}/superlu_dist-5.4.0/a3121eaff44f7bf7d44e625c3b3d2a9911e58876/${sparc_tpl_mpi_ext}
 
 export ATDM_CONFIG_USE_HWLOC=OFF
 export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
@@ -251,13 +206,6 @@ export ATDM_CONFIG_MPI_EXEC=${ATDM_SCRIPT_DIR}/ats2/trilinos_jsrun
 
 export ATDM_CONFIG_MPI_POST_FLAGS="--rs_per_socket;4"
 export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG="-p"
-
-# Set common default compilers
-export CC=mpicc
-export CXX=mpicxx
-export F77=mpifort
-export FC=mpifort
-export F90=mpifort
 
 # System-info for what ATS-2 system we are using
 if [[ "${ATDM_CONFIG_KNOWN_HOSTNAME}" == "vortex" ]] ; then
