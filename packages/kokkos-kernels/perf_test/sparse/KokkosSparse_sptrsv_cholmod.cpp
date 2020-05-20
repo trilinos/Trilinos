@@ -68,12 +68,17 @@ enum {CUSPARSE, SUPERNODAL_NAIVE, SUPERNODAL_ETREE};
 
 
 /* ========================================================================================= */
-template<typename scalar_type>
-cholmod_factor* factor_cholmod(const int nrow, const int nnz, scalar_type *nzvals, int *rowptr, int *colind, cholmod_common *Comm, int **etree) {
+template<typename cholmod_int_type, typename scalar_type, typename size_type, typename ordinal_type>
+cholmod_factor* factor_cholmod(const size_type nrow, const size_type nnz, scalar_type *nzvals, size_type *rowptr, ordinal_type *colind,
+                               cholmod_common *Comm, int **etree) {
 
   // Start Cholmod
   cholmod_common *cm = Comm;
-  cholmod_start (cm);
+  if (std::is_same<cholmod_int_type, long>::value == true) {
+    cholmod_l_start (cm);
+  } else if (std::is_same<cholmod_int_type, int>::value == true) {
+    cholmod_start (cm);
+  }
   cm->supernodal = CHOLMOD_SUPERNODAL;
 
   // Manually, initialize the matrix
@@ -81,34 +86,56 @@ cholmod_factor* factor_cholmod(const int nrow, const int nnz, scalar_type *nzval
   A.stype = 1;   // symmetric
   A.sorted = 0;
   A.packed = 1;
-  A.itype = CHOLMOD_INT;
-  A.xtype = CHOLMOD_REAL;
-  A.dtype = CHOLMOD_DOUBLE;
-
+  if (std::is_same<cholmod_int_type, long>::value == true) {
+    A.itype = CHOLMOD_LONG;
+  } else if (std::is_same<cholmod_int_type, int>::value == true) {
+    A.itype = CHOLMOD_INT;
+  }
+  if (std::is_same<scalar_type, double>::value == true) {
+    A.xtype = CHOLMOD_REAL;
+    A.dtype = CHOLMOD_DOUBLE;
+  } else if (std::is_same<scalar_type, Kokkos::complex<double>>::value == true) {
+    A.xtype = CHOLMOD_COMPLEX;
+    A.dtype = CHOLMOD_DOUBLE;
+  }
   A.nrow = nrow;
   A.ncol = nrow;
   A.nzmax = nnz;
-
-  A.p = rowptr;
+  // Make a copy of Crs's integer pointers with Cholmod int type
+  A.p = new cholmod_int_type [nrow+1];
+  A.i = new cholmod_int_type [nnz];
+  for (size_type i = 0; i <=nrow; i++) {
+    ((cholmod_int_type*)A.p)[i] = rowptr[i];
+  }
+  for (size_type i = 0; i < nnz; i++) {
+    ((cholmod_int_type*)A.i)[i] = colind[i];
+  }
+  //
   A.x = nzvals;
-  A.i = colind;
 
   // Symbolic factorization
   cholmod_factor *L;
-  L = cholmod_analyze (&A, cm);
+  if (std::is_same<cholmod_int_type, long>::value == true) {
+    L = cholmod_l_analyze (&A, cm);
+  } else if (std::is_same<cholmod_int_type, int>::value == true) {
+    L = cholmod_analyze (&A, cm);
+  }
   if (cm->status != CHOLMOD_OK) {
     printf( " ** cholmod_analyze returned with status = %d **",cm->status );
   }
 
   // Numerical factorization
-  if (!cholmod_factorize (&A, L, cm)) {
+  int cholmod_stat = 0;
+  if (std::is_same<cholmod_int_type, long>::value == true) {
+    cholmod_stat = cholmod_l_factorize (&A, L, cm);
+  } else if (std::is_same<cholmod_int_type, int>::value == true) {
+    cholmod_stat = cholmod_factorize (&A, L, cm);
+  }
+  if (!cholmod_stat) {
     printf( " ** cholmod_factorize returned FALSE **\n" );
   }
   if (cm->status != CHOLMOD_OK) {
     printf( " ** cholmod_factorize returned with status = %d, minor = %ld **",cm->status,L->minor );
-    int i;
-    int *Perm = (int*)(L->Perm);
-    for (i = 0; i < (int)(L->n); i++) printf( "%d %d\n",i,Perm[i] );
   }
   switch (cm->selected) {
     case CHOLMOD_NATURAL: printf( "  > NATURAL ordering (%d)\n", CHOLMOD_NATURAL ); break;
@@ -117,7 +144,7 @@ cholmod_factor* factor_cholmod(const int nrow, const int nnz, scalar_type *nzval
     case CHOLMOD_NESDIS:  printf( "  > NESDIS ordering (%d)\n",  CHOLMOD_NESDIS  ); break;
   }
   //print_factor_cholmod<scalar_type>(L, cm);
-  compute_etree_cholmod(&A, cm, etree);
+  compute_etree_cholmod<cholmod_int_type> (&A, cm, etree);
 
   return L;
 }
@@ -129,8 +156,16 @@ template<typename scalar_type>
 int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
 
   using STS = Kokkos::Details::ArithTraits<scalar_type>;
+  using mag_type = typename STS::mag_type;
+
+  using cholmod_int_type = long;
+  //using cholmod_int_type = int;
+
+  // using int (for CuSparse on GPU)
   using ordinal_type = int;
   using size_type    = int;
+  //using ordinal_type = long;
+  //using size_type    = long;
 
   // Default spaces
   using execution_space = Kokkos::DefaultExecutionSpace;
@@ -159,7 +194,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
   const scalar_type ONE (1.0);
 
   // tolerance
-  scalar_type tol = STS::epsilon();
+  mag_type tol = STS::epsilon();
 
   int num_failed = 0;
   std::cout << std::endl;
@@ -187,12 +222,14 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
     int *etree;
     timer.reset();
     std::cout << " > call CHOLMOD for factorization" << std::endl;
-    L = factor_cholmod<scalar_type> (nrows, Mtx.nnz(), values_host.data(), const_cast<int*> (row_map_host.data()), entries_host.data(),
-                                  &cm, &etree);
+    L = factor_cholmod<cholmod_int_type, scalar_type>
+         (nrows, Mtx.nnz(), values_host.data(), const_cast<size_type*> (row_map_host.data()), entries_host.data(),
+          &cm, &etree);
     std::cout << "   Factorization Time: " << timer.seconds() << std::endl << std::endl;
-    int* iperm = (int*)(L->Perm);
+    int* iperm = new int[nrows];
     int*  perm = new int[nrows];
     for (int i = 0; i < nrows; i++) {
+      iperm[i] = ((cholmod_int_type*)(L->Perm))[i];
       perm[iperm[i]] = i;
     }
 
@@ -230,11 +267,11 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
 
           // ==============================================
           // Do symbolic analysis
-          sptrsv_symbolic<scalar_type, ordinal_type, size_type> (&khL, &khU, L, &cm);
+          sptrsv_symbolic<cholmod_int_type> (&khL, &khU, L, &cm);
 
           // ==============================================
           // Do numerical compute
-          sptrsv_compute<scalar_type, ordinal_type, size_type> (&khL, &khU, L, &cm);
+          sptrsv_compute<cholmod_int_type> (&khL, &khU, L, &cm);
 
           // ==============================================
           // Create the known solution and set to all 1's ** on host **
@@ -311,7 +348,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
 
           // Benchmark
           // L-solve
-          double min_time = 1.0e32;
+          double min_time = 0.0;
           double max_time = 0.0;
           double ave_time = 0.0;
           Kokkos::fence();
@@ -321,9 +358,8 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
             Kokkos::fence();
             double time = timer.seconds();
             ave_time += time;
-            if(time>max_time) max_time = time;
-            if(time<min_time) min_time = time;
-            //std::cout << time << std::endl;
+            if(time>max_time || i == 0) max_time = time;
+            if(time<min_time || i == 0) min_time = time;
           }
           std::cout << " L-solve: loop = " << loop << std::endl;
           std::cout << "  LOOP_AVG_TIME:  " << ave_time/loop << std::endl;
@@ -362,8 +398,8 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
           timer.reset();
           std::cout << " > Read Cholmod factor into KokkosSparse::CrsMatrix (invert diagonabl, and copy to device) " << std::endl;
           khL.set_sptrsv_invert_diagonal (false);
-          auto graph = read_cholmod_graphL<graph_t>(&khL, L, &cm);
-          auto cholmodMtx = read_cholmod_factor<crsmat_t, graph_t> (&khL, L, &cm, graph);
+          auto graph = read_cholmod_graphL<cholmod_int_type, graph_t>(&khL, L, &cm);
+          auto cholmodMtx = read_cholmod_factor<cholmod_int_type, crsmat_t, graph_t> (&khL, L, &cm, graph);
           std::cout << "   Conversion Time: " << timer.seconds() << std::endl << std::endl;
 
           bool col_majorL = true;
@@ -407,6 +443,8 @@ int main(int argc, char **argv)
   std::string filename;
 
   int loop = 1;
+  // scalar type
+  std::string char_scalar = "d";
 
   if(argc == 1)
   {
@@ -437,6 +475,9 @@ int main(int argc, char **argv)
       loop = atoi(argv[++i]);
       continue;
     }
+    if((strcmp(argv[i],"--scalar-type")==0)) {
+      char_scalar = argv[++i];
+    }
     if((strcmp(argv[i],"--help")==0) || (strcmp(argv[i],"-h")==0)) {
       print_help_sptrsv();
       return 0;
@@ -451,10 +492,21 @@ int main(int argc, char **argv)
   {
     // Cholmod may not support single, yet
     //int total_errors = test_sptrsv_perf<float>(tests, filename, loop);
-    // Kokkos::IO may not read complex?
-    //int total_errors = test_sptrsv_perf<Kokkos::complex<double>>(tests, filename, loop);
+    int total_errors = 0;
     Kokkos::ScopeGuard kokkosScope (argc, argv);
-    int total_errors = test_sptrsv_perf<double>(tests, filename, loop);
+    if (char_scalar == "z") {
+      #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
+      total_errors = test_sptrsv_perf<Kokkos::complex<double>>(tests, filename, loop);
+      #else
+      std::cout << std::endl << " KOKKOSKERNELS_INST_COMPLEX_DOUBLE  is not enabled ** " << std::endl << std::endl;
+      #endif
+    } else if (char_scalar == "d") {
+      #if defined(KOKKOSKERNELS_INST_DOUBLE)
+      total_errors = test_sptrsv_perf<double>(tests, filename, loop);
+      #else
+      std::cout << std::endl << " KOKKOSKERNELS_INST_DOUBLE  is not enabled ** " << std::endl << std::endl;
+      #endif
+    }
     if(total_errors == 0)
       std::cout << "Kokkos::SPTRSV Test: Passed" << std::endl << std::endl;
     else

@@ -57,7 +57,7 @@ C $Id: sumnod.f,v 1.4 1999/02/16 21:38:01 gdsjaar Exp $
          ELSE
             STRA = 'Average'
          END IF
-         RSEL = FLOAT(NUMEQL (.TRUE., NUMNP, NODSEL))
+         RSEL = DBLE(NUMEQL (.TRUE., NUMNP, NODSEL))
       ELSE
          IF (DOABS) THEN
             STRA = 'Absolute value total of'

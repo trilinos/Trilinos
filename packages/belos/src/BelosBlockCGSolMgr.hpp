@@ -199,7 +199,7 @@ namespace Belos {
      *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms
      *                               must reach to decide convergence. Default: 1e-8.
      *   - "Orthogonalization" - a \c std::string specifying the desired orthogonalization:
-     *                           DGKS ,ICGS, and IMGS. Default: "DGKS"
+     *                           DGKS ,ICGS, and IMGS. Default: "ICGS"
      *   - "Orthogonalization Constant" - a \c MagnitudeType used by DGKS orthogonalization to
      *                                    determine whether another step of classical Gram-Schmidt
      *                                    is necessary.  Default: -1 (use DGKS default)
@@ -374,7 +374,7 @@ namespace Belos {
     static constexpr bool foldConvergenceDetectionIntoAllreduce_default_ = false;
     static constexpr const char * resScale_default_ = "Norm of Initial Residual";
     static constexpr const char * label_default_ = "Belos";
-    static constexpr const char * orthoType_default_ = "DGKS";
+    static constexpr const char * orthoType_default_ = "ICGS";
     static constexpr bool assertPositiveDefiniteness_default_ = true;
     static constexpr std::ostream * outputStream_default_ = &std::cout;
 

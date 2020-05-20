@@ -52,6 +52,8 @@
 #include <exodusII.h>
 #endif
 
+#include "Ioss_Assembly.h"
+#include "Ioss_Blob.h"
 #include "Ioss_CommSet.h"
 #include "Ioss_CoordinateFrame.h"
 #include "Ioss_DBUsage.h"

@@ -167,7 +167,7 @@ C
 C
 C  COMPUTE NET MOVEMENT VECTOR
 C
-               RK = 1.0/FLOAT(KOUNT)
+               RK = 1.0/DBLE(KOUNT)
                XNET = (ALPHA*XA  +  BETA*XL)*RK
                YNET = (ALPHA*YA  +  BETA*YL)*RK
 C

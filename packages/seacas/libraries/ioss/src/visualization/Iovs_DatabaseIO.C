@@ -382,9 +382,10 @@ namespace Iovs {
           error_codes.size() == error_messages.size()) {
         for (unsigned int i = 0; i < error_codes.size(); i++) {
           if (error_codes[i] > 0) {
-            IOSS_WARNING << "\n\n** ParaView Catalyst Plugin Warning Message Severity Level "
-                         << error_codes[i] << ", On Processor " << this->myProcessor << " **\n\n";
-            IOSS_WARNING << error_messages[i];
+            Ioss::WARNING() << "\n\n** ParaView Catalyst Plugin Warning Message Severity Level "
+                            << error_codes[i] << ", On Processor " << this->myProcessor
+                            << " **\n\n";
+            Ioss::WARNING() << error_messages[i];
           }
           else {
             std::ostringstream errmsg;
@@ -664,7 +665,8 @@ namespace Iovs {
           // Not applicable to viz output.
         }
         else {
-          IOSS_WARNING << " ElementBlock " << eb->name() << ". Unknown field " << field.get_name();
+          Ioss::WARNING() << " ElementBlock " << eb->name() << ". Unknown field "
+                          << field.get_name();
           num_to_get = 0;
         }
       }
@@ -968,8 +970,8 @@ namespace Iovs {
   int field_warning(const Ioss::GroupingEntity *ge, const Ioss::Field &field,
                     const std::string &inout)
   {
-    IOSS_WARNING << ge->type() << " '" << ge->name() << "'. Unknown " << inout << " field '"
-                 << field.get_name() << "'";
+    Ioss::WARNING() << ge->type() << " '" << ge->name() << "'. Unknown " << inout << " field '"
+                    << field.get_name() << "'";
     return -4;
   }
 

@@ -52,5 +52,10 @@ Exodus Library Warning/Error: [ex_get_init_ext] in file 'test.exo'
 	Warning: no title in file id 65536
 	NetCDF: Attribute not found
 testwt-results - write EXPERIMENTAL file with only transient data; no mesh bulk data...
+testwt-assembly - write file containing assembly data
+testrd-assembly - read file containing assembly data
+test-add-assembly - add an assembly to an existing file
+testwt-blob - write file containing blob data
+testrd-blob - read file containing blob data
 testwt-oned - write 1D mesh...
 testrd - read test of 1D file...

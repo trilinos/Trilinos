@@ -1,0 +1,209 @@
+netcdf test-assembly {
+dimensions:
+	len_name = 256 ;
+	time_step = UNLIMITED ; // (10 currently)
+	num_dim = 3 ;
+	num_nodes = 1 ;
+	num_elem = 7 ;
+	num_el_blk = 7 ;
+	num_el_in_blk1 = 1 ;
+	num_nod_per_el1 = 1 ;
+	num_el_in_blk2 = 1 ;
+	num_nod_per_el2 = 1 ;
+	num_el_in_blk3 = 1 ;
+	num_nod_per_el3 = 1 ;
+	num_el_in_blk4 = 1 ;
+	num_nod_per_el4 = 1 ;
+	num_el_in_blk5 = 1 ;
+	num_nod_per_el5 = 1 ;
+	num_el_in_blk6 = 1 ;
+	num_nod_per_el6 = 1 ;
+	num_el_in_blk7 = 1 ;
+	num_nod_per_el7 = 1 ;
+	num_entity_assembly100 = 3 ;
+	num_entity_assembly200 = 4 ;
+	num_entity_assembly300 = 3 ;
+	num_entity_assembly400 = 2 ;
+	num_assembly_red_var = 4 ;
+	num_entity_assembly222 = 4 ;
+variables:
+	double time_whole(time_step) ;
+	int eb_status(num_el_blk) ;
+	int eb_prop1(num_el_blk) ;
+		eb_prop1:name = "ID" ;
+	double coordx(num_nodes) ;
+	double coordy(num_nodes) ;
+	double coordz(num_nodes) ;
+	char eb_names(num_el_blk, len_name) ;
+	char coor_names(num_dim, len_name) ;
+	int connect1(num_el_in_blk1, num_nod_per_el1) ;
+		connect1:elem_type = "sphere" ;
+	int connect2(num_el_in_blk2, num_nod_per_el2) ;
+		connect2:elem_type = "sphere" ;
+		connect2:Units = 1, 0, 0, -1 ;
+	int connect3(num_el_in_blk3, num_nod_per_el3) ;
+		connect3:elem_type = "sphere" ;
+	int connect4(num_el_in_blk4, num_nod_per_el4) ;
+		connect4:elem_type = "sphere" ;
+	int connect5(num_el_in_blk5, num_nod_per_el5) ;
+		connect5:elem_type = "sphere" ;
+	int connect6(num_el_in_blk6, num_nod_per_el6) ;
+		connect6:elem_type = "sphere" ;
+	int connect7(num_el_in_blk7, num_nod_per_el7) ;
+		connect7:elem_type = "sphere" ;
+	int assembly_entity100(num_entity_assembly100) ;
+		assembly_entity100:_id = 100 ;
+		assembly_entity100:_type = 16 ;
+		assembly_entity100:_name = "Root" ;
+		assembly_entity100:_typename = "assembly" ;
+		assembly_entity100:Scale = 1.5 ;
+		assembly_entity100:Units = 1, 0, 0, -1 ;
+	int assembly_entity200(num_entity_assembly200) ;
+		assembly_entity200:_id = 200 ;
+		assembly_entity200:_type = 1 ;
+		assembly_entity200:_name = "Child2" ;
+		assembly_entity200:_typename = "element block" ;
+		assembly_entity200:Offset = 1.1, 2.2, 3.3 ;
+	int assembly_entity300(num_entity_assembly300) ;
+		assembly_entity300:_id = 300 ;
+		assembly_entity300:_type = 1 ;
+		assembly_entity300:_name = "Child3" ;
+		assembly_entity300:_typename = "element block" ;
+		assembly_entity300:Dimension = "length" ;
+		assembly_entity300:Offset = 1.1, 2.2, 3.3 ;
+	int assembly_entity400(num_entity_assembly400) ;
+		assembly_entity400:_id = 400 ;
+		assembly_entity400:_type = 1 ;
+		assembly_entity400:_name = "Child4" ;
+		assembly_entity400:_typename = "element block" ;
+		assembly_entity400:Units = 1, 0, 0, -1 ;
+	char name_assembly_red_var(num_assembly_red_var, len_name) ;
+	double vals_red_var_assembly100(time_step, num_assembly_red_var) ;
+	double vals_red_var_assembly200(time_step, num_assembly_red_var) ;
+	double vals_red_var_assembly300(time_step, num_assembly_red_var) ;
+	double vals_red_var_assembly400(time_step, num_assembly_red_var) ;
+	int assembly_entity222(num_entity_assembly222) ;
+		assembly_entity222:_id = 222 ;
+		assembly_entity222:_type = 16 ;
+		assembly_entity222:_name = "NewAssembly" ;
+		assembly_entity222:_typename = "assembly" ;
+
+// global attributes:
+		:floating_point_word_size = 8 ;
+		:file_size = 1 ;
+		:int64_status = 0 ;
+		:title = "This is a test" ;
+		:SOLID_MODEL = "STEP-X-43-1547836-Rev 0" ;
+data:
+
+ time_whole = 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1 ;
+
+ eb_status = 1, 1, 1, 1, 1, 1, 1 ;
+
+ eb_prop1 = 10, 11, 12, 13, 14, 15, 16 ;
+
+ coordx = 0 ;
+
+ coordy = 0 ;
+
+ coordz = 0 ;
+
+ eb_names =
+  "block_A",
+  "block_B",
+  "block_C",
+  "block_D",
+  "block_E",
+  "block_F",
+  "block_G" ;
+
+ coor_names =
+  "",
+  "",
+  "" ;
+
+ connect1 =
+  1 ;
+
+ connect2 =
+  1 ;
+
+ connect3 =
+  1 ;
+
+ connect4 =
+  1 ;
+
+ connect5 =
+  1 ;
+
+ connect6 =
+  1 ;
+
+ connect7 =
+  1 ;
+
+ assembly_entity100 = 200, 300, 400 ;
+
+ assembly_entity200 = 10, 11, 12, 13 ;
+
+ assembly_entity300 = 14, 15, 16 ;
+
+ assembly_entity400 = 10, 16 ;
+
+ name_assembly_red_var =
+  "Momentum_X",
+  "Momentum_Y",
+  "Momentum_Z",
+  "Kinetic_Energy" ;
+
+ vals_red_var_assembly100 =
+  0.02, 0.03, 0.04, 0.05,
+  0.04, 0.06, 0.08, 0.1,
+  0.06, 0.09, 0.12, 0.15,
+  0.08, 0.12, 0.16, 0.2,
+  0.1, 0.15, 0.2, 0.25,
+  0.12, 0.18, 0.24, 0.3,
+  0.14, 0.21, 0.28, 0.35,
+  0.16, 0.24, 0.32, 0.4,
+  0.18, 0.27, 0.36, 0.45,
+  0.2, 0.3, 0.4, 0.5 ;
+
+ vals_red_var_assembly200 =
+  1.02, 1.03, 1.04, 1.05,
+  1.04, 1.06, 1.08, 1.1,
+  1.06, 1.09, 1.12, 1.15,
+  1.08, 1.12, 1.16, 1.2,
+  1.1, 1.15, 1.2, 1.25,
+  1.12, 1.18, 1.24, 1.3,
+  1.14, 1.21, 1.28, 1.35,
+  1.16, 1.24, 1.32, 1.4,
+  1.18, 1.27, 1.36, 1.45,
+  1.2, 1.3, 1.4, 1.5 ;
+
+ vals_red_var_assembly300 =
+  2.02, 2.03, 2.04, 2.05,
+  2.04, 2.06, 2.08, 2.1,
+  2.06, 2.09, 2.12, 2.15,
+  2.08, 2.12, 2.16, 2.2,
+  2.1, 2.15, 2.2, 2.25,
+  2.12, 2.18, 2.24, 2.3,
+  2.14, 2.21, 2.28, 2.35,
+  2.16, 2.24, 2.32, 2.4,
+  2.18, 2.27, 2.36, 2.45,
+  2.2, 2.3, 2.4, 2.5 ;
+
+ vals_red_var_assembly400 =
+  3.02, 3.03, 3.04, 3.05,
+  3.04, 3.06, 3.08, 3.1,
+  3.06, 3.09, 3.12, 3.15,
+  3.08, 3.12, 3.16, 3.2,
+  3.1, 3.15, 3.2, 3.25,
+  3.12, 3.18, 3.24, 3.3,
+  3.14, 3.21, 3.28, 3.35,
+  3.16, 3.24, 3.32, 3.4,
+  3.18, 3.27, 3.36, 3.45,
+  3.2, 3.3, 3.4, 3.5 ;
+
+ assembly_entity222 = 100, 200, 300, 400 ;
+}

@@ -2633,7 +2633,6 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     Kokkos::View<mj_scalar_t*, device_t>(
     Kokkos::ViewAllocateWithoutInitializing("empty"), 0);
 
-  // distribute_points_on_cut_lines = false;
   if(this->distribute_points_on_cut_lines) {
     this->process_cut_line_weight_to_put_left =
       Kokkos::View<mj_scalar_t *, device_t>(
@@ -4708,20 +4707,20 @@ mj_create_new_partitions(
             local_thread_cut_line_weight_to_put_left(i) = 0;
           }
         }
-      }
 
-      // this is a special case. If cutlines share the same coordinate,
-      // their weights are equal. We need to adjust the ratio for that.
-      for(mj_part_t i = num_cuts - 1; i > 0 ; --i) {
-        if(std::abs(current_concurrent_cut_coordinate(i) -
-          current_concurrent_cut_coordinate(i -1)) < local_sEpsilon) {
-            local_thread_cut_line_weight_to_put_left(i) -=
-              local_thread_cut_line_weight_to_put_left(i - 1);
+        // this is a special case. If cutlines share the same coordinate,
+        // their weights are equal. We need to adjust the ratio for that.
+        for(mj_part_t i = num_cuts - 1; i > 0 ; --i) {
+          if(std::abs(current_concurrent_cut_coordinate(i) -
+            current_concurrent_cut_coordinate(i -1)) < local_sEpsilon) {
+              local_thread_cut_line_weight_to_put_left(i) -=
+                local_thread_cut_line_weight_to_put_left(i - 1);
+          }
+          local_thread_cut_line_weight_to_put_left(i) =
+            static_cast<long long>((local_thread_cut_line_weight_to_put_left(i) +
+            least_signifiance) * significance_mul) /
+            static_cast<mj_scalar_t>(significance_mul);
         }
-        local_thread_cut_line_weight_to_put_left(i) =
-          static_cast<long long>((local_thread_cut_line_weight_to_put_left(i) +
-          least_signifiance) * significance_mul) /
-          static_cast<mj_scalar_t>(significance_mul);
       }
 
       for(mj_part_t i = 0; i < num_parts; ++i) {

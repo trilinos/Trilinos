@@ -103,6 +103,7 @@ ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
   , oneTimeDirichletBeta_(0.0)
   , build_volume_field_managers_(true)
   , build_bc_field_managers_(true)
+  , active_evaluation_types_(Sacado::mpl::size<panzer::Traits::EvalTypes>::value, true)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -157,6 +158,7 @@ ModelEvaluator(const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits>
   , oneTimeDirichletBeta_(0.0)
   , build_volume_field_managers_(true)
   , build_bc_field_managers_(true)
+  , active_evaluation_types_(Sacado::mpl::size<panzer::Traits::EvalTypes>::value, true)
 {
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
@@ -422,6 +424,7 @@ setupModel(const Teuchos::RCP<panzer::WorksetContainer> & wc,
     {
       PANZER_FUNC_TIME_MONITOR_DIFF("allocate FieldManagerBuilder",allocFMB);
       fmb = Teuchos::rcp(new panzer::FieldManagerBuilder);
+      fmb->setActiveEvaluationTypes(active_evaluation_types_);
     }
     {
       PANZER_FUNC_TIME_MONITOR_DIFF("fmb->setWorksetContainer()",setupWorksets);

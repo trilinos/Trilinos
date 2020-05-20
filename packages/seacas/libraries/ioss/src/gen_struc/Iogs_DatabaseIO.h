@@ -160,6 +160,17 @@ namespace Iogs {
                                size_t data_size) const override;
     int64_t get_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
+    int64_t get_field_internal(const Ioss::Assembly* /*sb*/, const Ioss::Field & /*field*/,
+                               void * /*data*/, size_t /*data_size*/) const override
+    {
+      return 0;
+    }
+
+    int64_t get_field_internal(const Ioss::Blob * /*sb*/, const Ioss::Field & /*field*/,
+                               void * /*data*/, size_t /*data_size*/) const override
+    {
+      return 0;
+    }
 
     int64_t put_field_internal(const Ioss::Region *reg, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
@@ -190,6 +201,17 @@ namespace Iogs {
                                size_t /* data_size */) const override
     {
       return -1;
+    }
+    int64_t put_field_internal(const Ioss::Assembly* /*sb*/, const Ioss::Field & /*field*/,
+                               void * /*data*/, size_t /*data_size*/) const override
+    {
+      return 0;
+    }
+
+    int64_t put_field_internal(const Ioss::Blob * /*sb*/, const Ioss::Field & /*field*/,
+                               void * /*data*/, size_t /*data_size*/) const override
+    {
+      return 0;
     }
 
     void add_transient_fields(Ioss::GroupingEntity *entity);

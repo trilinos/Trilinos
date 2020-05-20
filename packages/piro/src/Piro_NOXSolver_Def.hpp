@@ -305,7 +305,7 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
         // choice to minimze the number of solves.  However this choice depends
         // also on what layout of dg/dx is supported (e.g., if only the operator
         // form is supported for forward sensitivities, then df/dp must be
-        // DERIV_MV_BY_COL).  For simplicity, we order the conditional tests
+        // DERIV_MV_JACOBIAN_FORM).  For simplicity, we order the conditional tests
         // to get the right layout in most situations.
         DerivativeLayout dfdp_layout;
         { // if (sensitivity_method == "Adjoint")
@@ -321,8 +321,8 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
                 std::endl << "Piro::NOXSolver::evalModel():  " <<
                 "For df/dp(" << i <<") with adjoint sensitivities, " <<
                 "underlying ModelEvaluator must support DERIV_LINEAR_OP, " <<
-                "DERIV_MV_BY_COL with p not distributed, or "
-                "DERIV_TRANS_MV_BY_ROW with f not distributed." <<
+                "DERIV_MV_JACOBIAN_FORM with p not distributed, or "
+                "DERIV_MV_GRADIENT_FORM with f not distributed." <<
                 std::endl);
         }
         if (dfdp_layout == COL) {
@@ -390,8 +390,8 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
                 std::endl << "Piro::NOXSolver::evalModel():  " <<
                 "For dg/dx(" << j <<") with adjoint sensitivities, " <<
                 "underlying ModelEvaluator must support DERIV_LINEAR_OP, " <<
-                "DERIV_MV_BY_COL with x not distributed, or "
-                "DERIV_TRANS_MV_BY_ROW with g not distributed." <<
+                "DERIV_MV_JACOBIAN_FORM with x not distributed, or "
+                "DERIV_MV_GRADIENT_FORM with g not distributed." <<
                 std::endl);
         }
 
@@ -455,8 +455,8 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
                     "For dg/dp(" << j << "," << i <<
                     ") with operator sensitivities, "<<
                     "underlying ModelEvaluator must support DERIV_LINEAR_OP, " <<
-                    "DERIV_MV_BY_COL with p not distributed, or "
-                    "DERIV_TRANS_MV_BY_ROW with g not distributed." <<
+                    "DERIV_MV_JACOBIAN_FORM with p not distributed, or "
+                    "DERIV_MV_GRADIENT_FORM with g not distributed." <<
                     std::endl);
             }
             else

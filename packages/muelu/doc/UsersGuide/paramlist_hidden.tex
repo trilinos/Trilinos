@@ -3,6 +3,8 @@
         
 \cbb{verbosity}{string}{"high"}{Control of the amount of printed information. Possible values: see Table~\ref{t:verbosity_types}.}
         
+\cbb{output filename}{string}{""}{Write MueLu output to a file instead of std out. Empty value disables file output.}
+        
 \cbb{number of equations}{int}{1}{Number of PDE equations at each grid node. Only constant block size is considered.}
         
 \cbb{max levels}{int}{10}{Maximum number of levels in a hierarchy.}
@@ -160,6 +162,10 @@
         
 \cbb{aggregation: pairwise: size}{int}{8}{Target size for pairwise aggregation.  The number
       of pairwise steps used will be log base-2 of this number.}
+        
+\cbb{aggregation: pairwise: tie threshold}{double}{1e-6}{Threshold for determining two potential pairwise
+      neighbors have identical values and then fall back on the
+      order.}
         
 \cbb{aggregate qualities: check symmetry}{bool}{false}{Whether to check symmetry and use nonsymmetric aggregate quality estimate if necessary.}
         

@@ -72,12 +72,6 @@ inline const std::string IOSS_SYM_TENSOR() { return std::string("sym_tensor_33")
 #include <SEACASIoss_config.h>
 #endif
 
-#if defined(PARALLEL_AWARE_EXODUS)
-#ifndef SEACAS_HAVE_MPI
-#define SEACAS_HAVE_MPI
-#endif
-#endif
-
 #if defined(IOSS_THREADSAFE)
 #include <mutex>
 #endif

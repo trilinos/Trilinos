@@ -87,10 +87,10 @@ C
          WRITE (*, *)'             DATE: ', DATE
          WRITE (*, *)'             TIME: ', TIME
          WRITE (*, *)'          VERSION: ', VERSN
-         WRITE (*, ' (A, I5)')'  CPU SECONDS USED: ', IFIX (TIME2-TIME1)
+         WRITE (*, ' (A, I5)')'  CPU SECONDS USED: ', INT (TIME2-TIME1)
          CALL MESAGE (' ')
       ELSE
-         WRITE (*, ' (A, I5)')' CPU SECONDS USED: ', IFIX (TIME2-TIME1)
+         WRITE (*, ' (A, I5)')' CPU SECONDS USED: ', INT (TIME2-TIME1)
          CALL MESAGE ('*--------------------------*')
          CALL MESAGE (' ')
          CALL VDESCP (10003, 0, 0)

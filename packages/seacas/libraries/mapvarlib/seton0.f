@@ -1,4 +1,4 @@
-C Copyright (c) 2007-2017 National Technology & Engineering Solutions of
+C Copyright (c) 2007-2017, 2020 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -134,7 +134,7 @@ C     divide by number of elements contributing to each node (average)
 C     
          DO I = 1, NODESA
             IF(NELTN(I) .NE. 0)THEN
-               SOLENA(I,IVAR) = SOLENA(I,IVAR) / float(NELTN(I))
+               SOLENA(I,IVAR) = SOLENA(I,IVAR) / dble(NELTN(I))
             END IF
          end do
  40      CONTINUE

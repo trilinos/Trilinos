@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -31,6 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Ioss_Tracer.h>
+#include <Ioss_Utils.h>
 #include <cassert>
 #include <fmt/ostream.h>
 #include <iostream>
@@ -40,7 +41,7 @@ namespace Ioss {
 
   Tracer::Tracer(const char *function)
   {
-    fmt::print(stderr, "Entering Function: {} at level {}\n", function, ++level);
+    fmt::print(Ioss::DEBUG(), "Entering Function: {} at level {}\n", function, ++level);
     assert(level == 1);
   }
 

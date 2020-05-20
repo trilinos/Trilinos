@@ -18,7 +18,7 @@ source ${WORKSPACE}/Trilinos/cmake/ctest/drivers/atdm/utils/create-src-and-build
 echo
 echo "Running: ctest -V -S $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-driver.cmake ..."
 
-ctest -V -S \
+ctest -V $ATDM_CONFIG_CTEST_REGEX -S \
   $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-driver.cmake
 ATDM_TCD_CTEST_S_RETURN_CODE=$?
 
