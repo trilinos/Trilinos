@@ -1577,6 +1577,14 @@ namespace Belos {
 
       } // for (int num_ortho_steps=1; num_ortho_steps < max_ortho_steps_; ++num_ortho_steps)
 
+      // Compute the Op-norms after the correction step.
+      {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+      Teuchos::TimeMonitor normTimer( *timerNorm_ );
+#endif
+      MVT::MvDot( *Xj, *MXj, newDot );
+      }
+
       // Check for linear dependence.
       if (SCT::magnitude(newDot[0]) < SCT::magnitude(oldDot[0]*sing_tol_)) {
         dep_flg = true;

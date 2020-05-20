@@ -234,7 +234,7 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
      * - "Orthogonalization": an \c std::string specifying the desired
      *   orthogonalization. Currently supported values: "DGKS",
      *   "ICGS", "IMGS", and "TSQR" (if Belos was built with TSQR
-     *   support). Default: "DGKS".
+     *   support). Default: "ICGS".
      * - "Orthogonalization Parameters": a sublist of parameters
      *   specific to the type of orthogonalization used. Defaults are
      *   set automatically.
@@ -469,7 +469,7 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
     static constexpr const char * impResScale_default_ = "Norm of Preconditioned Initial Residual";
     static constexpr const char * expResScale_default_ = "Norm of Initial Residual";
     static constexpr const char * label_default_ = "Belos";
-    static constexpr const char * orthoType_default_ = "DGKS";
+    static constexpr const char * orthoType_default_ = "ICGS";
     static constexpr std::ostream * outputStream_default_ = &std::cout;
 
     // Current solver values.

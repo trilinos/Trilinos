@@ -218,7 +218,7 @@ namespace Belos {
      *                            underlying solver is allowed to perform. Default: 1000
      *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms
      *                               must reach to decide convergence. Default: 1e-8.
-     *   - "Orthogonalization" - a \c string specifying the desired orthogonalization:  DGKS, ICGS, IMGS. Default: "DGKS"
+     *   - "Orthogonalization" - a \c string specifying the desired orthogonalization:  DGKS, ICGS, IMGS. Default: "ICGS"
      *                           Meaningless with unit block size
      *   - "Orthogonalization Constant" - a \c MagnitudeType used by DGKS orthogonalization to
      *                                    determine whether another step of classical Gram-Schmidt
@@ -379,7 +379,7 @@ namespace Belos {
     static constexpr int outputStyle_default_ = Belos::General;
     static constexpr int outputFreq_default_ = -1;
     static constexpr const char * label_default_ = "Belos";
-    static constexpr const char * orthoType_default_ = "DGKS";
+    static constexpr const char * orthoType_default_ = "ICGS";
     static constexpr std::ostream * outputStream_default_ = &std::cout;
 
     //
