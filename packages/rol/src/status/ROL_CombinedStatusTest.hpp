@@ -72,7 +72,7 @@ public:
   }
 
   bool check( AlgorithmState<Real> &state ) {
-    ROL_TEST_FOR_EXCECPTION(status_.empty(),std::logic_error,
+    ROL_TEST_FOR_EXCEPTION(status_.empty(),std::logic_error,
       ">>> ROL::CombinedStatusTest::check : No status test has been added!");
 
     bool flag = true;
