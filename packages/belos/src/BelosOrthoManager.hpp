@@ -82,7 +82,9 @@ namespace Belos {
   //@}
 
   template <class ScalarType, class MV>
-  class OrthoManager {
+  class OrthoManager : 
+    public Teuchos::ParameterListAcceptorDefaultBase 
+  {
   public:
     //! @name Constructor/Destructor
     //@{
