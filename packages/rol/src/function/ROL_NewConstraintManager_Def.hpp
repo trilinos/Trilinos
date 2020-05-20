@@ -249,8 +249,8 @@ void NewConstraintManager<Real>::initialize(const std::unordered_map<std::string
     }
     if ( cnt_lcon > 1 || hasInequality_ ) {
       linear_con_ = makePtr<Constraint_Partitioned<Real>>(lcvec_,isLinearInequality_,cnt_con);
-      linear_mul_ = makePtr<PartitionedVector<Real>>(lvec_);
-      linear_res_ = makePtr<PartitionedVector<Real>>(rvec_);
+      linear_mul_ = makePtr<PartitionedVector<Real>>(llvec_);
+      linear_res_ = makePtr<PartitionedVector<Real>>(lrvec_);
     }
     else {
       linear_con_ = lcvec_[0];
