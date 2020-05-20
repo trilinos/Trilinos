@@ -83,6 +83,14 @@ module load git/2.20.0
 if [[ "$ATDM_CONFIG_COMPILER" == *"GNU-7.3.1_SPMPI-rolling" ]]; then
   module load sparc-dev/gcc-7.3.1_spmpi-rolling
 
+  export COMPILER_ROOT=/usr/tce/packages/gcc/gcc-7.3.1
+  export LD_LIBRARY_PATH=${COMPILER_ROOT}/lib:${LD_LIBRARY_PATH}
+  export BINUTILS_ROOT=${COMPILER_ROOT}
+  export LIBRARY_PATH=${BINUTILS_ROOT}/lib
+  export LIBRARY_PATH=${CBLAS_ROOT}/lib:${LIBRARY_PATH}
+  export INCLUDE=${BINUTILS_ROOT}/include:${INCLUDE}
+  export CPATH=${BINUTILS_ROOT}/include:${CPATH}
+
 elif [[ "$ATDM_CONFIG_COMPILER" == *"XL-2019.08.20_SPMPI-rolling_DISABLED" ]]; then
   module load xl/2019.08.20
   module load lapack/3.8.0-xl-2019.08.20
