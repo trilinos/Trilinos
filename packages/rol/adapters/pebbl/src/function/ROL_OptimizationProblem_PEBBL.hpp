@@ -62,6 +62,7 @@ private:
   std::unordered_map<std::string,ConstraintData<Real>> ORIGINAL_con_;
   std::unordered_map<std::string,ConstraintData<Real>> ORIGINAL_linear_con_;
 
+  using NewOptimizationProblem<Real>::INPUT_xprim_;
   using NewOptimizationProblem<Real>::INPUT_obj_;
   using NewOptimizationProblem<Real>::INPUT_con_;
   using NewOptimizationProblem<Real>::INPUT_linear_con_;
@@ -132,15 +133,12 @@ public:
       if (trans_ != nullPtr) {
         ORIGINAL_obj_ = INPUT_obj_;
         INPUT_obj_ = makePtr<TransformedObjective_PEBBL<Real>>(ORIGINAL_obj_, trans_);
+        // Apply transformation to optimization vector
+        Real tol(std::sqrt(ROL_EPSILON<Real>()));
+        trans_->value(*INPUT_xprim_,*INPUT_xprim_,tol);
         // Transform nonlinear constraints
         ORIGINAL_con_.clear();
-        for (auto it = INPUT_con_.begin(); it != INPUT_con_.end(); ++it) {
-          Ptr<Constraint<Real>>      con = it->second.constraint;
-          Ptr<Vector<Real>>          mul = it->second.multiplier;
-          Ptr<Vector<Real>>          res = it->second.residual;
-          Ptr<BoundConstraint<Real>> bnd = it->second.bounds;
-          ORIGINAL_con_.insert({it->first,ConstraintData<Real>(con,mul,res,bnd)});
-        }
+        ORIGINAL_con_.insert(INPUT_con_.begin(),INPUT_con_.end());
         for (auto it = ORIGINAL_con_.begin(); it != ORIGINAL_con_.end(); ++it) {
           Ptr<Constraint<Real>>      con = makePtr<TransformedConstraint_PEBBL<Real>>(it->second.constraint, trans_);
           Ptr<Vector<Real>>          mul = it->second.multiplier;
@@ -152,13 +150,7 @@ public:
         }
         // Transform linear constraints
         ORIGINAL_linear_con_.clear();
-        for (auto it = INPUT_linear_con_.begin(); it != INPUT_linear_con_.end(); ++it) {
-          Ptr<Constraint<Real>>      con = it->second.constraint;
-          Ptr<Vector<Real>>          mul = it->second.multiplier;
-          Ptr<Vector<Real>>          res = it->second.residual;
-          Ptr<BoundConstraint<Real>> bnd = it->second.bounds;
-          ORIGINAL_linear_con_.insert({it->first,ConstraintData<Real>(con,mul,res,bnd)});
-        }
+        ORIGINAL_linear_con_.insert(INPUT_linear_con_.begin(),INPUT_linear_con_.end());
         for (auto it = ORIGINAL_linear_con_.begin(); it != ORIGINAL_linear_con_.end(); ++it) {
           Ptr<Constraint<Real>>      con = makePtr<TransformedConstraint_PEBBL<Real>>(it->second.constraint, trans_);
           Ptr<Vector<Real>>          mul = it->second.multiplier;
