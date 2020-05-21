@@ -993,8 +993,17 @@ unpackAndCombineIntoCrsMatrix(
     num_batches
   );
 
+  Kokkos::HostSpace host_space;
+  auto batches_per_lid_h = Kokkos::create_mirror_view(host_space, batches_per_lid);
+  Kokkos::deep_copy(batches_per_lid_h, batches_per_lid);
+
   Kokkos::View<LO*[2], BufferDeviceType> batch_info("", num_batches);
-  compute_batch_info(batches_per_lid, batch_info);
+  auto batch_info_h = Kokkos::create_mirror_view(host_space, batch_info);
+
+  (void) compute_batch_info(
+    batches_per_lid_h, batch_info_h
+  );
+  // Kokkos::deep_copy(batch_info, batch_info_h);
 
   // Now do the actual unpack!
   const bool atomic = XS::concurrency() != 1;
