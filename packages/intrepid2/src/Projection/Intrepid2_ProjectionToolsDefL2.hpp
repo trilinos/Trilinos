@@ -591,8 +591,8 @@ ProjectionTools<SpT>::getL2BasisCoeffs(Kokkos::DynRankView<basisCoeffsValueType,
 
     auto edgeDof = Kokkos::subview(tagToOrdinal, edgeDim, ie, Kokkos::ALL());
 
-    typedef SolveSystem<decltype(basisCoeffs), ScalarViewType, WorkArrayViewType, decltype(edgeDof)> functorType;
-    Kokkos::parallel_for(policy, functorType( basisCoeffs, edgeMassMat_, edgeRhsMat_, t_, w_, edgeDof, edgeCardinality));
+    ElemSystem edgeSystem("edgeSystem", false);
+    edgeSystem.solve(basisCoeffs, edgeMassMat_, edgeRhsMat_, t_, w_, edgeDof, edgeCardinality);
   }
 
   ScalarViewType ortJacobian_("ortJacobian", numCells, faceDim, faceDim);
@@ -663,8 +663,8 @@ ProjectionTools<SpT>::getL2BasisCoeffs(Kokkos::DynRankView<basisCoeffsValueType,
 
     auto faceDof = Kokkos::subview(tagToOrdinal, faceDim, iface, Kokkos::ALL());
 
-    typedef SolveSystem<decltype(basisCoeffs), ScalarViewType, WorkArrayViewType, decltype(faceDof)> functorType;
-    Kokkos::parallel_for(policy, functorType( basisCoeffs, faceMassMat_, faceRhsMat_, t_, w_, faceDof, faceCardinality));
+    ElemSystem faceSystem("faceSystem", false);
+    faceSystem.solve(basisCoeffs, faceMassMat_, faceRhsMat_, t_, w_, faceDof, faceCardinality);
   }
 
   ordinal_type numElemDofs = cellBasis->getDofCount(dim,0);
@@ -710,8 +710,8 @@ ProjectionTools<SpT>::getL2BasisCoeffs(Kokkos::DynRankView<basisCoeffsValueType,
 
     ScalarViewType t_("t",numCells, numElemDofs);
     WorkArrayViewType w_("w",numCells,numElemDofs);
-    typedef SolveSystem<decltype(basisCoeffs), ScalarViewType, WorkArrayViewType, decltype(cellDofs)> functorType2;
-    Kokkos::parallel_for(policy, functorType2( basisCoeffs, cellMassMat_, cellRhsMat_, t_, w_, cellDofs, numElemDofs));
+    ElemSystem cellSystem("cellSystem", true);
+    cellSystem.solve(basisCoeffs, cellMassMat_, cellRhsMat_, t_, w_, cellDofs, numElemDofs);
   }
 }
 }

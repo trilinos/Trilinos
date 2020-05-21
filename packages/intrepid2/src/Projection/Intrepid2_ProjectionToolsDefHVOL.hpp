@@ -145,9 +145,8 @@ ProjectionTools<SpT>::getHVolBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTyp
   ScalarViewType t_("t",numCells, basisCardinality);
   WorkArrayViewType w_("w",numCells,basisCardinality);
 
-  const Kokkos::RangePolicy<SpT> policy(0, numCells);
-  typedef SolveSystem<decltype(basisCoeffs), ScalarViewType, WorkArrayViewType, decltype(cellDofs)> functorType;
-  Kokkos::parallel_for(policy, functorType( basisCoeffs, massMat, rhsMat, t_, w_, cellDofs, basisCardinality));
+  ElemSystem cellSystem("cellSystem", true);
+  cellSystem.solve(basisCoeffs, massMat, rhsMat, t_, w_, cellDofs, basisCardinality);
 }
 
 }

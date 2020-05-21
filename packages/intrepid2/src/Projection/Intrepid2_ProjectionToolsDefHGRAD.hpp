@@ -564,8 +564,9 @@ ProjectionTools<SpT>::getHGradBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
     WorkArrayViewType w_("w",numCells, edgeCardinality);
 
     auto edgeDofs = Kokkos::subview(tagToOrdinal, edgeDim, ie, Kokkos::ALL());
-    typedef SolveSystem<decltype(basisCoeffs), ScalarViewType, WorkArrayViewType, decltype(edgeDofs)> functorTypeCellSys;
-    Kokkos::parallel_for(policy, functorTypeCellSys( basisCoeffs, edgeMassMat_, edgeRhsMat_, t_, w_, edgeDofs, edgeCardinality));
+
+    ElemSystem edgeSystem("edgeSystem", false);
+    edgeSystem.solve(basisCoeffs, edgeMassMat_, edgeRhsMat_, t_, w_, edgeDofs, edgeCardinality);
 
     for(ordinal_type i=0; i<edgeCardinality; ++i)
       computedDofs(computedDofsCount++) = tagToOrdinal(edgeDim, ie, i);
@@ -625,8 +626,9 @@ ProjectionTools<SpT>::getHGradBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
     WorkArrayViewType w_("w",numCells, faceCardinality);
 
     auto faceDofs = Kokkos::subview(tagToOrdinal, faceDim, iface, Kokkos::ALL());
-    typedef SolveSystem<decltype(basisCoeffs), ScalarViewType, WorkArrayViewType, decltype(faceDofs)> functorTypeCellSys;
-    Kokkos::parallel_for(policy, functorTypeCellSys( basisCoeffs, faceMassMat_, faceRhsMat_, t_, w_, faceDofs, faceCardinality));
+
+    ElemSystem faceSystem("faceSystem", false);
+    faceSystem.solve(basisCoeffs, faceMassMat_, faceRhsMat_, t_, w_, faceDofs, faceCardinality);
 
     for(ordinal_type i=0; i<faceCardinality; ++i)
       computedDofs(computedDofsCount++) = tagToOrdinal(faceDim, iface, i);
@@ -666,8 +668,8 @@ ProjectionTools<SpT>::getHGradBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
     WorkArrayViewType w_("w",numCells, numElemDofs);
 
     auto cellDofs = Kokkos::subview(tagToOrdinal, dim, 0, Kokkos::ALL());
-    typedef SolveSystem<decltype(basisCoeffs), ScalarViewType, WorkArrayViewType, decltype(cellDofs)> functorTypeCellSys;
-    Kokkos::parallel_for(policy, functorTypeCellSys( basisCoeffs, cellMassMat_, cellRhsMat_, t_, w_, cellDofs, numElemDofs));
+    ElemSystem cellSystem("cellSystem", true);
+    cellSystem.solve(basisCoeffs, cellMassMat_, cellRhsMat_, t_, w_, cellDofs, numElemDofs);
   }
 }
 }

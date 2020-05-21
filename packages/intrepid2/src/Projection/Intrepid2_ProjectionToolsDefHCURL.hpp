@@ -648,8 +648,8 @@ ProjectionTools<SpT>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
     WorkArrayViewType w_("w",numCells, edgeCardinality+1);
 
     auto edgeDofs = Kokkos::subview(tagToOrdinal, edgeDim, ie, Kokkos::ALL());
-    typedef SolveSystem<decltype(basisCoeffs), ScalarViewType, WorkArrayViewType, decltype(edgeDofs)> functorTypeCellSys;
-    Kokkos::parallel_for(policy, functorTypeCellSys( basisCoeffs, edgeMassMat_, edgeRhsMat_, t_, w_, edgeDofs, edgeCardinality, 1));
+    ElemSystem edgeSystem("edgeSystem", false);
+    edgeSystem.solve(basisCoeffs, edgeMassMat_, edgeRhsMat_, t_, w_, edgeDofs, edgeCardinality, 1);
 
     for(ordinal_type i=0; i<edgeCardinality; ++i)
       computedDofs(computedDofsCount++) = cellBasis->getDofOrdinal(edgeDim, ie, i);
@@ -668,7 +668,6 @@ ProjectionTools<SpT>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
       ss << ">>> ERROR (Intrepid2::ProjectionTools::getHCurlBasisCoeffs): "
           << "Method not implemented for basis " << name;
       INTREPID2_TEST_FOR_EXCEPTION( true, std::runtime_error, ss.str().c_str() );
-      return;
     }
 
     {
@@ -772,8 +771,8 @@ ProjectionTools<SpT>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
     WorkArrayViewType w_("w",numCells, numFaceDofs+hgradCardinality);
 
     auto faceDofs = Kokkos::subview(tagToOrdinal, faceDim, iface, Kokkos::ALL());
-    typedef SolveSystem<decltype(basisCoeffs), ScalarViewType, WorkArrayViewType, decltype(faceDofs)> functorTypeCellSys;
-    Kokkos::parallel_for(policy, functorTypeCellSys( basisCoeffs, faceMassMat_, faceRhsMat_, t_, w_, faceDofs, numFaceDofs, hgradCardinality));
+    ElemSystem faceSystem( "faceSystem", false);
+    faceSystem.solve(basisCoeffs, faceMassMat_, faceRhsMat_, t_, w_, faceDofs, numFaceDofs, hgradCardinality);
 
     for(ordinal_type i=0; i<numFaceDofs; ++i)
       computedDofs(computedDofsCount++) = cellBasis->getDofOrdinal(faceDim, iface, i);
@@ -796,7 +795,6 @@ ProjectionTools<SpT>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
       ss << ">>> ERROR (Intrepid2::ProjectionTools::getHCurlBasisCoeffs): "
           << "Method not implemented for basis " << name;
       INTREPID2_TEST_FOR_EXCEPTION( true, std::runtime_error, ss.str().c_str() );
-      return;
     }
 
     range_type cellPointsRange = targetEPointsRange(dim, 0);
@@ -871,8 +869,8 @@ ProjectionTools<SpT>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
     WorkArrayViewType w_("w",numCells, numCellDofs+hgradCardinality);
 
     auto cellDofs = Kokkos::subview(tagToOrdinal, dim, 0, Kokkos::ALL());
-    typedef SolveSystem<decltype(basisCoeffs), ScalarViewType, WorkArrayViewType, decltype(cellDofs)> functorTypeCellSys;
-    Kokkos::parallel_for(policy, functorTypeCellSys( basisCoeffs, cellMassMat_, cellRhsMat_, t_, w_, cellDofs, numCellDofs, hgradCardinality));
+    ElemSystem cellSystem( "cellSystem", true);
+    cellSystem.solve(basisCoeffs, cellMassMat_, cellRhsMat_, t_, w_, cellDofs, numCellDofs, hgradCardinality);
 
     delete hgradBasis;
   }

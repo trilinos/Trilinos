@@ -455,8 +455,8 @@ ProjectionTools<SpT>::getHDivBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTyp
 
     auto sideDof = Kokkos::subview(tagToOrdinal, sideDim, is, Kokkos::ALL());
 
-    typedef SolveSystem<decltype(basisCoeffs), ScalarViewType, WorkArrayViewType, decltype(sideDof)> functorType;
-    Kokkos::parallel_for(policy, functorType( basisCoeffs, sideMassMat_, sideRhsMat_, t_, w_, sideDof, sideCardinality, 1));
+    ElemSystem sideSystem("sideSystem", false);
+    sideSystem.solve(basisCoeffs, sideMassMat_, sideRhsMat_, t_, w_, sideDof, sideCardinality, 1);
   }
 
 
@@ -505,6 +505,7 @@ ProjectionTools<SpT>::getHDivBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTyp
   Kokkos::parallel_for(policy, functorType( basisCoeffs, targetSideDivAtBasisEPoints,  basisDivAtBasisEPoints,
       basisDivAtBasisDivEPoints, divEWeights,  weightedBasisDivAtBasisEPoints, targetDivEWeights, basisDivAtTargetDivEPoints, weightedBasisDivAtTargetEPoints,
       computedDofs, cellDofs, numCellDofs, offsetBasisDiv, offsetTargetDiv, numSideDofs));
+
 
   ordinal_type hcurlBasisCardinality = hcurlBasis->getCardinality();
   ordinal_type numCurlInteriorDOFs = hcurlBasis->getDofCount(dim,0);
@@ -561,8 +562,8 @@ ProjectionTools<SpT>::getHDivBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTyp
   ScalarViewType t_("t",numCells, numCellDofs+numCurlInteriorDOFs);
   WorkArrayViewType w_("w",numCells, numCellDofs+numCurlInteriorDOFs);
 
-  typedef SolveSystem<decltype(basisCoeffs), ScalarViewType, WorkArrayViewType, decltype(cellDofs)> functorTypeCellSys;
-  Kokkos::parallel_for(policy, functorTypeCellSys( basisCoeffs, massMat_, rhsMatTrans, t_, w_, cellDofs, numCellDofs, numCurlInteriorDOFs));
+  ElemSystem cellSystem("cellSystem", true);
+  cellSystem.solve(basisCoeffs, massMat_, rhsMatTrans, t_, w_, cellDofs, numCellDofs, numCurlInteriorDOFs);
 }
 
 

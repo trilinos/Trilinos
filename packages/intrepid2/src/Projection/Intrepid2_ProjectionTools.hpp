@@ -102,10 +102,12 @@
 
 #include "Intrepid2_ProjectionStruct.hpp"
 
+#ifdef HAVE_INTREPID2_KOKKOSKERNELS
 #include "KokkosBatched_QR_Serial_Internal.hpp"
 #include "KokkosBatched_ApplyQ_Serial_Internal.hpp"
 #include "KokkosBatched_Trsv_Serial_Internal.hpp"
 #include "KokkosBatched_Util.hpp"
+#endif
 
 namespace Intrepid2 {
 
@@ -504,94 +506,277 @@ public:
       ProjectionStruct<ExecSpaceType, typename BasisType::scalarType> * projStruct);
 
 
-
-  /** \brief  Functor to solve a square system A x = b on each cell using QR method implemented in KokkosKernels
+  /** \brief  Class to solve a square system A x = b on each cell
               A is expected to be saddle a point (KKT) matrix of the form [C B; B^T 0],
               where C has size nxn and B nxm, with n>0, m>=0.
               B^T is copied from B, so one does not have to define the B^T portion of A.
               b will contain the solution x.
               The first n-entries of x are copied into the provided basis coefficients using the provided indexing.
+              The system is solved either with a QR factorization implemented in KokkosKernels or
+              with Lapack GELS function.
    */
-  template<typename ViewType1, typename ViewType2, typename ViewType3, typename ViewType4>
-  struct SolveSystem {
-    ViewType1 basisCoeffs_; // rank-2 view (C,F) containing the basis coefficients on each cell
-    ViewType2 elemMat_;     // rank-3 view (C,P,P) containing the element matrix on each cell
-    ViewType2 elemRhs_;     // rank-2 view (C,P) containing the element rhs on each cell
-    ViewType2 tau_;         // rank-2 view (C,P) used to store the QR factorization
-    ViewType3 w_;           // rank-2 view (C,P) used has a workspace (needs to be of Layout Right)
+  struct ElemSystem {
 
-    const ViewType4 elemDof_; // rank-1 view having dimension n, containing the basis numbering
-    ordinal_type n_, m_;      // basis cardinality and dimension of the constraint of the KKT system
+
+    std::string systemName_;
+    bool matrixIndependentOfCell_;
 
     /** \brief  Functor constructor
+        \param  systemName               [in]     - string containing the name of the system (passed to parallel for)
+        \param  matrixIndependentOfCell  [in]     - bool: whether the local cell matrix of the system changes from cell to cell
+                                                          if true, the matrix factorization is preformed only on the first cell
+                                                          and reused on other cells.
+    */
 
-        \code
-          C  - num. cells
-          P  - num. evaluation points
-        \endcode
+    ElemSystem (std::string systemName, bool matrixIndependentOfCell) :
+      systemName_(systemName), matrixIndependentOfCell_(matrixIndependentOfCell){};
 
 
-        \param  basisCoeffs           [out]     - rank-2 view (C,F) containing the basis coefficients
-        \param  elemMat               [in/out]  - rank-3 view (C,P,P) containing the element matrix of size
-                                                  numCells x (n+m)x(n+m) on each cell
-                                                  it will be overwritten.
-        \param  elemRhs               [in/out]  - rank-2 view (C,P) containing the element rhs on each cell
-                                                  of size numCells x (n+m)
-                                                  it will contain the solution of the system on output
-        \param  tau                   [out]     - rank-2 view (C,P) used to store the QR factorization
-                                                  size: numCells x (n+m)
-        \param  w                     [out]     - rank-2 view (C,P) used has a workspace
-                                                  Layout Right, size: numCells x (n+m)
-        \param  elemDof               [in]      - rank-1 view having dimension n, containing the basis numbering
-        \param  n                     [in]      - ordinal_type, basis cardinality
-        \param  m                     [in]      - ordinal_type, dimension of the constraint of the KKT system
+
+    /** \brief  Solve the system and returns the basis coefficients
+                solve the system either using Kokkos Kernel QR or Lapack GELS
+                depending on whether Kokkos Kernel is enabled.
+
+         \code
+           C  - num. cells
+           P  - num. evaluation points
+         \endcode
+
+
+         \param  basisCoeffs           [out]     - rank-2 view (C,F) containing the basis coefficients
+         \param  elemMat               [in/out]  - rank-3 view (C,P,P) containing the element matrix of size
+                                                   numCells x (n+m)x(n+m) on each cell
+                                                   it will be overwritten.
+         \param  elemRhs               [in/out]  - rank-2 view (C,P) containing the element rhs on each cell
+                                                   of size numCells x (n+m)
+                                                   it will contain the solution of the system on output
+         \param  tau                   [out]     - rank-2 view (C,P) used to store the QR factorization
+                                                   size: numCells x (n+m)
+         \param  w                     [out]     - rank-2 view (C,P) used has a workspace
+                                                   Layout Right, size: numCells x (n+m)
+         \param  elemDof               [in]      - rank-1 view having dimension n, containing the basis numbering
+         \param  n                     [in]      - ordinal_type, basis cardinality
+         \param  m                     [in]      - ordinal_type, dimension of the constraint of the KKT system
      */
-    SolveSystem (ViewType1 basisCoeffs, ViewType2 elemMat, ViewType2 elemRhs, ViewType2 tau,
-        ViewType3 w,const  ViewType4 elemDof, ordinal_type n, ordinal_type m=0) :
-          basisCoeffs_(basisCoeffs), elemMat_(elemMat), elemRhs_(elemRhs),
-          tau_(tau), w_(w), elemDof_(elemDof), n_(n), m_(m){};
+    template<typename ViewType1, typename ViewType2, typename ViewType3, typename ViewType4>
+    void solve(ViewType1 basisCoeffs, ViewType2 elemMat, ViewType2 elemRhs, ViewType2 tau,
+        ViewType3 w,const  ViewType4 elemDof, ordinal_type n, ordinal_type m=0) {
+#ifdef HAVE_INTREPID2_KOKKOSKERNELS
+      solveParallel(basisCoeffs, elemMat, elemRhs, tau,
+          w, elemDof, n, m);
+#else
+      solveSerial(basisCoeffs, elemMat, elemRhs, tau,
+          w, elemDof, n, m);
+#endif
+
+    }
+
+    /** \brief  Parallel implementation of solve, using Kokkos Kernels QR factoriation
+     */
+#ifdef HAVE_INTREPID2_KOKKOSKERNELS
+    template<typename ViewType1, typename ViewType2, typename ViewType3, typename ViewType4>
+    void solveParallel(ViewType1 basisCoeffs, ViewType2 elemMat, ViewType2 elemRhs, ViewType2 taul,
+        ViewType3 work,const  ViewType4 elemDof, ordinal_type n, ordinal_type m) {
+
+      ordinal_type numCells = basisCoeffs.extent(0);
+
+      if(matrixIndependentOfCell_) {
+        auto A0 = Kokkos::subview(elemMat, 0, Kokkos::ALL(), Kokkos::ALL());
+        auto tau0 = Kokkos::subview(taul, 0, Kokkos::ALL());
+
+        auto A0_host = Kokkos::create_mirror_view_and_copy(typename ExecSpaceType::memory_space(), A0);
+        auto tau0_host = Kokkos::create_mirror_view(typename ExecSpaceType::memory_space(), tau0);
 
 
-    void
-    KOKKOS_INLINE_FUNCTION
-    operator()(const ordinal_type ic) const {
-      auto A = Kokkos::subview(elemMat_, ic, Kokkos::ALL(), Kokkos::ALL());
-      auto b = Kokkos::subview(elemRhs_, ic, Kokkos::ALL());
-      auto tau = Kokkos::subview(tau_, ic, Kokkos::ALL());
-      auto w = Kokkos::subview(w_, ic, Kokkos::ALL());
+        for(ordinal_type i=n; i<n+m; ++i)
+          for(ordinal_type j=0; j<n; ++j)
+            A0_host(i,j) = A0_host(j,i);
 
-      for(ordinal_type i=n_; i<n_+m_; ++i)
-        for(ordinal_type j=0; j<n_; ++j)
-          A(i,j) = A(j,i);
+        auto w0_host = Kokkos::create_mirror_view(Kokkos::subview(work, 0, Kokkos::ALL()));
 
-      //computing QR of A. QR is saved in A and tau
-      KokkosBatched::SerialQR_Internal::invoke(A.extent(0), A.extent(1),
-          A.data(), A.stride_0(), A.stride_1(), tau.data(), tau.stride_0(), w.data());
+        //computing QR of A0. QR is saved in A0 and tau0
+        KokkosBatched::SerialQR_Internal::invoke(A0_host.extent(0), A0_host.extent(1),
+            A0_host.data(), A0_host.stride_0(), A0_host.stride_1(),
+            tau0_host.data(), tau0_host.stride_0(), w0_host.data());
 
-      //b'*Q -> b
-      KokkosBatched::SerialApplyQ_RightNoTransForwardInternal::invoke(
-          1, A.extent(0), A.extent(1),
-          A.data(),  A.stride_0(), A.stride_1(),
-          tau.data(), tau.stride_0(),
-          b.data(),  1, b.stride_0(),
-          w.data());
+        Kokkos::deep_copy(A0, A0_host);
+        Kokkos::deep_copy(tau0, tau0_host);
 
-      // R^{-1} b -> b
-      KokkosBatched::SerialTrsvInternalUpper<KokkosBatched::Algo::Trsv::Unblocked>::invoke(false,
-          A.extent(0),
-          1.0,
-          A.data(), A.stride_0(), A.stride_1(),
-          b.data(),  b.stride_0());
+        Kokkos::parallel_for (systemName_,
+            Kokkos::RangePolicy<ExecSpaceType, int> (0, numCells),
+            KOKKOS_LAMBDA (const size_t ic) {
+          auto w = Kokkos::subview(work, ic, Kokkos::ALL());
 
-      //scattering b into the basis coefficients
-      for(ordinal_type i=0; i<n_; ++i){
-        basisCoeffs_(ic,elemDof_(i)) = b(i);
+          auto b = Kokkos::subview(elemRhs, ic, Kokkos::ALL());
+
+          //b'*Q0 -> b
+          KokkosBatched::SerialApplyQ_RightNoTransForwardInternal::invoke(
+              1, A0.extent(0), A0.extent(1),
+              A0.data(),  A0.stride_0(), A0.stride_1(),
+              tau0.data(), tau0.stride_0(),
+              b.data(),  1, b.stride_0(),
+              w.data());
+
+          // R0^{-1} b -> b
+          KokkosBatched::SerialTrsvInternalUpper<KokkosBatched::Algo::Trsv::Unblocked>::invoke(false,
+              A0.extent(0),
+              1.0,
+              A0.data(), A0.stride_0(), A0.stride_1(),
+              b.data(),  b.stride_0());
+
+          //scattering b into the basis coefficients
+          for(ordinal_type i=0; i<n; ++i){
+            basisCoeffs(ic,elemDof(i)) = b(i);
+          }
+        });
+
+      } else {
+
+        Kokkos::parallel_for (systemName_,
+            Kokkos::RangePolicy<ExecSpaceType, int> (0, numCells),
+            KOKKOS_LAMBDA (const size_t ic) {
+
+          auto A = Kokkos::subview(elemMat, ic, Kokkos::ALL(), Kokkos::ALL());
+          auto tau = Kokkos::subview(taul, ic, Kokkos::ALL());
+          auto w = Kokkos::subview(work, ic, Kokkos::ALL());
+
+          for(ordinal_type i=n; i<n+m; ++i)
+            for(ordinal_type j=0; j<n; ++j)
+              A(i,j) = A(j,i);
+
+          //computing QR of A. QR is saved in A and tau
+          KokkosBatched::SerialQR_Internal::invoke(A.extent(0), A.extent(1),
+              A.data(), A.stride_0(), A.stride_1(), tau.data(), tau.stride_0(), w.data());
+
+          auto b = Kokkos::subview(elemRhs, ic, Kokkos::ALL());
+
+          //b'*Q -> b
+          KokkosBatched::SerialApplyQ_RightNoTransForwardInternal::invoke(
+              1, A.extent(0), A.extent(1),
+              A.data(),  A.stride_0(), A.stride_1(),
+              tau.data(), tau.stride_0(),
+              b.data(),  1, b.stride_0(),
+              w.data());
+
+          // R^{-1} b -> b
+          KokkosBatched::SerialTrsvInternalUpper<KokkosBatched::Algo::Trsv::Unblocked>::invoke(false,
+              A.extent(0),
+              1.0,
+              A.data(), A.stride_0(), A.stride_1(),
+              b.data(),  b.stride_0());
+
+          //scattering b into the basis coefficients
+          for(ordinal_type i=0; i<n; ++i){
+            basisCoeffs(ic,elemDof(i)) = b(i);
+          }
+        });
+      }
+    }
+#endif
+
+    /** \brief  Serial implementation of solve, using Lapack GELS function
+     */
+
+    template<typename ViewType1, typename ViewType2, typename ViewType3, typename ViewType4>
+    void solveSerial(ViewType1 basisCoeffs, ViewType2 elemMat, ViewType2 elemRhs, ViewType2 ,
+        ViewType3, const  ViewType4 elemDof, ordinal_type n, ordinal_type m) {
+      using valueType = typename ViewType2::value_type;
+      using host_space_type = typename Kokkos::Impl::is_space<ExecSpaceType>::host_mirror_space::execution_space;
+      Kokkos::View<valueType**,Kokkos::LayoutLeft,host_space_type>
+      serialElemMat("serialElemMat", n+m, n+m);
+      Teuchos::LAPACK<ordinal_type,valueType> lapack_;
+      ordinal_type numCells = basisCoeffs.extent(0);
+
+      if(matrixIndependentOfCell_) {
+        ViewType2 elemRhsTrans("transRhs", elemRhs.extent(1), elemRhs.extent(0));
+        Kokkos::View<valueType**,Kokkos::LayoutLeft,host_space_type>
+        pivVec("pivVec", m+n + std::max(m+n, numCells), 1);
+
+        Kokkos::View<valueType**,Kokkos::LayoutLeft,host_space_type> serialElemRhs("serialElemRhs", n+m, numCells);
+
+        auto A = Kokkos::create_mirror_view_and_copy(typename ExecSpaceType::memory_space(),
+            Kokkos::subview(elemMat, 0, Kokkos::ALL(), Kokkos::ALL()));
+        auto b = Kokkos::create_mirror_view_and_copy(typename ExecSpaceType::memory_space(), elemRhs);
+
+        auto serialBasisCoeffs = Kokkos::create_mirror_view_and_copy(
+            typename ExecSpaceType::memory_space(), basisCoeffs);
+
+        for(ordinal_type i=0; i<m+n; ++i) {
+          for(ordinal_type ic=0; ic< numCells; ++ic)
+            serialElemRhs(i,ic) = b(ic,i);
+          for(ordinal_type j=0; j<n; ++j)
+            serialElemMat(j,i) = A(j,i);
+        }
+
+        for(ordinal_type i=n; i<n+m; ++i)
+          for(ordinal_type j=0; j<n; ++j)
+            serialElemMat(i,j) = serialElemMat(j,i);
+
+        ordinal_type info = 0;
+        lapack_.GELS('N', n+m, n+m, numCells,
+            serialElemMat.data(), serialElemMat.stride_1(),
+            serialElemRhs.data(), serialElemRhs.stride_1(),
+            pivVec.data(), pivVec.extent(0),
+            &info);
+
+        for(ordinal_type i=0; i<n; ++i) {
+          for (ordinal_type ic = 0; ic < numCells; ic++)
+            serialBasisCoeffs(ic,elemDof(i)) = serialElemRhs(i,ic);
+        }
+      }
+      else {
+        Kokkos::View<valueType**,Kokkos::LayoutLeft,host_space_type> pivVec("pivVec", 2*(m+n), 1);
+        Kokkos::View<valueType**,Kokkos::LayoutLeft,host_space_type> serialElemRhs("serialElemRhs", n+m, 1 );
+        for (ordinal_type ic = 0; ic < numCells; ic++) {
+          auto A = Kokkos::create_mirror_view_and_copy(typename ExecSpaceType::memory_space(),
+              Kokkos::subview(elemMat, ic, Kokkos::ALL(), Kokkos::ALL()));
+          auto b = Kokkos::create_mirror_view_and_copy(typename ExecSpaceType::memory_space(),
+              Kokkos::subview(elemRhs, ic, Kokkos::ALL()));
+          auto basisCoeffs_ = Kokkos::subview(basisCoeffs, ic, Kokkos::ALL());
+          auto serialBasisCoeffs = Kokkos::create_mirror_view_and_copy(typename ExecSpaceType::memory_space(),
+              basisCoeffs_);
+
+          Kokkos::deep_copy(serialElemMat,valueType(0));  //LAPACK might overwrite the matrix
+
+          for(ordinal_type i=0; i<m+n; ++i) {
+            serialElemRhs(i,0) = b(i);
+            for(ordinal_type j=0; j<n; ++j)
+              serialElemMat(j,i) = A(j,i);
+          }
+
+          for(ordinal_type i=n; i<n+m; ++i)
+            for(ordinal_type j=0; j<n; ++j)
+              serialElemMat(i,j) = serialElemMat(j,i);
+
+          // Using GELS because the matrix can be close to singular.
+          ordinal_type info = 0;
+          lapack_.GELS('N', n+m, n+m, 1,
+              serialElemMat.data(), serialElemMat.stride_1(),
+              serialElemRhs.data(), serialElemRhs.stride_1(),
+              pivVec.data(), pivVec.extent(0),
+              &info);
+
+          if (info) {
+            std::stringstream ss;
+            ss << ">>> ERROR (Intrepid::ProjectionTools::getBasisCoeffs): "
+                << "LAPACK return with error code: "
+                << info;
+            INTREPID2_TEST_FOR_EXCEPTION( true, std::runtime_error, ss.str().c_str() );
+          }
+
+          for(ordinal_type i=0; i<n; ++i) {
+            serialBasisCoeffs(elemDof(i)) = serialElemRhs(i,0);
+          }
+          Kokkos::deep_copy(basisCoeffs_,serialBasisCoeffs);
+        }
       }
     }
   };
+
 };
-}
-}
+
+} //Experimental
+} //Intrepid2
 
 
 // include templated function definitions
