@@ -41,43 +41,45 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_TEUCHOSBRANCHHELPER_PEBBL_H
-#define ROL_TEUCHOSBRANCHHELPER_PEBBL_H
+#ifndef ROL_PEBBL_TPETRABRANCHHELPER_H
+#define ROL_PEBBL_TPETRABRANCHHELPER_H
 
-#include "ROL_TeuchosVector.hpp"
-#include "ROL_BranchHelper_PEBBL.hpp"
-#include "ROL_TeuchosTransform_PEBBL.hpp"
+#include "ROL_TpetraMultiVector.hpp"
+#include "ROL_PEBBL_BranchHelper.hpp"
+#include "ROL_PEBBL_TpetraIntegerTransformation.hpp"
 
 /** @ingroup func_group
-    \class ROL::TeuchosBranchHelper_PEBBL
-    \brief Defines the pebbl branch index interface for TeuchosVectors.
+    \class ROL::PEBBL::TpetraBranchHelper
+    \brief Defines the pebbl branch index interface for TpetraMultiVectors.
 
     ---
 */
 
 
 namespace ROL {
+namespace PEBBL {
 
-template <class Ordinal, class Real>
-class TeuchosBranchHelper_PEBBL : public BranchHelper_PEBBL<Real> {
+template <class Real>
+class TpetraBranchHelper : public BranchHelper<Real> {
 private:
   const Real tol_;
   const int method_;
 
-  using BranchHelper_PEBBL<Real>::getVector;
-  Ptr<const Teuchos::SerialDenseVector<Ordinal,Real>> getConstData(const Vector<Real> &x) const {
-    return dynamic_cast<const TeuchosVector<Ordinal,Real>&>(*getVector(x)).getVector();
+  using BranchHelper<Real>::getVector;
+
+  Ptr<const Tpetra::MultiVector<>> getConstData(const Vector<Real> &x) const {
+    return dynamic_cast<const TpetraMultiVector<Real>&>(*getVector(x)).getVector();
   }
 
-  // Branching based on distance to integer
-  int getMyIndex_D(const Vector<Real> &x, const Vector<Real> &g) const {
+  // Branching based on distance to integer.
+  int getIndex_D(const Vector<Real> &x, const Vector<Real> &g) const {
     // Get index closest to 0.5
-    Ptr<const Teuchos::SerialDenseVector<Ordinal,Real>> xval = getConstData(x);
+    Teuchos::ArrayView<const Real> xview = (getConstData(x)->getData(0))();
     int index = 0;
     Real minD(0), minX(ROL_INF<Real>()), half(0.5);
-    int size = xval->length();
+    int size = xview.size();
     for (int i = 0; i < size; ++i) {
-      Real x  = (*xval)(i);
+      Real x  = xview[i];
       Real fx = std::floor(x);
       Real cx = std::ceil(x);
       minD    = std::min(x-fx,cx-x);
@@ -90,14 +92,14 @@ private:
   }
 
   // Branching based on directional derivatives (similar to pseudo costs).
-  int getMyIndex_PC(const Vector<Real> &x, const Vector<Real> &g) const {
-    Ptr<const Teuchos::SerialDenseVector<Ordinal,Real>> xval = getConstData(x);
-    Ptr<const Teuchos::SerialDenseVector<Ordinal,Real>> gval = getConstData(g);
+  int getIndex_PC(const Vector<Real> &x, const Vector<Real> &g) const {
+    Teuchos::ArrayView<const Real> xview = (getConstData(x)->getData(0))();
+    Teuchos::ArrayView<const Real> gview = (getConstData(g)->getData(0))();
     Real maxD(ROL_NINF<Real>()), Li(0), Ui(0), mini(0);
-    int index = 0, size = gval->length();
+    int index = 0, size = xview.size();
     for (int i = 0; i < size; ++i) {
-      Li   = (*gval)[i] * (std::floor((*xval)[i]) - (*xval)[i]);
-      Ui   = (*gval)[i] * (std::ceil((*xval)[i])  - (*xval)[i]);
+      Li   = gview[i] * (std::floor(xview[i]) - xview[i]);
+      Ui   = gview[i] * (std::ceil( xview[i]) - xview[i]);
       mini = std::min(std::abs(Li),std::abs(Ui));
       if (mini > maxD) {
         maxD  = mini;
@@ -108,34 +110,32 @@ private:
   }
 
 public:
-  TeuchosBranchHelper_PEBBL(const Real tol = 1e-6, const int method = 0)
+  TpetraBranchHelper(const Real tol = 1e-6, const int method = 0)
     : tol_(tol), method_(method) {}
 
-  TeuchosBranchHelper_PEBBL(const TeuchosBranchHelper_PEBBL &BH)
+  TpetraBranchHelper(const TpetraBranchHelper &BH)
     : tol_(BH.tol_), method_(BH.method_) {}
 
-  int getMyIndex(const Vector<Real> &x, const Vector<Real> &g) const {
+  //int getMyIndex(const Vector<Real> &x) const {
+  int getIndex(const Vector<Real> &x, const Vector<Real> &g) const {
     int index(0);
-    if (method_ == 1) {
-      index = getMyIndex_D(x,g);
-    }
-    else {
-      index = getMyIndex_PC(x,g);
-    }
+    if (method_ == 1) index = getIndex_D(x,g);
+    else              index = getIndex_PC(x,g);
     return index;
   }
 
-  void getMyNumFrac(int &nfrac, Real &integralityMeasure,
-                    const Vector<Real> &x) const {
+
+  void getNumFrac(int &nfrac, Real &integralityMeasure,
+                const Vector<Real> &x) const {
     // Return number of fractional variables and the
     // sum of the distance to integer for the input vector
-    Ptr<const Teuchos::SerialDenseVector<Ordinal,Real>> xval = getConstData(x);
+    Teuchos::ArrayView<const Real> xview = (getConstData(x)->getData(0))();
     nfrac = 0;
     integralityMeasure = static_cast<Real>(0);
     Real minD(0);
-    int size = xval->length();
+    int size = xview.size();
     for (int i = 0; i < size; ++i) {
-      Real x  = (*xval)(i);
+      Real x  = xview[i];
       Real fx = std::floor(x);
       Real cx = std::ceil(x);
       minD    = std::min(x-fx,cx-x);
@@ -146,12 +146,13 @@ public:
     }
   }
 
-  Ptr<Transform_PEBBL<Real>> createTransform(void) const {
-    return makePtr<TeuchosTransform_PEBBL<Ordinal,Real>>();
+  Ptr<IntegerTransformation<Real>> createTransform(void) const {
+    return makePtr<TpetraIntegerTransformation<Real>>();
   }
 
-}; // class StdBranchHelper_PEBBL
+}; // class TpetraBranchHelper
 
+} // namespace PEBBL
 } // namespace ROL
 
 #endif

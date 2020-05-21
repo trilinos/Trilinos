@@ -54,9 +54,9 @@
 
 #include "ROL_Stream.hpp"
 #include "ROL_ParameterList.hpp"
-#include "ROL_OptimizationSolver.hpp"
-#include "ROL_PEBBL_Driver.hpp"
-#include "ROL_TeuchosBranchHelper_PEBBL.hpp"
+#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_PEBBL_BranchAndBound.hpp"
+#include "ROL_PEBBL_TeuchosBranchHelper.hpp"
 #include "opfactory.hpp"
 #include "extractQP.hpp"
 #include "branchHelper.hpp"
@@ -89,10 +89,10 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** BUILD OPTIMIZATION PROBLEM ****************************/
     /*************************************************************************/
-    ROL::Ptr<BinaryAdvDiffFactory<RealT>>           factory;
-    ROL::Ptr<ROL::OptimizationProblem_PEBBL<RealT>> problem;
-    ROL::Ptr<ROL::NewOptimizationSolver<RealT>>     solver;
-    ROL::Ptr<ROL::Vector<RealT>>                    z, u;
+    ROL::Ptr<BinaryAdvDiffFactory<RealT>>       factory;
+    ROL::Ptr<ROL::PEBBL::IntegerProblem<RealT>> problem;
+    ROL::Ptr<ROL::NewOptimizationSolver<RealT>> solver;
+    ROL::Ptr<ROL::Vector<RealT>>                z, u;
     int nx = parlist->sublist("Problem").get("Number of X-Cells",64);
     int ny = parlist->sublist("Problem").get("Number of Y-Cells",32);
     factory = ROL::makePtr<BinaryAdvDiffFactory<RealT>>(*parlist,comm,outStream);
@@ -115,16 +115,16 @@ int main(int argc, char *argv[]) {
       int method    = parlist->sublist("Problem").get("Branching Method",0);
       int incheur   = parlist->sublist("Problem").get("Incumbent Heuristic",0);
       int verbosity = parlist->sublist("Problem").get("BB Output Level",0);
-      ROL::Ptr<ROL::BranchHelper_PEBBL<RealT>> bHelper;
+      ROL::Ptr<ROL::PEBBL::BranchHelper<RealT>> bHelper;
       if (factory->controlType())
-        bHelper = ROL::makePtr<Tpetra_AdvDiff_BranchHelper_PEBBL<RealT>>(intTol,method);
+        bHelper = ROL::makePtr<TpetraAdvDiffBranchHelper<RealT>>(intTol,method);
       else
-        bHelper = ROL::makePtr<Std_AdvDiff_BranchHelper_PEBBL<RealT>>(intTol,method);
-      ROL::Ptr<ADVDIFF_Branching<RealT>> branching
-        = ROL::makePtr<ADVDIFF_Branching<RealT>>(factory,parlist,bHelper,verbosity,outStream,incheur);
-      ROL::ROL_PEBBL_Driver<RealT> pebbl(branching);
+        bHelper = ROL::makePtr<StdAdvDiffBranchHelper<RealT>>(intTol,method);
+      ROL::Ptr<AdvDiffBranching<RealT>> branching
+        = ROL::makePtr<AdvDiffBranching<RealT>>(factory,parlist,bHelper,verbosity,outStream,incheur);
+      ROL::PEBBL::BranchAndBound<RealT> pebbl(branching);
       pebbl.solve(argc,argv,*outStream);
-      z = pebbl.getSolution();
+      z->set(*pebbl.getSolution());
     }
     else {
       if (solveQP) {

@@ -41,98 +41,68 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_TRANSFORM_PEBBL_H
-#define ROL_TRANSFORM_PEBBL_H
+#ifndef ROL_PEBBL_BRANCHANDBOUND_HPP
+#define ROL_PEBBL_BRANCHANDBOUND_HPP
 
-#include "ROL_Constraint.hpp"
-
-/** @ingroup func_group
-    \class ROL::Transform_PEBBL
-    \brief Defines the pebbl transform operator interface.
-
-    ROL's pebbl constraint interface is designed to set individual components
-    of a vector to a fixed value.  The range space is the same as the domain.
-
-    ---
-*/
-
+#include "ROL_PEBBL_Interface.hpp"
 
 namespace ROL {
+namespace PEBBL {
 
-template <class Real>
-class Transform_PEBBL : public Constraint<Real> {
+template<class Real>
+class BranchAndBound {
 private:
-  Ptr<Vector<Real>> getVector( Vector<Real> &xs ) const {
-    try {
-      return dynamic_cast<PartitionedVector<Real>&>(xs).get(0);
-    }
-    catch (std::exception &e) {
-      return makePtrFromRef(xs);
-    }
-  }
+  // min        obj(x)
+  // subject to xl <= x <= xu
+  //            econ(x) = 0         (Lagrange Multiplier: emul)
+  //            cl <= icon(x) <= cu (Lagrange Multiplier: imul)
+  const Ptr<IntegerProblemFactory<Real>> factory_;
 
-protected:
-  std::map<int,Real> map_;
+  // Parameter list containing algorithmic information
+  const Ptr<ParameterList> parlist_;
+  
+  // Application specific branching helper
+  const Ptr<BranchHelper<Real>> bHelper_;
+
+  // PEBBL Information
+  Ptr<Branching<Real>> branching_;
 
 public:
-  Transform_PEBBL(void) {}
 
-  Transform_PEBBL(const Transform_PEBBL &T) : map_(T.map_) {}
+  BranchAndBound(const Ptr<Branching<Real>> &branching)
+    : branching_(branching) {}
 
-  virtual void pruneVector(Vector<Real> &c) = 0;
-  virtual void shiftVector(Vector<Real> &c) = 0;
-
-  void value(Vector<Real> &c, const Vector<Real> &x, Real &tol) {
-    c.set(x);
-    Ptr<Vector<Real>> cp = getVector(c);
-    pruneVector(*cp);
-    shiftVector(*cp);
+  BranchAndBound(const Ptr<IntegerProblemFactory<Real>> &factory,
+                 const Ptr<ParameterList>               &parlist,
+                 const Ptr<BranchHelper<Real>>          &bHelper,
+                 int                                     verbosity = 0,
+                 const Ptr<std::ostream>                &outStream = nullPtr)
+    : factory_(factory), parlist_(parlist), bHelper_(bHelper) {
+    branching_ = makePtr<Branching<Real>>(factory_,parlist_,bHelper_,verbosity,outStream);
   }
 
-  void applyJacobian(Vector<Real> &jv,
-               const Vector<Real> &v,
-               const Vector<Real> &x,
-                     Real &tol) {
-    jv.set(v);
-    Ptr<Vector<Real>> jvp = getVector(jv);
-    pruneVector(*jvp);
+  bool solve(int &argc, char** &argv,
+             std::ostream &outStream = std::cout) {
+    utilib::exception_mngr::set_stack_trace(false);
+    bool flag = branching_->setup(argc,argv);
+    if (flag) {
+      utilib::exception_mngr::set_stack_trace(true);
+      branching_->reset();
+      branching_->solve();
+    }
+    return flag;
   }
 
-  void applyAdjointJacobian(Vector<Real> &ajv,
-                      const Vector<Real> &v,
-                      const Vector<Real> &x,
-                            Real &tol) {
-    ajv.set(v);
-    Ptr<Vector<Real>> ajvp = getVector(ajv);
-    pruneVector(*ajvp);
+  const Ptr<const Vector<Real>> getSolution(void) const {
+    if (branching_ != nullPtr) {
+      return dynamic_cast<IntegerSolution<Real>*>(branching_->incumbent)->getVector();
+    }
+    else {
+      return nullPtr;
+    }
   }
+};
 
-  void applyAdjointHessian(Vector<Real> &ahuv,
-                     const Vector<Real> &u,
-                     const Vector<Real> &v,
-                     const Vector<Real> &x,
-                           Real &tol) {
-    ahuv.zero();
-  }
-
-  bool isEmpty(void) const {
-    return map_.empty();
-  }
-
-  void reset(void) {
-    map_.clear();
-  }
-
-  void add(const std::map<int,Real> &in) {
-    map_.insert(in.begin(),in.end());
-  }
-
-  void add(const std::pair<int,Real> &in) {
-    map_.insert(in);
-  }
-
-}; // class Transform_PEBBL
-
+} // namespace PEBBL
 } // namespace ROL
-
 #endif

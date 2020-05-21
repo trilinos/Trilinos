@@ -45,7 +45,7 @@
 #define OPFACTORY_BINARY_ELASTICITY_HPP
 
 #include "ROL_Bounds.hpp"
-#include "ROL_OptimizationProblemFactory.hpp"
+#include "ROL_PEBBL_IntegerProblemFactory.hpp"
 
 #include "../../TOOLS/pdevector.hpp"
 #include "../../TOOLS/meshreader.hpp"
@@ -60,7 +60,7 @@
 #include "src/volume_con.hpp"
 
 template<class Real>
-class ElasticityFactory : public ROL::OptimizationProblemFactory<Real> {
+class ElasticityFactory : public ROL::PEBBL::IntegerProblemFactory<Real> {
 private:
   ROL::ParameterList                 pl_;
   ROL::Ptr<const Teuchos::Comm<int>> comm_;
@@ -85,6 +85,7 @@ private:
   ROL::Ptr<ROL::BoundConstraint<Real>> vbnd_;
 
   bool useIneq_;
+  bool useLinCon_;
 
   ROL::Ptr<ROL::Vector<Real>> z_, zlo_, zup_;
   ROL::Ptr<ROL::Bounds<Real>> bnd_;
@@ -117,6 +118,7 @@ public:
     sup_  = smul_->dual().clone(); sup_->setScalar(static_cast<Real>(0));
     sbnd_ = ROL::makePtr<ROL::Bounds<Real>>(slo_,sup_);
     useIneq_ = pl_.sublist("Problem").get("Use Inequality", false);
+    useLinCon_ = pl_.sublist("Problem").get("Use Linear Constraints", true);
 
     // Create density vector
     z_ = ROL::makePtr<PDE_PrimalOptVector<Real>>(sassembler_->createControlVector(),spde_,sassembler_,pl_);
@@ -146,18 +148,22 @@ public:
     bnd_ = ROL::makePtr<ROL::Bounds<Real>>(zlo_,zup_);
   }
 
-  ROL::Ptr<ROL::OptimizationProblem_PEBBL<Real>> build(void) override {
-    ROL::Ptr<ROL::OptimizationProblem_PEBBL<Real>>
-      problem = ROL::makePtr<ROL::OptimizationProblem_PEBBL<Real>>(buildObjective(),buildSolutionVector());
+  ROL::Ptr<ROL::PEBBL::IntegerProblem<Real>> build(void) override {
+    ROL::Ptr<ROL::PEBBL::IntegerProblem<Real>>
+      problem = ROL::makePtr<ROL::PEBBL::IntegerProblem<Real>>(buildObjective(),buildSolutionVector());
     problem->addBoundConstraint(bnd_);
     ROL::Ptr<ROL::Vector<Real>> smul = smul_->clone();
-    if (useIneq_) problem->addLinearConstraint("Selection",scon_,smul,sbnd_);
-    else          problem->addLinearConstraint("Selection",scon_,smul);
-    //if (useIneq_) problem->addConstraint("Selection",scon_,smul,sbnd_);
-    //else          problem->addConstraint("Selection",scon_,smul);
     ROL::Ptr<ROL::Vector<Real>> vmul = vmul_->clone();
-    problem->addLinearConstraint("Weight",vcon_,vmul,vbnd_);
-    //problem->addConstraint("Weight",vcon_,vmul,vbnd_);
+    if (useLinCon_) {
+      if (useIneq_) problem->addLinearConstraint("Selection",scon_,smul,sbnd_);
+      else          problem->addLinearConstraint("Selection",scon_,smul);
+      problem->addLinearConstraint("Weight",vcon_,vmul,vbnd_);
+    }
+    else {
+      if (useIneq_) problem->addConstraint("Selection",scon_,smul,sbnd_);
+      else          problem->addConstraint("Selection",scon_,smul);
+      problem->addConstraint("Weight",vcon_,vmul,vbnd_);
+    }
     problem->setProjectionAlgorithm(pl_);
     return problem;
   }

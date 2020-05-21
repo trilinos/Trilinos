@@ -47,7 +47,7 @@
 #include "ROL_Bounds.hpp"
 #include "ROL_ScaledStdVector.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
-#include "ROL_OptimizationProblemFactory.hpp"
+#include "ROL_PEBBL_IntegerProblemFactory.hpp"
 
 #include "../../TOOLS/pdeobjective.hpp"
 #include "../../TOOLS/pdevector.hpp"
@@ -55,7 +55,7 @@
 #include "tv_2d.hpp"
 
 template<class Real>
-class BinaryAdvDiffFactory : public ROL::OptimizationProblemFactory<Real> {
+class BinaryAdvDiffFactory : public ROL::PEBBL::IntegerProblemFactory<Real> {
 private:
   int dim_;
 
@@ -129,13 +129,13 @@ public:
     bnd_ = ROL::makePtr<ROL::Bounds<Real>>(zlop,zhip);
   }
 
-  ROL::Ptr<ROL::OptimizationProblem_PEBBL<Real>> build(void) {
+  ROL::Ptr<ROL::PEBBL::IntegerProblem<Real>> build(void) {
     int bbout = pl_.sublist("Problem").get("BB Output Level", 0);
     ROL::Ptr<ROL::Objective<Real>>
       obj = ROL::makePtr<Sum_Objective<Real>>(fem_,penalty_,binary_,pl_,os_,bbout>2);
     ROL::Ptr<ROL::Vector<Real>> z = z_->clone(); z->set(*z_);
-    ROL::Ptr<ROL::OptimizationProblem_PEBBL<Real>>
-      problem = ROL::makePtr<ROL::OptimizationProblem_PEBBL<Real>>(obj,z);
+    ROL::Ptr<ROL::PEBBL::IntegerProblem<Real>>
+      problem = ROL::makePtr<ROL::PEBBL::IntegerProblem<Real>>(obj,z);
     problem->addBoundConstraint(bnd_);
     return problem;
   }

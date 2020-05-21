@@ -48,38 +48,38 @@
 #include "../../TOOLS/pdevector.hpp"
 
 template<class Real>
-class MultiMat_BranchSub;
+class MultiMatBranchSub;
 
 template<class Real>
-class MultiMat_Branching : public ROL::ROL_PEBBL_Branching<Real> {
+class MultiMatBranching : public ROL::PEBBL::Branching<Real> {
 private:
   ROL::Ptr<ROL::Vector<Real>> z0_;
 
-  using ROL::ROL_PEBBL_Branching<Real>::verbosity_;
-  using ROL::ROL_PEBBL_Branching<Real>::outStream_;
-  using ROL::ROL_PEBBL_Branching<Real>::parlist_;
+  using ROL::PEBBL::Branching<Real>::verbosity_;
+  using ROL::PEBBL::Branching<Real>::outStream_;
+  using ROL::PEBBL::Branching<Real>::parlist_;
 
 public:
-  MultiMat_Branching(const ROL::Ptr<ElasticityFactory<Real>>       &factory,
-                     const ROL::Ptr<ROL::ParameterList>            &parlist,
-                     const ROL::Ptr<ROL::BranchHelper_PEBBL<Real>> &bHelper,
-                     int                                            verbosity = 0,
-                     const ROL::Ptr<std::ostream>                  &outStream = ROL::nullPtr)
-    : ROL::ROL_PEBBL_Branching<Real>::ROL_PEBBL_Branching(factory,parlist,bHelper,verbosity,outStream) {
+  MultiMatBranching(const ROL::Ptr<ElasticityFactory<Real>>        &factory,
+                    const ROL::Ptr<ROL::ParameterList>             &parlist,
+                    const ROL::Ptr<ROL::PEBBL::BranchHelper<Real>> &bHelper,
+                    int                                             verbosity = 0,
+                    const ROL::Ptr<std::ostream>                   &outStream = ROL::nullPtr)
+    : ROL::PEBBL::Branching<Real>(factory,parlist,bHelper,verbosity,outStream) {
     z0_ = factory->buildSolutionVector();
   }
 
   pebbl::branchSub* blankSub() {
-    return new MultiMat_BranchSub<Real>(parlist_,ROL::makePtrFromRef<MultiMat_Branching<Real>>(*this),verbosity_,outStream_);
+    return new MultiMatBranchSub<Real>(parlist_,ROL::makePtrFromRef<MultiMatBranching<Real>>(*this),verbosity_,outStream_);
   }
 
 //  pebbl::solution* iniitalGuess() {
 //
 //  }
-}; // MultiMat_Branching
+}; // MultiMatBranching
 
 template <class Real>
-class MultiMat_BranchSub : public ROL::ROL_PEBBL_BranchSub<Real> {
+class MultiMatBranchSub : public ROL::PEBBL::BranchSub<Real> {
 private:
   int method_;
   Real ctol_;
@@ -88,14 +88,14 @@ private:
   ROL::Ptr<ROL::Vector<Real>> c_;
   ROL::Ptr<ROL::Constraint<Real>> con_;
 
-  using ROL::ROL_PEBBL_BranchSub<Real>::anyChild;
-  using ROL::ROL_PEBBL_BranchSub<Real>::index_;
-  using ROL::ROL_PEBBL_BranchSub<Real>::branching_;
-  using ROL::ROL_PEBBL_BranchSub<Real>::problem0_;
-  using ROL::ROL_PEBBL_BranchSub<Real>::solution_;
-  using ROL::ROL_PEBBL_BranchSub<Real>::rndSolution_;
-  using ROL::ROL_PEBBL_BranchSub<Real>::verbosity_;
-  using ROL::ROL_PEBBL_BranchSub<Real>::outStream_;
+  using ROL::PEBBL::BranchSub<Real>::anyChild;
+  using ROL::PEBBL::BranchSub<Real>::index_;
+  using ROL::PEBBL::BranchSub<Real>::branching_;
+  using ROL::PEBBL::BranchSub<Real>::problem0_;
+  using ROL::PEBBL::BranchSub<Real>::solution_;
+  using ROL::PEBBL::BranchSub<Real>::rndSolution_;
+  using ROL::PEBBL::BranchSub<Real>::verbosity_;
+  using ROL::PEBBL::BranchSub<Real>::outStream_;
 
   void round(ROL::Vector<Real> &rx, const ROL::Vector<Real> &x, Real t) const {
     rx.set(x);
@@ -140,11 +140,11 @@ private:
   }
 
 public:
-  MultiMat_BranchSub(const ROL::Ptr<ROL::ParameterList> &parlist,
-                     const ROL::Ptr<ROL::ROL_PEBBL_Branching<Real>> &branching,
-                     int verbosity = 0,
-                     const ROL::Ptr<std::ostream> &outStream = ROL::nullPtr)
-    : ROL::ROL_PEBBL_BranchSub<Real>(branching, verbosity, outStream) {
+  MultiMatBranchSub(const ROL::Ptr<ROL::ParameterList> &parlist,
+                    const ROL::Ptr<ROL::PEBBL::Branching<Real>> &branching,
+                    int verbosity = 0,
+                    const ROL::Ptr<std::ostream> &outStream = ROL::nullPtr)
+    : ROL::PEBBL::BranchSub<Real>(branching, verbosity, outStream) {
     method_ = parlist->sublist("Problem").get("Incumbent Heuristic",0);
     ctol_   = parlist->sublist("Status Test").get("Constraint Tolerance",1e-8);
     std::vector<Real> ym = ROL::getArrayFromStringParameter<Real>(parlist->sublist("Problem"), "Young's Modulus");
@@ -160,8 +160,8 @@ public:
     }
   }
 
-  MultiMat_BranchSub(const MultiMat_BranchSub &rpbs)
-    : ROL::ROL_PEBBL_BranchSub<Real>(rpbs),
+  MultiMatBranchSub(const MultiMatBranchSub &rpbs)
+    : ROL::PEBBL::BranchSub<Real>(rpbs),
       method_(rpbs.method_), ctol_(rpbs.ctol_), T_(rpbs.T_), methodName_(rpbs.methodName_),
       c_(rpbs.c_->clone()), con_(rpbs.con_) {}
 
@@ -203,9 +203,9 @@ public:
     }
     problem0_->getObjective()->update(*rndSolution_);
     Real val = problem0_->getObjective()->value(*rndSolution_,tol);
-    branching_->foundSolution(new ROL::ROL_PEBBL_Solution<Real>(*rndSolution_,val));
+    branching_->foundSolution(new ROL::PEBBL::IntegerSolution<Real>(*rndSolution_,val));
     if (verbosity_ > 0) {
-      *outStream_ << "MultiMat_BranchSub::incumbentHeuristic: " << methodName_ << std::endl;
+      *outStream_ << "MultiMatBranchSub::incumbentHeuristic: " << methodName_ << std::endl;
       *outStream_ << "  Incumbent Value:       " <<   val << std::endl;
       *outStream_ << "  Incumbent Feasibility: " << cnorm << std::endl;
       *outStream_ << "  Number of Samples:     " <<   cnt << std::endl;
@@ -213,16 +213,14 @@ public:
   }
 
   pebbl::branchSub* makeChild(int whichChild = anyChild) override {
-    if (whichChild == anyChild) {
-      throw ROL::Exception::NotImplemented(">>> ROL_PEBBL_BranchSub::makeChild: whichChild is equal to anyChild!");
-    }
-    MultiMat_BranchSub<Real>* child
-      = new MultiMat_BranchSub<Real>(*this);
+    ROL_TEST_FOR_EXCEPTION(whichChild==anyChild, std::logic_error,
+      ">>> MultiMatBranchSub::makeChild: whichChild is equal to anyChild!");
+    MultiMatBranchSub<Real>* child = new MultiMatBranchSub<Real>(*this);
     child->updateFixed(index_,
       (whichChild==0 ? static_cast<Real>(1) : static_cast<Real>(0)));
     return child;
   }
 
-}; // class MultiMat_BranchSub
+}; // class MultiMatBranchSub
 
 #endif

@@ -41,79 +41,70 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_CONSTRAINT_PEBBL_H
-#define ROL_CONSTRAINT_PEBBL_H
+#ifndef ROL_PEBBL_INTEGERTRANSFORMATION_H
+#define ROL_PEBBL_INTEGERTRANSFORMATION_H
 
 #include "ROL_Constraint.hpp"
-#include "ROL_StdVector.hpp"
 
 /** @ingroup func_group
-    \class ROL::Constraint_PEBBL
-    \brief Defines the pebbl constraint operator interface.
+    \class ROL::PEBBL::IntegerTransformation
+    \brief Defines the pebbl integer transformation operator interface.
 
     ROL's pebbl constraint interface is designed to set individual components
-    of a vector to a fixed value.  The range space is a ROL::StdVector.
+    of a vector to a fixed value.  The range space is the same as the domain.
 
     ---
 */
 
 
 namespace ROL {
+namespace PEBBL {
 
 template <class Real>
-class Constraint_PEBBL : public Constraint<Real> {
+class IntegerTransformation : public Constraint<Real> {
 private:
+  Ptr<Vector<Real>> getVector( Vector<Real> &xs ) const {
+    try {
+      return dynamic_cast<PartitionedVector<Real>&>(xs).get(0);
+    }
+    catch (std::exception &e) {
+      return makePtrFromRef(xs);
+    }
+  }
+
+protected:
   std::map<int,Real> map_;
 
-  Ptr<std::vector<Real>> getData(Vector<Real> &x) const {
-    return dynamic_cast<StdVector<Real>&>(x).getVector();
-  }
-
-  Ptr<const std::vector<Real>> getConstData(const Vector<Real> &x) const {
-    return dynamic_cast<const StdVector<Real>&>(x).getVector();
-  }
-
 public:
-  Constraint_PEBBL(void) {}
+  IntegerTransformation(void) {}
+  IntegerTransformation(const IntegerTransformation &T) : map_(T.map_) {}
 
-  Constraint_PEBBL(const Constraint_PEBBL &con) : map_(con.map_) {}
+  virtual void pruneVector(Vector<Real> &c) = 0;
+  virtual void shiftVector(Vector<Real> &c) = 0;
 
-  void value(Vector<Real> &c,
-       const Vector<Real> &x,
-             Real &tol) {
-    Ptr<std::vector<Real>> cval = getData(c);
-    typename std::map<int,Real>::iterator it;
-    int cnt = 0;
-    for (it=map_.begin(); it!=map_.end(); ++it) {
-      (*cval)[cnt] = x.dot(*x.basis(it->first))-it->second;
-      cnt++;
-    }
+  void value(Vector<Real> &c, const Vector<Real> &x, Real &tol) {
+    c.set(x);
+    Ptr<Vector<Real>> cp = getVector(c);
+    pruneVector(*cp);
+    shiftVector(*cp);
   }
 
   void applyJacobian(Vector<Real> &jv,
                const Vector<Real> &v,
                const Vector<Real> &x,
                      Real &tol) {
-    Ptr<std::vector<Real>> jval = getData(jv);
-    typename std::map<int,Real>::iterator it;
-    int cnt = 0;
-    for (it=map_.begin(); it!=map_.end(); ++it) {
-      (*jval)[cnt] = v.dot(*x.basis(it->first));
-      cnt++;
-    }
+    jv.set(v);
+    Ptr<Vector<Real>> jvp = getVector(jv);
+    pruneVector(*jvp);
   }
 
   void applyAdjointJacobian(Vector<Real> &ajv,
                       const Vector<Real> &v,
                       const Vector<Real> &x,
                             Real &tol) {
-    Ptr<const std::vector<Real>> vval = getConstData(v);
-    typename std::map<int,Real>::iterator it;
-    int cnt = 0;
-    for (it=map_.begin(); it!=map_.end(); ++it) {
-      ajv.axpy((*vval)[cnt],*x.basis(it->first));
-      cnt++;
-    }
+    ajv.set(v);
+    Ptr<Vector<Real>> ajvp = getVector(ajv);
+    pruneVector(*ajvp);
   }
 
   void applyAdjointHessian(Vector<Real> &ahuv,
@@ -122,10 +113,6 @@ public:
                      const Vector<Real> &x,
                            Real &tol) {
     ahuv.zero();
-  }
-
-  Ptr<Vector<Real> > makeConstraintVector(void) const {
-    return makePtr<StdVector<Real>>(makePtr<std::vector<Real>>(map_.size(),0));
   }
 
   bool isEmpty(void) const {
@@ -144,8 +131,9 @@ public:
     map_.insert(in);
   }
 
-}; // class Constraint_PEBBL
+}; // class IntegerTransformation
 
+} // namespace PEBBL
 } // namespace ROL
 
 #endif

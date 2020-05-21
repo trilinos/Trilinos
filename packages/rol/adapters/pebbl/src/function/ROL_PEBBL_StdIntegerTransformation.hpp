@@ -41,69 +41,56 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_ADVDIFFTEST_INTEGERTRANSFORMATION_H
-#define ROL_ADVDIFFTEST_INTEGERTRANSFORMATION_H
+#ifndef ROL_PEBBL_STDINTEGERTRANSFORMATION_H
+#define ROL_PEBBL_STDINTEGERTRANSFORMATION_H
 
-#include "ROL_PEBBL_StdIntegerTransformation.hpp"
-#include "ROL_PEBBL_TpetraIntegerTransformation.hpp"
-#include "../../TOOLS/pdevector.hpp"
+#include "ROL_PEBBL_IntegerTransformation.hpp"
 
-template <class Real>
-class StdAdvDiffIntegerTransformation : public ROL::PEBBL::StdIntegerTransformation<Real> {
-private:
-  ROL::Ptr<ROL::StdVector<Real>> getParameter(ROL::Vector<Real> &x) const {
-    try {
-      return ROL::makePtrFromRef(dynamic_cast<ROL::StdVector<Real>&>(x));
-    }
-    catch (std::exception &e) {
-      return dynamic_cast<PDE_OptVector<Real>&>(x).getParameter();
-    }
-  }
+/** @ingroup func_group
+    \class ROL::PEBBL:IntegerStdTransformation
+    \brief Defines the pebbl integer transformation operator interface for StdVectors.
 
-public:
-  StdAdvDiffIntegerTransformation(void)
-    : ROL::PEBBL::StdIntegerTransformation<Real>() {}
+    ROL's pebbl constraint interface is designed to set individual components
+    of a vector to a fixed value.  The range space is the same as the domain.
 
-  StdAdvDiffIntegerTransformation(const StdAdvDiffIntegerTransformation &T)
-    : ROL::PEBBL::StdIntegerTransformation<Real>(T) {}
+    ---
+*/
 
-  void pruneVector(ROL::Vector<Real> &c) {
-    ROL::PEBBL::StdIntegerTransformation<Real>::pruneVector(*getParameter(c));
-  }
 
-  void shiftVector(ROL::Vector<Real> &c) {
-    ROL::PEBBL::StdIntegerTransformation<Real>::shiftVector(*getParameter(c));
-  }
-
-}; // class StdAdvDiffIntegerTransformation
+namespace ROL {
+namespace PEBBL {
 
 template <class Real>
-class TpetraAdvDiffIntegerTransformation : public ROL::PEBBL::TpetraIntegerTransformation<Real> {
+class StdIntegerTransformation : public IntegerTransformation<Real> {
 private:
-  ROL::Ptr<ROL::TpetraMultiVector<Real>> getData(ROL::Vector<Real> &x) const {
-    try {
-      return ROL::makePtrFromRef(dynamic_cast<ROL::TpetraMultiVector<Real>&>(x));
-    }
-    catch (std::exception &e) {
-      return dynamic_cast<PDE_OptVector<Real>&>(x).getField();
-    }
+  Ptr<std::vector<Real>> getData(Vector<Real> &x) const {
+    return dynamic_cast<StdVector<Real>&>(x).getVector();
   }
+
+ using IntegerTransformation<Real>::map_; 
 
 public:
-  TpetraAdvDiffIntegerTransformation(void)
-    : ROL::PEBBL::TpetraIntegerTransformation<Real>() {}
+  StdIntegerTransformation(void)
+    : IntegerTransformation<Real>() {}
 
-  TpetraAdvDiffIntegerTransformation(const TpetraAdvDiffIntegerTransformation &T)
-    : ROL::PEBBL::TpetraIntegerTransformation<Real>(T) {}
+  StdIntegerTransformation(const StdIntegerTransformation &T)
+    : IntegerTransformation<Real>(T) {}
 
-  void pruneVector(ROL::Vector<Real> &c) {
-    ROL::PEBBL::TpetraIntegerTransformation<Real>::pruneVector(*getData(c));
+  void pruneVector(Vector<Real> &c) {
+    for (auto it=map_.begin(); it!=map_.end(); ++it) {
+      (*getData(c))[it->first] = static_cast<Real>(0);
+    }
   }
 
-  void shiftVector(ROL::Vector<Real> &c) {
-    ROL::PEBBL::TpetraIntegerTransformation<Real>::shiftVector(*getData(c));
+  void shiftVector(Vector<Real> &c) {
+    for (auto it=map_.begin(); it!=map_.end(); ++it) {
+      (*getData(c))[it->first] = it->second;
+    }
   }
 
-}; // class TpetraAdvDiffIntegerTransformation
+}; // class StdIntegerTransformation
+
+} // namespace PEBBL
+} // namespace ROL
 
 #endif

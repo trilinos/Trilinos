@@ -41,63 +41,36 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_TEUCHOSTRANSFORM_PEBBL_H
-#define ROL_TEUCHOSTRANSFORM_PEBBL_H
+#ifndef ROL_PEBBL_INTEGERPROBLEMFACTORY_H
+#define ROL_PEBBL_INTEGERPROBLEMFACTORY_H
 
-#include "ROL_Transform_PEBBL.hpp"
-#include "ROL_TeuchosVector.hpp"
+#include "ROL_Ptr.hpp"
+#include "ROL_PEBBL_IntegerProblem.hpp"
 
 /** @ingroup func_group
-    \class ROL::TeuchosTransform_PEBBL
-    \brief Defines the pebbl transform operator interface for TeuchosVectors.
+    \class ROL::PEBBL::IntegerProblemFactory
+    \brief Defines the pebbl IntegerProblemFactory interface.
 
-    ROL's pebbl constraint interface is designed to set individual components
-    of a vector to a fixed value.  The range space is the same as the domain.
+    ROL's IntegerProblemFactory constructs a new (identical)
+    instance of an optimization problem for use in pebbl.
 
     ---
 */
 
 
 namespace ROL {
+namespace PEBBL {
 
-template <class Ordinal, class Real>
-class TeuchosTransform_PEBBL : public Transform_PEBBL<Real> {
-private:
-  Ptr<Teuchos::SerialDenseVector<Ordinal,Real>> getData(Vector<Real> &x) const {
-    return dynamic_cast<TeuchosVector<Ordinal,Real>&>(x).getVector();
-  }
-
-  Ptr<const Teuchos::SerialDenseVector<Ordinal,Real>> getConstData(const Vector<Real> &x) const {
-    return dynamic_cast<const TeuchosVector<Ordinal,Real>&>(x).getVector();
-  }
-
- using Transform_PEBBL<Real>::map_; 
-
+template <class Real>
+class IntegerProblemFactory {
 public:
-  TeuchosTransform_PEBBL(void)
-    : Transform_PEBBL<Real>() {}
+  virtual ~IntegerProblemFactory(void) {}
 
-  TeuchosTransform_PEBBL(const TeuchosTransform_PEBBL &T)
-    : Transform_PEBBL<Real>(T) {}
+  virtual Ptr<IntegerProblem<Real>> build(void) = 0;
 
-  void pruneVector(Vector<Real> &c) {
-    Ptr<Teuchos::SerialDenseVector<Ordinal,Real>> cval = getData(c);
-    typename std::map<int,Real>::iterator it;
-    for (it=map_.begin(); it!=map_.end(); ++it) {
-      (*cval)(it->first) = static_cast<Real>(0);
-    }
-  }
+}; // class IntegerProblemFactory
 
-  void shiftVector(Vector<Real> &c) {
-    Ptr<Teuchos::SerialDenseVector<Ordinal,Real>> cval = getData(c);
-    typename std::map<int,Real>::iterator it;
-    for (it=map_.begin(); it!=map_.end(); ++it) {
-      (*cval)(it->first) = it->second;
-    }
-  }
-
-}; // class TeuchosTransform_PEBBL
-
+} // namespace PEBBL
 } // namespace ROL
 
 #endif

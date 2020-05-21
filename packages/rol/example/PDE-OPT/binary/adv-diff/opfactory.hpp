@@ -46,7 +46,7 @@
 
 #include "ROL_Bounds.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
-#include "ROL_OptimizationProblemFactory.hpp"
+#include "ROL_PEBBL_IntegerProblemFactory.hpp"
 
 #include "../../TOOLS/linearpdeconstraint.hpp"
 #include "../../TOOLS/pdeconstraint.hpp"
@@ -59,7 +59,7 @@
 #include "extractQP.hpp"
 
 template<class Real>
-class BinaryAdvDiffFactory : public ROL::OptimizationProblemFactory<Real> {
+class BinaryAdvDiffFactory : public ROL::PEBBL::IntegerProblemFactory<Real> {
 private:
   int dim_;
 
@@ -83,7 +83,7 @@ public:
     dim_ = nx*ny;
   }
 
-  ROL::Ptr<ROL::OptimizationProblem_PEBBL<Real>> build(void) {
+  ROL::Ptr<ROL::PEBBL::IntegerProblem<Real>> build(void) {
     update();
     ROL::Ptr<ROL::Objective<Real>>       obj  = buildObjective();
     ROL::Ptr<ROL::Vector<Real>>          x    = buildSolutionVector();
@@ -91,8 +91,8 @@ public:
     ROL::Ptr<ROL::Constraint<Real>>      icon = buildConstraint();
     ROL::Ptr<ROL::Vector<Real>>          imul = buildMultiplier();
     ROL::Ptr<ROL::BoundConstraint<Real>> ibnd = buildSlackBoundConstraint();
-    ROL::Ptr<ROL::OptimizationProblem_PEBBL<Real>>
-      problem = ROL::makePtr<ROL::OptimizationProblem_PEBBL<Real>>(obj,x);
+    ROL::Ptr<ROL::PEBBL::IntegerProblem<Real>>
+      problem = ROL::makePtr<ROL::PEBBL::IntegerProblem<Real>>(obj,x);
     problem->addBoundConstraint(bnd);
     if (ibnd==ROL::nullPtr) problem->addLinearConstraint("Budget",icon,imul);
     else                    problem->addLinearConstraint("Budget",icon,imul,ibnd);
@@ -165,7 +165,7 @@ public:
 };
 
 template<class Real>
-class BinaryAdvDiffQPFactory : public ROL::OptimizationProblemFactory<Real> {
+class BinaryAdvDiffQPFactory : public ROL::PEBBL::IntegerProblemFactory<Real> {
 private:
   ROL::ParameterList pl_;
   ROL::Ptr<const Teuchos::Comm<int>> comm_;
@@ -182,7 +182,7 @@ public:
     factory_ = ROL::makePtr<BinaryAdvDiffFactory<Real>>(pl_,comm_,os_);
   }
 
-  ROL::Ptr<ROL::OptimizationProblem_PEBBL<Real>> build(void) {
+  ROL::Ptr<ROL::PEBBL::IntegerProblem<Real>> build(void) {
     factory_->update();
     extract_ = ROL::makePtr<extractQP<Real>>(factory_->buildObjective(),
                                              factory_->buildSolutionVector(),

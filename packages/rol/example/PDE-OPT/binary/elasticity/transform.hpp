@@ -41,15 +41,14 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_PDEOPT_MULTIMAT_TRANSFORM_PEBBL_H
-#define ROL_PDEOPT_MULTIMAT_TRANSFORM_PEBBL_H
+#ifndef ROL_PDEOPT_MULTIMAT_TRANSFORM_H
+#define ROL_PDEOPT_MULTIMAT_TRANSFORM_H
 
-#include "ROL_StdTransform_PEBBL.hpp"
-#include "ROL_TpetraTransform_PEBBL.hpp"
+#include "ROL_PEBBL_TpetraIntegerTransformation.hpp"
 #include "../../TOOLS/pdevector.hpp"
 
 template <class Real>
-class Tpetra_MultiMat_Transform_PEBBL : public ROL::TpetraTransform_PEBBL<Real> {
+class TpetraMultiMatIntegerTransformation : public ROL::PEBBL::TpetraIntegerTransformation<Real> {
 private:
   ROL::Ptr<ROL::TpetraMultiVector<Real>> getData(ROL::Vector<Real> &x) const {
     try {
@@ -61,20 +60,20 @@ private:
   }
 
 public:
-  Tpetra_MultiMat_Transform_PEBBL(void)
-    : ROL::TpetraTransform_PEBBL<Real>() {}
+  TpetraMultiMatIntegerTransformation(void)
+    : ROL::PEBBL::TpetraIntegerTransformation<Real>() {}
 
-  Tpetra_MultiMat_Transform_PEBBL(const Tpetra_MultiMat_Transform_PEBBL &T)
-    : ROL::TpetraTransform_PEBBL<Real>(T) {}
+  TpetraMultiMatIntegerTransformation(const TpetraMultiMatIntegerTransformation &T)
+    : ROL::PEBBL::TpetraIntegerTransformation<Real>(T) {}
 
   void pruneVector(ROL::Vector<Real> &c) {
-    ROL::TpetraTransform_PEBBL<Real>::pruneVector(*getData(c));
+    ROL::PEBBL::TpetraIntegerTransformation<Real>::pruneVector(*getData(c));
   }
 
   void shiftVector(ROL::Vector<Real> &c) {
-    ROL::TpetraTransform_PEBBL<Real>::shiftVector(*getData(c));
+    ROL::PEBBL::TpetraIntegerTransformation<Real>::shiftVector(*getData(c));
   }
 
-}; // class Tpetra_MultiMat_Transform_PEBBL
+}; // class TpetraMultiMatIntegerTransformation
 
 #endif

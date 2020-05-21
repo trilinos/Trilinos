@@ -54,7 +54,7 @@
 #include "ROL_StdVector.hpp"
 #include "ROL_Bounds.hpp"
 #include "ROL_NewOptimizationSolver.hpp"
-#include "ROL_Constraint_PEBBL.hpp"
+#include "ROL_PEBBL_IntegerConstraint.hpp"
 
 template<class Real>
 class Constraint_SimpleBinary : public ROL::Constraint<Real> {

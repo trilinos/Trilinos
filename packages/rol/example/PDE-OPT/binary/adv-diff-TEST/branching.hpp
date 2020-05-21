@@ -41,63 +41,63 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_PDEOPT_BRANCHING_PEBBL_H
-#define ROL_PDEOPT_BRANCHING_PEBBL_H
+#ifndef ROL_ADVDIFFTEST_BRANCHING_H
+#define ROL_ADVDIFFTEST_BRANCHING_H
 
 #include "ROL_PEBBL_Interface.hpp"
 #include "../../TOOLS/pdevector.hpp"
 #include "hilbert.hpp"
 
 template<class Real>
-class ADVDIFF_BranchSub;
+class AdvDiffBranchSub;
 
 template<class Real>
-class ADVDIFF_Branching : public ROL::ROL_PEBBL_Branching<Real> {
+class AdvDiffBranching : public ROL::PEBBL::Branching<Real> {
 private:
   const int method_;
   const bool useTpetra_;
   ROL::Ptr<ROL::Vector<Real>> z0_;
 
-  using ROL::ROL_PEBBL_Branching<Real>::verbosity_;
-  using ROL::ROL_PEBBL_Branching<Real>::outStream_;
-  using ROL::ROL_PEBBL_Branching<Real>::parlist_;
+  using ROL::PEBBL::Branching<Real>::verbosity_;
+  using ROL::PEBBL::Branching<Real>::outStream_;
+  using ROL::PEBBL::Branching<Real>::parlist_;
 
 public:
-  ADVDIFF_Branching(const ROL::Ptr<BinaryAdvDiffFactory<Real>>            &factory,
-                    const ROL::Ptr<ROL::ParameterList>                    &parlist,
-                    const ROL::Ptr<ROL::BranchHelper_PEBBL<Real>>         &bHelper,
-                    int                                                    verbosity = 0,
-                    const ROL::Ptr<std::ostream>                          &outStream = ROL::nullPtr,
-                    int                                                    method = 0)
-    : ROL::ROL_PEBBL_Branching<Real>::ROL_PEBBL_Branching(factory,parlist,bHelper,verbosity,outStream),
+  AdvDiffBranching(const ROL::Ptr<BinaryAdvDiffFactory<Real>>     &factory,
+                   const ROL::Ptr<ROL::ParameterList>             &parlist,
+                   const ROL::Ptr<ROL::PEBBL::BranchHelper<Real>> &bHelper,
+                   int                                             verbosity = 0,
+                   const ROL::Ptr<std::ostream>                   &outStream = ROL::nullPtr,
+                   int                                             method = 0)
+    : ROL::PEBBL::Branching<Real>(factory,parlist,bHelper,verbosity,outStream),
       method_(method), useTpetra_(factory->controlType()) {
     z0_ = factory->buildSolutionVector();
   }
 
   pebbl::branchSub* blankSub() {
-    return new ADVDIFF_BranchSub<Real>(useTpetra_,ROL::makePtrFromRef<ADVDIFF_Branching<Real>>(*this),verbosity_,outStream_,method_);
+    return new AdvDiffBranchSub<Real>(useTpetra_,ROL::makePtrFromRef<AdvDiffBranching<Real>>(*this),verbosity_,outStream_,method_);
   }
 
 //  pebbl::solution* iniitalGuess() {
 //
 //  }
-}; // ADVDIFF_Branching
+}; // AdvDiffBranching
 
 template <class Real>
-class ADVDIFF_BranchSub : public ROL::ROL_PEBBL_BranchSub<Real> {
+class AdvDiffBranchSub : public ROL::PEBBL::BranchSub<Real> {
 private:
   const bool useTpetra_;
   const int method_;
   std::string methodName_;
 
-  using ROL::ROL_PEBBL_BranchSub<Real>::anyChild;
-  using ROL::ROL_PEBBL_BranchSub<Real>::index_;
-  using ROL::ROL_PEBBL_BranchSub<Real>::branching_;
-  using ROL::ROL_PEBBL_BranchSub<Real>::problem0_;
-  using ROL::ROL_PEBBL_BranchSub<Real>::solution_;
-  using ROL::ROL_PEBBL_BranchSub<Real>::rndSolution_;
-  using ROL::ROL_PEBBL_BranchSub<Real>::verbosity_;
-  using ROL::ROL_PEBBL_BranchSub<Real>::outStream_;
+  using ROL::PEBBL::BranchSub<Real>::anyChild;
+  using ROL::PEBBL::BranchSub<Real>::index_;
+  using ROL::PEBBL::BranchSub<Real>::branching_;
+  using ROL::PEBBL::BranchSub<Real>::problem0_;
+  using ROL::PEBBL::BranchSub<Real>::solution_;
+  using ROL::PEBBL::BranchSub<Real>::rndSolution_;
+  using ROL::PEBBL::BranchSub<Real>::verbosity_;
+  using ROL::PEBBL::BranchSub<Real>::outStream_;
 
   void round(ROL::Vector<Real> &rx, const ROL::Vector<Real> &x, Real t) const {
     rx.set(x);
@@ -130,12 +130,12 @@ private:
   }
 
 public:
-  ADVDIFF_BranchSub(bool useTpetra,
-                    const ROL::Ptr<ROL::ROL_PEBBL_Branching<Real>> &branching,
-                    int verbosity = 0,
-                    const ROL::Ptr<std::ostream> &outStream = ROL::nullPtr,
-                    int method = 0)
-    : ROL::ROL_PEBBL_BranchSub<Real>(branching, verbosity, outStream), useTpetra_(useTpetra), method_(method) {
+  AdvDiffBranchSub(bool useTpetra,
+                   const ROL::Ptr<ROL::PEBBL::Branching<Real>> &branching,
+                   int verbosity = 0,
+                   const ROL::Ptr<std::ostream> &outStream = ROL::nullPtr,
+                   int method = 0)
+    : ROL::PEBBL::BranchSub<Real>(branching, verbosity, outStream), useTpetra_(useTpetra), method_(method) {
     switch (method_) {
       case 1:  methodName_ = "Mass Preserving Rounding"; break;
       case 2:  methodName_ = "Objective Gap Rounding";   break;
@@ -144,8 +144,8 @@ public:
     }
   }
 
-  ADVDIFF_BranchSub(const ADVDIFF_BranchSub &rpbs)
-    : ROL::ROL_PEBBL_BranchSub<Real>(rpbs), useTpetra_(rpbs.useTpetra_),
+  AdvDiffBranchSub(const AdvDiffBranchSub &rpbs)
+    : ROL::PEBBL::BranchSub<Real>(rpbs), useTpetra_(rpbs.useTpetra_),
       method_(rpbs.method_), methodName_(rpbs.methodName_) {}
 
   void incumbentHeuristic() {
@@ -257,25 +257,24 @@ public:
     }
     problem0_->getObjective()->update(*rndSolution_,ROL::UPDATE_TEMP);
     val = problem0_->getObjective()->value(*rndSolution_,tol);
-    branching_->foundSolution(new ROL::ROL_PEBBL_Solution<Real>(*rndSolution_,val));
+    branching_->foundSolution(new ROL::PEBBL::IntegerSolution<Real>(*rndSolution_,val));
     if (verbosity_ > 0) {
-      *outStream_ << "ADVDIFF_BranchSub::incumbentHeuristic: " << methodName_ << std::endl;
+      *outStream_ << "AdvDiffBranchSub::incumbentHeuristic: " << methodName_ << std::endl;
       *outStream_ << "  Incumbent Value:    " << val  << std::endl;
       *outStream_ << "  Rounding Threshold: " << t    << std::endl;
     }
   }
 
   pebbl::branchSub* makeChild(int whichChild = anyChild) override {
-    if (whichChild == anyChild) {
-      throw ROL::Exception::NotImplemented(">>> ROL_PEBBL_BranchSub::makeChild: whichChild is equal to anyChild!");
-    }
-    ADVDIFF_BranchSub<Real>* child
-      = new ADVDIFF_BranchSub<Real>(*this);
+    ROL_TEST_FOR_EXCEPTION(whichChild==anyChild,std::logic_error,
+      ">>> AdvDiffBranchSub::makeChild: whichChild is equal to anyChild!");
+    AdvDiffBranchSub<Real>* child
+      = new AdvDiffBranchSub<Real>(*this);
     child->updateFixed(index_,
       (whichChild==0 ? static_cast<Real>(1) : static_cast<Real>(0)));
     return child;
   }
 
-}; // class ADVDIFF_BranchSub
+}; // class AdvDiffBranchSub
 
 #endif

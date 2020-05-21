@@ -48,7 +48,7 @@
 #include "ROL_Teuchos_LinearOperator.hpp"
 #include "ROL_QuadraticObjective.hpp"
 #include "ROL_ScalarLinearConstraint.hpp"
-#include "ROL_OptimizationProblem_PEBBL.hpp"
+#include "ROL_PEBBL_IntegerProblem.hpp"
 #include "../../TOOLS/pdevector.hpp"
 
 template<class Real>
@@ -242,14 +242,14 @@ public:
     zero_ = input_x_->clone(); zero_->zero();
   }
 
-  ROL::Ptr<ROL::OptimizationProblem_PEBBL<Real>> operator()(void) {
+  ROL::Ptr<ROL::PEBBL::IntegerProblem<Real>> operator()(void) {
     buildObjective();
     buildSolution();
     buildBound();
     buildConstraint();
     buildMultiplier();
-    ROL::Ptr<ROL::OptimizationProblem_PEBBL<Real>>
-      problem = ROL::makePtr<ROL::OptimizationProblem_PEBBL<Real>>(obj_,x_);
+    ROL::Ptr<ROL::PEBBL::IntegerProblem<Real>>
+      problem = ROL::makePtr<ROL::PEBBL::IntegerProblem<Real>>(obj_,x_);
     problem->addBoundConstraint(bnd_);
     if (input_ibnd_ != ROL::nullPtr) {
       buildIneqBound();

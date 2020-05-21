@@ -59,7 +59,7 @@
 
 #include "ROL_Stream.hpp"
 #include "ROL_ParameterList.hpp"
-#include "ROL_PEBBL_Driver.hpp"
+#include "ROL_PEBBL_BranchAndBound.hpp"
 
 #include "opfactory.hpp"
 #include "transform.hpp"
@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
     bool binary = parlist->sublist("Problem").get("Binary",true);
     ROL::Ptr<ROL::Vector<RealT>> z;
     if (!binary) {
-      ROL::Ptr<ROL::OptimizationProblem_PEBBL<RealT>> problem = factory->build();
+      ROL::Ptr<ROL::PEBBL::IntegerProblem<RealT>> problem = factory->build();
       ROL::NewOptimizationSolver<RealT> solver(problem,*parlist);
       solver.solve(*outStream);
       z = problem->getPrimalOptimizationVector();
@@ -137,13 +137,13 @@ int main(int argc, char *argv[]) {
       RealT intTol  = parlist->sublist("Problem").get("Integrality Tolerance",1e-6);
       int method    = parlist->sublist("Problem").get("Branching Method",0);
       int verbosity = parlist->sublist("Problem").get("BB Output Level",0);
-      ROL::Ptr<Tpetra_MultiMat_BranchHelper_PEBBL<RealT>> bHelper
-        = ROL::makePtr<Tpetra_MultiMat_BranchHelper_PEBBL<RealT>>(intTol,method);
-      ROL::Ptr<MultiMat_Branching<RealT>> branching
-        = ROL::makePtr<MultiMat_Branching<RealT>>(factory,parlist,bHelper,verbosity,outStream);
-      ROL::ROL_PEBBL_Driver<RealT> pebbl(branching);
+      ROL::Ptr<TpetraMultiMatBranchHelper<RealT>> bHelper
+        = ROL::makePtr<TpetraMultiMatBranchHelper<RealT>>(intTol,method);
+      ROL::Ptr<MultiMatBranching<RealT>> branching
+        = ROL::makePtr<MultiMatBranching<RealT>>(factory,parlist,bHelper,verbosity,outStream);
+      ROL::PEBBL::BranchAndBound<RealT> pebbl(branching);
       pebbl.solve(argc,argv,*outStream);
-      z = pebbl.getSolution();
+      z->set(*pebbl.getSolution());
     }
     algoTimer.stop();
     *outStream << "Total optimization time = " << algoTimer.totalElapsedTime() << " seconds.\n";

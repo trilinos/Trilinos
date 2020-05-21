@@ -6,7 +6,7 @@ file="output_$1x$2.txt"
 sed -i '37s/.*/    <Parameter name="NX"                         type="int"     value="'$1'"    \/>/' input_ex01.xml
 sed -i '38s/.*/    <Parameter name="NY"                         type="int"     value="'$2'"    \/>/' input_ex01.xml
 
-./ROL_example_PDE-OPT_binary_adv-diff-TEST_RelaxedBinary.exe --maxWallMinutes=600 --relTolerance=1e-6 $size |tee $file
+./ROL_example_PDE-OPT_binary_adv-diff-TEST_Binary.exe --maxWallMinutes=600 --relTolerance=1e-6 $size |tee $file
 
 mv control.txt control_$1x$2.txt
 mv map_control.txt map_control_$1x$2.txt

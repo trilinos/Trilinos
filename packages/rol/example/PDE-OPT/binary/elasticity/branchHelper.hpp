@@ -41,15 +41,14 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_PDEOPT_MULTIMAT_BRANCHHELPER_PEBBL_H
-#define ROL_PDEOPT_MULTIMAT_BRANCHHELPER_PEBBL_H
+#ifndef ROL_PDEOPT_MULTIMAT_BRANCHHELPER_H
+#define ROL_PDEOPT_MULTIMAT_BRANCHHELPER_H
 
-#include "ROL_StdBranchHelper_PEBBL.hpp"
-#include "ROL_TpetraBranchHelper_PEBBL.hpp"
+#include "ROL_PEBBL_TpetraBranchHelper.hpp"
 #include "transform.hpp"
 
 template <class Real>
-class Tpetra_MultiMat_BranchHelper_PEBBL : public ROL::TpetraBranchHelper_PEBBL<Real> {
+class TpetraMultiMatBranchHelper : public ROL::PEBBL::TpetraBranchHelper<Real> {
 private:
   ROL::Ptr<const ROL::TpetraMultiVector<Real>> getData(const ROL::Vector<Real> &x) const {
     try {
@@ -61,28 +60,28 @@ private:
   }
 
 public:
-  Tpetra_MultiMat_BranchHelper_PEBBL(const Real tol = 1e-6, const int method = 0)
-    : ROL::TpetraBranchHelper_PEBBL<Real>(tol, method) {}
+  TpetraMultiMatBranchHelper(const Real tol = 1e-6, const int method = 0)
+    : ROL::PEBBL::TpetraBranchHelper<Real>(tol, method) {}
 
-  Tpetra_MultiMat_BranchHelper_PEBBL(const Tpetra_MultiMat_BranchHelper_PEBBL &BH)
-    : ROL::TpetraBranchHelper_PEBBL<Real>(BH) {}
+  TpetraMultiMatBranchHelper(const TpetraMultiMatBranchHelper &BH)
+    : ROL::PEBBL::TpetraBranchHelper<Real>(BH) {}
 
   //int getMyIndex(const ROL::Vector<Real> &x) const {
   int getMyIndex(const ROL::Vector<Real> &x, const ROL::Vector<Real> &g) const {
     // Use Std implementation
-    return ROL::TpetraBranchHelper_PEBBL<Real>::getMyIndex(*getData(x),*getData(g));
+    return ROL::PEBBL::TpetraBranchHelper<Real>::getMyIndex(*getData(x),*getData(g));
   }
 
   void getMyNumFrac(int &nfrac, Real &integralityMeasure,
                     const ROL::Vector<Real> &x) const {
     // Use Std implementation
-    ROL::TpetraBranchHelper_PEBBL<Real>::getMyNumFrac(nfrac, integralityMeasure, *getData(x));
+    ROL::PEBBL::TpetraBranchHelper<Real>::getMyNumFrac(nfrac, integralityMeasure, *getData(x));
   }
 
-  ROL::Ptr<ROL::Transform_PEBBL<Real>> createTransform(void) const {
-    return ROL::makePtr<Tpetra_MultiMat_Transform_PEBBL<Real>>();
+  ROL::Ptr<ROL::PEBBL::IntegerTransformation<Real>> createTransform(void) const {
+    return ROL::makePtr<TpetraMultiMatIntegerTransformation<Real>>();
   }
 
-}; // class Tpetra_MultiMat_BranchHelper_PEBBL
+}; // class TpetraMultiMatBranchHelper
 
 #endif

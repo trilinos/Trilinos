@@ -41,59 +41,47 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_TPETRATRANSFORM_PEBBL_H
-#define ROL_TPETRATRANSFORM_PEBBL_H
+#ifndef ROL_PEBBL_BRANCHHELPER_H
+#define ROL_PEBBL_BRANCHHELPER_H
 
-#include "ROL_Transform_PEBBL.hpp"
-#include "ROL_TpetraMultiVector.hpp"
+#include "ROL_Vector.hpp"
+#include "ROL_PEBBL_IntegerTransformation.hpp"
 
 /** @ingroup func_group
-    \class ROL::TpetraTransform_PEBBL
-    \brief Defines the pebbl transform operator interface for TpetraMultiVectors.
-
-    ROL's pebbl constraint interface is designed to set individual components
-    of a vector to a fixed value.  The range space is the same as the domain.
+    \class ROL::PEBBL::BranchHelper
+    \brief Defines the pebbl branch index interface.
 
     ---
 */
 
 
 namespace ROL {
+namespace PEBBL {
 
 template <class Real>
-class TpetraTransform_PEBBL : public Transform_PEBBL<Real> {
-private:
-  Ptr<Tpetra::MultiVector<>> getData(Vector<Real> &x) const {
-    return dynamic_cast<TpetraMultiVector<Real>&>(x).getVector();
+class BranchHelper {
+protected:
+  Ptr<const Vector<Real>> getVector(const Vector<Real> &xs ) const {
+    try {
+      return dynamic_cast<const PartitionedVector<Real>&>(xs).get(0);
+    }
+    catch (std::exception &e) {
+      return makePtrFromRef(xs);
+    }
   }
-
- using Transform_PEBBL<Real>::map_; 
 
 public:
-  TpetraTransform_PEBBL(void)
-    : Transform_PEBBL<Real>() {}
+  virtual ~BranchHelper(void) {}
+  BranchHelper(void) {}
+  BranchHelper(const BranchHelper &con) {}
 
-  TpetraTransform_PEBBL(const TpetraTransform_PEBBL &T)
-    : Transform_PEBBL<Real>(T) {}
+  virtual int getIndex(const Vector<Real> &x, const Vector<Real> &g) const = 0;
+  virtual void getNumFrac(int &nfrac, Real &integralityMeasure, const Vector<Real> &x) const = 0;
+  virtual Ptr<IntegerTransformation<Real>> createTransform(void) const = 0;
 
-  void pruneVector(Vector<Real> &c) {
-    Teuchos::ArrayView<Real> cview = (getData(c)->getDataNonConst(0))();
-    typename std::map<int,Real>::iterator it;
-    for (it=map_.begin(); it!=map_.end(); ++it) {
-      cview[it->first] = static_cast<Real>(0);
-    }
-  }
+}; // class BranchHelper
 
-  void shiftVector(Vector<Real> &c) {
-    Teuchos::ArrayView<Real> cview = (getData(c)->getDataNonConst(0))();
-    typename std::map<int,Real>::iterator it;
-    for (it=map_.begin(); it!=map_.end(); ++it) {
-      cview[it->first] = it->second;
-    }
-  }
-
-}; // class TpetraTransform_PEBBL
-
+} // namespace PEBBL
 } // namespace ROL
 
 #endif

@@ -1,3 +1,45 @@
+// @HEADER
+// ************************************************************************
+//
+//               Rapid Optimization Library (ROL) Package
+//                 Copyright (2014) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact lead developers:
+//              Drew Kouri   (dpkouri@sandia.gov) and
+//              Denis Ridzal (dridzal@sandia.gov)
+//
+// ************************************************************************
+// @HEADER
 
 #ifndef ROL_PEBBL_INTERFACE_HPP
 #define ROL_PEBBL_INTERFACE_HPP
@@ -10,22 +52,20 @@
 #include <pebbl/misc/chunkAlloc.h>
 
 #include "ROL_NewOptimizationSolver.hpp"
-#include "ROL_OptimizationProblemFactory.hpp"
-#include "ROL_BranchHelper_PEBBL.hpp"
-#include "ROL_Constraint_PEBBL.hpp"
-#include "ROL_TransformedObjective_PEBBL.hpp"
-#include "ROL_TransformedConstraint_PEBBL.hpp"
-
+#include "ROL_PEBBL_IntegerProblemFactory.hpp"
+#include "ROL_PEBBL_BranchHelper.hpp"
+#include "ROL_PEBBL_IntegerConstraint.hpp"
 
 using namespace utilib;
 
 namespace ROL {
+namespace PEBBL {
 
 template<class Real>
-class ROL_PEBBL_BranchSub;
+class BranchSub;
 
 template<class Real>
-class ROL_PEBBL_Solution : public pebbl::solution {
+class IntegerSolution : public pebbl::solution {
 private:
   Ptr<Vector<Real>> solution_;
 
@@ -37,18 +77,14 @@ private:
     Real apply(const Real &x) const {
       Real fx = std::floor(x);
       Real cx = std::ceil(x);
-      if (std::abs(fx - x) < tol_) {
-        return fx;
-      }
-      else if (std::abs(cx - x) < tol_) {
-        return cx;
-      }
+      if (std::abs(fx - x) < tol_)      return fx;
+      else if (std::abs(cx - x) < tol_) return cx;
       return x;
     }
   } snap;
 
 public:
-  ROL_PEBBL_Solution(const Vector<Real> &x, const Real newvalue) {
+  IntegerSolution(const Vector<Real> &x, const Real newvalue) {
     solution_ = x.clone();
     solution_->set(x);
     solution_->applyUnary(snap);
@@ -57,105 +93,93 @@ public:
 
   void copy(pebbl::solution* toCopy) {
     pebbl::solution::copy(toCopy);
-    solution_.set(*dynamic_cast<ROL_PEBBL_Solution>(toCopy)->getVector());
+    solution_.set(*dynamic_cast<IntegerSolution>(toCopy)->getVector());
   }
 
-  const char* typeDescription() const { return "ROL solution"; }
+  const char* typeDescription() const { return "ROL/PEBBL integer solution"; }
 
-  void print(std::ostream& s) {
-    solution_->print(s);
-  }
+  void print(std::ostream& s) { solution_->print(s); }
 
   //void printContents(std::ostream& /*s*/) { }
 
-  const Ptr<Vector<Real>> getVector(void) const {
-    return solution_;
-  }
+  const Ptr<const Vector<Real>> getVector(void) const { return solution_; }
 };
 
 template<class Real>
-class ROL_PEBBL_Branching : public pebbl::branching {
+class Branching : public pebbl::branching {
 protected:
   // OptimizationProblem encapsulates the following problem
   // min        obj(x)
   // subject to xl <= x <= xu
   //            econ(x) = 0         (Lagrange Multiplier: emul)
   //            cl <= icon(x) <= cu (Lagrange Multiplier: imul)
-  const Ptr<OptimizationProblemFactory<Real>> factory_;
+  const Ptr<IntegerProblemFactory<Real>> factory_;
   // Solver parameters
-  const Ptr<ParameterList>                    parlist_;
+  const Ptr<ParameterList>               parlist_;
   // Vector specific branching helper
-  const Ptr<BranchHelper_PEBBL<Real>>         bHelper_;
+  const Ptr<BranchHelper<Real>>          bHelper_;
 
-  const int verbosity_;
-  const Ptr<std::ostream> outStream_;
+  const int                              verbosity_;
+  const Ptr<std::ostream>                outStream_;
 
 public:
-  ROL_PEBBL_Branching(const Ptr<OptimizationProblemFactory<Real>> &factory,
-                      const Ptr<ParameterList>                    &parlist,
-                      const Ptr<BranchHelper_PEBBL<Real>>         &bHelper,
-                      int                                          verbosity = 0,
-                      const Ptr<std::ostream>                     &outStream = nullPtr)
+  Branching(const Ptr<IntegerProblemFactory<Real>> &factory,
+            const Ptr<ParameterList>               &parlist,
+            const Ptr<BranchHelper<Real>>          &bHelper,
+            int                                     verbosity = 0,
+            const Ptr<std::ostream>                &outStream = nullPtr)
     : factory_(factory), parlist_(parlist), bHelper_(bHelper),
       verbosity_(verbosity), outStream_(outStream) {}
 
   virtual pebbl::branchSub* blankSub() {
-    return new ROL_PEBBL_BranchSub<Real>(makePtrFromRef<ROL_PEBBL_Branching<Real>>(*this),verbosity_,outStream_);
+    return new BranchSub<Real>(makePtrFromRef<Branching<Real>>(*this),verbosity_,outStream_);
   }
 
   void writeLoadLog(std::ostream &llFile, int proc = 0) {}
 
-  const Ptr<OptimizationProblemFactory<Real>> getProblemFactory(void) const {
+  const Ptr<IntegerProblemFactory<Real>> getProblemFactory(void) const {
     return factory_;
   }
 
   bool haveIncumbentHeuristic() { return true; }
 
-  const Ptr<ParameterList> getSolverParameters(void) const {
-    return parlist_;
-  }
+  const Ptr<ParameterList> getSolverParameters(void) const { return parlist_; }
 
 //  const Ptr<Vector<Real>> getIncumbent(void) const {
 //    return problem_->getSolutionVector();
 //  }
 
-  const Ptr<BranchHelper_PEBBL<Real>> getBranchHelper(void) const {
-    return bHelper_;
-  }
+  const Ptr<BranchHelper<Real>> getBranchHelper(void) const { return bHelper_; }
 };
 
 template<class Real>
-class ROL_PEBBL_BranchSub : public pebbl::branchSub {
+class BranchSub : public pebbl::branchSub {
 protected:
-  const Ptr<ROL_PEBBL_Branching<Real>> branching_;
-  const Ptr<BranchHelper_PEBBL<Real>> bHelper_;
-  std::map<int,Real> fixed_;
-  Ptr<Transform_PEBBL<Real>>  ptrans_;
-  Ptr<Objective<Real>> tobj_;
-  Ptr<Constraint<Real>> tcon_;
-  Ptr<OptimizationProblem_PEBBL<Real>> problem_, problem0_;
+  const Ptr<Branching<Real>>       branching_;
+  const Ptr<BranchHelper<Real>>    bHelper_;
+  std::map<int,Real>               fixed_;
+  Ptr<IntegerTransformation<Real>> ptrans_;
+  Ptr<IntegerProblem<Real>>        problem_, problem0_;
   Ptr<NewOptimizationSolver<Real>> solver_;
-  Ptr<Vector<Real>> solution_, rndSolution_;
-  Ptr<Vector<Real>> multiplier_;
-  Ptr<Vector<Real>> gradient_, dwa_;
-  int nfrac_, index_;
-  Real integralityMeasure_;
-  bool hasConstraint_;
+  Ptr<Vector<Real>>                solution_, rndSolution_;
+  Ptr<Vector<Real>>                multiplier_;
+  Ptr<Vector<Real>>                gradient_, dwa_;
+  int                              nfrac_, index_;
+  Real                             integralityMeasure_;
+  bool                             hasConstraint_;
 
-  const int verbosity_;
-  const Ptr<std::ostream> outStream_;
+  const int                        verbosity_;
+  const Ptr<std::ostream>          outStream_;
 
   class round : public Elementwise::UnaryFunction<Real> {
   public:
-    Real apply(const Real &x) const {
-      return std::round(x);
-    }
+    Real apply(const Real &x) const { return std::round(x); }
   } rnd;
 
 public:
-  ROL_PEBBL_BranchSub(const Ptr<ROL_PEBBL_Branching<Real>> &branching,
-                      const int verbosity = 0,
-                      const Ptr<std::ostream> &outStream = nullPtr)
+  BranchSub(const Ptr<Branching<Real>> &branching,
+            int                         verbosity = 0,
+            const Ptr<std::ostream>    &outStream = nullPtr)
     : branching_(branching),
       bHelper_(branching_->getBranchHelper()),
       nfrac_(-1), index_(-1), integralityMeasure_(-1),
@@ -177,7 +201,7 @@ public:
     ptrans_     = branching_->getBranchHelper()->createTransform();
   }
 
-  ROL_PEBBL_BranchSub(const ROL_PEBBL_BranchSub &rpbs)
+  BranchSub(const BranchSub &rpbs)
     : branching_(rpbs.branching_),
       bHelper_(rpbs.bHelper_),
       fixed_(rpbs.fixed_),
@@ -202,13 +226,9 @@ public:
     bound       = rpbs.bound;
   }
 
-  pebbl::branching* bGlobal() const {
-    return getRawPtr<ROL_PEBBL_Branching<Real>>(branching_);
-  }
+  pebbl::branching* bGlobal() const { return getRawPtr<Branching<Real>>(branching_); }
 
-  void setRootComputation() {
-    fixed_.clear();
-  }
+  void setRootComputation() { fixed_.clear(); }
 
   void boundComputation(double* controlParam) {
     std::ios_base::fmtflags flags(outStream_->flags());
@@ -228,7 +248,7 @@ public:
       //problem_->finalize(false,false);
       //problem_->edit();
       //problem_->deleteTransformation();
-      //Ptr<Constraint_PEBBL<Real>> con = makePtr<Constraint_PEBBL<Real>>();
+      //Ptr<IntegerConstraint<Real>> con = makePtr<IntegerConstraint<Real>>();
       //con->add(fixed_);
       //Ptr<Vector<Real>> mul = con->makeConstraintVector();
       //problem_->removeLinearConstraint("Integer");
@@ -242,14 +262,9 @@ public:
     solver_ = makePtr<NewOptimizationSolver<Real>>(problem_,*parlist);
     // Solve optimization problem
     if (verbosity_ > 0) {
-      if (verbosity_ > 3) {
-        problem_->check(true,*outStream_);
-      }
+      if (verbosity_ > 3) problem_->check(true,*outStream_);
       solver_->solve(*outStream_);
-      //ptrans_->value(*solution_,*problem_->getSolutionVector(),tol);
-      if (verbosity_ > 1) {
-        *outStream_ << "  Problem ID:           " << id.serial << std::endl;
-      }
+      if (verbosity_ > 1) *outStream_ << "  Problem ID:           " << id.serial << std::endl;
     }
     else {
       solver_->solve();
@@ -259,24 +274,20 @@ public:
     Ptr<const AlgorithmState<Real>> state = solver_->getAlgorithmState();
     Real value = state->value;
     if (!fixed_.empty()) ptrans_->value(*solution_,*state->iterateVec,tol);
+    else                 solution_->set(*state->iterateVec);
     if (hasConstraint_) multiplier_->set(*state->lagmultVec);
     EExitStatus statusFlag = state->statusFlag;
-    if (statusFlag != EXITSTATUS_CONVERGED) {
-      throw Exception::NotImplemented(">>> ROL_PEBBL_Interface::boundComputation : Bound problem did not converge!");
-    }
+    ROL_TEST_FOR_EXCEPTION(statusFlag!=EXITSTATUS_CONVERGED,std::logic_error,
+      ">>> ROL_PEBBL_Interface::boundComputation : Bound problem did not converge!");
     if (verbosity_ > 2) {
       *outStream_ << std::endl << "  ";
       solution_->print(*outStream_);
       *outStream_ << std::endl;
     }
     if (value > static_cast<Real>(bound)) {
-      if (verbosity_ > 1) {
-        *outStream_ << "  Previous Bound:       " << bound << std::endl;
-      }
+      if (verbosity_ > 1) *outStream_ << "  Previous Bound:       " << bound << std::endl;
       bound = static_cast<double>(value);
-      if (verbosity_ > 1) {
-        *outStream_ << "  New Bound:            " << bound << std::endl;
-      }
+      if (verbosity_ > 1) *outStream_ << "  New Bound:            " << bound << std::endl;
     }
     bHelper_->getNumFrac(nfrac_,integralityMeasure_,*solution_);
     if (verbosity_ > 1) {
@@ -288,19 +299,14 @@ public:
   }
 
   virtual pebbl::branchSub* makeChild(int whichChild = anyChild) {
-    if (whichChild == anyChild) {
-      throw Exception::NotImplemented(">>> ROL_PEBBL_BranchSub::makeChild: whichChild is equal to anyChild!");
-    }
-    ROL_PEBBL_BranchSub<Real>* child
-      = new ROL_PEBBL_BranchSub<Real>(*this);
-    child->updateFixed(index_,
-      (whichChild==0 ? static_cast<Real>(1) : static_cast<Real>(0)));
+    ROL_TEST_FOR_EXCEPTION(whichChild==anyChild,std::logic_error,
+      ">>> ROL_PEBBL_BranchSub::makeChild: whichChild is equal to anyChild!");
+    BranchSub<Real>* child = new BranchSub<Real>(*this);
+    child->updateFixed(index_, (whichChild==0 ? static_cast<Real>(1) : static_cast<Real>(0)));
     return child;
   }
 
-  bool candidateSolution() {
-    return (nfrac_==0);
-  }
+  bool candidateSolution() { return (nfrac_==0); }
 
   virtual void incumbentHeuristic() {
     Real tol(std::sqrt(ROL_EPSILON<Real>()));
@@ -308,12 +314,12 @@ public:
     rndSolution_->applyUnary(rnd);
     problem0_->getObjective()->update(*rndSolution_,UPDATE_TEMP);
     Real val = problem0_->getObjective()->value(*rndSolution_,tol);
-    branching_->foundSolution(new ROL_PEBBL_Solution<Real>(*rndSolution_,val));
+    branching_->foundSolution(new IntegerSolution<Real>(*rndSolution_,val));
   }
 
   pebbl::solution* extractSolution() {
     Ptr<const AlgorithmState<Real>> state = solver_->getAlgorithmState();
-    return new ROL_PEBBL_Solution<Real>(*solution_,state->value);
+    return new IntegerSolution<Real>(*solution_,state->value);
   }
 
   int splitComputation() {
@@ -350,13 +356,13 @@ public:
 };
 
 template<class Real>
-void runSerial(const Ptr<ROL_PEBBL_Branching<Real>> &instance) {
+void runSerial(const Ptr<Branching<Real>> &instance) {
   utilib::exception_mngr::set_stack_trace(false);
   utilib::exception_mngr::set_stack_trace(true);
   instance->reset();
   instance->solve();
 }
 
-
-} // ROL namespace
+} // namespace PEBBL
+} // namespace ROL
 #endif

@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
     /***************** BUILD OPTIMIZATION PROBLEM ****************************/
     /*************************************************************************/
     ROL::Ptr<BinaryAdvDiffFactory<RealT>> factory;
-    ROL::Ptr<ROL::OptimizationProblem_PEBBL<RealT>> problem;
+    ROL::Ptr<ROL::PEBBL::IntegerProblem<RealT>> problem;
     ROL::Ptr<ROL::NewOptimizationSolver<RealT>> solver;
     ROL::Ptr<ROL::Vector<RealT>> z, omega, uomega, uz, du;
     RealT err(0);

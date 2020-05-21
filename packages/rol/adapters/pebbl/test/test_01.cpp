@@ -140,13 +140,13 @@ int main(int argc, char* argv[]) {
     fixed.insert(std::pair<int,RealT>(5,0.0));
     fixed.insert(std::pair<int,RealT>(3,1.0));
     fixed.insert(std::pair<int,RealT>(9,1.0));
-    ROL::Ptr<ROL::Constraint_PEBBL<RealT>> econ_bin
-      = ROL::makePtr<ROL::Constraint_PEBBL<RealT>>();
+    ROL::Ptr<ROL::PEBBL::IntegerConstraint<RealT>> econ_bin
+      = ROL::makePtr<ROL::PEBBL::IntegerConstraint<RealT>>();
     econ_bin->add(fixed);
     ROL::Ptr<ROL::Vector<RealT>> emul_bin
       = econ_bin->makeConstraintVector();
     problem->edit();
-    problem->addLinearConstraint("Binary",econ_bin,emul_bin);
+    problem->addLinearConstraint("Integer",econ_bin,emul_bin);
     problem->finalize(false,true,*outStream);
     problem->check(true,*outStream);
     ROL::NewOptimizationSolver<RealT> solver_bin(problem,*parlist);
@@ -168,10 +168,10 @@ int main(int argc, char* argv[]) {
     *outStream << "Sum(x) = " << sum_bin << "  Budget = " << budget;
     *outStream << std::endl << std::endl;
 
-    errorFlag += ((*x_ptr)[2]==0.0 ? 0 : 1);
-    errorFlag += ((*x_ptr)[5]==0.0 ? 0 : 1);
-    errorFlag += ((*x_ptr)[3]==1.0 ? 0 : 1);
-    errorFlag += ((*x_ptr)[9]==1.0 ? 0 : 1);
+    errorFlag += (std::abs((*x_ptr)[2]-0.0)<std::sqrt(ROL::ROL_EPSILON<RealT>()) ? 0 : 1);
+    errorFlag += (std::abs((*x_ptr)[5]-0.0)<std::sqrt(ROL::ROL_EPSILON<RealT>()) ? 0 : 1);
+    errorFlag += (std::abs((*x_ptr)[3]-1.0)<std::sqrt(ROL::ROL_EPSILON<RealT>()) ? 0 : 1);
+    errorFlag += (std::abs((*x_ptr)[9]-1.0)<std::sqrt(ROL::ROL_EPSILON<RealT>()) ? 0 : 1);
   }
   catch (std::logic_error& err) {
     *outStream << err.what() << "\n";

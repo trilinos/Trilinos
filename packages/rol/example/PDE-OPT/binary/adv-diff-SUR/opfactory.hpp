@@ -47,7 +47,7 @@
 #include "ROL_Bounds.hpp"
 #include "ROL_ScaledStdVector.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
-#include "ROL_OptimizationProblemFactory.hpp"
+#include "ROL_PEBBL_IntegerProblemFactory.hpp"
 
 #include "../../TOOLS/linearpdeconstraint.hpp"
 #include "../../TOOLS/pdeobjective.hpp"
@@ -57,7 +57,7 @@
 #include "mesh_adv_diff.hpp"
 
 template<class Real>
-class BinaryAdvDiffFactory : public ROL::OptimizationProblemFactory<Real> {
+class BinaryAdvDiffFactory : public ROL::PEBBL::IntegerProblemFactory<Real> {
 private:
   int dim_;
 
@@ -79,10 +79,10 @@ public:
                  const ROL::Ptr<std::ostream>             &os)
     : pl_(pl), comm_(comm), os_(os) {}
 
-  ROL::Ptr<ROL::OptimizationProblem_PEBBL<Real>> build(void) {
+  ROL::Ptr<ROL::PEBBL::IntegerProblem<Real>> build(void) {
     update();
-    ROL::Ptr<ROL::OptimizationProblem_PEBBL<Real>>
-      problem = ROL::makePtr<ROL::OptimizationProblem_PEBBL<Real>>(buildObjective(),buildSolutionVector());
+    ROL::Ptr<ROL::PEBBL::IntegerProblem<Real>>
+      problem = ROL::makePtr<ROL::PEBBL::IntegerProblem<Real>>(buildObjective(),buildSolutionVector());
     problem->addBoundConstraint(buildBoundConstraint());
     return problem;
   }

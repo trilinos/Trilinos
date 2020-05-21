@@ -42,9 +42,8 @@
 // @HEADER
 
 #include "test_01.hpp"
-#include "ROL_StdTransform_PEBBL.hpp"
-#include "ROL_TransformedConstraint_PEBBL.hpp"
-#include "ROL_TransformedObjective_PEBBL.hpp"
+#include "ROL_PEBBL_StdIntegerTransformation.hpp"
+#include "ROL_PEBBL_BuildTransformation.hpp"
 
 typedef double RealT;
 
@@ -140,8 +139,8 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     /************************* ADD BINARY CONSTRAINTS AND SOLVE ***********************************/
     /**********************************************************************************************/
-    ROL::Ptr<ROL::Transform_PEBBL<RealT>> trans_bin
-      = ROL::makePtr<ROL::StdTransform_PEBBL<RealT>>();
+    ROL::Ptr<ROL::PEBBL::StdIntegerTransformation<RealT>> trans_bin
+      = ROL::makePtr<ROL::PEBBL::StdIntegerTransformation<RealT>>();
     std::map<int,RealT> fixed;
     fixed.insert(std::pair<int,RealT>(2,0.0));
     fixed.insert(std::pair<int,RealT>(5,0.0));
@@ -150,10 +149,10 @@ int main(int argc, char* argv[]) {
     trans_bin->add(fixed);
     RealT tol(1e-8);
     trans_bin->value(*xbin,*x,tol);
-    ROL::Ptr<ROL::TransformedConstraint_PEBBL<RealT>> econ_trans
-      = ROL::makePtr<ROL::TransformedConstraint_PEBBL<RealT>>(econ,trans_bin);
-    ROL::Ptr<ROL::TransformedObjective_PEBBL<RealT>> obj_trans
-      = ROL::makePtr<ROL::TransformedObjective_PEBBL<RealT>>(obj,trans_bin);
+    ROL::Ptr<ROL::PEBBL::BuildTransformation<RealT>> build
+      = ROL::makePtr<ROL::PEBBL::BuildTransformation<RealT>>(trans_bin,x);
+    ROL::Ptr<ROL::Objective<RealT>>   obj_trans = build->transform(obj);
+    ROL::Ptr<ROL::Constraint<RealT>> econ_trans = build->transform(econ);
     ROL::Ptr<ROL::NewOptimizationProblem<RealT>>
       problem_bin = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(obj_trans,xbin);
     problem_bin->addBoundConstraint(bnd);
@@ -179,10 +178,10 @@ int main(int argc, char* argv[]) {
     *outStream << "Sum(x) = " << sum_bin << "  Budget = " << budget;
     *outStream << std::endl << std::endl;
 
-    errorFlag += ((*xbin_ptr)[2]==0.0 ? 0 : 1);
-    errorFlag += ((*xbin_ptr)[5]==0.0 ? 0 : 1);
-    errorFlag += ((*xbin_ptr)[3]==1.0 ? 0 : 1);
-    errorFlag += ((*xbin_ptr)[9]==1.0 ? 0 : 1);
+    errorFlag += (std::abs((*x_ptr)[2]-0.0)<std::sqrt(ROL::ROL_EPSILON<RealT>()) ? 0 : 1);
+    errorFlag += (std::abs((*x_ptr)[5]-0.0)<std::sqrt(ROL::ROL_EPSILON<RealT>()) ? 0 : 1);
+    errorFlag += (std::abs((*x_ptr)[3]-1.0)<std::sqrt(ROL::ROL_EPSILON<RealT>()) ? 0 : 1);
+    errorFlag += (std::abs((*x_ptr)[9]-1.0)<std::sqrt(ROL::ROL_EPSILON<RealT>()) ? 0 : 1);
   }
   catch (std::logic_error& err) {
     *outStream << err.what() << "\n";

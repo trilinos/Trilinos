@@ -41,103 +41,73 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_TRANSFORMEDCONSTRAINT_PEBBL_H
-#define ROL_TRANSFORMEDCONSTRAINT_PEBBL_H
+#ifndef ROL_PEBBL_INTEGERCONSTRAINT_H
+#define ROL_PEBBL_INTEGERCONSTRAINT_H
 
-#include "ROL_Transform_PEBBL.hpp"
+#include "ROL_Constraint.hpp"
+#include "ROL_StdVector.hpp"
 
 /** @ingroup func_group
-    \class ROL::TransformedConstraint_PEBBL
-    \brief Defines the pebbl transformed constraint operator interface.
+    \class ROL::PEBBL::IntegerConstraint
+    \brief Defines the pebbl integer constraint operator interface.
 
-    ROL's pebbl transformed constraint interface is designed to set individual
-    components of a vector to a fixed value.
+    ROL's pebbl constraint interface is designed to set individual components
+    of a vector to a fixed value.  The range space is a ROL::StdVector.
 
     ---
 */
 
 
 namespace ROL {
+namespace PEBBL {
 
 template <class Real>
-class TransformedConstraint_PEBBL : public Constraint<Real> {
+class IntegerConstraint : public Constraint<Real> {
 private:
-  const Ptr<Constraint<Real>>      con_;
-  const Ptr<Transform_PEBBL<Real>> trans_;
-  Ptr<Vector<Real>>                Tx_;
-  Ptr<Vector<Real>>                Tv_;
-  Ptr<Vector<Real>>                dx_;
-  bool                             isInit_;
-  bool                             isTransformed_;
+  std::map<int,Real> map_;
 
-  void initialize(const Vector<Real> &x) {
-    if (!isInit_) {
-      Tx_ = x.clone();
-      Tv_ = x.clone();
-      dx_ = x.dual().clone();
-      isInit_ = true;
-    }
+  Ptr<std::vector<Real>> getData(Vector<Real> &x) const {
+    return dynamic_cast<StdVector<Real>&>(x).getVector();
   }
 
-  void transform(const Vector<Real> &x, Real &tol) {
-    if (!isTransformed_) {
-      trans_->value(*Tx_,x,tol);
-      isTransformed_ = true;
-    }
+  Ptr<const std::vector<Real>> getConstData(const Vector<Real> &x) const {
+    return dynamic_cast<const StdVector<Real>&>(x).getVector();
   }
 
 public:
-  TransformedConstraint_PEBBL(const Ptr<Constraint<Real>>      &con,
-                              const Ptr<Transform_PEBBL<Real>> &trans)
-    : con_(con), trans_(trans), isInit_(false), isTransformed_(false) {}
-
-  TransformedConstraint_PEBBL(const TransformedConstraint_PEBBL &con)
-    : con_(con.con_), trans_(con.trans_), isInit_(false), isTransformed_(false) {}
-
-  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
-    Real tol = std::sqrt(ROL_EPSILON<Real>());
-    isTransformed_ = false;
-    initialize(x);
-    Tx_->zero(); Tv_->zero(); dx_->zero();
-    transform(x,tol);
-    con_->update(*Tx_,flag,iter);
-  }
-
-  void update( const Vector<Real> &x, EUpdateType type, int iter = -1 ) {
-    Real tol = std::sqrt(ROL_EPSILON<Real>());
-    isTransformed_ = false;
-    initialize(x);
-    Tx_->zero(); Tv_->zero(); dx_->zero();
-    transform(x,tol);
-    con_->update(*Tx_,type,iter);
-  }
+  IntegerConstraint(void) {}
+  IntegerConstraint(const IntegerConstraint &con) : map_(con.map_) {}
 
   void value(Vector<Real> &c,
        const Vector<Real> &x,
              Real &tol) {
-    initialize(x);
-    transform(x,tol);
-    con_->value(c,*Tx_,tol);    
+    int cnt = 0;
+    for (auto it=map_.begin(); it!=map_.end(); ++it) {
+      (*getData(c))[cnt] = x.dot(*x.basis(it->first))-it->second;
+      cnt++;
+    }
   }
 
   void applyJacobian(Vector<Real> &jv,
                const Vector<Real> &v,
                const Vector<Real> &x,
                      Real &tol) {
-    initialize(x);
-    transform(x,tol);
-    trans_->applyJacobian(*Tv_,v,x,tol);
-    con_->applyJacobian(jv,*Tv_,*Tx_,tol);
+    int cnt = 0;
+    for (auto it=map_.begin(); it!=map_.end(); ++it) {
+      (*getData(jv))[cnt] = v.dot(*x.basis(it->first));
+      cnt++;
+    }
   }
 
   void applyAdjointJacobian(Vector<Real> &ajv,
                       const Vector<Real> &v,
                       const Vector<Real> &x,
                             Real &tol) {
-    initialize(x);
-    transform(x,tol);
-    con_->applyAdjointJacobian(*dx_,v,*Tx_,tol);
-    trans_->applyAdjointJacobian(ajv,*dx_,x,tol);
+    int cnt = 0;
+    for (auto it=map_.begin(); it!=map_.end(); ++it) {
+      ajv.axpy((*getConstData(v))[cnt],*x.basis(it->first));
+      cnt++;
+    }
   }
 
   void applyAdjointHessian(Vector<Real> &ahuv,
@@ -145,31 +115,32 @@ public:
                      const Vector<Real> &v,
                      const Vector<Real> &x,
                            Real &tol) {
-    initialize(x);
-    transform(x,tol);
-    trans_->applyJacobian(*Tv_,v,x,tol);
-    con_->applyAdjointHessian(*dx_,u,*Tv_,*Tx_,tol);
-    trans_->applyAdjointJacobian(ahuv,*dx_,x,tol);
+    ahuv.zero();
+  }
+
+  Ptr<Vector<Real> > makeConstraintVector(void) const {
+    return makePtr<StdVector<Real>>(makePtr<std::vector<Real>>(map_.size(),0));
   }
 
   bool isEmpty(void) const {
-    return trans_->isEmpty();
+    return map_.empty();
   }
 
   void reset(void) {
-    trans_->clear();
+    map_.clear();
   }
 
   void add(const std::map<int,Real> &in) {
-    trans_->add(in);
+    map_.insert(in.begin(),in.end());
   }
 
   void add(const std::pair<int,Real> &in) {
-    trans_->add(in);
+    map_.insert(in);
   }
 
-}; // class TransformedConstraint_PEBBL
+}; // class IntegerConstraint
 
+} // namespace PEBBL
 } // namespace ROL
 
 #endif

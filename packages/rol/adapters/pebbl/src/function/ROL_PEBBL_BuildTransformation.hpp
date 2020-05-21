@@ -41,58 +41,79 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_STDTRANSFORM_PEBBL_H
-#define ROL_STDTRANSFORM_PEBBL_H
+#ifndef ROL_PEBBL_BUILDTRANSFORMATION_H
+#define ROL_PEBBL_BUILDTRANSFORMATION_H
 
-#include "ROL_Transform_PEBBL.hpp"
+#include "ROL_AffineTransformObjective.hpp"
+#include "ROL_AffineTransformConstraint.hpp"
+#include "ROL_PEBBL_IntegerTransformation.hpp"
 
 /** @ingroup func_group
-    \class ROL::StdTransform_PEBBL
-    \brief Defines the pebbl transform operator interface for StdVectors.
-
-    ROL's pebbl constraint interface is designed to set individual components
-    of a vector to a fixed value.  The range space is the same as the domain.
+    \class ROL::PEBBL::BuildTransformation
+    \brief Perform integer transformation for PEBBL.
 
     ---
 */
 
-
 namespace ROL {
+namespace PEBBL {
 
 template <class Real>
-class StdTransform_PEBBL : public Transform_PEBBL<Real> {
+class BuildTransformation {
 private:
-  Ptr<std::vector<Real>> getData(Vector<Real> &x) const {
-    return dynamic_cast<StdVector<Real>&>(x).getVector();
-  }
+  const Ptr<IntegerTransformation<Real>> trans_;
+  const Ptr<const Vector<Real>>          x_;
 
- using Transform_PEBBL<Real>::map_; 
+  Ptr<Vector<Real>>                      b_;
+  Ptr<LinearOperator<Real>>              A_;
+  Ptr<VectorController<Real>>            storage_;
+
+  class Prune : public LinearOperator<Real> {
+  private:
+    const Ptr<IntegerTransformation<Real>> trans_;
+    const Ptr<const Vector<Real>> x_;
+  public:
+    Prune(const Ptr<IntegerTransformation<Real>> &trans,
+          const Ptr<const Vector<Real>> &x)
+      : trans_(trans), x_(x) {}
+
+    void apply(Vector<Real> &Hv, const Vector<Real> &v, Real &tol) const {
+      trans_->applyJacobian(Hv,v,*x_,tol);
+    }
+
+    void applyAdjoint(Vector<Real> &Hv, const Vector<Real> &v, Real &tol) const {
+      trans_->applyAdjointJacobian(Hv,v,*x_,tol);
+    }
+  };
 
 public:
-  StdTransform_PEBBL(void)
-    : Transform_PEBBL<Real>() {}
+  virtual ~BuildTransformation(void) {}
 
-  StdTransform_PEBBL(const StdTransform_PEBBL &T)
-    : Transform_PEBBL<Real>(T) {}
-
-  void pruneVector(Vector<Real> &c) {
-    Ptr<std::vector<Real>> cval = getData(c);
-    typename std::map<int,Real>::iterator it;
-    for (it=map_.begin(); it!=map_.end(); ++it) {
-      (*cval)[it->first] = static_cast<Real>(0);
-    }
+  BuildTransformation(const Ptr<IntegerTransformation<Real>> &trans,
+                      const Ptr<const Vector<Real>>           &x)
+    : trans_(trans), x_(x) {
+    // Build right hand side vector
+    Real tol(std::sqrt(ROL_EPSILON<Real>()));
+    Ptr<Vector<Real>> x0 = x_->clone(); x0->zero();
+    b_ = x_->clone();
+    trans_->value(*b_,*x0,tol);
+    // Build linear operator
+    A_ = makePtr<Prune>(trans_,x_);
+    // Initialized storage
+    storage_ = makePtr<VectorController<Real>>();
   }
 
-  void shiftVector(Vector<Real> &c) {
-    Ptr<std::vector<Real>> cval = getData(c);
-    typename std::map<int,Real>::iterator it;
-    for (it=map_.begin(); it!=map_.end(); ++it) {
-      (*cval)[it->first] = it->second;
-    }
+  const Ptr<Objective<Real>> transform(const Ptr<Objective<Real>> &obj) const {
+    return makePtr<AffineTransformObjective<Real>>(obj,A_,b_,storage_);
   }
 
-}; // class StdTransform_PEBBL
+  const Ptr<Constraint<Real>> transform(const Ptr<Constraint<Real>> &con) const {
+    return makePtr<AffineTransformConstraint<Real>>(con,A_,b_,storage_);
+  }
 
+}; // class BuildTransformation
+
+} // namespace PEBBL
 } // namespace ROL
 
 #endif
