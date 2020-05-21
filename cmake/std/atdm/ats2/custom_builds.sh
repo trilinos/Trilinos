@@ -16,7 +16,7 @@ if atdm_match_any_buildname_keyword \
   cuda-10.1.243_xl-2019 \
   cuda-xl\
   ; then
-  export ATDM_CONFIG_COMPILER=CUDA-10.1.243_XL-2019.08.20_SPMPI-rolling
+  export ATDM_CONFIG_COMPILER=CUDA-10.1.243_XL-2019.08.20_SPMPI-ROLLING
 
 elif atdm_match_any_buildname_keyword \
   xl-2019.08.20-spmpi-rolling \
@@ -25,7 +25,7 @@ elif atdm_match_any_buildname_keyword \
   xl-2019 \
   xl \
   ; then
-  export ATDM_CONFIG_COMPILER=XL-2019.08.20_SPMPI-rolling
+  export ATDM_CONFIG_COMPILER=XL-2019.08.20_SPMPI-ROLLING
 
 elif atdm_match_any_buildname_keyword \
   cuda-10.1.243-gnu-7.3.1-spmpi-rolling \
@@ -39,7 +39,7 @@ elif atdm_match_any_buildname_keyword \
   cuda-gnu \
   cuda \
   ; then
-  export ATDM_CONFIG_COMPILER=CUDA-10.1.243_GNU-7.3.1_SPMPI-rolling
+  export ATDM_CONFIG_COMPILER=CUDA-10.1.243_GNU-7.3.1_SPMPI-ROLLING
   # NOTE: Default 'cuda' must be last cuda listed!
 
 elif atdm_match_any_buildname_keyword \
@@ -50,7 +50,7 @@ elif atdm_match_any_buildname_keyword \
   gnu \
   default \
   ; then
-  export ATDM_CONFIG_COMPILER=GNU-7.3.1_SPMPI-rolling
+  export ATDM_CONFIG_COMPILER=GNU-7.3.1_SPMPI-ROLLING
   # NOTE: Defaut 'gnu' must be last 'gnu' listed!
 
 else

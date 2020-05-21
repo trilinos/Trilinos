@@ -78,7 +78,7 @@ module load git/2.20.0
 # Load host compiler modules (CUDA modules will be loaded below)
 #
 
-if [[ "$ATDM_CONFIG_COMPILER" == *"GNU-7.3.1_SPMPI-rolling" ]]; then
+if [[ "$ATDM_CONFIG_COMPILER" == *"GNU-7.3.1_SPMPI-ROLLING" ]]; then
   module load sparc-dev/gcc-7.3.1_spmpi-rolling
 
   export COMPILER_ROOT=/usr/tce/packages/gcc/gcc-7.3.1
@@ -89,7 +89,7 @@ if [[ "$ATDM_CONFIG_COMPILER" == *"GNU-7.3.1_SPMPI-rolling" ]]; then
   export INCLUDE=${BINUTILS_ROOT}/include:${INCLUDE}
   export CPATH=${BINUTILS_ROOT}/include:${CPATH}
 
-elif [[ "$ATDM_CONFIG_COMPILER" == *"XL-2019.08.20_SPMPI-rolling_DISABLED" ]]; then
+elif [[ "$ATDM_CONFIG_COMPILER" == *"XL-2019.08.20_SPMPI-ROLLING_DISABLED" ]]; then
   module load xl/2019.08.20
   module load lapack/3.8.0-xl-2019.08.20
   module load gmake/4.2.1
