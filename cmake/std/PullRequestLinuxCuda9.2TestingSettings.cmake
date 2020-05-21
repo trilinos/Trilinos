@@ -110,4 +110,10 @@ set (PanzerMiniEM_MiniEM-BlockPrec_Augmentation_MPI_4_DISABLE ON CACHE BOOL "Tem
 set (PanzerMiniEM_MiniEM-BlockPrec_RefMaxwell_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 set (ROL_example_PDE-OPT_poisson-boltzmann_example_01_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 
+# Disable a couple of unit tests in test KokkosCore_UnitTest_Cuda_MPI_1 that
+# are randomly failing in PR test iterations (#6799)
+set (KokkosCore_UnitTest_Cuda_MPI_1_EXTRA_ARGS
+  "--gtest_filter=-cuda.debug_pin_um_to_host:cuda.debug_serial_execution"
+  CACHE STRING "Temporary disable for CUDA PR testing")
+
 include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")

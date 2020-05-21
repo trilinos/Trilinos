@@ -50,6 +50,12 @@ IF (ATDM_NODE_TYPE STREQUAL "CUDA")
   # Disable known falure for ROL CUDA builds (#3543)
   ATDM_SET_ENABLE(ROL_test_elementwise_TpetraMultiVector_MPI_4_DISABLE ON)
 
+  # Disable known failure (#6329)
+  ATDM_SET_ENABLE(ROL_NonlinearProblemTest_MPI_4_DISABLE ON)
+
+  # Disable known randomly timing out test (#7090)
+  ATDM_SET_ENABLE(MueLu_ParameterListInterpreterTpetra_MPI_1_DISABLE ON)
+
   IF (ATDM_CUDA_RDC)
 
     # Disable the build of SEACAS 'explore' for all cuda+rdc builds for now (#6008)
