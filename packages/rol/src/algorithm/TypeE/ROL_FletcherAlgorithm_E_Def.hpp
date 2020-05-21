@@ -56,16 +56,18 @@ FletcherAlgorithm_E<Real>::FletcherAlgorithm_E( ParameterList &list )
   status_->add(makePtr<ConstraintStatusTest<Real>>(list));
 
   ParameterList& sublist = list.sublist("Step").sublist("Fletcher");
-  sigma_                 = sublist.get("Penalty Parameter",                        Real(1));
-  delta_                 = sublist.get("Regularization Parameter",                 Real(0));
-  minDelta_              = sublist.get("Min Regularization Parameter",             Real(1e-8));
-  deltaUpdate_           = sublist.get("Regularization Parameter Decrease Factor", Real(1e-1));
-  sigmaUpdate_           = sublist.get("Penalty Parameter Growth Factor",          Real(2));
+  sigma_                 = sublist.get("Penalty Parameter",                        1.0);
+  delta_                 = sublist.get("Regularization Parameter",                 0.0);
+  minDelta_              = sublist.get("Minimum Regularization Parameter",         1e-8);
+  deltaUpdate_           = sublist.get("Regularization Parameter Decrease Factor", 1e-1);
+  sigmaUpdate_           = sublist.get("Penalty Parameter Growth Factor",          2.0);
   modifySigma_           = sublist.get("Modify Penalty Parameter",                 false);
-  maxSigma_              = sublist.get("Maximum Penalty Parameter",                Real(1e8));
-  minSigma_              = sublist.get("Minimum Penalty Parameter",                Real(1e-6));     
+  maxSigma_              = sublist.get("Maximum Penalty Parameter",                1e8);
+  minSigma_              = sublist.get("Minimum Penalty Parameter",                1e-6);     
   subStep_               = sublist.get("Subproblem Step Type",                     "Trust Region");
-  list_.sublist("Step").set("Type",subStep_);
+  int subiter            = sublist.get("Subproblem Iteration Limit",               100);
+  list_.sublist("Step").set("Type", subStep_);
+  list_.sublist("Status Test").set("Iteration Limit", subiter);
   // Verbosity setting
   verbosity_             = list.sublist("General").get("Output Level", 0);
   printHeader_           = verbosity_ > 2;
