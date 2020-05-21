@@ -59,7 +59,7 @@ FletcherAlgorithm_E<Real>::FletcherAlgorithm_E( ParameterList &list )
   sigma_                 = sublist.get("Penalty Parameter",                        Real(1));
   delta_                 = sublist.get("Regularization Parameter",                 Real(0));
   minDelta_              = sublist.get("Min Regularization Parameter",             Real(1e-8));
-  deltaUpdate_           = sublist.get("Regularization Parameter Decrease Factor", Real(1e1));
+  deltaUpdate_           = sublist.get("Regularization Parameter Decrease Factor", Real(1e-1));
   sigmaUpdate_           = sublist.get("Penalty Parameter Growth Factor",          Real(2));
   modifySigma_           = sublist.get("Modify Penalty Parameter",                 false);
   maxSigma_              = sublist.get("Maximum Penalty Parameter",                Real(1e8));
