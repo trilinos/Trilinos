@@ -66,13 +66,14 @@ FletcherAlgorithm_E<Real>::FletcherAlgorithm_E( ParameterList &list )
   minSigma_              = sublist.get("Minimum Penalty Parameter",                1e-6);     
   subStep_               = sublist.get("Subproblem Step Type",                     "Trust Region");
   int subiter            = sublist.get("Subproblem Iteration Limit",               100);
-  list_.sublist("Step").set("Type", subStep_);
-  list_.sublist("Status Test").set("Iteration Limit", subiter);
   // Verbosity setting
   verbosity_             = list.sublist("General").get("Output Level", 0);
   printHeader_           = verbosity_ > 2;
   bool print             = verbosity_ >= 2;
+  // Set parameter list for subproblem solve
   list_.sublist("General").set("Output Level",(print ? verbosity_-1 : 0));
+  list_.sublist("Step").set("Type", subStep_);
+  list_.sublist("Status Test").set("Iteration Limit", subiter);
 }
 
 template<typename Real>
