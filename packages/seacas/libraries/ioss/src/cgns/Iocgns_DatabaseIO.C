@@ -63,35 +63,11 @@
 #error "Could not include cgnslib.h"
 #endif
 
-#include "Ioss_CommSet.h"
-#include "Ioss_DBUsage.h"
-#include "Ioss_DatabaseIO.h"
-#include "Ioss_EdgeBlock.h"
-#include "Ioss_EdgeSet.h"
-#include "Ioss_ElementBlock.h"
-#include "Ioss_ElementSet.h"
-#include "Ioss_ElementTopology.h"
-#include "Ioss_EntityType.h"
-#include "Ioss_FaceBlock.h"
-#include "Ioss_FaceGenerator.h"
-#include "Ioss_FaceSet.h"
-#include "Ioss_Field.h"
 #include "Ioss_FileInfo.h"
 #include "Ioss_Hex8.h"
-#include "Ioss_IOFactory.h"
-#include "Ioss_NodeBlock.h"
-#include "Ioss_NodeSet.h"
-#include "Ioss_ParallelUtils.h"
-#include "Ioss_Property.h"
 #include "Ioss_Quad4.h"
-#include "Ioss_Region.h"
-#include "Ioss_SideBlock.h"
-#include "Ioss_SideSet.h"
 #include "Ioss_SmartAssert.h"
-#include "Ioss_State.h"
-#include "Ioss_StructuredBlock.h"
-#include "Ioss_Utils.h"
-#include "Ioss_VariableType.h"
+#include "Ioss_SubSystem.h"
 
 extern char hdf5_access[64];
 
@@ -967,6 +943,9 @@ namespace Iocgns {
         Utils::add_structured_boundary_conditions(get_file_pointer(), block, false);
       }
 
+      // See if this zone/block is a member of any assemblies...
+      Utils::add_to_assembly(get_file_pointer(), get_region(), block, base, zone);
+
       // Need to get a count of number of unique BC's.
       // Note that possible to assign multiple BC to a single face, so can't do this based on faces
       // Assume that if a BC is on multiple processors, then its name will be the same on all
@@ -1043,6 +1022,52 @@ namespace Iocgns {
                 [](const Ioss::BoundaryCondition &b1, const Ioss::BoundaryCondition &b2) {
                   return (b1.m_bcName < b2.m_bcName);
                 });
+    }
+
+    // Need to iterate the blocks again and make the assembly information consistent
+    // across processors.
+    // If a block belongs to an assembly, it will have the property "assembly"
+    // defined on it.
+    // This assumes that a block can belong to at most one assembly.
+    const auto &assemblies = get_region()->get_assemblies();
+    if (!assemblies.empty()) {
+      std::map<unsigned int, std::string> assembly_hash_map;
+      for (const auto &assem : assemblies) {
+        auto hash               = Ioss::Utils::hash(assem->name());
+        assembly_hash_map[hash] = assem->name();
+      }
+
+      const auto &              blocks = get_region()->get_structured_blocks();
+      std::vector<unsigned int> assem_ids;
+      assem_ids.reserve(blocks.size());
+
+      for (const auto &sb : blocks) {
+        unsigned int hash = 0;
+        if (sb->property_exists("assembly")) {
+          std::string assembly = sb->get_property("assembly").get_string();
+          hash                 = Ioss::Utils::hash(assembly);
+        }
+        assem_ids.push_back(hash);
+      }
+
+      // Hash will be >= 0, so we will take the maximum over all
+      // ranks and that will give the assembly (if any) that each block belongs to.
+      util().global_array_minmax(assem_ids, Ioss::ParallelUtils::DO_MAX);
+
+      int idx = 0;
+      for (const auto &sb : blocks) {
+        unsigned    assem_hash = assem_ids[idx++];
+        std::string name       = assembly_hash_map[assem_hash];
+        auto *      assembly   = get_region()->get_assembly(name);
+        assert(assembly != nullptr);
+        if (!sb->property_exists("assembly")) {
+          assembly->add(sb);
+          Ioss::StructuredBlock *new_sb = const_cast<Ioss::StructuredBlock *>(sb);
+          new_sb->property_add(Ioss::Property("assembly", assembly->name()));
+        }
+        SMART_ASSERT(sb->get_property("assembly").get_string() == assembly->name())
+        (sb->get_property("assembly").get_string())(assembly->name());
+      }
     }
 #endif
   }
@@ -1129,6 +1154,9 @@ namespace Iocgns {
 
     // Handle boundary conditions...
     Utils::add_structured_boundary_conditions(get_file_pointer(), block, false);
+
+    // See if this zone/block is a member of any assemblies...
+    Utils::add_to_assembly(get_file_pointer(), get_region(), block, base, zone);
   }
 
   size_t DatabaseIO::finalize_structured_blocks()
@@ -1329,6 +1357,9 @@ namespace Iocgns {
         eblock->property_add(Ioss::Property("node_count", (int64_t)total_block_nodes));
         eblock->property_add(Ioss::Property("original_block_order", zone));
 
+        // See if this zone/block is a member of any assemblies...
+        Utils::add_to_assembly(get_file_pointer(), get_region(), eblock, base, zone);
+
         SMART_ASSERT(is == 1); // For now, assume each zone has only a single element block.
         bool added = get_region()->add(eblock);
         if (!added) {
@@ -1405,9 +1436,14 @@ namespace Iocgns {
     get_step_times__();
 
     // ========================================================================
-    // Get the number of families in the mesh...
-    // Will treat these as sidesets if they are of the type "FamilyBC_t"
+    // Get the number of sidesets in the mesh...
+    // Will be the 'families' that are of the type "FamilyBC_t"
     Utils::add_sidesets(get_file_pointer(), this);
+
+    // ========================================================================
+    // Get the number of assemblies in the mesh...
+    // Will be the 'families' that contain nodes of 'FamVC_*'
+    Utils::add_assemblies(get_file_pointer(), this);
 
     // ========================================================================
     // Get the number of zones (element blocks) in the mesh...
@@ -2540,6 +2576,12 @@ namespace Iocgns {
           eb->property_update("guid", zone);
           eb->property_update("section", 1);
           eb->property_update("base", base);
+
+          if (eb->property_exists("assembly")) {
+            std::string assembly = eb->get_property("assembly").get_string();
+            CGCHECKM(cg_goto(get_file_pointer(), base, "Zone_t", zone, "end"));
+            CGCHECKM(cg_famname_write(assembly.c_str()));
+          }
 
           // Now we have a valid zone so can update some data structures...
           m_zoneOffset[zone]                = m_zoneOffset[zone - 1] + size[1];

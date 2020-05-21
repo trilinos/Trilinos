@@ -754,29 +754,29 @@ namespace Ioss {
     void verify_and_log(const GroupingEntity *ge, const Field &field, int in_out) const;
 
     virtual int64_t get_field_internal(const Region *reg, const Field &field, void *data,
-                                       size_t data_size) const = 0;
+                                       size_t data_size) const                      = 0;
     virtual int64_t get_field_internal(const NodeBlock *nb, const Field &field, void *data,
-                                       size_t data_size) const = 0;
+                                       size_t data_size) const                      = 0;
     virtual int64_t get_field_internal(const EdgeBlock *nb, const Field &field, void *data,
-                                       size_t data_size) const = 0;
+                                       size_t data_size) const                      = 0;
     virtual int64_t get_field_internal(const FaceBlock *nb, const Field &field, void *data,
-                                       size_t data_size) const = 0;
+                                       size_t data_size) const                      = 0;
     virtual int64_t get_field_internal(const ElementBlock *eb, const Field &field, void *data,
-                                       size_t data_size) const = 0;
+                                       size_t data_size) const                      = 0;
     virtual int64_t get_field_internal(const SideBlock *fb, const Field &field, void *data,
-                                       size_t data_size) const = 0;
+                                       size_t data_size) const                      = 0;
     virtual int64_t get_field_internal(const NodeSet *ns, const Field &field, void *data,
-                                       size_t data_size) const = 0;
+                                       size_t data_size) const                      = 0;
     virtual int64_t get_field_internal(const EdgeSet *ns, const Field &field, void *data,
-                                       size_t data_size) const = 0;
+                                       size_t data_size) const                      = 0;
     virtual int64_t get_field_internal(const FaceSet *ns, const Field &field, void *data,
-                                       size_t data_size) const = 0;
+                                       size_t data_size) const                      = 0;
     virtual int64_t get_field_internal(const ElementSet *ns, const Field &field, void *data,
-                                       size_t data_size) const = 0;
+                                       size_t data_size) const                      = 0;
     virtual int64_t get_field_internal(const SideSet *fs, const Field &field, void *data,
-                                       size_t data_size) const = 0;
+                                       size_t data_size) const                      = 0;
     virtual int64_t get_field_internal(const CommSet *cs, const Field &field, void *data,
-                                       size_t data_size) const = 0;
+                                       size_t data_size) const                      = 0;
     virtual int64_t get_field_internal(const Assembly * /*as*/, const Field & /*field*/,
                                        void * /*data*/, size_t /*data_size*/) const = 0;
     virtual int64_t get_field_internal(const Blob * /*bl*/, const Field & /*field*/,
@@ -785,29 +785,29 @@ namespace Ioss {
                                        void * /*data*/, size_t /*data_size*/) const = 0;
 
     virtual int64_t put_field_internal(const Region *reg, const Field &field, void *data,
-                                       size_t data_size) const = 0;
+                                       size_t data_size) const                      = 0;
     virtual int64_t put_field_internal(const NodeBlock *nb, const Field &field, void *data,
-                                       size_t data_size) const = 0;
+                                       size_t data_size) const                      = 0;
     virtual int64_t put_field_internal(const EdgeBlock *nb, const Field &field, void *data,
-                                       size_t data_size) const = 0;
+                                       size_t data_size) const                      = 0;
     virtual int64_t put_field_internal(const FaceBlock *nb, const Field &field, void *data,
-                                       size_t data_size) const = 0;
+                                       size_t data_size) const                      = 0;
     virtual int64_t put_field_internal(const ElementBlock *eb, const Field &field, void *data,
-                                       size_t data_size) const = 0;
+                                       size_t data_size) const                      = 0;
     virtual int64_t put_field_internal(const SideBlock *fb, const Field &field, void *data,
-                                       size_t data_size) const = 0;
+                                       size_t data_size) const                      = 0;
     virtual int64_t put_field_internal(const NodeSet *ns, const Field &field, void *data,
-                                       size_t data_size) const = 0;
+                                       size_t data_size) const                      = 0;
     virtual int64_t put_field_internal(const EdgeSet *ns, const Field &field, void *data,
-                                       size_t data_size) const = 0;
+                                       size_t data_size) const                      = 0;
     virtual int64_t put_field_internal(const FaceSet *ns, const Field &field, void *data,
-                                       size_t data_size) const = 0;
+                                       size_t data_size) const                      = 0;
     virtual int64_t put_field_internal(const ElementSet *ns, const Field &field, void *data,
-                                       size_t data_size) const = 0;
+                                       size_t data_size) const                      = 0;
     virtual int64_t put_field_internal(const SideSet *fs, const Field &field, void *data,
-                                       size_t data_size) const = 0;
+                                       size_t data_size) const                      = 0;
     virtual int64_t put_field_internal(const CommSet *cs, const Field &field, void *data,
-                                       size_t data_size) const = 0;
+                                       size_t data_size) const                      = 0;
     virtual int64_t put_field_internal(const Assembly * /*as*/, const Field & /*field*/,
                                        void * /*data*/, size_t /*data_size*/) const = 0;
     virtual int64_t put_field_internal(const Blob * /*bl*/, const Field & /*field*/,

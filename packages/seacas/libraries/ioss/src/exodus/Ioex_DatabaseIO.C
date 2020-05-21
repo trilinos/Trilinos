@@ -34,6 +34,7 @@
 #include <Ioss_FileInfo.h>
 #include <Ioss_ParallelUtils.h>
 #include <Ioss_SerializeIO.h>
+#include <Ioss_SmartAssert.h>
 #include <Ioss_SurfaceSplit.h>
 #include <Ioss_Utils.h>
 #include <algorithm>
@@ -416,6 +417,29 @@ namespace Ioex {
         int shuffle = properties.get("COMPRESSION_SHUFFLE").get_int();
         ex_set_option(exodusFilePtr, EX_OPT_COMPRESSION_SHUFFLE, shuffle);
       }
+      if (properties.exists("COMPRESSION_METHOD")) {
+        auto method                    = properties.get("COMPRESSION_METHOD").get_string();
+        method                         = Ioss::Utils::lowercase(method);
+        ex_compression_type exo_method = EX_COMPRESS_ZLIB;
+        if (method == "zlib" || method == "libz" || method == "gzip") {
+          exo_method = EX_COMPRESS_ZLIB;
+        }
+        else if (method == "szip") {
+#if defined(NC_HAS_SZIP_WRITE)
+          exo_method = EX_COMPRESS_SZIP;
+#else
+          fmt::print(Ioss::WARNING(), "The NetCDF library does not have SZip compression enabled."
+                                      " 'zlib' will be used instead.\n\n");
+#endif
+        }
+        else {
+          fmt::print(Ioss::WARNING(),
+                     "Unrecognized compression method specified: '{}'."
+                     " 'zlib' will be used instead.\n\n",
+                     method);
+        }
+        ex_set_option(exodusFilePtr, EX_OPT_COMPRESSION_TYPE, exo_method);
+      }
     }
     ex_opts(app_opt_val); // Reset back to what it was.
     return is_ok;
@@ -542,7 +566,7 @@ namespace Ioex {
     m_groupCount[EX_ASSEMBLY] = info.num_assembly;
     m_groupCount[EX_BLOB]     = info.num_blob;
 
-    if (nodeCount == 0) {
+    if (nodeCount == 0 && info.num_blob == 0) {
       fmt::print(Ioss::WARNING(), "No nodes were found in the model, file '{}'\n",
                  decoded_filename());
     }
@@ -556,7 +580,7 @@ namespace Ioex {
       IOSS_ERROR(errmsg);
     }
 
-    if (elementCount == 0) {
+    if (elementCount == 0 && info.num_blob == 0) {
       fmt::print(Ioss::WARNING(), "No elements were found in the model, file '{}'\n",
                  decoded_filename());
     }
@@ -897,8 +921,10 @@ namespace Ioex {
     region->field_add(Ioss::Field("border_elements", region->field_int_type(), IOSS_SCALAR(),
                                   Ioss::Field::COMMUNICATION, num_border_elems));
 
-    assert(nodeCount == num_internal_nodes + num_border_nodes);
-    assert(elementCount == num_internal_elems + num_border_elems);
+    SMART_ASSERT(nodeCount == num_internal_nodes + num_border_nodes)
+    (nodeCount)(num_internal_nodes)(num_border_nodes);
+    SMART_ASSERT(elementCount == num_internal_elems + num_border_elems)
+    (elementCount)(num_internal_elems)(num_border_elems);
   }
 
   const Ioss::Map &DatabaseIO::get_map(ex_entity_type type) const
@@ -1517,7 +1543,7 @@ namespace Ioex {
           if (!blockOmissions.empty() || !blockInclusions.empty()) {
             Ioex::filter_element_list(get_region(), element, sides, true);
             number_sides = element.size();
-            assert(element.size() == sides.size());
+            SMART_ASSERT(element.size() == sides.size())(element.size())(sides.size());
           }
 
           if (split_type == Ioss::SPLIT_BY_TOPOLOGIES && sideTopology.size() == 1) {
@@ -1531,7 +1557,7 @@ namespace Ioex {
           }
           else if (in_fs_map) {
             std::vector<std::string> tokens = Ioss::tokenize(side_set_name, "_");
-            assert(tokens.size() >= 4);
+            SMART_ASSERT(tokens.size() >= 4)(tokens.size());
             // The sideset should have only a single topology which is
             // given by the sideset name...
             const Ioss::ElementTopology *side_topo =
@@ -1741,7 +1767,8 @@ namespace Ioex {
               if (side == 999) {
                 side = 0;
               }
-              assert(side <= elem_topo->number_boundaries());
+              SMART_ASSERT(side <= elem_topo->number_boundaries())
+              (side)(elem_topo->number_boundaries());
               side_block->set_consistent_side_number(side);
             }
 
@@ -2025,7 +2052,7 @@ int64_t DatabaseIO::get_field_internal(const Ioss::NodeBlock *nb, const Ioss::Fi
 
 #ifndef NDEBUG
       int64_t my_node_count = field.raw_count();
-      assert(my_node_count == nodeCount);
+      SMART_ASSERT(my_node_count == nodeCount)(my_node_count)(nodeCount);
 #endif
 
       Ioss::Field::RoleType role = field.get_role();
@@ -4528,7 +4555,7 @@ int64_t DatabaseIO::handle_node_ids(void *ids, int64_t num_to_get) const
    * NOTE: The mapping is done on TRANSIENT fields only; MODEL fields
    *       should be in the original order...
    */
-  assert(num_to_get == nodeCount);
+  SMART_ASSERT(num_to_get == nodeCount)(num_to_get)(nodeCount);
 
   nodeMap.set_size(nodeCount);
 
@@ -5264,11 +5291,7 @@ int64_t DatabaseIO::put_field_internal(const Ioss::SideBlock *fb, const Ioss::Fi
 void DatabaseIO::write_meta_data()
 {
   Ioss::Region *region = get_region();
-
-  const Ioss::NodeBlockContainer &node_blocks = region->get_node_blocks();
-  assert(node_blocks.size() == 1);
-  nodeCount        = node_blocks[0]->entity_count();
-  spatialDimension = node_blocks[0]->get_property("component_degree").get_int();
+  common_write_meta_data();
 
   char the_title[max_line_length + 1];
 
@@ -5281,179 +5304,8 @@ void DatabaseIO::write_meta_data()
     Ioss::Utils::copy_string(the_title, "IOSS Default Output Title");
   }
 
-  Ioex::get_id(node_blocks[0], EX_NODE_BLOCK, &ids_);
-
-  // Assemblies --
-  {
-    const auto &assemblies = region->get_assemblies();
-    // Set ids of all entities that have "id" property...
-    for (auto &assem : assemblies) {
-      Ioex::set_id(assem, EX_ASSEMBLY, &ids_);
-    }
-
-    for (auto &assem : assemblies) {
-      Ioex::get_id(assem, EX_ASSEMBLY, &ids_);
-    }
-    m_groupCount[EX_ASSEMBLY] = assemblies.size();
-  }
-
-  // Blobs --
-  {
-    const auto &blobs = region->get_blobs();
-    // Set ids of all entities that have "id" property...
-    for (auto &blob : blobs) {
-      Ioex::set_id(blob, EX_BLOB, &ids_);
-    }
-
-    for (auto &blob : blobs) {
-      Ioex::get_id(blob, EX_BLOB, &ids_);
-    }
-    m_groupCount[EX_BLOB] = blobs.size();
-  }
-
-  // Edge Blocks --
-  {
-    const Ioss::EdgeBlockContainer &edge_blocks = region->get_edge_blocks();
-    assert(Ioss::Utils::check_block_order(edge_blocks));
-    // Set ids of all entities that have "id" property...
-    for (auto &edge_block : edge_blocks) {
-      Ioex::set_id(edge_block, EX_EDGE_BLOCK, &ids_);
-    }
-
-    edgeCount = 0;
-    for (auto &edge_block : edge_blocks) {
-      edgeCount += edge_block->entity_count();
-      // Set ids of all entities that do not have "id" property...
-      Ioex::get_id(edge_block, EX_EDGE_BLOCK, &ids_);
-    }
-    m_groupCount[EX_EDGE_BLOCK] = edge_blocks.size();
-  }
-
-  // Face Blocks --
-  {
-    const Ioss::FaceBlockContainer &face_blocks = region->get_face_blocks();
-    assert(Ioss::Utils::check_block_order(face_blocks));
-    // Set ids of all entities that have "id" property...
-    for (auto &face_block : face_blocks) {
-      Ioex::set_id(face_block, EX_FACE_BLOCK, &ids_);
-    }
-
-    faceCount = 0;
-    for (auto &face_block : face_blocks) {
-      faceCount += face_block->entity_count();
-      // Set ids of all entities that do not have "id" property...
-      Ioex::get_id(face_block, EX_FACE_BLOCK, &ids_);
-    }
-    m_groupCount[EX_FACE_BLOCK] = face_blocks.size();
-  }
-
-  // Element Blocks --
-  {
-    const Ioss::ElementBlockContainer &element_blocks = region->get_element_blocks();
-    assert(Ioss::Utils::check_block_order(element_blocks));
-    // Set ids of all entities that have "id" property...
-    for (auto &element_block : element_blocks) {
-      Ioex::set_id(element_block, EX_ELEM_BLOCK, &ids_);
-    }
-
-    elementCount = 0;
-    for (auto &element_block : element_blocks) {
-      elementCount += element_block->entity_count();
-      // Set ids of all entities that do not have "id" property...
-      Ioex::get_id(element_block, EX_ELEM_BLOCK, &ids_);
-    }
-    m_groupCount[EX_ELEM_BLOCK] = element_blocks.size();
-  }
-
-  // NodeSets ...
-  {
-    const Ioss::NodeSetContainer &nodesets = region->get_nodesets();
-    for (auto &nodeset : nodesets) {
-      Ioex::set_id(nodeset, EX_NODE_SET, &ids_);
-    }
-
-    for (auto &nodeset : nodesets) {
-      Ioex::get_id(nodeset, EX_NODE_SET, &ids_);
-    }
-    m_groupCount[EX_NODE_SET] = nodesets.size();
-  }
-
-  // EdgeSets ...
-  {
-    const Ioss::EdgeSetContainer &edgesets = region->get_edgesets();
-    for (auto &edgeset : edgesets) {
-      Ioex::set_id(edgeset, EX_EDGE_SET, &ids_);
-    }
-
-    for (auto &edgeset : edgesets) {
-      Ioex::get_id(edgeset, EX_EDGE_SET, &ids_);
-    }
-    m_groupCount[EX_EDGE_SET] = edgesets.size();
-  }
-
-  // FaceSets ...
-  {
-    const Ioss::FaceSetContainer &facesets = region->get_facesets();
-    for (auto &faceset : facesets) {
-      Ioex::set_id(faceset, EX_FACE_SET, &ids_);
-    }
-
-    for (auto &faceset : facesets) {
-      Ioex::get_id(faceset, EX_FACE_SET, &ids_);
-    }
-    m_groupCount[EX_FACE_SET] = facesets.size();
-  }
-
-  // ElementSets ...
-  {
-    const Ioss::ElementSetContainer &elementsets = region->get_elementsets();
-    for (auto &elementset : elementsets) {
-      Ioex::set_id(elementset, EX_ELEM_SET, &ids_);
-    }
-
-    for (auto &elementset : elementsets) {
-      Ioex::get_id(elementset, EX_ELEM_SET, &ids_);
-    }
-    m_groupCount[EX_ELEM_SET] = elementsets.size();
-  }
-
-  // SideSets ...
-  const Ioss::SideSetContainer &ssets = region->get_sidesets();
-  for (auto &sset : ssets) {
-    Ioex::set_id(sset, EX_SIDE_SET, &ids_);
-  }
-
-  // Get entity counts for all face sets... Create SideSets.
-  for (auto &sset : ssets) {
-    Ioex::get_id(sset, EX_SIDE_SET, &ids_);
-    int64_t id           = sset->get_property("id").get_int();
-    int64_t entity_count = 0;
-    int64_t df_count     = 0;
-
-    const Ioss::SideBlockContainer &side_blocks = sset->get_side_blocks();
-    for (auto &side_block : side_blocks) {
-      // Add  "*_offset" properties to specify at what offset
-      // the data for this block appears in the containing set.
-      Ioss::SideBlock *new_block = const_cast<Ioss::SideBlock *>(side_block);
-      new_block->property_add(Ioss::Property("set_offset", entity_count));
-      new_block->property_add(Ioss::Property("set_df_offset", df_count));
-
-      // If combining sideblocks into sidesets on output, then
-      // the id of the sideblock must be the same as the sideset
-      // id.
-      new_block->property_update("id", id);
-      new_block->property_update("guid", util().generate_guid(1));
-
-      entity_count += side_block->entity_count();
-      df_count += side_block->get_property("distribution_factor_count").get_int();
-    }
-    Ioss::SideSet *new_entity = const_cast<Ioss::SideSet *>(sset);
-    new_entity->property_add(Ioss::Property("entity_count", entity_count));
-    new_entity->property_add(Ioss::Property("distribution_factor_count", df_count));
-  }
-
-  m_groupCount[EX_SIDE_SET] = ssets.size();
-
+  bool       file_per_processor = true;
+  Ioex::Mesh mesh(spatialDimension, the_title, file_per_processor);
   {
     Ioss::SerializeIO serializeIO__(this);
     if (!properties.exists("OMIT_QA_RECORDS")) {
@@ -5463,8 +5315,6 @@ void DatabaseIO::write_meta_data()
       put_info();
     }
 
-    bool       file_per_processor = true;
-    Ioex::Mesh mesh(spatialDimension, the_title, file_per_processor);
     mesh.populate(region);
     gather_communication_metadata(&mesh.comm);
 

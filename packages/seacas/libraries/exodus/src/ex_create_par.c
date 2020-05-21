@@ -185,6 +185,15 @@ int ex_create_par_int(const char *path, int cmode, int *comp_ws, int *io_ws, MPI
   EX_FUNC_LEAVE(EX_FATAL);
 #endif
 
+  /* Verify that this file is not already open for read or write...
+     In theory, should be ok for the file to be open multiple times
+     for read, but bad things can happen if being read and written
+     at the same time...
+  */
+  if (ex__check_multiple_open(path, EX_WRITE, __func__)) {
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
+
   nc_mode = ex__handle_mode(my_mode, is_parallel, run_version);
 
   if ((status = nc_create_par(path, nc_mode, comm, info, &exoid)) != NC_NOERR) {

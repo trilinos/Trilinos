@@ -1,4 +1,4 @@
-C Copyright(C) 2011-2017 National Technology & Engineering Solutions of
+C Copyright(C) 2011-2017, 2020 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -1794,7 +1794,7 @@ C========================================================================
 C========================================================================
       ELSE IF (VERB .EQ. 'TMIN') then
          call ffreal (ifld, intyp, rfield,
-     $    'Minimum Time', 0, tmin, *345)
+     $    'Minimum Time', 0.0, tmin, *345)
          do itim = 1, nsteps
             if (times(itim) .lt. tmin) then
                itimst(itim) = 1
@@ -1805,7 +1805,7 @@ C========================================================================
 C========================================================================
       ELSE IF (VERB .EQ. 'TMAX') then
          call ffreal (ifld, intyp, rfield,
-     $    'Maximum Time', 0, tmax, *346)
+     $    'Maximum Time', 0.0, tmax, *346)
          do itim = 1, nsteps
             if (times(itim) .gt. tmax) then
                itimst(itim) = 1

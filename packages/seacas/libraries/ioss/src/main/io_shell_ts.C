@@ -270,12 +270,23 @@ namespace {
       properties.add(Ioss::Property("COMPRESSION_SHUFFLE", static_cast<int>(interFace.shuffle)));
     }
 
-    if (interFace.compose_output != "none") {
+    if (interFace.compose_output == "default") {
+      if (interFace.outFiletype == "cgns") {
+        properties.add(Ioss::Property("COMPOSE_RESULTS", "YES"));
+        properties.add(Ioss::Property("COMPOSE_RESTART", "YES"));
+      }
+      else {
+        properties.add(Ioss::Property("COMPOSE_RESULTS", "NO"));
+        properties.add(Ioss::Property("COMPOSE_RESTART", "NO"));
+      }
+    }
+    else if (interFace.compose_output == "external") {
+      properties.add(Ioss::Property("COMPOSE_RESULTS", "NO"));
+      properties.add(Ioss::Property("COMPOSE_RESTART", "NO"));
+    }
+    else if (interFace.compose_output != "none") {
       properties.add(Ioss::Property("COMPOSE_RESULTS", "YES"));
       properties.add(Ioss::Property("COMPOSE_RESTART", "YES"));
-      if (interFace.compose_output != "default") {
-        properties.add(Ioss::Property("PARALLEL_IO_MODE", interFace.compose_output));
-      }
     }
 
     if (interFace.netcdf4) {

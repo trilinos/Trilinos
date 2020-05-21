@@ -22,6 +22,19 @@ TRIBITS_ADD_TEST(
 )
 
 TRIBITS_ADD_EXECUTABLE(
+ Utst_blob_write_read
+ SOURCES Utst_blob_write_read.C
+)
+
+TRIBITS_ADD_TEST(
+        Utst_blob_write_read
+	NAME Utst_blob_write_read
+	NUM_MPI_PROCS ${NPROCS}
+	COMM mpi serial
+	XHOSTTYPE Windows
+  )
+
+TRIBITS_ADD_EXECUTABLE(
  Utst_sort
  SOURCES Utst_sort.C
 )

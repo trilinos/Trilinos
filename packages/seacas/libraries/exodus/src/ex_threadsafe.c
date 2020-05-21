@@ -39,8 +39,8 @@
 
 #include "exodusII_int.h"
 
-/* NOTE: All code in this file is based on the thread-safe code from the
- * hdf5 library.
+/* NOTE: All code in this file was originally based on the thread-safe
+ * code from the hdf5 library.
  */
 
 /* Global variable definitions */
@@ -95,11 +95,14 @@ int ex__mutex_lock(EX_mutex_t *mutex)
   return ret_value;
 }
 
-int ex__mutex_unlock(EX_mutex_t *mutex)
+int ex__mutex_unlock(EX_mutex_t *mutex, const char *func, int line)
 {
   int ret_value = pthread_mutex_unlock(&mutex->atomic_lock);
   if (ret_value != 0) {
-    ex_err_abort(ret_value, "Unlock mutex");
+    char errmsg[MAX_ERR_LENGTH];
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Invalid unlock mutex call from line %d of '%s'", line,
+             func);
+    ex_err_abort(ret_value, errmsg);
   }
   return ret_value;
 }

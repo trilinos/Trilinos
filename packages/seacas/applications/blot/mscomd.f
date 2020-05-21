@@ -502,7 +502,7 @@ C         --Set wireframe mode on 1 view
                   IHIDOP = 3
                end if
             END IF
-            CALL SETMSH (0, 'NONE', CDUM, IDUM, IDUM,
+            CALL SETMSH (0, 'NONE', CDUM, IDUM, LTYP,
      &         IDUM, IDUM, IDUM, IDUM, 'NONE', CDUM, ISSNPS, ISSESS)
             CALL INIINT (3, 1, LTYP)
             CALL SETMSH (2, 'UNDEFORM', 'NONE', MSHSEL, LTYP,

@@ -1,4 +1,4 @@
-C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
+C Copyright(C) 2009-2017, 2020 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -68,7 +68,7 @@ C   --   * - return statement if command error; message is printed
       LOGICAL MATSTR
       CHARACTER*80 ERRMSG
       CHARACTER*(MXSTLN) WORD, WORDM
-      LOGICAL ISON
+      INTEGER ISON
       include 'shades.blk'
 
       IF (VERB .EQ. 'SOFTCHAR') THEN

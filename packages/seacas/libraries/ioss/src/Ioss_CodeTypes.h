@@ -67,7 +67,6 @@ inline const std::string IOSS_SYM_TENSOR() { return std::string("sym_tensor_33")
 #define SEACAS_HAVE_EXODUS
 #define SEACAS_HAVE_CGNS
 #define SEACAS_HAVE_PAMGEN
-#define PARALLEL_AWARE_EXODUS
 #else
 #include <SEACASIoss_config.h>
 #endif
