@@ -75,7 +75,7 @@ fi
 module load git/2.20.0
 
 #
-# Load compiler modules, TPL modules, and point to SPARC TPL install base dirs
+# Load host compiler modules (CUDA modules will be loaded below)
 #
 
 if [[ "$ATDM_CONFIG_COMPILER" == *"GNU-7.3.1_SPMPI-rolling" ]]; then

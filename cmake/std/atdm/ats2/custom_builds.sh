@@ -7,44 +7,48 @@
 
 # Custom compiler selection logic
 
-if   [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.1.243-xl-2019.08.20-spmpi-rolling"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.1.243_xl-2019.08.20_spmpi-rolling"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.1.243-xl-2019.08.20"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.1.243_xl-2019.08.20"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.1.243-xl-2019"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.1.243_xl-2019"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-xl"* ]] \
+if atdm_match_any_buildname_keyword \
+  cuda-10.1.243-xl-2019.08.20-spmpi-rolling \
+  cuda-10.1.243_xl-2019.08.20_spmpi-rolling \
+  cuda-10.1.243-xl-2019.08.20 \
+  cuda-10.1.243_xl-2019.08.20 \
+  cuda-10.1.243-xl-2019 \
+  cuda-10.1.243_xl-2019 \
+  cuda-xl\
   ; then
   export ATDM_CONFIG_COMPILER=CUDA-10.1.243_XL-2019.08.20_SPMPI-rolling
 
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"xl-2019.08.20-spmpi-rolling"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"xl-2019.08.20_spmpi-rolling"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"xl-2019.08.20"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"xl-2019"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"xl"* ]] \
+elif atdm_match_any_buildname_keyword \
+  xl-2019.08.20-spmpi-rolling \
+  xl-2019.08.20_spmpi-rolling \
+  xl-2019.08.20 \
+  xl-2019 \
+  xl \
   ; then
   export ATDM_CONFIG_COMPILER=XL-2019.08.20_SPMPI-rolling
 
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.1.243-gnu-7.3.1-spmpi-rolling"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.1.243_gnu-7.3.1_spmpi-rolling"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.1.243-gnu-7.3.1"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.1.243_gnu-7.3.1"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.1.243-gnu-7"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.1.243_gnu-7"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.1.243"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-gnu"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"cuda"* ]] \
+elif atdm_match_any_buildname_keyword \
+  cuda-10.1.243-gnu-7.3.1-spmpi-rolling \
+  cuda-10.1.243_gnu-7.3.1_spmpi-rolling \
+  cuda-10.1.243-gnu-7.3.1 \
+  cuda-10.1.243_gnu-7.3.1 \
+  cuda-10.1.243-gnu-7 \
+  cuda-10.1.243_gnu-7 \
+  cuda-10.1.243 \
+  cuda-10 \
+  cuda-gnu \
+  cuda \
   ; then
   export ATDM_CONFIG_COMPILER=CUDA-10.1.243_GNU-7.3.1_SPMPI-rolling
   # NOTE: Default 'cuda' must be last cuda listed!
 
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-7.3.1-spmpi-rolling"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-7.3.1_spmpi-rolling"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-7.3.1"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-7"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"gnu"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"default" ]] \
+elif atdm_match_any_buildname_keyword \
+  gnu-7.3.1-spmpi-rolling \
+  gnu-7.3.1_spmpi-rolling \
+  gnu-7.3.1 \
+  gnu-7 \
+  gnu \
+  default \
   ; then
   export ATDM_CONFIG_COMPILER=GNU-7.3.1_SPMPI-rolling
   # NOTE: Defaut 'gnu' must be last 'gnu' listed!
