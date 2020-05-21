@@ -143,6 +143,7 @@ int main(int argc, char *argv[]) {
         = ROL::makePtr<MultiMatBranching<RealT>>(factory,parlist,bHelper,verbosity,outStream);
       ROL::PEBBL::BranchAndBound<RealT> pebbl(branching);
       pebbl.solve(argc,argv,*outStream);
+      z = pebbl.getSolution()->clone();
       z->set(*pebbl.getSolution());
     }
     algoTimer.stop();
