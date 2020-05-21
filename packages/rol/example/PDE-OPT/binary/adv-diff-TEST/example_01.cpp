@@ -124,6 +124,7 @@ int main(int argc, char *argv[]) {
         = ROL::makePtr<AdvDiffBranching<RealT>>(factory,parlist,bHelper,verbosity,outStream,incheur);
       ROL::PEBBL::BranchAndBound<RealT> pebbl(branching);
       pebbl.solve(argc,argv,*outStream);
+      z = pebbl.getSolution()->clone();
       z->set(*pebbl.getSolution());
     }
     else {
