@@ -600,14 +600,9 @@ namespace BaskerClassicNS{
     cout << endl;
 #endif
 
-    if (X) {
-      delete [] X;
-      X = nullptr;
-    }
-    if (color) {
-      delete [] color;
-      color = nullptr;
-    }
+    // Cleanup workspace allocations
+    delete [] X;
+    delete [] color;
 
     actual_lnnz = lnnz;
     actual_unnz = unnz;
