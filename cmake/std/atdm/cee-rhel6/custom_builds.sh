@@ -20,13 +20,13 @@ if atdm_match_any_buildname_keyword \
   # correct matching of of defaults
 
 elif atdm_match_any_buildname_keyword \
-    gnu-7.2.0-openmpi-4.0.2 \
-    gnu-7.2.0_openmpi-4.0.2 \
+    gnu-7.2.0-openmpi-4.0.3 \
+    gnu-7.2.0_openmpi-4.0.3 \
     gnu-7.2.0 \
     gnu-7 \
     gnu \
   ; then
-  export ATDM_CONFIG_COMPILER=GNU-7.2.0_OPENMPI-4.0.2
+  export ATDM_CONFIG_COMPILER=GNU-7.2.0_OPENMPI-4.0.3
   # List default "gnu"* build last of all the 'gnu' builds for correct
   # matching of defaults
 
@@ -57,7 +57,7 @@ else
   echo "*** Supported compilers include:"
   echo "***"
   echo "****  clang-9.0.1-openmpi-4.0.3      (default, default clang)"
-  echo "****  gnu-7.2.0-openmpi-4.0.2        (default gnu)"
+  echo "****  gnu-7.2.0-openmpi-4.0.3        (default gnu)"
   echo "****  intel-18.0.2-mpich2-3.2"
   echo "****  intel-19.0.3-intelmpi-2018.4   (default intel)"
   echo "***"  
