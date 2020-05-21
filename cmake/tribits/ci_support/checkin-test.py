@@ -741,7 +741,9 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
 
   clp.add_option(
     "--project-name", dest="projectName", action="store",
-    help="Set the project's name. This is used to locate various files.",
+    help="Set the project's name. This is used to locate various files."+\
+      "  If not set, then it reads the project name from the PROJECT_NAME"+\
+      " varaible set in the file SRCDIR/ProjectName.cmake.",
     default=None)
 
   clp.add_option(
