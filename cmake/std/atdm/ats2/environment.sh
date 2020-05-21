@@ -71,15 +71,13 @@ fi
 # messes up the ATS-2 env.  Therefore, it is recommended that the user load a
 # new shell and then load one of these envs.
 
-# Load common modules for all builds
-module load git/2.20.0
+# Load the sparc-dev/xxx module 
+sparc_module_name=$(get_sparc_dev_module_name "$ATDM_CONFIG_COMPILER")
+module load ${sparc_module_name}
 
-#
-# Load host compiler modules (CUDA modules will be loaded below)
-#
+# Set up stuff related the the host compiler
 
-if [[ "$ATDM_CONFIG_COMPILER" == *"GNU-7.3.1_SPMPI-ROLLING" ]]; then
-  module load sparc-dev/gcc-7.3.1_spmpi-rolling
+if [[ "$ATDM_CONFIG_COMPILER" == *"GNU"* ]]; then
 
   export COMPILER_ROOT=/usr/tce/packages/gcc/gcc-7.3.1
   export LD_LIBRARY_PATH=${COMPILER_ROOT}/lib:${LD_LIBRARY_PATH}
@@ -89,57 +87,23 @@ if [[ "$ATDM_CONFIG_COMPILER" == *"GNU-7.3.1_SPMPI-ROLLING" ]]; then
   export INCLUDE=${BINUTILS_ROOT}/include:${INCLUDE}
   export CPATH=${BINUTILS_ROOT}/include:${CPATH}
 
-elif [[ "$ATDM_CONFIG_COMPILER" == *"XL-2019.08.20_SPMPI-ROLLING_DISABLED" ]]; then
-  module load xl/2019.08.20
-  module load lapack/3.8.0-xl-2019.08.20
-  module load gmake/4.2.1
-
-  # Ninja not available for XL until cmake 3.17.0
-  export ATDM_CONFIG_USE_NINJA=OFF
-
-  export CBLAS_ROOT=/usr/tcetmp/packages/lapack/lapack-3.8.0-P9-xl-2019.08.20
-  export LAPACK_ROOT=/usr/tcetmp/packages/lapack/lapack-3.8.0-P9-xl-2019.08.20
-  export COMPILER_ROOT=/usr/tce/packages/xl/xl-2019.08.20
-  export SPARC_HDF5=hdf5-1.8.20
-
-  # eharvey: TODO: remove COMPILER_ROOT and other exports below.
-  export PATH=${COMPILER_ROOT}/bin:${PATH}
-  export LD_LIBRARY_PATH=${COMPILER_ROOT}/lib:${LD_LIBRARY_PATH}
-  export BINUTILS_ROOT=/usr/tce/packages/gcc/gcc-7.3.1
-  export LIBRARY_PATH=${BINUTILS_ROOT}/lib
-  export LIBRARY_PATH=${CBLAS_ROOT}/lib:${LIBRARY_PATH}
-  export INCLUDE=${BINUTILS_ROOT}/include:${INCLUDE}
-  export CPATH=${BINUTILS_ROOT}/include:${CPATH}
-
-  if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_"* ]]; then
-    export LD_LIBRARY_PATH=${BINUTILS_ROOT}/rh/lib/gcc/ppc64le-redhat-linux/7:${LD_LIBRARY_PATH}
-  fi
-
-else
-  echo
-  echo "***"
-  echo "*** ERROR: COMPILER=$ATDM_CONFIG_COMPILER is not supported on this system!"
-  echo "***"
-  return
+# ToDo: Add support for xl when needed
 
 fi
 
-#
-# Load module and do other setup for CUDA bulids
-#
+# Set up stuff related to CUDA
 
-if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_"* ]]; then
+if [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]]; then
 
-  module load sparc-dev/cuda-10.1.243_gcc-7.3.1_spmpi-rolling
   export CUDA_BIN_PATH=$CUDA_HOME
 
   # OpenMPI Settings
-  # NOTE: the below export overrides the value set by the module load above
   export OMPI_CXX=${ATDM_CONFIG_NVCC_WRAPPER}
   if [ ! -x "$OMPI_CXX" ]; then
       echo "No nvcc_wrapper found"
       return
   fi
+  # NOTE: The above export overrides the value set by the module load above
 
   # CUDA Settings
   if [[ ! -d /tmp/${USER} ]] ; then
@@ -157,18 +121,8 @@ if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_"* ]]; then
   export KOKKOS_NUM_DEVICES=4
 
   # CTEST Settings
-  # Trilinos_CTEST_RUN_CUDA_AWARE_MPI is used by cmake/ctest/driver/atdm/ats2/local-driver.sh
+  # Trilinos_CTEST_RUN_CUDA_AWARE_MPI is used by ats2/local-driver.sh
   export Trilinos_CTEST_RUN_CUDA_AWARE_MPI=1
-
-elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]]; then
-
-  echo
-  echo "***"
-  echo "*** ERROR: CUDA version in COMPILER=$ATDM_CONFIG_COMPILER"
-  echo "*** is not supported on this system!  Only CUDA-10.1.243"
-  echo "*** is currently supported!"
-  echo "***"
-  return
 
 fi
 
@@ -183,6 +137,9 @@ export PATH=/projects/atdm_devops/vortex/ninja-fortran-1.8.2:$PATH
 module unload cmake
 export PATH=/projects/atdm_devops/vortex/cmake-3.16.5/bin:$PATH
 
+# Set a standard git so everyone has the same git
+module load git/2.20.0
+
 # ATDM specific config variables
 export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT}/lib;-llapack;-lgfortran;-lgomp"
 export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas;-lgfortran;-lgomp;-lm"
@@ -194,10 +151,8 @@ export ATDM_CONFIG_USE_HWLOC=OFF
 export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
 export ATDM_CONFIG_NETCDF_LIBS="-L${NETCDF_ROOT}/lib;${NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${ATDM_CONFIG_HDF5_LIBS};-lcurl"
 
-if [[ "${ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS}" == "" ]] ; then
-  export ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS=${SUPERLUDIST_ROOT}/include
-  export ATDM_CONFIG_SUPERLUDIST_LIBS="${SUPERLUDIST_ROOT}/lib64/libsuperlu_dist.a"
-fi
+export ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS=${SUPERLUDIST_ROOT}/include
+export ATDM_CONFIG_SUPERLUDIST_LIBS="${SUPERLUDIST_ROOT}/lib64/libsuperlu_dist.a"
 
 # Set common MPI wrappers
 export MPICC=`which mpicc`
