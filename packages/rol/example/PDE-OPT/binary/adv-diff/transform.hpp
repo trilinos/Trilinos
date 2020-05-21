@@ -61,12 +61,8 @@ public:
   AdvDiffIntegerTransformation(const AdvDiffIntegerTransformation &T)
     : ROL::PEBBL::StdIntegerTransformation<Real>(T) {}
 
-  void pruneVector(ROL::Vector<Real> &c) {
-    ROL::PEBBL::StdIntegerTransformation<Real>::pruneVector(*getParameter(c));
-  }
-
-  void shiftVector(ROL::Vector<Real> &c) {
-    ROL::PEBBL::StdIntegerTransformation<Real>::shiftVector(*getParameter(c));
+  void fixValues(ROL::Vector<Real> &c, bool zero = false) const {
+    ROL::PEBBL::StdIntegerTransformation<Real>::fixValues(*getParameter(c),zero);
   }
 
 }; // class AdvDiffIntegerTransformation

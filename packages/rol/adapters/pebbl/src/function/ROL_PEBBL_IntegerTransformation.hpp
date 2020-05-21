@@ -79,14 +79,12 @@ public:
   IntegerTransformation(void) {}
   IntegerTransformation(const IntegerTransformation &T) : map_(T.map_) {}
 
-  virtual void pruneVector(Vector<Real> &c) = 0;
-  virtual void shiftVector(Vector<Real> &c) = 0;
+  virtual void fixValues(Vector<Real> &x, bool zero = false) const = 0;
 
   void value(Vector<Real> &c, const Vector<Real> &x, Real &tol) {
     c.set(x);
     Ptr<Vector<Real>> cp = getVector(c);
-    pruneVector(*cp);
-    shiftVector(*cp);
+    fixValues(*cp,false);
   }
 
   void applyJacobian(Vector<Real> &jv,
@@ -95,7 +93,7 @@ public:
                      Real &tol) {
     jv.set(v);
     Ptr<Vector<Real>> jvp = getVector(jv);
-    pruneVector(*jvp);
+    fixValues(*jvp,true);
   }
 
   void applyAdjointJacobian(Vector<Real> &ajv,
@@ -104,7 +102,7 @@ public:
                             Real &tol) {
     ajv.set(v);
     Ptr<Vector<Real>> ajvp = getVector(ajv);
-    pruneVector(*ajvp);
+    fixValues(*ajvp,true);
   }
 
   void applyAdjointHessian(Vector<Real> &ahuv,

@@ -67,12 +67,8 @@ public:
   StdAdvDiffIntegerTransformation(const StdAdvDiffIntegerTransformation &T)
     : ROL::PEBBL::StdIntegerTransformation<Real>(T) {}
 
-  void pruneVector(ROL::Vector<Real> &c) {
-    ROL::PEBBL::StdIntegerTransformation<Real>::pruneVector(*getParameter(c));
-  }
-
-  void shiftVector(ROL::Vector<Real> &c) {
-    ROL::PEBBL::StdIntegerTransformation<Real>::shiftVector(*getParameter(c));
+  void fixValues(ROL::Vector<Real> &c, bool zero = false) const {
+    ROL::PEBBL::StdIntegerTransformation<Real>::fixValues(*getParameter(c),zero);
   }
 
 }; // class StdAdvDiffIntegerTransformation
@@ -96,12 +92,8 @@ public:
   TpetraAdvDiffIntegerTransformation(const TpetraAdvDiffIntegerTransformation &T)
     : ROL::PEBBL::TpetraIntegerTransformation<Real>(T) {}
 
-  void pruneVector(ROL::Vector<Real> &c) {
-    ROL::PEBBL::TpetraIntegerTransformation<Real>::pruneVector(*getData(c));
-  }
-
-  void shiftVector(ROL::Vector<Real> &c) {
-    ROL::PEBBL::TpetraIntegerTransformation<Real>::shiftVector(*getData(c));
+  void fixValues(ROL::Vector<Real> &c, bool zero = false) const {
+    ROL::PEBBL::TpetraIntegerTransformation<Real>::fixValues(*getData(c),zero);
   }
 
 }; // class TpetraAdvDiffIntegerTransformation

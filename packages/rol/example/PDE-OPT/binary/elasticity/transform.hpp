@@ -66,12 +66,8 @@ public:
   TpetraMultiMatIntegerTransformation(const TpetraMultiMatIntegerTransformation &T)
     : ROL::PEBBL::TpetraIntegerTransformation<Real>(T) {}
 
-  void pruneVector(ROL::Vector<Real> &c) {
-    ROL::PEBBL::TpetraIntegerTransformation<Real>::pruneVector(*getData(c));
-  }
-
-  void shiftVector(ROL::Vector<Real> &c) {
-    ROL::PEBBL::TpetraIntegerTransformation<Real>::shiftVector(*getData(c));
+  void fixValues(ROL::Vector<Real> &c, bool zero = false) const {
+    ROL::PEBBL::TpetraIntegerTransformation<Real>::fixValues(*getData(c),zero);
   }
 
 }; // class TpetraMultiMatIntegerTransformation

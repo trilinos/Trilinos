@@ -76,15 +76,9 @@ public:
   StdIntegerTransformation(const StdIntegerTransformation &T)
     : IntegerTransformation<Real>(T) {}
 
-  void pruneVector(Vector<Real> &c) {
+  void fixValues(Vector<Real> &c, bool zero = false) const {
     for (auto it=map_.begin(); it!=map_.end(); ++it) {
-      (*getData(c))[it->first] = static_cast<Real>(0);
-    }
-  }
-
-  void shiftVector(Vector<Real> &c) {
-    for (auto it=map_.begin(); it!=map_.end(); ++it) {
-      (*getData(c))[it->first] = it->second;
+      (*getData(c))[it->first] = (zero ? static_cast<Real>(0) : it->second);
     }
   }
 

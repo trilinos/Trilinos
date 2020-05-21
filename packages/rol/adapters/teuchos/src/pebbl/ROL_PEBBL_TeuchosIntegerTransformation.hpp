@@ -81,19 +81,9 @@ public:
   TeuchosIntegerTransformation(const TeuchosIntegerTransformation &T)
     : IntegerTransformation<Real>(T) {}
 
-  void pruneVector(Vector<Real> &c) {
-    Ptr<Teuchos::SerialDenseVector<Ordinal,Real>> cval = getData(c);
-    typename std::map<int,Real>::iterator it;
-    for (it=map_.begin(); it!=map_.end(); ++it) {
-      (*cval)(it->first) = static_cast<Real>(0);
-    }
-  }
-
-  void shiftVector(Vector<Real> &c) {
-    Ptr<Teuchos::SerialDenseVector<Ordinal,Real>> cval = getData(c);
-    typename std::map<int,Real>::iterator it;
-    for (it=map_.begin(); it!=map_.end(); ++it) {
-      (*cval)(it->first) = it->second;
+  void fixValues(Vector<Real> &c, bool zero = false) const {
+    for (auto it=map_.begin(); it!=map_.end(); ++it) {
+      (*getData(c))(it->first) = (zero ? static_cast<Real>(0) : it->second);
     }
   }
 

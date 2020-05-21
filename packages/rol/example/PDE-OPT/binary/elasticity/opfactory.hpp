@@ -86,6 +86,7 @@ private:
 
   bool useIneq_;
   bool useLinCon_;
+  size_t numMat_;
 
   ROL::Ptr<ROL::Vector<Real>> z_, zlo_, zup_;
   ROL::Ptr<ROL::Bounds<Real>> bnd_;
@@ -146,6 +147,10 @@ public:
     zlo_ = z_->clone(); zlo_->setScalar(static_cast<Real>(0));
     zup_ = z_->clone(); zup_->setScalar(static_cast<Real>(1));
     bnd_ = ROL::makePtr<ROL::Bounds<Real>>(zlo_,zup_);
+
+    // Get number of materials
+    std::vector<Real> ym = ROL::getArrayFromStringParameter<Real>(pl_.sublist("Problem"), "Young's Modulus");
+    numMat_ = ym.size();
   }
 
   ROL::Ptr<ROL::PEBBL::IntegerProblem<Real>> build(void) override {
@@ -155,13 +160,17 @@ public:
     ROL::Ptr<ROL::Vector<Real>> smul = smul_->clone();
     ROL::Ptr<ROL::Vector<Real>> vmul = vmul_->clone();
     if (useLinCon_) {
-      if (useIneq_) problem->addLinearConstraint("Selection",scon_,smul,sbnd_);
-      else          problem->addLinearConstraint("Selection",scon_,smul);
+      if (numMat_ > size_t(1)) {
+        if (useIneq_) problem->addLinearConstraint("Selection",scon_,smul,sbnd_);
+        else          problem->addLinearConstraint("Selection",scon_,smul);
+      }
       problem->addLinearConstraint("Weight",vcon_,vmul,vbnd_);
     }
     else {
-      if (useIneq_) problem->addConstraint("Selection",scon_,smul,sbnd_);
-      else          problem->addConstraint("Selection",scon_,smul);
+      if (numMat_ > size_t(1)) {
+        if (useIneq_) problem->addConstraint("Selection",scon_,smul,sbnd_);
+        else          problem->addConstraint("Selection",scon_,smul);
+      }
       problem->addConstraint("Weight",vcon_,vmul,vbnd_);
     }
     problem->setProjectionAlgorithm(pl_);

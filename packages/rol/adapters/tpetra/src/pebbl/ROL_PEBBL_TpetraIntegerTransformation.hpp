@@ -77,19 +77,10 @@ public:
   TpetraIntegerTransformation(const TpetraIntegerTransformation &T)
     : IntegerTransformation<Real>(T) {}
 
-  void pruneVector(Vector<Real> &c) {
+  void fixValues(Vector<Real> &c, bool zero = false) const {
     Teuchos::ArrayView<Real> cview = (getData(c)->getDataNonConst(0))();
-    typename std::map<int,Real>::iterator it;
-    for (it=map_.begin(); it!=map_.end(); ++it) {
-      cview[it->first] = static_cast<Real>(0);
-    }
-  }
-
-  void shiftVector(Vector<Real> &c) {
-    Teuchos::ArrayView<Real> cview = (getData(c)->getDataNonConst(0))();
-    typename std::map<int,Real>::iterator it;
-    for (it=map_.begin(); it!=map_.end(); ++it) {
-      cview[it->first] = it->second;
+    for (auto it=map_.begin(); it!=map_.end(); ++it) {
+      cview[it->first] = (zero ? static_cast<Real>(0) : it->second);
     }
   }
 

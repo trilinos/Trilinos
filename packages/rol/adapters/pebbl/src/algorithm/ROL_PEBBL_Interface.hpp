@@ -236,6 +236,10 @@ public:
       *outStream_ << std::scientific << std::setprecision(3);
       *outStream_ << std::endl << "In boundCompuation" << std::endl;
     }
+    if (verbosity_ > 1) {
+      *outStream_ << "  Fixed Components" << std::endl;
+      *outStream_ << fixed_ << std::endl << std::endl;
+    }
     // Get base optimization solver parameters
     const Ptr<ParameterList>
       parlist = branching_->getSolverParameters();

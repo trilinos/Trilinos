@@ -178,10 +178,10 @@ int main(int argc, char* argv[]) {
     *outStream << "Sum(x) = " << sum_bin << "  Budget = " << budget;
     *outStream << std::endl << std::endl;
 
-    errorFlag += (std::abs((*x_ptr)[2]-0.0)<std::sqrt(ROL::ROL_EPSILON<RealT>()) ? 0 : 1);
-    errorFlag += (std::abs((*x_ptr)[5]-0.0)<std::sqrt(ROL::ROL_EPSILON<RealT>()) ? 0 : 1);
-    errorFlag += (std::abs((*x_ptr)[3]-1.0)<std::sqrt(ROL::ROL_EPSILON<RealT>()) ? 0 : 1);
-    errorFlag += (std::abs((*x_ptr)[9]-1.0)<std::sqrt(ROL::ROL_EPSILON<RealT>()) ? 0 : 1);
+    errorFlag += (std::abs((*xbin_ptr)[2]-0.0)<std::sqrt(ROL::ROL_EPSILON<RealT>()) ? 0 : 1);
+    errorFlag += (std::abs((*xbin_ptr)[5]-0.0)<std::sqrt(ROL::ROL_EPSILON<RealT>()) ? 0 : 1);
+    errorFlag += (std::abs((*xbin_ptr)[3]-1.0)<std::sqrt(ROL::ROL_EPSILON<RealT>()) ? 0 : 1);
+    errorFlag += (std::abs((*xbin_ptr)[9]-1.0)<std::sqrt(ROL::ROL_EPSILON<RealT>()) ? 0 : 1);
   }
   catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
