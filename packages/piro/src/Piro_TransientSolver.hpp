@@ -100,7 +100,7 @@ public:
   
   /** \name Setters for subbclasses */
   /** \brief . */
-  void setSensitivityMethod(const std::string sensitivity_method_string);  
+  void setSensitivityMethod(const std::string& sensitivity_method_string);
   //@}
 
   /** \brief . */
@@ -112,7 +112,7 @@ protected:
   //@{
 
   /** \brief . */
-  void evalConvergedModel(
+  void evalConvergedModelResponsesAndSensitivities(
       const Thyra::ModelEvaluatorBase::InArgs<Scalar>& modelInArgs,
       const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const;
   //@}
