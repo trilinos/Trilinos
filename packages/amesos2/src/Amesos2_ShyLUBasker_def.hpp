@@ -107,6 +107,22 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
 #else
   num_threads = Kokkos::OpenMP::impl_max_hardware_threads();
 #endif
+
+  ShyLUbaskerTr = new ::BaskerNS::BaskerTrilinosInterface<local_ordinal_type, slu_type, Exe_Space>();
+  ShyLUbaskerTr->Options.no_pivot      = BASKER_TRUE;
+  ShyLUbaskerTr->Options.symmetric     = BASKER_FALSE;
+  ShyLUbaskerTr->Options.realloc       = BASKER_FALSE;
+  ShyLUbaskerTr->Options.verbose       = BASKER_FALSE;
+  ShyLUbaskerTr->Options.matching      = BASKER_TRUE;
+  ShyLUbaskerTr->Options.matching_type = 0;
+  ShyLUbaskerTr->Options.btf           = BASKER_TRUE;
+  ShyLUbaskerTr->Options.amd_btf       = BASKER_TRUE;
+  ShyLUbaskerTr->Options.amd_dom       = BASKER_TRUE;
+  ShyLUbaskerTr->Options.transpose     = BASKER_TRUE;
+  ShyLUbaskerTr->Options.verbose_matrix_out = BASKER_FALSE;
+
+  ShyLUbaskerTr->Options.user_fill     = (double)BASKER_FILL_USER;
+  ShyLUbaskerTr->Options.use_sequential_diag_facto = BASKER_FALSE;
 #else
  TEUCHOS_TEST_FOR_EXCEPTION(1 != 0,
 		     std::runtime_error,
@@ -120,7 +136,10 @@ ShyLUBasker<Matrix,Vector>::~ShyLUBasker( )
 {  
   /* ShyLUBasker will cleanup its own internal memory*/
 #if defined(HAVE_AMESOS2_KOKKOS) && defined(KOKKOS_ENABLE_OPENMP)
+  ShyLUbasker->Finalize();
+  ShyLUbaskerTr->Finalize();
   delete ShyLUbasker;
+  delete ShyLUbaskerTr;
 #endif
 }
 
@@ -152,8 +171,10 @@ ShyLUBasker<Matrix,Vector>::symbolicFactorization_impl()
   if(this->root_)
   {
     int info = 0;
+    int infoTr = 0;
 
     ShyLUbasker->SetThreads(num_threads); 
+    ShyLUbaskerTr->SetThreads(num_threads); 
 
 #ifdef HAVE_AMESOS2_VERBOSE_DEBUG
     std::cout << "ShyLUBasker:: Before symbolic factorization" << std::endl;
@@ -196,6 +217,14 @@ ShyLUBasker<Matrix,Vector>::symbolicFactorization_impl()
           sp_colind,
           sp_values,
           true);
+
+      infoTr = ShyLUbaskerTr->Symbolic(this->globalNumRows_,
+          this->globalNumCols_,
+          this->globalNumNonZeros_,
+          sp_rowptr,
+          sp_colind,
+          sp_values,
+          true);
     }
     else 
     {   //follow original code path if conditions not met
@@ -206,9 +235,20 @@ ShyLUBasker<Matrix,Vector>::symbolicFactorization_impl()
           colptr_.getRawPtr(),
           rowind_.getRawPtr(),
           nzvals_.getRawPtr());
+
+      infoTr = ShyLUbaskerTr->Symbolic(this->globalNumRows_,
+          this->globalNumCols_,
+          this->globalNumNonZeros_,
+          colptr_.getRawPtr(),
+          rowind_.getRawPtr(),
+          nzvals_.getRawPtr(),
+          false);
     }
     TEUCHOS_TEST_FOR_EXCEPTION(info != 0,
         std::runtime_error, "Error in ShyLUBasker Symbolic");
+
+    TEUCHOS_TEST_FOR_EXCEPTION(infoTr != 0,
+        std::runtime_error, "Error in ShyLUBaskerTr Symbolic");
 
   } // end if (this->root_)
  
@@ -224,6 +264,7 @@ ShyLUBasker<Matrix,Vector>::numericFactorization_impl()
   using Teuchos::as;
 
   int info = 0;
+  int infoTr = 0;
   if ( this->root_ ){
     { // Do factorization
 #ifdef HAVE_AMESOS2_TIMERS
@@ -269,11 +310,25 @@ ShyLUBasker<Matrix,Vector>::numericFactorization_impl()
             sp_rowptr,
             sp_colind,
             sp_values);
+
+        infoTr = ShyLUbaskerTr->Factor( this->globalNumRows_,
+            this->globalNumCols_,
+            this->globalNumNonZeros_,
+            sp_rowptr,
+            sp_colind,
+            sp_values);
       }
       else 
       {
         // In this case, loadA_impl updates colptr_, rowind_, nzvals_
         info = ShyLUbasker->Factor(this->globalNumRows_,
+            this->globalNumCols_,
+            this->globalNumNonZeros_,
+            colptr_.getRawPtr(),
+            rowind_.getRawPtr(),
+            nzvals_.getRawPtr());
+
+        infoTr = ShyLUbaskerTr->Factor(this->globalNumRows_,
             this->globalNumCols_,
             this->globalNumNonZeros_,
             colptr_.getRawPtr(),
@@ -287,10 +342,18 @@ ShyLUBasker<Matrix,Vector>::numericFactorization_impl()
       TEUCHOS_TEST_FOR_EXCEPTION(info != 0, 
           std::runtime_error, "Error ShyLUBasker Factor");
 
+      TEUCHOS_TEST_FOR_EXCEPTION(infoTr != 0, 
+          std::runtime_error, "Error ShyLUBaskerTr Factor");
+
       local_ordinal_type blnnz = local_ordinal_type(0); 
       local_ordinal_type bunnz = local_ordinal_type(0); 
       ShyLUbasker->GetLnnz(blnnz); // Add exception handling?
       ShyLUbasker->GetUnnz(bunnz);
+
+      local_ordinal_type Trblnnz = local_ordinal_type(0); 
+      local_ordinal_type Trbunnz = local_ordinal_type(0); 
+      ShyLUbaskerTr->GetLnnz(Trblnnz); // Add exception handling?
+      ShyLUbaskerTr->GetUnnz(Trbunnz);
 
       // This is set after numeric factorization complete as pivoting can be used;
       // In this case, a discrepancy between symbolic and numeric nnz total can occur.
@@ -301,6 +364,7 @@ ShyLUBasker<Matrix,Vector>::numericFactorization_impl()
 
   /* All processes should have the same error code */
   Teuchos::broadcast(*(this->matrixA_->getComm()), 0, &info);
+  Teuchos::broadcast(*(this->matrixA_->getComm()), 0, &infoTr);
 
   //global_size_type info_st = as<global_size_type>(info);
   /* TODO : Proper error messages*/
@@ -334,6 +398,8 @@ ShyLUBasker<Matrix,Vector>::solve_impl(
   const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
   const size_t nrhs = X->getGlobalNumVectors();
 
+  bool ShyluBaskerTransposeRequest = this->control_.useTranspose_;
+
   if ( single_proc_optimization() && nrhs == 1 ) {
 
 #ifdef HAVE_AMESOS2_TIMERS
@@ -361,7 +427,10 @@ ShyLUBasker<Matrix,Vector>::solve_impl(
 #ifdef HAVE_AMESOS2_TIMERS
         Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
-        ierr = ShyLUbasker->Solve(nrhs, b_vector, x_vector);
+        if (!ShyluBaskerTransposeRequest)
+          ierr = ShyLUbasker->Solve(nrhs, b_vector, x_vector);
+        else
+          ierr = ShyLUbaskerTr->Solve(nrhs, b_vector, x_vector);
     } // end scope for timer
 
       /* All processes should have the same error code */
@@ -403,7 +472,10 @@ ShyLUBasker<Matrix,Vector>::solve_impl(
 #ifdef HAVE_AMESOS2_TIMERS
         Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
-        ierr = ShyLUbasker->Solve(nrhs, bvals_.getRawPtr(), xvals_.getRawPtr());
+        if (!ShyluBaskerTransposeRequest)
+          ierr = ShyLUbasker->Solve(nrhs, bvals_.getRawPtr(), xvals_.getRawPtr());
+        else
+          ierr = ShyLUbaskerTr->Solve(nrhs, bvals_.getRawPtr(), xvals_.getRawPtr());
       } // end scope for timer
     } // end if (this->root_)
 
@@ -472,59 +544,78 @@ ShyLUBasker<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Param
   if(parameterList->isParameter("pivot"))
     {
       ShyLUbasker->Options.no_pivot = (!parameterList->get<bool>("pivot"));
+      ShyLUbaskerTr->Options.no_pivot = (!parameterList->get<bool>("pivot"));
     }
   if(parameterList->isParameter("pivot_tol"))
     {
       ShyLUbasker->Options.pivot_tol = parameterList->get<double>("pivot_tol");
+      ShyLUbaskerTr->Options.pivot_tol = parameterList->get<double>("pivot_tol");
     }
   if(parameterList->isParameter("symmetric"))
     {
       ShyLUbasker->Options.symmetric = parameterList->get<bool>("symmetric");
+      ShyLUbaskerTr->Options.symmetric = parameterList->get<bool>("symmetric");
     }
   if(parameterList->isParameter("realloc"))
     {
       ShyLUbasker->Options.realloc = parameterList->get<bool>("realloc");
+      ShyLUbaskerTr->Options.realloc = parameterList->get<bool>("realloc");
     }
   if(parameterList->isParameter("verbose"))
     {
       ShyLUbasker->Options.verbose = parameterList->get<bool>("verbose");
+      ShyLUbaskerTr->Options.verbose = parameterList->get<bool>("verbose");
     }
   if(parameterList->isParameter("verbose_matrix"))
     {
       ShyLUbasker->Options.verbose_matrix_out = parameterList->get<bool>("verbose_matrix");
+      ShyLUbaskerTr->Options.verbose_matrix_out = parameterList->get<bool>("verbose_matrix");
     }
   if(parameterList->isParameter("matching"))
     {
       ShyLUbasker->Options.matching = parameterList->get<bool>("matching");
+      ShyLUbaskerTr->Options.matching = parameterList->get<bool>("matching");
     }
   if(parameterList->isParameter("matching_type"))
     {
       ShyLUbasker->Options.matching_type =
         (local_ordinal_type) parameterList->get<int>("matching_type");
+      ShyLUbaskerTr->Options.matching_type =
+        (local_ordinal_type) parameterList->get<int>("matching_type");
     }
   if(parameterList->isParameter("btf"))
     {
       ShyLUbasker->Options.btf = parameterList->get<bool>("btf");
+      ShyLUbaskerTr->Options.btf = parameterList->get<bool>("btf");
     }
   if(parameterList->isParameter("amd_btf"))
     {
       ShyLUbasker->Options.amd_btf = parameterList->get<bool>("amd_btf");
+      ShyLUbaskerTr->Options.amd_btf = parameterList->get<bool>("amd_btf");
     }
   if(parameterList->isParameter("amd_dom"))
     {
       ShyLUbasker->Options.amd_dom = parameterList->get<bool>("amd_dom");
+      ShyLUbaskerTr->Options.amd_dom = parameterList->get<bool>("amd_dom");
     }
   if(parameterList->isParameter("transpose"))
     {
-      ShyLUbasker->Options.transpose = parameterList->get<bool>("transpose");
+      // NDE: set transpose vs non-transpose mode as bool; track separate shylubasker objects
+      const auto transpose = parameterList->get<bool>("transpose");
+      if (transpose == true)
+        this->control_.useTranspose_ = true;
+      //ShyLUbasker->Options.transpose = parameterList->get<bool>("transpose");
+      //ShyLUbaskerTr->Options.transpose = parameterList->get<bool>("transpose");
     }
   if(parameterList->isParameter("use_sequential_diag_facto"))
     {
       ShyLUbasker->Options.use_sequential_diag_facto = parameterList->get<bool>("use_sequential_diag_facto");
+      ShyLUbaskerTr->Options.use_sequential_diag_facto = parameterList->get<bool>("use_sequential_diag_facto");
     }
   if(parameterList->isParameter("user_fill"))
     {
       ShyLUbasker->Options.user_fill = parameterList->get<double>("user_fill");
+      ShyLUbaskerTr->Options.user_fill = parameterList->get<double>("user_fill");
     }
 }
 

@@ -204,6 +204,36 @@ int main(int argc, char *argv[]) {
     solver->numericFactorization();
     solver->solve();
 
+    *fos << "\nAT^-1 * BT Solution :" << std::endl;
+    X->describe(*fos,Teuchos::VERB_EXTREME);
+  }
+
+  {
+    // Solve A \ B then Solve A' \ BT - same solver instance
+    // Create solver interface to Superlu with Amesos2 factory method
+    RCP<Amesos2::Solver<MAT,MV> > solver = Amesos2::create<MAT,MV>("ShyLUBasker", A, X, B);
+
+    Teuchos::ParameterList amesos2_params("Amesos2");
+    amesos2_params.sublist("ShyLUBasker").set("num_threads", 1, "Num threads == 1 by default");
+    solver->setParameters( Teuchos::rcpFromRef(amesos2_params) );
+
+    solver->symbolicFactorization();
+    solver->numericFactorization();
+    solver->solve();
+
+    *fos << "\nA^-1 * B Solution Try2 :" << std::endl;
+    X->describe(*fos,Teuchos::VERB_EXTREME);
+
+
+    solver->setB(BT);
+    amesos2_params.set("Transpose", true, "transpose solve");
+    //amesos2_params.sublist("ShyLUBasker").set("transpose", true, "Transpose solve");
+    solver->setParameters( Teuchos::rcpFromRef(amesos2_params) );
+//    solver->symbolicFactorization();
+//    solver->numericFactorization();
+    solver->solve();
+
+    *fos << "\nAT^-1 * BT Solution Try2 :" << std::endl;
     X->describe(*fos,Teuchos::VERB_EXTREME);
   }
 
