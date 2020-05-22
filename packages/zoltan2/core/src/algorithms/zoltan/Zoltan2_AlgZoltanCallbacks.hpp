@@ -51,6 +51,7 @@
 #include <Zoltan2_MatrixAdapter.hpp>
 #include <Zoltan2_IdentifierAdapter.hpp>
 
+#include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_HyperGraphModel.hpp>
 
 #include <Zoltan2_MachineRepresentation.hpp>
@@ -679,6 +680,383 @@ static void zoltanHGCS_withModel(void *data, int nGidEnt, int nEdges, int nPins,
 }
 
 ////////////////////////////
+// ZOLTAN_NUM_EDGES_MULTI_FN
+template <typename Adapter>
+static void zoltanNumEdgesMulti_withGraphModel(void *data,
+                                                 int nGidEnt,
+                                                 int nLigEnt,
+                                                 int nObjs,
+                                                 ZOLTAN_ID_PTR gids,
+                                                 ZOLTAN_ID_PTR lids,
+                                                 int *nEdges,
+                                                 int *ierr)
+{
+/*  // Graph Adapter
+  const Adapter *adp = static_cast<Adapter *>(data);
+  *ierr = ZOLTAN_OK;
+
+  std::cout << "\n\nHello NUM EDGES MULTI" << std::endl;
+
+
+  typedef typename Adapter::gno_t       gno_t;
+  typedef typename Adapter::lno_t       lno_t;
+  typedef typename Adapter::offset_t    offset_t;
+  typedef typename Adapter::scalar_t    scalar_t;
+
+  ArrayView<const offset_t> offsets;
+  ArrayView<const gno_t> adjIds;
+
+  adp->getEdgesView(offsets, adjIds);
+
+  std::cout << "\nOffsets length: " << offsets."
+
+  for (int i = 0; i < nObjs; ++i) {
+
+    int obj_edges = Teuchos::as<int>(offsets[i+1]) - Teuchos::as<int>(offsets[i]);
+
+    nEdges[i] = obj_edges;
+  }
+
+  // Output is nEdges
+
+  return;
+*/
+
+
+  typedef typename Adapter::gno_t       gno_t;
+  typedef typename Adapter::lno_t       lno_t;
+  typedef typename Adapter::offset_t    offset_t;
+  typedef typename Adapter::scalar_t    scalar_t;
+//  typedef typename Adapter::input_t     input_t;
+  typedef typename Adapter::user_t      user_t;
+  typedef typename Adapter::userCoord_t userCoord_t;
+  typedef StridedData<lno_t, scalar_t>  input_t;
+
+  const GraphModel<GraphAdapter<user_t, userCoord_t> >* graph_model =
+        static_cast<GraphModel<GraphAdapter<user_t, userCoord_t>>* >(data);
+
+  *ierr = ZOLTAN_OK;
+
+  ArrayView<const gno_t>    adjIds;
+  ArrayView<const offset_t> offsets;
+  ArrayView<input_t>        ewgts;
+  size_t nLocalEdges;
+
+  nLocalEdges = graph_model->getEdgeList(adjIds, offsets, ewgts);
+
+  int tot_edges = 0;
+
+  for (int i = 0; i < nObjs; ++i) {
+    nEdges[i] = Teuchos::as<int>(offsets[i + 1] - offsets[i]);
+
+    tot_edges += nEdges[i];
+
+  }
+
+  int myrank = 0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+
+  std::cout << "\nRank: " << myrank << ", Local NUM_EDGES: " << tot_edges << std::endl;
+
+  MPI_Barrier(MPI_COMM_WORLD);
+
+/*
+    for (int i = 0; i < nEdges; i++) {
+      float sum = 0;
+      for (offset_t j = offsets[i]; j < offsets[i+1]; j++)
+        sum += ewgts[j*stride];
+      ZOLTAN_ID_PTR idPtr = &(edgeGids[i*nGidEnt]);
+      TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN(idPtr, ids[i]);
+      if (nLidEnt) {
+        idPtr = &(edgeLids[i*nLidEnt]);
+        TPL_Traits<ZOLTAN_ID_PTR,int>::ASSIGN(idPtr, i);
+      }
+      edgeWgts[i] = sum;
+    }
+  }
+*/
+
+}
+
+
+
+////////////////////////////
+// ZOLTAN_EDGE_LIST_MULTI_FN
+template <typename Adapter>
+static void zoltanEdgeListMulti_withGraphModel(void *data,
+                                                 int nGidEnt,
+                                                 int nLigEnt,
+                                                 int nObjs,
+                                                 ZOLTAN_ID_PTR gids,
+                                                 ZOLTAN_ID_PTR lids,
+                                                 int *nEdges,
+                                                 ZOLTAN_ID_PTR nbor_gids,
+                                                 int *nbor_procs,
+                                                 int wdim,
+                                                 float *nbor_ewgts,
+                                                 int *ierr)
+{
+
+
+
+  typedef typename Adapter::gno_t       gno_t;
+  typedef typename Adapter::lno_t       lno_t;
+  typedef typename Adapter::offset_t    offset_t;
+  typedef typename Adapter::scalar_t    scalar_t;
+  typedef typename Adapter::user_t      user_t;
+  typedef typename Adapter::userCoord_t userCoord_t;
+
+  typedef StridedData<lno_t, scalar_t>  input_t;
+
+  const GraphModel<GraphAdapter<user_t, userCoord_t> >* graph_model =
+        static_cast<GraphModel<GraphAdapter<user_t, userCoord_t> >* >(data);
+
+  *ierr = ZOLTAN_OK;
+
+  ArrayView<const gno_t> Ids;
+  ArrayView<input_t> vwgts;
+
+  size_t nLocalVerts = graph_model->getVertexList(Ids, vwgts);
+
+//  std::cout << "\nNLocalVerts: " << nLocalVerts << " Ids: ";
+//  for (int i = 0; i < Teuchos::as<int>(nLocalVerts); ++i) {
+//      std::cout << " " << Ids[i];
+//  }
+//  std::cout << std::endl;
+
+  ArrayView<const gno_t> adjIds;
+  ArrayView<const offset_t> offsets;
+  ArrayView<input_t> ewgts;
+
+
+  size_t nLocalEdges = graph_model->getEdgeList(adjIds, offsets, ewgts);
+
+
+
+  ArrayView<size_t> vtxdist;
+
+  // vtxdist size: comm->getSize() + 1
+  graph_model->getVertexDist(vtxdist);
+
+//  std::cout << "\nVTXDIST: ";
+//  for (int i = 0; i < vtxdist.size(); ++i) {
+//    std::cout << " " << Teuchos::as<int>(vtxdist[i]);
+//  }
+//  std::cout << std::endl;
+
+
+  int edge_idx = 0;
+  int proc_idx = 0;
+
+  std::cout << "Size vtxdist: " << vtxdist.size() << std::endl;
+
+//  std::cout << "nObjs: " << nObjs << std::endl;
+
+//  std::cout << "NELEM: ";
+//  for (int i = 0; i < nObjs; ++i) {
+//    std::cout << " " << nEdges[i];
+//  }
+//  std::cout << std::endl;
+
+  for (int i = 0; i < nObjs; ++i) {
+
+    // If we pass the next offset, we are on to the next proc
+//    if (i >= Teuchos::as<int>(vtxdist[proc_idx + 1])) {
+//      proc_idx++;
+//    }
+
+    for (int j = 0;  j < nEdges[i]; ++j) {
+
+//      if (edge_idx >= Teuchos::as<int>(vtxdist[proc_idx + 1])) {
+//        proc_idx++;
+//        std::cout << "PROCIDX: " << proc_idx << std::endl;
+//      }
+
+      nbor_gids[edge_idx] = Teuchos::as<int>(adjIds[edge_idx]);
+//      nbor_procs[edge_idx] = proc_idx;
+
+
+      for (int k = 0; k < vtxdist.size() - 1; ++k) {
+
+        if (nbor_gids[edge_idx] >= vtxdist[k] &&
+            nbor_gids[edge_idx] < vtxdist[k + 1]) {
+
+          proc_idx = k;
+        }
+
+      }
+
+      nbor_procs[edge_idx] = proc_idx;
+
+
+
+//      std::cout << "NUM_GIDS: e" << edge_idx << " o" << i << " of " << nObjs
+//          << " nE" << nEdges[i] << " ng" << nbor_gids[edge_idx] << std::endl;
+//      std::cout << "NUM_PROCS: e" << edge_idx << " o" << i << " of " << nObjs
+//          << " nE" << nEdges[i] << " NP" << nbor_procs[edge_idx] << std::endl;
+
+      edge_idx++;
+    }
+  }
+
+  int myrank = 0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+
+  std::cout << "Rank: " << myrank << ", Max EDGE_IDX: " << edge_idx << std::endl;
+
+
+/*
+  int proc_idx = 0;
+  std::cout << "nGIDENT: " << nGidEnt << std::endl;
+
+  for (int i = 0; i < nGidEnt; ++i) {
+
+    if (i >= Teuchos::as<int>(vtxdist[proc_idx + 1])) {
+      proc_idx++;
+    }
+
+    nbor_gids[i] = Teuchos::as<int>(adjIds[i]);
+    nbor_procs[i] = proc_idx;
+  }
+*/
+
+/*
+  if (wdim) {
+    int mywdim = graph_model->getNumWeightsPerEdge();
+    for (int w = 0; w < wdim; w++) {
+      int edge_idx = 0;
+      for (size_t obj = 0; obj < nObjs; ++obj) {
+          if (w < mywdim) {
+            for (size_t i = 0; i < nEdges[]; i++)  {
+                nbor_ewgts[edge_idx*wdim+w] = Teuchos::as<float>(ewgts[w][i]);
+                edge_idx++;
+            }
+          }
+          else {
+            // provide uniform weights
+            for (size_t i = 0; i < num_verts; i++) {
+                nbor_ewgts[edge_idx*wdim+w] = 1.;
+                edge_idx++;
+            }
+          }
+      }
+    }
+  }
+*/
+
+  if (wdim) {
+
+    //std::cout << "wdim" << std::endl;
+    int mywdim = graph_model->getNumWeightsPerEdge();
+
+    edge_idx = 0;
+
+    for (int obj = 0; obj < nObjs; ++obj) {
+
+      for (int i = 0; i < nEdges[obj]; ++i) {
+
+        for (int w = 0; w < wdim; ++w) {
+          if (w < mywdim) {
+            nbor_ewgts[edge_idx + w] = Teuchos::as<float>(ewgts[w][i]);
+          }
+          else {
+            nbor_ewgts[edge_idx + w] = 1.;
+
+          }
+//          std::cout << "NUM_EWGTS: e" << edge_idx << " " << w << " with wd" << wdim
+//                << " o" << obj << " of " << nObjs
+//                << " nE" << nEdges[obj] << " EW" << nbor_ewgts[edge_idx] << std::endl;
+        }
+
+        edge_idx += wdim;
+      }
+    }
+  }
+//  else {
+//    std::cout << "nowdim" << std::endl;
+//  }
+
+
+
+
+
+/*
+  // Graph Adapater
+  const Adapter *adp = static_cast<Adapter *>(data);
+  *ierr = ZOLTAN_OK;
+  std::cout << "\n\nHello EDGE LIST MULTI" << std::endl;
+  // Output is nbor_gids, nbor_procs, nbor_ewgts
+  return;
+*/
+/*
+  typedef typename Adapter::gno_t gno_t;
+  typedef typename Adapter::offset_t offset_t;
+  typedef typename Adapter::scalar_t scalar_t;
+  typedef typename Adapter::user_t user_t;
+  typedef typename Adapter::userCoord_t userCoord_t;
+  const GraphAdapter<user_t, userCoord_t>* adp =
+        static_cast<GraphAdapter<user_t, userCoord_t>* >(data);
+
+  *ierr = ZOLTAN_OK;
+
+  const gno_t *ids;
+  const gno_t *adjIds;
+  const offset_t *offsets;
+  const scalar_t *ewgts;
+  int stride;
+  try {
+    adp->getIDsView(ids);
+    adp->getEdgesView(offsets, adjIds);
+    adp->getEdgeWeightsView(ewgts, stride, 0);  // Use only first weight
+  }
+  catch (std::exception &e) {
+    *ierr = ZOLTAN_FATAL;
+  }
+  if (ierr == ZOLTAN_OK) {
+
+    int edge_idx = 0;
+    for (int i = 0; i < nObjs; ++i) {
+        for (int j = 0; j < nEdges[i]; ++j) {
+
+            nbor_gids[edge_idx] = Teuchos::as<int>(adjIds[edge_idx]);
+
+            nbor_procs = ;
+
+            for (int k = 0; k < stride; ++k) {
+                nbor_ewgts[stride * edge_idx + k] = Teuchos::as<float>(ewgts[stride * edge_idx + k]);
+            }
+
+            edge_idx++;
+        }
+    }
+
+*/
+
+/*
+    for (int i = 0; i < nEdges; i++) {
+      float sum = 0;
+      for (offset_t j = offsets[i]; j < offsets[i+1]; j++)
+        sum += ewgts[j*stride];
+      ZOLTAN_ID_PTR idPtr = &(edgeGids[i*nGidEnt]);
+      TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN(idPtr, ids[i]);
+      if (nLidEnt) {
+        idPtr = &(edgeLids[i*nLidEnt]);
+        TPL_Traits<ZOLTAN_ID_PTR,int>::ASSIGN(idPtr, i);
+      }
+      edgeWgts[i] = sum;
+    }
+
+  }
+*/
+
+
+}
+
+
+
+
+
+////////////////////////////
 // ZOLTAN_HIER_NUM_LEVELS_FN
 template <typename Adapter>
 static int zoltanHierNumLevels(void *data,
@@ -736,9 +1114,9 @@ static int zoltanHierPart(void *data,
   int rank = machine->getMyRank();
 //  int ranks = machine->getNumRanks();
 
-  std::cout << "\n-\nRank: " << rank
-    << " zoltanHierPart, level: " << level
-    << "\n-\n"<< std::endl;
+//  std::cout << "\n-\nRank: " << rank
+//    << " zoltanHierPart, level: " << level
+//    << "\n-\n"<< std::endl;
 
   part_t num_unique_groups = machine->getNumUniqueGroups();
 
@@ -795,10 +1173,10 @@ static int zoltanHierPart(void *data,
 
     if (group_rank < upper_cdf && group_rank >= lower_cdf) {
 
-      std::cout << "\nRank: " << rank
-        << " solving part " << i
-        << " of Group " << group_idx
-        << " with group rank " << group_rank << std::endl;
+//      std::cout << "\nRank: " << rank
+//        << " solving part " << i
+//        << " of Group " << group_idx
+//        << " with group rank " << group_rank << std::endl;
 
       subgroup_idx = i;
       break;
@@ -856,12 +1234,17 @@ static void zoltanHierMethod(void *data,
 
   int rank = machine->getMyRank();
 
-  std::cout << "\n--\nRank: " << rank
-    << " zoltanHierMethod, level: " << level
-    << "\n--\n"<< std::endl;
+//  std::cout << "\n--\nRank: " << rank
+//    << " zoltanHierMethod, level: " << level
+//    << "\n--\n"<< std::endl;
 
   Zoltan_Set_Param(zz, "LB_Approach", "repartition");
-  Zoltan_Set_Param(zz, "LB_Method", "RCB");
+//  Zoltan_Set_Param(zz, "LB_Method", "RCB");
+  Zoltan_Set_Param(zz, "LB_Method", "PARMETIS");
+
+  Zoltan_Set_Param(zz, "CHECK_GRAPH", "0");
+  Zoltan_Set_Param(zz, "GRAPH_BUILD_TYPE", "FAST_NO_DUP");
+
 //  Zoltan_Set_Param(zz, "TFLOPS_SPECIAL", "1");
 //  Zoltan_Set_Param(zz, "", "1");
 
@@ -887,11 +1270,11 @@ static void zoltanHierMethod(void *data,
 
 
 
-    std::cout << "\nRank: " << rank << " NUG: " << num_unique_groups << ",   ";
-    for (int i = 0; i < num_unique_groups; ++i) {
-        std::cout << " " << group_count[i];
-    }
-    std::cout << std::endl;
+//    std::cout << "\nRank: " << rank << " NUG: " << num_unique_groups << ",   ";
+//    for (int i = 0; i < num_unique_groups; ++i) {
+//        std::cout << " " << group_count[i];
+//    }
+//    std::cout << std::endl;
 
 
     int group_idx = 0;
@@ -923,8 +1306,8 @@ static void zoltanHierMethod(void *data,
 //      std::cout << std::endl;
 //    }
 
-    std::cout << "\n\nRank: " << rank
-      << " Level 1 Group idx: " << group_idx << std::endl;
+//    std::cout << "\n\nRank: " << rank
+//      << " Level 1 Group idx: " << group_idx << std::endl;
     //  << " nug: " << zz->Num_Unique_Groups << std::endl;
    // std::cout << "\nRank: " << rank
    //   << " Level 1 Group idx: " << group_idx << std::endl;
@@ -956,13 +1339,13 @@ static void zoltanHierMethod(void *data,
 
 //    pcoord_t * xyz = new pcoord_t[3];
 
-    if (rank == 0) {
-        std::cout << "\nNUG: " << num_unique_groups << ",   ";
-        for (int i = 0; i < num_unique_groups; ++i) {
-            std::cout << " " << group_count[i];
-        }
-        std::cout << std::endl;
-    }
+//    if (rank == 0) {
+//        std::cout << "\nNUG: " << num_unique_groups << ",   ";
+//        for (int i = 0; i < num_unique_groups; ++i) {
+//            std::cout << " " << group_count[i];
+//        }
+//        std::cout << std::endl;
+//    }
 
 //    machine->getMyMachineCoordinate(xyz);
 //    int group_idx = int(xyz[0]);
