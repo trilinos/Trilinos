@@ -42,6 +42,7 @@
 GIT_COMMIT_FROM=$1
 GIT_COMMIT_TO=$2
 CMAKE_PACKAGE_ENABLES_OUT=$3
+CTEST_LABELS_FOR_SUBPROJETS_OUT=$4
 
 if [ "$GIT_COMMIT_FROM" == "" ] ; then
   echo "ERROR: Must specify first argument <git-commit-from>!"
@@ -57,6 +58,45 @@ if [ "$CMAKE_PACKAGE_ENABLES_OUT" == "" ] ; then
   echo "ERROR: Must specify third argument <package-enables-cmake-out>!"
   exit 1
 fi
+
+#
+# Functions
+#
+
+function trilinos_filter_packages_to_test() {
+  $TRIBITS_DIR/ci_support/filter-packages-list.py \
+    --deps-xml-file=TrilinosPackageDependencies.xml \
+    --input-packages-list="$1" \
+    --keep-test-test-categories=PT,ST
+}
+
+
+function trilinos_get_all_toplevel_packages() {
+  $TRIBITS_DIR/ci_support/get-tribits-packages.py \
+    --deps-xml-file=TrilinosPackageDependencies.xml
+}
+
+# Zero is success!
+function trilinos_contains_all_packages() {
+  echo "$1" | sed -n 1'p' | tr ',' '\n' | while read PKG_NAME ; do
+    #echo "PKG_NAME='${PKG_NAME}'"
+    if [[ "${PKG_NAME}" == "ALL_PACKAGES" ]] ; then
+      #echo "Contains ALL_PACKAGES!"
+      return 0
+    break
+  fi
+  return 1
+done
+
+
+}
+
+
+############################################
+#
+# Executable script
+#
+############################################
 
 echo
 echo "***"
@@ -149,11 +189,8 @@ echo "CHANGED_PACKAGES_FULL_LIST='$CHANGED_PACKAGES_FULL_LIST'"
 echo
 echo "D) Filter list of changed packages to get only the PT packages"
 echo
-CHANGED_PACKAGES_ST_LIST=`$TRIBITS_DIR/ci_support/filter-packages-list.py \
-  --deps-xml-file=TrilinosPackageDependencies.xml \
-  --input-packages-list=$CHANGED_PACKAGES_FULL_LIST \
-  --keep-test-test-categories=PT,ST`
-echo "CHANGED_PACKAGES_ST_LIST='$CHANGED_PACKAGES_ST_LIST'"
+CHANGED_PACKAGES_ST_LIST=$(trilinos_filter_packages_to_test "${CHANGED_PACKAGES_FULL_LIST}")
+echo "CHANGED_PACKAGES_ST_LIST='${CHANGED_PACKAGES_ST_LIST}'"
 
 echo
 echo "E) Generate the ${CMAKE_PACKAGE_ENABLES_OUT} enables file"
@@ -176,3 +213,29 @@ else
 fi
 
 echo "Wrote file '$CMAKE_PACKAGE_ENABLES_OUT'"
+
+echo
+echo "F) Generate the ${CTEST_LABELS_FOR_SUBPROJETS_OUT} enables file"
+echo
+
+printf "set(CTEST_LABELS_FOR_SUBPROJECTS" >  $CTEST_LABELS_FOR_SUBPROJETS_OUT
+
+if [[ "$CHANGED_PACKAGES_ST_LIST" != "" ]] ; then
+
+  if trilinos_contains_all_packages "$CHANGED_PACKAGES_ST_LIST"; then
+    ALL_PACKAGES=$(trilinos_get_all_toplevel_packages)
+    PR_PACKAGES=$(trilinos_filter_packages_to_test "${ALL_PACKAGES}")
+  else
+    PR_PACKAGES="$CHANGED_PACKAGES_ST_LIST"
+  fi
+
+  echo "$PR_PACKAGES" | sed -n 1'p' | tr ',' '\n' | while read PKG_NAME ; do
+    #echo $PKG_NAME
+    printf " ${PKG_NAME}" >> $CTEST_LABELS_FOR_SUBPROJETS_OUT
+  done
+
+fi
+
+echo ")" >> $CTEST_LABELS_FOR_SUBPROJETS_OUT
+
+echo "Wrote file '$CTEST_LABELS_FOR_SUBPROJETS_OUT'"

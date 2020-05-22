@@ -65,6 +65,7 @@ FUNCTION(create_get_changed_trilinos_packages_test  TEST_POSTFIX
   CHANGED_PACKAGES_FULL_LIST
   CHANGED_PACKAGES_ST_LIST
   EXPECTED_ENABLES_REGEX
+  EXPECTED_CTEST_LABELS_FOR_SUBPROJECTS_REGEX
   )
 
   SET(TEST_NAME "get_changed_trilinos_packages_test_${TEST_POSTFIX}")
@@ -99,7 +100,7 @@ MOCK_PROGRAM_OUTPUT: ${FILES_CHANGED}
     TEST_1
       MESSAGE "Run get-changed-trilinos-packages.sh with mock git"
       CMND "${CMAKE_CURRENT_SOURCE_DIR}/get-changed-trilinos-packages.sh"
-        ARGS sha1-from sha1-to packagesToEnable.cmake
+        ARGS sha1-from sha1-to packagesToEnable.cmake package_subproject_list.cmake
       PASS_REGULAR_EXPRESSION_ALL
         "CHANGED_PACKAGES_FULL_LIST='${CHANGED_PACKAGES_FULL_LIST}'"
 	"CHANGED_PACKAGES_ST_LIST='${CHANGED_PACKAGES_ST_LIST}'"
@@ -107,6 +108,11 @@ MOCK_PROGRAM_OUTPUT: ${FILES_CHANGED}
     TEST_2 CMND ${CMAKE_COMMAND}
       ARGS -P packagesToEnable.cmake
       PASS_REGULAR_EXPRESSION_ALL "${EXPECTED_ENABLES_REGEX}"
+
+    TEST_3 CMND cat
+      ARGS package_subproject_list.cmake
+      PASS_REGULAR_EXPRESSION_ALL
+        "set[(]CTEST_LABELS_FOR_SUBPROJECTS ${EXPECTED_CTEST_LABELS_FOR_SUBPROJECTS_REGEX}[)]"
 
     )
 
@@ -118,27 +124,32 @@ create_get_changed_trilinos_packages_test(ProjectsList_TeuchosCore
   "ALL_PACKAGES,TeuchosCore"
   "ALL_PACKAGES,TeuchosCore"
   "Setting Trilinos_ENABLE_ALL_PACKAGES = ON;Setting Trilinos_ENABLE_TeuchosCore = ON"
+  "TrilinosFrameworkTests TrilinosATDMConfigTests .*Kokkos Teuchos KokkosKernels .*EpetraExt Tpetra .*Domi Thyra .*SEACAS .*MueLu .*ShyLU_DD ShyLU .*Tempus Stokhos ROL Piro Panzer PyTrilinos Adelus TrilinosCouplings Pike"
   )
   # The above test ensures that it can detect global build files as well as
-  # package files.
+  # package files.  Above, we check several of the parent packages i Trilinos
+  # and we want to ensure that no subpackages are listed in the array
+  # CTEST_LABELS_FOR_SUBPROJECTS.
 
 
 create_get_changed_trilinos_packages_test(cmake_std_atdm_TeuchosCore_PyTrilinos
   "cmake/std/atdm/anything\npackages/teuchos/core/CMakeLists.txt\npackages/PyTrilinos/anything"
   "TrilinosATDMConfigTests,TeuchosCore,PyTrilinos"
   "TrilinosATDMConfigTests,TeuchosCore,PyTrilinos"
-  "Setting Trilinos_ENABLE_TeuchosCore = ON;Setting Trilinos_ENABLE_PyTrilinos = ON"
+  "Setting Trilinos_ENABLE_TrilinosATDMConfigTests = ON;Setting Trilinos_ENABLE_TeuchosCore = ON;Setting Trilinos_ENABLE_PyTrilinos = ON"
+  "TrilinosATDMConfigTests TeuchosCore PyTrilinos"
   )
   # The above test ensures that cmake/std/atdm/ changes don't trigger global
   # builds and it makes sure that PT (TeuchosCore) and ST packages
   # (PyTrilinos) do get enabled.
 
 
-create_get_changed_trilinos_packages_test(cmake_std_TeuchosCore_PyTrilinos_NewPackage
+create_get_changed_trilinos_packages_test(TeuchosCore_PyTrilinos_NewPackage
   "packages/teuchos/core/CMakeLists.txt\npackages/PyTrilinos/anything\npackages/new_package/anything"
   "TeuchosCore,PyTrilinos,NewPackage"
   "TeuchosCore,PyTrilinos"
   "Setting Trilinos_ENABLE_TeuchosCore = ON;Setting Trilinos_ENABLE_PyTrilinos = ON"
+  "TeuchosCore PyTrilinos"
   )
   # The above test ensures PT (TeuchosCore) andST packages (PyTrilinos) do get
   # enabled but EX packages (NewPackage) don't.
@@ -149,6 +160,7 @@ create_get_changed_trilinos_packages_test(cmake_std_atdm
   "TrilinosATDMConfigTests"
   "TrilinosATDMConfigTests"
   "Setting Trilinos_ENABLE_TrilinosATDMConfigTests = ON"
+  "TrilinosATDMConfigTests"
   )
   # The above test ensures changes to just cmake/std/atdm/ triggers the enable
   # of only the TrilinosATDMConfigTests package and does not trigger the
