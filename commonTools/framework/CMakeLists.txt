@@ -63,7 +63,7 @@ TRIBITS_ADD_ADVANCED_TEST( PullRequestLinuxDriverTest_UnitTests
 FUNCTION(create_get_changed_trilinos_packages_test  TEST_POSTFIX
   FILES_CHANGED
   CHANGED_PACKAGES_FULL_LIST
-  CHANGED_PACKAGES_PT_LIST
+  CHANGED_PACKAGES_ST_LIST
   EXPECTED_ENABLES_REGEX
   )
 
@@ -102,7 +102,7 @@ MOCK_PROGRAM_OUTPUT: ${FILES_CHANGED}
         ARGS sha1-from sha1-to packagesToEnable.cmake
       PASS_REGULAR_EXPRESSION_ALL
         "CHANGED_PACKAGES_FULL_LIST='${CHANGED_PACKAGES_FULL_LIST}'"
-	"CHANGED_PACKAGES_PT_LIST='${CHANGED_PACKAGES_PT_LIST}'"
+	"CHANGED_PACKAGES_ST_LIST='${CHANGED_PACKAGES_ST_LIST}'"
 
     TEST_2 CMND ${CMAKE_COMMAND}
       ARGS -P packagesToEnable.cmake
@@ -126,11 +126,22 @@ create_get_changed_trilinos_packages_test(ProjectsList_TeuchosCore
 create_get_changed_trilinos_packages_test(cmake_std_atdm_TeuchosCore_PyTrilinos
   "cmake/std/atdm/anything\npackages/teuchos/core/CMakeLists.txt\npackages/PyTrilinos/anything"
   "TrilinosATDMConfigTests,TeuchosCore,PyTrilinos"
-  "TrilinosATDMConfigTests,TeuchosCore"
-  "Setting Trilinos_ENABLE_TeuchosCore = ON"
+  "TrilinosATDMConfigTests,TeuchosCore,PyTrilinos"
+  "Setting Trilinos_ENABLE_TeuchosCore = ON;Setting Trilinos_ENABLE_PyTrilinos = ON"
   )
   # The above test ensures that cmake/std/atdm/ changes don't trigger global
-  # builds and it makes sure that ST packages (PyTrilinos) don't get enabled.
+  # builds and it makes sure that PT (TeuchosCore) and ST packages
+  # (PyTrilinos) do get enabled.
+
+
+create_get_changed_trilinos_packages_test(cmake_std_TeuchosCore_PyTrilinos_NewPackage
+  "packages/teuchos/core/CMakeLists.txt\npackages/PyTrilinos/anything\npackages/new_package/anything"
+  "TeuchosCore,PyTrilinos,NewPackage"
+  "TeuchosCore,PyTrilinos"
+  "Setting Trilinos_ENABLE_TeuchosCore = ON;Setting Trilinos_ENABLE_PyTrilinos = ON"
+  )
+  # The above test ensures PT (TeuchosCore) andST packages (PyTrilinos) do get
+  # enabled but EX packages (NewPackage) don't.
 
 
 create_get_changed_trilinos_packages_test(cmake_std_atdm

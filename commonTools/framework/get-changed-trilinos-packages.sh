@@ -149,14 +149,14 @@ echo "CHANGED_PACKAGES_FULL_LIST='$CHANGED_PACKAGES_FULL_LIST'"
 echo
 echo "D) Filter list of changed packages to get only the PT packages"
 echo
-CHANGED_PACKAGES_PT_LIST=`$TRIBITS_DIR/ci_support/filter-packages-list.py \
+CHANGED_PACKAGES_ST_LIST=`$TRIBITS_DIR/ci_support/filter-packages-list.py \
   --deps-xml-file=TrilinosPackageDependencies.xml \
   --input-packages-list=$CHANGED_PACKAGES_FULL_LIST \
-  --keep-test-test-categories=PT`
-echo "CHANGED_PACKAGES_PT_LIST='$CHANGED_PACKAGES_PT_LIST'"
+  --keep-test-test-categories=PT,ST`
+echo "CHANGED_PACKAGES_ST_LIST='$CHANGED_PACKAGES_ST_LIST'"
 
 echo
-echo "E) Generate the *.cmake enables file"
+echo "E) Generate the ${CMAKE_PACKAGE_ENABLES_OUT} enables file"
 echo
 
 echo "
@@ -166,8 +166,8 @@ MACRO(PR_ENABLE_BOOL  VAR_NAME  VAR_VAL)
 ENDMACRO()
 " >  $CMAKE_PACKAGE_ENABLES_OUT
 
-if [ "$CHANGED_PACKAGES_PT_LIST" != "" ] ; then
-  echo "$CHANGED_PACKAGES_PT_LIST" | sed -n 1'p' | tr ',' '\n' | while read PKG_NAME ; do
+if [ "$CHANGED_PACKAGES_ST_LIST" != "" ] ; then
+  echo "$CHANGED_PACKAGES_ST_LIST" | sed -n 1'p' | tr ',' '\n' | while read PKG_NAME ; do
     #echo $PKG_NAME
     echo "PR_ENABLE_BOOL(Trilinos_ENABLE_${PKG_NAME} ON)" >> $CMAKE_PACKAGE_ENABLES_OUT
   done
