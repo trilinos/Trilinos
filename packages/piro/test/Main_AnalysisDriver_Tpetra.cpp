@@ -95,7 +95,7 @@ int main(int argc, char *argv[]) {
 
   Piro::SolverFactory solverFactory;
 
-  for (int iTest=0; iTest<6; iTest++) {
+  for (int iTest=0; iTest<7; iTest++) {
 
     if (doAll) {
       switch (iTest) {
@@ -103,8 +103,9 @@ int main(int argc, char *argv[]) {
        case 1: inputFile="input_Analysis_ROL_ReducedSpace_NOXSolver_Tpetra.xml"; break;
        case 2: inputFile="input_Analysis_ROL_ReducedSpace_Tpetra.xml"; break;
        case 3: inputFile="input_Analysis_ROL_FullSpace_Tpetra.xml"; break;
-       case 4: inputFile="input_Analysis_ROL_AdjointSensitivities_ReducedSpace_NOXSolver_Tpetra.xml"; break;
-       case 5: inputFile="input_Analysis_ROL_AdjointSensitivities_FullSpace_Tpetra.xml"; break;
+       case 4: inputFile="input_Analysis_ROL_AdjointSensitivities_OldReducedSpace_Tpetra.xml"; break;
+       case 5: inputFile="input_Analysis_ROL_AdjointSensitivities_ReducedSpace_NOXSolver_Tpetra.xml"; break;
+       case 6: inputFile="input_Analysis_ROL_AdjointSensitivities_FullSpace_Tpetra.xml"; break;
        default : std::cout << "iTest logic error " << std::endl; exit(-1);
       }
     }
