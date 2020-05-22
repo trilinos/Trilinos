@@ -202,7 +202,7 @@ public:
 
   /// \brief the threshold for transitioning from device to host
   ///
-  /// If the number of elements in the multivector exceeds this 
+  /// If the number of elements in the multivector does not exceed this 
   /// threshold and the data is on host, then run the calculation on
   /// host.  Otherwise, run on device.
   /// By default this is 10000, but may be altered by the environment
