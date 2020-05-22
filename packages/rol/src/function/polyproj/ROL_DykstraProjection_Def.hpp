@@ -72,6 +72,7 @@ DykstraProjection<Real>::DykstraProjection(const Vector<Real>               &xpr
   if (dim_ == 1) {
     Real tol(std::sqrt(ROL_EPSILON<Real>()));
     xprim_->zero();
+    con_->update(*xprim_,UPDATE_TEMP);
     con_->value(*res_,*xprim_,tol);
     b_ = res_->dot(*res_->basis(0));
     mul_->setScalar(static_cast<Real>(1));
@@ -115,6 +116,7 @@ Real DykstraProjection<Real>::residual_1d(const Vector<Real> &x) const {
 template<typename Real>
 void DykstraProjection<Real>::residual_nd(Vector<Real> &r, const Vector<Real> &y) const {
   Real tol(std::sqrt(ROL_EPSILON<Real>()));
+  con_->update(y,UPDATE_TEMP);
   con_->value(r,y,tol);
 }
 

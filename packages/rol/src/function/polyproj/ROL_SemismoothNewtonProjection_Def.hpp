@@ -141,6 +141,7 @@ void SemismoothNewtonProjection<Real>::project(Vector<Real> &x, std::ostream &st
 template<typename Real>
 Real SemismoothNewtonProjection<Real>::residual(Vector<Real> &r, const Vector<Real> &y) const {
   Real tol(std::sqrt(ROL_EPSILON<Real>()));
+  con_->update(y,UPDATE_TEMP);
   con_->value(r,y,tol);
   return r.norm();
 }
@@ -164,6 +165,7 @@ void SemismoothNewtonProjection<Real>::update_primal(Vector<Real>       &y,
                                                      const Vector<Real> &lam) const {
   Real tol(std::sqrt(ROL_EPSILON<Real>()));
   y.set(x);
+  con_->update(x,UPDATE_TEMP);
   con_->applyAdjointJacobian(*xdual_,lam,x,tol);
   y.plus(xdual_->dual());
   bnd_->project(y);

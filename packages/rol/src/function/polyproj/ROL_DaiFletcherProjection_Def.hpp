@@ -66,15 +66,15 @@ DaiFletcherProjection<Real>::DaiFletcherProjection(const Vector<Real>           
     maxit_     (DEFAULT_maxit_),
     verbosity_ (DEFAULT_verbosity_) {
   dim_ = mul.dimension();
-  if (dim_ != 1) {
-    throw Exception::NotImplemented(">>> ROL::DaiFletcherProjection : The range of the linear constraint must be one dimensional!");
-  }
+  ROL_TEST_FOR_EXCEPTION(dim_!=1,std::logic_error,
+    ">>> ROL::DaiFletcherProjection : The range of the linear constraint must be one dimensional!");
   xnew_  = xprim.clone();
   mul1_  = static_cast<Real>(0);
   dlam1_ = static_cast<Real>(2);
   // con.value(x) = xprim_->dot(x) + b_
   Real tol(std::sqrt(ROL_EPSILON<Real>()));
   xprim_->zero();
+  con_->update(*xprim_,UPDATE_TEMP);
   con_->value(*res_,*xprim_,tol);
   b_ = res_->dot(*res_->basis(0));
   mul_->setScalar(static_cast<Real>(1));
