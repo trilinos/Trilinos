@@ -77,9 +77,10 @@ namespace BaskerNS
             "nfactor_dom_error error_blk");
         if(Options.verbose == BASKER_TRUE)
         {
-          std::cout << "ERROR THREAD: " << ti 
-            << " DOMBLK MALLOC : " << thread_array(ti).error_blk
-            << " " << thread_array(ti).error_subblk
+          std::cout << " > THREAD: " << ti 
+            << " DOMBLK MALLOC : blk=" << thread_array(ti).error_blk
+            << " subblk=" << thread_array(ti).error_subblk
+            << " newsize=" << thread_array(ti).error_info
             << std::endl;
         }
 
@@ -139,6 +140,7 @@ namespace BaskerNS
                 resize_L);
 
           }
+          L.mnnz = resize_L;
           L.nnz = resize_L;
         }
 
@@ -153,6 +155,7 @@ namespace BaskerNS
           REALLOC_ENTRY_1DARRAY(U.val,
               U.nnz,
               resize_U);
+          U.mnnz = resize_U;
           U.nnz = resize_U;
           //Still need to clear pend
           BASKER_MATRIX &L = 
@@ -293,12 +296,13 @@ namespace BaskerNS
 
         if(Options.verbose == BASKER_TRUE)
         {
-          std::cout << "ERROR_THREADS: " << ti
-            << " SEPBLK MALLOC: " << thread_array(ti).error_blk 
-            << " " << thread_array(ti).error_subblk
+          std::cout << " > THREADS: " << ti
+            << " SEPBLK MALLOC: blk=" << thread_array(ti).error_blk 
+            << " subblk=" << thread_array(ti).error_subblk
+            << " newsize=" << thread_array(ti).error_info
             << std::endl;
 
-          std::cout << "ERROR SEPLVL: " << error_sep_lvl << std::endl;
+          std::cout << " > SEPLVL: " << error_sep_lvl << std::endl;
         }
 
         //If on diagonal, want to compare L and U
@@ -335,6 +339,7 @@ namespace BaskerNS
           REALLOC_ENTRY_1DARRAY(L.val,
               L.nnz,
               resize_L);
+          L.mnnz = resize_L;
           L.nnz = resize_L;
           L.clear_pend();
         }
@@ -357,6 +362,7 @@ namespace BaskerNS
                 U.nnz,
                 resize_U);
           }
+          U.mnnz = resize_U;
           U.nnz = resize_U;
         }
 
@@ -499,7 +505,8 @@ namespace BaskerNS
           BASKER_ERROR_NOMALLOC)
       {
         std::cout << "ERROR_THREADS: " << ti
-          << " DIAGBLK NOMALLOC " << thread_array(ti).error_blk
+          << " DIAGBLK NOMALLOC blk=" << thread_array(ti).error_blk
+          << " newsize=" << thread_array(ti).error_info
           << std::endl;
         return BASKER_ERROR;
       }//end if NOMALLOC
@@ -513,8 +520,8 @@ namespace BaskerNS
 
         if(Options.verbose == BASKER_TRUE)
         {
-          std::cout << "ERROR_THREADS: " << ti
-            << " DIAGBLK MALLOC " << thread_array(ti).error_blk
+          std::cout << " > THREADS: " << ti
+            << " DIAGBLK MALLOC blk=" << thread_array(ti).error_blk
             << std::endl;
 
           //Clean the workspace
@@ -548,6 +555,7 @@ namespace BaskerNS
         REALLOC_ENTRY_1DARRAY(L.val,
             L.nnz,
             thread_array(ti).error_info);
+        L.mnnz = thread_array(ti).error_info;
         L.nnz = thread_array(ti).error_info;
         for(Int i = 0; i < L.ncol; i++)
         {
@@ -567,6 +575,7 @@ namespace BaskerNS
         REALLOC_ENTRY_1DARRAY(U.val,
             U.nnz,
             thread_array(ti).error_info);
+        U.mnnz = thread_array(ti).error_info;
         U.nnz = thread_array(ti).error_info;
         for(Int i = 0; i < U.ncol; i++)
         {

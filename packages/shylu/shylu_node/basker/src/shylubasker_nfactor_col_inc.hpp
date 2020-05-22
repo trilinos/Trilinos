@@ -1940,8 +1940,8 @@ namespace BaskerNS
     Int newsize;
     Entry pivot, value;
     Entry absv, maxv;
-    Int llnnz = L.nnz;
-    Int uunnz = U.nnz;
+    Int llnnz = L.mnnz;
+    Int uunnz = U.mnnz;
     
     cu_ltop = lval;
     cu_utop = uval;

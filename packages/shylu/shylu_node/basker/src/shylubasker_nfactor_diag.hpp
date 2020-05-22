@@ -131,15 +131,14 @@ namespace BaskerNS
       //thread.team_size(); //Not used
 
       Int chunk_start = thread_start(kid);
-      //printf("test: %d %d \n", kid, thread_start(kid));
+      //printf("test: %d %d: start = %d (max=%d) \n", kid, thread_start(kid), chunk_start, BASKER_MAX_IDX);
       if(chunk_start != BASKER_MAX_IDX)
       {
         Int chunk_size  = basker->btf_schedule(kid+1) - chunk_start;
 
-        // printf("Chunk start: %d size: %d \n", 
-        //	 chunk_start, chunk_size);
-        basker->t_nfactor_diag(kid, chunk_start,
-            chunk_size);
+        //printf("Chunk start: %d size: %d \n", 
+        //       chunk_start, chunk_size);
+        basker->t_nfactor_diag(kid, chunk_start, chunk_size);
       }//end if
 
     }//end operator()
@@ -292,7 +291,6 @@ namespace BaskerNS
     // Max number of nnz allowed/allocated
     Int llnnz  = L.mnnz;
     Int uunnz  = U.mnnz;
-    //Entry maxv = (Entry) 0;
     double maxv = (double) 0;
 
     Int maxindex = 0;
@@ -498,7 +496,6 @@ namespace BaskerNS
       //Note: Come back to this!!!!
       if(lnnz + lcnt > llnnz)
       {
-
         newsize = lnnz * 1.1 + 2 *L.nrow + 1;
 
         if (Options.verbose == BASKER_TRUE)
@@ -523,11 +520,9 @@ namespace BaskerNS
           thread_array(kid).error_info = newsize;
           return BASKER_ERROR;
         }
-
       }
       if(unnz+ucnt > uunnz)
       {
-
         newsize = uunnz*1.1 + 2*L.nrow+1;
 
         if(Options.verbose == BASKER_TRUE)
@@ -551,7 +546,6 @@ namespace BaskerNS
           thread_array(kid).error_info = newsize;
           return BASKER_ERROR;
         }
-
       }
 
       L.row_idx(lnnz) = maxindex;

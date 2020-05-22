@@ -144,8 +144,8 @@ namespace BaskerNS
     Entry pivot, value;
     Entry absv, maxv;
 
-    Int llnnz = L.nnz;
-    Int uunnz = U.nnz;
+    Int llnnz = L.mnnz;
+    Int uunnz = U.mnnz;
     
     //Why did we need this?
     Int col_idx_offset = M.nnz;
@@ -2196,8 +2196,8 @@ namespace BaskerNS
     Entry pivot, value;
     Entry absv, maxv;
 
-    Int llnnz = L.nnz;
-    Int uunnz = U.nnz;
+    Int llnnz = L.mnnz;
+    Int uunnz = U.mnnz;
     Int scol  = L.scol; //Note: this seems like over kill --clean up variables
     Int ecol  = L.ecol;
     

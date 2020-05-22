@@ -285,13 +285,12 @@ namespace BaskerNS
       {
         INT_1DARRAY thread_start;
         MALLOC_INT_1DARRAY(thread_start, num_threads+1);
-        init_value(thread_start, num_threads+1, 
-            (Int) BASKER_MAX_IDX);
+        init_value(thread_start, num_threads+1, (Int) BASKER_MAX_IDX);
         int nt = nfactor_diag_error(thread_start);
-        //printf("RETURNED: %d \n", nt);
+        //printf("RETURNED: %d (success=%d, error=%d)\n", nt, BASKER_SUCCESS, BASKER_ERROR);
         if((nt == BASKER_SUCCESS) || 
-            (nt == BASKER_ERROR) ||
-            (btf_restart > BASKER_RESTART))
+           (nt == BASKER_ERROR)   ||
+           (btf_restart > BASKER_RESTART))
         {
           break;
         }
