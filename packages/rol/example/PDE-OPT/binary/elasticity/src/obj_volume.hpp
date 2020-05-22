@@ -50,6 +50,7 @@
 
 #include "../../../TOOLS/qoi.hpp"
 #include "pde_elasticity.hpp"
+#include <algorithm>
 
 template <class Real>
 class QoI_Weight : public QoI<Real> {
@@ -65,13 +66,9 @@ public:
              const ROL::Ptr<FieldUtils::FieldInfo> &fieldInfo,
              ROL::ParameterList &list)
   : fe_(fe), fieldInfo_(fieldInfo) {
+    w_ = ROL::getArrayFromStringParameter<Real>(list.sublist("Problem"), "Density");
+    Real mw = *std::max_element(w_.begin(),w_.end());
     Real w0 = list.sublist("Problem").get("Maximum Weight Fraction", 0.5);
-    w_  = ROL::getArrayFromStringParameter<Real>(list.sublist("Problem"), "Density");
-    Real mw(0);
-    int T = w_.size();
-    for (int i = 0; i < T; ++i) {
-      mw = std::max(mw,w_[i]);
-    }
     // Get relevant dimensions
     int c = fe_->cubPts()->dimension(0);
     int p = fe_->cubPts()->dimension(1);
