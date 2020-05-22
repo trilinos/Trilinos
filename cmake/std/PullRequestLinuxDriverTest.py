@@ -548,7 +548,8 @@ def createPackageEnables(arguments):
                                                 'get-changed-trilinos-packages.sh'),
                                    os.path.join('origin', arguments.targetBranch),
                                    'HEAD',
-                                   'packageEnables.cmake'])
+                                   'packageEnables.cmake',
+                                   'package_subproject_list.cmake'])
         else:
             with open('packageEnables.cmake',  'w') as f_out:
                 f_out.write(dedent('''\
@@ -686,8 +687,7 @@ def run():
                                             'std',
                                             config_script),
                            '-Dpackage_enables=../packageEnables.cmake',
-                           '-Dsubprojects_file=../TFW_single_configure_support_scripts/'+
-                           'package_subproject_list.cmake'])
+                           '-Dsubprojects_file=../package_subproject_list.cmake'])
 
     return return_value
 
