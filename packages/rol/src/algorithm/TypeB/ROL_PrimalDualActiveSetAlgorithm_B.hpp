@@ -65,8 +65,9 @@ private:
   EKrylov ekv_;              ///< Krylov type
   std::string krylovName_;   ///< Krylov name
 
-  int iterKrylov_; ///< Number of Krylov iterations (used for inexact Newton)
-  int flagKrylov_; ///< Termination flag for Krylov method (used for inexact Newton)
+  int totalKrylov_; ///< Total number of Krylov iterations per PDAS iteration
+  int iterKrylov_;  ///< Number of Krylov iterations (used for inexact Newton)
+  int flagKrylov_;  ///< Termination flag for Krylov method (used for inexact Newton)
  
   bool useSecantHessVec_; ///< Whether or not to use to a secant approximation as the Hessian
   bool useSecantPrecond_; ///< Whether or not to use a secant approximation to precondition inexact Newton

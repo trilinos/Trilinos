@@ -155,6 +155,7 @@ std::vector<std::string> PrimalDualActiveSetAlgorithm_B<Real>::run( Vector<Real>
   if (verbosity_ > 0) outStream << print(true);
 
   while (status_->check(*state_)) {
+    totalKrylov_ = 0;
     state_->stepVec->zero();
     xnorm = x.norm();
     if (hasPoly_) {
@@ -226,6 +227,7 @@ std::vector<std::string> PrimalDualActiveSetAlgorithm_B<Real>::run( Vector<Real>
                 state_->iterateVec,xlam,neps_,secant_,useSecantPrecond_,dwa);
           krylov_->run(*state_->stepVec,*hessian,*gtmp,*precond,iterKrylov_,flagKrylov_);
         }
+        totalKrylov_ += iterKrylov_;
         bnd.pruneActive(*state_->stepVec,*xlam,neps_);     // s <- Is
       }
       state_->stepVec->plus(*As);                          // s = Is + As
@@ -314,19 +316,20 @@ std::string PrimalDualActiveSetAlgorithm_B<Real>::printHeader( void ) const {
       hist << "Primal Dual Active Set Quasi-Newton Method with " << secantName_ << " Hessian approximation";
     }
     hist << " status output definitions" << std::endl << std::endl;
-    hist << "  iter     - Number of iterates (steps taken)" << std::endl;
-    hist << "  value    - Objective function value" << std::endl;
-    hist << "  gnorm    - Norm of the gradient" << std::endl;
-    hist << "  snorm    - Norm of the step (update to optimization vector)" << std::endl;
-    hist << "  #fval    - Cumulative number of times the objective function was evaluated" << std::endl;
-    hist << "  #grad    - Cumulative number of times the gradient was computed" << std::endl;
+    hist << "  iter       - Number of iterates (steps taken)" << std::endl;
+    hist << "  value      - Objective function value" << std::endl;
+    hist << "  gnorm      - Norm of the gradient" << std::endl;
+    hist << "  snorm      - Norm of the step (update to optimization vector)" << std::endl;
+    hist << "  #fval      - Cumulative number of times the objective function was evaluated" << std::endl;
+    hist << "  #grad      - Cumulative number of times the gradient was computed" << std::endl;
     if (maxit_ > 1) {
-      hist << "  iterPDAS - Number of Primal Dual Active Set iterations" << std::endl << std::endl;
-      hist << "  flagPDAS - Primal Dual Active Set flag" << std::endl;
+      hist << "  iterPDAS   - Number of Primal Dual Active Set iterations" << std::endl << std::endl;
+      hist << "  flagPDAS   - Primal Dual Active Set flag" << std::endl;
+      hist << "  iterK      - Number of Krylov iterations" << std::endl << std::endl;
     }
     else {
-      hist << "  iterCR - Number of Krylov iterations" << std::endl << std::endl;
-      hist << "  flagCR - Krylov flag" << std::endl;
+      hist << "  iterK      - Number of Krylov iterations" << std::endl << std::endl;
+      hist << "  flagK      - Krylov flag" << std::endl;
       for( int flag = CG_FLAG_SUCCESS; flag != CG_FLAG_UNDEFINED; ++flag ) {
         hist << "    " << NumberToString(flag) << " - "
              << ECGFlagToString(static_cast<ECGFlag>(flag)) << std::endl;
@@ -346,10 +349,11 @@ std::string PrimalDualActiveSetAlgorithm_B<Real>::printHeader( void ) const {
   if (maxit_ > 1) {
     hist << std::setw(10) << std::left << "iterPDAS";
     hist << std::setw(10) << std::left << "flagPDAS";
+    hist << std::setw(10) << std::left << "iterK";
   }
   else {
-    hist << std::setw(10) << std::left << "iterCR";
-    hist << std::setw(10) << std::left << "flagCR";
+    hist << std::setw(10) << std::left << "iterK";
+    hist << std::setw(10) << std::left << "flagK";
   }
   hist << std::setw(10) << std::left << "feasible";
   hist << std::endl;
@@ -389,6 +393,9 @@ std::string PrimalDualActiveSetAlgorithm_B<Real>::print( const bool print_header
     hist << std::setw(10) << std::left << state_->ngrad;
     hist << std::setw(10) << std::left << "---";
     hist << std::setw(10) << std::left << "---";
+    if (maxit_ > 1) {
+      hist << std::setw(10) << std::left << "---";
+    }
     if ( feasible_ ) {
       hist << std::setw(10) << std::left << "YES";
     }
@@ -408,6 +415,7 @@ std::string PrimalDualActiveSetAlgorithm_B<Real>::print( const bool print_header
     if (maxit_ > 1) {
       hist << std::setw(10) << std::left << iter_;
       hist << std::setw(10) << std::left << flag_;
+      hist << std::setw(10) << std::left << totalKrylov_;
     }
     else {
       hist << std::setw(10) << std::left << iterKrylov_;
