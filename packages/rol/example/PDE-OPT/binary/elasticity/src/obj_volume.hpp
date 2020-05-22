@@ -70,9 +70,9 @@ public:
     Real mw = *std::max_element(w_.begin(),w_.end());
     Real w0 = list.sublist("Problem").get("Maximum Weight Fraction", 0.5);
     // Get relevant dimensions
-    int c = fe_->cubPts()->dimension(0);
-    int p = fe_->cubPts()->dimension(1);
-    ones_ = ROL::makePtr<Intrepid::FieldContainer<Real>>(c,p);
+    const int c = fe_->cubPts()->dimension(0);
+    const int p = fe_->cubPts()->dimension(1);
+    ones_    = ROL::makePtr<Intrepid::FieldContainer<Real>>(c,p);
     volFrac_ = ROL::makePtr<Intrepid::FieldContainer<Real>>(c,p);
     ones_->initialize(static_cast<Real>(1));
     volFrac_->initialize(w0 * mw);
