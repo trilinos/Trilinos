@@ -115,7 +115,7 @@ void VectorController<Real,Key>::constraintUpdate(EUpdateType type) {
       case UPDATE_TRIAL:   temp_ = false; trial_ = true;  resetTrial(); break;
       case UPDATE_ACCEPT:  temp_ = false; trial_ = false; accept();     break;
       case UPDATE_REVERT:  temp_ = false; trial_ = false;               break;
-      case UPDATE_TEMP:    temp_ = true;  trial_ = true;  resetTemp();  break;
+      case UPDATE_TEMP:    temp_ = true;  trial_ = false; resetTemp();  break;
     }
   }
   conUpdated_ = true;
