@@ -405,8 +405,14 @@ std::string PrimalDualActiveSetAlgorithm_B<Real>::print( const bool print_header
     hist << std::setw(15) << std::left << state_->snorm;
     hist << std::setw(10) << std::left << state_->nfval;
     hist << std::setw(10) << std::left << state_->ngrad;
-    hist << std::setw(10) << std::left << iterKrylov_;
-    hist << std::setw(10) << std::left << flagKrylov_;
+    if (maxit_ > 1) {
+      hist << std::setw(10) << std::left << iter_;
+      hist << std::setw(10) << std::left << flag_;
+    }
+    else {
+      hist << std::setw(10) << std::left << iterKrylov_;
+      hist << std::setw(10) << std::left << flagKrylov_;
+    }
     if ( feasible_ ) {
       hist << std::setw(10) << std::left << "YES";
     }
