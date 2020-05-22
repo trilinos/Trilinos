@@ -166,7 +166,7 @@ namespace Iovs {
       return 0;
     }
 
-    int64_t get_field_internal(const Ioss::Assembly* /*sb*/, const Ioss::Field & /*field*/,
+    int64_t get_field_internal(const Ioss::Assembly * /*sb*/, const Ioss::Field & /*field*/,
                                void * /*data*/, size_t /*data_size*/) const override
     {
       return 0;
@@ -227,7 +227,7 @@ namespace Iovs {
     {
       return 0;
     }
-    int64_t put_field_internal(const Ioss::Assembly* /*sb*/, const Ioss::Field & /*field*/,
+    int64_t put_field_internal(const Ioss::Assembly * /*sb*/, const Ioss::Field & /*field*/,
                                void * /*data*/, size_t /*data_size*/) const override
     {
       return 0;
@@ -238,7 +238,6 @@ namespace Iovs {
     {
       return 0;
     }
-
 
     void write_meta_data();
 

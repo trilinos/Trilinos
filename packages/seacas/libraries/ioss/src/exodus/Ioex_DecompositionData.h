@@ -34,6 +34,9 @@
 #ifndef IOPX_DECOMPOSITONDATA_H
 #define IOPX_DECOMPOSITONDATA_H
 
+#include <exodusII.h>
+#if defined PARALLEL_AWARE_EXODUS
+
 #include <Ioss_CodeTypes.h>
 #include <vector>
 #if !defined(NO_PARMETIS_SUPPORT)
@@ -47,7 +50,6 @@
 #include <Ioss_Decomposition.h>
 #include <Ioss_Map.h>
 #include <Ioss_PropertyManager.h>
-#include <exodusII.h>
 
 namespace Ioss {
   class Field;
@@ -286,4 +288,5 @@ namespace Ioex {
     Ioss::Decomposition<INT> m_decomposition;
   };
 } // namespace Ioex
+#endif
 #endif

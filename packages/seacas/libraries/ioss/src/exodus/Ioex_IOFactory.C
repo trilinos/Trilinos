@@ -30,18 +30,18 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <exodus/Ioex_IOFactory.h> // for Ioex IOFactory
 #include <exodus/Ioex_DatabaseIO.h> // for Ioex DatabaseIO
+#include <exodus/Ioex_IOFactory.h>  // for Ioex IOFactory
 
-#if defined(PARALLEL_AWARE_EXODUS)
+#if defined(PARALLEL_AWARE_EXODUS)          // Defined in exodusII.h
 #include <exodus/Ioex_ParallelDatabaseIO.h> // for Ioex ParallelDatabaseIO
 #endif
 #include <tokenize.h>
 
 #include <cstddef> // for nullptr
 #include <exodusII.h>
-#include <string> // for string
 #include <fmt/ostream.h>
+#include <string> // for string
 
 #include "Ioss_CodeTypes.h" // for MPI_Comm
 #include "Ioss_DBUsage.h"   // for DatabaseUsage
@@ -124,20 +124,23 @@ namespace Ioex {
       return new Ioex::DatabaseIO(nullptr, filename, db_usage, communicator, properties);
   }
 
-  void IOFactory::show_config() const 
-  { 
-    ex_print_config(); 
+  void IOFactory::show_config() const
+  {
+    ex_print_config();
 #if !defined(NO_PARMETIS_SUPPORT)
-  fmt::print(Ioss::OUTPUT(), "\tParMetis Library Version: {}.{}.{} (Parallel Decomposition)\n"
-	     "\t\tInteger Size is {}, Real Size is {}\n\n", PARMETIS_MAJOR_VERSION, PARMETIS_MINOR_VERSION, PARMETIS_SUBMINOR_VERSION,
-	     IDXTYPEWIDTH, REALTYPEWIDTH);
+    fmt::print(Ioss::OUTPUT(),
+               "\tParMetis Library Version: {}.{}.{} (Parallel Decomposition)\n"
+               "\t\tInteger Size is {}, Real Size is {}\n\n",
+               PARMETIS_MAJOR_VERSION, PARMETIS_MINOR_VERSION, PARMETIS_SUBMINOR_VERSION,
+               IDXTYPEWIDTH, REALTYPEWIDTH);
 #else
-  fmt::print(Ioss::OUTPUT(), "\tParMetis Library is NOT Available for Parallel Decomposition.\n\n");
+    fmt::print(Ioss::OUTPUT(),
+               "\tParMetis Library is NOT Available for Parallel Decomposition.\n\n");
 #endif
 #if !defined(NO_ZOLTAN_SUPPORT)
-  fmt::print(Ioss::OUTPUT(), "\tZoltan Library is Available for Parallel Decomposition.\n\n");
+    fmt::print(Ioss::OUTPUT(), "\tZoltan Library is Available for Parallel Decomposition.\n\n");
 #else
-  fmt::print(Ioss::OUTPUT(), "\tZoltan Library is NOT Available for Parallel Decomposition.\n\n");
+    fmt::print(Ioss::OUTPUT(), "\tZoltan Library is NOT Available for Parallel Decomposition.\n\n");
 #endif
   }
 } // namespace Ioex

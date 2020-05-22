@@ -1,4 +1,4 @@
-C Copyright (C) 2009-2017 National Technology & Engineering Solutions
+C Copyright (C) 2009-2017, 2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -1100,8 +1100,9 @@ C
       INTEGER   N
       INTEGER*4 NSTR(4)
       integer i, j
-      integer   itemp
+      integer*4 itemp
       integer*4 itemp1, itemp2
+      integer   itemp8
 C
       INTEGER*4 KWRTFL,KRDFL,KOUTFL,KINFL,KWRDSZ,KBYTEL,KCPW,KBAUD,
      1KCOMTP
@@ -1128,8 +1129,8 @@ C     SEND PAIRS OF CHARACTERS TO THE OUTPUT FILE.
             IF(MOD(J,2).EQ.1) THEN
                ITEMP2=ITEMP1
             ELSE
-               ITEMP=256*ITEMP2+ITEMP1
-               CALL WMET13S(ITEMP)
+               ITEMP8=256*ITEMP2+ITEMP1
+               CALL WMET13S(ITEMP8)
             ENDIF
          END DO
       END DO
@@ -1137,8 +1138,8 @@ C
 C PAD WITH A BLANK IF NECESSARY TO MAKE NUMBER OF CHARS EVEN.
  20   CONTINUE
       IF(MOD(J,2).EQ.0) THEN
-         ITEMP=256*ITEMP2+32
-         CALL WMET13S(ITEMP)
+         ITEMP8=256*ITEMP2+32
+         CALL WMET13S(ITEMP8)
       ENDIF
 C
       RETURN

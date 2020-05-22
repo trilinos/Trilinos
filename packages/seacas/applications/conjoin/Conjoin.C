@@ -2852,16 +2852,15 @@ namespace {
   }
 
   template <typename T, typename U>
-  void map_sideset_vars(U & /*unused*/, size_t /*unused*/,
-                        std::vector<T> & /*unused*/, std::vector<T> & /*unused*/)
+  void map_sideset_vars(U & /*unused*/, size_t /*unused*/, std::vector<T> & /*unused*/,
+                        std::vector<T> & /*unused*/)
   {
     throw std::runtime_error("Internal Error.");
   }
 
   template <typename INT>
   void map_sideset_vars(Excn::SideSet<INT> &local_set, size_t entity_count,
-                        std::vector<double> &values,
-                        std::vector<double> &global_values)
+                        std::vector<double> &values, std::vector<double> &global_values)
   {
     // copy values to master nodeset value information
     for (size_t j = 0; j < entity_count; j++) {
@@ -2873,8 +2872,7 @@ namespace {
 
   template <typename INT>
   void map_sideset_vars(Excn::SideSet<INT> &local_set, size_t entity_count,
-                        std::vector<float> &values,
-                        std::vector<float> &global_values)
+                        std::vector<float> &values, std::vector<float> &global_values)
   {
     // copy values to master nodeset value information
     for (size_t j = 0; j < entity_count; j++) {
@@ -2885,16 +2883,15 @@ namespace {
   }
 
   template <typename T, typename U>
-  void map_nodeset_vars(U & /*unused*/, size_t /*unused*/,
-                        std::vector<T> & /*unused*/, std::vector<T> & /*unused*/)
+  void map_nodeset_vars(U & /*unused*/, size_t /*unused*/, std::vector<T> & /*unused*/,
+                        std::vector<T> & /*unused*/)
   {
     throw std::runtime_error("Internal Error.");
   }
 
   template <typename INT>
   void map_nodeset_vars(Excn::NodeSet<INT> &local_set, size_t entity_count,
-                        std::vector<double> &values,
-                        std::vector<double> &global_values)
+                        std::vector<double> &values, std::vector<double> &global_values)
   {
     // copy values to master nodeset value information
     for (size_t j = 0; j < entity_count; j++) {
@@ -2906,8 +2903,7 @@ namespace {
 
   template <typename INT>
   void map_nodeset_vars(Excn::NodeSet<INT> &local_set, size_t entity_count,
-                        std::vector<float> &values,
-                        std::vector<float> &global_values)
+                        std::vector<float> &values, std::vector<float> &global_values)
   {
     // copy values to master nodeset value information
     for (size_t j = 0; j < entity_count; j++) {
@@ -2966,13 +2962,11 @@ namespace {
                 break;
 
               case Excn::SSET:
-                map_sideset_vars(local_sets[p][lb], entity_count,
-                                 values, master_values);
+                map_sideset_vars(local_sets[p][lb], entity_count, values, master_values);
                 break;
 
               case Excn::NSET:
-                map_nodeset_vars(local_sets[p][lb], entity_count,
-                                 values, master_values);
+                map_nodeset_vars(local_sets[p][lb], entity_count, values, master_values);
                 break;
               default: break;
               }

@@ -1,4 +1,4 @@
-C    Copyright(C) 1988-2017 National Technology & Engineering Solutions
+C    Copyright(C) 1988-2017, 2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -43,7 +43,7 @@ C
       INTEGER IA(*)
       DIMENSION A(*), TIME(*), MAT(6,*), DISP(NUMNP,*), CRD(NUMNP,*),
      *   LINK(*), DENSTY(*), WAVE(*)
-      LOGICAL ITMSEL(*), ISEVOK(*)
+      INTEGER ITMSEL(*), ISEVOK(*)
       CHARACTER*(MXSTLN) NAMEGL(*), NAMENV(*), NAMEEL(*)
       CHARACTER*(MXLNLN) INFREC(*)
       CHARACTER*(MXSTLN) QAREC(4,*)

@@ -232,16 +232,14 @@ namespace {
     int   ws      = 0;
     int   comp_ws = 8;
     float dumb    = 0.0;
-    int   err     = ex_open(file_name.c_str(), EX_READ, &comp_ws, &ws, &dumb);
-    if (err < 0) {
+    int   exoid   = ex_open(file_name.c_str(), EX_READ, &comp_ws, &ws, &dumb);
+    if (exoid < 0) {
       Error(fmt::format("Couldn't open file \"{}\".\n", file_name));
       return 0;
     }
-    if ((ex_int64_status(err) & EX_ALL_INT64_DB) != 0) {
-      return 8;
-    }
-
-    return 4;
+    int size = (ex_int64_status(exoid) & EX_ALL_INT64_DB) != 0 ? 8 : 4;
+    ex_close(exoid);
+    return size;
   }
 
   template <typename INT> TimeInterp get_surrounding_times(double time, ExoII_Read<INT> &file)
@@ -2068,7 +2066,7 @@ bool diff_sideset_df(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *
   std::string name        = "Distribution Factors";
   int         name_length = name.length();
 
-  if (!interFace.quiet_flag) {
+  if (!interFace.quiet_flag && file1.Num_Side_Sets() > 0) {
     fmt::print("Sideset Distribution Factors:\n");
   }
   DiffData max_diff;

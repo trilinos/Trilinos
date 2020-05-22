@@ -374,7 +374,7 @@ C-----------------------------------------------------------------------
          CALL wx11co(NUM,INDEXA,CLRARY,CLRMOD)
 #endif
       END IF
-      IF (FILEON) CALL wcpsco(NUM,INDEXA,CLRARY,CLRMOD)
+      IF (FILEON) CALL wcpsco(INDEXA,CLRARY,CLRMOD)
       RETURN
 C
 C-----------------------------------------------------------------------

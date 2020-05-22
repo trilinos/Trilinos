@@ -1,4 +1,4 @@
-C Copyright(C) 2011-2017 National Technology & Engineering Solutions of
+C Copyright(C) 2011-2017, 2020 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -200,9 +200,9 @@ C     --Determine the show option
       ELSE IF (SHOTYP .EQ. 'SMOOTH') THEN
         write (*, 40)
      $    'Smoothing Type = LAPLACIAN'
-        call numstr (1, 4, TOLER, RSTR(1), LR1)
+        call numstr1(4, TOLER, RSTR(1), LR1)
         call intstr (1, 0, NIT,   STRA,    LR2)
-        call numstr (1, 4, R0,    RSTR(3), LR3)
+        call numstr1(4, R0,    RSTR(3), LR3)
         write (*, 40)
      $    'Tolerance      = ',RSTR(1)(:LR1)
         write (*, 40)
@@ -219,8 +219,7 @@ C     --Determine the show option
 
       ELSE IF (SHOTYP .EQ. 'EQUIVALENCE') THEN
          IF (EQUIV) THEN
-            RNUM(1) = EQTOLER
-            CALL NUMSTR (1, 6, RNUM, RSTR, LR)
+            CALL NUMSTR1(6, EQTOLER, RSTR, LR)
             WRITE (*, 40)
      &           'Node Equivalence Tolerance = ', RSTR(1)(:LR)
          ELSE
@@ -233,8 +232,8 @@ C     --Determine the show option
           do i=1, numsnp
             call intstr(1, 0, IDSSSL(i), STRA,  LR1)
             call intstr(1, 0, IDSSMA(i), STRB,  LR2)
-            call numstr(1, 4, snptol(i), RSTR(4), LR4)
-            call numstr(1, 4, delmax(i), RSTR(5), LR5)
+            call numstr1(4, snptol(i), RSTR(4), LR4)
+            call numstr1(4, delmax(i), RSTR(5), LR5)
             if (usnorm(i) .eq. PNORM) then
               string = 'normal to slave surf'
             else if (usnorm(i) .eq. PRAD) then
@@ -260,7 +259,7 @@ C     --Determine the show option
      *          ' max delta ', RSTR(5)(:LR5)
             else
               call numstr(3, 4, VECTOR(1,i), RSTR,  LR3)
-              call numstr(1, 4, gap(i), RSTR(6), LR6)
+              call numstr1(4, gap(i), RSTR(6), LR6)
               write (*, 40) SMTYP(:4), ' Sideset ', STRA(:LR1),
      *          ' to ', STRB(:LR2),' ',
      *          STRING(:LENSTR(STRING)),' ',
@@ -295,7 +294,7 @@ C     --Determine the show option
           RSTR(2) = 'Z axis'
         END IF
 
-        CALL NUMSTR (1, 4, WRPDIS, RSTR, LR)
+        CALL NUMSTR1(4, WRPDIS, RSTR, LR)
 
         WRITE (*, 40) 'Warp mesh about the ', STRING(:LENSTR(STRING)),
      *    ', Reference Radius = ', RSTR(1)(:LR), ', Normal Vector = ',
