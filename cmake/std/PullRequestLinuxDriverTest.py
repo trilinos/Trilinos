@@ -560,6 +560,10 @@ def createPackageEnables(arguments):
 
                     PR_ENABLE_BOOL(Trilinos_ENABLE_''' + enable_map[arguments.job_base_name] + ''' ON)
                     '''))
+            with open ('package_subproject_list.cmake', 'w') as f_out:
+                f_out.write(dedent('''\
+                    set(CTEST_LABELS_FOR_SUBPROJECTS''' + enable_map[arguments.job_base_name] + ''')
+                    '''))
         print('Enabled packages:')
         cmake_rstring = subprocess.check_output(['cmake',
                                                  '-P',
