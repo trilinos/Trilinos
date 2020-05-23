@@ -239,7 +239,7 @@ std::string InteriorPointAlgorithm_B<Real>::printHeader( void ) const {
 template<typename Real>
 std::string InteriorPointAlgorithm_B<Real>::printName( void ) const {
   std::stringstream hist;
-  hist << std::endl << " Interior Point Solver";
+  hist << std::endl << "Interior Point Solver (Type B, Bound Constraints)";
   hist << std::endl;
   hist << "Subproblem Solver: " << stepname_ << std::endl;
   return hist.str();

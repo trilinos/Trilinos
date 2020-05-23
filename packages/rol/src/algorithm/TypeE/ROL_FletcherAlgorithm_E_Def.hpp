@@ -245,7 +245,7 @@ std::string FletcherAlgorithm_E<Real>::printHeader( void ) const {
 template<typename Real>
 std::string FletcherAlgorithm_E<Real>::printName( void ) const {
   std::stringstream hist;
-  hist << std::endl << " Fletcher Exact Penalty Solver";
+  hist << std::endl << "Fletcher Exact Penalty Solver (Type E, Equality Constraints)";
   hist << std::endl;
   hist << "Subproblem Solver: " << subStep_ << std::endl;
   return hist.str();

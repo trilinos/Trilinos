@@ -297,7 +297,7 @@ std::string GradientAlgorithm_B<Real>::printHeader( void ) const {
 template<typename Real>
 std::string GradientAlgorithm_B<Real>::printName( void ) const {
   std::stringstream hist;
-  hist << std::endl << "Projected Gradient Descent with Backtracking Line Search" << std::endl;
+  hist << std::endl << "Projected Gradient Descent with Backtracking Line Search (Type B, Bound Constraints)" << std::endl;
   return hist.str();
 }
 
