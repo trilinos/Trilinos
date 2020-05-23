@@ -112,6 +112,7 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   BLACS           "cmake/TPLs/"    ST
   SCALAPACK       "cmake/TPLs/"    ST
   MUMPS           "cmake/TPLs/"    ST
+  STRUMPACK       "cmake/TPLs/"    ST
   PARDISO_MKL     "cmake/TPLs/"    EX
   PARDISO         "cmake/TPLs/"    EX
   Oski            "cmake/TPLs/"    ST
