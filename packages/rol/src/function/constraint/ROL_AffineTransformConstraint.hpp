@@ -61,8 +61,8 @@ namespace ROL {
 template <class Real>
 class AffineTransformConstraint : public Constraint<Real> {
 private:
-  const Ptr<Constraint<Real>>  con_;
-  const Ptr<Constraint<Real>> acon_;
+  const Ptr<Constraint<Real>>        con_;
+  const Ptr<LinearConstraint<Real>> acon_;
 
   Ptr<VectorController<Real>> storage_;
   Ptr<Vector<Real>> primal_, dual_, Av_;
@@ -70,7 +70,7 @@ private:
 public:
   virtual ~AffineTransformConstraint() {}
   AffineTransformConstraint(const Ptr<Constraint<Real>>       &con,
-                            const Ptr<Constraint<Real>>       &acon,
+                            const Ptr<LinearConstraint<Real>> &acon,
                             const Ptr<VectorController<Real>> &storage = nullPtr);
   AffineTransformConstraint(const Ptr<Constraint<Real>>           &con,
                             const Ptr<const LinearOperator<Real>> &A,
