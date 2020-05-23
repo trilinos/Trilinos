@@ -102,53 +102,62 @@ if (TPL_ENABLE_MPI)
 endif()
 
 if (${CMAKE_PROJECT_NAME}_ENABLE_SEACASExodiff)
+   find_program (SEACAS_EXODIFF_BINARY
+	     NAME exodiff
+	     PATHS
+	       ${BINARY_DIR}
+	       ../../../../applications/exodiff
+	     )
+
+if (SEACAS_EXODIFF_BINARY)
 TRIBITS_ADD_ADVANCED_TEST(exodus32_to_exodus32
    TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} ${JOIN_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block32.g
      NOEXEPREFIX NOEXESUFFIX
      NUM_MPI_PROCS ${NPROCS}
-   TEST_1 CMND ../../../../applications/exodiff/exodiff ARGS -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block32.g
+   TEST_1 CMND ${SEACAS_EXODIFF_BINARY} ARGS -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block32.g
   COMM mpi serial
   XHOSTTYPE Windows
   )
 
 if (TPL_ENABLE_MPI)
   IF (TPL_Netcdf_PARALLEL)
-  TRIBITS_ADD_ADVANCED_TEST(exodus_fpp_serialize
-     TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} ${SERIALIZE_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block32-ser.g
-        NOEXEPREFIX NOEXESUFFIX
-        NUM_MPI_PROCS ${NPROCS}
-     TEST_1 EXEC io_shell ARGS ${JOIN_ARG} ${SERIALIZE_ARG} 8-block32-ser.g 8-block-32-serj.g
-        NOEXEPREFIX NOEXESUFFIX
-        NUM_MPI_PROCS ${NPROCS}
-     TEST_2 CMND ../../../../applications/exodiff/exodiff ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block-32-serj.g
-  COMM mpi
-  XHOSTTYPE Windows
-  )
-endif()
+    TRIBITS_ADD_ADVANCED_TEST(exodus_fpp_serialize
+       TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} ${SERIALIZE_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block32-ser.g
+          NOEXEPREFIX NOEXESUFFIX
+          NUM_MPI_PROCS ${NPROCS}
+       TEST_1 EXEC io_shell ARGS ${JOIN_ARG} ${SERIALIZE_ARG} 8-block32-ser.g 8-block-32-serj.g
+          NOEXEPREFIX NOEXESUFFIX
+          NUM_MPI_PROCS ${NPROCS}
+       TEST_2 CMND ${SEACAS_EXODIFF_BINARY} ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block-32-serj.g
+    COMM mpi
+    XHOSTTYPE Windows
+    )
+  endif()
 
-TRIBITS_ADD_ADVANCED_TEST(create_path_fpp
-   TEST_0 CMND rm ARGS -rf create_path_test_directory
-   TEST_1 EXEC io_shell ARGS --in_type generated 100x100x100 create_path_test_directory/1/2/3/4/5/tmp.g
-     NOEXEPREFIX NOEXESUFFIX
-     NUM_MPI_PROCS ${NPROCS}
-   TEST_2 CMND ls ARGS -1 create_path_test_directory/1/2/3/4/5/
-   )
+  TRIBITS_ADD_ADVANCED_TEST(create_path_fpp
+     TEST_0 CMND rm ARGS -rf create_path_test_directory
+     TEST_1 EXEC io_shell ARGS --in_type generated 100x100x100 create_path_test_directory/1/2/3/4/5/tmp.g
+       NOEXEPREFIX NOEXESUFFIX
+       NUM_MPI_PROCS ${NPROCS}
+     TEST_2 CMND ls ARGS -1 create_path_test_directory/1/2/3/4/5/
+     )
 
-TRIBITS_ADD_ADVANCED_TEST(exodus32_to_exodus64
-   TEST_0 EXEC io_shell ARGS -64 ${DECOMP_ARG} ${JOIN_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block64.g
-     NOEXEPREFIX NOEXESUFFIX
-     NUM_MPI_PROCS ${NPROCS}
-   TEST_1 CMND ../../../../applications/exodiff/exodiff ARGS -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block64.g
-  COMM mpi serial
-  )
+  TRIBITS_ADD_ADVANCED_TEST(exodus32_to_exodus64
+     TEST_0 EXEC io_shell ARGS -64 ${DECOMP_ARG} ${JOIN_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block64.g
+       NOEXEPREFIX NOEXESUFFIX
+       NUM_MPI_PROCS ${NPROCS}
+     TEST_1 CMND ${SEACAS_EXODIFF_BINARY} ARGS -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block64.g
+    COMM mpi serial
+    )
 
-TRIBITS_ADD_ADVANCED_TEST(exodus32_to_exodus32_pnetcdf
-   TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} ${PJOIN_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block64p.g
-     NOEXEPREFIX NOEXESUFFIX
-     NUM_MPI_PROCS ${NPROCS}
-   TEST_1 CMND ../../../../applications/exodiff/exodiff ARGS -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block64p.g
-  COMM mpi serial
-  )
+  TRIBITS_ADD_ADVANCED_TEST(exodus32_to_exodus32_pnetcdf
+     TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} ${PJOIN_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block64p.g
+       NOEXEPREFIX NOEXESUFFIX
+       NUM_MPI_PROCS ${NPROCS}
+     TEST_1 CMND ${SEACAS_EXODIFF_BINARY} ARGS -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block64p.g
+    COMM mpi serial
+    )
+ENDIF()
 
 IF (SEACASIoss_ENABLE_THREADSAFE)
   TRIBITS_ADD_EXECUTABLE(
@@ -159,31 +168,22 @@ IF (SEACASIoss_ENABLE_THREADSAFE)
     INSTALLABLE
     )
 
-  SET(IOSHELL_ARG --in_type generated 10x10x10+shell:xXyYzZ+sideset:xXyY+times:2+variables:element,2,nodal,3,sideset,4)
-IF (TPL_ENABLE_MPI)
+  if (TPL_ENABLE_MPI)
+     SET(IOSHELL_ARG --compose --in_type generated 10x10x10+shell:xXyYzZ+sideset:xXyY+times:2+variables:element,2,nodal,3,sideset,4)
+  else()
+     SET(IOSHELL_ARG --in_type generated 10x10x10+shell:xXyYzZ+sideset:xXyY+times:2+variables:element,2,nodal,3,sideset,4)
+  endif()
   TRIBITS_ADD_ADVANCED_TEST(
     io_shell_ts
     TEST_0 NOEXEPREFIX NOEXESUFFIX EXEC io_shell_ts ARGS ${IOSHELL_ARG} gen-shell-ts.g
     TEST_1 NOEXEPREFIX NOEXESUFFIX EXEC io_shell    ARGS ${IOSHELL_ARG} gen-shell.g
-    TEST_2 CMND ../../../../applications/epu/epu ARGS -auto gen-shell-ts.g.4.0
-    TEST_3 CMND ../../../../applications/epu/epu ARGS -auto gen-shell.g.4.0
-    TEST_4 CMND ../../../../applications/exodiff/exodiff ARGS -pedantic gen-shell-ts.g gen-shell.g
-    COMM mpi serial
-    FINAL_PASS_REGULAR_EXPRESSION
-  )
-ELSE()
-  TRIBITS_ADD_ADVANCED_TEST(
-    io_shell_ts
-    TEST_0 NOEXEPREFIX NOEXESUFFIX EXEC io_shell_ts ARGS ${IOSHELL_ARG} gen-shell-ts.g
-    TEST_1 NOEXEPREFIX NOEXESUFFIX EXEC io_shell    ARGS ${IOSHELL_ARG} gen-shell.g
-    TEST_4 CMND ../../../../applications/exodiff/exodiff ARGS -pedantic gen-shell-ts.g gen-shell.g
+    TEST_2 CMND ${SEACAS_EXODIFF_BINARY} ARGS -pedantic gen-shell-ts.g gen-shell.g
     COMM mpi serial
     FINAL_PASS_REGULAR_EXPRESSION
   )
 ENDIF()
 ENDIF()
-ENDIF()
-ENDIF()
+ENDIF(${CMAKE_PROJECT_NAME}_ENABLE_SEACASExodiff)
 
 IF (TPL_ENABLE_Pamgen OR Trilinos_ENABLE_Pamgen)
 # This test makes sure that the adjacency information (what element blocks are adjacent to what other
@@ -301,7 +301,7 @@ TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_to_exodus
    TEST_1 EXEC io_shell ARGS ${JOIN_ARG} 8-block.cgns 8-block.g
      NOEXEPREFIX NOEXESUFFIX
      NUM_MPI_PROCS ${NPROCS}
-   TEST_2 CMND ../../../../applications/exodiff/exodiff ARGS -stat -pedantic -map -dumpmap ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block.g
+   TEST_2 CMND ${SEACAS_EXODIFF_BINARY} ARGS -stat -pedantic -map -dumpmap ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block.g
   COMM mpi serial
   XHOSTTYPE Windows
   )
@@ -313,7 +313,7 @@ TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_to_exodus_single_block
    TEST_1 EXEC io_shell ARGS ${JOIN_ARG} cube.cgns cube.g
      NOEXEPREFIX NOEXESUFFIX
      NUM_MPI_PROCS ${NPROCS}
-   TEST_2 CMND ../../../../applications/exodiff/exodiff ARGS -stat -pedantic -map ${CMAKE_CURRENT_SOURCE_DIR}/test/cube.g cube.g
+   TEST_2 CMND ${SEACAS_EXODIFF_BINARY} ARGS -stat -pedantic -map ${CMAKE_CURRENT_SOURCE_DIR}/test/cube.g cube.g
   COMM mpi serial
   XHOSTTYPE Windows
   )
@@ -325,7 +325,7 @@ TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_to_exodus_double_block
    TEST_1 EXEC io_shell ARGS ${JOIN_ARG} two-block.cgns two-block.g
      NOEXEPREFIX NOEXESUFFIX
      NUM_MPI_PROCS ${NPROCS}
-   TEST_2 CMND ../../../../applications/exodiff/exodiff ARGS -stat -pedantic -map ${CMAKE_CURRENT_SOURCE_DIR}/test/two-block.g two-block.g
+   TEST_2 CMND ${SEACAS_EXODIFF_BINARY} ARGS -stat -pedantic -map ${CMAKE_CURRENT_SOURCE_DIR}/test/two-block.g two-block.g
   COMM mpi serial
   XHOSTTYPE Windows
   )
@@ -335,7 +335,7 @@ TRIBITS_ADD_ADVANCED_TEST(cgns_bc_no_parents_to_exodus
    TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} ${JOIN_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/BC_without_parents.cgns exodus_bc_parents.e
      NOEXEPREFIX NOEXESUFFIX
      NUM_MPI_PROCS ${NPROCS}
-   TEST_1 CMND ../../../../applications/exodiff/exodiff ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/exodus_bc_parents.gold exodus_bc_parents.e
+   TEST_1 CMND ${SEACAS_EXODIFF_BINARY} ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/exodus_bc_parents.gold exodus_bc_parents.e
   COMM mpi serial
   XHOSTTYPE Windows
   )
@@ -344,7 +344,7 @@ TRIBITS_ADD_ADVANCED_TEST(cgns_Q2_bc_no_parents_to_exodus
    TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} ${JOIN_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/BC_Q2_without_parents.cgns exodus_Q2_bc_parents.e
      NOEXEPREFIX NOEXESUFFIX
      NUM_MPI_PROCS ${NPROCS}
-   TEST_1 CMND ../../../../applications/exodiff/exodiff ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/exodus_Q2_bc_parents.gold exodus_Q2_bc_parents.e
+   TEST_1 CMND ${SEACAS_EXODIFF_BINARY} ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/exodus_Q2_bc_parents.gold exodus_Q2_bc_parents.e
   COMM mpi serial
   XHOSTTYPE Windows
   )
@@ -369,7 +369,7 @@ TRIBITS_ADD_ADVANCED_TEST(unstructured_cgns_to_exodus
    TEST_0 EXEC io_shell ARGS ${JOIN_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/generated.cgns exodus_generated.e
      NOEXEPREFIX NOEXESUFFIX
      NUM_MPI_PROCS ${NPROCS}
-   TEST_1 CMND ../../../../applications/exodiff/exodiff ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/exodus_generated.gold exodus_generated.e
+   TEST_1 CMND ${SEACAS_EXODIFF_BINARY} ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/exodus_generated.gold exodus_generated.e
   COMM mpi serial
   XHOSTTYPE Windows
   )
@@ -379,7 +379,7 @@ TRIBITS_ADD_ADVANCED_TEST(structured_cgns_to_unstructured
    TEST_0 EXEC struc_to_unstruc ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/sparc1.cgns exodus_struc.e
      NOEXEPREFIX NOEXESUFFIX
      NUM_MPI_PROCS ${NPROCS}
-   TEST_1 CMND ../../../../applications/exodiff/exodiff ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/exodus_struc.gold exodus_struc.e
+   TEST_1 CMND ${SEACAS_EXODIFF_BINARY} ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/exodus_struc.gold exodus_struc.e
   COMM mpi
   XHOSTTYPE Windows
   )
@@ -387,7 +387,7 @@ ELSE()
 TRIBITS_ADD_ADVANCED_TEST(structured_cgns_to_unstructured
    TEST_0 EXEC struc_to_unstruc ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/sparc1.cgns exodus_struc.e
      NOEXEPREFIX NOEXESUFFIX
-   TEST_1 CMND ../../../../applications/exodiff/exodiff ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/exodus_struc.gold exodus_struc.e
+   TEST_1 CMND ${SEACAS_EXODIFF_BINARY} ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/exodus_struc.gold exodus_struc.e
   COMM serial
   XHOSTTYPE Windows
   )
@@ -546,6 +546,49 @@ TRIBITS_ADD_ADVANCED_TEST(pamgen_to_unstructured_cgns
   )
 ENDIF()
 endif()
+
+TRIBITS_ADD_ADVANCED_TEST(structured_cgns_assembly_copy
+   TEST_0 EXEC io_shell ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/assemblies.cgns assemblies-out.cgns
+     NUM_MPI_PROCS 1-4
+     NOEXEPREFIX NOEXESUFFIX
+   TEST_1 EXEC io_info ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/assemblies.cgns
+     OUTPUT_FILE gold.info.txt
+     NUM_MPI_PROCS 1
+     NOEXEPREFIX NOEXESUFFIX
+   TEST_2 EXEC io_info ARGS assemblies-out.cgns
+     OUTPUT_FILE created.info.txt
+     NUM_MPI_PROCS 1
+     NOEXEPREFIX NOEXESUFFIX
+   TEST_3 CMND grep ARGS -v Database gold.info.txt OUTPUT_FILE clean.gold.info.txt
+   TEST_4 CMND grep ARGS -v Database created.info.txt OUTPUT_FILE clean.created.info.txt
+   TEST_5 CMND diff ARGS clean.gold.info.txt clean.created.info.txt
+     NUM_MPI_PROCS 1
+  COMM mpi
+  )
+
+if (TPL_ENABLE_MPI)
+   TRIBITS_ADD_ADVANCED_TEST(structured_cgns_assembly_copy_fpp
+      TEST_0 EXEC io_shell ARGS --compose=external ${CMAKE_CURRENT_SOURCE_DIR}/test/assemblies.cgns assemblies-fpp-out.cgns
+        NUM_MPI_PROCS 1-4
+        NOEXEPREFIX NOEXESUFFIX
+      TEST_1 EXEC io_shell ARGS --external assemblies-fpp-out.cgns assemblies-fpp-join.cgns
+        NUM_MPI_PROCS 1-4
+        NOEXEPREFIX NOEXESUFFIX
+      TEST_2 EXEC io_info ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/assemblies.cgns
+        OUTPUT_FILE fpp-gold.info.txt
+        NUM_MPI_PROCS 1
+        NOEXEPREFIX NOEXESUFFIX
+      TEST_3 EXEC io_info ARGS assemblies-fpp-join.cgns
+        OUTPUT_FILE fpp-created.info.txt
+        NUM_MPI_PROCS 1
+        NOEXEPREFIX NOEXESUFFIX
+      TEST_4 CMND grep ARGS -v Database fpp-gold.info.txt OUTPUT_FILE clean.fpp-gold.info.txt
+      TEST_5 CMND grep ARGS -v Database fpp-created.info.txt OUTPUT_FILE clean.fpp-created.info.txt
+      TEST_6 CMND diff ARGS clean.fpp-gold.info.txt clean.fpp-created.info.txt
+        NUM_MPI_PROCS 1
+     COMM mpi
+     )
+endif(TPL_ENABLE_MPI)
 
 ENDIF(TPL_ENABLE_CGNS)
 

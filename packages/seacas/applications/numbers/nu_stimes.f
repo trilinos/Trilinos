@@ -1,4 +1,4 @@
-C    Copyright(C) 1988-2017 National Technology & Engineering Solutions
+C    Copyright(C) 1988-2017, 2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -117,7 +117,7 @@ C   --   SQZSTR - (STRLIB) Delete extra blanks from string
             CALL MINMAX (NSTEPS, TIMES, TIMMIN, TIMMAX)
          END IF
          IF (NSTEPX .EQ. 1) THEN
-            CALL NUMSTR (1, 4, TIMMIN, RSTR, LSTR)
+            CALL NUMSTR1 (4, TIMMIN, RSTR, LSTR)
             IF (ALLPRT) THEN
                WRITE (*, 10030) '   Time = ', RSTR(1)(:LSTR)
             ELSE

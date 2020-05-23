@@ -1,4 +1,4 @@
-C    Copyright(C) 2008-2017 National Technology & Engineering Solutions of
+C    Copyright(C) 2008-2017, 2020 National Technology & Engineering Solutions of
 C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -566,14 +566,14 @@ C                    for all node sets
             RETURN
           END IF
 
-          CALL EXGCNS(ndbin, a(kidns), a(knnns), a(kndnps),
-     &      a(kixnns), a(kdisns), a(kltnns), a(kfacns), ierr)
+          CALL EXGCNS(ndbin, ia(kidns), ia(knnns), ia(kndnps),
+     &      ia(kixnns), ia(kdisns), ia(kltnns), a(kfacns), ierr)
         END IF
       END IF
 C     Write the node set information
       if ((numnps .gt. 0) .AND. (nnpso .gt. 0)) then
-        CALL EXPCNS(ndbout, a(kidns), a(knnns), a(kndnps),
-     &    a(kixnns), a(kdisns), a(kltnns), a(kfacns), ierr)
+        CALL EXPCNS(ndbout, ia(kidns), ia(knnns), ia(kndnps),
+     &    ia(kixnns), ia(kdisns), ia(kltnns), a(kfacns), ierr)
 
 C       Delete unneeded dynamic memory
         CALL MDDEL ('IDNPS')

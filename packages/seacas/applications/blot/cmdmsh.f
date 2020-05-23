@@ -99,7 +99,7 @@ C   --      of /MSHOPT/
 
       IF (VERB .EQ. 'EMPTY') THEN
          CALL FFADDC (VERB, INLINE)
-         CALL SETMSH (IVIEW, 'EMPTY', CDUM, IDUM, IDUM,
+         CALL SETMSH (IVIEW, 'EMPTY', CDUM, IDUM, LTYP,
      &      IDUM, IDUM, IDUM, IDUM, CDUM, CDUM, ISSNPS, ISSESS)
 
       ELSE IF ((VERB .EQ. 'DEFORM') .or. (verb .eq. 'UNDEFORM')) THEN

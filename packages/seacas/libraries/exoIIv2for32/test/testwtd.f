@@ -1,4 +1,4 @@
-C    Copyright (c) 2005-2017 National Technology & Engineering Solutions
+C    Copyright (c) 2005-2017, 2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -39,7 +39,7 @@ c database write routines.
 c
       include 'exodusII.inc'
 
-      integer*4 iin, iout, ierr
+      integer*4 iin, iout, ierr, id
       integer*4 exoid, num_dim,num_nodes,elem_map(5),num_elem
       integer*4 num_elem_blk,numattr(10)
       integer*4 num_elem_in_block(10), num_nodes_per_elem(10)
@@ -608,14 +608,16 @@ c     write (iout, '("after expcns, error = ", i4)' ) ierr
 c     write node set properties
 
       prop_names(1) = "FACE"
-      call expp(exoid, EXNSET, 20, prop_names(1), 4, ierr)
+      id = 20
+      call expp(exoid, EXNSET, id, prop_names(1), 4, ierr)
       write (iout, '("after expp, error = ", i4)' ) ierr
       if (ierr .ne. 0) then
          call exclos(exoid,ierr)
          call exit (0)
       endif
 
-      call expp(exoid, EXNSET, 21, prop_names(1), 5, ierr)
+      id = 21
+      call expp(exoid, EXNSET, id, prop_names(1), 5, ierr)
       write (iout, '("after expp, error = ", i4)' ) ierr
       if (ierr .ne. 0) then
          call exclos(exoid,ierr)
@@ -970,14 +972,16 @@ c    2             ierr)
 c     write (iout, '("after expcss, error = ", i4)' ) ierr
 
       prop_names(1) = "COLOR"
-      call expp(exoid, EXSSET, 30, prop_names(1), 100, ierr)
+      id = 30
+      call expp(exoid, EXSSET, id, prop_names(1), 100, ierr)
       write (iout, '("after expp, error = ", i4)' ) ierr
       if (ierr .ne. 0) then
          call exclos(exoid,ierr)
          call exit (0)
       endif
 
-      call expp(exoid, EXSSET, 31, prop_names(1), 101, ierr)
+      id = 31
+      call expp(exoid, EXSSET, id, prop_names(1), 101, ierr)
       write (iout, '("after expp, error = ", i4)' ) ierr
       if (ierr .ne. 0) then
          call exclos(exoid,ierr)

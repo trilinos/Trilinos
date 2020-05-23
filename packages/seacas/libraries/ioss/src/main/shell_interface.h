@@ -89,6 +89,8 @@ namespace IOShell {
     // -> file.A, t=7,8 -> file.B
     int  split_cyclic{0};
     bool shuffle{false};
+    bool zlib{true};
+    bool szip{false};
     bool debug{false};
     bool statistics{false};
     bool memory_statistics{false};

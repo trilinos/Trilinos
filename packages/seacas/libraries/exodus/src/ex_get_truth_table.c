@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2017 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017, 2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -154,10 +154,15 @@ int ex_get_truth_table(int exoid, ex_entity_type obj_type, int num_blk, int num_
     EX_FUNC_LEAVE(EX_WARN);
   }
 
-  status = ex__get_dimension(exoid, ex__dim_num_objects(obj_type), ex_name_of_object(obj_type),
-                             &num_entity, &dimid, __func__);
-  if (status != NC_NOERR) {
-    EX_FUNC_LEAVE(EX_FATAL);
+  if (obj_type == EX_BLOB) {
+    num_entity = ex_inquire_int(exoid, EX_INQ_BLOB);
+  }
+  else {
+    status = ex__get_dimension(exoid, ex__dim_num_objects(obj_type), ex_name_of_object(obj_type),
+                               &num_entity, &dimid, __func__);
+    if (status != NC_NOERR) {
+      EX_FUNC_LEAVE(EX_FATAL);
+    }
   }
 
   if (num_entity != (size_t)num_blk) {

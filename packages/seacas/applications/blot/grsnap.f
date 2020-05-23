@@ -1,4 +1,4 @@
-C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
+C Copyright(C) 2009-2017, 2020 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -162,8 +162,8 @@ C         --Abort plot
 
             ELSE IF (IDSNAP(IDEV) .EQ. 'DICOMED') THEN
 C            --Close segment and delete all segments
-               CALL VDESCP (201, 0, 0)
                RBUF(1) = 0
+               CALL VDESCP (201, 0, RBUF)
                CALL VDESCP (203, 1, RBUF)
             END IF
 
@@ -191,7 +191,8 @@ C            --Snap n frames
 
             ELSE IF (IDSNAP(IDEV) .EQ. 'DICOMED') THEN
 C            --Close segment
-               CALL VDESCP (201, 0, 0)
+               RBUF(1) = 0
+               CALL VDESCP (201, 0, RBUF)
 
 C            --Snap n-1 frames (plot segment with newpage)
                DO 100 I = 1, NSNAP(ICURDV)-1

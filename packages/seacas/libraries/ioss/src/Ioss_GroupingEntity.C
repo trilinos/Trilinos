@@ -205,20 +205,22 @@ Ioss::Property Ioss::GroupingEntity::get_implicit_property(const std::string &my
  *  \param[in] new_field The field to add
  *
  */
-void Ioss::GroupingEntity::field_add(const Ioss::Field &new_field)
+void Ioss::GroupingEntity::field_add(Ioss::Field new_field)
 {
+  size_t field_size = new_field.raw_count();
+
   if (new_field.get_role() == Ioss::Field::REDUCTION) {
+    if (field_size == 0) {
+      new_field.reset_count(1);
+    }
     fields.add(new_field);
     return;
   }
 
   size_t entity_size = entity_count();
-  size_t field_size  = new_field.raw_count();
   if (field_size == 0 && entity_size != 0) {
     // Set field size to match entity size...
-    Ioss::Field tmp_field(new_field);
-    tmp_field.reset_count(entity_size);
-    fields.add(tmp_field);
+    new_field.reset_count(entity_size);
   }
   else if (entity_size != field_size && type() != REGION) {
     std::string        filename = get_database()->get_filename();
@@ -230,9 +232,7 @@ void Ioss::GroupingEntity::field_add(const Ioss::Field &new_field)
                type_string(), name(), entity_size, new_field.get_name(), field_size, filename);
     IOSS_ERROR(errmsg);
   }
-  else {
-    fields.add(new_field);
-  }
+  fields.add(new_field);
 }
 
 /** \brief Read field data from the database file into memory using a pointer.

@@ -50,6 +50,11 @@
 #include "netcdf_meta.h"
 #if NC_HAS_PARALLEL
 #ifndef PARALLEL_AWARE_EXODUS
+#define PARALLEL_AWARE_EXODUS
+#endif
+#else
+#ifdef PARALLEL_AWARE_EXODUS
+#error "PARALLEL_AWARE_EXODUS defined, but NetCDF NC_HAS_PARALLEL is false"
 #endif
 #endif
 #endif
@@ -67,12 +72,12 @@
 #endif
 
 /* EXODUS version number */
-#define EXODUS_VERSION "8.03"
+#define EXODUS_VERSION "8.05"
 #define EXODUS_VERSION_MAJOR 8
-#define EXODUS_VERSION_MINOR 03
-#define EXODUS_RELEASE_DATE "May 4, 2020"
+#define EXODUS_VERSION_MINOR 05
+#define EXODUS_RELEASE_DATE "May 19, 2020"
 
-#define EX_API_VERS 8.03f
+#define EX_API_VERS 8.05f
 
 #define EX_API_VERS_NODOT (100 * EXODUS_VERSION_MAJOR + EXODUS_VERSION_MINOR)
 
@@ -324,7 +329,7 @@ typedef enum ex_options ex_options;
 /** Maximum length of the database title or an information record */
 #define MAX_LINE_LENGTH 80L
 /** Maximum length of an error message passed to ex_err() function. Typically, internal use only */
-#define MAX_ERR_LENGTH 256
+#define MAX_ERR_LENGTH 512
 /** @} */
 
 /** Specifies that this argument is the id of an entity: element block, nodeset, sideset, ... */
@@ -498,12 +503,24 @@ EXODUS_EXPORT int ex_copy_transient(int in_exoid, int out_exoid);
 EXODUS_EXPORT int ex_create_int(const char *path, int cmode, int *comp_ws, int *io_ws,
                                 int run_version);
 
+#define ex_open(path, mode, comp_ws, io_ws, version)                                               \
+  ex_open_int(path, mode, comp_ws, io_ws, version, EX_API_VERS_NODOT)
+
+EXODUS_EXPORT int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *version,
+                              int run_version);
+
 #if defined(PARALLEL_AWARE_EXODUS)
 #define ex_create_par(path, mode, comp_ws, io_ws, comm, info)                                      \
   ex_create_par_int(path, mode, comp_ws, io_ws, comm, info, EX_API_VERS_NODOT)
 
 EXODUS_EXPORT int ex_create_par_int(const char *path, int cmode, int *comp_ws, int *io_ws,
                                     MPI_Comm comm, MPI_Info info, int my_version);
+
+#define ex_open_par(path, mode, comp_ws, io_ws, version, comm, info)                               \
+  ex_open_par_int(path, mode, comp_ws, io_ws, version, comm, info, EX_API_VERS_NODOT)
+
+EXODUS_EXPORT int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws,
+                                  float *version, MPI_Comm comm, MPI_Info info, int my_version);
 #endif
 
 EXODUS_EXPORT int ex_get_group_id(int parent_id, const char *group_name, int *group_id);
@@ -513,20 +530,6 @@ EXODUS_EXPORT int ex_get_group_ids(int parent_id, int *num_groups, int *group_id
 EXODUS_EXPORT int ex_get_info(int exoid, char **info);
 
 EXODUS_EXPORT int ex_get_qa(int exoid, char *qa_record[][4]);
-
-#if defined(PARALLEL_AWARE_EXODUS)
-#define ex_open_par(path, mode, comp_ws, io_ws, version, comm, info)                               \
-  ex_open_par_int(path, mode, comp_ws, io_ws, version, comm, info, EX_API_VERS_NODOT)
-
-EXODUS_EXPORT int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws,
-                                  float *version, MPI_Comm comm, MPI_Info info, int my_version);
-#endif
-
-#define ex_open(path, mode, comp_ws, io_ws, version)                                               \
-  ex_open_int(path, mode, comp_ws, io_ws, version, EX_API_VERS_NODOT)
-
-EXODUS_EXPORT int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *version,
-                              int run_version);
 
 EXODUS_EXPORT int ex_put_info(int exoid, int num_info, char *info[]);
 
@@ -1797,7 +1800,8 @@ EXODUS_EXPORT int ex_get_idx(int         exoid,       /**< NetCDF/Exodus file ID
 #define EX_LOOKUPFAIL 1004    /**< id table lookup failed                   */
 #define EX_BADPARAM 1005      /**< bad parameter passed                     */
 #define EX_INTERNAL 1006      /**< internal logic error                     */
-#define EX_DUPLICATEID 1007   /**< duplicate id found                        */
+#define EX_DUPLICATEID 1007   /**< duplicate id found                       */
+#define EX_DUPLICATEOPEN 1008 /**< duplicate open                           */
 #define EX_MSG -1000          /**< message print code - no error implied    */
 #define EX_PRTLASTMSG -1001   /**< print last error message msg code        */
 #define EX_NOTROOTID -1002    /**< file id is not the root id; it is a subgroup id */

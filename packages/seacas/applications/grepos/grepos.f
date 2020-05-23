@@ -1,4 +1,4 @@
-C Copyright(C) 2011-2017 National Technology & Engineering Solutions of
+C Copyright(C) 2011-2017, 2020 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -695,7 +695,7 @@ C     old array contents into new (Only needed if EXODUS)
             IF (NERR .GT. 0) GOTO 40
             CALL CPYINT (NELBLK0, IA(KNELB),  IA(KNELB0))
             CALL CPYINT (NELBLK0, IA(KIDELB2), IA(KIDELB0))
-            CALL CPYINT (LIEVOK,  LA(KIEVOK), LA(KIEVOK0))
+            CALL CPYINT (LIEVOK,  IA(KIEVOK), IA(KIEVOK0))
          END IF
 
          CALL MDRSRV ('IXEL', KIXEL, NUMEL)
@@ -726,7 +726,7 @@ C     ... NUMEL changed in this block (if elements deleted)
 C     ... Fix up the truth table if the element block count changes...
          if (exodus .and. nvarel .gt. 0 .and. nelblk .ne. nelblk0) then
             call muntt(nelblk0, nelblk, nvarel,
-     $           la(kievok0), la(kievok), ia(kielbs))
+     $           ia(kievok0), ia(kievok), ia(kielbs))
          end if
 
          CALL MDDEL ('LINKO')

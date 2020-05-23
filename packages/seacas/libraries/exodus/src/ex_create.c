@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2017 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017, 2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -170,6 +170,15 @@ int ex_create_int(const char *path, int cmode, int *comp_ws, int *io_ws, int run
   EX_FUNC_ENTER();
 
   nc_mode = ex__handle_mode(my_mode, is_parallel, run_version);
+
+  /* Verify that this file is not already open for read or write...
+     In theory, should be ok for the file to be open multiple times
+     for read, but bad things can happen if being read and written
+     at the same time...
+  */
+  if (ex__check_multiple_open(path, EX_WRITE, __func__)) {
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
 
   if ((status = nc_create(path, nc_mode, &exoid)) != NC_NOERR) {
 #if NC_HAS_HDF5

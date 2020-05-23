@@ -160,7 +160,7 @@ namespace Iogs {
                                size_t data_size) const override;
     int64_t get_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
-    int64_t get_field_internal(const Ioss::Assembly* /*sb*/, const Ioss::Field & /*field*/,
+    int64_t get_field_internal(const Ioss::Assembly * /*sb*/, const Ioss::Field & /*field*/,
                                void * /*data*/, size_t /*data_size*/) const override
     {
       return 0;
@@ -202,7 +202,7 @@ namespace Iogs {
     {
       return -1;
     }
-    int64_t put_field_internal(const Ioss::Assembly* /*sb*/, const Ioss::Field & /*field*/,
+    int64_t put_field_internal(const Ioss::Assembly * /*sb*/, const Ioss::Field & /*field*/,
                                void * /*data*/, size_t /*data_size*/) const override
     {
       return 0;

@@ -34,12 +34,13 @@
 #ifndef IOSS_Ioex_ParallelDatabaseIO_h
 #define IOSS_Ioex_ParallelDatabaseIO_h
 
+#include <exodusII.h>
+#if defined PARALLEL_AWARE_EXODUS
 #include <Ioss_CodeTypes.h>
 #include <Ioss_DBUsage.h>               // for DatabaseUsage
 #include <Ioss_Map.h>                   // for Map
 #include <Ioss_State.h>                 // for State
 #include <exodus/Ioex_BaseDatabaseIO.h> // for DatabaseIO
-#include <exodusII.h>                   // for ex_entity_type, etc
 #include <functional>                   // for less
 #include <map>                          // for map, map<>::value_compare
 #include <memory>
@@ -282,4 +283,5 @@ namespace Ioex {
     mutable bool metaDataWritten{false};
   };
 } // namespace Ioex
+#endif
 #endif

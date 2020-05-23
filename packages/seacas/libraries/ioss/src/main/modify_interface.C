@@ -110,7 +110,7 @@ bool Modify::Interface::parse_options(int argc, char **argv)
   }
 
   {
-    const char *temp = options_.retrieve("in_type");
+    const char *temp = options_.retrieve("db_type");
     if (temp != nullptr) {
       filetype_ = temp;
     }
