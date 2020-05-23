@@ -144,6 +144,16 @@ namespace Amesos2 {
       }
 #endif
 
+std::cout << "Checking for strumpack!!!" << std::endl;
+#ifdef HAVE_AMESOS2_STRUMPACK
+    std::cout << "HAVE_AMESOS2_STRUMPACK Checking for STRUMPACK!!" << std::endl;
+    if(solverName == "strumpack" || solverName == "amesos2_strumpack")
+      {
+        return true;
+      }
+#else
+    std::cout << "DO NOT HAVE_AMESOS2_STRUMPACK !!" << std::endl;
+#endif
 
 #if defined (HAVE_AMESOS2_CHOLMOD) && defined (HAVE_AMESOS2_EXPERIMENTAL)
     if (solverName == "amesos2_cholmod" || solverName == "cholmod") {
