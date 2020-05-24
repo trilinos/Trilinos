@@ -102,12 +102,8 @@ if (TPL_ENABLE_MPI)
 endif()
 
 if (${CMAKE_PROJECT_NAME}_ENABLE_SEACASExodiff)
-   find_program (SEACAS_EXODIFF_BINARY
-	     NAME exodiff
-	     PATHS
-	       ${BINARY_DIR}
-	       ../../../../applications/exodiff
-	     )
+   set(SEACAS_EXODIFF_BINARY "../../../../applications/exodiff/exodiff")
+endif()
 
 if (SEACAS_EXODIFF_BINARY)
 TRIBITS_ADD_ADVANCED_TEST(exodus32_to_exodus32
@@ -183,7 +179,6 @@ IF (SEACASIoss_ENABLE_THREADSAFE)
   )
 ENDIF()
 ENDIF()
-ENDIF(${CMAKE_PROJECT_NAME}_ENABLE_SEACASExodiff)
 
 IF (TPL_ENABLE_Pamgen OR Trilinos_ENABLE_Pamgen)
 # This test makes sure that the adjacency information (what element blocks are adjacent to what other
@@ -293,7 +288,7 @@ TRIBITS_ADD_ADVANCED_TEST(exodus32_to_unstructured_cgns
   )
 endif()
 
-if (${CMAKE_PROJECT_NAME}_ENABLE_SEACASExodiff)
+if (SEACAS_EXODIFF_BINARY)
 TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_to_exodus
    TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block.cgns
      NOEXEPREFIX NOEXESUFFIX
