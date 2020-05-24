@@ -67,9 +67,10 @@ else
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=16
 fi
 
-# NOTE: We do *NOT* purge the modules first like on other systems because that
-# messes up the ATS-2 env.  Therefore, it is recommended that the user load a
-# new shell and then load one of these envs.
+# Purge then load StdEnv to get back to a fresh env in case previous other
+# modules were loaded.
+module purge --silent
+module load StdEnv
 
 # Load the sparc-dev/xxx module 
 sparc_module_name=$(get_sparc_dev_module_name "$ATDM_CONFIG_COMPILER")
