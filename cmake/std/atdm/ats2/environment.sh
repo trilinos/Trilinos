@@ -133,9 +133,9 @@ fi
 # Prepend path to ninja after all of the modules are loaded
 export PATH=/projects/atdm_devops/vortex/ninja-fortran-1.8.2:$PATH
 
-# Prepend path to updated CMake 3.16.5
+# Prepend path to updated and patched CMake 3.17.2
 module unload cmake
-export PATH=/projects/atdm_devops/vortex/cmake-3.16.5/bin:$PATH
+export PATH=/projects/atdm_devops/vortex/cmake-3.17.2/bin:$PATH
 
 # Set a standard git so everyone has the same git
 module load git/2.20.0
