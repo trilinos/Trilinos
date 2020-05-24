@@ -211,12 +211,8 @@ printf "set(CTEST_LABELS_FOR_SUBPROJECTS" >  $CTEST_LABELS_FOR_SUBPROJETS_OUT
 
 if [[ "$CHANGED_PACKAGES_ST_LIST" != "" ]] ; then
 
-  if comma_list_contains_ele "ALL_PACKAGES" "$CHANGED_PACKAGES_ST_LIST"; then
-    ALL_PACKAGES=$(trilinos_get_all_toplevel_packages)
-    PR_PACKAGES=$(trilinos_filter_packages_to_test "${ALL_PACKAGES}")
-  else
-    PR_PACKAGES="$CHANGED_PACKAGES_ST_LIST"
-  fi
+  ALL_PACKAGES=$(trilinos_get_all_toplevel_packages)
+  PR_PACKAGES=$(trilinos_filter_packages_to_test "${ALL_PACKAGES}")
 
   echo "$PR_PACKAGES" | sed -n 1'p' | tr ',' '\n' | while read PKG_NAME ; do
     #echo $PKG_NAME

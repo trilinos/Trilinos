@@ -130,12 +130,16 @@ MOCK_PROGRAM_OUTPUT: ${FILES_CHANGED}
 ENDFUNCTION()
 
 
+set(ALL_TOPLEVEL_PACKAGES_REGEX
+  "TrilinosFrameworkTests TrilinosATDMConfigTests .*Kokkos Teuchos KokkosKernels .*EpetraExt Tpetra .*Domi Thyra .*SEACAS .*Teko Intrepid .*MueLu .*ShyLU_DD ShyLU .*Tempus Stokhos ROL Piro Panzer Adelus TrilinosCouplings Pike")
+
+
 create_get_changed_trilinos_packages_test(ProjectsList_TeuchosCore
   "ProjectsList.cmake\npackages/teuchos/core/CMakeLists.txt"
   "ALL_PACKAGES,TeuchosCore"
   "ALL_PACKAGES,TeuchosCore"
   "Setting Trilinos_ENABLE_ALL_PACKAGES = ON;Setting Trilinos_ENABLE_TeuchosCore = ON"
-  "TrilinosFrameworkTests TrilinosATDMConfigTests .*Kokkos Teuchos KokkosKernels .*EpetraExt Tpetra .*Domi Thyra .*SEACAS .*Teko Intrepid .*MueLu .*ShyLU_DD ShyLU .*Tempus Stokhos ROL Piro Panzer Adelus TrilinosCouplings Pike"
+  "${ALL_TOPLEVEL_PACKAGES_REGEX}"
   )
   # The above test ensures that it can detect global build files as well as
   # package files.  Above, we check several of the parent packages in Trilinos
@@ -153,7 +157,7 @@ create_get_changed_trilinos_packages_test(cmake_std_atdm_TeuchosCore_PyTrilinos_
   "TrilinosATDMConfigTests,TeuchosCore,PyTrilinos,Pliris"
   "TrilinosATDMConfigTests,TeuchosCore,Pliris"
   "Setting Trilinos_ENABLE_TrilinosATDMConfigTests = ON;Setting Trilinos_ENABLE_TeuchosCore = ON;Setting Trilinos_ENABLE_Pliris = ON"
-  "TrilinosATDMConfigTests TeuchosCore Pliris"
+  "${ALL_TOPLEVEL_PACKAGES_REGEX}"
   )
   # The above test ensures that cmake/std/atdm/ changes don't trigger global
   # builds and it makes sure that PT (TeuchosCore) and ST packages (Pliris) do
@@ -165,7 +169,7 @@ create_get_changed_trilinos_packages_test(TeuchosCore_TriKota_NewPackage_Pliris
   "TeuchosCore,TriKota,NewPackage,Pliris"
   "TeuchosCore,Pliris"
   "Setting Trilinos_ENABLE_TeuchosCore = ON;Setting Trilinos_ENABLE_Pliris = ON"
-  "TeuchosCore Pliris"
+  "${ALL_TOPLEVEL_PACKAGES_REGEX}"
   )
   # The above test ensures PT (TeuchosCore) and ST packages (Piro) do get
   # enabled but EX packages (NewPackage) don't.
@@ -176,11 +180,29 @@ create_get_changed_trilinos_packages_test(cmake_std_atdm
   "TrilinosATDMConfigTests"
   "TrilinosATDMConfigTests"
   "Setting Trilinos_ENABLE_TrilinosATDMConfigTests = ON"
-  "TrilinosATDMConfigTests"
+  "${ALL_TOPLEVEL_PACKAGES_REGEX}"
   )
   # The above test ensures changes to just cmake/std/atdm/ triggers the enable
   # of only the TrilinosATDMConfigTests package and does not trigger the
   # enable of every package.
+
+
+create_get_changed_trilinos_packages_test(ShyLU_NodeHTS
+  "packages/shylu/shylu_node/hts/test/CMakeLists.txt"
+  "ShyLU_NodeHTS"
+  "ShyLU_NodeHTS"
+  "Setting Trilinos_ENABLE_ShyLU_NodeHTS = ON"
+  "${ALL_TOPLEVEL_PACKAGES_REGEX}"
+  )
+  # The above test ensures changes to packages/shylu/shylu_node/hts/ trigger
+  # testing of the ST ShyLU_NodeST subpackage.  (This will cause PRs like
+  # #7229 to actually test code.)
+
+
+# NOTE: Above, currently every top-level package is listed as a CDash
+# subproject.  Once we can implement TriBITS forward-package logic, then the
+# above tests will be checking a subset of packages.
+
 
 
 TRIBITS_PACKAGE_POSTPROCESS()
