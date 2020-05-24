@@ -48,15 +48,25 @@ namespace ROL {
 
 template<typename Real>
 AffineTransformConstraint<Real>::AffineTransformConstraint(const Ptr<Constraint<Real>>       &con,
+                                                           const Ptr<Constraint<Real>>       &acon,
+                                                           const Vector<Real>                &range,
+                                                           const Ptr<VectorController<Real>> &storage)
+  : con_(con), acon_(acon), storage_(storage) {
+  primal_ = range.clone();
+  Av_     = range.clone();
+  dual_   = range.dual().clone();
+  if (storage == nullPtr) storage_ = makePtr<VectorController<Real>>();
+}
+
+template<typename Real>
+AffineTransformConstraint<Real>::AffineTransformConstraint(const Ptr<Constraint<Real>>       &con,
                                                            const Ptr<LinearConstraint<Real>> &acon,
                                                            const Ptr<VectorController<Real>> &storage)
   : con_(con), acon_(acon), storage_(storage) {
-  primal_ = acon_->createRangeSpaceVector();
-  Av_     = acon_->createRangeSpaceVector();
+  primal_ = acon->createRangeSpaceVector();
+  Av_     = acon->createRangeSpaceVector();
   dual_   = primal_->dual().clone();
-  if (storage == nullPtr) {
-    storage_ = makePtr<VectorController<Real>>();
-  }
+  if (storage == nullPtr) storage_ = makePtr<VectorController<Real>>();
 }
 
 template<typename Real>
@@ -65,23 +75,23 @@ AffineTransformConstraint<Real>::AffineTransformConstraint(const Ptr<Constraint<
                                                            const Ptr<const Vector<Real>>         &b,
                                                            const Ptr<VectorController<Real>>     &storage)
   : con_(con), acon_(makePtr<LinearConstraint<Real>>(A,b)), storage_(storage) {
-  primal_ = acon_->createRangeSpaceVector();
-  Av_     = acon_->createRangeSpaceVector();
-  dual_   = primal_->dual().clone();
-  if (storage == nullPtr) {
-    storage_ = makePtr<VectorController<Real>>();
-  }
+  primal_ = b->clone();
+  Av_     = b->clone();
+  dual_   = b->dual().clone();
+  if (storage == nullPtr) storage_ = makePtr<VectorController<Real>>();
 }
 
 template<typename Real>
 void AffineTransformConstraint<Real>::update( const Vector<Real> &x, EUpdateType type, int iter ) {
   storage_->constraintUpdate(type);
+  acon_->update(x,type,iter);
   con_->update(*transform(x),type,iter);
 }
 
 template<typename Real>
 void AffineTransformConstraint<Real>::update( const Vector<Real> &x, bool flag, int iter ) {
   storage_->constraintUpdate(true);
+  acon_->update(x,flag,iter);
   con_->update(*transform(x),flag,iter);
 }
 

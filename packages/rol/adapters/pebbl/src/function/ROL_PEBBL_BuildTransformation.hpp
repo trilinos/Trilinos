@@ -63,28 +63,7 @@ class BuildTransformation {
 private:
   const Ptr<IntegerTransformation<Real>> trans_;
   const Ptr<const Vector<Real>>          x_;
-
-  Ptr<Vector<Real>>                      b_;
-  Ptr<LinearOperator<Real>>              A_;
   Ptr<VectorController<Real>>            storage_;
-
-  class Prune : public LinearOperator<Real> {
-  private:
-    const Ptr<IntegerTransformation<Real>> trans_;
-    const Ptr<const Vector<Real>> x_;
-  public:
-    Prune(const Ptr<IntegerTransformation<Real>> &trans,
-          const Ptr<const Vector<Real>> &x)
-      : trans_(trans), x_(x) {}
-
-    void apply(Vector<Real> &Hv, const Vector<Real> &v, Real &tol) const {
-      trans_->applyJacobian(Hv,v,*x_,tol);
-    }
-
-    void applyAdjoint(Vector<Real> &Hv, const Vector<Real> &v, Real &tol) const {
-      trans_->applyAdjointJacobian(Hv,v,*x_,tol);
-    }
-  };
 
 public:
   virtual ~BuildTransformation(void) {}
@@ -92,23 +71,16 @@ public:
   BuildTransformation(const Ptr<IntegerTransformation<Real>> &trans,
                       const Ptr<const Vector<Real>>           &x)
     : trans_(trans), x_(x) {
-    // Build right hand side vector
-    Real tol(std::sqrt(ROL_EPSILON<Real>()));
-    Ptr<Vector<Real>> x0 = x_->clone(); x0->zero();
-    b_ = x_->clone();
-    trans_->value(*b_,*x0,tol);
-    // Build linear operator
-    A_ = makePtr<Prune>(trans_,x_);
     // Initialized storage
     storage_ = makePtr<VectorController<Real>>();
   }
 
   const Ptr<Objective<Real>> transform(const Ptr<Objective<Real>> &obj) const {
-    return makePtr<AffineTransformObjective<Real>>(obj,A_,b_,storage_);
+    return makePtr<AffineTransformObjective<Real>>(obj,trans_,*x_,storage_);
   }
 
   const Ptr<Constraint<Real>> transform(const Ptr<Constraint<Real>> &con) const {
-    return makePtr<AffineTransformConstraint<Real>>(con,A_,b_,storage_);
+    return makePtr<AffineTransformConstraint<Real>>(con,trans_,*x_,storage_);
   }
 
 }; // class BuildTransformation
