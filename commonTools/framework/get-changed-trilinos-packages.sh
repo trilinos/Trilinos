@@ -3,12 +3,14 @@
 # Usage:
 #
 #   get-changed-trilinos-packages.sh <git-commit-from> <git-commit-to> \
-#     <package-enables-cmake-out>
+#     <package-enables-cmake-out> [<package-subproject-list-out>]
 #
 # This script takes a range of git commits <git-commit-from>..<git-commit-to>
 # and then generates a CMake fragment file <package-enables-cmake-out> which
 # provides the set of enables of Trilinos packages needed to test the changed
-# files.
+# files and optionally also a <package-subproject-list-out> CMake fragment
+# file provides a 'set(CTEST_LABELS_FOR_SUBPROJECTS ...)' statment which
+# provides the list of subprojects (TriBITS packages) to display on CDash.
 #
 # For example, to generate a file for the set of enables to test changes in
 # the current version of Trilinos w.r.t. to develop branch, one would do:
@@ -36,7 +38,17 @@
 # giving the relative or absolute path.
 
 #
-# Get command-line arguments
+# A) Data that may change
+#
+
+TRILINOS_EXCLUDE_PACKAGES_FROM_PR_TESTING=(
+  TriKota
+  PyTrilinos
+  )
+
+
+#
+# B) Get command-line arguments
 #
 
 GIT_COMMIT_FROM=$1
@@ -59,54 +71,9 @@ if [ "$CMAKE_PACKAGE_ENABLES_OUT" == "" ] ; then
   exit 1
 fi
 
-#
-# Functions
-#
-
-function trilinos_filter_packages_to_test() {
-  $TRIBITS_DIR/ci_support/filter-packages-list.py \
-    --deps-xml-file=TrilinosPackageDependencies.xml \
-    --input-packages-list="$1" \
-    --keep-test-test-categories=PT,ST
-}
-
-
-function trilinos_get_all_toplevel_packages() {
-  $TRIBITS_DIR/ci_support/get-tribits-packages.py \
-    --deps-xml-file=TrilinosPackageDependencies.xml
-}
-
-# Zero is success!
-function trilinos_contains_all_packages() {
-  echo "$1" | sed -n 1'p' | tr ',' '\n' | while read PKG_NAME ; do
-    #echo "PKG_NAME='${PKG_NAME}'"
-    if [[ "${PKG_NAME}" == "ALL_PACKAGES" ]] ; then
-      #echo "Contains ALL_PACKAGES!"
-      return 0
-    break
-  fi
-  return 1
-done
-
-
-}
-
-
-############################################
-#
-# Executable script
-#
-############################################
-
-echo
-echo "***"
-echo "*** Generating set of Trilinos enables given modified packages from"
-echo "*** git commit ${GIT_COMMIT_FROM} to ${GIT_COMMIT_TO}"
-echo "***"
-echo
 
 #
-# Determine TRILINOS_DIR
+# C) Determine paths
 #
 
 if [ "$TRILINOS_DIR" == "" ] ; then
@@ -143,16 +110,38 @@ else
 fi
 echo "TRIBITS_DIR=$TRIBITS_DIR"
 
+
+#
+# D) Import functions and vars
+#
+
+ABS_FILE_PATH=`readlink -f $0` || \
+ echo "Could not follow symlink to set TRILINOS_DIR!"
+if [ "$_ABS_FILE_PATH" != "" ] ; then
+  SCRIPT_DIR=`dirname $_ABS_FILE_PATH`
+fi
+
+source "${TRILINOS_DIR}/commonTools/framework/get-changed-trilinos-packages-helpers.sh"
+
+
+############################################
+#
+# Executable script
+#
+############################################
+
+echo
+echo "***"
+echo "*** Generating set of Trilinos enables given modified packages from"
+echo "*** git commit ${GIT_COMMIT_FROM} to ${GIT_COMMIT_TO}"
+echo "***"
+echo
+
 echo
 echo "A) Generate the Trilinos Packages definition and depencencies XML file"
 echo
 
-cmake \
-  -D Trilinos_DEPS_XML_OUTPUT_FILE=TrilinosPackageDependencies.xml \
-  -P $TRIBITS_DIR/ci_support/TribitsDumpDepsXmlScript.cmake \
-  &> TribitsDumpDepsXmlScript.log
-
-echo "Wrote the file 'TrilinosPackageDependencies.xml'"
+generate_trilinos_package_dependencies_xml_file
 
 echo
 echo "B) Get the set of changed files"
@@ -215,14 +204,14 @@ fi
 echo "Wrote file '$CMAKE_PACKAGE_ENABLES_OUT'"
 
 echo
-echo "F) Generate the ${CTEST_LABELS_FOR_SUBPROJETS_OUT} enables file"
+echo "F) Generate the ${CTEST_LABELS_FOR_SUBPROJETS_OUT} file"
 echo
 
 printf "set(CTEST_LABELS_FOR_SUBPROJECTS" >  $CTEST_LABELS_FOR_SUBPROJETS_OUT
 
 if [[ "$CHANGED_PACKAGES_ST_LIST" != "" ]] ; then
 
-  if trilinos_contains_all_packages "$CHANGED_PACKAGES_ST_LIST"; then
+  if comma_list_contains_ele "ALL_PACKAGES" "$CHANGED_PACKAGES_ST_LIST"; then
     ALL_PACKAGES=$(trilinos_get_all_toplevel_packages)
     PR_PACKAGES=$(trilinos_filter_packages_to_test "${ALL_PACKAGES}")
   else
