@@ -7,6 +7,17 @@ TRIBITS_ADD_ADVANCED_TEST( ProjectCiFileChangeLogic_UnitTests
   TEST_0 CMND ${PYTHON_EXECUTABLE} 
     ARGS ${CMAKE_CURRENT_SOURCE_DIR}/ProjectCiFileChangeLogic_UnitTests.py -v
     PASS_REGULAR_EXPRESSION "OK"
+    ALWAYS_FAIL_ON_NONZERO_RETURN
+  )
+
+
+TRIBITS_ADD_ADVANCED_TEST( get-changed-trilinos-packages-helpers-unit-tests
+  OVERALL_WORKING_DIRECTORY TEST_NAME
+  OVERALL_NUM_MPI_PROCS 1
+  TEST_0 CMND
+      "${CMAKE_CURRENT_SOURCE_DIR}/get-changed-trilinos-packages-helpers-unit-tests.sh"
+    PASS_REGULAR_EXPRESSION "OK"
+    ALWAYS_FAIL_ON_NONZERO_RETURN
   )
 
 
