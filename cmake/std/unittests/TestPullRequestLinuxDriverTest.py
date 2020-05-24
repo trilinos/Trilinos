@@ -222,7 +222,7 @@ Set CWD = /dev/null/workspace
                                         '-Dbuild_dir=/dev/null/workspace/pull_request_test',
                                         '-Dconfigure_script=/dev/null/workspace/Trilinos/cmake/std/dummyConfig.cmake',
                                         '-Dpackage_enables=../packageEnables.cmake',
-                                        '-Dsubprojects_file=../TFW_single_configure_support_scripts/package_subproject_list.cmake'])
+                                        '-Dsubprojects_file=../package_subproject_list.cmake'])
 
 
     def test_verifyTargetBranch_passes_with_develop_target(self):
@@ -291,7 +291,7 @@ Set CWD = /dev/null/workspace
                                         '-Dbuild_dir=/dev/null/workspace/pull_request_test',
                                         '-Dconfigure_script=/dev/null/workspace/Trilinos/cmake/std/dummyConfig.cmake',
                                         '-Dpackage_enables=../packageEnables.cmake',
-                                        '-Dsubprojects_file=../TFW_single_configure_support_scripts/package_subproject_list.cmake'])
+                                        '-Dsubprojects_file=../package_subproject_list.cmake'])
 
 
 
@@ -345,7 +345,8 @@ ENDMACRO()
                                                     'get-changed-trilinos-packages.sh'),
                                        os.path.join('origin',
                                                     self.target_branch),
-                                       'HEAD', 'packageEnables.cmake'])
+                                       'HEAD', 'packageEnables.cmake',
+                                       'package_subproject_list.cmake'])
         self.assertEqual(expected_output, m_stdout.getvalue())
         os.unlink('packageEnables.cmake')
 
@@ -383,7 +384,8 @@ ENDMACRO()
                                                     'get-changed-trilinos-packages.sh'),
                                        os.path.join('origin',
                                                     self.target_branch),
-                                       'HEAD', 'packageEnables.cmake'])
+                                       'HEAD', 'packageEnables.cmake',
+                                       'package_subproject_list.cmake'])
         self.assertEqual(expected_output, m_stdout.getvalue())
 
 
