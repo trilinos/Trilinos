@@ -59,7 +59,8 @@ function evaluate_jsrun_command {
 
   if [ "$ECHO_CMD" == "1" ]; then
     echo "BEFORE: jsrun " $(printf "'%s' " "${orig_args[@]}")
-    echo "AFTER: export TPETRA_ASSUME_CUDA_AWARE_MPI=${TPETRA_ASSUME_CUDA_AWARE_MPI}; jsrun " $(printf "'%s' " "${args[@]}")
+    echo "AFTER: export TPETRA_ASSUME_CUDA_AWARE_MPI=${TPETRA_ASSUME_CUDA_AWARE_MPI}; jsrun " \
+      $(printf "'%s' " "${args[@]}")
   fi
 
   # Set retry, assume JSRUN_WRAPPER_NUM_RETRIES is valid if set
@@ -94,11 +95,14 @@ function evaluate_jsrun_command {
   #rm $out_file
   eval jsrun $(printf "'%s' " "${args[@]}")
   jsrun_ret=$?
+  echo "jsrun return value: ${jsrun_ret}"
   return $jsrun_ret
 }
 
 # Check if TPETRA_ASSUME_CUDA_AWARE_MPI is set and default to 0 if unset.
-if [[ "$TPETRA_ASSUME_CUDA_AWARE_MPI" != "0" ]] && [[ "$TPETRA_ASSUME_CUDA_AWARE_MPI" != "1" ]]; then
+if [[ "$TPETRA_ASSUME_CUDA_AWARE_MPI" != "0" ]] && \
+   [[ "$TPETRA_ASSUME_CUDA_AWARE_MPI" != "1" ]] \
+  ; then
   echo "WARNING, you have not set TPETRA_ASSUME_CUDA_AWARE_MPI=0 or 1, defaulting to TPETRA_ASSUME_CUDA_AWARE_MPI=0"
   export TPETRA_ASSUME_CUDA_AWARE_MPI=0
 fi
@@ -158,7 +162,8 @@ if [ "$np_is_one" == "true" ]; then
     if [ "$arg" == "-M" ]; then
       debug_print "arg=$arg, found -M, prepending -disable_gpu_hooks"
       ip1=$(($i+1));
-      # single quotes matter, as the argument to -M needs to be all args originally quoted to it
+      # single quotes matter, as the argument to -M needs to be all args
+      # originally quoted to it
       args[${ip1}]="-disable_gpu_hooks ${args[${ip1}]}"
       debug_print "updated arg = ${args[${ip1}]}"
       added_disable="true"
@@ -187,7 +192,8 @@ if [[ "$TPETRA_ASSUME_CUDA_AWARE_MPI" == "1" ]] && [[ "$np_is_one" == "false" ]]
     if [ "$arg" == "-M" ]; then
       debug_print "arg=$arg, found -M, prepending -gpu"
       ip1=$(($i+1));
-      # single quotes matter, as the argument to -M needs to be all args originally quoted to it
+      # single quotes matter, as the argument to -M needs to be all args
+      # originally quoted to it
       args[${ip1}]="-gpu ${args[${ip1}]}"
       added_arg="true"
       break
