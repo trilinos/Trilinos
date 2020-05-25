@@ -46,7 +46,7 @@
 #include <string>
 
 #include "Thyra_VectorBase.hpp"
-
+#include "Thyra_DefaultMultiVectorProductVector.hpp"
 namespace Piro {
 
 template <typename Scalar>
@@ -56,7 +56,14 @@ public:
       const Thyra::VectorBase<Scalar> &solution);
 
   virtual void observeSolution(
+      const Thyra::DefaultMultiVectorProductVector<Scalar> &solution);
+  
+  virtual void observeSolution(
       const Thyra::VectorBase<Scalar> &solution,
+      const Scalar stamp);
+
+  virtual void observeSolution(
+      const Thyra::DefaultMultiVectorProductVector<Scalar> &solution,
       const Scalar stamp);
 
   virtual void observeSolution(
@@ -65,9 +72,20 @@ public:
       const Scalar stamp);
   
   virtual void observeSolution(
+      const Thyra::DefaultMultiVectorProductVector<Scalar> &solution,
+      const Thyra::DefaultMultiVectorProductVector<Scalar> &solution_dot,
+      const Scalar stamp);
+  
+  virtual void observeSolution(
       const Thyra::VectorBase<Scalar> &solution,
       const Thyra::VectorBase<Scalar> &solution_dot,
       const Thyra::VectorBase<Scalar> &solution_dotdot,
+      const Scalar stamp);
+
+  virtual void observeSolution(
+      const Thyra::DefaultMultiVectorProductVector<Scalar> &solution,
+      const Thyra::DefaultMultiVectorProductVector<Scalar> &solution_dot,
+      const Thyra::DefaultMultiVectorProductVector<Scalar> &solution_dotdot,
       const Scalar stamp);
 
 
@@ -91,7 +109,24 @@ ObserverBase<Scalar>::observeSolution(
 template <typename Scalar>
 void
 ObserverBase<Scalar>::observeSolution(
+    const Thyra::DefaultMultiVectorProductVector<Scalar> &/*solution + sensitivities*/)
+{
+  // Nothing to do by default
+}
+
+template <typename Scalar>
+void
+ObserverBase<Scalar>::observeSolution(
     const Thyra::VectorBase<Scalar> &/*solution*/,
+    const Scalar /*stamp*/)
+{
+  // Nothing to do by default
+}
+
+template <typename Scalar>
+void
+ObserverBase<Scalar>::observeSolution(
+    const Thyra::DefaultMultiVectorProductVector<Scalar> &/*solution + sensitivities*/,
     const Scalar /*stamp*/)
 {
   // Nothing to do by default
@@ -102,6 +137,16 @@ void
 ObserverBase<Scalar>::observeSolution(
     const Thyra::VectorBase<Scalar> &/*solution*/,
     const Thyra::VectorBase<Scalar> &/*solution_dot*/,
+    const Scalar /*stamp*/)
+{
+  // Nothing to do by default
+}
+
+template <typename Scalar>
+void
+ObserverBase<Scalar>::observeSolution(
+    const Thyra::DefaultMultiVectorProductVector<Scalar> &/*solution + sensitivities*/,
+    const Thyra::DefaultMultiVectorProductVector<Scalar> &/*solution_dot + sensitivities*/,
     const Scalar /*stamp*/)
 {
   // Nothing to do by default
@@ -113,6 +158,17 @@ ObserverBase<Scalar>::observeSolution(
     const Thyra::VectorBase<Scalar> &/*solution*/,
     const Thyra::VectorBase<Scalar> &/*solution_dot*/,
     const Thyra::VectorBase<Scalar> &/*solution_dotdot*/,
+    const Scalar /*stamp*/)
+{
+  // Nothing to do by default
+}
+
+template <typename Scalar>
+void
+ObserverBase<Scalar>::observeSolution(
+    const Thyra::DefaultMultiVectorProductVector<Scalar> &/*solution + sensitivities*/,
+    const Thyra::DefaultMultiVectorProductVector<Scalar> &/*solution_dot + sensitivities*/,
+    const Thyra::DefaultMultiVectorProductVector<Scalar> &/*solution_dotdot + sensitivities*/,
     const Scalar /*stamp*/)
 {
   // Nothing to do by default
