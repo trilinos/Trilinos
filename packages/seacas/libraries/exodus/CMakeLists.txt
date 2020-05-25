@@ -10,10 +10,6 @@ INCLUDE_DIRECTORIES(
 
 FILE(GLOB SOURCES src/ex_*.c)
 
-if (TPL_Netcdf_PARALLEL)
-   SET(PARALLEL_AWARE_EXODUS ON)
-endif()
-
 if (${SEACAS_HIDE_DEPRECATED_CODE})
 else()
   FILE(GLOB DEP_SOURCES src/deprecated/ex_*.c)

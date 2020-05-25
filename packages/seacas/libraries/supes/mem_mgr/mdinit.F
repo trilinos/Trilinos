@@ -1,4 +1,4 @@
-C    Copyright(C) 2008-2017 National Technology & Engineering Solutions
+C    Copyright(C) 2008-2017, 2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -229,8 +229,8 @@ C     Get the offset between "USERV" and "MYV".  All internal
 C     information is in terms of "MYV" since most operations are done
 C     with this base address.
 C
-      MYLOC = IXLNUM (MYV)
-      ULOC = IXLNUM (USERV)
+      MYLOC = IXLNUM (MYV(1))
+      ULOC = IXLNUM (USERV(1))
       OFFSET = MYLOC - ULOC
 C
 C     Check to see if deferred mode will be allowed.  This requires

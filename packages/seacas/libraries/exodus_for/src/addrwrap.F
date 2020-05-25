@@ -1,4 +1,4 @@
-C Copyright (c) 2005-2017 National Technology & Engineering Solutions
+C Copyright (c) 2005-2017, 2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -3323,7 +3323,7 @@ C
       integer*4 ierr4
 C
       idexo4 = idexo
-      call exgcor4 (idexo4, start_node_num, num_nodes, x_coor,
+      call exgncor4 (idexo4, start_node_num, num_nodes, x_coor,
      $  y_coor, z_coor, ierr4)
       ierr = ierr4
 C
@@ -3349,7 +3349,7 @@ C
       integer*4 ierr4
 C
       idexo4 = idexo
-      call expcor4 (idexo4, start_node_num, num_nodes, x_coor,
+      call expncor4 (idexo4, start_node_num, num_nodes, x_coor,
      $  y_coor, z_coor, ierr4)
       ierr = ierr4
 C

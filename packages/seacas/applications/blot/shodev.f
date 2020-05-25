@@ -73,8 +73,8 @@ C   --   SQZSTR - (STRLIB) Delete extra blanks from string
       CHARACTER*80 STRING
       CHARACTER*20 STR20
 
-      CALL GRGPAR ('DEVICE', 1, ONEDEV, DEVNAM(1))
-      CALL GRGPAR ('DEVICE', 2, TWODEV, DEVNAM(2))
+      CALL GRGPARD ('DEVICE', 1, ONEDEV, DEVNAM(1))
+      CALL GRGPARD ('DEVICE', 2, TWODEV, DEVNAM(2))
       ISDEV = 1
       IF (.NOT. ONEDEV) ISDEV = 2
       IEDEV = 2

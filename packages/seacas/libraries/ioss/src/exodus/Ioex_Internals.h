@@ -399,8 +399,8 @@ namespace Ioex {
     int  dimensionality{};
     bool file_per_processor{true};
 
-    std::vector<Assembly>  assemblies{};
-    std::vector<Blob>      blobs{};
+    std::vector<Assembly> assemblies{};
+    std::vector<Blob>     blobs{};
 
     std::vector<NodeBlock> nodeblocks{};
     std::vector<EdgeBlock> edgeblocks{};

@@ -1,4 +1,4 @@
-C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
+C Copyright(C) 2009-2017, 2020 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -68,7 +68,7 @@ C   --   Uses NDIM of /DBNUMS/
       CHARACTER TYP
 
       IF ((ISTMIN .LE. 0) .OR. (VALMIN .EQ. VALMAX)) THEN
-         CALL NUMSTR (1, 4, VALMIN, SVAL(1), LVAL)
+         CALL NUMSTR1(4, VALMIN, SVAL(1), LVAL)
          WRITE (*, 10060) NAME(:LENSTR(NAME)),
      &      ' does not vary - all values = ', SVAL(1)(:LVAL)
 

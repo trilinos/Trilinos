@@ -106,7 +106,7 @@ C   --   WHOTIM - IN - true iff TIMES(i) is whole (versus history) time step
             CALL MINMAX (NSTEPS, TIMES, TIMMIN, TIMMAX)
          END IF
          IF (NSTEPX .EQ. 1) THEN
-            CALL NUMSTR (1, 8, TIMMIN, RSTR, LSTR)
+            CALL NUMSTR1(8, TIMMIN, RSTR, LSTR)
             IF (ALLPRT) THEN
                WRITE (STRING, 10040) 'Time = ', RSTR(1)(:LSTR)
             ELSE

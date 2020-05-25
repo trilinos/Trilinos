@@ -32,6 +32,7 @@
 
 #include <cgns/Iocgns_Defines.h>
 
+#include <Ioss_Assembly.h>
 #include <Ioss_Beam2.h>
 #include <Ioss_Beam3.h>
 #include <Ioss_FaceGenerator.h>
@@ -870,6 +871,69 @@ namespace {
   }
 } // namespace
 
+void Iocgns::Utils::output_assembly(int file_ptr, const Ioss::Assembly *assembly, bool is_parallel_io, bool appending)
+{
+  int base = 1;
+  int fam = 0;
+    CGERR(cg_family_write(file_ptr, base, assembly->name().c_str(), &fam));
+
+    int64_t id = 0;
+    if (assembly->property_exists("id")) {
+      id = assembly->get_property("id").get_int();
+    }
+
+    CGERR(cg_goto(file_ptr, base, "Family_t", fam, nullptr));
+    CGERR(cg_descriptor_write("FamVC_TypeId", "0"));
+    CGERR(cg_descriptor_write("FamVC_TypeName", "Unspecified"));
+    CGERR(cg_descriptor_write("FamVC_UserId", std::to_string(id).c_str()));
+    CGERR(cg_descriptor_write("FamVC_UserName", assembly->name().c_str()));
+
+    const auto &members = assembly->get_members();
+    // Now, iterate the members of the assembly and add the reference to the structured block
+    if (assembly->get_member_type() == Ioss::STRUCTUREDBLOCK) {
+      for (const auto &mem : members) {
+        int         base = mem->get_property("base").get_int();
+        const auto *sb   = dynamic_cast<const Ioss::StructuredBlock *>(mem);
+        Ioss::Utils::check_dynamic_cast(sb);
+        if (is_parallel_io || sb->is_active()) {
+          int db_zone = get_db_zone(sb);
+          if (cg_goto(file_ptr, base, "Zone_t", db_zone, "end") == CG_OK) {
+            CGERR(cg_famname_write(assembly->name().c_str()));
+          }
+        }
+      }
+    }
+    else if (assembly->get_member_type() == Ioss::ELEMENTBLOCK) {
+      for (const auto &mem : members) {
+	if (appending) {
+	  // Modifying an existing database so the element blocks
+	  // should exist on the output database...
+          int db_zone = get_db_zone(mem);
+          if (cg_goto(file_ptr, base, "Zone_t", db_zone, "end") == CG_OK) {
+            CGERR(cg_famname_write(assembly->name().c_str()));
+          }
+	}
+	else {
+	  // The element blocks have not yet been output.  To make
+	  // it easier when they are written, add a property that
+	  // specifies what assembly they are in.  Currently, the way
+	  // CGNS represents assemblies limits membership to at most one
+	  // assembly.
+	  Ioss::GroupingEntity *new_mem = const_cast<Ioss::GroupingEntity *>(mem);
+	  new_mem->property_add(Ioss::Property("assembly", assembly->name()));
+	}
+      }
+    }
+}
+
+void Iocgns::Utils::output_assemblies(int file_ptr, const Ioss::Region &region, bool is_parallel_io)
+{
+  region.get_database()->progress("\tOutput Assemblies");
+  const auto &assemblies = region.get_assemblies();
+  for (const auto &assem : assemblies) {
+    output_assembly(file_ptr, assem, is_parallel_io);
+  }
+}
 size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &region,
                                              std::vector<size_t> &zone_offset, bool is_parallel_io)
 {
@@ -997,7 +1061,6 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
       int db_zone = 0;
       CGERR(cg_zone_write(file_ptr, base, name.c_str(), size, CG_Structured, &db_zone));
       sb->property_update("db_zone", db_zone);
-
       // Add GridCoordinates Node...
       int grid_idx = 0;
       CGERR(cg_grid_write(file_ptr, base, db_zone, "GridCoordinates", &grid_idx));
@@ -1011,6 +1074,12 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
     sb->property_update("zone", zone);
     sb->property_update("base", base);
   }
+
+  // TODO: Are there multi-level assemblies in CGNS?
+  // Output the assembly data.
+  // The assembly itself is Family data at top level.
+  // For each assembly, iterate members and add the 'FamilyName' node linking it to the Assembly
+  output_assemblies(file_ptr, region, is_parallel_io);
 
   region.get_database()->progress("\tMapping sb_name to zone");
   if (is_parallel_io || !is_parallel) { // Only for single file output or serial...
@@ -1207,6 +1276,7 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
       }
     }
   }
+
   region.get_database()->progress("\tReturn from common_write_meta_data");
   return element_count;
 }
@@ -1490,6 +1560,64 @@ void Iocgns::Utils::add_sidesets(int cgns_file_ptr, Ioss::DatabaseIO *db)
   }
 }
 
+void Iocgns::Utils::add_assemblies(int cgns_file_ptr, Ioss::DatabaseIO *db)
+{
+  int base         = 1;
+  int num_families = 0;
+  CGCHECKNP(cg_nfamilies(cgns_file_ptr, base, &num_families));
+
+  for (int family = 1; family <= num_families; family++) {
+    char name[CGNS_MAX_NAME_LENGTH + 1];
+    int  num_bc  = 0;
+    int  num_geo = 0;
+    CGCHECKNP(cg_family_read(cgns_file_ptr, base, family, name, &num_bc, &num_geo));
+
+    if (num_bc == 0 && num_geo == 0) {
+      // See if this is an assembly -- will contain a 'FamVC_UserName' Descriptor_t node
+      // The `Node Data` for that node will be the name of the assembly.
+      // Assemblies will be created empty and then blocks/zones will be added during
+      // the parsing of the zones.
+      CGCHECKNP(cg_goto(cgns_file_ptr, base, "Family_t", family, "end"));
+
+      int ndescriptors = 0;
+      CGCHECKNP(cg_ndescriptors(&ndescriptors));
+      if (ndescriptors > 0) {
+        int         id = -1;
+        std::string assem_name;
+        for (int ndesc = 1; ndesc <= ndescriptors; ndesc++) {
+          char  dname[CGNS_MAX_NAME_LENGTH + 1];
+          char *dtext = nullptr;
+          CGCHECKNP(cg_descriptor_read(ndesc, dname, &dtext));
+          if (strcmp(dname, "FamVC_UserId") == 0) {
+            // Convert text in `dtext` to integer...
+            id = Ioss::Utils::get_number(dtext);
+          }
+          else if (strcmp(dname, "FamVC_UserName") == 0) {
+            assem_name = dtext;
+          }
+          cg_free(dtext);
+        }
+        if (!assem_name.empty()) {
+          // Create an assembly with this name...
+          auto *assem = new Ioss::Assembly(db, assem_name);
+          db->get_region()->add(assem);
+          if (id >= 0) {
+            assem->property_add(Ioss::Property("id", id));
+          }
+
+#if IOSS_DEBUG_OUTPUT
+          if (db->parallel_rank() == 0) {
+            fmt::print(Ioss::DEBUG(),
+                       "Adding Family {} named {} as an assembly named {} with id {}.\n", family,
+                       name, assem_name, id);
+          }
+#endif
+        }
+      }
+    }
+  }
+}
+
 size_t Iocgns::Utils::resolve_nodes(Ioss::Region &region, int my_processor, bool is_parallel)
 {
   // Each structured block has its own set of "cell_nodes"
@@ -1669,6 +1797,22 @@ Iocgns::Utils::resolve_processor_shared_nodes(Ioss::Region &region, int my_proce
 #endif
   }
   return shared_nodes;
+}
+
+void Iocgns::Utils::add_to_assembly(int cgns_file_ptr, Ioss::Region *region,
+                                    Ioss::EntityBlock *block, int base, int zone)
+{
+  // See if there is a 'FamilyName' node...
+  if (cg_goto(cgns_file_ptr, base, "Zone_t", zone, "end") == CG_OK) {
+    char name[CGNS_MAX_NAME_LENGTH + 1];
+    if (cg_famname_read(name) == CG_OK) {
+      auto *assem = region->get_assembly(name);
+      if (assem != nullptr) {
+        assem->add(block);
+        block->property_add(Ioss::Property("assembly", assem->name()));
+      }
+    }
+  }
 }
 
 void Iocgns::Utils::add_structured_boundary_conditions(int                    cgns_file_ptr,

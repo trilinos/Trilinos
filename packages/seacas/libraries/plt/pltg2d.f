@@ -1,4 +1,4 @@
-C Copyright (C) 2009-2017 National Technology & Engineering Solutions
+C Copyright (C) 2009-2017, 2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -42,15 +42,16 @@ C
 C=======================================================================
       LOGICAL FUNCTION PLTG2D(XG,YG,XD,YD)
       DIMENSION UMAP(14)
+      REAL TYPE(1)
 
       PLTG2D = .FALSE.
       CALL PLTGTG(27,UMAP)
       CALL PLTGTG(9,TYPE)
-      IF (TYPE.EQ.1.) THEN
+      IF (TYPE(1).EQ.1.) THEN
          XD = XG*UMAP(1) + YG*UMAP(3) + UMAP(5)
          YD = XG*UMAP(2) + YG*UMAP(4) + UMAP(6)
 
-      ELSE IF (TYPE.EQ.2.) THEN
+      ELSE IF (TYPE(1).EQ.2.) THEN
          IF (XG.LE.0.) THEN
             CALL PLTFLU
             CALL SIORPT('PLTG2D',
@@ -63,7 +64,7 @@ C=======================================================================
          XD = LOG10(XG)*UMAP(1) + YG*UMAP(3) + UMAP(5)
          YD = LOG10(XG)*UMAP(2) + YG*UMAP(4) + UMAP(6)
 
-      ELSE IF (TYPE.EQ.3.) THEN
+      ELSE IF (TYPE(1).EQ.3.) THEN
          IF (YG.LE.0.) THEN
             CALL PLTFLU
             CALL SIORPT('PLTG2D',
@@ -76,7 +77,7 @@ C=======================================================================
          XD = XG*UMAP(1) + LOG10(YG)*UMAP(3) + UMAP(5)
          YD = XG*UMAP(2) + LOG10(YG)*UMAP(4) + UMAP(6)
 
-      ELSE IF (TYPE.EQ.4.) THEN
+      ELSE IF (TYPE(1).EQ.4.) THEN
          IF (XG.LE.0.) THEN
             CALL PLTFLU
             CALL SIORPT('PLTG2D',

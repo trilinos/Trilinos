@@ -95,7 +95,7 @@ namespace Iohb {
 
     ~DatabaseIO() override;
 
-    const std::string get_format() const override {return "HeartBeat";}
+    const std::string get_format() const override { return "HeartBeat"; }
 
     // Check capabilities of input/output database...  Returns an
     // unsigned int with the supported Ioss::EntityTypes or'ed
@@ -150,7 +150,7 @@ namespace Iohb {
                                size_t data_size) const override;
     int64_t get_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
-    int64_t get_field_internal(const Ioss::Assembly* /*sb*/, const Ioss::Field & /*field*/,
+    int64_t get_field_internal(const Ioss::Assembly * /*sb*/, const Ioss::Field & /*field*/,
                                void * /*data*/, size_t /*data_size*/) const override
     {
       return 0;
@@ -188,7 +188,7 @@ namespace Iohb {
                                size_t data_size) const override;
     int64_t put_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field,
                                void *data, size_t data_size) const override;
-    int64_t put_field_internal(const Ioss::Assembly* /*sb*/, const Ioss::Field & /*field*/,
+    int64_t put_field_internal(const Ioss::Assembly * /*sb*/, const Ioss::Field & /*field*/,
                                void * /*data*/, size_t /*data_size*/) const override
     {
       return 0;

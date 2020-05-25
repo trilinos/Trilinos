@@ -161,7 +161,7 @@ C   --   Uses CHLSIZ, DBORD0, DVIEW0, DVIEW, WVIEW of /LAYOUT/
       INTEGER BLKCOL(0:NELBLK)
       REAL DLEGND(KTOP)
 
-      LOGICAL PLTGTG, PLTSTG, MPVIEW, MPORT2, LDUM
+      LOGICAL PLTGTG, PLTSTG, PLTSTG1, MPVIEW, MPORT2, LDUM
       LOGICAL GRABRT
       INTEGER NUMMOD, NDEFVW, IXVW
 
@@ -286,7 +286,7 @@ C   --Set the top and bottom of the remaining legend area
       DLEGND(KBOT) = DBOT
 
 C   --Get software character flag for current device
-      CALL GRGPAR ('SOFTCHAR', 0, SOFTCH, STRING)
+      CALL GRGPARD ('SOFTCHAR', 0, SOFTCH, STRING)
 
 C   --Magnification factor
 
@@ -500,9 +500,9 @@ C   --Reset coordinate system
       YISCOP = (.NOT. YISSYM) .AND. (MSHDEF(4) .NE. 'NONE')
 
       IF (.NOT. DOAXIS(1)) THEN
-         LDUM = PLTSTG (KXNUMS, 0.0)
-         LDUM = PLTSTG (KYNUMS, 0.0)
-         LDUM = PLTSTG (KTICSZ, 0.0)
+         LDUM = PLTSTG1 (KXNUMS, 0.0)
+         LDUM = PLTSTG1 (KYNUMS, 0.0)
+         LDUM = PLTSTG1 (KTICSZ, 0.0)
       END IF
 
 C   --Compute tick-interval parameters
@@ -552,8 +552,8 @@ C   --Set up axis length
       DXALEN = DAVIEW(KRGT) - DAVIEW(KLFT)
       DYALEN = DAVIEW(KTOP) - DAVIEW(KBOT)
 
-      LDUM = PLTSTG (KXLENG, DXALEN)
-      LDUM = PLTSTG (KYLENG, DYALEN)
+      LDUM = PLTSTG1 (KXLENG, DXALEN)
+      LDUM = PLTSTG1 (KYLENG, DYALEN)
 
 C   --Set up axis minimum, maximum, and tick intervals
 
@@ -586,18 +586,18 @@ C   --Set up axis minimum, maximum, and tick intervals
 C         --Set up axes labeling
 
             IF (YISCOP .AND. TOPVW(IVIEW)) THEN
-               LDUM = PLTSTG (KXNUMS, 0.0)
-               LDUM = PLTSTG (KXLABS, 0.0)
+               LDUM = PLTSTG1 (KXNUMS, 0.0)
+               LDUM = PLTSTG1 (KXLABS, 0.0)
             ELSE
-               IF (DOAXIS(1)) LDUM = PLTSTG (KXNUMS, SZNUM)
-               LDUM = PLTSTG (KXLABS, SZLAB)
+               IF (DOAXIS(1)) LDUM = PLTSTG1 (KXNUMS, SZNUM)
+               LDUM = PLTSTG1 (KXLABS, SZLAB)
             END IF
             IF (XISCOP .AND. RGTVW(IVIEW)) THEN
-               LDUM = PLTSTG (KYNUMS, 0.0)
-               LDUM = PLTSTG (KYLABS, 0.0)
+               LDUM = PLTSTG1 (KYNUMS, 0.0)
+               LDUM = PLTSTG1 (KYLABS, 0.0)
             ELSE
-               IF (DOAXIS(1)) LDUM = PLTSTG (KYNUMS, SZNUM)
-               LDUM = PLTSTG (KYLABS, SZLAB)
+               IF (DOAXIS(1)) LDUM = PLTSTG1 (KYNUMS, SZNUM)
+               LDUM = PLTSTG1 (KYLABS, SZLAB)
             END IF
 
 C         --Set the axis start
@@ -613,8 +613,8 @@ C         --Set the axis start
                DYASTA = DVIEW(KBOT,2)
             END IF
 
-            LDUM = PLTSTG (KXORIG, DXASTA)
-            LDUM = PLTSTG (KYORIG, DYASTA)
+            LDUM = PLTSTG1 (KXORIG, DXASTA)
+            LDUM = PLTSTG1 (KYORIG, DYASTA)
 
 C         --Draw the axes
 
