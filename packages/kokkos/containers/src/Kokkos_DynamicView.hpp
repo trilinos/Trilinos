@@ -301,6 +301,7 @@ class DynamicView : public Kokkos::ViewTraits<DataType, P...> {
   resize_serial(IntType const& n) {
     typedef typename traits::value_type local_value_type;
     typedef local_value_type* value_pointer_type;
+    typedef typename traits::memory_space memory_space;
 
     const uintptr_t NC =
         (n + m_chunk_mask) >>
@@ -316,15 +317,13 @@ class DynamicView : public Kokkos::ViewTraits<DataType, P...> {
     if (*pc < NC) {
       while (*pc < NC) {
         m_chunks[*pc] = reinterpret_cast<value_pointer_type>(
-            typename traits::memory_space().allocate(sizeof(local_value_type)
-                                                     << m_chunk_shift));
+          kokkos_malloc<memory_space>(label(),sizeof(local_value_type)<<m_chunk_shift));
         ++*pc;
       }
     } else {
       while (NC + 1 <= *pc) {
         --*pc;
-        typename traits::memory_space().deallocate(
-            m_chunks[*pc], sizeof(local_value_type) << m_chunk_shift);
+        kokkos_free<memory_space>(m_chunks[*pc]);
         m_chunks[*pc] = nullptr;
       }
     }
@@ -362,12 +361,13 @@ class DynamicView : public Kokkos::ViewTraits<DataType, P...> {
     unsigned m_chunk_max;
     bool m_destroy;
     unsigned m_chunk_size;
+    typedef typename traits::memory_space memory_space;
 
     // Initialize or destroy array of chunk pointers.
     // Two entries beyond the max chunks are allocation counters.
     inline void operator()(unsigned i) const {
       if (m_destroy && i < m_chunk_max && nullptr != m_chunks[i]) {
-        typename traits::memory_space().deallocate(m_chunks[i], m_chunk_size);
+        kokkos_free<memory_space>(m_chunks[i]);
       }
       m_chunks[i] = nullptr;
     }
