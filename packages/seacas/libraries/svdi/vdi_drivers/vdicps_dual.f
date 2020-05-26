@@ -492,7 +492,7 @@ C
           COLDEF(3)=1.
         END IF
           DO 115 IK=0,255,8
-          CALL WCPSCO(1,IC+IK,COLDEF,0)
+          CALL WCPSCO(IC+IK,COLDEF,0)
           IF(IC.EQ.0) THEN
             COLDEF(1)=0.2
             COLDEF(2)=0.2
@@ -1894,7 +1894,7 @@ C
       vector(2) = color
   999 RETURN
       END
-      SUBROUTINE WCPSCO(NUM,INDEX,CLRARY,CLRMOD)
+      SUBROUTINE WCPSCO(INDEX,CLRARY,CLRMOD)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
 C
 C VDSTCO           -Set Color Table.

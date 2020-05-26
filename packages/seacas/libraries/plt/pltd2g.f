@@ -1,4 +1,4 @@
-C Copyright (C) 2009-2017 National Technology & Engineering Solutions
+C Copyright (C) 2009-2017, 2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -38,7 +38,7 @@ C Changed plt to library rather than single source file.
 C
 C=======================================================================
       LOGICAL FUNCTION PLTD2G(XD,YD,XG,YG)
-      DIMENSION UMAP(14)
+      DIMENSION UMAP(14), TYPE(1)
 
       CALL PLTGTG(27,UMAP)
       CALL PLTGTG(9,TYPE)
@@ -49,7 +49,7 @@ C=======================================================================
       TOP = XD*UMAP(2) - YD*UMAP(1) - UMAP(5)*UMAP(2) + UMAP(6)*UMAP(1)
       BOTTOM = UMAP(3)*UMAP(2) - UMAP(4)*UMAP(1)
       YG = TOP/BOTTOM
-      IF (TYPE.EQ.2.) THEN
+      IF (TYPE(1).EQ.2.) THEN
          IF (XD.LE.0.) THEN
             CALL PLTFLU
             CALL SIORPT('PLTD2G',
@@ -61,7 +61,7 @@ C=======================================================================
 
          XG = 10.**XG
 
-      ELSE IF (TYPE.EQ.3.) THEN
+      ELSE IF (TYPE(1).EQ.3.) THEN
          IF (YD.LE.0.) THEN
             CALL PLTFLU
             CALL SIORPT('PLTD2G',
@@ -73,7 +73,7 @@ C=======================================================================
 
          YG = 10.**YG
 
-      ELSE IF (TYPE.EQ.4.) THEN
+      ELSE IF (TYPE(1).EQ.4.) THEN
          IF (XD.LE.0.) THEN
             CALL PLTFLU
             CALL SIORPT('PLTD2G',

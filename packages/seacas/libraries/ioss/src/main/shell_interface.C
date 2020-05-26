@@ -138,13 +138,24 @@ void IOShell::Interface::enroll_options()
                   "Specify the hdf5 compression level [0..9] to be used on the output file.",
                   nullptr);
 
-#if defined(PARALLEL_AWARE_EXODUS)
+  options_.enroll(
+      "zlib", Ioss::GetLongOption::NoValue,
+      "Use the Zlib / libz compression method if compression is enabled (default) [exodus only].",
+      nullptr);
+
+  options_.enroll(
+      "szip", Ioss::GetLongOption::NoValue,
+      "Use the SZip library if compression is enabled. Not as portable as zlib [exodus only]",
+      nullptr);
+
+#if defined(SEACAS_HAVE_MPI)
   options_.enroll(
       "compose", Ioss::GetLongOption::OptionalValue,
       "If no argument, specify single-file output; if 'external', then file-per-processor.\n"
       "\t\tAll other options are ignored and just exist for backward-compatibility",
       nullptr, "true");
 
+#if !defined(NO_ZOLTAN_SUPPORT)
   options_.enroll(
       "rcb", Ioss::GetLongOption::NoValue,
       "Use recursive coordinate bisection method to decompose the input mesh in a parallel run.",
@@ -158,7 +169,9 @@ void IOShell::Interface::enroll_options()
       "hsfc", Ioss::GetLongOption::NoValue,
       "Use hilbert space-filling curve method to decompose the input mesh in a parallel run.",
       nullptr);
+#endif
 
+#if !defined(NO_PARMETIS_SUPPORT)
   options_.enroll(
       "metis_sfc", Ioss::GetLongOption::NoValue,
       "Use the metis space-filling-curve method to decompose the input mesh in a parallel run.",
@@ -173,6 +186,7 @@ void IOShell::Interface::enroll_options()
                   "Use the metis kway graph-based method with geometry speedup to decompose the "
                   "input mesh in a parallel run.",
                   nullptr);
+#endif
 
   options_.enroll("linear", Ioss::GetLongOption::NoValue,
                   "Use the linear method to decompose the input mesh in a parallel run.\n"
@@ -194,9 +208,11 @@ void IOShell::Interface::enroll_options()
                   "Files are decomposed externally into a file-per-processor in a parallel run.",
                   nullptr);
 
+#if defined(SEACAS_HAVE_CGNS)
   options_.enroll(
       "add_processor_id_field", Ioss::GetLongOption::NoValue,
       "For CGNS, add a cell-centered field whose value is the processor id of that cell", nullptr);
+#endif
 
   options_.enroll("serialize_io_size", Ioss::GetLongOption::MandatoryValue,
                   "Number of processors that can perform simultaneous IO operations in "
@@ -273,7 +289,7 @@ void IOShell::Interface::enroll_options()
 
   options_.enroll("retain_empty_blocks", Ioss::GetLongOption::NoValue,
                   "If any empty element blocks on input file, keep them and write to output file.\n"
-		  "\t\tDefault is to ignore empty blocks. based on basename and suffix.",
+                  "\t\tDefault is to ignore empty blocks. based on basename and suffix.",
                   nullptr);
 
 #ifdef SEACAS_HAVE_KOKKOS
@@ -358,6 +374,16 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
   }
 
   shuffle = (options_.retrieve("shuffle") != nullptr);
+  if (options_.retrieve("szip") != nullptr) {
+    szip = true;
+    zlib = false;
+  }
+  zlib = (options_.retrieve("zlib") != nullptr);
+
+  if (szip && zlib) {
+    fmt::print(stderr, "ERROR: Only one of 'szip' or 'zlib' can be specified.\n");
+    return false;
+  }
 
   {
     const char *temp = options_.retrieve("compress");
@@ -366,9 +392,12 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
     }
   }
 
-#if defined(PARALLEL_AWARE_EXODUS)
+#if defined(SEACAS_HAVE_MPI)
+#if defined(SEACAS_HAVE_CGNS)
   add_processor_id_field = (options_.retrieve("add_processor_id_field") != nullptr);
+#endif
 
+#if !defined(NO_ZOLTAN_SUPPORT)
   if (options_.retrieve("rcb") != nullptr) {
     decomp_method = "RCB";
   }
@@ -380,7 +409,9 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
   if (options_.retrieve("hsfc") != nullptr) {
     decomp_method = "HSFC";
   }
+#endif
 
+#if !defined(NO_PARMETIS_SUPPORT)
   if (options_.retrieve("metis_sfc") != nullptr) {
     decomp_method = "METIS_SFC";
   }
@@ -392,6 +423,7 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
   if (options_.retrieve("kway_geom") != nullptr) {
     decomp_method = "KWAY_GEOM";
   }
+#endif
 
   if (options_.retrieve("linear") != nullptr) {
     decomp_method = "LINEAR";
@@ -463,7 +495,9 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
     }
   }
 
-#if defined(PARALLEL_AWARE_EXODUS)
+#if defined(SEACAS_HAVE_MPI)
+  // Should be only for parallel-aware-exodus, but not sure yet how to avoid the coupling to get
+  // that define here
   {
     const char *temp = options_.retrieve("compose");
     if (temp != nullptr) {

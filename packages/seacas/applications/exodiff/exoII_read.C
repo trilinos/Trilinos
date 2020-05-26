@@ -55,16 +55,9 @@ namespace {
                  std::vector<std::string> &varlist);
 } // namespace
 
-template <typename INT>
-ExoII_Read<INT>::ExoII_Read()
-{
-}
+template <typename INT> ExoII_Read<INT>::ExoII_Read() {}
 
-template <typename INT>
-ExoII_Read<INT>::ExoII_Read(const std::string &fname)
-    : file_name(fname)
-{
-}
+template <typename INT> ExoII_Read<INT>::ExoII_Read(const std::string &fname) : file_name(fname) {}
 
 template <typename INT> ExoII_Read<INT>::~ExoII_Read()
 {
@@ -835,7 +828,7 @@ template <typename INT> std::string ExoII_Read<INT>::Open_File(const char *fname
     file_name = fname;
   }
   else if (file_name == "") {
-    return "exodiff: ERROR: No file name to open!";
+    return "No file name to open!";
   }
   int   ws = 0, comp_ws = 8;
   float dumb = 0.0;
@@ -843,16 +836,18 @@ template <typename INT> std::string ExoII_Read<INT>::Open_File(const char *fname
   if (sizeof(INT) == 8) {
     mode |= EX_ALL_INT64_API;
   }
-  int err = ex_open(file_name.c_str(), mode, &comp_ws, &ws, &dumb);
+  auto old_opt = ex_opts(EX_VERBOSE);
+  int  err     = ex_open(file_name.c_str(), mode, &comp_ws, &ws, &dumb);
+  ex_opts(old_opt);
   if (err < 0) {
     std::ostringstream oss;
-    fmt::print(oss, "exodiff: ERROR: Couldn't open file \"{}\".", file_name);
+    fmt::print(oss, "Couldn't open file \"{}\".", file_name);
 
     // ExodusII library could not open file.  See if a file (exodusII
     // or not) exists with the specified name.
     FILE *fid = fopen(file_name.c_str(), "r");
     if (fid != nullptr) {
-      fmt::print(oss, " File exists, but is not an exodusII file.");
+      fmt::print(oss, " File exists, but library could not open.");
       fclose(fid);
     }
     else {

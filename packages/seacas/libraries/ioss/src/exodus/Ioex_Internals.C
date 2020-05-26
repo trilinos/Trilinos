@@ -30,15 +30,16 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
-#include <Ioss_Utils.h>            // for IOSS_WARNING
-#include <cassert>                 // for assert
 #include <exodus/Ioex_Internals.h> // for Internals, ElemBlock, etc
 #include <exodus/Ioex_Utils.h>
+
+#include "exodusII.h" // for ex_err, ex_opts, etc
 
 extern "C" {
 #include <exodusII_int.h>
 }
+
+#include <cassert> // for assert
 #include <cstddef> // for size_t
 #include <cstdio>  // for nullptr
 #include <cstdlib> // for exit, EXIT_FAILURE
@@ -64,8 +65,8 @@ extern "C" {
 #include "Ioss_Region.h"
 #include "Ioss_SideBlock.h"
 #include "Ioss_SideSet.h"
+#include "Ioss_Utils.h"
 #include "Ioss_VariableType.h"
-#include "exodusII.h" // for ex_err, ex_opts, etc
 
 using namespace Ioex;
 
@@ -839,9 +840,11 @@ int Internals::initialize_state_file(Mesh &mesh, const ex_var_params &var_params
 void Mesh::populate(Ioss::Region *region)
 {
   {
-    const auto &    node_blocks = region->get_node_blocks();
-    Ioex::NodeBlock N(*node_blocks[0]);
-    nodeblocks.push_back(N);
+    const auto &node_blocks = region->get_node_blocks();
+    if (!node_blocks.empty()) {
+      Ioex::NodeBlock N(*node_blocks[0]);
+      nodeblocks.push_back(N);
+    }
   }
 
   // Assemblies --
@@ -1097,7 +1100,9 @@ void Internals::get_global_counts(Mesh &mesh)
   std::vector<int64_t> counts;
   std::vector<int64_t> global_counts;
 
-  counts.push_back(mesh.nodeblocks[0].localOwnedCount);
+  for (auto &nodeblock : mesh.nodeblocks) {
+    counts.push_back(nodeblock.localOwnedCount);
+  }
   for (auto &edgeblock : mesh.edgeblocks) {
     counts.push_back(edgeblock.entityCount);
   }
@@ -1157,10 +1162,11 @@ void Internals::get_global_counts(Mesh &mesh)
     }
   }
 
-  size_t j                       = 0;
-  mesh.nodeblocks[0].procOffset  = offsets[j];
-  mesh.nodeblocks[0].entityCount = global_counts[j++];
-
+  size_t j = 0;
+  for (auto &nodeblock : mesh.nodeblocks) {
+    nodeblock.procOffset  = offsets[j];
+    nodeblock.entityCount = global_counts[j++];
+  }
   for (auto &edgeblock : mesh.edgeblocks) {
     edgeblock.procOffset  = offsets[j];
     edgeblock.entityCount = global_counts[j++];
@@ -1204,7 +1210,7 @@ void Internals::get_global_counts(Mesh &mesh)
     sideset.dfCount      = global_counts[j++];
   }
   for (auto &blob : mesh.blobs) {
-    blob.procOffset = offsets[j];
+    blob.procOffset  = offsets[j];
     blob.entityCount = global_counts[j++];
   }
 #endif
@@ -1348,7 +1354,7 @@ int Internals::put_metadata(const Mesh &mesh, const CommunicationMetaData &comm)
 
   ex__compress_variable(exodusFilePtr, varid, 2);
 
-  if (mesh.nodeblocks[0].entityCount > 0) {
+  if (!mesh.nodeblocks.empty() && mesh.nodeblocks[0].entityCount > 0) {
     status = nc_def_dim(exodusFilePtr, DIM_NUM_NODES, mesh.nodeblocks[0].entityCount, &numnoddim);
     if (status != NC_NOERR) {
       ex_opts(EX_VERBOSE);
@@ -1378,7 +1384,7 @@ int Internals::put_metadata(const Mesh &mesh, const CommunicationMetaData &comm)
     ex__compress_variable(exodusFilePtr, varid, 1);
   }
 
-  if (mesh.nodeblocks[0].attributeCount > 0) {
+  if (!mesh.nodeblocks.empty() && mesh.nodeblocks[0].attributeCount > 0) {
     int numattrdim;
     status = nc_def_dim(exodusFilePtr, DIM_NUM_ATT_IN_NBLK, mesh.nodeblocks[0].attributeCount,
                         &numattrdim);
@@ -1576,9 +1582,11 @@ int Internals::put_metadata(const Mesh &mesh, const CommunicationMetaData &comm)
   }
 
   // ========================================================================
-  if (define_coordinate_vars(exodusFilePtr, mesh.nodeblocks[0].entityCount, numnoddim,
-                             mesh.dimensionality, numdimdim, namestrdim) != EX_NOERR) {
-    return (EX_FATAL);
+  if (!mesh.nodeblocks.empty()) {
+    if (define_coordinate_vars(exodusFilePtr, mesh.nodeblocks[0].entityCount, numnoddim,
+                               mesh.dimensionality, numdimdim, namestrdim) != EX_NOERR) {
+      return (EX_FATAL);
+    }
   }
 
   // Define dimension for the number of processors

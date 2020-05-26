@@ -64,7 +64,8 @@ Piro::TransientSolver<Scalar>::TransientSolver(
   out_(Teuchos::VerboseObjectBase::getDefaultOStream()),
   model_(model), 
   num_p_(model->Np()), 
-  num_g_(model->Ng())
+  num_g_(model->Ng()),
+  sensitivityMethod_(NONE)
 {
   //Nothing to do
 }
@@ -251,7 +252,7 @@ Piro::TransientSolver<Scalar>::num_g() const
 
 template <typename Scalar>
 void 
-Piro::TransientSolver<Scalar>::setSensitivityMethod(const std::string sensitivity_method_string)
+Piro::TransientSolver<Scalar>::setSensitivityMethod(const std::string& sensitivity_method_string)
 {
   if (sensitivity_method_string == "None") sensitivityMethod_ = NONE; 
   else if (sensitivity_method_string == "Forward") sensitivityMethod_ = FORWARD;
@@ -260,12 +261,6 @@ Piro::TransientSolver<Scalar>::setSensitivityMethod(const std::string sensitivit
     TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
         "\n Error! Piro::TransientSolver: invalid Sensitivity Method = " << sensitivity_method_string << "! \n" 
         << " Valid options for Sensitivity Method are 'None', 'Forward' and 'Adjoint'.\n");
-  }
-  //IKT, 5/8/2020: remove the following once we have support for adjoint sensitivities 
-  if (sensitivityMethod_ == ADJOINT) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
-        "\n Error! Piro::TransientSolver: adjoint sentivities (Sensitivity Method = "
-        << "Adjoint) are not yet supported!  Please set 'Sensitivity Method' to 'None' or 'Forward'.\n");
   }
 }
 
@@ -286,7 +281,7 @@ Piro::TransientSolver<Scalar>::setPiroTempusIntegrator(Teuchos::RCP<const Piro::
 
 template <typename Scalar>
 void 
-Piro::TransientSolver<Scalar>::evalConvergedModel(
+Piro::TransientSolver<Scalar>::evalConvergedModelResponsesAndSensitivities(
       const Thyra::ModelEvaluatorBase::InArgs<Scalar>& modelInArgs,
       const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const
 {

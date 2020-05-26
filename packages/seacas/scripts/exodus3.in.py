@@ -1,5 +1,5 @@
 """
-exodus.py v 1.19.0 (seacas-beta) is a python wrapper of some of the exodus library
+exodus.py v 1.19.1 (seacas-beta) is a python wrapper of some of the exodus library
 (Python 3 Version)
 
 Exodus is a common database for multiple application codes (mesh
@@ -95,10 +95,10 @@ from enum import Enum
 
 EXODUS_PY_COPYRIGHT_AND_LICENSE = __doc__
 
-EXODUS_PY_VERSION = "1.19.0 (seacas-py3)"
+EXODUS_PY_VERSION = "1.19.1 (seacas-py3)"
 
 EXODUS_PY_COPYRIGHT = """
-You are using exodus.py v 1.19.0 (seacas-py3), a python wrapper of some of the exodus library.
+You are using exodus.py v 1.19.1 (seacas-py3), a python wrapper of some of the exodus library.
 
 Copyright (c) 2013, 2014, 2015, 2016, 2017, 2018, 2019 National Technology &
 Engineering Solutions of Sandia, LLC (NTESS).  Under the terms of
@@ -831,7 +831,7 @@ class exodus:
         EXODUS_LIB.ex_set_int64_status(fileId, i64Status)
 
         self.__copy_file(fileId, include_transient)
-        EXODUS_LIB.ex_close(self.fileId)
+        EXODUS_LIB.ex_close(fileId)
 
         return exodus(fileName, "a")
 

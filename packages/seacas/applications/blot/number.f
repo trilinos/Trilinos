@@ -126,7 +126,7 @@ C   --   Uses IS3DIM, NUMNPF of /D3NUMS/
       EXISTS (M) = (MOD(M,2) .NE. 0)
 
 C   --Get software character flag for current device
-      CALL GRGPAR ('SOFTCHAR', 0, SOFTCH, ISTR)
+      CALL GRGPARD ('SOFTCHAR', 0, SOFTCH, ISTR)
 
       IF ((NUMTYP .EQ. 'SELECTED') .AND. (ISELTY .EQ. 'NODE')) THEN
 

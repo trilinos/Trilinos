@@ -1,4 +1,4 @@
-C Copyright (c) 2008-2017 National Technology & Engineering Solutions
+C Copyright (c) 2008-2017, 2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -141,7 +141,8 @@ C   --Print the input database titles and the output database title.
 
       ELSE IF (VERB .EQ. 'CHANGE') THEN
          CALL GETINP (0, 0, 'New title> ', TITLE, IOSTAT)
-         CALL OUTLOG (KLOG, 1, 0, TITLE, IDUM, RDUM)
+         INTYP(1) = 0
+         CALL OUTLOG (KLOG, 1, INTYP, TITLE, IFIELD, RFIELD)
 
          GOTO 50
 

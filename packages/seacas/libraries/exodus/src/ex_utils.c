@@ -125,7 +125,7 @@ void ex_print_config(void)
     fprintf(stderr, "\t\tHDF5 enabled (%u.%u.%u)\n", major, minor, release);
   }
   fprintf(stderr, "\t\tZlib Compression (read/write) enabled\n");
-#if defined(NC_HAS_SZIP_WRITE)
+#if defined(NC_HAS_SZIP_WRITE) && defined(DISABLED_FOR_NOW)
   fprintf(stderr, "\t\tSZip Compression (read/write) enabled\n");
 #endif
 #endif
@@ -380,7 +380,8 @@ int ex__put_name(int exoid, int varid, size_t index, const char *name, ex_entity
       fprintf(stderr,
               "Warning: The %s %s name '%s' is too long.\n\tIt will be "
               "truncated from %d to %d characters. [Called from %s]\n",
-              ex_name_of_object(obj_type), subtype, name, (int)strlen(name), (int)name_length - 1, routine);
+              ex_name_of_object(obj_type), subtype, name, (int)strlen(name), (int)name_length - 1,
+              routine);
       count[1] = name_length;
       too_long = 1;
     }
@@ -452,7 +453,8 @@ int ex__get_name(int exoid, int varid, size_t index, char *name, int name_size,
 
   status = nc_get_vara_text(exoid, varid, start, count, name);
   if (status != NC_NOERR) {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get %s name at index %d from file id %d [Called from %s]",
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to get %s name at index %d from file id %d [Called from %s]",
              ex_name_of_object(obj_type), (int)index, exoid, routine);
     ex_err_fn(exoid, __func__, errmsg, status);
     return (EX_FATAL);
@@ -1691,7 +1693,11 @@ int ex__get_dimension(int exoid, const char *DIMENSION, const char *label, size_
 /*!
   \deprecated
 */
-size_t ex_header_size(int exoid) { EX_UNUSED(exoid); return 0; }
+size_t ex_header_size(int exoid)
+{
+  EX_UNUSED(exoid);
+  return 0;
+}
 
 void ex__set_compact_storage(int exoid, int varid)
 {
@@ -1735,7 +1741,7 @@ void ex__compress_variable(int exoid, int varid, int type)
         }
       }
       else if (file->compression_algorithm == EX_COMPRESS_SZIP) {
-#if NC_HAS_SZIP__DISABLED
+#if defined(NC_HAS_SZIP_WRITE) && defined(DISABLED_FOR_NOW)
         /* See: https://support.hdfgroup.org/doc_resource/SZIP/ and
                 https://support.hdfgroup.org/HDF5/doc/RM/RM_H5P.html#Property-SetSzip
            for details on SZIP library and parameters.
@@ -1749,7 +1755,7 @@ void ex__compress_variable(int exoid, int varid, int type)
         char errmsg[MAX_ERR_LENGTH];
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: Compression algorithm SZIP is not supported yet (EXPERIMENTAL).");
-        ex_err_fn(exoid, __func__, errmsg, EX_BADFILEID);
+        ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
 #endif
       }
 
@@ -2169,8 +2175,8 @@ int ex__populate_header(int exoid, const char *path, int my_mode, int is_paralle
     is_hdf5 = 1;
   }
 
-  if (ex__conv_init(exoid, comp_ws, io_ws, 0, int64_status, is_parallel, is_hdf5, is_pnetcdf) !=
-      EX_NOERR) {
+  if (ex__conv_init(exoid, comp_ws, io_ws, 0, int64_status, is_parallel, is_hdf5, is_pnetcdf,
+                    my_mode & EX_WRITE) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to init conversion routines in file id %d",
              exoid);
     ex_err_fn(exoid, __func__, errmsg, EX_LASTERR);

@@ -110,7 +110,8 @@ C              Get mapping of colors
             endif
             IDBCKT = IDBCK
           ELSE
-            CALL PLTSTD (2, IBLACK)
+             BLACK = IBLACK
+            CALL PLTSTD (2, BLACK)
             IDBCKT = DEFBCK
           ENDIF
         ENDIF

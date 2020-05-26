@@ -191,8 +191,8 @@ C   --   Uses ISZOOM, ZMLIM of /ZOOM/
 
       ELSE IF (SHOTYP .EQ. 'FILTER') THEN
          IF (ISFILTER) THEN
-           CALL NUMSTR (1, 4, VALFLT, RSTR(1), LSTR1)
-           CALL NUMSTR (1, 4, TIMFLT, RSTR(2), LSTR2)
+           CALL NUMSTR1 (4, VALFLT, RSTR(1), LSTR1)
+           CALL NUMSTR1 (4, TIMFLT, RSTR(2), LSTR2)
            if (cmpflt .eq. 1) RSTR(3) = 'lt'
            if (cmpflt .eq. 2) RSTR(3) = 'le'
            if (cmpflt .eq. 3) RSTR(3) = 'eq'
