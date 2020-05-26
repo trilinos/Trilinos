@@ -52,4 +52,5 @@ testAll() {
 # Run the unit tests
 #
 
-. ${ATDM_CONFIG_SCRIPT_DIR}/test/shunit2/shunit2
+SHUNIT2_DIR=`readlink -f ${ATDM_CONFIG_SCRIPT_DIR}/../../../commonTools/test/shunit2`
+. ${SHUNIT2_DIR}/shunit2
