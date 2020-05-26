@@ -301,7 +301,7 @@ std::string AugmentedLagrangianAlgorithm_E<Real>::printHeader( void ) const {
 template<typename Real>
 std::string AugmentedLagrangianAlgorithm_E<Real>::printName( void ) const {
   std::stringstream hist;
-  hist << std::endl << " Augmented Lagrangian Solver";
+  hist << std::endl << "Augmented Lagrangian Solver (Type E, Equality Constraints)";
   hist << std::endl;
   hist << "Subproblem Solver: " << subStep_ << std::endl;
   return hist.str();

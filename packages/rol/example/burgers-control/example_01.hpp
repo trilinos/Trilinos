@@ -41,27 +41,14 @@
 // ************************************************************************
 // @HEADER
 
-/*! \file  example_01.cpp
-    \brief Shows how to solve an optimal control problem constrained by 
-           steady Burgers' equation with bound constraints.
+/*! \file  example_01.hpp
+    \brief Provides definitions of equality constraint and objective for
+           example_01.
 */
-
-#include "ROL_Algorithm.hpp"
-#include "ROL_PrimalDualActiveSetStep.hpp"
-#include "ROL_TrustRegionStep.hpp"
-#include "ROL_Types.hpp"
-#include "ROL_Stream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_LAPACK.hpp"
-
-#include <iostream>
-#include <fstream>
-#include <algorithm>
 
 #include "ROL_StdVector.hpp"
 #include "ROL_Objective.hpp"
-#include "ROL_Bounds.hpp"
+#include "ROL_BoundConstraint.hpp"
 
 template<class Real>
 class Objective_BurgersControl : public ROL::Objective<Real> {

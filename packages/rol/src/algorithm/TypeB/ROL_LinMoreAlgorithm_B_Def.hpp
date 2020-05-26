@@ -648,7 +648,7 @@ std::string LinMoreAlgorithm_B<Real>::printHeader( void ) const {
 template<typename Real>
 std::string LinMoreAlgorithm_B<Real>::printName( void ) const {
   std::stringstream hist;
-  hist << std::endl << "Lin-More Trust-Region Method" << std::endl;
+  hist << std::endl << "Lin-More Trust-Region Method (Type B, Bound Constraints)" << std::endl;
   return hist.str();
 }
 

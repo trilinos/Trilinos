@@ -320,7 +320,7 @@ template<typename Real>
 std::string NewtonKrylovAlgorithm_B<Real>::printName( void ) const {
   std::stringstream hist;
   if (!useSecantHessVec_) {
-    hist << std::endl << "Line-Search Projected Newton" << std::endl;
+    hist << std::endl << "Line-Search Projected Newton (Type B, Bound Constraints)" << std::endl;
   }
   else {
     hist << std::endl << "Line-Search Projected Quasi-Newton with "

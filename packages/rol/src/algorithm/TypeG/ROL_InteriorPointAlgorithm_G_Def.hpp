@@ -273,7 +273,7 @@ std::string InteriorPointAlgorithm_G<Real>::printHeader( void ) const {
 template<typename Real>
 std::string InteriorPointAlgorithm_G<Real>::printName( void ) const {
   std::stringstream hist;
-  hist << std::endl << " Interior Point Solver";
+  hist << std::endl << "Interior Point Solver (Type G, General Constraints)";
   hist << std::endl;
   hist << "Subproblem Solver: " << stepname_ << std::endl;
   return hist.str();

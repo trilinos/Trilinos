@@ -364,7 +364,7 @@ template<typename Real>
 std::string PrimalDualActiveSetAlgorithm_B<Real>::printName( void ) const {
   std::stringstream hist;
   if (!useSecantHessVec_) {
-    hist << std::endl << "Primal Dual Active Set Newton's Method" << std::endl;
+    hist << std::endl << "Primal Dual Active Set Newton's Method (Type B, Bound Constraints)" << std::endl;
   }
   else {
     hist << std::endl << "Primal Dual Active Set Quasi-Newton Method with "

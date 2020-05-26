@@ -94,7 +94,7 @@ public:
     : lcon_(lcon), x_(x) {
     nsop_ = makePtr<NullSpaceOperator<Real>>(lcon,x_,c);
     feasible(c);
-    storage_       = makePtr<VectorController<Real>>();
+    storage_ = makePtr<VectorController<Real>>();
   }
 
   const Ptr<Objective<Real>> transform(const Ptr<Objective<Real>> &obj) const {
@@ -113,14 +113,14 @@ public:
     return x_;
   }
 
-  void project(Vector<Real> &x,
-         const Vector<Real> &y) const {
+  void project(Vector<Real>       &x,
+               const Vector<Real> &y) const {
     Real tol = std::sqrt(ROL_EPSILON<Real>());
     nsop_->apply(x,y,tol);
   }
 
-  void project(Ptr<Vector<Real>> &x,
-         const Ptr<Vector<Real>> &y) const {
+  void project(const Ptr<Vector<Real>>       &x,
+               const Ptr<const Vector<Real>> &y) const {
     project(*x,*y);
   }
 

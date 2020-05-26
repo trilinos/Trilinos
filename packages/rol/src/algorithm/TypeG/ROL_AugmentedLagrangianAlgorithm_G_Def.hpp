@@ -321,7 +321,7 @@ std::string AugmentedLagrangianAlgorithm_G<Real>::printHeader( void ) const {
 template<typename Real>
 std::string AugmentedLagrangianAlgorithm_G<Real>::printName( void ) const {
   std::stringstream hist;
-  hist << std::endl << " Augmented Lagrangian Solver";
+  hist << std::endl << "Augmented Lagrangian Solver (Type G, General Constraints)";
   hist << std::endl;
   hist << "Subproblem Solver: " << subStep_ << std::endl;
   return hist.str();
