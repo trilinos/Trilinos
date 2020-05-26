@@ -364,6 +364,16 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
   void CGIter<ScalarType,MV,OP>::initializeCG(CGIterationState<ScalarType,MV>& newstate)
   {
     // Initialize the state storage if it isn't already.
+    if (!newstate.R.is_null() && MVT::GetNumberVecs(*newstate.R) == 1 &&
+        !newstate.Z.is_null() && MVT::GetNumberVecs(*newstate.Z) == 1 &&
+        !newstate.P.is_null() && MVT::GetNumberVecs(*newstate.P) == 1 &&
+        !newstate.AP.is_null() && MVT::GetNumberVecs(*newstate.AP) == 1) {
+      R_ = Teuchos::rcp_const_cast<MV>(newstate.R);
+      Z_ = Teuchos::rcp_const_cast<MV>(newstate.Z);
+      P_ = Teuchos::rcp_const_cast<MV>(newstate.P);
+      AP_ = Teuchos::rcp_const_cast<MV>(newstate.AP);
+    }
+
     if (!stateStorageInitialized_) 
       setStateSize();
 
