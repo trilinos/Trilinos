@@ -166,6 +166,45 @@ int get_ctest_gpu(const char* local_rank_str) {
   return std::atoi(id.c_str());
 }
 
+int get_gpu(const InitArguments& args) {
+  int use_gpu           = args.device_id;
+  const int ndevices    = args.ndevices;
+  const int skip_device = args.skip_device;
+  // if the exact device is not set, but ndevices was given, assign round-robin
+  // using on-node MPI rank
+  if (use_gpu < 0) {
+    auto const* local_rank_str =
+        std::getenv("OMPI_COMM_WORLD_LOCAL_RANK");  // OpenMPI
+    if (!local_rank_str)
+      local_rank_str = std::getenv("MV2_COMM_WORLD_LOCAL_RANK");  // MVAPICH2
+    if (!local_rank_str)
+      local_rank_str = std::getenv("SLURM_LOCALID");  // SLURM
+  
+    auto const* ctest_kokkos_device_type =
+        std::getenv("CTEST_KOKKOS_DEVICE_TYPE");  // CTest
+    auto const* ctest_resource_group_count_str =
+        std::getenv("CTEST_RESOURCE_GROUP_COUNT");  // CTest
+    if (ctest_kokkos_device_type && ctest_resource_group_count_str &&
+        local_rank_str) {
+      // Use the device assigned by CTest
+      use_gpu = get_ctest_gpu(local_rank_str);
+    } else if (ndevices >= 0) {
+      // Use the device assigned by the rank
+      if (local_rank_str) {
+        auto local_rank = std::atoi(local_rank_str);
+        use_gpu         = local_rank % ndevices;
+      } else {
+        // user only gave use ndevices, but the MPI environment variable wasn't
+        // set. start with GPU 0 at this point
+        use_gpu = 0;
+      }
+    }
+    // shift assignments over by one so no one is assigned to "skip_device"
+    if (use_gpu >= skip_device) ++use_gpu;
+  }
+  return use_gpu;
+}
+
 namespace {
 
 bool is_unsigned_int(const char* str) {
@@ -196,41 +235,7 @@ void initialize_backends(const InitArguments& args) {
 #endif
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_ROCM) || \
     defined(KOKKOS_ENABLE_HIP)
-  int use_gpu           = args.device_id;
-  const int ndevices    = args.ndevices;
-  const int skip_device = args.skip_device;
-  // if the exact device is not set, but ndevices was given, assign round-robin
-  // using on-node MPI rank
-  if (use_gpu < 0) {
-    auto const* local_rank_str =
-        std::getenv("OMPI_COMM_WORLD_LOCAL_RANK");  // OpenMPI
-    if (!local_rank_str)
-      local_rank_str = std::getenv("MV2_COMM_WORLD_LOCAL_RANK");  // MVAPICH2
-    if (!local_rank_str)
-      local_rank_str = std::getenv("SLURM_LOCALID");  // SLURM
-
-    auto const* ctest_kokkos_device_type =
-        std::getenv("CTEST_KOKKOS_DEVICE_TYPE");  // CTest
-    auto const* ctest_resource_group_count_str =
-        std::getenv("CTEST_RESOURCE_GROUP_COUNT");  // CTest
-    if (ctest_kokkos_device_type && ctest_resource_group_count_str &&
-        local_rank_str) {
-      // Use the device assigned by CTest
-      use_gpu = get_ctest_gpu(local_rank_str);
-    } else if (ndevices >= 0) {
-      // Use the device assigned by the rank
-      if (local_rank_str) {
-        auto local_rank = std::atoi(local_rank_str);
-        use_gpu         = local_rank % ndevices;
-      } else {
-        // user only gave use ndevices, but the MPI environment variable wasn't
-        // set. start with GPU 0 at this point
-        use_gpu = 0;
-      }
-    }
-    // shift assignments over by one so no one is assigned to "skip_device"
-    if (use_gpu >= skip_device) ++use_gpu;
-  }
+  int use_gpu = get_gpu(args);
 #endif  // defined( KOKKOS_ENABLE_CUDA )
 
 #if defined(KOKKOS_ENABLE_OPENMP)

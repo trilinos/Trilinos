@@ -238,8 +238,8 @@ namespace BaskerClassicNS{
     //U->val =     (Entry *) BASKERCALLOC(U->nnz, sizeof(Entry));
     U->val = new Entry[U->nnz]();
 
-    if((L->col_ptr == NULL) || (L->row_idx == NULL) || (L->val == NULL) ||
-       (U->col_ptr == NULL) || (U->row_idx == NULL) || (U->val == NULL))
+    if((L->col_ptr == nullptr) || (L->row_idx == nullptr) || (L->val == nullptr) ||
+       (U->col_ptr == nullptr) || (U->row_idx == nullptr) || (U->val == nullptr))
       {
         ierr = -1;
         return ierr;
@@ -257,7 +257,7 @@ namespace BaskerClassicNS{
     pinv = new Int[ncol+1]();
 
 
-    if( (tptr == NULL) || (X == NULL) || (pinv == NULL) )
+    if( (tptr == nullptr) || (X == nullptr) || (pinv == nullptr) )
       {
         ierr = -2;
         return ierr;
@@ -600,8 +600,9 @@ namespace BaskerClassicNS{
     cout << endl;
 #endif
 
-    //BASKERFREE(X);
-    //BASKERFREE(tptr);
+    // Cleanup workspace allocations
+    delete [] X;
+    delete [] color;
 
     actual_lnnz = lnnz;
     actual_unnz = unnz;
@@ -645,7 +646,7 @@ namespace BaskerClassicNS{
     //*val     = (Entry *) BASKERCALLOC(L->nnz, sizeof(Entry));
     *val = new Entry[L->nnz];
 
-    if( (*col_ptr == NULL) || (*row_idx == NULL) || (*val == NULL) )
+    if( (*col_ptr == nullptr) || (*row_idx == nullptr) || (*val == nullptr) )
       {
         return -1;
       }
@@ -678,7 +679,7 @@ namespace BaskerClassicNS{
     //*val     = (Entry *) BASKERCALLOC(U->nnz, sizeof(Entry));
     *val = new Entry[U->nnz];
 
-    if( (*col_ptr == NULL) || (*row_idx == NULL) || (*val == NULL) )
+    if( (*col_ptr == nullptr) || (*row_idx == nullptr) || (*val == nullptr) )
       {
         return -1;
       }
@@ -702,7 +703,7 @@ namespace BaskerClassicNS{
     //*p = (Int *) BASKERCALLOC(A->nrow, sizeof(Int));
     *p = new Int[A->nrow];
 
-    if( (*p == NULL ) )
+    if( (*p == nullptr ) )
       {
         return -1;
       }
@@ -858,7 +859,7 @@ namespace BaskerClassicNS{
     B->row_idx = (Int *) BASKERCALLOC(A->nnz, sizeof(Int));
     B->val     = (Entry *) BASKERCALLOC(A->val, sizeof(Int));
 
-    if( (B->col_ptr == NULL) || (B->row_idx == NULL) || (B->val == NULL) )
+    if( (B->col_ptr == nullptr) || (B->row_idx == nullptr) || (B->val == nullptr) )
       {
         perm_flag = false;
         return -1;

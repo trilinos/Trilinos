@@ -241,7 +241,8 @@ int main(int argc, char *argv[]) {
 
     if( !Amesos2::query(solverName) ){
       std::cerr << solverName << " not enabled.  Exiting..." << endl;
-      return EXIT_FAILURE;
+      return EXIT_SUCCESS;        // Otherwise CTest will pick it up as
+                                  // failure, which it isn't really
     }
 
     RCP<Amesos2::Solver<MAT,MV> > solver = Amesos2::create<MAT,MV>(solverName, A, Xhat, RHS);
