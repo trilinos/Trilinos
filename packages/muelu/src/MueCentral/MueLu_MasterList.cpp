@@ -124,6 +124,7 @@ namespace MueLu {
     if (name == "max levels") { ss << "<Parameter name=\"max levels\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "coarse grid correction scaling factor") { ss << "<Parameter name=\"coarse grid correction scaling factor\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
     if (name == "fuse prolongation and update") { ss << "<Parameter name=\"fuse prolongation and update\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "number of vectors") { ss << "<Parameter name=\"number of vectors\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "problem: symmetric") { ss << "<Parameter name=\"problem: symmetric\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "hierarchy label") { ss << "<Parameter name=\"hierarchy label\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
     if (name == "aggregation: drop tol") { ss << "<Parameter name=\"aggregation: drop tol\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
@@ -168,6 +169,7 @@ namespace MueLu {
   "<Parameter name=\"cycle type\" type=\"string\" value=\"V\"/>"
   "<Parameter name=\"coarse grid correction scaling factor\" type=\"double\" value=\"1.0\"/>"
   "<Parameter name=\"fuse prolongation and update\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"number of vectors\" type=\"int\" value=\"1\"/>"
   "<Parameter name=\"problem: symmetric\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"xml parameter file\" type=\"string\" value=\"\"/>"
   "<Parameter name=\"parameterlist: syntax\" type=\"string\" value=\"muelu\"/>"
@@ -521,6 +523,8 @@ namespace MueLu {
          ("coarse grid correction scaling factor","coarse grid correction scaling factor")
       
          ("fuse prolongation and update","fuse prolongation and update")
+      
+         ("number of vectors","number of vectors")
       
          ("problem: symmetric","problem: symmetric")
       
