@@ -208,7 +208,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackThenUnpackAndCombine, SC, LO, G
   out << "Building second matrix" << endl;
   auto graph = A->getCrsGraph();
   RCP<crs_matrix_type> B (new crs_matrix_type (graph));
-  B->setAllToScalar(SC {});
+  B->setAllToScalar(SC{-1.});
   B->fillComplete();
 
   out << "Calling unpackCrsMatrixAndCombine with "

@@ -256,6 +256,7 @@ unpackRowP(
       distance = j * bytes_per_value;
       (void) PackTraits<ST>::unpackValue(val_out, vals_in + distance);
       vals_out(j) = val_out;
+
     }
   );
 
@@ -524,10 +525,7 @@ struct UnpackCrsMatrixAndCombineFunctor {
     using size_type = typename XS::size_type;
     using slice = Kokkos::pair<size_type, size_type>;
 
-    typedef View<LO*, DT, MemoryUnmanaged> lids_out_type;
     typedef View<int*,DT, MemoryUnmanaged> pids_out_type;
-    typedef View<GO*, DT, MemoryUnmanaged> gids_out_type;
-    typedef View<ST*, DT, MemoryUnmanaged> vals_out_type;
 
     const LO batch = team_member.league_rank();
     const LO lid_no = batch_info(batch, 0);
@@ -586,88 +584,109 @@ struct UnpackCrsMatrixAndCombineFunctor {
     const size_type token = tokens.acquire();
     const size_t a = static_cast<size_t>(token) * batch_size;
     const size_t b = a + num_entries_in_batch;
-    lids_out_type lids_out = subview(lids_scratch, slice(a, b));
-    gids_out_type gids_out = subview(gids_scratch, slice(a, b));
     pids_out_type pids_out = subview(pids_scratch, slice(a, (unpack_pids ? b : a)));
-    vals_out_type vals_out = subview(vals_scratch, slice(a, b));
 
-    // Unpack this row!
-    int unpack_err = unpackRowP<ST, LO, GO, XS>(
-      team_member,
-      lid_no,
-      gids_out,
-      pids_out,
-      vals_out,
-      imports.data(),
-      offset,
-      num_bytes,
-      num_entries_in_row,
-      bytes_per_value,
-      batch_no,
-      batch_size,
-      num_entries_in_batch
-    );
-    if (unpack_err != 0) {
-      dst = Kokkos::make_pair(unpack_err, lid_no); // unpack error
+    const size_t bytes_per_lid = PackTraits<LO>::packValueCount(LO(0));
+    const size_t num_ent_start = offset;
+    const size_t num_ent_end = num_ent_start + bytes_per_lid;
+
+    const size_t bytes_per_gid = PackTraits<GO>::packValueCount(GO(0));
+    const size_t gids_start = num_ent_end;
+    const size_t gids_end = gids_start + num_entries_in_row * bytes_per_gid;
+
+    const size_t bytes_per_pid = PackTraits<int>::packValueCount(int(0));
+    const size_t pids_start = gids_end;
+    const size_t pids_end = pids_start + (unpack_pids ? size_t(num_entries_in_row * bytes_per_pid) : size_t(0));
+
+    const size_t vals_start = pids_end;
+
+    const size_t shift = batch_no * batch_size;
+    const char* const num_ent_in = imports.data() + num_ent_start;
+    const char* const gids_in = imports.data() + gids_start + shift * bytes_per_gid;
+    const char* const pids_in = unpack_pids ? imports.data() + pids_start + shift * bytes_per_pid : nullptr;
+    const char* const vals_in = imports.data() + vals_start + shift * bytes_per_value;
+
+    LO num_ent_out;
+    (void)PackTraits<LO>::unpackValue(num_ent_out, num_ent_in);
+    if (static_cast<size_t>(num_ent_out) != num_entries_in_row) {
+      dst = Kokkos::make_pair(4, lid_no); // unpack error
       tokens.release(token);
       return;
     }
 
-    // Column indices come in as global indices, in case the
-    // source object's column Map differs from the target object's
-    // (this's) column Map, and must be converted local index values
-    for (size_t i=0; i<num_entries_in_batch; i++)
-      lids_out(i) = local_col_map.getLocalElement(gids_out(i));
-//    Kokkos::parallel_for(
-//     Kokkos::TeamThreadRange(team_member, num_entries_in_batch),
-//     KOKKOS_LAMBDA(const LO& j)
-//     {
-//       lids_out(j) = local_col_map.getLocalElement(gids_out(j));
-//     }
-//   );
-
-    // Combine the values according to the combine_mode
-    const LO* const lids_raw = const_cast<const LO*>(lids_out.data());
-    const ST* const vals_raw = const_cast<const ST*>(vals_out.data());
-    LO num_modified = 0;
-
+    int errors = 0;
     constexpr bool matrix_has_sorted_rows = true; // see #6282
-    if (combine_mode == ADD) {
-      // NOTE (mfh 20 Nov 2019) Must assume atomic is required, unless
-      // different threads don't touch the same row (i.e., no
-      // duplicates in incoming LIDs list).
-      const bool use_atomic_updates = atomic;
-      num_modified += local_matrix.sumIntoValues(
-        import_lid,
-        lids_raw,
-        num_entries_in_batch,
-        vals_raw,
-        matrix_has_sorted_rows,
-        use_atomic_updates
-      );
-    }
-    else if (combine_mode == REPLACE) {
-      // NOTE (mfh 20 Nov 2019): It's never correct to use REPLACE
-      // combine mode with multiple incoming rows that touch the same
-      // target matrix entries, so we never need atomic updates.
-      const bool use_atomic_updates = false;
-      num_modified += local_matrix.replaceValues(
-        import_lid,
-        lids_raw,
-        num_entries_in_batch,
-        vals_raw,
-        matrix_has_sorted_rows,
-        use_atomic_updates
-      );
-    }
-    else {
+    Kokkos::parallel_reduce(
+      Kokkos::TeamThreadRange(team_member, num_entries_in_batch),
+      KOKKOS_LAMBDA(const LO& j, int& loc_errors)
+      {
+        size_t distance = 0;
+
+        GO gid_out;
+        distance = j * bytes_per_gid;
+        (void) PackTraits<GO>::unpackValue(gid_out, gids_in + distance);
+        auto lid_out = local_col_map.getLocalElement(gid_out);
+
+        // Column indices come in as global indices, in case the
+        // source object's column Map differs from the target object's
+        // (this's) column Map, and must be converted local index values
+
+        if (unpack_pids) {
+          int pid_out;
+          distance = j * bytes_per_pid;
+          (void) PackTraits<int>::unpackValue(pid_out, pids_in + distance);
+          pids_out(j) = pid_out;
+        }
+
+        // assume that ST is default constructible
+        ST val_out;
+        distance = j * bytes_per_value;
+        (void) PackTraits<ST>::unpackValue(val_out, vals_in + distance);
+
+        if (combine_mode == ADD) {
+          // NOTE (mfh 20 Nov 2019) Must assume atomic is required, unless
+          // different threads don't touch the same row (i.e., no
+          // duplicates in incoming LIDs list).
+          const bool use_atomic_updates = atomic;
+          (void)local_matrix.sumIntoValues(
+            import_lid,
+            &lid_out,
+            1,
+            &val_out,
+            matrix_has_sorted_rows,
+            use_atomic_updates
+          );
+        } else if (combine_mode == REPLACE) {
+          // NOTE (mfh 20 Nov 2019): It's never correct to use REPLACE
+          // combine mode with multiple incoming rows that touch the same
+          // target matrix entries, so we never need atomic updates.
+          const bool use_atomic_updates = false;
+          (void)local_matrix.replaceValues(
+            import_lid,
+            &lid_out,
+            1,
+            &val_out,
+            matrix_has_sorted_rows,
+            use_atomic_updates
+          );
+        } else {
+          // should never get here
+          loc_errors += 1;
+        }
+      },
+      errors
+    );
+
+    team_member.team_barrier();
+    tokens.release(token);
+
+    if (errors > 0) {
       dst = Kokkos::make_pair(4, lid_no); // invalid combine mode
-      tokens.release(token);
       return;
     }
 
-    tokens.release(token);
   }
+
 };
 
 struct MaxNumEntTag {};
@@ -1495,10 +1514,25 @@ unpackCrsMatrixAndCombine(
   auto local_matrix = sourceMatrix.getLocalMatrix();
   auto local_col_map = sourceMatrix.getColMap()->getLocalMap();
 
+  for (int i=0; i<importLIDs.size(); i++)
+  {
+    auto lclRow = importLIDs[i];
+    Teuchos::ArrayView<const LO> A_indices;
+    Teuchos::ArrayView<const ST> A_values;
+    sourceMatrix.getLocalRowView(lclRow, A_indices, A_values);
+  }
   // Now do the actual unpack!
   UnpackAndCombineCrsMatrixImpl::unpackAndCombineIntoCrsMatrix(
       local_matrix, local_col_map, imports_d, num_packets_per_lid_d,
       import_lids_d, combineMode, false);
+
+  for (int i=0; i<importLIDs.size(); i++)
+  {
+    auto lclRow = importLIDs[i];
+    Teuchos::ArrayView<const LO> A_indices;
+    Teuchos::ArrayView<const ST> A_values;
+    sourceMatrix.getLocalRowView(lclRow, A_indices, A_values);
+  }
 }
 
 template<typename ST, typename LO, typename GO, typename NT>
