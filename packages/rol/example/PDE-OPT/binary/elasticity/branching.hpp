@@ -201,7 +201,7 @@ public:
         *outStream_ << "  cnt = " << cnt << "  infeasibility = " << cnorm << std::endl;
       }
     }
-    problem0_->getObjective()->update(*rndSolution_);
+    problem0_->getObjective()->update(*rndSolution_,ROL::UPDATE_TEMP);
     Real val = problem0_->getObjective()->value(*rndSolution_,tol);
     branching_->foundSolution(new ROL::PEBBL::IntegerSolution<Real>(*rndSolution_,val));
     if (verbosity_ > 0) {
