@@ -131,7 +131,6 @@ public:
 
   Real value( const ROL::Vector<Real> &z, Real &tol ) {
     nfval_++;
-    ROL::Ptr<const Tpetra::MultiVector<>> z_data = getConstField(z);
     ROL::Ptr<Tpetra::MultiVector<>>       u_data = getField(*state_);
     // Solve state equation
     solve_state_equation(*state_,z);

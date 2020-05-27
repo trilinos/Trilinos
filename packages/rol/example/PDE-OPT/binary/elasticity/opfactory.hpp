@@ -68,7 +68,8 @@ private:
 
   ROL::Ptr<MeshManager<Real>>         mesh_;
   ROL::Ptr<PDE_Elasticity<Real>>      pde_;
-  ROL::Ptr<MultiMat_PDE_Filter<Real>> filter_;
+  ROL::Ptr<MultiMat_PDE_Filter<Real>> pde_filter_;
+  ROL::Ptr<Filter<Real>>              filter_;
   bool useFilter_;
 
   ROL::Ptr<PDE_Selection<Real>>        spde_;
@@ -106,8 +107,9 @@ public:
 
     useFilter_ = pl.sublist("Problem").get("Use Filter",true);
     if (useFilter_) {
-      filter_ = ROL::makePtr<MultiMat_PDE_Filter<Real>>(pl_);
-      pde_->setDensityFields(filter_->getFields());
+      pde_filter_ = ROL::makePtr<MultiMat_PDE_Filter<Real>>(pl_);
+      pde_->setDensityFields(pde_filter_->getFields());
+      filter_ = ROL::makePtr<Filter<Real>>(pde_filter_, mesh_, comm_, pl_, *os_);
     }
 
     // Selection constraint
@@ -183,7 +185,7 @@ public:
 
   ROL::Ptr<ROL::Objective<Real>> buildObjective(void) {
     if (useFilter_)
-      return ROL::makePtr<Filtered_Compliance_Objective<Real>>(pde_, filter_, mesh_, comm_, pl_, *os_);
+      return ROL::makePtr<Filtered_Compliance_Objective<Real>>(filter_, pde_, mesh_, comm_, pl_, *os_);
     else
       return ROL::makePtr<Compliance_Objective<Real>>(pde_, mesh_, comm_, pl_, *os_);
   }
@@ -197,7 +199,7 @@ public:
   void print(const ROL::Vector<Real> &z) {
     if (useFilter_) {
       ROL::Ptr<Filtered_Compliance_Objective<Real>>
-        obj = ROL::makePtr<Filtered_Compliance_Objective<Real>>(pde_, filter_, mesh_, comm_, pl_, *os_);
+        obj = ROL::makePtr<Filtered_Compliance_Objective<Real>>(filter_, pde_, mesh_, comm_, pl_, *os_);
       obj->printToFile(*dynamic_cast<const ROL::PartitionedVector<Real>&>(z).get(0),*os_);
     }
     else {

@@ -109,10 +109,11 @@ private:
   ROL::Ptr<Dirichlet<Real>>                   dirichlet_;
   ROL::Ptr<Traction<Real>>                    traction_;
   ROL::Ptr<FieldUtils::FieldInfo>             fieldInfo_, fieldInfoDens_;
-  bool getFields2called_;
+  bool getFields2called_, setCellNodes_, setFieldPattern_;
 
 public:
-  PDE_Elasticity(Teuchos::ParameterList &parlist) : getFields2called_(false) {
+  PDE_Elasticity(Teuchos::ParameterList &parlist)
+    : getFields2called_(false), setCellNodes_(true), setFieldPattern_(true) {
     // Material properties
     ROL::ParameterList list;
     list.set("Use Plain Stress", parlist.sublist("Problem").get("Use Plain Stress", true));
@@ -709,43 +710,49 @@ public:
   void setCellNodes(const ROL::Ptr<Intrepid::FieldContainer<Real>> &volCellNodes,
                     const std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> &bdryCellNodes,
                     const std::vector<std::vector<std::vector<int>>> &bdryCellLocIds) {
-    volCellNodes_ = volCellNodes;
-    bdryCellNodes_ = bdryCellNodes;
-    bdryCellLocIds_ = bdryCellLocIds;
-    // Finite element definition.
-    fe_ = ROL::makePtr<FE<Real>>(volCellNodes_,basisPtr_,cellCub_);
-    feDens_ = ROL::makePtr<FE<Real>>(volCellNodes_,basisPtrDens_,cellCub_,false);
-    fidx_ = fe_->getBoundaryDofs();
-    if (!traction_->isNull()) {
-      traction_->setCellNodes(bdryCellNodes_,bdryCellLocIds_);
-    }
-    dirichlet_->setCellNodes(bdryCellNodes_,bdryCellLocIds_,fidx_);
-    int T = matTensor_.size();
-    for (int t=0; t<T; ++t) {
-      matTensor_[t]->setFE(fe_);
-    }
-    // Construct boundary FE
-    int numSideSets = bdryCellLocIds_.size();
-    if (numSideSets> 0) {
-      feBdry_.resize(numSideSets);
-      for (int i = 0; i < numSideSets; ++i) {
-        int numLocSides = bdryCellNodes[i].size();
-        feBdry_[i].resize(numLocSides);
-        for (int j = 0; j < numLocSides; ++j) {
-          if (bdryCellNodes[i][j] != ROL::nullPtr) {
-            feBdry_[i][j] = ROL::makePtr<FE<Real>>(bdryCellNodes[i][j],basisPtr_,bdryCub_,j);
+    if (setCellNodes_) {
+      volCellNodes_ = volCellNodes;
+      bdryCellNodes_ = bdryCellNodes;
+      bdryCellLocIds_ = bdryCellLocIds;
+      // Finite element definition.
+      fe_     = ROL::makePtr<FE<Real>>(volCellNodes_,basisPtr_,cellCub_);
+      feDens_ = ROL::makePtr<FE<Real>>(volCellNodes_,basisPtrDens_,cellCub_,false);
+      fidx_   = fe_->getBoundaryDofs();
+      if (!traction_->isNull()) {
+        traction_->setCellNodes(bdryCellNodes_,bdryCellLocIds_);
+      }
+      dirichlet_->setCellNodes(bdryCellNodes_,bdryCellLocIds_,fidx_);
+      int T = matTensor_.size();
+      for (int t=0; t<T; ++t) {
+        matTensor_[t]->setFE(fe_);
+      }
+      // Construct boundary FE
+      int numSideSets = bdryCellLocIds_.size();
+      if (numSideSets> 0) {
+        feBdry_.resize(numSideSets);
+        for (int i = 0; i < numSideSets; ++i) {
+          int numLocSides = bdryCellNodes[i].size();
+          feBdry_[i].resize(numLocSides);
+          for (int j = 0; j < numLocSides; ++j) {
+            if (bdryCellNodes[i][j] != ROL::nullPtr) {
+              feBdry_[i][j] = ROL::makePtr<FE<Real>>(bdryCellNodes[i][j],basisPtr_,bdryCub_,j);
+            }
           }
         }
       }
+      setCellNodes_ = false;
     }
   }
 
   void setFieldPattern(const std::vector<std::vector<int>> &fieldPattern,
                        const std::vector<std::vector<int>> &fieldPattern2) {
-    fieldPattern_     = fieldPattern;
-    fieldPatternDens_ = fieldPattern2;
-    fieldInfo_     = ROL::makePtr<FieldUtils::FieldInfo>(numFields_, numDofs_, numFieldDofs_, fieldPattern_);
-    fieldInfoDens_ = ROL::makePtr<FieldUtils::FieldInfo>(numFieldsDens_, numDofsDens_, numFieldDofsDens_, fieldPatternDens_);
+    if (setFieldPattern_) {
+      fieldPattern_     = fieldPattern;
+      fieldPatternDens_ = fieldPattern2;
+      fieldInfo_     = ROL::makePtr<FieldUtils::FieldInfo>(numFields_, numDofs_, numFieldDofs_, fieldPattern_);
+      fieldInfoDens_ = ROL::makePtr<FieldUtils::FieldInfo>(numFieldsDens_, numDofsDens_, numFieldDofsDens_, fieldPatternDens_);
+      setFieldPattern_ = false;
+    }
   }
 
   const ROL::Ptr<FE<Real>> getFE(void) const {

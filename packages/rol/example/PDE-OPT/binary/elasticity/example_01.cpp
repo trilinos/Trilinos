@@ -123,12 +123,22 @@ int main(int argc, char *argv[]) {
     bool derivCheck = parlist->sublist("Problem").get("Check derivatives",false);
     if (derivCheck) {
       factory->check();
+      ROL::Ptr<ROL::PEBBL::IntegerProblem<RealT>> prob = factory->build();
+      ROL::Ptr<TpetraMultiMatIntegerTransformation<RealT>> trans
+        = ROL::makePtr<TpetraMultiMatIntegerTransformation<RealT>>();
+      trans->add({  1, RealT(1)});
+      trans->add({ 17, RealT(0)});
+      trans->add({107, RealT(1)});
+      prob->setTransformation(trans);
+      prob->finalize(false,true,*outStream);
+      prob->check(true,*outStream);
     }
     Teuchos::Time algoTimer("Algorithm Time", true);
     bool binary = parlist->sublist("Problem").get("Binary",true);
     ROL::Ptr<ROL::Vector<RealT>> z;
     if (!binary) {
       ROL::Ptr<ROL::PEBBL::IntegerProblem<RealT>> problem = factory->build();
+      problem->finalize(false,true,*outStream);
       ROL::NewOptimizationSolver<RealT> solver(problem,*parlist);
       solver.solve(*outStream);
       z = problem->getPrimalOptimizationVector();
