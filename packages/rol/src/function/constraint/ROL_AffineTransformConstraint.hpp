@@ -89,7 +89,7 @@ public:
   void applyAdjointHessian( Vector<Real> &ahuv, const Vector<Real> &u, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) override;
 
 private:
-  const Ptr<const Vector<Real>> transform(const Vector<Real> &x);
+  Ptr<const Vector<Real>> transform(const Vector<Real> &x);
 
 }; // class AffineTransformConstraint
 

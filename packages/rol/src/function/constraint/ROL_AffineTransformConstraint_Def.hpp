@@ -120,7 +120,7 @@ void AffineTransformConstraint<Real>::applyAdjointHessian( Vector<Real> &ahuv, c
 }
 
 template<typename Real>
-const Ptr<const Vector<Real>> AffineTransformConstraint<Real>::transform(const Vector<Real> &x) {
+Ptr<const Vector<Real>> AffineTransformConstraint<Real>::transform(const Vector<Real> &x) {
   bool isApplied = storage_->get(*primal_,Constraint<Real>::getParameter());
   if (!isApplied) {
     Real tol = std::sqrt(ROL_EPSILON<Real>());

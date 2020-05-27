@@ -91,7 +91,7 @@ public:
   void setParameter(const std::vector<Real> &param) override;
 
 private:
-  const Ptr<const Vector<Real>> transform(const Vector<Real> &x);
+  Ptr<const Vector<Real>> transform(const Vector<Real> &x);
 
 }; // class AffineTransformObjective
 

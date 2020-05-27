@@ -120,7 +120,7 @@ void AffineTransformObjective<Real>::setParameter(const std::vector<Real> &param
 }
 
 template<typename Real>
-const Ptr<const Vector<Real>> AffineTransformObjective<Real>::transform(const Vector<Real> &x) {
+Ptr<const Vector<Real>> AffineTransformObjective<Real>::transform(const Vector<Real> &x) {
   bool isApplied = storage_->get(*primal_,Objective<Real>::getParameter());
   if (!isApplied) {
     Real tol = std::sqrt(ROL_EPSILON<Real>());
