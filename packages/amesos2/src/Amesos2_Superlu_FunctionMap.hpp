@@ -881,8 +881,8 @@ namespace Amesos2 {
           Teuchos::Array<SLU::C::complex> & convert_x, view_t & x)
     {
       int read_index = 0;
-      for(int j = 0; j < x.extent(1); ++j) {
-        for(int i = 0; i < x.extent(0); ++i) { // layout left
+      for(int j = 0; j < static_cast<int>(x.extent(1)); ++j) {
+        for(int i = 0; i < static_cast<int>(x.extent(0)); ++i) { // layout left
           x(i,j) = Teuchos::as<Kokkos::complex<float>>(convert_x[read_index++]);
         }
       }
@@ -1031,8 +1031,8 @@ namespace Amesos2 {
           Teuchos::Array<SLU::Z::doublecomplex> & convert_x, view_t & x)
     {
       int read_index = 0;
-      for(int j = 0; j < x.extent(1); ++j) {
-        for(int i = 0; i < x.extent(0); ++i) { // layout left
+      for(int j = 0; j < static_cast<int>(x.extent(1)); ++j) {
+        for(int i = 0; i < static_cast<int>(x.extent(0)); ++i) { // layout left
           x(i,j) = Teuchos::as<Kokkos::complex<double>>(convert_x[read_index++]);
         }
       }
