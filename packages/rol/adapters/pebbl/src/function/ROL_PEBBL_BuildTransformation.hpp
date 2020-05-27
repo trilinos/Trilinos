@@ -63,23 +63,21 @@ class BuildTransformation {
 private:
   const Ptr<IntegerTransformation<Real>> trans_;
   const Ptr<const Vector<Real>>          x_;
-  Ptr<VectorController<Real>>            storage_;
+  const Ptr<VectorController<Real>>      storage_;
 
 public:
   virtual ~BuildTransformation(void) {}
 
   BuildTransformation(const Ptr<IntegerTransformation<Real>> &trans,
-                      const Ptr<const Vector<Real>>           &x)
-    : trans_(trans), x_(x) {
-    // Initialized storage
-    storage_ = makePtr<VectorController<Real>>();
-  }
+                      const Ptr<const Vector<Real>>          &x)
+    : trans_(trans), x_(x),
+      storage_(makePtr<VectorController<Real>>()) {}
 
-  const Ptr<Objective<Real>> transform(const Ptr<Objective<Real>> &obj) const {
+  Ptr<Objective<Real>> transform(const Ptr<Objective<Real>> &obj) const {
     return makePtr<AffineTransformObjective<Real>>(obj,trans_,*x_,storage_);
   }
 
-  const Ptr<Constraint<Real>> transform(const Ptr<Constraint<Real>> &con) const {
+  Ptr<Constraint<Real>> transform(const Ptr<Constraint<Real>> &con) const {
     return makePtr<AffineTransformConstraint<Real>>(con,trans_,*x_,storage_);
   }
 

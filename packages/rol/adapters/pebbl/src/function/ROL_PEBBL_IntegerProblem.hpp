@@ -131,13 +131,14 @@ public:
                 std::ostream &outStream = std::cout) override {
     if (!isFinalized()) {
       if (trans_ != nullPtr) {
+        // Apply transformation to optimization vector
+        Real tol(std::sqrt(ROL_EPSILON<Real>()));
+        trans_->value(*INPUT_xprim_,*INPUT_xprim_,tol);
+        // Build transformation
         build_ = makePtr<BuildTransformation<Real>>(trans_,INPUT_xprim_);
         // Transform objective
         ORIGINAL_obj_ = INPUT_obj_;
         INPUT_obj_    = build_->transform(ORIGINAL_obj_);
-        // Apply transformation to optimization vector
-        Real tol(std::sqrt(ROL_EPSILON<Real>()));
-        trans_->value(*INPUT_xprim_,*INPUT_xprim_,tol);
         // Transform nonlinear constraints
         ORIGINAL_con_.clear();
         ORIGINAL_con_.insert(INPUT_con_.begin(),INPUT_con_.end());
