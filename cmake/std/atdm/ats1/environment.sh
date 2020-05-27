@@ -145,10 +145,6 @@ export F90=${MPIF90}
 # Anasazi settings
 export ATDM_CONFIG_Anasazi_ENABLE_RBGen=OFF
 
-# Kokkos settings
-# ENABLE_SERIAL used by ATDMDevEnvSettings
-export ATDM_CONFIG_Kokkos_ENABLE_SERIAL=OFF
-
 # Lapack (intel) settings
 export ATDM_CONFIG_LAPACK_LIBS="-L${CBLAS_ROOT}/mkl/lib/intel64;-L${CBLAS_ROOT}/compiler/lib/intel64;-mkl;-lmkl_intel_lp64;-lmkl_intel_thread;-lmkl_core;-liomp5"
 
