@@ -249,7 +249,6 @@ namespace MueLu {
       }
       if (!matvecParams_.is_null())
         H.SetMatvecParams(matvecParams_);
-      // FIXME: Should allow specification of NumVectors on parameterlist
       H.AllocateLevelMultiVectors(sizeOfMultiVectors_);
       H.describe(H.GetOStream(Runtime0), verbosity_);
 
