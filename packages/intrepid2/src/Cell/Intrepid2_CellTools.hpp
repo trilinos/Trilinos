@@ -154,6 +154,8 @@ namespace Intrepid2 {
       return r_val;
     }
 
+    typedef Kokkos::DynRankView<double,ExecSpaceType> subcellParamViewType;
+
   private:
 
     /** \brief Generates default HGrad basis based on cell topology 
@@ -250,7 +252,6 @@ namespace Intrepid2 {
     /** \struct Intrepid2::CellTools::SubcellParamData
         \brief Parametrization coefficients of edges and faces of reference cells
      */
-    typedef Kokkos::DynRankView<double,ExecSpaceType> subcellParamViewType;
     struct SubcellParamData {
       subcellParamViewType dummy;
       subcellParamViewType lineEdges;  // edge maps for 2d non-standard cells; shell line and beam
@@ -264,6 +265,24 @@ namespace Intrepid2 {
     static SubcellParamData subcellParamData_;
 
     static bool isSubcellParametrizationSet_;
+
+
+    /** \brief  Sets orientation-preserving parametrizations of reference edges and faces of cell
+        topologies with reference cells. Used to populate Intrepid2::CellTools::SubcellParamData.
+
+        See Intrepid2::CellTools::setSubcellParametrization and Section \ref sec_cell_topology_subcell_map
+        more information about parametrization maps.
+
+        \param  subcellParam           [out]  - array with the coefficients of the parametrization map
+        \param  subcellDim             [in]   - dimension of the subcells being parametrized (1 or 2)
+        \param  parentCell             [in]   - topology of the parent cell owning the subcells.
+    */
+    static void
+    setSubcellParametrization(       subcellParamViewType &subcellParam,
+                               const ordinal_type          subcellDim,
+                               const shards::CellTopology  parentCell );
+
+  public:
 
     /** \brief  Defines orientation-preserving parametrizations of reference edges and faces of cell
         topologies with reference cells.
@@ -300,23 +319,6 @@ namespace Intrepid2 {
 
     */
     static void setSubcellParametrization();
-
-    /** \brief  Sets orientation-preserving parametrizations of reference edges and faces of cell
-        topologies with reference cells. Used to populate Intrepid2::CellTools::SubcellParamData.
-
-        See Intrepid2::CellTools::setSubcellParametrization and Section \ref sec_cell_topology_subcell_map
-        more information about parametrization maps.
-
-        \param  subcellParametrization [out]  - array with the coefficients of the parametrization map
-        \param  subcellDim             [in]   - dimension of the subcells being parametrized (1 or 2)
-        \param  parentCell             [in]   - topology of the parent cell owning the subcells.
-    */
-    static void
-    setSubcellParametrization(       subcellParamViewType &subcellParam,
-                               const ordinal_type          subcellDim,
-                               const shards::CellTopology  parentCell );
-
-  public:
 
    /** \brief  Default constructor.
       */
@@ -1139,6 +1141,28 @@ namespace Intrepid2 {
                            const ordinal_type subcellDim,
                            const ordinal_type subcellOrd,
                            const shards::CellTopology parentCell );
+
+
+    /**
+     \brief  Overload of mapToReferenceSubcell that runs on device.
+
+        \param  refSubcellPoints  [out] - rank-2 (P,D1) array with images of parameter space points
+        \param  paramPoints       [in]  - rank-2 (P,D2) array with points in 1D or 2D parameter domain
+        \param  subcellMap        [in]  - array with the coefficients of the subcell parametrization map
+        \param  subcellDim        [in]  - dimension of the subcell where points are mapped to
+        \param  subcellOrd        [in]  - subcell ordinal
+        \param  parentCellDim     [in]  - dimension of the parent cell.
+     */
+    template<typename refSubcellPointValueType, class ...refSubcellPointProperties,
+             typename paramPointValueType, class ...paramPointProperties>
+    static void
+    KOKKOS_INLINE_FUNCTION
+    mapToReferenceSubcell(       Kokkos::DynRankView<refSubcellPointValueType,refSubcellPointProperties...> refSubcellPoints,
+                           const Kokkos::DynRankView<paramPointValueType,paramPointProperties...>           paramPoints,
+                           const subcellParamViewType subcellMap,
+                           const ordinal_type subcellDim,
+                           const ordinal_type subcellOrd,
+                           const ordinal_type parentCellDim);
 
 
     //============================================================================================//

@@ -7,3 +7,6 @@
 /* Define if want to build with sacado enabled */
 #cmakedefine HAVE_INTREPID2_SACADO
 
+/* Define if want to build with KokkosKernels enabled */
+#cmakedefine HAVE_INTREPID2_KOKKOSKERNELS
+

@@ -108,7 +108,7 @@ namespace
     // since A is SPD, col/row major has no effect on the data
     // but B's data may be transposed relative to what LAPACK expects (column-major order)
     // so we allocate our own storage for B to make sure of the ordering
-    double B[N*M];
+    std::vector<double> B(N*M);
     
     for (int j=0; j<M; j++)
     {
@@ -132,7 +132,7 @@ namespace
     if (INFO != 0) std::cout << "ERROR: got " << INFO << " from POTRF.\n";
     
     // back-substitute
-    lapack.POTRS(UPLO, N, M, A_host.data(), N, B, N, &INFO);
+    lapack.POTRS(UPLO, N, M, A_host.data(), N, B.data(), N, &INFO);
     
     if (INFO != 0) result = INFO;
     

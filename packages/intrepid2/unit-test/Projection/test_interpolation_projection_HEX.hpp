@@ -503,8 +503,6 @@ int InterpolationProjectionHex(const bool verbose) {
             }
           }
 
-
-#ifndef KOKKOS_ENABLE_CUDA
           //compute projection-based interpolation of the Lagrangian interpolation
           DynRankView ConstructWithLabel(basisCoeffsHGrad, numCells, basisCardinality);
           {
@@ -647,7 +645,6 @@ int InterpolationProjectionHex(const bool verbose) {
                   "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
             }
           }
-#endif
         }
       }
     } while(std::next_permutation(&reorder[0]+1, &reorder[0]+4)); //reorder vertices of common face
@@ -957,7 +954,6 @@ int InterpolationProjectionHex(const bool verbose) {
             }
           }
 
-#ifndef KOKKOS_ENABLE_CUDA
           //compute projection-based interpolation of the Lagrangian interpolation
           DynRankView ConstructWithLabel(basisCoeffsHCurl, numCells, basisCardinality);
           {
@@ -1042,6 +1038,7 @@ int InterpolationProjectionHex(const bool verbose) {
             }
           }
 
+
           //compute L2 projection of the Lagrangian interpolation
           DynRankView ConstructWithLabel(basisCoeffsL2, numCells, basisCardinality);
           {
@@ -1101,7 +1098,6 @@ int InterpolationProjectionHex(const bool verbose) {
                   "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
             }
           }
-#endif
         }
       }
     } while(std::next_permutation(&reorder[0]+1, &reorder[0]+4)); //reorder vertices of common face
@@ -1403,7 +1399,6 @@ int InterpolationProjectionHex(const bool verbose) {
             }
           }
 
-#ifndef KOKKOS_ENABLE_CUDA
           //compute projection-based interpolation of the Lagrangian interpolation
           DynRankView ConstructWithLabel(basisCoeffsHDiv, numCells, basisCardinality);
           {
@@ -1487,7 +1482,6 @@ int InterpolationProjectionHex(const bool verbose) {
             }
           }
 
-
           //compute L2 projection interpolation of the Lagrangian interpolation
           DynRankView ConstructWithLabel(basisCoeffsL2, numCells, basisCardinality);
           {
@@ -1548,7 +1542,6 @@ int InterpolationProjectionHex(const bool verbose) {
                   "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
             }
           }
-#endif
         }
       }
     } while(std::next_permutation(&reorder[0]+1, &reorder[0]+4)); //reorder vertices of common face
@@ -1740,7 +1733,6 @@ int InterpolationProjectionHex(const bool verbose) {
         }
       }
 
-#ifndef KOKKOS_ENABLE_CUDA
       //compute projection-based interpolation of the Lagrangian interpolation
       DynRankView ConstructWithLabel(basisCoeffsHVol, numCells, basisCardinality);
       {
@@ -1794,10 +1786,10 @@ int InterpolationProjectionHex(const bool verbose) {
         }
 
         //Check that the two representations of the gradient of ifun are consistent
-        if(diffErr > pow(16, degree)*tol) { //heuristic relation on how round-off error depends on degree
+        if(diffErr > pow(20, degree)*tol) { //heuristic relation on how round-off error depends on degree
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-          *outStream << "HGRAD_C" << degree << ": The weights recovered with the optimization are different than the one used for generating the functon."<<
+          *outStream << "HVOL_C" << degree << ": The weights recovered with the optimization are different than the one used for generating the functon."<<
               "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
         }
       }
@@ -1854,14 +1846,13 @@ int InterpolationProjectionHex(const bool verbose) {
             diffErr = std::max(diffErr, std::abs(basisCoeffsLI(ic,k) - basisCoeffsL2(ic,k)));
         }
 
-        if(diffErr > pow(16, degree)*tol) { //heuristic relation on how round-off error depends on degree
+        if(diffErr > pow(20, degree)*tol) { //heuristic relation on how round-off error depends on degree
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-          *outStream << "HGRAD_C" << degree << ": The weights recovered with the L2 optimization are different than the one used for generating the functon."<<
+          *outStream << "HVOL_C" << degree << ": The weights recovered with the L2 optimization are different than the one used for generating the functon."<<
               "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
         }
       }
-#endif
     }
   } catch (std::exception &err) {
     std::cout << " Exeption\n";

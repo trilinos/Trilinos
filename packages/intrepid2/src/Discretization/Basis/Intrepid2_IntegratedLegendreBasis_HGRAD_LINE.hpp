@@ -338,6 +338,20 @@ namespace Intrepid2
       }
     }
     
+    /** \brief  Returns basis name
+
+     \return the name of the basis
+    */
+   const char* getName() const override {
+     return "Intrepid2_IntegratedLegendreBasis_HGRAD_LINE";
+   }
+
+   /** \brief True if orientation is required
+   */
+   virtual bool requireOrientation() const override {
+     return false;
+   }
+
     // since the getValues() below only overrides the FEM variant, we specify that
     // we use the base class's getValues(), which implements the FVD variant by throwing an exception.
     // (It's an error to use the FVD variant on this basis.)

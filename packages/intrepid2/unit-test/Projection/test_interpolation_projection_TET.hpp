@@ -322,13 +322,7 @@ int InterpolationProjectionTet(const bool verbose) {
           //compute Lagrangian Interpolation of fun
           {
             li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffsPhys, basisPtr.get(), POINTTYPE_EQUISPACED, elemOrts);
-            Kokkos::fence();
-                *outStream << "\n\nFunction DOFs for Tet 0 are:";
-                for(ordinal_type j=0;j<basisCardinality;j++)
-                  *outStream << " " << j << " " << dofCoeffsPhys(0,j) << " (" << dofCoordsOriented(0,j,0) << ", " << dofCoordsOriented(0,j,1) << ", " << dofCoordsOriented(0,j,2) <<").   ";
-                *outStream << "\nFunction DOFs for Tet 1 are:";
-                for(ordinal_type j=0;j<basisCardinality;j++)
-                  *outStream << " " << j << " " << dofCoeffsPhys(1,j) << " (" << dofCoordsOriented(1,j,0) << ", " << dofCoordsOriented(1,j,1) << ", " << dofCoordsOriented(1,j,2) <<").   ";
+
             //Compute physical Dof Coordinates
             {
               Basis_HGRAD_TET_C1_FEM<DeviceSpaceType,ValueType,ValueType> tetLinearBasis; //used for computing physical coordinates
@@ -431,14 +425,14 @@ int InterpolationProjectionTet(const bool verbose) {
               {
                 errorFlag++;
                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-                //*outStream << "Function DOFs on common edge " << iEdge << " computed using Tet 0 basis functions are not consistent with those computed using Tet 1\n";
-                //*outStream << "Function DOFs for Tet 0 are:";
-                //for(ordinal_type j=0;j<numEdgeDOFs;j++)
-                //  *outStream << " " << basisCoeffsLI(0,basisPtr->getDofOrdinal(1,edgeIndexes[0][iEdge],j));
-                //*outStream << "\nFunction DOFs for Tet 1 are:";
-                //for(ordinal_type j=0;j<numEdgeDOFs;j++)
-                //  *outStream << " " << basisCoeffsLI(1,basisPtr->getDofOrdinal(1,edgeIndexes[1][iEdge],j));
-                //*outStream << std::endl;
+                *outStream << "Function DOFs on common edge " << iEdge << " computed using Tet 0 basis functions are not consistent with those computed using Tet 1\n";
+                *outStream << "Function DOFs for Tet 0 are:";
+                for(ordinal_type j=0;j<numEdgeDOFs;j++)
+                  *outStream << " " << basisCoeffsLI(0,basisPtr->getDofOrdinal(1,edgeIndexes[0][iEdge],j));
+                *outStream << "\nFunction DOFs for Tet 1 are:";
+                for(ordinal_type j=0;j<numEdgeDOFs;j++)
+                  *outStream << " " << basisCoeffsLI(1,basisPtr->getDofOrdinal(1,edgeIndexes[1][iEdge],j));
+                *outStream << std::endl;
               }
             }
           }
@@ -486,8 +480,6 @@ int InterpolationProjectionTet(const bool verbose) {
             }
           }
 
-
-#ifndef KOKKOS_ENABLE_CUDA
           //compute projection-based interpolation of the Lagrangian interpolation
           DynRankView ConstructWithLabel(basisCoeffsHGrad, numCells, basisCardinality);
           {
@@ -629,7 +621,6 @@ int InterpolationProjectionTet(const bool verbose) {
                   "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
             }
           }
-#endif
         }
       }
     } while(std::next_permutation(&reorder[0]+1, &reorder[0]+4)); //reorder vertices of common face
@@ -924,7 +915,7 @@ int InterpolationProjectionTet(const bool verbose) {
             }
           }
 
-#ifndef KOKKOS_ENABLE_CUDA
+
           //compute projection-based interpolation of the Lagrangian interpolation
           DynRankView ConstructWithLabel(basisCoeffsHCurl, numCells, basisCardinality);
           {
@@ -1067,7 +1058,6 @@ int InterpolationProjectionTet(const bool verbose) {
                   "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
             }
           }
-#endif
         }
       }
     } while(std::next_permutation(&reorder[0]+1, &reorder[0]+4)); //reorder vertices of common face
@@ -1348,7 +1338,6 @@ int InterpolationProjectionTet(const bool verbose) {
             }
           }
 
-#ifndef KOKKOS_ENABLE_CUDA
           //compute projection-based interpolation of the Lagrangian interpolation
           DynRankView ConstructWithLabel(basisCoeffsHDiv, numCells, basisCardinality);
           {
@@ -1493,7 +1482,6 @@ int InterpolationProjectionTet(const bool verbose) {
                   "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
             }
           }
-#endif
         }
       }
     } while(std::next_permutation(&reorder[0]+1, &reorder[0]+4)); //reorder vertices of common face
@@ -1686,7 +1674,6 @@ int InterpolationProjectionTet(const bool verbose) {
         }
       }
 
-#ifndef KOKKOS_ENABLE_CUDA
       //compute projection-based interpolation of the Lagrangian interpolation
       DynRankView ConstructWithLabel(basisCoeffsHVol, numCells, basisCardinality);
       {
@@ -1743,7 +1730,7 @@ int InterpolationProjectionTet(const bool verbose) {
         if(diffErr > pow(7, degree-1)*tol) { //heuristic relation on how round-off error depends on degree
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-          *outStream << "HGRAD_C" << degree << ": The weights recovered with the optimization are different than the one used for generating the functon."<<
+          *outStream << "HVOL_C" << degree << ": The weights recovered with the optimization are different than the one used for generating the functon."<<
               "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
         }
       }
@@ -1803,11 +1790,10 @@ int InterpolationProjectionTet(const bool verbose) {
         if(diffErr > pow(7, degree-1)*tol) { //heuristic relation on how round-off error depends on degree
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-          *outStream << "HGRAD_C" << degree << ": The weights recovered with the L2 optimization are different than the one used for generating the functon."<<
+          *outStream << "HVOL_C" << degree << ": The weights recovered with the L2 optimization are different than the one used for generating the functon."<<
               "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
         }
       }
-#endif
     }
   } catch (std::exception &err) {
     std::cout << " Exeption\n";
