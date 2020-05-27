@@ -95,37 +95,55 @@ void VectorController<Real,Key>::constraintUpdate(bool flag) {
 
 template <class Real, class Key>
 void VectorController<Real,Key>::objectiveUpdate(EUpdateType type) {
-  if (!conUpdated_) {
-    switch(type) {
-      case UPDATE_INITIAL: temp_ = false; trial_ = false; reset(true);  break;
-      case UPDATE_TRIAL:   temp_ = false; trial_ = true;  resetTrial(); break;
-      case UPDATE_ACCEPT:  temp_ = false; trial_ = false; accept();     break;
-      case UPDATE_REVERT:  temp_ = false; trial_ = false;               break;
-      case UPDATE_TEMP:    temp_ = true;  trial_ = false; resetTemp();  break;
-    }
-  }
-  objUpdated_ = true;
-  if (conUpdated_ && objUpdated_) {
+  if (type == UPDATE_TEMP) {
+    temp_       = true;
+    trial_      = false;
     objUpdated_ = false;
     conUpdated_ = false;
+    resetTemp();
+  }
+  else {
+    if (!conUpdated_) {
+      switch(type) {
+        case UPDATE_INITIAL: temp_ = false; trial_ = false; reset(true);  break;
+        case UPDATE_TRIAL:   temp_ = false; trial_ = true;  resetTrial(); break;
+        case UPDATE_ACCEPT:  temp_ = false; trial_ = false; accept();     break;
+        case UPDATE_REVERT:  temp_ = false; trial_ = false;               break;
+        case UPDATE_TEMP:    temp_ = true;  trial_ = false; resetTemp();  break;
+      }
+    }
+    objUpdated_ = true;
+    if (conUpdated_ && objUpdated_) {
+      objUpdated_ = false;
+      conUpdated_ = false;
+    }
   }
 }
 
 template <class Real, class Key>
 void VectorController<Real,Key>::constraintUpdate(EUpdateType type) {
-  if (!objUpdated_) {
-    switch(type) {
-      case UPDATE_INITIAL: temp_ = false; trial_ = false; reset(true);  break;
-      case UPDATE_TRIAL:   temp_ = false; trial_ = true;  resetTrial(); break;
-      case UPDATE_ACCEPT:  temp_ = false; trial_ = false; accept();     break;
-      case UPDATE_REVERT:  temp_ = false; trial_ = false;               break;
-      case UPDATE_TEMP:    temp_ = true;  trial_ = false; resetTemp();  break;
-    }
-  }
-  conUpdated_ = true;
-  if (conUpdated_ && objUpdated_) {
+  if (type == UPDATE_TEMP) {
+    temp_       = true;
+    trial_      = false;
     objUpdated_ = false;
     conUpdated_ = false;
+    resetTemp();
+  }
+  else {
+    if (!objUpdated_) {
+      switch(type) {
+        case UPDATE_INITIAL: temp_ = false; trial_ = false; reset(true);  break;
+        case UPDATE_TRIAL:   temp_ = false; trial_ = true;  resetTrial(); break;
+        case UPDATE_ACCEPT:  temp_ = false; trial_ = false; accept();     break;
+        case UPDATE_REVERT:  temp_ = false; trial_ = false;               break;
+        case UPDATE_TEMP:    temp_ = true;  trial_ = false; resetTemp();  break;
+      }
+    }
+    conUpdated_ = true;
+    if (conUpdated_ && objUpdated_) {
+      objUpdated_ = false;
+      conUpdated_ = false;
+    }
   }
 }
 
