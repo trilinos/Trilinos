@@ -513,16 +513,16 @@ Real NewOptimizationProblem<Real>::checkLinearity(bool printToStream, std::ostre
   for (auto it = INPUT_linear_con_.begin(); it != INPUT_linear_con_.end(); ++it) {
     c1 = it->second.residual->clone();
     c2 = it->second.residual->clone();
-    it->second.constraint->update(*xy,true);
+    it->second.constraint->update(*xy,UPDATE_TEMP);
     it->second.constraint->value(*c1,*xy,tol);
     cnorm = c1->norm();
-    it->second.constraint->update(*x,true);
+    it->second.constraint->update(*x,UPDATE_TEMP);
     it->second.constraint->value(*c2,*x,tol);
     c1->axpy(-one,*c2);
-    it->second.constraint->update(*y,true);
+    it->second.constraint->update(*y,UPDATE_TEMP);
     it->second.constraint->value(*c2,*y,tol);
     c1->axpy(-alpha,*c2);
-    it->second.constraint->update(*z,true);
+    it->second.constraint->update(*z,UPDATE_TEMP);
     it->second.constraint->value(*c2,*z,tol);
     c1->axpy(alpha,*c2);
     err = c1->norm();
