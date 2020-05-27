@@ -28,7 +28,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_NEW_FAD_DESIGN_IS_DEFAULT
   SACADO_NEW_FAD_DESIGN_IS_DEFAULT
   "Make the new Fad design the default, replacing the old one."
-  FALSE
+  ON
   )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
