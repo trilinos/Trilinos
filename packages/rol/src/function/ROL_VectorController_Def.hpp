@@ -67,6 +67,8 @@ void VectorController<Real,Key>::reset(bool flag) {
 
 template <class Real, class Key>
 void VectorController<Real,Key>::objectiveUpdate(bool flag) {
+  temp_  = false;
+  trial_ = false;
   if (!conUpdated_) {
     reset(flag);
   }
@@ -79,6 +81,8 @@ void VectorController<Real,Key>::objectiveUpdate(bool flag) {
 
 template <class Real, class Key>
 void VectorController<Real,Key>::constraintUpdate(bool flag) {
+  temp_  = false;
+  trial_ = false;
   if (!objUpdated_) {
     reset(flag);
   }
