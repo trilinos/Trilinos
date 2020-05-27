@@ -607,6 +607,9 @@ namespace MueLuTests {
 
     out << "version: " << MueLu::Version() << std::endl;
 
+    if (Teuchos::ScalarTraits<SC>::isComplex)
+      return;
+
     using Teuchos::RCP;
     using Teuchos::null;
     typedef MueLu::Utilities<SC,LO,GO,NO> Utils;
