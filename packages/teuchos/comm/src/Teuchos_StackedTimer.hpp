@@ -57,12 +57,14 @@
 #include <iostream>
 
 #if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
+#ifndef KOKKOS_IMPL_KOKKOS_PROFILING_HPP
 namespace Kokkos {
 namespace Profiling {
 extern void pushRegion (const std::string&);
 extern void popRegion ();
 } // namespace Profiling
 } // namespace Kokkos
+#endif
 #endif
 
 
