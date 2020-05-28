@@ -43,6 +43,7 @@
 #include "TpetraCore_config.h"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ArrayView.hpp"
+#include "Teuchos_OrdinalTraits.hpp"
 #include "Tpetra_Details_castAwayConstDualView.hpp"
 #include "Tpetra_Details_computeOffsets.hpp"
 #include "Tpetra_Details_createMirrorView.hpp"
@@ -937,11 +938,11 @@ unpackAndCombineIntoCrsMatrix(
 
   const bool do_hierarchical_unpack = Tpetra::Details::Behavior::hierarchicalUnpack();
   //const bool do_hierarchical_unpack = false;
-  const size_t long_row_min_entries =
+  const size_t default_batch_size =
     do_hierarchical_unpack ?
-    Tpetra::Details::Behavior::longRowMinNumEntries() :
+    Tpetra::Details::Behavior::hierarchicalUnpackBatchSize() :
     std::numeric_limits<size_t>::max();
-  const size_t batch_size = std::min(long_row_min_entries, max_num_ent);
+  const size_t batch_size = std::min(default_batch_size, max_num_ent);
 
   // To achieve some balance amongst threads, unpack each row in equal size batches
   size_t num_batches = 0;
@@ -1008,7 +1009,15 @@ unpackAndCombineIntoCrsMatrix(
     Kokkos::parallel_reduce(policy(0, static_cast<LO>(num_batches)), f, x);
   } else {
     using policy = Kokkos::TeamPolicy<XS, Kokkos::IndexType<LO>, HierarchicalUnpackTag>;
-    Kokkos::parallel_reduce(policy(static_cast<LO>(num_batches), Kokkos::AUTO), f, x);
+    const size_t team_size = Tpetra::Details::Behavior::hierarchicalUnpackTeamSize();
+    if (team_size == Teuchos::OrdinalTraits<size_t>::invalid())
+    {
+      Kokkos::parallel_reduce(policy(static_cast<LO>(num_batches), Kokkos::AUTO), f, x);
+    }
+    else
+    {
+      Kokkos::parallel_reduce(policy(static_cast<LO>(num_batches), static_cast<int>(team_size)), f, x);
+    }
   }
 
   auto x_h = x.to_std_pair();

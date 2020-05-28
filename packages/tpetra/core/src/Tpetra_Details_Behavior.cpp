@@ -48,6 +48,7 @@
 #include <vector>
 #include <functional>
 #include "Teuchos_TestForException.hpp"
+#include "Teuchos_OrdinalTraits.hpp"
 #include <stdexcept>
 
 namespace Tpetra {
@@ -379,6 +380,28 @@ size_t Behavior::longRowMinNumEntries ()
 {
   constexpr char envVarName[] = "TPETRA_LONG_ROW_MIN_NUM_ENTRIES";
   constexpr size_t defaultValue (256);
+
+  static size_t value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariableAsSize
+    (value_, initialized_, envVarName, defaultValue);
+}
+
+size_t Behavior::hierarchicalUnpackBatchSize ()
+{
+  constexpr char envVarName[] = "TPETRA_HIERARCHICAL_UNPACK_BATCH_SIZE";
+  constexpr size_t defaultValue (256);
+
+  static size_t value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariableAsSize
+    (value_, initialized_, envVarName, defaultValue);
+}
+
+size_t Behavior::hierarchicalUnpackTeamSize ()
+{
+  constexpr char envVarName[] = "TPETRA_HIERARCHICAL_UNPACK_TEAM_SIZE";
+  const size_t defaultValue (Teuchos::OrdinalTraits<size_t>::invalid ());
 
   static size_t value_ = defaultValue;
   static bool initialized_ = false;
