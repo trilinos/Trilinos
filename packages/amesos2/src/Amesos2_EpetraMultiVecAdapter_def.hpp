@@ -267,7 +267,6 @@ void MultiVecAdapter<Epetra_MultiVector>::get1dCopy_kokkos_view_host(
     using Teuchos::rcpFromPtr;
     using Teuchos::as;
 
-    const size_t local_length = getLocalLength();
     const size_t num_vecs = getGlobalNumVectors();
 
   #ifdef HAVE_AMESOS2_DEBUG
@@ -280,7 +279,7 @@ void MultiVecAdapter<Epetra_MultiVector>::get1dCopy_kokkos_view_host(
     // First make a host view
     host_view = Kokkos::View<scalar_t**, Kokkos::LayoutLeft, Kokkos::HostSpace>(
       Kokkos::ViewAllocateWithoutInitializing("get1dCopy_kokkos_view"),
-      local_length, num_vecs);
+      distribution_map->getNodeNumElements(), num_vecs);
 
     // Optimization for ROOTED and single MPI process
     if ( num_vecs == 1 && this->mv_->Comm().MyPID() == 0 && this->mv_->Comm().NumProc() == 1 ) {
