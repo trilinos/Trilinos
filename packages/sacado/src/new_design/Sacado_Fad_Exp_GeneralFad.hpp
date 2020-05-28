@@ -136,6 +136,24 @@ namespace Sacado {
         this->fastAccessDx(ith) = value_type(1.);
       }
 
+      //! Set whether this Fad object should update values
+      /*! Retained for backward compatibility.
+       */
+      KOKKOS_INLINE_FUNCTION
+      void setUpdateValue(bool update_val) {}
+
+      //! Return whether this Fad object has an updated value
+      /*! Retained for backward compatibility.
+       */
+      KOKKOS_INLINE_FUNCTION
+      bool updateValue() const { return true; }
+
+      //! Cache values
+      /*! Retained for backward compatibility.
+       */
+      KOKKOS_INLINE_FUNCTION
+      void cache() const {}
+
       //! Returns whether two Fad objects have the same values
       template <typename S>
       KOKKOS_INLINE_FUNCTION
