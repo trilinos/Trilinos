@@ -294,9 +294,10 @@ ATDM_SET_CACHE(Kokkos_ENABLE_CUDA_LAMBDA "${ATDM_USE_CUDA}" CACHE BOOL)
 ATDM_SET_CACHE(Kokkos_ENABLE_DEBUG_BOUNDS_CHECK "${Trilinos_ENABLE_DEBUG}" CACHE BOOL)
 ATDM_SET_CACHE(Kokkos_ENABLE_DEBUG "${Trilinos_ENABLE_DEBUG}" CACHE BOOL)
 
-# Update Kokkos arch, expected ATDM_CONFIG_KOKKOS_ARCH=arch1;arch2;arch3
-# set the modern Kokkos arch, e.g., KOKKOS_ARCH=arch1 => Kokkos_ARCH_arch1=ON
+# Update Kokkos arch, expected ATDM_CONFIG_KOKKOS_ARCH=arch1,arch2,arch3.  Set
+# the modern Kokkos arch, e.g., KOKKOS_ARCH=arch1 => Kokkos_ARCH_arch1=ON
 set(kokkos_arch_list "$ENV{ATDM_CONFIG_KOKKOS_ARCH}")
+string(REPLACE "," ";" kokkos_arch_list "$ENV{ATDM_CONFIG_KOKKOS_ARCH}")
 foreach(kokkos_arch_loop_var ${kokkos_arch_list} )
   ATDM_SET_ENABLE(Kokkos_ARCH_${kokkos_arch_loop_var} ON)
 endforeach(kokkos_arch_loop_var)
