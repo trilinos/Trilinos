@@ -113,7 +113,7 @@ bool all_passed = true;
     const double failure_tolerance = 9e-8;
 
     // minimum neighbors for unisolvency is the same as the size of the polynomial basis
-    const int min_neighbors = Compadre::GMLS::getNP(order, dimension);
+    const int min_neighbors = Compadre::GMLS::getNP(order+1, dimension);
 
     //! [Parse Command Line Arguments]
     Kokkos::Timer timer;
@@ -366,7 +366,7 @@ bool all_passed = true;
     vector_basis_gmls.setWeightingPower(2);
 
     // setup quadrature for StaggeredEdgeIntegralSample
-    vector_basis_gmls.setOrderOfQuadraturePoints(2);
+    vector_basis_gmls.setOrderOfQuadraturePoints(order);
     vector_basis_gmls.setDimensionOfQuadraturePoints(1);
     vector_basis_gmls.setQuadratureType("LINE");
 
