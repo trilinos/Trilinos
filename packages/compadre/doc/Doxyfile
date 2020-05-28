@@ -38,7 +38,7 @@ PROJECT_NAME           = Compadre
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = @Compadre_VERSION_MAJOR@.@Compadre_VERSION_MINOR@.@Compadre_VERSION_PATCH@
+PROJECT_NUMBER         = $(COMPADRE_VERSION)
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -58,7 +58,7 @@ PROJECT_LOGO           =
 # entered, it will be relative to the location where doxygen was started. If
 # left blank the current directory will be used.
 
-OUTPUT_DIRECTORY       = @CMAKE_CURRENT_SOURCE_DIR@/doc/
+OUTPUT_DIRECTORY       = .
 
 # If the CREATE_SUBDIRS tag is set to YES, then doxygen will create 4096 sub-
 # directories (in 2 levels) under the output directory of each output format and
@@ -763,11 +763,13 @@ WARN_LOGFILE           =
 # spaces.
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                 += @CMAKE_CURRENT_SOURCE_DIR@/src 
-INPUT                 += @CMAKE_CURRENT_SOURCE_DIR@/README.md
-INPUT                 += @CMAKE_CURRENT_SOURCE_DIR@/LICENSE.md
-INPUT                 += @CMAKE_CURRENT_SOURCE_DIR@/examples
-INPUT                 += @CMAKE_CURRENT_SOURCE_DIR@/python
+INPUT                 += ../src 
+INPUT                 += ../src/basis
+INPUT                 += ../src/constraints
+INPUT                 += ../README.md
+INPUT                 += ../LICENSE.md
+INPUT                 += ../examples
+INPUT                 += ../python
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
@@ -846,9 +848,10 @@ RECURSIVE              = NO
 # Note that relative paths are relative to the directory from which doxygen is
 # run.
 
-EXCLUDE                = @CMAKE_CURRENT_SOURCE_DIR@/python/GMLS_Module_wrap.cxx
-EXCLUDE               += @CMAKE_CURRENT_SOURCE_DIR@/python/__init__.py.in
-EXCLUDE               += @CMAKE_CURRENT_SOURCE_DIR@/python/GMLS_Module.py.in
+EXCLUDE                = ../python/GMLS_Module_wrap.cxx
+EXCLUDE               += ../python/__init__.py.in
+EXCLUDE               += ../python/GMLS_Module.py.in
+EXCLUDE               += ../python/insert_version.py
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded
@@ -881,7 +884,7 @@ EXCLUDE_SYMBOLS        = Ifpack2 Tpetra
 # that contain example code fragments that are included (see the \include
 # command).
 
-EXAMPLE_PATH           = @CMAKE_CURRENT_SOURCE_DIR@/examples
+EXAMPLE_PATH           = ../examples
 
 # If the value of the EXAMPLE_PATH tag contains directories, you can use the
 # EXAMPLE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp and
@@ -949,7 +952,7 @@ FILTER_SOURCE_PATTERNS =
 # (index.html). This can be useful if you have a project on for instance GitHub
 # and want to reuse the introduction page also for the doxygen output.
 
-USE_MDFILE_AS_MAINPAGE = @CMAKE_CURRENT_SOURCE_DIR@/README.md
+USE_MDFILE_AS_MAINPAGE = ../README.md
 #@CMAKE_CURRENT_SOURCE_DIR@/README.md
 
 #---------------------------------------------------------------------------
@@ -2149,7 +2152,7 @@ HIDE_UNDOC_RELATIONS   = YES
 # set to NO
 # The default value is: NO.
 
-HAVE_DOT               = YES
+HAVE_DOT               = NO
 
 # The DOT_NUM_THREADS specifies the number of dot invocations doxygen is allowed
 # to run in parallel. When set to 0 doxygen will base this on the number of
@@ -2321,7 +2324,7 @@ INTERACTIVE_SVG        = NO
 # found. If left blank, it is assumed the dot tool can be found in the path.
 # This tag requires that the tag HAVE_DOT is set to YES.
 
-DOT_PATH               = /opt/local/bin/dot
+DOT_PATH               = 
 
 # The DOTFILE_DIRS tag can be used to specify one or more directories that
 # contain dot files that are included in the documentation (see the \dotfile
