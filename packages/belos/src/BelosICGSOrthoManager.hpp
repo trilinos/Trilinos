@@ -1196,7 +1196,7 @@ namespace Belos {
       // Normalize Xj.
       // Xj <- Xj / std::sqrt(newDot)
       ScalarType diag = SCT::squareroot(SCT::magnitude(newDot[0]));
-      {
+      if (SCT::magnitude(diag) > ZERO) {
         MVT::MvScale( *Xj, ONE/diag );
         if (this->_hasOp) {
           // Update MXj.
