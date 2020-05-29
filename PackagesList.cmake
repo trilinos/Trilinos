@@ -93,15 +93,15 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Galeri                packages/galeri                   PT
   Amesos                packages/amesos                   PT
   Pamgen                packages/pamgen                   PT
-  Zoltan2               packages/zoltan2                  PT
   Ifpack                packages/ifpack                   PT
   ML                    packages/ml                       PT
   Belos                 packages/belos                    PT
+  Anasazi               packages/anasazi                  PT
+  Zoltan2               packages/zoltan2                  PT
   ShyLU_Node            packages/shylu/shylu_node         PT
   Amesos2               packages/amesos2                  PT
   SEACAS                packages/seacas                   PT # Depends on netcdf, optionally hdf5, xdmf, pamgen
   Komplex               packages/komplex                  ST
-  Anasazi               packages/anasazi                  PT
   Ifpack2               packages/ifpack2                  PT
   Stratimikos           packages/stratimikos              PT
   FEI                   packages/fei                      PT
