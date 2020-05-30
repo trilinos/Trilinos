@@ -22,7 +22,7 @@ namespace Tacho {
   class SymbolicTools;
   template<typename ValueType, typename DeviceType> class CrsMatrixBase;
   template<typename ValueType, typename SchedulerType> class NumericTools;
-  template<typename ValueType, typename SchedulerType> class LevelSetTools;
+  template<typename ValueType, typename SchedulerType, int Variant> class LevelSetTools;
   
   ///
   /// Tacho Solver interface
@@ -63,7 +63,8 @@ namespace Tacho {
 
     typedef SymbolicTools symbolic_tools_type;
     typedef NumericTools<value_type,scheduler_type> numeric_tools_type;
-    typedef LevelSetTools<value_type,scheduler_type> levelset_tools_type;
+    typedef LevelSetTools<value_type,scheduler_type,0> levelset_tools_var0_type;
+    typedef LevelSetTools<value_type,scheduler_type,1> levelset_tools_var1_type;
 
   public:
     enum : int { Cholesky = 1,
@@ -112,7 +113,8 @@ namespace Tacho {
     numeric_tools_type *_N;
 
     // ** level set interface
-    levelset_tools_type *_L;
+    levelset_tools_var0_type *_L0;
+    levelset_tools_var1_type *_L1;
 
     // small dense matrix
     value_type_matrix_host _U;
@@ -132,6 +134,7 @@ namespace Tacho {
     ordinal_type _device_level_cut;     // above this level, matrices are computed on device
     ordinal_type _device_factor_thres;  // bigger than this threshold, device function is used
     ordinal_type _device_solve_thres;   // bigger than this threshold, device function is used
+    ordinal_type _variant;              // algorithmic variant in levelset 0: naive, 1: invert diagonals
     ordinal_type _nstreams;             // on cuda, multi streams are used
 
     // parallelism and memory constraint is made via this parameter
@@ -167,6 +170,7 @@ namespace Tacho {
     void setLevelSetOptionDeviceFunctionThreshold(const ordinal_type device_factor_thres,
                                                   const ordinal_type device_solve_thres);
     void setLevelSetOptionNumStreams(const ordinal_type nstreams);
+    void setLevelSetOptionAlgorithmVariant(const ordinal_type variant);
 
     ///
     /// get interface

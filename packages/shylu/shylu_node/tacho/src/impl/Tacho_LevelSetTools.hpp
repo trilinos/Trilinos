@@ -43,10 +43,10 @@ namespace Tacho {
   /// Here we do not use a scheduler but all derived types in supernodes 
   /// info are required scheduler  
   ///
-  template<typename ValueType, typename SchedulerType>
+  template<typename ValueType, typename SchedulerType, int Var>
   class LevelSetTools {
   public:
-    enum { variant = 1,
+    enum { variant = Var,
            max_factor_team_size = 64 };
 
     typedef ValueType value_type;
@@ -511,8 +511,8 @@ namespace Tacho {
       stat.t_mode_classification = timer.seconds();
 
       if (verbose) {
-        printf("Summary: LevelSetTools (Initialize)\n");
-        printf("==============================================\n");
+        printf("Summary: LevelSetTools-Variant-%d (Initialize)\n", variant);
+        printf("===============================================\n");
         print_stat_init();
       }
     }
@@ -528,8 +528,8 @@ namespace Tacho {
       track_free(_solve_mode.span()*sizeof(ordinal_type));
       track_free(_level_sids.span()*sizeof(ordinal_type));
       if (verbose) {
-        printf("Summary: LevelSetTools (Release)\n");
-        printf("===========================================\n");
+        printf("Summary: LevelSetTools-Variant-%d (Release)\n", variant);
+        printf("============================================\n");
         print_stat_memory();
       }
     }
@@ -860,8 +860,8 @@ namespace Tacho {
       stat.t_extra += timer.seconds();
 
       if (verbose) {
-        printf("Summary: LevelSetTools (Factorize)\n");
-        printf("==================================\n");
+        printf("Summary: LevelSetTools-Variant-%d (Factorize)\n", variant);
+        printf("==============================================\n");
         print_stat_factorize();
       }
 
@@ -1295,8 +1295,8 @@ namespace Tacho {
       stat.t_extra += timer.seconds();
 
       if (verbose) {
-        printf("Summary: LevelSetTools (ParallelSolve: %3d)\n", nrhs);
-        printf("===========================================\n");
+        printf("Summary: LevelSetTools-Variant-%d (ParallelSolve: %3d)\n", variant, nrhs);
+        printf("=====================================================\n");
         print_stat_solve();
       }
     }
