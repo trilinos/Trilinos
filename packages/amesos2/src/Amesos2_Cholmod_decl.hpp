@@ -57,7 +57,7 @@
 #include "Amesos2_SolverCore.hpp"
 #include "Amesos2_Cholmod_FunctionMap.hpp"
 
-#ifdef HAVE_AMESOS2_TRIANGULAR_SOLVES
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_CHOLMOD)
 #include "KokkosKernels_Handle.hpp"
 #endif
 
@@ -260,7 +260,7 @@ private:
   mutable host_solve_array_t host_bValues_;
   int ldb_;
 
-#ifdef HAVE_AMESOS2_TRIANGULAR_SOLVES
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_CHOLMOD)
 
   typedef Kokkos::DefaultExecutionSpace DeviceExecSpaceType;
 

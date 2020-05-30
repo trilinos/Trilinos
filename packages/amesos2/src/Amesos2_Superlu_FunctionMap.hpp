@@ -79,7 +79,6 @@ namespace SLU {
 #include "slu_util.h"
 #include "superlu_enum_consts.h"
 
-
     namespace S {               // single-precision real definitions
 
 #ifdef HAVE_AMESOS2_SUPERLU5_API
@@ -104,6 +103,9 @@ namespace SLU {
 		} GlobalLU_t;
 #endif
 
+      extern void
+      sCompRow_to_CompCol(int, int, int, float*, int*, int*,
+             float **, int **, int **);
       extern void
       sgssvx(SLU::superlu_options_t *, SLU::SuperMatrix *, int *, int *, int *,
              char *, float *, float *, SLU::SuperMatrix *, SLU::SuperMatrix *,
@@ -183,6 +185,9 @@ namespace SLU {
 		} GlobalLU_t;
 #endif
 
+      extern void
+      dCompRow_to_CompCol(int, int, int, double*, int*, int*,
+             double **, int **, int **);
       extern void
       dgssvx(SLU::superlu_options_t *, SLU::SuperMatrix *, int *, int *, int *,
              char *, double *, double *, SLU::SuperMatrix *, SLU::SuperMatrix *,
@@ -264,6 +269,9 @@ namespace SLU {
 #endif
 
       extern void
+      cCompRow_to_CompCol(int, int, int, complex*, int*, int*,
+            complex **, int **, int **);
+      extern void
       cgssvx(SLU::superlu_options_t *, SLU::SuperMatrix *, int *, int *, int *,
              char *, float *, float *, SLU::SuperMatrix *, SLU::SuperMatrix *,
              void *, int, SLU::SuperMatrix *, SLU::SuperMatrix *,
@@ -342,6 +350,9 @@ namespace SLU {
 		} GlobalLU_t;
 #endif
 
+      extern void
+      zCompRow_to_CompCol(int, int, int, doublecomplex*, int*, int*,
+            doublecomplex **, int **, int **);
       extern void
       zgssvx(SLU::superlu_options_t *, SLU::SuperMatrix *, int *, int *, int *,
              char *, double *, double *, SLU::SuperMatrix *, SLU::SuperMatrix *,
@@ -539,11 +550,14 @@ namespace Amesos2 {
     /**
      * \brief Creates a Superlu CCS matrix using the appropriate function
      */
-    static void create_CompCol_Matrix(SLU::SuperMatrix* A, int m, int n, 
-				      int nnz, type_map::type* nzval, int* rowind, int* colptr, 
-				      SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
+    template<class view_t>
+    static void create_CompCol_Matrix(SLU::SuperMatrix* A, int m, int n, int nnz,
+          Teuchos::Array<float> & convert_nzval, view_t & nzval,
+          int* rowind, int* colptr,
+          SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
-      SLU::S::sCreate_CompCol_Matrix(A, m, n, nnz, nzval, rowind, colptr,
+      // conversion not necessay - pass view data directly
+      SLU::S::sCreate_CompCol_Matrix(A, m, n, nnz, nzval.data(), rowind, colptr,
 				     stype, dtype, mtype);
     }
 
@@ -551,8 +565,8 @@ namespace Amesos2 {
      * \brief Creates a Superlu CRS matrix using the appropriate function
      */
     static void create_CompRow_Matrix(SLU::SuperMatrix* A, int m, int n, 
-				      int nnz, type_map::type* nzval, int* rowind, int* colptr,
-				      SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
+          int nnz, float* nzval, int* rowind, int* colptr,
+          SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
       SLU::S::sCreate_CompRow_Matrix(A, m, n, nnz, nzval, rowind, colptr,
 				     stype, dtype, mtype);
@@ -567,11 +581,21 @@ namespace Amesos2 {
      * \param x vals in column major order
      * \param ldx leading dimension of x
      */
+    template<class view_t>
     static void create_Dense_Matrix(SLU::SuperMatrix* X, int m, int n,
-				    type_map::type* x, int ldx, SLU::Stype_t stype,
-				    SLU::Dtype_t dtype, SLU::Mtype_t mtype)
+          Teuchos::Array<float> & convert_x, view_t & x,
+          int ldx, SLU::Stype_t stype,
+          SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
-      SLU::S::sCreate_Dense_Matrix(X, m, n, x, ldx, stype, dtype, mtype);
+      // conversion not necessay - pass view data directly
+      SLU::S::sCreate_Dense_Matrix(X, m, n, x.data(), ldx, stype, dtype, mtype);
+    }
+
+    template<class view_t>
+    static void convert_back_Dense_Matrix(
+          Teuchos::Array<float> & convert_x, view_t & x)
+    {
+      // conversion not necessay - pass view data directly
     }
 
     /**
@@ -684,27 +708,40 @@ namespace Amesos2 {
           stat, info);
     }
 
-    static void create_CompCol_Matrix(SLU::SuperMatrix* A, int m, int n, 
-				      int nnz, type_map::type* nzval, int* rowind, int* colptr, 
-				      SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
+    template<class view_t>
+    static void create_CompCol_Matrix(SLU::SuperMatrix* A, int m, int n, int nnz,
+          Teuchos::Array<double> & convert_nzval, view_t & nzval,
+          int* rowind, int* colptr,
+          SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
-      SLU::D::dCreate_CompCol_Matrix(A, m, n, nnz, nzval, rowind, colptr,
+      // conversion not necessay - pass view data directly
+      SLU::D::dCreate_CompCol_Matrix(A, m, n, nnz, nzval.data(), rowind, colptr,
 				     stype, dtype, mtype);
     }
 
     static void create_CompRow_Matrix(SLU::SuperMatrix* A, int m, int n, 
-				      int nnz, type_map::type* nzval, int* rowind, int* colptr, 
-				      SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
+          int nnz, double* nzval, int* rowind, int* colptr,
+          SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
       SLU::D::dCreate_CompRow_Matrix(A, m, n, nnz, nzval, rowind, colptr,
 				     stype, dtype, mtype);
     }
 
-    static void create_Dense_Matrix(SLU::SuperMatrix* X, int m, 
-				    int n, type_map::type* x, int ldx, SLU::Stype_t stype, 
-				    SLU::Dtype_t dtype, SLU::Mtype_t mtype)
+    template<class view_t>
+    static void create_Dense_Matrix(SLU::SuperMatrix* X, int m, int n,
+          Teuchos::Array<double> & convert_x, view_t & x,
+          int ldx, SLU::Stype_t stype,
+          SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
-      SLU::D::dCreate_Dense_Matrix(X, m, n, x, ldx, stype, dtype, mtype);
+      // conversion not necessay - pass view data directly
+      SLU::D::dCreate_Dense_Matrix(X, m, n, x.data(), ldx, stype, dtype, mtype);
+    }
+
+    template<class view_t>
+    static void convert_back_Dense_Matrix(
+          Teuchos::Array<double> & convert_x, view_t & x)
+    {
+      // conversion not necessay - pass view data directly
     }
 
     static void gsequ(SLU::SuperMatrix* A, double* R, double* C,
@@ -724,11 +761,8 @@ namespace Amesos2 {
 
 #ifdef HAVE_TEUCHOS_COMPLEX
 
-  /* The specializations for Teuchos::as<> for SLU::complex and
-   * SLU::doublecomplex are provided in Amesos2_Superlu_Type.hpp
-   */
   template <>
-  struct FunctionMap<Superlu,SLU::C::complex>
+  struct FunctionMap<Superlu, Kokkos::complex<float>>
   {
 #ifdef HAVE_AMESOS2_SUPERLU5_API
     typedef typename SLU::C::GlobalLU_t GlobalLU_type;
@@ -804,27 +838,54 @@ namespace Amesos2 {
           stat, info);
     }
 
+    template<class view_t>
     static void create_CompCol_Matrix(SLU::SuperMatrix* A, int m, int n, int nnz,
-				      SLU::C::complex* nzval, int* rowind, int* colptr,
-				      SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
+          Teuchos::Array<SLU::C::complex> & convert_nzval, view_t & nzval,
+          int* rowind, int* colptr,
+          SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
-      SLU::C::cCreate_CompCol_Matrix(A, m, n, nnz, nzval, rowind, colptr,
+      convert_nzval.resize(nnz);
+      for(int i = 0; i < nnz; ++i) {
+        convert_nzval[i] = Teuchos::as<SLU::C::complex>(nzval(i));
+      }
+      SLU::C::cCreate_CompCol_Matrix(A, m, n, nnz, convert_nzval.data(), rowind, colptr,
 				     stype, dtype, mtype);
     }
 
     static void create_CompRow_Matrix(SLU::SuperMatrix* A, int m, int n, int nnz,
-				      SLU::C::complex* nzval, int* rowind, int* colptr,
-				      SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
+          SLU::C::complex* nzval, int* rowind, int* colptr,
+          SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
       SLU::C::cCreate_CompRow_Matrix(A, m, n, nnz, nzval, rowind, colptr,
 				     stype, dtype, mtype);
     }
 
+    template<class view_t>
     static void create_Dense_Matrix(SLU::SuperMatrix* X, int m, int n,
-				    SLU::C::complex* x, int ldx, SLU::Stype_t stype,
-				    SLU::Dtype_t dtype, SLU::Mtype_t mtype)
+          Teuchos::Array<SLU::C::complex> & convert_x, view_t & x,
+          int ldx, SLU::Stype_t stype,
+          SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
-      SLU::C::cCreate_Dense_Matrix(X, m, n, x, ldx, stype, dtype, mtype);
+      convert_x.resize(m * n);
+      int write_index = 0;
+      for(int j = 0; j < n; ++j) {
+        for(int i = 0; i < m; ++i) { // layout left
+          convert_x[write_index++] = Teuchos::as<SLU::C::complex>(x(i,j));
+        }
+      }
+      SLU::C::cCreate_Dense_Matrix(X, m, n, convert_x.data(), ldx, stype, dtype, mtype);
+    }
+
+    template<class view_t>
+    static void convert_back_Dense_Matrix(
+          Teuchos::Array<SLU::C::complex> & convert_x, view_t & x)
+    {
+      int read_index = 0;
+      for(int j = 0; j < static_cast<int>(x.extent(1)); ++j) {
+        for(int i = 0; i < static_cast<int>(x.extent(0)); ++i) { // layout left
+          x(i,j) = Teuchos::as<Kokkos::complex<float>>(convert_x[read_index++]);
+        }
+      }
     }
 
     static void gsequ(SLU::SuperMatrix* A, float* R, float* C,
@@ -842,7 +903,7 @@ namespace Amesos2 {
 
 
   template <>
-  struct FunctionMap<Superlu,SLU::Z::doublecomplex>
+  struct FunctionMap<Superlu,Kokkos::complex<double>>
   {
 #ifdef HAVE_AMESOS2_SUPERLU5_API
     typedef typename SLU::Z::GlobalLU_t GlobalLU_type;
@@ -918,11 +979,17 @@ namespace Amesos2 {
           stat, info);
     }
 
+    template<class view_t>
     static void create_CompCol_Matrix(SLU::SuperMatrix* A, int m, int n, int nnz,
-				      SLU::Z::doublecomplex* nzval, int* rowind, int* colptr,
-				      SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
+          Teuchos::Array<SLU::Z::doublecomplex> & convert_nzval, view_t & nzval,
+          int* rowind, int* colptr,
+          SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
-      SLU::Z::zCreate_CompCol_Matrix(A, m, n, nnz, nzval, rowind, colptr,
+      convert_nzval.resize(nnz);
+      for(int i = 0; i < nnz; ++i) {
+        convert_nzval[i] = Teuchos::as<SLU::Z::doublecomplex>(nzval(i));
+      }
+      SLU::Z::zCreate_CompCol_Matrix(A, m, n, nnz, convert_nzval.data(), rowind, colptr,
 				     stype, dtype, mtype);
 
       TEUCHOS_TEST_FOR_EXCEPTION( A == NULL,
@@ -932,8 +999,8 @@ namespace Amesos2 {
 
 
     static void create_CompRow_Matrix(SLU::SuperMatrix* A, int m, int n, int nnz,
-				      SLU::Z::doublecomplex* nzval, int* rowind, int* colptr,
-				      SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
+          SLU::Z::doublecomplex* nzval, int* rowind, int* colptr,
+          SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
       SLU::Z::zCreate_CompRow_Matrix(A, m, n, nnz, nzval, rowind, colptr,
 				     stype, dtype, mtype);
@@ -943,11 +1010,32 @@ namespace Amesos2 {
 			  "Supermatrix A not initialized properly!");
     }
 
+    template<class view_t>
     static void create_Dense_Matrix(SLU::SuperMatrix* X, int m, int n,
-				    SLU::Z::doublecomplex* x, int ldx, SLU::Stype_t stype,
-				    SLU::Dtype_t dtype, SLU::Mtype_t mtype)
+          Teuchos::Array<SLU::Z::doublecomplex> & convert_x, view_t & x,
+          int ldx, SLU::Stype_t stype,
+          SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
-      SLU::Z::zCreate_Dense_Matrix(X, m, n, x, ldx, stype, dtype, mtype);
+      convert_x.resize(m * n);
+      int write_index = 0;
+      for(int j = 0; j < n; ++j) {
+        for(int i = 0; i < m; ++i) { // layout left
+          convert_x[write_index++] = Teuchos::as<SLU::Z::doublecomplex>(x(i,j));
+        }
+      }
+      SLU::Z::zCreate_Dense_Matrix(X, m, n, convert_x.data(), ldx, stype, dtype, mtype);
+    }
+
+    template<class view_t>
+    static void convert_back_Dense_Matrix(
+          Teuchos::Array<SLU::Z::doublecomplex> & convert_x, view_t & x)
+    {
+      int read_index = 0;
+      for(int j = 0; j < static_cast<int>(x.extent(1)); ++j) {
+        for(int i = 0; i < static_cast<int>(x.extent(0)); ++i) { // layout left
+          x(i,j) = Teuchos::as<Kokkos::complex<double>>(convert_x[read_index++]);
+        }
+      }
     }
 
     static void gsequ(SLU::SuperMatrix* A, double* R, double* C,
