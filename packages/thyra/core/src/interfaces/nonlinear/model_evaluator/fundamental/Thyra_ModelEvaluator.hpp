@@ -805,7 +805,7 @@ public:
   virtual RCP<const VectorSpaceBase<Scalar> > get_f_space() const = 0;
 
   /** \brief Return the dual vector space for the state function <tt>f(...) <: RE^n_x</tt>. */
-  virtual RCP<const VectorSpaceBase<Scalar> > get_f_dual_space() const { return this->get_f_space(); };
+  virtual RCP<const VectorSpaceBase<Scalar> > get_f_dual_space() const = 0;
 
   /** \brief Return the vector space for the auxiliary parameters
    * <tt>p(l) <: RE^n_p_l</tt>.
@@ -858,7 +858,7 @@ public:
    * <li><tt>0 <= j < this->Ng()</tt>
    * </ul>
    */
-  virtual RCP<const VectorSpaceBase<Scalar> > get_g_dual_space(int j) const { return this->get_g_space(j); };
+  virtual RCP<const VectorSpaceBase<Scalar> > get_g_dual_space(int j) const = 0;
 
   /** \brief Get the names of the response functions associated with
    * subvector j if available.
@@ -1064,7 +1064,7 @@ public:
    * <li><tt>this->createOutArgs().supports(OUT_ARG_hess_f_xx)==true</tt>
    * </ul>
    */
-  virtual RCP<LinearOpBase<Scalar> > create_hess_f_xx() const { return Teuchos::null; };
+  virtual RCP<LinearOpBase<Scalar> > create_hess_f_xx() const = 0;
 
   /** \brief If supported, create a linear operator derivative object for
    * \f$\sum_k \lambda_k \frac{\partial^2 f_k}{\partial \boldsymbol{x} \partial \boldsymbol{p}_l}\f$.
@@ -1075,7 +1075,7 @@ public:
    * <li><tt>this->createOutArgs().supports(l, OUT_ARG_hess_f_xp)==true</tt>
    * </ul>
    */
-  virtual RCP<LinearOpBase<Scalar> > create_hess_f_xp(int l) const { return Teuchos::null; };
+  virtual RCP<LinearOpBase<Scalar> > create_hess_f_xp(int l) const = 0;
 
   /** \brief If supported, create a linear operator derivative object for
    * \f$\sum_k \lambda_k \frac{\partial^2 f_k}{\partial \boldsymbol{p}_{l_1} \partial \boldsymbol{p}_{l_2}}\f$.
@@ -1089,7 +1089,7 @@ public:
    * <li><tt>this->createOutArgs().supports(l_1, l_2, OUT_ARG_hess_f_pp)==true</tt>
    * </ul>
    */
-  virtual RCP<LinearOpBase<Scalar> > create_hess_f_pp( int l1, int l2 ) const { return Teuchos::null; };
+  virtual RCP<LinearOpBase<Scalar> > create_hess_f_pp( int l1, int l2 ) const = 0;
 
   /** \brief If supported, create a linear operator derivative object for
    * \f$\sum_k \lambda_k \frac{\partial^2 g_{j,k}}{\partial \boldsymbol{x}^2}\f$.
@@ -1100,7 +1100,7 @@ public:
    * <li><tt>this->createOutArgs().supports(j, OUT_ARG_hess_g_xx)==true</tt>
    * </ul>
    */
-  virtual RCP<LinearOpBase<Scalar> > create_hess_g_xx(int j) const { return Teuchos::null; };
+  virtual RCP<LinearOpBase<Scalar> > create_hess_g_xx(int j) const = 0;
 
   /** \brief If supported, create a linear operator derivative object for
    * \f$\sum_k \lambda_k \frac{\partial^2 g_{j,k}}{\partial \boldsymbol{x} \partial \boldsymbol{p}_{l}}\f$.
@@ -1113,7 +1113,7 @@ public:
    * <li><tt>this->createOutArgs().supports(j, l, OUT_ARG_hess_g_xp)==true</tt>
    * </ul>
    */
-  virtual RCP<LinearOpBase<Scalar> > create_hess_g_xp( int j, int l ) const { return Teuchos::null; };
+  virtual RCP<LinearOpBase<Scalar> > create_hess_g_xp( int j, int l ) const = 0;
 
   /** \brief If supported, create a linear operator derivative object for
    * \f$\sum_k \lambda_k \frac{\partial^2 g_{j,k}}{\partial \boldsymbol{p}_{l_1} \partial \boldsymbol{p}_{l_2}}\f$.
@@ -1127,7 +1127,7 @@ public:
    * <li><tt>this->createOutArgs().supports(j, l_1, l_2, OUT_ARG_hess_g_xp)==true</tt>
    * </ul>
    */
-  virtual RCP<LinearOpBase<Scalar> > create_hess_g_pp( int j, int l1, int l2 ) const { return Teuchos::null; };
+  virtual RCP<LinearOpBase<Scalar> > create_hess_g_pp( int j, int l1, int l2 ) const = 0;
 
   //@}
 
