@@ -165,7 +165,9 @@ int driver (int argc, char *argv[]) {
       Kokkos::Random_XorShift64_Pool<typename device_type::execution_space> random(13718);
       Kokkos::fill_random(b, random, value_type(1));
     }
-    solver.solve(x, b, t);
+
+    for (int i=0;i<3;++i)
+      solver.solve(x, b, t);
     
     const double res = solver.computeRelativeResidual(values_on_device, x, b);
 
