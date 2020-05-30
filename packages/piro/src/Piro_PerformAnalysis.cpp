@@ -525,55 +525,109 @@ Piro::PerformROLAnalysis(
 
     //! check correctness of Gradient prvided by Model Evaluator
     if(rolParams.get<bool>("Check Gradient", false)) {
-     Teuchos::RCP<Thyra::VectorBase<double> > p_rand_vec = p->clone_v();
-     Teuchos::RCP<Thyra::VectorBase<double> > x_rand_vec = x_vec->clone_v();
+     Teuchos::RCP<Thyra::VectorBase<double> > p_rand_vec1 = p->clone_v();
+     Teuchos::RCP<Thyra::VectorBase<double> > x_rand_vec1 = x_vec->clone_v();
+     Teuchos::RCP<Thyra::VectorBase<double> > p_rand_vec2 = p->clone_v();
+     Teuchos::RCP<Thyra::VectorBase<double> > x_rand_vec2 = x_vec->clone_v();
+
      ::Thyra::seed_randomize<double>( seed );
+
+     auto rol_x_zero = rol_x.clone(); rol_x_zero->zero();
+     auto rol_p_zero = rol_p.clone(); rol_p_zero->zero();
 
      int num_checks = rolParams.get<int>("Number Of Gradient Checks", 1);
      double norm_p = rol_p.norm();
      double norm_x = rol_x.norm();
 
-     ROL::Vector_SimOpt<double> x(ROL::makePtrFromRef(rol_x),ROL::makePtrFromRef(rol_p));
+     ROL::Vector_SimOpt<double> sopt_vec(ROL::makePtrFromRef(rol_x),ROL::makePtrFromRef(rol_p));
 
      for(int i=0; i< num_checks; i++) {
 
        *out << "\nROL performing gradient check " << i+1 << " of " << num_checks << ", at parameter initial guess" << std::endl;
 
-       ::Thyra::randomize<double>( -1.0, 1.0,  p_rand_vec.ptr());
-       ::Thyra::randomize<double>( -1.0, 1.0,  x_rand_vec.ptr());
+       // compute direction 1
+       ::Thyra::randomize<double>( -1.0, 1.0,  p_rand_vec1.ptr());
+       ::Thyra::randomize<double>( -1.0, 1.0,  x_rand_vec1.ptr());
 
-       ROL::ThyraVector<double> rol_p_direction(p_rand_vec);
-       ROL::ThyraVector<double> rol_x_direction(x_rand_vec);
+       ROL::ThyraVector<double> rol_p_direction1(p_rand_vec1);
+       ROL::ThyraVector<double> rol_x_direction1(x_rand_vec1);
 
-       double norm_d = rol_p_direction.norm();
+       double norm_d = rol_p_direction1.norm();
        if(norm_d*norm_p > 0.0)
-         rol_p_direction.scale(norm_p/norm_d);
-       norm_d = rol_x_direction.norm();
+         rol_p_direction1.scale(norm_p/norm_d);
+       norm_d = rol_x_direction1.norm();
        if(norm_d*norm_x > 0.0)
-         rol_x_direction.scale(norm_x/norm_d);
+         rol_x_direction1.scale(norm_x/norm_d);
 
-       ROL::Vector_SimOpt<double> y(ROL::makePtrFromRef(rol_x_direction),ROL::makePtrFromRef(rol_p_direction));
+       ROL::Vector_SimOpt<double> sopt_vec_direction1(ROL::makePtrFromRef(rol_x_direction1),ROL::makePtrFromRef(rol_p_direction1));
+       ROL::Vector_SimOpt<double> sopt_vec_direction1_x(ROL::makePtrFromRef(rol_x_direction1),rol_p_zero);
+       ROL::Vector_SimOpt<double> sopt_vec_direction1_p(rol_x_zero,ROL::makePtrFromRef(rol_p_direction1));
 
-       auto rol_x_zero = rol_x_direction.clone(); rol_x_zero->zero();
-       auto rol_p_zero = rol_p_direction.clone(); rol_p_zero->zero();
-       ROL::Vector_SimOpt<double> y_x(ROL::makePtrFromRef(rol_x_direction),rol_p_zero);
-       ROL::Vector_SimOpt<double> y_p(rol_x_zero,ROL::makePtrFromRef(rol_p_direction));
+       // compute direction 2
+       ::Thyra::randomize<double>( -1.0, 1.0,  p_rand_vec2.ptr());
+       ::Thyra::randomize<double>( -1.0, 1.0,  x_rand_vec2.ptr());
 
-    //     Thyra::DetachedVectorView<double> rv_view(rol_p_direction.getVector());
-    //     std::cout << "rol_p_direction: " << rv_view(0) << " " << rv_view(1) << std::endl;
+       ROL::ThyraVector<double> rol_p_direction2(p_rand_vec2);
+       ROL::ThyraVector<double> rol_x_direction2(x_rand_vec2);
 
-       reduced_obj.checkGradient(rol_p, rol_p, rol_p_direction, print, *out);
+       norm_d = rol_p_direction2.norm();
+       if(norm_d*norm_p > 0.0)
+         rol_p_direction2.scale(norm_p/norm_d);
+       norm_d = rol_x_direction2.norm();
+       if(norm_d*norm_x > 0.0)
+         rol_x_direction2.scale(norm_x/norm_d);
+
+       ROL::Vector_SimOpt<double> sopt_vec_direction2(ROL::makePtrFromRef(rol_x_direction2),ROL::makePtrFromRef(rol_p_direction2));
+       ROL::Vector_SimOpt<double> sopt_vec_direction2_x(ROL::makePtrFromRef(rol_x_direction2),rol_p_zero);
+       ROL::Vector_SimOpt<double> sopt_vec_direction2_p(rol_x_zero,ROL::makePtrFromRef(rol_p_direction2));
+
+
+       int num_steps = 10;
+       int order = 2;
+
+       if(rolParams.get<bool>("Expensive Derivative Checks", false)) {
+         *out << "Checking Reduced Gradient Accuracy" << std::endl;
+         reduced_obj.checkGradient(rol_p, rol_p, rol_p_direction1, print, *out);
+       }
        // Check derivatives.
-       obj.checkGradient(x,y,true,*out);
-       obj.checkGradient(x,y_x,true,*out);
-       obj.checkGradient(x,y_p,true,*out);
 
-       constr.checkApplyJacobian(x,y,rol_x_direction,true,*out);
-       constr.checkApplyJacobian(x,y_x,rol_x_direction,true,*out);
-       constr.checkApplyJacobian(x,y_p,rol_x_direction,true,*out);
-       if(rolParams.get<bool>("Expensive Check of Adjoint Jacobian", false))
-         constr.checkApplyAdjointJacobian(x,rol_x_direction,rol_x_direction,x,true,*out);
-       constr.checkAdjointConsistencyJacobian(rol_x_direction, y, x,rol_x_direction,y,true,*out);
+       *out << "Checking Accuracy of Objective Gradient " << std::endl;
+       obj.checkGradient(sopt_vec,sopt_vec_direction1,true,*out,num_steps,order);
+       *out << "Checking  Accuracy of Objective Gradient in x direction" << std::endl;
+       obj.checkGradient(sopt_vec,sopt_vec_direction1_x,true,*out,num_steps,order);
+       *out << "Checking  Accuracy of Objective Gradient in p direction" << std::endl;
+       obj.checkGradient(sopt_vec,sopt_vec_direction1_p,true,*out,num_steps,order);
+
+
+       *out << "Checking Accuracy of Constraint Gradient " << std::endl;
+       constr.checkApplyJacobian(sopt_vec,sopt_vec_direction1,rol_x_direction1, true,*out,num_steps,order);
+       *out << "Checking Accuracy of Constraint Gradient in x direction (Jacobian) " << std::endl;
+       constr.checkApplyJacobian(sopt_vec,sopt_vec_direction1_x,rol_x_direction1,true,*out,num_steps,order);
+       *out << "Checking Accuracy of Constraint Gradient in p direction" << std::endl;
+       constr.checkApplyJacobian(sopt_vec,sopt_vec_direction1_p,rol_x_direction1,true,*out,num_steps,order);
+
+       if(rolParams.get<bool>("Expensive Derivative Checks", false))
+         constr.checkApplyAdjointJacobian(sopt_vec,rol_x_direction1,rol_x_direction1,sopt_vec,true,*out,num_steps);
+
+       *out << "Checking Consistency of Constraint Gradient and its adjoint" << std::endl;
+       constr.checkAdjointConsistencyJacobian(rol_x_direction1, sopt_vec_direction2, sopt_vec,true,*out);
+
+       *out << "Checking Symmetry of objective Hessian" << std::endl;
+       obj.checkHessSym(sopt_vec,sopt_vec_direction1, sopt_vec_direction2, true,*out);
+
+       *out << "Checking Symmetry of objective Hessian (H_xx = H_xx^T)" << std::endl;
+       obj.checkHessSym(sopt_vec,sopt_vec_direction1_x, sopt_vec_direction2_x, true,*out);
+       *out << "Checking Symmetry of objective Hessian (H_xp = H_px^T)" << std::endl;
+       obj.checkHessSym(sopt_vec,sopt_vec_direction1_x, sopt_vec_direction2_p, true,*out);
+       *out << "Checking Symmetry of objective Hessian (H_pp = H_pp^T)" << std::endl;
+       obj.checkHessSym(sopt_vec,sopt_vec_direction1_p, sopt_vec_direction2_p, true,*out);
+
+       *out << "Checking Accuracy of objective Hessian" << std::endl;
+       obj.checkHessVec(sopt_vec,sopt_vec_direction1,true,*out,num_steps,order);
+
+       *out << "Checking Accuracy of constraint Hessian" << std::endl;
+       constr.checkApplyAdjointHessian(sopt_vec,  rol_x_direction1, sopt_vec_direction2, sopt_vec_direction2, true,*out,num_steps,order);
+
      }
     }
 
@@ -617,13 +671,13 @@ Piro::PerformROLAnalysis(
 
      if ( useFullSpace ) {
 
-       ROL::Vector_SimOpt<double> x(ROL::makePtrFromRef(rol_x),ROL::makePtrFromRef(rol_p));
+       ROL::Vector_SimOpt<double> sopt_vec(ROL::makePtrFromRef(rol_x),ROL::makePtrFromRef(rol_p));
        auto r_ptr = rol_x.clone();
        double tol = 1e-5;
        constr.solve(*r_ptr,rol_x,rol_p,tol);
        ROL::BoundConstraint<double> u_bnd(rol_x);
        ROL::Ptr<ROL::BoundConstraint<double> > bnd = ROL::makePtr<ROL::BoundConstraint_SimOpt<double> >(ROL::makePtrFromRef(u_bnd),boundConstraint);
-       ROL::OptimizationProblem<double> optProb(ROL::makePtrFromRef(obj), ROL::makePtrFromRef(x),  bnd, ROL::makePtrFromRef(constr), r_ptr);
+       ROL::OptimizationProblem<double> optProb(ROL::makePtrFromRef(obj), ROL::makePtrFromRef(sopt_vec),  bnd, ROL::makePtrFromRef(constr), r_ptr);
        ROL::OptimizationSolver<double> optSolver(optProb, rolParams.sublist("ROL Options"));
        optSolver.solve(*out);
      } else {
@@ -633,11 +687,11 @@ Piro::PerformROLAnalysis(
     else {
       if ( useFullSpace ) {
 
-        ROL::Vector_SimOpt<double> x(ROL::makePtrFromRef(rol_x),ROL::makePtrFromRef(rol_p));
+        ROL::Vector_SimOpt<double> sopt_vec(ROL::makePtrFromRef(rol_x),ROL::makePtrFromRef(rol_p));
         auto r_ptr = rol_x.clone();
         double tol = 1e-5;
         constr.solve(*r_ptr,rol_x,rol_p,tol);
-        ROL::OptimizationProblem<double> optProb(ROL::makePtrFromRef(obj), ROL::makePtrFromRef(x), ROL::makePtrFromRef(constr), r_ptr);
+        ROL::OptimizationProblem<double> optProb(ROL::makePtrFromRef(obj), ROL::makePtrFromRef(sopt_vec), ROL::makePtrFromRef(constr), r_ptr);
         ROL::OptimizationSolver<double> optSolver(optProb, rolParams.sublist("ROL Options"));
         optSolver.solve(*out);
       } else {
