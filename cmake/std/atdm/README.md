@@ -1075,11 +1075,11 @@ $ bsub -x -Is -n 20 \
 
 ### ATS-2
 
-Once logged on a supported ATS-2 system like 'vortex' (SRN), one can either
-build and configure on a login node or a compute node.  But one must always
-run the tests from the launch node (allocated using 'bsub').  Make sure to
-setup SSH keys as described in `/opt/VORTEX_INTRO` before trying to do
-anything.
+Once logged on a supported ATS-2 system (called system 'ats2') like 'vortex'
+(SRN), one can either build and configure on a login node or a compute node.
+But one must always run the tests from the launch node (allocated using
+'bsub').  Make sure to setup SSH keys as described in `/opt/VORTEX_INTRO`
+before trying to do anything.
 
 For example, to configure, build and run the tests for the default
 `cuda-debug` build for `Tpetra` (after cloning Trilinos on the 'develop'

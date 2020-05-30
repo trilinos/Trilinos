@@ -93,6 +93,7 @@ namespace MueLu {
         doPRrebalance_          (MasterList::getDefault<bool>("repartition: rebalance P and R")),
         implicitTranspose_      (MasterList::getDefault<bool>("transpose: use implicit")),
         fuseProlongationAndUpdate_ (MasterList::getDefault<bool>("fuse prolongation and update")),
+        sizeOfMultiVectors_     (MasterList::getDefault<int>("number of vectors")),
         graphOutputLevel_(-1) { }
 
     //!
@@ -248,8 +249,7 @@ namespace MueLu {
       }
       if (!matvecParams_.is_null())
         H.SetMatvecParams(matvecParams_);
-      // FIXME: Should allow specification of NumVectors on parameterlist
-      H.AllocateLevelMultiVectors(1);
+      H.AllocateLevelMultiVectors(sizeOfMultiVectors_);
       H.describe(H.GetOStream(Runtime0), verbosity_);
 
       // When we reuse hierarchy, it is necessary that we don't
@@ -316,6 +316,7 @@ namespace MueLu {
     bool                  doPRrebalance_;
     bool                  implicitTranspose_;
     bool                  fuseProlongationAndUpdate_;
+    int                   sizeOfMultiVectors_;
     int                   graphOutputLevel_;
     Teuchos::Array<int>   matricesToPrint_;
     Teuchos::Array<int>   prolongatorsToPrint_;

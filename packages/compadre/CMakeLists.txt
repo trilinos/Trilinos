@@ -1,6 +1,7 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.10.0 FATAL_ERROR)
 
-set(Compadre_VERSION "1.0.3")
+# get Compadre_VERSION
+file(STRINGS ${CMAKE_CURRENT_LIST_DIR}/cmake/Compadre_Version.txt Compadre_VERSION)
 
 # Called at the top of every CMakeLists.txt file
 macro(include_tribits_build)
@@ -68,6 +69,10 @@ else() # Raw CMake Project
   PROJECT(Compadre VERSION ${Compadre_VERSION} LANGUAGES CXX)
 
   get_directory_property(Compadre_HAS_PARENT PARENT_DIRECTORY)
+
+  if (NOT Compadre_HAS_PARENT)
+    include(GNUInstallDirs)
+  endif()
 
   bob_begin_package()
 
@@ -547,28 +552,6 @@ else() # Raw CMake Project
 
   if(Compadre_USE_PYTHON)
     add_subdirectory(python)
-  endif()
-
-  ##########
-  #
-  #
-  #  DOXYGEN
-  #
-  #
-  ##########
-
-  find_package(Doxygen QUIET)
-  if (DOXYGEN_FOUND)
-    if (NOT(Compadre_HAS_PARENT))
-      configure_file("${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile.in" "${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile" @ONLY)
-      add_custom_target(doc
-          COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile
-          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/doc 
-          VERBATIM 
-      )
-      set_target_properties(doc PROPERTIES EXCLUDE_FROM_ALL TRUE)
-      # still must be called manually with "make doc"
-    endif()
   endif()
 
 

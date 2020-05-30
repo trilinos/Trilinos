@@ -290,7 +290,7 @@ namespace Intrepid2
         op3 = Intrepid2::OPERATOR_VALUE;
         
         // family 3 goes in the z component; 0 in the x and y components
-        auto outputValuesComponent_xy = Kokkos::subview(outputValues,Kokkos::ALL(),Kokkos::ALL(),std::make_pair(0,1));
+        auto outputValuesComponent_xy = Kokkos::subview(outputValues,Kokkos::ALL(),Kokkos::ALL(),std::make_pair(0,2));
         auto outputValuesComponent_z = Kokkos::subview(outputValues,Kokkos::ALL(),Kokkos::ALL(),2);
        
         // 0 in x and y components
@@ -388,7 +388,7 @@ namespace Intrepid2
     /** \brief True if orientation is required
     */
     virtual bool requireOrientation() const {
-      return true;
+      return (this->getDofCount(2,0) > 0); //if it has side DOFs, than it needs orientations
     }
   };
 } // end namespace Intrepid2

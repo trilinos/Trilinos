@@ -251,7 +251,7 @@ namespace Intrepid2
     /** \brief True if orientation is required
     */
     virtual bool requireOrientation() const {
-      return true;
+      return (this->getDofCount(1,0) > 0); //if it has side DOFs, than it needs orientations
     }
   };
 } // end namespace Intrepid2

@@ -233,7 +233,7 @@ void batchSVDFactorize(ParallelManager pm, bool swap_layout_P, double *P, int ld
 
     Kokkos::Profiling::popRegion();
 
-    if (max_mn <= 32) { // batch version only works on small matrices
+    if (max_mn <= 32) { // batch version only works on small matrices (https://docs.nvidia.com/cuda/cusolver/index.html#cuds-lt-t-gt-gesvdjbatch)
 
         Kokkos::Profiling::pushRegion("SVD::Workspace");
 
@@ -303,7 +303,7 @@ void batchSVDFactorize(ParallelManager pm, bool swap_layout_P, double *P, int ld
         //signed char jobv = 'A';
   
         Kokkos::Profiling::pushRegion("SVD::Execution");
-          Kokkos::parallel_for(Kokkos::RangePolicy<host_execution_space>(0,num_matrices), KOKKOS_LAMBDA(const int i) {
+          for (int i=0; i<num_matrices; ++i) {
               const int my_stream = i%NUM_STREAMS;
 
               cusolverDnDgesvdj(
@@ -335,7 +335,7 @@ void batchSVDFactorize(ParallelManager pm, bool swap_layout_P, double *P, int ld
 //                  rwork.data() + TO_GLOBAL(i)*TO_GLOBAL((min_mn-1)),
 //                  devInfo.data() + TO_GLOBAL(i) );
   
-          });
+          }
         Kokkos::Profiling::popRegion();
     }
 
