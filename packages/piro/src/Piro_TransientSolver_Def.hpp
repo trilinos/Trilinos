@@ -404,12 +404,12 @@ Piro::TransientSolver<Scalar>::evalConvergedModelResponsesAndSensitivities(
       {
         //Get dxdp_mv from Tempus::ForwardIntegratorSensitivity class  
         const RCP<const Thyra::MultiVectorBase<Scalar> > dxdp_mv = piroTempusIntegrator_->getDxDp();
-#if DEBUG_OUTPUT
+#ifdef DEBUG_OUTPUT
         *out_ << "\n*** Piro::TransientSolver: num_p, num vecs in dxdp = " << num_p_ << ", " << dxdp_mv->domain()->dim() << " ***\n";
 #endif
         for (int i=0; i < dxdp_mv->domain()->dim(); ++i) { 
           Teuchos::RCP<const Thyra::VectorBase<Scalar>> dxdp = dxdp_mv->col(i);
-#if DEBUG_OUTPUT
+#ifdef DEBUG_OUTPUT
           *out_ << "\n*** Piro::TransientSolver dxdp for p = " << i << " ***\n";
           Teuchos::Range1D range;
           RTOpPack::ConstSubVectorView<Scalar> dxdpv;
