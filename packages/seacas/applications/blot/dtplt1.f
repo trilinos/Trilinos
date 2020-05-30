@@ -254,8 +254,8 @@ C         --Use the standard color table
             N = 3
          END IF
          IF (MODTYP .EQ. 'NODE') THEN
-            CALL VECTOR (MODTYP, VARNP, NUMNPF, IDUM, IDUM,
-     &         HIDENP, XN, YN, ZN, IN2ELB, LDUM, VECMAX,
+            CALL VECTORN (MODTYP, VARNP, NUMNPF, 
+     &         HIDENP, XN, YN, ZN, IN2ELB, VECMAX,
      &         BLKCOL,  IDELB, *100)
          ELSE
             CALL EVAROK (N, IDTVAR, NELBLK, IELBST, ISEVOK, ISVOK)

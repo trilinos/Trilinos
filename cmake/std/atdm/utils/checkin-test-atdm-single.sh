@@ -33,7 +33,8 @@ fi
 
 set -x
 
-$ATDM_TRILINOS_DIR/cmake/tribits/ci_support/checkin-test.py \
+${ATDM_TRIBITS_DIR}/ci_support/checkin-test.py \
+  --src-dir=$ATDM_TRILINOS_DIR \
   --make-options="${make_options}" \
   --ctest-options="-j $ATDM_CONFIG_CTEST_PARALLEL_LEVEL" \
   --st-extra-builds=$ATDM_BUILD_NAME_KEYS "$@" \

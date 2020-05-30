@@ -169,7 +169,7 @@ C      --Get the number of lines needed
       END IF
 
 C   --Get software character flag for current device
-      CALL GRGPAR ('SOFTCHAR', 0, SOFTCH, STRING)
+      CALL GRGPARD ('SOFTCHAR', 0, SOFTCH, STRING)
 
 C   --Display plot item(s) (variable names and number) for each pathline
 

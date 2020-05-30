@@ -20,6 +20,7 @@ SET(HEADERS ${HEADERS}
 # B.1) utilities
 #
 APPEND_SET(HEADERS
+  Piro_Helpers.hpp 
   Piro_ValidPiroParameters.hpp
   Piro_Version.hpp
   Piro_InvertMassMatrixDecorator.hpp
@@ -130,7 +131,6 @@ ENDIF()
 ENDIF()
 IF (Piro_ENABLE_Tempus)
   APPEND_SET(HEADERS
-    Piro_Helpers.hpp 
     Piro_TempusSolver.hpp
     Piro_TempusSolver_Def.hpp 
     Piro_TempusIntegrator.hpp

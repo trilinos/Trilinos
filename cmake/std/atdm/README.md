@@ -1034,7 +1034,7 @@ command to run if using a CUDA build.  For example, to configure, build and
 run the tests for the default `cuda-debug` build for say `MueLu` (after
 cloning Trilinos on the `develop` branch) one would do:
 
-```
+```bash
 $ cd <some_build_dir>/
 
 $ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh cuda-debug
@@ -1047,13 +1047,20 @@ $ cmake \
 
 $ make NP=20
 
-$ bsub -x -Is -n 20 ctest -j4
+$ bsub -x -Is -n 20 ctest -j2
 ```
 
 **NOTE:** While the above example shows loading the environment, configuring
 and building on the login node, one can also do these on the compute nodes as
 well.  In fact, that is what the CTest -S drivers do in automated testing on
-'waterman'.
+'waterman'.  To get an interactive compute node, do:
+
+```
+$ bsub -x -Is -n 20 bash
+```
+
+Then one can configure, build, and run tests interactively on that compute
+node.
 
 Note that one can also run the same build and tests using the <a
 href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
@@ -1068,11 +1075,11 @@ $ bsub -x -Is -n 20 \
 
 ### ATS-2
 
-Once logged on a supported ATS-2 system like 'vortex' (SRN), one can either
-build and configure on a login node or a compute node.  But one must always
-run the tests from the launch node (allocated using 'bsub').  Make sure to
-setup SSH keys as described in `/opt/VORTEX_INTRO` before trying to do
-anything.
+Once logged on a supported ATS-2 system (called system 'ats2') like 'vortex'
+(SRN), one can either build and configure on a login node or a compute node.
+But one must always run the tests from the launch node (allocated using
+'bsub').  Make sure to setup SSH keys as described in `/opt/VORTEX_INTRO`
+before trying to do anything.
 
 For example, to configure, build and run the tests for the default
 `cuda-debug` build for `Tpetra` (after cloning Trilinos on the 'develop'

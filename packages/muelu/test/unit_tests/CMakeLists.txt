@@ -91,6 +91,8 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsTestMatrices_cp
   SOURCE_FILES aniso2dx.mat
   SOURCE_FILES aniso2dy.mat
   SOURCE_FILES iso2d.mat
+  SOURCE_FILES fuego0.mm
+  SOURCE_FILES fuego1.mm
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/TestMatrices
 )
 

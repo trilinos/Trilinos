@@ -55,9 +55,7 @@
 #include "BelosCGIter.hpp"
 #include "BelosCGSingleRedIter.hpp"
 #include "BelosBlockCGIter.hpp"
-#include "BelosDGKSOrthoManager.hpp"
-#include "BelosICGSOrthoManager.hpp"
-#include "BelosIMGSOrthoManager.hpp"
+#include "BelosOrthoManagerFactory.hpp"
 #include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestGenResNorm.hpp"
 #include "BelosStatusTestCombo.hpp"
@@ -199,7 +197,7 @@ namespace Belos {
      *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms
      *                               must reach to decide convergence. Default: 1e-8.
      *   - "Orthogonalization" - a \c std::string specifying the desired orthogonalization:
-     *                           DGKS ,ICGS, and IMGS. Default: "DGKS"
+     *                           DGKS ,ICGS, and IMGS. Default: "ICGS"
      *   - "Orthogonalization Constant" - a \c MagnitudeType used by DGKS orthogonalization to
      *                                    determine whether another step of classical Gram-Schmidt
      *                                    is necessary.  Default: -1 (use DGKS default)
@@ -374,7 +372,7 @@ namespace Belos {
     static constexpr bool foldConvergenceDetectionIntoAllreduce_default_ = false;
     static constexpr const char * resScale_default_ = "Norm of Initial Residual";
     static constexpr const char * label_default_ = "Belos";
-    static constexpr const char * orthoType_default_ = "DGKS";
+    static constexpr const char * orthoType_default_ = "ICGS";
     static constexpr bool assertPositiveDefiniteness_default_ = true;
     static constexpr std::ostream * outputStream_default_ = &std::cout;
 
@@ -548,54 +546,6 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
     }
   }
 
-  // Check if the orthogonalization changed.
-  if (params->isParameter("Orthogonalization")) {
-    std::string tempOrthoType = params->get("Orthogonalization",orthoType_default_);
-    TEUCHOS_TEST_FOR_EXCEPTION( tempOrthoType != "DGKS" && tempOrthoType != "ICGS" && tempOrthoType != "IMGS",
-                        std::invalid_argument,
-                        "Belos::BlockCGSolMgr: \"Orthogonalization\" must be either \"DGKS\", \"ICGS\", or \"IMGS\".");
-    if (tempOrthoType != orthoType_) {
-      orthoType_ = tempOrthoType;
-      params_->set("Orthogonalization", orthoType_);
-      // Create orthogonalization manager
-      if (orthoType_=="DGKS") {
-        if (orthoKappa_ <= 0) {
-          ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
-        }
-        else {
-          ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
-          Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( orthoKappa_ );
-        }
-      }
-      else if (orthoType_=="ICGS") {
-        ortho_ = Teuchos::rcp( new ICGSOrthoManager<ScalarType,MV,OP>( label_ ) );
-      }
-      else if (orthoType_=="IMGS") {
-        ortho_ = Teuchos::rcp( new IMGSOrthoManager<ScalarType,MV,OP>( label_ ) );
-      }
-    }
-  }
-
-  // Check which orthogonalization constant to use.
-  if (params->isParameter("Orthogonalization Constant")) {
-    if (params->isType<MagnitudeType> ("Orthogonalization Constant")) {
-      orthoKappa_ = params->get ("Orthogonalization Constant",
-                                 static_cast<MagnitudeType> (DefaultSolverParameters::orthoKappa));
-    }
-    else {
-      orthoKappa_ = params->get ("Orthogonalization Constant",
-                                 DefaultSolverParameters::orthoKappa);
-    }
-
-    // Update parameter in our list.
-    params_->set("Orthogonalization Constant",orthoKappa_);
-    if (orthoType_=="DGKS") {
-      if (orthoKappa_ > 0 && ortho_ != Teuchos::null) {
-        Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( orthoKappa_ );
-      }
-    }
-  }
-
   // Check for a change in verbosity level
   if (params->isParameter("Verbosity")) {
     if (Teuchos::isParameterType<int>(*params,"Verbosity")) {
@@ -648,6 +598,48 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   // Create output manager if we need to.
   if (printer_ == Teuchos::null) {
     printer_ = Teuchos::rcp( new OutputManager<ScalarType>(verbosity_, outputStream_) );
+  }
+
+  // Check if the orthogonalization changed.
+  bool changedOrthoType = false;
+  if (params->isParameter("Orthogonalization")) {
+    std::string tempOrthoType = params->get("Orthogonalization",orthoType_default_);
+    if (tempOrthoType != orthoType_) {
+      orthoType_ = tempOrthoType;
+      changedOrthoType = true;
+    }
+  }
+  params_->set("Orthogonalization", orthoType_);
+
+  // Check which orthogonalization constant to use.
+  if (params->isParameter("Orthogonalization Constant")) {
+    if (params->isType<MagnitudeType> ("Orthogonalization Constant")) {
+      orthoKappa_ = params->get ("Orthogonalization Constant",
+                                 static_cast<MagnitudeType> (DefaultSolverParameters::orthoKappa));
+    }
+    else {
+      orthoKappa_ = params->get ("Orthogonalization Constant",
+                                 DefaultSolverParameters::orthoKappa);
+    }
+
+    // Update parameter in our list.
+    params_->set("Orthogonalization Constant",orthoKappa_);
+    if (orthoType_=="DGKS") {
+      if (orthoKappa_ > 0 && ortho_ != Teuchos::null && !changedOrthoType) {
+        Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( orthoKappa_ );
+      }
+    }
+  }
+
+  // Create orthogonalization manager if we need to.
+  if (ortho_ == Teuchos::null || changedOrthoType) {
+    Belos::OrthoManagerFactory<ScalarType, MV, OP> factory;
+    Teuchos::RCP<Teuchos::ParameterList> paramsOrtho;   // can be null
+    if (orthoType_=="DGKS" && orthoKappa_ > 0) {
+      paramsOrtho->set ("depTol", orthoKappa_ );
+    }
+
+    ortho_ = factory.makeMatOrthoManager (orthoType_, Teuchos::null, printer_, label_, paramsOrtho);
   }
 
   // Convergence
@@ -750,30 +742,6 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
     std::string solverDesc = " Block CG ";
     outputTest_->setSolverDesc( solverDesc );
 
-  }
-
-  // Create orthogonalization manager if we need to.
-  if (ortho_ == Teuchos::null) {
-    params_->set("Orthogonalization", orthoType_);
-    if (orthoType_=="DGKS") {
-      if (orthoKappa_ <= 0) {
-        ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
-      }
-      else {
-        ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
-        Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( orthoKappa_ );
-      }
-    }
-    else if (orthoType_=="ICGS") {
-      ortho_ = Teuchos::rcp( new ICGSOrthoManager<ScalarType,MV,OP>( label_ ) );
-    }
-    else if (orthoType_=="IMGS") {
-      ortho_ = Teuchos::rcp( new IMGSOrthoManager<ScalarType,MV,OP>( label_ ) );
-    }
-    else {
-      TEUCHOS_TEST_FOR_EXCEPTION(orthoType_!="ICGS"&&orthoType_!="DGKS"&&orthoType_!="IMGS",std::logic_error,
-                         "Belos::BlockCGSolMgr(): Invalid orthogonalization type.");
-    }
   }
 
   // BelosCgIter accepts a parameter specifying whether to assert for the positivity of p^H*A*p in the CG iteration

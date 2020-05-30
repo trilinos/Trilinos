@@ -204,7 +204,7 @@ namespace Ioss {
     //                                FIELDS
     // ========================================================================
     // Just forward these through to the field manager...
-    void         field_add(const Field &new_field);
+    void         field_add(Field new_field);
     void         field_erase(const std::string &field_name);
     bool         field_exists(const std::string &field_name) const;
     Field        get_field(const std::string &field_name) const;

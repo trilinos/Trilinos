@@ -155,6 +155,15 @@ int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *ver
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
+  /* Verify that this file is not already open for read or write...
+     In theory, should be ok for the file to be open multiple times
+     for read, but bad things can happen if being read and written
+     at the same time...
+  */
+  if (ex__check_multiple_open(path, mode, __func__)) {
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
+
   /* The EX_READ mode is the default if EX_WRITE is not specified... */
   if (!(mode & EX_WRITE)) { /* READ ONLY */
     nc_mode = NC_NOWRITE | NC_SHARE;
@@ -384,7 +393,8 @@ int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *ver
   }
 
   /* initialize floating point and integer size conversion. */
-  if (ex__conv_init(exoid, comp_ws, io_ws, file_wordsize, int64_status, 0, 0, 0) != EX_NOERR) {
+  if (ex__conv_init(exoid, comp_ws, io_ws, file_wordsize, int64_status, 0, 0, 0, mode & EX_WRITE) !=
+      EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to initialize conversion routines in file id %d named %s", exoid, path);
     ex_err_fn(exoid, __func__, errmsg, EX_LASTERR);

@@ -177,6 +177,7 @@ IF (Piro_ENABLE_NOX)
           input_Analysis_ROL_ReducedSpace_Tpetra.xml
           input_Analysis_ROL_FullSpace_Tpetra.xml
           input_Analysis_ROL_AdjointSensitivities.xml
+          input_Analysis_ROL_AdjointSensitivities_OldReducedSpace_Tpetra.xml
           input_Analysis_ROL_AdjointSensitivities_ReducedSpace_NOXSolver_Tpetra.xml
           input_Analysis_ROL_AdjointSensitivities_FullSpace_Tpetra.xml
           input_Solve_RythmosMatrixFree_Fails.xml

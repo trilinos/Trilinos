@@ -55,6 +55,9 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
         "--verbose --filename=orsirr1.hb"
         "--verbose --filename=orsirr1.hb --num-rhs=1 --blocksize=2"
         "--verbose --filename=orsirr1.hb --pseudo"
+        "--verbose --filename=nos1.rsa --num-rhs=8 --blocksize=2 --ortho=ICGS"
+        "--verbose --filename=nos1.rsa --num-rhs=8 --blocksize=2 --ortho=IMGS"
+        "--verbose --filename=nos1.rsa --num-rhs=8 --blocksize=2 --ortho=DGKS"
       STANDARD_PASS_OUTPUT 
       )
 
@@ -72,6 +75,12 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       COMM serial mpi
       ARGS "--verbose --filename=orsirr1.hb"
       STANDARD_PASS_OUTPUT 
+      )
+
+    TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestBlockPGmresFiles
+      SOURCE_DIR ${Ifpack_SOURCE_DIR}/test/AztecOO
+      SOURCE_FILES nos1.rsa
+      EXEDEPS bl_pgmres_hb
       )
 
   ENDIF(${PACKAGE_NAME}_ENABLE_Ifpack)

@@ -1,7 +1,7 @@
 // @HEADER
 // ************************************************************************
 //
-//        Phalanx: A Partial Differential Equation Field Evaluation 
+//        Phalanx: A Partial Differential Equation Field Evaluation
 //       Kernel for Flexible Management of Complex Dependency Chains
 //                    Copyright 2008 Sandia Corporation
 //
@@ -95,27 +95,34 @@ TEUCHOS_UNIT_TEST(aliased_fields, basic)
     PHX::Tag<MyTraits::Residual::ScalarT> tag_a("a",dl);
     fm.requireField<MyTraits::Residual>(tag_a);
   }
-  
+
   // Alias "b" to "c"
   {
     PHX::Tag<MyTraits::Residual::ScalarT> tag_b("b",dl);
     PHX::Tag<MyTraits::Residual::ScalarT> tag_c("c",dl);
     fm.aliasFieldForAllEvaluationTypes(tag_b,tag_c);
   }
-  
+
   fm.postRegistrationSetup(0);
   fm.evaluateFields<MyTraits::Residual>(0);
-  
+  Kokkos::fence();
+
   MDField<double,CELL,BASIS> b("b",dl);
   MDField<double,CELL,BASIS> c("c",dl);
   fm.getFieldData<MyTraits::Residual,double,CELL,BASIS>(b);
   fm.getFieldData<MyTraits::Residual,double,CELL,BASIS>(c);
 
+  auto host_b = Kokkos::create_mirror_view(b.get_static_view());
+  auto host_c = Kokkos::create_mirror_view(c.get_static_view());
+  Kokkos::deep_copy(host_b,b.get_static_view());
+  Kokkos::deep_copy(host_c,c.get_static_view());
+
   const auto tol = std::numeric_limits<double>::epsilon() * 100.0;
 
   for (int cell = 0; cell < b.extent_int(0); ++cell) {
     for (int basis = 0; basis < c.extent_int(1); ++basis) {
-      TEST_FLOATING_EQUALITY(b(cell,basis),4.0,tol);
+      TEST_FLOATING_EQUALITY(host_b(cell,basis),4.0,tol);
+      TEST_FLOATING_EQUALITY(host_c(cell,basis),4.0,tol);
     }
   }
 }
@@ -151,7 +158,7 @@ TEUCHOS_UNIT_TEST(aliased_fields, throw_on_bad_layout)
     PHX::Tag<MyTraits::Residual::ScalarT> tag_a("a",dl);
     fm.requireField<MyTraits::Residual>(tag_a);
   }
-  
+
   // Alias "b" to "c"
   {
     // use an incorrectly sized data layout
@@ -159,7 +166,7 @@ TEUCHOS_UNIT_TEST(aliased_fields, throw_on_bad_layout)
     PHX::Tag<MyTraits::Residual::ScalarT> tag_c("c",dl);
     TEST_THROW(fm.aliasFieldForAllEvaluationTypes(tag_b,tag_c),std::runtime_error)
   }
-  
+
 }
 
 // ****************************************
@@ -192,7 +199,7 @@ TEUCHOS_UNIT_TEST(aliased_fields, throw_on_bad_scalar_type)
     PHX::Tag<MyTraits::Residual::ScalarT> tag_a("a",dl);
     fm.requireField<MyTraits::Residual>(tag_a);
   }
-  
+
   // Alias "b" to "c"
   {
     // inject a float instead of double
@@ -200,5 +207,5 @@ TEUCHOS_UNIT_TEST(aliased_fields, throw_on_bad_scalar_type)
     PHX::Tag<MyTraits::Residual::ScalarT> tag_c("c",dl);
     TEST_THROW(fm.aliasFieldForAllEvaluationTypes(tag_b,tag_c),std::runtime_error)
   }
-  
+
 }

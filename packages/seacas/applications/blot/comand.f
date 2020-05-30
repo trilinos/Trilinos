@@ -1,4 +1,4 @@
-C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
+C Copyright(C) 2009-2017, 2020 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -170,6 +170,7 @@ C   --   Uses NALVAR of /MSHOPT/
       INTEGER LIDSP(0:*)
       INTEGER BLKCOL(0:NELBLK)
       INTEGER NENUM(*)
+      INTEGER IDUMA(1)
       REAL SHDCOL(7, NELBLK)
       INTEGER ISHDCL(3, NELBLK)
       CHARACTER NEWPRO
@@ -438,7 +439,7 @@ C   --Informational commands
          CALL FFADDC (VERB, INLINE(1))
          CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
 
-         CALL DBSEL (A, INLINE,
+         CALL DBSEL (A, A, INLINE,
      &      WORD, IFLD, INTYP, CFIELD, IFIELD, RFIELD,
      &      NAMES, TIMES, WHOTIM, NPTIMS, IPTIMS,
      &      IDELB, LENE, IDNPS, IDESS,
@@ -479,7 +480,7 @@ C   --Informational commands
      &         .TRUE., IELBST, NALVAR, DUMMIN, DUMMAX, MAPEL, MAPND)
          ELSE
             CALL SCALER (A, A, 2, NAMES(IVAR), IVAR,
-     &         .FALSE., IDUM, 0, DUMMIN, DUMMAX, MAPEL, MAPND)
+     &         .FALSE., IDUMA, 0, DUMMIN, DUMMAX, MAPEL, MAPND)
          END IF
          CALL MDSTAT (NERR, MEM)
          IF (NERR .GT. 0) GOTO 160
@@ -662,7 +663,7 @@ C      --Set neutral file flag
 
 C      --Switch to hardcopy device
          IF (VERB .EQ. 'hardcopy') THEN
-            CALL GRGPAR ('DEVICE', 2, ISON, WORD)
+            CALL GRGPARD ('DEVICE', 2, ISON, WORD)
             IF (.NOT. ISON) VERB = 'plot'
          END IF
          IF (VERB .EQ. 'hardcopy')

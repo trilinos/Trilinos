@@ -17,7 +17,7 @@ namespace Tempus {
 
 /** \brief This composite AppAction loops over added AppActions.
  *
- *  Inidividual AppActions are executed in the order in which they
+ *  Individual AppActions are executed in the order in which they
  *  were added.
  */
 template<class Scalar>
@@ -50,7 +50,7 @@ public:
 
   // Clear the AppAction vector.
   void clearRKAppActions();
-  { appActions_.clear();}
+  { appActions_.clear(); }
 
   // Return the size of the AppAction vector.
   std::size_t getSize() const { return appActions_.size(); }

@@ -88,6 +88,7 @@ C   --   Uses NAMECO of /DBNAMS/
 
       CHARACTER TYP
       REAL XYZMIN(3), XYZMAX(3)
+      REAL RDUM(3)
 
       SAVE KTIMES, KWHOLE, KXN, KYN, KZN, KXE, KYE, KZE, KLENE, KIEVOK
       SAVE KVALHN, KISTHN, KVALHX, KISTHX
@@ -143,7 +144,7 @@ C      --Get the offset for the variable
 
 C      --Determine if min/max is already calculated
 
-        CALL SCACAL (NAME, IVAR, .FALSE., IDUM,
+        CALL SCACAL (NAME, IVAR, .FALSE., IELBST,
      &    A(KISTHN+IX), ICALC)
 
         IF (ICALC .GT. 0) THEN
@@ -172,8 +173,8 @@ C      --Print min/max for history variable
         IF ((IPRINT .GT. 0) .AND.
      &    ((IPRINT .GT. 1) .OR. (ICALC .GT. 0))) THEN
           CALL SCAPRT (NAMECO, NAME, IVAR, A(KTIMES),
-     &      A(KVALHN+IX), IDUM, RDUM, A(KISTHN+IX),
-     &      A(KVALHX+IX), IDUM, RDUM, A(KISTHX+IX))
+     &      A(KVALHN+IX), IDUM, RDUM, IA(KISTHN+IX),
+     &      A(KVALHX+IX), IDUM, RDUM, IA(KISTHX+IX))
         END IF
 
       ELSE IF (TYP .EQ. 'G') THEN
@@ -202,7 +203,7 @@ C      --Get the offset for the variable
 
 C      --Determine if min/max is already calculated
 
-        CALL SCACAL (NAME, IVAR, .FALSE., IDUM,
+        CALL SCACAL (NAME, IVAR, .FALSE., IELBST,
      &    A(KISTGN+IX), ICALC)
 
         IF (ICALC .GT. 0) THEN
@@ -232,8 +233,8 @@ C      --Print min/max for global variable
         IF ((IPRINT .GT. 0) .AND.
      &    ((IPRINT .GT. 1) .OR. (ICALC .GT. 0))) THEN
           CALL SCAPRT (NAMECO, NAME, IVAR, A(KTIMES),
-     &      A(KVALGN+IX), IDUM, RDUM, A(KISTGN+IX),
-     &      A(KVALGX+IX), IDUM, RDUM, A(KISTGX+IX))
+     &      A(KVALGN+IX), IDUM, RDUM, IA(KISTGN+IX),
+     &      A(KVALGX+IX), IDUM, RDUM, IA(KISTGX+IX))
         END IF
 
       ELSE IF (TYP .EQ. 'N') THEN
@@ -279,7 +280,7 @@ C      --Get the offset for the variable
 
 C      --Determine if min/max is already calculated
 
-        CALL SCACAL (NAME, IVAR, .FALSE., IDUM,
+        CALL SCACAL (NAME, IVAR, .FALSE., IELBST,
      &    A(KISTNN+IX), ICALC)
 
         IF (ICALC .GT. 0) THEN
@@ -313,9 +314,9 @@ C      --Print min/max for nodal variable
      &    ((IPRINT .GT. 1) .OR. (ICALC .GT. 0))) THEN
           CALL SCAPRT (NAMECO, NAME, IVAR, A(KTIMES),
      &      A(KVALNN+IX), MAPND(IA(KNUMNN+IX)), A(KXYZNN+IXX),
-     &      A(KISTNN+IX),
+     &      IA(KISTNN+IX),
      &      A(KVALNX+IX), MAPND(IA(KNUMNX+IX)), A(KXYZNX+IXX),
-     *      A(KISTNX+IX))
+     *      IA(KISTNX+IX))
         end if
 
       ELSE IF (TYP .EQ. 'E') THEN

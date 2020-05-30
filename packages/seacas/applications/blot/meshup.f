@@ -129,6 +129,7 @@ C   --   Uses IS3DIM, LLNSET of /D3NUMS/
       LOGICAL SELONL
       LOGICAL DRAWIT
       LOGICAL LDUM
+      INTEGER IDUM(1)
 
 C   --Set mesh display parameters
 
