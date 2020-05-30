@@ -184,13 +184,13 @@ public:
     RCP<const VectorBase<Scalar> > get_x() const;
 
     /** \brief Precondition: <tt>supports(IN_ARG_x)==true</tt>.  */
-    void set_Delta_x( const RCP<const MultiVectorBase<Scalar> > &Delta_x );
+    void set_delta_x( const RCP<const MultiVectorBase<Scalar> > &delta_x );
     /** \brief Precondition: <tt>supports(IN_ARG_x)==true</tt>.  */
-    void set_Delta_p( int l, const RCP<const MultiVectorBase<Scalar> > &Delta_p_l );
+    void set_delta_p( int l, const RCP<const MultiVectorBase<Scalar> > &delta_p_l );
     /** \brief Precondition: <tt>supports(IN_ARG_x)==true</tt>.  */
-    RCP<const MultiVectorBase<Scalar> > get_Delta_x() const;
+    RCP<const MultiVectorBase<Scalar> > get_delta_x() const;
     /** \brief Get <tt>p(l)</tt> where <tt>0 <= l && l < this->Np()</tt>.  */
-    RCP<const MultiVectorBase<Scalar> > get_Delta_p(int l) const;
+    RCP<const MultiVectorBase<Scalar> > get_delta_p(int l) const;
 
     /** \brief Precondition: <tt>supports(IN_ARG_x)==true</tt>.  */
     void set_multiplier_f( const RCP<const VectorBase<Scalar> > &multiplier_f );
@@ -305,13 +305,13 @@ public:
   private:
     // types
     typedef Teuchos::Array<RCP<const VectorBase<Scalar> > > p_t;
-    typedef Teuchos::Array<RCP<const MultiVectorBase<Scalar> > > Delta_p_t;
+    typedef Teuchos::Array<RCP<const MultiVectorBase<Scalar> > > delta_p_t;
     // data
     std::string modelEvalDescription_;
     RCP<const VectorBase<Scalar> > x_dot_dot_;
     RCP<const VectorBase<Scalar> > x_dot_;
     RCP<const VectorBase<Scalar> > x_;
-    RCP<const MultiVectorBase<Scalar> > Delta_x_;
+    RCP<const MultiVectorBase<Scalar> > delta_x_;
     RCP<const Stokhos::ProductEpetraVector > x_dot_mp_;
     RCP<const Stokhos::ProductEpetraVector > x_mp_;
 
@@ -323,7 +323,7 @@ public:
     RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > x_poly_;
 #endif // HAVE_THYRA_ME_POLYNOMIAL
     p_t p_;
-    Delta_p_t Delta_p_;
+    delta_p_t delta_p_;
     ScalarMag t_;
     Scalar alpha_;
     Scalar beta_;

@@ -184,29 +184,29 @@ ModelEvaluatorBase::InArgs<Scalar>::get_x() const
 
 
 template<class Scalar>
-void ModelEvaluatorBase::InArgs<Scalar>::set_Delta_x(
-  const RCP<const MultiVectorBase<Scalar> > &Delta_x
+void ModelEvaluatorBase::InArgs<Scalar>::set_delta_x(
+  const RCP<const MultiVectorBase<Scalar> > &delta_x
   )
-{ assert_supports(IN_ARG_x); Delta_x_ = Delta_x; }
+{ assert_supports(IN_ARG_x); delta_x_ = delta_x; }
 
 
 template<class Scalar>
-void ModelEvaluatorBase::InArgs<Scalar>::set_Delta_p(
-  int l, const RCP<const MultiVectorBase<Scalar> > &Delta_p_l
+void ModelEvaluatorBase::InArgs<Scalar>::set_delta_p(
+  int l, const RCP<const MultiVectorBase<Scalar> > &delta_p_l
   )
-{ assert_l(l); Delta_p_[l] = Delta_p_l; }
+{ assert_l(l); delta_p_[l] = delta_p_l; }
 
 
 template<class Scalar>
 RCP<const MultiVectorBase<Scalar> >
-ModelEvaluatorBase::InArgs<Scalar>::get_Delta_x() const
-{ assert_supports(IN_ARG_x); return Delta_x_; }
+ModelEvaluatorBase::InArgs<Scalar>::get_delta_x() const
+{ assert_supports(IN_ARG_x); return delta_x_; }
 
 
 template<class Scalar>
 RCP<const MultiVectorBase<Scalar> >
-ModelEvaluatorBase::InArgs<Scalar>::get_Delta_p(int l) const
-{ assert_l(l); return Delta_p_[l]; }
+ModelEvaluatorBase::InArgs<Scalar>::get_delta_p(int l) const
+{ assert_l(l); return delta_p_[l]; }
 
 
 template<class Scalar>
@@ -404,9 +404,9 @@ void ModelEvaluatorBase::InArgs<Scalar>::setArgs(
     if(supports(IN_ARG_x_mp) || !ignoreUnsupported)
       set_x_mp(condCloneVec_mp(inArgs.get_x_mp(),cloneObjects));
   }
-  if( inArgs.supports(IN_ARG_x) && nonnull(inArgs.get_Delta_x()) ) {
+  if( inArgs.supports(IN_ARG_x) && nonnull(inArgs.get_delta_x()) ) {
     if(supports(IN_ARG_x) || !ignoreUnsupported)
-      set_Delta_x(condCloneMultiVec(inArgs.get_Delta_x(),cloneObjects));
+      set_delta_x(condCloneMultiVec(inArgs.get_delta_x(),cloneObjects));
   }
   if( inArgs.supports(IN_ARG_x) && nonnull(inArgs.get_multiplier_f()) ) {
     if(supports(IN_ARG_x) || !ignoreUnsupported)
@@ -439,8 +439,8 @@ void ModelEvaluatorBase::InArgs<Scalar>::setArgs(
       set_p(l,condCloneVec(inArgs.get_p(l),cloneObjects));
   }
   for (int l = 0; l < min_Np; ++l) {
-    if (nonnull(inArgs.get_Delta_p(l)))
-      set_Delta_p(l,condCloneMultiVec(inArgs.get_Delta_p(l),cloneObjects));
+    if (nonnull(inArgs.get_delta_p(l)))
+      set_delta_p(l,condCloneMultiVec(inArgs.get_delta_p(l),cloneObjects));
   }
   for (int l = 0; l < min_Np; ++l) {
     if (inArgs.supports(IN_ARG_p_mp,l)) {
@@ -628,7 +628,7 @@ template<class Scalar>
 void ModelEvaluatorBase::InArgs<Scalar>::_set_Np_Ng(int Np_in, int Ng_in)
 {
   p_.resize(Np_in);
-  Delta_p_.resize(Np_in);
+  delta_p_.resize(Np_in);
   p_mp_.resize(Np_in);
   supports_p_mp_.resize(Np_in);
   multiplier_g_.resize(Ng_in);

@@ -578,11 +578,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( InArgs, setSolutionArgs, Scalar )
   RCP<VectorBase<Scalar>> x_dot_dot = createMember(model->get_x_space());
   inArgs.set_x_dot_dot(x_dot_dot);
 
-  RCP<VectorBase<Scalar>> Delta_x = createMember(model->get_x_space());
-  inArgs.set_Delta_x(Delta_x);
+  RCP<VectorBase<Scalar>> delta_x = createMember(model->get_x_space());
+  inArgs.set_delta_x(delta_x);
 
-  RCP<VectorBase<Scalar>> Delta_p = createMember(model->get_p_space(0));
-  inArgs.set_Delta_p(0, Delta_p);
+  RCP<VectorBase<Scalar>> delta_p = createMember(model->get_p_space(0));
+  inArgs.set_delta_p(0, delta_p);
 
   RCP<VectorBase<Scalar>> multiplier_f = createMember(model->get_x_space());
   inArgs.set_multiplier_f(multiplier_f);
@@ -602,11 +602,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( InArgs, setSolutionArgs, Scalar )
   auto x_dot_dot_out = inArgs2.get_x_dot_dot();
   TEST_EQUALITY(x_dot_dot_out, x_dot_dot);
 
-  auto Delta_x_out = inArgs2.get_Delta_x();
-  TEST_EQUALITY(Delta_x_out, Delta_x);
+  auto delta_x_out = inArgs2.get_delta_x();
+  TEST_EQUALITY(delta_x_out, delta_x);
 
-  auto Delta_p_out = inArgs2.get_Delta_p(0);
-  TEST_EQUALITY(Delta_p_out, Delta_p);
+  auto delta_p_out = inArgs2.get_delta_p(0);
+  TEST_EQUALITY(delta_p_out, delta_p);
 
   auto multiplier_f_out = inArgs2.get_multiplier_f();
   TEST_EQUALITY(multiplier_f_out, multiplier_f);
