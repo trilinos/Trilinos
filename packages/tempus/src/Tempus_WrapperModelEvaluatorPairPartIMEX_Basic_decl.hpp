@@ -159,9 +159,6 @@ public:
     virtual Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
       get_f_space() const;
 
-    virtual Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-      get_f_dual_space() const;
-
     virtual Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
     virtual Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
     virtual Thyra::ModelEvaluatorBase::OutArgs<Scalar>createOutArgsImpl() const;

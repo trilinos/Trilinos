@@ -116,14 +116,6 @@ public:
       return appModel_->get_f_space();
     }
 
-    Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_f_dual_space() const
-    {
-#ifdef VERBOSE_DEBUG_OUTPUT
-      *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
-      return appModel_->get_f_dual_space();
-    }
-
     Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space(int p) const
     {
 #ifdef VERBOSE_DEBUG_OUTPUT

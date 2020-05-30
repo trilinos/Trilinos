@@ -361,18 +361,6 @@ get_f_space() const
   return explicitModel_->get_f_space();
 }
 
-
-template <typename Scalar>
-Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-WrapperModelEvaluatorPairPartIMEX_Basic<Scalar>::
-get_f_dual_space() const
-{
-  if (useImplicitModel_ == true) return implicitModel_->get_f_dual_space();
-
-  return explicitModel_->get_f_dual_space();
-}
-
-
 template <typename Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
 WrapperModelEvaluatorPairPartIMEX_Basic<Scalar>::
