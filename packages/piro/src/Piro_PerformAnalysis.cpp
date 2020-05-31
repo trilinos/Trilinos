@@ -62,6 +62,7 @@
 
 #ifdef HAVE_PIRO_ROL
 #include "ROL_ThyraVector.hpp"
+#include "ROL_ScaledThyraVector.hpp"
 #include "ROL_Thyra_BoundConstraint.hpp"
 #include "ROL_ThyraME_Objective.hpp"
 #include "ROL_ThyraProductME_Objective.hpp"
@@ -454,10 +455,10 @@ Piro::PerformROLAnalysis(
     //Teuchos::RCP<Thyra::VectorSpaceBase<double> const> p_space;
     Teuchos::RCP<Thyra::VectorSpaceBase<double> const> x_space = model->get_x_space();
 
-    Teuchos::RCP<Thyra::VectorBase<double>> x_vec = Thyra::createMember(x_space);
-    Thyra::copy(*model->getNominalValues().get_x(), x_vec.ptr());
+    Teuchos::RCP<Thyra::VectorBase<double>> x = Thyra::createMember(x_space);
+    Thyra::copy(*model->getNominalValues().get_x(), x.ptr());
 
-    ROL::ThyraVector<double> rol_x(x_vec);
+    ROL::ThyraVector<double> rol_x(x);
     Teuchos::RCP<Thyra::VectorBase<double>> lambda_vec = Thyra::createMember(x_space);
     ROL::ThyraVector<double> rol_lambda(lambda_vec);
 
@@ -523,12 +524,16 @@ Piro::PerformROLAnalysis(
      }
     }
 
+
+
+
+
     //! check correctness of Gradient prvided by Model Evaluator
     if(rolParams.get<bool>("Check Gradient", false)) {
      Teuchos::RCP<Thyra::VectorBase<double> > p_rand_vec1 = p->clone_v();
-     Teuchos::RCP<Thyra::VectorBase<double> > x_rand_vec1 = x_vec->clone_v();
+     Teuchos::RCP<Thyra::VectorBase<double> > x_rand_vec1 = x->clone_v();
      Teuchos::RCP<Thyra::VectorBase<double> > p_rand_vec2 = p->clone_v();
-     Teuchos::RCP<Thyra::VectorBase<double> > x_rand_vec2 = x_vec->clone_v();
+     Teuchos::RCP<Thyra::VectorBase<double> > x_rand_vec2 = x->clone_v();
 
      ::Thyra::seed_randomize<double>( seed );
 
@@ -649,7 +654,10 @@ Piro::PerformROLAnalysis(
 
     // Run Algorithm
     std::vector<std::string> output;
-    if(rolParams.get<bool>("Bound Constrained", false)) {
+    Teuchos::RCP<ROL::BoundConstraint<double> > boundConstraint;
+    bool boundConstrained = rolParams.get<bool>("Bound Constrained", false);
+
+    if(boundConstrained) {
      Teuchos::Array<Teuchos::RCP<const Thyra::VectorBase<double>>> p_lo_vecs(num_parameters);
      Teuchos::Array<Teuchos::RCP<const Thyra::VectorBase<double>>> p_up_vecs(num_parameters);
      //double eps_bound = rolParams.get<double>("epsilon bound", 1e-6);
@@ -660,44 +668,35 @@ Piro::PerformROLAnalysis(
            std::endl << "Error in Piro::PerformROLAnalysis:  " <<
            "Lower and/or Upper bounds pointers are null, cannot perform bound constrained optimization"<<std::endl);
      }
-     Teuchos::RCP<const Thyra::VectorBase<double>> p_lo = Thyra::defaultProductVector<double>(p_space, p_lo_vecs());
-     Teuchos::RCP<const Thyra::VectorBase<double>> p_up = Thyra::defaultProductVector<double>(p_space, p_up_vecs());
+     Teuchos::RCP<Thyra::VectorBase<double>> p_lo = Thyra::defaultProductVector<double>(p_space, p_lo_vecs());
+     Teuchos::RCP<Thyra::VectorBase<double>> p_up = Thyra::defaultProductVector<double>(p_space, p_up_vecs());
 
      //ROL::Thyra_BoundConstraint<double>  boundConstraint(p_lo->clone_v(), p_up->clone_v(), eps_bound);
-     ROL::ThyraVector<double> plo(p_lo->clone_v());
-     ROL::ThyraVector<double> pup(p_up->clone_v());
-     Teuchos::RCP<ROL::BoundConstraint<double> > boundConstraint =
-         rcp( new ROL::Bounds<double>(ROL::makePtrFromRef(plo), ROL::makePtrFromRef(pup)));
+     boundConstraint = rcp( new ROL::Bounds<double>(ROL::makePtr<ROL::ThyraVector<double> >(p_lo), ROL::makePtr<ROL::ThyraVector<double> >(p_up)));
+    }
 
      if ( useFullSpace ) {
-
        ROL::Vector_SimOpt<double> sopt_vec(ROL::makePtrFromRef(rol_x),ROL::makePtrFromRef(rol_p));
        auto r_ptr = rol_x.clone();
        double tol = 1e-5;
        constr.solve(*r_ptr,rol_x,rol_p,tol);
-       ROL::BoundConstraint<double> u_bnd(rol_x);
-       ROL::Ptr<ROL::BoundConstraint<double> > bnd = ROL::makePtr<ROL::BoundConstraint_SimOpt<double> >(ROL::makePtrFromRef(u_bnd),boundConstraint);
-       ROL::OptimizationProblem<double> optProb(ROL::makePtrFromRef(obj), ROL::makePtrFromRef(sopt_vec),  bnd, ROL::makePtrFromRef(constr), r_ptr);
-       ROL::OptimizationSolver<double> optSolver(optProb, rolParams.sublist("ROL Options"));
-       optSolver.solve(*out);
+       if(boundConstrained) {
+         ROL::BoundConstraint<double> u_bnd(rol_x);
+         ROL::Ptr<ROL::BoundConstraint<double> > bnd = ROL::makePtr<ROL::BoundConstraint_SimOpt<double> >(ROL::makePtrFromRef(u_bnd),boundConstraint);
+         ROL::OptimizationProblem<double> prob(ROL::makePtrFromRef(obj), ROL::makePtrFromRef(sopt_vec), bnd, ROL::makePtrFromRef(constr), r_ptr);
+         ROL::OptimizationSolver<double> optSolver(prob, rolParams.sublist("ROL Options"));
+         optSolver.solve(*out);
+       } else {
+         ROL::OptimizationProblem<double> prob(ROL::makePtrFromRef(obj), ROL::makePtrFromRef(sopt_vec), ROL::makePtrFromRef(constr), r_ptr);
+         ROL::OptimizationSolver<double> optSolver(prob, rolParams.sublist("ROL Options"));
+         optSolver.solve(*out);
+       }
      } else {
-       output  = algo->run(rol_p, reduced_obj, *boundConstraint, print, *out);
+       if(boundConstrained)
+         output  = algo->run(rol_p, reduced_obj, *boundConstraint, print, *out);
+       else
+         output  = algo->run(rol_p, reduced_obj, print, *out);
      }
-    }
-    else {
-      if ( useFullSpace ) {
-
-        ROL::Vector_SimOpt<double> sopt_vec(ROL::makePtrFromRef(rol_x),ROL::makePtrFromRef(rol_p));
-        auto r_ptr = rol_x.clone();
-        double tol = 1e-5;
-        constr.solve(*r_ptr,rol_x,rol_p,tol);
-        ROL::OptimizationProblem<double> optProb(ROL::makePtrFromRef(obj), ROL::makePtrFromRef(sopt_vec), ROL::makePtrFromRef(constr), r_ptr);
-        ROL::OptimizationSolver<double> optSolver(optProb, rolParams.sublist("ROL Options"));
-        optSolver.solve(*out);
-      } else {
-        output  = algo->run(rol_p, reduced_obj, print, *out);
-      }
-    }
 
     for ( unsigned i = 0; i < output.size(); i++ ) {
      *out << output[i];

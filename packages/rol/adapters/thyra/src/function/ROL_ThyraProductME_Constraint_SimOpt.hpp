@@ -775,6 +775,161 @@ public:
     computeValue = solveConstraint = false;
   }
 
+//*
+  void applyAdjointHessian_11(Vector<Real> &ahwv,
+                                      const Vector<Real> &w,
+                                      const Vector<Real> &v,
+                                      const Vector<Real> &u,
+                                      const Vector<Real> &z,
+                                      Real &tol) {
+
+#ifdef  HAVE_ROL_DEBUG
+    //u and z should be updated in the update functions before calling this function
+    TEUCHOS_ASSERT(!u_hasChanged(u));
+    TEUCHOS_ASSERT(!z_hasChanged(z));
+#endif
+
+    if(verbosityLevel >= Teuchos::VERB_MEDIUM)
+      *out << "ROL::ThyraProductME_Constraint_SimOpt::applyAdjointHessian_11" << std::endl;
+
+    Real jtol = std::sqrt(ROL_EPSILON<Real>());
+    // Compute step size
+    Real h = std::cbrt(ROL_EPSILON<Real>());;
+    if (v.norm() > h) {
+      h *= std::max(1.0,u.norm()/v.norm());
+    }
+    // Evaluate Jacobian at (u+hv,z)
+    Ptr<Vector<Real>> unew = u.clone();
+    unew->set(u);
+    unew->axpy(h,v);
+    this->update(*unew,z);
+    applyAdjointJacobian_1(ahwv,w,*unew,z,jtol);
+    // Evaluate Jacobian at (u-hv,z)
+    Ptr<Vector<Real>> jv = ahwv.clone();
+    unew->axpy(-2.*h,v);
+    this->update(*unew,z);
+    applyAdjointJacobian_1(*jv,w,*unew,z,jtol);
+    // Compute Newton quotient
+    ahwv.axpy(-1.0,*jv);
+    ahwv.scale(0.5/h);
+  }
+
+
+  void applyAdjointHessian_12(Vector<Real> &ahwv,
+                                      const Vector<Real> &w,
+                                      const Vector<Real> &v,
+                                      const Vector<Real> &u,
+                                      const Vector<Real> &z,
+                                      Real &/*tol*/) {
+
+#ifdef  HAVE_ROL_DEBUG
+    //u and z should be updated in the update functions before calling this function
+    TEUCHOS_ASSERT(!u_hasChanged(u));
+    TEUCHOS_ASSERT(!z_hasChanged(z));
+#endif
+
+    if(verbosityLevel >= Teuchos::VERB_MEDIUM)
+      *out << "ROL::ThyraProductME_Constraint_SimOpt::applyAdjointHessian_12" << std::endl;
+
+    Real jtol = std::sqrt(ROL_EPSILON<Real>());
+    // Compute step size
+    Real h = std::cbrt(ROL_EPSILON<Real>());
+    if (v.norm() > h) {
+      h *= std::max(1.0,u.norm()/v.norm());
+    }
+    // Evaluate Jacobian at (u+hv,z)
+    Ptr<Vector<Real>> unew = u.clone();
+    unew->set(u);
+    unew->axpy(h,v);
+    this->update(*unew,z);
+    applyAdjointJacobian_2(ahwv,w,*unew,z,jtol);
+    // Evaluate Jacobian at (u - hv,z)
+    Ptr<Vector<Real>> jv = ahwv.clone();
+    unew->axpy(-2.0*h,v);
+    this->update(*unew,z);
+    applyAdjointJacobian_2(*jv,w,*unew,z,jtol);
+    // Compute Newton quotient
+    ahwv.axpy(-1.0,*jv);
+    ahwv.scale(0.5/h);
+  }
+
+
+  void applyAdjointHessian_21(Vector<Real> &ahwv,
+                                      const Vector<Real> &w,
+                                      const Vector<Real> &v,
+                                      const Vector<Real> &u,
+                                      const Vector<Real> &z,
+                                      Real &/*tol*/) {
+
+#ifdef  HAVE_ROL_DEBUG
+    //u and z should be updated in the update functions before calling this function
+    TEUCHOS_ASSERT(!u_hasChanged(u));
+    TEUCHOS_ASSERT(!z_hasChanged(z));
+#endif
+
+    if(verbosityLevel >= Teuchos::VERB_MEDIUM)
+      *out << "ROL::ThyraProductME_Constraint_SimOpt::applyAdjointHessian_21" << std::endl;
+
+    Real jtol = std::sqrt(ROL_EPSILON<Real>());
+    // Compute step size
+    Real h = std::cbrt(ROL_EPSILON<Real>());
+    if (v.norm() > h) {
+      h *= std::max(1.0,u.norm()/v.norm());
+    }
+    // Evaluate Jacobian at (u,z+hv)
+    Ptr<Vector<Real>> znew = z.clone();
+    znew->set(z);
+    znew->axpy(h,v);
+    this->update(u,*znew);
+    applyAdjointJacobian_1(ahwv,w,u,*znew,jtol);
+    // Evaluate Jacobian at (u,z-hv)
+    Ptr<Vector<Real>> jv = ahwv.clone();
+    znew->axpy(-2.0*h,v);
+    this->update(u,*znew);
+    applyAdjointJacobian_1(*jv,w,u,*znew,jtol);
+    // Compute Newton quotient
+    ahwv.axpy(-1.0,*jv);
+    ahwv.scale(0.5/h);
+  }
+
+  void applyAdjointHessian_22(Vector<Real> &ahwv,
+                                      const Vector<Real> &w,
+                                      const Vector<Real> &v,
+                                      const Vector<Real> &u,
+                                      const Vector<Real> &z,
+                                      Real &/*tol*/) {
+
+#ifdef  HAVE_ROL_DEBUG
+    //u and z should be updated in the update functions before calling this function
+    TEUCHOS_ASSERT(!u_hasChanged(u));
+    TEUCHOS_ASSERT(!z_hasChanged(z));
+#endif
+
+    if(verbosityLevel >= Teuchos::VERB_MEDIUM)
+      *out << "ROL::ThyraProductME_Constraint_SimOpt::applyAdjointHessian_22" << std::endl;
+
+    Real jtol = std::sqrt(ROL_EPSILON<Real>());
+    // Compute step size
+    Real h = std::cbrt(ROL_EPSILON<Real>());
+    if (v.norm() > h) {
+      h *= std::max(1.0,u.norm()/v.norm());
+    }
+    // Evaluate Jacobian at (u,z+hv)
+    Ptr<Vector<Real>> znew = z.clone();
+    znew->set(z);
+    znew->axpy(h,v);
+    this->update(u,*znew);
+    applyAdjointJacobian_2(ahwv,w,u,*znew,jtol);
+    // Evaluate Jacobian at (u,z-hv)
+    Ptr<Vector<Real>> jv = ahwv.clone();
+    znew->axpy(-2.0*h,v);
+    this->update(u,*znew);
+    applyAdjointJacobian_2(*jv,w,u,*znew,jtol);
+    // Compute Newton quotient
+    ahwv.axpy(-1.0,*jv);
+    ahwv.scale(0.5/h);
+}
+//*/
 
   /** \brief Update constraint functions with respect to Sim variable.
                 x is the optimization variable,

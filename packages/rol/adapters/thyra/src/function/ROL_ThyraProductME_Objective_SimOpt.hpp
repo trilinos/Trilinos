@@ -254,6 +254,148 @@ public:
     computeGradient2 = false;
   }
 
+//*
+  void hessVec_11( Vector<Real> &hv, const Vector<Real> &v,
+                     const Vector<Real> &u,  const Vector<Real> &z, Real &/*tol*/ ) {
+
+#ifdef  HAVE_ROL_DEBUG
+    //u and z should be updated in the update functions before calling this function
+    TEUCHOS_ASSERT(!u_hasChanged(u));
+    TEUCHOS_ASSERT(!z_hasChanged(z));
+#endif
+
+    if(verbosityLevel >= Teuchos::VERB_MEDIUM)
+      *out << "ROL::ThyraProductME_Objective_SimOpt::hessVec_11" << std::endl;
+
+    Real gtol = std::sqrt(ROL_EPSILON<Real>());
+    // Compute step length
+    Real h = std::cbrt(ROL_EPSILON<Real>());
+    if (v.norm() > h) {
+      h *= std::max(1.0,u.norm()/v.norm());
+    }
+    // Evaluate gradient of first component at (u+hv,z)
+    ROL::Ptr<Vector<Real> > unew = u.clone();
+    unew->set(u);
+    unew->axpy(h,v);
+    this->update(*unew,z);
+    hv.zero();
+    this->gradient_1(hv,*unew,z,gtol);
+    // Evaluate gradient of first component at (u-hv,z)
+    ROL::Ptr<Vector<Real> > g = hv.clone();
+    unew->axpy(-2.0*h,v);
+    this->update(*unew,z);
+    this->gradient_1(*g,*unew,z,gtol);
+    // Compute Newton quotient
+    hv.axpy(-1.0,*g);
+    hv.scale(0.5/h);
+  }
+
+  void hessVec_12( Vector<Real> &hv, const Vector<Real> &v,
+                           const Vector<Real> &u, const Vector<Real> &z, Real &/*tol*/ ) {
+
+#ifdef  HAVE_ROL_DEBUG
+    //u and z should be updated in the update functions before calling this function
+    TEUCHOS_ASSERT(!u_hasChanged(u));
+    TEUCHOS_ASSERT(!z_hasChanged(z));
+#endif
+
+    if(verbosityLevel >= Teuchos::VERB_MEDIUM)
+      *out << "ROL::ThyraProductME_Objective_SimOpt::hessVec_12" << std::endl;
+
+    Real gtol = std::sqrt(ROL_EPSILON<Real>());
+    // Compute step length
+    Real h = std::cbrt(ROL_EPSILON<Real>());
+    if (v.norm() > h) {
+      h *= std::max(1.0,u.norm()/v.norm());
+    }
+    // Evaluate gradient of first component at (u,z+hv)
+    ROL::Ptr<Vector<Real> > znew = z.clone();
+    znew->set(z);
+    znew->axpy(h,v);
+    this->update(u,*znew);
+    hv.zero();
+    this->gradient_1(hv,u,*znew,gtol);
+    // Evaluate gradient of first component at (u,z-hv)
+    ROL::Ptr<Vector<Real> > g = hv.clone();
+    znew->axpy(-2.0*h,v);
+    this->update(u,*znew);
+    this->gradient_1(*g,u,*znew,gtol);
+    // Compute Newton quotient
+    hv.axpy(-1.0,*g);
+    hv.scale(0.5/h);
+  }
+
+  void hessVec_21( Vector<Real> &hv, const Vector<Real> &v,
+                           const Vector<Real> &u, const Vector<Real> &z, Real &/*tol*/ ) {
+
+#ifdef  HAVE_ROL_DEBUG
+    //u and z should be updated in the update functions before calling this function
+    TEUCHOS_ASSERT(!u_hasChanged(u));
+    TEUCHOS_ASSERT(!z_hasChanged(z));
+#endif
+
+    if(verbosityLevel >= Teuchos::VERB_MEDIUM)
+      *out << "ROL::ThyraProductME_Objective_SimOpt::hessVec_21" << std::endl;
+
+    Real gtol = std::sqrt(ROL_EPSILON<Real>());
+    // Compute step length
+    Real h = std::cbrt(ROL_EPSILON<Real>());;
+    if (v.norm() > h) {
+      h *= std::max(1.0,u.norm()/v.norm());
+    }
+    // Evaluate gradient of first component at (u+hv,z)
+    ROL::Ptr<Vector<Real> > unew = u.clone();
+    unew->set(u);
+    unew->axpy(h,v);
+    this->update(*unew,z);
+    hv.zero();
+    this->gradient_2(hv,*unew,z,gtol);
+    // Evaluate gradient of first component at (u-hv,z)
+    ROL::Ptr<Vector<Real> > g = hv.clone();
+    unew->axpy(-2.0*h,v);
+    this->update(*unew,z);
+    this->gradient_2(*g,*unew,z,gtol);
+    // Compute Newton quotient
+    hv.axpy(-1.0,*g);
+    hv.scale(0.5/h);
+  }
+
+  void hessVec_22( Vector<Real> &hv, const Vector<Real> &v,
+                     const Vector<Real> &u,  const Vector<Real> &z, Real &/*tol*/ ) {
+
+#ifdef  HAVE_ROL_DEBUG
+    //u and z should be updated in the update functions before calling this function
+    TEUCHOS_ASSERT(!u_hasChanged(u));
+    TEUCHOS_ASSERT(!z_hasChanged(z));
+#endif
+
+    if(verbosityLevel >= Teuchos::VERB_MEDIUM)
+      *out << "ROL::ThyraProductME_Objective_SimOpt::hessVec_22" << std::endl;
+
+    Real gtol = std::sqrt(ROL_EPSILON<Real>());
+    // Compute step length
+    Real h = std::cbrt(ROL_EPSILON<Real>());
+    if (v.norm() > h) {
+      h *= std::max(1.0,u.norm()/v.norm());
+    }
+    // Evaluate gradient of first component at (u,z+hv)
+    ROL::Ptr<Vector<Real> > znew = z.clone();
+    znew->set(z);
+    znew->axpy(h,v);
+    update(u,*znew);
+    hv.zero();
+    gradient_2(hv,u,*znew,gtol);
+    // Evaluate gradient of first component at (u,z-hv)
+    ROL::Ptr<Vector<Real> > g = hv.clone();
+    znew->axpy(-2.0*h,v);
+    update(u,*znew);
+    gradient_2(*g,u,*znew,gtol);
+    // Compute Newton quotient
+    hv.axpy(-1.0,*g);
+    hv.scale(0.5/h);
+  }
+//*/
+
   void update( const Vector<Real> &u, const Vector<Real> &z, bool /*flag*/ = true, int iter = -1) {
     if(z_hasChanged(z) || u_hasChanged(u)) {
       if(verbosityLevel >= Teuchos::VERB_HIGH)
