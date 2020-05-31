@@ -652,6 +652,16 @@ Piro::PerformROLAnalysis(
     ROL::Ptr<ROL::Algorithm<double> > algo;
     algo = ROL::makePtr<ROL::Algorithm<double>>(step, status,false);
 
+    //this is for testing the PrimalScaledThyraVector. At the moment the scaling is set to 1, so it is not changing the dot product
+    Teuchos::RCP<Thyra::VectorBase<double> > scaling_vector_p = p->clone_v();
+    Teuchos::RCP<Thyra::VectorBase<double> > scaling_vector_x = x->clone_v();
+    ::Thyra::put_scalar<double>( 1.0, scaling_vector_p.ptr());
+    ::Thyra::put_scalar<double>( 1.0, scaling_vector_x.ptr());
+    //::Thyra::randomize<double>( 0.5, 2.0, scaling_vector_p.ptr());
+    //::Thyra::randomize<double>( 0.5, 2.0, scaling_vector_x.ptr());
+    ROL::PrimalScaledThyraVector<double> rol_x_primal(x, scaling_vector_x);
+    ROL::PrimalScaledThyraVector<double> rol_p_primal(p, scaling_vector_p);
+
     // Run Algorithm
     std::vector<std::string> output;
     Teuchos::RCP<ROL::BoundConstraint<double> > boundConstraint;
@@ -676,7 +686,8 @@ Piro::PerformROLAnalysis(
     }
 
      if ( useFullSpace ) {
-       ROL::Vector_SimOpt<double> sopt_vec(ROL::makePtrFromRef(rol_x),ROL::makePtrFromRef(rol_p));
+       //ROL::Vector_SimOpt<double> sopt_vec(ROL::makePtrFromRef(rol_x),ROL::makePtrFromRef(rol_p));
+       ROL::Vector_SimOpt<double> sopt_vec(ROL::makePtrFromRef(rol_x_primal),ROL::makePtrFromRef(rol_p_primal));
        auto r_ptr = rol_x.clone();
        double tol = 1e-5;
        constr.solve(*r_ptr,rol_x,rol_p,tol);
@@ -693,9 +704,9 @@ Piro::PerformROLAnalysis(
        }
      } else {
        if(boundConstrained)
-         output  = algo->run(rol_p, reduced_obj, *boundConstraint, print, *out);
+         output  = algo->run(rol_p_primal, reduced_obj, *boundConstraint, print, *out);
        else
-         output  = algo->run(rol_p, reduced_obj, print, *out);
+         output  = algo->run(rol_p_primal, reduced_obj, print, *out);
      }
 
     for ( unsigned i = 0; i < output.size(); i++ ) {
