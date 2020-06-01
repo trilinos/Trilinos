@@ -225,7 +225,7 @@ def setBuildEnviron(arguments):
                      'sems-parmetis/4.0.3/parallel',
                      'sems-scotch/6.0.3/nopthread_64bit_parallel',
                      'sems-superlu/4.3/base',
-                     'sems-cmake/3.10.3',
+                     'sems-cmake/3.17.1',
                      'atdm-env',
                      'atdm-ninja_fortran/1.7.2'],
                 'Trilinos_pullrequest_intel_17.0.1':

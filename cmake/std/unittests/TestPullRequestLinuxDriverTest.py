@@ -655,7 +655,7 @@ class Test_setEnviron(unittest.TestCase):
                          mock.call('load', 'sems-parmetis/4.0.3/parallel'),
                          mock.call('load', 'sems-scotch/6.0.3/nopthread_64bit_parallel'),
                          mock.call('load', 'sems-superlu/4.3/base'),
-                         mock.call('load', 'sems-cmake/3.10.3'),
+                         mock.call('load', 'sems-cmake/3.17.1'),
                          mock.call('load', 'atdm-env'),
                          mock.call('load', 'atdm-ninja_fortran/1.7.2'),
                          ]
