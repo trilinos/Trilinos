@@ -233,10 +233,8 @@ Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeTimeStep()
   Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > solution_dxdp_mv = Teuchos::null; 
   if (sens_method_ == FORWARD) {
     const int num_param = X->getMultiVector()->domain()->dim()-1;
-    std::cout << "IKT num_param = " << num_param << "\n"; 
     const Teuchos::Range1D rng(1,num_param);
     solution_dxdp_mv = X->getNonconstMultiVector()->subView(rng);
-    std::cout << "IKT number vectors in solution_dxdp_mv = " << solution_dxdp_mv->domain()->dim() << "\n"; 
   } 
   //Get solution_dot 
   Teuchos::RCP<const Thyra::VectorBase<Scalar>> xdot = solutionHistory_->getCurrentState()->getXDot(); 
