@@ -302,6 +302,11 @@ namespace Amesos2 {
       redist_mv.doExport (*mv_, *exporter_, Tpetra::REPLACE);
 
       if ( distribution != CONTIGUOUS_AND_ROOTED ) {
+        // Do this if GIDs contiguous - existing functionality
+        // Copy the imported (multi)vector's data into the Kokkos View.
+        deep_copy_or_assign_view(kokkos_view, redist_mv.getLocalViewDevice());
+      }
+      else {
         if(redist_mv.isConstantStride()) {
           redist_mv.sync_device(); // no testing of this right now - since UVM on
           deep_copy_or_assign_view(kokkos_view, redist_mv.getLocalViewDevice());
@@ -309,9 +314,6 @@ namespace Amesos2 {
         else {
           TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Kokkos adapter non-constant stride not imlemented.");
         }
-      }
-      else {
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Kokkos adapter CONTIGUOUS_AND_ROOTED path not implemented for get1dCopy_kokkos_view().");
       }
     }
   }
@@ -564,7 +566,36 @@ namespace Amesos2 {
         mv_->doImport (source_mv, *importer_, Tpetra::REPLACE);
       }
       else {
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Kokkos adapter CONTIGUOUS_AND_ROOTED not implemented for put1dData_kokkos_view.");
+        multivec_t redist_mv (srcMap, num_vecs); // unused for ROOTED case
+        typedef typename multivec_t::dual_view_type dual_view_type;
+        typedef typename dual_view_type::host_mirror_space host_execution_space;
+        redist_mv.template modify< host_execution_space > ();
+
+        // Cuda solvers won't currently use this path since they are just serial
+        // right now, so this mirror should be harmless (and not strictly necessary).
+        // Adding it for future possibilities though we may then refactor this
+        // for better efficiency if the kokkos_new_data view is on device.
+        auto host_kokkos_new_data = Kokkos::create_mirror_view(kokkos_new_data);
+        Kokkos::deep_copy(host_kokkos_new_data, kokkos_new_data);
+        if ( redist_mv.isConstantStride() ) {
+          auto contig_local_view_2d = redist_mv.template getLocalView<host_execution_space>();
+          for ( size_t j = 0; j < num_vecs; ++j) {
+            auto av_j = Kokkos::subview(host_kokkos_new_data, Kokkos::ALL, j);
+            for ( size_t i = 0; i < lda; ++i ) {
+              contig_local_view_2d(i,j) = av_j(i);
+            }
+          }
+        }
+        else {
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Kokkos adapter "
+            "CONTIGUOUS_AND_ROOTED not implemented for put1dData_kokkos_view "
+            "with non constant stride.");
+        }
+
+        typedef typename multivec_t::node_type::memory_space memory_space;
+        redist_mv.template sync <memory_space> ();
+
+        mv_->doImport (redist_mv, *importer_, Tpetra::REPLACE);
       }
     }
 
