@@ -8,7 +8,8 @@ namespace Compadre {
 KOKKOS_INLINE_FUNCTION
 void evaluateConstraints(scratch_matrix_right_type M, scratch_matrix_right_type PsqrtW, const ConstraintType constraint_type, const ReconstructionSpace reconstruction_space, const int NP, const double cutoff_p, const int dimension, const int num_neighbors = 0, scratch_matrix_right_type* T = NULL) {
     if (constraint_type == ConstraintType::NEUMANN_GRAD_SCALAR) {
-        if (reconstruction_space == ReconstructionSpace::ScalarTaylorPolynomial) {
+        if (reconstruction_space == ReconstructionSpace::ScalarTaylorPolynomial 
+                || reconstruction_space == ReconstructionSpace::VectorOfScalarClonesTaylorPolynomial) {
             // Fill in the bottom right entry for PsqrtW
             PsqrtW(num_neighbors, PsqrtW.extent(1)-1) = 1.0;
 

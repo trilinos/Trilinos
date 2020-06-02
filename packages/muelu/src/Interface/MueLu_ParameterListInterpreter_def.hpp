@@ -1942,6 +1942,11 @@ namespace MueLu {
         hieraList.remove("fuse prolongation and update");
       }
 
+      if (hieraList.isParameter("number of vectors")) {
+        this->numDesiredLevel_ = hieraList.get<int>("number of vectors");
+        hieraList.remove("number of vectors");
+      }
+
       if (hieraList.isSublist("matvec params"))
         this->matvecParams_ = Teuchos::parameterList(hieraList.sublist("matvec params"));
 

@@ -1,12 +1,12 @@
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-if (${TPL_ENABLE_LAPACK})
+if(Compadre_USE_LAPACK)
   tribits_add_executable(
     LAPACK_Test
     SOURCES
       UnitTest_ThreadedLapack.cpp
     ) # end tribits_add_executable
-endif() # LAPACK enabled
+endif()
 
 tribits_add_executable(
   GMLS_Host_Test
@@ -88,7 +88,7 @@ tribits_add_executable(
 
 
 # Test if LAPACK+BLAS are compatible for use in the toolkit
-if (${TPL_ENABLE_LAPACK})
+if(Compadre_USE_LAPACK)
   set(testName LAPACK_THREADSAFE)
   tribits_add_test(
     LAPACK_Test
@@ -112,7 +112,7 @@ if (${TPL_ENABLE_LAPACK})
           77
       ) # end set_tests_properties
   endif() # test created
-endif() # LAPACK enabled
+endif() # LAPACK being used
 
 # Host views tests for GMLS
 set(testName GMLS_Host_Dim3_SVD)
@@ -133,7 +133,7 @@ if (${testName}_CREATED)
       LABELS
         "UnitTest;unit;kokkos"
       TIMEOUT
-        10
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -155,7 +155,7 @@ if (${testName}_CREATED)
       LABELS
         "UnitTest;unit;kokkos"
       TIMEOUT
-        10
+        20
     ) # end set_tests_properties
 endif() # test created
 
@@ -177,7 +177,7 @@ if (${testName}_CREATED)
       LABELS
         "UnitTest;unit;kokkos"
       TIMEOUT
-        10
+        20
     ) # end set_tests_properties
 endif() # test created
 
@@ -427,7 +427,7 @@ if (${testName}_CREATED)
       LABELS
         "UnitTest;unit;kokkos"
       TIMEOUT
-        10
+        20
     ) # end set_tests_properties
 endif() # test created
 
@@ -449,7 +449,7 @@ if (${testName}_CREATED)
       LABELS
         "UnitTest;unit;kokkos"
       TIMEOUT
-        10
+        20
     ) # end set_tests_properties
 endif() # test created
 
@@ -486,7 +486,7 @@ tribits_add_test(
   COMM serial mpi
   NUM_MPI_PROCS 1
   ARGS
-    "3 200 3 1 0 0 --kokkos-threads=2"
+    "3 100 3 1 0 0 --kokkos-threads=4"
   ADDED_TESTS_NAMES_OUT ${testName}_CREATED
   ) # end tribits_add_test
 if (${testName}_CREATED)
@@ -496,7 +496,7 @@ if (${testName}_CREATED)
       LABELS
         "UnitTest;unit;kokkos;staggered"
       TIMEOUT
-        10
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -520,7 +520,7 @@ if (${testName}_CREATED)
       LABELS
         "UnitTest;unit;kokkos;staggered"
       TIMEOUT
-        10
+        20
     ) # end set_tests_properties
 endif() # test created
 
@@ -556,7 +556,7 @@ if (NOT(Compadre_DEBUG OR Compadre_EXTREME_DEBUG))
 
   # Divergence-free basis test for GMLS on non-manifold
   # Note: SVD is needed to be used here due to the null space introduced
-  set(testName GMLS_DivergenceFree_Dim3_SVD)
+  set(testName GMLS_DivergenceFree_Dim3_P3_SVD)
   tribits_add_test(
     GMLS_Divergence_Test
     NAME
@@ -571,11 +571,73 @@ if (NOT(Compadre_DEBUG OR Compadre_EXTREME_DEBUG))
       ${${testName}_CREATED}
       PROPERTIES
         LABELS
-          "UnitTest;unit;kokkos;divergencefree;svd"
+          "UnitTest;unit;kokkos;divergencefree;svd;batched"
         TIMEOUT
           60
       ) # end set_tests_properties
   endif() # test created
+  #set(testName GMLS_DivergenceFree_Dim3_P2_SVD)
+  #tribits_add_test(
+  #  GMLS_Divergence_Test
+  #  NAME
+  #    ${testName}
+  #  NUM_MPI_PROCS 1
+  #  ARGS
+  #    "2 200 3 0 0 0 --kokkos-threads=2"
+  #  ADDED_TESTS_NAMES_OUT ${testName}_CREATED
+  #  ) # end tribits_add_test
+  #if (${testName}_CREATED)
+  #  set_tests_properties(
+  #    ${${testName}_CREATED}
+  #    PROPERTIES
+  #      LABELS
+  #        "UnitTest;unit;kokkos;divergencefree;svd"
+  #      TIMEOUT
+  #        60
+  #    ) # end set_tests_properties
+  #endif() # test created
+
+  # Divergence-free basis test for GMLS on non-manifold
+  set(testName GMLS_DivergenceFree_Dim2_P3_SVD)
+  tribits_add_test(
+    GMLS_Divergence_Test
+    NAME
+      ${testName}
+    NUM_MPI_PROCS 1
+    ARGS
+      "3 200 2 0 0 0 --kokkos-threads=2"
+    ADDED_TESTS_NAMES_OUT ${testName}_CREATED
+    ) # end tribits_add_test
+  if (${testName}_CREATED)
+    set_tests_properties(
+      ${${testName}_CREATED}
+      PROPERTIES
+        LABELS
+          "UnitTest;unit;kokkos;divergencefree;svd;batched"
+        TIMEOUT
+          60
+      ) # end set_tests_properties
+  endif() # test created
+  #set(testName GMLS_DivergenceFree_Dim2_P2_SVD)
+  #tribits_add_test(
+  #  GMLS_Divergence_Test
+  #  NAME
+  #    ${testName}
+  #  NUM_MPI_PROCS 1
+  #  ARGS
+  #    "2 200 2 0 0 0 --kokkos-threads=2"
+  #  ADDED_TESTS_NAMES_OUT ${testName}_CREATED
+  #  ) # end tribits_add_test
+  #if (${testName}_CREATED)
+  #  set_tests_properties(
+  #    ${${testName}_CREATED}
+  #    PROPERTIES
+  #      LABELS
+  #        "UnitTest;unit;kokkos;divergencefree;svd"
+  #      TIMEOUT
+  #        60
+  #    ) # end set_tests_properties
+  #endif() # test created
 endif() # not debug
 
 # Python driven test of a C++ executable (Python changes command line

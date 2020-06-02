@@ -53,6 +53,7 @@
 #include "Piro_TempusIntegrator.hpp"
 
 #include "SinCosModel.hpp"
+#include "Piro_Test_MockObserver.hpp"
 
 #include "Teuchos_UnitTestHarness.hpp"
 
@@ -103,6 +104,7 @@ void test_sincos_fsa(const bool use_combined_method,
     }
   }
 
+  const RCP<MockObserver<double> > observer(new MockObserver<double>);
   std::vector<double> StepSize;
   std::vector<double> ErrorNorm;
   const int nTimeStepSizes = 7;
@@ -167,6 +169,11 @@ void test_sincos_fsa(const bool use_combined_method,
     }
     integrator->initializeSolutionHistory(t0, x0, Teuchos::null, Teuchos::null,
                                 DxDp0, Teuchos::null, Teuchos::null);
+    const RCP<const Tempus::SolutionHistory<double> > solutionHistory = integrator->getSolutionHistory();
+    const RCP<const Tempus::TimeStepControl<double> > timeStepControl = integrator->getTimeStepControl();
+    const Teuchos::RCP<Tempus::IntegratorObserver<double> > tempusObserver 
+          = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<double>(solutionHistory, timeStepControl, observer, false, false, sens_method));
+    integrator->setObserver(tempusObserver);
    
     const RCP<Thyra::NonlinearSolverBase<double> > stepSolver = Teuchos::null;
 
@@ -248,6 +255,28 @@ void test_sincos_fsa(const bool use_combined_method,
       }
       ftmp.close();
     }
+
+    const RCP<const Thyra::VectorBase<double> > solution =
+      observer->lastSolution();
+    const RCP<const Thyra::MultiVectorBase<double> > solution_dxdp =
+      observer->lastSolution_dxdp();
+
+    //Compare solution from observer and x to verify observer routines 
+    TEST_COMPARE_FLOATING_ARRAYS(
+      arrayFromVector(*solution),
+      arrayFromVector(*x),
+      tol);
+
+    //Compare solution_dxdp from observer and DxDp to verify observer routines 
+    for (int np = 0; np < DxDp->domain()->dim(); np++) { 
+      Teuchos::RCP<const Thyra::VectorBase<double>> DxDp_vec = DxDp->col(np);
+      Teuchos::RCP<const Thyra::VectorBase<double>> solution_dxdp_vec = solution_dxdp->col(np);
+      TEST_COMPARE_FLOATING_ARRAYS(
+        arrayFromVector(*solution_dxdp_vec),
+        arrayFromVector(*DxDp_vec),
+        tol);
+    }
+    
     // Calculate the error
     RCP<Thyra::VectorBase<double> > xdiff = x->clone_v();
     RCP<Thyra::MultiVectorBase<double> > DxDpdiff = DxDp->clone_mv();

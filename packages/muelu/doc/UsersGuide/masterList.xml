@@ -89,6 +89,14 @@
     </parameter>
 
     <parameter>
+      <name>number of vectors</name>
+      <type>int</type>
+      <default>1</default>
+      <description>Number of columns in multivectors that are cached for Hierarchy apply phase.</description>
+      <visible>true</visible>
+    </parameter>
+
+    <parameter>
       <name>problem: symmetric</name>
       <type>bool</type>
       <default>true</default>

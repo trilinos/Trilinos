@@ -412,8 +412,7 @@ namespace {
           std::logic_error,
           "SuperLU NonContigGID Test: The non-contiguous map claims to be contiguous.");
 
-      //RCP<MAT> A = rcp( new MAT(map,3) ); // max of three entries in a row
-      RCP<MAT> A = rcp( new MAT(map,0) );
+      RCP<MAT> A = rcp( new MAT(map,3) ); // max of three entries in a row
       A->setObjectLabel("A");
 
       /*

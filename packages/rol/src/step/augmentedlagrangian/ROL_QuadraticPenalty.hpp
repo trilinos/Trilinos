@@ -180,6 +180,7 @@ public:
   virtual void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
     // Apply objective Hessian to a vector
     if (HessianApprox_ < 3) {
+      con_->update(x);
       con_->applyJacobian(*primalConVector_,v,x,tol);
       con_->applyAdjointJacobian(hv,primalConVector_->dual(),x,tol);
       if (!useScaling_) {
