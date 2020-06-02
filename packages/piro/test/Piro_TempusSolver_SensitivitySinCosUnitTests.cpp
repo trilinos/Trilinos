@@ -255,6 +255,28 @@ void test_sincos_fsa(const bool use_combined_method,
       }
       ftmp.close();
     }
+
+    const RCP<const Thyra::VectorBase<double> > solution =
+      observer->lastSolution();
+    const RCP<const Thyra::MultiVectorBase<double> > solution_dxdp =
+      observer->lastSolution_dxdp();
+
+    //Compare solution from observer and x to verify observer routines 
+    TEST_COMPARE_FLOATING_ARRAYS(
+      arrayFromVector(*solution),
+      arrayFromVector(*x),
+      tol);
+
+    //Compare solution_dxdp from observer and DxDp to verify observer routines 
+    for (int np = 0; np < DxDp->domain()->dim(); np++) { 
+      Teuchos::RCP<const Thyra::VectorBase<double>> DxDp_vec = DxDp->col(np);
+      Teuchos::RCP<const Thyra::VectorBase<double>> solution_dxdp_vec = solution_dxdp->col(np);
+      TEST_COMPARE_FLOATING_ARRAYS(
+        arrayFromVector(*solution_dxdp_vec),
+        arrayFromVector(*DxDp_vec),
+        tol);
+    }
+    
     // Calculate the error
     RCP<Thyra::VectorBase<double> > xdiff = x->clone_v();
     RCP<Thyra::MultiVectorBase<double> > DxDpdiff = DxDp->clone_mv();
