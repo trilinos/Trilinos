@@ -74,3 +74,6 @@
 
 /* Define if want to make the new Fad design the default, replacing the old one */
 #cmakedefine SACADO_NEW_FAD_DESIGN_IS_DEFAULT
+
+/* Force SFad (in the new design) to initialize value and derivative components in the default constructor (adds additional runtime cost, but protects against uninitialized use). */
+#cmakedefine SACADO_SFAD_INIT_DEFAULT_CONSTRUCTOR
