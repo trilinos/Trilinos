@@ -14,10 +14,11 @@ fi
 set -x
 
 #TODO: review appropriate job size
-bsub -x -Is -q rhel7F -n 16 -J $JOB_NAME -W $BSUB_CTEST_TIME_LIMIT \
+bsub -x -Is -q rhel7G -n 16 -J $JOB_NAME -W $BSUB_CTEST_TIME_LIMIT \
   $WORKSPACE/Trilinos/cmake/std/PullRequestLinuxDriver.sh
 
-# NOTE: Above, this bsub command should grab a single rhel7F (Firestone,
-# Dual-Socket POWER8, 8 cores per socket, K80 GPUs) node.  The option '-x'
-# makes sure that only this job runs on that node.  The options '-n 16' and
-# '-q rhel7G' should make bsub allocate a single one of these nodes.
+# NOTE: Above, this bsub command should grab a single rhel7G
+# (Garrison/Minsky, Dual-Socket POWER8, 8 cores per socket,
+# dual P100 GPUs) node.  The option '-x' makes sure that only
+# this job runs on that node.  The options '-n 16' and '-q rhel7G'
+# should make bsub allocate a single one of these nodes.
