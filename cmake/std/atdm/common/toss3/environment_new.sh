@@ -40,6 +40,7 @@ fi
 module load sparc-dev/intel-19.0.4_openmpi-4.0.3
 
 if [ "$ATDM_CONFIG_COMPILER" == "INTEL-19.0.4_OPENMPI-4.0.3" ]; then
+  # Correct module already loaded above
   :
 elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.2_OPENMPI-4.0.3" ]; then
   module swap intel/19.0 intel/18.0.2.199
