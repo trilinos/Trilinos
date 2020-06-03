@@ -380,7 +380,7 @@ namespace Belos {
       }
       else {
         // Set to be the initial residual
-        MVT::Assign(*lp_->getInitResVec(), *Rhat_);
+        MVT::Assign(*R_, *Rhat_);
       }
 
       // Set V
