@@ -31,6 +31,7 @@
 
 const int fad_dim = 50;
 typedef Sacado::Fad::SFad<double,fad_dim> SFadType;
+typedef Sacado::Fad::SLFad<double,fad_dim> SLFadType;
 typedef Sacado::Fad::DFad<double> DFadType;
 
 template <typename ExecSpace>
