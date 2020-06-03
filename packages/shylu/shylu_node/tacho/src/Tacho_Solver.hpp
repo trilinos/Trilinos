@@ -142,7 +142,10 @@ namespace Tacho {
 
   public:
     Solver();
-    Solver(const Solver &b);
+    /// delete copy constructor and assignment operator
+    /// sharing numeric tools for different inputs does not make sense
+    Solver(const Solver &) = delete;
+    Solver& operator=(const Solver &) = delete;
 
     ///
     /// common options

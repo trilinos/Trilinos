@@ -32,10 +32,11 @@ namespace Tacho {
       _variant(1),
       _nstreams(8),
       _max_num_superblocks(-1) {}
-  
-  template<typename VT, typename ST>
-  Solver<VT,ST>
-  ::Solver(const Solver &b) = default;
+
+  /// deleted
+  // template<typename VT, typename ST>
+  // Solver<VT,ST>
+  // ::Solver(const Solver &b) = default;
   
   ///
   /// common options
@@ -329,7 +330,10 @@ namespace Tacho {
     if (_m < _small_problem_thres) {
       //_U = value_type_matrix_host("U", _m, _m);
     } else {
-      _N = new numeric_tools_type(_m, _ap, _aj,
+      if (_N == nullptr) 
+        _N = (numeric_tools_type*) ::operator new (sizeof(numeric_tools_type));
+      
+      new (_N) numeric_tools_type(_m, _ap, _aj,
                                   _perm, _peri,
                                   _nsupernodes, _supernodes,
                                   _gid_super_panel_ptr, _gid_super_panel_colidx,
@@ -358,11 +362,15 @@ namespace Tacho {
       ///
       if (_levelset) {
         if        (_variant == 0) {
-          _L0 = new levelset_tools_var0_type(*_N);
+          if (_L0 == nullptr) 
+            _L0 = (levelset_tools_var0_type*) ::operator new (sizeof(levelset_tools_var0_type));
+          new (_L0) levelset_tools_var0_type(*_N);
           _L0->initialize(_device_level_cut, _device_factor_thres, _device_solve_thres, _verbose);
           _L0->createStream(_nstreams);
         } else if (_variant == 1) {
-          _L1 = new levelset_tools_var1_type(*_N);
+          if (_L1 == nullptr) 
+            _L1 = (levelset_tools_var1_type*) ::operator new (sizeof(levelset_tools_var1_type));
+          new (_L0) levelset_tools_var1_type(*_N);
           _L1->initialize(_device_level_cut, _device_factor_thres, _device_solve_thres, _verbose);
           _L1->createStream(_nstreams);
         }
