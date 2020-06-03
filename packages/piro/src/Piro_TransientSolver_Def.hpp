@@ -58,6 +58,8 @@
 #include <stdexcept>
 #include <iostream>
 
+//#define DEBUG_OUTPUT
+
 template <typename Scalar>
 Piro::TransientSolver<Scalar>::TransientSolver(
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model) :  
@@ -402,6 +404,21 @@ Piro::TransientSolver<Scalar>::evalConvergedModelResponsesAndSensitivities(
       {
         //Get dxdp_mv from Tempus::ForwardIntegratorSensitivity class  
         const RCP<const Thyra::MultiVectorBase<Scalar> > dxdp_mv = piroTempusIntegrator_->getDxDp();
+#ifdef DEBUG_OUTPUT
+        *out_ << "\n*** Piro::TransientSolver: num_p, num vecs in dxdp = " << num_p_ << ", " << dxdp_mv->domain()->dim() << " ***\n";
+#endif
+        for (int i=0; i < dxdp_mv->domain()->dim(); ++i) { 
+          Teuchos::RCP<const Thyra::VectorBase<Scalar>> dxdp = dxdp_mv->col(i);
+#ifdef DEBUG_OUTPUT
+          *out_ << "\n*** Piro::TransientSolver dxdp for p = " << i << " ***\n";
+          Teuchos::Range1D range;
+          RTOpPack::ConstSubVectorView<Scalar> dxdpv;
+          dxdp->acquireDetachedView(range, &dxdpv);
+          auto dxdpa = dxdpv.values();
+          for (auto j = 0; j < dxdpa.size(); ++j) *out_ << dxdpa[j] << " ";
+          *out_ << "\n*** Piro::TransientSolver dxdp for p = " << i << " ***\n";
+#endif
+        }
         //IMPORTANT REMARK: we are currently NOT using DxdotDp and DxdotdotDp in transient sensitivities!  
         //The capability to use them can be added at a later point in time, if desired. 
         //IKT, 5/10/20: throw error if dxdp_mv returned by Tempus is null.  Not sure if this can happen in practice or not...
