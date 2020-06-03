@@ -226,8 +226,8 @@ def setBuildEnviron(arguments):
                      'sems-scotch/6.0.3/nopthread_64bit_parallel',
                      'sems-superlu/4.3/base',
                      'sems-cmake/3.17.1',
-                     'atdm-env',
-                     'atdm-ninja_fortran/1.7.2'],
+                     'sems-ninja_fortran/1.10.0',
+                     'atdm-env'],
                 'Trilinos_pullrequest_intel_17.0.1':
                      ['sems-env',
                      'sems-git/2.10.1',
