@@ -9,18 +9,18 @@
 
 # TODO: Check with EMPIRE developers about default compiler/mpi ver
 if atdm_match_any_buildname_keyword \
-    intel-19.0.5-openmpi-4.0.1 \
-    intel-19.0.5_openmpi-4.0.1 \
-    intel-19.0.5 \
+    intel-18.0.2-openmpi-4.0.3 \
+    intel-18.0.2_openmpi-4.0.3 \
+    intel-18.0.2 \
+    intel \
+    default \
   ; then
-  export ATDM_CONFIG_COMPILER=INTEL-19.0.5_OPENMPI-4.0.1
+  export ATDM_CONFIG_COMPILER=INTEL-18.0.2_OPENMPI-4.0.3
 elif atdm_match_any_buildname_keyword \
       intel-19.0.4-openmpi-4.0.3 \
       intel-19.0.4_openmpi-4.0.3 \
       intel-19.0.4 \
       intel-19 \
-      intel \
-      default \
   ; then
   export ATDM_CONFIG_COMPILER=INTEL-19.0.4_OPENMPI-4.0.3
 else
