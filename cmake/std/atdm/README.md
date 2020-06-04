@@ -1654,14 +1654,22 @@ ENDIF()
 
 Any CMake variable that has been set in the `ATDMDevEnvSettings.cmake` file
 before these tweak files are included can be used in if-logic but the
-recommended variables are `ATDM_COMPILER` (uppercase),
-`ATDM_KOKKOS_ARCH_JOB_NAME_KEYS` (uppercase seprated by `_`), `ATDM_NODE_TYPE`
-(values `CUDA`, `OPENMP`, `SERIAL`), `ATDM_CUDA_RDC` (`ON`/`OFF`), `ATDM_FPIC`
-(`ON`/`OFF`), `ATDM_COMPLEX` (`ON`/`OFF`), `ATDM_SHARED_LIBS` (`ON`/`OFF`),
-`ATDM_CMAKE_BUILD_TYPE` (values `DEBUG`, `RELEASE`, and `RELEASE-DEBUG`),
-`Trilinos_ENABLE_DEBUG` (`ON`/`OFF`), and `ATDM_PT_PACKAGES` (`ON`/`OFF`).  No
-other variables should be used in if-logic in these files as other variables
-may change in the future.
+recommended variables are:
+
+* `ATDM_COMPILER` (uppercase)
+* `ATDM_KOKKOS_ARCH_JOB_NAME_KEYS` (uppercase and seprated by `_`)
+* `ATDM_NODE_TYPE` (values `CUDA`, `OPENMP`, `SERIAL`)
+* `ATDM_KOKKOS_ARCH` (uppercase and seprated by `,`)
+* `ATDM_CUDA_RDC` (`ON`/`OFF`)
+* `ATDM_FPIC` (`ON`/`OFF`)
+* `ATDM_COMPLEX` (`ON`/`OFF`),
+* `ATDM_SHARED_LIBS` (`ON`/`OFF`)
+* `ATDM_CMAKE_BUILD_TYPE` (values `DEBUG`, `RELEASE` and `RELEASE-DEBUG`)
+* `Trilinos_ENABLE_DEBUG` (`ON`/`OFF`)
+* `ATDM_PT_PACKAGES` (`ON`/`OFF`)
+
+No other variables should be used in if-logic in these files as other
+variables may change in the future.
 
 
 ### Disable a test for builds on all platforms
