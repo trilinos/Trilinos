@@ -795,7 +795,7 @@ namespace Tacho {
                                      typename functor_type::DummyTag> team_policy_update;
 #else
           typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
-                                     typename functor_type::FactorizeTag<variant> > team_policy_factor;
+                                     typename functor_type::template FactorizeTag<variant> > team_policy_factor;
           typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
                                      typename functor_type::UpdateTag> team_policy_update;
 #endif

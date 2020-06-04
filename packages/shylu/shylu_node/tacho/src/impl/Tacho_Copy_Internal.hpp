@@ -23,7 +23,7 @@ namespace Tacho {
       static_assert(std::is_same<value_type,value_type_b>::value, "A and B does not have the value_type.");
 
       /// this should be for contiguous array
-      const ordinal_type sA = A.span(), sB = B.span();
+      //const ordinal_type sA = A.span(), sB = B.span();
       if (A.extent(0) == B.extent(0) && A.extent(0) == B.extent(0)) {
         if (A.span() > 0) {
           Kokkos::parallel_for
