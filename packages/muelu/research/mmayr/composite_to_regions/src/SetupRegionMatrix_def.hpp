@@ -827,7 +827,7 @@ void SetupMatVec(const Teuchos::RCP<Xpetra::MultiVector<GlobalOrdinal, LocalOrdi
  *  2. Sum interface values of y to account for duplication of interface DOFs.
  */
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void MatVec(const Scalar alpha,
+void ApplyMatVec(const Scalar alpha,
             const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& regionMatrix,
             const RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& X,
             const Scalar beta,
@@ -836,7 +836,7 @@ void MatVec(const Scalar alpha,
             RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Y) {
 #include "Xpetra_UseShortNames.hpp"
   using Teuchos::TimeMonitor;
-  RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MatVec: 1 - local apply")));
+  RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ApplyMatVec: 1 - local apply")));
   RCP<const Map> regionInterfaceMap = regionInterfaceImporter->getTargetMap();
 
   // Step 1: apply the local operator
@@ -844,7 +844,7 @@ void MatVec(const Scalar alpha,
   regionMatrix->apply(*X, *Y, Teuchos::NO_TRANS, alpha, beta);
 
   tm = Teuchos::null;
-  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MatVec: 2 - communicate data")));
+  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ApplyMatVec: 2 - communicate data")));
 
   // Step 2: preform communication to propagate local interface
   // values to all the processor that share interfaces.
@@ -852,7 +852,7 @@ void MatVec(const Scalar alpha,
   matvecInterfaceTmp->doImport(*Y, *regionInterfaceImporter, Xpetra::INSERT);
 
   tm = Teuchos::null;
-  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MatVec: 3 - sum interface contributions")));
+  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ApplyMatVec: 3 - sum interface contributions")));
 
   // Step 3: sum all contributions to interface values
   // on all ranks
@@ -863,7 +863,7 @@ void MatVec(const Scalar alpha,
   }
 
   tm = Teuchos::null;
-} // MatVec
+} // ApplyMatVec
 
 /*! \brief Compute the residual \f$r = b - Ax\f$ with pre-computed communication patterns
  *
@@ -894,7 +894,7 @@ computeResidual(Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, No
 
   // Step 1: Compute region version of y = Ax
   RCP<Vector> aTimesX = VectorFactory::Build(regionGrpMats[0]->getRangeMap(), true);
-  MatVec(TST::one(), regionGrpMats[0], regX[0],
+  ApplyMatVec(TST::one(), regionGrpMats[0], regX[0],
       TST::zero(), regionInterfaceImporter, regionInterfaceLIDs, aTimesX);
 
   // Step 2: Compute region version of r = b - y

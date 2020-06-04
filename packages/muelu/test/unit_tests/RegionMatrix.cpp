@@ -777,9 +777,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec, Scalar, LocalOrdinal
 
   Array<RCP<Vector> > regC(maxRegPerProc);
   regC[0] = VectorFactory::Build(revisedRowMapPerGrp[0], true);
-  MatVec(TST::one(), regionMat, regX[0], TST::zero(),
-         regionInterfaceImporter, regionMatVecLIDs,
-         regC[0]);
+  ApplyMatVec(TST::one(), regionMat, regX[0], TST::zero(),
+              regionInterfaceImporter, regionMatVecLIDs,
+              regC[0]);
 
   ArrayRCP<const SC> dataRegC = regC[0]->getData(0);
   for(size_t idx = 0; idx < refRegB[0]->getLocalLength(); ++idx) {
