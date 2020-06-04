@@ -46,13 +46,39 @@ NgpField<T> & get_updated_ngp_field(const FieldBase & stkField)
   NgpFieldBase * ngpField = stkField.get_ngp_field();
 
   if (ngpField == nullptr) {
-    ngpField = new NgpField<T>(stkField.get_mesh(), stkField);
+    NgpField<T>* ngpFieldT = new NgpField<T>(stkField.get_mesh(), stkField);
+    ngpField = ngpFieldT;
     stkField.set_ngp_field(ngpField);
+    const unsigned numStates = stkField.number_of_states();
+    NgpField<T>* stateNgpFields[MaximumFieldStates];
+    
+    if (numStates > 1) {
+      FieldState requestedState = stkField.state();
+
+      for (unsigned state = 0; state < numStates; ++state) {
+        FieldState fieldState = static_cast<FieldState>(state);
+        if (fieldState != requestedState) {
+          FieldBase* stateStkField = stkField.field_state(fieldState);
+          NgpField<T>* stateNgpField = new NgpField<T>(stateStkField->get_mesh(), *stateStkField);
+          stateStkField->set_ngp_field(stateNgpField);
+          stateNgpFields[state] = stateNgpField;
+        }
+        else {
+          stateNgpFields[state] = ngpFieldT;
+        }
+      }   
+    }   
+    else {
+      stateNgpFields[0] = ngpFieldT;
+    }   
+
+    for (unsigned state = 0; state < numStates; ++state) {
+      stateNgpFields[state]->set_field_states(stateNgpFields);
+    }
   }
   else {
     if (stkField.get_mesh().synchronized_count() != ngpField->synchronized_count()) {
-      ngpField = new NgpField<T>(stkField.get_mesh(), stkField);
-      stkField.set_ngp_field(ngpField);
+      ngpField->update_field();
     }
   }
 

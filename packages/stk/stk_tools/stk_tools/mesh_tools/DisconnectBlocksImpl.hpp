@@ -193,7 +193,7 @@ bool is_block(const stk::mesh::BulkData & bulk, stk::mesh::Part & part);
 
 stk::mesh::Part* get_block_part_for_element(const stk::mesh::BulkData & bulk, stk::mesh::Entity element);
 
-unsigned get_block_id_for_element(const stk::mesh::BulkData & bulk, stk::mesh::Entity element);
+int get_block_id_for_element(const stk::mesh::BulkData & bulk, stk::mesh::Entity element);
 
 void add_to_sharing_lookup(const stk::mesh::BulkData& bulk, stk::mesh::Entity node, PreservedSharingInfo& info);
 

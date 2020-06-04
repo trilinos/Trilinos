@@ -17,7 +17,7 @@ namespace balance
 //////////////////////////////////////////////////////////////////////////
 
 BalanceSettings::BalanceSettings()
-  : initialDecompMethod("RIB")
+  : m_initialDecompMethod("RIB")
 {}
 
 size_t BalanceSettings::getNumNodesRequiredForConnection(stk::topology element1Topology, stk::topology element2Topology) const
@@ -135,14 +135,9 @@ std::string BalanceSettings::getDecompMethod() const
     return std::string("parmetis");
 }
 
-void BalanceSettings::setInitialDecompMethod(const std::string& method)
-{
-    initialDecompMethod = method;
-}
-
 std::string BalanceSettings::getInitialDecompMethod() const
 {
-    return initialDecompMethod;
+    return m_initialDecompMethod;
 }
 
 std::string BalanceSettings::getCoordinateFieldName() const
@@ -221,6 +216,26 @@ double BalanceSettings::getNodeBalancerTargetLoadBalance() const
 unsigned BalanceSettings::getNodeBalancerMaxIterations() const
 {
   return 5;
+}
+
+void BalanceSettings::set_input_filename(const std::string& filename)
+{
+  m_inputFilename = filename;
+}
+
+std::string BalanceSettings::get_input_filename() const
+{
+  return m_inputFilename;
+}
+
+void BalanceSettings::set_output_filename(const std::string& filename)
+{
+  m_outputFilename = filename;
+}
+
+std::string BalanceSettings::get_output_filename() const
+{
+  return m_outputFilename;
 }
 
 //////////////////////////////////////
@@ -319,6 +334,8 @@ int GraphCreationSettings::getGraphVertexWeight(stk::topology type) const
             return 6;
         case stk::topology::WEDGE_6:
             return 2;
+        case stk::topology::WEDGE_12:
+            // TODO
         case stk::topology::WEDGE_15:
             return 12;
         default:
@@ -523,6 +540,7 @@ int GraphCreationSettings::getEdgeWeightTableIndex(stk::topology elementTopology
         case stk::topology::TET_11:
         case stk::topology::PYRAMID_13:
         case stk::topology::PYRAMID_14:
+        case stk::topology::WEDGE_12:
         case stk::topology::WEDGE_15:
         case stk::topology::WEDGE_18:
         case stk::topology::HEX_27:

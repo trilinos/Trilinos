@@ -1,8 +1,8 @@
 #include <iosfwd>
 #include <gtest/gtest.h>
-#include <stk_balance/internal/balanceCommandLine.hpp>
 #include <stk_balance/balance.hpp>
 #include <stk_balance/balanceUtils.hpp>
+#include <stk_balance/setup/Parser.hpp>
 #include <stk_util/command_line/CommandLineParserParallel.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_mesh/base/FieldBase.hpp>
@@ -48,7 +48,9 @@ TEST(BalanceOutputDirectory, checkOutputFileFromInputFileWithPath)
 class BalanceCommandLine : public ::testing::Test
 {
 protected:
-    BalanceCommandLine() { }
+    BalanceCommandLine()
+      : m_parser(MPI_COMM_WORLD)
+    { }
 
     std::vector<const char *> get_argv_c_strings()
     {
@@ -63,18 +65,15 @@ protected:
         argv = inputArgv;
     }
 
-    stk::balance::StkBalanceSettings get_stk_balance_settings(const std::vector<std::string> & options)
+    const stk::balance::BalanceSettings& get_stk_balance_settings(const std::vector<std::string> & options)
     {
         std::vector<std::string> args {"exe", "infile", "foobar"};
         args.insert(args.end(), options.begin(), options.end());
         set_argv(args);
         std::vector<const char *> argvCstr = get_argv_c_strings();
-        stk::balance::ParsedOptions parsedOptions = stk::balance::parse_balance_command_line(argvCstr.size(),
-                                                                                             argvCstr.data(),
-                                                                                             argv[0],
-                                                                                             MPI_COMM_WORLD);
 
-        return stk::balance::create_balance_settings(parsedOptions);
+        m_parser.parse_command_line_options(argvCstr.size(), argvCstr.data(), m_settings);
+        return m_settings;
     }
 
     double getAbsoluteToleranceForUnitMesh(const stk::balance::BalanceSettings & balanceSettings)
@@ -103,11 +102,15 @@ protected:
     }
 
     std::vector<std::string> argv;
+
+private:
+    stk::balance::StkBalanceSettings m_settings;
+    stk::balance::Parser m_parser;
 };
 
 TEST_F(BalanceCommandLine, createBalanceSettings_default)
 {
-  stk::balance::StkBalanceSettings balanceSettings = get_stk_balance_settings({});
+  const stk::balance::BalanceSettings& balanceSettings = get_stk_balance_settings({});
 
   EXPECT_EQ(balanceSettings.getDecompMethod(), "parmetis");
   EXPECT_TRUE(balanceSettings.includeSearchResultsInGraph());
@@ -119,7 +122,7 @@ TEST_F(BalanceCommandLine, createBalanceSettings_default)
 
 TEST_F(BalanceCommandLine, createBalanceSettings_smDefaults)
 {
-  stk::balance::StkBalanceSettings balanceSettings = get_stk_balance_settings({"--sm"});
+  const stk::balance::BalanceSettings& balanceSettings = get_stk_balance_settings({"--sm"});
 
   EXPECT_EQ(balanceSettings.getDecompMethod(), "parmetis");
   EXPECT_TRUE(balanceSettings.includeSearchResultsInGraph());
@@ -131,7 +134,7 @@ TEST_F(BalanceCommandLine, createBalanceSettings_smDefaults)
 
 TEST_F(BalanceCommandLine, createBalanceSettings_sdDefaults)
 {
-  stk::balance::StkBalanceSettings balanceSettings = get_stk_balance_settings({"--sd"});
+  const stk::balance::BalanceSettings& balanceSettings = get_stk_balance_settings({"--sd"});
 
   EXPECT_EQ(balanceSettings.getDecompMethod(), "parmetis");
   EXPECT_TRUE(balanceSettings.includeSearchResultsInGraph());
@@ -144,7 +147,7 @@ TEST_F(BalanceCommandLine, createBalanceSettings_sdDefaults)
 
 TEST_F(BalanceCommandLine, createBalanceSettings_defaultAbsoluteTolerance)
 {
-  stk::balance::StkBalanceSettings balanceSettings = get_stk_balance_settings({"--face-search-abs-tol"});
+  const stk::balance::BalanceSettings& balanceSettings = get_stk_balance_settings({"--face-search-abs-tol"});
 
   EXPECT_EQ(balanceSettings.getDecompMethod(), "parmetis");
   EXPECT_TRUE(balanceSettings.includeSearchResultsInGraph());
@@ -156,7 +159,7 @@ TEST_F(BalanceCommandLine, createBalanceSettings_defaultAbsoluteTolerance)
 
 TEST_F(BalanceCommandLine, createBalanceSettings_defaultRelativeTolerance)
 {
-  stk::balance::StkBalanceSettings balanceSettings = get_stk_balance_settings({"--face-search-rel-tol"});
+  const stk::balance::BalanceSettings& balanceSettings = get_stk_balance_settings({"--face-search-rel-tol"});
 
   EXPECT_EQ(balanceSettings.getDecompMethod(), "parmetis");
   EXPECT_TRUE(balanceSettings.includeSearchResultsInGraph());
@@ -174,7 +177,7 @@ TEST_F(BalanceCommandLine, createBalanceSettings_bothTolerances)
 
 TEST_F(BalanceCommandLine, createBalanceSettings_faceSearchAbsoluteTolerance)
 {
-  stk::balance::StkBalanceSettings balanceSettings = get_stk_balance_settings({"--face-search-abs-tol=0.001"});
+  const stk::balance::BalanceSettings& balanceSettings = get_stk_balance_settings({"--face-search-abs-tol=0.001"});
 
   EXPECT_EQ(balanceSettings.getDecompMethod(), "parmetis");
   EXPECT_TRUE(balanceSettings.includeSearchResultsInGraph());
@@ -186,7 +189,7 @@ TEST_F(BalanceCommandLine, createBalanceSettings_faceSearchAbsoluteTolerance)
 
 TEST_F(BalanceCommandLine, createBalanceSettings_faceSearchRelativeTolerance)
 {
-  stk::balance::StkBalanceSettings balanceSettings = get_stk_balance_settings({"--face-search-rel-tol=0.123"});
+  const stk::balance::BalanceSettings& balanceSettings = get_stk_balance_settings({"--face-search-rel-tol=0.123"});
 
   EXPECT_EQ(balanceSettings.getDecompMethod(), "parmetis");
   EXPECT_TRUE(balanceSettings.includeSearchResultsInGraph());
@@ -199,8 +202,8 @@ TEST_F(BalanceCommandLine, createBalanceSettings_faceSearchRelativeTolerance)
 
 TEST_F(BalanceCommandLine, createBalanceSettings_smDefaults_defaultAbsoluteTolerance)
 {
-  stk::balance::StkBalanceSettings balanceSettings = get_stk_balance_settings({"--sm",
-                                                                               "--face-search-abs-tol"});
+  const stk::balance::BalanceSettings& balanceSettings = get_stk_balance_settings({"--sm",
+                                                                             "--face-search-abs-tol"});
 
   EXPECT_EQ(balanceSettings.getDecompMethod(), "parmetis");
   EXPECT_TRUE(balanceSettings.includeSearchResultsInGraph());
@@ -212,8 +215,8 @@ TEST_F(BalanceCommandLine, createBalanceSettings_smDefaults_defaultAbsoluteToler
 
 TEST_F(BalanceCommandLine, createBalanceSettings_smDefaults_defaultRelativeTolerance)
 {
-  stk::balance::StkBalanceSettings balanceSettings = get_stk_balance_settings({"--sm",
-                                                                               "--face-search-rel-tol"});
+  const stk::balance::BalanceSettings& balanceSettings = get_stk_balance_settings({"--sm",
+                                                                             "--face-search-rel-tol"});
 
   EXPECT_EQ(balanceSettings.getDecompMethod(), "parmetis");
   EXPECT_TRUE(balanceSettings.includeSearchResultsInGraph());
@@ -225,8 +228,8 @@ TEST_F(BalanceCommandLine, createBalanceSettings_smDefaults_defaultRelativeToler
 
 TEST_F(BalanceCommandLine, createBalanceSettings_smDefaults_faceSearchAbsoluteTolerance)
 {
-  stk::balance::StkBalanceSettings balanceSettings = get_stk_balance_settings({"--sm",
-                                                                               "--face-search-abs-tol=0.005"});
+  const stk::balance::BalanceSettings& balanceSettings = get_stk_balance_settings({"--sm",
+                                                                             "--face-search-abs-tol=0.005"});
 
   EXPECT_EQ(balanceSettings.getDecompMethod(), "parmetis");
   EXPECT_TRUE(balanceSettings.includeSearchResultsInGraph());
@@ -238,8 +241,8 @@ TEST_F(BalanceCommandLine, createBalanceSettings_smDefaults_faceSearchAbsoluteTo
 
 TEST_F(BalanceCommandLine, createBalanceSettings_smDefaults_faceSearchRelativeTolerance)
 {
-  stk::balance::StkBalanceSettings balanceSettings = get_stk_balance_settings({"--sm",
-                                                                               "--face-search-rel-tol=0.123"});
+  const stk::balance::BalanceSettings& balanceSettings = get_stk_balance_settings({"--sm",
+                                                                             "--face-search-rel-tol=0.123"});
 
   EXPECT_EQ(balanceSettings.getDecompMethod(), "parmetis");
   EXPECT_TRUE(balanceSettings.includeSearchResultsInGraph());
@@ -252,8 +255,8 @@ TEST_F(BalanceCommandLine, createBalanceSettings_smDefaults_faceSearchRelativeTo
 
 TEST_F(BalanceCommandLine, createBalanceSettings_sdDefaults_defaultAbsoluteTolerance)
 {
-  stk::balance::StkBalanceSettings balanceSettings = get_stk_balance_settings({"--sd",
-                                                                               "--face-search-abs-tol"});
+  const stk::balance::BalanceSettings& balanceSettings = get_stk_balance_settings({"--sd",
+                                                                             "--face-search-abs-tol"});
 
   EXPECT_EQ(balanceSettings.getDecompMethod(), "parmetis");
   EXPECT_TRUE(balanceSettings.includeSearchResultsInGraph());
@@ -265,8 +268,8 @@ TEST_F(BalanceCommandLine, createBalanceSettings_sdDefaults_defaultAbsoluteToler
 
 TEST_F(BalanceCommandLine, createBalanceSettings_sdDefaults_defaultRelativeTolerance)
 {
-  stk::balance::StkBalanceSettings balanceSettings = get_stk_balance_settings({"--sd",
-                                                                               "--face-search-rel-tol"});
+  const stk::balance::BalanceSettings& balanceSettings = get_stk_balance_settings({"--sd",
+                                                                             "--face-search-rel-tol"});
 
   EXPECT_EQ(balanceSettings.getDecompMethod(), "parmetis");
   EXPECT_TRUE(balanceSettings.includeSearchResultsInGraph());
@@ -278,8 +281,8 @@ TEST_F(BalanceCommandLine, createBalanceSettings_sdDefaults_defaultRelativeToler
 
 TEST_F(BalanceCommandLine, createBalanceSettings_sdDefaults_faceSearchAbsoluteTolerance)
 {
-  stk::balance::StkBalanceSettings balanceSettings = get_stk_balance_settings({"--sd",
-                                                                               "--face-search-abs-tol=0.0005"});
+  const stk::balance::BalanceSettings& balanceSettings = get_stk_balance_settings({"--sd",
+                                                                             "--face-search-abs-tol=0.0005"});
 
   EXPECT_EQ(balanceSettings.getDecompMethod(), "parmetis");
   EXPECT_TRUE(balanceSettings.includeSearchResultsInGraph());
@@ -291,8 +294,8 @@ TEST_F(BalanceCommandLine, createBalanceSettings_sdDefaults_faceSearchAbsoluteTo
 
 TEST_F(BalanceCommandLine, createBalanceSettings_sdDefaults_faceSearchRelativeTolerance)
 {
-  stk::balance::StkBalanceSettings balanceSettings = get_stk_balance_settings({"--sd",
-                                                                               "--face-search-rel-tol=0.123"});
+  const stk::balance::BalanceSettings& balanceSettings = get_stk_balance_settings({"--sd",
+                                                                             "--face-search-rel-tol=0.123"});
 
   EXPECT_EQ(balanceSettings.getDecompMethod(), "parmetis");
   EXPECT_TRUE(balanceSettings.includeSearchResultsInGraph());
@@ -310,7 +313,7 @@ TEST_F(BalanceCommandLine, contactSearch_badValue)
 
 TEST_F(BalanceCommandLine, disableSearch_default_caseInsensitive)
 {
-  stk::balance::StkBalanceSettings balanceSettings = get_stk_balance_settings({"--contact-search=OFF"});
+  const stk::balance::BalanceSettings& balanceSettings = get_stk_balance_settings({"--contact-search=OFF"});
 
   EXPECT_EQ(balanceSettings.getDecompMethod(), "parmetis");
   EXPECT_FALSE(balanceSettings.includeSearchResultsInGraph());
@@ -322,7 +325,7 @@ TEST_F(BalanceCommandLine, disableSearch_default_caseInsensitive)
 
 TEST_F(BalanceCommandLine, disableSearch_smDefaults)
 {
-  stk::balance::StkBalanceSettings balanceSettings = get_stk_balance_settings({"--sm", "--contact-search=off"});
+  const stk::balance::BalanceSettings& balanceSettings = get_stk_balance_settings({"--sm", "--contact-search=off"});
 
   EXPECT_EQ(balanceSettings.getDecompMethod(), "parmetis");
   EXPECT_FALSE(balanceSettings.includeSearchResultsInGraph());
@@ -334,7 +337,7 @@ TEST_F(BalanceCommandLine, disableSearch_smDefaults)
 
 TEST_F(BalanceCommandLine, disableSearch_sdDefaults)
 {
-  stk::balance::StkBalanceSettings balanceSettings = get_stk_balance_settings({"--sd", "--contact-search=off"});
+  const stk::balance::BalanceSettings& balanceSettings = get_stk_balance_settings({"--sd", "--contact-search=off"});
 
   EXPECT_EQ(balanceSettings.getDecompMethod(), "parmetis");
   EXPECT_FALSE(balanceSettings.includeSearchResultsInGraph());
@@ -347,7 +350,7 @@ TEST_F(BalanceCommandLine, disableSearch_sdDefaults)
 
 TEST_F(BalanceCommandLine, enableSearch_default_caseInsensitive)
 {
-  stk::balance::StkBalanceSettings balanceSettings = get_stk_balance_settings({"--contact-search=ON"});
+  const stk::balance::BalanceSettings& balanceSettings = get_stk_balance_settings({"--contact-search=ON"});
 
   EXPECT_EQ(balanceSettings.getDecompMethod(), "parmetis");
   EXPECT_TRUE(balanceSettings.includeSearchResultsInGraph());
@@ -359,7 +362,7 @@ TEST_F(BalanceCommandLine, enableSearch_default_caseInsensitive)
 
 TEST_F(BalanceCommandLine, enableSearch_smDefaults)
 {
-  stk::balance::StkBalanceSettings balanceSettings = get_stk_balance_settings({"--sm", "--contact-search=on"});
+  const stk::balance::BalanceSettings& balanceSettings = get_stk_balance_settings({"--sm", "--contact-search=on"});
 
   EXPECT_EQ(balanceSettings.getDecompMethod(), "parmetis");
   EXPECT_TRUE(balanceSettings.includeSearchResultsInGraph());
@@ -371,7 +374,7 @@ TEST_F(BalanceCommandLine, enableSearch_smDefaults)
 
 TEST_F(BalanceCommandLine, enableSearch_sdDefaults)
 {
-  stk::balance::StkBalanceSettings balanceSettings = get_stk_balance_settings({"--sd", "--contact-search=on"});
+  const stk::balance::BalanceSettings& balanceSettings = get_stk_balance_settings({"--sd", "--contact-search=on"});
 
   EXPECT_EQ(balanceSettings.getDecompMethod(), "parmetis");
   EXPECT_TRUE(balanceSettings.includeSearchResultsInGraph());
@@ -384,28 +387,28 @@ TEST_F(BalanceCommandLine, enableSearch_sdDefaults)
 
 TEST_F(BalanceCommandLine, decompMethodRcb)
 {
-  stk::balance::StkBalanceSettings balanceSettings = get_stk_balance_settings({"--decomp-method=rcb"});
+  const stk::balance::BalanceSettings& balanceSettings = get_stk_balance_settings({"--decomp-method=rcb"});
 
   EXPECT_EQ(balanceSettings.getDecompMethod(), "rcb");
 }
 
 TEST_F(BalanceCommandLine, decompMethodRib)
 {
-  stk::balance::StkBalanceSettings balanceSettings = get_stk_balance_settings({"--decomp-method=rib"});
+  const stk::balance::BalanceSettings& balanceSettings = get_stk_balance_settings({"--decomp-method=rib"});
 
   EXPECT_EQ(balanceSettings.getDecompMethod(), "rib");
 }
 
 TEST_F(BalanceCommandLine, decompMethodMultijagged)
 {
-  stk::balance::StkBalanceSettings balanceSettings = get_stk_balance_settings({"--decomp-method=multijagged"});
+  const stk::balance::BalanceSettings& balanceSettings = get_stk_balance_settings({"--decomp-method=multijagged"});
 
   EXPECT_EQ(balanceSettings.getDecompMethod(), "multijagged");
 }
 
 TEST_F(BalanceCommandLine, decompMethodParmetis)
 {
-  stk::balance::StkBalanceSettings balanceSettings = get_stk_balance_settings({"--decomp-method=parmetis"});
+  const stk::balance::BalanceSettings& balanceSettings = get_stk_balance_settings({"--decomp-method=parmetis"});
 
   EXPECT_EQ(balanceSettings.getDecompMethod(), "parmetis");
   EXPECT_TRUE(balanceSettings.includeSearchResultsInGraph());

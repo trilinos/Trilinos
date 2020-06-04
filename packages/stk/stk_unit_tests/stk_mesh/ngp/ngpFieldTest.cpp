@@ -329,4 +329,33 @@ TEST_F(NgpFieldFixture, UpdateNgpFieldAfterMeshMod_WithMostCurrentDataOnDevice)
   check_field_on_host(get_bulk(), stkIntField, multiplier);
 }
 
+template<typename T>
+class NgpFieldTester : public stk::mesh::NgpField<T>
+{
+public:
+  bool test_need_sync_to_host() const { return this->need_sync_to_host(); }
+  bool test_need_sync_to_device() const { return this->need_sync_to_device(); }
+};
+
+TEST_F(NgpFieldFixture, ClearSyncStateAfterModifyOnDevice)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { return; }
+
+  stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField");
+  setup_mesh("generated:1x1x1", stk::mesh::BulkData::NO_AUTO_AURA);
+
+  stk::mesh::NgpField<int>& ngpField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
+  NgpFieldTester<int>& testNgpField = static_cast<NgpFieldTester<int>&>(ngpField);
+
+  testNgpField.modify_on_device();
+#ifdef STK_USE_DEVICE_MESH
+  EXPECT_TRUE(testNgpField.test_need_sync_to_host());
+#else
+  EXPECT_FALSE(testNgpField.test_need_sync_to_host());
+#endif
+
+  stkIntField.clear_sync_state();
+  EXPECT_FALSE(testNgpField.test_need_sync_to_host());
+}
+
 }

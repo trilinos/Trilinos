@@ -41,6 +41,11 @@
 #include <vector>
 #include <stk_util/environment/memory_util.hpp>
 
+#ifdef __CUDACC__
+#include <cuda.h>
+#include <cuda_runtime_api.h>
+#endif
+
 #if defined(__APPLE__)
 #include<mach/task.h>
 #include<mach/mach_init.h>
@@ -105,6 +110,21 @@ size_t get_memory_usage_now()
 
   /* Success */
   return memory;
+}
+
+//return GPU memory allocated and free (available)
+//values are 0 if __CUDACC__ not defined
+void get_gpu_memory_info(size_t& used, size_t& free)
+{
+  used = 0;
+  free = 0;
+#ifdef __CUDACC__
+  size_t total = 0;
+  cudaError_t err = cudaMemGetInfo(&free, &total);
+  ThrowRequireMsg(err == cudaSuccess,
+                  "stk::get_gpu_memory_info: cudaMemGetInfo returned error-code: "<<err);
+  used = total - free;
+#endif
 }
 
 // return current resident set size in bytes

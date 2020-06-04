@@ -165,7 +165,7 @@ void calculate_nodal_volume_given_elem_volume(const stk::mesh::NgpMesh &ngpMesh,
 STK_FUNCTION
 double calculate_element_volume(const stk::mesh::NgpMesh &ngpMesh,
                                 stk::mesh::NgpMesh::ConnectedNodes nodes,
-                                const stk::mesh::NgpConstField<double> &coords)
+                                const stk::mesh::NgpField<double> &coords)
 {
   double min[3] = {DBL_MAX, DBL_MAX, DBL_MAX};
   double max[3] = {DBL_MIN, DBL_MIN, DBL_MIN};
@@ -186,7 +186,7 @@ double calculate_element_volume(const stk::mesh::NgpMesh &ngpMesh,
 STK_FUNCTION
 void calculate_nodal_volume_device(const stk::mesh::NgpMesh &ngpMesh,
                                    const stk::mesh::FastMeshIndex& elem,
-                                   const stk::mesh::NgpConstField<double> &coords,
+                                   const stk::mesh::NgpField<double> &coords,
                                    const stk::mesh::NgpField<double> &nodalVolume)
 {
   stk::mesh::NgpMesh::ConnectedNodes nodes = ngpMesh.get_nodes(stk::topology::ELEM_RANK, elem);
@@ -195,7 +195,7 @@ void calculate_nodal_volume_device(const stk::mesh::NgpMesh &ngpMesh,
   calculate_nodal_volume_given_elem_volume(ngpMesh, nodes, elemVolumePerNode, nodalVolume);
 }
 
-void calculate_nodal_volume(stk::mesh::NgpMesh &ngpMesh, stk::mesh::Selector selector, const stk::mesh::NgpConstField<double> &coords, stk::mesh::NgpField<double> &nodalVolume)
+void calculate_nodal_volume(stk::mesh::NgpMesh &ngpMesh, stk::mesh::Selector selector, const stk::mesh::NgpField<double> &coords, stk::mesh::NgpField<double> &nodalVolume)
 {
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, selector,
                                  KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& elem)
@@ -212,7 +212,7 @@ void calculate_nodal_volume_entity_loop(stk::mesh::BulkData& mesh,
 {
   double start = stk::wall_time();
   const stk::mesh::FieldBase& coords = *mesh.mesh_meta_data().coordinate_field();
-  stk::mesh::NgpConstField<double> ngpCoords(mesh, coords);
+  stk::mesh::NgpField<double> ngpCoords(mesh, coords);
   stk::mesh::NgpField<double> ngpNodalVolume(mesh, nodalVolumeField);
   stk::mesh::NgpMesh & ngpMesh = mesh.get_updated_ngp_mesh();
   double middle = stk::wall_time();

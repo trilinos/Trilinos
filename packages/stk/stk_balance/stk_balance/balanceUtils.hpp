@@ -123,7 +123,6 @@ public:
     virtual void setDecompMethod(const std::string& method) ;
     virtual std::string getDecompMethod() const ;
 
-    virtual void setInitialDecompMethod(const std::string& method) ;
     virtual std::string getInitialDecompMethod() const ;
 
     virtual std::string getCoordinateFieldName() const ;
@@ -153,8 +152,21 @@ public:
     virtual double getNodeBalancerTargetLoadBalance() const;
     virtual unsigned getNodeBalancerMaxIterations() const;
 
+    virtual void set_input_filename(const std::string& filename);
+    virtual std::string get_input_filename() const;
+
+    virtual void set_output_filename(const std::string& filename);
+    virtual std::string get_output_filename() const;
+
+    virtual void setShouldFixSpiders(bool fixSpiders) { }
+    virtual void setEdgeWeightForSearch(double w) { }
+    virtual void setVertexWeightMultiplierForVertexInSearch(double w) { }
+    virtual void setToleranceForFaceSearch(double tol) { }
+
 private:
-    std::string initialDecompMethod;
+    std::string m_initialDecompMethod;
+    std::string m_inputFilename;
+    std::string m_outputFilename;
 };
 
 class BasicGeometricSettings : public BalanceSettings
@@ -293,6 +305,7 @@ class UserSpecifiedVertexWeightsSetting : public GraphCreationSettings
 public:
     UserSpecifiedVertexWeightsSetting()
     {
+      method = "parmetis";
       m_includeSearchResultInGraph = false;
     }
     virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const { return 1.0; }
@@ -310,7 +323,6 @@ public:
 
 private:
     std::vector<double> vertex_weights;
-    std::string method = std::string("parmetis");
     std::string m_field_name = std::string("coordinates");
 };
 
@@ -330,6 +342,7 @@ public:
         m_weightField(weightField),
         m_defaultWeight(defaultWeight) 
         { 
+            method = "parmetis";
             m_includeSearchResultInGraph = false;
         }
     virtual ~FieldVertexWeightSettings() = default;
@@ -351,14 +364,13 @@ public:
     }
 
 protected:
-    FieldVertexWeightSettings() = default;
+    FieldVertexWeightSettings() = delete;
     FieldVertexWeightSettings(const FieldVertexWeightSettings&) = delete;
     FieldVertexWeightSettings& operator=(const FieldVertexWeightSettings&) = delete;
 
     const stk::mesh::BulkData & m_stkMeshBulkData;
     const DoubleFieldType &m_weightField;
     const double m_defaultWeight;
-    std::string method = std::string("parmetis");
 };
 
 class MultipleCriteriaSettings : public GraphCreationSettings
@@ -409,7 +421,7 @@ public:
     }
 
 protected:
-    MultipleCriteriaSettings() = default;
+    MultipleCriteriaSettings() = delete;
     MultipleCriteriaSettings(const MultipleCriteriaSettings&) = delete;
     MultipleCriteriaSettings& operator=(const MultipleCriteriaSettings&) = delete;
     const std::vector<const stk::mesh::Field<double>*> m_critFields;

@@ -393,6 +393,14 @@ FieldBaseImpl::sync_to_device() const
   }
 }
 
+void
+FieldBaseImpl::clear_sync_state() const
+{
+  if (m_ngpField != nullptr) {
+    m_ngpField->clear_sync_state();
+  }
+}
+
 NgpFieldBase *
 FieldBaseImpl::get_ngp_field() const
 {

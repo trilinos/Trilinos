@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 #include <stk_mesh/base/Ngp.hpp>
 #include <stk_mesh/base/NgpAtomics.hpp>
-#include <stk_mesh/base/NgpMultistateField.hpp>
 #include <stk_mesh/base/NgpReductions.hpp>
 #include <stk_mesh/base/NgpMesh.hpp>
 #include <stk_mesh/base/NgpField.hpp>
