@@ -352,6 +352,7 @@ ENDIF()
       PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
       NUM_MPI_PROCS 1
       COMM serial mpi
+      RUN_SERIAL
       )
 
     TRIBITS_ADD_TEST(
