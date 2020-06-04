@@ -1,5 +1,5 @@
-#ifndef SHYLU_NODETACHO_CONFIG_H
-#define SHYLU_NODETACHO_CONFIG_H
+#ifndef __TACHO_CONFIG_H__
+#define __TACHO_CONFIG_H__
 
 /* Define if kokkos tasking is enabled */
 #cmakedefine TACHO_HAVE_KOKKOS_TASK

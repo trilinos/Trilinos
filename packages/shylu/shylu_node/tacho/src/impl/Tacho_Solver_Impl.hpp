@@ -370,7 +370,7 @@ namespace Tacho {
         } else if (_variant == 1) {
           if (_L1 == nullptr) 
             _L1 = (levelset_tools_var1_type*) ::operator new (sizeof(levelset_tools_var1_type));
-          new (_L0) levelset_tools_var1_type(*_N);
+          new (_L1) levelset_tools_var1_type(*_N);
           _L1->initialize(_device_level_cut, _device_factor_thres, _device_solve_thres, _verbose);
           _L1->createStream(_nstreams);
         }

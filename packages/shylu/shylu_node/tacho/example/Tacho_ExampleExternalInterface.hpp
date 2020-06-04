@@ -1,6 +1,6 @@
 #ifndef __TACHO_EXAMPLE_EXTERNALINTERFACE_HPP__
 #define __TACHO_EXAMPLE_EXTERNALINTERFACE_HPP__
-#include "ShyLU_NodeTacho_config.h"
+#include "Tacho_config.h"
 
 #if defined(TACHO_USE_INT_INT) 
 
