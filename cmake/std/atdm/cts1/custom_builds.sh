@@ -30,7 +30,7 @@ else
   echo "***"
   echo "*** Supported compilers include:"
   echo "***"
-  echo "****  intel-18.0.2_openmpi-4.0.3 (default, defailt intel)"
+  echo "****  intel-18.0.2_openmpi-4.0.3 (default, default intel)"
   echo "****  intel-19.0.4_openmpi-4.0.3"
   echo "***"
   return

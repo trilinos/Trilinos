@@ -33,10 +33,6 @@ fi
 # Common paths and modules for both intel-1{8,9}
 module load cmake/3.12.2
 
-if [ "$ATDM_CONFIG_COMPILER" == "DEFAULT" ] ; then
-  export ATDM_CONFIG_COMPILER=INTEL-19.0.4_OPENMPI-4.0.3
-fi
-
 module load sparc-dev/intel-19.0.4_openmpi-4.0.3
 
 if [ "$ATDM_CONFIG_COMPILER" == "INTEL-19.0.4_OPENMPI-4.0.3" ]; then
