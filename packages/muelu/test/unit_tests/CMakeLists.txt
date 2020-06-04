@@ -361,6 +361,7 @@ ENDIF()
       PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
       NUM_MPI_PROCS 4
       COMM mpi
+      RUN_SERIAL
       )
 
     IF (${PACKAGE_NAME}_ENABLE_CreatePreconditionerTests)
