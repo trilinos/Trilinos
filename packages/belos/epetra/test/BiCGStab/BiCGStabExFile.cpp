@@ -42,8 +42,7 @@
 // This driver reads a problem from a file, which can be in Harwell-Boeing (*.hb),
 // Matrix Market (*.mtx), or triplet format (*.triU, *.triS).  The right-hand side
 // from the problem, if it exists, will be used instead of multiple random
-// right-hand-sides.  The initial guesses are all set to zero.  An ILU preconditioner
-// is constructed using the Ifpack factory.
+// right-hand-sides.  The initial guesses are all set to zero.  
 //
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
@@ -58,7 +57,6 @@
 #  include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_CrsMatrix.h"
-#include "Ifpack.h"
 
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -95,7 +93,6 @@ int main (int argc, char *argv[])
   // bottom of main().  That macro has the corresponding "catch".
   try {
     bool proc_verbose = false;
-    bool leftprec = false;     // left preconditioning or right.
     int frequency = -1;        // frequency of status test output.
     int numrhs = 1;            // number of right-hand sides to solve for
     int maxiters = -1;         // maximum number of iterations allowed per linear system
@@ -105,8 +102,6 @@ int main (int argc, char *argv[])
     Teuchos::CommandLineProcessor cmdp(false,true);
     cmdp.setOption ("verbose", "quiet", &verbose, "Whether to print messages "
                     "and results.");
-    cmdp.setOption ("left-prec", "right-prec", &leftprec, "Left or right "
-                    "preconditioning.");
     cmdp.setOption ("frequency", &frequency, "Frequency of solver output "
                     "(1 means every iteration; -1 means never).");
     cmdp.setOption ("filename", &filename, "Test matrix filename.  "
@@ -146,55 +141,6 @@ int main (int argc, char *argv[])
       B = Teuchos::rcp_implicit_cast<Epetra_MultiVector> (vecB);
     }
 
-    // FIXME (mfh 05 Aug 2015) Doesn't this negate what we just did
-    // above with numrhs > 1 ?
-    B->PutScalar (1.0);
-
-    //
-    // Construct preconditioner
-    //
-
-    // allocates an IFPACK factory. No data is associated
-    // to this object (only method Create()).
-    Ifpack Factory;
-
-    // create the preconditioner. For valid PrecType values,
-    // please check the documentation
-    std::string PrecType = "point relaxation stand-alone"; // incomplete Cholesky
-    int OverlapLevel = 0; // must be >= 0. If Comm.NumProc() == 1,
-    // it is ignored.
-
-    RCP<Ifpack_Preconditioner> Prec;
-    try {
-      Prec = rcp (Factory.Create (PrecType, &*A, OverlapLevel));
-    } catch (std::exception& e) {
-      std::ostringstream os;
-      os << "Ifpack preconditioner construction threw an exception: "
-         << e.what ();
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, os.str ());
-    }
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (Prec.is_null (), std::runtime_error, "Failed to create Ifpack "
-       "preconditioner!");
-
-    try {
-      ParameterList ifpackList;
-      ifpackList.set ("relaxation: type", "Jacobi");
-      IFPACK_CHK_ERR( Prec->SetParameters (ifpackList) );
-      IFPACK_CHK_ERR( Prec->Initialize () );
-      IFPACK_CHK_ERR( Prec->Compute () );
-    } catch (std::exception& e) {
-      std::ostringstream os;
-      os << "Ifpack preconditioner setup threw an exception: " << e.what ();
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, os.str ());
-    }
-
-    // Create the Belos preconditioned operator from the Ifpack
-    // preconditioner.  This is necessary because Belos expects an
-    // operator to apply the preconditioner with Apply(), NOT with
-    // ApplyInverse().
-    RCP<Belos::EpetraPrecOp> belosPrec = rcp (new Belos::EpetraPrecOp (Prec));
-
     //
     // Create parameter list for the Belos solver
     //
@@ -221,12 +167,6 @@ int main (int argc, char *argv[])
     //
     RCP<Belos::LinearProblem<double,MV,OP> > problem
       = rcp (new Belos::LinearProblem<double,MV,OP> (A, X, B));
-    if (leftprec) {
-      problem->setLeftPrec (belosPrec);
-    }
-    else {
-      problem->setRightPrec (belosPrec);
-    }
     bool set = problem->setProblem ();
     if (! set) {
       if (proc_verbose) {
