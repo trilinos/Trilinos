@@ -57,7 +57,7 @@ public:
   STK_FUNCTION EntityFieldData(T* dataPtr, unsigned length, unsigned stride=1)
   : fieldDataPtr(dataPtr), fieldDataLength(length), fieldDataStride(stride)
   {}
-  STK_FUNCTION ~EntityFieldData() = default;
+  KOKKOS_DEFAULTED_FUNCTION ~EntityFieldData() = default;
 
   STK_FUNCTION unsigned size() const { return fieldDataLength; }
   STK_FUNCTION T& operator[](unsigned idx) { return fieldDataPtr[idx*fieldDataStride]; }

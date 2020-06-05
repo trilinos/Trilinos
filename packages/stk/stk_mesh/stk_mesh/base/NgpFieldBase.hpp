@@ -10,7 +10,7 @@ namespace mesh {
 class NgpFieldBase
 {
 public:
-  STK_FUNCTION NgpFieldBase() = default;
+  KOKKOS_DEFAULTED_FUNCTION NgpFieldBase() = default;
   STK_FUNCTION virtual ~NgpFieldBase() {}
   virtual void update_field() = 0;
   virtual void rotate_multistate_data() = 0;
