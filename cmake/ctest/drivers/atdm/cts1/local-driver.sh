@@ -1,7 +1,7 @@
 #!/bin/bash -l
 
 if [ "${SLURM_CTEST_TIMEOUT}" == "" ] ; then
-  SLURM_CTEST_TIMEOUT=1:20:00
+  SLURM_CTEST_TIMEOUT=3:00:00
   # This is just running tests, not the entire build!
 fi
 
