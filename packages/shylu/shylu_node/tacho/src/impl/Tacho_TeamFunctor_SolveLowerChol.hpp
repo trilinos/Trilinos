@@ -158,8 +158,7 @@ namespace Tacho {
           value_type *aptr = s.buf;
 
           UnmanagedViewType<value_type_matrix> AL(aptr, m, m); aptr += m*m;
-          UnmanagedViewType<value_type_matrix> b(bptr, n, _nrhs);
-          auto bT = Kokkos::subview(b, range_type(0, m), Kokkos::ALL());
+          UnmanagedViewType<value_type_matrix> bT(bptr, m, _nrhs); bptr += m*_nrhs;
 
           const ordinal_type offm = s.row_begin;
           auto tT = Kokkos::subview(_t, range_type(offm, offm+m), Kokkos::ALL());
@@ -170,8 +169,9 @@ namespace Tacho {
           if (n_m > 0) {
             // solve offdiag
             member.team_barrier();
-            UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n;
-            auto bB = Kokkos::subview(b, range_type(m, n), Kokkos::ALL());
+            UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); 
+            UnmanagedViewType<value_type_matrix> bB(bptr, n_m, _nrhs); 
+
             Gemv<Trans::ConjTranspose,GemvAlgoType>
               ::invoke(member, minus_one, AR, bT, zero, bB);
           }
@@ -185,8 +185,7 @@ namespace Tacho {
       {
         const ordinal_type m = s.m, n = s.n, n_m = n-m;
         if (m > 0) {
-          UnmanagedViewType<value_type_matrix> b(bptr, n, _nrhs);
-          auto bT = Kokkos::subview(b, range_type(0, m), Kokkos::ALL());
+          UnmanagedViewType<value_type_matrix> bT(bptr, m, _nrhs); bptr += m*_nrhs;
 
           const ordinal_type offm = s.row_begin;
           auto tT = Kokkos::subview(_t, range_type(offm, offm+m), Kokkos::ALL());
@@ -200,7 +199,8 @@ namespace Tacho {
             });
 
           if (n_m > 0) {
-            auto bB = Kokkos::subview(b, range_type(m, n), Kokkos::ALL());
+            UnmanagedViewType<value_type_matrix> bB(bptr, n_m, _nrhs); 
+
             // update
             const ordinal_type
               sbeg = s.sid_col_begin + 1, send = s.sid_col_end - 1;
@@ -227,75 +227,6 @@ namespace Tacho {
       }
     }
 
-    ///
-    /// Algorithm Variant 2: gemv
-    ///
-    template<typename MemberType>
-    KOKKOS_INLINE_FUNCTION
-    void solve_var2(MemberType &member, const supernode_type &s, value_type *bptr) const { 
-      const value_type one(1), zero(0);
-      {
-        const ordinal_type m = s.m, n = s.n;
-        if (m > 0 && n > 0) {
-          value_type *aptr = s.buf;
-          UnmanagedViewType<value_type_matrix> A(aptr, m, n); // aptr += m*n;
-          UnmanagedViewType<value_type_matrix> t(bptr, n, _nrhs); bptr += n*_nrhs;
-          UnmanagedViewType<value_type_matrix> b(bptr, n, _nrhs);
-          // AL stores inverse of diag
-          // AR stores -AL^{-1}, note that minus sign is already applied
-          Gemv<Trans::ConjTranspose,GemvAlgoType>
-            ::invoke(member, one, A, t, zero, b);
-        }
-      }
-    }
-
-    template<typename MemberType>
-    KOKKOS_INLINE_FUNCTION
-    void update_var2(MemberType &member, const supernode_type &s, value_type *bptr) const { 
-      {
-        const ordinal_type m = s.m, n = s.n, n_m = n-m;
-        if (m > 0) {
-          UnmanagedViewType<value_type_matrix> b(bptr, n, _nrhs);
-          auto bT = Kokkos::subview(b, range_type(0, m), Kokkos::ALL());
-
-          const ordinal_type offm = s.row_begin;
-          auto tT = Kokkos::subview(_t, range_type(offm, offm+m), Kokkos::ALL());
-
-          // copy to t
-          Kokkos::parallel_for
-            (Kokkos::TeamVectorRange(member, m*_nrhs),
-             [&](const ordinal_type &k) {
-              const ordinal_type i = k%m, j = k/m;
-              tT(i,j) = bT(i,j);
-            });
-
-          if (n_m > 0) {
-            auto bB = Kokkos::subview(b, range_type(m, n), Kokkos::ALL());
-            // update
-            const ordinal_type
-              sbeg = s.sid_col_begin + 1, send = s.sid_col_end - 1;
-            for (ordinal_type i=sbeg,ip=0/*is=0*/;i<send;++i) {
-              const ordinal_type
-                tbeg = _sid_block_colidx(i).second,
-                tend = _sid_block_colidx(i+1).second,
-                tcnt = tend - tbeg;
-
-              Kokkos::parallel_for
-                (Kokkos::TeamVectorRange(member, tcnt),
-                 [&](const ordinal_type &ii) {
-                  const ordinal_type it = tbeg+ii;
-                  const ordinal_type is = ip+ii;
-                  //for (ordinal_type it=tbeg;it<tend;++it,++is) {
-                  const ordinal_type row = _gid_colidx(s.gid_col_begin + it);
-                  for (ordinal_type j=0;j<_nrhs;++j)
-                    Kokkos::atomic_add(&_t(row,j), bB(is,j));
-                });
-              ip += tcnt;
-            }
-          }
-        }
-      }
-    }
 
     template<int Var> struct SolveTag  { enum { variant = Var }; };
     template<int Var> struct UpdateTag { enum { variant = Var }; };
@@ -313,7 +244,7 @@ namespace Tacho {
         value_type *bptr = _buf.data() + _buf_ptr(member.league_rank());
         if      (solve_tag_type::variant == 0) solve_var0(member, s, bptr);
         else if (solve_tag_type::variant == 1) solve_var1(member, s, bptr);
-        else if (solve_tag_type::variant == 2) solve_var2(member, s, bptr);
+        //else if (solve_tag_type::variant == 2) solve_var2(member, s, bptr);
         else printf("Error: abort\n");
       } if (mode == -1) {
         printf("Error: abort\n");
@@ -333,7 +264,7 @@ namespace Tacho {
         value_type *bptr = _buf.data() + _buf_ptr(member.league_rank());
         if      (update_tag_type::variant == 0) update_var0(member, s, bptr);
         else if (update_tag_type::variant == 1) update_var1(member, s, bptr);
-        else if (update_tag_type::variant == 2) update_var2(member, s, bptr);
+        //else if (update_tag_type::variant == 2) update_var2(member, s, bptr);
         else printf("Error: abort\n");
       } else {
         // skip
@@ -350,37 +281,3 @@ namespace Tacho {
 }
 
 #endif
-
-
-
-
-
-
-// template<typename MemberType>
-// KOKKOS_INLINE_FUNCTION
-// void solve_and_update_recursive_var0(MemberType &member, const ordinal_type sid) const {
-//   const auto &s = _supernodes(sid);
-//   for (ordinal_type i=0;i<s.nchildren;++i)
-//     solve_and_update_recursive(member, s.children[i]);
-
-//   solve(member, sid);
-//   update(member, sid);
-// }
-
-// template<typename MemberType>
-// KOKKOS_INLINE_FUNCTION
-// void operator()(const SolveUpdateTag &, const MemberType &member) const {
-//   const ordinal_type p = _pbeg + member.league_rank();
-//   const ordinal_type sid = _level_sids(p);
-//   const ordinal_type mode = _compute_mode(sid);
-
-//   // supernodes below this level are all solved and updated
-//   if (p < _pend && mode == 2) {
-//     solve_and_update_recursive(member, sid);
-//   } else if (mode == -1) {
-//     printf("Error: abort\n");
-//   } else {
-//     // skip
-//   }
-
-// }
