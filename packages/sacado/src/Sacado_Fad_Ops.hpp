@@ -289,7 +289,7 @@ namespace Sacado {
     // Implementation for simd type using if_then_else()
     //
     template <typename ExprT>
-    class Expr< SafeSqrt<ExprT>,ExprSpecDefault,true > {
+    class Expr< SafeSqrtOp<ExprT,true>,ExprSpecDefault > {
     public:
 
       typedef typename ExprT::value_type value_type;
@@ -345,7 +345,7 @@ namespace Sacado {
     // Specialization for scalar types using ternary operator
     //
     template <typename ExprT>
-    class Expr< SafeSqrt<ExprT>,ExprSpecDefault,false > {
+    class Expr< SafeSqrtOp<ExprT,false>,ExprSpecDefault > {
     public:
 
       typedef typename ExprT::value_type value_type;
@@ -400,7 +400,7 @@ namespace Sacado {
     Expr< SafeSqrtOp< Expr<T> > >
     safe_sqrt (const Expr<T>& expr)
     {
-      typedef OP< Expr<T> > expr_t;
+      typedef SafeSqrtOp< Expr<T> > expr_t;
 
       return Expr<expr_t>(expr);
     }
