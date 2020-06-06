@@ -440,14 +440,36 @@ namespace Xpetra {
         GO indexBase = 0;
         RCP<Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >    rowMap = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, m, (myRank == 0 ? m : 0), indexBase, comm), rangeMap  = rowMap;
         RCP<Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >    colMap = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, n, (myRank == 0 ? n : 0), indexBase, comm), domainMap = colMap;
-        RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A   = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(rowMap, colMap, 1);
-
-        //2019-06-07 JHU I don't see why this should matter.
-        //TEUCHOS_TEST_FOR_EXCEPTION(sizeof(int) != sizeof(GO), Exceptions::RuntimeError, "Incompatible sizes");
+        RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A;
 
         if (myRank == 0) {
           Teuchos::Array<GlobalOrdinal> inds;
           Teuchos::Array<Scalar> vals;
+          // Scan matrix to determine the exact nnz per row.
+          Teuchos::ArrayRCP<size_t> numEntriesPerRow(m);
+          for (int i = 0; i < m; i++) {
+            int row, rownnz;
+            ifs.read(reinterpret_cast<char*>(&row),    sizeof(row));
+            ifs.read(reinterpret_cast<char*>(&rownnz), sizeof(rownnz));
+            numEntriesPerRow[i] = rownnz;
+            for (int j = 0; j < rownnz; j++) {
+              int index;
+              ifs.read(reinterpret_cast<char*>(&index), sizeof(index));
+            }
+            for (int j = 0; j < rownnz; j++) {
+              double value;
+              ifs.read(reinterpret_cast<char*>(&value), sizeof(value));
+            }
+          }
+
+          A   = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(rowMap, colMap, numEntriesPerRow);
+
+          // Now that nnz per row are known, reread and store the matrix.
+          ifs.seekg(0, ifs.beg); //rewind to beginning of file
+          int junk; //skip header info
+          ifs.read(reinterpret_cast<char*>(&m),   sizeof(junk));
+          ifs.read(reinterpret_cast<char*>(&n),   sizeof(junk));
+          ifs.read(reinterpret_cast<char*>(&nnz), sizeof(junk));
           for (int i = 0; i < m; i++) {
             int row, rownnz;
             ifs.read(reinterpret_cast<char*>(&row),    sizeof(row));
@@ -462,16 +484,16 @@ namespace Xpetra {
             for (int j = 0; j < rownnz; j++) {
               double value;
               ifs.read(reinterpret_cast<char*>(&value), sizeof(value));
-              vals[j] = Teuchos::as<SC>(value);
+              vals[j] = Teuchos::as<Scalar>(value);
             }
             A->insertGlobalValues(row, inds, vals);
           }
-        }
+        } //if (myRank == 0)
 
         A->fillComplete(domainMap, rangeMap);
 
         return A;
-      }
+      } //if (binary == false) ... else
 
       TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
 
@@ -562,6 +584,7 @@ namespace Xpetra {
         ifs.read(reinterpret_cast<char*>(&n),   sizeof(n));
         ifs.read(reinterpret_cast<char*>(&nnz), sizeof(nnz));
 
+        //2020-June-05 JHU : for Tpetra, this will probably fail because Tpetra now requires staticly-sized matrix graphs.
         RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A = Xpetra::MatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap, colMap, 1);
 
         //2019-06-07 JHU I don't see why this should matter.
@@ -588,6 +611,7 @@ namespace Xpetra {
             ifs.read(reinterpret_cast<char*>(&value), sizeof(value));
             vals[j] = Teuchos::as<SC>(value);
           }
+          //This implies that row is not a global index.
           A->insertGlobalValues(rowElements[row], inds, vals);
         }
         A->fillComplete(domainMap, rangeMap);
@@ -1025,14 +1049,37 @@ namespace Xpetra {
         GlobalOrdinal indexBase = 0;
         RCP<Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >    rowMap = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, m, (myRank == 0 ? m : 0), indexBase, comm), rangeMap  = rowMap;
         RCP<Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >    colMap = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, n, (myRank == 0 ? n : 0), indexBase, comm), domainMap = colMap;
-        RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A   = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(rowMap, colMap, 1);
 
-        //2019-06-07 JHU I don't see why this should matter.
-        //TEUCHOS_TEST_FOR_EXCEPTION(sizeof(int) != sizeof(GlobalOrdinal), Exceptions::RuntimeError, "Incompatible sizes");
+        RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A;
 
         if (myRank == 0) {
           Teuchos::Array<GlobalOrdinal> inds;
           Teuchos::Array<Scalar> vals;
+          // Scan matrix to determine the exact nnz per row.
+          Teuchos::ArrayRCP<size_t> numEntriesPerRow(m);
+          for (int i = 0; i < m; i++) {
+            int row, rownnz;
+            ifs.read(reinterpret_cast<char*>(&row),    sizeof(row));
+            ifs.read(reinterpret_cast<char*>(&rownnz), sizeof(rownnz));
+            numEntriesPerRow[i] = rownnz;
+            for (int j = 0; j < rownnz; j++) {
+              int index;
+              ifs.read(reinterpret_cast<char*>(&index), sizeof(index));
+            }
+            for (int j = 0; j < rownnz; j++) {
+              double value;
+              ifs.read(reinterpret_cast<char*>(&value), sizeof(value));
+            }
+          }
+
+          A   = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(rowMap, colMap, numEntriesPerRow);
+
+          // Now that nnz per row are known, reread and store the matrix.
+          ifs.seekg(0, ifs.beg); //rewind to beginning of file
+          int junk; //skip header info
+          ifs.read(reinterpret_cast<char*>(&m),   sizeof(junk));
+          ifs.read(reinterpret_cast<char*>(&n),   sizeof(junk));
+          ifs.read(reinterpret_cast<char*>(&nnz), sizeof(junk));
           for (int i = 0; i < m; i++) {
             int row, rownnz;
             ifs.read(reinterpret_cast<char*>(&row),    sizeof(row));
@@ -1051,7 +1098,7 @@ namespace Xpetra {
             }
             A->insertGlobalValues(row, inds, vals);
           }
-        }
+        } //if (myRank == 0)
 
         A->fillComplete(domainMap, rangeMap);
 
@@ -1151,6 +1198,7 @@ namespace Xpetra {
         ifs.read(reinterpret_cast<char*>(&n),   sizeof(n));
         ifs.read(reinterpret_cast<char*>(&nnz), sizeof(nnz));
 
+        //2020-June-05 JHU : for Tpetra, this will probably fail because Tpetra now requires staticly-sized matrix graphs.
         RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A = Xpetra::MatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap, colMap, 1);
 
         //2019-06-07 JHU I don't see why this should matter.
@@ -1177,6 +1225,7 @@ namespace Xpetra {
             ifs.read(reinterpret_cast<char*>(&value), sizeof(value));
             vals[j] = Teuchos::as<Scalar>(value);
           }
+          //This implies that row is not a global index.
           A->insertGlobalValues(rowElements[row], inds, vals);
         }
         A->fillComplete(domainMap, rangeMap);
