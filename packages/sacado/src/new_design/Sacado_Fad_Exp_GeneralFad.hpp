@@ -94,12 +94,15 @@ namespace Sacado {
       using ExtenderType::ExtenderType;
 
       //! Default constructor
+      KOKKOS_DEFAULTED_FUNCTION
       GeneralFad() = default;
 
       //! Copy constructor
+      KOKKOS_DEFAULTED_FUNCTION
       GeneralFad(const GeneralFad& x) = default;
 
       //! Move constructor
+      KOKKOS_DEFAULTED_FUNCTION
       GeneralFad(GeneralFad&& x) = default;
 
       //! Constructor with value (disabled for ViewFad)
@@ -118,6 +121,7 @@ namespace Sacado {
       }
 
       //! Destructor
+      KOKKOS_DEFAULTED_FUNCTION
       ~GeneralFad() = default;
 
       //! Set %GeneralFad object as the \c ith independent variable
@@ -212,10 +216,12 @@ namespace Sacado {
       }
 
       //! Assignment with GeneralFad right-hand-side
+      KOKKOS_DEFAULTED_FUNCTION
       GeneralFad&
       operator=(const GeneralFad& x) = default;
 
       //! Move assignment with GeneralFad right-hand-side
+      KOKKOS_DEFAULTED_FUNCTION
       GeneralFad&
       operator=(GeneralFad&& x) = default;
 
