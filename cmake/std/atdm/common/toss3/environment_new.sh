@@ -23,13 +23,6 @@ module purge
 module load sems-env
 module load sems-git/2.10.1
 
-if [ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ] ; then
-  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=8
-  export OMP_NUM_THREADS=2
-else
-  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=16
-fi
-
 # Common paths and modules for both intel-1{8,9}
 module load cmake/3.12.2
 
@@ -49,6 +42,15 @@ else
 fi
 
 module load sems-ninja_fortran/1.8.2
+
+if [ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ] ; then
+  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=8
+  export OMP_NUM_THREADS=2
+  unset OMP_PLACES
+  unset OMP_PROC_BIND
+else
+  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=16
+fi
 
 export OMPI_CXX=`which icpc`
 export OMPI_CC=`which icc`

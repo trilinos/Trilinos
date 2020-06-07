@@ -114,12 +114,10 @@ void run_fad_hierarchical_team(const FluxView& flux, const WgbView& wgb,
   });
 }
 
-template <int N, typename ExecSpace>
+template <typename FadType, int N, typename ExecSpace>
 double time_fad_hierarchical_flat(int ncells, int num_basis, int num_points,
                                   int ndim, int ntrial, bool check)
 {
-  typedef Sacado::Fad::SFad<double,N> FadType;
-
   static const int FadStride = is_cuda_space<ExecSpace>::value ? 32 : 1;
 #if defined(SACADO_ALIGN_SFAD)
   static const int Nalign = ((N+FadStride-1)/FadStride)*FadStride;
@@ -159,12 +157,10 @@ double time_fad_hierarchical_flat(int ncells, int num_basis, int num_points,
   return time;
 }
 
-template <int N, typename ExecSpace>
+template <typename FadType, int N, typename ExecSpace>
 double time_fad_hierarchical_team(int ncells, int num_basis, int num_points,
                                   int ndim, int ntrial, bool check)
 {
-  typedef Sacado::Fad::SFad<double,N> FadType;
-
   static const int FadStride = is_cuda_space<ExecSpace>::value ? 32 : 1;
 #if defined(SACADO_ALIGN_SFAD)
   static const int Nalign = ((N+FadStride-1)/FadStride)*FadStride;
@@ -204,12 +200,13 @@ double time_fad_hierarchical_team(int ncells, int num_basis, int num_points,
   return time;
 }
 
-#define INST_FUNC_N_DEV(N,DEV) \
-  template double time_fad_hierarchical_flat< N, DEV >(int ncells, int num_basis, int num_points, int ndim, int ntrial, bool check); \
-  template double time_fad_hierarchical_team< N, DEV >(int ncells, int num_basis, int num_points, int ndim, int ntrial, bool check);
+#define INST_FUNC_FAD_N_DEV(FAD,N,DEV) \
+  template double time_fad_hierarchical_flat< FAD, N, DEV >(int ncells, int num_basis, int num_points, int ndim, int ntrial, bool check); \
+  template double time_fad_hierarchical_team< FAD, N, DEV >(int ncells, int num_basis, int num_points, int ndim, int ntrial, bool check);
 
 #define INST_FUNC_DEV(DEV) \
-  INST_FUNC_N_DEV( fad_dim, DEV )
+  INST_FUNC_FAD_N_DEV( SFadType, fad_dim, DEV ) \
+  INST_FUNC_FAD_N_DEV( SLFadType, fad_dim, DEV )
 
 #ifdef KOKKOS_ENABLE_SERIAL
 INST_FUNC_DEV(Kokkos::Serial)

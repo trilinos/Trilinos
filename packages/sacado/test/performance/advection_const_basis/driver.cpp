@@ -45,9 +45,11 @@ void run(const int cell_begin, const int cell_end, const int cell_step,
          const int nbasis, const int npoint, const int ntrial, const bool check)
 {
   const int ndim = 3;
-  printf("ncell %12s %12s %12s %12s %12s %12s %12s %12s %12s\n", "flat sfad", "flat dfad", "dfad sc", "analytic", "const", "team", "hier sfad", "hier dfad", "h dfad sc");
+  printf("ncell %12s %12s %12s %12s %12s %12s %12s %12s %12s %12s %12s\n", "flat sfad", "flat slfad", "flat dfad", "dfad sc", "analytic", "const", "team", "hier sfad", "hier slfad", "hier dfad", "h dfad sc");
   for(int i=cell_begin; i<=cell_end; i+=cell_step) {
     double sfad_flat = time_fad_flat<SFadType,fad_dim,ExecSpace>(
+      i,nbasis,npoint,ndim,ntrial,check);
+    double slfad_flat = time_fad_flat<SLFadType,fad_dim,ExecSpace>(
       i,nbasis,npoint,ndim,ntrial,check);
     double dfad_flat = time_fad_flat<DFadType,fad_dim,ExecSpace>(
       i,nbasis,npoint,ndim,ntrial,check);
@@ -59,14 +61,16 @@ void run(const int cell_begin, const int cell_end, const int cell_step,
       i,nbasis,npoint,ndim,ntrial,check);
     double analytic_team = time_analytic_team<fad_dim,ExecSpace>(
       i,nbasis,npoint,ndim,ntrial,check);
-    double sfad_hierarchical = time_fad_hierarchical_team<fad_dim,ExecSpace>(
+    double sfad_hierarchical = time_fad_hierarchical_team<SFadType,fad_dim,ExecSpace>(
+      i,nbasis,npoint,ndim,ntrial,check);
+    double slfad_hierarchical = time_fad_hierarchical_team<SLFadType,fad_dim,ExecSpace>(
       i,nbasis,npoint,ndim,ntrial,check);
     double dfad_hierarchical = time_dfad_hierarchical_team<fad_dim,ExecSpace>(
       i,nbasis,npoint,ndim,ntrial,check);
     double dfad_hierarchical_scratch =
       time_dfad_hierarchical_team_scratch<fad_dim,ExecSpace>(
       i,nbasis,npoint,ndim,ntrial,check);
-    printf("%5d %12.3e %12.3e %12.3e %12.3e %12.3e %12.3e %12.3e %12.3e %12.3e\n",i,sfad_flat,dfad_flat,dfad_scratch,analytic,analytic_const,analytic_team,sfad_hierarchical,dfad_hierarchical,dfad_hierarchical_scratch);
+    printf("%5d %12.3e %12.3e %12.3e %12.3e %12.3e %12.3e %12.3e %12.3e %12.3e %12.3e %12.3e\n",i,sfad_flat,slfad_flat,dfad_flat,dfad_scratch,analytic,analytic_const,analytic_team,sfad_hierarchical,slfad_hierarchical,dfad_hierarchical,dfad_hierarchical_scratch);
   }
 }
 
