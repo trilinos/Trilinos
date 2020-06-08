@@ -57,6 +57,10 @@
   A concrete implementation of this class is necessary. The user can create
   their own implementation if those supplied are not suitable for their needs.
 
+  Note: The OrthoManager class now inherits from 
+  Teuchos::ParameterListAcceptorDefaultBase. New derived classes must implement
+  <tt>setParameterList()</tt> and <tt>getValidParameters()</tt>.
+
   \author Chris Baker, Teri Barth, and Heidi Thornquist
 */
 
