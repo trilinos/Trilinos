@@ -52,7 +52,7 @@
       </ParameterList>
 
       <ParameterList name="solver_params">
-        <Parameter name="TriangularSolves" type="bool" value="true"/>
+        <Parameter name="Enable_KokkosKernels_TriangularSolves" type="bool" value="true"/>
         <Parameter name="SuperNodal" type="bool" value="true"/>
       </ParameterList>
     </ParameterList> <!-- end Cholmod -->
@@ -101,7 +101,7 @@
       </ParameterList>
 
       <ParameterList name="solver_params">
-        <Parameter name="TriangularSolves" type="bool" value="true"/>
+        <Parameter name="Enable_KokkosKernels_TriangularSolves" type="bool" value="true"/>
         <Parameter name="SuperNodal" type="bool" value="true"/>
 
         <!-- SuperNodal + Complex + GPU causes intermittent failures. -->

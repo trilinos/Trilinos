@@ -58,13 +58,16 @@
 #include <stdexcept>
 #include <iostream>
 
+//#define DEBUG_OUTPUT
+
 template <typename Scalar>
 Piro::TransientSolver<Scalar>::TransientSolver(
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model) :  
   out_(Teuchos::VerboseObjectBase::getDefaultOStream()),
   model_(model), 
   num_p_(model->Np()), 
-  num_g_(model->Ng())
+  num_g_(model->Ng()),
+  sensitivityMethod_(NONE)
 {
   //Nothing to do
 }
@@ -251,7 +254,7 @@ Piro::TransientSolver<Scalar>::num_g() const
 
 template <typename Scalar>
 void 
-Piro::TransientSolver<Scalar>::setSensitivityMethod(const std::string sensitivity_method_string)
+Piro::TransientSolver<Scalar>::setSensitivityMethod(const std::string& sensitivity_method_string)
 {
   if (sensitivity_method_string == "None") sensitivityMethod_ = NONE; 
   else if (sensitivity_method_string == "Forward") sensitivityMethod_ = FORWARD;
@@ -260,12 +263,6 @@ Piro::TransientSolver<Scalar>::setSensitivityMethod(const std::string sensitivit
     TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
         "\n Error! Piro::TransientSolver: invalid Sensitivity Method = " << sensitivity_method_string << "! \n" 
         << " Valid options for Sensitivity Method are 'None', 'Forward' and 'Adjoint'.\n");
-  }
-  //IKT, 5/8/2020: remove the following once we have support for adjoint sensitivities 
-  if (sensitivityMethod_ == ADJOINT) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
-        "\n Error! Piro::TransientSolver: adjoint sentivities (Sensitivity Method = "
-        << "Adjoint) are not yet supported!  Please set 'Sensitivity Method' to 'None' or 'Forward'.\n");
   }
 }
 
@@ -286,7 +283,7 @@ Piro::TransientSolver<Scalar>::setPiroTempusIntegrator(Teuchos::RCP<const Piro::
 
 template <typename Scalar>
 void 
-Piro::TransientSolver<Scalar>::evalConvergedModel(
+Piro::TransientSolver<Scalar>::evalConvergedModelResponsesAndSensitivities(
       const Thyra::ModelEvaluatorBase::InArgs<Scalar>& modelInArgs,
       const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const
 {
@@ -407,6 +404,21 @@ Piro::TransientSolver<Scalar>::evalConvergedModel(
       {
         //Get dxdp_mv from Tempus::ForwardIntegratorSensitivity class  
         const RCP<const Thyra::MultiVectorBase<Scalar> > dxdp_mv = piroTempusIntegrator_->getDxDp();
+#ifdef DEBUG_OUTPUT
+        *out_ << "\n*** Piro::TransientSolver: num_p, num vecs in dxdp = " << num_p_ << ", " << dxdp_mv->domain()->dim() << " ***\n";
+#endif
+        for (int i=0; i < dxdp_mv->domain()->dim(); ++i) { 
+          Teuchos::RCP<const Thyra::VectorBase<Scalar>> dxdp = dxdp_mv->col(i);
+#ifdef DEBUG_OUTPUT
+          *out_ << "\n*** Piro::TransientSolver dxdp for p = " << i << " ***\n";
+          Teuchos::Range1D range;
+          RTOpPack::ConstSubVectorView<Scalar> dxdpv;
+          dxdp->acquireDetachedView(range, &dxdpv);
+          auto dxdpa = dxdpv.values();
+          for (auto j = 0; j < dxdpa.size(); ++j) *out_ << dxdpa[j] << " ";
+          *out_ << "\n*** Piro::TransientSolver dxdp for p = " << i << " ***\n";
+#endif
+        }
         //IMPORTANT REMARK: we are currently NOT using DxdotDp and DxdotdotDp in transient sensitivities!  
         //The capability to use them can be added at a later point in time, if desired. 
         //IKT, 5/10/20: throw error if dxdp_mv returned by Tempus is null.  Not sure if this can happen in practice or not...

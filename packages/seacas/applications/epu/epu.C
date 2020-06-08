@@ -1116,10 +1116,11 @@ int epu(SystemInterface &interFace, int start_part, int part_count, int cycle, T
         }
         if (proc_time_val != time_val) {
           fmt::print(stderr,
-                     "ERROR: (EPU) At step {}, the time on processor {} is {:.8} which does not\n"
-                     "       match the time on processor {} which is {:.8}\n"
-                     "       This usually indicates a corrupt database.\n",
-                     time_step + 1, start_part, time_val, p + start_part, proc_time_val);
+                     "WARNING: (EPU) At step {}, the times on processors {} and {} do not match:\n"
+                     "         {:.8} vs {:.8} (absolute diff: {:.8})\n"
+                     "         This may indicate a corrupt database.\n",
+                     time_step + 1, start_part, p + start_part, time_val, proc_time_val,
+                     std::abs(time_val - proc_time_val));
         }
       }
 

@@ -416,7 +416,7 @@ namespace {
     TEST_COMPARE_FLOATING_ARRAYS( xhatnorms, xnorms, 0.005 );
   }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( KLU2, NonContgGID, SCALAR, LO, GO )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( KLU2, NonContigGID, SCALAR, LO, GO )
   {
     typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
     typedef ScalarTraits<SCALAR> ST;
@@ -457,7 +457,6 @@ namespace {
           std::logic_error,
           "KLU2 NonContigGID Test: The non-contiguous map claims to be contiguous.");
 
-      //RCP<MAT> A = rcp( new MAT(map,3) ); // max of three entries in a row
       RCP<MAT> A = rcp( new MAT(map,3) );
       A->setObjectLabel("A");
 
@@ -802,7 +801,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( KLU2, NumericFactorizationNullThrows, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( KLU2, Solve, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( KLU2, SolveTrans, SCALAR, LO, GO ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( KLU2, NonContgGID, SCALAR, LO, GO )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( KLU2, NonContigGID, SCALAR, LO, GO )
 
 #define UNIT_TEST_GROUP_ORDINAL( ORDINAL )              \
   UNIT_TEST_GROUP_ORDINAL_ORDINAL( ORDINAL, ORDINAL )

@@ -452,7 +452,7 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
   modelInArgs.set_t(t_final_ - soln_dt);
 
   //Calculate responses and sensitivities 
-  this->evalConvergedModel(modelInArgs, outArgs); 
+  this->evalConvergedModelResponsesAndSensitivities(modelInArgs, outArgs);
 
 }
 

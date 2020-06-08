@@ -329,9 +329,23 @@ namespace { // (anonymous)
     }
   }
 
+  template <class impl_scalar_type, class buffer_device_type>
+  bool
+  runKernelOnHost ( Kokkos::DualView<impl_scalar_type*, buffer_device_type> imports )
+  {
+    if (! imports.need_sync_device ()) {
+      return false; // most up-to-date on device
+    }
+    else { // most up-to-date on host
+      size_t localLengthThreshold = Tpetra::Details::Behavior::multivectorKernelLocationThreshold();
+      return imports.extent(0) <= localLengthThreshold;
+    }
+  }
+
+
   template <class SC, class LO, class GO, class NT>
   bool
-  multiVectorRunNormOnHost (const ::Tpetra::MultiVector<SC, LO, GO, NT>& X)
+  runKernelOnHost (const ::Tpetra::MultiVector<SC, LO, GO, NT>& X)
   {
     if (! X.need_sync_device ()) {
       return false; // most up-to-date on device
@@ -360,7 +374,7 @@ namespace { // (anonymous)
     const bool isConstantStride = X.isConstantStride ();
     const bool isDistributed = X.isDistributed ();
 
-    const bool runOnHost = multiVectorRunNormOnHost (X);
+    const bool runOnHost = runKernelOnHost (X);
     if (runOnHost) {
       using view_type = typename dual_view_type::t_host;
       using array_layout = typename view_type::array_layout;
@@ -981,7 +995,7 @@ namespace Tpetra {
        << permuteFromLIDs.extent (0) << ".");
 
     // We've already called checkSizes(), so this cast must succeed.
-    const MV& sourceMV = dynamic_cast<const MV&> (sourceObj);
+    MV& sourceMV = const_cast<MV &>(dynamic_cast<const MV&> (sourceObj));
     const size_t numCols = this->getNumVectors ();
 
     // sourceMV doesn't belong to us, so we can't sync it.  Do the
@@ -990,7 +1004,7 @@ namespace Tpetra {
       (sourceMV.need_sync_device () && sourceMV.need_sync_host (),
        std::logic_error, "Input MultiVector needs sync to both host "
        "and device.");
-    const bool copyOnHost = sourceMV.need_sync_device ();
+    const bool copyOnHost = runKernelOnHost(sourceMV);
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "copyOnHost=" << (copyOnHost ? "true" : "false") << endl;
@@ -998,12 +1012,12 @@ namespace Tpetra {
     }
 
     if (copyOnHost) {
-      if (this->need_sync_host ()) {
-        this->sync_host ();
-      }
+      sourceMV.sync_host();
+      this->sync_host ();
       this->modify_host ();
     }
     else {
+      sourceMV.sync_device();
       if (this->need_sync_device ()) {
         this->sync_device ();
       }
@@ -1296,7 +1310,7 @@ namespace Tpetra {
     }
 
     // We've already called checkSizes(), so this cast must succeed.
-    const MV& sourceMV = dynamic_cast<const MV&> (sourceObj);
+    MV& sourceMV = const_cast<MV&>(dynamic_cast<const MV&> (sourceObj));
 
     const size_t numCols = sourceMV.getNumVectors ();
 
@@ -1349,7 +1363,7 @@ namespace Tpetra {
       (sourceMV.need_sync_device () && sourceMV.need_sync_host (),
        std::logic_error, "Input MultiVector needs sync to both host "
        "and device.");
-    const bool packOnHost = sourceMV.need_sync_device ();
+    const bool packOnHost = runKernelOnHost(sourceMV);
     auto src_dev = sourceMV.getLocalViewHost ();
     auto src_host = sourceMV.getLocalViewDevice ();
     if (printDebugOutput) {
@@ -1369,6 +1383,7 @@ namespace Tpetra {
       // Clearing the sync flags prevents this possible case.
       exports.clear_sync_state ();
       exports.modify_host ();
+      sourceMV.sync_host();
     }
     else {
       // nde 06 Feb 2020: If 'exports' does not require resize
@@ -1378,6 +1393,7 @@ namespace Tpetra {
       // Clearing the sync flags prevents this possible case.
       exports.clear_sync_state ();
       exports.modify_device ();
+      sourceMV.sync_device();
     }
 
     if (numCols == 1) { // special case for one column only
@@ -1582,7 +1598,7 @@ namespace Tpetra {
     // mfh 12 Apr 2016, 04 Feb 2019: Decide where to unpack based on
     // the memory space in which the imports buffer was last modified.
     // DistObject::doTransferNew gets to decide this.
-    const bool unpackOnHost = imports.need_sync_device ();
+    const bool unpackOnHost = runKernelOnHost(imports);
 
     if (printDebugOutput) {
       std::ostringstream os;
@@ -1594,15 +1610,13 @@ namespace Tpetra {
     // We have to sync before modifying, because this method may read
     // as well as write (depending on the CombineMode).
     if (unpackOnHost) {
-      if (this->need_sync_host ()) {
-        this->sync_host ();
-      }
+      imports.sync_host();
+      this->sync_host ();
       this->modify_host ();
     }
     else {
-      if (this->need_sync_device ()) {
-        this->sync_device ();
-      }
+      imports.sync_device();
+      this->sync_device ();
       this->modify_device ();
     }
     auto X_d = this->getLocalViewDevice ();
@@ -2319,9 +2333,10 @@ namespace Tpetra {
     // avoids sync'ing, which could violate users' expectations.
     //
     // If we need sync to device, then host has the most recent version.
-    const bool runOnHost = this->need_sync_device ();
+    const bool runOnHost = runKernelOnHost(*this);
 
-    if (! runOnHost) { // last modified in device memory
+    this->clear_sync_state();
+    if (! runOnHost) {
       this->modify_device ();
       auto X = this->getLocalViewDevice ();
       if (this->isConstantStride ()) {

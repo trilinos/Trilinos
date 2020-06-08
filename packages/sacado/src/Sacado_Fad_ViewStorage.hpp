@@ -56,6 +56,14 @@ namespace Sacado {
 
   namespace Fad {
 
+#ifndef SACADO_FAD_DERIV_LOOP
+#if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(__CUDA_ARCH__)
+#define SACADO_FAD_DERIV_LOOP(I,SZ) for (int I=threadIdx.x; I<SZ; I+=blockDim.x)
+#else
+#define SACADO_FAD_DERIV_LOOP(I,SZ) for (int I=0; I<SZ; ++I)
+#endif
+#endif
+
     /*!
      * \brief Derivative array storage class that is a view into a contiguous
      * memory allocation.  It does not provide proper value semantics and
@@ -110,10 +118,12 @@ namespace Sacado {
         if (this != &x) {
           *val_ = *x.val_;
           if (stride_one)
-            for (int i=0; i<sz_.value; ++i)
+            //for (int i=0; i<sz_.value; ++i)
+            SACADO_FAD_DERIV_LOOP(i,sz_.value)
               dx_[i] = x.dx_[i];
           else
-            for (int i=0; i<sz_.value; ++i)
+            //for (int i=0; i<sz_.value; ++i)
+            SACADO_FAD_DERIV_LOOP(i,sz_.value)
               dx_[i*stride_.value] = x.dx_[i*x.stride_.value];
         }
         return *this;

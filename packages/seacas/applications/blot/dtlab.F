@@ -238,7 +238,7 @@ C         --Get the number of lines for min/max symbols
       END IF
 
 C   --Get software character flag for current device
-      CALL GRGPAR ('SOFTCHAR', 0, SOFTCH, STRING)
+      CALL GRGPARD ('SOFTCHAR', 0, SOFTCH, STRING)
 
 C   --Variable name(s)
 
@@ -434,9 +434,9 @@ C      --Count the number of contour modes if more than one time
                IF ((MAXMIN .GE. NMIN) .AND. (MAXMAX .GE. NMAX)) THEN
                   CALL NUMSTR (2, 4, RNUM, RSTR, LSTR)
                ELSE IF (MAXMIN .GE. NMIN) THEN
-                  CALL NUMSTR (1, 4, RNUM(1), RSTR(1), LSTR)
+                  CALL NUMSTR1(4, RNUM(1), RSTR(1), LSTR)
                ELSE IF (MAXMAX .GE. NMAX) THEN
-                  CALL NUMSTR (1, 4, RNUM(2), RSTR(2), LSTR)
+                  CALL NUMSTR1(4, RNUM(2), RSTR(2), LSTR)
                END IF
             END IF
             DY = DYMNMX

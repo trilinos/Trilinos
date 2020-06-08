@@ -47,6 +47,7 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for ex__file_item, EX_FATAL, etc
+#include "stdbool.h"
 
 /*! \file
  * this file contains code needed to support the various floating point word
@@ -76,6 +77,34 @@ struct ex__file_item *ex__find_file_item(int exoid)
     ptr = ptr->next;
   }
   return (ptr);
+}
+
+#define EX__MAX_PATHLEN 8192
+int ex__check_multiple_open(const char *path, int mode, const char *func)
+{
+  EX_FUNC_ENTER();
+  bool                  is_write = mode & EX_WRITE;
+  char                  tmp[EX__MAX_PATHLEN];
+  size_t                pathlen;
+  struct ex__file_item *ptr = file_list;
+  while (ptr) {
+    nc_inq_path(ptr->file_id, &pathlen, tmp);
+    /* If path is too long, assume it is ok... */
+    if (pathlen < EX__MAX_PATHLEN && strncmp(path, tmp, EX__MAX_PATHLEN) == 0) {
+      /* Found matching file.  See if any open for write */
+      if (ptr->is_write || is_write) {
+        char errmsg[MAX_ERR_LENGTH];
+        snprintf(errmsg, MAX_ERR_LENGTH,
+                 "ERROR: The file '%s' is open for both read and write."
+                 " File corruption or incorrect behavior can occur.\n",
+                 path);
+        ex_err(func, errmsg, EX_BADFILEID);
+        EX_FUNC_LEAVE(EX_FATAL);
+      }
+    }
+    ptr = ptr->next;
+  }
+  EX_FUNC_LEAVE(EX_NOERR);
 }
 
 void ex__check_valid_file_id(int exoid, const char *func)
@@ -108,7 +137,7 @@ void ex__check_valid_file_id(int exoid, const char *func)
 }
 
 int ex__conv_init(int exoid, int *comp_wordsize, int *io_wordsize, int file_wordsize,
-                  int int64_status, int is_parallel, int is_hdf5, int is_pnetcdf)
+                  int int64_status, int is_parallel, int is_hdf5, int is_pnetcdf, int is_write)
 {
   char                  errmsg[MAX_ERR_LENGTH];
   struct ex__file_item *new_file;
@@ -247,6 +276,7 @@ int ex__conv_init(int exoid, int *comp_wordsize, int *io_wordsize, int file_word
   new_file->has_edges             = 1;
   new_file->has_faces             = 1;
   new_file->has_elems             = 1;
+  new_file->is_write              = is_write;
 
   new_file->next = file_list;
   file_list      = new_file;

@@ -1,4 +1,4 @@
-C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
+C Copyright(C) 2009-2017, 2020 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -78,7 +78,7 @@ C   --   Uses IS3DIM of /D3NUMS/
       CHARACTER*20 RSTR(3)
       LOGICAL WINDOW
       LOGICAL FFMATC, MATSTR
-      LOGICAL LDUM
+      LOGICAL LDUM(1)
 
       IF ((VERB .EQ. 'WHAT') .OR. (VERB .EQ. 'WHAT3')) THEN
          INLINE = ' '

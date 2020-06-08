@@ -146,14 +146,18 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]] ; then
   export CUDA_LAUNCH_BLOCKING=1
   export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
   export KOKKOS_NUM_DEVICES=2
-  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=4
-  # Avoids timeouts due to not running on separate GPUs (see #2446)
+  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=2
+  # Avoids timeouts due to not running on separate GPUs (e.g. see #2446)
 
 fi
 
-# CMake and ninja
-module swap cmake/3.6.2 cmake/3.12.3
+# Ninja
 module load ninja/1.7.2
+
+# CMake
+#module swap cmake/3.6.2 cmake/3.12.3
+module unload cmake/3.6.2
+export PATH=/home/atdm-devops-admin/tools/waterman/cmake-3.17.2/bin:$PATH
 
 # HWLOC
 

@@ -65,12 +65,13 @@ static bool ex__is_internal_attribute(const char *name, ex_entity_type obj_type)
     return true;
   }
   else if (obj_type == EX_GLOBAL &&
-           ((strcmp(name, "api_version") == 0) || (strcmp(name, "version") == 0) ||
-            (strcmp(name, "floating_point_word_size") == 0) || (strcmp(name, "file_size") == 0) ||
-            (strcmp(name, "maximum_name_length") == 0) || (strcmp(name, "int64_status") == 0) ||
-            (strcmp(name, "title") == 0) || (strcmp(name, "nemesis_file_version") == 0) ||
-            (strcmp(name, "nemesis_api_version") == 0) || (strcmp(name, "processor_info") == 0) ||
-            (strcmp(name, "last_written_time") == 0))) {
+           ((strcmp(name, ATT_API_VERSION) == 0) || (strcmp(name, ATT_API_VERSION_BLANK) == 0) ||
+            (strcmp(name, ATT_VERSION) == 0) || (strcmp(name, ATT_FLT_WORDSIZE) == 0) ||
+            (strcmp(name, ATT_FLT_WORDSIZE_BLANK) == 0) || (strcmp(name, ATT_FILESIZE) == 0) ||
+            (strcmp(name, ATT_MAX_NAME_LENGTH) == 0) || (strcmp(name, ATT_INT64_STATUS) == 0) ||
+            (strcmp(name, ATT_TITLE) == 0) || (strcmp(name, ATT_NEM_FILE_VERSION) == 0) ||
+            (strcmp(name, ATT_NEM_API_VERSION) == 0) || (strcmp(name, ATT_PROCESSOR_INFO) == 0) ||
+            (strcmp(name, ATT_LAST_WRITTEN_TIME) == 0))) {
     return true;
   }
   return false;
@@ -93,7 +94,7 @@ static int ex__get_varid(int exoid, ex_entity_type obj_type, ex_entity_id id)
     ex_get_err(NULL, NULL, &status);
     if (status != 0) {
       if (status == EX_NULLENTITY) { /* NULL object?    */
-        EX_FUNC_LEAVE(EX_NOERR);
+        return EX_NOERR;
       }
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to locate %s id  %" PRId64 " in id array in file id %d",
@@ -151,7 +152,7 @@ static int ex__get_attribute_count(int exoid, ex_entity_type obj_type, ex_entity
     *varid = ex__get_varid(exoid, obj_type, id);
     if (*varid <= 0) {
       /* Error message handled in ex__get_varid */
-      return EX_FATAL;
+      return 0;
     }
 
     if ((status = nc_inq_var(exoid, *varid, NULL, NULL, NULL, NULL, &att_count)) != NC_NOERR) {
@@ -181,6 +182,11 @@ int ex_get_attribute_count(int exoid, ex_entity_type obj_type, ex_entity_id id)
 
   att_count = ex__get_attribute_count(exoid, obj_type, id, &varid);
   if (att_count < 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: Negative attribute count (%d) on %s with id %" PRId64 " in file id %d",
+             att_count, ex_name_of_object(obj_type), id, exoid);
+    ex_err_fn(exoid, __func__, errmsg, EX_INTERNAL);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -297,7 +303,7 @@ int ex_get_attribute(int exoid, ex_attribute *attr)
       attr->values = calloc(attr->value_count, sizeof(double));
     }
     else if (attr->type == EX_CHAR) {
-      attr->values = calloc(attr->value_count, sizeof(char));
+      attr->values = calloc(attr->value_count + 1, sizeof(char));
     }
     if (attr->values == NULL) {
       snprintf(

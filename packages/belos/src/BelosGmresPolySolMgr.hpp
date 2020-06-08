@@ -54,6 +54,7 @@
 #include "BelosSolverManager.hpp"
 #include "BelosGmresPolyOp.hpp"
 #include "BelosSolverFactory_Generic.hpp"
+#include "BelosOrthoManagerFactory.hpp"
 #include "Teuchos_as.hpp"
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 #include "Teuchos_TimeMonitor.hpp"
@@ -507,9 +508,16 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
   // Check if the orthogonalization changed.
   if (params->isParameter("Orthogonalization")) {
     std::string tempOrthoType = params->get("Orthogonalization",orthoType_default_);
-    TEUCHOS_TEST_FOR_EXCEPTION( tempOrthoType != "DGKS" && tempOrthoType != "ICGS" && tempOrthoType != "IMGS",
-                        std::invalid_argument,
-                        "Belos::GmresPolySolMgr: \"Orthogonalization\" must be either \"DGKS\", \"ICGS\", or \"IMGS\".");
+    OrthoManagerFactory<ScalarType, MV, OP> factory;
+    // Ensure that the specified orthogonalization type is valid.
+    if (! factory.isValidName (tempOrthoType)) {
+      std::ostringstream os;
+      os << "Belos::GCRODRSolMgr: Invalid orthogonalization name \""
+         << tempOrthoType << "\".  The following are valid options "
+         << "for the \"Orthogonalization\" name parameter: ";
+      factory.printValidNames (os);
+      throw std::invalid_argument (os.str());
+    }
     if (tempOrthoType != orthoType_) {
       orthoType_ = tempOrthoType;
     }

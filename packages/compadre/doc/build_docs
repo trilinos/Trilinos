@@ -1,0 +1,16 @@
+#!/bin/bash
+
+if [ $TRILINOS_HOME ]; then
+  echo "TRILINOS_HOME has already been set!"
+  export COMPADRE_VERSION=`<$TRILINOS_HOME/packages/compadre/cmake/Compadre_Version.txt`
+else
+  echo "TRILINOS_HOME has not been set.  Setting it!"
+  export TRILINOS_HOME=`pwd`/../../..
+  export COMPADRE_VERSION=`<../cmake/Compadre_Version.txt`
+fi
+
+echo
+echo "Generating main compadre doxygen documentation ..."
+echo
+
+doxygen Doxyfile

@@ -304,6 +304,8 @@ namespace MueLu {
     */
     static RCP<Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > CuthillMcKee(const Matrix &Op);
 
+    static void ApplyOAZToMatrixRows(RCP<Matrix>& A, const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows);
+
   }; // class Utils
 
 
@@ -715,6 +717,8 @@ namespace MueLu {
       Kokkos-Kernels has an RCM implementation, so we reverse that here if we call CM.
     */
     static RCP<Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > CuthillMcKee(const Matrix &Op);
+
+    static void ApplyOAZToMatrixRows(RCP<Matrix>& A, const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows);
 
   }; // class Utilities (specialization SC=double LO=GO=int)
 

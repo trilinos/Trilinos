@@ -106,6 +106,120 @@
 namespace MueLu {
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void FindNonZeros(const Teuchos::ArrayRCP<const Scalar> vals,
+                    Teuchos::ArrayRCP<bool> nonzeros) {
+    TEUCHOS_ASSERT(vals.size() == nonzeros.size());
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
+    const magnitudeType eps = 2.0*Teuchos::ScalarTraits<magnitudeType>::eps();
+    for(size_t i=0; i<static_cast<size_t>(vals.size()); i++) {
+      nonzeros[i] = (Teuchos::ScalarTraits<Scalar>::magnitude(vals[i]) > eps);
+    }
+  }
+
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void DetectDirichletCols(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+                           const Teuchos::ArrayRCP<bool>& dirichletRows,
+                           Teuchos::ArrayRCP<bool> dirichletCols,
+                           Teuchos::ArrayRCP<bool> dirichletDomain) {
+    const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > domMap = A.getDomainMap();
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap = A.getRowMap();
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > colMap = A.getColMap();
+    TEUCHOS_ASSERT(static_cast<size_t>(dirichletRows.size()) == rowMap->getNodeNumElements());
+    TEUCHOS_ASSERT(static_cast<size_t>(dirichletCols.size()) == colMap->getNodeNumElements());
+    TEUCHOS_ASSERT(static_cast<size_t>(dirichletDomain.size()) == domMap->getNodeNumElements());
+    RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > myColsToZero = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(colMap, 1, /*zeroOut=*/true);
+    // Find all local column indices that are in Dirichlet rows, record in myColsToZero as 1.0
+    for(size_t i=0; i<(size_t) dirichletRows.size(); i++) {
+      if (dirichletRows[i]) {
+        ArrayView<const LocalOrdinal> indices;
+        ArrayView<const Scalar> values;
+        A.getLocalRowView(i,indices,values);
+        for(size_t j=0; j<static_cast<size_t>(indices.size()); j++)
+          myColsToZero->replaceLocalValue(indices[j],0,one);
+      }
+    }
+
+    RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > globalColsToZero;
+    RCP<const Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > importer = A.getCrsGraph()->getImporter();
+    if (!importer.is_null()) {
+      globalColsToZero = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(domMap, 1, /*zeroOut=*/true);
+      // export to domain map
+      globalColsToZero->doExport(*myColsToZero,*importer,Xpetra::ADD);
+      // import to column map
+      myColsToZero->doImport(*globalColsToZero,*importer,Xpetra::INSERT);
+    }
+    else
+      globalColsToZero = myColsToZero;
+
+    FindNonZeros<Scalar,LocalOrdinal,GlobalOrdinal,Node>(globalColsToZero->getData(0),dirichletDomain);
+    FindNonZeros<Scalar,LocalOrdinal,GlobalOrdinal,Node>(myColsToZero->getData(0),dirichletCols);
+  }
+
+
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void FindNonZeros(const typename Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dual_view_type::t_dev_um vals,
+                    Kokkos::View<bool*, typename Node::device_type> nonzeros) {
+    using ATS        = Kokkos::ArithTraits<Scalar>;
+    using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
+    TEUCHOS_ASSERT(vals.extent(0) == nonzeros.extent(0));
+    const typename ATS::magnitudeType eps = 2.0*ATS::eps();
+
+    Kokkos::parallel_for("MueLu:RefMaxwell::FindNonZeros", range_type(0,vals.extent(0)),
+                         KOKKOS_LAMBDA (const size_t i) {
+                           nonzeros(i) = (ATS::magnitude(vals(i,0)) > eps);
+                         });
+  }
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void DetectDirichletCols(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+                           const Kokkos::View<bool*, typename Node::device_type> & dirichletRows,
+                           Kokkos::View<bool*, typename Node::device_type> dirichletCols,
+                           Kokkos::View<bool*, typename Node::device_type> dirichletDomain) {
+    using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
+    const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > domMap = A.getDomainMap();
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap = A.getRowMap();
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > colMap = A.getColMap();
+    TEUCHOS_ASSERT(dirichletRows.extent(0) == rowMap->getNodeNumElements());
+    TEUCHOS_ASSERT(dirichletCols.extent(0) == colMap->getNodeNumElements());
+    TEUCHOS_ASSERT(dirichletDomain.extent(0) == domMap->getNodeNumElements());
+    RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > myColsToZero = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(colMap, /*zeroOut=*/true);
+    // Find all local column indices that are in Dirichlet rows, record in myColsToZero as 1.0
+    auto myColsToZeroView = myColsToZero->template getLocalView<typename Node::device_type>();
+    auto localMatrix = A.getLocalMatrix();
+    Kokkos::parallel_for("MueLu:RefMaxwell::DetectDirichletCols", range_type(0,rowMap->getNodeNumElements()),
+                         KOKKOS_LAMBDA(const LocalOrdinal row) {
+                           if (dirichletRows(row)) {
+                             auto rowView = localMatrix.row(row);
+                             auto length  = rowView.length;
+
+                             for (decltype(length) colID = 0; colID < length; colID++)
+                               myColsToZeroView(rowView.colidx(colID),0) = one;
+                           }
+                         });
+
+    RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > globalColsToZero;
+    RCP<const Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > importer = A.getCrsGraph()->getImporter();
+    if (!importer.is_null()) {
+      globalColsToZero = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(domMap, /*zeroOut=*/true);
+      // export to domain map
+      globalColsToZero->doExport(*myColsToZero,*importer,Xpetra::ADD);
+      // import to column map
+      myColsToZero->doImport(*globalColsToZero,*importer,Xpetra::INSERT);
+    }
+    else
+      globalColsToZero = myColsToZero;
+    FindNonZeros<Scalar,LocalOrdinal,GlobalOrdinal,Node>(globalColsToZero->template getLocalView<typename Node::device_type>(),dirichletDomain);
+    FindNonZeros<Scalar,LocalOrdinal,GlobalOrdinal,Node>(myColsToZero->template getLocalView<typename Node::device_type>(),dirichletCols);
+  }
+
+#endif
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getDomainMap() const {
     return SM_Matrix_->getDomainMap();
   }
@@ -303,6 +417,8 @@ namespace MueLu {
       // Find rows with only 1 or 2 nonzero entries, record them in BCrows_.
       // BCrows_[i] is true, iff i is a boundary row
       // BCcols_[i] is true, iff i is a boundary column
+      int BCedgesLocal = 0;
+      int BCnodesLocal = 0;
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
       if (useKokkos_) {
         BCrowsKokkos_ = Utilities_kokkos::DetectDirichletRows(*SM_Matrix_,Teuchos::ScalarTraits<magnitudeType>::eps(),/*count_twos_as_dirichlet=*/true);
@@ -330,31 +446,22 @@ namespace MueLu {
           }
         }
 
-        BCcolsKokkos_ = Utilities_kokkos::DetectDirichletCols(*D0_Matrix_,BCrowsKokkos_);
+        BCcolsKokkos_ = Kokkos::View<bool*,typename Node::device_type>(Kokkos::ViewAllocateWithoutInitializing("dirichletCols"), D0_Matrix_->getColMap()->getNodeNumElements());
+        BCdomainKokkos_ = Kokkos::View<bool*,typename Node::device_type>(Kokkos::ViewAllocateWithoutInitializing("dirichletCols"), D0_Matrix_->getDomainMap()->getNodeNumElements());
+        DetectDirichletCols<Scalar,LocalOrdinal,GlobalOrdinal,Node>(*D0_Matrix_,BCrowsKokkos_,BCcolsKokkos_,BCdomainKokkos_);
 
-        int BCrowcountLocal = 0;
+        dump(BCrowsKokkos_,   "BCrows.m");
+        dump(BCcolsKokkos_,   "BCcols.m");
+        dump(BCdomainKokkos_, "BCdomain.m");
+
         for (size_t i = 0; i<BCrowsKokkos_.size(); i++)
           if (BCrowsKokkos_(i))
-            BCrowcountLocal += 1;
-#ifdef HAVE_MPI
-        MueLu_sumAll(SM_Matrix_->getRowMap()->getComm(), BCrowcountLocal, BCrowcount_);
-#else
-        BCrowcount_ = BCrowcountLocal;
-#endif
-        int BCcolcountLocal = 0;
-        for (size_t i = 0; i<BCcolsKokkos_.size(); i++)
-          if (BCcolsKokkos_(i))
-            BCcolcountLocal += 1;
-#ifdef HAVE_MPI
-        MueLu_sumAll(SM_Matrix_->getRowMap()->getComm(), BCcolcountLocal, BCcolcount_);
-#else
-        BCcolcount_ = BCcolcountLocal;
-#endif
-        if (IsPrint(Statistics2)) {
-          GetOStream(Statistics2) << "MueLu::RefMaxwell::compute(): Detected " << BCrowcount_ << " BC rows and " << BCcolcount_ << " BC columns." << std::endl;
-        }
+            BCedgesLocal += 1;
+        for (size_t i = 0; i<BCdomainKokkos_.size(); i++)
+          if (BCdomainKokkos_(i))
+            BCnodesLocal += 1;
       } else
-#endif
+#endif // HAVE_MUELU_KOKKOS_REFACTOR
         {
           BCrows_ = Teuchos::arcp_const_cast<bool>(Utilities::DetectDirichletRows(*SM_Matrix_,Teuchos::ScalarTraits<magnitudeType>::eps(),/*count_twos_as_dirichlet=*/true));
 
@@ -381,57 +488,36 @@ namespace MueLu {
             }
           }
 
-          BCcols_ = Utilities::DetectDirichletCols(*D0_Matrix_,BCrows_);
-          int BCrowcountLocal = 0;
+          BCcols_.resize(D0_Matrix_->getColMap()->getNodeNumElements());
+          BCdomain_.resize(D0_Matrix_->getDomainMap()->getNodeNumElements());
+          DetectDirichletCols<Scalar,LocalOrdinal,GlobalOrdinal,Node>(*D0_Matrix_,BCrows_,BCcols_,BCdomain_);
+
+          dump(BCrows_,   "BCrows.m");
+          dump(BCcols_,   "BCcols.m");
+          dump(BCdomain_, "BCdomain.m");
+
           for (auto it = BCrows_.begin(); it != BCrows_.end(); ++it)
             if (*it)
-              BCrowcountLocal += 1;
-#ifdef HAVE_MPI
-          MueLu_sumAll(SM_Matrix_->getRowMap()->getComm(), BCrowcountLocal, BCrowcount_);
-#else
-          BCrowcount_ = BCrowcountLocal;
-#endif
-          int BCcolcountLocal = 0;
-          for (auto it = BCcols_.begin(); it != BCcols_.end(); ++it)
+              BCedgesLocal += 1;
+          for (auto it = BCdomain_.begin(); it != BCdomain_.end(); ++it)
             if (*it)
-              BCcolcountLocal += 1;
-#ifdef HAVE_MPI
-          MueLu_sumAll(SM_Matrix_->getRowMap()->getComm(), BCcolcountLocal, BCcolcount_);
-#else
-          BCcolcount_ = BCcolcountLocal;
-#endif
-          if (IsPrint(Statistics2)) {
-            GetOStream(Statistics2) << "MueLu::RefMaxwell::compute(): Detected " << BCrowcount_ << " BC rows and " << BCcolcount_ << " BC columns." << std::endl;
-          }
+              BCnodesLocal += 1;
         }
 
-      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<Xpetra::global_size_t>(BCrowcount_) >= D0_Matrix_->getRangeMap()->getGlobalNumElements(), Exceptions::RuntimeError,
+#ifdef HAVE_MPI
+      MueLu_sumAll(SM_Matrix_->getRowMap()->getComm(), BCedgesLocal, BCedges_);
+      MueLu_sumAll(SM_Matrix_->getRowMap()->getComm(), BCnodesLocal, BCnodes_);
+#else
+      BCedges_ = BCedgesLocal;
+      BCnodes_ = BCnodesLocal;
+#endif
+      if (IsPrint(Statistics2)) {
+        GetOStream(Statistics2) << "MueLu::RefMaxwell::compute(): Detected " << BCedges_ << " BC rows and " << BCnodes_ << " BC columns." << std::endl;
+      }
+
+      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<Xpetra::global_size_t>(BCedges_) >= D0_Matrix_->getRangeMap()->getGlobalNumElements(), Exceptions::RuntimeError,
                                  "All edges are detected as boundary edges!");
 
-      if (dump_matrices_) {
-        GetOStream(Runtime0) << "Dumping BCrows, BCcols" << std::endl;
-        std::ofstream outBCrows("BCrows.m");
-        std::ofstream outBCcols("BCcols.m");
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
-        if (useKokkos_) {
-          auto BCrows = Kokkos::create_mirror_view (BCrowsKokkos_);
-          Kokkos::deep_copy(BCrows , BCrowsKokkos_);
-          for (size_t i = 0; i < BCrows.size(); i++)
-            outBCrows << BCrows[i] << "\n";
-
-          auto BCcols = Kokkos::create_mirror_view (BCcolsKokkos_);
-          Kokkos::deep_copy(BCcols , BCcolsKokkos_);
-          for (size_t i = 0; i < BCcols.size(); i++)
-            outBCcols << BCcols[i] << "\n";
-        } else
-#endif
-        {
-          for (size_t i = 0; i < Teuchos::as<size_t>(BCrows_.size()); i++)
-            outBCrows << BCrows_[i] << "\n";
-          for (size_t i = 0; i < Teuchos::as<size_t>(BCcols_.size()); i++)
-            outBCcols << BCcols_[i] << "\n";
-        }
-      }
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -542,6 +628,14 @@ namespace MueLu {
       coarseLevel.Request("A", rapFact.get());
 
       A_nodal_Matrix_ = coarseLevel.Get< RCP<Matrix> >("A", rapFact.get());
+
+      // Apply boundary conditions to A_nodal
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+      if (useKokkos_)
+        Utilities_kokkos::ApplyOAZToMatrixRows(A_nodal_Matrix_,BCdomainKokkos_);
+      else
+#endif
+        Utilities::ApplyOAZToMatrixRows(A_nodal_Matrix_,BCdomain_);
       dump(*A_nodal_Matrix_, "A_nodal.m");
 
       // build special prolongator
@@ -997,7 +1091,7 @@ namespace MueLu {
             std::transform(coarseType.begin(),   coarseType.end(),   coarseType.begin(), ::tolower);
             std::transform(coarseType.begin(), ++coarseType.begin(), coarseType.begin(), ::toupper);
           }
-          if (BCrowcount_ == 0 &&
+          if (BCedges_ == 0 &&
               (coarseType == "" ||
                coarseType == "Klu" ||
                coarseType == "Klu2") &&
@@ -1257,6 +1351,30 @@ namespace MueLu {
     }
   }
 
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dump(const Teuchos::ArrayRCP<bool>& v, std::string name) const {
+    if (dump_matrices_) {
+      GetOStream(Runtime0) << "Dumping to " << name << std::endl;
+      std::ofstream out(name);
+      for (size_t i = 0; i < Teuchos::as<size_t>(v.size()); i++)
+        out << v[i] << "\n";
+    }
+  }
+
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dump(const Kokkos::View<bool*, typename Node::device_type>& v, std::string name) const {
+    if (dump_matrices_) {
+      GetOStream(Runtime0) << "Dumping to " << name << std::endl;
+      std::ofstream out(name);
+      auto vH = Kokkos::create_mirror_view (v);
+          Kokkos::deep_copy(vH , v);
+          for (size_t i = 0; i < vH.size(); i++)
+            out << vH[i] << "\n";
+    }
+  }
+#endif
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<Teuchos::TimeMonitor> RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getTimer(std::string name, RCP<const Teuchos::Comm<int> > comm) const {

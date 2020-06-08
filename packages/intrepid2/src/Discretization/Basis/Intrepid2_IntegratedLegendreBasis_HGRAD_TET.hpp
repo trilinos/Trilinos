@@ -68,13 +68,13 @@ namespace Intrepid2
            class OutputFieldType, class InputPointsType>
   struct Hierarchical_HGRAD_TET_Functor
   {
-    using ScratchSpace        = Kokkos::DefaultExecutionSpace::scratch_memory_space;
+    using ScratchSpace        = typename ExecutionSpace::scratch_memory_space;
     using OutputScratchView   = Kokkos::View<OutputScalar*,ScratchSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
     using OutputScratchView2D = Kokkos::View<OutputScalar**,ScratchSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
     using PointScratchView    = Kokkos::View<PointScalar*, ScratchSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
     
-    using TeamPolicy = Kokkos::TeamPolicy<>;
-    using TeamMember = TeamPolicy::member_type;
+    using TeamPolicy = Kokkos::TeamPolicy<ExecutionSpace>;
+    using TeamMember = typename TeamPolicy::member_type;
     
     EOperator opType_;
     
@@ -810,6 +810,12 @@ namespace Intrepid2
       return "Intrepid2_IntegratedLegendreBasis_HGRAD_TET";
     }
     
+    /** \brief True if orientation is required
+    */
+    virtual bool requireOrientation() const override {
+      return (this->getDegree() > 2);
+    }
+
     // since the getValues() below only overrides the FEM variant, we specify that
     // we use the base class's getValues(), which implements the FVD variant by throwing an exception.
     // (It's an error to use the FVD variant on this basis.)

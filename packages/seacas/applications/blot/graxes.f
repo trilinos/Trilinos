@@ -82,7 +82,7 @@ C   --   GRAPAR - (GRPLIB) Select axis parameters
       REAL WXATIC, WYATIC
       CHARACTER*80 TXLAB, TYLAB
 
-      LOGICAL LDUM, PLTSTG
+      LOGICAL LDUM, PLTSTG, PLTSTG1
       REAL BUF(11)
 
 C   --Set device axis start and length
@@ -92,10 +92,10 @@ C   --Set device axis start and length
       DXALEN = DVIEW(KRGT) - DVIEW(KLFT)
       DYALEN = DVIEW(KTOP) - DVIEW(KBOT)
 
-      LDUM = PLTSTG (KXORIG, DXAST)
-      LDUM = PLTSTG (KYORIG, DYAST)
-      LDUM = PLTSTG (KXLENG, DXALEN)
-      LDUM = PLTSTG (KYLENG, DYALEN)
+      LDUM = PLTSTG1 (KXORIG, DXAST)
+      LDUM = PLTSTG1 (KYORIG, DYAST)
+      LDUM = PLTSTG1 (KXLENG, DXALEN)
+      LDUM = PLTSTG1 (KYLENG, DYALEN)
 
 C   --Set axis minimum and maximum and tick intervals (and exponents and
 C   --numbering size)

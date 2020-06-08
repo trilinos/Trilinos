@@ -91,6 +91,8 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsTestMatrices_cp
   SOURCE_FILES aniso2dx.mat
   SOURCE_FILES aniso2dy.mat
   SOURCE_FILES iso2d.mat
+  SOURCE_FILES fuego0.mm
+  SOURCE_FILES fuego1.mm
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/TestMatrices
 )
 
@@ -350,6 +352,7 @@ ENDIF()
       PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
       NUM_MPI_PROCS 1
       COMM serial mpi
+      RUN_SERIAL
       )
 
     TRIBITS_ADD_TEST(
@@ -359,6 +362,7 @@ ENDIF()
       PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
       NUM_MPI_PROCS 4
       COMM mpi
+      RUN_SERIAL
       )
 
     IF (${PACKAGE_NAME}_ENABLE_CreatePreconditionerTests)

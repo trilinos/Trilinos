@@ -12,7 +12,7 @@
 #include "Ioss_GetLongOpt.h" // for GetLongOption
 #include <string>            // for string
 
-/** \brief A special namespace for the io_info demonstration program interFace.
+/** \brief A special namespace for the io_modify demonstration program interFace.
  */
 namespace Modify {
   class Interface
@@ -31,7 +31,7 @@ namespace Modify {
     void enroll_options();
 
     Ioss::GetLongOption options_;
-    std::string         filetype_{"exodus"};
+    std::string         filetype_{"unknown"};
     std::string         filename_{};
     bool                allowModification_{false};
   };

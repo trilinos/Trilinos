@@ -1,6 +1,6 @@
 #!/bin/bash
 if [ "${Trilinos_TRACK}" == "" ] ; then
-  export Trilinos_TRACK=Experimental
+  export Trilinos_TRACK=Specialized
 fi
 export Trilinos_SKIP_CTEST_ADD_TEST=FALSE
 $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ats1/local-driver.sh

@@ -19,9 +19,6 @@
 #include <unistd.h>
 #include <utility>
 #include <vector>
-#if defined(SEACAS_HAVE_EXODUS)
-#include <exodusII.h>
-#endif
 
 #include <Ionit_Initializer.h>
 #include <Ioss_Assembly.h>
@@ -53,15 +50,20 @@
 #include <Ioss_StructuredBlock.h>
 #include <Ioss_Utils.h>
 #include <Ioss_VariableType.h>
-#include <exodus/Ioex_Utils.h>
-#include <exodus/Ioex_Internals.h>
 #include <tokenize.h>
 
 #include <fmt/color.h>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
+
+#if defined(SEACAS_HAVE_EXODUS)
+#include <exodusII.h>
+#include <exodus/Ioex_Internals.h>
+#include <exodus/Ioex_Utils.h>
+#endif
+
 #if defined(SEACAS_HAVE_CGNS)
-#include <cgnslib.h>
+#include <Iocgns_Utils.h>
 #endif
 
 #if defined(_MSC_VER)
@@ -72,7 +74,7 @@
 
 namespace {
   std::string codename;
-  std::string version = "0.9 (2020-04-20)";
+  std::string version = "0.92 (2020-05-20)";
 
   std::vector<Ioss::GroupingEntity *> attributes_modified;
 
@@ -176,7 +178,8 @@ namespace {
                    "WARNING: Regular Expression '{}' did not match any {}\n", tokens[3], type);
       }
     }
-    else if (tokens.size() == 3 && Ioss::Utils::substr_equal(tokens[2], "list")) {
+    else if (tokens.size() == 2 ||
+             (tokens.size() == 3 && Ioss::Utils::substr_equal(tokens[2], "list"))) {
       for (const T *ge : entities) {
         info_entity(ge, show_property);
       }
@@ -190,9 +193,6 @@ namespace {
       }
     }
   }
-
-  void info_property(const Ioss::GroupingEntity *ige, Ioss::Property::Origin origin,
-                     const std::string &header, const std::string &suffix = "\n\t");
 
   std::string name(const Ioss::GroupingEntity *entity)
   {
@@ -372,7 +372,7 @@ namespace {
     int64_t num_node = sb->get_property("node_count").get_int();
     fmt::print("{:14n} cells, {:14n} nodes\n", num_cell, num_node);
     if (show_property) {
-      info_property(sb, Ioss::Property::ATTRIBUTE, "\tAttributes (Reduction): ", "\t");
+      Ioss::Utils::info_property(sb, Ioss::Property::ATTRIBUTE, "\tAttributes (Reduction): ", "\t");
     }
   }
 
@@ -380,7 +380,8 @@ namespace {
   {
     fmt::print("\nRegion (global)\n");
     if (show_property) {
-      info_property(&region, Ioss::Property::ATTRIBUTE, "\tAttributes (Reduction): ", "\t");
+      Ioss::Utils::info_property(&region, Ioss::Property::ATTRIBUTE,
+                                 "\tAttributes (Reduction): ", "\t");
     }
   }
 
@@ -401,7 +402,7 @@ namespace {
     }
     fmt::print("\n");
     if (show_property) {
-      info_property(as, Ioss::Property::ATTRIBUTE, "\tAttributes (Reduction): ", "\t");
+      Ioss::Utils::info_property(as, Ioss::Property::ATTRIBUTE, "\tAttributes (Reduction): ", "\t");
     }
   }
 
@@ -410,7 +411,8 @@ namespace {
     fmt::print("\n{} id: {:6d}, contains: {} item(s).\n", name(blob), id(blob),
                blob->entity_count());
     if (show_property) {
-      info_property(blob, Ioss::Property::ATTRIBUTE, "\tAttributes (Reduction): ", "\t");
+      Ioss::Utils::info_property(blob, Ioss::Property::ATTRIBUTE,
+                                 "\tAttributes (Reduction): ", "\t");
     }
   }
 
@@ -423,7 +425,7 @@ namespace {
     fmt::print("\n{} id: {:6d}, topology: {:>10s}, {:14n} elements, {:3d} attributes.\n", name(eb),
                id(eb), type, num_elem, num_attrib);
     if (show_property) {
-      info_property(eb, Ioss::Property::ATTRIBUTE, "\tAttributes (Reduction): ", "\t");
+      Ioss::Utils::info_property(eb, Ioss::Property::ATTRIBUTE, "\tAttributes (Reduction): ", "\t");
     }
   }
 
@@ -447,7 +449,7 @@ namespace {
                  count, num_attrib, num_dist);
     }
     if (show_property) {
-      info_property(ss, Ioss::Property::ATTRIBUTE, "\tAttributes (Reduction): ", "\t");
+      Ioss::Utils::info_property(ss, Ioss::Property::ATTRIBUTE, "\tAttributes (Reduction): ", "\t");
     }
   }
 
@@ -459,7 +461,7 @@ namespace {
     fmt::print("\n{} id: {:6d}, {:8n} nodes, {:3d} attributes, {:8n} distribution factors.\n",
                name(ns), id(ns), count, num_attrib, num_dist);
     if (show_property) {
-      info_property(ns, Ioss::Property::ATTRIBUTE, "\tAttributes (Reduction): ", "\t");
+      Ioss::Utils::info_property(ns, Ioss::Property::ATTRIBUTE, "\tAttributes (Reduction): ", "\t");
     }
   }
 
@@ -469,7 +471,7 @@ namespace {
     int64_t num_attrib = nb->get_property("attribute_count").get_int();
     fmt::print("\n{} {:14n} nodes, {:3d} attributes.\n", name(nb), num_nodes, num_attrib);
     if (show_property) {
-      info_property(nb, Ioss::Property::ATTRIBUTE, "\tAttributes (Reduction): ", "\t");
+      Ioss::Utils::info_property(nb, Ioss::Property::ATTRIBUTE, "\tAttributes (Reduction): ", "\t");
     }
   }
 
@@ -507,9 +509,12 @@ namespace {
                  "\tQuickStart: https://www.regular-expressions.info/quickstart.html\n");
     }
     if (all || Ioss::Utils::substr_equal(topic, "list")) {
-      fmt::print("\n\tLIST summary|elementblock|block|assembly|nodeset|sideset|blob\n");
-      fmt::print("\n\tLIST elementblock|block|assembly|nodeset|sideset|blob {{names...}}\n\n");
-      fmt::print("\n\tLIST elementblock|block|assembly|nodeset|sideset|blob MATCHES {{regex}}\n\n");
+      fmt::print(
+          "\n\tLIST summary|elementblock|block|structuredblock|assembly|nodeset|sideset|blob\n");
+      fmt::print("\n\tLIST elementblock|block|structuredblock|assembly|nodeset|sideset|blob "
+                 "{{names...}}\n\n");
+      fmt::print("\n\tLIST elementblock|block|structuredblock|assembly|nodeset|sideset|blob "
+                 "MATCHES {{regex}}\n\n");
     }
     if (all || Ioss::Utils::substr_equal(topic, "assembly")) {
       fmt::print("\n\tFor all commands, if an assembly named `name` does not exist, it will be "
@@ -603,7 +608,7 @@ namespace {
         const auto &entities = region.get_node_blocks();
         info_entities(entities, tokens, region, "Node Block", show_attribute);
       }
-      else if (Ioss::Utils::substr_equal(tokens[1], "structuredlock")) {
+      else if (Ioss::Utils::substr_equal(tokens[1], "structuredblock")) {
         const auto &entities = region.get_structured_blocks();
         info_entities(entities, tokens, region, "Structured Blocks", show_attribute);
       }
@@ -923,7 +928,7 @@ namespace {
         if (ge != nullptr) {
           std::string prefix =
               fmt::format("\n{} id: {:6d}\n\tAttributes (Reduction): ", name(ge), id(ge));
-          info_property(ge, Ioss::Property::ATTRIBUTE, prefix, "\t");
+          Ioss::Utils::info_property(ge, Ioss::Property::ATTRIBUTE, prefix, "\t");
         }
       }
       return false;
@@ -1152,7 +1157,30 @@ namespace {
     return names;
   }
 
-  void update_assembly_info(Ioss::Region &region, const Modify::Interface &interFace)
+#if defined(SEACAS_HAVE_CGNS)
+  void           update_cgns_assembly_info(Ioss::Region &region, const Modify::Interface &interFace)
+  {
+    region.end_mode(Ioss::STATE_DEFINE_MODEL);
+    int file_ptr = region.get_database()->get_file_pointer();
+
+    fmt::print(fg(fmt::color::cyan), "\n\t*** Database changed. Updating assembly definitions.\n");
+    const auto &assemblies = region.get_assemblies();
+    for (const auto *assembly : assemblies) {
+      if (assembly->property_exists("modified")) {
+        if (assembly->property_exists("created")) {
+          fmt::print(fg(fmt::color::cyan), "\t*** Creating assembly '{}'\n", assembly->name());
+	  Iocgns::Utils::output_assembly(file_ptr, assembly, false, true);
+        }
+        else {
+	  fmt::print(stderr, fg(fmt::color::yellow), "WARNING: Can not modify existing assembly '{}'  yet.\n",
+		     assembly->name());
+        }
+      }
+    }
+  }
+#endif
+
+  void           update_exodus_assembly_info(Ioss::Region &region, const Modify::Interface &interFace)
   {
     std::vector<Ioex::Assembly> ex_assemblies;
     bool                        modify_existing = false;
@@ -1215,47 +1243,21 @@ namespace {
     }
   }
 
-  void info_property(const Ioss::GroupingEntity *ige, Ioss::Property::Origin origin,
-                     const std::string &header, const std::string &suffix)
+  void update_assembly_info(Ioss::Region &region, const Modify::Interface &interFace)
   {
-    Ioss::NameList properties;
-    ige->property_describe(origin, &properties);
-
-    if (properties.empty()) {
-      if (!header.empty()) {
-        fmt::print("{}{} *** No attributes ***\n", header, suffix);
-      }
-      return;
+    // Determine type of underlying database...
+    const auto type = region.get_database()->get_format();
+    if (type == "Exodus") {
+      update_exodus_assembly_info(region, interFace);
     }
-
-    if (!header.empty()) {
-      fmt::print("{}{}", header, suffix);
+#if defined(SEACAS_HAVE_CGNS)
+    else if (type == "CGNS") {
+      update_cgns_assembly_info(region, interFace);
     }
-
-    int num_out = 0;
-    for (const auto &property_name : properties) {
-      fmt::print("{:>s}: ", property_name);
-      auto prop = ige->get_property(property_name);
-      switch (prop.get_type()) {
-      case Ioss::Property::BasicType::REAL: fmt::print("{}\t", prop.get_real()); break;
-      case Ioss::Property::BasicType::INTEGER: fmt::print("{}\t", prop.get_int()); break;
-      case Ioss::Property::BasicType::STRING: fmt::print("'{}'\t", prop.get_string()); break;
-      case Ioss::Property::BasicType::VEC_INTEGER:
-        fmt::print("{}\t", fmt::join(prop.get_vec_int(), "  "));
-        break;
-      case Ioss::Property::BasicType::VEC_DOUBLE:
-        fmt::print("{}\t", fmt::join(prop.get_vec_double(), "  "));
-        break;
-      default:; // Do nothing
-      }
-      num_out++;
-      if (num_out >= 3) {
-        fmt::print("\n\t");
-        num_out = 0;
-      }
-    }
-    if (!header.empty()) {
-      fmt::print("\n");
+#endif    
+    else {
+      fmt::print(stderr, fg(fmt::color::red), "ERROR: Can not modify the database '{}' of type '{}'.\n",
+		 interFace.filename(), type);
     }
   }
 

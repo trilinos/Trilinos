@@ -43,6 +43,7 @@ int driver (int argc, char *argv[]) {
   int device_level_cut = 0;
   int device_factor_thres = 64;
   int device_solve_thres = 128;
+  int variant = 1;
   int nstreams = 8;
 
   Tacho::CommandLineParser opts("This example program measure the Tacho on Kokkos::OpenMP");
@@ -62,6 +63,7 @@ int driver (int argc, char *argv[]) {
   opts.set_option<int>("device-level-cut", "Device function is used above this level", &device_level_cut);
   opts.set_option<int>("device-factor-thres", "Device function is used above this subproblem size", &device_factor_thres);
   opts.set_option<int>("device-solve-thres", "Device function is used above this subproblem size", &device_solve_thres);
+  opts.set_option<int>("variant", "algorithm variant in levelset scheduling; 0 or 1", &variant);
   opts.set_option<int>("nstreams", "# of streams used in CUDA; on host, it is ignored", &nstreams);
 
   const bool r_parse = opts.parse(argc, argv);
@@ -140,6 +142,7 @@ int driver (int argc, char *argv[]) {
     solver.setLevelSetScheduling(levelset);
     solver.setLevelSetOptionDeviceLevelCut(device_level_cut);
     solver.setLevelSetOptionDeviceFunctionThreshold(device_factor_thres, device_solve_thres);
+    solver.setLevelSetOptionAlgorithmVariant(variant);
     solver.setLevelSetOptionNumStreams(nstreams);
 
     auto values_on_device = Kokkos::create_mirror_view(typename device_type::memory_space(), A.Values());
@@ -165,7 +168,9 @@ int driver (int argc, char *argv[]) {
       Kokkos::Random_XorShift64_Pool<typename device_type::execution_space> random(13718);
       Kokkos::fill_random(b, random, value_type(1));
     }
-    solver.solve(x, b, t);
+
+    for (int i=0;i<3;++i)
+      solver.solve(x, b, t);
     
     const double res = solver.computeRelativeResidual(values_on_device, x, b);
 
