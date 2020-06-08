@@ -210,7 +210,18 @@ Piro::PerformROLAnalysis(
     RCP< Thyra::VectorBase<double> >& p)
 {
   auto rolParams = analysisParams.sublist("ROL");
+
 #ifdef HAVE_PIRO_ROL
+
+  int verbose = rolParams.get<int>("Verbosity Level", 3);
+  Teuchos::EVerbosityLevel verbosityLevel;
+  switch(verbose) {
+    case 1: verbosityLevel= Teuchos::VERB_LOW; break;
+    case 2: verbosityLevel= Teuchos::VERB_MEDIUM; break;
+    case 3: verbosityLevel= Teuchos::VERB_HIGH; break;
+    case 4: verbosityLevel= Teuchos::VERB_EXTREME; break;
+    default: verbosityLevel= Teuchos::VERB_NONE;
+  }
 
   if(rolParams.isParameter("Use Old Reduced Space Interface") && rolParams.get<bool>("Use Old Reduced Space Interface")) {
 
@@ -244,7 +255,7 @@ Piro::PerformROLAnalysis(
     ROL::ThyraVector<double> rol_p(p_prod);
 
 
-    ROL::ThyraProductME_Objective<double> obj(piroModel, g_index, p_indices, Teuchos::rcp(&analysisParams.sublist("Optimization Status"),false));
+    ROL::ThyraProductME_Objective<double> obj(piroModel, g_index, p_indices, Teuchos::rcp(&analysisParams.sublist("Optimization Status"),false),verbosityLevel);
 
 
     bool print = rolParams.get<bool>("Print Output", false);
@@ -450,9 +461,8 @@ Piro::PerformROLAnalysis(
     Teuchos::RCP<Thyra::VectorBase<double>> lambda_vec = Thyra::createMember(x_space);
     ROL::ThyraVector<double> rol_lambda(lambda_vec);
 
-    bool always_recompute = true;
-    ThyraProductME_Objective_SimOpt<double> obj(*model, g_index, p_indices, Teuchos::rcp(&analysisParams.sublist("Optimization Status"),false));
-    ThyraProductME_Constraint_SimOpt<double> constr(*model, g_index, p_indices, Teuchos::rcp(&analysisParams.sublist("Optimization Status"),false),always_recompute);
+    ThyraProductME_Objective_SimOpt<double> obj(*model, g_index, p_indices, Teuchos::rcp(&analysisParams.sublist("Optimization Status"),false),verbosityLevel);
+    ThyraProductME_Constraint_SimOpt<double> constr(*model, g_index, p_indices, Teuchos::rcp(&analysisParams.sublist("Optimization Status"),false),verbosityLevel);
 
     constr.setSolveParameters(rolParams.sublist("ROL Options"));
 

@@ -9,6 +9,8 @@
 #include "Compadre_LinearAlgebra_Definitions.hpp"
 #include "Compadre_ParallelManager.hpp"
 #include "Compadre_Quadrature.hpp"
+#include "Compadre_ScalarTaylorPolynomial.hpp"
+#include "Compadre_DivergenceFreePolynomial.hpp"
 
 namespace Compadre {
 
@@ -211,6 +213,9 @@ protected:
     //! this is false, and so the _RHS matrix can not be stored or requested
     bool _entire_batch_computed_at_once;
 
+    //! whether polynomial coefficients were requested to be stored (in a state not yet applied to data)
+    bool _store_PTWP_inv_PTW;
+
     //! initial index for current batch
     int _initial_index_for_batch;
 
@@ -279,7 +284,8 @@ protected:
 ///@{
 
     /*! \brief Evaluates the polynomial basis under a particular sampling function. Generally used to fill a row of P.
-        \param delta            [in/out] - scratch space that is allocated so that each thread has its own copy. Must be at least as large is the _basis_multipler*the dimension of the polynomial basis.
+        \param delta            [in/out] - scratch space that is allocated so that each thread has its own copy. Must be at least as large as the _basis_multipler*the dimension of the polynomial basis.
+        \param thread_workspace [in/out] - scratch space that is allocated so that each thread has its own copy. Must be at least as large as the _poly_order*the spatial dimension of the polynomial basis.
         \param target_index         [in] - target number
         \param neighbor_index       [in] - index of neighbor for this target with respect to local numbering [0,...,number of neighbors for target]
         \param alpha                [in] - double to determine convex combination of target and neighbor site at which to evaluate polynomials. (1-alpha)*neighbor + alpha*target
@@ -292,10 +298,11 @@ protected:
         \param additional_evaluation_local_index [in] - local index for evaluation sites 
     */
     KOKKOS_INLINE_FUNCTION
-    void calcPij(const member_type& teamMember, double* delta, const int target_index, int neighbor_index, const double alpha, const int dimension, const int poly_order, bool specific_order_only = false, const scratch_matrix_right_type* V = NULL, const ReconstructionSpace reconstruction_space = ReconstructionSpace::ScalarTaylorPolynomial, const SamplingFunctional sampling_strategy = PointSample, const int additional_evaluation_local_index = 0) const;
+    void calcPij(const member_type& teamMember, double* delta, double* thread_workspace, const int target_index, int neighbor_index, const double alpha, const int dimension, const int poly_order, bool specific_order_only = false, const scratch_matrix_right_type* V = NULL, const ReconstructionSpace reconstruction_space = ReconstructionSpace::ScalarTaylorPolynomial, const SamplingFunctional sampling_strategy = PointSample, const int additional_evaluation_local_index = 0) const;
 
     /*! \brief Evaluates the gradient of a polynomial basis under the Dirac Delta (pointwise) sampling function.
         \param delta            [in/out] - scratch space that is allocated so that each thread has its own copy. Must be at least as large is the _basis_multipler*the dimension of the polynomial basis.
+        \param thread_workspace [in/out] - scratch space that is allocated so that each thread has its own copy. Must be at least as large as the _poly_order*the spatial dimension of the polynomial basis.
         \param target_index         [in] - target number
         \param neighbor_index       [in] - index of neighbor for this target with respect to local numbering [0,...,number of neighbors for target]
         \param alpha                [in] - double to determine convex combination of target and neighbor site at which to evaluate polynomials. (1-alpha)*neighbor + alpha*target
@@ -309,11 +316,31 @@ protected:
         \param additional_evaluation_local_index [in] - local index for evaluation sites 
     */
     KOKKOS_INLINE_FUNCTION
-    void calcGradientPij(const member_type& teamMember, double* delta, const int target_index, const int neighbor_index, const double alpha, const int partial_direction, const int dimension, const int poly_order, bool specific_order_only, const scratch_matrix_right_type* V, const ReconstructionSpace reconstruction_space, const SamplingFunctional sampling_strategy, const int additional_evaluation_local_index = 0) const;
+    void calcGradientPij(const member_type& teamMember, double* delta, double* thread_workspace, const int target_index, int neighbor_index, const double alpha, const int partial_direction, const int dimension, const int poly_order, bool specific_order_only, const scratch_matrix_right_type* V, const ReconstructionSpace reconstruction_space, const SamplingFunctional sampling_strategy, const int additional_evaluation_local_index = 0) const;
+
+    /*! \brief Evaluates the Hessian of a polynomial basis under the Dirac Delta (pointwise) sampling function.
+        \param delta            [in/out] - scratch space that is allocated so that each thread has its own copy. Must be at least as large is the _basis_multipler*the dimension of the polynomial basis.
+        \param thread_workspace [in/out] - scratch space that is allocated so that each thread has its own copy. Must be at least as large as the _poly_order*the spatial dimension of the polynomial basis.
+        \param target_index         [in] - target number
+        \param neighbor_index       [in] - index of neighbor for this target with respect to local numbering [0,...,number of neighbors for target]
+        \param alpha                [in] - double to determine convex combination of target and neighbor site at which to evaluate polynomials. (1-alpha)*neighbor + alpha*target
+        \param partial_direction_1  [in] - first direction that partial is taken with respect to, e.g. 0 is x direction, 1 is y direction
+        \param partial_direction_2  [in] - second direction that partial is taken with respect to, e.g. 0 is x direction, 1 is y direction
+        \param dimension            [in] - spatial dimension of basis to evaluate. e.g. dimension two basis of order one is 1, x, y, whereas for dimension 3 it is 1, x, y, z
+        \param poly_order           [in] - polynomial basis degree
+        \param specific_order_only  [in] - boolean for only evaluating one degree of polynomial when true
+        \param V                    [in] - orthonormal basis matrix size _dimensions * _dimensions whose first _dimensions-1 columns are an approximation of the tangent plane
+        \param reconstruction_space [in] - space of polynomial that a sampling functional is to evaluate
+        \param sampling_strategy    [in] - sampling functional specification
+        \param additional_evaluation_local_index [in] - local index for evaluation sites 
+    */
+    KOKKOS_INLINE_FUNCTION
+    void calcHessianPij(const member_type& teamMember, double* delta, double* thread_workspace, const int target_index, int neighbor_index, const double alpha, const int partial_direction_1, const int partial_direction_2, const int dimension, const int poly_order, bool specific_order_only, const scratch_matrix_right_type* V, const ReconstructionSpace reconstruction_space, const SamplingFunctional sampling_strategy, const int additional_evaluation_local_index = 0) const;
 
     /*! \brief Fills the _P matrix with either P or P*sqrt(w)
         \param teamMember           [in] - Kokkos::TeamPolicy member type (created by parallel_for)
         \param delta            [in/out] - scratch space that is allocated so that each thread has its own copy. Must be at least as large is the _basis_multipler*the dimension of the polynomial basis.
+        \param thread_workspace [in/out] - scratch space that is allocated so that each thread has its own copy. Must be at least as large as the _poly_order*the spatial dimension of the polynomial basis.
         \param P                   [out] - 2D Kokkos View which will contain evaluation of sampling functional on polynomial basis for each neighbor the target has (stored column major)
         \param w                   [out] - 1D Kokkos View which will contain weighting kernel values for the target with each neighbor if weight_p = true
         \param dimension            [in] - spatial dimension of basis to evaluate. e.g. dimension two basis of order one is 1, x, y, whereas for dimension 3 it is 1, x, y, z
@@ -324,7 +351,7 @@ protected:
         \param sampling_strategy    [in] - sampling functional specification
     */
     KOKKOS_INLINE_FUNCTION
-    void createWeightsAndP(const member_type& teamMember, scratch_vector_type delta, scratch_matrix_right_type P, scratch_vector_type w, const int dimension, int polynomial_order, bool weight_p = false, scratch_matrix_right_type* V = NULL, const ReconstructionSpace reconstruction_space = ReconstructionSpace::ScalarTaylorPolynomial, const SamplingFunctional sampling_strategy = PointSample) const;
+    void createWeightsAndP(const member_type& teamMember, scratch_vector_type delta, scratch_vector_type thread_workspace, scratch_matrix_right_type P, scratch_vector_type w, const int dimension, int polynomial_order, bool weight_p = false, scratch_matrix_right_type* V = NULL, const ReconstructionSpace reconstruction_space = ReconstructionSpace::ScalarTaylorPolynomial, const SamplingFunctional sampling_strategy = PointSample) const;
 
     /*! \brief Fills the _P matrix with P*sqrt(w) for use in solving for curvature
 
@@ -332,6 +359,7 @@ protected:
 
         \param teamMember           [in] - Kokkos::TeamPolicy member type (created by parallel_for)
         \param delta            [in/out] - scratch space that is allocated so that each thread has its own copy. Must be at least as large is the _basis_multipler*the dimension of the polynomial basis.
+        \param thread_workspace [in/out] - scratch space that is allocated so that each thread has its own copy. Must be at least as large as the _poly_order*the spatial dimension of the polynomial basis.
         \param P                   [out] - 2D Kokkos View which will contain evaluation of sampling functional on polynomial basis for each neighbor the target has (stored column major)
         \param w                   [out] - 1D Kokkos View which will contain weighting kernel values for the target with each neighbor if weight_p = true
         \param dimension            [in] - spatial dimension of basis to evaluate. e.g. dimension two basis of order one is 1, x, y, whereas for dimension 3 it is 1, x, y, z
@@ -339,12 +367,12 @@ protected:
         \param V                    [in] - orthonormal basis matrix size _dimensions * _dimensions whose first _dimensions-1 columns are an approximation of the tangent plane
     */
     KOKKOS_INLINE_FUNCTION
-    void createWeightsAndPForCurvature(const member_type& teamMember, scratch_vector_type delta, scratch_matrix_right_type P, scratch_vector_type w, const int dimension, bool only_specific_order, scratch_matrix_right_type* V = NULL) const;
+    void createWeightsAndPForCurvature(const member_type& teamMember, scratch_vector_type delta, scratch_vector_type thread_workspace, scratch_matrix_right_type P, scratch_vector_type w, const int dimension, bool only_specific_order, scratch_matrix_right_type* V = NULL) const;
 
     /*! \brief Evaluates a polynomial basis with a target functional applied to each member of the basis
         \param teamMember                   [in] - Kokkos::TeamPolicy member type (created by parallel_for)
-        \param t1                       [in/out] - scratch space that is allocated so that each team has its own copy. Must be at least as large is the _basis_multipler*the dimension of the polynomial basis.
-        \param t2                       [in/out] - scratch space that is allocated so that each team has its own copy. Must be at least as large is the _basis_multipler*the dimension of the polynomial basis.
+        \param delta                    [in/out] - scratch space that is allocated so that each thread has its own copy. Must be at least as large is the _basis_multipler*the dimension of the polynomial basis.
+        \param thread_workspace         [in/out] - scratch space that is allocated so that each team has its own copy. Must be at least as large is the _poly_order*_global_dimensions.
         \param P_target_row                [out] - 1D Kokkos View where the evaluation of the polynomial basis is stored
     */
     KOKKOS_INLINE_FUNCTION
@@ -355,8 +383,8 @@ protected:
         _operations is used by this function which is set through a modifier function
 
         \param teamMember                   [in] - Kokkos::TeamPolicy member type (created by parallel_for)
-        \param t1                       [in/out] - scratch space that is allocated so that each team has its own copy. Must be at least as large is the _basis_multipler*the dimension of the polynomial basis.
-        \param t2                       [in/out] - scratch space that is allocated so that each team has its own copy. Must be at least as large is the _basis_multipler*the dimension of the polynomial basis.
+        \param delta                    [in/out] - scratch space that is allocated so that each thread has its own copy. Must be at least as large is the _basis_multipler*the dimension of the polynomial basis.
+        \param thread_workspace         [in/out] - scratch space that is allocated so that each thread has its own copy. Must be at least as large as the _curvature_poly_order*the spatial dimension of the polynomial basis.
         \param P_target_row                [out] - 1D Kokkos View where the evaluation of the polynomial basis is stored
         \param V                            [in] - orthonormal basis matrix size _dimensions * _dimensions whose first _dimensions-1 columns are an approximation of the tangent plane
     */
@@ -368,8 +396,8 @@ protected:
          _operations is used by this function which is set through a modifier function
 
         \param teamMember                   [in] - Kokkos::TeamPolicy member type (created by parallel_for)
-        \param t1                       [in/out] - scratch space that is allocated so that each team has its own copy. Must be at least as large is the _basis_multipler*the dimension of the polynomial basis.
-        \param t2                       [in/out] - scratch space that is allocated so that each team has its own copy. Must be at least as large is the _basis_multipler*the dimension of the polynomial basis.
+        \param delta                    [in/out] - scratch space that is allocated so that each thread has its own copy. Must be at least as large is the _basis_multipler*the dimension of the polynomial basis.
+        \param thread_workspace         [in/out] - scratch space that is allocated so that each thread has its own copy. Must be at least as large as the _curvature_poly_order*the spatial dimension of the polynomial basis.
         \param P_target_row                [out] - 1D Kokkos View where the evaluation of the polynomial basis is stored
         \param V                            [in] - orthonormal basis matrix size _dimensions * _dimensions whose first _dimensions-1 columns are an approximation of the tangent plane
         \param G_inv                        [in] - (_dimensions-1)*(_dimensions-1) Kokkos View containing inverse of metric tensor
@@ -645,6 +673,7 @@ public:
         _reference_outward_normal_direction_provided = false;
         _use_reference_outward_normal_direction_provided_to_orient_surface = false;
         _entire_batch_computed_at_once = true;
+        _store_PTWP_inv_PTW = false;
 
         _initial_index_for_batch = 0;
 
@@ -781,43 +810,9 @@ public:
     KOKKOS_INLINE_FUNCTION
     static int getNP(const int m, const int dimension = 3, const ReconstructionSpace r_space = ReconstructionSpace::ScalarTaylorPolynomial) {
         if (r_space != ReconstructionSpace::DivergenceFreeVectorTaylorPolynomial) {
-            if (dimension == 3) return (m+1)*(m+2)*(m+3)/6;
-            else if (dimension == 2) return (m+1)*(m+2)/2;
-            else return m+1;
+            return ScalarTaylorPolynomialBasis::getSize(m, dimension);
         } else {
-            if (dimension == 3)
-                switch (m) {
-                    case 0:
-                        return 3;
-                    case 1:
-                        return 11;
-                    case 2:
-                        return 26;
-                    case 3:
-                        return 50;
-                    case 4:
-                        return 85;
-                    default:
-                        compadre_kernel_assert_release((false) && "Divergence-free basis only supports up to 4th-order polynomials.");
-                        return 0; // avoids warning about no return
-                }
-            if (dimension == 2) 
-                switch (m) {
-                    case 0:
-                        return 2;
-                    case 1:
-                        return 5;
-                    case 2:
-                        return 9;
-                    case 3:
-                        return 14;
-                    case 4:
-                        return 20;
-                    default:
-                        compadre_kernel_assert_release((false) && "Divergence-free basis only supports up to 4th-order polynomials.");
-                        return 0; // avoids warning about no return
-                }
-            else return -1;
+            return DivergenceFreePolynomialBasis::getSize(m, dimension);
         }
     }
 
@@ -925,6 +920,8 @@ public:
         auto M_by_N = this->getPolynomialCoefficientsDomainRangeSize();
         compadre_assert_release(_entire_batch_computed_at_once 
                 && "Entire batch not computed at once, so getFullPolynomialCoefficientsBasis() can not be called.");
+        compadre_assert_release(_store_PTWP_inv_PTW
+                && "generateAlphas() called with keep_coefficients set to false.");
         host_managed_local_index_type sizes("sizes", 2);
         if ((_constraint_type == ConstraintType::NO_CONSTRAINT) && (_dense_solver_type != DenseSolverType::LU)) {
             int rhsdim = getRHSSquareDim(_dense_solver_type, _constraint_type, _reconstruction_space, _dimensions, M_by_N[1], M_by_N[0]);
@@ -1063,6 +1060,8 @@ public:
     decltype(_RHS) getFullPolynomialCoefficientsBasis() const { 
         compadre_assert_release(_entire_batch_computed_at_once 
                 && "Entire batch not computed at once, so getFullPolynomialCoefficientsBasis() can not be called.");
+        compadre_assert_release(_store_PTWP_inv_PTW
+                && "generateAlphas() called with keep_coefficients set to false.");
         if ((_constraint_type == ConstraintType::NO_CONSTRAINT) && (_dense_solver_type != DenseSolverType::LU)) {
             return _RHS; 
         } else {
@@ -1275,7 +1274,7 @@ public:
         _host_neighbor_lists = Kokkos::create_mirror_view(_neighbor_lists);
 
         typedef typename view_type::memory_space input_array_memory_space;
-        if (std::is_same<input_array_memory_space, device_execution_space::memory_space>::value) {
+        if (std::is_same<input_array_memory_space, device_memory_space>::value) {
             // check if on the device, then copy directly
             // if it is, then it doesn't match the internal layout we use
             // then copy to the host mirror
@@ -1331,7 +1330,7 @@ public:
                 source_coordinates.extent(0), source_coordinates.extent(1));
 
         typedef typename view_type::memory_space input_array_memory_space;
-        if (std::is_same<input_array_memory_space, device_execution_space::memory_space>::value) {
+        if (std::is_same<input_array_memory_space, device_memory_space>::value) {
             // check if on the device, then copy directly
             // if it is, then it doesn't match the internal layout we use
             // then copy to the host mirror
@@ -1366,7 +1365,7 @@ public:
                 target_coordinates.extent(0), target_coordinates.extent(1));
 
         typedef typename view_type::memory_space input_array_memory_space;
-        if (std::is_same<input_array_memory_space, device_execution_space::memory_space>::value) {
+        if (std::is_same<input_array_memory_space, device_memory_space>::value) {
             // check if on the device, then copy directly
             // if it is, then it doesn't match the internal layout we use
             // then copy to the host mirror
@@ -1538,7 +1537,7 @@ public:
             evaluation_coordinates.extent(0), evaluation_coordinates.extent(1));
 
         typedef typename view_type::memory_space input_array_memory_space;
-        if (std::is_same<input_array_memory_space, device_execution_space::memory_space>::value) {
+        if (std::is_same<input_array_memory_space, device_memory_space>::value) {
             // check if on the device, then copy directly
             // if it is, then it doesn't match the internal layout we use
             // then copy to the host mirror
@@ -1578,7 +1577,7 @@ public:
         _host_additional_evaluation_indices = Kokkos::create_mirror_view(_additional_evaluation_indices);
 
         typedef typename view_type::memory_space input_array_memory_space;
-        if (std::is_same<input_array_memory_space, device_execution_space::memory_space>::value) {
+        if (std::is_same<input_array_memory_space, device_memory_space>::value) {
             // check if on the device, then copy directly
             // if it is, then it doesn't match the internal layout we use
             // then copy to the host mirror
@@ -1806,15 +1805,17 @@ public:
     //! that can later be contracted against data or degrees of freedom to form a
     //! global linear system.
     //! \param number_of_batches    [in] - how many batches to break up the total workload into (for storage)
+    //! \param keep_coefficients    [in] - whether to store (P^T W P)^-1 * P^T * W
     */
-    void generatePolynomialCoefficients(const int number_of_batches = 1);
+    void generatePolynomialCoefficients(const int number_of_batches = 1, const bool keep_coefficients = false);
 
     /*! \brief Meant to calculate target operations and apply the evaluations to the previously 
     //! constructed polynomial coefficients. But now that is inside of generatePolynomialCoefficients because
     //! it must be to handle number_of_batches>1. Effectively, this just calls generatePolynomialCoefficients.
     //! \param number_of_batches    [in] - how many batches to break up the total workload into (for storage)
+    //! \param keep_coefficients    [in] - whether to store (P^T W P)^-1 * P^T * W
     */
-    void generateAlphas(const int number_of_batches = 1);
+    void generateAlphas(const int number_of_batches = 1, const bool keep_coefficients = false);
 
 ///@}
 

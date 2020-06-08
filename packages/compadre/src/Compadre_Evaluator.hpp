@@ -37,11 +37,12 @@ struct SubviewND {
             compadre_assert_debug(((size_t)((column_num+1)*block_size-1)<_data_in.extent(1)) 
                     && "Subview asked for column > second dimension of input data.");
         }
-        if ((size_t)((column_num+1)*block_size-1)<_data_in.extent(1))
+        if ((size_t)((column_num+1)*block_size-1)<_data_in.extent(1)) {
             return Kokkos::subview(_data_in, Kokkos::ALL, Kokkos::make_pair(column_num*block_size, (column_num+1)*block_size));
-        else
+        } else {
             compadre_assert_debug(((size_t)(block_size-1)<_data_in.extent(1)) && "Subview asked for column > second dimension of input data.");
             return Kokkos::subview(_data_in, Kokkos::ALL, Kokkos::make_pair(0,block_size));
+        }
     }
 
     T2 copyToAndReturnOriginalView() {
@@ -94,11 +95,11 @@ struct SubviewND<T, T2, enable_if_t<(T::rank<2)> >
 //! Handles either 2D or 1D views as input, and they can be on the host or the device.
 template <typename T>
 auto CreateNDSliceOnDeviceView(T sampling_input_data_host_or_device, bool scalar_as_vector_if_needed) -> SubviewND<decltype(Kokkos::create_mirror_view(
-                    device_execution_space::memory_space(), sampling_input_data_host_or_device)), T> {
+                    device_memory_space(), sampling_input_data_host_or_device)), T> {
 
     // makes view on the device (does nothing if already on the device)
     auto sampling_input_data_device = Kokkos::create_mirror_view(
-        device_execution_space::memory_space(), sampling_input_data_host_or_device);
+        device_memory_space(), sampling_input_data_host_or_device);
     Kokkos::deep_copy(sampling_input_data_device, sampling_input_data_host_or_device);
     Kokkos::fence();
 
@@ -183,7 +184,7 @@ public:
     //! components in order to fill a vector target or matrix target.
     //! 
     //! Assumptions on input data:
-    //! \param output_data_single_column       [out] - 1D Kokkos View (memory space must be device_execution_space::memory_space())
+    //! \param output_data_single_column       [out] - 1D Kokkos View (memory space must be device_memory_space())
     //! \param sampling_data_single_column      [in] - 1D Kokkos View (memory space must match output_data_single_column)
     //! \param lro                              [in] - Target operation from the TargetOperation enum
     //! \param sro                              [in] - Sampling functional from the SamplingFunctional enum
@@ -295,7 +296,7 @@ public:
     //! components in order to transform a vector target.
     //! 
     //! Assumptions on input data:
-    //! \param output_data_single_column       [out] - 1D Kokkos View (memory space must be device_execution_space::memory_space())
+    //! \param output_data_single_column       [out] - 1D Kokkos View (memory space must be device_memory_space())
     //! \param sampling_data_single_column      [in] - 1D Kokkos View (memory space must match output_data_single_column)
     //! \param local_dim_index                  [in] - For manifold problems, this is the local coordinate direction that sampling data may need to be transformed to before the application of GMLS
     //! \param global_dim_index                 [in] - For manifold problems, this is the global coordinate direction that sampling data can be represented in
@@ -487,7 +488,7 @@ public:
     //! components in order to fill a vector target or matrix target.
     //! 
     //! Assumptions on input data:
-    //! \param output_data_block_column       [out] - 2D Kokkos View (memory space must be device_execution_space::memory_space())
+    //! \param output_data_block_column       [out] - 2D Kokkos View (memory space must be device_memory_space())
     //! \param sampling_data_single_column      [in] - 1D Kokkos View (memory space must match output_data_single_column)
     //! \param sro                              [in] - Sampling functional from the SamplingFunctional enum
     //! \param target_index                     [in] - Target # user wants to reconstruct target functional at, corresponds to row number of neighbor_lists

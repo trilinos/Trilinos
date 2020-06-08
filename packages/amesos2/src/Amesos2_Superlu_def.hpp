@@ -60,6 +60,16 @@
 #include "Amesos2_SolverCore_def.hpp"
 #include "Amesos2_Superlu_decl.hpp"
 
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
+// TODO: This 'using namespace SLU' is not a good thing.
+// It was added because kernels does not namespace SuperLU but Amesos2 does.
+// Declaring the namespace SLU allows us to reuse that file without duplication.
+// We need to determine a uniform system to avoid this this but for now, at least
+// this issue is only present when TRSV is enabled.
+using namespace SLU;
+#include "KokkosSparse_sptrsv_superlu.hpp"
+#endif
+
 namespace Amesos2 {
 
 
@@ -69,10 +79,8 @@ Superlu<Matrix,Vector>::Superlu(
   Teuchos::RCP<Vector>       X,
   Teuchos::RCP<const Vector> B )
   : SolverCore<Amesos2::Superlu,Matrix,Vector>(A, X, B)
-  , nzvals_()                   // initialize to empty arrays
-  , rowind_()
-  , colptr_()
-  , is_contiguous_(true)
+  , is_contiguous_(true) // default is set by params
+  , use_triangular_solves_(false) // default is set by params
 {
   // ilu_set_default_options is called later in set parameter list if required.
   // This is not the ideal way, but the other option to always call
@@ -85,11 +93,11 @@ Superlu<Matrix,Vector>::Superlu(
 
   SLU::StatInit(&(data_.stat));
 
-  data_.perm_r.resize(this->globalNumRows_);
-  data_.perm_c.resize(this->globalNumCols_);
-  data_.etree.resize(this->globalNumCols_);
-  data_.R.resize(this->globalNumRows_);
-  data_.C.resize(this->globalNumCols_);
+  Kokkos::resize(data_.perm_r, this->globalNumRows_);
+  Kokkos::resize(data_.perm_c, this->globalNumCols_);
+  Kokkos::resize(data_.etree, this->globalNumCols_);
+  Kokkos::resize(data_.R, this->globalNumRows_);
+  Kokkos::resize(data_.C, this->globalNumCols_);
 
   data_.relax = SLU::sp_ienv(2); // Query optimal relax param from superlu
   data_.panel_size = SLU::sp_ienv(1); // Query optimal panel size
@@ -199,7 +207,7 @@ Superlu<Matrix,Vector>::preOrdering_impl()
     Teuchos::TimeMonitor preOrderTimer(this->timers_.preOrderTime_);
 #endif
 
-    SLU::get_perm_c(permc_spec, &(data_.A), data_.perm_c.getRawPtr());
+    SLU::get_perm_c(permc_spec, &(data_.A), data_.perm_c.data());
   }
 
   return(0);
@@ -263,8 +271,8 @@ Superlu<Matrix,Vector>::numericFactorization_impl()
       int info2 = 0;
 
       // calculate row and column scalings
-      function_map::gsequ(&(data_.A), data_.R.getRawPtr(),
-                          data_.C.getRawPtr(), &rowcnd, &colcnd,
+      function_map::gsequ(&(data_.A), data_.R.data(),
+                          data_.C.data(), &rowcnd, &colcnd,
                           &amax, &info2);
       TEUCHOS_TEST_FOR_EXCEPTION
         (info2 < 0, std::runtime_error,
@@ -295,8 +303,8 @@ Superlu<Matrix,Vector>::numericFactorization_impl()
       }
 
       // apply row and column scalings if necessary
-      function_map::laqgs(&(data_.A), data_.R.getRawPtr(),
-                          data_.C.getRawPtr(), rowcnd, colcnd,
+      function_map::laqgs(&(data_.A), data_.R.data(),
+                          data_.C.data(), rowcnd, colcnd,
                           amax, &(data_.equed));
 
       // // check what types of equilibration was actually done
@@ -306,8 +314,8 @@ Superlu<Matrix,Vector>::numericFactorization_impl()
 
     // Apply the column permutation computed in preOrdering.  Place the
     // column-permuted matrix in AC
-    SLU::sp_preorder(&(data_.options), &(data_.A), data_.perm_c.getRawPtr(),
-                     data_.etree.getRawPtr(), &(data_.AC));
+    SLU::sp_preorder(&(data_.options), &(data_.A), data_.perm_c.data(),
+                     data_.etree.data(), &(data_.AC));
 
     { // Do factorization
 #ifdef HAVE_AMESOS2_TIMERS
@@ -323,8 +331,8 @@ Superlu<Matrix,Vector>::numericFactorization_impl()
 
       if(ILU_Flag_==false) {
         function_map::gstrf(&(data_.options), &(data_.AC),
-            data_.relax, data_.panel_size, data_.etree.getRawPtr(),
-            NULL, 0, data_.perm_c.getRawPtr(), data_.perm_r.getRawPtr(),
+            data_.relax, data_.panel_size, data_.etree.data(),
+            NULL, 0, data_.perm_c.data(), data_.perm_r.data(),
             &(data_.L), &(data_.U), 
 #ifdef HAVE_AMESOS2_SUPERLU5_API
             &(data_.lu), 
@@ -333,8 +341,8 @@ Superlu<Matrix,Vector>::numericFactorization_impl()
       }
       else {
         function_map::gsitrf(&(data_.options), &(data_.AC),
-            data_.relax, data_.panel_size, data_.etree.getRawPtr(),
-            NULL, 0, data_.perm_c.getRawPtr(), data_.perm_r.getRawPtr(),
+            data_.relax, data_.panel_size, data_.etree.data(),
+            NULL, 0, data_.perm_c.data(), data_.perm_r.data(),
             &(data_.L), &(data_.U), 
 #ifdef HAVE_AMESOS2_SUPERLU5_API
             &(data_.lu), 
@@ -365,6 +373,10 @@ Superlu<Matrix,Vector>::numericFactorization_impl()
   data_.options.Fact = SLU::FACTORED;
   same_symbolic_ = true;
 
+  if(use_triangular_solves_) {
+    triangular_solve_factor();
+  }
+
   return(info);
 }
 
@@ -379,26 +391,62 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
   const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
   const size_t nrhs = X->getGlobalNumVectors();
 
-  const size_t val_store_size = as<size_t>(ld_rhs * nrhs);
-  Teuchos::Array<slu_type> xValues(val_store_size);
-  Teuchos::Array<slu_type> bValues(val_store_size);
-
   {                             // Get values from RHS B
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
     Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
 #endif
-    if ( is_contiguous_ == true ) {
-      Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
-        slu_type>::do_get(B, bValues(),
+
+    // In general we may want to write directly to the x space without a copy.
+    // So we 'get' x which may be a direct view assignment to the MV.
+    if(use_triangular_solves_) { // to device
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
+      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+        device_solve_array_t>::do_get(X, device_xValues_,
             as<size_t>(ld_rhs),
-            ROOTED, this->rowIndexBase_);
+            (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+            this->rowIndexBase_);
+      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+        device_solve_array_t>::do_get(B, device_bValues_,
+            as<size_t>(ld_rhs),
+            (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+            this->rowIndexBase_);
+#endif
+    }
+    else { // to host
+      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+        host_solve_array_t>::do_get(X, host_xValues_,
+            as<size_t>(ld_rhs),
+            (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+            this->rowIndexBase_);
+      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+        host_solve_array_t>::do_get(B, host_bValues_,
+            as<size_t>(ld_rhs),
+            (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+            this->rowIndexBase_);
+    }
+  }
+
+  // If equilibration was applied at numeric, then gssvx and gsisx are going to
+  // modify B, so we can't use the optimized assignment to B since we'll change
+  // the source test vector and then fail the subsequent cycle. We need a copy.
+  // TODO: If above get_1d_copy_helper_kokkos_view already copied then we can
+  // skip this. Generally need an API which tells us what happened internally
+  // in above get_1d_copy_helper_kokkos_view - whether is was copy or assign.
+  if(data_.equed != 'N') {
+    if(use_triangular_solves_) { // to device
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
+      device_solve_array_t copyB(Kokkos::ViewAllocateWithoutInitializing("copyB"),
+        device_bValues_.extent(0), device_bValues_.extent(1));
+      Kokkos::deep_copy(copyB, device_bValues_);
+      device_bValues_ = copyB;
+#endif
     }
     else {
-      Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
-        slu_type>::do_get(B, bValues(),
-            as<size_t>(ld_rhs),
-            CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
+      host_solve_array_t copyB(Kokkos::ViewAllocateWithoutInitializing("copyB"),
+        host_bValues_.extent(0), host_bValues_.extent(1));
+      Kokkos::deep_copy(copyB, host_bValues_);
+      host_bValues_ = copyB;
     }
   }
 
@@ -406,55 +454,74 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
 
   magnitude_type rpg, rcond;
   if ( this->root_ ) {
-    data_.ferr.resize(nrhs);
-    data_.berr.resize(nrhs);
-
-    {
-#ifdef HAVE_AMESOS2_TIMERS
-      Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
-#endif
-      SLU::Dtype_t dtype = type_map::dtype;
-      int i_ld_rhs = as<int>(ld_rhs);
-      function_map::create_Dense_Matrix(&(data_.B), i_ld_rhs, as<int>(nrhs),
-                                        bValues.getRawPtr(), i_ld_rhs,
-                                        SLU::SLU_DN, dtype, SLU::SLU_GE);
-      function_map::create_Dense_Matrix(&(data_.X), i_ld_rhs, as<int>(nrhs),
-                                        xValues.getRawPtr(), i_ld_rhs,
-                                        SLU::SLU_DN, dtype, SLU::SLU_GE);
-    }
-
     // Note: the values of B and X (after solution) are adjusted
     // appropriately within gssvx for row and column scalings.
-
     {                           // Do solve!
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
 
-    if(ILU_Flag_==false) {
-      function_map::gssvx(&(data_.options), &(data_.A),
-          data_.perm_c.getRawPtr(), data_.perm_r.getRawPtr(),
-          data_.etree.getRawPtr(), &(data_.equed), data_.R.getRawPtr(),
-          data_.C.getRawPtr(), &(data_.L), &(data_.U), NULL, 0, &(data_.B),
-          &(data_.X), &rpg, &rcond, data_.ferr.getRawPtr(),
-          data_.berr.getRawPtr(), 
-#ifdef HAVE_AMESOS2_SUPERLU5_API
-          &(data_.lu), 
-#endif
-          &(data_.mem_usage), &(data_.stat), &ierr);
+    if(use_triangular_solves_) {
+      triangular_solve();
     }
     else {
-      function_map::gsisx(&(data_.options), &(data_.A),
-          data_.perm_c.getRawPtr(), data_.perm_r.getRawPtr(),
-          data_.etree.getRawPtr(), &(data_.equed), data_.R.getRawPtr(),
-          data_.C.getRawPtr(), &(data_.L), &(data_.U), NULL, 0, &(data_.B),
-          &(data_.X), &rpg, &rcond, 
-#ifdef HAVE_AMESOS2_SUPERLU5_API
-          &(data_.lu), 
-#endif
-          &(data_.mem_usage), &(data_.stat), &ierr);
+      Kokkos::resize(data_.ferr, nrhs);
+      Kokkos::resize(data_.berr, nrhs);
+
+      {
+  #ifdef HAVE_AMESOS2_TIMERS
+        Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
+  #endif
+        SLU::Dtype_t dtype = type_map::dtype;
+        int i_ld_rhs = as<int>(ld_rhs);
+        function_map::create_Dense_Matrix(&(data_.B), i_ld_rhs, as<int>(nrhs),
+                                          convert_bValues_, host_bValues_, i_ld_rhs,
+                                          SLU::SLU_DN, dtype, SLU::SLU_GE);
+        function_map::create_Dense_Matrix(&(data_.X), i_ld_rhs, as<int>(nrhs),
+                                          convert_xValues_, host_xValues_, i_ld_rhs,
+                                          SLU::SLU_DN, dtype, SLU::SLU_GE);
+      }
+
+      if(ILU_Flag_==false) {
+        function_map::gssvx(&(data_.options), &(data_.A),
+            data_.perm_c.data(), data_.perm_r.data(),
+            data_.etree.data(), &(data_.equed), data_.R.data(),
+            data_.C.data(), &(data_.L), &(data_.U), NULL, 0, &(data_.B),
+            &(data_.X), &rpg, &rcond, data_.ferr.data(),
+            data_.berr.data(),
+  #ifdef HAVE_AMESOS2_SUPERLU5_API
+            &(data_.lu),
+  #endif
+            &(data_.mem_usage), &(data_.stat), &ierr);
+      }
+      else {
+        function_map::gsisx(&(data_.options), &(data_.A),
+            data_.perm_c.data(), data_.perm_r.data(),
+            data_.etree.data(), &(data_.equed), data_.R.data(),
+            data_.C.data(), &(data_.L), &(data_.U), NULL, 0, &(data_.B),
+            &(data_.X), &rpg, &rcond,
+  #ifdef HAVE_AMESOS2_SUPERLU5_API
+            &(data_.lu),
+  #endif
+            &(data_.mem_usage), &(data_.stat), &ierr);
+      }
+
+      // Cleanup X and B stores
+      SLU::Destroy_SuperMatrix_Store( &(data_.X) );
+      SLU::Destroy_SuperMatrix_Store( &(data_.B) );
+      data_.X.Store = NULL;
+      data_.B.Store = NULL;
     }
 
+    } // do solve
+
+    // convert back to Kokkos views
+    {
+#ifdef HAVE_AMESOS2_TIMERS
+      Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
+#endif
+      function_map::convert_back_Dense_Matrix(convert_bValues_, host_bValues_);
+      function_map::convert_back_Dense_Matrix(convert_xValues_, host_xValues_);
     }
 
     // Cleanup X and B stores
@@ -485,18 +552,23 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif
 
-    if ( is_contiguous_ == true ) {
-      Util::put_1d_data_helper<
-        MultiVecAdapter<Vector>,slu_type>::do_put(X, xValues(),
-            as<size_t>(ld_rhs),
-            ROOTED, this->rowIndexBase_);
-    }
-    else {
-      Util::put_1d_data_helper<
-        MultiVecAdapter<Vector>,slu_type>::do_put(X, xValues(),
-            as<size_t>(ld_rhs),
-            CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
-    }
+  if(use_triangular_solves_) { // to device
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
+    Util::put_1d_data_helper_kokkos_view<
+      MultiVecAdapter<Vector>,device_solve_array_t>::do_put(X, device_xValues_,
+          as<size_t>(ld_rhs),
+          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+          this->rowIndexBase_);
+#endif
+  }
+  else {
+    Util::put_1d_data_helper_kokkos_view<
+      MultiVecAdapter<Vector>,host_solve_array_t>::do_put(X, host_xValues_,
+          as<size_t>(ld_rhs),
+          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+          this->rowIndexBase_);
+  }
+
   }
 
 
@@ -594,8 +666,14 @@ Superlu<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Parameter
 
   data_.options.ILU_FillTol = parameterList->get<double>("ILU_FillTol", 0.01);
 
-  if( parameterList->isParameter("IsContiguous") ){
-    is_contiguous_ = parameterList->get<bool>("IsContiguous");
+  is_contiguous_ = parameterList->get<bool>("IsContiguous", true);
+  use_triangular_solves_ = parameterList->get<bool>("Enable_KokkosKernels_TriangularSolves", false);
+
+  if(use_triangular_solves_) {
+#if not defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) || not defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+      "Calling for triangular solves but KokkosKernels_ENABLE_SUPERNODAL_SPTRSV and KokkosKernels_ENABLE_TPL_SUPERLU were not configured." );
+#endif
   }
 }
 
@@ -717,6 +795,8 @@ Superlu<Matrix,Vector>::getValidParameters_impl() const
 
     pl->set("ILU_Flag", false, "ILU flag: if true, run ILU routines");
 
+    pl->set("Enable_KokkosKernels_TriangularSolves", false, "Whether to use triangular solves.");
+
     pl->set("IsContiguous", true, "Whether GIDs contiguous");
 
     valid_params = pl;
@@ -747,9 +827,9 @@ Superlu<Matrix,Vector>::loadA_impl(EPhase current_phase)
 
   // Only the root image needs storage allocated
   if( this->root_ ){
-    nzvals_.resize(this->globalNumNonZeros_);
-    rowind_.resize(this->globalNumNonZeros_);
-    colptr_.resize(this->globalNumCols_ + 1);
+    Kokkos::resize(host_nzvals_view_, this->globalNumNonZeros_);
+    Kokkos::resize(host_rows_view_, this->globalNumNonZeros_);
+    Kokkos::resize(host_col_ptr_view_, this->globalNumRows_ + 1);
   }
 
   int nnz_ret = 0;
@@ -763,18 +843,20 @@ Superlu<Matrix,Vector>::loadA_impl(EPhase current_phase)
                         "Row and column maps have different indexbase ");
 
     if ( is_contiguous_ == true ) {
-      Util::get_ccs_helper<
-        MatrixAdapter<Matrix>,slu_type,int,int>::do_get(this->matrixA_.ptr(),
-            nzvals_(), rowind_(),
-            colptr_(), nnz_ret, ROOTED,
+      Util::get_ccs_helper_kokkos_view<
+        MatrixAdapter<Matrix>,host_value_type_array,host_ordinal_type_array,
+          host_size_type_array>::do_get(this->matrixA_.ptr(),
+            host_nzvals_view_, host_rows_view_,
+            host_col_ptr_view_, nnz_ret, ROOTED,
             ARBITRARY,
             this->rowIndexBase_);
     }
     else {
-      Util::get_ccs_helper<
-        MatrixAdapter<Matrix>,slu_type,int,int>::do_get(this->matrixA_.ptr(),
-            nzvals_(), rowind_(),
-            colptr_(), nnz_ret, CONTIGUOUS_AND_ROOTED,
+      Util::get_ccs_helper_kokkos_view<
+        MatrixAdapter<Matrix>,host_value_type_array,host_ordinal_type_array,
+          host_size_type_array>::do_get(this->matrixA_.ptr(),
+            host_nzvals_view_, host_rows_view_,
+            host_col_ptr_view_, nnz_ret, CONTIGUOUS_AND_ROOTED,
             ARBITRARY,
             this->rowIndexBase_);
     }
@@ -788,18 +870,133 @@ Superlu<Matrix,Vector>::loadA_impl(EPhase current_phase)
                         std::runtime_error,
                         "Did not get the expected number of non-zero vals");
 
-    function_map::create_CompCol_Matrix( &(data_.A),
+    function_map::template create_CompCol_Matrix<host_value_type_array>( &(data_.A),
                                          this->globalNumRows_, this->globalNumCols_,
                                          nnz_ret,
-                                         nzvals_.getRawPtr(),
-                                         rowind_.getRawPtr(),
-                                         colptr_.getRawPtr(),
+                                         convert_nzvals_, host_nzvals_view_,
+                                         host_rows_view_.data(),
+                                         host_col_ptr_view_.data(),
                                          SLU::SLU_NC, dtype, SLU::SLU_GE);
   }
 
   return true;
 }
 
+template <class Matrix, class Vector>
+void
+Superlu<Matrix,Vector>::triangular_solve_factor()
+{
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
+  size_t ld_rhs = this->matrixA_->getGlobalNumRows();
+
+  // convert etree to parents
+  SLU::SCformat * Lstore = (SLU::SCformat*)(data_.L.Store);
+  int nsuper = 1 + Lstore->nsuper;     // # of supernodal columns
+  Kokkos::resize(data_.parents, nsuper);
+  for (int s = 0; s < nsuper; s++) {
+    int j = Lstore->sup_to_col[s+1]-1; // the last column index of this supernode
+    if (data_.etree[j] == static_cast<int>(ld_rhs)) {
+        data_.parents(s) = -1;
+    } else {
+        data_.parents(s) = Lstore->col_to_sup[data_.etree[j]];
+    }
+  }
+
+  deep_copy_or_assign_view(device_trsv_perm_r_, data_.perm_r); // will use device to permute
+  deep_copy_or_assign_view(device_trsv_perm_c_, data_.perm_c); // will use device to permute
+
+  // Create handles for U and U^T solves
+  device_khL_.create_sptrsv_handle(
+    KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_ETREE, ld_rhs, true);
+  device_khU_.create_sptrsv_handle(
+    KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_ETREE, ld_rhs, false);
+
+  const bool u_in_csr = true; // TODO: add needed params
+  device_khU_.set_sptrsv_column_major (!u_in_csr);
+
+  const bool merge = false; // TODO: add needed params
+  device_khL_.set_sptrsv_merge_supernodes (merge);
+  device_khU_.set_sptrsv_merge_supernodes (merge);
+
+  // specify whether to invert diagonal blocks
+  const bool invert_diag = true; // TODO: add needed params
+  device_khL_.set_sptrsv_invert_diagonal (invert_diag);
+  device_khU_.set_sptrsv_invert_diagonal (invert_diag);
+
+  // specify wheather to apply diagonal-inversion to off-diagonal blocks (optional, default is false)
+  const bool invert_offdiag = false; // TODO: add needed params
+  device_khL_.set_sptrsv_invert_offdiagonal (invert_offdiag);
+  device_khU_.set_sptrsv_invert_offdiagonal (invert_offdiag);
+
+  // set etree
+  device_khL_.set_sptrsv_etree(data_.parents.data());
+  device_khU_.set_sptrsv_etree(data_.parents.data());
+
+  // set permutation
+  device_khL_.set_sptrsv_perm(data_.perm_r.data());
+  device_khU_.set_sptrsv_perm(data_.perm_c.data());
+
+  int block_size  = -1; // TODO: add needed params
+  if (block_size >= 0) {
+    std::cout << " Block Size         : " << block_size << std::endl;
+    device_khL_.set_sptrsv_diag_supernode_sizes (block_size, block_size);
+    device_khU_.set_sptrsv_diag_supernode_sizes (block_size, block_size);
+  }
+
+  // Do symbolic analysis
+  KokkosSparse::Experimental::sptrsv_symbolic
+    (&device_khL_, &device_khU_, data_.L, data_.U);
+
+  // Do numerical compute
+  KokkosSparse::Experimental::sptrsv_compute
+    (&device_khL_, &device_khU_, data_.L, data_.U);
+#endif // HAVE_AMESOS2_TRIANGULAR_SOLVE
+}
+
+template <class Matrix, class Vector>
+void
+Superlu<Matrix,Vector>::triangular_solve() const
+{
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
+  size_t ld_rhs = device_xValues_.extent(0);
+  size_t nrhs = device_xValues_.extent(1);
+
+  Kokkos::resize(device_trsv_rhs_, ld_rhs, nrhs);
+  Kokkos::resize(device_trsv_sol_, ld_rhs, nrhs);
+
+  // forward pivot
+  auto local_device_bValues = device_bValues_;
+  auto local_device_trsv_perm_r = device_trsv_perm_r_;
+  auto local_device_trsv_rhs = device_trsv_rhs_;
+  Kokkos::parallel_for(Kokkos::RangePolicy<DeviceExecSpaceType>(0, ld_rhs),
+    KOKKOS_LAMBDA(size_t j) {
+    for(size_t k = 0; k < nrhs; ++k) {
+      local_device_trsv_rhs(local_device_trsv_perm_r(j),k) = local_device_bValues(j,k);
+    }
+  });
+
+  for(size_t k = 0; k < nrhs; ++k) { // sptrsv_solve does not batch
+    auto sub_sol = Kokkos::subview(device_trsv_sol_, Kokkos::ALL, k);
+    auto sub_rhs = Kokkos::subview(device_trsv_rhs_, Kokkos::ALL, k);
+
+    // do L solve= - numeric (only rhs is modified) on the default device/host space
+    KokkosSparse::Experimental::sptrsv_solve(&device_khL_, sub_sol, sub_rhs);
+
+    // do L^T solve - numeric (only rhs is modified) on the default device/host space
+    KokkosSparse::Experimental::sptrsv_solve(&device_khU_, sub_rhs, sub_sol);
+  } // end loop over rhs vectors
+
+  // backward pivot
+  auto local_device_xValues = device_xValues_;
+  auto local_device_trsv_perm_c = device_trsv_perm_c_;
+  Kokkos::parallel_for(Kokkos::RangePolicy<DeviceExecSpaceType>(0, ld_rhs),
+    KOKKOS_LAMBDA(size_t j) {
+    for(size_t k = 0; k < nrhs; ++k) {
+      local_device_xValues(j,k) = local_device_trsv_rhs(local_device_trsv_perm_c(j),k);
+    }
+  });
+#endif // HAVE_AMESOS2_TRIANGULAR_SOLVE
+}
 
 template<class Matrix, class Vector>
 const char* Superlu<Matrix,Vector>::name = "SuperLU";

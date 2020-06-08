@@ -450,6 +450,7 @@ public:
     algo_state.snorm = s.norm();
     algo_state.iter++;
     // Update objective function value
+    obj.update(x);
     algo_state.value = augLag.getObjectiveValue(x);
     // Update constraint value
     augLag.getConstraintVec(*(state->constraintVec),x);

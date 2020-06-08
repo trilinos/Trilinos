@@ -200,6 +200,15 @@ public:
   /// separate question.
   static size_t longRowMinNumEntries ();
 
+  /// \brief the threshold for transitioning from device to host
+  ///
+  /// If the number of elements in the multivector does not exceed this 
+  /// threshold and the data is on host, then run the calculation on
+  /// host.  Otherwise, run on device.
+  /// By default this is 10000, but may be altered by the environment
+  /// variable TPETRA_VECTOR_DEVICE_THRESHOLD
+  static size_t multivectorKernelLocationThreshold ();
+
   /// \brief Use Teuchos::Timer in Tpetra::ProfilingRegion
   ///
   /// This is disabled by default.  You may control this at run time via the
