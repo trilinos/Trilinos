@@ -65,3 +65,14 @@ function get_sparc_dev_module_name() {
   #echo "sparc_module_name = '${sparc_module_name}'"
   echo "${sparc_module_name}"
 }
+
+#
+# Remove the "substring" from the PATH var.
+# @param substring: the string to remove.
+#
+function atdm_remove_from_path() {
+  local substring=$(printf "%s" "$1" | sed 's/\//\\\//g')
+  local path=$(printf "%s" "$PATH" | sed "s/$substring://g")
+  path=$(printf "%s" "$path" | sed "s/:$substring//g")
+  export PATH=$path
+}
