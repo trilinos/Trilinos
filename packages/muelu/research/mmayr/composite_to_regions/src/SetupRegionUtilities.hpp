@@ -210,7 +210,7 @@ void createRegionData(const int numDimensions,
                       const Teuchos::RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > dofMap,
                       int& maxRegPerGID, LocalOrdinal& numLocalRegionNodes,
                       Teuchos::Array<int>& boundaryConditions,
-                      Teuchos::Array<GlobalOrdinal>& sendGIDs,
+                      Teuchos::Array<GlobalOrdinal>& sendGIDs, ///< GIDs of nodes
                       Teuchos::Array<int>& sendPIDs,
                       int& numInterfaces,
                       Teuchos::Array<LocalOrdinal>&  rNodesPerDim,
@@ -1022,16 +1022,22 @@ void createRegionData(const int numDimensions,
 
   // Here we gather the interface GIDs (in composite layout)
   // and the interface LIDs (in region layout) for the local rank
-  interfaceLIDsData.resize(sendGIDs.size() + receiveGIDs.size());
-  interfaceGIDs.resize(sendGIDs.size() + receiveGIDs.size());
+  interfaceLIDsData.resize((sendGIDs.size() + receiveGIDs.size()) * numDofsPerNode);
+  interfaceGIDs.resize((sendGIDs.size() + receiveGIDs.size()) * numDofsPerNode);
   using size_type = typename Teuchos::Array<GO>::size_type;
-  for(size_type idx = 0; idx < sendGIDs.size(); ++idx) {
-    interfaceGIDs[idx] = sendGIDs[idx];
-    interfaceLIDsData[idx] = compositeToRegionLIDs[sendLIDs[idx]];
+  for(size_type nodeIdx = 0; nodeIdx < sendGIDs.size(); ++nodeIdx) {
+    for(int dof = 0; dof < numDofsPerNode; ++dof) {
+      LO dofIdx = nodeIdx*numDofsPerNode + dof;
+      interfaceGIDs[dofIdx] = sendGIDs[nodeIdx] * numDofsPerNode + dof;
+      interfaceLIDsData[dofIdx] = compositeToRegionLIDs[sendLIDs[nodeIdx] * numDofsPerNode + dof];
+    }
   }
-  for(size_type idx = 0; idx < receiveGIDs.size(); ++idx) {
-    interfaceGIDs[idx + sendGIDs.size()] = receiveGIDs[idx];
-    interfaceLIDsData[idx + sendLIDs.size()] = receiveLIDs[idx];
+  for(size_type nodeIdx = 0; nodeIdx < receiveGIDs.size(); ++nodeIdx) {
+    for(int dof = 0; dof < numDofsPerNode; ++dof) {
+      LO dofIdx = nodeIdx*numDofsPerNode + dof;
+      interfaceGIDs[dofIdx + sendGIDs.size() * numDofsPerNode] = receiveGIDs[nodeIdx] * numDofsPerNode + dof;
+      interfaceLIDsData[dofIdx + sendLIDs.size() * numDofsPerNode] = receiveLIDs[nodeIdx] * numDofsPerNode + dof;
+    }
   }
 
   // Have all the GIDs and LIDs we stort them in place with std::sort()
@@ -1124,6 +1130,8 @@ void MakeRegionPerGIDWithGhosts(const Teuchos::RCP<Xpetra::Map<LocalOrdinal, Glo
     }
 
   }
+
+  // interfaceGIDsMV->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
 
 } // MakeRegionPerGIDWithGhosts
 
