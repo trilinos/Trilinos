@@ -173,7 +173,7 @@ module load sems-boost/1.59.0/base
 module load sems-netcdf/4.7.3/parallel
 module load sems-hdf5/1.10.6/parallel
 module load sems-zlib/1.2.8/base
-module unload sems-python/2.7.9
+module load sems-python/2.7.9
 module load sems-superlu/4.3/base
 
 if [[ "${ATDM_CONFIG_SHARED_LIBS}" == "ON" ]] ; then
