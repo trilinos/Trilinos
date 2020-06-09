@@ -89,7 +89,7 @@ namespace MueLu {
 #elif defined(HAVE_AMESOS2_BASKER)
       type_ = "Basker";
 #else
-      this->declareConstructionOutcome(true, "Amesos2 has been compiled without SuperLU_DIST, SuperLU, Klu, or Basker. By default, MueLu tries" +
+      this->declareConstructionOutcome(true, std::string("Amesos2 has been compiled without SuperLU_DIST, SuperLU, Klu, or Basker. By default, MueLu tries") +
                                        "to use one of these libraries. Amesos2 must be compiled with one of these solvers, " +
                                        "or a valid Amesos2 solver has to be specified explicitly.");
       return;
