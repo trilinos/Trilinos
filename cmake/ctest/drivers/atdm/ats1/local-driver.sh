@@ -16,6 +16,12 @@ if [[ "${Trilinos_SKIP_CTEST_ADD_TEST}" == "" ]] ; then
   export Trilinos_SKIP_CTEST_ADD_TEST=TRUE
 fi
 
+# Don't install the intel-18 builds because SPARC does not support intel-18 on
+# this platform and EMPIRE does not use these installs (yet) (ATDV-361)
+if [[ "${ATDM_CONFIG_COMPILER}" = "INTEL-18"* ]] ; then
+  export CTEST_DO_INSTALL=OFF
+fi
+
 if [[ "${Trilinos_INNER_ENABLE_TESTS}" == "" ]] && \
    [[ "${ATDM_CONFIG_BUILD_TYPE}" == "DEBUG" ]] \
   ; then
