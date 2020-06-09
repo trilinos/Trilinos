@@ -145,7 +145,7 @@ void createRegionMatrix(const Teuchos::ParameterList galeriList,
 
   revisedRowMapPerGrp[0] = Xpetra::MapFactory<LO,GO,Node>::Build(A->getRowMap()->lib(),
                                                                  Teuchos::OrdinalTraits<GO>::invalid(),
-                                                                 quasiRegionGIDs.size()*numDofsPerNode,
+                                                                 quasiRegionGIDs.size(),
                                                                  A->getRowMap()->getIndexBase(),
                                                                  A->getRowMap()->getComm());
   revisedColMapPerGrp[0] = revisedRowMapPerGrp[0];
@@ -154,18 +154,17 @@ void createRegionMatrix(const Teuchos::ParameterList galeriList,
 
   rowImportPerGrp[0] = ImportFactory::Build(dofMap, rowMapPerGrp[0]);
   colImportPerGrp[0] = ImportFactory::Build(dofMap, colMapPerGrp[0]);
-std::cout << __LINE__ << __FILE__ <<std::endl;
+
   RCP<Xpetra::MultiVector<LO, LO, GO, NO> > regionsPerGIDWithGhosts;
   RCP<Xpetra::MultiVector<GO, LO, GO, NO> > interfaceGIDsMV;
   MakeRegionPerGIDWithGhosts(nodeMap, revisedRowMapPerGrp[0], rowImportPerGrp[0],
                              maxRegPerGID, numDofsPerNode,
                              lNodesPerDir, sendGIDs, sendPIDs, interfaceRegionLIDs,
                              regionsPerGIDWithGhosts, interfaceGIDsMV);
-  // regionsPerGIDWithGhosts->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
-std::cout << __LINE__ << __FILE__ <<std::endl;
+
   SetupMatVec(interfaceGIDsMV, regionsPerGIDWithGhosts, revisedRowMapPerGrp, rowImportPerGrp,
               regionMatVecLIDs, regionInterfaceImporter);
-std::cout << __LINE__ << __FILE__ <<std::endl;
+
   std::vector<RCP<Matrix> > quasiRegionGrpMats(maxRegPerProc);
   MakeQuasiregionMatrices(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A), maxRegPerProc,
                           regionsPerGIDWithGhosts, rowMapPerGrp, colMapPerGrp, rowImportPerGrp,
@@ -1422,7 +1421,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace3D, Scalar, LocalOrdinal,
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RegionMatrix,RegionToCompositeMatrix,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RegionMatrix,MatVec,Scalar,LO,GO,Node)                  \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RegionMatrix,FastMatVec,Scalar,LO,GO,Node)              \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RegionMatrix,FastMatVec_Elasticity,Scalar,LO,GO,Node)              \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RegionMatrix,FastMatVec_Elasticity,Scalar,LO,GO,Node)   \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RegionMatrix,Laplace2D,Scalar,LO,GO,Node)               \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RegionMatrix,Laplace3D,Scalar,LO,GO,Node)
 

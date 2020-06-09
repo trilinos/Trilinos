@@ -782,51 +782,48 @@ void SetupMatVec(const Teuchos::RCP<Xpetra::MultiVector<GlobalOrdinal, LocalOrdi
                  Teuchos::Array<LocalOrdinal>& regionMatVecLIDs,
                  Teuchos::RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter) {
 #include "Xpetra_UseShortNamesOrdinal.hpp"
+  using Teuchos::TimeMonitor;
+
+  RCP<TimeMonitor> tm;
+  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("SetupMatVec: 1 - sumInterfaceValues")));
 
   const LO  maxRegPerProc = static_cast<LO>(regionRowMap.size());
   const LO  maxRegPerGID  = static_cast<LO>(regionsPerGIDWithGhosts->getNumVectors());
   const int myRank        = regionRowMap[0]->getComm()->getRank();
-std::cout << __LINE__ << __FILE__ << std::endl;
   interfaceGIDsMV->replaceMap(regionRowMap[0]);
   Array<RCP<Xpetra::MultiVector<GO, LO, GO, NO> > > interfaceGIDsPerGrp(maxRegPerProc);
   interfaceGIDsPerGrp[0] = interfaceGIDsMV;
   sumInterfaceValues(interfaceGIDsPerGrp, regionRowMap, rowImportPerGrp);
 
-  // interfaceGIDsPerGrp[0]->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
-  // regionsPerGIDWithGhosts->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
+  tm = Teuchos::null;
+  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("SetupMatVec: 2 - build regionInterfaceMap")));
 
-std::cout << __LINE__ << __FILE__ << std::endl;
   Teuchos::Array<GO> regionMatVecGIDs;
   Array<ArrayRCP<const LO> > regionsPerGIDWithGhostsData(maxRegPerGID);
   Array<ArrayRCP<const GO> > interfaceGIDsData(maxRegPerGID);
   for(LO regionIdx = 0; regionIdx < maxRegPerGID; ++regionIdx) {
     regionsPerGIDWithGhostsData[regionIdx] = regionsPerGIDWithGhosts->getData(regionIdx);
-    // interfaceGIDsData[regionIdx] = interfaceGIDsMV->getData(regionIdx);
-    // interfaceGIDsData[regionIdx] = interfaceGIDsPerGrp[0]->getData(regionIdx);
-    ArrayRCP<const GO> interfaceGIDsData2 = interfaceGIDsPerGrp[0]->getData(regionIdx);
-// std::cout << __LINE__ << __FILE__ << std::endl;
+    interfaceGIDsData[regionIdx] = interfaceGIDsPerGrp[0]->getData(regionIdx);
     for(LO idx = 0; idx < static_cast<LO>(regionsPerGIDWithGhostsData[regionIdx].size()); ++idx) {
       if((regionsPerGIDWithGhostsData[regionIdx][idx] != -1)
          && (regionsPerGIDWithGhostsData[regionIdx][idx] != myRank)) {
         regionMatVecLIDs.push_back(idx);
-//         regionMatVecGIDs.push_back(interfaceGIDsData[regionIdx][idx]);
+        regionMatVecGIDs.push_back(interfaceGIDsData[regionIdx][idx]);
       }
     }
   }
-std::cout << __LINE__ << __FILE__ << std::endl;
-regionRowMap[0]->getComm()->barrier();
-exit(0);
-  // std::cout << "p=" << myRank << " | regionMatVecGIDs: " << regionMatVecGIDs << std::endl;
-  // std::cout << "p=" << myRank << " | regionMatVecLIDs: " << regionMatVecLIDs << std::endl;
-std::cout << __LINE__ << __FILE__ << std::endl;
   RCP<Map> regionInterfaceMap = Xpetra::MapFactory<LO,GO,Node>::Build(regionRowMap[0]->lib(),
-                                                          Teuchos::OrdinalTraits<GO>::invalid(),
-                                                          regionMatVecGIDs(),
-                                                          regionRowMap[0]->getIndexBase(),
-                                                          regionRowMap[0]->getComm());
-std::cout << __LINE__ << __FILE__ << std::endl;
+                                                                      Teuchos::OrdinalTraits<GO>::invalid(),
+                                                                      regionMatVecGIDs(),
+                                                                      regionRowMap[0]->getIndexBase(),
+                                                                      regionRowMap[0]->getComm());
+
+  tm = Teuchos::null;
+  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("SetupMatVec: 3 - Build importer")));
+
   regionInterfaceImporter = ImportFactory::Build(regionRowMap[0], regionInterfaceMap);
-std::cout << __LINE__ << __FILE__ << std::endl;
+
+  tm = Teuchos::null;
 } // SetupMatVec
 
 /*! \brief Compute a matrix vector product \f$Y = beta*Y + alpha*Ax\f$
