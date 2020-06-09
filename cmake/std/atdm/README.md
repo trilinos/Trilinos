@@ -83,7 +83,7 @@ typical order and format of this string is:
 but any order of these keywords is supported.  Also, the keywords are
 case-insensitive All of these keywords, except for `<compiler>` (which can be
 `default`), are optional.  All of the other keywords have default values.  Any
-strings not recognised as keywords are ignored.  (Therefore, mispelling the
+strings not recognized as keywords are ignored.  (Therefore, misspelling the
 name of a keyword is ignored.) See some examples of build name strings
 [below](#build-name-examples).
 
@@ -170,7 +170,7 @@ Carefully examine STDOUT after running `source cmake/std/atdm/load-env
 <a name="kokkos_thread"/>
 
 **`<kokkos_thread>`:** The following `<build-name>` keywords determine the
-Kokkos threading / backend model variable `<NODE_TYPE>` (default is
+Kokkos threading / back-end model variable `<NODE_TYPE>` (default is
 `<NODE_TYPE>=SERIAL` unless `<COMPILER>=CUDA`):
 
 * `serial`: Use no host threading (`NODE_TYPE=SERIAL`, DEFAULT)
@@ -258,7 +258,7 @@ informational purposes.  The reason that a `<build-name>` string is defined in
 this form is that this can be used as the Jenkins job name and the Trilinos
 build name that shows up on CDash.  This makes it very easy to define the
 configuration options and maintain the Jenkins build jobs.  The combination
-`<COMPILER>-<BUILD_TYPE>-<NODE_TYPE>-<KOKKOS_ACRCH>` is used to define the
+`<COMPILER>-<BUILD_TYPE>-<NODE_TYPE>-<KOKKOS_ARCH>` is used to define the
 CMake variable `ATDM_BUILD_NAME_KEYS_STR` that is used to uniquely define a
 build on a particular system and to manage a system of tweaks for each of the
 supported builds (see below).
@@ -358,7 +358,7 @@ value that might be passed in or set otherwise.  (This is a `FORCE`D cache
 variable set on `CMAKE_INSTALL_PREFIX` so this value will appear in the
 `CMakeCache.txt` file.)
 
-If permissions need to be set on a basdir of `CMAKE_INSTALL_PREFIX`, then one
+If permissions need to be set on a base dir of `CMAKE_INSTALL_PREFIX`, then one
 can set a base dir of this through:
 
 ```
@@ -371,7 +371,7 @@ value is for `CMAKE_INSTALL_PREFIX`.
 
 By default, every file and directory created during the install under
 `<install-base-dir>` will be made explicitly group read/write and "other"
-readable.  (That can be changed by setting CMake Cache vars starting wtih
+readable.  (That can be changed by setting CMake Cache vars starting with
 `Trilinos_MAKE_INSTALL_`.)
 
 The owning group for everything under `<install-base-dir>` can be set using:
@@ -390,7 +390,7 @@ configure-time using the CMake cache variable:
   -D ATDM_INSTALLED_ENV_LOAD_SCRIPT_NAME=<load-matching-env-sh> \
 ```
 
-whereif the CMake cache variable `ATDM_INSTALLED_ENV_LOAD_SCRIPT_NAME` is not
+where if the CMake cache variable `ATDM_INSTALLED_ENV_LOAD_SCRIPT_NAME` is not
 specified, then it is given the name `load_matching_env.sh` by default.
 
 
@@ -613,7 +613,7 @@ That will install the enabled Trilinos packages under:
   <full-build-name>/SRC_AND_BUILD/BUILD/install/
 ```
 
-For more details, see the help documentation in the scirpt itself
+For more details, see the help documentation in the script itself
 [`ctest-s-local-test-driver.sh`](https://github.com/trilinos/Trilinos/blob/develop/cmake/std/atdm/ctest-s-local-test-driver.sh). Also,
 see
 [TRIBITS_CTEST_DRIVER()](https://tribits.org/doc/TribitsDevelopersGuide.html#determining-what-testing-related-actions-are-performed-tribits-ctest-driver)
@@ -924,7 +924,7 @@ if that directory exists.
 
 ### Spack RHEL Environment
 
-The env 'spack-rhel' should work on any RedHad Enterprise Linux (RHEL) (and
+The env 'spack-rhel' should work on any Red Hat Enterprise Linux (RHEL) (and
 perhaps many other Linux systems) that have the SNL ATDM Spack modules
 installed on them.  See the [installation
 documentation](https://gitlab.sandia.gov/atdm/atdm-spack-scripts/blob/master/README.md).
@@ -1190,7 +1190,7 @@ $ ./checkin-test-atdm.sh <buildname0> <buildname1> ... \
   bash`.  That takes up CPU resources on the launch node that need to be used
   by all users of the cluster to run individual MPI jobs.
 - The `lrun` command is just a simpler wrapper around `jsrun` that is meant to
-  be more similar to the SLURM `srun` comamnd.  That is, `lrun -n <N> <cmnd>`
+  be more similar to the SLURM `srun` command.  That is, `lrun -n <N> <cmnd>`
   should behave similarly to `jsrun --np <N> <cmnd>`.
 - One can directly log into any compute node (independent of if that node is
   allocated to you or not).  That can be useful to examine a running job but
@@ -1473,7 +1473,7 @@ used to define a default file name:
 
 If that file exists, then it is set as the default for the cmake cache
 variable `ATDM_TWEAKS_FILES` (prints to STDOUT) and that file is included and
-its options are set as CMake cache varaibles.  For example, this is what the
+its options are set as CMake cache variables.  For example, this is what the
 output looks like for a build on 'waterman':
 
 ```
@@ -1627,7 +1627,7 @@ IF (Trilinos_ENABLE_DEBUG)
   ...
 ENDIF()
 
-IF (ATDM_COMPILER STREQUAL "GNU-7.2.0")  # See <system_name>/enviornment.sh
+IF (ATDM_COMPILER STREQUAL "GNU-7.2.0")  # See <system_name>/environment.sh
   # Disables for all non-CUDA GNU 7.2.0 builds
   ...
 ENDIF()
@@ -1654,14 +1654,22 @@ ENDIF()
 
 Any CMake variable that has been set in the `ATDMDevEnvSettings.cmake` file
 before these tweak files are included can be used in if-logic but the
-recommended variables are `ATDM_COMPILER` (uppercase),
-`ATDM_KOKKOS_ARCH_JOB_NAME_KEYS` (uppercase seprated by `_`), `ATDM_NODE_TYPE`
-(values `CUDA`, `OPENMP`, `SERIAL`), `ATDM_CUDA_RDC` (`ON`/`OFF`), `ATDM_FPIC`
-(`ON`/`OFF`), `ATDM_COMPLEX` (`ON`/`OFF`), `ATDM_SHARED_LIBS` (`ON`/`OFF`),
-`ATDM_CMAKE_BUILD_TYPE` (values `DEBUG`, `RELEASE`, and `RELEASE-DEBUG`),
-`Trilinos_ENABLE_DEBUG` (`ON`/`OFF`), and `ATDM_PT_PACKAGES` (`ON`/`OFF`).  No
-other variables should be used in if-logic in these files as other variables
-may change in the future.
+recommended variables are:
+
+* `ATDM_COMPILER` (uppercase)
+* `ATDM_KOKKOS_ARCH_JOB_NAME_KEYS` (uppercase and separated by `_`)
+* `ATDM_NODE_TYPE` (values `CUDA`, `OPENMP`, `SERIAL`)
+* `ATDM_KOKKOS_ARCH` (uppercase and separated by `,`)
+* `ATDM_CUDA_RDC` (`ON`/`OFF`)
+* `ATDM_FPIC` (`ON`/`OFF`)
+* `ATDM_COMPLEX` (`ON`/`OFF`),
+* `ATDM_SHARED_LIBS` (`ON`/`OFF`)
+* `ATDM_CMAKE_BUILD_TYPE` (values `DEBUG`, `RELEASE` and `RELEASE-DEBUG`)
+* `Trilinos_ENABLE_DEBUG` (`ON`/`OFF`)
+* `ATDM_PT_PACKAGES` (`ON`/`OFF`)
+
+No other variables should be used in if-logic in these files as other
+variables may change in the future.
 
 
 ### Disable a test for builds on all platforms
@@ -1698,7 +1706,7 @@ after the test was fixed.)
 The specific `cmake/std/atdm/<system-name>/` sub-directories and the systems
 they support are:
 
-* `cee-rhel6/`: CEE LANL RHEL6 systems with a CEE environment
+* `cee-rhel6/`: CEE LAN RHEL6 systems with a CEE environment
 
 * `mutrino/`: Supports SNL HPC machine 'mutrino'.
 
