@@ -73,6 +73,13 @@
     </parameter>
 
     <parameter>
+      <name>W cycle start level</name>
+      <type>int</type>
+      <default>0</default>
+      <description>Level at which to start multigrid W cycle.</description>
+    </parameter>
+
+    <parameter>
       <name>coarse grid correction scaling factor</name>
       <type>double</type>
       <default>1.0</default>
