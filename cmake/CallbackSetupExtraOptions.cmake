@@ -100,3 +100,11 @@ MACRO(TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS)
   SET(TRILINOS_BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS})
 
 ENDMACRO()
+
+
+#
+# Set up for build stats
+#
+
+include("${Trilinos_SOURCE_DIR}/commonTools/build_stats/BuildStatsWrappers.cmake")
+generate_build_stats_wrappers()
