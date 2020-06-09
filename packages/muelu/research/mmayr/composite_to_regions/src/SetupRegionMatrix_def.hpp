@@ -52,6 +52,7 @@
 #define MultipleRegionsPerProc  2
 
 #include <Kokkos_DefaultNode.hpp>
+#include <KokkosSparse_spmv.hpp>
 
 #include <Xpetra_ConfigDefs.hpp>
 #include <Xpetra_Export.hpp>
@@ -828,20 +829,27 @@ void SetupMatVec(const Teuchos::RCP<Xpetra::MultiVector<GlobalOrdinal, LocalOrdi
  */
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ApplyMatVec(const Scalar alpha,
-            const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& regionMatrix,
-            const RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& X,
-            const Scalar beta,
-            const RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter,
-            const Teuchos::Array<LocalOrdinal>& regionInterfaceLIDs,
-            RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Y) {
+                 const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& regionMatrix,
+                 const RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& X,
+                 const Scalar beta,
+                 const RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter,
+                 const Teuchos::Array<LocalOrdinal>& regionInterfaceLIDs,
+                 RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Y) {
 #include "Xpetra_UseShortNames.hpp"
   using Teuchos::TimeMonitor;
+  using local_matrix_type = typename Xpetra::Matrix<SC,LO,GO,Node>::local_matrix_type;
+  using device_type       = typename local_matrix_type::device_type;
+
   RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ApplyMatVec: 1 - local apply")));
   RCP<const Map> regionInterfaceMap = regionInterfaceImporter->getTargetMap();
 
   // Step 1: apply the local operator
   // since in region formate the matrix is block diagonal
-  regionMatrix->apply(*X, *Y, Teuchos::NO_TRANS, alpha, beta);
+  // regionMatrix->apply(*X, *Y, Teuchos::NO_TRANS, alpha, beta);
+  local_matrix_type localA = regionMatrix->getLocalMatrix();
+  auto localX = X->template getLocalView<device_type>();
+  auto localY = Y->template getLocalView<device_type>();
+  KokkosSparse::spmv("N", alpha, localA, localX, beta, localY);
 
   tm = Teuchos::null;
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ApplyMatVec: 2 - communicate data")));
