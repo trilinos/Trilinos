@@ -51,6 +51,7 @@ bool all_passed = true;
             number_of_batches = arg8toi;
         }
     }
+    bool keep_coefficients = number_of_batches==1;
 
     // check if 7 arguments are given from the command line, the first being the program name
     //  constraint_type used in solving each GMLS problem:
@@ -365,7 +366,7 @@ bool all_passed = true;
     my_GMLS.setWeightingPower(2);
     
     // generate the alphas that to be combined with data for each target operation requested in lro
-    my_GMLS.generateAlphas(number_of_batches);
+    my_GMLS.generateAlphas(number_of_batches, keep_coefficients /* keep polynomial coefficients, only needed for a test later in this program */);
     
     
     //! [Setting Up The GMLS Object]

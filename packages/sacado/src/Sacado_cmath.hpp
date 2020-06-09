@@ -64,6 +64,15 @@ namespace Sacado {
     return cond ? a : b;
   }
 
+  // Special version of sqrt(x) that avoids the NaN if x==0 in the derivative.
+  // The default implementation just calls the standard sqrt(x).
+  template <typename T>
+  KOKKOS_INLINE_FUNCTION
+  T safe_sqrt(const T& x) {
+    using std::sqrt;
+    return sqrt(x);
+  }
+
 }
 
 #endif // SACADO_CMATH_HPP

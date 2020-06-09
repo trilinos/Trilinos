@@ -69,7 +69,16 @@ namespace Sacado {
       };
 
       //! Default constructor
+#ifdef SACADO_SFAD_INIT_DEFAULT_CONSTRUCTOR
+      KOKKOS_INLINE_FUNCTION
+      StaticFixedStorage() :
+        val_(T(0.0)) {
+        ss_array<T>::zero(dx_, Num);
+      }
+#else
+      KOKKOS_DEFAULTED_FUNCTION
       StaticFixedStorage() = default;
+#endif
 
       //! Constructor with value
       KOKKOS_INLINE_FUNCTION
@@ -128,6 +137,7 @@ namespace Sacado {
       }
 
       //! Destructor
+      KOKKOS_DEFAULTED_FUNCTION
       ~StaticFixedStorage() = default;
 
       //! Assignment

@@ -81,6 +81,7 @@ using namespace Teuchos;
 using namespace Piro;
 using namespace Piro::Test;
 
+//#define DEBUG_OUTPUT
 
 namespace Thyra {
   typedef ModelEvaluatorBase MEB;
@@ -491,26 +492,48 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, ObserveInitialConditionWhenSensitivitiesReq
 
   const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
   Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
-  {
-    const int solutionResponseIndex = solver->Ng() - 1;
-    const int parameterIndex = 0;
-    const Thyra::MEB::Derivative<double> dxdp_deriv =
+  
+  const int solutionResponseIndex = solver->Ng() - 1;
+  const int parameterIndex = 0;
+  const Thyra::MEB::Derivative<double> dxdp_deriv =
       Thyra::create_DgDp_mv(*solver, solutionResponseIndex, parameterIndex, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
-    const RCP<Thyra::MultiVectorBase<double> > dxdp = dxdp_deriv.getMultiVector();
+  const RCP<Thyra::MultiVectorBase<double> > dxdp = dxdp_deriv.getMultiVector();
     outArgs.set_DgDp(solutionResponseIndex, parameterIndex, dxdp_deriv);
-  }
   solver->evalModel(inArgs, outArgs);
 
-  {
-    const RCP<const Thyra::VectorBase<double> > solution =
-      observer->lastSolution();
+  const RCP<const Thyra::VectorBase<double> > solution =
+    observer->lastSolution();
+    
+  const RCP<const Thyra::MultiVectorBase<double> > solution_dxdp =
+    observer->lastSolution_dxdp();
 
-    const RCP<const Thyra::VectorBase<double> > initialCondition =
-      model->getNominalValues().get_x();
+  const RCP<const Thyra::VectorBase<double> > initialCondition =
+    model->getNominalValues().get_x();
 
+  TEST_COMPARE_FLOATING_ARRAYS(
+      arrayFromVector(*solution),
+      arrayFromVector(*initialCondition),
+      tol);
+
+  //Test observer output of lastSolution_dxdp 
+  for (int np = 0; np < dxdp->domain()->dim(); np++) { 
+    Teuchos::RCP<const Thyra::VectorBase<double>> solution_dxdp_vec = solution_dxdp->col(np);
+    Teuchos::RCP<Thyra::VectorBase<double>> zero_vec = 
+        Thyra::createMember(solution_dxdp_vec->space());
+    Thyra::put_scalar(0.0, zero_vec.ptr());  
+#ifdef DEBUG_OUTPUT 
+    auto out_ =Teuchos::VerboseObjectBase::getDefaultOStream(); 
+    *out_ << "\n*** Piro::TransientSolver dxdp for p = " << np << " ***\n";
+    Teuchos::Range1D range;
+    RTOpPack::ConstSubVectorView<double> dxdpv;
+    solution_dxdp_vec->acquireDetachedView(range, &dxdpv);
+    auto dxdpa = dxdpv.values();
+    for (auto j = 0; j < dxdpa.size(); ++j) *out_ << dxdpa[j] << " ";
+    *out_ << "\n*** Piro::TransientSolver dxdp for p = " << np << " ***\n";
+#endif
     TEST_COMPARE_FLOATING_ARRAYS(
-        arrayFromVector(*solution),
-        arrayFromVector(*initialCondition),
+        arrayFromVector(*solution_dxdp->col(np)),
+        arrayFromVector(*zero_vec),
         tol);
   }
 

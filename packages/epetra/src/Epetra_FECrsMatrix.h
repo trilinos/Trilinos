@@ -166,6 +166,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
 
    enum { ROW_MAJOR = 0, COLUMN_MAJOR = 3 };
 
+   void Print(std::ostream& os) const;
 #if !defined(EPETRA_NO_32BIT_GLOBAL_INDICES) || !defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
    using Epetra_CrsMatrix::SumIntoGlobalValues;
    using Epetra_CrsMatrix::InsertGlobalValues;

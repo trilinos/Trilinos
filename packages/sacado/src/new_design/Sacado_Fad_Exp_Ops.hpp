@@ -277,6 +277,162 @@ FAD_UNARYOP_MACRO(cbrt,
                   expr.dx(i)/(value_type(3)*cbrt(expr.val()*expr.val())),
                   expr.fastAccessDx(i)/(value_type(3)*cbrt(expr.val()*expr.val())))
 
+// Special handling for safe_sqrt() to provide specializations of SafeSqrtOp for
+// "simd" value types that use if_then_else(). The only reason for not using
+// if_then_else() always is to avoid evaluating the derivative if the value is
+// zero to avoid throwing FPEs.
+namespace Sacado {
+  namespace Fad {
+  namespace Exp {
+
+    template <typename T, typename ExprSpec, bool is_simd>
+    class SafeSqrtOp {};
+
+    //
+    // Implementation for simd type using if_then_else()
+    //
+    template <typename T>
+    class SafeSqrtOp< T,ExprSpecDefault,true > :
+      public Expr< SafeSqrtOp<T,ExprSpecDefault> > {
+    public:
+
+      typedef typename std::remove_cv<T>::type ExprT;
+      typedef typename ExprT::value_type value_type;
+      typedef typename ExprT::scalar_type scalar_type;
+
+      typedef ExprSpecDefault expr_spec_type;
+
+      KOKKOS_INLINE_FUNCTION
+      explicit SafeSqrtOp(const T& expr_) : expr(expr_)  {}
+
+      KOKKOS_INLINE_FUNCTION
+      int size() const { return expr.size(); }
+
+      KOKKOS_INLINE_FUNCTION
+      bool hasFastAccess() const {
+        return expr.hasFastAccess();
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      value_type val() const {
+        using std::sqrt;
+        return sqrt(expr.val());
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      value_type dx(int i) const {
+        using std::sqrt;
+        return if_then_else(
+          expr.val() == value_type(0.0), value_type(0.0),
+          value_type(expr.dx(i)/(value_type(2)*sqrt(expr.val()))));
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      value_type fastAccessDx(int i) const {
+        using std::sqrt;
+        return if_then_else(
+          expr.val() == value_type(0.0), value_type(0.0),
+          value_type(expr.fastAccessDx(i)/(value_type(2)*sqrt(expr.val()))));
+      }
+
+    protected:
+
+      const T& expr;
+    };
+
+    //
+    // Specialization for scalar types using ternary operator
+    //
+    template <typename T>
+    class SafeSqrtOp< T,ExprSpecDefault,false > :
+      public Expr< SafeSqrtOp<T,ExprSpecDefault> > {
+    public:
+
+      typedef typename std::remove_cv<T>::type ExprT;
+      typedef typename ExprT::value_type value_type;
+      typedef typename ExprT::scalar_type scalar_type;
+
+      typedef ExprSpecDefault expr_spec_type;
+
+      KOKKOS_INLINE_FUNCTION
+      explicit SafeSqrtOp(const T& expr_) : expr(expr_)  {}
+
+      KOKKOS_INLINE_FUNCTION
+      int size() const { return expr.size(); }
+
+      KOKKOS_INLINE_FUNCTION
+      bool hasFastAccess() const {
+        return expr.hasFastAccess();
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      value_type val() const {
+        using std::sqrt;
+        return sqrt(expr.val());
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      value_type dx(int i) const {
+        using std::sqrt;
+        return expr.val() == value_type(0.0) ? value_type(0.0) :
+          value_type(expr.dx(i)/(value_type(2)*sqrt(expr.val())));
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      value_type fastAccessDx(int i) const {
+        using std::sqrt;
+        return expr.val() == value_type(0.0) ? value_type(0.0) :
+          value_type(expr.fastAccessDx(i)/(value_type(2)*sqrt(expr.val())));
+      }
+
+    protected:
+
+      const T& expr;
+    };
+
+    template <typename T>
+    KOKKOS_INLINE_FUNCTION
+    SafeSqrtOp< typename Expr<T>::derived_type,
+                typename T::expr_spec_type >
+    safe_sqrt (const Expr<T>& expr)
+    {
+      typedef SafeSqrtOp< typename Expr<T>::derived_type,
+                          typename T::expr_spec_type > expr_t;
+
+      return expr_t(expr.derived());
+    }
+
+    template <typename T, typename E>
+    struct ExprLevel< SafeSqrtOp< T,E > > {
+      static const unsigned value = ExprLevel<T>::value;
+    };
+
+    template <typename T, typename E>
+    struct IsFadExpr< SafeSqrtOp< T,E > > {
+      static const unsigned value = true;
+    };
+
+  }
+  }
+
+  template <typename T, typename E>
+  struct IsExpr< Fad::Exp::SafeSqrtOp< T,E > > {
+    static const bool value = true;
+  };
+
+  template <typename T, typename E>
+  struct BaseExprType< Fad::Exp::SafeSqrtOp< T,E > > {
+    typedef typename BaseExprType<T>::type type;
+  };
+
+  template <typename T, typename E>
+  struct IsSimdType< Fad::Exp::SafeSqrtOp< T,E > > {
+    static const bool value =
+      IsSimdType< typename Fad::Exp::SafeSqrtOp< T,E >::scalar_type >::value;
+  };
+
+}
+
 #undef FAD_UNARYOP_MACRO
 
 #define FAD_BINARYOP_MACRO(OPNAME,OP,USING,VALUE,DX,CDX1,CDX2,FASTACCESSDX,VAL_CONST_DX_1,VAL_CONST_DX_2,CONST_DX_1,CONST_DX_2,CONST_FASTACCESSDX_1,CONST_FASTACCESSDX_2) \
