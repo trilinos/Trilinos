@@ -6,7 +6,7 @@
 #
 # If the var <var_name> is already set, then it will be appended to.  On
 # completion of the function, <var_name> is exported.  The result is a
-# semi-colon seprated list of full library paths.  CMake likes this type of
+# semi-colon separated list of full library paths.  CMake likes this type of
 # input for libraries and it makes them easier to verify that they exist.
 #
 # For example, to build up a set of libs for MLK, one would use something like:
@@ -116,3 +116,5 @@ function atdm_remove_substrings_from_env_var() {
 function atdm_remove_dirs_from_path() {
   atdm_remove_substrings_from_env_var PATH ":" $@
 }
+
+#  LocalWords:  CMake
