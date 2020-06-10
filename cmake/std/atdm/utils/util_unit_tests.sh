@@ -14,36 +14,42 @@ source ${ATDM_UTIL_SCRIPT}
 
 test_atdm_remove_substrings_from_env_var() {
   for DELIM in ":" "," "-" "_"; do
+    # Don't remove anything from path
     EXPECTED_ENV_VAR="/paths"
     ENV_VAR="$EXPECTED_ENV_VAR"
     STRINGS="/test/path1"
     atdm_remove_substrings_from_env_var ENV_VAR "$DELIM" "$STRINGS"
     ${_ASSERT_EQUALS_} ${EXPECTED_ENV_VAR} ${ENV_VAR}
 
+    # Remove dir from end of path
     EXPECTED_ENV_VAR="/paths"
     ENV_VAR="$EXPECTED_ENV_VAR$DELIM/test/path1"
     STRINGS="/test/path1"
     atdm_remove_substrings_from_env_var ENV_VAR "$DELIM" "$STRINGS"
     ${_ASSERT_EQUALS_} ${EXPECTED_ENV_VAR} ${ENV_VAR}
 
+    # Remove dir at beginning of path
     EXPECTED_ENV_VAR="/paths"
     ENV_VAR="/test/path1$DELIM$EXPECTED_ENV_VAR"
     STRINGS="/test/path1"
     atdm_remove_substrings_from_env_var ENV_VAR "$DELIM" "$STRINGS"
     ${_ASSERT_EQUALS_} ${EXPECTED_ENV_VAR} ${ENV_VAR}
 
+    # Remove dir at beginning of path with similar path beside it
     EXPECTED_ENV_VAR="/paths$DELIM/paths2"
     ENV_VAR="/test/path1$DELIM$EXPECTED_ENV_VAR"
     STRINGS="/test/path1"
     atdm_remove_substrings_from_env_var ENV_VAR "$DELIM" "$STRINGS"
     ${_ASSERT_EQUALS_} ${EXPECTED_ENV_VAR} ${ENV_VAR}
 
+    # Remove dirs at beginning and end of path
     EXPECTED_ENV_VAR="/paths"
     ENV_VAR="/test/path1$DELIM$EXPECTED_ENV_VAR$DELIM/test/path2"
     STRINGS="/test/path1 /test/path2"
     atdm_remove_substrings_from_env_var ENV_VAR "$DELIM" "$STRINGS"
     ${_ASSERT_EQUALS_} ${EXPECTED_ENV_VAR} ${ENV_VAR}
 
+    # Only one dir matches to be removed (other non-matching dir is ignored)
     EXPECTED_ENV_VAR="/paths"
     ENV_VAR="/test/path2$DELIM/test/path1$DELIM$EXPECTED_ENV_VAR"
     STRINGS="/test/path1 /test/path2"
