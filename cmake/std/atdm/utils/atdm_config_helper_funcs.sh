@@ -116,5 +116,3 @@ function atdm_remove_substrings_from_env_var() {
 function atdm_remove_dirs_from_path() {
   atdm_remove_substrings_from_env_var PATH ":" $@
 }
-
-#  LocalWords:  CMake
