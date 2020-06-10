@@ -122,6 +122,7 @@ namespace MueLu {
     if (name == "output filename") { ss << "<Parameter name=\"output filename\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
     if (name == "number of equations") { ss << "<Parameter name=\"number of equations\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "max levels") { ss << "<Parameter name=\"max levels\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "W cycle start level") { ss << "<Parameter name=\"W cycle start level\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "coarse grid correction scaling factor") { ss << "<Parameter name=\"coarse grid correction scaling factor\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
     if (name == "fuse prolongation and update") { ss << "<Parameter name=\"fuse prolongation and update\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "number of vectors") { ss << "<Parameter name=\"number of vectors\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
@@ -167,6 +168,7 @@ namespace MueLu {
   "<Parameter name=\"number of equations\" type=\"int\" value=\"1\"/>"
   "<Parameter name=\"max levels\" type=\"int\" value=\"10\"/>"
   "<Parameter name=\"cycle type\" type=\"string\" value=\"V\"/>"
+  "<Parameter name=\"W cycle start level\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"coarse grid correction scaling factor\" type=\"double\" value=\"1.0\"/>"
   "<Parameter name=\"fuse prolongation and update\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"number of vectors\" type=\"int\" value=\"1\"/>"
@@ -519,6 +521,8 @@ namespace MueLu {
          ("max levels","max levels")
       
          ("prec type","cycle type")
+      
+         ("W cycle start level","W cycle start level")
       
          ("coarse grid correction scaling factor","coarse grid correction scaling factor")
       
