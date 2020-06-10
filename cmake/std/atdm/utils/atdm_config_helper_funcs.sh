@@ -79,10 +79,12 @@ function atdm_remove_substrings_from_env_var() {
   local sub_strs="$@"
   #echo "${env_var}=${!env_var}"
 
-  if [[ "$delim" = "/" ||
-	      "$delim" = ";" ]]; then
+  if [[ ! "$delim" = ":" &&
+	      ! "$delim" = "," &&
+        ! "$delim" = "-" &&
+        ! "$delim" = "_" ]]; then
     printf "%s\n" "ERROR: $FUNCNAME: \"$delim\" is an invalid delimiter." 2>&1
-    exit 1
+    return
   fi
 
   local env_var_sub_strs=$(printf "%s" "${!env_var}" | sed "s/${delim}/ /g")
@@ -90,6 +92,7 @@ function atdm_remove_substrings_from_env_var() {
   for str in $env_var_sub_strs; do
     for subStr in $sub_strs; do
       if [ "$subStr" = "$str" ]; then
+        env_var_sub_strs=("${env_var_sub_strs[@]/" $str"}")
         env_var_sub_strs=("${env_var_sub_strs[@]/"$str "}")
       fi
     done
