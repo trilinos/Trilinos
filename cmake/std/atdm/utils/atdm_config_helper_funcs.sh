@@ -67,12 +67,43 @@ function get_sparc_dev_module_name() {
 }
 
 #
-# Remove the "substring" from the PATH var.
-# @param substring: the string to remove.
+# Remove the substrings from the environment variable.
+# @param env_var:  The environment variable to modify.
+# @param delim:    The delimiter used in the environment variable.
+# @param sub_strs: The substrings to remove.
+# @return void, the environment variable is exported to the new value.
 #
-function atdm_remove_from_path() {
-  local substring=$(printf "%s" "$1" | sed 's/\//\\\//g')
-  local path=$(printf "%s" "$PATH" | sed "s/$substring://g")
-  path=$(printf "%s" "$path" | sed "s/:$substring//g")
-  export PATH=$path
+function atdm_remove_substrings_from_env_var() {
+  local env_var="$1"; shift
+  local delim="$1"; shift
+  local sub_strs="$@"
+  #echo "${env_var}=${!env_var}"
+
+  if [[ "$delim" = "/" ||
+	      "$delim" = ";" ]]; then
+    printf "%s\n" "ERROR: $FUNCNAME: \"$delim\" is an invalid delimiter." 2>&1
+    exit 1
+  fi
+
+  local env_var_sub_strs=$(printf "%s" "${!env_var}" | sed "s/${delim}/ /g")
+
+  for str in $env_var_sub_strs; do
+    for subStr in $sub_strs; do
+      if [ "$subStr" = "$str" ]; then
+        env_var_sub_strs=("${env_var_sub_strs[@]/"$str "}")
+      fi
+    done
+  done
+
+  export ${env_var}=$(printf "%s" "$env_var_sub_strs" | sed "s/ /$delim/g")
+  #echo "${env_var}=${!env_var}"
+}
+
+#
+# Remove substrings from the PATH environment variable.
+# @param substrings: one or more space delimited substrings
+# @return void, the environment variable is exported to the new value.
+#
+function atdm_remove_substrings_from_path() {
+  atdm_remove_substrings_from_env_var PATH ":" $@
 }
