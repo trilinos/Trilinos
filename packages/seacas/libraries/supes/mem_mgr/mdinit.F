@@ -186,6 +186,11 @@ C     an offset to the users base vector is maintained to give the
 C     user the correct pointer to the users base vector.  They are
 C     equivalenced to allow printing as real or integer (see mdprnt).
 C
+
+#if __GFORTRAN__ && __GNUC__ == 10
+C ... For some reason, gfortran-10 needs this SAVE in addition to later save...      
+      save myv
+#endif
       double precision dmyv(1)
       REAL RMYV(1)
       equivalence (dmyv,rmyv)

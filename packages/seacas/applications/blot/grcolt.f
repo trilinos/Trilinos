@@ -195,12 +195,18 @@ C  Blue-brown-red spectrum (DEFAULT)
                 FRAC = DBLE(I) / DBLE(NEWCOL)
                 ISEG = INT (FRAC * 4)
                 REM = FRAC * 4 - ISEG
-                XRED   = SRED(ISEG)
-     &            - REM * (SRED(ISEG) - SRED(ISEG+1))
-                XGREEN = SGREEN(ISEG)
-     &            - REM * (SGREEN(ISEG) - SGREEN(ISEG+1))
-                XBLUE  = SBLUE(ISEG)
-     &            - REM * (SBLUE(ISEG) - SBLUE(ISEG+1))
+                if (iseg .lt. 4) then
+                   XRED   = SRED(ISEG)
+     &                  - REM * (SRED(ISEG) - SRED(ISEG+1))
+                   XGREEN = SGREEN(ISEG)
+     &                  - REM * (SGREEN(ISEG) - SGREEN(ISEG+1))
+                   XBLUE  = SBLUE(ISEG)
+     &                  - REM * (SBLUE(ISEG) - SBLUE(ISEG+1))
+                else
+                   XRED   = SRED(ISEG)
+                   XGREEN = SGREEN(ISEG)
+                   XBLUE  = SBLUE(ISEG)
+                end if
                 if (isinv .eq. 0) then
                   CALL PLTCOL (8+I, XRED, XGREEN, XBLUE)
                 else

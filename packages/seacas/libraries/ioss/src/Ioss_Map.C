@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -123,6 +123,11 @@ bool Ioss::Map::is_sequential(bool check_all) const
   // slot zero is set appropriately.
   // 'sequential' is defined here to mean i==the_map[i] for all
   // 0<i<the_map.size()
+
+  // Arguably, an empty map is sequential...
+  if (m_map.empty()) {
+    return true;
+  }
 
   if (!check_all) {
     // Check slot zero...

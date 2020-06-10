@@ -2301,6 +2301,16 @@ namespace Ioex {
   {
     Ioss::Region *region = get_region();
 
+    // Verify that exodus supports the mesh_type...
+    if (region->mesh_type() != Ioss::MeshType::UNSTRUCTURED) {
+      std::ostringstream errmsg;
+      fmt::print(errmsg,
+		 "ERROR: The mesh type is '{}' which Exodus does not support.\n"
+		 "       Only 'Unstructured' is supported at this time.\n",
+		 region->mesh_type_string());
+      IOSS_ERROR(errmsg);
+    }
+
     const Ioss::NodeBlockContainer &node_blocks = region->get_node_blocks();
     assert(node_blocks.size() <= 1);
     if (!node_blocks.empty()) {

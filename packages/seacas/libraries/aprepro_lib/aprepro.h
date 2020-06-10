@@ -139,6 +139,8 @@ namespace SEAMS {
     std::string include_path{};
     std::string include_file{};
     bool        end_on_exit{false};
+    bool        errors_fatal{false};
+    bool        errors_and_warnings_fatal{false};
     bool        warning_msg{true};
     bool        info_msg{false};
     bool        debugging{false};
@@ -284,6 +286,10 @@ namespace SEAMS {
     {
       return parseErrorCount;
     } /** Return number of errors reported during parse */
+    int get_warning_count() const
+    {
+      return parseWarningCount;
+    } /** Return number of warnings reported during parse */
     void error(const std::string &msg, bool line_info = true, bool prefix = true) const;
     void warning(const std::string &msg, bool line_info = true, bool prefix = true) const;
     void info(const std::string &msg, bool line_info = false, bool prefix = true) const;
@@ -317,6 +323,7 @@ namespace SEAMS {
     std::vector<history_data> history{};
 
     mutable int parseErrorCount{0};
+    mutable int parseWarningCount{0};
 
   public:
     bool stateImmutable{false};

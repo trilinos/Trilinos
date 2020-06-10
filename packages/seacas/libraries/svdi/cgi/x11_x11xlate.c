@@ -501,8 +501,8 @@ static dev_descrip_table dev_descrip;
 static surf_statelist *cur_state;
 
 /* These arrays are global because of size. Used in cell and pixel array */
-float rarray[MAX_ARRAY], garray[MAX_ARRAY], barray[MAX_ARRAY];
-int   varray[MAX_ARRAY];
+static float rarray[MAX_ARRAY], garray[MAX_ARRAY], barray[MAX_ARRAY];
+static int   varray[MAX_ARRAY];
 
 /*-------------------------------------------------------------*/
 /* >> CGI/SVDI DEVICE DRIVER ROUTINES                          */

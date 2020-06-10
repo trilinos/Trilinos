@@ -125,7 +125,8 @@ c      OPEN (8, STATUS='unknown',FILE=CV(1)(1:LEN))
          IF (KV(2) .EQ. 1) THEN
             CALL MDFILL (RV(2))
          ELSE
-            CALL MDFILL (IV(2))
+            TMP = IV(2)
+            CALL MDFILL (TMP)
          END IF
       ELSE IF (CV(1) .EQ. 'MCFILL') THEN
          CALL MCFILL (CV(2))

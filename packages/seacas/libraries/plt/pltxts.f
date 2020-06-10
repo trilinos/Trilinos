@@ -68,7 +68,7 @@ C=======================================================================
       COMMON /STORAG/MEMORY(1000)
       LOGICAL CPUIFC
       CHARACTER*(*) TEXT
-      CHARACTER*1 LASCHR,ESCCHR
+      CHARACTER*1 LASCHR,ESCCHR, textip1
       CHARACTER*20 ESC
       INTEGER ASCII
       LOGICAL STATUS,CHRCI
@@ -91,13 +91,17 @@ C=======================================================================
       IF (ASCII.LT.1 .OR. ASCII.GT.126) THEN
          CALL CHRIC(ASCII,LASCHR,LI)
          CALL PLTFLU
-         CALL SIORPT('PLTXTS','Invalid character "'//LASCHR(1:LI)//
-     *               '" in text string; rest of string ignored',2)
          RETURN
 
       END IF
 
-      IF (ASCII.EQ.ICHAR(ESCCHR) .AND. TEXT(I+1:I+1).EQ.ESCCHR) THEN
+      if (i .lt. nchar) then
+         textip1 = text(i+1:i+1)
+      else
+         textip1 = escchr
+      end if
+
+      IF (ASCII.EQ.ICHAR(ESCCHR) .AND. textip1.EQ.ESCCHR) THEN
          I = I + 1
 
       ELSE IF (ASCII.EQ.ICHAR(ESCCHR)) THEN

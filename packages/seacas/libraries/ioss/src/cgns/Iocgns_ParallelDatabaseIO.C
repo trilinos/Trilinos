@@ -183,6 +183,14 @@ namespace Iocgns {
       if (properties.exists("FLUSH_INTERVAL")) {
         m_flushInterval = properties.get("FLUSH_INTERVAL").get_int();
       }
+
+      {
+        bool file_per_state = false;
+        Ioss::Utils::check_set_bool_property(properties, "FILE_PER_STATE", file_per_state);
+        if (file_per_state) {
+          set_file_per_state(true);
+        }
+      }
     }
 
     Ioss::DatabaseIO::openDatabase__();
@@ -194,6 +202,7 @@ namespace Iocgns {
       delete gtb.second;
     }
     try {
+      closeBaseDatabase__();
       closeDatabase__();
     }
     catch (...) {
@@ -293,6 +302,27 @@ namespace Iocgns {
     assert(m_cgnsFilePtr >= 0);
   }
 
+  void ParallelDatabaseIO::closeBaseDatabase__() const
+  {
+    if (m_cgnsBasePtr > 0) {
+      bool do_timer = false;
+      Ioss::Utils::check_set_bool_property(properties, "IOSS_TIME_FILE_OPEN_CLOSE", do_timer);
+      double t_begin = (do_timer ? Ioss::Utils::timer() : 0);
+
+      CGCHECKM(cg_close(m_cgnsBasePtr));
+      m_cgnsBasePtr = -1;
+
+      if (do_timer) {
+        double t_end    = Ioss::Utils::timer();
+        double duration = util().global_minmax(t_end - t_begin, Ioss::ParallelUtils::DO_MAX);
+        if (myProcessor == 0) {
+          fmt::print(Ioss::DEBUG(), "{} Base File Close Time = {}\n", is_input() ? "Input" : "Output",
+                     duration);
+        }
+      }
+    }
+  }
+
   void ParallelDatabaseIO::closeDatabase__() const
   {
     if (m_cgnsFilePtr > 0) {
@@ -326,7 +356,14 @@ namespace Iocgns {
     }
 
     if (!m_dbFinalized) {
-      Utils::finalize_database(get_file_pointer(), m_timesteps, get_region(), myProcessor, true);
+      int file_ptr;
+      if (get_file_per_state()) {
+        file_ptr = m_cgnsBasePtr;
+      }
+      else {
+        file_ptr = get_file_pointer();
+      }
+      Utils::finalize_database(file_ptr, m_timesteps, get_region(), myProcessor, true);
       m_dbFinalized = true;
     }
   }
@@ -927,6 +964,39 @@ namespace Iocgns {
     return true;
   }
 
+  void ParallelDatabaseIO::free_state_pointer()
+  {
+    // If this is the first state file created, then we need to save a reference
+    // to the base CGNS file so we can update the metadata and create links to
+    // the state files (if we are using the file-per-state option)
+    if (m_cgnsBasePtr < 0) {
+      m_cgnsBasePtr = m_cgnsFilePtr;
+      m_cgnsFilePtr = -1;
+    }
+    closeDatabase__();
+  }
+
+  void ParallelDatabaseIO::open_state_file(int state)
+  {
+    // Close current state file (if any)...
+    free_state_pointer();
+
+    // Update filename to append state count...
+    decodedFilename.clear();
+
+    Ioss::FileInfo db(originalDBFilename);
+    std::string    new_filename;
+    if (!db.pathname().empty()) {
+      new_filename += db.pathname() + "/";
+    }
+
+    new_filename += fmt::format("{}-SolutionAtStep{:05}.{}", db.basename(), state, db.extension());
+
+    DBFilename = new_filename;
+
+    Iocgns::Utils::write_state_meta_data(get_file_pointer(), *get_region(), true);
+  }
+
   bool ParallelDatabaseIO::end__(Ioss::State state)
   {
     // Transitioning out of state 'state'
@@ -957,7 +1027,12 @@ namespace Iocgns {
     if (is_input()) {
       return true;
     }
-    Utils::write_flow_solution_metadata(get_file_pointer(), get_region(), state,
+    if (get_file_per_state()) {
+      // Close current state file (if any); create new state file and output metadata...
+      open_state_file(state);
+      write_results_meta_data();
+    }
+    Utils::write_flow_solution_metadata(get_file_pointer(), m_cgnsBasePtr, get_region(), state,
                                         &m_currentVertexSolutionIndex,
                                         &m_currentCellCenterSolutionIndex, true);
     m_dbFinalized = false;
@@ -2004,6 +2079,8 @@ namespace Iocgns {
         eb->property_update("guid", util().generate_guid(zone));
         eb->property_update("section", 1);
         eb->property_update("base", base);
+        eb->property_update("zone_node_count", size[0]);
+        eb->property_update("zone_element_count", size[1]);
 
         if (eb->property_exists("assembly")) {
           std::string assembly = eb->get_property("assembly").get_string();

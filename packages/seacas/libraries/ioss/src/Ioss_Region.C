@@ -90,24 +90,24 @@ namespace {
     return nullptr;
   }
 
-  template <typename T> size_t get_variable_count(const std::vector<T> &entities)
+  template <typename T> size_t internal_get_variable_count(const std::vector<T> &entities, Ioss::Field::RoleType role)
   {
     Ioss::NameList names;
     for (auto ent : entities) {
-      ent->field_describe(Ioss::Field::TRANSIENT, &names);
+      ent->field_describe(role, &names);
     }
     Ioss::Utils::uniquify(names);
     return names.size();
   }
 
+  template <typename T> size_t get_variable_count(const std::vector<T> &entities)
+  {
+    return internal_get_variable_count(entities, Ioss::Field::TRANSIENT);
+  }
+
   template <typename T> size_t get_reduction_variable_count(const std::vector<T> &entities)
   {
-    Ioss::NameList names;
-    for (auto ent : entities) {
-      ent->field_describe(Ioss::Field::REDUCTION, &names);
-    }
-    Ioss::Utils::uniquify(names);
-    return names.size();
+    return internal_get_variable_count(entities, Ioss::Field::REDUCTION);
   }
 
   template <typename T> int64_t get_entity_count(const std::vector<T> &entities)
@@ -545,17 +545,17 @@ namespace Ioss {
     size_t num_blob_vars = get_variable_count(get_blobs());
 
     size_t num_glo_red_vars  = field_count(Ioss::Field::REDUCTION);
-    size_t num_nod_red_vars  = get_variable_count(get_node_blocks());
-    size_t num_edg_red_vars  = get_variable_count(get_edge_blocks());
-    size_t num_fac_red_vars  = get_variable_count(get_face_blocks());
-    size_t num_ele_red_vars  = get_variable_count(get_element_blocks());
-    size_t num_str_red_vars  = get_variable_count(get_structured_blocks());
-    size_t num_ns_red_vars   = get_variable_count(get_nodesets());
-    size_t num_es_red_vars   = get_variable_count(get_edgesets());
-    size_t num_fs_red_vars   = get_variable_count(get_facesets());
-    size_t num_els_red_vars  = get_variable_count(get_elementsets());
+    size_t num_nod_red_vars  = get_reduction_variable_count(get_node_blocks());
+    size_t num_edg_red_vars  = get_reduction_variable_count(get_edge_blocks());
+    size_t num_fac_red_vars  = get_reduction_variable_count(get_face_blocks());
+    size_t num_ele_red_vars  = get_reduction_variable_count(get_element_blocks());
+    size_t num_str_red_vars  = get_reduction_variable_count(get_structured_blocks());
+    size_t num_ns_red_vars   = get_reduction_variable_count(get_nodesets());
+    size_t num_es_red_vars   = get_reduction_variable_count(get_edgesets());
+    size_t num_fs_red_vars   = get_reduction_variable_count(get_facesets());
+    size_t num_els_red_vars  = get_reduction_variable_count(get_elementsets());
     size_t num_asm_red_vars  = get_reduction_variable_count(get_assemblies());
-    size_t num_blob_red_vars = get_variable_count(get_blobs());
+    size_t num_blob_red_vars = get_reduction_variable_count(get_blobs());
 
     size_t                       num_ss_vars = 0;
     const Ioss::SideSetContainer fss         = get_sidesets();

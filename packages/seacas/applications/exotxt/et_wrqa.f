@@ -31,7 +31,6 @@ C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C
 
-C     $Id: wrqa.f,v 1.5 2007/10/17 18:46:10 gdsjaar Exp $
 C=======================================================================
       SUBROUTINE WRQA (NTXT, NQAREC, QAREC, NINFO, INFO, QAINFO)
 C=======================================================================
@@ -67,7 +66,8 @@ C   --upon exit positioned at end of information records.
   100 CONTINUE
 
 C ... Add record for this code
-      write (ntxt, '(A)') QAINFO(1), QAINFO(3), QAINFO(5), QAINFO(6)
+      write (ntxt, '(A)') QAINFO(1), QAINFO(3), QAINFO(5)(:8),
+     $     QAINFO(6)(:8)
       WRITE (NTXT, '(A)') '! Information Records'
       WRITE (NTXT, 10010) NINFO, '! information records'
 

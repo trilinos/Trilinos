@@ -1,4 +1,4 @@
-C    Copyright(C) 2014-2017 National Technology & Engineering Solutions of
+C    Copyright(C) 2014-2017, 2020 National Technology & Engineering Solutions of
 C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -147,9 +147,9 @@ C
 C  SKIP CONTINUATION LINES, EXTERIOR BOUNDARY LINES, AND NODES
 C  THAT ARE ON THE INTERIOR
 C
-            IF (NODE .gt. 0 .AND.
-     &         (LXN(1, NODE) .GT. 0) .AND. (LXN(2, NODE) .GT. 0) .AND.
-     &         (LNODES (4, NODE) .EQ. - 1) ) THEN
+            IF (NODE .gt. 0) THEN
+            IF ((LXN(1, NODE) .GT. 0) .AND. (LXN(2, NODE) .GT. 0) .AND.
+     &              (LNODES (4, NODE) .EQ. - 1))  THEN
 C
 C  FIND ELEMENTS AND LINES ATTACHED TO NODE
 C
@@ -337,6 +337,7 @@ C
 C
 C  CHECK FOR CONVERGENCE
 C
+            ENDIF
             ENDIF
   150    CONTINUE
 C

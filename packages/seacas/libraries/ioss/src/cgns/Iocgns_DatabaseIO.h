@@ -110,6 +110,9 @@ namespace Iocgns {
     int get_file_pointer() const override;
 
   private:
+    void open_state_file(int state);
+    void free_state_pointer();
+
     void openDatabase__() const override;
     void closeDatabase__() const override;
 
@@ -219,6 +222,8 @@ namespace Iocgns {
 
   private:
     mutable int m_cgnsFilePtr{-1};
+    mutable int m_cgnsBasePtr{
+        -1}; // If using links to file-per-state, the file pointer for "base" file.
 
     int          m_flushInterval{0}; // Default is no flushing after each timestep
     int          m_currentVertexSolutionIndex     = 0;

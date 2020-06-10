@@ -1,4 +1,4 @@
-// Copyright(C) 2010-2017 National Technology & Engineering Solutions
+// Copyright(C) 2010-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -368,6 +368,7 @@ double ejoin(SystemInterface &interFace, std::vector<Ioss::Region *> &part_mesh,
   // in the global node list.  If no mapping, then the list is simply
   // 0..number_of_global_nodes where number_of_global_nodes is the sum
   // of the node counts in the individual files.
+  // This routine also eliminates nodes if there are omitted element blocks.
   if (interFace.match_node_ids()) {
     build_reverse_node_map(output_region, part_mesh, global_node_map, local_node_map);
   }
@@ -559,9 +560,9 @@ double ejoin(SystemInterface &interFace, std::vector<Ioss::Region *> &part_mesh,
   }
   output_region.output_summary(std::cout);
   fmt::print("******* END *******\n");
-  fmt::print(stderr, "\nTotal Execution time     = {} seconds.\n", end - begin);
+  fmt::print(stderr, "\nTotal Execution time     = {:.5} seconds.\n", end - begin);
   if (steps > 0) {
-    fmt::print(stderr, "\tMesh = {} seconds; Timesteps = {} seconds / step.\n\n",
+    fmt::print(stderr, "\tMesh = {:.5} seconds; Timesteps = {:.5} seconds / step.\n\n",
                (ts_begin - begin), (end - ts_begin) / (double)(steps));
   }
   return (end - begin);
