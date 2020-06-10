@@ -1,4 +1,3 @@
-#
 # This function aids in the building of an explicit list of libraries.
 #
 # Usage:
@@ -18,8 +17,6 @@
 #   atdm_config_add_libs_to_var ATDM_CONFIG_BLAS_LIBS ${CBLAS_ROOT}/lib/intel64 .so \
 #      iomp5
 #
-
-
 function atdm_config_add_libs_to_var {
   
   # Formal arguments
@@ -53,7 +50,6 @@ function atdm_config_add_libs_to_var {
 }
 
 
-#
 # Get the standard name of the sparc-dev module for a standard-named
 # ATDM_CONFIG_COMPILER var.
 #
@@ -66,8 +62,13 @@ function get_sparc_dev_module_name() {
   echo "${sparc_module_name}"
 }
 
-#
+
 # Remove the substrings from the environment variable.
+#
+# Usage:
+#
+#   atdm_remove_substrings_from_env_var <env_var> <delim> <sstr1> <sstr2> ...
+#
 # @param env_var:  The environment variable to modify.
 # @param delim:    The delimiter used in the environment variable.
 # @param sub_strs: The substrings to remove.
@@ -102,11 +103,16 @@ function atdm_remove_substrings_from_env_var() {
   #echo "${env_var}=${!env_var}"
 }
 
+
+# Remove individual dirs from the PATH environment variable
 #
-# Remove substrings from the PATH environment variable.
-# @param substrings: one or more space delimited substrings
+# Usage:
+#
+#   atdm_remove_dirs_from_path <dir1> <dir2> ...
+#
+# @param dirs: one or more space delimited individual directories
 # @return void, the environment variable is exported to the new value.
 #
-function atdm_remove_substrings_from_path() {
+function atdm_remove_dirs_from_path() {
   atdm_remove_substrings_from_env_var PATH ":" $@
 }
