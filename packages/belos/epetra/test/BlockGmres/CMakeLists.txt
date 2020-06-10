@@ -1,15 +1,14 @@
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  bl_gmres_diag
+  SOURCES test_bl_gmres_diag.cpp 
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+)
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
 IF (${PACKAGE_NAME}_ENABLE_Triutils)
     
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    bl_gmres_diag
-    SOURCES test_bl_gmres_diag.cpp 
-    COMM serial mpi
-    STANDARD_PASS_OUTPUT
-    )
-
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     bl_gmres_hb
     SOURCES test_bl_gmres_hb.cpp 
@@ -41,8 +40,8 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
   TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestBlockGmresFiles
     SOURCE_DIR ${Belos_SOURCE_DIR}/epetra/example/BlockGmres
     SOURCE_FILES orsirr1.hb 
-    EXEDEPS bl_gmres_diag
-    )
+    EXEDEPS bl_gmres_hb
+  )
 
   ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Ifpack)
   IF(${PACKAGE_NAME}_ENABLE_Ifpack)
