@@ -1752,9 +1752,6 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>
   const LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
   const SC SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
 
-  // If this is being run on Cuda, we need to fence because the below host code will use UVM
-  typename graph_t::execution_space().fence();
-
   // Sizes
   RCP<const map_type> Ccolmap = C.getColMap();
   size_t m = Aview.origMatrix->getNodeNumRows();
@@ -2070,9 +2067,6 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>
   const size_t ST_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
   const LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
   const SC SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
-
-  // If this is being run on Cuda, we need to fence because the below host code will use UVM
-  typename graph_t::execution_space().fence();
 
   // Sizes
   RCP<const map_type> Ccolmap = C.getColMap();
