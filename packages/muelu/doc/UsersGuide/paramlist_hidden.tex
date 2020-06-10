@@ -11,6 +11,8 @@
         
 \cbb{cycle type}{string}{"V"}{Multigrid cycle type. Possible values: "V", "W".}
         
+\cbb{W cycle start level}{int}{0}{Level at which to start multigrid W cycle.}
+        
 \cbb{coarse grid correction scaling factor}{double}{1.0}{Scaling factor to be applied to the coarse grid correction. This only affects the solve phase.}
         
 \cbb{fuse prolongation and update}{bool}{false}{Fuse prolongation and update into one kernel call. Due to round-off error accumulation, this can in some cases result in slightly higher iteration counts. This only affects the solve phase.}
