@@ -333,4 +333,13 @@ IF (Sacado_ENABLE_TeuchosCore)
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
     )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    SafeSqrtTests
+    SOURCES SafeSqrtTests.cpp
+    ARGS
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+    )
 ENDIF()

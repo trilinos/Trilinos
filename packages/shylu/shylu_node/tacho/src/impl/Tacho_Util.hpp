@@ -529,6 +529,31 @@ namespace Tacho {
   using ConstUnmanagedViewType = ConstViewType<UnmanagedViewType<ViewType> >;
 
   using do_not_initialize_tag = Kokkos::ViewAllocateWithoutInitializing; 
+
+  template<typename T>
+  struct ExecSpaceFactory {
+    static void createInstance(T &exec_instance) {
+      exec_instance = T();
+    }
+#if defined(KOKKOS_ENABLE_CUDA)
+    static void createInstance(const cudaStream_t &s, T &exec_instance) {
+      exec_instance = T();
+    }
+#endif
+  };
+
+#if defined(KOKKOS_ENABLE_CUDA)
+  template<>
+  struct ExecSpaceFactory<Kokkos::Cuda> {
+    static void createInstance(Kokkos::Cuda &exec_instance) {
+      exec_instance = Kokkos::Cuda();
+    }
+    static void createInstance(const cudaStream_t &s, Kokkos::Cuda &exec_instance) {
+      exec_instance = Kokkos::Cuda(s);
+    }
+  };
+#endif
+
 }
 
 #endif

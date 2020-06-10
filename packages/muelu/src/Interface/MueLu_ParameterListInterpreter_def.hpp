@@ -169,6 +169,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetParameterList(const ParameterList& paramList) {
     Cycle_     = Hierarchy::GetDefaultCycle();
+    WCycleStartLevel_ = Hierarchy::GetDefaultCycleStartLevel();
     scalingFactor_= Teuchos::ScalarTraits<double>::one();
     blockSize_ = 1;
     dofOffset_ = 0;
@@ -291,6 +292,10 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(cycleMap.count(cycleType) == 0, Exceptions::RuntimeError,
                                  "Invalid cycle type: \"" << cycleType << "\"");
       Cycle_ = cycleMap[cycleType];
+    }
+
+    if (paramList.isParameter("W cycle start level")) {
+      WCycleStartLevel_ = paramList.get<int>("W cycle start level");
     }
 
     if (paramList.isParameter("coarse grid correction scaling factor"))
@@ -1942,6 +1947,11 @@ namespace MueLu {
         hieraList.remove("fuse prolongation and update");
       }
 
+      if (hieraList.isParameter("number of vectors")) {
+        this->numDesiredLevel_ = hieraList.get<int>("number of vectors");
+        hieraList.remove("number of vectors");
+      }
+
       if (hieraList.isSublist("matvec params"))
         this->matvecParams_ = Teuchos::parameterList(hieraList.sublist("matvec params"));
 
@@ -1960,6 +1970,10 @@ namespace MueLu {
         std::string cycleType = hieraList.get<std::string>("cycle type");
         TEUCHOS_TEST_FOR_EXCEPTION(cycleMap.count(cycleType) == 0, Exceptions::RuntimeError, "Invalid cycle type: \"" << cycleType << "\"");
         this->Cycle_ = cycleMap[cycleType];
+      }
+
+      if (hieraList.isParameter("W cycle start level")) {
+        this->WCycleStartLevel_ = hieraList.get<int>("W cycle start level");
       }
 
       if (hieraList.isParameter("verbosity")) {
@@ -2280,6 +2294,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupHierarchy(Hierarchy& H) const {
     H.SetCycle(Cycle_);
+    H.SetCycleStartLevel(WCycleStartLevel_);
     H.SetProlongatorScalingFactor(scalingFactor_);
     HierarchyManager::SetupHierarchy(H);
   }

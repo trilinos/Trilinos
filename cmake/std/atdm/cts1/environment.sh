@@ -24,8 +24,6 @@ if [ "$ATDM_CONFIG_KOKKOS_ARCH" != "BDW" ] ; then
   return
 fi
 
-export ATDM_CONFIG_SPARC_TPL_BASE=/projects/sparc/tpls/cts1-bdw
-
 export ATDM_CONFIG_SBATCH_DEFAULT_TIMEOUT=4:00:00
 
 export ATDM_CONFIG_SLURM_DEFAULT_ACCOUNT=fy150090

@@ -57,6 +57,9 @@
 #include "Amesos2_SolverCore.hpp"
 #include "Amesos2_Superlu_FunctionMap.hpp"
 
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
+#include "KokkosKernels_Handle.hpp"
+#endif
 
 namespace Amesos2 {
 
@@ -97,6 +100,7 @@ public:
    * - the corresponding type to use for magnitude
    */
   typedef typename type_map::type                                  slu_type;
+  typedef typename type_map::convert_type                  slu_convert_type;
   typedef typename type_map::magnitude_type                  magnitude_type;
 
   typedef FunctionMap<Amesos2::Superlu,slu_type>               function_map;
@@ -232,6 +236,7 @@ private:
    */
   bool loadA_impl(EPhase current_phase);
 
+  typedef Kokkos::DefaultHostExecutionSpace HostExecSpaceType;
 
   // struct holds all data necessary to make a superlu factorization or solve call
   mutable struct SLUData {
@@ -245,13 +250,21 @@ private:
 #endif
     SLU::SuperLUStat_t stat;
 
-    Teuchos::Array<magnitude_type> berr; ///< backward error bounds
-    Teuchos::Array<magnitude_type> ferr; ///<  forward error bounds
-    Teuchos::Array<int> perm_r;
-    Teuchos::Array<int> perm_c;
-    Teuchos::Array<int> etree;
-    Teuchos::Array<magnitude_type> R;
-    Teuchos::Array<magnitude_type> C;
+
+
+    typedef Kokkos::View<magnitude_type*, HostExecSpaceType>    host_mag_array;
+    typedef Kokkos::View<int*, HostExecSpaceType>               host_int_array;
+    host_mag_array berr; ///< backward error bounds
+    host_mag_array ferr; ///<  forward error bounds
+    host_int_array perm_r;
+    host_int_array perm_c;
+    host_int_array etree;
+    host_mag_array R;
+    host_mag_array C;
+
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
+    host_int_array parents;
+#endif
 
     char equed;
     bool rowequ, colequ;        // flags what type of equilibration
@@ -261,18 +274,61 @@ private:
     int panel_size;
   } data_;
 
+  typedef int size_type;
+  typedef int ordinal_type;
+  typedef Kokkos::View<size_type*, HostExecSpaceType>       host_size_type_array;
+  typedef Kokkos::View<ordinal_type*, HostExecSpaceType> host_ordinal_type_array;
+  typedef Kokkos::View<slu_type*, HostExecSpaceType>       host_value_type_array;
+
   // The following Arrays are persisting storage arrays for A, X, and B
   /// Stores the values of the nonzero entries for SuperLU
-  Teuchos::Array<slu_type> nzvals_;
+  host_value_type_array host_nzvals_view_;
+  Teuchos::Array<slu_convert_type> convert_nzvals_; // copy to SuperLU native array before calling SuperLU
+
   /// Stores the location in \c Ai_ and Aval_ that starts row j
-  Teuchos::Array<int> rowind_;
+  host_size_type_array host_rows_view_;
   /// Stores the row indices of the nonzero entries
-  Teuchos::Array<int> colptr_;
+  host_ordinal_type_array host_col_ptr_view_;
+
+  typedef typename Kokkos::View<slu_type**, Kokkos::LayoutLeft, HostExecSpaceType>
+    host_solve_array_t;
 
   /// Persisting 1D store for X
-  Teuchos::Array<slu_type> xvals_;  int ldx_;
+  mutable host_solve_array_t host_xValues_;
+  mutable Teuchos::Array<slu_convert_type> convert_xValues_; // copy to SuperLU native array before calling SuperLU
+  int ldx_;
+
   /// Persisting 1D store for B
-  Teuchos::Array<slu_type> bvals_;  int ldb_;
+  mutable host_solve_array_t host_bValues_;
+  mutable Teuchos::Array<slu_convert_type> convert_bValues_; // copy to SuperLU native array before calling SuperLU
+  int ldb_;
+
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
+  typedef Kokkos::DefaultExecutionSpace DeviceExecSpaceType;
+
+  #ifdef KOKKOS_ENABLE_CUDA
+    // solver will be UVM off even though Tpetra is CudaUVMSpace
+    typedef typename Kokkos::CudaSpace DeviceMemSpaceType;
+  #else
+    typedef typename DeviceExecSpaceType::memory_space DeviceMemSpaceType;
+  #endif
+
+  typedef Kokkos::View<slu_type**, Kokkos::LayoutLeft, DeviceMemSpaceType>
+    device_solve_array_t;
+  // For triangular solves we have both host and device versions of xValues and
+  // bValues because a parameter can turn it on or off.
+  mutable device_solve_array_t device_xValues_;
+  mutable device_solve_array_t device_bValues_;
+  typedef Kokkos::View<int*, DeviceMemSpaceType>              device_int_array;
+  device_int_array device_trsv_perm_r_;
+  device_int_array device_trsv_perm_c_;
+  mutable device_solve_array_t device_trsv_rhs_;
+  mutable device_solve_array_t device_trsv_sol_;
+  typedef KokkosKernels::Experimental::KokkosKernelsHandle <size_type, ordinal_type, slu_type,
+    DeviceExecSpaceType, DeviceMemSpaceType, DeviceMemSpaceType> kernel_handle_type;
+  mutable kernel_handle_type device_khL_;
+  mutable kernel_handle_type device_khU_;
+#endif
 
   /* Note: In the above, must use "Amesos2::Superlu" rather than
    * "Superlu" because otherwise the compiler references the
@@ -305,6 +361,12 @@ private:
   bool ILU_Flag_;
 
   bool is_contiguous_;
+  bool use_triangular_solves_;
+
+  void triangular_solve_factor();
+
+  public: // for GPU
+    void triangular_solve() const; // Only for internal use - public to support kernels
 };                              // End class Superlu
 
 
@@ -312,15 +374,19 @@ private:
 template <>
 struct solver_traits<Superlu> {
 #ifdef HAVE_TEUCHOS_COMPLEX
-  typedef Meta::make_list6<float,
-                           double,
-                           std::complex<float>,
-                           std::complex<double>,
-                           SLU::C::complex,
-                           SLU::Z::doublecomplex> supported_scalars;
+  typedef Meta::make_list6<float, double,
+                           std::complex<float>, std::complex<double>,
+                           Kokkos::complex<float>, Kokkos::complex<double>>
+                           supported_scalars;
 #else
   typedef Meta::make_list2<float, double> supported_scalars;
 #endif
+};
+
+template <typename Scalar, typename LocalOrdinal, typename ExecutionSpace>
+struct solver_supports_matrix<Superlu,
+  KokkosSparse::CrsMatrix<Scalar, LocalOrdinal, ExecutionSpace>> {
+  static const bool value = true;
 };
 
 } // end namespace Amesos2

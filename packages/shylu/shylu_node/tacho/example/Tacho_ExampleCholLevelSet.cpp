@@ -172,7 +172,12 @@ int main (int argc, char *argv[]) {
         S.SupernodesTreeRoots());
     N.printMemoryStat(verbose);
 
-    Tacho::LevelSetTools<value_type,scheduler_type> L(N);
+#if defined(TACHO_USE_LEVELSET_VARIANT)
+    constexpr int variant = TACHO_USE_LEVELSET_VARIANT;
+#else
+    constexpr int variant = 0;
+#endif
+    Tacho::LevelSetTools<value_type,scheduler_type,variant> L(N);
     L.initialize(device_level_cut, device_factor_thres, device_solve_thres, verbose);
     L.createStream(nstreams);
 

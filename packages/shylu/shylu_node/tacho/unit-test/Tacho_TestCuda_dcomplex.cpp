@@ -11,7 +11,7 @@ static const std::string MM_TEST_FILE="test_dcomplex";
 //#define TEST_END   Kokkos::finalize()
 
 #define __TACHO_TEST_CUDA__
-#include "ShyLU_NodeTacho_config.h"
+#include "Tacho_config.h"
 #include "Tacho_Util.hpp"
 
 typedef typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type HostDeviceType;

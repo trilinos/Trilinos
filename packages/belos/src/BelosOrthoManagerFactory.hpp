@@ -112,9 +112,9 @@ namespace Belos {
     OrthoManagerFactory () : theList_ (numOrthoManagers())
     {
       int index = 0;
-      theList_[index++] = "DGKS";
       theList_[index++] = "ICGS";
       theList_[index++] = "IMGS";
+      theList_[index++] = "DGKS";
 #ifdef HAVE_BELOS_TSQR
       theList_[index++] = "TSQR";
 #endif // HAVE_BELOS_TSQR

@@ -17,7 +17,8 @@ namespace Tacho {
       _ap(), _h_ap(),_aj(), _h_aj(),
       _perm(), _h_perm(), _peri(), _h_peri(),
       _N(nullptr),
-      _L(nullptr),
+      _L0(nullptr),
+      _L1(nullptr),
       _verbose(0),
       _small_problem_thres(1024),
       _serial_thres_size(-1),
@@ -28,12 +29,14 @@ namespace Tacho {
       _device_level_cut(0),
       _device_factor_thres(64),
       _device_solve_thres(128),
+      _variant(1),
       _nstreams(8),
       _max_num_superblocks(-1) {}
-  
-  template<typename VT, typename ST>
-  Solver<VT,ST>
-  ::Solver(const Solver &b) = default;
+
+  /// deleted
+  // template<typename VT, typename ST>
+  // Solver<VT,ST>
+  // ::Solver(const Solver &b) = default;
   
   ///
   /// common options
@@ -165,6 +168,16 @@ namespace Tacho {
     _device_solve_thres = device_solve_thres;
   }
 
+  template<typename VT, typename ST>  
+  void 
+  Solver<VT,ST>
+  ::setLevelSetOptionAlgorithmVariant(const ordinal_type variant) {
+    if (variant > 1 || variant < 0) {
+      std::logic_error("levelset algorithm variants range from 0 to 1");
+    }
+    _variant = variant;
+  }
+  
   template<typename VT, typename ST>  
   void 
   Solver<VT,ST>
@@ -317,7 +330,10 @@ namespace Tacho {
     if (_m < _small_problem_thres) {
       //_U = value_type_matrix_host("U", _m, _m);
     } else {
-      _N = new numeric_tools_type(_m, _ap, _aj,
+      if (_N == nullptr) 
+        _N = (numeric_tools_type*) ::operator new (sizeof(numeric_tools_type));
+      
+      new (_N) numeric_tools_type(_m, _ap, _aj,
                                   _perm, _peri,
                                   _nsupernodes, _supernodes,
                                   _gid_super_panel_ptr, _gid_super_panel_colidx,
@@ -345,9 +361,19 @@ namespace Tacho {
       /// initialize levelset tools
       ///
       if (_levelset) {
-        _L = new levelset_tools_type(*_N);
-        _L->initialize(_device_level_cut, _device_factor_thres, _device_solve_thres, _verbose);
-        _L->createStream(_nstreams);
+        if        (_variant == 0) {
+          if (_L0 == nullptr) 
+            _L0 = (levelset_tools_var0_type*) ::operator new (sizeof(levelset_tools_var0_type));
+          new (_L0) levelset_tools_var0_type(*_N);
+          _L0->initialize(_device_level_cut, _device_factor_thres, _device_solve_thres, _verbose);
+          _L0->createStream(_nstreams);
+        } else if (_variant == 1) {
+          if (_L1 == nullptr) 
+            _L1 = (levelset_tools_var1_type*) ::operator new (sizeof(levelset_tools_var1_type));
+          new (_L1) levelset_tools_var1_type(*_N);
+          _L1->initialize(_device_level_cut, _device_factor_thres, _device_solve_thres, _verbose);
+          _L1->createStream(_nstreams);
+        }
       }
     }
     return 0;
@@ -400,7 +426,8 @@ namespace Tacho {
 #endif
 #endif
       if (_levelset) {
-        _L->factorizeCholesky(ax, _verbose);
+        if      (_variant == 0) _L0->factorizeCholesky(ax, _verbose);
+        else if (_variant == 1) _L1->factorizeCholesky(ax, _verbose);
       } 
 #if !defined (KOKKOS_ENABLE_CUDA)
       else if (nthreads == 1) {
@@ -512,7 +539,8 @@ namespace Tacho {
                                 Kokkos::pair<ordinal_type,ordinal_type>(0, x.extent(0)),
                                 Kokkos::pair<ordinal_type,ordinal_type>(0, x.extent(1)));
       if (_levelset) {
-        _L->solveCholesky(x, b, tt, _verbose);
+        if      (_variant == 0) _L0->solveCholesky(x, b, tt, _verbose);
+        else if (_variant == 1) _L1->solveCholesky(x, b, tt, _verbose);
       } 
 #if !defined (KOKKOS_ENABLE_CUDA)
       else if (nthreads == 1) {
@@ -593,9 +621,15 @@ namespace Tacho {
     }
 
     if (_levelset) {
-      if (_L != nullptr)
-        _L->release(_verbose);
-      delete _L; _L = nullptr;
+      if (_variant == 0) {
+        if (_L0 != nullptr)
+          _L0->release(_verbose);
+        delete _L0; _L0 = nullptr;
+      } else if (_variant == 1) {
+        if (_L1 != nullptr)
+          _L1->release(_verbose);
+        delete _L1; _L1 = nullptr;
+      }
     }
     
     {

@@ -51,3 +51,17 @@ function atdm_config_add_libs_to_var {
   unset export_env_var_name
 
 }
+
+
+#
+# Get the standard name of the sparc-dev module for a standard-named
+# ATDM_CONFIG_COMPILER var.
+#
+function get_sparc_dev_module_name() {
+  atdm_config_compiler=$1
+  sparc_module_name=sparc-dev/$(echo "$ATDM_CONFIG_COMPILER" | tr '[:upper:]' '[:lower:]' | sed 's|/gnu-|/gcc-|g')
+  #echo "sparc_module_name = '${sparc_module_name}'"
+  sparc_module_name=$(echo "$sparc_module_name" | sed 's|gnu-|gcc-|g')
+  #echo "sparc_module_name = '${sparc_module_name}'"
+  echo "${sparc_module_name}"
+}
