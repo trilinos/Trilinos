@@ -28,7 +28,7 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DZ1_TEST_DIR=\"${CMAKE_CURRENT_SOURCE_D
 # A) Define the package
 #
 
-TRIBITS_PACKAGE(Zoltan2 ENABLE_SHADOWING_WARNINGS)
+TRIBITS_PACKAGE(Zoltan2Core ENABLE_SHADOWING_WARNINGS)
 
 #
 # A2) Enable required explicit instantiation types
@@ -160,9 +160,10 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_SCOTCH_MEMORY_REPORT
 
 ADD_SUBDIRECTORY(src)
 
-TRIBITS_ADD_TEST_DIRECTORIES(test)
-
-TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
+# This package is called Zoltan2Core from now on.
+# Tests and examples belong to Zoltan2.
+# TRIBITS_ADD_TEST_DIRECTORIES(test)
+# TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
 
 #
 # Exclude files for source package.
@@ -175,3 +176,6 @@ TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
 #
 
 TRIBITS_PACKAGE_POSTPROCESS()
+
+# We keep the name of this header file the same as before. 
+CONFIGURE_FILE(cmake/Zoltan2Core_config.h.in src/Zoltan2_config.h @ONLY)
