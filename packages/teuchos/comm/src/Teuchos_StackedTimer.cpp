@@ -636,7 +636,8 @@ static void printXMLEscapedString(std::ostream& os, const std::string& str)
 double
 StackedTimer::printLevelXML (std::string prefix, int print_level, std::ostream& os, std::vector<bool> &printed, double parent_time, const std::string& rootName)
 {
-  int indent = 2 * print_level;
+  constexpr int indSpaces = 2;
+  int indent = indSpaces * print_level;
 
   double total_time = 0.0;
 
@@ -670,7 +671,7 @@ StackedTimer::printLevelXML (std::string prefix, int print_level, std::ostream& 
       os << innerContents;
       // Print Remainder
       if (sub_time > 0 ) {
-        for (int j = 0; j < indent + 4; j++)
+        for (int j = 0; j < indent + indSpaces; j++)
           os << " ";
         os << "<timing name=\"Remainder\" value=\"" << (sum_[i]/active_[i] - sub_time) << "\"/>\n";
       }
