@@ -301,7 +301,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_zoltan_simple_for_driver_tests_
   SOURCE_FILES
     simple.coords
     simple.graph
-  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../zoltan/test/ch_simple
+  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../zoltan/test/ch_simple
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
 )
 
@@ -309,7 +309,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_zoltan_vwgt_for_driver_tests_
   SOURCE_FILES
     vwgt.coords
     vwgt.graph
-  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../zoltan/test/ch_vwgt
+  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../zoltan/test/ch_vwgt
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
 )
 
@@ -317,7 +317,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_zoltan_vwgt2_for_driver_tests_
   SOURCE_FILES
     vwgt2.coords
     vwgt2.graph
-  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../zoltan/test/ch_vwgt2
+  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../zoltan/test/ch_vwgt2
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
 )
 
@@ -325,7 +325,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_zoltan_ewgt_for_driver_tests_
   SOURCE_FILES
     ewgt.coords
     ewgt.graph
-  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../zoltan/test/ch_ewgt
+  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../zoltan/test/ch_ewgt
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
 )
 
@@ -333,7 +333,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_zoltan_nograph_for_driver_tests_
   SOURCE_FILES
     nograph.coords
     nograph.graph
-  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../zoltan/test/ch_nograph
+  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../zoltan/test/ch_nograph
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
 )
 
