@@ -65,6 +65,7 @@ ATDM_KNOWN_SYSTEM_NAMES_LIST=(
   waterman
   ats2
   van1-tx2
+  cts1empire
   cts1
   tlcc2
   sems-rhel7
