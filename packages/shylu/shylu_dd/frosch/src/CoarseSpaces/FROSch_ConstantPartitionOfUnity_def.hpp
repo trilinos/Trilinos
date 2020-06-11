@@ -39,6 +39,7 @@
 // ************************************************************************
 //@HEADER
 
+
 #ifndef _FROSCH_CONSTANTPARTITIONOFUNITY_DEF_HPP
 #define _FROSCH_CONSTANTPARTITIONOFUNITY_DEF_HPP
 
@@ -123,7 +124,9 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(computePartitionOfUnityTime,"ConstantPartitionOfUnity::computePartitionOfUnity");
         // Interface
+
         UN dofsPerNode = DDInterface_->getInterior()->getEntity(0)->getDofsPerNode();
+
         UN numInteriorDofs = dofsPerNode*DDInterface_->getInterior()->getEntity(0)->getNumNodes();
 
         if (UseVolumes_) Volumes_->buildEntityMap(DDInterface_->getNodesMap());

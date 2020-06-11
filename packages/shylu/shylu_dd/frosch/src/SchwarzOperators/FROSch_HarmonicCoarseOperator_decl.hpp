@@ -110,6 +110,8 @@ namespace FROSch {
                                ParameterListPtr parameterList);
 
         virtual int initialize() = 0;
+        XMapPtr assembleCoarseMap();
+
 
         XMapPtr computeCoarseSpace(CoarseSpacePtr coarseSpace);
 

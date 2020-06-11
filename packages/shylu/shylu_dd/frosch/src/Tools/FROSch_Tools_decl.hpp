@@ -74,9 +74,15 @@
 #define FROSCH_INDENT 5
 #endif
 
-#include <ShyLU_DDFROSch_config.h>
 
+
+
+
+
+#include <ShyLU_DDFROSch_config.h>
 #include <Tpetra_Distributor.hpp>
+#include <MatrixMarket_Tpetra.hpp>
+
 
 #include <Xpetra_MatrixFactory.hpp>
 #include <Xpetra_CrsGraphFactory.hpp>
@@ -150,7 +156,13 @@ namespace FROSch {
 
         using CommPtr                   = RCP<const Comm<int> >;
 
-        using ConstXMapPtr              = RCP<const Map<LO,GO,NO> >;
+        using XMap                              = Map<LO,GO,NO>;
+        using XMapPtr                           = RCP<XMap>;
+        using ConstXMapPtr                      = RCP<const XMap>;
+        using XMapPtrVecPtr                     = ArrayRCP<XMapPtr>;
+        using ConstXMapPtrVecPtr                = ArrayRCP<ConstXMapPtr>;
+        using XMapPtrVecPtr2D                   = ArrayRCP<XMapPtrVecPtr>;
+        using ConstXMapPtrVecPtr2D              = ArrayRCP<ConstXMapPtrVecPtr>;
 
         using OverlappingDataPtr        = RCP<OverlappingData<LO,GO> >;
         using OverlappingDataPtrVec     = Array<OverlappingDataPtr>;
@@ -202,6 +214,12 @@ namespace FROSch {
         UN LevelID_ = 1;
     };
 
+    template <class SC, class LO, class GO, class NO>
+    void writeMM(std::string fileName, Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &matrix_);
+
+    template <class SC, class LO, class GO, class NO>
+    void readMM(std::string fileName, Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &matrix_,RCP<const Comm<int> > &comm);
+
     template <class LO,class GO,class NO>
     RCP<const Map<LO,GO,NO> > BuildUniqueMap(const RCP<const Map<LO,GO,NO> > map,
                                              bool useCreateOneToOneMap = true,
@@ -239,6 +257,34 @@ namespace FROSch {
     template <class LO,class GO,class NO>
     RCP<const Map<LO,GO,NO> > BuildRepeatedMap(RCP<const CrsGraph<LO,GO,NO> > graph);
 
+    template <class LO,class GO,class NO>
+    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildMapFromNodeMap(Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > &nodesMap,
+                                                           unsigned dofsPerNode,
+                                                           unsigned dofOrdering);
+
+    template <class LO,class GO,class NO>
+    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepeatedMapCoarseLevel(Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > &nodesMap,
+                                                                     unsigned dofsPerNode,
+                                                                     Teuchos::Array<GO> numEnt,
+                                                                     unsigned partitionType,
+                                                                     ArrayRCP<RCP<const Map<LO,GO,NO>>> dofsMaps);
+
+
+
+
+
+
+
+
+
+
+
+
+    template <class LO,class GO,class NO>
+    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildMapFromNodeMapRepeated(Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > &nodesMap,
+                                                                     unsigned dofsPerNode,
+                                                                     unsigned dofOrdering);
+
     template <class SC,class LO,class GO,class NO>
     int ExtendOverlapByOneLayer_Old(RCP<const Matrix<SC,LO,GO,NO> > inputMatrix,
                                     RCP<const Map<LO,GO,NO> > inputMap,
@@ -266,6 +312,10 @@ namespace FROSch {
     template <class LO,class GO,class NO>
     RCP<Map<LO,GO,NO> > AssembleMaps(ArrayView<RCP<const Map<LO,GO,NO> > > mapVector,
                                      ArrayRCP<ArrayRCP<LO> > &partMappings);
+
+    template <class LO,class GO,class NO>
+    RCP<Map<LO,GO,NO> > AssembleMapsNonConst(ArrayView<RCP<Map<LO,GO,NO> > > mapVector,
+                                             ArrayRCP<ArrayRCP<LO> > &partMappings);
 
     template <class LO,class GO,class NO>
     RCP<Map<LO,GO,NO> > AssembleSubdomainMap(unsigned numberOfBlocks,
@@ -330,6 +380,10 @@ namespace FROSch {
 
     template<class T>
     inline void sortunique(T &v);
+
+    template<class SC, class LO, class GO, class NO>
+    void writeMM(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> >& matrix_,std::string fileName);
+
 
     template <class SC, class LO,class GO,class NO>
     RCP<MultiVector<SC,LO,GO,NO> > ModifiedGramSchmidt(RCP<const MultiVector<SC,LO,GO,NO> > multiVector,

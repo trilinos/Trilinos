@@ -45,6 +45,11 @@
 #include <Xpetra_Operator.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>
 
+#include <Teuchos_ScalarTraits.hpp>
+#include <Teuchos_SerialDenseMatrix.hpp>
+#include <Teuchos_SerialQRDenseSolver.hpp>
+#include <Teuchos_SerialDenseVector.hpp>
+#include <Teuchos_SerialDenseHelpers.hpp>
 #include <FROSch_CoarseSpace_def.hpp>
 
 #include "FROSch_Tools_def.hpp"
@@ -54,7 +59,7 @@ namespace FROSch {
 
     using namespace Teuchos;
     using namespace Xpetra;
-    
+
     template <class SC = double,
               class LO = int,
               class GO = DefaultGlobalOrdinal,
@@ -112,6 +117,7 @@ namespace FROSch {
         XMultiVectorPtrVecPtr getPartitionOfUnity() const;
 
         XMultiVectorPtr getNullspaceBasis() const;
+        ConstXMultiVectorPtr getCoarseNullSpace() const;
 
         CoarseSpacePtr getLocalPartitionOfUnitySpace() const;
 
@@ -128,6 +134,7 @@ namespace FROSch {
 
         XMultiVectorPtrVecPtr PartitionOfUnity_;
         ConstXMultiVectorPtr NullspaceBasis_;
+        ConstXMultiVectorPtr CoarseNullSpace_;
 
         XMapPtrVecPtr PartitionOfUnityMaps_;
 

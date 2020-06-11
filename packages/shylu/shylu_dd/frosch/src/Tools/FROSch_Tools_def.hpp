@@ -206,6 +206,42 @@ namespace FROSch {
         return minidx;
     }
 
+    template <class SC, class LO, class GO, class NO>
+    void writeMM(std::string fileName, Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &matrix_){
+      TEUCHOS_TEST_FOR_EXCEPTION( matrix_.is_null(), std::runtime_error,"Matrix in writeMM is null.");
+      TEUCHOS_TEST_FOR_EXCEPTION( !(matrix_->getMap()->lib()==Xpetra::UseTpetra), std::logic_error,"Only available for Tpetra underlying lib.");
+      typedef Tpetra::CrsMatrix<SC,LO,GO,NO> TpetraCrsMatrix;
+      typedef Teuchos::RCP<TpetraCrsMatrix> TpetraCrsMatrixPtr;
+
+      Xpetra::CrsMatrixWrap<SC,LO,GO,NO>& crsOp = dynamic_cast<Xpetra::CrsMatrixWrap<SC,LO,GO,NO>&>(*matrix_);
+      Xpetra::TpetraCrsMatrix<SC,LO,GO,NO>& xTpetraMat = dynamic_cast<Xpetra::TpetraCrsMatrix<SC,LO,GO,NO>&>(*crsOp.getCrsMatrix());
+
+      TpetraCrsMatrixPtr tpetraMat = xTpetraMat.getTpetra_CrsMatrixNonConst();
+
+      Tpetra::MatrixMarket::Writer< TpetraCrsMatrix > tpetraWriter;
+
+      tpetraWriter.writeSparseFile(fileName, tpetraMat, "matrix", "");
+    }
+
+    template <class SC, class LO, class GO, class NO>
+    void readMM(std::string fileName, Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &matrix_,RCP<const Comm<int> > &comm){
+
+      TEUCHOS_TEST_FOR_EXCEPTION( !(matrix_->getMap()->lib()==Xpetra::UseTpetra), std::logic_error,"Only available for Tpetra underlying lib.");
+      typedef Tpetra::CrsMatrix<SC,LO,GO,NO> TpetraCrsMatrix;
+      typedef Teuchos::RCP<TpetraCrsMatrix> TpetraCrsMatrixPtr;
+
+      TpetraCrsMatrixPtr tmpMatrix;
+      Tpetra::MatrixMarket::Reader<TpetraCrsMatrix> tpetraReader;
+
+      tmpMatrix = tpetraReader.readSparseFile(fileName,comm);
+
+      matrix_ = rcp_dynamic_cast<Matrix<SC,LO,GO,NO> >(tmpMatrix);
+
+    }
+
+
+
+
     template <class LO,class GO,class NO>
     RCP<const Map<LO,GO,NO> > BuildUniqueMap(const RCP<const Map<LO,GO,NO> > map,
                                              bool useCreateOneToOneMap,
@@ -387,6 +423,76 @@ namespace FROSch {
     }
 
     template <class LO,class GO,class NO>
+    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepeatedMapCoarseLevel(Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > &nodesMap,
+                                                           unsigned dofsPerNode,
+                                                           Teuchos::Array<GO> numEnt,
+                                                           unsigned partitionType,
+                                                           ArrayRCP<RCP<const Map<LO,GO,NO>>> dofMaps)
+    {
+      //FROSCH_ASSERT(numVert+numEdg+numFac != nodesMap->getGlobalNumElements(),"ERROR: Map does not match number of Entities");
+      Teuchos::Array<GO> nodeEle = nodesMap->getNodeElementList();
+      //std::cout<<"Rank "<<nodesMap->getComm()->getRank()<<"   "<<nodeEle<<std::endl;
+      //std::cout<<"Rank "<<nodesMap->getComm()->getRank()<<"   "<<nodeEle[0]+2*numVert<<std::endl;
+      Teuchos::Array<GO> dofEle(nodeEle.size()*dofsPerNode);
+      Teuchos::Array<GO> dmapEle(nodeEle.size());
+      //GDSW Type CoarseOperator
+      if(partitionType == 0){
+      for(unsigned j = 0;j<dofsPerNode;j++){
+        for(unsigned i = 0;i<nodeEle.size();i++){
+          //vertices
+          if(nodeEle[i]<numEnt[0]){
+            dofEle[i*dofsPerNode+j] = nodeEle[i]+j*numEnt[0];
+            dmapEle[i] = nodeEle[i]+j*numEnt[0];
+          }
+          //shortEdges
+          else if (nodeEle[i]>=numEnt[0] && nodeEle[i]<numEnt[1]+numEnt[0]){
+            dofEle[i*dofsPerNode+j] = nodeEle[i]+j*numEnt[1]+(dofsPerNode-1)*numEnt[0];
+            dmapEle[i] = nodeEle[i]+j*numEnt[1]+(dofsPerNode-1)*numEnt[0];
+          }
+          //straightEdges
+          else if (nodeEle[i]<numEnt[2]+numEnt[0]+numEnt[1] && nodeEle[i]>=numEnt[1]+numEnt[0]){
+            dofEle[i*dofsPerNode+j] = nodeEle[i]+j*numEnt[2]+(numEnt[0]*(dofsPerNode-1))+(numEnt[1]*(dofsPerNode-1));
+            dmapEle[i] = nodeEle[i]+j*numEnt[2]+(numEnt[0]*(dofsPerNode-1))+(numEnt[1]*(dofsPerNode-1));
+          }
+          //edges
+          else if (nodeEle[i]<numEnt[3]+numEnt[2]+numEnt[0]+numEnt[1] && nodeEle[i]>=numEnt[1]+numEnt[0]+numEnt[2]){
+            dofEle[i*dofsPerNode+j] = nodeEle[i]+j*numEnt[3]+(numEnt[0]*(dofsPerNode-1))+(numEnt[1]*(dofsPerNode-1))+(numEnt[2]*(dofsPerNode-1));
+            dmapEle[i] = nodeEle[i]+j*numEnt[3]+(numEnt[0]*(dofsPerNode-1))+(numEnt[1]*(dofsPerNode-1))+(numEnt[2]*(dofsPerNode-1));
+          }
+          //faces
+          else if (nodeEle[i]<numEnt[3]+numEnt[2]+numEnt[0]+numEnt[1]+numEnt[4] && nodeEle[i]>=numEnt[1]+numEnt[0]+numEnt[2]+numEnt[3]){
+            dofEle[i*dofsPerNode+j] = nodeEle[i]+j*numEnt[4]+(numEnt[0]*(dofsPerNode-1))+(numEnt[1]*(dofsPerNode-1))+(numEnt[2]*(dofsPerNode-1))+(numEnt[3]*(dofsPerNode-1));
+            dmapEle[i] = nodeEle[i]+j*numEnt[4]+(numEnt[0]*(dofsPerNode-1))+(numEnt[1]*(dofsPerNode-1))+(numEnt[2]*(dofsPerNode-1))+(numEnt[3]*(dofsPerNode-1));
+          } else{
+            if(nodesMap->getComm()->getRank() == 0) std::cout<<"This should never happen\n";
+          }
+        }
+        dofMaps[j] =   Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,-1,dmapEle,0,nodesMap->getComm());
+      }
+    } //RGDSW type CoarseOperator
+     else if(partitionType == 2){
+       for(unsigned j = 0;j<dofsPerNode;j++){
+        for(unsigned i = 0;i<nodeEle.size();i++){
+          //roots
+         if(nodeEle[i]<numEnt[5]){
+            dofEle[i*dofsPerNode+j] = nodeEle[i]+j*numEnt[5];
+            dmapEle[i] = nodeEle[i]+j*numEnt[5];
+          }
+          else if (numEnt[6] !=-1 &&nodeEle[i]>=numEnt[5] && nodeEle[i]<numEnt[6]+numEnt[5]){
+            dofEle[i*dofsPerNode+j] = nodeEle[i]+j*numEnt[6]+(dofsPerNode-1)*numEnt[5];
+            dmapEle[i] = nodeEle[i]+j*numEnt[6]+(dofsPerNode-1)*numEnt[5];
+          }
+        }
+        dofMaps[j] =   Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,-1,dmapEle,0,nodesMap->getComm());
+      }
+     }
+    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > tmpMap =   Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,-1,dofEle,0,nodesMap->getComm());
+    return tmpMap;
+
+    }
+
+
+    template <class LO,class GO,class NO>
     RCP<Map<LO,GO,NO> > BuildRepeatedMapNonConstOld(RCP<const CrsGraph<LO,GO,NO> > graph)
     {
         FROSCH_TIMER_START(buildRepeatedMapNonConstTime,"BuildRepeatedMapNonConstOld");
@@ -528,6 +634,35 @@ namespace FROSch {
     RCP<const Map<LO,GO,NO> > BuildRepeatedMap(RCP<const CrsGraph<LO,GO,NO> > graph)
     {
         return BuildRepeatedMapNonConst(graph).getConst();
+    }
+
+
+    template <class LO,class GO,class NO>
+    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildMapFromNodeMapRepeated(Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > &nodesMap,
+                                                             unsigned dofsPerNode,
+                                                             unsigned dofOrdering)
+    {
+        FROSCH_ASSERT(dofOrdering==0 || dofOrdering==1,"ERROR: Specify a valid DofOrdering.");
+        FROSCH_ASSERT(!nodesMap.is_null(),"nodesMap.is_null().");
+
+        unsigned numNodes = nodesMap->getNodeNumElements();
+        Teuchos::Array<GO> globalIDs(dofsPerNode*numNodes);
+        if (dofOrdering==0) {
+            for (unsigned i=0; i<dofsPerNode; i++) {
+                for (unsigned j=0; j<numNodes; j++) {
+                    globalIDs[dofsPerNode*j+i] = dofsPerNode*(nodesMap->getMaxGlobalIndex()+1)+i;
+                }
+            }
+        } else if (dofOrdering == 1) {
+            for (unsigned i=0; i<dofsPerNode; i++) {
+                for (unsigned j=0; j<numNodes; j++) {
+                    globalIDs[j+i*numNodes] = nodesMap->getGlobalElement(j)+i*(nodesMap->getMaxGlobalIndex()+1);
+                }
+            }
+        } else {
+            FROSCH_ASSERT(false,"dofOrdering unknown.");
+        }
+        return Xpetra::MapFactory<LO,GO,NO>::Build(nodesMap->lib(),-1,globalIDs(),0,nodesMap->getComm());
     }
 
     /*
@@ -690,6 +825,51 @@ namespace FROSch {
         sort(globalIDs);
         return MapFactory<LO,GO,NO>::Build(inputMap->lib(),-1,globalIDs(),0,inputMap->getComm());
     }
+
+
+  template <class LO,class GO,class NO>
+        RCP<Map<LO,GO,NO> > AssembleMapsNonConst(ArrayView<RCP<Map<LO,GO,NO> > > mapVector,
+                                         ArrayRCP<ArrayRCP<LO> > &partMappings)
+        {
+            FROSCH_TIMER_START(assembleMapsTime,"AssembleMaps");
+            FROSCH_ASSERT(mapVector.size()>0,"Length of mapVector is == 0!");
+            LO i = 0;
+            LO localstart = 0;
+            LO sizetmp = 0;
+            LO size = 0;
+            GO globalstart = 0;
+
+            partMappings = ArrayRCP<ArrayRCP<LO> >(mapVector.size());
+
+            ArrayRCP<GO> assembledMapTmp(0);
+            for (unsigned j=0; j<mapVector.size(); j++) {
+                sizetmp = mapVector[j]->getNodeNumElements();
+                partMappings[j] = ArrayRCP<LO>(sizetmp);
+
+                size += sizetmp;
+                assembledMapTmp.resize(size);
+
+                localstart = i;
+                while (i<localstart+sizetmp) {
+                    partMappings[j][i-localstart] = i;
+                    assembledMapTmp[i] = globalstart + mapVector[j]->getGlobalElement(i-localstart);
+                    i++;
+                }
+                //std::cout << mapVector[j]->getMaxAllGlobalIndex() << std::endl;
+                /*
+                globalstart += mapVector[j]->getMaxAllGlobalIndex();
+
+                if (mapVector[0]->lib()==UseEpetra || mapVector[j]->getGlobalNumElements()>0) {
+                    globalstart += 1;
+                }
+                 */
+
+                globalstart += std::max(mapVector[j]->getMaxAllGlobalIndex(),(GO)-1)+1; // AH 04/05/2018: mapVector[j]->getMaxAllGlobalIndex() can result in -2147483648 if the map is empty on the process => introducing max(,)
+
+                //if (mapVector[j]->getComm()->getRank() == 0) std::cout << std::endl << globalstart << std::endl;
+            }
+            return MapFactory<LO,GO,NO>::Build(mapVector[0]->lib(),-1,assembledMapTmp(),0,mapVector[0]->getComm());
+        }
 
     template <class LO,class GO,class NO>
     RCP<Map<LO,GO,NO> > AssembleMaps(ArrayView<RCP<const Map<LO,GO,NO> > > mapVector,

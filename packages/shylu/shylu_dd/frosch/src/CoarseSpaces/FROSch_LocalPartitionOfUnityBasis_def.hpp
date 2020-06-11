@@ -155,6 +155,13 @@ namespace FROSch {
     }
 
     template<class SC,class LO,class GO,class NO>
+    typename LocalPartitionOfUnityBasis<SC,LO,GO,NO>::ConstXMultiVectorPtr LocalPartitionOfUnityBasis<SC,LO,GO,NO>::getCoarseNullSpace() const
+    {
+        FROSCH_ASSERT(!CoarseNullSpace_.is_null(),"Nullspace Basis is not set.");
+        return CoarseNullSpace_;
+    }
+
+    template<class SC,class LO,class GO,class NO>
     typename LocalPartitionOfUnityBasis<SC,LO,GO,NO>::CoarseSpacePtr LocalPartitionOfUnityBasis<SC,LO,GO,NO>::getLocalPartitionOfUnitySpace() const
     {
         FROSCH_ASSERT(!LocalPartitionOfUnitySpace_.is_null(),"Local Partition Of Unity Space is not built yet.");

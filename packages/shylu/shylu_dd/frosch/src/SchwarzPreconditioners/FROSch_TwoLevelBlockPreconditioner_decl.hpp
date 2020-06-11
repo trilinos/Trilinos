@@ -44,6 +44,7 @@
 
 #include <FROSch_OneLevelPreconditioner_def.hpp>
 
+#define ATimer(S,L) Teuchos::TimeMonitor::getNewCounter(std::string("FROSch: ") + std::string(S) + " (Level " + std::to_string(L) + std::string(")"));
 
 namespace FROSch {
 
@@ -105,6 +106,16 @@ namespace FROSch {
                        ConstXMapPtrVecPtr repeatedMapVec = null,
                        ConstXMultiVectorPtrVecPtr nullSpaceBasisVec = null,
                        ConstXMultiVectorPtrVecPtr nodeListVec = null,
+                       ConstXMapPtrVecPtr2D dofsMapsVec = null,
+                       GOVecPtr2D dirichletBoundaryDofsVec = null);
+
+        int initialize(UN dimension,
+                       UNVecPtr dofsPerNodeVec,
+                       DofOrderingVecPtr dofOrderingVec,
+                       int overlap = -1,
+                       ConstXMultiVectorPtrVecPtr nodeListVec = null,
+                       ConstXMapPtrVecPtr repeatedMapVec = null,
+                       ConstXMultiVectorPtrVecPtr nullSpaceBasisVec = null,
                        ConstXMapPtrVecPtr2D dofsMapsVec = null,
                        GOVecPtr2D dirichletBoundaryDofsVec = null);
 

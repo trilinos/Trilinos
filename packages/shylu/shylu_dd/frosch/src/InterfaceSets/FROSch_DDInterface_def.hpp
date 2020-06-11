@@ -80,6 +80,37 @@ namespace FROSch {
         identifyLocalComponents(componentsSubdomains,componentsSubdomainsUnique);
     }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     template <class SC,class LO,class GO,class NO>
     DDInterface<SC,LO,GO,NO>::~DDInterface()
     {
@@ -232,6 +263,8 @@ namespace FROSch {
         FROSCH_TIMER_START_LEVELID(sortVerticesEdgesFacesTime,"DDInterface::sortVerticesEdgesFaces");
         //if (Verbose_ && Verbosity_==All) cout << "FROSch::DDInterface : Sorting interface components" << endl;
 
+
+
         // Clear EntitySets if non-empty
         if (Vertices_->getNumEntities()>0) Vertices_.reset(new EntitySet<SC,LO,GO,NO>(VertexType));
         if (ShortEdges_->getNumEntities()>0) ShortEdges_.reset(new EntitySet<SC,LO,GO,NO>(EdgeType));
@@ -317,6 +350,7 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(buildEntityMapsTime,"DDInterface::buildEntityMaps");
         //if (Verbose_ && Verbosity_==All) cout << "FROSch::DDInterface : Building global interface component maps" << endl;
+
 
         if (buildVerticesMap) Vertices_->buildEntityMap(NodesMap_);
         if (buildShortEdgesMap) ShortEdges_->buildEntityMap(NodesMap_);
@@ -474,7 +508,7 @@ namespace FROSch {
                     globalVec[i] = -1;
                 }
             }
-
+            numEntity = globalVec;
             if (Verbose_) {
                 cout
                 << "\n" << setw(FROSCH_INDENT) << " "
@@ -558,6 +592,11 @@ namespace FROSch {
         }
 
         return 0;
+    }
+
+    template <class SC,class LO,class GO,class NO>
+    typename DDInterface<SC,LO,GO,NO>::GOVec DDInterface<SC,LO,GO,NO>::getNumEnt() const{
+      return numEntity;
     }
 
     template <class SC,class LO,class GO,class NO>
@@ -838,6 +877,9 @@ namespace FROSch {
         FROSCH_TIMER_START_LEVELID(identifyLocalComponentsTime,"DDInterface::identifyLocalComponents");
         //if (Verbose_ && Verbosity_==All) cout << "FROSch::DDInterface : Classifying interface components based on equivalence classes" << endl;
 
+
+
+
         // Hier herausfinden, ob Ecke, Kante oder Fläche
         UNVecPtr componentsMultiplicity(componentsSubdomainsUnique.size());
         IntVecVecPtr components(componentsSubdomainsUnique.size());
@@ -851,7 +893,6 @@ namespace FROSch {
         for (UN i=0; i<maxMultiplicity+1; i++) {
             EntitySetVector_[i].reset(new EntitySet<SC,LO,GO,NO>(DefaultType));
         }
-
         typename IntVecVec::iterator classIterator;
         LOVecPtr localComponentIndices(NumMyNodes_);
         for (int i=0; i<NumMyNodes_; i++) {

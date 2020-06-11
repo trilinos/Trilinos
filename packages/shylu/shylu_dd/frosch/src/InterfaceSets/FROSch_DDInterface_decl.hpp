@@ -55,6 +55,7 @@
 #include <FROSch_ExtractSubmatrices_def.hpp>
 
 
+
 namespace FROSch {
 
     using namespace Teuchos;
@@ -126,6 +127,8 @@ namespace FROSch {
         using SCVec                     = Array<SC>;
         using SCVecPtr                  = ArrayRCP<SC>;
 
+        using TimePtr                   = RCP<Teuchos::Time>;
+
     public:
 
         DDInterface(UN dimension,
@@ -195,11 +198,12 @@ namespace FROSch {
         EntitySetConstPtr & getInterior() const;
 
         EntitySetConstPtr & getRoots() const;
-        
+
         EntitySetConstPtr & getLeafs() const;
 
         EntitySetPtrConstVecPtr & getEntitySetVector() const;
 
+        GOVec getNumEnt()const;
         //! This function returns those entities which are to be used to build a connectivity graph on the subdomain
         //! level. They have to identified first using the function identifyConnectivityEntities().
         EntitySetConstPtr & getConnectivityEntities() const;
@@ -243,6 +247,7 @@ namespace FROSch {
         Verbosity Verbosity_ = All;
 
         ConstUN LevelID_ = 1;
+        GOVec numEntity;
     };
 
 }

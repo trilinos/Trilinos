@@ -81,6 +81,9 @@ namespace FROSch {
         using XMultiVectorPtrVecPtr             = typename SchwarzOperator<SC,LO,GO,NO>::XMultiVectorPtrVecPtr;
         using ConstXMultiVectorPtrVecPtr        = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMultiVectorPtrVecPtr;
 
+        using XCrsGraph                         = typename SchwarzOperator<SC,LO,GO,NO>::XCrsGraph;
+        using GraphPtr                          = typename SchwarzOperator<SC,LO,GO,NO>::GraphPtr;
+        using ConstXCrsGraphPtr                 = typename SchwarzOperator<SC,LO,GO,NO>::ConstXCrsGraphPtr;
         using ParameterListPtr                  = typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr;
 
         using DDInterfacePtr                    = typename SchwarzOperator<SC,LO,GO,NO>::DDInterfacePtr;
