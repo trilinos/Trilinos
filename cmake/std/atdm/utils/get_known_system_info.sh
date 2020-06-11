@@ -150,6 +150,10 @@ fi
 
 # CTS1 systems
 if [[ $SNLSYSTEM == "cts1" ]] ; then
+  # Make cts1empire the default environment
+  systemNameTypeMatchedList+=(cts1empire)
+  systemNameTypeMatchedListHostNames[cts1empire]=$SNLCLUSTER
+  # Add cts1 to the list for the D.1 branch, below
   systemNameTypeMatchedList+=(cts1)
   systemNameTypeMatchedListHostNames[cts1]=$SNLCLUSTER
 fi
