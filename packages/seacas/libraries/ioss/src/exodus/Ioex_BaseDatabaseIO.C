@@ -67,7 +67,7 @@
 #if defined(BUILT_IN_SIERRA)
 #define GLOBALS_ARE_TRANSIENT 1
 #else
-#define GLOBALS_ARE_TRANSIENT 0
+#define GLOBALS_ARE_TRANSIENT 1
 #endif
 
 // ========================================================================
