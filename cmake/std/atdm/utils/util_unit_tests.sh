@@ -18,6 +18,12 @@ fi
 # Test atdm get_known_system_info script
 #
 test_atdm_get_known_system_info() {
+   # TODO: D.2 needs to be tested by setting these values:
+  SNLSYSTEM=
+  SEMS_PLATFORM=
+  ATDM_SYSTEM_NAME=
+  SNLCLUSTER=
+
   # Get the good ATDM_KNOWN_SYSTEM_NAMES_LIST
   ATDM_CONFIG_BUILD_NAME=unit_test
   ATDM_CONFIG_DISABLE_WARNINGS=ON
