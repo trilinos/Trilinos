@@ -197,19 +197,26 @@ int ex_create_par_int(const char *path, int cmode, int *comp_ws, int *io_ws, MPI
   nc_mode = ex__handle_mode(my_mode, is_parallel, run_version);
 
   if ((status = nc_create_par(path, nc_mode, comm, info, &exoid)) != NC_NOERR) {
-#if NC_HAS_HDF5
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: file create failed for %s", path);
-#else
     if (my_mode & EX_NETCDF4) {
+#if NC_HAS_PARALLEL4
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: file create failed for %s.", path);
+#else
       snprintf(errmsg, MAX_ERR_LENGTH,
-               "ERROR: file create failed for %s in NETCDF4 "
-               "mode.\n\tThis library does not support netcdf-4 files.",
+               "ERROR: file create failed for %s in NetCDF-4 "
+               "mode.\n\tThis library does not support parallel NetCDF-4 files (HDF5-based).",
                path);
+#endif
     }
     else {
+#if NC_HAS_PNETCDF
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: file create failed for %s", path);
-    }
+#else
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: file create failed for %s in PnetCDF "
+               "mode.\n\tThis library does not provide PnetCDF support.",
+               path);
 #endif
+    }
     ex_err(__func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }

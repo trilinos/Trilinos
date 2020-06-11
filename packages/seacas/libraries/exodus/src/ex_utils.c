@@ -130,21 +130,31 @@ void ex_print_config(void)
 #endif
 #endif
 #endif
+#if defined(PARALLEL_AWARE_EXODUS)
 #if NC_HAS_PARALLEL
   fprintf(stderr, "\t\tParallel IO enabled via HDF5 and/or PnetCDF\n");
+#else
+  fprintf(stderr,
+          "\t\tParallel IO *NOT* enabled via HDF5 and/or PnetCDF (PROBABLY A BUILD ERROR!)\n");
 #endif
 #if NC_HAS_PARALLEL4
   fprintf(stderr, "\t\tParallel IO enabled via HDF5\n");
+#else
+  fprintf(stderr, "\t\tParallel IO *NOT* enabled via HDF5\n");
+#endif
 #if NC_HAS_PAR_FILTERS
   fprintf(stderr, "\t\tParallel IO supports filters\n");
-#endif
 #endif
 #if NC_HAS_PNETCDF
   {
     char *libver = ncmpi_inq_libvers();
     fprintf(stderr, "\t\tParallel IO enabled via PnetCDF (%s)\n", libver);
   }
+#else
+  fprintf(stderr, "\t\tParallel IO *NOT* enabled via PnetCDF\n");
 #endif
+#endif /* PARALLEL_AWARE_EXODUS */
+
 #if NC_HAS_ERANGE_FILL
   fprintf(stderr, "\t\tERANGE_FILL support\n");
 #endif

@@ -109,26 +109,56 @@ int main(int argc, char *argv[])
     // Read and parse a file.  The entire file will be parsed and
     // then the output can be obtained in an std::ostringstream via
     // Aprepro::parsing_results()
+    bool writeResults = true;
     try {
       bool result = aprepro.parse_stream(infile, input_files[0]);
 
-      if (result) {
-        if (input_files.size() > 1) {
-          std::ofstream ofile(input_files[1]);
-          if (!quiet) {
-            auto comment = aprepro.getsym("_C_")->value.svar;
-            ofile << comment << " Algebraic Preprocessor (Aprepro) version " << aprepro.version()
-                  << "\n";
+      if (aprepro.ap_options.errors_fatal && aprepro.get_error_count() > 0) {
+        writeResults = false;
+      }
+      if ((aprepro.ap_options.errors_and_warnings_fatal) &&
+          (aprepro.get_error_count() + aprepro.get_warning_count() > 0)) {
+        writeResults = false;
+      }
+
+      if (writeResults) {
+        if (result) {
+          if (input_files.size() > 1) {
+            std::ofstream ofile(input_files[1]);
+            if (!quiet) {
+              auto comment = aprepro.getsym("_C_")->value.svar;
+              ofile << comment << " Algebraic Preprocessor (Aprepro) version " << aprepro.version()
+                    << "\n";
+            }
+            ofile << aprepro.parsing_results().str();
           }
-          ofile << aprepro.parsing_results().str();
+          else {
+            if (!quiet) {
+              auto comment = aprepro.getsym("_C_")->value.svar;
+              std::cout << comment << " Algebraic Preprocessor (Aprepro) version "
+                        << aprepro.version() << "\n";
+            }
+            std::cout << aprepro.parsing_results().str();
+          }
+        }
+      }
+      else {
+        std::cerr << "There were " << aprepro.get_error_count() << " errors and "
+                  << aprepro.get_warning_count() << " warnings."
+                  << "\n";
+        if (aprepro.ap_options.errors_and_warnings_fatal) {
+          std::cerr << "Errors and warnings are fatal. No output has been written"
+                    << "\n";
+        }
+        else if (aprepro.ap_options.errors_fatal) {
+          std::cerr << "Errors are fatal. No output has been written."
+                    << "\n";
         }
         else {
-          if (!quiet) {
-            auto comment = aprepro.getsym("_C_")->value.svar;
-            std::cout << comment << " Algebraic Preprocessor (Aprepro) version "
-                      << aprepro.version() << "\n";
-          }
-          std::cout << aprepro.parsing_results().str();
+          std::cerr << "Neither errors nor warnings are fatal. "
+                    << "If you see this message, then there is a bug in Aprepro. "
+                    << "No output has been written."
+                    << "\n";
         }
       }
     }

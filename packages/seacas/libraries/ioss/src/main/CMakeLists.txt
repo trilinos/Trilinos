@@ -178,7 +178,7 @@ IF (SEACASIoss_ENABLE_THREADSAFE)
     FINAL_PASS_REGULAR_EXPRESSION
   )
 ENDIF()
-ENDIF()
+ENDIF(SEACAS_EXODIFF_BINARY)
 
 IF (TPL_ENABLE_Pamgen OR Trilinos_ENABLE_Pamgen)
 # This test makes sure that the adjacency information (what element blocks are adjacent to what other
@@ -297,6 +297,18 @@ TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_to_exodus
      NOEXEPREFIX NOEXESUFFIX
      NUM_MPI_PROCS ${NPROCS}
    TEST_2 CMND ${SEACAS_EXODIFF_BINARY} ARGS -stat -pedantic -map -dumpmap ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block.g
+  COMM mpi serial
+  XHOSTTYPE Windows
+  )
+
+TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_file_per_state_to_exodus
+   TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} --file_per_state ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block-link.cgns
+     NOEXEPREFIX NOEXESUFFIX
+     NUM_MPI_PROCS ${NPROCS}
+   TEST_1 EXEC io_shell ARGS ${JOIN_ARG} 8-block-link.cgns 8-block-rt.g
+     NOEXEPREFIX NOEXESUFFIX
+     NUM_MPI_PROCS 1
+   TEST_2 CMND ${SEACAS_EXODIFF_BINARY} ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block-rt.g
   COMM mpi serial
   XHOSTTYPE Windows
   )

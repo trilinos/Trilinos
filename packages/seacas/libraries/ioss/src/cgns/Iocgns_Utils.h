@@ -276,8 +276,8 @@ namespace Iocgns {
                             std::map<std::string, Ioss::FaceUnorderedSet> &boundary_faces,
                             Ioss::Field::BasicType                         field_type);
 
-    static void write_flow_solution_metadata(int file_ptr, Ioss::Region *region, int state,
-                                             const int *vertex_solution_index,
+    static void write_flow_solution_metadata(int file_ptr, int base_ptr, Ioss::Region *region,
+                                             int state, const int *vertex_solution_index,
                                              const int *cell_center_solution_index,
                                              bool       is_parallel_io);
     static int  find_solution_index(int cgns_file_ptr, int base, int zone, int step,
@@ -288,6 +288,8 @@ namespace Iocgns {
                                 bool appending = false);
     static void output_assemblies(int file_ptr, const Ioss::Region &region, bool is_parallel_io);
 
+    static void   write_state_meta_data(int file_ptr, const Ioss::Region &region,
+                                        bool is_parallel_io);
     static size_t common_write_meta_data(int file_ptr, const Ioss::Region &region,
                                          std::vector<size_t> &zone_offset, bool is_parallel);
     static size_t resolve_nodes(Ioss::Region &region, int my_processor, bool is_parallel);

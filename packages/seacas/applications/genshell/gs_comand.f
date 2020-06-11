@@ -1,4 +1,4 @@
-C Copyright(C) 2011-2017 National Technology & Engineering Solutions
+C Copyright(C) 2011-2017, 2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -646,7 +646,7 @@ C ... ATTRIBUTE {id} {which } {value}
   170 CONTINUE
 
       IF (VERB .NE. ' ') THEN
-         CALL SHOW (VERB, ' ', IDNPS, IDESS, IDNSET, IDESET,
+         CALL SHOW (VERB, '        ', IDNPS, IDESS, IDNSET, IDESET,
      &      IDELB, NAMELB, NUMELB, NUMLNK, ELATTR)
       END IF
 

@@ -1,4 +1,4 @@
-C    Copyright(C) 2014-2017 National Technology & Engineering Solutions of
+C    Copyright(C) 2014-2017, 2020 National Technology & Engineering Solutions of
 C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -387,7 +387,7 @@ C
                ADDLNK = .FALSE.
                DO 110 IRSZ = 3, IFOUND
                   CALL LTSORT (MR, LINKR, IIN(IRSZ), JJ, ADDLNK)
-                  IF (JJ .GE. 0) THEN
+                  IF (JJ .GT. 0) THEN
                      RSIZE(JJ) = AMAX1(RIN(2), 0.)
                   ELSE
                      WRITE(*, 10070) IIN(IRSZ)

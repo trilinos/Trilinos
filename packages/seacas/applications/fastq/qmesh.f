@@ -1,4 +1,4 @@
-C    Copyright(C) 2014-2017 National Technology & Engineering Solutions of
+C    Copyright(C) 2014-2017, 2020 National Technology & Engineering Solutions of
 C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -1172,7 +1172,8 @@ C
       COUNT = .FALSE.
       DO 350 I = I1, I2
          CALL LTSORT (MR, LINKR, I, L, ADDLNK)
-         IF ((L .GT. 0) .AND. (IREGN(L) .LT. 0)) THEN
+         IF (L .GT. 0) THEN
+         IF (IREGN(L) .LT. 0) THEN
             NOROOM = .FALSE.
             CALL MESAGE (' ')
             WRITE (*, 10090) ABS(IREGN(L))
@@ -1457,6 +1458,7 @@ C
             ELSE IF (ICODE .EQ. IQUIT) THEN
                GO TO 350
             END IF
+         END IF
          END IF
   350 CONTINUE
 C

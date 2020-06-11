@@ -112,6 +112,26 @@ namespace {
   const std::string SEP() { return std::string("@"); } // Separator for attribute offset storage
   const char *      complex_suffix[] = {".re", ".im"};
 
+  void check_node_owning_processor_data(const Ioss::IntVector &nop, size_t file_node_count)
+  {
+    // Verify that the nop (NodeOwningProcessor) vector is not empty and is of the correct size.
+    // This vector specifies which rank owns each node on this rank
+    // Throws error if problem, otherwise returns quietly.
+    if (nop.empty()) {
+      std::ostringstream errmsg;
+      fmt::print(errmsg, "ERROR: The use of the 'compose' output option requires the definition of the 'owning_processor'"
+		 " field prior to the output of nodal data.  This field has not yet been defined so output is not possible."
+		 " For more information, contact gdsjaar@sandia.gov.\n");
+      IOSS_ERROR(errmsg);
+    }
+    else if (nop.size() < file_node_count) {
+      std::ostringstream errmsg;
+      fmt::print(errmsg, "ERROR: The 'owning_processor' data was defined, but it is not the correct size."
+		 "  Its size is {}, but it must be at least this size {}."
+		 " For more information, contact gdsjaar@sandia.gov.\n", nop.size(), file_node_count);
+      IOSS_ERROR(errmsg);
+    }
+  }
   void get_connectivity_data(int exoid, void *data, ex_entity_type type, ex_entity_id id,
                              int position, int int_size_api)
   {
@@ -2605,7 +2625,7 @@ int64_t ParallelDatabaseIO::write_attribute_field(ex_entity_type type, const Ios
     for (int i = 0; i < comp_count; i++) {
       std::vector<double> file_data;
       file_data.reserve(file_count);
-      assert(nodeOwningProcessor.size() >= (size_t)file_count);
+      check_node_owning_processor_data(nodeOwningProcessor, file_count);
       if (ioss_type == Ioss::Field::REAL) {
         map_data(nodeOwningProcessor, myProcessor, static_cast<double *>(data), file_data, i,
                  comp_count);
@@ -3275,7 +3295,7 @@ int64_t ParallelDatabaseIO::put_field_internal(const Ioss::NodeBlock *nb, const 
       double *            rdata = static_cast<double *>(data);
       std::vector<double> file_data;
       file_data.reserve(file_count);
-      assert(nodeOwningProcessor.size() >= file_count);
+      check_node_owning_processor_data(nodeOwningProcessor, file_count);
       map_data(nodeOwningProcessor, myProcessor, rdata, file_data);
 
       int ierr = ex_put_partial_coord_component(get_file_pointer(), proc_offset + 1, file_count, 1,
@@ -3289,7 +3309,7 @@ int64_t ParallelDatabaseIO::put_field_internal(const Ioss::NodeBlock *nb, const 
       double *            rdata = static_cast<double *>(data);
       std::vector<double> file_data;
       file_data.reserve(file_count);
-      assert(nodeOwningProcessor.size() >= file_count);
+      check_node_owning_processor_data(nodeOwningProcessor, file_count);
       map_data(nodeOwningProcessor, myProcessor, rdata, file_data);
       int ierr = ex_put_partial_coord_component(get_file_pointer(), proc_offset + 1, file_count, 2,
                                                 file_data.data());
@@ -3302,7 +3322,7 @@ int64_t ParallelDatabaseIO::put_field_internal(const Ioss::NodeBlock *nb, const 
       double *            rdata = static_cast<double *>(data);
       std::vector<double> file_data;
       file_data.reserve(file_count);
-      assert(nodeOwningProcessor.size() >= file_count);
+      check_node_owning_processor_data(nodeOwningProcessor, file_count);
       map_data(nodeOwningProcessor, myProcessor, rdata, file_data);
       int ierr = ex_put_partial_coord_component(get_file_pointer(), proc_offset + 1, file_count, 3,
                                                 file_data.data());
@@ -3330,7 +3350,7 @@ int64_t ParallelDatabaseIO::put_field_internal(const Ioss::NodeBlock *nb, const 
 
       // Cast 'data' to correct size -- double
       double *rdata = static_cast<double *>(data);
-      assert(nodeOwningProcessor.size() >= file_count);
+      check_node_owning_processor_data(nodeOwningProcessor, file_count);
       map_data(nodeOwningProcessor, myProcessor, rdata, x, 0, spatialDimension);
       if (spatialDimension > 1) {
         map_data(nodeOwningProcessor, myProcessor, rdata, y, 1, spatialDimension);
@@ -3992,7 +4012,7 @@ void ParallelDatabaseIO::write_nodal_transient_field(ex_entity_type /* type */,
 
       std::vector<double> file_temp;
       file_temp.reserve(file_count);
-      assert(nodeOwningProcessor.size() >= file_count);
+      check_node_owning_processor_data(nodeOwningProcessor, file_count);
       map_data(nodeOwningProcessor, myProcessor, temp.data(), file_temp);
       int ierr = ex_put_partial_var(get_file_pointer(), step, EX_NODE_BLOCK, var_index, 0,
                                     proc_offset + 1, file_count, file_temp.data());
@@ -4164,7 +4184,7 @@ int64_t ParallelDatabaseIO::put_Xset_field_internal(ex_entity_type type, const I
         nodesetOwnedNodes[ns].reserve(file_count);
         if (int_byte_size_api() == 4) {
           i32data.reserve(file_count);
-          assert(nodeOwningProcessor.size() >= file_count);
+	  check_node_owning_processor_data(nodeOwningProcessor, file_count);
           map_nodeset_id_data(nodeOwningProcessor, nodesetOwnedNodes[ns], myProcessor,
                               reinterpret_cast<int *>(data), num_to_get, i32data);
           assert(i32data.size() == file_count);
@@ -4174,7 +4194,7 @@ int64_t ParallelDatabaseIO::put_Xset_field_internal(ex_entity_type type, const I
         }
         else {
           i64data.reserve(file_count);
-          assert(nodeOwningProcessor.size() >= file_count);
+	  check_node_owning_processor_data(nodeOwningProcessor, file_count);
           map_nodeset_id_data(nodeOwningProcessor, nodesetOwnedNodes[ns], myProcessor,
                               reinterpret_cast<int64_t *>(data), num_to_get, i64data);
           assert(i64data.size() == file_count);
@@ -4638,7 +4658,7 @@ void ParallelDatabaseIO::output_node_map() const
     if (int_byte_size_api() == 4) {
       std::vector<int> file_ids;
       file_ids.reserve(locally_owned_count);
-      assert(nodeOwningProcessor.size() >= locally_owned_count);
+      check_node_owning_processor_data(nodeOwningProcessor, locally_owned_count);
       map_data(nodeOwningProcessor, myProcessor, &nodeMap.map()[1], file_ids);
       ierr = ex_put_partial_id_map(get_file_pointer(), EX_NODE_MAP, processor_offset + 1,
                                    locally_owned_count, file_ids.data());
@@ -4646,7 +4666,7 @@ void ParallelDatabaseIO::output_node_map() const
     else {
       std::vector<int64_t> file_ids;
       file_ids.reserve(locally_owned_count);
-      assert(nodeOwningProcessor.size() >= locally_owned_count);
+      check_node_owning_processor_data(nodeOwningProcessor, locally_owned_count);
       map_data(nodeOwningProcessor, myProcessor, &nodeMap.map()[1], file_ids);
       ierr = ex_put_partial_id_map(get_file_pointer(), EX_NODE_MAP, processor_offset + 1,
                                    locally_owned_count, file_ids.data());

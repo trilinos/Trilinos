@@ -67,7 +67,7 @@ C=======================================================================
       REAL MAPP
       COMMON /STORAG/MEMORY(1000)
       CHARACTER*(*) CHARST
-      CHARACTER ESC*20,ESCCHR*1
+      CHARACTER ESC*20,ESCCHR*1, textip1*1
       REAL LENGTH,LENGT1
       INTEGER ASCII
       LOGICAL STATUS,CHRCI
@@ -85,14 +85,17 @@ C=======================================================================
       IF (ASCII.LT.1 .OR. ASCII.GT.126) THEN
          CALL CHRIC(ASCII,ESCCHR,LI)
          CALL PLTFLU
-         CALL SIORPT('PLTXSL','Invalid character "'//ESCCHR(1:LI)//
-     *               '" in text string; rest of string ignored',2)
          RETURN
 
       END IF
 
       RLINE = 0.
-      IF (ASCII.EQ.ICHAR(ESCCHR) .AND. CHARST(I+1:I+1).EQ.ESCCHR) THEN
+      if (i .lt. num) then
+         textip1 = charst(i+1:i+1)
+      else
+         textip1 = escchr
+      end if
+      IF (ASCII.EQ.ICHAR(ESCCHR) .AND. textip1.EQ.ESCCHR) THEN
          I = I + 1
 
       ELSE IF (ASCII.EQ.ICHAR(ESCCHR)) THEN

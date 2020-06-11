@@ -114,8 +114,12 @@ namespace Iocgns {
     void write_results_meta_data();
 
   private:
+    void open_state_file(int state);
+    void free_state_pointer();
+
     void openDatabase__() const override;
     void closeDatabase__() const override;
+    void closeBaseDatabase__() const;
 
     bool begin__(Ioss::State state) override;
     bool end__(Ioss::State state) override;
@@ -229,6 +233,7 @@ namespace Iocgns {
     std::vector<int64_t> get_processor_zone_node_offset() const;
 
     mutable int    m_cgnsFilePtr{-1};
+    mutable int    m_cgnsBasePtr{-1};
     Ioss::MeshType m_meshType{Ioss::MeshType::UNKNOWN};
 
     mutable std::unique_ptr<DecompositionDataBase> decomp;

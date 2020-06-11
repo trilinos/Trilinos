@@ -51,7 +51,7 @@
 
 namespace {
   const unsigned int HASHSIZE       = 5939;
-  const char *       version_string = "5.15 (2020/02/28)";
+  const char *       version_string = "5.16 (2020/06/09)";
 
   void output_copyright();
 
@@ -238,6 +238,7 @@ namespace SEAMS {
 
     // Send it to the user defined stream
     (*warningStream) << ss.str();
+    parseWarningCount++;
   }
 
   void Aprepro::info(const std::string &msg, bool line_info, bool prefix) const
@@ -444,6 +445,13 @@ namespace SEAMS {
       ap_options.immutable = true;
       stateImmutable       = true;
     }
+    else if (option == "--errors_fatal" || option == "-f") {
+      ap_options.errors_fatal = true;
+    }
+    else if (option == "--errors_and_warnings_fatal" || option == "-F") {
+      ap_options.errors_and_warnings_fatal = true;
+      ap_options.errors_fatal              = true;
+    }
     else if (option == "--trace" || option == "-t") {
       ap_options.trace_parsing = true;
     }
@@ -509,6 +517,10 @@ namespace SEAMS {
           << "       --dumpvars or -D: Dump all variables at end of run        \n"
           << "        --version or -v: Print version number to stderr          \n"
           << "      --immutable or -X: All variables are immutable--cannot be modified\n"
+          << "   --errors_fatal or -f: Exit program with nonzero status if errors are "
+             "encountered\n"
+          << " --errors_and_warnings_fatal or -F: Exit program with nonzero status if "
+             "warnings are encountered\n"
           << "--one_based_index or -1: Array indexing is one-based (default = zero-based)\n"
           << "    --interactive or -i: Interactive use, no buffering           \n"
           << "    --include=P or -I=P: Include file or include path            \n"
