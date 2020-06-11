@@ -6,10 +6,6 @@
 #
 ################################################################################
 
-# Chama and cts1 jobs all use the same environmnet changes to the
-# sourced script below will impact jobs on both of those
-# machines. please be mindful of this when making changes
-
 if [ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" ] ; then
   export ATDM_CONFIG_KOKKOS_ARCH=BDW
 fi

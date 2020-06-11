@@ -1,6 +1,6 @@
 ################################################################################
 #
-# Set up env on toss3 (chama and serrano) for ATMD builds of Trilinos
+# Set up cts1 env for EMPIRE ATDM builds of Trilinos
 #
 # This source script gets the settings from the ATDM_CONFIG_BUILD_NAME var.
 #
@@ -31,7 +31,6 @@ else
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=16
 fi
 
-# Common paths and modules for both intel-1{8,9}
 sparc_tpl_base=${ATDM_CONFIG_SPARC_TPL_BASE}
 module load cmake/3.12.2
 
@@ -42,8 +41,6 @@ if [ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.2_OPENMPI-4.0.1" ]; then
 
     sparc_tpl_ext=cts1-bdw_intel-19.0.5
     sparc_tpl_mpi_ext=cts1-bdw_intel-19.0.5_openmpi-4.0.1
-    # rabartl: ToDo: Above, we need to find a way to extract 'cts1-bdw' out of
-    # this file for this to be general!
 
     export PATH=/usr/tce/packages/gcc/gcc-6.1.0/bin:${PATH}
     export LD_LIBRARY_PATH=/usr/tce/packages/gcc/gcc-6.1.0/lib64:${LD_LIBRARY_PATH}
@@ -79,9 +76,6 @@ export ATDM_CONFIG_NETCDF_LIBS="-L${NETCDF_ROOT}/lib;-L${PNETCDF_ROOT}/lib;${NET
 export ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS=${SUPERLUDIST_ROOT}/include
 export ATDM_CONFIG_SUPERLUDIST_LIBS=${SUPERLUDIST_ROOT}/lib64/libsuperlu_dist.a
 export ATDM_CONFIG_BINUTILS_LIBS="/usr/lib64/libbfd.so;/usr/lib64/libiberty.a"
-
-# not sure what below does.  It was in the original environment script
-#unset ATTB_ENV
 
 # Set MPI wrappers
 export MPICC=`which mpicc`
