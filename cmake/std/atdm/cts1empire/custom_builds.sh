@@ -7,7 +7,6 @@
 
 # Custom compiler selection logic
 
-# TODO: Check with EMPIRE developers about default compiler/mpi ver
 if [[ $ATDM_CONFIG_BUILD_NAME == *"intel-18.0.2-openmpi-4.0.1"* ]] \
   || [[ $ATDM_CONFIG_BUILD_NAME == *"intel-18.0.2_openmpi-4.0.1"* ]] \
   || [[ $ATDM_CONFIG_BUILD_NAME == *"intel-18.0.2"* ]] \
