@@ -1,5 +1,5 @@
 #
-# Custom builds for 'cts1' env
+# Custom builds for 'cts1empire' env
 #
 # NOTE: This file gets sourced in atdm/utils/set_build_options.sh before the
 # default grep logic is applied.
@@ -18,7 +18,7 @@ if [[ $ATDM_CONFIG_BUILD_NAME == *"intel-18.0.2-openmpi-4.0.1"* ]] \
 else
   echo
   echo "***"
-  echo "*** ERROR: A supported compiler was not selected for 'cts1' env"
+  echo "*** ERROR: A supported compiler was not selected for 'cts1empire' env"
   echo "***"
   echo "*** Supported compilers include:"
   echo "***"
