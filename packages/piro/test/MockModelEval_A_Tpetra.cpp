@@ -251,21 +251,7 @@ MockModelEval_A_Tpetra::createOutArgsImpl() const
   result.setSupports(
         Thyra::ModelEvaluatorBase::OUT_ARG_DgDx, 0, Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM);
 
-  result.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_g_xx, 0, true );
-
-  result.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_g_xp, 0, 0, true );
-
-  result.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_g_px, 0, 0, true );
-
-  result.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_g_pp, 0, 0, 0, true );
-
-  result.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_f_xx, true );
-
-  result.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_f_xp, 0, true );
-
-  result.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_f_px, 0, true );
-
-  result.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_f_pp, 0, 0, true );
+  result.setHessianSupports(true);
 
   return result;
 }
