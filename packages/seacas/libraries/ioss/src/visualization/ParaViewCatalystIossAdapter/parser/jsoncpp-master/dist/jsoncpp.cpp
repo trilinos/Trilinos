@@ -27,7 +27,11 @@ described in clear, concise terms at:
 The full text of the MIT License follows:
 
 ========================================================================
-Copyright (c) 2007-2010 Baptiste Lepilleur
+Copyright(C) 1999-2020 National Technology & Engineering Solutions
+of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+NTESS, the U.S. Government retains certain rights in this software.
+
+See packages/seacas/LICENSE for details
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
