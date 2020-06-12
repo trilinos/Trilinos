@@ -248,6 +248,7 @@ namespace Thyra {
                 SchwarzPreconditioner = TLP;
             } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("TwoLevelBlockPreconditioner")) {
                 ConstXMapPtrVecPtr repeatedMaps = null;
+                ConstXMultiVectorPtrVecPtr coordinatesList = null;
                 UNVecPtr dofsPerNodeVector;
                 DofOrderingVecPtr dofOrderings;
 
@@ -255,12 +256,20 @@ namespace Thyra {
                 FROSCH_ASSERT(paramList_->isParameter("DofOrdering Vector"),"Currently, TwoLevelBlockPreconditioner cannot be constructed without DofOrdering Vector.");
                 if (paramList_->isParameter("Repeated Map Vector")) {
                     XMapPtrVecPtr repeatedMapsTmp = ExtractVectorFromParameterList<XMapPtr>(*paramList_,"Repeated Map Vector");
+                    XMultiVectorPtrVecPtr nodeListVecTmp = ExtractVectorFromParameterList<XMultiVectorPtr>(*paramList_,"Coordinates List Vector");
                     if (!repeatedMapsTmp.is_null()) {
                         repeatedMaps.resize(repeatedMapsTmp.size());
                         for (unsigned i=0; i<repeatedMaps.size(); i++) {
                             repeatedMaps[i] = repeatedMapsTmp[i].getConst();
                         }
                     }
+                    if(!nodeListVecTmp.is_null()){
+                      coordinatesList.resize(nodeListVecTmp.size());
+                      for(unsigned i = 0; i<coordinatesList.size();i++){
+                        coordinatesList[i] = nodeListVecTmp[i].getConst();
+                      }
+                    }
+
                     FROSCH_ASSERT(!repeatedMaps.is_null(),"FROSch::FROSchFactory : ERROR: repeatedMaps.is_null()");
 
                     dofsPerNodeVector = ExtractVectorFromParameterList<UN>(*paramList_,"DofsPerNode Vector");
@@ -278,6 +287,7 @@ namespace Thyra {
                                  dofsPerNodeVector,
                                  dofOrderings,
                                  paramList_->get("Overlap",1),
+                                 coordinatesList,
                                  repeatedMaps);
 
                 SchwarzPreconditioner = TLBP;

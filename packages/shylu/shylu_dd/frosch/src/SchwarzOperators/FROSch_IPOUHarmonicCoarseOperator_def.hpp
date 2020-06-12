@@ -207,7 +207,6 @@ namespace FROSch {
         if (useForCoarseSpace) {
             this->DofsMaps_[blockId] = dofsMaps;
             this->DofsPerNode_[blockId] = dofsPerNode;
-
             // Compute Interface Partition of Unity
             InterfacePartitionOfUnityPtr interfacePartitionOfUnity;
             if (!coarseSpaceList->sublist("InterfacePartitionOfUnity").get("Type","GDSW").compare("GDSW")) {
@@ -225,7 +224,6 @@ namespace FROSch {
             } else {
                 FROSCH_ASSERT(false,"InterfacePartitionOfUnity Type is unknown.");
             }
-
 
 
             // Extract the interface and the interior from the DDInterface stored in the Interface Partition of Unity object
@@ -264,7 +262,7 @@ namespace FROSch {
             } else {
                 interfacePartitionOfUnity->removeDirichletNodes(dirichletBoundaryDofs(),nodeList);
                 interfacePartitionOfUnity->sortInterface(this->K_,nodeList);
-
+                
                 // Construct Interface and Interior index sets
                 this->GammaDofs_[blockId] = LOVecPtr(this->DofsPerNode_[blockId]*interface->getNumNodes());
                 this->IDofs_[blockId] = LOVecPtr(this->DofsPerNode_[blockId]*interior->getNumNodes());
@@ -278,6 +276,7 @@ namespace FROSch {
                 }
 
                 interfacePartitionOfUnity->computePartitionOfUnity(nodeList);
+
                 PartitionOfUnity_ = interfacePartitionOfUnity;
             }
 
@@ -311,9 +310,6 @@ namespace FROSch {
                     this->numEnt = interfacePartitionOfUnity->getDDInterface()->getNumEnt();
                   //  }
                 }
-
-
-
 
             // Build local basis
             LocalPartitionOfUnityBasis_ = LocalPartitionOfUnityBasisPtr(new LocalPartitionOfUnityBasis<SC,LO,GO,NO>(this->MpiComm_,this->SerialComm_,this->DofsPerNode_[blockId],sublist(coarseSpaceList,"LocalPartitionOfUnityBasis"),interfaceNullspaceBasis.getConst(),PartitionOfUnity_->getLocalPartitionOfUnity(),PartitionOfUnity_->getPartitionOfUnityMaps())); // sublist(coarseSpaceList,"LocalPartitionOfUnityBasis") testen
