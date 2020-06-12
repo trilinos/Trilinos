@@ -578,17 +578,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( InArgs, setSolutionArgs, Scalar )
   RCP<VectorBase<Scalar>> x_dot_dot = createMember(model->get_x_space());
   inArgs.set_x_dot_dot(x_dot_dot);
 
-  RCP<VectorBase<Scalar>> delta_x = createMember(model->get_x_space());
-  inArgs.set_delta_x(delta_x);
+  RCP<VectorBase<Scalar>> x_direction = createMember(model->get_x_space());
+  inArgs.set_x_direction(x_direction);
 
-  RCP<VectorBase<Scalar>> delta_p = createMember(model->get_p_space(0));
-  inArgs.set_delta_p(0, delta_p);
+  RCP<VectorBase<Scalar>> p_direction = createMember(model->get_p_space(0));
+  inArgs.set_p_direction(0, p_direction);
 
-  RCP<VectorBase<Scalar>> multiplier_f = createMember(model->get_x_space());
-  inArgs.set_multiplier_f(multiplier_f);
+  RCP<VectorBase<Scalar>> f_multiplier = createMember(model->get_x_space());
+  inArgs.set_f_multiplier(f_multiplier);
 
-  RCP<VectorBase<Scalar>> multiplier_g = createMember(model->get_x_space());
-  inArgs.set_multiplier_g(0, multiplier_g);
+  RCP<VectorBase<Scalar>> g_multiplier = createMember(model->get_x_space());
+  inArgs.set_g_multiplier(0, g_multiplier);
 
   auto inArgs2 = model->createInArgs();
   inArgs2.setArgs(inArgs);
@@ -602,17 +602,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( InArgs, setSolutionArgs, Scalar )
   auto x_dot_dot_out = inArgs2.get_x_dot_dot();
   TEST_EQUALITY(x_dot_dot_out, x_dot_dot);
 
-  auto delta_x_out = inArgs2.get_delta_x();
-  TEST_EQUALITY(delta_x_out, delta_x);
+  auto x_direction_out = inArgs2.get_x_direction();
+  TEST_EQUALITY(x_direction_out, x_direction);
 
-  auto delta_p_out = inArgs2.get_delta_p(0);
-  TEST_EQUALITY(delta_p_out, delta_p);
+  auto p_direction_out = inArgs2.get_p_direction(0);
+  TEST_EQUALITY(p_direction_out, p_direction);
 
-  auto multiplier_f_out = inArgs2.get_multiplier_f();
-  TEST_EQUALITY(multiplier_f_out, multiplier_f);
+  auto f_multiplier_out = inArgs2.get_f_multiplier();
+  TEST_EQUALITY(f_multiplier_out, f_multiplier);
 
-  auto multiplier_g_out = inArgs2.get_multiplier_g(0);
-  TEST_EQUALITY(multiplier_g_out, multiplier_g);
+  auto g_multiplier_out = inArgs2.get_g_multiplier(0);
+  TEST_EQUALITY(g_multiplier_out, g_multiplier);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( InArgs, setSolutionArgs )

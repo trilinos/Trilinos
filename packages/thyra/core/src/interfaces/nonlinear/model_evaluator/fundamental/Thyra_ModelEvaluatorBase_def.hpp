@@ -126,7 +126,7 @@ int ModelEvaluatorBase::InArgs<Scalar>::Np() const
 
 template<class Scalar>
 int ModelEvaluatorBase::InArgs<Scalar>::Ng() const
-{ return multiplier_g_.size(); }
+{ return g_multiplier_.size(); }
 
 template<class Scalar>
 bool ModelEvaluatorBase::InArgs<Scalar>::supports(EInArgsMembers arg) const
@@ -184,29 +184,29 @@ ModelEvaluatorBase::InArgs<Scalar>::get_x() const
 
 
 template<class Scalar>
-void ModelEvaluatorBase::InArgs<Scalar>::set_delta_x(
-  const RCP<const MultiVectorBase<Scalar> > &delta_x
+void ModelEvaluatorBase::InArgs<Scalar>::set_x_direction(
+  const RCP<const MultiVectorBase<Scalar> > &x_direction
   )
-{ assert_supports(IN_ARG_x); delta_x_ = delta_x; }
+{ assert_supports(IN_ARG_x); x_direction_ = x_direction; }
 
 
 template<class Scalar>
-void ModelEvaluatorBase::InArgs<Scalar>::set_delta_p(
-  int l, const RCP<const MultiVectorBase<Scalar> > &delta_p_l
+void ModelEvaluatorBase::InArgs<Scalar>::set_p_direction(
+  int l, const RCP<const MultiVectorBase<Scalar> > &p_direction_l
   )
-{ assert_l(l); delta_p_[l] = delta_p_l; }
+{ assert_l(l); p_direction_[l] = p_direction_l; }
 
 
 template<class Scalar>
 RCP<const MultiVectorBase<Scalar> >
-ModelEvaluatorBase::InArgs<Scalar>::get_delta_x() const
-{ assert_supports(IN_ARG_x); return delta_x_; }
+ModelEvaluatorBase::InArgs<Scalar>::get_x_direction() const
+{ assert_supports(IN_ARG_x); return x_direction_; }
 
 
 template<class Scalar>
 RCP<const MultiVectorBase<Scalar> >
-ModelEvaluatorBase::InArgs<Scalar>::get_delta_p(int l) const
-{ assert_l(l); return delta_p_[l]; }
+ModelEvaluatorBase::InArgs<Scalar>::get_p_direction(int l) const
+{ assert_l(l); return p_direction_[l]; }
 
 
 template<class Scalar>
@@ -235,33 +235,33 @@ ModelEvaluatorBase::InArgs<Scalar>::get_x_mp() const
 { assert_supports(IN_ARG_x_mp); return x_mp_; }
 
 template<class Scalar>
-void ModelEvaluatorBase::InArgs<Scalar>::set_multiplier_f(
-  const RCP<const VectorBase<Scalar> > &multiplier_f
+void ModelEvaluatorBase::InArgs<Scalar>::set_f_multiplier(
+  const RCP<const VectorBase<Scalar> > &f_multiplier
   )
-{ assert_supports(IN_ARG_x); multiplier_f_ = multiplier_f; }
+{ assert_supports(IN_ARG_x); f_multiplier_ = f_multiplier; }
 
 template<class Scalar>
 RCP<const VectorBase<Scalar> >
-ModelEvaluatorBase::InArgs<Scalar>::get_multiplier_f() const
-{ assert_supports(IN_ARG_x); return multiplier_f_; }
+ModelEvaluatorBase::InArgs<Scalar>::get_f_multiplier() const
+{ assert_supports(IN_ARG_x); return f_multiplier_; }
 
 template<class Scalar>
-void ModelEvaluatorBase::InArgs<Scalar>::set_multiplier_g(
-  int j, const RCP<const VectorBase<Scalar> > &multiplier_g
+void ModelEvaluatorBase::InArgs<Scalar>::set_g_multiplier(
+  int j, const RCP<const VectorBase<Scalar> > &g_multiplier
   )
 {
   assert_j(j);
   assert_supports(IN_ARG_x);
-  multiplier_g_[j] = multiplier_g;
+  g_multiplier_[j] = g_multiplier;
 }
 
 template<class Scalar>
 RCP<const VectorBase<Scalar> >
-ModelEvaluatorBase::InArgs<Scalar>::get_multiplier_g(int j) const
+ModelEvaluatorBase::InArgs<Scalar>::get_g_multiplier(int j) const
 {
   assert_j(j);
   assert_supports(IN_ARG_x);
-  return multiplier_g_[j];
+  return g_multiplier_[j];
 }
 
 #ifdef HAVE_THYRA_ME_POLYNOMIAL
@@ -404,18 +404,18 @@ void ModelEvaluatorBase::InArgs<Scalar>::setArgs(
     if(supports(IN_ARG_x_mp) || !ignoreUnsupported)
       set_x_mp(condCloneVec_mp(inArgs.get_x_mp(),cloneObjects));
   }
-  if( inArgs.supports(IN_ARG_x) && nonnull(inArgs.get_delta_x()) ) {
+  if( inArgs.supports(IN_ARG_x) && nonnull(inArgs.get_x_direction()) ) {
     if(supports(IN_ARG_x) || !ignoreUnsupported)
-      set_delta_x(condCloneMultiVec(inArgs.get_delta_x(),cloneObjects));
+      set_x_direction(condCloneMultiVec(inArgs.get_x_direction(),cloneObjects));
   }
-  if( inArgs.supports(IN_ARG_x) && nonnull(inArgs.get_multiplier_f()) ) {
+  if( inArgs.supports(IN_ARG_x) && nonnull(inArgs.get_f_multiplier()) ) {
     if(supports(IN_ARG_x) || !ignoreUnsupported)
-      set_multiplier_f(condCloneVec(inArgs.get_multiplier_f(),cloneObjects));
+      set_f_multiplier(condCloneVec(inArgs.get_f_multiplier(),cloneObjects));
   }
   const int min_Ng = TEUCHOS_MIN(this->Ng(),inArgs.Ng());
   for (int j = 0; j < min_Ng; ++j) {
-    if (nonnull(inArgs.get_multiplier_g(j)))
-      set_multiplier_g(j,condCloneVec(inArgs.get_multiplier_g(j),cloneObjects));
+    if (nonnull(inArgs.get_g_multiplier(j)))
+      set_g_multiplier(j,condCloneVec(inArgs.get_g_multiplier(j),cloneObjects));
   }
 #ifdef HAVE_THYRA_ME_POLYNOMIAL
   if( inArgs.supports(IN_ARG_x_dot_poly) && nonnull(inArgs.get_x_dot_poly()) ) {
@@ -439,8 +439,8 @@ void ModelEvaluatorBase::InArgs<Scalar>::setArgs(
       set_p(l,condCloneVec(inArgs.get_p(l),cloneObjects));
   }
   for (int l = 0; l < min_Np; ++l) {
-    if (nonnull(inArgs.get_delta_p(l)))
-      set_delta_p(l,condCloneMultiVec(inArgs.get_delta_p(l),cloneObjects));
+    if (nonnull(inArgs.get_p_direction(l)))
+      set_p_direction(l,condCloneMultiVec(inArgs.get_p_direction(l),cloneObjects));
   }
   for (int l = 0; l < min_Np; ++l) {
     if (inArgs.supports(IN_ARG_p_mp,l)) {
@@ -628,10 +628,10 @@ template<class Scalar>
 void ModelEvaluatorBase::InArgs<Scalar>::_set_Np_Ng(int Np_in, int Ng_in)
 {
   p_.resize(Np_in);
-  delta_p_.resize(Np_in);
+  p_direction_.resize(Np_in);
   p_mp_.resize(Np_in);
   supports_p_mp_.resize(Np_in);
-  multiplier_g_.resize(Ng_in);
+  g_multiplier_.resize(Ng_in);
 }
 
 

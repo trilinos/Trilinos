@@ -525,7 +525,7 @@ namespace Thyra {
  *     <li><b>Second-order derivatives of the state function <tt>f(x_dot,x,{p(l)},t,...)</tt></b>
  *
        \verbatim
-       hess_f_xx = sum(multiplier_f * D^2(f)/D(x)^2).
+       hess_f_xx = sum(f_multiplier * D^2(f)/D(x)^2).
        \endverbatim
  *
  *     This is a derivative object that represents the second-order derivative of the
@@ -534,7 +534,7 @@ namespace Thyra {
  *     Objects of this type are created with the function <tt>create_hess_f_xx()</tt>.
  *
        \verbatim
-       hess_f_xp(l) = sum(multiplier_f * D^2(f)/(D(x)D(p(l))))
+       hess_f_xp(l) = sum(f_multiplier * D^2(f)/(D(x)D(p(l))))
        \endverbatim
  *
  *     for <tt>l=0...Np-1</tt>.
@@ -546,7 +546,7 @@ namespace Thyra {
  *     Objects of this type are created with the function <tt>create_hess_f_xp(l)</tt>.
  *
        \verbatim
-       hess_f_pp(l1,l2) = sum(multiplier_f * D^2(f)/(D(p(l1))D(p(l2))))
+       hess_f_pp(l1,l2) = sum(f_multiplier * D^2(f)/(D(p(l1))D(p(l2))))
        \endverbatim
  *
  *     for <tt>l1=0...Np-1</tt>, <tt>l2=0...Np-1</tt>.
@@ -560,7 +560,7 @@ namespace Thyra {
  *     <li><b>Second-order derivatives of the auxiliary response function <tt>g(j)(x,{p(l)},t,...)</tt></b>
  *
        \verbatim
-       hess_g_xx(j) = sum(multiplier_g(j) * D^2(g(j))/D(x)^2)
+       hess_g_xx(j) = sum(g_multiplier(j) * D^2(g(j))/D(x)^2)
        \endverbatim
  *
  *     for <tt>j=0...Ng-1</tt>.
@@ -571,7 +571,7 @@ namespace Thyra {
  *     Objects of this type are created with the function <tt>create_hess_g_xx(j)</tt>.
  *
        \verbatim
-       hess_g_xp(j,l) = sum(multiplier_g(j) * D^2(g(j))/(D(x)D(p(l))))
+       hess_g_xp(j,l) = sum(g_multiplier(j) * D^2(g(j))/(D(x)D(p(l))))
        \endverbatim
  *
  *     for <tt>j=0...Ng-1</tt>, <tt>l=0...Np-1</tt>.
@@ -583,7 +583,7 @@ namespace Thyra {
  *     Objects of this type are created with the function <tt>create_hess_g_xp(j,l)</tt>.
  *
        \verbatim
-       hess_g_pp(j,l1,l2) = sum(multiplier_g(j) * D^2(g(j))/(D(p(l1))D(p(l2))))
+       hess_g_pp(j,l1,l2) = sum(g_multiplier(j) * D^2(g(j))/(D(p(l1))D(p(l2))))
        \endverbatim
  *
  *     for <tt>j=0...Ng-1</tt>, <tt>l1=0...Np-1</tt>, <tt>l2=0...Np-1</tt>.
@@ -805,7 +805,7 @@ public:
   virtual RCP<const VectorSpaceBase<Scalar> > get_f_space() const = 0;
 
   /** \brief Return the dual vector space for the state function <tt>f(...) <: RE^n_x</tt>. */
-  virtual RCP<const VectorSpaceBase<Scalar> > get_f_dual_space() const = 0;
+  virtual RCP<const VectorSpaceBase<Scalar> > get_f_multiplier_space() const = 0;
 
   /** \brief Return the vector space for the auxiliary parameters
    * <tt>p(l) <: RE^n_p_l</tt>.
@@ -858,7 +858,7 @@ public:
    * <li><tt>0 <= j < this->Ng()</tt>
    * </ul>
    */
-  virtual RCP<const VectorSpaceBase<Scalar> > get_g_dual_space(int j) const = 0;
+  virtual RCP<const VectorSpaceBase<Scalar> > get_g_multiplier_space(int j) const = 0;
 
   /** \brief Get the names of the response functions associated with
    * subvector j if available.

@@ -184,22 +184,22 @@ public:
     RCP<const VectorBase<Scalar> > get_x() const;
 
     /** \brief Precondition: <tt>supports(IN_ARG_x)==true</tt>.  */
-    void set_delta_x( const RCP<const MultiVectorBase<Scalar> > &delta_x );
+    void set_x_direction( const RCP<const MultiVectorBase<Scalar> > &x_direction );
     /** \brief Precondition: <tt>supports(IN_ARG_x)==true</tt>.  */
-    void set_delta_p( int l, const RCP<const MultiVectorBase<Scalar> > &delta_p_l );
+    void set_p_direction( int l, const RCP<const MultiVectorBase<Scalar> > &p_direction_l );
     /** \brief Precondition: <tt>supports(IN_ARG_x)==true</tt>.  */
-    RCP<const MultiVectorBase<Scalar> > get_delta_x() const;
+    RCP<const MultiVectorBase<Scalar> > get_x_direction() const;
     /** \brief Get <tt>p(l)</tt> where <tt>0 <= l && l < this->Np()</tt>.  */
-    RCP<const MultiVectorBase<Scalar> > get_delta_p(int l) const;
+    RCP<const MultiVectorBase<Scalar> > get_p_direction(int l) const;
 
     /** \brief Precondition: <tt>supports(IN_ARG_x)==true</tt>.  */
-    void set_multiplier_f( const RCP<const VectorBase<Scalar> > &multiplier_f );
+    void set_f_multiplier( const RCP<const VectorBase<Scalar> > &f_multiplier );
     /** \brief Precondition: <tt>supports(IN_ARG_x)==true</tt>.  */
-    RCP<const VectorBase<Scalar> > get_multiplier_f() const;
+    RCP<const VectorBase<Scalar> > get_f_multiplier() const;
     /** \brief Precondition: <tt>supports(IN_ARG_x)==true</tt>.  */
-    void set_multiplier_g( int j, const RCP<const VectorBase<Scalar> > &multiplier_g );
+    void set_g_multiplier( int j, const RCP<const VectorBase<Scalar> > &g_multiplier );
     /** \brief Precondition: <tt>supports(IN_ARG_x)==true</tt>.  */
-    RCP<const VectorBase<Scalar> > get_multiplier_g(int j) const;
+    RCP<const VectorBase<Scalar> > get_g_multiplier(int j) const;
 
     /** \brief Determines if an extended input argument of type <tt>ObjectType</tt> is supported. */
     template<typename ObjectType>
@@ -305,25 +305,25 @@ public:
   private:
     // types
     typedef Teuchos::Array<RCP<const VectorBase<Scalar> > > p_t;
-    typedef Teuchos::Array<RCP<const MultiVectorBase<Scalar> > > delta_p_t;
+    typedef Teuchos::Array<RCP<const MultiVectorBase<Scalar> > > p_direction_t;
     // data
     std::string modelEvalDescription_;
     RCP<const VectorBase<Scalar> > x_dot_dot_;
     RCP<const VectorBase<Scalar> > x_dot_;
     RCP<const VectorBase<Scalar> > x_;
-    RCP<const MultiVectorBase<Scalar> > delta_x_;
+    RCP<const MultiVectorBase<Scalar> > x_direction_;
     RCP<const Stokhos::ProductEpetraVector > x_dot_mp_;
     RCP<const Stokhos::ProductEpetraVector > x_mp_;
 
-    RCP<const VectorBase<Scalar> > multiplier_f_;
-    p_t multiplier_g_;
+    RCP<const VectorBase<Scalar> > f_multiplier_;
+    p_t g_multiplier_;
     Teuchos::Array< RCP< const Stokhos::ProductEpetraVector > > p_mp_;
 #ifdef HAVE_THYRA_ME_POLYNOMIAL
     RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > x_dot_poly_;
     RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > x_poly_;
 #endif // HAVE_THYRA_ME_POLYNOMIAL
     p_t p_;
-    delta_p_t delta_p_;
+    p_direction_t p_direction_;
     ScalarMag t_;
     Scalar alpha_;
     Scalar beta_;

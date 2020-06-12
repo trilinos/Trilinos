@@ -137,7 +137,7 @@ public:
   /** \brief . */
   RCP<const VectorSpaceBase<Scalar> > get_f_space() const;
   /** \brief . */
-  RCP<const VectorSpaceBase<Scalar> > get_f_dual_space() const;
+  RCP<const VectorSpaceBase<Scalar> > get_f_multiplier_space() const;
   /** \brief . */
   RCP<const VectorSpaceBase<Scalar> > get_p_space(int l) const;
   /** \brief . */
@@ -145,7 +145,7 @@ public:
   /** \brief . */
   RCP<const VectorSpaceBase<Scalar> > get_g_space(int j) const;
   /** \brief . */
-  RCP<const VectorSpaceBase<Scalar> > get_g_dual_space(int j) const;
+  RCP<const VectorSpaceBase<Scalar> > get_g_multiplier_space(int j) const;
   /** \brief . */
   Teuchos::ArrayView<const std::string> get_g_names(int j) const;
   /** \brief . */
@@ -416,9 +416,9 @@ ModelEvaluatorDelegatorBase<Scalar>::get_f_space() const
 
 template<class Scalar>
 RCP<const VectorSpaceBase<Scalar> >
-ModelEvaluatorDelegatorBase<Scalar>::get_f_dual_space() const
+ModelEvaluatorDelegatorBase<Scalar>::get_f_multiplier_space() const
 {
-  return getUnderlyingModel()->get_f_dual_space();
+  return getUnderlyingModel()->get_f_multiplier_space();
 }
 
 
@@ -448,9 +448,9 @@ ModelEvaluatorDelegatorBase<Scalar>::get_g_space(int j) const
 
 template<class Scalar>
 RCP<const VectorSpaceBase<Scalar> >
-ModelEvaluatorDelegatorBase<Scalar>::get_g_dual_space(int j) const
+ModelEvaluatorDelegatorBase<Scalar>::get_g_multiplier_space(int j) const
 {
-  return getUnderlyingModel()->get_g_dual_space(j);
+  return getUnderlyingModel()->get_g_multiplier_space(j);
 }
 
 

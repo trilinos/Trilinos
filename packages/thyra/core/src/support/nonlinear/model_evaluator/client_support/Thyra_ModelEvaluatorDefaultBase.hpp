@@ -214,9 +214,9 @@ public:
     const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
     ) const;
   /** \brief . */
-  virtual RCP<const VectorSpaceBase<Scalar> > get_f_dual_space() const;
+  virtual RCP<const VectorSpaceBase<Scalar> > get_f_multiplier_space() const;
   /** \brief . */
-  virtual RCP<const VectorSpaceBase<Scalar> > get_g_dual_space(int j) const;
+  virtual RCP<const VectorSpaceBase<Scalar> > get_g_multiplier_space(int j) const;
   /** \brief . */
   virtual RCP<LinearOpBase<Scalar> > create_hess_f_xx() const;
   /** \brief . */
@@ -968,14 +968,14 @@ ModelEvaluatorDefaultBase<Scalar>::create_DgDp_op_impl(int j, int l) const
 
 template<class Scalar>
 RCP<const VectorSpaceBase<Scalar> >
-ModelEvaluatorDefaultBase<Scalar>::get_f_dual_space() const
+ModelEvaluatorDefaultBase<Scalar>::get_f_multiplier_space() const
 {
   return this->get_f_space();
 }
 
 template<class Scalar>
 RCP<const VectorSpaceBase<Scalar> >
-ModelEvaluatorDefaultBase<Scalar>::get_g_dual_space(int j) const
+ModelEvaluatorDefaultBase<Scalar>::get_g_multiplier_space(int j) const
 {
   return this->get_g_space(j);
 }
