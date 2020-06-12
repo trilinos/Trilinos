@@ -1168,9 +1168,9 @@ public:
    Constructs a ``basic_format_context`` object. References to the arguments are
    stored in the object so make sure they have appropriate lifetimes.
    */
-  basic_format_context(OutputIt pout, basic_format_args<basic_format_context> ctx_args,
+  basic_format_context(OutputIt p_out, basic_format_args<basic_format_context> ctx_args,
                        internal::locale_ref loc = internal::locale_ref())
-      : out_(pout), args_(ctx_args), loc_(loc)
+      : out_(p_out), args_(ctx_args), loc_(loc)
   {
   }
 
