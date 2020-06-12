@@ -111,19 +111,35 @@ TEUCHOS_UNIT_TEST(TimeStepControl, setOutputTimes)
 
 // ************************************************************
 // ************************************************************
-TEUCHOS_UNIT_TEST(TimeStepControl, getOutputIndicesandIntervals)
+TEUCHOS_UNIT_TEST(TimeStepControl, Accessors)
 {
   auto tsc = rcp(new Tempus::TimeStepControl<double>());
-  int setOutputTimeIndex = 17;
-  double setOutputTimeInterval = 1.101001000100001e-7;
+  int    iSet = 17;
+  double dSet = 0.989;
 
-  tsc->setOutputIndexInterval(setOutputTimeIndex);
-  tsc->setOutputTimeInterval(setOutputTimeInterval);
+  tsc->setInitTime(dSet); TEST_COMPARE( tsc->getInitTime(), ==, dSet);
+  tsc->setFinalTime(dSet); TEST_COMPARE( tsc->getFinalTime(), ==, dSet);
+  tsc->setMinTimeStep(dSet); TEST_COMPARE( tsc->getMinTimeStep(), ==, dSet);
+  tsc->setInitTimeStep(dSet); TEST_COMPARE( tsc->getInitTimeStep(), ==, dSet);
+  tsc->setMaxTimeStep(dSet); TEST_COMPARE( tsc->getMaxTimeStep(), ==, dSet);
+  tsc->setInitIndex(iSet); TEST_COMPARE( tsc->getInitIndex(), ==, iSet);
+  tsc->setFinalIndex(iSet); TEST_COMPARE( tsc->getFinalIndex(), ==, iSet);
+  tsc->setMaxAbsError(dSet); TEST_COMPARE( tsc->getMaxAbsError(), ==, dSet);
+  tsc->setMaxRelError(dSet); TEST_COMPARE( tsc->getMaxRelError(), ==, dSet);
+  tsc->setMinOrder(iSet); TEST_COMPARE( tsc->getMinOrder(), ==, iSet);
+  tsc->setInitOrder(iSet); TEST_COMPARE( tsc->getInitOrder(), ==, iSet);
+  tsc->setMaxOrder(iSet); TEST_COMPARE( tsc->getMaxOrder(), ==, iSet);
+  tsc->setStepType("Constant"); TEST_COMPARE( tsc->getStepType(), ==, "Constant");
+  tsc->setStepType("Variable"); TEST_COMPARE( tsc->getStepType(), ==, "Variable");
+  tsc->setOutputExactly(false); TEST_COMPARE( tsc->getOutputExactly(), ==, false);
+  tsc->setOutputExactly(true); TEST_COMPARE( tsc->getOutputExactly(), ==, true);
 
-  int getOutputTimeIndex = tsc->getOutputIndexInterval();
-  double getOutputTimeInterval = tsc->getOutputTimeInterval();
-  TEST_COMPARE(getOutputTimeInterval, ==, setOutputTimeInterval);
-  TEST_COMPARE(getOutputTimeIndex, ==, setOutputTimeIndex);
+  std::vector<int> iVSet{ 0, 1, 1, 2, 3, 5, 8, 13, 21, 34 };
+  tsc->setOutputIndices(iVSet); TEUCHOS_TEST_FOR_EXCEPT(tsc->getOutputIndices() != iVSet);
+
+
+  tsc->setOutputIndexInterval(iSet); TEST_COMPARE( tsc->getOutputIndexInterval(), ==, iSet);
+  tsc->setOutputTimeInterval(dSet); TEST_COMPARE( tsc->getOutputTimeInterval(), ==, dSet);
 }
 
 
@@ -149,9 +165,11 @@ TEUCHOS_UNIT_TEST(TimeStepControl, SetDtAfterOutput_Variable)
   tsc->setOutputTimes(outputTimes);
   tsc->setOutputExactly(true);
   tsc->setStepType("Variable");
+  TEST_COMPARE(tsc->getOutputExactly(), ==, true);
   Tempus::Status status = Tempus::Status::WORKING;
 
-  // Set dt to hit outputTime for first timestep.
+  // ** First Timestep ** //
+  // Set dt to hit outputTime.
   // If last step is PASSED (i.e., WS is null), then initWorkingState()
   //   * Deep Copy CS to WS (maybe new RCP; may recycle old RCP for WS).
   solutionHistory->initWorkingState();
@@ -172,7 +190,8 @@ TEUCHOS_UNIT_TEST(TimeStepControl, SetDtAfterOutput_Variable)
   // If workingState PASSED, then RCP CS = RCP WS and RCP WS = null.
   solutionHistory->promoteWorkingState();
 
-  // Set dt to timestep before output for second timestep.
+  // ** Second Timestep ** //
+  // Set dt to timestep before output.
   solutionHistory->initWorkingState();
   // Set local RCPs for WS and CS after initialize.
   currentState = solutionHistory->getCurrentState();
@@ -182,6 +201,69 @@ TEUCHOS_UNIT_TEST(TimeStepControl, SetDtAfterOutput_Variable)
   timeNM1 = currentState->getTime();
   timeN   = workingState->getTime();
   TEST_COMPARE( (timeNM1 + dt), ==, timeN);
+
+  double dtN = workingState->getTimeStep();
+  TEST_COMPARE( dt, ==, dtN);
+
+  TEST_COMPARE(workingState->getOutput(), ==, false);
+}
+
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(TimeStepControl, SetDtAfterOutput_Constant)
+{
+  // Setup the SolutionHistory --------------------------------
+  auto model   = rcp(new Tempus_Test::SinCosModel<double>());
+  Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =model->getNominalValues();
+  auto icSolution =rcp_const_cast<Thyra::VectorBase<double> >(inArgsIC.get_x());
+  auto icState = rcp(new Tempus::SolutionState<double>(icSolution));
+  auto solutionHistory = rcp(new Tempus::SolutionHistory<double>());
+  solutionHistory->addState(icState);
+  double dt = 0.9;
+  solutionHistory->getCurrentState()->setTimeStep(dt);
+
+  // Setup the TimeStepControl --------------------------------
+  auto tsc = rcp(new Tempus::TimeStepControl<double>());
+  std::vector<double> outputTimes;
+  double outputTime = 0.8;
+  outputTimes.push_back(outputTime);
+  tsc->setOutputTimes(outputTimes);
+  tsc->setOutputExactly(true);
+  tsc->setStepType("Constant");
+  tsc->setOutputExactly(false);
+  TEST_COMPARE(tsc->getOutputExactly(), ==, false);
+  Tempus::Status status = Tempus::Status::WORKING;
+
+  // Set dt to hit outputTime for first timestep.
+  // If last step is PASSED (i.e., WS is null), then initWorkingState()
+  //   * Deep Copy CS to WS (maybe new RCP; may recycle old RCP for WS).
+  solutionHistory->initWorkingState();
+  // Need to reset local RCPs for WS and CS after initialize.
+  auto currentState = solutionHistory->getCurrentState();
+  auto workingState = solutionHistory->getWorkingState();
+
+  tsc->getNextTimeStep(solutionHistory, status);
+  double timeN   = workingState->getTime();
+  TEST_COMPARE(timeN, ==, dt);
+  //TEST_COMPARE( std::abs(timeN-dt)/dt, <, 1.0e-15);
+  TEST_COMPARE(workingState->getOutput(), ==, true);
+
+  // ** Successful timestep !! ** //
+  workingState->setSolutionStatus(Tempus::Status::PASSED);
+
+  // If workingState PASSED, then RCP CS = RCP WS and RCP WS = null.
+  solutionHistory->promoteWorkingState();
+
+  // Set dt to timestep before output for second timestep.
+  solutionHistory->initWorkingState();
+  // Set local RCPs for WS and CS after initialize.
+  currentState = solutionHistory->getCurrentState();
+  workingState = solutionHistory->getWorkingState();
+
+  tsc->getNextTimeStep(solutionHistory, status);
+  timeN   = workingState->getTime();
+  TEST_COMPARE( (timeN), ==, 2*dt);
 
   double dtN = workingState->getTimeStep();
   TEST_COMPARE( dt, ==, dtN);

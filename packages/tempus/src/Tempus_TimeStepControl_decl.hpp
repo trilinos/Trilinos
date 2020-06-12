@@ -156,7 +156,7 @@ public:
     virtual void setMaxRelError(Scalar MaxRelError)
       { tscPL_->set<double>("Maximum Relative Error"   , MaxRelError ); }
     virtual void setMinOrder(int MinOrder)
-     { tscPL_->set<int>   ("Minimum Order"             , MinOrder    ); }
+      { tscPL_->set<int>   ("Minimum Order"            , MinOrder    ); }
     virtual void setInitOrder(int InitOrder)
       { tscPL_->set<int>   ("Initial Order"            , InitOrder   ); }
     virtual void setMaxOrder(int MaxOrder)
@@ -164,7 +164,7 @@ public:
     virtual void setStepType(std::string StepType)
       { tscPL_->set<std::string>("Integrator Step Type", StepType    ); }
     virtual void setOutputExactly(bool OutputExactly)
-      { tscPL_->get<bool>("Output Exactly On Output Times", OutputExactly); }
+      { tscPL_->set<bool>("Output Exactly On Output Times", OutputExactly); }
     virtual void setOutputIndices(std::vector<int> OutputIndices)
       { outputIndices_ = OutputIndices;
         std::ostringstream ss;
