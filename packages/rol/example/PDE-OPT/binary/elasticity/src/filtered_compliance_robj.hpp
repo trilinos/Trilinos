@@ -58,6 +58,25 @@ public:
     printFreq_ = list.sublist("Problem").get("Output Frequency",0);
   }
 
+  Filtered_Compliance_Objective(
+      const ROL::Ptr<Filter<Real>>                 &filter,
+      const ROL::Ptr<PDE<Real>>                    &pde,
+      const ROL::Ptr<Assembler<Real>>              &assembler,
+      ROL::ParameterList                           &list)
+    : filter_(filter), nupda_(0), nfval_(0), ngrad_(0), nhess_(0), nprec_(0) {
+    // Compliance objective function
+    comp_ = ROL::makePtr<Compliance_Objective<Real>>(pde,assembler,list,"state","filtered_density");
+
+    // Vector storage
+    Fz_      = filter_->createPrimalFilterVector();
+    Fzcache_ = filter_->createPrimalFilterVector();
+    Fv_      = filter_->createPrimalFilterVector();
+    dctrl_   = filter_->createDualFilterVector();
+
+    nuke_      = list.sublist("Problem").get("Use Basic Update",false);
+    printFreq_ = list.sublist("Problem").get("Output Frequency",0);
+  }
+
   const ROL::Ptr<Assembler<Real>> getAssembler(void) const {
     return comp_->getAssembler();
   }

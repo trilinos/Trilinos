@@ -225,7 +225,7 @@ private: // Vector accessor functions
     u->putScalar(static_cast<Real>(0)); z->putScalar(static_cast<Real>(0));
     assembler_->assemblePDEResidual(vecR_, pde_, u, z);
     assembler_->assemblePDEJacobian2(matJ_, pde_, u, z);
-    outputTpetraData();
+    //outputTpetraData();
   }
 
   // Application routines

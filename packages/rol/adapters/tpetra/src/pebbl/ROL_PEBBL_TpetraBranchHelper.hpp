@@ -61,7 +61,7 @@ namespace PEBBL {
 
 template <class Real>
 class TpetraBranchHelper : public BranchHelper<Real> {
-private:
+protected:
   const Real tol_;
   const int method_;
 

@@ -35,6 +35,7 @@ private:
   Real cmpScale_;
   bool nuke_;
   int printFreq_;
+  bool matFree_;
 
   unsigned nstat_, nsens_;
   unsigned nupda_, nfval_, ngrad_, nhess_, nprec_;
@@ -76,6 +77,41 @@ public:
     cmpScale_  = list.sublist("Problem").get("Compliance Scaling", 1.0);
     nuke_      = list.sublist("Problem").get("Use Basic Update",false);
     printFreq_ = list.sublist("Problem").get("Output Frequency",0);
+    matFree_   = list.sublist("Problem").get("Matrix Free",false);
+
+    initialize();
+  }
+
+  Compliance_Objective(
+      const ROL::Ptr<PDE<Real>>                    &pde,
+      const ROL::Ptr<Assembler<Real>>              &assembler,
+      ROL::ParameterList                           &list,
+      std::string                                   uname  = "state",
+      std::string                                   dname  = "density")
+    : pde_(pde), assembler_(assembler), assembleJ1_(true), assembleJ2_(true),
+      assembleH22_(true), assembleF_(true),
+      uname_(uname), dname_(dname),
+      nstat_(0), nsens_(0),
+      nupda_(0), nfval_(0), ngrad_(0), nhess_(0), nprec_(0),
+      napJ1_(0), nasJ1_(0), napJ2_(0), nasJ2_(0), napH2_(0), nasH2_(0), nasLo_(0) {
+    // PDE solvers
+    solver_       = ROL::makePtr<Solver<Real>>(list.sublist("Solver"));
+    solver_cache_ = ROL::makePtr<Solver<Real>>(list.sublist("Solver"));
+
+    // Vector storage
+    F_data_           = assembler_->createResidualVector();
+    state_sens_data_  = assembler_->createStateVector();
+    dstat_data_       = assembler_->createResidualVector();
+    dctrl_data_       = assembler_->createControlVector();
+    state_            = ROL::makePtr<PDE_PrimalSimVector<Real>>(assembler_->createStateVector(),pde_,assembler_,list);
+    dctrl_            = ROL::makePtr<PDE_DualOptVector<Real>>(dctrl_data_,pde_,assembler_,list);
+    stateStore_       = ROL::makePtr<ROL::VectorController<Real>>();
+
+    storage_   = list.sublist("Problem").get("Use state storage", true);
+    cmpScale_  = list.sublist("Problem").get("Compliance Scaling", 1.0);
+    nuke_      = list.sublist("Problem").get("Use Basic Update",false);
+    printFreq_ = list.sublist("Problem").get("Output Frequency",0);
+    matFree_   = list.sublist("Problem").get("Matrix Free",false);
 
     initialize();
   }
@@ -137,6 +173,8 @@ public:
     // Compute compliance
     Teuchos::Array<Real> cmp(1,0);
     F_data_->dot(*u_data, cmp.view(0,1));
+//std::cout << std::scientific << std::setprecision(16);
+//std::cout << z.norm() << "  " << state_->norm() << "  " << cmpScale_ << "  " << cmp[0] << std::endl;
     return cmpScale_*cmp[0];
   }
 
@@ -148,8 +186,7 @@ public:
     // Solve state equation
     solve_state_equation(*state_,z);
     // Apply adjoint density jacobian
-    assembleJ2(u_data, z_data);
-    applyJacobian2(g_data, u_data, true);
+    applyJacobian2(g_data, u_data, u_data, z_data, true);
     g_data->scale(-cmpScale_);
   }
 
@@ -162,13 +199,11 @@ public:
     // Solve state equation
     solve_state_equation(*state_,z);
     // Solve state sensitivity equation
-    assembleJ2(u_data, z_data);
-    solve_state_sensitivity(state_sens_data_, v_data);
+    solve_state_sensitivity(state_sens_data_, v_data, u_data, z_data);
     // Apply density hessian to direction
-    assembleH22(u_data, z_data);
-    applyHessian22(h_data, v_data);
+    applyHessian22(h_data, v_data, u_data, u_data, z_data);
     // Apply adjoint density jacobian to state sensitivity
-    applyJacobian2(dctrl_data_, state_sens_data_, true);
+    applyJacobian2(dctrl_data_, state_sens_data_, u_data, z_data, true);
     h_data->update(static_cast<Real>(2)*cmpScale_,*dctrl_data_,-cmpScale_);
   }
 
@@ -304,28 +339,46 @@ private:
     }
   }
 
-  void applyJacobian2(ROL::Ptr<Tpetra::MultiVector<>> &Jv, const ROL::Ptr<const Tpetra::MultiVector<>> &v,
-                      const bool transpose) {
+  void applyJacobian2(ROL::Ptr<Tpetra::MultiVector<>> &Jv,
+                      const ROL::Ptr<const Tpetra::MultiVector<>> &v,
+                      const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                      const ROL::Ptr<const Tpetra::MultiVector<>> &z,
+                      bool transpose) {
     napJ2_++;
-    if (transpose) {
-      matJ2_->apply(*v,*Jv,Teuchos::TRANS);
+    if (matFree_) {
+      if (transpose) assembler_->assemblePDEapplyAdjointJacobian2(Jv,pde_,v,u,z);
+      else           assembler_->assemblePDEapplyJacobian2(Jv,pde_,v,u,z);
     }
     else {
-      matJ2_->apply(*v,*Jv);
+      assembleJ2(u,z);
+      if (transpose) matJ2_->apply(*v,*Jv,Teuchos::TRANS);
+      else           matJ2_->apply(*v,*Jv);
     }
   }
 
-  void assembleH22(const ROL::Ptr<const Tpetra::MultiVector<>> &u, const ROL::Ptr<const Tpetra::MultiVector<>> &z) {
+  void assembleH22(const ROL::Ptr<const Tpetra::MultiVector<>> &l,
+                   const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                   const ROL::Ptr<const Tpetra::MultiVector<>> &z) {
     if (assembleH22_) {
       nasH2_++;
-      assembler_->assemblePDEHessian22(matH22_,pde_,u,u,z);
+      assembler_->assemblePDEHessian22(matH22_,pde_,l,u,z);
       assembleH22_ = false;
     }
   }
 
-  void applyHessian22(ROL::Ptr<Tpetra::MultiVector<>> &Hv, const ROL::Ptr<const Tpetra::MultiVector<>> &v) {
-    matH22_->apply(*v,*Hv);
+  void applyHessian22(ROL::Ptr<Tpetra::MultiVector<>> &Hv,
+                      const ROL::Ptr<const Tpetra::MultiVector<>> &v,
+                      const ROL::Ptr<const Tpetra::MultiVector<>> &l,
+                      const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                      const ROL::Ptr<const Tpetra::MultiVector<>> &z) {
     napH2_++;
+    if (matFree_) {
+      assembler_->assemblePDEapplyHessian22(Hv,pde_,v,l,u,z);
+    }
+    else {
+      assembleH22(l,u,z);
+      matH22_->apply(*v,*Hv);
+    }
   }
 
   void assembleJ1(const ROL::Ptr<const Tpetra::MultiVector<>> &u, const ROL::Ptr<const Tpetra::MultiVector<>> &z, bool setSolve = true) {
@@ -365,10 +418,13 @@ private:
     solve(u,F_data_);
   }
 
-  void solve_state_sensitivity(ROL::Ptr<Tpetra::MultiVector<>> &s, const ROL::Ptr<const Tpetra::MultiVector<>> &v) {
+  void solve_state_sensitivity(ROL::Ptr<Tpetra::MultiVector<>> &s,
+                               const ROL::Ptr<const Tpetra::MultiVector<>> &v,
+                               const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                               const ROL::Ptr<const Tpetra::MultiVector<>> &z) {
     // This assumes that assembleJ1 and assemble J2 were called
     nsens_++;
-    applyJacobian2(dstat_data_, v, false);
+    applyJacobian2(dstat_data_, v, u, z, false);
     solve(s, dstat_data_);
   }
 

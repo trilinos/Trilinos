@@ -159,7 +159,7 @@ protected:
   const Ptr<BranchHelper<Real>>    bHelper_;
   std::map<int,Real>               fixed_;
   Ptr<IntegerTransformation<Real>> ptrans_;
-  Ptr<IntegerProblem<Real>>        problem_, problem0_;
+  Ptr<IntegerProblem<Real>>        problem0_;
   Ptr<NewOptimizationSolver<Real>> solver_;
   Ptr<Vector<Real>>                solution_, rndSolution_;
   Ptr<Vector<Real>>                multiplier_;
@@ -186,7 +186,6 @@ public:
       hasConstraint_(false),
       verbosity_(verbosity), outStream_(outStream) {
     problem0_   = branching_->getProblemFactory()->build();
-    problem_    = branching_->getProblemFactory()->build();
     solution_   = problem0_->getPrimalOptimizationVector()->clone();
     rndSolution_= problem0_->getPrimalOptimizationVector()->clone();
     solution_->set(*problem0_->getPrimalOptimizationVector());
@@ -210,7 +209,6 @@ public:
       verbosity_(rpbs.verbosity_), outStream_(rpbs.outStream_) {
     branchSubAsChildOf(this);
     problem0_   = rpbs.branching_->getProblemFactory()->build();
-    problem_    = rpbs.branching_->getProblemFactory()->build();
     solution_   = rpbs.solution_->clone();
     solution_->set(*rpbs.solution_);
     rndSolution_ = rpbs.rndSolution_->clone();
@@ -244,34 +242,39 @@ public:
     const Ptr<ParameterList>
       parlist = branching_->getSolverParameters();
     // Set fixed constraint
-    problem_->edit();
-    problem_->deleteTransformation();
+    problem0_->edit();
+    problem0_->deleteTransformation();
     if (!fixed_.empty()) {
       ptrans_->add(fixed_);
-      problem_->setTransformation(ptrans_);
-      //problem_->finalize(false,false);
-      //problem_->edit();
-      //problem_->deleteTransformation();
+      problem0_->setTransformation(ptrans_);
+      //problem0_->finalize(false,false);
+      //problem0_->edit();
+      //problem0_->deleteTransformation();
       //Ptr<IntegerConstraint<Real>> con = makePtr<IntegerConstraint<Real>>();
       //con->add(fixed_);
       //Ptr<Vector<Real>> mul = con->makeConstraintVector();
-      //problem_->removeLinearConstraint("Integer");
-      //problem_->addLinearConstraint("Integer",con,mul);
+      //problem0_->removeLinearConstraint("Integer");
+      //problem0_->addLinearConstraint("Integer",con,mul);
     }
-    problem_->setProjectionAlgorithm(*parlist);
-    if (verbosity_ > 0) problem_->finalize(false,true,*outStream_);
-    else                problem_->finalize(false,false);
+    problem0_->setProjectionAlgorithm(*parlist);
+    if (verbosity_ > 0) problem0_->finalize(false,true,*outStream_);
+    else                problem0_->finalize(false,false);
 
     // Construct optimization solver
-    solver_ = makePtr<NewOptimizationSolver<Real>>(problem_,*parlist);
+    solver_ = makePtr<NewOptimizationSolver<Real>>(problem0_,*parlist);
     // Solve optimization problem
     if (verbosity_ > 0) {
-      if (verbosity_ > 3) problem_->check(true,*outStream_);
+      if (verbosity_ > 3) problem0_->check(true,*outStream_);
       solver_->solve(*outStream_);
       if (verbosity_ > 1) *outStream_ << "  Problem ID:           " << id.serial << std::endl;
     }
     else {
       solver_->solve();
+    }
+    // Reset problem0 for use in other computations
+    if (!fixed_.empty()) {
+      problem0_->edit();
+      problem0_->deleteTransformation();
     }
     // Get objective function value and status
     Real tol = static_cast<Real>(1e-10);
@@ -328,9 +331,9 @@ public:
 
   int splitComputation() {
     Real tol(std::sqrt(ROL_EPSILON<Real>()));
-    problem_->getObjective()->gradient(*gradient_,*solution_,tol);
+    problem0_->getObjective()->gradient(*gradient_,*solution_,tol);
     if (hasConstraint_) {
-      problem_->getConstraint()->applyAdjointJacobian(*dwa_,*multiplier_,*solution_,tol);
+      problem0_->getConstraint()->applyAdjointJacobian(*dwa_,*multiplier_,*solution_,tol);
       gradient_->plus(*dwa_);
     }
     index_ = bHelper_->getIndex(*solution_, *gradient_);

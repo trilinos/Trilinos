@@ -124,7 +124,7 @@ private:
       assembler_->assembleQoIGradient2(V,qoi_,ROL::nullPtr,z0);
       Vdual_->set(V_->dual());
       assemble_ = false;
-      outputTpetraData();
+      //outputTpetraData();
     }
   }
 }; // class Volume_Constraint

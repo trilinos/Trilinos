@@ -70,6 +70,7 @@ private:
   ROL::Ptr<PDE_Elasticity<Real>>      pde_;
   ROL::Ptr<MultiMat_PDE_Filter<Real>> pde_filter_;
   ROL::Ptr<Filter<Real>>              filter_;
+  ROL::Ptr<Assembler<Real>>           assembler_;
   bool useFilter_;
 
   ROL::Ptr<PDE_Selection<Real>>        spde_;
@@ -92,6 +93,9 @@ private:
   ROL::Ptr<ROL::Vector<Real>> z_, zlo_, zup_;
   ROL::Ptr<ROL::Bounds<Real>> bnd_;
 
+  bool serial_;
+  ROL::Ptr<ROL::Objective<Real>> obj_;
+
 public:
   ElasticityFactory(ROL::ParameterList                 &pl,
               const ROL::Ptr<const Teuchos::Comm<int>> &comm,
@@ -111,6 +115,10 @@ public:
       pde_->setDensityFields(pde_filter_->getFields());
       filter_ = ROL::makePtr<Filter<Real>>(pde_filter_, mesh_, comm_, pl_, *os_);
     }
+    assembler_ = ROL::makePtr<Assembler<Real>>(pde_->getFields(),
+                                               pde_->getFields2(),
+                                               mesh_, comm_, pl_, *os_);
+    assembler_->setCellNodes(*pde_);
 
     // Selection constraint
     spde_ = ROL::makePtr<PDE_Selection<Real>>(pl_);
@@ -153,6 +161,15 @@ public:
     // Get number of materials
     std::vector<Real> ym = ROL::getArrayFromStringParameter<Real>(pl_.sublist("Problem"), "Young's Modulus");
     numMat_ = ym.size();
+
+    // Build objective if running in serial
+    serial_ = pl_.sublist("Problem").get("Serial",true);
+    if (serial_) {
+      if (useFilter_)
+        obj_ = ROL::makePtr<Filtered_Compliance_Objective<Real>>(filter_, pde_, assembler_, pl_);
+      else
+        obj_ = ROL::makePtr<Compliance_Objective<Real>>(pde_, assembler_, pl_);
+    }
   }
 
   ROL::Ptr<ROL::PEBBL::IntegerProblem<Real>> build(void) override {
@@ -184,10 +201,15 @@ public:
   }
 
   ROL::Ptr<ROL::Objective<Real>> buildObjective(void) {
-    if (useFilter_)
-      return ROL::makePtr<Filtered_Compliance_Objective<Real>>(filter_, pde_, mesh_, comm_, pl_, *os_);
-    else
-      return ROL::makePtr<Compliance_Objective<Real>>(pde_, mesh_, comm_, pl_, *os_);
+    if (serial_) {
+      return obj_;
+    }
+    else {
+      if (useFilter_)
+        return ROL::makePtr<Filtered_Compliance_Objective<Real>>(filter_, pde_, assembler_, pl_);
+      else
+        return ROL::makePtr<Compliance_Objective<Real>>(pde_, assembler_, pl_);
+    }
   }
 
   ROL::Ptr<ROL::Vector<Real>> buildSolutionVector(void) {
