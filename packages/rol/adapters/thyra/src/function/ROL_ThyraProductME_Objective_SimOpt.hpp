@@ -281,11 +281,11 @@ public:
       inArgs.set_p(p_indices[i], thyra_prodvec_p->getVectorBlock(i));
     }
     inArgs.set_x(thyra_x.getVector());
-    inArgs.set_delta_x(thyra_v.getVector());
+    inArgs.set_x_direction(thyra_v.getVector());
 
-    Teuchos::RCP< Thyra::VectorBase<Real> > multiplier_g = Thyra::createMember<Real>(thyra_model.get_g_dual_space(g_index));
+    Teuchos::RCP< Thyra::VectorBase<Real> > multiplier_g = Thyra::createMember<Real>(thyra_model.get_g_multiplier_space(g_index));
     Thyra::put_scalar(1.0, multiplier_g.ptr());
-    inArgs.set_multiplier_g(g_index, multiplier_g);
+    inArgs.set_g_multiplier(g_index, multiplier_g);
 
     Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model.createOutArgs();
 
@@ -345,13 +345,13 @@ public:
 
     for(std::size_t i=0; i<p_indices.size(); ++i) {
       inArgs.set_p(p_indices[i], thyra_prodvec_p->getVectorBlock(i));
-      inArgs.set_delta_p(p_indices[i], thyra_prodvec_v->getVectorBlock(i));
+      inArgs.set_p_direction(p_indices[i], thyra_prodvec_v->getVectorBlock(i));
     }
     inArgs.set_x(thyra_x.getVector());
 
-    Teuchos::RCP< Thyra::VectorBase<Real> > multiplier_g = Thyra::createMember<Real>(thyra_model.get_g_dual_space(g_index));
+    Teuchos::RCP< Thyra::VectorBase<Real> > multiplier_g = Thyra::createMember<Real>(thyra_model.get_g_multiplier_space(g_index));
     Thyra::put_scalar(1.0, multiplier_g.ptr());
-    inArgs.set_multiplier_g(g_index, multiplier_g);
+    inArgs.set_g_multiplier(g_index, multiplier_g);
 
     Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model.createOutArgs();
 
@@ -425,11 +425,11 @@ public:
       inArgs.set_p(p_indices[i], thyra_prodvec_p->getVectorBlock(i));
     }
     inArgs.set_x(thyra_x.getVector());
-    inArgs.set_delta_x(thyra_v.getVector());
+    inArgs.set_x_direction(thyra_v.getVector());
 
-    Teuchos::RCP< Thyra::VectorBase<Real> > multiplier_g = Thyra::createMember<Real>(thyra_model.get_g_dual_space(g_index));
+    Teuchos::RCP< Thyra::VectorBase<Real> > multiplier_g = Thyra::createMember<Real>(thyra_model.get_g_multiplier_space(g_index));
     Thyra::put_scalar(1.0, multiplier_g.ptr());
-    inArgs.set_multiplier_g(g_index, multiplier_g);
+    inArgs.set_g_multiplier(g_index, multiplier_g);
 
     Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model.createOutArgs();
 
@@ -492,13 +492,13 @@ public:
 
     for(std::size_t i=0; i<p_indices.size(); ++i) {
       inArgs.set_p(p_indices[i], thyra_prodvec_p->getVectorBlock(i));
-      inArgs.set_delta_p(p_indices[i], thyra_prodvec_v->getVectorBlock(i));
+      inArgs.set_p_direction(p_indices[i], thyra_prodvec_v->getVectorBlock(i));
     }
     inArgs.set_x(thyra_x.getVector());
 
-    Teuchos::RCP< Thyra::VectorBase<Real> > multiplier_g = Thyra::createMember<Real>(thyra_model.get_g_dual_space(g_index));
+    Teuchos::RCP< Thyra::VectorBase<Real> > multiplier_g = Thyra::createMember<Real>(thyra_model.get_g_multiplier_space(g_index));
     Thyra::put_scalar(1.0, multiplier_g.ptr());
-    inArgs.set_multiplier_g(g_index, multiplier_g);
+    inArgs.set_g_multiplier(g_index, multiplier_g);
 
 
     Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model.createOutArgs();

@@ -806,9 +806,9 @@ public:
       inArgs.set_p(p_indices[i], thyra_prodvec_p->getVectorBlock(i));
     }
     inArgs.set_x(thyra_x.getVector());
-    inArgs.set_delta_x(thyra_v.getVector());
+    inArgs.set_x_direction(thyra_v.getVector());
 
-    inArgs.set_multiplier_f(thyra_w.getVector());
+    inArgs.set_f_multiplier(thyra_w.getVector());
 
     Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model.createOutArgs();
 
@@ -876,9 +876,9 @@ public:
       inArgs.set_p(p_indices[i], thyra_prodvec_p->getVectorBlock(i));
     }
     inArgs.set_x(thyra_x.getVector());
-    inArgs.set_delta_x(thyra_v.getVector());
+    inArgs.set_x_direction(thyra_v.getVector());
 
-    inArgs.set_multiplier_f(thyra_w.getVector());
+    inArgs.set_f_multiplier(thyra_w.getVector());
 
 
     Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model.createOutArgs();
@@ -945,11 +945,11 @@ public:
 
     for(std::size_t i=0; i<p_indices.size(); ++i) {
       inArgs.set_p(p_indices[i], thyra_prodvec_p->getVectorBlock(i));
-      inArgs.set_delta_p(p_indices[i], thyra_prodvec_v->getVectorBlock(i));
+      inArgs.set_p_direction(p_indices[i], thyra_prodvec_v->getVectorBlock(i));
     }
     inArgs.set_x(thyra_x.getVector());
 
-    inArgs.set_multiplier_f(thyra_w.getVector());
+    inArgs.set_f_multiplier(thyra_w.getVector());
 
     Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model.createOutArgs();
 
@@ -1025,11 +1025,11 @@ public:
 
     for(std::size_t i=0; i<p_indices.size(); ++i) {
       inArgs.set_p(p_indices[i], thyra_prodvec_p->getVectorBlock(i));
-      inArgs.set_delta_p(p_indices[i], thyra_prodvec_v->getVectorBlock(i));
+      inArgs.set_p_direction(p_indices[i], thyra_prodvec_v->getVectorBlock(i));
     }
     inArgs.set_x(thyra_x.getVector());
 
-    inArgs.set_multiplier_f(thyra_w.getVector());
+    inArgs.set_f_multiplier(thyra_w.getVector());
 
     Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model.createOutArgs();
 
