@@ -135,9 +135,9 @@ Piro::InvertMassMatrixDecorator<Scalar>::get_f_space() const
 
 template<typename Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-Piro::InvertMassMatrixDecorator<Scalar>::get_f_dual_space() const
+Piro::InvertMassMatrixDecorator<Scalar>::get_f_multiplier_space() const
 {
-  return model->get_f_dual_space();
+  return model->get_f_multiplier_space();
 }
 
 template<typename Scalar>
@@ -163,9 +163,9 @@ Piro::InvertMassMatrixDecorator<Scalar>::get_g_space(int j) const
 
 template<typename Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-Piro::InvertMassMatrixDecorator<Scalar>::get_g_dual_space(int j) const
+Piro::InvertMassMatrixDecorator<Scalar>::get_g_multiplier_space(int j) const
 {
-  return model->get_g_dual_space(j);
+  return model->get_g_multiplier_space(j);
 }
 
 template<typename Scalar>
