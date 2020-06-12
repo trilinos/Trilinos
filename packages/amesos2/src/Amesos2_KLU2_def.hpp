@@ -236,52 +236,73 @@ KLU2<Matrix,Vector>::solve_impl(
   const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
   const size_t nrhs = X->getGlobalNumVectors();
 
-  {                             // Get values from RHS B
+  {
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
     Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
 #endif
-    if ( is_contiguous_ == true ) {
+    if ( single_proc_optimization() && nrhs == 1 ) {
+      // no msp creation
       Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-        host_solve_array_t>::do_get(B, bValues_,
-            as<size_t>(ld_rhs),
-            ROOTED, this->rowIndexBase_);
-    }
-    else {
-      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-        host_solve_array_t>::do_get(B, bValues_,
-            as<size_t>(ld_rhs),
-            CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
-    }
+        host_solve_array_t>::do_get(B, bValues_, as<size_t>(ld_rhs));
 
-    // see Amesos2_Tacho_def.hpp for an explanation of why we 'get' X
-    if ( is_contiguous_ == true ) {
       Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-        host_solve_array_t>::do_get(X, xValues_,
-            as<size_t>(ld_rhs),
-            ROOTED, this->rowIndexBase_);
+        host_solve_array_t>::do_get(X, xValues_, as<size_t>(ld_rhs));
     }
     else {
-      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-        host_solve_array_t>::do_get(X, xValues_,
-            as<size_t>(ld_rhs),
-            CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
+      if ( is_contiguous_ == true ) {
+        Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+          host_solve_array_t>::do_get(B, bValues_,
+              as<size_t>(ld_rhs),
+              ROOTED, this->rowIndexBase_);
+      }
+      else {
+        Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+          host_solve_array_t>::do_get(B, bValues_,
+              as<size_t>(ld_rhs),
+              CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
+      }
+
+      // see Amesos2_Tacho_def.hpp for an explanation of why we 'get' X
+      if ( is_contiguous_ == true ) {
+        Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+          host_solve_array_t>::do_get(X, xValues_,
+              as<size_t>(ld_rhs),
+              ROOTED, this->rowIndexBase_);
+      }
+      else {
+        Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+          host_solve_array_t>::do_get(X, xValues_,
+              as<size_t>(ld_rhs),
+              CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
+      }
+
+      // TODO: klu_tsolve is going to put the solution x into the input b.
+      // Copy b to x then solve in x.
+      // We do not want to solve in b, then copy to x, because if b was assigned
+      // then the solve will change b permanently and mess up the next test cycle.
+      // However if b was actually a copy (not assigned) then we can avoid this
+      // deep_copy and just assign xValues_ = bValues_.
+      // This comes up in a few places, see #7158, so planning to fix them all
+      // at the same time with some system to track what get_1d_copy_helper_kokkos_view
+      // actually did.
+      Kokkos::deep_copy(xValues_, bValues_);
     }
-  } // end Timer scope
+  }
 
   klu2_dtype * pxValues = function_map::convert_scalar(xValues_.data());
   klu2_dtype * pbValues = function_map::convert_scalar(bValues_.data());
+
+  TEUCHOS_TEST_FOR_EXCEPTION(pbValues == nullptr,
+      std::runtime_error, "Amesos2 Runtime Error: b_vector returned null ");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(pxValues  == nullptr,
+      std::runtime_error, "Amesos2 Runtime Error: x_vector returned null ");
 
   if ( single_proc_optimization() && nrhs == 1 ) {
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
-
-    TEUCHOS_TEST_FOR_EXCEPTION(pbValues == nullptr,
-        std::runtime_error, "Amesos2 Runtime Error: b_vector returned null ");
-
-    TEUCHOS_TEST_FOR_EXCEPTION(pxValues  == nullptr,
-        std::runtime_error, "Amesos2 Runtime Error: x_vector returned null ");
 
     // For this case, Crs matrix raw pointers were used, so the non-transpose default solve
     // is actually the transpose solve as klu_solve expects Ccs matrix pointers
@@ -310,80 +331,50 @@ KLU2<Matrix,Vector>::solve_impl(
         // or distributed over processes case
   {
     if ( this->root_ ) {
-      {                           // Do solve!
 #ifdef HAVE_AMESOS2_TIMERS
-        Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
+      Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
-
-        // TODO: klu_tsolve is going to put the solution x into the input b.
-        // Copy b to x then solve in x.
-        // We do not want to solve in b, then copy to x, because if b was assigned
-        // then the solve will change b permanently and mess up the next test cycle.
-        // However if b was actually a copy (not assigned) then we can avoid this
-        // deep_copy and just assign xValues_ = bValues_.
-        // This comes up in a few places, see #7158, so planning to fix them all
-        // at the same time with some system to track what get_1d_copy_helper_kokkos_view
-        // actually did.
-        Kokkos::deep_copy(xValues_, bValues_);
-
-        if (transFlag_ == 0)
-        {
+      if (transFlag_ == 0)
+      {
         // For this case, Crs matrix raw pointers were used, so the non-transpose default solve
         // is actually the transpose solve as klu_solve expects Ccs matrix pointers
         // Thus, if the transFlag_ is true, the non-transpose solve should be used
-          if ( single_proc_optimization() ) {
-          ::KLU2::klu_tsolve<klu2_dtype, local_ordinal_type>
-            (data_.symbolic_, data_.numeric_,
-             (local_ordinal_type)this->globalNumCols_,
-             (local_ordinal_type)nrhs,
-             pxValues, &(data_.common_)) ;
-          }
-          else {
-          ::KLU2::klu_solve<klu2_dtype, local_ordinal_type>
-            (data_.symbolic_, data_.numeric_,
-             (local_ordinal_type)this->globalNumCols_,
-             (local_ordinal_type)nrhs,
-             pxValues, &(data_.common_)) ;
-          }
+        if ( single_proc_optimization() ) {
+        ::KLU2::klu_tsolve<klu2_dtype, local_ordinal_type>
+          (data_.symbolic_, data_.numeric_,
+           (local_ordinal_type)this->globalNumCols_,
+           (local_ordinal_type)nrhs,
+           pxValues, &(data_.common_)) ;
         }
-        else
-        {
+        else {
+        ::KLU2::klu_solve<klu2_dtype, local_ordinal_type>
+          (data_.symbolic_, data_.numeric_,
+           (local_ordinal_type)this->globalNumCols_,
+           (local_ordinal_type)nrhs,
+           pxValues, &(data_.common_)) ;
+        }
+      }
+      else
+      {
         // For this case, Crs matrix raw pointers were used, so the non-transpose default solve
         // is actually the transpose solve as klu_solve expects Ccs matrix pointers
         // Thus, if the transFlag_ is true, the non-  transpose solve should be used
-          if ( single_proc_optimization() ) {
-          ::KLU2::klu_solve<klu2_dtype, local_ordinal_type>
-            (data_.symbolic_, data_.numeric_,
-             (local_ordinal_type)this->globalNumCols_,
-             (local_ordinal_type)nrhs,
-             pxValues, &(data_.common_)) ;
-          }
-          else {
-          ::KLU2::klu_tsolve<klu2_dtype, local_ordinal_type>
-            (data_.symbolic_, data_.numeric_,
-             (local_ordinal_type)this->globalNumCols_,
-             (local_ordinal_type)nrhs,
-             pxValues, &(data_.common_)) ;
-          }
+        if ( single_proc_optimization() ) {
+        ::KLU2::klu_solve<klu2_dtype, local_ordinal_type>
+          (data_.symbolic_, data_.numeric_,
+           (local_ordinal_type)this->globalNumCols_,
+           (local_ordinal_type)nrhs,
+           pxValues, &(data_.common_)) ;
         }
-      } //end Timer scope
+        else {
+        ::KLU2::klu_tsolve<klu2_dtype, local_ordinal_type>
+          (data_.symbolic_, data_.numeric_,
+           (local_ordinal_type)this->globalNumCols_,
+           (local_ordinal_type)nrhs,
+           pxValues, &(data_.common_)) ;
+        }
+      }
     } // end root_
-
-    /* All processes should have the same error code */
-    // Teuchos::broadcast(*(this->getComm()), 0, &ierr);
-
-    // global_size_type ierr_st = as<global_size_type>(ierr); // unused
-    // TODO
-    //TEUCHOS_TEST_FOR_EXCEPTION( ierr < 0,
-    //std::invalid_argument,
-    //"Argument " << -ierr << " to KLU2 xgssvx had illegal value" );
-    //TEUCHOS_TEST_FOR_EXCEPTION( ierr > 0 && ierr_st <= this->globalNumCols_,
-    //std::runtime_error,
-    //"Factorization complete, but U is exactly singular" );
-    //TEUCHOS_TEST_FOR_EXCEPTION( ierr > 0 && ierr_st > this->globalNumCols_ + 1,
-    //std::runtime_error,
-    //"KLU2 allocated " << ierr - this->globalNumCols_ << " bytes of "
-    //"memory before allocation failure occured." );
 
     /* Update X's global values */
     {
@@ -413,17 +404,24 @@ KLU2<Matrix,Vector>::solve_impl(
   // this deep_copy_or_assign_view will do assignment (no copy) so there won't
   // be any overhead.
   deep_copy_or_assign_view(convert_xValues_, xValues_);
-  if ( is_contiguous_ == true ) {
-    Util::put_1d_data_helper_kokkos_view<
-      MultiVecAdapter<Vector>,convert_host_solve_array_t>::do_put(X, convert_xValues_,
-          as<size_t>(ld_rhs),
-          ROOTED, this->rowIndexBase_);
-  }
-  else {
-    Util::put_1d_data_helper_kokkos_view<
-      MultiVecAdapter<Vector>,convert_host_solve_array_t>::do_put(X, convert_xValues_,
-          as<size_t>(ld_rhs),
-          CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
+
+  {
+#ifdef HAVE_AMESOS2_TIMERS
+    Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
+#endif
+
+    if ( is_contiguous_ == true ) {
+      Util::put_1d_data_helper_kokkos_view<
+        MultiVecAdapter<Vector>,convert_host_solve_array_t>::do_put(X, convert_xValues_,
+            as<size_t>(ld_rhs),
+            ROOTED, this->rowIndexBase_);
+    }
+    else {
+      Util::put_1d_data_helper_kokkos_view<
+        MultiVecAdapter<Vector>,convert_host_solve_array_t>::do_put(X, convert_xValues_,
+            as<size_t>(ld_rhs),
+            CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
+    }
   }
 
   return(ierr);
@@ -520,11 +518,11 @@ KLU2<Matrix,Vector>::loadA_impl(EPhase current_phase)
   // Only the root image needs storage allocated
   if( this->root_ ){
     host_nzvals_view_ = host_value_type_array(
-      Kokkos::ViewAllocateWithoutInitializing("nzvals"), this->globalNumNonZeros_);
+      Kokkos::ViewAllocateWithoutInitializing("host_nzvals_view_"), this->globalNumNonZeros_);
     host_rows_view_ = host_ordinal_type_array(
-      Kokkos::ViewAllocateWithoutInitializing("rowptr"), this->globalNumNonZeros_);
+      Kokkos::ViewAllocateWithoutInitializing("host_rows_view_"), this->globalNumNonZeros_);
     host_col_ptr_view_ = host_ordinal_type_array(
-      Kokkos::ViewAllocateWithoutInitializing("colind"), this->globalNumRows_ + 1);
+      Kokkos::ViewAllocateWithoutInitializing("host_col_ptr_view_"), this->globalNumRows_ + 1);
   }
 
   local_ordinal_type nnz_ret = 0;
