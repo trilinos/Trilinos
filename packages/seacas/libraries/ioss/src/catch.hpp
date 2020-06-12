@@ -1,6 +1,6 @@
 /*
- *  Catch v2.11.3
- *  Generated: 2020-03-19 13:44:21.042491
+ *  Catch v2.12.2
+ *  Generated: 2020-05-25 15:09:23.791719
  *  ----------------------------------------------------------
  *  This file has been merged from multiple headers. Please don't edit it directly
  *  Copyright (c) 2020 Two Blue Cubes Ltd. All rights reserved.
@@ -14,8 +14,8 @@
 
 
 #define CATCH_VERSION_MAJOR 2
-#define CATCH_VERSION_MINOR 11
-#define CATCH_VERSION_PATCH 3
+#define CATCH_VERSION_MINOR 12
+#define CATCH_VERSION_PATCH 2
 
 #ifdef __clang__
 #    pragma clang system_header
@@ -132,7 +132,7 @@ namespace Catch {
 
 #endif
 
-#if defined(CATCH_CPP17_OR_GREATER)
+#if defined(__cpp_lib_uncaught_exceptions)
 #  define CATCH_INTERNAL_CONFIG_CPP17_UNCAUGHT_EXCEPTIONS
 #endif
 
@@ -151,7 +151,20 @@ namespace Catch {
 #    define CATCH_INTERNAL_START_WARNINGS_SUPPRESSION _Pragma( "clang diagnostic push" )
 #    define CATCH_INTERNAL_STOP_WARNINGS_SUPPRESSION  _Pragma( "clang diagnostic pop" )
 
-#    define CATCH_INTERNAL_IGNORE_BUT_WARN(...) (void)__builtin_constant_p(__VA_ARGS__)
+// As of this writing, IBM XL's implementation of __builtin_constant_p has a bug
+// which results in calls to destructors being emitted for each temporary,
+// without a matching initialization. In practice, this can result in something
+// like `std::string::~string` being called on an uninitialized value.
+//
+// For example, this code will likely segfault under IBM XL:
+// ```
+// REQUIRE(std::string("12") + "34" == "1234")
+// ```
+//
+// Therefore, `CATCH_INTERNAL_IGNORE_BUT_WARN` is not implemented.
+#  if !defined(__ibmxl__)
+#    define CATCH_INTERNAL_IGNORE_BUT_WARN(...) (void)__builtin_constant_p(__VA_ARGS__) /* NOLINT(cppcoreguidelines-pro-type-vararg, hicpp-vararg) */
+#  endif
 
 #    define CATCH_INTERNAL_SUPPRESS_GLOBALS_WARNINGS \
          _Pragma( "clang diagnostic ignored \"-Wexit-time-destructors\"" ) \
@@ -931,13 +944,13 @@ namespace Catch {
 
 #if defined(__cpp_lib_is_invocable) && __cpp_lib_is_invocable >= 201703
     // std::result_of is deprecated in C++17 and removed in C++20. Hence, it is
-    // replaced with std::invoke_result here. Also *_t format is preferred over
-    // typename *::type format.
-    template <typename Func, typename U>
-    using FunctionReturnType = std::remove_reference_t<std::remove_cv_t<std::invoke_result_t<Func, U>>>;
+    // replaced with std::invoke_result here.
+    template <typename Func, typename... U>
+    using FunctionReturnType = std::remove_reference_t<std::remove_cv_t<std::invoke_result_t<Func, U...>>>;
 #else
-    template <typename Func, typename U>
-    using FunctionReturnType = typename std::remove_reference<typename std::remove_cv<typename std::result_of<Func(U)>::type>::type>::type;
+    // Keep ::type here because we still support C++11
+    template <typename Func, typename... U>
+    using FunctionReturnType = typename std::remove_reference<typename std::remove_cv<typename std::result_of<Func(U...)>::type>::type>::type;
 #endif
 
 } // namespace Catch
@@ -1975,20 +1988,27 @@ namespace Catch {
 #endif // CATCH_CONFIG_ENABLE_VARIANT_STRINGMAKER
 
 namespace Catch {
-    struct not_this_one {}; // Tag type for detecting which begin/ end are being selected
-
-    // Import begin/ end from std here so they are considered alongside the fallback (...) overloads in this namespace
+    // Import begin/ end from std here
     using std::begin;
     using std::end;
 
-    not_this_one begin( ... );
-    not_this_one end( ... );
+    namespace detail {
+        template <typename...>
+        struct void_type {
+            using type = void;
+        };
+
+        template <typename T, typename = void>
+        struct is_range_impl : std::false_type {
+        };
+
+        template <typename T>
+        struct is_range_impl<T, typename void_type<decltype(begin(std::declval<T>()))>::type> : std::true_type {
+        };
+    } // namespace detail
 
     template <typename T>
-    struct is_range {
-        static const bool value =
-            !std::is_same<decltype(begin(std::declval<T>())), not_this_one>::value &&
-            !std::is_same<decltype(end(std::declval<T>())), not_this_one>::value;
+    struct is_range : detail::is_range_impl<T> {
     };
 
 #if defined(_MANAGED) // Managed types are never ranges
@@ -2355,6 +2375,18 @@ namespace Catch {
         template<typename RhsT>
         auto operator <= ( RhsT const& rhs ) -> BinaryExpr<LhsT, RhsT const&> const {
             return { static_cast<bool>(m_lhs <= rhs), m_lhs, "<=", rhs };
+        }
+        template <typename RhsT>
+        auto operator | (RhsT const& rhs) -> BinaryExpr<LhsT, RhsT const&> const {
+            return { static_cast<bool>(m_lhs | rhs), m_lhs, "|", rhs };
+        }
+        template <typename RhsT>
+        auto operator & (RhsT const& rhs) -> BinaryExpr<LhsT, RhsT const&> const {
+            return { static_cast<bool>(m_lhs & rhs), m_lhs, "&", rhs };
+        }
+        template <typename RhsT>
+        auto operator ^ (RhsT const& rhs) -> BinaryExpr<LhsT, RhsT const&> const {
+            return { static_cast<bool>(m_lhs ^ rhs), m_lhs, "^", rhs };
         }
 
         template<typename RhsT>
@@ -3000,6 +3032,9 @@ namespace Catch {
             {}
 
             std::string translate( ExceptionTranslators::const_iterator it, ExceptionTranslators::const_iterator itEnd ) const override {
+#if defined(CATCH_CONFIG_DISABLE_EXCEPTIONS)
+                return "";
+#else
                 try {
                     if( it == itEnd )
                         std::rethrow_exception(std::current_exception());
@@ -3009,6 +3044,7 @@ namespace Catch {
                 catch( T& ex ) {
                     return m_translateFunction( ex );
                 }
+#endif
             }
 
         protected:
@@ -3571,12 +3607,12 @@ namespace Catch {
 namespace Matchers {
 
     namespace Vector {
-        template<typename T>
-        struct ContainsElementMatcher : MatcherBase<std::vector<T>> {
+        template<typename T, typename Alloc>
+        struct ContainsElementMatcher : MatcherBase<std::vector<T, Alloc>> {
 
             ContainsElementMatcher(T const &comparator) : m_comparator( comparator) {}
 
-            bool match(std::vector<T> const &v) const override {
+            bool match(std::vector<T, Alloc> const &v) const override {
                 for (auto const& el : v) {
                     if (el == m_comparator) {
                         return true;
@@ -3592,12 +3628,12 @@ namespace Matchers {
             T const& m_comparator;
         };
 
-        template<typename T>
-        struct ContainsMatcher : MatcherBase<std::vector<T>> {
+        template<typename T, typename AllocComp, typename AllocMatch>
+        struct ContainsMatcher : MatcherBase<std::vector<T, AllocMatch>> {
 
-            ContainsMatcher(std::vector<T> const &comparator) : m_comparator( comparator ) {}
+            ContainsMatcher(std::vector<T, AllocComp> const &comparator) : m_comparator( comparator ) {}
 
-            bool match(std::vector<T> const &v) const override {
+            bool match(std::vector<T, AllocMatch> const &v) const override {
                 // !TBD: see note in EqualsMatcher
                 if (m_comparator.size() > v.size())
                     return false;
@@ -3619,18 +3655,18 @@ namespace Matchers {
                 return "Contains: " + ::Catch::Detail::stringify( m_comparator );
             }
 
-            std::vector<T> const& m_comparator;
+            std::vector<T, AllocComp> const& m_comparator;
         };
 
-        template<typename T>
-        struct EqualsMatcher : MatcherBase<std::vector<T>> {
+        template<typename T, typename AllocComp, typename AllocMatch>
+        struct EqualsMatcher : MatcherBase<std::vector<T, AllocMatch>> {
 
-            EqualsMatcher(std::vector<T> const &comparator) : m_comparator( comparator ) {}
+            EqualsMatcher(std::vector<T, AllocComp> const &comparator) : m_comparator( comparator ) {}
 
-            bool match(std::vector<T> const &v) const override {
+            bool match(std::vector<T, AllocMatch> const &v) const override {
                 // !TBD: This currently works if all elements can be compared using !=
                 // - a more general approach would be via a compare template that defaults
-                // to using !=. but could be specialised for, e.g. std::vector<T> etc
+                // to using !=. but could be specialised for, e.g. std::vector<T, Alloc> etc
                 // - then just call that directly
                 if (m_comparator.size() != v.size())
                     return false;
@@ -3642,15 +3678,15 @@ namespace Matchers {
             std::string describe() const override {
                 return "Equals: " + ::Catch::Detail::stringify( m_comparator );
             }
-            std::vector<T> const& m_comparator;
+            std::vector<T, AllocComp> const& m_comparator;
         };
 
-        template<typename T>
-        struct ApproxMatcher : MatcherBase<std::vector<T>> {
+        template<typename T, typename AllocComp, typename AllocMatch>
+        struct ApproxMatcher : MatcherBase<std::vector<T, AllocMatch>> {
 
-            ApproxMatcher(std::vector<T> const& comparator) : m_comparator( comparator ) {}
+            ApproxMatcher(std::vector<T, AllocComp> const& comparator) : m_comparator( comparator ) {}
 
-            bool match(std::vector<T> const &v) const override {
+            bool match(std::vector<T, AllocMatch> const &v) const override {
                 if (m_comparator.size() != v.size())
                     return false;
                 for (std::size_t i = 0; i < v.size(); ++i)
@@ -3677,16 +3713,14 @@ namespace Matchers {
                 return *this;
             }
 
-            std::vector<T> const& m_comparator;
+            std::vector<T, AllocComp> const& m_comparator;
             mutable Catch::Detail::Approx approx = Catch::Detail::Approx::custom();
         };
 
-        template<typename T>
-        struct UnorderedEqualsMatcher : MatcherBase<std::vector<T>> {
-            UnorderedEqualsMatcher(std::vector<T> const& target) : m_target(target) {}
-            bool match(std::vector<T> const& vec) const override {
-                // Note: This is a reimplementation of std::is_permutation,
-                //       because I don't want to include <algorithm> inside the common path
+        template<typename T, typename AllocComp, typename AllocMatch>
+        struct UnorderedEqualsMatcher : MatcherBase<std::vector<T, AllocMatch>> {
+            UnorderedEqualsMatcher(std::vector<T, AllocComp> const& target) : m_target(target) {}
+            bool match(std::vector<T, AllocMatch> const& vec) const override {
                 if (m_target.size() != vec.size()) {
                     return false;
                 }
@@ -3697,7 +3731,7 @@ namespace Matchers {
                 return "UnorderedEquals: " + ::Catch::Detail::stringify(m_target);
             }
         private:
-            std::vector<T> const& m_target;
+            std::vector<T, AllocComp> const& m_target;
         };
 
     } // namespace Vector
@@ -3705,29 +3739,29 @@ namespace Matchers {
     // The following functions create the actual matcher objects.
     // This allows the types to be inferred
 
-    template<typename T>
-    Vector::ContainsMatcher<T> Contains( std::vector<T> const& comparator ) {
-        return Vector::ContainsMatcher<T>( comparator );
+    template<typename T, typename AllocComp = std::allocator<T>, typename AllocMatch = AllocComp>
+    Vector::ContainsMatcher<T, AllocComp, AllocMatch> Contains( std::vector<T, AllocComp> const& comparator ) {
+        return Vector::ContainsMatcher<T, AllocComp, AllocMatch>( comparator );
     }
 
-    template<typename T>
-    Vector::ContainsElementMatcher<T> VectorContains( T const& comparator ) {
-        return Vector::ContainsElementMatcher<T>( comparator );
+    template<typename T, typename Alloc = std::allocator<T>>
+    Vector::ContainsElementMatcher<T, Alloc> VectorContains( T const& comparator ) {
+        return Vector::ContainsElementMatcher<T, Alloc>( comparator );
     }
 
-    template<typename T>
-    Vector::EqualsMatcher<T> Equals( std::vector<T> const& comparator ) {
-        return Vector::EqualsMatcher<T>( comparator );
+    template<typename T, typename AllocComp = std::allocator<T>, typename AllocMatch = AllocComp>
+    Vector::EqualsMatcher<T, AllocComp, AllocMatch> Equals( std::vector<T, AllocComp> const& comparator ) {
+        return Vector::EqualsMatcher<T, AllocComp, AllocMatch>( comparator );
     }
 
-    template<typename T>
-    Vector::ApproxMatcher<T> Approx( std::vector<T> const& comparator ) {
-        return Vector::ApproxMatcher<T>( comparator );
+    template<typename T, typename AllocComp = std::allocator<T>, typename AllocMatch = AllocComp>
+    Vector::ApproxMatcher<T, AllocComp, AllocMatch> Approx( std::vector<T, AllocComp> const& comparator ) {
+        return Vector::ApproxMatcher<T, AllocComp, AllocMatch>( comparator );
     }
 
-    template<typename T>
-    Vector::UnorderedEqualsMatcher<T> UnorderedEquals(std::vector<T> const& target) {
-        return Vector::UnorderedEqualsMatcher<T>(target);
+    template<typename T, typename AllocComp = std::allocator<T>, typename AllocMatch = AllocComp>
+    Vector::UnorderedEqualsMatcher<T, AllocComp, AllocMatch> UnorderedEquals(std::vector<T, AllocComp> const& target) {
+        return Vector::UnorderedEqualsMatcher<T, AllocComp, AllocMatch>( target );
     }
 
 } // namespace Matchers
@@ -6523,20 +6557,18 @@ namespace Catch {
                     return {};
                 }
             };
-            template <typename Sig>
-            using ResultOf_t = typename std::result_of<Sig>::type;
 
             // invoke and not return void :(
             template <typename Fun, typename... Args>
-            CompleteType_t<ResultOf_t<Fun(Args...)>> complete_invoke(Fun&& fun, Args&&... args) {
-                return CompleteInvoker<ResultOf_t<Fun(Args...)>>::invoke(std::forward<Fun>(fun), std::forward<Args>(args)...);
+            CompleteType_t<FunctionReturnType<Fun, Args...>> complete_invoke(Fun&& fun, Args&&... args) {
+                return CompleteInvoker<FunctionReturnType<Fun, Args...>>::invoke(std::forward<Fun>(fun), std::forward<Args>(args)...);
             }
 
             const std::string benchmarkErrorMsg = "a benchmark failed to run successfully";
         } // namespace Detail
 
         template <typename Fun>
-        Detail::CompleteType_t<Detail::ResultOf_t<Fun()>> user_code(Fun&& fun) {
+        Detail::CompleteType_t<FunctionReturnType<Fun>> user_code(Fun&& fun) {
             CATCH_TRY{
                 return Detail::complete_invoke(std::forward<Fun>(fun));
             } CATCH_CATCH_ALL{
@@ -6781,8 +6813,8 @@ namespace Catch {
             Result result;
             int iterations;
         };
-        template <typename Clock, typename Sig>
-        using TimingOf = Timing<ClockDuration<Clock>, Detail::CompleteType_t<Detail::ResultOf_t<Sig>>>;
+        template <typename Clock, typename Func, typename... Args>
+        using TimingOf = Timing<ClockDuration<Clock>, Detail::CompleteType_t<FunctionReturnType<Func, Args...>>>;
     } // namespace Benchmark
 } // namespace Catch
 
@@ -6793,7 +6825,7 @@ namespace Catch {
     namespace Benchmark {
         namespace Detail {
             template <typename Clock, typename Fun, typename... Args>
-            TimingOf<Clock, Fun(Args...)> measure(Fun&& fun, Args&&... args) {
+            TimingOf<Clock, Fun, Args...> measure(Fun&& fun, Args&&... args) {
                 auto start = Clock::now();
                 auto&& r = Detail::complete_invoke(fun, std::forward<Args>(args)...);
                 auto end = Clock::now();
@@ -6812,11 +6844,11 @@ namespace Catch {
     namespace Benchmark {
         namespace Detail {
             template <typename Clock, typename Fun>
-            TimingOf<Clock, Fun(int)> measure_one(Fun&& fun, int iters, std::false_type) {
+            TimingOf<Clock, Fun, int> measure_one(Fun&& fun, int iters, std::false_type) {
                 return Detail::measure<Clock>(fun, iters);
             }
             template <typename Clock, typename Fun>
-            TimingOf<Clock, Fun(Chronometer)> measure_one(Fun&& fun, int iters, std::true_type) {
+            TimingOf<Clock, Fun, Chronometer> measure_one(Fun&& fun, int iters, std::true_type) {
                 Detail::ChronometerModel<Clock> meter;
                 auto&& result = Detail::complete_invoke(fun, Chronometer(meter, iters));
 
@@ -6833,7 +6865,7 @@ namespace Catch {
             };
 
             template <typename Clock, typename Fun>
-            TimingOf<Clock, Fun(run_for_at_least_argument_t<Clock, Fun>)> run_for_at_least(ClockDuration<Clock> how_long, int seed, Fun&& fun) {
+            TimingOf<Clock, Fun, run_for_at_least_argument_t<Clock, Fun>> run_for_at_least(ClockDuration<Clock> how_long, int seed, Fun&& fun) {
                 auto iters = seed;
                 while (iters < (1 << 30)) {
                     auto&& Timing = measure_one<Clock>(fun, iters, is_callable<Fun(Chronometer)>());
@@ -10319,8 +10351,7 @@ namespace Catch {
 
 #if defined(CATCH_PLATFORM_MAC) || defined(CATCH_PLATFORM_IPHONE)
 
-#  include <assert.h>
-#  include <stdbool.h>
+#  include <cassert>
 #  include <sys/types.h>
 #  include <unistd.h>
 #  include <cstddef>
@@ -11740,10 +11771,10 @@ namespace Catch {
 
     Capturer::Capturer( StringRef macroName, SourceLineInfo const& lineInfo, ResultWas::OfType resultType, StringRef names ) {
         auto trimmed = [&] (size_t start, size_t end) {
-            while (names[start] == ',' || isspace(names[start])) {
+            while (names[start] == ',' || isspace(static_cast<unsigned char>(names[start]))) {
                 ++start;
             }
-            while (names[end] == ',' || isspace(names[end])) {
+            while (names[end] == ',' || isspace(static_cast<unsigned char>(names[end]))) {
                 --end;
             }
             return names.substr(start, end - start + 1);
@@ -13977,27 +14008,77 @@ namespace Catch {
 // end catch_test_case_info.cpp
 // start catch_test_case_registry_impl.cpp
 
+#include <algorithm>
 #include <sstream>
 
 namespace Catch {
 
+    namespace {
+        struct TestHasher {
+            explicit TestHasher(Catch::SimplePcg32& rng) {
+                basis = rng();
+                basis <<= 32;
+                basis |= rng();
+            }
+
+            uint64_t basis;
+
+            uint64_t operator()(TestCase const& t) const {
+                // Modified FNV-1a hash
+                static constexpr uint64_t prime = 1099511628211;
+                uint64_t hash = basis;
+                for (const char c : t.name) {
+                    hash ^= c;
+                    hash *= prime;
+                }
+                return hash;
+            }
+        };
+    } // end unnamed namespace
+
     std::vector<TestCase> sortTests( IConfig const& config, std::vector<TestCase> const& unsortedTestCases ) {
-
-        std::vector<TestCase> sorted = unsortedTestCases;
-
         switch( config.runOrder() ) {
-            case RunTests::InLexicographicalOrder:
-                std::sort( sorted.begin(), sorted.end() );
-                break;
-            case RunTests::InRandomOrder:
-                seedRng( config );
-                std::shuffle( sorted.begin(), sorted.end(), rng() );
-                break;
             case RunTests::InDeclarationOrder:
                 // already in declaration order
                 break;
+
+            case RunTests::InLexicographicalOrder: {
+                std::vector<TestCase> sorted = unsortedTestCases;
+                std::sort( sorted.begin(), sorted.end() );
+                return sorted;
+            }
+
+            case RunTests::InRandomOrder: {
+                seedRng( config );
+                TestHasher h( rng() );
+
+                using hashedTest = std::pair<uint64_t, TestCase const*>;
+                std::vector<hashedTest> indexed_tests;
+                indexed_tests.reserve( unsortedTestCases.size() );
+
+                for (auto const& testCase : unsortedTestCases) {
+                    indexed_tests.emplace_back(h(testCase), &testCase);
+                }
+
+                std::sort(indexed_tests.begin(), indexed_tests.end(),
+                          [](hashedTest const& lhs, hashedTest const& rhs) {
+                          if (lhs.first == rhs.first) {
+                              return lhs.second->name < rhs.second->name;
+                          }
+                          return lhs.first < rhs.first;
+                });
+
+                std::vector<TestCase> sorted;
+                sorted.reserve( indexed_tests.size() );
+
+                for (auto const& hashed : indexed_tests) {
+                    sorted.emplace_back(*hashed.second);
+                }
+
+                return sorted;
+            }
         }
-        return sorted;
+        return unsortedTestCases;
     }
 
     bool isThrowSafe( TestCase const& testCase, IConfig const& config ) {
@@ -14591,6 +14672,7 @@ namespace Catch {
          m_pos = m_arg.size();
          m_substring.clear();
          m_patternName.clear();
+         m_realPatternPos = 0;
          return false;
       }
       endMode();
@@ -14609,6 +14691,7 @@ namespace Catch {
         }
 
         m_patternName.clear();
+        m_realPatternPos = 0;
 
         return token;
     }
@@ -15079,7 +15162,7 @@ namespace Catch {
     }
 
     Version const& libraryVersion() {
-        static Version version( 2, 11, 3, "", 0 );
+        static Version version( 2, 12, 2, "", 0 );
         return version;
     }
 
@@ -16142,7 +16225,7 @@ ConsoleReporter::ConsoleReporter(ReporterConfig const& config)
         else
         {
             return{
-                { "benchmark name", CATCH_CONFIG_CONSOLE_WIDTH - 32, ColumnInfo::Left },
+                { "benchmark name", CATCH_CONFIG_CONSOLE_WIDTH - 43, ColumnInfo::Left },
                 { "samples      mean       std dev", 14, ColumnInfo::Right },
                 { "iterations   low mean   low std dev", 14, ColumnInfo::Right },
                 { "estimated    high mean  high std dev", 14, ColumnInfo::Right }
@@ -16658,6 +16741,11 @@ namespace Catch {
                 xml.writeAttribute( "name", name );
             }
             xml.writeAttribute( "time", ::Catch::Detail::stringify( sectionNode.stats.durationInSeconds ) );
+            // This is not ideal, but it should be enough to mimic gtest's
+            // junit output.
+            // Ideally the JUnit reporter would also handle `skipTest`
+            // events and write those out appropriately.
+            xml.writeAttribute( "status", "run" );
 
             writeAssertions( sectionNode );
 
