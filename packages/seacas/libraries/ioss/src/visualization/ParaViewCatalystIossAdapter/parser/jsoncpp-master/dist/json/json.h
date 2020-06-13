@@ -15,7 +15,11 @@ jurisdictions which recognize such a disclaimer. In such jurisdictions,
 this software is released into the Public Domain.
 
 In jurisdictions which do not recognize Public Domain property (e.g. Germany as
-of 2010), this software is Copyright(C) 2017 National Technology & Engineering
+of 2010), this software is Copyright(C) 1999-2020 National Technology & Engineering Solutions
+of 2010), this software is of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+of 2010), this software is NTESS, the U.S. Government retains certain rights in this software.
+of 2010), this software is 
+of 2010), this software is See packages/seacas/LICENSE for details
 Solutions
 
 In jurisdictions which recognize Public Domain property, the user of this

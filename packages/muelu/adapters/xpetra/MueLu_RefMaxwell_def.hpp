@@ -164,13 +164,14 @@ namespace MueLu {
   void FindNonZeros(const typename Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dual_view_type::t_dev_um vals,
                     Kokkos::View<bool*, typename Node::device_type> nonzeros) {
     using ATS        = Kokkos::ArithTraits<Scalar>;
+    using impl_ATS = Kokkos::ArithTraits<typename ATS::val_type>;
     using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
     TEUCHOS_ASSERT(vals.extent(0) == nonzeros.extent(0));
-    const typename ATS::magnitudeType eps = 2.0*ATS::eps();
+    const typename ATS::magnitudeType eps = 2.0*impl_ATS::eps();
 
     Kokkos::parallel_for("MueLu:RefMaxwell::FindNonZeros", range_type(0,vals.extent(0)),
                          KOKKOS_LAMBDA (const size_t i) {
-                           nonzeros(i) = (ATS::magnitude(vals(i,0)) > eps);
+                           nonzeros(i) = (impl_ATS::magnitude(vals(i,0)) > eps);
                          });
   }
 
@@ -1547,6 +1548,7 @@ namespace MueLu {
     if (useKokkos_) {
 
       using ATS        = Kokkos::ArithTraits<SC>;
+      using impl_ATS = Kokkos::ArithTraits<typename ATS::val_type>;
       using range_type = Kokkos::RangePolicy<LO, typename NO::execution_space>;
 
       typedef typename Matrix::local_matrix_type KCRS;
@@ -1617,7 +1619,7 @@ namespace MueLu {
                                  for (size_t ll = localD0.graph.row_map(i); ll < localD0.graph.row_map(i+1); ll++) {
                                    LO l = localD0.graph.entries(ll);
                                    SC p = localD0.values(ll);
-                                   if (ATS::magnitude(p) < tol)
+                                   if (impl_ATS::magnitude(p) < tol)
                                      continue;
                                    for (size_t jj = localP.graph.row_map(l); jj < localP.graph.row_map(l+1); jj++) {
                                      LO j = localP.graph.entries(jj);
