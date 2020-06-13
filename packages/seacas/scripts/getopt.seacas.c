@@ -1,4 +1,11 @@
 /*
+ * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
+ * 
+ * See packages/seacas/LICENSE for details
+ */
+/*
     getopt.c - Enhanced implementation of BSD getopt(1)
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by

@@ -1,34 +1,8 @@
-// Copyright(C) 1999-2018, 2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//
-//     * Neither the name of NTESS nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+// See packages/seacas/LICENSE for details
 
 #include <cgns/Iocgns_Defines.h>
 
@@ -871,59 +845,60 @@ namespace {
   }
 } // namespace
 
-void Iocgns::Utils::output_assembly(int file_ptr, const Ioss::Assembly *assembly, bool is_parallel_io, bool appending)
+void Iocgns::Utils::output_assembly(int file_ptr, const Ioss::Assembly *assembly,
+                                    bool is_parallel_io, bool appending)
 {
   int base = 1;
-  int fam = 0;
-    CGERR(cg_family_write(file_ptr, base, assembly->name().c_str(), &fam));
+  int fam  = 0;
+  CGERR(cg_family_write(file_ptr, base, assembly->name().c_str(), &fam));
 
-    int64_t id = 0;
-    if (assembly->property_exists("id")) {
-      id = assembly->get_property("id").get_int();
-    }
+  int64_t id = 0;
+  if (assembly->property_exists("id")) {
+    id = assembly->get_property("id").get_int();
+  }
 
-    CGERR(cg_goto(file_ptr, base, "Family_t", fam, nullptr));
-    CGERR(cg_descriptor_write("FamVC_TypeId", "0"));
-    CGERR(cg_descriptor_write("FamVC_TypeName", "Unspecified"));
-    CGERR(cg_descriptor_write("FamVC_UserId", std::to_string(id).c_str()));
-    CGERR(cg_descriptor_write("FamVC_UserName", assembly->name().c_str()));
+  CGERR(cg_goto(file_ptr, base, "Family_t", fam, nullptr));
+  CGERR(cg_descriptor_write("FamVC_TypeId", "0"));
+  CGERR(cg_descriptor_write("FamVC_TypeName", "Unspecified"));
+  CGERR(cg_descriptor_write("FamVC_UserId", std::to_string(id).c_str()));
+  CGERR(cg_descriptor_write("FamVC_UserName", assembly->name().c_str()));
 
-    const auto &members = assembly->get_members();
-    // Now, iterate the members of the assembly and add the reference to the structured block
-    if (assembly->get_member_type() == Ioss::STRUCTUREDBLOCK) {
-      for (const auto &mem : members) {
-        int         base = mem->get_property("base").get_int();
-        const auto *sb   = dynamic_cast<const Ioss::StructuredBlock *>(mem);
-        Ioss::Utils::check_dynamic_cast(sb);
-        if (is_parallel_io || sb->is_active()) {
-          int db_zone = get_db_zone(sb);
-          if (cg_goto(file_ptr, base, "Zone_t", db_zone, "end") == CG_OK) {
-            CGERR(cg_famname_write(assembly->name().c_str()));
-          }
+  const auto &members = assembly->get_members();
+  // Now, iterate the members of the assembly and add the reference to the structured block
+  if (assembly->get_member_type() == Ioss::STRUCTUREDBLOCK) {
+    for (const auto &mem : members) {
+      int         base = mem->get_property("base").get_int();
+      const auto *sb   = dynamic_cast<const Ioss::StructuredBlock *>(mem);
+      Ioss::Utils::check_dynamic_cast(sb);
+      if (is_parallel_io || sb->is_active()) {
+        int db_zone = get_db_zone(sb);
+        if (cg_goto(file_ptr, base, "Zone_t", db_zone, "end") == CG_OK) {
+          CGERR(cg_famname_write(assembly->name().c_str()));
         }
       }
     }
-    else if (assembly->get_member_type() == Ioss::ELEMENTBLOCK) {
-      for (const auto &mem : members) {
-	if (appending) {
-	  // Modifying an existing database so the element blocks
-	  // should exist on the output database...
-          int db_zone = get_db_zone(mem);
-          if (cg_goto(file_ptr, base, "Zone_t", db_zone, "end") == CG_OK) {
-            CGERR(cg_famname_write(assembly->name().c_str()));
-          }
-	}
-	else {
-	  // The element blocks have not yet been output.  To make
-	  // it easier when they are written, add a property that
-	  // specifies what assembly they are in.  Currently, the way
-	  // CGNS represents assemblies limits membership to at most one
-	  // assembly.
-	  Ioss::GroupingEntity *new_mem = const_cast<Ioss::GroupingEntity *>(mem);
-	  new_mem->property_add(Ioss::Property("assembly", assembly->name()));
-	}
+  }
+  else if (assembly->get_member_type() == Ioss::ELEMENTBLOCK) {
+    for (const auto &mem : members) {
+      if (appending) {
+        // Modifying an existing database so the element blocks
+        // should exist on the output database...
+        int db_zone = get_db_zone(mem);
+        if (cg_goto(file_ptr, base, "Zone_t", db_zone, "end") == CG_OK) {
+          CGERR(cg_famname_write(assembly->name().c_str()));
+        }
+      }
+      else {
+        // The element blocks have not yet been output.  To make
+        // it easier when they are written, add a property that
+        // specifies what assembly they are in.  Currently, the way
+        // CGNS represents assemblies limits membership to at most one
+        // assembly.
+        Ioss::GroupingEntity *new_mem = const_cast<Ioss::GroupingEntity *>(mem);
+        new_mem->property_add(Ioss::Property("assembly", assembly->name()));
       }
     }
+  }
 }
 
 void Iocgns::Utils::output_assemblies(int file_ptr, const Ioss::Region &region, bool is_parallel_io)
@@ -934,6 +909,82 @@ void Iocgns::Utils::output_assemblies(int file_ptr, const Ioss::Region &region, 
     output_assembly(file_ptr, assem, is_parallel_io);
   }
 }
+void Iocgns::Utils::write_state_meta_data(int file_ptr, const Ioss::Region &region,
+                                          bool is_parallel_io)
+{
+  // Write the metadata to the state file...
+  // Not everything is needed, we just need the zones output so we can put the FlowSolutionPointers
+  // node under the Zone nodes.
+  int base           = 0;
+  int phys_dimension = region.get_property("spatial_dimension").get_int();
+  CGERR(cg_base_write(file_ptr, "Base", phys_dimension, phys_dimension, &base));
+
+  region.get_database()->progress("\tElement Blocks");
+  const Ioss::ElementBlockContainer &ebs = region.get_element_blocks();
+  for (auto eb : ebs) {
+    const std::string &name    = eb->name();
+    int                db_zone = 0;
+    cgsize_t           size[3] = {0, 0, 0};
+    size[1]                    = eb->get_property("zone_element_count").get_int();
+    size[0]                    = eb->get_property("zone_node_count").get_int();
+
+    if (is_parallel_io) {
+    }
+
+    CGERR(cg_zone_write(file_ptr, base, name.c_str(), size, CG_Unstructured, &db_zone));
+    int prev_db_zone = get_db_zone(eb);
+    if (db_zone != prev_db_zone) {
+      std::ostringstream errmsg;
+      fmt::print(
+          errmsg,
+          "ERROR: CGNS: The 'db_zone' does not match in the state file {} and the base file {}.",
+          db_zone, prev_db_zone);
+      IOSS_ERROR(errmsg);
+    }
+  }
+
+  region.get_database()->progress("\tStructured Blocks");
+  const auto &structured_blocks = region.get_structured_blocks();
+
+  // If `is_parallel` and `!is_parallel_io`, then writing file-per-processor
+  bool is_parallel = region.get_database()->util().parallel_size() > 1;
+  int  rank        = region.get_database()->util().parallel_rank();
+  for (const auto &sb : structured_blocks) {
+    cgsize_t size[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+    if (is_parallel_io) {
+      size[3] = sb->get_property("ni_global").get_int();
+      size[4] = sb->get_property("nj_global").get_int();
+      size[5] = sb->get_property("nk_global").get_int();
+    }
+    else {
+      size[3] = sb->get_property("ni").get_int();
+      size[4] = sb->get_property("nj").get_int();
+      size[5] = sb->get_property("nk").get_int();
+    }
+    size[0] = size[3] + 1;
+    size[1] = size[4] + 1;
+    size[2] = size[5] + 1;
+
+    if (is_parallel_io || sb->is_active()) {
+      std::string name = sb->name();
+      if (is_parallel && !is_parallel_io) {
+        name += "_proc-";
+        name += std::to_string(rank);
+      }
+      int db_zone = 0;
+      CGERR(cg_zone_write(file_ptr, base, name.c_str(), size, CG_Structured, &db_zone));
+      if (db_zone != sb->get_property("db_zone").get_int()) {
+        std::ostringstream errmsg;
+        fmt::print(
+            errmsg,
+            "ERROR: CGNS: The 'db_zone' does not match in the state file {} and the base file {}.",
+            db_zone, sb->get_property("db_zone").get_int());
+        IOSS_ERROR(errmsg);
+      }
+    }
+  }
+}
+
 size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &region,
                                              std::vector<size_t> &zone_offset, bool is_parallel_io)
 {
@@ -1385,8 +1436,8 @@ CG_ElementType_t Iocgns::Utils::map_topology_to_cgns(const std::string &name)
   return topo;
 }
 
-void Iocgns::Utils::write_flow_solution_metadata(int file_ptr, Ioss::Region *region, int state,
-                                                 const int *vertex_solution_index,
+void Iocgns::Utils::write_flow_solution_metadata(int file_ptr, int base_ptr, Ioss::Region *region,
+                                                 int state, const int *vertex_solution_index,
                                                  const int *cell_center_solution_index,
                                                  bool       is_parallel_io)
 {
@@ -1397,6 +1448,16 @@ void Iocgns::Utils::write_flow_solution_metadata(int file_ptr, Ioss::Region *reg
   const auto &nblocks                 = region->get_node_blocks();
   const auto &nblock                  = nblocks[0];
   bool        global_has_nodal_fields = nblock->field_count(Ioss::Field::TRANSIENT) > 0;
+  bool        is_file_per_state = (base_ptr >= 0);
+
+  // IF the `base_ptr` is positive, then we are in file-per-state option.
+  // `file_ptr` points to the linked-to file where the state data is being
+  // written and `base_ptr` points to the "base" file which has the mesh
+  // metadata and links to the solution data "state" files.
+  std::string linked_file_name;
+  if (is_file_per_state) {
+    linked_file_name = region->get_database()->get_filename();
+  }
 
   // Create a lambda to avoid code duplication for similar treatment
   // of structured blocks and element blocks.
@@ -1404,6 +1465,13 @@ void Iocgns::Utils::write_flow_solution_metadata(int file_ptr, Ioss::Region *reg
     int base = block->get_property("base").get_int();
     int zone = get_db_zone(block);
     if (has_nodal_fields) {
+      if (is_file_per_state) {
+        // We are using file-per-state and we need to add a link from the base file (base_ptr)
+        // to the state file (file_ptr).
+        CGERR(cg_goto(base_ptr, base, "Zone_t", zone, "end"));
+        std::string linkpath = "/Base/" + block->name() + "/" + v_name;
+        CGERR(cg_link_write(v_name.c_str(), linked_file_name.c_str(), linkpath.c_str()));
+      }
       CGERR(cg_sol_write(file_ptr, base, zone, v_name.c_str(), CG_Vertex,
                          (int *)vertex_solution_index));
       CGERR(
@@ -1412,6 +1480,13 @@ void Iocgns::Utils::write_flow_solution_metadata(int file_ptr, Ioss::Region *reg
       CGERR(cg_descriptor_write("Step", step.c_str()));
     }
     if (block->field_count(Ioss::Field::TRANSIENT) > 0) {
+      if (is_file_per_state) {
+        // We are using file-per-state and we need to add a link from the base file (base_ptr)
+        // to the state file (file_ptr).
+        CGERR(cg_goto(base_ptr, base, "Zone_t", zone, "end"));
+        std::string linkpath = "/Base/" + block->name() + "/" + c_name;
+        CGERR(cg_link_write(c_name.c_str(), linked_file_name.c_str(), linkpath.c_str()));
+      }
       CGERR(cg_sol_write(file_ptr, base, zone, c_name.c_str(), CG_CellCenter,
                          (int *)cell_center_solution_index));
       CGERR(cg_goto(file_ptr, base, "Zone_t", zone, "FlowSolution_t", *cell_center_solution_index,

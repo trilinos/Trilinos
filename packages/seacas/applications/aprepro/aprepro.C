@@ -1,35 +1,8 @@
-// Copyright(C) 2015-2017 National Technology & Engineering Solutions of
-// Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above
-//   copyright notice, this list of conditions and the following
-//   disclaimer in the documentation and/or other materials provided
-//   with the distribution.
-//
-// * Neither the name of NTESS nor the names of its
-//   contributors may be used to endorse or promote products derived
-//   from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
+// 
+// See packages/seacas/LICENSE for details
 
 #include <cstring>
 #include <fstream>
@@ -109,26 +82,56 @@ int main(int argc, char *argv[])
     // Read and parse a file.  The entire file will be parsed and
     // then the output can be obtained in an std::ostringstream via
     // Aprepro::parsing_results()
+    bool writeResults = true;
     try {
       bool result = aprepro.parse_stream(infile, input_files[0]);
 
-      if (result) {
-        if (input_files.size() > 1) {
-          std::ofstream ofile(input_files[1]);
-          if (!quiet) {
-            auto comment = aprepro.getsym("_C_")->value.svar;
-            ofile << comment << " Algebraic Preprocessor (Aprepro) version " << aprepro.version()
-                  << "\n";
+      if (aprepro.ap_options.errors_fatal && aprepro.get_error_count() > 0) {
+        writeResults = false;
+      }
+      if ((aprepro.ap_options.errors_and_warnings_fatal) &&
+          (aprepro.get_error_count() + aprepro.get_warning_count() > 0)) {
+        writeResults = false;
+      }
+
+      if (writeResults) {
+        if (result) {
+          if (input_files.size() > 1) {
+            std::ofstream ofile(input_files[1]);
+            if (!quiet) {
+              auto comment = aprepro.getsym("_C_")->value.svar;
+              ofile << comment << " Algebraic Preprocessor (Aprepro) version " << aprepro.version()
+                    << "\n";
+            }
+            ofile << aprepro.parsing_results().str();
           }
-          ofile << aprepro.parsing_results().str();
+          else {
+            if (!quiet) {
+              auto comment = aprepro.getsym("_C_")->value.svar;
+              std::cout << comment << " Algebraic Preprocessor (Aprepro) version "
+                        << aprepro.version() << "\n";
+            }
+            std::cout << aprepro.parsing_results().str();
+          }
+        }
+      }
+      else {
+        std::cerr << "There were " << aprepro.get_error_count() << " errors and "
+                  << aprepro.get_warning_count() << " warnings."
+                  << "\n";
+        if (aprepro.ap_options.errors_and_warnings_fatal) {
+          std::cerr << "Errors and warnings are fatal. No output has been written"
+                    << "\n";
+        }
+        else if (aprepro.ap_options.errors_fatal) {
+          std::cerr << "Errors are fatal. No output has been written."
+                    << "\n";
         }
         else {
-          if (!quiet) {
-            auto comment = aprepro.getsym("_C_")->value.svar;
-            std::cout << comment << " Algebraic Preprocessor (Aprepro) version "
-                      << aprepro.version() << "\n";
-          }
-          std::cout << aprepro.parsing_results().str();
+          std::cerr << "Neither errors nor warnings are fatal. "
+                    << "If you see this message, then there is a bug in Aprepro. "
+                    << "No output has been written."
+                    << "\n";
         }
       }
     }

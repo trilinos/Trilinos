@@ -271,7 +271,7 @@ public:
   ///
   virtual
   KOKKOS_INLINE_FUNCTION
-  ~Matrix() final;
+  ~Matrix();
 
   ///
   /// Indexing for constant tensor
