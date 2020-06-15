@@ -84,7 +84,7 @@ namespace FROSch {
         else{
             this->SumOperator_->addOperator(CoarseOperator_);
         }
-        
+
 
     }
 

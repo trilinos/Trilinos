@@ -239,9 +239,6 @@ namespace FROSch {
 
     }
 
-
-
-
     template <class LO,class GO,class NO>
     RCP<const Map<LO,GO,NO> > BuildUniqueMap(const RCP<const Map<LO,GO,NO> > map,
                                              bool useCreateOneToOneMap,
@@ -490,7 +487,6 @@ namespace FROSch {
     return tmpMap;
 
     }
-
 
     template <class LO,class GO,class NO>
     RCP<Map<LO,GO,NO> > BuildRepeatedMapNonConstOld(RCP<const CrsGraph<LO,GO,NO> > graph)

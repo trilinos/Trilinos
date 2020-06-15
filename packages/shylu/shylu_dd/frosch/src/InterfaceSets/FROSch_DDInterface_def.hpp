@@ -80,37 +80,6 @@ namespace FROSch {
         identifyLocalComponents(componentsSubdomains,componentsSubdomainsUnique);
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     template <class SC,class LO,class GO,class NO>
     DDInterface<SC,LO,GO,NO>::~DDInterface()
     {

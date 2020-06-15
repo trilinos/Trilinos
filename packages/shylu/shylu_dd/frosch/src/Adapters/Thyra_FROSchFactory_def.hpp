@@ -254,6 +254,7 @@ namespace Thyra {
 
                 FROSCH_ASSERT(paramList_->isParameter("DofsPerNode Vector"),"Currently, TwoLevelBlockPreconditioner cannot be constructed without DofsPerNode Vector.");
                 FROSCH_ASSERT(paramList_->isParameter("DofOrdering Vector"),"Currently, TwoLevelBlockPreconditioner cannot be constructed without DofOrdering Vector.");
+                // Extract the repeated map vector
                 if (paramList_->isParameter("Repeated Map Vector")) {
                     XMapPtrVecPtr repeatedMapsTmp = ExtractVectorFromParameterList<XMapPtr>(*paramList_,"Repeated Map Vector");
                     XMultiVectorPtrVecPtr nodeListVecTmp = ExtractVectorFromParameterList<XMultiVectorPtr>(*paramList_,"Coordinates List Vector");
@@ -263,6 +264,7 @@ namespace Thyra {
                             repeatedMaps[i] = repeatedMapsTmp[i].getConst();
                         }
                     }
+                    // Extract the nodeList map vector
                     if(!nodeListVecTmp.is_null()){
                       coordinatesList.resize(nodeListVecTmp.size());
                       for(unsigned i = 0; i<coordinatesList.size();i++){
@@ -271,8 +273,9 @@ namespace Thyra {
                     }
 
                     FROSCH_ASSERT(!repeatedMaps.is_null(),"FROSch::FROSchFactory : ERROR: repeatedMaps.is_null()");
-
+                    // Extract the DofsPerNode  vector
                     dofsPerNodeVector = ExtractVectorFromParameterList<UN>(*paramList_,"DofsPerNode Vector");
+                    // Extract the DofOrdering vector
                     dofOrderings = ExtractVectorFromParameterList<DofOrdering>(*paramList_,"DofOrdering Vector");
                 } else {
                     FROSCH_ASSERT(false,"Currently, TwoLevelBlockPreconditioner cannot be constructed without Repeated Maps.");

@@ -61,10 +61,6 @@ namespace FROSch {
         FROSCH_TIMER_START_LEVELID(coarseOperatorTime,"CoarseOperator::CoarseOperator");
     }
 
-
-
-
-
     template<class SC,class LO,class GO,class NO>
     CoarseOperator<SC,LO,GO,NO>::~CoarseOperator()
     {
@@ -72,7 +68,8 @@ namespace FROSch {
     }
 
     //##############CoarseSolve Repeated Map##############################
-    //this is only called if an additional level is applied
+    //this is only called if an additional level is applied and ZoltanDual is chosen
+    //for distribution
     template<class SC,class LO, class GO, class NO>
     int CoarseOperator<SC,LO,GO,NO>::buildGlobalGraph(Teuchos::RCP<DDInterface<SC,LO,GO,NO> > theDDInterface_)
     {
@@ -117,10 +114,6 @@ namespace FROSch {
        return 0;
     }
 
-
-
-
-
     template <class SC,class LO, class GO,class NO>
     int CoarseOperator<SC,LO,GO,NO>::buildCoarseGraph()
     {
@@ -157,9 +150,6 @@ namespace FROSch {
 		 }
      return 0;
     }
-
-
-
 
     template <class SC,class LO,class GO, class NO>
     int CoarseOperator<SC,LO,GO,NO>::buildElementNodeList()
@@ -219,11 +209,6 @@ namespace FROSch {
       return 0;
     }
 
-
-
-
-
-
     template <class SC,class LO,class GO, class NO>
     int CoarseOperator<SC,LO,GO,NO>::BuildRepMapZoltan(GraphPtr Xgraph,
                                 GraphPtr  B,
@@ -271,16 +256,6 @@ namespace FROSch {
       return 0;
     }
 //################end Coarse RepetedMap Functions###########################
-
-
-
-
-
-
-
-
-
-
 
     template <class SC,class LO,class GO,class NO>
     int CoarseOperator<SC,LO,GO,NO>::compute()
@@ -491,9 +466,7 @@ namespace FROSch {
                 k0 = tmpCoarseMatrix;
 
             } else if(!DistributionList_->get("Type","linear").compare("ZoltanDual")){
-              // ZoltanDual repartion the coarse problen using Zoltan2
-              // Repeated for additional leval can be built
-              // get Coarse Nullspace
+              //ZoltanDual
               CoarseSolveExporters_[0] = Xpetra::ExportFactory<LO,GO,NO>::Build(k0->getMap(),GatheringMaps_[0]);
               XMatrixPtr tmpCoarseMatrix = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(GatheringMaps_[0],k0->getGlobalMaxNumRowEntries());
               tmpCoarseMatrix->doExport(*k0,*CoarseSolveExporters_[0],Xpetra::INSERT);
@@ -509,45 +482,6 @@ namespace FROSch {
               tmpCoarseMatrix->fillComplete();
               k0 = tmpCoarseMatrix;
 
-              //Option to build CoarseNullSpace_ for the nect level
-              /*
-              if(DistributionList_->get("CoarseNullSpace",false)){
-
-                XExportPtr NullSpaceExport = Xpetra::ExportFactory<LO,GO,NO>::Build(CoarseNullSpace_[0]->getMap(),GatheringMaps_[0]);
-                XMultiVectorPtr tmpNullSpace = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(GatheringMaps_[0],CoarseNullSpace_[0]->getNumVectors());
-                tmpNullSpace->doExport(*CoarseNullSpace_[0],*NullSpaceExport,Xpetra::INSERT);
-                //CoarseNullSpace to Map according to coarsematrix map
-                CoarseNullSpace_[0] = tmpNullSpace;
-                for (UN j=1; j<GatheringMaps_.size(); j++) {
-                  tmpNullSpace = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(GatheringMaps_[j],CoarseNullSpace_[0]->getNumVectors());
-                  tmpNullSpace->doExport(*CoarseNullSpace_[0],*CoarseSolveExporters_[j],Xpetra::INSERT);
-                }
-
-                size_t numBasisFunc;
-                ConstXMultiVectorPtrVecPtr CNullSpaces_(CoarseNullSpace_.size());
-                XMultiVectorPtr tmpnullSpaceCoarse;
-                //CoarseNullSpace to new Communicator
-                if(OnCoarseSolveComm_){
-
-                  tmpnullSpaceCoarse= Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(CoarseSolveMap_,CoarseNullSpace_[0]->getNumVectors());
-                  numBasisFunc = CoarseNullSpace_[0]->getNumVectors();
-                  XMultiVectorPtr NullSpaceCoarse_;
-                  for(UN i = 0;i<numBasisFunc;i++){
-                    Teuchos::ArrayRCP<const SC> data = CoarseNullSpace_[0]->getData(i);
-                    for(UN j = 0;j<data.size();j++){
-                      tmpnullSpaceCoarse->replaceLocalValue(j,i,data[j]);
-                    }
-                  }
-                  NullSpaceCoarse_ = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(RepMapCoarse,numBasisFunc);
-                  XImportPtr repImport = Xpetra::ImportFactory<LO,GO,NO>::Build(CoarseSolveMap_,RepMapCoarse);
-                  NullSpaceCoarse_->doImport(*tmpnullSpaceCoarse,*repImport,Xpetra::INSERT);
-                  //Write Nullspace to ParameterList for the next Level
-                  CNullSpaces_[0] = NullSpaceCoarse_;
-                  sublist(this->ParameterList_,"CoarseSolver")->set("Coarse NullSpace",CNullSpaces_);
-
-                }//CoarseSolveComm_
-              }*/
-              //CoarseNullSpace
             } else if (!DistributionList_->get("Type","linear").compare("Zoltan2")) {
 #ifdef HAVE_SHYLU_DDFROSCH_ZOLTAN2
                 GatheringMaps_[0] = rcp_const_cast<XMap> (BuildUniqueMap(k0->getRowMap()));
@@ -788,12 +722,6 @@ namespace FROSch {
         return 0;
     }
 
-
-
-
-
-
-
     template<class SC,class LO,class GO,class NO>
     typename CoarseOperator<SC,LO,GO,NO>::XMatrixPtr CoarseOperator<SC,LO,GO,NO>::buildCoarseMatrix()
     {
@@ -809,31 +737,6 @@ namespace FROSch {
         }
         return k0;
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     template<class SC,class LO,class GO,class NO>
     int CoarseOperator<SC,LO,GO,NO>::buildCoarseSolveMap(ConstXMapPtr coarseMapUnique)
@@ -968,7 +871,7 @@ namespace FROSch {
 #endif
             }
         } else if(!DistributionList_->get("Type","linear").compare("ZoltanDual")){
-          //Zoltan Dual provides a factorization of the coarse problem with Zoltan2 inlcuding the
+          //ZoltanDual provides a factorization of the coarse problem with Zoltan2 inlcuding the
           //build of a Repeated map suited for the next level
           //GatheringSteps to communicate Matrix
           int gatheringSteps = DistributionList_->get("GatheringSteps",1);
@@ -1101,7 +1004,7 @@ namespace FROSch {
                //Set DofOderingVec and DofsPerNodeVec to ParameterList for the next Level
                //Create Here DofsMaps for the next Level->DofOrdering will become redundant
                Teuchos::ArrayRCP<DofOrdering> dofOrderings(1);
-               dofOrderings[0] = Custom;
+               dofOrderings[0] = Custom; //special Ordering for Coarse Level
                Teuchos::ArrayRCP<UN> dofsPerNodeVector(1);
                dofsPerNodeVector[0] = dofs;
                CoarseDofsMaps[0] = DMapRep;
