@@ -657,6 +657,8 @@ def run():
     print('Set CWD = {}'.format(os.getcwd()))
 
     # Execute the call to ctest.
+    # - NOTE: simple_testing.cmake can be found in the TFW_single_configure_support_scripts
+    #         repository.
     subprocess.check_call(['ctest', '-S', 'simple_testing.cmake',
                            '-Dbuild_name={}'.format(build_name),
                            '-Dskip_by_parts_submit=OFF',
