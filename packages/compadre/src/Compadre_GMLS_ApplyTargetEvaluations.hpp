@@ -8,25 +8,26 @@ KOKKOS_INLINE_FUNCTION
 void GMLS::applyTargetsToCoefficients(const member_type& teamMember, scratch_vector_type t1, scratch_vector_type t2, scratch_matrix_right_type Q, scratch_vector_type w, scratch_matrix_right_type P_target_row, const int target_NP) const {
 
     const int target_index = _initial_index_for_batch + teamMember.league_rank();
-        
-    const int num_evaluation_sites = (static_cast<int>(_additional_evaluation_indices.extent(1)) > 1) 
-            ? static_cast<int>(_additional_evaluation_indices.extent(1)) : 1;
-
-    const int added_alpha_size = getAdditionalAlphaSizeFromConstraint(_dense_solver_type, _constraint_type);
 
 #ifdef COMPADRE_USE_LAPACK
 
     // CPU
-    for (int e=0; e<num_evaluation_sites; ++e) {
+    const int alphas_per_tile_per_target = _neighbor_lists.getNumberOfNeighborsDevice(target_index) + _added_alpha_size;
+    const int base_offset_index_jmke = getTargetOffsetIndexDevice(0,0,0,0);
+    const int base_alphas_index = getAlphaIndexDevice(target_index, base_offset_index_jmke);
+
+    scratch_matrix_right_type this_alphas(_alphas.data() + TO_GLOBAL(base_alphas_index), _total_alpha_values*_max_evaluation_sites_per_target, alphas_per_tile_per_target);
+
+    for (int e=0; e<this->getNEvaluationSitesPerTarget(target_index); ++e) {
         // evaluating alpha_ij
-        for (int i=0; i<this->getNNeighbors(target_index) + added_alpha_size; ++i) {
-            for (size_t j=0; j<_operations.size(); ++j) {
-                for (int k=0; k<_lro_output_tile_size[j]; ++k) {
-                    for (int m=0; m<_lro_input_tile_size[j]; ++m) {
-                        double alpha_ij = 0;
-                        int offset_index_jmke = getTargetOffsetIndexDevice(j,m,k,e);
+        for (size_t j=0; j<_operations.size(); ++j) {
+            for (int k=0; k<_lro_output_tile_size[j]; ++k) {
+                for (int m=0; m<_lro_input_tile_size[j]; ++m) {
+                    double alpha_ij = 0;
+                    int offset_index_jmke = getTargetOffsetIndexDevice(j,m,k,e);
+                    for (int i=0; i<this->getNNeighbors(target_index) + _added_alpha_size; ++i) {
                         Kokkos::parallel_reduce(Kokkos::TeamThreadRange(teamMember,
-                            _basis_multiplier*target_NP), [=] (const int l, double &talpha_ij) {
+                            _basis_multiplier*target_NP), [&] (const int l, double &talpha_ij) {
                             if (_sampling_multiplier>1 && m<_sampling_multiplier) {
 
                                 talpha_ij += P_target_row(offset_index_jmke, l)*Q(l, i+m*this->getNNeighbors(target_index));
@@ -50,7 +51,7 @@ void GMLS::applyTargetsToCoefficients(const member_type& teamMember, scratch_vec
                             }
                         }, alpha_ij);
                         Kokkos::single(Kokkos::PerTeam(teamMember), [&] () {
-                            _alphas(target_index, offset_index_jmke, i) = alpha_ij;
+                            this_alphas(offset_index_jmke,i) = alpha_ij;
                             compadre_kernel_assert_extreme_debug(alpha_ij==alpha_ij && "NaN in alphas.");
                         });
                     }
@@ -99,13 +100,14 @@ void GMLS::applyTargetsToCoefficients(const member_type& teamMember, scratch_vec
 //        }
 
     // GPU
-    for (int e=0; e<num_evaluation_sites; ++e) {
+    for (int e=0; e<getNEvaluationSitesPerTarget(target_index); ++e) {
         for (int j=0; j<(int)_operations.size(); ++j) {
             for (int k=0; k<_lro_output_tile_size[j]; ++k) {
                 for (int m=0; m<_lro_input_tile_size[j]; ++m) {
                     int offset_index_jmke = getTargetOffsetIndexDevice(j,m,k,e);
+                    int alphas_index = getAlphaIndexDevice(target_index, offset_index_jmke);
                     Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,
-                            this->getNNeighbors(target_index) + added_alpha_size), [&] (const int i) {
+                            this->getNNeighbors(target_index) + _added_alpha_size), [&] (const int i) {
                         double alpha_ij = 0;
                         if (_sampling_multiplier>1 && m<_sampling_multiplier) {
                             const int m_neighbor_offset = i+m*this->getNNeighbors(target_index);
@@ -132,7 +134,8 @@ void GMLS::applyTargetsToCoefficients(const member_type& teamMember, scratch_vec
                             }, alpha_ij);
                         } 
                         Kokkos::single(Kokkos::PerThread(teamMember), [=] () {
-                            _alphas(target_index, offset_index_jmke, i) = alpha_ij;
+                            //_alphas(target_index, offset_index_jmke, i) = alpha_ij;
+                            _alphas(alphas_index+i) = alpha_ij;
                             compadre_kernel_assert_extreme_debug(alpha_ij==alpha_ij && "NaN in alphas.");
                         });
                     });
