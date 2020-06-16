@@ -73,6 +73,8 @@ namespace Intrepid2
   protected:
     Basis1 basis1_;
     Basis2 basis2_;
+    
+    std::string name_;
   public:
     using OrdinalTypeArray1DHost = typename Basis1::OrdinalTypeArray1DHost;
     using OrdinalTypeArray2DHost = typename Basis1::OrdinalTypeArray2DHost;
@@ -101,6 +103,12 @@ namespace Intrepid2
       
       this->basisCardinality_  = basis1.getCardinality() + basis2.getCardinality();
       this->basisDegree_       = std::max(basis1.getDegree(), basis2.getDegree());
+      
+      {
+        std::ostringstream basisName;
+        basisName << basis1.getName() << " + " << basis2.getName();
+        name_ = basisName.str();
+      }
       
       this->basisCellTopology_ = basis1.getBaseCellTopology();
       this->basisType_         = basis1.getBasisType();
@@ -212,6 +220,16 @@ namespace Intrepid2
       
       basis1_.getDofCoords(dofCoords1);
       basis2_.getDofCoords(dofCoords2);
+    }
+    
+    /** \brief  Returns basis name
+     
+     \return the name of the basis
+     */
+    virtual
+    const char*
+    getName() const override {
+      return name_.c_str();
     }
     
     // since the getValues() below only overrides the FEM variant, we specify that

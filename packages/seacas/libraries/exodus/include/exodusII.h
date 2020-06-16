@@ -1,36 +1,9 @@
 /*
- * Copyright (c) 2005-2017 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
- *     * Neither the name of NTESS nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
+ * See packages/seacas/LICENSE for details
  */
 
 /*****************************************************************************
@@ -52,6 +25,10 @@
 #ifndef PARALLEL_AWARE_EXODUS
 #define PARALLEL_AWARE_EXODUS
 #endif
+#else
+#ifdef PARALLEL_AWARE_EXODUS
+#error "PARALLEL_AWARE_EXODUS defined, but NetCDF NC_HAS_PARALLEL is false"
+#endif
 #endif
 #endif
 
@@ -68,12 +45,13 @@
 #endif
 
 /* EXODUS version number */
-#define EXODUS_VERSION "7.26"
-#define EXODUS_VERSION_MAJOR 7
-#define EXODUS_VERSION_MINOR 26
-#define EXODUS_RELEASE_DATE "January 9, 2020"
+#define EXODUS_VERSION "8.06"
+#define EXODUS_VERSION_MAJOR 8
+#define EXODUS_VERSION_MINOR 06
+#define EXODUS_RELEASE_DATE "May 27, 2020"
 
-#define EX_API_VERS 7.26f
+#define EX_API_VERS 8.06f
+
 #define EX_API_VERS_NODOT (100 * EXODUS_VERSION_MAJOR + EXODUS_VERSION_MINOR)
 
 #define EX_VERS EX_API_VERS
@@ -217,6 +195,8 @@ enum ex_inquiry {
   EX_INQ_FULL_GROUP_NAME_LEN = 57, /**< inquire length of full path name of this (exoid) group */
   EX_INQ_FULL_GROUP_NAME = 58, /**< inquire full "/"-separated path name of this (exoid) group */
   EX_INQ_THREADSAFE      = 59, /**< Returns 1 if library is thread-safe; 0 otherwise */
+  EX_INQ_ASSEMBLY        = 60, /**< inquire number of assemblies */
+  EX_INQ_BLOB            = 61, /**< inquire number of blobs */
   EX_INQ_INVALID         = -1
 };
 
@@ -281,6 +261,8 @@ enum ex_entity_type {
 
   EX_GLOBAL     = 13, /**< global "block" for variables*/
   EX_COORDINATE = 15, /**< kluge so some internal wrapper functions work */
+  EX_ASSEMBLY   = 16, /**< assembly property code */
+  EX_BLOB       = 17, /**< blob property code */
   EX_INVALID    = -1
 };
 typedef enum ex_entity_type ex_entity_type;
@@ -307,6 +289,10 @@ typedef enum ex_options ex_options;
  * constants that are used as netcdf dimensions must be of type long
  * @{
  */
+
+/** Maximum length of name permitted by NetCDF */
+#define EX_MAX_NAME NC_MAX_NAME
+
 /** Maximum length of QA record, element type name */
 #define MAX_STR_LENGTH 32L
 /** Default maximum length of an entity name, attribute name, variable name.
@@ -316,7 +302,7 @@ typedef enum ex_options ex_options;
 /** Maximum length of the database title or an information record */
 #define MAX_LINE_LENGTH 80L
 /** Maximum length of an error message passed to ex_err() function. Typically, internal use only */
-#define MAX_ERR_LENGTH 256
+#define MAX_ERR_LENGTH 512
 /** @} */
 
 /** Specifies that this argument is the id of an entity: element block, nodeset, sideset, ... */
@@ -356,7 +342,39 @@ typedef struct ex_init_params
   int64_t num_edge_maps;
   int64_t num_face_maps;
   int64_t num_elem_maps;
+  int64_t num_assembly;
+  int64_t num_blob;
 } ex_init_params;
+
+enum ex_type { EX_INTEGER = NC_INT, EX_DOUBLE = NC_DOUBLE, EX_CHAR = NC_CHAR };
+
+typedef enum ex_type ex_type;
+
+typedef struct ex_attribute
+{
+  ex_entity_type entity_type;
+  int64_t        entity_id;
+  char           name[NC_MAX_NAME];
+  ex_type        type; /* int, double, text */
+  size_t         value_count;
+  void *         values; /* not accessed if NULL */
+} ex_attribute;
+
+typedef struct ex_blob
+{
+  int64_t id;
+  char *  name;
+  int64_t num_entry;
+} ex_blob;
+
+typedef struct ex_assembly
+{
+  int64_t        id;
+  char *         name;
+  ex_entity_type type; /* EX_ELEM_BLOCK or EX_ASSEMBLY */
+  int            entity_count;
+  int64_t *      entity_list;
+} ex_assembly;
 
 typedef struct ex_block
 {
@@ -458,12 +476,24 @@ EXODUS_EXPORT int ex_copy_transient(int in_exoid, int out_exoid);
 EXODUS_EXPORT int ex_create_int(const char *path, int cmode, int *comp_ws, int *io_ws,
                                 int run_version);
 
+#define ex_open(path, mode, comp_ws, io_ws, version)                                               \
+  ex_open_int(path, mode, comp_ws, io_ws, version, EX_API_VERS_NODOT)
+
+EXODUS_EXPORT int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *version,
+                              int run_version);
+
 #if defined(PARALLEL_AWARE_EXODUS)
 #define ex_create_par(path, mode, comp_ws, io_ws, comm, info)                                      \
   ex_create_par_int(path, mode, comp_ws, io_ws, comm, info, EX_API_VERS_NODOT)
 
 EXODUS_EXPORT int ex_create_par_int(const char *path, int cmode, int *comp_ws, int *io_ws,
                                     MPI_Comm comm, MPI_Info info, int my_version);
+
+#define ex_open_par(path, mode, comp_ws, io_ws, version, comm, info)                               \
+  ex_open_par_int(path, mode, comp_ws, io_ws, version, comm, info, EX_API_VERS_NODOT)
+
+EXODUS_EXPORT int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws,
+                                  float *version, MPI_Comm comm, MPI_Info info, int my_version);
 #endif
 
 EXODUS_EXPORT int ex_get_group_id(int parent_id, const char *group_name, int *group_id);
@@ -473,20 +503,6 @@ EXODUS_EXPORT int ex_get_group_ids(int parent_id, int *num_groups, int *group_id
 EXODUS_EXPORT int ex_get_info(int exoid, char **info);
 
 EXODUS_EXPORT int ex_get_qa(int exoid, char *qa_record[][4]);
-
-#if defined(PARALLEL_AWARE_EXODUS)
-#define ex_open_par(path, mode, comp_ws, io_ws, version, comm, info)                               \
-  ex_open_par_int(path, mode, comp_ws, io_ws, version, comm, info, EX_API_VERS_NODOT)
-
-EXODUS_EXPORT int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws,
-                                  float *version, MPI_Comm comm, MPI_Info info, int my_version);
-#endif
-
-#define ex_open(path, mode, comp_ws, io_ws, version)                                               \
-  ex_open_int(path, mode, comp_ws, io_ws, version, EX_API_VERS_NODOT)
-
-EXODUS_EXPORT int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *version,
-                              int run_version);
 
 EXODUS_EXPORT int ex_put_info(int exoid, int num_info, char *info[]);
 
@@ -537,6 +553,14 @@ EXODUS_EXPORT int ex_get_variable_name(int exoid, ex_entity_type obj_type, int v
 
 EXODUS_EXPORT int ex_get_variable_param(int exoid, ex_entity_type obj_type, int *num_vars);
 
+EXODUS_EXPORT int ex_get_reduction_variable_names(int exoid, ex_entity_type obj_type, int num_vars,
+                                                  char *var_names[]);
+EXODUS_EXPORT int ex_get_reduction_variable_name(int exoid, ex_entity_type obj_type, int var_num,
+                                                 char *var_name);
+
+EXODUS_EXPORT int ex_get_reduction_variable_param(int exoid, ex_entity_type obj_type,
+                                                  int *num_vars);
+
 EXODUS_EXPORT int ex_get_object_truth_vector(int exoid, ex_entity_type obj_type,
                                              ex_entity_id entity_id, int num_var, int *var_vec);
 
@@ -559,6 +583,14 @@ EXODUS_EXPORT int ex_put_variable_names(int exoid, ex_entity_type obj_type, int 
 
 EXODUS_EXPORT int ex_put_variable_param(int exoid, ex_entity_type obj_type, int num_vars);
 
+EXODUS_EXPORT int ex_put_reduction_variable_name(int exoid, ex_entity_type obj_type, int var_num,
+                                                 const char *var_name);
+
+EXODUS_EXPORT int ex_put_reduction_variable_names(int exoid, ex_entity_type obj_type, int num_vars,
+                                                  char *var_names[]);
+
+EXODUS_EXPORT int ex_put_reduction_variable_param(int exoid, ex_entity_type obj_type, int num_vars);
+
 EXODUS_EXPORT int ex_put_truth_table(int exoid, ex_entity_type obj_type, int num_blk, int num_var,
                                      int *var_tab);
 
@@ -575,6 +607,11 @@ EXODUS_EXPORT int ex_put_partial_var(int exoid, int time_step, ex_entity_type va
                                      int var_index, ex_entity_id obj_id, int64_t start_index,
                                      int64_t num_entities, const void *var_vals);
 
+/*  Write Edge Face or Element Reduction Variable Values on Blocks or Sets at a Time Step */
+EXODUS_EXPORT int ex_put_reduction_vars(int exoid, int time_step, ex_entity_type obj_type,
+                                        ex_entity_id obj_id, int64_t num_variables,
+                                        const void *var_vals);
+
 /*  Read Edge Face or Element Variable Values Defined On Blocks or Sets at a Time Step */
 EXODUS_EXPORT int ex_get_var(int exoid, int time_step, ex_entity_type var_type, int var_index,
                              ex_entity_id obj_id, int64_t num_entry_this_obj, void *var_vals);
@@ -582,6 +619,10 @@ EXODUS_EXPORT int ex_get_var(int exoid, int time_step, ex_entity_type var_type, 
 EXODUS_EXPORT int ex_get_partial_var(int exoid, int time_step, ex_entity_type var_type,
                                      int var_index, ex_entity_id obj_id, int64_t start_index,
                                      int64_t num_entities, void *var_vals);
+
+/*  Read Edge Face or Element Reduction Variable Values Defined On Blocks or Sets at a Time Step */
+EXODUS_EXPORT int ex_get_reduction_vars(int exoid, int time_step, ex_entity_type obj_type,
+                                        ex_entity_id obj_id, int64_t num_variables, void *var_vals);
 
 /*  Read Edge Face or Element Variable Values Defined On Blocks or Sets Through Time */
 EXODUS_EXPORT int ex_get_var_time(int exoid, ex_entity_type var_type, int var_index, int64_t id,
@@ -861,6 +902,38 @@ EXODUS_EXPORT int ex_put_attr_names(int exoid, ex_entity_type blk_type, ex_entit
 /*  Read Edge Face or Element Block Attribute Names */
 EXODUS_EXPORT int ex_get_attr_names(int exoid, ex_entity_type obj_type, ex_entity_id obj_id,
                                     char **names);
+
+EXODUS_EXPORT int ex_put_assembly(int exoid, const struct ex_assembly assembly);
+EXODUS_EXPORT int ex_get_assembly(int exoid, struct ex_assembly *assembly);
+
+EXODUS_EXPORT int ex_put_assemblies(int exoid, size_t count, const struct ex_assembly *assemblies);
+EXODUS_EXPORT int ex_get_assemblies(int exoid, struct ex_assembly *assemblies);
+
+EXODUS_EXPORT int ex_put_blob(int exoid, const struct ex_blob blob);
+EXODUS_EXPORT int ex_get_blob(int exoid, struct ex_blob *blob);
+
+EXODUS_EXPORT int ex_put_blobs(int exoid, size_t count, const struct ex_blob *blobs);
+EXODUS_EXPORT int ex_get_blobs(int exoid, struct ex_blob *blobs);
+
+/*  Write arbitrary integer, double, or text attributes on an entity */
+EXODUS_EXPORT int ex_put_attribute(int exoid, ex_attribute attributes);
+EXODUS_EXPORT int ex_put_attributes(int exoid, size_t attr_count, ex_attribute *attributes);
+
+EXODUS_EXPORT int ex_put_double_attribute(int exoid, ex_entity_type obj_type, ex_entity_id id,
+                                          const char *atr_name, int num_values, double *values);
+EXODUS_EXPORT int ex_put_integer_attribute(int exoid, ex_entity_type obj_type, ex_entity_id id,
+                                           const char *atr_name, int num_values, void_int *values);
+EXODUS_EXPORT int ex_put_text_attribute(int exoid, ex_entity_type obj_type, ex_entity_id id,
+                                        const char *atr_name, const char *value);
+
+/*  Read attribute values on an entity */
+EXODUS_EXPORT int ex_get_attribute(int exoid, ex_attribute *attributes);
+EXODUS_EXPORT int ex_get_attributes(int exoid, size_t count, ex_attribute *attributes);
+
+/* Query attributes on an entity */
+EXODUS_EXPORT int ex_get_attribute_count(int exoid, ex_entity_type obj_type, ex_entity_id id);
+EXODUS_EXPORT int ex_get_attribute_param(int exoid, ex_entity_type obj_type, ex_entity_id id,
+                                         ex_attribute *attributes);
 
 /*  Write Node Edge Face or Side Set Parameters */
 EXODUS_EXPORT int ex_put_set_param(int exoid, ex_entity_type set_type, ex_entity_id set_id,
@@ -1700,12 +1773,15 @@ EXODUS_EXPORT int ex_get_idx(int         exoid,       /**< NetCDF/Exodus file ID
 #define EX_LOOKUPFAIL 1004    /**< id table lookup failed                   */
 #define EX_BADPARAM 1005      /**< bad parameter passed                     */
 #define EX_INTERNAL 1006      /**< internal logic error                     */
+#define EX_DUPLICATEID 1007   /**< duplicate id found                       */
+#define EX_DUPLICATEOPEN 1008 /**< duplicate open                           */
 #define EX_MSG -1000          /**< message print code - no error implied    */
 #define EX_PRTLASTMSG -1001   /**< print last error message msg code        */
 #define EX_NOTROOTID -1002    /**< file id is not the root id; it is a subgroup id */
 #define EX_LASTERR -1003      /**< in ex_err, use existing err_num value */
 #define EX_NULLENTITY -1006   /**< null entity found                        */
-#define EX_DUPLICATEID -1007  /**< duplicate id found                        */
+#define EX_NOENTITY -1007     /**< no entities of that type on database    */
+#define EX_NOTFOUND -1008     /**< could not find requested variable on database */
 
 #define EX_FATAL -1 /**< fatal error flag def                     */
 #define EX_NOERR 0  /**< no error flag def                        */

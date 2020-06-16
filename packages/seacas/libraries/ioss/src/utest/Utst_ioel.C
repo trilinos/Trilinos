@@ -1,34 +1,8 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//
-//     * Neither the name of NTESS nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+// See packages/seacas/LICENSE for details
 
 #include <Ioss_CodeTypes.h>
 
@@ -133,7 +107,8 @@ bool test_element(const std::string &type)
 
   // Check that master element name is an alias...
   if (!element->is_alias(element->master_element_name())) {
-    if (element->name() == "edge2d2" || element->name() == "edge2d3" || element->name() == "edge2d4") { // kluge
+    if (element->name() == "edge2d2" || element->name() == "edge2d3" ||
+        element->name() == "edge2d4") { // kluge
       fmt::print(stderr, "\n\tMaster element name is not valid alias (ignore) ");
     }
     else {
@@ -348,20 +323,22 @@ bool test_element(const std::string &type)
 
             result = false;
           }
-	  if (element->name() == "wedge12" || element->name() == "hex16") {
-	    continue;
-	  }
+          if (element->name() == "wedge12" || element->name() == "hex16") {
+            continue;
+          }
 
-	  if (edge_conn.size() != size_t(order) + 1) {
-	    fmt::print(stderr, "\n\tInvalid edge connectivity count. ({} must equal {})", edge_conn.size(), order+1);
-              result = false;
-            }
+          if (edge_conn.size() != size_t(order) + 1) {
+            fmt::print(stderr, "\n\tInvalid edge connectivity count. ({} must equal {})",
+                       edge_conn.size(), order + 1);
+            result = false;
+          }
 
-	  if (order > 1 && face_conn.size() < fncn + (order-1) * num_edges_face) {
-	    fmt::print(stderr, "\n\tInvalid face connectivity count ({} must be greater than {} + {}*{}).",
-		       face_conn.size(), fncn, order-1, num_edges_face);
-              result = false;
-            }
+          if (order > 1 && face_conn.size() < fncn + (order - 1) * num_edges_face) {
+            fmt::print(stderr,
+                       "\n\tInvalid face connectivity count ({} must be greater than {} + {}*{}).",
+                       face_conn.size(), fncn, order - 1, num_edges_face);
+            result = false;
+          }
           if (order == 2) {
             if (edge_conn[2] != face_conn[fncn + j]) {
               fmt::print(stderr,
@@ -372,12 +349,12 @@ bool test_element(const std::string &type)
             }
           }
           else if (order == 3) {
-	    auto en2 = edge_conn[2];
-	    auto en3 = edge_conn[3];
+            auto en2 = edge_conn[2];
+            auto en3 = edge_conn[3];
 
-	    auto fn2 = face_conn[fncn + 2*j];
-	    auto fn3 = face_conn[fncn + 2*j + 1];
-	    if (en2 != fn2 && en3 != fn2 && en2 != fn3 && en3 != fn3) {
+            auto fn2 = face_conn[fncn + 2 * j];
+            auto fn3 = face_conn[fncn + 2 * j + 1];
+            if (en2 != fn2 && en3 != fn2 && en2 != fn3 && en3 != fn3) {
               fmt::print(stderr,
                          "\n\tMid-Side Node Edge Connectivity does not match face "
                          "connectivity for edge {} on face {} ({} {} : {} {})",

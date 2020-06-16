@@ -55,7 +55,7 @@ template<typename T> class MultistateField;
 class NgpFieldBase
 {
 public:
-  STK_FUNCTION NgpFieldBase() = default;
+  KOKKOS_DEFAULTED_FUNCTION NgpFieldBase() = default;
   STK_FUNCTION virtual ~NgpFieldBase() {}
   virtual void update_field() = 0;
   virtual void modify_on_host() = 0;
@@ -73,7 +73,7 @@ public:
   STK_FUNCTION EntityFieldData(T* dataPtr, unsigned length, unsigned stride=1)
   : fieldDataPtr(dataPtr), fieldDataLength(length), fieldDataStride(stride)
   {}
-  STK_FUNCTION ~EntityFieldData() = default;
+  KOKKOS_DEFAULTED_FUNCTION ~EntityFieldData() = default;
 
   STK_FUNCTION unsigned size() const { return fieldDataLength; }
   STK_FUNCTION T& operator[](unsigned idx) { return fieldDataPtr[idx*fieldDataStride]; }
@@ -413,7 +413,7 @@ public:
     fieldData.clear_sync_state();
   }
 
-  STK_FUNCTION DeviceField(const DeviceField &) = default;
+  KOKKOS_DEFAULTED_FUNCTION DeviceField(const DeviceField &) = default;
 
   STK_FUNCTION virtual ~DeviceField() {}
 
@@ -643,7 +643,7 @@ public:
   {
   }
 
-  STK_FUNCTION ConstDeviceField(const ConstDeviceField &) = default;
+  KOKKOS_DEFAULTED_FUNCTION ConstDeviceField(const ConstDeviceField &) = default;
 
   STK_FUNCTION virtual ~ConstDeviceField() {}
 

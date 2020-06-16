@@ -39,17 +39,6 @@ IF( TPL_ENABLE_AVATAR AND ${PACKAGE_NAME}_ENABLE_AvatarT)
   MESSAGE(FATAL_ERROR "MueLu does not support Avatar being built both as a TPL and as an external package.")
 ENDIF()
 
-# JJH: pulled this logic from Tpetra.  Comments below about CUDA are from Tpetra developers.
-# This is redundant, since MueLu also requires Kokkos, and Kokkos requires C++11.
-# "I left a special case for CUDA because I'm not sure whether TriBITS
-# counts C++11 as enabled in that case; please feel free to revise if
-# you know better."
-ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_CXX11)
-ASSERT_DEFINED(TPL_ENABLE_CUDA)
-IF (NOT ${PROJECT_NAME}_ENABLE_CXX11 AND NOT TPL_ENABLE_CUDA)
-  MESSAGE(FATAL_ERROR "MueLu requires that C++11 support in Trilinos be enabled.  This should happen automatically if your compiler is C++11 compliant.")
-ENDIF ()
-
 IF ((CMAKE_CXX_COMPILER_ID MATCHES "GNU") AND (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "4.7") AND NOT TPL_ENABLE_CUDA)
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-local-typedefs")
 ENDIF()

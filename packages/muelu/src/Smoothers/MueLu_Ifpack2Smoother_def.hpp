@@ -55,6 +55,7 @@
 #include <Tpetra_RowMatrix.hpp>
 
 #include <Ifpack2_Chebyshev.hpp>
+#include <Ifpack2_RILUK.hpp>
 #include <Ifpack2_Relaxation.hpp>
 #include <Ifpack2_ILUT.hpp>
 #include <Ifpack2_BlockRelaxation.hpp>

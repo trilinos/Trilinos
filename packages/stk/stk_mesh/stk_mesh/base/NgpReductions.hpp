@@ -98,7 +98,7 @@ struct FieldAccessFunctor{
   }
   KOKKOS_FUNCTION
   stk::mesh::EntityRank get_rank() const { return field.get_rank(); }
-  KOKKOS_FUNCTION
+  KOKKOS_DEFAULTED_FUNCTION
   FieldAccessFunctor(const FieldAccessFunctor& rhs) = default;
   KOKKOS_FUNCTION
   FieldAccessFunctor(const FieldAccessFunctor& rhs, unsigned b_id, ReductionOp r)

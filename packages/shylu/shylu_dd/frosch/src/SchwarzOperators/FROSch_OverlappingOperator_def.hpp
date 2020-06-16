@@ -47,6 +47,7 @@
 
 namespace FROSch {
 
+    using namespace std;
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -176,7 +177,7 @@ namespace FROSch {
     int OverlappingOperator<SC,LO,GO,NO>::computeOverlappingOperator()
     {
         FROSCH_TIMER_START_LEVELID(computeOverlappingOperatorTime,"OverlappingOperator::computeOverlappingOperator");
-        
+
         updateLocalOverlappingMatrices();
 
         bool reuseSymbolicFactorization = this->ParameterList_->get("Reuse: Symbolic Factorization",true);
@@ -185,7 +186,7 @@ namespace FROSch {
         }
 
         if (!reuseSymbolicFactorization) {
-            if (this->IsComputed_ && this->Verbose_) std::cout << "FROSch::OverlappingOperator : Recomputing the Symbolic Factorization" << std::endl;
+            if (this->IsComputed_ && this->Verbose_) cout << "FROSch::OverlappingOperator : Recomputing the Symbolic Factorization" << endl;
             SubdomainSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(OverlappingMatrix_,sublist(this->ParameterList_,"Solver")));
             SubdomainSolver_->initialize();
         } else {

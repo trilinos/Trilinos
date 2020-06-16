@@ -1,35 +1,8 @@
-C    Copyright(C) 2014-2017 National Technology & Engineering Solutions of
-C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C
-C    Redistribution and use in source and binary forms, with or without
-C    modification, are permitted provided that the following conditions are
-C    met:
-C
-C    * Redistributions of source code must retain the above copyright
-C       notice, this list of conditions and the following disclaimer.
-C
-C    * Redistributions in binary form must reproduce the above
-C      copyright notice, this list of conditions and the following
-C      disclaimer in the documentation and/or other materials provided
-C      with the distribution.
-C
-C    * Neither the name of NTESS nor the names of its
-C      contributors may be used to endorse or promote products derived
-C      from this software without specific prior written permission.
-C
-C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C    A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C    OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C
+C    
+C    See packages/seacas/LICENSE for details
 
 C $Id: dline.f,v 1.3 2000/11/13 15:39:04 gdsjaar Exp $
 C $Log: dline.f,v $
@@ -122,9 +95,9 @@ C
             GOTO 140
          ENDIF
          IF (TEST)WRITE (12, 10010)
-     &      'PU;PA', IFIX (X1 * 1000.), ', ',
-     &      IFIX (Y1 * 1000.), ';PD;PA',
-     &      IFIX (X2 * 1000.), ', ', IFIX (Y2 * 1000.), ';'
+     &      'PU;PA', INT (X1 * 1000.), ', ',
+     &      INT (Y1 * 1000.), ';PD;PA',
+     &      INT (X2 * 1000.), ', ', INT (Y2 * 1000.), ';'
          CALL MPD2VC (1, X1, Y1, X2, Y2)
          XMID = X1 + ((X2 - X1) * .25)
          YMID = Y1 + ((Y2 - Y1) * .25)
@@ -145,9 +118,9 @@ C  GENERATE THE CIRCLE
 C
          ANG = THETA1
          DARC = .10
-         INC = IFIX (ABS (TANG) / DARC) + 1
+         INC = INT (ABS (TANG) / DARC) + 1
          IF (INC .LE. 6)INC = 6
-         DEL = TANG * (1.0 / FLOAT (INC))
+         DEL = TANG * (1.0 / DBLE(INC))
          IEND = INC - 1
          XK =  (LOG (R2 / R1)) / (THETA2 - THETA1)
          XA = R2 / EXP (XK * THETA2)
@@ -171,9 +144,9 @@ C
                CALL MPD2VC (1, X1, Y1, X2, Y2)
             ENDIF
             IF (TEST)WRITE (12, 10010)
-     &         'PU;PA', IFIX (X1 * 1000.), ', ',
-     &         IFIX (Y1 * 1000.), ';PD;PA',
-     &         IFIX (X2 * 1000.), ', ', IFIX (Y2 * 1000.), ';'
+     &         'PU;PA', INT (X1 * 1000.), ', ',
+     &         INT (Y1 * 1000.), ';PD;PA',
+     &         INT (X2 * 1000.), ', ', INT (Y2 * 1000.), ';'
             X1 = X2
             Y1 = Y2
             IF (I .EQ. INC / 2) THEN
@@ -199,8 +172,8 @@ C
             YMIN = AMIN1 (Y1, YMIN)
          ENDIF
          DARC = .10
-         INC = MAX0 (IFIX (ABS (TANG) / DARC) + 1, 15)
-         DEL = TANG * (1.0 / FLOAT (INC))
+         INC = MAX0 (INT (ABS (TANG) / DARC) + 1, 15)
+         DEL = TANG * (1.0 / DBLE(INC))
          IEND = INC - 1
          ANG  =  THETA1
          DO 110 I  =  1, IEND
@@ -219,9 +192,9 @@ C
                CALL MPD2VC (1, X1, Y1, X2, Y2)
             ENDIF
             IF (TEST)WRITE (12, 10010)
-     &         'PU;PA', IFIX (X1 * 1000.), ', ',
-     &         IFIX (Y1 * 1000.), ';PD;PA',
-     &         IFIX (X2 * 1000.), ', ', IFIX (Y2 * 1000.), ';'
+     &         'PU;PA', INT (X1 * 1000.), ', ',
+     &         INT (Y1 * 1000.), ';PD;PA',
+     &         INT (X2 * 1000.), ', ', INT (Y2 * 1000.), ';'
             X1 = X2
             Y1 = Y2
             IF (I .EQ. INC / 2) THEN
@@ -301,7 +274,7 @@ C
          DELX = 2.0 * HALFW / 200.0
          DO 120 I = 1, 100
             FM = SQRT (1.0 + (TCOEF * (XL + DELX)) **2)
-            XR =  - HALFW + FLOAT (I) * 2.0 * DELX
+            XR =  - HALFW + DBLE(I) * 2.0 * DELX
             FR = SQRT (1.0 + (TCOEF * XR) **2)
             ARCOLD = ARCNOW
             ARCNOW = ARCNOW + DELX * (FL + 4.0 * FM + FR) / 3.0
@@ -332,9 +305,9 @@ C
                X2 = ROTX + COOR (1, IPNTR3)
                Y2 = ROTY + COOR (2, IPNTR3)
                IF (TEST)WRITE (12, 10010)
-     &            'PU;PA', IFIX (X1 * 1000.), ', ',
-     &            IFIX (Y1 * 1000.), ';PD;PA',
-     &            IFIX (X2 * 1000.), ', ', IFIX (Y2 * 1000.), ';'
+     &            'PU;PA', INT (X1 * 1000.), ', ',
+     &            INT (Y1 * 1000.), ';PD;PA',
+     &            INT (X2 * 1000.), ', ', INT (Y2 * 1000.), ';'
                IF (GETMAX) THEN
                   XMAX = AMAX1 (X2, XMAX)
                   YMAX = AMAX1 (Y2, YMAX)
@@ -382,9 +355,9 @@ C
          GOTO 140
       ENDIF
       IF (TEST)WRITE (12, 10010)
-     &   'PU;PA', IFIX (X1 * 1000.), ', ',
-     &   IFIX (Y1 * 1000.), ';PD;PA',
-     &   IFIX (X2 * 1000.), ', ', IFIX (Y2 * 1000.), ';'
+     &   'PU;PA', INT (X1 * 1000.), ', ',
+     &   INT (Y1 * 1000.), ';PD;PA',
+     &   INT (X2 * 1000.), ', ', INT (Y2 * 1000.), ';'
       CALL MPD2VC (1, X1, Y1, X2, Y2)
       CALL PLTFLU
 C

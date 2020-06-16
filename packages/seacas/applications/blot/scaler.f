@@ -1,33 +1,8 @@
-C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
-C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C
-C Redistribution and use in source and binary forms, with or without
-C modification, are permitted provided that the following conditions are
-C met:
-C
-C     * Redistributions of source code must retain the above copyright
-C       notice, this list of conditions and the following disclaimer.
-C
-C     * Redistributions in binary form must reproduce the above
-C       copyright notice, this list of conditions and the following
-C       disclaimer in the documentation and/or other materials provided
-C       with the distribution.
-C     * Neither the name of NTESS nor the names of its
-C       contributors may be used to endorse or promote products derived
-C       from this software without specific prior written permission.
-C
-C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+C 
+C See packages/seacas/LICENSE for details
 
 C======================================================================
       SUBROUTINE SCALER (A, IA, IPRINT, NAME, IVAR,
@@ -88,6 +63,7 @@ C   --   Uses NAMECO of /DBNAMS/
 
       CHARACTER TYP
       REAL XYZMIN(3), XYZMAX(3)
+      REAL RDUM(3)
 
       SAVE KTIMES, KWHOLE, KXN, KYN, KZN, KXE, KYE, KZE, KLENE, KIEVOK
       SAVE KVALHN, KISTHN, KVALHX, KISTHX
@@ -143,7 +119,7 @@ C      --Get the offset for the variable
 
 C      --Determine if min/max is already calculated
 
-        CALL SCACAL (NAME, IVAR, .FALSE., IDUM,
+        CALL SCACAL (NAME, IVAR, .FALSE., IELBST,
      &    A(KISTHN+IX), ICALC)
 
         IF (ICALC .GT. 0) THEN
@@ -172,8 +148,8 @@ C      --Print min/max for history variable
         IF ((IPRINT .GT. 0) .AND.
      &    ((IPRINT .GT. 1) .OR. (ICALC .GT. 0))) THEN
           CALL SCAPRT (NAMECO, NAME, IVAR, A(KTIMES),
-     &      A(KVALHN+IX), IDUM, RDUM, A(KISTHN+IX),
-     &      A(KVALHX+IX), IDUM, RDUM, A(KISTHX+IX))
+     &      A(KVALHN+IX), IDUM, RDUM, IA(KISTHN+IX),
+     &      A(KVALHX+IX), IDUM, RDUM, IA(KISTHX+IX))
         END IF
 
       ELSE IF (TYP .EQ. 'G') THEN
@@ -202,7 +178,7 @@ C      --Get the offset for the variable
 
 C      --Determine if min/max is already calculated
 
-        CALL SCACAL (NAME, IVAR, .FALSE., IDUM,
+        CALL SCACAL (NAME, IVAR, .FALSE., IELBST,
      &    A(KISTGN+IX), ICALC)
 
         IF (ICALC .GT. 0) THEN
@@ -232,8 +208,8 @@ C      --Print min/max for global variable
         IF ((IPRINT .GT. 0) .AND.
      &    ((IPRINT .GT. 1) .OR. (ICALC .GT. 0))) THEN
           CALL SCAPRT (NAMECO, NAME, IVAR, A(KTIMES),
-     &      A(KVALGN+IX), IDUM, RDUM, A(KISTGN+IX),
-     &      A(KVALGX+IX), IDUM, RDUM, A(KISTGX+IX))
+     &      A(KVALGN+IX), IDUM, RDUM, IA(KISTGN+IX),
+     &      A(KVALGX+IX), IDUM, RDUM, IA(KISTGX+IX))
         END IF
 
       ELSE IF (TYP .EQ. 'N') THEN
@@ -279,7 +255,7 @@ C      --Get the offset for the variable
 
 C      --Determine if min/max is already calculated
 
-        CALL SCACAL (NAME, IVAR, .FALSE., IDUM,
+        CALL SCACAL (NAME, IVAR, .FALSE., IELBST,
      &    A(KISTNN+IX), ICALC)
 
         IF (ICALC .GT. 0) THEN
@@ -313,9 +289,9 @@ C      --Print min/max for nodal variable
      &    ((IPRINT .GT. 1) .OR. (ICALC .GT. 0))) THEN
           CALL SCAPRT (NAMECO, NAME, IVAR, A(KTIMES),
      &      A(KVALNN+IX), MAPND(IA(KNUMNN+IX)), A(KXYZNN+IXX),
-     &      A(KISTNN+IX),
+     &      IA(KISTNN+IX),
      &      A(KVALNX+IX), MAPND(IA(KNUMNX+IX)), A(KXYZNX+IXX),
-     *      A(KISTNX+IX))
+     *      IA(KISTNX+IX))
         end if
 
       ELSE IF (TYP .EQ. 'E') THEN

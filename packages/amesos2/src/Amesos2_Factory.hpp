@@ -136,7 +136,7 @@
 #include "Amesos2_Cholmod.hpp"
 #endif
 
-#ifdef HAVE_AMESOS2_CUSOLVER
+#if defined (HAVE_AMESOS2_CUSOLVER) && defined (HAVE_AMESOS2_CUSPARSE)
 #include "Amesos2_cuSOLVER.hpp"
 #endif
 
@@ -404,7 +404,7 @@ struct throw_no_matrix_support_exception {
   {
     TEUCHOS_TEST_FOR_EXCEPTION( true,
                         std::invalid_argument,
-                        "Currently only the Tacho solver supports the kokkos adapter." );
+                        "This solver does not support the kokkos adapter." );
   }
 };
 

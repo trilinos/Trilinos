@@ -50,7 +50,6 @@
 #include <BelosOrthoManager.hpp>
 #include <BelosOutputManager.hpp>
 #include <Teuchos_ParameterList.hpp>
-#include <Teuchos_ParameterListAcceptorDefaultBase.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 
@@ -66,8 +65,7 @@ namespace Belos {
   /// features.
   template<class Scalar, class MV>
   class SimpleOrthoManager :
-    public OrthoManager<Scalar, MV>,
-    public Teuchos::ParameterListAcceptorDefaultBase
+    public OrthoManager<Scalar, MV>
   {
   public:
     typedef Scalar scalar_type;
@@ -203,7 +201,7 @@ namespace Belos {
       }
       reorthogonalize_ = reorthogonalize;
 
-      setMyParamList (params);
+      this->setMyParamList (params);
     }
 
     /// \brief Constructor

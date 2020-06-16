@@ -139,6 +139,35 @@ UNARYFUNC_MACRO(cbrt, CbrtOp)
 
 #undef UNARYFUNC_MACRO
 
+namespace Sacado {
+  namespace Fad {
+    template <typename T>
+    KOKKOS_INLINE_FUNCTION
+    Expr< SafeSqrtOp< Expr<T> > > safe_sqrt (const Expr<T>&);
+  }
+
+  namespace ELRFad {
+    template <typename T> class SafeSqrtOp;
+    template <typename T>
+    KOKKOS_INLINE_FUNCTION
+    Expr< SafeSqrtOp< Expr<T> > > safe_sqrt (const Expr<T>&);
+  }
+
+  namespace CacheFad {
+    template <typename T> class SafeSqrtOp;
+    template <typename T>
+    KOKKOS_INLINE_FUNCTION
+    Expr< SafeSqrtOp< Expr<T> > > safe_sqrt (const Expr<T>&);
+  }
+
+  namespace ELRCacheFad {
+    template <typename T> class SafeSqrtOp;
+    template <typename T>
+    KOKKOS_INLINE_FUNCTION
+    Expr< SafeSqrtOp< Expr<T> > > safe_sqrt (const Expr<T>&);
+  }
+}
+
 #define BINARYFUNC_MACRO(OP,FADOP)                                      \
 namespace Sacado {                                                      \
                                                                         \

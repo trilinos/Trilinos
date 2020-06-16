@@ -30,7 +30,7 @@ set (BUILD_SHARED_LIBS OFF CACHE BOOL "Set by default for CUDA PR testing")
 set (Tpetra_INST_SERIAL ON CACHE BOOL "Set by default for CUDA PR testing")
 set (Trilinos_ENABLE_SECONDARY_TESTED_CODE OFF CACHE BOOL "Set by default for CUDA PR testing")
 set (EpetraExt_ENABLE_HDF5 OFF CACHE BOOL "Set by default for CUDA PR testing")
-set (Panzer_ENABLE_FADTYPE "Sacado::Fad::DFad<RealType>" CACHE STRING "Set by default for CUDA PR testing")
+set (Panzer_FADTYPE "Sacado::Fad::DFad<RealType>" CACHE STRING "Set by default for CUDA PR testing")
 set (Kokkos_ENABLE_Debug_Bounds_Check ON CACHE BOOL "Set by default for CUDA PR testing")
 set (KOKKOS_ENABLE_DEBUG ON CACHE BOOL "Set by default for CUDA PR testing")
 
@@ -60,7 +60,12 @@ set (HDF5_INCLUDE_DIRS "$ENV{HDF5_ROOT}/include" CACHE FILEPATH "Set by default 
 set (TPL_HDF5_LIBRARIES "-L$ENV{HDF5_ROOT}/lib;$ENV{HDF5_ROOT}/lib/libhdf5_hl.a;$ENV{HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl" CACHE FILEPATH "Set by default for CUDA PR testing")
 set (TPL_ENABLE_Netcdf ON CACHE BOOL "Set by default for CUDA PR testing")
 set (Netcdf_INCLUDE_DIRS "$ENV{NETCDF_ROOT}/include" CACHE FILEPATH "Set by default for CUDA PR testing")
-set (TPL_Netcdf_LIBRARIES "-L$ENV{BOOST_ROOT}/lib;-L$ENV{NETCDF_ROOT}/lib;-L$ENV{NETCDF_ROOT}/lib;-L$ENV{PNETCDF_ROOT}/lib;-L$ENV{HDF5_ROOT}/lib;$ENV{BOOST_ROOT}/lib/libboost_program_options.a;$ENV{BOOST_ROOT}/lib/libboost_system.a;$ENV{NETCDF_ROOT}/lib/libnetcdf.a;$ENV{PNETCDF_ROOT}/lib/libpnetcdf.a;$ENV{HDF5_ROOT}/lib/libhdf5_hl.a;$ENV{HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl" CACHE STRING "Set by default for CUDA PR testing")
+IF ("$ENV{PNETCDF_ROOT}" STREQUAL "")
+  SET(PNETCDF_ROOT "$ENV{NETCDF_ROOT}")
+ELSE()
+  SET(PNETCDF_ROOT "$ENV{PNETCDF_ROOT}")
+ENDIF()
+set (TPL_Netcdf_LIBRARIES "-L$ENV{NETCDF_ROOT}/lib;$ENV{NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${TPL_HDF5_LIBRARIES}" CACHE STRING "Set by default for CUDA PR testing")
 # SuperLU and SuperLUDist is available on ride and could be enabled for the CUDA PR build
 set (TPL_ENABLE_SuperLU OFF CACHE BOOL "Set by default for CUDA PR testing")
 set (TPL_ENABLE_SuperLUDist OFF CACHE BOOL "Set by default for CUDA PR testing")
@@ -104,5 +109,11 @@ set (PanzerAdaptersSTK_PoissonInterfaceExample_3d_MPI_4_DISABLE ON CACHE BOOL "T
 set (PanzerMiniEM_MiniEM-BlockPrec_Augmentation_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 set (PanzerMiniEM_MiniEM-BlockPrec_RefMaxwell_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 set (ROL_example_PDE-OPT_poisson-boltzmann_example_01_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
+
+# Disable a couple of unit tests in test KokkosCore_UnitTest_Cuda_MPI_1 that
+# are randomly failing in PR test iterations (#6799)
+set (KokkosCore_UnitTest_Cuda_MPI_1_EXTRA_ARGS
+  "--gtest_filter=-cuda.debug_pin_um_to_host:cuda.debug_serial_execution"
+  CACHE STRING "Temporary disable for CUDA PR testing")
 
 include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")

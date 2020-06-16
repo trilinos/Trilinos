@@ -86,6 +86,10 @@ Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 #define KOKKOS_FUNCTION /* */
 #endif
 
+#ifndef KOKKOS_DEFAULTED_FUNCTION
+#define KOKKOS_DEFAULTED_FUNCTION /* */
+#endif
+
 #ifndef KOKKOS_INLINE_FUNCTION
 #define KOKKOS_INLINE_FUNCTION inline
 #endif

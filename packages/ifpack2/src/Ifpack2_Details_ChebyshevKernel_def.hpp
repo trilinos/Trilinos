@@ -52,6 +52,7 @@
 #include "Kokkos_ArithTraits.hpp"
 #include "Teuchos_Assert.hpp"
 #include <type_traits>
+#include "KokkosSparse_spmv_impl.hpp"
 
 namespace Ifpack2 {
 namespace Details {
@@ -143,7 +144,7 @@ struct ChebyshevKernelVectorFunctor {
          if (lclRow >= m_A.numRows ()) {
            return;
          }
-         const auto A_row = m_A.rowConst(lclRow);
+         const KokkosSparse::SparseRowViewConst<AMatrix> A_row = m_A.rowConst(lclRow);
          const LO row_length = static_cast<LO> (A_row.length);
          residual_value_type A_x = KAT::zero ();
 
@@ -170,75 +171,9 @@ struct ChebyshevKernelVectorFunctor {
             });
        });
   }
+
 };
 
-template<class ExecutionSpace>
-int64_t
-chebyshev_kernel_vector_launch_parameters (int64_t numRows,
-                                                 int64_t nnz,
-                                                 int64_t rows_per_thread,
-                                                 int& team_size,
-                                                 int& vector_length)
-{
-  using execution_space = typename ExecutionSpace::execution_space;
-
-  int64_t rows_per_team;
-  int64_t nnz_per_row = nnz/numRows;
-
-  if (nnz_per_row < 1) {
-    nnz_per_row = 1;
-  }
-
-  if (vector_length < 1) {
-    vector_length = 1;
-    while (vector_length<32 && vector_length*6 < nnz_per_row) {
-      vector_length *= 2;
-    }
-  }
-
-  // Determine rows per thread
-  if (rows_per_thread < 1) {
-#ifdef KOKKOS_ENABLE_CUDA
-    if (std::is_same<Kokkos::Cuda, execution_space>::value) {
-      rows_per_thread = 1;
-    }
-    else
-#endif
-    {
-      if (nnz_per_row < 20 && nnz > 5000000) {
-        rows_per_thread = 256;
-      }
-      else {
-        rows_per_thread = 64;
-      }
-    }
-  }
-
-#ifdef KOKKOS_ENABLE_CUDA
-  if (team_size < 1) {
-    if (std::is_same<Kokkos::Cuda,execution_space>::value) {
-      team_size = 256/vector_length;
-    }
-    else {
-      team_size = 1;
-    }
-  }
-#endif
-
-  rows_per_team = rows_per_thread * team_size;
-
-  if (rows_per_team < 0) {
-    int64_t nnz_per_team = 4096;
-    int64_t conc = execution_space::concurrency ();
-    while ((conc * nnz_per_team * 4 > nnz) &&
-           (nnz_per_team > 256)) {
-      nnz_per_team /= 2;
-    }
-    rows_per_team = (nnz_per_team + nnz_per_row - 1) / nnz_per_row;
-  }
-
-  return rows_per_team;
-}
 
 // W := alpha * D * (B - A*X) + beta * W.
 template<class WVector,
@@ -270,22 +205,25 @@ chebyshev_kernel_vector
   int vector_length = -1;
   int64_t rows_per_thread = -1;
 
-  const int64_t rows_per_team =
-    chebyshev_kernel_vector_launch_parameters<execution_space>
-      (A.numRows (), A.nnz (), rows_per_thread, team_size, vector_length);
+  const int64_t rows_per_team = KokkosSparse::Impl::spmv_launch_parameters<execution_space>(A.numRows(), A.nnz(), rows_per_thread, team_size, vector_length);
   int64_t worksets = (b.extent (0) + rows_per_team - 1) / rows_per_team;
 
   using Kokkos::Dynamic;
+  using Kokkos::Static;
   using Kokkos::Schedule;
   using Kokkos::TeamPolicy;
-  using policy_type = TeamPolicy<execution_space, Schedule<Dynamic>>;
+  using policy_type_dynamic = TeamPolicy<execution_space, Schedule<Dynamic> >;
+  using policy_type_static = TeamPolicy<execution_space, Schedule<Static> >;
   const char kernel_label[] = "chebyshev_kernel_vector";
-  policy_type policy (1, 1);
+  policy_type_dynamic policyDynamic (1, 1);
+  policy_type_static  policyStatic (1, 1);
   if (team_size < 0) {
-    policy = policy_type (worksets, Kokkos::AUTO, vector_length);
+    policyDynamic = policy_type_dynamic (worksets, Kokkos::AUTO, vector_length);
+    policyStatic  = policy_type_static  (worksets, Kokkos::AUTO, vector_length);
   }
   else {
-    policy = policy_type (worksets, team_size, vector_length);
+    policyDynamic = policy_type_dynamic (worksets, team_size, vector_length);
+    policyStatic  = policy_type_static  (worksets, team_size, vector_length);
   }
 
   // Canonicalize template arguments to avoid redundant instantiations.
@@ -308,7 +246,10 @@ chebyshev_kernel_vector
                                      use_beta,
                                      true>;
       functor_type func (alpha, w, d, b, A, x_colMap, x_domMap, beta, rows_per_team);
-      Kokkos::parallel_for (kernel_label, policy, func);
+      if(A.nnz()>10000000)
+        Kokkos::parallel_for (kernel_label, policyDynamic, func);
+      else
+        Kokkos::parallel_for (kernel_label, policyStatic, func);
     } else {
       using functor_type =
         ChebyshevKernelVectorFunctor<w_vec_type, d_vec_type,
@@ -318,7 +259,10 @@ chebyshev_kernel_vector
                                      use_beta,
                                      false>;
       functor_type func (alpha, w, d, b, A, x_colMap, x_domMap, beta, rows_per_team);
-      Kokkos::parallel_for (kernel_label, policy, func);
+      if(A.nnz()>10000000)
+        Kokkos::parallel_for (kernel_label, policyDynamic, func);
+      else
+        Kokkos::parallel_for (kernel_label, policyStatic, func);
     }
   }
   else {
@@ -332,7 +276,10 @@ chebyshev_kernel_vector
                                      use_beta,
                                      true>;
       functor_type func (alpha, w, d, b, A, x_colMap, x_domMap, beta, rows_per_team);
-      Kokkos::parallel_for (kernel_label, policy, func);
+      if(A.nnz()>10000000)
+        Kokkos::parallel_for (kernel_label, policyDynamic, func);
+      else
+        Kokkos::parallel_for (kernel_label, policyStatic, func);
     } else {
       using functor_type =
         ChebyshevKernelVectorFunctor<w_vec_type, d_vec_type,
@@ -342,7 +289,10 @@ chebyshev_kernel_vector
                                      use_beta,
                                      false>;
       functor_type func (alpha, w, d, b, A, x_colMap, x_domMap, beta, rows_per_team);
-      Kokkos::parallel_for (kernel_label, policy, func);
+      if(A.nnz()>10000000)
+        Kokkos::parallel_for (kernel_label, policyDynamic, func);
+      else
+        Kokkos::parallel_for (kernel_label, policyStatic, func);
     }
   }
 }

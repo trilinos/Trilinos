@@ -12,8 +12,8 @@ module load sems-python/2.7.9
 module load sems-git/2.10.1
 module load sems-boost/1.63.0/base
 module load sems-zlib/1.2.8/base
-module load sems-hdf5/1.8.12/parallel
-module load sems-netcdf/4.4.1/exo_parallel
+module load sems-hdf5/1.10.6/parallel
+module load sems-netcdf/4.7.3/parallel
 module load sems-parmetis/4.0.3/parallel
 module load sems-scotch/6.0.3/nopthread_64bit_parallel
 module load sems-superlu/4.3/base

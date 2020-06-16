@@ -56,6 +56,9 @@ cmakeDefaultVersion = "3.13.4"
 from InstallProgramDriver import *
 from GeneralScriptSupport import *
 
+import os.path
+
+devtools_install_dir = os.path.dirname(os.path.abspath(__file__))
 
 class CMakeInstall:
 
@@ -102,6 +105,9 @@ This downloads tarballs from GitHub by default for the given cmake version.
 This build script sets the environment vars CXXFLAGS=-O3 AND CFLAGS=-O3
 when doing the configure.  Therefore, this builds and installs an optimized
 version of CMake by default.
+
+If CMake 3.17 is selected, a patch is applied which adds the CTEST_RESOURCE_SPEC_FILE
+variable.  (For versions 3.18+ this is not needed.)
 """
 
   def injectExtraCmndLineOptions(self, clp, version):
@@ -160,6 +166,9 @@ version of CMake by default.
     createDir(self.cmakeSrcDir, verbose=True)
     echoRunSysCmnd("tar -xzf "+self.cmakeTarball \
      +" -C "+self.cmakeSrcDir+" --strip-components 1")
+    if self.inOptions.version.startswith("3.17"):
+      echoRunSysCmnd("patch -d "+self.cmakeSrcDir+" -p1 -i " \
+       +os.path.join(devtools_install_dir, "0001-CTest-Add-CTEST_RESOURCE_SPEC_FILE-variable.patch"))
 
   def doConfigure(self):
     createDir(self.cmakeBuildBaseDir, True, True)

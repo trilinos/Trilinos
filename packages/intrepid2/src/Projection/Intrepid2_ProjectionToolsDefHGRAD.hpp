@@ -57,12 +57,274 @@
 namespace Intrepid2 {
 namespace Experimental {
 
+template<typename ViewType1, typename ViewType2, typename ViewType3,
+typename ViewType4, typename ViewType5>
+struct ComputeBasisCoeffsOnVertices_HGRAD {
+  ViewType1 basisCoeffs_;
+  const ViewType2 tagToOrdinal_;
+  const ViewType3 targetEPointsRange_;
+  const ViewType4 targetAtTargetEPoints_;
+  const ViewType5 basisAtTargetEPoints_;
+  ordinal_type numVertices_;
+
+
+  ComputeBasisCoeffsOnVertices_HGRAD(ViewType1 basisCoeffs, ViewType2 tagToOrdinal, ViewType3 targetEPointsRange,
+      ViewType4  targetAtTargetEPoints, ViewType5 basisAtTargetEPoints, ordinal_type numVertices) :
+        basisCoeffs_(basisCoeffs), tagToOrdinal_(tagToOrdinal), targetEPointsRange_(targetEPointsRange),
+        targetAtTargetEPoints_(targetAtTargetEPoints), basisAtTargetEPoints_(basisAtTargetEPoints), numVertices_(numVertices) {}
+
+  void
+  KOKKOS_INLINE_FUNCTION
+  operator()(const ordinal_type ic) const {
+
+
+    for(ordinal_type iv=0; iv<numVertices_; ++iv) {
+      ordinal_type idof = tagToOrdinal_(0, iv, 0);
+      ordinal_type pt = targetEPointsRange_(0,iv).first;
+      //the value of the basis at the vertex might be different than 1; HGrad basis, so the function is scalar
+      basisCoeffs_(ic,idof) = targetAtTargetEPoints_(ic,pt)/basisAtTargetEPoints_(ic,idof,pt,0);
+    }
+  }
+};
+
+template<typename ViewType1, typename ViewType2, typename ViewType3,
+typename ViewType4, typename ViewType5, typename ViewType6>
+struct ComputeBasisCoeffsOnEdges_HGRAD {
+  const ViewType1 basisCoeffs_;
+  const ViewType2 negPartialProjGrad_;
+  const ViewType2 basisTanAtEPoints_;
+  const ViewType2 basisGradAtBasisGradEPoints_;
+  const ViewType3 basisGradEWeights_;
+  const ViewType2 wBasisAtBasisGradEPoints_;
+  const ViewType3 targetGradEWeights_;
+  const ViewType2 basisGradAtTargetGradEPoints_;
+  const ViewType2 wBasisAtTargetGradEPoints_;
+  const ViewType4 computedDofs_;
+  const ViewType5 tagToOrdinal_;
+  const ViewType2 targetGradTanAtTargetGradEPoints_;
+  const ViewType6 targetGradAtTargetGradEPoints_;
+  const ViewType2 refEdgesTan_;
+  ordinal_type edgeCardinality_;
+  ordinal_type offsetBasis_;
+  ordinal_type offsetTarget_;
+  ordinal_type numVertexDofs_;
+  ordinal_type edgeDim_;
+  ordinal_type dim_;
+  ordinal_type iedge_;
+
+  ComputeBasisCoeffsOnEdges_HGRAD(const ViewType1 basisCoeffs, ViewType2 negPartialProjGrad,  const ViewType2 basisTanAtEPoints,
+      const ViewType2 basisGradAtBasisGradEPoints, const ViewType3 basisGradEWeights,  const ViewType2 wBasisAtBasisGradEPoints,   const ViewType3 targetGradEWeights,
+      const ViewType2 basisGradAtTargetGradEPoints, const ViewType2 wBasisAtTargetGradEPoints, const ViewType4 computedDofs, const ViewType5 tagToOrdinal,
+      const ViewType2 targetGradTanAtTargetGradEPoints, const ViewType6 targetGradAtTargetGradEPoints, const ViewType2 refEdgesTan,
+      ordinal_type edgeCardinality, ordinal_type offsetBasis,
+      ordinal_type offsetTarget, ordinal_type numVertexDofs, ordinal_type edgeDim, ordinal_type dim, ordinal_type iedge) :
+        basisCoeffs_(basisCoeffs), negPartialProjGrad_(negPartialProjGrad), basisTanAtEPoints_(basisTanAtEPoints),
+        basisGradAtBasisGradEPoints_(basisGradAtBasisGradEPoints), basisGradEWeights_(basisGradEWeights), wBasisAtBasisGradEPoints_(wBasisAtBasisGradEPoints), targetGradEWeights_(targetGradEWeights),
+        basisGradAtTargetGradEPoints_(basisGradAtTargetGradEPoints), wBasisAtTargetGradEPoints_(wBasisAtTargetGradEPoints),
+        computedDofs_(computedDofs), tagToOrdinal_(tagToOrdinal), targetGradTanAtTargetGradEPoints_(targetGradTanAtTargetGradEPoints),
+        targetGradAtTargetGradEPoints_(targetGradAtTargetGradEPoints), refEdgesTan_(refEdgesTan),
+        edgeCardinality_(edgeCardinality), offsetBasis_(offsetBasis),
+        offsetTarget_(offsetTarget), numVertexDofs_(numVertexDofs), edgeDim_(edgeDim), dim_(dim), iedge_(iedge)
+  {}
+
+  void
+  KOKKOS_INLINE_FUNCTION
+  operator()(const ordinal_type ic) const {
+
+    ordinal_type numBasisGradEPoints = basisGradEWeights_.extent(0);
+    ordinal_type numTargetGradEPoints = targetGradEWeights_.extent(0);
+    for(ordinal_type j=0; j <edgeCardinality_; ++j) {
+      ordinal_type jdof = tagToOrdinal_(edgeDim_, iedge_, j);
+
+      //Note: we are not considering the jacobian of the orientation map since it is simply a scalar term for the integrals and it does not affect the projection
+      for(ordinal_type iq=0; iq <numBasisGradEPoints; ++iq) {
+        for(ordinal_type d=0; d <dim_; ++d)
+          basisTanAtEPoints_(ic,j,iq) += basisGradAtBasisGradEPoints_(ic,jdof,offsetBasis_+iq,d)*refEdgesTan_(iedge_, d);
+        wBasisAtBasisGradEPoints_(ic,j,iq) = basisTanAtEPoints_(ic,j,iq)*basisGradEWeights_(iq);
+      }
+      for(ordinal_type iq=0; iq <numTargetGradEPoints; ++iq) {
+        for(ordinal_type d=0; d <dim_; ++d)
+          wBasisAtTargetGradEPoints_(ic,j,iq) += basisGradAtTargetGradEPoints_(ic,jdof,offsetTarget_+iq,d)*refEdgesTan_(iedge_, d)*targetGradEWeights_(iq);
+      }
+    }
+
+    for(ordinal_type iq=0; iq <numTargetGradEPoints; ++iq)
+      for(ordinal_type d=0; d <dim_; ++d)
+        targetGradTanAtTargetGradEPoints_(ic,iq) += targetGradAtTargetGradEPoints_(ic,offsetTarget_+iq,d)*refEdgesTan_(iedge_, d);
+
+    for(ordinal_type j=0; j <numVertexDofs_; ++j) {
+      ordinal_type jdof = computedDofs_(j);
+      for(ordinal_type iq=0; iq <numBasisGradEPoints; ++iq)
+        for(ordinal_type d=0; d <dim_; ++d)
+          negPartialProjGrad_(ic,iq) -=  basisCoeffs_(ic,jdof)*basisGradAtBasisGradEPoints_(ic,jdof,offsetBasis_+iq,d)*refEdgesTan_(iedge_, d);
+    }
+  }
+};
+
+template<typename ViewType1, typename ViewType2, typename ViewType3,
+typename ViewType4, typename ViewType5, typename ViewType6, typename ViewType7>
+struct ComputeBasisCoeffsOnFaces_HGRAD {
+  const ViewType1 basisCoeffs_;
+  const ViewType2 negPartialProjGrad_;
+  const ViewType2 faceBasisGradAtGradEPoints_;
+  const ViewType2 basisGradAtBasisGradEPoints_;
+  const ViewType3 basisGradEWeights_;
+  const ViewType2 wBasisGradAtGradEPoints_;
+  const ViewType3 targetGradEWeights_;
+  const ViewType2 basisGradAtTargetGradEPoints_;
+  const ViewType2 wBasisGradBasisAtTargetGradEPoints_;
+  const ViewType4 computedDofs_;
+  const ViewType5 tagToOrdinal_;
+  const ViewType6 orts_;
+  const ViewType2 targetGradTanAtTargetGradEPoints_;
+  const ViewType7 targetGradAtTargetGradEPoints_;
+  const ViewType2 ortJacobian_;
+  const ViewType2 faceCoeff_;
+  const ViewType2 refFacesTangents_;
+  ordinal_type faceCardinality_;
+  ordinal_type offsetBasisGrad_;
+  ordinal_type offsetTargetGrad_;
+  ordinal_type numVertexEdgeDofs_;
+  ordinal_type numFaces_;
+  ordinal_type faceDim_;
+  ordinal_type dim_;
+  ordinal_type iface_;
+  unsigned topoKey_;
+
+  ComputeBasisCoeffsOnFaces_HGRAD(const ViewType1 basisCoeffs, ViewType2 negPartialProjGrad,  const ViewType2 faceBasisGradAtGradEPoints,
+      const ViewType2 basisGradAtBasisGradEPoints, const ViewType3 basisGradEWeights,  const ViewType2 wBasisGradAtGradEPoints,   const ViewType3 targetGradEWeights,
+      const ViewType2 basisGradAtTargetGradEPoints, const ViewType2 wBasisGradBasisAtTargetGradEPoints, const ViewType4 computedDofs, const ViewType5 tagToOrdinal,
+      const ViewType6 orts, const ViewType2 targetGradTanAtTargetGradEPoints, const ViewType7 targetGradAtTargetGradEPoints,
+      const ViewType2 refFacesTangents, ordinal_type faceCardinality, ordinal_type offsetBasisGrad,
+      ordinal_type offsetTargetGrad, ordinal_type numVertexEdgeDofs, ordinal_type numFaces, ordinal_type faceDim,
+      ordinal_type dim, ordinal_type iface, unsigned topoKey) :
+        basisCoeffs_(basisCoeffs), negPartialProjGrad_(negPartialProjGrad), faceBasisGradAtGradEPoints_(faceBasisGradAtGradEPoints),
+        basisGradAtBasisGradEPoints_(basisGradAtBasisGradEPoints), basisGradEWeights_(basisGradEWeights), wBasisGradAtGradEPoints_(wBasisGradAtGradEPoints),
+        targetGradEWeights_(targetGradEWeights),
+        basisGradAtTargetGradEPoints_(basisGradAtTargetGradEPoints), wBasisGradBasisAtTargetGradEPoints_(wBasisGradBasisAtTargetGradEPoints),
+        computedDofs_(computedDofs), tagToOrdinal_(tagToOrdinal), orts_(orts), targetGradTanAtTargetGradEPoints_(targetGradTanAtTargetGradEPoints),
+        targetGradAtTargetGradEPoints_(targetGradAtTargetGradEPoints), refFacesTangents_(refFacesTangents),
+        faceCardinality_(faceCardinality), offsetBasisGrad_(offsetBasisGrad),
+        offsetTargetGrad_(offsetTargetGrad), numVertexEdgeDofs_(numVertexEdgeDofs), numFaces_(numFaces),
+        faceDim_(faceDim), dim_(dim), iface_(iface), topoKey_(topoKey)
+  {}
+
+  void
+  KOKKOS_INLINE_FUNCTION
+  operator()(const ordinal_type ic) const {
+
+    typename ViewType2::value_type ortJacData[2*2];
+    auto ortJac = ViewType2(ortJacData, 2, 2);
+
+    ordinal_type fOrt[6];
+    orts_(ic).getFaceOrientation(fOrt, numFaces_);
+    ordinal_type ort = fOrt[iface_];
+
+    ordinal_type numBasisGradEPoints = basisGradEWeights_.extent(0);
+    ordinal_type numTargetGradEPoints = targetGradEWeights_.extent(0);
+    Impl::OrientationTools::getJacobianOfOrientationMap(ortJac, topoKey_, ort);
+    for(ordinal_type j=0; j <faceCardinality_; ++j) {
+      ordinal_type jdof = tagToOrdinal_(faceDim_, iface_, j);
+      for(ordinal_type itan=0; itan <faceDim_; ++itan) {
+        for(ordinal_type iq=0; iq <numBasisGradEPoints; ++iq) {
+          for(ordinal_type d=0; d <dim_; ++d)
+            for(ordinal_type jtan=0; jtan <faceDim_; ++jtan)
+              faceBasisGradAtGradEPoints_(ic,j,iq,itan) += refFacesTangents_(iface_, d, jtan)*ortJac(jtan,itan)*basisGradAtBasisGradEPoints_(ic,jdof,offsetBasisGrad_+iq,d);
+          wBasisGradAtGradEPoints_(ic,j,iq,itan) = faceBasisGradAtGradEPoints_(ic,j,iq,itan) * basisGradEWeights_(iq);
+        }
+        for(ordinal_type iq=0; iq <numTargetGradEPoints; ++iq) {
+          typename ViewType2::value_type tmp=0;
+          for(ordinal_type d=0; d <dim_; ++d) {
+            for(ordinal_type jtan=0; jtan <faceDim_; ++jtan)
+              tmp += refFacesTangents_(iface_, d, jtan)*ortJac(jtan,itan)*basisGradAtTargetGradEPoints_(ic,jdof,offsetTargetGrad_+iq,d);
+          }
+          wBasisGradBasisAtTargetGradEPoints_(ic,j,iq,itan) = tmp * targetGradEWeights_(iq);
+        }
+      }
+    }
+
+    for(ordinal_type d=0; d <dim_; ++d)
+      for(ordinal_type itan=0; itan <faceDim_; ++itan)
+        for(ordinal_type iq=0; iq <numTargetGradEPoints; ++iq)
+          for(ordinal_type jtan=0; jtan <faceDim_; ++jtan)
+            targetGradTanAtTargetGradEPoints_(ic,iq,itan) += refFacesTangents_(iface_, d, jtan)*ortJac(jtan,itan)*targetGradAtTargetGradEPoints_(ic,offsetTargetGrad_+iq,d);
+
+    for(ordinal_type j=0; j <numVertexEdgeDofs_; ++j) {
+      ordinal_type jdof = computedDofs_(j);
+      for(ordinal_type iq=0; iq <numBasisGradEPoints; ++iq)
+        for(ordinal_type d=0; d <dim_; ++d)
+          for(ordinal_type itan=0; itan <faceDim_; ++itan)
+            for(ordinal_type jtan=0; jtan <faceDim_; ++jtan)
+              negPartialProjGrad_(ic,iq,itan) -=  basisCoeffs_(ic,jdof)*refFacesTangents_(iface_, d, jtan)*ortJac(jtan,itan)*basisGradAtBasisGradEPoints_(ic,jdof,offsetBasisGrad_+iq,d);
+    }
+  }
+};
+
+
+template<typename ViewType1, typename ViewType2, typename ViewType3,
+typename ViewType4, typename ViewType5>
+struct ComputeBasisCoeffsOnCells_HGRAD {
+  const ViewType1 basisCoeffs_;
+  const ViewType2 negPartialProjGrad_;
+  const ViewType2 cellBasisGradAtGradEPoints_;
+  const ViewType2 basisGradAtBasisGradEPoints_;
+  const ViewType3 basisGradEWeights_;
+  const ViewType2 wBasisGradAtGradEPoints_;
+  const ViewType3 targetGradEWeights_;
+  const ViewType2 basisGradAtTargetGradEPoints_;
+  const ViewType2 wBasisGradBasisAtTargetGradEPoints_;
+  const ViewType4 computedDofs_;
+  const ViewType5 elemDof_;
+  ordinal_type dim_;
+  ordinal_type numElemDofs_;
+  ordinal_type offsetBasisGrad_;
+  ordinal_type offsetTargetGrad_;
+  ordinal_type numVertexEdgeFaceDofs_;
+
+  ComputeBasisCoeffsOnCells_HGRAD(const ViewType1 basisCoeffs, ViewType2 negPartialProjGrad,  const ViewType2 cellBasisGradAtGradEPoints,
+      const ViewType2 basisGradAtBasisGradEPoints, const ViewType3 basisGradEWeights,  const ViewType2 wBasisGradAtGradEPoints,   const ViewType3 targetGradEWeights,
+      const ViewType2 basisGradAtTargetGradEPoints, const ViewType2 wBasisGradBasisAtTargetGradEPoints, const ViewType4 computedDofs, const ViewType5 elemDof,
+      ordinal_type dim, ordinal_type numElemDofs, ordinal_type offsetBasisGrad, ordinal_type offsetTargetGrad, ordinal_type numVertexEdgeFaceDofs) :
+        basisCoeffs_(basisCoeffs), negPartialProjGrad_(negPartialProjGrad), cellBasisGradAtGradEPoints_(cellBasisGradAtGradEPoints),
+        basisGradAtBasisGradEPoints_(basisGradAtBasisGradEPoints), basisGradEWeights_(basisGradEWeights), wBasisGradAtGradEPoints_(wBasisGradAtGradEPoints), targetGradEWeights_(targetGradEWeights),
+        basisGradAtTargetGradEPoints_(basisGradAtTargetGradEPoints), wBasisGradBasisAtTargetGradEPoints_(wBasisGradBasisAtTargetGradEPoints),
+        computedDofs_(computedDofs), elemDof_(elemDof), dim_(dim), numElemDofs_(numElemDofs), offsetBasisGrad_(offsetBasisGrad),
+        offsetTargetGrad_(offsetTargetGrad), numVertexEdgeFaceDofs_(numVertexEdgeFaceDofs) {}
+
+  void
+  KOKKOS_INLINE_FUNCTION
+  operator()(const ordinal_type ic) const {
+    ordinal_type numBasisGradEPoints = basisGradEWeights_.extent(0);
+    ordinal_type numTargetGradEPoints = targetGradEWeights_.extent(0);
+    for(ordinal_type j=0; j <numElemDofs_; ++j) {
+      ordinal_type idof = elemDof_(j);
+      for(ordinal_type d=0; d <dim_; ++d) {
+        for(ordinal_type iq=0; iq <numBasisGradEPoints; ++iq) {
+          cellBasisGradAtGradEPoints_(ic,j,iq,d) = basisGradAtBasisGradEPoints_(ic,idof,offsetBasisGrad_+iq,d);
+          wBasisGradAtGradEPoints_(ic,j,iq,d) = cellBasisGradAtGradEPoints_(ic,j,iq,d) * basisGradEWeights_(iq);
+        }
+        for(ordinal_type iq=0; iq <numTargetGradEPoints; ++iq) {
+          wBasisGradBasisAtTargetGradEPoints_(ic,j,iq,d )= basisGradAtTargetGradEPoints_(ic,idof,offsetTargetGrad_+iq,d) * targetGradEWeights_(iq);
+        }
+      }
+    }
+    for(ordinal_type j=0; j <numVertexEdgeFaceDofs_; ++j) {
+      ordinal_type jdof = computedDofs_(j);
+      for(ordinal_type iq=0; iq <numBasisGradEPoints; ++iq)
+        for(ordinal_type d=0; d <dim_; ++d) {
+          negPartialProjGrad_(ic,iq,d) -=  basisCoeffs_(ic,jdof)*basisGradAtBasisGradEPoints_(ic,jdof,offsetBasisGrad_+iq,d);
+        }
+    }
+  }
+};
+
+
 template<typename SpT>
 template<typename BasisType,
 typename ortValueType,       class ...ortProperties>
 void
-ProjectionTools<SpT>::getHGradEvaluationPoints(typename BasisType::ScalarViewType evaluationPoints,
-    typename BasisType::ScalarViewType extDerivEvaluationPoints,
+ProjectionTools<SpT>::getHGradEvaluationPoints(typename BasisType::ScalarViewType ePoints,
+    typename BasisType::ScalarViewType gradEPoints,
     const Kokkos::DynRankView<ortValueType,   ortProperties...>  orts,
     const BasisType* cellBasis,
     ProjectionStruct<SpT, typename BasisType::scalarType> * projStruct,
@@ -71,8 +333,9 @@ ProjectionTools<SpT>::getHGradEvaluationPoints(typename BasisType::ScalarViewTyp
   typedef Kokkos::DynRankView<scalarType,SpT> ScalarViewType;
   typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
   const auto cellTopo = cellBasis->getBaseCellTopology();
+  //const auto cellTopoKey = cellBasis->getBaseCellTopology().getKey();
   ordinal_type dim = cellTopo.getDimension();
-  ordinal_type numCells = evaluationPoints.extent(0);
+  ordinal_type numCells = ePoints.extent(0);
   const ordinal_type edgeDim = 1;
   const ordinal_type faceDim = 2;
 
@@ -80,81 +343,80 @@ ProjectionTools<SpT>::getHGradEvaluationPoints(typename BasisType::ScalarViewTyp
   ordinal_type numEdges = (cellBasis->getDofCount(1, 0) > 0) ? cellTopo.getEdgeCount() : 0;
   ordinal_type numFaces = (cellBasis->getDofCount(2, 0) > 0) ? cellTopo.getFaceCount() : 0;
 
-  Kokkos::View<ordinal_type*> eOrt("eOrt", numEdges), fOrt("fOrt", numFaces);
+  CellTools<SpT>::setSubcellParametrization();
+  typename CellTools<SpT>::subcellParamViewType subcellParamEdge,  subcellParamFace;
+  if(numEdges>0)
+    CellTools<SpT>::getSubcellParametrization(subcellParamEdge,  edgeDim, cellBasis->getBaseCellTopology());
+  if(numFaces>0)
+    CellTools<SpT>::getSubcellParametrization(subcellParamFace,  faceDim, cellBasis->getBaseCellTopology());
+
+  auto refTopologyKey =  Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getTopologyKey());
+
+  auto ePointsRange = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getPointsRange(evalPointType));
+  auto gradEPointsRange  = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getDerivPointsRange(evalPointType));
 
   if(numVertices>0) {
-    //TODO: use lattice to retrieve vertex coordinates.
-    ScalarViewType dofCoords("dofCoords", cellBasis->getCardinality(), dim);
-    cellBasis->getDofCoords(dofCoords);
     for(ordinal_type iv=0; iv<numVertices; ++iv) {
-      ordinal_type idof = cellBasis->getDofOrdinal(0, iv, 0);
-      for(ordinal_type d=0; d<dim; d++)
-        for(ordinal_type ic=0; ic<numCells; ++ic)
-          evaluationPoints(ic,iv,d) = dofCoords(idof,d);
+      auto vertexEPoints = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getEvalPoints(0,iv,evalPointType));
+      RealSpaceTools<SpT>::clone(Kokkos::subview(ePoints, Kokkos::ALL(),
+          ePointsRange(0, iv), Kokkos::ALL()), vertexEPoints);
     }
   }
 
+  ScalarViewType workView("workView", numCells, projStruct->getMaxNumDerivPoints(evalPointType), dim-1);
   for(ordinal_type ie=0; ie<numEdges; ++ie) {
-    range_type edgeGradPointsRange;
-    ScalarViewType cubPoints;
-    if(evalPointType == TARGET) {
-      edgeGradPointsRange = projStruct->getTargetDerivPointsRange(edgeDim, ie);
-      cubPoints = projStruct->getTargetDerivEvalPoints(edgeDim, ie);
-    }
-    else {
-      edgeGradPointsRange = projStruct->getBasisDerivPointsRange(edgeDim, ie);
-      cubPoints = projStruct->getBasisDerivEvalPoints(edgeDim, ie);
-    }
 
-    ScalarViewType orientedTargetCubPoints("orientedTargetCubPoints", cubPoints.extent(0),edgeDim);
+    auto edgeGradEPointsRange = gradEPointsRange(edgeDim, ie);
+    auto edgeRefGradEPointsRange = range_type(0, range_size(edgeGradEPointsRange));
+    auto edgeGradEPoints =  Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getDerivEvalPoints(edgeDim,ie,evalPointType));
 
-    const auto topoKey = projStruct->getTopologyKey(edgeDim,ie);
+    const auto topoKey = refTopologyKey(edgeDim,ie);
 
-    for(ordinal_type ic=0; ic<numCells; ++ic)  {
-      orts(ic).getEdgeOrientation(eOrt.data(), numEdges);
-      ordinal_type ort = eOrt(ie);
-      Impl::OrientationTools::mapToModifiedReference(orientedTargetCubPoints,cubPoints,topoKey,ort);
-      CellTools<SpT>::mapToReferenceSubcell(Kokkos::subview(extDerivEvaluationPoints,ic,edgeGradPointsRange,Kokkos::ALL()), orientedTargetCubPoints, edgeDim, ie, cellBasis->getBaseCellTopology());
-    }
+    Kokkos::parallel_for
+    ("Evaluate Points Edges ",
+        Kokkos::RangePolicy<SpT, int> (0, numCells),
+        KOKKOS_LAMBDA (const size_t ic) {
+
+
+      ordinal_type eOrt[12];
+      orts(ic).getEdgeOrientation(eOrt, numEdges);
+      ordinal_type ort = eOrt[ie];
+
+      auto orientedEdgeEPoints = Kokkos::subview(workView, ic, edgeRefGradEPointsRange, range_type(0, edgeDim));
+      Impl::OrientationTools::mapToModifiedReference(orientedEdgeEPoints,edgeGradEPoints,topoKey,ort);
+      CellTools<SpT>::mapToReferenceSubcell(Kokkos::subview(gradEPoints,ic,edgeGradEPointsRange,Kokkos::ALL()), orientedEdgeEPoints, subcellParamEdge, edgeDim, ie, dim);
+    });
   }
 
 
   for(ordinal_type iface=0; iface<numFaces; ++iface) {
 
-    ScalarViewType gradCubPoints;
-    range_type faceGradPointsRange;
-    if(evalPointType == TARGET) {
-      gradCubPoints = projStruct->getTargetDerivEvalPoints(faceDim, iface);
-      faceGradPointsRange = projStruct->getTargetDerivPointsRange(faceDim, iface);
-    } else {
-      gradCubPoints = projStruct->getBasisDerivEvalPoints(faceDim, iface);
-      faceGradPointsRange = projStruct->getBasisDerivPointsRange(faceDim, iface);
-    }
+    auto faceGradEPointsRange = gradEPointsRange(faceDim, iface);
+    auto faceRefGradEPointsRange = range_type(0, range_size(faceGradEPointsRange));
+    auto refGradEPoints = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getDerivEvalPoints(faceDim,iface,evalPointType));
 
-    ScalarViewType faceGradCubPoints("faceGradCubPoints", gradCubPoints.extent(0), faceDim);
 
-    const auto topoKey = projStruct->getTopologyKey(faceDim,iface);
-    for(ordinal_type ic=0; ic<numCells; ++ic) {
+    const auto topoKey = refTopologyKey(faceDim,iface);
+    Kokkos::parallel_for
+    ("Evaluate Points Faces ",
+        Kokkos::RangePolicy<SpT, int> (0, numCells),
+        KOKKOS_LAMBDA (const size_t ic) {
+      auto faceGradEPoints  = Kokkos::subview(workView, ic, faceRefGradEPointsRange, Kokkos::ALL());
 
-      orts(ic).getFaceOrientation(fOrt.data(), numFaces);
+      ordinal_type fOrt[6];
+      orts(ic).getFaceOrientation(fOrt, numFaces);
+      ordinal_type ort = fOrt[iface];
 
-      ordinal_type ort = fOrt(iface);
-      Impl::OrientationTools::mapToModifiedReference(faceGradCubPoints,gradCubPoints,topoKey,ort);
-      CellTools<SpT>::mapToReferenceSubcell(Kokkos::subview(extDerivEvaluationPoints,  ic, faceGradPointsRange, Kokkos::ALL()), faceGradCubPoints, faceDim, iface, cellBasis->getBaseCellTopology());
-    }
+      Impl::OrientationTools::mapToModifiedReference(faceGradEPoints,refGradEPoints,topoKey,ort);
+      CellTools<SpT>::mapToReferenceSubcell(Kokkos::subview(gradEPoints,  ic, faceGradEPointsRange, Kokkos::ALL()), faceGradEPoints, subcellParamFace, faceDim, iface, dim);
+    });
   }
 
   if(cellBasis->getDofCount(dim,0)>0) {
-    range_type cellGradPointsRange;
-    ScalarViewType gradCubPoints;
-    if(evalPointType == TARGET) {
-      gradCubPoints = projStruct->getTargetDerivEvalPoints(dim, 0);
-      cellGradPointsRange = projStruct->getTargetDerivPointsRange(dim, 0);
-    } else {
-      gradCubPoints = projStruct->getBasisDerivEvalPoints(dim, 0);
-      cellGradPointsRange = projStruct->getBasisDerivPointsRange(dim, 0);
-    }
-    RealSpaceTools<SpT>::clone(Kokkos::subview(extDerivEvaluationPoints, Kokkos::ALL(), cellGradPointsRange, Kokkos::ALL()), gradCubPoints);
+    auto gradPointsRange = gradEPointsRange(dim, 0);
+    //auto refGradEPointsRange = range_type(0, range_size(gradPointsRange));
+    auto refCellGradEPoints = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getDerivEvalPoints(dim,0,evalPointType));
+    RealSpaceTools<SpT>::clone(Kokkos::subview(gradEPoints, Kokkos::ALL(), gradPointsRange, Kokkos::ALL()), refCellGradEPoints);
   }
 }
 
@@ -166,10 +428,10 @@ typename BasisType,
 typename ortValueType,class ...ortProperties>
 void
 ProjectionTools<SpT>::getHGradBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueType,basisCoeffsProperties...> basisCoeffs,
-    const Kokkos::DynRankView<funValsValueType,funValsProperties...> targetAtEvalPoints,
-    const Kokkos::DynRankView<funValsValueType,funValsProperties...> targetGradAtGradEvalPoints,
-    const typename BasisType::ScalarViewType evaluationPoints,
-    const typename BasisType::ScalarViewType extDerivEvaluationPoints,
+    const Kokkos::DynRankView<funValsValueType,funValsProperties...> targetAtTargetEPoints,
+    const Kokkos::DynRankView<funValsValueType,funValsProperties...> targetGradAtTargetGradEPoints,
+    const typename BasisType::ScalarViewType targetEPoints,
+    const typename BasisType::ScalarViewType targetGradEPoints,
     const Kokkos::DynRankView<ortValueType,   ortProperties...>  orts,
     const BasisType* cellBasis,
     ProjectionStruct<SpT, typename BasisType::scalarType> * projStruct){
@@ -180,10 +442,10 @@ ProjectionTools<SpT>::getHGradBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
   typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
   const auto cellTopo = cellBasis->getBaseCellTopology();
   ordinal_type dim = cellTopo.getDimension();
-  ordinal_type numTotalEvaluationPoints(targetAtEvalPoints.extent(1)),
-      numTotalGradEvaluationPoints(targetGradAtGradEvalPoints.extent(1));
+  ordinal_type numTotalTargetEPoints(targetAtTargetEPoints.extent(1)),
+      numTotalTargetGradEPoints(targetGradAtTargetGradEPoints.extent(1));
   ordinal_type basisCardinality = cellBasis->getCardinality();
-  ordinal_type numCells = targetAtEvalPoints.extent(0);
+  ordinal_type numCells = targetAtTargetEPoints.extent(0);
   const ordinal_type edgeDim = 1;
   const ordinal_type faceDim = 2;
 
@@ -191,12 +453,8 @@ ProjectionTools<SpT>::getHGradBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
   ordinal_type numEdges = (cellBasis->getDofCount(1, 0) > 0) ? cellTopo.getEdgeCount() : 0;
   ordinal_type numFaces = (cellBasis->getDofCount(2, 0) > 0) ? cellTopo.getFaceCount() : 0;
 
-  Kokkos::View<ordinal_type*> eOrt("eOrt", numEdges);
-  Kokkos::View<ordinal_type*> fOrt("fOrt", numFaces);
-  ScalarViewType refEdgeTan("refEdgeTan",  dim);
-  ScalarViewType refFaceTangents("refFaceTangents", dim, 2);
-  auto refFaceTanU = Kokkos::subview(refFaceTangents, Kokkos::ALL, 0);
-  auto refFaceTanV = Kokkos::subview(refFaceTangents, Kokkos::ALL, 1);
+  ScalarViewType refEdgesTan("refEdgesTan",  numEdges, dim);
+  ScalarViewType refFacesTangents("refFacesTangents", numFaces, dim, faceDim);
 
   ordinal_type numVertexDofs = numVertices;
 
@@ -210,354 +468,208 @@ ProjectionTools<SpT>::getHGradBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
 
   Kokkos::View<ordinal_type*> computedDofs("computedDofs",numVertexDofs+numEdgeDofs+numFaceDofs);
 
-  ordinal_type computedDofsCount = 0;
+  ordinal_type numTotalBasisEPoints = projStruct->getNumBasisEvalPoints(),
+      numTotalBasisGradEPoints = projStruct->getNumBasisDerivEvalPoints();
+  ScalarViewType basisEPoints("basisEPoints",numCells,numTotalBasisEPoints, dim);
+  ScalarViewType basisGradEPoints("basisGradEPoints",numCells,numTotalBasisGradEPoints, dim);
+  getHGradEvaluationPoints(basisEPoints, basisGradEPoints, orts, cellBasis, projStruct, EvalPointsType::BASIS);
 
-  ordinal_type numTotalCubPoints = projStruct->getNumBasisEvalPoints(),
-      numTotalGradCubPoints = projStruct->getNumBasisDerivEvalPoints();
-  ScalarViewType cubPoints("cubPoints",numCells,numTotalCubPoints, dim);
-  ScalarViewType gradCubPoints("gradCubPoints",numCells,numTotalGradCubPoints, dim);
-  getHGradEvaluationPoints(cubPoints, gradCubPoints, orts, cellBasis, projStruct, BASIS);
-
-  ScalarViewType basisAtCubPoints("basisAtCubPoints",numCells,basisCardinality, numTotalCubPoints);
-  ScalarViewType basisAtTargetCubPoints("basisAtTargetCubPoints",numCells,basisCardinality, numTotalEvaluationPoints);
+  ScalarViewType basisAtTargetEPoints("basisAtTargetEPoints",numCells,basisCardinality, numTotalTargetEPoints);
   {
-    ScalarViewType nonOrientedBasisAtCubPoints("nonOrientedBasisAtCubPoints",numCells,basisCardinality, numTotalCubPoints);
-    ScalarViewType nonOrientedBasisAtTargetCubPoints("nonOrientedBasisAtTargetCubPoints",numCells,basisCardinality, numTotalEvaluationPoints);
+    ScalarViewType nonOrientedBasisAtTargetEPoints("nonOrientedBasisAtTargetEPoints",numCells,basisCardinality, numTotalTargetEPoints);
+    for(ordinal_type ic=0; ic<numCells; ++ic) {
+      cellBasis->getValues(Kokkos::subview(nonOrientedBasisAtTargetEPoints,ic,Kokkos::ALL(),Kokkos::ALL()), Kokkos::subview(targetEPoints, ic, Kokkos::ALL(), Kokkos::ALL()));
+    }
+    OrientationTools<SpT>::modifyBasisByOrientation(basisAtTargetEPoints, nonOrientedBasisAtTargetEPoints, orts, cellBasis);
+  }
+
+  ScalarViewType basisGradAtBasisGradEPoints;
+  ScalarViewType basisGradAtTargetGradEPoints;
+  if(numTotalBasisGradEPoints>0) {
+    ScalarViewType nonOrientedBasisGradAtTargetGradEPoints, nonOrientedBasisGradAtBasisGradEPoints;
+
+    basisGradAtBasisGradEPoints = ScalarViewType ("basisGradAtBasisGradEPoints",numCells,basisCardinality, numTotalBasisGradEPoints, dim);
+    nonOrientedBasisGradAtBasisGradEPoints = ScalarViewType ("nonOrientedBasisGradAtBasisGradEPoints",numCells,basisCardinality, numTotalBasisGradEPoints, dim);
+    basisGradAtTargetGradEPoints = ScalarViewType("basisGradAtTargetGradEPoints",numCells,basisCardinality, numTotalTargetGradEPoints, dim);
+    nonOrientedBasisGradAtTargetGradEPoints = ScalarViewType("nonOrientedBasisGradAtTargetGradEPoints",numCells,basisCardinality, numTotalTargetGradEPoints, dim);
 
     for(ordinal_type ic=0; ic<numCells; ++ic) {
-      cellBasis->getValues(Kokkos::subview(nonOrientedBasisAtTargetCubPoints,ic,Kokkos::ALL(),Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()));
-      cellBasis->getValues(Kokkos::subview(nonOrientedBasisAtCubPoints,ic,Kokkos::ALL(),Kokkos::ALL()), Kokkos::subview(cubPoints, ic, Kokkos::ALL(), Kokkos::ALL()));
+      cellBasis->getValues(Kokkos::subview(nonOrientedBasisGradAtBasisGradEPoints,ic,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL()), Kokkos::subview(basisGradEPoints, ic, Kokkos::ALL(), Kokkos::ALL()),OPERATOR_GRAD);
+      cellBasis->getValues(Kokkos::subview(nonOrientedBasisGradAtTargetGradEPoints,ic,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL()), Kokkos::subview(targetGradEPoints, ic, Kokkos::ALL(), Kokkos::ALL()),OPERATOR_GRAD);
     }
 
-    OrientationTools<SpT>::modifyBasisByOrientation(basisAtCubPoints, nonOrientedBasisAtCubPoints, orts, cellBasis);
-    OrientationTools<SpT>::modifyBasisByOrientation(basisAtTargetCubPoints, nonOrientedBasisAtTargetCubPoints, orts, cellBasis);
+    OrientationTools<SpT>::modifyBasisByOrientation(basisGradAtBasisGradEPoints, nonOrientedBasisGradAtBasisGradEPoints, orts, cellBasis);
+    OrientationTools<SpT>::modifyBasisByOrientation(basisGradAtTargetGradEPoints, nonOrientedBasisGradAtTargetGradEPoints, orts, cellBasis);
   }
 
-  ScalarViewType basisGradAtGradCubPoints;
-  ScalarViewType basisGradAtTargetGradCubPoints;
-  if(numTotalGradEvaluationPoints>0) {
-    ScalarViewType nonOrientedBasisGradAtTargetGradCubPoints, nonOrientedBasisGradAtGradCubPoints;
+  auto targetEPointsRange  = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getTargetPointsRange());
+  auto targetGradEPointsRange  = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getTargetDerivPointsRange());
 
-    basisGradAtGradCubPoints = ScalarViewType ("basisGradAtGradCubPoints",numCells,basisCardinality, numTotalGradCubPoints, dim);
-    nonOrientedBasisGradAtGradCubPoints = ScalarViewType ("nonOrientedBasisGradAtGradCubPoints",numCells,basisCardinality, numTotalGradCubPoints, dim);
-    basisGradAtTargetGradCubPoints = ScalarViewType("basisGradAtTargetGradCubPoints",numCells,basisCardinality, numTotalGradEvaluationPoints, dim);
-    nonOrientedBasisGradAtTargetGradCubPoints = ScalarViewType("nonOrientedBasisGradAtTargetGradCubPoints",numCells,basisCardinality, numTotalGradEvaluationPoints, dim);
+  auto basisGradEPointsRange  = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getBasisDerivPointsRange());
 
-    for(ordinal_type ic=0; ic<numCells; ++ic) {
-      cellBasis->getValues(Kokkos::subview(nonOrientedBasisGradAtGradCubPoints,ic,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL()), Kokkos::subview(gradCubPoints, ic, Kokkos::ALL(), Kokkos::ALL()),OPERATOR_GRAD);
-      cellBasis->getValues(Kokkos::subview(nonOrientedBasisGradAtTargetGradCubPoints,ic,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL()), Kokkos::subview(extDerivEvaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()),OPERATOR_GRAD);
-    }
+  auto refTopologyKey =  Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getTopologyKey());
 
-    OrientationTools<SpT>::modifyBasisByOrientation(basisGradAtGradCubPoints, nonOrientedBasisGradAtGradCubPoints, orts, cellBasis);
-    OrientationTools<SpT>::modifyBasisByOrientation(basisGradAtTargetGradCubPoints, nonOrientedBasisGradAtTargetGradCubPoints, orts, cellBasis);
-  }
+  auto tagToOrdinal = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(), cellBasis->getAllDofOrdinal());
 
-  for(ordinal_type iv=0; iv<numVertices; ++iv) {
-    ordinal_type idof = cellBasis->getDofOrdinal(0, iv, 0);
-    computedDofs(computedDofsCount++) = idof;
-    for(ordinal_type ic=0; ic<numCells; ++ic)
-      basisCoeffs(ic,idof) = targetAtEvalPoints(ic,iv);
-  }
+  ordinal_type computedDofsCount = 0;
+  for(ordinal_type iv=0; iv<numVertices; ++iv)
+    computedDofs(computedDofsCount++) = tagToOrdinal(0, iv, 0);
+
+  const Kokkos::RangePolicy<SpT> policy(0, numCells);
+  typedef ComputeBasisCoeffsOnVertices_HGRAD<decltype(basisCoeffs), decltype(tagToOrdinal), decltype(targetEPointsRange),
+      decltype(targetAtTargetEPoints), decltype(basisAtTargetEPoints)> functorType;
+  Kokkos::parallel_for(policy, functorType(basisCoeffs, tagToOrdinal, targetEPointsRange,
+      targetAtTargetEPoints, basisAtTargetEPoints, numVertices));
 
   for(ordinal_type ie=0; ie<numEdges; ++ie)  {
 
     ordinal_type edgeCardinality = cellBasis->getDofCount(edgeDim,ie);
-    ordinal_type numCubPoints = projStruct->getNumBasisDerivEvalPoints(edgeDim, ie);
-    ordinal_type numTargetCubPoints = projStruct->getNumTargetDerivEvalPoints(edgeDim, ie);
+    ordinal_type offsetBasis = basisGradEPointsRange(edgeDim, ie).first;
+    ordinal_type offsetTarget = targetGradEPointsRange(edgeDim, ie).first;
+    ordinal_type numBasisGradEPoints = range_size(basisGradEPointsRange(edgeDim, ie));
+    ordinal_type numTargetGradEPoints = range_size(targetGradEPointsRange(edgeDim, ie));
+    auto basisGradEWeights = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getBasisDerivEvalWeights(edgeDim,ie));
+    auto targetGradEWeights = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getTargetDerivEvalWeights(edgeDim,ie));
 
-    CellTools<SpT>::getReferenceEdgeTangent(refEdgeTan, ie, cellBasis->getBaseCellTopology());
+    auto edgeTan = Kokkos::subview(refEdgesTan, ie, Kokkos::ALL());
+    auto edgeTanHost = Kokkos::create_mirror_view(edgeTan);
+    CellTools<SpT>::getReferenceEdgeTangent(edgeTanHost,ie, cellTopo);
+    Kokkos::deep_copy(edgeTan,edgeTanHost);
 
-    ScalarViewType edgeBasisAtCubPoints("tanBasisAtElemCubPoints",numCells,edgeCardinality, numCubPoints);
-    ScalarViewType edgeTargetAtTargetCubPoints("tanBasisAtTargetCubPoints",numCells, numTargetCubPoints);
-    ScalarViewType weightedBasisAtElemCubPoints("weightedTanBasisAtElemCubPoints",numCells,edgeCardinality, numCubPoints);
-    ScalarViewType weightedBasisAtTargetCubPoints("weightedTanBasisAtTargetCubPoints",numCells,edgeCardinality, numTargetCubPoints);
-    ScalarViewType mComputedProjection("mComputedProjection", numCells, numCubPoints);
+    ScalarViewType basisTanAtEPoints("basisTanAtEPoints",numCells,edgeCardinality, numBasisGradEPoints);
+    ScalarViewType targetGradTanAtTargetGradEPoints("tanBasisAtTargetGradEPoints",numCells, numTargetGradEPoints);
+    ScalarViewType wBasisAtBasisGradEPoints("wTanBasisAtBasisGradEPoints",numCells,edgeCardinality, numBasisGradEPoints);
+    ScalarViewType wBasisAtTargetGradEPoints("wTanBasisAtTargetGradEPoints",numCells,edgeCardinality, numTargetGradEPoints);
+    ScalarViewType negPartialProjGrad("negPartialProjGrad", numCells, numBasisGradEPoints);
 
-    ScalarViewType targetEvalWeights = projStruct->getTargetDerivEvalWeights(edgeDim, ie);
-    ScalarViewType basisEvalWeights = projStruct->getBasisDerivEvalWeights(edgeDim, ie);
+    typedef ComputeBasisCoeffsOnEdges_HGRAD<decltype(basisCoeffs), ScalarViewType,  decltype(basisGradEWeights),
+        decltype(computedDofs), decltype(tagToOrdinal), decltype(targetGradAtTargetGradEPoints)> functorTypeEdge;
 
-    //Note: we are not considering the jacobian of the orientation map since it is simply a scalar term for the integrals and it does not affect the projection
-    ordinal_type offsetBasis = projStruct->getBasisDerivPointsRange(edgeDim, ie).first;
-    ordinal_type offsetTarget = projStruct->getTargetDerivPointsRange(edgeDim, ie).first;
-    for(ordinal_type j=0; j <edgeCardinality; ++j) {
-      ordinal_type jdof = cellBasis->getDofOrdinal(edgeDim, ie, j);
-      for(ordinal_type ic=0; ic<numCells; ++ic) {
-        for(ordinal_type iq=0; iq <numCubPoints; ++iq) {
-          for(ordinal_type d=0; d <dim; ++d)
-            edgeBasisAtCubPoints(ic,j,iq) += basisGradAtGradCubPoints(ic,jdof,offsetBasis+iq,d)*refEdgeTan(d);
-          weightedBasisAtElemCubPoints(ic,j,iq) = edgeBasisAtCubPoints(ic,j,iq)*basisEvalWeights(iq);
-        }
-        for(ordinal_type iq=0; iq <numTargetCubPoints; ++iq) {
-          for(ordinal_type d=0; d <dim; ++d)
-            weightedBasisAtTargetCubPoints(ic,j,iq) += basisGradAtTargetGradCubPoints(ic,jdof,offsetTarget+iq,d)*refEdgeTan(d)*targetEvalWeights(iq);
-        }
-      }
-    }
-
-    for(ordinal_type ic=0; ic<numCells; ++ic)
-      for(ordinal_type iq=0; iq <numTargetCubPoints; ++iq)
-        for(ordinal_type d=0; d <dim; ++d)
-          edgeTargetAtTargetCubPoints(ic,iq) += targetGradAtGradEvalPoints(ic,offsetTarget+iq,d)*refEdgeTan(d);
-
-    for(ordinal_type j=0; j <numVertexDofs; ++j) {
-      ordinal_type jdof = computedDofs(j);
-      for(ordinal_type ic=0; ic<numCells; ++ic)
-        for(ordinal_type iq=0; iq <numCubPoints; ++iq)
-          for(ordinal_type d=0; d <dim; ++d)
-            mComputedProjection(ic,iq) -=  basisCoeffs(ic,jdof)*basisGradAtGradCubPoints(ic,jdof,offsetBasis+iq,d)*refEdgeTan(d);
-    }
-
+    Kokkos::parallel_for(policy, functorTypeEdge(basisCoeffs, negPartialProjGrad,  basisTanAtEPoints,
+        basisGradAtBasisGradEPoints, basisGradEWeights,  wBasisAtBasisGradEPoints,   targetGradEWeights,
+        basisGradAtTargetGradEPoints, wBasisAtTargetGradEPoints, computedDofs, tagToOrdinal,
+        targetGradTanAtTargetGradEPoints, targetGradAtTargetGradEPoints, refEdgesTan,
+        edgeCardinality, offsetBasis,
+        offsetTarget, numVertexDofs, edgeDim, dim, ie));
 
     ScalarViewType edgeMassMat_("edgeMassMat_", numCells, edgeCardinality, edgeCardinality),
         edgeRhsMat_("rhsMat_", numCells, edgeCardinality);
 
-    ScalarViewType cubWeights_("cubWeights_", numCells, 1, basisEvalWeights.extent(0)), targetEvalWeights_("targetEvalWeights", numCells, 1, targetEvalWeights.extent(0));
-    RealSpaceTools<SpT>::clone(cubWeights_, basisEvalWeights);
-    RealSpaceTools<SpT>::clone(targetEvalWeights_, targetEvalWeights);
+    FunctionSpaceTools<SpT >::integrate(edgeMassMat_, basisTanAtEPoints, wBasisAtBasisGradEPoints);
+    FunctionSpaceTools<SpT >::integrate(edgeRhsMat_, targetGradTanAtTargetGradEPoints, wBasisAtTargetGradEPoints);
+    FunctionSpaceTools<SpT >::integrate(edgeRhsMat_, negPartialProjGrad, wBasisAtBasisGradEPoints,true);
 
-    FunctionSpaceTools<SpT >::integrate(edgeMassMat_, edgeBasisAtCubPoints, weightedBasisAtElemCubPoints);
-    FunctionSpaceTools<SpT >::integrate(edgeRhsMat_, edgeTargetAtTargetCubPoints, weightedBasisAtTargetCubPoints);
-    FunctionSpaceTools<SpT >::integrate(edgeRhsMat_, mComputedProjection, weightedBasisAtElemCubPoints,true);
+    typedef Kokkos::DynRankView<scalarType, Kokkos::LayoutRight, SpT> WorkArrayViewType;
+    ScalarViewType t_("t",numCells, edgeCardinality);
+    WorkArrayViewType w_("w",numCells, edgeCardinality);
 
+    auto edgeDofs = Kokkos::subview(tagToOrdinal, edgeDim, ie, Kokkos::ALL());
 
-    Kokkos::View<funValsValueType**,Kokkos::LayoutLeft,host_space_type> edgeMassMat("edgeMassMat", edgeCardinality,edgeCardinality);
-    Kokkos::View<funValsValueType**,Kokkos::LayoutLeft,host_space_type> edgeRhsMat("edgeRhsMat",edgeCardinality, 1);
+    ElemSystem edgeSystem("edgeSystem", false);
+    edgeSystem.solve(basisCoeffs, edgeMassMat_, edgeRhsMat_, t_, w_, edgeDofs, edgeCardinality);
 
-    Teuchos::LAPACK<ordinal_type,funValsValueType> lapack;
-    ordinal_type info = 0;
-    for(ordinal_type ic=0; ic<numCells; ++ic)  {
-      for(ordinal_type i=0; i<edgeCardinality; ++i) {
-        edgeRhsMat(i,0) = edgeRhsMat_(ic,i);
-        for(ordinal_type j=0; j<edgeCardinality; ++j)
-          edgeMassMat(i,j) = edgeMassMat_(ic,i,j);
-      }
-
-      lapack.POSV('U', edgeCardinality, 1,
-          edgeMassMat.data(),
-          edgeMassMat.stride_1(),
-          edgeRhsMat.data(),
-          edgeRhsMat.stride_1(),
-          &info);
-
-      if (info) {
-        std::stringstream ss;
-        ss << ">>> ERROR (Intrepid::ProjectionTools::getBasisCoeffs): "
-            << "LAPACK return with error code: "
-            << info;
-        INTREPID2_TEST_FOR_EXCEPTION( true, std::runtime_error, ss.str().c_str() );
-      }
-
-      for(ordinal_type i=0; i<edgeCardinality; ++i){
-        ordinal_type edge_dof = cellBasis->getDofOrdinal(edgeDim, ie, i);
-        basisCoeffs(ic,edge_dof) = edgeRhsMat(i,0);
-      }
-    }
     for(ordinal_type i=0; i<edgeCardinality; ++i)
-      computedDofs(computedDofsCount++) = cellBasis->getDofOrdinal(edgeDim, ie, i);
+      computedDofs(computedDofsCount++) = tagToOrdinal(edgeDim, ie, i);
   }
-
-  ScalarViewType ortJacobian("ortJacobian", faceDim, faceDim);
 
   for(ordinal_type iface=0; iface<numFaces; ++iface) {
 
-
-    const auto topoKey = projStruct->getTopologyKey(faceDim,iface);
-
+    const auto topoKey = refTopologyKey(faceDim,iface);
 
     ordinal_type faceCardinality = cellBasis->getDofCount(faceDim,iface);
 
-    ordinal_type numTargetGradCubPoints = projStruct->getNumTargetDerivEvalPoints(faceDim, iface);
-    ordinal_type numGradCubPoints = projStruct->getNumBasisDerivEvalPoints(faceDim, iface);
+    ordinal_type numGradEPoints = range_size(basisGradEPointsRange(faceDim, iface));
+    ordinal_type numTargetGradEPoints = range_size(targetGradEPointsRange(faceDim, iface));
+    ordinal_type offsetBasisGrad = basisGradEPointsRange(faceDim, iface).first;
+    ordinal_type offsetTargetGrad = targetGradEPointsRange(faceDim, iface).first;
+    auto basisGradEWeights =  Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getBasisDerivEvalWeights(faceDim,iface));
+    auto targetGradEWeights = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getTargetDerivEvalWeights(faceDim,iface));
 
-    CellTools<SpT>::getReferenceFaceTangents(refFaceTanU, refFaceTanV,iface, cellTopo);
+    auto refFaceTanU = Kokkos::subview(refFacesTangents, iface, Kokkos::ALL, 0);
+    auto refFaceTanV = Kokkos::subview(refFacesTangents, iface, Kokkos::ALL,1);
+    auto refFaceTanUHost = Kokkos::create_mirror_view(refFaceTanU);
+    auto refFaceTanVHost = Kokkos::create_mirror_view(refFaceTanV);
+    CellTools<SpT>::getReferenceFaceTangents(refFaceTanUHost, refFaceTanVHost, iface, cellTopo);
+    Kokkos::deep_copy(refFaceTanU, refFaceTanUHost);
+    Kokkos::deep_copy(refFaceTanV, refFaceTanVHost);
 
-    ScalarViewType faceBasisGradAtGradCubPoints("normaBasisGradAtGradCubPoints",numCells,faceCardinality, numGradCubPoints,faceDim);
-    ScalarViewType wBasisGradAtGradCubPoints("weightedNormalBasisGradAtGradCubPoints",numCells,faceCardinality, numGradCubPoints,faceDim);
+    ScalarViewType faceBasisGradAtGradEPoints("normaBasisGradAtGradEPoints",numCells,faceCardinality, numGradEPoints,faceDim);
+    ScalarViewType wBasisGradAtGradEPoints("wNormalBasisGradAtGradEPoints",numCells,faceCardinality, numGradEPoints,faceDim);
+    ScalarViewType wBasisGradBasisAtTargetGradEPoints("wNormalBasisGradAtTargetGradEPoints",numCells,faceCardinality, numTargetGradEPoints,faceDim);
+    ScalarViewType targetGradTanAtTargetGradEPoints("targetGradTanAtTargetGradEPoints",numCells, numTargetGradEPoints,faceDim);
+    ScalarViewType negPartialProjGrad("mNormalComputedProjection", numCells,numGradEPoints,faceDim);
 
-    ScalarViewType faceBasisGradAtTargetGradCubPoints("normalBasisGradAtTargetGradCubPoints",numCells,faceCardinality, numTargetGradCubPoints,faceDim);
-    ScalarViewType wBasisGradBasisAtTargetGradCubPoints("weightedNormalBasisGradAtTargetGradCubPoints",numCells,faceCardinality, numTargetGradCubPoints,faceDim);
+    typedef ComputeBasisCoeffsOnFaces_HGRAD<decltype(basisCoeffs), ScalarViewType,  decltype(basisGradEWeights),
+        decltype(computedDofs), decltype(tagToOrdinal), decltype(orts), decltype(targetGradAtTargetGradEPoints)> functorTypeFace_HGRAD;
 
-    ScalarViewType targetGradAtTargetGradCubPoints("targetGradAtTargetGradCubPoints",numCells, numTargetGradCubPoints,faceDim);
-    ScalarViewType mComputedProjectionGrad("mNormalComputedProjection", numCells,numGradCubPoints,faceDim);
-
-    ordinal_type offsetBasisGrad = projStruct->getBasisDerivPointsRange(faceDim, iface).first;
-    ordinal_type offsetTargetGrad = projStruct->getTargetDerivPointsRange(faceDim, iface).first;
-    ScalarViewType targetGradCubWeights = projStruct->getTargetDerivEvalWeights(faceDim, iface);
-    ScalarViewType gradCubWeights = projStruct->getBasisDerivEvalWeights(faceDim, iface);
-
-    //Note: we are not considering the jacobian of the orientation map since it is simply a scalar term for the integrals and it does not affect the projection
-    for(ordinal_type ic=0; ic<numCells; ++ic)  {
-
-      orts(ic).getFaceOrientation(fOrt.data(), numFaces);
-
-      ordinal_type ort = fOrt(iface);
-      Impl::OrientationTools::getJacobianOfOrientationMap(ortJacobian, topoKey, ort);
-      for(ordinal_type j=0; j <faceCardinality; ++j) {
-        ordinal_type jdof = cellBasis->getDofOrdinal(faceDim, iface, j);
-        for(ordinal_type itan=0; itan <faceDim; ++itan) {
-          for(ordinal_type iq=0; iq <numGradCubPoints; ++iq) {
-            for(ordinal_type d=0; d <dim; ++d)
-              for(ordinal_type jtan=0; jtan <faceDim; ++jtan)
-                faceBasisGradAtGradCubPoints(ic,j,iq,itan) += refFaceTangents(d, jtan)*ortJacobian(jtan,itan)*basisGradAtGradCubPoints(ic,jdof,offsetBasisGrad+iq,d);
-            wBasisGradAtGradCubPoints(ic,j,iq,itan) = faceBasisGradAtGradCubPoints(ic,j,iq,itan) * gradCubWeights(iq);
-          }
-          for(ordinal_type iq=0; iq <numTargetGradCubPoints; ++iq) {
-            for(ordinal_type d=0; d <dim; ++d)
-              for(ordinal_type jtan=0; jtan <faceDim; ++jtan)
-                faceBasisGradAtTargetGradCubPoints(ic,j,iq,itan) += refFaceTangents(d, jtan)*ortJacobian(jtan,itan)*basisGradAtTargetGradCubPoints(ic,jdof,offsetTargetGrad+iq,d);
-            wBasisGradBasisAtTargetGradCubPoints(ic,j,iq,itan) = faceBasisGradAtTargetGradCubPoints(ic,j,iq,itan) * targetGradCubWeights(iq);
-          }
-        }
-      }
-
-      for(ordinal_type d=0; d <dim; ++d)
-        for(ordinal_type itan=0; itan <faceDim; ++itan)
-          for(ordinal_type iq=0; iq <numTargetGradCubPoints; ++iq)
-            for(ordinal_type jtan=0; jtan <faceDim; ++jtan)
-              targetGradAtTargetGradCubPoints(ic,iq,itan) += refFaceTangents(d, jtan)*ortJacobian(jtan,itan)*targetGradAtGradEvalPoints(ic,offsetTargetGrad+iq,d);
-
-      for(ordinal_type j=0; j <numVertexDofs+numEdgeDofs; ++j) {
-        ordinal_type jdof = computedDofs(j);
-        for(ordinal_type iq=0; iq <numGradCubPoints; ++iq)
-          for(ordinal_type d=0; d <dim; ++d)
-            for(ordinal_type itan=0; itan <faceDim; ++itan)
-              for(ordinal_type jtan=0; jtan <faceDim; ++jtan)
-                mComputedProjectionGrad(ic,iq,itan) -=  basisCoeffs(ic,jdof)*refFaceTangents(d, jtan)*ortJacobian(jtan,itan)*basisGradAtGradCubPoints(ic,jdof,offsetBasisGrad+iq,d);
-      }
-    }
+    Kokkos::parallel_for(policy, functorTypeFace_HGRAD(basisCoeffs, negPartialProjGrad, faceBasisGradAtGradEPoints,
+        basisGradAtBasisGradEPoints, basisGradEWeights, wBasisGradAtGradEPoints, targetGradEWeights,
+        basisGradAtTargetGradEPoints,wBasisGradBasisAtTargetGradEPoints, computedDofs, tagToOrdinal,
+        orts,targetGradTanAtTargetGradEPoints,targetGradAtTargetGradEPoints,
+        refFacesTangents, faceCardinality, offsetBasisGrad,
+        offsetTargetGrad, numVertexDofs+numEdgeDofs, numFaces, faceDim,
+        dim, iface, topoKey));
 
     ScalarViewType faceMassMat_("faceMassMat_", numCells, faceCardinality, faceCardinality),
         faceRhsMat_("rhsMat_", numCells, faceCardinality);
 
-    FunctionSpaceTools<SpT >::integrate(faceMassMat_, faceBasisGradAtGradCubPoints, wBasisGradAtGradCubPoints);
+    FunctionSpaceTools<SpT >::integrate(faceMassMat_, faceBasisGradAtGradEPoints, wBasisGradAtGradEPoints);
 
-    FunctionSpaceTools<SpT >::integrate(faceRhsMat_, targetGradAtTargetGradCubPoints, wBasisGradBasisAtTargetGradCubPoints);
-    FunctionSpaceTools<SpT >::integrate(faceRhsMat_, mComputedProjectionGrad, wBasisGradAtGradCubPoints,true);
+    FunctionSpaceTools<SpT >::integrate(faceRhsMat_, targetGradTanAtTargetGradEPoints, wBasisGradBasisAtTargetGradEPoints);
+    FunctionSpaceTools<SpT >::integrate(faceRhsMat_, negPartialProjGrad, wBasisGradAtGradEPoints,true);
 
     Kokkos::View<funValsValueType**,Kokkos::LayoutLeft,host_space_type> faceMassMat("faceMassMat", faceCardinality,faceCardinality);
     Kokkos::View<funValsValueType**,Kokkos::LayoutLeft,host_space_type> faceRhsMat("faceRhsMat",faceCardinality, 1);
 
-    Teuchos::LAPACK<ordinal_type,funValsValueType> lapack;
-    ordinal_type info = 0;
-    for(ordinal_type ic=0; ic<numCells; ++ic)  {
+    typedef Kokkos::DynRankView<scalarType, Kokkos::LayoutRight, SpT> WorkArrayViewType;
+    ScalarViewType t_("t",numCells, faceCardinality);
+    WorkArrayViewType w_("w",numCells, faceCardinality);
 
-      for(ordinal_type i=0; i<faceCardinality; ++i) {
-        faceRhsMat(i,0) = faceRhsMat_(ic,i);
-        for(ordinal_type j=0; j<faceCardinality; ++j)
-          faceMassMat(i,j) = faceMassMat_(ic,i,j);
-      }
+    auto faceDofs = Kokkos::subview(tagToOrdinal, faceDim, iface, Kokkos::ALL());
 
-      lapack.POSV('U', faceCardinality, 1,
-          faceMassMat.data(),
-          faceMassMat.stride_1(),
-          faceRhsMat.data(),
-          faceRhsMat.stride_1(),
-          &info);
-
-      if (info) {
-        std::stringstream ss;
-        ss << ">>> ERROR (Intrepid::ProjectionTools::getBasisCoeffs): "
-            << "LAPACK return with error code: "
-            << info;
-        INTREPID2_TEST_FOR_EXCEPTION( true, std::runtime_error, ss.str().c_str() );
-      }
-
-      for(ordinal_type i=0; i<faceCardinality; ++i){
-        ordinal_type face_dof = cellBasis->getDofOrdinal(faceDim, iface, i);
-        basisCoeffs(ic,face_dof) = faceRhsMat(i,0);
-      }
-    }
+    ElemSystem faceSystem("faceSystem", false);
+    faceSystem.solve(basisCoeffs, faceMassMat_, faceRhsMat_, t_, w_, faceDofs, faceCardinality);
 
     for(ordinal_type i=0; i<faceCardinality; ++i)
-      computedDofs(computedDofsCount++) = cellBasis->getDofOrdinal(faceDim, iface, i);
+      computedDofs(computedDofsCount++) = tagToOrdinal(faceDim, iface, i);
   }
 
   ordinal_type numElemDofs = cellBasis->getDofCount(dim,0);
   if(numElemDofs>0) {
 
-    range_type cellGradPointsRange = projStruct->getTargetDerivPointsRange(dim, 0);
+    range_type cellTargetGradEPointsRange = targetGradEPointsRange(dim, 0);
+    ordinal_type numTargetGradEPoints = range_size(cellTargetGradEPointsRange);
+    ordinal_type numGradEPoints = range_size(basisGradEPointsRange(dim, 0));
+    ordinal_type offsetBasisGrad = basisGradEPointsRange(dim, 0).first;
+    ordinal_type offsetTargetGrad = cellTargetGradEPointsRange.first;
+    auto targetGradEWeights = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getTargetDerivEvalWeights(dim,0));
+    auto basisGradEWeights = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getBasisDerivEvalWeights(dim,0));
 
-    ordinal_type numTargetGradCubPoints = projStruct->getNumTargetDerivEvalPoints(dim,0);
-    ordinal_type numGradCubPoints = projStruct->getNumBasisDerivEvalPoints(dim,0);
+    ScalarViewType cellBasisGradAtGradEPoints("internalBasisGradAtEPoints",numCells,numElemDofs, numGradEPoints, dim);
+    ScalarViewType negPartialProjGrad("negPartialProjGrad", numCells, numGradEPoints, dim);
+    ScalarViewType wBasisGradAtGradEPoints("wBasisGradAtGradEPoints",numCells,numElemDofs, numGradEPoints,dim);
+    ScalarViewType wBasisGradBasisAtTargetGradEPoints("wBasisGradAtTargetGradEPoints",numCells,numElemDofs, numTargetGradEPoints,dim);
 
-    ScalarViewType internalBasisGradAtGradCubPoints("internalBasisGradAtCubPoints",numCells,numElemDofs, numGradCubPoints, dim);
-    ScalarViewType internalBasisGradAtTargetGradCubPoints("weightedBasisGradAtGradCubPoints",numCells,numElemDofs, numTargetGradCubPoints,dim);
-    ScalarViewType mComputedProjectionGrad("mComputedProjectionGrad", numCells, numGradCubPoints, dim);
-
-    ScalarViewType targetGradCubWeights = projStruct->getTargetDerivEvalWeights(dim, 0);
-    ScalarViewType cubGradWeights = projStruct->getBasisDerivEvalWeights(dim, 0);
-    ordinal_type offsetBasisGrad = projStruct->getBasisDerivPointsRange(dim, 0).first;
-    ordinal_type offsetTargetGrad = projStruct->getTargetDerivPointsRange(dim, 0).first;
-
-
-    ScalarViewType wBasisGradAtGradCubPoints("weightedBasisGradAtGradCubPoints",numCells,numElemDofs, numGradCubPoints,dim);
-    ScalarViewType wBasisGradBasisAtTargetGradCubPoints("weightedBasisGradAtTargetGradCubPoints",numCells,numElemDofs, numTargetGradCubPoints,dim);
-    for(ordinal_type j=0; j <numElemDofs; ++j) {
-      ordinal_type idof = cellBasis->getDofOrdinal(dim, 0, j);
-      for(ordinal_type ic=0; ic<numCells; ++ic) {
-        for(ordinal_type d=0; d <dim; ++d) {
-          for(ordinal_type iq=0; iq <numGradCubPoints; ++iq) {
-            internalBasisGradAtGradCubPoints(ic,j,iq,d) = basisGradAtGradCubPoints(ic,idof,offsetBasisGrad+iq,d);
-            wBasisGradAtGradCubPoints(ic,j,iq,d) = internalBasisGradAtGradCubPoints(ic,j,iq,d) * cubGradWeights(iq);
-          }
-          for(ordinal_type iq=0; iq <numTargetGradCubPoints; ++iq) {
-            internalBasisGradAtTargetGradCubPoints(ic,j,iq,d) = basisGradAtTargetGradCubPoints(ic,idof,offsetTargetGrad+iq,d);
-            wBasisGradBasisAtTargetGradCubPoints(ic,j,iq,d )= internalBasisGradAtTargetGradCubPoints(ic,j,iq,d) * targetGradCubWeights(iq);
-          }
-        }
-      }
-    }
-
-    for(ordinal_type j=0; j <numVertexDofs+numEdgeDofs+numFaceDofs; ++j) {
-      ordinal_type jdof = computedDofs(j);
-      for(ordinal_type iq=0; iq <numGradCubPoints; ++iq)
-        for(ordinal_type ic=0; ic<numCells; ++ic)  {
-          for(ordinal_type d=0; d <dim; ++d) {
-            mComputedProjectionGrad(ic,iq,d) -=  basisCoeffs(ic,jdof)*basisGradAtGradCubPoints(ic,jdof,offsetBasisGrad+iq,d);
-          }
-        }
-    }
-
-
+    auto elemDof = Kokkos::subview(tagToOrdinal, dim, 0, Kokkos::ALL());
+    typedef ComputeBasisCoeffsOnCells_HGRAD<decltype(basisCoeffs), ScalarViewType,  decltype(basisGradEWeights), decltype(computedDofs), decltype(elemDof)> functorTypeCell_HGRAD;
+    Kokkos::parallel_for(policy, functorTypeCell_HGRAD(basisCoeffs, negPartialProjGrad,  cellBasisGradAtGradEPoints,
+        basisGradAtBasisGradEPoints, basisGradEWeights,  wBasisGradAtGradEPoints,   targetGradEWeights,
+        basisGradAtTargetGradEPoints, wBasisGradBasisAtTargetGradEPoints, computedDofs, elemDof,
+        dim, numElemDofs, offsetBasisGrad, offsetTargetGrad, numVertexDofs+numEdgeDofs+numFaceDofs));
     ScalarViewType cellMassMat_("cellMassMat_", numCells, numElemDofs, numElemDofs),
         cellRhsMat_("rhsMat_", numCells, numElemDofs);
 
-    FunctionSpaceTools<SpT >::integrate(cellMassMat_, internalBasisGradAtGradCubPoints, wBasisGradAtGradCubPoints);
-    FunctionSpaceTools<SpT >::integrate(cellRhsMat_, Kokkos::subview(targetGradAtGradEvalPoints,Kokkos::ALL(),cellGradPointsRange,Kokkos::ALL()), wBasisGradBasisAtTargetGradCubPoints);
-    FunctionSpaceTools<SpT >::integrate(cellRhsMat_, mComputedProjectionGrad, wBasisGradAtGradCubPoints, true);
+    FunctionSpaceTools<SpT >::integrate(cellMassMat_, cellBasisGradAtGradEPoints, wBasisGradAtGradEPoints);
+    FunctionSpaceTools<SpT >::integrate(cellRhsMat_, Kokkos::subview(targetGradAtTargetGradEPoints,Kokkos::ALL(),cellTargetGradEPointsRange,Kokkos::ALL()), wBasisGradBasisAtTargetGradEPoints);
+    FunctionSpaceTools<SpT >::integrate(cellRhsMat_, negPartialProjGrad, wBasisGradAtGradEPoints, true);
 
-    Kokkos::View<funValsValueType**,Kokkos::LayoutLeft,host_space_type> cellMassMat("cellMassMat", numElemDofs,numElemDofs);
-    Kokkos::View<funValsValueType**,Kokkos::LayoutLeft,host_space_type> cellRhsMat("cellRhsMat",numElemDofs, 1);
+    typedef Kokkos::DynRankView<scalarType, Kokkos::LayoutRight, SpT> WorkArrayViewType;
+    ScalarViewType t_("t",numCells, numElemDofs);
+    WorkArrayViewType w_("w",numCells, numElemDofs);
 
-    Teuchos::LAPACK<ordinal_type,funValsValueType> lapack;
-    ordinal_type info = 0;
-    for(ordinal_type ic=0; ic<numCells; ++ic) {
-      for(ordinal_type i=0; i<numElemDofs; ++i) {
-        cellRhsMat(i,0) = cellRhsMat_(ic,i);
-        for(ordinal_type j=0; j<numElemDofs; ++j)
-          cellMassMat(i,j) = cellMassMat_(ic,i,j);
-      }
-
-      lapack.POSV('U', numElemDofs, 1,
-          cellMassMat.data(),
-          cellMassMat.stride_1(),
-          cellRhsMat.data(),
-          cellRhsMat.stride_1(),
-          &info);
-
-      for(ordinal_type i=0; i<numElemDofs; ++i){
-        ordinal_type idof = cellBasis->getDofOrdinal(dim, 0, i);
-        basisCoeffs(ic,idof) = cellRhsMat(i,0);
-      }
-
-      if (info) {
-        std::stringstream ss;
-        ss << ">>> ERROR (Intrepid::ProjectionTools::getBasisCoeffs): "
-            << "LAPACK return with error code: "
-            << info;
-        INTREPID2_TEST_FOR_EXCEPTION( true, std::runtime_error, ss.str().c_str() );
-      }
-    }
+    auto cellDofs = Kokkos::subview(tagToOrdinal, dim, 0, Kokkos::ALL());
+    ElemSystem cellSystem("cellSystem", true);
+    cellSystem.solve(basisCoeffs, cellMassMat_, cellRhsMat_, t_, w_, cellDofs, numElemDofs);
   }
 }
 }

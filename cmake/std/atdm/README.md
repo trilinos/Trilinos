@@ -83,7 +83,7 @@ typical order and format of this string is:
 but any order of these keywords is supported.  Also, the keywords are
 case-insensitive All of these keywords, except for `<compiler>` (which can be
 `default`), are optional.  All of the other keywords have default values.  Any
-strings not recognised as keywords are ignored.  (Therefore, mispelling the
+strings not recognized as keywords are ignored.  (Therefore, misspelling the
 name of a keyword is ignored.) See some examples of build name strings
 [below](#build-name-examples).
 
@@ -138,7 +138,7 @@ functionality could be supported in the future if needed.
 **`<compiler>`:** The following **lower case** `<build-name>` keywords specify
 the `<COMPILER>` variable include:
 
-* `default`: Auto-select the default compiler and version for the given system 
+* `default`: Auto-select the default compiler and version for the given system
 * `gnu`: Use the GCC compilers (`<COMPILER>=GNU`)
   - `gnu-4.9.3`: Use GNU GCC 4.9.3 compilers
   - `gnu-7.2.0`: Use GNU GCC 7.2.0 compilers
@@ -170,7 +170,7 @@ Carefully examine STDOUT after running `source cmake/std/atdm/load-env
 <a name="kokkos_thread"/>
 
 **`<kokkos_thread>`:** The following `<build-name>` keywords determine the
-Kokkos threading / backend model variable `<NODE_TYPE>` (default is
+Kokkos threading / back-end model variable `<NODE_TYPE>` (default is
 `<NODE_TYPE>=SERIAL` unless `<COMPILER>=CUDA`):
 
 * `serial`: Use no host threading (`NODE_TYPE=SERIAL`, DEFAULT)
@@ -241,7 +241,7 @@ checking etc.):
 * `debug` or `dbg`: (`<BUILD_TYPE>=DEBUG`, DEFAULT)
   * Set `CMAKE_BULD_TYPE=DEBUG` (i.e. `-O0 -g` compiler options)
   * Turn **ON** runtime debug checking
-  * NOTE: This build supports running in a debugger. 
+  * NOTE: This build supports running in a debugger.
 
 <a name="pt"/>
 
@@ -258,7 +258,7 @@ informational purposes.  The reason that a `<build-name>` string is defined in
 this form is that this can be used as the Jenkins job name and the Trilinos
 build name that shows up on CDash.  This makes it very easy to define the
 configuration options and maintain the Jenkins build jobs.  The combination
-`<COMPILER>-<BUILD_TYPE>-<NODE_TYPE>-<KOKKOS_ACRCH>` is used to define the
+`<COMPILER>-<BUILD_TYPE>-<NODE_TYPE>-<KOKKOS_ARCH>` is used to define the
 CMake variable `ATDM_BUILD_NAME_KEYS_STR` that is used to uniquely define a
 build on a particular system and to manage a system of tweaks for each of the
 supported builds (see below).
@@ -328,7 +328,7 @@ which after installation can then be sourced by clients using:
 
 ```
 $ source <install-prefix>/load_matching_env.sh
-``` 
+```
 
 Sourcing this file loads the compilers, MPI, and TPLs and sets up the various
 `ATDM_CONG_` environment variables described above.  It also sets the
@@ -358,6 +358,31 @@ value that might be passed in or set otherwise.  (This is a `FORCE`D cache
 variable set on `CMAKE_INSTALL_PREFIX` so this value will appear in the
 `CMakeCache.txt` file.)
 
+If permissions need to be set on a base dir of `CMAKE_INSTALL_PREFIX`, then one
+can set a base dir of this through:
+
+```
+$ export ATDM_CONFIG_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR=<install-base-dir>
+```
+
+where `<install-base-dir>` must be a base directory of `<install-prefix>`.  If
+not explicitly set in this way, then it is assumed to be whatever the set
+value is for `CMAKE_INSTALL_PREFIX`.
+
+By default, every file and directory created during the install under
+`<install-base-dir>` will be made explicitly group read/write and "other"
+readable.  (That can be changed by setting CMake Cache vars starting with
+`Trilinos_MAKE_INSTALL_`.)
+
+The owning group for everything under `<install-base-dir>` can be set using:
+
+```
+$ export ATDM_CONFIG_MAKE_INSTALL_GROUP=<owning-group>
+```
+
+Otherwise, the owning group will be set by the group sticky bit or by the
+default user's group (on systems that don't support the group sticky bit).
+
 The name of the installed script `load_matching_env.sh` can be changed at
 configure-time using the CMake cache variable:
 
@@ -365,7 +390,7 @@ configure-time using the CMake cache variable:
   -D ATDM_INSTALLED_ENV_LOAD_SCRIPT_NAME=<load-matching-env-sh> \
 ```
 
-whereif the CMake cache variable `ATDM_INSTALLED_ENV_LOAD_SCRIPT_NAME` is not
+where if the CMake cache variable `ATDM_INSTALLED_ENV_LOAD_SCRIPT_NAME` is not
 specified, then it is given the name `load_matching_env.sh` by default.
 
 
@@ -588,7 +613,7 @@ That will install the enabled Trilinos packages under:
   <full-build-name>/SRC_AND_BUILD/BUILD/install/
 ```
 
-For more details, see the help documentation in the scirpt itself
+For more details, see the help documentation in the script itself
 [`ctest-s-local-test-driver.sh`](https://github.com/trilinos/Trilinos/blob/develop/cmake/std/atdm/ctest-s-local-test-driver.sh). Also,
 see
 [TRIBITS_CTEST_DRIVER()](https://tribits.org/doc/TribitsDevelopersGuide.html#determining-what-testing-related-actions-are-performed-tribits-ctest-driver)
@@ -609,6 +634,7 @@ example, skip the configure, skip the build, skip running tests, etc.
 * <a href="#waterman">waterman</a>
 * <a href="#ats-2">ATS-2</a>
 * <a href="#astra-vanguard-arm-system">ASTRA (Vanguard ARM System)</a>
+* <a href="#ats-1">ATS-1</a>
 
 
 ### ride/white
@@ -754,6 +780,8 @@ $ salloc -N1 --time=0:20:00 --account=<YOUR_WCID> \
 
 ### mutrino
 
+The default environment on mutrino is now ats1. Please see 
+<a href="#ats-1">ATS-1</a>.
 Once logged on to 'mutrino', one can directly configure and build on the login
 node (being careful not to overload the node) using the `mutrino` env.  But to
 run the tests, one must run on the compute nodes using the `salloc` command.
@@ -764,7 +792,7 @@ For example, to configure, build and run the tests for say `MueLu` on
 ```
 $ cd <some_build_dir>/
 
-$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh intel-opt-openmp
+$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh mutrino-intel-opt-openmp
 
 $ cmake \
   -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake \
@@ -896,7 +924,7 @@ if that directory exists.
 
 ### Spack RHEL Environment
 
-The env 'spack-rhel' should work on any RedHad Enterprise Linux (RHEL) (and
+The env 'spack-rhel' should work on any Red Hat Enterprise Linux (RHEL) (and
 perhaps many other Linux systems) that have the SNL ATDM Spack modules
 installed on them.  See the [installation
 documentation](https://gitlab.sandia.gov/atdm/atdm-spack-scripts/blob/master/README.md).
@@ -1006,7 +1034,7 @@ command to run if using a CUDA build.  For example, to configure, build and
 run the tests for the default `cuda-debug` build for say `MueLu` (after
 cloning Trilinos on the `develop` branch) one would do:
 
-```
+```bash
 $ cd <some_build_dir>/
 
 $ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh cuda-debug
@@ -1019,13 +1047,20 @@ $ cmake \
 
 $ make NP=20
 
-$ bsub -x -Is -n 20 ctest -j4
+$ bsub -x -Is -n 20 ctest -j2
 ```
 
 **NOTE:** While the above example shows loading the environment, configuring
 and building on the login node, one can also do these on the compute nodes as
 well.  In fact, that is what the CTest -S drivers do in automated testing on
-'waterman'.
+'waterman'.  To get an interactive compute node, do:
+
+```
+$ bsub -x -Is -n 20 bash
+```
+
+Then one can configure, build, and run tests interactively on that compute
+node.
 
 Note that one can also run the same build and tests using the <a
 href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
@@ -1040,11 +1075,11 @@ $ bsub -x -Is -n 20 \
 
 ### ATS-2
 
-Once logged on a supported ATS-2 system like 'vortex' (SRN), one can either
-build and configure on a login node or a compute node.  But one must always
-run the tests from the launch node (allocated using 'bsub').  Make sure to
-setup SSH keys as described in `/opt/VORTEX_INTRO` before trying to do
-anything.
+Once logged on a supported ATS-2 system (called system 'ats2') like 'vortex'
+(SRN), one can either build and configure on a login node or a compute node.
+But one must always run the tests from the launch node (allocated using
+'bsub').  Make sure to setup SSH keys as described in `/opt/VORTEX_INTRO`
+before trying to do anything.
 
 For example, to configure, build and run the tests for the default
 `cuda-debug` build for `Tpetra` (after cloning Trilinos on the 'develop'
@@ -1064,7 +1099,7 @@ $ cmake -GNinja \
 # Get a node allocation and log on to launch node
 $ bsub -J <job-name> -W 6:00 -Is bash
 
-# Build on the allocated compute node 
+# Build on the allocated compute node
 $ lrun -n 1 make NP=32
 
 # Run the test suite from the launch node
@@ -1155,7 +1190,7 @@ $ ./checkin-test-atdm.sh <buildname0> <buildname1> ... \
   bash`.  That takes up CPU resources on the launch node that need to be used
   by all users of the cluster to run individual MPI jobs.
 - The `lrun` command is just a simpler wrapper around `jsrun` that is meant to
-  be more similar to the SLURM `srun` comamnd.  That is, `lrun -n <N> <cmnd>`
+  be more similar to the SLURM `srun` command.  That is, `lrun -n <N> <cmnd>`
   should behave similarly to `jsrun --np <N> <cmnd>`.
 - One can directly log into any compute node (independent of if that node is
   allocated to you or not).  That can be useful to examine a running job but
@@ -1177,7 +1212,7 @@ $ cd <some_build_dir>/
 # List available environments
 $ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh help
 
-# Load hsw env and configure on the login node
+# Load arm env and configure on the login node
 $ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh arm-20.0
 $ cmake -G Ninja \
   -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake \
@@ -1244,6 +1279,65 @@ fail.)
   shell directly on a compute node using `srun ... bash' an` then run `mpirun`
   from there.
 
+### ATS-1
+
+Once logged onto a supported ATS-1 system (called system 'ats1')
+system like 'mutrino', one can build and configure on a login node.
+
+To configure, build and run the tests for the default `intel-19` build for
+`Kokkos` (after cloning Trilinos on the 'develop' branch), run the following
+from a login node on 'mutrino':
+
+```bash
+$ cd <some_build_dir>/
+
+# List available environments
+$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh ats1-help
+
+# Load HSW env and configure on the login node
+$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh intel-19
+$ cmake -G Ninja \
+  -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake \
+  -DTrilinos_ENABLE_TESTS=ON \
+  -DTrilinos_ENABLE_Tpetra=ON \
+  $TRILINOS_DIR
+
+$ make NP=8  # This is a shared node!
+
+# Get a node allocation and run ctest
+$ salloc -N 1 --time=2:00:00  -p short,batch --account=<YOUR_WCID> ctest -j1
+```
+
+One can also run tests in the background on a compute node using sbatch:
+```
+echo '#!/bin/bash' > do-test.sh
+echo 'ctest -j1' >> do-test.sh
+$ sbatch --output=do-test.out -N1 --time=2:00:00 -J ats1-do-test --account=<YOUR_WCID> do-test.sh
+```
+
+To drop to a compute node for an interactive session:
+```
+$ salloc -N1 --account=<YOUR_WCID>
+```
+
+To use the `ctest-s-local-test-driver.sh` script, one must set one's WCID
+account using:
+
+```
+$ export ATDM_CONFIG_WCID_ACCOUNT=<YOUR_WCID>
+```
+
+If `ATDM_CONFIG_WCID_ACCOUNT` is not set, then a default account will be used.
+(But if the user is not approved for that account, then the allocation will
+fail.)
+
+**NOTES:**
+- **IMPORTANT** Do not use anything but `ctest -j1` for running tests.
+- One cannot run more than one instance of srun at a time on a given compute node.
+- To get information on <YOUR_WCID> used above, there is a WC tool tab on
+  computing.sandia.gov.
+- CTest runs everything using the `srun` command and this must be run from
+  inside a `salloc` or `sbatch` allocation.
 
 ## Building and installing Trilinos for ATDM Applications
 
@@ -1379,7 +1473,7 @@ used to define a default file name:
 
 If that file exists, then it is set as the default for the cmake cache
 variable `ATDM_TWEAKS_FILES` (prints to STDOUT) and that file is included and
-its options are set as CMake cache varaibles.  For example, this is what the
+its options are set as CMake cache variables.  For example, this is what the
 output looks like for a build on 'waterman':
 
 ```
@@ -1533,7 +1627,7 @@ IF (Trilinos_ENABLE_DEBUG)
   ...
 ENDIF()
 
-IF (ATDM_COMPILER STREQUAL "GNU-7.2.0")  # See <system_name>/enviornment.sh
+IF (ATDM_COMPILER STREQUAL "GNU-7.2.0")  # See <system_name>/environment.sh
   # Disables for all non-CUDA GNU 7.2.0 builds
   ...
 ENDIF()
@@ -1560,14 +1654,22 @@ ENDIF()
 
 Any CMake variable that has been set in the `ATDMDevEnvSettings.cmake` file
 before these tweak files are included can be used in if-logic but the
-recommended variables are `ATDM_COMPILER` (uppercase),
-`ATDM_KOKKOS_ARCH_JOB_NAME_KEYS` (uppercase seprated by `_`), `ATDM_NODE_TYPE`
-(values `CUDA`, `OPENMP`, `SERIAL`), `ATDM_CUDA_RDC` (`ON`/`OFF`), `ATDM_FPIC`
-(`ON`/`OFF`), `ATDM_COMPLEX` (`ON`/`OFF`), `ATDM_SHARED_LIBS` (`ON`/`OFF`),
-`ATDM_CMAKE_BUILD_TYPE` (values `DEBUG`, `RELEASE`, and `RELEASE-DEBUG`),
-`Trilinos_ENABLE_DEBUG` (`ON`/`OFF`), and `ATDM_PT_PACKAGES` (`ON`/`OFF`).  No
-other variables should be used in if-logic in these files as other variables
-may change in the future.
+recommended variables are:
+
+* `ATDM_COMPILER` (uppercase)
+* `ATDM_KOKKOS_ARCH_JOB_NAME_KEYS` (uppercase and separated by `_`)
+* `ATDM_NODE_TYPE` (values `CUDA`, `OPENMP`, `SERIAL`)
+* `ATDM_KOKKOS_ARCH` (uppercase and separated by `,`)
+* `ATDM_CUDA_RDC` (`ON`/`OFF`)
+* `ATDM_FPIC` (`ON`/`OFF`)
+* `ATDM_COMPLEX` (`ON`/`OFF`),
+* `ATDM_SHARED_LIBS` (`ON`/`OFF`)
+* `ATDM_CMAKE_BUILD_TYPE` (values `DEBUG`, `RELEASE` and `RELEASE-DEBUG`)
+* `Trilinos_ENABLE_DEBUG` (`ON`/`OFF`)
+* `ATDM_PT_PACKAGES` (`ON`/`OFF`)
+
+No other variables should be used in if-logic in these files as other
+variables may change in the future.
 
 
 ### Disable a test for builds on all platforms
@@ -1604,7 +1706,7 @@ after the test was fixed.)
 The specific `cmake/std/atdm/<system-name>/` sub-directories and the systems
 they support are:
 
-* `cee-rhel6/`: CEE LANL RHEL6 systems with a CEE environment
+* `cee-rhel6/`: CEE LAN RHEL6 systems with a CEE environment
 
 * `mutrino/`: Supports SNL HPC machine 'mutrino'.
 

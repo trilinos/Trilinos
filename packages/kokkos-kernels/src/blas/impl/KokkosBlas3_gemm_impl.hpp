@@ -45,7 +45,8 @@
 #ifndef KOKKOS_BLAS3_GEMM_IMPL_HPP_
 #define KOKKOS_BLAS3_GEMM_IMPL_HPP_
 
-#include<Kokkos_Core.hpp>
+#include <Kokkos_Core.hpp>
+#include "KokkosKernels_Macros.hpp"
 
 #ifdef KOKKOS_ENABLE_CXX14
 #ifdef KOKKOS_COMPILER_GNU
@@ -401,16 +402,10 @@ void impl_team_gemm_block(const TeamHandle& team, const ViewTypeC& C, const View
   const int blockB1 = B.extent_int(1);
 #endif
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team,blockA0), [&] (const int i) {
-#if defined(__CUDA_ARCH__) || !defined(KOKKOS_ENABLE_OPENMP)
+#ifndef KOKKOSKERNELS_ENABLE_OMP_SIMD
     Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,blockB1/4), [&] (const int B_j) {
 #else
-  #if defined(KOKKOS_COMPILER_GNU)
-    #if (KOKKOS_COMPILER_GNU > 485 )
     #pragma omp simd
-    #endif
-  #else
-    #pragma omp simd
-  #endif
     for(int B_j=0; B_j<blockB1/4; B_j++) {
 #endif
       ScalarC C_ij0 = 0;
@@ -428,7 +423,7 @@ void impl_team_gemm_block(const TeamHandle& team, const ViewTypeC& C, const View
       C(i,B_j+blockB1/4) += C_ij1;
       C(i,B_j+2*blockB1/4) += C_ij2;
       C(i,B_j+3*blockB1/4) += C_ij3;
-#if defined(__CUDA_ARCH__) || !defined(KOKKOS_ENABLE_OPENMP)
+#ifndef KOKKOSKERNELS_ENABLE_OMP_SIMD
     });
 #else
     }

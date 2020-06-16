@@ -76,6 +76,7 @@
 #include "MueLu_GenericRFactory.hpp"
 #include "MueLu_LineDetectionFactory.hpp"
 #include "MueLu_MasterList.hpp"
+#include "MueLu_NotayAggregationFactory.hpp"
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_PatternFactory.hpp"
 #include "MueLu_PgPFactory.hpp"
@@ -168,6 +169,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetParameterList(const ParameterList& paramList) {
     Cycle_     = Hierarchy::GetDefaultCycle();
+    WCycleStartLevel_ = Hierarchy::GetDefaultCycleStartLevel();
     scalingFactor_= Teuchos::ScalarTraits<double>::one();
     blockSize_ = 1;
     dofOffset_ = 0;
@@ -292,6 +294,10 @@ namespace MueLu {
       Cycle_ = cycleMap[cycleType];
     }
 
+    if (paramList.isParameter("W cycle start level")) {
+      WCycleStartLevel_ = paramList.get<int>("W cycle start level");
+    }
+
     if (paramList.isParameter("coarse grid correction scaling factor"))
       scalingFactor_ = paramList.get<double>("coarse grid correction scaling factor");
 
@@ -322,22 +328,14 @@ namespace MueLu {
     // Set verbosity parameter
     VerbLevel oldVerbLevel = VerboseObject::GetDefaultVerbLevel();
     {
-      std::map<std::string, MsgType> verbMap;
-      verbMap["none"]    = None;
-      verbMap["low"]     = Low;
-      verbMap["medium"]  = Medium;
-      verbMap["high"]    = High;
-      verbMap["extreme"] = Extreme;
-      verbMap["test"]    = Test;
-
       MUELU_SET_VAR_2LIST(paramList, paramList, "verbosity", std::string, verbosityLevel);
-      verbosityLevel = lowerCase(verbosityLevel);
-
-      TEUCHOS_TEST_FOR_EXCEPTION(verbMap.count(verbosityLevel) == 0, Exceptions::RuntimeError,
-                                 "Invalid verbosity level: \"" << verbosityLevel << "\"");
-      this->verbosity_ = verbMap[verbosityLevel];
+      this->verbosity_ = toVerbLevel(verbosityLevel);
       VerboseObject::SetDefaultVerbLevel(this->verbosity_);
     }
+
+    MUELU_SET_VAR_2LIST(paramList, paramList, "output filename", std::string, outputFilename);
+    if (outputFilename != "")
+      VerboseObject::SetMueLuOFileStream(outputFilename);
 
     // Detect if we need to transfer coordinates to coarse levels. We do that iff
     //  - we use "distance laplacian" dropping on some level, or
@@ -934,7 +932,7 @@ namespace MueLu {
 
     // Aggregation graph
     RCP<Factory> dropFactory;
-
+    
     if (MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "matlab")) {
 #ifdef HAVE_MUELU_MATLAB
       dropFactory = rcp(new SingleLevelMatlabFactory());
@@ -971,7 +969,7 @@ namespace MueLu {
 
     // Aggregation scheme
     MUELU_SET_VAR_2LIST(paramList, defaultList, "aggregation: type", std::string, aggType);
-    TEUCHOS_TEST_FOR_EXCEPTION(!strings({"uncoupled", "coupled", "brick", "matlab"}).count(aggType),
+    TEUCHOS_TEST_FOR_EXCEPTION(!strings({"uncoupled", "coupled", "brick", "matlab","notay"}).count(aggType),
         Exceptions::RuntimeError, "Unknown aggregation algorithm: \"" << aggType << "\". Please consult User's Guide.");
     #ifndef HAVE_MUELU_MATLAB
     if (aggType == "matlab")
@@ -996,6 +994,7 @@ namespace MueLu {
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 2a",           bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 2b",           bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 3",            bool, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: phase2a include root",      bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: preserve Dirichlet points", bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: error on nodes with no on-rank neighbors", bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: phase3 avoid singletons", bool, aggParams);
@@ -1015,6 +1014,9 @@ namespace MueLu {
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: brick x size", int, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: brick y size", int, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: brick z size", int, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: brick x Dirichlet", bool, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: brick y Dirichlet", bool, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: brick z Dirichlet", bool, aggParams);
       aggFactory->SetParameterList(aggParams);
 
       if (levelID > 1) {
@@ -1024,6 +1026,18 @@ namespace MueLu {
         aggFactory->SetFactory("Coordinates", this->GetFactoryManager(levelID-1)->GetFactory("Coordinates"));
       }
     }
+    else if (aggType == "notay") {
+      aggFactory = rcp(new NotayAggregationFactory());
+      ParameterList aggParams;
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: pairwise: size",             int, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: pairwise: tie threshold",    double, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: Dirichlet threshold",        double, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: ordering",                   std::string, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: compute aggregate qualities",bool, aggParams);
+      aggFactory->SetParameterList(aggParams);
+      aggFactory->SetFactory("DofsPerNode", manager.GetFactory("Graph"));
+      aggFactory->SetFactory("Graph", manager.GetFactory("Graph"));
+    }
 #ifdef HAVE_MUELU_MATLAB
     else if(aggType == "matlab") {
       ParameterList aggParams = paramList.sublist("aggregation: params");
@@ -1031,6 +1045,8 @@ namespace MueLu {
       aggFactory->SetParameterList(aggParams);
     }
 #endif
+
+
     manager.SetFactory("Aggregates", aggFactory);
 
     // Coarse map
@@ -1931,6 +1947,11 @@ namespace MueLu {
         hieraList.remove("fuse prolongation and update");
       }
 
+      if (hieraList.isParameter("number of vectors")) {
+        this->numDesiredLevel_ = hieraList.get<int>("number of vectors");
+        hieraList.remove("number of vectors");
+      }
+
       if (hieraList.isSublist("matvec params"))
         this->matvecParams_ = Teuchos::parameterList(hieraList.sublist("matvec params"));
 
@@ -1951,44 +1972,18 @@ namespace MueLu {
         this->Cycle_ = cycleMap[cycleType];
       }
 
-      //TODO Move this its own class or MueLu::Utils?
-      std::map<std::string, MsgType> verbMap;
-      //for developers
-      verbMap["errors"]         = Errors;
-      verbMap["warnings0"]      = Warnings0;
-      verbMap["warnings00"]     = Warnings00;
-      verbMap["warnings1"]      = Warnings1;
-      verbMap["perfWarnings"]   = PerfWarnings;
-      verbMap["runtime0"]       = Runtime0;
-      verbMap["runtime1"]       = Runtime1;
-      verbMap["runtimeTimings"] = RuntimeTimings;
-      verbMap["noTimeReport"]   = NoTimeReport;
-      verbMap["parameters0"]    = Parameters0;
-      verbMap["parameters1"]    = Parameters1;
-      verbMap["statistics0"]    = Statistics0;
-      verbMap["statistics1"]    = Statistics1;
-      verbMap["timings0"]       = Timings0;
-      verbMap["timings1"]       = Timings1;
-      verbMap["timingsByLevel"] = TimingsByLevel;
-      verbMap["external"]       = External;
-      verbMap["debug"]          = Debug;
-      verbMap["test"]           = Test;
-      //for users and developers
-      verbMap["none"]           = None;
-      verbMap["low"]            = Low;
-      verbMap["medium"]         = Medium;
-      verbMap["high"]           = High;
-      verbMap["extreme"]        = Extreme;
+      if (hieraList.isParameter("W cycle start level")) {
+        this->WCycleStartLevel_ = hieraList.get<int>("W cycle start level");
+      }
+
       if (hieraList.isParameter("verbosity")) {
         std::string vl = hieraList.get<std::string>("verbosity");
-        vl = lowerCase(vl);
         hieraList.remove("verbosity");
-        //TODO Move this to its own class or MueLu::Utils?
-        if (verbMap.find(vl) != verbMap.end())
-          this->verbosity_ = verbMap[vl];
-        else
-          TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::ParameterListInterpreter():: invalid verbosity level");
+        this->verbosity_ = toVerbLevel(vl);
       }
+
+      if (hieraList.isParameter("output filename"))
+        VerboseObject::SetMueLuOFileStream(hieraList.get<std::string>("output filename"));
 
       if (hieraList.isParameter("dependencyOutputLevel"))
         this->graphOutputLevel_ = hieraList.get<int>("dependencyOutputLevel");
@@ -2299,6 +2294,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupHierarchy(Hierarchy& H) const {
     H.SetCycle(Cycle_);
+    H.SetCycleStartLevel(WCycleStartLevel_);
     H.SetProlongatorScalingFactor(scalingFactor_);
     HierarchyManager::SetupHierarchy(H);
   }

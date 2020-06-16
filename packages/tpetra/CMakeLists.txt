@@ -60,16 +60,6 @@ IF (Tpetra_ENABLE_CUDA AND (NOT Kokkos_ENABLE_CUDA))
   MESSAGE (FATAL_ERROR "You set Tpetra_ENABLE_CUDA:BOOL=ON, but Kokkos_ENABLE_CUDA is OFF.  TPL_ENABLE_CUDA and Kokkos_ENABLE_CUDA must both be ON before you may set Tpetra_ENABLE_CUDA:BOOL=ON.")
 ENDIF ()
 
-# Kokkos and Tpetra require C++11 as of the 12.0 release.
-#
-# I left a special case for CUDA because I'm not sure whether TriBITS
-# counts C++11 as enabled in that case; please feel free to revise if
-# you know better.
-ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_CXX11)
-IF (NOT ${PROJECT_NAME}_ENABLE_CXX11 AND NOT Tpetra_ENABLE_CUDA)
-  MESSAGE(FATAL_ERROR "As of Trilinos 12.0, C++11 is REQUIRED when building Kokkos and its downstream packages, which include Tpetra.  You MUST enable C++11 when building these packages.  Trilinos should enable this by default, if your C++11 compiler supports C++11 (that is, if it's not too old).  If you set ${PROJECT_NAME}_ENABLE_CXX11=OFF, then you are disabling C++11.  DON'T DO THAT if you want to build Kokkos or its downstream packages, including Tpetra.  If you aren't happy about that, then you need to disable Kokkos explicitly, by setting ${PROJECT_NAME}_ENABLE_Kokkos=OFF.  This WILL disable Tpetra and its downstream packages.")
-ENDIF ()
-
 # Checks that only matter if building with CUDA enabled.
 IF (Tpetra_ENABLE_CUDA)
   # As of 10 Aug 2017, Tpetra requires CUDA >= 7.5.
@@ -96,7 +86,7 @@ IF (Tpetra_ENABLE_CUDA)
   #  SET(TpetraCore_FOUND_CUDA_LAMBDA_FLAG ON)
   #ENDIF ()
   #IF (NOT TpetraCore_FOUND_CUDA_LAMBDA_FLAG)
-  #  MESSAGE (FATAL_ERROR "If building with CUDA, Tpetra and downstream packages require, at least with CUDA_VERSION >= 7.5 and <= 9.0, that you add \"--expt-extended-lambda\" to either Trilinos_CXX11_FLAGS or CMAKE_CXX_FLAGS.  You must also set Kokkos_ENABLE_CUDA_LAMBDA:BOOL=ON, if it is not already ON by default.")
+  #  MESSAGE (FATAL_ERROR "If building with CUDA, Tpetra and downstream packages require, at least with CUDA_VERSION >= 7.5 and <= 9.0, that you add \"--expt-extended-lambda\" to CMAKE_CXX_FLAGS.  You must also set Kokkos_ENABLE_CUDA_LAMBDA:BOOL=ON, if it is not already ON by default.")
   #ENDIF ()
 
   IF (NOT DEFINED Kokkos_ENABLE_CUDA_LAMBDA OR NOT Kokkos_ENABLE_CUDA_LAMBDA)

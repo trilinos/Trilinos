@@ -144,6 +144,7 @@ namespace MueLu {
 
     //!
     static CycleType             GetDefaultCycle()                                     { return MasterList::getDefault<std::string>("cycle type") == "V" ? VCYCLE : WCYCLE; }
+    static int                   GetDefaultCycleStartLevel()                           { return MasterList::getDefault<int>("W cycle start level"); }
     static bool                  GetDefaultImplicitTranspose()                         { return MasterList::getDefault<bool>("transpose: use implicit");  }
     static bool                  GetDefaultFuseProlongationAndUpdate()                 { return MasterList::getDefault<bool>("fuse prolongation and update"); }
     static Xpetra::global_size_t GetDefaultMaxCoarseSize()                             { return MasterList::getDefault<int>("coarse: max size");   }
@@ -252,6 +253,8 @@ namespace MueLu {
 
     //! Supports VCYCLE and WCYCLE types.
     void      SetCycle(CycleType Cycle)        { Cycle_ = Cycle; }
+
+    void      SetCycleStartLevel(int cycleStart)        { WCycleStartLevel_ = cycleStart; }
 
     //! Specify damping factor alpha such that x = x + alpha*P*c, where c is the coarse grid correction.
     void SetProlongatorScalingFactor(double scalingFactor) { scalingFactor_ = scalingFactor; }
@@ -382,6 +385,9 @@ namespace MueLu {
 
     //! V- or W-cycle
     CycleType Cycle_;
+
+    //! Level at which to start W-cycle
+    int WCycleStartLevel_;
 
     //! Scaling factor to be applied to coarse grid correction.
     double scalingFactor_;

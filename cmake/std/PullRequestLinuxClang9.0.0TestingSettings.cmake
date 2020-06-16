@@ -13,7 +13,7 @@
 
 #set (TPL_ENABLE_Netcdf OFF CACHE BOOL "Turn off for Clang")
 
-#set (TPL_Netcdf_LIBRARIES "-L$ENV{BOOST_ROOT}/lib;-L$ENV{NETCDF_ROOT}/lib;-L$ENV{NETCDF_ROOT}/lib;-L$ENV{PNETCDF_ROOT}/lib;-L$ENV{HDF5_ROOT}/lib;$ENV{BOOST_ROOT}/lib/libboost_program_options.a;$ENV{BOOST_ROOT}/lib/libboost_system.a;$ENV{NETCDF_ROOT}/lib/libnetcdf.a;$ENV{PNETCDF_ROOT}/lib/libpnetcdf.a;$ENV{HDF5_ROOT}/lib/libhdf5_hl.a;$ENV{HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl" CACHE STRING "Set by default for CUDA PR testing")
+#set (TPL_Netcdf_LIBRARIES "-L$ENV{SEMS_NETCDF_ROOT}/lib;-L$ENV{SEMS_HDF5_ROOT}/lib;$ENV{SEMS_NETCDF_ROOT}/lib/libnetcdf.a;$ENV{SEMS_NETCDF_ROOT}/lib/libpnetcdf.a;$ENV{SEMS_HDF5_ROOT}/lib/libhdf5_hl.a;$ENV{SEMS_HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl;-lcurl" CACHE STRING "Set by default for CUDA PR testing")
 
 set (MPI_EXEC_PRE_NUMPROCS_FLAGS "--bind-to;none" CACHE STRING "Set by default for PR testing")
 # NOTE: The above is a workaround for the problem of having threads on MPI

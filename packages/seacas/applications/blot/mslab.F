@@ -1,33 +1,8 @@
-C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
-C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C
-C Redistribution and use in source and binary forms, with or without
-C modification, are permitted provided that the following conditions are
-C met:
-C
-C     * Redistributions of source code must retain the above copyright
-C       notice, this list of conditions and the following disclaimer.
-C
-C     * Redistributions in binary form must reproduce the above
-C       copyright notice, this list of conditions and the following
-C       disclaimer in the documentation and/or other materials provided
-C       with the distribution.
-C     * Neither the name of NTESS nor the names of its
-C       contributors may be used to endorse or promote products derived
-C       from this software without specific prior written permission.
-C
-C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+C 
+C See packages/seacas/LICENSE for details
 
 C=======================================================================
       SUBROUTINE MSLAB (A, NEWSET, NVWTIM, IPTIMS, TIMES,
@@ -161,7 +136,7 @@ C   --   Uses CHLSIZ, DBORD0, DVIEW0, DVIEW, WVIEW of /LAYOUT/
       INTEGER BLKCOL(0:NELBLK)
       REAL DLEGND(KTOP)
 
-      LOGICAL PLTGTG, PLTSTG, MPVIEW, MPORT2, LDUM
+      LOGICAL PLTGTG, PLTSTG, PLTSTG1, MPVIEW, MPORT2, LDUM
       LOGICAL GRABRT
       INTEGER NUMMOD, NDEFVW, IXVW
 
@@ -286,7 +261,7 @@ C   --Set the top and bottom of the remaining legend area
       DLEGND(KBOT) = DBOT
 
 C   --Get software character flag for current device
-      CALL GRGPAR ('SOFTCHAR', 0, SOFTCH, STRING)
+      CALL GRGPARD ('SOFTCHAR', 0, SOFTCH, STRING)
 
 C   --Magnification factor
 
@@ -500,9 +475,9 @@ C   --Reset coordinate system
       YISCOP = (.NOT. YISSYM) .AND. (MSHDEF(4) .NE. 'NONE')
 
       IF (.NOT. DOAXIS(1)) THEN
-         LDUM = PLTSTG (KXNUMS, 0.0)
-         LDUM = PLTSTG (KYNUMS, 0.0)
-         LDUM = PLTSTG (KTICSZ, 0.0)
+         LDUM = PLTSTG1 (KXNUMS, 0.0)
+         LDUM = PLTSTG1 (KYNUMS, 0.0)
+         LDUM = PLTSTG1 (KTICSZ, 0.0)
       END IF
 
 C   --Compute tick-interval parameters
@@ -552,8 +527,8 @@ C   --Set up axis length
       DXALEN = DAVIEW(KRGT) - DAVIEW(KLFT)
       DYALEN = DAVIEW(KTOP) - DAVIEW(KBOT)
 
-      LDUM = PLTSTG (KXLENG, DXALEN)
-      LDUM = PLTSTG (KYLENG, DYALEN)
+      LDUM = PLTSTG1 (KXLENG, DXALEN)
+      LDUM = PLTSTG1 (KYLENG, DYALEN)
 
 C   --Set up axis minimum, maximum, and tick intervals
 
@@ -586,18 +561,18 @@ C   --Set up axis minimum, maximum, and tick intervals
 C         --Set up axes labeling
 
             IF (YISCOP .AND. TOPVW(IVIEW)) THEN
-               LDUM = PLTSTG (KXNUMS, 0.0)
-               LDUM = PLTSTG (KXLABS, 0.0)
+               LDUM = PLTSTG1 (KXNUMS, 0.0)
+               LDUM = PLTSTG1 (KXLABS, 0.0)
             ELSE
-               IF (DOAXIS(1)) LDUM = PLTSTG (KXNUMS, SZNUM)
-               LDUM = PLTSTG (KXLABS, SZLAB)
+               IF (DOAXIS(1)) LDUM = PLTSTG1 (KXNUMS, SZNUM)
+               LDUM = PLTSTG1 (KXLABS, SZLAB)
             END IF
             IF (XISCOP .AND. RGTVW(IVIEW)) THEN
-               LDUM = PLTSTG (KYNUMS, 0.0)
-               LDUM = PLTSTG (KYLABS, 0.0)
+               LDUM = PLTSTG1 (KYNUMS, 0.0)
+               LDUM = PLTSTG1 (KYLABS, 0.0)
             ELSE
-               IF (DOAXIS(1)) LDUM = PLTSTG (KYNUMS, SZNUM)
-               LDUM = PLTSTG (KYLABS, SZLAB)
+               IF (DOAXIS(1)) LDUM = PLTSTG1 (KYNUMS, SZNUM)
+               LDUM = PLTSTG1 (KYLABS, SZLAB)
             END IF
 
 C         --Set the axis start
@@ -613,8 +588,8 @@ C         --Set the axis start
                DYASTA = DVIEW(KBOT,2)
             END IF
 
-            LDUM = PLTSTG (KXORIG, DXASTA)
-            LDUM = PLTSTG (KYORIG, DYASTA)
+            LDUM = PLTSTG1 (KXORIG, DXASTA)
+            LDUM = PLTSTG1 (KYORIG, DYASTA)
 
 C         --Draw the axes
 

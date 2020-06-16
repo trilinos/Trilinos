@@ -1,34 +1,8 @@
-// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//
-//     * Neither the name of NTESS nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+// See packages/seacas/LICENSE for details
 
 #include "io_info.h"
 #include <Ioss_Hex8.h>
@@ -58,12 +32,12 @@ namespace {
 
   void info_sidesets(Ioss::Region &region, const Info::Interface &interFace);
   void info_coordinate_frames(Ioss::Region &region);
+  void info_assemblies(Ioss::Region &region);
+  void info_region(Ioss::Region &region);
+  void info_blobs(Ioss::Region &region);
 
   void info_aliases(const Ioss::Region &region, const Ioss::GroupingEntity *ige, bool nl_pre,
                     bool nl_post);
-
-  void info_fields(const Ioss::GroupingEntity *ige, Ioss::Field::RoleType role,
-                   const std::string &header);
 
   void file_info(const Info::Interface &interFace);
   void group_info(Info::Interface &interFace);
@@ -217,8 +191,8 @@ namespace {
     if (!nb.is_nonglobal_nodeblock()) {
       info_aliases(region, &nb, false, true);
     }
-    info_fields(&nb, Ioss::Field::ATTRIBUTE, prefix + "\tAttributes: ");
-    info_fields(&nb, Ioss::Field::TRANSIENT, prefix + "\tTransient: ");
+    Ioss::Utils::info_fields(&nb, Ioss::Field::ATTRIBUTE, prefix + "\tAttributes: ");
+    Ioss::Utils::info_fields(&nb, Ioss::Field::TRANSIENT, prefix + "\tTransient: ");
   }
 
   void info_nodeblock(Ioss::Region &region, const Info::Interface &interFace)
@@ -256,7 +230,8 @@ namespace {
       fmt::print("{:14n} cells, {:14n} nodes ", num_cell, num_node);
 
       info_aliases(region, sb, true, false);
-      info_fields(sb, Ioss::Field::TRANSIENT, "\n\tTransient:  ");
+      Ioss::Utils::info_fields(sb, Ioss::Field::TRANSIENT, "\n\tTransient:  ");
+      Ioss::Utils::info_fields(sb, Ioss::Field::REDUCTION, "\n\tTransient (Reduction):  ", "\t");
       info_nodeblock(region, sb->get_node_block(), interFace, "\t");
       fmt::print("\n");
 
@@ -268,7 +243,15 @@ namespace {
       }
       if (!sb->m_boundaryConditions.empty()) {
         fmt::print("\tBoundary Conditions:\n");
-        for (const auto &bc : sb->m_boundaryConditions) {
+        // NOTE: The sort here is just to make io_info more useful for regression testing.
+        //       With the sort, we get more reproducable output.  For now, only needed for BC...
+        auto sb_bc = sb->m_boundaryConditions;
+        std::sort(sb_bc.begin(), sb_bc.end(),
+                  [](const Ioss::BoundaryCondition &a, const Ioss::BoundaryCondition &b) {
+                    return a.m_bcName < b.m_bcName;
+                  });
+
+        for (const auto &bc : sb_bc) {
           fmt::print("{}\n", bc);
         }
       }
@@ -278,6 +261,47 @@ namespace {
                    "\t              Maximum X,Y,Z = {:12.4e}\t{:12.4e}\t{:12.4e}\n",
                    bbox.xmin, bbox.ymin, bbox.zmin, bbox.xmax, bbox.ymax, bbox.zmax);
       }
+    }
+  }
+
+  void info_region(Ioss::Region &region)
+  {
+    fmt::print("\nRegion '{}' (global)\n", region.name());
+    Ioss::Utils::info_property(&region, Ioss::Property::ATTRIBUTE,
+                               "\tAttributes (Reduction): ", "\t");
+    Ioss::Utils::info_fields(&region, Ioss::Field::REDUCTION, "\tTransient  (Reduction):  ", "\t");
+  }
+
+  void info_assemblies(Ioss::Region &region)
+  {
+    const auto &assem = region.get_assemblies();
+    for (auto as : assem) {
+      fmt::print("\n{} id: {:6d}, contains: {} member(s) of type {:>10s}.\n\tMembers: ", name(as),
+                 id(as), as->member_count(), as->contains_string());
+      for (const auto mem : as->get_members()) {
+        fmt::print("'{}', ", mem->name());
+      }
+
+      info_aliases(region, as, true, false);
+      fmt::print("\n");
+      Ioss::Utils::info_property(as, Ioss::Property::ATTRIBUTE, "\tAttributes (Reduction): ", "\t");
+      Ioss::Utils::info_fields(as, Ioss::Field::REDUCTION, "\tTransient  (Reduction):  ", "\t");
+    }
+  }
+
+  void info_blobs(Ioss::Region &region)
+  {
+    const auto &blobs = region.get_blobs();
+    for (auto blob : blobs) {
+      fmt::print("\n{} id: {:6d}, contains: {} item(s).\n", name(blob), id(blob),
+                 blob->entity_count());
+
+      info_aliases(region, blob, true, false);
+      fmt::print("\n");
+      Ioss::Utils::info_property(blob, Ioss::Property::ATTRIBUTE,
+                                 "\tAttributes (Reduction): ", "\t");
+      Ioss::Utils::info_fields(blob, Ioss::Field::TRANSIENT, "\tTransient:  ", "\t");
+      Ioss::Utils::info_fields(blob, Ioss::Field::REDUCTION, "\tTransient  (Reduction):  ", "\t");
     }
   }
 
@@ -293,7 +317,9 @@ namespace {
                  id(eb), type, num_elem, num_attrib);
 
       info_aliases(region, eb, true, false);
-      info_fields(eb, Ioss::Field::ATTRIBUTE, "\n\tAttributes: ");
+      fmt::print("\n");
+      Ioss::Utils::info_fields(eb, Ioss::Field::ATTRIBUTE, "\n\tAttributes: ");
+      Ioss::Utils::info_property(eb, Ioss::Property::ATTRIBUTE, "\tAttributes (Reduction): ", "\t");
 
       if (interFace.adjacencies()) {
         std::vector<std::string> blocks;
@@ -303,8 +329,8 @@ namespace {
           fmt::print("{}  ", block);
         }
       }
-      info_fields(eb, Ioss::Field::TRANSIENT, "\n\tTransient:  ");
-      fmt::print("\n");
+      Ioss::Utils::info_fields(eb, Ioss::Field::TRANSIENT, "\n\tTransient:  ");
+      Ioss::Utils::info_fields(eb, Ioss::Field::REDUCTION, "\n\tTransient  (Reduction):  ");
 
       if (interFace.compute_bbox()) {
         Ioss::AxisAlignedBoundingBox bbox = eb->get_bounding_box();
@@ -327,7 +353,7 @@ namespace {
                  id(eb), type, num_edge, num_attrib);
 
       info_aliases(region, eb, false, true);
-      info_fields(eb, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
+      Ioss::Utils::info_fields(eb, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
 
 #if 0
         std::vector<std::string> blocks;
@@ -337,7 +363,8 @@ namespace {
           fmt::print("{}  ", block);
         }
 #endif
-      info_fields(eb, Ioss::Field::TRANSIENT, "\n\tTransient:  ");
+      Ioss::Utils::info_fields(eb, Ioss::Field::TRANSIENT, "\n\tTransient:  ");
+      Ioss::Utils::info_fields(eb, Ioss::Field::REDUCTION, "\n\tTransient (Reduction):  ");
       fmt::print("\n");
     }
   }
@@ -354,7 +381,7 @@ namespace {
                  id(eb), type, num_face, num_attrib);
 
       info_aliases(region, eb, false, true);
-      info_fields(eb, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
+      Ioss::Utils::info_fields(eb, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
 
 #if 0
         std::vector<std::string> blocks;
@@ -364,7 +391,8 @@ namespace {
           fmt::print("{}  ", block);
         }
 #endif
-      info_fields(eb, Ioss::Field::TRANSIENT, "\n\tTransient:  ");
+      Ioss::Utils::info_fields(eb, Ioss::Field::TRANSIENT, "\n\tTransient:  ");
+      Ioss::Utils::info_fields(eb, Ioss::Field::REDUCTION, "\n\tTransient (Reduction):  ");
       fmt::print("\n");
     }
   }
@@ -383,7 +411,8 @@ namespace {
 #endif
       }
       info_aliases(region, fs, true, false);
-      info_fields(fs, Ioss::Field::TRANSIENT, "\n\tTransient: ");
+      Ioss::Utils::info_fields(fs, Ioss::Field::TRANSIENT, "\n\tTransient: ");
+      Ioss::Utils::info_fields(fs, Ioss::Field::REDUCTION, "\n\tTransient (Reduction):  ");
       if (interFace.adjacencies()) {
         std::vector<std::string> blocks;
         fs->block_membership(blocks);
@@ -401,7 +430,8 @@ namespace {
         fmt::print("\t{}, {:8n} sides, {:3d} attributes, {:8n} distribution factors.\n", name(fb),
                    count, num_attrib, num_dist);
         info_df(fb, "\t\t");
-        info_fields(fb, Ioss::Field::TRANSIENT, "\t\tTransient: ");
+        Ioss::Utils::info_fields(fb, Ioss::Field::TRANSIENT, "\t\tTransient: ");
+        Ioss::Utils::info_fields(fb, Ioss::Field::REDUCTION, "\t\tTransient (Reduction):  ");
       }
     }
   }
@@ -417,8 +447,9 @@ namespace {
                  name(ns), id(ns), count, num_attrib, num_dist);
       info_aliases(region, ns, false, true);
       info_df(ns, "\t");
-      info_fields(ns, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
-      info_fields(ns, Ioss::Field::TRANSIENT, "\tTransient:  ");
+      Ioss::Utils::info_fields(ns, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
+      Ioss::Utils::info_fields(ns, Ioss::Field::TRANSIENT, "\tTransient:  ");
+      Ioss::Utils::info_fields(ns, Ioss::Field::REDUCTION, "\tTransient (Reduction):  ");
     }
   }
 
@@ -432,8 +463,9 @@ namespace {
                  num_attrib);
       info_aliases(region, ns, false, true);
       info_df(ns, "\t");
-      info_fields(ns, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
-      info_fields(ns, Ioss::Field::TRANSIENT, "\tTransient:  ");
+      Ioss::Utils::info_fields(ns, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
+      Ioss::Utils::info_fields(ns, Ioss::Field::TRANSIENT, "\tTransient:  ");
+      Ioss::Utils::info_fields(ns, Ioss::Field::REDUCTION, "\tTransient (Reduction):  ");
     }
   }
 
@@ -447,8 +479,9 @@ namespace {
                  num_attrib);
       info_aliases(region, fs, false, true);
       info_df(fs, "\t");
-      info_fields(fs, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
-      info_fields(fs, Ioss::Field::TRANSIENT, "\tTransient:  ");
+      Ioss::Utils::info_fields(fs, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
+      Ioss::Utils::info_fields(fs, Ioss::Field::TRANSIENT, "\tTransient:  ");
+      Ioss::Utils::info_fields(fs, Ioss::Field::REDUCTION, "\tTransient (Reduction):  ");
     }
   }
 
@@ -460,8 +493,9 @@ namespace {
       fmt::print("\n{} id: {:6d}, {:8n} elements.\n", name(es), id(es), count);
       info_aliases(region, es, false, true);
       info_df(es, "\t");
-      info_fields(es, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
-      info_fields(es, Ioss::Field::TRANSIENT, "\tTransient:  ");
+      Ioss::Utils::info_fields(es, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
+      Ioss::Utils::info_fields(es, Ioss::Field::TRANSIENT, "\tTransient:  ");
+      Ioss::Utils::info_fields(es, Ioss::Field::REDUCTION, "\tTransient (Reduction):  ");
     }
   }
 
@@ -505,43 +539,6 @@ namespace {
     }
   }
 
-  void info_fields(const Ioss::GroupingEntity *ige, Ioss::Field::RoleType role,
-                   const std::string &header)
-  {
-    Ioss::NameList fields;
-    ige->field_describe(role, &fields);
-
-    if (fields.empty()) {
-      return;
-    }
-
-    if (!header.empty()) {
-      fmt::print("{}\n\t", header);
-    }
-    // Iterate through results fields and transfer to output
-    // database...
-    // Get max width of a name...
-    int max_width = 0;
-    for (const auto &field_name : fields) {
-      max_width = max_width > (int)field_name.length() ? max_width : field_name.length();
-    }
-
-    auto width   = Ioss::Utils::term_width();
-    int  cur_out = 8; // Tab width...
-    for (const auto &field_name : fields) {
-      const Ioss::VariableType *var_type   = ige->get_field(field_name).raw_storage();
-      int                       comp_count = var_type->component_count();
-      fmt::print("{1:>{0}s}:{2}  ", max_width, field_name, comp_count);
-      cur_out += max_width + 4;
-      if (cur_out + max_width >= width) {
-        fmt::print("\n\t");
-        cur_out = 8;
-      }
-    }
-    if (!header.empty()) {
-      fmt::print("\n");
-    }
-  }
 } // namespace
 
 namespace Ioss {
@@ -599,6 +596,8 @@ namespace Ioss {
 
         if (!interFace.summary()) {
 
+          info_region(region);
+          info_assemblies(region);
           info_nodeblock(region, interFace);
           info_edgeblock(region);
           info_faceblock(region);
@@ -611,6 +610,7 @@ namespace Ioss {
           info_elementsets(region);
 
           info_sidesets(region, interFace);
+          info_blobs(region);
           info_coordinate_frames(region);
         }
       }

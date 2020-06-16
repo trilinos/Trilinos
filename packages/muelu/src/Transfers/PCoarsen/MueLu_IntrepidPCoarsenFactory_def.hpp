@@ -543,6 +543,7 @@ void GenerateRepresentativeBasisNodes(const Basis & basis, const SCFieldContaine
 
  basis.getValues(LoValues, ReferenceNodeLocations , Intrepid2::OPERATOR_VALUE);
 
+ Kokkos::fence(); // for kernel in getValues
 
 #if 0
   printf("** LoValues[%d,%d] **\n",(int)numFieldsLo,(int)numFieldsHi);
@@ -603,6 +604,8 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
   FC LoValues_at_HiDofs("LoValues_at_HiDofs",numFieldsLo,numFieldsHi);
   lo_basis.getValues(LoValues_at_HiDofs, hi_DofCoords, Intrepid2::OPERATOR_VALUE);
 
+  Kokkos::fence(); // for kernel in getValues
+
   typedef typename Teuchos::ScalarTraits<SC>::halfPrecision SClo;
   typedef typename Teuchos::ScalarTraits<SClo>::magnitudeType MT;
   MT effective_zero = Teuchos::ScalarTraits<MT>::eps();
@@ -658,6 +661,8 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
   size_t numFieldsLo = lo_basis.getCardinality();
   FC LoValues_at_HiDofs("LoValues_at_HiDofs",numFieldsLo,numFieldsHi);
   lo_basis.getValues(LoValues_at_HiDofs, hi_DofCoords, Intrepid2::OPERATOR_VALUE);
+
+  Kokkos::fence(); // for kernel in getValues
 
   typedef typename Teuchos::ScalarTraits<SC>::halfPrecision SClo;
   typedef typename Teuchos::ScalarTraits<SClo>::magnitudeType MT;

@@ -91,7 +91,7 @@ namespace Stokhos {
     };
 
     //! Constructor
-    KOKKOS_INLINE_FUNCTION
+    KOKKOS_DEFAULTED_FUNCTION
     StaticFixedStorage() = default;
 
     //! Constructor
@@ -112,7 +112,7 @@ namespace Stokhos {
     StaticFixedStorage(const ordinal_type& sz, pointer v, bool owned) {}
 
     //! Copy constructor
-    KOKKOS_INLINE_FUNCTION
+    KOKKOS_DEFAULTED_FUNCTION
     StaticFixedStorage(const StaticFixedStorage& s) = default;
 
     //! Copy constructor
@@ -122,11 +122,11 @@ namespace Stokhos {
     }
 
     //! Destructor
-    KOKKOS_INLINE_FUNCTION
+    KOKKOS_DEFAULTED_FUNCTION
     ~StaticFixedStorage() = default;
 
     //! Assignment operator
-    KOKKOS_INLINE_FUNCTION
+    KOKKOS_DEFAULTED_FUNCTION
     StaticFixedStorage& operator=(const StaticFixedStorage& s) = default;
 
     //! Assignment operator
@@ -323,7 +323,7 @@ namespace Stokhos {
     };
 
     //! Constructor
-    KOKKOS_INLINE_FUNCTION
+    KOKKOS_DEFAULTED_FUNCTION
     StaticFixedStorage() = default;
 
     //! Constructor
@@ -344,7 +344,7 @@ namespace Stokhos {
     StaticFixedStorage(const ordinal_type& sz, pointer v, bool owned) {}
 
     //! Copy constructor
-    KOKKOS_INLINE_FUNCTION
+    KOKKOS_DEFAULTED_FUNCTION
     StaticFixedStorage(const StaticFixedStorage& s) = default;
 
     //! Copy constructor
@@ -354,11 +354,11 @@ namespace Stokhos {
     }
 
     //! Destructor
-    KOKKOS_INLINE_FUNCTION
+    KOKKOS_DEFAULTED_FUNCTION
     ~StaticFixedStorage() = default;
 
     //! Assignment operator
-    KOKKOS_INLINE_FUNCTION
+    KOKKOS_DEFAULTED_FUNCTION
     StaticFixedStorage& operator=(const StaticFixedStorage& s) = default;
 
     //! Assignment operator

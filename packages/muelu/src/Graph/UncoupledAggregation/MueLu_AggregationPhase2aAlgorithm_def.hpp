@@ -67,6 +67,7 @@ namespace MueLu {
 
     int minNodesPerAggregate = params.get<int>("aggregation: min agg size");
     int maxNodesPerAggregate = params.get<int>("aggregation: max agg size");
+    bool includeRootInAgg = params.get<bool>("aggregation: phase2a include root");
 
     const LO  numRows = graph.GetNodeNumVertices();
     const int myRank  = graph.GetComm()->getRank();
@@ -92,6 +93,8 @@ namespace MueLu {
         continue;
 
       aggSize = 0;
+      if (includeRootInAgg)
+        aggList[aggSize++] = rootCandidate;
 
       ArrayView<const LocalOrdinal> neighOfINode = graph.getNeighborVertices(rootCandidate);
 
@@ -116,7 +119,8 @@ namespace MueLu {
 
       // NOTE: ML uses a hardcoded value 3 instead of MinNodesPerAggregate
       if (aggSize > as<size_t>(minNodesPerAggregate) &&
-          aggSize > factor*numNeighbors) {
+          ((includeRootInAgg && aggSize-1 > factor*numNeighbors) ||
+           (!includeRootInAgg && aggSize > factor*numNeighbors))) {
         // Accept new aggregate
         // rootCandidate becomes the root of the newly formed aggregate
         aggregates.SetIsRoot(rootCandidate);

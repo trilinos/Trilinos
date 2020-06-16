@@ -1,33 +1,8 @@
-C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
-C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C
-C Redistribution and use in source and binary forms, with or without
-C modification, are permitted provided that the following conditions are
-C met:
-C
-C     * Redistributions of source code must retain the above copyright
-C       notice, this list of conditions and the following disclaimer.
-C
-C     * Redistributions in binary form must reproduce the above
-C       copyright notice, this list of conditions and the following
-C       disclaimer in the documentation and/or other materials provided
-C       with the distribution.
-C     * Neither the name of NTESS nor the names of its
-C       contributors may be used to endorse or promote products derived
-C       from this software without specific prior written permission.
-C
-C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+C 
+C See packages/seacas/LICENSE for details
 
 C=======================================================================
       SUBROUTINE MSSHOW (SHOTYP, NAMECO, NAMES, IDELB, IELBST,
@@ -394,7 +369,7 @@ C *** Active element control ***
 
       ELSE IF (SHOTYP .EQ. 'DEATH') THEN
          IF (NALVAR .GT. 0) THEN
-           CALL NUMSTR(1, 4, ALIVAL, RSTR(1), LSTR)
+           CALL NUMSTR1(4, ALIVAL, RSTR(1), LSTR)
             WRITE (*, 10150) 'Birth/Death variable: ',
      &       NAMES(NALVAR)(:LENSTR(NAMES(NALVAR))),
      *       ', Alive value = ', RSTR(1)(:LSTR)
@@ -410,7 +385,7 @@ C *** Multiple views control ***
             IF (XISSYM) THEN
                S1 = 'right'
                IF (LFTSYM) S1 = 'left'
-               CALL NUMSTR (1, 4, XAXSYM, RSTR(1), LSTR)
+               CALL NUMSTR1 (4, XAXSYM, RSTR(1), LSTR)
                WRITE (*, 10030) 'vertical', S1(:LENSTR(S1)),
      &            RSTR(1)(:LSTR)
             ELSE IF (MSHDEF(1) .NE. 'NONE') THEN
@@ -419,7 +394,7 @@ C *** Multiple views control ***
             IF (YISSYM) THEN
                S1 = 'top'
                IF (BOTSYM) S1 = 'bottom'
-               CALL NUMSTR (1, 4, YAXSYM, RSTR(1), LSTR)
+               CALL NUMSTR1 (4, YAXSYM, RSTR(1), LSTR)
                WRITE (*, 10030) 'horizontal', S1(:LENSTR(S1)),
      &            RSTR(1)(:LSTR)
             ELSE IF (MSHDEF(4) .NE. 'NONE') THEN
@@ -444,12 +419,12 @@ C *** Mesh control ***
          IF (.NOT. DEFOK) THEN
             WRITE (*, 10150) 'No displacement variables found'
          ELSE IF (DEFFAC .LT. 0.0) THEN
-            CALL NUMSTR (1, 4, DFAC, RSTR(1), L1)
+            CALL NUMSTR1(4, DFAC, RSTR(1), L1)
             WRITE (*, 10150) 'Displacement magnification factor = ',
      &         RSTR(1)(:L1), ', default not calculated'
          ELSE
-            CALL NUMSTR (1, 4, DFAC, RSTR(1), L1)
-            CALL NUMSTR (1, 4, DEFFAC, RSTR(2), L2)
+            CALL NUMSTR1(4, DFAC, RSTR(1), L1)
+            CALL NUMSTR1(4, DEFFAC, RSTR(2), L2)
             WRITE (*, 10150) 'Displacement magnification factor = ',
      &         RSTR(1)(:L1), ', Calculated = ', RSTR(2)(:L2)
          END IF
@@ -538,7 +513,7 @@ C -- WRITE MESH CENTERING INFORMATION
             CALL SQZSTR (STRING, LSTR)
             WRITE (*, 10150) STRING(:LSTR)
 C -- WRITE ZOOM RADIUS INFORMATION
-            CALL NUMSTR(1, 4, RADZM, RSTR, LSTR)
+            CALL NUMSTR1(4, RADZM, RSTR, LSTR)
             STRING = 'Mesh Zoom Radius: ' // RSTR(1)
             CALL SQZSTR (STRING, LSTR)
             WRITE (*, 10150) STRING(:LSTR)
@@ -549,7 +524,7 @@ C -- WRITE ZOOM RADIUS INFORMATION
             WRITE (*, 10150)
      &         'Mesh axis tick interval automatically scaled'
          ELSE
-            CALL NUMSTR (1, 4, TICMSH, RSTR(1), LSTR)
+            CALL NUMSTR1(4, TICMSH, RSTR(1), LSTR)
             WRITE (*, 10150) 'Mesh axis tick interval = ',
      &         RSTR(1)(:LSTR)
          END IF
@@ -581,7 +556,7 @@ C -- WRITE ZOOM RADIUS INFORMATION
              WRITE (*, 10170) ilit, (LITE(I,ILIT),I=1,4)
  155       continue
          end if
-         call numstr (1, 4, AMBIENT, RSTR, LSTR)
+         call numstr1(4, AMBIENT, RSTR, LSTR)
          write (STRING, 10140) 'Ambient Light Intensity is ',
      *     RSTR(1)(:LSTR)
          CALL SQZSTR (STRING, LSTR)
@@ -673,7 +648,7 @@ C -- WRITE ZOOM RADIUS INFORMATION
 C *** Display options ***
 
       ELSE IF (SHOTYP .EQ. 'VECSCL') THEN
-         CALL NUMSTR (1, 4, VECSCL, RSTR, LSTR)
+         CALL NUMSTR1(4, VECSCL, RSTR, LSTR)
          WRITE (*, 10150) 'Vector/symbol scale factor = ',
      &      RSTR(1)(:LSTR)
 

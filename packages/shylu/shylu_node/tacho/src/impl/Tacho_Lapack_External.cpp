@@ -2,7 +2,7 @@
 /// \brief Lapack wrapper
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "ShyLU_NodeTacho_config.h"
+#include "Tacho_config.h"
 #include "Tacho_Lapack_External.hpp"
 
 #include "Kokkos_Core.hpp"

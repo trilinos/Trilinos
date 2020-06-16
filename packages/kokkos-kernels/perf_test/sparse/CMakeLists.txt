@@ -59,6 +59,11 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
   )
 
 KOKKOSKERNELS_ADD_EXECUTABLE(
+  sparse_sptrsv_supernode
+  SOURCES KokkosSparse_sptrsv_supernode.cpp 
+  )
+
+KOKKOSKERNELS_ADD_EXECUTABLE(
   sparse_gs
   SOURCES KokkosSparse_gs.cpp
   )

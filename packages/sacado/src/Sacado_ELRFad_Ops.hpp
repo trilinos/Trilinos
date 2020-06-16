@@ -211,6 +211,13 @@ FAD_UNARYOP_MACRO(sqrt,
                   false,
                   expr.dx(i)/(value_type(2)* std::sqrt(expr.val())),
                   expr.fastAccessDx(i)/(value_type(2)* std::sqrt(expr.val())))
+FAD_UNARYOP_MACRO(safe_sqrt,
+                  SafeSqrtOp,
+                  std::sqrt(expr.val()),
+                  expr.val() == value_type(0.0) ? value_type(0.0) : value_type(value_type(0.5)*bar/std::sqrt(expr.val())),
+                  false,
+                  expr.val() == value_type(0.0) ? value_type(0.0) : value_type(expr.dx(i)/(value_type(2)*std::sqrt(expr.val()))),
+                  expr.val() == value_type(0.0) ? value_type(0.0) : value_type(expr.fastAccessDx(i)/(value_type(2)*std::sqrt(expr.val()))))
 FAD_UNARYOP_MACRO(cos,
                   CosOp,
                   std::cos(expr.val()),

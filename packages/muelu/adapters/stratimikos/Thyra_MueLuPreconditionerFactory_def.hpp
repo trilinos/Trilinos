@@ -48,7 +48,7 @@
 
 #include "Thyra_MueLuPreconditionerFactory_decl.hpp"
 
-#ifdef HAVE_MUELU_STRATIMIKOS
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
 
 namespace Thyra {
 

@@ -3,6 +3,7 @@
 
 #include "Compadre_Typedefs.hpp"
 #include "Compadre_GMLS.hpp"
+#include "Compadre_NeighborLists.hpp"
 
 namespace Compadre {
 
@@ -37,11 +38,12 @@ struct SubviewND {
             compadre_assert_debug(((size_t)((column_num+1)*block_size-1)<_data_in.extent(1)) 
                     && "Subview asked for column > second dimension of input data.");
         }
-        if ((size_t)((column_num+1)*block_size-1)<_data_in.extent(1))
+        if ((size_t)((column_num+1)*block_size-1)<_data_in.extent(1)) {
             return Kokkos::subview(_data_in, Kokkos::ALL, Kokkos::make_pair(column_num*block_size, (column_num+1)*block_size));
-        else
+        } else {
             compadre_assert_debug(((size_t)(block_size-1)<_data_in.extent(1)) && "Subview asked for column > second dimension of input data.");
             return Kokkos::subview(_data_in, Kokkos::ALL, Kokkos::make_pair(0,block_size));
+        }
     }
 
     T2 copyToAndReturnOriginalView() {
@@ -94,11 +96,11 @@ struct SubviewND<T, T2, enable_if_t<(T::rank<2)> >
 //! Handles either 2D or 1D views as input, and they can be on the host or the device.
 template <typename T>
 auto CreateNDSliceOnDeviceView(T sampling_input_data_host_or_device, bool scalar_as_vector_if_needed) -> SubviewND<decltype(Kokkos::create_mirror_view(
-                    device_execution_space::memory_space(), sampling_input_data_host_or_device)), T> {
+                    device_memory_space(), sampling_input_data_host_or_device)), T> {
 
     // makes view on the device (does nothing if already on the device)
     auto sampling_input_data_device = Kokkos::create_mirror_view(
-        device_execution_space::memory_space(), sampling_input_data_host_or_device);
+        device_memory_space(), sampling_input_data_host_or_device);
     Kokkos::deep_copy(sampling_input_data_device, sampling_input_data_host_or_device);
     Kokkos::fence();
 
@@ -154,19 +156,19 @@ public:
 
         
         // gather needed information for evaluation
-        auto neighbor_lists = _gmls->getNeighborLists();
-        auto alphas         = _gmls->getAlphas();
-        auto neighbor_lists_lengths = _gmls->getNeighborListsLengths();
+        auto nla = *(_gmls->getNeighborLists());
+        auto alphas = _gmls->getAlphas();
         auto sampling_data_device = sampling_subview_maker.get1DView(column_of_input);
         
+        auto alpha_index = _gmls->getAlphaIndexHost(target_index, alpha_input_output_component_index);
         // loop through neighbor list for this target_index
         // grabbing data from that entry of data
         Kokkos::parallel_reduce("applyAlphasToData::Device", 
-                Kokkos::RangePolicy<device_execution_space>(0,neighbor_lists_lengths(target_index)), 
+                Kokkos::RangePolicy<device_execution_space>(0,nla.getNumberOfNeighborsHost(target_index)), 
                 KOKKOS_LAMBDA(const int i, double& t_value) {
 
-            t_value += sampling_data_device(neighbor_lists(target_index, i+1))
-                *alphas(target_index, alpha_input_output_component_index, i);
+            t_value += sampling_data_device(nla.getNeighborDevice(target_index, i))
+                *alphas(alpha_index + i);
 
         }, value );
         Kokkos::fence();
@@ -183,7 +185,7 @@ public:
     //! components in order to fill a vector target or matrix target.
     //! 
     //! Assumptions on input data:
-    //! \param output_data_single_column       [out] - 1D Kokkos View (memory space must be device_execution_space::memory_space())
+    //! \param output_data_single_column       [out] - 1D Kokkos View (memory space must be device_memory_space())
     //! \param sampling_data_single_column      [in] - 1D Kokkos View (memory space must match output_data_single_column)
     //! \param lro                              [in] - Target operation from the TargetOperation enum
     //! \param sro                              [in] - Sampling functional from the SamplingFunctional enum
@@ -207,11 +209,12 @@ public:
         const int alpha_input_output_component_index2 = alpha_input_output_component_index;
 
         // gather needed information for evaluation
-        auto neighbor_lists = _gmls->getNeighborLists();
-        auto alphas         = _gmls->getAlphas();
+        auto gmls = *(_gmls);
+        auto nla = *(_gmls->getNeighborLists());
+        auto alphas = _gmls->getAlphas();
         auto prestencil_weights = _gmls->getPrestencilWeights();
 
-        const int num_targets = neighbor_lists.extent(0); // one row for each target
+        const int num_targets = nla.getNumberOfTargets();
 
         // make sure input and output views have same memory space
         compadre_assert_debug((std::is_same<typename view_type_data_out::memory_space, typename view_type_data_in::memory_space>::value) && 
@@ -231,14 +234,15 @@ public:
             const double previous_value = output_data_single_column(target_index);
 
             // loops over neighbors of target_index
+            auto alpha_index = gmls.getAlphaIndexDevice(target_index, alpha_input_output_component_index);
             double gmls_value = 0;
-            Kokkos::parallel_reduce(Kokkos::TeamThreadRange(teamMember, neighbor_lists(target_index,0)), [=](const int i, double& t_value) {
+            Kokkos::parallel_reduce(Kokkos::TeamThreadRange(teamMember, nla.getNumberOfNeighborsDevice(target_index)), [=](const int i, double& t_value) {
                 const double neighbor_varying_pre_T =  (weight_with_pre_T && vary_on_neighbor) ?
                     prestencil_weights(0, target_index, i, pre_transform_local_index, pre_transform_global_index)
                     : 1.0;
 
-                t_value += neighbor_varying_pre_T * sampling_data_single_column(neighbor_lists(target_index, i+1))
-                    *alphas(target_index, alpha_input_output_component_index, i);
+                t_value += neighbor_varying_pre_T * sampling_data_single_column(nla.getNeighborDevice(target_index, i))
+                            *alphas(alpha_index + i);
 
             }, gmls_value );
 
@@ -256,15 +260,16 @@ public:
 
             double staggered_value_from_targets = 0;
             double pre_T_staggered = 1.0;
+            auto alpha_index2 = gmls.getAlphaIndexDevice(target_index, alpha_input_output_component_index2);
             // loops over target_index for each neighbor for staggered approaches
             if (target_plus_neighbor_staggered_schema) {
-                Kokkos::parallel_reduce(Kokkos::TeamThreadRange(teamMember, neighbor_lists(target_index,0)), [=](const int i, double& t_value) {
+                Kokkos::parallel_reduce(Kokkos::TeamThreadRange(teamMember, nla.getNumberOfNeighborsDevice(target_index)), [=](const int i, double& t_value) {
                     const double neighbor_varying_pre_T_staggered =  (weight_with_pre_T && vary_on_neighbor) ?
                         prestencil_weights(1, target_index, i, pre_transform_local_index, pre_transform_global_index)
                         : 1.0;
 
-                    t_value += neighbor_varying_pre_T_staggered * sampling_data_single_column(neighbor_lists(target_index, 1))
-                        *alphas(target_index, alpha_input_output_component_index2, i);
+                    t_value += neighbor_varying_pre_T_staggered * sampling_data_single_column(nla.getNeighborDevice(target_index, 0))
+                                *alphas(alpha_index2 + i);
 
                 }, staggered_value_from_targets );
 
@@ -295,7 +300,7 @@ public:
     //! components in order to transform a vector target.
     //! 
     //! Assumptions on input data:
-    //! \param output_data_single_column       [out] - 1D Kokkos View (memory space must be device_execution_space::memory_space())
+    //! \param output_data_single_column       [out] - 1D Kokkos View (memory space must be device_memory_space())
     //! \param sampling_data_single_column      [in] - 1D Kokkos View (memory space must match output_data_single_column)
     //! \param local_dim_index                  [in] - For manifold problems, this is the local coordinate direction that sampling data may need to be transformed to before the application of GMLS
     //! \param global_dim_index                 [in] - For manifold problems, this is the global coordinate direction that sampling data can be represented in
@@ -306,8 +311,8 @@ public:
         auto global_dimensions = _gmls->getGlobalDimensions();
 
         // gather needed information for evaluation
-        auto neighbor_lists = _gmls->getNeighborLists();
-        const int num_targets = neighbor_lists.extent(0); // one row for each target
+        auto nla = *(_gmls->getNeighborLists());
+        const int num_targets = nla.getNumberOfTargets();
 
         auto tangent_directions = _gmls->getTangentDirections();
 
@@ -369,7 +374,7 @@ public:
         auto input_dimension_of_operator = _gmls->getInputDimensionOfOperation(lro);
 
         // gather needed information for evaluation
-        auto neighbor_lists = _gmls->getNeighborLists();
+        auto nla = *(_gmls->getNeighborLists());
 
         // determines the number of columns needed for output after action of the target functional
         int output_dimensions = _gmls->getOutputDimensionOfOperation(lro);
@@ -379,7 +384,7 @@ public:
 
         // create view on whatever memory space the user specified with their template argument when calling this function
         output_view_type target_output = createView<output_view_type>("output of target operation", 
-                neighbor_lists.extent(0) /* number of targets */, output_dimensions);
+                nla.getNumberOfTargets(), output_dimensions);
 
         // make sure input and output columns make sense under the target operation
         compadre_assert_debug(((output_dimensions==1 && output_view_type::rank==1) || output_view_type::rank!=1) && 
@@ -457,7 +462,7 @@ public:
 
             // create view on whatever memory space the user specified with their template argument when calling this function
             output_view_type ambient_target_output = createView<output_view_type>(
-                    "output of transform to ambient space", neighbor_lists.extent(0) /* number of targets */,
+                    "output of transform to ambient space", nla.getNumberOfTargets(),
                     global_dimensions);
             auto transformed_output_subview_maker = CreateNDSliceOnDeviceView(ambient_target_output, false); 
             // output will always be the correct dimension
@@ -487,7 +492,7 @@ public:
     //! components in order to fill a vector target or matrix target.
     //! 
     //! Assumptions on input data:
-    //! \param output_data_block_column       [out] - 2D Kokkos View (memory space must be device_execution_space::memory_space())
+    //! \param output_data_block_column       [out] - 2D Kokkos View (memory space must be device_memory_space())
     //! \param sampling_data_single_column      [in] - 1D Kokkos View (memory space must match output_data_single_column)
     //! \param sro                              [in] - Sampling functional from the SamplingFunctional enum
     //! \param target_index                     [in] - Target # user wants to reconstruct target functional at, corresponds to row number of neighbor_lists
@@ -504,7 +509,8 @@ public:
     template <typename view_type_data_out, typename view_type_data_in>
     void applyFullPolynomialCoefficientsBasisToDataSingleComponent(view_type_data_out output_data_block_column, view_type_data_in sampling_data_single_column, const SamplingFunctional sro, const int output_component_axis_1, const int output_component_axis_2, const int input_component_axis_1, const int input_component_axis_2, const int pre_transform_local_index = -1, const int pre_transform_global_index = -1, const int post_transform_local_index = -1, const int post_transform_global_index = -1, bool vary_on_target = false, bool vary_on_neighbor = false) const {
 
-        auto neighbor_lists = _gmls->getNeighborLists();
+        auto nla = *(_gmls->getNeighborLists());
+
         auto coefficient_matrix_dims = _gmls->getPolynomialCoefficientsDomainRangeSize();
         auto coefficient_memory_layout_dims = _gmls->getPolynomialCoefficientsMemorySize();
         auto coefficient_memory_layout_dims_device = 
@@ -517,7 +523,7 @@ public:
         auto tangent_directions = _gmls->getTangentDirections();
         auto prestencil_weights = _gmls->getPrestencilWeights();
 
-        const int num_targets = neighbor_lists.extent(0); // one row for each target
+        const int num_targets = nla.getNumberOfTargets();
 
         // make sure input and output views have same memory space
         compadre_assert_debug((std::is_same<typename view_type_data_out::memory_space, typename view_type_data_in::memory_space>::value) && 
@@ -550,13 +556,13 @@ public:
 
                 // loops over neighbors of target_index
                 double gmls_value = 0;
-                Kokkos::parallel_reduce(Kokkos::TeamThreadRange(teamMember, neighbor_lists(target_index,0)), [=](const int i, double& t_value) {
+                Kokkos::parallel_reduce(Kokkos::TeamThreadRange(teamMember, nla.getNumberOfNeighborsDevice(target_index)), [=](const int i, double& t_value) {
                     const double neighbor_varying_pre_T =  (weight_with_pre_T && vary_on_neighbor) ?
                         prestencil_weights(0, target_index, i, pre_transform_local_index, pre_transform_global_index)
                         : 1.0;
 
-                    t_value += neighbor_varying_pre_T * sampling_data_single_column(neighbor_lists(target_index, i+1))
-                        *Coeffs(j, i+input_component_axis_1*neighbor_lists(target_index,0));
+                    t_value += neighbor_varying_pre_T * sampling_data_single_column(nla.getNeighborDevice(target_index, i))
+                        *Coeffs(j, i+input_component_axis_1*nla.getNumberOfNeighborsDevice(target_index));
 
                 }, gmls_value );
 
@@ -576,13 +582,13 @@ public:
                 double pre_T_staggered = 1.0;
                 // loops over target_index for each neighbor for staggered approaches
                 if (target_plus_neighbor_staggered_schema) {
-                    Kokkos::parallel_reduce(Kokkos::TeamThreadRange(teamMember, neighbor_lists(target_index,0)), [=](const int i, double& t_value) {
+                    Kokkos::parallel_reduce(Kokkos::TeamThreadRange(teamMember, nla.getNumberOfNeighborsDevice(target_index)), [=](const int i, double& t_value) {
                         const double neighbor_varying_pre_T_staggered =  (weight_with_pre_T && vary_on_neighbor) ?
                             prestencil_weights(1, target_index, i, pre_transform_local_index, pre_transform_global_index)
                             : 1.0;
 
-                        t_value += neighbor_varying_pre_T_staggered * sampling_data_single_column(neighbor_lists(target_index, 1))
-                            *Coeffs(j, i+input_component_axis_1*neighbor_lists(target_index,0));
+                        t_value += neighbor_varying_pre_T_staggered * sampling_data_single_column(nla.getNeighborDevice(target_index, 0))
+                            *Coeffs(j, i+input_component_axis_1*nla.getNumberOfNeighborsDevice(target_index));
 
                     }, staggered_value_from_targets );
 
@@ -635,7 +641,7 @@ public:
         auto coefficient_matrix_dims = _gmls->getPolynomialCoefficientsDomainRangeSize();
 
         // gather needed information for evaluation
-        auto neighbor_lists = _gmls->getNeighborLists();
+        auto nla = *(_gmls->getNeighborLists());
 
         // determines the number of columns needed for output
         int output_dimensions = output_dimension_of_reconstruction_space;
@@ -643,7 +649,7 @@ public:
         const SamplingFunctional sro = _gmls->getDataSamplingFunctional();
 
         // create view on whatever memory space the user specified with their template argument when calling this function
-        output_view_type coefficient_output("output coefficients", neighbor_lists.extent(0) /* number of targets */, 
+        output_view_type coefficient_output("output coefficients", nla.getNumberOfTargets(), 
                 output_dimensions*_gmls->getPolynomialCoefficientsSize() /* number of coefficients */);
 
         // make sure input and output columns make sense under the target operation

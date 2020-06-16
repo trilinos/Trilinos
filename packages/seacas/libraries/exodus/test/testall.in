@@ -1,36 +1,9 @@
 #! /usr/bin/env bash
-# Copyright (c) 2005-2017 National Technology & Engineering Solutions
+# Copyright(C) 1999-2020 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
-#
-#     * Redistributions of source code must retain the above copyright
-#       notice, this list of conditions and the following disclaimer.
-#
-#     * Redistributions in binary form must reproduce the above
-#       copyright notice, this list of conditions and the following
-#       disclaimer in the documentation and/or other materials provided
-#       with the distribution.
-#
-#     * Neither the name of NTESS nor the names of its
-#       contributors may be used to endorse or promote products derived
-#       from this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
+# 
+# See packages/seacas/LICENSE for details
 
 # script to run all tests and compare them to saved dump files.
 #
@@ -70,7 +43,7 @@ ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v maximum
 
 echo "testrd - single precision read test..."
 echo "begin testrd" >> test.output
-${PREFIX} ${BINDIR}/testrd${SUFFIX} | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testrd.dmp | tee testrd.res
+${PREFIX} ${BINDIR}/testrd${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/testrd.dmp | tee testrd.res
 echo "end testrd" >> test.output
 
 echo "testcp_ss - single-to-single precision copy test..."
@@ -111,7 +84,7 @@ ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SR
 
 echo "testrdd - double precision read test..."
 echo "begin testrdd" >> test.output
-${PREFIX} ${BINDIR}/testrdd${SUFFIX} | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testrdd.dmp | tee testrdd.res
+${PREFIX} ${BINDIR}/testrdd${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/testrdd.dmp | tee testrdd.res
 echo "end testrdd" >> test.output
 
 echo "testcp_dd - double-to-double precision copy test..."
@@ -137,7 +110,7 @@ echo "testrd1 - single precision read test of a file with several side sets..."
 echo "testrd1 ... [Expect file create failure error, NOCLOBBER]"
 echo "testrd1 ... [Expect failure locating elem var 1 for elem block 12]"
 echo "begin testrd1" >> test.output
-${PREFIX} ${BINDIR}/testrd1${SUFFIX} | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testrd1.dmp | tee testrd1.res
+${PREFIX} ${BINDIR}/testrd1${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/testrd1.dmp | tee testrd1.res
 echo "end testrd1" >> test.output
 
 echo "testwt_ss - write files to test side sets..."
@@ -150,7 +123,7 @@ ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SR
 echo "testrd_ss - read test of a file with several side sets..."
 echo "testrd_ss ... [Expect warning for NULL sidesets 30 and 31]"
 echo "begin testrd_ss" >> test.output
-${PREFIX} ${BINDIR}/testrd_ss${SUFFIX} | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testrd_ss.dmp | tee testrd_ss.res
+${PREFIX} ${BINDIR}/testrd_ss${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/testrd_ss.dmp | tee testrd_ss.res
 echo "end testrd_ss" >> test.output
 
 echo "testwt2 - single precision write 2 files (simultaneously open) test..."
@@ -175,7 +148,7 @@ ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | grep -v maximu
 
 echo "testrd_nc - read x y z components of coordinates separately..."
 echo "begin testrd_nc" >> test.output
-${PREFIX} ${BINDIR}/testrd_nc${SUFFIX} | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testrd_nc.dmp | tee testrd_nc.res
+${PREFIX} ${BINDIR}/testrd_nc${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/testrd_nc.dmp | tee testrd_nc.res
 echo "end testrd" >> test.output
 
 echo "testwt-zeron - write file with zero nodes and elements..."
@@ -186,7 +159,7 @@ ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SR
 
 echo "testrd - read test of file with zero nodes and elements..."
 echo "begin testrd zero nodes" >> test.output
-${PREFIX} ${BINDIR}/testrd${SUFFIX} | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testrd_zeron.dmp | tee testrd_zeron.res
+${PREFIX} ${BINDIR}/testrd${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/testrd_zeron.dmp | tee testrd_zeron.res
 echo "end testrd zero nodes" >> test.output
 
 echo "testwt-zeroe - write file with zero elements..."
@@ -197,7 +170,7 @@ ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SR
 
 echo "testrd - read test of file with zero elements..."
 echo "begin testrd zero elements" >> test.output
-${PREFIX} ${BINDIR}/testrd${SUFFIX} | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testrd_zeroe.dmp | tee testrd_zeroe.res
+${PREFIX} ${BINDIR}/testrd${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/testrd_zeroe.dmp | tee testrd_zeroe.res
 echo "end testrd zero elements" >> test.output
 
 echo "testwt-one-attrib - read/write test of element attributes - read one at a time..."
@@ -213,7 +186,7 @@ ${NCDUMP} -d5,5 test-nsided.exo | grep -v version | grep -v _FillValue | ${DIFF}
 
 echo "testrd-nsided - read file with nsided elements..."
 echo "begin testrd-nsided" >> test.output
-${PREFIX} ${BINDIR}/testrd-nsided${SUFFIX} | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testrd-nsided.dmp | tee testrd-nsided.res
+${PREFIX} ${BINDIR}/testrd-nsided${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/testrd-nsided.dmp | tee testrd-nsided.res
 echo "end testrd-nsided" >> test.output
 
 echo "testwt-nfaced - write file with nfaced elements..."
@@ -224,7 +197,7 @@ ${NCDUMP} -d5,5 test-nfaced.exo | grep -v version | grep -v _FillValue | ${DIFF}
 
 echo "testrd-nfaced - read file with nfaced elements..."
 echo "begin testrd-nfaced" >> test.output
-${PREFIX} ${BINDIR}/testrd-nfaced${SUFFIX} | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testrd-nfaced.dmp | tee testrd-nfaced.res
+${PREFIX} ${BINDIR}/testrd-nfaced${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/testrd-nfaced.dmp | tee testrd-nfaced.res
 echo "end testrd-nfaced" >> test.output
 
 echo "testwt-long-name - write file with long (64-character) names..."
@@ -236,22 +209,22 @@ ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v "maximu
 
 echo "testrd - read long name file truncating to 32 characters on read..."
 echo "begin testrd (truncate)" >> test.output
-${PREFIX} ${BINDIR}/testrd${SUFFIX} | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testrd-nm32.dmp | tee testrd-nm32.res
+${PREFIX} ${BINDIR}/testrd${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/testrd-nm32.dmp | tee testrd-nm32.res
 echo "end testrd (truncate)" >> test.output
 
 echo "testrd-long-name - read long name file..."
 echo "begin testrd-long-name" >> test.output
-${PREFIX} ${BINDIR}/testrd-long-name${SUFFIX} | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testrd-long-name.dmp | tee testrd-long-name.res
+${PREFIX} ${BINDIR}/testrd-long-name${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/testrd-long-name.dmp | tee testrd-long-name.res
 echo "end testrd-long-name" >> test.output
 
 echo "test_nemesis - read long name file..."
 echo "begin test_nemesis" >> test.output
-${PREFIX} ${BINDIR}/test_nemesis${SUFFIX} | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/test_nemesis.dmp | tee test_nemesis.res
+${PREFIX} ${BINDIR}/test_nemesis${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/test_nemesis.dmp | tee test_nemesis.res
 echo "end test_nemesis" >> test.output
 
 echo "test-empty - read an empty (only ex_create called) exodus file..."
 echo "begin test-empty" >> test.output
-${PREFIX} ${BINDIR}/test-empty${SUFFIX} | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/test-empty.dmp | tee test-empty.res
+${PREFIX} ${BINDIR}/test-empty${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/test-empty.dmp | tee test-empty.res
 echo "end test-empty" >> test.output
 
 echo "testwt-results - write EXPERIMENTAL file with only transient data; no mesh bulk data..."
@@ -260,6 +233,37 @@ ${PREFIX} ${BINDIR}/testwt-results${SUFFIX} >> test.output
 echo "end testwt-results" >> test.output
 # Filter out the "maximum_name_length" attribute. Moves around in ncdump output for nc4 vs nc3
 ${NCDUMP} -d5,5 test-results.exo | grep -v version | grep -v _FillValue |grep -v "maximum_name_length" | ${DIFF} - ${SRCDIR}/testwt-results.dmp | tee testwt-results.res
+
+echo "testwt-assembly - write file containing assembly data"
+echo "begin testwt-assembly" >> test.output
+${PREFIX} ${BINDIR}/testwt-assembly${SUFFIX} >> test.output
+echo "end testwt-assembly" >> test.output
+# Filter out the "maximum_name_length" attribute. Moves around in ncdump output for nc4 vs nc3
+${NCDUMP} -d5,5 test-assembly.exo | grep -v version | grep -v _FillValue |grep -v "maximum_name_length" | ${DIFF} - ${SRCDIR}/testwt-assembly.dmp | tee testwt-assembly.res
+
+echo "testrd-assembly - read file containing assembly data"
+echo "begin testrd-assembly" >> test.output
+${PREFIX} ${BINDIR}/testrd-assembly${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/testrd-assembly.dmp | tee testrd-assembly.res
+echo "end testrd-assembly" >> test.output
+
+echo "test-add-assembly - add an assembly to an existing file"
+echo "begin test-add-assembly" >> test.output
+${PREFIX} ${BINDIR}/test-add-assembly${SUFFIX} >> test.output
+# Filter out the "maximum_name_length" attribute. Moves around in ncdump output for nc4 vs nc3
+${NCDUMP} -d5,5 test-assembly.exo | grep -v version | grep -v _FillValue |grep -v "maximum_name_length" | ${DIFF} - ${SRCDIR}/test-add-assembly.dmp | tee test-add-assembly.res
+echo "end test-add-assembly" >> test.output
+
+echo "testwt-blob - write file containing blob data"
+echo "begin testwt-blob" >> test.output
+${PREFIX} ${BINDIR}/testwt-blob${SUFFIX} >> test.output
+echo "end testwt-blob" >> test.output
+# Filter out the "maximum_name_length" attribute. Moves around in ncdump output for nc4 vs nc3
+${NCDUMP} -d5,5 test-blob.exo | grep -v version | grep -v _FillValue |grep -v "maximum_name_length" | ${DIFF} - ${SRCDIR}/testwt-blob.dmp | tee testwt-blob.res
+
+echo "testrd-blob - read file containing blob data"
+echo "begin testrd-blob" >> test.output
+${PREFIX} ${BINDIR}/testrd-blob${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/testrd-blob.dmp | tee testrd-blob.res
+echo "end testrd-blob" >> test.output
 
 echo "testwt-oned - write 1D mesh..."
 echo "begin testwt-oned" >> test.output
@@ -270,7 +274,7 @@ ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v "maximu
 
 echo "testrd - read test of 1D file..."
 echo "begin testrd 1D" >> test.output
-${PREFIX} ${BINDIR}/testrd${SUFFIX} | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testrd-oned.dmp | tee testrd-oned.res
+${PREFIX} ${BINDIR}/testrd${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/testrd-oned.dmp | tee testrd-oned.res
 echo "end testrd 1D" >> test.output
 
 if [ "$THREAD_SAFE" == "ON" ]; then

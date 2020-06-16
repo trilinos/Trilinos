@@ -120,7 +120,7 @@ namespace SEAMS {
 #define YY_SYMBOL_PRINT(Title, Symbol)                                                             \
   do {                                                                                             \
     if (yydebug_) {                                                                                \
-      *yycdebug_ << Title << ' ';                                                                \
+      *yycdebug_ << Title << ' ';                                                                  \
       yy_print_(*yycdebug_, Symbol);                                                               \
       *yycdebug_ << '\n';                                                                          \
     }                                                                                              \

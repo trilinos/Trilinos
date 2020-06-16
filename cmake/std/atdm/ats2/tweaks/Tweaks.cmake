@@ -1,4 +1,12 @@
 #
+# Set up to limit running on GPUs
+#
+
+ATDM_SET_CACHE(Trilinos_AUTOGENERATE_TEST_RESOURCE_FILE ON CACHE BOOL)
+ATDM_SET_CACHE(Trilinos_CUDA_NUM_GPUS 4 CACHE STRING)
+ATDM_SET_CACHE(Trilinos_CUDA_SLOTS_PER_GPU 2 CACHE STRING)
+
+#
 # Disables across multiple builds on 'ats2'
 #
 
