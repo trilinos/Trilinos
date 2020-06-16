@@ -18,9 +18,11 @@
 #include "Tempus_StepperRKButcherTableau.hpp"
 
 #include "Tempus_StepperForwardEulerModifierBase.hpp"
-#include "Tempus_StepperForwardEulerObserverBase.hpp"
 #include "Tempus_StepperForwardEulerModifierXBase.hpp"
+#include "Tempus_StepperForwardEulerObserverBase.hpp"
 #include "Tempus_StepperForwardEulerModifierDefault.hpp"
+#include "Tempus_StepperForwardEulerModifierXDefault.hpp"
+#include "Tempus_StepperForwardEulerObserverDefault.hpp"
 
 #include "../TestModels/SinCosModel.hpp"
 #include "../TestModels/VanDerPolModel.hpp"
@@ -52,7 +54,10 @@ TEUCHOS_UNIT_TEST(ForwardEuler, Default_Construction)
   auto model   = rcp(new Tempus_Test::SinCosModel<double>());
 
   // Default construction.
-  auto stepper = rcp(new Tempus::StepperForwardEuler<double>());
+  auto modifier  = rcp(new Tempus::StepperForwardEulerModifierDefault<double>());
+  auto modifierX = rcp(new Tempus::StepperForwardEulerModifierXDefault<double>());
+  auto observer  = rcp(new Tempus::StepperForwardEulerObserverDefault<double>());
+  auto stepper   = rcp(new Tempus::StepperForwardEuler<double>());
   stepper->setModel(model);
   stepper->initialize();
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
@@ -66,8 +71,9 @@ TEUCHOS_UNIT_TEST(ForwardEuler, Default_Construction)
   auto obs    = rcp(new Tempus::StepperForwardEulerObserver<double>());
   stepper->setObserver(obs);                           stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 #endif
-  auto modifier = rcp(new Tempus::StepperForwardEulerModifierDefault<double>());
-  stepper->setAppAction(modifier);
+  stepper->setAppAction(modifier);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setAppAction(modifierX);                    stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setAppAction(observer);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setUseFSAL(useFSAL);                        stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setICConsistency(ICConsistency);            stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setICConsistencyCheck(ICConsistencyCheck);  stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
