@@ -404,7 +404,7 @@ struct throw_no_matrix_support_exception {
   {
     TEUCHOS_TEST_FOR_EXCEPTION( true,
                         std::invalid_argument,
-                        "Currently only the Tacho solver supports the kokkos adapter." );
+                        "This solver does not support the kokkos adapter." );
   }
 };
 
