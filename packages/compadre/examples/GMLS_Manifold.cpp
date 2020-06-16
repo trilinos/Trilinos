@@ -291,7 +291,7 @@ Kokkos::initialize(argc, args);
     // query the point cloud to generate the neighbor lists using a kdtree to produce the n nearest neighbor
     // to each target site, adding (epsilon_multiplier-1)*100% to whatever the distance away the further neighbor used is from
     // each target to the view for epsilon
-    point_cloud_search.generateNeighborListsFromKNNSearch(false /*not dry run*/, target_coords, neighbor_lists, 
+    point_cloud_search.generate2DNeighborListsFromKNNSearch(false /*not dry run*/, target_coords, neighbor_lists, 
             epsilon, min_neighbors, epsilon_multiplier);
 
     //! [Performing Neighbor Search]

@@ -411,16 +411,6 @@ namespace Intrepid2
      */
     Basis_Derived_HCURL_HEX(int polyOrder) : Basis_Derived_HCURL_HEX(polyOrder, polyOrder, polyOrder) {}
 
-    /** \brief  Returns basis name
-
-        \return the name of the basis
-    */
-    virtual
-    const char*
-    getName() const {
-      return "Intrepid2_DerivedBasis_HCURL_HEX";
-    }
-
     /** \brief True if orientation is required
     */
     virtual bool requireOrientation() const {

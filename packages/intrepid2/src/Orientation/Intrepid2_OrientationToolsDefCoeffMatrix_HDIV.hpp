@@ -130,23 +130,30 @@ namespace Intrepid2 {
       // Function space
       //
       {
-        const std::string cellBasisName(cellBasis.getName());
-        INTREPID2_TEST_FOR_EXCEPTION( cellBasisName.find("HDIV") == std::string::npos,
+        const bool isHDIV = cellBasis.getFunctionSpace() == FUNCTION_SPACE_HDIV;
+        INTREPID2_TEST_FOR_EXCEPTION( !isHDIV,
                                       std::logic_error,
                                       ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HDIV): "
                                       "cellBasis is not HDIV.");
         {
+          const bool subcellBasisIsHGRAD = subcellBasis.getFunctionSpace() == FUNCTION_SPACE_HGRAD;
+          const bool subcellBasisIsHVOL  = subcellBasis.getFunctionSpace() == FUNCTION_SPACE_HVOL;
+          const bool cellIsTri  = cellBaseKey == shards::Triangle<>::key;
+          const bool cellIsTet  = cellBaseKey == shards::Tetrahedron<>::key;
+          const bool cellIsHex  = cellBaseKey == shards::Hexahedron<>::key;
+          const bool cellIsQuad = cellBaseKey == shards::Quadrilateral<>::key;
+            
           const std::string subcellBasisName(subcellBasis.getName());
           switch (subcellDim) {
           case 1: {
             //TODO: Hex, QUAD, TET and TRI element should have the same 1d basis
-            if ((cellBasisName.find("HEX") != std::string::npos) || (cellBasisName.find("QUAD") != std::string::npos)) {
-              INTREPID2_TEST_FOR_EXCEPTION( subcellBasisName.find("HGRAD") == std::string::npos,
+            if (cellIsHex || cellIsQuad) {
+              INTREPID2_TEST_FOR_EXCEPTION( !subcellBasisIsHGRAD,
                                           std::logic_error,
                                           ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_DIV): " 
                                           "subcellBasis function space (1d) is not consistent to cellBasis, which should be open line hgrad, order -1.");
-            } else if ((cellBasisName.find("TET") != std::string::npos) || (cellBasisName.find("TRI") != std::string::npos)) {
-              INTREPID2_TEST_FOR_EXCEPTION( subcellBasisName.find("HVOL") == std::string::npos,
+            } else if (cellIsTet || cellIsTri) {
+              INTREPID2_TEST_FOR_EXCEPTION( !subcellBasisIsHVOL,
                                           std::logic_error,
                                           ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_DIV): " 
                                           "subcellBasis function space (1d) is not consistent to cellBasis, which should be HVOL line, order -1.");
@@ -156,13 +163,13 @@ namespace Intrepid2 {
           case 2: {
             if        (subcellBaseKey == shards::Quadrilateral<>::key) {
               // quad face basis is tensor product of open line basis functions
-              INTREPID2_TEST_FOR_EXCEPTION( subcellBasisName.find("HGRAD") == std::string::npos,
+              INTREPID2_TEST_FOR_EXCEPTION( !subcellBasisIsHGRAD,
                                             std::logic_error,
                                             ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HDIV): "
                                             "subcellBasis function space is not compatible, which should be open line hgrad, order -1.");
             } else if (subcellBaseKey == shards::Triangle<>::key) {
               // triangle face basis comes from HVOL basis
-              INTREPID2_TEST_FOR_EXCEPTION( subcellBasisName.find("HVOL") == std::string::npos,
+              INTREPID2_TEST_FOR_EXCEPTION( !subcellBasisIsHVOL,
                                             std::logic_error,
                                             ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HDIV): "
                                             "subcellBasis function space is not compatible, which should HVOL, order-1.");
