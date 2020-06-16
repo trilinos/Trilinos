@@ -293,11 +293,14 @@ KLU2<Matrix,Vector>::solve_impl(
   klu2_dtype * pxValues = function_map::convert_scalar(xValues_.data());
   klu2_dtype * pbValues = function_map::convert_scalar(bValues_.data());
 
-  TEUCHOS_TEST_FOR_EXCEPTION(pbValues == nullptr,
+  // can be null for non root
+  if( this->root_) {
+    TEUCHOS_TEST_FOR_EXCEPTION(pbValues == nullptr,
       std::runtime_error, "Amesos2 Runtime Error: b_vector returned null ");
 
-  TEUCHOS_TEST_FOR_EXCEPTION(pxValues  == nullptr,
+    TEUCHOS_TEST_FOR_EXCEPTION(pxValues == nullptr,
       std::runtime_error, "Amesos2 Runtime Error: x_vector returned null ");
+  }
 
   if ( single_proc_optimization() && nrhs == 1 ) {
 #ifdef HAVE_AMESOS2_TIMERS
