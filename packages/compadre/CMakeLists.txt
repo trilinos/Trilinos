@@ -91,7 +91,18 @@ else() # Raw CMake Project
   # RPATH should always include the folder it is called from
   bob_option(PYTHON_CALLING_BUILD "Python setuptools calling build" OFF)
   bob_option(Compadre_USE_PYTHON "Use PYTHON" OFF)
+  bob_option(Compadre_USE_MATLAB "Use MATLAB interface for PYTHON" OFF)
+  set(PYTHON_LIBRARY_PREFIX "..") # relative to examples folder
   if (Compadre_USE_PYTHON)
+    bob_input(PYTHON_EXECUTABLE "" PATH "Python executable location")
+    IF(NOT(PYTHON_EXECUTABLE))
+      MESSAGE(STATUS "Python executable location PYTHON_EXECUTABLE not given. Search made using 'which python'")
+      EXECUTE_PROCESS(
+        COMMAND which "python"
+        OUTPUT_VARIABLE PYTHON_EXECUTABLE
+        OUTPUT_STRIP_TRAILING_WHITESPACE )
+    ENDIF()
+    MESSAGE(STATUS "PYTHON_EXECUTABLE: ${PYTHON_EXECUTABLE}")
     if (APPLE)
       SET(CMAKE_BUILD_RPATH ${CMAKE_BUILD_RPATH} "@loader_path/")
       SET(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_RPATH} "@loader_path/")
@@ -380,84 +391,6 @@ else() # Raw CMake Project
 
 
 
-  #PYTHON
-  bob_option(Compadre_USE_MATLAB "Use MATLAB interface for PYTHON" OFF)
-  bob_input(PYTHON_PREFIX "" PATH "Path to PYTHON install")
-  if (PYTHON_PREFIX)
-    set(CMAKE_PREFIX_PATH ${PYTHON_PREFIX} ${CMAKE_PREFIX_PATH})
-  endif()
-  if (Compadre_USE_PYTHON)
-
-    bob_input(PYTHON_EXECUTABLE "" PATH "Python executable location")
-    IF(NOT(PYTHON_EXECUTABLE))
-      MESSAGE(STATUS "Python executable location PYTHON_EXECUTABLE not given. Search made using 'which python'")
-      EXECUTE_PROCESS(
-        COMMAND which "python"
-        OUTPUT_VARIABLE PYTHON_EXECUTABLE
-        OUTPUT_STRIP_TRAILING_WHITESPACE )
-    ENDIF()
-    MESSAGE(STATUS "PYTHON_EXECUTABLE: ${PYTHON_EXECUTABLE}")
-    
-    EXECUTE_PROCESS(
-      COMMAND "${PYTHON_EXECUTABLE}" -c "import site; print(site.USER_SITE)"
-      OUTPUT_VARIABLE PYTHON_SITEPACKAGES
-      OUTPUT_STRIP_TRAILING_WHITESPACE )
-    
-    IF(NOT EXISTS ${PYTHON_SITEPACKAGES})
-      EXECUTE_PROCESS(
-        COMMAND "${PYTHON_EXECUTABLE}" -c "import sysconfig; print(sysconfig.get_path('platlib'))"
-        OUTPUT_VARIABLE PYTHON_SITEPACKAGES
-        OUTPUT_STRIP_TRAILING_WHITESPACE )
-    ENDIF()
-    MESSAGE(STATUS "PYTHON_SITEPACKAGES: ${PYTHON_SITEPACKAGES}")
-
-    IF(NOT EXISTS ${Numpy_PREFIX})
-      EXECUTE_PROCESS(
-        COMMAND "${PYTHON_EXECUTABLE}" -c "import numpy; print(numpy.get_include())"
-        OUTPUT_VARIABLE Numpy_PREFIX
-        OUTPUT_STRIP_TRAILING_WHITESPACE )
-    ENDIF()
-    MESSAGE(STATUS "Numpy_PREFIX: ${Numpy_PREFIX}")
-    
-    FIND_PATH(Numpy_INCLUDE_DIRS numpy/arrayobject.h HINTS ${Numpy_PREFIX})
-    IF (Numpy_INCLUDE_DIRS)
-      MESSAGE(STATUS "Numpy_INCLUDE_DIRS: ${Numpy_INCLUDE_DIRS}")
-    ELSE()
-      MESSAGE(FATAL_ERROR "Numpy headers not found, but needed when Compadre_USE_PYTHON:BOOL=ON. Try setting Numpy_PREFIX.")
-    ENDIF()
-
-    set(SWIG_PREFIX "../python") # relative to examples folder
-    bob_input(GMLS_Module_DEST "${CMAKE_INSTALL_LIBDIR}/python/dist-packages" PATH "Path to install python module")
-
-    IF(NOT EXISTS ${PYTHON_INCLUDE_DIRS})
-      EXECUTE_PROCESS(
-        COMMAND "${PYTHON_EXECUTABLE}" -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())"
-        OUTPUT_VARIABLE PYTHON_INCLUDE_DIRS
-        OUTPUT_STRIP_TRAILING_WHITESPACE )
-    ENDIF()
-
-    EXECUTE_PROCESS(
-      COMMAND "${PYTHON_EXECUTABLE}" -c "from distutils import sysconfig; print(sysconfig.get_config_var(\"LIBDIR\"))"
-      OUTPUT_VARIABLE PYTHON_PATHS
-      OUTPUT_STRIP_TRAILING_WHITESPACE )
-    MESSAGE(STATUS "PYTHON_PATHS: ${PYTHON_PATHS}")
-
-    file(GLOB PYTHON_LIBNAME
-      "${PYTHON_PATHS}/libpython*${CMAKE_SHARED_LIBRARY_SUFFIX}"
-    )
-    get_filename_component(PYTHON_LIBNAME_BASE "${PYTHON_LIBNAME}" NAME)
-    STRING(REGEX REPLACE "lib(.*)${CMAKE_SHARED_LIBRARY_SUFFIX}" "\\1" PYTHON_LIBNAME "${PYTHON_LIBNAME_BASE}")
-
-    MESSAGE(STATUS "PYTHON_LIBNAME: ${PYTHON_LIBNAME}")
-    find_library(PYTHON_LIBRARIES NAME "${PYTHON_LIBNAME}" PATHS "${PYTHON_PATHS}" NO_DEFAULT_PATH)
-
-    MESSAGE(STATUS "PYTHON_INCLUDE_DIRS: ${PYTHON_INCLUDE_DIRS}")
-    MESSAGE(STATUS "PYTHON_LIBRARIES: ${PYTHON_LIBRARIES}")
-
-  endif()
-
-
-
   ##########
   #
   #
@@ -551,7 +484,9 @@ else() # Raw CMake Project
   endif()
 
   if(Compadre_USE_PYTHON)
-    add_subdirectory(python)
+    add_subdirectory(pycompadre/pybind11)
+    pybind11_add_module(pycompadre pycompadre/pycompadre.cpp)
+    target_link_libraries(pycompadre PUBLIC compadre)
   endif()
 
 

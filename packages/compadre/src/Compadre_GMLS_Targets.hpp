@@ -36,8 +36,7 @@ void GMLS::computeTargetFunctionals(const member_type& teamMember, scratch_vecto
     teamMember.team_barrier();
 
     const int target_NP = this->getNP(_poly_order, _dimensions, _reconstruction_space);
-    const int num_evaluation_sites = (static_cast<int>(_additional_evaluation_indices.extent(1)) > 1) 
-                ? static_cast<int>(getNAdditionalEvaluationCoordinates(target_index)+1) : 1;
+    const int num_evaluation_sites = getNEvaluationSitesPerTarget(target_index);
 
     for (size_t i=0; i<_operations.size(); ++i) {
 
@@ -1021,8 +1020,7 @@ void GMLS::computeTargetFunctionalsOnManifold(const member_type& teamMember, scr
     bool additional_evaluation_sites_need_handled = 
         (_additional_evaluation_coordinates.extent(0) > 0) ? true : false; // additional evaluation sites are specified
 
-    const int num_evaluation_sites = (static_cast<int>(_additional_evaluation_indices.extent(1)) > 1) 
-                ? static_cast<int>(getNAdditionalEvaluationCoordinates(target_index)+1) : 1;
+    const int num_evaluation_sites = getNEvaluationSitesPerTarget(target_index);
 
     for (size_t i=0; i<_operations.size(); ++i) {
 
