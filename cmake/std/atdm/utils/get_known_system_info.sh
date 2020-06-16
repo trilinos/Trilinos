@@ -31,6 +31,7 @@ fi
 source ${ATDM_CONFIG_SCRIPT_DIR}/utils/get_system_info_utils.sh
 
 realHostname=`hostname`
+hostNameOverride=false
 if [[ "${ATDM_CONFIG_GET_KNOW_SYSTEM_INFO_REAL_HOSTNAME_OVERRIDE_FOR_UNIT_TESTING}" ]] ; then
   if [[ -z $ATDM_CONFIG_DISABLE_WARNINGS ]]; then
     echo

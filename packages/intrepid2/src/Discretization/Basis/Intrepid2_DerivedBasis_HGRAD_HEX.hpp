@@ -99,16 +99,6 @@ namespace Intrepid2
         \param [in] polyOrder - the polynomial order to use in all dimensions.
      */
     Basis_Derived_HGRAD_HEX(int polyOrder) : Basis_Derived_HGRAD_HEX(polyOrder, polyOrder, polyOrder) {}
-    
-    /** \brief  Returns basis name
-
-        \return the name of the basis
-    */
-    virtual
-    const char*
-    getName() const override {
-      return "Intrepid2_DerivedBasis_HGRAD_HEX";
-    }
 
     /** \brief True if orientation is required
     */
