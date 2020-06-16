@@ -812,6 +812,7 @@ void SetupMatVec(const Teuchos::RCP<Xpetra::MultiVector<GlobalOrdinal, LocalOrdi
       }
     }
   }
+
   RCP<Map> regionInterfaceMap = Xpetra::MapFactory<LO,GO,Node>::Build(regionRowMap[0]->lib(),
                                                                       Teuchos::OrdinalTraits<GO>::invalid(),
                                                                       regionMatVecGIDs(),

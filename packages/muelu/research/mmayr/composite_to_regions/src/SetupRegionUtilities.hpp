@@ -761,6 +761,8 @@ void createRegionData(const int numDimensions,
           sendGIDs[countIDs] = k*(gNodesPerDim[1]*gNodesPerDim[0])
             + j*gNodesPerDim[0]
             + startGID + lNodesPerDim[0] - 1;
+          sendLIDs[countIDs] = k*(lNodesPerDim[1]*lNodesPerDim[0])
+            + j*lNodesPerDim[0] + lNodesPerDim[0] - 1;
           sendPIDs[countIDs] = myRank + 1;
           ++countIDs;
         }
@@ -770,6 +772,8 @@ void createRegionData(const int numDimensions,
         for(LO i = 0; i < lNodesPerDim[0]; ++i) {
           sendGIDs[countIDs] = k*(gNodesPerDim[1]*gNodesPerDim[0]) + i
             + startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0];
+          sendLIDs[countIDs] = k*(lNodesPerDim[1]*lNodesPerDim[0])
+            + (lNodesPerDim[1] - 1)*lNodesPerDim[0] + i;
           sendPIDs[countIDs] = myRank + procsPerDim[0];
           ++countIDs;
         }
@@ -778,6 +782,8 @@ void createRegionData(const int numDimensions,
       for(LO k = 0; k < lNodesPerDim[2]; ++k) {
         sendGIDs[countIDs] = k*(gNodesPerDim[1]*gNodesPerDim[0])
           + startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0] + lNodesPerDim[0] - 1;
+        sendLIDs[countIDs] = k*(lNodesPerDim[1]*lNodesPerDim[0])
+          + lNodesPerDim[1]*lNodesPerDim[0] - 1;
         sendPIDs[countIDs] = myRank + procsPerDim[0] + 1;
         ++countIDs;
       }
@@ -786,6 +792,8 @@ void createRegionData(const int numDimensions,
         for(LO i = 0; i < lNodesPerDim[0]; ++i) {
           sendGIDs[countIDs] = j*gNodesPerDim[0] + i
             + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0];
+          sendLIDs[countIDs] = (lNodesPerDim[2] - 1)*lNodesPerDim[1]*lNodesPerDim[0]
+            + j*lNodesPerDim[0] + i;
           sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0];
           ++countIDs;
         }
@@ -794,6 +802,8 @@ void createRegionData(const int numDimensions,
       for(LO j = 0; j < lNodesPerDim[1]; ++j) {
         sendGIDs[countIDs] = j*gNodesPerDim[0]
           + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0] + lNodesPerDim[0] - 1;
+        sendLIDs[countIDs] = (lNodesPerDim[2] - 1)*(lNodesPerDim[1]*lNodesPerDim[0])
+          + j*lNodesPerDim[0] + lNodesPerDim[0] - 1;
         sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0] + 1;
         ++countIDs;
       }
@@ -802,12 +812,15 @@ void createRegionData(const int numDimensions,
         sendGIDs[countIDs] = i
           + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0]
           + (lNodesPerDim[1] - 1)*gNodesPerDim[0];
+        sendLIDs[countIDs] = (lNodesPerDim[2] - 1)*(lNodesPerDim[1]*lNodesPerDim[0])
+          + (lNodesPerDim[1] - 1)*lNodesPerDim[0] + i;
         sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0] + procsPerDim[0];
         ++countIDs;
       }
       // Send node of top-back-right corner
       sendGIDs[countIDs] = startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0]
         + (lNodesPerDim[1] - 1)*gNodesPerDim[0] + lNodesPerDim[0] - 1;
+      sendLIDs[countIDs] = lNodesPerDim[2]*lNodesPerDim[1]*lNodesPerDim[0] - 1;
       sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0] + procsPerDim[0] + 1;
       ++countIDs;
 
@@ -825,6 +838,8 @@ void createRegionData(const int numDimensions,
         for(LO i = 0; i < lNodesPerDim[0]; ++i) {
           sendGIDs[countIDs] = k*(gNodesPerDim[1]*gNodesPerDim[0]) + i
             + startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0];
+          sendLIDs[countIDs] = k*lNodesPerDim[1]*lNodesPerDim[0]
+            + (lNodesPerDim[1] - 1)*lNodesPerDim[0] + i;
           sendPIDs[countIDs] = myRank + procsPerDim[0];
           ++countIDs;
         }
@@ -834,6 +849,8 @@ void createRegionData(const int numDimensions,
         for(LO i = 0; i < lNodesPerDim[0]; ++i) {
           sendGIDs[countIDs] = j*gNodesPerDim[0] + i
             + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0];
+          sendLIDs[countIDs] = (lNodesPerDim[2] - 1)*lNodesPerDim[1]*lNodesPerDim[0]
+            + j*lNodesPerDim[0] + i;
           sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0];
           ++countIDs;
         }
@@ -843,6 +860,8 @@ void createRegionData(const int numDimensions,
         sendGIDs[countIDs] = i
           + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0]
           + (lNodesPerDim[1] - 1)*gNodesPerDim[0];
+        sendLIDs[countIDs] = (lNodesPerDim[2] - 1)*lNodesPerDim[1]*lNodesPerDim[0]
+          + (lNodesPerDim[1] - 1)*lNodesPerDim[0] + i;
         sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0] + procsPerDim[0];
         ++countIDs;
       }
@@ -862,6 +881,8 @@ void createRegionData(const int numDimensions,
           sendGIDs[countIDs] = k*(gNodesPerDim[1]*gNodesPerDim[0])
             + j*gNodesPerDim[0]
             + startGID + lNodesPerDim[0] - 1;
+          sendLIDs[countIDs] = k*(lNodesPerDim[1]*lNodesPerDim[0])
+            + j*lNodesPerDim[0] + lNodesPerDim[0] - 1;
           sendPIDs[countIDs] = myRank + 1;
           ++countIDs;
         }
@@ -871,6 +892,8 @@ void createRegionData(const int numDimensions,
         for(LO i = 0; i < lNodesPerDim[0]; ++i) {
           sendGIDs[countIDs] = j*gNodesPerDim[0] + i
             + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0];
+          sendLIDs[countIDs] = (lNodesPerDim[2] - 1)*lNodesPerDim[1]*lNodesPerDim[0]
+            + j*lNodesPerDim[0] + i;
           sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0];
           ++countIDs;
         }
@@ -879,6 +902,8 @@ void createRegionData(const int numDimensions,
       for(LO j = 0; j < lNodesPerDim[1]; ++j) {
         sendGIDs[countIDs] = j*gNodesPerDim[0]
           + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0] + lNodesPerDim[0] - 1;
+        sendLIDs[countIDs] = (lNodesPerDim[2] - 1)*lNodesPerDim[1]*lNodesPerDim[0]
+          + j*lNodesPerDim[0] + lNodesPerDim[0] - 1;
         sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0] + 1;
         ++countIDs;
       }
@@ -895,6 +920,8 @@ void createRegionData(const int numDimensions,
         for(LO j = 0; j < lNodesPerDim[1]; ++j) {
           sendGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0] + j*gNodesPerDim[0]
             + startGID + lNodesPerDim[0] - 1;
+          sendLIDs[countIDs] = k*lNodesPerDim[1]*lNodesPerDim[0]
+            + j*lNodesPerDim[0] + lNodesPerDim[0] - 1;
           sendPIDs[countIDs] = myRank + 1;
           ++countIDs;
         }
@@ -904,6 +931,8 @@ void createRegionData(const int numDimensions,
         for(LO i = 0; i < lNodesPerDim[0]; ++i) {
           sendGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0] + i
             + startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0];
+          sendLIDs[countIDs] = k*lNodesPerDim[1]*lNodesPerDim[0]
+            + (lNodesPerDim[1] - 1)*lNodesPerDim[0] + i;
           sendPIDs[countIDs] = myRank + procsPerDim[0];
           ++countIDs;
         }
@@ -912,6 +941,8 @@ void createRegionData(const int numDimensions,
       for(LO k = 0; k < lNodesPerDim[2]; ++k) {
           sendGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0]
             + startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0] + lNodesPerDim[0] - 1;
+          sendLIDs[countIDs] = k*(lNodesPerDim[1]*lNodesPerDim[0])
+            + lNodesPerDim[1]*lNodesPerDim[0] - 1;
           sendPIDs[countIDs] = myRank + procsPerDim[0] + 1;
           ++countIDs;
       }
@@ -928,6 +959,8 @@ void createRegionData(const int numDimensions,
         for(LO i = 0; i < lNodesPerDim[0]; ++i) {
           sendGIDs[countIDs] = j*gNodesPerDim[0] + i
             + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[0]*gNodesPerDim[1];
+          sendLIDs[countIDs] = (lNodesPerDim[2] - 1)*lNodesPerDim[1]*lNodesPerDim[0]
+            + j*lNodesPerDim[0] + i;
           sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0];
           ++countIDs;
         }
@@ -945,6 +978,8 @@ void createRegionData(const int numDimensions,
         for(LO i = 0; i < lNodesPerDim[0]; ++i) {
           sendGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0] + i
             + startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0];
+          sendLIDs[countIDs] = k*lNodesPerDim[1]*lNodesPerDim[0]
+            + (lNodesPerDim[1] - 1)*lNodesPerDim[0] + i;
           sendPIDs[countIDs] = myRank + procsPerDim[0];
           ++countIDs;
         }
@@ -962,6 +997,8 @@ void createRegionData(const int numDimensions,
         for(LO j = 0; j < lNodesPerDim[1]; ++j) {
           sendGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0]
             + j*gNodesPerDim[0] + startGID + lNodesPerDim[0] - 1;
+          sendLIDs[countIDs] = k*lNodesPerDim[1]*lNodesPerDim[0]
+            + j*lNodesPerDim[0] + lNodesPerDim[0] - 1;
           sendPIDs[countIDs] = myRank + 1;
           ++countIDs;
         }
@@ -1131,8 +1168,6 @@ void MakeRegionPerGIDWithGhosts(const Teuchos::RCP<Xpetra::Map<LocalOrdinal, Glo
 
   }
 
-  // interfaceGIDsMV->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
-
 } // MakeRegionPerGIDWithGhosts
 
 /*!
@@ -1152,39 +1187,5 @@ void ExtractListOfInterfaceRegionGIDs(
       regionRowMap[0]->getGlobalElement(interfaceRegionLIDs[interfaceIdx]);
   }
 } // ExtractListOfInterfaceRegionGIDs
-
-/*!
-\brief Constructing coarse level regionPerGIDWith rank from finer level
-
-The goal is to construct the coarse level without communication,
-but simply by following how nodes are aggregated in the prolongator.
-
-*/
-// template <class LocalOrdinal, class GlobalOrdinal, class Node>
-// void ComputeCoarseRegionPerGIDWithGhosts(const int maxRegPerGID, const LO currentLevel) {
-//   using GO = GlobalOrdinal;
-//   using LO = LocalOrdinal;
-
-//   Array<ArrayRCP<const LO> > regionPerGIDWithGhostsFine(maxRegPerGID);
-//   Array<ArrayRCP<LO> > regionPerGIDWithGhostsCoarse(maxRegPerGID);
-//   for(size_t idx = 0; idx < static_cast<size_t>(maxRegPerGID); ++idx) {
-//     regionPerGIDWithGhostsFine[idx]   = regionsPerGIDWithGhosts[currentLevel - 1]->getData(idx);
-//     regionPerGIDWithGhostsCoarse[idx] = regionsPerGIDWithGhosts[currentLevel]->getDataNonConst(idx);
-//   }
-
-//   for(size_t fineIdx = 0; fineIdx < numFineRegionNodes; ++fineIdx) {
-//     ArrayView<const LO> coarseRegionLID; // Should contain a single value
-//     ArrayView<const SC> dummyData;       // Should contain a single value
-//     regProlong[currentLevel][0]->getLocalRowView(fineIdx,
-//                                                  coarseRegionLID,
-//                                                  dummyData);
-//     out << "fineLID: " << fineIdx << ", coarseLID: " << coarseRegionLID[0] << ", PIDs: { ";
-//     for(size_t idx = 0; idx < static_cast<size_t>(maxRegPerGID); ++idx) {
-//       out << regionPerGIDWithGhostsFine[idx][fineIdx] << " ";
-//     }
-//     out << "}" << std::endl;
-//   }
-
-// } // ComputeCoarseRegionPerGIDWithGhosts
 
 #endif // MUELU_SETUPREGIONUTILITIES_HPP

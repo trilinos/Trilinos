@@ -592,14 +592,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
                              lNodesPerDim, sendGIDs, sendPIDs, interfaceLIDsData,
                              regionsPerGIDWithGhosts, interfaceGIDsMV);
 
-  comm->barrier(); std::cout << __LINE__ << __FILE__ << std::endl; comm->barrier();
-
   Teuchos::Array<LO> regionMatVecLIDs;
   RCP<Import> regionInterfaceImporter;
   SetupMatVec(interfaceGIDsMV, regionsPerGIDWithGhosts, revisedRowMapPerGrp, rowImportPerGrp,
               regionMatVecLIDs, regionInterfaceImporter);
-
-  comm->barrier(); std::cout << __LINE__ << __FILE__ << std::endl; comm->barrier();
 
   comm->barrier();
   tmLocal = Teuchos::null;
