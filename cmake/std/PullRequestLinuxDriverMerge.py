@@ -118,9 +118,9 @@ def merge_branch(source_url, source_branch, target_branch, sourceSHA):
 
     if actual_source_SHA != sourceSHA:
         print('The SHA ({source_sha}) for the last commit on branch {source_branch}'.format(source_sha=actual_source_SHA,
-                                                                                            source_branch=source_branch))
-        print('  in repo {source_repo} is different than the expected SHA,'.format(source_repo=source_url))
-        print('  which is: {source_sha}.'.format(source_sha=sourceSHA))
+                                                                                            source_branch=source_branch), file=sys.stdout)
+        print('  in repo {source_repo} is different than the expected SHA,'.format(source_repo=source_url), file=sys.stdout)
+        print('  which is: {source_sha}.'.format(source_sha=sourceSHA), file=sys.stdout)
         raise SystemExit(-1)
 
 
@@ -146,15 +146,15 @@ def run():
             return_value = False
         except subprocess.CalledProcessError as cpe:
             return_value = False
-            print('Recieved subprocess.CalledProcessError - returned {error_num}'.format(error_num=cpe.returncode))
-            print('  from command {cmd}'.format(cmd=cpe.cmd))
-            print('  output {out}'.format(out=cpe.output))
+            print('Recieved subprocess.CalledProcessError - returned {error_num}'.format(error_num=cpe.returncode), file=sys.stdout)
+            print('  from command {cmd}'.format(cmd=cpe.cmd), file=sys.stdout)
+            print('  output {out}'.format(out=cpe.output), file=sys.stdout)
             try:
-                print('  stdout {out}'.format(out=cpe.stdout))
+                print('  stdout {out}'.format(out=cpe.stdout), file=sys.stdout)
             except AttributeError:
                 pass
             try:
-                print('  stderr {eout}'.format(eout=cpe.stderr))
+                print('  stderr {eout}'.format(eout=cpe.stderr), file=sys.stdout)
             except AttributeError:
                 pass
 
