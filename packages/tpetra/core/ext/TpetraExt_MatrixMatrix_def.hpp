@@ -813,10 +813,7 @@ add (const Scalar& alpha,
                               col_inds_array, global_col_inds_array,
                               typename map_type::local_map_type>
         (localColinds, globalColinds, CcolMap->getLocalMap()));
-    //TODO: use KokkosKernels batched sort on device as soon as it's available
-    //But now, have to sort on host (using UVM)
-    exec_space().fence();
-    Tpetra::Import_Util::sortCrsEntries(rowptrs, localColinds, vals);
+    KokkosKernels::Impl::sort_crs_matrix<exec_space, row_ptrs_array, col_inds_array, values_array>(rowptrs, localColinds, vals);
     C.setAllValues(rowptrs, localColinds, vals);
     C.fillComplete(CDomainMap, CRangeMap, params);
     if(!doFillComplete)
