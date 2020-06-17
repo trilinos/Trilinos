@@ -1056,7 +1056,7 @@ public:
         ahwv_vec[i].resize(p_indices.size());
         ahwv_vec[i][0] = prodvec_ahwv->getNonconstMultiVectorBlock(i);
         for(std::size_t j=1; j<p_indices.size(); ++j) {
-          ahwv_vec[i][j] = prodvec_ahwv->clone_mv();
+          ahwv_vec[i][j] = ahwv_vec[i][0]->clone_mv();
         }
       }
 
