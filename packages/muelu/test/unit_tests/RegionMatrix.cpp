@@ -973,7 +973,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec3D, Scalar, LocalOrdin
 // to composite formate before verifying the equivalence.
 //
 // Do this for 2 DOFs per node (two-dimensional elasticity)
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec_Elasticity, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec2D_Elasticity, Scalar, LocalOrdinal, GlobalOrdinal, Node)
 {
 #   include "MueLu_UseShortNames.hpp"
   MUELU_TESTING_SET_OSTREAM;
@@ -1066,14 +1066,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec_Elasticity, Scalar, L
                            100*TMT::eps());
   }
 
-} // FastMatVec_Elasticity
+} // FastMatVec2D_Elasticity
 
 // This test aims at checking that apply regionA to a region vector has the same effect as
 // applying A to a composite vector. Of course the region vector needs to be brought back
 // to composite formate before verifying the equivalence.
 //
-// Do this for 3 DOFs per node (two-dimensional elasticity)
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec_Elasticity3D, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+// Do this for 3 DOFs per node (three-dimensional elasticity)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec3D_Elasticity, Scalar, LocalOrdinal, GlobalOrdinal, Node)
 {
 #   include "MueLu_UseShortNames.hpp"
   MUELU_TESTING_SET_OSTREAM;
@@ -1166,7 +1166,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec_Elasticity3D, Scalar,
                            100*TMT::eps());
   }
 
-} // FastMatVec_Elasticity3D
+} // FastMatVec3D_Elasticity
 
 // Here a Laplace 2D problem is tested for all the above checks mentioned:
 //   1) the region operator is compared against know values
@@ -1674,8 +1674,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace3D, Scalar, LocalOrdinal,
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RegionMatrix,MatVec,Scalar,LO,GO,Node)                  \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RegionMatrix,FastMatVec,Scalar,LO,GO,Node)              \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RegionMatrix,FastMatVec3D,Scalar,LO,GO,Node)            \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RegionMatrix,FastMatVec_Elasticity,Scalar,LO,GO,Node)   \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RegionMatrix,FastMatVec_Elasticity3D,Scalar,LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RegionMatrix,FastMatVec2D_Elasticity,Scalar,LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RegionMatrix,FastMatVec3D_Elasticity,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RegionMatrix,Laplace2D,Scalar,LO,GO,Node)               \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RegionMatrix,Laplace3D,Scalar,LO,GO,Node)
 
