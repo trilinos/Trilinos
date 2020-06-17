@@ -391,17 +391,22 @@ size_t Behavior::longRowMinNumEntries ()
 {
   constexpr char envVarName[] = "TPETRA_VECTOR_DEVICE_THRESHOLD";
   constexpr size_t defaultValue (10000);
-    
+
   static size_t value_ = defaultValue;
   static bool initialized_ = false;
   return idempotentlyGetEnvironmentVariableAsSize
     (value_, initialized_, envVarName, defaultValue);
 }
-    
+
 size_t Behavior::hierarchicalUnpackBatchSize ()
 {
   constexpr char envVarName[] = "TPETRA_HIERARCHICAL_UNPACK_BATCH_SIZE";
+
+#ifdef HAVE_TPETRA_INST_CUDA
+  constexpr size_t defaultValue (16);
+#else
   constexpr size_t defaultValue (256);
+#endif
 
   static size_t value_ = defaultValue;
   static bool initialized_ = false;
@@ -412,7 +417,11 @@ size_t Behavior::hierarchicalUnpackBatchSize ()
 size_t Behavior::hierarchicalUnpackTeamSize ()
 {
   constexpr char envVarName[] = "TPETRA_HIERARCHICAL_UNPACK_TEAM_SIZE";
+#ifdef HAVE_TPETRA_INST_CUDA
+  const size_t defaultValue (16);
+#else
   const size_t defaultValue (Teuchos::OrdinalTraits<size_t>::invalid ());
+#endif
 
   static size_t value_ = defaultValue;
   static bool initialized_ = false;

@@ -200,7 +200,7 @@ struct UnpackCrsMatrixAndCombineFunctor {
   typedef Kokkos::View<const char*, BufferDeviceType> input_buffer_type;
   typedef Kokkos::View<const LO*, BufferDeviceType> import_lids_type;
 
-  typedef Kokkos::View<int, DT, Kokkos::MemoryTraits<Kokkos::Atomic>> error_type;
+  typedef Kokkos::View<int, DT> error_type;
   using member_type = typename Kokkos::TeamPolicy<XS>::member_type;
 
   static_assert (std::is_same<LO, typename local_matrix_type::ordinal_type>::value,
@@ -243,7 +243,7 @@ struct UnpackCrsMatrixAndCombineFunctor {
     batch_size (batch_size_in),
     bytes_per_value (bytes_per_value_in),
     atomic (atomic_in),
-    error_code(0)
+    error_code("error")
   {}
 
   KOKKOS_INLINE_FUNCTION
@@ -285,20 +285,22 @@ struct UnpackCrsMatrixAndCombineFunctor {
     if (expected_num_bytes > num_bytes)
     {
       printf(
+        "*** Error: UnpackCrsMatrixAndCombineFunctor: "
         "At row %d, the expected number of bytes (%d) != number of unpacked bytes (%d)\n",
         (int) lid_no, (int) expected_num_bytes, (int) num_bytes
       );
-      error_code() = 1;
+      Kokkos::atomic_compare_exchange_strong(error_code.data(), 0, 21);
       return;
     }
 
     if (offset > buf_size || offset + num_bytes > buf_size)
     {
       printf(
+        "*** Error: UnpackCrsMatrixAndCombineFunctor: "
         "At row %d, the offset (%d) > buffer size (%d)\n",
         (int) lid_no, (int) offset, (int) buf_size
       );
-      error_code() = 1;
+      Kokkos::atomic_compare_exchange_strong(error_code.data(), 0, 22);
       return;
     }
 
@@ -331,17 +333,17 @@ struct UnpackCrsMatrixAndCombineFunctor {
     if (static_cast<size_t>(num_ent_out) != num_entries_in_row)
     {
       printf(
+        "*** Error: UnpackCrsMatrixAndCombineFunctor: "
         "At row %d, number of entries (%d) != number of entries unpacked (%d)\n",
         (int) lid_no, (int) num_entries_in_row, (int) num_ent_out
       );
-      error_code() = 1;
+      Kokkos::atomic_compare_exchange_strong(error_code.data(), 0, 23);
     }
 
-    int errors = 0;
     constexpr bool matrix_has_sorted_rows = true; // see #6282
-    Kokkos::parallel_reduce(
+    Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team_member, num_entries_in_batch),
-      KOKKOS_LAMBDA(const LO& j, int& loc_errors)
+      KOKKOS_LAMBDA(const LO& j)
       {
         size_t distance = 0;
 
@@ -387,21 +389,25 @@ struct UnpackCrsMatrixAndCombineFunctor {
           );
         } else {
           // should never get here
-          loc_errors += 1;
+          printf(
+            "*** Error: UnpackCrsMatrixAndCombineFunctor: "
+            "At row %d, an unknown error occurred during unpack\n", (int) lid_no
+          );
+          Kokkos::atomic_compare_exchange_strong(error_code.data(), 0, 31);
         }
-      },
-      errors
+      }
     );
 
     team_member.team_barrier();
 
-    if (errors > 0)
-    {
-      printf("At row %d, an unknown error occurred during unpack\n", (int) lid_no);
-      error_code() = 1;
-      return;
-    }
+  }
 
+  //! Host function for getting the error.
+  int error() const {
+    auto error_code_h = Kokkos::create_mirror_view_and_copy(
+      Kokkos::HostSpace(), error_code
+    );
+    return error_code_h();
   }
 
 };
@@ -713,9 +719,7 @@ unpackAndCombineIntoCrsMatrix(
     Kokkos::parallel_for(policy(static_cast<LO>(num_batches), static_cast<int>(team_size)), f);
   }
 
-  //auto error_code = Kokkos::create_mirror_view(host_space, f.error_code);
-  //Kokkos::deep_copy(&error_code, f.error_code);
-  int error_code = 0;
+  auto error_code = f.error();
   TEUCHOS_TEST_FOR_EXCEPTION(
     error_code != 0,
     std::runtime_error,
