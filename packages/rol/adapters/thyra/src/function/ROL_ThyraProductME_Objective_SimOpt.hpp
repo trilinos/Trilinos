@@ -526,7 +526,7 @@ public:
         hv_vec[i].resize(p_indices.size());
         hv_vec[i][0] = prodvec_hv->getNonconstMultiVectorBlock(i);
         for(std::size_t j=1; j<p_indices.size(); ++j) {
-          hv_vec[i][j] = prodvec_hv->clone_mv();
+          hv_vec[i][j] = hv_vec[i][0]->clone_mv();
         }
       }
 
