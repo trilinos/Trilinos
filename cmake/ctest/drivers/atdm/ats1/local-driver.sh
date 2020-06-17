@@ -8,6 +8,10 @@ if [ "${SBATCH_TEST_TIME_LIMIT_MINUTES}" == "" ] ; then
   export SBATCH_TEST_TIME_LIMIT_MINUTES=780 # Default 13 hour time limit
 fi
 
+if [[ "${Trilinos_ENABLE_BUILD_STATS}" == "" ]] ; then
+  export Trilinos_ENABLE_BUILD_STATS=ON
+fi
+
 # Load environment on the login node
 source $WORKSPACE/Trilinos/cmake/std/atdm/load-env.sh $JOB_NAME
 
