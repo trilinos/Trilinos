@@ -102,10 +102,10 @@ void createRegionMatrix(const Teuchos::ParameterList galeriList,
   procsPerDim[1] = galeriList.get<GO>("my");
   procsPerDim[2] = galeriList.get<GO>("mz");
 
-  std::cout << "p=" << nodeMap->getComm()->getRank() << " | numDimensions=" << numDimensions
-            << ", useStructured=" << false << ", numDofsPerNode=" << numDofsPerNode
-            << ", gNodesPerDir=" << gNodesPerDir << ", lNodesPerDir=" << lNodesPerDir
-            << ", procsPerDim=" << procsPerDim << std::endl;
+  // std::cout << "p=" << nodeMap->getComm()->getRank() << " | numDimensions=" << numDimensions
+  //           << ", useStructured=" << false << ", numDofsPerNode=" << numDofsPerNode
+  //           << ", gNodesPerDir=" << gNodesPerDir << ", lNodesPerDir=" << lNodesPerDir
+  //           << ", procsPerDim=" << procsPerDim << std::endl;
 
   Array<int> boundaryConditions;
   int maxRegPerGID = 0;
@@ -237,6 +237,14 @@ void createProblem(const int maxRegPerProc, const LocalOrdinal numDofsPerNode,
                      rowMapPerGrp, colMapPerGrp, revisedRowMapPerGrp, revisedColMapPerGrp,
                      rowImportPerGrp, colImportPerGrp, regionGrpMats,
                      regionMatVecLIDs, regionInterfaceImporter);
+
+  // Debug output
+  // std::cout << "p=" << comm->getRank() << " | regionMatVecLIDs: " << regionMatVecLIDs << std::endl;
+  // std::cout << "p=" << comm->getRank() << " | source map element list: "
+  //           << regionInterfaceImporter->getSourceMap()->getNodeElementList() << std::endl;
+  // std::cout << "p=" << comm->getRank() << " | target map element list: "
+  //           << regionInterfaceImporter->getTargetMap()->getNodeElementList() << std::endl;
+
 
 } // createProblem
 
@@ -795,12 +803,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec, Scalar, LocalOrdinal
                      rowImportPerGrp, colImportPerGrp, regionGrpMats,
                      regionMatVecLIDs, regionInterfaceImporter);
 
-  std::cout << "p=" << comm->getRank() << " | regionMatVecLIDs: " << regionMatVecLIDs << std::endl;
-  std::cout << "p=" << comm->getRank() << " | source map element list: "
-            << regionInterfaceImporter->getSourceMap()->getNodeElementList() << std::endl;
-  std::cout << "p=" << comm->getRank() << " | target map element list: "
-            << regionInterfaceImporter->getTargetMap()->getNodeElementList() << std::endl;
-
   RCP<Matrix> regionMat = regionGrpMats[0];
 
   // Create initial vectors in composite format and apply composite A.
@@ -905,12 +907,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec3D, Scalar, LocalOrdin
                 A, regionGrpMats, revisedRowMapPerGrp, rowImportPerGrp,
                 regionMatVecLIDs, regionInterfaceImporter);
 
-  std::cout << "p=" << comm->getRank() << " | regionMatVecLIDs: " << regionMatVecLIDs << std::endl;
-  std::cout << "p=" << comm->getRank() << " | source map element list: "
-            << regionInterfaceImporter->getSourceMap()->getNodeElementList() << std::endl;
-  std::cout << "p=" << comm->getRank() << " | target map element list: "
-            << regionInterfaceImporter->getTargetMap()->getNodeElementList() << std::endl;
-
   RCP<Matrix> regionMat = regionGrpMats[0];
 
   // Create initial vectors in composite format and apply composite A.
@@ -1011,12 +1007,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec_Elasticity, Scalar, L
                 A, regionGrpMats, revisedRowMapPerGrp, rowImportPerGrp,
                 regionMatVecLIDs, regionInterfaceImporter);
 
-  std::cout << "p=" << comm->getRank() << " | regionMatVecLIDs: " << regionMatVecLIDs << std::endl;
-  std::cout << "p=" << comm->getRank() << " | source map element list: "
-            << regionInterfaceImporter->getSourceMap()->getNodeElementList() << std::endl;
-  std::cout << "p=" << comm->getRank() << " | target map element list: "
-            << regionInterfaceImporter->getTargetMap()->getNodeElementList() << std::endl;
-
   RCP<Matrix> regionMat = regionGrpMats[0];
 
   // Create initial vectors in composite format and apply composite A.
@@ -1116,12 +1106,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec_Elasticity3D, Scalar,
   createProblem(maxRegPerProc, numDofsPerNode, galeriParameters, comm,
                 A, regionGrpMats, revisedRowMapPerGrp, rowImportPerGrp,
                 regionMatVecLIDs, regionInterfaceImporter);
-
-  std::cout << "p=" << comm->getRank() << " | regionMatVecLIDs: " << regionMatVecLIDs << std::endl;
-  std::cout << "p=" << comm->getRank() << " | source map element list: "
-            << regionInterfaceImporter->getSourceMap()->getNodeElementList() << std::endl;
-  std::cout << "p=" << comm->getRank() << " | target map element list: "
-            << regionInterfaceImporter->getTargetMap()->getNodeElementList() << std::endl;
 
   RCP<Matrix> regionMat = regionGrpMats[0];
 
