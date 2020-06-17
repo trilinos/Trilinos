@@ -100,22 +100,20 @@ reallocDualViewIfNeeded (Kokkos::DualView<ValueType*, DeviceType>& dv,
   }
   else if (curSize < newSize) { // too small; need to reallocate
     if (needFenceBeforeRealloc) {
-      execution_space().fence ();
+      execution_space().fence (); // keep this fence to respect needFenceBeforeRealloc
     }
     dv = dual_view_type (); // free first, in order to save memory
     // If current size is 0, the DualView's Views likely lack a label.
     dv = dual_view_type (curSize == 0 ? newLabel : dv.d_view.label (), newSize);
-    execution_space().fence ();
     return true; // we did reallocate
   }
   else {
     if (newSize == 0) { // special case: realloc to 0 means always do it
       if (needFenceBeforeRealloc) {
-        execution_space().fence ();
+        execution_space().fence (); // keep this fence to respect needFenceBeforeRealloc
       }
       // If current size is 0, the DualView's Views likely lack a label.
       dv = dual_view_type (curSize == 0 ? newLabel : dv.d_view.label (), 0);
-      execution_space().fence ();
       return true; // we did reallocate
     }
     // Instead of writing curSize >= tooBigFactor * newSize, express
@@ -125,12 +123,11 @@ reallocDualViewIfNeeded (Kokkos::DualView<ValueType*, DeviceType>& dv,
       // The allocation is much too big, so free it and reallocate
       // to the new, smaller size.
       if (needFenceBeforeRealloc) {
-        execution_space().fence ();
+        execution_space().fence (); // keep this fence to respect needFenceBeforeRealloc
       }
       dv = dual_view_type (); // free first, in order to save memory
       // If current size is 0, the DualView's Views likely lack a label.
       dv = dual_view_type (curSize == 0 ? newLabel : dv.d_view.label (), newSize);
-      execution_space().fence ();
       return true; // we did reallocate
     }
     else {
