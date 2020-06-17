@@ -1142,8 +1142,9 @@ init (const keys_type& keys,
     Kokkos::deep_copy (counts, countsHost);
   }
 
-  // FIXME (mfh 28 Mar 2016) Need a fence here, otherwise SIGSEGV w/
-  // CUDA when ptr is filled.
+  // KJ: This fence is not required for the 2-argument deep_copy which calls
+  // fence, but will be required if switched to the 3-argumemt deep_copy which
+  // passes a space. The 3-argument form does not fence.
   execution_space().fence ();
 
   // Kokkos::View fills with zeros by default.
@@ -1196,8 +1197,9 @@ init (const keys_type& keys,
     }
   }
 
-  // FIXME (mfh 28 Mar 2016) Need a fence here, otherwise SIGSEGV w/
-  // CUDA when val is filled.
+  // KJ: computeOffsetsFromCounts calls parallel_scan which does not fence.
+  // This fence is necessary as we need to make sure that the offset view
+  // completes before the view is used in the next functor.
   execution_space().fence ();
 
   // Allocate the array of (key,value) pairs.  Don't fill it with
