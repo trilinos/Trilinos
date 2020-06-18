@@ -1,12 +1,14 @@
 #!/bin/bash -l
 
+set +x
+
 if [ "${SLURM_CTEST_TIMEOUT}" == "" ] ; then
   SLURM_CTEST_TIMEOUT=1:20:00
   # This is just running tests, not the entire build!
 fi
 
-if [ "${Trilinos_CTEST_DO_ALL_AT_ONCE}" == "" ] ; then
-  export Trilinos_CTEST_DO_ALL_AT_ONCE=TRUE
+if [[ "${Trilinos_ENABLE_BUILD_STATS}" == "" ]] ; then
+  export Trilinos_ENABLE_BUILD_STATS=ON
 fi
 
 set -x
