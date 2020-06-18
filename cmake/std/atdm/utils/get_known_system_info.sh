@@ -141,7 +141,8 @@ fi
 #
 
 # ATS-1 systems
-if [[ $realHostname == "mutrino"* || $HOST == "mutrino"* ]] ; then
+if [[ $realHostname == "mutrino"* ||
+      $HOST == "mutrino"* && -z $ATDM_CONFIG_HOSTNAME_OVERRIDE ]] ; then
   systemNameTypeMatchedList+=(ats1)
   systemNameTypeMatchedListHostNames[ats1]=mutrino
   systemNameTypeMatchedList+=(mutrino)

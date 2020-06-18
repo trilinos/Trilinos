@@ -989,7 +989,9 @@ void sort_crs_matrix(const rowmap_t& rowmap, const entries_t& entries, const val
     //TODO (probably important for performnce): add thread-level sort also, and use that
     //for small avg degree. But this works for now.
     int teamSize = 1;
-    lno_t avgDeg = (entries.extent(0) + numRows - 1) / numRows;
+    lno_t avgDeg = 0;
+    if(numRows)
+      avgDeg = (entries.extent(0) + numRows - 1) / numRows;
     while(teamSize * 2 * 2 <= avgDeg)
     {
       teamSize *= 2;
@@ -1041,7 +1043,9 @@ void sort_crs_graph(const rowmap_t& rowmap, const entries_t& entries)
     //TODO (probably important for performnce): add thread-level sort also, and use that
     //for small avg degree. But this works for now.
     int teamSize = 1;
-    lno_t avgDeg = (entries.extent(0) + numRows - 1) / numRows;
+    lno_t avgDeg = 0;
+    if(numRows)
+      avgDeg = (entries.extent(0) + numRows - 1) / numRows;
     while(teamSize * 2 * 2 <= avgDeg)
     {
       teamSize *= 2;
