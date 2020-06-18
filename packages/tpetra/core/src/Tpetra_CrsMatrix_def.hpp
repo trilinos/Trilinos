@@ -4106,17 +4106,7 @@ namespace Tpetra {
          "either the row Map or the range Map of the CrsMatrix.");
     }
 
-    // Check whether A has a valid local matrix.  It might not if it
-    // was not created with a local matrix, and if fillComplete has
-    // never been called on it before.  A never-initialized (and thus
-    // invalid) local matrix has zero rows, because it was default
-    // constructed.
-    const LO lclNumRows =
-      static_cast<LO> (this->getRowMap ()->getNodeNumElements ());
-    const bool validLocalMatrix = lclMatrix_.get () != nullptr &&
-      lclMatrix_->getLocalMatrix ().numRows () == lclNumRows;
-
-    if (validLocalMatrix) {
+    if (this->isFillComplete()) {
       using dev_memory_space = typename device_type::memory_space;
       if (xp->template need_sync<dev_memory_space> ()) {
         using Teuchos::rcp_const_cast;
@@ -4129,19 +4119,10 @@ namespace Tpetra {
                                x_lcl_1d, false, false);
     }
     else {
-      execution_space().fence (); // for UVM's sake
-
-      ArrayRCP<const Scalar> vectorVals = xp->getData (0);
-      ArrayView<impl_scalar_type> rowValues = Teuchos::null;
-      for (LocalOrdinal i = 0; i < lclNumRows; ++i) {
-        const RowInfo rowinfo = this->staticGraph_->getRowInfo (i);
-        rowValues = this->getViewNonConst (rowinfo);
-        const impl_scalar_type scaleValue = static_cast<impl_scalar_type> (vectorVals[i]);
-        for (size_t j = 0; j < rowinfo.numEntries; ++j) {
-          rowValues[j] *= scaleValue;
-        }
-      }
-      execution_space().fence (); // for UVM's sake
+      // 6/2020  Disallow leftScale of non-fillComplete matrices #7446
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (true, std::runtime_error, "CrsMatrix::leftScale requires matrix to be"
+         "fillComplete");
     }
   }
 
@@ -4185,17 +4166,7 @@ namespace Tpetra {
          "either the domain Map or the column Map of the CrsMatrix.");
     }
 
-    // Check whether A has a valid local matrix.  It might not if it
-    // was not created with a local matrix, and if fillComplete has
-    // never been called on it before.  A never-initialized (and thus
-    // invalid) local matrix has zero rows, because it was default
-    // constructed.
-    const LO lclNumRows =
-      static_cast<LO> (this->getRowMap ()->getNodeNumElements ());
-    const bool validLocalMatrix = lclMatrix_.get () != nullptr &&
-      lclMatrix_->getLocalMatrix ().numRows () == lclNumRows;
-
-    if (validLocalMatrix) {
+    if (this->isFillComplete()) {
       using dev_memory_space = typename device_type::memory_space;
       if (xp->template need_sync<dev_memory_space> ()) {
         using Teuchos::rcp_const_cast;
@@ -4208,20 +4179,10 @@ namespace Tpetra {
                                 x_lcl_1d, false, false);
     }
     else {
-      execution_space().fence (); // for UVM's sake
-
-      ArrayRCP<const Scalar> vectorVals = xp->getData (0);
-      ArrayView<impl_scalar_type> rowValues = null;
-      for (LO i = 0; i < lclNumRows; ++i) {
-        const RowInfo rowinfo = this->staticGraph_->getRowInfo (i);
-        rowValues = this->getViewNonConst (rowinfo);
-        ArrayView<const LO> colInds;
-        this->getCrsGraphRef ().getLocalRowView (i, colInds);
-        for (size_t j = 0; j < rowinfo.numEntries; ++j) {
-          rowValues[j] *= static_cast<impl_scalar_type> (vectorVals[colInds[j]]);
-        }
-      }
-      execution_space().fence (); // for UVM's sake
+      // 6/2020  Disallow rightScale of non-fillComplete matrices #7446
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (true, std::runtime_error, "CrsMatrix::rightScale requires matrix to be"
+         "fillComplete");
     }
   }
 
