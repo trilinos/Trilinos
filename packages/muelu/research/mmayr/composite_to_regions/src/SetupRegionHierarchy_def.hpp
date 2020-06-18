@@ -1030,19 +1030,38 @@ void vCycle(const int l, ///< ID of current level
     // Transfer to coarse level
     Array<RCP<Vector> > coarseRegX(maxRegPerProc);
     Array<RCP<Vector> > coarseRegB(maxRegPerProc);
-    for (int j = 0; j < maxRegPerProc; j++) {
-      coarseRegX[j] = VectorFactory::Build(regRowMaps[l+1][j], true);
-      coarseRegB[j] = VectorFactory::Build(regRowMaps[l+1][j], true);
+    if (useFastMatVec)
+    {
+      // Get pre-communicated communication patterns for the fast MatVec
+      const Array<LocalOrdinal> regionInterfaceLIDs = smootherParams[l+1]->get<Array<LO>>("Fast MatVec: interface LIDs");
+      const RCP<Import> regionInterfaceImporter = smootherParams[l+1]->get<RCP<Import>>("Fast MatVec: interface importer");
 
-      regProlong[l+1][j]->apply(*regRes[j], *coarseRegB[j], Teuchos::TRANS);
-      TEUCHOS_ASSERT(regProlong[l+1][j]->getRangeMap()->isSameAs(*regRes[j]->getMap()));
-      TEUCHOS_ASSERT(regProlong[l+1][j]->getDomainMap()->isSameAs(*coarseRegB[j]->getMap()));
+      for (int j = 0; j < maxRegPerProc; j++) {
+        coarseRegX[j] = VectorFactory::Build(regRowMaps[l+1][j], true);
+        coarseRegB[j] = VectorFactory::Build(regRowMaps[l+1][j], true);
+
+        ApplyMatVec(SC_ONE, regProlong[l+1][j], regRes[j], SC_ZERO, regionInterfaceImporter,
+            regionInterfaceLIDs, coarseRegB[j], Teuchos::TRANS);
+        TEUCHOS_ASSERT(regProlong[l+1][j]->getRangeMap()->isSameAs(*regRes[j]->getMap()));
+        TEUCHOS_ASSERT(regProlong[l+1][j]->getDomainMap()->isSameAs(*coarseRegB[j]->getMap()));
+      }
     }
+    else
+    {
+      for (int j = 0; j < maxRegPerProc; j++) {
+        coarseRegX[j] = VectorFactory::Build(regRowMaps[l+1][j], true);
+        coarseRegB[j] = VectorFactory::Build(regRowMaps[l+1][j], true);
 
-    tm = Teuchos::null;
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("vCycle: 5 - sum interface values")));
+        regProlong[l+1][j]->apply(*regRes[j], *coarseRegB[j], Teuchos::TRANS);
+        TEUCHOS_ASSERT(regProlong[l+1][j]->getRangeMap()->isSameAs(*regRes[j]->getMap()));
+        TEUCHOS_ASSERT(regProlong[l+1][j]->getDomainMap()->isSameAs(*coarseRegB[j]->getMap()));
+      }
 
-    sumInterfaceValues(coarseRegB, regRowMaps[l+1], regRowImporters[l+1]);
+      tm = Teuchos::null;
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("vCycle: 5 - sum interface values")));
+
+      sumInterfaceValues(coarseRegB, regRowMaps[l+1], regRowImporters[l+1]);
+    }
 
     tm = Teuchos::null;
     bool coarseZeroInitGuess = true;
