@@ -234,19 +234,16 @@ Basker<Matrix,Vector>::solve_impl(
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif
-    // see Amesos2_Klu2_def.hpp for same situation and a long comment on this
-    // Note for Basker the issue applies to float or complex<float>, while Klu2 just applies to complex<float>
-    deep_copy_or_assign_view(convert_xValues_, xValues_);
 
     if ( is_contiguous_ == true ) {
       Util::put_1d_data_helper_kokkos_view<
-        MultiVecAdapter<Vector>,convert_host_solve_array_t>::do_put(X, convert_xValues_,
+        MultiVecAdapter<Vector>,host_solve_array_t>::do_put(X, xValues_,
             as<size_t>(ld_rhs),
             ROOTED);
     }
     else {
       Util::put_1d_data_helper_kokkos_view<
-        MultiVecAdapter<Vector>,convert_host_solve_array_t>::do_put(X, convert_xValues_,
+        MultiVecAdapter<Vector>,host_solve_array_t>::do_put(X, xValues_,
             as<size_t>(ld_rhs),
             CONTIGUOUS_AND_ROOTED);
     }

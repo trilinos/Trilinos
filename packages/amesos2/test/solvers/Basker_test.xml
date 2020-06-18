@@ -83,4 +83,65 @@
     </ParameterList>
   </ParameterList> <!-- end basker mtx -->
 
+  <ParameterList name="tacho_test_complex.mtx">
+    <ParameterList name="Basker">
+      <ParameterList name="tpetra">
+        <ParameterList name="run_complex_double">
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="GlobalOrdinal" type="string" value="long long int"/>
+          <Parameter name="Scalar" type="string" value="complex"/>
+          <Parameter name="Magnitude" type="string" value="double"/>
+        </ParameterList>
+        <ParameterList name="run_complex_float">
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="GlobalOrdinal" type="string" value="long long int"/>
+          <Parameter name="Scalar" type="string" value="complex"/>
+          <Parameter name="Magnitude" type="string" value="float"/>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="kokkos">
+        <ParameterList name="run_serial_complex_double">
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="Node" type="string" value="serial"/>
+          <Parameter name="Scalar" type="string" value="complex"/>
+          <Parameter name="Magnitude" type="string" value="double"/>
+        </ParameterList>
+        <ParameterList name="run_cuda_complex_double">
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="Node" type="string" value="cuda"/>
+          <Parameter name="Scalar" type="string" value="complex"/>
+          <Parameter name="Magnitude" type="string" value="double"/>
+        </ParameterList>
+        <ParameterList name="run_cudauvmoff_complex_double">
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="Node" type="string" value="cudauvmoff"/>
+          <Parameter name="Scalar" type="string" value="complex"/>
+          <Parameter name="Magnitude" type="string" value="double"/>
+        </ParameterList>
+        <ParameterList name="run_serial_complex_float">
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="Node" type="string" value="serial"/>
+          <Parameter name="Scalar" type="string" value="complex"/>
+          <Parameter name="Magnitude" type="string" value="float"/>
+        </ParameterList>
+        <ParameterList name="run_cuda_complex_float">
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="Node" type="string" value="cuda"/>
+          <Parameter name="Scalar" type="string" value="complex"/>
+          <Parameter name="Magnitude" type="string" value="float"/>
+        </ParameterList>
+        <ParameterList name="run_cudauvmoff_complex_float">
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="Node" type="string" value="cudauvmoff"/>
+          <Parameter name="Scalar" type="string" value="complex"/>
+          <Parameter name="Magnitude" type="string" value="float"/>
+        </ParameterList>
+      </ParameterList>
+
+    </ParameterList> <!-- end Basker -->
+    <ParameterList name="all_solver_params">
+    </ParameterList>
+  </ParameterList> <!-- end tacho_test_complex.mtx -->
+
 </ParameterList>

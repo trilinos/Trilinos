@@ -76,18 +76,15 @@ template <class, class> class Basker;
 template <>
 struct TypeMap<Basker,float>
 {
-  typedef double dtype;
+  static double dtype;
   typedef double type;
-  typedef float put_type; // exists just to handle the case of std::complex<float> or float adapter
 };
-
 
 template <>
 struct TypeMap<Basker,double>
 {
-  typedef double dtype;
+  static double dtype;
   typedef double type;
-  typedef double put_type; // exists just to handle the case of std::complex<float> or float adapter
 };
 
 
@@ -96,35 +93,29 @@ struct TypeMap<Basker,double>
 template <>
 struct TypeMap<Basker,std::complex<float> >
 {
-  typedef std::complex<double> dtype;
+  static std::complex<double> dtype;
   typedef Kokkos::complex<double> type;
-  typedef Kokkos::complex<float> put_type; // exists just to handle the case of std::complex<float> or float adapter
 };
-
 
 template <>
 struct TypeMap<Basker,std::complex<double> >
 {
-  typedef std::complex<double> dtype;
+  static std::complex<double> dtype;
   typedef Kokkos::complex<double> type;
-  typedef Kokkos::complex<double> put_type; // exists just to handle the case of std::complex<float> or float adapter
 };
 
 template <>
 struct TypeMap<Basker,Kokkos::complex<float> >
 {
-  typedef std::complex<double> dtype;
+  static std::complex<double> dtype;
   typedef Kokkos::complex<double> type;
-  typedef Kokkos::complex<float> put_type; // exists just to handle the case of std::complex<float> or float adapter
 };
-
 
 template <>
 struct TypeMap<Basker,Kokkos::complex<double> >
 {
-  typedef std::complex<double> dtype;
+  static std::complex<double> dtype;
   typedef Kokkos::complex<double> type;
-  typedef Kokkos::complex<double> put_type; // exists just to handle the case of std::complex<float> or float adapter
 };
 
 

@@ -528,23 +528,7 @@ namespace Amesos2 {
 
       // If this is the optimized path then kokkos_new_data will be the dst
       auto mv_view_to_modify_2d = mv_->getLocalViewDevice();
-
-      #ifdef HAVE_TEUCHOS_FLOAT
-      // To remove this and make it use the optimized deep_copy_or_assign_view,
-      // need to resolve the put_type setup for Klu2 and Basker which is
-      // handling float in an awkward way. The current effect of this check
-      // is to make the put not completely optimized for float builds.
-      // This is related to #7158. The problem here was that we are assuming
-      // that the vector we did a 'get' on is the same one we will do 'put' with
-      // but the added put_type for float breaks that assumption. In that case,
-      // the code here may assign when in fact we need a copy back to the MV.
-      // If this code does assign it's not doing anything to the MV because it's
-      // assuming we were solving directly to it from the original 'get'.
-      // TODO: Make put_type go away and get rid of these special checks for float.
-      deep_copy(mv_view_to_modify_2d, kokkos_new_data);
-      #else
       deep_copy_or_assign_view(mv_view_to_modify_2d, kokkos_new_data);
-      #endif
     }
     else {
 
@@ -568,11 +552,19 @@ namespace Amesos2 {
       }
 
       if ( distribution != CONTIGUOUS_AND_ROOTED ) {
+        // Use View scalar type, not MV Scalar because we want Kokkos::complex, not
+        // std::complex to avoid a Kokkos::complex<double> to std::complex<float>
+        // conversion which would require a double copy and fail here. Then we'll be
+        // setup to safely reinterpret_cast complex to std if necessary.
+        typedef typename multivec_t::dual_view_type::t_host::value_type tpetra_mv_view_type;
+        Kokkos::View<tpetra_mv_view_type**,typename KV::array_layout,
+          Kokkos::HostSpace> convert_kokkos_new_data;
+        deep_copy_or_assign_view(convert_kokkos_new_data, kokkos_new_data);
 #ifdef HAVE_TEUCHOS_COMPLEX
-        // for complex, cast Kokkos::complex back to std::complex
-        auto pData = reinterpret_cast<Scalar*>(kokkos_new_data.data());
+        // convert_kokkos_new_data may be Kokkos::complex and Scalar could be std::complex
+        auto pData = reinterpret_cast<Scalar*>(convert_kokkos_new_data.data());
 #else
-        auto pData = kokkos_new_data.data();
+        auto pData = convert_kokkos_new_data.data();
 #endif
 
         const multivec_t source_mv (srcMap, Teuchos::ArrayView<const scalar_t>(

@@ -95,8 +95,11 @@ public:
   typedef TypeMap<Amesos2::Basker,scalar_type>                     type_map;
 
   typedef typename type_map::type                               basker_type;
-  typedef typename type_map::dtype                             basker_dtype;
-  typedef typename type_map::put_type                       basker_put_type; // just for special case when adapter is std::complex<float> or float
+
+  // TODO: Would like to change dtype to be a regular type, not static.
+  // Seems nothing was using dtype before anyways but Stokhos would break so
+  // will address that as a separate PR.
+  typedef decltype(type_map::dtype)                            basker_dtype;
 
   typedef FunctionMap<Amesos2::Basker,basker_type>             function_map;
 
@@ -202,12 +205,9 @@ private:
 
   typedef typename Kokkos::View<basker_type**, Kokkos::LayoutLeft, HostSpaceType>
     host_solve_array_t;
-  typedef typename Kokkos::View<basker_put_type**, Kokkos::LayoutLeft, HostSpaceType>
-    convert_host_solve_array_t;
 
   /// Persisting 1D store for X
   mutable host_solve_array_t xValues_;
-  mutable convert_host_solve_array_t convert_xValues_; // exists just for the case of adapter using std::complex<float> or float
   int ldx_;
 
   /// Persisting 1D store for B

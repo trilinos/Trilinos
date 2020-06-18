@@ -64,14 +64,6 @@
 
 namespace Amesos2 {
 
-  template <>
-  struct FunctionMap<Basker,double>
-  {
-    static double * convert_scalar(double * pData) {
-      return pData; // no conversion necessary
-    }
-  };
-
 #ifdef HAVE_TEUCHOS_COMPLEX
   template <>
   struct FunctionMap<Basker,Kokkos::complex<double>>
@@ -82,6 +74,15 @@ namespace Amesos2 {
   };
 
 #endif // HAVE_TEUCHOS_COMPLEX
+
+  // if not specialized, then assume generic conversion is fine
+  template <typename scalar_t>
+  struct FunctionMap<Basker,scalar_t>
+  {
+    static scalar_t * convert_scalar(scalar_t * pData) {
+      return pData; // no conversion necessary
+    }
+  };
 
 } // end namespace Amesos2
 
