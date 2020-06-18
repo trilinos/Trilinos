@@ -649,9 +649,7 @@ unpackAndCombineIntoCrsMatrix(
   Kokkos::View<size_t*, DT> offsets("offsets", num_import_lids+1);
   computeOffsetsFromCounts(offsets, num_packets_per_lid);
 
-  // Determine the maximum number of entries in any row in the matrix.  The
-  // maximum number of entries is needed to allocate unpack buffers on the
-  // device.
+  // Determine the sizes of the unpack batches
   size_t max_num_ent = compute_maximum_num_entries<LO,DT>(num_packets_per_lid, offsets, imports);
   const size_t default_batch_size = Tpetra::Details::Behavior::hierarchicalUnpackBatchSize();
   const size_t batch_size = std::min(default_batch_size, max_num_ent);
@@ -710,7 +708,12 @@ unpackAndCombineIntoCrsMatrix(
 
   using policy = Kokkos::TeamPolicy<XS, Kokkos::IndexType<LO>>;
   const size_t team_size = Tpetra::Details::Behavior::hierarchicalUnpackTeamSize();
-  if (team_size == Teuchos::OrdinalTraits<size_t>::invalid())
+#if defined(KOKKOS_ENABLE_CUDA)
+  constexpr bool is_cuda = std::is_same<XS, Kokkos::Cuda>::value;
+#else
+  constexpr bool is_cuda = false;
+#endif
+  if (!is_cuda || team_size == Teuchos::OrdinalTraits<size_t>::invalid())
   {
     Kokkos::parallel_for(policy(static_cast<LO>(num_batches), Kokkos::AUTO), f);
   }
