@@ -842,7 +842,7 @@ void ApplyMatVec(const Scalar alpha,
                  const Teuchos::Array<LocalOrdinal>& regionInterfaceLIDs,
                  RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Y,
                  const Teuchos::ETransp transposeMode,
-                 const bool sumInterfaceValues = true) {
+                 const bool sumInterfaceValues) {
 #include "Xpetra_UseShortNames.hpp"
   using Teuchos::TimeMonitor;
   using local_matrix_type = typename Xpetra::Matrix<SC,LO,GO,Node>::local_matrix_type;
@@ -919,7 +919,7 @@ computeResidual(Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, No
   // Step 1: Compute region version of y = Ax
   RCP<Vector> aTimesX = VectorFactory::Build(regionGrpMats[0]->getRangeMap(), true);
   ApplyMatVec(TST::one(), regionGrpMats[0], regX[0],
-      TST::zero(), regionInterfaceImporter, regionInterfaceLIDs, aTimesX, Teuchos::NO_TRANS);
+      TST::zero(), regionInterfaceImporter, regionInterfaceLIDs, aTimesX, Teuchos::NO_TRANS, true);
 
   // Step 2: Compute region version of r = b - y
   regRes[0]->update(TST::one(), *regB[0], -TST::one(), *aTimesX, TST::zero());
