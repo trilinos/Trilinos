@@ -329,17 +329,6 @@ namespace MueLu {
                 } else
                   numDropped++;
               }
-#if 0
-              if (rownnz == 1) {
-                // If the only element remaining after filtering is diagonal, mark node as boundary
-                // FIXME: this should really be replaced by the following
-                //    if (indices.size() == 1 && indices[0] == row)
-                //        boundaryNodes[row] = true;
-                // We do not do it this way now because there is no framework for distinguishing isolated
-                // and boundary nodes in the aggregation algorithms
-                boundaryNodes[row] = true;
-              }
-#endif
               rows[row+1] = realnnz;
             }
             else {
