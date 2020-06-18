@@ -18,7 +18,7 @@ if atdm_match_any_buildname_keyword \
 else
   echo
   echo "***"
-  echo "*** ERROR: A supported compiler was not selected for 'cts1empire' env"
+  echo "*** ERROR: A supported compiler was not selected for 'cts1empire' env - $ATDM_CONFIG_BUILD_NAME"
   echo "***"
   echo "*** Supported compilers include:"
   echo "***"
