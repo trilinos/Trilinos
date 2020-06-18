@@ -67,6 +67,33 @@ if [[ "$ATDM_CONFIG_COMPILER" == "ARM-20.0_OPENMPI-4.0.2" ]]; then
   export LAPACK_ROOT="$ARMPL_LIB"
   export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT};-larmpl_ilp64_mp"
   export ATDM_CONFIG_BLAS_LIBS="-L${LAPACK_ROOT};-larmpl_ilp64_mp"
+
+  # We'll use TPL_ROOT for consistency across ATDM environments
+  export MPI_ROOT=${MPI_DIR}
+  export BLAS_ROOT=${ARMPL_DIR}
+  export LAPACK_ROOT=${ARMPL_DIR}
+  export HDF5_ROOT=${HDF5_DIR}
+  export NETCDF_ROOT=${NETCDF_DIR}
+  export PNETCDF_ROOT=${PNETCDF_DIR}
+  export ZLIB_ROOT=${ZLIB_DIR}
+  export CGNS_ROOT=${CGNS_DIR}
+  export BOOST_ROOT=${BOOST_DIR}
+
+elif [[ "$ATDM_CONFIG_COMPILER" == "ARM-20.1_OPENMPI-4.0.3" ]]; then
+  module load sparc-dev/arm-20.1_openmpi-4.0.3
+
+  # We'll use TPL_ROOT for consistency across ATDM environments
+  export MPI_ROOT=${MPI_DIR}
+  export BLAS_ROOT=${ARMPL_DIR}
+  export HDF5_ROOT=${HDF5_DIR}
+  export NETCDF_ROOT=${NETCDF_DIR}
+  export PNETCDF_ROOT=${PNETCDF_DIR}
+  export ZLIB_ROOT=${ZLIB_DIR}
+  export CGNS_ROOT=${CGNS_DIR}
+  export METIS_ROOT=${METIS_DIR}
+  export PARMETIS_ROOT=${PARMETIS_DIR}
+  export SUPERLUDIST_ROOT=${SUPERLU_DIST_DIR}
+  export BINUTILS_ROOT=${BINUTILS_DIR}
 else
   echo
   echo "***"
@@ -79,26 +106,6 @@ fi
 module load ninja
 module load cmake/3.12.2
 module load git/2.19.2
-
-#
-# Set up for the TPLs
-#
-
-# Common TPL paths, we'll use TPL_ROOT for consistency across ATDM
-# environments
-export MPI_ROOT=${MPI_DIR}
-export BLAS_ROOT=${ARMPL_DIR}
-export LAPACK_ROOT=${ARMPL_DIR}
-export HDF5_ROOT=${HDF5_DIR}
-export NETCDF_ROOT=${NETCDF_DIR}
-export PNETCDF_ROOT=${PNETCDF_DIR}
-export ZLIB_ROOT=${ZLIB_DIR}
-export CGNS_ROOT=${CGNS_DIR}
-export BOOST_ROOT=${BOOST_DIR}
-export METIS_ROOT=${METIS_DIR}
-export PARMETIS_ROOT=${PARMETIS_DIR}
-export SUPERLUDIST_ROOT=${SUPERLU_DIST_DIR}
-export BINUTILS_ROOT=${BINUTILS_DIR}
 
 export ATDM_CONFIG_USE_HWLOC=OFF
 export HWLOC_LIBS=
