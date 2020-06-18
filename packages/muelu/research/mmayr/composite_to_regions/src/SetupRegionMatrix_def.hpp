@@ -840,7 +840,8 @@ void ApplyMatVec(const Scalar alpha,
                  const Scalar beta,
                  const RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter,
                  const Teuchos::Array<LocalOrdinal>& regionInterfaceLIDs,
-                 RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Y) {
+                 RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Y,
+                 const Teuchos::ETransp transposeMode) {
 #include "Xpetra_UseShortNames.hpp"
   using Teuchos::TimeMonitor;
   using local_matrix_type = typename Xpetra::Matrix<SC,LO,GO,Node>::local_matrix_type;
@@ -855,7 +856,12 @@ void ApplyMatVec(const Scalar alpha,
   local_matrix_type localA = regionMatrix->getLocalMatrix();
   auto localX = X->template getLocalView<device_type>();
   auto localY = Y->template getLocalView<device_type>();
-  KokkosSparse::spmv("N", alpha, localA, localX, beta, localY);
+  char spmvMode = KokkosSparse::NoTranspose[0];
+  if (transposeMode == Teuchos::TRANS)
+    spmvMode = KokkosSparse::Transpose[0];
+  else
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(false, "Unsupported mode.");
+  KokkosSparse::spmv(&spmvMode, alpha, localA, localX, beta, localY);
 
   tm = Teuchos::null;
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ApplyMatVec: 2 - communicate data")));
@@ -909,7 +915,7 @@ computeResidual(Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, No
   // Step 1: Compute region version of y = Ax
   RCP<Vector> aTimesX = VectorFactory::Build(regionGrpMats[0]->getRangeMap(), true);
   ApplyMatVec(TST::one(), regionGrpMats[0], regX[0],
-      TST::zero(), regionInterfaceImporter, regionInterfaceLIDs, aTimesX);
+      TST::zero(), regionInterfaceImporter, regionInterfaceLIDs, aTimesX, Teuchos::NO_TRANS);
 
   // Step 2: Compute region version of r = b - y
   regRes[0]->update(TST::one(), *regB[0], -TST::one(), *aTimesX, TST::zero());
