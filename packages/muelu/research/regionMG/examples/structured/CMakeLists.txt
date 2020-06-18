@@ -26,6 +26,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
       compare_residual_history.py
       gold_files/Star2D_GS_4.log.gold
       gold_files/Brick3D_linear_4.log.gold
+      gold_files/Elasticity3D_linear_4.log.gold
     )
 
   ## These are some completion tests
@@ -223,6 +224,21 @@ TRIBITS_ADD_TEST(
 	  OVERALL_NUM_MPI_PROCS 4
 	  )
 
-  ENDIF()
+  TRIBITS_ADD_ADVANCED_TEST(
+	  Structured_Region_Linear_Elasticity3D_Tpetra_MPI_4_regression
+	  TEST_0
+	    EXEC StructuredRegionDriver
+ 	    ARGS --linAlgebra=Tpetra --xml=structured_linear_3dof.xml --matrixType=Elasticity3D --nx=10 --ny=10 --nz=10 --smootherIts=2 --convergence-log=Elasticity3D_linear_4.log
+		NUM_MPI_PROCS 4
+	  TEST_1
+	    CMND ${PYTHON_EXECUTABLE}
+	    ARGS compare_residual_history.py gold_files/Elasticity3D_linear_4.log.gold Elasticity3D_linear_4.log 1.0e-12
+	    STANDARD_PASS_OUTPUT
+	  FAIL_FAST
+	  COMM serial mpi
+	  OVERALL_NUM_MPI_PROCS 4
+	  )
+
+ENDIF()
 
 ENDIF()
