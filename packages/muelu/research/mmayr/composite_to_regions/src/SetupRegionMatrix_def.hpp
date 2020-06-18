@@ -841,7 +841,8 @@ void ApplyMatVec(const Scalar alpha,
                  const RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter,
                  const Teuchos::Array<LocalOrdinal>& regionInterfaceLIDs,
                  RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Y,
-                 const Teuchos::ETransp transposeMode) {
+                 const Teuchos::ETransp transposeMode,
+                 const bool sumInterfaceValues = true) {
 #include "Xpetra_UseShortNames.hpp"
   using Teuchos::TimeMonitor;
   using local_matrix_type = typename Xpetra::Matrix<SC,LO,GO,Node>::local_matrix_type;
@@ -863,23 +864,26 @@ void ApplyMatVec(const Scalar alpha,
     TEUCHOS_TEST_FOR_EXCEPT_MSG(false, "Unsupported mode.");
   KokkosSparse::spmv(&spmvMode, alpha, localA, localX, beta, localY);
 
-  tm = Teuchos::null;
-  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ApplyMatVec: 2 - communicate data")));
+  if (sumInterfaceValues)
+  {
+    tm = Teuchos::null;
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ApplyMatVec: 2 - communicate data")));
 
-  // Step 2: preform communication to propagate local interface
-  // values to all the processor that share interfaces.
-  RCP<MultiVector> matvecInterfaceTmp = MultiVectorFactory::Build(regionInterfaceMap, 1);
-  matvecInterfaceTmp->doImport(*Y, *regionInterfaceImporter, Xpetra::INSERT);
+    // Step 2: preform communication to propagate local interface
+    // values to all the processor that share interfaces.
+    RCP<MultiVector> matvecInterfaceTmp = MultiVectorFactory::Build(regionInterfaceMap, 1);
+    matvecInterfaceTmp->doImport(*Y, *regionInterfaceImporter, Xpetra::INSERT);
 
-  tm = Teuchos::null;
-  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ApplyMatVec: 3 - sum interface contributions")));
+    tm = Teuchos::null;
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ApplyMatVec: 3 - sum interface contributions")));
 
-  // Step 3: sum all contributions to interface values
-  // on all ranks
-  ArrayRCP<Scalar> YData = Y->getDataNonConst(0);
-  ArrayRCP<Scalar> interfaceData = matvecInterfaceTmp->getDataNonConst(0);
-  for(LO interfaceIdx = 0; interfaceIdx < static_cast<LO>(interfaceData.size()); ++interfaceIdx) {
-    YData[regionInterfaceLIDs[interfaceIdx]] += interfaceData[interfaceIdx];
+    // Step 3: sum all contributions to interface values
+    // on all ranks
+    ArrayRCP<Scalar> YData = Y->getDataNonConst(0);
+    ArrayRCP<Scalar> interfaceData = matvecInterfaceTmp->getDataNonConst(0);
+    for(LO interfaceIdx = 0; interfaceIdx < static_cast<LO>(interfaceData.size()); ++interfaceIdx) {
+      YData[regionInterfaceLIDs[interfaceIdx]] += interfaceData[interfaceIdx];
+    }
   }
 
   tm = Teuchos::null;

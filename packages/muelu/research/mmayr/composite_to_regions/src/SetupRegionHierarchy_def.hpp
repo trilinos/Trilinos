@@ -1076,11 +1076,27 @@ void vCycle(const int l, ///< ID of current level
 
     // Transfer coarse level correction to fine level
     Array<RCP<Vector> > regCorrection(maxRegPerProc);
-    for (int j = 0; j < maxRegPerProc; j++) {
-      regCorrection[j] = VectorFactory::Build(regRowMaps[l][j], true);
-      regProlong[l+1][j]->apply(*coarseRegX[j], *regCorrection[j]);
-      TEUCHOS_ASSERT(regProlong[l+1][j]->getDomainMap()->isSameAs(*coarseRegX[j]->getMap()));
-      TEUCHOS_ASSERT(regProlong[l+1][j]->getRangeMap()->isSameAs(*regCorrection[j]->getMap()));
+    if (useFastMatVec)
+    {
+      // Get pre-communicated communication patterns for the fast MatVec
+      const Array<LocalOrdinal> regionInterfaceLIDs = smootherParams[l]->get<Array<LO>>("Fast MatVec: interface LIDs");
+      const RCP<Import> regionInterfaceImporter = smootherParams[l]->get<RCP<Import>>("Fast MatVec: interface importer");
+
+      for (int j = 0; j < maxRegPerProc; j++) {
+        regCorrection[j] = VectorFactory::Build(regRowMaps[l][j], true);
+        ApplyMatVec(SC_ONE, regProlong[l+1][j], coarseRegX[j], SC_ZERO, regionInterfaceImporter,
+            regionInterfaceLIDs, regCorrection[j], Teuchos::NO_TRANS, false);
+        // TEUCHOS_ASSERT(regProlong[l+1][j]->getDomainMap()->isSameAs(*coarseRegX[j]->getMap()));
+        // TEUCHOS_ASSERT(regProlong[l+1][j]->getRangeMap()->isSameAs(*regCorrection[j]->getMap()));
+      }
+    }
+    else{
+      for (int j = 0; j < maxRegPerProc; j++) {
+        regCorrection[j] = VectorFactory::Build(regRowMaps[l][j], true);
+        regProlong[l+1][j]->apply(*coarseRegX[j], *regCorrection[j]);
+        // TEUCHOS_ASSERT(regProlong[l+1][j]->getDomainMap()->isSameAs(*coarseRegX[j]->getMap()));
+        // TEUCHOS_ASSERT(regProlong[l+1][j]->getRangeMap()->isSameAs(*regCorrection[j]->getMap()));
+      }
     }
 
     tm = Teuchos::null;
