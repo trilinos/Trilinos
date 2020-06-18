@@ -14,7 +14,7 @@
 
     <parameter>
       <name>verbosity</name>
-      <type>string</type>a
+      <type>string</type>
       <default>"high"</default>
       <description>Control of the amount of printed information. Possible values: see Table~\ref{t:verbosity_types}.</description>
       <name-ML>ML output</name-ML>
