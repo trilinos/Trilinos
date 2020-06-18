@@ -124,6 +124,25 @@ namespace Sacado {
     typedef U type;
   };
 
+  //! Specialization of %ScalarType to ViewFad types
+  /*!
+   * This specialization overrides the one for GeneralFad to handle const
+   * value types so that resulting scalar type is still const.
+   */
+  template <typename ValueT, unsigned Size, unsigned Stride, typename Base>
+  struct ScalarType< Fad::Exp::ViewFad<ValueT,Size,Stride,Base> > {
+    typedef typename ScalarType<ValueT>::type type;
+  };
+
+  /*!
+   * This specialization overrides the one for GeneralFad to handle const
+   * value types so that resulting value type is still const.
+   */
+  template <typename ValueT, unsigned Size, unsigned Stride, typename Base>
+  struct ValueType< Fad::Exp::ViewFad<ValueT,Size,Stride,Base> > {
+    typedef ValueT type;
+  };
+
 } // namespace Sacado
 
 #endif // SACADO_FAD_EXP_VIEWFAD_HPP

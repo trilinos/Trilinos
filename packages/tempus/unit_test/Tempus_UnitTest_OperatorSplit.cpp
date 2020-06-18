@@ -18,9 +18,11 @@
 #include "Tempus_StepperRKButcherTableau.hpp"
 
 #include "Tempus_StepperOperatorSplitModifierBase.hpp"
-#include "Tempus_StepperOperatorSplitObserverBase.hpp"
 #include "Tempus_StepperOperatorSplitModifierXBase.hpp"
+#include "Tempus_StepperOperatorSplitObserverBase.hpp"
 #include "Tempus_StepperOperatorSplitModifierDefault.hpp"
+#include "Tempus_StepperOperatorSplitModifierXDefault.hpp"
+#include "Tempus_StepperOperatorSplitObserverDefault.hpp"
 #include "Tempus_StepperOperatorSplitObserver.hpp"
 
 #include "../TestModels/VanDerPol_IMEX_ExplicitModel.hpp"
@@ -64,19 +66,24 @@ TEUCHOS_UNIT_TEST(OperatorSplit, Default_Construction)
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
   // Default values for construction.
-#ifndef TEMPUS_DEPRECATED_CODE
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   auto obs    = rcp(new Tempus::StepperOperatorSplitObserver<double>());
 #endif
-
-  auto modifier = rcp(new Tempus::StepperOperatorSplitModifierDefault<double>());
-  stepper->setAppAction(modifier);
+  auto modifier  = rcp(new Tempus::StepperOperatorSplitModifierDefault<double>());
+  auto modifierX = rcp(new Tempus::StepperOperatorSplitModifierXDefault<double>());
+  auto observer  = rcp(new Tempus::StepperOperatorSplitObserverDefault<double>());
   bool useFSAL              = stepper->getUseFSALDefault();
   std::string ICConsistency = stepper->getICConsistencyDefault();
   bool ICConsistencyCheck   = stepper->getICConsistencyCheckDefault();
   int order = 1;
 
   // Test the set functions.
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   stepper->setObserver(obs);                           stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+#endif
+  stepper->setAppAction(modifier);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setAppAction(modifierX);                    stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setAppAction(observer);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setUseFSAL(useFSAL);                        stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setICConsistency(ICConsistency);            stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setICConsistencyCheck(ICConsistencyCheck);  stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
@@ -135,24 +142,24 @@ TEUCHOS_UNIT_TEST(OperatorSplit, StepperFactory_Construction)
 
 }
 
-// ************************************************************                                   
-// ************************************************************                                   
+// ************************************************************
+// ************************************************************
 class StepperOperatorSplitModifierTest
   : virtual public Tempus::StepperOperatorSplitModifierBase<double>
 {
 public:
 
-  /// Constructor                                                                                  
+  /// Constructor
   StepperOperatorSplitModifierTest()
     : testBEGIN_STEP(false), testEND_STEP(false),
       testCurrentValue(-0.99), testWorkingValue(-0.99),
       testDt(-1.5), testType("")
   {}
 
-  /// Destructor                                                                                   
+  /// Destructor
   virtual ~StepperOperatorSplitModifierTest(){}
 
-  /// Modify OperatorSplit Stepper at action location.                                             
+  /// Modify OperatorSplit Stepper at action location.
   virtual void modify(
     Teuchos::RCP<Tempus::SolutionHistory<double> > sh,
     Teuchos::RCP<Tempus::StepperOperatorSplit<double> > stepper,
@@ -207,7 +214,7 @@ TEUCHOS_UNIT_TEST(OperatorSplit, AppAction_Modifier)
 {
   auto explicitModel = rcp(new Tempus_Test::VanDerPol_IMEX_ExplicitModel<double>());
   auto implicitModel = rcp(new Tempus_Test::VanDerPol_IMEX_ImplicitModel<double>());
-  // Default construction.                                                                          
+  // Default construction.
   auto stepper = rcp(new Tempus::StepperOperatorSplit<double>());
   auto sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
   auto subStepper1 =
@@ -220,7 +227,7 @@ TEUCHOS_UNIT_TEST(OperatorSplit, AppAction_Modifier)
   stepper->addStepper(subStepper2);
   stepper->initialize();
 
-  // Setup initial condition SolutionState --------------------                                  
+  // Setup initial condition SolutionState --------------------
   Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
     stepper->getModel()->getNominalValues();
   auto icX    = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
@@ -232,26 +239,26 @@ TEUCHOS_UNIT_TEST(OperatorSplit, AppAction_Modifier)
   icState->setOrder   (stepper->getOrder());
   icState->setSolutionStatus(Tempus::Status::PASSED);  // ICs are passing.
 
-  // Create a SolutionHistory.                                                                   
+  // Create a SolutionHistory.
   auto solutionHistory = rcp(new Tempus::SolutionHistory<double>());
   solutionHistory->setName("Forward States");
   solutionHistory->setStorageType(Tempus::STORAGE_TYPE_STATIC);
   solutionHistory->setStorageLimit(2);
   solutionHistory->addState(icState);
 
-  // Take one time step.                                                                           
+  // Take one time step.
   stepper->setInitialConditions(solutionHistory);
   solutionHistory->initWorkingState();
   solutionHistory->getWorkingState()->setTimeStep(-15.0);
   stepper->takeStep(solutionHistory);
 
-  // Testing that each ACTION_LOCATION has been called.                                            
+  // Testing that each ACTION_LOCATION has been called.
   TEST_COMPARE(modifier->testBEGIN_STEP, ==, true);
   TEST_COMPARE(modifier->testBEFORE_STEPPER, ==, true);
   TEST_COMPARE(modifier->testAFTER_STEPPER, ==, true);
   TEST_COMPARE(modifier->testEND_STEP, ==, true);
 
-  // Testing that values can be set through the Modifier.                                          
+  // Testing that values can be set through the Modifier.
   auto x = solutionHistory->getCurrentState()->getX();
   TEST_FLOATING_EQUALITY(modifier->testCurrentValue, get_ele(*(x), 0), 1.0e-15);
   x = solutionHistory->getWorkingState()->getX();
@@ -262,14 +269,14 @@ TEUCHOS_UNIT_TEST(OperatorSplit, AppAction_Modifier)
   TEST_COMPARE(modifier->testType, ==, "OperatorSplit - Modifier");
 }
 
-// ************************************************************                                  
-// ************************************************************                                  
+// ************************************************************
+// ************************************************************
 class StepperOperatorSplitObserverTest
   : virtual public Tempus::StepperOperatorSplitObserverBase<double>
 {
 public:
 
-  /// Constructor                                                                                
+  /// Constructor
   StepperOperatorSplitObserverTest()
     : testBEGIN_STEP(false), testBEFORE_STEPPER(false),
       testAFTER_STEPPER(false), testEND_STEP(false),
@@ -277,10 +284,10 @@ public:
       testDt(-1.5), testType("Operator Split")
   {}
 
-  /// Destructor                                                                                 
+  /// Destructor
   virtual ~StepperOperatorSplitObserverTest(){}
 
-  /// Observe OperatorSplit Stepper at action location.                                          
+  /// Observe OperatorSplit Stepper at action location.
   virtual void observe(
     Teuchos::RCP<const Tempus::SolutionHistory<double> > sh,
     Teuchos::RCP<const Tempus::StepperOperatorSplit<double> > stepper,
@@ -333,7 +340,7 @@ TEUCHOS_UNIT_TEST(OperatorSplit, AppAction_Observer)
 {
   auto explicitModel = rcp(new Tempus_Test::VanDerPol_IMEX_ExplicitModel<double>());
   auto implicitModel = rcp(new Tempus_Test::VanDerPol_IMEX_ImplicitModel<double>());
-  // Default construction.                                                                          
+  // Default construction.
   auto stepper = rcp(new Tempus::StepperOperatorSplit<double>());
   auto sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
   auto subStepper1 =
@@ -346,7 +353,7 @@ TEUCHOS_UNIT_TEST(OperatorSplit, AppAction_Observer)
   stepper->addStepper(subStepper2);
   stepper->initialize();
 
-  // Setup initial condition SolutionState --------------------                                     
+  // Setup initial condition SolutionState --------------------
   Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
     stepper->getModel()->getNominalValues();
   auto icX    = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
@@ -356,28 +363,28 @@ TEUCHOS_UNIT_TEST(OperatorSplit, AppAction_Observer)
   icState->setIndex   (1);
   icState->setTimeStep(-1.5);
   icState->setOrder   (stepper->getOrder());
-  icState->setSolutionStatus(Tempus::Status::PASSED);  // ICs are passing.                          
+  icState->setSolutionStatus(Tempus::Status::PASSED);  // ICs are passing.
 
-  // Create a SolutionHistory.                                                                     
+  // Create a SolutionHistory.
   auto solutionHistory = rcp(new Tempus::SolutionHistory<double>());
   solutionHistory->setName("Forward States");
   solutionHistory->setStorageType(Tempus::STORAGE_TYPE_STATIC);
   solutionHistory->setStorageLimit(2);
   solutionHistory->addState(icState);
 
-  // Take one time step.                                                                         
+  // Take one time step.
   stepper->setInitialConditions(solutionHistory);
   solutionHistory->initWorkingState();
   solutionHistory->getWorkingState()->setTimeStep(-1.5);
   stepper->takeStep(solutionHistory);
 
-  // Testing that each ACTION_LOCATION has been called.                                          
+  // Testing that each ACTION_LOCATION has been called.
   TEST_COMPARE(observer->testBEGIN_STEP, ==, true);
   TEST_COMPARE(observer->testBEFORE_STEPPER, ==, true);
   TEST_COMPARE(observer->testAFTER_STEPPER, ==, true);
   TEST_COMPARE(observer->testEND_STEP, ==, true);
 
-  // Testing that values can be observed through the observer.                                   
+  // Testing that values can be observed through the observer.
   auto x = solutionHistory->getCurrentState()->getX();
   TEST_FLOATING_EQUALITY(observer->testCurrentValue, get_ele(*(x), 0), 1.0e-15);
   x = solutionHistory->getWorkingState()->getX();
@@ -387,14 +394,14 @@ TEUCHOS_UNIT_TEST(OperatorSplit, AppAction_Observer)
   TEST_COMPARE(observer->testType, ==, "Operator Split");
 }
 
-// ************************************************************                                  
-// ************************************************************                                  
+// ************************************************************
+// ************************************************************
 class StepperOperatorSplitModifierXTest
   : virtual public Tempus::StepperOperatorSplitModifierXBase<double>
 {
 public:
 
-  /// Constructor                                                                                
+  /// Constructor
   StepperOperatorSplitModifierXTest()
     : testX_BEGIN_STEP(false), testX_BEFORE_STEPPER(false),
       testX_AFTER_STEPPER(false), testXDOT_END_STEP(false),
@@ -402,10 +409,10 @@ public:
       testDt(-1.5), testTime(-1.5)
   {}
 
-  /// Destructor                                                                                 
+  /// Destructor
   virtual ~StepperOperatorSplitModifierXTest(){}
 
-  /// Modify OperatorSplit Stepper at action location.                                           
+  /// Modify OperatorSplit Stepper at action location.
   virtual void modify(
     Teuchos::RCP<Thyra::VectorBase<double> > x,
     const double time, const double dt,
@@ -456,7 +463,7 @@ TEUCHOS_UNIT_TEST(OperatorSplit, AppAction_ModifierX)
 {
   auto explicitModel = rcp(new Tempus_Test::VanDerPol_IMEX_ExplicitModel<double>());
   auto implicitModel = rcp(new Tempus_Test::VanDerPol_IMEX_ImplicitModel<double>());
-  // Default construction.                                                                          
+  // Default construction.
   auto stepper = rcp(new Tempus::StepperOperatorSplit<double>());
   auto sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
   auto subStepper1 =
@@ -469,7 +476,7 @@ TEUCHOS_UNIT_TEST(OperatorSplit, AppAction_ModifierX)
   stepper->addStepper(subStepper2);
   stepper->initialize();
 
-  // Setup initial condition SolutionState --------------------                                     
+  // Setup initial condition SolutionState --------------------
   Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
     stepper->getModel()->getNominalValues();
   auto icX    = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
@@ -479,31 +486,31 @@ TEUCHOS_UNIT_TEST(OperatorSplit, AppAction_ModifierX)
   icState->setIndex   (1);
   icState->setTimeStep(-1.5);
   icState->setOrder   (stepper->getOrder());
-  icState->setSolutionStatus(Tempus::Status::PASSED);  // ICs are passing.                          
+  icState->setSolutionStatus(Tempus::Status::PASSED);  // ICs are passing.
 
-  // Create a SolutionHistory.                                                                      
+  // Create a SolutionHistory.
   auto solutionHistory = rcp(new Tempus::SolutionHistory<double>());
   solutionHistory->setName("Forward States");
   solutionHistory->setStorageType(Tempus::STORAGE_TYPE_STATIC);
   solutionHistory->setStorageLimit(2);
   solutionHistory->addState(icState);
 
-  // Take one time step.                                                                         
+  // Take one time step.
   stepper->setInitialConditions(solutionHistory);
   solutionHistory->initWorkingState();
   solutionHistory->getWorkingState()->setTimeStep(-1.5);
   stepper->takeStep(solutionHistory);
 
-  // Testing that each ACTION_LOCATION has been called.                                          
+  // Testing that each ACTION_LOCATION has been called.
   TEST_COMPARE(modifierX->testX_BEGIN_STEP, ==, true);
   TEST_COMPARE(modifierX->testX_BEFORE_STEPPER, ==, true);
   TEST_COMPARE(modifierX->testX_AFTER_STEPPER, ==, true);
   TEST_COMPARE(modifierX->testXDOT_END_STEP, ==, true);
 
-  // Testing that values can be set through the Modifier.                                        
+  // Testing that values can be set through the Modifier.
   auto x = solutionHistory->getCurrentState()->getX();
   TEST_FLOATING_EQUALITY(modifierX->testX, get_ele(*(x), 0), 1.0e-15);
-  // Temporary memory for xDot is not guarranteed to exist outside the Stepper.                  
+  // Temporary memory for xDot is not guarranteed to exist outside the Stepper.
   auto xDot = stepper->getStepperXDot(solutionHistory->getWorkingState());
   TEST_FLOATING_EQUALITY(modifierX->testXDot, get_ele(*(xDot), 0),1.0e-15);
   auto Dt = solutionHistory->getWorkingState()->getTimeStep();

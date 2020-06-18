@@ -1,6 +1,6 @@
 #ifndef __TACHO_EXAMPLE_EXTERNALINTERFACE_HPP__
 #define __TACHO_EXAMPLE_EXTERNALINTERFACE_HPP__
-#include "ShyLU_NodeTacho_config.h"
+#include "Tacho_config.h"
 
 #if defined(TACHO_USE_INT_INT) 
 
@@ -24,6 +24,7 @@ namespace tacho {
      LEVELSET_OPTION_DEVICE_FACTOR_THRES,
      LEVELSET_OPTION_DEVICE_SOLVE_THRES,
      LEVELSET_OPTION_NSTREAMS,
+     LEVELSET_OPTION_VARIANT,
      INDEX_LENGTH
     };
 
@@ -192,21 +193,22 @@ namespace tacho {
     {
       if (solverParams[USEDEFAULTSOLVERPARAMETERS]) return;
       // common options
-      m_Solver.setVerbose                     (solverParams[VERBOSITY]);
-      m_Solver.setSmallProblemThresholdsize   (solverParams[SMALLPROBLEMTHRESHOLDSIZE]);
+      m_Solver.setVerbose                       (solverParams[VERBOSITY]);
+      m_Solver.setSmallProblemThresholdsize     (solverParams[SMALLPROBLEMTHRESHOLDSIZE]);
 
       // tasking options
-      m_Solver.setBlocksize                   (solverParams[TASKING_OPTION_BLOCKSIZE]);
-      m_Solver.setPanelsize                   (solverParams[TASKING_OPTION_PANELSIZE]);
-      m_Solver.setMaxNumberOfSuperblocks      (solverParams[TASKING_OPTION_MAXNUMSUPERBLOCKS]);
+      m_Solver.setBlocksize                     (solverParams[TASKING_OPTION_BLOCKSIZE]);
+      m_Solver.setPanelsize                     (solverParams[TASKING_OPTION_PANELSIZE]);
+      m_Solver.setMaxNumberOfSuperblocks        (solverParams[TASKING_OPTION_MAXNUMSUPERBLOCKS]);
 
       // levelset options
-      m_Solver.setLevelSetScheduling          (solverParams[LEVELSET_OPTION_SCHEDULING]);      
-      m_Solver.setLevelSetOptionDeviceLevelCut(solverParams[LEVELSET_OPTION_DEVICE_LEVEL_CUT]);
+      m_Solver.setLevelSetScheduling            (solverParams[LEVELSET_OPTION_SCHEDULING]);      
+      m_Solver.setLevelSetOptionDeviceLevelCut  (solverParams[LEVELSET_OPTION_DEVICE_LEVEL_CUT]);
       m_Solver.setLevelSetOptionDeviceFunctionThreshold
         (solverParams[LEVELSET_OPTION_DEVICE_FACTOR_THRES], 
          solverParams[LEVELSET_OPTION_DEVICE_SOLVE_THRES]);
-      m_Solver.setLevelSetOptionNumStreams    (solverParams[LEVELSET_OPTION_NSTREAMS]);
+      m_Solver.setLevelSetOptionNumStreams      (solverParams[LEVELSET_OPTION_NSTREAMS]);
+      m_Solver.setLevelSetOptionAlgorithmVariant(solverParams[LEVELSET_OPTION_VARIANT]);
     }
 
   };

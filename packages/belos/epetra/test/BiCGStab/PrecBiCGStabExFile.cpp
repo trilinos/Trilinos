@@ -205,10 +205,6 @@ int main (int argc, char *argv[])
     RCP<ParameterList> belosList (new ParameterList ("Belos"));
     belosList->set ("Maximum Iterations", maxiters);
     belosList->set ("Convergence Tolerance", tol);
-    if (numrhs > 1) {
-      // Show only the maximum residual norm
-      belosList->set ("Show Maximum Residual Norm Only", true);
-    }
     if (verbose) {
       belosList->set ("Verbosity", Belos::Errors + Belos::Warnings +
                      Belos::TimingDetails + Belos::StatusTestDetails);

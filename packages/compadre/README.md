@@ -33,7 +33,7 @@ Details about building and using the Compadre toolkit can be found on the [Wiki]
 [Installation of Compadre](https://github.com/SNLComputation/compadre/wiki/Building-Compadre)
 
 ## Documentation and Tutorials
-The toolkit is documented by Doxygen. <b>[Documentation is available online](https://snlcomputation.github.io/compadre/doc/html/index.html)</b> or can be compiled from source.
+The toolkit is documented by Doxygen. <b>[Documentation is available online](https://snlcomputation.github.io/compadre/index.html)</b> or can be compiled from source.
 To compile from source: 1.) install doxygen software on your computer, 2.) execute '>> make doc' after having installed the Compadre Toolkit. HTML and Latex documentation will be generated in the <b>doc/</b> folder, in-source. 
 
 ## Citing the Software
@@ -41,21 +41,21 @@ To compile from source: 1.) install doxygen software on your computer, 2.) execu
 If you write a paper using results obtained with the help of the Compadre Toolkit, please cite the following reference:
 
 ```
-@software{paul_kuberry_2020_3703333,
+@software{paul_kuberry_2020_3876465,
   author       = {Paul Kuberry and
                   Peter Bosler and
                   Nathaniel Trask},
   title        = {Compadre Toolkit},
-  month        = mar,
+  month        = jun,
   year         = 2020,
   publisher    = {Zenodo},
-  version      = {v1.0.3},
-  doi          = {10.5281/zenodo.3703333},
-  url          = {https://doi.org/10.5281/zenodo.3703333}
+  version      = {v1.1.0},
+  doi          = {10.5281/zenodo.3876465},
+  url          = {https://doi.org/10.5281/zenodo.3876465}
 }
 ```
 
 If you would like to export the reference information to either CSL, DataCite, Dublin, Core, JSON, JSON-LD, MARCXML, or Mendeley, please find the export section at the bottom-right corner once you follow the link below:
 
-<a href="https://doi.org/10.5281/zenodo.3338664" target="_blank"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.3703333.svg"></a>
+<a href="https://doi.org/10.5281/zenodo.3876465" target="_blank"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.3876465.svg"></a>
 

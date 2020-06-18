@@ -60,9 +60,9 @@
 #include "Amesos2_SolverCore_def.hpp"
 #include "Amesos2_Cholmod_decl.hpp"
 
-#ifdef HAVE_AMESOS2_TRIANGULAR_SOLVES
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_CHOLMOD)
 #include "KokkosSparse_sptrsv_cholmod.hpp"
-#endif // HAVE_AMESOS2_TRIANGULAR_SOLVES
+#endif
 
 namespace Amesos2 {
 
@@ -236,7 +236,7 @@ Cholmod<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
     // In general we may want to write directly to the x space without a copy.
     // So we 'get' x which may be a direct view assignment to the MV.
     if(use_triangular_solves_) { // to device
-#ifdef HAVE_AMESOS2_TRIANGULAR_SOLVES
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_CHOLMOD)
       Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
           device_solve_array_t>::do_get(B, device_bValues_,
               Teuchos::as<size_t>(ld_rhs),
@@ -298,7 +298,7 @@ Cholmod<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
 #endif
 
     if(use_triangular_solves_) { // to device
-#ifdef HAVE_AMESOS2_TRIANGULAR_SOLVES
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_CHOLMOD)
       Util::put_1d_data_helper_kokkos_view<
         MultiVecAdapter<Vector>,device_solve_array_t>::do_put(X, device_xValues_,
             Teuchos::as<size_t>(ld_rhs),
@@ -338,12 +338,12 @@ Cholmod<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Parameter
   RCP<const Teuchos::ParameterList> valid_params = getValidParameters_impl();
 
   is_contiguous_ = parameterList->get<bool>("IsContiguous", true);
-  use_triangular_solves_ = parameterList->get<bool>("TriangularSolves", false);
+  use_triangular_solves_ = parameterList->get<bool>("Enable_KokkosKernels_TriangularSolves", false);
 
   if(use_triangular_solves_) {
-#ifndef HAVE_AMESOS2_TRIANGULAR_SOLVES
+#if not defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) || not defined(KOKKOSKERNELS_ENABLE_TPL_CHOLMOD)
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
-      "Calling for triangular solves but Amesos2_ENABLE_TRIANGULAR_SOLVES was not configured." );
+      "Calling for triangular solves but KokkosKernels_ENABLE_SUPERNODAL_SPTRSV and KokkosKernels_ENABLE_TPL_CHOLMOD not configured." );
 #endif
   }
 
@@ -409,7 +409,7 @@ Cholmod<Matrix,Vector>::getValidParameters_impl() const
 
     pl->set("useGPU", -1, "1: Use GPU is 1, 0: Do not use GPU, -1: ENV CHOLMOD_USE_GPU set GPU usage.");
 
-    pl->set("TriangularSolves", false, "Whether to use triangular solves.");
+    pl->set("Enable_KokkosKernels_TriangularSolves", false, "Whether to use triangular solves.");
 
     pl->set("IsContiguous", true, "Whether GIDs contiguous");
 
@@ -489,7 +489,7 @@ template <class Matrix, class Vector>
 void
 Cholmod<Matrix,Vector>::triangular_solve_symbolic()
 {
-#ifdef HAVE_AMESOS2_TRIANGULAR_SOLVES
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_CHOLMOD)
   // Create handles for U and U^T solves
   device_khL_.create_sptrsv_handle(
     KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_ETREE, data_.L->n, true);
@@ -529,7 +529,7 @@ template <class Matrix, class Vector>
 void
 Cholmod<Matrix,Vector>::triangular_solve_numeric()
 {
-#ifdef HAVE_AMESOS2_TRIANGULAR_SOLVES
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_CHOLMOD)
   // Do numerical compute
   KokkosSparse::Experimental::sptrsv_compute<long, kernel_handle_type>
     (&device_khL_, &device_khU_, data_.L, &data_.c);
@@ -540,7 +540,7 @@ template <class Matrix, class Vector>
 void
 Cholmod<Matrix,Vector>::triangular_solve() const
 {
-#ifdef HAVE_AMESOS2_TRIANGULAR_SOLVES
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_CHOLMOD)
   size_t ld_rhs = device_xValues_.extent(0);
   size_t nrhs = device_xValues_.extent(1);
 
@@ -577,7 +577,7 @@ Cholmod<Matrix,Vector>::triangular_solve() const
       local_device_xValues(j,k) = local_device_trsv_rhs(local_device_trsv_perm(j),k);
     }
   });
-#endif // HAVE_AMESOS2_TRIANGULAR_SOLVE
+#endif
 }
 
 template<class Matrix, class Vector>

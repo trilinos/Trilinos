@@ -197,7 +197,7 @@ void findInterface(const int numDimensions, Teuchos::Array<LocalOrdinal> nodesPe
       nodeOffset += nodesPerDim[1]*nodesPerDim[0];
     }
   }
-}
+} // findInterface
 
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -210,13 +210,15 @@ void createRegionData(const int numDimensions,
                       const Teuchos::RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > dofMap,
                       int& maxRegPerGID, LocalOrdinal& numLocalRegionNodes,
                       Teuchos::Array<int>& boundaryConditions,
-                      Teuchos::Array<GlobalOrdinal>& sendGIDs,
+                      Teuchos::Array<GlobalOrdinal>& sendGIDs, ///< GIDs of nodes
                       Teuchos::Array<int>& sendPIDs,
                       int& numInterfaces,
                       Teuchos::Array<LocalOrdinal>&  rNodesPerDim,
                       Teuchos::Array<GlobalOrdinal>& quasiRegionGIDs,
                       Teuchos::Array<GlobalOrdinal>& quasiRegionCoordGIDs,
-                      Teuchos::Array<LocalOrdinal>&  compositeToRegionLIDs) {
+                      Teuchos::Array<LocalOrdinal>&  compositeToRegionLIDs,
+                      Teuchos::Array<GlobalOrdinal>& interfaceGIDs,
+                      Teuchos::Array<LocalOrdinal>&  interfaceLIDsData) {
 
   using GO = GlobalOrdinal;
   using LO = LocalOrdinal;
@@ -759,6 +761,8 @@ void createRegionData(const int numDimensions,
           sendGIDs[countIDs] = k*(gNodesPerDim[1]*gNodesPerDim[0])
             + j*gNodesPerDim[0]
             + startGID + lNodesPerDim[0] - 1;
+          sendLIDs[countIDs] = k*(lNodesPerDim[1]*lNodesPerDim[0])
+            + j*lNodesPerDim[0] + lNodesPerDim[0] - 1;
           sendPIDs[countIDs] = myRank + 1;
           ++countIDs;
         }
@@ -768,6 +772,8 @@ void createRegionData(const int numDimensions,
         for(LO i = 0; i < lNodesPerDim[0]; ++i) {
           sendGIDs[countIDs] = k*(gNodesPerDim[1]*gNodesPerDim[0]) + i
             + startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0];
+          sendLIDs[countIDs] = k*(lNodesPerDim[1]*lNodesPerDim[0])
+            + (lNodesPerDim[1] - 1)*lNodesPerDim[0] + i;
           sendPIDs[countIDs] = myRank + procsPerDim[0];
           ++countIDs;
         }
@@ -776,6 +782,8 @@ void createRegionData(const int numDimensions,
       for(LO k = 0; k < lNodesPerDim[2]; ++k) {
         sendGIDs[countIDs] = k*(gNodesPerDim[1]*gNodesPerDim[0])
           + startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0] + lNodesPerDim[0] - 1;
+        sendLIDs[countIDs] = k*(lNodesPerDim[1]*lNodesPerDim[0])
+          + lNodesPerDim[1]*lNodesPerDim[0] - 1;
         sendPIDs[countIDs] = myRank + procsPerDim[0] + 1;
         ++countIDs;
       }
@@ -784,6 +792,8 @@ void createRegionData(const int numDimensions,
         for(LO i = 0; i < lNodesPerDim[0]; ++i) {
           sendGIDs[countIDs] = j*gNodesPerDim[0] + i
             + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0];
+          sendLIDs[countIDs] = (lNodesPerDim[2] - 1)*lNodesPerDim[1]*lNodesPerDim[0]
+            + j*lNodesPerDim[0] + i;
           sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0];
           ++countIDs;
         }
@@ -792,6 +802,8 @@ void createRegionData(const int numDimensions,
       for(LO j = 0; j < lNodesPerDim[1]; ++j) {
         sendGIDs[countIDs] = j*gNodesPerDim[0]
           + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0] + lNodesPerDim[0] - 1;
+        sendLIDs[countIDs] = (lNodesPerDim[2] - 1)*(lNodesPerDim[1]*lNodesPerDim[0])
+          + j*lNodesPerDim[0] + lNodesPerDim[0] - 1;
         sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0] + 1;
         ++countIDs;
       }
@@ -800,12 +812,15 @@ void createRegionData(const int numDimensions,
         sendGIDs[countIDs] = i
           + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0]
           + (lNodesPerDim[1] - 1)*gNodesPerDim[0];
+        sendLIDs[countIDs] = (lNodesPerDim[2] - 1)*(lNodesPerDim[1]*lNodesPerDim[0])
+          + (lNodesPerDim[1] - 1)*lNodesPerDim[0] + i;
         sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0] + procsPerDim[0];
         ++countIDs;
       }
       // Send node of top-back-right corner
       sendGIDs[countIDs] = startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0]
         + (lNodesPerDim[1] - 1)*gNodesPerDim[0] + lNodesPerDim[0] - 1;
+      sendLIDs[countIDs] = lNodesPerDim[2]*lNodesPerDim[1]*lNodesPerDim[0] - 1;
       sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0] + procsPerDim[0] + 1;
       ++countIDs;
 
@@ -823,6 +838,8 @@ void createRegionData(const int numDimensions,
         for(LO i = 0; i < lNodesPerDim[0]; ++i) {
           sendGIDs[countIDs] = k*(gNodesPerDim[1]*gNodesPerDim[0]) + i
             + startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0];
+          sendLIDs[countIDs] = k*lNodesPerDim[1]*lNodesPerDim[0]
+            + (lNodesPerDim[1] - 1)*lNodesPerDim[0] + i;
           sendPIDs[countIDs] = myRank + procsPerDim[0];
           ++countIDs;
         }
@@ -832,6 +849,8 @@ void createRegionData(const int numDimensions,
         for(LO i = 0; i < lNodesPerDim[0]; ++i) {
           sendGIDs[countIDs] = j*gNodesPerDim[0] + i
             + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0];
+          sendLIDs[countIDs] = (lNodesPerDim[2] - 1)*lNodesPerDim[1]*lNodesPerDim[0]
+            + j*lNodesPerDim[0] + i;
           sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0];
           ++countIDs;
         }
@@ -841,6 +860,8 @@ void createRegionData(const int numDimensions,
         sendGIDs[countIDs] = i
           + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0]
           + (lNodesPerDim[1] - 1)*gNodesPerDim[0];
+        sendLIDs[countIDs] = (lNodesPerDim[2] - 1)*lNodesPerDim[1]*lNodesPerDim[0]
+          + (lNodesPerDim[1] - 1)*lNodesPerDim[0] + i;
         sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0] + procsPerDim[0];
         ++countIDs;
       }
@@ -860,6 +881,8 @@ void createRegionData(const int numDimensions,
           sendGIDs[countIDs] = k*(gNodesPerDim[1]*gNodesPerDim[0])
             + j*gNodesPerDim[0]
             + startGID + lNodesPerDim[0] - 1;
+          sendLIDs[countIDs] = k*(lNodesPerDim[1]*lNodesPerDim[0])
+            + j*lNodesPerDim[0] + lNodesPerDim[0] - 1;
           sendPIDs[countIDs] = myRank + 1;
           ++countIDs;
         }
@@ -869,6 +892,8 @@ void createRegionData(const int numDimensions,
         for(LO i = 0; i < lNodesPerDim[0]; ++i) {
           sendGIDs[countIDs] = j*gNodesPerDim[0] + i
             + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0];
+          sendLIDs[countIDs] = (lNodesPerDim[2] - 1)*lNodesPerDim[1]*lNodesPerDim[0]
+            + j*lNodesPerDim[0] + i;
           sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0];
           ++countIDs;
         }
@@ -877,6 +902,8 @@ void createRegionData(const int numDimensions,
       for(LO j = 0; j < lNodesPerDim[1]; ++j) {
         sendGIDs[countIDs] = j*gNodesPerDim[0]
           + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0] + lNodesPerDim[0] - 1;
+        sendLIDs[countIDs] = (lNodesPerDim[2] - 1)*lNodesPerDim[1]*lNodesPerDim[0]
+          + j*lNodesPerDim[0] + lNodesPerDim[0] - 1;
         sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0] + 1;
         ++countIDs;
       }
@@ -893,6 +920,8 @@ void createRegionData(const int numDimensions,
         for(LO j = 0; j < lNodesPerDim[1]; ++j) {
           sendGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0] + j*gNodesPerDim[0]
             + startGID + lNodesPerDim[0] - 1;
+          sendLIDs[countIDs] = k*lNodesPerDim[1]*lNodesPerDim[0]
+            + j*lNodesPerDim[0] + lNodesPerDim[0] - 1;
           sendPIDs[countIDs] = myRank + 1;
           ++countIDs;
         }
@@ -902,6 +931,8 @@ void createRegionData(const int numDimensions,
         for(LO i = 0; i < lNodesPerDim[0]; ++i) {
           sendGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0] + i
             + startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0];
+          sendLIDs[countIDs] = k*lNodesPerDim[1]*lNodesPerDim[0]
+            + (lNodesPerDim[1] - 1)*lNodesPerDim[0] + i;
           sendPIDs[countIDs] = myRank + procsPerDim[0];
           ++countIDs;
         }
@@ -910,6 +941,8 @@ void createRegionData(const int numDimensions,
       for(LO k = 0; k < lNodesPerDim[2]; ++k) {
           sendGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0]
             + startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0] + lNodesPerDim[0] - 1;
+          sendLIDs[countIDs] = k*(lNodesPerDim[1]*lNodesPerDim[0])
+            + lNodesPerDim[1]*lNodesPerDim[0] - 1;
           sendPIDs[countIDs] = myRank + procsPerDim[0] + 1;
           ++countIDs;
       }
@@ -926,6 +959,8 @@ void createRegionData(const int numDimensions,
         for(LO i = 0; i < lNodesPerDim[0]; ++i) {
           sendGIDs[countIDs] = j*gNodesPerDim[0] + i
             + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[0]*gNodesPerDim[1];
+          sendLIDs[countIDs] = (lNodesPerDim[2] - 1)*lNodesPerDim[1]*lNodesPerDim[0]
+            + j*lNodesPerDim[0] + i;
           sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0];
           ++countIDs;
         }
@@ -943,6 +978,8 @@ void createRegionData(const int numDimensions,
         for(LO i = 0; i < lNodesPerDim[0]; ++i) {
           sendGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0] + i
             + startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0];
+          sendLIDs[countIDs] = k*lNodesPerDim[1]*lNodesPerDim[0]
+            + (lNodesPerDim[1] - 1)*lNodesPerDim[0] + i;
           sendPIDs[countIDs] = myRank + procsPerDim[0];
           ++countIDs;
         }
@@ -960,6 +997,8 @@ void createRegionData(const int numDimensions,
         for(LO j = 0; j < lNodesPerDim[1]; ++j) {
           sendGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0]
             + j*gNodesPerDim[0] + startGID + lNodesPerDim[0] - 1;
+          sendLIDs[countIDs] = k*lNodesPerDim[1]*lNodesPerDim[0]
+            + j*lNodesPerDim[0] + lNodesPerDim[0] - 1;
           sendPIDs[countIDs] = myRank + 1;
           ++countIDs;
         }
@@ -1018,6 +1057,135 @@ void createRegionData(const int numDimensions,
     }
   }
 
+  // Here we gather the interface GIDs (in composite layout)
+  // and the interface LIDs (in region layout) for the local rank
+  interfaceLIDsData.resize((sendGIDs.size() + receiveGIDs.size()) * numDofsPerNode);
+  interfaceGIDs.resize((sendGIDs.size() + receiveGIDs.size()) * numDofsPerNode);
+  using size_type = typename Teuchos::Array<GO>::size_type;
+  for(size_type nodeIdx = 0; nodeIdx < sendGIDs.size(); ++nodeIdx) {
+    for(int dof = 0; dof < numDofsPerNode; ++dof) {
+      LO dofIdx = nodeIdx*numDofsPerNode + dof;
+      interfaceGIDs[dofIdx] = sendGIDs[nodeIdx] * numDofsPerNode + dof;
+      interfaceLIDsData[dofIdx] = compositeToRegionLIDs[sendLIDs[nodeIdx] * numDofsPerNode + dof];
+    }
+  }
+  for(size_type nodeIdx = 0; nodeIdx < receiveGIDs.size(); ++nodeIdx) {
+    for(int dof = 0; dof < numDofsPerNode; ++dof) {
+      LO dofIdx = nodeIdx*numDofsPerNode + dof;
+      interfaceGIDs[dofIdx + sendGIDs.size() * numDofsPerNode] = receiveGIDs[nodeIdx] * numDofsPerNode + dof;
+      interfaceLIDsData[dofIdx + sendLIDs.size() * numDofsPerNode] = receiveLIDs[nodeIdx] * numDofsPerNode + dof;
+    }
+  }
+
+  // Have all the GIDs and LIDs we stort them in place with std::sort()
+  // Subsequently we bring unique values to the begin of the array with
+  // std::unique() and delente the duplicates with erase.
+  std::sort(interfaceLIDsData.begin(), interfaceLIDsData.end());
+  interfaceLIDsData.erase(std::unique(interfaceLIDsData.begin(), interfaceLIDsData.end()),
+                          interfaceLIDsData.end());
+  std::sort(interfaceGIDs.begin(), interfaceGIDs.end());
+  interfaceGIDs.erase(std::unique(interfaceGIDs.begin(), interfaceGIDs.end()),
+                      interfaceGIDs.end());
+
 } // createRegionData
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+void MakeRegionPerGIDWithGhosts(const Teuchos::RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& nodeMap,
+                                const Teuchos::RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& regionRowMap,
+                                const Teuchos::RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& rowImport,
+                                const int maxRegPerGID,
+                                const LocalOrdinal numDofsPerNode,
+                                const Teuchos::Array<LocalOrdinal>&  lNodesPerDir,
+                                const Teuchos::Array<GlobalOrdinal>& sendGIDs,
+                                const Teuchos::Array<int>& sendPIDs,
+                                const Teuchos::Array<LocalOrdinal>& interfaceRegionLIDs,
+                                Teuchos::RCP<Xpetra::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> >& regionsPerGIDWithGhosts,
+                                Teuchos::RCP<Xpetra::MultiVector<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> >& interfaceGIDsMV) {
+  using LO = LocalOrdinal;
+  using GO = GlobalOrdinal;
+  using NO = Node;
+  using Teuchos::RCP;
+  using Teuchos::Array;
+  using Teuchos::ArrayRCP;
+
+  const RCP<const Xpetra::Map<LO,GO,NO> > dofMap       = rowImport->getSourceMap();
+  const RCP<const Xpetra::Map<LO,GO,NO> > quasiRegionRowMap = rowImport->getTargetMap();
+  const int myRank = dofMap->getComm()->getRank();
+
+  RCP<Xpetra::MultiVector<LO, LO, GO, NO> >regionsPerGID =
+    Xpetra::MultiVectorFactory<LO, LO, GO, NO>::Build(dofMap, maxRegPerGID, false);
+  regionsPerGIDWithGhosts =
+    Xpetra::MultiVectorFactory<LO, LO, GO, NO>::Build(quasiRegionRowMap, maxRegPerGID, false);
+
+  { // Scope for regionsPerGIDView
+    Array<ArrayRCP<LO> > regionsPerGIDView(maxRegPerGID);
+    for(int regionIdx = 0; regionIdx < maxRegPerGID; ++regionIdx) {
+      regionsPerGIDView[regionIdx] = regionsPerGID->getDataNonConst(regionIdx);
+    }
+
+    // Initialize all entries to myRank in first column and to -1 in other columns
+    for(LO dofIdx = 0; dofIdx < lNodesPerDir[0]*lNodesPerDir[1]*lNodesPerDir[2]*numDofsPerNode; ++dofIdx) {
+      regionsPerGIDView[0][dofIdx] = myRank;
+      for(int regionIdx = 1; regionIdx < maxRegPerGID; ++regionIdx) {
+        regionsPerGIDView[regionIdx][dofIdx] = -1;
+      }
+    }
+
+    // Now loop over the sendGIDs array to fill entries with values in sendPIDs
+    LO nodeIdx = 0;
+    for(LO sendIdx = 0; sendIdx < static_cast<LO>(sendPIDs.size()); ++sendIdx) {
+      nodeIdx = nodeMap->getLocalElement(sendGIDs[sendIdx]);
+      for(int dof = 0; dof < numDofsPerNode; ++dof) {
+        LO dofIdx = nodeIdx*numDofsPerNode + dof;
+        for(int regionIdx = 1; regionIdx < maxRegPerGID; ++regionIdx) {
+          if(regionsPerGIDView[regionIdx][dofIdx] == -1) {
+            regionsPerGIDView[regionIdx][dofIdx] = sendPIDs[sendIdx];
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  regionsPerGIDWithGhosts->doImport(*regionsPerGID, *rowImport, Xpetra::INSERT);
+
+  interfaceGIDsMV = Xpetra::MultiVectorFactory<GO, LO, GO, NO>::Build(quasiRegionRowMap, maxRegPerGID, false);
+  interfaceGIDsMV->putScalar(Teuchos::OrdinalTraits<GO>::zero());
+  const LO numRegionInterfaceLIDs = static_cast<LO>(interfaceRegionLIDs.size());
+  { // Scope for interfaceGIDsPerRegion
+    Array<ArrayRCP<LO> > regionsPerGIDWithGhostsData(maxRegPerGID);
+    Array<ArrayRCP<GO> > interfaceGIDsMVData(maxRegPerGID);
+    for(int regionIdx = 0; regionIdx < maxRegPerGID; ++regionIdx) {
+      regionsPerGIDWithGhostsData[regionIdx] = regionsPerGIDWithGhosts->getDataNonConst(regionIdx);
+      interfaceGIDsMVData[regionIdx] = interfaceGIDsMV->getDataNonConst(regionIdx);
+      for(LO idx = 0; idx < numRegionInterfaceLIDs; ++idx) {
+        LO LID = interfaceRegionLIDs[idx];
+        if(regionsPerGIDWithGhostsData[regionIdx][LID] == myRank) {
+          interfaceGIDsMVData[regionIdx][LID] = regionRowMap->getGlobalElement(LID);
+        }
+      }
+    }
+
+  }
+
+} // MakeRegionPerGIDWithGhosts
+
+/*!
+\brief Extract list of region GIDs of all interface DOFs from the region row map
+
+Starting from the known list of \c interfaceRegionLIDs, we know, which entries in the \c regionRowMap
+refert to interface DOFs, so we can grab them and stick them into the list of \c interfaceRegionGIDs.
+*/
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+void ExtractListOfInterfaceRegionGIDs(
+    std::vector<Teuchos::RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > >& regionRowMap,
+    const Teuchos::Array<LocalOrdinal>& interfaceRegionLIDs, Teuchos::Array<GlobalOrdinal>& interfaceRegionGIDs)
+{
+  interfaceRegionGIDs.resize(interfaceRegionLIDs.size());
+  for(LocalOrdinal interfaceIdx = 0; interfaceIdx < static_cast<LocalOrdinal>(interfaceRegionLIDs.size()); ++interfaceIdx) {
+    interfaceRegionGIDs[interfaceIdx] =
+      regionRowMap[0]->getGlobalElement(interfaceRegionLIDs[interfaceIdx]);
+  }
+} // ExtractListOfInterfaceRegionGIDs
 
 #endif // MUELU_SETUPREGIONUTILITIES_HPP

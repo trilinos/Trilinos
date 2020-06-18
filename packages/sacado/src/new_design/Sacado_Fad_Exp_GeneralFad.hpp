@@ -94,12 +94,15 @@ namespace Sacado {
       using ExtenderType::ExtenderType;
 
       //! Default constructor
+      KOKKOS_DEFAULTED_FUNCTION
       GeneralFad() = default;
 
       //! Copy constructor
+      KOKKOS_DEFAULTED_FUNCTION
       GeneralFad(const GeneralFad& x) = default;
 
       //! Move constructor
+      KOKKOS_DEFAULTED_FUNCTION
       GeneralFad(GeneralFad&& x) = default;
 
       //! Constructor with value (disabled for ViewFad)
@@ -118,6 +121,7 @@ namespace Sacado {
       }
 
       //! Destructor
+      KOKKOS_DEFAULTED_FUNCTION
       ~GeneralFad() = default;
 
       //! Set %GeneralFad object as the \c ith independent variable
@@ -135,6 +139,24 @@ namespace Sacado {
         this->zero();
         this->fastAccessDx(ith) = value_type(1.);
       }
+
+      //! Set whether this Fad object should update values
+      /*! Retained for backward compatibility.
+       */
+      KOKKOS_INLINE_FUNCTION
+      void setUpdateValue(bool update_val) {}
+
+      //! Return whether this Fad object has an updated value
+      /*! Retained for backward compatibility.
+       */
+      KOKKOS_INLINE_FUNCTION
+      bool updateValue() const { return true; }
+
+      //! Cache values
+      /*! Retained for backward compatibility.
+       */
+      KOKKOS_INLINE_FUNCTION
+      void cache() const {}
 
       //! Returns whether two Fad objects have the same values
       template <typename S>
@@ -194,10 +216,12 @@ namespace Sacado {
       }
 
       //! Assignment with GeneralFad right-hand-side
+      KOKKOS_DEFAULTED_FUNCTION
       GeneralFad&
       operator=(const GeneralFad& x) = default;
 
       //! Move assignment with GeneralFad right-hand-side
+      KOKKOS_DEFAULTED_FUNCTION
       GeneralFad&
       operator=(GeneralFad&& x) = default;
 
