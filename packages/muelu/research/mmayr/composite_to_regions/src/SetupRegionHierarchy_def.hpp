@@ -1042,8 +1042,8 @@ void vCycle(const int l, ///< ID of current level
 
         ApplyMatVec(SC_ONE, regProlong[l+1][j], regRes[j], SC_ZERO, regionInterfaceImporter,
             regionInterfaceLIDs, coarseRegB[j], Teuchos::TRANS);
-        TEUCHOS_ASSERT(regProlong[l+1][j]->getRangeMap()->isSameAs(*regRes[j]->getMap()));
-        TEUCHOS_ASSERT(regProlong[l+1][j]->getDomainMap()->isSameAs(*coarseRegB[j]->getMap()));
+        // TEUCHOS_ASSERT(regProlong[l+1][j]->getRangeMap()->isSameAs(*regRes[j]->getMap()));
+        // TEUCHOS_ASSERT(regProlong[l+1][j]->getDomainMap()->isSameAs(*coarseRegB[j]->getMap()));
       }
     }
     else
@@ -1053,8 +1053,8 @@ void vCycle(const int l, ///< ID of current level
         coarseRegB[j] = VectorFactory::Build(regRowMaps[l+1][j], true);
 
         regProlong[l+1][j]->apply(*regRes[j], *coarseRegB[j], Teuchos::TRANS);
-        TEUCHOS_ASSERT(regProlong[l+1][j]->getRangeMap()->isSameAs(*regRes[j]->getMap()));
-        TEUCHOS_ASSERT(regProlong[l+1][j]->getDomainMap()->isSameAs(*coarseRegB[j]->getMap()));
+        // TEUCHOS_ASSERT(regProlong[l+1][j]->getRangeMap()->isSameAs(*regRes[j]->getMap()));
+        // TEUCHOS_ASSERT(regProlong[l+1][j]->getDomainMap()->isSameAs(*coarseRegB[j]->getMap()));
       }
 
       tm = Teuchos::null;
