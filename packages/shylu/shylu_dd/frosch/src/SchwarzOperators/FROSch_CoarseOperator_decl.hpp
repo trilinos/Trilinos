@@ -246,8 +246,6 @@ namespace FROSch {
         GraphPtr ElementNodeList_;
         Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> > GraphEntriesList_;
 
-        ConstXMultiVectorPtrVecPtr CoarseNullSpace_;
-
         ConstXMapPtr kRowMap_;
 
         LO DofsPerNodeCoarse_;

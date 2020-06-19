@@ -911,7 +911,6 @@ namespace FROSch {
             for (int i=1; i<MLgatheringSteps-1; i++) {
                 MLnumMyRows = 0;
                 numProcsGatheringStep = LO(numProcsGatheringStep/MLgatheringFactor);
-                //if (this->Verbose_) std::cout << i << " " << numProcsGatheringStep << " " << numGlobalIndices << std::endl;
                 if (this->MpiComm_->getRank()%(this->MpiComm_->getSize()/numProcsGatheringStep) == 0 && this->MpiComm_->getRank()/(this->MpiComm_->getSize()/numProcsGatheringStep) < numProcsGatheringStep) {
                     if (this->MpiComm_->getRank()==0) {
                         MLnumMyRows = MLnumGlobalIndices - (MLnumGlobalIndices/numProcsGatheringStep)*(numProcsGatheringStep-1);
@@ -1008,8 +1007,7 @@ namespace FROSch {
                Teuchos::ArrayRCP<UN> dofsPerNodeVector(1);
                dofsPerNodeVector[0] = dofs;
                CoarseDofsMaps[0] = DMapRep;
-               for(UN i = 0;i<dofs;i++){
-               }
+
                sublist(this->ParameterList_,"CoarseSolver")->set("Repeated Map Vector",RepMapVector);
                sublist(this->ParameterList_,"CoarseSolver")->set("Dofs Maps Vector",CoarseDofsMaps);
                sublist(this->ParameterList_,"CoarseSolver")->set("DofOrdering Vector",dofOrderings);
@@ -1022,7 +1020,6 @@ namespace FROSch {
              for (int i=0; i<gatheringSteps-1; i++) {
                numMyRows = 0;
                numProcsGatheringStep = LO(numProcsGatheringStep/gatheringFactor);
-               //if (this->Verbose_) std::cout << i << " " << numProcsGatheringStep << " " << numGlobalIndices << std::endl;
                if (this->MpiComm_->getRank()%(this->MpiComm_->getSize()/numProcsGatheringStep) == 0 && this->MpiComm_->getRank()/(this->MpiComm_->getSize()/numProcsGatheringStep) < numProcsGatheringStep) {
                  if (this->MpiComm_->getRank()==0) {
                    numMyRows = numGlobalIndices - (numGlobalIndices/numProcsGatheringStep)*(numProcsGatheringStep-1);

@@ -103,21 +103,13 @@ namespace FROSch {
                         ConstXMultiVectorPtr subspaceBasis = null,
                         UN offset = 0);
 
-        int addNullspace(ConstXMapPtr subspaceBasisMap,
-                         ConstXMultiVectorPtr nullSpaceBasis = Teuchos::null);
-
-
         int assembleCoarseSpace();
 
-        int assembleNullSpace(UN NumRowEntries);
 
         int buildGlobalBasisMatrix(ConstXMapPtr rowMap,
                                    ConstXMapPtr rangeMap,
                                    ConstXMapPtr repeatedMap,
                                    SC treshold);
-
-        int buildGlobalNullSpace(SC treshold);
-
 
         int clearCoarseSpace();
 
@@ -137,8 +129,6 @@ namespace FROSch {
 
         ConstXMultiVectorPtr getAssembledBasis() const;
 
-        ConstXMultiVectorPtr getAssembledNullSpace() const;
-
         ConstUNVecView getLocalSubspaceSizes() const;
 
         bool hasGlobalBasisMatrix() const;
@@ -152,19 +142,14 @@ namespace FROSch {
 
         ConstXMapPtrVec UnassembledBasesMaps_ = ConstXMapPtrVec(0);
         ConstXMapPtrVec UnassembledBasesMapsUnique_ = ConstXMapPtrVec(0);
-        ConstXMapPtrVec UnassembledNullSpaceMaps_ = ConstXMapPtrVec(0);
 
         ConstXMultiVectorPtrVec UnassembledSubspaceBases_ = ConstXMultiVectorPtrVec(0);
-        ConstXMultiVectorPtrVec UnassembledNullSpaceBases_= ConstXMultiVectorPtrVec(0);
 
         LOVec Offsets_ = LOVec(0);
 
         ConstXMapPtr AssembledBasisMap_;
         ConstXMapPtr AssembledBasisMapUnique_;
-        ConstXMapPtr AssembledNullSpaceMap_;
-
         XMultiVectorPtr AssembledBasis_;
-        XMultiVectorPtr AssembledNullSpace_;
 
         UNVec LocalSubspacesSizes_ = UNVec(0);
 

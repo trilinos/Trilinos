@@ -48,8 +48,8 @@
                           <Parameter name="Coarse NullSpace"                    type="bool"     value="true"/>
                         </ParameterList>
                         <ParameterList name="InterfacePartitionOfUnity">
-                            <Parameter name="Type"                              type="string"   value="GDSW"/>
-                            <ParameterList name="GDSW">
+                            <Parameter name="Type"                              type="string"   value="RGDSW"/>
+                            <ParameterList name="RGDSW">
                                 <Parameter name="Type"                          type="string"   value="Full"/>
                                 <Parameter name="Distance Function"             type="string"   value="Inverse Euclidean"/>
                             </ParameterList>
@@ -102,8 +102,8 @@
                     <ParameterList name="1">
                         <Parameter name="Use For Coarse Space"                  type="bool"     value="true"/>
                         <ParameterList name="InterfacePartitionOfUnity">
-                            <Parameter name="Type"                              type="string"   value="GDSW"/>
-                            <ParameterList name="GDSW">
+                            <Parameter name="Type"                              type="string"   value="RGDSW"/>
+                            <ParameterList name="RGDSW">
                                 <Parameter name="Type"                          type="string"   value="Full"/>
                                 <Parameter name="Distance Function"             type="string"   value="Inverse Euclidean"/>
                             </ParameterList>

@@ -13,6 +13,10 @@ DEST_FILES ParameterList_GDSWPreconditioner_ILU.xml
            ParameterList_TwoLevelPreconditioner_IPOUHarmonic_RGDSW_Klu.xml
            ParameterList_TwoLevelPreconditioner_RGDSW_ILU.xml
            ParameterList_TwoLevelPreconditioner_RGDSW_Klu.xml
+           ParameterList_TwoLevelPreconditioner_GDSW_ML.xml
+           ParameterList_TwoLevelPreconditioner_GDSW_ML3.xml
+           ParameterList_TwoLevelPreconditioner_RGDSW_ML.xml
+           ParameterList_TwoLevelPreconditioner_RGDSW_ML3.xml
 SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
 DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
 EXEDEPS thyra_xpetra_elasticity
