@@ -6577,6 +6577,29 @@ install commands from the former two files are run before install commands for
 the enabled packages while install commands from the latter two files are run
 after.)
 
+One can also change what compilers are written into the generated
+``<Project>Config.cmake`` and ``<Package>Config.cmake`` files for the build
+and the install trees.  By default, the compilers pointed to in these
+``Config.cmake`` files will be ``CMAKE_<LANG>_COMPILER`` where ``<LANG>`` =
+``CXX``, ``C``, and ``Fortran``.  But if can change this by setting any of the
+following::
+
+  SET(CMAKE_CXX_COMPILER_FOR_CONFIG_FILE_BUILD_DIR <path>)
+  SET(CMAKE_C_COMPILER_FOR_CONFIG_FILE_BUILD_DIR <path>)
+  SET(CMAKE_Fortran_COMPILER_FOR_CONFIG_FILE_BUILD_DIR <path>)
+  SET(CMAKE_CXX_COMPILER_FOR_CONFIG_FILE_INSTALL_DIR <path>)
+  SET(CMAKE_C_COMPILER_FOR_CONFIG_FILE_INSTALL_DIR <path>)
+  SET(CMAKE_Fortran_COMPILER_FOR_CONFIG_FILE_INSTALL_DIR <path>)
+
+before the ``Config.cmake`` files are generated.  These can also be set in the
+CMake cache using, for example,
+``-DCMAKE_CXX_COMPILER_FOR_CONFIG_FILE_INSTALL_DIR:FILEPATH=<path>``.
+
+This is used, for example, when compiler wrappers are used for the build tree
+and are set to ``CMAKE_<LANG>_COMPILER`` but when one wants to point the
+original underlying compilers for the installed ``Config.cmake`` files.
+
+
 
 RPATH Handling
 --------------
