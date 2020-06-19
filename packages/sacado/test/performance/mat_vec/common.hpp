@@ -39,7 +39,7 @@ struct Perf {
   double throughput;
 };
 
-const int SFadSize  = 32;
+const int SFadSize  = 8;
 const int SLFadSize = SFadSize;
 const int HierSFadSize  = 32;
 const int HierSLFadSize = HierSFadSize;

@@ -97,20 +97,22 @@ namespace Details {
 ///
 /// TPETRA_DEBUG: flags Tpetra to turn on debug checking.
 /// TPETRA_VERBOSE: flags Tpetra to turn on debug _output_.
+/// TPETRA_TIMING: flags Tpetra to turn on timing code.
 ///
 /// These are two different things.  For example, TPETRA_DEBUG may do extra MPI
 /// communication in order to ensure correct error state propagation, but
 /// TPETRA_DEBUG should never print copious debug output if no errors occurred.
 /// The idea is that if users get a mysterious error or hang, they can rerun
 /// with TPETRA_DEBUG set.  TPETRA_VERBOSE is for Tpetra developers to use for
-/// debugging Tpetra.
+/// debugging Tpetra. TPETRA_TIMING is for Tpetra developers to use for timing
+/// Tpetra.
 ///
 /// The environment variables are understood to be "on" or "off" and recognized
-/// if specified in one of two ways.  The first is to specify the variable
-/// unconditionally ON or OFF.  e.g., TPETRA_VERBOSE=ON or TPETRA_VERBOSE=OFF.
-/// The default value of TPETRA_VERBOSE is always OFF.  The default value for
-/// TPETRA_DEBUG is ON if Tpetra is configured with Tpetra_ENABLE_DEBUG,
-/// otherwise it is OFF
+/// if specified in one of two ways. The first is to specify the variable
+/// unconditionally ON or OFF. e.g., TPETRA_[VERBOSE,DEBUG,TIMING]=ON or
+/// TPETRA_[VERBOSE,DEBUG,TIMING]=OFF. The default value of TPETRA_VERBOSE and
+/// TPETRA_TIMING is always OFF. The default value for TPETRA_DEBUG is ON if
+/// Tpetra is configured with Tpetra_ENABLE_DEBUG, otherwise it is OFF.
 ///
 /// The second is to specify the variable on a per class/object basis, e.g.,
 /// TPETRA_VERBOSE=CrsGraph,CrsMatrix,Distributor means that verbose output
@@ -153,6 +155,24 @@ public:
 
   /// \brief Enable verbose mode, programatically
   static void enable_verbose_behavior ();
+
+  /// \brief Whether Tpetra is in timing mode.
+  ///
+  /// "Timing mode" means that Tpetra enables code that instruments internal timing.
+  static bool timing ();
+
+  /// \brief Whether the given Tpetra object is in timing mode.
+  ///
+  /// \param name [in] Name of the Tpetra object.  Typically, the object would
+  ///        be a class name, e.g., "CrsGraph" or method, e.g.,
+  ///        "CrsGraph::insertLocalIndices".
+  static bool timing (const char name[]);
+
+  /// \brief Disable timing, programatically
+  static void disable_timing();
+
+  /// \brief Enable timing, programatically
+  static void enable_timing();
 
   /// \brief Whether to assume that MPI is CUDA aware.
   ///
@@ -199,6 +219,24 @@ public:
   /// entries to treat it as "dense" relative to other rows, is a
   /// separate question.
   static size_t longRowMinNumEntries ();
+
+  /// \brief Unpack rows of a matrix using hierarchical unpacking
+  static bool hierarchicalUnpack ();
+
+  /// \brief Size of batch for hierarchical unpacking
+  static size_t hierarchicalUnpackBatchSize ();
+
+  /// \brief Size of team for hierarchical unpacking
+  static size_t hierarchicalUnpackTeamSize ();
+
+  /// \brief the threshold for transitioning from device to host
+  ///
+  /// If the number of elements in the multivector does not exceed this 
+  /// threshold and the data is on host, then run the calculation on
+  /// host.  Otherwise, run on device.
+  /// By default this is 10000, but may be altered by the environment
+  /// variable TPETRA_VECTOR_DEVICE_THRESHOLD
+  static size_t multivectorKernelLocationThreshold ();
 
   /// \brief Use Teuchos::Timer in Tpetra::ProfilingRegion
   ///

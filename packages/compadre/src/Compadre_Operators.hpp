@@ -201,7 +201,8 @@ namespace Compadre {
     //! Available weighting kernel function types
     enum WeightingFunctionType {
         Power,
-        Gaussian
+        Gaussian,
+        CubicSpline,
     };
 
     //! Coordinate type for input and output format of vector data on manifold problems.

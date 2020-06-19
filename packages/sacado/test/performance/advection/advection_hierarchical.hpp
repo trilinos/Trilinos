@@ -29,10 +29,10 @@
 
 #pragma once
 
-template <int N, typename ExecSpace>
+template <typename FadType, int N, typename ExecSpace>
 double time_fad_hierarchical_flat(int ncells, int num_basis, int num_points,
                                   int ndim, int ntrial, bool check);
 
-template <int N, typename ExecSpace>
+template <typename FadType, int N, typename ExecSpace>
 double time_fad_hierarchical_team(int ncells, int num_basis, int num_points,
                                   int ndim, int ntrial, bool check);

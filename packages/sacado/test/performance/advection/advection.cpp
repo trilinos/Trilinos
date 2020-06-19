@@ -399,6 +399,7 @@ double time_analytic_team(int ncells, int num_basis, int num_points, int ndim,
 
 #define INST_FUNC_N_DEV(N,DEV) \
   INST_FUNC_FAD_N_DEV(SFadType,N,DEV) \
+  INST_FUNC_FAD_N_DEV(SLFadType,N,DEV) \
   INST_FUNC_FAD_N_DEV(DFadType,N,DEV) \
   template double time_analytic_flat< N, DEV >(int ncells, int num_basis, int num_points, int ndim, int ntrial, bool check); \
   template double time_analytic_const< N, DEV >(int ncells, int num_basis, int num_points, int ndim, int ntrial, bool check); \

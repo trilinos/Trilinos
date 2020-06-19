@@ -270,6 +270,144 @@ FAD_UNARYOP_MACRO(cbrt,
 
 #undef FAD_UNARYOP_MACRO
 
+// Special handling for safe_sqrt() to provide specializations of SafeSqrtOp for
+// "simd" value types that use if_then_else(). The only reason for not using
+// if_then_else() always is to avoid evaluating the derivative if the value is
+// zero to avoid throwing FPEs.
+namespace Sacado {
+  namespace Fad {
+
+    template <typename ExprT, bool is_simd>
+    class SafeSqrtOp {};
+
+    template <typename ExprT>
+    struct ExprSpec< SafeSqrtOp<ExprT> > {
+      typedef typename ExprSpec<ExprT>::type type;
+    };
+
+    //
+    // Implementation for simd type using if_then_else()
+    //
+    template <typename ExprT>
+    class Expr< SafeSqrtOp<ExprT,true>,ExprSpecDefault > {
+    public:
+
+      typedef typename ExprT::value_type value_type;
+      typedef typename ExprT::scalar_type scalar_type;
+      typedef typename ExprT::base_expr_type base_expr_type;
+
+      KOKKOS_INLINE_FUNCTION
+      explicit Expr(const ExprT& expr_) : expr(expr_)  {}
+
+      KOKKOS_INLINE_FUNCTION
+      int size() const { return expr.size(); }
+
+      KOKKOS_INLINE_FUNCTION
+      bool hasFastAccess() const { return expr.hasFastAccess(); }
+
+      KOKKOS_INLINE_FUNCTION
+      bool isPassive() const { return expr.isPassive();}
+
+      KOKKOS_INLINE_FUNCTION
+      bool updateValue() const { return expr.updateValue(); }
+
+      KOKKOS_INLINE_FUNCTION
+      void cache() const {}
+
+      KOKKOS_INLINE_FUNCTION
+      value_type val() const {
+        using std::sqrt;
+        return sqrt(expr.val());
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      value_type dx(int i) const {
+        using std::sqrt;
+        return if_then_else(
+          expr.val() == value_type(0.0), value_type(0.0),
+          value_type(expr.dx(i)/(value_type(2)*sqrt(expr.val()))));
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      value_type fastAccessDx(int i) const {
+        using std::sqrt;
+        return if_then_else(
+          expr.val() == value_type(0.0), value_type(0.0),
+          value_type(expr.fastAccessDx(i)/(value_type(2)*sqrt(expr.val()))));
+      }
+
+    protected:
+
+      const ExprT& expr;
+    };
+
+    //
+    // Specialization for scalar types using ternary operator
+    //
+    template <typename ExprT>
+    class Expr< SafeSqrtOp<ExprT,false>,ExprSpecDefault > {
+    public:
+
+      typedef typename ExprT::value_type value_type;
+      typedef typename ExprT::scalar_type scalar_type;
+      typedef typename ExprT::base_expr_type base_expr_type;
+
+      KOKKOS_INLINE_FUNCTION
+      explicit Expr(const ExprT& expr_) : expr(expr_)  {}
+
+      KOKKOS_INLINE_FUNCTION
+      int size() const { return expr.size(); }
+
+      KOKKOS_INLINE_FUNCTION
+      bool hasFastAccess() const { return expr.hasFastAccess(); }
+
+      KOKKOS_INLINE_FUNCTION
+      bool isPassive() const { return expr.isPassive();}
+
+      KOKKOS_INLINE_FUNCTION
+      bool updateValue() const { return expr.updateValue(); }
+
+      KOKKOS_INLINE_FUNCTION
+      void cache() const {}
+
+      KOKKOS_INLINE_FUNCTION
+      value_type val() const {
+        using std::sqrt;
+        return sqrt(expr.val());
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      value_type dx(int i) const {
+        using std::sqrt;
+        return expr.val() == value_type(0.0) ? value_type(0.0) :
+          value_type(expr.dx(i)/(value_type(2)*sqrt(expr.val())));
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      value_type fastAccessDx(int i) const {
+        using std::sqrt;
+        return expr.val() == value_type(0.0) ? value_type(0.0) :
+          value_type(expr.fastAccessDx(i)/(value_type(2)*sqrt(expr.val())));
+      }
+
+    protected:
+
+      const ExprT& expr;
+    };
+
+    template <typename T>
+    KOKKOS_INLINE_FUNCTION
+    Expr< SafeSqrtOp< Expr<T> > >
+    safe_sqrt (const Expr<T>& expr)
+    {
+      typedef SafeSqrtOp< Expr<T> > expr_t;
+
+      return Expr<expr_t>(expr);
+    }
+  }
+
+}
+
 #define FAD_BINARYOP_MACRO(OPNAME,OP,USING,VALUE,DX,FASTACCESSDX,VAL_CONST_DX_1,VAL_CONST_DX_2,CONST_DX_1,CONST_DX_2,CONST_FASTACCESSDX_1,CONST_FASTACCESSDX_2) \
 namespace Sacado {                                                      \
   namespace Fad {                                                       \

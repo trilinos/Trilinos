@@ -813,10 +813,7 @@ add (const Scalar& alpha,
                               col_inds_array, global_col_inds_array,
                               typename map_type::local_map_type>
         (localColinds, globalColinds, CcolMap->getLocalMap()));
-    //TODO: use KokkosKernels batched sort on device as soon as it's available
-    //But now, have to sort on host (using UVM)
-    exec_space().fence();
-    Tpetra::Import_Util::sortCrsEntries(rowptrs, localColinds, vals);
+    KokkosKernels::Impl::sort_crs_matrix<exec_space, row_ptrs_array, col_inds_array, values_array>(rowptrs, localColinds, vals);
     C.setAllValues(rowptrs, localColinds, vals);
     C.fillComplete(CDomainMap, CRangeMap, params);
     if(!doFillComplete)
@@ -1684,7 +1681,7 @@ void mult_A_B_newmatrix(
   // Run through all the hash table lookups once and for all
   lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getNodeNumElements());
   lo_view_t targetMapToImportRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToImportRow"),Aview.colMap->getNodeNumElements());
-  Kokkos::fence();
+
   Kokkos::parallel_for("Tpetra::mult_A_B_newmatrix::construct_tables",range_type(Aview.colMap->getMinLocalIndex(), Aview.colMap->getMaxLocalIndex()+1),KOKKOS_LAMBDA(const LO i) {
       GO aidx = Acolmap_local.getGlobalElement(i);
       LO B_LID = Browmap_local.getLocalElement(aidx);
@@ -2019,8 +2016,6 @@ void mult_A_B_reuse(
       }
     });
 
-  Kokkos::fence();
-
   // Call the actual kernel.  We'll rely on partial template specialization to call the correct one ---
   // Either the straight-up Tpetra code (SerialNode) or the KokkosKernels one (other NGP node types)
   KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,lo_view_t>::mult_A_B_reuse_kernel_wrapper(Aview,Bview,targetMapToOrigRow,targetMapToImportRow,Bcol2Ccol,Icol2Ccol,C,Cimport,label,params);
@@ -2324,8 +2319,6 @@ void jacobi_A_B_newmatrix(
 
       }
     });
-
-  Kokkos::fence();
 
   // Call the actual kernel.  We'll rely on partial template specialization to call the correct one ---
   // Either the straight-up Tpetra code (SerialNode) or the KokkosKernels one (other NGP node types)
@@ -2670,8 +2663,6 @@ void jacobi_A_B_reuse(
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM = Teuchos::null;
 #endif
-
-  Kokkos::fence();
 
   // Call the actual kernel.  We'll rely on partial template specialization to call the correct one ---
   // Either the straight-up Tpetra code (SerialNode) or the KokkosKernels one (other NGP node types)

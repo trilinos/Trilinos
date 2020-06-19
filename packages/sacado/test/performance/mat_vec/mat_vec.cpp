@@ -27,6 +27,8 @@
 // ***********************************************************************
 // @HEADER
 
+//#define SACADO_DISABLE_FAD_VIEW_SPEC
+
 #include "Sacado.hpp"
 
 #include "mat_vec.hpp"
@@ -292,9 +294,15 @@ do_time_fad(const size_t m, const size_t n, const size_t p, const size_t nloop,
   }
 #endif
 
+#ifndef SACADO_DISABLE_FAD_VIEW_SPEC
   ViewTypeA A("A",m,n,p+1);
   ViewTypeB b("B",n,p+1);
   ViewTypeC c("c",m,p+1);
+#else
+  ViewTypeA A("A",m,n);
+  ViewTypeB b("B",n);
+  ViewTypeC c("c",m);
+#endif
 
   // FadType a(p, 1.0);
   // for (size_t k=0; k<p; ++k)
@@ -319,12 +327,14 @@ do_time_fad(const size_t m, const size_t n, const size_t p, const size_t nloop,
   perf.flops = m*n*(2+4*p);
   perf.throughput = perf.flops / perf.time / 1.0e9;
 
+#ifndef SACADO_DISABLE_FAD_VIEW_SPEC
   if (check) {
     typename ViewTypeA::array_type A_flat = A;
     typename ViewTypeB::array_type b_flat = b;
     typename ViewTypeC::array_type c_flat = c;
     check_deriv(A_flat, b_flat, c_flat);
   }
+#endif
 
   return perf;
 }
@@ -339,9 +349,15 @@ do_time_scratch(const size_t m, const size_t n, const size_t p, const size_t nlo
   typedef Kokkos::View<FadType*,  ViewArgs...> ViewTypeC;
   typedef typename ViewTypeA::execution_space execution_space;
 
+#ifndef SACADO_DISABLE_FAD_VIEW_SPEC
   ViewTypeA A("A",m,n,p+1);
   ViewTypeB b("B",n,p+1);
   ViewTypeC c("c",m,p+1);
+#else
+  ViewTypeA A("A",m,n);
+  ViewTypeB b("B",n);
+  ViewTypeC c("c",m);
+#endif
 
   // FadType a(p, 1.0);
   // for (size_t k=0; k<p; ++k)
@@ -366,12 +382,14 @@ do_time_scratch(const size_t m, const size_t n, const size_t p, const size_t nlo
   perf.flops = m*n*(2+4*p);
   perf.throughput = perf.flops / perf.time / 1.0e9;
 
+#ifndef SACADO_DISABLE_FAD_VIEW_SPEC
   if (check) {
     typename ViewTypeA::array_type A_flat = A;
     typename ViewTypeB::array_type b_flat = b;
     typename ViewTypeC::array_type c_flat = c;
     check_deriv(A_flat, b_flat, c_flat);
   }
+#endif
 
   return perf;
 }
@@ -400,13 +418,10 @@ do_time_analytic(const size_t m, const size_t n, const size_t p,
   run_mat_vec_deriv( A, b, c );
   execution_space().fence();
 
-  Teuchos::Time timer("mult", false);
-  timer.start(true);
   for (size_t l=0; l<nloop; l++) {
     run_mat_vec_deriv( A, b, c );
   }
   execution_space().fence();
-  timer.stop();
 
   perf.time = wall_clock.seconds() / nloop;
   perf.flops = m*n*(2+4*p);
@@ -442,13 +457,10 @@ do_time_analytic_sl(const size_t m, const size_t n, const size_t p,
   run_mat_vec_deriv_sl<MaxP>( A, b, c );
   execution_space().fence();
 
-  Teuchos::Time timer("mult", false);
-  timer.start(true);
   for (size_t l=0; l<nloop; l++) {
     run_mat_vec_deriv_sl<MaxP>( A, b, c );
   }
   execution_space().fence();
-  timer.stop();
 
   perf.time = wall_clock.seconds() / nloop;
   perf.flops = m*n*(2+4*p);
@@ -484,13 +496,10 @@ do_time_analytic_s(const size_t m, const size_t n,
   run_mat_vec_deriv_s<p>( A, b, c );
   execution_space().fence();
 
-  Teuchos::Time timer("mult", false);
-  timer.start(true);
   for (size_t l=0; l<nloop; l++) {
     run_mat_vec_deriv_s<p>( A, b, c );
   }
   execution_space().fence();
-  timer.stop();
 
   perf.time = wall_clock.seconds() / nloop;
   perf.flops = m*n*(2+4*p);

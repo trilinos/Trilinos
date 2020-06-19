@@ -136,8 +136,7 @@ public:
 template<class Scalar, class MV>
 class TsqrOrthoManager :
     public OrthoManager<Scalar, MV>,
-    public OutOfPlaceNormalizerMixin<Scalar, MV>,
-    public Teuchos::ParameterListAcceptor
+    public OutOfPlaceNormalizerMixin<Scalar, MV>
 {
 public:
   typedef Scalar scalar_type;
@@ -377,8 +376,7 @@ private:
 template<class Scalar, class MV, class OP>
 class TsqrMatOrthoManager :
     public MatOrthoManager<Scalar, MV, OP>,
-    public OutOfPlaceNormalizerMixin<Scalar, MV>,
-    public Teuchos::ParameterListAcceptorDefaultBase
+    public OutOfPlaceNormalizerMixin<Scalar, MV>
 {
 public:
   typedef Scalar scalar_type;

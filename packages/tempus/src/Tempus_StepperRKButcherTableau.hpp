@@ -2234,7 +2234,7 @@ protected:
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
     const Scalar one = ST::one();
     const Scalar zero = ST::zero();
-    const Scalar gamma = as<Scalar>(one - ( one / std::sqrt(2.0) ) );
+    const Scalar gamma = as<Scalar>(one - ( one / ST::squareroot(2*one) ) );
 
     // Fill A:
     A(0,0) = A(1,1) = A(2,2) = gamma;
@@ -3556,10 +3556,10 @@ protected:
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
 
-    const Scalar one      = ST::one();
-    const Scalar zero     = ST::zero();
-    const Scalar onehalf = one/(2*one);
-    const Scalar rootthree = std::sqrt(3);
+    const Scalar one       = ST::one();
+    const Scalar zero      = ST::zero();
+    const Scalar onehalf   = one/(2*one);
+    const Scalar rootthree = ST::squareroot(3*one);
 
     // Fill A:
     A(0,0) = A(1,1) = one/(3*one + rootthree);
@@ -3687,7 +3687,7 @@ protected:
     const Scalar one      = ST::one();
     const Scalar zero     = ST::zero();
     const Scalar onethird = one/(3*one);
-    const Scalar rootwo   = std::sqrt(2);
+    const Scalar rootwo   = ST::squareroot(2*one);
 
     // Fill A:
     A(0,0) = A(1,1) = A(2,2) = one / (4*one + 2*rootwo);
