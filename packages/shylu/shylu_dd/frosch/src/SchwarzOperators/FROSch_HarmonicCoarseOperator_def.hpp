@@ -80,9 +80,9 @@ namespace FROSch {
         // Remove coupling blocks
         if (!this->ParameterList_->get("Extensions: Remove Coupling",false)) {
             FROSCH_ASSERT(this->ParameterList_->isParameter("Extensions: Coupling IDs to Remove"),"FROSch::HarmonicCoarseOperator : ERROR: Coupling IDs to remove are not specified (\"Extensions: Coupling IDs to Remove\").");
-            FROSCH_ASSERT(this->ParameterList_->isType<TwoDArray<int> >("Extensions: Coupling IDs to Remove"),"FROSch::HarmonicCoarseOperator : ERROR: \"Extensions: Coupling IDs to Remove\" is not of type Teuchos::TwoDArray<int>.");
+            //FROSCH_ASSERT(this->ParameterList_->isType<decltype(couplingIDsToRemove)>("Extensions: Coupling IDs to Remove"),"FROSch::HarmonicCoarseOperator : ERROR: \"Extensions: Coupling IDs to Remove\" is not of type Teuchos::TwoDArray<int>.");
 
-            TwoDArray couplingIDsToRemove = paramList.get<TwoDArray<int> >("Extensions: Coupling IDs to Remove");
+            TwoDArray<int> couplingIDsToRemove = this->ParameterList_->get("Extensions: Coupling IDs to Remove",TwoDArray<int>(0,0,0));
             repeatedMatrix = removeCouplingBetweenDofs(repeatedMatrix,repeatedMap,couplingIDsToRemove);
         }
 
@@ -748,71 +748,69 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     typename HarmonicCoarseOperator<SC,LO,GO,NO>::ConstXMatrixPtr HarmonicCoarseOperator<SC,LO,GO,NO>::removeCouplingBetweenDofs(ConstXMatrixPtr matrix,
                                                                                                                                  ConstXMapPtr map,
-                                                                                                                                 TwoDArray &couplingIDsToRemove)
+                                                                                                                                 TwoDArray<int> &couplingIDsToRemove)
     {
         FROSCH_TIMER_START_LEVELID(removeCouplingBetweenDofsTime,"HarmonicCoarseOperator::removeCouplingBetweenDofs");
 
-        // UN totalNumDofIDs = 0;
-        // UNVecPtr2D mapping(NumberOfBlocks_);
-        // for (UN i=0; i<NumberOfBlocks_; i++) {
-        //     mapping[i] = UNVecPtr(DofsPerNode_[i]);
-        //     for (UN j=0; j<DofsPerNode_[i]; j++) {
-        //         mapping[i][j] = totalNumDofIDs;
-        //         totalNumDofIDs++;
-        //     }
-        // }
-        //
-        // Array<RCP<MultiVector<bool,LO,GO,NO> > > mask(totalNumDofIDs);
-        // for (UN i=0; i<NumberOfBlocks_; i++) {
-        //     mask[i] = MultiVectorFactory<LO,GO,NO>::Build(matrix->getRowMap(),totalNumDofIDs);
-        //     mask[i]->putScalar(true);
-        // }
         ConstUNVecView numLocalBlockRows = AssembledInterfaceCoarseSpace_->getLocalSubspaceSizes();
         FROSCH_ASSERT(numLocalBlockRows.size()==NumberOfBlocks_,"FROSch::HarmonicCoarseOperator : ERROR: numLocalBlockRows.size()!=NumberOfBlocks_");
 
-        Array<RCP<MultiVector<bool,LO,GO,NO> > > mask(NumberOfBlocks_);
+        // Array<RCP<MultiVector<bool,LO,GO,NO> > > mask(NumberOfBlocks_);
+        // for (UN i=0; i<NumberOfBlocks_; i++) {
+        //     mask[i] = MultiVectorFactory<bool,LO,GO,NO>::Build(matrix->getRowMap(),DofsPerNode_[i]);
+        //     mask[i]->putScalar(false);
+        // }
+        Array<Array<bool> > mask(NumberOfBlocks_);
         for (UN i=0; i<NumberOfBlocks_; i++) {
-            mask[i] = MultiVectorFactory<LO,GO,NO>::Build(matrix->getRowMap(),DofsPerNode_[i]);
-            mask[i]->putScalar(false);
+            mask[i] = Array<bool>(DofsPerNode_[i]*map->getNodeNumElements(),false);
         }
 
         FROSCH_ASSERT(couplingIDsToRemove.getNumCols()==4,"FROSch::HarmonicCoarseOperator : ERROR: couplingIDsToRemove.getNumCols()!=4");
         for (UN i=0; i<couplingIDsToRemove.getNumRows() ; i++) {
-            blockID1 = couplingIDsToRemove[0];
-            dofID1 = couplingIDsToRemove[1];
+            FROSCH_ASSERT(couplingIDsToRemove[i][0]>=0,"FROSch::HarmonicCoarseOperator : ERROR: couplingIDsToRemove[i][0]<0");
+            FROSCH_ASSERT(couplingIDsToRemove[i][1]>=0,"FROSch::HarmonicCoarseOperator : ERROR: couplingIDsToRemove[i][1]<0");
+            FROSCH_ASSERT(couplingIDsToRemove[i][2]>=0,"FROSch::HarmonicCoarseOperator : ERROR: couplingIDsToRemove[i][2]<0");
+            FROSCH_ASSERT(couplingIDsToRemove[i][3]>=0,"FROSch::HarmonicCoarseOperator : ERROR: couplingIDsToRemove[i][3]<0");
 
-            blockID2 = couplingIDsToRemove[2];
-            dofID2 = couplingIDsToRemove[3];
+            int blockID1 = couplingIDsToRemove[i][0];
+            int dofID1 = couplingIDsToRemove[i][1];
 
-            for (UN j=0; i<DofsMaps_[blockID2][dofID2]->getNodeNumElements(); i++) {
-                GO globalIndex = DofsMaps_[blockID2][dofID2]->getGlobalElement(i);
+            int blockID2 = couplingIDsToRemove[i][2];
+            int dofID2 = couplingIDsToRemove[i][3];
+
+            Array<bool>& tmpMask = mask[blockID1];
+            for (UN j=0; j<DofsMaps_[blockID2][dofID2]->getNodeNumElements(); j++) {
+                GO globalIndex = DofsMaps_[blockID2][dofID2]->getGlobalElement(j);
                 FROSCH_ASSERT(globalIndex>=0,"FROSch::HarmonicCoarseOperator : ERROR: globalIndex<0");
                 LO localIndex = map->getLocalElement(globalIndex);
                 FROSCH_ASSERT(localIndex>=0,"FROSch::HarmonicCoarseOperator : ERROR: localIndex<0");
-                mask[blockID1]->replaceLocalValue(localIndex,dofID1,true);
+                //mask[blockID1]->replaceLocalValue(localIndex,dofID1,true);
+                tmpMask[dofID1*map->getNodeNumElements()+localIndex] = true;
             }
         }
 
         XMatrixPtr reducedMatrix = MatrixFactory<SC,LO,GO,NO>::Build(matrix->getRowMap(),matrix->getNodeMaxNumRowEntries());
         for (UN i=0; i<NumberOfBlocks_; i++) {
             for (UN j=0; j<DofsPerNode_[i]; j++) {
-                ConstBoolVecPtr maskData = mask[i]->getData(j);
+                //ConstBoolVecPtr maskData = mask[i]->getData(j);
+                Array<bool>& tmpMask = mask[j];
                 for (UN k=0; k<DofsMaps_[i][j]->getNodeNumElements(); k++) {
                     GO globalIndex = DofsMaps_[i][j]->getGlobalElement(k);
                     FROSCH_ASSERT(globalIndex>=0,"FROSch::HarmonicCoarseOperator : ERROR: globalIndex<0");
                     LO localIndex = map->getLocalElement(globalIndex);
                     FROSCH_ASSERT(localIndex>=0,"FROSch::HarmonicCoarseOperator : ERROR: localIndex<0");
 
-                    ArrayView<const GO> indices;
+                    ArrayView<const LO> indices;
                     ArrayView<const SC> values;
-                    subdomainMatrix->getLocalRowView(localIndex,indices,values);
+                    matrix->getLocalRowView(localIndex,indices,values);
 
                     LO size = indices.size();
                     if (size>0) {
-                        Array<GO> indicesLocal;
-                        Array<SC> valuesLocal;
+                        Array<GO> indicesGlobal;
+                        Array<SC> valuesGlobal;
                         for (LO l=0; l<size; l++) {
-                            if (!maskData[indices[l]]) {
+                            //if (!maskData[indices[l]]) {
+                            if (!tmpMask[j*map->getNodeNumElements()+indices[l]]) {
                                 indicesGlobal.push_back(matrix->getRowMap()->getGlobalElement(indices[l]));
                                 valuesGlobal.push_back(values[l]);
                             }
@@ -823,6 +821,11 @@ namespace FROSch {
             }
         }
         reducedMatrix->fillComplete();
+
+        for (UN i=0; i<NumberOfBlocks_; i++) {
+            if (this->Verbose_) {RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); matrix->describe(*fancy,VERB_EXTREME);}
+            if (this->Verbose_) {RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); reducedMatrix->describe(*fancy,VERB_EXTREME);}
+        }
 
         return reducedMatrix.getConst();
     }

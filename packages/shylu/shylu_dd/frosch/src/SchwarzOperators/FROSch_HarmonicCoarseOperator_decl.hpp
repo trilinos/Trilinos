@@ -104,6 +104,8 @@ namespace FROSch {
         using ConstSCVecPtr           = typename SchwarzOperator<SC,LO,GO,NO>::ConstSCVecPtr;
         using ConstSCVecView          = typename SchwarzOperator<SC,LO,GO,NO>::ConstSCVecView;
 
+        using ConstBoolVecPtr         = typename SchwarzOperator<SC,LO,GO,NO>::ConstBoolVecPtr;
+
     public:
 
         HarmonicCoarseOperator(ConstXMatrixPtr k,
@@ -147,6 +149,10 @@ namespace FROSch {
                                                   GOVecView indicesIDofsAll,
                                                   XMatrixPtr kII,
                                                   XMatrixPtr kIGamma);
+
+        virtual ConstXMatrixPtr removeCouplingBetweenDofs(ConstXMatrixPtr matrix,
+                                                          ConstXMapPtr map,
+                                                          TwoDArray<int> &couplingIDsToRemove);
 
 
         SubdomainSolverPtr ExtensionSolver_;

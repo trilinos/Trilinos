@@ -170,6 +170,7 @@ namespace FROSch {
 
         using BoolVec                           = Array<bool>;
         using BoolVecPtr                        = ArrayRCP<bool>;
+        using ConstBoolVecPtr                   = ArrayRCP<const bool>;
 
     public:
 
