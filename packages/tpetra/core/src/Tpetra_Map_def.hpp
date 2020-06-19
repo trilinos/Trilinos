@@ -723,6 +723,8 @@ namespace Tpetra {
                                              firstContiguousGID_,
                                              lastContiguousGID_,
                                              static_cast<LO> (i));
+        // use copy constructor to make host version
+        glMapHost_ = global_to_local_table_host_type(glMap_);
       }
 
       // FIXME (mfh 10 Oct 2016) When we construct the global-to-local
@@ -1105,6 +1107,8 @@ namespace Tpetra {
                                              firstContiguousGID_,
                                              lastContiguousGID_,
                                              static_cast<LO> (i));
+        // use copy constructor to make host version
+        glMapHost_ = global_to_local_table_host_type(glMap_);
       }
 
       // FIXME (mfh 10 Oct 2016) When we construct the global-to-local
@@ -1297,7 +1301,8 @@ namespace Tpetra {
     else {
       // If the given global index is not in the table, this returns
       // the same value as OrdinalTraits<LocalOrdinal>::invalid().
-      return glMap_.get (globalIndex);
+      // glMapHost_ is Host and does not assume UVM
+      return glMapHost_.get (globalIndex);
     }
   }
 
@@ -1963,6 +1968,7 @@ namespace Tpetra {
       newMap->lgMap_ = this->lgMap_;
       newMap->lgMapHost_ = this->lgMapHost_;
       newMap->glMap_ = this->glMap_;
+      newMap->glMapHost_ = this->glMapHost_;
       // It's OK not to initialize the new Map's Directory.
       // This is initialized lazily, on first call to getRemoteIndexList.
 
@@ -2100,6 +2106,7 @@ namespace Tpetra {
       map->lgMap_ = lgMap_;
       map->lgMapHost_ = lgMapHost_;
       map->glMap_ = glMap_;
+      map->glMapHost_ = glMapHost_;
 
       // Map's default constructor creates an uninitialized Directory.
       // The Directory will be initialized on demand in

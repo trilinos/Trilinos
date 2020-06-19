@@ -1281,6 +1281,18 @@ namespace Tpetra {
     /// this mapping.
     global_to_local_table_type glMap_;
 
+    //! Type of a mapping from global IDs to local IDs on host.
+    typedef ::Tpetra::Details::FixedHashTable<
+      global_ordinal_type, local_ordinal_type, Kokkos::HostSpace::device_type>
+      global_to_local_table_host_type;
+
+    /// \brief Host View of glMap_.
+    ///
+    /// Used by getLocalElement() (which is a host method, and therefore
+    /// requires a host View) if necessary (only noncontiguous Maps
+    /// need this).
+    global_to_local_table_host_type glMapHost_;
+
     /// \brief Object that can find the process rank and local index
     ///   for any given global index.
     ///
@@ -1488,6 +1500,7 @@ namespace Tpetra {
       typedef ::Tpetra::Directory<LO, GO,
                                   typename OutMapType::node_type> out_dir_type;
       typedef typename OutMapType::global_to_local_table_type out_table_type;
+      typedef typename OutMapType::global_to_local_table_host_type out_table_host_type;
       typedef typename OutMapType::device_type out_device_type;
 
       OutMapType mapOut; // Make an empty Map.
@@ -1540,6 +1553,7 @@ namespace Tpetra {
       // expectations.  (Kokkos::View::operator= only does a shallow
       // copy, EVER.)
       mapOut.glMap_ = out_table_type (mapIn.glMap_);
+      mapOut.glMapHost_ = out_table_host_type (mapIn.glMapHost_);
 
       // We could cleverly clone the Directory here if it is
       // initialized, but there is no harm in simply creating it
