@@ -69,6 +69,10 @@ if [[ "$ATDM_CONFIG_COMPILER" == "ARM-20.0_OPENMPI-4.0.2" ]]; then
   export ZLIB_ROOT=${ZLIB_DIR}
   export CGNS_ROOT=${CGNS_DIR}
   export BOOST_ROOT=${BOOST_DIR}
+  export METIS_ROOT=${METIS_DIR}
+  export PARMETIS_ROOT=${PARMETIS_DIR}
+  export SUPERLUDIST_ROOT=${SUPERLU_DIST_DIR}
+  export BINUTILS_ROOT=${BINUTILS_DIR}
 
   module load git/2.19.2
 elif [[ "$ATDM_CONFIG_COMPILER" == "ARM-20.1_OPENMPI-4.0.3" ]]; then
