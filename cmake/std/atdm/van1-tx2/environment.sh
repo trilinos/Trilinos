@@ -35,15 +35,6 @@ if [[ "${ATDM_CONFIG_BUILD_TYPE}" == "DEBUG" ]] ; then
   # Reducing this is to avoid that.  See CDOFA-117.
 fi
 
-if [[ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ]] ; then
-  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=16
-  export OMP_NUM_THREADS=2
-else
-  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=32
-  export OMP_PROC_BIND=FALSE
-  export OMP_NUM_THREADS=1
-fi
-
 #
 # Load the modules
 #
@@ -79,8 +70,14 @@ if [[ "$ATDM_CONFIG_COMPILER" == "ARM-20.0_OPENMPI-4.0.2" ]]; then
   export CGNS_ROOT=${CGNS_DIR}
   export BOOST_ROOT=${BOOST_DIR}
 
+  module load git/2.19.2
 elif [[ "$ATDM_CONFIG_COMPILER" == "ARM-20.1_OPENMPI-4.0.3" ]]; then
   module load sparc-dev/arm-20.1_openmpi-4.0.3
+
+  if [ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ] ; then
+    unset OMP_PLACES
+    unset OMP_PROC_BIND
+  fi
 
   # We'll use TPL_ROOT for consistency across ATDM environments
   export MPI_ROOT=${MPI_DIR}
@@ -102,10 +99,18 @@ else
   return
 fi
 
+if [[ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ]] ; then
+  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=16
+  export OMP_NUM_THREADS=2
+else
+  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=32
+  export OMP_PROC_BIND=FALSE
+  export OMP_NUM_THREADS=1
+fi
+
 # Common modules for all builds
 module load ninja
 module load cmake/3.12.2
-module load git/2.19.2
 
 export ATDM_CONFIG_USE_HWLOC=OFF
 export HWLOC_LIBS=
