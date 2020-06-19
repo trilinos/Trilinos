@@ -55,11 +55,11 @@ ${DEFINE_CMAKE_CURRENT_LIST_DIR_CODE_SNIPPET}
 ## Compilers used by ${PROJECT_NAME} build
 ## ---------------------------------------------------------------------------
 
-SET(${PROJECT_NAME}_CXX_COMPILER "${CMAKE_CXX_COMPILER}")
+SET(${PROJECT_NAME}_CXX_COMPILER "${CMAKE_CXX_COMPILER_FOR_CONFIG_FILE}")
 
-SET(${PROJECT_NAME}_C_COMPILER "${CMAKE_C_COMPILER}")
+SET(${PROJECT_NAME}_C_COMPILER "${CMAKE_C_COMPILER_FOR_CONFIG_FILE}")
 
-SET(${PROJECT_NAME}_Fortran_COMPILER "${CMAKE_Fortran_COMPILER}")
+SET(${PROJECT_NAME}_Fortran_COMPILER "${CMAKE_Fortran_COMPILER_FOR_CONFIG_FILE}")
 
 ## ---------------------------------------------------------------------------
 ## Compiler flags used by ${PROJECT_NAME} build
