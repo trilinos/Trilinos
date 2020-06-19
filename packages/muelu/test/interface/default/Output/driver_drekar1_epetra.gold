@@ -26,6 +26,7 @@ aggregation: drop tol = 0   [default]
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = distance laplacian
 aggregation: distance laplacian algo = default   [default]
+aggregation: classical algo = default   [default]
 lightweight wrap = 1
 
 Filtered matrix is not being constructed as no filtering is being done
@@ -172,6 +173,7 @@ aggregation: drop tol = 0   [default]
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = distance laplacian
 aggregation: distance laplacian algo = default   [default]
+aggregation: classical algo = default   [default]
 lightweight wrap = 1
 
 Filtered matrix is not being constructed as no filtering is being done
@@ -318,6 +320,7 @@ aggregation: drop tol = 0   [default]
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = distance laplacian
 aggregation: distance laplacian algo = default   [default]
+aggregation: classical algo = default   [default]
 lightweight wrap = 1
 
 Filtered matrix is not being constructed as no filtering is being done
