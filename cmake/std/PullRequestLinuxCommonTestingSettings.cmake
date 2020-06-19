@@ -105,7 +105,7 @@ set (TPL_Scotch_INCLUDE_DIRS "$ENV{SEMS_SCOTCH_INCLUDE_PATH}" CACHE PATH "Set by
 set (Scotch_LIBRARY_DIRS "$ENV{SEMS_SCOTCH_LIBRARY_PATH}" CACHE PATH "Set by default for PR testing")
 
 # Add build stats (#7376)
-set(Trilinos_ENABLE_BUILD_STATS ON CACHE BOOL "Set in PullRequestLinuxGCC8.3.0TestingSettings.cmake")
+set(Trilinos_ENABLE_BUILD_STATS ON CACHE BOOL "Set in PullRequestLinuxCommonTestingSettings.cmake")
 # NOTE: Above, we directly set the cache var instead of the non-cache default
 # Trilinos_ENABLE_BUILD_STATS_DEFAULT because setting a non-cache var in an
 # *.cmake file included with the -C option does not seem to get picked up in
