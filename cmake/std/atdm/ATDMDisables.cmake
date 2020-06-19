@@ -306,4 +306,10 @@ IF (ATDM_NODE_TYPE STREQUAL "CUDA")
   # Disable ctest DISABLED test (otherwise, this shows up on CDash as "NotRun")
   ATDM_SET_ENABLE(KokkosContainers_PerformanceTest_Cuda_DISABLE ON)
 
+  # Disable a couple of unit tests in test KokkosCore_UnitTest_Cuda_MPI_1
+  # (#6799)
+  ATDM_SET_CACHE(KokkosCore_UnitTest_Cuda_MPI_1_EXTRA_ARGS
+    "--gtest_filter=-cuda.debug_pin_um_to_host:cuda.debug_serial_execution"
+    CACHE STRING )
+
 ENDIF()

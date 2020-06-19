@@ -51,16 +51,16 @@ Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::ObserverToTempusIntegr
     const Teuchos::RCP<const Tempus::SolutionHistory<Scalar> >& solutionHistory,
     const Teuchos::RCP<const Tempus::TimeStepControl<Scalar> >& timeStepControl,
     const Teuchos::RCP<Piro::ObserverBase<Scalar> > &wrappedObserver,
-    const bool supports_x_dotdot, const bool abort_on_fail_at_min_dt)
+    const bool supports_x_dotdot, const bool abort_on_fail_at_min_dt, 
+    const SENS_METHOD sens_method)
     : solutionHistory_(solutionHistory),
       timeStepControl_(timeStepControl),
       out_(Teuchos::VerboseObjectBase::getDefaultOStream()),
       wrappedObserver_(wrappedObserver),
       supports_x_dotdot_(supports_x_dotdot),
-      abort_on_fail_at_min_dt_(abort_on_fail_at_min_dt) 
+      abort_on_fail_at_min_dt_(abort_on_fail_at_min_dt), 
+      sens_method_(sens_method)  
 {
-  //Currently, sensitivities are not supported in Tempus.
-  hasSensitivities_ = false;
   previous_dt_ = 0.0;
 }
 
@@ -224,16 +224,37 @@ Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeTimeStep()
   }
 
   //Get solution
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> > solution = solutionHistory_->getCurrentState()->getX();
-  solution.assert_not_null();
-  //Get solution_dot
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> > solution_dot = solutionHistory_->getCurrentState()->getXDot();
+  typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
+  Teuchos::RCP<const Thyra::VectorBase<Scalar>> x = solutionHistory_->getCurrentState()->getX(); 
+  Teuchos::RCP<const DMVPV> X = Teuchos::rcp_dynamic_cast<const DMVPV>(x);
+  //IKT, 5/12/2020: getX() returns a vector containing the sensitivities for the case of sensitivity calculations for sensitivity integrator. 
+  //Hence, we extract the first column, which is the solution.
+  Teuchos::RCP<const Thyra::VectorBase<Scalar>> solution = (sens_method_ == NONE) ? x : X->getMultiVector()->col(0);
+  //IKT FIXME? Extract the remaining columns which would represent dxdp for the forward sensitivities?
+  //This is if we want to observe them/write them to Exodus file in Albany.
+  //if (sens_method == FORWARD) {
+    //const int num_param = X->getMultiVector()->domain()->dim()-1;
+    //const Teuchos::Range1D rng(1,num_param);
+    //Teuchos::RCP<const Thyra::VectorBase<Scalar>> solution_dxdp = X->getMultiVector()->subView(rng);
+  //}
+ 
+  //Get solution_dot 
+  Teuchos::RCP<const Thyra::VectorBase<Scalar>> xdot = solutionHistory_->getCurrentState()->getXDot(); 
+  Teuchos::RCP<const DMVPV> XDot = Teuchos::rcp_dynamic_cast<const DMVPV>(xdot);
+  //IKT, 5/11/2020: getXDot() returns a vector containing the sensitivities for the case of sensitivity calculations for sentivity integrator 
+  //Hence, we extract the first column, which is the solution_dot.
+  Teuchos::RCP<const Thyra::VectorBase<Scalar>> solution_dot = (sens_method_ == NONE) ? xdot : XDot->getMultiVector()->col(0);
 
   const Scalar scalar_time = solutionHistory_->getCurrentState()->getTime();
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType StampScalar;
   const StampScalar time = Teuchos::ScalarTraits<Scalar>::real(scalar_time);
 
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> > solution_dotdot = solutionHistory_->getCurrentState()->getXDotDot();
+  //Get solution_dotdot 
+  Teuchos::RCP<const Thyra::VectorBase<Scalar>> xdotdot = solutionHistory_->getCurrentState()->getXDotDot(); 
+  Teuchos::RCP<const DMVPV> XDotDot = Teuchos::rcp_dynamic_cast<const DMVPV>(xdotdot);
+  //IKT, 5/11/2020: getXDotDot() returns a vector containing the sensitivities for the case of sensitivity calculations. 
+  //Hence, we extract the first column, which is the solution_dotdot.
+  Teuchos::RCP<const Thyra::VectorBase<Scalar>> solution_dotdot = (sens_method_ == NONE) ? xdot : XDotDot->getMultiVector()->col(0);
   if (Teuchos::nonnull(solution_dot))
   {
     if (supports_x_dotdot_) {

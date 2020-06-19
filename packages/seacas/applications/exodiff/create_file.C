@@ -132,7 +132,10 @@ int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::strin
       mode |= EX_ALL_INT64_API;
     }
     out_file_id = ex_create(diffile_name.c_str(), mode, &compws, &iows);
-    SMART_ASSERT(out_file_id >= 0);
+    if (out_file_id < 0) {
+      Error(fmt::format("Couldn't create output file \"{}\".\n", diffile_name));
+      exit(1);
+    }
     ex_copy(file1.File_ID(), out_file_id);
   }
 

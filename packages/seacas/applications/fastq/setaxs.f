@@ -1,4 +1,4 @@
-C    Copyright(C) 2014-2017 National Technology & Engineering Solutions of
+C    Copyright(C) 2014-2017, 2020 National Technology & Engineering Solutions of
 C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -58,14 +58,19 @@ C
 C
 C  FORCE X AND Y LIMITS ON THE GRAPH
 C
-      CALL PLTSTG (1, X01)
-      CALL PLTSTG (2, Y01)
-      CALL PLTSTG (3, X02 - X01)
-      CALL PLTSTG (4, Y02 - Y01)
+      BUFF(1) = X01
+      CALL PLTSTG (1, BUFF)
+      BUFF(1) = Y01
+      CALL PLTSTG (2, BUFF)
+      BUFF(1) = X02 - X01
+      CALL PLTSTG (3, BUFF)
+      BUFF(1) = Y02 - Y01
+      CALL PLTSTG (4, BUFF)
 C
 C  TURN OFF THE ZERO LINE PLOT
 C
-      CALL PLTSTG (37, 0.)
+      BUFF(1) = 0.
+      CALL PLTSTG (37, BUFF)
 C
 C  GET NICE INTERVALS ON THE AXIS
 C

@@ -51,6 +51,7 @@ void TimeStepControl<Scalar>::getNextTimeStep(
     RCP<Teuchos::FancyOStream> out = this->getOStream();
     Teuchos::OSTab ostab(out,0,"getNextTimeStep");
 
+    // Lambda function to report changes to dt.
     auto changeDT = [] (int istep, Scalar dt_old, Scalar dt_new,
                         std::string reason)
     {

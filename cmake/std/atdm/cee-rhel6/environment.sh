@@ -47,10 +47,6 @@ export ATDM_CONFIG_BUILD_COUNT=$ATDM_CONFIG_MAX_NUM_CORES_TO_USE
 
 module purge
 
-module load sparc-dev
-# NOTE: Above was reported needed by jhu on some CEE RHEL6 machine in order to
-# get NetCDF to load (#4662).
-
 # Warning options requested by Gemma team (which should hopefully also take
 # care of warnings required by the other ATDM APPs as well).  See #3178 and
 # #4221
@@ -75,8 +71,8 @@ if  [[ "$ATDM_CONFIG_COMPILER" == "CLANG-9.0.1_OPENMPI-4.0.3" ]]; then
   fi
   export ATDM_CONFIG_MKL_ROOT=${CBLAS_ROOT}
 
-elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0_OPENMPI-4.0.2" ]] ; then
-  module load sparc-dev/gcc-7.2.0_openmpi-4.0.2
+elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0_OPENMPI-4.0.3" ]] ; then
+  module load sparc-dev/gcc-7.2.0_openmpi-4.0.3
   unset OMP_NUM_THREADS  # SPARC module sets these and we must unset!
   unset OMP_PROC_BIND
   unset OMP_PLACES

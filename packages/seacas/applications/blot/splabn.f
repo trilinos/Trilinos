@@ -84,7 +84,7 @@ C   --Get the plot legend
 10000  FORMAT (I9, '..', I9)
       CALL PCKSTR (1, STRNUM)
 
-      CALL NUMSTR (1, 4, TIME, STRTIM, LSTR)
+      CALL NUMSTR1(4, TIME, STRTIM, LSTR)
 
       IF (NODVAR) THEN
          PLTITL = 'DISTANCE vs ' // NAM(:LENSTR(NAM))

@@ -69,7 +69,7 @@ C   --   NSTEPS - IN - the number of time steps
          STRA = 'whole time step'
       END IF
       LSTRA = LENSTR (STRA)
-      CALL NUMSTR (1, 4, TIME, RSTR, LRSTR)
+      CALL NUMSTR1(4, TIME, RSTR, LRSTR)
       WRITE (STRB, 10000, IOSTAT=IDUM) NCSTEP, NSTEPS
 10000  FORMAT (I5, ' of ', I5)
       CALL SQZSTR (STRB, LSTRB)

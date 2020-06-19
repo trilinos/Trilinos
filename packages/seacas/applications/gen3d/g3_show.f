@@ -1,4 +1,4 @@
-C Copyright(C) 2011-2017 National Technology & Engineering Solutions
+C Copyright(C) 2011-2017, 2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -151,16 +151,17 @@ C   --Determine the show option
             CONTINUE
          ELSE IF (ITRANT .EQ. 2) THEN
             CALL INTSTR (1, 0, NEREPL, STRA, LSTRA)
-            CALL NUMSTR (1, 4, DIM3, RSTR(1), LR)
+            RNUM(1) = DIM3
+            RNUM(2) = RGRAD
+            CALL NUMSTR (2, 4, RNUM, RSTR(1), LR)
 
             IF (ABS (RGRAD - 1.0) .LE. 1.0E-6) THEN
                WRITE (*, 130) 'Rotate mesh ', STRA(:LSTRA),
      &            ' times for a total of ', RSTR(1)(:LR), ' degrees'
             ELSE
-               CALL NUMSTR (1, 3, RGRAD, RSTR(2), LR2)
                WRITE (*, 130) 'Rotate mesh ', STRA(:LSTRA),
      &            ' times for a total of ', RSTR(1)(:LR), ' degrees',
-     &            ' with a gradient of ', RSTR(2)(:LR2)
+     &            ' with a gradient of ', RSTR(2)(:LR)
             END IF
 
             if (rotax .eq. 0) then
@@ -181,12 +182,12 @@ C   --Determine the show option
                WRITE (*, 130) '   Center of rotation in ',
      &            STRA(:LSTRA), ' columns'
             ELSE
-               CALL NUMSTR (1, 4, CENTER, RSTR(1), LR)
+               CALL NUMSTR1 (4, CENTER, RSTR(1), LR)
                WRITE (*, 130) '   Center of rotation = ', RSTR(1)(:LR)
             END IF
 
          ELSE IF (ITRANT .EQ. 4) THEN
-            CALL NUMSTR (1, 3, DWARP, RSTR(1), LR1)
+            CALL NUMSTR1 (3, DWARP, RSTR(1), LR1)
             IF (IWARP .EQ.  1) STRB = 'Point'
             IF (IWARP .EQ. -1) STRB = 'X Axis'
             IF (IWARP .EQ. -2) STRB = 'Y Axis'
@@ -220,7 +221,7 @@ C   --Determine the show option
                WRITE (*, 130) '   Center of rotation in ',
      &            STRA(:LSTRA), ' columns'
             ELSE
-               CALL NUMSTR (1, 4, CENTER, RSTR(1), LR)
+               CALL NUMSTR1 (4, CENTER, RSTR(1), LR)
                WRITE (*, 130) '   Center of rotation = ', RSTR(1)(:LR)
             END IF
          ELSE IF (ITRANT .EQ. 64) THEN
@@ -292,7 +293,7 @@ C   --Determine the show option
          END IF
 
       ELSE IF (SHOTYP .EQ. 'ROTCEN') THEN
-         CALL NUMSTR (1, 4, CENTER, RSTR, LR)
+         CALL NUMSTR1 (4, CENTER, RSTR, LR)
          WRITE (*, 130)
      &      'Center of rotation = ',RSTR(1)(:LR)
 

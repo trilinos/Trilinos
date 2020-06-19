@@ -1,7 +1,7 @@
 // @HEADER
 // ************************************************************************
 //
-//        Phalanx: A Partial Differential Equation Field Evaluation 
+//        Phalanx: A Partial Differential Equation Field Evaluation
 //       Kernel for Flexible Management of Complex Dependency Chains
 //                    Copyright 2008 Sandia Corporation
 //
@@ -80,49 +80,96 @@ namespace PHX {
   template<> std::string print<Point>(){return "P";}
 }
 
+// Functor to test accessors
+template<typename F1,typename F2,typename F3,typename F4,typename F5,typename F6,typename F7,
+	 typename CF1,typename CF2,typename CF3,typename CF4,typename CF5,typename CF6,typename CF7>
+struct TestAssignmentFunctor {
+
+  F1 f1_; F2 f2_; F3 f3_; F4 f4_; F5 f5_; F6 f6_; F7 f7_;
+  CF1 cf1_; CF2 cf2_; CF3 cf3_; CF4 cf4_; CF5 cf5_; CF6 cf6_; CF7 cf7_;
+
+  TestAssignmentFunctor(F1& f1,F2& f2,F3& f3,F4& f4,F5& f5, F6& f6, F7& f7,
+			CF1& cf1,CF2& cf2,CF3& cf3,CF4& cf4,CF5& cf5, CF6& cf6, CF7& cf7)
+    : f1_(f1),f2_(f2),f3_(f3),f4_(f4),f5_(f5),f6_(f6),f7_(f7),
+      cf1_(cf1),cf2_(cf2),cf3_(cf3),cf4_(cf4),cf5_(cf5),cf6_(cf6),cf7_(cf7)
+  {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const int i) const {
+    using size_type = std::size_t;
+
+    f1_(i) = cf1_(i);
+    f1_.access(i) = cf1_.access(i);
+    for (size_type j=0; j < f7_.dimension(1); ++j) {
+      f2_(i,j) = cf2_(i,j);
+      f2_(i,j) = cf2_.access(i,j);
+      for (size_type k=0; k < f7_.dimension(2); ++k) {
+	f3_(i,j,k) = cf3_(i,j,k);
+	f3_(i,j,k) = cf3_.access(i,j,k);
+	for (size_type l=0; l < f7_.dimension(3); ++l) {
+	  f4_(i,j,k,l) = cf4_(i,j,k,l);
+	  f4_(i,j,k,l) = cf4_.access(i,j,k,l);
+	  for (size_type m=0; m < f7_.dimension(4); ++m) {
+	    f5_(i,j,k,l,m) = cf5_(i,j,k,l,m);
+	    f5_(i,j,k,l,m) = cf5_.access(i,j,k,l,m);
+	    for (size_type n=0; n < f7_.dimension(5); ++n) {
+	      f6_(i,j,k,l,m,n) = cf6_(i,j,k,l,m,n);
+	      f6_(i,j,k,l,m,n) = cf6_.access(i,j,k,l,m,n);
+	      for (size_type o=0; o < f7_.dimension(6); ++o) {
+		f7_(i,j,k,l,m,n,o) = cf7_(i,j,k,l,m,n,o);
+		f7_(i,j,k,l,m,n,o) = cf7_.access(i,j,k,l,m,n,o);
+	      }
+	    }
+	  }
+	}
+      }
+    }
+  }
+};
+
 TEUCHOS_UNIT_TEST(mdfield, CompileTimeChecked)
 {
   using namespace std;
   using namespace Teuchos;
   using namespace PHX;
-  
+
   RCP<Time> total_time = TimeMonitor::getNewTimer("Total Run Time");
   TimeMonitor tm(*total_time);
-  
+
   // *********************************************************************
   // Start of MDField Testing
   // *********************************************************************
   {
-    
+
     typedef MDField<double,Cell,Node>::size_type size_type;
-    
+
     // Dummy data layouts
     size_type num_cells = 100;
     RCP<DataLayout> node_scalar = rcp(new MDALayout<Cell,Node>(num_cells,4));
     RCP<DataLayout> quad_scalar = rcp(new MDALayout<Cell,Quadrature>(num_cells,4));
     RCP<DataLayout> node_vector = rcp(new MDALayout<Cell,Node,Dim>(num_cells,4,3));
     RCP<DataLayout> quad_vector = rcp(new MDALayout<Cell,Quadrature,Dim>(num_cells,4,3));
-    
+
     // Tags with same name but different topology
     Tag<double> nodal_density("density", node_scalar);
     Tag<double> qp_density("density", quad_scalar);
     Tag<double> grad_qp_density("density", quad_vector);
     Tag<MyTraits::FadType> f_grad_qp_density("density",quad_vector);
-    
+
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // Ctors
     cout << "Testing ctor with FieldTag...";
     MDField<double,Cell,Node> a(nodal_density);
     MDField<double,Cell,Quadrature,Dim> b(grad_qp_density);
     cout << "passed!" << endl;
-    
+
     cout << "Testing ctor with individual data...";
-    MDField<MyTraits::FadType,Cell,Node> 
+    MDField<MyTraits::FadType,Cell,Node>
       c("density", node_scalar);
-    MDField<MyTraits::FadType,Cell,Quadrature,Dim> 
+    MDField<MyTraits::FadType,Cell,Quadrature,Dim>
       d("density", quad_vector);
     cout << "passed!" << endl;
-    
+
     cout << "Testing empty ctor...";
     MDField<double,Cell,Point> e;
     MDField<MyTraits::FadType,Cell,Point,Dim> f;
@@ -132,7 +179,7 @@ TEUCHOS_UNIT_TEST(mdfield, CompileTimeChecked)
     {
       RCP<PHX::FieldTag> t1 = rcp(new PHX::Tag<double>("test",node_scalar));
       MDField<double,Cell,Node> f1(t1); // rcp(tag) ctor
-      MDField<double,Cell,Node> f2; 
+      MDField<double,Cell,Node> f2;
       f2.setFieldTag(t1); // set rcp(tag)
       auto t2 = f1.fieldTagPtr(); // accessor
       auto t3 = f2.fieldTagPtr();
@@ -177,7 +224,7 @@ TEUCHOS_UNIT_TEST(mdfield, CompileTimeChecked)
       // QuadraturePoint DimTag.
       RCP<DataLayout> ctor_dl_qp = rcp(new MDALayout<Cell,Quadrature>(10,4));
       MDField<double,Cell,Quadrature> ctor_nonconst_qp("ctor_nonconst",ctor_dl_qp);
-      MDField<const double,Cell,Quadrature> ctor_const_qp("ctor_const_qp",ctor_dl_qp); 
+      MDField<const double,Cell,Quadrature> ctor_const_qp("ctor_const_qp",ctor_dl_qp);
 
       // Repeat test above but with different tags for Quadrature --> Point
       MDField<double,Cell,Point> cc4(ctor_nonconst_qp);       // non-const from non-const
@@ -199,35 +246,35 @@ TEUCHOS_UNIT_TEST(mdfield, CompileTimeChecked)
       cc11 = ctor_nonconst_qp;
       cc12 = ctor_const_qp;
     }
-    
+
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // FieldTag accessor
     cout << "Testing fieldTag() accessor...";
-    
+
     const FieldTag& test_a = a.fieldTag();
     TEUCHOS_TEST_FOR_EXCEPTION( !(test_a == nodal_density),
 				std::logic_error,
 				"fieldTag() accessor failed!");
-    
+
     const FieldTag& test_b = b.fieldTag();
     TEUCHOS_TEST_FOR_EXCEPTION( !(test_b == grad_qp_density),
 				std::logic_error,
 				"fieldTag() accessor failed!");
-    
+
     const FieldTag& test_d = d.fieldTag();
     TEUCHOS_TEST_FOR_EXCEPTION( !(test_d == f_grad_qp_density),
 				std::logic_error,
 				"fieldTag() accessor failed!");
-    
+
     cout << "passed!" << endl;
-    
+
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // setFieldTag()
     cout << "Testing setFieldTag()...";
     e.setFieldTag(nodal_density);
     f.setFieldTag(f_grad_qp_density);
     cout << "passed!" << endl;
-    
+
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // setFieldData()
     cout << "Testing setFieldData()...";
@@ -239,16 +286,16 @@ TEUCHOS_UNIT_TEST(mdfield, CompileTimeChecked)
     PHX::any d_mem = PHX::KokkosViewFactory<MyTraits::FadType,typename PHX::DevLayout<MyTraits::FadType>::type,PHX::Device>::buildView(d.fieldTag(),ddims);
     PHX::any e_mem = PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(e.fieldTag());
     PHX::any f_mem = PHX::KokkosViewFactory<MyTraits::FadType,typename PHX::DevLayout<MyTraits::FadType>::type,PHX::Device>::buildView(f.fieldTag(),ddims);
-    
+
     a.setFieldData(a_mem);
     b.setFieldData(b_mem);
     c.setFieldData(c_mem);
     d.setFieldData(d_mem);
     e.setFieldData(e_mem);
     f.setFieldData(f_mem);
-    
+
     cout << "passed!" << endl;
-    
+
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // rank()
     TEST_EQUALITY(a.rank(),2);
@@ -269,13 +316,13 @@ TEUCHOS_UNIT_TEST(mdfield, CompileTimeChecked)
     TEST_EQUALITY(b.extent_int(0), static_cast<int>(num_cells));
     TEST_EQUALITY(b.extent_int(1), static_cast<int>(4));
     TEST_EQUALITY(b.extent_int(2), static_cast<int>(3));
-    
+
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // dimension()
     TEST_EQUALITY(b.dimension(0), num_cells);
     TEST_EQUALITY(b.dimension(1), 4);
     TEST_EQUALITY(b.dimension(2), 3);
-    
+
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // dimensions()
     std::vector<size_type> dims;
@@ -284,7 +331,7 @@ TEUCHOS_UNIT_TEST(mdfield, CompileTimeChecked)
     TEST_EQUALITY(dims[0], 100);
     TEST_EQUALITY(dims[1], 4);
     TEST_EQUALITY(dims[2], 3);
-    
+
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // size()
     TEST_EQUALITY(a.size(), node_scalar->size());
@@ -292,14 +339,14 @@ TEUCHOS_UNIT_TEST(mdfield, CompileTimeChecked)
     TEST_EQUALITY(c.size(), node_scalar->size());
     TEST_EQUALITY(d.size(), quad_vector->size());
     TEST_EQUALITY(e.size(), node_scalar->size());
-    TEST_EQUALITY(f.size(), quad_vector->size());    
-    
+    TEST_EQUALITY(f.size(), quad_vector->size());
+
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // operator()
     cout << "Testing operator()(...) accessors...";
-    
+
     RCP<DataLayout> d1 = rcp(new MDALayout<Cell>(num_cells));
-    RCP<DataLayout> d2 = rcp(new MDALayout<Cell,Dim>(num_cells,1));    
+    RCP<DataLayout> d2 = rcp(new MDALayout<Cell,Dim>(num_cells,1));
     RCP<DataLayout> d3 = rcp(new MDALayout<Cell,Dim,Dim>(num_cells,1,2));
     RCP<DataLayout> d4 = rcp(new MDALayout<Cell,Dim,Dim,Dim>(num_cells,1,2,3));
     RCP<DataLayout> d5 = rcp(new MDALayout<Cell,Dim,Dim,Dim,Dim>(num_cells,1,2,3,4));
@@ -315,33 +362,6 @@ TEUCHOS_UNIT_TEST(mdfield, CompileTimeChecked)
     MDField<double,Cell,Dim,Dim,Dim,Dim,Dim> f6 = PHX::allocateUnmanagedMDField<double,Cell,Dim,Dim,Dim,Dim,Dim>("Test6",d6);
     MDField<double,Cell,Dim,Dim,Dim,Dim,Dim,Dim> f7 = PHX::allocateUnmanagedMDField<double,Cell,Dim,Dim,Dim,Dim,Dim,Dim>("Test7",d7);
 
-    // Pre-Unmanaged allocator
-
-    // MDField<double,Cell> f1("Test1",d1);
-    // MDField<double,Cell,Dim> f2("Test2",d2);
-    // MDField<double,Cell,Dim,Dim> f3("Test3",d3);
-    // MDField<double,Cell,Dim,Dim,Dim> f4("Test4",d4);
-    // MDField<double,Cell,Dim,Dim,Dim,Dim> f5("Test5",d5);
-    // MDField<double,Cell,Dim,Dim,Dim,Dim,Dim> f6("Test6",d6);
-    // MDField<double,Cell,Dim,Dim,Dim,Dim,Dim,Dim> f7("Test7",d7);
-    
-    // f1.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f1.fieldTag()));
-    // f2.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f2.fieldTag()));
-    // f3.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f3.fieldTag()));
-    // f4.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f4.fieldTag()));
-    // f5.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f5.fieldTag()));
-    // f6.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f6.fieldTag()));
-    // f7.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f7.fieldTag()));
-
-    // Access last entry in contiguous array
-    f1(99) = 1.0;
-    f2(99,0) = 1.0;
-    f3(99,0,1) = 1.0;
-    f4(99,0,1,2) = 1.0;
-    f5(99,0,1,2,3) = 1.0;
-    f6(99,0,1,2,3,4) = 1.0;
-    f7(99,0,1,2,3,4,5) = 1.0;
-    
     // Test const/ non-const versions
     const MDField<double,Cell>& cf1 = f1;
     const MDField<double,Cell,Dim>& cf2 = f2;
@@ -350,54 +370,29 @@ TEUCHOS_UNIT_TEST(mdfield, CompileTimeChecked)
     const MDField<double,Cell,Dim,Dim,Dim,Dim>& cf5 = f5;
     const MDField<double,Cell,Dim,Dim,Dim,Dim,Dim>& cf6 = f6;
     const MDField<double,Cell,Dim,Dim,Dim,Dim,Dim,Dim>& cf7 = f7;
-    
-    for (size_type i=0; i < f7.dimension(0); ++i) {
-      f1(i) = cf1(i);      
-      for (size_type j=0; j < f7.dimension(1); ++j) {
-	f2(i,j) = cf2(i,j);
-	for (size_type k=0; k < f7.dimension(2); ++k) {
-	  f3(i,j,k) = cf3(i,j,k);
-	  for (size_type l=0; l < f7.dimension(3); ++l) {
-	    f4(i,j,k,l) = cf4(i,j,k,l);
-	    for (size_type m=0; m < f7.dimension(4); ++m) {
-	      f5(i,j,k,l,m) = cf5(i,j,k,l,m);
-	      for (size_type n=0; n < f7.dimension(5); ++n) {
-		f6(i,j,k,l,m,n) = cf6(i,j,k,l,m,n);
-		for (size_type o=0; o < f7.dimension(6); ++o) {
-		  f7(i,j,k,l,m,n,o) = cf7(i,j,k,l,m,n,o);
-		}
-	      }
-	    }
-	  }
-	}
-      }
-    }
-    
-    cout << "passed!" << endl;
 
-    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // Check the access() function
-    for (size_type i=0; i < f7.dimension(0); ++i) {
-      f1(i) = cf1.access(i);
-      for (size_type j=0; j < f7.dimension(1); ++j) {
-	f2(i,j) = cf2.access(i,j);
-	for (size_type k=0; k < f7.dimension(2); ++k) {
-	  f3(i,j,k) = cf3.access(i,j,k);
-	  for (size_type l=0; l < f7.dimension(3); ++l) {
-	    f4(i,j,k,l) = cf4.access(i,j,k,l);
-	    for (size_type m=0; m < f7.dimension(4); ++m) {
-	      f5(i,j,k,l,m) = cf5.access(i,j,k,l,m);
-	      for (size_type n=0; n < f7.dimension(5); ++n) {
-		f6(i,j,k,l,m,n) = cf6.access(i,j,k,l,m,n);
-		for (size_type o=0; o < f7.dimension(6); ++o) {
-		  f7(i,j,k,l,m,n,o) = cf7.access(i,j,k,l,m,n,o);
-		}
-	      }
-	    }
-	  }
-	}
-      }
-    }
+    auto func = TestAssignmentFunctor<MDField<double,Cell>,
+				      MDField<double,Cell,Dim>,
+				      MDField<double,Cell,Dim,Dim>,
+				      MDField<double,Cell,Dim,Dim,Dim>,
+				      MDField<double,Cell,Dim,Dim,Dim,Dim>,
+				      MDField<double,Cell,Dim,Dim,Dim,Dim,Dim>,
+				      MDField<double,Cell,Dim,Dim,Dim,Dim,Dim,Dim>,
+				      const MDField<double,Cell>,
+				      const MDField<double,Cell,Dim>,
+				      const MDField<double,Cell,Dim,Dim>,
+				      const MDField<double,Cell,Dim,Dim,Dim>,
+				      const MDField<double,Cell,Dim,Dim,Dim,Dim>,
+				      const MDField<double,Cell,Dim,Dim,Dim,Dim,Dim>,
+				      const MDField<double,Cell,Dim,Dim,Dim,Dim,Dim,Dim>
+				      >(f1,f2,f3,f4,f5,f6,f7,
+					cf1,cf2,cf3,cf4,cf5,cf6,cf7);
+
+    Kokkos::parallel_for("TestAssignmentFunctor",
+			 Kokkos::RangePolicy<PHX::Device>(0,f7.extent(0)),
+			 func);
+
+    cout << "passed!" << endl;
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // check for const mdfield assignment from non-const factory
@@ -411,7 +406,7 @@ TEUCHOS_UNIT_TEST(mdfield, CompileTimeChecked)
       MDField<const double,Cell,Dim,Dim,Dim,Dim> c_f5("CONST Test5",d5);
       MDField<const double,Cell,Dim,Dim,Dim,Dim,Dim> c_f6("CONST Test6",d6);
       MDField<const double,Cell,Dim,Dim,Dim,Dim,Dim,Dim> c_f7("CONST Test7",d7);
-      
+
       // Note that the factory never uses a const scalar type
       c_f1.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(c_f1.fieldTag()));
       c_f2.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(c_f2.fieldTag()));
@@ -426,28 +421,28 @@ TEUCHOS_UNIT_TEST(mdfield, CompileTimeChecked)
     // Kokkos static View accessors
     {
       // non-const view
-      auto kva = a.get_static_view(); 
-      kva(0,0) = 1.0;
-      auto kvc = c.get_static_view(); 
-      kvc(0,0) = MyTraits::FadType(1.0);
+      auto kva = a.get_static_view();
+      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),KOKKOS_LAMBDA(const int ){kva(0,0) = 1.0;});
+      auto kvc = c.get_static_view();
+      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),KOKKOS_LAMBDA(const int ){kvc(0,0) = MyTraits::FadType(1.0);});
       // const view (view const, not const data)
-      const auto const_kva = a.get_static_view(); 
-      const_kva(0,0) = 1.0;
-      const auto const_kvc = c.get_static_view(); 
-      const_kvc(0,0) = MyTraits::FadType(1.0);
+      const auto const_kva = a.get_static_view();
+      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),KOKKOS_LAMBDA(const int ){const_kva(0,0) = 1.0;});
+      const auto const_kvc = c.get_static_view();
+      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),KOKKOS_LAMBDA(const int ){const_kvc(0,0) = MyTraits::FadType(1.0);});
     }
     // Kokkos DynRankView accessors
     {
       // non-const view
-      auto kva = a.get_view(); 
-      kva(0,0) = 1.0;
-      auto kvc = c.get_view(); 
-      kvc(0,0) = MyTraits::FadType(1.0);
+      auto kva = a.get_view();
+      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),KOKKOS_LAMBDA(const int ){kva(0,0) = 1.0;});
+      auto kvc = c.get_view();
+      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),KOKKOS_LAMBDA(const int ){kvc(0,0) = MyTraits::FadType(1.0);});
       // const view (view const, not const data)
-      const auto const_kva = a.get_view(); 
-      const_kva(0,0) = 1.0;
-      const auto const_kvc = c.get_view(); 
-      const_kvc(0,0) = MyTraits::FadType(1.0);
+      const auto const_kva = a.get_view();
+      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),KOKKOS_LAMBDA(const int ){const_kva(0,0) = 1.0;});
+      const auto const_kvc = c.get_view();
+      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),KOKKOS_LAMBDA(const int ){const_kvc(0,0) = MyTraits::FadType(1.0);});
     }
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -459,7 +454,7 @@ TEUCHOS_UNIT_TEST(mdfield, CompileTimeChecked)
     ostringstream output;
     output << a;
     // Disable below - name mangling not handled correctly on all platforms.
-    // TEST_EQUALITY(output.str(), "MDField<C,N>(100,4): Tag: density, double, DataLayout: <C,N>(100,4)"); 
+    // TEST_EQUALITY(output.str(), "MDField<C,N>(100,4): Tag: density, double, DataLayout: <C,N>(100,4)");
   }
 
   TimeMonitor::summarize();

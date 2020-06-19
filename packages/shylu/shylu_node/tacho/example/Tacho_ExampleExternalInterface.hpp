@@ -117,6 +117,16 @@ namespace tacho {
       return 0;
     }
 
+    void exportSupernodes(std::vector<int> &supernodes) {
+      const auto supernodes_device = m_Solver.getSupernodes();
+      auto supernodes_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), supernodes_device); 
+      {
+        const int n = supernodes_host.extent(0);
+        supernodes.resize(n);
+        std::copy(supernodes_host.data(), supernodes_host.data()+n, supernodes.data());
+      }
+    }
+
     void exportUpperTriangularFactorsToCrsMatrix(std::vector<int> &rowBeginU,
                                                  std::vector<int> &columnsU,
                                                  std::vector<SX> &valuesU,

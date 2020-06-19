@@ -1,4 +1,4 @@
-C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
+C Copyright(C) 2009-2017, 2020 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -579,7 +579,7 @@ C      --Reset the number of contours when the colors change
             NCOL = 0
             IF (VERB .EQ. 'color') THEN
                DO 130 IDEV = 1, 2
-                  CALL GRGPAR ('DEVICE', IDEV, ISON, WORD)
+                  CALL GRGPARD ('DEVICE', IDEV, ISON, WORD)
                   IF (ISON) THEN
                      CALL GRGPAR ('SPECTRUM', IDEV, IFIELD, WORD)
                      IF (IFIELD(3) .GT. 0) NCOL = -999
@@ -588,7 +588,7 @@ C      --Reset the number of contours when the colors change
             END IF
             IF (NCOL .EQ. 0) THEN
                DO 140 IDEV = 1, 2
-                  CALL GRGPAR ('DEVICE', IDEV, ISON, WORD)
+                  CALL GRGPARD ('DEVICE', IDEV, ISON, WORD)
                   IF (ISON) THEN
                      CALL GRGPAR ('SPECTRUM', IDEV, IFIELD, WORD)
                      NCOL = MAX (NCOL, IFIELD(1))

@@ -30,7 +30,7 @@ C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 C=======================================================================
-      SUBROUTINE MSSURF (A, LENE, NLNKE, LINKE,
+      SUBROUTINE MSSURF (A, IA, LENE, NLNKE, LINKE,
      &   LENF, NLNKF, KLINKF, KIF2EL, NAMELB)
 C=======================================================================
 
@@ -62,6 +62,7 @@ C   --   Uses IS3DIM of /D3NUMS/
       include 'd3nums.blk'
 
       DIMENSION A(*)
+      INTEGER IA(*)
       INTEGER LENE(0:*)
       INTEGER NLNKE(*)
       INTEGER LINKE(*)
@@ -99,7 +100,7 @@ C   --   Uses IS3DIM of /D3NUMS/
          CALL FACE3D (A, LENE, NLNKE, LINKE, MAXFAC, LENLNK,
      $        A(KLENS), A(KNLNKS), A(KLINKS), A(KF2ES), NAMELB)
 
-         CALL CNTLNK (NELBLK, A(KLENS), A(KNLNKS), LSCLNK, NSCFAC)
+         CALL CNTLNK (NELBLK, IA(KLENS), IA(KNLNKS), LSCLNK, NSCFAC)
          CALL MDLONG ('LNKSCR', KLINKS, LSCLNK)
          CALL MDLONG ('IFSCR', KF2ES, 2 * NSCFAC)
 

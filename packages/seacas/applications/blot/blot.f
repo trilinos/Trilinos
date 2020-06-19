@@ -267,7 +267,7 @@ C   --Open database file
         CALL PRTERR ('CMDSPEC',
      *    'Syntax is: "blot.dev [-basename basename] [-ps_option num]'//
      *    ' [-nomap node|element|all] filename"')
-        GOTO 170
+        GOTO 190
       end if
 
       CALL get_argument(narg,dbname, lfil)
@@ -726,7 +726,7 @@ C   --Break 3D elements into faces, and sort faces by element block
         CALL MDSTAT (NERR, MEM)
         IF (NERR .GT. 0) GOTO 160
 
-        CALL MSSURF (A, A(KLENE), A(KNLNKE), A(KLINKE),
+        CALL MSSURF (A, IA, A(KLENE), A(KNLNKE), A(KLINKE),
      &    A(KLENF), A(KNLNKF), KLINKF, KIF2EL, C(KNMLB))
         CALL MDSTAT (NERR, MEM)
         IF (NERR .GT. 0) GOTO 160
@@ -1032,6 +1032,8 @@ C   --Close files
       IF (ANYPRT) CLOSE (NPRT, IOSTAT=IDUM)
       IF (GRFOPN) CLOSE(NEUGRF)
       IF (CSVOPN) CLOSE(NCSV)
+
+ 190  continue
       call addlog (QAINFO(1)(:lenstr(QAINFO(1))))
       CALL WRAPUP (QAINFO(1))
 

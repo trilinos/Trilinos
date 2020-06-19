@@ -179,10 +179,6 @@ The relevant defines for SEACAS are:
   -D Trilinos_EXTRA_LINK_FLAGS:STRING="-L${WHERE_TO_INSTALL}/lib -lpnetcdf -lhdf5_hl -lhdf5 -lz"
 ```
 
-If you are using a NetCDF version prior to 4.3 and NetCDF was compiled
-with parallel enabled, then you also need to add `-D TPL_Netcdf_PARALLEL:BOOL=ON`
-This is automatically determined for NetCDF-4.3 and later.
-
 ## Testing
 There are a few unit tests for exodus, and aprepro that can be run via `make test` if you configured with `-D SEACAS_ENABLE_TESTS=ON`.
 

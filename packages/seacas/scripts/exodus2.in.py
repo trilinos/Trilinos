@@ -3,7 +3,7 @@ from ctypes import *
 import os
 
 """
-exodus.py v 1.13 (seacas-beta) is a python wrapper of some of the exodus library
+exodus.py v 1.14 (seacas-beta) is a python wrapper of some of the exodus library
 (Python 2 Version)
 
 Copyright(C) 2019, 2020 National Technology & Engineering Solutions of
@@ -41,10 +41,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 EXODUS_PY_COPYRIGHT_AND_LICENSE = __doc__
 
-EXODUS_PY_VERSION = "1.13 (seacas-py2)"
+EXODUS_PY_VERSION = "1.14 (seacas-py2)"
 
 EXODUS_PY_COPYRIGHT = """
-You are using exodus.py v 1.13 (seacas-py2), a python wrapper of some of the exodus library.
+You are using exodus.py v 1.14 (seacas-py2), a python wrapper of some of the exodus library.
 
 Copyright (c) 2013, 2014, 2015, 2016, 2017, 2018, 2019 National Technology &
 Engineering Solutions of Sandia, LLC (NTESS).  Under the terms of
@@ -459,7 +459,7 @@ class exodus:
         EXODUS_LIB.ex_set_int64_status(fileId, i64Status)
 
         self.__copy_file(fileId, include_transient)
-        EXODUS_LIB.ex_close(self.fileId)
+        EXODUS_LIB.ex_close(fileId)
 
         return exodus(fileName, "a")
 

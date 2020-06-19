@@ -45,6 +45,8 @@
 
 #include "Piro_ConfigDefs.hpp"
 #include "Thyra_ResponseOnlyModelEvaluatorBase.hpp"
+#include "Piro_TempusIntegrator.hpp" 
+#include "Piro_Helpers.hpp" 
 
 #include <map>
 #include <string>
@@ -61,14 +63,12 @@ public:
   /** \name Constructors/initializers */
   //@{
   /** \brief . */
-  explicit TransientSolver(const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&model, 
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &initialConditionModel = Teuchos::null); 
+  explicit TransientSolver(const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&model);  
 
   /** \brief . */
   TransientSolver(
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
-      int numParameters, 
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &initialConditionModel = Teuchos::null); 
+      int numParameters); 
   //@}
 
   /** \name Overridden from Thyra::ModelEvaluatorBase. */
@@ -83,12 +83,36 @@ public:
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_g_space(int j) const;
   //@}
 
+  /** \name Getters for subbclasses */
+  //@{
+  /** \brief . */
+  const Thyra::ModelEvaluator<Scalar> &getModel() const; 
+
+  /** \brief . */
+  int num_p() const; 
+
+  /** \brief . */
+  int num_g() const; 
+
+  /** \brief . */
+  SENS_METHOD getSensitivityMethod(); 
+  //@}
+  
+  /** \name Setters for subbclasses */
+  /** \brief . */
+  void setSensitivityMethod(const std::string& sensitivity_method_string);
+  //@}
+
+  /** \brief . */
+  void setPiroTempusIntegrator(Teuchos::RCP<const Piro::TempusIntegrator<Scalar>> piroTempusIntegrator); 
+  //@}
+  
 protected:
   /** \name Service methods for subclasses. */
   //@{
 
   /** \brief . */
-  void evalConvergedModel(
+  void evalConvergedModelResponsesAndSensitivities(
       const Thyra::ModelEvaluatorBase::InArgs<Scalar>& modelInArgs,
       const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const;
   //@}
@@ -102,13 +126,14 @@ private:
 
   Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_DgDp_op_impl(int j, int l) const;
 
-  Teuchos::RCP<Teuchos::FancyOStream> out;
+  Teuchos::RCP<Teuchos::FancyOStream> out_;
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;
-  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > initialConditionModel_;
+  Teuchos::RCP<const Piro::TempusIntegrator<Scalar>> piroTempusIntegrator_; 
 
   int num_p_;
   int num_g_;
 
+  SENS_METHOD sensitivityMethod_;
 
 };
 

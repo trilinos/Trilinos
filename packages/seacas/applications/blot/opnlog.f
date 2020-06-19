@@ -74,7 +74,7 @@ C   --   Uses QAINFO of /PROGQA/
       IF (L .LT. LEN (INLINE)) INLINE(L+1:) = DBNAME
       L = LENSTR (INLINE) + 1
 
-      CALL GRGPAR ('DEVICE', 1, ISON, STR)
+      CALL GRGPARD ('DEVICE', 1, ISON, STR)
       IF (ISON) THEN
          IF (L .LT. LEN (INLINE)) INLINE(L+1:) = STR
       ELSE
@@ -82,7 +82,7 @@ C   --   Uses QAINFO of /PROGQA/
       END IF
       L = LENSTR (INLINE) + 1
 
-      CALL GRGPAR ('DEVICE', 2, ISON, STR)
+      CALL GRGPARD ('DEVICE', 2, ISON, STR)
       IF (ISON) THEN
          IF (L .LT. LEN (INLINE)) INLINE(L+1:) = STR
       ELSE
