@@ -4122,7 +4122,7 @@ namespace Tpetra {
       // 6/2020  Disallow leftScale of non-fillComplete matrices #7446
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (true, std::runtime_error, "CrsMatrix::leftScale requires matrix to be"
-         "fillComplete");
+         " fillComplete");
     }
   }
 
@@ -4182,7 +4182,7 @@ namespace Tpetra {
       // 6/2020  Disallow rightScale of non-fillComplete matrices #7446
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (true, std::runtime_error, "CrsMatrix::rightScale requires matrix to be"
-         "fillComplete");
+         " fillComplete");
     }
   }
 
