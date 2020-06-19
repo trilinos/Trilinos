@@ -74,11 +74,6 @@
 #define FROSCH_INDENT 5
 #endif
 
-
-
-
-
-
 #include <ShyLU_DDFROSch_config.h>
 #include <Tpetra_Distributor.hpp>
 #include <MatrixMarket_Tpetra.hpp>
@@ -268,16 +263,6 @@ namespace FROSch {
                                                                      Teuchos::Array<GO> numEnt,
                                                                      unsigned partitionType,
                                                                      ArrayRCP<RCP<const Map<LO,GO,NO>>> dofsMaps);
-
-
-
-
-
-
-
-
-
-
 
 
     template <class LO,class GO,class NO>

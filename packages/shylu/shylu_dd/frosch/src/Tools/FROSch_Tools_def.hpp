@@ -428,8 +428,7 @@ namespace FROSch {
     {
       //FROSCH_ASSERT(numVert+numEdg+numFac != nodesMap->getGlobalNumElements(),"ERROR: Map does not match number of Entities");
       Teuchos::Array<GO> nodeEle = nodesMap->getNodeElementList();
-      //std::cout<<"Rank "<<nodesMap->getComm()->getRank()<<"   "<<nodeEle<<std::endl;
-      //std::cout<<"Rank "<<nodesMap->getComm()->getRank()<<"   "<<nodeEle[0]+2*numVert<<std::endl;
+    
       Teuchos::Array<GO> dofEle(nodeEle.size()*dofsPerNode);
       Teuchos::Array<GO> dmapEle(nodeEle.size());
       //GDSW Type CoarseOperator

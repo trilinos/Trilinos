@@ -100,7 +100,6 @@ namespace FROSch {
                                                              ConstXMapPtrVecPtr2D dofsMapsVec,
                                                              GOVecPtr2D dirichletBoundaryDofsVec)
     {
-        RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(std::cout));
         //FROSCH_TIMER_START_LEVELID(initializeTime,"TwoLevelBlockPreconditioner::initialize");
         ////////////
         // Checks //
@@ -221,8 +220,7 @@ namespace FROSch {
             } else {
                 FROSCH_ASSERT(false,"Null Space Type unknown.");
             }
-            //nullSpaceBasisVec[0]->getMap()->describe(*fancy,Teuchos::VERB_EXTREME);
-            //nullSpaceBasisVec[0]->describe(*fancy,Teuchos::VERB_EXTREME);
+
             IPOUHarmonicCoarseOperatorPtr iPOUHarmonicCoarseOperator = rcp_static_cast<IPOUHarmonicCoarseOperator<SC,LO,GO,NO> >(CoarseOperator_);
             if (0>iPOUHarmonicCoarseOperator->initialize(dimension,dofsPerNodeVec,repeatedNodesMapVec,dofsMapsVec,nullSpaceBasisVec,nodeListVec,dirichletBoundaryDofsVec)) ret -=10;
         } else if (!this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator").compare("GDSWCoarseOperator")) {
@@ -252,7 +250,6 @@ namespace FROSch {
                                                              ConstXMapPtrVecPtr2D dofsMapsVec,
                                                              GOVecPtr2D dirichletBoundaryDofsVec)
     {
-        RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(std::cout));
         //FROSCH_TIMER_START_LEVELID(initializeTime,"TwoLevelBlockPreconditioner::initialize");
         ////////////
         // Checks //
@@ -384,10 +381,7 @@ namespace FROSch {
             } else {
                 FROSCH_ASSERT(false,"Null Space Type unknown.");
             }
-            //nullSpaceBasisVec[0]->getMap()->describe(*fancy,Teuchos::VERB_EXTREME);
-            //nullSpaceBasisVec[0]->describe(*fancy,Teuchos::VERB_EXTREME);
-
-
+        
             IPOUHarmonicCoarseOperatorPtr iPOUHarmonicCoarseOperator = rcp_static_cast<IPOUHarmonicCoarseOperator<SC,LO,GO,NO> >(CoarseOperator_);
             if (0>iPOUHarmonicCoarseOperator->initialize(dimension,dofsPerNodeVec,repeatedNodesMapVec,dofsMapsVec,nullSpaceBasisVec,nodeListVec,dirichletBoundaryDofsVec)) ret -=10;
         } else if (!this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator").compare("GDSWCoarseOperator")) {

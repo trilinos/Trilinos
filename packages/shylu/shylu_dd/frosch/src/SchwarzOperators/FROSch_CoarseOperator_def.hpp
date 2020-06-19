@@ -74,7 +74,6 @@ namespace FROSch {
     int CoarseOperator<SC,LO,GO,NO>::buildGlobalGraph(Teuchos::RCP<DDInterface<SC,LO,GO,NO> > theDDInterface_)
     {
       FROSCH_TIMER_START_LEVELID(buildGlobalGraphTime,"CoarseOperator::buildGlobalGraph");
-      Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
       std::map<GO,int> rep;
       Teuchos::Array<GO> entries;
       IntVec2D conn;
@@ -120,8 +119,6 @@ namespace FROSch {
       //bring graph to correct communictaor
       FROSCH_TIMER_START_LEVELID(buildCoarseGraphTime,"CoarseOperator::buildCoarseGraph");
 
-      Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-      //SubdomainConnectGraph_->describe(*fancy,Teuchos::VERB_EXTREME);
 		  GraphPtr TestGraph2 =  Xpetra::CrsGraphFactory<LO,GO,NO>::Build(MLGatheringMaps_[1],maxNumNeigh_);;
 	 	  GraphPtr TestGraph3;
 		  {
@@ -157,7 +154,6 @@ namespace FROSch {
       //get elements belonging to one subdomain
       FROSCH_TIMER_START_LEVELID(buildElementNodeListTime,"CoarseOperator::buildElementNodeList");
 
-      Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
       Teuchos::ArrayView<const GO> elements_ = kRowMap_->getNodeElementList();
       UN maxNumElements = -1;
       UN numElementsLocal = elements_.size();
@@ -218,7 +214,6 @@ namespace FROSch {
     {
 
       FROSCH_TIMER_START_LEVELID(BuildRepMapZoltanTime,"CoarseOperator::BuildRepMapZoltan");
-      Teuchos::RCP<Teuchos::FancyOStream> fancy = fancyOStream(Teuchos::rcpFromRef(std::cout));
       //Zoltan2 Problem
       typedef Zoltan2::XpetraCrsGraphAdapter<Xpetra::CrsGraph<LO,GO,NO> > inputAdapter;
       Teuchos::RCP<Teuchos::ParameterList> tmpList = Teuchos::sublist(parameterList,"Zoltan2 Parameter");
@@ -965,14 +960,12 @@ namespace FROSch {
                ConstXMapPtrVecPtr2D CoarseDofsMaps(1);
                BuildRepMapZoltan(SubdomainConnectGraph_,ElementNodeList_, DistributionList_,CoarseSolveComm_,CoarseSolveRepeatedMap_);
                ConstRepMap = CoarseSolveRepeatedMap_;
-               //CoarseSolveRepeatedMap_->describe(*fancy,Teuchos::VERB_EXTREME);
                ConstXMapPtrVecPtr NodesMapVector(1);
                //MapVector for next Level
                //So far only one Block is allowed ; needs to be adapetd fpr Block Ops
                ConstXMapPtrVecPtr RepMapVector(1);
                //Create DofMaps according to counting the interface entities
                //partitionType defines the CoarsespaceType 0 = GDSW; 1 = GDSWStar; 2 = RGDSW
-               //CoarseSolveRepeatedMap_->describe(*fancy,Teuchos::VERB_EXTREME);
                ConstXMapPtrVecPtr DMap(dofs);
                ConstXMapPtrVecPtr DMapRep(dofs);
                if(dim == 2){

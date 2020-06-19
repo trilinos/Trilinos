@@ -117,7 +117,6 @@ namespace FROSch {
         XMultiVectorPtrVecPtr getPartitionOfUnity() const;
 
         XMultiVectorPtr getNullspaceBasis() const;
-        ConstXMultiVectorPtr getCoarseNullSpace() const;
 
         CoarseSpacePtr getLocalPartitionOfUnitySpace() const;
 
@@ -134,7 +133,6 @@ namespace FROSch {
 
         XMultiVectorPtrVecPtr PartitionOfUnity_;
         ConstXMultiVectorPtr NullspaceBasis_;
-        ConstXMultiVectorPtr CoarseNullSpace_;
 
         XMapPtrVecPtr PartitionOfUnityMaps_;
 

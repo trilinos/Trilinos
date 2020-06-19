@@ -297,11 +297,6 @@ namespace FROSch {
            this->kRowMap_ = PartitionOfUnity_->getAssembledPartitionOfUnityMap();
 
            if (this->ParameterList_->get("Use RepMap",false)) {
-              //  if (this->K_->getMap()->lib() == Xpetra::UseTpetra) {
-                    //Teuchos::RCP<DDInterface<SC,LO,GO,NO> > theInterface =Teuchos::rcp_const_cast<DDInterface<SC,LO,GO,NO> >(interfacePartitionOfUnity->getDDInterface());
-                    //this->buildGlobalGraph(theInterface);
-                    //interfacePartitionOfUnity->buildGlobalGraph();
-
                     Teuchos::RCP<DDInterface<SC,LO,GO,NO> > theInterface =Teuchos::rcp_const_cast<DDInterface<SC,LO,GO,NO> >(interfacePartitionOfUnity->getDDInterface());
                     this->buildGlobalGraph(theInterface);
 

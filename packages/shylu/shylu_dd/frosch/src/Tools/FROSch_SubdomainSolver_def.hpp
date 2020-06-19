@@ -291,7 +291,6 @@ namespace FROSch {
   }
 
 
-  Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   ConstXMultiVectorPtr nodeList = null;
   GOVecPtr dirichletBoundaryDofs = null;
   ConstXMultiVectorPtr nullSpaceBasisVec = null;
