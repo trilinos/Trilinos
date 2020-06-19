@@ -17,7 +17,9 @@ source $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-s-driver-config-build.
 
 set -x
 
+if [[ "${CTEST_DO_TEST}" != "OFF" ]] ; then
 atdm_run_script_on_compute_node \
   $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-s-driver-test.sh \
   $PWD/ctest-s-driver-test.out \
   ${SLURM_CTEST_TIMEOUT}
+fi # CTEST_DO_TEST
