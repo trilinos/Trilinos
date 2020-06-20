@@ -14,11 +14,12 @@
 #include "Thyra_VectorStdOps.hpp"
 
 #include "Tempus_StepperFactory.hpp"
-//#include "Tempus_UnitTest_Utils.hpp"
 #include "Tempus_StepperSubcyclingModifierBase.hpp"
-#include "Tempus_StepperSubcyclingObserverBase.hpp"
 #include "Tempus_StepperSubcyclingModifierXBase.hpp"
+#include "Tempus_StepperSubcyclingObserverBase.hpp"
 #include "Tempus_StepperSubcyclingModifierDefault.hpp"
+#include "Tempus_StepperSubcyclingModifierXDefault.hpp"
+#include "Tempus_StepperSubcyclingObserverDefault.hpp"
 
 #include "../TestModels/SinCosModel.hpp"
 #include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
@@ -59,6 +60,8 @@ TEUCHOS_UNIT_TEST(Subcycling, Default_Construction)
   auto obs       = rcp(new Tempus::StepperSubcyclingObserver<double>());
 #endif
   auto modifier  = rcp(new Tempus::StepperSubcyclingModifierDefault<double>());
+  auto modifierX = rcp(new Tempus::StepperSubcyclingModifierXDefault<double>());
+  auto observer  = rcp(new Tempus::StepperSubcyclingObserverDefault<double>());
   auto solver    = rcp(new Thyra::NOXNonlinearSolver());
   solver->setParameterList(Tempus::defaultSolverParameters());
 
@@ -72,6 +75,8 @@ TEUCHOS_UNIT_TEST(Subcycling, Default_Construction)
   stepper->setObserver(obs);                           stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 #endif
   stepper->setAppAction(modifier);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setAppAction(modifierX);                    stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setAppAction(observer);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setUseFSAL(useFSAL);                        stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setICConsistency(ICConsistency);            stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setICConsistencyCheck(ICConsistencyCheck);  stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
