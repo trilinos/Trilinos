@@ -5,7 +5,7 @@
 /// \brief Main header file
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "ShyLU_NodeTacho_config.h"
+#include "Tacho_config.h"
 
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
@@ -33,6 +33,12 @@
 
 #include "Tacho_Blas_External.hpp"
 #include "Tacho_Blas_Team.hpp"
+
+#include "Tacho_Copy.hpp"
+#include "Tacho_Copy_Internal.hpp"
+
+#include "Tacho_SetIdentity.hpp"
+#include "Tacho_SetIdentity_Internal.hpp"
 
 #include "Tacho_Chol.hpp"
 #include "Tacho_Chol_External.hpp"

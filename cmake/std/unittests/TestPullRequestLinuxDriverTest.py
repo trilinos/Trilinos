@@ -207,6 +207,7 @@ Set CWD = /dev/null/workspace
                 l_environ, \
                 mock.patch('PullRequestLinuxDriverTest.createPackageEnables'), \
                 mock.patch('PullRequestLinuxDriverTest.setBuildEnviron'), \
+                mock.patch('PullRequestLinuxDriverTest.compute_n', return_value=20), \
                 mock.patch('PullRequestLinuxDriverTest.getCDashTrack') as m_cdtr:
             PullRequestLinuxDriverTest.run()
 
@@ -222,7 +223,7 @@ Set CWD = /dev/null/workspace
                                         '-Dbuild_dir=/dev/null/workspace/pull_request_test',
                                         '-Dconfigure_script=/dev/null/workspace/Trilinos/cmake/std/dummyConfig.cmake',
                                         '-Dpackage_enables=../packageEnables.cmake',
-                                        '-Dsubprojects_file=../TFW_single_configure_support_scripts/package_subproject_list.cmake'])
+                                        '-Dsubprojects_file=../package_subproject_list.cmake'])
 
 
     def test_verifyTargetBranch_passes_with_develop_target(self):
@@ -291,7 +292,7 @@ Set CWD = /dev/null/workspace
                                         '-Dbuild_dir=/dev/null/workspace/pull_request_test',
                                         '-Dconfigure_script=/dev/null/workspace/Trilinos/cmake/std/dummyConfig.cmake',
                                         '-Dpackage_enables=../packageEnables.cmake',
-                                        '-Dsubprojects_file=../TFW_single_configure_support_scripts/package_subproject_list.cmake'])
+                                        '-Dsubprojects_file=../package_subproject_list.cmake'])
 
 
 
@@ -319,14 +320,16 @@ class Test_createPackageEnables(unittest.TestCase):
 
     def success_side_effect(self):
         with open('packageEnables.cmake',  'w') as f_out:
-            f_out.write('''
-MACRO(PR_ENABLE_BOOL  VAR_NAME  VAR_VAL)
-  MESSAGE("-- Setting ${VAR_NAME} = ${VAR_VAL}")
-  SET(${VAR_NAME} ${VAR_VAL} CACHE BOOL "Set in $CMAKE_PACKAGE_ENABLES_OUT")
-ENDMACRO()
-''')
+            f_out.write(dedent('''\
+            MACRO(PR_ENABLE_BOOL  VAR_NAME  VAR_VAL)
+              MESSAGE("-- Setting ${VAR_NAME} = ${VAR_VAL}")
+              SET(${VAR_NAME} ${VAR_VAL} CACHE BOOL "Set in $CMAKE_PACKAGE_ENABLES_OUT")
+            ENDMACRO()
+            '''))
             f_out.write("PR_ENABLE_BOOL(Trilinos_ENABLE_FooPackageBar ON)")
-
+        with open ('package_subproject_list.cmake', 'w') as f_out:
+            f_out.write(dedent('''\
+            set(CTEST_LABELS_FOR_SUBPROJECTS TrilinosFrameworkTests '''))
 
     def test_call_success(self):
         expected_output = '''Enabled packages:
@@ -345,9 +348,11 @@ ENDMACRO()
                                                     'get-changed-trilinos-packages.sh'),
                                        os.path.join('origin',
                                                     self.target_branch),
-                                       'HEAD', 'packageEnables.cmake'])
+                                       'HEAD', 'packageEnables.cmake',
+                                       'package_subproject_list.cmake'])
         self.assertEqual(expected_output, m_stdout.getvalue())
         os.unlink('packageEnables.cmake')
+        os.unlink('package_subproject_list.cmake')
 
 
     def test_call_python2(self):
@@ -365,6 +370,7 @@ ENDMACRO()
         m_out.assert_not_called()
         self.assertEqual(expected_output, m_stdout.getvalue())
         os.unlink('packageEnables.cmake')
+        os.unlink('package_subproject_list.cmake')
 
 
     def test_call_failure(self):
@@ -383,7 +389,8 @@ ENDMACRO()
                                                     'get-changed-trilinos-packages.sh'),
                                        os.path.join('origin',
                                                     self.target_branch),
-                                       'HEAD', 'packageEnables.cmake'])
+                                       'HEAD', 'packageEnables.cmake',
+                                       'package_subproject_list.cmake'])
         self.assertEqual(expected_output, m_stdout.getvalue())
 
 
@@ -655,9 +662,9 @@ class Test_setEnviron(unittest.TestCase):
                          mock.call('load', 'sems-parmetis/4.0.3/parallel'),
                          mock.call('load', 'sems-scotch/6.0.3/nopthread_64bit_parallel'),
                          mock.call('load', 'sems-superlu/4.3/base'),
-                         mock.call('load', 'sems-cmake/3.10.3'),
+                         mock.call('load', 'sems-cmake/3.17.1'),
+                         mock.call('load', 'sems-ninja_fortran/1.10.0'),
                          mock.call('load', 'atdm-env'),
-                         mock.call('load', 'atdm-ninja_fortran/1.7.2'),
                          ]
         self.buildEnv_passes(PR_name, expected_list,
                              test_ENV={'OMP_NUM_THREADS': '2'})

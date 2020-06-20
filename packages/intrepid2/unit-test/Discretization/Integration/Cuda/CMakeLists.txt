@@ -1,10 +1,11 @@
-
+#Note BMK 6-3-20: adding RUN_SERIAL because this was timing out on RIDE
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Test_01
   SOURCES test_01.cpp
   ARGS PrintItAll
   NUM_MPI_PROCS 1
   PASS_REGULAR_EXPRESSION "TEST PASSED"
+  RUN_SERIAL
   ADD_DIR_TO_NAME
   )
 

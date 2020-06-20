@@ -48,6 +48,7 @@
 #include "ROL_StdVector.hpp"
 #include "ROL_Objective_SimOpt.hpp"
 #include "ROL_Types.hpp"
+#include "Teuchos_VerbosityLevel.hpp"
 
 using namespace ROL;
 
@@ -57,43 +58,76 @@ class ThyraProductME_Objective_SimOpt : public Objective_SimOpt<Real> {
 public:
 
 
-  ThyraProductME_Objective_SimOpt(Thyra::ModelEvaluatorDefaultBase<double>& thyra_model_, int g_index_, const std::vector<int>& p_indices_,Teuchos::RCP<Teuchos::ParameterList> params_ = Teuchos::null) :
-    thyra_model(thyra_model_), g_index(g_index_), p_indices(p_indices_), params(params_) {
-    updateValue = true;
+  ThyraProductME_Objective_SimOpt(Thyra::ModelEvaluatorDefaultBase<double>& thyra_model_, int g_index_, const std::vector<int>& p_indices_,
+      Teuchos::RCP<Teuchos::ParameterList> params_ = Teuchos::null, Teuchos::EVerbosityLevel verbLevel= Teuchos::VERB_HIGH) :
+    thyra_model(thyra_model_), g_index(g_index_), p_indices(p_indices_), params(params_),
+    out(Teuchos::VerboseObjectBase::getDefaultOStream()),
+    verbosityLevel(verbLevel) {
+    computeValue = computeGradient1 = computeGradient2 = true;
     value_ = 0;
-    x_ptr = Teuchos::null;
+    rol_u_ptr = rol_z_ptr = Teuchos::null;
     if(params != Teuchos::null) {
       params->set<int>("Optimizer Iteration Number", -1);
+      params->set<Teuchos::RCP<Vector<Real> > >("Optimization Variable", Teuchos::null);
     }
   };
 
 
   Real value(const Vector<Real> &u, const Vector<Real> &z, Real &tol ) {
 
-    if(updateValue) {
-      const ThyraVector<Real>  & thyra_p = dynamic_cast<const ThyraVector<Real>&>(z);
-      const ThyraVector<Real>  & thyra_x = dynamic_cast<const ThyraVector<Real>&>(u);
-      Teuchos::RCP< Thyra::VectorBase<Real> > g = Thyra::createMember<Real>(thyra_model.get_g_space(g_index));
-      Teuchos::RCP<const Thyra::ProductVectorBase<Real> > thyra_prodvec_p = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Real>>(thyra_p.getVector());
+#ifdef  HAVE_ROL_DEBUG
+    //u and z should be updated in the update functions before calling applyAdjointJacobian_2
+    TEUCHOS_ASSERT(!u_hasChanged(u));
+    TEUCHOS_ASSERT(!z_hasChanged(z));
+#endif
 
-      Thyra::ModelEvaluatorBase::InArgs<Real> inArgs = thyra_model.createInArgs();
-      Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model.createOutArgs();
+    if(verbosityLevel >= Teuchos::VERB_MEDIUM)
+      *out << "ROL::ThyraProductME_Objective_SimOpt::value" << std::endl;
 
-      outArgs.set_g(g_index, g);
-      for(std::size_t i=0; i<p_indices.size(); ++i)
-        inArgs.set_p(p_indices[i], thyra_prodvec_p->getVectorBlock(i));
-      inArgs.set_x(thyra_x.getVector());
-
-      thyra_model.evalModel(inArgs, outArgs);
-
-      value_ = ::Thyra::get_ele(*g,0);
-
-      updateValue = false;
+    if(!computeValue) {
+      if(verbosityLevel >= Teuchos::VERB_HIGH)
+        *out << "ROL::ThyraProductME_Objective_SimOpt::value, Skipping Computation of Value" << std::endl;
+      return value_;
     }
+
+    const ThyraVector<Real>  & thyra_p = dynamic_cast<const ThyraVector<Real>&>(z);
+    const ThyraVector<Real>  & thyra_x = dynamic_cast<const ThyraVector<Real>&>(u);
+    Teuchos::RCP< Thyra::VectorBase<Real> > g = Thyra::createMember<Real>(thyra_model.get_g_space(g_index));
+    Teuchos::RCP<const Thyra::ProductVectorBase<Real> > thyra_prodvec_p = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Real>>(thyra_p.getVector());
+
+    Thyra::ModelEvaluatorBase::InArgs<Real> inArgs = thyra_model.createInArgs();
+    Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model.createOutArgs();
+
+    outArgs.set_g(g_index, g);
+    for(std::size_t i=0; i<p_indices.size(); ++i)
+      inArgs.set_p(p_indices[i], thyra_prodvec_p->getVectorBlock(i));
+    inArgs.set_x(thyra_x.getVector());
+
+    thyra_model.evalModel(inArgs, outArgs);
+
+    value_ = ::Thyra::get_ele(*g,0);
+
+    computeValue = false;
+
     return value_;
   }
 
   void gradient_1(Vector<Real> &g, const Vector<Real> &u, const Vector<Real> &z, Real &tol ) {
+
+#ifdef  HAVE_ROL_DEBUG
+    //u and z should be updated in the update functions before calling gradient_1
+    TEUCHOS_ASSERT(!u_hasChanged(u));
+    TEUCHOS_ASSERT(!z_hasChanged(z));
+#endif
+
+    if(verbosityLevel >= Teuchos::VERB_MEDIUM)
+      *out << "ROL::ThyraProductME_Objective_SimOpt::gradient_1" << std::endl;
+
+    if(!computeGradient1) {
+      if(verbosityLevel >= Teuchos::VERB_HIGH)
+        *out << "ROL::ThyraProductME_Objective_SimOpt::gradient_1, Skipping Computation of Gradient 1" << std::endl;
+      return g.set(*grad1_ptr_);
+    }
 
     const ThyraVector<Real>  & thyra_p = dynamic_cast<const ThyraVector<Real>&>(z);
     const ThyraVector<Real>  & thyra_x = dynamic_cast<const ThyraVector<Real>&>(u);
@@ -111,7 +145,7 @@ public:
 
     Teuchos::RCP< Thyra::VectorBase<Real> > thyra_g;
 
-    if(updateValue) {
+    if(computeValue) {
       thyra_g = Thyra::createMember<Real>(thyra_model.get_g_space(g_index));
       outArgs.set_g(g_index, thyra_g);
     }
@@ -133,13 +167,37 @@ public:
     }
     thyra_model.evalModel(inArgs, outArgs);
 
-    if(updateValue) {
+    if(computeValue) {
+      if(verbosityLevel >= Teuchos::VERB_HIGH)
+      *out << "ROL::ThyraProductME_Objective_SimOpt::gradient_1, Computing Value" << std::endl;
       value_ = ::Thyra::get_ele(*thyra_g,0);
-      updateValue = false;
+      computeValue = false;
     }
+
+    if (Teuchos::is_null(grad1_ptr_))
+      grad1_ptr_ = g.clone();
+    grad1_ptr_->set(g);
+
+    computeGradient1 = false;
   }
 
   void gradient_2(Vector<Real> &g, const Vector<Real> &u, const Vector<Real> &z, Real &tol ) {
+
+#ifdef  HAVE_ROL_DEBUG
+    //u and z should be updated in the update functions before calling gradient_2
+    TEUCHOS_ASSERT(!u_hasChanged(u));
+    TEUCHOS_ASSERT(!z_hasChanged(z));
+#endif
+
+    if(verbosityLevel >= Teuchos::VERB_MEDIUM)
+      *out << "ROL::ThyraProductME_Objective_SimOpt::gradient_2" << std::endl;
+
+
+    if(!computeGradient2) {
+      if(verbosityLevel >= Teuchos::VERB_HIGH)
+        *out << "ROL::ThyraProductME_Objective_SimOpt::gradient_2, Skipping Computation of Gradient 2" << std::endl;
+      return g.set(*grad2_ptr_);
+    }
 
     const ThyraVector<Real>  & thyra_p = dynamic_cast<const ThyraVector<Real>&>(z);
     const ThyraVector<Real>  & thyra_x = dynamic_cast<const ThyraVector<Real>&>(u);
@@ -160,7 +218,9 @@ public:
 
     Teuchos::RCP< Thyra::VectorBase<Real> > thyra_g;
 
-    if(updateValue) {
+    if(computeValue) {
+      if(verbosityLevel >= Teuchos::VERB_HIGH)
+        *out << "ROL::ThyraProductME_Objective_SimOpt::gradient_2, Computing Value" << std::endl;
       thyra_g = Thyra::createMember<Real>(thyra_model.get_g_space(g_index));
       outArgs.set_g(g_index, thyra_g);
     }
@@ -182,31 +242,86 @@ public:
     }
     thyra_model.evalModel(inArgs, outArgs);
 
-    if(updateValue) {
+    if(computeValue) {
       value_ = ::Thyra::get_ele(*thyra_g,0);
-      updateValue = false;
+      computeValue = false;
+    }
+
+    if (grad2_ptr_ == Teuchos::null)
+      grad2_ptr_ = g.clone();
+    grad2_ptr_->set(g);
+
+    computeGradient2 = false;
+  }
+
+  void update( const Vector<Real> &u, const Vector<Real> &z, bool /*flag*/ = true, int iter = -1) {
+    if(z_hasChanged(z) || u_hasChanged(u)) {
+      if(verbosityLevel >= Teuchos::VERB_HIGH)
+        *out << "ROL::ThyraProductME_Objective_SimOpt::update, Either The State Or The Parameters Changed" << std::endl;
+      computeValue = computeGradient1 = computeGradient2 = true;
+
+      if (Teuchos::is_null(rol_z_ptr))
+        rol_z_ptr = z.clone();
+      rol_z_ptr->set(z);
+
+      if (Teuchos::is_null(rol_u_ptr))
+        rol_u_ptr = u.clone();
+      rol_u_ptr->set(u);
+    }
+
+    if(params != Teuchos::null) {
+      auto& z_stored_ptr = params->get<Teuchos::RCP<Vector<Real> > >("Optimization Variable");
+      if(Teuchos::is_null(z_stored_ptr) || z_hasChanged(*z_stored_ptr)) {
+        if(verbosityLevel >= Teuchos::VERB_HIGH)
+          *out << "ROL::ThyraProductME_Objective_SimOpt::update, Signaling That Parameter Changed" << std::endl;
+        params->set<bool>("Optimization Variables Changed", true);
+        if(Teuchos::is_null(z_stored_ptr))
+          z_stored_ptr = z.clone();
+        z_stored_ptr->set(z);
+      }
+      params->set<int>("Optimizer Iteration Number", iter);
     }
   }
 
-  void update( const Vector<Real> &/*u*/, const Vector<Real> &/*z*/, bool flag = true, int iter = -1) {
-    updateValue = flag;
-    if(params != Teuchos::null) {
-      params->set<int>("Optimizer Iteration Number", iter);
-      if(flag == true)
-        params->set<bool>("Optimization Variables Changed",true);
+  bool z_hasChanged(const Vector<Real> &rol_z) const {
+    bool changed = true;
+    if (Teuchos::nonnull(rol_z_ptr)) {
+      auto diff = rol_z.clone();
+      diff->set(*rol_z_ptr);
+      diff->axpy( -1.0, rol_z );
+      Real norm = diff->norm();
+      changed = (norm == 0) ? false : true;
     }
+    return changed;
+  }
+
+  bool u_hasChanged(const Vector<Real> &rol_u) const {
+    bool changed = true;
+    if (Teuchos::nonnull(rol_u_ptr)) {
+      auto diff = rol_u.clone();
+      diff->set(*rol_u_ptr);
+      diff->axpy( -1.0, rol_u );
+      Real norm = diff->norm();
+      changed = (norm == 0) ? false : true;
+    }
+    return changed;
   }
 
 public:
-  bool updateValue;
+  bool computeValue, computeGradient1, computeGradient2;
 
 private:
   Thyra::ModelEvaluatorDefaultBase<Real>& thyra_model;
   const int g_index;
   const std::vector<int> p_indices;
   Real value_;
-  Teuchos::RCP<Vector<Real> > x_ptr;
+  Teuchos::RCP<Vector<Real> > grad1_ptr_;
+  Teuchos::RCP<Vector<Real> > grad2_ptr_;
+  Teuchos::RCP<Vector<Real> > rol_z_ptr;
+  Teuchos::RCP<Vector<Real> > rol_u_ptr;
   Teuchos::RCP<Teuchos::ParameterList> params;
+  Teuchos::RCP<Teuchos::FancyOStream> out;
+  Teuchos::EVerbosityLevel verbosityLevel;
 
 };
 

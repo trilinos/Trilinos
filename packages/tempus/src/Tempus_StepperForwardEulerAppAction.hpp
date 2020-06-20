@@ -11,7 +11,6 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
-#include "Tempus_StepperForwardEuler.hpp"
 
 
 namespace Tempus {

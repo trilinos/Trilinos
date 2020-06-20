@@ -729,6 +729,64 @@ namespace MueLu {
     return MueLu::CuthillMcKee<double,int,int,Node>(Op);
   }
 
+  // Applies Ones-and-Zeros to matrix rows
+  // Takes a Boolean array.
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  ApplyOAZToMatrixRows(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,
+                       const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows) {
+    TEUCHOS_ASSERT(A->isFillComplete());
+    using ATS        = Kokkos::ArithTraits<Scalar>;
+    using impl_ATS = Kokkos::ArithTraits<typename ATS::val_type>;
+    using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
+
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > domMap = A->getDomainMap();
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > ranMap = A->getRangeMap();
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > Rmap = A->getRowMap();
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > Cmap = A->getColMap();
+
+    TEUCHOS_ASSERT(static_cast<size_t>(dirichletRows.size()) == Rmap->getNodeNumElements());
+
+    const Scalar one  = impl_ATS::one();
+    const Scalar zero = impl_ATS::zero();
+
+    auto localMatrix = A->getLocalMatrix();
+    auto localRmap = Rmap->getLocalMap();
+    auto localCmap = Cmap->getLocalMap();
+
+    Kokkos::parallel_for("MueLu::Utils::ApplyOAZ",range_type(0,dirichletRows.extent(0)),
+                         KOKKOS_LAMBDA(const LocalOrdinal row) {
+                           if (dirichletRows(row)){
+                             auto rowView = localMatrix.row(row);
+                             auto length = rowView.length;
+                             auto row_gid = localRmap.getGlobalElement(row);
+                             auto row_lid = localCmap.getLocalElement(row_gid);
+
+                             for (decltype(length) colID = 0; colID < length; colID++)
+                               if (rowView.colidx(colID) == row_lid)
+                                 rowView.value(colID) = one;
+                               else
+                                 rowView.value(colID) = zero;
+                           }
+                         });
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  ApplyOAZToMatrixRows(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,
+                       const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows) {
+    MueLu::ApplyOAZToMatrixRows<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A, dirichletRows);
+  }
+
+  template <class Node>
+  void
+  Utilities_kokkos<double,int,int,Node>::
+  ApplyOAZToMatrixRows(Teuchos::RCP<Xpetra::Matrix<double,int,int,Node> >& A,
+                       const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows) {
+    MueLu::ApplyOAZToMatrixRows<double,int,int,Node>(A, dirichletRows);
+  }
+
 } //namespace MueLu
 
 #define MUELU_UTILITIES_KOKKOS_SHORT

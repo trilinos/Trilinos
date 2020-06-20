@@ -1,7 +1,7 @@
 #ifndef __TACHO_HPP__
 #define __TACHO_HPP__
 
-#include "ShyLU_NodeTacho_config.h" 
+#include "Tacho_config.h" 
 
 #include "Kokkos_Core.hpp"
 #include "impl/Kokkos_Timer.hpp"

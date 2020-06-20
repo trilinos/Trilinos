@@ -345,9 +345,9 @@ void StepperOperatorSplit<Scalar>::takeStep(
     typename std::vector<Teuchos::RCP<Stepper<Scalar> > >::iterator
       subStepperIter = subStepperList_.begin();
     for (; subStepperIter < subStepperList_.end() and pass; subStepperIter++) {
-      int index = subStepperIter - subStepperList_.begin();
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
+      int index = subStepperIter - subStepperList_.begin();
       stepperOSObserver_->observeBeforeStepper(index, solutionHistory, *this);
 #endif
       stepperOSAppAction_->execute(solutionHistory, thisStepper,

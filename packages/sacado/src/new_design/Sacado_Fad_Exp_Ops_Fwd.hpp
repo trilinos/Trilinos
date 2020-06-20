@@ -58,6 +58,8 @@ namespace Sacado {
     template <typename T, typename E> class AbsOp;
     template <typename T, typename E> class FAbsOp;
     template <typename T, typename E> class CbrtOp;
+    template <typename T, typename E, bool is_simd = IsSimdType<T>::value>
+    class SafeSqrtOp;
 
     template <typename T1, typename T2, bool, bool, typename E>
     class AdditionOp;

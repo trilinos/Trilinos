@@ -579,6 +579,15 @@ namespace Belos {
                      << " failed." << endl;
         }
 
+        {
+          //
+          // Test normalize() for various deficient cases 
+          //
+          debugOut << "Testing normalize() on bad multivectors " << endl;
+          const int thisNumFailed = testNormalize(OM,S,MyOM);
+          numFailed += thisNumFailed;
+        }
+
         if (isRankRevealing)
           {
             // run a X1,Y2 range multivector against P_{X1,X1} P_{Y2,Y2}
@@ -618,7 +627,7 @@ namespace Belos {
             MVT::SetBlock(*mid,ind,*S);
 
             debugOut << "Testing normalize() on a rank-deficient multivector " << endl;
-            const int thisNumFailed = testNormalize(OM,S,MyOM);
+            const int thisNumFailed = testNormalizeRankReveal(OM,S,MyOM);
             numFailed += thisNumFailed;
             if (thisNumFailed > 0)
               debugOut << "  *** " << thisNumFailed
@@ -644,7 +653,7 @@ namespace Belos {
                 MVT::MvAddMv(scaleS(i,0),*one,ZERO,*one,*Si);
               }
             debugOut << "Testing normalize() on a rank-1 multivector " << endl;
-            const int thisNumFailed = testNormalize(OM,S,MyOM);
+            const int thisNumFailed = testNormalizeRankReveal(OM,S,MyOM);
             numFailed += thisNumFailed;
             if (thisNumFailed > 0)
               debugOut << "  *** " << thisNumFailed
@@ -1137,6 +1146,40 @@ namespace Belos {
       testNormalize (const Teuchos::RCP< Belos::OrthoManager< Scalar, MV > >& OM,
                      const Teuchos::RCP< const MV >& S,
                      const Teuchos::RCP< Belos::OutputManager< Scalar > >& MyOM)
+      {
+        using Teuchos::RCP;
+
+        int numFailures = 0;
+        const scalar_type ZERO = SCT::zero();
+
+        const int msgType = (static_cast<int>(Debug) | static_cast<int>(Errors));
+
+        // Check that the orthogonalization gracefully handles zero vectors.
+        RCP<MV> zeroVec = MVT::Clone(*S,1);
+        RCP< mat_type > bZero (new mat_type (1, 1));
+        std::vector< magnitude_type > zeroNorm( 1 );
+
+        MVT::MvInit( *zeroVec, ZERO );
+        OM->normalize( *zeroVec, bZero );
+        MVT::MvNorm( *zeroVec, zeroNorm );
+        // Check if the number is a NaN, this orthogonalization fails if it is.
+        if ( zeroNorm[0] != ZERO )
+        {
+          MyOM->stream(static_cast< MsgType >(msgType)) << " --> Normalization of zero vector FAILED!" << std::endl;
+          numFailures++;
+        }
+ 
+        return numFailures;
+      }
+
+      /// Test OrthoManager::normalize() for the specific OrthoManager
+      /// instance.
+      ///
+      /// \return Count of errors (should be zero)
+      static int
+      testNormalizeRankReveal (const Teuchos::RCP< Belos::OrthoManager< Scalar, MV > >& OM,
+                               const Teuchos::RCP< const MV >& S,
+                               const Teuchos::RCP< Belos::OutputManager< Scalar > >& MyOM)
       {
         using Teuchos::Array;
         using Teuchos::RCP;

@@ -73,6 +73,13 @@
     </parameter>
 
     <parameter>
+      <name>W cycle start level</name>
+      <type>int</type>
+      <default>0</default>
+      <description>Level at which to start multigrid W cycle.</description>
+    </parameter>
+
+    <parameter>
       <name>coarse grid correction scaling factor</name>
       <type>double</type>
       <default>1.0</default>
@@ -86,6 +93,14 @@
       <default>false</default>
       <description>Fuse prolongation and update into one kernel call. Due to round-off error accumulation, this can in some cases result in slightly higher iteration counts. This only affects the solve phase.</description>
       <visible>false</visible>
+    </parameter>
+
+    <parameter>
+      <name>number of vectors</name>
+      <type>int</type>
+      <default>1</default>
+      <description>Number of columns in multivectors that are cached for Hierarchy apply phase.</description>
+      <visible>true</visible>
     </parameter>
 
     <parameter>
@@ -426,6 +441,15 @@
       <type>string</type>
       <default>"default"</default>
       <description>Type of sub-algorithm for "distance laplacian" dropping. Possible values: "default", "unscaled cut", "scaled cut".</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: classical algo</name>
+      <type>string</type>
+      <default>"default"</default>
+      <description>Type of sub-algorithm for "classical" dropping. Possible values: "default", "unscaled cut", "scaled cut".</description>
       <visible>false</visible>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>

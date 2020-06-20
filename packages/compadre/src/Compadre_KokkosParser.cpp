@@ -95,7 +95,7 @@ Kokkos::InitArguments KokkosParser::createInitArguments() const {
 
 void KokkosParser::retrievePreviouslyInstantiatedKokkosInitArguments() {
 // NUMA parts are not tested, and only work for 1 numa region
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef COMPADRE_USE_CUDA
     //auto cuda_space = Kokkos::DefaultExecutionSpace;
     _device = 0;//cuda_space.cuda_device();
     _ngpu = 1;
@@ -160,7 +160,7 @@ int KokkosParser::finalize(bool hard_finalize) {
 }
 
 void KokkosParser::status() const {
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef COMPADRE_USE_CUDA
   printf("KOKKOS mode is enabled on GPU with nthreads: %d,  numa: %d, device_id: %d\n", getNumberOfThreads(), getNuma(), getDeviceID());
 #else
   printf("KOKKOS mode is enabled on CPU with nthreads: %d,  numa: %d\n", getNumberOfThreads(), getNuma());

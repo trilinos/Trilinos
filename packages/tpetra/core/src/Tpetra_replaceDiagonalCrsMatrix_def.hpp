@@ -90,7 +90,10 @@ replaceDiagonalCrsMatrix (CrsMatrix<SC, LO, GO, NT>& matrix,
         "Row map of matrix and map of input vector do not match.");
   }
 
-  typename crs_matrix_type::execution_space().fence(); // for UVM's sake
+  // KJ: This fence is necessary for UVM. Views used in the row map and colmap
+  // can use UVM and they are accessed in the following routine. So, we need to
+  // make sure that the values are available for touching in host.
+  typename crs_matrix_type::execution_space().fence();
 
   if (isFillCompleteOnInput)
     matrix.resumeFill();

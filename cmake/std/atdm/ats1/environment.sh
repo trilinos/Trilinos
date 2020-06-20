@@ -29,7 +29,10 @@ export ATDM_CONFIG_MPI_PRE_FLAGS="--mpi=pmi2;--ntasks-per-node;36"
 export ATDM_CONFIG_SBATCH_DEFAULT_ACCOUNT=IGNORED
 
 # Assume we are building on a haswell compute node with 64 virtual cores
-export ATDM_CONFIG_BUILD_COUNT=64
+export ATDM_CONFIG_BUILD_COUNT=32
+# NOTE: Above, we were getting out-of-memory errors when trying to build with
+# 64 processes so we reduced this to just 32 to try to avoid these.  (See
+# ATDV-361)
 
 # Common sparc tpl path values
 sparc_tpl_prefix_path="/usr/projects/sparc/tpls"
@@ -144,10 +147,6 @@ export F90=${MPIF90}
 
 # Anasazi settings
 export ATDM_CONFIG_Anasazi_ENABLE_RBGen=OFF
-
-# Kokkos settings
-# ENABLE_SERIAL used by ATDMDevEnvSettings
-export ATDM_CONFIG_Kokkos_ENABLE_SERIAL=OFF
 
 # Lapack (intel) settings
 export ATDM_CONFIG_LAPACK_LIBS="-L${CBLAS_ROOT}/mkl/lib/intel64;-L${CBLAS_ROOT}/compiler/lib/intel64;-mkl;-lmkl_intel_lp64;-lmkl_intel_thread;-lmkl_core;-liomp5"

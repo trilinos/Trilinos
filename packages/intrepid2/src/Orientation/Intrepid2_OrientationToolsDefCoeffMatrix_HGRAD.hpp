@@ -116,10 +116,10 @@ namespace Intrepid2 {
       //
       
       {
-        const std::string cellBasisName(cellBasis.getName());
-        if (cellBasisName.find("HGRAD") != std::string::npos) {
-          const std::string subcellBasisName(subcellBasis.getName());
-          INTREPID2_TEST_FOR_EXCEPTION( subcellBasisName.find("HGRAD") == std::string::npos,
+        const bool cellBasisIsHGRAD = cellBasis.getFunctionSpace() == FUNCTION_SPACE_HGRAD;
+        const bool subcellBasisIsHGRAD = subcellBasis.getFunctionSpace() == FUNCTION_SPACE_HGRAD;
+        if (cellBasisIsHGRAD) {
+          INTREPID2_TEST_FOR_EXCEPTION( !subcellBasisIsHGRAD,
                                         std::logic_error,
                                         ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
                                         "subcellBasis function space is not consistent to cellBasis.");

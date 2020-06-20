@@ -11,9 +11,13 @@
         
 \cbb{cycle type}{string}{"V"}{Multigrid cycle type. Possible values: "V", "W".}
         
+\cbb{W cycle start level}{int}{0}{Level at which to start multigrid W cycle.}
+        
 \cbb{coarse grid correction scaling factor}{double}{1.0}{Scaling factor to be applied to the coarse grid correction. This only affects the solve phase.}
         
 \cbb{fuse prolongation and update}{bool}{false}{Fuse prolongation and update into one kernel call. Due to round-off error accumulation, this can in some cases result in slightly higher iteration counts. This only affects the solve phase.}
+        
+\cbb{number of vectors}{int}{1}{Number of columns in multivectors that are cached for Hierarchy apply phase.}
         
 \cbb{problem: symmetric}{bool}{true}{Symmetry of a problem. This setting affects the construction of a restrictor. If set to true, the restrictor is set to be the transpose of a prolongator. If set to false, underlying multigrid algorithm makes the decision.}
         
@@ -71,6 +75,8 @@
 \cbb{aggregation: penalty parameters}{Array(double)}{{12.,-.2,0,0,0} }{Defines a polynomial coef[0] + coef[1]*i + coef[2]*i^2 + coef[3]*i^3 + coef[4]*i^4 that models the cost of having i nonzeros per row when  "unsupported vector smoothing" used.}
         
 \cbb{aggregation: distance laplacian algo}{string}{"default"}{Type of sub-algorithm for "distance laplacian" dropping. Possible values: "default", "unscaled cut", "scaled cut".}
+        
+\cbb{aggregation: classical algo}{string}{"default"}{Type of sub-algorithm for "classical" dropping. Possible values: "default", "unscaled cut", "scaled cut".}
         
 \cbb{aggregation: drop tol}{double}{0.0}{Connectivity dropping threshold for a graph used in aggregation.}
         
