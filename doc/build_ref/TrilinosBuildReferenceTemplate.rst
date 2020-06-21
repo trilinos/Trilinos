@@ -155,9 +155,8 @@ the Kokkos settings are not used and the default Trilinos CMake configuration
 is used as described below.
 
 If ``KOKKOS_ARCH != None`` is set, then the correct compiler flags for
-C++11 and OpenMP are selected by the Kokkos system and the values of the cache
-vars ``Trilinos_CXX11_FLAGS`` and ``OpenMP_CXX_FLAGS`` set by the user will be
-ignored.
+OpenMP are selected by the Kokkos system and the value of the cache
+var ``OpenMP_CXX_FLAGS`` set by the user will be ignored.
 
 ``KOKKOS_ARCH`` can be set to a list of entries with different values for the
 host code and the device code using semi-colons as::

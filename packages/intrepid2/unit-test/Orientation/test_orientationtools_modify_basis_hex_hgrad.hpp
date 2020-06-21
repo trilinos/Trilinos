@@ -67,7 +67,7 @@ namespace Intrepid2 {
       ++nthrow;                                                         \
       S ;                                                               \
     }                                                                   \
-    catch (std::exception err) {                                        \
+    catch (std::exception &err) {                                        \
       ++ncatch;                                                         \
       *outStream << "Expected Error ----------------------------------------------------------------\n"; \
       *outStream << err.what() << '\n';                                 \
@@ -284,7 +284,7 @@ namespace Intrepid2 {
           ots::clearCoeffMatrix();
         }
 
-      } catch (std::exception err) {
+      } catch (std::exception &err) {
         std::cout << " Exeption\n";
         *outStream << err.what() << "\n\n";
         errorFlag = -1000;

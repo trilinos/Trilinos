@@ -1,36 +1,9 @@
 /*
- * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
- * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
- *     * Neither the name of NTESS nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
+ * See packages/seacas/LICENSE for details
  */
 #ifndef RF_IO_CONST_H
 #define RF_IO_CONST_H
@@ -43,46 +16,40 @@
 /* Restart structure */
 template <typename T> struct Restart_Description
 {
+  Restart_Description() = default;
 
-  Restart_Description()
-      : Flag(-1), Num_Times(-1), Time(0), NVar_Glob(-1), NVar_Elem(-1), NVar_Node(-1),
-        NVar_Nset(-1), NVar_Sset(-1), NV_Name(nullptr), EV_Name(nullptr), GV_Name(nullptr),
-        NSV_Name(nullptr), SSV_Name(nullptr)
-  {
-  }
+  int Flag{-1}; /* Indicates whether restart info is to be processed */
 
-  int Flag; /* Indicates whether restart info is to be processed */
+  int              Num_Times{-1}; /* The number of time indices to spread */
+  std::vector<int> Time_Idx{};    /* Time indices to read, need to keep track of all */
+  T                Time{};        /* time value */
 
-  int              Num_Times; /* The number of time indices to spread */
-  std::vector<int> Time_Idx;  /* Time indices to read, need to keep track of all */
-  T                Time;      /* time value */
+  int NVar_Glob{-1}; /* Number of global variables read */
+  int NVar_Elem{-1}; /* Number of elemental variables read */
+  int NVar_Node{-1}; /* Number of nodal variables read */
+  int NVar_Nset{-1}; /* Number of nodeset variables read */
+  int NVar_Sset{-1}; /* Number of sideset variables read */
 
-  int NVar_Glob; /* Number of global variables read */
-  int NVar_Elem; /* Number of elemental variables read */
-  int NVar_Node; /* Number of nodal variables read */
-  int NVar_Nset; /* Number of nodeset variables read */
-  int NVar_Sset; /* Number of sideset variables read */
-
-  std::vector<int> GElem_TT; /* Global Elemental variable truth table */
-  std::vector<int> GNset_TT; /* Global Elemental variable truth table */
-  std::vector<int> GSset_TT; /* Global Elemental variable truth table */
+  std::vector<int> GElem_TT{}; /* Global Elemental variable truth table */
+  std::vector<int> GNset_TT{}; /* Global Elemental variable truth table */
+  std::vector<int> GSset_TT{}; /* Global Elemental variable truth table */
 
   /*
    * To be able to support single or double precision exodus files,
    * need to have both float and double pointers here.
    */
-  std::vector<T> Glob_Vals;              /* Global variable values, only one per variable *
+  std::vector<T> Glob_Vals{};            /* Global variable values, only one per variable *
                                           * and processor                                 */
   std::vector<std::vector<T>> Elem_Vals; /* Element variable values for each processor */
   std::vector<std::vector<T>> Node_Vals; /* Nodal variable values for each processor */
   std::vector<std::vector<T>> Nset_Vals; /* Nodeset variable values for each processor */
   std::vector<std::vector<T>> Sset_Vals; /* Sideset variable values for each processor */
 
-  char **NV_Name;  /* Names of the nodal variables */
-  char **EV_Name;  /* Names of the elemental variables */
-  char **GV_Name;  /* Names of the global variables */
-  char **NSV_Name; /* Names of the nodeset variables */
-  char **SSV_Name; /* Names of the sideset variables */
+  char **NV_Name{nullptr};  /* Names of the nodal variables */
+  char **EV_Name{nullptr};  /* Names of the elemental variables */
+  char **GV_Name{nullptr};  /* Names of the global variables */
+  char **NSV_Name{nullptr}; /* Names of the nodeset variables */
+  char **SSV_Name{nullptr}; /* Names of the sideset variables */
 };
 
 /*****************************************************************************/

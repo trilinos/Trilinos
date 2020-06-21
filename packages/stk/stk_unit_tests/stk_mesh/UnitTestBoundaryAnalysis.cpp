@@ -53,7 +53,6 @@
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/EntityLess.hpp"  // for EntityLess
 #include "stk_mesh/base/Types.hpp"      // for EntityId, Ordinal, etc
-#include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_topology/topology.hpp"    // for topology::num_faces
 #include "stk_unit_test_utils/stk_mesh_fixtures/GridFixture.hpp"  // for GridFixture
 #include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_size, etc

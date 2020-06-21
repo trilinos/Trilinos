@@ -47,7 +47,7 @@
 #include "Tpetra_DistObject_decl.hpp"
 #include "Tpetra_CrsMatrix_fwd.hpp"
 
-/// \file Tpetra_Details_packCrsMatrix.hpp
+/// \file Tpetra_Details_packCrsMatrix_decl.hpp
 /// \brief Functions for packing the entries of a Tpetra::CrsMatrix
 ///   for communication, in the case where it is valid to go to the
 ///   KokkosSparse::CrsMatrix (local sparse matrix data structure)

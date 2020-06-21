@@ -540,7 +540,7 @@ void deep_copy( const View<DT,DP...> & dst ,
   else {
 
     // If views are in the same memory space, copy component-wise
-    if ( Impl::is_same< typename dst_type::memory_space ,
+    if ( std::is_same< typename dst_type::memory_space ,
                         typename src_type::memory_space >::value ) {
       Experimental::Impl::DeepCopyNonContiguous< dst_type , src_type >( dst , src );
     }
@@ -1243,7 +1243,7 @@ public:
 
   //----------------------------------------
 
-  KOKKOS_INLINE_FUNCTION ~ViewMapping() = default ;
+  KOKKOS_DEFAULTED_FUNCTION ~ViewMapping() = default ;
   KOKKOS_INLINE_FUNCTION ViewMapping() :
     m_impl_handle(),
     m_impl_offset(),
@@ -1252,11 +1252,11 @@ public:
     m_is_contiguous(true)
     {}
 
-  KOKKOS_INLINE_FUNCTION ViewMapping( const ViewMapping & ) = default ;
-  KOKKOS_INLINE_FUNCTION ViewMapping & operator = ( const ViewMapping & ) = default ;
+  KOKKOS_DEFAULTED_FUNCTION ViewMapping( const ViewMapping & ) = default ;
+  KOKKOS_DEFAULTED_FUNCTION ViewMapping & operator = ( const ViewMapping & ) = default ;
 
-  KOKKOS_INLINE_FUNCTION ViewMapping( ViewMapping && ) = default ;
-  KOKKOS_INLINE_FUNCTION ViewMapping & operator = ( ViewMapping && ) = default ;
+  KOKKOS_DEFAULTED_FUNCTION ViewMapping( ViewMapping && ) = default ;
+  KOKKOS_DEFAULTED_FUNCTION ViewMapping & operator = ( ViewMapping && ) = default ;
 
   template< class ... P >
   KOKKOS_INLINE_FUNCTION

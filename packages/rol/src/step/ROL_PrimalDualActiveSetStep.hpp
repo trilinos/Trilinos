@@ -316,6 +316,7 @@ public:
              @param[in]        con         are the bound constraints
              @param[in]        algo_state  is the current state of the algorithm
   */
+  using Step<Real>::initialize;
   void initialize( Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g, 
                    Objective<Real> &obj, BoundConstraint<Real> &con, 
                    AlgorithmState<Real> &algo_state ) {
@@ -375,6 +376,7 @@ public:
              @param[in]        con         are the bound constraints
              @param[in]        algo_state  is the current state of the algorithm
   */
+  using Step<Real>::compute;
   void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, BoundConstraint<Real> &con, 
                 AlgorithmState<Real> &algo_state ) {
     ROL::Ptr<StepState<Real> > step_state = Step<Real>::getState();
@@ -507,6 +509,7 @@ public:
              @param[in]        con         are the bound constraints
              @param[in]        algo_state  is the current state of the algorithm
   */
+  using Step<Real>::update;
   void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, BoundConstraint<Real> &con,
                AlgorithmState<Real> &algo_state ) {
     ROL::Ptr<StepState<Real> > step_state = Step<Real>::getState();

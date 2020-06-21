@@ -4,6 +4,7 @@
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_io/StkIoUtils.hpp>
+#include <stk_io/SidesetUpdater.hpp>
 #include "stk_unit_test_utils/ReadWriteSidesetTester.hpp"
 #include "stk_unit_test_utils/FaceTestingUtils.hpp"
 #include "stk_unit_test_utils/TextMesh.hpp"
@@ -85,6 +86,85 @@ TEST(StkIo, sideset_polarity_AB)
       check_polarity_of_modified_AB(pm, stk::unit_test_util::RIGHT, "ARB", false);
       check_polarity_of_modified_AB(pm, stk::unit_test_util::LEFT , "ALB", true);
   }
+}
+
+void update_sidesets(const stk::mesh::BulkData& bulk, std::ostream& os)
+{
+    std::vector<std::shared_ptr<stk::io::SidesetUpdater> > updaters = bulk.get_observer_type<stk::io::SidesetUpdater>();
+    ThrowRequireMsg(!updaters.empty(), "ERROR, no SidesetUpdater found on stk::mesh::BulkData");
+
+    updaters[0]->set_output_stream(os);
+
+    std::vector<size_t> values;
+    updaters[0]->fill_values_to_reduce(values);
+    std::vector<size_t> maxValues(values);
+
+    if (stk::parallel_machine_size(bulk.parallel()) > 1) {
+        stk::all_reduce_max(bulk.parallel(), values.data(), maxValues.data(), maxValues.size());
+    }
+
+    updaters[0]->set_reduced_values(maxValues);
+}
+
+TEST(StkIo, check_internal_sideset_warning)
+{
+    stk::ParallelMachine pm = MPI_COMM_WORLD;
+    if (stk::parallel_machine_size(pm) != 1) {
+      return;
+    }
+
+    size_t spatialDim = 3;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::BulkData bulk(meta, pm);
+
+    stk::unit_test_util::SidesetDirection direction = stk::unit_test_util::LEFT;
+    stk::mesh::Part* ssPart = stk::unit_test_util::create_AA_mesh_with_sideset(bulk, direction);
+    EXPECT_TRUE(ssPart != nullptr);
+
+    bulk.register_observer(std::make_shared<stk::io::SidesetUpdater>(bulk, meta.universal_part()));
+    bulk.modification_end();
+
+    {//mesh was just modified, including elements touching the sideset, so expect warning
+      std::ostringstream os;
+      update_sidesets(bulk, os);
+
+      std::string warningString = os.str();
+
+      std::string expected = "WARNING, Internal sideset ("+ ssPart->name() +") detected. STK doesn't support internal sidesets\n(i.e., sidesets between elements where both elements are in the same block)\nExecution will continue but correct results are not guaranteed. Contact sierra-help@sandia.gov\n";
+
+      EXPECT_EQ(expected, warningString);
+    }
+
+    bulk.modification_begin();
+    bulk.modification_end();
+
+    {//mesh now not modified, so expect no warning about internal sideset
+      std::ostringstream os;
+      update_sidesets(bulk, os);
+
+      std::string warningString = os.str();
+      std::string expected = "";
+      EXPECT_EQ(expected, warningString);
+    }
+
+    bulk.modification_begin();
+
+    //add an element that doesn't touch the sideset:
+    stk::mesh::Part& elemTopoPart = meta.get_topology_root_part(stk::topology::HEX_8);
+    stk::mesh::EntityId elemId = 3;
+    stk::mesh::EntityIdVector nodeIds = {9, 10, 11, 12, 13, 14, 15, 16};
+    stk::mesh::declare_element(bulk, elemTopoPart, elemId, nodeIds);
+
+    bulk.modification_end();
+
+    {//mesh modified, but not sideset, so still no warning about internal sideset
+      std::ostringstream os;
+      update_sidesets(bulk, os);
+
+      std::string warningString = os.str();
+      std::string expected = "";
+      EXPECT_EQ(expected, warningString);
+    }
 }
 
 }

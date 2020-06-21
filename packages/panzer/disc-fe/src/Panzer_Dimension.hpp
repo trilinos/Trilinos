@@ -82,6 +82,17 @@ namespace panzer {
   struct Dummy{};
 }
 
+namespace PHX {
+  template<> std::string print<panzer::Dim>();
+  template<> std::string print<panzer::IP>();
+  template<> std::string print<panzer::BASIS>();
+  template<> std::string print<panzer::Point>();
+  template<> std::string print<panzer::Cell>();
+  template<> std::string print<panzer::Face>();
+  template<> std::string print<panzer::Edge>();
+  template<> std::string print<panzer::Dummy>();
+}
+
 PHX_IS_EXTENT(panzer::Dim)
 PHX_IS_EXTENT(panzer::IP)
 PHX_IS_EXTENT(panzer::BASIS)

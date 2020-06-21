@@ -76,8 +76,6 @@ namespace MueLu {
                   LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");
 
-    using memory_space = typename LWGraph_kokkos::memory_space;
-
     typename Kokkos::View<unsigned*, memory_space>::HostMirror aggstatHost
       = Kokkos::create_mirror(aggstat);
     Kokkos::deep_copy(aggstatHost, aggstat);

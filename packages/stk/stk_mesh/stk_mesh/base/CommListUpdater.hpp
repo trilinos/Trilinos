@@ -43,7 +43,10 @@ namespace mesh {
 
 class CommListUpdater  : public CommMapChangeListener {
 public:
-    CommListUpdater(EntityCommListInfoVector& comm_list) : m_comm_list(comm_list) {}
+    CommListUpdater(EntityCommListInfoVector& comm_list,
+                    std::vector<EntityComm*>& entity_comms)
+    : m_comm_list(comm_list), m_entity_comms(entity_comms)
+    {}
     virtual ~CommListUpdater(){}
 
     virtual void removedKey(const EntityKey& key) {
@@ -51,11 +54,13 @@ public:
                 std::lower_bound(m_comm_list.begin(), m_comm_list.end(), key);
         if (iter != m_comm_list.end() && iter->key == key) {
             iter->entity_comm = nullptr;
+            m_entity_comms[iter->entity.local_offset()] = nullptr;
         }
     }
 
 private:
   EntityCommListInfoVector& m_comm_list;
+  std::vector<EntityComm*>& m_entity_comms;
 };
 
 }

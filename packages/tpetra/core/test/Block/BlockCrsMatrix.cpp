@@ -429,6 +429,8 @@ namespace {
       BV Y (* (graph.getRangeMap ()), blockSize);
       Y.putScalar (STS::zero ());
 
+      Y.sync_host(); // X and Y are same map and write to X_lcl(i) needs fence
+
       const map_type& meshDomainMap = * (graph.getDomainMap ());
       for (LO lclDomIdx = meshDomainMap.getMinLocalIndex ();
            lclDomIdx <= meshDomainMap.getMaxLocalIndex (); ++lclDomIdx) {
@@ -536,6 +538,8 @@ namespace {
       BMV X (* (graph.getDomainMap ()), blockSize, numVecs);
       BMV Y (* (graph.getRangeMap ()), blockSize, numVecs);
       Y.putScalar (STS::zero ());
+
+      Y.sync_host(); // X and Y are same map and write to X_lcl(i) needs fence
 
       const map_type& meshDomainMap = * (graph.getDomainMap ());
       for (LO lclDomIdx = meshDomainMap.getMinLocalIndex ();
@@ -647,6 +651,8 @@ namespace {
       BV X (* (graph.getDomainMap ()), blockSize);
       BV Y (* (graph.getRangeMap ()), blockSize);
       Y.putScalar (STS::zero ());
+
+      Y.sync_host(); // X and Y are same map and write to X_lcl(i) needs fence
 
       const map_type& meshDomainMap = * (graph.getDomainMap ());
       for (LO lclDomIdx = meshDomainMap.getMinLocalIndex ();
@@ -762,6 +768,8 @@ namespace {
       BMV X (* (graph.getDomainMap ()), blockSize, numVecs);
       BMV Y (* (graph.getRangeMap ()), blockSize, numVecs);
       Y.putScalar (STS::zero ());
+
+      Y.sync_host(); // X and Y are same map and write to X_lcl(i) needs fence
 
       const map_type& meshDomainMap = * (graph.getDomainMap ());
       for (LO lclDomIdx = meshDomainMap.getMinLocalIndex ();
@@ -2463,7 +2471,10 @@ namespace {
     else {
       out << normStr.str() << std::endl;
     }
-    TEUCHOS_TEST_FOR_EXCEPTION(relativeError[0]>1e-8, std::runtime_error, "BlockCrsMatrix matvec does not produce same result as CrsMatrix matvec.");
+
+    const magnitude_type tol =
+      magnitude_type(10.0) * Teuchos::ScalarTraits<magnitude_type>::eps();
+    TEUCHOS_TEST_FOR_EXCEPTION(relativeError[0] > tol, std::runtime_error, "BlockCrsMatrix matvec does not produce same result as CrsMatrix matvec.");
   }
 
 

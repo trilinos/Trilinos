@@ -403,7 +403,7 @@ IF(Stokhos_ENABLE_Sacado)
       STANDARD_PASS_OUTPUT
       )
 
-    IF (Kokkos_ENABLE_Pthread)
+    IF (Kokkos_ENABLE_PTHREAD)
       TRIBITS_ADD_EXECUTABLE_AND_TEST(
         KokkosViewUQPCEUnitTest_Threads
         SOURCES Stokhos_KokkosViewUQPCEUnitTest.hpp
@@ -415,7 +415,7 @@ IF(Stokhos_ENABLE_Sacado)
         )
     ENDIF()
 
-    IF (Kokkos_ENABLE_Serial)
+    IF (Kokkos_ENABLE_SERIAL)
       TRIBITS_ADD_EXECUTABLE_AND_TEST(
         KokkosViewUQPCEUnitTest_Serial
         SOURCES Stokhos_KokkosViewUQPCEUnitTest.hpp
@@ -426,7 +426,7 @@ IF(Stokhos_ENABLE_Sacado)
         )
     ENDIF()
 
-    IF (Kokkos_ENABLE_OpenMP)
+    IF (Kokkos_ENABLE_OPENMP)
       TRIBITS_ADD_EXECUTABLE_AND_TEST(
         KokkosViewUQPCEUnitTest_OpenMP
         SOURCES Stokhos_KokkosViewUQPCEUnitTest.hpp
@@ -438,7 +438,7 @@ IF(Stokhos_ENABLE_Sacado)
         )
     ENDIF()
 
-    IF (Kokkos_ENABLE_Cuda)
+    IF (Kokkos_ENABLE_CUDA)
       TRIBITS_ADD_EXECUTABLE_AND_TEST(
         KokkosViewUQPCEUnitTest_Cuda
         SOURCES Stokhos_KokkosViewUQPCEUnitTest.hpp
@@ -589,7 +589,7 @@ IF(Stokhos_ENABLE_Sacado)
       STANDARD_PASS_OUTPUT
       )
 
-    IF (Kokkos_ENABLE_Pthread)
+    IF (Kokkos_ENABLE_PTHREAD)
       TRIBITS_ADD_EXECUTABLE_AND_TEST(
         KokkosViewMPVectorUnitTest_Threads
         SOURCES Stokhos_KokkosViewMPVectorUnitTest.hpp
@@ -601,7 +601,7 @@ IF(Stokhos_ENABLE_Sacado)
         )
     ENDIF()
 
-    IF (Kokkos_ENABLE_Serial)
+    IF (Kokkos_ENABLE_SERIAL)
       TRIBITS_ADD_EXECUTABLE_AND_TEST(
         KokkosViewMPVectorUnitTest_Serial
         SOURCES Stokhos_KokkosViewMPVectorUnitTest.hpp
@@ -612,7 +612,7 @@ IF(Stokhos_ENABLE_Sacado)
         )
     ENDIF()
 
-    IF (Kokkos_ENABLE_OpenMP)
+    IF (Kokkos_ENABLE_OPENMP)
       TRIBITS_ADD_EXECUTABLE_AND_TEST(
         KokkosViewMPVectorUnitTest_OpenMP
         SOURCES Stokhos_KokkosViewMPVectorUnitTest.hpp
@@ -624,7 +624,7 @@ IF(Stokhos_ENABLE_Sacado)
         )
     ENDIF()
 
-    IF (Kokkos_ENABLE_Cuda)
+    IF (Kokkos_ENABLE_CUDA)
       TRIBITS_ADD_EXECUTABLE_AND_TEST(
         KokkosViewMPVectorUnitTest_Cuda
         SOURCES Stokhos_KokkosViewMPVectorUnitTest.hpp
@@ -784,7 +784,7 @@ ENDIF()
 # Need to fix these tests so they don't require Epetra
 IF (Stokhos_ENABLE_EpetraExt AND Stokhos_ENABLE_KokkosContainers)
 
-  IF (Kokkos_ENABLE_Serial)
+  IF (Kokkos_ENABLE_SERIAL)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       KokkosArrayKernelsUnitTest_Serial
       SOURCES Stokhos_KokkosArrayKernelsUnitTest.hpp
@@ -797,7 +797,7 @@ IF (Stokhos_ENABLE_EpetraExt AND Stokhos_ENABLE_KokkosContainers)
       )
   ENDIF()
 
-  IF (Kokkos_ENABLE_Pthread)
+  IF (Kokkos_ENABLE_PTHREAD)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       KokkosArrayKernelsUnitTest_Threads
       SOURCES Stokhos_KokkosArrayKernelsUnitTest.hpp
@@ -811,7 +811,7 @@ IF (Stokhos_ENABLE_EpetraExt AND Stokhos_ENABLE_KokkosContainers)
       )
   ENDIF()
 
-  IF (Kokkos_ENABLE_OpenMP)
+  IF (Kokkos_ENABLE_OPENMP)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       KokkosArrayKernelsUnitTest_OpenMP
       SOURCES Stokhos_KokkosArrayKernelsUnitTest.hpp
@@ -825,7 +825,7 @@ IF (Stokhos_ENABLE_EpetraExt AND Stokhos_ENABLE_KokkosContainers)
       )
   ENDIF()
 
-  IF (Kokkos_ENABLE_Cuda AND Stokhos_ENABLE_CUSPARSE)
+  IF (Kokkos_ENABLE_CUDA AND Stokhos_ENABLE_CUSPARSE)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       KokkosArrayKernelsUnitTest_Cuda
       SOURCES Stokhos_KokkosArrayKernelsUnitTest.hpp

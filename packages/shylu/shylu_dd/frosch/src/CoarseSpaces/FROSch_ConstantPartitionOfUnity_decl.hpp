@@ -108,7 +108,7 @@ namespace FROSch {
 
         DDInterfacePtr DDInterface_;
         
-        bool UseVolumes_;
+        bool UseVolumes_ = false;
 
         EntitySetPtr Volumes_;
     };

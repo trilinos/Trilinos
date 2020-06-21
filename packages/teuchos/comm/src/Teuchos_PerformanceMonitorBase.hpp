@@ -262,35 +262,12 @@ namespace Teuchos
     /// would be returned by counters()).
     static void clearCounters ();
 
-    /// \brief "Forget" about all counters created with getNewCounter().
-    ///
-    /// This removes all counters from the current list of counters
-    /// (as would be returned by counters()).
-    ///
-    /// \warning This method is DEPRECATED, because the name is
-    ///   inaccurate (the template parameter of PerformanceMonitorBase
-    ///   may be any kind of performance counter, not just a timer).
-    ///   Use clearCounters() instead.
-    static TEUCHOS_DEPRECATED void clearTimers ();
-
     /// \brief "Forget" about any counters with the given name.
     ///
     /// If one or more counters with the given name was created using
     /// getNewCounter(), calling this method with that name will
     /// remove them from the global list of counters.
     static void clearCounter (const std::string& name);
-
-    /// \brief "Forget" about any counters with the given name.
-    ///
-    /// If one or more counters with the given name was created using
-    /// getNewCounter(), calling this method with that name will
-    /// remove them from the global list of counters.
-    ///
-    /// \warning This method is DEPRECATED, because the name is
-    ///   inaccurate (the template parameter of PerformanceMonitorBase
-    ///   may be any kind of performance counter, not just a timer).
-    ///   Use clearCounter() instead.
-    static TEUCHOS_DEPRECATED void clearTimer (const std::string& name);
 
   protected:
 
@@ -422,20 +399,6 @@ namespace Teuchos
   PerformanceMonitorBase<T>::clearCounter (const std::string& name)
   {
     counters ().erase (name);
-  }
-
-  template<class T>
-  void
-  PerformanceMonitorBase<T>::clearTimer (const std::string& name)
-  {
-    clearCounter (name);
-  }
-
-  template<class T>
-  void
-  PerformanceMonitorBase<T>::clearTimers ()
-  {
-    clearCounters ();
   }
 
   template<class T>

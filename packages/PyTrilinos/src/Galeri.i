@@ -76,7 +76,6 @@ example subdirectory of the PyTrilinos package:
 %enddef
 
 %module(package   = "PyTrilinos",
-	autodoc   = "1",
 	docstring = %galeri_docstring) Galeri
 
 %{
@@ -108,11 +107,11 @@ example subdirectory of the PyTrilinos package:
 // Standard exception handling
 %include "exception.i"
 
-// Turn on autodocumentation
-%feature("autodoc", "1");
-
 // Include Galeri documentation
+#if SWIG_VERSION < 0x040000
+%feature("autodoc", "1");
 %include "Galeri_dox.i"
+#endif
 
 // Typemap support for STL
 %include "stl.i"

@@ -86,8 +86,8 @@ namespace LOCA {
 
     /*!
      * \brief Call user routine for applying the shifted matrix
-     * \f$\alpha J + \beta M\f$ where \f$J\f$ is the Jacobian matrix
-     * and \f$M\f$ is the mass matrix.
+     * \f$\alpha J + \beta M\f$ where \f$ J\f$ is the Jacobian matrix
+     * and \f$ M\f$ is the mass matrix.
      */
     virtual bool
         applyShiftedMatrix(double alpha, double beta,

@@ -221,15 +221,6 @@ void printTestResults(
   const Ptr<std::ostream> &out
   );
 
-/** \brief Deprecated (call overload without raw pointers). */
-THYRA_DEPRECATED void printTestResults(
-  const bool result,
-  const std::string &test_summary,
-  const bool show_all_tests,
-  bool *success,
-  std::ostream *out
-  );
-
 /** \brief Control printing of test results.
  *
  * This class is designed to help control printing of test results and to help

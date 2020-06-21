@@ -254,23 +254,8 @@ public:
   ///   declarations for copy construction, move construction, copy
   ///   assignment, and move assignment.
   virtual ~Vector () = default;
-
   //@}
-  //! \name Clone method
-  //@{
 
-  /// \brief Return a deep copy of <tt>*this</tt> with a different
-  ///   Node type (and therefore a different Device type).
-  /// \tparam Node2 The returned Vector's Node type.
-  ///
-  /// \param node2 [in] The returned Vector's Kokkos Node instance.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template <class Node2>
-  Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> > TPETRA_DEPRECATED
-  clone (const Teuchos::RCP<Node2>& node2);
-#endif
-
-  //@}
   //! @name Post-construction modification routines
   //@{
 
@@ -378,14 +363,6 @@ public:
   //! Return the infinity-norm of this Vector.
   mag_type normInf() const;
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::normWeighted; // overloading, not hiding
-  /// \brief Compute Weighted 2-norm (RMS Norm) of this Vector.
-  ///
-  /// \warning This method is DEPRECATED.
-  mag_type TPETRA_DEPRECATED
-  normWeighted (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& weights) const;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::meanValue; // overloading, not hiding
   //! Compute mean (average) value of this Vector.

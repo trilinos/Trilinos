@@ -1,34 +1,8 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//
-//     * Neither the name of NTESS nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+// See packages/seacas/LICENSE for details
 
 #include <Ionit_Initializer.h>
 #include <Ioss_CodeTypes.h>
@@ -87,7 +61,7 @@ namespace {
     double            minimum_time{};
     double            offset_time{};
     double            offset_pressure{};
-    std::string       working_directory;
+    std::string       working_directory{};
   };
 
   void show_usage(const std::string &prog, bool add_sset);
@@ -280,7 +254,7 @@ int main(int argc, char *argv[])
   }
 
   if (!input_file.empty()) {
-    std::ifstream input(input_file.c_str());
+    std::ifstream input(input_file);
     if (!input) {
       std::cerr << "Error opening file '" << input_file << "'.\n";
       show_usage(codename, globals.add_sset);
@@ -799,8 +773,7 @@ namespace {
     for (IF = fields.begin(); IF != fields.end(); ++IF) {
       std::string field_name = *IF;
       if (field_name != "ids" && !oge->field_exists(field_name) &&
-          (prefix.empty() ||
-           std::strncmp(prefix.c_str(), field_name.c_str(), prefix.length()) == 0)) {
+          Ioss::Utils::substr_equal(prefix, field_name)) {
         // If the field does not already exist, add it to the output node block
         Ioss::Field field = ige->get_field(field_name);
         oge->field_add(field);
@@ -841,8 +814,7 @@ namespace {
         continue;
       }
 
-      if (field_name != "ids" && (prefix.empty() || std::strncmp(prefix.c_str(), field_name.c_str(),
-                                                                 prefix.length()) == 0)) {
+      if (field_name != "ids" && Ioss::Utils::substr_equal(prefix, field_name)) {
         assert(oge->field_exists(field_name));
         transfer_field_data_internal(ige, oge, field_name);
       }
@@ -1052,7 +1024,7 @@ namespace {
           // NOTE: Only dealing with the "cth_" fields here.
           // If there are other fields, we probably have an invalid
           // output database...
-          if (std::strncmp("cth_", field_name.c_str(), 4) == 0) {
+          if (Ioss::Utils::substr_equal("cth_", field_name)) {
             int isize = (*i)->get_field(field_name).get_size();
             int count = (*i)->get_field(field_name).raw_count();
             data.resize(isize);
@@ -1136,7 +1108,7 @@ namespace {
             }
             fb->put_field_data(field_name, &data[0], isize);
           }
-          else if (std::strncmp("cth_", field_name.c_str(), 4) == 0) {
+          else if (Ioss::Utils::substr_equal("cth_", field_name)) {
             assert(fb->field_exists(field_name));
             transfer_field_data_internal(*i, fb, field_name);
           }
@@ -1188,7 +1160,7 @@ namespace {
 
         for (IF = state_fields.begin(); IF != state_fields.end(); ++IF) {
           std::string field_name = *IF;
-          if (std::strncmp("cth_", field_name.c_str(), 4) == 0) {
+          if (Ioss::Utils::substr_equal("cth_", field_name)) {
             if (field_name == cth_pressure &&
                 (globals.final_pressure == Globals::ZERO ||
                  globals.final_pressure == Globals::OFFSET || globals.convert_gage)) {

@@ -43,6 +43,7 @@
 #define BELOS_TPETRA_ADAPTER_MP_VECTOR_HPP
 
 #include "BelosTpetraAdapter.hpp"
+#include "Belos_Tpetra_MP_Vector.hpp"
 #include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 #include "KokkosBlas.hpp"
 

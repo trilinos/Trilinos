@@ -356,7 +356,7 @@ namespace MueLuTests {
     }
   } // banded
 
-  // Make sure Ifpack2's Banded relaxation actually gets called
+  // Make sure Ifpack2's TriDi relaxation actually gets called
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Ifpack2Smoother, TriDiRelaxation, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include <MueLu_UseShortNames.hpp>
@@ -428,6 +428,37 @@ namespace MueLuTests {
     }
   } // tridi
 
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Ifpack2Smoother, BlockRelaxation_Autosize, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType magnitude_type;
+    MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
+      Teuchos::ParameterList matrixParams, ifpack2Params;
+
+      matrixParams.set("matrixType","Laplace1D");
+      matrixParams.set("nx",(GlobalOrdinal)20);// needs to be even
+      Teuchos::RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildMatrix(matrixParams,Xpetra::UseTpetra);
+      A->SetFixedBlockSize(2);
+
+      ifpack2Params.set("partitioner: type","linear");
+      Ifpack2Smoother smoother("BLOCK RELAXATION",ifpack2Params);
+      
+
+      Level level; TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(level);
+      level.Set("A", A);
+      smoother.Setup(level);
+
+
+      TEST_EQUALITY(1,1);
+    }
+  } // banded
+
+
+
+
 #define MUELU_ETI_GROUP(SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,NotSetup,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,HardCodedResult_GaussSeidel,SC,LO,GO,NO) \
@@ -436,7 +467,8 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,HardCodedResult_ILU,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,ILU_TwoSweeps,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,BandedRelaxation,SC,LO,GO,NO) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,TriDiRelaxation,SC,LO,GO,NO)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,TriDiRelaxation,SC,LO,GO,NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,BlockRelaxation_Autosize,SC,LO,GO,NO)
 
 #include <MueLu_ETI_4arg.hpp>
 

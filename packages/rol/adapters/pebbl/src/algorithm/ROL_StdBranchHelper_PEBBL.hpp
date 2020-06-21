@@ -71,8 +71,7 @@ private:
   }
 
   // Branching based on distance to integer.
-  int getMyIndex_D(const Vector<Real> &x, const Vector<Real> &lam,
-                    Objective<Real> &obj, Constraint<Real> &con) const {
+  int getMyIndex_D(const Vector<Real> &x, const Vector<Real> &g) const {
     // Get index closest to 0.5
     Ptr<const std::vector<Real>> xval = getConstData(x);
     int index = 0;
@@ -92,16 +91,9 @@ private:
   }
 
   // Branching based on directional derivatives (similar to pseudo costs).
-  int getMyIndex_PC(const Vector<Real> &x, const Vector<Real> &lam,
-                    Objective<Real> &obj, Constraint<Real> &con) const {
-    Real tol = static_cast<Real>(1e-8);
-    Ptr<Vector<Real>> g = x.dual().clone();
-    Ptr<Vector<Real>> J = x.dual().clone();
+  int getMyIndex_PC(const Vector<Real> &x, const Vector<Real> &g) const {
     Ptr<const std::vector<Real>> xval = getConstData(x);
-    Ptr<const std::vector<Real>> gval = getConstData(*g);
-    obj.gradient(*g,x,tol);
-    con.applyAdjointJacobian(*J,lam,x,tol);
-    g->plus(*J);
+    Ptr<const std::vector<Real>> gval = getConstData(g);
     Real maxD(ROL_NINF<Real>()), Li(0), Ui(0), mini(0);
     int index = 0, size = gval->size();
     for (int i = 0; i < size; ++i) {
@@ -124,14 +116,13 @@ public:
     : tol_(BH.tol_), method_(BH.method_) {}
 
   //int getMyIndex(const Vector<Real> &x) const {
-  int getMyIndex(const Vector<Real> &x, const Vector<Real> &lam,
-                 Objective<Real> &obj, Constraint<Real> &con) const {
+  int getMyIndex(const Vector<Real> &x, const Vector<Real> &g) const {
     int index(0);
     if (method_ == 1) {
-      index = getMyIndex_D(x,lam,obj,con);
+      index = getMyIndex_D(x,g);
     }
     else {
-      index = getMyIndex_PC(x,lam,obj,con);
+      index = getMyIndex_PC(x,g);
     }
     return index;
   }

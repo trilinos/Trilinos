@@ -1,34 +1,8 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//
-//     * Neither the name of NTESS nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+// See packages/seacas/LICENSE for details
 
 #include "io_info.h"
 #include <Ioss_Hex8.h>
@@ -45,35 +19,37 @@ namespace {
   // Data space shared by most field input/output routines...
   std::vector<char> data;
 
-  void info_nodeblock(Ioss::Region &region, const Info::Interface &interface);
+  void info_nodeblock(Ioss::Region &region, const Info::Interface &interFace);
   void info_edgeblock(Ioss::Region &region);
   void info_faceblock(Ioss::Region &region);
-  void info_elementblock(Ioss::Region &region, const Info::Interface &interface);
-  void info_structuredblock(Ioss::Region &region, const Info::Interface &interface);
+  void info_elementblock(Ioss::Region &region, const Info::Interface &interFace);
+  void info_structuredblock(Ioss::Region &region, const Info::Interface &interFace);
 
   void info_nodesets(Ioss::Region &region);
   void info_edgesets(Ioss::Region &region);
   void info_facesets(Ioss::Region &region);
   void info_elementsets(Ioss::Region &region);
 
-  void info_sidesets(Ioss::Region &region, const Info::Interface &interface);
+  void info_sidesets(Ioss::Region &region, const Info::Interface &interFace);
   void info_coordinate_frames(Ioss::Region &region);
+  void info_assemblies(Ioss::Region &region);
+  void info_region(Ioss::Region &region);
+  void info_blobs(Ioss::Region &region);
 
   void info_aliases(const Ioss::Region &region, const Ioss::GroupingEntity *ige, bool nl_pre,
                     bool nl_post);
 
-  void info_fields(const Ioss::GroupingEntity *ige, Ioss::Field::RoleType role,
-                   const std::string &header);
-
-  void file_info(const Info::Interface &interface);
-  void group_info(Info::Interface &interface);
+  void file_info(const Info::Interface &interFace);
+  void group_info(Info::Interface &interFace);
 
   void info_df(const Ioss::GroupingEntity *ge, const std::string &prefix)
   {
     int64_t             num_dist = ge->get_property("distribution_factor_count").get_int();
     std::vector<double> df;
     // Do even if num_dist == 0 so parallel does not assert.
-    ge->get_field_data("distribution_factors", df);
+    if (ge->field_exists("distribution_factors")) {
+      ge->get_field_data("distribution_factors", df);
+    }
     if (num_dist > 0) {
       auto mm = std::minmax_element(df.begin(), df.end());
       fmt::print("{}Distribution Factors: ", prefix);
@@ -100,11 +76,11 @@ namespace {
     return id;
   }
 
-  Ioss::PropertyManager set_properties(const Info::Interface &interface)
+  Ioss::PropertyManager set_properties(const Info::Interface &interFace)
   {
-    Ioss::PropertyManager properties;
-    if (!interface.decomp_method().empty()) {
-      properties.add(Ioss::Property("DECOMPOSITION_METHOD", interface.decomp_method()));
+    Ioss::PropertyManager properties{};
+    if (!interFace.decomp_method().empty()) {
+      properties.add(Ioss::Property("DECOMPOSITION_METHOD", interFace.decomp_method()));
     }
     return properties;
   }
@@ -139,7 +115,7 @@ namespace {
 
     int              num_children = ex_inquire_int(exoid, EX_INQ_NUM_CHILD_GROUPS);
     std::vector<int> children(num_children);
-    ex_get_group_ids(exoid, nullptr, TOPTR(children));
+    ex_get_group_ids(exoid, nullptr, children.data());
     prefix += '\t';
     for (int i = 0; i < num_children; i++) {
       print_groups(children[i], prefix);
@@ -148,11 +124,11 @@ namespace {
     return 0;
   }
 
-  void group_info(Info::Interface &interface)
+  void group_info(Info::Interface &interFace)
   {
 #if defined(SEACAS_HAVE_EXODUS)
     // Assume exodusII...
-    std::string inpfile       = interface.filename();
+    std::string inpfile       = interFace.filename();
     float       vers          = 0.0;
     int         CPU_word_size = 0;
     int         IO_word_size  = 0;
@@ -163,35 +139,35 @@ namespace {
 #endif
   }
 
-  void file_info(const Info::Interface &interface)
+  void file_info(const Info::Interface &interFace)
   {
-    std::string inpfile    = interface.filename();
-    std::string input_type = interface.type();
+    std::string inpfile    = interFace.filename();
+    std::string input_type = interFace.type();
 
     //========================================================================
     // INPUT ...
     // NOTE: The "READ_RESTART" mode ensures that the node and element ids will be mapped.
     //========================================================================
-    Ioss::PropertyManager properties = set_properties(interface);
+    Ioss::PropertyManager properties = set_properties(interFace);
 
     Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(input_type, inpfile, Ioss::READ_RESTART,
                                                     (MPI_Comm)MPI_COMM_WORLD, properties);
 
-    Ioss::io_info_set_db_properties(interface, dbi);
+    Ioss::io_info_set_db_properties(interFace, dbi);
 
     // NOTE: 'region' owns 'db' pointer at this time...
     Ioss::Region region(dbi, "region_1");
-    Ioss::io_info_file_info(interface, region);
+    Ioss::io_info_file_info(interFace, region);
   }
 
   void info_nodeblock(Ioss::Region &region, const Ioss::NodeBlock &nb,
-                      const Info::Interface &interface, const std::string &prefix = "")
+                      const Info::Interface &interFace, const std::string &prefix = "")
   {
     int64_t num_nodes  = nb.entity_count();
     int64_t num_attrib = nb.get_property("attribute_count").get_int();
     fmt::print("\n{}{} {:14n} nodes, {:3d} attributes.\n", prefix, name(&nb), num_nodes,
                num_attrib);
-    if (interface.check_node_status()) {
+    if (interFace.check_node_status()) {
       std::vector<char>    node_status;
       std::vector<int64_t> ids;
       nb.get_field_data("node_connectivity_status", node_status);
@@ -215,19 +191,19 @@ namespace {
     if (!nb.is_nonglobal_nodeblock()) {
       info_aliases(region, &nb, false, true);
     }
-    info_fields(&nb, Ioss::Field::ATTRIBUTE, prefix + "\tAttributes: ");
-    info_fields(&nb, Ioss::Field::TRANSIENT, prefix + "\tTransient: ");
+    Ioss::Utils::info_fields(&nb, Ioss::Field::ATTRIBUTE, prefix + "\tAttributes: ");
+    Ioss::Utils::info_fields(&nb, Ioss::Field::TRANSIENT, prefix + "\tTransient: ");
   }
 
-  void info_nodeblock(Ioss::Region &region, const Info::Interface &interface)
+  void info_nodeblock(Ioss::Region &region, const Info::Interface &interFace)
   {
     const Ioss::NodeBlockContainer &nbs = region.get_node_blocks();
     for (auto nb : nbs) {
-      info_nodeblock(region, *nb, interface, "");
+      info_nodeblock(region, *nb, interFace, "");
     }
   }
 
-  void info_structuredblock(Ioss::Region &region, const Info::Interface &interface)
+  void info_structuredblock(Ioss::Region &region, const Info::Interface &interFace)
   {
     bool                                  parallel = region.get_database()->is_parallel();
     const Ioss::StructuredBlockContainer &sbs      = region.get_structured_blocks();
@@ -254,8 +230,9 @@ namespace {
       fmt::print("{:14n} cells, {:14n} nodes ", num_cell, num_node);
 
       info_aliases(region, sb, true, false);
-      info_fields(sb, Ioss::Field::TRANSIENT, "\n\tTransient:  ");
-      info_nodeblock(region, sb->get_node_block(), interface, "\t");
+      Ioss::Utils::info_fields(sb, Ioss::Field::TRANSIENT, "\n\tTransient:  ");
+      Ioss::Utils::info_fields(sb, Ioss::Field::REDUCTION, "\n\tTransient (Reduction):  ", "\t");
+      info_nodeblock(region, sb->get_node_block(), interFace, "\t");
       fmt::print("\n");
 
       if (!sb->m_zoneConnectivity.empty()) {
@@ -266,11 +243,19 @@ namespace {
       }
       if (!sb->m_boundaryConditions.empty()) {
         fmt::print("\tBoundary Conditions:\n");
-        for (const auto &bc : sb->m_boundaryConditions) {
+        // NOTE: The sort here is just to make io_info more useful for regression testing.
+        //       With the sort, we get more reproducable output.  For now, only needed for BC...
+        auto sb_bc = sb->m_boundaryConditions;
+        std::sort(sb_bc.begin(), sb_bc.end(),
+                  [](const Ioss::BoundaryCondition &a, const Ioss::BoundaryCondition &b) {
+                    return a.m_bcName < b.m_bcName;
+                  });
+
+        for (const auto &bc : sb_bc) {
           fmt::print("{}\n", bc);
         }
       }
-      if (interface.compute_bbox()) {
+      if (interFace.compute_bbox()) {
         Ioss::AxisAlignedBoundingBox bbox = sb->get_bounding_box();
         fmt::print("\tBounding Box: Minimum X,Y,Z = {:12.4e}\t{:12.4e}\t{:12.4e}\n"
                    "\t              Maximum X,Y,Z = {:12.4e}\t{:12.4e}\t{:12.4e}\n",
@@ -279,7 +264,48 @@ namespace {
     }
   }
 
-  void info_elementblock(Ioss::Region &region, const Info::Interface &interface)
+  void info_region(Ioss::Region &region)
+  {
+    fmt::print("\nRegion '{}' (global)\n", region.name());
+    Ioss::Utils::info_property(&region, Ioss::Property::ATTRIBUTE,
+                               "\tAttributes (Reduction): ", "\t");
+    Ioss::Utils::info_fields(&region, Ioss::Field::REDUCTION, "\tTransient  (Reduction):  ", "\t");
+  }
+
+  void info_assemblies(Ioss::Region &region)
+  {
+    const auto &assem = region.get_assemblies();
+    for (auto as : assem) {
+      fmt::print("\n{} id: {:6d}, contains: {} member(s) of type {:>10s}.\n\tMembers: ", name(as),
+                 id(as), as->member_count(), as->contains_string());
+      for (const auto mem : as->get_members()) {
+        fmt::print("'{}', ", mem->name());
+      }
+
+      info_aliases(region, as, true, false);
+      fmt::print("\n");
+      Ioss::Utils::info_property(as, Ioss::Property::ATTRIBUTE, "\tAttributes (Reduction): ", "\t");
+      Ioss::Utils::info_fields(as, Ioss::Field::REDUCTION, "\tTransient  (Reduction):  ", "\t");
+    }
+  }
+
+  void info_blobs(Ioss::Region &region)
+  {
+    const auto &blobs = region.get_blobs();
+    for (auto blob : blobs) {
+      fmt::print("\n{} id: {:6d}, contains: {} item(s).\n", name(blob), id(blob),
+                 blob->entity_count());
+
+      info_aliases(region, blob, true, false);
+      fmt::print("\n");
+      Ioss::Utils::info_property(blob, Ioss::Property::ATTRIBUTE,
+                                 "\tAttributes (Reduction): ", "\t");
+      Ioss::Utils::info_fields(blob, Ioss::Field::TRANSIENT, "\tTransient:  ", "\t");
+      Ioss::Utils::info_fields(blob, Ioss::Field::REDUCTION, "\tTransient  (Reduction):  ", "\t");
+    }
+  }
+
+  void info_elementblock(Ioss::Region &region, const Info::Interface &interFace)
   {
     const Ioss::ElementBlockContainer &ebs = region.get_element_blocks();
     for (auto eb : ebs) {
@@ -291,9 +317,11 @@ namespace {
                  id(eb), type, num_elem, num_attrib);
 
       info_aliases(region, eb, true, false);
-      info_fields(eb, Ioss::Field::ATTRIBUTE, "\n\tAttributes: ");
+      fmt::print("\n");
+      Ioss::Utils::info_fields(eb, Ioss::Field::ATTRIBUTE, "\n\tAttributes: ");
+      Ioss::Utils::info_property(eb, Ioss::Property::ATTRIBUTE, "\tAttributes (Reduction): ", "\t");
 
-      if (interface.adjacencies()) {
+      if (interFace.adjacencies()) {
         std::vector<std::string> blocks;
         eb->get_block_adjacencies(blocks);
         fmt::print("\n\tAdjacent to  {} element block(s):\t", blocks.size());
@@ -301,10 +329,10 @@ namespace {
           fmt::print("{}  ", block);
         }
       }
-      info_fields(eb, Ioss::Field::TRANSIENT, "\n\tTransient:  ");
-      fmt::print("\n");
+      Ioss::Utils::info_fields(eb, Ioss::Field::TRANSIENT, "\n\tTransient:  ");
+      Ioss::Utils::info_fields(eb, Ioss::Field::REDUCTION, "\n\tTransient  (Reduction):  ");
 
-      if (interface.compute_bbox()) {
+      if (interFace.compute_bbox()) {
         Ioss::AxisAlignedBoundingBox bbox = eb->get_bounding_box();
         fmt::print("\tBounding Box: Minimum X,Y,Z = {:12.4e}\t{:12.4e}\t{:12.4e}\n"
                    "\t              Maximum X,Y,Z = {:12.4e}\t{:12.4e}\t{:12.4e}\n",
@@ -325,7 +353,7 @@ namespace {
                  id(eb), type, num_edge, num_attrib);
 
       info_aliases(region, eb, false, true);
-      info_fields(eb, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
+      Ioss::Utils::info_fields(eb, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
 
 #if 0
         std::vector<std::string> blocks;
@@ -335,7 +363,8 @@ namespace {
           fmt::print("{}  ", block);
         }
 #endif
-      info_fields(eb, Ioss::Field::TRANSIENT, "\n\tTransient:  ");
+      Ioss::Utils::info_fields(eb, Ioss::Field::TRANSIENT, "\n\tTransient:  ");
+      Ioss::Utils::info_fields(eb, Ioss::Field::REDUCTION, "\n\tTransient (Reduction):  ");
       fmt::print("\n");
     }
   }
@@ -352,7 +381,7 @@ namespace {
                  id(eb), type, num_face, num_attrib);
 
       info_aliases(region, eb, false, true);
-      info_fields(eb, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
+      Ioss::Utils::info_fields(eb, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
 
 #if 0
         std::vector<std::string> blocks;
@@ -362,12 +391,13 @@ namespace {
           fmt::print("{}  ", block);
         }
 #endif
-      info_fields(eb, Ioss::Field::TRANSIENT, "\n\tTransient:  ");
+      Ioss::Utils::info_fields(eb, Ioss::Field::TRANSIENT, "\n\tTransient:  ");
+      Ioss::Utils::info_fields(eb, Ioss::Field::REDUCTION, "\n\tTransient (Reduction):  ");
       fmt::print("\n");
     }
   }
 
-  void info_sidesets(Ioss::Region &region, const Info::Interface &interface)
+  void info_sidesets(Ioss::Region &region, const Info::Interface &interFace)
   {
     const Ioss::SideSetContainer &fss = region.get_sidesets();
     for (auto fs : fss) {
@@ -381,8 +411,9 @@ namespace {
 #endif
       }
       info_aliases(region, fs, true, false);
-      info_fields(fs, Ioss::Field::TRANSIENT, "\n\tTransient: ");
-      if (interface.adjacencies()) {
+      Ioss::Utils::info_fields(fs, Ioss::Field::TRANSIENT, "\n\tTransient: ");
+      Ioss::Utils::info_fields(fs, Ioss::Field::REDUCTION, "\n\tTransient (Reduction):  ");
+      if (interFace.adjacencies()) {
         std::vector<std::string> blocks;
         fs->block_membership(blocks);
         fmt::print("\n\t\tTouches {} element block(s):\t", blocks.size());
@@ -399,7 +430,8 @@ namespace {
         fmt::print("\t{}, {:8n} sides, {:3d} attributes, {:8n} distribution factors.\n", name(fb),
                    count, num_attrib, num_dist);
         info_df(fb, "\t\t");
-        info_fields(fb, Ioss::Field::TRANSIENT, "\t\tTransient: ");
+        Ioss::Utils::info_fields(fb, Ioss::Field::TRANSIENT, "\t\tTransient: ");
+        Ioss::Utils::info_fields(fb, Ioss::Field::REDUCTION, "\t\tTransient (Reduction):  ");
       }
     }
   }
@@ -415,8 +447,9 @@ namespace {
                  name(ns), id(ns), count, num_attrib, num_dist);
       info_aliases(region, ns, false, true);
       info_df(ns, "\t");
-      info_fields(ns, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
-      info_fields(ns, Ioss::Field::TRANSIENT, "\tTransient:  ");
+      Ioss::Utils::info_fields(ns, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
+      Ioss::Utils::info_fields(ns, Ioss::Field::TRANSIENT, "\tTransient:  ");
+      Ioss::Utils::info_fields(ns, Ioss::Field::REDUCTION, "\tTransient (Reduction):  ");
     }
   }
 
@@ -430,8 +463,9 @@ namespace {
                  num_attrib);
       info_aliases(region, ns, false, true);
       info_df(ns, "\t");
-      info_fields(ns, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
-      info_fields(ns, Ioss::Field::TRANSIENT, "\tTransient:  ");
+      Ioss::Utils::info_fields(ns, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
+      Ioss::Utils::info_fields(ns, Ioss::Field::TRANSIENT, "\tTransient:  ");
+      Ioss::Utils::info_fields(ns, Ioss::Field::REDUCTION, "\tTransient (Reduction):  ");
     }
   }
 
@@ -445,8 +479,9 @@ namespace {
                  num_attrib);
       info_aliases(region, fs, false, true);
       info_df(fs, "\t");
-      info_fields(fs, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
-      info_fields(fs, Ioss::Field::TRANSIENT, "\tTransient:  ");
+      Ioss::Utils::info_fields(fs, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
+      Ioss::Utils::info_fields(fs, Ioss::Field::TRANSIENT, "\tTransient:  ");
+      Ioss::Utils::info_fields(fs, Ioss::Field::REDUCTION, "\tTransient (Reduction):  ");
     }
   }
 
@@ -458,8 +493,9 @@ namespace {
       fmt::print("\n{} id: {:6d}, {:8n} elements.\n", name(es), id(es), count);
       info_aliases(region, es, false, true);
       info_df(es, "\t");
-      info_fields(es, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
-      info_fields(es, Ioss::Field::TRANSIENT, "\tTransient:  ");
+      Ioss::Utils::info_fields(es, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
+      Ioss::Utils::info_fields(es, Ioss::Field::TRANSIENT, "\tTransient:  ");
+      Ioss::Utils::info_fields(es, Ioss::Field::REDUCTION, "\tTransient (Reduction):  ");
     }
   }
 
@@ -503,66 +539,42 @@ namespace {
     }
   }
 
-  void info_fields(const Ioss::GroupingEntity *ige, Ioss::Field::RoleType role,
-                   const std::string &header)
-  {
-    Ioss::NameList fields;
-    ige->field_describe(role, &fields);
-
-    if (fields.empty()) {
-      return;
-    }
-
-    if (!header.empty()) {
-      fmt::print("{}", header);
-    }
-    // Iterate through results fields and transfer to output
-    // database...
-    for (const auto &field_name : fields) {
-      const Ioss::VariableType *var_type   = ige->get_field(field_name).raw_storage();
-      int                       comp_count = var_type->component_count();
-      fmt::print("{:>16s}:{} ", field_name, comp_count);
-    }
-    if (!header.empty()) {
-      fmt::print("\n");
-    }
-  }
 } // namespace
 
 namespace Ioss {
-  void io_info_file_info(const Info::Interface &interface) { file_info(interface); }
-  void io_info_group_info(Info::Interface &interface) { group_info(interface); }
+  void io_info_file_info(const Info::Interface &interFace) { file_info(interFace); }
+  void io_info_group_info(Info::Interface &interFace) { group_info(interFace); }
 
-  void io_info_set_db_properties(const Info::Interface &interface, Ioss::DatabaseIO *dbi)
+  void io_info_set_db_properties(const Info::Interface &interFace, Ioss::DatabaseIO *dbi)
   {
-    std::string inpfile = interface.filename();
+    std::string inpfile = interFace.filename();
 
     if (dbi == nullptr || !dbi->ok(true)) {
       std::exit(EXIT_FAILURE);
     }
 
-    if (interface.use_generic_names()) {
+    if (interFace.use_generic_names()) {
       dbi->set_use_generic_canonical_name(true);
     }
 
-    dbi->set_surface_split_type(Ioss::int_to_surface_split(interface.surface_split_scheme()));
-    dbi->set_field_separator(interface.field_suffix_separator());
-    dbi->set_field_recognition(!interface.disable_field_recognition());
-    if (interface.ints_64_bit()) {
+    dbi->set_surface_split_type(Ioss::int_to_surface_split(interFace.surface_split_scheme()));
+    dbi->set_field_separator(interFace.field_suffix_separator());
+    dbi->set_field_recognition(!interFace.disable_field_recognition());
+    if (interFace.ints_64_bit()) {
       dbi->set_int_byte_size_api(Ioss::USE_INT64_API);
     }
 
-    if (!interface.groupname().empty()) {
-      bool success = dbi->open_group(interface.groupname());
+    if (!interFace.groupname().empty()) {
+      bool success = dbi->open_group(interFace.groupname());
       if (!success) {
-        fmt::print("ERROR: Unable to open group '{}' in file '{}'\n", interface.groupname(),
+        fmt::print("ERROR: Unable to open group '{}' in file '{}'\n", interFace.groupname(),
                    inpfile);
         return;
       }
     }
   }
 
-  void io_info_file_info(const Info::Interface &interface, Ioss::Region &region)
+  void io_info_file_info(const Info::Interface &interFace, Ioss::Region &region)
   {
     Ioss::DatabaseIO *dbi = region.get_database();
 
@@ -582,27 +594,30 @@ namespace Ioss {
         }
         region.output_summary(std::cout, true);
 
-        if (interface.summary() == 0) {
+        if (!interFace.summary()) {
 
-          info_nodeblock(region, interface);
+          info_region(region);
+          info_assemblies(region);
+          info_nodeblock(region, interFace);
           info_edgeblock(region);
           info_faceblock(region);
-          info_elementblock(region, interface);
-          info_structuredblock(region, interface);
+          info_elementblock(region, interFace);
+          info_structuredblock(region, interFace);
 
           info_nodesets(region);
           info_edgesets(region);
           info_facesets(region);
           info_elementsets(region);
 
-          info_sidesets(region, interface);
+          info_sidesets(region, interFace);
+          info_blobs(region);
           info_coordinate_frames(region);
         }
       }
       region.get_database()->util().barrier();
     }
 
-    if (interface.compute_volume()) {
+    if (interFace.compute_volume()) {
       element_volume(region);
     }
   }

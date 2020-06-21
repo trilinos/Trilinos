@@ -116,6 +116,28 @@ namespace Amesos2 {
     typedef row_access major_access;
   };
 
+  template < typename Scalar,
+             typename LocalOrdinal,
+             typename DeviceType >
+  struct MatrixTraits<
+    KokkosSparse::CrsMatrix<Scalar,
+                      LocalOrdinal,
+                      DeviceType> > {
+    typedef Scalar scalar_t;
+    typedef LocalOrdinal local_ordinal_t;
+    typedef Tpetra::Map<>::global_ordinal_type global_ordinal_t;
+    typedef LocalOrdinal global_size_t;
+
+    typedef KokkosSparse::CrsMatrix<Scalar, LocalOrdinal, DeviceType>  matrix_type;
+    typedef Tpetra::Map<>::node_type node_t;
+
+    typedef matrix_type  local_matrix_t; // is the same right now
+    typedef typename matrix_type::row_map_type::value_type * sparse_ptr_type;
+    typedef typename matrix_type::ordinal_type * sparse_idx_type;
+    typedef typename matrix_type::value_type * sparse_values_type;
+
+    typedef row_access major_access;
+  };
 
 #ifdef HAVE_AMESOS2_EPETRA
 

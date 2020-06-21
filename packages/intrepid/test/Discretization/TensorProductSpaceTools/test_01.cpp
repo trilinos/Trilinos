@@ -20,7 +20,7 @@ using Intrepid::TensorBasis;
   try {                                                                                                             \
     S ;                                                                                                             \
   }                                                                                                                 \
-  catch (std::logic_error err) {                                                                                    \
+  catch (const std::logic_error & err) {                                                                                    \
       *outStream << "Expected Error ----------------------------------------------------------------\n";            \
       *outStream << err.what() << '\n';                                                                             \
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";    \

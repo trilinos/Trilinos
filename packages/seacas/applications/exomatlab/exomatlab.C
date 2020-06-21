@@ -1,35 +1,9 @@
 /*
- * Copyright(C) 2011-2017 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- * * Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *
- * * Redistributions in binary form must reproduce the above
- *   copyright notice, this list of conditions and the following
- *   disclaimer in the documentation and/or other materials provided
- *   with the distribution.
- *
- * * Neither the name of NTESS nor the names of its
- *   contributors may be used to endorse or promote products derived
- *   from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
+ * See packages/seacas/LICENSE for details
  */
 
 #include <cassert>
@@ -62,7 +36,7 @@
 // ========================================================================
 namespace {
   bool file_info(const std::string &inpfile, const std::string &input_type,
-                 SystemInterface &interface);
+                 SystemInterface &interFace);
 
   void output_names(const std::string &type, const Ioss::NameList &fields,
                     Ioss::GroupingEntity *entity)
@@ -102,17 +76,17 @@ int main(int argc, char *argv[])
     SystemInterface::show_version();
     Ioss::Init::Initializer io;
 
-    SystemInterface interface;
-    ok = interface.parse_options(argc, argv);
+    SystemInterface interFace;
+    ok = interFace.parse_options(argc, argv);
 
     if (ok) {
-      std::string in_file     = interface.input_file();
-      std::string output_file = interface.output_file();
+      std::string in_file     = interFace.input_file();
+      std::string output_file = interFace.output_file();
 
       fmt::print("Input:    '{}', Type: {}\n", in_file, in_type);
       fmt::print("Output:   '{}', Type: matlab script\n\n", output_file);
 
-      ok = file_info(in_file, in_type, interface);
+      ok = file_info(in_file, in_type, interFace);
     }
     std::string success = ok ? "successful" : "unsuccessful";
     fmt::print("\n{} execution {}.\n", codename, success);
@@ -130,7 +104,7 @@ int main(int argc, char *argv[])
 
 namespace {
   bool file_info(const std::string &inpfile, const std::string &input_type,
-                 SystemInterface &interface)
+                 SystemInterface &interFace)
   {
     //========================================================================
     // INPUT ...
@@ -142,14 +116,14 @@ namespace {
       return false;
     }
 
-    dbi->set_field_separator(interface.field_suffix());
+    dbi->set_field_separator(interFace.field_suffix());
     dbi->set_lower_case_variable_names(false);
 
     // NOTE: 'region' owns 'db' pointer at this time...
     Ioss::Region region(dbi, "region_1");
 
-    if (interface.list_vars()) {
-      StringIdVector types_to_list = interface.vars_to_list();
+    if (interFace.list_vars()) {
+      StringIdVector types_to_list = interFace.vars_to_list();
       for (auto types : types_to_list) {
         std::string type = types.first;
 
@@ -169,7 +143,7 @@ namespace {
     }
 
     Ioss::NameList fields;
-    StringIdVector global_vars = interface.global_var_names();
+    StringIdVector global_vars = interFace.global_var_names();
     if (!global_vars.empty()) {
       if (global_vars[0].first == "all") {
         region.field_describe(Ioss::Field::TRANSIENT, &fields);
@@ -201,7 +175,7 @@ namespace {
     }
 
     std::ofstream out_stream;
-    out_stream.open(interface.output_file().c_str());
+    out_stream.open(interFace.output_file().c_str());
 
     out_stream.setf(std::ios::scientific);
     out_stream.setf(std::ios::showpoint);
@@ -240,8 +214,8 @@ namespace {
     int st_min = 1;
     int st_max = num_steps;
 
-    double tmin = interface.minimum_time();
-    double tmax = interface.maximum_time();
+    double tmin = interFace.minimum_time();
+    double tmax = interFace.maximum_time();
     if (tmax == -1.0) {
       tmax = region.get_max_time().second;
     }

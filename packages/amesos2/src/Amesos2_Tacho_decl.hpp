@@ -44,6 +44,8 @@
 #ifndef AMESOS2_TACHO_DECL_HPP
 #define AMESOS2_TACHO_DECL_HPP
 
+#include <Kokkos_Core.hpp>
+
 #include "Amesos2_SolverTraits.hpp"
 #include "Amesos2_SolverCore.hpp"
 #include "Amesos2_Tacho_FunctionMap.hpp"
@@ -95,11 +97,25 @@ public:
   // TODO - Not sure yet best place for organizing these typedefs
   typedef Tacho::ordinal_type                                  ordinal_type;
   typedef Tacho::size_type                                        size_type;
-  typedef Kokkos::DefaultHostExecutionSpace                   HostSpaceType;
-  typedef Kokkos::TaskScheduler<HostSpaceType>                SchedulerType;
-  typedef Kokkos::View<size_type*,HostSpaceType>            size_type_array;
-  typedef Kokkos::View<ordinal_type*,HostSpaceType>      ordinal_type_array;
-  typedef Kokkos::View<tacho_type*, HostSpaceType>         value_type_array;
+
+  typedef Kokkos::DefaultExecutionSpace                     exec_space_type;
+  typedef Kokkos::DefaultHostExecutionSpace            host_exec_space_type;
+
+  typedef typename
+    Tacho::UseThisDevice<exec_space_type>::device_type          device_type;
+  typedef typename
+    Tacho::UseThisDevice<host_exec_space_type>::device_type host_device_type;
+
+  typedef Kokkos::TaskScheduler<exec_space_type>             scheduler_type;
+
+  typedef Kokkos::View<size_type*, device_type>       device_size_type_array;
+  typedef Kokkos::View<ordinal_type*, device_type> device_ordinal_type_array;
+  typedef Kokkos::View<tacho_type*, device_type>     device_value_type_array;
+
+  // also work with host space - right now symbolic requires host space so we
+  // do everything in device space if source was device, then deep_copy
+  typedef Kokkos::View<size_type*, host_device_type>       host_size_type_array;
+  typedef Kokkos::View<ordinal_type*, host_device_type> host_ordinal_type_array;
 
   /// \name Constructor/Destructor methods
   //@{
@@ -140,8 +156,10 @@ private:
    *
    * \throw std::runtime_error Tacho is not able to factor the matrix.
    */
+public: // made this public for CUDA parallel_for usage
   int symbolicFactorization_impl();
 
+private:
 
   /**
    * \brief Tacho specific numeric factorization
@@ -204,32 +222,29 @@ private:
 
   // struct holds all data necessary to make a tacho factorization or solve call
   mutable struct TACHOData {
-    typename Tacho::Solver<tacho_type,SchedulerType> solver;
+    typename Tacho::Solver<tacho_type, scheduler_type> solver;
 
     // TODO: Implement the paramter options - confirm which we want and which have been implemented
     // int num_kokkos_threads;
     // int max_num_superblocks;
   } data_;
 
-  // The following Arrays are persisting storage arrays for A, X, and B
-  /// Stores the values of the nonzero entries for Tacho
-  Teuchos::Array<tacho_type> nzvals_;
-  /// Stores the location in \c Ai_ and Aval_ that starts row j
-  Teuchos::Array<ordinal_type> colind_;
-  /// Stores the row indices of the nonzero entries
-  Teuchos::Array<size_type> rowptr_;
-
-  // TODO: Decide handling for CUDA - how to fail
-#ifdef KOKKOS_ENABLE_OPENMP
-  typedef Kokkos::OpenMP DeviceSpaceType;
-#else
-  typedef Kokkos::Serial DeviceSpaceType;
-#endif
-  typedef typename Tacho::Solver<tacho_type,SchedulerType>::value_type_matrix
-    solve_array_t;
+  typedef typename Tacho::Solver<tacho_type, scheduler_type>::value_type_matrix
+    device_solve_array_t;
 
   // used as an internal workspace - possibly we can store this better in TACHOData
-  mutable solve_array_t workspace_;
+  mutable device_solve_array_t workspace_;
+
+  // x and b for solve - only allocated first time
+  mutable device_solve_array_t xValues_;
+  mutable device_solve_array_t bValues_;
+
+  // numeric is on device
+  device_value_type_array device_nzvals_view_;
+
+  // symbolic is done on host for Tacho so store these versions as well
+  host_size_type_array host_row_ptr_view_;
+  host_ordinal_type_array host_cols_view_;
 };                              // End class Tacho
 
 
@@ -237,16 +252,24 @@ private:
 template <>
 struct solver_traits<TachoSolver> {
 #ifdef HAVE_TEUCHOS_COMPLEX
-  typedef Meta::make_list4<float,
+  typedef Meta::make_list6<float,
                            double,
                            std::complex<float>,
-                           std::complex<double>
+                           std::complex<double>,
+                           Kokkos::complex<float>,
+                           Kokkos::complex<double>
                            >supported_scalars;
 #else
   typedef Meta::make_list2<float,
                            double
                            >supported_scalars;
 #endif
+};
+
+template <typename Scalar, typename LocalOrdinal, typename ExecutionSpace>
+struct solver_supports_matrix<TachoSolver,
+  KokkosSparse::CrsMatrix<Scalar, LocalOrdinal, ExecutionSpace>> {
+  static const bool value = true;
 };
 
 } // end namespace Amesos2

@@ -1,34 +1,8 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//
-//     * Neither the name of NTESS nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+// See packages/seacas/LICENSE for details
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_Utils.h>
@@ -40,7 +14,7 @@
 #include <heartbeat/Iohb_Layout.h>
 #include <iostream>
 #include <string>
-#include <sys/select.h>
+
 #include <vector>
 
 #include "Ioss_DBUsage.h"
@@ -126,10 +100,10 @@ namespace {
       // 'logger' class which handles sharing and destruction...
       std::ofstream *tmp = nullptr;
       if (append_file) {
-        tmp = new std::ofstream(filename.c_str(), std::ios::out | std::ios::app);
+        tmp = new std::ofstream(filename, std::ios::out | std::ios::app);
       }
       else {
-        tmp = new std::ofstream(filename.c_str());
+        tmp = new std::ofstream(filename);
       }
       if (!tmp->is_open()) {
         delete tmp;
@@ -186,23 +160,23 @@ namespace Iohb {
       assert(layout_ == nullptr);
       assert(legend_ == nullptr);
 
-      DatabaseIO *new_this = const_cast<DatabaseIO *>(this);
+      auto *new_this = const_cast<DatabaseIO *>(this);
 
       if (properties.exists("FILE_FORMAT")) {
         std::string format = properties.get("FILE_FORMAT").get_string();
-        if (Ioss::Utils::case_strcmp(format, "spyhis") == 0) {
+        if (Ioss::Utils::str_equal(format, "spyhis")) {
           new_this->fileFormat = SPYHIS;
         }
-        else if (Ioss::Utils::case_strcmp(format, "csv") == 0) {
+        else if (Ioss::Utils::str_equal(format, "csv")) {
           new_this->fileFormat = CSV;
         }
-        else if (Ioss::Utils::case_strcmp(format, "ts_csv") == 0) {
+        else if (Ioss::Utils::str_equal(format, "ts_csv")) {
           new_this->fileFormat = TS_CSV;
         }
-        else if (Ioss::Utils::case_strcmp(format, "text") == 0) {
+        else if (Ioss::Utils::str_equal(format, "text")) {
           new_this->fileFormat = TEXT;
         }
-        else if (Ioss::Utils::case_strcmp(format, "ts_text") == 0) {
+        else if (Ioss::Utils::str_equal(format, "ts_text")) {
           new_this->fileFormat = TS_TEXT;
         }
       }
@@ -534,7 +508,7 @@ namespace Iohb {
         }
         else {
           std::vector<double> rdata(ncomp);
-          double *            r_data = reinterpret_cast<double *>(data);
+          auto *              r_data = reinterpret_cast<double *>(data);
           for (int i = 0; i < ncomp; i++) {
             rdata[i] = r_data[i];
           }

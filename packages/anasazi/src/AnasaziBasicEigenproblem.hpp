@@ -92,15 +92,15 @@ namespace Anasazi {
     */
     void setOperator( const Teuchos::RCP<const OP>& Op ) { _Op = Op; _isSet=false; };
     
-    /*! \brief Set the operator \c A of the eigenvalue problem \f$Ax=Mx\lambda\f$.
+    /*! \brief Set the operator \c A of the eigenvalue problem \f$ Ax=Mx\lambda\f$.
     */
     void setA( const Teuchos::RCP<const OP>& A ) { _AOp = A; _isSet=false; };
     
-    /*! \brief Set the operator \c M of the eigenvalue problem \f$Ax = Mx\lambda\f$.
+    /*! \brief Set the operator \c M of the eigenvalue problem \f$ Ax = Mx\lambda\f$.
      */
     void setM( const Teuchos::RCP<const OP>& M ) { _MOp = M; _isSet=false; };
     
-    /*! \brief Set the preconditioner for this eigenvalue problem \f$Ax = Mx\lambda\f$.
+    /*! \brief Set the preconditioner for this eigenvalue problem \f$ Ax = Mx\lambda\f$.
      */
     void setPrec( const Teuchos::RCP<const OP>& Prec ) { _Prec = Prec; _isSet=false; };
     
@@ -162,13 +162,13 @@ namespace Anasazi {
     //! Get a pointer to the operator for which eigenvalues will be computed.
     Teuchos::RCP<const OP> getOperator() const { return( _Op ); };
     
-    //! Get a pointer to the operator \c A of the eigenproblem \f$Ax=\lambda Mx\f$.
+    //! Get a pointer to the operator \c A of the eigenproblem \f$ Ax=\lambda Mx\f$.
     Teuchos::RCP<const OP> getA() const { return( _AOp ); };
     
-    //! Get a pointer to the operator \c M of the eigenproblem \f$Ax=\lambda Mx\f$.
+    //! Get a pointer to the operator \c M of the eigenproblem \f$ Ax=\lambda Mx\f$.
     Teuchos::RCP<const OP> getM() const { return( _MOp ); };
     
-    //! Get a pointer to the preconditioner of the eigenproblem \f$Ax=\lambda Mx\f$.
+    //! Get a pointer to the preconditioner of the eigenproblem \f$ Ax=\lambda Mx\f$.
     Teuchos::RCP<const OP> getPrec() const { return( _Prec ); };
     
     //! Get a pointer to the initial vector
@@ -202,7 +202,7 @@ namespace Anasazi {
      *
      * If there is no computed solution, returns Teuchos::null.
      *
-     * \note If A has not been set, this function will compute \f$R = OpX-MX\Lambda\f$
+     * \note If A has not been set, this function will compute \f$ R = OpX-MX\Lambda\f$
      * If you are using a spectral transformation, this may not be what you want.
      */
     Teuchos::RCP<const MV> computeCurrResVec() const;
@@ -211,29 +211,29 @@ namespace Anasazi {
 
   protected:
     
-    //! Reference-counted pointer for \c A of the eigenproblem \f$Ax=\lambda Mx\f$
+    //! Reference-counted pointer for \c A of the eigenproblem \f$ Ax=\lambda Mx\f$
     Teuchos::RCP<const OP> _AOp;
 
-    //! Reference-counted pointer for \c M of the eigenproblem \f$Ax=\lambda Mx\f$
+    //! Reference-counted pointer for \c M of the eigenproblem \f$ Ax=\lambda Mx\f$
     Teuchos::RCP<const OP> _MOp; 
 
-    //! Reference-counted pointer for the operator of the eigenproblem \f$Ax=\lambda Mx\f$
+    //! Reference-counted pointer for the operator of the eigenproblem \f$ Ax=\lambda Mx\f$
     Teuchos::RCP<const OP> _Op;
 
-    //! Reference-counted pointer for the preconditioner of the eigenproblem \f$Ax=\lambda Mx\f$
+    //! Reference-counted pointer for the preconditioner of the eigenproblem \f$ Ax=\lambda Mx\f$
     Teuchos::RCP<const OP> _Prec;
 
-    //! Reference-counted pointer for the initial vector of the eigenproblem \f$Ax=\lambda Mx\f$
+    //! Reference-counted pointer for the initial vector of the eigenproblem \f$ Ax=\lambda Mx\f$
     Teuchos::RCP<MV> _InitVec;
 
-    //! Reference-counted pointer for the auxiliary vector of the eigenproblem \f$Ax=\lambda Mx\f$
+    //! Reference-counted pointer for the auxiliary vector of the eigenproblem \f$ Ax=\lambda Mx\f$
     Teuchos::RCP<const MV> _AuxVecs;
 
     //! Number of eigenvalues requested
     int _nev;
 
     //! Symmetry of the eigenvalue problem
-    /*! \note A generalized eigenvalue problem \f$Ax= \lambda Mx\f$ is considered symmetric
+    /*! \note A generalized eigenvalue problem \f$ Ax= \lambda Mx\f$ is considered symmetric
       if the operator \c M is positive (semi) definite.
     */
     bool _isSym;

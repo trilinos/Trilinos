@@ -1,36 +1,9 @@
 /*
- * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
- * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
- *     * Neither the name of NTESS nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
+ * See packages/seacas/LICENSE for details
  */
 
 #include <exodusII.h> // for ex_close, ex_inquire, etc
@@ -67,9 +40,12 @@ template int read_exo_weights(Problem_Description *prob, Weight_Description<int6
 template <typename INT>
 int read_exo_weights(Problem_Description *prob, Weight_Description<INT> *weight)
 {
-  int         exoid, cpu_ws = 0, io_ws = 0;
+  int         exoid;
+  int         cpu_ws = 0;
+  int         io_ws  = 0;
   int         neblks;
-  float       version, minval = 1.0f;
+  float       version;
+  float       minval = 1.0f;
   char        elem_type[MAX_STR_LENGTH + 1];
   std::string ctemp;
   /*---------------------------Execution Begins--------------------------------*/
@@ -123,7 +99,8 @@ int read_exo_weights(Problem_Description *prob, Weight_Description<INT> *weight)
 
     /* Get the count of elements in each element block */
     for (int cnt = 0; cnt < neblks; cnt++) {
-      INT dum1, dum2;
+      INT dum1;
+      INT dum2;
       if (ex_get_block(exoid, EX_ELEM_BLOCK, eblk_ids[cnt], elem_type, &(eblk_ecnts[cnt]), &dum1,
                        nullptr, nullptr, &dum2) < 0) {
         Gen_Error(0, "fatal: unable to get element block");
@@ -180,7 +157,9 @@ template <typename INT>
 int read_mesh_params(const std::string &exo_file, Problem_Description *problem,
                      Mesh_Description<INT> *mesh, Sphere_Info *sphere)
 {
-  int   exoid, cpu_ws = 0, io_ws = 0;
+  int   exoid;
+  int   cpu_ws = 0;
+  int   io_ws  = 0;
   float version;
   char  elem_type[MAX_STR_LENGTH + 1];
   /*---------------------------Execution Begins--------------------------------*/
@@ -254,12 +233,13 @@ int read_mesh_params(const std::string &exo_file, Problem_Description *problem,
       ex_close(exoid);
       return 0;
     }
-    mesh->eb_npe[cnt]  = nodes_in_elem;
-    mesh->eb_type[cnt] = get_elem_type(elem_type, nodes_in_elem, mesh->num_dims);
 
     if (mesh->eb_cnts[cnt] == 0) {
       continue;
     }
+
+    mesh->eb_npe[cnt]  = nodes_in_elem;
+    mesh->eb_type[cnt] = get_elem_type(elem_type, nodes_in_elem, mesh->num_dims);
 
     if (cnt == 0) {
       sphere->end[0] = mesh->eb_cnts[cnt];
@@ -317,12 +297,17 @@ template <typename INT>
 int read_mesh(const std::string &exo_file, Problem_Description *problem,
               Mesh_Description<INT> *mesh, Weight_Description<INT> *weight)
 {
-  float version, *xptr, *yptr, *zptr;
+  float  version;
+  float *xptr;
+  float *yptr;
+  float *zptr;
   /*---------------------------Execution Begins--------------------------------*/
 
   /* Open the ExodusII file */
-  int exoid, cpu_ws = 0, io_ws = 0;
-  int mode = EX_READ | problem->int64api;
+  int exoid;
+  int cpu_ws = 0;
+  int io_ws  = 0;
+  int mode   = EX_READ | problem->int64api;
   if ((exoid = ex_open(exo_file.c_str(), mode, &cpu_ws, &io_ws, &version)) < 0) {
     Gen_Error(0, "fatal: unable to open ExodusII mesh file");
     return 0;

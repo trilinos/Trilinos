@@ -63,7 +63,7 @@ namespace Intrepid2 {
       try {                                                             \
         S ;                                                             \
       }                                                                 \
-      catch (std::logic_error err) {                                    \
+      catch (std::logic_error &err) {                                    \
         *outStream << "Expected Error ----------------------------------------------------------------\n"; \
         *outStream << err.what() << '\n';                               \
         *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \

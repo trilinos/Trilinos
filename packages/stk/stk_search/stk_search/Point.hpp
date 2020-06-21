@@ -89,7 +89,7 @@ public:
   KOKKOS_FUNCTION value_type get_z_max() const { return m_value[2]; }
 
 
-  KOKKOS_FUNCTION ~Point() = default;
+  KOKKOS_DEFAULTED_FUNCTION ~Point() = default;
 
 private:
   value_type m_value[Dim];
@@ -100,6 +100,13 @@ std::ostream& operator<<(std::ostream & out, Point<T> const& p)
 {
   out << "(" << p[0] << "," << p[1] << "," << p[2] << ")";
   return out;
+}
+
+template<class T>
+std::istream& operator>>(std::istream& in, Point<T>& p) {
+  char c;
+  in >> c >> p[0] >> c >> p[1] >> c >> p[2] >> c;
+  return in;
 }
 
 }} // stk::search

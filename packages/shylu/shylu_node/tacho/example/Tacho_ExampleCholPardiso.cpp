@@ -1,14 +1,7 @@
-#include "ShyLU_NodeTacho_config.h"
-
 #include <Kokkos_Core.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
-#include "Tacho_Util.hpp"
-#include "Tacho_CrsMatrixBase.hpp"
-#include "Tacho_MatrixMarket.hpp"
-
-#include "Tacho_NumericTools.hpp"
-
+#include "Tacho_Internal.hpp"
 #include "Tacho_CommandLineParser.hpp"
 
 #if defined (TACHO_HAVE_MKL)
@@ -23,11 +16,13 @@ int main (int argc, char *argv[]) {
 
   int nthreads = 1;
   bool verbose = true;
+  bool sanitize = false;
   std::string file_input = "test.mtx";
   int nrhs = 1;
 
   opts.set_option<int>("kokkos-threads", "Number of threads", &nthreads);
   opts.set_option<bool>("verbose", "Flag for verbose printing", &verbose);
+  opts.set_option<bool>("sanitize", "Flag to sanitize input matrix (remove zeros)", &sanitize);
   opts.set_option<std::string>("file", "Input file (MatrixMarket SPD matrix)", &file_input);
   opts.set_option<int>("nrhs", "Number of RHS vectors", &nrhs);
 
@@ -35,18 +30,18 @@ int main (int argc, char *argv[]) {
   if (r_parse) return 0; // print help return
 
   const bool skip_factorize = false, skip_solve = false;
-
-  typedef Kokkos::DefaultHostExecutionSpace host_space;
   
   Kokkos::initialize(argc, argv);
-  host_space::print_configuration(std::cout, false);
+
+  typedef UseThisDevice<Kokkos::DefaultHostExecutionSpace> host_device_type;
+  printExecSpaceConfiguration<typename host_device_type::execution_space>("HostDevice", false);
 
   int r_val = 0;
 #if defined (__INTEL_MKL__)
   {
     typedef double value_type;
-    typedef CrsMatrixBase<value_type,host_space> CrsMatrixBaseType;
-    typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,host_space> DenseMatrixBaseType;
+    typedef CrsMatrixBase<value_type,host_device_type> CrsMatrixBaseType;
+    typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,host_device_type> DenseMatrixBaseType;
     
     // mkl nthreads setting 
     mkl_set_dynamic(0);
@@ -82,7 +77,7 @@ int main (int argc, char *argv[]) {
           return -1;
         }
       }
-      MatrixMarket<value_type>::read(file_input, A);
+      MatrixMarket<value_type>::read(file_input, A, sanitize, verbose);
       
       // somehow pardiso does not like symmetric full matrix (store only half)
       Asym.createConfTo(A);
@@ -104,7 +99,7 @@ int main (int argc, char *argv[]) {
     t = timer.seconds();
 
     // 32bit vs 64bit integers; A uses size_t for size array
-    Kokkos::View<ordinal_type*,host_space> rowptr("rowptr", Asym.NumRows()+1);
+    Kokkos::View<ordinal_type*,host_device_type> rowptr("rowptr", Asym.NumRows()+1);
     {      
       for (ordinal_type i=0;i<=Asym.NumRows();++i)
         rowptr(i) = Asym.RowPtrBegin(i);
@@ -184,7 +179,7 @@ int main (int argc, char *argv[]) {
     }
     
     {
-      const double res = NumericTools<value_type,host_space>::computeRelativeResidual(A, X, B);
+      const double res = computeRelativeResidual(A, X, B);
       std::cout << "PardisoChol:: residual = " << res << std::endl;
     }
     

@@ -65,7 +65,7 @@ namespace LOCA {
      * i.e., problems with a mass matrix (typically used in eignvalue or
      * Hopf calculations).  It provides pure virtual methods for computing
      * and manipulating the shifted matrix \f$\alpha J + \beta M\f$ where
-     * \f$J\f$ is the Jacobian matrix and \f$M\f$ is the mass matrix.
+     * \f$ J\f$ is the Jacobian matrix and \f$ M\f$ is the mass matrix.
      */
     class AbstractGroup :
       public virtual LOCA::MultiContinuation::AbstractGroup {

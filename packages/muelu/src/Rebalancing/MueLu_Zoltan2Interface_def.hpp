@@ -215,7 +215,7 @@ namespace MueLu {
       {
         SubFactoryMonitor m1(*this, "Zoltan2 " + toString(algo), level);
         if (writeZoltan2DebuggingFiles)
-          adapter.generateFiles("mj_debug", *(rowMap->getComm()));
+          adapter.generateFiles(("mj_debug.lvl_"+std::to_string(level.GetLevelID())).c_str(), *(rowMap->getComm()));
         problem->solve();
       }
 
@@ -256,8 +256,9 @@ namespace MueLu {
 
       const typename InputAdapterType::part_t * parts = problem->getSolution().getPartListView();
 
-      for (GO i = 0; i < numElements; i++) {
-        int partNum = parts[i];
+      // For blkSize > 1, ignore solution for every row but the first ones in a block.
+      for (GO i = 0; i < numElements/blkSize; i++) {
+        int partNum = parts[i*blkSize];
 
         for (LO j = 0; j < blkSize; j++)
           decompEntries[i*blkSize + j] = partNum;

@@ -1348,7 +1348,6 @@ void CellTools<Scalar>::mapToPhysicalFrame(ArrayPhysPoint      &        physPoin
   int basisCardinality = HGRAD_Basis -> getCardinality();
   FieldContainer<Scalar> basisVals(basisCardinality, numPoints);
 
-//#ifndef INTREPID_OLD_KOKKOS_CODE 
   // Initialize physPoints
   if(getrank(physPoints)==3){
 for(size_t i = 0; i < static_cast<size_t>(physPoints.dimension(0)); i++) {
@@ -1367,9 +1366,6 @@ for(size_t i = 0; i < static_cast<size_t>(physPoints.dimension(0)); i++) {
 	 
  }
 
-//#else
-//   Kokkos::deep_copy(physPoints.get_kokkos_view(), Scalar(0.0));  
-//#endif
   // handle separately rank-2 (P,D) and rank-3 (C,P,D) cases of refPoints
   switch(getrank(refPoints)) {
     
@@ -1566,7 +1562,6 @@ void CellTools<Scalar>::mapToPhysicalFrame(ArrayPhysPoint      &        physPoin
   int basisCardinality = HGRAD_Basis -> getCardinality();
   FieldContainer<Scalar> basisVals(basisCardinality, numPoints);
 
-//#ifndef INTREPID_OLD_KOKKOS_CODE 
   // Initialize physPoints
   if(getrank(physPoints)==3){
 for(size_t i = 0; i < static_cast<size_t>(physPoints.dimension(0)); i++) {
@@ -1585,9 +1580,6 @@ for(size_t i = 0; i < static_cast<size_t>(physPoints.dimension(0)); i++) {
 	 
  }
 
-//#else
-//   Kokkos::deep_copy(physPoints.get_kokkos_view(), Scalar(0.0));  
-//#endif
   // handle separately rank-2 (P,D) and rank-3 (C,P,D) cases of refPoints
   switch(getrank(refPoints)) {
     

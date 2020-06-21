@@ -219,7 +219,7 @@ public:
   ///          only valid as long as the vector does not run of scope!
   template<class TargetDeviceType>
   typename Kokkos::Impl::if_c<
-  Kokkos::Impl::is_same<
+  std::is_same<
   typename dual_view_type::t_dev_um::execution_space::memory_space,
   typename TargetDeviceType::memory_space>::value,
   typename dual_view_type::t_dev_um,
@@ -407,7 +407,7 @@ public:
   ///          only valid as long as the vector does not run of scope!
   template<class TargetDeviceType>
   typename Kokkos::Impl::if_c<
-  Kokkos::Impl::is_same<
+  std::is_same<
   typename dual_view_type::t_dev_um::execution_space::memory_space,
   typename TargetDeviceType::memory_space>::value,
   typename dual_view_type::t_dev_um,
@@ -592,7 +592,7 @@ public:
   ///          only valid as long as the vector does not run of scope!
   template<class TargetDeviceType>
   typename Kokkos::Impl::if_c<
-  Kokkos::Impl::is_same<
+  std::is_same<
   typename dual_view_type::t_dev_um::execution_space::memory_space,
   typename TargetDeviceType::memory_space>::value,
   typename dual_view_type::t_dev_um,

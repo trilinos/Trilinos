@@ -41,7 +41,6 @@
       A(2,0) = 0; // (x[1][2] - x[0][2]);
       A(2,1) = 0; // (x[2][2] - x[0][2]);
       A(2,2) = 1.0;
-      //if (m_scale_to_unit) scale_to_unit(A);
 
       detJ = det(A);
       return detJ < 0.0;

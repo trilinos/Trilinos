@@ -75,53 +75,16 @@
 
       TopologyId getCellTopologyId(const CellTopology &cell_topology);
 
-      CellTopology getBasicCellTopology(TopologyId id);
       CellTopology getBasicCellTopology(const char *name);
 
-      CellTopology nodeCellTopology(const CellTopology &cell_topology, UInt ordinal);
       CellTopology edgeCellTopology(const CellTopology &cell_topology, UInt ordinal);
       CellTopology faceCellTopology(const CellTopology &cell_topology, UInt ordinal);
       CellTopology sideCellTopology(const CellTopology &cell_topology, UInt ordinal);
 
-      bool isElement(const CellTopology &cell_topology, unsigned spatial_dimension);
-      bool isSolidElement(const CellTopology &cell_topology, unsigned spatial_dimension);
-      bool isShellElement(const CellTopology &cell_topology);
-      bool isRodElement(const CellTopology &cell_topology);
-      bool isParticleElement(const CellTopology &cell_topology);
-
-      int getEdgeNode(const CellTopology &cell_topology, unsigned edge, unsigned node_of_edge);
-      int getFaceNode(const CellTopology &cell_topology, unsigned face, unsigned node_of_face);
-      int getSideNode(const CellTopology &cell_topology, unsigned side, unsigned node_of_side);
       int getFaceEdge(const CellTopology &cell_topology, unsigned face, unsigned edge_of_face);
-
-      const unsigned *getNodesOfEdge(const CellTopology &cell_topology, unsigned edge);
-      const unsigned *getNodesOfFace(const CellTopology &cell_topology, unsigned face);
-      const unsigned *getNodesOfSide(const CellTopology &cell_topology, unsigned side);
-
-      bool isCellTopologySubsetOf(const CellTopology &cell_topology, const CellTopology &richer);
-
-      unsigned getParametricDimension(const CellTopology &cell_topology) ;
-
-      int findReversePermutation(const CellTopologyData &top, int permutation_ord);
 
     } // namespace Elem
   } // namespace percept
-
-// namespace shards {
-
-//   inline bool operator<(const CellTopology &c1, const CellTopology &c2) {
-//     return c1.getTopology() < c2.getTopology();
-//   }
-
-//   inline bool operator==(const CellTopology &c1, const CellTopology &c2) {
-//     return c1.getTopology() == c2.getTopology();
-//   }
-
-//   inline bool operator!=(const CellTopology &c1, const CellTopology &c2) {
-//     return !(c1 == c2);
-//   }
-
-// } // namespace shards
 
 #endif // adapt_sierra_element_CellTopology_hpp
 

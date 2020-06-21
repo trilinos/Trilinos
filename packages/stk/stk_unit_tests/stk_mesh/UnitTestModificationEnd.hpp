@@ -50,7 +50,6 @@
 #include <vector>                       // for vector, etc
 
 #include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/base/FEMHelpers.hpp>   // for BulkData, etc
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 #include <stk_mesh/base/Entity.hpp>

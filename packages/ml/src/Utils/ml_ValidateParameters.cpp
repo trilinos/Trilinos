@@ -149,6 +149,10 @@ void ML_Epetra::SetValidSmooParams(Teuchos::ParameterList *PL, Teuchos::Array<st
   PL->set("smoother: self list",dummy);
   PL->sublist("smoother: self list").disableRecursiveValidation();
   setDoubleParameter("coarse: add to diag", 0.0,"Unlisted option",PL,dblParam);
+  PL->set("coarse: split communicator",false);
+  PL->set("smoother: split communicator",false);
+    
+
   // From ml_Multilevel_Smoothers.cpp:
   setIntParameter("smoother: ParaSails matrix",0,"Unlisted option",PL,intParam);
   setIntParameter("smoother: ParaSails levels",0,"Unlisted option",PL,intParam);
@@ -257,6 +261,8 @@ void ML_Epetra::SetValidAggrParams(Teuchos::ParameterList *PL)
   /* Highly experimental */
   PL->set("aggregation: respect materials",false);
   PL->set("aggregation: material type",(int*)0);
+  PL->set("aggregation: do qr",true);
+  PL->set("aggregation: coarsen partial dirichlet dofs",true);
 
 }//SetValidAggrParams()
 
@@ -410,11 +416,11 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
 
   /* Unlisted Options */
   PL->set("ML debug mode",false);
-  setStringToIntegralParameter<int>("default values","SA","Internal Option",tuple<std::string>("SA","DD","DD-ML","maxwell","NSSA","RefMaxwell","DD-ML-LU"),PL);
+  setStringToIntegralParameter<int>("default values","SA","Internal Option",tuple<std::string>("SA","DD","DD-ML","maxwell","NSSA","RefMaxwell","DD-ML-LU","Classical-AMG"),PL);
   PL->set("ML validate parameter list",true);
   setIntParameter("ML validate depth",0,"Internal option to control validation depth",PL,intParam);
   PL->set("ResetList",true);
-  setStringToIntegralParameter<int>("SetDefaults","not-set","Internal Option",tuple<std::string>("not-set","SA","DD","DD-ML","maxwell","NSSA","RefMaxwell"),PL);
+  setStringToIntegralParameter<int>("SetDefaults","not-set","Internal Option",tuple<std::string>("not-set","SA","DD","DD-ML","maxwell","NSSA","RefMaxwell","Classical-AMG"),PL);
   setIntParameter("ML node id",-1,"Experimental option to identify the processor node (vis-a-vis core) id",PL,intParam);
 
   /* Unlisted Options that should probably be listed */
@@ -448,12 +454,22 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   setDoubleParameter("coarse: ifpack relative threshold",1.0,"Unlisted option",PL,dblParam);
   setDoubleParameter("coarse: ifpack absolute threshold",0.0,"Unlisted option",PL,dblParam);
 
+  /* Amesos support */  
+  PL->set("coarse: split communicator",false);
+  PL->set("smoother: split communicator",false);
+
   /* EXPERIMENTAL - RefMaxwell block parallelization */
   PL->set("partitioner: options",dummy);
   PL->sublist("partitioner: options").disableRecursiveValidation();
 
   /* EXPERIMENTAL - node aware code */
   setIntParameter("ML node id", -1, "Unlisted option", PL, intParam);
+
+  /* EXPERIEMNTAL - Material aggregation */
+  PL->set("aggregation: material: enable",false);
+  setDoubleParameter("aggregation: material: threshold",0.0,"Unlisted option",PL,dblParam);
+  setIntParameter("aggregation: material: max levels",10,"Unlisted option",PL,intParam);
+  PL->set("material coordinates",(double*)0);
 
   return PL;
 }
@@ -524,11 +540,10 @@ Teuchos::ParameterList * ML_Epetra::GetValidRefMaxwellParameters(){
   setStringToIntegralParameter<int>("refmaxwell: 11solver","edge matrix free","(1,1) Block Solver",tuple<std::string>("edge matrix free","sa"),PL);
   setStringToIntegralParameter<int>("refmaxwell: 22solver","multilevel","(2,2) Block Solver",tuple<std::string>("multilevel"),PL);
   setStringToIntegralParameter<int>("refmaxwell: mode","additive","Mode for RefMaxwell",tuple<std::string>("additive","212","121","none"),PL);
+  List11.set("aggregation: aux: user matrix",(Epetra_CrsMatrix*)0);  
   PL->set("edge matrix free: coarse",dummy);
-  List11.set("aggregation: aux: user matrix",(Epetra_CrsMatrix*)0);
   PL->set("refmaxwell: 11list",List11);
   PL->set("refmaxwell: 22list",dummy);
-
 
   // HAQ - clobber the smoother list to avoid validation.  MUST FIX LATER
   PL->set("smoother: type","IFPACK");
@@ -536,6 +551,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidRefMaxwellParameters(){
 
   /* RefMaxwell Options - Unsupported */
   PL->set("refmaxwell: aggregate with sigma",false);
+  PL->set("refmaxwell: use nodal dirichlet aggregation",false);
   PL->set("refmaxwell: lump m1",false);
   PL->set("refmaxwell: disable addon",false);
   PL->set("refmaxwell: normalize prolongator",false);

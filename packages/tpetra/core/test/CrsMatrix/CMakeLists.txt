@@ -88,6 +88,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_2DRandomDist
+  SOURCES
+    CrsMatrix_2DRandomDist.cpp
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
 # We split the CrsMatrix_WithGraph test by execution space.
 # This speeds up the build.
 
@@ -354,6 +363,17 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  applyDirichlet
+  SOURCES
+    applyDirichlet
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM serial mpi
+  NUM_MPI_PROCS 1-4
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_StaticImportExport
   SOURCES
     CrsMatrix_StaticImportExport
@@ -377,6 +397,16 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     CrsMatrix_createDeepCopy
   COMM serial mpi
   NUM_MPI_PROCS 1-4
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_UnpackMerge
+  SOURCES
+    UnpackMerge
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM mpi
+  NUM_MPI_PROCS 2
   STANDARD_PASS_OUTPUT
   )
 

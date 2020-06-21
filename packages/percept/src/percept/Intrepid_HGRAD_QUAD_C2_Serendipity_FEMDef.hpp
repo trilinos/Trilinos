@@ -1,8 +1,12 @@
-// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
-// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
-// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
-// in this software.
-//
+/*--------------------------------------------------------------------*/
+/*    Copyright 2002 - 2008, 2010, 2011 National Technology &         */
+/*    Engineering Solutions of Sandia, LLC (NTESS). Under the terms   */
+/*    of Contract DE-NA0003525 with NTESS, there is a                 */
+/*    non-exclusive license for use of this work by or on behalf      */
+/*    of the U.S. Government.  Export of this program may require     */
+/*    a license from the United States Government.                    */
+/*--------------------------------------------------------------------*/
+
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -13,9 +17,10 @@
 // ************************************************************************
 //
 //                           Intrepid Package
-//                 Copyright (2007) Sandia Corporation
+//         Copyright (2002-2008, 2010, 2011) National Technology & 
+//                 Engineering Solutions of Sandia, LLC.
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// Under terms of Contract DE-NA0003525, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
 //
 // This library is free software; you can redistribute it and/or modify

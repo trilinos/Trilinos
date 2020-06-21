@@ -66,12 +66,12 @@
 Class Amesos_Klu is an object-oriented wrapper for KLU. KLU, whose sources
 are distributed
 within Amesos, is a serial solver for sparse matrices. KLU will solve a
-linear system of equations: \f$A X = B\f$, where
+linear system of equations: \f$ A X = B\f$, where
 <TT>A</TT> is an Epetra_RowMatrix and <TT>X</TT> and <TT>B</TT> are
 Epetra_MultiVector objects.
 
-Amesos_Klu computes \f$A^T X = B\f$
-more efficiently than \f$>A X = B\f$.  The
+Amesos_Klu computes \f$ A^T X = B\f$
+more efficiently than \f$ >A X = B\f$.  The
 latter requires a matrix transpose -- which costs both time and space.
 
 KLU is Tim Davis' implementation of Gilbert-Peierl's left-looking
@@ -155,7 +155,7 @@ public:
   //! SetUseTranpose(true) is more efficient in Amesos_Klu
   /*!
     If SetUseTranspose() is set to true,
-    \f$A^T X = B\f$ is computed.
+    \f$ A^T X = B\f$ is computed.
   */
   int SetUseTranspose(bool UseTranspose_in) {UseTranspose_ = UseTranspose_in; return(0);};
 

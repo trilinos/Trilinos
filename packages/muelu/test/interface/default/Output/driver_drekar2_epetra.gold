@@ -21,10 +21,12 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 
-algorithm = "distance laplacian": threshold = 0.02, blocksize = 1
+algorithm = "distance laplacian" distance laplacian algorithm = "default": threshold = 0.02, blocksize = 1
 aggregation: drop tol = 0.02
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = distance laplacian
+aggregation: distance laplacian algo = default   [default]
+aggregation: classical algo = default   [default]
 lightweight wrap = 1
 
 Lumping dropped entries
@@ -47,11 +49,13 @@ aggregation: enable phase 1 = 1   [default]
 aggregation: enable phase 2a = 1   [default]
 aggregation: enable phase 2b = 1   [default]
 aggregation: enable phase 3 = 1   [default]
+aggregation: phase2a include root = 1   [default]
 aggregation: preserve Dirichlet points = 0   [default]
 aggregation: allow user-specified singletons = 0   [default]
 aggregation: use interface aggregation = 0   [default]
 aggregation: error on nodes with no on-rank neighbors = 0   [default]
 aggregation: phase3 avoid singletons = 0   [default]
+aggregation: compute aggregate qualities = 0   [default]
 OnePt aggregate map name =    [default]
 OnePt aggregate map factory =    [default]
 Interface aggregate map name =    [default]
@@ -67,6 +71,7 @@ Domain GID offsets = {0}   [default]
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+tentative: constant column sums = 0   [default]
 Nullspace name = Nullspace   [default]
 matrixmatrix: kernel params -> 
  [empty list]
@@ -103,6 +108,7 @@ matrixmatrix: kernel params ->
 
 Build (MueLu::RepartitionHeuristicFactory)
 repartition: start level = 1
+repartition: use map = 0   [default]
 repartition: node repartition level = -1   [default]
 repartition: min rows per proc = 2000
 repartition: target rows per proc = 0   [default]
@@ -162,10 +168,12 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 
-algorithm = "distance laplacian": threshold = 0.02, blocksize = 1
+algorithm = "distance laplacian" distance laplacian algorithm = "default": threshold = 0.02, blocksize = 1
 aggregation: drop tol = 0.02
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = distance laplacian
+aggregation: distance laplacian algo = default   [default]
+aggregation: classical algo = default   [default]
 lightweight wrap = 1
 
 Lumping dropped entries
@@ -188,11 +196,13 @@ aggregation: enable phase 1 = 1   [default]
 aggregation: enable phase 2a = 1   [default]
 aggregation: enable phase 2b = 1   [default]
 aggregation: enable phase 3 = 1   [default]
+aggregation: phase2a include root = 1   [default]
 aggregation: preserve Dirichlet points = 0   [default]
 aggregation: allow user-specified singletons = 0   [default]
 aggregation: use interface aggregation = 0   [default]
 aggregation: error on nodes with no on-rank neighbors = 0   [default]
 aggregation: phase3 avoid singletons = 0   [default]
+aggregation: compute aggregate qualities = 0   [default]
 OnePt aggregate map name =    [default]
 OnePt aggregate map factory =    [default]
 Interface aggregate map name =    [default]
@@ -208,6 +218,7 @@ Domain GID offsets = {0}   [default]
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+tentative: constant column sums = 0   [default]
 Nullspace name = Nullspace   [default]
 matrixmatrix: kernel params -> 
  [empty list]
@@ -244,6 +255,7 @@ matrixmatrix: kernel params ->
 
 Build (MueLu::RepartitionHeuristicFactory)
 repartition: start level = 1
+repartition: use map = 0   [default]
 repartition: node repartition level = -1   [default]
 repartition: min rows per proc = 2000
 repartition: target rows per proc = 0   [default]
@@ -303,10 +315,12 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 
-algorithm = "distance laplacian": threshold = 0.02, blocksize = 1
+algorithm = "distance laplacian" distance laplacian algorithm = "default": threshold = 0.02, blocksize = 1
 aggregation: drop tol = 0.02
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = distance laplacian
+aggregation: distance laplacian algo = default   [default]
+aggregation: classical algo = default   [default]
 lightweight wrap = 1
 
 Lumping dropped entries
@@ -329,11 +343,13 @@ aggregation: enable phase 1 = 1   [default]
 aggregation: enable phase 2a = 1   [default]
 aggregation: enable phase 2b = 1   [default]
 aggregation: enable phase 3 = 1   [default]
+aggregation: phase2a include root = 1   [default]
 aggregation: preserve Dirichlet points = 0   [default]
 aggregation: allow user-specified singletons = 0   [default]
 aggregation: use interface aggregation = 0   [default]
 aggregation: error on nodes with no on-rank neighbors = 0   [default]
 aggregation: phase3 avoid singletons = 0   [default]
+aggregation: compute aggregate qualities = 0   [default]
 OnePt aggregate map name =    [default]
 OnePt aggregate map factory =    [default]
 Interface aggregate map name =    [default]
@@ -349,6 +365,7 @@ Domain GID offsets = {0}   [default]
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+tentative: constant column sums = 0   [default]
 Nullspace name = Nullspace   [default]
 matrixmatrix: kernel params -> 
  [empty list]
@@ -385,6 +402,7 @@ matrixmatrix: kernel params ->
 
 Build (MueLu::RepartitionHeuristicFactory)
 repartition: start level = 1
+repartition: use map = 0   [default]
 repartition: node repartition level = -1   [default]
 repartition: min rows per proc = 2000
 repartition: target rows per proc = 0   [default]

@@ -52,6 +52,7 @@ public:
   TransferCopyByIdMpmdMeshAdapter(stk::ParallelMachine pm, const int num_fields);
   const void* field_data(const Mesh_ID & id, const unsigned field_index) const override;
   void* field_data(const Mesh_ID & id, const unsigned field_index) override;
+  std::string field_name(const unsigned field_index) const override;
   unsigned field_data_size(const Mesh_ID & id, const unsigned field_index) const override;
   unsigned num_fields() const override;
   ParallelMachine comm() const override;
@@ -61,6 +62,8 @@ public:
   void centroid(const Mesh_ID & id, double coords[3]) const override;
   std::string print_mesh_id(const Mesh_ID& id) const override;
   virtual ~TransferCopyByIdMpmdMeshAdapter() = default;
+  DataTypeKey::data_t get_field_type(const unsigned fieldIndex) const override;
+  
 private:
   stk::ParallelMachine m_comm;
   MeshIDVector m_empty_ids;

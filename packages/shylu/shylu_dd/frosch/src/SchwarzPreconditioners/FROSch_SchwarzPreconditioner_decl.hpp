@@ -55,6 +55,7 @@
 
 namespace FROSch {
 
+    using namespace std;
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -137,25 +138,27 @@ namespace FROSch {
         virtual void describe(FancyOStream &out,
                               const EVerbosityLevel verbLevel=Describable::verbLevel_default) const = 0;
 
-        virtual std::string description() const = 0;
+        virtual string description() const = 0;
 
         bool isInitialized() const;
 
         bool isComputed() const;
 
-
+        virtual void residual(const XMultiVector & X,
+                              const XMultiVector & B,
+                              XMultiVector& R) const;
     protected:
 
         CommPtr MpiComm_;
 
         ParameterListPtr ParameterList_;
 
-        bool UseTranspose_;
-        bool IsInitialized_;
-        bool IsComputed_;
-        bool Verbose_;
+        bool UseTranspose_ = false;
+        bool IsInitialized_ = false;
+        bool IsComputed_ = false;
+        bool Verbose_ = false;
 
-        ConstUN LevelID_;
+        ConstUN LevelID_ = 1;
     };
 
 }

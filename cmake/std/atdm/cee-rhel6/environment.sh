@@ -47,10 +47,6 @@ export ATDM_CONFIG_BUILD_COUNT=$ATDM_CONFIG_MAX_NUM_CORES_TO_USE
 
 module purge
 
-module load sparc-dev
-# NOTE: Above was reported needed by jhu on some CEE RHEL6 machine in order to
-# get NetCDF to load (#4662).
-
 # Warning options requested by Gemma team (which should hopefully also take
 # care of warnings required by the other ATDM APPs as well).  See #3178 and
 # #4221
@@ -62,8 +58,8 @@ if [[ "${ATDM_CONFIG_ENABLE_STRONG_WARNINGS}" == "" ]] ; then
   export ATDM_CONFIG_ENABLE_STRONG_WARNINGS=1
 fi
 
-if [[ "$ATDM_CONFIG_COMPILER" == "CLANG-5.0.1_OPENMPI-1.10.2" ]]; then
-  module load sparc-dev/clang-5.0.1_openmpi-1.10.2
+if  [[ "$ATDM_CONFIG_COMPILER" == "CLANG-9.0.1_OPENMPI-4.0.3" ]]; then
+  module load sparc-dev/clang-9.0.1_openmpi-4.0.3
   export OMPI_CXX=`which clang++`
   export OMPI_CC=`which clang`
   export OMPI_FC=`which gfortran`
@@ -75,8 +71,8 @@ if [[ "$ATDM_CONFIG_COMPILER" == "CLANG-5.0.1_OPENMPI-1.10.2" ]]; then
   fi
   export ATDM_CONFIG_MKL_ROOT=${CBLAS_ROOT}
 
-elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0_OPENMPI-1.10.2" ]] ; then
-  module load sparc-dev/gcc-7.2.0_openmpi-1.10.2
+elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0_OPENMPI-4.0.3" ]] ; then
+  module load sparc-dev/gcc-7.2.0_openmpi-4.0.3
   unset OMP_NUM_THREADS  # SPARC module sets these and we must unset!
   unset OMP_PROC_BIND
   unset OMP_PLACES
@@ -171,9 +167,9 @@ fi
 # modules change them!
 
 # Use updated Ninja and CMake
-module load atdm-env
-module load atdm-cmake/3.11.1
-module load atdm-ninja_fortran/1.7.2
+module load sems-env
+module load sems-cmake/3.12.2
+module load sems-ninja_fortran/1.8.2
 
 export ATDM_CONFIG_USE_HWLOC=OFF
 
@@ -217,7 +213,10 @@ atdm_config_add_libs_to_var ATDM_CONFIG_BOOST_LIBS ${BOOST_ROOT}/lib .a \
 
 export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
 
-export ATDM_CONFIG_NETCDF_LIBS="-L${BOOST_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${SEMS_PNETCDF_ROOT}/lib;-L${HDF5_ROOT}/lib;${BOOST_ROOT}/lib/libboost_program_options.a;${BOOST_ROOT}/lib/libboost_system.a;${NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl;-lcurl"
+if [[ "${PNETCDF_ROOT}" == "" ]] ; then
+  export PNETCDF_ROOT=${NETCDF_ROOT}
+fi
+export ATDM_CONFIG_NETCDF_LIBS="-L${NETCDF_ROOT}/lib;${NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${ATDM_CONFIG_HDF5_LIBS};-lcurl"
 
 # SuperLUDist
 if [[ "${ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS}" == "" ]] ; then

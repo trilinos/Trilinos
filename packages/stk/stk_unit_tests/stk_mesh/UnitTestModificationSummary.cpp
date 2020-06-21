@@ -76,6 +76,7 @@ TEST(ModificationSummary, testString)
         writer.track_change_ghosting(aura, changes , remove_receive);
 
         writer.write_summary(mod_count);
+        unlink("modification_cycle_P000_B000_C000000.txt");
     }
 }
 

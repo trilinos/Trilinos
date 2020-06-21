@@ -1,8 +1,0 @@
-ADD_SUBDIRECTORY(EasyParameterListInterpreter)
-ADD_SUBDIRECTORY(EasyParameterListInterpreter-heavy)
-# commented since extended xml interface does not support kokkos factories
-# ADD_SUBDIRECTORY(FactoryParameterListInterpreter)
-# ADD_SUBDIRECTORY(FactoryParameterListInterpreter-heavy)
-ADD_SUBDIRECTORY(MLParameterListInterpreter)
-ADD_SUBDIRECTORY(MLParameterListInterpreter2)
-ADD_SUBDIRECTORY(Output)

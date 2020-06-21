@@ -240,6 +240,15 @@ namespace Amesos2 {
                                               node_t> > distribution_map,
                                               EDistribution distribution) const;
 
+    template<typename KV>
+    void
+    get1dCopy_kokkos_view (KV& v,
+               size_t lda,
+               Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,
+                                              global_ordinal_t,
+                                              node_t> > distribution_map,
+                                              EDistribution distribution) const;
+
     /**
      * \brief Extracts a 1 dimensional view of this MultiVector's data
      *
@@ -271,6 +280,16 @@ namespace Amesos2 {
                                         global_ordinal_t,
                                         node_t> > source_map,
                                         EDistribution distribution );
+
+    template<typename KV>
+    void
+    put1dData_kokkos_view (KV& kokkos_new_data,
+               size_t lda,
+               Teuchos::Ptr< const Tpetra::Map<local_ordinal_t,
+                                        global_ordinal_t,
+                                        node_t> > source_map,
+                                        EDistribution distribution );
+
 
     //! Get a short description of this adapter class
     std::string description () const;

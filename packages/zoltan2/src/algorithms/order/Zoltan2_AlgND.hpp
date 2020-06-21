@@ -201,8 +201,6 @@ int AlgND<Adapter>::globalOrder(
 template <typename Adapter>
 int AlgND<Adapter>::localOrder(const RCP<LocalOrderingSolution<lno_t> > &solution_)
 {
-    typedef typename Adapter::lno_t lno_t;     // local ids
-
     mEnv->debug(DETAILED_STATUS, std::string("Entering AlgND"));
 
     //////////////////////////////////////////////////////////////////////
@@ -534,10 +532,8 @@ void AlgND<Adapter>::getBoundLayer(part_t levelIndx, const std::vector<part_t> &
 				   std::vector<lno_t> &bigraphCRSRowPtr, std::vector<lno_t> &bigraphCRSCols,
 				   std::vector<lno_t> &bigraphVMapS, std::vector<lno_t> &bigraphVMapT)
 {
-  typedef typename Adapter::lno_t lno_t;         // local ids
   typedef typename Adapter::offset_t offset_t;   // offset_t
-  typedef typename Adapter::scalar_t scalar_t;   // scalars
-  typedef StridedData<lno_t, scalar_t> input_t;
+  typedef StridedData<lno_t, typename Adapter::scalar_t> input_t;
 
   lno_t numVerts = mGraphModel->getLocalNumVertices();
 

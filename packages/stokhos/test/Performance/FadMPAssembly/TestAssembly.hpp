@@ -138,7 +138,7 @@ Perf fenl_assembly(
 
   //------------------------------------
 
-  const int print_flag = use_print && Kokkos::Impl::is_same< Kokkos::HostSpace , typename Device::memory_space >::value ;
+  const int print_flag = use_print && std::is_same< Kokkos::HostSpace , typename Device::memory_space >::value ;
 
   const int comm_rank = comm->getRank();
   const int comm_size = comm->getSize();
@@ -359,7 +359,7 @@ struct PerformanceDriverOp {
     ensemble_vector_type ensemble_residual;
     Kokkos::Example::FENL::DeviceConfig ensemble_dev_config = dev_config;
 #if defined( KOKKOS_ENABLE_CUDA )
-    const bool is_cuda = Kokkos::Impl::is_same<Device,Kokkos::Cuda>::value;
+    const bool is_cuda = std::is_same<Device,Kokkos::Cuda>::value;
 #else
     const bool is_cuda = false ;
 #endif

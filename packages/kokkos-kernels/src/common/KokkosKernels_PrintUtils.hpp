@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//               KokkosKernels 0.9: Linear Algebra and Graph Kernels
-//                 Copyright 2017 Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -46,6 +47,7 @@
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Atomic.hpp"
 #include "impl/Kokkos_Timer.hpp"
+#include <ostream>
 
 namespace KokkosKernels{
 
@@ -89,48 +91,74 @@ inline void kk_get_histogram(
   MyExecSpace().fence();
 }
 
+
+/**
+ * \brief Prints the given 1D view.
+ * \param os: Stream to print to. To print to stdout use std::cout, stderr, std::cerr, or a file use an ofstream object.
+ * \param view: input view to print.
+ * \param print_all: whether to print all elements or not. If it is false, print print_size/2 first and last elements.
+ * \param sep: Element separator. Default is a single space: " "
+ * \param print_size: Total elements to print if print_all is false print_size/2 first and last elements are pritned.
+ *                    This parameter is not used if print_all is set to true.
+ */
+template <typename idx_array_type>
+inline void kk_print_1Dview(std::ostream& os, idx_array_type view, bool print_all=false, const char* sep=" ", size_t print_size=40)
+{
+  typedef typename idx_array_type::HostMirror host_type;
+  typedef typename idx_array_type::size_type idx;
+  host_type host_view = Kokkos::create_mirror_view (view);
+  Kokkos::deep_copy (host_view, view);
+  idx nr = host_view.extent(0);
+  if (!print_all)
+  {
+    if (nr > print_size)
+    {
+      idx n = print_size / 2;
+      for (idx i = 0; i < n; ++i)
+      {
+        os << host_view(i) << sep;
+      }
+      os << "... ... ..." << sep;
+
+      for (idx i = nr-n; i < nr; ++i)
+      {
+        os << host_view(i) << sep;
+      }
+      os << std::endl;
+    }
+    else
+    {
+      for (idx i = 0; i < nr; ++i)
+      {
+        os << host_view(i) << sep;
+      }
+      os << std::endl;
+    }
+  }
+  else
+  {
+    for (idx i = 0; i < nr; ++i)
+    {
+      os << host_view(i) << sep;
+    }
+    os << std::endl;
+  }
+}
+
+
 /**
  * \brief Prints the given 1D view.
  * \param view: input view to print.
  * \param print_all: whether to print all elements or not. If it is false,
- * only first and last 10 elements are printed.
+ * only first and last 20 elements are printed.
+ * 
+ * This interface is provided for backwards compatiblity.
  */
 template <typename idx_array_type>
 inline void kk_print_1Dview(idx_array_type view, bool print_all = false, size_t print_size = 40){
 
-  typedef typename idx_array_type::HostMirror host_type;
-  typedef typename idx_array_type::size_type idx;
-  host_type host_view = Kokkos::create_mirror_view (view);
-  Kokkos::deep_copy (host_view , view);
-  idx nr = host_view.extent(0);
-  if (!print_all){
+  kk_print_1Dview(std::cout, view, print_all, " ", print_size);
 
-
-    if (nr > print_size){
-      idx n = print_size / 2;
-      for (idx i = 0; i < n; ++i){
-        std::cout << host_view(i) << " ";
-      }
-      std::cout << "... ... ... ";
-
-      for (idx i = nr-n; i < nr; ++i){
-        std::cout << host_view(i) << " ";
-      }
-      std::cout << std::endl;
-    }
-    else {
-      for (idx i = 0; i < nr; ++i){
-        std::cout << host_view(i) << " ";
-      }
-      std::cout << std::endl;
-    }
-  }
-  else {
-    for (idx i = 0; i < nr; ++i){
-      std::cout << host_view(i) << " ";
-    }
-    std::cout << std::endl;
-  }
 }
 
 }

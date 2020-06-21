@@ -55,6 +55,7 @@
 
 #include "Dimension.hpp"
 
+// Dummy evalauator for testing
 template<typename EvalT, typename Traits>
 class Constant : 
 #ifdef PHX_ENABLE_KOKKOS_AMT
@@ -84,6 +85,8 @@ private:
 
   PHX::MDField<ScalarT,Cell,Point> constant;
 
+  int num_points;
+  
   //! Not neede for problem, but included for some unit testing
   std::size_t dummy_workset_size;
 };

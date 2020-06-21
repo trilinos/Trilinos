@@ -105,7 +105,9 @@ int ML_Aggregate_Create( ML_Aggregate **ag )
    (*ag)->semicoarsen_levels         = -1;
    (*ag)->semicoarsen_coordinate     = 'z';
 /*cms*/
-   (*ag)->rowsum_threshold           = -1.0; /* defaults to off */
+   (*ag)->rowsum_threshold              = -1.0; /* defaults to off */
+   (*ag)->do_qr                         = 1;    /* defaults to on */
+   (*ag)->coarsen_partial_dirichlet_dofs= 1;    /* defaults to on */
 
 #if defined(AZTEC) && defined(ML_AGGR_READINFO)
    ML_Aggregate_AztecRead(*ag);
@@ -690,15 +692,26 @@ int ML_Aggregate_Set_RowSum_Threshold( ML_Aggregate *ag, double epsilon )
 }
 
 /* ------------------------------------------------------------------------- */
-
-int ML_Aggregate_Reset_RowSum_Threshold( ML_Aggregate *ag )
+int ML_Aggregate_Set_Do_QR(ML_Aggregate *ag, int flag )
 {
    if ( ag->ML_id != ML_ID_AGGRE )
    {
-      printf("ML_Aggregate_Reset_RowSum_Threshold : wrong object. \n");
+      printf("ML_Aggregate_Set_Do_QR : wrong object. \n");
       exit(-1);
    }
-   ag->rowsum_threshold = -1.0;
+   ag->do_qr = flag;
+   return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+int ML_Aggregate_Set_Coarsen_Partial_Dirichlet_Dofs(ML_Aggregate *ag, int flag )
+{
+   if ( ag->ML_id != ML_ID_AGGRE )
+   {
+      printf("ML_Aggregate_Set_Coarsen_Partial_Dirichlet_Dofs : wrong object. \n");
+      exit(-1);
+   }
+   ag->coarsen_partial_dirichlet_dofs = flag;
    return 0;
 }
 
@@ -2223,8 +2236,8 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
   double *new_null;
   int ml_gmin, ml_gmax, Nprocs_ToUse;
   double ml_gsum;
-  double *xcoord = NULL, *ycoord = NULL, *zcoord = NULL;
-  double *new_xcoord, *new_ycoord, *new_zcoord;
+  double *xcoord = NULL, *ycoord = NULL, *zcoord = NULL, *mcoord = NULL;
+  double *new_xcoord, *new_ycoord, *new_zcoord,*new_mcoord;
   int UseImplicitTranspose;
   ML_Partitioner which_partitioner;
   ML_Aggregate_Viz_Stats *grid_info;
@@ -2314,6 +2327,7 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
     xcoord = grid_info->x;
     ycoord = grid_info->y;
     zcoord = grid_info->z;
+    mcoord = grid_info->material;
     N_dimensions = grid_info->Ndim;
     if (N_dimensions < 1 || N_dimensions > 3) {
       N_dimensions = 0;
@@ -2413,6 +2427,20 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
                         perm->outvec_leng, new_zcoord);
       ML_free(grid_info->z);
       grid_info->z = new_zcoord;
+    }
+    if (mcoord != NULL) {
+      new_mcoord = (double *) ML_allocate(sizeof(double)*(N_dimensions)*
+                                        (perm->outvec_leng +1));
+
+      /* make sure coordinate is setup as a degree of freedom vector */
+      for (i=0; i < perm->invec_leng ; i++) {
+         tmp_coord[i] = mcoord[i/Amatrix->num_PDEs];
+      }
+
+      ML_Operator_Apply(perm, perm->invec_leng,
+            tmp_coord, perm->outvec_leng, new_mcoord);
+      ML_free(grid_info->material);
+      grid_info->material = new_mcoord;
     }
     ML_free(tmp_coord);
 

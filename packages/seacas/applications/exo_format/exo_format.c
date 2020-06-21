@@ -1,35 +1,9 @@
 /*
- * Copyright(C) 2016-2017 National Technology & Engineering Solutions of
- * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- * * Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *
- * * Redistributions in binary form must reproduce the above
- *   copyright notice, this list of conditions and the following
- *   disclaimer in the documentation and/or other materials provided
- *   with the distribution.
- *
- * * Neither the name of NTESS nor the names of its
- *   contributors may be used to endorse or promote products derived
- *   from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
+ * See packages/seacas/LICENSE for details
  */
 
 /*
@@ -61,13 +35,18 @@ char *filename;
 
 int main(int argc, char *argv[])
 {
-  int   c1, c2, c3, c4;
+  int   c1;
+  int   c2;
+  int   c3;
+  int   c4;
   FILE *fid;
 
-  int j, k;
+  size_t j;
+  size_t k;
 
   int   exoid;
-  int   CPU_word_size, IO_word_size;
+  int   CPU_word_size;
+  int   IO_word_size;
   float version;
   int   file_size;
   int   netcdf_based    = 0;
@@ -173,7 +152,7 @@ int main(int argc, char *argv[])
   else {
     fprintf(stderr, "\t\tFloating point data are stored as 64-bit doubles\n");
   }
-  max_name_length = ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
+  max_name_length = (int)ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
   fprintf(stderr, "\n\t\tMaximum name length is %d\n\n", max_name_length);
 
   if (file_size == 0) {
@@ -232,7 +211,7 @@ int main(int argc, char *argv[])
     printf("ex_close failed");
   }
 
-  version += 0.00005f;
+  version += 0.00005F;
   sprintf(cversion, "%4.2f", version);
 
   k = strlen(cversion);

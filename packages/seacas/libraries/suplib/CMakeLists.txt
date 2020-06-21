@@ -33,6 +33,7 @@ SET(SOURCES
   intstr.f
   lowstr.f
   numstr.f
+  numstr1.f
   ran1.f
   argparse.F
   cpyint.f
@@ -104,7 +105,6 @@ SET(SOURCES
   pltone.f
   wheneq.f
   addlog.c
-  convert.C
   )
 
 TRIBITS_ADD_LIBRARY(

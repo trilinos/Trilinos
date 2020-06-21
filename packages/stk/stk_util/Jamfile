@@ -154,6 +154,7 @@ exe stk_util_doc_test
     [ glob $(stk_util-root)/../stk_doc_tests/stk_util/*.cpp ]
     /sierra/stk_unit_test_utils//stk_unit_main
     /sierra/stk_unit_test_utils//comparisonUtils
+    stk_util_command_line
   : <tag>@sierra-exec-tag
     <include>$(stk_util-root)/../stk_doc_tests/stk_util
   ;
@@ -167,6 +168,7 @@ exe stk_util_utest
     [ glob $(stk_util-root)/../stk_unit_tests/stk_util/diag/*.cpp ]
     /sierra/stk_unit_test_utils//stk_unit_main
     /sierra/stk_unit_test_utils//comparisonUtils
+    stk_util_command_line
   : <tag>@sierra-exec-tag
     <include>$(stk_util-root)/../stk_unit_tests/stk_util
   ;
@@ -176,6 +178,7 @@ exe stk_util_parallel_utest
     [ glob $(stk_util-root)/../stk_unit_tests/stk_util/parallel/*.cpp ]
     /sierra/stk_unit_test_utils//stk_unit_main
     /sierra/stk_unit_test_utils//comparisonUtils
+    stk_util_command_line
   : <tag>@sierra-exec-tag
     <include>$(stk_util-root)/../stk_unit_tests/stk_util/parallel
   ;
@@ -241,7 +244,6 @@ lib stk_util_environment
     /mpi//mpi
     stk_util_util
     stk_util_parallel
-    /tpl/boost-program-options//boost_program_options
   :
     [ ifdevbuild
         # Any parameters within this 'ifdevbuild' block apply to development
@@ -310,8 +312,8 @@ lib stk_util_util
         [ glob $(stk_util-root)/stk_util/util/*.cpp ]
     ]
     /mpi//mpi
-    /tpl/boost-program-options//boost_program_options
     /tpl/trilinos//kokkoscore
+    /tpl/boost//boost_header_only_libs
   :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user

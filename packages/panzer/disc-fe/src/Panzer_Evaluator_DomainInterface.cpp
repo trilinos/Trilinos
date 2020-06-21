@@ -24,6 +24,8 @@ namespace panzer {
       return 0;
     else if (domain_ == VIRTUAL)
       return workset.numOwnedCells() + workset.numGhostCells();
+    else if (domain_ == EXTERNAL)
+      return workset.numOwnedCells();
     else {
       TEUCHOS_ASSERT(false);
     }
@@ -40,6 +42,8 @@ namespace panzer {
     else if (domain_ == REAL)
       return workset.numOwnedCells() + workset.numGhostCells();
     else if (domain_ == VIRTUAL)
+      return workset.num_cells;
+    else if(domain_ == EXTERNAL)
       return workset.num_cells;
     else {
       TEUCHOS_ASSERT(false);

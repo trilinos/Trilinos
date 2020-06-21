@@ -14,6 +14,9 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   TRIBITS_COPY_FILES_TO_BINARY_DIR(StructuredRegion_cp
     SOURCE_FILES
       amg_1dof.xml
+      amg_1dof_rebalance.xml
+      amg_3dof_rebalance.xml
+      coarse_smoother.xml
       structured_1dof.xml
       structured_1dof_3level.xml
       structured_1dof-complex.xml
@@ -23,6 +26,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
       compare_residual_history.py
       gold_files/Star2D_GS_4.log.gold
       gold_files/Brick3D_linear_4.log.gold
+      gold_files/Elasticity3D_linear_4.log.gold
     )
 
   ## These are some completion tests
@@ -57,11 +61,11 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     COMM serial mpi
     NUM_MPI_PROCS 4
     )
-    
+
   TRIBITS_ADD_TEST(
     StructuredRegionDriver
     NAME "Structured_Region_Star2D_CoarseSmoother_Tpetra"
-    ARGS "--linAlgebra=Tpetra --xml=structured_1dof.xml --matrixType=Star2D --nx=10 --ny=10 --smootherIts=2 --coarseSolverType=smoother"
+    ARGS "--linAlgebra=Tpetra --xml=structured_1dof.xml --matrixType=Star2D --nx=10 --ny=10 --smootherIts=2 --coarseSolverType=smoother --coarseSmootherXML=coarse_smoother.xml"
     COMM serial mpi
     NUM_MPI_PROCS 1
     )
@@ -69,7 +73,23 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   TRIBITS_ADD_TEST(
     StructuredRegionDriver
     NAME "Structured_Region_Star2D_CoarseSmoother_Tpetra"
-    ARGS "--linAlgebra=Tpetra --xml=structured_1dof.xml --matrixType=Star2D --nx=10 --ny=10 --smootherIts=2 --coarseSolverType=smoother"
+    ARGS "--linAlgebra=Tpetra --xml=structured_1dof.xml --matrixType=Star2D --nx=10 --ny=10 --smootherIts=2 --coarseSolverType=smoother --coarseSmootherXML=coarse_smoother.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 4
+    )
+
+  TRIBITS_ADD_TEST(
+    StructuredRegionDriver
+    NAME "Structured_Region_Star2D_Tpetra_Chebyshev"
+    ARGS "--linAlgebra=Tpetra --xml=structured_1dof.xml --matrixType=Star2D --nx=10 --ny=10 --smootherIts=2 --convergence-log=Star2D_Chebyshev_1.log --smootherType=Chebyshev --smootherChebyBoostFactor=1.2"
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    )
+
+  TRIBITS_ADD_TEST(
+    StructuredRegionDriver
+    NAME "Structured_Region_Star2D_Tpetra_Chebyshev"
+    ARGS "--linAlgebra=Tpetra --xml=structured_1dof.xml --matrixType=Star2D --nx=10 --ny=10 --smootherIts=2 --convergence-log=Star2D_Chebyshev_4.log --smootherType=Chebyshev --smootherChebyBoostFactor=1.2"
     COMM serial mpi
     NUM_MPI_PROCS 4
     )
@@ -78,6 +98,14 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     StructuredRegionDriver
     NAME "Structured_Region_Star2D_AMG_CoarseSolver_Tpetra"
     ARGS "--linAlgebra=Tpetra --xml=structured_1dof_3level.xml --matrixType=Star2D --nx=50 --ny=50 --smootherIts=2 --coarseSolverType=amg --coarseAmgXml=amg_1dof.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 4
+    )
+
+  TRIBITS_ADD_TEST(
+    StructuredRegionDriver
+    NAME "Structured_Region_Star2D_AMG_CoarseSolver_repartitioning_Tpetra"
+    ARGS "--linAlgebra=Tpetra --xml=structured_1dof_3level.xml --matrixType=Star2D --nx=50 --ny=50 --smootherIts=2 --coarseSolverType=amg --keep-coarse-coords --coarseAmgXml=amg_1dof_rebalance.xml"
     COMM serial mpi
     NUM_MPI_PROCS 4
     )
@@ -154,6 +182,14 @@ TRIBITS_ADD_TEST(
     NUM_MPI_PROCS 4
     )
 
+TRIBITS_ADD_TEST(
+    StructuredRegionDriver
+    NAME "Structured_Region_Linear_Elasticity3D_repartitioning_Tpetra"
+    ARGS "--linAlgebra=Tpetra --xml=structured_linear_3dof.xml --matrixType=Elasticity3D --nx=10 --ny=10 --nz=10 --smootherIts=2 --tol=1.0e-8  --coarseSolverType=amg --keep-coarse-coords --coarseAmgXml=amg_3dof_rebalance.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 4
+    )
+
   ## These are very few regression tests, that also compare residual convergence history
   ASSERT_DEFINED(PYTHONINTERP_FOUND)
   IF (PYTHONINTERP_FOUND)
@@ -188,6 +224,21 @@ TRIBITS_ADD_TEST(
 	  OVERALL_NUM_MPI_PROCS 4
 	  )
 
-  ENDIF()
+  TRIBITS_ADD_ADVANCED_TEST(
+	  Structured_Region_Linear_Elasticity3D_Tpetra_MPI_4_regression
+	  TEST_0
+	    EXEC StructuredRegionDriver
+ 	    ARGS --linAlgebra=Tpetra --xml=structured_linear_3dof.xml --matrixType=Elasticity3D --nx=10 --ny=10 --nz=10 --smootherIts=2 --convergence-log=Elasticity3D_linear_4.log
+		NUM_MPI_PROCS 4
+	  TEST_1
+	    CMND ${PYTHON_EXECUTABLE}
+	    ARGS compare_residual_history.py gold_files/Elasticity3D_linear_4.log.gold Elasticity3D_linear_4.log 1.0e-12
+	    STANDARD_PASS_OUTPUT
+	  FAIL_FAST
+	  COMM serial mpi
+	  OVERALL_NUM_MPI_PROCS 4
+	  )
+
+ENDIF()
 
 ENDIF()

@@ -141,8 +141,10 @@ public:
 
   /** Allocate communication buffers based upon
    *  sizing from the surrogate send buffer packing.
+   *  Returns true if the local processor is actually
+   *  sending or receiving.
    */
-  void allocate_buffers();
+  bool allocate_buffers();
 
   /** Allocate communication buffers based upon
    *  sizing from the surrogate send buffer packing, with user-specified
@@ -207,9 +209,11 @@ template<typename COMM, typename PACK_ALGORITHM>
 void pack_and_communicate(COMM & comm, const PACK_ALGORITHM & algorithm)
 {
     algorithm();
-    comm.allocate_buffers();
-    algorithm();
-    comm.communicate();
+    const bool actuallySendingOrReceiving = comm.allocate_buffers();
+    if (actuallySendingOrReceiving) {
+        algorithm();
+        comm.communicate();
+    }
 }
 
 template<typename COMM, typename UNPACK_ALGORITHM>

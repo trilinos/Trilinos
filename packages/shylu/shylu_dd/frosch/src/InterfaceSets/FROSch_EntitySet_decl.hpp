@@ -104,17 +104,21 @@ namespace FROSch {
 
         int findAncestorsInSet(EntitySetPtr entitySet);
 
+        EntitySetPtr findRoots();
+        
+        EntitySetPtr findLeafs();
+        
         int clearAncestors();
 
         int clearOffspring();
 
-        EntitySetPtr findCoarseNodes();
+        int clearRoots();
+        
+        int clearLeafs();
 
-        int clearCoarseNodes();
-
-        int computeDistancesToCoarseNodes(UN dimension,
-                                          ConstXMultiVectorPtr &nodeList = null,
-                                          DistanceFunction distanceFunction = ConstantDistanceFunction);
+        int computeDistancesToRoots(UN dimension,
+                                    ConstXMultiVectorPtr &nodeList = null,
+                                    DistanceFunction distanceFunction = ConstantDistanceFunction);
 
         int divideUnconnectedEntities(ConstXMatrixPtr matrix,
                                       int pID);
@@ -151,7 +155,9 @@ namespace FROSch {
 
         int setUniqueIDToFirstGlobalNodeID();
 
-        int setCoarseNodeID();
+        int setRootID();
+        
+        int setLeafID();
 
         int resetEntityType(EntityType type);
 
@@ -179,11 +185,11 @@ namespace FROSch {
         // Variables //
         ///////////////
 
-        EntityType Type_;
+        EntityType Type_ = DefaultType;
 
-        InterfaceEntityPtrVec EntityVector_;
+        InterfaceEntityPtrVec EntityVector_ = InterfaceEntityPtrVec(0);
 
-        bool EntityMapIsUpToDate_;
+        bool EntityMapIsUpToDate_ = false;
 
         XMapPtr EntityMap_;
     };

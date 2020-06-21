@@ -60,7 +60,7 @@ using Teuchos::Ordinal;
 double relCpuSpeed = 1e-2;
 int maxArraySize = 10000;
 double maxArrayBracketRatio =100.0;
-double maxArrayIterRatio = 100.0;
+double maxArrayIterRatio = 200.0;
 double maxArrayRCPSelfIterRatio =200.0;
 
 const int minArraySize = 100;

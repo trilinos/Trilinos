@@ -125,20 +125,26 @@ namespace Intrepid2 {
       // Function space
       //      
       {
-        const std::string cellBasisName(cellBasis.getName());
-        if (cellBasisName.find("HCURL") != std::string::npos) {
-          const std::string subcellBasisName(subcellBasis.getName());
+        const bool cellBasisIsHCURL = cellBasis.getFunctionSpace() == FUNCTION_SPACE_HCURL;
+        if (cellBasisIsHCURL) {
+          const bool subcellBasisIsHGRAD = subcellBasis.getFunctionSpace() == FUNCTION_SPACE_HGRAD;
+          const bool subcellBasisIsHVOL  = subcellBasis.getFunctionSpace() == FUNCTION_SPACE_HVOL;
+          const bool subcellBasisIsHCURL = subcellBasis.getFunctionSpace() == FUNCTION_SPACE_HCURL;
+          const bool cellIsTri  = cellBaseKey == shards::Triangle<>::key;
+          const bool cellIsTet  = cellBaseKey == shards::Tetrahedron<>::key;
+          const bool cellIsHex  = cellBaseKey == shards::Hexahedron<>::key;
+          const bool cellIsQuad = cellBaseKey == shards::Quadrilateral<>::key;
           // edge hcurl is hgrad with gauss legendre points
           switch (subcellDim) {
           case 1: {
             //TODO: Hex, QUAD, TET and TRI element should have the same 1d basis
-            if ((cellBasisName.find("HEX") != std::string::npos) || (cellBasisName.find("QUAD") != std::string::npos)) {
-              INTREPID2_TEST_FOR_EXCEPTION( subcellBasisName.find("HGRAD") == std::string::npos,
+            if (cellIsHex || cellIsQuad) {
+              INTREPID2_TEST_FOR_EXCEPTION( !subcellBasisIsHGRAD,
                                           std::logic_error,
                                           ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HCURL): " 
                                           "subcellBasis function space (1d) is not consistent to cellBasis.");
-            } else if ((cellBasisName.find("TET") != std::string::npos) || (cellBasisName.find("TRI") != std::string::npos)) {
-              INTREPID2_TEST_FOR_EXCEPTION( subcellBasisName.find("HVOL") == std::string::npos,
+            } else if (cellIsTet || cellIsTri) {
+              INTREPID2_TEST_FOR_EXCEPTION( !subcellBasisIsHVOL,
                                           std::logic_error,
                                           ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HCURL): " 
                                           "subcellBasis function space (1d) is not consistent to cellBasis.");
@@ -146,7 +152,7 @@ namespace Intrepid2 {
             break;
           }
           case 2: {
-            INTREPID2_TEST_FOR_EXCEPTION( subcellBasisName.find("HCURL") == std::string::npos,
+            INTREPID2_TEST_FOR_EXCEPTION( !subcellBasisIsHCURL,
                                           std::logic_error,
                                           ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HCURL): " 
                                           "subcellBasis function space (2d) is not consistent to cellBasis.");

@@ -2,6 +2,7 @@
 #define SHYLUBASKER_DECL_HPP
 
 //Basker Includes
+#include "ShyLU_NodeBasker_config.h"
 #include "shylubasker_matrix_decl.hpp"
 #include "shylubasker_matrix_view_decl.hpp"
 #include "shylubasker_stats.hpp"
@@ -12,7 +13,7 @@
 
 //Kokkos Includes
 #ifdef BASKER_KOKKOS
-#include <Kokkos_Core.hpp>
+#include "Kokkos_Core.hpp"
 #else
 #include <omp.h>
 #endif

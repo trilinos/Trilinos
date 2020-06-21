@@ -93,25 +93,15 @@
 #include <stdexcept>
 #include <iostream>
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Piro::RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::RythmosSolver() :
-#else
 template <typename Scalar>
 Piro::RythmosSolver<Scalar>::RythmosSolver() :
-#endif
   out(Teuchos::VerboseObjectBase::getDefaultOStream()),
   isInitialized(false)
 {
 }
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Piro::RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::RythmosSolver(
-#else
 template <typename Scalar>
 Piro::RythmosSolver<Scalar>::RythmosSolver(
-#endif
     const Teuchos::RCP<Teuchos::ParameterList> &appParams,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &in_model,
     const Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > &observer) :
@@ -132,13 +122,8 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(
     initialize(appParams, in_model, observer);
 }
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-void Piro::RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::initialize(
-#else
 template <typename Scalar>
 void Piro::RythmosSolver<Scalar>::initialize(
-#endif
     const Teuchos::RCP<Teuchos::ParameterList> &appParams,
     const Teuchos::RCP< Thyra::ModelEvaluator<Scalar> > &in_model,
     const Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > &observer)
@@ -361,19 +346,11 @@ void Piro::RythmosSolver<Scalar>::initialize(
 
 #ifdef HAVE_PIRO_IFPACK2
      typedef Thyra::PreconditionerFactoryBase<double> Base;
-#ifdef ALBANY_BUILD
-     typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<double, LocalOrdinal, GlobalOrdinal, Node> > Impl;
-#else
      typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<double> > Impl;
-#endif
      linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
 #endif
 #ifdef HAVE_PIRO_MUELU
-#ifdef ALBANY_BUILD
-     Stratimikos::enableMueLu<LocalOrdinal, GlobalOrdinal, Node>(linearSolverBuilder);
-#else
      Stratimikos::enableMueLu(linearSolverBuilder);
-#endif
 #endif
 
      linearSolverBuilder.setParameterList(sublist(rythmosSolverPL, "Stratimikos", true));
@@ -399,11 +376,7 @@ void Piro::RythmosSolver<Scalar>::initialize(
       else {
         Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model;
         rythmosSolverPL->get("Lump Mass Matrix", false);  //JF line does not do anything
-#ifdef ALBANY_BUILD
-        model = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>(
-#else
         model = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar>(
-#endif
               sublist(rythmosSolverPL,"Stratimikos", true), origModel,
               true,rythmosSolverPL->get("Lump Mass Matrix", false),false));
       }
@@ -452,13 +425,8 @@ else {
   isInitialized = true;
 }
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Piro::RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::RythmosSolver(
-#else
 template <typename Scalar>
 Piro::RythmosSolver<Scalar>::RythmosSolver(
-#endif
     const Teuchos::RCP<Rythmos::DefaultIntegrator<Scalar> > &stateIntegrator,
     const Teuchos::RCP<Rythmos::StepperBase<Scalar> > &stateStepper,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &timeStepSolver,
@@ -484,13 +452,8 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(
   }
 }
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Piro::RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::RythmosSolver(
-#else
 template <typename Scalar>
 Piro::RythmosSolver<Scalar>::RythmosSolver(
-#endif
     const Teuchos::RCP<Rythmos::DefaultIntegrator<Scalar> > &stateIntegrator,
     const Teuchos::RCP<Rythmos::StepperBase<Scalar> > &stateStepper,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &timeStepSolver,
@@ -517,42 +480,24 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(
   }
 }
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Teuchos::RCP<const Rythmos::IntegratorBase<Scalar> >
-Piro::RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getRythmosIntegrator() const
-#else
 template <typename Scalar>
 Teuchos::RCP<const Rythmos::IntegratorBase<Scalar> >
 Piro::RythmosSolver<Scalar>::getRythmosIntegrator() const
-#endif
 {
   return fwdStateIntegrator;
 }
 
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Teuchos::RCP<const Thyra::NonlinearSolverBase<Scalar> >
-Piro::RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getTimeStepSolver() const
-#else
 template <typename Scalar>
 Teuchos::RCP<const Thyra::NonlinearSolverBase<Scalar> >
 Piro::RythmosSolver<Scalar>::getTimeStepSolver() const
-#endif
 {
   return fwdTimeStepSolver;
 }
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-Piro::RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::get_p_space(int l) const
-#else
 template<typename Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 Piro::RythmosSolver<Scalar>::get_p_space(int l) const
-#endif
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
       l >= num_p || l < 0,
@@ -565,15 +510,9 @@ Piro::RythmosSolver<Scalar>::get_p_space(int l) const
   return model->get_p_space(l);
 }
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-Piro::RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::get_g_space(int j) const
-#else
 template<typename Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 Piro::RythmosSolver<Scalar>::get_g_space(int j) const
-#endif
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
       j > num_g || j < 0,
@@ -591,15 +530,9 @@ Piro::RythmosSolver<Scalar>::get_g_space(int j) const
   }
 }
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Thyra::ModelEvaluatorBase::InArgs<Scalar>
-Piro::RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getNominalValues() const
-#else
 template<typename Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
 Piro::RythmosSolver<Scalar>::getNominalValues() const
-#endif
 {
   Thyra::ModelEvaluatorBase::InArgs<Scalar> result = this->createInArgs();
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> modelNominalValues = model->getNominalValues();
@@ -609,15 +542,9 @@ Piro::RythmosSolver<Scalar>::getNominalValues() const
   return result;
 }
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Thyra::ModelEvaluatorBase::InArgs<Scalar>
-Piro::RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createInArgs() const
-#else
 template <typename Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
 Piro::RythmosSolver<Scalar>::createInArgs() const
-#endif
 {
   Thyra::ModelEvaluatorBase::InArgsSetup<Scalar> inArgs;
   inArgs.setModelEvalDescription(this->description());
@@ -625,15 +552,9 @@ Piro::RythmosSolver<Scalar>::createInArgs() const
   return inArgs;
 }
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Thyra::ModelEvaluatorBase::OutArgs<Scalar>
-Piro::RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createOutArgsImpl() const
-#else
 template <typename Scalar>
 Thyra::ModelEvaluatorBase::OutArgs<Scalar>
 Piro::RythmosSolver<Scalar>::createOutArgsImpl() const
-#endif
 {
   Thyra::ModelEvaluatorBase::OutArgsSetup<Scalar> outArgs;
   outArgs.setModelEvalDescription(this->description());
@@ -703,13 +624,8 @@ Piro::RythmosSolver<Scalar>::createOutArgsImpl() const
   return outArgs;
 }
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-void Piro::RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::evalModelImpl(
-#else
 template <typename Scalar>
 void Piro::RythmosSolver<Scalar>::evalModelImpl(
-#endif
     const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
     const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const
 {
@@ -1027,15 +943,9 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
   }
 }
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
-Piro::RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::create_DgDp_op_impl(int j, int l) const
-#else
 template <typename Scalar>
 Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
 Piro::RythmosSolver<Scalar>::create_DgDp_op_impl(int j, int l) const
-#endif
 {
   TEUCHOS_ASSERT(j != num_g);
   const Teuchos::Array<Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > > dummy =
@@ -1043,15 +953,9 @@ Piro::RythmosSolver<Scalar>::create_DgDp_op_impl(int j, int l) const
   return Teuchos::rcp(new Thyra::DefaultAddedLinearOp<Scalar>(dummy));
 }
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Teuchos::RCP<const Teuchos::ParameterList>
-Piro::RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getValidRythmosParameters() const
-#else
 template <typename Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 Piro::RythmosSolver<Scalar>::getValidRythmosParameters() const
-#endif
 {
   Teuchos::RCP<Teuchos::ParameterList> validPL =
      Teuchos::rcp(new Teuchos::ParameterList("ValidRythmosParams"));
@@ -1091,15 +995,9 @@ Piro::RythmosSolver<Scalar>::getValidRythmosParameters() const
   return validPL;
 }
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Teuchos::RCP<const Teuchos::ParameterList>
-Piro::RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getValidRythmosSolverParameters() const
-#else
 template <typename Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 Piro::RythmosSolver<Scalar>::getValidRythmosSolverParameters() const
-#endif
 {
   Teuchos::RCP<Teuchos::ParameterList> validPL =
     Teuchos::rcp(new Teuchos::ParameterList("ValidRythmosSolverParams"));;
@@ -1112,38 +1010,23 @@ Piro::RythmosSolver<Scalar>::getValidRythmosSolverParameters() const
   return validPL;
 }
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-void Piro::RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-#else
 template <typename Scalar>
 void Piro::RythmosSolver<Scalar>::
-#endif
 addStepperFactory(const std::string & stepperName,const Teuchos::RCP<Piro::RythmosStepperFactory<Scalar> > & factory)
 {
   stepperFactories[stepperName] = factory;
 }
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-void Piro::RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-#else
 template <typename Scalar>
 void Piro::RythmosSolver<Scalar>::
-#endif
 addStepControlFactory(const std::string & stepControlName,
                       const Teuchos::RCP<Piro::RythmosStepControlFactory<Scalar>> & step_control_strategy)
 {
   stepControlFactories[stepControlName] = step_control_strategy;
 }
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Teuchos::RCP<Piro::RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-#else
 template <typename Scalar>
 Teuchos::RCP<Piro::RythmosSolver<Scalar> >
-#endif
 Piro::rythmosSolver(
     const Teuchos::RCP<Teuchos::ParameterList> &appParams,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &in_model,
@@ -1155,11 +1038,7 @@ Piro::rythmosSolver(
         new ObserverToRythmosIntegrationObserverAdapter<Scalar>(piroObserver));
   }
 
-#ifdef ALBANY_BUILD
-  return Teuchos::rcp(new RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>(appParams, in_model, observer));
-#else
   return Teuchos::rcp(new RythmosSolver<Scalar>(appParams, in_model, observer));
-#endif
 
 }
 

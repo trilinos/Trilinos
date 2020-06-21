@@ -103,7 +103,7 @@ namespace Anasazi {
     All concepts of orthogonality discussed in this class are defined with respect to this inner product.
 
     \note This is potentially different from MultiVecTraits::MvTransMv(). For example, it is customary in many
-    eigensolvers to exploit a mass matrix \c M for the inner product: \f$x^HMx\f$. 
+    eigensolvers to exploit a mass matrix \c M for the inner product: \f$ x^HMx\f$. 
 
     @param Z [out] <tt>Z(i,j)</tt> contains the inner product of <tt>X[i]</tt> and <tt>Y[i]</tt>:
     \f[
@@ -178,7 +178,7 @@ namespace Anasazi {
 
 
     /*! \brief This method takes a multivector \c X and attempts to compute a basis 
-     * for \f$colspan(X)\f$. This basis is orthonormal with respect to innerProd().
+     * for \f$ colspan(X)\f$. This basis is orthonormal with respect to innerProd().
      *
      * This routine returns an integer \c rank stating the rank of the computed
      * basis. If \c X does not have full rank and the normalize() routine does
@@ -222,10 +222,10 @@ namespace Anasazi {
         Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B = Teuchos::null) const = 0;
 
 
-    /*! \brief Given a set of bases <tt>Q[i]</tt> and a multivector \c X, this method computes an orthonormal basis for \f$colspan(X) - \sum_i colspan(Q[i])\f$.
+    /*! \brief Given a set of bases <tt>Q[i]</tt> and a multivector \c X, this method computes an orthonormal basis for \f$ colspan(X) - \sum_i colspan(Q[i])\f$.
      *    
      *  This routine returns an integer \c rank stating the rank of the
-     *  computed basis. If the subspace \f$colspan(X) - \sum_i colspan(Q[i])\f$
+     *  computed basis. If the subspace \f$ colspan(X) - \sum_i colspan(Q[i])\f$
      *  does not have dimension as large as the number of columns of \c X and
      *  the orthogonalization manager does not attempt to augment the subspace,
      *  then \c rank may be smaller than the number of columns of \c X. In this

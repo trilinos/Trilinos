@@ -72,7 +72,7 @@ SET( CTEST_PARALLEL_LEVEL "4" )
 SET(Trilinos_ENABLE_SECONDARY_TESTED_CODE ON)
 
 #disabling Mesquite because of a build error when shared libs is turned on.
-SET(EXTRA_EXCLUDE_PACKAGES Mesquite STK Claps PyTrilinos)
+SET(EXTRA_EXCLUDE_PACKAGES STK PyTrilinos)
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"

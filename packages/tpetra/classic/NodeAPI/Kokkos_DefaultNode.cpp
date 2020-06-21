@@ -43,12 +43,5 @@
 
 namespace KokkosClassic {
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-Teuchos::RCP<DefaultNode::DefaultNodeType>
-DefaultNode::getDefaultNode()
-{
-  return Teuchos::rcp (new DefaultNode::DefaultNodeType);
-}
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 } // namespace KokkosClassic

@@ -340,8 +340,7 @@ class Amesos_BaseSolver
       the new value of UseTranspose. </li>
       </ul>
 
-    \param
-	   UseTranspose -- (In) If true, solve A<SUP>T</SUP> X = B, otherwise
+    \param UseTranspose -- (In) If true, solve A<SUP>T</SUP> X = B, otherwise
 	   solve A X = B.  
 
     \return Integer error code, set to 0 if successful.  Set to -1 if

@@ -80,16 +80,16 @@ namespace LOCA {
      *      f(x,y) = 0
      *      g(x,y) = 0
      * \f]
-     * where \f$f(x,y)\f$ is represented by a concrete implementation of
-     * a LOCA::MultiContinuation::AbstractGroup and \f$g(x,y)\f$ (the
+     * where \f$ f(x,y)\f$ is represented by a concrete implementation of
+     * a LOCA::MultiContinuation::AbstractGroup and \f$ g(x,y)\f$ (the
      * constraint) is represented by an implementation of this class.  Here
-     * it is assumed the resulting system is square, i.e., \f$x\in\Re^n\f$,
-     * \f$y\in\Re^m\f$, \f$f(x,y)\in\Re^n\f$ and \f$g(x,y)\in\Re^m\f$.
+     * it is assumed the resulting system is square, i.e., \f$ x\in\Re^n\f$,
+     * \f$ y\in\Re^m\f$, \f$ f(x,y)\in\Re^n\f$ and \f$ g(x,y)\in\Re^m\f$.
      *
-     * This class provides an interface to evaluate \f$g(x,y)\f$, compute
-     * the derivatives \f$g_x\f$ and \f$g_y\f$, and apply the derivative
-     * \f$g_x\f$ to arbitrary multi-vectors (the implementation is never
-     * required to explicitly store \f$g_x\f$ which is impractical in
+     * This class provides an interface to evaluate \f$ g(x,y)\f$, compute
+     * the derivatives \f$ g_x\f$ and \f$ g_y\f$, and apply the derivative
+     * \f$ g_x\f$ to arbitrary multi-vectors (the implementation is never
+     * required to explicitly store \f$ g_x\f$ which is impractical in
      * many situations).
      */
     class ConstraintInterface {
@@ -134,8 +134,8 @@ namespace LOCA {
       //! Compute derivative of constraints w.r.t. supplied parameters.
       /*!
        * The first column of \c dgdp should be filled with the constraint
-       * residuals \f$g\f$ if \c isValidG is \c false.  If \c isValidG is
-       * \c true, then the \c dgdp contains \f$g\f$ on input.
+       * residuals \f$ g\f$ if \c isValidG is \c false.  If \c isValidG is
+       * \c true, then the \c dgdp contains \f$ g\f$ on input.
        */
       virtual NOX::Abstract::Group::ReturnType
       computeDP(const std::vector<int>& paramIDs,

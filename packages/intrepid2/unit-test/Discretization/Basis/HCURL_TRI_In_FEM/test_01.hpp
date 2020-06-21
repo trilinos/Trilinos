@@ -73,7 +73,7 @@ namespace Test {
       ++nthrow;                                                         \
       S ;                                                               \
     }                                                                   \
-    catch (std::exception err) {                                        \
+    catch (std::exception &err) {                                        \
       ++ncatch;                                                         \
       *outStream << "Expected Error ----------------------------------------------------------------\n"; \
       *outStream << err.what() << '\n';                                 \
@@ -184,7 +184,7 @@ int HCURL_TRI_In_FEM_Test01(const bool verbose) {
 
       }
     }
-  } catch (std::exception err) {
+  } catch (std::exception &err) {
     *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
     *outStream << err.what() << '\n';
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -255,7 +255,7 @@ int HCURL_TRI_In_FEM_Test01(const bool verbose) {
       }
     }
 
-  } catch (std::exception err) {
+  } catch (std::exception &err) {
     *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
     *outStream << err.what() << '\n';
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -324,7 +324,7 @@ int HCURL_TRI_In_FEM_Test01(const bool verbose) {
       }
     }
 
-  } catch (std::exception err) {
+  } catch (std::exception &err) {
     *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
     *outStream << err.what() << '\n';
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -436,7 +436,7 @@ int HCURL_TRI_In_FEM_Test01(const bool verbose) {
       }
     }
 
-  } catch (std::exception err) {
+  } catch (std::exception &err) {
     *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
     *outStream << err.what() << '\n';
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -544,7 +544,7 @@ int HCURL_TRI_In_FEM_Test01(const bool verbose) {
       }
     }
     }
-  } catch (std::exception err) {
+  } catch (std::exception &err) {
     *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
     *outStream << err.what() << '\n';
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -576,7 +576,7 @@ int HCURL_TRI_In_FEM_Test01(const bool verbose) {
       }
       errorFlag++;
     }
-  } catch (std::logic_error err){
+  } catch (std::logic_error &err){
     *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
     *outStream << err.what() << '\n';
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";

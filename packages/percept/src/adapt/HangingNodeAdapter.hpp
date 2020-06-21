@@ -11,13 +11,13 @@
 
 #include <functional>
 #include <cmath>
+#include <unordered_set>
 
 #include <adapt/PredicateBasedElementAdapter.hpp>
 #include <percept/SetOfEntities.hpp>
+#include <stk_mesh/base/HashEntityAndEntityKey.hpp>
 
 #include <percept/pooled_alloc.h>
-#include <boost/scoped_ptr.hpp>
-#include <boost/pool/pool_alloc.hpp>
 
 #include <stk_mesh/base/FieldParallel.hpp>
 
@@ -28,42 +28,14 @@
 
   namespace percept {
 
-    // this is the expected number of elements that are node neighbors of any element
-    enum { HNA_POOL_SIZE = 100 };
-
-#define USE_HNA_USET 1
-#define USE_BOOST_POOL_ALLOC 1
-
-    template<typename Value, typename Less = std::less<Value> >
+    template<typename Value, typename Less = std::less<Value>, typename Allocator = std::allocator<Value> >
     struct PooledStdSet
     {
-#if USE_BOOST_POOL_ALLOC
-      typedef std::set<Value, Less,
-                       boost::fast_pool_allocator<Value, boost::default_user_allocator_new_delete,
-                                                  boost::details::pool::null_mutex,
-                                                  HNA_POOL_SIZE
-                                                  >
-                       > Type;
-#else
-      typedef std::set<Value, Less, PooledAllocator<Value> > Type;
-#endif
+      typedef std::set<Value, Less, Allocator> Type;
       typedef Less less;
-
     };
 
-    //typedef boost::unordered_set<stk::mesh::Entity> LocalSetType;
-    //typedef std::set<stk::mesh::Entity, less<stk::mesh::Entity> , percept::pool_allocator<stk::mesh::Entity> > LocalSetType;
-
-#if USE_HNA_USET
     typedef SetOfEntities LocalSetType;
-#else
-    typedef PooledStdSet<stk::mesh::Entity >::Type LocalSetType;
-    typedef PooledStdSet<stk::mesh::Entity > LocalSet;
-#endif
-
-    //typedef PooledUSet<stk::mesh::Entity >::Type LocalSetType;
-    //typedef PooledUSet<stk::mesh::Entity > LocalSet;
-    //typedef boost::unordered_set<stk::mesh::Entity> LocalSetType;
 
     class HangingNodeAdapterBase
     {
@@ -267,10 +239,6 @@
         SelectIfRefined sir(*this);
         HNRefinerSelector<SelectIfRefined> ters(*this, sir);
 
-#if !USE_BOOST_POOL_ALLOC
-        Pool pool( sizeof(stk::mesh::Entity), HNA_POOL_SIZE );
-#endif
-
         stk::mesh::Selector on_locally_owned_part =  ( m_pMesh.get_fem_meta_data()->locally_owned_part() );
         const stk::mesh::BucketVector & buckets = m_pMesh.get_bulk_data()->buckets( m_pMesh.element_rank() );
 
@@ -330,12 +298,8 @@
                     int *refine_field_elem = stk::mesh::field_data( *refine_field , element );
                     if (refine_field_elem[0] <= 0)
                       {
-#if USE_BOOST_POOL_ALLOC
                         LocalSetType selected_neighbors;
-#else
-                        pool.Reset();
-                        LocalSetType selected_neighbors(LocalSet::less(), &pool);
-#endif
+
                         get_node_neighbors(element, selected_neighbors);
 
                         for (LocalSetType::iterator neighbor = selected_neighbors.begin();
@@ -482,9 +446,6 @@
         SelectIfUnrefined sir;
         HNRefinerSelector<SelectIfUnrefined> ters(*this, sir);
 
-#if !USE_BOOST_POOL_ALLOC
-        Pool pool( sizeof(stk::mesh::Entity), HNA_POOL_SIZE );
-#endif
         stk::mesh::Selector on_locally_owned_part =  ( m_pMesh.get_fem_meta_data()->locally_owned_part() );
         const stk::mesh::BucketVector & buckets = m_pMesh.get_bulk_data()->buckets( m_pMesh.element_rank() );
         for ( stk::mesh::BucketVector::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
@@ -508,12 +469,8 @@
                     int *refine_field_elem = stk::mesh::field_data( *refine_field , element );
                     if (refine_field_elem[0] < 0)
                       {
-#if USE_BOOST_POOL_ALLOC
                         LocalSetType selected_neighbors;
-#else
-                        pool.Reset();
-                        LocalSetType selected_neighbors(LocalSet::less(), &pool);
-#endif
+
                         get_node_neighbors(element, selected_neighbors);
 
                         for (LocalSetType::iterator neighbor = selected_neighbors.begin();
@@ -639,8 +596,8 @@
       class HNRefinerSelector : public RefinerSelector {
         HangingNodeAdapter& m_hna;
         LocalSelector& m_localSelector;
-        boost::unordered_set<stk::mesh::Entity> m_elements;
-        boost::unordered_set<stk::mesh::Entity> m_nodes;
+        std::unordered_set<stk::mesh::Entity,std::hash<stk::mesh::Entity>> m_elements;
+        std::unordered_set<stk::mesh::Entity,std::hash<stk::mesh::Entity>> m_nodes;
         typedef HangingNodeAdapter<RefinePredicate> Base;
 
       public:

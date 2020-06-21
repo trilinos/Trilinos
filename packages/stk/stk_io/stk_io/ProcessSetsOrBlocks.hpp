@@ -213,7 +213,7 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::MetaData &meta);
 template <typename INT>
 void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
 {
-  const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
+  const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
 
   stk::mesh::EntityVector elems;
   stk::mesh::Permutation perm = stk::mesh::Permutation::INVALID_PERMUTATION;
@@ -266,6 +266,7 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
   }
 }
 
+void process_nodesets_without_distribution_factors(Ioss::Region &region, stk::mesh::MetaData &meta);
 void process_nodesets(Ioss::Region &region, stk::mesh::MetaData &meta);
 template <typename INT>
 void process_nodesets(Ioss::Region &region, stk::mesh::BulkData &bulk)
@@ -273,7 +274,7 @@ void process_nodesets(Ioss::Region &region, stk::mesh::BulkData &bulk)
     // Should only process nodes that have already been defined via the element
     // blocks connectivity lists.
     const Ioss::NodeSetContainer& node_sets = region.get_nodesets();
-    const stk::mesh::MetaData &meta = stk::mesh::MetaData::get(bulk);
+    const stk::mesh::MetaData &meta = bulk.mesh_meta_data();
 
     for(Ioss::NodeSetContainer::const_iterator it = node_sets.begin();
             it != node_sets.end(); ++it) {

@@ -1,34 +1,8 @@
-// Copyright(C) 2019 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//
-//     * Neither the name of NTESS nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+// See packages/seacas/LICENSE for details
 
 // Make asserts active even in non-debug build
 #undef NDEBUG
@@ -147,7 +121,7 @@ namespace {
       }
       else {
         fmt::print(stderr, "\nERROR: Filename missing.\n");
-        options_.usage(std::cerr);
+        options_.usage(std::cout);
         return false;
       }
 
@@ -448,10 +422,10 @@ namespace {
     fmt::print("\n");
   }
   void describe_decomposition(std::vector<Iocgns::StructuredZoneData *> &zones,
-                              size_t orig_zone_count, const Interface &interface)
+                              size_t orig_zone_count, const Interface &interFace)
   {
-    size_t proc_count = interface.proc_count;
-    bool   verbose    = interface.verbose;
+    size_t proc_count = interFace.proc_count;
+    bool   verbose    = interFace.verbose;
 
     // ========================================================================
     // Output information about decomposition...
@@ -491,7 +465,7 @@ namespace {
       }
     }
 
-    if (interface.zone_proc_assignment) {
+    if (interFace.zone_proc_assignment) {
       // Output Zone->Processor assignment info
       fmt::print("\n");
       for (const auto adam_zone : zones) {
@@ -546,7 +520,7 @@ namespace {
           "\nWork per processor:\n\tMinimum = {:n}, Maximum = {:n}, Median = {:n}, Ratio = {}\n\n",
           min_work, max_work, median, (double)(max_work) / min_work);
     }
-    if (interface.work_per_processor) {
+    if (interFace.work_per_processor) {
       if (min_work == max_work) {
         fmt::print("\nWork on all processors is {:n}\n\n", min_work);
       }
@@ -589,12 +563,12 @@ namespace {
     }
 
     // Output Histogram...
-    if (interface.histogram) {
+    if (interFace.histogram) {
       output_histogram(proc_work, (size_t)avg_work, median);
     }
 
     // Communication Information (proc X communicates with proc Z)
-    if (interface.communication_map) {
+    if (interFace.communication_map) {
       output_communications(zones, proc_count);
     }
 
@@ -632,13 +606,13 @@ int main(int argc, char *argv[])
   ON_BLOCK_EXIT(MPI_Finalize);
 #endif
 
-  Interface interface;
-  bool      success = interface.parse_options(argc, argv);
+  Interface interFace;
+  bool      success = interFace.parse_options(argc, argv);
   if (!success) {
     exit(EXIT_FAILURE);
   }
 
-  std::string in_type = interface.filetype;
+  std::string in_type = interFace.filetype;
 
   codename   = argv[0];
   size_t ind = codename.find_last_of('/', codename.size());
@@ -648,11 +622,11 @@ int main(int argc, char *argv[])
 
   Ioss::Init::Initializer io;
 
-  Ioss::PropertyManager properties;
-  Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(in_type, interface.filename, Ioss::READ_RESTART,
+  Ioss::PropertyManager properties{};
+  Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(in_type, interFace.filename, Ioss::READ_RESTART,
                                                   (MPI_Comm)MPI_COMM_WORLD, properties);
   if (dbi == nullptr || !dbi->ok()) {
-    fmt::print("\nERROR: Could not open database '{}' of type '{}'\n", interface.filename, in_type);
+    fmt::print("\nERROR: Could not open database '{}' of type '{}'\n", interFace.filename, in_type);
     std::exit(EXIT_FAILURE);
   }
 
@@ -674,38 +648,45 @@ int main(int argc, char *argv[])
     size_t zone = iblock->get_property("zone").get_int();
 
     zones.push_back(new Iocgns::StructuredZoneData(iblock->name(), zone, ni, nj, nk));
-    if (interface.ordinal >= 0) {
-      zones.back()->m_lineOrdinal = interface.ordinal;
+    if (interFace.ordinal >= 0) {
+      zones.back()->m_lineOrdinal = interFace.ordinal;
     }
     zones.back()->m_zoneConnectivity = iblock->m_zoneConnectivity;
   }
 
   if (in_type == "cgns") {
-    Iocgns::Utils::set_line_decomposition(dbi->get_file_pointer(), interface.line_decomposition,
-                                          zones, 0, interface.verbose);
+    Iocgns::Utils::set_line_decomposition(dbi->get_file_pointer(), interFace.line_decomposition,
+                                          zones, 0, interFace.verbose);
   }
 
-  region.output_summary(std::cout, false);
+  region.output_summary(std::cerr, false);
 
   size_t orig_zone_count = zones.size();
-  Iocgns::Utils::decompose_model(zones, interface.proc_count, 0, interface.load_balance,
-                                 interface.verbose);
-  update_zgc_data(zones, interface.proc_count);
+  Iocgns::Utils::decompose_model(zones, interFace.proc_count, 0, interFace.load_balance,
+                                 interFace.verbose);
+  update_zgc_data(zones, interFace.proc_count);
 
-  describe_decomposition(zones, orig_zone_count, interface);
+  describe_decomposition(zones, orig_zone_count, interFace);
 
-  validate_decomposition(zones, interface.proc_count);
+  validate_decomposition(zones, interFace.proc_count);
 
   cleanup(zones);
 }
 
+#if defined(_MSC_VER)
+#include <io.h>
+#define isatty _isatty
+#endif
+
 namespace {
-  int term_width(void)
+  int term_width()
   {
     int cols = 100;
     if (isatty(fileno(stdout))) {
 #ifdef TIOCGSIZE
-      struct ttysize ts;
+      struct ttysize ts
+      {
+      };
       ioctl(STDIN_FILENO, TIOCGSIZE, &ts);
       cols = ts.ts_cols;
 #elif defined(TIOCGWINSZ)

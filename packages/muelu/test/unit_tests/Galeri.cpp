@@ -57,15 +57,6 @@
 TPETRA_ETI_MANGLING_TYPEDEFS()
 #endif
 
-// I don't particularly like having these typdef's here.
-// They duplicate typdefs in MueLu_ETI_3arg.hpp,
-// MueLu_ETI_4arg.hpp, and Xpetra_Map.hpp.
-#ifdef EPETRA_HAVE_OMP
-  typedef Kokkos::Compat::KokkosOpenMPWrapperNode EpetraNode;
-#else
-    typedef Kokkos::Compat::KokkosSerialWrapperNode EpetraNode;
-#endif
-
 namespace Galeri {
   namespace Xpetra {
 

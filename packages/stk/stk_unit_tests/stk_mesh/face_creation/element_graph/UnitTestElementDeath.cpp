@@ -357,7 +357,18 @@ TEST(ElementDeath, keep_faces_after_element_death_without_calling_create_faces)
             }
 
             boundary_mesh_parts.push_back(&active);
-
+std::ostringstream os;
+for(auto elem : deactivated_elems){
+os<<"P"<<bulkData.parallel_rank()<<" deact "<<bulkData.entity_key(elem)<<std::endl;
+const stk::mesh::Entity* nodes = bulkData.begin_nodes(elem);
+unsigned numNodes = bulkData.num_nodes(elem);
+os<<"    nodes: ";
+for(unsigned n=0; n<numNodes; ++n){
+os<<bulkData.identifier(nodes[n])<<":o="<<bulkData.bucket(nodes[n]).owned()<<",s="<<bulkData.bucket(nodes[n]).shared()<<" ";
+}
+os<<std::endl;
+std::cerr<<os.str();
+}
             ElemGraphTestUtils::deactivate_elements(deactivated_elems, bulkData,  active);
 
             test_active_part_membership(bulkData, skin_faces_of_elem2, active);

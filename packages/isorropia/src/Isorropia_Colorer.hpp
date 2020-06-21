@@ -114,9 +114,9 @@ public:
   /** Give access of the color assignments array that is owned by the current
       processor.
 
-      \param[out] size Number of elements in the array.
+      \param size [out] Number of elements in the array.
 
-      \param[out] array Pointer to the color assignements array inside
+      \param array [out] Pointer to the color assignements array inside
                         the object.
 
       \remark This pointer is only significant if the object still exists.
@@ -132,11 +132,11 @@ public:
 
   /** Copy a part of the color assignments array.
 
-      \param[in] len of the array given by the user.
+      \param len [in] of the array given by the user.
 
-      \param[out] size Number of elements in the array.
+      \param size [out] Number of elements in the array.
 
-      \param[out] array Array of color assignments. Allocated by the user with
+      \param array [out] Array of color assignments. Allocated by the user with
                         a size of at least @c len elements.
 
       \remark Memory space which is not useful in the array is not

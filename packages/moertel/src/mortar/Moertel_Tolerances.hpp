@@ -52,7 +52,7 @@ namespace MOERTEL
 {
 
 const double Nodes_Identical_Epsilon = 1.0e-15;
-const double Projection_Length_Epsilon = 1.0e-10;
+const double Projection_Length_Epsilon = 0.25;
 const double Rough_Search_Radius = 2.5;
 
 

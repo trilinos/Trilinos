@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,24 +34,19 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
 // ************************************************************************
 //@HEADER
 
 #ifndef __TSQR_TrivialMessenger_hpp
 #define __TSQR_TrivialMessenger_hpp
 
-#include <Tsqr_MessengerBase.hpp>
-
+#include "Tsqr_MessengerBase.hpp"
 #include <algorithm>
 #include <sstream>
 #include <stdexcept>
 #include <vector>
 
-
-namespace TSQR { 
-
+namespace TSQR {
   /// \class TrivialMessenger
   /// \brief Noncommunicating "communication" object for TSQR.
   ///
@@ -66,10 +61,10 @@ namespace TSQR {
   class TrivialMessenger : public MessengerBase<Datum> {
   public:
     //! Trivial / default constructor, since no member data.
-    TrivialMessenger () {}
+    TrivialMessenger () = default;
 
     //! Virtual destructor for memory safety of derived classes.
-    virtual ~TrivialMessenger() {}
+    virtual ~TrivialMessenger() = default;
 
     /// \brief Send sendData[0:sendCount-1] to process destProc.
     ///
@@ -77,11 +72,11 @@ namespace TSQR {
     /// \param sendCount [in] Number of elements in the array
     /// \param destProc [in] Rank of destination process
     /// \param tag [in] MPI tag (ignored)
-    void 
-    send (const Datum sendData[], 
-	  const int sendCount, 
-	  const int destProc, 
-	  const int tag) 
+    void
+    send (const Datum sendData[],
+          const int sendCount,
+          const int destProc,
+          const int tag)
     {}
 
     /// \brief Receive recvData[0:recvCount-1] from process srcProc.
@@ -90,11 +85,11 @@ namespace TSQR {
     /// \param recvCount [in] Number of elements to receive in the array
     /// \param srcProc [in] Rank of sending process
     /// \param tag [in] MPI tag (ignored)
-    void 
-    recv (Datum recvData[], 
-	  const int recvCount, 
-	  const int srcProc, 
-	  const int tag) 
+    void
+    recv (Datum recvData[],
+          const int recvCount,
+          const int srcProc,
+          const int tag)
     {}
 
     /// \brief Exchange data between processors.
@@ -113,36 +108,36 @@ namespace TSQR {
     ///   this process is sending data, and from which this process is
     ///   receiving data)
     /// \param tag [in] MPI tag (ignored)
-    void 
-    swapData (const Datum sendData[], 
-	      Datum recvData[], 
-	      const int sendRecvCount, 
-	      const int destProc, 
-	      const int tag)
+    void
+    swapData (const Datum sendData[],
+              Datum recvData[],
+              const int sendRecvCount,
+              const int destProc,
+              const int tag)
     {
       if (destProc != rank())
-	{
-	  std::ostringstream os;
-	  os << "Destination rank " << destProc << " is invalid.  The only "
-	     << "valid rank for TSQR::TrivialMessenger is 0 (zero).";
-	    throw std::invalid_argument (os.str());
-	}
+        {
+          std::ostringstream os;
+          os << "Destination rank " << destProc << " is invalid.  The only "
+             << "valid rank for TSQR::TrivialMessenger is 0 (zero).";
+            throw std::invalid_argument (os.str());
+        }
       else if (sendRecvCount < 0)
-	{
-	  std::ostringstream os;
-	  os << "sendRecvCount = " << sendRecvCount << " is invalid: "
-	     << "only nonnegative values are allowed.";
-	  throw std::invalid_argument (os.str());
-	}
+        {
+          std::ostringstream os;
+          os << "sendRecvCount = " << sendRecvCount << " is invalid: "
+             << "only nonnegative values are allowed.";
+          throw std::invalid_argument (os.str());
+        }
       else if (sendRecvCount == 0)
-	return; // No data to exchange
-      else 
-	safeCopy (sendData, recvData, sendRecvCount);
+        return; // No data to exchange
+      else
+        safeCopy (sendData, recvData, sendRecvCount);
     }
 
     //! Sum inDatum on all processors, and return the result.
-    Datum 
-    globalSum (const Datum& inDatum) 
+    Datum
+    globalSum (const Datum& inDatum)
     {
       Datum outDatum (inDatum);
       return outDatum;
@@ -151,7 +146,7 @@ namespace TSQR {
     /// \brief Compute the global minimum over all processors.
     ///
     /// Assumes that Datum objects are less-than comparable.
-    Datum 
+    Datum
     globalMin (const Datum& inDatum)
     {
       Datum outDatum (inDatum);
@@ -161,7 +156,7 @@ namespace TSQR {
     /// \brief Compute the global maximum over all processors.
     ///
     /// Assumes that Datum objects are less-than comparable.
-    Datum 
+    Datum
     globalMax (const Datum& inDatum)
     {
       Datum outDatum (inDatum);
@@ -170,18 +165,18 @@ namespace TSQR {
 
     //! Sum inData[0:count-1] over all processors into outData.
     void
-    globalVectorSum (const Datum inData[], 
-		     Datum outData[], 
-		     const int count) 
+    globalVectorSum (const Datum inData[],
+                     Datum outData[],
+                     const int count)
     {
       safeCopy (inData, outData, count);
     }
 
     //! Broadcast data[0:count-1] from root to all processors.
     void
-    broadcast (Datum data[], 
-	       const int count,
-	       const int root)
+    broadcast (Datum data[],
+               const int count,
+               const int root)
     {}
 
     //! Return this process' rank.
@@ -196,30 +191,30 @@ namespace TSQR {
   private:
 
     /// \brief Copy count elements of inData into outData.
-    /// 
+    ///
     /// Attempt to detect aliasing, and use a method appropriate for
     /// either the nonaliased or the aliased case.
     void
     safeCopy (const Datum inData[],
-	      Datum outData[],
-	      const int count) 
+              Datum outData[],
+              const int count)
     {
       // Check for nonaliasing of inData and outData.
       if (&inData[count-1] < &outData[0] ||
-	  &outData[count-1] < &inData[0])
-	// The arrays don't overlap, so we can call std::copy.
-	// std::copy assumes that the third argument does not
-	// point to an element in the range of the first two
-	// arguments.
-	std::copy (inData, inData+count, outData);
+          &outData[count-1] < &inData[0])
+        // The arrays don't overlap, so we can call std::copy.
+        // std::copy assumes that the third argument does not
+        // point to an element in the range of the first two
+        // arguments.
+        std::copy (inData, inData+count, outData);
       else
-	{
-	  // If inData and outData do alias one another, use
-	  // the buffer as intermediate scratch space.
-	  buf_.resize (count);
-	  std::copy (inData, inData+count, buf_.begin());
-	  std::copy (buf_.begin(), buf_.end(), outData);
-	}
+        {
+          // If inData and outData do alias one another, use
+          // the buffer as intermediate scratch space.
+          buf_.resize (count);
+          std::copy (inData, inData+count, buf_.begin());
+          std::copy (buf_.begin(), buf_.end(), outData);
+        }
     }
 
     /// Buffer to guard against incorrect behavior for aliased arrays.

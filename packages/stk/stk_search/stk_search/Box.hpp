@@ -49,12 +49,22 @@ public:
   static const int Dim = 3;
 
   static KOKKOS_FUNCTION constexpr value_type max() { return Kokkos::Details::ArithTraits<T>::max() ;}
-  static KOKKOS_FUNCTION constexpr value_type min() { return Kokkos::Details::ArithTraits<T>::min() ;}
+  static KOKKOS_FUNCTION constexpr value_type min() {
+    // Kokkos documentation claims this function is equivalent to numeric_limits<T>::min() which returns the 
+    // smallest positive representatble real value.  However, ArithTraits<T>::min() actually returns the most 
+    // negative real value (which would be equilvalent to numeric_limits<T>::lowest).  If Kokkos ever changes
+    // the behavior of this min  function to be consistent with Kokkos documentation this class will break badly 
+    // as it is the 'lowest' value we really want here.  
+    return Kokkos::Details::ArithTraits<T>::min();
+  }
 
-  KOKKOS_FUNCTION Box( point_type const& x_min_corner = point_type(max(), max(), max()),
-       point_type const& x_max_corner = point_type(min(), min(), min()))
-    : m_min_corner(x_min_corner)
-    , m_max_corner(x_max_corner)
+  KOKKOS_FUNCTION Box()
+  : m_min_corner(max(), max(), max()), m_max_corner(min(), min(), min()) {}
+
+  KOKKOS_FUNCTION Box( point_type const& minCorner,
+                       point_type const& maxCorner)
+    : m_min_corner(minCorner)
+    , m_max_corner(maxCorner)
   {
   }
 
@@ -98,7 +108,7 @@ public:
     set_max_corner(b.max_corner());
   }
 
-  KOKKOS_FUNCTION ~Box() = default;
+  KOKKOS_DEFAULTED_FUNCTION ~Box() = default;
 
 private:
   point_type m_min_corner;
@@ -110,6 +120,13 @@ std::ostream& operator<<(std::ostream & out, Box<T> const& b)
 {
   out << "{" << b.min_corner() << "->" << b.max_corner() << "}";
   return out;
+}
+
+template<typename T>
+std::istream& operator>>(std::istream& in, Box<T>& b) {
+  char c;
+  in >> c >> b.min_corner() >> c >> c >> b.max_corner() >> c;
+  return in;
 }
 
 }} //namespace stk::search

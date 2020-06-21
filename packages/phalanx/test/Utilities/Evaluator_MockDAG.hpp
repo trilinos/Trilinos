@@ -60,6 +60,7 @@ namespace PHX {
     void evaluates(const std::string& field_name);
     void requires(const std::string& field_name);
     void contributes(const std::string& field_name);
+    void unshared(const std::string& field_name);
   };
   
 }

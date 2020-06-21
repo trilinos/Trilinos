@@ -12,6 +12,22 @@ namespace stk
 namespace unit_test_util
 {
 
+inline bool has_option(const std::string& option)
+{
+    if ( gl_argv != 0 )
+    {
+        for (int i=0;i<gl_argc;i++)
+        {
+            std::string input_argv(gl_argv[i]);
+            if ( option == input_argv )
+            {
+              return true;
+            }
+        }
+    }
+    return false;
+}
+
 inline std::string get_option(const std::string& option, const std::string defaultString="no")
 {
     std::string returnValue = defaultString;

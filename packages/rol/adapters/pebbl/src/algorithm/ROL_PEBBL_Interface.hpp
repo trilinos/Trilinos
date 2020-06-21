@@ -31,7 +31,7 @@ private:
 
   class SnapInt : public Elementwise::UnaryFunction<Real> {
   private:
-    Real tol_;
+    const Real tol_;
   public:
     SnapInt(void) : tol_(1e-6) {}
     Real apply(const Real &x) const {
@@ -109,6 +109,8 @@ public:
     return factory_;
   }
 
+  bool haveIncumbentHeuristic() { return true; }
+
   const Ptr<ParameterList> getSolverParameters(void) const {
     return parlist_;
   }
@@ -133,13 +135,22 @@ private:
   Ptr<Constraint<Real>> tcon_;
   Ptr<OptimizationProblem<Real>> problem_, problem0_;
   Ptr<OptimizationSolver<Real>> solver_;
-  Ptr<Vector<Real>> solution_;
+  Ptr<Vector<Real>> solution_, rndSolution_;
   Ptr<Vector<Real>> multiplier_;
+  Ptr<Vector<Real>> gradient_, dwa_;
   int nfrac_, index_;
   Real integralityMeasure_;
+  bool hasConstraint_;
 
   const int verbosity_;
   const Ptr<std::ostream> outStream_;
+
+  class round : public Elementwise::UnaryFunction<Real> {
+  public:
+    Real apply(const Real &x) const {
+      return std::round(x);
+    }
+  } rnd;
 
 public:
   ROL_PEBBL_BranchSub(const Ptr<ROL_PEBBL_Branching<Real>> &branching,
@@ -148,11 +159,20 @@ public:
     : branching_(branching),
       bHelper_(branching_->getBranchHelper()),
       nfrac_(-1), index_(-1), integralityMeasure_(-1),
+      hasConstraint_(false),
       verbosity_(verbosity), outStream_(outStream) {
     problem0_   = branching_->getProblemFactory()->build();
     solution_   = problem0_->getSolutionVector()->clone();
     solution_->set(*problem0_->getSolutionVector());
-    multiplier_ = problem0_->getMultiplierVector()->clone();
+    rndSolution_= problem0_->getSolutionVector()->clone();
+    rndSolution_->set(*problem0_->getSolutionVector());
+    rndSolution_->applyUnary(rnd);
+    gradient_   = solution_->dual().clone();
+    dwa_        = gradient_->clone();
+    if ( problem0_->getMultiplierVector() != nullPtr ) {
+      hasConstraint_ = true;
+      multiplier_ = problem0_->getMultiplierVector()->clone();
+    }
     ptrans_     = branching_->getBranchHelper()->createTransform();
   }
 
@@ -161,13 +181,21 @@ public:
       bHelper_(rpbs.bHelper_),
       fixed_(rpbs.fixed_),
       nfrac_(-1), index_(-1), integralityMeasure_(-1), 
+      hasConstraint_(rpbs.hasConstraint_),
       verbosity_(rpbs.verbosity_), outStream_(rpbs.outStream_) {
     branchSubAsChildOf(this);
     problem0_   = rpbs.branching_->getProblemFactory()->build();
     solution_   = rpbs.solution_->clone();
     solution_->set(*rpbs.solution_);
-    multiplier_ = rpbs.multiplier_->clone();
-    multiplier_->set(*rpbs.multiplier_);
+    rndSolution_ = rpbs.rndSolution_->clone();
+    rndSolution_->set(*rpbs.rndSolution_);
+    gradient_   = rpbs.gradient_->clone();
+    gradient_->set(*rpbs.gradient_);
+    dwa_        = rpbs.gradient_->clone();
+    if (hasConstraint_) {
+      multiplier_ = rpbs.multiplier_->clone();
+      multiplier_->set(*rpbs.multiplier_);
+    }
     ptrans_     = rpbs.branching_->getBranchHelper()->createTransform();
     bound       = rpbs.bound;
   }
@@ -199,17 +227,24 @@ public:
       solution_->print(*outStream_);
       *outStream_ << std::endl;
     }
-    multiplier_->set(*problem0_->getMultiplierVector());
     // Construct new optimization problem from problem0_
     tobj_ = makePtr<TransformedObjective_PEBBL<Real>>(
               problem0_->getObjective(),ptrans_);
-    tcon_ = makePtr<TransformedConstraint_PEBBL<Real>>(
-              problem0_->getConstraint(),ptrans_);
-    problem_ = makePtr<OptimizationProblem<Real>>(tobj_,
-                                                  solution_,
-                                                  problem0_->getBoundConstraint(),
-                                                  tcon_,
-                                                  multiplier_);
+    if (hasConstraint_) {
+      multiplier_->set(*problem0_->getMultiplierVector());
+      tcon_ = makePtr<TransformedConstraint_PEBBL<Real>>(
+                problem0_->getConstraint(),ptrans_);
+      problem_ = makePtr<OptimizationProblem<Real>>(tobj_,
+                                                    solution_,
+                                                    problem0_->getBoundConstraint(),
+                                                    tcon_,
+                                                    multiplier_);
+    }
+    else {
+      problem_ = makePtr<OptimizationProblem<Real>>(tobj_,
+                                                    solution_,
+                                                    problem0_->getBoundConstraint());
+    }
     // Construct optimization solver
     solver_ = makePtr<OptimizationSolver<Real>>(*problem_,*parlist);
     // Solve optimization problem
@@ -271,13 +306,27 @@ public:
     return (nfrac_==0);
   }
 
+  void incumbentHeuristic() {
+    Real tol(std::sqrt(ROL_EPSILON<Real>()));
+    rndSolution_->set(*solution_);
+    rndSolution_->applyUnary(rnd);
+    Real val = problem0_->getObjective()->value(*rndSolution_,tol);
+    branching_->foundSolution(new ROL_PEBBL_Solution<Real>(*rndSolution_,val));
+  }
+
   pebbl::solution* extractSolution() {
     Ptr<const AlgorithmState<Real>> state = solver_->getAlgorithmState();
     return new ROL_PEBBL_Solution<Real>(*solution_,state->value);
   }
 
   int splitComputation() {
-    index_ = bHelper_->getIndex(*solution_, *multiplier_, *tobj_, *tcon_);
+    Real tol(std::sqrt(ROL_EPSILON<Real>()));
+    tobj_->gradient(*gradient_,*solution_,tol);
+    if (hasConstraint_) {
+      tcon_->applyAdjointJacobian(*dwa_,*multiplier_,*solution_,tol);
+      gradient_->plus(*dwa_);
+    }
+    index_ = bHelper_->getIndex(*solution_, *gradient_);
     //index_ = bHelper_->getIndex(*solution_);
     if (verbosity_ > 1) {
       std::ios_base::fmtflags flags(outStream_->flags());

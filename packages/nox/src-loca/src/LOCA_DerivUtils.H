@@ -83,7 +83,7 @@ namespace LOCA {
    * \f[
    * \frac{\partial F}{\partial p},\quad\frac{\partial Jn}{\partial p},\quad\frac{\partial Jn}{\partial x}a
    * \f]
-   * where \f$J = \partial F/\partial x\f$ and \f$n\f$, \f$a\f$ are vectors.
+   * where \f$ J = \partial F/\partial x\f$ and \f$ n\f$, \f$ a\f$ are vectors.
    * These quantities are calculate by finite differencing.
    */
   class DerivUtils {

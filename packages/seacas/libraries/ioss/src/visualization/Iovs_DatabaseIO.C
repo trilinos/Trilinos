@@ -1,34 +1,8 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//
-//     * Neither the name of NTESS nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+// See packages/seacas/LICENSE for details
 
 /*--------------------------------------------------------------------*/
 /*    Copyright 2000-2010 NTESS.                         */
@@ -238,7 +212,7 @@ namespace Iovs {
   }
 
   ParaViewCatalystIossAdapterBase *
-    DatabaseIO::load_plugin_library(const std::string &/*plugin_name*/,
+  DatabaseIO::load_plugin_library(const std::string & /*plugin_name*/,
                                   const std::string &plugin_library_name)
   {
 
@@ -269,12 +243,12 @@ namespace Iovs {
       throw std::runtime_error(dlerror());
     }
 
-    typedef ParaViewCatalystIossAdapterBase *(*PvCatSrrAdapterMakerFuncType)();
+    using PvCatSrrAdapterMakerFuncType = ParaViewCatalystIossAdapterBase *(*)();
 
 #ifdef __GNUC__
     __extension__
 #endif
-        PvCatSrrAdapterMakerFuncType mkr = reinterpret_cast<PvCatSrrAdapterMakerFuncType>(
+        auto mkr = reinterpret_cast<PvCatSrrAdapterMakerFuncType>(
             dlsym(globalCatalystIossDlHandle, "ParaViewCatalystIossAdapterCreateInstance"));
     if (mkr == nullptr) {
       throw std::runtime_error("dlsym call failed to load function "
@@ -382,9 +356,10 @@ namespace Iovs {
           error_codes.size() == error_messages.size()) {
         for (unsigned int i = 0; i < error_codes.size(); i++) {
           if (error_codes[i] > 0) {
-            IOSS_WARNING << "\n\n** ParaView Catalyst Plugin Warning Message Severity Level "
-                         << error_codes[i] << ", On Processor " << this->myProcessor << " **\n\n";
-            IOSS_WARNING << error_messages[i];
+            Ioss::WARNING() << "\n\n** ParaView Catalyst Plugin Warning Message Severity Level "
+                            << error_codes[i] << ", On Processor " << this->myProcessor
+                            << " **\n\n";
+            Ioss::WARNING() << error_messages[i];
           }
           else {
             std::ostringstream errmsg;
@@ -459,9 +434,9 @@ namespace Iovs {
     if ((role == Ioss::Field::TRANSIENT || role == Ioss::Field::REDUCTION) && num_to_get == 1) {
       const char *           complex_suffix[] = {".re", ".im"};
       Ioss::Field::BasicType ioss_type        = field.get_type();
-      double *               rvar             = static_cast<double *>(data);
+      auto *                 rvar             = static_cast<double *>(data);
       int *                  ivar             = static_cast<int *>(data);
-      int64_t *              ivar64           = static_cast<int64_t *>(data);
+      auto *                 ivar64           = static_cast<int64_t *>(data);
 
       int comp_count = var_type->component_count();
 
@@ -494,7 +469,7 @@ namespace Iovs {
           }
         }
         if (this->pvcsa != nullptr) {
-          this->pvcsa->CreateGlobalVariable(component_names, TOPTR(globalValues),
+          this->pvcsa->CreateGlobalVariable(component_names, globalValues.data(),
                                             this->DBFilename.c_str());
         }
       }
@@ -540,7 +515,7 @@ namespace Iovs {
 
           // Another 'const-cast' since we are modifying the database just
           // for efficiency; which the client does not see...
-          DatabaseIO *new_this = const_cast<DatabaseIO *>(this);
+          auto *new_this = const_cast<DatabaseIO *>(this);
           /*64 bit should be okay*/
           new_this->handle_node_ids(data, num_to_get);
         }
@@ -596,7 +571,7 @@ namespace Iovs {
           }
 
           if (this->pvcsa != nullptr) {
-            this->pvcsa->CreateNodalVariable(component_names, TOPTR(interleaved_data),
+            this->pvcsa->CreateNodalVariable(component_names, interleaved_data.data(),
                                              this->DBFilename.c_str());
           }
         }
@@ -657,14 +632,15 @@ namespace Iovs {
         else if (field.get_name() == "ids") {
           // Another 'const-cast' since we are modifying the database just
           // for efficiency; which the client does not see...
-          DatabaseIO *new_this = const_cast<DatabaseIO *>(this);
+          auto *new_this = const_cast<DatabaseIO *>(this);
           new_this->handle_element_ids(eb, data, num_to_get);
         }
         else if (field.get_name() == "skin") {
           // Not applicable to viz output.
         }
         else {
-          IOSS_WARNING << " ElementBlock " << eb->name() << ". Unknown field " << field.get_name();
+          Ioss::WARNING() << " ElementBlock " << eb->name() << ". Unknown field "
+                          << field.get_name();
           num_to_get = 0;
         }
       }
@@ -717,7 +693,7 @@ namespace Iovs {
             }
           }
           if (this->pvcsa != nullptr) {
-            this->pvcsa->CreateElementVariable(component_names, bid, TOPTR(interleaved_data),
+            this->pvcsa->CreateElementVariable(component_names, bid, interleaved_data.data(),
                                                this->DBFilename.c_str());
           }
         }
@@ -968,8 +944,8 @@ namespace Iovs {
   int field_warning(const Ioss::GroupingEntity *ge, const Ioss::Field &field,
                     const std::string &inout)
   {
-    IOSS_WARNING << ge->type() << " '" << ge->name() << "'. Unknown " << inout << " field '"
-                 << field.get_name() << "'";
+    Ioss::WARNING() << ge->type() << " '" << ge->name() << "'. Unknown " << inout << " field '"
+                    << field.get_name() << "'";
     return -4;
   }
 
@@ -1011,7 +987,7 @@ namespace Iovs {
   }
 
   int64_t DatabaseIO::put_field_internal(const Ioss::SideSet *fs, const Ioss::Field &field,
-                                         void */*data*/, size_t data_size) const
+                                         void * /*data*/, size_t data_size) const
   {
     size_t num_to_get = field.verify(data_size);
     if (field.get_name() == "ids") {
@@ -1039,7 +1015,7 @@ namespace Iovs {
       if (field.get_type() == Ioss::Field::INTEGER) {
         Ioss::IntVector element(num_to_get);
         Ioss::IntVector side(num_to_get);
-        int *           el_side = (int *)data;
+        int *           el_side = static_cast<int *>(data);
 
         for (unsigned int i = 0; i < num_to_get; i++) {
           element[i] = el_side[index++];
@@ -1095,7 +1071,7 @@ namespace Iovs {
       else {
         Ioss::Int64Vector element(num_to_get);
         Ioss::Int64Vector side(num_to_get);
-        int64_t *         el_side = (int64_t *)data;
+        auto *            el_side = static_cast<int64_t *>(data);
 
         for (unsigned int i = 0; i < num_to_get; i++) {
           element[i] = el_side[index++];
@@ -1209,7 +1185,7 @@ namespace {
 
     // 'id' is a unique id for this entity type...
     idset->insert(std::make_pair(type, id));
-    Ioss::GroupingEntity *new_entity = const_cast<Ioss::GroupingEntity *>(entity);
+    auto *new_entity = const_cast<Ioss::GroupingEntity *>(entity);
     new_entity->property_add(Ioss::Property(id_prop, id));
     return id;
   }
@@ -1234,7 +1210,7 @@ namespace {
       if (!succeed) {
         // Need to remove the property so it doesn't cause problems
         // later...
-        Ioss::GroupingEntity *new_entity = const_cast<Ioss::GroupingEntity *>(entity);
+        auto *new_entity = const_cast<Ioss::GroupingEntity *>(entity);
         new_entity->property_erase(id_prop);
         assert(!entity->property_exists(id_prop));
       }

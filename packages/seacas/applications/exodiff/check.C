@@ -1,35 +1,8 @@
-// Copyright(C) 2008-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//
-//     * Neither the name of NTESS nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
+// 
+// See packages/seacas/LICENSE for details
 
 #include <cstdio>
 #include <cstdlib>
@@ -75,24 +48,24 @@ template <typename INT> bool Check_Global(ExoII_Read<INT> &file1, ExoII_Read<INT
     is_same = false;
   }
   if (file1.Num_Nodes() != file2.Num_Nodes()) {
-    if (interface.map_flag != PARTIAL) {
+    if (interFace.map_flag != PARTIAL) {
       Error(".. Number of nodes doesn't agree.\n");
       is_same = false;
     }
   }
   if (file1.Num_Elmts() != file2.Num_Elmts()) {
-    if (interface.map_flag != PARTIAL) {
+    if (interFace.map_flag != PARTIAL) {
       Error(".. Number of elements doesn't agree.\n");
       is_same = false;
     }
   }
   if (file1.Num_Elmt_Blocks() != file2.Num_Elmt_Blocks()) {
-    if (interface.map_flag != PARTIAL) {
+    if (interFace.map_flag != PARTIAL) {
       Error(".. Number of element blocks doesn't agree.\n");
       is_same = false;
     }
   }
-  if (file1.Num_Times() != file2.Num_Times() && !interface.quiet_flag && !interface.ignore_steps) {
+  if (file1.Num_Times() != file2.Num_Times() && !interFace.quiet_flag && !interFace.ignore_steps) {
     Error(fmt::format(".. First file has {} result times while the second file has {}.\n",
                       file1.Num_Times(), file2.Num_Times()));
   }
@@ -138,59 +111,62 @@ namespace {
   {
     bool is_same = true;
 
-    if (interface.coord_tol.type == IGNORE || !check_only) {
+    if (interFace.coord_tol.type == IGNORE_ || !check_only) {
       return is_same;
     }
 
     file1.Load_Nodal_Coordinates();
     file2.Load_Nodal_Coordinates();
 
-    double *x1 = (double *)file1.X_Coords();
-    double *y1 = x1, *z1 = x1;
+    const auto *  x1 = file1.X_Coords();
+    const double *y1 = x1;
+    const double *z1 = x1;
     if (file1.Dimension() > 1) {
-      y1 = (double *)file1.Y_Coords();
+      y1 = file1.Y_Coords();
     }
     if (file1.Dimension() > 2) {
-      z1 = (double *)file1.Z_Coords();
+      z1 = file1.Z_Coords();
     }
 
-    double *x2 = (double *)file2.X_Coords();
-    double *y2 = x2, *z2 = x2;
+    const auto *  x2 = file2.X_Coords();
+    const double *y2 = x2;
+    const double *z2 = x2;
     if (file2.Dimension() > 1) {
-      y2 = (double *)file2.Y_Coords();
+      y2 = file2.Y_Coords();
     }
     if (file2.Dimension() > 2) {
-      z2 = (double *)file2.Z_Coords();
+      z2 = file2.Z_Coords();
     }
 
-    double max = 0.0, norm;
-    for (size_t n = 0; n < file1.Num_Nodes() && (is_same || interface.show_all_diffs); ++n) {
+    double max = 0.0;
+    double norm;
+    for (size_t n = 0; n < file1.Num_Nodes() && (is_same || interFace.show_all_diffs); ++n) {
       // Should this node be processed...
       if (node_map == nullptr || node_map[n] >= 0) {
         INT    n2 = node_map != nullptr ? node_map[n] : n;
-        double dx = interface.coord_tol.Delta(x1[n], x2[n2]);
-        if (dx > interface.coord_tol.value) {
+        double dx = interFace.coord_tol.Delta(x1[n], x2[n2]);
+        if (dx > interFace.coord_tol.value) {
           fmt::print("   x coord {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (node {})\n",
-                     interface.coord_tol.abrstr(), x1[n], x2[n2], dx, (size_t)id_map[n]);
+                     interFace.coord_tol.abrstr(), x1[n], x2[n2], dx, (size_t)id_map[n]);
           is_same = false;
         }
         norm = (x1[n] - x2[n2]) * (x1[n] - x2[n2]);
 
         if (file1.Dimension() > 1 && file2.Dimension() > 1) {
-          double dy = interface.coord_tol.Delta(y1[n], y2[n2]);
-          if (dy > interface.coord_tol.value) {
+          double dy = interFace.coord_tol.Delta(y1[n], y2[n2]);
+          if (dy > interFace.coord_tol.value) {
             fmt::print("   y coord {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (node {})\n",
-                       interface.coord_tol.abrstr(), y1[n], y2[n2], dy, (size_t)id_map[n]);
+                       interFace.coord_tol.abrstr(), y1[n], y2[n2], dy, (size_t)id_map[n]);
             is_same = false;
           }
           norm += (y1[n] - y2[n2]) * (y1[n] - y2[n2]);
         }
 
         if (file1.Dimension() > 2 && file2.Dimension() > 2) {
-          double dz = interface.coord_tol.Delta(z1[n], z2[n2]);
-          if (dz > interface.coord_tol.value) {
+          double dz = interFace.coord_tol.Delta(z1[n], z2[n2]);
+          if (dz > interFace.coord_tol.value) {
             fmt::print("   z coord {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (node {})\n",
-                       interface.coord_tol.abrstr(), z1[n], z2[n2], dz, (size_t)id_map[n]);
+                       interFace.coord_tol.abrstr(), z1[n], z2[n2], dz, (size_t)id_map[n]);
             is_same = false;
           }
           norm += (z1[n] - z2[n2]) * (z1[n] - z2[n2]);
@@ -199,7 +175,7 @@ namespace {
       } // End of node iteration...
     }
 
-    if (!interface.quiet_flag && is_same && max > 0.0) {
+    if (!interFace.quiet_flag && is_same && max > 0.0) {
       max = sqrt(max);
       fmt::print("Maximum difference between nodal coordinates = {}\n", max);
     }
@@ -213,12 +189,12 @@ namespace {
   {
     bool is_same = true;
     // Verify that element blocks match in the two files...
-    for (int b = 0; b < file1.Num_Elmt_Blocks(); ++b) {
+    for (size_t b = 0; b < file1.Num_Elmt_Blocks(); ++b) {
       Exo_Block<INT> *block1 = file1.Get_Elmt_Block_by_Index(b);
       Exo_Block<INT> *block2 = nullptr;
-      if (interface.map_flag != DISTANCE && interface.map_flag != PARTIAL) {
+      if (interFace.map_flag != DISTANCE && interFace.map_flag != PARTIAL) {
         if (block1 != nullptr) {
-          if (interface.by_name) {
+          if (interFace.by_name) {
             block2 = file2.Get_Elmt_Block_by_Name(block1->Name());
           }
           else {
@@ -237,7 +213,7 @@ namespace {
             else {
               // Only do this check if Check_Elmt_Block_Params does not fail.
               // TODO(gdsjaar): Pass in node_map and node_id_map...
-              if (!interface.map_flag) {
+              if (!interFace.map_flag) {
                 if (!Check_Elmt_Block_Connectivity(block1, block2)) {
                   is_same = false;
                 }
@@ -289,17 +265,17 @@ namespace {
     bool is_same = true;
     SMART_ASSERT(block1 && block2);
 
-    if (!interface.by_name && block1->Id() != block2->Id()) {
+    if (!interFace.by_name && block1->Id() != block2->Id()) {
       Error(fmt::format(".. Block ids don't agree ({} != {}\n", block1->Id(), block2->Id()));
       is_same = false;
     }
-    if (interface.by_name && block1->Name() != block2->Name()) {
+    if (interFace.by_name && block1->Name() != block2->Name()) {
       Error(
           fmt::format(".. Block names don't agree ({} != {}).\n", block1->Name(), block2->Name()));
       is_same = false;
     }
     if (!(no_case_equals(block1->Elmt_Type(), block2->Elmt_Type()))) {
-      if (!interface.short_block_check ||
+      if (!interFace.short_block_check ||
           !close_compare(block1->Elmt_Type(), block2->Elmt_Type())) {
         Error(fmt::format(".. Block {}: element types don't agree ({} != {}).\n", block1->Id(),
                           block1->Elmt_Type(), block2->Elmt_Type()));
@@ -336,18 +312,18 @@ namespace {
     // what is a diff.
     bool is_same = true;
     if (file1.Num_Node_Sets() != file2.Num_Node_Sets()) {
-      if (interface.map_flag != PARTIAL) {
+      if (interFace.map_flag != PARTIAL) {
         Error(".. Number of nodesets doesn't agree...\n");
-        if (interface.pedantic) {
+        if (interFace.pedantic) {
           is_same = false;
         }
       }
     }
     // Check that the files both contain the same nodesets...
-    for (int b = 0; b < file1.Num_Node_Sets(); ++b) {
+    for (size_t b = 0; b < file1.Num_Node_Sets(); ++b) {
       Node_Set<INT> *set1 = file1.Get_Node_Set_by_Index(b);
       Node_Set<INT> *set2 = nullptr;
-      if (interface.by_name) {
+      if (interFace.by_name) {
         set2 = file2.Get_Node_Set_by_Name(set1->Name());
       }
       else {
@@ -357,7 +333,7 @@ namespace {
       if (set2 == nullptr) {
         Error(
             fmt::format(".. Nodeset id {} exists in first file but not the second.\n", set1->Id()));
-        if (interface.pedantic) {
+        if (interFace.pedantic) {
           is_same = false;
         }
       }
@@ -366,7 +342,7 @@ namespace {
           Error(fmt::format(
               ".. The node count for nodeset id {} is not the same in the two files ({} != {}).\n",
               set1->Id(), set1->Size(), set2->Size()));
-          if (interface.pedantic) {
+          if (interFace.pedantic) {
             is_same = false;
           }
         }
@@ -375,12 +351,12 @@ namespace {
 
     // Check that can access all nodesets in file2.
     // This should never fail if the above tests pass...
-    for (int b = 0; b < file2.Num_Node_Sets(); ++b) {
+    for (size_t b = 0; b < file2.Num_Node_Sets(); ++b) {
       Node_Set<INT> *set2 = file2.Get_Node_Set_by_Index(b);
       if (set2 == nullptr) {
         Error(
             fmt::format(".. Could not access the Nodeset with index {} in the second file.\n", b));
-        if (interface.pedantic) {
+        if (interFace.pedantic) {
           is_same = false;
         }
       }
@@ -389,11 +365,11 @@ namespace {
     // Do the following check(s) only if there are nodeset variables...
     // For each nodeset, check that the order of the nodeset nodes is the same.
     // Eventually need to be able to map the order...
-    if (!interface.ns_var_names.empty() || interface.pedantic) {
-      for (int b = 0; b < file1.Num_Node_Sets(); ++b) {
+    if (!interFace.ns_var_names.empty() || interFace.pedantic) {
+      for (size_t b = 0; b < file1.Num_Node_Sets(); ++b) {
         Node_Set<INT> *set1 = file1.Get_Node_Set_by_Index(b);
         Node_Set<INT> *set2 = nullptr;
-        if (interface.by_name) {
+        if (interFace.by_name) {
           set2 = file2.Get_Node_Set_by_Name(set1->Name());
         }
         else {
@@ -408,7 +384,7 @@ namespace {
           set1->apply_map(node_map);
         }
 
-        if ((interface.pedantic || set1->var_count() > 0) && (set1->Size() == set2->Size())) {
+        if ((interFace.pedantic || set1->var_count() > 0) && (set1->Size() == set2->Size())) {
           size_t  node_count = set1->Size();
           int64_t diff       = -1;
           for (size_t i = 0; i < node_count; i++) {
@@ -422,7 +398,7 @@ namespace {
                 ".. The nodelists for nodeset id {} are not the same in the two files.\n"
                 "\t\tThe first difference is at position {}: Node {} vs. Node {}.\n",
                 set1->Id(), set1->Node_Index(diff) + 1, set1->Node_Id(diff), set2->Node_Id(diff)));
-            if (interface.map_flag != PARTIAL) {
+            if (interFace.map_flag != PARTIAL) {
               is_same = false;
             }
             else {
@@ -446,18 +422,18 @@ namespace {
     // what is a diff.
     bool is_same = true;
     if (file1.Num_Side_Sets() != file2.Num_Side_Sets()) {
-      if (interface.map_flag != PARTIAL) {
+      if (interFace.map_flag != PARTIAL) {
         Error(".. Number of sidesets doesn't agree...\n");
-        if (interface.pedantic) {
+        if (interFace.pedantic) {
           is_same = false;
         }
       }
     }
     // Check that the files both contain the same sidesets...
-    for (int b = 0; b < file1.Num_Side_Sets(); ++b) {
+    for (size_t b = 0; b < file1.Num_Side_Sets(); ++b) {
       Side_Set<INT> *set1 = file1.Get_Side_Set_by_Index(b);
       Side_Set<INT> *set2 = nullptr;
-      if (interface.by_name) {
+      if (interFace.by_name) {
         set2 = file2.Get_Side_Set_by_Name(set1->Name());
       }
       else {
@@ -467,7 +443,7 @@ namespace {
       if (set2 == nullptr) {
         Error(
             fmt::format(".. Sideset id {} exists in first file but not the second.\n", set1->Id()));
-        if (interface.pedantic) {
+        if (interFace.pedantic) {
           is_same = false;
         }
       }
@@ -476,19 +452,19 @@ namespace {
           Error(fmt::format(
               ".. The side count for sideset id {} is not the same in the two files ({} != {}).\n",
               set1->Id(), set1->Size(), set2->Size()));
-          if (interface.pedantic) {
+          if (interFace.pedantic) {
             is_same = false;
           }
         }
       }
     }
 
-    for (int b = 0; b < file2.Num_Side_Sets(); ++b) {
+    for (size_t b = 0; b < file2.Num_Side_Sets(); ++b) {
       Side_Set<INT> *set2 = file2.Get_Side_Set_by_Index(b);
       if (set2 == nullptr) {
         Error(
             fmt::format(".. Could not access the Sideset with index {} in the second file.\n", b));
-        if (interface.pedantic) {
+        if (interFace.pedantic) {
           is_same = false;
         }
       }
@@ -497,11 +473,11 @@ namespace {
     // Do the following check(s) only if there are sideset variables... (or -pedantic)
     // For each sideset, check that the order of the sideset sides is the same.
     // Eventually need to be able to map the order...
-    if (!interface.ss_var_names.empty() || interface.pedantic || !interface.ignore_sideset_df) {
-      for (int b = 0; b < file1.Num_Side_Sets(); ++b) {
+    if (!interFace.ss_var_names.empty() || interFace.pedantic || !interFace.ignore_sideset_df) {
+      for (size_t b = 0; b < file1.Num_Side_Sets(); ++b) {
         Side_Set<INT> *set1 = file1.Get_Side_Set_by_Index(b);
         Side_Set<INT> *set2 = nullptr;
-        if (interface.by_name) {
+        if (interFace.by_name) {
           set2 = file2.Get_Side_Set_by_Name(set1->Name());
         }
         else {
@@ -518,7 +494,7 @@ namespace {
 
         // Don't care if sidesets don't match if there are no variables...
         // If different sizes and pedantic, difference caught above.
-        if ((interface.pedantic || set1->var_count() > 0) && (set1->Size() == set2->Size())) {
+        if ((interFace.pedantic || set1->var_count() > 0) && (set1->Size() == set2->Size())) {
           size_t  side_count = set1->Size();
           int64_t diff       = -1;
           for (size_t i = 0; i < side_count; i++) {
@@ -528,12 +504,27 @@ namespace {
             }
           }
           if (diff >= 0) {
+            // If `elmt_map` is not null, then need to unmap the set1 ids to get the local id that
+            // appears in the file.  If don't do this, error message is very confusing for the
+            // user...
+            auto set1_id = set1->Side_Id(diff).first;
+            if (elmt_map != nullptr) {
+              // Iterate map to find an entry equal to `set1_id`.  Its position is then the file1 id
+              // of the element.
+              for (size_t i = 0; i < file1.Num_Elmts(); i++) {
+                if (elmt_map[i] == set1_id - 1) {
+                  set1_id = i + 1;
+                  break;
+                }
+              }
+            }
+
             Error(fmt::format(
                 ".. The sidelists for sideset id {} are not the same in the two files.\n"
                 "\t\tThe first difference is at position {}: Side {}.{} .vs. Side {}.{}.\n",
-                set1->Id(), set1->Side_Index(diff) + 1, set1->Side_Id(diff).first,
-                set1->Side_Id(diff).second, set2->Side_Id(diff).first, set2->Side_Id(diff).second));
-            if (interface.map_flag != PARTIAL) {
+                set1->Id(), set1->Side_Index(diff) + 1, set1_id, set1->Side_Id(diff).second,
+                set2->Side_Id(diff).first, set2->Side_Id(diff).second));
+            if (interFace.map_flag != PARTIAL) {
               is_same = false;
             }
             else {

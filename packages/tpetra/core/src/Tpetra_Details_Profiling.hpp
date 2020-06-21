@@ -47,6 +47,9 @@
 ///   for Kokkos Profiling.
 
 #include "TpetraCore_config.h"
+#include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_RCP.hpp"
+
 
 namespace Tpetra {
 namespace Details {
@@ -101,8 +104,15 @@ class ProfilingRegion {
 public:
   //! Open region to profile; name the region \c name.
   ProfilingRegion (const char name[]);
+  //! Open region to profile, if the group name \c group is enabled by the
+  //! TPETRA_TIMING variable; name the region \c name.
+  ProfilingRegion (const char name[], const char group[]);
   //! Close region to profile.
   ~ProfilingRegion ();
+
+private:
+  Teuchos::RCP<Teuchos::TimeMonitor> tm;
+
 };
 
 } // namespace Details

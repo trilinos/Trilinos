@@ -41,34 +41,32 @@
 //
 // @HEADER
 
+#include "Amesos2_config.h"
+
+#ifdef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
 #if defined (HAVE_AMESOS2_CHOLMOD) && defined (HAVE_AMESOS2_EXPERIMENTAL)
 
 #include "Amesos2_Cholmod_decl.hpp"
-
-#ifdef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
-
-#  include "Amesos2_Cholmod_def.hpp"
-#  include "Amesos2_ExplicitInstantiationHelpers.hpp"
+#include "Amesos2_Cholmod_def.hpp"
+#include "Amesos2_ExplicitInstantiationHelpers.hpp"
+#include "TpetraCore_ETIHelperMacros.h"
 
 namespace Amesos2 {
 #ifdef HAVE_AMESOS2_EPETRA
   AMESOS2_SOLVER_EPETRA_INST(Cholmod);
 #endif
 
-#ifdef HAVE_TPETRA_INST_FLOAT
-  AMESOS2_SOLVER_TPETRA_INST(Cholmod,float,int,int);
-#endif
-#ifdef HAVE_TPETRA_INST_DOUBLE
-  AMESOS2_SOLVER_TPETRA_INST(Cholmod,double,int,int);
-#endif
-#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
-  AMESOS2_SOLVER_TPETRA_INST(Cholmod,std::complex<float>,int,int);
-#endif
-#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
-  AMESOS2_SOLVER_TPETRA_INST(Cholmod,std::complex<double>,int,int);
-#endif
+  #define AMESOS2_CHOLMOD_LOCAL_INSTANT(S,LO,GO,N) \
+    template class Amesos2::Cholmod<Tpetra::CrsMatrix<S, LO, GO, N>, \
+                                    Tpetra::MultiVector<S, LO, GO, N> >;
+
+  TPETRA_ETI_MANGLING_TYPEDEFS()
+
+  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(AMESOS2_CHOLMOD_LOCAL_INSTANT)
+
+  #define AMESOS2_KOKKOS_IMPL_SOLVER_NAME Cholmod
+  #include "Amesos2_Kokkos_Impl.hpp"
 }
 
+#endif // (HAVE_AMESOS2_CHOLMOD) && defined (HAVE_AMESOS2_EXPERIMENTAL)
 #endif  // HAVE_AMESOS2_EXPLICIT_INSTANTIATION
-
-#endif

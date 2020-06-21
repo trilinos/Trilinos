@@ -9,11 +9,6 @@
 #include <percept/mesh/geometry/kernel/MeshGeometry.hpp>
 #include <stk_util/environment/CPUTime.hpp>
 
-//#include <unordered_set>
-
-
-
-
 #include <percept/mesh/geometry/kernel/GeometryKernelGregoryPatch.hpp>
 #include <percept/PerceptMesh.hpp>
 

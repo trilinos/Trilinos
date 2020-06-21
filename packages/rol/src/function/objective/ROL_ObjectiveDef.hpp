@@ -52,58 +52,74 @@ namespace ROL {
 
 template <class Real>
 Real Objective<Real>::dirDeriv( const Vector<Real> &x, const Vector<Real> &d, Real &tol) {
-  Real ftol = std::sqrt(ROL_EPSILON<Real>());
-
-  ROL::Ptr<Vector<Real> > xd = d.clone();
-  xd->set(x);
-  xd->axpy(tol, d);
-  return (this->value(*xd,ftol) - this->value(x,ftol)) / tol;
+  Real dnorm = d.norm(), zero(0);
+  if ( dnorm == zero ) {
+    return zero;
+  }
+  Real cbrteps = std::cbrt(ROL_EPSILON<Real>()), one(1), v0(0), v1(0);
+  Real xnorm = x.norm(), h = cbrteps * std::max(xnorm/dnorm,one);
+  ROL::Ptr<Vector<Real>> y = x.clone();
+  y->set(x); y->axpy(h, d);
+  v0 = value(x,tol);
+  update(*y);
+  v1 = value(*y,tol);
+  update(x);
+  return (v1 - v0) / h;
 }
 
 template <class Real>
 void Objective<Real>::gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
   g.zero();
-  Real deriv = 0.0, h = 0.0, xi = 0.0;
+  Real cbrteps = std::cbrt(ROL_EPSILON<Real>()), zero(0), one(1);
+  Real f0 = value(x,tol), h(0), xi(0), gi(0);
+  Ptr<Vector<Real>> y = x.clone(), ei = x.clone();
   for (int i = 0; i < g.dimension(); i++) {
-    xi    = std::abs(x.dot(*x.basis(i)));
-    h     = ((xi < ROL_EPSILON<Real>()) ? 1. : xi)*tol;
-    deriv = this->dirDeriv(x,*x.basis(i),h);
-    g.axpy(deriv,*g.basis(i));
+    ei = x.basis(i);
+    xi = x.dot(*ei);
+    h  = cbrteps * std::max(std::abs(xi),one) * (xi < zero ? -one : one);
+    y->set(x); y->axpy(h,*ei);
+    h  = y->dot(*ei) - xi;
+    update(*y);
+    gi = (value(*y,tol) - f0) / h;
+    g.axpy(gi,*g.basis(i));
   }
+  update(x);
 }
 
 template <class Real>
 void Objective<Real>::hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-  Real zero(0), one(1);
+  Real zero(0), vnorm = v.norm();
   // Get Step Length
-  if ( v.norm() == zero ) {
+  if ( vnorm == zero ) {
     hv.zero();
   }
   else {
-    Real gtol = std::sqrt(ROL_EPSILON<Real>());
+    Real gtol = std::sqrt(ROL_EPSILON<Real>()), one(1);
 
-    Real h = std::max(one,x.norm()/v.norm())*tol;
+    Real h = std::max(one,x.norm()/vnorm)*tol;
     //Real h = 2.0/(v.norm()*v.norm())*tol;
 
     // Compute Gradient at x
-    ROL::Ptr<Vector<Real> > g = hv.clone();
-    this->gradient(*g,x,gtol);
+    ROL::Ptr<Vector<Real>> g = hv.clone();
+    gradient(*g,x,gtol);
 
-    // Compute New Step x + h*v
-    ROL::Ptr<Vector<Real> > xnew = x.clone();
-    xnew->set(x);
-    xnew->axpy(h,v);  
-    this->update(*xnew);
+    // Compute y = x + h*v
+    ROL::Ptr<Vector<Real>> y = x.clone();
+    y->set(x); y->axpy(h,v);
 
-    // Compute Gradient at x + h*v
+    // Compute Gradient at y
     hv.zero();
-    this->gradient(hv,*xnew,gtol);
-    
+    update(*y);
+    gradient(hv,*y,gtol);
+ 
     // Compute Newton Quotient
     hv.axpy(-one,*g);
     hv.scale(one/h);
+
+    // Reset objective to x
+    update(x);
   }
-} 
+}
 
 
 

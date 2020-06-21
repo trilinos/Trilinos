@@ -1,35 +1,9 @@
 /*
- * Copyright(C) 1999-2017 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
- *     * Neither the name of NTESS nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
+ * See packages/seacas/LICENSE for details
  */
 
 #ifndef IOSS_Ioex_Internals_h
@@ -41,33 +15,17 @@
 #include <string>               // for string
 #include <vector>               // for vector
 namespace Ioss {
+  class Assembly;
+  class Blob;
   class EdgeBlock;
-} // namespace Ioss
-namespace Ioss {
   class EdgeSet;
-} // namespace Ioss
-namespace Ioss {
   class ElementBlock;
-} // namespace Ioss
-namespace Ioss {
   class ElementSet;
-} // namespace Ioss
-namespace Ioss {
   class FaceBlock;
-} // namespace Ioss
-namespace Ioss {
   class FaceSet;
-} // namespace Ioss
-namespace Ioss {
   class NodeBlock;
-} // namespace Ioss
-namespace Ioss {
   class NodeSet;
-} // namespace Ioss
-namespace Ioss {
   class SideBlock;
-} // namespace Ioss
-namespace Ioss {
   class SideSet;
 } // namespace Ioss
 
@@ -127,8 +85,48 @@ namespace Ioex {
     int64_t     localOwnedCount{0};
     int64_t     attributeCount{0};
     int64_t     procOffset{0};
+  };
 
-  private:
+  struct Assembly
+  {
+    Assembly()                      = default;
+    Assembly(const Assembly &other) = default;
+    explicit Assembly(const Ioss::Assembly &other);
+
+    Assembly &operator=(const Assembly &other);
+
+    ~Assembly() = default;
+
+    bool operator==(const Assembly &) const;
+    bool operator!=(const Assembly &other) const { return !(*this == other); }
+
+    std::string          name{};
+    entity_id            id{0};
+    int64_t              entityCount{0};
+    int64_t              attributeCount{0};
+    ex_entity_type       type{};
+    std::vector<int64_t> memberIdList;
+  };
+
+  struct Blob
+  {
+    Blob()                  = default;
+    Blob(const Blob &other) = default;
+    explicit Blob(const Ioss::Blob &other);
+
+    Blob &operator=(const Blob &other);
+
+    ~Blob() = default;
+
+    bool operator==(const Blob &) const;
+    bool operator!=(const Blob &other) const { return !(*this == other); }
+
+    std::string name{};
+    entity_id   id{0};
+    int64_t     entityCount{0};
+    int64_t     localOwnedCount{0};
+    int64_t     attributeCount{0};
+    int64_t     procOffset{0};
   };
 
   struct EdgeBlock
@@ -165,12 +163,7 @@ namespace Ioex {
 
   struct FaceBlock
   {
-    FaceBlock()
-        : name(""), id(0), entityCount(0), nodesPerEntity(0), edgesPerEntity(0), attributeCount(0),
-          procOffset(0)
-    {
-      Ioss::Utils::copy_string(elType, "");
-    }
+    FaceBlock() { Ioss::Utils::copy_string(elType, ""); }
 
     FaceBlock(const FaceBlock &other)
         : name(other.name), id(other.id), entityCount(other.entityCount),
@@ -190,25 +183,20 @@ namespace Ioex {
     bool operator!=(const FaceBlock &other) const { return !(*this == other); }
 
     char        elType[MAX_STR_LENGTH + 1]{};
-    std::string name;
-    entity_id   id;
-    int64_t     entityCount;
-    int64_t     nodesPerEntity;
-    int64_t     edgesPerEntity;
-    int64_t     attributeCount;
-    int64_t     procOffset;
+    std::string name{};
+    entity_id   id{0};
+    int64_t     entityCount{0};
+    int64_t     nodesPerEntity{0};
+    int64_t     edgesPerEntity{0};
+    int64_t     attributeCount{0};
+    int64_t     procOffset{0};
 
   private:
   };
 
   struct ElemBlock
   {
-    ElemBlock()
-        : name(""), id(0), entityCount(0), nodesPerEntity(0), edgesPerEntity(0), facesPerEntity(0),
-          attributeCount(0), offset_(-1), procOffset(0)
-    {
-      Ioss::Utils::copy_string(elType, "");
-    }
+    ElemBlock() { Ioss::Utils::copy_string(elType, ""); }
 
     ElemBlock(const ElemBlock &other)
         : name(other.name), id(other.id), entityCount(other.entityCount),
@@ -229,15 +217,15 @@ namespace Ioex {
     bool operator!=(const ElemBlock &other) const { return !(*this == other); }
 
     char        elType[MAX_STR_LENGTH + 1]{};
-    std::string name;
-    entity_id   id;
-    int64_t     entityCount;
-    int64_t     nodesPerEntity;
-    int64_t     edgesPerEntity;
-    int64_t     facesPerEntity;
-    int64_t     attributeCount;
-    int64_t     offset_;
-    int64_t     procOffset;
+    std::string name{};
+    entity_id   id{0};
+    int64_t     entityCount{0};
+    int64_t     nodesPerEntity{0};
+    int64_t     edgesPerEntity{0};
+    int64_t     facesPerEntity{0};
+    int64_t     attributeCount{0};
+    int64_t     offset_{-1};
+    int64_t     procOffset{0};
   };
 
   struct NodeSet
@@ -337,32 +325,24 @@ namespace Ioex {
 
   struct CommunicationMetaData
   {
-    CommunicationMetaData()
-        : processorId(0), processorCount(0), globalNodes(0), globalElements(0),
-          globalElementBlocks(0), globalNodeSets(0), globalSideSets(0), nodesInternal(0),
-          nodesBorder(0), nodesExternal(0), elementsInternal(0), elementsBorder(0),
-          outputNemesis(false)
-    {
-    }
+    CommunicationMetaData()                              = default;
+    CommunicationMetaData(const CommunicationMetaData &) = delete;
 
-    std::vector<CommunicationMap> nodeMap;
-    std::vector<CommunicationMap> elementMap;
-    int                           processorId;
-    int                           processorCount;
-    int64_t                       globalNodes;
-    int64_t                       globalElements;
-    int64_t                       globalElementBlocks;
-    int64_t                       globalNodeSets;
-    int64_t                       globalSideSets;
-    int64_t                       nodesInternal;
-    int64_t                       nodesBorder;
-    int64_t                       nodesExternal;
-    int64_t                       elementsInternal;
-    int64_t                       elementsBorder;
-    bool                          outputNemesis;
-
-  private:
-    CommunicationMetaData(const CommunicationMetaData &);
+    std::vector<CommunicationMap> nodeMap{};
+    std::vector<CommunicationMap> elementMap{};
+    int                           processorId{0};
+    int                           processorCount{0};
+    int64_t                       globalNodes{0};
+    int64_t                       globalElements{0};
+    int64_t                       globalElementBlocks{0};
+    int64_t                       globalNodeSets{0};
+    int64_t                       globalSideSets{0};
+    int64_t                       nodesInternal{0};
+    int64_t                       nodesBorder{0};
+    int64_t                       nodesExternal{0};
+    int64_t                       elementsInternal{0};
+    int64_t                       elementsBorder{0};
+    bool                          outputNemesis{false};
   };
 
   class Redefine
@@ -380,7 +360,7 @@ namespace Ioex {
   class Mesh
   {
   public:
-    Mesh() : title(), dimensionality(0), file_per_processor(true) {}
+    Mesh() = default;
 
     Mesh(int dim, char *the_title, bool file_pp) : dimensionality(dim), file_per_processor(file_pp)
     {
@@ -390,19 +370,22 @@ namespace Ioex {
     void populate(Ioss::Region *region);
 
     char title[MAX_LINE_LENGTH + 1]{};
-    int  dimensionality;
-    bool file_per_processor;
+    int  dimensionality{};
+    bool file_per_processor{true};
 
-    std::vector<NodeBlock> nodeblocks;
-    std::vector<EdgeBlock> edgeblocks;
-    std::vector<FaceBlock> faceblocks;
-    std::vector<ElemBlock> elemblocks;
-    std::vector<NodeSet>   nodesets;
-    std::vector<EdgeSet>   edgesets;
-    std::vector<FaceSet>   facesets;
-    std::vector<ElemSet>   elemsets;
-    std::vector<SideSet>   sidesets;
-    CommunicationMetaData  comm;
+    std::vector<Assembly> assemblies{};
+    std::vector<Blob>     blobs{};
+
+    std::vector<NodeBlock> nodeblocks{};
+    std::vector<EdgeBlock> edgeblocks{};
+    std::vector<FaceBlock> faceblocks{};
+    std::vector<ElemBlock> elemblocks{};
+    std::vector<NodeSet>   nodesets{};
+    std::vector<EdgeSet>   edgesets{};
+    std::vector<FaceSet>   facesets{};
+    std::vector<ElemSet>   elemsets{};
+    std::vector<SideSet>   sidesets{};
+    CommunicationMetaData  comm{};
   };
 
   class Internals
@@ -417,21 +400,19 @@ namespace Ioex {
 
     int write_meta_data(Mesh &mesh);
 
-    /*!  A restart file may contain an attribute which contains
-     *   information about the processor count and current processor id
-     *   * when the file was written.  This code checks whether that
-     *   information matches the current processor count and id.  If it
-     *   * exists, but doesn't match, a warning message is printed.
-     *   Eventually, this will be used to determine whether certain
-     *   decomposition-related data in the file is valid or has been
-     *   invalidated by a join/re-spread to a different number of
-     *   processors.
-     */
+    /* Special use for updating assembly data in-place in existing db file */
+    /* See src/main/io_assembly.C for current use */
+    static void update_assembly_data(int filePtr, std::vector<Assembly> &assemblies, int stage = 0);
+
+    // Simple wrapper around `ex_copy`, but keeps users from including `exodusII.h`
+    static void copy_database(int in_file, int out_file, bool transient_also = true);
 
   private:
     void get_global_counts(Mesh &mesh);
 
     int put_metadata(const Mesh &mesh, const CommunicationMetaData &comm);
+    int put_metadata(const std::vector<Assembly> &assemblies);
+    int put_metadata(const std::vector<Blob> &blobs);
     int put_metadata(const std::vector<NodeBlock> &nodeblocks, bool count_only = false);
     int put_metadata(const std::vector<EdgeBlock> &blocks, bool count_only = false);
     int put_metadata(const std::vector<FaceBlock> &blocks, bool count_only = false);
@@ -445,6 +426,8 @@ namespace Ioex {
     int put_metadata(const std::vector<SideSet> &sidesets, bool count_only = false);
 
     int put_non_define_data(const CommunicationMetaData &comm);
+    int put_non_define_data(const std::vector<Assembly> &assemblies);
+    int put_non_define_data(const std::vector<Blob> &blobs);
     int put_non_define_data(const std::vector<NodeBlock> &nodeblocks);
     int put_non_define_data(const std::vector<EdgeBlock> &blocks);
     int put_non_define_data(const std::vector<FaceBlock> &blocks);
@@ -459,7 +442,7 @@ namespace Ioex {
 
     int max_name_length() const { return maximumNameLength; }
 
-    int                 exodusFilePtr;
+    int                 exodusFilePtr{0};
     int                 nodeMapVarID[3];
     int                 elementMapVarID[2];
     int                 commIndexVar{0};

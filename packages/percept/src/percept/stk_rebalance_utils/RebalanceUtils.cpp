@@ -29,7 +29,7 @@ double stk::rebalance::check_balance(mesh::BulkData &    bulk_data,
   const ParallelMachine    &comm = bulk_data.parallel();
   double my_load = 0.0;
 
-  const mesh::MetaData & meta_data = stk::mesh::MetaData::get(bulk_data);
+  const mesh::MetaData & meta_data = bulk_data.mesh_meta_data();
 
   mesh::EntityVector local_elems;
   if (provided_elements)

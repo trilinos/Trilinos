@@ -61,7 +61,7 @@ namespace Details {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 template<class TpetraOperatorType>
-class ScaledDampedResidual; // forward declaration
+class ChebyshevKernel; // forward declaration
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 /// \class Chebyshev
@@ -358,8 +358,8 @@ private:
   /// nonnull input.
   Teuchos::RCP<const row_matrix_type> A_;
 
-  //! "Operator" implementing W := alpha*D_inv*(B-A*X) + beta*W.
-  Teuchos::RCP<ScaledDampedResidual<op_type>> sdr_;
+  //! "Operator" implementing W := alpha*D_inv*(B-A*X) + beta*W and X := X+W.
+  Teuchos::RCP<ChebyshevKernel<op_type> > ck_;
 
   /// \brief The inverse of the diagonal entries of A.
   ///

@@ -862,8 +862,8 @@ namespace Anasazi {
       std::vector<MagType> normsB1(p), normsB2(p),
                            normsC1(p), normsC2(p),
                            normsD1(p), normsD2(p);
-      ScalarType alpha = 0.5 * SCT::one(),
-                  beta = 0.33 * SCT::one();
+      ScalarType alpha = MagType(0.5) * SCT::one();
+      ScalarType beta = MagType(0.33) * SCT::one();
 
       B = MVT::Clone(*A,p);
       C = MVT::Clone(*A,p);

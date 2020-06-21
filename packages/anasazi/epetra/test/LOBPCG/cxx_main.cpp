@@ -78,6 +78,8 @@ int main(int argc, char *argv[])
 #endif
   MyPID = Comm.MyPID();
 
+  int nev = 5;
+  int blockSize = -1;
   bool testFailed;
   bool verbose = false;
   bool debug = false;
@@ -85,16 +87,20 @@ int main(int argc, char *argv[])
   bool fullOrtho = true;
   bool testRecovery = false;
   std::string which("LM");
+  std::string ortho("SVQB");
   int numElements = 100;
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
   cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
+  cmdp.setOption("ortho",&ortho,"Orthogonalization method (SVQB, DGKS, ICGS).");
   cmdp.setOption("shortrun","longrun",&shortrun,"Allow only a small number of iterations.");
   cmdp.setOption("testrecovery","notestrecovery",&testRecovery,"Test the LOBPCGRitzError recovery code in LOBPCGSolMgr.");
   cmdp.setOption("fullortho","nofullortho",&fullOrtho,"Use full orthogonalization.");
   cmdp.setOption("numElements",&numElements,"Number of elements in discretization.");
+  cmdp.setOption("nev",&nev,"Number of eigenvalues to compute.");
+  cmdp.setOption("blocksize",&blockSize,"Block size used by LOBPCG (-1 = nev)");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
 #ifdef HAVE_MPI
     MPI_Finalize();
@@ -131,12 +137,12 @@ int main(int argc, char *argv[])
   RCP<const Epetra_CrsMatrix> M = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
   //
   // Create the initial vectors
-  int blockSize = 5;
+  if (blockSize == -1)
+    blockSize = nev;
   RCP<Epetra_MultiVector> ivec = rcp( new Epetra_MultiVector(K->OperatorDomainMap(), blockSize) );
   ivec->Random();
 
   // Create eigenproblem
-  const int nev = 5;
   RCP<Anasazi::BasicEigenproblem<ScalarType,MV,OP> > problem =
     rcp( new Anasazi::BasicEigenproblem<ScalarType,MV,OP>(K,M,ivec) );
   //
@@ -190,11 +196,13 @@ int main(int argc, char *argv[])
   MyPL.set( "Use Locking", true );
   MyPL.set( "Locking Tolerance", tol/10 );
   MyPL.set( "Full Ortho", fullOrtho );
+  MyPL.set( "Orthogonalization", ortho );
+
   if (testRecovery) {
     // initialize with bad P
     RCP<Anasazi::LOBPCGState<ScalarType,MV> > badstate = rcp( new Anasazi::LOBPCGState<ScalarType,MV>() );
-    Anasazi::SVQBOrthoManager<ScalarType,MV,OP> ortho(M);
-    ortho.normalize(*ivec,null);
+    Anasazi::SVQBOrthoManager<ScalarType,MV,OP> orthoM(M);
+    orthoM.normalize(*ivec,null);
     badstate->X = ivec;
     RCP<MV> P  = rcp( new Epetra_MultiVector(K->OperatorDomainMap(), blockSize) );
     MVT::MvInit(*P,0.0);

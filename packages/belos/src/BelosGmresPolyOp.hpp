@@ -57,10 +57,7 @@
 
 #include "BelosGmresIteration.hpp"
 #include "BelosBlockGmresIter.hpp"
-
-#include "BelosDGKSOrthoManager.hpp"
-#include "BelosICGSOrthoManager.hpp"
-#include "BelosIMGSOrthoManager.hpp"
+#include "BelosOrthoManagerFactory.hpp"
 
 #include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestGenResNorm.hpp"
@@ -394,9 +391,6 @@ namespace Belos {
 
     if (params_in->isParameter("Orthogonalization")) {
       orthoType_ = params_in->get("Orthogonalization",orthoType_default_);
-      TEUCHOS_TEST_FOR_EXCEPTION( orthoType_ != "DGKS" && orthoType_ != "ICGS" && orthoType_ != "IMGS",
-                                  std::invalid_argument,
-                                  "Belos::GmresPolyOp: \"Orthogonalization\" must be either \"DGKS\", \"ICGS\", or \"IMGS\".");
     }
 
     // Check for timer label
@@ -553,26 +547,17 @@ namespace Belos {
     polyList.set("Block Size",1);
     polyList.set("Keep Hessenberg", true);
 
+    // Create output manager.
+    printer_ = Teuchos::rcp( new OutputManager<ScalarType>(verbosity_, outputStream_) );
+
     // Create orthogonalization manager if we need to.  
     if (ortho_.is_null()) {
       params_->set("Orthogonalization", orthoType_);
-      if (orthoType_=="DGKS") {
-        ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( polyLabel ) );
-      }
-      else if (orthoType_=="ICGS") {
-        ortho_ = Teuchos::rcp( new ICGSOrthoManager<ScalarType,MV,OP>( polyLabel ) );
-      }
-      else if (orthoType_=="IMGS") {
-        ortho_ = Teuchos::rcp( new IMGSOrthoManager<ScalarType,MV,OP>( polyLabel ) );
-      }
-      else {
-        TEUCHOS_TEST_FOR_EXCEPTION(orthoType_!="ICGS"&&orthoType_!="DGKS"&&orthoType_!="IMGS",std::invalid_argument,
-          "Belos::GmresPolyOp(): Invalid orthogonalization type.");
-      }
-    }
+      Belos::OrthoManagerFactory<ScalarType, MV, OP> factory;
+      Teuchos::RCP<Teuchos::ParameterList> paramsOrtho;   // can be null
 
-    // Create output manager.
-    printer_ = Teuchos::rcp( new OutputManager<ScalarType>(verbosity_, outputStream_) );
+      ortho_ = factory.makeMatOrthoManager (orthoType_, Teuchos::null, printer_, polyLabel, paramsOrtho);
+    }
 
     // Create a simple status test that either reaches the relative residual tolerance or maximum polynomial size.
     Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP> > maxItrTst =
@@ -620,11 +605,11 @@ namespace Belos {
     try {
       gmres_iter->iterate();
     }
-    catch (GmresIterationOrthoFailure e) {
+    catch (GmresIterationOrthoFailure& e) {
       // Try to recover the most recent least-squares solution
       gmres_iter->updateLSQR( gmres_iter->getCurSubspaceDim() );
     }
-    catch (std::exception e) {
+    catch (std::exception& e) {
       using std::endl;
       printer_->stream(Errors) << "Error! Caught exception in BlockGmresIter::iterate() at iteration "
         << gmres_iter->getNumIters() << endl << e.what () << endl;
@@ -763,7 +748,10 @@ namespace Belos {
     std::vector<int> extra (dim_);
     int totalExtra = 0;
     for(int i=0; i<dim_; ++i){
-      extra[i] = ceil((log10(pof[i])-MagnitudeType(4.0))/MagnitudeType(14.0));
+      if (pof[i] > MCT::zero())
+        extra[i] = ceil((log10(pof[i])-MagnitudeType(4.0))/MagnitudeType(14.0));
+      else
+        extra[i] = 0;
       if(extra[i] > 0){
         totalExtra += extra[i];
       }
@@ -864,7 +852,12 @@ namespace Belos {
         {
           a = thetaN(i,0) - sorted(k,0);
           b = thetaN(i,1) - sorted(k,1);
-          prod(i) = prod(i) + log10(sqrt(a*a + b*b));
+          if (a*a + b*b > MCT::zero())
+            prod(i) = prod(i) + log10(hypot(a,b));
+          else {
+            prod(i) = -std::numeric_limits<MagnitudeType>::infinity();
+            break;
+          }
         }
       }
       

@@ -191,10 +191,14 @@ namespace MueLuTests {
         GO numGlobalElements; //global_size_t
         if (matrixType == "Laplace1D")
           numGlobalElements = nx;
-        else if (matrixType == "Laplace2D")
+        else if (matrixType == "Laplace2D" || matrixType == "Star2D")
           numGlobalElements = nx*ny;
-        else if (matrixType == "Laplace3D")
+        else if(matrixType == "Elasticity2D")
+          numGlobalElements = 2*nx*ny;
+        else if (matrixType == "Laplace3D" || matrixType == "Brick3D")
           numGlobalElements = nx*ny*nz;
+        else if  (matrixType == "Elasticity3D")
+          numGlobalElements = 3*nx*ny*nz;
         else {
           std::string msg = matrixType + " is unsupported (in unit testing)";
           throw(MueLu::Exceptions::RuntimeError(msg));
@@ -589,13 +593,6 @@ namespace MueLuTests {
       }
 
       static Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > CreateBlockDiagonalExampleMatrix(Xpetra::UnderlyingLib lib, int noBlocks, Teuchos::RCP<const Teuchos::Comm<int> > comm) {
-        typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
-        typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> CrsMatrix;
-        typedef Xpetra::CrsMatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> CrsMatrixFactory;
-        typedef Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node> MapExtractor;
-        typedef Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedCrsMatrix;
-        typedef Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node> CrsMatrixWrap;
-
         GlobalOrdinal nOverallDOFGidsPerProc = Teuchos::as<GlobalOrdinal>(Teuchos::ScalarTraits<GlobalOrdinal>::pow(2,noBlocks-2)) * 10;
 
         GlobalOrdinal procOffset = comm->getRank() * nOverallDOFGidsPerProc;
@@ -660,13 +657,6 @@ namespace MueLuTests {
       }
 
       static Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > CreateBlockDiagonalExampleMatrixThyra(Xpetra::UnderlyingLib lib, int noBlocks, Teuchos::RCP<const Teuchos::Comm<int> > comm) {
-        typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
-        typedef Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node> MapFactory;
-        typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> CrsMatrix;
-        typedef Xpetra::CrsMatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> CrsMatrixFactory;
-        typedef Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node> MapExtractor;
-        typedef Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedCrsMatrix;
-        typedef Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node> CrsMatrixWrap;
 
         std::vector<Teuchos::RCP<const Map> > maps(noBlocks, Teuchos::null);
 
@@ -711,10 +701,6 @@ namespace MueLuTests {
       }
 
       static Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > CreateBlocked3x3MatrixThyra(const Teuchos::Comm<int>& comm, Xpetra::UnderlyingLib lib) {
-        typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
-        typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> Matrix;
-        typedef Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node> MapExtractor;
-        typedef Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedCrsMatrix;
 
         std::vector<RCP<const Map> > maps = std::vector<RCP<const Map> >(3, Teuchos::null);
         maps[0] = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildMap(100);

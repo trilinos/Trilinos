@@ -145,7 +145,7 @@ public:
   /// complete the canceled request (as required by the MPI standard).
   virtual ~CommRequest() {}
 
-  //! Wait on this request (a blocking operation).
+  /// Wait on this request (a blocking operation).
   virtual RCP<CommStatus<OrdinalType> > wait () = 0;
 };
 
@@ -166,6 +166,7 @@ public:
 /// You have to create one of the subclasses.  The normal way to
 /// handle a Comm is to pass it around using RCP (a reference-counted
 /// "smart" pointer).  For example:
+///
 /// \code
 /// // Make a Comm.  This one happens to wrap MPI_COMM_WORLD.
 /// RCP<const Comm<int> > comm = rcp (new MpiComm (MPI_COMM_WORLD));
@@ -230,6 +231,7 @@ public:
 /// with MPI enabled, you may use GlobalMPISession to call MPI_Init if
 /// necessary, and DefaultComm to "get a default communicator."  For
 /// example:
+/// \code
 /// int main (int argc, char* argv[]) {
 ///   using Teuchos::Comm;
 ///   using Teuchos::DefaultComm;

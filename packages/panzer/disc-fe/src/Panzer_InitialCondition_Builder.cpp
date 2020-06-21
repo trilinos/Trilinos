@@ -83,8 +83,16 @@ setupInitialConditionFieldManagers(WorksetContainer & wkstContainer,
                                                       << "\".  You must provide an initial condition for each element block or set a default!" 
                                                       << ic_block_closure_models);
 
+    // Only the residual is used by initial conditions
+    std::vector<bool> active_evaluation_types(Sacado::mpl::size<panzer::Traits::EvalTypes>::value,false);
+    int residual_index = Sacado::mpl::find<panzer::Traits::EvalTypes,panzer::Traits::Residual>::value;
+    active_evaluation_types[residual_index] = true;
+    pb->setActiveEvaluationTypes(active_evaluation_types);
+
     // use the physics block to register evaluators
     pb->buildAndRegisterInitialConditionEvaluators(*fm, cm_factory, closure_model_name, ic_block_closure_models, lo_factory, user_data);
+
+    pb->activateAllEvaluationTypes();
 
     // build the setup data using passed in information
     Traits::SD setupData;
@@ -92,9 +100,14 @@ setupInitialConditionFieldManagers(WorksetContainer & wkstContainer,
     setupData.worksets_ = wkstContainer.getWorksets(wd);
     setupData.orientations_ = wkstContainer.getOrientations();
 
-    fm->postRegistrationSetup(setupData);
+    int i=0;
+    for (auto eval_type=fm->begin(); eval_type != fm->end(); ++eval_type,++i) {
+      if (active_evaluation_types[i])
+        eval_type->postRegistrationSetup(setupData,*fm,false,false,nullptr);
+    }
+
     phx_ic_field_managers[blockId] = fm;
-    
+
     if (write_graphviz_file)
       fm->writeGraphvizFile(graphviz_file_prefix+"_IC_"+blockId);
   }
@@ -132,11 +145,19 @@ setupInitialConditionFieldManagers(WorksetContainer & wkstContainer,
                                                       << "\".  You must provide an initial condition for each element block or set a default!" 
                                                       << ic_block_closure_models);
 
+    // Only the residual is used by initial conditions
+    std::vector<bool> active_evaluation_types(Sacado::mpl::size<panzer::Traits::EvalTypes>::value,false);
+    int residual_index = Sacado::mpl::find<panzer::Traits::EvalTypes,panzer::Traits::Residual>::value;
+    active_evaluation_types[residual_index] = true;
+    pb->setActiveEvaluationTypes(active_evaluation_types);
+
     // build and register all closure models
     pb->buildAndRegisterClosureModelEvaluators(*fm,cm_factory,closure_models,user_data);
      
     // use the physics block to register evaluators
     pb->buildAndRegisterInitialConditionEvaluators(*fm, cm_factory, closure_model_name, ic_block_closure_models, lo_factory, user_data);
+
+    pb->activateAllEvaluationTypes();
 
     // build the setup data using passed in information
     Traits::SD setupData;
@@ -144,9 +165,14 @@ setupInitialConditionFieldManagers(WorksetContainer & wkstContainer,
     setupData.worksets_ = wkstContainer.getWorksets(wd);
     setupData.orientations_ = wkstContainer.getOrientations();
 
-    fm->postRegistrationSetup(setupData);
+    int i=0;
+    for (auto eval_type=fm->begin(); eval_type != fm->end(); ++eval_type,++i) {
+      if (active_evaluation_types[i])
+        eval_type->postRegistrationSetup(setupData,*fm,false,false,nullptr);
+    }
+
     phx_ic_field_managers[blockId] = fm;
-    
+
     if (write_graphviz_file)
       fm->writeGraphvizFile(graphviz_file_prefix+"_IC_"+blockId);
   }

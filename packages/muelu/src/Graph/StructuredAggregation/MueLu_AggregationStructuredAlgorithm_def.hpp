@@ -241,8 +241,7 @@ namespace MueLu {
     *out << "Call constructor of CrsGraph" << std::endl;
     myGraph = CrsGraphFactory::Build(rowMap,
                                      colMap,
-                                     nnzOnRow,
-                                     Xpetra::StaticProfile);
+                                     nnzOnRow);
 
     *out << "Fill CrsGraph" << std::endl;
     LO rowIdx = 0;
@@ -257,7 +256,7 @@ namespace MueLu {
     myGraph->fillComplete(domainMap, rowMap);
     *out << "Prolongator CrsGraph computed" << std::endl;
 
-  } // BuildAggregates()
+  } // BuildGraph()
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>

@@ -37,7 +37,7 @@
 #include <fstream>
 
 #include <unit_tests/UnitTestUtils.hpp>
-#include <unit_tests/MeshUtilsForBoundingVolumes.hpp>
+#include "MeshUtilsForBoundingVolumes.hpp"
 
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <stk_unit_test_utils/getOption.h>
@@ -52,20 +52,6 @@ void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<FloatBox> &domainBo
         stk::search::SearchMethod searchMethod, SearchResults boxIdPairResults);
 void testStkSearchUsingFloatAABoxes(MPI_Comm comm, std::vector<FloatBox> &domainBoxes,
                 stk::search::SearchMethod searchMethod, SearchResults boxIdPairResults);
-
-TEST(Performance, ofAxisAlignedBoundingBoxesUsingOctTree)
-{
-  MPI_Comm comm = MPI_COMM_WORLD;
-  stk::search::SearchMethod searchMethod = stk::search::KDTREE;
-  testPerformanceOfAxisAlignedBoundingBoxes(searchMethod, comm);
-}
-
-TEST(Performance, ofAxisAlignedBoundingBoxesUsingBoostRtree)
-{
-  MPI_Comm comm = MPI_COMM_WORLD;
-  stk::search::SearchMethod searchMethod = stk::search::BOOST_RTREE;
-  testPerformanceOfAxisAlignedBoundingBoxes(searchMethod, comm);
-}
 
 TEST(Performance, ofAxisAlignedBoundingBoxesUsingKdtree)
 {
@@ -145,19 +131,9 @@ void testPerformanceOfAxisAlignedBoundingBoxes(stk::search::SearchMethod searchM
 
 ////////////////////////////////////////////////////////////
 
-TEST(Performance, stkSearchUsingBoostUsingStkAABoxes)
-{
-    runStkSearchTestUsingStkAABoxes(stk::search::BOOST_RTREE);
-}
-
 TEST(Performance, stkSearchUsingKdtreeUsingStkAABoxes)
 {
     runStkSearchTestUsingStkAABoxes(stk::search::KDTREE);
-}
-
-TEST(Performance, stkSearchUsingBoostUsingFloatAABoxes)
-{
-    runStkSearchTestUsingFloatAABoxes(stk::search::BOOST_RTREE);
 }
 
 TEST(Performance, stkSearchUsingKdtreeUsingFloatAABoxes)

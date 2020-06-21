@@ -46,6 +46,13 @@ void extract_blocks_from_file(const std::string &inFile,
                               const std::string &outFile,
                               const std::vector<std::string> &blockNames,
                               MPI_Comm comm);
+
+void extract_blocks_and_ns_from_file(const std::string &inFile,
+                              const std::string &outFile,
+                              const std::vector<std::string> &blockNames,
+							  const std::vector<std::string> &nodesetNames,
+                              MPI_Comm comm);
+
 void extract_blocks(stk::mesh::BulkData &oldBulk, stk::mesh::BulkData &newBulk, const std::vector<std::string> &blockNames);
 
 }

@@ -68,7 +68,7 @@ namespace PHX{
     }
   };
 
-  //! Used to set the extents from a parameter pack. this implementation ends the recursion.
+  //! Used to set the extents from a parameter pack. This implementation ends the recursion.
   template<>
   struct SetExtentsImpl<> {
     static void setExtents(PHX::Device::size_type ,

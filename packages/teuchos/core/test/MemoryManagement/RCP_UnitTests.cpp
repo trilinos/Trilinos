@@ -225,6 +225,41 @@ TEUCHOS_UNIT_TEST( RCP, move_assign_nonnull )
 }
 
 
+TEUCHOS_UNIT_TEST( RCP, operator_bool_null )
+{
+  RCP<A> a_rcp;
+  TEST_EQUALITY_CONST(bool(a_rcp), false);
+}
+
+
+TEUCHOS_UNIT_TEST( RCP, operator_bool_nonnull )
+{
+  RCP<A> a_rcp(new A);
+  TEST_EQUALITY_CONST(bool(a_rcp), true);
+}
+
+
+TEUCHOS_UNIT_TEST( RCP, operator_bool_if )
+{
+  RCP<A> a_rcp(new A);
+  RCP<A> b_rcp;
+  bool a_is_null;
+  bool b_is_null;
+
+  if (a_rcp)
+    a_is_null = false;
+  else
+    a_is_null = true;
+  if (b_rcp)
+    b_is_null = false;
+  else
+    b_is_null = true;
+ 
+  TEST_EQUALITY_CONST(a_is_null, false);
+  TEST_EQUALITY_CONST(b_is_null, true );
+}
+
+
 TEUCHOS_UNIT_TEST( RCP, getConst )
 {
   RCP<A> a_rcp(new A);

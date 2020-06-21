@@ -1,40 +1,14 @@
 /*
- * Copyright (c) 2005-2017 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
- *     * Neither the name of NTESS nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
+ * See packages/seacas/LICENSE for details
  */
 
 #include "exodusII.h"     // for ex_block, ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, etc
+#include <stdbool.h>
 
 /*!
  * writes the parameters used to describe an element/face/edge block
@@ -83,8 +57,75 @@ int ex_put_block_params(int exoid, size_t block_count, const struct ex_block *bl
   int fill = NC_FILL_CHAR;
 #endif
 
+  if (block_count == 0) {
+    return (EX_NOERR);
+  }
+
   EX_FUNC_ENTER();
   ex__check_valid_file_id(exoid, __func__);
+
+  /*
+   * ========================================================================
+   * Check whether `blocks` is homogenous (all same type) and if so, does it
+   * contain entries for all blocks of that type that will be defined. If so,
+   * can consolidate some operations...
+   */
+  bool all_same  = true;
+  int  last_type = blocks[0].type;
+  for (i = 0; i < block_count; i++) {
+    if (blocks[i].type != last_type) {
+      all_same = false;
+      break;
+    }
+    /* See if storing an 'nsided' element block (arbitrary 2d polyhedra or super
+     * element) */
+    if (strlen(blocks[i].topology) >= 3) {
+      if ((blocks[i].topology[0] == 'n' || blocks[i].topology[0] == 'N') &&
+          (blocks[i].topology[1] == 's' || blocks[i].topology[1] == 'S') &&
+          (blocks[i].topology[2] == 'i' || blocks[i].topology[2] == 'I')) {
+        all_same = false;
+        break;
+      }
+      else if ((blocks[i].topology[0] == 'n' || blocks[i].topology[0] == 'N') &&
+               (blocks[i].topology[1] == 'f' || blocks[i].topology[1] == 'F') &&
+               (blocks[i].topology[2] == 'a' || blocks[i].topology[2] == 'A')) {
+        /* If a FACE_BLOCK, then we are dealing with the faces of the nfaced
+         * blocks[i]. */
+        all_same = false;
+        break;
+      }
+    }
+  }
+
+  if (all_same) {
+    /*
+     * Check number of blocks of this type on the database and
+     * see if that is the size of `blocks` array (i.e., are all
+     * blocks of that type being defined in this call.
+     */
+    switch (last_type) {
+    case EX_EDGE_BLOCK: dnumblk = DIM_NUM_ED_BLK; break;
+    case EX_FACE_BLOCK: dnumblk = DIM_NUM_FA_BLK; break;
+    case EX_ELEM_BLOCK: dnumblk = DIM_NUM_EL_BLK; break;
+    default:
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: Bad block type (%d) specified for all blocks file id %d", last_type, exoid);
+      ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
+      EX_FUNC_LEAVE(EX_FATAL);
+    }
+    if ((status = ex__get_dimension(exoid, dnumblk, ex_name_of_object(last_type), &num_blk, &dimid,
+                                    __func__)) != NC_NOERR) {
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: No %ss defined in file id %d",
+               ex_name_of_object(last_type), exoid);
+      ex_err_fn(exoid, __func__, errmsg, EX_LASTERR);
+      EX_FUNC_LEAVE(EX_FATAL);
+    }
+
+    if (block_count == num_blk) {
+      status = ex__put_homogenous_block_params(exoid, block_count, blocks);
+      EX_FUNC_LEAVE(status);
+    }
+  }
 
   if (!(blocks_to_define = malloc(block_count * sizeof(int)))) {
     snprintf(errmsg, MAX_ERR_LENGTH,
@@ -191,7 +232,7 @@ int ex_put_block_params(int exoid, size_t block_count, const struct ex_block *bl
       blk_stat = 0;                 /* change element block status to NULL */
     }
     else {
-      blk_stat = 1; /* change element block status to EX_EX_TRUE */
+      blk_stat = 1; /* change element block status to TRUE */
     }
 
     if ((status = nc_inq_varid(exoid, vblksta, &varid)) != NC_NOERR) {

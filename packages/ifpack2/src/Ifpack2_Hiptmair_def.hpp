@@ -46,6 +46,7 @@
 #include "Ifpack2_Details_OneLevelFactory.hpp"
 #include "Ifpack2_Parameters.hpp"
 #include "Teuchos_TimeMonitor.hpp"
+#include "Tpetra_MultiVector.hpp"
 #include <cmath>
 #include <iostream>
 #include <sstream>

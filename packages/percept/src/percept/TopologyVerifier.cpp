@@ -102,7 +102,7 @@
      */
     bool TopologyVerifier::isTopologyBad(stk::mesh::BulkData& bulk) //, stk::mesh::Part& mesh_part )
     {
-      const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
+      const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
 
       stk::mesh::Field<double, stk::mesh::Cartesian> *coord_field =
         meta.get_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(stk::topology::NODE_RANK, "coordinates");

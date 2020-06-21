@@ -210,11 +210,7 @@ namespace Teuchos {
   //! @name I/O methods.
   //@{
     //! Print method.  Define the behavior of the std::ostream << operator inherited from the Object class.
-#ifndef TEUCHOS_HIDE_DEPRECATED_CODE
-    virtual void print(std::ostream& os) const;
-#else
     std::ostream& print(std::ostream& os) const;
-#endif
   //@}
 };
 
@@ -285,11 +281,7 @@ namespace Teuchos {
   }
 
   template<typename OrdinalType, typename ScalarType>
-#ifndef TEUCHOS_HIDE_DEPRECATED_CODE
-  void SerialDenseVector<OrdinalType, ScalarType>::print(std::ostream& os) const
-#else
   std::ostream& SerialDenseVector<OrdinalType, ScalarType>::print(std::ostream& os) const
-#endif
   {
     os << std::endl;
     if(this->valuesCopied_)
@@ -305,9 +297,7 @@ namespace Teuchos {
       }
       os << std::endl;
     }
-#ifdef TEUCHOS_HIDE_DEPRECATED_CODE
     return os;
-#endif
   }
 
   //----------------------------------------------------------------------------------------------------

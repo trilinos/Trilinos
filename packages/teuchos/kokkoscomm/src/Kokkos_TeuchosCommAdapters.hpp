@@ -137,7 +137,7 @@ reduceAll (const SendViewType& sendBuf,
   typedef typename RecvViewType::value_type recv_value_type;
 
   const bool typesDiffer =
-    ! Kokkos::Impl::is_same<send_value_type, recv_value_type>::value;
+    ! std::is_same<send_value_type, recv_value_type>::value;
   TEUCHOS_TEST_FOR_EXCEPTION(
     typesDiffer, std::invalid_argument, "Teuchos::reduceAll: Send and receive "
     "Views contain data of different types.");
@@ -185,7 +185,7 @@ reduceAll(const Comm<Ordinal>& comm,
   typedef typename RecvViewType::value_type recv_value_type;
 
   const bool typesDiffer =
-    ! Kokkos::Impl::is_same<send_value_type, recv_value_type>::value;
+    ! std::is_same<send_value_type, recv_value_type>::value;
   TEUCHOS_TEST_FOR_EXCEPTION(
     typesDiffer, std::invalid_argument, "Teuchos::reduceAll: Send and receive "
     "Views contain data of different types.");

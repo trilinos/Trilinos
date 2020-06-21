@@ -43,14 +43,14 @@
 #include <cmath>
 #include "Piro_TransientDecorator.hpp"
 
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Piro::TrapezoidRuleSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+template <typename Scalar>
+Piro::TrapezoidRuleSolver<Scalar>::
 TrapezoidRuleSolver(const Teuchos::RCP<Teuchos::ParameterList> &appParams_,
                           const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model_,
                           const Teuchos::RCP<Thyra::AdaptiveSolutionManager> &solMgr_,
                           const Teuchos::RCP<Piro::ObserverBase<Scalar> > &observer_ ) :
   appParams(appParams_),
-  model(Teuchos::rcp(new Piro::TrapezoidDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>(model_))),
+  model(Teuchos::rcp(new Piro::TrapezoidDecorator<Scalar>(model_))),
   observer(observer_),
   solMgr(solMgr_),
   out(Teuchos::VerboseObjectBase::getDefaultOStream())
@@ -101,9 +101,9 @@ TrapezoidRuleSolver(const Teuchos::RCP<Teuchos::ParameterList> &appParams_,
 
 }
 
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+template <typename Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-Piro::TrapezoidRuleSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::get_p_space(int l) const
+Piro::TrapezoidRuleSolver<Scalar>::get_p_space(int l) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
       l >= num_p || l < 0,
@@ -116,9 +116,9 @@ Piro::TrapezoidRuleSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::get_p_spac
   return model->get_p_space(l);
 }
 
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+template <typename Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-Piro::TrapezoidRuleSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::get_g_space(int j) const
+Piro::TrapezoidRuleSolver<Scalar>::get_g_space(int j) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
       j > num_g || j < 0,
@@ -136,9 +136,9 @@ Piro::TrapezoidRuleSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::get_g_spac
   }
 }
 
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+template <typename Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
-Piro::TrapezoidRuleSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getNominalValues() const
+Piro::TrapezoidRuleSolver<Scalar>::getNominalValues() const
 {
   Thyra::ModelEvaluatorBase::InArgs<Scalar> result = this->createInArgs();
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> modelNominalValues = model->getNominalValues();
@@ -148,9 +148,9 @@ Piro::TrapezoidRuleSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getNominal
   return result;
 }
 
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+template <typename Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
-Piro::TrapezoidRuleSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createInArgs() const
+Piro::TrapezoidRuleSolver<Scalar>::createInArgs() const
 {
   Thyra::ModelEvaluatorBase::InArgsSetup<Scalar> inArgs;
   inArgs.setModelEvalDescription(this->description());
@@ -158,9 +158,9 @@ Piro::TrapezoidRuleSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createInAr
   return inArgs;
 }
 
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+template <typename Scalar>
 Thyra::ModelEvaluatorBase::OutArgs<Scalar>
-Piro::TrapezoidRuleSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createOutArgsImpl() const
+Piro::TrapezoidRuleSolver<Scalar>::createOutArgsImpl() const
 {
   Thyra::ModelEvaluatorBase::OutArgsSetup<Scalar> outArgs;
   outArgs.setModelEvalDescription(this->description());
@@ -220,9 +220,9 @@ Piro::TrapezoidRuleSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createOutA
 
 }
 
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+template <typename Scalar>
 void
-Piro::TrapezoidRuleSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::evalModelImpl(
+Piro::TrapezoidRuleSolver<Scalar>::evalModelImpl(
     const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
     const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const
 {
@@ -389,9 +389,9 @@ Piro::TrapezoidRuleSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::evalModelI
 
 }
 
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+template <typename Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
-Piro::TrapezoidRuleSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getValidTrapezoidRuleParameters() const
+Piro::TrapezoidRuleSolver<Scalar>::getValidTrapezoidRuleParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> validPL =
      Teuchos::rcp(new Teuchos::ParameterList("ValidTrapezoidRuleParams"));;
@@ -408,8 +408,8 @@ Piro::TrapezoidRuleSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getValidTr
 
 /****************************************************************************/
 
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Piro::TrapezoidDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TrapezoidDecorator(
+template <typename Scalar>
+Piro::TrapezoidDecorator<Scalar>::TrapezoidDecorator(
                           const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model_) :
   Thyra::ModelEvaluatorDelegatorBase<Scalar>(model_),
   DMEWSF(Teuchos::rcp_dynamic_cast<Thyra::DefaultModelEvaluatorWithSolveFactory<Scalar> >(model_)),
@@ -438,52 +438,51 @@ Piro::TrapezoidDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TrapezoidDe
 
 }
 
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+template <typename Scalar>
 Teuchos::RCP<const Thyra::VectorBase<Scalar> >
-Piro::TrapezoidDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::get_x() const
+Piro::TrapezoidDecorator<Scalar>::get_x() const
 {
 
   return x_save;
 
 }
 
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+template <typename Scalar>
 Teuchos::RCP<const Thyra::VectorBase<Scalar> >
-Piro::TrapezoidDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::get_x_dot() const
+Piro::TrapezoidDecorator<Scalar>::get_x_dot() const
 {
 
   return xDot;
 
 }
 
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+template <typename Scalar>
 Teuchos::RCP<const Thyra::VectorBase<Scalar> >
-Piro::TrapezoidDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::get_x_dotdot() const
+Piro::TrapezoidDecorator<Scalar>::get_x_dotdot() const
 {
-  Teuchos::RCP<const Piro::TransientDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > dec =
-     Teuchos::rcp_dynamic_cast<const Piro::TransientDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  Teuchos::RCP<const Piro::TransientDecorator<Scalar> > dec =
+     Teuchos::rcp_dynamic_cast<const Piro::TransientDecorator<Scalar> >
          (DMEWSF->getUnderlyingModel());
 
   TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(dec),
     std::logic_error,
-    "Underlying model in trapezoid decorator does not cast to a Piro::TransientDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>"
-    << std::endl);
+    "Underlying model in trapezoid decorator does not cast to a Piro::TransientDecorator<Scalar>\n"); 
 
   return dec->get_x_dotdot();
 
 }
 
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+template <typename Scalar>
 void
-Piro::TrapezoidDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::reportFinalPoint(
+Piro::TrapezoidDecorator<Scalar>::reportFinalPoint(
     const Thyra::ModelEvaluatorBase::InArgs<Scalar>& finalPoint,
     const bool wasSolved)
 {
   this->getNonconstUnderlyingModel()->reportFinalPoint(finalPoint,wasSolved);
 }
 
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-void Piro::TrapezoidDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::injectData(
+template <typename Scalar>
+void Piro::TrapezoidDecorator<Scalar>::injectData(
     const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x_,
     const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x_pred_a_, Scalar fdt2_,
     const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x_pred_v_, Scalar tdt_,
@@ -500,8 +499,8 @@ void Piro::TrapezoidDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::inject
 
 }
 
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-void Piro::TrapezoidDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::resize(
+template <typename Scalar>
+void Piro::TrapezoidDecorator<Scalar>::resize(
     const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x_)
 {
 
@@ -515,8 +514,8 @@ void Piro::TrapezoidDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::resize
 }
 
 
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-void Piro::TrapezoidDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::evalModelImpl(
+template <typename Scalar>
+void Piro::TrapezoidDecorator<Scalar>::evalModelImpl(
       const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
       const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const {
 
@@ -540,14 +539,13 @@ void Piro::TrapezoidDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::evalMo
   // No xdotdot support in Thyra, so set directly in the model
   // Need to set xdotdot and omega in the underlying model if the model is a DMEWSF
 
-  Teuchos::RCP<const Piro::TransientDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > dec =
-       Teuchos::rcp_dynamic_cast<const Piro::TransientDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  Teuchos::RCP<const Piro::TransientDecorator<Scalar> > dec =
+       Teuchos::rcp_dynamic_cast<const Piro::TransientDecorator<Scalar> >
            (DMEWSF->getUnderlyingModel());
 
   TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(dec),
       std::logic_error,
-      "Underlying model in trapezoid decorator does not cast to a Piro::TransientDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>"
-      << std::endl);
+      "Underlying model in trapezoid decorator does not cast to a Piro::TransientDecorator<Scalar>\n");
 
   dec->set_omega(fdt2);  // fdt2 = 4/(dt)^2
   dec->set_x_dotdot_data(xDotDot); // no xdotdot in Thyra inArgs

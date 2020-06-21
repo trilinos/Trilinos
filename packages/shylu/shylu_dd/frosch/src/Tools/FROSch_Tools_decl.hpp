@@ -58,8 +58,20 @@
 #define FROSCH_TIMER_STOP(A) A.reset();
 #endif
 
+#ifndef FROSCH_WARNING
+#define FROSCH_WARNING(CLASS,VERBOSE,OUTPUT) if (VERBOSE) std::cerr << CLASS << " : WARNING: " << OUTPUT << std::endl;
+#endif
+
+#ifndef FROSCH_NOTIFICATION
+#define FROSCH_NOTIFICATION(CLASS,VERBOSE,OUTPUT) if (VERBOSE) std::cout << CLASS << " : NOTIFICATION: " << OUTPUT << std::endl;
+#endif
+
 #ifndef FROSCH_TEST_OUTPUT
 #define FROSCH_TEST_OUTPUT(COMM,VERBOSE,OUTPUT) COMM->barrier(); COMM->barrier(); COMM->barrier(); if (VERBOSE) std::cout << OUTPUT << std::endl;
+#endif
+
+#ifndef FROSCH_INDENT
+#define FROSCH_INDENT 5
 #endif
 
 #include <ShyLU_DDFROSch_config.h>
@@ -81,6 +93,7 @@
 
 namespace FROSch {
 
+    using namespace std;
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -116,6 +129,7 @@ namespace FROSch {
 
         int Merge(const RCP<OverlappingData<LO,GO> > od) const;
 
+
         GO GID_;
 
         mutable IntVec PIDs_;
@@ -136,7 +150,7 @@ namespace FROSch {
 
         using CommPtr                   = RCP<const Comm<int> >;
 
-        using ConstXMapPtr               = RCP<const Map<LO,GO,NO> >;
+        using ConstXMapPtr              = RCP<const Map<LO,GO,NO> >;
 
         using OverlappingDataPtr        = RCP<OverlappingData<LO,GO> >;
         using OverlappingDataPtrVec     = Array<OverlappingDataPtr>;
@@ -170,8 +184,8 @@ namespace FROSch {
 
         int sendDataToOriginalMap();
 
-        virtual std::size_t selectedIndex(GO GID,
-                                          const std::vector<std::pair<int,LO> > & pid_and_lid) const;
+        virtual size_t selectedIndex(GO GID,
+                                          const vector<pair<int,LO> > & pid_and_lid) const;
 
     protected:
 
@@ -202,6 +216,18 @@ namespace FROSch {
                                                               ArrayRCP<const RCP<Map<LO,GO,NO> > > subMaps);
 
     template <class SC,class LO,class GO,class NO>
+    RCP<Map<LO,GO,NO> > BuildRepeatedMapNonConstOld(RCP<const Matrix<SC,LO,GO,NO> > matrix);
+
+    template <class SC,class LO,class GO,class NO>
+    RCP<const Map<LO,GO,NO> > BuildRepeatedMapOld(RCP<const Matrix<SC,LO,GO,NO> > matrix);
+
+    template <class LO,class GO,class NO>
+    RCP<Map<LO,GO,NO> > BuildRepeatedMapNonConstOld(RCP<const CrsGraph<LO,GO,NO> > graph);
+
+    template <class LO,class GO,class NO>
+    RCP<const Map<LO,GO,NO> > BuildRepeatedMapOld(RCP<const CrsGraph<LO,GO,NO> > graph);
+
+    template <class SC,class LO,class GO,class NO>
     RCP<Map<LO,GO,NO> > BuildRepeatedMapNonConst(RCP<const Matrix<SC,LO,GO,NO> > matrix);
 
     template <class SC,class LO,class GO,class NO>
@@ -230,7 +256,7 @@ namespace FROSch {
                                 RCP<const Map<LO,GO,NO> > inputMap,
                                 RCP<const CrsGraph<LO,GO,NO> > &outputGraph,
                                 RCP<const Map<LO,GO,NO> > &outputMap);
-    
+
     /*! \brief Sort the Xpetra::Map by the global IDs \c x
      * \param[in] inputMap Unsorted input map
      */
@@ -238,9 +264,9 @@ namespace FROSch {
     RCP<const Map<LO,GO,NO> > SortMapByGlobalIndex(RCP<const Map<LO,GO,NO> > inputMap);
 
     template <class LO,class GO,class NO>
-    RCP<Map<LO,GO,NO> > AssembleMaps(ArrayView<RCP<Map<LO,GO,NO> > > mapVector,
+    RCP<Map<LO,GO,NO> > AssembleMaps(ArrayView<RCP<const Map<LO,GO,NO> > > mapVector,
                                      ArrayRCP<ArrayRCP<LO> > &partMappings);
-    
+
     template <class LO,class GO,class NO>
     RCP<Map<LO,GO,NO> > AssembleSubdomainMap(unsigned numberOfBlocks,
                                              ArrayRCP<ArrayRCP<RCP<const Map<LO,GO,NO> > > > dofsMaps,
@@ -274,14 +300,19 @@ namespace FROSch {
                                             unsigned dofOrdering);
 
     template <class LO,class GO,class NO>
-    RCP<Map<LO,GO,NO> > BuildMapFromNodeMap(RCP<Map<LO,GO,NO> > &nodesMap,
+    RCP<Map<LO,GO,NO> > BuildMapFromNodeMap(RCP<const Map<LO,GO,NO> > &nodesMap,
                                             unsigned dofsPerNode,
                                             unsigned dofOrdering);
 
     template <class LO,class GO,class NO>
+    ArrayRCP<RCP<const Map<LO,GO,NO> > > BuildNodeMapsFromDofMaps(ArrayRCP<ArrayRCP<RCP<const Map<LO,GO,NO> > > >dofsMapsVecVec,
+                                                                  ArrayRCP<unsigned> dofsPerNodeVec,
+                                                                  ArrayRCP<DofOrdering> dofOrderingVec);
+
+    template <class LO,class GO,class NO>
     ArrayRCP<RCP<Map<LO,GO,NO> > > BuildSubMaps(RCP<const Map<LO,GO,NO> > &fullMap,
                                                 ArrayRCP<GO> maxSubGIDVec);
-    
+
     template <class SC,class LO,class GO,class NO>
     ArrayRCP<GO> FindOneEntryOnlyRowsGlobal(RCP<const Matrix<SC,LO,GO,NO> > matrix,
                                             RCP<const Map<LO,GO,NO> > repeatedMap);
@@ -289,14 +320,14 @@ namespace FROSch {
     template <class LO,class GO,class NO>
     ArrayRCP<GO> FindOneEntryOnlyRowsGlobal(RCP<const CrsGraph<LO,GO,NO> > graph,
                                             RCP<const Map<LO,GO,NO> > repeatedMap);
-    
+
     template <class SC,class LO>
     bool ismultiple(ArrayView<SC> A,
                     ArrayView<SC> B);
 
     template<class T>
     inline void sort(T &v);
-    
+
     template<class T>
     inline void sortunique(T &v);
 
@@ -370,11 +401,11 @@ namespace FROSch {
 
     template <class Type>
     RCP<Type> ExtractPtrFromParameterList(ParameterList& paramList,
-                                          std::string namePtr="Ptr");
+                                          string namePtr="Ptr");
 
     template <class Type>
     ArrayRCP<Type> ExtractVectorFromParameterList(ParameterList& paramList,
-                                                  std::string nameVector="Vector");
+                                                  string nameVector="Vector");
 
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
     template <class LO,class GO,class NO>
@@ -391,7 +422,7 @@ namespace FROSch {
 #endif
 
     template <class LO>
-    Array<LO> GetIndicesFromString(std::string string);
+    Array<LO> GetIndicesFromString(string string);
 
 #ifdef HAVE_SHYLU_DDFROSCH_ZOLTAN2
     template <class SC,class LO,class GO,class NO>
@@ -410,11 +441,11 @@ namespace FROSch {
     \param[in] forschObj FROSch object that is asking for the missing package
     \param[in] packageName Name of the missing package
     */
-    inline void ThrowErrorMissingPackage(const std::string& froschObj,
-                                         const std::string& packageName)
+    inline void ThrowErrorMissingPackage(const string& froschObj,
+                                         const string& packageName)
     {
         // Create the error message
-        std::stringstream errMsg;
+        stringstream errMsg;
         errMsg << froschObj << " is asking for the Trilinos packate '"<< packageName << "', "
         "but this package is not included in your build configuration. "
         "Please enable '" << packageName << "' in your build configuration to be used with ShyLU_DDFROSch.";

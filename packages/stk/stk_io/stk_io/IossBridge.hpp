@@ -56,9 +56,6 @@
 #include "stk_io/OutputParams.hpp"
 #include "stk_io/FieldAndName.hpp"
 
-namespace Ioss { class ElementTopology; }
-namespace Ioss { class EntityBlock; }
-namespace Ioss { class Region; }
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class FieldRestriction; } }
@@ -78,6 +75,8 @@ class Field;
 class GroupingEntity;
 class Region;
 class ElementTopology;
+class EntityBlock;
+class DatabaseIO;
 }
 
 void STKIORequire(bool cond);
@@ -290,7 +289,7 @@ void ioss_add_fields(const stk::mesh::Part &part,
  */
 void define_input_fields(Ioss::Region &region,  stk::mesh::MetaData &meta);
 
-FieldNameToPartVector get_var_names(Ioss::Region &region, Ioss::EntityType type, stk::mesh::MetaData& meta);
+FieldNameToPartVector get_var_names(Ioss::Region &region, Ioss::EntityType type, const stk::mesh::MetaData& meta);
 
 /**
  * For the given Ioss::GroupingEntity "entity", find all fields that
@@ -454,6 +453,14 @@ void set_field_role(mesh::FieldBase &f, const Ioss::Field::RoleType &role);
  */
 bool is_part_io_part(const mesh::Part &part);
 
+bool is_part_io_part(const stk::mesh::Part* part);
+
+Ioss::GroupingEntity* get_grouping_entity(const Ioss::Region& region, stk::mesh::Part& part);
+
+std::vector<Ioss::EntityType> get_ioss_entity_types(const stk::mesh::MetaData& meta, stk::mesh::EntityRank rank);
+
+std::vector<Ioss::EntityType> get_ioss_entity_types(stk::mesh::Part& part);
+
 std::string getPartName(stk::mesh::Part& part);
 
 void set_alternate_part_name(stk::mesh::Part& part, const std::string& altPartName);
@@ -464,6 +471,11 @@ void set_original_topology_type(stk::mesh::Part& part);
 void set_original_topology_type(stk::mesh::Part& part, const std::string& origTopo);
 std::string get_original_topology_type(stk::mesh::Part& part);
 bool has_original_topology_type(stk::mesh::Part& part);
+
+void set_topology_type(stk::mesh::Part& part);
+void set_topology_type(stk::mesh::Part& part, const std::string& origTopo);
+std::string get_topology_type(stk::mesh::Part& part);
+bool has_topology_type(stk::mesh::Part& part);
 
 void set_original_part_id(stk::mesh::Part& part, const int64_t originalId);
 int64_t get_original_part_id(stk::mesh::Part& part);
@@ -493,6 +505,21 @@ bool has_io_part_attribute(mesh::Part &part);
 size_t db_api_int_size(const Ioss::GroupingEntity *entity);
 
 void initialize_spatial_dimension(mesh::MetaData &meta, size_t spatial_dimension, const std::vector<std::string> &entity_rank_names);
+
+Ioss::DatabaseIO *create_database_for_subdomain(const std::string &baseFilename, int index_subdomain, int num_subdomains);
+
+void add_properties_for_subdomain(stk::mesh::BulkData& bulkData, Ioss::Region &out_region, int index_subdomain,
+                                  int num_subdomains, int global_num_nodes, int global_num_elems);
+
+void write_mesh_data_for_subdomain(Ioss::Region& out_region, stk::mesh::BulkData& bulkData, const EntitySharingInfo& nodeSharingInfo);
+
+int write_transient_data_for_subdomain(Ioss::Region &out_region, stk::mesh::BulkData& bulkData, double timeStep);
+
+void write_file_for_subdomain(Ioss::Region &out_region,
+                              stk::mesh::BulkData& bulkData,
+                              const EntitySharingInfo &nodeSharingInfo,
+                              int numSteps = -1,
+                              double timeStep = 0.0);
 
 void write_file_for_subdomain(const std::string &baseFilename,
                               int index_subdomain,

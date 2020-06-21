@@ -1,4 +1,0 @@
-@INCLUDE=globipack/doc/BrowserTagFiles # Requires @INCLUDE_PAH=$(TRILINOS_HOME)/packages
-@INCLUDE=thyra/doc/BrowserTagFiles # Requires @INCLUDE_PAH=$(TRILINOS_HOME)/packages
-TAGFILES += \
-  $(TRILINOS_HOME)/packages/common/tag_files/optipackBrowser.tag=$(TRILINOS_HOME)/packages/optipack/browser/doc/html

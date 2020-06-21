@@ -1,7 +1,9 @@
 #ifndef INCL_CORE_POOL
 #define INCL_CORE_POOL
 
-#include <boost/scoped_array.hpp>
+#include <cstddef>
+#include <assert.h>
+#include <vector>
 
 //! Simple pool class.
 class Pool
@@ -13,7 +15,7 @@ public:
 	//! Checks for emptiness before destructing.
 	~Pool();
 
-  void Reset() { m_used = 0; m_overflow = 0; }
+        void Reset() { m_used = 0; m_overflow = 0; }
 
 	//! Gets the pool granularity.
 	size_t GetGranularity() const { return m_granularity; }
@@ -58,7 +60,7 @@ private:
 	bool IsFromPool( void const* instance ) const
 	{
 		char const* block = reinterpret_cast<char const*>( instance );
-		return m_storage.get() <= block && block < ( m_storage.get() + m_size*m_granularity );
+		return m_storage.data() <= block && block < ( m_storage.data() + m_size*m_granularity );
 	}
 
 	size_t m_granularity;	//!< The size of each element in the pool in bytes.
@@ -66,8 +68,8 @@ private:
 	size_t m_used;			//!< The number of pooled allocations.
 	size_t m_overflow;		//!< The number of non-pooled allocations.
 
-	boost::scoped_array<char> m_storage;	//!< The pool storage.
-	boost::scoped_array<void*> m_slots;		//!< The free list.
+        std::vector<char> m_storage;	//!< The pool storage.
+        std::vector<void*> m_slots;	//!< The free list.
 };
 
 #endif // ndef INCL_CORE_POOL

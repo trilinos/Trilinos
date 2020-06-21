@@ -19,7 +19,7 @@ namespace Tempus {
 
 /** \brief BDF2 (Backward-Difference-Formula-2) time stepper.
  *
- *  For the implicit ODE system, \f$f(\dot{x},x,t) = 0\f$,
+ *  For the implicit ODE system, \f$\mathcal{F}(\dot{x},x,t) = 0\f$,
  *  the solution, \f$\dot{x}\f$ and \f$x\f$, is determined using a
  *  solver (e.g., a non-linear solver, like NOX).  This stepper allows
  *  for a variable time-step, \f$\Delta t\f$.  It is a 2-step method.
@@ -46,6 +46,31 @@ namespace Tempus {
  *  The First-Step-As-Last (FSAL) principle is not needed BDF2.
  *  The default is to set useFSAL=false, however useFSAL=true will also work
  *  but have no affect (i.e., no-op).
+ *
+ *  <b> Iteration Matrix, \f$W\f$.</b>
+ *  Recalling that the definition of the iteration matrix, \f$W\f$, is
+ *  \f[
+ *    W = \alpha \frac{\partial \mathcal{F}_n}{\partial \dot{x}_n}
+ *      + \beta  \frac{\partial \mathcal{F}_n}{\partial x_n},
+ *  \f]
+ *  where \f$ \alpha \equiv \frac{\partial \dot{x}_n(x_n) }{\partial x_n}, \f$
+ *  and \f$ \beta \equiv \frac{\partial x_n}{\partial x_n} = 1\f$, and
+ *  the time derivative for BDF2 is
+ *  \f[
+ *    \dot{x}_n(x_n) = \frac{2\tau_n + \tau_{n-1}}{\tau_n + \tau_{n-1}}
+ *                  \left[ \frac{x_n-x_{n-1}}{\tau_n}\right]
+ *                -  \frac{\tau_n}{\tau_n + \tau_{n-1}}
+ *                   \left[ \frac{x_{n-1}-x_{n-2}}{\tau_{n-1}}\right],
+ *  \f]
+ *  where \f$\Delta t_n = \tau_n = t_n - t_{n-1}\f$,
+ *  we can determine that
+ *  \f$ \alpha = \frac{2\tau_n + \tau_{n-1}}{(\tau_n + \tau_{n-1})\tau_n}\f$
+ *  and \f$ \beta = 1 \f$, and therefore write
+ *  \f[
+ *    W = \frac{2\tau_n + \tau_{n-1}}{(\tau_n + \tau_{n-1})\tau_n}
+          \frac{\partial \mathcal{F}_n}{\partial \dot{x}_n}
+ *      + \frac{\partial \mathcal{F}_n}{\partial x_n}.
+ *  \f]
  */
 template<class Scalar>
 class StepperBDF2 : virtual public Tempus::StepperImplicit<Scalar>
@@ -55,7 +80,7 @@ public:
   /** \brief Default constructor.
    *
    *  - Requires the following calls before takeStep():
-   *    setModel(), setSolver(), setStartUpStepper() and initialize().
+   *    setModel() and initialize().
   */
   StepperBDF2();
 
@@ -75,6 +100,9 @@ public:
 
   /// \name Basic stepper methods
   //@{
+    virtual void setModel(
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
+
     virtual void setObserver(
       Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
@@ -82,8 +110,7 @@ public:
     { return this->stepperObserver_; }
 
     /// Set the stepper to use in first step
-    void setStartUpStepper(std::string startupStepperType =
-                           "DIRK 1 Stage Theta Method");
+    void setStartUpStepper(std::string startupStepperType);
     void setStartUpStepper(Teuchos::RCP<Stepper<Scalar> > startupStepper);
 
     /// Initialize during construction and after changing input parameters.
@@ -133,12 +160,14 @@ public:
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
+  virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
+
 private:
 
-  Teuchos::RCP<Stepper<Scalar> >                     startUpStepper_;
-  Teuchos::RCP<StepperObserverComposite<Scalar> >    stepperObserver_;
-  Teuchos::RCP<StepperBDF2Observer<Scalar> >         stepperBDF2Observer_;
-  Scalar                                             order_;
+  Teuchos::RCP<Stepper<Scalar> >             startUpStepper_;
+  Teuchos::RCP<StepperObserverComposite<Scalar> >     stepperObserver_;
+  Teuchos::RCP<StepperBDF2Observer<Scalar> > stepperBDF2Observer_;
+  Scalar                                     order_ = Scalar(2.0);
 };
 
 /** \brief Time-derivative interface for BDF2.

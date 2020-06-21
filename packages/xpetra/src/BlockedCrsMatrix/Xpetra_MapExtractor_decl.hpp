@@ -52,15 +52,16 @@
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Describable.hpp>
-#include <Xpetra_Import.hpp>
-#include <Xpetra_Map.hpp>
 
 #include <Xpetra_Import.hpp>
 #include <Xpetra_ImportFactory.hpp>
-#include <Xpetra_MapFactory.hpp>
+#include <Xpetra_Map_decl.hpp>
+#include <Xpetra_MapFactory_decl.hpp>
 #include <Xpetra_MapUtils.hpp>
-#include <Xpetra_MultiVector.hpp>
+#include <Xpetra_MultiVector_decl.hpp>
 #include <Xpetra_Vector.hpp>
+#include <Xpetra_BlockedMultiVector_decl.hpp>
+#include <Xpetra_MultiVectorFactory_decl.hpp>
 
 namespace Xpetra {
 

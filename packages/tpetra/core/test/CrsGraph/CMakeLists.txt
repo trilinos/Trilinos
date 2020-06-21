@@ -137,3 +137,24 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsGraph_UnpackMerge
+  SOURCES
+    UnpackMerge
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM mpi
+  NUM_MPI_PROCS 2
+  STANDARD_PASS_OUTPUT
+  )
+
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsGraph_DetectNonlocals
+  SOURCES
+  DetectNonlocals
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ARGS "--show-test-details=ALL --output-show-proc-rank"
+  COMM mpi
+  NUM_MPI_PROCS 2
+  STANDARD_PASS_OUTPUT
+  )

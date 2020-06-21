@@ -1,36 +1,9 @@
 /*
- * Copyright(C) 2010-2017 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
- *     * Neither the name of NTESS nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
+ * See packages/seacas/LICENSE for details
  */
 #ifndef SEACAS_ExodusEntity_H
 #define SEACAS_ExodusEntity_H
@@ -52,11 +25,7 @@ namespace Excn {
   class Mesh
   {
   public:
-    Mesh()
-        : dimensionality(0), nodeCount(0), elementCount(0), blockCount(0), nodesetCount(0),
-          sidesetCount(0), needNodeMap(true), needElementMap(true)
-    {
-    }
+    Mesh() = default;
 
     size_t count(ObjectType type) const
     {
@@ -72,26 +41,21 @@ namespace Excn {
 
     IntVector truthTable[3];
 
-    std::string title;
-    int         dimensionality;
-    int64_t     nodeCount;
-    int64_t     elementCount;
-    int         blockCount;
-    int         nodesetCount;
-    int         sidesetCount;
-    bool        needNodeMap;
-    bool        needElementMap;
+    std::string title{};
+    int         dimensionality{0};
+    int64_t     nodeCount{0};
+    int64_t     elementCount{0};
+    int         blockCount{0};
+    int         nodesetCount{0};
+    int         sidesetCount{0};
+    bool        needNodeMap{true};
+    bool        needElementMap{true};
   };
 
   class Block
   {
   public:
-    Block()
-        : name_(""), id(0), elementCount(0), nodesPerElement(0), attributeCount(0), offset_(0),
-          position_(0)
-    {
-      copy_string(elType, "");
-    }
+    Block() { copy_string(elType, ""); }
 
     Block(const Block &other)
         : name_(other.name_), id(other.id), elementCount(other.elementCount),
@@ -106,14 +70,14 @@ namespace Excn {
     size_t entity_count() const { return elementCount; }
 
     char                     elType[MAX_STR_LENGTH + 1]{};
-    std::string              name_;
-    std::vector<std::string> attributeNames;
-    int64_t                  id;
-    int64_t                  elementCount;
-    int                      nodesPerElement;
-    int                      attributeCount;
-    int64_t                  offset_;
-    int                      position_;
+    std::string              name_{""};
+    std::vector<std::string> attributeNames{};
+    int64_t                  id{0};
+    int64_t                  elementCount{0};
+    int                      nodesPerElement{0};
+    int                      attributeCount{0};
+    int64_t                  offset_{0};
+    int                      position_{0};
 
     Block &operator=(const Block &other)
     {
@@ -133,18 +97,18 @@ namespace Excn {
   template <typename INT> class NodeSet
   {
   public:
-    NodeSet() : id(0), nodeCount(0), dfCount(0), offset_(0), position_(-1), name_("") {}
+    NodeSet() = default;
 
-    ex_entity_id id;
-    int64_t      nodeCount;
-    int64_t      dfCount;
-    int64_t      offset_;
-    int          position_;
-    std::string  name_;
+    ex_entity_id id{0};
+    int64_t      nodeCount{0};
+    int64_t      dfCount{0};
+    int64_t      offset_{0};
+    int          position_{-1};
+    std::string  name_{""};
 
-    std::vector<INT> nodeSetNodes;
-    std::vector<INT> nodeOrderMap;
-    DistVector       distFactors;
+    std::vector<INT> nodeSetNodes{};
+    std::vector<INT> nodeOrderMap{};
+    DistVector       distFactors{};
 
     size_t entity_count() const { return nodeCount; }
 
@@ -168,18 +132,18 @@ namespace Excn {
   template <typename INT> class SideSet
   {
   public:
-    SideSet() : id(0), sideCount(0), dfCount(0), offset_(-1), position_(-1), name_("") {}
+    SideSet() = default;
 
-    ex_entity_id id;
-    int64_t      sideCount;
-    int64_t      dfCount;
-    int64_t      offset_;
-    int          position_;
-    std::string  name_;
+    ex_entity_id id{0};
+    int64_t      sideCount{0};
+    int64_t      dfCount{0};
+    int64_t      offset_{-1};
+    int          position_{-1};
+    std::string  name_{""};
 
-    std::vector<INT> elems;
-    std::vector<INT> sides;
-    DistVector       distFactors;
+    std::vector<INT> elems{};
+    std::vector<INT> sides{};
+    DistVector       distFactors{};
 
     size_t entity_count() const { return sideCount; }
 
@@ -193,39 +157,35 @@ namespace Excn {
   class CommunicationMap
   {
   public:
-    CommunicationMap() : id(0), entityCount(0), type('U') {}
+    CommunicationMap() = default;
     CommunicationMap(int the_id, int64_t count, char the_type)
         : id(the_id), entityCount(count), type(the_type)
     {
     }
-    int64_t id;
-    int64_t entityCount;
-    char    type; // 'n' for node, 'e' for element
+    int64_t id{0};
+    int64_t entityCount{0};
+    char    type{'U'}; // 'n' for node, 'e' for element
   };
 
   class CommunicationMetaData
   {
   public:
-    CommunicationMetaData()
-        : processorId(0), processorCount(0), globalNodes(0), globalElements(0), nodesInternal(0),
-          nodesBorder(0), nodesExternal(0), elementsInternal(0), elementsBorder(0)
-    {
-    }
+    CommunicationMetaData()                              = default;
     CommunicationMetaData(const CommunicationMetaData &) = delete;
     CommunicationMetaData &operator=(const CommunicationMetaData &other) = delete;
 
-    std::vector<CommunicationMap> nodeMap;
-    std::vector<CommunicationMap> elementMap;
+    std::vector<CommunicationMap> nodeMap{};
+    std::vector<CommunicationMap> elementMap{};
 
-    int     processorId;
-    int     processorCount;
-    int64_t globalNodes;
-    int64_t globalElements;
-    int64_t nodesInternal;
-    int64_t nodesBorder;
-    int64_t nodesExternal;
-    int64_t elementsInternal;
-    int64_t elementsBorder;
+    int     processorId{0};
+    int     processorCount{0};
+    int64_t globalNodes{0};
+    int64_t globalElements{0};
+    int64_t nodesInternal{0};
+    int64_t nodesBorder{0};
+    int64_t nodesExternal{0};
+    int64_t elementsInternal{0};
+    int64_t elementsBorder{0};
   };
 } // namespace Excn
 #endif /* SEACAS_ExodusEntity_H */

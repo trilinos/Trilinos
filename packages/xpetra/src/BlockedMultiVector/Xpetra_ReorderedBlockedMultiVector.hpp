@@ -94,7 +94,6 @@ namespace Xpetra {
      * \param npr extimated number of entries per row in each block(!)
      * \param brm of type BlockReorderManager
      * \param bmat original full blocked operator (we keep the RCP to make sure all subblocks are available)
-     * \param pftype Xpetra profile type
      */
     ReorderedBlockedMultiVector
         (Teuchos::RCP<const BlockedMap>& rangeMap,

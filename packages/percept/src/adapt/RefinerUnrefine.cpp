@@ -117,15 +117,15 @@
                                     SubDimCell_SDCEntityType subDimEntity(&m_eMesh);
                                     m_nodeRegistry->getSubDimEntity(subDimEntity, element, needed_entity_rank, iSubDimOrd, cell_topo_data);
 
-                                    SubDimCellData* nodeId_elementOwnderId_ptr = m_nodeRegistry->getFromMapPtr(subDimEntity);
-                                    if (nodeId_elementOwnderId_ptr)
+                                    SubDimCellData* nodeId_elementOwnerId_ptr = m_nodeRegistry->getFromMapPtr(subDimEntity);
+                                    if (nodeId_elementOwnerId_ptr)
                                       {
 
-                                        nodeId_elementOwnderId_ptr->get<SDC_DATA_OWNING_ELEMENT_KEY>() = m_eMesh.entity_key(element);
-                                        nodeId_elementOwnderId_ptr->get<SDC_DATA_OWNING_SUBDIM_ORDINAL>() = static_cast<unsigned char>(iSubDimOrd + 1);
-                                        nodeId_elementOwnderId_ptr->get<SDC_DATA_OWNING_SUBDIM_RANK>() = static_cast<unsigned char>(needed_entity_rank);
+                                        std::get<SDC_DATA_OWNING_ELEMENT_KEY>(*nodeId_elementOwnerId_ptr) = m_eMesh.entity_key(element);
+                                        std::get<SDC_DATA_OWNING_SUBDIM_ORDINAL>(*nodeId_elementOwnerId_ptr) = static_cast<unsigned char>(iSubDimOrd + 1);
+                                        std::get<SDC_DATA_OWNING_SUBDIM_RANK>(*nodeId_elementOwnerId_ptr) = static_cast<unsigned char>(needed_entity_rank);
 
-                                        map_new[subDimEntity] = *nodeId_elementOwnderId_ptr;
+                                        map_new[subDimEntity] = *nodeId_elementOwnerId_ptr;
 
                                       }
                                   }
@@ -136,7 +136,6 @@
                 }
             }
         }
-      //std::cout << m_eMesh.rank() << " old size= " << map.size() << " new= " << map_new.size() << std::endl;
       map = map_new;
     }
 
@@ -912,10 +911,10 @@
       for (SubDimCellToDataMap::iterator cell_iter = cell_2_data_map.begin(); cell_iter != cell_2_data_map.end(); ++cell_iter)
         {
           const SubDimCell_SDCEntityType& subDimEntity = (*cell_iter).first;
-          SubDimCellData& nodeId_elementOwnderId = (*cell_iter).second;
-          NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
-          stk::mesh::EntityId owning_elementId = nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>().id();
-          stk::mesh::EntityRank owning_elementRank = nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>().rank();
+          SubDimCellData& nodeId_elementOwnerId = (*cell_iter).second;
+          NodeIdsOnSubDimEntityType& nodeIds_onSE = std::get<SDC_DATA_GLOBAL_NODE_IDS>(nodeId_elementOwnerId);
+          stk::mesh::EntityId owning_elementId = std::get<SDC_DATA_OWNING_ELEMENT_KEY>(nodeId_elementOwnerId).id();
+          stk::mesh::EntityRank owning_elementRank = std::get<SDC_DATA_OWNING_ELEMENT_KEY>(nodeId_elementOwnerId).rank();
           if (!nodeIds_onSE.size())
             continue;
 

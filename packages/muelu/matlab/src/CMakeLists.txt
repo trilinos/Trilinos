@@ -14,6 +14,10 @@ if(TPL_ENABLE_MATLAB)
   # Must glob the binary dir last to get all of the auto-generated headers
   SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
 
+  # Force the code into R2017b compatibility mode
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMX_COMPAT_64 -DMATLAB_MEXCMD_RELEASE=R2017b") 
+  SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DMX_COMPAT_64 -DMATLAB_MEXCMD_RELEASE=R2017b") 
+
   APPEND_GLOB(HEADERS_LIB *.hpp)
   APPEND_SET(SOURCES_LIB MueLu_SingleLevelMatlabFactory.cpp MueLu_TwoLevelMatlabFactory.cpp MueLu_MatlabSmoother.cpp MueLu_MatlabUtils.cpp)
 

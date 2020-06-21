@@ -1113,6 +1113,14 @@ namespace Teuchos {
     computeGlobalTimerStatistics (statData, statNames, comm.ptr(), setOp, filter);
   }
 
+  SyncTimeMonitor::SyncTimeMonitor(Time& timer, Ptr<const Comm<int> > comm, bool reset)
+    : TimeMonitor(timer, reset), comm_(comm)
+  { }
+
+  SyncTimeMonitor::~SyncTimeMonitor() {
+    comm_->barrier();
+  }
+
 
   namespace {
     /// \brief Quote the given string for YAML output.

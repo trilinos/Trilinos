@@ -157,7 +157,7 @@ namespace Abstract {
 
    //! Compute x = grp.x + step * d.
    /*!
-     Let \f$x\f$ denote this group's solution vector.
+     Let \f$ x\f$ denote this group's solution vector.
      Let \f$\hat x\f$ denote the result of grp.getX().
      Then set
      \f[
@@ -200,7 +200,7 @@ namespace Abstract {
      \f]
 
      The \b Jacobian
-     is denoted by \f$J\f$ and defined by
+     is denoted by \f$ J\f$ and defined by
      \f[
      J_{ij} = \frac{\partial F_i}{\partial x_j} (x).
      \f]
@@ -220,12 +220,12 @@ namespace Abstract {
 
    //! Compute and store gradient.
    /*!
-     We can pose the nonlinear equation problem \f$F(x) = 0\f$ as an optimization problem as follows:
+     We can pose the nonlinear equation problem \f$ F(x) = 0\f$ as an optimization problem as follows:
      \f[
      \min f(x) \equiv \frac{1}{2} \|F(x)\|_2^2.
      \f]
 
-     In that case, the \b gradient (of \f$f\f$) is defined as
+     In that case, the \b gradient (of \f$ f\f$) is defined as
      \f[
      g \equiv J^T F.
      \f]
@@ -233,7 +233,7 @@ namespace Abstract {
      \return
      <ul>
      <li> NOX::Abstract::Group::NotDefined - Returned by default implementation in NOX::Abstract::Group
-     <li> NOX::Abstract::Group::BadDependency - If either \f$F\f$ or \f$J\f$ has not been computed
+     <li> NOX::Abstract::Group::BadDependency - If either \f$ F\f$ or \f$ J\f$ has not been computed
      <li> NOX::Abstract::Group::Failed - If the computation fails in any other way
      <li> NOX::Abstract::Group::Ok - Otherwise
      </ul>
@@ -260,7 +260,7 @@ namespace Abstract {
      \return
      <ul>
      <li> NOX::Abstract::Group::NotDefined - Returned by default implementation in NOX::Abstract::Group
-     <li> NOX::Abstract::Group::BadDependency - If either \f$F\f$ or \f$J\f$ has not been computed
+     <li> NOX::Abstract::Group::BadDependency - If either \f$ F\f$ or \f$ J\f$ has not been computed
      <li> NOX::Abstract::Group::NotConverged - If the linear solve fails to satisfy the "Tolerance"
       specified in \c params
      <li> NOX::Abstract::Group::Failed - If the computation fails in any other way
@@ -282,12 +282,12 @@ namespace Abstract {
    /*!
      Computes
      \f[ v = J u, \f]
-     where \f$J\f$ is the Jacobian, \f$u\f$ is the input vector, and \f$v\f$ is the result vector.
+     where \f$ J\f$ is the Jacobian, \f$ u\f$ is the input vector, and \f$ v\f$ is the result vector.
 
      \return
      <ul>
      <li> NOX::Abstract::Group::NotDefined - Returned by default implementation in NOX::Abstract::Group
-     <li> NOX::Abstract::Group::BadDependency - If the Jacobian \f$J\f$ has not been computed
+     <li> NOX::Abstract::Group::BadDependency - If the Jacobian \f$ J\f$ has not been computed
      <li> NOX::Abstract::Group::Failed - If the computation fails
      <li> NOX::Abstract::Group::Ok - Otherwise
      </ul>
@@ -301,12 +301,12 @@ namespace Abstract {
    /*!
      Computes
      \f[ v = J^T u, \f]
-      where \f$J\f$ is the Jacobian, \f$u\f$ is the input vector, and \f$v\f$ is the result vector.
+      where \f$ J\f$ is the Jacobian, \f$ u\f$ is the input vector, and \f$ v\f$ is the result vector.
 
      \return
      <ul>
      <li> NOX::Abstract::Group::NotDefined - Returned by default implementation in NOX::Abstract::Group
-     <li> NOX::Abstract::Group::BadDependency - If \f$J\f$ has not been computed
+     <li> NOX::Abstract::Group::BadDependency - If \f$ J\f$ has not been computed
      <li> NOX::Abstract::Group::Failed - If the computation fails
      <li> NOX::Abstract::Group::Ok - Otherwise
      </ul>
@@ -321,7 +321,7 @@ namespace Abstract {
 
      Computes
      \f[ v = J^{-1} u, \f]
-     where \f$J\f$ is the Jacobian, \f$u\f$ is the input vector, and \f$v\f$ is the result vector.
+     where \f$ J\f$ is the Jacobian, \f$ u\f$ is the input vector, and \f$ v\f$ is the result vector.
 
      The "Tolerance" parameter specifies that the
      solution should be such that
@@ -332,7 +332,7 @@ namespace Abstract {
      \return
      <ul>
      <li> NOX::Abstract::Group::NotDefined - Returned by default implementation in NOX::Abstract::Group
-     <li> NOX::Abstract::Group::BadDependency - If \f$J\f$ has not been computed
+     <li> NOX::Abstract::Group::BadDependency - If \f$ J\f$ has not been computed
      <li> NOX::Abstract::Group::NotConverged - If the linear solve fails to satisfy the "Tolerance"
       specified in \c params
      <li> NOX::Abstract::Group::Failed - If the computation fails
@@ -350,13 +350,13 @@ namespace Abstract {
 
    //! Apply right preconditiong to the given input vector
    /*!
-     Let \f$M\f$ be a right preconditioner for the Jacobian \f$J\f$; in
-     other words, \f$M\f$ is a matrix such that
+     Let \f$ M\f$ be a right preconditioner for the Jacobian \f$ J\f$; in
+     other words, \f$ M\f$ is a matrix such that
      \f[ JM \approx I. \f]
 
      Compute
      \f[ u = M^{-1} v, \f]
-     where \f$u\f$ is the input vector and \f$v\f$ is the result vector.
+     where \f$ u\f$ is the input vector and \f$ v\f$ is the result vector.
 
      If <em>useTranspose</em> is true, then the transpose of the
      preconditioner is applied:

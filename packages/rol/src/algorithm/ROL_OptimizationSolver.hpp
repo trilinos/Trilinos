@@ -255,7 +255,6 @@ public:
       case TYPE_LAST:
         ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
           "Error in OptimizationSolver::solve() : Unsupported problem type");
-      break;
     }
 
     // TODO: Interrogate AlgorithmState and StatusTest to generate a return code

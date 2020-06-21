@@ -47,6 +47,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <algorithm>
+#include <cstdio>
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
@@ -96,14 +97,34 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   bool runHeavyTests = false;
   std::string xmlForceFile = "";
   bool useKokkos = false;
-#if defined(HAVE_MUELU_KOKKOS_REFACTOR) && defined(HAVE_MUELU_KOKKOS_REFACTOR_USE_BY_DEFAULT)
   if(lib == Xpetra::UseTpetra) {
-    useKokkos = true;
+#if !defined(HAVE_MUELU_KOKKOS_REFACTOR)
+    useKokkos = false;
+#else
+# ifdef HAVE_MUELU_SERIAL
+    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosSerialWrapperNode).name())
+      useKokkos = false;
+# endif
+# ifdef HAVE_MUELU_OPENMP
+    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosOpenMPWrapperNode).name())
+      useKokkos = true;
+# endif
+# ifdef HAVE_MUELU_CUDA
+    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
+      useKokkos = true;
+# endif
+#endif
   }
+  bool compareWithGold = true;
+#ifdef KOKKOS_ENABLE_CUDA
+  if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
+    // Behavior of some algorithms on Cuda is non-deterministic, so we won't check the output.
+    compareWithGold = false;
 #endif
   clp.setOption("kokkosRefactor", "noKokkosRefactor", &useKokkos, "use kokkos refactor");
   clp.setOption("heavytests", "noheavytests",  &runHeavyTests, "whether to exercise tests that take a long time to run");
   clp.setOption("xml", &xmlForceFile, "xml input file (useful for debugging)");
+  clp.setOption("compareWithGold", "skipCompareWithGold", &compareWithGold, "compare runs against gold files");
   clp.recogniseAllOptions(true);
   switch (clp.parse(argc,argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
@@ -124,37 +145,29 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   std::string prefix;
   if (useKokkos) {
 #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
-    if (TYPE_EQUAL(Scalar, std::complex<double>) || TYPE_EQUAL(Scalar, std::complex<float>)) {
-      prefix = "kokkos-complex/";
-    } else {
-      prefix = "kokkos/";
-    }
+    prefix = "kokkos/";
 #else
     std::cout << "No kokkos refactor available." << std::endl;
     return EXIT_FAILURE;
 #endif
   } else {
-    if (TYPE_EQUAL(Scalar, std::complex<double>) || TYPE_EQUAL(Scalar, std::complex<float>)) {
-      prefix = "complex/";
-    } else {
-      prefix = "default/";
-    }
+    prefix = "default/";
   }
   std::string outDir = prefix+"Output/";
 
   std::vector<std::string> dirList;
   if (runHeavyTests) {
     dirList.push_back(prefix+"EasyParameterListInterpreter-heavy/");
-#if !(defined(HAVE_MUELU_KOKKOS_REFACTOR) && defined(HAVE_MUELU_KOKKOS_REFACTOR_USE_BY_DEFAULT))
-    // commented since extended xml interface does not support kokkos factories
-    dirList.push_back(prefix+"FactoryParameterListInterpreter-heavy/");
-#endif
+    if (!useKokkos) {
+      // commented since extended xml interface does not support kokkos factories
+      dirList.push_back(prefix+"FactoryParameterListInterpreter-heavy/");
+    }
   } else {
     dirList.push_back(prefix+"EasyParameterListInterpreter/");
-#if !(defined(HAVE_MUELU_KOKKOS_REFACTOR) && defined(HAVE_MUELU_KOKKOS_REFACTOR_USE_BY_DEFAULT))
-    // commented since extended xml interface does not support kokkos factories
-    dirList.push_back(prefix+"FactoryParameterListInterpreter/");
-#endif
+    if (!useKokkos) {
+      // commented since extended xml interface does not support kokkos factories
+      dirList.push_back(prefix+"FactoryParameterListInterpreter/");
+    }
   }
 #if defined(HAVE_MPI) && defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_AMESOS2_KLU2)
   // The ML interpreter have internal ifdef, which means that the resulting
@@ -200,6 +213,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         baseFile = outFile.substr(0, outFile.find_last_of('.'));
         found = baseFile.find("_np");
         jumpOut = true;
+        std::cout << "Test dir: " << dirList[k] << std::endl;
       }
 
       if (numProc == 1 && found != std::string::npos) {
@@ -210,7 +224,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         continue;
 #endif
       }
-      std::cout << "Testing: "<< xmlFile << std::endl;
+      if (myRank == 0)
+        std::cout << "Testing: "<< xmlFile << std::endl;
 
       baseFile = baseFile + (lib == Xpetra::UseEpetra ? "_epetra" : "_tpetra");
       std::string goldFile = baseFile + ".gold";
@@ -221,13 +236,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         continue;
       }
 
-      std::filebuf    buffer;
+      std::stringbuf buffer;
       std::streambuf* oldbuffer = NULL;
-      if (myRank == 0) {
-        // Redirect output
-        buffer.open((baseFile + ".out").c_str(), std::ios::out);
-        oldbuffer = std::cout.rdbuf(&buffer);
-      }
+      //   // Redirect output
+      oldbuffer = std::cout.rdbuf(&buffer);
 
       // NOTE: we cannot use ParameterListInterpreter(xmlFile, comm), because we want to update the ParameterList
       // first to include "test" verbosity
@@ -251,25 +263,24 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         // and the ML parameter list interpreter. Note that the ML paramter interpreter also
         // works with Tpetra matrices.
         if (dirList[k] == prefix+"EasyParameterListInterpreter/"         ||
-            dirList[k] == prefix+"EasyParameterListInterpreter-heavy/"   ||
-            dirList[k] == prefix+"FactoryParameterListInterpreter/"      ||
-            dirList[k] == prefix+"FactoryParameterListInterpreter-heavy/") {
+            dirList[k] == prefix+"EasyParameterListInterpreter-heavy/") {
           paramList.set("use kokkos refactor", useKokkos);
-          mueluFactory = Teuchos::rcp(new ParameterListInterpreter(paramList));
+          mueluFactory = Teuchos::rcp(new ParameterListInterpreter(paramList,comm));
+        } else if (dirList[k] == prefix+"FactoryParameterListInterpreter/"      ||
+                   dirList[k] == prefix+"FactoryParameterListInterpreter-heavy/") {
+          paramList.sublist("Hierarchy").set("use kokkos refactor", useKokkos);
+          mueluFactory = Teuchos::rcp(new ParameterListInterpreter(paramList,comm));
 
         } else if (dirList[k] == prefix+"MLParameterListInterpreter/") {
           paramList.set("use kokkos refactor", useKokkos);
           mueluFactory = Teuchos::rcp(new MLParameterListInterpreter(paramList));
 
         } else if (dirList[k] == prefix+"MLParameterListInterpreter2/") {
-          //std::cout << "ML ParameterList: " << std::endl;
-          //std::cout << paramList << std::endl;
           RCP<Teuchos::ParameterList> mueluParamList = Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(paramList,"SA"));
-          //std::cout << "MueLu ParameterList: " << std::endl;
-          //std::cout << *mueluParamList << std::endl;
           mueluParamList->set("use kokkos refactor", useKokkos);
           mueluFactory = Teuchos::rcp(new ParameterListInterpreter(*mueluParamList));
-        }
+        } else
+          TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Not a test directory");
 
         RCP<Hierarchy> H = mueluFactory->CreateHierarchy();
 
@@ -295,17 +306,13 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         }
 
         timer.stop();
+
       } catch (Teuchos::ExceptionBase& e) {
         std::string msg = e.what();
         msg = msg.substr(msg.find_last_of('\n')+1);
 
-        if (myRank == 0) {
+        if (myRank == 0)
           std::cout << "Caught exception: " << msg << std::endl;
-
-          // Redirect output back
-          std::cout.rdbuf(oldbuffer);
-          buffer.close();
-        }
 
         if (msg == "Zoltan interface is not available" ||
             msg == "Zoltan2 interface is not available" ||
@@ -318,12 +325,30 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         }
       }
 
+      // Redirect output back
+      std::cout.rdbuf(oldbuffer);
+#ifdef HAVE_MPI
+      std::string logStr = buffer.str();
+      if (myRank == 0)
+        remove((baseFile + ".out").c_str());
+      RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > mpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm)->getRawMpiComm();
+      MPI_File logfile;
+      comm->barrier();
+      MPI_File_open((*mpiComm)(), (baseFile + ".out").c_str(), MPI_MODE_WRONLY | MPI_MODE_CREATE, MPI_INFO_NULL, &logfile);
+      MPI_File_set_atomicity(logfile, true);
+      const char* msg = logStr.c_str();
+      int err = MPI_File_write_ordered(logfile, msg, logStr.size(), MPI_CHAR, MPI_STATUS_IGNORE);
+      TEUCHOS_ASSERT(err == MPI_SUCCESS);
+      MPI_File_close(&logfile);
+#else
+      std::ofstream outStream;
+      outStream.open((baseFile + ".out").c_str(), std::ofstream::out);
+      outStream << buffer.str();
+      outStream.close();
+#endif
+
       std::string cmd;
       if (myRank == 0) {
-        // Redirect output back
-        std::cout.rdbuf(oldbuffer);
-        buffer.close();
-
         // Create a copy of outputs
         cmd = "cp -f ";
         system((cmd + baseFile + ".gold " + baseFile + ".gold_filtered").c_str());
@@ -377,9 +402,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
         // Run comparison (ignoring whitespaces)
         cmd = "diff -u -w -I\"^\\s*$\" " + baseFile + ".gold_filtered " + baseFile + ".out_filtered";
-        int ret = system(cmd.c_str());
-        if (ret)
+        int ret = 0;
+        if (compareWithGold)
+          ret = system(cmd.c_str());
+        else
+          std::cout << "Skipping comparison with gold file\n";
+        if (ret) {
           failed = true;
+        }
 
         //std::ios_base::fmtflags ff(std::cout.flags());
         //std::cout.precision(2);

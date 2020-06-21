@@ -794,7 +794,6 @@ class StatusTestGenResSubNorm<ScalarType,Thyra::MultiVectorBase<ScalarType>,Thyr
 
     Teuchos::RCP<const MV> thySubVec = thyProdVec->getMultiVectorBlock(block);
 
-    typedef MultiVecTraits<ScalarType, MV> MVT;
     MVT::MvNorm(*thySubVec,normVec,type);
   }
 

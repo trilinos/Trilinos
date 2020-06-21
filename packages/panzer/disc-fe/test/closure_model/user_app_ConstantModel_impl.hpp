@@ -53,6 +53,9 @@ ConstantModel(
 	    p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") )
 {
   this->addEvaluatedField(constant);
+
+  // Make this unshared so that it is not overwritten
+  this->addUnsharedField(constant.fieldTag().clone());
   
   std::string n = "user_app::Constant: " + constant.fieldTag().name();
   this->setName(n);
@@ -80,7 +83,7 @@ void
 user_app::ConstantModel<EvalT, Traits>::
 evaluateFields(
   typename Traits::EvalData d)
-{ }
+{}
 
 //**********************************************************************
 

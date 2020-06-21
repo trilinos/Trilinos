@@ -165,7 +165,7 @@ void MeshTransfer::run(int argc, char** argv)
   srcMesh.commit();
   dstMesh.commit();
 
-  boost::shared_ptr<STKMeshTransfer> mesh_transfer =
+  std::shared_ptr<STKMeshTransfer> mesh_transfer =
     buildSTKMeshTransfer<STKMeshTransfer>(*(srcMesh.get_bulk_data()),
 			 srcMesh.get_coordinates_field(),
 			 fromField,

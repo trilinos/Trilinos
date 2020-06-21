@@ -6,6 +6,8 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils AND Tpetra_INST_COMPLEX_DOUBLE)
     Tpetra_LOBPCG_Complex_test
     SOURCES cxx_main_complex.cpp 
     ARGS 
+      "--verbose"
+      "--verbose --ortho=ICGS"
     COMM serial mpi
     )
 

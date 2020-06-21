@@ -207,7 +207,7 @@ std::vector<size_t> DefaultFieldDataManager::get_old_bucket_field_offsets(const 
         }
     }
     oldOffsetForField.push_back(currentFieldOldOffset);
-    return std::move(oldOffsetForField);
+    return oldOffsetForField;
 }
 
 std::vector<size_t> DefaultFieldDataManager::get_new_bucket_field_offsets(const EntityRank rank,
@@ -234,7 +234,7 @@ std::vector<size_t> DefaultFieldDataManager::get_new_bucket_field_offsets(const 
         }
     }
     newOffsetForField.push_back(currentFieldNewOffset);
-    return std::move(newOffsetForField);
+    return newOffsetForField;
 }
 
 void DefaultFieldDataManager::copy_field_data_from_old_to_new_bucket(const EntityRank rank,
@@ -686,7 +686,7 @@ std::vector<size_t> ContiguousFieldDataManager::get_field_bucket_offsets(const s
         currentBucketOffset += bucketDataSizeThisField;
     }
     offsetForBucket.push_back(currentBucketOffset);
-    return std::move(offsetForBucket);
+    return offsetForBucket;
 }
 
 void ContiguousFieldDataManager::copy_bucket_data_from_old_to_new_field(const std::vector<size_t>& oldOffsetForBucket,

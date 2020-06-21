@@ -174,7 +174,7 @@ double MeshField::restore_field_data_at_step(Ioss::Region *region,
       // selector of the stk part.
       bool subsetted = rank == stk::topology::NODE_RANK &&
         io_entity->type() == Ioss::NODEBLOCK &&
-        *stk_part != mesh::MetaData::get(bulk).universal_part();
+        *stk_part != bulk.mesh_meta_data().universal_part();
 
       size_t state_count = m_field->number_of_states();
       stk::mesh::FieldState state = m_field->state();
@@ -250,6 +250,8 @@ double MeshField::restore_field_data(stk::mesh::BulkData &bulk,
       const stk::mesh::EntityRank rank = field_part.get_entity_rank();
       stk::io::get_input_entity_list(io_entity, rank, bulk, entity_list);
       
+      m_field->sync_to_host();
+      m_field->modify_on_host();
       for (size_t i=0; i < entity_list.size(); ++i) {
 	if (bulk.is_valid(entity_list[i])) {
 	  double *fld_data = static_cast<double*>(stk::mesh::field_data(*m_field, entity_list[i]));

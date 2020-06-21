@@ -175,6 +175,21 @@ PHX::Field<DataT,Rank,Layout>::operator()(const index_pack&... indices) const
 
 // **********************************************************************
 template<typename DataT,int Rank,typename Layout>
+template<typename... index_pack>
+KOKKOS_INLINE_FUNCTION
+typename PHX::FieldReturnType<typename PHX::Field<DataT,Rank,Layout>::array_type>::return_type
+PHX::Field<DataT,Rank,Layout>::access(const index_pack&... indices) const
+{
+#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
+  static_assert(Rank == sizeof...(indices), "PHX::Field::operator(const index_pack&... indices) : must have number of indices equal to rank!");
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+#endif
+
+  return m_field_data.access(indices...);
+}
+
+// **********************************************************************
+template<typename DataT,int Rank,typename Layout>
 KOKKOS_INLINE_FUNCTION
 typename PHX::Field<DataT,Rank,Layout>::size_type
 PHX::Field<DataT,Rank,Layout>::rank() const

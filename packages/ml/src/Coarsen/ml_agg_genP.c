@@ -23,6 +23,8 @@
 #include "ml_viz_stats.h"
 #include "ml_agg_min_energy.h"
 
+#define ML_ABS(x) ( (x) < 0 ? -(x) : (x) )
+
 #ifndef ML_CPP
 #ifdef __cplusplus
 extern "C"
@@ -282,9 +284,9 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
 
       grid_info =(ML_Aggregate_Viz_Stats *) ml->Amat[level].to->Grid->Grid;
       if (grid_info) {
-        if (grid_info->x != NULL) {
+        if (grid_info->x != NULL || grid_info->material) {
           if (ML_Get_PrintLevel() > 4 && ml->comm->ML_mypid == 0)
-            printf("ML_Gen_MGHierarchy: Projecting node coordinates from level %d to level %d\n",
+            printf("ML_Gen_MGHierarchy: Projecting coordinates from level %d to level %d\n",
                    level,next);
           ML_Project_Coordinates(ml->Amat+level, Ptent, ml->Amat+next);
         }
@@ -2267,6 +2269,7 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
   double* new_x_coord = NULL;
   double* new_y_coord = NULL;
   double* new_z_coord = NULL;
+  double* new_m_coord = NULL;
   int PDEs = Cmat->num_PDEs;
   int Nghost, i;
   ML_Operator* Rmat;
@@ -2463,6 +2466,39 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
     Cgrid_info->z = new_z_coord;
   }
 
+  if (Agrid_info->material != NULL)
+  {
+    for (i = 0 ; i < size_old ; i+=oldPDEs)
+      tmp_old[i] = Agrid_info->material[i / oldPDEs];
+
+    ML_Operator_Apply(Rmat, Rmat->invec_leng, tmp_old, Rmat->outvec_leng, tmp_new);
+
+    new_m_coord = (double *) ML_allocate(sizeof(double) * (size_new / PDEs+1));
+
+    ML_exchange_bdry(tmp_new,Cmat->getrow->pre_comm,Cmat->outvec_leng,
+                     Cmat->comm, ML_OVERWRITE,NULL);
+
+    for (i = 0 ; i < size_new ; i+=PDEs) {
+      if (aggr_sizes[i] != 0.0)
+        new_m_coord[i / PDEs] = tmp_new[i] / aggr_sizes[i];
+      else {
+        if (tmp_new[i] == 0.0)
+          new_m_coord[i / PDEs] = 0.0;
+        else {
+          char msg[240];
+          sprintf(msg,"(pid %d) agg %d size = %f but nonzero coordinate = %f",
+                  Cmat->comm->ML_mypid, i, aggr_sizes[i],tmp_new[i]);
+          pr_error("*ML_ERR* %s\n*ML_ERR* function %s\n*ML_ERR* file %s\n*ML_ERR* line %d\n",
+                    msg,ML_FUNCTION_NAME,__FILE__, __LINE__);
+        }
+      }
+    }
+
+    if (Cgrid_info->material != NULL) ML_free(Cgrid_info->material);
+    Cgrid_info->material = new_m_coord;
+  }
+
+
   ML_free(tmp_old);
   ML_free(tmp_new);
   ML_free(aggr_sizes);
@@ -2486,6 +2522,232 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
 #undef ML_FUNCTION_NAME
 #endif
 
+
+/* ================================================ ====== ==== ==== == = */
+static void ML_Init_Material(ML* ml, const int level) {
+  int i, j, n, count, num_PDEs, BlockRow, BlockCol;
+  double threshold;
+  int* columns;
+  double* values;
+  int allocated, entries = 0;
+  int** filter;
+
+  ML_Operator* A = &(ml->Amat[level]);
+  ML_Aggregate_Viz_Stats * grid_info = (ML_Aggregate_Viz_Stats *) A->to->Grid->Grid;
+  double *material = grid_info->material;
+
+  num_PDEs = A->num_PDEs;
+  threshold = A->aux_data->m_threshold;
+
+  ML_Operator_AmalgamateAndDropWeak(A, num_PDEs, 0.0);
+  n = A->invec_leng;
+
+  filter = (int**) ML_allocate(sizeof(int*) * n);
+  A->aux_data->filtered_nnz = 0;
+  A->aux_data->unfiltered_nnz = 0;
+
+  allocated = 128;
+  columns = (int *)    ML_allocate(allocated * sizeof(int));
+  values  = (double *) ML_allocate(allocated * sizeof(double));
+
+  for (i = 0 ; i < n ; ++i) {
+    BlockRow = i;
+
+    ML_get_matrix_row(A,1,&i,&allocated,&columns,&values, &entries,0);
+    count = 0;
+    for (j = 0 ; j < entries ; ++j) {
+      BlockCol = columns[j];
+      if (  (i != columns[j]) &&
+            (ML_ABS(log10(material[BlockRow]) - log10(material[BlockCol])) > threshold) ) {
+        columns[count++] = columns[j];
+      }
+    }
+    
+    /* insert the rows */
+    filter[BlockRow] = (int*) ML_allocate(sizeof(int) * (count + 1));
+    filter[BlockRow][0] = count;
+
+    for (j = 0 ; j < count ; ++j)
+      filter[BlockRow][j + 1] = columns[j];
+
+    A->aux_data->filtered_nnz += count;
+    A->aux_data->unfiltered_nnz += entries;
+  }
+
+  ML_free(columns);
+  ML_free(values);
+
+  ML_Operator_UnAmalgamateAndDropWeak(A, num_PDEs, 0.0);
+
+  A->aux_data->aux_func_ptr  = A->getrow->func_ptr;
+  A->getrow->func_ptr = ML_Aux_Getrow;
+  A->aux_data->filter = filter;
+  A->aux_data->filter_size = n;
+
+}
+
+/* ================================================ ====== ==== ==== == = */
+static void ML_Init_Aux_And_Material(ML* ml, int level)
+{
+  int i, j, n, count, num_PDEs, BlockRow, BlockCol;
+  double threshold, mat_threshold;
+  int* columns;
+  double* values;
+  int allocated, entries = 0;
+  int N_dimensions;
+  int DiagID;
+  double DiagValue;
+  int** filter;
+  double dist;
+  double* x_coord,* y_coord,* z_coord, *mat_coord;
+  ML_Aggregate_Viz_Stats *grid_info;
+  double *LaplacianDiag;
+  int     Nghost;
+
+  ML_Operator* A = &(ml->Amat[level]);
+  grid_info = (ML_Aggregate_Viz_Stats *) A->to->Grid->Grid;
+  num_PDEs = A->num_PDEs;
+  N_dimensions = grid_info->Ndim;
+  x_coord = grid_info->x;
+  y_coord = grid_info->y;
+  z_coord = grid_info->z;
+  mat_coord = grid_info->material;
+  if (x_coord == NULL || mat_coord == NULL) {
+      printf("ML_Init_Aux_And_Material: Cannot use aux options without supplying coordinates and material coordinates\n");
+      exit(1);
+  }
+
+  threshold     = A->aux_data->threshold;
+  mat_threshold = A->aux_data->m_threshold;
+  ML_Operator_AmalgamateAndDropWeak(A, num_PDEs, 0.0);
+
+  n = A->invec_leng;
+  Nghost = ML_CommInfoOP_Compute_TotalRcvLength(A->getrow->pre_comm);
+
+  LaplacianDiag = (double *) ML_allocate((A->getrow->Nrows+Nghost+1)*
+                                         sizeof(double));
+
+  A->aux_data->filtered_nnz = 0;
+  A->aux_data->unfiltered_nnz = 0;
+
+  filter = (int**) ML_allocate(sizeof(int*) * n);
+
+  allocated = 128;
+  columns = (int *)    ML_allocate(allocated * sizeof(int));
+  values  = (double *) ML_allocate(allocated * sizeof(double));
+
+  for (i = 0 ; i < n ; ++i) {
+    BlockRow = i;
+    DiagID = -1;
+    DiagValue = 0.0;
+
+    ML_get_matrix_row(A,1,&i,&allocated,&columns,&values, &entries,0);
+
+    for (j = 0; j < entries; j++) {
+      BlockCol = columns[j];
+      if (BlockRow != BlockCol) {
+        dist = 0.0;
+        switch (N_dimensions) {
+        case 3:
+          dist += (z_coord[BlockRow] - z_coord[BlockCol]) * (z_coord[BlockRow] - z_coord[BlockCol]);
+        case 2:
+          dist += (y_coord[BlockRow] - y_coord[BlockCol]) * (y_coord[BlockRow] - y_coord[BlockCol]);
+        case 1:
+          dist += (x_coord[BlockRow] - x_coord[BlockCol]) * (x_coord[BlockRow] - x_coord[BlockCol]);
+        }
+
+        if (dist == 0.0) {
+          printf("node %d = %e ", i, x_coord[BlockRow]);
+          if (N_dimensions > 1) printf(" %e ", y_coord[BlockRow]);
+          if (N_dimensions > 2) printf(" %e ", z_coord[BlockRow]);
+          printf("\n");
+          printf("node %d = %e ", j, x_coord[BlockCol]);
+          if (N_dimensions > 1) printf(" %e ", y_coord[BlockCol]);
+          if (N_dimensions > 2) printf(" %e ", z_coord[BlockCol]);
+          printf("\n");
+          printf("Operator has inlen = %d and outlen = %d\n",
+                 A->invec_leng, A->outvec_leng);
+        }
+
+        dist = 1.0 / dist;
+        DiagValue += dist;
+      }
+      else if (columns[j] == i) {
+        DiagID = j;
+      }
+    }
+
+    if (DiagID == -1) {
+      fprintf(stderr, "ERROR: matrix has no diagonal!\n"
+              "ERROR: (file %s, line %d)\n",
+              __FILE__, __LINE__);
+      exit(EXIT_FAILURE);
+    }
+    LaplacianDiag[BlockRow] = DiagValue;
+  }
+  if ( A->getrow->pre_comm != NULL )
+     ML_exchange_bdry(LaplacianDiag,A->getrow->pre_comm,A->getrow->Nrows,
+                      A->comm, ML_OVERWRITE,NULL);
+
+
+  for (i = 0 ; i < n ; ++i) {
+    BlockRow = i;
+
+    ML_get_matrix_row(A,1,&i,&allocated,&columns,&values, &entries,0);
+
+    for (j = 0; j < entries; j++) {
+      BlockCol = columns[j];
+      if (BlockRow != BlockCol) {
+        dist = 0.0;
+        switch (N_dimensions) {
+        case 3:
+          dist += (z_coord[BlockRow] - z_coord[BlockCol]) * (z_coord[BlockRow] - z_coord[BlockCol]);
+        case 2:
+          dist += (y_coord[BlockRow] - y_coord[BlockCol]) * (y_coord[BlockRow] - y_coord[BlockCol]);
+        case 1:
+          dist += (x_coord[BlockRow] - x_coord[BlockCol]) * (x_coord[BlockRow] - x_coord[BlockCol]);
+        }
+
+        dist = 1.0 / dist;
+        values[j] = dist;
+      }
+    }
+
+    count = 0;
+    for (j = 0 ; j < entries ; ++j) {
+      if (  (i != columns[j]) && (
+            (values[j]*values[j] < LaplacianDiag[BlockRow]*LaplacianDiag[columns[j]]*threshold*threshold) ||
+            (ML_ABS(log10(mat_coord[BlockRow]) - log10(mat_coord[BlockCol])) > mat_threshold) ) ) {
+        columns[count++] = columns[j];
+      }
+    }
+
+    /* insert the rows */
+    filter[BlockRow] = (int*) ML_allocate(sizeof(int) * (count + 1));
+    filter[BlockRow][0] = count;
+
+    for (j = 0 ; j < count ; ++j)
+      filter[BlockRow][j + 1] = columns[j];
+
+    A->aux_data->filtered_nnz += count;
+    A->aux_data->unfiltered_nnz += entries;
+
+  }
+
+  ML_free(columns);
+  ML_free(values);
+
+  ML_free(LaplacianDiag);
+
+  ML_Operator_UnAmalgamateAndDropWeak(A, num_PDEs, 0.0);
+
+  A->aux_data->aux_func_ptr  = A->getrow->func_ptr;
+  A->getrow->func_ptr = ML_Aux_Getrow;
+  A->aux_data->filter = filter;
+  A->aux_data->filter_size = n;
+
+}
+/* ================================================ ====== ==== ==== == = */
 /*
  * This function allocates the filter field of the aux_data
  * structure. Filter[i] contains the thrown away nonzero
@@ -2505,7 +2767,7 @@ static void ML_Init_Aux(ML* ml, int level)
   double DiagValue;
   int** filter;
   double dist;
-  double* x_coord,* y_coord,* z_coord;
+  double* x_coord,* y_coord,* z_coord, *mat_coord;
   ML_Aggregate_Viz_Stats *grid_info;
   double *LaplacianDiag;
   int     Nghost;
@@ -2517,9 +2779,18 @@ static void ML_Init_Aux(ML* ml, int level)
   x_coord = grid_info->x;
   y_coord = grid_info->y;
   z_coord = grid_info->z;
-  if (x_coord == NULL) {
-      printf("ML_Init_Aux: Cannot use aux options without supplying coordinates\n");
+  mat_coord = grid_info->material;
+  if (x_coord == NULL && mat_coord == NULL) {
+      printf("ML_Init_Aux: Cannot use aux options without supplying coordinates or material coordinates\n");
       exit(1);
+  }
+  /* Short-circuit for material aggregation */
+  if(mat_coord) {
+    if(A->aux_data->threshold > 0.0 && A->aux_data->m_threshold > 0.0)
+      ML_Init_Aux_And_Material(ml,level);   
+    else 
+      ML_Init_Material(ml,level);
+    return;
   }
 
   threshold = A->aux_data->threshold;
@@ -2651,6 +2922,8 @@ static void ML_Init_Aux(ML* ml, int level)
   A->aux_data->filter_size = n;
 
 }
+
+
 
 static void ML_Finalize_Aux(ML* ml, const int level)
 {
@@ -2835,10 +3108,24 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
      {
        if (ml->comm->ML_mypid == 0 && 6 < ML_Get_PrintLevel())
        {
-         printf("ML_Gen_MultiLevelHierarchy (level %d) : Using auxiliary matrix\n",
-                level);
-         printf("ML_Gen_MultiLevelHierarchy (level %d) : threshold = %e\n",
-                level, Amat->aux_data->threshold);
+         if(grid_info && grid_info->material && grid_info->x &&  Amat->aux_data->threshold > 0.0 &&  Amat->aux_data->m_threshold  > 0.0) {
+           printf("ML_Gen_MultiLevelHierarchy (level %d) : Using aux+material matrix\n",
+                  level);
+           printf("ML_Gen_MultiLevelHierarchy (level %d) : aux threshold = %e, mat threshold = %e\n",
+                  level, Amat->aux_data->threshold,Amat->aux_data->m_threshold);
+         }
+         else if(grid_info && grid_info->material) {
+           printf("ML_Gen_MultiLevelHierarchy (level %d) : Using material matrix\n",
+                  level);
+           printf("ML_Gen_MultiLevelHierarchy (level %d) : threshold = %e\n",
+                  level, Amat->aux_data->m_threshold);
+         }
+         else {
+           printf("ML_Gen_MultiLevelHierarchy (level %d) : Using auxiliary matrix\n",
+                  level);
+           printf("ML_Gen_MultiLevelHierarchy (level %d) : threshold = %e\n",
+                  level, Amat->aux_data->threshold);
+         }
        }
 
        ML_Init_Aux(ml, level);
@@ -2941,7 +3228,7 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
 
       grid_info =(ML_Aggregate_Viz_Stats *) ml->Amat[level].to->Grid->Grid;
       if (grid_info) {
-        if (grid_info->x != NULL) {
+        if (grid_info->x != NULL || grid_info->material != NULL) {
           if (ML_Get_PrintLevel() > 6 && ml->comm->ML_mypid == 0)
             printf("ML_Gen_MultilevelHierarchy: Projecting node coordinates from level %d to level %d\n",
                    level,next);

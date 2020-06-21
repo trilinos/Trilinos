@@ -49,7 +49,6 @@ from . import _Base
 %enddef
 
 %module(package      = "PyTrilinos.NOX",
-	autodoc      = "1",
         moduleimport = %nox_base_importcode) Base
 
 %{
@@ -74,11 +73,11 @@ from . import _Base
 %ignore operator<<;
 %ignore *::operator=;
 
-// Auto-documentation feature
-%feature("autodoc", "1");
-
 // Include NOX documentation
+#if SWIG_VERSION < 0x040000
+%feature("autodoc", "1");
 %include "NOX_dox.i"
+#endif
 
 // SWIG library include files
 %include "stl.i"

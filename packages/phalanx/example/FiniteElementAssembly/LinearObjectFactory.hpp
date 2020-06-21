@@ -18,6 +18,8 @@ namespace phx_example {
     // Phalanx device spaces
     using exec_t = PHX::exec_space;
     using mem_t = PHX::mem_space;
+    using local_matrix_type = KokkosSparse::CrsMatrix<double,int,PHX::Device>;
+    using local_graph_type = typename local_matrix_type::StaticCrsGraphType;
     using team_t =  Kokkos::TeamPolicy<exec_t>::member_type;
     
     const int num_nodes_;       //! Total number of nodes in mesh
@@ -36,7 +38,7 @@ namespace phx_example {
     Kokkos::View<int*,PHX::Device> row_count_;
 
     //! Row offsets for building graph, sizeof(num_dofs_+1)
-    using row_offset_size_t = typename Kokkos::StaticCrsGraph<int,Kokkos::LayoutLeft,PHX::Device>::size_type;
+    using row_offset_size_t = typename local_graph_type::size_type;
     Kokkos::View<row_offset_size_t*,PHX::Device> row_offsets_;
 
     //! Single value for the size of the matrix
@@ -46,7 +48,7 @@ namespace phx_example {
     Kokkos::View<int*, PHX::Device> col_ids_;
 
     //! Crs Graph for Jacobian
-    Kokkos::StaticCrsGraph<int,Kokkos::LayoutLeft,PHX::Device> graph_;
+    local_graph_type graph_;
 
     public:
     
@@ -98,7 +100,7 @@ namespace phx_example {
       Kokkos::deep_copy(row_count_,0); // reuse this view
       Kokkos::fence();
       graph_.row_map = row_offsets_;
-      graph_.entries = Kokkos::StaticCrsGraph<int,Kokkos::LayoutLeft,PHX::Device>::entries_type("graph_entries",num_matrix_entries_);
+      graph_.entries = local_graph_type::entries_type("graph_entries",num_matrix_entries_);
       Kokkos::parallel_for(Kokkos::RangePolicy<exec_t,TagFillGraphEntries>(0,global_node_set_.capacity()), *this );
       exec_t().fence();
       
@@ -123,8 +125,8 @@ namespace phx_example {
     Kokkos::View<double*,PHX::Device> createSolutionVector(const std::string& name) const
     { return Kokkos::View<double*,PHX::Device>(name,num_dofs_); }
     
-    KokkosSparse::CrsMatrix<double,int,PHX::Device> createJacobianMatrix(const std::string& name) const
-    { return KokkosSparse::CrsMatrix<double,int,PHX::Device>(name,graph_); }
+    local_matrix_type createJacobianMatrix(const std::string& name) const
+    { return local_matrix_type(name,graph_); }
 
 
     // ****************************************************

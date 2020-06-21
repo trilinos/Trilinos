@@ -1,3 +1,0 @@
-<ParameterList name="MueLu">
-  <Parameter name="transpose: use implicit" type="bool" value="true"/>
-</ParameterList>

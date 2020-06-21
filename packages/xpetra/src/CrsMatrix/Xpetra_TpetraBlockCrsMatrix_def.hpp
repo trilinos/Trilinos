@@ -56,7 +56,6 @@ namespace Xpetra {
     TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     TpetraBlockCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, 
                          size_t maxNumEntriesPerRow, 
-                         ProfileType pftype, 
                          const Teuchos::RCP< Teuchos::ParameterList > &params)
     { 
       throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented"); 
@@ -68,7 +67,6 @@ namespace Xpetra {
     TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     TpetraBlockCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, 
                          const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, 
-                         ProfileType pftype, 
                          const Teuchos::RCP< Teuchos::ParameterList > &params)
     {
       throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented");
@@ -81,7 +79,6 @@ namespace Xpetra {
     TpetraBlockCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, 
                          const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, 
                          size_t maxNumEntriesPerRow, 
-                         ProfileType pftype, 
                          const Teuchos::RCP< Teuchos::ParameterList > &params)
     {
       throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented"); 
@@ -94,7 +91,6 @@ namespace Xpetra {
     TpetraBlockCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, 
                          const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, 
                          const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, 
-                         ProfileType pftype, 
                          const Teuchos::RCP< Teuchos::ParameterList > &params)
     { 
       throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented");
@@ -576,19 +572,6 @@ namespace Xpetra {
         mtx_->setObjectLabel(objectLabel);
     }
 
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    //! Deep copy constructor
-    template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    TpetraBlockCrsMatrix(const TpetraBlockCrsMatrix& matrix)
-    //  : mtx_ (matrix.mtx_->template clone<Node> (matrix.mtx_->getNode())) 
-    { 
-        // This won't compile because there is no Tpetra::BlockCrsMatrix::clone() 
-        // so just throwing an error... it'll go away anyhow with deprecations.
-        // But seriously, pre ETI how did this ever actually compile!?
-        throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function is deprecated.");
-    }
-#endif  // XPETRA_ENABLE_DEPRECATED_CODE
 
 
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -839,22 +822,22 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
     //! @name Constructor/Destructor Methods
 
     //! Constructor specifying fixed number of entries for each row (not implemented)
-    TpetraBlockCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null) {
+    TpetraBlockCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, size_t maxNumEntriesPerRow, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null) {
       XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
 
     //! Constructor specifying (possibly different) number of entries in each row (not implemented)
-    TpetraBlockCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null) {
+    TpetraBlockCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null) {
       XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
 
     //! Constructor specifying column Map and fixed number of entries for each row (not implemented)
-    TpetraBlockCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null) {
+    TpetraBlockCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null) {
       XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
 
     //! Constructor specifying column Map and number of entries in each row (not implemented)
-    TpetraBlockCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null) {
+    TpetraBlockCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null) {
       XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
 
@@ -1117,16 +1100,6 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
     {}
 
 
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    // INST_INT_INT specialization variant
-    template<class Node2>
-    RCP<TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > 
-    XPETRA_DEPRECATED 
-    clone(const RCP<Node2> &node2) const 
-    { 
-      return Teuchos::null; 
-    }
-#endif  // XPETRA_ENABLE_DEPRECATED_CODE
 
     //! @name Xpetra specific
 
@@ -1194,19 +1167,19 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
     //! @name Constructor/Destructor Methods
 
     //! Constructor specifying fixed number of entries for each row (not implemented)
-    TpetraBlockCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null)
+    TpetraBlockCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, size_t maxNumEntriesPerRow, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null)
     {XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );}
 
     //! Constructor specifying (possibly different) number of entries in each row (not implemented)
-    TpetraBlockCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null)
+    TpetraBlockCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null)
     {XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );}
 
     //! Constructor specifying column Map and fixed number of entries for each row (not implemented)
-    TpetraBlockCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null)
+    TpetraBlockCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null)
     {XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );}
 
     //! Constructor specifying column Map and number of entries in each row (not implemented)
-    TpetraBlockCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null)
+    TpetraBlockCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null)
     {XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );}
 
     //! Constructor specifying a previously constructed graph ( not implemented )
@@ -1465,16 +1438,6 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
     {}
 
 
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    // INST_INT_LONG_LONG specialization variation
-    template<class Node2>
-    RCP<TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > 
-    XPETRA_DEPRECATED 
-    clone(const RCP<Node2> &node2) const 
-    { 
-      return Teuchos::null; 
-    }
-#endif  // XPETRA_ENABLE_DEPRECATED_CODE
 
     //! @name Xpetra specific
 

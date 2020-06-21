@@ -89,6 +89,8 @@ public:
 
   void set_flag_needs_to_be_sorted(bool flag) { m_updated_since_sort = flag; }
 
+  bool needs_to_be_sorted() const { return m_updated_since_sort; }
+
   size_t field_data_footprint(const FieldBase &f) const;
 
   ////

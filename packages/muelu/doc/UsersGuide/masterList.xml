@@ -26,6 +26,13 @@
     </parameter>
 
     <parameter>
+      <name>output filename</name>
+      <type>string</type>
+      <default>""</default>
+      <description>Write MueLu output to a file instead of std out. Empty value disables file output.</description>
+    </parameter>
+
+    <parameter>
       <name>number of equations</name>
       <type>int</type>
       <default>1</default>
@@ -66,6 +73,13 @@
     </parameter>
 
     <parameter>
+      <name>W cycle start level</name>
+      <type>int</type>
+      <default>0</default>
+      <description>Level at which to start multigrid W cycle.</description>
+    </parameter>
+
+    <parameter>
       <name>coarse grid correction scaling factor</name>
       <type>double</type>
       <default>1.0</default>
@@ -79,6 +93,14 @@
       <default>false</default>
       <description>Fuse prolongation and update into one kernel call. Due to round-off error accumulation, this can in some cases result in slightly higher iteration counts. This only affects the solve phase.</description>
       <visible>false</visible>
+    </parameter>
+
+    <parameter>
+      <name>number of vectors</name>
+      <type>int</type>
+      <default>1</default>
+      <description>Number of columns in multivectors that are cached for Hierarchy apply phase.</description>
+      <visible>true</visible>
     </parameter>
 
     <parameter>
@@ -382,7 +404,53 @@
       <name>aggregation: drop scheme</name>
       <type>string</type>
       <default>"classical"</default>
-      <description>Connectivity dropping scheme for a graph used in aggregation. Possible values: "classical", "distance laplacian".</description>
+      <description>Connectivity dropping scheme for a graph used in aggregation. Possible values: "classical", "distance laplacian", "unsupported vector smoothing".</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: number of random vectors</name>
+      <type>int</type>
+      <default>10</default>
+      <description>Determines how many random vectors are smoothed when "unsupported vector smoothing" used.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+
+    <parameter>
+      <name>aggregation: number of times to pre or post smooth</name>
+      <type>int</type>
+      <default>10</default>
+      <description>Determines how many times presmoother (or postsmoother if no presmoother set) is invoked when "unsupported vector smoothing" used. Each invocation may include several smoother sweeps.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: penalty parameters</name>
+      <type>Array(double)</type>
+      <default>{12.,-.2,0,0,0} </default>
+      <description>Defines a polynomial coef[0] + coef[1]*i + coef[2]*i^2 + coef[3]*i^3 + coef[4]*i^4 that models the cost of having i nonzeros per row when  "unsupported vector smoothing" used.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: distance laplacian algo</name>
+      <type>string</type>
+      <default>"default"</default>
+      <description>Type of sub-algorithm for "distance laplacian" dropping. Possible values: "default", "unscaled cut", "scaled cut".</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: classical algo</name>
+      <type>string</type>
+      <default>"default"</default>
+      <description>Type of sub-algorithm for "classical" dropping. Possible values: "default", "unscaled cut", "scaled cut".</description>
+      <visible>false</visible>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
@@ -413,6 +481,15 @@
     </parameter>
 
     <parameter>
+      <name>aggregation: compute aggregate qualities</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Whether to compute aggregate quality estimates.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+
+    <parameter>
       <name>aggregation: brick x size</name>
       <type>int</type>
       <default>2</default>
@@ -433,6 +510,33 @@
       <type>int</type>
       <default>2</default>
       <description>Number of points for z axis in "brick" aggregation (limited to 3).</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+   <parameter>
+      <name>aggregation: brick x Dirichlet</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Asserts that Dirichlet conditions are applied in
+        the x-direction and the Dirichlet DOFs are not aggregated.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+   <parameter>
+      <name>aggregation: brick y Dirichlet</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Asserts that Dirichlet conditions are applied in
+        the y-direction and the Dirichlet DOFs are not aggregated.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+   <parameter>
+      <name>aggregation: brick z Dirichlet</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Asserts that Dirichlet conditions are applied in
+        the z-direction and the Dirichlet DOFs are not aggregated.</description>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
@@ -462,10 +566,10 @@
     </parameter>
 
     <parameter>
-      <name>aggregation: phase 1 algorithm</name>
+      <name>aggregation: coloring algorithm</name>
       <type>string</type>
-      <default>Serial</default>
-      <description>Choice of algorithm for aggregation phase 1.</description>
+      <default>serial</default>
+      <description>Choice of distance 2 coloring algorithm used by Uncoupled Aggregation. Currently set by defulat to COLORING_D2_SERIAL.</description>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
@@ -501,6 +605,15 @@
       <type>bool</type>
       <default>true</default>
       <description>Turn on/off phase 3 of aggregation</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: phase2a include root</name>
+      <type>bool</type>
+      <default>true</default>
+      <description>Whether the root node should be included in the aggregates formed in phase 2a.</description>
       <visible>false</visible>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
@@ -685,7 +798,92 @@
     </parameter>
 
 
+    <parameter>
+      <name>aggregation: pairwise: size</name>
+      <type>int</type>
+      <default>8</default>
+      <description>Target size for pairwise aggregation.  The number
+      of pairwise steps used will be log base-2 of this number.</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: pairwise: tie threshold</name>
+      <type>double</type>
+      <default>1e-6</default>
+      <description>Threshold for determining two potential pairwise
+      neighbors have identical values and then fall back on the
+      order.</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+
   </aggregation>
+
+  <aggregate_qualities>
+
+    <parameter>
+      <name>aggregate qualities: check symmetry</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Whether to check symmetry and use nonsymmetric aggregate quality estimate if necessary.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregate qualities: good aggregate threshold</name>
+      <type>double</type>
+      <default>100.0</default>
+      <description>Maximum quality where aggregate is considered acceptable.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregate qualities: file output</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Whether to output files containing the aggregate qualities.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregate qualities: file base</name>
+      <type>string</type>
+      <default>agg_qualities</default>
+      <description>Base of filename for aggregate quality output.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregate qualities: algorithm</name>
+      <type>string</type>
+      <default>forward</default>
+      <description>Which aggregate qualtiy algorithm to use:
+      ``forward'' or ``reverse.''  The forward algorithm uses the
+      ``A'' matrix in the denominator of the generalized eigenvalue
+      problem.  The reverse algorithm uses it in the numerator.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregate qualities: zero threshold</name>
+      <type>double</type>
+      <default>1e-12</default>
+      <description>The zero threshold for the reverse algorithm.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregate qualities: percentiles</name>
+      <type>Array(double)</type>
+      <default>{}</default>
+      <description>Percentiles of aggregate qualities to report (in a [0,1] range).</description>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+  </aggregate_qualities>
 
   <misc>
 
@@ -1018,6 +1216,14 @@
     </parameter>
 
     <parameter>
+      <name>tentative: constant column sums</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>If true, scale the column sums to one (before applying nullspace).</description>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
       <name>tentative: build coarse coordinates</name>
       <type>bool</type>
       <default>true</default>
@@ -1069,6 +1275,13 @@
       <description-ML>Minimum level to run partitioner. \muelu does not rebalance levels finer than this one.</description-ML>
     </parameter>
 
+    <parameter>
+      <name>repartition: use map</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Instead of using a matrix, use a map to determine rebalancing heuristics. Obviously, this cannot evaluate nonzero imbalance.</description>
+      <visible>false</visible>
+    </parameter>
 
     <parameter>
       <name>repartition: node repartition level</name>

@@ -4,6 +4,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SOURCES cxx_main_solvertest.cpp
   ARGS 
     "--verbose"
+    "--verbose --ortho=ICGS"
 #    "--debug"
   COMM serial mpi
   )

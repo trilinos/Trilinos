@@ -11,7 +11,7 @@
 # machines. please be mindful of this when making changes
 
 if [ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" ] ; then
-  export ATDM_CONFIG_KOKKOS_ARCH=SNB  
+  export ATDM_CONFIG_KOKKOS_ARCH=SNB
 fi
 
 if [ "$ATDM_CONFIG_KOKKOS_ARCH" != "SNB" ] ; then
@@ -24,4 +24,4 @@ if [ "$ATDM_CONFIG_KOKKOS_ARCH" != "SNB" ] ; then
   return
 fi
 
-source $ATDM_SCRIPT_DIR/common/toss3/environment.sh
+source $ATDM_SCRIPT_DIR/common/toss3/environment_tlcc2.sh

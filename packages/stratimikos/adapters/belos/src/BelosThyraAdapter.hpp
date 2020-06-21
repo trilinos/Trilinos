@@ -298,13 +298,12 @@ namespace Belos {
     static void MvAddMv( const ScalarType alpha, const TMVB& A,
                          const ScalarType beta,  const TMVB& B, TMVB& mv )
     {
-      typedef Teuchos::ScalarTraits<ScalarType> ST;
       using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::inoutArg;
 
       Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Belos::MVT::MvAddMv")));
 
       Thyra::linear_combination<ScalarType>(
-        tuple(alpha, beta)(), tuple(ptrInArg(A), ptrInArg(B))(), ST::zero(), inoutArg(mv));
+        tuple(alpha, beta)(), tuple(ptrInArg(A), ptrInArg(B))(), Teuchos::ScalarTraits<ScalarType>::zero(), inoutArg(mv));
     }
 
     /*! \brief Scale each element of the vectors in \c *this with \c alpha.

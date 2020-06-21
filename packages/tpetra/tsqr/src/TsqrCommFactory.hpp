@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
 // ************************************************************************
 //@HEADER
 
@@ -47,8 +45,8 @@
 ///
 /// \warning TSQR users should <i>not</i> include this file directly.
 
-#include <Teuchos_RCP.hpp>
-#include <Tsqr_MessengerBase.hpp>
+#include "Teuchos_RCP.hpp"
+#include "Tsqr_MessengerBase.hpp"
 
 namespace TSQR {
   namespace Trilinos {
@@ -83,8 +81,8 @@ namespace TSQR {
       /// suitable for TSQR.
       virtual void
       makeMessengers (const comm_ptr& comm,
-		      scalar_messenger_ptr& scalarMessenger,
-		      ordinal_messenger_ptr& ordinalMessenger) = 0;
+                      scalar_messenger_ptr& scalarMessenger,
+                      ordinal_messenger_ptr& ordinalMessenger) = 0;
 
       //! Virtual destructor for memory safety.
       virtual ~CommFactory () {}

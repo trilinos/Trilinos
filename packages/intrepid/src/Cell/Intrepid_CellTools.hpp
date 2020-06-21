@@ -84,10 +84,8 @@
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_RCP.hpp"
 
-#include <Intrepid_KokkosRank.hpp>
-#ifdef INTREPID_OLD_KOKKOS_CODE
-#include "Kokkos_Core.hpp"
-#endif
+#include <Intrepid_Rank.hpp>
+
 namespace Intrepid {
   
 //nn  
@@ -347,22 +345,7 @@ public:
         \param  cellTopo          [in]  - cell topology of the cells stored in \c cellWorkset
         \param  whichCell         [in]  - cell ordinal (for single cell Jacobian computation); default is -1      
      */
-/*
- #ifdef INTREPID_OLD_KOKKOS_CODE
 
-    
-template<class ArrayJac, class ArrayPoint, class ArrayCell, bool typecheck>
-	struct setJacobianTempSpecKokkos;
-	
-	
-	template<class Scalar1,class Scalar2,class Scalar3,class Layout,class MemorySpace>
-	static void setJacobianTemp(Kokkos::View<Scalar1,Layout,MemorySpace> &               jacobian,
-                            const Kokkos::View<Scalar2,Layout,MemorySpace> &           points,
-                            const Kokkos::View<Scalar3,Layout,MemorySpace>  &           cellWorkset,
-                            const shards::CellTopology & cellTopo,
-                            const int &                  whichCell = -1);
-                            
- #endif */                          
     template<class ArrayJac, class ArrayPoint, class ArrayCell, bool typecheck>
 	struct setJacobianTempSpec;
 	
@@ -1502,9 +1485,6 @@ template<class ArrayJac, class ArrayPoint, class ArrayCell, bool typecheck>
 } // namespace Intrepid
 
 // include templated function definitions
-#ifdef INTREPID_OLD_KOKKOS_CODE
-#include <Intrepid_CellTools_Kokkos.hpp>
-#endif
 #include "Intrepid_CellToolsDef.hpp"
 
 #endif

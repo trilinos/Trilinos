@@ -62,7 +62,7 @@ private:
   stk::mesh::PartVector m_geometryMeshActiveParts;
   stk::mesh::PartVector m_nodeMeshActiveParts;
   bool m_debug;
-  boost::shared_ptr<percept::GPSTKMeshTransfer> m_meshTransfer;
+  std::shared_ptr<percept::GPSTKMeshTransfer> m_meshTransfer;
   stk::mesh::Entity m_found_face;
 
 };

@@ -64,6 +64,10 @@ namespace tsl {
    * slow modulo. Other growth policies are available and you may define your own growth policy,
    * check `tsl::rh::power_of_two_growth_policy` for the interface.
    *
+   * `std::pair<Key, T>` must be swappable.
+   *
+   * `Key` and `T` must be copy and/or move constructible.
+   *
    * If the destructor of `Key` or `T` throws an exception, the behaviour of the class is undefined.
    *
    * Iterators invalidation:
@@ -645,8 +649,8 @@ namespace tsl {
     void min_load_factor(float ml) { m_ht.min_load_factor(ml); }
     void max_load_factor(float ml) { m_ht.max_load_factor(ml); }
 
-    void rehash(size_type count) { m_ht.rehash(count); }
-    void reserve(size_type count) { m_ht.reserve(count); }
+    void rehash(size_type my_count) { m_ht.rehash(my_count); }
+    void reserve(size_type my_count) { m_ht.reserve(my_count); }
 
     /*
      * Observers

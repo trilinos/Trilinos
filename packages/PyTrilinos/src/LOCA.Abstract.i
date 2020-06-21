@@ -80,7 +80,6 @@ from PyTrilinos.LOCA import PhaseTransition
 
 %module(package      = "PyTrilinos.LOCA",
 	directors    = "1",
-	autodoc      = "1",
 	implicitconv = "1",
         moduleimport = %loca_abstract_importcode,
 	docstring    = %loca_abstract_docstring) Abstract
@@ -112,8 +111,10 @@ from PyTrilinos.LOCA import PhaseTransition
 %include "exception.i"
 
 // Include LOCA documentation
+#if SWIG_VERSION < 0x040000
 %feature("autodoc", "1");
 %include "LOCA_dox.i"
+#endif
 
 // Director exception handling
 %feature("director:except")

@@ -92,7 +92,7 @@
                         stk::mesh::FieldBase *proc_rank_field=0)
       {
         const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
-        typedef boost::tuple<stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId> tri_tuple_type;
+        typedef std::array<stk::mesh::EntityId, 3> tri_tuple_type;
         static vector<tri_tuple_type> elems(6);
 
         CellTopology cell_topo(cell_topo_data);
@@ -132,13 +132,13 @@
           }
 
 
-        elems[0] = tri_tuple_type(VERT_N(0), EDGE_N(0), EDGE_N(3));
-        elems[1] = tri_tuple_type(VERT_N(1), EDGE_N(1), EDGE_N(0));
-        elems[2] = tri_tuple_type(EDGE_N(0), EDGE_N(1), EDGE_N(3));
+        elems[0] = {VERT_N(0), EDGE_N(0), EDGE_N(3)};
+        elems[1] = {VERT_N(1), EDGE_N(1), EDGE_N(0)};
+        elems[2] = {EDGE_N(0), EDGE_N(1), EDGE_N(3)};
 
-        elems[3] = tri_tuple_type(VERT_N(2), EDGE_N(2), EDGE_N(1));
-        elems[4] = tri_tuple_type(VERT_N(3), EDGE_N(3), EDGE_N(2));
-        elems[5] = tri_tuple_type(EDGE_N(2), EDGE_N(3), EDGE_N(1));
+        elems[3] = {VERT_N(2), EDGE_N(2), EDGE_N(1)};
+        elems[4] = {VERT_N(3), EDGE_N(3), EDGE_N(2)};
+        elems[5] = {EDGE_N(2), EDGE_N(3), EDGE_N(1)};
 
         // write a diagram of the refinement pattern as a vtk file, or a latex/tikz/pgf file
 #define WRITE_DIAGRAM 0
@@ -158,9 +158,9 @@
               newElement = *element_pool;
 
             stk::mesh::Entity nodes[3] = {
-              eMesh.createOrGetNode(elems[ielem].get<0>()),
-              eMesh.createOrGetNode(elems[ielem].get<1>()),
-              eMesh.createOrGetNode(elems[ielem].get<2>())};
+              eMesh.createOrGetNode(elems[ielem][0]),
+              eMesh.createOrGetNode(elems[ielem][1]),
+              eMesh.createOrGetNode(elems[ielem][2])};
 
             create_side_element(eMesh, use_declare_element_side, nodes, 3, newElement);
 
@@ -171,17 +171,7 @@
                 fdata[0] = double(eMesh.owner_rank(newElement));
               }
 
-            //eMesh.get_bulk_data()->change_entity_parts( newElement, add_parts, remove_parts );
             change_entity_parts(eMesh, element, newElement);
-
-            {
-              if (!elems[ielem].get<0>())
-                {
-                  std::cout << "P[" << eMesh.get_rank() << " nid = 0 << " << std::endl;
-                  exit(1);
-                }
-
-            }
 
             set_parent_child_relations(eMesh, element, newElement, *ft_element_pool, ielem);
 

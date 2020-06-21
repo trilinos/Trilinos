@@ -78,7 +78,7 @@ namespace FROSch {
         using XMultiVectorPtr       = typename SchwarzOperator<SC,LO,GO,NO>::XMultiVectorPtr;
 
         using XImportPtrVecPtr      = typename SchwarzOperator<SC,LO,GO,NO>::XImportPtrVecPtr;
-        
+
         using XExportPtrVecPtr      = typename SchwarzOperator<SC,LO,GO,NO>::XExportPtrVecPtr;
 
         using ParameterListPtr      = typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr;
@@ -143,14 +143,14 @@ namespace FROSch {
 
         XMatrixPtr buildCoarseMatrix();
 
-        int buildCoarseSolveMap();
+        int buildCoarseSolveMap(ConstXMapPtr coarseMapUnique);
 
 
         CommPtr CoarseSolveComm_;
 
-        bool OnCoarseSolveComm_;
-        
-        int NumProcsCoarseSolve_;
+        bool OnCoarseSolveComm_ = false;
+
+        int NumProcsCoarseSolve_ = 0;
 
         CoarseSpacePtr CoarseSpace_;
 
@@ -167,18 +167,16 @@ namespace FROSch {
         mutable XMultiVectorPtr YCoarseSolve_;
         mutable XMultiVectorPtr YCoarseSolveTmp_;
 
-        ConstXMapPtrVecPtr GatheringMaps_;
-        XMapPtr CoarseMap_;
+        ConstXMapPtrVecPtr GatheringMaps_ = ConstXMapPtrVecPtr(0);
         XMapPtr CoarseSolveMap_;
-        XMapPtr CoarseSolveRepeatedMap_;
 
         SubdomainSolverPtr CoarseSolver_;
 
         ParameterListPtr DistributionList_;
 
-        XExportPtrVecPtr CoarseSolveExporters_;
+        XExportPtrVecPtr CoarseSolveExporters_ = XExportPtrVecPtr(0);
 #ifdef FROSCH_COARSEOPERATOR_EXPORT_AND_IMPORT
-        XImportPtrVecPtr CoarseSolveImporters_;
+        XImportPtrVecPtr CoarseSolveImporters_ = XImportPtrVecPtr(0);
 #endif
     };
 

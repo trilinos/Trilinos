@@ -145,9 +145,8 @@ namespace Sacado {
     template <typename ValueT>
     SimpleFad<ValueT>
     tanh(const SimpleFad<ValueT>& a) {
-      ValueT t = std::cosh(a.val());
-      t = 1.0/(t*t);
-      return SimpleFad<ValueT>(a, std::tanh(a.val()), t);
+      ValueT t = std::tanh(a.val());
+      return SimpleFad<ValueT>(a, t, 1-t*t);
     }
 
     template <typename ValueT>

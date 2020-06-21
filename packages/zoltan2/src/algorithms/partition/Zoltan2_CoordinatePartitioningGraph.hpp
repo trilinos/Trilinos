@@ -80,7 +80,7 @@ public:
             dim(dim_),
             lmins(0), lmaxs(0),
             maxScalar (std::numeric_limits<coord_t>::max()),
-            _EPSILON(std::numeric_limits<coord_t>::epsilon()),
+            epsilon(std::numeric_limits<coord_t>::epsilon()),
             minHashIndices(0),
             maxHashIndices(0),
             gridIndices(0), neighbors()
@@ -105,7 +105,7 @@ public:
             dim(dim_),
             lmins(0), lmaxs(0),
             maxScalar (std::numeric_limits<coord_t>::max()),
-            _EPSILON(std::numeric_limits<coord_t>::epsilon()),
+            epsilon(std::numeric_limits<coord_t>::epsilon()),
             minHashIndices(0),
             maxHashIndices(0),
             gridIndices(0), neighbors()
@@ -130,7 +130,7 @@ public:
             dim(other.getDim()),
             lmins(0), lmaxs(0),
             maxScalar (std::numeric_limits<coord_t>::max()),
-            _EPSILON(std::numeric_limits<coord_t>::epsilon()),
+            epsilon(std::numeric_limits<coord_t>::epsilon()),
             minHashIndices(0),
             maxHashIndices(0),
             gridIndices(0), neighbors()
@@ -255,12 +255,12 @@ public:
             int equality = 0;
             for (int i = 0; i < dim; ++i){
 
-                if (omins[i] - this->lmaxs[i] > _EPSILON  || 
-                    this->lmins[i] - omaxs[i] > _EPSILON ) {
+                if (omins[i] - this->lmaxs[i] > epsilon  ||
+                    this->lmins[i] - omaxs[i] > epsilon ) {
                     return false;
                 }
-                else if (Z2_ABS(omins[i] - this->lmaxs[i]) < _EPSILON || 
-                         Z2_ABS(this->lmins[i] - omaxs[i]) < _EPSILON ){
+                else if (Z2_ABS(omins[i] - this->lmaxs[i]) < epsilon ||
+                         Z2_ABS(this->lmins[i] - omaxs[i]) < epsilon ){
                     if (++equality > 1){
                         return false;
                     }
@@ -304,7 +304,7 @@ public:
             for (int j = 0; j < dim; ++j){
                 coord_t distance = (lmins[j] - minMaxBoundaries[j]);
                 part_t minInd = 0;
-                if (distance > _EPSILON && sliceSizes[j] > _EPSILON){
+                if (distance > epsilon && sliceSizes[j] > epsilon){
                     minInd = static_cast<part_t>(floor((lmins[j] - minMaxBoundaries[j])/ sliceSizes[j]));
                 }
 
@@ -313,7 +313,7 @@ public:
                 }
                 part_t maxInd = 0;
                 distance = (lmaxs[j] - minMaxBoundaries[j]);
-                if (distance > _EPSILON && sliceSizes[j] > _EPSILON){
+                if (distance > epsilon && sliceSizes[j] > epsilon){
                     maxInd = static_cast<part_t>(ceil((lmaxs[j] - minMaxBoundaries[j])/ sliceSizes[j]));
                 }
                 if(maxInd >= numSlicePerDim){
@@ -488,7 +488,7 @@ private:
         coord_t *lmins;    //minimum boundaries of the box along all dimensions.
         coord_t *lmaxs;    //maximum boundaries of the box along all dimensions.
         coord_t maxScalar;
-        coord_t _EPSILON;
+        coord_t epsilon;
 
         //to calculate the neighbors of the box and avoid the p^2 comparisons,
         //we use hashing. A box can be put into multiple hash buckets.

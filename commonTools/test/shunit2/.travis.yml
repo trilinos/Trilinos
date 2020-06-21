@@ -1,0 +1,40 @@
+language: bash
+
+env:
+  - SHUNIT_COLOR='always'
+
+script:
+  # Execute the unit tests.
+  - ./test_runner
+
+addons:
+  apt:
+    packages:
+      - ksh
+      - mksh
+      - zsh
+
+matrix:
+  include:
+    - os: linux
+      # Support Ubuntu Bionic 18.04 through at least Apr 2023.
+      dist: bionic
+    - os: linux
+      # Support Ubuntu Xenial 16.04 through at least Apr 2021.
+      dist: xenial
+    - os: linux
+      # Support Ubuntu Trusty 14.04 through at least Apr 2019.
+      dist: trusty
+    - os: osx
+    - os: linux
+      script:
+        # Run the source through ShellCheck (http://www.shellcheck.net).
+        - shellcheck shunit2 *_test.sh
+        - shellcheck -s sh shunit2_test_helpers
+
+branches:
+  only:
+  - master
+  - 2.1.x
+  # Tags, e.g. v.2.1.8.
+  - /^v\d+\.\d+(\.\d+)?(-\S*)?$/

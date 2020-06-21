@@ -942,13 +942,6 @@ public:
     }
     return 0;
   }
-  //! The strong count; retained for backwards compatibility.
-  int count() const {
-    if (node_) {
-      return node_->strong_count();
-    }
-    return 0;
-  }
   //! The strength of this handle.
   ERCPStrength strength() const {
     return strength_;

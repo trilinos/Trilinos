@@ -36,12 +36,10 @@
       DenseMatrix<3,3> m_dMetric_dA[NNODES_MAX];
       double m_grad[NNODES_MAX][NNODES_MAX][3];
       int m_num_nodes;
-      bool m_scale_to_unit;
       bool m_use_approximate_quadratic_jacobian;
 
       JacobianUtilBase(bool use_approximate_quadratic_jacobian=true) :
         m_num_nodes(0),
-        m_scale_to_unit(false),
         m_use_approximate_quadratic_jacobian(use_approximate_quadratic_jacobian)
       {
       }
@@ -71,7 +69,6 @@
       using  Base::m_dMetric_dA;
       using  Base::m_grad;
       using  Base::m_num_nodes;
-      using  Base::m_scale_to_unit;
       using  Base::m_use_approximate_quadratic_jacobian;
 
 
@@ -143,7 +140,6 @@
         A(2,0) = (x1[2] - x0[2]);
         A(2,1) = (x2[2] - x0[2]);
         A(2,2) = (x3[2] - x0[2]);
-        //if (m_scale_to_unit) scale_to_unit(A);
 
         detJ = det(A);
         return detJ < 0.0;
@@ -371,69 +367,6 @@
         /* Calculate det(M). */
         detJ = det(A);
         return detJ < 0.0;
-      }
-
-      void grad_util_pyramid_3d_new(int ibasis, const DenseMatrix<3,3>& dMdA, double grad[NNODES_MAX][3], const int nnode, const int spd, const int *indices, const int nind)
-      {
-        double rst[5][3] = {{0,0,0},{1,0,0},{1,1,0},{0,1,0},{.5,.5,.49999}};  //note: avoid singularity at top vertex
-
-        double r = rst[ibasis][0];
-        double s = rst[ibasis][1];
-        double t = rst[ibasis][2];
-
-        for (int i=0; i < nnode; i++)
-          for (int j=0; j < spd; j++)
-            grad[i][j]=0.0;
-
-#define Rule(x,y) x += y
-#define GRAD(i,j) grad[i-1][j-1]
-#define DMDA(i,j) dMdA(i-1,j-1)
-#define Sqrt(x) std::sqrt(x)
-        Rule(GRAD(1,1),-(((-1 + s + t)*DMDA(1,1))/(-1 + 2*t)));
-        Rule(GRAD(1,1),-(((-1 + r + t)*DMDA(1,2))/(-1 + 2*t)));
-        Rule(GRAD(1,1),((-2*(1 + Sqrt(2) - 2*t)*(-1 + t) + s*(-1 - 3*Sqrt(2) + 2*(1 + Sqrt(2))*t) + r*(-1 - 3*Sqrt(2) + 4*Sqrt(2)*s + 2*(1 + Sqrt(2))*t))*
-                        DMDA(1,3))/(Sqrt(2)*Power(1 - 2*t,2)));
-        Rule(GRAD(1,2),-(((-1 + s + t)*DMDA(2,1))/(-1 + 2*t)));
-        Rule(GRAD(1,2),-(((-1 + r + t)*DMDA(2,2))/(-1 + 2*t)));
-        Rule(GRAD(1,2),((-2*(1 + Sqrt(2) - 2*t)*(-1 + t) + s*(-1 - 3*Sqrt(2) + 2*(1 + Sqrt(2))*t) + r*(-1 - 3*Sqrt(2) + 4*Sqrt(2)*s + 2*(1 + Sqrt(2))*t))*
-                        DMDA(2,3))/(Sqrt(2)*Power(1 - 2*t,2)));
-        Rule(GRAD(1,3),-(((-1 + s + t)*DMDA(3,1))/(-1 + 2*t)));
-        Rule(GRAD(1,3),-(((-1 + r + t)*DMDA(3,2))/(-1 + 2*t)));
-        Rule(GRAD(1,3),((-2*(1 + Sqrt(2) - 2*t)*(-1 + t) + s*(-1 - 3*Sqrt(2) + 2*(1 + Sqrt(2))*t) + r*(-1 - 3*Sqrt(2) + 4*Sqrt(2)*s + 2*(1 + Sqrt(2))*t))*
-                        DMDA(3,3))/(Sqrt(2)*Power(1 - 2*t,2)));
-        Rule(GRAD(2,1),((-1 + s + t)*DMDA(1,1))/(-1 + 2*t));
-        Rule(GRAD(2,1),((r - t)*DMDA(1,2))/(-1 + 2*t));
-        Rule(GRAD(2,1),-(((1 + 3*Sqrt(2) - 2*t - 6*Sqrt(2)*t + 4*Sqrt(2)*Power(t,2) + s*(-1 - 3*Sqrt(2) + 2*(1 + Sqrt(2))*t) +
-                           r*(-1 - 3*Sqrt(2) + 4*Sqrt(2)*s + 2*(1 + Sqrt(2))*t))*DMDA(1,3))/(Sqrt(2)*Power(1 - 2*t,2))));
-        Rule(GRAD(2,2),((-1 + s + t)*DMDA(2,1))/(-1 + 2*t));
-        Rule(GRAD(2,2),((r - t)*DMDA(2,2))/(-1 + 2*t));
-        Rule(GRAD(2,2),
-             -(((1 + 3*Sqrt(2) - 2*t - 6*Sqrt(2)*t + 4*Sqrt(2)*Power(t,2) + s*(-1 - 3*Sqrt(2) + 2*(1 + Sqrt(2))*t) +
-                 r*(-1 - 3*Sqrt(2) + 4*Sqrt(2)*s + 2*(1 + Sqrt(2))*t))*DMDA(2,3))/(Sqrt(2)*Power(1 - 2*t,2)))); Rule(GRAD(2,3),((-1 + s + t)*DMDA(3,1))/(-1 + 2*t));
-        Rule(GRAD(2,3),((r - t)*DMDA(3,2))/(-1 + 2*t));
-        Rule(GRAD(2,3),
-             -(((1 + 3*Sqrt(2) - 2*t - 6*Sqrt(2)*t + 4*Sqrt(2)*Power(t,2) + s*(-1 - 3*Sqrt(2) + 2*(1 + Sqrt(2))*t) +
-                 r*(-1 - 3*Sqrt(2) + 4*Sqrt(2)*s + 2*(1 + Sqrt(2))*t))*DMDA(3,3))/(Sqrt(2)*Power(1 - 2*t,2)))); Rule(GRAD(3,1),((-s + t)*DMDA(1,1))/(-1 + 2*t));
-        Rule(GRAD(3,1),((-r + t)*DMDA(1,2))/(-1 + 2*t));
-        Rule(GRAD(3,1),
-             -(((s*(1 + 3*Sqrt(2) - 2*(1 + Sqrt(2))*t) + r*(1 + 3*Sqrt(2) - 4*Sqrt(2)*s - 2*(1 + Sqrt(2))*t) + 2*t*(-1 - 3*Sqrt(2) + (2 + 4*Sqrt(2))*t))*DMDA(1,3))/
-               (Sqrt(2)*Power(1 - 2*t,2))));
-        Rule(GRAD(3,2),((-s + t)*DMDA(2,1))/(-1 + 2*t)); Rule(GRAD(3,2),((-r + t)*DMDA(2,2))/(-1 + 2*t));
-        Rule(GRAD(3,2),-(((s*(1 + 3*Sqrt(2) - 2*(1 + Sqrt(2))*t) + r*(1 + 3*Sqrt(2) - 4*Sqrt(2)*s - 2*(1 + Sqrt(2))*t) + 2*t*(-1 - 3*Sqrt(2) + (2 + 4*Sqrt(2))*t))*
-                          DMDA(2,3))/(Sqrt(2)*Power(1 - 2*t,2))));
-        Rule(GRAD(3,3),((-s + t)*DMDA(3,1))/(-1 + 2*t));
-        Rule(GRAD(3,3),((-r + t)*DMDA(3,2))/(-1 + 2*t));
-        Rule(GRAD(3,3),-(((s*(1 + 3*Sqrt(2) - 2*(1 + Sqrt(2))*t) + r*(1 + 3*Sqrt(2) - 4*Sqrt(2)*s - 2*(1 + Sqrt(2))*t) + 2*t*(-1 - 3*Sqrt(2) + (2 + 4*Sqrt(2))*t))*
-                          DMDA(3,3))/(Sqrt(2)*Power(1 - 2*t,2))));
-
-
-
-#undef List
-#undef Power
-#undef xi
-#undef GRAD
-#undef DMDA
-#undef Rule
       }
 
       inline bool jacobian_matrix_tri_2D(double &detJ, DenseMatrix<3,3>& A, const double *x[3])

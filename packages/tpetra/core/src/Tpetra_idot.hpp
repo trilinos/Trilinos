@@ -233,6 +233,7 @@ lclDotRaw (typename ::Tpetra::MultiVector<SC, LO, GO, NT>::dot_type* const resul
         }
         auto result_j = subview (result, j);
         KokkosBlas::dot (result_j, X_j_1d, Y_j_1d);
+        Kokkos::fence();
       }
     } // for each column j of X and Y
   }
@@ -286,6 +287,7 @@ lclDotRaw (typename ::Tpetra::MultiVector<SC, LO, GO, NT>::dot_type* const resul
         auto Y_lcl_1d = subview (Y_lcl, rowRange, 0);
         auto result_0d = subview (result, 0);
         KokkosBlas::dot (result_0d, X_lcl_1d, Y_lcl_1d);
+        Kokkos::fence();
       }
       else {
         auto X_lcl_2d = subview (X_lcl, rowRange,
@@ -293,6 +295,7 @@ lclDotRaw (typename ::Tpetra::MultiVector<SC, LO, GO, NT>::dot_type* const resul
         auto Y_lcl_2d = subview (Y_lcl, rowRange,
                                  pair_type (0, Y_numVecs));
         KokkosBlas::dot (result, X_lcl_2d, Y_lcl_2d);
+        Kokkos::fence();
       }
     } // host or device?
   } // multivector with nonconstant stride?

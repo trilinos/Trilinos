@@ -336,12 +336,34 @@ namespace panzer {
       ghostedSourceMap = rcp(new MapType(Teuchos::OrdinalTraits<panzer::GlobalOrdinal>::invalid(),indices,0,comm_));
     }
 
-    RCP<GraphType> ghostedGraph = rcp(new GraphType(ghostedTargetMap,ghostedSourceMap,0));
 
     // Now insert the non-zero pattern per row
+    // count number of entries per row; required by CrsGraph constructor
+    std::vector<size_t> nEntriesPerRow(ghostedTargetMap->getNodeNumElements(),0);
     std::vector<std::string> elementBlockIds;
     targetGlobalIndexer_->getElementBlockIds(elementBlockIds);
     std::vector<std::string>::const_iterator blockItr;
+    for (blockItr=elementBlockIds.begin();blockItr!=elementBlockIds.end();++blockItr) {
+      std::string blockId = *blockItr;
+      const std::vector<panzer::LocalOrdinal> & elements = targetGlobalIndexer_->getElementBlock(blockId);
+
+      std::vector<panzer::GlobalOrdinal> row_gids;
+      std::vector<panzer::GlobalOrdinal> col_gids;
+
+      for(std::size_t elmt=0;elmt<elements.size();elmt++) {
+        targetGlobalIndexer_->getElementGIDs(elements[elmt],row_gids);
+        sourceGlobalIndexer.getElementGIDs(elements[elmt],col_gids);
+        for(std::size_t row=0;row<row_gids.size();row++) {
+          panzer::LocalOrdinal lid = 
+                               ghostedTargetMap->getLocalElement(row_gids[row]);
+          nEntriesPerRow[lid] += col_gids.size();
+        }
+      }
+    }
+
+    Teuchos::ArrayView<const size_t> nEntriesPerRowView(nEntriesPerRow);
+    RCP<GraphType> ghostedGraph = rcp(new GraphType(ghostedTargetMap,ghostedSourceMap,nEntriesPerRowView,Tpetra::StaticProfile));
+
     for (blockItr=elementBlockIds.begin();blockItr!=elementBlockIds.end();++blockItr) {
       std::string blockId = *blockItr;
       const std::vector<panzer::LocalOrdinal> & elements = targetGlobalIndexer_->getElementBlock(blockId);

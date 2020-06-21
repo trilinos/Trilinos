@@ -39,7 +39,6 @@
 #include <stk_util/environment/ProgramOptions.hpp>
 #include <string>                       // for string, allocator, etc
 #include <utility>                      // for make_pair
-#include "boost/program_options/variables_map.hpp"  // for variable_value, etc
 
 namespace
 {
@@ -56,10 +55,10 @@ namespace
 
   void setFilenameInCommandLineOptions(const std::string &filename)
   {
-    boost::program_options::variables_map &command_line_options = stk::get_variables_map();
-    command_line_options.insert(std::make_pair("input-deck", boost::program_options::variable_value(filename, false)));
+    stk::get_parsed_options().insert("input-deck", filename);
     stk::EnvData::instance().m_inputFile = filename;
   }
+
   TEST(StkUtilHowTo, useFilenameSubstitutionWithFileComingFromCommandLineOptions)
   {
     const std::string base_filename = "myfile";

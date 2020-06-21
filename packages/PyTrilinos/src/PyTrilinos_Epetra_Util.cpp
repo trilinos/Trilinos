@@ -75,7 +75,10 @@
 #include "Epetra_JadMatrix.h"
 
 #ifdef HAVE_PYTRILINOS_DOMI
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include "Domi_MDVector.hpp"
+#pragma GCC diagnostic pop
 #include "PyTrilinos_Domi_Util.hpp"
 #endif
 

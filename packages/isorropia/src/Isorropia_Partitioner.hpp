@@ -83,7 +83,7 @@ public:
 
   /** Return the number of LOCAL elements in a given part.
 
-      \param[in] part the part ID we want to know the number of local
+      \param part [in] the part ID we want to know the number of local
       elements.
 
       \return number of local elements that belongs to the
@@ -97,12 +97,12 @@ public:
   /** Fill user-allocated list (of length len) with the
       local element ids to be located in the given part
 
-      \param[in] part the part ID we consider
+      \param part [in] the part ID we consider
 
-      \param[out] elementList array of elements that belongs to this
+      \param elementList [out] array of elements that belongs to this
       part ID, must be allocated by user with size at least @c len
 
-      \param[in] len maximum number of elements we can put in the
+      \param len [in] maximum number of elements we can put in the
       array. Usually, may be the result of
       Isorropia::Partitioner::numElemsInPart().  .
 
@@ -116,9 +116,9 @@ public:
   /** Give access of the part assignments array that is owned by the current
       processor.
 
-      \param[out] size Number of elements in the array.
+      \param size [out] Number of elements in the array.
 
-      \param[out] array Pointer to the the part assignements array inside
+      \param array [out] Pointer to the the part assignements array inside
                         the object.
 
       \remark This pointer is only significant if the object still exists.
@@ -134,11 +134,11 @@ public:
 
   /** Copy a part of the part assignment array.
 
-      \param[in] len of the array given by the user.
+      \param len [in] of the array given by the user.
 
-      \param[out] size Number of elements in the array.
+      \param size [out] Number of elements in the array.
 
-      \param[out] array Array of part assignments. Allocated by the user with
+      \param array [out] Array of part assignments. Allocated by the user with
                         a size of at least @c len elements.
 
       \remark Memory space which is not useful in the array is not

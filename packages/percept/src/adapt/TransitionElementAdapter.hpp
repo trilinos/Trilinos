@@ -1206,7 +1206,7 @@
                               SubDimCellData* nodeId_elementOwnderId_ptr = Base::getNodeRegistry().getFromMapPtr(subDimEntity);
                               SubDimCellData& nodeId_elementOwnderId = (nodeId_elementOwnderId_ptr ? *nodeId_elementOwnderId_ptr : empty_SubDimCellData);
                               bool is_empty = nodeId_elementOwnderId_ptr == 0;
-                              bool is_marked = (!is_empty && nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>().size() != 0);
+                              bool is_marked = (!is_empty && std::get<SDC_DATA_GLOBAL_NODE_IDS>(nodeId_elementOwnderId).size() != 0);
                               if (is_marked)
                                 throw std::runtime_error("bad mark in checkTransitionElements1");
                             }

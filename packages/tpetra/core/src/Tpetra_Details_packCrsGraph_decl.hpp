@@ -47,7 +47,7 @@
 #include "Tpetra_DistObject_decl.hpp"
 #include "Tpetra_CrsGraph_fwd.hpp"
 
-/// \file Tpetra_Details_packCrsGraph.hpp
+/// \file Tpetra_Details_packCrsGraph_decl.hpp
 /// \brief Functions for packing the entries of a Tpetra::CrsGraph
 ///   for communication, in the case where it is valid to go to the
 ///   KokkosSparse::CrsGraph (local sparse graph data structure)

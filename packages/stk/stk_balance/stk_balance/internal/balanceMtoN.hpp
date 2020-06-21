@@ -38,12 +38,14 @@
 #include <string>
 
 namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace io { class StkMeshIoBroker; } }
 
 namespace stk {
 namespace balance {
 namespace internal {
 
-void rebalanceMtoN(stk::mesh::BulkData& bulkData, stk::mesh::Field<double> &targetDecompField, int num_target_procs, const std::string& outputFilename, int numSteps = -1, double timeStep = 0.0);
+bool rebalanceMtoN(stk::mesh::BulkData& bulkData, stk::mesh::Field<double> &targetDecompField, int num_target_procs, const std::string& outputFilename, int numSteps = -1, double timeStep = 0.0);
+bool rebalanceMtoN(stk::io::StkMeshIoBroker& ioBroker, stk::mesh::Field<double> &targetDecompField, int num_target_procs, const std::string& outputFilename, int numSteps = -1, double timeStep = 0.0);
 
 }}}
 

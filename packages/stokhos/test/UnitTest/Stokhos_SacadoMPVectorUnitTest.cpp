@@ -397,6 +397,16 @@ struct UnitTestSetup {
                           setup.rtol, setup.atol, out);                 \
   }
 
+#define TERNARY_UNIT_TEST(VEC)                                          \
+  TEUCHOS_UNIT_TEST( VEC, ternay) {                                     \
+    UTS setup;                                                          \
+    UTS::vec_type u = std::sin(setup.x);                                \
+    UTS::vec_type v = -std::sin(setup.x);                               \
+    u = u >= 0 ? -u : u;                                                 \
+    success = compareVecs(u, "u", v, "v",                               \
+                          setup.rtol, setup.atol, out);                 \
+  }
+
 #define VECTOR_UNIT_TESTS(VEC)                                  \
   UNARY_UNIT_TEST(VEC, +, UnaryPlus)                            \
   UNARY_UNIT_TEST(VEC, -, UnaryMinus)                           \
@@ -434,6 +444,7 @@ struct UnitTestSetup {
   OPASSIGN_UNIT_TEST(VEC, /=, DivideEqual)                      \
                                                                 \
   SAXPY_UNIT_TEST(VEC)                                          \
+  TERNARY_UNIT_TEST(VEC)                                        \
                                                                 \
   TEUCHOS_UNIT_TEST( VEC, initializer_list_copy ) {                     \
     UTS setup;                                                          \

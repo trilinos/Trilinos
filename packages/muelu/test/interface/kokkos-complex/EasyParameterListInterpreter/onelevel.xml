@@ -1,4 +1,0 @@
-<ParameterList name="MueLu">
-  <Parameter        name="max levels"    type="int"      value="1"/>
-  <Parameter        name="coarse: type"  type="string"   value="RELAXATION"/>
-</ParameterList>

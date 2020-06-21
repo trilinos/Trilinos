@@ -56,19 +56,22 @@
 #include "src/con_volume.hpp"
 #include "src/mesh_topo-opt.hpp"
 #include "src/pde_elasticity.hpp"
+#include "src/bilinearpdeconstraint.hpp"
+#include "src/femdata.hpp"
 
 template<class Real>
 class ElasticityFactory : public ROL::OptimizationProblemFactory<Real> {
 private:
-  ROL::ParameterList pl_;
+  ROL::ParameterList                 pl_;
   ROL::Ptr<const Teuchos::Comm<int>> comm_;
-  ROL::Ptr<std::ostream> os_;
+  ROL::Ptr<std::ostream>             os_;
 
-  ROL::Ptr<MeshManager<Real>>    mesh_;
-  ROL::Ptr<PDE_Elasticity<Real>> pde_;
-  ROL::Ptr<PDE_Constraint<Real>> con_;
-  ROL::Ptr<Assembler<Real>>      assembler_;
-  ROL::Ptr<ROL::Vector<Real>>    u_, z_, p_, r_;
+  ROL::Ptr<MeshManager<Real>>             mesh_;
+  ROL::Ptr<PDE_Elasticity<Real>>          pde_;
+  ROL::Ptr<Bilinear_PDE_Constraint<Real>> con_;
+  ROL::Ptr<Assembler<Real>>               assembler_;
+  ROL::Ptr<FEM_Data<Real>>                fem_;
+  ROL::Ptr<ROL::Vector<Real>>             u_, z_, p_, r_;
 
   Real cmpScaling_;
   bool storage_;
@@ -87,9 +90,7 @@ public:
     N_          = pl.sublist("Problem").get("Number of Vertical Cells",20);
     T_          = ym.size();
     dim_        = M_*N_*T_;
-  }
 
-  void update(void) {
     if (probDim_ == 2) {
       mesh_ = ROL::makePtr<MeshManager_TopoOpt<Real>>(pl_);
     } else if (probDim_ == 3) {
@@ -100,8 +101,68 @@ public:
         ">>> PDE-OPT/binary/elasticity/example_01.cpp: Problem dim is not 2 or 3!");
     }
     pde_       = ROL::makePtr<PDE_Elasticity<Real>>(pl_);
-    con_       = ROL::makePtr<PDE_Constraint<Real>>(pde_,mesh_,comm_,pl_,*os_);
-    assembler_ = con_->getAssembler();
+    fem_       = ROL::makePtr<FEM_Data<Real>>(pde_,mesh_,comm_,pl_,*os_);
+    assembler_ = fem_->getAssembler();
+  }
+
+  void check(void) {
+    if (con_ == ROL::nullPtr) {
+      update();
+    }
+    ROL::Ptr<ROL::Vector<Real>> ru = u_->clone(); ru->randomize();
+    ROL::Ptr<ROL::Vector<Real>> rz = z_->clone(); rz->randomize();
+    ROL::Ptr<ROL::Vector<Real>> rp = p_->clone(); rp->randomize();
+    ROL::Ptr<ROL::Vector<Real>> rv = u_->clone(); rv->randomize();
+    ROL::Ptr<ROL::Vector<Real>> rr = r_->clone(); rr->randomize();
+
+    *os_ << std::endl;
+    rr = r_->clone(); rr->randomize();
+    con_->checkSolve(*ru,*rz,*rr,true,*os_);
+
+    *os_ << std::endl;
+    rv = u_->clone(); rv->randomize();
+    rr = r_->clone(); rr->randomize();
+    con_->checkApplyJacobian_1(*ru,*rz,*rv,*rr,true,*os_);
+
+    *os_ << std::endl;
+    rv = u_->clone(); rv->randomize();
+    rr = r_->clone(); rr->randomize();
+    con_->checkInverseJacobian_1(*rr,*rv,*ru,*rz,true,*os_);
+
+    *os_ << std::endl;
+    rv = u_->clone(); rv->randomize();
+    rr = r_->clone(); rr->randomize();
+    con_->checkInverseAdjointJacobian_1(*rr,*rv,*ru,*rz,true,*os_);
+
+    *os_ << std::endl;
+    rv = z_->clone(); rv->randomize();
+    rr = r_->clone(); rr->randomize();
+    con_->checkApplyJacobian_2(*ru,*rz,*rv,*rr,true,*os_);
+
+    *os_ << std::endl;
+    rv = u_->clone(); rv->randomize();
+    rr = r_->clone(); rr->randomize();
+    con_->checkApplyAdjointHessian_11(*ru,*rz,*rp,*rv,*rr,true,*os_);
+    
+    *os_ << std::endl;
+    rv = z_->clone(); rv->randomize();
+    rr = u_->clone(); rr->randomize();
+    con_->checkApplyAdjointHessian_21(*ru,*rz,*rp,*rv,*rr,true,*os_);
+
+    *os_ << std::endl;
+    rv = u_->clone(); rv->randomize();
+    rr = z_->clone(); rr->randomize();
+    con_->checkApplyAdjointHessian_12(*ru,*rz,*rp,*rv,*rr,true,*os_);
+
+    *os_ << std::endl;
+    rv = z_->clone(); rv->randomize();
+    rr = z_->clone(); rr->randomize();
+    con_->checkApplyAdjointHessian_22(*ru,*rz,*rp,*rv,*rr,true,*os_);
+  }
+
+  void update(void) {
+    //con_ = ROL::makePtr<PDE_Constraint<Real>>(pde_,mesh_,comm_,pl_,*os_);
+    con_ = ROL::makePtr<Bilinear_PDE_Constraint<Real>>(fem_,pl_,*os_);
     con_->setSolveParameters(pl_);
 
     ROL::Ptr<Tpetra::MultiVector<>> u_ptr, p_ptr, r_ptr;

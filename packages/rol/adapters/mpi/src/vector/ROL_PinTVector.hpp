@@ -71,6 +71,7 @@ template <class Real>
 class PinTVector
  : public Vector<Real>
 {
+
 protected:
   // Class to build all the communciators
 
@@ -359,7 +360,7 @@ public:
    */
   Ptr<Vector<Real>> getRemoteBufferPtr(int i) const
   {
-    assert(0<=i or i<bufferVectors_.size());
+    assert( 0<=i or i < static_cast<int>(bufferVectors_.size()) );
 
     return bufferVectors_[i];
   }
@@ -397,7 +398,7 @@ public:
     auto timer = Teuchos::TimeMonitor::getStackedTimer();
     timer->start("PinTVector::boundaryExchangeLeftToRight");
 
-    assert(sendBuffer.size() <= bufferSize_);
+    assert( static_cast<int>(sendBuffer.size()) <= bufferSize_ );
 
     MPI_Comm timeComm = communicators_->getTimeCommunicator();
     int      myRank   = communicators_->getTimeRank();

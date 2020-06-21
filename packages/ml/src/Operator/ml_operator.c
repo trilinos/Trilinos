@@ -2284,6 +2284,7 @@ void ML_Aux_Data_Create(ML_Aux_Data** ptr)
   (*ptr)->max_level = -1;
   (*ptr)->filter = NULL;
   (*ptr)->filter_size = -1;
+  (*ptr)->m_threshold = 0.0;
 }
 
 ML_Aux_Data* ML_Aux_Data_Clone(ML_Aux_Data* original)
@@ -2305,6 +2306,7 @@ ML_Aux_Data* ML_Aux_Data_Clone(ML_Aux_Data* original)
 void ML_Aux_Data_Destroy(ML_Aux_Data** ptr)
 {
   (*ptr)->threshold = 0.0;
+  (*ptr)->m_threshold = 0.0;
   ML_free(*ptr);
 }
 

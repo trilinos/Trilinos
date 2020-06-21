@@ -27,6 +27,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ArrayRCP.hpp"
+#include "ml_RefMaxwell_Utils.h"
 
 #ifdef HAVE_ML_IFPACK
 #include "Ifpack_Chebyshev.h"
@@ -187,10 +188,13 @@ namespace ML_Epetra
     ML_Operator * CoarseMat_ML;
 
     //! Coarse data objects
-    Teuchos::Array<double> CoarseXcoord_, CoarseYcoord_, CoarseZcoord_;
+    ML_Epetra::CoordPack CoarseCoord_;
 
     //! Level 2+ Preconditioner
     MultiLevelPreconditioner * CoarsePC;
+
+    //! Coarse nullspace (slung in consecutive ML ordering)
+    double *CoarseNullspace_;
 
 #ifdef HAVE_ML_IFPACK
     //! Ifpack Chebyshev Smoother

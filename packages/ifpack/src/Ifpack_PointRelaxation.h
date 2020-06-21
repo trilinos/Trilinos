@@ -83,33 +83,33 @@ Consider a linear system of type
 \f[
 A x = b,
 \f]
-where \f$A\f$ is a square, real matrix, and \f$x, b\f$ are two real
+where \f$ A\f$ is a square, real matrix, and \f$ x, b\f$ are two real
 vectors. We begin with the decomposition
 \f[
 A = D - E - F
 \f]
-where \f$D\f$ is the diagonal of A, \f$-E\f$ is the strict lower part, and
-\f$-F\f$ is the strict upper part. It is assumed that the diagonal entries
-of \f$A\f$ are different from zero.
+where \f$ D\f$ is the diagonal of A, \f$ -E\f$ is the strict lower part, and
+\f$ -F\f$ is the strict upper part. It is assumed that the diagonal entries
+of \f$ A\f$ are different from zero.
 
-<P>Given an starting solution \f$x_0\f$, an iteration of the (damped) Jacobi
+<P>Given an starting solution \f$ x_0\f$, an iteration of the (damped) Jacobi
 method can be written in matrix form as follows:
 \f[
 x_{k+1} = \omega D^{-1}(E + F) x_k + D_{-1}b,
 \f]
-for \f$k < k_{max}\f$, and \f$\omega \f$ a damping parameter.
+for \f$ k < k_{max}\f$, and \f$\omega \f$ a damping parameter.
 
 Using Ifpack_Jacobi, the user can apply the specified number of sweeps
-(\f$k_{max}\f$), and the damping parameter. If only one sweep is used, then
+(\f$ k_{max}\f$), and the damping parameter. If only one sweep is used, then
 the class simply applies the inverse of the diagonal of A to the input
 vector.
 
-<P>Given an starting solution \f$x_0\f$, an iteration of the (damped) GaussSeidel
+<P>Given an starting solution \f$ x_0\f$, an iteration of the (damped) GaussSeidel
 method can be written in matrix form as follows:
 \f[
 (D - E) x_{k+1} = \omega F x_k + b,
 \f]
-for \f$k < k_{max}\f$, and \f$\omega \f$ a damping parameter. Equivalently,
+for \f$ k < k_{max}\f$, and \f$\omega \f$ a damping parameter. Equivalently,
 the Gauss-Seidel preconditioner can be defined as
 \f[
 P_{GS}^{-1} = (D - E)^{-1}.
@@ -135,8 +135,7 @@ public:
   //! Ifpack_PointRelaxation constructor with given Epetra_RowMatrix.
   /*! Creates an instance of Ifpack_PointRelaxation class.
    *
-   * \param
-   * Matrix - (In) Pointer to matrix to precondition.
+   * \param Matrix - (In) Pointer to matrix to precondition.
    */
   Ifpack_PointRelaxation(const Epetra_RowMatrix* Matrix);
 

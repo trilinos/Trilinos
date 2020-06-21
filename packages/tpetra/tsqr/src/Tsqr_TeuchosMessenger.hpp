@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,22 +34,17 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
 // ************************************************************************
 //@HEADER
 
 #ifndef __TSQR_TeuchosMessenger_hpp
 #define __TSQR_TeuchosMessenger_hpp
 
-#include <Teuchos_CommHelpers.hpp>
-#include <Tsqr_MessengerBase.hpp>
-
+#include "Teuchos_CommHelpers.hpp"
+#include "Tsqr_MessengerBase.hpp"
 #include <algorithm>
 
-
-namespace TSQR { 
-
+namespace TSQR {
   /// \class TeuchosMessenger
   /// \brief Communication object for TSQR
   ///
@@ -63,13 +58,13 @@ namespace TSQR {
   template<class Datum>
   class TeuchosMessenger : public MessengerBase<Datum> {
   public:
-    typedef Teuchos::RCP<const Teuchos::Comm<int> > comm_ptr;
+    typedef Teuchos::RCP<const Teuchos::Comm<int>> comm_ptr;
 
     //! Constructor, taking the communicator object to wrap.
     TeuchosMessenger (const comm_ptr& pComm) : pComm_ (pComm) {}
 
     //! Virtual destructor for memory safety of derived classes.
-    virtual ~TeuchosMessenger() {}
+    virtual ~TeuchosMessenger() = default;
 
     /// \brief Send sendData[0:sendCount-1] to process destProc.
     ///
@@ -77,11 +72,11 @@ namespace TSQR {
     /// \param sendCount [in] Number of elements in the array
     /// \param destProc [in] Rank of destination process
     /// \param tag [in] MPI tag (ignored)
-    void 
-    send (const Datum sendData[], 
-	  const int sendCount, 
-	  const int destProc, 
-	  const int tag) 
+    void
+    send (const Datum sendData[],
+          const int sendCount,
+          const int destProc,
+          const int tag)
     {
       // NOTE (mfh 14 June 2010): Teuchos generates "tag" arguments to
       // MPI calls internally, so we ignore the tag here.  I don't use
@@ -95,11 +90,11 @@ namespace TSQR {
     /// \param recvCount [in] Number of elements to receive in the array
     /// \param srcProc [in] Rank of sending process
     /// \param tag [in] MPI tag (ignored)
-    void 
-    recv (Datum recvData[], 
-	  const int recvCount, 
-	  const int srcProc, 
-	  const int tag) 
+    void
+    recv (Datum recvData[],
+          const int recvCount,
+          const int srcProc,
+          const int tag)
     {
       // NOTE (mfh 14 June 2010): Teuchos generates "tag" arguments to
       // MPI calls internally, so we ignore the tag here.  I don't use
@@ -125,138 +120,132 @@ namespace TSQR {
     ///   this process is sending data, and from which this process is
     ///   receiving data)
     /// \param tag [in] MPI tag (ignored)
-    void 
-    swapData (const Datum sendData[], 
-	      Datum recvData[], 
-	      const int sendRecvCount, 
-	      const int destProc, 
-	      const int tag)
+    void
+    swapData (const Datum sendData[],
+              Datum recvData[],
+              const int sendRecvCount,
+              const int destProc,
+              const int tag)
     {
-      if (destProc == rank())
-	{
-	  // If the sending and receiving processes are the same,
-	  // then all we need to do is copy the data.  Hopefully in
-	  // that case you aren't aliasing.  std::copy assumes that
-	  // the third argument does not point to an element in the
-	  // range of the first two arguments.
-	  std::copy (sendData, sendData+sendRecvCount, recvData);
-	}
-      else
-	{
-	  using Teuchos::RCP;
-	  using Teuchos::ArrayRCP;
-	  using Teuchos::CommRequest;
+      if (destProc == rank()) {
+        // If the sending and receiving processes are the same,
+        // then all we need to do is copy the data.  Hopefully in
+        // that case you aren't aliasing.  std::copy assumes that
+        // the third argument does not point to an element in the
+        // range of the first two arguments.
+        std::copy (sendData, sendData+sendRecvCount, recvData);
+      }
+      else {
+        using Teuchos::RCP;
+        using Teuchos::ArrayRCP;
+        using Teuchos::CommRequest;
 
-	  const int srcProc = Teuchos::rank (*pComm_);
+        const int srcProc = Teuchos::rank (*pComm_);
 
-	  // If we can prove that sendData and recvData don't alias
-	  // one another, use an isend and an ireceive to exchange
-	  // them.  (Our test may not necessarily be safe in general,
-	  // since we only check whether the pointers are equal and
-	  // not whether the arrays overlap.  However, it is safe for
-	  // the specific case of TSQR.)
-	  //
-	  // Otherwise, if the arrays do alias one another, safely
-	  // perform a send and then a receive (or a receive and then
-	  // a send, depending on whether this MPI process is the
-	  // source or destination process).  
-	  //
-	  // (It would be nice if Teuchos had a sendRecv() routine, as
-	  // of summer 2010 when this code was written.  As it stands,
-	  // we have to do a send and then a receive.)
-	  if (sendData == recvData)
-	    {
-	      // The smaller-rank process sends first, and the
-	      // larger-rank process receives first.
-	      //
-	      // Teuchos::send() and Teuchos::recv() are blocking,
-	      // so we may safely write to recvBuf even if it
-	      // aliases sendBuf.
-	      if (srcProc < destProc)
-		{
-		  Teuchos::send (*pComm_, sendRecvCount, sendData, destProc);
-		  Teuchos::receive (*pComm_, destProc, sendRecvCount, recvData);
-		}
-	      else 
-		{
-		  Teuchos::receive (*pComm_, destProc, sendRecvCount, recvData);
-		  Teuchos::send (*pComm_, sendRecvCount, sendData, destProc);
-		}
-	    }
-	  else
-	    {
-	      ArrayRCP<const Datum> sendBuf (sendData, 0, sendRecvCount, false);
-	      ArrayRCP<Datum> recvBuf (recvData, 0, sendRecvCount, false);
+        // If we can prove that sendData and recvData don't alias one
+        // another, use an isend and an ireceive to exchange them.
+        // (Our test may not necessarily be safe in general, since we
+        // only check whether the pointers are equal and not whether
+        // the arrays overlap.  However, it is safe for the specific
+        // case of TSQR.)
+        //
+        // Otherwise, if the arrays do alias one another, safely
+        // perform a send and then a receive (or a receive and then a
+        // send, depending on whether this MPI process is the source
+        // or destination process).
+        //
+        // (It would be nice if Teuchos had a sendRecv() routine, as
+        // of summer 2010 when this code was written.  As it stands,
+        // we have to do a send and then a receive.)
+        if (sendData == recvData) {
+          // The smaller-rank process sends first, and the
+          // larger-rank process receives first.
+          //
+          // Teuchos::send() and Teuchos::recv() are blocking,
+          // so we may safely write to recvBuf even if it
+          // aliases sendBuf.
+          if (srcProc < destProc) {
+            Teuchos::send (*pComm_, sendRecvCount, sendData, destProc);
+            Teuchos::receive (*pComm_, destProc, sendRecvCount, recvData);
+          }
+          else
+            {
+              Teuchos::receive (*pComm_, destProc, sendRecvCount, recvData);
+              Teuchos::send (*pComm_, sendRecvCount, sendData, destProc);
+            }
+        }
+        else {
+          ArrayRCP<const Datum> sendBuf (sendData, 0, sendRecvCount, false);
+          ArrayRCP<Datum> recvBuf (recvData, 0, sendRecvCount, false);
 
-	      RCP<CommRequest<int> > sendReq, recvReq;
-	      if (srcProc < destProc)
-		{
-		  sendReq = Teuchos::isend (*pComm_, sendBuf, destProc);
-		  recvReq = Teuchos::ireceive (*pComm_, recvBuf, destProc);
-		}
-	      else
-		{
-		  recvReq = Teuchos::ireceive (*pComm_, recvBuf, destProc);
-		  sendReq = Teuchos::isend (*pComm_, sendBuf, destProc);
-		}
-	      // Wait on both the send and the receive to complete.  The
-	      // two can happen independently, because sendBuf and recvBuf
-	      // are different.  (We assert no aliasing of buffers here,
-	      // and we've also checked above that destProc != rank().)
-	      Teuchos::waitAll (*pComm_, Teuchos::tuple (sendReq, recvReq));
-	    }
-	}
+          RCP<CommRequest<int> > sendReq, recvReq;
+          if (srcProc < destProc) {
+            sendReq = Teuchos::isend (*pComm_, sendBuf, destProc);
+            recvReq = Teuchos::ireceive (*pComm_, recvBuf, destProc);
+          }
+          else
+            {
+              recvReq = Teuchos::ireceive (*pComm_, recvBuf, destProc);
+              sendReq = Teuchos::isend (*pComm_, sendBuf, destProc);
+            }
+          // Wait on both the send and the receive to complete.  The
+          // two can happen independently, because sendBuf and recvBuf
+          // are different.  (We assert no aliasing of buffers here,
+          // and we've also checked above that destProc != rank().)
+          Teuchos::waitAll (*pComm_, Teuchos::tuple (sendReq, recvReq));
+        }
+      }
     }
 
     //! Sum inDatum on all processors, and return the result.
-    Datum 
-    globalSum (const Datum& inDatum) 
+    Datum
+    globalSum (const Datum& inDatum)
     {
       Datum outDatum;
-      Teuchos::reduceAll (*pComm_, Teuchos::REDUCE_SUM, inDatum, 
-			  Teuchos::outArg(outDatum));
+      Teuchos::reduceAll (*pComm_, Teuchos::REDUCE_SUM, inDatum,
+                          Teuchos::outArg(outDatum));
       return outDatum;
     }
 
     /// \brief Compute the global minimum over all processors.
     ///
     /// Assumes that Datum objects are less-than comparable.
-    Datum 
+    Datum
     globalMin (const Datum& inDatum)
     {
       Datum outDatum;
-      Teuchos::reduceAll (*pComm_, Teuchos::REDUCE_MIN, inDatum, 
-			  Teuchos::outArg(outDatum));
+      Teuchos::reduceAll (*pComm_, Teuchos::REDUCE_MIN, inDatum,
+                          Teuchos::outArg(outDatum));
       return outDatum;
     }
 
     /// \brief Compute the global maximum over all processors.
     ///
     /// Assumes that Datum objects are less-than comparable.
-    Datum 
+    Datum
     globalMax (const Datum& inDatum)
     {
       Datum outDatum;
-      Teuchos::reduceAll (*pComm_, Teuchos::REDUCE_MAX, inDatum, 
-			  Teuchos::outArg(outDatum));
+      Teuchos::reduceAll (*pComm_, Teuchos::REDUCE_MAX, inDatum,
+                          Teuchos::outArg(outDatum));
       return outDatum;
     }
 
     //! Sum inData[0:count-1] over all processors into outData.
     void
-    globalVectorSum (const Datum inData[], 
-		     Datum outData[], 
-		     const int count) 
+    globalVectorSum (const Datum inData[],
+                     Datum outData[],
+                     const int count)
     {
-      Teuchos::reduceAll (*pComm_, Teuchos::REDUCE_SUM, count, 
-			  inData, outData);
+      Teuchos::reduceAll (*pComm_, Teuchos::REDUCE_SUM, count,
+                          inData, outData);
     }
 
     //! Broadcast data[0:count-1] from root to all processors.
     void
-    broadcast (Datum data[], 
-	       const int count,
-	       const int root)
+    broadcast (Datum data[],
+               const int count,
+               const int root)
     {
       Teuchos::broadcast (*pComm_, root, count, data);
     }
@@ -271,8 +260,6 @@ namespace TSQR {
     void barrier () const { Teuchos::barrier (*pComm_); }
 
   private:
-
-    //! Shared pointer to the the underlying communicator object.
     comm_ptr pComm_;
   };
 } // namespace TSQR

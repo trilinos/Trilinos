@@ -99,8 +99,8 @@
           }
 
         const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
-        typedef boost::tuple<stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId> tri_tuple_type;
-        typedef boost::tuple<int, int, int> tri_tuple_type_int;
+        typedef std::array<stk::mesh::EntityId, 3> tri_tuple_type;
+        typedef std::array<int, 3> tri_tuple_type_int;
         static vector<tri_tuple_type> elems(4);
         static vector<tri_tuple_type_local> elems_local(4);
         unsigned num_new_elems=0;
@@ -149,7 +149,7 @@
         elems.resize(num_new_elems);
         for (unsigned ielem=0; ielem < num_new_elems; ielem++)
           {
-            elems[ielem] = tri_tuple_type( CV_EV(elems_local[ielem].get<0>() ), CV_EV(elems_local[ielem].get<1>() ), CV_EV(elems_local[ielem].get<2>() ) );
+            elems[ielem] = {CV_EV(elems_local[ielem][0] ), CV_EV(elems_local[ielem][1] ), CV_EV(elems_local[ielem][2] )};
           }
 
         //std::cout << "tmp RefinerPattern_Tri3_Tri3_N::num_edges_marked= " << num_edges_marked << std::endl;
@@ -164,9 +164,9 @@
             if (!use_declare_element_side)
               newElement = *element_pool;
 
-            stk::mesh::Entity nodes[3] = {eMesh.createOrGetNode(elems[ielem].get<0>()),
-                                          eMesh.createOrGetNode(elems[ielem].get<1>()),
-                                          eMesh.createOrGetNode(elems[ielem].get<2>()) };
+            stk::mesh::Entity nodes[3] = {eMesh.createOrGetNode(elems[ielem][0]),
+                                          eMesh.createOrGetNode(elems[ielem][1]),
+                                          eMesh.createOrGetNode(elems[ielem][2])};
 
             create_side_element(eMesh, use_declare_element_side, nodes, 3, newElement);
 

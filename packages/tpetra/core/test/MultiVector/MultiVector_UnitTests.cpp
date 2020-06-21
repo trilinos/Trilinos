@@ -43,8 +43,10 @@
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Kokkos_ArithTraits.hpp"
+#include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_DefaultSerialComm.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
 #include <iterator>
 
 // FINISH: add test for MultiVector with a node containing zero local entries
@@ -202,42 +204,6 @@ namespace {
     TEST_ASSERT( gblSuccess == 1 );
   }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, Cloner, LO, GO, Scalar , Node )
-  {
-    typedef Tpetra::Map<LO, GO, Node> map_type;
-    typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
-    typedef Tpetra::Details::MultiVectorCloner<MV,MV> cloner_type;
-
-    out << "Test: MultiVector, Cloner" << endl;
-    Teuchos::OSTab tab0 (out);
-
-    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid ();
-    // create a Map
-    const size_t numLocal = 13;
-    const size_t numVecs  = 7;
-    const GO indexBase = 0;
-    auto comm = getDefaultComm ();
-    RCP<const map_type> map =
-      rcp (new map_type (INVALID, numLocal, indexBase, comm));
-
-    // Create a MultiVector
-    RCP<MV> mvec = Tpetra::createMultiVector<Scalar>(map,numVecs);
-
-    // Clone the MultiVector
-    RCP<MV> mvec_clone = cloner_type::clone(*mvec,mvec->getMap()->getNode());
-
-    // Check that the vectors are the same: same map, same values
-    TEST_EQUALITY(mvec->getMap()->isSameAs(*mvec_clone->getMap()), true);
-    TEST_COMPARE_FLOATING_ARRAYS(mvec->get1dView(),mvec_clone->get1dView(),0.0);
-
-    // Make sure that the test passed on all processes, not just Proc 0.
-    int lclSuccess = success ? 1 : 0;
-    int gblSuccess = 1;
-    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-    TEST_ASSERT( gblSuccess == 1 );
-  }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, basic, LO, GO, Scalar , Node )
@@ -263,6 +229,83 @@ namespace {
     myOut << "Create Map" << endl;
     const size_t numLocal = 13;
     const size_t numVecs  = 7;
+    const GO indexBase = 0;
+    RCP<const map_type> map =
+      rcp (new map_type (INVALID, numLocal, indexBase, comm));
+
+    myOut << "Test MultiVector's & Vector's default constructors" << endl;
+    {
+      MV defaultConstructedMultiVector;
+      auto dcmv_map = defaultConstructedMultiVector.getMap ();
+      TEST_ASSERT( dcmv_map.get () != nullptr );
+      if (dcmv_map.get () != nullptr) {
+        TEST_EQUALITY( dcmv_map->getGlobalNumElements (),
+                       Tpetra::global_size_t (0) );
+      }
+      vec_type defaultConstructedVector;
+      auto dcv_map = defaultConstructedVector.getMap ();
+      TEST_ASSERT( dcv_map.get () != nullptr );
+      if (dcv_map.get () != nullptr) {
+        TEST_EQUALITY( dcv_map->getGlobalNumElements (),
+                       Tpetra::global_size_t (0) );
+      }
+    }
+
+    myOut << "Test MultiVector's usual constructor" << endl;
+    RCP<MV> mvec;
+    TEST_NOTHROW( mvec = rcp (new MV (map, numVecs, true)) );
+    if (mvec.is_null ()) {
+      myOut << "MV constructor threw an exception: returning" << endl;
+      return;
+    }
+    TEST_EQUALITY( mvec->getNumVectors(), numVecs );
+    TEST_EQUALITY( mvec->getLocalLength(), numLocal );
+    TEST_EQUALITY( mvec->getGlobalLength(), numImages*numLocal );
+
+    myOut << "Test that all norms are zero" << endl;
+    Array<Magnitude> norms(numVecs), zeros(numVecs);
+    std::fill(zeros.begin(),zeros.end(),ScalarTraits<Magnitude>::zero());
+    TEST_NOTHROW( mvec->norm2(norms) );
+    TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,ScalarTraits<Magnitude>::zero());
+    TEST_NOTHROW( mvec->norm1(norms) );
+    TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,ScalarTraits<Magnitude>::zero());
+    TEST_NOTHROW( mvec->normInf(norms) );
+    TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,ScalarTraits<Magnitude>::zero());
+    // print it
+    myOut << *mvec << endl;
+
+    // Make sure that the test passed on all processes, not just Proc 0.
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+  }
+
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, large, LO, GO, Scalar , Node )
+  {
+    using map_type = Tpetra::Map<LO, GO, Node>;
+    using MV = Tpetra::MultiVector<Scalar, LO, GO, Node>;
+    using vec_type = Tpetra::Vector<Scalar, LO, GO, Node>;
+    typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
+    constexpr bool debug = true;
+
+    RCP<Teuchos::FancyOStream> outPtr = debug ?
+      Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) :
+      Teuchos::rcpFromRef (out);
+    Teuchos::FancyOStream& myOut = *outPtr;
+
+    myOut << "Test: MultiVector, basic" << endl;
+    Teuchos::OSTab tab0 (myOut);
+
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid ();
+    RCP<const Comm<int> > comm = getDefaultComm ();
+    const int numImages = comm->getSize ();
+
+    myOut << "Create Map" << endl;
+    const size_t numLocal = 15000;
+    const size_t numVecs  = 10;
     const GO indexBase = 0;
     RCP<const map_type> map =
       rcp (new map_type (INVALID, numLocal, indexBase, comm));
@@ -363,10 +406,13 @@ namespace {
     typedef Tpetra::Vector<Scalar,LO,GO,Node> V;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
 
-    out << "Test: MultiVector, NonContigView" << endl;
+    out << "Test: MultiVector, NonContigView: Scalar="
+        << Teuchos::TypeNameTraits<Scalar>::name() << endl;
     Teuchos::OSTab tab0 (out);
 
     const Mag tol = errorTolSlack * errorTolSlack * testingTol<Scalar>();   // extra slack on this test; dots() seem to be a little sensitive for single precision types
+    out << "tol: " << tol << endl;
+
     const Mag M0  = ScalarTraits<Mag>::zero();
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
@@ -407,7 +453,25 @@ namespace {
       }
       // create the views, compute and test
       RCP<      MV> mvView1 = mvOrig1.subViewNonConst(inView1);
+      TEST_ASSERT( ! mvView1.is_null() );
+      if (! mvView1.is_null() ) {
+        auto mvView1_d = mvView1->getLocalViewDevice();
+        auto mvOrig1_d = mvOrig1.getLocalViewDevice();
+        TEST_ASSERT( mvView1_d.data() == mvOrig1_d.data() );
+        auto mvView1_h = mvView1->getLocalViewHost();
+        auto mvOrig1_h = mvOrig1.getLocalViewHost();
+        TEST_ASSERT( mvView1_h.data() == mvOrig1_h.data() );
+      }
       RCP<const MV> mvView2 = mvOrig2.subView(inView2);
+      TEST_ASSERT( ! mvView2.is_null() );
+      if (! mvView2.is_null() ) {
+        auto mvView2_lcl = mvView2->getLocalViewDevice();
+        auto mvOrig2_lcl = mvOrig2.getLocalViewDevice();
+        TEST_ASSERT( mvView2_lcl.data() == mvOrig2_lcl.data() );
+        auto mvView2_h = mvView2->getLocalViewHost();
+        auto mvOrig2_h = mvOrig2.getLocalViewHost();
+        TEST_ASSERT( mvView2_h.data() == mvOrig2_h.data() );
+      }
       Array<Mag> nView2(numView), nView1(numView), nViewI(numView);
       Array<Scalar> meansView(numView), dotsView(numView);
       mvView1->norm1(nView1());
@@ -415,13 +479,34 @@ namespace {
       mvView1->normInf(nViewI());
       mvView1->meanValue(meansView());
       mvView1->dot( *mvView2, dotsView() );
+
       for (size_t j=0; j < numView; ++j) {
         TEST_FLOATING_EQUALITY(nOrig1[inView1[j]],  nView1[j],  tol);
+      }
+      for (size_t j=0; j < numView; ++j) {
         TEST_FLOATING_EQUALITY(nOrig2[inView1[j]],  nView2[j],  tol);
+      }
+      for (size_t j=0; j < numView; ++j) {
         TEST_FLOATING_EQUALITY(nOrigI[inView1[j]],  nViewI[j],  tol);
+      }
+      for (size_t j=0; j < numView; ++j) {
         TEST_FLOATING_EQUALITY(meansOrig[inView1[j]], meansView[j], tol);
+      }
+      for (size_t j=0; j < numView; ++j) {
         TEST_FLOATING_EQUALITY(dotsOrig[j], dotsView[j], tol);
       }
+
+      int lclSuccess = success ? 1 : 0;
+      int gblSuccess = 0;
+      using Teuchos::outArg;
+      using Teuchos::reduceAll;
+      using Teuchos::REDUCE_MIN;
+      reduceAll(*comm, REDUCE_MIN, lclSuccess, outArg(gblSuccess));
+      TEST_EQUALITY_CONST( gblSuccess, 1 );
+      if (! success) {
+        return;
+      }
+
       // randomize the view, compute view one-norms, test difference
       mvView2 = Teuchos::null;
       mvView1->randomize();
@@ -915,6 +1000,331 @@ namespace {
     // Create a Map.
     RCP<const Comm<int> > comm = getDefaultComm ();
     const size_t lclNumRows = 3;
+    const GST gblNumRows = comm->getSize () * lclNumRows;
+    const GO indexBase = 0;
+    RCP<const map_type> map3n =
+      rcp (new map_type (gblNumRows, lclNumRows, indexBase, comm));
+
+    const MT M0 = STM::zero ();
+    const ST S0 = STS::zero ();
+    const ST S1 = STS::one ();
+
+    // In what follows, '@' (without single quotes) denotes
+    // element-wise multiplication -- that is, what
+    // MultiVector::elementWiseMultiply implements.
+
+    const size_t maxNumVecs = 3;
+
+    // Test for various numbers of columns.
+    for (size_t numVecs = 1; numVecs <= maxNumVecs; ++numVecs) {
+      out << "Test numVecs = " << numVecs << endl;
+      Teuchos::OSTab tab1 (out);
+
+      // A (always) has 1 vector, and B and C have numVecs vectors.
+      V A (map3n);
+      MV B (map3n, numVecs);
+      MV C (map3n, numVecs);
+      MV C_exp (map3n, numVecs);
+      Array<MT> C_norms (C.getNumVectors ());
+      Array<MT> C_zeros (C.getNumVectors ());
+      std::fill (C_zeros.begin (), C_zeros.end (), M0);
+
+      int caseNum = 0;
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = 0*C + 0*(A @ B)" << endl;
+      // Fill A and B initially with nonzero values, just for
+      // generality.  C should get filled with zeros afterwards.
+      // Prefill C with NaN, to ensure that the method follows BLAS
+      // update rules.
+      {
+        A.putScalar (S1);
+        B.putScalar (S1);
+
+        // Prefill C with NaN, if NaN exists for ST.
+        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        C.putScalar (nan);
+
+        C.elementWiseMultiply (S0, A, B, S0);
+
+        C_exp.putScalar (S0);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = 1*C + 0*(A @ B)" << endl;
+      // Fill A and B with NaN to check that the method follows BLAS
+      // update rules.
+      {
+        const ST S3 = S1 + S1 + S1;
+
+        // Prefill A and B with NaN, if NaN exists for ST.
+        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        A.putScalar (nan);
+        B.putScalar (nan);
+        C.putScalar (S3);
+
+        C.elementWiseMultiply (S0, A, B, S1);
+
+        C_exp.putScalar (S3);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = (-1)*C + 0*(A @ B)" << endl;
+      // Fill A and B with NaN to check that the method follows BLAS
+      // update rules.
+      {
+        // Prefill A and B with NaN, if NaN exists for ST.
+        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        A.putScalar (nan);
+        B.putScalar (nan);
+        C.putScalar (S1);
+
+        C.elementWiseMultiply (S0, A, B, -S1);
+
+        C_exp.putScalar (-S1);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = 2*C + 0*(A @ B)" << endl;
+      // Fill A and B with NaN to check that the method follows BLAS
+      // update rules.
+      {
+        const ST S2 = S1 + S1;
+
+        // Prefill A and B with NaN, if NaN exists for ST.
+        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        A.putScalar (nan);
+        B.putScalar (nan);
+        C.putScalar (S1);
+
+        C.elementWiseMultiply (S0, A, B, S2);
+
+        C_exp.putScalar (S2);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = 0*C + 1*(A @ B)" << endl;
+      // A and B will be filled with 1s, so C should get filled with 1s.
+      // Prefill C with NaN, to ensure that the method follows BLAS
+      // update rules.
+      {
+        A.putScalar (S1);
+        B.putScalar (S1);
+
+        // Prefill C with NaN, if NaN exists for ST.
+        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        C.putScalar (nan);
+
+        C.elementWiseMultiply (S1, A, B, S0);
+
+        C_exp.putScalar (S1);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = 0*C + (-1)*(A @ B)" << endl;
+      // A and B will be filled with 1, so C should get filled with -1.
+      // Prefill C with NaN, to ensure that the method follows BLAS
+      // update rules.
+      {
+        A.putScalar (S1);
+        B.putScalar (S1);
+
+        // Prefill C with NaN, if NaN exists for ST.
+        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        C.putScalar (nan);
+
+        C.elementWiseMultiply (-S1, A, B, S0);
+
+        C_exp.putScalar (-S1);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = 1*C + 1*(A @ B)" << endl;
+      // Fill A with 1, B with 2, and C with 3.  C should be 5 after.
+      {
+        const ST S2 = S1 + S1;
+        const ST S3 = S1 + S1 + S1;
+        const ST S5 = S2 + S3;
+        A.putScalar (S1);
+        B.putScalar (S2);
+        C.putScalar (S3);
+
+        C.elementWiseMultiply (S1, A, B, S1);
+
+        C_exp.putScalar (S5);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = (-1)*C + 1*(A @ B)" << endl;
+      // Fill A with 1, B with 2, and C with 3.  C should be -1 after.
+      {
+        const ST S2 = S1 + S1;
+        const ST S3 = S1 + S1 + S1;
+        A.putScalar (S1);
+        B.putScalar (S2);
+        C.putScalar (S3);
+
+        C.elementWiseMultiply (S1, A, B, -S1);
+
+        C_exp.putScalar (-S1);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = 1*C + (-1)*(A @ B)" << endl;
+      // Fill A with 2, B with 3, and C with 1.  C should be -5 after.
+      {
+        const ST S2 = S1 + S1;
+        const ST S3 = S2 + S1;
+        const ST S5 = S2 + S3;
+
+        A.putScalar (S2);
+        B.putScalar (S3);
+        C.putScalar (S1);
+
+        C.elementWiseMultiply (-S1, A, B, S1);
+
+        C_exp.putScalar (-S5);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = (-1)*C + (-1)*(A @ B)" << endl;
+      // Fill A with 1, B with 2, and C with 3.  C should be -5 after.
+      {
+        const ST S2 = S1 + S1;
+        const ST S3 = S1 + S1 + S1;
+        const ST S5 = S2 + S3;
+        A.putScalar (S1);
+        B.putScalar (S2);
+        C.putScalar (S3);
+
+        C.elementWiseMultiply (-S1, A, B, -S1);
+
+        C_exp.putScalar (-S5);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = 0*C + 2*(A @ B)" << endl;
+      // Fill A with 3 and B with 4.  C should be 24 after.
+      {
+        const ST S2 = S1 + S1;
+        const ST S3 = S2 + S1;
+        const ST S4 = S3 + S1;
+        const ST S24 = S2 * S3 * S4;
+
+        A.putScalar (S3);
+        B.putScalar (S4);
+
+        // Prefill C with NaN, if NaN exists for ST.
+        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        C.putScalar (nan);
+
+        C.elementWiseMultiply (S2, A, B, S0);
+
+        C_exp.putScalar (S24);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = (-2)*C + 2*(A @ B)" << endl;
+      // Fill A with 3, B with 4, and C with 5.  C should be 14 after.
+      {
+        const ST S2 = S1 + S1;
+        const ST S3 = S2 + S1;
+        const ST S4 = S3 + S1;
+        const ST S5 = S4 + S1;
+        const ST S14 = S5 * S2 + S4;
+
+        A.putScalar (S3);
+        B.putScalar (S4);
+        C.putScalar (S5);
+
+        C.elementWiseMultiply (S2, A, B, -S2);
+
+        C_exp.putScalar (S14);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+    }
+
+    // Make sure that the test passed on all processes, not just Proc 0.
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+  }
+
+  // Test Tpetra::MultiVector::elementWiseMultiply on a large multivector
+  //
+  // Be sure to exercise all combinations of the cases alpha =
+  // {-1,0,1,other} and beta = {-1,0,1,other}, as these commonly have
+  // special cases.
+  //
+  // Also be sure to exercise the common case (also often with a
+  // special-case implementation) where all the MultiVectors have one
+  // column.
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, ElementWiseMultiplyLg, LO , GO , ST , Node )
+  {
+    using Teuchos::View;
+    typedef Tpetra::global_size_t GST;
+    typedef Teuchos::ScalarTraits<ST> STS;
+    typedef typename STS::magnitudeType MT;
+    typedef Teuchos::ScalarTraits<MT> STM;
+    typedef Tpetra::Map<LO,GO,Node> map_type;
+    typedef Tpetra::MultiVector<ST,LO,GO,Node> MV;
+    typedef Tpetra::Vector<ST,LO,GO,Node> V;
+    typedef typename Kokkos::Details::ArithTraits<ST>::val_type IST;
+
+    out << "Tpetra::MultiVector::elementWiseMultiplyLg test" << endl;
+    Teuchos::OSTab tab0 (out);
+
+    // Create a Map.
+    RCP<const Comm<int> > comm = getDefaultComm ();
+    const size_t lclNumRows = 15000;
     const GST gblNumRows = comm->getSize () * lclNumRows;
     const GO indexBase = 0;
     RCP<const map_type> map3n =
@@ -4792,6 +5202,7 @@ namespace {
 
 #define UNIT_TEST_GROUP_BASE( SCALAR, LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, basic             , LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, large             , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, NonMemberConstructors, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, BadConstLDA       , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, BadConstAA        , LO, GO, SCALAR, NODE ) \
@@ -4814,6 +5225,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, SingleVecNormalize, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Multiply          , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ElementWiseMultiply,LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ElementWiseMultiplyLg,LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, NonContigView     , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Describable       , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Typedefs          , LO, GO, SCALAR, NODE ) \
@@ -4827,14 +5239,8 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DimsWithAllZeroRows, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Swap, LO, GO, SCALAR, NODE )
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Cloner            , LO, GO, SCALAR, NODE ) \
-    UNIT_TEST_GROUP_BASE( SCALAR, LO, GO, NODE )
-#else
   #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
     UNIT_TEST_GROUP_BASE( SCALAR, LO, GO, NODE )
-#endif
 
 
   typedef Tpetra::Map<>::local_ordinal_type default_local_ordinal_type;

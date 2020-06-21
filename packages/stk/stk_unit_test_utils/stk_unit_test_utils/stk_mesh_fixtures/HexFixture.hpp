@@ -54,7 +54,6 @@
 #include "stk_mesh/base/Entity.hpp"
 #include "stk_topology/topology.hpp"
 #include "stk_util/util/ReportHandler.hpp"
-namespace stk { namespace mesh { struct ConnectivityMap; } }
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
 
@@ -92,7 +91,6 @@ class HexFixture
               , size_t nx
               , size_t ny
               , size_t nz
-              , ConnectivityMap const* connectivity_map = NULL
             );
 
   HexFixture(   stk::ParallelMachine pm
@@ -100,7 +98,6 @@ class HexFixture
               , size_t ny
               , size_t nz
               , const std::string& coordinate_name
-              , ConnectivityMap const* connectivity_map = NULL
             );
 
   HexFixture(   stk::ParallelMachine pm
@@ -108,7 +105,6 @@ class HexFixture
               , size_t ny
               , size_t nz
               , bool auraOn
-              , ConnectivityMap const* connectivity_map = NULL
             );
 
   const int                     m_spatial_dimension;

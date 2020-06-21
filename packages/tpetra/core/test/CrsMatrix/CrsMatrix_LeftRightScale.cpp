@@ -202,13 +202,11 @@ namespace {
     matrix->leftScale(*vector);
     matrix2->rightScale(*vector);
 
-    RCP<MAT> diffMat1 = createCrsMatrix<Scalar, LO, GO, Node>(map,3);
-    RCP<MAT> diffMat2 = createCrsMatrix<Scalar, LO, GO, Node>(map,3);
     Scalar sOne = ScalarTraits<Scalar>::one();
-    Tpetra::MatrixMatrix::Add(*matrix, false, -sOne, *answerMatrix, false, sOne, diffMat1);
-    diffMat1->fillComplete();
-    Tpetra::MatrixMatrix::Add(*matrix2, false, -sOne, *answerMatrix, false, sOne, diffMat2);
-    diffMat2->fillComplete();
+
+    RCP<MAT> diffMat1 = Tpetra::MatrixMatrix::add(sOne, false, *matrix, -sOne, false, *answerMatrix);
+    RCP<MAT> diffMat2 = Tpetra::MatrixMatrix::add(sOne, false, *matrix2, -sOne, false, *answerMatrix);
+
     Scalar epsilon1 = getNorm(diffMat1)/getNorm(answerMatrix);
     Scalar epsilon2 = getNorm(diffMat2)/getNorm(answerMatrix);
     TEST_COMPARE(ScalarTraits<Scalar>::real(epsilon1), <, 1e-10)

@@ -82,7 +82,7 @@ namespace Sacado {
       static const bool is_linear = true;
 
       KOKKOS_INLINE_FUNCTION
-      Expr(const ExprT& expr_) : expr(expr_)  {}
+      explicit Expr(const ExprT& expr_) : expr(expr_)  {}
 
       KOKKOS_INLINE_FUNCTION
       int size() const { return expr.size(); }
@@ -179,7 +179,7 @@ namespace Sacado {
       static const bool is_linear = true;
 
       KOKKOS_INLINE_FUNCTION
-      Expr(const ExprT& expr_) : expr(expr_)  {}
+      explicit Expr(const ExprT& expr_) : expr(expr_)  {}
 
       KOKKOS_INLINE_FUNCTION
       int size() const { return expr.size(); }
@@ -278,7 +278,7 @@ namespace Sacado {
       static const bool is_linear = false;
 
       KOKKOS_INLINE_FUNCTION
-      Expr(const ExprT& expr_) : expr(expr_)  {}
+      explicit Expr(const ExprT& expr_) : expr(expr_)  {}
 
       KOKKOS_INLINE_FUNCTION
       int size() const { return expr.size(); }
@@ -386,7 +386,7 @@ namespace Sacado {
       static const bool is_linear = false;
 
       KOKKOS_INLINE_FUNCTION
-      Expr(const ExprT& expr_) : expr(expr_)  {}
+      explicit Expr(const ExprT& expr_) : expr(expr_)  {}
 
       KOKKOS_INLINE_FUNCTION
       int size() const { return expr.size(); }
@@ -497,7 +497,7 @@ namespace Sacado {                                                      \
       static const bool is_linear = false;                              \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
-      Expr(const ExprT& expr_) : expr(expr_)  {}                        \
+      explicit Expr(const ExprT& expr_) : expr(expr_)  {}               \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       int size() const { return expr.size(); }                          \
@@ -597,6 +597,10 @@ FAD_UNARYOP_MACRO(sqrt,
                   SqrtOp,
                   a = scalar_type(1.0)/(scalar_type(2.0)*std::sqrt(v)),
                   std::sqrt(v))
+FAD_UNARYOP_MACRO(safe_sqrt,
+                  SafeSqrtOp,
+                  a = (v == value_type(0.0) ? value_type(0.0) : value_type(scalar_type(1.0)/(scalar_type(2.0)*std::sqrt(v)))),
+                  std::sqrt(v))
 FAD_UNARYOP_MACRO(cos,
                   CosOp,
                   a = -std::sin(v),
@@ -631,7 +635,7 @@ FAD_UNARYOP_MACRO(sinh,
                   std::sinh(v))
 FAD_UNARYOP_MACRO(tanh,
                   TanhOp,
-                  a = scalar_type(1.0)/(std::cosh(v)*std::cosh(v)),
+                  a = scalar_type(1.0)-std::tanh(v)*std::tanh(v),
                   std::tanh(v))
 FAD_UNARYOP_MACRO(acosh,
                   ACoshOp,

@@ -110,6 +110,11 @@ GatherTangent_Epetra(
     gatherFields_[fd] =
       MDField<ScalarT, Cell, NODE>(names[fd], basis->functional);
     this->addEvaluatedField(gatherFields_[fd]);
+
+    // This fixes the case of dxdpEvRoGed_ being null and no
+    // operations performed during evalaute. Keeps the field with
+    // initial zero state.
+    this->addUnsharedField(gatherFields_[fd].fieldTag().clone());
   } // end loop over names
 
   // Figure out what the first active name is.

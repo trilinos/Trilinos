@@ -35,12 +35,6 @@
 INCLUDE_DIRECTORIES(${${PARENT_PACKAGE_NAME}_BINARY_DIR}/stk_util/stk_util)
 
 FILE(GLOB SOURCES *.cpp)
-#removing due to dependence on geometry toolkit which is not available to Trilinos
-LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/UnitTestCoarseSearch.cpp")
-
-IF(NOT TPL_ENABLE_BoostLib)
-LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/UnitTestCoarseSearchBoostImpl.cpp")
-ENDIF()
 
 TRIBITS_ADD_EXECUTABLE(
     search_unit_tests

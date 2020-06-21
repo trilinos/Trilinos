@@ -49,7 +49,7 @@
 #ifndef XPETRA_STRIDEDMAP_DEF_HPP
 #define XPETRA_STRIDEDMAP_DEF_HPP
 
-#include "Xpetra_StridedMap_decl.hpp"
+#include "Xpetra_StridedMap.hpp"
 
 #include <Teuchos_OrdinalTraits.hpp>
 
@@ -60,23 +60,6 @@ namespace Xpetra {
 
 
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template<class LocalOrdinal, class GlobalOrdinal, class Node>
-TPETRA_DEPRECATED
-StridedMap<LocalOrdinal, GlobalOrdinal, Node>::
-StridedMap(UnderlyingLib                                 xlib,
-           global_size_t                                 numGlobalElements,
-           GlobalOrdinal                                 indexBase,
-           std::vector<size_t>&                          stridingInfo,
-           const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
-           LocalOrdinal                                  stridedBlockId,      // FIXME (mfh 03 Sep 2014) This breaks for unsigned LocalOrdinal
-           GlobalOrdinal                                 offset,
-           LocalGlobal                                   lg,
-           const Teuchos::RCP<Node>&                     /* node */)
-    : StridedMap(xlib, numGlobalElements, indexBase, stridingInfo, comm, stridedBlockId, offset, lg)
-{
-}
-#endif      // #ifdef TPETRA_ENABLE_DEPRECATED_CODE
 
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -190,23 +173,6 @@ StridedMap(UnderlyingLib                                 xlib,
 }
 
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template<class LocalOrdinal, class GlobalOrdinal, class Node>
-TPETRA_DEPRECATED
-StridedMap<LocalOrdinal, GlobalOrdinal, Node>::
-StridedMap(UnderlyingLib                                 xlib,
-           global_size_t                                 numGlobalElements,
-           size_t                                        numLocalElements,
-           GlobalOrdinal                                 indexBase,
-           std::vector<size_t>&                          stridingInfo,
-           const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
-           LocalOrdinal                                  stridedBlockId,
-           GlobalOrdinal                                 offset,
-           const Teuchos::RCP<Node>&                     /* node */)
-    : StridedMap(xlib, numGlobalElements, numLocalElements, indexBase, stridingInfo, comm, stridedBlockId, offset)
-{
-}
-#endif      // TPETRA_ENABLE_DEPRECATED_CODE
 
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -336,22 +302,6 @@ StridedMap(UnderlyingLib                                 xlib,
 }
 
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template<class LocalOrdinal, class GlobalOrdinal, class Node>
-TPETRA_DEPRECATED
-StridedMap<LocalOrdinal, GlobalOrdinal, Node>::
-StridedMap(UnderlyingLib                                  xlib,
-           global_size_t                                  numGlobalElements,
-           const Teuchos::ArrayView<const GlobalOrdinal>& elementList,
-           GlobalOrdinal                                  indexBase,
-           std::vector<size_t>&                           stridingInfo,
-           const Teuchos::RCP<const Teuchos::Comm<int>>&  comm,
-           LocalOrdinal                                   stridedBlockId,
-           const Teuchos::RCP<Node>&                      /* node */)
-    : StridedMap(xlib, numGlobalElements, elementList, indexBase, stridingInfo, comm, stridedBlockId)
-{
-}
-#endif      // TPETRA_ENABLE_DEPRECATED_CODE
 
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -866,15 +816,6 @@ getComm() const
 }
 
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template<class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<Node>
-StridedMap<LocalOrdinal, GlobalOrdinal, Node>::
-getNode() const
-{
-    return map_->getNode();
-}
-#endif      // TPETRA_ENABLE_DEPRECATED_CODE
 
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>

@@ -94,7 +94,7 @@ namespace LOCA {
      *
      * \f[ g(x, \lambda) = \lambda F(x) + (1.0 - \lambda)(x - a) \f]
      *
-     * where \f$x\f$ is the solution vector, \f$ \lambda \f$ is an artificial
+     * where \f$ x\f$ is the solution vector, \f$ \lambda \f$ is an artificial
      * parameter, \f$ F(x) \f$ is the set of nonlinear equations the user
      * supplies, \f$ g(x) \f$ is the corresponding set of
      * homotopy equations that LOCA will solve, and \f$ a \f$ is a random
@@ -250,7 +250,7 @@ namespace LOCA {
                     const NOX::Abstract::MultiVector& input,
                     NOX::Abstract::MultiVector& result) const;
 
-      //! Return \c true if the homotopy residual \f$g\f$ is valid.
+      //! Return \c true if the homotopy residual \f$ g\f$ is valid.
       virtual bool isF() const;
 
       //! Return \c true if the homotopy Jacobian is valid.
@@ -262,13 +262,13 @@ namespace LOCA {
       //! Return \c true if the homotopy Newton direction is valid.
       virtual bool isNewton() const;
 
-      //! Return homotopy solution vector \f$x\f$.
+      //! Return homotopy solution vector \f$ x\f$.
       virtual const NOX::Abstract::Vector& getX() const;
 
-      //! Return homotopy residual \f$g\f$
+      //! Return homotopy residual \f$ g\f$
       virtual const NOX::Abstract::Vector& getF() const;
 
-      //! Return 2-norm of \f$g\f$.
+      //! Return 2-norm of \f$ g\f$.
       virtual double getNormF() const;
 
       //! Return homotopy gradient
@@ -277,10 +277,10 @@ namespace LOCA {
       //! Return homotopy Newton direction.
       virtual const NOX::Abstract::Vector& getNewton() const;
 
-      //! Return homotopy solution vector \f$x\f$.
+      //! Return homotopy solution vector \f$ x\f$.
       virtual Teuchos::RCP< const NOX::Abstract::Vector > getXPtr() const;
 
-      //! Return homotopy residual \f$g\f$
+      //! Return homotopy residual \f$ g\f$
       virtual Teuchos::RCP< const NOX::Abstract::Vector > getFPtr() const;
 
       //! Return homotopy gradient
@@ -342,7 +342,7 @@ namespace LOCA {
       virtual double getParam(std::string paramID) const;
 
       /*!
-       * Compute \f$\partial F/\partial p\f$ for each parameter \f$p\f$
+       * Compute \f$\partial F/\partial p\f$ for each parameter \f$ p\f$
        * indexed by paramIDs.  The first column of \em dfdp holds F,
        * which is valid if \em isValidF is true.  Otherwise F must be
        * computed.

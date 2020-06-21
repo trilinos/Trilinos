@@ -1,35 +1,8 @@
-C    Copyright(C) 2014-2017 National Technology & Engineering Solutions of
-C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C
-C    Redistribution and use in source and binary forms, with or without
-C    modification, are permitted provided that the following conditions are
-C    met:
-C
-C    * Redistributions of source code must retain the above copyright
-C       notice, this list of conditions and the following disclaimer.
-C
-C    * Redistributions in binary form must reproduce the above
-C      copyright notice, this list of conditions and the following
-C      disclaimer in the documentation and/or other materials provided
-C      with the distribution.
-C
-C    * Neither the name of NTESS nor the names of its
-C      contributors may be used to endorse or promote products derived
-C      from this software without specific prior written permission.
-C
-C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C    A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C    OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C
+C    
+C    See packages/seacas/LICENSE for details
 
 C $Id: rowsmo.f,v 1.5 2004/01/22 14:25:22 gdsjaar Exp $
 C $Log: rowsmo.f,v $
@@ -147,9 +120,9 @@ C
 C  SKIP CONTINUATION LINES, EXTERIOR BOUNDARY LINES, AND NODES
 C  THAT ARE ON THE INTERIOR
 C
-            IF (NODE .gt. 0 .AND.
-     &         (LXN(1, NODE) .GT. 0) .AND. (LXN(2, NODE) .GT. 0) .AND.
-     &         (LNODES (4, NODE) .EQ. - 1) ) THEN
+            IF (NODE .gt. 0) THEN
+            IF ((LXN(1, NODE) .GT. 0) .AND. (LXN(2, NODE) .GT. 0) .AND.
+     &              (LNODES (4, NODE) .EQ. - 1))  THEN
 C
 C  FIND ELEMENTS AND LINES ATTACHED TO NODE
 C
@@ -259,8 +232,8 @@ C
                      SUMY = SUMY + YN(NODES(J1)) + YN(NODES(J3))
      &                  - WFAC * YN(NODES(J2))
   120             CONTINUE
-                  SUMX = SUMX/(FLOAT(KS) * (2.0 - WFAC))
-                  SUMY = SUMY/(FLOAT(KS) * (2.0 - WFAC))
+                  SUMX = SUMX/(DBLE(KS) * (2.0 - WFAC))
+                  SUMY = SUMY/(DBLE(KS) * (2.0 - WFAC))
                   XDEL = (RO * ( SUMX - XN (NODE) ))
                   YDEL = (RO * ( SUMY - YN (NODE) ))
 C
@@ -337,6 +310,7 @@ C
 C
 C  CHECK FOR CONVERGENCE
 C
+            ENDIF
             ENDIF
   150    CONTINUE
 C

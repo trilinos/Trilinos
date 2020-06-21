@@ -618,7 +618,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsMatrix: public Epetra_DistObject, public E
   int SumIntoMyValues(int MyRow, int NumEntries, const double* Values, const int* Indices);
 
   //! Replaces diagonal values of the matrix with those in the user-provided vector.
-  /*! This routine is meant to allow replacement of {\bf existing} diagonal values.
+  /*! This routine is meant to allow replacement of \b existing diagonal values.
     If a diagonal value does not exist for a given row, the corresponding value in
     the input Epetra_Vector will be ignored and the return code will be set to 1.
 
@@ -705,7 +705,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsMatrix: public Epetra_DistObject, public E
     \return Integer error code, set to 0 if successful.
 
     \pre Filled()==true.
-    \pre If CV=View when the graph was constructed, then this method will be effective \only if the indices of the graph were already contiguous.  In this case, the indices are left untouched and internal storage for the graph is minimized.
+    \pre If CV=View when the graph was constructed, then this method will be effective \em only if the indices of the graph were already contiguous.  In this case, the indices are left untouched and internal storage for the graph is minimized.
 
     \post StorageOptimized()==true, if successful.
     \post Graph().StorageOptimized()==true, if successful.

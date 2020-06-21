@@ -114,6 +114,12 @@ namespace Xpetra {
     //@}
 
     virtual void removeEmptyProcessesInPlace(const RCP<const Map>& /* newMap */) { }
+
+    //! Compute a residual R = B - (*this) * X
+    virtual void residual(const MultiVector & X,
+                          const MultiVector & B,
+                          MultiVector& R) const = 0;
+
   };
 
 } // Xpetra namespace

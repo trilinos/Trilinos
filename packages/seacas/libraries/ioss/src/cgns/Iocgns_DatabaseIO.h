@@ -1,34 +1,8 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//
-//     * Neither the name of NTESS nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+// See packages/seacas/LICENSE for details
 
 #ifndef IOSS_Iocgns_DatabaseIO_h
 #define IOSS_Iocgns_DatabaseIO_h
@@ -36,18 +10,22 @@
 #include <Ioss_CodeTypes.h>
 #include <Ioss_DBUsage.h>    // for DatabaseUsage
 #include <Ioss_DatabaseIO.h> // for DatabaseIO
-#include <Ioss_IOFactory.h>  // for IOFactory
-#include <Ioss_Map.h>        // for Map
-#include <Ioss_State.h>      // for State
-#include <cstddef>           // for size_t
-#include <cstdint>           // for int64_t
-#include <iostream>          // for ostream
+#include <Ioss_FaceGenerator.h>
+#include <Ioss_IOFactory.h> // for IOFactory
+#include <Ioss_Map.h>       // for Map
+#include <Ioss_State.h>     // for State
+#include <cstddef>          // for size_t
+#include <cstdint>          // for int64_t
+#include <iostream>         // for ostream
 #include <map>
 #include <string> // for string
 
+#include <cgns/Iocgns_Defines.h>
 #include <cgnslib.h>
 
 namespace Ioss {
+  class Assembly;
+  class Blob;
   class CommSet;
   class EdgeBlock;
   class EdgeSet;
@@ -90,7 +68,7 @@ namespace Iocgns {
 
     ~DatabaseIO() override;
 
-    const std::string get_format() const override {return "CGNS";}
+    const std::string get_format() const override { return "CGNS"; }
 
     // This isn't quite true since a CGNS library with cgsize_t == 64-bits can read
     // a file with 32-bit ints. However,...
@@ -106,6 +84,9 @@ namespace Iocgns {
     int get_file_pointer() const override;
 
   private:
+    void open_state_file(int state);
+    void free_state_pointer();
+
     void openDatabase__() const override;
     void closeDatabase__() const override;
 
@@ -120,7 +101,7 @@ namespace Iocgns {
     void   create_structured_block(int base, int zone, size_t &num_node);
     void   create_structured_block_fpp(int base, int zone, size_t &num_node);
     size_t finalize_structured_blocks();
-    void   finalize_database() override;
+    void   finalize_database() const override;
     void   get_step_times__() override;
 
     void create_unstructured_block(int base, int zone, size_t &num_node);
@@ -152,6 +133,17 @@ namespace Iocgns {
                                size_t data_size) const override;
     int64_t get_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
+    int64_t get_field_internal(const Ioss::Assembly * /*sb*/, const Ioss::Field & /*field*/,
+                               void * /*data*/, size_t /*data_size*/) const override
+    {
+      return 0;
+    }
+
+    int64_t get_field_internal(const Ioss::Blob * /*sb*/, const Ioss::Field & /*field*/,
+                               void * /*data*/, size_t /*data_size*/) const override
+    {
+      return 0;
+    }
 
     int64_t get_field_internal_sub_nb(const Ioss::NodeBlock *nb, const Ioss::Field &field,
                                       void *data, size_t data_size) const;
@@ -182,6 +174,17 @@ namespace Iocgns {
                                size_t data_size) const override;
     int64_t put_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field,
                                void *data, size_t data_size) const override;
+    int64_t put_field_internal(const Ioss::Assembly * /*sb*/, const Ioss::Field & /*field*/,
+                               void * /*data*/, size_t /*data_size*/) const override
+    {
+      return 0;
+    }
+
+    int64_t put_field_internal(const Ioss::Blob * /*sb*/, const Ioss::Field & /*field*/,
+                               void * /*data*/, size_t /*data_size*/) const override
+    {
+      return 0;
+    }
 
     int64_t put_field_internal_sub_nb(const Ioss::NodeBlock *nb, const Ioss::Field &field,
                                       void *data, size_t data_size) const;
@@ -193,18 +196,22 @@ namespace Iocgns {
 
   private:
     mutable int m_cgnsFilePtr{-1};
+    mutable int m_cgnsBasePtr{
+        -1}; // If using links to file-per-state, the file pointer for "base" file.
 
-    int m_flushInterval{0}; // Default is no flushing after each timestep
-    int m_currentVertexSolutionIndex     = 0;
-    int m_currentCellCenterSolutionIndex = 0;
+    int          m_flushInterval{0}; // Default is no flushing after each timestep
+    int          m_currentVertexSolutionIndex     = 0;
+    int          m_currentCellCenterSolutionIndex = 0;
+    mutable bool m_dbFinalized                    = false;
 
     mutable std::vector<size_t> m_zoneOffset; // Offset for local zone/block element ids to global.
     mutable std::vector<size_t>
-                                       m_bcOffset; // The BC Section element offsets in unstructured output.
-    mutable std::vector<double>        m_timesteps;
-    std::vector<std::vector<cgsize_t>> m_blockLocalNodeMap;
-    std::map<std::string, int>         m_zoneNameMap;
-    mutable std::map<int, Ioss::Map *> m_globalToBlockLocalNodeMap;
+                                                          m_bcOffset; // The BC Section element offsets in unstructured output.
+    mutable std::vector<double>                           m_timesteps;
+    std::vector<CGNSIntVector>                            m_blockLocalNodeMap;
+    std::map<std::string, int>                            m_zoneNameMap;
+    mutable std::map<int, Ioss::Map *>                    m_globalToBlockLocalNodeMap;
+    mutable std::map<std::string, Ioss::FaceUnorderedSet> m_boundaryFaces;
   };
 } // namespace Iocgns
 #endif

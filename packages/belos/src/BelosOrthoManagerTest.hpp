@@ -463,7 +463,7 @@ namespace Belos {
           debugOut << "done: || <X2,X1> || = " << err << endl;
         }
 
-
+#ifdef HAVE_BELOS_TSQR
         //
         // If OM is an OutOfPlaceNormalizerMixin, exercise the
         // out-of-place normalization routines.
@@ -560,6 +560,7 @@ namespace Belos {
                      << "=== Done with OutOfPlaceNormalizerMixin tests ==="
                      << endl << endl;
           }
+#endif // HAVE_BELOS_TSQR
 
         {
           //
@@ -576,6 +577,15 @@ namespace Belos {
             debugOut << "  *** " << thisNumFailed
                      << (thisNumFailed > 1 ? " tests" : " test")
                      << " failed." << endl;
+        }
+
+        {
+          //
+          // Test normalize() for various deficient cases 
+          //
+          debugOut << "Testing normalize() on bad multivectors " << endl;
+          const int thisNumFailed = testNormalize(OM,S,MyOM);
+          numFailed += thisNumFailed;
         }
 
         if (isRankRevealing)
@@ -617,7 +627,7 @@ namespace Belos {
             MVT::SetBlock(*mid,ind,*S);
 
             debugOut << "Testing normalize() on a rank-deficient multivector " << endl;
-            const int thisNumFailed = testNormalize(OM,S,MyOM);
+            const int thisNumFailed = testNormalizeRankReveal(OM,S,MyOM);
             numFailed += thisNumFailed;
             if (thisNumFailed > 0)
               debugOut << "  *** " << thisNumFailed
@@ -640,10 +650,10 @@ namespace Belos {
                 std::vector<int> ind(1);
                 ind[0] = i;
                 RCP<MV> Si = MVT::CloneViewNonConst(*S,ind);
-                MVT::MvAddMv(scaleS[i],*one,ZERO,*one,*Si);
+                MVT::MvAddMv(scaleS(i,0),*one,ZERO,*one,*Si);
               }
             debugOut << "Testing normalize() on a rank-1 multivector " << endl;
-            const int thisNumFailed = testNormalize(OM,S,MyOM);
+            const int thisNumFailed = testNormalizeRankReveal(OM,S,MyOM);
             numFailed += thisNumFailed;
             if (thisNumFailed > 0)
               debugOut << "  *** " << thisNumFailed
@@ -725,7 +735,7 @@ namespace Belos {
                 std::vector<int> ind(1);
                 ind[0] = i;
                 RCP<MV> Si = MVT::CloneViewNonConst(*S,ind);
-                MVT::MvAddMv(scaleS[i],*one,ZERO,*one,*Si);
+                MVT::MvAddMv(scaleS(i,0),*one,ZERO,*one,*Si);
               }
             debugOut << "Testing projectAndNormalize() on a rank-1 multivector " << endl;
             bool constantStride = true;
@@ -940,9 +950,9 @@ namespace Belos {
             // copies of S,MS
             Scopy = MVT::CloneCopy(*S);
             // randomize this data, it should be overwritten
-            Teuchos::randomSyncedMatrix(B);
+            Teuchos::randomSyncedMatrix(*B);
             for (size_type i=0; i<C.size(); i++) {
-              Teuchos::randomSyncedmatrix(*C[i]);
+              Teuchos::randomSyncedMatrix(*C[i]);
             }
             // Run test.  Since S was specified by the caller and
             // Scopy is a copy of S, we don't know what rank to expect
@@ -996,7 +1006,7 @@ namespace Belos {
               // data will be overwritten by projectAndNormalize().
               // Filling these matrices here is only to catch some
               // bugs in projectAndNormalize().
-              Teuchos::randomSyncedMatrix(B);
+              Teuchos::randomSyncedMatrix(*B);
               for (size_type i=0; i<C.size(); i++) {
                 Teuchos::randomSyncedMatrix(*C[i]);
               }
@@ -1137,6 +1147,40 @@ namespace Belos {
                      const Teuchos::RCP< const MV >& S,
                      const Teuchos::RCP< Belos::OutputManager< Scalar > >& MyOM)
       {
+        using Teuchos::RCP;
+
+        int numFailures = 0;
+        const scalar_type ZERO = SCT::zero();
+
+        const int msgType = (static_cast<int>(Debug) | static_cast<int>(Errors));
+
+        // Check that the orthogonalization gracefully handles zero vectors.
+        RCP<MV> zeroVec = MVT::Clone(*S,1);
+        RCP< mat_type > bZero (new mat_type (1, 1));
+        std::vector< magnitude_type > zeroNorm( 1 );
+
+        MVT::MvInit( *zeroVec, ZERO );
+        OM->normalize( *zeroVec, bZero );
+        MVT::MvNorm( *zeroVec, zeroNorm );
+        // Check if the number is a NaN, this orthogonalization fails if it is.
+        if ( zeroNorm[0] != ZERO )
+        {
+          MyOM->stream(static_cast< MsgType >(msgType)) << " --> Normalization of zero vector FAILED!" << std::endl;
+          numFailures++;
+        }
+ 
+        return numFailures;
+      }
+
+      /// Test OrthoManager::normalize() for the specific OrthoManager
+      /// instance.
+      ///
+      /// \return Count of errors (should be zero)
+      static int
+      testNormalizeRankReveal (const Teuchos::RCP< Belos::OrthoManager< Scalar, MV > >& OM,
+                               const Teuchos::RCP< const MV >& S,
+                               const Teuchos::RCP< Belos::OutputManager< Scalar > >& MyOM)
+      {
         using Teuchos::Array;
         using Teuchos::RCP;
         using Teuchos::rcp;
@@ -1210,7 +1254,7 @@ namespace Belos {
             // random data just to make sure that the normalization
             // operated on all the elements of B on which it should
             // operate.
-            Teuchos::randomSyncedMatrix(B);
+            Teuchos::randomSyncedMatrix(*B);
 
             const int reportedRank = OM->normalize (*S_copy, B);
             sout << "normalize() returned rank " << reportedRank << endl;

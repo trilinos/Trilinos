@@ -44,6 +44,7 @@
 #define PIRO_STEADYSTATESOLVER_HPP
 
 #include "Thyra_ResponseOnlyModelEvaluatorBase.hpp"
+#include "Piro_Helpers.hpp"
 
 namespace Piro {
 
@@ -75,6 +76,10 @@ class SteadyStateSolver
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space(int l) const;
   /** \brief . */
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_g_space(int j) const;
+  /** \brief . */
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
+  /** \brief . */
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_f_space() const;
   //@}
 
   /** \name Overridden from Thyra::ResponseOnlyModelEvaluatorBase . */
@@ -85,11 +90,12 @@ class SteadyStateSolver
   Thyra::ModelEvaluatorBase::InArgs<Scalar> getLowerBounds() const;
   /** \brief . */
   Thyra::ModelEvaluatorBase::InArgs<Scalar> getUpperBounds() const;
+
   //@}
 
-  protected:
-  /** \name Service methods for subclasses. */
+  /** \name Getters for subclasses. */
   //@{
+
   /** \brief . */
   const Thyra::ModelEvaluator<Scalar> &getModel() const;
 
@@ -99,7 +105,22 @@ class SteadyStateSolver
   int num_g() const;
 
   /** \brief . */
-  void evalConvergedModel(
+  SENS_METHOD getSensitivityMethod();
+  //@}
+
+  /** \name Setters for subbclasses */
+  /** \brief . */
+  void setSensitivityMethod(const std::string& sensitivity_method_string);
+  //@}
+
+  //@}
+
+  protected:
+  /** \name Service methods for subclasses. */
+  //@{
+
+  /** \brief . */
+  void evalConvergedModelResponsesAndSensitivities(
       const Thyra::ModelEvaluatorBase::InArgs<Scalar>& modelInArgs,
       const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const;
   //@}
@@ -124,6 +145,8 @@ class SteadyStateSolver
 
   int num_p_;
   int num_g_;
+
+  SENS_METHOD sensitivityMethod_;
 };
 
 }

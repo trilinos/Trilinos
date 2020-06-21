@@ -49,6 +49,7 @@
 #define IFPACK2_DETAILS_LINEARSOLVER_DEF_HPP
 
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
+#include "Tpetra_MultiVector.hpp"
 
 // Ifpack2: key is for Ifpack2's factory to have subordinate
 // factories.  That way, each package still has one factory, but we

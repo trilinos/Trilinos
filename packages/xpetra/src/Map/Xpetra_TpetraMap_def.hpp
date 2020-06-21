@@ -57,18 +57,6 @@ namespace Xpetra {
 //@{
 
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    template<class LocalOrdinal, class GlobalOrdinal, class Node>
-    TPETRA_DEPRECATED
-    TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::
-    TpetraMap (global_size_t numGlobalElements,
-               GlobalOrdinal indexBase,
-               const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-               LocalGlobal lg,
-               const Teuchos::RCP< Node > & /* node */)
-      : TpetraMap(numGlobalElements, indexBase, comm, lg)
-    {}
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 
     template<class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -84,18 +72,6 @@ namespace Xpetra {
 
 
     //! Constructor with a user-defined contiguous distribution.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    template<class LocalOrdinal, class GlobalOrdinal, class Node>
-    TPETRA_DEPRECATED
-    TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::
-    TpetraMap (global_size_t numGlobalElements,
-               size_t numLocalElements,
-               GlobalOrdinal indexBase,
-               const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-               const Teuchos::RCP< Node > & /* node */) 
-      : TpetraMap(numGlobalElements, numLocalElements, indexBase, comm)
-    {}
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 
     template<class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -111,18 +87,6 @@ namespace Xpetra {
 
 
     //! Constructor with user-defined arbitrary (possibly noncontiguous) distribution.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    template<class LocalOrdinal, class GlobalOrdinal, class Node>
-    TPETRA_DEPRECATED
-    TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::
-    TpetraMap (global_size_t numGlobalElements,
-               const Teuchos::ArrayView< const GlobalOrdinal > &elementList,
-               GlobalOrdinal indexBase,
-               const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-               const Teuchos::RCP< Node > & /* node */)
-      : TpetraMap(numGlobalElements, elementList, indexBase, comm)
-    {}
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 
     template<class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -246,12 +210,6 @@ bool TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::isSameAs(const Map< LocalOrdina
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP< const Teuchos::Comm< int > >  TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::getComm() const
 { XPETRA_MONITOR("TpetraMap::getComm"); return map_->getComm(); }
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-
-template<class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP< Node >  TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::getNode() const
-{ XPETRA_MONITOR("TpetraMap::getNode"); return map_->getNode(); }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 std::string TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::description() const
@@ -317,16 +275,6 @@ typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type TpetraMap<LocalO
 
 
     //! Constructor with Tpetra-defined contiguous uniform distribution.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    TpetraMap (global_size_t numGlobalElements,
-               GlobalOrdinal indexBase,
-               const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-               LocalGlobal lg,
-               const Teuchos::RCP< Node > & /*node*/)
-     : TpetraMap(numGlobalElements, indexBase, comm, lg)
-    {}
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 
     TpetraMap (global_size_t numGlobalElements,
@@ -338,16 +286,6 @@ typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type TpetraMap<LocalO
 
 
     //! Constructor with a user-defined contiguous distribution.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    TpetraMap (global_size_t numGlobalElements,
-               size_t numLocalElements,
-               GlobalOrdinal indexBase,
-               const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-               const Teuchos::RCP< Node > & /*node */) 
-      : TpetraMap(numGlobalElements, numLocalElements, indexBase, comm)
-    {}
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 
     TpetraMap (global_size_t numGlobalElements,
@@ -359,16 +297,6 @@ typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type TpetraMap<LocalO
 
 
     //! Constructor with user-defined arbitrary (possibly noncontiguous) distribution.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    TpetraMap (global_size_t numGlobalElements,
-               const Teuchos::ArrayView< const GlobalOrdinal > &elementList,
-               GlobalOrdinal indexBase,
-               const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-               const Teuchos::RCP< Node > & /* node */)
-      : TpetraMap(numGlobalElements, elementList, indexBase, comm)
-    {}
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 
     TpetraMap (global_size_t numGlobalElements,
@@ -460,10 +388,6 @@ typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type TpetraMap<LocalO
     //! Get this Map's Comm object.
     Teuchos::RCP< const Teuchos::Comm< int > >  getComm() const { return Teuchos::null; }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    //! Get this Map's Node object.
-    Teuchos::RCP< Node >  getNode() const { return Teuchos::null; }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //@}
 
@@ -479,15 +403,7 @@ typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type TpetraMap<LocalO
     RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > removeEmptyProcesses () const { return Teuchos::null; }
     RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > replaceCommWithSubset (const Teuchos::RCP<const Teuchos::Comm<int> >& newComm) const { return Teuchos::null; }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    template<class Node2>
-    RCP<Map<LocalOrdinal, GlobalOrdinal, Node2> > TPETRA_DEPRECATED 
-    clone(const RCP<Node2> &node2) const 
-    { 
-        return Teuchos::null; 
-    }
-#endif
-    //@}
+//@}
 
     //! @name Xpetra specific
     //@{
@@ -534,16 +450,6 @@ typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type TpetraMap<LocalO
     //@{
 
     //! Constructor with Tpetra-defined contiguous uniform distribution.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    TpetraMap (global_size_t numGlobalElements,
-               GlobalOrdinal indexBase,
-               const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-               LocalGlobal lg,
-               const Teuchos::RCP< Node > & /* node */) 
-      : TpetraMap(numGlobalElements, indexBase, comm, lg)
-    {}
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
     TpetraMap (global_size_t numGlobalElements,
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
@@ -552,16 +458,6 @@ typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type TpetraMap<LocalO
     }
 
     //! Constructor with a user-defined contiguous distribution.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    TpetraMap (global_size_t numGlobalElements,
-               size_t numLocalElements,
-               GlobalOrdinal indexBase,
-               const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-               const Teuchos::RCP< Node > & /* node */)
-      : TpetraMap(numGlobalElements, numLocalElements, indexBase, comm)
-    {}
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
     TpetraMap (global_size_t numGlobalElements,
                size_t numLocalElements,
                GlobalOrdinal indexBase,
@@ -570,16 +466,6 @@ typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type TpetraMap<LocalO
     }
 
     //! Constructor with user-defined arbitrary (possibly noncontiguous) distribution.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    TpetraMap (global_size_t numGlobalElements,
-               const Teuchos::ArrayView< const GlobalOrdinal > &elementList,
-               GlobalOrdinal indexBase,
-               const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-               const Teuchos::RCP< Node > & /* node */)
-      : TpetraMap(numGlobalElements, elementList, indexBase, comm)
-    {}
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
     TpetraMap (global_size_t numGlobalElements,
                const Teuchos::ArrayView< const GlobalOrdinal > &elementList,
                GlobalOrdinal indexBase,
@@ -668,10 +554,6 @@ typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type TpetraMap<LocalO
     //! Get this Map's Comm object.
     Teuchos::RCP< const Teuchos::Comm< int > >  getComm() const { return Teuchos::null; }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    //! Get this Map's Node object.
-    Teuchos::RCP< Node >  getNode() const { return Teuchos::null; }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //@}
 
@@ -687,15 +569,7 @@ typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type TpetraMap<LocalO
     RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > removeEmptyProcesses () const { return Teuchos::null; }
     RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > replaceCommWithSubset (const Teuchos::RCP<const Teuchos::Comm<int> >& newComm) const { return Teuchos::null; }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    template<class Node2>
-    RCP<Map<LocalOrdinal, GlobalOrdinal, Node2> > TPETRA_DEPRECATED 
-    clone(const RCP<Node2> &node2) const 
-    { 
-        return Teuchos::null; 
-    }
-#endif
-    //@}
+//@}
 
     //! @name Xpetra specific
     //@{

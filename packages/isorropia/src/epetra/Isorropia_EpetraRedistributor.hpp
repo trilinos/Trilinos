@@ -76,7 +76,7 @@ public:
       This constructor calls the Isorropia::Epetra::Partitioner::partition
       method on the @c partitioner if it has not already been called.
  
-      \param[in] partitioner this input partitioner determines the new partitioning
+      \param partitioner (in) this input partitioner determines the new partitioning
             to be created when Isorropia::Epetra::Redistributor::redistribute is called
    */
   Redistributor(Teuchos::RCP<Isorropia::Epetra::Partitioner> partitioner);
@@ -84,7 +84,7 @@ public:
   /** @ingroup partitioning_rcp_grp
       This constructor sets the target map for the redistribution.
 
-      \param[in] target_map this input map determines the new matrices/vectors
+      \param target_map (in) this input map determines the new matrices/vectors
       to be created when Isorropia::Epetra::Redistributor::redistribute is
       called
    */
@@ -94,7 +94,7 @@ public:
       This constructor calls the Isorropia::Epetra::Partitioner::partition
       method on the @c partitioner if it has not already been called.
  
-      \param[in] partitioner this input partitioner determines the new partitioning
+      \param partitioner (in) this input partitioner determines the new partitioning
             to be created when Isorropia::Epetra::Redistributor::redistribute is called
    */
   Redistributor(Isorropia::Epetra::Partitioner *partitioner);
@@ -102,7 +102,7 @@ public:
   /** @ingroup partitioning_ptr_grp
       This constructor sets the target map for the redistribution.
 
-      \param[in] target_map this input map determines the new matrices/vectors
+      \param target_map (in) this input map determines the new matrices/vectors
       to be created when Isorropia::Epetra::Redistributor::redistribute is
       called
    */
@@ -125,11 +125,11 @@ public:
       Method to accept a Epetra_CrsGraph object, and
       return a redistributed Epetra_CrsGraph object.
 
-      \param[in] input_graph the graph for which we want a new graph that is distributed
+      \param input_graph (in) the graph for which we want a new graph that is distributed
                       according to the partitioner with which this Redistributor was
                       created.
 
-      \param[in] callFillComplete The new graph is FillComplete'd if callFillComplete is @c true. 
+      \param callFillComplete (in) The new graph is FillComplete'd if callFillComplete is @c true. 
       In that case, the range map is set to equal the row map. 
       The domain map will equal the range map, unless the
       input_graph has different domain and range maps, in which case
@@ -144,13 +144,13 @@ public:
       Method to accept a Epetra_CrsGraph object, and
       return a redistributed Epetra_CrsGraph object.
 
-      \param[in] input_graph the graph for which we want a new graph that is distributed
+      \param input_graph (in) the graph for which we want a new graph that is distributed
                       according to the partitioner with which this Redistributor was
                       created.
 
-      \param[out] outputGraphPtr pointer to the new redistributed graph 
+      \param outputGraphPtr (out) pointer to the new redistributed graph 
 
-      \param[in] callFillComplete The new graph is FillComplete'd if callFillComplete is @c true. 
+      \param callFillComplete (in) The new graph is FillComplete'd if callFillComplete is @c true. 
       In that case, the range map is set to equal the row map. 
       The domain map will equal the range map, unless the
       input_graph has different domain and range maps, in which case
@@ -163,11 +163,11 @@ public:
       Method to accept a Epetra_CrsMatrix object, and
       return a redistributed Epetra_CrsMatrix object.
 
-      \param[in] input_matrix the matrix for which we want a new matrix that is distributed
+      \param input_matrix (in) the matrix for which we want a new matrix that is distributed
                       according to the partitioner with which this Redistributor was
                       created.
 
-      \param[in] callFillComplete The new matrix is FillComplete'd if callFillComplete is @c true. 
+      \param callFillComplete (in) The new matrix is FillComplete'd if callFillComplete is @c true. 
       In that case, the range map is set to equal the row map. 
       The domain map will equal the range map, unless the
       input_matrix has different domain and range maps, in which case
@@ -182,13 +182,13 @@ public:
       Method to accept a Epetra_CrsMatrix object, and
       return a redistributed Epetra_CrsMatrix object.
 
-      \param[in] inputMatrix the matrix for which we want a new matrix that is distributed
+      \param inputMatrix (in) the matrix for which we want a new matrix that is distributed
                       according to the partitioner with which this Redistributor was
                       created.
 
-      \param[out] outputMatrix pointer to the new redistributed matrix
+      \param outputMatrix (out) pointer to the new redistributed matrix
 
-      \param[in] callFillComplete The new matrix is FillComplete'd if callFillComplete is @c true. 
+      \param callFillComplete (in) The new matrix is FillComplete'd if callFillComplete is @c true. 
       In that case, the range map is set to equal the row map. 
       The domain map will equal the range map, unless the
       input_matrix has different domain and range maps, in which case
@@ -201,11 +201,11 @@ public:
       Method to accept a Epetra_RowMatrix object, and
       return a redistributed Epetra_CrsMatrix object.
 
-      \param[in] input_matrix the row matrix for which we want a new matrix that is distributed
+      \param input_matrix (in) the row matrix for which we want a new matrix that is distributed
                       according to the partitioner with which this Redistributor was
                       created.
 
-      \param[in] callFillComplete The new matrix is FillComplete'd if callFillComplete is @c true. 
+      \param callFillComplete (in) The new matrix is FillComplete'd if callFillComplete is @c true. 
       In that case, the range map is set to equal the row map. 
       The domain map will equal the range map, unless the
       input_matrix has different domain and range maps, in which case
@@ -221,13 +221,13 @@ public:
       Method to accept a Epetra_RowMatrix object, and
       return a redistributed Epetra_CrsMatrix object.
 
-      \param[in] inputMatrix the row matrix for which we want a new matrix that is distributed
+      \param inputMatrix (in) the row matrix for which we want a new matrix that is distributed
                       according to the partitioner with which this Redistributor was
                       created.
 
-      \param[out] outputMatrix pointer to the new redistributed matrix
+      \param outputMatrix (out) pointer to the new redistributed matrix
 
-      \param[in] callFillComplete The new matrix is FillComplete'd if callFillComplete is @c true. 
+      \param callFillComplete (in) The new matrix is FillComplete'd if callFillComplete is @c true. 
       In that case, the range map is set to equal the row map. 
       The domain map will equal the range map, unless the
       input_matrix has different domain and range maps, in which case
@@ -240,7 +240,7 @@ public:
       Method to accept a Epetra_Vector object, and
       return a redistributed Epetra_Vector object.
 
-      \param[in] input_vector the vector for which we want a new vector that is distributed
+      \param input_vector (in) the vector for which we want a new vector that is distributed
                       according to the partitioner with which this Redistributor was
                       created.
 
@@ -253,11 +253,11 @@ public:
       Method to accept a Epetra_Vector object, and
       return a redistributed Epetra_Vector object.
 
-      \param[in] inputVector the vector for which we want a new vector that is distributed
+      \param inputVector (in) the vector for which we want a new vector that is distributed
                       according to the partitioner with which this Redistributor was
                       created.
 
-      \param[out] outputVector pointer to the new redistributed vector
+      \param outputVector (out) pointer to the new redistributed vector
   */
   void
   redistribute(const Epetra_Vector& inputVector, Epetra_Vector * &outputVector);
@@ -266,7 +266,7 @@ public:
       Method to accept a Epetra_MultiVector object, and
       return a redistributed Epetra_MultiVector object.
 
-      \param[in] input_vector the multi vector for which we want a new multi vector that is distributed
+      \param input_vector (in) the multi vector for which we want a new multi vector that is distributed
                       according to the partitioner with which this Redistributor was
                       created.
 
@@ -281,11 +281,11 @@ public:
       Method to accept a Epetra_MultiVector object, and
       return a redistributed Epetra_MultiVector object.
 
-      \param[in] inputVector the multi vector for which we want a new multi vector that is distributed
+      \param inputVector (in) the multi vector for which we want a new multi vector that is distributed
                       according to the partitioner with which this Redistributor was
                       created.
 
-      \param[out] outputVector a reference counted pointer to the new redistributed multi vector
+      \param outputVector (out) a reference counted pointer to the new redistributed multi vector
 
   */
   void 
@@ -294,9 +294,9 @@ public:
   /** @ingroup partitioning_grp 
       Reverse redistribute an Epetra_Vector.
 
-      \param[in] input_vector a vector that is distributed according to the partitioner that was used to create this Redistributor
+      \param input_vector (in) a vector that is distributed according to the partitioner that was used to create this Redistributor
 
-      \param[out] output_vector a copy of the @c input_vector which has been redistributed according
+      \param output_vector (out) a copy of the @c input_vector which has been redistributed according
                     to the reverse of the partitioner that was used to create this Redistributor
 
   */
@@ -306,9 +306,9 @@ public:
   /** @ingroup partitioning_grp 
       Reverse redistribute an Epetra_MultiVector.
 
-      \param[in] input_vector a multi vector that is distributed according to the partitioner that was used to create this Redistributor
+      \param input_vector (in) a multi vector that is distributed according to the partitioner that was used to create this Redistributor
 
-      \param[out] output_vector a copy of the @c input_vector which has been redistributed according
+      \param output_vector (out) a copy of the @c input_vector which has been redistributed according
                     to the reverse of the partitioner that was used to create this Redistributor
   */
   void
@@ -319,7 +319,7 @@ public:
 private:
   /** @ingroup partitioning_grp
       Create an importer object to be used in the redistribution
-      \param[in] src_map the map describing the pattern of the import operation
+      \param src_map (in) the map describing the pattern of the import operation
    */
   void create_importer(const Epetra_BlockMap& src_map);
 

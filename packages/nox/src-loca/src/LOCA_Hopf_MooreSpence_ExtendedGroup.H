@@ -98,16 +98,16 @@ namespace LOCA {
        *      \end{array}
        *      \right] = 0
        * \f]
-       * where \f$z = [x, y, z, \omega, p]\in\Re^{3n+2}\f$, \f$x\f$ is the
-       * solution vector, \f$y+i\omega z\f$ is the complex eigenvector of
-       * \f$J\f$ with corresponding eigenvalues \f$\pm i\omega\f$, \f$l\f$
-       * is the length normalization vector and \f$J\f$ is the Jacobian of F
-       * w.r.t \f$x\f$.
+       * where \f$ z = [x, y, z, \omega, p]\in\Re^{3n+2}\f$, \f$ x\f$ is the
+       * solution vector, \f$ y+i\omega z\f$ is the complex eigenvector of
+       * \f$ J\f$ with corresponding eigenvalues \f$\pm i\omega\f$, \f$ l\f$
+       * is the length normalization vector and \f$ J\f$ is the Jacobian of F
+       * w.r.t \f$ x\f$.
        *
        * The group stores an underlying group of type
        * LOCA::Hopf::MooreSpence AbstractGroup to represent the equations
-       * \f$F(x,p) = 0\f$ and to manipulate the underlying Jacobian \f$J\f$.
-       * Note that the entire extended Jacobian \f$D_z G\f$ is not stored in
+       * \f$ F(x,p) = 0\f$ and to manipulate the underlying Jacobian \f$ J\f$.
+       * Note that the entire extended Jacobian \f$ D_z G\f$ is not stored in
        * memory, rather a block-elimination algorithm (bordering algorithm) is
        * used to compute linear solves of the extended Jacobian (see
        * LOCA::Hopf::MooreSpence::SolverFactory() for more details).
@@ -129,18 +129,18 @@ namespace LOCA {
        * to the constructor.  The parameters this class recognizes are:
        * <ul>
        * <li> "Bifurcation Parameter" -- [string] (Must be supplied) Name of
-       *      the bifurcation parameter \f$p\f$
+       *      the bifurcation parameter \f$ p\f$
        * <li> "Length Normalization Vector" --
        *      [Teuchos::RCP<NOX::Abstract::Vector>] (Must be supplied)
-       *     Vector storing length normalization vector \f$l\f$
+       *     Vector storing length normalization vector \f$ l\f$
        * <li> "Initial Real Eigenvector"  --
        *      [Teuchos::RCP<NOX::Abstract::Vector>] (Must be supplied)
        *     Vector storing initial guess for the real component of the
-       *     eigenvector \f$y\f$
+       *     eigenvector \f$ y\f$
        * <li> "Initial Imaginary Eigenvector"  --
        *      [Teuchos::RCP<NOX::Abstract::Vector>] (Must be supplied)
        *     Vector storing initial guess for the imaginary component of the
-       *     eigenvector \f$z\f$
+       *     eigenvector \f$ z\f$
        * <li> "Initial Frequency" -- [double] (Must be supplied)
        *      Initial guess for the Hopf frequency \f$\omega\f$.
        * <li> "Perturb Initial Solution" -- [bool] (default: false) Flag
@@ -192,10 +192,10 @@ namespace LOCA {
                   const NOX::Abstract::Vector& d,
                   double step);
 
-    //! Compute the Hopf point equation residual \f$G\f$.
+    //! Compute the Hopf point equation residual \f$ G\f$.
     virtual NOX::Abstract::Group::ReturnType computeF();
 
-    //! Compute the blocks of the Jacobian derivative of \f$G\f$
+    //! Compute the blocks of the Jacobian derivative of \f$ G\f$
     virtual NOX::Abstract::Group::ReturnType computeJacobian();
 
     //! Gradient computation is not defined for this group
@@ -251,7 +251,7 @@ namespace LOCA {
                     const NOX::Abstract::MultiVector& input,
                     NOX::Abstract::MultiVector& result) const;
 
-    //! Return \c true if the extended residual \f$G\f$ is valid.
+    //! Return \c true if the extended residual \f$ G\f$ is valid.
     virtual bool isF() const;
 
     //! Return \c true if the extended Jacobian is valid.
@@ -263,13 +263,13 @@ namespace LOCA {
     //! Return \c true if the extended Newton direction is valid.
     virtual bool isNewton() const;
 
-    //! Return extended solution vector \f$z\f$.
+    //! Return extended solution vector \f$ z\f$.
     virtual const NOX::Abstract::Vector& getX() const;
 
-    //! Return extended equation residual \f$G(z)\f$
+    //! Return extended equation residual \f$ G(z)\f$
     virtual const NOX::Abstract::Vector& getF() const;
 
-    //! Return 2-norm of \f$G(z)\f$.
+    //! Return 2-norm of \f$ G(z)\f$.
     virtual double getNormF() const;
 
     //! Vector returned is not valid.
@@ -278,10 +278,10 @@ namespace LOCA {
     //! Return extended Newton direction.
     virtual const NOX::Abstract::Vector& getNewton() const;
 
-    //! Return RCP to extended solution vector \f$z\f$.
+    //! Return RCP to extended solution vector \f$ z\f$.
     virtual Teuchos::RCP< const NOX::Abstract::Vector > getXPtr() const;
 
-    //! Return RCP to extended equation residual \f$G(z)\f$
+    //! Return RCP to extended equation residual \f$ G(z)\f$
     virtual Teuchos::RCP< const NOX::Abstract::Vector > getFPtr() const;
 
     //! Vector returned is not valid.
@@ -346,7 +346,7 @@ namespace LOCA {
     virtual double getParam(std::string paramID) const;
 
     /*!
-     * Compute \f$\partial F/\partial p\f$ for each parameter \f$p\f$
+     * Compute \f$\partial F/\partial p\f$ for each parameter \f$ p\f$
      * indexed by paramIDs.  The first column of \em dfdp holds F,
      * which is valid if \em isValidF is true.  Otherwise F must be
      * computed.
@@ -410,7 +410,7 @@ namespace LOCA {
     //! Get bifurcation frequency
     double getFrequency() const;
 
-    //! Defines null vector normalization \f$l^Tz\f$ equation
+    //! Defines null vector normalization \f$ l^Tz\f$ equation
     double lTransNorm(const NOX::Abstract::Vector& z) const;
 
     //! null vector normalization for multivectors
@@ -447,7 +447,7 @@ namespace LOCA {
     //! Bifurcation parameter list
     Teuchos::RCP<Teuchos::ParameterList> hopfParams;
 
-    //! Pointer to base group that defines \f$F\f$
+    //! Pointer to base group that defines \f$ F\f$
     Teuchos::RCP<LOCA::Hopf::MooreSpence::AbstractGroup> grpPtr;
 
     //! Stores the extended solution vector

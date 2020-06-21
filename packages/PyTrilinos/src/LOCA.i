@@ -50,7 +50,6 @@ from . import _Base
 
 %module(package       = "PyTrilinos.LOCA",
         directors     = "1",
-	autodoc       = "1",
 	implicitconv  = "1",
         moduleinclude = %loca_base_importcode) Base
 
@@ -97,8 +96,10 @@ from . import _Base
 %include "exception.i"
 
 // Include LOCA documentation
+#if SWIG_VERSION < 0x040000
 %feature("autodoc", "1");
 %include "LOCA_dox.i"
+#endif
 
 // Director exception handling
 %feature("director:except")

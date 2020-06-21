@@ -8,7 +8,7 @@
 #cmakedefine HAVE_MPI
 
 // What AD Type are you going to use?
-#cmakedefine PANZER_FADTYPE @Panzer_ENABLE_FADTYPE@
+#define PANZER_FADTYPE @Panzer_FADTYPE@
 #cmakedefine PANZER_DEBUG
 #cmakedefine HAVE_PANZER_EXPLICIT_INSTANTIATION
 #cmakedefine PANZER_EXPLICIT_INSTANTIATION

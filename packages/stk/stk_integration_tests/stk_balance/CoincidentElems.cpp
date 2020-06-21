@@ -51,7 +51,7 @@ TEST_F(CoincidentElems, balance_coincidentsNotSplit)
         "0,1,HEX_8,1,2,3,4,5,6,7,8\n\
          1,2,HEX_8,5,6,7,8,9,10,11,12\n\
          1,3,HEX_8,5,6,7,8,9,10,11,12";
-    stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk());
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 
     expect_coincidents_on_same_proc(2, 3);
     stk::balance::balanceStkMesh(graphOptions, get_bulk());

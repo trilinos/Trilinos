@@ -67,7 +67,7 @@ protected:
     void write_rebalanced_mxn()
     {
         setup_initial_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
-        stk::balance::internal::rebalanceMtoN(get_bulk(), *targetDecompField, get_num_procs_target_decomp(), get_output_filename());
+        EXPECT_TRUE(stk::balance::internal::rebalanceMtoN(get_bulk(), *targetDecompField, get_num_procs_target_decomp(), get_output_filename()));
     }
 
     // FIXME
@@ -95,6 +95,9 @@ protected:
 
     void test_decomp()
     {
+        // Make sure all procs have written their files before p0 tries to read them
+        MPI_Barrier(get_comm());
+
         test_subdomain_files();
         test_decomp_is_balanced();
     }

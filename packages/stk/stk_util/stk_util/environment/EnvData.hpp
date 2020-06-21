@@ -42,7 +42,7 @@
 #include <iosfwd>
 #include <map>
 #include <string>
-#include <boost/program_options.hpp>
+#include <stk_util/environment/ParsedOptions.hpp>
 #include <stk_util/util/Null_Streambuf.hpp>
 
 namespace sierra {
@@ -93,7 +93,7 @@ struct EnvData
 
   std::string           m_productName;
 
-  boost::program_options::variables_map & m_vm;
+  stk::ParsedOptions& m_parsedOptions;
 
   null_streambuf	m_nullBuf;
   std::ostream		m_outputNull;

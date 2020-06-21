@@ -157,6 +157,7 @@ exe stk_mesh_utest
            $(stk_mesh-root)/../stk_unit_tests/stk_mesh/face_creation/element_graph/*.cpp 
            $(stk_mesh-root)/../stk_unit_tests/stk_mesh/custom_ghosting/*.cpp 
            $(stk_mesh-root)/../stk_unit_tests/stk_mesh/entity_sorting/*.cpp 
+           $(stk_mesh-root)/../stk_unit_tests/stk_mesh/ngp/*.cpp 
     ]
     /sierra/stk_unit_test_utils//stk_unit_main
     /sierra/stk_unit_test_utils//stk_mesh_fixtures

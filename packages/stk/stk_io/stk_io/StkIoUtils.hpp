@@ -95,8 +95,8 @@ bool should_reconstruct_sideset(const stk::mesh::BulkData& bulkData, const stk::
 
 bool isSidesetSupported(const stk::mesh::BulkData &bulk, const stk::mesh::EntityVector &sides, const stk::mesh::impl::ParallelPartInfo &parallelPartInfo);
 
-stk::mesh::FieldVector get_transient_fields(stk::mesh::MetaData &meta);
-stk::mesh::FieldVector get_transient_fields(stk::mesh::MetaData &meta, const stk::mesh::EntityRank rank);
+stk::mesh::FieldVector get_transient_fields(const stk::mesh::MetaData &meta);
+stk::mesh::FieldVector get_transient_fields(const stk::mesh::MetaData &meta, const stk::mesh::EntityRank rank);
 
 const stk::mesh::Part& get_sideset_parent(const stk::mesh::Part& sidesetPart);
 

@@ -104,6 +104,7 @@ public:
   typedef typename InputTraits<User>::lno_t lno_t;
   typedef typename InputTraits<User>::gno_t gno_t;
   typedef typename InputTraits<User>::scalar_t scalar_t;
+  typedef typename InputTraits<User>::node_t node_t;
   typedef typename InputTraits<User>::part_t part_t;  
   typedef typename InputTraits<User>::offset_t offset_t;
 
@@ -116,23 +117,37 @@ public:
   virtual ~BaseAdapter() {};
 
   /*! \brief Provide a pointer to this process' identifiers.
-
       \param ids will on return point to the list of the global Ids for 
         this process.
    */
   virtual void getIDsView(const gno_t *&ids) const {
-    Kokkos::View<gno_t *> kokkosIds;
+    // If adapter does not define getIDsView, getIDsKokkosView is called.
+    // If adapter does not define getIDsKokkosView, getIDsView is called.
+    // Allows forward and backwards compatibility.
+    Kokkos::View<const gno_t *, typename node_t::device_type> kokkosIds;
     getIDsKokkosView(kokkosIds);
     ids = kokkosIds.data();
   }
 
-  /*! \brief Provide a pointer to this process' identifiers.
-
+  /*! \brief Provide a Kokkos view to this process' identifiers.
       \param ids will on return point to the list of the global Ids for 
         this process.
    */
-  virtual void getIDsKokkosView(Kokkos::View<gno_t *> &/* ids */) const {
-    Z2_THROW_NOT_IMPLEMENTED
+  virtual void getIDsKokkosView(Kokkos::View<const gno_t *,
+    typename node_t::device_type> &ids) const {
+    // If adapter does not define getIDsView, getIDsKokkosView is called.
+    // If adapter does not define getIDsKokkosView, getIDsView is called.
+    // Allows forward and backwards compatibility.
+    const gno_t * ptr_ids;
+    getIDsView(ptr_ids);
+    typedef Kokkos::View<gno_t *, typename node_t::device_type> view_t;
+    view_t non_const_ids = view_t("ptr_ids", getLocalNumIDs());
+    typename view_t::HostMirror host_ids = Kokkos::create_mirror_view(non_const_ids);
+    for(size_t i = 0; i < this->getLocalNumIDs(); ++i) {
+       host_ids(i) = ptr_ids[i];
+    }
+    Kokkos::deep_copy(non_const_ids, host_ids);
+    ids = non_const_ids;
   }
 
   ///*! \brief Provide pointer to a weight array with stride.
@@ -140,28 +155,47 @@ public:
   // *    \param stride on return, the value such that
   // *       the \t nth weight should be found at <tt> wgt[n*stride] </tt>.
   // *    \param idx  the weight index, zero or greater
-  // *   This function must be implemented in derived adapter if
-  // *   getNumWeightsPerID > 0.
+  // *   This function or getWeightsKokkosView must be implemented in
+  // *   derived adapter if getNumWeightsPerID > 0.
   // *   This function should not be called if getNumWeightsPerID is zero.
   // */ 
   virtual void getWeightsView(const scalar_t *&wgt, int &stride,
                               int idx = 0) const {
-    Kokkos::View<scalar_t *> tempWeightsView;
-    getWeightsKokkosView(tempWeightsView, idx);
-    wgt = tempWeightsView.data();
+    // If adapter does not define getWeightsView, getWeightsKokkosView is called.
+    // If adapter does not define getWeightsKokkosView, getWeightsView is called.
+    // Allows forward and backwards compatibility.
+    Kokkos::View<scalar_t **, typename node_t::device_type> kokkos_wgts_2d;
+    getWeightsKokkosView(kokkos_wgts_2d);
+    Kokkos::View<scalar_t *, typename node_t::device_type> kokkos_wgts;
+    wgt = Kokkos::subview(kokkos_wgts_2d, Kokkos::ALL, idx).data();
     stride = 1;
   }
 
-  ///*! \brief Provide pointer to a weight View.
-  // *    \param wgt on return a pointer to the weights for this idx
-  // *    \param idx  the weight index, zero or greater
-  // *   This function must be implemented in derived adapter if
-  // *   getNumWeightsPerID > 0.
+  ///*! \brief Provide kokkos view of weights.
+  // *    \param wgt on return a Kokkos view of the weights for this idx
+  // *   This function or getWeightsView must be implemented in
+  // *   derived adapter if getNumWeightsPerID > 0.
   // *   This function should not be called if getNumWeightsPerID is zero.
-  // */ 
-  virtual void getWeightsKokkosView(Kokkos::View<scalar_t *> &/* wgt */, 
-                              int /* idx */ = 0) const {
-    Z2_THROW_NOT_IMPLEMENTED
+  // */
+  virtual void getWeightsKokkosView(Kokkos::View<scalar_t **,
+    typename node_t::device_type> & wgt) const {
+    // If adapter does not define getWeightsKokkosView, getWeightsView is called.
+    // If adapter does not define getWeightsView, getWeightsKokkosView is called.
+    // Allows forward and backwards compatibility.
+    wgt = Kokkos::View<scalar_t **, typename node_t::device_type>(
+      "wgts", getLocalNumIDs(), getNumWeightsPerID());
+    typename Kokkos::View<scalar_t **, typename node_t::device_type>::HostMirror
+      host_wgt = Kokkos::create_mirror_view(wgt);
+    for(int j = 0; j < this->getNumWeightsPerID(); ++j) {
+      const scalar_t * ptr_wgts;
+      int stride;
+      getWeightsView(ptr_wgts, stride, j);
+      size_t i = 0;
+      for(size_t n = 0; n < this->getLocalNumIDs() * stride; n += stride) {
+        host_wgt(i++,j) = ptr_wgts[n];
+      }
+    }
+    Kokkos::deep_copy(wgt, host_wgt);
   }
 
   /*! \brief Provide pointer to an array containing the input part 

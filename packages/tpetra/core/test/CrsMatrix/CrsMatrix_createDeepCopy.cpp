@@ -71,11 +71,6 @@ public:
   Teuchos::RCP<const Teuchos::Comm<int> >
   getComm () const override { return G_->getComm (); }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  TPETRA_DEPRECATED Teuchos::RCP<NT> getNode () const override {
-    return G_->getNode ();
-  }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>
   getRowMap () const override {
@@ -167,24 +162,6 @@ public:
     return G_->isFillComplete ();
   }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  Tpetra::global_size_t TPETRA_DEPRECATED
-  getGlobalNumDiags () const override {
-    return G_->getGlobalNumDiags ();
-  }
-
-  size_t TPETRA_DEPRECATED getNodeNumDiags () const override {
-    return G_->getNodeNumDiags ();
-  }
-
-  bool TPETRA_DEPRECATED isLowerTriangular () const override {
-    return G_->isLowerTriangular ();
-  }
-
-  bool TPETRA_DEPRECATED isUpperTriangular () const override {
-    return G_->isUpperTriangular ();
-  }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   void
   getGlobalRowCopy (GO gblRow,
@@ -260,11 +237,6 @@ public:
   Teuchos::RCP<const Teuchos::Comm<int> >
   getComm () const override { return A_->getComm (); }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  TPETRA_DEPRECATED Teuchos::RCP<NT> getNode () const override {
-    return A_->getNode ();
-  }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>
   getRowMap () const override {
@@ -346,24 +318,6 @@ public:
     return supportsRowViews_;
   }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  Tpetra::global_size_t TPETRA_DEPRECATED
-  getGlobalNumDiags () const override {
-    return A_->getGlobalNumDiags ();
-  }
-
-  size_t TPETRA_DEPRECATED getNodeNumDiags () const override {
-    return A_->getNodeNumDiags ();
-  }
-
-  bool TPETRA_DEPRECATED isLowerTriangular () const override {
-    return A_->isLowerTriangular ();
-  }
-
-  bool TPETRA_DEPRECATED isUpperTriangular () const override {
-    return A_->isUpperTriangular ();
-  }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   void
   getGlobalRowCopy (GO gblRow,
@@ -678,13 +632,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, createDeepCopy, SC, LO, GO, NT )
   {
     myOut << "Test CrsMatrix created with row Map" << endl;
     Teuchos::OSTab tab1 (myOut);
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    RCP<crs_matrix_type> A
-      (new crs_matrix_type (rowMap, 1, Tpetra::StaticProfile));
-#else
     RCP<crs_matrix_type> A
       (new crs_matrix_type (rowMap, 1));
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
       const GO gblRow = rowMap->getGlobalElement (lclRow);
@@ -738,14 +687,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, createDeepCopy, SC, LO, GO, NT )
     Teuchos::OSTab tab1 (myOut);
 
     RCP<const map_type> colMap = rowMap;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    RCP<crs_matrix_type> A
-      (new crs_matrix_type (rowMap, colMap, 1,
-                            Tpetra::StaticProfile));
-#else
     RCP<crs_matrix_type> A
       (new crs_matrix_type (rowMap, colMap, 1));
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
       const GO gblRow = rowMap->getGlobalElement (lclRow);

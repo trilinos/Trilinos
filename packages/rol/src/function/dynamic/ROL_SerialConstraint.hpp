@@ -102,7 +102,19 @@ public:
 
   } // solve
 
+  virtual void update( const Vector<Real> &u, const Vector<Real> &z, bool flag = true, int iter = -1 ) override {
+    auto& up = partition(u);
+    auto& zp = partition(z);
+
+    if( !getSkipInitialCondition() )
+      con_->update( getInitialCondition(), up[0], zp[0], ts(0) );
+
+    for( size_type k=1; k<numTimeSteps(); ++k )
+      con_->update( up[k-1], up[k], zp[k], ts(k) );
+  }
+
    
+  using Constraint_SimOpt<Real>::value;
   virtual void value(       Vector<Real>& c, 
                       const Vector<Real>& u, 
                       const Vector<Real>& z, 
@@ -175,6 +187,7 @@ public:
   } // applyInverseJacobian_1
   
  
+  using Constraint_SimOpt<Real>::applyAdjointJacobian_1;
   virtual void applyAdjointJacobian_1(       Vector<Real>& ajv, 
                                        const Vector<Real>& v, 
                                        const Vector<Real>& u, 
@@ -257,6 +270,7 @@ public:
   } // applyJacobian_2
 
  
+  using Constraint_SimOpt<Real>::applyAdjointJacobian_2;
   virtual void applyAdjointJacobian_2(       Vector<Real>& ajv, 
                                        const Vector<Real>& v, 
                                        const Vector<Real>& u, 

@@ -185,12 +185,6 @@ namespace Xpetra {
     IDNotPresent   /*!< Indicates that at least one of the specified IDs was not present in the Map */
   };
 
-  /*! Allocation profile for matrix/graph entries */
-  enum ProfileType {
-    StaticProfile,  /*!< Indicates a single, static allocation (strict and more efficient) */
-    DynamicProfile  /*!< Indicates multiple, dynamic allocations (flexibile, but less efficient) */
-  };
-
   /*! Optimize storage option */
   enum OptimizeOption {
     DoOptimizeStorage,   /*!< Indicates that storage should be optimized */

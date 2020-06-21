@@ -272,10 +272,13 @@ int main(int argc, char *argv[])
   bool testFailed;
   bool verbose = false;
   bool debug = false;
+  std::string ortho = "SVQB";
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("debug","nodebug",&debug,"Print debugging output from iteration.");
+  cmdp.setOption("ortho",&ortho,"Orthogonalization type (DGKS, ICGS, or SVQB)");
+
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
 #ifdef HAVE_MPI
     MPI_Finalize();
@@ -353,6 +356,7 @@ int main(int argc, char *argv[])
   {
     BlockKrylovSchurState<ScalarType,AT::MV> istate;
 
+    pls.set<std::string>("Orthogonalization",ortho);
     pls.set<int>("Block Size",nev);
     pls.set<int>("Num Blocks",3);
     pls.set<int>("Step Size", 2);

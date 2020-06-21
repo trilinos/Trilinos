@@ -228,7 +228,7 @@ namespace Tpetra {
       RCP<const map_type> targetMap_P = Pprime->getRowMap();
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-      MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP All I&X"))));
+      MM = Teuchos::null; MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP All I&X"))));
 #endif
 
       // Now import any needed remote rows and populate the Aview struct
@@ -259,7 +259,7 @@ namespace Tpetra {
         Actemp = rcp(&Ac,false);// don't allow deallocation
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-      MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP All Multiply"))));
+      MM = Teuchos::null; MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP All Multiply"))));
 #endif
 
       // Call the appropriate method to perform the actual multiplication.
@@ -303,7 +303,7 @@ namespace Tpetra {
 
       if (needs_final_export) {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-        MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP exportAndFillComplete"))));
+        MM = Teuchos::null; MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP exportAndFillComplete"))));
 #endif
         Teuchos::ParameterList labelList;
         labelList.set("Timer Label", label);
@@ -492,7 +492,6 @@ namespace Tpetra {
       // Run through all the hash table lookups once and for all
       lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getNodeNumElements());
       lo_view_t targetMapToImportRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToImportRow"),Aview.colMap->getNodeNumElements());
-      Kokkos::fence();
       Kokkos::parallel_for("Tpetra::mult_R_A_P_newmatrix::construct_tables",range_type(Aview.colMap->getMinLocalIndex(), Aview.colMap->getMaxLocalIndex()+1),KOKKOS_LAMBDA(const LO i) {
           GO aidx = Acolmap_local.getGlobalElement(i);
           LO P_LID = Prowmap_local.getLocalElement(aidx);
@@ -1087,7 +1086,7 @@ namespace Tpetra {
       Kokkos::resize(Cvals,nnz);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-      MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Newmatrix Final Sort"))));
+      MM = Teuchos::null; MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Newmatrix Final Sort"))));
 #endif
 
       // Final sort & set of CRS arrays
@@ -1096,7 +1095,7 @@ namespace Tpetra {
       Ac.setAllValues(Crowptr, Ccolind, Cvals);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-      MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Newmatrix ESFC"))));
+     MM = Teuchos::null;  MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Newmatrix ESFC"))));
 #endif
 
       // Final FillComplete
@@ -1213,6 +1212,10 @@ namespace Tpetra {
       // For column index Aik in row i of A, Acol2Prow[Aik] tells
       // you whether the corresponding row of P belongs to P_local
       // ("orig") or P_remote ("Import").
+
+      // Necessary until following UVM host accesses are changed - for example Crowptr
+      // Also probably needed in mult_R_A_P_newmatrix_kernel_wrapper - did not demonstrate this in test failure yet
+      Kokkos::fence();
 
       // For each row of R
       size_t OLD_ip = 0, CSR_ip = 0;

@@ -1709,7 +1709,7 @@ namespace MueLu {
     const Array<LO>& Cptlist = myCpts.getCList();
     RCP<const Map> coarseMap = MapFactory::Build(rowMap->lib(), Cptlist.size(), rowMap->getIndexBase() + offset, rowMap->getComm());
 
-    P = rcp(new CrsMatrixWrap(rowMap, coarseMap, 0, Xpetra::StaticProfile));
+    P = rcp(new CrsMatrixWrap(rowMap, coarseMap, 0));
     RCP<CrsMatrix> Pcrs = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
 
     ArrayRCP<size_t>  iaP;

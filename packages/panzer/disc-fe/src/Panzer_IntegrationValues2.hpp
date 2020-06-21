@@ -171,6 +171,8 @@ namespace panzer {
      */
     void swapQuadraturePoints(int cell,int a,int b);
 
+    static void convertNormalToRotationMatrix(const Scalar normal[3], Scalar transverse[3], Scalar binormal[3]);
+    
   protected:
 
 

@@ -54,10 +54,10 @@
 #include "Tpetra_CrsMatrix.hpp"
 
 #include "Xpetra_CrsMatrix.hpp"
-#include "Xpetra_TpetraMap.hpp"
-#include "Xpetra_TpetraMultiVector.hpp"
-#include "Xpetra_TpetraVector.hpp"
-#include "Xpetra_TpetraCrsGraph.hpp"
+#include "Xpetra_TpetraMap_decl.hpp"
+#include "Xpetra_TpetraMultiVector_decl.hpp"
+#include "Xpetra_TpetraVector_decl.hpp"
+#include "Xpetra_TpetraCrsGraph_decl.hpp"
 #include "Xpetra_Exceptions.hpp"
 
 
@@ -81,14 +81,12 @@ namespace Xpetra {
     //! Constructor specifying fixed number of entries for each row (not implemented)
     TpetraBlockCrsMatrix(const  Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, 
                          size_t maxNumEntriesPerRow, 
-                         ProfileType pftype=DynamicProfile, 
                          const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null);
 
 
     //! Constructor specifying (possibly different) number of entries in each row (not implemented)
     TpetraBlockCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, 
                          const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, 
-                         ProfileType pftype=DynamicProfile, 
                          const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null);
 
 
@@ -96,7 +94,6 @@ namespace Xpetra {
     TpetraBlockCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, 
                          const Teuchos::RCP< const  Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, 
                          size_t maxNumEntriesPerRow, 
-                         ProfileType pftype=DynamicProfile, 
                          const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null);
 
 
@@ -104,7 +101,6 @@ namespace Xpetra {
     TpetraBlockCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, 
                          const Teuchos::RCP< const  Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, 
                          const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, 
-                         ProfileType pftype=DynamicProfile, 
                          const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null);
 
 
@@ -333,14 +329,6 @@ namespace Xpetra {
     void setObjectLabel( const std::string &objectLabel );
 
 
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    //! Deep copy constructor
-    // This probably never compiled but also never got called... 
-    // We're leaving this in the decl file for now as part of the ETI work
-    // just to maintain status-quo but it'll go away anyhow with deprecations
-    // soon.
-    TpetraBlockCrsMatrix(const TpetraBlockCrsMatrix& matrix);
-#endif  // XPETRA_ENABLE_DEPRECATED_CODE
 
 
     //! Get a copy of the diagonal entries owned by this node, with local row idices 
@@ -388,16 +376,6 @@ namespace Xpetra {
     void removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap);    
 
 
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    template<class Node2>
-    RCP<TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > 
-    XPETRA_DEPRECATED 
-    clone(const RCP<Node2> &node2) const
-    {
-      return RCP<TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >
-        (new TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2>(mtx_->clone(node2)));
-    }
-#endif  // XPETRA_ENABLE_DEPRECATED_CODE
 
     //! @name Xpetra specific
 
@@ -425,6 +403,18 @@ namespace Xpetra {
                        const typename local_matrix_type::values_type& val);    
 #endif  // HAVE_XPETRA_TPETRA
 #endif  // HAVE_XPETRA_KOKKOS_REFACTOR
+
+    //! Compute a residual R = B - (*this) * X
+    void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
+                  const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
+                  MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const {
+      using STS = Teuchos::ScalarTraits<Scalar>;
+      R.update(STS::one(),B,STS::zero());
+      this->apply (X, R, Teuchos::NO_TRANS, -STS::one(), STS::one());   
+    }      
+    
+
+
 
   private:
 

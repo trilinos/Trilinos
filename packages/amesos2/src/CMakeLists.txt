@@ -82,10 +82,10 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 #INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/basker)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/KLU2/Include)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/KLU2/Source)
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/packages/common/auxiliarySoftware/SuiteSparse/src/AMD/Include)
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/packages/common/auxiliarySoftware/SuiteSparse/src/COLAMD/Include)
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/packages/common/auxiliarySoftware/SuiteSparse/src/BTF/Include)
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/packages/common/auxiliarySoftware/SuiteSparse/src/UFconfig)
+INCLUDE_DIRECTORIES(${Trilinos_SOURCE_DIR}/packages/common/auxiliarySoftware/SuiteSparse/src/AMD/Include)
+INCLUDE_DIRECTORIES(${Trilinos_SOURCE_DIR}/packages/common/auxiliarySoftware/SuiteSparse/src/COLAMD/Include)
+INCLUDE_DIRECTORIES(${Trilinos_SOURCE_DIR}/packages/common/auxiliarySoftware/SuiteSparse/src/BTF/Include)
+INCLUDE_DIRECTORIES(${Trilinos_SOURCE_DIR}/packages/common/auxiliarySoftware/SuiteSparse/src/UFconfig)
 
 APPEND_SET(HEADERS
   Amesos2.hpp
@@ -103,6 +103,11 @@ APPEND_SET(HEADERS
   Amesos2_TpetraCrsMatrix_MatrixAdapter.hpp
   Amesos2_TpetraCrsMatrix_MatrixAdapter_decl.hpp
   Amesos2_TpetraCrsMatrix_MatrixAdapter_def.hpp
+  Amesos2_KokkosCrsMatrix_MatrixAdapter.hpp
+  Amesos2_KokkosCrsMatrix_MatrixAdapter_decl.hpp
+  Amesos2_KokkosCrsMatrix_MatrixAdapter_def.hpp
+  Amesos2_Kokkos_Impl.hpp
+  Amesos2_Kokkos_View_Copy_Assign.hpp
   Amesos2_MatrixAdapter.hpp
   Amesos2_MatrixAdapter_decl.hpp
   Amesos2_MatrixAdapter_def.hpp
@@ -128,6 +133,9 @@ APPEND_SET(HEADERS
   Amesos2_TpetraMultiVecAdapter.hpp
   Amesos2_TpetraMultiVecAdapter_decl.hpp
   Amesos2_TpetraMultiVecAdapter_def.hpp
+  Amesos2_KokkosMultiVecAdapter.hpp
+  Amesos2_KokkosMultiVecAdapter_decl.hpp
+  Amesos2_KokkosMultiVecAdapter_def.hpp
   Amesos2_TypeMap.hpp
   Amesos2_TypeDecl.hpp
   Amesos2_Util.hpp
@@ -149,7 +157,9 @@ APPEND_SET(SOURCES
   Amesos2_Solver.cpp
   Amesos2_TpetraRowMatrix_AbstractMatrixAdapter.cpp
   Amesos2_TpetraCrsMatrix_MatrixAdapter.cpp
+  Amesos2_KokkosCrsMatrix_MatrixAdapter.cpp
   Amesos2_TpetraMultiVecAdapter.cpp
+  Amesos2_KokkosMultiVecAdapter.cpp
   Amesos2_Util.cpp
   Amesos2_Version.cpp
   )
@@ -430,9 +440,24 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
       APPEND_SET(SOURCES
         Amesos2_Cholmod.cpp
         )
-ENDIF()
+  ENDIF()
 ENDIF()
 
+IF (${PACKAGE_NAME}_ENABLE_CUSOLVER)
+  IF (${PACKAGE_NAME}_ENABLE_CUSPARSE)
+    APPEND_SET(HEADERS
+      Amesos2_cuSOLVER.hpp
+      Amesos2_cuSOLVER_decl.hpp
+      Amesos2_cuSOLVER_def.hpp
+      Amesos2_cuSOLVER_FunctionMap.hpp
+      Amesos2_cuSOLVER_TypeMap.hpp
+    )
+
+    APPEND_SET(SOURCES
+      Amesos2_cuSOLVER.cpp
+    )
+  ENDIF()
+ENDIF()
 
 #
 # C) Define the targets for package's library(s)

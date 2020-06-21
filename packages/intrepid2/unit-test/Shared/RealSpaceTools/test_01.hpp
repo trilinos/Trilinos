@@ -66,7 +66,7 @@ namespace Intrepid2 {
       try {                                                             \
         S ;                                                             \
       }                                                                 \
-      catch (std::logic_error err) {                                    \
+      catch (std::logic_error &err) {                                    \
         *outStream << "Expected Error ----------------------------------------------------------------\n"; \
         *outStream << err.what() << '\n';                               \
         *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
@@ -169,7 +169,7 @@ namespace Intrepid2 {
         INTREPID2_TEST_ERROR_EXPECTED( rst::absval(a_10_3, a_10_2_3) );
         INTREPID2_TEST_ERROR_EXPECTED( rst::absval(a_10_2_2, a_10_2_3) );
 #endif
-      } catch (std::logic_error err) {
+      } catch (std::logic_error &err) {
         *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
         *outStream << err.what() << '\n';
         *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -266,7 +266,7 @@ namespace Intrepid2 {
         INTREPID2_TEST_ERROR_EXPECTED( rst::matvec(b_10_15_3, a_10_15_3_2, b_10_15_3) );
 #undef INTREPID2_TEST_FOR_ABORT_OVERRIDE_TO_CONTINUE 
 #endif
-      } catch (std::logic_error err) {
+      } catch (std::logic_error &err) {
         *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
         *outStream << err.what() << '\n';
         *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -611,7 +611,7 @@ namespace Intrepid2 {
           
           *outStream << "\n";
         }
-      } catch (std::logic_error err) {
+      } catch (std::logic_error &err) {
         *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
         *outStream << err.what() << '\n';
         *outStream << "-------------------------------------------------------------------------------" << "\n\n";

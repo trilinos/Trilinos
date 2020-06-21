@@ -50,11 +50,30 @@ import json
 import datetime
 import copy
 import pprint
+import csv
 
 from FindGeneralScriptSupport import *
 from GeneralScriptSupport import *
 
 import cdash_build_testing_date as CBTD
+
+
+# Accept the --date input option with values 'today', 'yesterday', or some
+# 'YYYY-MM-DD' value.
+#
+def convertInputDateArgToYYYYMMDD(cdashProjectTestingDayStartTime, dateText,
+  currentDateTimeStr=None,  # Used for unit testing only
+  ):
+  if dateText == "yesterday" or dateText == "today":
+    if dateText == "yesterday": dayIncr = -1
+    else: dayIncr = 0
+    dateTime = CBTD.getRelativeCDashBuildStartTimeFromCmndLineArgs(
+      currentDateTimeStr, cdashProjectTestingDayStartTime, dayIncr)
+    rtnDate = CBTD.getDateOnlyFromDateTime(dateTime)
+  else:
+    rtnDate = validateAndConvertYYYYMMDD(dateText)
+  return rtnDate
+
 
 # Validate a date YYYY-MM-DD string and return a date object for the
 # 'datetime' module.
@@ -80,7 +99,7 @@ def getFileNameStrFromText(inputStr):
   return fileNameStr
 
 
-# Check if the key/value pairs for two dicts are the same and if return an
+# Check if the key/value pairs for two dicts are the same and if so, return an
 # error message explaining how they are different.
 #
 # Returns tuple (hasSameKeyValuePairs, errMsg).  If
@@ -245,10 +264,10 @@ def writeCsvFileStructureToStr(csvFileStruct):
     csvFileStr += ", ".join(rowFieldsList)+"\n"
   return csvFileStr
 
+
 #
 # CDash Specific stuff
 #
-
 
 def cdashColorPassed(): return 'green'
 def cdashColorFailed(): return 'red'
@@ -269,8 +288,8 @@ def cdashColorMissing(): return 'gray'
 #
 def extractCDashApiQueryData(cdashApiQueryUrl):
   #print sys.version_info
-  if sys.version_info < (2,7,9):
-    raise Exception("Error: Must be using Python 2.7.9 or newer")
+  if sys.version_info < (2,7,5):
+    raise Exception("Error: Must be using Python 2.7.5 or newer")
   # NOTE: If we use Python 2.6.6. then the urllib2 function crashes!
   response = urlopen(cdashApiQueryUrl)
   return json.load(response)
@@ -292,82 +311,129 @@ def extractCDashApiQueryData(cdashApiQueryUrl):
 #    { 'col_0':'val_10', 'col_1':'val_11', 'col_2':'val_12' }, 
 #    ]
 #
-# and the expected list of column headers would be:
+# This function can also allow the user to assert that the included columns
+# match a set of required and optional headers.  For example, that above CSV
+# file would match:
 #
-#   expectedColumnHeadersList = [ 'col_0', 'col_1', 'col_2' ]
+#   requiredColumnHeadersList = [ 'col_0', 'col_1', 'col_2' ]
 #
-# But the expectedColumnHeadersList argument is optional.
+# or:
 #
-def readCsvFileIntoListOfDicts(csvFileName, expectedColumnHeadersList=None):
+#   requiredColumnHeadersList = [ 'col_0', 'col_1' ]
+#   optionalColumnHeadersList = [ 'col_2', 'col_3', ]
+#
+# The requiredColumnHeadersList and optionalColumnHeadersList argument lists
+# are optional.
+#
+# Also, the columns can be appear in any order as long as they match all of
+# the required headers and don't contain any headers not in the list of
+# expected headers.
+#
+def readCsvFileIntoListOfDicts(csvFileName, requiredColumnHeadersList=[],
+  optionalColumnHeadersList=[],
+  ):
   listOfDicts = []
   with open(csvFileName, 'r') as csvFile:
-    # Get the list of column headers
-    columnHeadersLineStr = csvFile.readline().strip()
-    columnHeadersRawStrList = columnHeadersLineStr.split(',')
-    columnHeadersList = []
-    for headerRawStr in columnHeadersRawStrList:
-      columnHeadersList.append(headerRawStr.strip())
-    if expectedColumnHeadersList:
-      if len(columnHeadersList) != len(expectedColumnHeadersList):
-        raise Exception(
-          "Error, for CSV file '"+csvFileName+"' the"+\
-          " column headers '"+str(columnHeadersList)+"' has"+\
-          " "+str(len(columnHeadersList))+" items but the expected"+\
-          " set of column headers '"+str(expectedColumnHeadersList)+"'"+\
-          " has "+str(len(expectedColumnHeadersList))+" items!")
-      for i in range(len(columnHeadersList)):
-        if columnHeadersList[i] != expectedColumnHeadersList[i]:
-          raise Exception(
-            "Error, column header "+str(i)+" '"+columnHeadersList[i]+"' does"+\
-            " not match expected column header '"+expectedColumnHeadersList[i]+"'!")
+    csvReader = csv.reader(csvFile)
+    columnHeadersList = getColumnHeadersFromCsvFileReader(csvFileName, csvReader)
+    assertExpectedColumnHeadersFromCsvFile(csvFileName, requiredColumnHeadersList,
+      optionalColumnHeadersList, columnHeadersList)
     # Read the rows of the CSV file into dicts
     dataRow = 0
-    line = csvFile.readline().strip()
-    while line:
-      #print("\ndataRow = "+str(dataRow))
-      lineList = line.split(',')
-      #print(lineList)
-      # Assert that the row has the right number of entries
-      if len(lineList) != len(columnHeadersList):
-        raise Exception(
-          "Error, data row "+str(dataRow)+" '"+line+"' has"+\
-          " "+str(len(lineList))+" entries which does not macth"+\
-          " the number of column headers "+str(len(columnHeadersList))+"!")
+    for lineList in csvReader:
+      if not lineList: continue # Ingore blank line
+      stripWhiltespaceFromStrList(lineList)
+      assertExpectedNumRowsFromCsvFile(csvFileName, dataRow, lineList,
+        columnHeadersList)
       # Read the row entries into a new dict
       rowDict = {}
       for j in range(len(columnHeadersList)):
-        rowDict.update( { columnHeadersList[j] : lineList[j].strip() } )
-      #print(rowDict)
+        rowDict.update( { columnHeadersList[j] : lineList[j] } )
       listOfDicts.append(rowDict)
       # Update for next row
-      line = csvFile.readline().strip()
       dataRow += 1
   # Return the constructed object
   return listOfDicts
 
 
-# Get list of expected builds from CSV file
+def getColumnHeadersFromCsvFileReader(csvFileName, csvReader):
+  try:
+    columnHeadersList = csvReader.next()
+    stripWhiltespaceFromStrList(columnHeadersList)
+    return columnHeadersList
+  except StopIteration:
+    raise Exception(
+      "Error, CSV file '"+csvFileName+"' is empty which is not allowed!"
+      )
+
+
+def assertExpectedColumnHeadersFromCsvFile(csvFileName, requiredColumnHeadersList,
+  optionalColumnHeadersList, columnHeadersList,
+  ):
+
+  if not requiredColumnHeadersList and not optionalColumnHeadersList:
+    return  # No expected column headers to assert against!
+
+  requiredAndOptionalHeadersSet = set(requiredColumnHeadersList)
+  requiredAndOptionalHeadersSet.update(optionalColumnHeadersList)
+  columnHeadersSet = set(columnHeadersList)
+
+  # Assert that each column header is expected
+  for colHeader in columnHeadersList:
+    if not colHeader in requiredAndOptionalHeadersSet:
+      raise Exception(
+        "Error, for CSV file '"+csvFileName+"' the"+\
+        " column header '"+str(colHeader)+"' is not in the set"+\
+        " of required column headers '"+str(requiredColumnHeadersList)+"'"+\
+        " or optional column headers '"+str(optionalColumnHeadersList)+"'!"+\
+        ""
+        )
+
+  # Assert that all of the required headers are present
+  for requiredHeader in requiredColumnHeadersList:
+    if not requiredHeader in columnHeadersSet:
+      raise Exception(
+        "Error, for CSV file '"+csvFileName+"' the"+\
+        " required header '"+str(requiredHeader)+"' is missing from the"+\
+        " set of included column headers '"+str(columnHeadersList)+"'!"+\
+        ""
+        )
+
+
+def assertExpectedNumRowsFromCsvFile(csvFileName, dataRow, lineList,
+  columnHeadersList,
+  ):
+  if len(lineList) != len(columnHeadersList):
+    raise Exception(
+      "Error, for CSV file '"+csvFileName+"' the data row"+\
+      " "+str(dataRow)+" "+str(lineList)+" has"+\
+      " "+str(len(lineList))+" entries which does not macth"+\
+      " the number of column headers "+str(len(columnHeadersList))+"!")
+
+
+def stripWhiltespaceFromStrList(strListInOut):
+  for i in range(len(strListInOut)): strListInOut[i] = strListInOut[i].strip()
+
+
 def getExpectedBuildsListfromCsvFile(expectedBuildsFileName):
   return readCsvFileIntoListOfDicts(expectedBuildsFileName,
     ['group', 'site', 'buildname'])
 
 
-# Headers for basic CSV file
-g_testsWithIssueTrackersCsvFileHeaders = \
+g_testsWithIssueTrackersCsvFileHeadersRequired = \
   ('site', 'buildName', 'testname', 'issue_tracker_url', 'issue_tracker')
 
 
-# Get list of tests from CSV file
 def getTestsWtihIssueTrackersListFromCsvFile(testsWithIssueTrackersFile):
   return readCsvFileIntoListOfDicts(testsWithIssueTrackersFile,
-    g_testsWithIssueTrackersCsvFileHeaders)
+    g_testsWithIssueTrackersCsvFileHeadersRequired)
 
 
 # Write list of tests from a Tests LOD to a CSV file structure meant to match
 # tests with issue trackers CSV file.
 #
 def writeTestsLODToCsvFileStructure(testsLOD):
-  csvFileHeadersList = copy.deepcopy(g_testsWithIssueTrackersCsvFileHeaders)
+  csvFileHeadersList = copy.deepcopy(g_testsWithIssueTrackersCsvFileHeadersRequired)
   csvFileRowsList = []
   for testDict in testsLOD:
     csvFileRow = (
@@ -684,21 +750,18 @@ def flattenCDashQueryTestsToListOfDicts(fullCDashQueryTestsJson):
 # SearchableListOfDicts.  Please use that class instead of this raw function.
 #
 def createLookupDictForListOfDicts(listOfDicts, listOfKeys,
-  removeExactDuplicateElements=False,
-  checkDictsAreSame_in=checkDictsAreSame,
+  removeExactDuplicateElements=False, checkDictsAreSame_in=checkDictsAreSame,
   ):
   # Build the lookup dict data-structure. Also, optionally mark any 100%
   # duplicate elements if asked to remove 100% duplicate elements.
-  lookupDict = {} ; idx = 0 ; numRemoved = 0 ; duplicateIndexesToRemoveList = []
+  lookupDict = {} ; idx = 0 ; numRemoved = 0 ; duplicateIndexesToRemoveFromList = []
   for dictEle in listOfDicts:
     # Create the structure of recursive dicts for the keys in order
     currentLookupDictRef = lookupDict
     lastLookupDictRef = None
-    lastKeyValue = None
     for key in listOfKeys:
       keyValue = dictEle[key]
       lastLookupDictRef = currentLookupDictRef
-      lastKeyValue = keyValue
       nextLookupDictRef = currentLookupDictRef.setdefault(keyValue, {})
       currentLookupDictRef = nextLookupDictRef
     addEle = True
@@ -711,22 +774,12 @@ def createLookupDictForListOfDicts(listOfDicts, listOfKeys,
         lookedUpDict, "listOfDicts["+str(lookedUpIdx)+"]" )
       if hasSameKeyValuePairs and removeExactDuplicateElements:
         # This is a 100% duplicate element to one previously added.
-        # Therefore, marke this duplicate element to be removed from the
-        # orginal list.
-        duplicateIndexesToRemoveList.append(idx)
+        # Therefore, mark this duplicate element to be removed.
+        duplicateIndexesToRemoveFromList.append(idx)
         addEle = False
       else:
-        raise Exception(
-          "Error, The element\n\n"+\
-          "    listOfDicts["+str(idx)+"] =\n\n"+\
-          "      "+sorted_dict_str(dictEle)+"\n\n"+\
-          "  has duplicate values for the list of keys\n\n"+\
-          "    "+str(listOfKeys)+"\n\n"+\
-          "  with the element already added\n\n"+\
-          "    listOfDicts["+str(lookedUpIdx)+"] =\n\n"+\
-          "      "+sorted_dict_str(lookedUpDict)+"\n\n"+\
-          "  and differs by at least the key/value pair\n\n"+\
-          "    "+str(dictDiffErrorMsg))
+        raiseDuplicateDictEleException(idx, dictEle, listOfKeys, lookedUpIdx,
+          lookedUpDict, dictDiffErrorMsg)
     # Need to go back and reset the dict on the last dict in the
     # data-structure so that modifications to the dicts that are looked up
     # will modify the original list.
@@ -735,9 +788,25 @@ def createLookupDictForListOfDicts(listOfDicts, listOfKeys,
     else:
       numRemoved += 1
     idx += 1
-  # Remove 100% duplicate elements marged above
-  removeElementsFromListGivenIndexes(listOfDicts, duplicateIndexesToRemoveList)
+  # Remove 100% duplicate elements marked above
+  removeElementsFromListGivenIndexes(listOfDicts, duplicateIndexesToRemoveFromList)
   return  lookupDict
+
+
+def raiseDuplicateDictEleException(idx, dictEle, listOfKeys,
+  lookedUpIdx, lookedUpDict, dictDiffErrorMsg \
+  ):
+  raise Exception(
+    "Error, The element\n\n"+\
+    "    listOfDicts["+str(idx)+"] =\n\n"+\
+    "      "+sorted_dict_str(dictEle)+"\n\n"+\
+    "  has duplicate values for the list of keys\n\n"+\
+    "    "+str(listOfKeys)+"\n\n"+\
+    "  with the element already added\n\n"+\
+    "    listOfDicts["+str(lookedUpIdx)+"] =\n\n"+\
+    "      "+sorted_dict_str(lookedUpDict)+"\n\n"+\
+    "  and differs by at least the key/value pair\n\n"+\
+    "    "+str(dictDiffErrorMsg))
 
 
 # Lookup a dict (and optionally also its index location) in a list of dicts
@@ -1075,6 +1144,9 @@ def dateFromBuildStartTime(buildStartTime):
 # allowed and handled in function.  Any days in that range missing contribute
 # to testHistoryStats['missing_last_x_days'].
 #
+# Also note that this function will remove any duplicate tests (which seem to
+# occur sometimes due to a defect in CDash).
+#
 # Returns:
 #
 #   (sortedTestHistoryLOD, testHistoryStats, testStatus)
@@ -1133,6 +1205,9 @@ def sortTestHistoryGetStatistics(testHistoryLOD,
   # Sort the test history by the buildstarttime (most current date at top)
   sortedTestHistoryLOD = copy.copy(testHistoryLOD)
   sortedTestHistoryLOD.sort(reverse=True, key=DictSortFunctor(['buildstarttime']))
+
+  # Remove duplicate tests from list of dicts
+  sortedTestHistoryLOD = getUniqueSortedTestsHistoryLOD(sortedTestHistoryLOD)
  
   # Get testing day/time helper object
   testingDayTimeObj = CBTD.CDashProjectTestingDay(currentTestDate, testingDayStartTimeUtc)
@@ -1212,6 +1287,34 @@ def sortTestHistoryGetStatistics(testHistoryLOD,
   return (sortedTestHistoryLOD, testHistoryStats, testStatus)
 
 
+# Get a new list with unique entires from an input sorted list of test dicts.
+#
+# The returned list is new and does not modify any of the entires in the input
+# sorted inputSortedTestHistoryLOD object.
+#
+def getUniqueSortedTestsHistoryLOD(inputSortedTestHistoryLOD):
+
+  if len(inputSortedTestHistoryLOD) == 0:
+    return inputSortedTestHistoryLOD
+
+  uniqueSortedTestHistoryLOD = []
+
+  lastUniqueTestDict = inputSortedTestHistoryLOD[0]
+  uniqueSortedTestHistoryLOD.append(lastUniqueTestDict)
+
+  idx = 1
+  while idx < len(inputSortedTestHistoryLOD):
+    candidateTestDict = inputSortedTestHistoryLOD[idx]
+    
+    if not checkCDashTestDictsAreSame(candidateTestDict, "a", lastUniqueTestDict, "b")[0]:
+      uniqueSortedTestHistoryLOD.append(candidateTestDict)
+      lastUniqueTestDict = candidateTestDict
+    # Else, this is dupliate test entry so skip
+    idx += 1
+
+  return uniqueSortedTestHistoryLOD
+
+
 # Extract testid and buildid from 'testDetailsLink' CDash test dict
 # field.
 def extractTestIdAndBuildIdFromTestDetailsLink(testDetailsLink):
@@ -1284,7 +1387,7 @@ def checkCDashTestDictsAreSame(testDict_1, testDict_1_name,
     testDict_2_copy, testDict_2_name )
 
 
-# Get the test history CDash cache file.
+# Get the test history CDash cache filename
 #
 # Note: this takes care of things like having '/' in the test name
 #
@@ -1311,7 +1414,7 @@ class AddTestHistoryToTestDictFunctor(object):
   #
   def __init__(self, cdashUrl, projectName, date, testingDayStartTimeUtc, daysOfHistory,
     testCacheDir, useCachedCDashData=True, alwaysUseCacheFileIfExists=True,
-    verbose=False, printDetails=False,
+    verbose=False, printDetails=False, requireMatchTestTopTestHistory=True,
     extractCDashApiQueryData_in=extractCDashApiQueryData, # For unit testing
     ):
     self.__cdashUrl = cdashUrl
@@ -1324,6 +1427,7 @@ class AddTestHistoryToTestDictFunctor(object):
     self.__alwaysUseCacheFileIfExists = alwaysUseCacheFileIfExists
     self.__verbose = verbose
     self.__printDetails = printDetails
+    self.__requireMatchTestTopTestHistory = requireMatchTestTopTestHistory
     self.__extractCDashApiQueryData_in = extractCDashApiQueryData_in
 
 
@@ -1354,27 +1458,19 @@ class AddTestHistoryToTestDictFunctor(object):
     else:
       testAlreadyHasCDashData = False
 
-    # Set up object to handle CDash testing day stuff
-    currentProjectTestingDayObj = \
-      CBTD.CDashProjectTestingDay(self.__date, self.__testingDayStartTimeUtc)
-    currentTestingDayStartUtcDT = currentProjectTestingDayObj.getTestingDayStartUtcDT()
-
-    # Date range for test history
-    dayAfterCurrentTestDay = \
-      CBTD.getBuildStartTimeUtcStrFromUtcDT(
-        currentTestingDayStartUtcDT + datetime.timedelta(days=1), True )
-    daysBeforeCurrentTestDay = \
-      CBTD.getBuildStartTimeUtcStrFromUtcDT(
-        currentTestingDayStartUtcDT - datetime.timedelta(days=daysOfHistory-1), True)
+    # Get the date range for CDash queries
+    dateRangeBeginDT = testDayDate - datetime.timedelta(days=(daysOfHistory-1))
+    dateRangeBeginDateStr = CBTD.getDateStrFromDateTime(dateRangeBeginDT)
+    dateRangeEndDateStr = self.__date
+    beginEndUrlFields = "begin="+dateRangeBeginDateStr+"&end="+dateRangeEndDateStr
 
     # Define queryTests.php query filters for test history
     testHistoryQueryFilters = \
-      "filtercombine=and&filtercombine=&filtercount=5&showfilters=1&filtercombine=and"+\
+      beginEndUrlFields+"&"+\
+      "filtercombine=and&filtercombine=&filtercount=3&showfilters=1&filtercombine=and"+\
       "&field1=buildname&compare1=61&value1="+buildName+\
       "&field2=testname&compare2=61&value2="+testname+\
-      "&field3=site&compare3=61&value3="+site+\
-      "&field4=buildstarttime&compare4=84&value4="+dayAfterCurrentTestDay+\
-      "&field5=buildstarttime&compare5=83&value5="+daysBeforeCurrentTestDay
+      "&field3=site&compare3=61&value3="+site
     
     # URL used to get the history of the test in JSON form
     testHistoryQueryUrl = \
@@ -1387,11 +1483,11 @@ class AddTestHistoryToTestDictFunctor(object):
     # URL for to the build summary on index.php page
     buildHistoryEmailUrl = getCDashIndexBrowserUrl(
       cdashUrl, projectName, None,
-      "filtercombine=and&filtercombine=&filtercount=4&showfilters=1&filtercombine=and"+\
+      beginEndUrlFields+"&"+\
+      "filtercombine=and&filtercombine=&filtercount=2&showfilters=1&filtercombine=and"+\
       "&field1=buildname&compare1=61&value1="+buildName+\
-      "&field2=site&compare2=61&value2="+site+\
-      "&field3=buildstarttime&compare3=84&value3="+dayAfterCurrentTestDay+\
-      "&field4=buildstarttime&compare4=83&value4="+daysBeforeCurrentTestDay )
+      "&field2=site&compare2=61&value2="+site
+      )
     # ToDo: Replace this with the the URL to just this one build the index.php
     # page.  To do that, get the build stamp from the list of builds on CDash
     # and then create a URL link for this one build given 'site', 'buildName',
@@ -1437,9 +1533,7 @@ class AddTestHistoryToTestDictFunctor(object):
     #print("\ntestHistoryLOD[0] = "+str(testHistoryLOD[0]))
 
     if testStatus == "Missing":
-      testDict['status'] = "Missing"
-      testDict['status_color'] = cdashColorMissing()
-      testDict['details'] = "Missing"
+      testDict = setTestDictAsMissing(testDict)
     elif testStatus == "Passed":
       testDict.update(testHistoryLOD[0])
       testDict['status_color'] = cdashColorPassed()
@@ -1449,25 +1543,35 @@ class AddTestHistoryToTestDictFunctor(object):
       # testHistoryLOD[0] should be an exact duplicate of testDict.  The below
       # check confirms that to make sure that CDash is giving us consistent
       # data.
-      if testDict.get('status', None) != testStatus:
-        raise Exception(
-          "Error, test testDict['status'] = '"+str(testDict.get('status',None))+"'"+\
-          " != "+\
-          "top test history testStatus = '"+testStatus+"'"+\
-          " where:\n\n"+\
-          "   testDict = "+sorted_dict_str(testDict)+"\n\n"+\
-          "   top test history dict = "+sorted_dict_str(testHistoryLOD[0])+"\n\n" )
-      if testDict.get('buildstarttime', None) != testHistoryLOD[0]['buildstarttime']:
-        raise Exception(
-          "Error, testDict['buildstarttime'] = '"+\
-          str(testDict.get('buildstarttime',None))+"'"+\
-          " != "+\
-          "top test history 'buildstarttime' = "+\
-          "'"+testHistoryLOD[0]['buildstarttime']+"'"+\
-          " where:\n\n"+\
-          "   testDict = "+sorted_dict_str(testDict)+"\n\n"+\
-          "   top test history dict = "+sorted_dict_str(testHistoryLOD[0])+"\n\n" )
-      if testStatus == "Failed":
+      if self.__requireMatchTestTopTestHistory:
+        if testDict.get('status', None) != testStatus:
+          raise Exception(
+            "Error, test testDict['status'] = '"+str(testDict.get('status',None))+"'"+\
+            " != "+\
+            "top test history testStatus = '"+testStatus+"'"+\
+            " where:\n\n"+\
+            "   testDict = "+sorted_dict_str(testDict)+"\n\n"+\
+            "   top test history dict = "+sorted_dict_str(testHistoryLOD[0])+"\n\n" )
+        if testDict.get('buildstarttime', None) != testHistoryLOD[0]['buildstarttime']:
+          raise Exception(
+            "Error, testDict['buildstarttime'] = '"+\
+            str(testDict.get('buildstarttime',None))+"'"+\
+            " != "+\
+            "top test history 'buildstarttime' = "+\
+            "'"+testHistoryLOD[0]['buildstarttime']+"'"+\
+            " where:\n\n"+\
+            "   testDict = "+sorted_dict_str(testDict)+"\n\n"+\
+            "   top test history dict = "+sorted_dict_str(testHistoryLOD[0])+"\n\n" )
+      if testDict.get('status', None) == None and testStatus == "Failed":
+        # This is a test missing in the outer list of nonpassing tests but is
+        # shown to be failing for the current testing day when looking at the
+        # test history.  This can happen when the outer CDash query filters
+        # out random system failures (see documentation for option
+        # --require-test-history-match-nonpassing-tests).
+        testDict = setTestDictAsMissing(testDict)
+        testDict.update(testHistoryLOD[0])       # Overwrites 'status' = "Failed"
+        testDict['status'] = "Missing / Failed"  # Show this special status!
+      elif testStatus == "Failed":
         testDict['status_color'] = cdashColorFailed()
       elif testStatus == "Not Run":
         testDict['status_color'] = cdashColorNotRun()
@@ -1517,6 +1621,12 @@ class AddTestHistoryToTestDictFunctor(object):
     return testDict
 
 
+def setTestDictAsMissing(testDict):
+  testDict['status'] = "Missing"
+  testDict['status_color'] = cdashColorMissing()
+  testDict['details'] = "Missing"
+  return testDict
+
 # Gather up a list of the missing builds.
 #
 # Inputs:
@@ -1535,17 +1645,11 @@ class AddTestHistoryToTestDictFunctor(object):
 #
 # The field 'status' will either be given either:
 #
-#   "Build not found on CDash"
+#   "Missing ALL"
 #
-# or
+# or will be:
 #
-#   "Build exists but no test results"
-#
-# ToDo: Change name of 'status' to 'build_missing_status' and add other
-# 'build_missing_status' values like:
-#
-#   "Build exists but no build results"
-#   "Build exists but no configure results"
+#   "Missing [update], [configure], [build], [tests]"
 #
 def getMissingExpectedBuildsList(buildsSearchableListOfDicts, expectedBuildsList):
   missingExpectedBuildsList = []
@@ -1553,25 +1657,72 @@ def getMissingExpectedBuildsList(buildsSearchableListOfDicts, expectedBuildsList
     #print("\nexpectedBuildDict = "+str(expectedBuildDict))
     buildSummaryDict = \
       buildsSearchableListOfDicts.lookupDictGivenKeyValueDict(expectedBuildDict)
-    #print("buildSummaryDict = "+str(buildSummaryDict))
+    #print("\nbuildSummaryDict = "+str(buildSummaryDict))
     if not buildSummaryDict:
-      # Expected build not found!
+      # No part of the expected build is found!
       missingExpectedBuildDict = copy.deepcopy(expectedBuildDict)
-      missingExpectedBuildDict.update({'status':"Build not found on CDash"})
-      #print("missingExpectedBuildDict = "+str(missingExpectedBuildDict))
-      missingExpectedBuildsList.append(missingExpectedBuildDict)
-    elif not buildSummaryDict.get('test', None):
-      # Build exists but it is missing tests!
-      missingExpectedBuildDict = copy.deepcopy(expectedBuildDict)
-      missingExpectedBuildDict.update({'status':"Build exists but no test results"})
+      missingExpectedBuildDict.update({'status':"Missing ALL"})
       #print("missingExpectedBuildDict = "+str(missingExpectedBuildDict))
       missingExpectedBuildsList.append(missingExpectedBuildDict)
     else:
-      # This build exists and it has test results so don't add it
-      None
+      # This build has some build results so see if all of the results are
+      # there or not
+      missingPartsList = []
+      #if not buildSummaryDict.get('update', None):
+      #  missingPartsList.append("update")
+      if not buildSummaryDict.get('configure', None):
+        missingPartsList.append("configure")
+      if not buildSummaryDict.get('compilation', None):
+        missingPartsList.append("build")
+      if not buildSummaryDict.get('test', None):
+        compilationDict = buildSummaryDict.get('compilation', None)
+        if compilationDict and compilationDict['time'] == '0s':
+          missingPartsList.append("build") # See NOTE below for explaination!
+        missingPartsList.append("tests")
+      # See if any parts are missing and report if there are as a missing
+      # build
+      if len(missingPartsList) > 0:
+        missingBuildStr = "Missing "+", ".join(missingPartsList)
+        missingExpectedBuildDict = copy.deepcopy(expectedBuildDict)
+        missingExpectedBuildDict.update({'status':missingBuildStr})
+        #print("missingExpectedBuildDict = "+str(missingExpectedBuildDict))
+        missingExpectedBuildsList.append(missingExpectedBuildDict)
+      else:
+        # All parts of the expected build exists so don't report this as an
+        # expected build.
+        None
   # Return the list of missing expected builds and status
   return missingExpectedBuildsList
 
+  # NOTE: Above uses a heuristic for reporting missing build/compilation data
+  # that if the 'compilation' 'time' is '0s' and there is no test data, then
+  # we will assume that no build data was submitted to the dashboard.
+  # Otherwise, we can't detect when build results are missing because if just
+  # 'configure' data is updated to CDash, then CDash will automatically create
+  # a 'compilation' subdict and will set the initail time to '0s'.  So we
+  # can't directly tell if build has missing build/compilation data or if it
+  # just has configure data.  (I consider this to be a defect in CDash and we
+  # may ask Kitware to fix this but for now we can just use this heuristic.)
+  # But we don't want to assume that a time of '0s' means that no
+  # build/compilation data was submitted to CDash since a rebuild with no
+  # targets getting built can take under 0s.  However, it is unlikely that the
+  # build/compilation time is '0s' and just happens to be missing test
+  # results.  In that case, it is likely that the job that was doing the build
+  # died and never submitted build results in the first place.  Therefore, we
+  # will never report missing build results unless there are also missing test
+  # results.  And if there are missing test results, then the build will be
+  # listed and missing anyway.  And I don't see a lot of harm in failing to
+  # report missing build results if there are test results and all of the
+  # tests pass.  The only gap is this logic, therefore, are expected builds
+  # that have zero tests defined and submitted 0 tests to CDash (so the 'test'
+  # subdict exists).  So this is not perfect but I think this is the best we
+  # can do until Kitware fixes CDash to not create a 'compilation' subdict
+  # unless build data is actually submitted to CDash.
+
+  # NOTE: Above, we are skipping checking for missing 'update' results for now
+  # because we want to allow some builds to not have update results.  In the
+  # future, it may be better to allow an expected build to say that it does
+  # not have expected 'update' results.
 
 # Download set of builds from CDash builds and return flattened list of dicts
 #

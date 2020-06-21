@@ -113,7 +113,6 @@ public:
   Real integrateCDF(const Real input) const {
     ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
       ">>> ERROR (ROL::Gaussian): Gaussian integrateCDF not implemented!");
-    return ((input < mean_) ? 0.0 : input);
   }
 
   Real invertCDF(const Real input) const {

@@ -59,43 +59,36 @@ public:
   virtual Real evaluatePDF(const Real input) const {
     ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
       ">>> ERROR (ROL::Distribution): evaluatePDF not implemented!");
-    return 0.;
   }
 
   virtual Real evaluateCDF(const Real input) const {
     ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
       ">>> ERROR (ROL::Distribution): evaluateCDF not implemented!");
-    return 0.;
   }
 
   virtual Real integrateCDF(const Real input) const {
     ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
       ">>> ERROR (ROL::Distribution): integrateCDF not implemented!");
-    return 0.;
   }
 
   virtual Real invertCDF(const Real input) const {
     ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
       ">>> ERROR (ROL::Distribution): invertCDF not implemented!");
-    return 0.;
   }
 
   virtual Real moment(const size_t m) const {
     ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
       ">>> ERROR (ROL::Distribution): moment not implemented!");
-    return 0.;
   }
 
   virtual Real lowerBound(void) const {
     ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
       ">>> ERROR (ROL::Distribution): lowerBound not implemented!");
-    return 0.;
   }
 
   virtual Real upperBound(void) const {
     ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
       ">>> ERROR (ROL::Distribution): upperBound not implemented!");
-    return 0.;
   }
 
   virtual void test(std::ostream &outStream = std::cout) const {

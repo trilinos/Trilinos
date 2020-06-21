@@ -207,18 +207,26 @@ template <typename T1, typename T2>
 inline bool intersects(Sphere<T1> const& a, Box<T2> const& b)
 {
   Point<T1> const& ac   = a.center();
-  Point<T2> const& bmin = b.min_corner();
-  Point<T2> const& bmax = b.max_corner();
+  const T1         ar   = a.radius(); 
+  T1 distToBoxSquared = 0.0;
+  for(unsigned idir=0; idir<3; ++idir) {
+      const T2 boxMin = b.min_corner()[idir];
+      const T2 boxMax = b.max_corner()[idir];
+      const T1 sphereCenter = ac[idir];
 
-  const T1 r2 = a.radius() * a.radius();
-
-  // check that the nearest point in the bounding box is within the sphere
-  T1 dmin = 0;
-  for( int i = 0; i < 3; ++i ) {
-    if( ac[i] < bmin[i] ) dmin += (ac[i]-bmin[i])*(ac[i]-bmin[i]);
-    else if( ac[i] > bmax[i] ) dmin += (ac[i]-bmax[i])*(ac[i]-bmax[i]);
+      if(       sphereCenter + ar < boxMin) {
+          return false;
+      } else if(sphereCenter - ar > boxMax) {
+          return false;
+      } else if(sphereCenter      < boxMin) {
+          T1 dist = boxMin-sphereCenter;
+          distToBoxSquared += dist*dist;
+      } else if(sphereCenter      > boxMax) {
+          T1 dist = sphereCenter-boxMax;
+          distToBoxSquared += dist*dist;
+      }
   }
-  return dmin <= r2;
+   return (distToBoxSquared <= ar*ar);
 }
 
 // intersects: Box,Sphere
@@ -241,6 +249,11 @@ inline bool intersects(Box<T1> const& a, Box<T2> const& b)
         || (amax[1] < bmin[1]) || (bmax[1] < amin[1])
         || (amax[2] < bmin[2]) || (bmax[2] < amin[2]));
 
+}
+
+template <typename T, typename U>
+inline void scale_by(Point<T> &p, U const& mult_fact, U const& add_fact = 0)
+{
 }
 
 template <typename T, typename U>

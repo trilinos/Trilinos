@@ -133,7 +133,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
 
-  Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcp(&std::cout,false)));
+  Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcpFromRef(std::cout)));
   Teuchos::RCP<const Teuchos::MpiComm<int> > comm
     = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(Teuchos::DefaultComm<int>::getComm());
   if (comm->getSize() > 1) {
@@ -189,8 +189,12 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
     }
 
-    if (use_stacked_timer)
+    if (use_stacked_timer) {
       stacked_timer = rcp(new Teuchos::StackedTimer("Mini-EM"));
+      Teuchos::RCP<Teuchos::FancyOStream> verbose_out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcpFromRef(std::cout)));
+      verbose_out->setShowProcRank(true);
+      stacked_timer->setVerboseOstream(verbose_out);
+    }
     Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
 
     Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: Total Time")));
@@ -248,9 +252,20 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
         mesh_factory->setParameterList(pl);
         // build mesh
         mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
-        //get dt
-        if (dt <=0.)
+        // get dt
+        if (dt <= 0.)
           dt = input_pl->get<double>("dt");
+      } else if (mesh_pl.get<std::string>("Source") ==  "Pamgen Mesh") { // Pamgen mesh generator
+        Teuchos::ParameterList & pamgen_pl = mesh_pl.sublist("Pamgen Mesh");
+        Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::rcp(new Teuchos::ParameterList(pamgen_pl.sublist("Pamgen Parameters")));
+        pl->set("File Type","Pamgen");
+        mesh_factory = Teuchos::rcp(new panzer_stk::STK_ExodusReaderFactory());
+        mesh_factory->setParameterList(pl);
+        // build mesh
+        mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
+        // get dt
+        if (dt <= 0.)
+          dt = pamgen_pl.get<double>("dt");
       } else if (mesh_pl.get<std::string>("Source") == "Inline Mesh") { // Inline mesh generator
         // set mesh factory parameters
         Teuchos::ParameterList & inline_gen_pl = mesh_pl.sublist("Inline Mesh");
@@ -285,7 +300,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
         mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
 
         // set dt
-        if (dt <=0.) {
+        if (dt <= 0.) {
           if (inline_gen_pl.isType<double>("dt"))
             dt = inline_gen_pl.get<double>("dt");
           else {
@@ -331,7 +346,6 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
           return EXIT_FAILURE;
       else if (solver == ML_REFMAXWELL) {
         updateParams("solverMLRefMaxwell.xml", lin_solver_pl, comm, out);
-        lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").set("dt",dt);
       } else if (solver == MUELU_REFMAXWELL) {
         if (linAlgebra == linAlgTpetra) {
           updateParams("solverMueLuRefMaxwell.xml", lin_solver_pl, comm, out);
@@ -362,10 +376,13 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
           if (dim == 2)
             updateParams("solverMueLuRefMaxwell2D.xml", lin_solver_pl, comm, out);
         }
-        lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").set("dt",dt);
       }
     } else
       updateParams(xml, lin_solver_pl, comm, out);
+    if (lin_solver_pl->sublist("Preconditioner Types").isSublist("Teko") &&
+        lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").isSublist("Inverse Factory Library") &&
+        lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").isSublist("Maxwell"))
+      lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").set("dt",dt);
     lin_solver_pl->print(*out);
 
     // The curl-curl term needs to be scaled by dt, the RefMaxwell augmentation needs 1/dt
@@ -631,8 +648,10 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
 
     {
       Teuchos::TimeMonitor tMts(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: timestepper")));
+      auto time_step_timer = Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: Advance Time Step"));
       for(int ts = 1; ts < numTimeSteps+1; ts++)
         {
+          Teuchos::TimeMonitor adv_time_step_timer(*time_step_timer);
           (*out) << std::endl;
           (*out) << "**************************************************" << std::endl;
           (*out) << "* starting time step " << ts << std::endl;
@@ -710,6 +729,9 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     Teuchos::StackedTimer::OutputOptions options;
     options.output_fraction = options.output_histogram = options.output_minmax = true;
     stacked_timer->report(*out, comm, options);
+    auto xmlOut = stacked_timer->reportWatchrXML(std::string("MiniEM 3D RefMaxwell ") + std::to_string(comm->getSize()) + " ranks", comm);
+    if(xmlOut.length())
+      std::cout << "\nAlso created Watchr performance report " << xmlOut << '\n';
   } else
     Teuchos::TimeMonitor::summarize(*out,false,true,false,Teuchos::Union,"",true);
 

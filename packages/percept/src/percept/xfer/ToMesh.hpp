@@ -24,7 +24,6 @@
 
 #include <stk_search/IdentProc.hpp>
 #include <stk_search/BoundingBox.hpp>
-#include <boost/lexical_cast.hpp>
 
 #include <percept/xfer/TransferHelper.hpp>
 #include <percept/xfer/FromMesh.hpp>

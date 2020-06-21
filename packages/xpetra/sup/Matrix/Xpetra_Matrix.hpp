@@ -599,6 +599,11 @@ namespace Xpetra {
 #endif
     // ----------------------------------------------------------------------------------
 
+    //! Compute a residual R = B - (*this) * X
+    virtual void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
+                          const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
+                          MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const = 0;
+
     protected:
       Teuchos::Hashtable<viewLabel_t, RCP<MatrixView> > operatorViewTable_; // hashtable storing the operator views (keys = view names, values = views).
 

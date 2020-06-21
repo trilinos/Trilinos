@@ -1,35 +1,8 @@
-// Copyright (c) 2014-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//
-//     * Neither the name of NTESS nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
+// 
+// See packages/seacas/LICENSE for details
 
 /***
    NAME
@@ -58,16 +31,20 @@ namespace SEAMS {
       {"atan", do_atan, "atan(x)", "Inverse tangent of x, returns radians."},
       {"atand", do_atand, "atand(x)", "Inverse tangent of x, returns degrees."},
       {"atanh", do_atanh, "atanh(x)", "Inverse hyperbolic tangent of x."},
+      {"cbrt", do_cbrt, "cbrt(x)", "Cube root of x. "},
       {"ceil", do_ceil, "ceil(x)", "Smallest integer not less than x."},
       {"cos", do_cos, "cos(x)", "Cosine of x, with x in radians"},
       {"cosd", do_cosd, "cosd(x)", "Cosine of x, with x in degrees"},
       {"cosh", do_cosh, "cosh(x)", "Hyperbolic cosine of x."},
       {"d2r", do_d2r, "d2r(x)", "Degrees to radians."},
+      {"erf", do_erf, "erf(x)", "Error Function of x"},
+      {"erf", do_erfc, "erfc(x)", "Complementary Error Function of x"},
       {"exp", do_exp, "exp(x)", "Exponential: e^x"},
       {"expm1", do_expm1, "expm1(x)", "Exponential: Accurate version of e^x - 1.0 for small x"},
       {"floor", do_floor, "floor(x)", "Largest integer not greater than x."},
       {"int", do_int, "int(x), [x]", "Integer part of x truncated toward 0."},
       {"lgamma", do_lgamma, "lgamma(x)", "log(Gamma(x))."},
+      {"tgamma", do_tgamma, "tgamma(x)", "Gamma(x)."},
       {"ln", do_log, "ln(x)", "Natural (base e) logarithm of x."},
       {"log", do_log, "log(x)", "Natural (base e) logarithm of x."},
       {"log10", do_log10, "log10(x)", "Base 10 logarithm of x. "},
@@ -100,6 +77,7 @@ namespace SEAMS {
       {"min", do_min, "min(x,y)", "Minimum of x and y. "},
       {"polarX", do_polarX, "polarX(r,a)", "r * cos(a), a is in degrees "},
       {"polarY", do_polarY, "polarY(r,a)", "r * sin(a), a is in degrees "},
+      {"pow", do_pow, "pow(x,y)", "x^y "},
       {"rand", do_rand, "rand(xl,xh)", "Random value between xl and xh; uniformly distributed. "},
       {"rand_normal", do_rand_normal, "rand_normal(m,s)",
        "Random value normally distributed with mean m and stddev s."},

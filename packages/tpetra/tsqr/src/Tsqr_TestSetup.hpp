@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,37 +34,32 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
 // ************************************************************************
 //@HEADER
 
 #ifndef __TSQR_TestSetup_hpp
 #define __TSQR_TestSetup_hpp
 
-#include <Tsqr_MessengerBase.hpp>
-#include <Tsqr_Random_GlobalMatrix.hpp>
-#include <Tsqr_Matrix.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-
+#include "Tsqr_MessengerBase.hpp"
+#include "Tsqr_Random_GlobalMatrix.hpp"
+#include "Tsqr_Matrix.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 #include <vector>
 
-
-namespace TSQR { 
+namespace TSQR {
   namespace Test {
-
     template<class Ordinal, class CommOrdinal>
-    Ordinal 
-    numLocalRows (const Ordinal nrowsGlobal, 
-		  const CommOrdinal myRank,
-		  const CommOrdinal nprocs)
+    Ordinal
+    numLocalRows (const Ordinal nrowsGlobal,
+                  const CommOrdinal myRank,
+                  const CommOrdinal nprocs)
     {
       const Ordinal nrowsLocal = nrowsGlobal / Ordinal(nprocs);
       const Ordinal remainder = nrowsGlobal - nrowsLocal * Ordinal(nprocs);
       if (myRank != nprocs - 1)
-	return nrowsLocal;
+        return nrowsLocal;
       else
-	return nrowsLocal + remainder;
+        return nrowsLocal + remainder;
     }
 
     /// \param generator [in/out] Proc 0 is the only MPI process that
@@ -76,44 +71,44 @@ namespace TSQR {
     template<class MatrixViewType, class Generator>
     void
     distributedTestProblem (Generator& generator,
-			    MatrixViewType& A_local,
-			    MessengerBase<typename MatrixViewType::ordinal_type>* const ordinalComm,
-			    MessengerBase<typename MatrixViewType::scalar_type>* const scalarComm)
+                            MatrixViewType& A_local,
+                            MessengerBase<typename MatrixViewType::ordinal_type>* const ordinalComm,
+                            MessengerBase<typename MatrixViewType::non_const_value_type>* const scalarComm)
     {
-      typedef typename MatrixViewType::ordinal_type ordinal_type;
-      typedef typename MatrixViewType::scalar_type scalar_type;
-      typedef typename Teuchos::ScalarTraits< scalar_type >::magnitudeType magnitude_type;
+      using ordinal_type = typename MatrixViewType::ordinal_type;
+      using scalar_type =
+        typename MatrixViewType::non_const_value_type;
+      using magnitude_type =
+        typename Teuchos::ScalarTraits<scalar_type>::magnitudeType;
 
       const int myRank = scalarComm->rank();
-      const ordinal_type ncols = A_local.ncols();
+      const ordinal_type ncols = A_local.extent(1);
+      if (myRank == 0) {
+        // Generate some singular values for the test problem.
+        std::vector<magnitude_type> singular_values (ncols);
+        singular_values[0] = 1.0;
+        for (ordinal_type k = 1; k < ncols; ++k) {
+          singular_values[k] = singular_values[k-1] / magnitude_type(2.0);
+        }
 
-      if (myRank == 0)
-	{
-	  // Generate some singular values for the test problem.
-	  std::vector< magnitude_type > singular_values (ncols);
-	  singular_values[0] = 1.0;
-	  for (ordinal_type k = 1; k < ncols; ++k)
-	    singular_values[k] = singular_values[k-1] / double(2);
+        // Generate the test problem.  All MPI processes
+        // participate, but only Proc 0 generates the (pseudo)random
+        // numbers.
+        TSQR::Random::randomGlobalMatrix (&generator, A_local,
+                                          singular_values.data (),
+                                          ordinalComm, scalarComm);
+      }
+      else {
+        // This helps C++ deduce the type; the values aren't read on
+        // this proc.
+        magnitude_type singular_values[1];
 
-	  // Generate the test problem.  All MPI processes
-	  // participate, but only Proc 0 generates the (pseudo)random
-	  // numbers.
-	  TSQR::Random::randomGlobalMatrix (&generator, A_local, 
-					    &singular_values[0], ordinalComm,
-					    scalarComm);
-	}
-      else
-	{
-	  // This helps C++ deduce the type; the values aren't read on
-	  // this proc.
-	  magnitude_type singular_values[1];
-
-	  // All MPI processes participate in the distribution of the
-	  // test matrix.
-	  TSQR::Random::randomGlobalMatrix (&generator, A_local, 
-					    &singular_values[0], ordinalComm,
-					    scalarComm);
-	}
+        // All MPI processes participate in the distribution of the
+        // test matrix.
+        TSQR::Random::randomGlobalMatrix (&generator, A_local,
+                                          singular_values,
+                                          ordinalComm, scalarComm);
+      }
     }
   } // namespace Test
 } // namespace TSQR

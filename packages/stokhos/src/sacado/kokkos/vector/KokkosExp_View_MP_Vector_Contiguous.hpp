@@ -1017,7 +1017,7 @@ public:
 
   //----------------------------------------
 
-  KOKKOS_INLINE_FUNCTION ~ViewMapping() = default ;
+  KOKKOS_DEFAULTED_FUNCTION ~ViewMapping() = default ;
   KOKKOS_INLINE_FUNCTION ViewMapping() :
     m_impl_handle(),
     m_impl_offset(),
@@ -1025,11 +1025,11 @@ public:
     m_sacado_size(0)
     {}
 
-  KOKKOS_INLINE_FUNCTION ViewMapping( const ViewMapping & ) = default ;
-  KOKKOS_INLINE_FUNCTION ViewMapping & operator = ( const ViewMapping & ) = default ;
+  KOKKOS_DEFAULTED_FUNCTION ViewMapping( const ViewMapping & ) = default ;
+  KOKKOS_DEFAULTED_FUNCTION ViewMapping & operator = ( const ViewMapping & ) = default ;
 
-  KOKKOS_INLINE_FUNCTION ViewMapping( ViewMapping && ) = default ;
-  KOKKOS_INLINE_FUNCTION ViewMapping & operator = ( ViewMapping && ) = default ;
+  KOKKOS_DEFAULTED_FUNCTION ViewMapping( ViewMapping && ) = default ;
+  KOKKOS_DEFAULTED_FUNCTION ViewMapping & operator = ( ViewMapping && ) = default ;
 
   template< class ... P >
   KOKKOS_INLINE_FUNCTION

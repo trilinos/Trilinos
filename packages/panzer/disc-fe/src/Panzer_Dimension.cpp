@@ -41,7 +41,7 @@
 // @HEADER
 
 
-// #include "Panzer_Dimension.hpp"
+#include "Panzer_Dimension.hpp"
 
 namespace panzer {
 
@@ -55,4 +55,15 @@ namespace panzer {
   // SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION(Dummy)
   // SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION(Edge)
 
+}
+
+namespace PHX {
+  template<> std::string print<panzer::Dim>(){return "D";}
+  template<> std::string print<panzer::IP>(){return "IP";}
+  template<> std::string print<panzer::BASIS>(){return "B";}
+  template<> std::string print<panzer::Point>(){return "P";}
+  template<> std::string print<panzer::Cell>(){return "C";}
+  template<> std::string print<panzer::Face>(){return "F";}
+  template<> std::string print<panzer::Edge>(){return "E";}
+  template<> std::string print<panzer::Dummy>(){return "";}
 }

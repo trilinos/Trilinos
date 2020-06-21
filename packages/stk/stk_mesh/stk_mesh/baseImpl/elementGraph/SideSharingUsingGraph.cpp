@@ -12,18 +12,19 @@ stk::mesh::EntityVector fill_shared_entities_that_need_fixing(const stk::mesh::B
     stk::mesh::get_selected_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData.buckets(bulkData.mesh_meta_data().side_rank()), sides);
 
     stk::mesh::EntityVector sidesThatNeedFixing;
+    stk::mesh::EntityVector nodeVec;
+    std::vector<int> shared_procs;
     for(stk::mesh::Entity side : sides)
         if(bulkData.state(side) == stk::mesh::Created)
         {
             unsigned num_nodes = bulkData.num_nodes(side);
             const stk::mesh::Entity* nodes = bulkData.begin_nodes(side);
 
-            std::vector<stk::mesh::EntityKey> nodeKeys(num_nodes);
+            nodeVec.resize(num_nodes);
             for(unsigned int i=0;i<num_nodes;++i)
-                nodeKeys[i] = bulkData.entity_key(nodes[i]);
+                nodeVec[i] = nodes[i];
 
-            std::vector<int> shared_procs;
-            bulkData.shared_procs_intersection(nodeKeys, shared_procs);
+            bulkData.shared_procs_intersection(nodeVec, shared_procs);
             if(!shared_procs.empty())
                 sidesThatNeedFixing.push_back(side);
         }

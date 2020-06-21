@@ -76,8 +76,8 @@ namespace LOCA {
        * This class is derived from the
        * LOCA::Hopf::MooreSpence::AbstractGroup
        * and declares several pure virtual methods to compute various
-       * derivatives of \f$w^H C e\f$ for a given \f$w = w_1 + i w_2\f$ and
-       * \f$e = y + i z\f$ where \f$C = J + i \omega M\f$.  Default
+       * derivatives of \f$ w^H C e\f$ for a given \f$ w = w_1 + i w_2\f$ and
+       * \f$ e = y + i z\f$ where \f$ C = J + i \omega M\f$.  Default
        * implementations for the derivatives using finite differencing are
        * implemented in the
        * LOCA::Hopf::MinimallyAugmented::FiniteDifferenceGroup.
@@ -131,7 +131,7 @@ namespace LOCA {
 
     /*!
      * \brief Computes the derivative \f$\partial w^H C e/\partial p\f$,
-     * \f$w = w_1 + i w_2\f$, \f$e = y + i z\f$, \f$C = J + i \omega M\f$.
+     * \f$ w = w_1 + i w_2\f$, \f$ e = y + i z\f$, \f$ C = J + i \omega M\f$.
      */
     virtual NOX::Abstract::Group::ReturnType
     computeDwtCeDp(const std::vector<int>& paramIDs,
@@ -147,7 +147,7 @@ namespace LOCA {
     /*!
      * \brief Computes the derivative
      * \f$\frac{\partial w^H C e}{\partial x}\f$,
-     * \f$w = w_1 + i w_2\f$, \f$e = y + i z\f$, \f$C = J + i \omega M\f$.
+     * \f$ w = w_1 + i w_2\f$, \f$ e = y + i z\f$, \f$ C = J + i \omega M\f$.
      */
     virtual NOX::Abstract::Group::ReturnType
     computeDwtCeDx(const NOX::Abstract::Vector& w1,

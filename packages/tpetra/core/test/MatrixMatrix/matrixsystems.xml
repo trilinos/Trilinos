@@ -16,6 +16,10 @@ P is m-by-n
 R is n-by-m
 m > n
 Q is a permutation matrix (identity matrix with rows swapped around)
+
+synthetic1_v2 and RectangleA*P_v2 are the updated versions of 
+synthetic1 and RectangleA*P, respectively, with nonzero diagonals in A.
+
 -->
 <ParameterList>
   <ParameterList name="synthetic1">
@@ -26,11 +30,27 @@ Q is a permutation matrix (identity matrix with rows swapped around)
     <Parameter name="TransA" value="false" type="bool"/>
     <Parameter name="TransB" value="false" type="bool"/>
   </ParameterList>
+  <ParameterList name="synthetic1_v2">
+    <Parameter name="op" value="multiply" type="string"/>
+    <Parameter name="A" value="matrices/syn1a_v2.mtx" type="string"/>
+    <Parameter name="B" value="matrices/syn1b.mtx" type="string"/>
+    <Parameter name="C" value="matrices/syn1c_v2.mtx" type="string"/>
+    <Parameter name="TransA" value="false" type="bool"/>
+    <Parameter name="TransB" value="false" type="bool"/>
+  </ParameterList>
   <ParameterList name="RectangleA*P">
     <Parameter name="op" value="multiply" type="string"/>
     <Parameter name="A" value="matrices/rectAPa.mtx" type="string"/>
     <Parameter name="B" value="matrices/rectAPb.mtx" type="string"/>
     <Parameter name="C" value="matrices/rectAPc.mtx" type="string"/>
+    <Parameter name="TransA" value="false" type="bool"/>
+    <Parameter name="TransB" value="false" type="bool"/>
+  </ParameterList>
+  <ParameterList name="RectangleA*P_v2">
+    <Parameter name="op" value="multiply" type="string"/>
+    <Parameter name="A" value="matrices/rectAPa_v2.mtx" type="string"/>
+    <Parameter name="B" value="matrices/rectAPb.mtx" type="string"/>
+    <Parameter name="C" value="matrices/rectAPc_v2.mtx" type="string"/>
     <Parameter name="TransA" value="false" type="bool"/>
     <Parameter name="TransB" value="false" type="bool"/>
   </ParameterList>

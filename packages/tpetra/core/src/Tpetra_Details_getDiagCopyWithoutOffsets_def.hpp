@@ -80,7 +80,7 @@ public:
   typedef typename vec_type::device_type device_type;
 
 private:
-  typedef typename vec_type::dual_view_type::host_mirror_space::execution_space host_execution_space;
+  typedef typename vec_type::dual_view_type::t_host::execution_space host_execution_space;
   typedef typename vec_type::map_type map_type;
 
   static bool

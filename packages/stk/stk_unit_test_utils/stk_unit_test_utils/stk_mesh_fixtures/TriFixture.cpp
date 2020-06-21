@@ -46,7 +46,6 @@
 #include <stk_unit_test_utils/stk_mesh_fixtures/FixtureNodeSharing.hpp>
 #include <stk_unit_test_utils/stk_mesh_fixtures/TriFixture.hpp>
 #include <stk_util/util/ReportHandler.hpp>  // for ThrowRequireMsg
-namespace stk { namespace mesh { struct ConnectivityMap; } }
 
 namespace stk {
 namespace mesh {
@@ -88,9 +87,8 @@ TriFixtureImpl<DIM>::TriFixtureImpl(   stk::ParallelMachine pm
               , size_t nx
               , size_t ny
               , stk::mesh::BulkData::AutomaticAuraOption autoAuraOption
-              , ConnectivityMap const* connectivity_map
             )
-  : TriFixtureImpl(pm, nx, ny, "coordinates", autoAuraOption, connectivity_map)
+  : TriFixtureImpl(pm, nx, ny, "coordinates", autoAuraOption)
 {
 }
 
@@ -100,7 +98,6 @@ TriFixtureImpl<DIM>::TriFixtureImpl(   stk::ParallelMachine pm
               , size_t ny
               , const std::string& coordsName
               , stk::mesh::BulkData::AutomaticAuraOption autoAuraOption
-              , ConnectivityMap const* /*connectivity_map*/
             )
   : m_spatial_dimension(DIM),
     m_meta_p( new MetaData(m_spatial_dimension) ),

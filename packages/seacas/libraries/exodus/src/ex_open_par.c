@@ -1,36 +1,9 @@
 /*
- * Copyright (c) 2005-2017 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
- *     * Neither the name of NTESS nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
+ * See packages/seacas/LICENSE for details
  */
 /*****************************************************************************
  *
@@ -147,18 +120,18 @@ struct ncvar /* variable */
 int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws, float *version,
                     MPI_Comm comm, MPI_Info info, int run_version)
 {
-  int     exoid;
-  int     status, stat_att, stat_dim;
-  nc_type att_type = NC_NAT;
-  size_t  att_len  = 0;
-  int     nc_mode  = 0;
-  int     old_fill;
-  int     file_wordsize;
-  int     dim_str_name;
-  int     int64_status = 0;
-  int     is_hdf5      = 0;
-  int     is_pnetcdf   = 0;
-  int     in_redef     = 0;
+  int     exoid  = -1;
+  int     status = 0, stat_att = 0, stat_dim = 0;
+  nc_type att_type      = NC_NAT;
+  size_t  att_len       = 0;
+  int     nc_mode       = 0;
+  int     old_fill      = 0;
+  int     file_wordsize = 0;
+  int     dim_str_name  = 0;
+  int     int64_status  = 0;
+  int     is_hdf5       = 0;
+  int     is_pnetcdf    = 0;
+  int     in_redef      = 0;
 
   char errmsg[MAX_ERR_LENGTH];
 
@@ -172,6 +145,15 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws, float 
   if ((mode & EX_READ) && (mode & EX_WRITE)) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Cannot specify both EX_READ and EX_WRITE");
     ex_err(__func__, errmsg, EX_BADFILEMODE);
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
+
+  /* Verify that this file is not already open for read or write...
+     In theory, should be ok for the file to be open multiple times
+     for read, but bad things can happen if being read and written
+     at the same time...
+  */
+  if (ex__check_multiple_open(path, mode, __func__)) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -444,8 +426,8 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws, float 
   }
 
   /* initialize floating point and integer size conversion. */
-  if (ex__conv_init(exoid, comp_ws, io_ws, file_wordsize, int64_status, 1, is_hdf5, is_pnetcdf) !=
-      EX_NOERR) {
+  if (ex__conv_init(exoid, comp_ws, io_ws, file_wordsize, int64_status, 1, is_hdf5, is_pnetcdf,
+                    mode & EX_WRITE) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to initialize conversion routines in file id %d", exoid);
     ex_err_fn(exoid, __func__, errmsg, EX_LASTERR);
@@ -459,5 +441,5 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws, float 
  * Prevent warning in some versions of ranlib(1) because the object
  * file has no symbols.
  */
-const char exodus_unused_symbol_dummy_1;
+const char exodus_unused_symbol_dummy_ex_open_par;
 #endif

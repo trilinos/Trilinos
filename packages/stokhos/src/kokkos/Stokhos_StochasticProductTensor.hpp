@@ -133,7 +133,7 @@ public:
   size_type aligned_dimension() const {
     const bool is_cuda =
 #if defined( KOKKOS_ENABLE_CUDA )
-      Kokkos::Impl::is_same<execution_space,Kokkos::Cuda>::value;
+      std::is_same<execution_space,Kokkos::Cuda>::value;
 #else
       false ;
 #endif

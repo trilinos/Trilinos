@@ -64,7 +64,7 @@ namespace Test {
       ++nthrow;                                                         \
       S ;                                                               \
     }                                                                   \
-    catch (std::exception err) {                                        \
+    catch (std::exception &err) {                                        \
       ++ncatch;                                                         \
       *outStream << "Expected Error ----------------------------------------------------------------\n"; \
       *outStream << err.what() << '\n';                                 \
@@ -195,7 +195,7 @@ int HDIV_WEDGE_I1_FEM_Test01(const bool verbose) {
     INTREPID2_TEST_ERROR_EXPECTED( wedgeBasis.getValues(badVals7, wedgeNodes, OPERATOR_VALUE));
 #endif
 
-  } catch (std::logic_error err) {
+  } catch (std::logic_error &err) {
     *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
     *outStream << err.what() << '\n';
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -259,7 +259,7 @@ int HDIV_WEDGE_I1_FEM_Test01(const bool verbose) {
       }
     }
   }
-  catch (std::logic_error err){
+  catch (std::logic_error &err){
     *outStream << err.what() << "\n\n";
     errorFlag = -1000;
   };
@@ -382,7 +382,7 @@ int HDIV_WEDGE_I1_FEM_Test01(const bool verbose) {
         }
       }
     }
-  } catch (std::logic_error err) {
+  } catch (std::logic_error &err) {
     *outStream << err.what() << "\n\n";
     errorFlag = -1000;
   }
@@ -457,7 +457,7 @@ int HDIV_WEDGE_I1_FEM_Test01(const bool verbose) {
         }
       }
     }
-  } catch (std::logic_error err) {
+  } catch (std::logic_error &err) {
     *outStream << err.what() << "\n\n";
     errorFlag = -1000;
   }
@@ -484,7 +484,7 @@ int HDIV_WEDGE_I1_FEM_Test01(const bool verbose) {
       }
       errorFlag++;
     }
-  } catch (std::logic_error err){
+  } catch (std::logic_error &err){
     *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
     *outStream << err.what() << '\n';
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";

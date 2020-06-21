@@ -203,21 +203,21 @@ TEST_F(Color2DMesh, colorHeterogeneousMeshWithQuadsSurroundingTriangles)
 
     declare_color_fields(get_meta());
 
-    std::string meshDesc = "0,1,QUAD_4_2D,  1,  5,  6,  2,block_1\n\
-                            0,2,QUAD_4_2D,  2,  6,  7,  3,block_1\n\
-                            0,3,QUAD_4_2D,  3,  7,  8,  4,block_1\n\
-                            0,4,QUAD_4_2D,  5,  9, 10,  6,block_1\n\
-                            0,5,QUAD_4_2D,  7, 11, 12,  8,block_1\n\
-                            0,6,QUAD_4_2D,  9, 13, 14, 10,block_1\n\
-                            0,7,QUAD_4_2D, 10, 14, 15, 11,block_1\n\
-                            0,8,QUAD_4_2D, 11, 15, 16, 12,block_1\n\
-                            0,9, TRI_3_2D,  6, 10,  7    ,block_2\n\
-                            0,10,TRI_3_2D, 10, 11,  7    ,block_2\n";
+    std::string meshDesc = "0,1,QUAD_4_2D,  1,  5,  6,  2,block_1\n"
+                           "0,2,QUAD_4_2D,  2,  6,  7,  3,block_1\n"
+                           "0,3,QUAD_4_2D,  3,  7,  8,  4,block_1\n"
+                           "0,4,QUAD_4_2D,  5,  9, 10,  6,block_1\n"
+                           "0,5,QUAD_4_2D,  7, 11, 12,  8,block_1\n"
+                           "0,6,QUAD_4_2D,  9, 13, 14, 10,block_1\n"
+                           "0,7,QUAD_4_2D, 10, 14, 15, 11,block_1\n"
+                           "0,8,QUAD_4_2D, 11, 15, 16, 12,block_1\n"
+                           "0,9, TRI_3_2D,  6, 10,  7    ,block_2\n"
+                           "0,10,TRI_3_2D, 10, 11,  7    ,block_2\n";
 
     std::vector<double> coordinates = { 0,3, 1,3, 2,3, 3,3, 0,2, 1,2, 2,2, 3,2,
-                                       0,1, 1,1, 2,1, 3,1, 0,0, 1,0, 2,0, 3,0 };
+                                        0,1, 1,1, 2,1, 3,1, 0,0, 1,0, 2,0, 3,0 };
 
-    stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, get_bulk());
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
 
     ColorMeshWithColoringFieldsSettings coloringSettings;
     bool meshIsColored = stk::balance::colorStkMesh(coloringSettings, get_bulk());
@@ -228,8 +228,6 @@ TEST_F(Color2DMesh, colorHeterogeneousMeshWithQuadsSurroundingTriangles)
     goldTopologyCounts[stk::topology::TRIANGLE_3_2D] = 2;
 
     check_coloring_by_topology(get_meta(), goldTopologyCounts);
-
-//    stk::io::write_mesh_with_fields("heterogeneousMesh.e", get_bulk(), 1, 0.0);
 }
 
 class ColorInputMesh : public stk::unit_test_util::MeshFixture {

@@ -77,5 +77,4 @@ namespace Xpetra {
 
 #endif // XPETRA_EPETRACOMM_HPP
 
-// Note: no support for Epetra_MpiSmpComm
 // TODO: remove return RCP for toEpetra?

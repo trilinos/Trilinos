@@ -16,10 +16,12 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 
-algorithm = "classical": threshold = 0, blocksize = 1
+algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
 aggregation: drop tol = 0   [default]
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
+aggregation: distance laplacian algo = default   [default]
+aggregation: classical algo = default   [default]
 lightweight wrap = 1
 
 Filtered matrix is not being constructed as no filtering is being done
@@ -42,11 +44,13 @@ aggregation: enable phase 1 = 1   [default]
 aggregation: enable phase 2a = 1   [default]
 aggregation: enable phase 2b = 1   [default]
 aggregation: enable phase 3 = 1   [default]
+aggregation: phase2a include root = 1   [default]
 aggregation: preserve Dirichlet points = 0   [default]
 aggregation: allow user-specified singletons = 0   [default]
 aggregation: use interface aggregation = 0   [default]
 aggregation: error on nodes with no on-rank neighbors = 0   [default]
 aggregation: phase3 avoid singletons = 0   [default]
+aggregation: compute aggregate qualities = 0   [default]
 OnePt aggregate map name =    [default]
 OnePt aggregate map factory =    [default]
 Interface aggregate map name =    [default]
@@ -62,6 +66,7 @@ Domain GID offsets = {0}   [default]
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+tentative: constant column sums = 0   [default]
 Nullspace name = Nullspace   [default]
 matrixmatrix: kernel params -> 
  [empty list]
@@ -108,10 +113,12 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 
-algorithm = "classical": threshold = 0, blocksize = 1
+algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
 aggregation: drop tol = 0   [default]
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
+aggregation: distance laplacian algo = default   [default]
+aggregation: classical algo = default   [default]
 lightweight wrap = 1
 
 Filtered matrix is not being constructed as no filtering is being done
@@ -134,11 +141,13 @@ aggregation: enable phase 1 = 1   [default]
 aggregation: enable phase 2a = 1   [default]
 aggregation: enable phase 2b = 1   [default]
 aggregation: enable phase 3 = 1   [default]
+aggregation: phase2a include root = 1   [default]
 aggregation: preserve Dirichlet points = 0   [default]
 aggregation: allow user-specified singletons = 0   [default]
 aggregation: use interface aggregation = 0   [default]
 aggregation: error on nodes with no on-rank neighbors = 0   [default]
 aggregation: phase3 avoid singletons = 0   [default]
+aggregation: compute aggregate qualities = 0   [default]
 OnePt aggregate map name =    [default]
 OnePt aggregate map factory =    [default]
 Interface aggregate map name =    [default]
@@ -154,6 +163,7 @@ Domain GID offsets = {0}   [default]
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+tentative: constant column sums = 0   [default]
 Nullspace name = Nullspace   [default]
 matrixmatrix: kernel params -> 
  [empty list]
@@ -200,10 +210,12 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 
-algorithm = "classical": threshold = 0, blocksize = 1
+algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
 aggregation: drop tol = 0   [default]
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
+aggregation: distance laplacian algo = default   [default]
+aggregation: classical algo = default   [default]
 lightweight wrap = 1
 
 Filtered matrix is not being constructed as no filtering is being done
@@ -226,11 +238,13 @@ aggregation: enable phase 1 = 1   [default]
 aggregation: enable phase 2a = 1   [default]
 aggregation: enable phase 2b = 1   [default]
 aggregation: enable phase 3 = 1   [default]
+aggregation: phase2a include root = 1   [default]
 aggregation: preserve Dirichlet points = 0   [default]
 aggregation: allow user-specified singletons = 0   [default]
 aggregation: use interface aggregation = 0   [default]
 aggregation: error on nodes with no on-rank neighbors = 0   [default]
 aggregation: phase3 avoid singletons = 0   [default]
+aggregation: compute aggregate qualities = 0   [default]
 OnePt aggregate map name =    [default]
 OnePt aggregate map factory =    [default]
 Interface aggregate map name =    [default]
@@ -246,6 +260,7 @@ Domain GID offsets = {0}   [default]
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+tentative: constant column sums = 0   [default]
 Nullspace name = Nullspace   [default]
 matrixmatrix: kernel params -> 
  [empty list]
@@ -292,10 +307,12 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 
-algorithm = "classical": threshold = 0, blocksize = 1
+algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
 aggregation: drop tol = 0   [default]
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
+aggregation: distance laplacian algo = default   [default]
+aggregation: classical algo = default   [default]
 lightweight wrap = 1
 
 Filtered matrix is not being constructed as no filtering is being done
@@ -318,11 +335,13 @@ aggregation: enable phase 1 = 1   [default]
 aggregation: enable phase 2a = 1   [default]
 aggregation: enable phase 2b = 1   [default]
 aggregation: enable phase 3 = 1   [default]
+aggregation: phase2a include root = 1   [default]
 aggregation: preserve Dirichlet points = 0   [default]
 aggregation: allow user-specified singletons = 0   [default]
 aggregation: use interface aggregation = 0   [default]
 aggregation: error on nodes with no on-rank neighbors = 0   [default]
 aggregation: phase3 avoid singletons = 0   [default]
+aggregation: compute aggregate qualities = 0   [default]
 OnePt aggregate map name =    [default]
 OnePt aggregate map factory =    [default]
 Interface aggregate map name =    [default]
@@ -338,6 +357,7 @@ Domain GID offsets = {0}   [default]
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+tentative: constant column sums = 0   [default]
 Nullspace name = Nullspace   [default]
 matrixmatrix: kernel params -> 
  [empty list]

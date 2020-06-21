@@ -141,7 +141,6 @@ extern "C" {
 
 #endif /* !AUTOTOOLS_BUILD */
 
-#define ZOLTAN_HIER
 /*****************************************************************************/
 /* 
  *  Macros and definitions that are common to all Zoltan modules and 

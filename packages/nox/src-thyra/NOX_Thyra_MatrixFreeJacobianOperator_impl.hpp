@@ -51,6 +51,10 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Thyra_ModelEvaluatorBase.hpp"
+#include "Thyra_VectorStdOps.hpp"
+
+namespace NOX {
+namespace Thyra {
 
 template<typename Scalar>
 MatrixFreeJacobianOperator<Scalar>::
@@ -326,3 +330,6 @@ Scalar MatrixFreeJacobianOperator<Scalar>::getDelta() const
 {
   return delta_;
 }
+
+} // namespace Thyra
+} // namespace NOX

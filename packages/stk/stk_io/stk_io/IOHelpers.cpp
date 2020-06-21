@@ -497,7 +497,7 @@ void process_surface_entity_df(const Ioss::SideSet* sset, stk::mesh::BulkData & 
 {
     assert(sset->type() == Ioss::SIDESET);
 
-    const stk::mesh::MetaData &meta = stk::mesh::MetaData::get(bulk);
+    const stk::mesh::MetaData &meta = bulk.mesh_meta_data();
 
     Ioss::Region *region = sset->get_database()->get_region();
     const std::string universalAlias = region->get_alias("universal_sideset");
@@ -616,7 +616,7 @@ void process_node_coords_and_attributes(Ioss::Region &region, stk::mesh::BulkDat
     // instead of the "global" ids. If there exists a stk-field with the
     // name "implicit_node_ids", then populate the field with the correct
     // data.
-    const stk::mesh::MetaData &meta = stk::mesh::MetaData::get(bulk);
+    const stk::mesh::MetaData &meta = bulk.mesh_meta_data();
     stk::mesh::FieldBase *implicit_node_id_field = meta.get_field(stk::topology::NODE_RANK, "implicit_node_ids");
     if (implicit_node_id_field) {
         stk::io::field_data_from_ioss(bulk, implicit_node_id_field, nodes, nb, "implicit_ids");
@@ -647,7 +647,7 @@ template void process_node_coords_and_attributes<int64_t>(Ioss::Region &region, 
 template <typename INT>
 void process_elem_attributes_and_implicit_ids(Ioss::Region &region, stk::mesh::BulkData &bulk, const bool shouldAutoLoadAttributes)
 {
-    const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
+    const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
 
     const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
     for(Ioss::ElementBlockContainer::const_iterator it = elem_blocks.begin();
@@ -760,7 +760,7 @@ void process_nodesets_df(Ioss::Region &region, stk::mesh::BulkData &bulk)
     // Should only process nodes that have already been defined via the element
     // blocks connectivity lists.
     const Ioss::NodeSetContainer& node_sets = region.get_nodesets();
-    const stk::mesh::MetaData &meta = stk::mesh::MetaData::get(bulk);
+    const stk::mesh::MetaData &meta = bulk.mesh_meta_data();
 
     NodesetMap nodesetMap;
 

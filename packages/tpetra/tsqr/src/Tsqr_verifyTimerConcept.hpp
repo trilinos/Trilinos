@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
 // ************************************************************************
 //@HEADER
 
@@ -43,9 +41,6 @@
 #define __TSQR_Test_verifyTimerConcept_hpp
 
 #include <stdexcept>
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 namespace TSQR {
   namespace Test {
@@ -94,27 +89,27 @@ namespace TSQR {
 
       std::string timerName = timer.name();
       if (timerName != "NameOfTimer")
-	throw std::logic_error ("TimerType does not correctly store the timer name");
+        throw std::logic_error ("TimerType does not correctly store the timer name");
 
       // Test default argument of start()
       if (timer.isRunning())
-	throw std::logic_error ("TimerType does not correctly initialize isRunning");
+        throw std::logic_error ("TimerType does not correctly initialize isRunning");
       timer.start ();
       if (! timer.isRunning())
-	throw std::logic_error ("TimerType does not correctly set isRunning");
+        throw std::logic_error ("TimerType does not correctly set isRunning");
       double result1 = timer.stop();
       if (timer.isRunning())
-	throw std::logic_error ("TimerType does not correctly reset isRunning");
+        throw std::logic_error ("TimerType does not correctly reset isRunning");
 
       // Test nondefault argument of start()
       if (timer.isRunning())
-	throw std::logic_error ("TimerType does not correctly initialize isRunning");
+        throw std::logic_error ("TimerType does not correctly initialize isRunning");
       timer.start (true);
       if (! timer.isRunning())
-	throw std::logic_error ("TimerType does not correctly set isRunning");
+        throw std::logic_error ("TimerType does not correctly set isRunning");
       double result2 = timer.stop();
       if (timer.isRunning())
-	throw std::logic_error ("TimerType does not correctly reset isRunning");
+        throw std::logic_error ("TimerType does not correctly reset isRunning");
 
       return result1 + result2;
     }

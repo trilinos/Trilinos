@@ -649,6 +649,14 @@ UnitTestEvaluator::testEvaluator()
 
   }
 
+  // Test point mask functions
+  EXPECT_TRUE(test_one_value("point2d(0,0,1,0.1)", 1.0));
+  EXPECT_TRUE(test_one_value("point2d(0,1,1,0.1)", 0.5));
+  EXPECT_TRUE(test_one_value("point2d(0,2,1,0.1)", 0.0));
+
+  EXPECT_TRUE(test_one_value("point3d(0,0,0,1,0.1)", 1.0));
+  EXPECT_TRUE(test_one_value("point3d(0,1,0,1,0.1)", 0.5));
+  EXPECT_TRUE(test_one_value("point3d(0,2,0,1,0.1)", 0.0));
 
   // These tests just print a range of values of the input expressions.
   // and optionally output to a CSV file along with an associated GNUPLOT input file.

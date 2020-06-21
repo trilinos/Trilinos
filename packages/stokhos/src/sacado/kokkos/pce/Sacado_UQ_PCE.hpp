@@ -116,7 +116,7 @@ namespace Sacado {
       /*!
        * May not intialize the coefficient array.
        */
-      KOKKOS_INLINE_FUNCTION
+      KOKKOS_DEFAULTED_FUNCTION 
       PCE() = default;
 
       //! Constructor with supplied value \c x
@@ -179,7 +179,7 @@ namespace Sacado {
         cijk_(), s_(l.size(), l.begin()) {}
 
       //! Destructor
-      KOKKOS_INLINE_FUNCTION
+      KOKKOS_DEFAULTED_FUNCTION
       ~PCE() = default;
 
       //! Initialize coefficients to value
@@ -1311,6 +1311,31 @@ namespace Sacado {
 
 #include "Sacado_UQ_PCE_Traits.hpp"
 #include "Sacado_UQ_PCE_Imp.hpp"
+
+#include "Kokkos_NumericTraits.hpp"
+
+namespace Kokkos {
+
+template <typename Storage>
+struct reduction_identity< Sacado::UQ::PCE<Storage> > {
+  typedef Sacado::UQ::PCE<Storage> pce;
+  typedef typename Storage::value_type scalar;
+  typedef reduction_identity<scalar> RIS;
+  KOKKOS_FORCEINLINE_FUNCTION constexpr static pce sum()  {
+    return pce(RIS::sum());
+  }
+  KOKKOS_FORCEINLINE_FUNCTION constexpr static pce prod() {
+    return pce(RIS::prod());
+  }
+  KOKKOS_FORCEINLINE_FUNCTION constexpr static pce max()  {
+    return pce(RIS::max());
+  }
+  KOKKOS_FORCEINLINE_FUNCTION constexpr static pce min()  {
+    return pce(RIS::min());
+  }
+};
+
+}
 
 #endif // HAVE_STOKHOS_SACADO
 

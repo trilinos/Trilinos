@@ -433,9 +433,9 @@ void ExplicitRKStepper<Scalar>::describe(
     }
     out << "ktemp_vector = " << std::endl;
     out << Teuchos::describe(*ktemp_vector_,verbLevel);
-    out << "ERK Butcher Tableau A matrix: " << erkButcherTableau_->A() << std::endl;
-    out << "ERK Butcher Tableau b vector: " << erkButcherTableau_->b() << std::endl;
-    out << "ERK Butcher Tableau c vector: " << erkButcherTableau_->c() << std::endl;
+    out << "ERK Butcher Tableau A matrix: " << printMat(erkButcherTableau_->A()) << std::endl;
+    out << "ERK Butcher Tableau b vector: " << printMat(erkButcherTableau_->b()) << std::endl;
+    out << "ERK Butcher Tableau c vector: " << printMat(erkButcherTableau_->c()) << std::endl;
     out << "t = " << t_ << std::endl;
   }
 }

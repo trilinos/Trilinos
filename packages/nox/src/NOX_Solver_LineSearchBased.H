@@ -74,14 +74,14 @@ namespace Solver {
 /*!
   \brief Nonlinear solver based on a line search (i.e., damping)
 
-  Solves \f$F(x)=0\f$ using an iterative line-search-based method.
+  Solves \f$ F(x)=0\f$ using an iterative line-search-based method.
 
   Each iteration, the solver does the following.
 
   <ul>
-  <li>Compute a search direction \f$d\f$ via a NOX::Direction method
+  <li>Compute a search direction \f$ d\f$ via a NOX::Direction method
 
-  <li>Compute a step length \f$\lambda\f$ and update \f$x\f$ as \f$x_{\rm new}
+  <li>Compute a step length \f$\lambda\f$ and update \f$ x\f$ as \f$ x_{\rm new}
       = x_{\rm old} + \lambda d\f$ via a NOX::LineSearch method.
 
   </ul>

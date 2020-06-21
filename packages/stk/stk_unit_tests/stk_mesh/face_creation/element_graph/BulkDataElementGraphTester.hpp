@@ -117,12 +117,11 @@ public:
                 stk::mesh::Entity entity = shared_modified[i].m_entity;
                 int sharing_proc = shared_modified[i].m_sharing_proc;
                 entity_comm_map_insert(entity, stk::mesh::EntityCommInfo(stk::mesh::BulkData::SHARED, sharing_proc));
+                int old_owner = parallel_owner_rank(entity);
                 int owning_proc = shared_modified[i].m_owner;
-                const bool am_not_owner = this->internal_set_parallel_owner_rank_but_not_comm_lists(entity, owning_proc);
-                if (am_not_owner)
+                if (old_owner != owning_proc)
                 {
-                    stk::mesh::EntityKey key = this->entity_key(entity);
-                    internal_change_owner_in_comm_data(key, owning_proc);
+                    internal_set_owner(entity, owning_proc);
                     this->internal_change_entity_parts(entity, shared_part /*add*/, owned_part /*remove*/, scratch1, scratch2);
                 }
                 else

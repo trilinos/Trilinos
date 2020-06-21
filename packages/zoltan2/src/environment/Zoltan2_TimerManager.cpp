@@ -113,7 +113,8 @@ void TimerManager::stop(TimerType tt, const std::string &name)
     newTimer->reset();     // reset to zero
     timerMap_[name] = timers_.size();
     timers_.push_back(newTimer);
-    std::cerr << comm_->getRank() << ": warning, stop with no start" << std::endl;
+    std::cerr << comm_->getRank() << ": warning, stop with no start:"
+      << name.c_str() << std::endl;
   }
 }
 

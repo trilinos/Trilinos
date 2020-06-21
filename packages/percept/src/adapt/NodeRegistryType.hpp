@@ -19,7 +19,7 @@
 #include <cmath>
 #include <utility>
 #include <math.h>
-#include <map>
+#include <unordered_map>
 #include <set>
 #include <vector>
 
@@ -40,17 +40,11 @@
 
 #include <percept/PerceptBoostArray.hpp>
 
-#include <boost/tuple/tuple_io.hpp>
-#include <boost/tuple/tuple_comparison.hpp>
+#include <tuple>
 
 #include <adapt/SubDimCell.hpp>
 #include <adapt/SDCEntityType.hpp>
 #include <adapt/NodeIdsOnSubDimEntityType.hpp>
-
-#define NODE_REGISTRY_MAP_TYPE_BOOST 1
-#if NODE_REGISTRY_MAP_TYPE_BOOST
-#include <boost/unordered_map.hpp>
-#endif
 
 namespace percept {
 // pair of rank and number of entities of that rank needed on a SubDimCell
@@ -63,14 +57,14 @@ namespace percept {
      : first(f), second(s), third(0) {}
    };
 
-   inline std::ostream &operator<<(std::ostream& out, const boost::array<stk::mesh::EntityId, 1>& arr)
+   inline std::ostream &operator<<(std::ostream& out, const std::array<stk::mesh::EntityId, 1>& arr)
    {
      out << arr[0];
      return out;
    }
 
 #define DOUBLE2LEN 2
-   typedef boost::array<double, DOUBLE2LEN> Double2;
+   typedef std::array<double, DOUBLE2LEN> Double2;
 
    inline std::ostream &operator<<(std::ostream& out, const Double2 arr)
    {
@@ -80,7 +74,7 @@ namespace percept {
    }
 
    // tuple storage: SDC_DATA_GLOBAL_NODE_IDS, SDC_DATA_OWNING_ELEMENT_KEY,  SDC_DATA_OWNING_SUBDIM_RANK, SDC_DATA_OWNING_SUBDIM_ORDINAL, SDC_DATA_SPACING
-   typedef boost::tuple<NodeIdsOnSubDimEntityType, stk::mesh::EntityKey, unsigned char, unsigned char, Double2> SubDimCellData;
+   typedef std::tuple<NodeIdsOnSubDimEntityType, stk::mesh::EntityKey, unsigned char, unsigned char, Double2> SubDimCellData;
 
    enum { MAX_NODES_ON_A_FACE = 4 };
    typedef MySubDimCell<SDCEntityType, MAX_NODES_ON_A_FACE, CompareSDCEntityType> SubDimCell_SDCEntityType;
@@ -104,32 +98,21 @@ namespace percept {
    {
      std::ostringstream ostr;
      ostr << "SDC:: node ids= [";
-     for (unsigned ii=0; ii < val.get<SDC_DATA_GLOBAL_NODE_IDS>().size(); ++ii)
+     for (unsigned ii=0; ii < std::get<SDC_DATA_GLOBAL_NODE_IDS>(val).size(); ++ii)
        {
-         ostr << " " << val.get<SDC_DATA_GLOBAL_NODE_IDS>().m_entity_id_vector[ii];
+         ostr << " " << std::get<SDC_DATA_GLOBAL_NODE_IDS>(val).m_entity_id_vector[ii];
        }
-     ostr << "] owning element rank= " << val.get<SDC_DATA_OWNING_ELEMENT_KEY>().rank()
-         << " id= " << val.get<SDC_DATA_OWNING_ELEMENT_KEY>().id()
-         << " subDim-ord= " << (int)val.get<SDC_DATA_OWNING_SUBDIM_ORDINAL>()
-         << " subDim-rank= " << (int)val.get<SDC_DATA_OWNING_SUBDIM_RANK>()
-         << " spacing info= " << val.get<SDC_DATA_SPACING>()[0] << " " << val.get<SDC_DATA_SPACING>()[1];
+     ostr << "] owning element rank= " << std::get<SDC_DATA_OWNING_ELEMENT_KEY>(val).rank()
+         << " id= " << std::get<SDC_DATA_OWNING_ELEMENT_KEY>(val).id()
+         << " subDim-ord= " << (int)std::get<SDC_DATA_OWNING_SUBDIM_ORDINAL>(val)
+         << " subDim-rank= " << (int)std::get<SDC_DATA_OWNING_SUBDIM_RANK>(val)
+         << " spacing info= " << std::get<SDC_DATA_SPACING>(val)[0] << " " << std::get<SDC_DATA_SPACING>(val)[1];
      out << ostr.str() << std::endl;
      return out;
    }
 
    /// map of the node ids on a sub-dim entity to the data on the sub-dim entity
-
-#if NODE_REGISTRY_MAP_TYPE_BOOST
-#  ifdef STK_HAVE_TBB
-
-   typedef tbb::scalable_allocator<std::pair<SubDimCell_SDCEntityType const, SubDimCellData> > RegistryAllocator;
-   typedef boost::unordered_map<SubDimCell_SDCEntityType, SubDimCellData, my_fast_hash<SDCEntityType, 4>, my_fast_equal_to<SDCEntityType, 4>, RegistryAllocator > SubDimCellToDataMap;
-
-#  else
-   typedef boost::unordered_map<SubDimCell_SDCEntityType, SubDimCellData, my_fast_hash<SDCEntityType, 4>, my_fast_equal_to<SDCEntityType, 4> > SubDimCellToDataMap;
-   typedef boost::unordered_map<stk::mesh::EntityId, stk::mesh::Entity > EntityRepo;
-#  endif
-#endif
+   typedef std::unordered_map<SubDimCell_SDCEntityType, SubDimCellData, my_fast_hash<SDCEntityType, 4>, my_fast_equal_to<SDCEntityType, 4> > SubDimCellToDataMap;
 
    // Size and rank of sub-dim cells needing new nodes, actual nodes' EntityKeys stored in a SubDimCell<EntityKey>
    enum CommDataTypeEnum {
@@ -139,7 +122,7 @@ namespace percept {
    };
 
    // decode: size of SubDimCell, SubDimCell, sub-dim entity rank, non-owning element RANK
-   typedef boost::tuple<unsigned, stk::mesh::EntityRank, SubDimCell<stk::mesh::EntityKey> > CommDataType;
+   typedef std::tuple<unsigned, stk::mesh::EntityRank, SubDimCell<stk::mesh::EntityKey> > CommDataType;
 
    enum NodeRegistryState {
      NRS_NONE,

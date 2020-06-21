@@ -151,7 +151,7 @@ int main(int argc, char *argv[]) {
   RCP<Amesos2::Solver<MAT,MV> > solver;
   try{
     solver = Amesos2::create<MAT,MV>(solver_name, rcp(A), X, B);
-  } catch (std::invalid_argument e){
+  } catch (const std::invalid_argument& e){
     *fos << e.what() << std::endl;
     return 0;
   }

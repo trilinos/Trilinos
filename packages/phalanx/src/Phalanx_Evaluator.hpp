@@ -112,6 +112,10 @@ namespace PHX {
     virtual const std::vector< Teuchos::RCP<FieldTag> >&
     dependentFields() const = 0;
 
+    //! Returns vector of fields that are not allowed to share memory with other fields.
+    virtual const std::vector< Teuchos::RCP<FieldTag> >&
+    unsharedFields() const = 0;
+
     //! Evaluate all fields that the provider supplies.
     /*!
         Input:
@@ -186,6 +190,9 @@ namespace PHX {
 
     //! Call dtor and delete device memory. Only used for Device DAG support
     virtual void deleteDeviceEvaluator(PHX::DeviceEvaluator<Traits>* e) const = 0;
+
+    /// Print the field values for all fields in the evaluator.
+    virtual void printFieldValues(std::ostream& os) const = 0;
 
     // @}
 

@@ -40,8 +40,9 @@
 #include "stk_mesh/base/FieldRestriction.hpp"  // for FieldRestriction
 #include <stk_mesh/base/FindRestriction.hpp>
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowRequireMsg
-namespace stk { namespace mesh { class BulkData; } }
 
+
+namespace stk { namespace mesh { class BulkData; } }
 
 namespace stk {
 namespace mesh {

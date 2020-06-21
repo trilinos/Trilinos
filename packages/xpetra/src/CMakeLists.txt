@@ -100,6 +100,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
     CrsMatrix/Xpetra_EpetraCrsMatrix.cpp
     Vector/Xpetra_EpetraVector.cpp
     Vector/Xpetra_EpetraIntVector.cpp
+    Vector/Xpetra_EpetraVectorFactory.cpp
     )
 ENDIF()
 

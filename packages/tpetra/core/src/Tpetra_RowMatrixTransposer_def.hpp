@@ -98,6 +98,8 @@ createTranspose (const Teuchos::RCP<Teuchos::ParameterList> &params)
       labelList.set (paramName, params->get (paramName, true));
     }
     // Use the Export object to do a fused Export and fillComplete.
+    // This always sorts the local matrix after communication, so
+    //   no need to set "sorted = false" in parameters.
     return exportAndFillCompleteCrsMatrix<crs_matrix_type>
       (transMatrixWithSharedRows, *exporter, Teuchos::null,
        Teuchos::null, Teuchos::rcpFromRef (labelList));
@@ -158,12 +160,7 @@ createTransposeLocal (const Teuchos::RCP<Teuchos::ParameterList>& params)
       auto colMap = origMatrix_->getColMap ();
 
       RCP<crs_matrix_type> crsMatrix_nc =
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-        rcp (new crs_matrix_type (rowMap, colMap, numEntPerRow (),
-                                  Tpetra::StaticProfile));
-#else
         rcp (new crs_matrix_type (rowMap, colMap, numEntPerRow ()));
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
       // When source & target Maps are same, Import just copies.
       import_type imp (rowMap, rowMap);
@@ -271,12 +268,18 @@ createTransposeLocal (const Teuchos::RCP<Teuchos::ParameterList>& params)
   RCP<const export_type> myExport = origImport.is_null () ?
     Teuchos::null : rcp (new export_type (*origImport));
 
+  RCP<Teuchos::ParameterList> graphParams = Teuchos::null;
+  if(!sort) {
+    graphParams = rcp(new Teuchos::ParameterList);
+    graphParams->set("sorted", false);
+  }
+
   return rcp (new crs_matrix_type (lclTransposeMatrix,
                                    origMatrix_->getColMap (),
                                    origMatrix_->getRowMap (),
                                    origMatrix_->getRangeMap (),
                                    origMatrix_->getDomainMap (),
-                                   myImport, myExport));
+                                   myImport, myExport, graphParams));
 }
 //
 // Explicit instantiation macro

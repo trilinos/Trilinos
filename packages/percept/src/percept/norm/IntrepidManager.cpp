@@ -561,7 +561,7 @@
       found_it = 0;
 
       // FIXME consider caching the coords_field in FieldFunction
-      const stk::mesh::MetaData& metaData = stk::mesh::MetaData::get(bulkData);
+      const stk::mesh::MetaData& metaData = bulkData.mesh_meta_data();
       CoordinatesFieldType *coords_field = metaData.get_field<CoordinatesFieldType >(stk::topology::NODE_RANK, "coordinates");
 
       const stk::mesh::Bucket & bucket = bulkData.bucket(element);

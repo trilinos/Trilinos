@@ -55,9 +55,6 @@ namespace FROSch {
                                                               CommPtr comm) :
     MpiComm_ (comm),
     ParameterList_ (parameterList),
-    UseTranspose_ (false),
-    IsInitialized_ (false),
-    IsComputed_ (false),
     Verbose_ (comm->getRank()==0),
     LevelID_ (ParameterList_->get("Level ID",UN(1)))
     {
@@ -81,6 +78,17 @@ namespace FROSch {
     {
         return IsComputed_; // TODO: Das hat noch keine Bedeutung
     }
+
+    template <class SC,class LO,class GO,class NO>
+    void SchwarzPreconditioner<SC,LO,GO,NO>::residual(const XMultiVector & X,
+                                                      const XMultiVector & B,
+                                                      XMultiVector& R) const 
+    {
+        SC one = Teuchos::ScalarTraits<SC>::one(), negone = -one;
+        apply(X,R);
+        R.update(one,B,negone);
+    }
+
 }
 
 #endif

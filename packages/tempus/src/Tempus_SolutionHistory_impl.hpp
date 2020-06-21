@@ -15,7 +15,6 @@
 #include "Teuchos_TimeMonitor.hpp"
 
 // Tempus
-#include "Tempus_SolutionStateMetaData.hpp"
 #include "Tempus_InterpolatorFactory.hpp"
 
 //#include "Thyra_VectorStdOps.hpp"
@@ -53,6 +52,48 @@ namespace {
 
 
 namespace Tempus {
+
+template<class Scalar>
+SolutionHistory<Scalar>::SolutionHistory()
+{
+  using Teuchos::RCP;
+  // Create history, an array of solution states.
+  history_ = rcp(new std::vector<RCP<SolutionState<Scalar> > >);
+
+  this->setParameterList(Teuchos::null);
+
+  if (Teuchos::as<int>(this->getVerbLevel()) >=
+      Teuchos::as<int>(Teuchos::VERB_HIGH)) {
+    RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::OSTab ostab(out,1,"SolutionHistory::SolutionHistory");
+    *out << this->description() << std::endl;
+  }
+}
+
+
+template<class Scalar>
+SolutionHistory<Scalar>::SolutionHistory(
+  std::string                               name,
+  Teuchos::RCP<std::vector<Teuchos::RCP<SolutionState<Scalar> > > > history,
+  Teuchos::RCP<Interpolator<Scalar> >       interpolator,
+  StorageType                               storageType,
+  int                                       storageLimit)
+{
+  this->setParameterList(Teuchos::null);
+
+  this->setName(name);
+  history_ = history;
+  this->setStorageType(storageType);
+  this->setStorageLimit(storageLimit);
+
+  if (Teuchos::as<int>(this->getVerbLevel()) >=
+      Teuchos::as<int>(Teuchos::VERB_HIGH)) {
+    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::OSTab ostab(out,1,"SolutionHistory::SolutionHistory");
+    *out << this->description() << std::endl;
+  }
+}
+
 
 template<class Scalar>
 SolutionHistory<Scalar>::SolutionHistory(
@@ -136,13 +177,13 @@ void SolutionHistory<Scalar>::addWorkingState(
 
   addState(state);
   workingState_ = (*history_)[getNumStates()-1];
-  RCP<SolutionStateMetaData<Scalar> > csmd = getCurrentState()->getMetaData();
-  RCP<SolutionStateMetaData<Scalar> > wsmd = workingState_    ->getMetaData();
-  wsmd->setSolutionStatus(Status::WORKING);
-  wsmd->setIStep(csmd->getIStep()+1);
+  auto cs = getCurrentState();
+  auto ws = getWorkingState();
+  ws->setSolutionStatus(Status::WORKING);
+  ws->setIndex(cs->getIndex()+1);
   if (updateTime) {
-    wsmd->setTime(csmd->getTime() + csmd->getDt());
-    wsmd->setDt(csmd->getDt());
+    ws->setTime(cs->getTime() + cs->getTimeStep());
+    ws->setTimeStep(cs->getTimeStep());
   }
 }
 
@@ -261,15 +302,14 @@ void SolutionHistory<Scalar>::initWorkingState()
 template<class Scalar>
 void SolutionHistory<Scalar>::promoteWorkingState()
 {
-  Teuchos::RCP<SolutionStateMetaData<Scalar> > md =
-    getWorkingState()->getMetaData();
+  auto ws = getWorkingState();
 
-  if ( md->getSolutionStatus() == Status::PASSED ) {
-    md->setNFailures(std::max(0,md->getNFailures()-1));
-    md->setNConsecutiveFailures(0);
-    md->setSolutionStatus(Status::PASSED);
-    //md->setIsSynced(true);
-    md->setIsInterpolated(false);
+  if ( ws->getSolutionStatus() == Status::PASSED ) {
+    ws->setNFailures(std::max(0,ws->getNFailures()-1));
+    ws->setNConsecutiveFailures(0);
+    ws->setSolutionStatus(Status::PASSED);
+    //ws->setIsSynced(true);
+    ws->setIsInterpolated(false);
     workingState_ = Teuchos::null;
   } else {
     Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
@@ -507,15 +547,6 @@ SolutionHistory<Scalar>::unsetParameterList()
   return(temp_plist);
 }
 
-// Nonmember constructor.
-template<class Scalar>
-Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory(
-  Teuchos::RCP<Teuchos::ParameterList> pList)
-{
-  Teuchos::RCP<SolutionHistory<Scalar> > sh=rcp(new SolutionHistory<Scalar>(pList));
-  return sh;
-}
-
 template<class Scalar>
 void SolutionHistory<Scalar>::setInterpolator(
  const Teuchos::RCP<Interpolator<Scalar> >& interpolator)
@@ -554,6 +585,49 @@ SolutionHistory<Scalar>::unSetInterpolator()
  Teuchos::RCP<Interpolator<Scalar> > old_interpolator = interpolator_;
  interpolator_ = lagrangeInterpolator<Scalar>();
  return old_interpolator;
+}
+
+// Nonmember constructors.
+// ------------------------------------------------------------------------
+
+template<class Scalar>
+Teuchos::RCP<SolutionHistory<Scalar> > createSolutionHistoryPL(
+  Teuchos::RCP<Teuchos::ParameterList> pList)
+{
+  auto sh = rcp(new SolutionHistory<Scalar>(pList));
+  return sh;
+}
+
+
+template<class Scalar>
+Teuchos::RCP<SolutionHistory<Scalar> >
+createSolutionHistoryState(const Teuchos::RCP<SolutionState<Scalar> >& state)
+{
+  auto sh = rcp(new SolutionHistory<Scalar>());
+  sh->setName("From createSolutionHistoryState");
+  sh->addState(state);
+  return sh;
+}
+
+
+template<class Scalar>
+Teuchos::RCP<SolutionHistory<Scalar> >
+createSolutionHistoryME(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model)
+{
+  // Setup initial condition SolutionState --------------------
+  auto state = createSolutionStateME(model);
+  state->setTime    (0.0);
+  state->setIndex   (0);
+  state->setTimeStep(0.0);
+  state->setOrder   (1);
+
+  // Setup SolutionHistory ------------------------------------
+  auto sh = rcp(new SolutionHistory<Scalar>());
+  sh->setName("From createSolutionHistoryME");
+  sh->addState(state);
+
+  return sh;
 }
 
 

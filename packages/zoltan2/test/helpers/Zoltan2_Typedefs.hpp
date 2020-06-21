@@ -108,7 +108,7 @@
  
 // Forward declaration of classes in the Zoltan2 namespace
  namespace Zoltan2 {
-   template<typename T1, typename T2, typename T3>
+   template<typename T1, typename T2, typename T3, typename T4>
    class BasicUserTypes;
  
    template<typename T1>

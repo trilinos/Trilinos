@@ -47,17 +47,14 @@
 
 namespace FROSch {
 
+    using namespace std;
     using namespace Teuchos;
     using namespace Xpetra;
 
     template <class SC,class LO,class GO,class NO>
     MultiplicativeOperator<SC,LO,GO,NO>::MultiplicativeOperator(ConstXMatrixPtr k,
                                                                 ParameterListPtr parameterList) :
-    SchwarzOperator<SC,LO,GO,NO> (k, parameterList),
-    OperatorVector_ (0),
-    XTmp_ (),
-    YTmp_ (),
-    EnableOperators_ (0)
+    SchwarzOperator<SC,LO,GO,NO> (k, parameterList)
     {
         FROSCH_TIMER_START_LEVELID(multiplicativeOperatorTime,"MultiplicativeOperator::MultiplicativeOperator");
     }
@@ -66,11 +63,7 @@ namespace FROSch {
     MultiplicativeOperator<SC,LO,GO,NO>::MultiplicativeOperator(ConstXMatrixPtr k,
                                                                 SchwarzOperatorPtrVecPtr operators,
                                                                 ParameterListPtr parameterList) :
-    SchwarzOperator<SC,LO,GO,NO> (k, parameterList),
-    OperatorVector_ (0),
-    XTmp_ (),
-    YTmp_ (),
-    EnableOperators_ (0)
+    SchwarzOperator<SC,LO,GO,NO> (k, parameterList)
     {
         FROSCH_TIMER_START_LEVELID(multiplicativeOperatorTime,"MultiplicativeOperator::MultiplicativeOperator");
         OperatorVector_.push_back(operators.at(0));
@@ -176,9 +169,9 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    std::string MultiplicativeOperator<SC,LO,GO,NO>::description() const
+    string MultiplicativeOperator<SC,LO,GO,NO>::description() const
     {
-        std::string labelString = "Level operator: ";
+        string labelString = "Level operator: ";
 
         for (UN i=0; i<OperatorVector_.size(); i++) {
             labelString += OperatorVector_.at(i)->description();
@@ -196,11 +189,11 @@ namespace FROSch {
         int ret = 0;
         if (OperatorVector_.size()>0) {
             if (!op->getDomainMap()->isSameAs(*OperatorVector_[0]->getDomainMap())) {
-                if (this->Verbose_) std::cerr << "MultiplicativeOperator<SC,LO,GO,NO>::addOperator(SchwarzOperatorPtr op)\t\t!op->getDomainMap().isSameAs(OperatorVector_[0]->getDomainMap())\n";
+                if (this->Verbose_) cerr << "MultiplicativeOperator<SC,LO,GO,NO>::addOperator(SchwarzOperatorPtr op)\t\t!op->getDomainMap().isSameAs(OperatorVector_[0]->getDomainMap())\n";
                 ret -= 1;
             }
             if (!op->getRangeMap()->isSameAs(*OperatorVector_[0]->getRangeMap())){
-                if (this->Verbose_) std::cerr << "MultiplicativeOperator<SC,LO,GO,NO>::addOperator(SchwarzOperatorPtr op)\t\t!op->getRangeMap().isSameAs(OperatorVector_[0]->getRangeMap())\n";
+                if (this->Verbose_) cerr << "MultiplicativeOperator<SC,LO,GO,NO>::addOperator(SchwarzOperatorPtr op)\t\t!op->getRangeMap().isSameAs(OperatorVector_[0]->getRangeMap())\n";
                 ret -= 10;
             }
             //FROSCH_ASSERT(op->OperatorDomainMap().SameAs(OperatorVector_.at(0)->OperatorDomainMap()),"The DomainMaps of the operators are not identical.");
@@ -230,11 +223,11 @@ namespace FROSch {
         FROSCH_ASSERT(iD<OperatorVector_.size(),"iD exceeds the length of the OperatorVector_");
         int ret = 0;
         if (!op->getDomainMap().isSameAs(OperatorVector_[0]->getDomainMap())) {
-            if (this->Verbose_) std::cerr << "MultiplicativeOperator<SC,LO,GO,NO>::addOperator(SchwarzOperatorPtr op)\t\t!op->getDomainMap().isSameAs(OperatorVector_[0]->getDomainMap())\n";
+            if (this->Verbose_) cerr << "MultiplicativeOperator<SC,LO,GO,NO>::addOperator(SchwarzOperatorPtr op)\t\t!op->getDomainMap().isSameAs(OperatorVector_[0]->getDomainMap())\n";
             ret -= 1;
         }
         if (!op->getRangeMap().isSameAs(OperatorVector_[0]->getRangeMap())){
-            if (this->Verbose_) std::cerr << "MultiplicativeOperator<SC,LO,GO,NO>::addOperator(SchwarzOperatorPtr op)\t\t!op->getRangeMap().isSameAs(OperatorVector_[0]->getRangeMap())\n";
+            if (this->Verbose_) cerr << "MultiplicativeOperator<SC,LO,GO,NO>::addOperator(SchwarzOperatorPtr op)\t\t!op->getRangeMap().isSameAs(OperatorVector_[0]->getRangeMap())\n";
             ret -= 10;
         }
         OperatorVector_[iD] = op;

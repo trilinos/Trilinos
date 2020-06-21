@@ -47,6 +47,7 @@
 
 #include "Amesos2_TpetraMultiVecAdapter_def.hpp"
 // EpetraMultiVecAdapter_def.hpp not included because the specialization is not a template
+#include "Amesos2_KokkosMultiVecAdapter_def.hpp"
 
 #include "Amesos2_Util.hpp"     // for getDistributionMap
 
@@ -92,7 +93,7 @@ namespace Amesos2{
      * the same, then we can do a simple straight copy.
      */
     template <typename MV>
-    void same_type_get_copy<MV>::apply(const Teuchos::Ptr<const MV>& mv,
+    void same_type_get_copy<MV>::apply(const Teuchos::Ptr<const MV> mv,
                                        const Teuchos::ArrayView<typename MV::scalar_t>& v,
                                        const size_t ldx,
                                        Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
@@ -109,9 +110,9 @@ namespace Amesos2{
      */
     template <typename MV, typename S>
     void diff_type_get_copy<MV,S>::
-    apply (const Teuchos::Ptr<const MV>& mv,
+    apply (const Teuchos::Ptr<const MV> mv,
            const Teuchos::ArrayView<S>& v,
-           const size_t& ldx,
+           const size_t ldx,
            Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
            EDistribution distribution )
     {
@@ -202,6 +203,64 @@ namespace Amesos2{
       do_get (mv, vals, ldx, Teuchos::ptrInArg (*map), ROOTED); // ROOTED the default here for now
     }
 
+    template <class MV, typename KV>
+    void get_1d_copy_helper_kokkos_view<MV,KV>::
+    do_get (const Teuchos::Ptr<const MV>& mv,
+            KV& kokkos_vals,
+            const size_t ldx,
+            Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
+            EDistribution distribution)
+    {
+      mv->get1dCopy_kokkos_view(kokkos_vals, ldx, distribution_map, distribution);
+    }
+
+    template <class MV, typename KV>
+    void get_1d_copy_helper_kokkos_view<MV,KV>::
+    do_get (const Teuchos::Ptr<const MV>& mv,
+            KV& kokkos_vals,
+            const size_t ldx,
+            EDistribution distribution,
+            typename MV::global_ordinal_t indexBase)
+    {
+      typedef typename MV::local_ordinal_t lo_t;
+      typedef typename MV::global_ordinal_t go_t;
+      typedef typename MV::global_size_t gs_t;
+      typedef typename MV::node_t node_t;
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        mv.getRawPtr () == NULL, std::invalid_argument,
+        "Amesos2::get_1d_copy_helper_kokkos_view::do_get(5 args): mv is null.");
+
+      Teuchos::RCP<const Tpetra::Map<lo_t,go_t,node_t> > map
+        = Amesos2::Util::getDistributionMap<lo_t,go_t,gs_t,node_t> (distribution,
+                                                                    mv->getGlobalLength (),
+                                                                    mv->getComm (),
+                                                                    indexBase,
+                                                                    mv->getMap());
+
+      do_get (mv, kokkos_vals, ldx, Teuchos::ptrInArg (*map), distribution);
+    }
+
+    template <class MV, typename KV>
+    void get_1d_copy_helper_kokkos_view<MV,KV>::do_get(const Teuchos::Ptr<const MV>& mv,
+                                          KV& kokkos_vals,
+                                          const size_t ldx)
+    {
+      typedef Tpetra::Map<typename MV::local_ordinal_t,
+                          typename MV::global_ordinal_t,
+                          typename MV::node_t> map_type;
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        mv.getRawPtr () == NULL, std::invalid_argument,
+        "Amesos2::get_1d_copy_helper::do_get(3 args): mv is null.");
+
+      Teuchos::RCP<const map_type> map = mv->getMap ();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        map.is_null (), std::invalid_argument,
+        "Amesos2::get_1d_copy_helper_kokkos_view::do_get(3 args): mv->getMap() is null.");
+
+      do_get (mv, kokkos_vals, ldx, Teuchos::ptrInArg (*map), ROOTED); // ROOTED the default here for now
+    }
+
 
     ///////////////////////////
     // Copy-puting utilities //
@@ -226,7 +285,7 @@ namespace Amesos2{
     template <typename MV, typename S>
     void diff_type_data_put<MV,S>::apply(const Teuchos::Ptr<MV>& mv,
                                          const Teuchos::ArrayView<S>& data,
-                                         const size_t& ldx,
+                                         const size_t ldx,
                                          Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
                                          EDistribution distribution )
     {
@@ -298,6 +357,49 @@ namespace Amesos2{
         typename MV::node_t> > map
         = mv->getMap();
       do_put (mv, data, ldx, Teuchos::ptrInArg (*map), ROOTED); // Default as ROOTED for now
+    }
+
+    template <class MV, typename KV>
+    void put_1d_data_helper_kokkos_view<MV,KV>::do_put(const Teuchos::Ptr<MV>& mv,
+                                          KV& kokkos_data,
+                                          const size_t ldx,
+                                          Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
+                                          EDistribution distribution )
+    {
+      mv->put1dData_kokkos_view(kokkos_data, ldx, distribution_map, distribution);
+    }
+
+    template <class MV, typename KV>
+    void put_1d_data_helper_kokkos_view<MV,KV>::do_put(const Teuchos::Ptr<MV>& mv,
+                                          KV& kokkos_data,
+                                          const size_t ldx,
+                                          EDistribution distribution,  typename MV::global_ordinal_t indexBase)
+    {
+      typedef typename MV::local_ordinal_t lo_t;
+      typedef typename MV::global_ordinal_t go_t;
+      typedef typename MV::global_size_t gs_t;
+      typedef typename MV::node_t node_t;
+
+      const Teuchos::RCP<const Tpetra::Map<lo_t,go_t,node_t> > map
+        = Amesos2::Util::getDistributionMap<lo_t,go_t,gs_t,node_t>(distribution,
+                                                                   mv->getGlobalLength(),
+                                                                   mv->getComm(),
+                                                                   indexBase,
+                                                                   mv->getMap());
+
+      do_put(mv, kokkos_data, ldx, Teuchos::ptrInArg(*map), distribution);
+    }
+
+    template <class MV, typename KV>
+    void put_1d_data_helper_kokkos_view<MV,KV>::do_put (const Teuchos::Ptr<MV>& mv,
+                                           KV& kokkos_data,
+                                           const size_t ldx)
+    {
+      const Teuchos::RCP<const Tpetra::Map<typename MV::local_ordinal_t,
+        typename MV::global_ordinal_t,
+        typename MV::node_t> > map
+        = mv->getMap();
+      do_put (mv, kokkos_data, ldx, Teuchos::ptrInArg (*map), ROOTED); // Default as ROOTED for now
     }
 
   } // end namespace Util

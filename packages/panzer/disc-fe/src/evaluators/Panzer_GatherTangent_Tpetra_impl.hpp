@@ -83,6 +83,10 @@ GatherTangent_Tpetra(
     gatherFields_[fd] =
       PHX::MDField<ScalarT,Cell,NODE>(names[fd],basis->functional);
     this->addEvaluatedField(gatherFields_[fd]);
+    // If tpetraContainer_ is null, the evalaution is a no-op. In this
+    // case we need to preserve zero initial value. Do this by not
+    // sharing.
+    this->addUnsharedField(gatherFields_[fd].fieldTag().clone());
   }
 
   if (p.isType<bool>("Use Time Derivative Solution Vector"))

@@ -772,7 +772,6 @@ int main_(Teuchos::CommandLineProcessor &clp,  Xpetra::UnderlyingLib &lib, int a
 #include "MueLu_Test_ETI.hpp"
 
 int main(int argc, char *argv[]) {
-    Kokkos::ScopeGuard KokkosScope(argc,argv);
     auto val =  Automatic_Test_ETI(argc,argv);
     return val;
 }

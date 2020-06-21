@@ -133,9 +133,10 @@ typedef int default_part_t;  // Restrictions in MPI interface will make it
     \li \c gno (global number) is the integral data type used by the application and Zoltan2 to represent global identifiers and global counts.
  */
 
-template <typename scalar=default_scalar_t, 
+template <typename scalar=default_scalar_t,
           typename lno=default_lno_t,
-          typename gno=default_gno_t>
+          typename gno=default_gno_t,
+          typename node=default_node_t>
 class BasicUserTypes{
 };
 
@@ -245,15 +246,16 @@ struct InputTraits {
 
 template <typename Scalar,
           typename LocalOrdinal,
-          typename GlobalOrdinal>
-struct InputTraits<BasicUserTypes<Scalar, LocalOrdinal, GlobalOrdinal> >
+          typename GlobalOrdinal,
+          typename Node>
+struct InputTraits<BasicUserTypes<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 {
   typedef Scalar        scalar_t;
   typedef LocalOrdinal  lno_t;
   typedef GlobalOrdinal gno_t;
   typedef LocalOrdinal  offset_t;
   typedef Zoltan2::default_part_t  part_t;
-  typedef Zoltan2::default_node_t node_t;
+  typedef Node          node_t;
   static inline std::string name() {return "BasicUserTypes";}
 
   Z2_STATIC_ASSERT_TYPES // validate the types

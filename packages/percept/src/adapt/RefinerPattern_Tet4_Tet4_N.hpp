@@ -100,8 +100,8 @@
     //static unsigned tbl_tet_face_nodes[4][3]     = { {0, 1, 3}, {1, 2, 3}, {0, 3, 2}, {0, 2, 1} };
     //static unsigned tbl_tet_edge_nodes[6][2]     = { {0, 1}, {1, 2}, {2, 0}, {0, 3}, {1, 3}, {2, 3} };
 
-    typedef boost::tuple<unsigned, unsigned, unsigned, unsigned> TetTupleTypeLocal;
-    typedef boost::tuple<stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId> TetTupleType;
+    typedef std::array<unsigned, 4> TetTupleTypeLocal;
+    typedef std::array<stk::mesh::EntityId, 4> TetTupleType;
 
     /// general refinement pattern
 
@@ -260,13 +260,10 @@
             tets.resize(new_tets.size());
             for (unsigned i = 0; i < new_tets.size(); i++)
               {
-                tets[i] = TetTupleTypeLocal((unsigned)new_tets[i].get<0>(),
-                                            (unsigned)new_tets[i].get<1>(),
-                                            (unsigned)new_tets[i].get<2>(),
-                                            (unsigned)new_tets[i].get<3>() );
-                if (0)
-                  std::cout << "tmp RefPatt::createNewElements new tet= " << tets[i] << std::endl;
-
+                tets[i] = {(unsigned)new_tets[i][0],
+                           (unsigned)new_tets[i][1],
+                           (unsigned)new_tets[i][2],
+                           (unsigned)new_tets[i][3]};
               }
           }
       }
@@ -277,9 +274,6 @@
                         vector<stk::mesh::Entity>::iterator& ft_element_pool,
                         stk::mesh::FieldBase *proc_rank_field=0)
       {
-        bool debug = false;
-        //if (m_eMesh.getProperty("debugRemesh") == "true") debug = true;
-
         const CellTopologyData * const cell_topo_data = eMesh.get_cell_topology(element);
         static std::vector<TetTupleType> elems(8);
         static std::vector<TetTupleTypeLocal> elems_local(8);
@@ -327,20 +321,11 @@
         elems.resize(num_new_elems);
         for (unsigned ielem=0; ielem < num_new_elems; ielem++)
           {
-            elems[ielem] = TetTupleType( TET_CV_EV(elems_local[ielem].get<0>() ),
-                                         TET_CV_EV(elems_local[ielem].get<1>() ),
-                                         TET_CV_EV(elems_local[ielem].get<2>() ),
-                                         TET_CV_EV(elems_local[ielem].get<3>() ) );
-            if (debug)
-              {
-                std::cout << "tmp RefPatt::createNewElements old tet= " << eMesh.print_entity_compact(element) << "\n new tet= " << elems[ielem] << " elems_local= " << elems_local[ielem] << std::endl;
-              }
-
+            elems[ielem] = { TET_CV_EV(elems_local[ielem][0] ),
+                             TET_CV_EV(elems_local[ielem][1] ),
+                             TET_CV_EV(elems_local[ielem][2] ),
+                             TET_CV_EV(elems_local[ielem][3] ) };
           }
-
-        //std::cout << "tmp RefinerPattern_Tet4_Tet4_N::num_edges_marked= " << num_edges_marked << std::endl;
-
-        //nodeRegistry.prolongateCoords(*const_cast<stk::mesh::Entity>(&element), stk::topology::ELEMENT_RANK, 0u);
 
         for (unsigned ielem=0; ielem < elems.size(); ielem++)
           {
@@ -365,42 +350,20 @@
                   {
                     transition_element[0] = 1;
                   }
-                if (0)
-                  std::cout << "tmp srk found transition_element = " << m_eMesh.identifier(newElement) << " num_edges_marked= " << num_edges_marked 
-                            << " val= " << transition_element[0]
-                            << " element= " << m_eMesh.identifier(element)
-                            << std::endl;
               }
 
-
-            //eMesh.get_bulk_data()->change_entity_parts( newElement, add_parts, remove_parts );
             change_entity_parts(eMesh, element, newElement);
 
-            {
-              if (!elems[ielem].get<0>())
-                {
-                  std::cout << "P[" << eMesh.get_rank() << "] nid = 0 << " << std::endl;
-                  //exit(1);
-                }
-            }
-
             // 4 nodes of the new tets
-            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<0>()), 0);
-            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<1>()), 1);
-            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<2>()), 2);
-            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<3>()), 3);
-
+            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem][0]), 0);
+            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem][1]), 1);
+            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem][2]), 2);
+            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem][3]), 3);
+            
             set_parent_child_relations(eMesh, element, newElement, *ft_element_pool, ielem);
 
             std::vector<stk::mesh::Entity> elements(1,element);
             eMesh.prolongateElementFields( elements, newElement);
-
-            if (0)
-              {
-                std::cout << "tmp RefPatt::createNewElements eMesh.identifier(element)= " << eMesh.identifier(element)
-                          << " newElement= " << eMesh.identifier(newElement) << std::endl;
-
-              }
 
             ft_element_pool++;
             element_pool++;

@@ -81,11 +81,17 @@ namespace Epetra {
 
 /*! \brief Concrete implementation for creating an Epetra_Operator Jacobian based on the Matrix-Free Newton-Krylov method.
 
-Matrix-Free Newton-Krylov is a method that takes advantage of the fact the Newton Krylov solvers do not require an explicit Jacobian matrix.  Newton-Krylov solvers only require the matrix-vector product \f$Jy\f$ in the iteration sequence.  This product can approximated by the following:
+Matrix-Free Newton-Krylov is a method that takes advantage of the fact
+the Newton Krylov solvers do not require an explicit Jacobian matrix.
+Newton-Krylov solvers only require the matrix-vector product \f$ Jy\f$
+in the iteration sequence.  This product can approximated by the
+following:
 
 \f[ Jy = \frac{F(x + \delta y) - F(x)}{\delta} \f]
 
-where \f$J\f$ is the Jacobian, \f$F\f$ is the function evaluation, \f$x\f$ is the solution vector, \f$y\f$ is the vector to be operated on, and \f$\delta\f$ is a scalar perturbation calculated by:
+where \f$ J\f$ is the Jacobian, \f$ F\f$ is the function evaluation,
+\f$ x\f$ is the solution vector, \f$ y\f$ is the vector to be operated
+on, and \f$\delta\f$ is a scalar perturbation calculated by:
 
 \f[ \delta = \lambda * (\lambda + \frac{\| x\|}{\| y\|} ) \f]
 
@@ -176,7 +182,9 @@ class MatrixFree : public Epetra_Operator,
   //! Allows the user to change the value of \f$ \lambda \f$ in the perturbation calculation.
   void setLambda(double lambda_);
 
-  //! Flag that toggles whether MatrixFree should compute the perturbation parameter \f$ \eta \f$ or use a value supplied by the user through setPerturbation().
+  //! Flag that toggles whether MatrixFree should compute the
+  //! perturbation parameter \f$ \eta \f$ or use a value supplied by
+  //! the user through setPerturbation().
   void setComputePerturbation(bool bVal);
 
   //! Set the perturbation parameter \f$ \eta \f$.
@@ -215,8 +223,12 @@ protected:
   //! Optional pointer to function evaluation at -perturbX - needed only for centered finite differencing
   mutable Teuchos::RCP<NOX::Epetra::Vector> fmPtr;
 
-  //! Epetra_Map object used in the returns of the Epetra_Operator derived methods.
-  /*! If the user is using Epetra_BlockMaps, then NOX::Epetra::MatrixFree must create an equivalent Epetra_Map from the Epetra_BlockMap that can be used as the return object of the OperatorDomainMap() and OperatorRangeMap() methods.
+  //! Epetra_Map object used in the returns of the Epetra_Operator
+  //! derived methods.
+  /*! If the user is using Epetra_BlockMaps, then
+   *  NOX::Epetra::MatrixFree must create an equivalent Epetra_Map
+   *  from the Epetra_BlockMap that can be used as the return object
+   *  of the OperatorDomainMap() and OperatorRangeMap() methods.
    */
   Teuchos::RCP<const Epetra_Map> epetraMap;
 

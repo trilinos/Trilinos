@@ -60,7 +60,6 @@ following class:
 %enddef
 
 %module(package   = "PyTrilinos",
-	autodoc   = "1",
 	docstring = %komplex_docstring) Komplex
 
 %{
@@ -82,11 +81,11 @@ following class:
 
 %}
 
-// Auto-documentation feature
-%feature("autodoc", "1");
-
 // Include Komplex documentation
+#if SWIG_VERSION < 0x040000
+%feature("autodoc", "1");
 %include "Komplex_dox.i"
+#endif
 
 // SWIG library include files
 using std::string;

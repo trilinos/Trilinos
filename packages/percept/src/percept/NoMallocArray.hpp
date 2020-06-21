@@ -14,7 +14,7 @@
 
   namespace percept {
 
-    // patterned after boost::array
+    // patterned after std::array
 
     template<class T, std::size_t N>
     class NoMallocArray {
@@ -160,9 +160,6 @@
       // direct access to data (read-only)
       const T* data() const { return m_data; }
       T* data() { return m_data; }
-
-      // use array as C array (direct read/write access to data)
-      T* c_array() { return m_data; }
 
       // assignment with type conversion
       template <typename T2>

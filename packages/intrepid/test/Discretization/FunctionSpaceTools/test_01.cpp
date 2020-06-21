@@ -64,7 +64,7 @@ using namespace Intrepid;
   try {                                                                                                             \
     S ;                                                                                                             \
   }                                                                                                                 \
-  catch (std::logic_error err) {                                                                                    \
+  catch (const std::logic_error & err) {                                                                                    \
       *outStream << "Expected Error ----------------------------------------------------------------\n";            \
       *outStream << err.what() << '\n';                                                                             \
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";    \
@@ -213,7 +213,7 @@ int main(int argc, char *argv[]) {
     INTREPID_TEST_COMMAND( fst::evaluate<double>(a_2_2_2_2, a_2_2, a_2_2_2_2_2) );
 #endif
   }
-  catch (std::logic_error err) {
+  catch (const std::logic_error & err) {
     *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
     *outStream << err.what() << '\n';
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -396,7 +396,7 @@ int main(int argc, char *argv[]) {
 
       *outStream << "\n";
   }
-  catch (std::logic_error err) {
+  catch (const std::logic_error & err) {
     *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
     *outStream << err.what() << '\n';
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";

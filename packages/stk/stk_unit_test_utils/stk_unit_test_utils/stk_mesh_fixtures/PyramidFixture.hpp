@@ -50,7 +50,6 @@
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowRequire
-namespace stk { namespace mesh { struct ConnectivityMap; } }
 
 
 namespace stk {
@@ -88,7 +87,6 @@ class PyramidFixture
               , size_t ny
               , size_t nz
               , stk::mesh::BulkData::AutomaticAuraOption = stk::mesh::BulkData::AUTO_AURA
-              , ConnectivityMap const* connectivity_map = NULL
             );
 
   PyramidFixture(   stk::ParallelMachine pm
@@ -97,7 +95,6 @@ class PyramidFixture
               , size_t nz
               , std::string coordinate_name
               , stk::mesh::BulkData::AutomaticAuraOption = stk::mesh::BulkData::AUTO_AURA
-              , ConnectivityMap const* connectivity_map = NULL
             );
 
   ~PyramidFixture();

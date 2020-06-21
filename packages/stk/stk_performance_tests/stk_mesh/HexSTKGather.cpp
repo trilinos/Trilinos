@@ -40,7 +40,7 @@
 #include <stk_util/environment/perf_util.hpp>
 
 #include <stk_io/util/Gmesh_STKmesh_Fixture.hpp>
-#include <stk_performance_test_includes/calculate_centroid.hpp>
+#include <stk_performance_tests/stk_mesh/calculate_centroid.hpp>
 
 #include <stk_mesh/base/Relation.hpp>
 #include <stk_mesh/base/Entity.hpp>

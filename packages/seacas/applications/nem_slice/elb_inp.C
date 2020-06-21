@@ -1,36 +1,9 @@
 /*
- * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
- * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
- *     * Neither the name of NTESS nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
+ * See packages/seacas/LICENSE for details
  */
 
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -46,7 +19,12 @@
 #include "elb_inp.h"
 #include "elb_util.h" // for strip_string, token_compare, etc
 #include "fmt/ostream.h"
+#ifdef _MSC_VER
+#include "XGetopt.h"
+#include <unistd.h>
+#else
 #include "getopt.h" // for getopt
+#endif
 #include "scopeguard.h"
 #include <cstddef> // for size_t
 #ifndef _XOPEN_SOURCE
@@ -59,7 +37,7 @@
 namespace {
   void print_usage();
 
-  const std::string remove_extension(const std::string &filename)
+  std::string remove_extension(const std::string &filename)
   {
     // Strip off the extension
     size_t ind = filename.find_last_of('.', filename.size());
@@ -99,12 +77,14 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
                        Weight_Description<INT> *weight  /* Structure for weighting graph */
 )
 {
-  int         opt_let, iret, el_blk, wgt, max_dim = 0, i;
+  int         opt_let;
+  int         iret;
+  int         el_blk;
+  int         wgt;
+  int         max_dim = 0;
+  int         i;
   char *      sub_opt = nullptr, *value = nullptr, *cptr = nullptr, *cptr2 = nullptr;
   std::string ctemp;
-
-  extern char *optarg;
-  extern int   optind;
 
   /* see NOTE in elb.h about the order of the following array */
   const char *weight_subopts[] = {"none",  "read",       "eb",       "var_index",
@@ -194,8 +174,12 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
     case 'w':
       /* Weighting options */
       sub_opt = optarg;
+#ifdef _MSC_VER
+      fprintf(stderr, "Windows build does not use getsubopt yet...\n");
+      exit(1);
+#else
       while (sub_opt != nullptr && *sub_opt != '\0') {
-        switch (::getsubopt(&sub_opt, (char *const *)weight_subopts, &value)) {
+        switch (getsubopt(&sub_opt, (char *const *)weight_subopts, &value)) {
         case READ_EXO:
           if (value == nullptr) {
             ctemp =
@@ -341,10 +325,10 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
           Gen_Error(0, ctemp);
           return 0;
 
-        } /* End "switch(::getsubopt(&sub_opt, weight_subopts, &value))" */
+        } /* End "switch(getsubopt(&sub_opt, weight_subopts, &value))" */
 
       } /* End "while(*sub_opt != '\0')" */
-
+#endif
       break; /* End "case 'w'" */
 
     case 'a':
@@ -385,10 +369,14 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
       if (sub_opt != nullptr) {
         string_to_lower(sub_opt, '\0');
       }
+#ifdef _MSC_VER
+      fprintf(stderr, "Windows build does not use getsubopt yet...\n");
+      exit(1);
+#else
       while (sub_opt != nullptr && *sub_opt != '\0') {
 
         /* Switch over the machine description */
-        switch (::getsubopt(&sub_opt, (char *const *)mach_subopts, &value)) {
+        switch (getsubopt(&sub_opt, (char *const *)mach_subopts, &value)) {
         case HCUBE:
         case HYPERCUBE:
           if (machine->type < 0) {
@@ -474,10 +462,10 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
 
         default: Gen_Error(0, "FATAL: unknown machine type"); return 0;
 
-        } /* End "switch(::getsubopt(&sub_opt, mach_subopts, &value))" */
+        } /* End "switch(getsubopt(&sub_opt, mach_subopts, &value))" */
 
       } /* End "while(*sub_opt != '\0')" */
-
+#endif
       break; /* End "case 'm'" */
 
     case 'l':
@@ -486,8 +474,12 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
       if (sub_opt != nullptr) {
         string_to_lower(sub_opt, '\0');
       }
+#ifdef _MSC_VER
+      fprintf(stderr, "Windows build does not use getsubopt yet...\n");
+      exit(1);
+#else
       while (sub_opt != nullptr && *sub_opt != '\0') {
-        switch (::getsubopt(&sub_opt, (char *const *)lb_subopts, &value)) {
+        switch (getsubopt(&sub_opt, (char *const *)lb_subopts, &value)) {
         case MULTIKL: lb->type = MULTIKL; break;
 
         case SPECTRAL: lb->type = SPECTRAL; break;
@@ -564,10 +556,10 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
           Gen_Error(0, ctemp);
           return 0;
 
-        } /* End "switch(::getsubopt(&sup_opt, mach_subopts, &value))" */
+        } /* End "switch(getsubopt(&sup_opt, mach_subopts, &value))" */
 
       } /* End "while(*sup_opt != '\0')" */
-
+#endif
       break; /* End "case 'l'" */
 
     case 'S': prob->no_sph = 1; break;
@@ -578,8 +570,12 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
       if (sub_opt != nullptr) {
         string_to_lower(sub_opt, '\0');
       }
+#ifdef _MSC_VER
+      fprintf(stderr, "Windows build does not use getsubopt yet...\n");
+      exit(1);
+#else
       while (sub_opt != nullptr && *sub_opt != '\0') {
-        switch (::getsubopt(&sub_opt, (char *const *)solve_subopts, &value)) {
+        switch (getsubopt(&sub_opt, (char *const *)solve_subopts, &value)) {
         case TOLER:
           if (value == nullptr) {
             fmt::print(stderr, "FATAL: tolerance specification requires \
@@ -619,10 +615,10 @@ value\n");
 
         default: fmt::print(stderr, "FATAL: unknown solver option\n"); return 0;
 
-        } /* End "switch(::getsubopt(&sub_opt, solve_subopts, &value))" */
+        } /* End "switch(getsubopt(&sub_opt, solve_subopts, &value))" */
 
       } /* End "while(sub_opt != '\0')" */
-
+#endif
       break; /* End "case 's'" */
 
     case 'g':
@@ -656,7 +652,6 @@ value\n");
     } /* End "switch(opt_let)" */
 
   } /* End "while((opt_let=getopt(argc, argv, "i")) != EOF)" */
-
   /* Get the input file name, if specified on the command line */
   if ((argc - optind) >= 1) {
     exoII_inp_file = argv[optind];
@@ -694,7 +689,12 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
   char        inp_copy[MAX_INP_LINE];
   char *      cptr, *cptr2;
 
-  int  iret, el_blk, wgt, i, ilen, max_dim;
+  int  iret;
+  int  el_blk;
+  int  wgt;
+  int  i;
+  int  ilen;
+  int  max_dim;
   char tmpstr[2048];
   /*-----------------------------Execution Begins------------------------------*/
   if (!(inp_fd = fopen(ascii_inp_file.c_str(), "r"))) {
@@ -1356,9 +1356,15 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
   ex_entity_type type;
   char **        var_names;
   int            cnt;
-  int            exoid, cpu_ws = 0, io_ws = 0, nvars, tmp_vindx = 0;
+  int            exoid;
+  int            cpu_ws = 0;
+  int            io_ws  = 0;
+  int            nvars;
+  int            tmp_vindx = 0;
   float          version;
-  int            exid_inp, icpu_ws = 0, iio_ws = 0;
+  int            exid_inp;
+  int            icpu_ws = 0;
+  int            iio_ws  = 0;
   float          vers;
 
   /* Check that an input ExodusII file name was specified */

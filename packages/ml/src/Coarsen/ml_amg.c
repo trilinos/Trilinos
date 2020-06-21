@@ -76,6 +76,8 @@ int ML_AMG_Create( ML_AMG **amg )
    (*amg)->post_aztec_proc_config     = NULL;
    (*amg)->post_aztec_status          = NULL;
    (*amg)->post_function              = NULL;
+   /*cms*/
+   (*amg)->rowsum_threshold           = -1.0; /* defaults to off */
    return 0;
 }
 
@@ -197,6 +199,23 @@ int ML_AMG_Set_Threshold( ML_AMG *amg, double thresh )
    }
    if ( thresh >= 0.0 && thresh <= 1.0 ) amg->threshold = thresh;
    else                                  amg->threshold = 0.0;
+   return 0;
+}
+
+/* ************************************************************************* */
+/* set/reset rowsum threshold                                                */
+/* ------------------------------------------------------------------------- */
+
+int ML_AMG_Set_RowSum_Threshold( ML_AMG *amg, double epsilon )
+{
+   if ( amg->ML_id != ML_ID_AMG )
+   {
+      printf("ML_AMG_Set_RowSum_Threshold : wrong object. \n");
+      exit(-1);
+   }
+   if ( epsilon > 0.0 ) amg->rowsum_threshold = epsilon;
+   else                 amg->rowsum_threshold = -1.0;
+
    return 0;
 }
 

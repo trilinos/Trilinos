@@ -82,8 +82,10 @@ the following classes:
 %}
 
 // Include LOCA documentation
+#if SWIG_VERSION < 0x040000
 %feature("autodoc", "1");
 %include "LOCA_dox.i"
+#endif
 
 // Ignore/renames
 %ignore operator=;

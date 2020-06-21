@@ -28,7 +28,14 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_NEW_FAD_DESIGN_IS_DEFAULT
   SACADO_NEW_FAD_DESIGN_IS_DEFAULT
   "Make the new Fad design the default, replacing the old one."
-  FALSE
+  ON
+  )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_SFAD_INIT_DEFAULT_CONSTRUCTOR
+  SACADO_SFAD_INIT_DEFAULT_CONSTRUCTOR
+  "Force SFad (in the new design) to initialize value and derivative components in the default constructor (adds additional runtime cost, but protects against uninitialized use)."
+  OFF
   )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
@@ -123,16 +130,8 @@ int main()
 CHECK_CXX_SOURCE_COMPILES("${SOURCE_C99_TR1_CMATH}"
   HAS_C99_TR1_CMATH)
 
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  Sacado_ENABLE_CXX11
-  HAVE_SACADO_CXX11
-  "Enable C++11 support in Sacado."
-  "${${PROJECT_NAME}_ENABLE_CXX11}"
-  )
-
-IF(Sacado_NEW_FAD_DESIGN_IS_DEFAULT AND NOT Sacado_ENABLE_CXX11)
-  message(FATAL_ERROR "New Fad design requires C++11 enabled.  Please reconfigure with ${PROJECT_NAME}_ENABLE_CXX11=ON.")
-ENDIF()
+# FIXME: Remove this hard-coded setting.  We always have C++11 now.
+SET(HAVE_SACADO_CXX11 ON)
 
 #
 # C) Add the libraries, tests, and examples

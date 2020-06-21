@@ -39,7 +39,6 @@
 
 #define STK_HAS_MPI
 #define STK_HAVE_BOOST
-#define STK_HAVE_BOOSTLIB
 #define STK_HAVE_KOKKOSCORE
 #define STK_HAVE_STKMESH
 #define STK_HAVE_STKIO
@@ -48,7 +47,7 @@
 #else
 // This file gets created by cmake during a Trilinos build
 // and will not be present in a sierra build using bjam or associated wrappers
-#include <stk_util/STK_Trilinos_config.h>
+#include <STK_Trilinos_config.h>
 #ifdef HAVE_MPI
 #define STK_HAS_MPI
 #else

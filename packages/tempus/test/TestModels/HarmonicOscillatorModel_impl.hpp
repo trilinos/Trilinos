@@ -25,7 +25,7 @@ namespace Tempus_Test {
 
 template<class Scalar>
 HarmonicOscillatorModel<Scalar>::
-HarmonicOscillatorModel(Teuchos::RCP<Teuchos::ParameterList> pList_):
+HarmonicOscillatorModel(Teuchos::RCP<Teuchos::ParameterList> pList_, const bool use_accel_IC):
  out_(Teuchos::VerboseObjectBase::getDefaultOStream())
 {
   isInitialized_ = false;
@@ -52,9 +52,14 @@ HarmonicOscillatorModel(Teuchos::RCP<Teuchos::ParameterList> pList_):
   //is computed correctly using displacement and velocity ICs
   //inside 2nd order steppers.
   //Thyra::put_scalar(f_-c_, x_dot_dot_vec_.ptr());
-  //Instead of real IC, putting arbitrary, incorrect IC to check correctness
-  //in stepper involving calculation of a IC.
-  Thyra::put_scalar(7.0, x_dot_dot_vec_.ptr());
+  if (use_accel_IC == true) {
+    Thyra::put_scalar(-2.0, x_dot_dot_vec_.ptr());
+  }
+  else {
+    //Instead of real IC, putting arbitrary, incorrect IC to check correctness
+    //in stepper involving calculation of a IC.
+    Thyra::put_scalar(7.0, x_dot_dot_vec_.ptr());
+  }
 
   //Set up responses
   numResponses_ = 1;

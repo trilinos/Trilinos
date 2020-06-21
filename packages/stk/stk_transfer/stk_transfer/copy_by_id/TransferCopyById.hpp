@@ -40,10 +40,21 @@
 #include "SearchById.hpp"
 #include "TransferCopyByIdMeshAdapter.hpp"
 
+namespace stk { class CommSparse; }
 
 namespace stk {
 namespace transfer {
 
+struct CopyTransferUnpackInfo {
+  std::vector<uint8_t>& buffer;
+  uint8_t* fieldData;
+  unsigned sentDataTypeKey;
+  unsigned fieldSize;
+  unsigned fieldIndex;
+
+  CopyTransferUnpackInfo(std::vector<uint8_t>& buffer_, uint8_t* fieldData_, unsigned sentDataTypeKey_, unsigned fieldSize_, unsigned fieldIndex_)
+    : buffer(buffer_), fieldData(fieldData_), sentDataTypeKey(sentDataTypeKey_), fieldSize(fieldSize_), fieldIndex(fieldIndex_) {}
+};
 
 class TransferCopyById : public TransferBase {
 public :
@@ -56,7 +67,10 @@ public :
     :m_search(search_in)
     ,m_mesha(mesha_in)
     ,m_meshb(meshb_in)
-  {}
+  {
+    setup_translators();
+  }
+
   virtual ~TransferCopyById() {};
   virtual void coarse_search()
   {
@@ -66,18 +80,40 @@ public :
   virtual void local_search() {};
   virtual void apply()
   {
-    do_transfer(m_key_to_target_processor,m_mesha,m_meshb);
+    do_transfer();
   }
 
+  void setup_translators();
+
+  static const stk::transfer::DataTypeTranslator<unsigned> translateUnsigned;
+  static const stk::transfer::DataTypeTranslator<int64_t> translateInt64;
+  static const stk::transfer::DataTypeTranslator<uint64_t> translateUInt64;
+  static const stk::transfer::DataTypeTranslator<int> translateInt;
+  static const stk::transfer::DataTypeTranslator<long double> translateLongDouble;
+  static const stk::transfer::DataTypeTranslator<double> translateDouble;
+
 private:
-  void do_transfer(const KeyToTargetProcessor & key_to_target_processor,
-                   const TransferCopyByIdMeshAdapter & mesha,
-                   TransferCopyByIdMeshAdapter & meshb);
+  void do_transfer();
+  void send_fields(CommSparse& commSparse);
+  void receive_fields(CommSparse& commSparse);
+  void local_copy(const Mesh_ID key);
+  void pack_fields(const int target_proc, const Mesh_ID key, CommSparse& commSparse);
+  void unpack_fields(MeshIDSet& remote_keys, const int recv_proc, CommSparse& commSparse);
+  void unpack_and_copy_fields(const int recv_proc, CommSparse& commSparse, CopyTransferUnpackInfo& unpackInfo);
+  void unpack_and_copy_fields_with_compatibility(const int recv_proc, CommSparse& commSparse, CopyTransferUnpackInfo& unpackInfo);
 
   SearchById & m_search;
   TransferCopyByIdMeshAdapter & m_mesha;
   TransferCopyByIdMeshAdapter & m_meshb;
   KeyToTargetProcessor m_key_to_target_processor;
+  unsigned m_numFields;
+  unsigned m_errorCount;
+  std::ostringstream m_errorMsg;
+
+  std::vector<DataTypeKey::data_t> m_sendFieldDataTypes;
+  std::vector<DataTypeKey::data_t> m_recvFieldDataTypes;
+  std::vector<bool> m_fieldCompatibility;
+  std::vector<const stk::transfer::TranslatorBase*> m_dataTranslators;
 };
 
 }  } // namespace transfer stk

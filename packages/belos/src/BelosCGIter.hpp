@@ -434,9 +434,9 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
     }
 
     // Allocate memory for scalars.
-    Teuchos::SerialDenseMatrix<int,ScalarType> alpha( 1, 1 );
-    Teuchos::SerialDenseMatrix<int,ScalarType> beta( 1, 1 );
-    Teuchos::SerialDenseMatrix<int,ScalarType> rHz( 1, 1 ), rHz_old( 1, 1 ), pAp( 1, 1 );
+    std::vector<ScalarType> alpha(1);
+    std::vector<ScalarType> beta(1);
+    std::vector<ScalarType> rHz(1), rHz_old(1), pAp(1);
 
     // Create convenience variables for zero and one.
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
@@ -453,7 +453,7 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
                         "Belos::CGIter::iterate(): current linear system has more than one vector!" );
 
     // Compute first <r,z> a.k.a. rHz
-    MVT::MvTransMv( one, *R_, *Z_, rHz );
+    MVT::MvDot( *R_, *Z_, rHz );
     
     ////////////////////////////////////////////////////////////////
     // Iterate until the status test tells us to stop.
@@ -467,26 +467,26 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
       lp_->applyOp( *P_, *AP_ );
       
       // Compute alpha := <R_,Z_> / <P_,AP_>
-      MVT::MvTransMv( one, *P_, *AP_, pAp );
-      alpha(0,0) = rHz(0,0) / pAp(0,0);
+      MVT::MvDot( *P_, *AP_, pAp );
+      alpha[0] = rHz[0] / pAp[0];
       
       // Check that alpha is a positive number!
       if(assertPositiveDefiniteness_)
-        TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(alpha(0,0)) <= zero, CGIterateFailure,
+        TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(alpha[0]) <= zero, CGIterateFailure,
                                     "Belos::CGIter::iterate(): non-positive value for p^H*A*p encountered!" );
       //
       // Update the solution vector x := x + alpha * P_
       //
-      MVT::MvAddMv( one, *cur_soln_vec, alpha(0,0), *P_, *cur_soln_vec );
+      MVT::MvAddMv( one, *cur_soln_vec, alpha[0], *P_, *cur_soln_vec );
       lp_->updateSolution();
       //
       // Save the denominator of beta before residual is updated [ old <R_, Z_> ]
       //
-      rHz_old(0,0) = rHz(0,0);
+      rHz_old[0] = rHz[0];
       //
       // Compute the new residual R_ := R_ - alpha * AP_
       //
-      MVT::MvAddMv( one, *R_, -alpha(0,0), *AP_, *R_ );
+      MVT::MvAddMv( one, *R_, -alpha[0], *AP_, *R_ );
       //
       // Compute beta := [ new <R_, Z_> ] / [ old <R_, Z_> ], 
       // and the new direction vector p.
@@ -506,24 +506,24 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
         Z_ = R_;
       }
       //
-      MVT::MvTransMv( one, *R_, *Z_, rHz );
+      MVT::MvDot( *R_, *Z_, rHz );
       //
-      beta(0,0) = rHz(0,0) / rHz_old(0,0);
+      beta[0] = rHz[0] / rHz_old[0];
       //
-      MVT::MvAddMv( one, *Z_, beta(0,0), *P_, *P_ );
+      MVT::MvAddMv( one, *Z_, beta[0], *P_, *P_ );
      
       // Condition estimate (if needed)
       if (doCondEst_) {
         if (iter_ > 1) {
-          diag_[iter_-1]    = Teuchos::ScalarTraits<ScalarType>::real((beta_old * beta_old * pAp_old + pAp(0,0)) / rHz_old(0,0));
-          offdiag_[iter_-2] = -Teuchos::ScalarTraits<ScalarType>::real(beta_old * pAp_old / (sqrt( rHz_old(0,0) * rHz_old2)));
+          diag_[iter_-1]    = Teuchos::ScalarTraits<ScalarType>::real((beta_old * beta_old * pAp_old + pAp[0]) / rHz_old[0]);
+          offdiag_[iter_-2] = -Teuchos::ScalarTraits<ScalarType>::real(beta_old * pAp_old / (sqrt( rHz_old[0] * rHz_old2)));
         }
         else {
-          diag_[iter_-1]    = Teuchos::ScalarTraits<ScalarType>::real(pAp(0,0) / rHz_old(0,0));
+          diag_[iter_-1]    = Teuchos::ScalarTraits<ScalarType>::real(pAp[0] / rHz_old[0]);
         }
-        rHz_old2 = rHz_old(0,0);
-        beta_old = beta(0,0);
-        pAp_old = pAp(0,0);
+        rHz_old2 = rHz_old[0];
+        beta_old = beta[0];
+        pAp_old = pAp[0];
       }
  
     } // end while (sTest_->checkStatus(this) != Passed)

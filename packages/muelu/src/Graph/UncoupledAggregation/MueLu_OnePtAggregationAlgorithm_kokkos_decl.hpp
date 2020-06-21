@@ -86,6 +86,7 @@ namespace MueLu {
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
   public:
+    using memory_space = typename LWGraph_kokkos::memory_space;
     //! @name Constructors/Destructors.
     //@{
 

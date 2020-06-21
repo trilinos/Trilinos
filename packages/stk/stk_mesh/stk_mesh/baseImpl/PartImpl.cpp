@@ -37,7 +37,6 @@
 #include <stk_mesh/base/Part.hpp>       // for insert
 #include <stk_util/util/ReportHandler.hpp>  // for ThrowErrorMsgIf
 #include "stk_mesh/base/Types.hpp"      // for EntityRank, etc
-#include "stk_topology/topology.hpp"    // for topology, operator<<, etc
 #include "stk_topology/topology.hpp"    // for topology::rank
 
 namespace stk { namespace mesh { class MetaData; } }

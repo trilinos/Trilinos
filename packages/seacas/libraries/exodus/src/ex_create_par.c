@@ -1,36 +1,9 @@
 /*
- * Copyright (c) 2005-2017 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
- *     * Neither the name of NTESS nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
+ * See packages/seacas/LICENSE for details
  */
 
 /*!
@@ -165,8 +138,8 @@ exoid = ex_create ("test.exo"       \comment{filename path}
 int ex_create_par_int(const char *path, int cmode, int *comp_ws, int *io_ws, MPI_Comm comm,
                       MPI_Info info, int run_version)
 {
-  int  exoid;
-  int  status;
+  int  exoid  = -1;
+  int  status = 0;
   char errmsg[MAX_ERR_LENGTH];
   int  nc_mode = 0;
 
@@ -181,27 +154,43 @@ int ex_create_par_int(const char *path, int cmode, int *comp_ws, int *io_ws, MPI
            "EXODUS: ERROR: Parallel output requires the netcdf-4 and/or "
            "pnetcdf library format, but this netcdf library does not "
            "support either.\n");
-  ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
+  ex_err(__func__, errmsg, EX_BADPARAM);
   EX_FUNC_LEAVE(EX_FATAL);
 #endif
+
+  /* Verify that this file is not already open for read or write...
+     In theory, should be ok for the file to be open multiple times
+     for read, but bad things can happen if being read and written
+     at the same time...
+  */
+  if (ex__check_multiple_open(path, EX_WRITE, __func__)) {
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
 
   nc_mode = ex__handle_mode(my_mode, is_parallel, run_version);
 
   if ((status = nc_create_par(path, nc_mode, comm, info, &exoid)) != NC_NOERR) {
-#if NC_HAS_HDF5
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: file create failed for %s", path);
-#else
     if (my_mode & EX_NETCDF4) {
+#if NC_HAS_PARALLEL4
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: file create failed for %s.", path);
+#else
       snprintf(errmsg, MAX_ERR_LENGTH,
-               "ERROR: file create failed for %s in NETCDF4 "
-               "mode.\n\tThis library does not support netcdf-4 files.",
+               "ERROR: file create failed for %s in NetCDF-4 "
+               "mode.\n\tThis library does not support parallel NetCDF-4 files (HDF5-based).",
                path);
+#endif
     }
     else {
+#if NC_HAS_PNETCDF
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: file create failed for %s", path);
-    }
+#else
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: file create failed for %s in PnetCDF "
+               "mode.\n\tThis library does not provide PnetCDF support.",
+               path);
 #endif
-    ex_err_fn(exoid, __func__, errmsg, status);
+    }
+    ex_err(__func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -216,5 +205,5 @@ int ex_create_par_int(const char *path, int cmode, int *comp_ws, int *io_ws, MPI
  * Prevent warning in some versions of ranlib(1) because the object
  * file has no symbols.
  */
-const char exodus_unused_symbol_dummy_1;
+const char exodus_unused_symbol_dummy_ex_create_par;
 #endif

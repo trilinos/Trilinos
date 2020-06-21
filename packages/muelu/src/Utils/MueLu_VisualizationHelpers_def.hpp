@@ -133,12 +133,16 @@ namespace MueLu {
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doConvexHulls2D(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& /* isRoot */, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>& xCoords, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>& yCoords) {
+
+    // This algorithm is based on Andrew's Monotone Chain variant of the Graham Scan for Convex Hulls.  It adds
+    // a colinearity check which we'll need for our viz.
     for(int agg = 0; agg < numLocalAggs; agg++) {
-      std::list<int> aggNodes;
+      std::vector<int> aggNodes;
       for(int i = 0; i < numFineNodes; i++) {
         if(vertex2AggId[i] == agg)
           aggNodes.push_back(i);
       }
+
       //have a list of nodes in the aggregate
       TEUCHOS_TEST_FOR_EXCEPTION(aggNodes.size() == 0, Exceptions::RuntimeError,
                "CoarseningVisualization::doConvexHulls2D: aggregate contains zero nodes!");
@@ -153,67 +157,75 @@ namespace MueLu {
         geomSizes.push_back(2);
         continue;
       }
-      //check if all points are collinear, need to explicitly draw a line in that case.
-      bool collinear = true; //assume true at first, if a segment not parallel to others then clear
-      {
-        std::list<int>::iterator it = aggNodes.begin();
-        myVec3 firstPoint(xCoords[*it], yCoords[*it], 0);
-        it++;
-        myVec3 secondPoint(xCoords[*it], yCoords[*it], 0);
-        it++;  //it now points to third node in the aggregate
-        myVec3 norm1(-(secondPoint.y - firstPoint.y), secondPoint.x - firstPoint.x, 0);
-        do {
-          myVec3 thisNorm(yCoords[*it] - firstPoint.y, firstPoint.x - xCoords[*it], 0);
-          //rotate one of the vectors by 90 degrees so that dot product is 0 if the two are parallel
-          double temp = thisNorm.x;
-          thisNorm.x = thisNorm.y;
-          thisNorm.y = temp;
-          double comp = dotProduct(norm1, thisNorm);
-          if(-1e-8 > comp || comp > 1e-8) {
-            collinear = false;
-            break;
-          }
-          it++;
-        }
-        while(it != aggNodes.end());
-      }
-      if(collinear)
-      {
-        //find the most distant two points in the plane and use as endpoints of line representing agg
-        std::list<int>::iterator min = aggNodes.begin();    //min X then min Y where x is a tie
-        std::list<int>::iterator max = aggNodes.begin(); //max X then max Y where x is a tie
-        for(std::list<int>::iterator it = ++aggNodes.begin(); it != aggNodes.end(); it++) {
-          if(xCoords[*it] < xCoords[*min])
-            min = it;
-          else if(xCoords[*it] == xCoords[*min]) {
-            if(yCoords[*it] < yCoords[*min])
-              min = it;
-          }
-          if(xCoords[*it] > xCoords[*max])
-            max = it;
-          else if(xCoords[*it] == xCoords[*max]) {
-            if(yCoords[*it] > yCoords[*max])
-              max = it;
-          }
-        }
-        //Just set up a line between nodes *min and *max
-        vertices.push_back(*min);
-        vertices.push_back(*max);
-        geomSizes.push_back(2);
-        continue; //jump to next aggregate in loop
-      }
-      std::vector<myVec2> points;
-      std::vector<int> nodes;
-      for(std::list<int>::iterator it = aggNodes.begin(); it != aggNodes.end(); it++) {
-        points.push_back(myVec2(xCoords[*it], yCoords[*it]));
-        nodes.push_back(*it);
-      }
-      std::vector<int> hull = giftWrap(points, nodes, xCoords, yCoords);
-      vertices.reserve(vertices.size() + hull.size());
-      for(size_t i = 0; i < hull.size(); i++) {
-        vertices.push_back(hull[i]);
-      }
-      geomSizes.push_back(hull.size());
+      else {	
+	int N = (int) aggNodes.size();
+	using MyPair = std::pair<myVec2,int>;
+	std::vector<MyPair> pointsAndIndex(N);
+	for(int i=0; i<N; i++) {
+	  pointsAndIndex[i] = std::make_pair(myVec2(xCoords[aggNodes[i]], yCoords[aggNodes[i]]),i);
+	}
+
+	// Sort by x coordinate    
+	std::sort(pointsAndIndex.begin(),pointsAndIndex.end(),[](const MyPair &a, const MyPair &b) {
+	    return a.first.x < b.first.x || (a.first.x == b.first.x && a.first.y < b.first.y);
+	  });
+
+	
+	// Colinearity check
+	bool colinear=true;
+	for(int i=0; i<N; i++) {
+	  if(ccw(pointsAndIndex[i].first,pointsAndIndex[(i+1)%N].first,pointsAndIndex[(i+2)%N].first)!=0) {
+	    colinear=false;
+	    break;
+	  }
+	}
+
+	if(colinear) {
+	  vertices.push_back(aggNodes[pointsAndIndex.front().second]);
+	  vertices.push_back(aggNodes[pointsAndIndex.back().second]);
+	  geomSizes.push_back(2);
+	}
+	else {      
+	  std::vector<int> hull(2*N);
+	  int count=0;
+	  
+	  // Build lower hull
+	  for(int i=0; i<N; i++) {
+	    while (count >=2 && ccw(pointsAndIndex[hull[count-2]].first,pointsAndIndex[hull[count-1]].first,pointsAndIndex[i].first)<=0) {
+	      count--;
+	    }
+	    hull[count++] = i;
+	  }
+	  
+	  // Build the upper hull
+	  int t=count+1;
+	  for(int i=N-1; i>0; i--) {
+	    while(count >= t && ccw(pointsAndIndex[hull[count-2]].first,pointsAndIndex[hull[count-1]].first,pointsAndIndex[i-1].first)<=0) {
+	      count--;
+	    }
+	    hull[count++]=i-1;
+	  }
+	  
+	  // Remove the duplicated point
+	  hull.resize(count-1);
+
+	  // Verify: Check that hull retains CCW order
+	  for(int i=0; i<(int)hull.size(); i++) {
+            TEUCHOS_TEST_FOR_EXCEPTION(ccw(pointsAndIndex[hull[i]].first,pointsAndIndex[hull[(i+1)%hull.size()]].first,pointsAndIndex[hull[(i+1)%hull.size()]].first) == 1, Exceptions::RuntimeError,"CoarseningVisualization::doConvexHulls2D: counter-clockwise verification fails");
+	  }
+
+	  // We now need to undo the indices from the sorting
+	  for(int i=0; i<(int)hull.size(); i++) {
+	    hull[i] = aggNodes[pointsAndIndex[hull[i]].second];
+	  }
+
+	  vertices.reserve(vertices.size() + hull.size());
+	  for(size_t i = 0; i < hull.size(); i++) {
+	    vertices.push_back(hull[i]);
+	  }
+	  geomSizes.push_back(hull.size());
+	}//else colinear
+      }//else 3 + nodes
     }
   }
 
@@ -794,6 +806,14 @@ namespace MueLu {
       vertices.push_back(vert1[i].second);
       geomSizes.push_back(2);
     }
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  int VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ccw(const myVec2& a, const myVec2& b, const myVec2& c)
+  {
+    const double ccw_zero_threshold=1e-8;
+    double val = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+    return (val > ccw_zero_threshold) ? 1 : ( (val < -ccw_zero_threshold) ? -1 : 0);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

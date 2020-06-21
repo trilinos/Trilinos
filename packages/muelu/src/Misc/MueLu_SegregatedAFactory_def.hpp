@@ -112,7 +112,7 @@ namespace MueLu {
     Teuchos::RCP<Map> map = currentLevel.Get< Teuchos::RCP<Map> >(mapName,mapFactory.get());
 
     // create new empty Operator
-    Teuchos::RCP<Matrix> Aout = MatrixFactory::Build(Ain->getRowMap(), Ain->getGlobalMaxNumRowEntries(), Xpetra::StaticProfile);
+    Teuchos::RCP<Matrix> Aout = MatrixFactory::Build(Ain->getRowMap(), Ain->getGlobalMaxNumRowEntries());
 
     size_t numLocalRows = Ain->getNodeNumRows();
     for(size_t row=0; row<numLocalRows; row++) { // how can i replace this by a parallel for?

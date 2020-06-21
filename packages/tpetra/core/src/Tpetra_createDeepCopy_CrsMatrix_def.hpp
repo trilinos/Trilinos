@@ -84,17 +84,9 @@ createDeepCopy (const RowMatrix<SC, LO, GO, NT>& A)
       A.hasColMap () && ! A.getColMap ().is_null ();
 
     crs_matrix_type A_copy = hasColMap ?
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      crs_matrix_type (A.getRowMap (), A.getColMap (),
-                       entPerRow_av,
-                       Tpetra::StaticProfile) :
-      crs_matrix_type (A.getRowMap (), entPerRow_av,
-                       Tpetra::StaticProfile);
-#else // TPETRA_ENABLE_DEPRECATED_CODE
       crs_matrix_type (A.getRowMap (), A.getColMap (),
                        entPerRow_av) :
       crs_matrix_type (A.getRowMap (), entPerRow_av);
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     const bool hasViews = A.supportsRowViews ();
 

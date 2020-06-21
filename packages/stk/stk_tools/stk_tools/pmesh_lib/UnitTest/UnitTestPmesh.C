@@ -32,7 +32,7 @@ TEST(PMESH, a)
     const std::string rootdir="";
     const std::string subdir="";
 
-    stk_tools::MakeParFile(my_proc_id, num_procs, ncuts_x, ncuts_y, ncuts_z, num_elem_per_edge, lenx, leny, lenzi, numraid, rootdir.c_str(), subdir.c_str());;
+    stk_tools::MakeParFile(my_proc_id, num_procs, ncuts_x, ncuts_y, ncuts_z, num_elem_per_edge, lenx, leny, lenzi, numraid, rootdir.c_str(), subdir.c_str());
 
     stk::mesh::MetaData meta;
     stk::mesh::BulkData bulk(meta, comm);

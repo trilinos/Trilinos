@@ -457,7 +457,7 @@ double SCSCRES(int isym, int m, int n, double *val, int *indx, int *pntr,
 {
     int i, j, ibgn, iend;
     double norm_tmp = 0.0, norm_b = 0.0;
-    double scaled_res_norm, res_norm, *tmp, max_norm = 0.0;
+    double scaled_res_norm = 0.0, res_norm = 0.0, *tmp = NULL, max_norm = 0.0;
 
 
 /*     Computes the residual
@@ -531,8 +531,8 @@ void ReadHB(const char *data_file, const Epetra_Comm  &comm,
   char Ptrfmt[17], Indfmt[17], Valfmt[21], Rhsfmt[21];
   int Ptrcrd, Indcrd, Valcrd, Rhscrd;
   
-  int * bindx, * pntr, * indx1, * pntr1;
-  double * val, * val1, * hbx, * hbxexact, * hbb;
+  int * bindx = NULL, * pntr = NULL, * indx1 = NULL, * pntr1 = NULL;
+  double * val = NULL, * val1 = NULL, * hbx = NULL, * hbxexact, * hbb = NULL;
 
   hbb = 0; hbxexact = 0; hbb = 0;
 

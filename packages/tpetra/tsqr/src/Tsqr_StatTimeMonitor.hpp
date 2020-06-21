@@ -35,8 +35,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 */
@@ -44,8 +42,8 @@
 #ifndef __TSQR_StatTimeMonitor_hpp
 #define __TSQR_StatTimeMonitor_hpp
 
-#include <Teuchos_Time.hpp>
-#include <Tsqr_TimeStats.hpp>
+#include "Teuchos_Time.hpp"
+#include "Tsqr_TimeStats.hpp"
 
 namespace TSQR {
 
@@ -58,7 +56,6 @@ namespace TSQR {
   ///
   /// \note Implementers: You may safely add new statistics to
   ///   TimeStats without needing to change this class.
-  ///
   class StatTimeMonitor {
   public:
     /// \brief Constructor

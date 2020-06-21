@@ -1,35 +1,9 @@
 /*
- * Copyright(C) 1999-2017 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
- *     * Neither the name of NTESS nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
+ * See packages/seacas/LICENSE for details
  */
 /*--------------------------------------------------------------------*/
 /*    Copyright 2000-2010 NTESS.                         */
@@ -74,7 +48,7 @@ namespace Iovs {
                MPI_Comm communicator, const Ioss::PropertyManager &props);
     ~DatabaseIO() override;
 
-    const std::string get_format() const override {return "Embedded Visualization";}
+    const std::string get_format() const override { return "Embedded Visualization"; }
 
     // Check capabilities of input/output database...  Returns an
     // unsigned int with the supported Ioss::EntityTypes or'ed
@@ -166,6 +140,18 @@ namespace Iovs {
       return 0;
     }
 
+    int64_t get_field_internal(const Ioss::Assembly * /*sb*/, const Ioss::Field & /*field*/,
+                               void * /*data*/, size_t /*data_size*/) const override
+    {
+      return 0;
+    }
+
+    int64_t get_field_internal(const Ioss::Blob * /*sb*/, const Ioss::Field & /*field*/,
+                               void * /*data*/, size_t /*data_size*/) const override
+    {
+      return 0;
+    }
+
     int64_t put_field_internal(const Ioss::Region *reg, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
 
@@ -215,6 +201,17 @@ namespace Iovs {
     {
       return 0;
     }
+    int64_t put_field_internal(const Ioss::Assembly * /*sb*/, const Ioss::Field & /*field*/,
+                               void * /*data*/, size_t /*data_size*/) const override
+    {
+      return 0;
+    }
+
+    int64_t put_field_internal(const Ioss::Blob * /*sb*/, const Ioss::Field & /*field*/,
+                               void * /*data*/, size_t /*data_size*/) const override
+    {
+      return 0;
+    }
 
     void write_meta_data();
 
@@ -239,13 +236,13 @@ namespace Iovs {
     bool singleProcOnly; // True if history or heartbeat which is only written from proc 0...
     bool doLogging;      // True if logging field input/output
 
-    std::string        databaseTitle;
+    std::string        databaseTitle{};
     static std::string paraview_script_filename;
-    std::string        catalyst_block_file_name;
-    std::string        paraview_json_parse;
-    std::string        sierra_input_deck_name;
-    std::string        catalyst_output_directory;
-    std::string        paraview_script_extra_filename;
+    std::string        catalyst_block_file_name{};
+    std::string        paraview_json_parse{};
+    std::string        sierra_input_deck_name{};
+    std::string        catalyst_output_directory{};
+    std::string        paraview_script_extra_filename{};
     int                enableLogging;
     int                debugLevel;
     int                underscoreVectors;
@@ -263,7 +260,7 @@ namespace Iovs {
     ParaViewCatalystIossAdapterBase *pvcsa;
     mutable bool                     globalNodeAndElementIDsCreated;
     void                             create_global_node_and_element_ids() const;
-    mutable EntityIdSet              ids_;
+    mutable EntityIdSet              ids_{};
   };
 } // namespace Iovs
 

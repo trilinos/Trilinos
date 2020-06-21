@@ -28,6 +28,17 @@ void write_mesh(const std::string &filename,
     stkIo.write_output_mesh(outputFileIndex);
 }
 
+void write_mesh_with_canonical_name(const std::string &filename,
+                                    stk::mesh::BulkData &bulkData,
+                                    stk::io::DatabasePurpose databasePurpose)
+{
+    stk::io::StkMeshIoBroker stkIo;
+    stkIo.set_bulk_data(bulkData);
+    size_t outputFileIndex = stkIo.create_output_mesh(filename, databasePurpose);
+    stkIo.get_output_io_region(outputFileIndex)->get_database()->set_use_generic_canonical_name(true);
+    stkIo.write_output_mesh(outputFileIndex);
+}
+
 void write_mesh_with_large_ids(const std::string &filename,
                 stk::mesh::BulkData &bulkData,
                 stk::io::DatabasePurpose databasePurpose)

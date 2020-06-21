@@ -92,13 +92,13 @@ namespace StatusTest {
 
   Here:
 
-  - \f$x_i^k\f$ denotes component \f$i\f$ of nonlinear iterate \f$k\f$.
-  - \f$N\f$ denotes the number of unknowns
-  - \f$RTOL\f$ denotes the relative error tolerance, specified via \c
+  - \f$ x_i^k\f$ denotes component \f$ i\f$ of nonlinear iterate \f$ k\f$.
+  - \f$ N\f$ denotes the number of unknowns
+  - \f$ RTOL\f$ denotes the relative error tolerance, specified via \c
     rtol in the constructor
-  - \f$ATOL\f$ denotes the absolution error tolerance, specified via
+  - \f$ ATOL\f$ denotes the absolution error tolerance, specified via
     \c atol in the constructor. This can be a vector or a scalar.
-  - \f$C\f$ denotes a weight, specified via the parameter \c
+  - \f$ C\f$ denotes a weight, specified via the parameter \c
     BDFMultiplier in the constructor.
 
   <li> <em>If a line search based solver is used</em>, the line search

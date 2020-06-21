@@ -391,15 +391,5 @@ struct StructuredGrid {
   template<typename MeshType>
   void set_field(const double * fld, unsigned size, int index, PerceptMesh *eMesh, typename MeshType::MTField *field, typename MeshType::MTNode node);
 
-
-  template<typename T, size_t N>
-  std::ostream& operator<<(std::ostream& os, const std::array<T, N>& arr)
-  {
-    for (unsigned i=0; i < N; ++i)
-      os << arr[i] << (i == N-1 ? "" : " ");
-    return os;
-  }
-
-
 }
 #endif

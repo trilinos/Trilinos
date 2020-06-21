@@ -10,16 +10,13 @@ SHELL=/bin/bash
 
 # MIN HOUR DAY MONTH
 
-# nightly tests
+# Tpetra testing
 
-0  22 * * * cd /home/nightlyTesting/trilinos/cmake/ctest/drivers/rocketman; eval `python ./setSshEnv.py`; cd /home/nightlyTesting/trilinos; git pull > /dev/null 2>&1; cd /home/nightlyTesting/trilinos/cmake/ctest/drivers/rocketman; ./cron_driver.sh &> /home/nightlyTesting/cron_driver.log; cd /home/nightlyTesting; /home/nightlyTesting/trilinos/cmake/ctest/drivers/rocketman/sendTestSummary.sh cron_driver.log
+#0  04 * * * cd /home/nightlyTesting/trilinos/cmake/ctest/drivers/rocketman; eval `python ./setSshEnv.py`; cd /home/nightlyTesting/trilinos; git pull > /dev/null 2>&1; cd /home/nightlyTesting/trilinos/cmake/ctest/drivers/rocketman; ./cron_driver_tpetra.sh &> /home/nightlyTesting/cron_driver_tpetra.log; echo -e "Testing results for Tpetra with deprecated code disabled\nhttps://testing-dev.sandia.gov/cdash/index.php?project=Trilinos&filtercount=2&showfilters=1&filtercombine=and&field1=site&compare1=63&value1=rocketman&field2=buildname&compare2=63&value2=DEPRECATED" | mail -s "$(date) Tpetra testing is done on rocketman" tpetra-developers@software.sandia.gov
 
-0  11 * * * cd /home/nightlyTesting/trilinos/cmake/ctest/drivers/rocketman; eval `python ./setSshEnv.py`; cd /home/nightlyTesting/trilinos; git pull > /dev/null 2>&1; cd /home/nightlyTesting/trilinos/cmake/ctest/drivers/rocketman; ./cron_driver.sh &> /home/nightlyTesting/cron_driver.log; cd /home/nightlyTesting; /home/nightlyTesting/trilinos/cmake/ctest/drivers/rocketman/sendTestSummary.sh cron_driver.log
+# MueLu & Tpetra testing
 
-#05  13 29 10 * cd /home/nightlyTesting/trilinos/cmake/ctest/drivers/rocketman; eval `python ./setSshEnv.py`; cd /home/nightlyTesting/trilinos; git pull > /dev/null 2>&1; cd /home/nightlyTesting/trilinos/cmake/ctest/drivers/rocketman; ./cron_driver.sh &> /home/nightlyTesting/cron_driver.log; cd /home/nightlyTesting; /home/nightlyTesting/trilinos/cmake/ctest/drivers/rocketman/sendTestSummary.sh cron_driver.log
-
-
-#25  11 22 6 5 cd /home/nightlyTesting/trilinos/cmake/ctest/drivers/rocketman; eval `python ./setSshEnv.py`; cd /home/nightlyTesting/trilinos; git pull > /dev/null 2>&1; cd /home/nightlyTesting/trilinos/cmake/ctest/drivers/rocketman; ./cron_driver.sh &> /home/nightlyTesting/cron_driver.log; cd /home/nightlyTesting; /home/nightlyTesting/trilinos/cmake/ctest/drivers/rocketman/sendTestSummary.sh cron_driver.log
+0  22 * * * cd /home/nightlyTesting/trilinos/cmake/ctest/drivers/rocketman; eval `python ./setSshEnv.py`; cd /home/nightlyTesting/trilinos; git pull > /dev/null 2>&1; cd /home/nightlyTesting/trilinos/cmake/ctest/drivers/rocketman; ./cron_driver.sh &> /home/nightlyTesting/cron_driver.log; cd /home/nightlyTesting; /home/nightlyTesting/trilinos/cmake/ctest/drivers/rocketman/sendTestSummary.sh cron_driver.log; cd /home/nightlyTesting/trilinos/cmake/ctest/drivers/rocketman; ./cron_driver_tpetra.sh &> /home/nightlyTesting/cron_driver_tpetra.log; echo -e "Testing results for Tpetra with deprecated code disabled\nhttps://testing-dev.sandia.gov/cdash/index.php?project=Trilinos&filtercount=2&showfilters=1&filtercombine=and&field1=site&compare1=63&value1=rocketman&field2=buildname&compare2=63&value2=DEPRECATED" | mail -s "$(date) Tpetra testing is done on rocketman" tpetra-developers@software.sandia.gov
 
 #
 @reboot /home/jhu/bin/send-reboot-email.sh

@@ -53,8 +53,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     GDSWCoarseOperator<SC,LO,GO,NO>::GDSWCoarseOperator(ConstXMatrixPtr k,
                                                         ParameterListPtr parameterList) :
-    HarmonicCoarseOperator<SC,LO,GO,NO> (k,parameterList),
-    DDInterface_ ()
+    HarmonicCoarseOperator<SC,LO,GO,NO> (k,parameterList)
     {
         FROSCH_TIMER_START_LEVELID(gDSWCoarseOperatorTime,"GDSWCoarseOperator::GDSWCoarseOperator");
     }
@@ -65,8 +64,8 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(initializeTime,"GDSWCoarseOperator::initialize");
         buildCoarseSpace(dimension,repeatedMap);
-        this->CoarseMap_ = this->assembleCoarseMap();
-        this->buildCoarseSolveMap();
+        this->assembleInterfaceCoarseSpace();
+        this->buildCoarseSolveMap(this->AssembledInterfaceCoarseSpace_->getBasisMapUnique());
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
         return 0;
@@ -79,8 +78,8 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(initializeTime,"GDSWCoarseOperator::initialize");
         buildCoarseSpace(dimension,repeatedMap,dirichletBoundaryDofs);
-        this->CoarseMap_ = this->assembleCoarseMap();
-        this->buildCoarseSolveMap();
+        this->assembleInterfaceCoarseSpace();
+        this->buildCoarseSolveMap(this->AssembledInterfaceCoarseSpace_->getBasisMapUnique());
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
         return 0;
@@ -94,8 +93,8 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(initializeTime,"GDSWCoarseOperator::initialize");
         buildCoarseSpace(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps);
-        this->CoarseMap_ = this->assembleCoarseMap();
-        this->buildCoarseSolveMap();
+        this->assembleInterfaceCoarseSpace();
+        this->buildCoarseSolveMap(this->AssembledInterfaceCoarseSpace_->getBasisMapUnique());
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
         return 0;
@@ -110,8 +109,8 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(initializeTime,"GDSWCoarseOperator::initialize");
         buildCoarseSpace(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,dirichletBoundaryDofs);
-        this->CoarseMap_ = this->assembleCoarseMap();
-        this->buildCoarseSolveMap();
+        this->assembleInterfaceCoarseSpace();
+        this->buildCoarseSolveMap(this->AssembledInterfaceCoarseSpace_->getBasisMapUnique());
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
         return 0;
@@ -126,8 +125,8 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(initializeTime,"GDSWCoarseOperator::initialize");
         buildCoarseSpace(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,nodeList);
-        this->CoarseMap_ = this->assembleCoarseMap();
-        this->buildCoarseSolveMap();
+        this->assembleInterfaceCoarseSpace();
+        this->buildCoarseSolveMap(this->AssembledInterfaceCoarseSpace_->getBasisMapUnique());
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
         return 0;
@@ -143,8 +142,8 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(initializeTime,"GDSWCoarseOperator::initialize");
         buildCoarseSpace(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,dirichletBoundaryDofs,nodeList);
-        this->CoarseMap_ = this->assembleCoarseMap();
-        this->buildCoarseSolveMap();
+        this->assembleInterfaceCoarseSpace();
+        this->buildCoarseSolveMap(this->AssembledInterfaceCoarseSpace_->getBasisMapUnique());
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
         return 0;
@@ -160,13 +159,12 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(initializeTime,"GDSWCoarseOperator::initialize");
         buildCoarseSpace(dimension,dofsPerNodeVec,repeatedNodesMapVec,repeatedDofMapsVec,dirichletBoundaryDofsVec,nodeListVec);
-        this->CoarseMap_ = this->assembleCoarseMap();
-        this->buildCoarseSolveMap();
+        this->assembleInterfaceCoarseSpace();
+        this->buildCoarseSolveMap(this->AssembledInterfaceCoarseSpace_->getBasisMapUnique());
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
         return 0;
     }
-
 
     template <class SC,class LO,class GO,class NO>
     void GDSWCoarseOperator<SC,LO,GO,NO>::describe(FancyOStream &out,
@@ -176,7 +174,7 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    std::string GDSWCoarseOperator<SC,LO,GO,NO>::description() const
+    string GDSWCoarseOperator<SC,LO,GO,NO>::description() const
     {
         return "GDSW Coarse Operator";
     }
@@ -217,7 +215,7 @@ namespace FROSch {
         GOVecPtr dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_->getCrsGraph(),nodesMap);
 #end
  */
-        if (this->Verbose_) std::cout << "FROSch::GDSWCoarseOperator : WARNING: We do not have the right map (repeatedMap) to use FindOneEntryOnlyRowsGlobal. A variant that uses the row map could be implemented?! => We use dirichletBoundaryDofs = null for now" << std::endl;
+        FROSCH_WARNING("FROSch::GDSWCoarseOperator",this->Verbose_,"We do not have the right map (repeatedMap) to use FindOneEntryOnlyRowsGlobal. A variant that uses the row map could be implemented?! => We use dirichletBoundaryDofs = null for now.");
         GOVecPtr dirichletBoundaryDofs = null;
         buildCoarseSpace(dimension,dofsPerNode,nodesMap,dofsMaps,dirichletBoundaryDofs);
 
@@ -251,7 +249,7 @@ namespace FROSch {
         GOVecPtr dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_->getCrsGraph(),nodesMap);
 #end
  */
-        if (this->Verbose_) std::cout << "FROSch::GDSWCoarseOperator : WARNING: We do not have the right map (repeatedMap) to use FindOneEntryOnlyRowsGlobal. A variant that uses the row map could be implemented?! => We use dirichletBoundaryDofs = null for now" << std::endl;
+        FROSCH_WARNING("FROSch::GDSWCoarseOperator",this->Verbose_,"We do not have the right map (repeatedMap) to use FindOneEntryOnlyRowsGlobal. A variant that uses the row map could be implemented?! => We use dirichletBoundaryDofs = null for now.");
         GOVecPtr dirichletBoundaryDofs = null;
         buildCoarseSpace(dimension,dofsPerNode,nodesMap,dofsMaps,dirichletBoundaryDofs,nodeList);
 
@@ -323,7 +321,7 @@ namespace FROSch {
         FROSCH_ASSERT(blockId<this->NumberOfBlocks_,"Block does not exist yet and can therefore not be reset.");
 
         if (this->Verbose_) {
-            std::cout << "\n\
+            cout << "\n\
 +--------------------+\n\
 | GDSWCoarseOperator |\n\
 |  Block " << blockId << "           |\n\
@@ -332,9 +330,9 @@ namespace FROSch {
 
 
         // Process the parameter list
-        std::stringstream blockIdStringstream;
+        stringstream blockIdStringstream;
         blockIdStringstream << blockId+1;
-        std::string blockIdString = blockIdStringstream.str();
+        string blockIdString = blockIdStringstream.str();
         RCP<ParameterList> coarseSpaceList = sublist(sublist(this->ParameterList_,"Blocks"),blockIdString.c_str());
 
         CommunicationStrategy communicationStrategy = CreateOneToOneMap;
@@ -376,7 +374,7 @@ namespace FROSch {
         bool useRotations = coarseSpaceList->get("Rotations",true);
         if (useRotations && nodeList.is_null()) {
             useRotations = false;
-            if (this->Verbose_) std::cout << "FROSch::GDSWCoarseOperator : WARNING: Rotations cannot be used" << std::endl;
+            FROSCH_WARNING("FROSch::GDSWCoarseOperator",this->Verbose_,"Rotations cannot be used since nodeList.is_null().");
         }
         if (!useRotations) {
             useShortEdgeRotations = false;
@@ -397,10 +395,10 @@ namespace FROSch {
 
         EntitySetPtr interface = this->DDInterface_->getInterface();
         EntitySetPtr interior = this->DDInterface_->getInterior();
-        
+
         // Check for interface
         if (interface->getEntity(0)->getNumNodes()==0) {
-            if (this->Verbose_) std::cout << "FROSch::GDSWCoarseOperator : WARNING: No interface found => Volume functions will be used instead.";
+            FROSCH_NOTIFICATION("FROSch::GDSWCoarseOperator",this->Verbose_,"No interface found => Volume functions will be used instead.");
             this->computeVolumeFunctions(blockId,dimension,nodesMap,nodeList,interior);
         } else {
             this->GammaDofs_[blockId] = LOVecPtr(this->DofsPerNode_[blockId]*interface->getEntity(0)->getNumNodes());
@@ -414,16 +412,16 @@ namespace FROSch {
                 }
             }
 
-            this->InterfaceCoarseSpaces_[blockId].reset(new CoarseSpace<SC,LO,GO,NO>());
+            this->InterfaceCoarseSpaces_[blockId].reset(new CoarseSpace<SC,LO,GO,NO>(this->MpiComm_,this->SerialComm_));
 
             if (useForCoarseSpace && (useVertexTranslations||useShortEdgeTranslations||useShortEdgeRotations||useStraightEdgeTranslations||useStraightEdgeRotations||useEdgeTranslations||useEdgeRotations||useFaceTranslations||useFaceRotations)) {
-                
+
                 if (this->ParameterList_->get("Test Unconnected Interface",true)) {
                     DDInterface_->divideUnconnectedEntities(this->K_);
                 }
-                
+
                 DDInterface_->sortVerticesEdgesFaces(nodeList);
-                
+
                 EntitySetPtr interface = DDInterface_->getInterface();
                 EntitySetPtr interior = DDInterface_->getInterior();
 
@@ -440,78 +438,123 @@ namespace FROSch {
                 // Vertices
                 if (useVertexTranslations) {
                     XMultiVectorPtrVecPtr translations = this->computeTranslations(blockId,DDInterface_->getVertices());
+                    ConstXMapPtr verticesEntityMap = DDInterface_->getVertices()->getEntityMap();
                     for (UN i=0; i<translations.size(); i++) {
-                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(DDInterface_->getVertices()->getEntityMap(),translations[i]);
+                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(verticesEntityMap,null,translations[i]);
                     }
                 }
                 // ShortEdges
                 if (useShortEdgeTranslations) {
                     XMultiVectorPtrVecPtr translations = this->computeTranslations(blockId,DDInterface_->getShortEdges());
+                    ConstXMapPtr shortEdgesEntityMap = DDInterface_->getShortEdges()->getEntityMap();
                     for (UN i=0; i<translations.size(); i++) {
-                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(DDInterface_->getShortEdges()->getEntityMap(),translations[i]);
+                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(shortEdgesEntityMap,null,translations[i]);
                     }
                 }
                 if (useShortEdgeRotations) {
-                    XMultiVectorPtrVecPtr rotations = this->computeRotations(blockId,dimension,nodeList,DDInterface_->getShortEdges());
+                    XMultiVectorPtrVecPtr rotations = this->computeRotations(blockId,dimension,nodeList,DDInterface_->getShortEdges(),(dimension==3));
+                    ConstXMapPtr shortEdgesEntityMap = DDInterface_->getShortEdges()->getEntityMap();
                     for (UN i=0; i<rotations.size(); i++) {
-                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(DDInterface_->getShortEdges()->getEntityMap(),rotations[i]);
+                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(shortEdgesEntityMap,null,rotations[i]);
                     }
                 }
                 // StraightEdges
                 if (useStraightEdgeTranslations) {
                     XMultiVectorPtrVecPtr translations = this->computeTranslations(blockId,DDInterface_->getStraightEdges());
-                    for (UN i=0; i<translations.size(); i++) {                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(DDInterface_->getStraightEdges()->getEntityMap(),translations[i]);
+                    ConstXMapPtr straightEdgesEntityMap = DDInterface_->getStraightEdges()->getEntityMap();
+                    for (UN i=0; i<translations.size(); i++) {
+                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(straightEdgesEntityMap,null,translations[i]);
                     }
                 }
                 if (useStraightEdgeRotations) {
-                    XMultiVectorPtrVecPtr rotations = this->computeRotations(blockId,dimension,nodeList,DDInterface_->getStraightEdges());
-                    for (UN i=0; i<rotations.size(); i++) {                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(DDInterface_->getStraightEdges()->getEntityMap(),rotations[i]);
+                    XMultiVectorPtrVecPtr rotations = this->computeRotations(blockId,dimension,nodeList,DDInterface_->getStraightEdges(),(dimension==3));
+                    ConstXMapPtr straightEdgesEntityMap = DDInterface_->getStraightEdges()->getEntityMap();
+                    for (UN i=0; i<rotations.size(); i++) {
+                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(straightEdgesEntityMap,null,rotations[i]);
                     }
                 }
                 // Edges
                 if (useEdgeTranslations) {
                     XMultiVectorPtrVecPtr translations = this->computeTranslations(blockId,DDInterface_->getEdges());
+                    ConstXMapPtr edgesEntityMap = DDInterface_->getEdges()->getEntityMap();
                     for (UN i=0; i<translations.size(); i++) {
-                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(DDInterface_->getEdges()->getEntityMap(),translations[i]);
+                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(edgesEntityMap,null,translations[i]);
                     }
                 }
                 if (useEdgeRotations) {
                     XMultiVectorPtrVecPtr rotations = this->computeRotations(blockId,dimension,nodeList,DDInterface_->getEdges());
+                    ConstXMapPtr edgesEntityMap = DDInterface_->getEdges()->getEntityMap();
                     for (UN i=0; i<rotations.size(); i++) {
-                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(DDInterface_->getEdges()->getEntityMap(),rotations[i]);
+                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(edgesEntityMap,null,rotations[i]);
                     }
                 }
                 // Faces
                 if (useFaceTranslations) {
                     XMultiVectorPtrVecPtr translations = this->computeTranslations(blockId,DDInterface_->getFaces());
+                    ConstXMapPtr facesEntityMap = DDInterface_->getFaces()->getEntityMap();
                     for (UN i=0; i<translations.size(); i++) {
-                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(DDInterface_->getFaces()->getEntityMap(),translations[i]);
+                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(facesEntityMap,null,translations[i]);
                     }
                 }
                 if (useFaceRotations) {
                     XMultiVectorPtrVecPtr rotations = this->computeRotations(blockId,dimension,nodeList,DDInterface_->getFaces());
+                    ConstXMapPtr facesEntityMap = DDInterface_->getFaces()->getEntityMap();
                     for (UN i=0; i<rotations.size(); i++) {
-                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(DDInterface_->getFaces()->getEntityMap(),rotations[i]);
+                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(facesEntityMap,null,rotations[i]);
                     }
                 }
 
                 this->InterfaceCoarseSpaces_[blockId]->assembleCoarseSpace();
 
                 if (this->Verbose_) {
-                    std::cout << std::boolalpha << "\n\
-    ------------------------------------------------------------------------------\n\
-     GDSW coarse space\n\
-    ------------------------------------------------------------------------------\n\
-      Vertices: translations                      --- " << useVertexTranslations << "\n\
-      ShortEdges: translations                    --- " << useShortEdgeTranslations << "\n\
-      ShortEdges: rotations                       --- " << useShortEdgeRotations << "\n\
-      StraightEdges: translations                 --- " << useStraightEdgeTranslations << "\n\
-      StraightEdges: rotations                    --- " << useStraightEdgeRotations << "\n\
-      Edges: translations                         --- " << useEdgeTranslations << "\n\
-      Edges: rotations                            --- " << useEdgeRotations << "\n\
-      Faces: translations                         --- " << useFaceTranslations << "\n\
-      Faces: rotations                            --- " << useFaceRotations << "\n\
-    ------------------------------------------------------------------------------\n" << std::noboolalpha;
+                    cout
+                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << setw(89) << "-----------------------------------------------------------------------------------------"
+                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "| "
+                    << left << setw(74) << "GDSW coarse space " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
+                    << " |"
+                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << setw(89) << "========================================================================================="
+                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "| " << left << setw(20) << "Vertices " << " | " << setw(19) << " Translations" << right
+                    << " | " << setw(41) << boolalpha << useVertexTranslations << noboolalpha
+                    << " |"
+                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "| " << left << setw(20) << "ShortEdges " << " | " << setw(19) << " Translations" << right
+                    << " | " << setw(41) << boolalpha << useShortEdgeTranslations << noboolalpha
+                    << " |"
+                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "| " << left << setw(20) << "ShortEdges " << " | " << setw(19) << " Rotations" << right
+                    << " | " << setw(41) << boolalpha << useShortEdgeRotations << noboolalpha
+                    << " |"
+                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "| " << left << setw(20) << "StraightEdges " << " | " << setw(19) << " Translations" << right
+                    << " | " << setw(41) << boolalpha << useStraightEdgeTranslations << noboolalpha
+                    << " |"
+                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "| " << left << setw(20) << "StraightEdges " << " | " << setw(19) << " Rotations" << right
+                    << " | " << setw(41) << boolalpha << useStraightEdgeRotations << noboolalpha
+                    << " |"
+                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "| " << left << setw(20) << "Edges " << " | " << setw(19) << " Translations" << right
+                    << " | " << setw(41) << boolalpha << useEdgeTranslations << noboolalpha
+                    << " |"
+                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "| " << left << setw(20) << "Edges " << " | " << setw(19) << " Rotations" << right
+                    << " | " << setw(41) << boolalpha << useEdgeRotations << noboolalpha
+                    << " |"
+                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "| " << left << setw(20) << "Faces " << " | " << setw(19) << " Translations" << right
+                    << " | " << setw(41) << boolalpha << useFaceTranslations << noboolalpha
+                    << " |"
+                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "| " << left << setw(20) << "Faces " << " | " << setw(19) << " Rotations" << right
+                    << " | " << setw(41) << boolalpha << useFaceRotations << noboolalpha
+                    << " |"
+                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << setw(89) << "-----------------------------------------------------------------------------------------"
+                    << endl;
                 }
             }
         }

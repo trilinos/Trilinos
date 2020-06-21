@@ -275,6 +275,9 @@ namespace ML_Epetra{
   //! Applies Dirichlet conditions to matrix rows.
   void Apply_BCsToMatrixRows(const int *dirichletRows, int numBCRows, const Epetra_CrsMatrix & Matrix);
 
+  //! Applies Dirichlet conditions to matrix rows (marking all dofs on a node as Dirichlet if any one dof is)
+  void Apply_BCsToMatrixRowsNodal(const int *dirichletRows, int numBCRows, int dofsPerNode, const Epetra_CrsMatrix & Matrix);
+
   //! Applies Dirichlet conditions to columns that rows already have.
   /*! Apply the Dirichlet BC's specified by BoundaryMatrix to remove all
    * columns (across all processors) that have entries zero'd by the BC's.  This

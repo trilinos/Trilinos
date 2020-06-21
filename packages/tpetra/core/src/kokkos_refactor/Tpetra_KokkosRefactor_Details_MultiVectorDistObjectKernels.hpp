@@ -148,6 +148,7 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
         ("Tpetra::MultiVector pack one col",
          range_type (0, idx.size ()),
          PackArraySingleColumn (dst, src, idx, col));
+      Kokkos::fence();
     }
   };
 
@@ -230,6 +231,8 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
          range_type (0, idx.size ()),
          PackArraySingleColumnWithBoundsCheck (dst, src, idx, col),
          errorCount);
+      Kokkos::fence();
+
       if (errorCount != 0) {
         // Go back and find the out-of-bounds entries in the index
         // array.  Performance doesn't matter since we are already in

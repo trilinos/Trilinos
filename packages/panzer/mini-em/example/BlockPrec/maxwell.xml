@@ -2,12 +2,20 @@
 
   <ParameterList name="Mesh">
     <Parameter name="Source" type="string" value="Inline Mesh" />
+    <!-- <Parameter name="Source" type="string" value="Pamgen Mesh" /> -->
     <!-- <Parameter name="Source" type="string" value="Exodus File" /> -->
 
     <ParameterList name="Exodus File">
       <Parameter name="dt" type="double" value="6.0e-12"/>
       <ParameterList name="Exodus Parameters">
         <Parameter name="File Name" type="string" value="blob/blob.g" />
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="Pamgen Mesh">
+      <Parameter name="dt" type="double" value="6.0e-12"/>
+      <ParameterList name="Pamgen Parameters">
+        <Parameter name="File Name" type="string" value="pamgen.gen"/>
       </ParameterList>
     </ParameterList>
 

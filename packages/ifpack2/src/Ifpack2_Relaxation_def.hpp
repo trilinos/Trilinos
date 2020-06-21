@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ***********************************************************************
 //@HEADER
 */
@@ -52,6 +50,7 @@
 #include "MatrixMarket_Tpetra.hpp"
 #include "Tpetra_transform_MultiVector.hpp"
 #include "Tpetra_withLocalAccess_MultiVector.hpp"
+#include "Tpetra_Details_residual.hpp"
 #include <cstdlib>
 #include <memory>
 #include <sstream>
@@ -190,17 +189,18 @@ updateCachedMultiVector (const Teuchos::RCP<const Tpetra::Map<local_ordinal_type
   }
 }
 
-
 template<class MatrixType>
 void Relaxation<MatrixType>::
-setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
+setMatrix(const Teuchos::RCP<const row_matrix_type>& A)
 {
-  if (A.getRawPtr () != A_.getRawPtr ()) { // it's a different matrix
+  if (A.getRawPtr() != A_.getRawPtr()) { // it's a different matrix
     Importer_ = Teuchos::null;
+    pointImporter_ = Teuchos::null;
     Diagonal_ = Teuchos::null; // ??? what if this comes from the user???
     isInitialized_ = false;
     IsComputed_ = false;
-    diagOffsets_ = Kokkos::View<size_t*, typename node_type::device_type> ();
+    using device_type = typename node_type::device_type;
+    diagOffsets_ = Kokkos::View<size_t*, device_type>();
     savedDiagOffsets_ = false;
     hasBlockCrsMatrix_ = false;
     if (! A.is_null ()) {
@@ -210,44 +210,13 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
   }
 }
 
-
 template<class MatrixType>
 Relaxation<MatrixType>::
 Relaxation (const Teuchos::RCP<const row_matrix_type>& A)
 : A_ (A),
-  NumSweeps_ (1),
-  PrecType_ (Ifpack2::Details::JACOBI),
-  DampingFactor_ (STS::one ()),
   IsParallel_ ((A.is_null () || A->getRowMap ().is_null () || A->getRowMap ()->getComm ().is_null ()) ?
                false : // a reasonable default if there's no communicator
-               A->getRowMap ()->getComm ()->getSize () > 1),
-  ZeroStartingSolution_ (true),
-  DoBackwardGS_ (false),
-  DoL1Method_ (false),
-  L1Eta_ (Teuchos::as<magnitude_type> (1.5)),
-  MinDiagonalValue_ (STS::zero ()),
-  fixTinyDiagEntries_ (false),
-  checkDiagEntries_ (false),
-  is_matrix_structurally_symmetric_ (false),
-  ifpack2_dump_matrix_(false),
-  isInitialized_ (false),
-  IsComputed_ (false),
-  NumInitialize_ (0),
-  NumCompute_ (0),
-  NumApply_ (0),
-  InitializeTime_ (0.0), // Times are double anyway, so no need for ScalarTraits.
-  ComputeTime_ (0.0),
-  ApplyTime_ (0.0),
-  ComputeFlops_ (0.0),
-  ApplyFlops_ (0.0),
-  globalMinMagDiagEntryMag_ (STM::zero ()),
-  globalMaxMagDiagEntryMag_ (STM::zero ()),
-  globalNumSmallDiagEntries_ (0),
-  globalNumZeroDiagEntries_ (0),
-  globalNumNegDiagEntries_ (0),
-  globalDiagNormDiff_(Teuchos::ScalarTraits<magnitude_type>::zero()),
-  savedDiagOffsets_ (false),
-  hasBlockCrsMatrix_ (false)
+               A->getRowMap ()->getComm ()->getSize () > 1)
 {
   this->setObjectLabel ("Ifpack2::Relaxation");
 }
@@ -272,18 +241,24 @@ Relaxation<MatrixType>::getValidParameters () const
 
     // Set a validator that automatically converts from the valid
     // string options to their enum values.
-    Array<std::string> precTypes (5);
+    Array<std::string> precTypes (8);
     precTypes[0] = "Jacobi";
     precTypes[1] = "Gauss-Seidel";
     precTypes[2] = "Symmetric Gauss-Seidel";
     precTypes[3] = "MT Gauss-Seidel";
     precTypes[4] = "MT Symmetric Gauss-Seidel";
-    Array<Details::RelaxationType> precTypeEnums (5);
+    precTypes[5] = "Richardson";
+    precTypes[6] = "Two-stage Gauss-Seidel";
+    precTypes[7] = "Two-stage Symmetric Gauss-Seidel";
+    Array<Details::RelaxationType> precTypeEnums (8);
     precTypeEnums[0] = Details::JACOBI;
     precTypeEnums[1] = Details::GS;
     precTypeEnums[2] = Details::SGS;
     precTypeEnums[3] = Details::MTGS;
     precTypeEnums[4] = Details::MTSGS;
+    precTypeEnums[5] = Details::RICHARDSON;
+    precTypeEnums[6] = Details::GS2;
+    precTypeEnums[7] = Details::SGS2;
     const std::string defaultPrecType ("Jacobi");
     setStringToIntegralParameter<Details::RelaxationType> ("relaxation: type",
       defaultPrecType, "Relaxation method", precTypes (), precTypeEnums (),
@@ -294,6 +269,16 @@ Relaxation<MatrixType>::getValidParameters () const
       rcp_implicit_cast<PEV> (rcp (new NonnegativeIntValidator));
     pl->set ("relaxation: sweeps", numSweeps, "Number of relaxation sweeps",
              rcp_const_cast<const PEV> (numSweepsValidator));
+
+    // number of inner sweeps for two-stage GS
+    const int numInnerSweeps = 1;
+    RCP<PEV> numInnerSweepsValidator =
+      rcp_implicit_cast<PEV> (rcp (new NonnegativeIntValidator));
+    pl->set ("relaxation: inner sweeps", numInnerSweeps, "Number of inner relaxation sweeps",
+             rcp_const_cast<const PEV> (numInnerSweepsValidator));
+    // specify if using sptrsv instead of inner-iterations
+    const bool innerSpTrsv = false;
+    pl->set ("relaxation: inner sparse-triangular solve", innerSpTrsv);
 
     const scalar_type dampingFactor = STS::one ();
     pl->set ("relaxation: damping factor", dampingFactor);
@@ -329,6 +314,9 @@ Relaxation<MatrixType>::getValidParameters () const
     const bool ifpack2_dump_matrix = false;
     pl->set("relaxation: ifpack2 dump matrix", ifpack2_dump_matrix);
 
+    const int cluster_size = 1;
+    pl->set("relaxation: mtgs cluster size", cluster_size);
+
     validParams_ = rcp_const_cast<const ParameterList> (pl);
   }
   return validParams_;
@@ -356,6 +344,8 @@ void Relaxation<MatrixType>::setParametersImpl (Teuchos::ParameterList& pl)
   const Details::RelaxationType precType =
     getIntegralValue<Details::RelaxationType> (pl, "relaxation: type");
   const int numSweeps = pl.get<int> ("relaxation: sweeps");
+  const int numInnerSweeps = pl.get<int> ("relaxation: inner sweeps");
+  const bool innerSpTrsv = pl.get<bool> ("relaxation: inner sparse-triangular solve");
   const ST dampingFactor = pl.get<ST> ("relaxation: damping factor");
   const bool zeroStartSol = pl.get<bool> ("relaxation: zero starting solution");
   const bool doBackwardGS = pl.get<bool> ("relaxation: backward mode");
@@ -366,6 +356,9 @@ void Relaxation<MatrixType>::setParametersImpl (Teuchos::ParameterList& pl)
   const bool checkDiagEntries = pl.get<bool> ("relaxation: check diagonal entries");
   const bool is_matrix_structurally_symmetric = pl.get<bool> ("relaxation: symmetric matrix structure");
   const bool ifpack2_dump_matrix = pl.get<bool> ("relaxation: ifpack2 dump matrix");
+  int cluster_size = 1;
+  if(pl.isParameter ("relaxation: mtgs cluster size")) //optional parameter
+    cluster_size = pl.get<int> ("relaxation: mtgs cluster size");
 
   Teuchos::ArrayRCP<local_ordinal_type> localSmoothingIndices = pl.get<Teuchos::ArrayRCP<local_ordinal_type> >("relaxation: local smoothing indices");
 
@@ -373,6 +366,8 @@ void Relaxation<MatrixType>::setParametersImpl (Teuchos::ParameterList& pl)
   // "Commit" the changes, now that we've validated everything.
   PrecType_              = precType;
   NumSweeps_             = numSweeps;
+  NumInnerSweeps_        = numInnerSweeps;
+  InnerSpTrsv_           = innerSpTrsv;
   DampingFactor_         = dampingFactor;
   ZeroStartingSolution_  = zeroStartSol;
   DoBackwardGS_          = doBackwardGS;
@@ -381,6 +376,7 @@ void Relaxation<MatrixType>::setParametersImpl (Teuchos::ParameterList& pl)
   MinDiagonalValue_      = minDiagonalValue;
   fixTinyDiagEntries_    = fixTinyDiagEntries;
   checkDiagEntries_      = checkDiagEntries;
+  clusterSize_           = cluster_size;
   is_matrix_structurally_symmetric_ = is_matrix_structurally_symmetric;
   ifpack2_dump_matrix_ = ifpack2_dump_matrix;
   localSmoothingIndices_ = localSmoothingIndices;
@@ -585,10 +581,15 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
         ApplyInverseSGS(*Xcopy,Y);
         break;
       case Ifpack2::Details::MTSGS:
+      case Ifpack2::Details::SGS2:
         ApplyInverseMTSGS_CrsMatrix(*Xcopy,Y);
         break;
       case Ifpack2::Details::MTGS:
+      case Ifpack2::Details::GS2:
         ApplyInverseMTGS_CrsMatrix(*Xcopy,Y);
+        break;
+      case Ifpack2::Details::RICHARDSON:
+        ApplyInverseRichardson(*Xcopy,Y);
         break;
 
       default:
@@ -671,7 +672,8 @@ void Relaxation<MatrixType>::initialize ()
       hasBlockCrsMatrix_ = ! A_bcrs.is_null ();
     }
 
-    if (PrecType_ == Details::MTGS || PrecType_ == Details::MTSGS) {
+    if (PrecType_ == Details::MTGS || PrecType_ == Details::MTSGS ||
+        PrecType_ == Details::GS2  || PrecType_ == Details::SGS2) {
       const crs_matrix_type* crsMat =
         dynamic_cast<const crs_matrix_type*> (A_.get());
       TEUCHOS_TEST_FOR_EXCEPTION
@@ -696,12 +698,19 @@ void Relaxation<MatrixType>::initialize ()
 
       this->mtKernelHandle_ = Teuchos::rcp (new mt_kernel_handle_type ());
       if (mtKernelHandle_->get_gs_handle () == nullptr) {
-        mtKernelHandle_->create_gs_handle ();
+        if (PrecType_ == Details::GS2 || PrecType_ == Details::SGS2)
+          mtKernelHandle_->create_gs_handle (KokkosSparse::GS_TWOSTAGE);
+        else if(this->clusterSize_ == 1)
+          mtKernelHandle_->create_gs_handle ();
+        else
+          mtKernelHandle_->create_gs_handle (KokkosSparse::CLUSTER_DEFAULT, this->clusterSize_);
       }
       local_matrix_type kcsr = crsMat->getLocalMatrix ();
-
-      bool is_symmetric = (PrecType_ == Ifpack2::Details::MTSGS);
-      is_symmetric = is_symmetric || is_matrix_structurally_symmetric_;
+      if (PrecType_ == Details::GS2 || PrecType_ == Details::SGS2) {
+        // set parameters for two-stage GS
+        mtKernelHandle_->set_gs_set_num_inner_sweeps (NumInnerSweeps_);
+        mtKernelHandle_->set_gs_twostage (!InnerSpTrsv_, A_->getNodeNumRows ());
+      }
 
       using KokkosSparse::Experimental::gauss_seidel_symbolic;
       gauss_seidel_symbolic<mt_kernel_handle_type,
@@ -711,7 +720,7 @@ void Relaxation<MatrixType>::initialize ()
                                                  A_->getNodeNumCols (),
                                                  kcsr.graph.row_map,
                                                  kcsr.graph.entries,
-                                                 is_symmetric);
+                                                 is_matrix_structurally_symmetric_);
     }
   } // timing of initialize stops here
 
@@ -1110,9 +1119,10 @@ void Relaxation<MatrixType>::compute ()
     // Teuchos::ScalarTraits when its template parameter is not a
     // floating-point type.  (Ifpack2 sometimes gets instantiated for
     // integer Scalar types.)
-    const IST oneOverMinDiagVal = (MinDiagonalValue_ == zero) ?
-      KAT::one () / static_cast<IST> (SmallTraits<scalar_type>::eps ()) :
-      KAT::one () / static_cast<IST> (MinDiagonalValue_);
+    IST oneOverMinDiagVal = KAT::one () / static_cast<IST> (SmallTraits<scalar_type>::eps ());
+    if ( MinDiagonalValue_ != zero) 
+      oneOverMinDiagVal = KAT::one () / static_cast<IST> (MinDiagonalValue_);
+      
     // It's helpful not to have to recompute this magnitude each time.
     const magnitude_type minDiagValMag = STS::magnitude (MinDiagonalValue_);
 
@@ -1302,8 +1312,11 @@ void Relaxation<MatrixType>::compute ()
       Diagonal_->sync_device ();
     }
 
-    if (PrecType_ == Ifpack2::Details::MTGS ||
-        PrecType_ == Ifpack2::Details::MTSGS) {
+    if (PrecType_ == Ifpack2::Details::MTGS  ||
+        PrecType_ == Ifpack2::Details::MTSGS ||
+        PrecType_ == Ifpack2::Details::GS2   ||
+        PrecType_ == Ifpack2::Details::SGS2) {
+
       //KokkosKernels GaussSeidel Initialization.
 
       const crs_matrix_type* crsMat =
@@ -1314,7 +1327,6 @@ void Relaxation<MatrixType>::compute ()
          "when the input matrix is a Tpetra::CrsMatrix.");
       local_matrix_type kcsr = crsMat->getLocalMatrix ();
 
-      const bool is_symmetric = (PrecType_ == Ifpack2::Details::MTSGS);
       auto diagView_2d = Diagonal_->getLocalViewDevice ();
       auto diagView_1d = Kokkos::subview (diagView_2d, Kokkos::ALL (), 0);
       using KokkosSparse::Experimental::gauss_seidel_numeric;
@@ -1328,13 +1340,77 @@ void Relaxation<MatrixType>::compute ()
                                                    kcsr.graph.entries,
                                                    kcsr.values,
                                                    diagView_1d,
-                                                   is_symmetric);
+                                                   is_matrix_structurally_symmetric_);
     }
   } // end TimeMonitor scope
 
   ComputeTime_ += timer->totalElapsedTime ();
   ++NumCompute_;
   IsComputed_ = true;
+}
+
+
+template<class MatrixType>
+void
+Relaxation<MatrixType>::
+ApplyInverseRichardson (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+                    Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
+{
+  using Teuchos::as;
+  const double numGlobalRows = as<double> (A_->getGlobalNumRows ());
+  const double numVectors = as<double> (X.getNumVectors ());
+  if (ZeroStartingSolution_) {
+    // For the first Richardson sweep, if we are allowed to assume that
+    // the initial guess is zero, then Richardson is just alpha times the RHS
+    // Compute it as Y(i,j) = DampingFactor_ * X(i,j).
+    Y.scale(DampingFactor_,X);
+
+    // Count (global) floating-point operations.  Ifpack2 represents
+    // this as a floating-point number rather than an integer, so that
+    // overflow (for a very large number of calls, or a very large
+    // problem) is approximate instead of catastrophic.
+    double flopUpdate = 0.0;
+    if (DampingFactor_ == STS::one ()) {
+      // Y(i,j) = X(i,j): one multiply for each entry of Y.
+      flopUpdate = numGlobalRows * numVectors;
+    } else {
+      // Y(i,j) = DampingFactor_ * X(i,j):
+      // One multiplies per entry of Y.
+      flopUpdate = numGlobalRows * numVectors;
+    }
+    ApplyFlops_ += flopUpdate;
+    if (NumSweeps_ == 1) {
+      return;
+    }
+  }
+  // If we were allowed to assume that the starting guess was zero,
+  // then we have already done the first sweep above.
+  const int startSweep = ZeroStartingSolution_ ? 1 : 0;
+
+  // Allocate a multivector if the cached one isn't perfect
+  updateCachedMultiVector(Y.getMap(),as<size_t>(numVectors));
+
+  for (int j = startSweep; j < NumSweeps_; ++j) {
+    // Each iteration: Y = Y + \omega D^{-1} (X - A*Y)
+    Tpetra::Details::residual(*A_,Y,X,*cachedMV_);
+    Y.update(DampingFactor_,*cachedMV_,STS::one());
+  }
+
+  // For each column of output, for each pass over the matrix:
+  //
+  // - One + and one * for each matrix entry
+  // - One / and one + for each row of the matrix
+  // - If the damping factor is not one: one * for each row of the
+  //   matrix.  (It's not fair to count this if the damping factor is
+  //   one, since the implementation could skip it.  Whether it does
+  //   or not is the implementation's choice.)
+
+  // Floating-point operations due to the damping factor, per matrix
+  // row, per direction, per columm of output.
+  const double numGlobalNonzeros = as<double> (A_->getGlobalNumEntries ());
+  const double dampingFlops = (DampingFactor_ == STS::one ()) ? 0.0 : 1.0;
+  ApplyFlops_ += as<double> (NumSweeps_ - startSweep) * numVectors *
+    (2.0 * numGlobalNonzeros + dampingFlops);
 }
 
 
@@ -1386,8 +1462,7 @@ ApplyInverseJacobi (const Tpetra::MultiVector<scalar_type,local_ordinal_type,glo
 
   for (int j = startSweep; j < NumSweeps_; ++j) {
     // Each iteration: Y = Y + \omega D^{-1} (X - A*Y)
-    applyMat (Y, *cachedMV_);
-    cachedMV_->update (STS::one (), X, -STS::one ());
+    Tpetra::Details::residual(*A_,Y,X,*cachedMV_);
     Y.elementWiseMultiply (DampingFactor_, *Diagonal_, *cachedMV_, STS::one ());
   }
 
@@ -1494,7 +1569,7 @@ ApplyInverseGS (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_
   const crs_matrix_type* crsMat =
     dynamic_cast<const crs_matrix_type*> (A_.getRawPtr ());
   if (blockCrsMat != nullptr)  {
-    const_cast<this_type*> (this)->ApplyInverseGS_BlockCrsMatrix (*blockCrsMat, X, Y);
+    const_cast<this_type&> (*this).ApplyInverseGS_BlockCrsMatrix (*blockCrsMat, X, Y);
   }
   else if (crsMat != nullptr) {
     ApplyInverseGS_CrsMatrix (*crsMat, X, Y);
@@ -1753,13 +1828,18 @@ ApplyInverseGS_BlockCrsMatrix (const block_crs_matrix_type& A,
                                const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
                                Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y)
 {
+  using Tpetra::INSERT;
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcpFromRef;
-  typedef Tpetra::BlockMultiVector<scalar_type,
-    local_ordinal_type, global_ordinal_type, node_type> BMV;
-  typedef Tpetra::MultiVector<scalar_type,
-    local_ordinal_type, global_ordinal_type, node_type> MV;
+  using BMV = Tpetra::BlockMultiVector<scalar_type,
+    local_ordinal_type, global_ordinal_type, node_type>;
+  using MV = Tpetra::MultiVector<scalar_type,
+    local_ordinal_type, global_ordinal_type, node_type>;
+  using map_type = Tpetra::Map<local_ordinal_type,
+    global_ordinal_type, node_type>;
+  using import_type = Tpetra::Import<local_ordinal_type,
+    global_ordinal_type, node_type>;
 
   //FIXME: (tcf) 8/21/2014 -- may be problematic for multiple right hand sides
   //
@@ -1768,31 +1848,46 @@ ApplyInverseGS_BlockCrsMatrix (const block_crs_matrix_type& A,
   // does not have constant stride.  We should check for that case
   // here, in case it doesn't work in localGaussSeidel (which is
   // entirely possible).
-  BMV yBlock (Y, * (A.getGraph ()->getDomainMap ()), A.getBlockSize ());
-  const BMV xBlock (X, * (A.getColMap ()), A.getBlockSize ());
+  BMV yBlock(Y, *(A.getGraph ()->getDomainMap()), A.getBlockSize());
+  const BMV xBlock(X, *(A.getColMap ()), A.getBlockSize());
 
   bool performImport = false;
   RCP<BMV> yBlockCol;
-  if (Importer_.is_null ()) {
-    yBlockCol = rcpFromRef (yBlock);
+  if (Importer_.is_null()) {
+    yBlockCol = rcpFromRef(yBlock);
   }
   else {
-    if (yBlockColumnPointMap_.is_null () ||
-        yBlockColumnPointMap_->getNumVectors () != yBlock.getNumVectors () ||
-        yBlockColumnPointMap_->getBlockSize () != yBlock.getBlockSize ()) {
+    if (yBlockColumnPointMap_.is_null() ||
+        yBlockColumnPointMap_->getNumVectors() != yBlock.getNumVectors() ||
+        yBlockColumnPointMap_->getBlockSize() != yBlock.getBlockSize()) {
       yBlockColumnPointMap_ =
-        rcp (new BMV (* (A.getColMap ()), A.getBlockSize (),
-                      static_cast<local_ordinal_type> (yBlock.getNumVectors ())));
+        rcp(new BMV(*(A.getColMap()), A.getBlockSize(),
+                    static_cast<local_ordinal_type>(yBlock.getNumVectors())));
     }
     yBlockCol = yBlockColumnPointMap_;
+    if (pointImporter_.is_null()) {
+      auto srcMap = rcp(new map_type(yBlock.getPointMap()));
+      auto tgtMap = rcp(new map_type(yBlockCol->getPointMap()));
+      pointImporter_ = rcp(new import_type(srcMap, tgtMap));
+    }
     performImport = true;
   }
 
+  MV yBlock_mv;
+  MV yBlockCol_mv;
+  RCP<const MV> yBlockColPointDomain;
+  if (performImport) { // create views (shallow copies)
+    yBlock_mv = yBlock.getMultiVectorView();
+    yBlockCol_mv = yBlockCol->getMultiVectorView();
+    yBlockColPointDomain =
+      yBlockCol_mv.offsetView(A.getDomainMap(), 0);
+  }
+
   if (ZeroStartingSolution_) {
-    yBlockCol->putScalar (STS::zero ());
+    yBlockCol->putScalar(STS::zero ());
   }
   else if (performImport) {
-    yBlockCol->doImport (yBlock, *Importer_, Tpetra::INSERT);
+    yBlockCol_mv.doImport(yBlock_mv, *pointImporter_, INSERT);
   }
 
   const Tpetra::ESweepDirection direction =
@@ -1800,14 +1895,12 @@ ApplyInverseGS_BlockCrsMatrix (const block_crs_matrix_type& A,
 
   for (int sweep = 0; sweep < NumSweeps_; ++sweep) {
     if (performImport && sweep > 0) {
-      yBlockCol->doImport(yBlock, *Importer_, Tpetra::INSERT);
+      yBlockCol_mv.doImport(yBlock_mv, *pointImporter_, INSERT);
     }
-    A.localGaussSeidel (xBlock, *yBlockCol, blockDiag_,
-                        DampingFactor_, direction);
+    A.localGaussSeidel(xBlock, *yBlockCol, blockDiag_,
+                       DampingFactor_, direction);
     if (performImport) {
-      RCP<const MV> yBlockColPointDomain =
-        yBlockCol->getMultiVectorView ().offsetView (A.getDomainMap (), 0);
-      Tpetra::deep_copy (Y, *yBlockColPointDomain);
+      Tpetra::deep_copy(Y, *yBlockColPointDomain);
     }
   }
 }
@@ -2083,7 +2176,6 @@ MTGaussSeidel (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_o
   }
 
   local_matrix_type kcsr = crsMat->getLocalMatrix ();
-  const size_t NumVectors = X.getNumVectors ();
 
   bool update_y_vector = true;
   //false as it was done up already, and we dont want to zero it in each sweep.
@@ -2096,45 +2188,37 @@ MTGaussSeidel (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_o
       X_colMap->doImport (*X_domainMap, *importer, Tpetra::CombineMode::INSERT);
     }
 
-    for (size_t indVec = 0; indVec < NumVectors; ++indVec) {
-      if (direction == Tpetra::Symmetric) {
-        KokkosSparse::Experimental::symmetric_gauss_seidel_apply
-        (mtKernelHandle_.getRawPtr(), A_->getNodeNumRows(), A_->getNodeNumCols(),
-            kcsr.graph.row_map, kcsr.graph.entries, kcsr.values,
-            Kokkos::subview(X_colMap->template getLocalView<MyExecSpace> (), Kokkos::ALL (), indVec),
-            Kokkos::subview(B_in->template getLocalView<MyExecSpace> (), Kokkos::ALL (), indVec),
-            zero_x_vector, update_y_vector, DampingFactor_);
-      }
-      else if (direction == Tpetra::Forward) {
-        KokkosSparse::Experimental::forward_sweep_gauss_seidel_apply
-        (mtKernelHandle_.getRawPtr(), A_->getNodeNumRows(), A_->getNodeNumCols(),
-            kcsr.graph.row_map,kcsr.graph.entries, kcsr.values,
-            Kokkos::subview(X_colMap->template getLocalView<MyExecSpace> (), Kokkos::ALL (), indVec ),
-            Kokkos::subview(B_in->template getLocalView<MyExecSpace> (), Kokkos::ALL (), indVec),
-            zero_x_vector, update_y_vector, DampingFactor_);
-      }
-      else if (direction == Tpetra::Backward) {
-        KokkosSparse::Experimental::backward_sweep_gauss_seidel_apply
-        (mtKernelHandle_.getRawPtr(), A_->getNodeNumRows(), A_->getNodeNumCols(),
-            kcsr.graph.row_map,kcsr.graph.entries, kcsr.values,
-            Kokkos::subview(X_colMap->template getLocalView<MyExecSpace> (), Kokkos::ALL (), indVec ),
-            Kokkos::subview(B_in->template getLocalView<MyExecSpace> (), Kokkos::ALL (), indVec),
-            zero_x_vector, update_y_vector, DampingFactor_);
-      }
-      else {
-        TEUCHOS_TEST_FOR_EXCEPTION(
-            true, std::invalid_argument,
-            prefix << "The 'direction' enum does not have any of its valid "
-            "values: Forward, Backward, or Symmetric.");
-      }
+    if (direction == Tpetra::Symmetric) {
+      KokkosSparse::Experimental::symmetric_gauss_seidel_apply
+      (mtKernelHandle_.getRawPtr(), A_->getNodeNumRows(), A_->getNodeNumCols(),
+          kcsr.graph.row_map, kcsr.graph.entries, kcsr.values,
+          X_colMap->getLocalViewDevice(),
+          B_in->getLocalViewDevice(),
+          zero_x_vector, update_y_vector, DampingFactor_, 1);
     }
-
-    if (NumVectors > 1){
-      update_y_vector = true;
+    else if (direction == Tpetra::Forward) {
+      KokkosSparse::Experimental::forward_sweep_gauss_seidel_apply
+      (mtKernelHandle_.getRawPtr(), A_->getNodeNumRows(), A_->getNodeNumCols(),
+          kcsr.graph.row_map,kcsr.graph.entries, kcsr.values,
+          X_colMap->getLocalViewDevice (),
+          B_in->getLocalViewDevice(),
+          zero_x_vector, update_y_vector, DampingFactor_, 1);
+    }
+    else if (direction == Tpetra::Backward) {
+      KokkosSparse::Experimental::backward_sweep_gauss_seidel_apply
+      (mtKernelHandle_.getRawPtr(), A_->getNodeNumRows(), A_->getNodeNumCols(),
+          kcsr.graph.row_map,kcsr.graph.entries, kcsr.values,
+          X_colMap->getLocalViewDevice(),
+          B_in->getLocalViewDevice(),
+          zero_x_vector, update_y_vector, DampingFactor_, 1);
     }
     else {
-      update_y_vector = false;
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          true, std::invalid_argument,
+          prefix << "The 'direction' enum does not have any of its valid "
+          "values: Forward, Backward, or Symmetric.");
     }
+    update_y_vector = false;
   }
 
   if (copyBackOutput) {
@@ -2201,7 +2285,7 @@ ApplyInverseSGS (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global
   const crs_matrix_type* crsMat =
     dynamic_cast<const crs_matrix_type*> (A_.getRawPtr ());
   if (blockCrsMat != nullptr)  {
-    const_cast<this_type*> (this)->ApplyInverseSGS_BlockCrsMatrix(*blockCrsMat, X, Y);
+    const_cast<this_type&> (*this).ApplyInverseSGS_BlockCrsMatrix(*blockCrsMat, X, Y);
   }
   else if (crsMat != nullptr) {
     ApplyInverseSGS_CrsMatrix (*crsMat, X, Y);
@@ -2457,13 +2541,18 @@ ApplyInverseSGS_BlockCrsMatrix (const block_crs_matrix_type& A,
                                 const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
                                 Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y)
 {
+  using Tpetra::INSERT;
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcpFromRef;
-  typedef Tpetra::BlockMultiVector<scalar_type,
-    local_ordinal_type, global_ordinal_type, node_type> BMV;
-  typedef Tpetra::MultiVector<scalar_type,
-    local_ordinal_type, global_ordinal_type, node_type> MV;
+  using BMV = Tpetra::BlockMultiVector<scalar_type,
+    local_ordinal_type, global_ordinal_type, node_type>;
+  using MV = Tpetra::MultiVector<scalar_type,
+    local_ordinal_type, global_ordinal_type, node_type>;
+  using map_type = Tpetra::Map<local_ordinal_type,
+    global_ordinal_type, node_type>;
+  using import_type = Tpetra::Import<local_ordinal_type,
+    global_ordinal_type, node_type>;
 
   //FIXME: (tcf) 8/21/2014 -- may be problematic for multiple right hand sides
   //
@@ -2489,14 +2578,29 @@ ApplyInverseSGS_BlockCrsMatrix (const block_crs_matrix_type& A,
                       static_cast<local_ordinal_type> (yBlock.getNumVectors ())));
     }
     yBlockCol = yBlockColumnPointMap_;
+    if (pointImporter_.is_null()) {
+      auto srcMap = rcp(new map_type(yBlock.getPointMap()));
+      auto tgtMap = rcp(new map_type(yBlockCol->getPointMap()));
+      pointImporter_ = rcp(new import_type(srcMap, tgtMap));
+    }
     performImport = true;
   }
 
+  MV yBlock_mv;
+  MV yBlockCol_mv;
+  RCP<const MV> yBlockColPointDomain;
+  if (performImport) { // create views (shallow copies)
+    yBlock_mv = yBlock.getMultiVectorView();
+    yBlockCol_mv = yBlockCol->getMultiVectorView();
+    yBlockColPointDomain =
+      yBlockCol_mv.offsetView(A.getDomainMap(), 0);
+  }
+
   if (ZeroStartingSolution_) {
-    yBlockCol->putScalar (STS::zero ());
+    yBlockCol->putScalar(STS::zero ());
   }
   else if (performImport) {
-    yBlockCol->doImport (yBlock, *Importer_, Tpetra::INSERT);
+    yBlockCol_mv.doImport(yBlock_mv, *pointImporter_, INSERT);
   }
 
   // FIXME (mfh 12 Sep 2014) Shouldn't this come from the user's parameter?
@@ -2504,19 +2608,15 @@ ApplyInverseSGS_BlockCrsMatrix (const block_crs_matrix_type& A,
 
   for (int sweep = 0; sweep < NumSweeps_; ++sweep) {
     if (performImport && sweep > 0) {
-      yBlockCol->doImport (yBlock, *Importer_, Tpetra::INSERT);
+      yBlockCol_mv.doImport(yBlock_mv, *pointImporter_, INSERT);
     }
-    A.localGaussSeidel (xBlock, *yBlockCol, blockDiag_,
-                        DampingFactor_, direction);
+    A.localGaussSeidel(xBlock, *yBlockCol, blockDiag_,
+                       DampingFactor_, direction);
     if (performImport) {
-      RCP<const MV> yBlockColPointDomain =
-        yBlockCol->getMultiVectorView ().offsetView (A.getDomainMap (), 0);
-      MV yBlockView = yBlock.getMultiVectorView ();
-      Tpetra::deep_copy (yBlockView, *yBlockColPointDomain);
+      Tpetra::deep_copy(yBlock_mv, *yBlockColPointDomain);
     }
   }
 }
-
 
 template<class MatrixType>
 std::string Relaxation<MatrixType>::description () const
@@ -2545,6 +2645,10 @@ std::string Relaxation<MatrixType>::description () const
     os << "MT Gauss-Seidel";
   } else if (PrecType_ == Ifpack2::Details::MTSGS) {
     os << "MT Symmetric Gauss-Seidel";
+  } else if (PrecType_ == Ifpack2::Details::GS2) {
+    os << "Two-stage Gauss-Seidel";
+  } else if (PrecType_ == Ifpack2::Details::SGS2) {
+    os << "Two-stage Symmetric Gauss-Seidel";
   }
   else {
     os << "INVALID";
@@ -2625,6 +2729,10 @@ describe (Teuchos::FancyOStream &out,
         out << "MT Gauss-Seidel";
       } else if (PrecType_ == Ifpack2::Details::MTSGS) {
         out << "MT Symmetric Gauss-Seidel";
+      } else if (PrecType_ == Ifpack2::Details::GS2) {
+        out << "Two-stage Gauss-Seidel";
+      } else if (PrecType_ == Ifpack2::Details::SGS2) {
+        out << "Two-stage Symmetric Gauss-Seidel";
       } else {
         out << "INVALID";
       }

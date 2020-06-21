@@ -279,6 +279,7 @@ namespace percept {
                   << " num_new_elems= " << num_new_elems
                   << std::endl;
 
+      std::vector<stk::mesh::Entity> elemNodes(4);
       for (unsigned ielem=0; ielem < elems_tet.size(); ielem++)
         {
           stk::mesh::Entity newElement = *element_pool;
@@ -320,9 +321,9 @@ namespace percept {
           // 4 nodes of the new tets
           for (unsigned ii=0; ii < 4; ++ii)
             {
-              stk::mesh::Entity n0 = eMesh.createOrGetNode(elems_tet[ielem][ii]);
-              eMesh.get_bulk_data()->declare_relation(newElement, n0, ii);
+              elemNodes[ii] = eMesh.createOrGetNode(elems_tet[ielem][ii]);
             }
+          eMesh.get_bulk_data()->declare_relation(newElement, elemNodes);
 
           unsigned nchild = eMesh.numChildren(element);
           //set_parent_child_relations(eMesh, element, newElement, ielem);
@@ -572,6 +573,7 @@ namespace percept {
                   << " num_new_elems= " << num_new_elems << " elems_pyr.size= " << elems_pyr.size()
                   << std::endl;
 
+      std::vector<stk::mesh::Entity> elemNodes(5);
       for (unsigned ielem=0; ielem < elems_pyr.size(); ielem++)
         {
           stk::mesh::Entity newElement = *element_pool;
@@ -603,9 +605,9 @@ namespace percept {
           // 5 nodes of the new pyramids
           for (unsigned ii=0; ii < 5; ++ii)
             {
-              stk::mesh::Entity n0 = eMesh.createOrGetNode(elems_pyr[ielem][ii]);
-              eMesh.get_bulk_data()->declare_relation(newElement, n0, ii);
+              elemNodes[ii] = eMesh.createOrGetNode(elems_pyr[ielem][ii]);
             }
+          eMesh.get_bulk_data()->declare_relation(newElement, elemNodes);
 
           unsigned nchild = eMesh.numChildren(element);
           //set_parent_child_relations(eMesh, element, newElement, ielem);

@@ -55,7 +55,6 @@
 // test's behavior at run time.
 
 #include "Tpetra_TestingUtilities.hpp"
-#include "Tpetra_Details_assumeMpiIsCudaAware.hpp"
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Map.hpp" // creating a Map ensures Kokkos initialization
 #include "Teuchos_CommHelpers.hpp"
@@ -92,14 +91,8 @@ namespace { // (anonymous)
     int gblSuccess = 0; // output argument; to be modified below
 
     out << "Testing CUDA-awareness of the MPI implementation" << endl;
-    Teuchos::OSTab tab1 (out);
     const bool assumeMpiIsCudaAware =
-      Tpetra::Details::assumeMpiIsCudaAware (&out);
-    {
-      const bool fromBehavior =
-        ::Tpetra::Details::Behavior::assumeMpiIsCudaAware ();
-      TEST_EQUALITY( assumeMpiIsCudaAware, fromBehavior );
-    }
+      ::Tpetra::Details::Behavior::assumeMpiIsCudaAware ();
     if (! assumeMpiIsCudaAware) {
       out << "Trilinos (or you, the user) asserts that MPI is NOT CUDA aware."
           << endl
@@ -108,6 +101,12 @@ namespace { // (anonymous)
           << "but we won't run any of the test after this point."
           << endl;
       return;
+    }
+    else {
+      out << "Trilinos (or you, the user) asserts that MPI is CUDA aware."
+          << endl
+          << "Beginning the test now."
+          << endl;
     }
 
     RCP<const Comm<int> > comm = Tpetra::TestingUtilities::getDefaultComm ();

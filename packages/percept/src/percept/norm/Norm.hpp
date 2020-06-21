@@ -129,7 +129,7 @@
       Norm(stk::mesh::BulkData& bulkData, std::string partName, TurboOption turboOpt=TURBO_BUCKET, bool is_surface_norm=false) :
         FunctionOperator(bulkData, (stk::mesh::Part*)0), m_is_surface_norm(is_surface_norm), m_turboOpt(turboOpt), m_cubDegree(2), m_norm_field(0)
       {
-        stk::mesh::Part * part = stk::mesh::MetaData::get(bulkData).get_part(partName);
+        stk::mesh::Part * part = bulkData.mesh_meta_data().get_part(partName);
         if (!part) throw std::runtime_error(std::string("No part named ") +partName);
         init(part);
         error_check_is_surface_norm();
@@ -145,7 +145,7 @@
         m_selector = new stk::mesh::Selector;
         for (int i = 0; i < partNames.dimension(0); i++)
           {
-            stk::mesh::Part * part = stk::mesh::MetaData::get(bulkData).get_part(partNames(i));
+            stk::mesh::Part * part = bulkData.mesh_meta_data().get_part(partNames(i));
             if (!part) throw std::runtime_error(std::string("No part named ") +partNames(i));
             *m_selector = (*m_selector) | (*part);
           }
@@ -161,7 +161,7 @@
             stk::mesh::EntityRank rank = stk::topology::ELEMENT_RANK;
             if (m_is_surface_norm)
               {
-                rank = stk::mesh::MetaData::get(bulkData).side_rank();
+                rank = bulkData.mesh_meta_data().side_rank();
               }
             if (!m_selector)
               m_selector = new stk::mesh::Selector();
@@ -206,8 +206,8 @@
       void error_check_is_surface_norm()
       {
         stk::mesh::EntityRank element_rank = stk::topology::ELEMENT_RANK;
-        stk::mesh::EntityRank side_rank    = stk::mesh::MetaData::get(m_bulkData).side_rank();
-        const stk::mesh::PartVector& parts = stk::mesh::MetaData::get(m_bulkData).get_parts();
+        stk::mesh::EntityRank side_rank    = m_bulkData.mesh_meta_data().side_rank();
+        const stk::mesh::PartVector& parts = m_bulkData.mesh_meta_data().get_parts();
         stk::mesh::EntityRank all_ranks = stk::topology::NODE_RANK;
         unsigned nparts = parts.size();
         for (unsigned ipart=0; ipart < nparts; ipart++)
@@ -278,7 +278,7 @@
               integrated_LN_op.setAccumulationType(IntegratedOp::ACCUMULATE_MAX);
             }
 
-            const stk::mesh::Part& locally_owned_part = stk::mesh::MetaData::get(m_bulkData).locally_owned_part();
+            const stk::mesh::Part& locally_owned_part = m_bulkData.mesh_meta_data().locally_owned_part();
             stk::mesh::Selector selector(*m_selector & locally_owned_part);
             if (m_turboOpt == TURBO_NONE || m_turboOpt == TURBO_ELEMENT)
               {
@@ -294,7 +294,7 @@
 
             if (Power == -1)
               {
-                MaxOfNodeValues maxOfNodeValues(stk::mesh::MetaData::get(m_bulkData).spatial_dimension(), integrand);
+                MaxOfNodeValues maxOfNodeValues(m_bulkData.mesh_meta_data().spatial_dimension(), integrand);
                 nodalOpLoop(m_bulkData, maxOfNodeValues, 0, &selector);
 		for (unsigned iDim = 0; iDim < local.size(); iDim++)
 		  local[iDim] = std::max(local[iDim], maxOfNodeValues.maxVal[iDim]);
