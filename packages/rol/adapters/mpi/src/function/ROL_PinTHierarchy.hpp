@@ -729,7 +729,7 @@ public:
 
      ROL::Ptr<const PinTCommunicators> comm = getLevelCommunicators(level);
   
-     TEUCHOS_ASSERT(comm!=Teuchos::null);
+     TEUCHOS_ASSERT(comm!=nullPtr);
 
      const PinTVector<Real> & pint_ref  = dynamic_cast<const PinTVector<Real>&>(level_0_ref);
      auto vectorComm = pint_ref.vectorCommunicationPtr();

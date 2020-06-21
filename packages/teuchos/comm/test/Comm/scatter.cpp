@@ -73,7 +73,6 @@ testScatter (bool& success, std::ostream& out,
   int gblSuccess = lclSuccess;
 
 #ifdef HAVE_TEUCHOS_MPI
-  using Teuchos::MpiComm;
   int errCode = MPI_SUCCESS;
 
   const MpiComm<int>* mpiComm = dynamic_cast<const MpiComm<int>* > (&comm);
