@@ -34,13 +34,11 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
-#ifndef __Tpetra_DirectoryImpl_def_hpp
-#define __Tpetra_DirectoryImpl_def_hpp
+#ifndef TPETRA_DIRECTORYIMPL_DEF_HPP
+#define TPETRA_DIRECTORYIMPL_DEF_HPP
 
 /// \file Tpetra_DirectoryImpl_def.hpp
 /// \brief Definition of implementation details of Tpetra::Directory.
@@ -48,6 +46,7 @@
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_TieBreak.hpp"
+#include "Tpetra_Util.hpp"
 #include "Tpetra_Details_FixedHashTable.hpp"
 #include "Teuchos_Comm.hpp"
 #include <memory>
@@ -355,7 +354,7 @@ namespace Tpetra {
       // Put the max cap at the end.  Adding one lets us write loops
       // over the global IDs with the usual strict less-than bound.
       allMinGIDs_[numProcs] = map.getMaxAllGlobalIndex ()
-        + Teuchos::OrdinalTraits<GO>::one ();
+                            + Teuchos::OrdinalTraits<GO>::one ();
     }
 
     template<class LO, class GO, class NT>
@@ -431,9 +430,32 @@ namespace Tpetra {
 
       RCP<const Teuchos::Comm<int> > comm = map.getComm ();
       const int numProcs = comm->getSize ();
-      const global_size_t nOverP = map.getGlobalNumElements () / numProcs;
       const LO LINVALID = Teuchos::OrdinalTraits<LO>::invalid();
+      const GO noGIDsOnProc = std::numeric_limits<GO>::max();
       LookupStatus res = AllIDsPresent;
+
+      // Find the first initialized GID for search below
+      int firstProcWithGIDs;
+      for (firstProcWithGIDs = 0; firstProcWithGIDs < numProcs;
+           firstProcWithGIDs++) {
+        if (allMinGIDs_[firstProcWithGIDs] != noGIDsOnProc) break;
+      }
+
+      // If Map is empty, return invalid values for all requested lookups
+      // This case should not happen, as an empty Map is not considered
+      // Distributed.
+      if (firstProcWithGIDs == numProcs) {
+        // No entries in Map
+        res = (globalIDs.size() > 0) ? IDNotPresent : AllIDsPresent;
+        std::fill(nodeIDs.begin(), nodeIDs.end(), -1);
+        if (computeLIDs)
+          std::fill(localIDs.begin(), localIDs.end(), LINVALID);
+        return res;
+      }
+
+      const GO one = as<GO> (1);
+      const GO nOverP = as<GO> (map.getGlobalNumElements ()
+                      / as<global_size_t>(numProcs - firstProcWithGIDs));
 
       // Map is distributed but contiguous.
       typename ArrayView<int>::iterator procIter = nodeIDs.begin();
@@ -443,34 +465,50 @@ namespace Tpetra {
         LO LID = LINVALID; // Assume not found until proven otherwise
         int image = -1;
         GO GID = *gidIter;
-        // Guess uniform distribution and start a little above it
-        // TODO: replace by a binary search
+        // Guess uniform distribution (TODO: maybe replace by a binary search)
+        // We go through all this trouble to avoid overflow and
+        // signed / unsigned casting mistakes (that were made in
+        // previous versions of this code).
         int curRank;
-        { // We go through all this trouble to avoid overflow and
-          // signed / unsigned casting mistakes (that were made in
-          // previous versions of this code).
-          const GO one = as<GO> (1);
-          const GO two = as<GO> (2);
-          const GO nOverP_GID = as<GO> (nOverP);
-          const GO lowerBound = GID / std::max(nOverP_GID, one) + two;
-          curRank = as<int>(std::min(lowerBound, as<GO>(numProcs - 1)));
+        const GO firstGuess = firstProcWithGIDs + GID / std::max(nOverP, one);
+        curRank = as<int>(std::min(firstGuess, as<GO>(numProcs - 1)));
+
+        // This while loop will stop because 
+        // allMinGIDs_[np] == global num elements
+        while (allMinGIDs_[curRank] == noGIDsOnProc) curRank++;
+
+        bool badGID = false;
+        while (curRank >= firstProcWithGIDs && GID < allMinGIDs_[curRank]) {
+          curRank--;
+          while (curRank >= firstProcWithGIDs && 
+                 allMinGIDs_[curRank] == noGIDsOnProc) curRank--;
         }
-        bool found = false;
-        while (curRank >= 0 && curRank < numProcs) {
-          if (allMinGIDs_[curRank] <= GID) {
-            if (GID < allMinGIDs_[curRank + 1]) {
-              found = true;
+        if (curRank < firstProcWithGIDs) {
+          // GID is lower than all GIDs in map
+          badGID = true;
+        }
+        else if (curRank == numProcs) {
+          // GID is higher than all GIDs in map
+          badGID = true;
+        }
+        else {
+          // we have the lower bound; now limit from above
+          int above = curRank + 1;
+          while (allMinGIDs_[above] == noGIDsOnProc) above++;
+
+          while (GID >= allMinGIDs_[above]) {
+            curRank = above;
+            if (curRank == numProcs) {
+              // GID is higher than all GIDs in map
+              badGID = true;
               break;
             }
-            else {
-              curRank++;
-            }
-          }
-          else {
-            curRank--;
+            above++;
+            while (allMinGIDs_[above] == noGIDsOnProc) above++;
           }
         }
-        if (found) {
+
+        if (!badGID) {
           image = curRank;
           LID = as<LO> (GID - allMinGIDs_[image]);
         }
@@ -943,7 +981,8 @@ namespace Tpetra {
       using Teuchos::as;
       using Teuchos::RCP;
       using Teuchos::toString;
-      using ::Tpetra::Details::Behavior;
+      using Details::Behavior;
+      using Details::verbosePrintArray;
       using std::cerr;
       using std::endl;
       using size_type = typename Array<GO>::size_type;
@@ -955,6 +994,9 @@ namespace Tpetra {
       RCP<const Teuchos::Comm<int> > comm = map.getComm ();
       const bool verbose = Behavior::verbose ("Directory") ||
         Behavior::verbose ("Tpetra::Directory");
+      const size_t maxNumToPrint = verbose ?
+        Behavior::verbosePrintCountThreshold() : size_t(0);
+
       std::unique_ptr<std::string> procPrefix;
       if (verbose) {
         std::ostringstream os;
@@ -966,12 +1008,16 @@ namespace Tpetra {
           os << map.getComm ()->getRank ();
         }
         os << ": ";
-        procPrefix = std::unique_ptr<std::string> (new std::string (os.str ()));
-        os << funcPrefix << "{GIDs: " << toString (globalIDs)
-           << ", PIDs: " << toString (nodeIDs)
-           << ", LIDs: " << toString (localIDs)
-           << ", computeLIDs: " << (computeLIDs ? "true" : "false")
-           << "}" << endl;
+        procPrefix = std::unique_ptr<std::string>(
+          new std::string(os.str()));
+        os << funcPrefix << "{";
+        verbosePrintArray(os, globalIDs, "GIDs", maxNumToPrint);
+        os << ", ";
+        verbosePrintArray(os, nodeIDs, "PIDs", maxNumToPrint);
+        os << ", ";
+        verbosePrintArray(os, localIDs, "LIDs", maxNumToPrint);
+        os << ", computeLIDs: "
+           << (computeLIDs ? "true" : "false") << "}" << endl;
         cerr << os.str ();
       }
 
@@ -1001,8 +1047,9 @@ namespace Tpetra {
       res = directoryMap_->getRemoteIndexList (globalIDs, dirImages ());
       if (verbose) {
         std::ostringstream os;
-        os << *procPrefix << "directoryMap_->getRemoteIndexList "
-          "PIDs result: " << toString (dirImages) << endl;
+        os << *procPrefix << "Director Map getRemoteIndexList out ";
+        verbosePrintArray(os, dirImages, "PIDs", maxNumToPrint);
+        os << endl;
         cerr << os.str ();
       }
 
@@ -1032,9 +1079,11 @@ namespace Tpetra {
       if (verbose) {
         std::ostringstream os;
         os << *procPrefix << "Distributor::createFromRecvs result: "
-           << "{sendGIDs: " << toString (sendGIDs)
-           << ", sendPIDs: " << toString (sendImages)
-           << "}" << endl;
+           << "{";
+        verbosePrintArray(os, sendGIDs, "sendGIDs", maxNumToPrint);
+        os << ", ";
+        verbosePrintArray(os, sendImages, "sendPIDs", maxNumToPrint);
+        os << "}" << endl;
         cerr << os.str ();
       }
       const size_type numSends = sendGIDs.size ();
@@ -1181,16 +1230,18 @@ namespace Tpetra {
       // doWaits.  The code is still correct in this form, however.
       if (verbose) {
         std::ostringstream os;
-        os << *procPrefix << "Call doPostsAndWaits: {packetSize: "
-           << packetSize << ", exports: " << toString (exports) << "}"
-           << endl;
+        os << *procPrefix << "Call doPostsAndWaits: {"
+           << "packetSize: " << packetSize << ", ";
+        verbosePrintArray(os, exports, "exports", maxNumToPrint);
+        os << "}" << endl;
         cerr << os.str ();
       }
       distor.doPostsAndWaits (exports ().getConst (), packetSize, imports ());
       if (verbose) {
         std::ostringstream os;
-        os << *procPrefix << "doPostsAndWaits result: "
-           << toString (imports) << endl;
+        os << *procPrefix << "doPostsAndWaits result: ";
+        verbosePrintArray(os, imports, "imports", maxNumToPrint);
+        os << endl;
         cerr << os.str ();
       }
 
@@ -1202,8 +1253,11 @@ namespace Tpetra {
       sort2 (sortedIDs.begin(), sortedIDs.begin() + numEntries, offset.begin());
       if (verbose) {
         std::ostringstream os;
-        os << *procPrefix << "sortedIDs: " << toString (sortedIDs)
-           << ", offset: " << toString (offset) << endl;
+        os << *procPrefix;
+        verbosePrintArray(os, sortedIDs, "sortedIDs", maxNumToPrint);
+        os << ", ";
+        verbosePrintArray(os, offset, "offset", maxNumToPrint);
+        os << endl;
         cerr << os.str ();
       }
 
@@ -1281,4 +1335,4 @@ namespace Tpetra {
     template class DistributedNoncontiguousDirectory< LO , GO , NODE >; \
   }
 
-#endif // __Tpetra_DirectoryImpl_def_hpp
+#endif // TPETRA_DIRECTORYIMPL_DEF_HPP

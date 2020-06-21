@@ -37,6 +37,8 @@
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
 #include <stk_util/parallel/ParallelReduce.hpp>  // for all_write_string
 #include <stk_util/parallel/ParallelVectorConcat.hpp>
+#include <stk_util/parallel/mpi_filebuf.hpp>
+#include <aprepro.h>  // for Aprepro
 #include <gtest/gtest.h>
 #include <string>                       // for string
  
@@ -60,4 +62,103 @@ TEST(UnitTestParallel, testUnit)
   
   ASSERT_LT(mpi_rank, mpi_size);
 }
+
+#if !defined(NOT_HAVE_STK_SEACASAPREPRO_LIB)
+TEST(UnitTestParallel, apreproDefines_singleSubstitution)
+{
+    const std::string defines = "a=b";
+
+    SEAMS::Aprepro aprepro;
+    stk::add_aprepro_defines(aprepro, defines);
+
+    const std::string inputString = "{a}";
+
+    std::string errorString;
+    bool success = aprepro.parse_string(inputString, errorString);
+    ASSERT_TRUE(success);
+
+    ASSERT_EQ(aprepro.parsing_results().str(), "b");
+}
+
+TEST(UnitTestParallel, apreproDefines_twoSubstitutions)
+{
+    const std::string defines = "a=b, c=d";
+
+    SEAMS::Aprepro aprepro;
+    stk::add_aprepro_defines(aprepro, defines);
+
+    const std::string inputString = "{a}={c}";
+
+    std::string errorString;
+    bool success = aprepro.parse_string(inputString, errorString);
+    ASSERT_TRUE(success);
+
+    ASSERT_EQ(aprepro.parsing_results().str(), "b=d");
+}
+
+TEST(UnitTestParallel, apreproDefines_numericSubstitution)
+{
+    const std::string defines = "a=1.23";
+
+    SEAMS::Aprepro aprepro;
+    stk::add_aprepro_defines(aprepro, defines);
+
+    const std::string inputString = "{a}";
+
+    std::string errorString;
+    bool success = aprepro.parse_string(inputString, errorString);
+    ASSERT_TRUE(success);
+
+    ASSERT_EQ(aprepro.parsing_results().str(), "1.23");
+}
+
+TEST(UnitTestParallel, apreproDefines_badNumericSubstitution)
+{
+    const std::string defines = "a=1_23";
+
+    SEAMS::Aprepro aprepro;
+    stk::add_aprepro_defines(aprepro, defines);
+
+    const std::string inputString = "{a}";
+
+    std::string errorString;
+    bool success = aprepro.parse_string(inputString, errorString);
+    ASSERT_TRUE(success);
+
+    ASSERT_EQ(aprepro.parsing_results().str(), "1_23");
+}
+
+TEST(UnitTestParallel, apreproDefines_mathSubstitution)
+{
+    const std::string defines = "a=1.23";
+
+    SEAMS::Aprepro aprepro;
+    stk::add_aprepro_defines(aprepro, defines);
+
+    const std::string inputString = "{a*2}";
+
+    std::string errorString;
+    bool success = aprepro.parse_string(inputString, errorString);
+    ASSERT_TRUE(success);
+
+    ASSERT_EQ(aprepro.parsing_results().str(), "2.46");
+}
+
+
+TEST(UnitTestParallel, apreproDefines_badMathSubstitution)
+{
+    const std::string defines = "a=1_23";
+
+    SEAMS::Aprepro aprepro;
+    stk::add_aprepro_defines(aprepro, defines);
+
+    const std::string inputString = "{a*2}";
+
+    std::string errorString;
+    bool success = aprepro.parse_string(inputString, errorString);
+    ASSERT_TRUE(success);
+
+    ASSERT_EQ(aprepro.parsing_results().str(), "");
+}
+#endif
 

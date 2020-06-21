@@ -56,6 +56,7 @@
 #include "TpetraCore_config.h"
 #include "Tpetra_Map_fwd.hpp"
 #include "Tpetra_RowGraph_fwd.hpp"
+#include "Kokkos_Core.hpp"
 #include <ostream>
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -108,7 +109,7 @@ namespace Details {
 ///   are responsible for propagating that error state to all
 ///   processes.
 ///
-/// This function <i>always</i> makes a column Map, even if the Map
+/// This function <i>always</i> makes a column Map, even if the graph
 /// already has one.  This makes it possible to change the graph's
 /// structure, and have its column Map and corresponding Import update
 /// in the same way.
@@ -130,6 +131,16 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& colMap,
             const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& domMap,
             const RowGraph<LO, GO, NT>& graph,
             const bool sortEachProcsGids = true,
+            std::ostream* errStrm = NULL);
+
+/// \brief Construct a column map for the given set of gids (always sorting remote GIDs within each remote process).
+/// \param colMap [out] Will be set to the new column map.
+/// \param domMap [in] The domain map, used to determine which global columns are locally owned.
+template <class LO, class GO, class NT>
+int
+makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
+            const Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& domMap,
+            Kokkos::View<GO*, typename NT::memory_space> gids,
             std::ostream* errStrm = NULL);
 
 } // namespace Details

@@ -146,8 +146,8 @@ namespace LOCA {
       /*!
        * Use this constructor to enable shift-invert and Cayley transformations
        * or Hopf bifurcations.  It requires another interface to compute the
-       * shifted matrix \f$\alpha J + \beta M\f$ where \f$J\f$ is the
-       * Jacobian matrix and \f$M\f$ is the mass matrix, and a linear
+       * shifted matrix \f$\alpha J + \beta M\f$ where \f$ J\f$ is the
+       * Jacobian matrix and \f$ M\f$ is the mass matrix, and a linear
        * system object to solve this system.  Setting linSys = shiftedLinSys
        * is a valid option for passing the shifted solver, but this will cause
        * the shifted matrix to overwrite the Jacobian possibly resulting in
@@ -358,7 +358,7 @@ namespace LOCA {
 
       //! Compute a scaled dot product
       /*!
-       * The implementation here uses the scaling vector \f$s\f$ if one
+       * The implementation here uses the scaling vector \f$ s\f$ if one
        * is supplied:
        * \f[
        *     \sum_{i=1}^n a_i*b_i*s_i*s_i.
@@ -379,7 +379,7 @@ namespace LOCA {
 
       //! Scales a vector using scaling vector
       /*!
-       * The implementation here uses the scaling vector \f$s\f$ if one
+       * The implementation here uses the scaling vector \f$ s\f$ if one
        * is supplied:
        * \f[
        *     x_i = a_i*s_i.
@@ -398,7 +398,7 @@ namespace LOCA {
       //@{
 
      /*!
-       * \brief Replace Jacobian \f$J\f$ by \f$aJ+bI\f$ where \f$I\f$ is
+       * \brief Replace Jacobian \f$ J\f$ by \f$ aJ+bI\f$ where \f$ I\f$ is
        * the identity matrix.
        */
       virtual NOX::Abstract::Group::ReturnType
@@ -457,12 +457,12 @@ namespace LOCA {
        */
       //@{
 
-      //! Is  \f$J+i\omega B\f$ valid
+      //! Is  \f$ J+i\omega B\f$ valid
       virtual bool isComplex() const;
 
-      //! Compute \f$J+i\omega B\f$
+      //! Compute \f$ J+i\omega B\f$
       /*!
-       * The argument \b frequency stores \f$\omega\f$.
+       * The argument \b frequency stores \f$\omega\f$ .
        */
       virtual NOX::Abstract::Group::ReturnType
       computeComplex(double frequency);

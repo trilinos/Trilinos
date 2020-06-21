@@ -97,7 +97,7 @@ TEST(UnitTestChangeParts, test_batch_part_change)
 
     std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
     stk::mesh::Part& part = metaData.declare_part_with_topology("new_part", stk::topology::NODE);
-    stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, bulkData);
+    stk::unit_test_util::setup_text_mesh(bulkData, meshDesc);
 
     stk::mesh::Entity elem1 = bulkData.get_entity(stk::topology::ELEM_RANK, 1u);
     EXPECT_TRUE(bulkData.is_valid(elem1));
@@ -148,7 +148,7 @@ TEST(UnitTestChangeParts, test_superset_and_subset_part_change)
     stk::mesh::put_field_on_mesh(field, supersetPart, (stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type*) nullptr);
 
     std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
-    stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, bulkData);
+    stk::unit_test_util::setup_text_mesh(bulkData, meshDesc);
 
     stk::mesh::Entity node1 = bulkData.get_entity(stk::topology::NODE_RANK, 1u);
     EXPECT_TRUE(bulkData.is_valid(node1));

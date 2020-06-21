@@ -527,7 +527,7 @@ namespace MueLu {
     //coarseMap = MapFactory::createContigMapWithNode(rowMap->lib(),(NCLayers*GNdofs)/nz, NCLayers*NVertLines*DofsPerNode,(rowMap->getComm()), rowMap->getNode());
 
 
-    P       = rcp(new CrsMatrixWrap(rowMap, coarseMap , 0, Xpetra::StaticProfile));
+    P       = rcp(new CrsMatrixWrap(rowMap, coarseMap , 0));
     coarseNullspace = MultiVectorFactory::Build(coarseMap, fineNullspace->getNumVectors());
 
 

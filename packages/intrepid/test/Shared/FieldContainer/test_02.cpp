@@ -138,7 +138,7 @@ int main(int argc, char *argv[]) {
       multiIndex[4] = 6;
       myContainer.getEnumeration(multiIndex);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream  << err.what() << "\n";
     };
     
@@ -157,7 +157,7 @@ int main(int argc, char *argv[]) {
       multiIndex[3] = 2;
       myContainer.getEnumeration(multiIndex);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream  << err.what() << "\n";
     };
     
@@ -192,7 +192,7 @@ int main(int argc, char *argv[]) {
       // Now try to stuff this data into FieldContainer
       myContainer.setValues(dataTeuchosArray);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream  << err.what() << "\n";
     };
     
@@ -229,7 +229,7 @@ int main(int argc, char *argv[]) {
       // Now try to stuff this data into FieldContainer
       myContainer.setValues(dataTeuchosArray());
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream  << err.what() << "\n";
     };
     
@@ -243,7 +243,7 @@ int main(int argc, char *argv[]) {
       << " Trying to use [] with enumeration that is out of range: \n";
       myContainer[1000];
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream  << err.what() << "\n";
     }
     
@@ -257,7 +257,7 @@ int main(int argc, char *argv[]) {
       << " Trying to get multi-index from enumeration that is out of bounds: \n";
       myContainer.getMultiIndex(multiIndex,10000);
     }
-    catch(std::logic_error err) {
+    catch (const std::logic_error & err) {
      *outStream << err.what() << "\n";
     }
     
@@ -271,7 +271,7 @@ int main(int argc, char *argv[]) {
       << " Trying to self-assign FieldContainer \n";
       myContainer = myContainer;
     }
-    catch(std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << err.what() << "\n"; 
     }
 
@@ -286,7 +286,7 @@ int main(int argc, char *argv[]) {
       << " using a method for rank-2 container \n";
       rank1Container.getEnumeration(1,1); 
     }
-    catch(std::logic_error err){
+    catch (const std::logic_error & err){
       *outStream << err.what() << "\n";
     }
     
@@ -297,7 +297,7 @@ int main(int argc, char *argv[]) {
       << " using a method for rank-3 container \n";
       rank1Container.getEnumeration(1,1,1); 
     }
-    catch(std::logic_error err){
+    catch (const std::logic_error & err){
       *outStream << err.what() << "\n";
     }
     
@@ -308,7 +308,7 @@ int main(int argc, char *argv[]) {
       << " using a method for rank-4 container \n";
       rank1Container.getEnumeration(1,1,1,1); 
     }
-    catch(std::logic_error err){
+    catch (const std::logic_error & err){
       *outStream << err.what() << "\n";
     }
     
@@ -319,7 +319,7 @@ int main(int argc, char *argv[]) {
       << " using a method for rank-5 container \n";
       rank1Container.getEnumeration(1,1,1,1,1); 
     }
-    catch(std::logic_error err){
+    catch (const std::logic_error & err){
       *outStream << err.what() << "\n";
     }
     
@@ -331,7 +331,7 @@ int main(int argc, char *argv[]) {
       int i0;
       rank1Container.getMultiIndex(i0,4); 
     }
-    catch(std::logic_error err){
+    catch (const std::logic_error & err){
       *outStream << err.what() << "\n";
     }
     
@@ -343,7 +343,7 @@ int main(int argc, char *argv[]) {
       int i0,i1;
       rank1Container.getMultiIndex(i0,i1,2); 
     }
-    catch(std::logic_error err){
+    catch (const std::logic_error & err){
       *outStream << err.what() << "\n";
     }
     
@@ -355,7 +355,7 @@ int main(int argc, char *argv[]) {
       int i0,i1,i2;
       rank1Container.getMultiIndex(i0,i1,i2,2); 
     }
-    catch(std::logic_error err){
+    catch (const std::logic_error & err){
       *outStream << err.what() << "\n";
     }
     
@@ -368,7 +368,7 @@ int main(int argc, char *argv[]) {
       int i0,i1,i2,i3;
       rank1Container.getMultiIndex(i0,i1,i2,i3,2); 
     }
-    catch(std::logic_error err){
+    catch (const std::logic_error & err){
       *outStream << err.what() << "\n";
     }
     
@@ -381,7 +381,7 @@ int main(int argc, char *argv[]) {
       int i0,i1,i2,i3,i4;
       rank1Container.getMultiIndex(i0,i1,i2,i3,i4,2); 
     }
-    catch(std::logic_error err){
+    catch (const std::logic_error & err){
       *outStream << err.what() << "\n";
     }
     
@@ -392,7 +392,7 @@ int main(int argc, char *argv[]) {
       
     }
   } // outer try block
-  catch (std::logic_error err) {
+  catch (const std::logic_error & err) {
     *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
     *outStream  << err.what() << "\n";
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";

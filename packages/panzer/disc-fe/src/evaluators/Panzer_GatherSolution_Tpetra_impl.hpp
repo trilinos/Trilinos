@@ -242,6 +242,9 @@ GatherSolution_Tpetra(
     gatherFields_[fd] =
       PHX::MDField<ScalarT,Cell,NODE>(names[fd],basis->functional);
     this->addEvaluatedField(gatherFields_[fd]);
+    // Don't allow for sharing so that we can avoid zeroing out the
+    // off-diagonal values of the FAD derivative array.
+    this->addUnsharedField(gatherFields_[fd].fieldTag().clone());
   }
 
   // Setup dependent tangent fields if requested
@@ -416,6 +419,9 @@ GatherSolution_Tpetra(
     PHX::MDField<ScalarT,Cell,NODE> f(names[fd],basis->functional);
     gatherFields_[fd] = f;
     this->addEvaluatedField(gatherFields_[fd]);
+    // Don't allow for sharing so that we can avoid zeroing out the
+    // off-diagonal values of the FAD derivative array.
+    this->addUnsharedField(gatherFields_[fd].fieldTag().clone());
   }
 
   // figure out what the first active name is

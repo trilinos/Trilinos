@@ -70,7 +70,7 @@ namespace Intrepid2 {
     try {                                                               \
       ++nthrow;                                                         \
       S ;                                                               \
-    } catch (std::logic_error err) {                                    \
+    } catch (std::logic_error &err) {                                    \
       ++ncatch;                                                         \
       *outStream << "Expected Error ----------------------------------------------------------------\n"; \
       *outStream << err.what() << '\n';                                 \
@@ -179,7 +179,7 @@ namespace Intrepid2 {
               }
             }
           }
-      } catch (std::exception err) {
+      } catch (std::exception &err) {
         *outStream << err.what() << "\n";
         errorFlag = -10000;
       }  
@@ -245,7 +245,7 @@ namespace Intrepid2 {
           *outStream << " does not equal primary cell volume: " << exactVolume << "\n";
         }
 
-      } catch (std::exception err) {
+      } catch (std::exception &err) {
         *outStream << err.what() << "\n";
         errorFlag = -10000;
       }  
@@ -678,7 +678,7 @@ namespace Intrepid2 {
                                           outStream);
           }
         }
-      } catch (std::exception err) {
+      } catch (std::exception &err) {
         *outStream << err.what() << "\n";
         errorFlag = -10000;
       }  
@@ -787,7 +787,7 @@ namespace Intrepid2 {
                                         exactVolume,
                                         outStream);
         }
-      } catch (std::exception err) {
+      } catch (std::exception &err) {
         *outStream << err.what() << "\n";
         errorFlag = -1;
       }  
@@ -1027,7 +1027,7 @@ namespace Intrepid2 {
             *outStream << " does not equal integral of div F over volume: " << volumeInt << "\n";
           }
         }
-      } catch (std::exception err) {
+      } catch (std::exception &err) {
         *outStream << err.what() << "\n";
         errorFlag = -1;
       }          

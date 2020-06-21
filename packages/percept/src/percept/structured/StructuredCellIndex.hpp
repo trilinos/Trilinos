@@ -12,10 +12,24 @@
 #include <array>
 #include <iostream>
 
+#include <functional>
+
 namespace percept {
 
   using StructuredCellIndex = std::array<unsigned,4>;  // i,j,k, block
 
+}
+
+namespace std {
+
+  template<>
+  struct hash<percept::StructuredCellIndex>
+  {
+    size_t operator()(const percept::StructuredCellIndex& e) const
+    {
+      return hash<uint64_t>()(e[0]+e[1]+e[2]+e[3]);
+    }
+  };
 }
 
 #endif

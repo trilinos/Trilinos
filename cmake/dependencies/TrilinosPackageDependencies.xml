@@ -334,20 +334,6 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
-  <Package name="GlobiPack" dir="packages/globipack" type="PT">
-    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>
-    <LIB_OPTIONAL_DEP_PACKAGES/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
-    <EmailAddresses>
-      <Regression address="globipack-regression@software.sandia.gov"/>
-    </EmailAddresses>
-    <ParentPackage value=""/>
-  </Package>
   <Package name="Triutils" dir="packages/triutils" type="PT">
     <LIB_REQUIRED_DEP_PACKAGES value="Epetra"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
@@ -474,20 +460,6 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
-  <Package name="OptiPack" dir="packages/optipack" type="PT">
-    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,GlobiPack,Thyra"/>
-    <LIB_OPTIONAL_DEP_PACKAGES/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
-    <EmailAddresses>
-      <Regression address="optipack-regression@software.sandia.gov"/>
-    </EmailAddresses>
-    <ParentPackage value=""/>
-  </Package>
   <Package name="Isorropia" dir="packages/isorropia" type="PT">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,EpetraExt,Zoltan"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Tpetra,KokkosClassic"/>
@@ -513,20 +485,6 @@
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
       <Regression address="pliris-regression@software.sandia.gov"/>
-    </EmailAddresses>
-    <ParentPackage value=""/>
-  </Package>
-  <Package name="Claps" dir="packages/claps" type="EX">
-    <LIB_REQUIRED_DEP_PACKAGES value="Epetra"/>
-    <LIB_OPTIONAL_DEP_PACKAGES/>
-    <TEST_REQUIRED_DEP_PACKAGES value="Teuchos"/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS value="METIS"/>
-    <LIB_OPTIONAL_DEP_TPLS/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
-    <EmailAddresses>
-      <Regression address="claps-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
@@ -1090,132 +1048,6 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
-  <Package name="Trioscommsplitter" dir="packages/trios/libraries/commsplitter" type="EX">
-    <LIB_REQUIRED_DEP_PACKAGES/>
-    <LIB_OPTIONAL_DEP_PACKAGES/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS value="MPI"/>
-    <LIB_OPTIONAL_DEP_TPLS value="HPCToolkit"/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
-    <EmailAddresses>
-      <Regression address="trios-regression@software.sandia.gov"/>
-    </EmailAddresses>
-    <ParentPackage value="Trios"/>
-  </Package>
-  <Package name="Triossupport" dir="packages/trios/libraries/support" type="EX">
-    <LIB_REQUIRED_DEP_PACKAGES/>
-    <LIB_OPTIONAL_DEP_PACKAGES/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS value="Pablo"/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
-    <EmailAddresses>
-      <Regression address="trios-regression@software.sandia.gov"/>
-    </EmailAddresses>
-    <ParentPackage value="Trios"/>
-  </Package>
-  <Package name="Triosnnti" dir="packages/trios/libraries/nessie/nnti" type="EX">
-    <LIB_REQUIRED_DEP_PACKAGES value="Triossupport"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Trioscommsplitter"/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS value="CrayPortals,Portals,Gemini,InfiniBand,BGPDCMF,HPCToolkit"/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
-    <EmailAddresses>
-      <Regression address="trios-regression@software.sandia.gov"/>
-    </EmailAddresses>
-    <ParentPackage value="Trios"/>
-  </Package>
-  <Package name="Triosnssi" dir="packages/trios/libraries/nessie/nssi" type="EX">
-    <LIB_REQUIRED_DEP_PACKAGES value="Triosnnti"/>
-    <LIB_OPTIONAL_DEP_PACKAGES/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
-    <EmailAddresses>
-      <Regression address="trios-regression@software.sandia.gov"/>
-    </EmailAddresses>
-    <ParentPackage value="Trios"/>
-  </Package>
-  <Package name="Triosprograms" dir="packages/trios/programs" type="EX">
-    <LIB_REQUIRED_DEP_PACKAGES value="Triosnssi,TeuchosCore"/>
-    <LIB_OPTIONAL_DEP_PACKAGES/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS value="LibTopoMap,ParMETIS,METIS,gpcd"/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
-    <EmailAddresses>
-      <Regression address="trios-regression@software.sandia.gov"/>
-    </EmailAddresses>
-    <ParentPackage value="Trios"/>
-  </Package>
-  <Package name="Triosexamples" dir="packages/trios/examples" type="EX">
-    <LIB_REQUIRED_DEP_PACKAGES value="Triosnssi,TeuchosCore"/>
-    <LIB_OPTIONAL_DEP_PACKAGES/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS value="MPI"/>
-    <LIB_OPTIONAL_DEP_TPLS/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
-    <EmailAddresses>
-      <Regression address="trios-regression@software.sandia.gov"/>
-    </EmailAddresses>
-    <ParentPackage value="Trios"/>
-  </Package>
-  <Package name="Triostests" dir="packages/trios/tests" type="EX">
-    <LIB_REQUIRED_DEP_PACKAGES value="Triosnssi,TeuchosCore"/>
-    <LIB_OPTIONAL_DEP_PACKAGES/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS value="MPI,Pthread"/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
-    <EmailAddresses>
-      <Regression address="trios-regression@software.sandia.gov"/>
-    </EmailAddresses>
-    <ParentPackage value="Trios"/>
-  </Package>
-  <Package name="Triosnetcdf-service" dir="packages/trios/services/netcdf" type="EX">
-    <LIB_REQUIRED_DEP_PACKAGES value="Triosnssi,TeuchosCore"/>
-    <LIB_OPTIONAL_DEP_PACKAGES/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS value="MPI,Pnetcdf,Netcdf"/>
-    <LIB_OPTIONAL_DEP_TPLS/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
-    <EmailAddresses>
-      <Regression address="trios-regression@software.sandia.gov"/>
-    </EmailAddresses>
-    <ParentPackage value="Trios"/>
-  </Package>
-  <Package name="Trios" dir="packages/trios" type="EX">
-    <LIB_REQUIRED_DEP_PACKAGES/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="TeuchosCore,Trioscommsplitter,Triossupport,Triosnnti,Triosnssi,Triosprograms,Triosexamples,Triostests,Triosnetcdf-service"/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS value="BGQPAMI,BGPDCMF,MPI,Netcdf,Pnetcdf,Pthread,CrayPortals,Portals,Gemini,InfiniBand,Pablo,PAPI,HPCToolkit"/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
-    <EmailAddresses>
-      <Regression address="trios-regression@software.sandia.gov"/>
-    </EmailAddresses>
-    <ParentPackage value=""/>
-  </Package>
   <Package name="Ifpack" dir="packages/ifpack" type="PT">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Amesos,EpetraExt,AztecOO"/>
@@ -1722,7 +1554,7 @@
   </Package>
   <Package name="Piro" dir="packages/piro" type="ST">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Stratimikos,ThyraCore,ThyraEpetraAdapters,ThyraEpetraExtAdapters,Epetra,EpetraExt"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="NOX,Rythmos,MOOCHO,Stokhos,OptiPack,TriKota"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="NOX,Rythmos,MOOCHO,Stokhos,TriKota"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>

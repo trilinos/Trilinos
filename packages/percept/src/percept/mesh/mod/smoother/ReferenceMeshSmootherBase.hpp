@@ -14,7 +14,8 @@
 
 #include <percept/mesh/mod/smoother/MeshSmoother.hpp>
 #include <percept/mesh/mod/smoother/SmootherMetric.hpp>
-#include <boost/unordered_map.hpp>
+#include <unordered_map>
+#include <stk_mesh/base/HashEntityAndEntityKey.hpp>
 #include <stk_mesh/base/FieldParallel.hpp>
 #include <percept/PerceptUtils.hpp>
 
@@ -29,7 +30,7 @@ public:
 
 	using Base = MeshSmootherImpl<MeshType>;
 
-	typedef boost::unordered_map<typename MeshType::MTNode , std::vector<double> > NodeMap;
+	typedef std::unordered_map<typename MeshType::MTNode , std::vector<double> > NodeMap;
 
 	ReferenceMeshSmootherBaseImpl(PerceptMesh *eMesh,
 //			typename MeshType::MTSelector *boundary_selector=0,

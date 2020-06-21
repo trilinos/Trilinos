@@ -151,7 +151,7 @@ namespace Intrepid2 {
             errorFlag = -1;
           }
         }
-      } catch (std::exception err) {
+      } catch (std::exception &err) {
         std::cout << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
         std::cout << err.what() << '\n';
         std::cout << "-------------------------------------------------------------------------------" << "\n\n";

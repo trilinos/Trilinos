@@ -61,10 +61,11 @@ private:
 
   void reset(const bool flag = true) {
     if ( flag ) {
-      typename std::map<Key, int>::iterator it;
-      for (it = indices_.begin(); it != indices_.end(); ++it) {
-        flags_[it->second] = false;
-      }
+      flags_.assign(flags_.size(),false);
+//      typename std::map<Key, int>::iterator it;
+//      for (it = indices_.begin(); it != indices_.end(); ++it) {
+//        flags_[it->second] = false;
+//      }
     }
   }
 

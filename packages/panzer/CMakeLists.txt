@@ -17,7 +17,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG
   "Build with debug code enabled."
   OFF )
 
-IF (CMAKE_BUILD_TYPE STREQUAL "DEBUG" AND KOKKOS_ENABLE_CUDA)
+IF (CMAKE_BUILD_TYPE STREQUAL "DEBUG" AND Kokkos_ENABLE_CUDA)
   SET(${PACKAGE_NAME}_ADD_EXPENSIVE_CUDA_TESTS_DEFAULT OFF)
 ELSE()
   SET(${PACKAGE_NAME}_ADD_EXPENSIVE_CUDA_TESTS_DEFAULT ON)
@@ -28,10 +28,9 @@ SET(${PACKAGE_NAME}_ADD_EXPENSIVE_CUDA_TESTS
   "Add expensive convergence tests to cuda builds.  Not recommended for CMAKE_BUILD_TYPE=DEBUG and CUDA")
 MESSAGE(STATUS "Convergence tests: ${${PACKAGE_NAME}_ADD_EXPENSIVE_CUDA_TESTS}")
 
-TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_FADTYPE
-  PANZER_FADTYPE
-  "Choose the Sacado automatic differentiation scalar type (default is DFad)."
-  "Sacado::Fad::DFad<RealType>" )
+SET(${PACKAGE_NAME}_FADTYPE  "Sacado::Fad::DFad<RealType>"
+  CACHE STRING
+  "Choose the Sacado automatic differentiation scalar type (default is DFad).")
 
 TRIBITS_ADD_ENABLE_TEUCHOS_TIME_MONITOR_OPTION()
 

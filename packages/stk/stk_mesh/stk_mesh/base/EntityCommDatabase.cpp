@@ -150,7 +150,7 @@ void unpack_entity_info(
   for ( unsigned i = 0 ; i < nparts ; ++i ) {
     unsigned part_ordinal = ~0u ;
     buf.unpack<unsigned>( part_ordinal );
-    parts[i] = & MetaData::get(mesh).get_part( part_ordinal );
+    parts[i] = & mesh.mesh_meta_data().get_part( part_ordinal );
   }
 
   buf.unpack( nrel );
@@ -281,7 +281,7 @@ void pack_field_values(const BulkData& mesh, CommBuffer & buf , Entity entity )
         return;
     }
     const Bucket   & bucket = mesh.bucket(entity);
-    const MetaData & mesh_meta_data = MetaData::get(mesh);
+    const MetaData & mesh_meta_data = mesh.mesh_meta_data();
     const std::vector< FieldBase * > & fields = mesh_meta_data.get_fields(bucket.entity_rank());
     for ( FieldBase* field : fields ) {
         if ( field->data_traits().is_pod ) {
@@ -305,7 +305,7 @@ bool unpack_field_values(const BulkData& mesh,
         return true;
     }
     const Bucket   & bucket = mesh.bucket(entity);
-    const MetaData & mesh_meta_data = MetaData::get(mesh);
+    const MetaData & mesh_meta_data = mesh.mesh_meta_data();
     const std::vector< FieldBase * > & fields = mesh_meta_data.get_fields(bucket.entity_rank());
     bool ok = true ;
     for ( const FieldBase* f : fields) {
@@ -357,20 +357,14 @@ bool EntityCommDatabase::cached_find(const EntityKey& key) const
 }
 
 
-void EntityCommDatabase::insert(const EntityKey& key)
+const EntityComm* EntityCommDatabase::insert(const EntityKey& key)
 {
   if (!cached_find(key)) {
     m_last_lookup = m_comm_map.insert(std::make_pair(key, EntityComm())).first;
   }
+  return &(m_last_lookup->second);
 }
 
-
-int EntityCommDatabase::owner_rank( const EntityKey & key ) const
-{
-  if (!cached_find(key)) return InvalidProcessRank;
-
-  return m_last_lookup->second.owner_rank;
-}
 
 PairIterEntityComm EntityCommDatabase::shared_comm_info( const EntityKey & key ) const
 {
@@ -422,18 +416,26 @@ PairIterEntityComm EntityCommDatabase::comm( const EntityKey & key, const Ghosti
 }
 
 
-bool EntityCommDatabase::insert( const EntityKey & key, const EntityCommInfo & val, int owner )
+std::pair<EntityComm*,bool> EntityCommDatabase::insert( const EntityKey & key, const EntityCommInfo & val, int /*owner*/ )
 {
   insert(key);
+
+  if (val.ghost_id == 0) {
+    m_last_lookup->second.isShared = true;
+  }
+  else {
+    m_last_lookup->second.isGhost = true;
+  }
+
   EntityCommInfoVector & comm_map = m_last_lookup->second.comm_map;
-  m_last_lookup->second.owner_rank = owner;
 
   EntityCommInfoVector::iterator i =
     std::lower_bound( comm_map.begin() , comm_map.end() , val );
 
-  const bool result = ((i == comm_map.end()) || (val != *i));
+  const bool didInsert = ((i == comm_map.end()) || (val != *i));
+  std::pair<EntityComm*,bool> result = std::make_pair(&(m_last_lookup->second), didInsert);
 
-  if ( result ) {
+  if ( didInsert ) {
     comm_map.insert( i , val );
   }
 
@@ -451,6 +453,20 @@ bool EntityCommDatabase::erase( const EntityKey & key, const EntityCommInfo & va
     std::lower_bound( comm_map.begin() , comm_map.end() , val );
 
   const bool result = ( (i != comm_map.end()) && (val == *i) ) ;
+
+  if (val.ghost_id == 0) {
+    m_last_lookup->second.isShared = (!comm_map.empty() && comm_map.front().ghost_id==0);
+  }
+  else {
+    bool isStillGhost = false;
+    for(const EntityCommInfo& info : comm_map) {
+      if (info.ghost_id > 0) {
+        isStillGhost = true;
+        break;
+      }
+    }
+    m_last_lookup->second.isGhost = isStillGhost;
+  }
 
   if ( result ) {
     comm_map.erase( i );
@@ -536,20 +552,6 @@ bool EntityCommDatabase::comm_clear(const EntityKey & key)
     }
     return did_clear;
 }
-
-
-bool EntityCommDatabase::change_owner_rank(const EntityKey& key, int owner)
-{
-  // Do not add key to map, only update rank if it was already in the map
-  if (cached_find(key)) {
-    const int orig_owner = m_last_lookup->second.owner_rank;
-    m_last_lookup->second.owner_rank = owner;
-    return orig_owner != owner;
-  }
-  return false;
-}
-
-
 
 } // namespace mesh
 }

@@ -319,6 +319,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, FillLevel, Scalar, 
     Teuchos::ParameterList params;
     params.set("fact: iluk level-of-fill", lof);
     params.set("fact: iluk level-of-overlap", 0);
+    params.set("fact: iluk overalloc", 1.01); // Use non-default only to test
+                                              // matrix resizing in IlukGraph;
+                                              // Usually, 1.01 is too small;
+                                              // default value should be used.
 
     prec.setParameters(params);
     prec.initialize();

@@ -1,3 +1,43 @@
+/*
+// @HEADER
+// ***********************************************************************
+//
+//          Tpetra: Templated Linear Algebra Services Package
+//                 Copyright (2008) Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// ************************************************************************
+// @HEADER
+*/
 #ifndef TPETRA_DETAILS_BEHAVIOR_HPP
 #define TPETRA_DETAILS_BEHAVIOR_HPP
 
@@ -57,20 +97,22 @@ namespace Details {
 ///
 /// TPETRA_DEBUG: flags Tpetra to turn on debug checking.
 /// TPETRA_VERBOSE: flags Tpetra to turn on debug _output_.
+/// TPETRA_TIMING: flags Tpetra to turn on timing code.
 ///
 /// These are two different things.  For example, TPETRA_DEBUG may do extra MPI
 /// communication in order to ensure correct error state propagation, but
 /// TPETRA_DEBUG should never print copious debug output if no errors occurred.
 /// The idea is that if users get a mysterious error or hang, they can rerun
 /// with TPETRA_DEBUG set.  TPETRA_VERBOSE is for Tpetra developers to use for
-/// debugging Tpetra.
+/// debugging Tpetra. TPETRA_TIMING is for Tpetra developers to use for timing
+/// Tpetra.
 ///
 /// The environment variables are understood to be "on" or "off" and recognized
-/// if specified in one of two ways.  The first is to specify the variable
-/// unconditionally ON or OFF.  e.g., TPETRA_VERBOSE=ON or TPETRA_VERBOSE=OFF.
-/// The default value of TPETRA_VERBOSE is always OFF.  The default value for
-/// TPETRA_DEBUG is ON if Tpetra is configured with Tpetra_ENABLE_DEBUG,
-/// otherwise it is OFF
+/// if specified in one of two ways. The first is to specify the variable
+/// unconditionally ON or OFF. e.g., TPETRA_[VERBOSE,DEBUG,TIMING]=ON or
+/// TPETRA_[VERBOSE,DEBUG,TIMING]=OFF. The default value of TPETRA_VERBOSE and
+/// TPETRA_TIMING is always OFF. The default value for TPETRA_DEBUG is ON if
+/// Tpetra is configured with Tpetra_ENABLE_DEBUG, otherwise it is OFF.
 ///
 /// The second is to specify the variable on a per class/object basis, e.g.,
 /// TPETRA_VERBOSE=CrsGraph,CrsMatrix,Distributor means that verbose output
@@ -114,6 +156,24 @@ public:
   /// \brief Enable verbose mode, programatically
   static void enable_verbose_behavior ();
 
+  /// \brief Whether Tpetra is in timing mode.
+  ///
+  /// "Timing mode" means that Tpetra enables code that instruments internal timing.
+  static bool timing ();
+
+  /// \brief Whether the given Tpetra object is in timing mode.
+  ///
+  /// \param name [in] Name of the Tpetra object.  Typically, the object would
+  ///        be a class name, e.g., "CrsGraph" or method, e.g.,
+  ///        "CrsGraph::insertLocalIndices".
+  static bool timing (const char name[]);
+
+  /// \brief Disable timing, programatically
+  static void disable_timing();
+
+  /// \brief Enable timing, programatically
+  static void enable_timing();
+
   /// \brief Whether to assume that MPI is CUDA aware.
   ///
   /// An MPI implementation is "CUDA aware" if it can accept CUDA
@@ -124,15 +184,73 @@ public:
   /// For a discussion, see Trilinos GitHub issues #1571 and #1088.
   static bool assumeMpiIsCudaAware ();
 
-  /// \brief The core count above which Tpetra::CrsMatrix::transferAndFillComplete
-  /// will attempt to do advanced neighbor discovery. This is platform 
-  /// dependent, and the user/developer should test each new platform 
-  /// for the correct value. The 3000 value was found on Serrano summer 2018 
-
+  /// \brief MPI process count above which
+  ///   Tpetra::CrsMatrix::transferAndFillComplete will attempt to do
+  ///   advanced neighbor discovery.
+  ///
+  /// This is platform dependent, and the user/developer should test
+  /// each new platform for the correct value.  You may control this
+  /// at run time via the <tt>MM_TAFC_OptimizationCoreCount</tt>
+  /// environment variable.
   static int TAFC_OptimizationCoreCount ();
 
-  /// \brief Threshold, below which arrays, lists, etc. will be printed in debug mode.
+  /// \brief Number of entries below which arrays, lists, etc. will be
+  ///   printed in debug mode.
+  ///
+  /// You may control this at run time via the
+  /// <tt>TPETRA_VERBOSE_PRINT_COUNT_THRESHOLD</tt> environment
+  /// variable.
   static size_t verbosePrintCountThreshold ();
+
+  /// \brief Minimum number of entries in a "long" sparse graph or
+  ///   matrix row.
+  ///
+  /// If a local row of a sparse graph or matrix has this many or more
+  /// entries, we consider it "long."  Tpetra has the option to treat
+  /// "long" rows separately from shorter rows in algorithms like
+  /// sparse matrix-vector multiply, packAndPrepare, and
+  /// unpackAndCombine.  You may control this at run time via the
+  /// <tt>TPETRA_LONG_ROW_MIN_NUM_ENTRIES</tt> environment variable.
+  ///
+  /// This is an absolute value, not a relative value.  This matters
+  /// for thread parallelization, because the point is to decide how
+  /// much parallelism needs to be available in a row in order to
+  /// treat it differently from other rows.  Whether a row has enough
+  /// entries to treat it as "dense" relative to other rows, is a
+  /// separate question.
+  static size_t longRowMinNumEntries ();
+
+  /// \brief Unpack rows of a matrix using hierarchical unpacking
+  static bool hierarchicalUnpack ();
+
+  /// \brief Size of batch for hierarchical unpacking
+  static size_t hierarchicalUnpackBatchSize ();
+
+  /// \brief Size of team for hierarchical unpacking
+  static size_t hierarchicalUnpackTeamSize ();
+
+  /// \brief the threshold for transitioning from device to host
+  ///
+  /// If the number of elements in the multivector does not exceed this 
+  /// threshold and the data is on host, then run the calculation on
+  /// host.  Otherwise, run on device.
+  /// By default this is 10000, but may be altered by the environment
+  /// variable TPETRA_VECTOR_DEVICE_THRESHOLD
+  static size_t multivectorKernelLocationThreshold ();
+
+  /// \brief Use Teuchos::Timer in Tpetra::ProfilingRegion
+  ///
+  /// This is disabled by default.  You may control this at run time via the
+  /// <tt>TPETRA_USE_TEUCHOS_TIMERS</tt> environment variable.
+  static bool profilingRegionUseTeuchosTimers();
+
+  /// \brief Use Kokkos::Profiling in Tpetra::ProfilingRegion
+  ///
+  /// This is enabled by default if KOKKOS_ENABLE_PROFILING is defined.
+  /// You mau control this at run time via the <tt>TPETRA_USE_KOKKOS_PROFILING</tt>
+  /// environment variable.
+  static bool profilingRegionUseKokkosProfiling();
+
 
 };
 

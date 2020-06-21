@@ -92,7 +92,6 @@ package:
 
 // Define the module name, its package and documentation string
 %module(package   = "PyTrilinos",
-	autodoc   = "1",
 	docstring = %anasazi_docstring) Anasazi
 
 %{
@@ -132,11 +131,11 @@ package:
 // Standard exception handling
 %include "exception.i"
 
-// Auto-documentation feature
-%feature("autodoc", "1");
-
 // Include Anasazi documentation
+#if SWIG_VERSION < 0x040000
+%feature("autodoc", "1");
 %include "Anasazi_dox.i"
+#endif
 
 // C++ STL support
 %include "stl.i"
@@ -438,6 +437,7 @@ namespace std { struct ostream; }
 // Anasazi EpetraAdapter support //
 ///////////////////////////////////
 #ifdef HAVE_PYTRILINOS_EPETRA
+#pragma SWIG nowarn=317
 %include "AnasaziEpetraAdapter.hpp"
 %ignore
 Anasazi::MultiVecTraits< double,

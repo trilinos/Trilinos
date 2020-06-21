@@ -41,6 +41,7 @@
       <Parameter name="prolongatorGraph"                    type="string" value="myAggregationFact"/>
       <Parameter name="coarseCoordinatesFineMap"            type="string" value="myAggregationFact"/>
       <Parameter name="coarseCoordinatesMap"                type="string" value="myAggregationFact"/>
+      <Parameter name="keep coarse coords"                  type="bool"   value="true"/>
     </ParameterList>
 
     <ParameterList name="myCoordTransferFact">

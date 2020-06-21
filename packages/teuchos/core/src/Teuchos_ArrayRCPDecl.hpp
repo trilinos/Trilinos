@@ -776,13 +776,6 @@ public:
   inline const ArrayRCP<T>& assert_valid_ptr() const;
 
   //@}
-  /** \name Deprecated */
-  //@{
-
-  /** \brief Returns <tt>strong_count()</tt> [deprecated]. */
-  inline TEUCHOS_DEPRECATED int count() const;
-
-  //@}
 
 private:
   //! Raw pointer to the array; NULL if this array is null.
@@ -931,8 +924,6 @@ public:
   inline const ArrayRCP<const T>& assert_not_null () const;
   inline const ArrayRCP<const T>& assert_in_range (size_type lowerOffset, size_type size) const;
   inline const ArrayRCP<const T>& assert_valid_ptr() const;
-
-  inline TEUCHOS_DEPRECATED int count() const;
 
 private:
   const T* ptr_; // NULL if this pointer is null

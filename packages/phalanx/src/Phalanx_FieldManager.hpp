@@ -124,9 +124,23 @@ namespace PHX {
         NOTE: this is a very dangerous power user capability as the
         user must allocate the field correctly (remember Sacado AD
         types must have the extra dimensions sized correctly).
+
+        \param cleanup_output (bool) This flag only matters if this
+        function is called after postRegistrationSetup() is called. If
+        set to true and called after postRegistrationSetup(), this
+        will take more execution time to search field lists to cleanup
+        data structures for output information. This is important
+        because a user could toggle a field that was tagged as shared
+        during postRegistrationSetup() into an unmanaged state. The
+        code will always perform correctly, but output from this
+        object might be confusing as is could report an unmanaged
+        field as being shared. We allow users set this flag to false
+        and to leave the output in a bad state since they might want
+        to call this many times in the middle of an evaluation.
     */
     template<typename EvalT, typename DataT, typename...Props>
-    void setUnmanagedField(PHX::MDField<DataT,Props...>& f);
+    void setUnmanagedField(PHX::MDField<DataT,Props...>& f,
+                           const bool cleanup_output = true);
 
     /*! \brief Allows the user to manage the memory allocation of a
         particular field and dynamically set/swap the memory at any
@@ -139,9 +153,23 @@ namespace PHX {
         NOTE: this is a very dangerous power user capability as the
         user must allocate the field correctly (remember Sacado AD
         types must have the extra dimensions sized correctly).
+
+        \param cleanup_output (bool) This flag only matters if this
+        function is called after postRegistrationSetup() is called. If
+        set to true and called after postRegistrationSetup(), this
+        will take more execution time to search field lists to cleanup
+        data structures for output information. This is important
+        because a user could toggle a field that was tagged as shared
+        during postRegistrationSetup() into an unmanaged state. The
+        code will always perform correctly, but output from this
+        object might be confusing as is could report an unmanaged
+        field as being shared. We allow users set this flag to false
+        and to leave the output in a bad state since they might want
+        to call this many times in the middle of an evaluation.
     */
     template<typename EvalT, typename DataT, int Rank, typename Layout>
-    void setUnmanagedField(PHX::Field<DataT,Rank,Layout>& f);
+    void setUnmanagedField(PHX::Field<DataT,Rank,Layout>& f,
+                           const bool cleanup_output = true);
 
     /*! \brief Allows the user to manage the memory allocation of a
         particular field and dynamically set/swap the memory at any
@@ -154,10 +182,23 @@ namespace PHX {
         NOTE: this is a very dangerous power user capability as the
         user must allocate the field correctly (remember Sacado AD
         types must have the extra dimensions sized correctly).
+        \param cleanup_output (bool) This flag only matters if this
+        function is called after postRegistrationSetup() is called. If
+        set to true and called after postRegistrationSetup(), this
+        will take more execution time to search field lists to cleanup
+        data structures for output information. This is important
+        because a user could toggle a field that was tagged as shared
+        during postRegistrationSetup() into an unmanaged state. The
+        code will always perform correctly, but output from this
+        object might be confusing as is could report an unmanaged
+        field as being shared. We allow users set this flag to false
+        and to leave the output in a bad state since they might want
+        to call this many times in the middle of an evaluation.
     */
     template<typename EvalT, typename DataT, typename Layout>
     void setUnmanagedField(const FieldTag& ft,
-                           Kokkos::View<DataT,Layout,PHX::Device>& f);
+                           Kokkos::View<DataT,Layout,PHX::Device>& f,
+                           const bool cleanup_ouput = true);
 
     /*! \brief Makes two fields point to (alias) the same memory for all evaluation types.
 
@@ -268,14 +309,14 @@ namespace PHX {
     template<typename EvalT>
     void writeGraphvizFile(const std::string filename = "graph.dot",
 			   bool writeEvaluatedFields = true,
-			   bool writeDependentFields = false,
+			   bool writeDependentFields = true,
 			   bool debugRegisteredEvaluators = false) const;
 
     //! Writes graphviz dot file for all evaluation types (adds eval type to filename).
     void writeGraphvizFile(const std::string base_filename = "graph",
 			   const std::string file_extension = ".dot",
 			   bool writeEvaluatedFields = true,
-			   bool writeDependentFields = false,
+			   bool writeDependentFields = true,
 			   bool debugRegisteredEvaluators = false) const;
 
     void print(std::ostream& os) const;

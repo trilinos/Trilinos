@@ -150,7 +150,7 @@ int test_simple_replace(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
       ++err;
     }
   }
-  catch(std::logic_error) {
+  catch(std::logic_error &e) {
     if(comm->getSize() != 1) {
       err = 1;
     }

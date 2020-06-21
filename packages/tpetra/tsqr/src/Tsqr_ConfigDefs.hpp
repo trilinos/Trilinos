@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
@@ -47,7 +45,7 @@
 
 // Users should not include TpetraTSQR_config.h directly.
 // Include Tsqr_ConfigDefs.hpp instead.
-#include <TpetraTSQR_config.h>
+#include "TpetraTSQR_config.h"
 
 /// \namespace TSQR
 /// \brief Implementation of the Tall Skinny QR (TSQR) factorization.

@@ -1,3 +1,0 @@
-<ParameterList name="MueLu">
-  <Parameter name="problem: type"     type="string"   value="MHD"/>
-</ParameterList>

@@ -56,6 +56,7 @@
 #define AMESOS2_SOLVERTRAITS_HPP
 
 #include "Amesos2_Meta.hpp"
+#include "Amesos2_MatrixAdapter.hpp"
 
 namespace Amesos2 {
 
@@ -101,6 +102,24 @@ namespace Amesos2 {
 		       Meta::type_list_contains<
 			 typename solver_traits<ConcreteSolver>::supported_scalars,
 			 Scalar> >::type::value;
+  };
+
+  template <template <class,class> class ConcreteSolver,
+      typename Matrix>
+  struct solver_supports_matrix {
+    static const bool value = true;
+  };
+
+  // for kokkos adapter we only allow this for the specific solvers which
+  // are using it. This is to avoid having ETI setup for all solvers. The
+  // kokkos adapter is for testing UVM off and would become relic when Tpetra
+  // switches to UVM off. To support this, solvers like Tacho override this
+  // method and return true.
+  template <template <class,class> class ConcreteSolver,
+    typename Scalar, typename LocalOrdinal, typename ExecutionSpace>
+  struct solver_supports_matrix<ConcreteSolver,
+    KokkosSparse::CrsMatrix<Scalar, LocalOrdinal, ExecutionSpace>> {
+    static const bool value = false;
   };
 
 } // end namespace Amesos2

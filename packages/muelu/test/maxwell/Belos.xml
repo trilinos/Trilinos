@@ -1,0 +1,18 @@
+<ParameterList name="Belos">
+  <ParameterList name="Block CG">
+    <Parameter name="Output Frequency" type="int" value="1"/>
+    <Parameter name="Output Style" type="int" value="1"/>
+    <Parameter name="Verbosity" type="int" value="33"/>
+    <Parameter name="Implicit Residual Scaling" type="string" value="None"/>
+    <Parameter name="Explicit Residual Scaling" type="string" value="None"/>
+    <Parameter name="Explicit Residual Test" type="bool" value="true"/>
+  </ParameterList>
+  <ParameterList name="Block GMRES">
+    <Parameter name="Output Frequency" type="int" value="1"/>
+    <Parameter name="Output Style" type="int" value="1"/>
+    <Parameter name="Verbosity" type="int" value="33"/>
+    <Parameter name="Implicit Residual Scaling" type="string" value="None"/>
+    <Parameter name="Explicit Residual Scaling" type="string" value="None"/>
+    <Parameter name="Explicit Residual Test" type="bool" value="true"/>
+  </ParameterList>
+</ParameterList>

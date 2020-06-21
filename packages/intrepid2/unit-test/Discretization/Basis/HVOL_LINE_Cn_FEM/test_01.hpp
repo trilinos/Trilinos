@@ -68,7 +68,7 @@ namespace Intrepid2 {
       ++nthrow;                                                         \
       S ;                                                               \
     }                                                                   \
-    catch (std::exception err) {                                        \
+    catch (std::exception &err) {                                        \
       ++ncatch;                                                         \
       *outStream << "Expected Error ----------------------------------------------------------------\n"; \
       *outStream << err.what() << '\n';                                 \
@@ -216,7 +216,7 @@ namespace Intrepid2 {
           *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << nthrow << ")\n";
         }
 #endif
-      } catch (std::exception err) {
+      } catch (std::exception &err) {
         *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
         *outStream << err.what() << '\n';
         *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -268,7 +268,7 @@ namespace Intrepid2 {
               }
           }
         }
-      } catch (std::exception err) {
+      } catch (std::exception &err) {
         *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
         *outStream << err.what() << "\n\n";
         errorFlag = -1000;
@@ -300,7 +300,7 @@ namespace Intrepid2 {
             errorFlag++;
           }
         }
-      } catch (std::logic_error err){
+      } catch (std::logic_error &err){
         *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
         *outStream << err.what() << '\n';
         *outStream << "-------------------------------------------------------------------------------" << "\n\n";

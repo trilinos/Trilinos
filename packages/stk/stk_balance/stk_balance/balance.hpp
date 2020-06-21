@@ -6,15 +6,15 @@
  // Redistribution and use in source and binary forms, with or without
  // modification, are permitted provided that the following conditions are
  // met:
- // 
+ //
  //     * Redistributions of source code must retain the above copyright
  //       notice, this list of conditions and the following disclaimer.
- // 
+ //
  //     * Redistributions in binary form must reproduce the above
  //       copyright notice, this list of conditions and the following
  //       disclaimer in the documentation and/or other materials provided
  //       with the distribution.
- // 
+ //
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -42,6 +42,8 @@ namespace stk { namespace mesh { class BulkData; } }
 #include <string>
 #include "mpi.h"
 #include <stk_balance/internal/balanceDefaults.hpp>
+#include <stk_balance/internal/balanceCommandLine.hpp>
+#include "balanceUtils.hpp"               // for BalanceSettings, etc
 
 namespace stk
 {
@@ -50,8 +52,10 @@ namespace balance
 
 bool balanceStkMesh(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData);
 bool balanceStkMesh(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData, const std::vector<stk::mesh::Selector>& selectors);
+bool balanceStkMeshNodes(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData);
+
 bool colorStkMesh(const BalanceSettings& colorSettings, stk::mesh::BulkData& stkMeshBulkData);
-void run_stk_rebalance(const std::string& outputDirectory, const std::string& exodusFilename, stk::balance::AppTypeDefaults appType, MPI_Comm comm);
+void run_stk_rebalance(const ParsedOptions& options, MPI_Comm comm);
 void run_stk_balance_with_settings(const std::string& outputDirectory, const std::string& exodusFilename, MPI_Comm comm, stk::balance::BalanceSettings& graphOptions);
 void initial_decomp_and_balance(stk::mesh::BulkData &bulk,
                                 stk::balance::BalanceSettings& graphOptions,
@@ -61,6 +65,7 @@ void initial_decomp_and_balance(stk::mesh::BulkData &bulk,
 void fill_coloring_parts(const stk::mesh::MetaData& meta, stk::mesh::PartVector& coloringParts);
 void fill_coloring_parts_with_topology(const stk::mesh::MetaData& meta, const stk::topology topo, stk::mesh::PartVector& coloringParts);
 std::string construct_coloring_part_name(const int color, const stk::mesh::Part& part);
+StkBalanceSettings create_balance_settings(const stk::balance::ParsedOptions & options);
 }
 }
 #endif

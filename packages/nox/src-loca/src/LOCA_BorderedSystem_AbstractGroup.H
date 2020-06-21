@@ -71,11 +71,11 @@ namespace LOCA {
      *        B^T & C
      *     \end{bmatrix}
      * \f]
-     * where \f$A\f$ and \f$B\f$ are multivectors and \f$C\f$ is a dense
+     * where \f$ A\f$ and \f$ B\f$ are multivectors and \f$ C\f$ is a dense
      * matrix.  It provides methods for determining the width of the bordered
      * rows/columns and for extracting these components.  It is intended
      * to be a recusive interface, in that if the group representing
-     * \f$J\f$ also has this form, the extracted rows/columns should be
+     * \f$ J\f$ also has this form, the extracted rows/columns should be
      * the combined rows/columns of this group and the underlying group
      * (and so on).
      */

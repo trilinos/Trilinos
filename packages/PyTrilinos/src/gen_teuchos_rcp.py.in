@@ -442,14 +442,10 @@ def get_import_directives(teuchos_rcps):
         if swig_directive not in result:
             result.append(swig_directive)
 
-    # if (WITH_TPETRA):
-    #     # Find the Tpetra::Map import
-    #     index = result.index('%import "Tpetra_Map_decl.hpp"')
-    #     result.insert(index  , "%ignore Tpetra::Map::Map;")
-    #     result.insert(index+1, "%ignore Tpetra::Map::getGlobalNumElements;")
-    #     result.insert(index+2, "%ignore Tpetra::Map::getRemoteIndexList;")
-    #     result.insert(index+3, "%ignore Tpetra::Map::getMyGlobalIndices;")
-    #     result.insert(index+5, "%template(Map_default) Tpetra::Map<PYTRILINOS_LOCAL_ORD,PYTRILINOS_GLOBAL_ORD>;")
+    if (WITH_TPETRA):
+        # Find the Tpetra::Map import
+        index = result.index('%import "Tpetra_Map_decl.hpp"')
+        result.insert(index, '%import "TpetraCore_config.h"')
 
     if (WITH_ANASAZI):
         # Find the first Anasazi import and insert AnasaziTypes.hpp before it

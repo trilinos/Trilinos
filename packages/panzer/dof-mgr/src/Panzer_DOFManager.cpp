@@ -795,6 +795,8 @@ DOFManager::buildGlobalUnknowns_GUN(const Tpetra::MultiVector<panzer::GlobalOrdi
   {
     PANZER_FUNC_TIME_MONITOR_DIFF("panzer::DOFManager::buildGlobalUnknowns_GUN::line_13-21 gid_assignment",GUN13_21);
     int which_id=0;
+    if (non_overlap_mv->need_sync_host())
+      non_overlap_mv->sync_host();
     auto editnonoverlap = non_overlap_mv->getLocalViewHost();
     for(size_t i=0; i<non_overlap_mv->getLocalLength(); ++i){
       for(int j=0; j<numFields_; ++j){

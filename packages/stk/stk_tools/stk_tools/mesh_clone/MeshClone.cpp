@@ -2,14 +2,13 @@
 #include "MeshCloneIo.hpp"
 #include "MeshCloneUtils.hpp"
 #include <stk_mesh/base/DestroyElements.hpp>
-#include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/base/BulkData.hpp>
 #include "stk_mesh/base/Part.hpp"
 #include "stk_mesh/base/Field.hpp"
 #include "stk_mesh/base/FieldBase.hpp"
 #include "stk_topology/topology.hpp"
 #include "stk_util/util/ReportHandler.hpp"
-#include <stk_mesh/base/DestroyElements.hpp>
 
 namespace stk {
 namespace mesh {
@@ -32,7 +31,7 @@ namespace tools {
 
 stk::mesh::Part *create_new_part(const stk::mesh::Part &oldPart, stk::mesh::MetaData &newMeta)
 {
-    if(oldPart.topology() != stk::topology::INVALID_TOPOLOGY)
+    if (oldPart.topology() != stk::topology::INVALID_TOPOLOGY)
         return &newMeta.declare_part_with_topology(oldPart.name(), oldPart.topology());
     else
     {
@@ -126,7 +125,12 @@ void copy_surface_to_block_mapping(const stk::mesh::MetaData &oldMeta, stk::mesh
 
 void copy_meta(const stk::mesh::MetaData &inputMeta, stk::mesh::MetaData &outputMeta)
 {
-    outputMeta.initialize(inputMeta.spatial_dimension(), inputMeta.entity_rank_names());
+    // Query the coordinate field, to figure out the final name (if none set by the user)
+    inputMeta.coordinate_field();
+
+    outputMeta.initialize(inputMeta.spatial_dimension(),
+                          inputMeta.entity_rank_names(),
+                          inputMeta.coordinate_field_name());
     copy_parts(inputMeta, outputMeta);
     copy_fields(inputMeta, outputMeta);
     copy_surface_to_block_mapping(inputMeta, outputMeta);

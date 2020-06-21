@@ -782,6 +782,7 @@ class PDE_OptVector : public ROL::Vector<Real> {
 private:
   ROL::Ptr<ROL::TpetraMultiVector<Real,LO,GO,Node> > vec1_;
   ROL::Ptr<ROL::StdVector<Real> >                    vec2_;
+  const int rank_;
   mutable ROL::Ptr<ROL::TpetraMultiVector<Real,LO,GO,Node> > dual_vec1_;
   mutable ROL::Ptr<ROL::StdVector<Real> >                    dual_vec2_;
   mutable ROL::Ptr<PDE_OptVector<Real,LO,GO,Node> >          dual_vec_;
@@ -789,20 +790,22 @@ private:
 
 public:
   PDE_OptVector(const ROL::Ptr<ROL::TpetraMultiVector<Real,LO,GO,Node> > &vec1,
-                const ROL::Ptr<ROL::StdVector<Real> >                    &vec2 ) 
-    : vec1_(vec1), vec2_(vec2), isDualInitialized_(false) {
+                const ROL::Ptr<ROL::StdVector<Real> >                    &vec2,
+                const int rank = 0 ) 
+    : vec1_(vec1), vec2_(vec2), rank_(rank), isDualInitialized_(false) {
 
     dual_vec1_ = ROL::dynamicPtrCast<ROL::TpetraMultiVector<Real,LO,GO,Node> >(vec1_->dual().clone());
     dual_vec2_ = ROL::dynamicPtrCast<ROL::StdVector<Real> >(vec2_->dual().clone());
   }
 
   PDE_OptVector(const ROL::Ptr<ROL::TpetraMultiVector<Real,LO,GO,Node> > &vec)
-    : vec1_(vec), vec2_(ROL::nullPtr), dual_vec2_(ROL::nullPtr), isDualInitialized_(false) {
+    : vec1_(vec), vec2_(ROL::nullPtr), rank_(0), dual_vec2_(ROL::nullPtr), isDualInitialized_(false) {
     dual_vec1_ = ROL::dynamicPtrCast<ROL::TpetraMultiVector<Real,LO,GO,Node> >(vec1_->dual().clone());
   }
 
-  PDE_OptVector(const ROL::Ptr<ROL::StdVector<Real> > &vec)
-    : vec1_(ROL::nullPtr), vec2_(vec), dual_vec1_(ROL::nullPtr), isDualInitialized_(false) {
+  PDE_OptVector(const ROL::Ptr<ROL::StdVector<Real> > &vec,
+                const int rank = 0)
+    : vec1_(ROL::nullPtr), vec2_(vec), rank_(rank), dual_vec1_(ROL::nullPtr), isDualInitialized_(false) {
     dual_vec2_ = ROL::dynamicPtrCast<ROL::StdVector<Real> >(vec2_->dual().clone());
   }
 
@@ -1005,7 +1008,9 @@ public:
       vec1_->print(outStream);
     }
     if (vec2_ != ROL::nullPtr) {
-      vec2_->print(outStream);
+      if (rank_ == 0) {
+        vec2_->print(outStream);
+      }
     }
   }
 

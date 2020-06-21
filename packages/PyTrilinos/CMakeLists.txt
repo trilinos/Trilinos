@@ -68,75 +68,75 @@ APPEND_SET(PyTrilinos_MODULES  Teuchos)
 IF(PyTrilinos_ENABLE_Epetra)
   APPEND_SET(PyTrilinos_PACKAGES Epetra)
   APPEND_SET(PyTrilinos_MODULES  Epetra)
-ENDIF(PyTrilinos_ENABLE_Epetra)
+ENDIF()
 
 IF(PyTrilinos_ENABLE_Triutils)
   APPEND_SET(PyTrilinos_PACKAGES TriUtils)
   APPEND_SET(PyTrilinos_MODULES  TriUtils)
-ENDIF(PyTrilinos_ENABLE_Triutils)
+ENDIF()
 
 IF(PyTrilinos_ENABLE_Tpetra)
   APPEND_SET(PyTrilinos_PACKAGES Tpetra)
   APPEND_SET(PyTrilinos_MODULES  Tpetra)
-ENDIF(PyTrilinos_ENABLE_Tpetra)
+ENDIF()
 
 IF(PyTrilinos_ENABLE_Domi)
   APPEND_SET(PyTrilinos_PACKAGES Domi)
   APPEND_SET(PyTrilinos_MODULES  Domi)
-ENDIF(PyTrilinos_ENABLE_Domi)
+ENDIF()
 
 IF(PyTrilinos_ENABLE_EpetraExt)
   APPEND_SET(PyTrilinos_PACKAGES EpetraExt)
   APPEND_SET(PyTrilinos_MODULES  EpetraExt)
-ENDIF(PyTrilinos_ENABLE_EpetraExt)
+ENDIF()
 
 IF(PyTrilinos_ENABLE_Isorropia)
   APPEND_SET(PyTrilinos_PACKAGES Isorropia)
   APPEND_SET(PyTrilinos_MODULES  Isorropia)
   IF(PyTrilinos_ENABLE_Epetra)
     Append_SET(PyTrilinos_MODULES Isorropia.Epetra)
-  ENDIF(PyTrilinos_ENABLE_Epetra)
-ENDIF(PyTrilinos_ENABLE_Isorropia)
+  ENDIF()
+ENDIF()
 
 IF(PyTrilinos_ENABLE_Pliris)
   APPEND_SET(PyTrilinos_PACKAGES Pliris)
   APPEND_SET(PyTrilinos_MODULES  Pliris)
-ENDIF(PyTrilinos_ENABLE_Pliris)
+ENDIF()
 
 IF(PyTrilinos_ENABLE_AztecOO)
   APPEND_SET(PyTrilinos_PACKAGES AztecOO)
   APPEND_SET(PyTrilinos_MODULES  AztecOO)
-ENDIF(PyTrilinos_ENABLE_AztecOO)
+ENDIF()
 
 IF(PyTrilinos_ENABLE_Galeri)
   APPEND_SET(PyTrilinos_PACKAGES Galeri)
   APPEND_SET(PyTrilinos_MODULES  Galeri)
-ENDIF(PyTrilinos_ENABLE_Galeri)
+ENDIF()
 
 IF(PyTrilinos_ENABLE_Amesos)
   APPEND_SET(PyTrilinos_PACKAGES Amesos)
   APPEND_SET(PyTrilinos_MODULES  Amesos)
-ENDIF(PyTrilinos_ENABLE_Amesos)
+ENDIF()
 
 IF(PyTrilinos_ENABLE_Ifpack)
   APPEND_SET(PyTrilinos_PACKAGES IFPACK)
   APPEND_SET(PyTrilinos_MODULES  IFPACK)
-ENDIF(PyTrilinos_ENABLE_Ifpack)
+ENDIF()
 
 IF(PyTrilinos_ENABLE_Komplex)
   APPEND_SET(PyTrilinos_PACKAGES Komplex)
   APPEND_SET(PyTrilinos_MODULES  Komplex)
-ENDIF(PyTrilinos_ENABLE_Komplex)
+ENDIF()
 
 IF(PyTrilinos_ENABLE_Anasazi)
   APPEND_SET(PyTrilinos_PACKAGES Anasazi)
   APPEND_SET(PyTrilinos_MODULES  Anasazi)
-ENDIF(PyTrilinos_ENABLE_Anasazi)
+ENDIF()
 
 IF(PyTrilinos_ENABLE_ML)
   APPEND_SET(PyTrilinos_PACKAGES ML)
   APPEND_SET(PyTrilinos_MODULES  ML)
-ENDIF(PyTrilinos_ENABLE_ML)
+ENDIF()
 
 IF(PyTrilinos_ENABLE_NOX)
   APPEND_SET(PyTrilinos_PACKAGES NOX)
@@ -148,12 +148,12 @@ IF(PyTrilinos_ENABLE_NOX)
   IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA)
     APPEND_SET(PyTrilinos_MODULES NOX.Epetra          )
     APPEND_SET(PyTrilinos_MODULES NOX.Epetra.Interface)
-  ENDIF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA)
+  ENDIF()
   IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_PETSC)
     APPEND_SET(PyTrilinos_MODULES NOX.PETSc          )
     APPEND_SET(PyTrilinos_MODULES NOX.PETSc.Interface)
-  ENDIF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_PETSC)
-ENDIF(PyTrilinos_ENABLE_NOX)
+  ENDIF()
+ENDIF()
 
 IF(NOX_ENABLE_LOCA)
   APPEND_SET(PyTrilinos_PACKAGES LOCA                                )
@@ -187,8 +187,8 @@ IF(NOX_ENABLE_LOCA)
   IF(NOX_ENABLE_Epetra)
     APPEND_SET(PyTrilinos_MODULES  LOCA.Epetra          )
     APPEND_SET(PyTrilinos_MODULES  LOCA.Epetra.Interface)
-  ENDIF(NOX_ENABLE_Epetra)
-ENDIF(NOX_ENABLE_LOCA)
+  ENDIF()
+ENDIF()
 
 # Python interpreter and header files are required
 FIND_PACKAGE(PythonInterp 2.5 REQUIRED)
@@ -198,8 +198,9 @@ FIND_PACKAGE(PythonInclude REQUIRED)
 FIND_PACKAGE(NumPy 1.0 REQUIRED)
 
 # Simple wrapper interface generator (SWIG) is required. SWIG 3.0.11
-# is required to support the %module(moduleimport=...) option
-SET(SWIG_VERSION_FLOOR   3.0.11)
+# or higher is required to support the %module(moduleimport=...)
+# option
+SET(SWIG_VERSION_FLOOR 3.0.11)
 FIND_PACKAGE(SWIG REQUIRED)
 IF(${SWIG_VERSION} VERSION_LESS ${SWIG_VERSION_FLOOR})
   MESSAGE(FATAL_ERROR
@@ -207,6 +208,7 @@ IF(${SWIG_VERSION} VERSION_LESS ${SWIG_VERSION_FLOOR})
     " is less than minimum version " ${SWIG_VERSION_FLOOR}
     )
 ENDIF()
+MESSAGE(STATUS "Found swig: " ${SWIG_VERSION})
 # ${SWIG_USE_FILE} is hard-coded to be the installed UseSWIG.cmake
 # file.  We want to include the local, modified version.
 INCLUDE(UseSWIG)
@@ -217,15 +219,15 @@ IF(TPL_ENABLE_MPI)
   SET(TPL_ENABLE_MPI4PY ON CACHE BOOL "Use Mpi4Py")
   IF(TPL_ENABLE_MPI4PY)
     FIND_PACKAGE(Mpi4Py)
-  ELSE(TPL_ENABLE_MPI4PY)
+  ELSE()
     SET(Mpi4Py_FOUND OFF)
-  ENDIF(TPL_ENABLE_MPI4PY)
-ENDIF(TPL_ENABLE_MPI)
+  ENDIF()
+ENDIF()
 
 # Python module petsc4py is required if NOX_ENABLE_PETSC is true
 IF(NOX_ENABLE_PETSC)
   FIND_PACKAGE(PETSc4Py REQUIRED)
-ENDIF(NOX_ENABLE_PETSC)
+ENDIF()
 
 # Print the enabled PyTrilinos packages
 MESSAGE(STATUS "Enabled PyTrilinos packages:")
@@ -240,9 +242,9 @@ EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} -c "import sys; print(sys.prefix)"
   )
 IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   SET(PyTrilinos_DEFAULT_INSTALL_PREFIX ${PYTHON_PREFIX})
-ELSE(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+ELSE()
   SET(PyTrilinos_DEFAULT_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
-ENDIF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+ENDIF()
 
 # Set the PyTrilinos install prefix
 SET(PyTrilinos_INSTALL_PREFIX ${PyTrilinos_DEFAULT_INSTALL_PREFIX}
@@ -260,26 +262,28 @@ IF(DOXYGEN_FOUND)
       "Alternatively, you may choose to use a different version of doxygen. If you "
       "choose this route, be sure that the new version of doxygen is found first in "
       "your environment path.")
-  ELSE(${DOXYGEN_VERSION} VERSION_EQUAL 1.8.13 AND PyTrilinos_DOCSTRINGS)
+  ELSE()
     SET(PyTrilinos_DOCSTRINGS_DEFAULT ON)
-  ENDIF(${DOXYGEN_VERSION} VERSION_EQUAL 1.8.13 AND PyTrilinos_DOCSTRINGS)
-ELSE(DOXYGEN_FOUND)
+  ENDIF()
+ELSE()
   SET(PyTrilinos_DOCSTRINGS_DEFAULT OFF)
   MESSAGE(STATUS "doxygen not found!")
-ENDIF(DOXYGEN_FOUND)
+ENDIF()
 
 # Set the PyTrilinos docstrings flag
 SET(PyTrilinos_DOCSTRINGS ${PyTrilinos_DOCSTRINGS_DEFAULT} CACHE BOOL
     "a flag that determines whether Python docstrings will be built using doxygen")
 IF(PyTrilinos_DOCSTRINGS AND NOT DOXYGEN_FOUND)
   MESSAGE(ERROR "PyTrilinos docstrings enabled but doxygen not found")
-ENDIF(PyTrilinos_DOCSTRINGS AND NOT DOXYGEN_FOUND)
+ENDIF()
 
 # Add the util directory
 ADD_SUBDIRECTORY(util)
 
 # Add the doc directory, which builds the python documentation strings
-ADD_SUBDIRECTORY(doc)
+IF(SWIG_VERSION VERSION_LESS 4.0)
+  ADD_SUBDIRECTORY(doc)
+ENDIF()
 
 # Add the src directory, which builds the pytrilinos library,
 # generates the wrapper code, builds the PyTrilinos python package and

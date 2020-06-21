@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
@@ -47,19 +45,10 @@
 #include <cmath>
 #include <utility> // std::pair
 
-#include <Tsqr_MessengerBase.hpp>
-#include <Tsqr_Util.hpp>
-
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-
-// #define MGS_DEBUG 1
-#ifdef MGS_DEBUG
-#  include <iostream>
-using std::cerr;
-using std::endl;
-#endif // MGS_DEBUG
-
+#include "Tsqr_MessengerBase.hpp"
+#include "Tsqr_Util.hpp"
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 
 namespace TSQR {
 
@@ -77,7 +66,7 @@ namespace TSQR {
     ///
     /// \param messenger [in/out] Communicator wrapper instance.
     ///
-    MGS (const Teuchos::RCP< MessengerBase< Scalar > >& messenger) :
+    MGS (const Teuchos::RCP<MessengerBase<Scalar>>& messenger) :
       messenger_ (messenger) {}
 
     /// \brief Does the R factor have a nonnegative diagonal?
@@ -102,7 +91,7 @@ namespace TSQR {
          const LocalOrdinal ldr);
 
   private:
-    Teuchos::RCP<MessengerBase<Scalar> > messenger_;
+    Teuchos::RCP<MessengerBase<Scalar>> messenger_;
   };
 
 
@@ -145,18 +134,9 @@ namespace TSQR {
       {
         Scalar local_result (0);
 
-#ifdef MGS_DEBUG
-        // for (LocalOrdinal k = 0; k != nrows_local; ++k)
-        //   cerr << "(x[" << k << "], y[" << k << "]) = (" << x_local[k] << "," << y_local[k] << ")" << " ";
-        //   cerr << endl;
-#endif // MGS_DEBUG
-
-        for (LocalOrdinal i = 0; i < nrows_local; ++i)
+        for (LocalOrdinal i = 0; i < nrows_local; ++i) {
           local_result += x_local[i] * STS::conjugate (y_local[i]);
-
-#ifdef MGS_DEBUG
-          // cerr << "-- Final value on this proc = " << local_result << endl;
-#endif // MGS_DEBUG
+        }
 
         // FIXME (mfh 23 Apr 2010) Does MPI_SUM do the right thing for
         // complex or otherwise general MPI data types?  Perhaps an MPI_Op
@@ -173,22 +153,18 @@ namespace TSQR {
         // Doing the right thing in the complex case requires taking
         // an absolute value.  We want to avoid this additional cost
         // in the real case, which is why we check is_complex.
-        if (STS::isComplex)
-          {
-            for (LocalOrdinal i = 0; i < nrows_local; ++i)
-              {
-                const Scalar xi = STS::magnitude (x_local[i]);
-                localResult += xi * xi;
-              }
+        if (STS::isComplex) {
+          for (LocalOrdinal i = 0; i < nrows_local; ++i) {
+            const Scalar xi = STS::magnitude (x_local[i]);
+            localResult += xi * xi;
           }
-        else
-          {
-            for (LocalOrdinal i = 0; i < nrows_local; ++i)
-              {
-                const Scalar xi = x_local[i];
-                localResult += xi * xi;
-              }
+        }
+        else {
+          for (LocalOrdinal i = 0; i < nrows_local; ++i) {
+            const Scalar xi = x_local[i];
+            localResult += xi * xi;
           }
+        }
         const Scalar globalResult = messenger_->globalSum (localResult);
         // sqrt doesn't make sense if the type of Scalar is complex,
         // even if the imaginary part of global_result is zero.
@@ -206,10 +182,9 @@ namespace TSQR {
       }
 
     private:
-      Teuchos::RCP< MessengerBase< Scalar > > messenger_;
+      Teuchos::RCP<MessengerBase<Scalar>> messenger_;
     };
   } // namespace details
-
 
   template<class LocalOrdinal, class Scalar>
   void
@@ -222,38 +197,28 @@ namespace TSQR {
   {
     details::MgsOps<LocalOrdinal, Scalar> ops (messenger_);
 
-    for (LocalOrdinal j = 0; j < ncols; ++j)
-      {
-        Scalar* const v = &A_local[j*lda_local];
-        for (LocalOrdinal i = 0; i < j; ++i)
-          {
-            const Scalar* const q = &A_local[i*lda_local];
-            R[i + j*ldr] = ops.project (nrows_local, q, v);
-#ifdef MGS_DEBUG
-            if (my_rank == 0)
-              cerr << "(i,j) = (" << i << "," << j << "): coeff = " << R[i + j*ldr] << endl;
-#endif // MGS_DEBUG
-          }
-        const magnitude_type denom = ops.norm2 (nrows_local, v);
-#ifdef MGS_DEBUG
-          if (my_rank == 0)
-            cerr << "j = " << j << ": denom = " << denom << endl;
-#endif // MGS_DEBUG
-
-        // FIXME (mfh 29 Apr 2010)
-        //
-        // NOTE IMPLICIT CAST.  This should work for complex numbers.
-        // If it doesn't work for your Scalar data type, it means that
-        // you need a different data type for the diagonal elements of
-        // the R factor, than you need for the other elements.  This
-        // is unlikely if we're comparing MGS against a Householder QR
-        // factorization; I don't really understand how the latter
-        // would work (not that it couldn't be given a sensible
-        // interpretation) in the case of Scalars that aren't plain
-        // old real or complex numbers.
-        R[j + j*ldr] = Scalar (denom);
-        ops.scale (nrows_local, v, denom);
+    for (LocalOrdinal j = 0; j < ncols; ++j) {
+      Scalar* const v = &A_local[j*lda_local];
+      for (LocalOrdinal i = 0; i < j; ++i) {
+        const Scalar* const q = &A_local[i*lda_local];
+        R[i + j*ldr] = ops.project (nrows_local, q, v);
       }
+      const magnitude_type denom = ops.norm2 (nrows_local, v);
+
+      // FIXME (mfh 29 Apr 2010)
+      //
+      // NOTE IMPLICIT CAST.  This should work for complex numbers.
+      // If it doesn't work for your Scalar data type, it means that
+      // you need a different data type for the diagonal elements of
+      // the R factor, than you need for the other elements.  This
+      // is unlikely if we're comparing MGS against a Householder QR
+      // factorization; I don't really understand how the latter
+      // would work (not that it couldn't be given a sensible
+      // interpretation) in the case of Scalars that aren't plain
+      // old real or complex numbers.
+      R[j + j*ldr] = Scalar (denom);
+      ops.scale (nrows_local, v, denom);
+    }
   }
 
 } // namespace TSQR

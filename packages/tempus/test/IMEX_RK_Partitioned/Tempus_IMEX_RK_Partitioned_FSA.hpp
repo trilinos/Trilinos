@@ -199,6 +199,10 @@ void test_vdp_fsa(const std::string& method_name,
       // Setup the Integrator and reset initial time step
       pl->sublist("Default Integrator")
          .sublist("Time Step Control").set("Initial Time Step", dt);
+      pl->sublist("Default Integrator")
+         .sublist("Time Step Control").set("Integrator Step Type", "Constant");
+      pl->sublist("Default Integrator")
+         .sublist("Time Step Control").remove("Time Step Control Strategy");
       RCP<Tempus::IntegratorForwardSensitivity<double> > integrator =
         Tempus::integratorForwardSensitivity<double>(pl, model);
       order = integrator->getStepper()->getOrder();

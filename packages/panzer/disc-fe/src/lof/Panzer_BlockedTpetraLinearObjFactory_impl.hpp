@@ -1001,8 +1001,6 @@ buildTpetraGhostedGraph(int i,int j) const
    RCP<const MapType> map_i = getGhostedMap(i);
    RCP<const MapType> map_j = getGhostedMap(j);
 
-   RCP<CrsGraphType> graph  = rcp(new CrsGraphType(map_i,map_j,0));
-
    std::vector<std::string> elementBlockIds;
 
    Teuchos::RCP<const GlobalIndexer> rowProvider, colProvider;
@@ -1013,8 +1011,37 @@ buildTpetraGhostedGraph(int i,int j) const
    gidProviders_[0]->getElementBlockIds(elementBlockIds); // each sub provider "should" have the
                                                           // same element blocks
 
-   // graph information about the mesh
+   // Count number of entries in each row of graph; needed for graph constructor
+   std::vector<size_t> nEntriesPerRow(map_i->getNodeNumElements(), 0);
    std::vector<std::string>::const_iterator blockItr;
+   for(blockItr=elementBlockIds.begin();blockItr!=elementBlockIds.end();++blockItr) {
+      std::string blockId = *blockItr;
+      // grab elements for this block
+      const std::vector<LocalOrdinalT> & elements = gidProviders_[0]->getElementBlock(blockId); // each sub provider "should" have the
+                                                                                                // same elements in each element block
+
+      // get information about number of indicies
+      std::vector<GlobalOrdinalT> row_gids;
+      std::vector<GlobalOrdinalT> col_gids;
+
+      // loop over the elemnts
+      for(std::size_t elmt=0;elmt<elements.size();elmt++) {
+
+         rowProvider->getElementGIDs(elements[elmt],row_gids);
+         colProvider->getElementGIDs(elements[elmt],col_gids);
+         for(std::size_t row=0;row<row_gids.size();row++) {
+            LocalOrdinalT lid = map_i->getLocalElement(row_gids[row]);
+            nEntriesPerRow[lid] += col_gids.size();
+         }
+      }
+   }
+   Teuchos::ArrayView<const size_t> nEntriesPerRowView(nEntriesPerRow);
+   RCP<CrsGraphType> graph  = rcp(new CrsGraphType(map_i,map_j, nEntriesPerRowView,
+                                                   Tpetra::StaticProfile));
+
+
+
+   // graph information about the mesh
    for(blockItr=elementBlockIds.begin();blockItr!=elementBlockIds.end();++blockItr) {
       std::string blockId = *blockItr;
 

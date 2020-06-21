@@ -1451,7 +1451,7 @@ namespace Intrepid2 {
 //     value_type r_val(0);
 
 //     // * This is probably not necessary
-//     if (Kokkos::Impl::is_same<ExecSpace,Kokkos::Serial>::value) {
+//     if (std::is_same<ExecSpace,Kokkos::Serial>::value) {
 //       const ordinal_type iend = iVec1.extent(0);
 //       for (ordinal_type i=0;i<iend;++i)
 //         r_val += inVec1(i)*inVec2(i);

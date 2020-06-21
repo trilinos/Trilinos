@@ -9,6 +9,8 @@ smoother ->
  relaxation: sweeps = 2
  relaxation: damping factor = 1
  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
+ relaxation: inner sweeps = 1   [default]
+ relaxation: inner sparse-triangular solve = 0   [default]
  relaxation: zero starting solution = 1   [default]
  relaxation: backward mode = 0   [default]
  relaxation: use l1 = 0   [default]
@@ -19,6 +21,7 @@ smoother ->
  relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
  relaxation: symmetric matrix structure = 0   [default]
  relaxation: ifpack2 dump matrix = 0   [default]
+ relaxation: mtgs cluster size = 1   [default]
 
 Level 1
 Build (MueLu::TentativePFactory_kokkos)
@@ -37,7 +40,7 @@ filtered matrix: reuse eigenvalue = 1   [default]
 lightweight wrap = 1   [default]
 
 BuildAggregates (Phase - (Dirichlet))
-BuildAggregatesSerial (Phase 1 (main))
+BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregatesRandom (Phase 3 (cleanup))
@@ -45,12 +48,15 @@ aggregation: max agg size = -1   [default]
 aggregation: min agg size = 1   [unused]
 aggregation: max selected neighbors = 0   [unused]
 aggregation: ordering = natural   [unused]
-aggregation: enable phase 1 = 1   [default]
-aggregation: phase 1 algorithm = Serial   [default]
 aggregation: deterministic = 0   [default]
+aggregation: coloring algorithm = serial   [default]
+aggregation: enable phase 1 = 1   [default]
 aggregation: enable phase 2a = 1   [default]
 aggregation: enable phase 2b = 1   [default]
 aggregation: enable phase 3 = 1   [default]
+aggregation: phase2a include root = 1   [default]
+aggregation: phase3 avoid singletons = 0   [default]
+aggregation: error on nodes with no on-rank neighbors = 0   [default]
 aggregation: preserve Dirichlet points = 0   [unused]
 aggregation: allow user-specified singletons = 0   [default]
 OnePt aggregate map name =    [default]
@@ -87,6 +93,8 @@ smoother ->
  relaxation: sweeps = 2
  relaxation: damping factor = 1
  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
+ relaxation: inner sweeps = 1   [default]
+ relaxation: inner sparse-triangular solve = 0   [default]
  relaxation: zero starting solution = 1   [default]
  relaxation: backward mode = 0   [default]
  relaxation: use l1 = 0   [default]
@@ -97,6 +105,7 @@ smoother ->
  relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
  relaxation: symmetric matrix structure = 0   [default]
  relaxation: ifpack2 dump matrix = 0   [default]
+ relaxation: mtgs cluster size = 1   [default]
 
 Level 2
 Build (MueLu::TentativePFactory_kokkos)
@@ -115,7 +124,7 @@ filtered matrix: reuse eigenvalue = 1   [default]
 lightweight wrap = 1   [default]
 
 BuildAggregates (Phase - (Dirichlet))
-BuildAggregatesSerial (Phase 1 (main))
+BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregatesRandom (Phase 3 (cleanup))
@@ -123,12 +132,15 @@ aggregation: max agg size = -1   [default]
 aggregation: min agg size = 1   [unused]
 aggregation: max selected neighbors = 0   [unused]
 aggregation: ordering = natural   [unused]
-aggregation: enable phase 1 = 1   [default]
-aggregation: phase 1 algorithm = Serial   [default]
 aggregation: deterministic = 0   [default]
+aggregation: coloring algorithm = serial   [default]
+aggregation: enable phase 1 = 1   [default]
 aggregation: enable phase 2a = 1   [default]
 aggregation: enable phase 2b = 1   [default]
 aggregation: enable phase 3 = 1   [default]
+aggregation: phase2a include root = 1   [default]
+aggregation: phase3 avoid singletons = 0   [default]
+aggregation: error on nodes with no on-rank neighbors = 0   [default]
 aggregation: preserve Dirichlet points = 0   [unused]
 aggregation: allow user-specified singletons = 0   [default]
 OnePt aggregate map name =    [default]
@@ -168,6 +180,8 @@ smoother ->
  relaxation: sweeps = 2
  relaxation: damping factor = 1
  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
+ relaxation: inner sweeps = 1   [default]
+ relaxation: inner sparse-triangular solve = 0   [default]
  relaxation: zero starting solution = 1   [default]
  relaxation: backward mode = 0   [default]
  relaxation: use l1 = 0   [default]
@@ -178,6 +192,7 @@ smoother ->
  relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
  relaxation: symmetric matrix structure = 0   [default]
  relaxation: ifpack2 dump matrix = 0   [default]
+ relaxation: mtgs cluster size = 1   [default]
 
 Level 3
 Build (MueLu::TentativePFactory_kokkos)
@@ -196,7 +211,7 @@ filtered matrix: reuse eigenvalue = 1   [default]
 lightweight wrap = 1   [default]
 
 BuildAggregates (Phase - (Dirichlet))
-BuildAggregatesSerial (Phase 1 (main))
+BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregatesRandom (Phase 3 (cleanup))
@@ -204,12 +219,15 @@ aggregation: max agg size = -1   [default]
 aggregation: min agg size = 1   [unused]
 aggregation: max selected neighbors = 0   [unused]
 aggregation: ordering = natural   [unused]
-aggregation: enable phase 1 = 1   [default]
-aggregation: phase 1 algorithm = Serial   [default]
 aggregation: deterministic = 0   [default]
+aggregation: coloring algorithm = serial   [default]
+aggregation: enable phase 1 = 1   [default]
 aggregation: enable phase 2a = 1   [default]
 aggregation: enable phase 2b = 1   [default]
 aggregation: enable phase 3 = 1   [default]
+aggregation: phase2a include root = 1   [default]
+aggregation: phase3 avoid singletons = 0   [default]
+aggregation: error on nodes with no on-rank neighbors = 0   [default]
 aggregation: preserve Dirichlet points = 0   [unused]
 aggregation: allow user-specified singletons = 0   [default]
 OnePt aggregate map name =    [default]
@@ -249,6 +267,8 @@ smoother ->
  relaxation: sweeps = 2
  relaxation: damping factor = 1
  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
+ relaxation: inner sweeps = 1   [default]
+ relaxation: inner sparse-triangular solve = 0   [default]
  relaxation: zero starting solution = 1   [default]
  relaxation: backward mode = 0   [default]
  relaxation: use l1 = 0   [default]
@@ -259,6 +279,7 @@ smoother ->
  relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
  relaxation: symmetric matrix structure = 0   [default]
  relaxation: ifpack2 dump matrix = 0   [default]
+ relaxation: mtgs cluster size = 1   [default]
 
 Level 4
 Build (MueLu::TentativePFactory_kokkos)
@@ -277,7 +298,7 @@ filtered matrix: reuse eigenvalue = 1   [default]
 lightweight wrap = 1   [default]
 
 BuildAggregates (Phase - (Dirichlet))
-BuildAggregatesSerial (Phase 1 (main))
+BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregatesRandom (Phase 3 (cleanup))
@@ -285,12 +306,15 @@ aggregation: max agg size = -1   [default]
 aggregation: min agg size = 1   [unused]
 aggregation: max selected neighbors = 0   [unused]
 aggregation: ordering = natural   [unused]
-aggregation: enable phase 1 = 1   [default]
-aggregation: phase 1 algorithm = Serial   [default]
 aggregation: deterministic = 0   [default]
+aggregation: coloring algorithm = serial   [default]
+aggregation: enable phase 1 = 1   [default]
 aggregation: enable phase 2a = 1   [default]
 aggregation: enable phase 2b = 1   [default]
 aggregation: enable phase 3 = 1   [default]
+aggregation: phase2a include root = 1   [default]
+aggregation: phase3 avoid singletons = 0   [default]
+aggregation: error on nodes with no on-rank neighbors = 0   [default]
 aggregation: preserve Dirichlet points = 0   [unused]
 aggregation: allow user-specified singletons = 0   [default]
 OnePt aggregate map name =    [default]

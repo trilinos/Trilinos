@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
@@ -45,6 +43,7 @@
 #include "TpetraCore_config.h"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ArrayView.hpp"
+#include "Teuchos_OrdinalTraits.hpp"
 #include "Tpetra_Details_castAwayConstDualView.hpp"
 #include "Tpetra_Details_computeOffsets.hpp"
 #include "Tpetra_Details_createMirrorView.hpp"
@@ -100,19 +99,16 @@ namespace UnpackAndCombineCrsMatrixImpl {
 ///   documentation of Map for requirements.
 /// \tparam GO The type of global indices.  See the
 ///   documentation of Map for requirements.
-/// \tparam DT The Kokkos device type.  See the documentation of Map
-///   for requirements.
-/// \tparam BDT The "buffer device type."
-template<class ST, class LO, class GO, class DT, class BDT>
+template<class ST, class LO, class GO>
 KOKKOS_FUNCTION int
-unpackRow(typename PackTraits<GO, DT>::output_array_type& gids_out,
-          typename PackTraits<int, DT>::output_array_type& pids_out,
-          typename PackTraits<ST, DT>::output_array_type& vals_out,
-          const Kokkos::View<const char*, BDT>& imports,
+unpackRow(const typename PackTraits<GO>::output_array_type& gids_out,
+          const typename PackTraits<int>::output_array_type& pids_out,
+          const typename PackTraits<ST>::output_array_type& vals_out,
+          const char imports[],
           const size_t offset,
           const size_t /* num_bytes */,
           const size_t num_ent,
-          const size_t num_bytes_per_value)
+          const size_t bytes_per_value)
 {
   if (num_ent == 0) {
     // Empty rows always take zero bytes, to ensure sparsity.
@@ -121,49 +117,49 @@ unpackRow(typename PackTraits<GO, DT>::output_array_type& gids_out,
   bool unpack_pids = pids_out.size() > 0;
 
   const size_t num_ent_beg = offset;
-  const size_t num_ent_len = PackTraits<LO, BDT>::packValueCount (LO (0));
+  const size_t num_ent_len = PackTraits<LO>::packValueCount (LO (0));
 
   const size_t gids_beg = num_ent_beg + num_ent_len;
   const size_t gids_len =
-    num_ent * PackTraits<GO, BDT>::packValueCount (GO (0));
+    num_ent * PackTraits<GO>::packValueCount (GO (0));
 
   const size_t pids_beg = gids_beg + gids_len;
   const size_t pids_len = unpack_pids ?
-    size_t (num_ent * PackTraits<int, BDT>::packValueCount (int (0))) :
+    size_t (num_ent * PackTraits<int>::packValueCount (int (0))) :
     size_t (0);
 
   const size_t vals_beg = gids_beg + gids_len + pids_len;
-  const size_t vals_len = num_ent * num_bytes_per_value;
+  const size_t vals_len = num_ent * bytes_per_value;
 
-  const char* const num_ent_in = imports.data () + num_ent_beg;
-  const char* const gids_in = imports.data () + gids_beg;
-  const char* const pids_in = unpack_pids ? imports.data () + pids_beg : NULL;
-  const char* const vals_in = imports.data () + vals_beg;
+  const char* const num_ent_in = imports + num_ent_beg;
+  const char* const gids_in = imports + gids_beg;
+  const char* const pids_in = unpack_pids ? imports + pids_beg : nullptr;
+  const char* const vals_in = imports + vals_beg;
 
   size_t num_bytes_out = 0;
   LO num_ent_out;
-  num_bytes_out += PackTraits<LO, BDT>::unpackValue (num_ent_out, num_ent_in);
+  num_bytes_out += PackTraits<LO>::unpackValue (num_ent_out, num_ent_in);
   if (static_cast<size_t> (num_ent_out) != num_ent) {
     return 20; // error code
   }
 
   {
     Kokkos::pair<int, size_t> p;
-    p = PackTraits<GO, BDT>::unpackArray (gids_out.data (), gids_in, num_ent);
+    p = PackTraits<GO>::unpackArray (gids_out.data (), gids_in, num_ent);
     if (p.first != 0) {
       return 21; // error code
     }
     num_bytes_out += p.second;
 
     if (unpack_pids) {
-      p = PackTraits<int, BDT>::unpackArray (pids_out.data (), pids_in, num_ent);
+      p = PackTraits<int>::unpackArray (pids_out.data (), pids_in, num_ent);
       if (p.first != 0) {
         return 22; // error code
       }
       num_bytes_out += p.second;
     }
 
-    p = PackTraits<ST, BDT>::unpackArray (vals_out.data (), vals_in, num_ent);
+    p = PackTraits<ST>::unpackArray (vals_out.data (), vals_in, num_ent);
     if (p.first != 0) {
       return 23; // error code
     }
@@ -204,12 +200,8 @@ struct UnpackCrsMatrixAndCombineFunctor {
   typedef Kokkos::View<const char*, BufferDeviceType> input_buffer_type;
   typedef Kokkos::View<const LO*, BufferDeviceType> import_lids_type;
 
-  typedef Kokkos::View<LO*, DT> lids_scratch_type;
-  typedef Kokkos::View<GO*, DT> gids_scratch_type;
-  typedef Kokkos::View<int*,DT> pids_scratch_type;
-  typedef Kokkos::View<ST*, DT> vals_scratch_type;
-
-  typedef Kokkos::pair<int, LO> value_type;
+  typedef Kokkos::View<int, DT> error_type;
+  using member_type = typename Kokkos::TeamPolicy<XS>::member_type;
 
   static_assert (std::is_same<LO, typename local_matrix_type::ordinal_type>::value,
                  "LocalMap::local_ordinal_type and "
@@ -220,17 +212,13 @@ struct UnpackCrsMatrixAndCombineFunctor {
   input_buffer_type imports;
   num_packets_per_lid_type num_packets_per_lid;
   import_lids_type import_lids;
+  Kokkos::View<const LO*[2], DT> batch_info;
   offsets_type offsets;
   Tpetra::CombineMode combine_mode;
-  size_t max_num_ent;
-  bool unpack_pids;
-  size_t num_bytes_per_value;
+  size_t batch_size;
+  size_t bytes_per_value;
   bool atomic;
-  Kokkos::Experimental::UniqueToken<XS, Kokkos::Experimental::UniqueTokenScope::Global> tokens;
-  lids_scratch_type lids_scratch;
-  gids_scratch_type gids_scratch;
-  pids_scratch_type pids_scratch;
-  vals_scratch_type vals_scratch;
+  error_type error_code;
 
   UnpackCrsMatrixAndCombineFunctor(
       const local_matrix_type& local_matrix_in,
@@ -238,161 +226,190 @@ struct UnpackCrsMatrixAndCombineFunctor {
       const input_buffer_type& imports_in,
       const num_packets_per_lid_type& num_packets_per_lid_in,
       const import_lids_type& import_lids_in,
+      const Kokkos::View<const LO*[2], DT>& batch_info_in,
       const offsets_type& offsets_in,
       const Tpetra::CombineMode combine_mode_in,
-      const size_t max_num_ent_in,
-      const bool unpack_pids_in,
-      const size_t num_bytes_per_value_in,
+      const size_t batch_size_in,
+      const size_t bytes_per_value_in,
       const bool atomic_in) :
     local_matrix (local_matrix_in),
     local_col_map (local_col_map_in),
     imports (imports_in),
     num_packets_per_lid (num_packets_per_lid_in),
     import_lids (import_lids_in),
+    batch_info (batch_info_in),
     offsets (offsets_in),
     combine_mode (combine_mode_in),
-    max_num_ent (max_num_ent_in),
-    unpack_pids (unpack_pids_in),
-    num_bytes_per_value (num_bytes_per_value_in),
+    batch_size (batch_size_in),
+    bytes_per_value (bytes_per_value_in),
     atomic (atomic_in),
-    tokens (XS()),
-    lids_scratch (Kokkos::view_alloc("lids_scratch", Kokkos::WithoutInitializing), tokens.size() * max_num_ent),
-    gids_scratch (Kokkos::view_alloc("gids_scratch", Kokkos::WithoutInitializing), tokens.size() * max_num_ent),
-    pids_scratch (Kokkos::view_alloc("pids_scratch", Kokkos::WithoutInitializing), tokens.size() * max_num_ent),
-    vals_scratch (Kokkos::view_alloc("vals_scratch", Kokkos::WithoutInitializing), tokens.size() * max_num_ent)
+    error_code("error")
   {}
 
-  KOKKOS_INLINE_FUNCTION void init(value_type& dst) const
-  {
-    using Tpetra::Details::OrdinalTraits;
-    dst = Kokkos::make_pair (0, OrdinalTraits<LO>::invalid ());
-  }
-
-  KOKKOS_INLINE_FUNCTION void
-  join (volatile value_type& dst, const volatile value_type& src) const
-  {
-    // `dst` should reflect the first (least) bad index and
-    // all other associated error codes and data.  Thus, we need only
-    // check if the `src` object shows an error and if its associated
-    // bad index is less than `dst`'s bad index.
-    using Tpetra::Details::OrdinalTraits;
-    if (src.second != OrdinalTraits<LO>::invalid ()) {
-      // An error in the src; check if
-      //   1. `dst` shows errors
-      //   2. If `dst` does show errors, if src's bad index is less than
-      //      *this' bad index
-      if (dst.second == OrdinalTraits<LO>::invalid () ||
-          src.second < dst.second) {
-        dst = src;
-      }
-    }
-  }
-
   KOKKOS_INLINE_FUNCTION
-  void operator()(const LO i, value_type& dst) const
+  void operator()(member_type team_member) const
   {
     using Kokkos::View;
     using Kokkos::subview;
     using Kokkos::MemoryUnmanaged;
-    typedef typename XS::size_type size_type;
-    typedef typename Kokkos::pair<size_type, size_type> slice;
-    typedef BufferDeviceType BDT;
 
-    typedef View<LO*, DT, MemoryUnmanaged> lids_out_type;
-    typedef View<int*,DT, MemoryUnmanaged> pids_out_type;
-    typedef View<GO*, DT, MemoryUnmanaged> gids_out_type;
-    typedef View<ST*, DT, MemoryUnmanaged> vals_out_type;
+    const LO batch = team_member.league_rank();
+    const LO lid_no = batch_info(batch, 0);
+    const LO batch_no = batch_info(batch, 1);
 
-    const size_t num_bytes = num_packets_per_lid(i);
+    const size_t num_bytes = num_packets_per_lid(lid_no);
 
     // Only unpack data if there is a nonzero number of bytes.
-    if (num_bytes == 0) {
+    if (num_bytes == 0)
       return;
-    }
 
     // there is actually something in the row
-    const LO import_lid = import_lids[i];
+    const LO import_lid = import_lids(lid_no);
     const size_t buf_size = imports.size();
-    const size_t offset = offsets(i);
+    const size_t offset = offsets(lid_no);
 
     // Get the number of entries to expect in the received data for this row.
     LO num_ent_LO = 0;
-    const char* const in_buf = imports.data () + offset;
-    (void) PackTraits<LO, BDT>::unpackValue (num_ent_LO, in_buf);
-    const size_t num_ent = static_cast<size_t> (num_ent_LO);
+    const char* const in_buf = imports.data() + offset;
+    (void) PackTraits<LO>::unpackValue(num_ent_LO, in_buf);
+    const size_t num_entries_in_row = static_cast<size_t>(num_ent_LO);
 
     // Count the number of bytes expected to unpack
     size_t expected_num_bytes = 0;
     {
-      expected_num_bytes += PackTraits<LO, BDT>::packValueCount (LO (0));
-      expected_num_bytes += num_ent * PackTraits<GO, BDT>::packValueCount (GO (0));
-      if (unpack_pids) {
-        expected_num_bytes += num_ent * PackTraits<int, BDT>::packValueCount (int (0));
+      expected_num_bytes += PackTraits<LO>::packValueCount(LO(0));
+      expected_num_bytes += num_entries_in_row * PackTraits<GO>::packValueCount(GO(0));
+      expected_num_bytes += num_entries_in_row * PackTraits<ST>::packValueCount(ST());
+    }
+
+    if (expected_num_bytes > num_bytes)
+    {
+      printf(
+        "*** Error: UnpackCrsMatrixAndCombineFunctor: "
+        "At row %d, the expected number of bytes (%d) != number of unpacked bytes (%d)\n",
+        (int) lid_no, (int) expected_num_bytes, (int) num_bytes
+      );
+      Kokkos::atomic_compare_exchange_strong(error_code.data(), 0, 21);
+      return;
+    }
+
+    if (offset > buf_size || offset + num_bytes > buf_size)
+    {
+      printf(
+        "*** Error: UnpackCrsMatrixAndCombineFunctor: "
+        "At row %d, the offset (%d) > buffer size (%d)\n",
+        (int) lid_no, (int) offset, (int) buf_size
+      );
+      Kokkos::atomic_compare_exchange_strong(error_code.data(), 0, 22);
+      return;
+    }
+
+    // Determine the number of entries to unpack in this batch
+    size_t num_entries_in_batch = 0;
+    if (num_entries_in_row <= batch_size)
+      num_entries_in_batch = num_entries_in_row;
+    else if (num_entries_in_row >= (batch_no + 1) * batch_size)
+      num_entries_in_batch = batch_size;
+    else
+      num_entries_in_batch = num_entries_in_row - batch_no * batch_size;
+
+    const size_t bytes_per_lid = PackTraits<LO>::packValueCount(LO(0));
+    const size_t num_ent_start = offset;
+    const size_t num_ent_end = num_ent_start + bytes_per_lid;
+
+    const size_t bytes_per_gid = PackTraits<GO>::packValueCount(GO(0));
+    const size_t gids_start = num_ent_end;
+    const size_t gids_end = gids_start + num_entries_in_row * bytes_per_gid;
+
+    const size_t vals_start = gids_end;
+
+    const size_t shift = batch_no * batch_size;
+    const char* const num_ent_in = imports.data() + num_ent_start;
+    const char* const gids_in = imports.data() + gids_start + shift * bytes_per_gid;
+    const char* const vals_in = imports.data() + vals_start + shift * bytes_per_value;
+
+    LO num_ent_out;
+    (void)PackTraits<LO>::unpackValue(num_ent_out, num_ent_in);
+    if (static_cast<size_t>(num_ent_out) != num_entries_in_row)
+    {
+      printf(
+        "*** Error: UnpackCrsMatrixAndCombineFunctor: "
+        "At row %d, number of entries (%d) != number of entries unpacked (%d)\n",
+        (int) lid_no, (int) num_entries_in_row, (int) num_ent_out
+      );
+      Kokkos::atomic_compare_exchange_strong(error_code.data(), 0, 23);
+    }
+
+    constexpr bool matrix_has_sorted_rows = true; // see #6282
+    Kokkos::parallel_for(
+      Kokkos::TeamThreadRange(team_member, num_entries_in_batch),
+      KOKKOS_LAMBDA(const LO& j)
+      {
+        size_t distance = 0;
+
+        GO gid_out;
+        distance = j * bytes_per_gid;
+        (void) PackTraits<GO>::unpackValue(gid_out, gids_in + distance);
+        auto lid_out = local_col_map.getLocalElement(gid_out);
+
+        // Column indices come in as global indices, in case the
+        // source object's column Map differs from the target object's
+        // (this's) column Map, and must be converted local index values
+
+        // assume that ST is default constructible
+        ST val_out;
+        distance = j * bytes_per_value;
+        (void) PackTraits<ST>::unpackValue(val_out, vals_in + distance);
+
+        if (combine_mode == ADD) {
+          // NOTE (mfh 20 Nov 2019) Must assume atomic is required, unless
+          // different threads don't touch the same row (i.e., no
+          // duplicates in incoming LIDs list).
+          const bool use_atomic_updates = atomic;
+          (void)local_matrix.sumIntoValues(
+            import_lid,
+            &lid_out,
+            1,
+            &val_out,
+            matrix_has_sorted_rows,
+            use_atomic_updates
+          );
+        } else if (combine_mode == REPLACE) {
+          // NOTE (mfh 20 Nov 2019): It's never correct to use REPLACE
+          // combine mode with multiple incoming rows that touch the same
+          // target matrix entries, so we never need atomic updates.
+          const bool use_atomic_updates = false;
+          (void)local_matrix.replaceValues(
+            import_lid,
+            &lid_out,
+            1,
+            &val_out,
+            matrix_has_sorted_rows,
+            use_atomic_updates
+          );
+        } else {
+          // should never get here
+          printf(
+            "*** Error: UnpackCrsMatrixAndCombineFunctor: "
+            "At row %d, an unknown error occurred during unpack\n", (int) lid_no
+          );
+          Kokkos::atomic_compare_exchange_strong(error_code.data(), 0, 31);
+        }
       }
-      expected_num_bytes += num_ent * PackTraits<ST, BDT>::packValueCount (ST ());
-    }
+    );
 
-    if (expected_num_bytes > num_bytes) {
-      dst = Kokkos::make_pair (1, i); // wrong number of bytes
-      return;
-    }
+    team_member.team_barrier();
 
-    if (offset > buf_size || offset + num_bytes > buf_size) {
-      dst = Kokkos::make_pair (2, i); // out of bounds
-      return;
-    }
-
-    // Get subviews in to the scratch arrays.  The token returned from acquire
-    // is an integer in [0, tokens.size()).  It is used to grab a unique (to
-    // this thread) subview of the scratch arrays.
-    const size_type token = tokens.acquire();
-    const size_t a = static_cast<size_t>(token) * max_num_ent;
-    const size_t b = a + num_ent;
-    lids_out_type lids_out = subview(lids_scratch, slice(a, b));
-    gids_out_type gids_out = subview(gids_scratch, slice(a, b));
-    pids_out_type pids_out = subview(pids_scratch, slice(a, (unpack_pids ? b : a)));
-    vals_out_type vals_out = subview(vals_scratch, slice(a, b));
-
-    // Unpack this row!
-    int unpack_err =
-      unpackRow<ST,LO,GO,DT,BDT>(gids_out, pids_out, vals_out,
-                                 imports, offset, num_bytes,
-                                 num_ent, num_bytes_per_value);
-    if (unpack_err != 0) {
-      dst = Kokkos::make_pair (unpack_err, i); // unpack error
-      tokens.release (token);
-      return;
-    }
-
-    // Column indices come in as global indices, in case the
-    // source object's column Map differs from the target object's
-    // (this's) column Map, and must be converted local index values
-    for (size_t k = 0; k < num_ent; ++k) {
-      lids_out(k) = local_col_map.getLocalElement (gids_out(k));
-    }
-
-    // Combine the values according to the combine_mode
-    const LO* const lids_raw = const_cast<const LO*> (lids_out.data ());
-    const ST* const vals_raw = const_cast<const ST*> (vals_out.data ());
-    LO num_modified = 0;
-    if (combine_mode == ADD) {
-      num_modified +=
-        local_matrix.sumIntoValues (import_lid, lids_raw, num_ent,
-                                    vals_raw, false, atomic);
-    }
-    else if (combine_mode == REPLACE) {
-      num_modified +=
-        local_matrix.replaceValues (import_lid, lids_raw, num_ent,
-                                    vals_raw, false, atomic);
-    }
-    else {
-      dst = Kokkos::make_pair (4, i); // invalid combine mode
-      tokens.release (token);
-      return;
-    }
-
-    tokens.release (token);
   }
+
+  //! Host function for getting the error.
+  int error() const {
+    auto error_code_h = Kokkos::create_mirror_view_and_copy(
+      Kokkos::HostSpace(), error_code
+    );
+    return error_code_h();
+  }
+
 };
 
 struct MaxNumEntTag {};
@@ -417,8 +434,6 @@ public:
   typedef size_t value_type;
 
 private:
-  typedef Kokkos::pair<size_t,size_t> slice;
-
   num_packets_per_lid_type num_packets_per_lid;
   offsets_type offsets;
   input_buffer_type imports;
@@ -439,7 +454,7 @@ public:
     if (num_bytes > 0) {
       LO num_ent_LO = 0; // output argument of unpackValue
       const char* const in_buf = imports.data () + offsets(i);
-      (void) PackTraits<LO, BDT>::unpackValue (num_ent_LO, in_buf);
+      (void) PackTraits<LO>::unpackValue (num_ent_LO, in_buf);
       const size_t num_ent = static_cast<size_t> (num_ent_LO);
 
       update = (update < num_ent) ? num_ent : update;
@@ -461,7 +476,7 @@ public:
     if (num_bytes > 0) {
       LO num_ent_LO = 0; // output argument of unpackValue
       const char* const in_buf = imports.data () + offsets(i);
-      (void) PackTraits<LO, BDT>::unpackValue (num_ent_LO, in_buf);
+      (void) PackTraits<LO>::unpackValue (num_ent_LO, in_buf);
       tot_num_ent += static_cast<size_t> (num_ent_LO);
     }
   }
@@ -523,6 +538,53 @@ compute_total_num_entries (
   return tot_num_ent;
 }
 
+template<class LO>
+KOKKOS_INLINE_FUNCTION
+size_t
+unpackRowCount(const char imports[],
+               const size_t offset,
+               const size_t num_bytes)
+{
+  using PT = PackTraits<LO>;
+
+  LO num_ent_LO = 0;
+  if (num_bytes > 0) {
+    const size_t p_num_bytes = PT::packValueCount(num_ent_LO);
+    if (p_num_bytes > num_bytes) {
+      return OrdinalTraits<size_t>::invalid();
+    }
+    const char* const in_buf = imports + offset;
+    (void) PT::unpackValue(num_ent_LO, in_buf);
+  }
+  return static_cast<size_t>(num_ent_LO);
+}
+
+/// \brief Compute the index and batch number associated with each batch
+///
+/// batch_info(i, 0) is the local index of the ith batch
+/// batch_info(i, 1) is the local batch number of the ith batch
+template<class View1, class View2>
+inline
+bool
+compute_batch_info(
+  const View1& batches_per_lid,
+  View2& batch_info
+)
+{
+  using LO = typename View2::value_type;
+  size_t batch = 0;
+  for (size_t i=0; i<batches_per_lid.extent(0); i++)
+  {
+    for (size_t batch_no=0; batch_no<batches_per_lid(i); batch_no++)
+    {
+      batch_info(batch, 0) = static_cast<LO>(i);
+      batch_info(batch, 1) = batch_no;
+      batch++;
+    }
+  }
+  return batch == batch_info.extent(0);
+}
+
 /// \brief Perform the unpack operation for the matrix
 ///
 /// \tparam LocalMatrix the specialization of the KokkosSparse::CrsMatrix
@@ -537,20 +599,16 @@ unpackAndCombineIntoCrsMatrix(
     const LocalMap& local_map,
     const Kokkos::View<const char*, BufferDeviceType>& imports,
     const Kokkos::View<const size_t*, BufferDeviceType>& num_packets_per_lid,
-    const typename PackTraits<typename LocalMap::local_ordinal_type, BufferDeviceType>::input_array_type import_lids,
-    const Tpetra::CombineMode combine_mode,
-    const bool unpack_pids,
-    const bool atomic)
+    const typename PackTraits<typename LocalMap::local_ordinal_type>::input_array_type import_lids,
+    const Tpetra::CombineMode combine_mode)
 {
-  typedef typename LocalMatrix::value_type ST;
-  typedef typename LocalMap::local_ordinal_type LO;
-  typedef typename LocalMap::device_type DT;
-  typedef typename DT::execution_space XS;
-  typedef Kokkos::RangePolicy<XS, Kokkos::IndexType<LO> > range_policy;
-  typedef UnpackCrsMatrixAndCombineFunctor<LocalMatrix, LocalMap, BufferDeviceType> unpack_functor_type;
-
+  using ST = typename LocalMatrix::value_type;
+  using LO = typename LocalMap::local_ordinal_type;
+  using DT = typename LocalMap::device_type;
+  using XS = typename DT::execution_space;
   const char prefix[] =
-    "Tpetra::Details::UnpackAndCombineCrsMatrixImpl::unpackAndCombineIntoCrsMatrix: ";
+    "Tpetra::Details::UnpackAndCombineCrsMatrixImpl::"
+    "unpackAndCombineIntoCrsMatrix: ";
 
   const size_t num_import_lids = static_cast<size_t>(import_lids.extent(0));
   if (num_import_lids == 0) {
@@ -591,36 +649,92 @@ unpackAndCombineIntoCrsMatrix(
   Kokkos::View<size_t*, DT> offsets("offsets", num_import_lids+1);
   computeOffsetsFromCounts(offsets, num_packets_per_lid);
 
-  // Determine the maximum number of entries in any row in the matrix.  The
-  // maximum number of entries is needed to allocate unpack buffers on the
-  // device.
-  size_t max_num_ent = compute_maximum_num_entries<LO,DT>(
-      num_packets_per_lid, offsets, imports);
+  // Determine the sizes of the unpack batches
+  size_t max_num_ent = compute_maximum_num_entries<LO,DT>(num_packets_per_lid, offsets, imports);
+  const size_t default_batch_size = Tpetra::Details::Behavior::hierarchicalUnpackBatchSize();
+  const size_t batch_size = std::min(default_batch_size, max_num_ent);
+
+  // To achieve some balance amongst threads, unpack each row in equal size batches
+  size_t num_batches = 0;
+  Kokkos::View<LO*[2], DT> batch_info("", num_batches);
+  Kokkos::View<size_t*, DT> batches_per_lid("", num_import_lids);
+  // Compute meta data that allows batch unpacking
+  Kokkos::parallel_reduce(
+    Kokkos::RangePolicy<XS, Kokkos::IndexType<size_t>>(0, num_import_lids),
+    KOKKOS_LAMBDA(const size_t i, size_t& batches)
+    {
+      const size_t num_entries_in_row = unpackRowCount<LO>(
+        imports.data(), offsets(i), num_packets_per_lid(i)
+      );
+      batches_per_lid(i) =
+        (num_entries_in_row <= batch_size) ?
+        1 :
+        num_entries_in_row / batch_size + (num_entries_in_row % batch_size != 0);
+      batches += batches_per_lid(i);
+    },
+    num_batches
+  );
+  Kokkos::resize(batch_info, num_batches);
+
+  Kokkos::HostSpace host_space;
+  auto batches_per_lid_h = Kokkos::create_mirror_view(host_space, batches_per_lid);
+  Kokkos::deep_copy(batches_per_lid_h, batches_per_lid);
+
+  auto batch_info_h = Kokkos::create_mirror_view(host_space, batch_info);
+
+  (void) compute_batch_info(batches_per_lid_h, batch_info_h);
+  Kokkos::deep_copy(batch_info, batch_info_h);
 
   // FIXME (TJF SEP 2017)
   // The scalar type is not necessarily default constructible
-  size_t num_bytes_per_value = PackTraits<ST, DT>::packValueCount(ST());
+  size_t bytes_per_value = PackTraits<ST>::packValueCount(ST());
 
   // Now do the actual unpack!
-  unpack_functor_type f(local_matrix, local_map,
-      imports, num_packets_per_lid, import_lids, offsets, combine_mode,
-      max_num_ent, unpack_pids, num_bytes_per_value, atomic);
+  const bool atomic = XS::concurrency() != 1;
+  using functor = UnpackCrsMatrixAndCombineFunctor<LocalMatrix, LocalMap, BufferDeviceType>;
+  functor f(
+    local_matrix,
+    local_map,
+    imports,
+    num_packets_per_lid,
+    import_lids,
+    batch_info,
+    offsets,
+    combine_mode,
+    batch_size,
+    bytes_per_value,
+    atomic
+  );
 
-  typename unpack_functor_type::value_type x;
-  Kokkos::parallel_reduce(range_policy(0, static_cast<LO>(num_import_lids)), f, x);
-  auto x_h = x.to_std_pair();
-  TEUCHOS_TEST_FOR_EXCEPTION(x_h.first != 0, std::runtime_error,
-      prefix << "UnpackCrsMatrixAndCombineFunctor reported error code "
-             << x_h.first << " for the first bad row " << x_h.second);
+  using policy = Kokkos::TeamPolicy<XS, Kokkos::IndexType<LO>>;
+  const size_t team_size = Tpetra::Details::Behavior::hierarchicalUnpackTeamSize();
+#if defined(KOKKOS_ENABLE_CUDA)
+  constexpr bool is_cuda = std::is_same<XS, Kokkos::Cuda>::value;
+#else
+  constexpr bool is_cuda = false;
+#endif
+  if (!is_cuda || team_size == Teuchos::OrdinalTraits<size_t>::invalid())
+  {
+    Kokkos::parallel_for(policy(static_cast<LO>(num_batches), Kokkos::AUTO), f);
+  }
+  else
+  {
+    Kokkos::parallel_for(policy(static_cast<LO>(num_batches), static_cast<int>(team_size)), f);
+  }
 
-  return;
+  auto error_code = f.error();
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    error_code != 0,
+    std::runtime_error,
+    prefix << "UnpackCrsMatrixAndCombineFunctor reported error code " << error_code
+  );
 }
 
 template<class LocalMatrix, class BufferDeviceType>
 size_t
 unpackAndCombineWithOwningPIDsCount(
   const LocalMatrix& local_matrix,
-  const typename PackTraits<typename LocalMatrix::ordinal_type, typename LocalMatrix::device_type>::input_array_type permute_from_lids,
+  const typename PackTraits<typename LocalMatrix::ordinal_type>::input_array_type permute_from_lids,
   const Kokkos::View<const char*, BufferDeviceType>& imports,
   const Kokkos::View<const size_t*, BufferDeviceType>& num_packets_per_lid,
   const size_t num_same_ids)
@@ -674,38 +788,19 @@ unpackAndCombineWithOwningPIDsCount(
   return count;
 }
 
-template<class LO, class DT, class BDT>
-KOKKOS_INLINE_FUNCTION
-size_t
-unpackRowCount(const Kokkos::View<const char*, BDT>& imports,
-               const size_t offset,
-               const size_t num_bytes)
-{
-  LO num_ent_LO = 0;
-  if (num_bytes > 0) {
-    const size_t p_num_bytes = PackTraits<LO, DT>::packValueCount(num_ent_LO);
-    if (p_num_bytes > num_bytes) {
-      return OrdinalTraits<size_t>::invalid();
-    }
-    const char* const in_buf = imports.data () + offset;
-    (void) PackTraits<LO,DT>::unpackValue(num_ent_LO, in_buf);
-  }
-  return static_cast<size_t>(num_ent_LO);
-}
-
 /// \brief Setup row pointers for remotes
 template<class LO, class DT, class BDT>
 int
 setupRowPointersForRemotes(
-  const typename PackTraits<size_t, DT>::output_array_type& tgt_rowptr,
-  const typename PackTraits<LO, DT>::input_array_type& import_lids,
+  const typename PackTraits<size_t>::output_array_type& tgt_rowptr,
+  const typename PackTraits<LO>::input_array_type& import_lids,
   const Kokkos::View<const char*, BDT>& imports,
   const Kokkos::View<const size_t*, BDT>& num_packets_per_lid,
-  const typename PackTraits<size_t, DT>::input_array_type& offsets)
+  const typename PackTraits<size_t>::input_array_type& offsets)
 {
   using Kokkos::parallel_reduce;
   typedef typename DT::execution_space XS;
-  typedef typename PackTraits<size_t,DT>::input_array_type::size_type size_type;
+  typedef typename PackTraits<size_t>::input_array_type::size_type size_type;
   typedef Kokkos::RangePolicy<XS, Kokkos::IndexType<size_type> > range_policy;
 
   const size_t InvalidNum = OrdinalTraits<size_t>::invalid();
@@ -718,7 +813,7 @@ setupRowPointersForRemotes(
       typedef typename std::remove_reference< decltype( tgt_rowptr(0) ) >::type atomic_incr_type;
       const size_t num_bytes = num_packets_per_lid(i);
       const size_t offset = offsets(i);
-      const size_t num_ent = unpackRowCount<LO, DT, BDT> (imports, offset, num_bytes);
+      const size_t num_ent = unpackRowCount<LO> (imports.data(), offset, num_bytes);
       if (num_ent == InvalidNum) {
         k_error += 1;
       }
@@ -731,7 +826,7 @@ setupRowPointersForRemotes(
 template<class DT>
 void
 makeCrsRowPtrFromLengths(
-    const typename PackTraits<size_t,DT>::output_array_type& tgt_rowptr,
+    const typename PackTraits<size_t>::output_array_type& tgt_rowptr,
     const Kokkos::View<size_t*,DT>& new_start_row)
 {
   using Kokkos::parallel_scan;
@@ -754,12 +849,12 @@ makeCrsRowPtrFromLengths(
 template<class LocalMatrix, class LocalMap>
 void
 copyDataFromSameIDs(
-    const typename PackTraits<typename LocalMap::global_ordinal_type, typename LocalMap::device_type>::output_array_type& tgt_colind,
-    const typename PackTraits<int, typename LocalMap::device_type>::output_array_type& tgt_pids,
-    const typename PackTraits<typename LocalMatrix::value_type, typename LocalMap::device_type>::output_array_type& tgt_vals,
-    const Kokkos::View<size_t*,typename LocalMap::device_type>& new_start_row,
-    const typename PackTraits<size_t, typename LocalMap::device_type>::output_array_type& tgt_rowptr,
-    const typename PackTraits<int, typename LocalMap::device_type>::input_array_type& src_pids,
+    const typename PackTraits<typename LocalMap::global_ordinal_type>::output_array_type& tgt_colind,
+    const typename PackTraits<int>::output_array_type& tgt_pids,
+    const typename PackTraits<typename LocalMatrix::value_type>::output_array_type& tgt_vals,
+    const Kokkos::View<size_t*, typename LocalMap::device_type>& new_start_row,
+    const typename PackTraits<size_t>::output_array_type& tgt_rowptr,
+    const typename PackTraits<int>::input_array_type& src_pids,
     const LocalMatrix& local_matrix,
     const LocalMap& local_col_map,
     const size_t num_same_ids,
@@ -799,14 +894,14 @@ copyDataFromSameIDs(
 template<class LocalMatrix, class LocalMap>
 void
 copyDataFromPermuteIDs(
-    const typename PackTraits<typename LocalMap::global_ordinal_type, typename LocalMap::device_type>::output_array_type& tgt_colind,
-    const typename PackTraits<int, typename LocalMap::device_type>::output_array_type& tgt_pids,
-    const typename PackTraits<typename LocalMatrix::value_type, typename LocalMap::device_type>::output_array_type& tgt_vals,
+    const typename PackTraits<typename LocalMap::global_ordinal_type>::output_array_type& tgt_colind,
+    const typename PackTraits<int>::output_array_type& tgt_pids,
+    const typename PackTraits<typename LocalMatrix::value_type>::output_array_type& tgt_vals,
     const Kokkos::View<size_t*,typename LocalMap::device_type>& new_start_row,
-    const typename PackTraits<size_t, typename LocalMap::device_type>::output_array_type& tgt_rowptr,
-    const typename PackTraits<int, typename LocalMap::device_type>::input_array_type& src_pids,
-    const typename PackTraits<typename LocalMap::local_ordinal_type, typename LocalMap::device_type>::input_array_type& permute_to_lids,
-    const typename PackTraits<typename LocalMap::local_ordinal_type, typename LocalMap::device_type>::input_array_type& permute_from_lids,
+    const typename PackTraits<size_t>::output_array_type& tgt_rowptr,
+    const typename PackTraits<int>::input_array_type& src_pids,
+    const typename PackTraits<typename LocalMap::local_ordinal_type>::input_array_type& permute_to_lids,
+    const typename PackTraits<typename LocalMap::local_ordinal_type>::input_array_type& permute_from_lids,
     const LocalMatrix& local_matrix,
     const LocalMap& local_col_map,
     const int my_pid)
@@ -815,7 +910,7 @@ copyDataFromPermuteIDs(
   typedef typename LocalMap::device_type DT;
   typedef typename LocalMap::local_ordinal_type LO;
   typedef typename DT::execution_space XS;
-  typedef typename PackTraits<LO,DT>::input_array_type::size_type size_type;
+  typedef typename PackTraits<LO>::input_array_type::size_type size_type;
   typedef Kokkos::RangePolicy<XS, Kokkos::IndexType<size_type> > range_policy;
 
   const size_type num_permute_to_lids = permute_to_lids.extent(0);
@@ -848,18 +943,18 @@ copyDataFromPermuteIDs(
 template<typename LocalMatrix, typename LocalMap, typename BufferDeviceType>
 int
 unpackAndCombineIntoCrsArrays2(
-    const typename PackTraits<typename LocalMap::global_ordinal_type, typename LocalMap::device_type>::output_array_type& tgt_colind,
-    const typename PackTraits<int, typename LocalMap::device_type>::output_array_type& tgt_pids,
-    const typename PackTraits<typename LocalMatrix::value_type, typename LocalMap::device_type>::output_array_type& tgt_vals,
+    const typename PackTraits<typename LocalMap::global_ordinal_type>::output_array_type& tgt_colind,
+    const typename PackTraits<int>::output_array_type& tgt_pids,
+    const typename PackTraits<typename LocalMatrix::value_type>::output_array_type& tgt_vals,
     const Kokkos::View<size_t*,typename LocalMap::device_type>& new_start_row,
-    const typename PackTraits<size_t, typename LocalMap::device_type>::input_array_type& offsets,
-    const typename PackTraits<typename LocalMap::local_ordinal_type, typename LocalMap::device_type>::input_array_type& import_lids,
+    const typename PackTraits<size_t>::input_array_type& offsets,
+    const typename PackTraits<typename LocalMap::local_ordinal_type>::input_array_type& import_lids,
     const Kokkos::View<const char*, BufferDeviceType>& imports,
     const Kokkos::View<const size_t*, BufferDeviceType>& num_packets_per_lid,
     const LocalMatrix& /* local_matrix */,
     const LocalMap /*& local_col_map*/,
     const int my_pid,
-    const size_t num_bytes_per_value)
+    const size_t bytes_per_value)
 {
   using Kokkos::View;
   using Kokkos::subview;
@@ -875,7 +970,6 @@ unpackAndCombineIntoCrsArrays2(
   typedef typename Kokkos::View<LO*, DT>::size_type size_type;
   typedef typename Kokkos::pair<size_type, size_type> slice;
   typedef Kokkos::RangePolicy<XS, Kokkos::IndexType<size_type> > range_policy;
-  typedef BufferDeviceType BDT;
 
   typedef View<int*,DT, MemoryUnmanaged> pids_out_type;
   typedef View<GO*, DT, MemoryUnmanaged> gids_out_type;
@@ -897,7 +991,7 @@ unpackAndCombineIntoCrsArrays2(
         // Empty buffer means that the row is empty.
         return;
       }
-      size_t num_ent = unpackRowCount<LO,DT,BDT>(imports, offset, num_bytes);
+      size_t num_ent = unpackRowCount<LO>(imports.data(), offset, num_bytes);
       if (num_ent == InvalidNum) {
         k_error += 1;
         return;
@@ -910,9 +1004,9 @@ unpackAndCombineIntoCrsArrays2(
       vals_out_type vals_out = subview(tgt_vals, slice(start_row, end_row));
       pids_out_type pids_out = subview(tgt_pids, slice(start_row, end_row));
 
-      k_error += unpackRow<ST,LO,GO,DT,BDT>(gids_out, pids_out, vals_out,
-                                            imports, offset, num_bytes,
-                                            num_ent, num_bytes_per_value);
+      k_error += unpackRow<ST,LO,GO>(gids_out, pids_out, vals_out,
+                                     imports.data(), offset, num_bytes,
+                                     num_ent, bytes_per_value);
 
       // Correct target PIDs.
       for (size_t j = 0; j < static_cast<size_t>(num_ent); ++j) {
@@ -929,21 +1023,21 @@ void
 unpackAndCombineIntoCrsArrays(
     const LocalMatrix & local_matrix,
     const LocalMap & local_col_map,
-    const typename PackTraits<typename LocalMap::local_ordinal_type, typename LocalMap::device_type>::input_array_type& import_lids,
+    const typename PackTraits<typename LocalMap::local_ordinal_type>::input_array_type& import_lids,
     const Kokkos::View<const char*, BufferDeviceType>& imports,
     const Kokkos::View<const size_t*, BufferDeviceType>& num_packets_per_lid,
-    const typename PackTraits<typename LocalMap::local_ordinal_type, typename LocalMap::device_type>::input_array_type& permute_to_lids,
-    const typename PackTraits<typename LocalMap::local_ordinal_type, typename LocalMap::device_type>::input_array_type& permute_from_lids,
-    const typename PackTraits<size_t, typename LocalMap::device_type>::output_array_type& tgt_rowptr,
-    const typename PackTraits<typename LocalMap::global_ordinal_type, typename LocalMap::device_type>::output_array_type& tgt_colind,
-    const typename PackTraits<typename LocalMatrix::value_type, typename LocalMap::device_type>::output_array_type& tgt_vals,
-    const typename PackTraits<int, typename LocalMap::device_type>::input_array_type& src_pids,
-    const typename PackTraits<int, typename LocalMap::device_type>::output_array_type& tgt_pids,
+    const typename PackTraits<typename LocalMap::local_ordinal_type>::input_array_type& permute_to_lids,
+    const typename PackTraits<typename LocalMap::local_ordinal_type>::input_array_type& permute_from_lids,
+    const typename PackTraits<size_t>::output_array_type& tgt_rowptr,
+    const typename PackTraits<typename LocalMap::global_ordinal_type>::output_array_type& tgt_colind,
+    const typename PackTraits<typename LocalMatrix::value_type>::output_array_type& tgt_vals,
+    const typename PackTraits<int>::input_array_type& src_pids,
+    const typename PackTraits<int>::output_array_type& tgt_pids,
     const size_t num_same_ids,
     const size_t tgt_num_rows,
     const size_t tgt_num_nonzeros,
     const int my_tgt_pid,
-    const size_t num_bytes_per_value)
+    const size_t bytes_per_value)
 {
   using Kokkos::View;
   using Kokkos::subview;
@@ -960,7 +1054,6 @@ unpackAndCombineIntoCrsArrays(
   const char prefix[] = "unpackAndCombineIntoCrsArrays: ";
 
   const size_t N = tgt_num_rows;
-  const size_t mynnz = tgt_num_nonzeros;
 
   // In the case of reduced communicators, the sourceMatrix won't have
   // the right "my_pid", so thus we have to supply it.
@@ -1026,13 +1119,6 @@ unpackAndCombineIntoCrsArrays(
 
   // Turn row length into a real CRS row pointer
   makeCrsRowPtrFromLengths(tgt_rowptr, new_start_row);
-  {
-    auto nth_tgt_rowptr_h = getEntryOnHost(tgt_rowptr, N);
-    bool condition = nth_tgt_rowptr_h != mynnz;
-    TEUCHOS_TEST_FOR_EXCEPTION(condition, std::invalid_argument,
-      prefix << "CRS_rowptr[last] = " <<
-      nth_tgt_rowptr_h << "!= mynnz = " << mynnz << ".");
-  }
 
   // SameIDs: Copy the data over
   copyDataFromSameIDs(tgt_colind, tgt_pids, tgt_vals, new_start_row,
@@ -1048,7 +1134,7 @@ unpackAndCombineIntoCrsArrays(
 
   int unpack_err = unpackAndCombineIntoCrsArrays2(tgt_colind, tgt_pids,
       tgt_vals, new_start_row, offsets, import_lids, imports, num_packets_per_lid,
-      local_matrix, local_col_map, my_pid, num_bytes_per_value);
+      local_matrix, local_col_map, my_pid, bytes_per_value);
   TEUCHOS_TEST_FOR_EXCEPTION(
     unpack_err != 0, std::logic_error, prefix << "unpack loop failed.  This "
     "should never happen.  Please report this bug to the Tpetra developers.");
@@ -1106,8 +1192,7 @@ unpackCrsMatrixAndCombine(
     const Teuchos::ArrayView<const LO>& importLIDs,
     size_t /* constantNumPackets */,
     Distributor & /* distor */,
-    CombineMode combineMode,
-    const bool atomic)
+    CombineMode combineMode)
 {
   using Kokkos::View;
   typedef typename Node::device_type device_type;
@@ -1139,29 +1224,34 @@ unpackCrsMatrixAndCombine(
   auto local_matrix = sourceMatrix.getLocalMatrix();
   auto local_col_map = sourceMatrix.getColMap()->getLocalMap();
 
+  for (int i=0; i<importLIDs.size(); i++)
+  {
+    auto lclRow = importLIDs[i];
+    Teuchos::ArrayView<const LO> A_indices;
+    Teuchos::ArrayView<const ST> A_values;
+    sourceMatrix.getLocalRowView(lclRow, A_indices, A_values);
+  }
   // Now do the actual unpack!
   UnpackAndCombineCrsMatrixImpl::unpackAndCombineIntoCrsMatrix(
       local_matrix, local_col_map, imports_d, num_packets_per_lid_d,
-      import_lids_d, combineMode, false, atomic);
+      import_lids_d, combineMode);
 
-  return;
 }
 
 template<typename ST, typename LO, typename GO, typename NT>
 void
-unpackCrsMatrixAndCombineNew (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
-                              const Kokkos::DualView<const char*,
-                                typename DistObject<char, LO, GO, NT>::buffer_device_type>& imports,
-                              const Kokkos::DualView<const size_t*,
-                                typename DistObject<char, LO, GO, NT>::buffer_device_type>& numPacketsPerLID,
-                              const Kokkos::DualView<const LO*,
-                                typename DistObject<char, LO, GO, NT>::buffer_device_type>& importLIDs,
-                              const size_t /* constantNumPackets */,
-                              Distributor& /* distor */,
-                              const CombineMode combineMode,
-                              const bool atomic)
+unpackCrsMatrixAndCombineNew(
+  const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
+  Kokkos::DualView<char*,
+    typename DistObject<char, LO, GO, NT>::buffer_device_type> imports,
+  Kokkos::DualView<size_t*,
+    typename DistObject<char, LO, GO, NT>::buffer_device_type> numPacketsPerLID,
+  const Kokkos::DualView<const LO*,
+    typename DistObject<char, LO, GO, NT>::buffer_device_type>& importLIDs,
+  const size_t /* constantNumPackets */,
+  Distributor& /* distor */,
+  const CombineMode combineMode)
 {
-  using Tpetra::Details::castAwayConstDualView;
   using Kokkos::View;
   using crs_matrix_type = CrsMatrix<ST, LO, GO, NT>;
   using dist_object_type = DistObject<char, LO, GO, NT>;
@@ -1174,18 +1264,16 @@ unpackCrsMatrixAndCombineNew (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
      "crs_matrix_type::device_type and local_matrix_type::device_type "
      "must be the same.");
 
-  {
-    auto numPacketsPerLID_nc = castAwayConstDualView (numPacketsPerLID);
-    numPacketsPerLID_nc.sync_device ();
+  if (numPacketsPerLID.need_sync_device()) {
+    numPacketsPerLID.sync_device ();
   }
   auto num_packets_per_lid_d = numPacketsPerLID.view_device ();
 
   TEUCHOS_ASSERT( ! importLIDs.need_sync_device () );
   auto import_lids_d = importLIDs.view_device ();
 
-  {
-    auto imports_nc = castAwayConstDualView (imports);
-    imports_nc.sync_device ();
+  if (imports.need_sync_device()) {
+    imports.sync_device ();
   }
   auto imports_d = imports.view_device ();
 
@@ -1193,13 +1281,12 @@ unpackCrsMatrixAndCombineNew (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
   auto local_col_map = sourceMatrix.getColMap ()->getLocalMap ();
   typedef decltype (local_col_map) local_map_type;
 
-  // Now do the actual unpack!
   UnpackAndCombineCrsMatrixImpl::unpackAndCombineIntoCrsMatrix<
       local_matrix_type,
       local_map_type,
       buffer_device_type
     > (local_matrix, local_col_map, imports_d, num_packets_per_lid_d,
-       import_lids_d, combineMode, false, atomic);
+       import_lids_d, combineMode);
 }
 
 /// \brief Special version of Tpetra::Details::unpackCrsMatrixAndCombine
@@ -1459,10 +1546,10 @@ unpackAndCombineIntoCrsArrays (
     create_mirror_view_from_raw_host_array(outputDevice, TargetPids.getRawPtr(),
         TargetPids.size(), true, "tgt_pids");
 
-  size_t num_bytes_per_value = 0;
-  if (PackTraits<ST,DT>::compileTimeSize) {
+  size_t bytes_per_value = 0;
+  if (PackTraits<ST>::compileTimeSize) {
     // assume that ST is default constructible
-    num_bytes_per_value = PackTraits<ST,DT>::packValueCount(ST());
+    bytes_per_value = PackTraits<ST>::packValueCount(ST());
   }
   else {
     // Since the packed data come from the source matrix, we can use the source
@@ -1473,18 +1560,18 @@ unpackAndCombineIntoCrsArrays (
     // a Scalar value is.  Of course, if no processes have any entries, then no
     // values should be packed (though this does assume that in our packing
     // scheme, rows with zero entries take zero bytes).
-    size_t num_bytes_per_value_l = 0;
+    size_t bytes_per_value_l = 0;
     if (local_matrix.values.extent(0) > 0) {
       const ST& val = local_matrix.values(0);
-      num_bytes_per_value_l = PackTraits<ST,DT>::packValueCount(val);
+      bytes_per_value_l = PackTraits<ST>::packValueCount(val);
     } else {
       const ST& val = crs_vals_d(0);
-      num_bytes_per_value_l = PackTraits<ST,DT>::packValueCount(val);
+      bytes_per_value_l = PackTraits<ST>::packValueCount(val);
     }
     Teuchos::reduceAll<int, size_t>(*(sourceMatrix.getComm()),
                                     Teuchos::REDUCE_MAX,
-                                    num_bytes_per_value_l,
-                                    outArg(num_bytes_per_value));
+                                    bytes_per_value_l,
+                                    outArg(bytes_per_value));
   }
 
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
@@ -1500,7 +1587,7 @@ unpackAndCombineIntoCrsArrays (
       num_packets_per_lid_d, permute_to_lids_d, permute_from_lids_d,
       crs_rowptr_d, crs_colind_d, crs_vals_d, src_pids_d, tgt_pids_d,
       numSameIDs, TargetNumRows, TargetNumNonzeros, MyTargetPID,
-      num_bytes_per_value);
+      bytes_per_value);
 
   // Copy outputs back to host
   typename decltype(crs_rowptr_d)::HostMirror crs_rowptr_h(
@@ -1533,18 +1620,16 @@ unpackAndCombineIntoCrsArrays (
     const Teuchos::ArrayView<const LO>&, \
     size_t, \
     Distributor&, \
-    CombineMode, \
-    const bool); \
+    CombineMode); \
   template void \
   Details::unpackCrsMatrixAndCombineNew<ST, LO, GO, NT> ( \
     const CrsMatrix<ST, LO, GO, NT>&, \
-    const Kokkos::DualView<const char*, typename DistObject<char, LO, GO, NT>::buffer_device_type>&, \
-    const Kokkos::DualView<const size_t*, typename DistObject<char, LO, GO, NT>::buffer_device_type>&, \
+    Kokkos::DualView<char*, typename DistObject<char, LO, GO, NT>::buffer_device_type>, \
+    Kokkos::DualView<size_t*, typename DistObject<char, LO, GO, NT>::buffer_device_type>, \
     const Kokkos::DualView<const LO*, typename DistObject<char, LO, GO, NT>::buffer_device_type>&, \
     const size_t, \
     Distributor&, \
-    const CombineMode, \
-    const bool); \
+    const CombineMode); \
   template void \
   Details::unpackAndCombineIntoCrsArrays<ST, LO, GO, NT> ( \
     const CrsMatrix<ST, LO, GO, NT> &, \

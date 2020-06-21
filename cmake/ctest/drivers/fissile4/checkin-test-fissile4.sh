@@ -38,7 +38,7 @@ TRILINOS_BASE_DIR_ABS=$(readlink -f $TRILINOS_BASE_DIR)
 DRIVERS_BASE_DIR="$TRILINOS_BASE_DIR_ABS/Trilinos/cmake/ctest/drivers/fissile4"
 
 # Packages in Trilinos to disable (mostly for auotmated CI server)
-DISABLE_PACKAGES=PyTrilinos,Pliris,Claps,STK,TriKota
+DISABLE_PACKAGES=PyTrilinos,Pliris,STK,TriKota
 
 # Check to make sure that the env has been loaded correctly
 if [ "$LOADED_TRIBITS_DEV_ENV" != "gcc-4.8.3" ] ; then

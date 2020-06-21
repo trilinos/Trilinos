@@ -20,21 +20,20 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Smoothers)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../unit_tests)
 
-IF (${PACKAGE_NAME}_ENABLE_Galeri)
 
-  TRIBITS_ADD_EXECUTABLE(
-    Convergence
-    SOURCES Convergence.cpp ../unit_tests/MueLu_TestHelpers.cpp
-    COMM serial mpi
-    )
 
-ENDIF()
+TRIBITS_ADD_EXECUTABLE(
+  Convergence
+  SOURCES Convergence.cpp ../unit_tests/MueLu_TestHelpers.cpp
+  COMM serial mpi
+  )
+
 
 #
 # Tests
 #
 
-IF (${PACKAGE_NAME}_ENABLE_Galeri AND ${PACKAGE_NAME}_ENABLE_Belos)
+IF (${PACKAGE_NAME}_ENABLE_Belos)
 
   IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
       ${PACKAGE_NAME}_ENABLE_Ifpack AND ${PACKAGE_NAME}_ENABLE_Amesos)

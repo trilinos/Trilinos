@@ -38,23 +38,16 @@
 #include "Sacado_PCE_OrthogPoly.hpp"
 #endif
 
-template <>
-Sacado::Fad::MemPool* Sacado::Fad::MemPoolStorage<double>::defaultPool_ = NULL;
-template <>
-Sacado::Fad::MemPool* Sacado::Fad::MemPoolStorage< Sacado::Fad::DMFad<double> >::defaultPool_ = NULL;
-
 typedef TraitsTests< Sacado::Fad::DFad<double> > DFadTest;
 typedef TraitsTests< Sacado::Fad::SFad<double,5> > SFadTest;
 typedef TraitsTests< Sacado::Fad::SLFad<double,10> > SLFadTest;
 typedef TraitsTests< Sacado::Fad::SimpleFad<double> > SimpleFadTest;
-typedef TraitsTests< Sacado::Fad::DMFad<double> > DMFadTest;
 typedef TraitsTests< Sacado::Fad::DVFad<double> > DVFadTest;
 
 CPPUNIT_TEST_SUITE_REGISTRATION(DFadTest);
 CPPUNIT_TEST_SUITE_REGISTRATION(SFadTest);
 CPPUNIT_TEST_SUITE_REGISTRATION(SLFadTest);
 CPPUNIT_TEST_SUITE_REGISTRATION(SimpleFadTest);
-CPPUNIT_TEST_SUITE_REGISTRATION(DMFadTest);
 CPPUNIT_TEST_SUITE_REGISTRATION(DVFadTest);
 
 typedef TraitsTests< Sacado::ELRFad::DFad<double> > ELRDFadTest;

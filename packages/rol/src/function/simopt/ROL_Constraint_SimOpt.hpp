@@ -118,6 +118,8 @@ private:
   const int  DEFAULT_solverType_;
 
   // User-set parameters for solve (backtracking Newton)
+
+protected:
   Real atol_;
   Real rtol_;
   Real stol_;
@@ -923,6 +925,7 @@ public:
   }
 
 
+  using Constraint<Real>::applyAdjointJacobian;
   virtual void applyAdjointJacobian(Vector<Real> &ajv,
                                     const Vector<Real> &v,
                                     const Vector<Real> &x,

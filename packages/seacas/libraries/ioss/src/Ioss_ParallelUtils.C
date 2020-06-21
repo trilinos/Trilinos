@@ -1,34 +1,8 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//
-//     * Neither the name of NTESS nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+// See packages/seacas/LICENSE for details
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_ParallelUtils.h>
@@ -48,8 +22,6 @@
 
 #ifdef SEACAS_HAVE_MPI
 #include <Ioss_SerializeIO.h>
-#include <cassert>
-#include <cstring>
 #endif
 
 namespace {
@@ -103,7 +75,7 @@ void Ioss::ParallelUtils::add_environment_properties(Ioss::PropertyManager &prop
       bool        all_digit = value.find_first_not_of("0123456789") == std::string::npos;
 
       if (do_print && rank == 0) {
-        fmt::print(stderr, "IOSS: Adding property '{}' with value '{}'\n", prop, value);
+        fmt::print(Ioss::OUTPUT(), "IOSS: Adding property '{}' with value '{}'\n", prop, value);
       }
       if (all_digit) {
         int int_value = std::stoi(value);
@@ -145,11 +117,11 @@ bool Ioss::ParallelUtils::get_environment(const std::string &name, std::string &
     if (string_length > 0) {
       broadcast_string.resize(string_length + 1);
       if (rank == 0) {
-        Ioss::Utils::copy_string(TOPTR(broadcast_string), result_string,
+        Ioss::Utils::copy_string(broadcast_string.data(), result_string,
                                  static_cast<size_t>(string_length) + 1);
       }
-      MPI_Bcast(TOPTR(broadcast_string), string_length + 1, MPI_CHAR, 0, communicator_);
-      value = std::string(TOPTR(broadcast_string));
+      MPI_Bcast(broadcast_string.data(), string_length + 1, MPI_CHAR, 0, communicator_);
+      value = std::string(broadcast_string.data());
     }
     else {
       value = std::string("");
@@ -311,14 +283,14 @@ void Ioss::ParallelUtils::attribute_reduction(const int length, char buffer[]) c
 
     std::vector<char> recv_buf(length);
     const int         success =
-        MPI_Allreduce(buffer, TOPTR(recv_buf), length, MPI_BYTE, MPI_BOR, communicator_);
+        MPI_Allreduce(buffer, recv_buf.data(), length, MPI_BYTE, MPI_BOR, communicator_);
     if (MPI_SUCCESS != success) {
       std::ostringstream errmsg;
       fmt::print(errmsg, "{} - MPI_Allreduce failed", __func__);
       IOSS_ERROR(errmsg);
     }
 
-    std::memcpy(buffer, TOPTR(recv_buf), length);
+    std::memcpy(buffer, recv_buf.data(), length);
   }
 #endif
 }
@@ -529,7 +501,7 @@ void Ioss::ParallelUtils::progress(const std::string &output) const
 
   if (parallel_rank() == 0) {
     double diff = Utils::timer() - begin;
-    fmt::print(stderr, "  [{:.3f}] ({}MiB  {}MiB  {}MiB)\t{}\n", diff, min / MiB, max / MiB,
+    fmt::print(Ioss::DEBUG(), "  [{:.3f}] ({}MiB  {}MiB  {}MiB)\t{}\n", diff, min / MiB, max / MiB,
                avg / MiB, output);
   }
 }
@@ -549,8 +521,8 @@ void Ioss::ParallelUtils::gather(std::vector<T> &my_values, std::vector<T> &resu
   }
 #ifdef SEACAS_HAVE_MPI
   if (parallel_size() > 1) {
-    const int success = MPI_Gather((void *)TOPTR(my_values), count, mpi_type(T()),
-                                   (void *)TOPTR(result), count, mpi_type(T()), 0, communicator_);
+    const int success = MPI_Gather((void *)my_values.data(), count, mpi_type(T()),
+                                   (void *)result.data(), count, mpi_type(T()), 0, communicator_);
     if (success != MPI_SUCCESS) {
       std::ostringstream errmsg;
       fmt::print(errmsg, "{} - MPI_Gather failed", __func__);

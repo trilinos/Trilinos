@@ -77,7 +77,7 @@ namespace Test {
       ++nthrow;                                                         \
       S ;                                                               \
     }                                                                   \
-    catch (std::exception err) {                                        \
+    catch (std::exception &err) {                                        \
       ++ncatch;                                                         \
       *outStream << "Expected Error ----------------------------------------------------------------\n"; \
       *outStream << err.what() << '\n';                                 \
@@ -285,7 +285,7 @@ int DeRHAM_TET_FEM_Test01(const bool verbose) {
             "\nIts max norm at HGRAD DOF coordinates is: " << maxNorm << std::endl;;
       }
     }
-  } catch (std::exception err) {
+  } catch (std::exception &err) {
     *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
     *outStream << err.what() << '\n';
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -421,7 +421,7 @@ int DeRHAM_TET_FEM_Test01(const bool verbose) {
             "\nIts max norm at HCURL DOF coordinates is: " << maxNorm << std::endl;;
       }
     }
-  } catch (std::exception err) {
+  } catch (std::exception &err) {
     *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
     *outStream << err.what() << '\n';
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -530,7 +530,7 @@ int DeRHAM_TET_FEM_Test01(const bool verbose) {
       }
 
     }
-  } catch (std::exception err) {
+  } catch (std::exception &err) {
     *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
     *outStream << err.what() << '\n';
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";

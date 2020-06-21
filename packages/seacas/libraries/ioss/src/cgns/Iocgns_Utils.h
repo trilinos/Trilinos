@@ -1,34 +1,8 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//
-//     * Neither the name of NTESS nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+// See packages/seacas/LICENSE for details
 
 #ifndef IOSS_IOCGNS_UTILS_H
 #define IOSS_IOCGNS_UTILS_H
@@ -36,11 +10,13 @@
 #include <Ioss_CodeTypes.h>
 #include <Ioss_DatabaseIO.h>
 #include <Ioss_ElementTopology.h>
+#include <Ioss_FaceGenerator.h>
 #include <Ioss_Region.h>
 #include <Ioss_SideBlock.h>
 #include <Ioss_SideSet.h>
 #include <Ioss_StructuredBlock.h>
 #include <Ioss_Utils.h>
+#include <cgns/Iocgns_Defines.h>
 #include <cgnslib.h>
 #include <ostream>
 #include <string>
@@ -72,6 +48,18 @@
 namespace Iocgns {
   class StructuredZoneData;
 
+  struct ZoneBC
+  {
+    ZoneBC(const std::string &bc_name, std::array<cgsize_t, 2> &point_range)
+        : name(bc_name), range_beg(point_range[0]), range_end(point_range[1])
+    {
+    }
+
+    std::string name;
+    cgsize_t    range_beg;
+    cgsize_t    range_end;
+  };
+
   class Utils
   {
   public:
@@ -80,6 +68,9 @@ namespace Iocgns {
 
     static const size_t CG_CELL_CENTER_FIELD_ID = 1ul << 33;
     static const size_t CG_VERTEX_FIELD_ID      = 1ul << 34;
+
+    static std::pair<std::string, int> decompose_name(const std::string &name, bool is_parallel);
+    static std::string                 decompose_sb_name(const std::string &name);
 
     static size_t index(const Ioss::Field &field);
 
@@ -91,6 +82,80 @@ namespace Iocgns {
     static int  get_db_zone(const Ioss::GroupingEntity *entity);
     static void set_field_index(const Ioss::Field &field, size_t index, CG_GridLocation_t location);
     static bool is_cell_field(const Ioss::Field &field);
+
+    template <typename INT>
+    static void map_cgns_connectivity(const Ioss::ElementTopology *topo, size_t element_count,
+                                      INT *idata)
+    {
+      // Map from CGNS to IOSS/Exodus/Patran order...
+      switch (topo->shape()) {
+      case Ioss::ElementShape::HEX:
+        switch (topo->number_nodes()) {
+        case 8:
+        case 20: break;
+        case 27: {
+          // nodes 1 through 20 are the same...
+          //
+          // ioss: 21, 22, 23, 24, 25, 26, 27 [zero-based: 20, 21, 22, 23, 24, 25, 26]
+          // cgns: 27, 21, 26, 25, 23, 22, 24 [zero-based: 26, 20, 25, 24, 22, 21, 23]
+          static std::array<int, 7> hex27_map{26, 20, 25, 24, 22, 21, 23};
+          for (size_t i = 0; i < element_count; i++) {
+            size_t             con_beg = 27 * i; // start of connectivity for i'th element.
+            std::array<int, 7> reorder;
+            for (size_t j = 0; j < 7; j++) {
+              reorder[j] = idata[con_beg + hex27_map[j]];
+            }
+
+            for (size_t j = 0; j < 7; j++) {
+              idata[con_beg + 20 + j] = reorder[j];
+            }
+          }
+        }
+        }
+        break;
+      default:
+          // do nothing cgns ordering matches ioss/exodus/patran (or not handled yet... todo: add
+          // error checking)
+          ;
+      }
+    }
+
+    template <typename INT>
+    static void unmap_cgns_connectivity(const Ioss::ElementTopology *topo, size_t element_count,
+                                        INT *idata)
+    {
+      // Map from IOSS/Exodus/Patran to CGNS order...
+      switch (topo->shape()) {
+      case Ioss::ElementShape::HEX:
+        switch (topo->number_nodes()) {
+        case 8:
+        case 20: break;
+        case 27: {
+          // nodes 1 through 20 are the same...
+          //
+          // ioss: 21, 22, 23, 24, 25, 26, 27 [zero-based: 20, 21, 22, 23, 24, 25, 26]
+          // cgns: 27, 21, 26, 25, 23, 22, 24 [zero-based: 26, 20, 25, 24, 22, 21, 23]
+          static std::array<int, 7> hex27_map{26, 20, 25, 24, 22, 21, 23};
+          for (size_t i = 0; i < element_count; i++) {
+            size_t             con_beg = 27 * i; // start of connectivity for i'th element.
+            std::array<int, 7> reorder;
+            for (size_t j = 0; j < 7; j++) {
+              reorder[j] = idata[con_beg + 20 + j];
+            }
+
+            for (size_t j = 0; j < 7; j++) {
+              idata[con_beg + hex27_map[j]] = reorder[j];
+            }
+          }
+        }
+        }
+        break;
+      default:
+          // do nothing cgns ordering matches ioss/exodus/patran (or not handled yet... todo: add
+          // error checking)
+          ;
+      }
+    }
 
     template <typename INT>
     static void map_cgns_face_to_ioss(const Ioss::ElementTopology *parent_topo, size_t num_to_get,
@@ -136,7 +201,7 @@ namespace Iocgns {
     }
 
     static void map_ioss_face_to_cgns(const Ioss::ElementTopology *parent_topo, size_t num_to_get,
-                                      std::vector<cgsize_t> &data)
+                                      CGNSIntVector &data)
     {
       // The {topo}_map[] arrays map from CGNS face# to IOSS face#.
       // See http://cgns.github.io/CGNS_docs_current/sids/conv.html#unstructgrid
@@ -177,21 +242,41 @@ namespace Iocgns {
       }
     }
 
-    static void write_flow_solution_metadata(int file_ptr, Ioss::Region *region, int state,
-                                             int *vertex_solution_index,
-                                             int *cell_center_solution_index, bool is_parallel_io);
+    static std::vector<ZoneBC> parse_zonebc_sideblocks(int cgns_file_ptr, int base, int zone,
+                                                       int myProcessor);
+
+    static void
+    generate_boundary_faces(Ioss::Region *                                 region,
+                            std::map<std::string, Ioss::FaceUnorderedSet> &boundary_faces,
+                            Ioss::Field::BasicType                         field_type);
+
+    static void write_flow_solution_metadata(int file_ptr, int base_ptr, Ioss::Region *region,
+                                             int state, const int *vertex_solution_index,
+                                             const int *cell_center_solution_index,
+                                             bool       is_parallel_io);
     static int  find_solution_index(int cgns_file_ptr, int base, int zone, int step,
                                     CG_GridLocation_t location);
     static Ioss::MeshType check_mesh_type(int cgns_file_ptr);
-    static size_t         common_write_meta_data(int file_ptr, const Ioss::Region &region,
-                                                 std::vector<size_t> &zone_offset, bool is_parallel);
-    static size_t         resolve_nodes(Ioss::Region &region, int my_processor, bool is_parallel);
+
+    static void output_assembly(int file_ptr, const Ioss::Assembly *assembly, bool is_parallel_io,
+                                bool appending = false);
+    static void output_assemblies(int file_ptr, const Ioss::Region &region, bool is_parallel_io);
+
+    static void   write_state_meta_data(int file_ptr, const Ioss::Region &region,
+                                        bool is_parallel_io);
+    static size_t common_write_meta_data(int file_ptr, const Ioss::Region &region,
+                                         std::vector<size_t> &zone_offset, bool is_parallel);
+    static size_t resolve_nodes(Ioss::Region &region, int my_processor, bool is_parallel);
     static std::vector<std::vector<std::pair<size_t, size_t>>>
     resolve_processor_shared_nodes(Ioss::Region &region, int my_processor);
 
     static CG_ElementType_t map_topology_to_cgns(const std::string &name);
     static std::string      map_cgns_to_topology_type(CG_ElementType_t type);
     static void             add_sidesets(int cgns_file_ptr, Ioss::DatabaseIO *db);
+    static void             add_assemblies(int cgns_file_ptr, Ioss::DatabaseIO *db);
+    static void add_to_assembly(int cgns_file_ptr, Ioss::Region *region, Ioss::EntityBlock *block,
+                                int base, int zone);
+
     static void add_structured_boundary_conditions(int cgns_file_ptr, Ioss::StructuredBlock *block,
                                                    bool is_parallel_io);
     static void add_structured_boundary_conditions_fpp(int                    cgns_file_ptr,
@@ -218,6 +303,12 @@ namespace Iocgns {
     static void   assign_zones_to_procs(std::vector<Iocgns::StructuredZoneData *> &zones,
                                         std::vector<size_t> &work_vector, bool verbose);
     static void   show_config();
+
+    template <typename INT>
+    static void generate_block_faces(Ioss::ElementTopology *topo, size_t num_elem,
+                                     const std::vector<INT> &connectivity,
+                                     Ioss::FaceUnorderedSet &boundary,
+                                     const std::vector<INT> &zone_local_zone_global);
   };
 } // namespace Iocgns
 

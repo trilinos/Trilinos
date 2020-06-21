@@ -72,7 +72,6 @@ import PyTrilinos.Epetra
 
 %module(package      = "PyTrilinos.NOX",
 	directors    = "1",
-	autodoc      = "1",
 	implicitconv = "1",
 	docstring    = %nox_abstract_docstring) Abstract
 
@@ -110,7 +109,10 @@ import PyTrilinos.Epetra
 %include "exception.i"
 
 // Include NOX documentation
+#if SWIG_VERSION < 0x040000
+%feature("autodoc", "1");
 %include "NOX_dox.i"
+#endif
 
 // General ignore directives
 %ignore *::operator=;

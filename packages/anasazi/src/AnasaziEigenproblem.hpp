@@ -87,13 +87,13 @@ namespace Anasazi {
      */
     virtual void setOperator( const Teuchos::RCP<const OP> &Op ) = 0;
 
-    //! \brief Set the operator \c A of the eigenvalue problem \f$Ax=\lambda Mx\f$.
+    //! \brief Set the operator \c A of the eigenvalue problem \f$ Ax=\lambda Mx\f$.
     virtual void setA( const Teuchos::RCP<const OP> &A ) = 0;
 
-    //! \brief Set the operator \c M of the eigenvalue problem \f$Ax=\lambda Mx\f$.
+    //! \brief Set the operator \c M of the eigenvalue problem \f$ Ax=\lambda Mx\f$.
     virtual void setM( const Teuchos::RCP<const OP> &M ) = 0;
 
-    //! \brief Set the preconditioner for this eigenvalue problem \f$Ax=\lambda Mx\f$.
+    //! \brief Set the preconditioner for this eigenvalue problem \f$ Ax=\lambda Mx\f$.
     virtual void setPrec( const Teuchos::RCP<const OP> &Prec ) = 0;
 
     /*! \brief Set the initial guess.  
@@ -151,10 +151,10 @@ namespace Anasazi {
     //! Get a pointer to the operator for which eigenvalues will be computed.
     virtual Teuchos::RCP<const OP> getOperator() const = 0;
 
-    //! Get a pointer to the operator \c A of the eigenproblem \f$AX=\lambda Mx\f$.
+    //! Get a pointer to the operator \c A of the eigenproblem \f$ AX=\lambda Mx\f$.
     virtual Teuchos::RCP<const OP> getA() const = 0;
 
-    //! Get a pointer to the operator \c M of the eigenproblem \f$AX=\lambda Mx\f$.
+    //! Get a pointer to the operator \c M of the eigenproblem \f$ AX=\lambda Mx\f$.
     virtual Teuchos::RCP<const OP> getM() const = 0;
 
     //! Get a pointer to the preconditioner.

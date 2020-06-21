@@ -49,12 +49,6 @@
       <Email address="shards-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
-  <SubProject name="GlobiPack">
-    <Dependency name="Teuchos" type="LR"/>
-    <EmailAddresses>
-      <Email address="globipack-regression@software.sandia.gov"/>
-    </EmailAddresses>
-  </SubProject>
   <SubProject name="Triutils">
     <Dependency name="Teuchos" type="ILO"/>
     <Dependency name="Epetra" type="LR"/>
@@ -98,19 +92,6 @@
       <Email address="thyra-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
-  <SubProject name="OptiPack">
-    <Dependency name="Teuchos" type="LR"/>
-    <Dependency name="RTOp" type="ILR"/>
-    <Dependency name="Epetra" type="ILO"/>
-    <Dependency name="GlobiPack" type="LR"/>
-    <Dependency name="Triutils" type="ILO"/>
-    <Dependency name="Tpetra" type="ILO"/>
-    <Dependency name="EpetraExt" type="ILO"/>
-    <Dependency name="Thyra" type="LR"/>
-    <EmailAddresses>
-      <Email address="optipack-regression@software.sandia.gov"/>
-    </EmailAddresses>
-  </SubProject>
   <SubProject name="Isorropia">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="Epetra" type="LR"/>
@@ -127,13 +108,6 @@
     <Dependency name="Epetra" type="LR"/>
     <EmailAddresses>
       <Email address="pliris-regression@software.sandia.gov"/>
-    </EmailAddresses>
-  </SubProject>
-  <SubProject name="Claps">
-    <Dependency name="Teuchos" type="TR"/>
-    <Dependency name="Epetra" type="LR"/>
-    <EmailAddresses>
-      <Email address="claps-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
   <SubProject name="AztecOO">
@@ -187,11 +161,6 @@
     <Dependency name="Pamgen" type="ILO"/>
     <EmailAddresses>
       <Email address="seacas-regression@software.sandia.gov"/>
-    </EmailAddresses>
-  </SubProject>
-  <SubProject name="Trios">
-    <EmailAddresses>
-      <Email address="trios-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
   <SubProject name="Ifpack">
@@ -660,13 +629,11 @@
     <Dependency name="Sacado" type="ILO"/>
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="ILO"/>
-    <Dependency name="GlobiPack" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="LR"/>
     <Dependency name="Xpetra" type="ILO"/>
     <Dependency name="Thyra" type="ILO"/>
-    <Dependency name="OptiPack" type="LO"/>
     <Dependency name="Isorropia" type="ILO"/>
     <Dependency name="AztecOO" type="ILO"/>
     <Dependency name="Galeri" type="ILO"/>
@@ -698,13 +665,11 @@
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="LR"/>
     <Dependency name="Shards" type="ILR"/>
-    <Dependency name="GlobiPack" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="Tpetra" type="LR"/>
     <Dependency name="EpetraExt" type="LR"/>
     <Dependency name="Xpetra" type="ILO"/>
     <Dependency name="Thyra" type="ILO"/>
-    <Dependency name="OptiPack" type="ILO"/>
     <Dependency name="Isorropia" type="ILO"/>
     <Dependency name="AztecOO" type="ILO"/>
     <Dependency name="Galeri" type="ILO"/>
@@ -953,13 +918,11 @@
     <Dependency name="Sacado" type="LR"/>
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="ILO"/>
-    <Dependency name="GlobiPack" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="LR"/>
     <Dependency name="Xpetra" type="ILO"/>
     <Dependency name="Thyra" type="ILO"/>
-    <Dependency name="OptiPack" type="ILO"/>
     <Dependency name="Isorropia" type="ILO"/>
     <Dependency name="AztecOO" type="ILO"/>
     <Dependency name="Galeri" type="ILO"/>

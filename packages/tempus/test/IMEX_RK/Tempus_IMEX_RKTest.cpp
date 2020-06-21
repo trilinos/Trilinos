@@ -36,12 +36,7 @@ using Tempus::IntegratorBasic;
 using Tempus::SolutionHistory;
 using Tempus::SolutionState;
 
-// Comment out any of the following tests to exclude from build/run.
-#define TEST_CONSTRUCTING_FROM_DEFAULTS
-#define TEST_VANDERPOL
 
-
-#ifdef TEST_CONSTRUCTING_FROM_DEFAULTS
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(IMEX_RK, ConstructingFromDefaults)
@@ -68,7 +63,6 @@ TEUCHOS_UNIT_TEST(IMEX_RK, ConstructingFromDefaults)
   // Setup Stepper for field solve ----------------------------
   auto stepper = rcp(new Tempus::StepperIMEX_RK<double>());
   stepper->setModel(model);
-  stepper->setSolver();
   stepper->initialize();
 
   // Setup TimeStepControl ------------------------------------
@@ -86,7 +80,7 @@ TEUCHOS_UNIT_TEST(IMEX_RK, ConstructingFromDefaults)
   Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
     stepper->getModel()->getNominalValues();
   auto icSolution = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
-  auto icState = rcp(new Tempus::SolutionState<double>(icSolution));
+  auto icState = Tempus::createSolutionStateX(icSolution);
   icState->setTime    (timeStepControl->getInitTime());
   icState->setIndex   (timeStepControl->getInitIndex());
   icState->setTimeStep(0.0);
@@ -106,7 +100,6 @@ TEUCHOS_UNIT_TEST(IMEX_RK, ConstructingFromDefaults)
   integrator->setStepperWStepper(stepper);
   integrator->setTimeStepControl(timeStepControl);
   integrator->setSolutionHistory(solutionHistory);
-  //integrator->setObserver(...);
   integrator->initialize();
 
 
@@ -133,37 +126,51 @@ TEUCHOS_UNIT_TEST(IMEX_RK, ConstructingFromDefaults)
   TEST_FLOATING_EQUALITY(get_ele(*(x), 0),  1.810210, 1.0e-4 );
   TEST_FLOATING_EQUALITY(get_ele(*(x), 1), -0.754602, 1.0e-4 );
 }
-#endif // TEST_CONSTRUCTING_FROM_DEFAULTS
 
 
-#ifdef TEST_VANDERPOL
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(IMEX_RK, VanDerPol)
 {
   std::vector<std::string> stepperTypes;
   stepperTypes.push_back("IMEX RK 1st order");
+  stepperTypes.push_back("SSP1_111"         );
   stepperTypes.push_back("IMEX RK SSP2"     );
+  stepperTypes.push_back("SSP2_222"         );
   stepperTypes.push_back("IMEX RK ARS 233"  );
   stepperTypes.push_back("General IMEX RK"  );
+  stepperTypes.push_back("IMEX RK SSP3"     );
 
   std::vector<double> stepperOrders;
   stepperOrders.push_back(1.07964);
+  stepperOrders.push_back(1.07964); // SSP1_111
   stepperOrders.push_back(2.00408);
+  stepperOrders.push_back(2.76941); //SSP2_222
   stepperOrders.push_back(2.70655);
+  stepperOrders.push_back(2.00211);
   stepperOrders.push_back(2.00211);
 
   std::vector<double> stepperErrors;
   stepperErrors.push_back(0.0046423);
+  stepperErrors.push_back(0.103569); // SSP1_111
   stepperErrors.push_back(0.0154534);
+  stepperErrors.push_back(0.000533759); // SSP2_222
   stepperErrors.push_back(0.000298908);
   stepperErrors.push_back(0.0071546);
+  stepperErrors.push_back(0.0151202);
 
   std::vector<double> stepperInitDt;
+  stepperInitDt.push_back(0.0125);
   stepperInitDt.push_back(0.0125);
   stepperInitDt.push_back(0.05);
   stepperInitDt.push_back(0.05);
   stepperInitDt.push_back(0.05);
+  stepperInitDt.push_back(0.05);
+  stepperInitDt.push_back(0.05);
+
+  TEUCHOS_ASSERT( stepperTypes.size() == stepperOrders.size() );
+  TEUCHOS_ASSERT( stepperTypes.size() == stepperErrors.size() );
+  TEUCHOS_ASSERT( stepperTypes.size() == stepperInitDt.size() );
 
   std::vector<std::string>::size_type m;
   for(m = 0; m != stepperTypes.size(); m++) {
@@ -268,7 +275,6 @@ TEUCHOS_UNIT_TEST(IMEX_RK, VanDerPol)
   }
   //Teuchos::TimeMonitor::summarize();
 }
-#endif // TEST_VANDERPOL
 
 
 } // namespace Tempus_Test

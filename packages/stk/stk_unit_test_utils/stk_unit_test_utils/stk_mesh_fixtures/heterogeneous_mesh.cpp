@@ -193,7 +193,7 @@ void heterogeneous_mesh_bulk_data(
 
   bulk_data.modification_begin();
 
-  const stk::mesh::MetaData & meta_data = stk::mesh::MetaData::get(bulk_data);
+  const stk::mesh::MetaData & meta_data = bulk_data.mesh_meta_data();
 
   stk::mesh::Part & hex_block        = * meta_data.get_part("hexes",method);
   stk::mesh::Part & wedge_block      = * meta_data.get_part("wedges",method);

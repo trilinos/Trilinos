@@ -48,9 +48,7 @@
 #include <stk_mesh/base/FieldBase.hpp>             // for FieldBase, etc
 #include <stk_mesh/base/FindRestriction.hpp>       // for find_restriction
 #include <stk_mesh/base/MetaData.hpp>              // for MetaData
-#if defined(STK_HAVE_BOOSTLIB)
 #include <stk_util/environment/FileUtils.hpp>
-#endif
 #include <stk_util/util/ReportHandler.hpp>  // for ThrowErrorMsgIf
 #include <utility>                                 // for pair
 #include "Ioss_DBUsage.h"                          // for DatabaseUsage, etc
@@ -137,9 +135,7 @@ namespace stk {
       if (m_db_purpose == stk::io::READ_RESTART)
         db_usage = Ioss::READ_RESTART;
 
-#if defined(STK_HAVE_BOOSTLIB)
       stk::util::filename_substitution(mesh_filename);
-#endif
       m_database = Teuchos::rcp(Ioss::IOFactory::create(mesh_type, mesh_filename,
 							db_usage, communicator,
 							properties));
@@ -260,7 +256,7 @@ namespace stk {
       m_region->field_describe(Ioss::Field::TRANSIENT, &names);
     }
 
-    FieldNameToPartVector InputFile::get_var_names(Ioss::EntityType type, stk::mesh::MetaData& meta)
+    FieldNameToPartVector InputFile::get_var_names(Ioss::EntityType type, const stk::mesh::MetaData& meta)
     {
         return stk::io::get_var_names(*m_region.get(), type, meta);
     }
@@ -368,7 +364,7 @@ namespace stk {
           // Now handle the non-subsetted fields...
 
           // Check universal_part() NODE_RANK first...
-          const stk::mesh::MetaData &meta = stk::mesh::MetaData::get(bulk);
+          const stk::mesh::MetaData &meta = bulk.mesh_meta_data();
           {
               if (f->entity_rank() == stk::topology::NODE_RANK) {
                   build_field_part_associations(mf, meta.universal_part(), stk::topology::NODE_RANK,
@@ -530,7 +526,7 @@ namespace stk {
     {
         Ioss::Region *region = m_region.get();
         size_t num_missing_fields = 0;
-        const stk::mesh::MetaData &meta = stk::mesh::MetaData::get(bulk);
+        const stk::mesh::MetaData &meta = bulk.mesh_meta_data();
 
         for (auto &mesh_field : m_fields)
         {
@@ -593,6 +589,11 @@ namespace stk {
                 if (nullptr != missingFields)
                 {
                     add_missing_fields(missingFields, missingFieldCollector);
+                }
+                else {
+                    for (auto missingField : missingFieldCollector) {
+                        std::cout << "Missing field: " << missingField.second->db_name() << std::endl;
+                    }
                 }
             }
         }
@@ -659,7 +660,7 @@ namespace stk {
         // Now handle the non-subsetted fields...
 
         // Check universal_part() NODE_RANK first...
-        const stk::mesh::MetaData &meta = stk::mesh::MetaData::get(bulk);
+        const stk::mesh::MetaData &meta = bulk.mesh_meta_data();
         {
             std::vector<stk::io::MeshField>::iterator I = m_fields.begin();
             while (I != m_fields.end()) {

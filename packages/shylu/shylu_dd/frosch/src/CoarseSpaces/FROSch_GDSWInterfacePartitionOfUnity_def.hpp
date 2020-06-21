@@ -60,17 +60,7 @@ namespace FROSch {
                                                                               ParameterListPtr parameterList,
                                                                               Verbosity verbosity,
                                                                               UN levelID) :
-    InterfacePartitionOfUnity<SC,LO,GO,NO> (mpiComm,serialComm,dimension,dofsPerNode,nodesMap,dofsMaps,parameterList,verbosity,levelID),
-    UseVertices_ (false),
-    UseShortEdges_ (false),
-    UseStraightEdges_ (false),
-    UseEdges_ (false),
-    UseFaces_ (false),
-    Vertices_ (),
-    ShortEdges_ (),
-    StraightEdges_ (),
-    Edges_ (),
-    Faces_ ()
+    InterfacePartitionOfUnity<SC,LO,GO,NO> (mpiComm,serialComm,dimension,dofsPerNode,nodesMap,dofsMaps,parameterList,verbosity,levelID)
     {
         FROSCH_TIMER_START_LEVELID(gDSWInterfacePartitionOfUnityTime,"GDSWInterfacePartitionOfUnity::GDSWInterfacePartitionOfUnity");
         if (!this->ParameterList_->get("Type","Full").compare("Full")) {
@@ -157,7 +147,7 @@ namespace FROSch {
         FROSCH_TIMER_START_LEVELID(sortInterfaceTime,"GDSWInterfacePartitionOfUnity::sortInterface");
         if (this->ParameterList_->get("Test Unconnected Interface",true)) {
             if (matrix.is_null()) {
-                if (this->Verbose_) std::cout << "FROSch::GDSWInterfacePartitionOfUnity : WARNING: divideUnconnectedEntities() cannot be performed without the matrix." << std::endl;
+                FROSCH_WARNING("FROSch::GDSWInterfacePartitionOfUnity",this->Verbose_,"divideUnconnectedEntities() cannot be performed without the matrix.");
             } else this->DDInterface_->divideUnconnectedEntities(matrix);
         }
         this->DDInterface_->sortVerticesEdgesFaces(nodeList);
@@ -178,6 +168,7 @@ namespace FROSch {
                                             UseStraightEdges_,
                                             UseEdges_,
                                             UseFaces_,
+                                            false,
                                             false);
 
         // Maps
@@ -207,16 +198,38 @@ namespace FROSch {
         }
 
         if (this->Verbose_) {
-            std::cout << std::boolalpha << "\n\
-    ------------------------------------------------------------------------------\n\
-     GDSW Interface Partition Of Unity (GDSW IPOU)\n\
-    ------------------------------------------------------------------------------\n\
-      Vertices                                    --- " << UseVertices_ << "\n\
-      ShortEdges                                  --- " << UseShortEdges_ << "\n\
-      StraightEdges                               --- " << UseStraightEdges_ << "\n\
-      Edges                                       --- " << UseEdges_ << "\n\
-      Faces                                       --- " << UseFaces_ << "\n\
-    ------------------------------------------------------------------------------\n" << std::noboolalpha;
+            cout
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << setw(89) << "-----------------------------------------------------------------------------------------"
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << "| "
+            << left << setw(74) << "GDSW Interface Partition Of Unity " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")" << right
+            << " |"
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << setw(89) << "========================================================================================="
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << "| " << left << setw(41) << "Vertices" << right
+            << " | " << setw(41) << boolalpha << UseVertices_ << noboolalpha
+            << " |"
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << "| " << left << setw(41) << "Short edges" << right
+            << " | " << setw(41) << boolalpha << UseShortEdges_ << noboolalpha
+            << " |"
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << "| " << left << setw(41) << "Straight edges" << right
+            << " | " << setw(41) << boolalpha << UseStraightEdges_ << noboolalpha
+            << " |"
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << "| " << left << setw(41) << "Edges" << right
+            << " | " << setw(41) << boolalpha << UseEdges_ << noboolalpha
+            << " |"
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << "| " << left << setw(41) << "Faces" << right
+            << " | " << setw(41) << boolalpha << UseFaces_ << noboolalpha
+            << " |"
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << setw(89) << "-----------------------------------------------------------------------------------------"
+            << endl;
         }
 
         // Build Partition Of Unity Vectors

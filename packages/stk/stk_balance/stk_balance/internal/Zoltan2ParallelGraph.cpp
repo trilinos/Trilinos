@@ -208,8 +208,7 @@ void Zoltan2ParallelGraph::createGraphEdgesUsingNodeConnectivity(stk::mesh::Bulk
     unsigned spatialDimension = stkMeshBulkData.mesh_meta_data().spatial_dimension();
     mVertexCoordinates.resize(numElements*spatialDimension, 0);
 
-    stk::mesh::FieldBase const * coord = stk::balance::internal::get_coordinate_field(stkMeshBulkData.mesh_meta_data(),
-                                                                                      balanceSettings.getCoordinateFieldName());
+    const stk::mesh::FieldBase * coord = stkMeshBulkData.mesh_meta_data().coordinate_field();
 
     for (size_t i=0; i<buckets.size(); i++)
     {
@@ -256,7 +255,7 @@ void Zoltan2ParallelGraph::fillZoltan2AdapterDataFromStkMesh(stk::mesh::BulkData
     {
         stk::balance::internal::logMessage(stkMeshBulkData.parallel(), "Create graph edges using search results");
 
-        stk::balance::internal::createGraphEdgesUsingBBSearch(stkMeshBulkData, balanceSettings, graphEdges, searchSelector);
+        stk::balance::internal::addGraphEdgesUsingBBSearch(stkMeshBulkData, balanceSettings, graphEdges, searchSelector);
 
         std::sort(graphEdges.begin(), graphEdges.end());
         std::vector<stk::balance::GraphEdge>::iterator iter = std::unique(graphEdges.begin(), graphEdges.end());

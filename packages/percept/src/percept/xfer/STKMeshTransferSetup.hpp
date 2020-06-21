@@ -27,7 +27,7 @@ typedef stk::transfer::GeometricTransfer< class LinInterp<  FMesh, TMesh > > STK
 
 template<class SMT>
 inline
-boost::shared_ptr<SMT>
+std::shared_ptr<SMT>
 buildSTKMeshTransfer(stk::mesh::BulkData       &bulkData_from,
 		     stk::mesh::Field<double, stk::mesh::Cartesian> * coordinates_from,
 		     stk::mesh::FieldBase * field_from,
@@ -49,13 +49,13 @@ buildSTKMeshTransfer(stk::mesh::BulkData       &bulkData_from,
     transferType = TWOD_AXI_TO_THREED;
   }
 
-  boost::shared_ptr<FMesh >
+  std::shared_ptr<FMesh >
     from_mesh (new FMesh(bulkData_from,
                          coordinates_from,
                          field_from,
                          bulkData_from.parallel()));
 
-  boost::shared_ptr<TMesh >
+  std::shared_ptr<TMesh >
     to_mesh (new TMesh(bulkData_to,
                        coordinates_to,
                        field_to,
@@ -63,7 +63,7 @@ buildSTKMeshTransfer(stk::mesh::BulkData       &bulkData_from,
                        transferType,
                        srcFieldType));
 
-  boost::shared_ptr<SMT>
+  std::shared_ptr<SMT>
     mesh_transfer(new SMT(from_mesh, to_mesh, transfer_name, expansion_factor));
 
   return mesh_transfer;
@@ -76,16 +76,16 @@ initializeSTKMeshTransfer(SMT * mesh_transfer)
 {
   mesh_transfer->coarse_search();
 
-  mesh_transfer->mesha()->fromBulkData_.modification_begin();
+  mesh_transfer->meshA()->fromBulkData_.modification_begin();
 
   // based on Transfer::change_ghosting() in conchas2
   //  which calls Transfer::ghost_from_elements();
   STKMeshTransfer::MeshA::EntityProcVec entity_keys;
   mesh_transfer->determine_entities_to_copy(entity_keys);
-  mesh_transfer->mesha()->update_ghosting(entity_keys);
+  mesh_transfer->meshA()->update_ghosting(entity_keys);
 
-  stk::mesh::fixup_ghosted_to_shared_nodes(mesh_transfer->mesha()->fromBulkData_);
-  mesh_transfer->mesha()->fromBulkData_.modification_end();
+  stk::mesh::fixup_ghosted_to_shared_nodes(mesh_transfer->meshA()->fromBulkData_);
+  mesh_transfer->meshA()->fromBulkData_.modification_end();
 
   mesh_transfer->local_search();
 }

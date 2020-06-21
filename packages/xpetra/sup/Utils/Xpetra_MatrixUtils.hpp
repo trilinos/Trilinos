@@ -93,9 +93,6 @@ public:
 
   static Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xpetraGidNumbering2ThyraGidNumbering(
       const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& input) {
-    typedef Xpetra::MapUtils<LocalOrdinal, GlobalOrdinal, Node>  MapUtils;
-    typedef Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>  MultiVector;
-    typedef Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>  MultiVectorFactory;
     RCP<const Map> map = MapUtils::shrinkMapGIDs(*(input.getMap()),*(input.getMap()));
     RCP<MultiVector> ret = MultiVectorFactory::Build(map, input.getNumVectors(), true);
     for (size_t c = 0; c < input.getNumVectors(); c++) {
@@ -202,10 +199,6 @@ public:
                        Teuchos::RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > domainMapExtractor,
                        Teuchos::RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > columnMapExtractor = Teuchos::null,
                        bool bThyraMode = false) {
-    typedef Xpetra::MapUtils<LocalOrdinal, GlobalOrdinal, Node>  MapUtils;
-    typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> MapExtractor;
-    typedef Xpetra::MapExtractorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> MapExtractorFactory;
-    typedef Xpetra::MatrixUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>  MatrixUtils;
 
     size_t numRows  = rangeMapExtractor->NumMaps();
     size_t numCols  = domainMapExtractor->NumMaps();
@@ -460,7 +453,7 @@ public:
     Ac->getLocalDiagCopy(*diagVec);
 
     LocalOrdinal lZeroDiags = 0;
-    Teuchos::ArrayRCP< Scalar > diagVal = diagVec->getDataNonConst(0);
+    Teuchos::ArrayRCP< const Scalar > diagVal = diagVec->getData(0);
 
     for (size_t i = 0; i < rowMap->getNodeNumElements(); i++) {
       if (TST::magnitude(diagVal[i]) <= threshold) {
@@ -528,7 +521,7 @@ public:
 #ifdef HAVE_XPETRA_DEBUG // only for debugging
     // check whether Ac has been repaired...
     Ac->getLocalDiagCopy(*diagVec);
-    Teuchos::ArrayRCP< Scalar > diagVal2 = diagVec->getDataNonConst(0);
+    diagVal = diagVec->getData(0);
     for (size_t r = 0; r < Ac->getRowMap()->getNodeNumElements(); r++) {
       if (TST::magnitude(diagVal[r]) <= threshold) {
         fos << "Error: there are too small entries left on diagonal after repair..." << std::endl;
@@ -638,6 +631,24 @@ public:
         Tpetra::Details::inverseScaleBlockDiagonal(Dt,doTranspose,St);
 #endif // HAVE_XPETRA_TPETRA
       }
+  }
+
+  static void checkLocalRowMapMatchesColMap(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & A) {
+    RCP<const Map> rowMap = A.getRowMap();
+    RCP<const Map> colMap = A.getColMap();
+    RCP<const Teuchos::Comm<int> > comm = rowMap->getComm();
+    LO numRows = Teuchos::as<LocalOrdinal>(rowMap->getNodeNumElements());
+    bool fail = false;
+    for (LO rowLID = 0; rowLID < numRows; rowLID++) {
+      GO rowGID = rowMap->getGlobalElement(rowLID);
+      LO colLID = colMap->getLocalElement(rowGID);
+      if (rowLID != colLID) {
+        fail = true;
+        std::cerr << "On rank " << comm->getRank() << ", GID " << rowGID << " is LID " << rowLID << "in the rowmap, but LID " << colLID << " in the column map.\n";
+      }
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(fail, Exceptions::RuntimeError,
+                               "Local parts of row and column map do not match!");
   }
 
 

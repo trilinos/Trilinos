@@ -124,7 +124,7 @@ namespace { // (anonymous)
     Kokkos::RangePolicy<cur_exec_space> policy (0, vector_size);
     {
       ::Tpetra::Details::ProfilingRegion region ("Raw Lambda Update Loop");
-      for(size_t i=0; i<num_repeats; i++) {
+      for(size_t rep=0; rep<num_repeats; rep++) {
         Kokkos::parallel_for(policy,KOKKOS_LAMBDA(const size_t &i) {
             // This is what we should do in general
             //            X_lcl(i,0) = ONE * X_lcl(i,0) + ONE * Y_lcl(i,0);

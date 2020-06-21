@@ -60,6 +60,9 @@ set (Piro_EpetraSolver_MPI_4_DISABLE ON CACHE BOOL "Set by default for PR testin
 # Disable tests that timeout in PR testing until it can be fixed (#4614)
 set (PanzerAdaptersSTK_PoissonInterfaceExample_2d_diffsideids_MPI_1_DISABLE ON CACHE BOOL "Set by default for PR testing")
 
+# Disable long-failing Anazazi test until it can be fixed (#3585)
+set (Anasazi_Epetra_OrthoManagerGenTester_0_MPI_4_DISABLE ON CACHE BOOL "Set by default for PR testing")
+
 # Options from SEMSDevEnv.cmake
 
 SET(CMAKE_C_COMPILER "$ENV{MPICC}" CACHE FILEPATH "Set by default for PR testing")

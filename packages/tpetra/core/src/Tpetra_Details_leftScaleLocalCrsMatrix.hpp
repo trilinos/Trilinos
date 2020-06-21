@@ -42,7 +42,7 @@
 #ifndef TPETRA_DETAILS_LEFTSCALELOCALCRSMATRIX_HPP
 #define TPETRA_DETAILS_LEFTSCALELOCALCRSMATRIX_HPP
 
-/// \file Tpetra_Details_leftScaleLocalCrsMatrix_def.hpp
+/// \file Tpetra_Details_leftScaleLocalCrsMatrix.hpp
 /// \brief Declaration and definition of
 ///   Tpetra::Details::leftScaleLocalCrsMatrix
 ///

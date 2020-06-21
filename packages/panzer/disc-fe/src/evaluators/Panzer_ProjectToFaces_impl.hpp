@@ -138,6 +138,43 @@ postRegistrationSetup(typename Traits::SetupData d,
 
   TEUCHOS_ASSERT(result.extent(1) == normals.extent(1));
   TEUCHOS_ASSERT(vector_values[0].extent(2) == normals.extent(2));
+
+
+  // Cache off vectors and keep intrepid2 function calls on host (by
+  // switching memory space to ProjectionSpace). This is done to
+  // prevent many small UVM allocations of temporaries in the
+  // intrepid2 functions.
+  if (use_fast_method_on_rectangular_hex_mesh) {
+    // Reminder to fix the fast method in the future 
+    // quadWts = Kokkos::DynRankView<double,PHX::Device>("quadWts",numQPoints);
+    // quadPts = Kokkos::DynRankView<double,PHX::Device>("quadPts",numQPoints,num_dim);
+  } else {
+    const shards::CellTopology & parentCell = *basis->getCellTopology();
+    const int cellDim = parentCell.getDimension();
+    using HostDRVType = Kokkos::DynRankView<ScalarT,ProjectionSpace>;
+    refEdges = Kokkos::createDynRankViewWithType<HostDRVType>(result.get_static_view(),"ref_edges", 2, cellDim);
+    phyEdges = Kokkos::createDynRankViewWithType<HostDRVType>(result.get_static_view(),"phy_edges", 2, cellDim);
+
+    PHX::MDField<double,Cell,panzer::NODE,Dim> vertex_coords = (*d.worksets_)[0].cell_vertex_coordinates;
+    physicalNodes = Kokkos::DynRankView<double,ProjectionSpace>("physicalNodes",1,vertex_coords.extent(1),num_dim);
+
+    const int subcell_dim = 2;
+    Intrepid2::DefaultCubatureFactory quadFactory;
+    int maxNumFaceQP = 0;
+    faceQuads.resize(num_pts);
+    for (int p = 0; p < num_pts; ++p){
+      const shards::CellTopology & subcell = parentCell.getCellTopologyData(subcell_dim,p);
+      faceQuads[p] = quadFactory.create<ProjectionSpace::execution_space,double,double>(subcell, quad_degree);
+      TEUCHOS_ASSERT(faceQuads[p]->getNumPoints() == static_cast<int>(vector_values.size()));
+      maxNumFaceQP = std::max(maxNumFaceQP,faceQuads[p]->getNumPoints());
+    }
+    quadWts = Kokkos::DynRankView<double,ProjectionSpace>("quadWts",maxNumFaceQP);
+    quadPts = Kokkos::DynRankView<double,ProjectionSpace>("quadPts",maxNumFaceQP,subcell_dim);
+    refQuadPts = Kokkos::DynRankView<double,ProjectionSpace>("refQuadPts",maxNumFaceQP,num_dim);
+    jacobianSide = Kokkos::DynRankView<double,ProjectionSpace>("jacobianSide",1,maxNumFaceQP,num_dim,num_dim);
+    weighted_measure = Kokkos::DynRankView<double,ProjectionSpace>("weighted_measure",1,maxNumFaceQP);
+    scratch_space = Kokkos::DynRankView<double,ProjectionSpace>("scratch_space",jacobianSide.span());
+  }
 }
 
 // **********************************************************************
@@ -154,13 +191,13 @@ evaluateFields(typename Traits::EvalData workset)
   // to be made so the field is appropriately projected.
   const shards::CellTopology & parentCell = *basis->getCellTopology();
   Intrepid2::DefaultCubatureFactory quadFactory;
-  Teuchos::RCP< Intrepid2::Cubature<PHX::exec_space,double,double> > faceQuad;
 
   // Fast Method: One point quadrature on hex mesh. Assumes that the
   // face area can be computed from two edge normals. This is only
   // true if the mesh is square or rectangular. Will not work for
   // paved meshes.
   if (use_fast_method_on_rectangular_hex_mesh){
+    Teuchos::RCP< Intrepid2::Cubature<PHX::exec_space,double,double> > faceQuad;
 
     // Collect the reference face information. For now, do nothing with the quadPts.
     const unsigned num_faces = parentCell.getFaceCount();
@@ -168,11 +205,11 @@ evaluateFields(typename Traits::EvalData workset)
     for (unsigned f=0; f<num_faces; f++) {
       faceQuad = quadFactory.create<PHX::exec_space,double,double>(parentCell.getCellTopologyData(2,f), 1);
       const int numQPoints = faceQuad->getNumPoints();
-      Kokkos::DynRankView<double,PHX::Device> quadWts("quadWts",numQPoints);
-      Kokkos::DynRankView<double,PHX::Device> quadPts("quadPts",numQPoints,num_dim);
-      faceQuad->getCubature(quadPts,quadWts);
+      Kokkos::DynRankView<double,PHX::Device> quadWtsFast("quadWts",numQPoints);
+      Kokkos::DynRankView<double,PHX::Device> quadPtsFast("quadPts",numQPoints,num_dim);
+      faceQuad->getCubature(quadPtsFast,quadWtsFast);
       for (int q=0; q<numQPoints; q++)
-        refFaceWt[f] += quadWts(q);
+        refFaceWt[f] += quadWtsFast(q);
     }
     
     // Loop over the faces of the workset cells.
@@ -187,22 +224,14 @@ evaluateFields(typename Traits::EvalData workset)
 
   } else {
     PHX::MDField<double,Cell,panzer::NODE,Dim> vertex_coords = workset.cell_vertex_coordinates;
-    int subcell_dim = 2;
-
-    int cellDim = parentCell.getDimension();
-    int numFaces = Teuchos::as<int>(parentCell.getFaceCount());
-
-    // allocate space that is sized correctly for AD
-    auto refEdges = Kokkos::createDynRankView(result.get_static_view(),"ref_edges", 2, cellDim);
-    auto phyEdges = Kokkos::createDynRankView(result.get_static_view(),"phy_edges", 2, cellDim);
-
+    const int subcell_dim = 2;
+    const int numFaces = Teuchos::as<int>(parentCell.getFaceCount());
     const WorksetDetails & details = workset;
 
     // Loop over the faces of the workset cells
     for (index_t cell = 0; cell < workset.num_cells; ++cell) {
 
       // get nodal coordinates for this cell 
-      Kokkos::DynRankView<double,PHX::Device> physicalNodes("physicalNodes",1,vertex_coords.extent(1),num_dim);
       for (int point(0); point < vertex_coords.extent_int(1); ++point)
       {
         for (int ict(0); ict < num_dim; ict++)
@@ -228,25 +257,17 @@ evaluateFields(typename Traits::EvalData workset)
 
         // get quad weights/pts on reference 2d cell
         const shards::CellTopology & subcell = parentCell.getCellTopologyData(subcell_dim,p);     
-        faceQuad = quadFactory.create<PHX::exec_space,double,double>(subcell, quad_degree);
-        TEUCHOS_ASSERT(
-          faceQuad->getNumPoints() == static_cast<int>(vector_values.size()));
-        Kokkos::DynRankView<double,PHX::Device> quadWts("quadWts",faceQuad->getNumPoints());
-        Kokkos::DynRankView<double,PHX::Device> quadPts("quadPts",faceQuad->getNumPoints(),subcell_dim);
+        const auto& faceQuad = faceQuads[p];
         faceQuad->getCubature(quadPts,quadWts);
 
         // map 2d quad pts to reference cell (3d)
-        Kokkos::DynRankView<double,PHX::Device> refQuadPts("refQuadPts",faceQuad->getNumPoints(),num_dim);
-        Intrepid2::CellTools<PHX::exec_space>::mapToReferenceSubcell(refQuadPts, quadPts, subcell_dim, p, parentCell);
+        Intrepid2::CellTools<ProjectionSpace::execution_space>::mapToReferenceSubcell(refQuadPts, quadPts, subcell_dim, p, parentCell);
 
         // Calculate side jacobian
-        Kokkos::DynRankView<double,PHX::Device> jacobianSide("jacobianSide", 1, faceQuad->getNumPoints(), num_dim, num_dim);
-        Intrepid2::CellTools<PHX::exec_space>::setJacobian(jacobianSide, refQuadPts, physicalNodes, parentCell);
+        Intrepid2::CellTools<ProjectionSpace::execution_space>::setJacobian(jacobianSide, refQuadPts, physicalNodes, parentCell);
 
         // Calculate weighted measure at quadrature points
-        Kokkos::DynRankView<double,PHX::Device> weighted_measure("weighted_measure",1,faceQuad->getNumPoints());
-        Kokkos::DynRankView<double,PHX::Device> scratch_space("scratch_space",jacobianSide.span());        
-        Intrepid2::FunctionSpaceTools<PHX::exec_space>::computeFaceMeasure(weighted_measure, jacobianSide, quadWts, p, parentCell, scratch_space);
+        Intrepid2::FunctionSpaceTools<ProjectionSpace::execution_space>::computeFaceMeasure(weighted_measure, jacobianSide, quadWts, p, parentCell, scratch_space);
 
         // loop over quadrature points
         for (int qp = 0; qp < faceQuad->getNumPoints(); ++qp) {
@@ -259,7 +280,7 @@ evaluateFields(typename Traits::EvalData workset)
           Intrepid2::Kernels::Serial::matvec_product(phyEdgeTan_V, J, ortEdgeTan_V);            
 
           // normal = TanU x TanV
-          std::vector<ScalarT> normal(3,0.0);
+          ScalarT normal[3];
           normal[0] = (phyEdgeTan_U(1)*phyEdgeTan_V(2) - phyEdgeTan_U(2)*phyEdgeTan_V(1));
           normal[1] = (phyEdgeTan_U(2)*phyEdgeTan_V(0) - phyEdgeTan_U(0)*phyEdgeTan_V(2));
           normal[2] = (phyEdgeTan_U(0)*phyEdgeTan_V(1) - phyEdgeTan_U(1)*phyEdgeTan_V(0));

@@ -59,7 +59,7 @@ static void print_out(const Epetra_Comm& Comm, const int level, const char* what
 // ================================================ ====== ==== ==== == =
 
 int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs,
-                  double AddToDiag, Amesos_Handle_Type *Amesos_Handle)
+                  double AddToDiag, int splitComm, Amesos_Handle_Type *Amesos_Handle)
 {
 # ifdef ML_MPI
   MPI_Comm  amesosComm;
@@ -81,8 +81,12 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs,
 
 
   int hasRows=1;
-  if(choice != ML_AMESOS_SUPERLUDIST) {
+  if(splitComm && choice != ML_AMESOS_SUPERLUDIST) {
 #   ifdef ML_MPI
+    if( !Ke->comm->ML_mypid && ML_Get_PrintLevel() > 2 ) {      
+      std::cout << "Amesos (level " << curr_level
+                << ") : Splitting communicator" <<std::endl;
+    }
     hasRows = MPI_UNDEFINED;
     if (Ke->invec_leng > 0 || Ke->outvec_leng > 0) hasRows = 1;
     MPI_Comm_split(Ke->comm->USR_comm,hasRows,Ke->comm->ML_mypid,&amesosComm);
@@ -90,6 +94,10 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs,
 #   endif
   }
   else {
+    if( !Ke->comm->ML_mypid && ML_Get_PrintLevel() > 2 ) {      
+      std::cout << "Amesos (level " << curr_level
+                << ") : Not splitting communicator" <<std::endl;
+    }
     amesosComm=Ke->comm->USR_comm;
     Amesos_Handle->freeMpiComm = 0;
   }

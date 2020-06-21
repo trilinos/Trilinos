@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//               KokkosKernels 0.9: Linear Algebra and Graph Kernels
-//                 Copyright 2017 Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -81,20 +82,19 @@ namespace Impl{
     typedef typename ain_nonzero_index_view_type::device_type device2;
 
     typedef typename KernelHandle::nnz_lno_t idx;
-    typedef typename ain_row_index_view_type::non_const_type idx_array_type;
 
 
     //TODO this is not correct, check memory space.
-    if (Kokkos::Impl::is_same<Kokkos::Cuda, device1 >::value){
+    if (std::is_same<Kokkos::Cuda, device1 >::value){
       throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSPARSE\n");
       //return;
     }
-    if (Kokkos::Impl::is_same<Kokkos::Cuda, device2 >::value){
+    if (std::is_same<Kokkos::Cuda, device2 >::value){
       throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSPARSE\n");
       //return;
     }
 
-    if (Kokkos::Impl::is_same<idx, int>::value){
+    if (std::is_same<idx, int>::value){
 
       const idx *a_xadj = (int *)row_mapA.data();
       const idx *b_xadj = (int *)row_mapB.data();
@@ -144,6 +144,11 @@ namespace Impl{
       //return;
     }
 #else
+    (void)handle;
+    (void)m;          (void)n;          (void)k;
+    (void)row_mapA;   (void)row_mapB;   (void)row_mapC;
+    (void)entriesA;   (void)entriesB;
+    (void)transposeA; (void)transposeB;
     throw std::runtime_error ("CUSPARSE IS NOT DEFINED\n");
     //return;
 #endif
@@ -171,18 +176,17 @@ namespace Impl{
       ain_nonzero_index_view_type entriesA,
       ain_nonzero_value_view_type valuesA,
 
-      bool transposeA,
+      bool /* transposeA */,
       bin_row_index_view_type row_mapB,
       bin_nonzero_index_view_type entriesB,
       bin_nonzero_value_view_type valuesB,
-      bool transposeB,
+      bool /* transposeB */,
       cin_row_index_view_type row_mapC,
       cin_nonzero_index_view_type entriesC,
       cin_nonzero_value_view_type valuesC){
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
     typedef typename KernelHandle::nnz_lno_t idx;
-    typedef ain_row_index_view_type idx_array_type;
 
     typedef typename KernelHandle::nnz_scalar_t value_type;
 
@@ -192,22 +196,22 @@ namespace Impl{
     typedef typename ain_nonzero_value_view_type::device_type device3;
 
 
-    if (Kokkos::Impl::is_same<Kokkos::Cuda, device1 >::value){
+    if (std::is_same<Kokkos::Cuda, device1 >::value){
       throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSPARSE\n");
       //return;
     }
-    if (Kokkos::Impl::is_same<Kokkos::Cuda, device2 >::value){
+    if (std::is_same<Kokkos::Cuda, device2 >::value){
       throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSPARSE\n");
       //return;
     }
-    if (Kokkos::Impl::is_same<Kokkos::Cuda, device3 >::value){
+    if (std::is_same<Kokkos::Cuda, device3 >::value){
       throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSPARSE\n");
       //return;
     }
 
 
 
-    if (Kokkos::Impl::is_same<idx, int>::value){
+    if (std::is_same<idx, int>::value){
       int *a_xadj = (int *)row_mapA.data();
       int *b_xadj = (int *)row_mapB.data();
       int *c_xadj = (int *)row_mapC.data();
@@ -226,7 +230,7 @@ namespace Impl{
       value_type *b_ew = (value_type *)valuesB.data();
       value_type *c_ew = (value_type *)valuesC.data();
 
-      if (Kokkos::Impl::is_same<value_type, float>::value){
+      if (std::is_same<value_type, float>::value){
         cusparseScsrgemm(
             h->handle,
             h->transA,
@@ -249,7 +253,7 @@ namespace Impl{
             c_xadj,
             c_adj);
       }
-      else if (Kokkos::Impl::is_same<value_type, double>::value){
+      else if (std::is_same<value_type, double>::value){
         cusparseDcsrgemm(
             h->handle,
             h->transA,
@@ -286,6 +290,11 @@ namespace Impl{
       //return;
     }
 #else
+    (void)handle;
+    (void)m;        (void)n;        (void)k;
+    (void)row_mapA; (void)row_mapB; (void)row_mapC;
+    (void)entriesA; (void)entriesB; (void)entriesC;
+    (void)valuesA;  (void)valuesB;  (void)valuesC;
     throw std::runtime_error ("CUSPARSE IS NOT DEFINED\n");
     //return;
 #endif

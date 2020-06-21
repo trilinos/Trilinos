@@ -94,6 +94,13 @@ int main(int argc, char *argv[]) {
     RealT T        = parlist->sublist("Time Discretization").get("End Time",             1.0);
     RealT dt       = T/static_cast<RealT>(nt);
 
+    parlist->sublist("Reduced Dynamic Objective").set("State Domain Seed",12321*(myRank+1));
+    parlist->sublist("Reduced Dynamic Objective").set("State Range Seed", 32123*(myRank+1));
+    parlist->sublist("Reduced Dynamic Objective").set("Adjoint Domain Seed",23432*(myRank+1));
+    parlist->sublist("Reduced Dynamic Objective").set("Adjoint Range Seed", 43234*(myRank+1));
+    parlist->sublist("Reduced Dynamic Objective").set("State Sensitivity Domain Seed",34543*(myRank+1));
+    parlist->sublist("Reduced Dynamic Objective").set("State Sensitivity Range Seed", 54345*(myRank+1));
+
     /*************************************************************************/
     /***************** BUILD GOVERNING PDE ***********************************/
     /*************************************************************************/
@@ -164,6 +171,29 @@ int main(int argc, char *argv[]) {
     ROL::ParameterList &rpl = parlist->sublist("Reduced Dynamic Objective");
     ROL::Ptr<ROL::ReducedDynamicObjective<RealT>> obj
       = ROL::makePtr<ROL::ReducedDynamicObjective<RealT>>(dyn_obj, dyn_con, u0, zk, ck, timeStamp, rpl,outStream);
+    // print uncontrolled state
+    bool print_unc = true;
+    if (print_unc) {
+      std::clock_t timer_print_unc = std::clock();
+      // Output state and control to file
+      uo->set(*u0); un->zero(); z->zero();
+      for (int k = 1; k < nt; ++k) {
+        // Print previous state to file
+        std::stringstream ufile;
+        ufile << "uncontrolled_state." << k-1 << ".txt";
+        assembler->outputTpetraVector(uo_ptr, ufile.str());
+        // Advance time stepper
+        dyn_con->solve(*ck, *uo, *un, *z->get(k), timeStamp[k]);
+        uo->set(*un);
+      }
+      // Print previous state to file
+      std::stringstream ufile;
+      ufile << "uncontrolled_state." << nt-1 << ".txt";
+      assembler->outputTpetraVector(uo_ptr, ufile.str());
+      *outStream << "Output time: "
+                 << static_cast<RealT>(std::clock()-timer_print_unc)/static_cast<RealT>(CLOCKS_PER_SEC)
+                 << " seconds." << std::endl << std::endl;
+    }
  
     /*************************************************************************/
     /***************** BUILD BOUND CONSTRAINT ********************************/

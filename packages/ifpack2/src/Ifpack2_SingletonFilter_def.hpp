@@ -149,15 +149,6 @@ SingletonFilter<MatrixType>::getComm() const
   return A_->getComm();
 }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template<class MatrixType>
-TPETRA_DEPRECATED
-Teuchos::RCP<typename MatrixType::node_type>
-SingletonFilter<MatrixType>::getNode() const
-{
-  return Teuchos::null;
-}
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 template<class MatrixType>
 Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,

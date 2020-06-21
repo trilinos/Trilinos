@@ -75,7 +75,7 @@ SET(CTEST_TEST_TIMEOUT 14400) # twice the default value, for valgrind
 SET(CTEST_DO_MEMORY_TESTING FALSE)
 
 SET(Trilinos_PACKAGES Tpetra)
-SET(Trilinos_EXCLUDE_PACKAGES Epetra GlobiPack OptiPack Domi PyTrilinos Moertel)
+SET(Trilinos_EXCLUDE_PACKAGES Epetra Domi PyTrilinos Moertel)
 SET(Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES ON)
 
 # If true, this option yields faster builds. In that case, however, it won't disable any upstream package that fails to compile.
@@ -93,8 +93,6 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTPL_ENABLE_X11=OFF"
   "-DTPL_ENABLE_BoostLib=ON"
   "-DTrilinos_ENABLE_Epetra:BOOL=OFF"
-  "-DTrilinos_ENABLE_GlobiPack:BOOL=OFF"
-  "-DTrilinos_ENABLE_OptiPack:BOOL=OFF"
   "-DTrilinos_ENABLE_Domi:BOOL=OFF"
   "-DTrilinos_ENABLE_PyTrilinos:BOOL=OFF"
   "-DTrilinos_ENABLE_Moertel:BOOL=OFF"

@@ -85,7 +85,7 @@ namespace LOCA {
       //@{
 
       /*!
-       * \brief Replace Jacobian \f$J\f$ by \f$aJ+bI\f$ where \f$I\f$ is
+       * \brief Replace Jacobian \f$ J\f$ by \f$ aJ+bI\f$ where \f$ I\f$ is
        * the identity matrix
        */
       virtual NOX::Abstract::Group::ReturnType

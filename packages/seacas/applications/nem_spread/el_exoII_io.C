@@ -1,36 +1,9 @@
 /*
- * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
- * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
- *     * Neither the name of NTESS nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
+ * See packages/seacas/LICENSE for details
  */
 #include "copy_string_cpp.h"
 #include "el_check_monot.h" // for check_monot
@@ -881,7 +854,6 @@ void NemSpread<T, INT>::read_side_set_ids(int mesh_exoid, INT num_elem_in_ssets[
     print_line("=", 79);
     fmt::print("\n");
   }
-  return;
 }
 
 /*****************************************************************************/
@@ -903,7 +875,7 @@ void NemSpread<T, INT>::read_coord(int exoid, int max_name_length)
     size_t itotal_nodes = globals.Num_Internal_Nodes[iproc] + globals.Num_Border_Nodes[iproc] +
                           globals.Num_External_Nodes[iproc];
 
-    /* Allocate permament storage for the coordinates */
+    /* Allocate permanent storage for the coordinates */
     if (itotal_nodes > 0) {
       globals.Coor[iproc] =
           (T **)array_alloc(__FILE__, __LINE__, 2, globals.Num_Dim, itotal_nodes, sizeof(T));
@@ -957,10 +929,10 @@ void NemSpread<T, INT>::read_coord(int exoid, int max_name_length)
    * output databases.
    */
   {
-    int sequential = 1;
+    bool sequential = true;
     for (size_t i = 0; i < globals.Num_Node; i++) {
       if ((size_t)global_node_ids[i] != i + 1) {
-        sequential = 0;
+        sequential = false;
         break;
       }
     }
@@ -975,12 +947,12 @@ void NemSpread<T, INT>::read_coord(int exoid, int max_name_length)
                    "       All global ids must be greater than 0. The map will be ignored.\n"
                    "---------------------------------------------------------------------\n",
                    i + 1, global_node_ids[i]);
-        sequential = 1; // Map is invalid, ignore it.
+        sequential = true; // Map is invalid, ignore it.
         break;
       }
     }
 
-    if (sequential == 0) {
+    if (!sequential) {
       for (int iproc = Proc_Info[4]; iproc < Proc_Info[4] + Proc_Info[5]; iproc++) {
 
         size_t itotal_nodes = globals.Num_Internal_Nodes[iproc] + globals.Num_Border_Nodes[iproc] +
@@ -1077,7 +1049,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::extract_elem_blk()
      */
     find_elem_block(proc_elem_blk, iproc, Proc_Ids[iproc]);
 
-    /* Allocate Permament integer arrays, which have lengths equal to the
+    /* Allocate Permanent integer arrays, which have lengths equal to the
      * number of element blocks defined on the processor.  This is done with a
      * single malloc call.  Initialize this space to zero.
      */
@@ -1201,10 +1173,17 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
   size_t ielem_count;
 #endif
   INT *  elem_blk             = nullptr, ipos;
-  size_t num_elem_per_message = 0, num_attr_per_message = 0, num_attr_left_over = 0;
-  size_t num_elem_messages = 0, num_attr_messages = 0, num_elem_left_over = 0;
+  size_t num_elem_per_message = 0;
+  size_t num_attr_per_message = 0;
+  size_t num_attr_left_over   = 0;
+  size_t num_elem_messages    = 0;
+  size_t num_attr_messages    = 0;
+  size_t num_elem_left_over   = 0;
 
-  size_t istart_elem, iend_elem, istart_attr, iend_attr;
+  size_t istart_elem;
+  size_t iend_elem;
+  size_t istart_attr;
+  size_t iend_attr;
   int    local_ielem_blk;
 
   /**************************** execution begins ******************************/
@@ -1477,6 +1456,22 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
         break;
       }
     }
+
+    // Check that map is valid 1 <= global_node_id[*]
+    // If not, output a warning and disable the map.
+    for (size_t i = 0; i < globals.Num_Elem; i++) {
+      if (global_ids[i] <= 0) {
+        fmt::print(stderr,
+                   "---------------------------------------------------------------------\n"
+                   "ERROR: Local element {:n} has a global id of {:n} which is invalid.\n"
+                   "       All global ids must be greater than 0. The map will be ignored.\n"
+                   "---------------------------------------------------------------------\n",
+                   i + 1, global_ids[i]);
+        sequential = true; // Map is invalid, ignore it.
+        break;
+      }
+    }
+
     if (!sequential) {
       for (int iproc = Proc_Info[4]; iproc < Proc_Info[4] + Proc_Info[5]; iproc++) {
 
@@ -1797,6 +1792,9 @@ void NemSpread<T, INT>::find_elem_block(INT *proc_elem_blk, int iproc, int /*pro
    *                              the global element block number.
    *                              (Global int vector of length globals.Num_Elem_Blk)
    */
+  if (globals.Num_Elem_Blk == 0) {
+    return;
+  }
 
   /* Boolean vector of length globals.Num_Elem_Blk If the i'th
      element block exists on the current processor, the i'th entry
@@ -1925,7 +1923,7 @@ void NemSpread<T, INT>::find_elem_block(INT *proc_elem_blk, int iproc, int /*pro
 
   /*
    * Create a map from the current processor's element block number to the
-   * 'global' element block number, globals.GElem_Blks.  This is a permament Global
+   * 'global' element block number, globals.GElem_Blks.  This is a permanent Global
    * Map.
    */
   globals.GElem_Blks[iproc] =
@@ -1978,7 +1976,9 @@ void NemSpread<T, INT>::read_node_sets(int exoid, INT *num_nodes_in_node_set, IN
  */
 
 {
-  size_t num_messages, num_left_over, num_node_per_message;
+  size_t num_messages;
+  size_t num_left_over;
+  size_t num_node_per_message;
 
   /* Allocate arrays */
   std::vector<INT>  list_length(Proc_Info[2]);
@@ -2217,12 +2217,12 @@ void NemSpread<T, INT>::read_node_sets(int exoid, INT *num_nodes_in_node_set, IN
   }   /* END "for (i = 0; i < globals.Num_Node_Set; i++)" */
 
   /*--------------------------------------------------------------------------*/
-  /*             WRITE PERMAMENT ARRAYS FOR NODE SET INFO                     */
+  /*             WRITE PERMANENT ARRAYS FOR NODE SET INFO                     */
   /*--------------------------------------------------------------------------*/
 
   for (int iproc = 0; iproc < Proc_Info[2]; iproc++) {
 
-    /* Allocate Permament Arrays for node sets in one long malloc */
+    /* Allocate Permanent Arrays for node sets in one long malloc */
     if (globals.Num_Node_Set > 0) {
 
       /*
@@ -2261,7 +2261,7 @@ void NemSpread<T, INT>::read_node_sets(int exoid, INT *num_nodes_in_node_set, IN
     }
 
     /*
-     * Fill in the permament node set arrays which have length,
+     * Fill in the permanent node set arrays which have length,
      * globals.Proc_Num_Node_Sets, the total number of node sets defined on the
      * current processor.
      */
@@ -2432,7 +2432,9 @@ void NemSpread<T, INT>::read_side_sets(int exoid, INT *num_elem_in_ssets, INT *n
       /* One element ID + One side ID */
       size_t iss_size = 3 * sizeof(INT);
 
-      size_t num_messages, num_left_over, num_elem_per_message;
+      size_t num_messages;
+      size_t num_left_over;
+      size_t num_elem_per_message;
       find_message_info(iss_size, num_elem_in_ssets[i], &num_elem_per_message, &num_messages,
                         &num_left_over);
 
@@ -2805,7 +2807,7 @@ void NemSpread<T, INT>::read_side_sets(int exoid, INT *num_elem_in_ssets, INT *n
   /*-------------------------------------------------------------------------*/
 
   /*
-   * Allocate storage for permament side set integer info vectors using one
+   * Allocate storage for permanent side set integer info vectors using one
    * long malloc statement.
    */
   for (int iproc = 0; iproc < Proc_Info[2]; iproc++) {

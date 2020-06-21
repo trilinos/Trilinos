@@ -115,6 +115,8 @@ namespace MueLu {
 
     static void SetMueLuOStream(const Teuchos::RCP<Teuchos::FancyOStream> &mueluOStream);
 
+    static void SetMueLuOFileStream(const std::string& filename);
+
     static Teuchos::RCP<Teuchos::FancyOStream> GetMueLuOStream();
 
     //! @name Public static member functions
@@ -135,6 +137,7 @@ namespace MueLu {
       int procRank_;
     int numProcs_;
 
+    static Teuchos::RCP<Teuchos::FancyOStream> mueluOutputStream_;
     static Teuchos::RCP<Teuchos::FancyOStream> blackHole_;
 
     //! Global verbose level. This verbose level is used when the verbose level of the object is not specified (verbLevel_ == NotSpecified)

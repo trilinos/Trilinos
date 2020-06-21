@@ -90,10 +90,6 @@ namespace Tpetra {
     virtual Teuchos::RCP<const Teuchos::Comm<int> >
     getComm () const = 0;
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    //! The Kokkos Node instance with which this object was created.
-    virtual TPETRA_DEPRECATED Teuchos::RCP<Node> getNode () const = 0;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //! The Map that describes this graph's distribution of rows over processes.
     virtual Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
@@ -166,44 +162,6 @@ namespace Tpetra {
     //! Whether fillComplete() has been called (without an intervening resumeFill()).
     virtual bool isFillComplete() const = 0;
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    /// \brief Number of diagonal entries over all processes in the
-    ///   graph's communicator.
-    ///
-    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
-    ///   and will DISAPPEAR VERY SOON per #2630.
-    virtual global_size_t TPETRA_DEPRECATED getGlobalNumDiags () const = 0;
-
-    /// \brief Number of diagonal entries on the calling process.
-    ///
-    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
-    ///   and will DISAPPEAR VERY SOON per #2630.
-    virtual size_t TPETRA_DEPRECATED getNodeNumDiags () const = 0;
-
-    /// \brief Whether the graph is locally lower triangular.
-    ///
-    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
-    ///   and will DISAPPEAR VERY SOON per #2630.
-    ///
-    /// \pre Subclasses reserve the right to impose preconditions on
-    ///   the matrix's state.
-    ///
-    /// \note This is entirely a local property.  That means this
-    ///   method may return different results on different processes.
-    virtual bool TPETRA_DEPRECATED isLowerTriangular () const = 0;
-
-    /// \brief Whether the graph is locally upper triangular.
-    ///
-    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
-    ///   and will DISAPPEAR VERY SOON per #2630.
-    ///
-    /// \pre Subclasses reserve the right to impose preconditions on
-    ///   the matrix's state.
-    ///
-    /// \note This is entirely a local property.  That means this
-    ///   method may return different results on different processes.
-    virtual bool TPETRA_DEPRECATED isUpperTriangular () const = 0;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //@}
     //! @name Access to entries in a row

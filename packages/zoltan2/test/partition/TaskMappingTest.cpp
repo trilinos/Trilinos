@@ -289,6 +289,11 @@ int main(int narg, char *arg[]) {
       int *machine_extent = new int [mach_coord_dim];
       bool *machine_extent_wrap_around = new bool[mach_coord_dim];
 
+      // Adding this to avoid uninitialized memory read below
+      for(int n = 0; n < mach_coord_dim; ++n) {
+        machine_extent_wrap_around[n] = false;
+      }
+
       mach.getMachineExtent(machine_extent);
       mach.getMachineExtentWrapArounds(machine_extent_wrap_around);
      
@@ -306,11 +311,10 @@ int main(int narg, char *arg[]) {
           mach.getHopCount(procId1, procId2, distance2);
           
           hops2 += distance2;
-          for (int k = 0 ; k < mach_coord_dim ; ++k) {
-            part_t distance = 
-              ZOLTAN2_ABS(proc_coords[k][procId1] - proc_coords[k][procId2]);
-            if (machine_extent_wrap_around[k]) {
-              if (machine_extent[k] - distance < distance) {
+          for (int k = 0 ; k < mach_coord_dim ; ++k){
+            part_t distance = std::abs(proc_coords[k][procId1] - proc_coords[k][procId2]);
+            if (machine_extent_wrap_around[k]){
+              if (machine_extent[k] - distance < distance){
                 distance = machine_extent[k] - distance;
               }
             }

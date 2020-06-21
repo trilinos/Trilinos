@@ -123,7 +123,6 @@ and IntSerialDenseMatrix.
 %}
 
 // Global swig features
-%feature("autodoc", "1");
 %feature("compactdefaultargs");
 
 // SWIG library include files
@@ -257,7 +256,10 @@ char* strtok;
 %include "Teuchos_RCP_DAP.i"
 
 // Include Epetra documentation
+#if SWIG_VERSION < 0x040000
+%feature("autodoc", "1");
 %include "Epetra_dox.i"
+#endif
 
 // Epetra interface include files
 %include "Epetra_Base.i"              // Base classes and utility classes

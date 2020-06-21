@@ -49,6 +49,7 @@
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
+#include <type_traits>
 #include <vector>
 
 namespace Teuchos {
@@ -261,7 +262,16 @@ namespace Teuchos {
               throw std::invalid_argument(os.str());
             }
         }
-      istr >> the_realValue;
+      {
+        if (std::is_same<Real, float>::value) {
+          double dblVal {};
+          istr >> dblVal;
+          the_realValue = static_cast<Real> (dblVal);
+        }
+        else {
+          istr >> the_realValue;
+        }
+      }
       if (istr.fail())
         {
           if (tolerant)

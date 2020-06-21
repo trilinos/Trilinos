@@ -761,7 +761,7 @@ namespace percept {
 
           stk::mesh::EntityVector sides;
           stk::mesh::Selector sel = stk::mesh::Selector(*partp) & m_eMesh.get_fem_meta_data()->locally_owned_part();
-          stk::mesh::get_selected_entities(sel , m_eMesh.get_bulk_data()->buckets(m_eMesh.side_rank()), sides);
+          stk::mesh::get_selected_entities(sel , m_eMesh.get_bulk_data()->buckets(m_eMesh.side_rank()), sides, false/*don't sort*/);
 
           for (auto side : sides)
             {

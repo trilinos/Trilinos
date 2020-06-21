@@ -31,7 +31,6 @@ Experimental AD classes:
 
 <ul>
 <li> Forward mode AD using caching expression templates:  Sacado::CacheFad::DFad.  Preliminary testing indicates this approach is more efficient for deep expressions with large number of derivative components, but is less efficient and Sacado::Fad::DFad otherwise.
-<li> Forward mode AD with custom memory manager:  Sacado::Fad::DMFad.  This implementation has not been extensively tested.
 <li> Taylor polynomial AD using caching expression templates:  Sacado::Tay::CacheTaylor.  Preliminary testing indicates this approach is less efficient than Sacado::Tay::Taylor.
 </ul>
 

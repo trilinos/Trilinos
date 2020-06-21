@@ -47,23 +47,14 @@
 
 namespace FROSch {
 
+    using namespace std;
     using namespace Teuchos;
     using namespace Xpetra;
 
     template <class SC,class LO,class GO,class NO>
     OverlappingOperator<SC,LO,GO,NO>::OverlappingOperator(ConstXMatrixPtr k,
                                                           ParameterListPtr parameterList) :
-    SchwarzOperator<SC,LO,GO,NO> (k,parameterList),
-    OverlappingMatrix_ (),
-    OverlappingMap_ (),
-    XTmp_ (),
-    XOverlap_ (),
-    XOverlapTmp_ (),
-    YOverlap_ (),
-    Scatter_(),
-    SubdomainSolver_ (),
-    Multiplicity_(),
-    Combine_()
+    SchwarzOperator<SC,LO,GO,NO> (k,parameterList)
     {
         FROSCH_TIMER_START_LEVELID(overlappingOperatorTime,"OverlappingOperator::OverlappingOperator");
         if (!this->ParameterList_->get("Combine Values in Overlap","Restricted").compare("Averaging")) {
@@ -133,14 +124,17 @@ namespace FROSch {
         YOverlap_->replaceMap(OverlappingMap_);
 
         XTmp_->putScalar(ScalarTraits<SC>::zero());
+        ConstXMapPtr yMap = y.getMap();
+        ConstXMapPtr yOverlapMap = YOverlap_->getMap();
         if (Combine_ == Restricted){
             GO globID = 0;
             LO localID = 0;
             for (UN i=0; i<y.getNumVectors(); i++) {
-                for (UN j=0; j<y.getMap()->getNodeNumElements(); j++) {
-                    globID = y.getMap()->getGlobalElement(j);
-                    localID = YOverlap_->getMap()->getLocalElement(globID);
-                    XTmp_->getDataNonConst(i)[j] = YOverlap_->getData(i)[localID];
+                ConstSCVecPtr yOverlapData_i = YOverlap_->getData(i);
+                for (UN j=0; j<yMap->getNodeNumElements(); j++) {
+                    globID = yMap->getGlobalElement(j);
+                    localID = yOverlapMap->getLocalElement(globID);
+                    XTmp_->getDataNonConst(i)[j] = yOverlapData_i[localID];
                 }
             }
         } else {
@@ -183,7 +177,7 @@ namespace FROSch {
     int OverlappingOperator<SC,LO,GO,NO>::computeOverlappingOperator()
     {
         FROSCH_TIMER_START_LEVELID(computeOverlappingOperatorTime,"OverlappingOperator::computeOverlappingOperator");
-        
+
         updateLocalOverlappingMatrices();
 
         bool reuseSymbolicFactorization = this->ParameterList_->get("Reuse: Symbolic Factorization",true);
@@ -192,7 +186,7 @@ namespace FROSch {
         }
 
         if (!reuseSymbolicFactorization) {
-            if (this->IsComputed_ && this->Verbose_) std::cout << "FROSch::OverlappingOperator : Recomputing the Symbolic Factorization" << std::endl;
+            if (this->IsComputed_ && this->Verbose_) cout << "FROSch::OverlappingOperator : Recomputing the Symbolic Factorization" << endl;
             SubdomainSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(OverlappingMatrix_,sublist(this->ParameterList_,"Solver")));
             SubdomainSolver_->initialize();
         } else {

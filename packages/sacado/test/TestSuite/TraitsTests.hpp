@@ -82,24 +82,13 @@ protected:
   // Random number generator
   Sacado::Random<double> urand;
 
-  // Memory pools for DMFad
-  Sacado::Fad::MemPoolManager<double> poolManager;
-  Sacado::Fad::MemPoolManager< Sacado::Fad::DMFad<double> > poolManager2;
-
 }; // class TraitsTests
 
 template <class ADType>
 TraitsTests<ADType>::
 TraitsTests() :
-  urand(),
-  poolManager(1),
-  poolManager2(1)
+  urand()
 {
-  Sacado::Fad::MemPool *pool = poolManager.getMemoryPool(1);
-  Sacado::Fad::DMFad<double>::setDefaultPool(pool);
-
-  Sacado::Fad::MemPool *pool2 = poolManager2.getMemoryPool(1);
-  Sacado::Fad::DMFad< Sacado::Fad::DMFad<double> >::setDefaultPool(pool2);
 }
 
 template <class ADType>

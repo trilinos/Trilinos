@@ -51,8 +51,6 @@
 #include <vector>                       // for vector
 
 #include "stk_unit_test_utils/stk_mesh_fixtures/CoordinateMapping.hpp"
-namespace stk { namespace mesh { struct ConnectivityMap; } }
-
 
 namespace stk {
 namespace mesh {
@@ -84,14 +82,12 @@ class TriFixtureImpl
               , size_t nx
               , size_t ny
               , stk::mesh::BulkData::AutomaticAuraOption = stk::mesh::BulkData::AUTO_AURA
-              , ConnectivityMap const* connectivity_map = NULL
             );
   TriFixtureImpl(   stk::ParallelMachine pm
               , size_t nx
               , size_t ny
               , const std::string& coordsName
               , stk::mesh::BulkData::AutomaticAuraOption = stk::mesh::BulkData::AUTO_AURA
-              , ConnectivityMap const* connectivity_map = NULL
             );
 
   const int         m_spatial_dimension;

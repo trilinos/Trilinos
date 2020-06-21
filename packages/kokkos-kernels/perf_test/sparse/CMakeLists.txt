@@ -1,28 +1,74 @@
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-TRIBITS_ADD_EXECUTABLE(
+KOKKOSKERNELS_ADD_EXECUTABLE(
   sparse_pcg
-  SOURCES KokkosSparse_pcg.cpp  
+  SOURCES KokkosSparse_pcg.cpp
   )
 
-TRIBITS_ADD_EXECUTABLE(
+KOKKOSKERNELS_ADD_EXECUTABLE(
+  sparse_block_pcg
+  SOURCES KokkosSparse_block_pcg.cpp
+  )
+
+KOKKOSKERNELS_ADD_EXECUTABLE(
   sparse_spgemm
-  SOURCES KokkosSparse_spgemm.cpp 
+  SOURCES KokkosSparse_spgemm.cpp
+  )
+
+KOKKOSKERNELS_ADD_EXECUTABLE(
+  sparse_spgemm_jacobi
+  SOURCES KokkosSparse_spgemm_jacobi.cpp
   )
   
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/spmv)
+KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/spmv)
 
-TRIBITS_ADD_EXECUTABLE(
+KOKKOSKERNELS_ADD_EXECUTABLE(
+  sparse_spadd
+  SOURCES KokkosSparse_spadd.cpp
+  )
+
+KOKKOSKERNELS_ADD_EXECUTABLE(
+  sparse_spmv_struct
+  SOURCES KokkosSparse_spmv_struct.cpp
+  )
+
+KOKKOSKERNELS_ADD_EXECUTABLE(
+  sparse_spmv_struct_tuning
+  SOURCES KokkosSparse_spmv_struct_tuning.cpp
+  )
+
+KOKKOSKERNELS_ADD_EXECUTABLE(
   sparse_spmv
-  SOURCES KokkosSparse_spmv.cpp 
+  SOURCES KokkosSparse_spmv.cpp
   )
-  
-TRIBITS_ADD_EXECUTABLE(
+
+KOKKOSKERNELS_ADD_EXECUTABLE(
   sparse_sptrsv
-  SOURCES KokkosSparse_sptrsv.cpp 
+  SOURCES KokkosSparse_sptrsv.cpp
   )
-  
 
-  
+KOKKOSKERNELS_ADD_EXECUTABLE(
+  sparse_sptrsv_cholmod
+  SOURCES KokkosSparse_sptrsv_cholmod.cpp 
+  )
 
+KOKKOSKERNELS_ADD_EXECUTABLE(
+  sparse_sptrsv_superlu
+  SOURCES KokkosSparse_sptrsv_superlu.cpp 
+  )
+
+KOKKOSKERNELS_ADD_EXECUTABLE(
+  sparse_sptrsv_supernode
+  SOURCES KokkosSparse_sptrsv_supernode.cpp 
+  )
+
+KOKKOSKERNELS_ADD_EXECUTABLE(
+  sparse_gs
+  SOURCES KokkosSparse_gs.cpp
+  )
+
+KOKKOSKERNELS_ADD_EXECUTABLE(
+  sparse_spiluk
+  SOURCES KokkosSparse_spiluk.cpp 
+  )

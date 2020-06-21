@@ -118,7 +118,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BasicRowMatrix: public Epetra_CompObject, pub
      This constructor requires a valid Epetra_Comm object as its only argument.  The constructor will use Comm to build
      Epetra_Maps objects: RowMap, ColMap, DomainMap and RangeMap.  However, these will be zero-length (trivial) maps that
      @e must be reset by calling one of the two SetMap() methods listed below.
-     @param[in] Comm An Epetra_Comm containing a valid Comm object.
+     @param Comm [in] An Epetra_Comm containing a valid Comm object.
   */
   Epetra_BasicRowMatrix(const Epetra_Comm & Comm);
 
@@ -133,8 +133,8 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BasicRowMatrix: public Epetra_CompObject, pub
      This method takes a row and column map.  On each processor these maps describe the global rows and columns, resp,
      that the processor will care about.  Note that the ColMap does not have to be one-to-one.  In other words, a column ID can appear
      on more than one processor.  The RowMap \e must be 1-to-1.
-     \param[in] RowMap An Epetra_Map containing on each processor a list of GIDs of rows that the processor cares about.
-     \param[in] ColMap An Epetra_Map containing on each processor a list of GIDs of columns that the processor cares about.
+     \param RowMap [in] An Epetra_Map containing on each processor a list of GIDs of rows that the processor cares about.
+     \param ColMap [in] An Epetra_Map containing on each processor a list of GIDs of columns that the processor cares about.
 
      In this method, the domain and range maps are assumed to be the same as the row map.  Note that this requires that
      the global matrix be square.  If the matrix is not square, or the domain vectors or range vectors do not have the same layout
@@ -148,10 +148,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BasicRowMatrix: public Epetra_CompObject, pub
      and range, resp, that the processor will care about.  The domain and range maps must be one-to-one, but note that the row and column
      maps do not have to be one-to-one.  In other words, a row ID can appear
      on more than one processor, as can a column ID.
-     \param[in] RowMap An Epetra_Map containing on each processor a list of GIDs of rows that the processor cares about.
-     \param[in] ColMap An Epetra_Map containing on each processor a list of GIDs of columns that the processor cares about.
-     \param[in] DomainMap An Epetra_Map describing the distribution of domain vectors and multivectors.
-     \param[in] RangeMap An Epetra_Map describing the distribution of range vectors and multivectors.
+     \param RowMap [in] An Epetra_Map containing on each processor a list of GIDs of rows that the processor cares about.
+     \param ColMap [in] An Epetra_Map containing on each processor a list of GIDs of columns that the processor cares about.
+     \param DomainMap [in] An Epetra_Map describing the distribution of domain vectors and multivectors.
+     \param RangeMap [in] An Epetra_Map describing the distribution of range vectors and multivectors.
 
   */
   void SetMaps(const Epetra_Map & RowMap, const Epetra_Map & ColMap,

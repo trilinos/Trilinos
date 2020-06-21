@@ -92,7 +92,7 @@ template <typename Matrix, typename InputVector, typename OutputVector,
 class MPMultiply {};
 
 // Kernel implementing y = A * x where
-//   A == KokkosSparse::CrsMatrix< Sacado::MP::Vector<...>,...>,
+//   A == KokkosSparse::CrsMatrix< const Sacado::MP::Vector<...>,...>,
 //   x, y == Kokkos::View< Sacado::MP::Vector<...>*,...>,
 //   x and y are rank 1, any layout
 // We spell everything out here to make sure the ranks and devices match.
@@ -108,7 +108,7 @@ template <typename MatrixDevice,
           typename OutputStorage,
           typename ... OutputP,
           typename Update>
-class MPMultiply< KokkosSparse::CrsMatrix< Sacado::MP::Vector<MatrixStorage>,
+class MPMultiply< KokkosSparse::CrsMatrix< const Sacado::MP::Vector<MatrixStorage>,
                                            MatrixOrdinal,
                                            MatrixDevice,
                                            MatrixMemory,
@@ -120,7 +120,7 @@ class MPMultiply< KokkosSparse::CrsMatrix< Sacado::MP::Vector<MatrixStorage>,
                   Update
 #ifdef KOKKOS_ENABLE_CUDA
                   , typename std::enable_if<
-                      !std::is_same<MatrixDevice,Kokkos::Cuda>::value >::type
+                      !std::is_same<typename MatrixDevice::execution_space,Kokkos::Cuda>::value >::type
 #endif
                   >
 {
@@ -132,10 +132,10 @@ public:
   typedef Sacado::MP::Vector<OutputStorage> OutputVectorValue;
   typedef OutputVectorValue scalar_type;
 
-  typedef MatrixDevice execution_space;
+  typedef typename MatrixDevice::execution_space execution_space;
   typedef typename execution_space::size_type size_type;
 
-  typedef KokkosSparse::CrsMatrix< MatrixValue,
+  typedef KokkosSparse::CrsMatrix< const MatrixValue,
                                    MatrixOrdinal,
                                    MatrixDevice,
                                    MatrixMemory,
@@ -202,7 +202,7 @@ template <typename MatrixDevice,
           typename OutputStorage,
           typename ... OutputP,
           typename Update>
-class MPMultiply< KokkosSparse::CrsMatrix< Sacado::MP::Vector<MatrixStorage>,
+class MPMultiply< KokkosSparse::CrsMatrix< const Sacado::MP::Vector<MatrixStorage>,
                                            MatrixOrdinal,
                                            MatrixDevice,
                                            MatrixMemory,
@@ -214,7 +214,7 @@ class MPMultiply< KokkosSparse::CrsMatrix< Sacado::MP::Vector<MatrixStorage>,
                   Update
 #ifdef KOKKOS_ENABLE_CUDA
                   , typename std::enable_if<
-                    !std::is_same<MatrixDevice,Kokkos::Cuda>::value >::type
+                    !std::is_same<typename MatrixDevice::execution_space,Kokkos::Cuda>::value >::type
 #endif
                   >
 {
@@ -224,10 +224,10 @@ public:
   typedef Sacado::MP::Vector<OutputStorage> OutputVectorValue;
   typedef OutputVectorValue scalar_type;
 
-  typedef MatrixDevice execution_space;
+  typedef typename MatrixDevice::execution_space execution_space;
   typedef typename execution_space::size_type size_type;
 
-  typedef KokkosSparse::CrsMatrix< MatrixValue,
+  typedef KokkosSparse::CrsMatrix< const MatrixValue,
                                    MatrixOrdinal,
                                    MatrixDevice,
                                    MatrixMemory,
@@ -285,6 +285,134 @@ public:
   }
 };
 
+// Kernel implementing y = A * x where
+//   A == KokkosSparse::CrsMatrix< Sacado::MP::Vector<...>,...>,
+//   x, y == Kokkos::View< Sacado::MP::Vector<...>*,...>,
+//   x and y are rank 1, any layout
+// We spell everything out here to make sure the ranks and devices match.
+//
+// This implementation uses overloaded operators for MP::Vector.
+template <typename MatrixDevice,
+          typename MatrixStorage,
+          typename MatrixOrdinal,
+          typename MatrixMemory,
+          typename MatrixSize,
+          typename InputStorage,
+          typename ... InputP,
+          typename OutputStorage,
+          typename ... OutputP,
+          typename Update>
+class MPMultiply< KokkosSparse::CrsMatrix< Sacado::MP::Vector<MatrixStorage>,
+                                           MatrixOrdinal,
+                                           MatrixDevice,
+                                           MatrixMemory,
+                                           MatrixSize>,
+                  Kokkos::View< const Sacado::MP::Vector<InputStorage>*,
+                                InputP... >,
+                  Kokkos::View< Sacado::MP::Vector<OutputStorage>*,
+                                OutputP... >,
+                  Update
+                  >
+{
+
+public:
+
+  typedef Sacado::MP::Vector<MatrixStorage> MatrixValue;
+  typedef Sacado::MP::Vector<InputStorage> InputVectorValue;
+  typedef Sacado::MP::Vector<OutputStorage> OutputVectorValue;
+  typedef OutputVectorValue scalar_type;
+
+  typedef typename MatrixDevice::execution_space execution_space;
+  typedef typename execution_space::size_type size_type;
+
+  typedef KokkosSparse::CrsMatrix< MatrixValue,
+                                   MatrixOrdinal,
+                                   MatrixDevice,
+                                   MatrixMemory,
+                                   MatrixSize > matrix_type;
+  typedef typename matrix_type::const_type const_matrix_type;
+
+  typedef Kokkos::View< const InputVectorValue*,
+                        InputP... > input_vector_type;
+  typedef Kokkos::View< OutputVectorValue*,
+                        OutputP... > output_vector_type;
+  typedef Update update_type;
+
+  static void apply( const matrix_type & A,
+                     const input_vector_type & x,
+                     const output_vector_type & y,
+                     const update_type & update )
+  {
+    const_matrix_type cA = A;
+    MPMultiply< const_matrix_type, input_vector_type, output_vector_type, update_type >::apply(
+      cA, x, y, update);
+  }
+};
+
+// Kernel implementing y = A * x where
+//   A == KokkosSparse::CrsMatrix< Sacado::MP::Vector<...>,...>,
+//   x, y == Kokkos::View< Sacado::MP::Vector<...>**,...>,
+//   x and y are rank 2, any layout
+// We spell everything out here to make sure the ranks and devices match.
+//
+// This implementation uses overloaded operators for MP::Vector.
+template <typename MatrixDevice,
+          typename MatrixStorage,
+          typename MatrixOrdinal,
+          typename MatrixMemory,
+          typename MatrixSize,
+          typename InputStorage,
+          typename ... InputP,
+          typename OutputStorage,
+          typename ... OutputP,
+          typename Update>
+class MPMultiply< KokkosSparse::CrsMatrix< Sacado::MP::Vector<MatrixStorage>,
+                                           MatrixOrdinal,
+                                           MatrixDevice,
+                                           MatrixMemory,
+                                           MatrixSize>,
+                  Kokkos::View< const Sacado::MP::Vector<InputStorage>**,
+                                InputP... >,
+                  Kokkos::View< Sacado::MP::Vector<OutputStorage>**,
+                                OutputP... >,
+                  Update
+                  >
+{
+
+public:
+
+  typedef Sacado::MP::Vector<MatrixStorage> MatrixValue;
+  typedef Sacado::MP::Vector<InputStorage> InputVectorValue;
+  typedef Sacado::MP::Vector<OutputStorage> OutputVectorValue;
+  typedef OutputVectorValue scalar_type;
+
+  typedef typename MatrixDevice::execution_space execution_space;
+  typedef typename execution_space::size_type size_type;
+
+  typedef KokkosSparse::CrsMatrix< MatrixValue,
+                                   MatrixOrdinal,
+                                   MatrixDevice,
+                                   MatrixMemory,
+                                   MatrixSize > matrix_type;
+  typedef typename matrix_type::const_type const_matrix_type;
+
+  typedef Kokkos::View< const InputVectorValue**,
+                        InputP... > input_vector_type;
+  typedef Kokkos::View< OutputVectorValue**,
+                        OutputP... > output_vector_type;
+  typedef Update update_type;
+
+  static void apply( const matrix_type & A,
+                     const input_vector_type & x,
+                     const output_vector_type & y,
+                     const update_type & update )
+  {
+    const_matrix_type cA = A;
+    MPMultiply< const_matrix_type, input_vector_type, output_vector_type, update_type >::apply(
+      cA, x, y, update);
+  }
+};
+
 } // namespace details
 
 // Kernel implementing y = A * x where
@@ -319,7 +447,7 @@ public:
   typedef Sacado::MP::Vector<InputStorage> InputVectorValue;
   typedef Sacado::MP::Vector<OutputStorage> OutputVectorValue;
 
-  typedef MatrixDevice execution_space;
+  typedef typename MatrixDevice::execution_space execution_space;
   typedef typename execution_space::size_type size_type;
 
   typedef KokkosSparse::CrsMatrix< MatrixValue,
@@ -376,7 +504,7 @@ public:
   typedef Sacado::MP::Vector<InputStorage> InputVectorValue;
   typedef Sacado::MP::Vector<OutputStorage> OutputVectorValue;
 
-  typedef MatrixDevice execution_space;
+  typedef typename MatrixDevice::execution_space execution_space;
   typedef typename execution_space::size_type size_type;
 
   typedef KokkosSparse::CrsMatrix< MatrixValue,

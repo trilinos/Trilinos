@@ -45,8 +45,10 @@
 #define AMESOS2_TPETRA_CRSMATRIX_MATRIXADAPTER_HPP
 
 #include "Amesos2_TpetraCrsMatrix_MatrixAdapter_decl.hpp"
+#include "Amesos2_KokkosCrsMatrix_MatrixAdapter_decl.hpp"
 #ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
 #  include "Amesos2_TpetraCrsMatrix_MatrixAdapter_def.hpp"
+#  include "Amesos2_KokkosCrsMatrix_MatrixAdapter_def.hpp"
 #endif
 
 #endif  // AMESOS2_TPETRA_CRSMATRIX_MATRIXADAPTER_HPP

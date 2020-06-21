@@ -545,6 +545,109 @@ COMM mpi
 NUM_MPI_PROCS 8
 )
 
+################################################
+# TwoLevelPreconditioner_IPOUHarmonic_GDSWStar #
+################################################
+## Epetra
+IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode")
+TRIBITS_ADD_TEST(
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_IPOUHarmonic_GDSWStar_DIM2_DPN1_ORD0_EPETRA
+ARGS "--M=3 --DIM=2 --O=1 --NB=1 --DPN=1 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_GDSWStar.xml --USEEPETRA"
+COMM mpi
+NUM_MPI_PROCS 4
+)
+
+TRIBITS_ADD_TEST(
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_IPOUHarmonic_GDSWStar_DIM2_DPN2_ORD0_EPETRA
+ARGS "--M=3 --DIM=2 --O=1 --NB=1 --DPN=2 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_GDSWStar.xml --USEEPETRA"
+COMM mpi
+NUM_MPI_PROCS 4
+)
+
+TRIBITS_ADD_TEST(
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_IPOUHarmonic_GDSWStar_DIM2_DPN2_ORD1_EPETRA
+ARGS "--M=3 --DIM=2 --O=1 --NB=1 --DPN=2 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_GDSWStar.xml --USEEPETRA"
+COMM mpi
+NUM_MPI_PROCS 4
+)
+
+TRIBITS_ADD_TEST(
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_IPOUHarmonic_GDSWStar_DIM3_DPN1_ORD0_EPETRA
+ARGS "--M=3 --DIM=3 --O=1 --NB=1 --DPN=1 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_GDSWStar.xml --USEEPETRA"
+COMM mpi
+NUM_MPI_PROCS 8
+)
+
+TRIBITS_ADD_TEST(
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_IPOUHarmonic_GDSWStar_DIM3_DPN3_ORD0_EPETRA
+ARGS "--M=3 --DIM=3 --O=1 --NB=1 --DPN=3 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_GDSWStar.xml --USEEPETRA"
+COMM mpi
+NUM_MPI_PROCS 8
+)
+
+TRIBITS_ADD_TEST(
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_IPOUHarmonic_GDSWStar_DIM3_DPN3_ORD1_EPETRA
+ARGS "--M=3 --DIM=3 --O=1 --NB=1 --DPN=3 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_GDSWStar.xml --USEEPETRA"
+COMM mpi
+NUM_MPI_PROCS 8
+)
+ENDIF()
+
+## Tpetra
+TRIBITS_ADD_TEST(
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_IPOUHarmonic_GDSWStar_DIM2_DPN1_ORD0_TPETRA
+ARGS "--M=3 --DIM=2 --O=1 --NB=1 --DPN=1 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_GDSWStar.xml --USETPETRA"
+COMM mpi
+NUM_MPI_PROCS 4
+)
+
+TRIBITS_ADD_TEST(
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_IPOUHarmonic_GDSWStar_DIM2_DPN2_ORD0_TPETRA
+ARGS "--M=3 --DIM=2 --O=1 --NB=1 --DPN=2 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_GDSWStar.xml --USETPETRA"
+COMM mpi
+NUM_MPI_PROCS 4
+)
+
+TRIBITS_ADD_TEST(
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_IPOUHarmonic_GDSWStar_DIM2_DPN2_ORD1_TPETRA
+ARGS "--M=3 --DIM=2 --O=1 --NB=1 --DPN=2 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_GDSWStar.xml --USETPETRA"
+COMM mpi
+NUM_MPI_PROCS 4
+)
+
+TRIBITS_ADD_TEST(
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_IPOUHarmonic_GDSWStar_DIM3_DPN1_ORD0_TPETRA
+ARGS "--M=3 --DIM=3 --O=1 --NB=1 --DPN=1 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_GDSWStar.xml --USETPETRA"
+COMM mpi
+NUM_MPI_PROCS 8
+)
+
+TRIBITS_ADD_TEST(
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_IPOUHarmonic_GDSWStar_DIM3_DPN3_ORD0_TPETRA
+ARGS "--M=3 --DIM=3 --O=1 --NB=1 --DPN=3 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_GDSWStar.xml --USETPETRA"
+COMM mpi
+NUM_MPI_PROCS 8
+)
+
+TRIBITS_ADD_TEST(
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_IPOUHarmonic_GDSWStar_DIM3_DPN3_ORD1_TPETRA
+ARGS "--M=3 --DIM=3 --O=1 --NB=1 --DPN=3 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_GDSWStar.xml --USETPETRA"
+COMM mpi
+NUM_MPI_PROCS 8
+)
+
 #############################################
 # TwoLevelPreconditioner_IPOUHarmonic_RGDSW #
 #############################################

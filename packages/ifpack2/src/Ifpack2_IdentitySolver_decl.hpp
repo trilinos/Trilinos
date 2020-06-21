@@ -45,6 +45,7 @@
 
 #include "Ifpack2_Preconditioner.hpp"
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
+#include "Tpetra_Export_fwd.hpp"
 #include <type_traits>
 
 namespace Ifpack2 {

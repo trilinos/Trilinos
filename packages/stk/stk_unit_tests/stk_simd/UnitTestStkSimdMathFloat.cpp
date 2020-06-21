@@ -235,8 +235,8 @@ TEST(StkSimd, Simd_fmaddFloat)
     maxerr = stk::math::max(err,maxerr);
   }
 
-  ASSERT_NEAR( maxerr, 0.0, 1e-14 );
-  
+  ASSERT_NEAR( maxerr, 0.0, 1e-5 );
+
 }
 
 TEST(StkSimd, SimdSqrtFloat) 

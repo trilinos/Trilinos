@@ -1,0 +1,81 @@
+#! /usr/bin/env python
+
+import os
+import sys
+import re
+
+filters = [
+  "KokkosKernels_BINARY_DIR",
+  "KokkosKernels_SOURCE_DIR",
+  "BLAS_goto2_",
+  "BLAS_mkl_",
+  "BLAS_openblas_",
+  "Kokkos_DIR",
+  "Kokkos_ROOT",
+  "CMAKE_",
+  "MEMORYCHECK_",
+  "MAKECOMM",
+  "GITCOMMAND",
+  "HGCOMM",
+  "COVERAGE_",
+  "CTEST",
+  "BZRCOMMAND",
+  "P4COMM",
+  "blas_",
+  "lapack_",
+  "SITE:",
+  "BUILD_",
+  "CVS",
+  "DART",
+  "SVN",
+  "SLURM",
+  "_GNUInstallDirs_",
+]
+
+cachePath = sys.argv[1]
+
+text = open(cachePath).readlines()
+option = None
+doclines = None
+parseEntry = False
+options = []
+for line in text:
+  line = line.strip()
+  #print "==",line
+  if parseEntry:
+    if line.startswith("//"):
+      doclines += line[2:] 
+    else:
+      option = line
+      parseEntry = False
+  elif line.startswith("//"):
+    parseEntry = True
+    doclines = line[2:]
+  elif option:
+    options.append([doclines, option])
+    option = None
+    doclines = None
+
+str_arr = []
+for doclines, option in options:
+  if len(doclines) < 1000:
+    skip = False
+    for f in filters:
+      if option.startswith(f):
+        skip = True
+        break
+    if not skip:
+      if not "Default:" in doclines:
+        sys.exit("Option has no default docstring: %s" % option)
+      maindoc, dflt = doclines.split("Default:")
+      option, typ = option.split(":")
+      typ = typ.split("=")[0]
+      str_arr.append("* %s: %s" % (option, typ.strip()))
+      str_arr.append("  * %s" % maindoc.strip())
+      str_arr.append("  * Default: %s" % dflt.strip())
+sys.stdout.write("%s\n" % "\n".join(str_arr))
+
+
+
+
+

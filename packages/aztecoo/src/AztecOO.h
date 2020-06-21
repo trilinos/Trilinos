@@ -74,9 +74,9 @@ namespace Teuchos {
   using the SetAztecOption() and SetAztecParam() functions.
 
   AztecOO will solve a linear systems of equations: \f$ AX=B \f$, using Epetra
-  objects and the Aztec solver library, where \f$A\f$ is an Epetra_Operator or Epetra_RowMatrix (note
+  objects and the Aztec solver library, where \f$ A\f$ is an Epetra_Operator or Epetra_RowMatrix (note
   that the Epetra_Operator class is a base class for Epetra_RowMatrix so that Epetra_RowMatrix \e isa
-  Epetra_Operator.) \f$X\f$ and \f$B\f$ are Epetra_MultiVector objects.
+  Epetra_Operator.) \f$ X\f$ and \f$ B\f$ are Epetra_MultiVector objects.
 
   \warning AztecOO does not presently support solution of more than one simultaneous right-hand-side.
 */
@@ -322,7 +322,7 @@ class AztecOO {
     However, there are situations where we would like to compute the preconditioner ahead
     of time.  One particular case is when we want to confirm that the preconditioner
     well-conditioned.  This method allows us to precompute the preconditioner.  It also
-    provides a estimate of the condition number of the preconditioner.  If \it condest is
+    provides a estimate of the condition number of the preconditioner.  If \em condest is
     large, e.g., > 1.0e+14, it is likely the preconditioner will fail.  In this case, using
     threshold values (available in the incomplete factorizations) can be used to reduce
     the condition number.

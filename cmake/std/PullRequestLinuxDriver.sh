@@ -34,7 +34,7 @@ echo -e "REPO_ROOT : ${REPO_ROOT}"
 # proxies so set them here.
 export https_proxy=http://wwwproxy.sandia.gov:80
 export http_proxy=http://wwwproxy.sandia.gov:80
-export no_proxy='localhost,localnets,.sandia.gov,127.0.0.1,169.254.0.0/16,forge.sandia.gov'
+export no_proxy='localhost,localnets,127.0.0.1,169.254.0.0/16,forge.sandia.gov'
 
 
 # Call the script to handle merging the incoming branch into

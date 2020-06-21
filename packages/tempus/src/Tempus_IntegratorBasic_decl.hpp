@@ -163,6 +163,15 @@ public:
 
     virtual void setScreenOutputIndexInterval(int i)
     { integratorPL_->set("Screen Output Index Interval", i); }
+
+    virtual int getScreenOutputIndexInterval() const
+    { return integratorPL_->get<int>("Screen Output Index Interval"); }
+
+    virtual void setScreenOutputIndexList(std::string s)
+    { integratorPL_->set("Screen Output Index List", s); }
+
+    virtual std::string getScreenOutputIndexList() const
+    { return integratorPL_->get<std::string>("Screen Output Index List", ""); }
   //@}
 
   /// Parse when screen output should be executed
@@ -210,23 +219,23 @@ protected:
 
 /// Non-member constructor
 template<class Scalar>
-Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic(
+Teuchos::RCP<IntegratorBasic<Scalar> > integratorBasic(
   Teuchos::RCP<Teuchos::ParameterList>                pList,
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
 
 /// Non-member constructor
 template<class Scalar>
-Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic(
+Teuchos::RCP<IntegratorBasic<Scalar> > integratorBasic(
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
   std::string stepperType);
 
 /// Non-member constructor
 template<class Scalar>
-Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic();
+Teuchos::RCP<IntegratorBasic<Scalar> > integratorBasic();
 
 /// Non-member constructor
 template<class Scalar>
-Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic(
+Teuchos::RCP<IntegratorBasic<Scalar> > integratorBasic(
   Teuchos::RCP<Teuchos::ParameterList>                pList,
   std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > models);
 

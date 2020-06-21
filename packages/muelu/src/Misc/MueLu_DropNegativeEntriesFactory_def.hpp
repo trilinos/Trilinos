@@ -89,7 +89,7 @@ namespace MueLu {
     LocalOrdinal nDofsPerNode = Ain->GetFixedBlockSize();
 
     // create new empty Operator
-    Teuchos::RCP<Matrix> Aout = MatrixFactory::Build(Ain->getRowMap(), Ain->getGlobalMaxNumRowEntries(), Xpetra::StaticProfile);
+    Teuchos::RCP<Matrix> Aout = MatrixFactory::Build(Ain->getRowMap(), Ain->getGlobalMaxNumRowEntries());
 
     size_t numLocalRows = Ain->getNodeNumRows();
     for(size_t row=0; row<numLocalRows; row++) {

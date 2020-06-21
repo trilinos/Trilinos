@@ -257,8 +257,8 @@ import numpy
 // %define %teuchos_rcp_epetra_numpy(CLASS)
 //   %teuchos_rcp(Epetra_##CLASS)
 //   %teuchos_rcp(PyTrilinos::Epetra_NumPy##CLASS)
-//   %teuchos_rcp_epetra_numpy_overrides(SWIGEMPTYHACK, CLASS)
-//   %teuchos_rcp_epetra_numpy_overrides(const        , CLASS)
+//   %teuchos_rcp_epetra_numpy_overrides(PYTRILINOS_NULLST, CLASS)
+//   %teuchos_rcp_epetra_numpy_overrides(const            , CLASS)
 // %enddef
 
 // Use the %teuchos_rcp_dap and %teuchos_rcp_typemaps_overrides macros
@@ -269,8 +269,8 @@ import numpy
     Teuchos::RCP< Epetra_##CLASS >
   }
   %teuchos_rcp_dap(PyTrilinos::convertPythonToEpetra##CLASS, Epetra_##CLASS)
-  %teuchos_rcp_typemaps_overrides(SWIGEMPTYHACK, Epetra_##CLASS)
-  %teuchos_rcp_typemaps_overrides(const        , Epetra_##CLASS)
+  %teuchos_rcp_typemaps_overrides(PYTRILINOS_NULLSTR, Epetra_##CLASS)
+  %teuchos_rcp_typemaps_overrides(const             , Epetra_##CLASS)
 %enddef
 
 // Define macros for typemaps that convert a reference to a pointer to

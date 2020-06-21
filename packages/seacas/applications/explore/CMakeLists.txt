@@ -20,13 +20,14 @@ TRIBITS_ADD_EXECUTABLE(
   LINKER_LANGUAGE Fortran
   SOURCES ${SOURCES}
   COMM serial mpi
+  ADDED_EXE_TARGET_NAME_OUT explore_added
+  INSTALLABLE
   )
 
-if (${CMAKE_PROJECT_NAME} STREQUAL "SEACASProj")
-InstallSymLink(explore ${CMAKE_INSTALL_PREFIX}/bin/grope)
+if (explore_added)
+  if (${CMAKE_PROJECT_NAME} STREQUAL "SEACASProj")
+    InstallSymLink(explore ${CMAKE_INSTALL_PREFIX}/bin/grope)
+  endif()
 endif()
 
-install_executable(explore)
-
 TRIBITS_SUBPACKAGE_POSTPROCESS()
-

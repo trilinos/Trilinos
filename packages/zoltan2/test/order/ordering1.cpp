@@ -125,6 +125,8 @@ int main(int narg, char** arg)
   std::string outputFile = "";           // Output file to write
   bool verbose = false;                  // Verbosity of output
   int testReturn = 0;
+  size_t origBandwidth = 0;
+  size_t permutedBandwidth = 0;
 
   ////// Establish session.
   Tpetra::ScopeGuard tscope(&narg, &arg);
@@ -141,7 +143,7 @@ int main(int narg, char** arg)
                  "Name of file to write the permutation");
   cmdp.setOption("verbose", "quiet", &verbose,
                  "Print messages and results.");
-  std::cout << "Starting everything" << std::endl;
+  if (me == 0) std::cout << "Starting everything" << std::endl;
 
   //////////////////////////////////
   // Even with cmdp option "true", I get errors for having these
@@ -173,7 +175,7 @@ int main(int narg, char** arg)
   cmdp.setOption("order_method", &orderMethod,
                 "order_method: natural, random, rcm, sorted_degree");
 
-  std::string orderMethodType("local"); // TODO: Allow "RCM" as well
+  std::string orderMethodType("local"); // TODO: Allow "LOCAL" as well
   cmdp.setOption("order_method_type", &orderMethodType,
                 "local or global or both");
 
@@ -220,7 +222,7 @@ int main(int narg, char** arg)
   try
   {
   Zoltan2::OrderingProblem<SparseMatrixAdapter> problem(&adapter, &params);
-  std::cout << "Going to solve" << std::endl;
+  if (me == 0) std::cout << "Going to solve" << std::endl;
   problem.solve();
 
   ////// Basic metric checking of the ordering solution
@@ -228,7 +230,7 @@ int main(int narg, char** arg)
   Zoltan2::LocalOrderingSolution<z2TestLO> *soln =
     problem.getLocalOrderingSolution();
 
-  std::cout << "Going to get results" << std::endl;
+  if (me == 0) std::cout << "Going to get results" << std::endl;
   // Check that the solution is really a permutation
 
   z2TestLO * perm = soln->getPermutationView();
@@ -250,16 +252,17 @@ int main(int narg, char** arg)
 
   }
 
-  std::cout << "Going to validate the soln" << std::endl;
+  if (me == 0) std::cout << "Verifying results " << std::endl;
+
   // Verify that checkPerm is a permutation
   testReturn = soln->validatePerm();
 
-  std::cout << "Going to compute the bandwidth" << std::endl;
   // Compute original bandwidth
-  std::cout << "Original Bandwidth: " << computeBandwidth(origMatrix, nullptr) << std::endl;
+  origBandwidth = computeBandwidth(origMatrix, nullptr);
+
   // Compute permuted bandwidth
   z2TestLO * iperm = soln->getPermutationView(true);
-  std::cout << "Permuted Bandwidth: " << computeBandwidth(origMatrix, iperm) << std::endl;
+  permutedBandwidth = computeBandwidth(origMatrix, iperm);
 
   } catch (std::exception &e){
       std::cout << "Exception caught in ordering" << std::endl;
@@ -268,11 +271,35 @@ int main(int narg, char** arg)
       return 0;
   }
 
+  if (testReturn)
+    std::cout << me << ": Not a valid permutation" << std::endl;
+
+  int gTestReturn;
+  Teuchos::reduceAll<int,int>(*comm, Teuchos::EReductionType::REDUCE_MAX, 1,
+                     &testReturn, &gTestReturn);
+
+  int increasedBandwidth = (permutedBandwidth > origBandwidth);
+  if (increasedBandwidth) 
+    std::cout << me << ": Bandwidth increased: original " 
+              << origBandwidth << " < " << permutedBandwidth << " permuted "
+              << std::endl;
+  else 
+    std::cout << me << ": Bandwidth not increased: original " 
+              << origBandwidth << " >= " << permutedBandwidth << " permuted "
+              << std::endl;
+
+  int gIncreasedBandwidth;
+  Teuchos::reduceAll<int,int>(*comm, Teuchos::EReductionType::REDUCE_MAX, 1,
+                     &increasedBandwidth, &gIncreasedBandwidth);
+
   if (me == 0) {
-    if (testReturn)
+    if (gTestReturn)
       std::cout << "Solution is not a permutation; FAIL" << std::endl;
+    else if (gIncreasedBandwidth && (orderMethod == "rcm"))
+      std::cout << "Bandwidth was increased; FAIL" << std::endl;
     else
       std::cout << "PASS" << std::endl;
+
   }
 
 }

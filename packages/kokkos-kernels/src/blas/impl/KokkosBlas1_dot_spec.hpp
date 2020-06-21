@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//               KokkosKernels 0.9: Linear Algebra and Graph Kernels
-//                 Copyright 2017 Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -49,13 +50,46 @@
 #include <Kokkos_InnerProductSpaceTraits.hpp>
 
 // Include the actual functors
-#if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY 
+#if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 #include <KokkosBlas1_dot_impl.hpp>
 #include <KokkosBlas1_dot_mv_impl.hpp>
 #endif
 
 namespace KokkosBlas {
 namespace Impl {
+
+// Some platforms, such as Mac Clang, seem to get poor accuracy with
+// float and complex<float>.  Work around some Trilinos test
+// failures by using a higher-precision type for intermediate dot
+// product sums.
+//
+// Note that this is not the same thing as InnerProductSpaceTraits<scalar>::dot_type
+template<typename scalar_t>
+struct DotAccumulatingScalar
+{
+  using type = scalar_t;
+};
+
+template<>
+struct DotAccumulatingScalar<float>
+{
+  using type = double;
+};
+
+template<>
+struct DotAccumulatingScalar<Kokkos::complex<float>>
+{
+  using type = Kokkos::complex<double>;
+};
+
+template<typename scalar_t>
+struct HasSpecialAccumulator
+{
+  enum : bool {
+      value = !std::is_same<scalar_t, typename DotAccumulatingScalar<scalar_t>::type>::value
+  };
+};
+
 // Specialization struct which defines whether a specialization exists
 template<class AV, class XV, class YV, int Xrank = XV::rank, int Yrank = YV::rank>
 struct dot_eti_spec_avail {
@@ -70,7 +104,6 @@ struct dot_eti_spec_avail {
 // the declarations of full specializations go in this header file.
 // We may spread out definitions (see _INST macro below) across one or
 // more .cpp files.
-//
 #define KOKKOSBLAS1_DOT_ETI_SPEC_AVAIL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
     template<> \
     struct dot_eti_spec_avail< \
@@ -151,32 +184,61 @@ struct Dot {
   static void dot (const RV&, const XV& R, const YV& X);
 };
 
+//This version never has TPL support, but it does use the same ETI system
+template<class RV, class XV, class YV, bool eti_spec_avail = dot_eti_spec_avail<RV,XV,YV>::value>
+struct DotSpecialAccumulator {
+  //Note: not doing the static_asserts to validate RV, XV, YV since those errors
+  //would have already arisen when building the library.
+  using size_type = typename YV::size_type;
+  using dot_type = typename Kokkos::Details::InnerProductSpaceTraits<
+    typename XV::non_const_value_type>::dot_type;
+  using accum_type = typename DotAccumulatingScalar<dot_type>::type;
+  //This is the same View type as RV, but using the special accumulator as the value type
+  using RV_Result = Kokkos::View<accum_type, typename RV::array_layout,
+        typename RV::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+
+  static void dot (const RV_Result& R, const XV& X, const YV& Y);
+};
+
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 //! Full specialization of Dot for single vectors (1-D Views).
+//  The rank-1 case is currently the only one that may use a different accumulator
+//  type than <tt>InnerProductSpaceTraits::dot_type</tt>.
 template<class RV, class XV, class YV>
 struct Dot<RV, XV, YV, 1, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
 {
+  //Check some things about the template parameters at compile time to get nice error messages,
+  //before using them under the assumption they are valid.
+  static_assert (Kokkos::Impl::is_view<XV>::value, "KokkosBlas::Impl::"
+                 "Dot<1-D>: XV is not a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_view<YV>::value, "KokkosBlas::Impl::"
+                 "Dot<1-D>: YV is not a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_view<RV>::value, "KokkosBlas::Impl::"
+                 "Dot<1-D>: RV is not a Kokkos::View.");
+  static_assert (RV::rank == 0, "KokkosBlas::Impl::Dot<1-D>: "
+                 "RV is not rank 0.");
+  static_assert (XV::rank == 1, "KokkosBlas::Impl::Dot<1-D>: "
+                 "XV is not rank 1.");
+  static_assert (YV::rank == 1, "KokkosBlas::Impl::Dot<1-D>: "
+                 "YV is not rank 1.");
+  static_assert (std::is_same<typename RV::value_type,typename RV::non_const_value_type>::value,
+                 "KokkosBlas::Dot<1D>: R is const.  "
+                 "It must be nonconst, because it is an output argument "
+                 "(we have to be able to write to its entries).");
+
   typedef typename YV::size_type size_type;
+  typedef typename RV::non_const_value_type dot_type;
+  typedef typename DotAccumulatingScalar<dot_type>::type special_result_type;
+
+  //This is the same View type as RV, but using the special accumulator as the value type
+  typedef Kokkos::View<
+    special_result_type,
+    typename RV::array_layout,
+    typename RV::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV_Result;
 
   static void dot (const RV& R, const XV& X, const YV& Y)
   {
-    static_assert (Kokkos::Impl::is_view<RV>::value, "KokkosBlas::Impl::"
-                   "Dot<1-D>: RV is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<XV>::value, "KokkosBlas::Impl::"
-                   "Dot<1-D>: XV is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<YV>::value, "KokkosBlas::Impl::"
-                   "Dot<1-D>: YV is not a Kokkos::View.");
-    static_assert (RV::rank == 0, "KokkosBlas::Impl::Dot<1-D>: "
-                   "RV is not rank 0.");
-    static_assert (XV::rank == 1, "KokkosBlas::Impl::Dot<1-D>: "
-                   "XV is not rank 1.");
-    static_assert (YV::rank == 1, "KokkosBlas::Impl::Dot<1-D>: "
-                   "YV is not rank 1.");
-    static_assert (std::is_same<typename RV::value_type,typename RV::non_const_value_type>::value,
-                   "KokkosBlas::Dot<1D>: R is const.  "
-                   "It must be nonconst, because it is an output argument "
-                   "(we have to be able to write to its entries).");
-
     Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY?"KokkosBlas::dot[ETI]":"KokkosBlas::dot[noETI]");
     #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
     if(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
@@ -201,19 +263,77 @@ struct Dot<RV, XV, YV, 1, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
   }
 };
 
+//Implementation that has the same template args as Dot, but which internally uses
+//DotAccumulatingScalar for the result view.
+//
+//Is never supported by TPLs, but uses the same dot_eti_spec_avail::value.
+template<class RV, class XV, class YV>
+struct DotSpecialAccumulator<RV, XV, YV, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
+{
+  static_assert (Kokkos::Impl::is_view<XV>::value, "KokkosBlas::Impl::"
+                 "DotSpecialAccumulator: XV is not a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_view<YV>::value, "KokkosBlas::Impl::"
+                 "DotSpecialAccumulator: YV is not a Kokkos::View.");
+  static_assert (XV::rank == YV::rank, "KokkosBlas::Impl::"
+                 "DotSpecialAccumulator: X and Y have different ranks.");
+  static_assert (XV::rank == 1, "KokkosBlas::Impl::"
+                 "DotSpecialAccumulator: X and Y are not rank-1 Views.");
+  static_assert (Kokkos::Impl::is_view<RV>::value, "KokkosBlas::Impl::"
+                 "DotSpecialAccumulator: RV is not a Kokkos::View.");
+  static_assert (std::is_same<typename XV::non_const_value_type, typename YV::non_const_value_type>::value,
+                 "KokkosBlas::Impl::DotSpecialAccumulator: X and Y have different scalar types.");
+  static_assert (std::is_same<typename RV::value_type,typename RV::non_const_value_type>::value,
+                 "KokkosBlas::Dot<1D>: R is const.  "
+                 "It must be nonconst, because it is an output argument "
+                 "(we have to be able to write to its entries).");
+
+  using size_type = typename YV::size_type;
+  using dot_type = typename Kokkos::Details::InnerProductSpaceTraits<
+    typename XV::non_const_value_type>::dot_type;
+  using accum_type = typename DotAccumulatingScalar<dot_type>::type;
+  //This is the same View type as RV, but using the special accumulator as the value type
+  using RV_Result = Kokkos::View<accum_type, typename RV::array_layout,
+        typename RV::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+
+  static void dot (const RV_Result& R, const XV& X, const YV& Y)
+  {
+    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY?"KokkosBlas::dot[ETI]":"KokkosBlas::dot[noETI]");
+    #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
+    if(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+      printf("KokkosBlas::dot<> ETI specialization for < %s , %s >\n",typeid(XV).name(),typeid(YV).name());
+    else {
+      printf("KokkosBlas::dot<> non-ETI specialization for < %s , %s >\n",typeid(XV).name(),typeid(YV).name());
+    }
+    #endif
+    const size_type numElems = X.extent(0);
+
+    if (numElems < static_cast<size_type> (INT_MAX)) {
+      typedef int index_type;
+      DotFunctor<RV_Result,XV,YV,index_type> f(X,Y);
+      f.run("KokkosBlas::dot<1D>",R);
+    }
+    else {
+      typedef int64_t index_type;
+      DotFunctor<RV_Result,XV,YV,index_type> f(X,Y);
+      f.run("KokkosBlas::dot<1D>",R);
+    }
+    Kokkos::Profiling::popRegion();
+  }
+};
+
 template<class RV,class XV, class YV, int X_Rank, int Y_Rank>
 struct Dot<RV, XV, YV, X_Rank, Y_Rank, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+  static_assert (Kokkos::Impl::is_view<XV>::value, "KokkosBlas::Impl::"
+                 "Dot<2-D>: XV is not a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_view<YV>::value, "KokkosBlas::Impl::"
+                 "Dot<2-D>: YV is not a Kokkos::View.");
+  static_assert (RV::rank == 1, "KokkosBlas::Impl::Dot<2-D>: "
+                 "RV is not rank 1.");
+
   typedef typename YV::size_type size_type;
 
   static void dot (const RV& R, const XV& X, const YV& Y)
   {
-    static_assert (Kokkos::Impl::is_view<XV>::value, "KokkosBlas::Impl::"
-                   "Dot<2-D>: XV is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<YV>::value, "KokkosBlas::Impl::"
-                   "Dot<2-D>: YV is not a Kokkos::View.");
-    static_assert (RV::rank == 1, "KokkosBlas::Impl::Dot<2-D>: "
-                   "RV is not rank 1.");
-
     Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY?"KokkosBlas::dot[ETI]":"KokkosBlas::dot[noETI]");
     #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
     if(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
@@ -244,7 +364,7 @@ struct Dot<RV, XV, YV, X_Rank, Y_Rank, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 
 //
 // Macro for declaration of full specialization of
-// KokkosBlas::Impl::Dot for rank == 2.  This is NOT for users!!!  All
+// KokkosBlas::Impl::Dot for rank == 1.  This is NOT for users!!!  All
 // the declarations of full specializations go in this header file.
 // We may spread out definitions (see _DEF macro below) across one or
 // more .cpp files.
@@ -265,7 +385,21 @@ extern template struct Dot< \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
         Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-        1,1,false,true>;
+        1,1,false,true>; \
+extern template struct DotSpecialAccumulator< \
+        Kokkos::View<SCALAR, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+        Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+        Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >, true>; \
+extern template struct DotSpecialAccumulator< \
+        Kokkos::View<SCALAR, LAYOUT, Kokkos::HostSpace, \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+        Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+        Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >, true>;
 
 #define KOKKOSBLAS1_DOT_ETI_SPEC_INST( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 template struct Dot< \
@@ -283,7 +417,21 @@ template struct Dot< \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
         Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-        1,1,false,true>;
+        1,1,false,true>; \
+template struct DotSpecialAccumulator< \
+        Kokkos::View<SCALAR, LAYOUT, Kokkos::HostSpace, \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+        Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+        Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >, true>; \
+template struct DotSpecialAccumulator< \
+        Kokkos::View<SCALAR, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+        Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+        Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >, true>;
 
 //
 //

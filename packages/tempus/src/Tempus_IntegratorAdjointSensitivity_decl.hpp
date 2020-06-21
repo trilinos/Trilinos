@@ -158,7 +158,7 @@ public:
 protected:
 
   // Create sensitivity model evaluator from application model
-  Teuchos::RCP<Tempus::AdjointAuxSensitivityModelEvaluator<Scalar> >
+  Teuchos::RCP<AdjointAuxSensitivityModelEvaluator<Scalar> >
   createAdjointModel(
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
     const Teuchos::RCP<Teuchos::ParameterList>& inputPL);
@@ -168,7 +168,7 @@ protected:
     const Teuchos::RCP<const SolutionHistory<Scalar> >& adjoint_solution_history);
 
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;
-  Teuchos::RCP<Tempus::AdjointAuxSensitivityModelEvaluator<Scalar> > adjoint_model_;
+  Teuchos::RCP<AdjointAuxSensitivityModelEvaluator<Scalar> > adjoint_model_;
   Teuchos::RCP<IntegratorBasic<Scalar> > state_integrator_;
   Teuchos::RCP<IntegratorBasic<Scalar> > adjoint_integrator_;
   Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory_;
@@ -184,14 +184,14 @@ protected:
 
 /// Non-member constructor
 template<class Scalar>
-Teuchos::RCP<Tempus::IntegratorAdjointSensitivity<Scalar> >
+Teuchos::RCP<IntegratorAdjointSensitivity<Scalar> >
 integratorAdjointSensitivity(
   Teuchos::RCP<Teuchos::ParameterList>                pList,
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
 
 /// Non-member constructor
 template<class Scalar>
-Teuchos::RCP<Tempus::IntegratorAdjointSensitivity<Scalar> >
+Teuchos::RCP<IntegratorAdjointSensitivity<Scalar> >
 integratorAdjointSensitivity();
 
 } // namespace Tempus

@@ -284,7 +284,7 @@ namespace percept {
                       << " new_sub_entity_nodes[face][0].size= " << new_sub_entity_nodes[m_primaryEntityRank][0].size()
                       << "\n elem= " << elems[ielem]
                       << std::endl;
-          elems[ielem] = quad_to_tri_tuple_type( Q_CV_EV(elems_local[ielem].get<0>() ), Q_CV_EV(elems_local[ielem].get<1>() ), Q_CV_EV(elems_local[ielem].get<2>() ) );
+          elems[ielem] = { Q_CV_EV(elems_local[ielem][0] ), Q_CV_EV(elems_local[ielem][1] ), Q_CV_EV(elems_local[ielem][2] ) };
         }
 
       if (0)
@@ -302,9 +302,9 @@ namespace percept {
 
 
           // 3 nodes of the new tris
-          stk::mesh::Entity n0 = eMesh.createOrGetNode(elems[ielem].get<0>());
-          stk::mesh::Entity n1 = eMesh.createOrGetNode(elems[ielem].get<1>());
-          stk::mesh::Entity n2 = eMesh.createOrGetNode(elems[ielem].get<2>());
+          stk::mesh::Entity n0 = eMesh.createOrGetNode(elems[ielem][0]);
+          stk::mesh::Entity n1 = eMesh.createOrGetNode(elems[ielem][1]);
+          stk::mesh::Entity n2 = eMesh.createOrGetNode(elems[ielem][2]);
 
           stk::mesh::Entity nodes[3] = {n0, n1, n2};
 
@@ -515,7 +515,7 @@ namespace percept {
       elems.resize(num_new_elems);
       for (unsigned ielem=0; ielem < num_new_elems; ielem++)
         {
-          elems[ielem] = quad_to_quad_tuple_type( Q_CV_EV(elems_local[ielem].get<0>() ), Q_CV_EV(elems_local[ielem].get<1>() ), Q_CV_EV(elems_local[ielem].get<2>() ), Q_CV_EV(elems_local[ielem].get<3>() ) );
+          elems[ielem] = { Q_CV_EV(elems_local[ielem][0] ), Q_CV_EV(elems_local[ielem][1] ), Q_CV_EV(elems_local[ielem][2] ), Q_CV_EV(elems_local[ielem][3] ) };
         }
 
       bool use_declare_element_side = UniformRefinerPatternBase::USE_DECLARE_ELEMENT_SIDE &&  m_primaryEntityRank == eMesh.side_rank();
@@ -528,10 +528,10 @@ namespace percept {
 
           // 4 nodes of the new quads
           stk::mesh::Entity nodes[4] = {
-            eMesh.createOrGetNode(elems[ielem].get<0>()),
-            eMesh.createOrGetNode(elems[ielem].get<1>()),
-            eMesh.createOrGetNode(elems[ielem].get<2>()),
-            eMesh.createOrGetNode(elems[ielem].get<3>()) };
+            eMesh.createOrGetNode(elems[ielem][0]),
+            eMesh.createOrGetNode(elems[ielem][1]),
+            eMesh.createOrGetNode(elems[ielem][2]),
+            eMesh.createOrGetNode(elems[ielem][3]) };
 
           create_side_element(eMesh, use_declare_element_side, nodes, 4, newElement);
 

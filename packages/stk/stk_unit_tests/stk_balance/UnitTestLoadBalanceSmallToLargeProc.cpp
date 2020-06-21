@@ -35,6 +35,27 @@ TEST_F(TestBalanceBalanceSmallToLarge, MxN_decompositionWithoutAura)
         setup_and_test_balance_of_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
+class TestBalanceMtoM : public MeshFixtureMxNRebalance
+{
+protected:
+    TestBalanceMtoM() : MeshFixtureMxNRebalance() {}
+
+    virtual unsigned get_x() const { return 3; }
+    virtual unsigned get_y() const { return 3; }
+    virtual unsigned get_z() const { return 3; }
+
+    virtual unsigned get_num_procs_initial_decomp() const { return 2; }
+    virtual unsigned get_num_procs_target_decomp()  const { return 2; }
+};
+
+TEST_F(TestBalanceMtoM, DISABLED_MxM_decompositionWithoutAura)
+{
+    if(stk::parallel_machine_size(get_comm()) == static_cast<int>(get_num_procs_initial_decomp())) {
+        setup_initial_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+        EXPECT_FALSE(stk::balance::internal::rebalanceMtoN(get_bulk(), *targetDecompField, get_num_procs_target_decomp(), get_output_filename()));
+    }
+}
+
 class Mesh1x1x4 : public MeshFixtureMxNRebalance
 {
 protected:

@@ -25,11 +25,15 @@ def setGeneratedFilePermissions(filePath):
   os.chmod(filePath, stat.S_IREAD | stat.S_IRGRP | stat.S_IROTH)
 
 
-def generateFile(filePath, generateCmnd, outFile=None, workingDir="", runTwice=False):
+def generateFile(filePath, generateCmnd, outFile=None, workingDir="",
+  runTwice=False, echoCmnds=False \
+  ):
   openWriteFilePermissions(filePath)
-  runSysCmnd(generateCmnd, outFile=outFile, workingDir=workingDir)
+  runSysCmnd(generateCmnd, outFile=outFile, workingDir=workingDir,
+    echoCmndForDebugging=echoCmnds)
   if runTwice:
-    runSysCmnd(generateCmnd, outFile=outFile, workingDir=workingDir)
+    runSysCmnd(generateCmnd, outFile=outFile, workingDir=workingDir,
+       echoCmndForDebugging=echoCmnds)
   setGeneratedFilePermissions(filePath)
 
 
@@ -82,6 +86,14 @@ def addCmndLineOptions(clp):
     help="Do not delete temporary files.",
     default=True )
 
+  clp.add_option(
+    "--echo-cmnds", dest="echoCmnds", action="store_true",
+    help="Echo the commands being run to STDOUT." )
+  clp.add_option(
+    "--no-echo-cmnds", dest="echoCmnds", action="store_false",
+    help="Do not echo the commands being run.",
+    default=False )
+
 
 def generateDocutilsOuputFiles(options):
 
@@ -98,21 +110,21 @@ def generateDocutilsOuputFiles(options):
     print("Generating " + outputFileBaseName + ".html ...")
     outputHtmlFile = outputFileBase+".html"
     generateFile(outputHtmlFile,
-      options.generateHtml+" "+rstFile+" "+outputHtmlFile)
+      options.generateHtml+" "+rstFile+" "+outputHtmlFile, echoCmnds=options.echoCmnds)
   
   if options.generateLatex:
     print("Generating " + outputFileBaseName + ".tex ...")
     outputLatexFile = outputFileBase+".tex"
     runSysCmnd(options.generateLatex+" "+options.generateLatexOptions+ \
-       " "+rstFile+" "+outputLatexFile)
+       " "+rstFile+" "+outputLatexFile, echoCmndForDebugging=options.echoCmnds)
     if options.generatePDF:
       print("Generating " + outputFileBaseName + ".pdf ...")
       outputPdfFile = outputFileBase+".pdf"
       outputPdfFileLog = outputLatexFile+".log"
       generateFile(outputPdfFile,
-        options.generatePDF+" "+outputLatexFile,
+        options.generatePDF+" -halt-on-error "+outputLatexFile,
         outFile=outputPdfFileLog,
-        runTwice=True)
+        runTwice=True, echoCmnds=options.echoCmnds)
       filesToClean.append(outputPdfFileLog)
   
   #

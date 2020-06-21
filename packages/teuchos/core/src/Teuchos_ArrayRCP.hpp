@@ -1178,20 +1178,6 @@ assert_in_range (size_type lowerOffset_in, size_type size_in) const
 }
 
 
-// Deprecated
-
-
-template<class T> inline
-int ArrayRCP<T>::count() const {
-  return node_.count();
-}
-
-template<class T> inline
-int ArrayRCP<const T>::count() const {
-  return node_.count();
-}
-
-
 // very bad public functions
 
 

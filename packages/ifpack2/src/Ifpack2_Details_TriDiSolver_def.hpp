@@ -45,6 +45,10 @@
 
 #include "Ifpack2_LocalFilter.hpp"
 #include "Teuchos_LAPACK.hpp"
+#include "Tpetra_MultiVector.hpp"
+#include "Tpetra_Map.hpp"
+#include "Tpetra_Import.hpp"
+#include "Tpetra_Export.hpp"
 
 #ifdef HAVE_MPI
 #  include <mpi.h>

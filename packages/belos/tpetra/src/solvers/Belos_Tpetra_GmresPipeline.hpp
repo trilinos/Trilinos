@@ -25,6 +25,7 @@ private:
   using vec_type = typename Krylov<SC, MV, OP>::vec_type;
   using device_type = typename MV::device_type;
   using dot_type = typename MV::dot_type;
+  using dot_view_type = Kokkos::View<dot_type*, device_type>;
 
 public:
   GmresPipeline () :
@@ -60,6 +61,9 @@ private:
     const mag_type tolOrtho = mag_type (10.0) * STM::squareroot (eps);
     const bool computeRitzValues = input.computeRitzValues;
 
+    // timers
+    Teuchos::RCP< Teuchos::Time > spmvTimer = Teuchos::TimeMonitor::getNewCounter ("GmresPipeline::matrix-apply");
+
     // initialize output parameters
     SolverOutput<SC> output {};
     output.converged = false;
@@ -78,15 +82,20 @@ private:
     dense_vector_type  h (restart+1, true);
     std::vector<mag_type> cs (restart);
     std::vector<SC> sn (restart);
-    MV  Q (B.getMap (), restart+1);
-    MV  V (B.getMap (), restart+1);
+
+    bool zeroOut = false; // Kokkos::View:init can take a long time on GPU?
+    MV  Q (B.getMap (), restart+1, zeroOut);
+    MV  V (B.getMap (), restart+1, zeroOut);
+    vec_type R (B.getMap (), zeroOut);
+    vec_type Y (B.getMap (), zeroOut);
+    vec_type MZ (B.getMap (), zeroOut);
     vec_type Z = * (V.getVectorNonConst (0));
-    vec_type R (B.getMap ());
-    vec_type Y (B.getMap ());
-    vec_type MZ (B.getMap ());
 
     // initial residual (making sure R = B - Ax)
-    A.apply (X, R);
+    {
+      Teuchos::TimeMonitor LocalTimer (*spmvTimer);
+      A.apply (X, R);
+    }
     R.update (one, B, -one);
     // TODO: this should be idot?
     b0_norm = STM::squareroot (STS::real (R.dot (R))); // initial residual norm, no preconditioned
@@ -128,8 +137,7 @@ private:
 
     // for idot
     std::shared_ptr<Tpetra::Details::CommRequest> req;
-    Kokkos::View<dot_type*, device_type> vals ("results[numVecs]",
-                                               restart+1);
+    dot_view_type vals ("results[numVecs]", restart+1);
     auto vals_h = Kokkos::create_mirror_view (vals);
 
     // Initialize starting vector
@@ -161,14 +169,21 @@ private:
           vec_type Z = * (V.getVectorNonConst (iter));
           vec_type W = * (V.getVectorNonConst (iter+1));
           if (input.precoSide == "none") {
+            Teuchos::TimeMonitor LocalTimer (*spmvTimer);
             A.apply (Z, W);
           }
           else if (input.precoSide == "right") {
             M.apply (Z, MZ);
-            A.apply (MZ, W);
+            {
+              Teuchos::TimeMonitor LocalTimer (*spmvTimer);
+              A.apply (MZ, W);
+            }
           }
           else {
-            A.apply (Z, MZ);
+            {
+              Teuchos::TimeMonitor LocalTimer (*spmvTimer);
+              A.apply (Z, MZ);
+            }
             M.apply (MZ, W);
           }
           // Shift for Newton basis, explicitly for the first iter
@@ -192,7 +207,9 @@ private:
         if (k >= 0) {
           if (k > 0) {
             req->wait (); // wait for idot
-            Kokkos::deep_copy (vals_h, vals);
+            auto v_iter = Kokkos::subview(vals, std::pair<int, int>(0, iter+1));
+            auto h_iter = Kokkos::subview(vals_h, std::pair<int, int>(0, iter+1));
+            Kokkos::deep_copy (h_iter, v_iter);
 
             for (int i = 0; i <= iter; i++) {
               G(i, k) = vals_h[i];
@@ -205,7 +222,7 @@ private:
             if (computeRitzValues) {
               //H(k-1, k-1) += output.getRitzValue((k-1)%ell);
               const complex_type theta = output.ritzValues[(k-1)%ell];
-              UpdateNewton<SC, MV>::updateNewtonH(k-1, H, theta);
+              UpdateNewton<SC, MV>::updateNewtonH (k-1, H, theta);
             }
 
             // Fix H
@@ -222,8 +239,8 @@ private:
           if (k > 0) {
             // Orthogonalize V(:, k), k = iter+1-ell
             vec_type AP = * (Q.getVectorNonConst (k));
-            Teuchos::Range1D index_prev(0, k-1);
-            const MV Qprev = * (Q.subView(index_prev));
+            Teuchos::Range1D index_prev (0, k-1);
+            const MV Qprev = * (Q.subView (index_prev));
             dense_matrix_type g_prev (Teuchos::View, G, k, 1, 0, k);
 
             MVT::MvTimesMatAddMv (-one, Qprev, g_prev, one, AP);
@@ -235,8 +252,8 @@ private:
           // Apply change-of-basis to W
           vec_type W = * (V.getVectorNonConst (iter+1));
           if (k > 0) {
-            Teuchos::Range1D index_prev(ell, iter);
-            const MV Zprev = * (V.subView(index_prev));
+            Teuchos::Range1D index_prev (ell, iter);
+            const MV Zprev = * (V.subView (index_prev));
 
             dense_matrix_type h_prev (Teuchos::View, H, k, 1, 0, k-1);
             MVT::MvTimesMatAddMv (-one, Zprev, h_prev, one, W);
@@ -276,8 +293,9 @@ private:
           Teuchos::Range1D index_prev(0, iter+1);
           const MV Qprev  = * (Q.subView(index_prev));
 
+          dot_view_type v_iter = Kokkos::subview(vals, std::pair<int, int>(0, iter+2));
           vec_type W = * (V.getVectorNonConst (iter+1));
-          req = Tpetra::idot (vals, Qprev, W);
+          req = Tpetra::idot (v_iter, Qprev, static_cast<const MV&> (W));
         }
       } // End of restart cycle
 
@@ -310,7 +328,10 @@ private:
         y.resize (restart+1);
       }
       // Compute real residual
-      A.apply (X, R);
+      {
+        Teuchos::TimeMonitor LocalTimer (*spmvTimer);
+        A.apply (X, R);
+      }
       R.update (one, B, -one);
       // TODO: compute residual norm with all-reduce, should be idot?
       r_norm = R.norm2 ();
@@ -365,7 +386,7 @@ private:
             const MV Qprev  = * (Q.subView(index_prev));
 
             vec_type W = * (V.getVectorNonConst (iter));
-            req = Tpetra::idot (vals, Qprev, W);
+            req = Tpetra::idot (vals, Qprev, static_cast<const MV&> (W));
           }
         }
       }

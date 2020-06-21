@@ -1,3 +1,9 @@
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
+// 
+// See packages/seacas/LICENSE for details
+
 #define CATCH_CONFIG_MAIN
 #include <Ioss_ConcreteVariableType.h>
 #include <Ioss_Field.h>
@@ -95,7 +101,7 @@ TEST_CASE("test sequential map with offset", "[sequential offset]")
     SECTION(sections[i])
     {
       std::size_t offset = offsets[i];
-      std::iota(init.begin(), init.end(), offset + 1);
+      std::iota(init.begin(), init.end(), int64_t(offset) + 1);
 
       my_map.set_map(init.data(), init.size(), 0, true);
 
@@ -133,7 +139,7 @@ TEST_CASE("test segmented map creation", "[segment]")
     SECTION(sections[i])
     {
       std::size_t offset = offsets[i];
-      std::iota(init.begin(), init.end(), offset + 1);
+      std::iota(init.begin(), init.end(), int(offset) + 1);
 
       for (size_t j = 0; j < segments; j++) {
         my_map.set_map(&init[j * seg_size], seg_size, j * seg_size, true);
@@ -168,7 +174,7 @@ TEST_CASE("test reverse segmented map creation", "[reverse segment]")
     SECTION(sections[i])
     {
       std::size_t offset = offsets[i];
-      std::iota(init.begin(), init.end(), offset + 1);
+      std::iota(init.begin(), init.end(), int(offset) + 1);
 
       for (size_t j = 0; j < segments; j++) {
         size_t k = segments - j - 1;
@@ -273,7 +279,7 @@ TEST_CASE("test map_data sequential", "[map_data_seq]")
     SECTION(sections[ii])
     {
       std::size_t offset = offsets[ii];
-      std::iota(init.begin(), init.end(), offset + 1);
+      std::iota(init.begin(), init.end(), int(offset) + 1);
 
       my_map.set_map(init.data(), init.size(), 0, true);
 

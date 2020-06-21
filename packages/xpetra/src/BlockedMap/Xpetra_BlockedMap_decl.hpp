@@ -50,7 +50,7 @@
 #include "Xpetra_ConfigDefs.hpp"
 
 #include "Xpetra_Import.hpp"
-#include "Xpetra_Map.hpp"
+#include "Xpetra_Map_decl.hpp"
 
 
 
@@ -216,10 +216,6 @@ class BlockedMap : public Map<LocalOrdinal, GlobalOrdinal, Node>
     virtual Teuchos::RCP<const Teuchos::Comm<int>> getComm() const;
 
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    //! Get this Map's Node object.
-    virtual Teuchos::RCP<Node> getNode() const;
-#endif      // TPETRA_ENABLE_DEPRECATED_CODE
 
 
     //@}

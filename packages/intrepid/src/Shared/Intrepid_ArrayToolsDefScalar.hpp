@@ -50,28 +50,6 @@
 
 
 namespace Intrepid {
-//Kokkos Only Implementation of scalarMultiplyDataData
-
-
-/* template<class ArrayOutData, class ArrayInDataLeft, class ArrayInDataRight>
- void ArrayTools::scalarMultiplyDataDataTemp( ArrayOutData&         outputData,
-                                              ArrayInDataLeft&      inputDataLeft,
-                                              ArrayInDataRight&     inputDataRight,
-                                              const  bool           reciprocal){
-     ArrayTools::scalarMultiplyDataData2<ArrayOutData,ArrayInDataLeft,ArrayInDataRight, void, void, Rank<ArrayInDataRight>::value,Rank<ArrayOutData>::value>(outputData, inputDataLeft, inputDataRight,reciprocal);
- 
-     }
- #ifdef INTREPID_OLD_KOKKOS_CODE  
- template<class ArrayOutData, class ArrayInDataLeft, class ArrayInDataRight, class Layout, class MemorySpace>
- void ArrayTools::scalarMultiplyDataDataTemp(Kokkos::View<ArrayOutData,Layout,MemorySpace>     &outputData,
-                                             Kokkos::View<ArrayInDataLeft,Layout,MemorySpace>  &inputDataLeft,
-                                             Kokkos::View<ArrayInDataRight,Layout,MemorySpace> &inputDataRight,
-                                             const bool                                        reciprocal){
-									
-	ArrayTools::scalarMultiplyDataData2Kokkos<Kokkos::View<ArrayOutData,Layout,MemorySpace>, Kokkos::View<ArrayInDataLeft,Layout,MemorySpace> , Kokkos::View<ArrayInDataRight,Layout,MemorySpace> , Layout, MemorySpace, Rank<Kokkos::View<ArrayInDataRight,Layout,MemorySpace> >::value,Rank<Kokkos::View<ArrayOutData,Layout,MemorySpace> >::value>(outputData, inputDataLeft, inputDataRight,reciprocal);
-	
-	}
-#endif    */                       
 
 template<class Scalar, class ArrayOutFields, class ArrayInData, class ArrayInFields>
 void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,

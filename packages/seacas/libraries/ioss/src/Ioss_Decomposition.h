@@ -1,35 +1,9 @@
 /*
- * Copyright(C) 1999-2017 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
- *     * Neither the name of NTESS nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
+ * See packages/seacas/LICENSE for details
  */
 #ifndef IOSS_DECOMPOSITON_H
 #define IOSS_DECOMPOSITON_H
@@ -54,6 +28,8 @@
 #endif
 
 namespace Ioss {
+  const std::vector<std::string> &valid_decomp_methods();
+
   class BlockDecompositionData
   {
   public:
@@ -116,6 +92,7 @@ namespace Ioss {
     }
 
     const std::string &name() const { return name_; }
+    const std::string &ss_name() const { return ss_name_.empty() ? name_ : ss_name_; }
     int64_t            id() const { return id_; }
     int                zone() const { return zone_; }
     int                section() const { return section_; }
@@ -128,8 +105,9 @@ namespace Ioss {
     std::vector<bool>   hasEntities; // T/F if this set exists on processor p
 
     std::string name_{};
+    std::string ss_name_{};
     int64_t     id_{0};
-    int         zone_{0};
+    int         zone_{0}; // Zone of the element block that this set is on
     int         section_{0};
     size_t      fileCount{0}; // Number of nodes in nodelist for file decomposition
     int         root_{0};     // Lowest number processor that has nodes for this nodest
@@ -158,7 +136,11 @@ namespace Ioss {
     size_t file_node_offset() const { return m_nodeOffset; }
     size_t file_elem_offset() const { return m_elementOffset; }
 
-    bool needs_centroids() const;
+    bool needs_centroids() const
+    {
+      return (m_method == "RCB" || m_method == "RIB" || m_method == "HSFC" ||
+              m_method == "GEOM_KWAY" || m_method == "KWAY_GEOM" || m_method == "METIS_SFC");
+    }
 
     void generate_entity_distributions(size_t globalNodeCount, size_t globalElementCount);
 
@@ -207,6 +189,8 @@ namespace Ioss {
       }
     }
 
+    // Zero out some large arrays usually not needed after decomposition
+    void release_memory();
     void decompose_model(
 #if !defined(NO_ZOLTAN_SUPPORT)
         Zoltan &zz,
@@ -236,25 +220,327 @@ namespace Ioss {
 #endif
 
     void get_node_entity_proc_data(INT *entity_proc, const Ioss::MapContainer &node_map,
-                                   bool do_map) const;
+                                   bool do_map) const
+    {
+      show_progress(__func__);
+      size_t j = 0;
+      if (do_map) {
+        for (size_t i = 0; i < m_nodeCommMap.size(); i += 2) {
+          INT local_id     = m_nodeCommMap[i];
+          entity_proc[j++] = node_map[local_id];
+          entity_proc[j++] = m_nodeCommMap[i + 1];
+        }
+      }
+      else {
+        for (size_t i = 0; i < m_nodeCommMap.size(); i += 2) {
+          entity_proc[j++] = m_nodeCommMap[i + 0];
+          entity_proc[j++] = m_nodeCommMap[i + 1];
+        }
+      }
+    }
 
     void get_element_block_communication(std::vector<BlockDecompositionData> &el_blocks);
     void build_global_to_local_elem_map();
     void get_local_node_list();
     void get_shared_node_list();
+
+    // The following function is used if reading all element data on a
+    // processor instead of just an element blocks worth...
     template <typename T>
-    void communicate_element_data(T *file_data, T *ioss_data, size_t comp_count) const;
+    void communicate_element_data(T *file_data, T *ioss_data, size_t comp_count) const
+    {
+      show_progress(__func__);
+      // Transfer the file-decomposition based data in 'file_data' to
+      // the ioss-decomposition based data in 'ioss_data'
+      std::vector<T> export_data(exportElementMap.size() * comp_count);
+      std::vector<T> import_data(importElementMap.size() * comp_count);
+
+      if (comp_count == 1) {
+        for (size_t i = 0; i < exportElementMap.size(); i++) {
+          size_t index   = exportElementMap[i] - m_elementOffset;
+          export_data[i] = file_data[index];
+        }
+
+        // Transfer all local data from file_data to ioss_data...
+        for (size_t i = 0; i < localElementMap.size(); i++) {
+          size_t index                             = localElementMap[i];
+          ioss_data[m_importPreLocalElemIndex + i] = file_data[index];
+        }
+
+        // Get my imported data and send my exported data...
+        Ioss::MY_Alltoallv(export_data, exportElementCount, exportElementIndex, import_data,
+                           importElementCount, importElementIndex, m_comm);
+        show_progress("\tCommunication 1a finished");
+
+        // Copy the imported data into ioss_data...
+        // Some comes before the local data...
+        for (size_t i = 0; i < m_importPreLocalElemIndex; i++) {
+          ioss_data[i] = import_data[i];
+        }
+
+        // Some comes after the local data...
+        size_t offset = m_importPreLocalElemIndex + localElementMap.size();
+        for (size_t i = 0; i < importElementMap.size() - m_importPreLocalElemIndex; i++) {
+          ioss_data[offset + i] = import_data[m_importPreLocalElemIndex + i];
+        }
+      }
+      else {
+        for (size_t i = 0; i < exportElementMap.size(); i++) {
+          size_t index = exportElementMap[i] - m_elementOffset;
+          for (size_t j = 0; j < comp_count; j++) {
+            export_data[comp_count * i + j] = file_data[comp_count * index + j];
+          }
+        }
+
+        // Transfer all local data from file_data to ioss_data...
+        for (size_t i = 0; i < localElementMap.size(); i++) {
+          size_t index = localElementMap[i];
+          for (size_t j = 0; j < comp_count; j++) {
+            ioss_data[comp_count * (m_importPreLocalElemIndex + i) + j] =
+                file_data[comp_count * index + j];
+          }
+        }
+
+        std::vector<INT> export_count(exportElementCount.begin(), exportElementCount.end());
+        std::vector<INT> export_disp(exportElementIndex.begin(), exportElementIndex.end());
+        std::vector<INT> import_count(importElementCount.begin(), importElementCount.end());
+        std::vector<INT> import_disp(importElementIndex.begin(), importElementIndex.end());
+
+        for (int i = 0; i < m_processorCount; i++) {
+          export_count[i] *= comp_count;
+          export_disp[i] *= comp_count;
+          import_count[i] *= comp_count;
+          import_disp[i] *= comp_count;
+        }
+
+        // Get my imported data and send my exported data...
+        Ioss::MY_Alltoallv(export_data, export_count, export_disp, import_data, import_count,
+                           import_disp, m_comm);
+        show_progress("\tCommunication 1b finished");
+
+        // Copy the imported data into ioss_data...
+        // Some comes before the local data...
+        for (size_t i = 0; i < m_importPreLocalElemIndex; i++) {
+          for (size_t j = 0; j < comp_count; j++) {
+            ioss_data[comp_count * i + j] = import_data[comp_count * i + j];
+          }
+        }
+
+        // Some comes after the local data...
+        size_t offset = m_importPreLocalElemIndex + localElementMap.size();
+        for (size_t i = 0; i < importElementMap.size() - m_importPreLocalElemIndex; i++) {
+          for (size_t j = 0; j < comp_count; j++) {
+            ioss_data[comp_count * (offset + i) + j] =
+                import_data[comp_count * (m_importPreLocalElemIndex + i) + j];
+          }
+        }
+      }
+    }
 
     template <typename T>
     void communicate_set_data(T *file_data, T *ioss_data, const SetDecompositionData &set,
-                              size_t comp_count) const;
+                              size_t comp_count) const
+    {
+      show_progress(__func__);
+      std::vector<T> recv_data;
+
+      size_t size = set.file_count() * comp_count;
+      if (size == 0)
+        return;
+
+      if (set.setComm_ != MPI_COMM_NULL) {
+        recv_data.resize(size);
+        if (m_processor == set.root_) {
+          std::copy(file_data, file_data + size, recv_data.begin());
+        }
+        // NOTE: This broadcast uses a split communicator, so possibly
+        // not all processors participating.
+        MPI_Bcast(recv_data.data(), size, Ioss::mpi_type(T(0)), 0, set.setComm_);
+      }
+      if (comp_count == 1) {
+        if (set.root_ == m_processor) {
+          for (size_t i = 0; i < set.ioss_count(); i++) {
+            size_t index = set.entitylist_map[i];
+            ioss_data[i] = file_data[index];
+          }
+        }
+        else {
+          // Receiving data from root...
+          for (size_t i = 0; i < set.ioss_count(); i++) {
+            size_t index = set.entitylist_map[i];
+            ioss_data[i] = recv_data[index];
+          }
+        }
+      }
+      else {
+        if (set.root_ == m_processor) {
+          for (size_t i = 0; i < set.ioss_count(); i++) {
+            size_t index = set.entitylist_map[i];
+            for (size_t j = 0; j < comp_count; j++) {
+              ioss_data[comp_count * i + j] = file_data[comp_count * index + j];
+            }
+          }
+        }
+        else {
+          // Receiving data from root...
+          for (size_t i = 0; i < set.ioss_count(); i++) {
+            size_t index = set.entitylist_map[i];
+            for (size_t j = 0; j < comp_count; j++) {
+              ioss_data[comp_count * i + j] = recv_data[comp_count * index + j];
+            }
+          }
+        }
+      }
+    }
 
     template <typename T, typename U>
     void communicate_block_data(T *file_data, U *ioss_data, const BlockDecompositionData &block,
-                                size_t comp_count) const;
+                                size_t comp_count) const
+    {
+      show_progress(__func__);
+      std::vector<U> exports;
+      exports.reserve(comp_count * block.exportMap.size());
+      std::vector<U> imports(comp_count * block.importMap.size());
+
+      if (comp_count == 1) {
+        for (int i : block.exportMap) {
+          exports.push_back(file_data[i]);
+        }
+
+        // Get my imported data and send my exported data...
+        Ioss::MY_Alltoallv(exports, block.exportCount, block.exportIndex, imports,
+                           block.importCount, block.importIndex, m_comm);
+
+        // Map local and imported data to ioss_data.
+        for (size_t i = 0; i < block.localMap.size(); i++) {
+          ioss_data[i + block.localIossOffset] = file_data[block.localMap[i]];
+        }
+
+        for (size_t i = 0; i < block.importMap.size(); i++) {
+          ioss_data[block.importMap[i]] = imports[i];
+        }
+      }
+      else {
+        for (int i : block.exportMap) {
+          for (size_t j = 0; j < comp_count; j++) {
+            exports.push_back(file_data[i * comp_count + j]);
+          }
+        }
+
+        std::vector<int> export_count(block.exportCount.begin(), block.exportCount.end());
+        std::vector<int> export_disp(block.exportIndex.begin(), block.exportIndex.end());
+        std::vector<int> import_count(block.importCount.begin(), block.importCount.end());
+        std::vector<int> import_disp(block.importIndex.begin(), block.importIndex.end());
+
+        for (int i = 0; i < m_processorCount; i++) {
+          export_count[i] *= comp_count;
+          export_disp[i] *= comp_count;
+          import_count[i] *= comp_count;
+          import_disp[i] *= comp_count;
+        }
+
+        // Get my imported data and send my exported data...
+        Ioss::MY_Alltoallv(exports, export_count, export_disp, imports, import_count, import_disp,
+                           m_comm);
+        show_progress("\tCommunication 1 finished");
+
+        // Map local and imported data to ioss_data.
+        for (size_t i = 0; i < block.localMap.size(); i++) {
+          for (size_t j = 0; j < comp_count; j++) {
+            ioss_data[(i + block.localIossOffset) * comp_count + j] =
+                file_data[block.localMap[i] * comp_count + j];
+          }
+        }
+
+        for (size_t i = 0; i < block.importMap.size(); i++) {
+          for (size_t j = 0; j < comp_count; j++) {
+            ioss_data[block.importMap[i] * comp_count + j] = imports[i * comp_count + j];
+          }
+        }
+      }
+    }
 
     template <typename T>
-    void communicate_node_data(T *file_data, T *ioss_data, size_t comp_count) const;
+    void communicate_node_data(T *file_data, T *ioss_data, size_t comp_count) const
+    {
+      show_progress(__func__);
+      // Transfer the file-decomposition based data in 'file_data' to
+      // the ioss-decomposition based data in 'ioss_data'
+      std::vector<T> export_data(exportNodeMap.size() * comp_count);
+      std::vector<T> import_data(importNodeMap.size() * comp_count);
+
+      if (comp_count == 1) {
+        for (size_t i = 0; i < exportNodeMap.size(); i++) {
+          size_t index = exportNodeMap[i] - m_nodeOffset;
+          assert(index < m_nodeCount);
+          export_data[i] = file_data[index];
+        }
+
+        // Transfer all local data from file_data to ioss_data...
+        for (size_t i = 0; i < localNodeMap.size(); i++) {
+          size_t index = localNodeMap[i] - m_nodeOffset;
+          assert(index < m_nodeCount);
+          ioss_data[m_importPreLocalNodeIndex + i] = file_data[index];
+        }
+
+        // Get my imported data and send my exported data...
+        Ioss::MY_Alltoallv(export_data, exportNodeCount, exportNodeIndex, import_data,
+                           importNodeCount, importNodeIndex, m_comm);
+        show_progress("\tCommunication 1a finished");
+
+        // Copy the imported data into ioss_data...
+        for (size_t i = 0; i < importNodeMap.size(); i++) {
+          size_t index = importNodeMap[i];
+          assert(index < ioss_node_count());
+          ioss_data[index] = import_data[i];
+        }
+      }
+      else { // Comp_count > 1
+        for (size_t i = 0; i < exportNodeMap.size(); i++) {
+          size_t index = exportNodeMap[i] - m_nodeOffset;
+          assert(index < m_nodeCount);
+          for (size_t j = 0; j < comp_count; j++) {
+            export_data[comp_count * i + j] = file_data[comp_count * index + j];
+          }
+        }
+
+        // Transfer all local data from file_data to ioss_data...
+        for (size_t i = 0; i < localNodeMap.size(); i++) {
+          size_t index = localNodeMap[i] - m_nodeOffset;
+          assert(index < m_nodeCount);
+          for (size_t j = 0; j < comp_count; j++) {
+            ioss_data[comp_count * (m_importPreLocalNodeIndex + i) + j] =
+                file_data[comp_count * index + j];
+          }
+        }
+
+        std::vector<INT> export_count(exportNodeCount.begin(), exportNodeCount.end());
+        std::vector<INT> export_disp(exportNodeIndex.begin(), exportNodeIndex.end());
+        std::vector<INT> import_count(importNodeCount.begin(), importNodeCount.end());
+        std::vector<INT> import_disp(importNodeIndex.begin(), importNodeIndex.end());
+
+        for (int i = 0; i < m_processorCount; i++) {
+          export_count[i] *= comp_count;
+          export_disp[i] *= comp_count;
+          import_count[i] *= comp_count;
+          import_disp[i] *= comp_count;
+        }
+
+        // Get my imported data and send my exported data...
+        Ioss::MY_Alltoallv(export_data, export_count, export_disp, import_data, import_count,
+                           import_disp, m_comm);
+        show_progress("\tCommunication 1b finished");
+
+        // Copy the imported data into ioss_data...
+        for (size_t i = 0; i < importNodeMap.size(); i++) {
+          size_t index = importNodeMap[i];
+          assert(index < ioss_node_count());
+          for (size_t j = 0; j < comp_count; j++) {
+            ioss_data[comp_count * index + j] = import_data[comp_count * i + j];
+          }
+        }
+      }
+    }
 
     MPI_Comm    m_comm;
     int         m_processor{};

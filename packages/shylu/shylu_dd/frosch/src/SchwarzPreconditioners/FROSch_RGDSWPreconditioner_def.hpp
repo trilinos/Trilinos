@@ -47,14 +47,14 @@
 
 namespace FROSch {
 
+    using namespace std;
     using namespace Teuchos;
     using namespace Xpetra;
 
     template <class SC,class LO,class GO,class NO>
     RGDSWPreconditioner<SC,LO,GO,NO>::RGDSWPreconditioner(ConstXMatrixPtr k,
                                                           ParameterListPtr parameterList) :
-    AlgebraicOverlappingPreconditioner<SC,LO,GO,NO> (k,parameterList),
-    CoarseOperator_ ()
+    AlgebraicOverlappingPreconditioner<SC,LO,GO,NO> (k,parameterList)
     {
         FROSCH_TIMER_START_LEVELID(rGDSWPreconditionerTime,"RGDSWPreconditioner::RGDSWPreconditioner");
         // Set the LevelID in the sublist
@@ -257,7 +257,7 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    std::string RGDSWPreconditioner<SC,LO,GO,NO>::description() const
+    string RGDSWPreconditioner<SC,LO,GO,NO>::description() const
     {
         return "RGDSW Preconditioner";
     }

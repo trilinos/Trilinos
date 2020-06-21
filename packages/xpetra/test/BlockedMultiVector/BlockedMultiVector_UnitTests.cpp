@@ -787,8 +787,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, UpdateVector1, M, MA, Sca
 {
   typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVector;
   typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
-  typedef Teuchos::ScalarTraits<Scalar> STS;
-  typedef typename STS::magnitudeType Magnitude;
+  using STS = Teuchos::ScalarTraits<Scalar>;
+  using mag_type = typename STS::magnitudeType;
 
   // get a comm and node
   Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
@@ -802,22 +802,25 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, UpdateVector1, M, MA, Sca
   Teuchos::RCP<BlockedMultiVector> bvv1 = CreateBlockedMultiVector<Scalar, LO, GO, Node, M>(noBlocks, comm);
   Teuchos::RCP<BlockedMultiVector> bvv2 = CreateBlockedMultiVector<Scalar, LO, GO, Node, M>(noBlocks, comm);
 
-  TEST_EQUALITY(bvv1->getNumVectors(), 2);
-  TEST_EQUALITY(bvv2->getNumVectors(), 2);
+  TEST_EQUALITY(size_t(bvv1->getNumVectors()), size_t(2));
+  TEST_EQUALITY(size_t(bvv2->getNumVectors()), size_t(2));
 
-  TEST_NOTHROW(bvv1->update(-0.35*STS::one(), *bvv2, 0.7*STS::one()));
-  TEST_NOTHROW(bvv1->update(-0.35*STS::one(), *bvv2, STS::one()));
+  // NOTE (mfh 23 Feb 2020) You can't always multiply double by
+  // Scalar, e.g., if Scalar=complex<float>.
+  TEST_NOTHROW(bvv1->update(mag_type(-0.35)*STS::one(), *bvv2, mag_type(0.7)*STS::one()));
+  TEST_NOTHROW(bvv1->update(mag_type(-0.35)*STS::one(), *bvv2, STS::one()));
 
-  typedef typename STS::magnitudeType Magnitude;
-  Teuchos::Array<Magnitude> bnorms1(bvv1->getNumVectors());
-  Teuchos::Array<Magnitude> bnorms2(vv->getNumVectors());
+  Teuchos::Array<mag_type> bnorms1(bvv1->getNumVectors());
+  Teuchos::Array<mag_type> bnorms2(vv->getNumVectors());
   TEST_NOTHROW( bvv1->norm1(bnorms1) );
   // TAW: CUDA produces a "dirty zero" (not exactly zero)
   // this might be numerical effects caused by the ordering of calculations
+  //
+  // FIXME (mfh 23 Feb 2020) Tolerances should depend on Scalar.
   TEST_COMPARE( bnorms1[0], < , 3e-12);
   TEST_COMPARE( bnorms1[1], < , 3e-12);
   //TEST_EQUALITY( bnorms1[0], STS::zero());
-  //TEST_EQUALITY( bnorms1[1], Teuchos::ScalarTraits<Magnitude>STS::zero());
+  //TEST_EQUALITY( bnorms1[1], Teuchos::ScalarTraits<mag_type>STS::zero());
   TEST_NOTHROW( vv->norm1(bnorms1) );
   TEST_NOTHROW( bvv2->norm1(bnorms2) );
   TEST_EQUALITY( bnorms1[0] , bnorms2[0]);
@@ -828,8 +831,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, UpdateVector1b, M, MA, Sc
 {
   typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVector;
   typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
-  typedef Teuchos::ScalarTraits<Scalar> STS;
-  typedef typename STS::magnitudeType Magnitude;
+  using STS = Teuchos::ScalarTraits<Scalar>;
+  using mag_type = typename STS::magnitudeType;
 
   // get a comm and node
   Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
@@ -843,15 +846,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, UpdateVector1b, M, MA, Sc
   Teuchos::RCP<BlockedMultiVector> bvv1 = CreateBlockedMultiVector<Scalar, LO, GO, Node, M>(noBlocks, comm);
   TEST_EQUALITY(bvv1->getNumVectors(), 2);
 
-  typedef typename STS::magnitudeType Magnitude;
-  Teuchos::Array<Magnitude> bnorms1(bvv1->getNumVectors());
-  Teuchos::Array<Magnitude> bnorms2(vv->getNumVectors());
+  Teuchos::Array<mag_type> bnorms1(bvv1->getNumVectors());
+  Teuchos::Array<mag_type> bnorms2(vv->getNumVectors());
 
-  TEST_NOTHROW(bvv1->update(-0.5* STS::one(), *vv, STS::one()));
+  // NOTE (mfh 23 Feb 2020) You can't always multiply double by
+  // Scalar, e.g., if Scalar=complex<float>.
+  TEST_NOTHROW(bvv1->update(mag_type(-0.5) * STS::one(), *vv, STS::one()));
   TEST_NOTHROW( bvv1->norm1(bnorms1) );
   TEST_NOTHROW( vv->norm1(bnorms2) );
-  TEST_EQUALITY( bnorms1[0], 0.5 * bnorms2[0]);
-  TEST_EQUALITY( bnorms1[1], 0.5 * bnorms2[1]);
+  TEST_EQUALITY( bnorms1[0], mag_type(0.5) * bnorms2[0]);
+  TEST_EQUALITY( bnorms1[1], mag_type(0.5) * bnorms2[1]);
 
 #ifdef HAVE_XPETRA_DEBUG
   // create faulty multivector
@@ -866,7 +870,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, UpdateVector2, M, MA, Sca
   typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVector;
   typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
   typedef Teuchos::ScalarTraits<Scalar> STS;
-  typedef typename STS::magnitudeType Magnitude;
+  typedef typename STS::magnitudeType mag_type;
 
   // get a comm and node
   Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
@@ -885,11 +889,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, UpdateVector2, M, MA, Sca
   TEST_EQUALITY(bvv2->getNumVectors(), 2);
   TEST_EQUALITY(bvv3->getNumVectors(), 2);
 
-  TEST_NOTHROW(bvv1->update(-0.25 * STS::one(), *bvv2, -0.25 * STS::one(), *bvv3, 0.5 * STS::one()));
+  // NOTE (mfh 23 Feb 2020) You can't always multiply double by
+  // Scalar, e.g., if Scalar=complex<float>.
+  TEST_NOTHROW(bvv1->update(mag_type(-0.25) * STS::one(), *bvv2, mag_type(-0.25) * STS::one(), *bvv3, mag_type(0.5) * STS::one()));
 
-  typedef typename STS::magnitudeType Magnitude;
-  Teuchos::Array<Magnitude> bnorms1(bvv1->getNumVectors());
-  Teuchos::Array<Magnitude> bnorms2(vv->getNumVectors());
+  Teuchos::Array<mag_type> bnorms1(bvv1->getNumVectors());
+  Teuchos::Array<mag_type> bnorms2(vv->getNumVectors());
   TEST_NOTHROW( bvv1->norm1(bnorms1) );
   TEST_EQUALITY( bnorms1[0], STS::zero());
   TEST_EQUALITY( bnorms1[1], STS::zero());
@@ -903,8 +908,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, PutScalar, M, MA, Scalar,
 {
   typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVector;
   typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
-  typedef Teuchos::ScalarTraits<Scalar> STS;
-  typedef typename STS::magnitudeType Magnitude;
+  using STS = Teuchos::ScalarTraits<Scalar>;
+  using mag_type = typename STS::magnitudeType;
 
   // get a comm and node
   Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
@@ -914,22 +919,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, PutScalar, M, MA, Scalar,
   // create BlockedMultiVector
   Teuchos::RCP<BlockedMultiVector> bvv = CreateBlockedMultiVector<Scalar, LO, GO, Node, M>(noBlocks, comm);
 
-  TEST_NOTHROW(bvv->putScalar(1.0*STS::one()));
+  TEST_NOTHROW(bvv->putScalar(STS::one()));
 
-  typedef typename STS::magnitudeType Magnitude;
-  Teuchos::Array<Magnitude> bnorms(bvv->getNumVectors());
+  Teuchos::Array<mag_type> bnorms(bvv->getNumVectors());
   TEST_NOTHROW( bvv->norm1(bnorms) );
-  TEST_EQUALITY( bnorms[0], Teuchos::as<Magnitude>(bvv->getBlockedMap()->getFullMap()->getGlobalNumElements()));
-  TEST_EQUALITY( bnorms[1], Teuchos::as<Magnitude>(bvv->getBlockedMap()->getFullMap()->getGlobalNumElements()));
+  TEST_EQUALITY( bnorms[0], Teuchos::as<mag_type>(bvv->getBlockedMap()->getFullMap()->getGlobalNumElements()));
+  TEST_EQUALITY( bnorms[1], Teuchos::as<mag_type>(bvv->getBlockedMap()->getFullMap()->getGlobalNumElements()));
 
-  TEST_NOTHROW(bvv->putScalar(3.0*STS::one()));
+  // NOTE (mfh 23 Feb 2020) You can't always multiply double by
+  // Scalar, e.g., if Scalar=complex<float>.
+  TEST_NOTHROW(bvv->putScalar(mag_type(3.0) * STS::one()));
 
   for(size_t r = 0; r < bvv->getBlockedMap()->getNumMaps(); ++r) {
     Teuchos::RCP<const MultiVector> part = bvv->getMultiVector(r);
     Teuchos::ArrayRCP<const Scalar > partd1 = part->getData(0);
     Teuchos::ArrayRCP<const Scalar > partd2 = part->getData(1);
     for(LO l = 0; l < Teuchos::as<LO>(part->getLocalLength()); l++) {
-      TEST_EQUALITY(partd1[l], 3.0 * STS::one());
+      TEST_EQUALITY(partd1[l], mag_type(3.0) * STS::one());
       TEST_EQUALITY(partd1[l], partd2[l]);
     }
   }

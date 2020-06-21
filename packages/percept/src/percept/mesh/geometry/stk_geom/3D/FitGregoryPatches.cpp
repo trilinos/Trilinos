@@ -612,9 +612,9 @@ namespace percept {
         std::vector<int>& normalsSet = m_nodeNormalsSetMap[node];
         for (unsigned jj=0; jj < normals.size(); ++jj)
           {
-            if (normalsSet[jj] && Math::norm_3d(normals[jj].c_array()) > 0.0)
+            if (normalsSet[jj] && Math::norm_3d(normals[jj].data()) > 0.0)
               {
-                Math::normalize_3d(normals[jj].c_array());
+                Math::normalize_3d(normals[jj].data());
               }
             else
               {
@@ -1155,7 +1155,7 @@ namespace percept {
       {
         tangent[j] = nd1[j] - nd0[j];
       }
-    Math::normalize_3d(tangent.c_array());
+    Math::normalize_3d(tangent.data());
     return tangent;
   }
 
@@ -1484,12 +1484,12 @@ namespace percept {
 
                     if (orient0 >= 0)
                       {
-                        Math::copy_3d(n.getData().get(), normals0[orient0].c_array());
+                        Math::copy_3d(n.getData().get(), normals0[orient0].data());
                         VERIFY_OP_ON(Math::norm_3d(n.getData().get()), >, 1.e-8, "bad norm");
                       }
                     if (orient1 >= 0)
                       {
-                        Math::copy_3d(np.getData().get(), normals1[orient1].c_array());
+                        Math::copy_3d(np.getData().get(), normals1[orient1].data());
                         VERIFY_OP_ON(Math::norm_3d(np.getData().get()), >, 1.e-8, "bad normp");
                       }
 

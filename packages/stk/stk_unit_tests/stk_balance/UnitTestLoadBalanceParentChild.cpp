@@ -409,9 +409,15 @@ protected:
         stk::mesh::put_field_on_mesh(coordinateField, get_meta().universal_part(), static_cast<double*>(nullptr));
     }
 
-    void allocate_bulk(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    void allocate_bulk(stk::mesh::BulkData::AutomaticAuraOption auraOption,
+                       unsigned bucketCapacity = stk::mesh::impl::BucketRepository::default_bucket_capacity)
     {
-        m_bulkData = new stk::mesh::BulkData(*m_metaData, m_communicator, auraOption);
+        m_bulkData = new stk::mesh::BulkData(*m_metaData, m_communicator, auraOption,
+#ifdef SIERRA_MIGRATION
+                                           false,
+#endif
+                                           nullptr,
+                                           bucketCapacity);
     }
 
     void allocate_meta()

@@ -60,8 +60,8 @@ namespace StatusTest {
 
 //! Failure test based on the maximum number of nonlinear solver iterations.
 /*!
-  Let \f$k\f$ denote the current number of iterations (accessed via
-  NOX::Solver::getNumIterations) and \f$k_{\max}\f$ denote the
+  Let \f$ k\f$ denote the current number of iterations (accessed via
+  NOX::Solver::getNumIterations) and \f$ k_{\max}\f$ denote the
   tolerance set in the constructor of this status test.
   This test returns NOX::StatusTest::Failed if
   \f$
@@ -77,7 +77,7 @@ class MaxIters : public Generic {
 
 public:
 
-  //! Constructor. Specify the maximum number of nonlinear solver iterations, \f$k_{\max}\f$ ands optinally an error stream for printing errors.
+  //! Constructor. Specify the maximum number of nonlinear solver iterations, \f$ k_{\max}\f$ ands optinally an error stream for printing errors.
   MaxIters(int maxIterations, const NOX::Utils* u = NULL);
 
   //! Destructor.

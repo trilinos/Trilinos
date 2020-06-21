@@ -111,18 +111,17 @@ namespace FROSch {
 
     protected:
 
-        bool UseVertices_;
-        bool UseShortEdges_;
-        bool UseStraightEdges_;
-        bool UseEdges_;
-        bool UseFaces_;
+        bool UseVertices_ = false;
+        bool UseShortEdges_ = false;
+        bool UseStraightEdges_ = false;
+        bool UseEdges_ = false;
+        bool UseFaces_ = false;
 
         EntitySetPtr Vertices_;
         EntitySetPtr ShortEdges_;
         EntitySetPtr StraightEdges_;
         EntitySetPtr Edges_;
         EntitySetPtr Faces_;
-
     };
 
 }

@@ -53,7 +53,6 @@ void SearchByIdGeometric::do_search(const TransferCopyByIdMeshAdapter & mesha,
   key_to_target_processor.clear();
   m_remote_keys.clear();
 
-  typedef TransferCopyByIdMeshAdapter::Mesh_ID Mesh_ID;
   typedef TransferCopyByIdMeshAdapter::MeshIDVector MeshIDVector;
   typedef stk::search::Point<float>  Point;
   typedef stk::search::Sphere<float> Sphere;
@@ -101,7 +100,7 @@ void SearchByIdGeometric::do_search(const TransferCopyByIdMeshAdapter & mesha,
   EntityProcRelationVec source_to_target_vector;
   stk::search::coarse_search(source_bbox_vector,
                              target_bbox_vector,
-                             stk::search::BOOST_RTREE,
+                             stk::search::KDTREE,
                              mesha.comm(),
                              source_to_target_vector
                              );

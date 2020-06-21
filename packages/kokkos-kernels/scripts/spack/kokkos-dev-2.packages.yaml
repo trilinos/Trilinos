@@ -1,0 +1,18 @@
+packages:
+ cmake:
+  paths:
+   cmake: /projects/sems/install/rhel7-x86_64/sems/utility/cmake/3.12.2/bin/cmake 
+ cuda:
+  modules:
+   cuda@10.1: sems-cuda/10.1
+   cuda@9.2: sems-cuda/9.2
+ kokkos:
+  variants: +cuda +openmp +volta70 +cuda_lambda +wrapper std=14 ^cuda@10.1
+  compiler: [gcc@7.2.0]
+ openmpi:
+  paths:
+   openmpi@4.0.2: /projects/sems/install/rhel7-x86_64/sems/compiler/gcc/7.2.0/openmpi/4.0.2
+  modules:
+   openmpi@4.0.2: sems-openmpi/4.0.2
+
+   

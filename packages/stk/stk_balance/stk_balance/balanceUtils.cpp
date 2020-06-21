@@ -16,6 +16,10 @@ namespace balance
 
 //////////////////////////////////////////////////////////////////////////
 
+BalanceSettings::BalanceSettings()
+  : initialDecompMethod("RIB")
+{}
+
 size_t BalanceSettings::getNumNodesRequiredForConnection(stk::topology element1Topology, stk::topology element2Topology) const
 {
     return 1;
@@ -46,6 +50,10 @@ bool BalanceSettings::includeSearchResultsInGraph() const
     return false;
 }
 
+void BalanceSettings::setIncludeSearchResultsInGraph(bool doContactSearch) 
+{
+}
+
 double BalanceSettings::getToleranceForFaceSearch(const stk::mesh::BulkData & mesh,
                                                   const stk::mesh::FieldBase & coordField,
                                                   const stk::mesh::Entity * faceNodes,
@@ -58,9 +66,19 @@ void BalanceSettings::setToleranceFunctionForFaceSearch(std::shared_ptr<stk::bal
 {
 }
 
+bool BalanceSettings::isConstantFaceSearchTolerance() const
+{
+    return true;
+}
+
 double BalanceSettings::getToleranceForParticleSearch() const
 {
     return 0.0;
+}
+
+double BalanceSettings::getAbsoluteToleranceForParticleSearch(stk::mesh::Entity particle) const
+{
+    return getParticleRadius(particle) * getToleranceForParticleSearch();
 }
 
 double BalanceSettings::getGraphEdgeWeightForSearch() const
@@ -115,6 +133,16 @@ void BalanceSettings::setDecompMethod(const std::string& method)
 std::string BalanceSettings::getDecompMethod() const
 {
     return std::string("parmetis");
+}
+
+void BalanceSettings::setInitialDecompMethod(const std::string& method)
+{
+    initialDecompMethod = method;
+}
+
+std::string BalanceSettings::getInitialDecompMethod() const
+{
+    return initialDecompMethod;
 }
 
 std::string BalanceSettings::getCoordinateFieldName() const
@@ -177,6 +205,22 @@ bool BalanceSettings::useLocalIds() const
     return getGraphOption() == stk::balance::BalanceSettings::COLOR_MESH ||
            getGraphOption() == stk::balance::BalanceSettings::COLOR_MESH_BY_TOPOLOGY ||
            getGraphOption() == stk::balance::BalanceSettings::COLOR_MESH_AND_OUTPUT_COLOR_FIELDS;
+}
+
+
+bool BalanceSettings::useNodeBalancer() const
+{
+  return false;
+}
+
+double BalanceSettings::getNodeBalancerTargetLoadBalance() const
+{
+  return 1.0;
+}
+
+unsigned BalanceSettings::getNodeBalancerMaxIterations() const
+{
+  return 5;
 }
 
 //////////////////////////////////////
@@ -250,6 +294,8 @@ int GraphCreationSettings::getGraphVertexWeight(stk::topology type) const
         case stk::topology::LINE_2:
         case stk::topology::BEAM_2:
         case stk::topology::BEAM_3:
+        case stk::topology::SPRING_2:
+        case stk::topology::SPRING_3:
             return 1;
         case stk::topology::SHELL_TRIANGLE_3:
             return 3;
@@ -291,7 +337,12 @@ BalanceSettings::GraphOption GraphCreationSettings::getGraphOption() const
 
 bool GraphCreationSettings::includeSearchResultsInGraph() const
 {
-    return true;
+    return m_includeSearchResultInGraph;
+}
+
+void GraphCreationSettings::setIncludeSearchResultsInGraph(bool doContactSearch)
+{
+    m_includeSearchResultInGraph = doContactSearch;
 }
 
 double GraphCreationSettings::getToleranceForParticleSearch() const
@@ -303,6 +354,11 @@ void GraphCreationSettings::setToleranceFunctionForFaceSearch(std::shared_ptr<st
 {
     m_faceSearchToleranceFunction = faceSearchTolerance;
     m_UseConstantToleranceForFaceSearch = false;
+}
+
+bool GraphCreationSettings::isConstantFaceSearchTolerance() const
+{
+  return m_UseConstantToleranceForFaceSearch;
 }
 
 double GraphCreationSettings::getToleranceForFaceSearch(const stk::mesh::BulkData & mesh,
@@ -337,8 +393,10 @@ void GraphCreationSettings::setDecompMethod(const std::string& input_method)
 {
     method = input_method;
 }
+
 void GraphCreationSettings::setToleranceForFaceSearch(double tol)
 {
+    m_UseConstantToleranceForFaceSearch = true;
     mToleranceForFaceSearch = tol;
 }
 void GraphCreationSettings::setToleranceForParticleSearch(double tol)
@@ -368,6 +426,8 @@ int GraphCreationSettings::getConnectionTableIndex(stk::topology elementTopology
         case stk::topology::BEAM_3:
         case stk::topology::SHELL_LINE_2:
         case stk::topology::SHELL_LINE_3:
+        case stk::topology::SPRING_2:
+        case stk::topology::SPRING_3:
             tableIndex = 1;
             break;
         case stk::topology::TRI_3_2D:
@@ -432,6 +492,8 @@ int GraphCreationSettings::getEdgeWeightTableIndex(stk::topology elementTopology
         case stk::topology::BEAM_3:
         case stk::topology::SHELL_LINE_2:
         case stk::topology::SHELL_LINE_3:
+        case stk::topology::SPRING_2:
+        case stk::topology::SPRING_3:
             tableIndex = 1;
             break;
         case stk::topology::TRI_3_2D:
@@ -507,6 +569,36 @@ const stk::mesh::Field<int> * GraphCreationSettings::getSpiderConnectivityCountF
         ThrowRequireMsg(m_spiderConnectivityCountField != nullptr, "Must create spider connectivity field when stomping spiders.");
     }
     return m_spiderConnectivityCountField;
+}
+
+void GraphCreationSettings::setUseNodeBalancer(bool useBalancer)
+{
+  m_useNodeBalancer = useBalancer;
+}
+
+void GraphCreationSettings::setNodeBalancerTargetLoadBalance(double targetLoadBalance)
+{
+  m_nodeBalancerTargetLoadBalance = targetLoadBalance;
+}
+
+void GraphCreationSettings::setNodeBalancerMaxIterations(unsigned maxIterations)
+{
+  m_nodeBalancerMaxIterations = maxIterations;
+}
+
+bool GraphCreationSettings::useNodeBalancer() const
+{
+  return m_useNodeBalancer;
+}
+
+double GraphCreationSettings::getNodeBalancerTargetLoadBalance() const
+{
+  return m_nodeBalancerTargetLoadBalance;
+}
+
+unsigned GraphCreationSettings::getNodeBalancerMaxIterations() const
+{
+  return m_nodeBalancerMaxIterations;
 }
 
 const std::string& get_coloring_part_base_name()

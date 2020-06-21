@@ -62,8 +62,6 @@ namespace FROSch {
     MpiComm_ (mpiComm),
     SerialComm_ (serialComm),
     ParameterList_ (parameterList),
-    LocalPartitionOfUnity_ (),
-    PartitionOfUnityMaps_ (),
     Verbose_ (MpiComm_->getRank() == 0),
     Verbosity_ (verbosity),
     LevelID_ (levelID)
@@ -78,6 +76,17 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
+    int PartitionOfUnity<SC,LO,GO,NO>::assembledPartitionOfUnityMaps()
+    {
+        if (!AssmbledPartitionOfUnityMap_.is_null()) {
+            FROSCH_NOTIFICATION("FROSch::PartitionOfUnity",Verbosity_,"AssmbledPartitionOfUnityMap_ has already been assembled previously.");
+        }
+        LOVecPtr2D partMappings;
+        AssmbledPartitionOfUnityMap_ = AssembleMaps(PartitionOfUnityMaps_(),partMappings);
+        return 0;
+    }
+
+    template <class SC,class LO,class GO,class NO>
     typename PartitionOfUnity<SC,LO,GO,NO>::XMultiVectorPtrVecPtr PartitionOfUnity<SC,LO,GO,NO>::getLocalPartitionOfUnity() const
     {
         return LocalPartitionOfUnity_;
@@ -87,6 +96,12 @@ namespace FROSch {
     typename PartitionOfUnity<SC,LO,GO,NO>::XMapPtrVecPtr PartitionOfUnity<SC,LO,GO,NO>::getPartitionOfUnityMaps() const
     {
         return PartitionOfUnityMaps_;
+    }
+
+    template <class SC,class LO,class GO,class NO>
+    typename PartitionOfUnity<SC,LO,GO,NO>::XMapPtr PartitionOfUnity<SC,LO,GO,NO>::getAssembledPartitionOfUnityMap() const
+    {
+        return AssmbledPartitionOfUnityMap_;
     }
 }
 

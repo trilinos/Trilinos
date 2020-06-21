@@ -466,6 +466,9 @@ protected:
     const SC zero = STS::zero ();
     const SC one  = STS::one ();
 
+    // timers
+    Teuchos::RCP< Teuchos::Time > spmvTimer = Teuchos::TimeMonitor::getNewCounter ("Gmres::matrix-apply");
+
     // initialize output parameters
     SolverOutput<SC> output {};
     output.converged = false;
@@ -487,14 +490,19 @@ protected:
     mag_type b0_norm; // initial residual norm, not left preconditioned
     mag_type r_norm;
     mag_type r_norm_imp;
-    vec_type R (B.getMap ());
-    vec_type Y (B.getMap ());
-    vec_type MP (B.getMap ());
-    MV Q (B.getMap (), restart+1);
+
+    bool zeroOut = false; // Kokkos::View:init can take a long time on GPU?
+    vec_type R (B.getMap (), zeroOut);
+    vec_type Y (B.getMap (), zeroOut);
+    vec_type MP (B.getMap (), zeroOut);
+    MV Q (B.getMap (), restart+1, zeroOut);
     vec_type P = * (Q.getVectorNonConst (0));
 
     // initial residual (making sure R = B - Ax)
-    A.apply (X, R);
+    {
+      Teuchos::TimeMonitor LocalTimer (*spmvTimer);
+      A.apply (X, R);
+    }
     R.update (one, B, -one);
     b0_norm = R.norm2 (); // residual norm, not-preconditioned
     if (input.precoSide == "left") {
@@ -539,9 +547,7 @@ protected:
     while (output.numIters < input.maxNumIters && ! output.converged) {
       if (outPtr != nullptr) {
         *outPtr << "Restart cycle " << output.numRests << ":" << endl;
-      }
-      Indent indent2 (outPtr);
-      if (outPtr != nullptr) {
+        Indent indent2 (outPtr);
         *outPtr << output;
       }
 
@@ -562,14 +568,21 @@ protected:
         vec_type P  = * (Q.getVectorNonConst (iter));
         vec_type AP = * (Q.getVectorNonConst (iter+1));
         if (input.precoSide == "none") {
+          Teuchos::TimeMonitor LocalTimer (*spmvTimer);
           A.apply (P, AP);
         }
         else if (input.precoSide == "right") {
           M.apply (P, MP);
-          A.apply (MP, AP);
+          {
+            Teuchos::TimeMonitor LocalTimer (*spmvTimer);
+            A.apply (MP, AP);
+          }
         }
         else { // left
-          A.apply (P, MP);
+          {
+            Teuchos::TimeMonitor LocalTimer (*spmvTimer);
+            A.apply (P, MP);
+          }
           M.apply (MP, AP);
         }
         output.numIters++;
@@ -606,12 +619,6 @@ protected:
         if (input.computeRitzValues && output.numRests == 0) {
           computeRitzValues (iter, G, output.ritzValues);
           sortRitzValues <LO, SC> (iter, output.ritzValues);
-          if (outPtr != nullptr) {
-            *outPtr << " > ComputeRitzValues: " << endl;
-            for (int i = 0; i < iter; i++) {
-              *outPtr << " > ritzValues[ " << i << " ] = " << output.ritzValues[i] << endl;
-            }
-          }
         }
         // Update solution
         blas.TRSM (Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI,
@@ -634,7 +641,10 @@ protected:
         //y.resize (restart+1);
       }
       // Compute explicit unpreconditioned residual
-      A.apply (X, R);
+      {
+        Teuchos::TimeMonitor LocalTimer (*spmvTimer);
+        A.apply (X, R);
+      }
       R.update (one, B, -one);
       r_norm = R.norm2 (); // residual norm
       output.absResid = r_norm;

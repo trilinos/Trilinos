@@ -66,6 +66,7 @@ INCLUDE(TribitsIncludeDirectories)
 INCLUDE(TribitsFindPythonInterp)
 INCLUDE(TribitsGlobalMacros)
 INCLUDE(TribitsConfigureCTestCustom)
+INCLUDE(TribitsGenerateResourceSpecFile)
 
 INCLUDE(AdvancedSet)
 INCLUDE(AdvancedOption)
@@ -321,7 +322,13 @@ MACRO(TRIBITS_PROJECT_IMPL)
   ENDIF()
 
   #
-  # N) Show final timing and end
+  # N) Generate resource spec file if applicable
+  #
+
+  TRIBITS_GENERATE_CTEST_RESOURCE_SPEC_FILE_PROJECT_LOGIC()
+
+  #
+  # O) Show final timing and end
   #
 
   MESSAGE("")

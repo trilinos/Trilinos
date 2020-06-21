@@ -1443,10 +1443,484 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   }
 }
 
+//
+// Test Belos GMRES solve for a simple lower-triangular matrix with lucky breakdown with DGKS orthogonalization
+//
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
+  Tpetra_CrsMatrix_MP, BelosGMRES_DGKS, Storage, LocalOrdinal, GlobalOrdinal, Node )
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::tuple;
+  using Teuchos::ArrayView;
+  using Teuchos::Array;
+  using Teuchos::ArrayRCP;
+  using Teuchos::ParameterList;
+
+  typedef typename Storage::value_type BaseScalar;
+  typedef Sacado::MP::Vector<Storage> Scalar;
+
+  typedef Teuchos::Comm<int> Tpetra_Comm;
+  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Tpetra_Map;
+  typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_Vector;
+  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsMatrix;
+  typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
+
+  // Ensure device is initialized
+  if ( !Kokkos::is_initialized() )
+    Kokkos::initialize();
+
+  // Build diagonal matrix
+  GlobalOrdinal nrow = 20;
+  RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
+  RCP<const Tpetra_Map> map =
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
+      nrow, comm);
+  RCP<Tpetra_CrsGraph> graph =
+    rcp(new Tpetra_CrsGraph(map, size_t(1), Tpetra::StaticProfile));
+  Array<GlobalOrdinal> columnIndices(1);
+  ArrayView<const GlobalOrdinal> myGIDs = map->getNodeElementList();
+  const size_t num_my_row = myGIDs.size();
+  for (size_t i=0; i<num_my_row; ++i) {
+    const GlobalOrdinal row = myGIDs[i];
+    columnIndices[0] = row;
+    size_t ncol = 1;
+    graph->insertGlobalIndices(row, columnIndices(0,ncol));
+  }
+  graph->fillComplete();
+  RCP<Tpetra_CrsMatrix> matrix = rcp(new Tpetra_CrsMatrix(graph));
+
+  Array<Scalar> vals(1);
+  for (size_t i=0; i<num_my_row; ++i) {
+    const GlobalOrdinal row = myGIDs[i];
+    columnIndices[0] = row;
+    vals[0] = Scalar(row+1);
+    matrix->replaceGlobalValues(row, columnIndices(0,1), vals(0,1));
+  }
+  matrix->fillComplete();
+
+  // Fill RHS vector:
+  //     [ 0, 0, ..., 0, 0, 1]
+  //     [ 0, 0, ..., 0, 2, 2]
+  //     [ 0, 0, ..., 3, 3, 3]
+  //     [ 0, 0, ..., 4, 4, 4]
+  //     ...
+
+  RCP<Tpetra_Vector> b = Tpetra::createVector<Scalar>(map);
+  ArrayRCP<Scalar> b_view = b->get1dViewNonConst();
+  for (size_t i=0; i<num_my_row; ++i) {
+    const GlobalOrdinal row = myGIDs[i];
+    b_view[i] = Scalar(0.0);
+    for (LocalOrdinal j=0; j<VectorSize; ++j)
+      if (int(j+2+row-VectorSize) > 0)
+        b_view[i].fastAccessCoeff(j) = BaseScalar(row+1);
+  }
+
+  // Solve
+  typedef Teuchos::ScalarTraits<BaseScalar> ST;
+#ifdef HAVE_STOKHOS_ENSEMBLE_REDUCT
+  typedef BaseScalar BelosScalar;
+#else
+  typedef Scalar BelosScalar;
+#endif
+  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
+  typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> OP;
+  typedef Belos::LinearProblem<BelosScalar,MV,OP> BLinProb;
+  RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(map);
+  RCP< BLinProb > problem = rcp(new BLinProb(matrix, x, b));
+  RCP<ParameterList> belosParams = rcp(new ParameterList);
+  typename ST::magnitudeType tol = 1e-9;
+  belosParams->set("Flexible Gmres", false);
+  belosParams->set("Num Blocks", 100);
+  belosParams->set("Convergence Tolerance", BelosScalar(tol));
+  belosParams->set("Maximum Iterations", 100);
+  belosParams->set("Verbosity", 33);
+  belosParams->set("Output Style", 1);
+  belosParams->set("Output Frequency", 1);
+  belosParams->set("Output Stream", out.getOStream());
+  belosParams->set("Orthogonalization","DGKS");
+  RCP<Belos::PseudoBlockGmresSolMgr<BelosScalar,MV,OP> > solver =
+    rcp(new Belos::PseudoBlockGmresSolMgr<BelosScalar,MV,OP>(problem, belosParams));
+  problem->setProblem();
+  Belos::ReturnType ret = solver->solve();
+  TEST_EQUALITY_CONST( ret, Belos::Converged );
+
+#ifndef HAVE_STOKHOS_ENSEMBLE_REDUCT
+  int numItersExpected = nrow;
+  int numIters = solver->getNumIters();
+  out << "numIters = " << numIters << std::endl;
+  TEST_EQUALITY( numIters, numItersExpected);
+
+  // Get and print number of ensemble iterations
+  std::vector<int> ensemble_iterations =
+    static_cast<const Belos::StatusTestImpResNorm<BelosScalar, MV, OP> *>(solver->getResidualStatusTest())->getEnsembleIterations();
+  out << "Ensemble iterations = ";
+  for (auto ensemble_iteration : ensemble_iterations)
+    out << ensemble_iteration << " ";
+  out << std::endl;
+
+  for (LocalOrdinal j=0; j<VectorSize; ++j) {
+    if (int(j+1+nrow-VectorSize) > 0) {
+      TEST_EQUALITY(int(j+1+nrow-VectorSize), ensemble_iterations[j]);
+    }
+    else {
+      TEST_EQUALITY(int(0), ensemble_iterations[j]);
+    }
+  }
+#endif
+
+  // Check -- Correct answer is:
+  //     [ 0, 0, ..., 0, 0, 1]
+  //     [ 0, 0, ..., 0, 1, 1]
+  //     [ 0, 0, ..., 1, 1, 1]
+  //     [ 0, 0, ..., 1, 1, 1]
+  //     ...
+  tol = 1000*tol;
+  ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
+  for (size_t i=0; i<num_my_row; ++i) {
+    const GlobalOrdinal row = myGIDs[i];
+    Scalar v = x_view[i];
+
+    for (LocalOrdinal j=0; j<VectorSize; ++j) {
+      if (ST::magnitude(v.coeff(j)) < tol)
+        v.fastAccessCoeff(j) = BaseScalar(0.0);
+    }
+
+    Scalar val = Scalar(0.0);
+
+    for (LocalOrdinal j=0; j<VectorSize; ++j)
+      if (j+2+row-VectorSize > 0)
+        val.fastAccessCoeff(j) = BaseScalar(1.0);
+
+    for (LocalOrdinal j=0; j<VectorSize; ++j)
+      TEST_FLOATING_EQUALITY(v.coeff(j), val.coeff(j), tol);
+  }
+}
+
+//
+// Test Belos GMRES solve for a simple lower-triangular matrix with lucky breakdown with ICGS orthogonalization
+//
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
+  Tpetra_CrsMatrix_MP, BelosGMRES_ICGS, Storage, LocalOrdinal, GlobalOrdinal, Node )
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::tuple;
+  using Teuchos::ArrayView;
+  using Teuchos::Array;
+  using Teuchos::ArrayRCP;
+  using Teuchos::ParameterList;
+
+  typedef typename Storage::value_type BaseScalar;
+  typedef Sacado::MP::Vector<Storage> Scalar;
+
+  typedef Teuchos::Comm<int> Tpetra_Comm;
+  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Tpetra_Map;
+  typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_Vector;
+  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsMatrix;
+  typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
+
+  // Ensure device is initialized
+  if ( !Kokkos::is_initialized() )
+    Kokkos::initialize();
+
+  // Build diagonal matrix
+  GlobalOrdinal nrow = 20;
+  RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
+  RCP<const Tpetra_Map> map =
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
+      nrow, comm);
+  RCP<Tpetra_CrsGraph> graph =
+    rcp(new Tpetra_CrsGraph(map, size_t(1), Tpetra::StaticProfile));
+  Array<GlobalOrdinal> columnIndices(1);
+  ArrayView<const GlobalOrdinal> myGIDs = map->getNodeElementList();
+  const size_t num_my_row = myGIDs.size();
+  for (size_t i=0; i<num_my_row; ++i) {
+    const GlobalOrdinal row = myGIDs[i];
+    columnIndices[0] = row;
+    size_t ncol = 1;
+    graph->insertGlobalIndices(row, columnIndices(0,ncol));
+  }
+  graph->fillComplete();
+  RCP<Tpetra_CrsMatrix> matrix = rcp(new Tpetra_CrsMatrix(graph));
+
+  Array<Scalar> vals(1);
+  for (size_t i=0; i<num_my_row; ++i) {
+    const GlobalOrdinal row = myGIDs[i];
+    columnIndices[0] = row;
+    vals[0] = Scalar(row+1);
+    matrix->replaceGlobalValues(row, columnIndices(0,1), vals(0,1));
+  }
+  matrix->fillComplete();
+
+  // Fill RHS vector:
+  //     [ 0, 0, ..., 0, 0, 1]
+  //     [ 0, 0, ..., 0, 2, 2]
+  //     [ 0, 0, ..., 3, 3, 3]
+  //     [ 0, 0, ..., 4, 4, 4]
+  //     ...
+
+  RCP<Tpetra_Vector> b = Tpetra::createVector<Scalar>(map);
+  ArrayRCP<Scalar> b_view = b->get1dViewNonConst();
+  for (size_t i=0; i<num_my_row; ++i) {
+    const GlobalOrdinal row = myGIDs[i];
+    b_view[i] = Scalar(0.0);
+    for (LocalOrdinal j=0; j<VectorSize; ++j)
+      if (int(j+2+row-VectorSize) > 0)
+        b_view[i].fastAccessCoeff(j) = BaseScalar(row+1);
+  }
+
+  // Solve
+  typedef Teuchos::ScalarTraits<BaseScalar> ST;
+#ifdef HAVE_STOKHOS_ENSEMBLE_REDUCT
+  typedef BaseScalar BelosScalar;
+#else
+  typedef Scalar BelosScalar;
+#endif
+  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
+  typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> OP;
+  typedef Belos::LinearProblem<BelosScalar,MV,OP> BLinProb;
+  RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(map);
+  RCP< BLinProb > problem = rcp(new BLinProb(matrix, x, b));
+  RCP<ParameterList> belosParams = rcp(new ParameterList);
+  typename ST::magnitudeType tol = 1e-9;
+  belosParams->set("Flexible Gmres", false);
+  belosParams->set("Num Blocks", 100);
+  belosParams->set("Convergence Tolerance", BelosScalar(tol));
+  belosParams->set("Maximum Iterations", 100);
+  belosParams->set("Verbosity", 33);
+  belosParams->set("Output Style", 1);
+  belosParams->set("Output Frequency", 1);
+  belosParams->set("Output Stream", out.getOStream());
+  belosParams->set("Orthogonalization","ICGS");
+  RCP<Belos::PseudoBlockGmresSolMgr<BelosScalar,MV,OP> > solver =
+    rcp(new Belos::PseudoBlockGmresSolMgr<BelosScalar,MV,OP>(problem, belosParams));
+  problem->setProblem();
+  Belos::ReturnType ret = solver->solve();
+  TEST_EQUALITY_CONST( ret, Belos::Converged );
+
+#ifndef HAVE_STOKHOS_ENSEMBLE_REDUCT
+  int numItersExpected = nrow;
+  int numIters = solver->getNumIters();
+  out << "numIters = " << numIters << std::endl;
+  TEST_EQUALITY( numIters, numItersExpected);
+
+  // Get and print number of ensemble iterations
+  std::vector<int> ensemble_iterations =
+    static_cast<const Belos::StatusTestImpResNorm<BelosScalar, MV, OP> *>(solver->getResidualStatusTest())->getEnsembleIterations();
+  out << "Ensemble iterations = ";
+  for (auto ensemble_iteration : ensemble_iterations)
+    out << ensemble_iteration << " ";
+  out << std::endl;
+
+  for (LocalOrdinal j=0; j<VectorSize; ++j) {
+    if (int(j+1+nrow-VectorSize) > 0) {
+      TEST_EQUALITY(int(j+1+nrow-VectorSize), ensemble_iterations[j]);
+    }
+    else {
+      TEST_EQUALITY(int(0), ensemble_iterations[j]);
+    }
+  }
+#endif
+
+  // Check -- Correct answer is:
+  //     [ 0, 0, ..., 0, 0, 1]
+  //     [ 0, 0, ..., 0, 1, 1]
+  //     [ 0, 0, ..., 1, 1, 1]
+  //     [ 0, 0, ..., 1, 1, 1]
+  //     ...
+  tol = 1000*tol;
+  ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
+  for (size_t i=0; i<num_my_row; ++i) {
+    const GlobalOrdinal row = myGIDs[i];
+    Scalar v = x_view[i];
+
+    for (LocalOrdinal j=0; j<VectorSize; ++j) {
+      if (ST::magnitude(v.coeff(j)) < tol)
+        v.fastAccessCoeff(j) = BaseScalar(0.0);
+    }
+
+    Scalar val = Scalar(0.0);
+
+    for (LocalOrdinal j=0; j<VectorSize; ++j)
+      if (j+2+row-VectorSize > 0)
+        val.fastAccessCoeff(j) = BaseScalar(1.0);
+
+    for (LocalOrdinal j=0; j<VectorSize; ++j)
+      TEST_FLOATING_EQUALITY(v.coeff(j), val.coeff(j), tol);
+  }
+}
+
+//
+// Test Belos GMRES solve for a simple lower-triangular matrix with lucky breakdown with IMGS orthogonalization
+//
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
+  Tpetra_CrsMatrix_MP, BelosGMRES_IMGS, Storage, LocalOrdinal, GlobalOrdinal, Node )
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::tuple;
+  using Teuchos::ArrayView;
+  using Teuchos::Array;
+  using Teuchos::ArrayRCP;
+  using Teuchos::ParameterList;
+
+  typedef typename Storage::value_type BaseScalar;
+  typedef Sacado::MP::Vector<Storage> Scalar;
+
+  typedef Teuchos::Comm<int> Tpetra_Comm;
+  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Tpetra_Map;
+  typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_Vector;
+  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsMatrix;
+  typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
+
+  // Ensure device is initialized
+  if ( !Kokkos::is_initialized() )
+    Kokkos::initialize();
+
+  // Build diagonal matrix
+  GlobalOrdinal nrow = 20;
+  RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
+  RCP<const Tpetra_Map> map =
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
+      nrow, comm);
+  RCP<Tpetra_CrsGraph> graph =
+    rcp(new Tpetra_CrsGraph(map, size_t(1), Tpetra::StaticProfile));
+  Array<GlobalOrdinal> columnIndices(1);
+  ArrayView<const GlobalOrdinal> myGIDs = map->getNodeElementList();
+  const size_t num_my_row = myGIDs.size();
+  for (size_t i=0; i<num_my_row; ++i) {
+    const GlobalOrdinal row = myGIDs[i];
+    columnIndices[0] = row;
+    size_t ncol = 1;
+    graph->insertGlobalIndices(row, columnIndices(0,ncol));
+  }
+  graph->fillComplete();
+  RCP<Tpetra_CrsMatrix> matrix = rcp(new Tpetra_CrsMatrix(graph));
+
+  Array<Scalar> vals(1);
+  for (size_t i=0; i<num_my_row; ++i) {
+    const GlobalOrdinal row = myGIDs[i];
+    columnIndices[0] = row;
+    vals[0] = Scalar(row+1);
+    matrix->replaceGlobalValues(row, columnIndices(0,1), vals(0,1));
+  }
+  matrix->fillComplete();
+
+  // Fill RHS vector:
+  //     [ 0, 0, ..., 0, 0, 1]
+  //     [ 0, 0, ..., 0, 2, 2]
+  //     [ 0, 0, ..., 3, 3, 3]
+  //     [ 0, 0, ..., 4, 4, 4]
+  //     ...
+
+  RCP<Tpetra_Vector> b = Tpetra::createVector<Scalar>(map);
+  ArrayRCP<Scalar> b_view = b->get1dViewNonConst();
+  for (size_t i=0; i<num_my_row; ++i) {
+    const GlobalOrdinal row = myGIDs[i];
+    b_view[i] = Scalar(0.0);
+    for (LocalOrdinal j=0; j<VectorSize; ++j)
+      if (int(j+2+row-VectorSize) > 0)
+        b_view[i].fastAccessCoeff(j) = BaseScalar(row+1);
+  }
+
+  // Solve
+  typedef Teuchos::ScalarTraits<BaseScalar> ST;
+#ifdef HAVE_STOKHOS_ENSEMBLE_REDUCT
+  typedef BaseScalar BelosScalar;
+#else
+  typedef Scalar BelosScalar;
+#endif
+  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
+  typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> OP;
+  typedef Belos::LinearProblem<BelosScalar,MV,OP> BLinProb;
+  RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(map);
+  RCP< BLinProb > problem = rcp(new BLinProb(matrix, x, b));
+  RCP<ParameterList> belosParams = rcp(new ParameterList);
+  typename ST::magnitudeType tol = 1e-9;
+  belosParams->set("Flexible Gmres", false);
+  belosParams->set("Num Blocks", 100);
+  belosParams->set("Convergence Tolerance", BelosScalar(tol));
+  belosParams->set("Maximum Iterations", 100);
+  belosParams->set("Verbosity", 33);
+  belosParams->set("Output Style", 1);
+  belosParams->set("Output Frequency", 1);
+  belosParams->set("Output Stream", out.getOStream());
+  belosParams->set("Orthogonalization","IMGS");
+  RCP<Belos::PseudoBlockGmresSolMgr<BelosScalar,MV,OP> > solver =
+    rcp(new Belos::PseudoBlockGmresSolMgr<BelosScalar,MV,OP>(problem, belosParams));
+  problem->setProblem();
+  Belos::ReturnType ret = solver->solve();
+  TEST_EQUALITY_CONST( ret, Belos::Converged );
+
+#ifndef HAVE_STOKHOS_ENSEMBLE_REDUCT
+  int numItersExpected = nrow;
+  int numIters = solver->getNumIters();
+  out << "numIters = " << numIters << std::endl;
+  TEST_EQUALITY( numIters, numItersExpected);
+
+  // Get and print number of ensemble iterations
+  std::vector<int> ensemble_iterations =
+    static_cast<const Belos::StatusTestImpResNorm<BelosScalar, MV, OP> *>(solver->getResidualStatusTest())->getEnsembleIterations();
+  out << "Ensemble iterations = ";
+  for (auto ensemble_iteration : ensemble_iterations)
+    out << ensemble_iteration << " ";
+  out << std::endl;
+
+  for (LocalOrdinal j=0; j<VectorSize; ++j) {
+    if (int(j+1+nrow-VectorSize) > 0) {
+      TEST_EQUALITY(int(j+1+nrow-VectorSize), ensemble_iterations[j]);
+    }
+    else {
+      TEST_EQUALITY(int(0), ensemble_iterations[j]);
+    }
+  }
+#endif
+
+  // Check -- Correct answer is:
+  //     [ 0, 0, ..., 0, 0, 1]
+  //     [ 0, 0, ..., 0, 1, 1]
+  //     [ 0, 0, ..., 1, 1, 1]
+  //     [ 0, 0, ..., 1, 1, 1]
+  //     ...
+  tol = 1000*tol;
+  ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
+  for (size_t i=0; i<num_my_row; ++i) {
+    const GlobalOrdinal row = myGIDs[i];
+    Scalar v = x_view[i];
+
+    for (LocalOrdinal j=0; j<VectorSize; ++j) {
+      if (ST::magnitude(v.coeff(j)) < tol)
+        v.fastAccessCoeff(j) = BaseScalar(0.0);
+    }
+
+    Scalar val = Scalar(0.0);
+
+    for (LocalOrdinal j=0; j<VectorSize; ++j)
+      if (j+2+row-VectorSize > 0)
+        val.fastAccessCoeff(j) = BaseScalar(1.0);
+
+    for (LocalOrdinal j=0; j<VectorSize; ++j)
+      TEST_FLOATING_EQUALITY(v.coeff(j), val.coeff(j), tol);
+  }
+}
+
 #else
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   Tpetra_CrsMatrix_MP, BelosGMRES, Storage, LocalOrdinal, GlobalOrdinal, Node )
+{}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
+  Tpetra_CrsMatrix_MP, BelosGMRES_DGKS, Storage, LocalOrdinal, GlobalOrdinal, Node )
+{}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
+  Tpetra_CrsMatrix_MP, BelosGMRES_ICGS, Storage, LocalOrdinal, GlobalOrdinal, Node )
+{}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
+  Tpetra_CrsMatrix_MP, BelosGMRES_IMGS, Storage, LocalOrdinal, GlobalOrdinal, Node )
 {}
 
 #endif
@@ -1978,6 +2452,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, SimpleCG, S, LO, GO, N ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, SimplePCG_Muelu, S, LO, GO, N ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, BelosGMRES, S, LO, GO, N ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, BelosGMRES_DGKS, S, LO, GO, N ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, BelosGMRES_ICGS, S, LO, GO, N ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, BelosGMRES_IMGS, S, LO, GO, N ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, BelosGMRES_RILUK, S, LO, GO, N ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, BelosCG_Muelu, S, LO, GO, N ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, Amesos2, S, LO, GO, N )

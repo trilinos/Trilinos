@@ -205,6 +205,7 @@ private:
 
   bool MUMPS_MATRIX_LOAD;
   bool MUMPS_STRUCT;
+  mutable bool MUMPS_MATRIX_LOAD_PREORDERING;
 
   // The following Arrays are persisting storage arrays for A, X, and B
   /// Stores the values of the nonzero entries for MUMPS

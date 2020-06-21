@@ -118,15 +118,9 @@ testImpl (Teuchos::FancyOStream& out,
   std::istringstream mapInFile (mapOutFile.str ());
   RCP<const map_type> readMap =
     reader_type::readMap (mapInFile, comm,
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-                          origMap->getNode (), 
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
                           false, false);
   std::istringstream mvInFile (mvOutFile.str ());
   RCP<MV> read_mv = reader_type::readDense (mvInFile, comm, 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-                                            origMap->getNode (),
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
                                             readMap, false, false);
 
   out << "Write MultiVector again" << endl;

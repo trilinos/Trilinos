@@ -49,6 +49,7 @@
 namespace Ifpack2 {
 namespace Details {
 
+
 template<class SC, class LO, class GO, class NT>
 class Factory {
 public:
@@ -87,6 +88,9 @@ public:
   create (const std::string& precType,
           const Teuchos::RCP<const row_matrix_type>& matrix,
           const int overlap);
+
+  bool
+  isSupported (const std::string& precType);
 };
 
 } // namespace Details

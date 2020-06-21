@@ -203,10 +203,10 @@ namespace MueLu {
       maxEntriesPerRowP = 4,
       maxEntriesPerRowM = 9;
 
-    RCP<Matrix> P  = rcp(new CrsMatrixWrap(rowMapforP ,maxEntriesPerRowV,Xpetra::StaticProfile));
-    RCP<Matrix> PV = rcp(new CrsMatrixWrap(rowMapforPV,maxEntriesPerRowV,Xpetra::StaticProfile));
-    RCP<Matrix> PP = rcp(new CrsMatrixWrap(rowMapforPP,maxEntriesPerRowP,Xpetra::StaticProfile));
-    RCP<Matrix> PM = rcp(new CrsMatrixWrap(rowMapforPM,maxEntriesPerRowM,Xpetra::StaticProfile));
+    RCP<Matrix> P  = rcp(new CrsMatrixWrap(rowMapforP ,maxEntriesPerRowV));
+    RCP<Matrix> PV = rcp(new CrsMatrixWrap(rowMapforPV,maxEntriesPerRowV));
+    RCP<Matrix> PP = rcp(new CrsMatrixWrap(rowMapforPP,maxEntriesPerRowP));
+    RCP<Matrix> PM = rcp(new CrsMatrixWrap(rowMapforPM,maxEntriesPerRowM));
 
 
     //*****************************************************************/

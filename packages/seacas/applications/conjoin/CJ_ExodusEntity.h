@@ -1,33 +1,8 @@
-// Copyright(C) 2009-2010-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//     * Neither the name of NTESS nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+// See packages/seacas/LICENSE for details
 #ifndef SEACAS_ExodusEntity_H
 #define SEACAS_ExodusEntity_H
 
@@ -63,10 +38,10 @@ namespace Excn {
       }
     }
 
-    std::vector<INT> localNodeToGlobal;
-    std::vector<INT> localElementToGlobal;
+    std::vector<INT> localNodeToGlobal{};
+    std::vector<INT> localElementToGlobal{};
 
-    std::string title;
+    std::string title{};
 
     size_t dimensionality{0};
     size_t nodeCount{0};
@@ -95,9 +70,9 @@ namespace Excn {
 
     size_t entity_count() const { return elementCount; }
 
-    IntVector                truthTable;
-    std::vector<std::string> attributeNames;
-    std::string              name_;
+    IntVector                truthTable{};
+    std::vector<std::string> attributeNames{};
+    std::string              name_{};
     int64_t                  id{0};
     size_t                   elementCount{0};
     size_t                   nodesPerElement{0};
@@ -127,33 +102,33 @@ namespace Excn {
   {
     NodeSet() = default;
 
-    IntVector   truthTable;
+    IntVector   truthTable{};
     int64_t     id{0};
     size_t      nodeCount{0};
     size_t      dfCount{0};
     size_t      offset_{0};
     size_t      position_{0};
-    std::string name_;
+    std::string name_{};
 
-    std::vector<INT> nodeSetNodes;
-    std::vector<INT> nodeOrderMap;
-    DistVector       distFactors;
+    std::vector<INT> nodeSetNodes{};
+    std::vector<INT> nodeOrderMap{};
+    DistVector       distFactors{};
 
     size_t entity_count() const { return nodeCount; }
 
     void dump() const
     {
-      fmt::print(stderr, "NodeSet {}, Name: '{}', {:n} nodes, {:n} df,\torder = {}\n", id, name_,
-                 nodeCount, dfCount, position_);
+      fmt::print("NodeSet {}, Name: '{}', {:n} nodes, {:n} df,\torder = {}\n", id, name_, nodeCount,
+                 dfCount, position_);
     }
 
     void dump_order() const
     {
       dump();
       for (size_t i = 0; i < nodeCount; i++) {
-        fmt::print(stderr, "{}, ", nodeOrderMap[i]);
+        fmt::print("{}, ", nodeOrderMap[i]);
       }
-      fmt::print(stderr, "\n");
+      fmt::print("\n");
     }
   };
 
@@ -162,28 +137,28 @@ namespace Excn {
   {
     SideSet() = default;
 
-    IntVector   truthTable;
+    IntVector   truthTable{};
     int64_t     id{0};
     size_t      sideCount{0};
     size_t      dfCount{0};
     size_t      offset_{0};
     size_t      position_{0};
-    std::string name_;
+    std::string name_{};
 
-    std::vector<INT> elems;
-    std::vector<INT> sides;
+    std::vector<INT> elems{};
+    std::vector<INT> sides{};
 
     // For conjoin only. Maps the location (of elems, sides, vars) within this sideset into
     // the location in the corresponding global sideset
-    std::vector<INT> elemOrderMap;
-    DistVector       distFactors;
+    std::vector<INT> elemOrderMap{};
+    DistVector       distFactors{};
 
     size_t entity_count() const { return sideCount; }
 
     void dump() const
     {
-      fmt::print(stderr, "SideSet {}, Name: '{}', {:n} sides, {:n} df\toffset = {}, order = {}\n",
-                 id, name_, sideCount, dfCount, offset_, position_);
+      fmt::print("SideSet {}, Name: '{}', {:n} sides, {:n} df\toffset = {}, order = {}\n", id,
+                 name_, sideCount, dfCount, offset_, position_);
     }
   };
 
@@ -204,8 +179,8 @@ namespace Excn {
     CommunicationMetaData()                              = default;
     CommunicationMetaData(const CommunicationMetaData &) = delete;
 
-    std::vector<CommunicationMap> nodeMap;
-    std::vector<CommunicationMap> elementMap;
+    std::vector<CommunicationMap> nodeMap{};
+    std::vector<CommunicationMap> elementMap{};
 
     size_t processorId{0};
     size_t processorCount{0};

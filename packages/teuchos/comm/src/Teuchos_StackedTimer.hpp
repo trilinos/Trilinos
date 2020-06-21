@@ -1,5 +1,41 @@
-// @HEADER BEGIN
-// @HEADER END
+// @HEADER
+// ***********************************************************************
+//
+//                    Teuchos: Common Tools Package
+//                 Copyright (2004) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// ***********************************************************************
+// @HEADER
 
 #ifndef TEUCHOS_STACKED_TIMER_HPP
 #define TEUCHOS_STACKED_TIMER_HPP
@@ -16,7 +52,8 @@
 #include <cassert>
 #include <chrono>
 #include <climits>
-#include <cstdlib> // for std::getenv
+#include <cstdlib> // for std::getenv and atoi
+#include <ctime> // for timestamp support
 #include <iostream>
 
 #if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
@@ -324,6 +361,10 @@ protected:
       return 0;
     }
 
+    /// Returns the level of the timer in the stack
+    unsigned level() const
+    {return level_;}
+
   protected:
     /**
      * \brief split a string into two parts split by a '@' if no '@' first gets the full string
@@ -395,7 +436,7 @@ protected:
 
      /**
       * Dump the timer stats in a pretty format to ostream
-      * @param [in/out] os  Where are you dumping the stats, stdout??
+      * @param [in,out] os  Where are you dumping the stats, stdout??
       */
      void report(std::ostream &os);
 
@@ -431,6 +472,7 @@ public:
   explicit StackedTimer(const char *name, const bool start_base_timer = true)
     : timer_(0,name,nullptr,false),
       enable_verbose_(false),
+      verbose_timestamp_levels_(0), // 0 disables
       verbose_ostream_(Teuchos::rcpFromRef(std::cout))
   {
     top_ = &timer_;
@@ -440,6 +482,11 @@ public:
     auto check_verbose = std::getenv("TEUCHOS_ENABLE_VERBOSE_TIMERS");
     if (check_verbose != nullptr)
       enable_verbose_ = true;
+
+    auto check_timestamp = std::getenv("TEUCHOS_ENABLE_VERBOSE_TIMESTAMP_LEVELS");
+    if (check_timestamp != nullptr) {
+      verbose_timestamp_levels_ = std::atoi(check_timestamp);
+    }
   }
 
   /**
@@ -478,8 +525,25 @@ public:
       ::Kokkos::Profiling::pushRegion(name);
     }
 #endif
-    if (enable_verbose_)
-      *verbose_ostream_ << "STARTING: " << name << std::endl;
+    if (enable_verbose_) {
+      if (!verbose_timestamp_levels_) {
+        *verbose_ostream_ << "STARTING: " << name << std::endl;
+      }
+      // gcc 4.X is incomplete in c++11 standard - missing
+      // std::put_time. We'll disable this feature for gcc 4.
+#if !defined(__GNUC__) || ( defined(__GNUC__) && (__GNUC__ > 4) )
+      else if (top_ != nullptr) {
+        if ( top_->level() <= verbose_timestamp_levels_) {
+          auto now = std::chrono::system_clock::now();
+          auto now_time = std::chrono::system_clock::to_time_t(now);
+          auto gmt = gmtime(&now_time);
+          auto timestamp = std::put_time(gmt, "%Y-%m-%d %H:%M:%S");
+          auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
+          *verbose_ostream_ << "STARTING: " << name << " LEVEL: " << top_->level() << " COUNT: " << timer_.numCalls() << " TIMESTAMP: " << timestamp << "." << ms.count() << std::endl;
+        }
+      }
+#endif
+    }
   }
 
   /**
@@ -498,8 +562,26 @@ public:
       ::Kokkos::Profiling::popRegion();
     }
 #endif
-    if (enable_verbose_)
-      *verbose_ostream_ << "STOPPING: " << name << std::endl;
+    if (enable_verbose_) {
+      if (!verbose_timestamp_levels_) {
+        *verbose_ostream_ << "STOPPING: " << name << std::endl;
+      }
+      // gcc 4.X is incomplete in c++11 standard - missing
+      // std::put_time. We'll disable this feature for gcc 4.
+#if !defined(__GNUC__) || ( defined(__GNUC__) && (__GNUC__ > 4) )
+      // The stop adjusts the top level, need to adjust by +1 for printing
+      else if (top_ != nullptr) {
+        if ( (top_->level()+1) <= verbose_timestamp_levels_) {
+          auto now = std::chrono::system_clock::now();
+          auto now_time = std::chrono::system_clock::to_time_t(now);
+          auto gmt = gmtime(&now_time);
+          auto timestamp = std::put_time(gmt, "%Y-%m-%d %H:%M:%S");
+          auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
+          *verbose_ostream_ << "STOPPING: " << name << " LEVEL: " << top_->level()+1 << " COUNT: " << timer_.numCalls() << " TIMESTAMP: " << timestamp << "." << ms.count() << std::endl;
+        }
+      }
+#endif
+    }
   }
 
   /**
@@ -574,32 +656,88 @@ public:
     timer_.report(os);
   }
 
-  /// Struct for controlling output options like histograms
+  /** Struct for controlling output options like histograms
+
+      @param output_fraction Print the timer fractions within a level.
+      @param output_total_updates Print the updates counter.
+      @param output_historgram Print the histogram.
+      @param output_minmax Print the min max and standard deviation across MPI processes.
+      @param num_histogram The number of equally size bickets to use in the histogram.
+      @param max_level The number of levels in the stacked timer to print (default prints all levels).
+      @param print_warnings Print any relevant warnings on stacked timer use.
+      @param align_columns Output will align the columsn of stacked timer data.
+      @param print_names_before_values If set to true, writes the timer names before values.
+      @param drop_time If a timer has a total time less that this value, the timer will not be printed and the total time of that timer will be added to the Remainder. Useful for ignoring negligible timers. Default is -1.0 to force printing of all timers even if they have zero accumulated time.
+   */
   struct OutputOptions {
     OutputOptions() : output_fraction(false), output_total_updates(false), output_histogram(false),
-                      output_minmax(false), num_histogram(10), max_levels(INT_MAX),
-                      print_warnings(true), align_columns(false), print_names_before_values(true) {}
+                      output_minmax(false), output_proc_minmax(false), num_histogram(10), max_levels(INT_MAX),
+                      print_warnings(true), align_columns(false), print_names_before_values(true),
+                      drop_time(-1.0) {}
     bool output_fraction;
     bool output_total_updates;
     bool output_histogram;
     bool output_minmax;
+    bool output_proc_minmax;
     int num_histogram;
     int max_levels;
     bool print_warnings;
     bool align_columns;
     bool print_names_before_values;
+    double drop_time;
   };
 
   /**
    * Dump all the data from all the MPI ranks to an ostream
-   * @param [in] os - Output stream
+   * @param [in,out] os - Output stream
    * @param [in] comm - Teuchos comm pointer
    */
   void report(std::ostream &os, Teuchos::RCP<const Teuchos::Comm<int> > comm, OutputOptions options = OutputOptions());
 
+  /**
+   * Dump all the data from all the MPI ranks to the given output stream, in Watchr XML format.
+   *  \c reportWatchrXML() is a wrapper for this function that creates \c os as a \c std::ofstream.
+   * @param [in,out] os - stream where XML will be written
+   * @param [in] datestamp - UTC datestamp in the format YYYY_MM_DD
+   * @param [in] timestamp - UTC timestamp in ISO 8601 format: YYYY-MM-DDTHH:MM:SS (HH in 24-hour time, and T is just the character 'T')
+   * @param [in] comm - Teuchos comm pointer
+   * @return The complete filename, or empty string if no output was produced.
+   */
+  void reportXML(std::ostream &os, const std::string& datestamp, const std::string& timestamp, Teuchos::RCP<const Teuchos::Comm<int> > comm);
+
+  /**
+   * Dump all the data from all the MPI ranks to an XML file. This function
+   * calls reportXML and is intended to be used directly by performance tests.
+   *
+   * In the XML report, the top-level timer name (representing the total) will be replaced with
+   * \c name (the name of the test). This becomes the top-level chart name in Watchr.
+   *
+   * The output filename is controlled by two environment variables: \c $WATCHR_PERF_DIR (required for output)
+   * and \c $WATCHR_BUILD_NAME (optional). \c $WATCHR_PERF_DIR is the directory where the output file
+   * will be created. If it is not set or is empty, no output will be produced and the function returns an empty
+   * string on all ranks.
+   *
+   * If \c $WATCHR_BUILD_NAME is set, the filename is
+   * \c $WATCHR_BUILD_NAME-name_$DATESTAMP.xml. Additionally, the build name is prepended
+   * (verbatim) to the the top-level chart name,
+   * so that Watchr knows it is a different data series than runs of the same test from other builds.
+   *
+   * If \c $WATCHR_BUILD_NAME is not set or is empty, the filename is just \c name_$DATESTAMP.xml .
+   * DATESTAMP is calculated from the current UTC time, in the format YYYY_MM_DD.
+   *
+   * In the filename, all spaces in will be replaced by underscores.
+   *
+   * @param [in] name - Name of performance test
+   * @param [in] comm - Teuchos comm pointer
+   * @return If on rank 0 and output was produced, the complete output filename. Otherwise the empty string.
+   */
+  std::string reportWatchrXML(const std::string& name, Teuchos::RCP<const Teuchos::Comm<int> > comm);
 
   // If set to true, print timer start/stop to verbose ostream.
   void enableVerbose(const bool enable_verbose);
+
+  // Enable timestamps in verbose mode for the number of levels specified.
+  void enableVerboseTimestamps(const unsigned levels);
 
   // Set the ostream for verbose mode(defaults to std::cout).
   void setVerboseOstream(const Teuchos::RCP<std::ostream>& os);
@@ -613,6 +751,8 @@ protected:
   Array<std::string> flat_names_;
   Array<double> min_;
   Array<double> max_;
+  Array<int> procmin_;
+  Array<int> procmax_;
   Array<double> sum_;
   Array<double> sum_sq_;
   Array<Array<int>> hist_;
@@ -629,6 +769,8 @@ protected:
     std::string::size_type total_updates_;
     std::string::size_type min_;
     std::string::size_type max_;
+    std::string::size_type procmin_;
+    std::string::size_type procmax_;
     std::string::size_type stddev_;
     std::string::size_type histogram_;
     AlignmentWidths() :
@@ -639,12 +781,16 @@ protected:
       total_updates_(0),
       min_(0),
       max_(0),
+      procmax_(0),
       stddev_(0),
       histogram_(0){}
   } alignments_;
 
   /// If set to true, prints to the debug ostream. At construction, default value is set from environment variable.
   bool enable_verbose_;
+
+  /// If set to a value greater than 0, verbose mode will print that many levels of timers with timestamps. A value of zero disables timestamps.
+  unsigned verbose_timestamp_levels_;
 
   /// For debugging, this is the ostream used for printing.
   Teuchos::RCP<std::ostream> verbose_ostream_;
@@ -680,6 +826,12 @@ protected:
     */
   double printLevel(std::string prefix, int level, std::ostream &os, std::vector<bool> &printed,
                     double parent_time, const OutputOptions &options);
+
+   /**
+    * Recursive call to print a level of timer data, in Watchr XML format.
+    * If non-empty, rootName will replace the root level's timer name in the output. If empty or level > 0, it has no effect.
+    */
+  double printLevelXML(std::string prefix, int level, std::ostream &os, std::vector<bool> &printed, double parent_time, const std::string& rootName = "");
 
 };  //StackedTimer
 

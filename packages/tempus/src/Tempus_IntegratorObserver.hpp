@@ -68,6 +68,9 @@ public:
 
     /// Observe the end of the time integrator.
     virtual void observeEndIntegrator(const Integrator<Scalar>& integrator) = 0;
+
+   /// default destructor
+   virtual ~IntegratorObserver() = default;
   //@}
 
 };

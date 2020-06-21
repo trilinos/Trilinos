@@ -32,8 +32,12 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#ifndef STK_SIMD_FUNCTIONS_H
-#define STK_SIMD_FUNCTIONS_H
+#ifndef STK_SIMD_SIMD_HPP
+#define STK_SIMD_SIMD_HPP
+
+#ifndef STK_BUILT_IN_SIERRA
+#include <STK_Trilinos_config.h>
+#endif
 
 #include "stk_simd/SimdConfig.hpp" // IWYU pragma: export
 #include <iostream>
@@ -41,8 +45,11 @@
 #include <stk_math/StkMath.hpp>
 
 #define STK_HAVE_SIMD
+#define SIMD_NAMESPACE kokkos_simd
 
-#if defined ( STK_SIMD_AVX512 )
+#if defined ( STK_KOKKOS_SIMD )
+#include "disimd/DISimd.hpp"
+#elif defined ( STK_SIMD_AVX512 )
 #include "avx512/Avx512.hpp"
 #elif defined ( STK_SIMD_AVX )
 #include "avx/Avx.hpp"
@@ -467,4 +474,4 @@ void store_array(float* const to, const Float* const from, const int numValid) {
 } // namespace simd
 } // namespace stk
 
-#endif // #ifndef SIMD_H__
+#endif // #ifndef STK_SIMD_SIMD_HPP

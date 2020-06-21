@@ -74,7 +74,7 @@ namespace panzer {
     //! Sizes/allocates memory for arrays
     void setupArrays(const Teuchos::RCP<const panzer::PointRule>& pr);
 
-    /** Evaluate teh jacobian and derivative information at the requested reference
+    /** Evaluate the jacobian and derivative information at the requested reference
       * points.
       *
       * \param[in] node_coords Cell vertices
@@ -88,7 +88,7 @@ namespace panzer {
       copyPointCoords(in_point_coords);
       evaluateValues(in_num_cells); }
 
-    /** Evaluate teh jacobian and derivative information at the requested reference
+    /** Evaluate the jacobian and derivative information at the requested reference
       * points. This version allows a shallow copy of the vertex coordinates. 
       *
       * \param[in] node_coords Cell vertices

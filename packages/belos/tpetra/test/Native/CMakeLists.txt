@@ -104,3 +104,27 @@ TRIBITS_ADD_TEST(
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   )
+
+TRIBITS_ADD_TEST(
+  Tpetra_Native_solvers_nonsymm_matrix
+  NAME Tpetra_Native_GMRES_S_STEP_nonsymm_matrix_step5
+  ARGS "--solver=\"TPETRA GMRES S-STEP\" --restartLength=10 --stepSize=5"
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  Tpetra_Native_solvers_nonsymm_matrix
+  NAME Tpetra_Native_GMRES_S_STEP_nonsymm_matrix_step5_cholqr
+  ARGS "--solver=\"TPETRA GMRES S-STEP\" --restartLength=10 --stepSize=5 --useCholQR"
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  Tpetra_Native_solvers_nonsymm_matrix
+  NAME Tpetra_Native_GMRES_S_STEP_nonsymm_matrix_step5_cholqr2
+  ARGS "--solver=\"TPETRA GMRES S-STEP\" --restartLength=10 --stepSize=5 --useCholQR2"
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )

@@ -74,7 +74,7 @@ SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( Dim )
   try {                                                                                                             \
     S ;                                                                                                             \
   }                                                                                                                 \
-  catch (std::logic_error err) {                                                                                    \
+  catch (const std::logic_error & err) {                                                                                    \
       *outStream << "Expected Error ----------------------------------------------------------------\n";            \
       *outStream << err.what() << '\n';                                                                             \
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";    \
@@ -375,7 +375,7 @@ int main(int argc, char *argv[]) {
 
 
   } // outer try block
-  catch (std::logic_error err) {
+  catch (const std::logic_error & err) {
     *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
     *outStream  << err.what() << "\n";
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";

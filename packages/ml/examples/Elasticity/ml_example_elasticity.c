@@ -481,7 +481,7 @@ int main(int argc, char *argv[])
       ML_Gen_CoarseSolverSuperLU( ml, coarsest_level);
    }
    else if (ML_strcmp(context->coarse_solve,"Amesos") == 0) {
-      ML_Gen_Smoother_Amesos(ml,coarsest_level,ML_AMESOS_KLU,-1, 0.0);
+     ML_Gen_Smoother_Amesos(ml,coarsest_level,ML_AMESOS_KLU,-1, 0.0, 1);
    }
    else {
          printf("unknown coarse grid solver %s\n",context->coarse_solve);

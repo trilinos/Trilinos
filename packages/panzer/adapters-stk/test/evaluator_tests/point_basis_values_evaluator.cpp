@@ -148,7 +148,9 @@ namespace panzer {
        TEST_EQUALITY(evaluator->evaluatedFields().size(),6);
 
        fm.registerEvaluator<panzer::Traits::Residual>(evaluator);
-       fm.requireField<panzer::Traits::Residual>(*evaluator->evaluatedFields()[0]);
+       auto required_fields = evaluator->evaluatedFields();
+       for (const auto& f : required_fields)
+         fm.requireField<panzer::Traits::Residual>(*f);
     }
 
     {
@@ -158,7 +160,9 @@ namespace panzer {
        TEST_EQUALITY(evaluator->evaluatedFields().size(),6);
 
        fm.registerEvaluator<panzer::Traits::Residual>(evaluator);
-       fm.requireField<panzer::Traits::Residual>(*evaluator->evaluatedFields()[0]);
+       auto required_fields = evaluator->evaluatedFields();
+       for (const auto& f : required_fields)
+         fm.requireField<panzer::Traits::Residual>(*f);
     }
 
     {

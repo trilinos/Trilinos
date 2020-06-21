@@ -79,7 +79,6 @@ example subdirectory of the PyTrilinos package:
 %enddef
 
 %module(package   = "PyTrilinos",
-	autodoc   = "1",
 	docstring = %ifpack_docstring) IFPACK
 
 %{
@@ -116,11 +115,11 @@ example subdirectory of the PyTrilinos package:
 // Standard exception handling
 %include "exception.i"
 
-// Auto-documentation feature
-%feature("autodoc", "1");
-
 // Include IFPACK documentation
+#if SWIG_VERSION < 0x040000
+%feature("autodoc", "1");
 %include "IFPACK_dox.i"
+#endif
 
 // External Trilinos modules
 %import "Teuchos.i"

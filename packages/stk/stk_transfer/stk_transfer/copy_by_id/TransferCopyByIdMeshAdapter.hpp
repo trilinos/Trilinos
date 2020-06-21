@@ -39,6 +39,7 @@
 #include <vector>
 #include <string>
 #include <stk_util/parallel/Parallel.hpp>
+#include "TransferCopyTranslator.hpp"
 
 namespace stk {
 namespace transfer {
@@ -50,9 +51,12 @@ public:
 
   virtual const void* field_data(const Mesh_ID & id, const unsigned field_index) const = 0;
   virtual       void* field_data(const Mesh_ID & id, const unsigned field_index)       = 0;
+  virtual std::string field_name(const unsigned field_index) const = 0;
   virtual unsigned field_data_size(const Mesh_ID & id, const unsigned field_index) const = 0;
   virtual unsigned num_fields() const = 0;
   virtual ParallelMachine comm() const = 0;
+
+  virtual DataTypeKey::data_t get_field_type(const unsigned fieldIndex) const = 0;
 
   virtual const MeshIDVector & get_mesh_ids() const = 0;
   virtual bool is_locally_owned(const Mesh_ID & id) const = 0;

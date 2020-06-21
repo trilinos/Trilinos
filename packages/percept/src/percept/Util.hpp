@@ -39,7 +39,6 @@
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/util/tokenize.hpp>
 
-#include <boost/lexical_cast.hpp>
 #include <percept/stk_mesh.hpp>
 
 
@@ -261,7 +260,7 @@ namespace shards {
     //========================================================================================================================
 
     template<class T>
-    std::string toString(T t) { return boost::lexical_cast<std::string>(t); }
+    std::string toString(T t) { return std::to_string(t); }
 
     inline std::string toString(stk::topology::rank_t t) { return toString<unsigned int>(static_cast<unsigned int>(t)); }
 
@@ -273,7 +272,7 @@ namespace shards {
     inline
     T SQR(T t) { return t*t; }
 
-    inline int toInt(std::string t) { return boost::lexical_cast<int>(t); }
+    inline int toInt(std::string t) { return std::stoi(t); }
 
     //========================================================================================================================
 

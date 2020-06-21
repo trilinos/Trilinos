@@ -1,3 +1,9 @@
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
+// 
+// See packages/seacas/LICENSE for details
+
 #define CATCH_CONFIG_MAIN
 #include <catch.hpp>
 
@@ -86,7 +92,7 @@ void check_split_assign(std::vector<Iocgns::StructuredZoneData *> &zones,
     }
 
     for (size_t i = 0; i < zones.size(); i++) {
-      CHECK(zones[i]->m_zone == i + 1);
+      CHECK(zones[i]->m_zone == int(i) + 1);
     }
 
     SECTION("assign_to_procs")
@@ -571,6 +577,93 @@ TEST_CASE("mk21", "[mk21]")
   for (size_t proc_count = 2; proc_count < 17; proc_count++) {
     std::string name = "MK21_ProcCount_" + std::to_string(proc_count);
     SECTION(name) { check_split_assign(zones, load_balance_tolerance, proc_count); }
+  }
+  cleanup(zones);
+}
+
+TEST_CASE("mk21-large", "[mk21-large]")
+{
+  std::vector<Iocgns::StructuredZoneData *> zones;
+
+  int zone = 1;
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "96x64x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "96x64x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "96x64x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "96x32x128"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "96x64x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "96x64x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "96x32x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "96x32x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "96x64x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "96x64x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "96x128x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "96x128x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x32x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x32x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x32x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x32x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x64x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x32x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x32x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x32x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x32x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x32x32"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x32x32"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x64x32"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x32x32"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x32x32"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x32x32"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x32x32"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x64x32"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x32x32"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x32x32"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x32x32"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x32x32"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "256x64x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "256x64x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "256x64x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "96x64x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "96x64x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "96x64x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "96x32x128"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "96x64x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "96x64x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "96x32x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "96x32x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "96x64x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "96x64x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "96x128x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "96x128x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x32x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x32x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x32x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x32x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x64x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x32x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x32x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x32x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x32x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x32x32"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x32x32"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x64x32"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x32x32"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x32x32"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x32x32"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x32x32"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x64x32"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x32x32"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x32x32"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x32x32"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x32x32"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "256x64x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "256x64x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "256x64x64"));
+
+  double load_balance_tolerance = 1.1;
+
+  for (size_t proc_count = 2; proc_count < 257; proc_count *= 2) {
+    std::string name = "MK21_Large_ProcCount_" + std::to_string(proc_count);
+    SECTION(name) { check_split_assign(zones, load_balance_tolerance, proc_count, .8, 1.2); }
   }
   cleanup(zones);
 }

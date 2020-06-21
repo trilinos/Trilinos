@@ -34,21 +34,16 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 #ifndef __TSQR_Test_CombineBenchmark_hpp
 #define __TSQR_Test_CombineBenchmark_hpp
 
-#include <Tsqr_ConfigDefs.hpp>
-#include <Tsqr_CombineBenchmarker.hpp>
-#include <Tsqr_CombineDefault.hpp>
-#include <Tsqr_CombineNative.hpp>
-#ifdef HAVE_KOKKOSTSQR_FORTRAN
-#  include <Tsqr_CombineFortran.hpp>
-#endif // HAVE_KOKKOSTSQR_FORTRAN
+#include "Tsqr_ConfigDefs.hpp"
+#include "Tsqr_CombineBenchmarker.hpp"
+#include "Tsqr_CombineDefault.hpp"
+#include "Tsqr_CombineNative.hpp"
 
 #include <algorithm>
 #include <iostream>
@@ -147,25 +142,25 @@ namespace TSQR {
                           const std::string& additionalData)
     {
       using std::endl;
+      using ordinal_type = typename CombineType::ordinal_type;
+      using scalar_type = typename CombineType::scalar_type;
+      using benchmarker_type =
+        CombineBenchmarker<ordinal_type, scalar_type, CombineType, TimerType>;
 
-      typedef typename CombineType::ordinal_type ordinal_type;
-      typedef typename CombineType::scalar_type scalar_type;
-      typedef CombineBenchmarker<ordinal_type, scalar_type, CombineType, TimerType>
-        benchmarker_type;
-
-      TEUCHOS_TEST_FOR_EXCEPTION(cacheBlockNumTrials < 1, std::invalid_argument,
-                         "The number of trials for the cache block benchmark "
-                         "must be positive, but you specified cacheBlockNum"
-                         "Trials = " << cacheBlockNumTrials << ".");
-      TEUCHOS_TEST_FOR_EXCEPTION(pairNumTrials < 1, std::invalid_argument,
-                         "The number of trials for the pair benchmark must be "
-                         "positive, but you specified pairNumTrials = "
-                         << pairNumTrials << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (cacheBlockNumTrials < 1, std::invalid_argument,
+         "The number of trials for the cache block benchmark must be "
+         "positive, but you specified cacheBlockNumTrials="
+         << cacheBlockNumTrials << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (pairNumTrials < 1, std::invalid_argument,
+         "The number of trials for the pair benchmark must be "
+         "positive, but you specified pairNumTrials="
+         << pairNumTrials << ".");
 
       benchmarker_type b (iseed);
       std::pair<double, double> results;
-      results.first =
-        b.benchmarkPair (numCols, pairNumTrials);
+      results.first = b.benchmarkPair (numCols, pairNumTrials);
       results.second =
         b.benchmarkCacheBlock (numRows, numCols, cacheBlockNumTrials);
 
@@ -263,20 +258,18 @@ namespace TSQR {
           // Number of trials for factor_pair() and apply_pair().
           std::pair<int, double> result;
           result = c.calibratePair (numCols, accuracyFactor);
-          if (debug)
-            {
-              cerr << "- Pair number of trials: " << result.first << endl;
-              cerr << "- Pair calibration time: " << result.second << endl;
-            }
+          if (debug) {
+            cerr << "- Pair number of trials: " << result.first << endl;
+            cerr << "- Pair calibration time: " << result.second << endl;
+          }
           pairNumTrials = result.first;
 
           // Number of trials for factor_inner() and apply_inner().
           result = c.calibrateCacheBlock (numRows, numCols, accuracyFactor);
-          if (debug)
-            {
-              cerr << "- Cache block number of trials: " << result.first << endl;
-              cerr << "- Cache block calibration time: " << result.second << endl;
-            }
+          if (debug) {
+            cerr << "- Cache block number of trials: " << result.first << endl;
+            cerr << "- Cache block calibration time: " << result.second << endl;
+          }
           cacheBlockNumTrials = result.first;
 
           // Store the updated PRNG seed in the benchmark parameters.
@@ -324,51 +317,18 @@ namespace TSQR {
                                                          params.additionalData);
         const double slowdown = nativeTimings[1] / defaultTimings[1];
         const bool tooSlow = slowdown > params.allowance;
-        // FIXME (mfh 24 May 2011) Replace std::runtime_error with a
-        // more appropriately named exception.
-        TEUCHOS_TEST_FOR_EXCEPTION(params.strictPerfTests && tooSlow,
-                           std::runtime_error,
-                           "CombineNative is too slow!  For cache block "
-                           "benchmark with numRows=" << numRows << " and numCols="
-                           << numCols << ", CombineNative time (= "
-                           << nativeTimings[1] << ") / CombineDefault time (= "
-                           << defaultTimings[1] << ") = " << slowdown
-                           << " > the allowed fraction " << params.allowance
-                           << ".");
+        // FIXME (mfh 10 Dec 2019) Return an error code / bool,
+        // instead of throwing.
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (params.strictPerfTests && tooSlow, std::runtime_error,
+           "CombineNative is too slow!  For cache block benchmark "
+           "with numRows=" << numRows << " and numCols=" << numCols
+           << ", CombineNative time (= " << nativeTimings[1] <<
+           ") / CombineDefault time (= " << defaultTimings[1] <<
+           ") = " << slowdown << " > the allowed fraction " <<
+           params.allowance << ".");
       }
-
-#ifdef HAVE_KOKKOSTSQR_FORTRAN
-      std::vector<double> fortranTimings;
-      {
-        typedef CombineFortran<Scalar> combine_type;
-        std::string combineTypeName ("Fortran");
-        fortranTimings =
-          benchmarkCombineType<combine_type, TimerType> (out, params.seed,
-                                                         dataTypeName,
-                                                         combineTypeName,
-                                                         numRows,
-                                                         numCols,
-                                                         cacheBlockNumTrials,
-                                                         pairNumTrials,
-                                                         params.averageTimings,
-                                                         params.additionalData);
-        const double slowdown = fortranTimings[1] / defaultTimings[1];
-        const bool tooSlow = slowdown > params.allowance;
-        // FIXME (mfh 24 May 2011) Replace std::runtime_error with a
-        // more appropriately named exception.
-        TEUCHOS_TEST_FOR_EXCEPTION(params.strictPerfTests && tooSlow,
-                           std::runtime_error,
-                           "CombineFortran is too slow!  For cache block "
-                           "benchmark with numRows=" << numRows << " and numCols="
-                           << numCols << ", CombineFortran time (= "
-                           << fortranTimings[1] << ") / CombineDefault time (= "
-                           << defaultTimings[1] << ") = " << slowdown
-                           << " > the allowed fraction " << params.allowance
-                           << ".");
-      }
-#endif // HAVE_KOKKOSTSQR_FORTRAN
     }
-
 
     template<class TimerType>
     static void
@@ -397,7 +357,7 @@ namespace TSQR {
         }
       if (params.testComplex)
         {
-#ifdef HAVE_KOKKOSTSQR_COMPLEX
+#ifdef HAVE_TPETRATSQR_COMPLEX
           using std::complex;
 
           dataTypeName = "complex<float>";
@@ -407,9 +367,9 @@ namespace TSQR {
           benchmarkAllCombineTypes<complex<double>, TimerType> (out, dataTypeName,
                                                                 params, timerResolution);
 
-#else // Don't HAVE_KOKKOSTSQR_COMPLEX
+#else // Don't HAVE_TPETRATSQR_COMPLEX
           throw std::logic_error("TSQR not built with complex arithmetic support");
-#endif // HAVE_KOKKOSTSQR_COMPLEX
+#endif // HAVE_TPETRATSQR_COMPLEX
         }
     }
 

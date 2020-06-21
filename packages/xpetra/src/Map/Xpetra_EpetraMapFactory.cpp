@@ -47,7 +47,9 @@
 
 #include "Xpetra_BlockedMap.hpp"
 #include "Xpetra_EpetraMap.hpp"
+#ifdef HAVE_XPETRA_TPETRA
 #include "Xpetra_TpetraMap.hpp"
+#endif
 
 namespace Xpetra {
 
@@ -63,20 +65,6 @@ namespace Xpetra {
     }
 
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    RCP<Map<int, int, EpetraNode> >
-    MapFactory<int, int, EpetraNode>::
-    Build (UnderlyingLib lib,
-           global_size_t                                 numGlobalElements,
-           int                                           indexBase,
-           const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-           LocalGlobal                                   lg,
-           const Teuchos::RCP<EpetraNode>& /* node */ )
-    {
-      return Build(lib, numGlobalElements, indexBase, comm, lg);
-    }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 
     RCP<Map<int, int, EpetraNode>>
@@ -88,10 +76,6 @@ namespace Xpetra {
            LocalGlobal                                   lg)
     {
       XPETRA_MONITOR("MapFactory::Build");
-
-      using LocalOrdinal  = int;
-      using GlobalOrdinal = int;
-      using Node          = EpetraNode;
 
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == UseTpetra)
@@ -105,20 +89,6 @@ namespace Xpetra {
     }
 
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    RCP<Map<int, int, EpetraNode> >
-    MapFactory<int, int, EpetraNode>::
-    Build (UnderlyingLib lib,
-           global_size_t numGlobalElements,
-           size_t numLocalElements,
-           int indexBase,
-           const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-           const Teuchos::RCP<EpetraNode>& /* node */ )
-    {
-      return Build(lib, numGlobalElements, numLocalElements, indexBase, comm);
-    }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 
     RCP<Map<int, int, EpetraNode> >
@@ -130,10 +100,6 @@ namespace Xpetra {
            const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
     {
       XPETRA_MONITOR("MapFactory::Build");
-
-      using LocalOrdinal  = int;
-      using GlobalOrdinal = int;
-      using Node          = EpetraNode;
 
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == UseTpetra)
@@ -147,20 +113,6 @@ namespace Xpetra {
     }
 
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    RCP<Map<int, int, EpetraNode> >
-    MapFactory<int, int, EpetraNode>::
-    Build(UnderlyingLib lib,
-          global_size_t numGlobalElements,
-          const Teuchos::ArrayView<const int> &elementList,
-          int indexBase,
-          const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-          const Teuchos::RCP<EpetraNode>& /* node */ )
-    {
-      return Build(lib, numGlobalElements, elementList, indexBase, comm);
-    }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 
     RCP<Map<int, int, EpetraNode> >
@@ -171,9 +123,6 @@ namespace Xpetra {
           int indexBase,
           const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
     {
-      using LocalOrdinal  = int;
-      using GlobalOrdinal = int;
-      using Node          = EpetraNode;
 
       XPETRA_MONITOR("MapFactory::Build");
 #ifdef HAVE_XPETRA_TPETRA
@@ -196,10 +145,6 @@ namespace Xpetra {
           int                                                   numDofPerNode)
     {
       XPETRA_MONITOR("MapFactory::Build");
-
-      using LocalOrdinal  = int;
-      using GlobalOrdinal = int;
-      using Node          = EpetraNode;
 
       RCP<const BlockedMap<LocalOrdinal, GlobalOrdinal, Node> > bmap = Teuchos::rcp_dynamic_cast<const BlockedMap<LocalOrdinal, GlobalOrdinal, Node> >(map);
       if(!bmap.is_null())
@@ -244,10 +189,6 @@ namespace Xpetra {
     {
        XPETRA_MONITOR("MapFactory::Build");
 
-      using LocalOrdinal  = int;
-      using GlobalOrdinal = int;
-      using Node          = EpetraNode;
-
 #ifdef HAVE_XPETRA_TPETRA
        if (lib == UseTpetra)
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
@@ -273,18 +214,6 @@ namespace Xpetra {
 
 
     // TODO remove this
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    Teuchos::RCP< const Map<int, int, EpetraNode>  >
-    MapFactory<int, int, EpetraNode>::
-    createLocalMapWithNode(UnderlyingLib                                    lib,
-                           size_t                                           numElements,
-                           const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-                           const Teuchos::RCP<Node> & /* node */)
-    {
-      return createLocalMapWithNode(lib, numElements, comm);
-    }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 
 
@@ -295,10 +224,6 @@ namespace Xpetra {
                            const Teuchos::RCP< const Teuchos::Comm< int > > &comm)
     {
        XPETRA_MONITOR("MapFactory::Build");
-
-      using LocalOrdinal  = int;
-      using GlobalOrdinal = int;
-      using Node          = EpetraNode;
 
 #ifdef HAVE_XPETRA_TPETRA
        if (lib == UseTpetra)
@@ -325,18 +250,6 @@ namespace Xpetra {
 
 
     // TODO remove this
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    Teuchos::RCP< const Map<int, int, EpetraNode>  >
-    MapFactory<int, int, EpetraNode>::
-    createUniformContigMapWithNode (UnderlyingLib                                    lib,
-                                    global_size_t                                    numElements,
-                                    const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-                                    const Teuchos::RCP<Node>& /* node */)
-    {
-      return createUniformContigMapWithNode(lib, numElements, comm);
-    }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 
 
@@ -347,10 +260,6 @@ namespace Xpetra {
                                     const Teuchos::RCP< const Teuchos::Comm< int > > &comm)
     {
        XPETRA_MONITOR("MapFactory::Build");
-
-      using LocalOrdinal  = int;
-      using GlobalOrdinal = int;
-      using Node          = EpetraNode;
 
 #ifdef HAVE_XPETRA_TPETRA
        if (lib == UseTpetra)
@@ -382,10 +291,6 @@ namespace Xpetra {
                            const Teuchos::RCP< const Teuchos::Comm< int > > &comm)
     {
        XPETRA_MONITOR("MapFactory::Build");
-
-      using LocalOrdinal  = int;
-      using GlobalOrdinal = int;
-      using Node          = EpetraNode;
 
 #ifdef HAVE_XPETRA_TPETRA
        if (lib == UseTpetra)
@@ -419,10 +324,6 @@ namespace Xpetra {
     {
        XPETRA_MONITOR("MapFactory::Build");
 
-      using LocalOrdinal  = int;
-      using GlobalOrdinal = int;
-      using Node          = EpetraNode;
-
        #ifdef HAVE_XPETRA_TPETRA
        if (lib == UseTpetra)
            #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
@@ -443,19 +344,6 @@ namespace Xpetra {
     }
 
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    Teuchos::RCP< const Map<int, int, EpetraNode>  >
-    MapFactory<int, int, EpetraNode>::
-    createContigMapWithNode(UnderlyingLib lib,
-                            global_size_t numElements,
-                            size_t localNumElements,
-                            const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-                            const Teuchos::RCP<Node> & /* node */)
-    {
-      return createContigMapWithNode(lib, numElements, localNumElements, comm);
-    }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 
     Teuchos::RCP< const Map<int, int, EpetraNode>  >
@@ -466,10 +354,6 @@ namespace Xpetra {
                             const Teuchos::RCP< const Teuchos::Comm< int > > &comm)
     {
        XPETRA_MONITOR("MapFactory::Build");
-
-      using LocalOrdinal  = int;
-      using GlobalOrdinal = int;
-      using Node          = EpetraNode;
 
 #ifdef HAVE_XPETRA_TPETRA
        if (lib == UseTpetra)
@@ -516,20 +400,6 @@ namespace Xpetra {
     }
 
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    RCP<Map<int, long long, EpetraNode> >
-    MapFactory<int, long long, EpetraNode>::
-    Build (UnderlyingLib lib,
-           global_size_t numGlobalElements,
-           int indexBase,
-           const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-           LocalGlobal lg,
-           const Teuchos::RCP<Node>& /* node */)
-    {
-      return Build(lib, numGlobalElements, indexBase, comm, lg);
-    }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 
     RCP<Map<int, long long, EpetraNode>>
@@ -541,10 +411,6 @@ namespace Xpetra {
            LocalGlobal                                   lg)
     {
       XPETRA_MONITOR("MapFactory::Build");
-
-      using LocalOrdinal  = int;
-      using GlobalOrdinal = long long;
-      using Node          = EpetraNode;
 
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == UseTpetra)
@@ -558,20 +424,6 @@ namespace Xpetra {
     }
 
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    RCP<Map<int, long long, EpetraNode> >
-    MapFactory<int, long long, EpetraNode>::
-    Build (UnderlyingLib lib,
-           global_size_t numGlobalElements,
-           size_t numLocalElements,
-           int indexBase,
-           const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-           const Teuchos::RCP<EpetraNode>& /* node */)
-    {
-      return Build(lib, numGlobalElements, numLocalElements, indexBase, comm);
-    }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 
     RCP<Map<int, long long, EpetraNode> >
@@ -583,10 +435,6 @@ namespace Xpetra {
            const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
     {
       XPETRA_MONITOR("MapFactory::Build");
-
-      using LocalOrdinal  = int;
-      using GlobalOrdinal = long long;
-      using Node          = EpetraNode;
 
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == UseTpetra)
@@ -600,20 +448,6 @@ namespace Xpetra {
     }
 
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    RCP<Map<int, long long, EpetraNode> >
-    MapFactory<int, long long, EpetraNode>::
-    Build(UnderlyingLib lib,
-          global_size_t numGlobalElements,
-          const Teuchos::ArrayView<const long long> &elementList,
-          int indexBase,
-          const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-          const Teuchos::RCP<EpetraNode>& /* node */)
-    {
-      return Build(lib, numGlobalElements, elementList, indexBase, comm);
-    }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 
     RCP<Map<int, long long, EpetraNode> >
@@ -625,10 +459,6 @@ namespace Xpetra {
           const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
     {
       XPETRA_MONITOR("MapFactory::Build");
-
-      using LocalOrdinal  = int;
-      using GlobalOrdinal = long long;
-      using Node          = EpetraNode;
 
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == UseTpetra)
@@ -649,10 +479,6 @@ namespace Xpetra {
            int numDofPerNode)
     {
       XPETRA_MONITOR("MapFactory::Build");
-
-      using LocalOrdinal  = int;
-      using GlobalOrdinal = long long;
-      using Node          = EpetraNode;
 
       RCP<const BlockedMap<LocalOrdinal, GlobalOrdinal, Node> > bmap = Teuchos::rcp_dynamic_cast<const BlockedMap<LocalOrdinal, GlobalOrdinal, Node> >(map);
       if(!bmap.is_null()) {
@@ -688,10 +514,6 @@ namespace Xpetra {
     {
        XPETRA_MONITOR("MapFactory::Build");
 
-      using LocalOrdinal  = int;
-      using GlobalOrdinal = long long;
-      using Node          = EpetraNode;
-
 #ifdef HAVE_XPETRA_TPETRA
        if (lib == UseTpetra)
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
@@ -710,18 +532,6 @@ namespace Xpetra {
     }
 
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    Teuchos::RCP< const Map<int, long long, EpetraNode>  >
-    MapFactory<int, long long, EpetraNode>::
-    createLocalMapWithNode(UnderlyingLib lib,
-                           size_t numElements,
-                           const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-                           const Teuchos::RCP<EpetraNode> & /* node */)
-    {
-      return createLocalMapWithNode(lib, numElements, comm);
-    }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 
     Teuchos::RCP< const Map<int, long long, EpetraNode>  >
@@ -731,10 +541,6 @@ namespace Xpetra {
                            const Teuchos::RCP< const Teuchos::Comm< int > > &comm)
     {
        XPETRA_MONITOR("MapFactory::Build");
-
-      using LocalOrdinal  = int;
-      using GlobalOrdinal = long long;
-      using Node          = EpetraNode;
 
 #ifdef HAVE_XPETRA_TPETRA
        if (lib == UseTpetra)
@@ -759,18 +565,6 @@ namespace Xpetra {
     }
 
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    Teuchos::RCP< const Map<int, long long, EpetraNode>  >
-    MapFactory<int, long long, EpetraNode>::
-    createUniformContigMapWithNode (UnderlyingLib lib,
-                                    global_size_t numElements,
-                                    const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-                                    const Teuchos::RCP<EpetraNode>& /* node */)
-    {
-      return createUniformContigMapWithNode(lib, numElements, comm);
-    }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 
     Teuchos::RCP< const Map<int, long long, EpetraNode>  >
@@ -780,10 +574,6 @@ namespace Xpetra {
                                     const Teuchos::RCP< const Teuchos::Comm< int > > &comm)
     {
        XPETRA_MONITOR("MapFactory::Build");
-
-      using LocalOrdinal  = int;
-      using GlobalOrdinal = long long;
-      using Node          = EpetraNode;
 
 #ifdef HAVE_XPETRA_TPETRA
        if (lib == UseTpetra)
@@ -816,10 +606,6 @@ namespace Xpetra {
     {
        XPETRA_MONITOR("MapFactory::Build");
 
-      using LocalOrdinal  = int;
-      using GlobalOrdinal = long long;
-      using Node          = EpetraNode;
-
 #ifdef HAVE_XPETRA_TPETRA
        if (lib == UseTpetra)
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
@@ -846,10 +632,6 @@ namespace Xpetra {
     {
         XPETRA_MONITOR("MapFactory::Build");
 
-        using LocalOrdinal  = int;
-        using GlobalOrdinal = long long;
-        using Node          = EpetraNode;
-
 #ifdef HAVE_XPETRA_TPETRA
         if(lib == UseTpetra)
 #if((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))) \
@@ -871,19 +653,6 @@ namespace Xpetra {
     }
 
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    Teuchos::RCP< const Map<int, long long, EpetraNode>  >
-    MapFactory<int, long long, EpetraNode>::
-    createContigMapWithNode(UnderlyingLib lib,
-                            global_size_t numElements,
-                            size_t localNumElements,
-                            const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-                            const Teuchos::RCP<EpetraNode> & /* node */ )
-    {
-      return createContigMapWithNode(lib, numElements, localNumElements, comm);
-    }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 
     Teuchos::RCP<const Map<int, long long, EpetraNode>>
@@ -894,10 +663,6 @@ namespace Xpetra {
                             const Teuchos::RCP<const Teuchos::Comm<int>>& comm)
     {
         XPETRA_MONITOR("MapFactory::Build");
-
-        using LocalOrdinal  = int;
-        using GlobalOrdinal = long long;
-        using Node          = EpetraNode;
 
 #ifdef HAVE_XPETRA_TPETRA
         if(lib == UseTpetra)

@@ -424,7 +424,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
     int EndSubmitEntries();
 
     //! Replaces diagonal values of the with those in the user-provided vector.
-    /*! This routine is meant to allow replacement of {\bf existing} diagonal values.
+    /*! This routine is meant to allow replacement of \b existing diagonal values.
         If a diagonal value does not exist for a given row, the corresponding value in
   the input Epetra_Vector will be ignored and the return code will be set to 1.
 

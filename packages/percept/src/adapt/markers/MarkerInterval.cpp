@@ -81,8 +81,8 @@ size_t MarkerInterval::estimateNewElements(double errIndRefineThreshold, std::ve
 {
   size_t numRefinedLocal = 0, numRefinedGlobal = 0;
   for (size_t i = 0; i < errIndRefFieldVec.size(); ++i) {
-    if (refine_element(*errIndRefFieldVec[i].get<0>()) 
-        && !errIndRefFieldVec[i].get<2>())
+    if (refine_element(*std::get<0>(errIndRefFieldVec[i])) 
+        && !std::get<2>(errIndRefFieldVec[i]))
       ++numRefinedLocal;
   }
 

@@ -76,7 +76,7 @@ namespace stk {
       {delete m_multiStateSuffixes;}
 
       void create_ioss_region();
-      FieldNameToPartVector get_var_names(Ioss::EntityType type, stk::mesh::MetaData& meta);
+      FieldNameToPartVector get_var_names(Ioss::EntityType type, const stk::mesh::MetaData& meta);
       void add_input_field(const stk::io::MeshField &mesh_field);
       void add_all_mesh_fields_as_input_fields(stk::mesh::MetaData &meta, MeshField::TimeMatchOption tmo);
       bool read_input_field(stk::io::MeshField &mf, stk::mesh::BulkData &bulk);
@@ -128,7 +128,7 @@ namespace stk {
 	return m_database;
       }
 
-      bool set_multistate_suffixes(std::vector<std::string>& multiStateSuffixes)
+      bool set_multistate_suffixes(const std::vector<std::string>& multiStateSuffixes)
       {
           if(nullptr != m_multiStateSuffixes) {
               delete m_multiStateSuffixes;

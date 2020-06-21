@@ -60,6 +60,8 @@
 #include <Tpetra_CrsMatrix.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
 
+#include <fstream>
+
 using namespace Teuchos;
 using namespace Belos;
 using Tpetra::Operator;

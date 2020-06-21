@@ -1,34 +1,8 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//
-//     * Neither the name of NTESS nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+// See packages/seacas/LICENSE for details
 
 #ifndef IOSS_Iogn_DashSurfaceMesh_h
 #define IOSS_Iogn_DashSurfaceMesh_h
@@ -50,9 +24,9 @@ namespace Iogn {
 
   struct SharedNode
   {
-    SharedNode() : nodeId(-1), procId(-1) {}
-    int nodeId;
-    int procId;
+    SharedNode() = default;
+    int nodeId{-1};
+    int procId{-1};
   };
 
   enum Topology { Beam2 = 2, Shell4 = 4, Hex8 = 8 };
@@ -69,18 +43,18 @@ namespace Iogn {
 
   struct ExodusData
   {
-    std::vector<double>                 coordinates;
+    std::vector<double>                 coordinates{};
     const std::vector<std::vector<int>> elementBlockConnectivity;
-    const std::vector<int>              globalNumberOfElementsInBlock;
-    const std::vector<int>              localNumberOfElementsInBlock;
-    const std::vector<Topology>         blockTopologicalData;
+    const std::vector<int>              globalNumberOfElementsInBlock{};
+    const std::vector<int>              localNumberOfElementsInBlock{};
+    const std::vector<Topology>         blockTopologicalData{};
 
-    const int globalNumberOfNodes;
+    const int globalNumberOfNodes{0};
 
-    const std::vector<int> globalIdsOfLocalElements;
-    const std::vector<int> globalIdsOfLocalNodes;
+    const std::vector<int> globalIdsOfLocalElements{};
+    const std::vector<int> globalIdsOfLocalNodes{};
 
-    std::vector<SharedNode> sharedNodes;
+    std::vector<SharedNode> sharedNodes{};
 
     // A sideset' is basically an exodus sideset.  A
     // sideset has a list of elements and a corresponding local
@@ -90,7 +64,7 @@ namespace Iogn {
     std::vector<std::vector<int>>         sidesetConnectivity;
     std::vector<std::vector<std::string>> sidesetTouchingBlocks;
 
-    ExodusData() : globalNumberOfNodes(0) {}
+    ExodusData() {}
     ExodusData(const std::vector<double>           coords,
                const std::vector<std::vector<int>> elemBlockConnectivity,
                const std::vector<int>              globalNumOfElemsInBlock,
@@ -113,9 +87,9 @@ namespace Iogn {
 
   struct DashSurfaceData
   {
-    const std::vector<double> coordinates;
-    const std::vector<int>    surfaceAConnectivity;
-    const std::vector<int>    surfaceBConnectivity;
+    const std::vector<double> coordinates{};
+    const std::vector<int>    surfaceAConnectivity{};
+    const std::vector<int>    surfaceBConnectivity{};
 
     int globalNumberOfNodes{};
     int globalNumberOfElements{};
@@ -123,10 +97,10 @@ namespace Iogn {
     int globalNumberOfElementsSurface1{};
     int globalNumberOfElementsSurface2{};
 
-    std::vector<int> globalIdsOfLocalElements;
-    std::vector<int> globalIdsOfLocalNodes;
+    std::vector<int> globalIdsOfLocalElements{};
+    std::vector<int> globalIdsOfLocalNodes{};
 
-    std::vector<SharedNode> sharedNodes;
+    std::vector<SharedNode> sharedNodes{};
 
     DashSurfaceData(const std::vector<double> &coords, const std::vector<int> &connectivity1,
                     const std::vector<int> &connectivity2)
@@ -188,6 +162,7 @@ namespace Iogn {
     void coordinates(double *coord) const override;
     void coordinates(std::vector<double> &coord) const override;
     void coordinates(int component, std::vector<double> &xyz) const override;
+    void coordinates(int component, double *xyz) const override;
     void coordinates(std::vector<double> &x, std::vector<double> &y,
                      std::vector<double> &z) const override;
 
@@ -210,6 +185,8 @@ namespace Iogn {
     void element_map(std::vector<int> &map) const override;
 
   private:
+    std::string get_sideset_topology() const override;
+
     DashSurfaceData mDashSurfaceData;
   };
 
@@ -241,6 +218,7 @@ namespace Iogn {
     void coordinates(double *coord) const override;
     void coordinates(std::vector<double> &coord) const override;
     void coordinates(int component, std::vector<double> &xyz) const override;
+    void coordinates(int component, double *xyz) const override;
     void coordinates(std::vector<double> &x, std::vector<double> &y,
                      std::vector<double> &z) const override;
 
@@ -265,6 +243,8 @@ namespace Iogn {
     void element_map(std::vector<int> &map) const override;
 
   private:
+    std::string get_sideset_topology() const override;
+
     int64_t mGlobalNumberOfElements;
     int64_t mLocalNumberOfElements;
 

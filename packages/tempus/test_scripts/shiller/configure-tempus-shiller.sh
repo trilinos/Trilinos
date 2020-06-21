@@ -34,7 +34,7 @@ cmake \
 -D Phalanx_KOKKOS_DEVICE_TYPE:STRING="${NODE_TYPE}" \
 -D Trilinos_ENABLE_Fortran:BOOL=ON \
 -D HAVE_INTREPID_KOKKOSCORE:BOOL=ON \
--D Panzer_ENABLE_FADTYPE:STRING="Sacado::Fad::DFad<RealType>" \
+-D Panzer_FADTYPE:STRING="Sacado::Fad::DFad<RealType>" \
 -D Panzer_ENABLE_TESTS:BOOL=OFF \
 -D Trilinos_ENABLE_KokkosCore:BOOL=ON \
 -D Trilinos_ENABLE_KokkosAlgorithms:BOOL=ON \
@@ -108,7 +108,7 @@ cmake \
 -D TPL_ENABLE_X11:BOOL=OFF \
 -D TPL_ENABLE_SuperLU:BOOL=OFF \
 -D Trilinos_ENABLE_OpenMP=${USE_OPENMP} \
--D Kokkos_ENABLE_OpenMP:BOOL=${USE_OPENMP} \
+-D Kokkos_ENABLE_OPENMP:BOOL=${USE_OPENMP} \
 -D Kokkos_ENABLE_Pthread:BOOL=${USE_PTHREADS} \
 -D TPL_ENABLE_CUDA:BOOL=${USE_CUDA} \
 -D TPL_ENABLE_CUSPARSE:BOOL=${USE_CUDA} \

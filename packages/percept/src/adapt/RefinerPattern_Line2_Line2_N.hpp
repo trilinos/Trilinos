@@ -49,7 +49,7 @@
                         stk::mesh::FieldBase *proc_rank_field=0)
       {
         const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
-        typedef boost::tuple<stk::mesh::EntityId, stk::mesh::EntityId> line_tuple_type;
+        typedef std::array<stk::mesh::EntityId, 2> line_tuple_type;
         static vector<line_tuple_type> elems(2);
 
         CellTopology cell_topo(cell_topo_data);
@@ -128,7 +128,7 @@
 
                 EN[jNode] = inode;
               }
-            elems[iChild] = line_tuple_type(EN[0], EN[1]);
+            elems[iChild] = {EN[0], EN[1]};
           }
 
 #undef CENTROID_N
@@ -142,7 +142,7 @@
               newElement = *element_pool;
 
 
-            stk::mesh::Entity nodes[2] = {eMesh.createOrGetNode(elems[ielem].get<0>()), eMesh.createOrGetNode(elems[ielem].get<1>())};
+            stk::mesh::Entity nodes[2] = {eMesh.createOrGetNode(elems[ielem][0]), eMesh.createOrGetNode(elems[ielem][1])};
             create_side_element(eMesh, use_declare_element_side, nodes, 2, newElement);
 
 #if 0

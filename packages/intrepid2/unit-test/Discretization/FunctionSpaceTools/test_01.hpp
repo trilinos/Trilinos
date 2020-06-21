@@ -71,7 +71,7 @@ namespace Intrepid2 {
     try {                                                               \
       ++nthrow;                                                         \
       S ;                                                               \
-    } catch (std::logic_error err) {                                    \
+    } catch (std::logic_error &err) {                                    \
       ++ncatch;                                                         \
       *outStream << "Expected Error ----------------------------------------------------------------\n"; \
       *outStream << err.what() << '\n';                                 \
@@ -303,7 +303,7 @@ namespace Intrepid2 {
 
         *outStream << "\n";
       }
-      catch (std::logic_error err) {
+      catch (std::logic_error &err) {
         *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
         *outStream << err.what() << '\n';
         *outStream << "-------------------------------------------------------------------------------" << "\n\n";

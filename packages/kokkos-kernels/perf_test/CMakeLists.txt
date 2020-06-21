@@ -1,7 +1,7 @@
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../test_common)
+KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../test_common)
 
 # At some point, we may wish to make this into real "performance
 # tests," in the sense that they can pass or fail.  At that point, use
@@ -10,8 +10,8 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../test_common)
 # build correctly with or without MPI, but only run them with a single
 # MPI process.
 
-ADD_SUBDIRECTORIES(graph)
-ADD_SUBDIRECTORIES(sparse)
-ADD_SUBDIRECTORIES(performance)
-#ADD_SUBDIRECTORIES(common)
+ADD_SUBDIRECTORY(graph)
+ADD_SUBDIRECTORY(sparse)
+ADD_SUBDIRECTORY(performance)
+#ADD_SUBDIRECTORY(common)
 

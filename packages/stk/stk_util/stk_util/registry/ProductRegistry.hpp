@@ -137,6 +137,9 @@ public:
     m_productName = product_name;
   }
 
+  const ProductMap& productMap() const { return m_productMap; }
+        ProductMap& productMap()       { return m_productMap; }
+
   ProductMap::const_iterator productMap_begin() const {
       return m_productMap.begin();
   }
@@ -244,6 +247,8 @@ private:
   std::string                   m_productName;                  ///< Name of main product
   bool				m_registryOK;			///< Registry is OK
 };
+
+std::string get_version(const std::string& executableName);
 
 } // namespace stk
 

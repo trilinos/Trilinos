@@ -49,6 +49,7 @@
 #endif
 
 #include "Amesos2_FunctionMap.hpp"
+
 #include "Amesos2_Tacho_TypeMap.hpp"
 
 // No specializations

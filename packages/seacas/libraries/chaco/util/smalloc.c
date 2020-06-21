@@ -1,51 +1,14 @@
 /*
- * Copyright (c) 2005-2017 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
- *     * Neither the name of NTESS nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
+ * See packages/seacas/LICENSE for details
  */
 
 #include <stddef.h> // for size_t
 #include <stdio.h>  // for NULL, fprintf, printf, FILE, etc
 #include <stdlib.h> // for malloc, free, realloc
-
-#if defined(__STDC_VERSION__)
-#if (__STDC_VERSION__ >= 199901L)
-#define ST_ZU "%zu"
-#else
-#define ST_ZU "%lu"
-#endif
-#else
-#define ST_ZU "%lu"
-#endif
 
 static int    nmalloc    = 0; /* number of calls to malloc */
 static int    nfree      = 0; /* number of calls to free */
@@ -81,14 +44,14 @@ void *smalloc(size_t n)
 
   nmalloc++;
   if (n == 0) {
-    message("ERROR: Non-positive argument to smalloc (" ST_ZU ").\n", n, Output_File);
+    message("ERROR: Non-positive argument to smalloc (%zu).\n", n, Output_File);
     bail(NULL, 1);
   }
 
   ptr = malloc(n);
 
   if (ptr == NULL) {
-    message("Program out of space while attempting to allocate " ST_ZU ".\n", n, Output_File);
+    message("Program out of space while attempting to allocate %zu.\n", n, Output_File);
     bail(NULL, 1);
   }
 
@@ -96,7 +59,7 @@ void *smalloc(size_t n)
     new = (struct smalloc_debug_data *)malloc(sizeof(struct smalloc_debug_data));
 
     if (new == NULL) {
-      message("WARNING: No space for malloc_debug " ST_ZU ".\n", n, Output_File);
+      message("WARNING: No space for malloc_debug %zu.\n", n, Output_File);
       return (ptr);
     }
 
@@ -112,7 +75,7 @@ void *smalloc(size_t n)
   }
 
   if (DEBUG_MEMORY > 2) {
-    printf(" order=%d, size=" ST_ZU ", location=%p\n", nmalloc, n, ptr);
+    printf(" order=%d, size=%zu, location=%p\n", nmalloc, n, ptr);
   }
 
   return (ptr);
@@ -130,7 +93,7 @@ void *smalloc_ret(size_t n)
 
   ptr = NULL;
   if (n == 0) {
-    message("ERROR: Non-positive argument to smalloc_ret (" ST_ZU ").\n", n, Output_File);
+    message("ERROR: Non-positive argument to smalloc_ret (%zu).\n", n, Output_File);
     bail(NULL, 1);
   }
 
@@ -140,7 +103,7 @@ void *smalloc_ret(size_t n)
 
     if (ptr == NULL) {
       nmalloc--;
-      message("\nERROR: Unable to allocate " ST_ZU " bytes of memory.\n", n, Output_File);
+      message("\nERROR: Unable to allocate %zu bytes of memory.\n", n, Output_File);
     }
     else {
 
@@ -148,7 +111,7 @@ void *smalloc_ret(size_t n)
         new = (struct smalloc_debug_data *)malloc(sizeof(struct smalloc_debug_data));
 
         if (new == NULL) {
-          message("WARNING: No space for malloc_debug " ST_ZU ".\n", n, Output_File);
+          message("WARNING: No space for malloc_debug %zu.\n", n, Output_File);
           return (ptr);
         }
 
@@ -164,7 +127,7 @@ void *smalloc_ret(size_t n)
       }
 
       if (DEBUG_MEMORY > 2) {
-        printf(" order=%d, size=" ST_ZU ", location=%p\n", nmalloc, n, ptr);
+        printf(" order=%d, size=%zu, location=%p\n", nmalloc, n, ptr);
       }
     }
   }
@@ -214,7 +177,7 @@ void *srealloc(void *ptr, size_t n)
   }
 
   if (p == NULL) {
-    message("Program out of space while attempting to reallocate " ST_ZU ".\n", n, Output_File);
+    message("Program out of space while attempting to reallocate %zu.\n", n, Output_File);
     bail(NULL, 1);
   }
   return (p);
@@ -263,8 +226,7 @@ void *srealloc_ret(void *ptr, size_t n)
   }
 
   if (p == NULL && DEBUG_MEMORY > 0) {
-    message("WARNING: Program out of space while attempting to reallocate " ST_ZU ".\n", n,
-            Output_File);
+    message("WARNING: Program out of space while attempting to reallocate %zu.\n", n, Output_File);
   }
   return (p);
 }
@@ -313,13 +275,12 @@ void smalloc_stats(void)
     printf("Calls to smalloc = %d,  Calls to sfree = %d\n", nmalloc, nfree);
   }
   if (DEBUG_MEMORY > 1) {
-    printf("Calls to smalloc = %d,  Calls to sfree = %d, maximum bytes = " ST_ZU "\n", nmalloc,
-           nfree, bytes_max);
+    printf("Calls to smalloc = %d,  Calls to sfree = %d, maximum bytes = %zu\n", nmalloc, nfree,
+           bytes_max);
     if (top != NULL) {
       printf("Remaining allocations:\n");
       for (dbptr = top; dbptr != NULL; dbptr = dbptr->next) {
-        printf(" order=%d, size=" ST_ZU ", location=%p\n", dbptr->order, dbptr->size,
-               (void *)dbptr->ptr);
+        printf(" order=%d, size=%zu, location=%p\n", dbptr->order, dbptr->size, (void *)dbptr->ptr);
       }
     }
   }

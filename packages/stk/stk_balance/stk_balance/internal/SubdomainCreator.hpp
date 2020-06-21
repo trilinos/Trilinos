@@ -40,6 +40,8 @@
 
 namespace stk { namespace mesh { class MetaData; }}
 namespace stk { namespace mesh { class BulkData; }}
+namespace stk { namespace io { class StkMeshIoBroker; }}
+namespace stk { namespace transfer_utils { class MtoNTransientFieldTransferById; }}
 
 namespace stk {
 namespace balance {
@@ -48,7 +50,10 @@ namespace internal {
 class SubdomainCreator
 {
 public:
-    SubdomainCreator(stk::mesh::BulkData &bulk, int numTarget) : mMeta(bulk.mesh_meta_data()), mBulk(bulk), mNumSubdomains(numTarget) {}
+    SubdomainCreator(stk::mesh::BulkData &bulk, int numTarget);
+    SubdomainCreator(stk::io::StkMeshIoBroker& ioBroker, int numTarget);
+
+    ~SubdomainCreator();
 
     void declare_all_subdomain_parts();
     void move_entities_into_subdomain_part(size_t i, const stk::mesh::EntityVector &entities);
@@ -67,6 +72,7 @@ private:
     stk::mesh::MetaData &mMeta;
     stk::mesh::BulkData &mBulk;
     int mNumSubdomains;
+    stk::transfer_utils::MtoNTransientFieldTransferById* mTransientIo;
 };
 
 }}}

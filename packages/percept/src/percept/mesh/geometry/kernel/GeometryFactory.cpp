@@ -10,9 +10,7 @@
 #include <percept/PerceptMesh.hpp>
 #include <percept/Util.hpp>
 
-#include <boost/algorithm/string.hpp>    
-
-#define DEBUG_GF2 0
+#include <stk_util/diag/StringUtil.hpp>
 
 namespace percept {
 
@@ -38,7 +36,7 @@ static stk::mesh::Part*
 getPart(stk::mesh::MetaData *meta_data, std::string part_name, bool partial_string_match_ok)
 {
   stk::mesh::Part* found_part =0;
-  boost::algorithm::to_lower(part_name);
+  sierra::make_lower(part_name);
   if (!partial_string_match_ok)
     {
       found_part = meta_data->get_part(part_name);
@@ -53,7 +51,6 @@ getPart(stk::mesh::MetaData *meta_data, std::string part_name, bool partial_stri
         {
           stk::mesh::Part& part = *parts[ipart];
           size_t found = part.name().find(part_name);
-          if (DEBUG_GF2) std::cout << "part_name= " << part_name << " part.name()= " << part.name() << " found= " << found << std::endl;
           if (found != std::string::npos)
             {
               // skip "old" parts
@@ -68,7 +65,6 @@ getPart(stk::mesh::MetaData *meta_data, std::string part_name, bool partial_stri
             }
         }
     }
-  if (DEBUG_GF2) std::cout << "part_name= " << part_name << " found_part.name()= " << found_part->name() << std::endl;
 
   const bool error_check = true;
   if (error_check && !found_part && part_name != "edgeseams")

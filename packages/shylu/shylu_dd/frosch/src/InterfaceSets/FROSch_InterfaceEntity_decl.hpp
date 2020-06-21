@@ -154,7 +154,9 @@ namespace FROSch {
 
         int setLocalID(LO localID);
 
-        int setCoarseNodeID(LO coarseNodeID);
+        int setRootID(LO rootID);
+        
+        int setLeafID(LO leafID);
 
         int setUniqueIDToFirstGlobalID();
 
@@ -170,13 +172,13 @@ namespace FROSch {
 
         int clearOffspring();
 
-        EntitySetPtr findCoarseNodes();
+        EntitySetPtr findRoots();
 
-        int clearCoarseNodes();
+        int clearRoots();
 
-        int computeDistancesToCoarseNodes(UN dimension,
-                                          ConstXMultiVectorPtr &nodeList = null,
-                                          DistanceFunction distanceFunction = ConstantDistanceFunction);
+        int computeDistancesToRoots(UN dimension,
+                                    ConstXMultiVectorPtr &nodeList = null,
+                                    DistanceFunction distanceFunction = ConstantDistanceFunction);
 
         InterfaceEntityPtr divideEntity(ConstXMatrixPtr matrix,
                                         int pID);
@@ -197,7 +199,9 @@ namespace FROSch {
 
         LO getLocalID() const;
 
-        LO getCoarseNodeID() const;
+        LO getRootID() const;
+        
+        LO getLeafID() const;
 
         const Node<SC,LO,GO>& getNode(UN iDNode) const;
 
@@ -221,32 +225,33 @@ namespace FROSch {
 
         const EntitySetPtr getOffspring() const;
 
-        const EntitySetPtr getCoarseNodes() const;
+        const EntitySetPtr getRoots() const;
 
-        SC getDistanceToCoarseNode(UN iDNode,
-                                   UN iDCoarseNode) const;
+        SC getDistanceToRoot(UN iDNode,
+                             UN iDRoot) const;
 
     protected:
 
-        EntityType Type_;
+        EntityType Type_ = DefaultType;
 
-        EntityFlag Flag_;
+        EntityFlag Flag_ = DefaultFlag;
 
-        NodeVec NodeVector_;
+        NodeVec NodeVector_ = NodeVec(0);
 
-        IntVec SubdomainsVector_;
+        IntVec SubdomainsVector_ = IntVec(0);
 
         EntitySetPtr Ancestors_;
         EntitySetPtr Offspring_;
-        EntitySetPtr CoarseNodes_;
+        EntitySetPtr Roots_;
 
-        SCVecPtrVec DistancesVector_; // AH 08/08/2019 TODO: make a MultiVector out of this
+        SCVecPtrVec DistancesVector_ = SCVecPtrVec(0); // AH 08/08/2019 TODO: make a MultiVector out of this
 
-        UN DofsPerNode_;
-        UN Multiplicity_;
-        GO UniqueID_;
-        LO LocalID_;
-        LO CoarseNodeID_;
+        UN DofsPerNode_ = 1;
+        UN Multiplicity_ = 1;
+        GO UniqueID_ = -1;
+        LO LocalID_ = -1;
+        LO RootID_ = -1;
+        LO LeafID_ = -1;
     };
 
     template <class SC,class LO,class GO,class NO>

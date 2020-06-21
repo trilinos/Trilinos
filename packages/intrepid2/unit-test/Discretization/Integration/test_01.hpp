@@ -76,7 +76,7 @@ namespace Intrepid2 {
     try {                                                               \
       ++nthrow;                                                         \
       S ;                                                               \
-    } catch (std::logic_error err) {                                    \
+    } catch (std::logic_error &err) {                                    \
       ++ncatch;                                                         \
       *outStream << "Expected Error ----------------------------------------------------------------\n"; \
       *outStream << err.what() << '\n';                                 \
@@ -168,7 +168,7 @@ namespace Intrepid2 {
           *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << ncatch << ")\n";
         }
 
-      } catch (std::logic_error err) {
+      } catch (std::logic_error &err) {
         *outStream << err.what() << "\n";
         errorFlag = -1000;
       };
@@ -249,7 +249,7 @@ namespace Intrepid2 {
                                         ">>> ERROR (Integration::Test01): prism cubature reports wrong accuracy.");
         }
 
-      } catch (std::logic_error err) {
+      } catch (std::logic_error &err) {
         *outStream << err.what() << "\n";
         errorFlag = -1000;
       };
@@ -431,7 +431,7 @@ namespace Intrepid2 {
         //     *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
         //   }
         // }
-      }  catch (std::logic_error err) {
+      }  catch (std::logic_error &err) {
         *outStream << err.what() << "\n";
         errorFlag = -1;
       };

@@ -68,10 +68,6 @@ else #If we aren't building everything, figure out which packages to bulid
         PackageEnables+="-DTrilinos_ENABLE_Shards=ON "
   fi
 
-  if grep -q packages/globipack/ gitchanges.txt; then
-        PackageEnables+="-DTrilinos_ENABLE_GlobiPack=ON "
-  fi
-
   if grep -q packages/triutils/ gitchanges.txt; then
         PackageEnables+="-DTrilinos_ENABLE_Triutils=ON "
   fi
@@ -98,10 +94,6 @@ else #If we aren't building everything, figure out which packages to bulid
 
   if grep -q packages/xpetra/ gitchanges.txt; then
         PackageEnables+="-DTrilinos_ENABLE_Xpetra=ON "
-  fi
-
-  if grep -q packages/optipack/ gitchanges.txt; then
-        PackageEnables+="-DTrilinos_ENABLE_OptiPack=ON "
   fi
 
   if grep -q packages/isorropia/ gitchanges.txt; then

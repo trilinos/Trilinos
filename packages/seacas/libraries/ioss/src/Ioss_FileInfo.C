@@ -1,42 +1,33 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//
-//     * Neither the name of NTESS nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+// See packages/seacas/LICENSE for details
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_FileInfo.h>
+#include <Ioss_ParallelUtils.h>
 #include <Ioss_Utils.h>
 #include <cstddef>
+#include <cstring>
 #include <string>
-#include <sys/select.h>
+#include <tokenize.h>
+
+#ifndef _MSC_VER
 #include <sys/unistd.h>
+#else
+#include <direct.h>
+#include <io.h>
+#define access _access
+#define R_OK 4 /* Test for read permission.  */
+#define W_OK 2 /* Test for write permission.  */
+#define X_OK 1 /* execute permission - unsupported in windows*/
+#define F_OK 0 /* Test for existence.  */
+#ifndef S_ISREG
+#define S_ISREG(m) (((m)&_S_IFMT) == _S_IFREG)
+#define S_ISDIR(m) (((m)&_S_IFMT) == _S_IFDIR)
+#endif
+#endif
 
 #ifdef SEACAS_HAVE_MPI
 #include <numeric>
@@ -165,13 +156,14 @@ namespace Ioss {
   //: Returns TRUE if we are pointing to a symbolic link
   bool FileInfo::is_symlink() const
   {
+#ifndef _MSC_VER
     struct stat s
     {
     };
     if (lstat(filename_.c_str(), &s) == 0) {
       return S_ISLNK(s.st_mode);
     }
-
+#endif
     return false;
   }
 
@@ -228,7 +220,7 @@ namespace Ioss {
   }
 
   //: Returns the filename
-  const std::string FileInfo::filename() const { return filename_; }
+  std::string FileInfo::filename() const { return filename_; }
 
   //: Sets the filename
   void FileInfo::set_filename(const std::string &name)
@@ -249,7 +241,7 @@ namespace Ioss {
   //: Returns the filename extension or the empty string if there is
   //: no extension.  Assumes extension is all characters following the
   //: last period.
-  const std::string FileInfo::extension() const
+  std::string FileInfo::extension() const
   {
     size_t ind  = filename_.find_last_of('.', std::string::npos);
     size_t inds = filename_.find_last_of('/', std::string::npos);
@@ -262,7 +254,7 @@ namespace Ioss {
     return std::string();
   }
 
-  const std::string FileInfo::pathname() const
+  std::string FileInfo::pathname() const
   {
     size_t ind = filename_.find_last_of('/', filename_.size());
     if (ind != std::string::npos) {
@@ -272,7 +264,7 @@ namespace Ioss {
     return std::string();
   }
 
-  const std::string FileInfo::tailname() const
+  std::string FileInfo::tailname() const
   {
     size_t ind = filename_.find_last_of('/', filename_.size());
     if (ind != std::string::npos) {
@@ -282,7 +274,7 @@ namespace Ioss {
     return filename_; // No path, just return the filename
   }
 
-  const std::string FileInfo::basename() const
+  std::string FileInfo::basename() const
   {
     std::string tail = tailname();
 
@@ -295,11 +287,103 @@ namespace Ioss {
     return tail;
   }
 
+  std::string FileInfo::realpath() const
+  {
+#ifdef _MSC_VER
+    char *path = _fullpath(nullptr, filename_.c_str(), _MAX_PATH);
+#else
+    char *path = ::realpath(filename_.c_str(), nullptr);
+#endif
+    if (path != nullptr) {
+      std::string temp(path);
+      free(path);
+      return temp;
+    }
+    {
+      return filename_;
+    }
+  }
+
   bool FileInfo::remove_file()
   {
     int success = std::remove(filename_.c_str());
     return success == 0;
   }
+
+  void FileInfo::create_path(const std::string &filename)
+  {
+    bool               error_found = false;
+    std::ostringstream errmsg;
+
+    Ioss::FileInfo file      = Ioss::FileInfo(filename);
+    std::string    path      = file.pathname();
+    std::string    path_root = path[0] == '/' ? "/" : "";
+
+    auto comps = tokenize(path, "/");
+    for (const auto &comp : comps) {
+      path_root += comp;
+
+      struct stat st;
+      if (stat(path_root.c_str(), &st) != 0) {
+        const int mode = 0777; // Users umask will be applied to this.
+#ifdef _MSC_VER
+        if (mkdir(path_root.c_str()) != 0 && errno != EEXIST) {
+#else
+        if (mkdir(path_root.c_str(), mode) != 0 && errno != EEXIST) {
+#endif
+          errmsg << "ERROR: Cannot create directory '" << path_root << "': " << std::strerror(errno)
+                 << "\n";
+          error_found = true;
+          break;
+        }
+      }
+      else if (!S_ISDIR(st.st_mode)) {
+        errno = ENOTDIR;
+        errmsg << "ERROR: Path '" << path_root << "' is not a directory.\n";
+        error_found = true;
+        break;
+      }
+      path_root += "/";
+    }
+
+    if (error_found) {
+      IOSS_ERROR(errmsg);
+    }
+  }
+
+  void FileInfo::create_path(const std::string &filename, MPI_Comm communicator)
+  {
+#ifdef SEACAS_HAVE_MPI
+    int                error_found = 0;
+    std::ostringstream errmsg;
+
+    Ioss::ParallelUtils util(communicator);
+
+    if (util.parallel_rank() == 0) {
+      try {
+        create_path(filename);
+      }
+      catch (const std::exception &x) {
+        errmsg << x.what();
+        error_found = 1;
+      }
+    }
+    else {
+      errmsg << "ERROR: Could not create path '" << filename << "'.\n";
+    }
+
+    if (util.parallel_size() > 1) {
+      MPI_Bcast(&error_found, 1, MPI_INT, 0, communicator);
+    }
+
+    if (error_found) {
+      IOSS_ERROR(errmsg);
+    }
+#else
+    create_path(filename);
+#endif
+  }
+
 } // namespace Ioss
 
 namespace {

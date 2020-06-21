@@ -8,7 +8,7 @@ import sys
 sys.dont_write_bytecode = True
 
 import os
-sys.path.insert(1, os.path.dirname(os.path.dirname(__file__)))
+sys.path.insert(1, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 import unittest
@@ -29,8 +29,10 @@ from subprocess import CalledProcessError
 import PullRequestLinuxDriverMerge
 
 
+
 class Test_header(unittest.TestCase):
     '''Test that we can properly echo the header information'''
+
     def test_writeHeader(self):
         with mock.patch('sys.stdout', new_callable=StringIO) as m_stdout:
             PullRequestLinuxDriverMerge.write_header()
@@ -43,9 +45,9 @@ class Test_header(unittest.TestCase):
                          m_stdout.getvalue())
 
 
+
 class Test_EchoJenkinsVars(unittest.TestCase):
     '''Test that the Jenkins environment is echoed properly'''
-
 
     def setUp(self):
         self.m_environ = mock.patch.dict(os.environ, {'JOB_BASE_NAME':'TEST_JOB_BASE_NAME',
@@ -89,6 +91,7 @@ Environment:
         self.assertEqual(expected_string, m_stdout.getvalue())
 
 
+
 class Test_parsing(unittest.TestCase):
     '''Finally given a decent parser I want to now pass
        all parameters and check them'''
@@ -124,6 +127,7 @@ class Test_parsing(unittest.TestCase):
             args = PullRequestLinuxDriverMerge.parseArgs()
         self.assertEqual(test_namespace, args)
 
+
     def test_parseInsufficientArgs_fails(self):
         test_namespace = Namespace()
         setattr(test_namespace, 'sourceRepo', '/dev/null/source/Trilinos.git')
@@ -133,14 +137,14 @@ class Test_parsing(unittest.TestCase):
 programName: error: the following arguments are required: sourceRepo, \
 sourceBranch, targetRepo, targetBranch, sourceSHA, workspaceDir
 '''
-        if sys.version_info.major is not 3:
+        if sys.version_info.major != 3:
             expected_output = '''usage: programName [-h]
                    sourceRepo sourceBranch targetRepo targetBranch sourceSHA
                    workspaceDir\nprogramName: error: too few arguments
 '''
         with mock.patch.object(sys, 'argv', ['programName']), \
                 mock.patch('sys.stderr', new_callable=StringIO) as m_stderr:
-            if sys.version_info.major is not 3:
+            if sys.version_info.major != 3:
                 with self.assertRaisesRegexp(SystemExit, '2'):
                     PullRequestLinuxDriverMerge.parseArgs()
             else:
@@ -149,9 +153,11 @@ sourceBranch, targetRepo, targetBranch, sourceSHA, workspaceDir
         self.assertEqual(expected_output, m_stderr.getvalue())
 
 
+
 class Test_mergeBranch(unittest.TestCase):
     '''Verify that we call the correct sequence to merge the source branch/SHA
        into the target branch'''
+
     def test_mergeBranch_without_source_remote(self):
         with mock.patch('subprocess.check_output',
                         side_effect=['origin /dev/null/target/Trilinos',
@@ -235,7 +241,7 @@ class Test_mergeBranch(unittest.TestCase):
                                     CalledProcessError(-1, 'cmd'),
                                     CalledProcessError(-2, 'cmd'),
                                     CalledProcessError(-3, 'cmd')]) as m_check_call:
-            if sys.version_info.major is not 3:
+            if sys.version_info.major != 3:
                 with self.assertRaisesRegexp(SystemExit, '12'):
                     PullRequestLinuxDriverMerge.merge_branch(os.path.join(os.path.sep,
                                                                           'dev',
@@ -275,7 +281,7 @@ class Test_mergeBranch(unittest.TestCase):
                                       'df324ae']) as m_check_out, \
             mock.patch('subprocess.check_call') as m_check_call, \
             mock.patch('sys.stdout', new_callable=StringIO) as m_stdout:
-            if sys.version_info.major is not 3:
+            if sys.version_info.major != 3:
                 with self.assertRaisesRegexp(SystemExit, '-1'):
                     PullRequestLinuxDriverMerge.merge_branch(os.path.join(os.path.sep,
                                                                           'dev',
@@ -311,8 +317,10 @@ class Test_mergeBranch(unittest.TestCase):
                          m_stdout.getvalue())
 
 
+
 class Test_run(unittest.TestCase):
     '''This is the main function that ties everything together in order'''
+
     def test_run(self):
         with mock.patch('PullRequestLinuxDriverMerge.parseArgs') as m_parser, \
             mock.patch('os.chdir') as m_chdir, \
@@ -339,6 +347,7 @@ class Test_run(unittest.TestCase):
                         side_effect=SystemExit(2)):
             self.assertFalse(PullRequestLinuxDriverMerge.run())
 
+
     def test_run_fails_on_bad_fetch(self):
         with mock.patch('subprocess.check_output',
                         side_effect=['origin /dev/null/target/Trilinos',
@@ -361,7 +370,7 @@ class Test_run(unittest.TestCase):
   output None
   stdout None
   stderr None\n'''
-        if sys.version_info.major is not 3:
+        if sys.version_info.major != 3:
             expected_string = '''Recieved subprocess.CalledProcessError - returned -1
   from command test_cmd
   output None\n'''
@@ -376,6 +385,8 @@ class Test_run(unittest.TestCase):
             mock.patch('os.chdir'):
             self.assertFalse(PullRequestLinuxDriverMerge.run())
         self.assertTrue(m_stdout.getvalue().endswith(expected_string))
+
+
 
 
 if __name__ == '__main__':

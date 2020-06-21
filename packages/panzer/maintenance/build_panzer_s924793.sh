@@ -7,7 +7,6 @@ cmake \
       -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
       -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
       -D Trilinos_ENABLE_EXAMPLES:BOOL=OFF \
-      -D Trios_ENABLE_XDMF:BOOL=OFF \
       -D Trilinos_ENABLE_TESTS:BOOL=OFF \
       -D Trilinos_ENABLE_Teko:BOOL=ON \
       -D Trilinos_ENABLE_Panzer:BOOL=ON \

@@ -135,6 +135,8 @@ Piro::LOCASolver<Scalar>::LOCASolver(
   if (piroParams_->isSublist("NOX") &&
       piroParams_->sublist("NOX").isSublist("Printing"))
     utils_.reset(piroParams_->sublist("NOX").sublist("Printing"));
+
+  this->setSensitivityMethod("Forward");
 }
 
 template<typename Scalar>
@@ -224,7 +226,7 @@ Piro::LOCASolver<Scalar>::evalModelImpl(
       modelInArgs.set_p(l, p_inargs);
     }
 
-    this->evalConvergedModel(modelInArgs, outArgs);
+    this->evalConvergedModelResponsesAndSensitivities(modelInArgs, outArgs);
   }
 }
 

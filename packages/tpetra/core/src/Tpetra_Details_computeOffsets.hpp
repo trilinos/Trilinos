@@ -279,6 +279,32 @@ computeOffsetsFromCounts (const ExecutionSpace& execSpace,
        ": counts.size() = " << numCounts << " >= ptr.size() = " <<
        numOffsets << ".");
 
+#ifdef TPETRA_AVOID_PARALLEL_SCAN
+    // KDD 11/25/19  Temporary workaround to the one scan whose behavior
+    // makes a difference for GPU runs.  On the GPU platforms, serializing
+    // this scan (via Kokkos' magic) makes the code perform correctly.  
+    // This code serializes the scan, without the Kokkos magic, for debugging
+    // on stria.  #6345
+    // To use this code, add -DTPETRA_AVOID_PARALLEL_SCAN to CMAKE_CXX_FLAGS
+
+    Kokkos::View<offset_type*,Kokkos::HostSpace> 
+            ptrAPS(Kokkos::ViewAllocateWithoutInitializing("APS_offsets"),
+                   numOffsets);
+    Kokkos::View<count_type*,Kokkos::HostSpace> 
+            countsAPS(Kokkos::ViewAllocateWithoutInitializing("APS_counts"),
+                      numCounts);
+
+    Kokkos::deep_copy(countsAPS, counts);
+
+    ptrAPS(0) = 0;
+    for (size_t i = 0; i < numCounts; i++)
+      ptrAPS(i+1) = ptrAPS(i) + countsAPS(i);
+
+    total = ptrAPS(numCounts);
+
+    Kokkos::deep_copy(ptr, ptrAPS);
+
+#else
     using Kokkos::AnonymousSpace;
     using Kokkos::View;
     View<offset_type*, AnonymousSpace> ptr_a = ptr;
@@ -313,6 +339,7 @@ computeOffsetsFromCounts (const ExecutionSpace& execSpace,
     using functor_type =
       ComputeOffsetsFromCounts<offset_type, count_type, SizeType>;
     total = functor_type::run (execSpace, ptr_a, counts_a);
+#endif
   }
 
   return total;

@@ -270,7 +270,7 @@ gblNormImpl (const RV& normsOut,
     // launch a parallel kernel for that, since there isn't enough
     // parallelism for the typical MultiVector case.
     const bool inHostMemory =
-      Kokkos::Impl::is_same<typename RV::memory_space,
+      std::is_same<typename RV::memory_space,
       typename RV::host_mirror_space::memory_space>::value;
     if (inHostMemory) {
       for (size_t j = 0; j < numVecs; ++j) {

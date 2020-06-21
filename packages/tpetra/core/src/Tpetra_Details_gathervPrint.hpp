@@ -35,13 +35,11 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 */
 
-/// \file Tpetra_Details_gatherPrint.hpp
+/// \file Tpetra_Details_gathervPrint.hpp
 /// \brief Declaration of a function that prints strings from each process.
 ///
 /// \warning This is an implementation detail of Tpetra.  Users may

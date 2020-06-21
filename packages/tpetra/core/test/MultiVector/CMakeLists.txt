@@ -198,3 +198,20 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   )
+
+# The mixed node tests only make sense if there is more than 1 MPI rank
+ASSERT_DEFINED (Tpetra_INST_CUDA)
+ASSERT_DEFINED (Tpetra_INST_SERIAL)
+IF (Tpetra_INST_CUDA AND Tpetra_INST_SERIAL)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    MultiVector_MixedNode
+    SOURCES
+      MultiVector_MixedNode
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ARGS ${ARGS}
+    COMM mpi
+    NUM_MPI_PROCS 2-4
+    STANDARD_PASS_OUTPUT
+    )
+ENDIF ()
+

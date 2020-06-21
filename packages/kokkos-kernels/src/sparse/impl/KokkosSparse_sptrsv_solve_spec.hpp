@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//               KokkosKernels 0.9: Linear Algebra and Graph Kernels
-//                 Copyright 2017 Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -102,6 +103,10 @@ struct sptrsv_solve_eti_spec_avail {
 namespace KokkosSparse {
 namespace Impl {
 
+#if defined(KOKKOS_ENABLE_CUDA) && 10000 < CUDA_VERSION && defined(KOKKOSKERNELS_ENABLE_EXP_CUDAGRAPH)
+  #define KOKKOSKERNELS_SPTRSV_CUDAGRAPHSUPPORT
+#endif
+
 // Unification layer
 /// \brief Implementation of KokkosSparse::sptrsv_solve
 
@@ -156,19 +161,42 @@ struct SPTRSV_SOLVE<KernelHandle, RowMapType, EntriesType, ValuesType, BType, XT
   {
     // Call specific algorithm type
     auto sptrsv_handle = handle->get_sptrsv_handle();
-
+    Kokkos::Profiling::pushRegion(sptrsv_handle->is_lower_tri() ? "KokkosSparse_sptrsv[lower]" : "KokkosSparse_sptrsv[upper]");
     if ( sptrsv_handle->is_lower_tri() ) {
       if ( sptrsv_handle->is_symbolic_complete() == false ) {
         Experimental::lower_tri_symbolic(*sptrsv_handle, row_map, entries);
       }
-      Experimental::lower_tri_solve( *sptrsv_handle, row_map, entries, values, b, x);
+      if ( sptrsv_handle->get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN ) {
+        Experimental::tri_solve_chain( *sptrsv_handle, row_map, entries, values, b, x, true);
+      }
+      else {
+#ifdef KOKKOSKERNELS_SPTRSV_CUDAGRAPHSUPPORT
+        using ExecSpace = typename RowMapType::memory_space::execution_space;
+        if ( std::is_same<ExecSpace, Kokkos::Cuda>::value)
+          Experimental::lower_tri_solve_cg( *sptrsv_handle, row_map, entries, values, b, x);
+        else
+#endif
+          Experimental::lower_tri_solve( *sptrsv_handle, row_map, entries, values, b, x);
+      }
     }
     else {
       if ( sptrsv_handle->is_symbolic_complete() == false ) {
         Experimental::upper_tri_symbolic(*sptrsv_handle, row_map, entries);
       }
-      Experimental::upper_tri_solve( *sptrsv_handle, row_map, entries, values, b, x);
+      if ( sptrsv_handle->get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN ) {
+        Experimental::tri_solve_chain( *sptrsv_handle, row_map, entries, values, b, x, false);
+      }
+      else {
+#ifdef KOKKOSKERNELS_SPTRSV_CUDAGRAPHSUPPORT
+        using ExecSpace = typename RowMapType::memory_space::execution_space;
+        if ( std::is_same<ExecSpace, Kokkos::Cuda>::value)
+          Experimental::upper_tri_solve_cg( *sptrsv_handle, row_map, entries, values, b, x);
+        else
+#endif
+          Experimental::upper_tri_solve( *sptrsv_handle, row_map, entries, values, b, x);
+      }
     }
+    Kokkos::Profiling::popRegion();
   }
 
 };

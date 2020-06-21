@@ -58,6 +58,10 @@
 #define FROSCH_TIMER_STOP(A) A.reset();
 #endif
 
+#ifndef FROSCH_WARNING
+#define FROSCH_WARNING(CLASS,VERBOSE,OUTPUT) if (VERBOSE) std::cerr << CLASS << " : WARNING: " << OUTPUT << std::endl;
+#endif
+
 #ifndef FROSCH_TEST_OUTPUT
 #define FROSCH_TEST_OUTPUT(COMM,VERBOSE,OUTPUT) COMM->barrier(); COMM->barrier(); COMM->barrier(); if (VERBOSE) std::cout << OUTPUT << std::endl;
 #endif
@@ -95,9 +99,17 @@
 #include <Ifpack2_Details_OneLevelFactory_decl.hpp>
 #endif
 
+#ifdef HAVE_SHYLU_DDFROSCH_THYRA
+#ifdef HAVE_SHYLU_DDFROSCH_IFPACK2
+#include "Teuchos_AbstractFactoryStd.hpp"
+#include "Thyra_Ifpack2PreconditionerFactory.hpp"
+#endif
+#endif
+
 
 namespace FROSch {
 
+    using namespace std;
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -251,7 +263,7 @@ namespace FROSch {
 
         \return String describing this operator
         */
-        virtual std::string description() const;
+        virtual string description() const;
 
         //! @name Access to class members
         //!@{
@@ -261,9 +273,16 @@ namespace FROSch {
 
         //! Get #IsComputed_
         bool isComputed() const;
-        
+
         int resetMatrix(ConstXMatrixPtr k,
                         bool reuseInitialize);
+
+        /*!
+        \brief Computes a residual using the operator
+        */
+        virtual void residual(const XMultiVector & X,
+                              const XMultiVector & B,
+                              XMultiVector& R) const;
 
         //!@}
 
@@ -307,10 +326,15 @@ namespace FROSch {
         RCP<Ifpack2::Preconditioner<SC,LO,GO,NO> > Ifpack2Preconditioner_;
 #endif
 
-        bool IsInitialized_;
+#ifdef HAVE_SHYLU_DDFROSCH_THYRA
+        mutable RCP<Thyra::MultiVectorBase<SC> > ThyraYTmp_;
+        RCP<Thyra::LinearOpWithSolveBase<SC> > LOWS_;
+#endif
+
+        bool IsInitialized_ = false;
 
         //! Flag to indicated whether this subdomain solver has been setup/computed
-        bool IsComputed_;
+        bool IsComputed_ = false;
     };
 
 }

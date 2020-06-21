@@ -80,6 +80,7 @@ TEST(Parallel, CommNeighborsOneSided_Raw_MPI)
   int localProc = 0;
   MPI_Comm_rank(comm, &localProc);
   int otherProc = 1 - localProc;
+  std::vector<int> neighbors = {otherProc};
   std::vector<int> sendProcs = {otherProc};
   std::vector<int> recvProcs = {otherProc};
   if (localProc==0) {
@@ -94,21 +95,21 @@ TEST(Parallel, CommNeighborsOneSided_Raw_MPI)
   int reorder = 0;
   const int* weights = (int*)MPI_UNWEIGHTED;
 
-  //cppreference.com says vector::data() may be nullptr if vector is empty but not guaranteed
-  const int* sendProcsPtr = sendProcs.size() > 0 ? sendProcs.data() : nullptr;
-  const int* recvProcsPtr = recvProcs.size() > 0 ? recvProcs.data() : nullptr;
-
   MPI_Comm neighborComm;
   MPI_Dist_graph_create_adjacent(comm,
-              recvProcs.size(), recvProcsPtr, weights,
-              sendProcs.size(), sendProcsPtr, weights,
+              neighbors.size(), neighbors.data(), weights,
+              neighbors.size(), neighbors.data(), weights,
               info, reorder, &neighborComm);
   MPI_Info_free(&info);
 
   int numItems = 5;
-  std::vector<double> sendBuf(sendProcs.size()*numItems, 0), recvBuf;
-  std::vector<int> sendCounts(sendProcs.size(), numItems), recvCounts(recvProcs.size());
-  std::vector<int> sendDispls(sendProcs.size(), 0), recvDispls(recvProcs.size());
+  std::vector<double> sendBuf(numItems, 0), recvBuf;
+  std::vector<int> sendCounts(neighbors.size(), 0), recvCounts(neighbors.size());
+  std::vector<int> sendDispls(neighbors.size(), 0), recvDispls(neighbors.size());
+
+  for(size_t i=0; i<sendProcs.size(); ++i) {
+    sendCounts[i] = numItems;
+  }
 
   if (localProc == 0) {
     for(int i=0; i<numItems; ++i) {
@@ -116,11 +117,8 @@ TEST(Parallel, CommNeighborsOneSided_Raw_MPI)
     }
   }
 
-  const int* sendCountsPtr = sendCounts.size() > 0 ? sendCounts.data() : nullptr;
-  const int* recvCountsPtr = recvCounts.size() > 0 ? recvCounts.data() : nullptr;
-
-  MPI_Neighbor_alltoall((void*)sendCountsPtr, 1, MPI_INT,
-                        (void*)recvCountsPtr, 1, MPI_INT, neighborComm);
+  MPI_Neighbor_alltoall((void*)sendCounts.data(), 1, MPI_INT,
+                        (void*)recvCounts.data(), 1, MPI_INT, neighborComm);
 
   int totalRecv = 0;
   recvDispls.resize(recvCounts.size());
@@ -130,14 +128,9 @@ TEST(Parallel, CommNeighborsOneSided_Raw_MPI)
   }
   recvBuf.resize(totalRecv);
 
-  const double* sendBufPtr = sendBuf.size() > 0 ? sendBuf.data() : nullptr;
-  const double* recvBufPtr = recvBuf.size() > 0 ? recvBuf.data() : nullptr;
-  const int* sendDisplsPtr = sendDispls.size() > 0 ? sendDispls.data() : nullptr;
-  const int* recvDisplsPtr = recvDispls.size() > 0 ? recvDispls.data() : nullptr;
-
   MPI_Neighbor_alltoallv(
-      (void*)sendBufPtr, sendCountsPtr, sendDisplsPtr, MPI_DOUBLE,
-      (void*)recvBufPtr, recvCountsPtr, recvDisplsPtr, MPI_DOUBLE, neighborComm);
+      (void*)sendBuf.data(), sendCounts.data(), sendDispls.data(), MPI_DOUBLE,
+      (void*)recvBuf.data(), recvCounts.data(), recvDispls.data(), MPI_DOUBLE, neighborComm);
 
   for(unsigned i=0; i<recvProcs.size(); ++i) {
       EXPECT_EQ(1, localProc);//should only recv on proc 1

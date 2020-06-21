@@ -34,6 +34,14 @@
 #include <stdlib.h> // for malloc, realloc
 #include <unistd.h> // for ssize_t
 
+#if defined(_MSC_VER)
+#ifdef _WIN64
+#define ssize_t __int64
+#else
+#define ssize_t long
+#endif
+#endif
+
 ssize_t getdelim(char **buf, size_t *bufsiz, int delimiter, FILE *fp)
 {
   char *ptr, *eptr;

@@ -293,6 +293,10 @@ void communicateVector(
   const int p_rank = commSparse.parallel_rank();
   const int p_size = commSparse.parallel_size();
 
+  if (1 == p_size) {
+    return;
+  }
+
   typename std::vector< ValueType >::const_iterator i ; 
 
   size_t numLocal = 0;

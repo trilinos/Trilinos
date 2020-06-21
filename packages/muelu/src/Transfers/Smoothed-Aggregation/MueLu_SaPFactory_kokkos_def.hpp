@@ -173,13 +173,19 @@ namespace MueLu {
 
       {
         SubFactoryMonitor m2(*this, "Fused (I-omega*D^{-1} A)*Ptent", coarseLevel);
-        RCP<Vector> invDiag = Utilities_kokkos::GetMatrixDiagonalInverse(*A);
-
+        RCP<Vector> invDiag;
+        {
+          SubFactoryMonitor m3(*this, "Diagonal Extraction", coarseLevel);
+          invDiag = Utilities_kokkos::GetMatrixDiagonalInverse(*A);
+        }
         SC omega = dampingFactor / lambdaMax;
         TEUCHOS_TEST_FOR_EXCEPTION(!std::isfinite(Teuchos::ScalarTraits<SC>::magnitude(omega)), Exceptions::RuntimeError, "Prolongator damping factor needs to be finite.");
 
-        // finalP = Ptent + (I - \omega D^{-1}A) Ptent
-        finalP = Xpetra::IteratorOps<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Jacobi(omega, *invDiag, *A, *Ptent, finalP, GetOStream(Statistics2), std::string("MueLu::SaP-") + toString(coarseLevel.GetLevelID()), APparams);
+        {
+          SubFactoryMonitor m3(*this, "Xpetra::IteratorOps::Jacobi", coarseLevel);
+          // finalP = Ptent + (I - \omega D^{-1}A) Ptent
+          finalP = Xpetra::IteratorOps<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Jacobi(omega, *invDiag, *A, *Ptent, finalP, GetOStream(Statistics2), std::string("MueLu::SaP-") + toString(coarseLevel.GetLevelID()), APparams);
+        }
       }
 
     } else {

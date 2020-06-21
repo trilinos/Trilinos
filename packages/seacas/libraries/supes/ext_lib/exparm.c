@@ -1,36 +1,9 @@
 /*
- * Copyright(C) 2008-2017 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- * * Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *
- * * Redistributions in binary form must reproduce the above
- *   copyright notice, this list of conditions and the following
- *   disclaimer in the documentation and/or other materials provided
- *   with the distribution.
- *
- * * Neither the name of NTESS nor the names of its
- *   contributors may be used to endorse or promote products derived
- *   from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
+ * See packages/seacas/LICENSE for details
  */
 /*
  * $Id: exparm.c,v 1.26 2008/03/14 13:22:37 gdsjaar Exp $
@@ -77,6 +50,12 @@
 #include <unistd.h> /* isatty  */
 #endif
 #include <stdio.h> /* sprintf */
+
+#ifdef _MSC_VER
+#include <io.h>
+#include <sys/ioctl.h>
+#define isatty _isatty
+#endif
 
 static char *copy_string(char *dest, char const *source, long int elements)
 {
@@ -158,76 +137,6 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
   copy_string(soft, softname, WORDLEN);
 
 #endif /* HPUX */
-/********************************************************************/
-#if defined(paragon)
-
-  struct utsname SysInfo;
-  char           hardname[MAXCHAR];
-  char           softname[MAXCHAR];
-
-  *idau = 0;
-  *kcsu = sizeof(FTNREAL); /* 860 has 32 bit words */
-  *knsu = 1;
-
-  uname(&SysInfo);
-
-  sprintf(hardname, "i860 GP ");
-  sprintf(softname, "OSF %.2s.%.1s", SysInfo.version, SysInfo.release);
-
-  copy_string(hard, hardname, WORDLEN);
-  copy_string(soft, softname, WORDLEN);
-
-#endif
-/********************************************************************/
-#if defined(pumagon) || defined(p6)
-
-  char hardname[MAXCHAR];
-  char softname[MAXCHAR];
-
-  *idau = 0;
-  *kcsu = sizeof(FTNREAL); /* 860 has 32 bit words */
-  *knsu = 1;
-
-  sprintf(hardname, "i860 GP ");
-  sprintf(softname, "SUNMOS  ");
-
-  copy_string(hard, hardname, WORDLEN);
-  copy_string(soft, softname, WORDLEN);
-
-#endif
-/********************************************************************/
-#if defined(p6)
-
-  char hardname[MAXCHAR];
-  char softname[MAXCHAR];
-
-  *idau = 0;
-  *kcsu = sizeof(FTNREAL); /* P6 has 32 bit words */
-  *knsu = 1;
-
-  sprintf(hardname, "P6      ");
-  sprintf(softname, "Solari  ");
-
-  copy_string(hard, hardname, WORDLEN);
-  copy_string(soft, softname, WORDLEN);
-#endif
-/********************************************************************/
-#if defined(cougar)
-
-  char hardname[MAXCHAR];
-  char softname[MAXCHAR];
-
-  *idau = 0;
-  *kcsu = sizeof(FTNREAL); /* p6 has 32 bit words */
-  *knsu = 1;
-
-  sprintf(hardname, "PentPro ");
-  sprintf(softname, "COUGAR  ");
-
-  copy_string(hard, hardname, WORDLEN);
-  copy_string(soft, softname, WORDLEN);
-
-#endif
 /********************************************************************/
 #if defined(__osf__)
 

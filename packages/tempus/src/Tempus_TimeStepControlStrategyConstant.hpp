@@ -12,7 +12,6 @@
 #include "Tempus_TimeStepControl.hpp"
 #include "Tempus_TimeStepControlStrategy.hpp"
 #include "Tempus_SolutionState.hpp"
-#include "Tempus_SolutionStateMetaData.hpp"
 #include "Tempus_SolutionHistory.hpp"
 #include "Tempus_StepperState.hpp"
 
@@ -41,13 +40,11 @@ public:
   {
      using Teuchos::RCP;
      RCP<SolutionState<Scalar> >workingState=solutionHistory->getWorkingState();
-     RCP<SolutionStateMetaData<Scalar> > metaData = workingState->getMetaData();
-     const Scalar errorAbs = metaData->getErrorAbs();
-     const Scalar errorRel = metaData->getErrorRel();
-     int order = metaData->getOrder();
-     Scalar dt = metaData->getDt();
-     bool printChanges = solutionHistory->getVerbLevel() !=
-        Teuchos::as<int>(Teuchos::VERB_NONE);
+     const Scalar errorAbs = workingState->getErrorAbs();
+     const Scalar errorRel = workingState->getErrorRel();
+     int order = workingState->getOrder();
+     Scalar dt = workingState->getTimeStep();
+     bool printDtChanges = tsc.getPrintDtChanges();
 
      dt = tsc.getInitTimeStep();
 
@@ -65,7 +62,7 @@ public:
      // Stepper failure
      if (workingState->getSolutionStatus() == Status::FAILED) {
         if (order+1 <= tsc.getMaxOrder()) {
-           if (printChanges) *out << changeOrder(order, order+1,
+           if (printDtChanges) *out << changeOrder(order, order+1,
                  "Stepper failure, increasing order.");
            order++;
         } else {
@@ -81,7 +78,7 @@ public:
      // Absolute error failure
      if (errorAbs > tsc.getMaxAbsError()) {
         if (order+1 <= tsc.getMaxOrder()) {
-           if (printChanges) *out << changeOrder(order, order+1,
+           if (printDtChanges) *out << changeOrder(order, order+1,
                  "Absolute error is too large.  Increasing order.");
            order++;
         } else {
@@ -101,7 +98,7 @@ public:
      // Relative error failure
      if (errorRel > tsc.getMaxRelError()) {
         if (order+1 <= tsc.getMaxOrder()) {
-           if (printChanges) *out << changeOrder(order, order+1,
+           if (printDtChanges) *out << changeOrder(order, order+1,
                  "Relative error is too large.  Increasing order.");
            order++;
         } else {
@@ -130,8 +127,8 @@ public:
        "    order = " << order << "\n");
 
      // update order and dt
-     metaData->setOrder(order);
-     metaData->setDt(dt);
+     workingState->setOrder(order);
+     workingState->setTimeStep(dt);
   }
 
 };

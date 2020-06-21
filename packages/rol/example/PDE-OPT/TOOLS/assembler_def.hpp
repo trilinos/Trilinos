@@ -152,6 +152,9 @@ void Assembler<Real>::assemblePDEJacobian1(ROL::Ptr<Tpetra::CrsMatrix<>> &J1,
     pde->Jacobian_1(localVal,u_coeff,z_coeff,z_param);
     assembleFieldMatrix( J1, localVal );
     isJ1Transposed_ = false;
+    // Output
+    //Tpetra::MatrixMarket::Writer< Tpetra::CrsMatrix<>> matWriter;
+    //matWriter.writeSparseFile("jacobian_1.txt", J1);
   }
   catch ( Exception::Zero & ez ) {
     throw Exception::Zero(">>> (Assembler::assemblePDEJacobian1): Jacobian is zero.");
@@ -1737,6 +1740,130 @@ void Assembler<Real>::assembleQoIHessVec33(ROL::Ptr<std::vector<Real>> &H33,
     throw Exception::NotImplemented(">>> (Assembler::assembleQoIHessVec33): HessVec not implemented.");
   }
 }
+
+template<class Real>
+void Assembler<Real>::assembleQoIHessian11(ROL::Ptr<Tpetra::CrsMatrix<>> &H11,
+                                     const ROL::Ptr<QoI<Real>> &qoi,
+                                     const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                                     const ROL::Ptr<const Tpetra::MultiVector<>> &z,
+                                     const ROL::Ptr<const std::vector<Real>> & z_param) {
+  #ifdef ROL_TIMERS
+    Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssembleQOIHessian11);
+  #endif
+  try {
+    // Get u_coeff from u and z_coeff from z
+    ROL::Ptr<Intrepid::FieldContainer<Real>> u_coeff, z_coeff;
+    getCoeffFromStateVector(u_coeff,u);
+    getCoeffFromControlVector(z_coeff,z);
+    // Initialize Jacobian matrices
+    if ( H11 == ROL::nullPtr ) {
+      H11 = ROL::makePtr<Tpetra::CrsMatrix<>>(matH11Graph_);
+    }
+    // Assemble
+    ROL::Ptr<Intrepid::FieldContainer<Real>> localVal;
+    qoi->Hessian_11(localVal,u_coeff,z_coeff,z_param);
+    assembleFieldMatrix( H11, localVal );
+  }
+  catch ( Exception::Zero & ez ) {
+    throw Exception::Zero(">>> (Assembler::assembleQoIHessian11): Hessian is zero.");
+  }
+  catch ( Exception::NotImplemented & eni ) {
+    throw Exception::NotImplemented(">>> (Assembler::assembleQoIHessian11): Hessian not implemented.");
+  }
+}
+
+template<class Real>
+void Assembler<Real>::assembleQoIHessian12(ROL::Ptr<Tpetra::CrsMatrix<>> &H12,
+                                     const ROL::Ptr<QoI<Real>> &qoi,
+                                     const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                                     const ROL::Ptr<const Tpetra::MultiVector<>> &z,
+                                     const ROL::Ptr<const std::vector<Real>> & z_param) {
+  #ifdef ROL_TIMERS
+    Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssembleQOIHessian12);
+  #endif
+  try {
+    // Get u_coeff from u and z_coeff from z
+    ROL::Ptr<Intrepid::FieldContainer<Real>> u_coeff, z_coeff;
+    getCoeffFromStateVector(u_coeff,u);
+    getCoeffFromControlVector(z_coeff,z);
+    // Initialize Jacobian matrices
+    if ( H12 == ROL::nullPtr ) {
+      H12 = ROL::makePtr<Tpetra::CrsMatrix<>>(matH12Graph_);
+    }
+    // Assemble
+    ROL::Ptr<Intrepid::FieldContainer<Real>> localVal;
+    qoi->Hessian_12(localVal,u_coeff,z_coeff,z_param);
+    assembleFieldMatrix( H12, localVal );
+  }
+  catch ( Exception::Zero & ez ) {
+    throw Exception::Zero(">>> (Assembler::assembleQoIHessian12): Hessian is zero.");
+  }
+  catch ( Exception::NotImplemented & eni ) {
+    throw Exception::NotImplemented(">>> (Assembler::assembleQoIHessian12): Hessian not implemented.");
+  }
+}
+
+template<class Real>
+void Assembler<Real>::assembleQoIHessian21(ROL::Ptr<Tpetra::CrsMatrix<>> &H21,
+                                     const ROL::Ptr<QoI<Real>> &qoi,
+                                     const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                                     const ROL::Ptr<const Tpetra::MultiVector<>> &z,
+                                     const ROL::Ptr<const std::vector<Real>> & z_param) {
+  #ifdef ROL_TIMERS
+    Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssembleQOIHessian21);
+  #endif
+  try {
+    // Get u_coeff from u and z_coeff from z
+    ROL::Ptr<Intrepid::FieldContainer<Real>> u_coeff, z_coeff;
+    getCoeffFromStateVector(u_coeff,u);
+    getCoeffFromControlVector(z_coeff,z);
+    // Initialize Jacobian matrices
+    if ( H21 == ROL::nullPtr ) {
+      H21 = ROL::makePtr<Tpetra::CrsMatrix<>>(matH21Graph_);
+    }
+    // Assemble
+    ROL::Ptr<Intrepid::FieldContainer<Real>> localVal;
+    qoi->Hessian_21(localVal,u_coeff,z_coeff,z_param);
+    assembleFieldMatrix( H21, localVal );
+  }
+  catch ( Exception::Zero & ez ) {
+    throw Exception::Zero(">>> (Assembler::assembleQoIHessian21): Hessian is zero.");
+  }
+  catch ( Exception::NotImplemented & eni ) {
+    throw Exception::NotImplemented(">>> (Assembler::assembleQoIHessian21): Hessian not implemented.");
+  }
+}
+
+template<class Real>
+void Assembler<Real>::assembleQoIHessian22(ROL::Ptr<Tpetra::CrsMatrix<>> &H22,
+                                     const ROL::Ptr<QoI<Real>> &qoi,
+                                     const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                                     const ROL::Ptr<const Tpetra::MultiVector<>> &z,
+                                     const ROL::Ptr<const std::vector<Real>> & z_param) {
+  #ifdef ROL_TIMERS
+    Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssembleQOIHessian22);
+  #endif
+  try {
+    // Get u_coeff from u and z_coeff from z
+    ROL::Ptr<Intrepid::FieldContainer<Real>> u_coeff, z_coeff;
+    getCoeffFromStateVector(u_coeff,u);
+    getCoeffFromControlVector(z_coeff,z);
+    // Initialize Jacobian matrices
+    if ( H22 == ROL::nullPtr ) {
+      H22 = ROL::makePtr<Tpetra::CrsMatrix<>>(matH11Graph_);
+    }
+    // Assemble
+    ROL::Ptr<Intrepid::FieldContainer<Real>> localVal;
+    qoi->Hessian_22(localVal,u_coeff,z_coeff,z_param);
+    assembleFieldMatrix( H22, localVal );
+  }
+  catch ( Exception::Zero & ez ) {
+    throw Exception::Zero(">>> (Assembler::assembleQoIHessian22): Hessian is zero.");
+  }
+  catch ( Exception::NotImplemented & eni ) {
+    throw Exception::NotImplemented(">>> (Assembler::assembleQoIHessian22): Hessian not implemented.");
+  }
+}
 /***************************************************************************/
 /* End QoI assembly routines                                               */
 /***************************************************************************/
@@ -2001,18 +2128,18 @@ void Assembler<Real>::printMeshData(std::ostream &outStream) const {
     }
     meshfile.close();
     
-    meshfile.open("cell_to_node_tri.txt");
-    for (int i=0; i<cellToNodeMap.dimension(0); ++i) {
-      for (int j=0; j<3; ++j) {
-        meshfile << cellToNodeMap(i,j) << "  ";
-      }
-      meshfile << std::endl;
-      for (int j=2; j<5; ++j) {
-        meshfile << cellToNodeMap(i,j%4) << "  ";
-      }
-      meshfile << std::endl;
-    }
-    meshfile.close();
+//    meshfile.open("cell_to_node_tri.txt");
+//    for (int i=0; i<cellToNodeMap.dimension(0); ++i) {
+//      for (int j=0; j<3; ++j) {
+//        meshfile << cellToNodeMap(i,j) << "  ";
+//      }
+//      meshfile << std::endl;
+//      for (int j=2; j<5; ++j) {
+//        meshfile << cellToNodeMap(i,j%4) << "  ";
+//      }
+//      meshfile << std::endl;
+//    }
+//    meshfile.close();
    
     meshfile.open("nodes.txt");
     meshfile.precision(16);

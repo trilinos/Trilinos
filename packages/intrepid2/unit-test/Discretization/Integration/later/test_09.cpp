@@ -229,7 +229,7 @@ Kokkos::initialize();
       }
       *outStream << "\n";
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error &err) {
     *outStream << err.what() << "\n";
     errorFlag = -1;
   };

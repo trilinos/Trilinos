@@ -24,8 +24,8 @@
 
 using namespace Tacho;
 
-typedef CrsMatrixBase<ValueType,HostSpaceType>   CrsMatrixBaseHostType;
-//typedef CrsMatrixBase<ValueType,DeviceSpaceType> CrsMatrixBaseDeviceType;
+typedef CrsMatrixBase<ValueType,HostDeviceType>   CrsMatrixBaseHostType;
+//typedef CrsMatrixBase<ValueType,DeviceType> CrsMatrixBaseDeviceType;
 
 TEST( Graph, constructor ) {  
   TEST_BEGIN;

@@ -325,7 +325,7 @@ bool Scheduler::internal_is_it_time(Time time)
   int intervals = static_cast<int>((delta.max - start) / tdelta);
 
   if (lastInterval_ < 0 && lastTime_ > -TIME_MAX) {
-    lastInterval_ = static_cast<int>((lastTime_ - start) / tdelta);
+    lastInterval_ = static_cast<int>((delta.min- start) / tdelta);
   }
 
   // If the last output time was in the same interval as the current time,

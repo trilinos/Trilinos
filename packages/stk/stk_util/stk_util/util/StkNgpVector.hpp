@@ -102,6 +102,32 @@ public:
         return deviceVals(i);
     }
 
+protected:
+#ifdef KOKKOS_ENABLE_CUDA
+  using DeviceSpace = Kokkos::CudaSpace;
+#else
+  using DeviceSpace = Kokkos::HostSpace;
+#endif
+public:
+    template <class Device>
+    STK_FUNCTION Datatype & get(
+      typename std::enable_if<
+        std::is_same<typename Device::execution_space, DeviceSpace::execution_space>::value,
+        size_t>::type i) const
+    {
+      return deviceVals(i);
+    }
+#ifdef KOKKOS_ENABLE_CUDA
+    template <class Device>
+    STK_FUNCTION Datatype & get(
+      typename std::enable_if<
+        !std::is_same<typename Device::execution_space, DeviceSpace::execution_space>::value,
+        size_t>::type i) const
+    {
+      return hostVals(i);
+    }
+#endif
+
     void push_back(Datatype val)
     {
         if(mSize >= capacity())
@@ -120,11 +146,6 @@ public:
     }
 
 protected:
-#ifdef KOKKOS_ENABLE_CUDA
-  using DeviceSpace = Kokkos::CudaSpace;
-#else
-  using DeviceSpace = Kokkos::HostSpace;
-#endif
   typedef Kokkos::View<Datatype *, DeviceSpace> DeviceType;
     typedef typename DeviceType::HostMirror HostType;
 

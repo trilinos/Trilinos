@@ -74,7 +74,6 @@ exAmesos_Factory.py.
 %enddef
 
 %module(package   = "PyTrilinos",
-	autodoc   = "1",
 	docstring = %amesos_docstring) Amesos
 
 %{
@@ -109,11 +108,11 @@ exAmesos_Factory.py.
 // Standard exception handling
 %include "exception.i"
 
-// Auto-documentation feature
-%feature("autodoc", "1");
-
 // Include Amesos documentation
+#if SWIG_VERSION < 0x040000
+%feature("autodoc", "1");
 %include "Amesos_dox.i"
+#endif
 
 // SWIG library include files
 %include "stl.i"

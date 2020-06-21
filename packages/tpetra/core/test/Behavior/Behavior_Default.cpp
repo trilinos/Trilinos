@@ -35,8 +35,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 */
@@ -48,6 +46,8 @@
 #include <Tpetra_Details_Behavior.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_CommHelpers.hpp>
+#include <cstdlib> // std::getenv
+
 namespace {
 
 /*
@@ -61,24 +61,46 @@ namespace {
 
 TEUCHOS_UNIT_TEST(Behavior, Default)
 {
-#ifdef HAVE_TPETRA_DEBUG
-  bool debug_default = true;
-#else
-  bool debug_default = false;
-#endif
-  bool dbg = Tpetra::Details::Behavior::debug();
-  TEUCHOS_TEST_ASSERT(dbg==debug_default, out, success);
-
   bool verbose_default = false;
   bool verb = Tpetra::Details::Behavior::verbose();
   TEUCHOS_TEST_ASSERT(verb==verbose_default, out, success);
 
-#ifdef TPETRA_ASSUME_CUDA_AWARE_MPI
-  bool cuda_aware_mpi_default = true;
-#else
-  bool cuda_aware_mpi_default = false;
-#endif
-  bool cuda_aware_mpi = Tpetra::Details::Behavior::assumeMpiIsCudaAware();
-  TEUCHOS_TEST_ASSERT(cuda_aware_mpi==cuda_aware_mpi_default, out, success);
+  // Print current values of other behaviors. 
+  // Can't test against default since these behaviors may be 
+  // changed by environment variables (in which case, test against
+  // default fails)
+  std::cout << "\n        Cuda-aware MPI?  " 
+            << Tpetra::Details::Behavior::assumeMpiIsCudaAware()
+            << "\n";
+
+  std::cout << "\n        Tpetra Debug?  "
+            << Tpetra::Details::Behavior::debug()
+            << "\n";
 }
+
+TEUCHOS_UNIT_TEST(Behavior, verbosePrintCountThreshold) {
+  // We only require that the default be between these values.
+  const size_t maxVal (1000);
+  const size_t minVal (100);
+  const size_t val0 =
+    Tpetra::Details::Behavior::verbosePrintCountThreshold();
+  TEST_ASSERT( val0 >= minVal && val0 <= maxVal );
+
+  const size_t val1 =
+    Tpetra::Details::Behavior::verbosePrintCountThreshold();
+  TEST_ASSERT( val1 >= minVal && val1 <= maxVal );
+}
+
+TEUCHOS_UNIT_TEST(Behavior, longRowMinNumEntries) {
+  // We only require that the default be at least this much.
+  const size_t minVal (100);
+  const size_t val0 =
+    Tpetra::Details::Behavior::longRowMinNumEntries();
+  TEST_ASSERT( val0 >= minVal );
+
+  const size_t val1 =
+    Tpetra::Details::Behavior::longRowMinNumEntries();
+  TEST_ASSERT( val1 >= minVal );
+}
+
 } // namespace (anonymous)

@@ -42,6 +42,8 @@
 #if !defined(MiniTensor_Utilities_h)
 #define MiniTensor_Utilities_h
 
+#include <type_traits>
+
 #include "MiniTensor_config.h"
 #include "Sacado.hpp"
 
@@ -163,8 +165,8 @@ random_normal();
 ///
 /// Fill all levels of AD to specified constant.
 ///
-using Kokkos::Impl::enable_if;
-using Kokkos::Impl::is_same;
+using std::enable_if;
+using std::is_same;
 using Sacado::ScalarType;
 
 template<typename T>

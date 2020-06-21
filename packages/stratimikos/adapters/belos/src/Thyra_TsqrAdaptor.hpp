@@ -265,16 +265,7 @@ namespace Thyra {
 #endif // HAVE_MPI
     }
 
-    /// \brief Finish intranode TSQR initialization.
-    ///
-    /// \note It's OK to call this method more than once; it is idempotent.
-    void
-    prepareNodeTsqr (const MV& /* X */)
-    {
-      throw std::logic_error ("Thyra adaptor for TSQR not implemented");
-    }
-
-    /// \brief Finish internode TSQR initialization.
+    /// \brief Finish interprocess TSQR initialization.
     ///
     /// Input X is a valid Thyra::MultiVectorBase instance whose
     /// communicator wrapper we will use to prepare TSQR.  It is not
@@ -287,10 +278,7 @@ namespace Thyra {
     /// we don't know how to extract a communicator from it.  If it
     /// fails in this way, it will throw std::runtime_error.
     void
-    prepareDistTsqr (const MV& /* X */)
-    {
-      throw std::logic_error ("Thyra adaptor for TSQR not implemented");
-    }
+    prepareDistTsqr (const MV& /* X */) {}
 
     /// \brief Finish TSQR initialization.
     ///
@@ -312,10 +300,7 @@ namespace Thyra {
     ///   All multivector objects used with this adapter must have the
     ///   same communicator and Kokkos Node instance (if applicable).
     void
-    prepareTsqr (const MV& /* X */)
-    {
-      throw std::logic_error ("Thyra adaptor for TSQR not implemented");
-    }
+    prepareTsqr (const MV& /* X */) {}
   };
 
 } // namespace Tpetra

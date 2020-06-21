@@ -141,7 +141,7 @@ public:
     void initialize_entity_field_data(EntityRank rank, unsigned bucket_id, Bucket::size_type bucket_ord, const std::vector<FieldBase *> &fields) override;
     void swap_fields(const int field1, const int field2) override { }
 
-    size_t heap_memory_in_bytes() const
+    size_t heap_memory_in_bytes() const override
     {
        size_t bytes = 0;
        for(const std::vector<unsigned char*>& fdata : m_field_raw_data) {
@@ -220,7 +220,7 @@ public:
     const std::vector<size_t> &get_num_bytes_used_per_field_array() const {return m_num_bytes_used_per_field;}
     size_t get_extra_capacity() const { return m_extra_capacity; }
 
-    size_t heap_memory_in_bytes() const
+    size_t heap_memory_in_bytes() const override
     {
        size_t bytes = 0;
        bytes += impl::capacity_in_bytes(m_field_raw_data);

@@ -1,62 +1,46 @@
-// Copyright(C) 2008-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//
-//     * Neither the name of NTESS nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
+// 
+// See packages/seacas/LICENSE for details
 
-#include "FileInfo.h"
-#include <algorithm>   // for move
-#include <cstddef>     // for size_t
-#include <cstdio>      // for remove
-#include <cstdlib>     // for free, realpath
-#include <string>      // for string
-#include <sys/stat.h>  // for stat, lstat, S_ISDIR, etc
-#include <sys/types.h> // for off_t
-#include <unistd.h>    // for F_OK, R_OK, access, W_OK, etc
+#include <FileInfo.h>
+#include <cstddef>
+#include <string>
+
+#ifndef _MSC_VER
+#include <sys/unistd.h>
+#else
+#include <io.h>
+#define access _access
+#define R_OK 4 /* Test for read permission.  */
+#define W_OK 2 /* Test for write permission.  */
+#define X_OK 1 /* execute permission - unsupported in windows*/
+#define F_OK 0 /* Test for existence.  */
+#ifndef S_ISREG
+#define S_ISREG(m) (((m)&_S_IFMT) == _S_IFREG)
+#define S_ISDIR(m) (((m)&_S_IFMT) == _S_IFDIR)
+#endif
+#endif
+
+#include <cstdio>
+#include <sys/stat.h>
+#include <unistd.h>
 
 namespace {
   bool internal_access(const std::string &name, int mode);
   bool do_stat(const std::string &filename, struct stat *s);
 } // namespace
 
-FileInfo::FileInfo() : filename_(""), exists_(false), readable_(false) {}
+FileInfo::FileInfo() = default;
 
-FileInfo::FileInfo(std::string my_filename)
-    : filename_(std::move(my_filename)), exists_(false), readable_(false)
+FileInfo::FileInfo(std::string my_filename) : filename_(std::move(my_filename))
 {
   readable_ = internal_access(filename_, R_OK);
   exists_   = readable_ || internal_access(filename_, F_OK);
 }
 
-FileInfo::FileInfo(const char *my_filename)
-    : filename_(std::string(my_filename)), exists_(false), readable_(false)
+FileInfo::FileInfo(const char *my_filename) : filename_(std::string(my_filename))
 {
   readable_ = internal_access(filename_, R_OK);
   exists_   = readable_ || internal_access(filename_, F_OK);
@@ -64,7 +48,7 @@ FileInfo::FileInfo(const char *my_filename)
 
 FileInfo::FileInfo(const FileInfo &copy_from) = default;
 
-FileInfo::FileInfo(const std::string &dirpath, const std::string &my_filename) : filename_("")
+FileInfo::FileInfo(const std::string &dirpath, const std::string &my_filename)
 {
   static std::string SLASH("/");
 
@@ -124,13 +108,14 @@ bool FileInfo::is_dir() const
 //: Returns TRUE if we are pointing to a symbolic link
 bool FileInfo::is_symlink() const
 {
+#ifndef _MSC_VER
   struct stat s
   {
   };
   if (lstat(filename_.c_str(), &s) == 0) {
     return S_ISLNK(s.st_mode);
   }
-
+#endif
   return false;
 }
 
@@ -187,7 +172,7 @@ off_t FileInfo::size() const
 }
 
 //: Returns the filename
-const std::string FileInfo::filename() const { return filename_; }
+std::string FileInfo::filename() const { return filename_; }
 
 //: Sets the filename
 void FileInfo::set_filename(const std::string &name)
@@ -208,7 +193,7 @@ void FileInfo::set_filename(const char *name)
 //: Returns the filename extension or the empty string if there is
 //: no extension.  Assumes extension is all characters following the
 //: last period.
-const std::string FileInfo::extension() const
+std::string FileInfo::extension() const
 {
   size_t ind  = filename_.find_last_of('.', std::string::npos);
   size_t inds = filename_.find_last_of('/', std::string::npos);
@@ -221,7 +206,7 @@ const std::string FileInfo::extension() const
   return std::string();
 }
 
-const std::string FileInfo::pathname() const
+std::string FileInfo::pathname() const
 {
   size_t ind = filename_.find_last_of('/', filename_.size());
   if (ind != std::string::npos) {
@@ -231,7 +216,7 @@ const std::string FileInfo::pathname() const
   return std::string();
 }
 
-const std::string FileInfo::tailname() const
+std::string FileInfo::tailname() const
 {
   size_t ind = filename_.find_last_of('/', filename_.size());
   if (ind != std::string::npos) {
@@ -241,7 +226,7 @@ const std::string FileInfo::tailname() const
   return filename_; // No path, just return the filename
 }
 
-const std::string FileInfo::basename() const
+std::string FileInfo::basename() const
 {
   std::string tail = tailname();
 
@@ -254,9 +239,13 @@ const std::string FileInfo::basename() const
   return tail;
 }
 
-const std::string FileInfo::realpath() const
+std::string FileInfo::realpath() const
 {
+#ifdef _MSC_VER
+  char *path = _fullpath(nullptr, filename_.c_str(), _MAX_PATH);
+#else
   char *path = ::realpath(filename_.c_str(), nullptr);
+#endif
   if (path != nullptr) {
     std::string temp(path);
     free(path);

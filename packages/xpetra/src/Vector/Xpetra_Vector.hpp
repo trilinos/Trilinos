@@ -60,11 +60,14 @@ namespace Xpetra {
   class Vector
     : public virtual MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >
   {
+
   public:
-    typedef Scalar scalar_type;
-    typedef LocalOrdinal local_ordinal_type;
-    typedef GlobalOrdinal global_ordinal_type;
-    typedef Node node_type;
+
+    using scalar_type         = Scalar;
+    using local_ordinal_type  = LocalOrdinal;
+    using global_ordinal_type = GlobalOrdinal;
+    using node_type           = Node;
+
 
     using MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::dot;          // overloading, not hiding
     using MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::norm1;        // overloading, not hiding
@@ -73,8 +76,8 @@ namespace Xpetra {
     using MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::meanValue;    // overloading, not hiding
     using MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::replaceGlobalValue; // overloading, not hiding
     using MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::sumIntoGlobalValue; // overloading, not hiding
-    using MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::replaceLocalValue; // overloading, not hiding
-    using MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::sumIntoLocalValue; // overloading, not hiding
+    using MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::replaceLocalValue;  // overloading, not hiding
+    using MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::sumIntoLocalValue;  // overloading, not hiding
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 
@@ -95,7 +98,7 @@ namespace Xpetra {
     ///          only valid as long as the vector does not run of scope!
     template<class TargetDeviceType>
     typename Kokkos::Impl::if_c<
-      Kokkos::Impl::is_same<
+      std::is_same<
         typename dual_view_type::t_dev_um::execution_space::memory_space,
         typename TargetDeviceType::memory_space>::value,
         typename dual_view_type::t_dev_um,

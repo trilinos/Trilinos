@@ -380,6 +380,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
   // Chebyshev-NE parameters
   bool cheby_NE=List_.get("smoother: chebyshev solve normal equations",false);
 
+  // Amesos params
+  int SplitComm = (int) List_.get("smoother: split communicator",true);
+
   // Hiptmair-specific declarations
   std::string SubSmType,NodeSubSmType,EdgeSubSmType;
   int NodeSubSmIts = 1, EdgeSubSmIts = 1;
@@ -1861,25 +1864,25 @@ myaztecParams = m_smootherAztecParams;
 
     } else if( MySmoother == "Amesos-LAPACK" ) {
       ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1],
-                             ML_AMESOS_LAPACK, MaxProcs, AddToDiag);
+                             ML_AMESOS_LAPACK, MaxProcs, AddToDiag,SplitComm);
     } else if( MySmoother == "Amesos-KLU" ) {
       ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1],
-                             ML_AMESOS_KLU, MaxProcs, AddToDiag);
+                             ML_AMESOS_KLU, MaxProcs, AddToDiag,SplitComm);
     } else if( MySmoother == "Amesos-UMFPACK" ) {
       ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1],
-                             ML_AMESOS_UMFPACK, MaxProcs, AddToDiag);
+                             ML_AMESOS_UMFPACK, MaxProcs, AddToDiag,SplitComm);
     } else if(  MySmoother == "Amesos-Superludist" ) {
       ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1],
-                             ML_AMESOS_SUPERLUDIST, MaxProcs, AddToDiag);
+                             ML_AMESOS_SUPERLUDIST, MaxProcs, AddToDiag,SplitComm);
     } else if(  MySmoother == "Amesos-Superlu" ) {
       ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1],
-                             ML_AMESOS_SUPERLU, MaxProcs, AddToDiag);
+                             ML_AMESOS_SUPERLU, MaxProcs, AddToDiag,SplitComm);
     } else if( MySmoother == "Amesos-MUMPS" ) {
       ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1],
-                             ML_AMESOS_MUMPS, MaxProcs, AddToDiag);
+                             ML_AMESOS_MUMPS, MaxProcs, AddToDiag,SplitComm);
     } else if( MySmoother == "Amesos-ScaLAPACK" ) {
       ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1],
-                             ML_AMESOS_SCALAPACK, MaxProcs, AddToDiag);
+                             ML_AMESOS_SCALAPACK, MaxProcs, AddToDiag,SplitComm);
 
     } else if( MySmoother == "do-nothing" ) {
 

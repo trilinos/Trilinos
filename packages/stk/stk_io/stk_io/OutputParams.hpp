@@ -126,6 +126,16 @@ public:
         return is_valid_rank(rank) ? (nullptr != m_outputSelector[rank]) : false;
     }
 
+    const stk::mesh::Selector *get_skin_mesh_selector() const {
+        return m_skinMeshSelector;
+    }
+    void set_skin_mesh_selector(const stk::mesh::Selector *skin_mesh_selector) {
+        m_skinMeshSelector = skin_mesh_selector;
+    }
+    bool has_skin_mesh_selector() const {
+        return nullptr != m_skinMeshSelector;
+    }
+
     bool get_sort_stk_parts_by_name() const {
         return m_sortStkPartsByName;
     }
@@ -175,13 +185,6 @@ public:
         m_hasAdaptivity = hasAdaptivity;
     }
 
-    bool get_is_skin_mesh() const {
-        return m_isSkinMesh;
-    }
-    void set_is_skin_mesh(const bool skinMesh) {
-        m_isSkinMesh = skinMesh;
-    }
-
     bool get_is_restart() const {
         return m_isRestart;
     }
@@ -214,6 +217,7 @@ private:
     const stk::mesh::Selector *m_subsetSelector = nullptr;
     const stk::mesh::Selector *m_sharedSelector = nullptr;
     const stk::mesh::Selector *m_outputSelector[stk::topology::ELEM_RANK+1];
+    const stk::mesh::Selector *m_skinMeshSelector = nullptr;
     bool m_sortStkPartsByName = false;
     bool m_useNodesetForBlockNodeFields = true;
     bool m_useNodesetForSidesetNodeFields = true;
@@ -221,7 +225,6 @@ private:
     bool m_usePartIdForOutput = true;
     bool m_hasGhosting = false;
     bool m_hasAdaptivity = false;
-    bool m_isSkinMesh = false;
     bool m_isRestart = false;
     std::vector<stk::io::FieldAndName> m_additionalAttributeFields;
 };

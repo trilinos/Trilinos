@@ -3,7 +3,7 @@ TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURC
 
 # Don't build these tests when Cuda is enabled -- they take forever to compile
 # using the nvcc wrapper
-IF (${PACKAGE_NAME}_ENABLE_TeuchosCore AND NOT Kokkos_ENABLE_Cuda)
+IF (${PACKAGE_NAME}_ENABLE_TeuchosCore AND NOT Kokkos_ENABLE_CUDA)
 
   TRIBITS_ADD_EXECUTABLE(
     fad_expr_depth
@@ -74,31 +74,8 @@ IF (${PACKAGE_NAME}_ENABLE_TeuchosCore AND NOT Kokkos_ENABLE_Cuda)
 
 ENDIF()
 
-IF (Sacado_ENABLE_TeuchosCore AND Sacado_ENABLE_KokkosCore)
-
-  TRIBITS_ADD_EXECUTABLE(
-    fad_kokkos_view
-    SOURCES fad_kokkos_view.cpp
-    COMM serial mpi
-    )
-
-  # These tests do not compile with gcc 4.7.x because it doesn't properly
-  # support lambdas.  See github issue #854
-  IF(NOT ((CMAKE_CXX_COMPILER_ID STREQUAL "GNU") AND (CMAKE_CXX_COMPILER_VERSION VERSION_LESS "4.8")))
-    TRIBITS_ADD_EXECUTABLE(
-      fad_kokkos_hierarchical
-      SOURCES fad_kokkos_hierarchical.cpp
-      COMM serial mpi
-      )
-
-#    TRIBITS_ADD_EXECUTABLE(
-#      fad_kokkos_mat_vec_perf
-#      SOURCES fad_kokkos_mat_vec_perf.cpp
-#      COMM serial mpi
-#      )
-  ENDIF()
-
-ENDIF()
-
 ADD_SUBDIRECTORY(fenl_assembly)
 ADD_SUBDIRECTORY(fenl_assembly_view)
+ADD_SUBDIRECTORY(mat_vec)
+ADD_SUBDIRECTORY(advection)
+ADD_SUBDIRECTORY(advection_const_basis)

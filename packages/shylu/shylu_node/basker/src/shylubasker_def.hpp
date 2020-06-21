@@ -356,12 +356,12 @@ namespace BaskerNS
         vals_crs_transpose(i) = i; // init vals permutation due to transpose
       }
 
+      A.init_matrix("Original Matrix", nrow, ncol, nnz, col_ptr, row_idx, val);
+      A.scol = 0;
+      A.srow = 0;
+
       if(Options.transpose == BASKER_FALSE)
       {
-        A.init_matrix("Original Matrix", nrow, ncol, nnz, col_ptr, row_idx, val);
-        A.scol = 0;
-        A.srow = 0;
-
         // NDE: New for Amesos2 CRS mods
         if ( crs_transpose_needed ) {
           matrix_transpose(0, nrow, 0, ncol, nnz, col_ptr, row_idx, val, A, vals_crs_transpose);
@@ -369,12 +369,9 @@ namespace BaskerNS
       }
       else
       {
-        //Will transpose and put in A using little extra
-        //if ( crs_transpose_needed ) {
-        //  matrix_transpose(0, nrow, 0, ncol, nnz, col_ptr, row_idx, val, A, vals_crs_transpose);
-        //}
-        matrix_transpose(0, nrow, 0, ncol, nnz, col_ptr, row_idx, val, A);
-        // NDE: How should transpose be handled special case (when CRS format comes in)? null op, i.e. transpose of transpose yields original input?
+        if ( !crs_transpose_needed ) {
+          matrix_transpose(0, nrow, 0, ncol, nnz, col_ptr, row_idx, val, A, vals_crs_transpose);
+        }
       }
       sort_matrix(A);
 
@@ -929,7 +926,11 @@ namespace BaskerNS
     //Next test if Kokkos has that many threads!
     //This is a common mistake in mpi-based apps
     #ifdef KOKKOS_ENABLE_OPENMP
+    #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     int check_value = Kokkos::OpenMP::max_hardware_threads();
+    #else
+    int check_value = Kokkos::OpenMP::impl_max_hardware_threads();
+    #endif
     if(nthreads > check_value)
     {
       BASKER_ASSERT(0==1, "Basker SetThreads Assert: Number of thread not available");

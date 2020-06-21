@@ -11,7 +11,10 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_StepperExplicit.hpp"
-#include "Tempus_StepperSubcyclingObserver.hpp"
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+  #include "Tempus_StepperSubcyclingObserver.hpp"
+#endif
+#include "Tempus_StepperSubcyclingAppAction.hpp"
 #include "Tempus_IntegratorBasic.hpp"
 
 
@@ -44,6 +47,7 @@ public:
   */
   StepperSubcycling();
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   /// Constructor
   StepperSubcycling(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
@@ -52,6 +56,16 @@ public:
     bool useFSAL,
     std::string ICConsistency,
     bool ICConsistencyCheck);
+#endif
+
+  /// Constructor                                                                       
+  StepperSubcycling(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<IntegratorBasic<Scalar> >& integrator,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    const Teuchos::RCP<StepperSubcyclingAppAction<Scalar> >& stepperSCAppAction);
 
   /// \name Basic stepper methods
   //@{
@@ -64,10 +78,18 @@ public:
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
       getModel(){return scIntegrator_->getStepper()->getModel();}
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE    
     virtual void setObserver(
       Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
     virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const;
+#endif
+
+    virtual void setAppAction(
+      Teuchos::RCP<StepperSubcyclingAppAction<Scalar> > appAction = Teuchos::null);
+
+    virtual Teuchos::RCP<StepperSubcyclingAppAction<Scalar> > getAppAction() const
+      { return stepperSCAppAction_; }
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
@@ -117,7 +139,7 @@ public:
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
-  /// \name Functions to set the subcycling stepper.
+  /// \name Functions to set the subcycling stepper values.
   //@{
     virtual void setSubcyclingStepper(Teuchos::RCP<Stepper<Scalar> > stepper);
     virtual void setSubcyclingMinTimeStep(Scalar MinTimeStep);
@@ -127,16 +149,38 @@ public:
     virtual void setSubcyclingMaxFailures(int MaxFailures);
     virtual void setSubcyclingMaxConsecFailures(int MaxConsecFailures);
     virtual void setSubcyclingScreenOutputIndexInterval(int i);
+    virtual void setSubcyclingScreenOutputIndexList(std::string s);
     virtual void setSubcyclingTimeStepControlStrategy(
       Teuchos::RCP<TimeStepControlStrategy<Scalar> > tscs);
+    virtual void setSubcyclingIntegratorObserver(
+      Teuchos::RCP<IntegratorObserver<Scalar> > obs);
+    virtual void setSubcyclingPrintDtChanges(bool printDtChanges);
   //@}
 
-  // Temporary until 5908 branch is committed.
-  bool isInitialized_ = false;
+  /// \name Functions to get the subcycling stepper values.
+  //@{
+    virtual Teuchos::RCP<const Stepper<Scalar> > getSubcyclingStepper() const;
+    virtual Scalar getSubcyclingMinTimeStep() const;
+    virtual Scalar getSubcyclingInitTimeStep() const;
+    virtual Scalar getSubcyclingMaxTimeStep() const;
+    virtual std::string getSubcyclingStepType() const;
+    virtual int getSubcyclingMaxFailures() const;
+    virtual int getSubcyclingMaxConsecFailures() const;
+    virtual int getSubcyclingScreenOutputIndexInterval() const;
+    virtual std::string getSubcyclingScreenOutputIndexList() const;
+    virtual Teuchos::RCP<TimeStepControlStrategy<Scalar> >
+      getSubcyclingTimeStepControlStrategy() const;
+    virtual Teuchos::RCP<IntegratorObserver<Scalar> >
+      getSubcyclingIntegratorObserver() const;
+    virtual bool getSubcyclingPrintDtChanges() const;
+  //@}
 
 protected:
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   Teuchos::RCP<StepperSubcyclingObserver<Scalar> >  stepperSCObserver_;
+#endif
+  Teuchos::RCP<StepperSubcyclingAppAction<Scalar> > stepperSCAppAction_;
   Teuchos::RCP<IntegratorBasic<Scalar> >            scIntegrator_;
 
 };

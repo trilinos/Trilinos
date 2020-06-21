@@ -56,10 +56,6 @@ enum { buffer_putback_length =   16 };
 // --------------------------------------------------------------------
 namespace {
 
-#if !defined(NOT_HAVE_STK_SEACASAPREPRO_LIB)
-  void add_aprepro_defines(SEAMS::Aprepro &aprepro, const std::string &defines);
-#endif
-
   double mpi_wall_time()
   {
 #if defined(STK_HAS_MPI)
@@ -200,7 +196,7 @@ mpi_filebuf * mpi_filebuf::open(
       SEAMS::Aprepro aprepro;
       aprepro.set_error_streams(&sierra::Env::output(), &sierra::Env::output(), &sierra::Env::output());
 
-      add_aprepro_defines(aprepro, aprepro_defines);
+      stk::add_aprepro_defines(aprepro, aprepro_defines);
 
       bool result = aprepro.parse_stream(infile);
       if (result) {
@@ -270,7 +266,7 @@ mpi_filebuf * mpi_filebuf::open(
 
     SEAMS::Aprepro aprepro;
 
-    add_aprepro_defines(aprepro, aprepro_defines);
+    stk::add_aprepro_defines(aprepro, aprepro_defines);
 
     bool result = aprepro.parse_stream(infile);
     if (result) {
@@ -637,7 +633,8 @@ int mpi_filebuf::sync()
 }
 
 #if !defined(NOT_HAVE_STK_SEACASAPREPRO_LIB)
-namespace {
+namespace stk
+{
   void add_aprepro_defines(SEAMS::Aprepro &aprepro, const std::string &defines)
   {
     // See if any variables were defined on the command line...
@@ -660,7 +657,7 @@ namespace {
 	    std::stringstream ss(define[1]);
 	    double d = 0;
 	    ss >> d;
-	    if (ss.fail()) {
+	    if (ss.fail() || !ss.eof()) {
 	      // Not a valid number; treat as a string
 	      aprepro.add_variable(define[0], define[1], immutable);
 	    } else {

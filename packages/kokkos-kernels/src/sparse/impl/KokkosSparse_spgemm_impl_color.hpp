@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//               KokkosKernels 0.9: Linear Algebra and Graph Kernels
-//                 Copyright 2017 Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -40,6 +41,8 @@
 // ************************************************************************
 //@HEADER
 */
+
+#include "KokkosGraph_Distance2Color.hpp"
 
 namespace KokkosSparse{
 
@@ -481,7 +484,7 @@ void
       transpose_col_xadj = row_lno_temp_work_view_t("transpose_col_xadj", b_col_cnt + 1);
       transpose_col_adj = nnz_lno_temp_work_view_t (Kokkos::ViewAllocateWithoutInitializing("tmp_row_view"), c_nnz_size);
 
-    KokkosKernels::Impl::kk_transpose_graph<
+    KokkosKernels::Impl::transpose_graph<
   c_row_view_t, c_nnz_view_t,
   row_lno_temp_work_view_t, nnz_lno_temp_work_view_t, row_lno_temp_work_view_t,
   MyExecSpace>
@@ -512,11 +515,11 @@ void
         //for now only sequential one exists.
         //find distance-2 graph coloring
 
-        handle->get_graph_coloring_handle()->set_algorithm(KokkosGraph::COLORING_SERIAL2);
+        auto gchD2 = handle->get_distance2_graph_coloring_handle();
 
-        KokkosGraph::Experimental::graph_compute_distance2_color_serial 
-            <HandleType, c_row_view_t, c_nnz_view_t, row_lno_temp_work_view_t, nnz_lno_temp_work_view_t>
-            (this->handle, a_row_cnt, b_col_cnt, rowmapC, entryIndicesC_, transpose_col_xadj, transpose_col_adj);
+        KokkosGraph::Experimental::graph_compute_distance2_color
+          <HandleType, c_row_view_t, c_nnz_view_t, row_lno_temp_work_view_t, nnz_lno_temp_work_view_t>
+          (this->handle, a_row_cnt, b_col_cnt, rowmapC, entryIndicesC_, transpose_col_xadj, transpose_col_adj);
 
         original_num_colors = handle->get_graph_coloring_handle()->get_num_colors();
 
@@ -646,3 +649,4 @@ void
 
 }
 }
+

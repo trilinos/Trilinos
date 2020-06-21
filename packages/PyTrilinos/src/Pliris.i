@@ -66,7 +66,6 @@ from . import _Pliris
 
 %module(package      = "PyTrilinos",
         moduleimport = %pliris_importcode,
-	autodoc      = "1",
 	docstring    = %pliris_docstring) Pliris
 
 %{
@@ -88,9 +87,6 @@ from . import _Pliris
 #endif
 %}
 
-// Auto-documentation feature
-%feature("autodoc", "1");
-
 // C++ STL support.  If the wrapped class uses standard template
 // library containers, the following %include wraps the containers
 // and makes certain conversions seamless, such as between std::string
@@ -100,7 +96,10 @@ from . import _Pliris
 using std::string;
 
 // Include Pliris documentation
+// #if SWIG_VERSION < 0x040000
+// %feature("autodoc", "1");
 // %include "Pliris_dox.i"
+// #endif
 
 // External Trilinos modules
 #ifdef HAVE_PYTRILINOS_EPETRA

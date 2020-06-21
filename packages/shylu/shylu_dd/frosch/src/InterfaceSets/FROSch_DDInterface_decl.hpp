@@ -154,13 +154,14 @@ namespace FROSch {
                             bool buildStraightEdgesMap = true,
                             bool buildEdgesMap = true,
                             bool buildFacesMap = true,
-                            bool buildCoarseNodesMap = false);
+                            bool buildRootsMap = false,
+                            bool buildLeafsMap = false);
 
         int buildEntityHierarchy();
 
-        int computeDistancesToCoarseNodes(UN dimension,
-                                          ConstXMultiVectorPtr &nodeList = null,
-                                          DistanceFunction distanceFunction = ConstantDistanceFunction);
+        int computeDistancesToRoots(UN dimension,
+                                    ConstXMultiVectorPtr &nodeList = null,
+                                    DistanceFunction distanceFunction = ConstantDistanceFunction);
 
         //! This function extracts those entities which are to be used to build a connectivity graph on the subdomain
         //! level. By default, we identify all entities with multiplicity 2. Afterwards, the corresponding entities can
@@ -193,7 +194,9 @@ namespace FROSch {
 
         EntitySetConstPtr & getInterior() const;
 
-        EntitySetConstPtr & getCoarseNodes() const;
+        EntitySetConstPtr & getRoots() const;
+        
+        EntitySetConstPtr & getLeafs() const;
 
         EntitySetPtrConstVecPtr & getEntitySetVector() const;
 
@@ -216,29 +219,30 @@ namespace FROSch {
 
         CommPtr MpiComm_;
 
-        UN Dimension_;
-        UN DofsPerNode_;
-        LO NumMyNodes_;
+        UN Dimension_ = 3;
+        UN DofsPerNode_ = 1;
+        LO NumMyNodes_ = 0;
 
-        EntitySetPtr Vertices_;
-        EntitySetPtr ShortEdges_;
-        EntitySetPtr StraightEdges_;
-        EntitySetPtr Edges_;
-        EntitySetPtr Faces_;
-        EntitySetPtr Interface_;
-        EntitySetPtr Interior_;
-        EntitySetPtr CoarseNodes_;
-        EntitySetPtr ConnectivityEntities_;
+        EntitySetPtr Vertices_ = EntitySetPtr(new EntitySet<SC,LO,GO,NO>(VertexType));
+        EntitySetPtr ShortEdges_ = EntitySetPtr(new EntitySet<SC,LO,GO,NO>(EdgeType));
+        EntitySetPtr StraightEdges_ = EntitySetPtr(new EntitySet<SC,LO,GO,NO>(EdgeType));
+        EntitySetPtr Edges_ = EntitySetPtr(new EntitySet<SC,LO,GO,NO>(EdgeType));
+        EntitySetPtr Faces_ = EntitySetPtr(new EntitySet<SC,LO,GO,NO>(FaceType));
+        EntitySetPtr Interface_ = EntitySetPtr(new EntitySet<SC,LO,GO,NO>(InterfaceType));
+        EntitySetPtr Interior_ = EntitySetPtr(new EntitySet<SC,LO,GO,NO>(InteriorType));
+        EntitySetPtr Roots_ = EntitySetPtr(new EntitySet<SC,LO,GO,NO>(DefaultType));
+        EntitySetPtr Leafs_ = EntitySetPtr(new EntitySet<SC,LO,GO,NO>(DefaultType));
+        EntitySetPtr ConnectivityEntities_ = EntitySetPtr(new EntitySet<SC,LO,GO,NO>(DefaultType));
         EntitySetPtrVecPtr EntitySetVector_;
 
         ConstXMapPtr NodesMap_;
         ConstXMapPtr UniqueNodesMap_;
 
-        bool Verbose_;
+        bool Verbose_ = false;
 
-        Verbosity Verbosity_;
+        Verbosity Verbosity_ = All;
 
-        ConstUN LevelID_;
+        ConstUN LevelID_ = 1;
     };
 
 }

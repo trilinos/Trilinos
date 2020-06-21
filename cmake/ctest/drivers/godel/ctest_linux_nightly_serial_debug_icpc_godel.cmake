@@ -66,7 +66,7 @@ SET(BUILD_DIR_NAME SERIAL_DEBUG_ICPC)
 SET(CTEST_TEST_TYPE Experimental)
 #SET(CTEST_TEST_TIMEOUT 900)
 
-#SET(Trilinos_PACKAGES Teuchos RTOp GlobiPack Tpetra Thyra OptiPack Stratimikos Phalanx Rythmos MOOCHO)
+#SET(Trilinos_PACKAGES Teuchos RTOp Tpetra Thyra Stratimikos Phalanx Rythmos MOOCHO)
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_Fortran:BOOL=OFF"

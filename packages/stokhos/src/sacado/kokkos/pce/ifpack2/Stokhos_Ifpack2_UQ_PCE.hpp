@@ -47,7 +47,6 @@
 
 // MP includes and specializations
 #include "Stokhos_Tpetra_UQ_PCE.hpp"
-#include "Ifpack2_Krylov_UQ_PCE.hpp"
 
 // Specialization of LocalReciprocalThreshold functor in
 // Ifpack2_Details_Chebyshev_def.hpp

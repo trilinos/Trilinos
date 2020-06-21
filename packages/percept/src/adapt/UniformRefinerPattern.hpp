@@ -24,8 +24,6 @@
 #include "Teuchos_RCP.hpp"
 
 #include <percept/stk_mesh.hpp>
-#include <boost/tuple/tuple_io.hpp>
-#include <boost/tuple/tuple_comparison.hpp>
 #include <percept/PerceptBoostArray.hpp>
 
 
@@ -38,10 +36,6 @@
 #include <percept/PerceptMesh.hpp>
 #include <adapt/NodeRegistry.hpp>
 #include <percept/function/FieldFunction.hpp>
-#include <percept/math/Math.hpp>
-
-#include <percept/math/Math.hpp>
-
 
 #include <adapt/sierra_element/RefinementTopology.hpp>
 #include <adapt/sierra_element/StdMeshObjTopologies.hpp>
@@ -482,16 +476,12 @@
 
       virtual std::string getName() { return std::string("UniformRefinerPattern_")+getFromTopoPartName()+"_"+getToTopoPartName(); }
 
-      // draw
-      /// draw a picture of the element's topology and its refinement pattern (using the "dot" program from AT&T's graphviz program)
-      static std::string draw(bool showRefined = false, bool showEdgeNodes = false);
-
     protected:
       percept::PerceptMesh& m_eMesh;
       URP(percept::PerceptMesh& eMesh) : m_eMesh(eMesh) {}
 
       typedef ToTopology TTopo;
-      typedef boost::array<stk::mesh::EntityId, ToTopology::node_count > refined_element_type;
+      typedef std::array<stk::mesh::EntityId, ToTopology::node_count > refined_element_type;
 
 
 

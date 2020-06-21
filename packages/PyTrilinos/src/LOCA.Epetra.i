@@ -67,7 +67,6 @@ from . import Interface
 
 %module(package      = "PyTrilinos.LOCA.Epetra",
 	directors    = "1",
-	autodoc      = "1",
 	implicitconv = "1",
         moduleimport = %loca_epetra_base_importcode) Base
 
@@ -104,8 +103,10 @@ using Teuchos::rcp;
 %include "exception.i"
 
 // Include LOCA documentation
+#if SWIG_VERSION < 0x040000
 %feature("autodoc", "1");
 %include "LOCA_dox.i"
+#endif
 
 %include "Epetra_DLLExportMacro.h"
 

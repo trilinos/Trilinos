@@ -15,11 +15,11 @@
 namespace percept {
 
 
-  typedef boost::tuple<unsigned, unsigned, unsigned> quad_to_tri_tuple_type_local;
-  typedef boost::tuple<stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId > quad_to_tri_tuple_type;
+  typedef std::array<unsigned, 3> quad_to_tri_tuple_type_local;
+  typedef std::array<stk::mesh::EntityId, 3 > quad_to_tri_tuple_type;
 
-  typedef boost::tuple<unsigned, unsigned, unsigned, unsigned> quad_to_quad_tuple_type_local;
-  typedef boost::tuple<stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId > quad_to_quad_tuple_type;
+  typedef std::array<unsigned, 4> quad_to_quad_tuple_type_local;
+  typedef std::array<stk::mesh::EntityId, 4> quad_to_quad_tuple_type;
 
   /**
    *
@@ -101,7 +101,7 @@ namespace percept {
               //unsigned i1 = (iedge+1) % 4;
               unsigned jedge = iedge + 4;
               unsigned kedge = (iedge + 3) % 4 + 4;
-              elems_quad.push_back(quad_to_quad_tuple_type_local(i0, jedge, Q_CENTROID_N, kedge));
+              elems_quad.push_back({i0, jedge, Q_CENTROID_N, kedge});
             }
           return;
         }
@@ -149,12 +149,12 @@ namespace percept {
               unsigned jedge = iedge + 4;
               if (edge_marks[iedge])
                 {
-                  elems.push_back(quad_to_tri_tuple_type_local(i0, jedge, Q_CENTROID_N));
-                  elems.push_back(quad_to_tri_tuple_type_local(jedge, i1, Q_CENTROID_N));
+                  elems.push_back({i0, jedge, Q_CENTROID_N});
+                  elems.push_back({jedge, i1, Q_CENTROID_N});
                 }
               else
                 {
-                  elems.push_back(quad_to_tri_tuple_type_local(i0, i1, Q_CENTROID_N));
+                  elems.push_back({i0, i1, Q_CENTROID_N});
                 }
             }
         }
@@ -193,9 +193,9 @@ namespace percept {
               unsigned i2 = (iedge+2) % 4;
               unsigned i3 = (iedge+3) % 4;
               unsigned jedge = iedge + 4;
-              elems.push_back(quad_to_tri_tuple_type_local(i0, jedge, i3));
-              elems.push_back(quad_to_tri_tuple_type_local(jedge, i2, i3));
-              elems.push_back(quad_to_tri_tuple_type_local(jedge, i1, i2));
+              elems.push_back({i0, jedge, i3});
+              elems.push_back({jedge, i2, i3});
+              elems.push_back({jedge, i1, i2});
             }
           else if (num_edges_marked == 2)
             {
@@ -246,10 +246,10 @@ namespace percept {
 
                   if (m_avoid_centroid_node)
                     {
-                      elems.push_back(quad_to_tri_tuple_type_local(i0, jedge0, i3));
-                      elems.push_back(quad_to_tri_tuple_type_local(jedge0, i1, jedge1));
-                      elems.push_back(quad_to_tri_tuple_type_local(jedge1, i2, i3));
-                      elems.push_back(quad_to_tri_tuple_type_local(jedge0, jedge1, i3));
+                      elems.push_back({i0, jedge0, i3});
+                      elems.push_back({jedge0, i1, jedge1});
+                      elems.push_back({jedge1, i2, i3});
+                      elems.push_back({jedge0, jedge1, i3});
                     }
                   else
                     {
@@ -266,9 +266,9 @@ namespace percept {
                        *        o-------*-------o
                        *       i0      i0+4     i1
                        */
-                      elems_quad.push_back(quad_to_quad_tuple_type_local(i0, jedge0, Q_CENTROID_N, i3));
-                      elems_quad.push_back(quad_to_quad_tuple_type_local(jedge0, i1, jedge1, Q_CENTROID_N));
-                      elems_quad.push_back(quad_to_quad_tuple_type_local(jedge1, i2, i3, Q_CENTROID_N));
+                      elems_quad.push_back({i0, jedge0, Q_CENTROID_N, i3});
+                      elems_quad.push_back({jedge0, i1, jedge1, Q_CENTROID_N});
+                      elems_quad.push_back({jedge1, i2, i3, Q_CENTROID_N});
                     }
                 }
               else
@@ -288,8 +288,8 @@ namespace percept {
                    *       i0      i0+4     i1
                    */
 
-                  elems_quad.push_back(quad_to_quad_tuple_type_local(i0, jedge0, jedge1, i3));
-                  elems_quad.push_back(quad_to_quad_tuple_type_local(jedge0, i1, i2, jedge1));
+                  elems_quad.push_back({i0, jedge0, jedge1, i3});
+                  elems_quad.push_back({jedge0, i1, i2, jedge1});
                 }
             }
           else if (num_edges_marked == 3)
@@ -330,10 +330,10 @@ namespace percept {
               unsigned jedge1 = iedge1 + 4;
               unsigned jedge2 = iedge2 + 4;
 
-              elems_quad.push_back(quad_to_quad_tuple_type_local(i0, jedge0, jedge2, i3));
-              elems.push_back(quad_to_tri_tuple_type_local(jedge0, i1, jedge1));
-              elems.push_back(quad_to_tri_tuple_type_local(jedge0, jedge1, jedge2));
-              elems.push_back(quad_to_tri_tuple_type_local(jedge1, i2, jedge2));
+              elems_quad.push_back({i0, jedge0, jedge2, i3});
+              elems.push_back({jedge0, i1, jedge1});
+              elems.push_back({jedge0, jedge1, jedge2});
+              elems.push_back({jedge1, i2, jedge2});
             }
           else if (num_edges_marked == 4)
             {
@@ -368,13 +368,13 @@ namespace percept {
               unsigned jedge2 = iedge2 + 4;
               unsigned jedge3 = iedge3 + 4;
 
-              elems.push_back(quad_to_tri_tuple_type_local(jedge0, i1, jedge1));
-              elems.push_back(quad_to_tri_tuple_type_local(jedge0, jedge1, jedge2));
-              elems.push_back(quad_to_tri_tuple_type_local(jedge1, i2, jedge2));
+              elems.push_back({jedge0, i1, jedge1});
+              elems.push_back({jedge0, jedge1, jedge2});
+              elems.push_back({jedge1, i2, jedge2});
 
-              elems.push_back(quad_to_tri_tuple_type_local(jedge2, i3, jedge3));
-              elems.push_back(quad_to_tri_tuple_type_local(jedge0, jedge2, jedge3));
-              elems.push_back(quad_to_tri_tuple_type_local(i0, jedge0, jedge3));
+              elems.push_back({jedge2, i3, jedge3});
+              elems.push_back({jedge0, jedge2, jedge3});
+              elems.push_back({i0, jedge0, jedge3});
             }
 
         }

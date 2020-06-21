@@ -51,11 +51,12 @@ namespace stk { namespace balance { class BalanceSettings; } }
 
 namespace stk { namespace balance { namespace internal {
 
-typedef stk::search::Box<float> StkBox;
-typedef stk::search::IdentProc<stk::mesh::EntityId, int> StkMeshIdent;
-typedef std::pair<StkBox, StkMeshIdent> BoxWithStkId;
-typedef std::vector< BoxWithStkId > BoxVectorWithStkId;
-typedef std::vector<std::pair<StkMeshIdent, StkMeshIdent> > StkSearchResults;
+using StkBox              = stk::search::Box<float>;
+using SearchIdentProc     = stk::search::IdentProc<stk::mesh::EntityId, int>;
+using SearchBoxIdentProc  = std::pair<StkBox, SearchIdentProc>;
+using SearchBoxIdentProcs = std::vector<SearchBoxIdentProc>;
+using SearchElemPair      = std::pair<SearchIdentProc, SearchIdentProc>;
+using SearchElemPairs     = std::vector<SearchElemPair>;
 
 std::string get_parallel_filename(int subdomainIndex, int numSubdomains, const std::string& baseFilename);
 
@@ -63,7 +64,9 @@ int getNumSharedNodesBetweenElements(const ::stk::mesh::BulkData& stkMeshBulkDat
                                      const ::stk::mesh::Entity element1,
                                      const ::stk::mesh::Entity element2);
 
-StkSearchResults getSearchResultsForFacesParticles(stk::mesh::BulkData& stkMeshBulkData, const BalanceSettings &balanceSettings, const stk::mesh::Selector& searchSelector);
+SearchElemPairs getBBIntersectionsForFacesParticles(stk::mesh::BulkData& stkMeshBulkData,
+                                                    const BalanceSettings &balanceSettings,
+                                                    const stk::mesh::Selector& searchSelector);
 
 void addBoxForNodes(stk::mesh::BulkData& stkMeshBulkData,
                     unsigned numNodes,
@@ -71,12 +74,13 @@ void addBoxForNodes(stk::mesh::BulkData& stkMeshBulkData,
                     const stk::mesh::FieldBase* coord,
                     const double eps,
                     stk::mesh::EntityId elementId,
-                    BoxVectorWithStkId& faceBoxes);
+                    SearchBoxIdentProcs& faceBoxes);
 
-
-void fillFaceBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData, const BalanceSettings & balanceSettings, const stk::mesh::FieldBase* coord, BoxVectorWithStkId &faceBoxes, const stk::mesh::Selector& searchSelector);
-
-const stk::mesh::FieldBase * get_coordinate_field(const stk::mesh::MetaData& meta_data, const std::string& coordinateFieldName);
+void fillFaceBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData,
+                          const BalanceSettings & balanceSettings,
+                          const stk::mesh::FieldBase* coord,
+                          SearchBoxIdentProcs &faceBoxes,
+                          const stk::mesh::Selector& searchSelector);
 
 }}}
 

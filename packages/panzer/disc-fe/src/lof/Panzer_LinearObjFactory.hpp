@@ -272,10 +272,6 @@ public:
    template <typename EvalT>
    Teuchos::RCP<PHX::Evaluator<Traits> > buildScatterDirichlet(const Teuchos::ParameterList & pl) const
    { return Teuchos::rcp_dynamic_cast<PHX::Evaluator<Traits> >(scatterDirichletManager_->template getAsBase<EvalT>()->clone(pl)); }
-
-   //! Get the range global indexer object associated with this factory
-   PANZER_DEPRECATED Teuchos::RCP<const panzer::GlobalIndexer> getGlobalIndexer() const
-   { return getRangeGlobalIndexer(); }
   
    //! Get the domain global indexer object associated with this factory
    virtual Teuchos::RCP<const panzer::GlobalIndexer> getDomainGlobalIndexer() const = 0;

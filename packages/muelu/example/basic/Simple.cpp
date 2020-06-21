@@ -124,6 +124,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   std::string rhsFile;                                clp.setOption("rhs",                   &rhsFile,           "rhs data file");
   std::string coordFile;                              clp.setOption("coords",                &coordFile,         "coordinates data file");
   std::string nullFile;                               clp.setOption("nullspace",             &nullFile,          "nullspace data file");
+  std::string materialFile;                           clp.setOption("material",              &materialFile,      "material data file");    
   int         maxIts            = 200;                clp.setOption("its",                   &maxIts,            "maximum number of solver iterations");
   int         numVectors        = 1;                  clp.setOption("multivector",           &numVectors,        "number of rhs to solve simultaneously");
   bool        scaleResidualHist = true;               clp.setOption("scale", "noscale",      &scaleResidualHist, "scaled Krylov residual history");
@@ -179,10 +180,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   RCP<const Map>              map;
   RCP<RealValuedMultiVector> coordinates;
   RCP<MultiVector> nullspace;
+  RCP<MultiVector> material;
   RCP<MultiVector> X, B;
 
   // Load the matrix off disk (or generate it via Galeri)
-  MatrixLoad<SC,LO,GO,NO>(comm,lib,binaryFormat,matrixFile,rhsFile,rowMapFile,colMapFile,domainMapFile,rangeMapFile,coordFile,nullFile,map,A,coordinates,nullspace,X,B,numVectors,galeriParameters,xpetraParameters,galeriStream);
+  MatrixLoad<SC,LO,GO,NO>(comm,lib,binaryFormat,matrixFile,rhsFile,rowMapFile,colMapFile,domainMapFile,rangeMapFile,coordFile,nullFile,materialFile,map,A,coordinates,nullspace,material,X,B,numVectors,galeriParameters,xpetraParameters,galeriStream);
   comm->barrier();
   tm = Teuchos::null;
   out << galeriStream.str();
@@ -200,7 +202,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   {
     comm->barrier();
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 2 - MueLu Setup")));
-    PreconditionerSetup(A,coordinates,nullspace,paramList,false,false,useML,0,H,Prec);
+    PreconditionerSetup(A,coordinates,nullspace,material,paramList,false,false,useML,0,H,Prec);
     comm->barrier();
     tm = Teuchos::null;
   }

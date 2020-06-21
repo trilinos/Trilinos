@@ -1,44 +1,9 @@
 /*
- * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
- * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
- *     * Neither the name of NTESS nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
+ * See packages/seacas/LICENSE for details
  */
 
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -108,7 +73,11 @@ int token_compare(char *token, const char *key)
 /*****************************************************************************/
 void strip_string(char inp_str[], const char *tokens)
 {
-  int i, j, itok, ntokes, bval;
+  int i;
+  int j;
+  int itok;
+  int ntokes;
+  int bval;
 
   i      = 0;
   ntokes = strlen(tokens);
@@ -159,7 +128,8 @@ void strip_string(char inp_str[], const char *tokens)
 /*****************************************************************************/
 void string_to_lower(char in_string[], char cval)
 {
-  int len, cnt;
+  int len;
+  int cnt;
 
   len = strlen(in_string);
   for (cnt = 0; cnt < len; cnt++) {
@@ -171,8 +141,6 @@ void string_to_lower(char in_string[], char cval)
       in_string[cnt] = tolower(in_string[cnt]);
     }
   }
-
-  return;
 }
 
 /*****************************************************************************/
@@ -180,7 +148,12 @@ void string_to_lower(char in_string[], char cval)
 /*****************************************************************************/
 void clean_string(char inp_str[], const char *tokens)
 {
-  int i, j, itok, ntokes, bval, inplen;
+  int i;
+  int j;
+  int itok;
+  int ntokes;
+  int bval;
+  int inplen;
 
   ntokes = strlen(tokens);
   inplen = strlen(inp_str);
@@ -216,8 +189,6 @@ void clean_string(char inp_str[], const char *tokens)
     i++;
 
   } /* End "while(inp_str[i] != '\0')" */
-
-  return;
 
 } /*---------------- End clean_string() -----------------*/
 
@@ -265,7 +236,8 @@ namespace {
   template <typename INT> void gds_qsort(INT v[], size_t left, size_t right)
   {
     size_t pivot;
-    size_t i, j;
+    size_t i;
+    size_t j;
 
     if (left + GDS_QSORT_CUTOFF <= right) {
       pivot = gds_median3(v, left, right);
@@ -295,19 +267,20 @@ namespace {
 
   template <typename INT> void gds_isort(INT v[], size_t N)
   {
-    size_t i, j;
+    size_t i;
+    size_t j;
     size_t ndx = 0;
-    INT    small;
+    INT    small_val;
     INT    tmp;
 
     if (N <= 1) {
       return;
     }
-    small = v[0];
+    small_val = v[0];
     for (i = 1; i < N; i++) {
-      if (v[i] < small) {
-        small = v[i];
-        ndx   = i;
+      if (v[i] < small_val) {
+        small_val = v[i];
+        ndx       = i;
       }
     }
     /* Put smallest value in slot 0 */
@@ -319,33 +292,6 @@ namespace {
         v[j] = v[j - 1];
       }
       v[j] = tmp;
-    }
-  }
-
-  template <typename INT> inline void SWAP(INT r, INT s)
-  {
-    INT t = r;
-    r     = s;
-    s     = t;
-  }
-
-  template <typename INT> void siftDown(INT *a, INT *b, size_t start, size_t end)
-  {
-    size_t root = start;
-
-    while (root * 2 + 1 < end) {
-      size_t child = 2 * root + 1;
-      if ((child + 1 < end) && (a[child] < a[child + 1])) {
-        child += 1;
-      }
-      if (a[root] < a[child]) {
-        SWAP(a[child], a[root]);
-        SWAP(b[child], b[root]);
-        root = child;
-      }
-      else {
-        return;
-      }
     }
   }
 
@@ -422,7 +368,6 @@ void find_first_last(INT val, size_t vecsize, INT *vector, INT *first, INT *last
       *last = vecsize - 1;
     }
   }
-  return;
 }
 
 /*****************************************************************************
@@ -487,7 +432,8 @@ template <typename INT> ssize_t in_list(INT value, std::vector<INT> vector)
  *****************************************************************************/
 int roundfloat(float value)
 {
-  float high, low;
+  float high;
+  float low;
   int   ans;
 
   high = std::ceil(value);
@@ -568,7 +514,7 @@ namespace {
     if (ra1 < ra2) {
       return 1;
     }
-    else if (ra1 > ra2) {
+    if (ra1 > ra2) {
       return 0;
     }
     assert(ra1 == ra2);
@@ -576,7 +522,7 @@ namespace {
     if (rb1 < rb2) {
       return 1;
     }
-    else if (rb1 > rb2) {
+    if (rb1 > rb2) {
       return 0;
     }
     assert(rb1 == rb2);
@@ -584,7 +530,7 @@ namespace {
     if (rc1 < rc2) {
       return 1;
     }
-    else if (rc1 > rc2) {
+    if (rc1 > rc2) {
       return 0;
     }
     assert(rc1 == rc2);
@@ -592,9 +538,8 @@ namespace {
     if (rd1 < rd2) {
       return 1;
     }
-    else {
-      return 0;
-    }
+
+    return 0;
   }
 
   template <typename INT> int is_less_than4v(INT *v1, INT *v2, INT *v3, INT *v4, size_t i, size_t j)
@@ -602,7 +547,7 @@ namespace {
     if (v1[i] < v1[j]) {
       return 1;
     }
-    else if (v1[i] > v1[j]) {
+    if (v1[i] > v1[j]) {
       return 0;
     }
     assert(v1[i] == v1[j]);
@@ -610,7 +555,7 @@ namespace {
     if (v2[i] < v2[j]) {
       return 1;
     }
-    else if (v2[i] > v2[j]) {
+    if (v2[i] > v2[j]) {
       return 0;
     }
     assert(v2[i] == v2[j]);
@@ -618,7 +563,7 @@ namespace {
     if (v3[i] < v3[j]) {
       return 1;
     }
-    else if (v3[i] > v3[j]) {
+    if (v3[i] > v3[j]) {
       return 0;
     }
     assert(v3[i] == v3[j]);
@@ -626,9 +571,8 @@ namespace {
     if (v4[i] < v4[j]) {
       return 1;
     }
-    else {
-      return 0;
-    }
+
+    return 0;
   }
 
   template <typename INT> void swap4(INT *v1, INT *v2, INT *v3, INT *v4, size_t i, size_t j)
@@ -696,27 +640,27 @@ namespace {
         ndx = i;
       }
     }
-    /* Put smallest value in slot 0 */
+    /* Put small_valest value in slot 0 */
     swap4(v1, v2, v3, v4, 0, ndx);
 
     for (size_t i = 1; i < N; i++) {
-      INT    small1 = v1[i];
-      INT    small2 = v2[i];
-      INT    small3 = v3[i];
-      INT    small4 = v4[i];
+      INT    small_val1 = v1[i];
+      INT    small_val2 = v2[i];
+      INT    small_val3 = v3[i];
+      INT    small_val4 = v4[i];
       size_t j;
-      for (j = i; is_less_than4(small1, small2, small3, small4, v1[j - 1], v2[j - 1], v3[j - 1],
-                                v4[j - 1]);
+      for (j = i; is_less_than4(small_val1, small_val2, small_val3, small_val4, v1[j - 1],
+                                v2[j - 1], v3[j - 1], v4[j - 1]);
            j--) {
         v1[j] = v1[j - 1];
         v2[j] = v2[j - 1];
         v3[j] = v3[j - 1];
         v4[j] = v4[j - 1];
       }
-      v1[j] = small1;
-      v2[j] = small2;
-      v3[j] = small3;
-      v4[j] = small4;
+      v1[j] = small_val1;
+      v2[j] = small_val2;
+      v3[j] = small_val3;
+      v4[j] = small_val4;
     }
   }
 
@@ -725,7 +669,7 @@ namespace {
     if (ra1 < ra2) {
       return 1;
     }
-    else if (ra1 > ra2) {
+    if (ra1 > ra2) {
       return 0;
     }
     assert(ra1 == ra2);
@@ -733,9 +677,8 @@ namespace {
     if (rb1 < rb2) {
       return 1;
     }
-    else {
-      return 0;
-    }
+
+    return 0;
   }
 
   template <typename INT> int is_less_than2v(INT *v1, INT *v2, size_t i, size_t j)
@@ -743,7 +686,7 @@ namespace {
     if (v1[i] < v1[j]) {
       return 1;
     }
-    else if (v1[i] > v1[j]) {
+    if (v1[i] > v1[j]) {
       return 0;
     }
     assert(v1[i] == v1[j]);
@@ -751,9 +694,8 @@ namespace {
     if (v2[i] < v2[j]) {
       return 1;
     }
-    else {
-      return 0;
-    }
+
+    return 0;
   }
 
   template <typename INT> void swap2(INT *v1, INT *v2, size_t i, size_t j)
@@ -817,19 +759,19 @@ namespace {
       }
     }
 
-    /* Put smallest value in slot 0 */
+    /* Put small_valest value in slot 0 */
     swap2(v1, v2, 0, ndx);
 
     for (size_t i = 1; i < N; i++) {
-      INT    small1 = v1[i];
-      INT    small2 = v2[i];
+      INT    small_val1 = v1[i];
+      INT    small_val2 = v2[i];
       size_t j;
-      for (j = i; is_less_than2(small1, small2, v1[j - 1], v2[j - 1]); j--) {
+      for (j = i; is_less_than2(small_val1, small_val2, v1[j - 1], v2[j - 1]); j--) {
         v1[j] = v1[j - 1];
         v2[j] = v2[j - 1];
       }
-      v1[j] = small1;
-      v2[j] = small2;
+      v1[j] = small_val1;
+      v2[j] = small_val2;
     }
   }
 } // namespace
@@ -873,25 +815,6 @@ template <typename INT> void qsort2(INT *v1, INT *v2, size_t N)
     assert(is_less_than2v(v1, v2, i - 1, i));
   }
 #endif
-}
-
-template void                sort2(ssize_t N, int *v1, int *v2);
-template void                sort2(ssize_t N, int64_t *v1, int64_t *v2);
-template <typename INT> void sort2(ssize_t count, INT ra[], INT rb[])
-{
-  if (count <= 1) {
-    return;
-  }
-  /* heapify */
-  for (ssize_t start = (count - 2) / 2; start >= 0; start--) {
-    siftDown(ra, rb, start, count);
-  }
-
-  for (size_t end = count - 1; end > 0; end--) {
-    SWAP(ra[end], ra[0]);
-    SWAP(rb[end], rb[0]);
-    siftDown(ra, rb, 0, end);
-  }
 }
 
 template void                sort3(ssize_t count, int ra[], int rb[], int rc[]);

@@ -82,16 +82,21 @@ class InstallProgramDriver:
     #
     # 1) Set up the help text
     #
+
+    productSupportedVersions = self.installObj.getProductSupportedVersions()
+    if productSupportedVersions:
+      supportedVersionsTxt = "Versions supported include:\n   "+\
+        str(self.installObj.getProductSupportedVersions())
+    else:
+      supportedVersionsTxt = "Arbirary versions are supported."
       
     usageHelp = scriptName+\
 r""" [OPTIONS] [--install-dir=<install-dir> ...]
 
 This script checks out source, untars, configures, builds, and installs
-"""+productName+r""" in one shot.  Versions supported include:
+"""+productName+r""" in one shot.  """+supportedVersionsTxt+r"""
 
-    """+str(self.installObj.getProductSupportedVersions())+r"""
-
-(set with --"""+productBaseName+r"""-version=<version>)
+The version to install is set with --"""+productBaseName+r"""-version=<version>.
 
 By default, if you just type:
 
@@ -141,16 +146,29 @@ in order to remove the intermediate source and build files.
     defaultVersion = self.installObj.getProductDefaultVersion()
     defaultVersionIdx = findInSequence(supportedVersions, defaultVersion)
 
-    addOptionParserChoiceOption(
-      versionCmndArgName, "version", supportedVersions, defaultVersionIdx,
-      "Version to install for "+productName+".", clp)
-    
+    if supportedVersions:
+      addOptionParserChoiceOption(
+        versionCmndArgName, "version", supportedVersions, defaultVersionIdx,
+        "Version to install for "+productName+".", clp)
+    else:
+      clp.add_option(
+        versionCmndArgName, dest="version", type="string",
+        default=defaultVersion,
+        help="Version to install for "+productName+" (list of versions open-ended).")
+
     clp.add_option(
       "--install-dir", dest="installDir", type="string",
-      default="/usr/local",
+      default="",
       help="The install directory <install-dir> for "+productName+ \
-        " (default = /usr/local).  This can be a relative or absolute path, it can" \
+        " (default = '').  This can be a relative or absolute path, it can" \
         " start with ~/, etc." )
+
+    clp.add_option(
+      "--install-dir-base", dest="installDirBase", type="string",
+      default="",
+      help="The base install directory <install-dir> for "+productName+ \
+        " (default = '').  In this case the subdir "+productName+\
+        " will be created under this directory for the install prefix." )
 
     insertInstallPermissionsOptions(clp)
 
@@ -207,10 +225,12 @@ in order to remove the intermediate source and build files.
     # 3) Echo the command-line options
     #
 
-    cmndLine = "******************************************************************************\n"
+    cmndLine = \
+      "******************************************************************************\n"
     cmndLine += scriptName + " \\\n"
     cmndLine += "  "+versionCmndArgName + "='"+options.version+"' \\\n"
     cmndLine += "  --install-dir='" + options.installDir + "' \\\n"
+    cmndLine += "  --install-dir-base='" + options.installDirBase + "' \\\n"
     cmndLine += echoInsertPermissionsOptions(options)
     cmndLine += "  --parallel='" + str(options.parallel) + "' \\\n"
     cmndLine += "  --make-options='" + options.makeOptions + "'\\\n"
@@ -237,7 +257,10 @@ in order to remove the intermediate source and build files.
 
     # Check the options
 
-    if options.installDir == "":
+    if options.installDirBase != "" and options.installDir == "":
+      options.installDir=options.installDirBase+"/"+productName
+
+    elif options.installDir == "":
       raise Exception("Error, --install-dir=<install-dir> can't be empty!")
     options.installDir = os.path.abspath(os.path.expanduser(options.installDir))
 
@@ -277,17 +300,14 @@ in order to remove the intermediate source and build files.
     else:
       print("Skipping on request ...")
     
-    
     print("")
     print("C) Configure "+productName+" ...")
     print("")
-    
     
     if options.configure:
       self.installObj.doConfigure()
     else:
       print("Skipping on request ...")
-    
     
     print("")
     print("D) Build "+productName+" ...")
@@ -297,7 +317,6 @@ in order to remove the intermediate source and build files.
       self.installObj.doBuild()
     else:
       print("Skipping on request ...")
-    
     
     print("")
     print("E) Install "+productName+" ...")
@@ -335,6 +354,18 @@ def setStdDownloadCmndOption(installObj, clp, version):
     "--download-cmnd", dest="downloadCmnd", type="string",
     default=defaultDownloadCmnd,
     help="Command used to download source for "+productName+"." \
+      +"  (Default ='"+defaultDownloadCmnd+"')  WARNING: This will delete" \
+      +" an existing directory '"+productBaseDirName+"' if it already exists!")
+
+def setStdGithubDownloadCmndOption(installObj, githubOrg, githubRepo, clp, version):
+  productName = installObj.getProductBaseName()+"-"+version
+  productBaseDirName = productName+"-base"
+  defaultDownloadCmnd = \
+    "wget -O "+productName+".tar.gz https://github.com/"+githubOrg+"/"+githubRepo+"/tarball/v"+version
+  clp.add_option(
+    "--download-cmnd", dest="downloadCmnd", type="string",
+    default=defaultDownloadCmnd,
+    help="Command used to download source tarball for "+productName+"." \
       +"  (Default ='"+defaultDownloadCmnd+"')  WARNING: This will delete" \
       +" an existing directory '"+productBaseDirName+"' if it already exists!")
 

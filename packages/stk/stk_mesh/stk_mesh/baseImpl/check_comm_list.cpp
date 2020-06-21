@@ -2,6 +2,7 @@
 #include <stk_mesh/base/EntityKey.hpp>
 #include <stk_mesh/base/EntityCommListInfo.hpp>
 #include <stk_mesh/base/EntityCommDatabase.hpp>
+#include <stk_mesh/base/BulkData.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
 #include <stk_util/util/SortAndUnique.hpp>
@@ -50,10 +51,11 @@ void pack_key_and_ghost_ids(EntityKey key, bool locally_owned, const EntityCommI
     }
 }
 
-void pack_send_data(int local_proc, const EntityCommListInfoVector& comm_list, stk::CommSparse& comm)
+void pack_send_data(const stk::mesh::BulkData& mesh, int local_proc,
+                    const EntityCommListInfoVector& comm_list, stk::CommSparse& comm)
 {
     for(const EntityCommListInfo& commInfo : comm_list) {
-        pack_key_and_ghost_ids(commInfo.key, commInfo.owner==local_proc, commInfo.entity_comm->comm_map, comm);
+        pack_key_and_ghost_ids(commInfo.key, mesh.parallel_owner_rank(commInfo.entity)==local_proc, commInfo.entity_comm->comm_map, comm);
     }
 }
 
@@ -73,10 +75,10 @@ void push_back_key_procs_ghost_ids(EntityKey key, bool locally_owned, const Enti
     }
 }
 
-void fill_expected_recv_data(int local_proc, const EntityCommListInfoVector& comm_list, std::vector<KeyProcGhostId>& recv_data)
+void fill_expected_recv_data(const stk::mesh::BulkData& mesh, const EntityCommListInfoVector& comm_list, std::vector<KeyProcGhostId>& recv_data)
 {
     for(const EntityCommListInfo& commInfo : comm_list) {
-        push_back_key_procs_ghost_ids(commInfo.key, commInfo.owner==local_proc, commInfo.entity_comm->comm_map, recv_data);
+        push_back_key_procs_ghost_ids(commInfo.key, mesh.parallel_owner_rank(commInfo.entity)==mesh.parallel_rank(), commInfo.entity_comm->comm_map, recv_data);
     }
     stk::util::sort_and_unique(recv_data);
 }
@@ -110,10 +112,11 @@ void check_for_expected_recv_data_that_failed_to_arrive(const std::vector<KeyPro
     }
 }
 
-void pack_and_send_comm_list_data(int local_proc, const EntityCommListInfoVector& comm_list, stk::CommSparse& comm)
+void pack_and_send_comm_list_data(const stk::mesh::BulkData& mesh,
+                                  const EntityCommListInfoVector& comm_list, stk::CommSparse& comm)
 {
     for(int phase=0; phase<2; ++phase) {
-        pack_send_data(local_proc, comm_list, comm);
+        pack_send_data(mesh, mesh.parallel_rank(), comm_list, comm);
 
         if (phase==0) {
             comm.allocate_buffers();
@@ -136,29 +139,29 @@ void unpack_and_check_recvd_data(stk::CommSparse& comm, int local_proc, int num_
     }
 }
 
-bool is_comm_list_globally_consistent(stk::ParallelMachine communicator, const EntityCommListInfoVector& comm_list)
+bool is_comm_list_globally_consistent(const stk::mesh::BulkData& mesh, const EntityCommListInfoVector& comm_list)
 {
     std::ostringstream os;
-    bool result = is_comm_list_globally_consistent(communicator, comm_list, os);
+    bool result = is_comm_list_globally_consistent(mesh, comm_list, os);
 
     std::string str = os.str();
     if (!str.empty()) {
-        std::cerr<<"P"<<stk::parallel_machine_rank(communicator)<<" check_comm_list_global_consistency:\n"<<str;
+        std::cerr<<"P"<<mesh.parallel_rank()<<" check_comm_list_global_consistency:\n"<<str;
     }
 
     return result;
 }
 
-bool is_comm_list_globally_consistent(stk::ParallelMachine communicator, const EntityCommListInfoVector& comm_list, std::ostream& error_msg)
+bool is_comm_list_globally_consistent(const stk::mesh::BulkData& mesh, const EntityCommListInfoVector& comm_list, std::ostream& error_msg)
 {
-    int local_proc = stk::parallel_machine_rank(communicator);
-    int num_procs = stk::parallel_machine_size(communicator);
+    int local_proc = mesh.parallel_rank();
+    int num_procs = mesh.parallel_size();
 
     std::vector<KeyProcGhostId> expected_recv_data;
-    fill_expected_recv_data(local_proc, comm_list, expected_recv_data);
+    fill_expected_recv_data(mesh, comm_list, expected_recv_data);
   
-    stk::CommSparse comm(communicator);
-    pack_and_send_comm_list_data(local_proc, comm_list, comm);
+    stk::CommSparse comm(mesh.parallel());
+    pack_and_send_comm_list_data(mesh, comm_list, comm);
 
     std::ostringstream os;
     unpack_and_check_recvd_data(comm, local_proc, num_procs, expected_recv_data, os);

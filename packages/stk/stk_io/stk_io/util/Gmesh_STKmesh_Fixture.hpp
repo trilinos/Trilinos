@@ -43,8 +43,6 @@
 #include <vector>                       // for vector
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class MetaData; } }
-namespace stk { namespace mesh { struct ConnectivityMap; } }
-
 
 namespace stk {
 namespace io {

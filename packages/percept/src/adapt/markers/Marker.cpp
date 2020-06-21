@@ -97,7 +97,7 @@ stk::mesh::Selector *Marker::getSelector() { return m_globalSelector; }
 struct CompareErrIndRefFieldVec : public std::binary_function<ErrIndInfoTuple, ErrIndInfoTuple, bool> {
   bool operator()( ErrIndInfoTuple a,  ErrIndInfoTuple b)
   {
-    return *a.get<0>()  < *b.get<0>();
+    return std::get<0>(a)  < std::get<0>(b);
   }
 };
 

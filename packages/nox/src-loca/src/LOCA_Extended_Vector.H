@@ -76,7 +76,7 @@ namespace LOCA {
       Many continuation and bifurcation calculations can be viewed as the
       solution to an extended set of equations.  For example, calculating
       a turning point can be viewed as computing a solution to
-      \f$G(z) = 0\f$ where \f$z = [x, n, p]\in\Re^{2n+1}\f$ and
+      \f$ G(z) = 0\f$ where \f$ z = [x, n, p]\in\Re^{2n+1}\f$ and
       \f[
       G(z) = \left[
       \begin{array}{c}
@@ -86,8 +86,8 @@ namespace LOCA {
       \end{array}
       \right]
       \f]
-      The extended vector \f$z\f$ is comprised of the two vectors \f$x\f$ and
-      \f$n\f$ as well as the scalar \f$p\f$.  This class provides
+      The extended vector \f$ z\f$ is comprised of the two vectors \f$ x\f$ and
+      \f$ n\f$ as well as the scalar \f$ p\f$.  This class provides
       an implementation of the NOX::Abstract::Vector interface for such
       extended vectors.  It stores an array of pointers to
       NOX::Abstract::Vector's as well as an array of scalars using the

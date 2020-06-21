@@ -32,7 +32,7 @@ TEST_F(StkSimdViewFixture, SimdParallelFor) {
     EXPECT_EQ(2, veloFieldHost(i,1));
     EXPECT_EQ(3, veloFieldHost(i,2));
   }
-};
+}
 
 
 double reduce_sum_velocity_field(stk::simd::View<double*[3]> veloField, int direction) {
@@ -50,7 +50,7 @@ TEST_F(StkSimdViewFixture, SimdParallelReduce) {
   EXPECT_EQ(1*numNodes, reduce_sum_velocity_field(veloField, 0));
   EXPECT_EQ(2*numNodes, reduce_sum_velocity_field(veloField, 1));
   EXPECT_EQ(3*numNodes, reduce_sum_velocity_field(veloField, 2));
-};
+}
 
 #ifndef KOKKOS_ENABLE_CUDA
 
@@ -73,7 +73,7 @@ TEST_F(StkSimdViewFixture, ForEach_ReduceSumEach) {
   EXPECT_EQ(2*numNodes, double_and_reduce_sum_each(veloField, 0));
   EXPECT_EQ(4*numNodes, double_and_reduce_sum_each(veloField, 1));
   EXPECT_EQ(6*numNodes, double_and_reduce_sum_each(veloField, 2));
-};
+}
 
 #endif
 

@@ -62,7 +62,7 @@ cmake \
       -D Trilinos_ENABLE_Panzer:BOOL=ON \
       -D Phalanx_ENABLE_TESTS:BOOL=ON \
       -D Phalanx_ENABLE_EXAMPLES:BOOL=ON \
-      -D Panzer_ENABLE_FADTYPE:STRING="Sacado::Fad::DFad<RealType>" \
+      -D Panzer_FADTYPE:STRING="Sacado::Fad::DFad<RealType>" \
       -D Panzer_ENABLE_TESTS:BOOL=ON \
       -D Panzer_ENABLE_EXAMPLES:BOOL=ON \
       -D Trilinos_ENABLE_SECONDARY_TESTED_CODE:BOOL=ON \
@@ -95,7 +95,7 @@ cmake \
       -D CMAKE_SKIP_RULE_DEPENDENCY=ON \
       -D CMAKE_BUILD_TYPE:STRING=DEBUG \
       -D Trilinos_ENABLE_OpenMP:BOOL=ON \
-      -D Kokkos_ENABLE_OpenMP:BOOL=ON \
+      -D Kokkos_ENABLE_OPENMP:BOOL=ON \
       -D Kokkos_ENABLE_Serial:BOOL=ON \
        ../Trilinos
 

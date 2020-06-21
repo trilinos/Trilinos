@@ -47,6 +47,7 @@
 
 namespace FROSch {
 
+    using namespace std;
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -113,7 +114,7 @@ namespace FROSch {
         virtual void describe(FancyOStream &out,
                               const EVerbosityLevel verbLevel=Describable::verbLevel_default) const;
 
-        virtual std::string description() const;
+        virtual string description() const;
 
         int addOperator(SchwarzOperatorPtr op);
 
@@ -129,13 +130,13 @@ namespace FROSch {
 
     protected:
 
-        SchwarzOperatorPtrVec OperatorVector_;
+        SchwarzOperatorPtrVec OperatorVector_ = SchwarzOperatorPtrVec(0);
 
         // Temp Vectors for apply()
         mutable XMultiVectorPtr XTmp_;
         mutable XMultiVectorPtr YTmp_;
 
-        BoolVec EnableOperators_;
+        BoolVec EnableOperators_ = BoolVec(0);
     };
 
 }

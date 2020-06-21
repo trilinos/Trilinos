@@ -193,28 +193,28 @@ namespace Tpetra {
             Tpetra::Vector<SC, LO, GO, NT>& X_j_ref = *X_j;
             using read_write_view_type =
               with_local_access_function_argument_type<
-                decltype (readWrite (X_j_ref).on (memSpace))>;
+                decltype (readWrite (X_j_ref).on (memSpace). at(execSpace))>;
             withLocalAccess
               ([=] (const read_write_view_type& X_j_lcl) {
                 using functor_type = VectorForEachLoopBody<
                   read_write_view_type, UserFunctionType, LO>;
                 Kokkos::parallel_for (kernelLabel, range,
                                       functor_type (X_j_lcl, f));
-              }, readWrite (X_j_ref).on (memSpace));
+              }, readWrite (X_j_ref).on (memSpace). at(execSpace));
           }
         }
         else {
           // Generic lambdas need C++14, so we need a typedef here.
           using read_write_view_type =
             with_local_access_function_argument_type<
-              decltype (readWrite (X).on (memSpace))>;
+              decltype (readWrite (X).on (memSpace). at(execSpace))>;
           withLocalAccess
             ([=] (const read_write_view_type& X_lcl) {
               using functor_type = MultiVectorForEachLoopBody<
                 read_write_view_type, UserFunctionType, LO>;
               Kokkos::parallel_for (kernelLabel, range,
                                     functor_type (X_lcl, f));
-            }, readWrite (X).on (memSpace));
+            }, readWrite (X).on (memSpace). at(execSpace));
         }
       }
     };

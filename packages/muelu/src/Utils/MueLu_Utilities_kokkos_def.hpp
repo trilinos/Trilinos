@@ -46,6 +46,7 @@
 #ifndef MUELU_UTILITIES_KOKKOS_DEF_HPP
 #define MUELU_UTILITIES_KOKKOS_DEF_HPP
 
+#include <algorithm>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_ParameterList.hpp>
 
@@ -57,9 +58,9 @@
 # endif
 #endif
 
-#include <Kokkos_ArithTraits.hpp>
 #include <Kokkos_Core.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
+#include <KokkosSparse_getDiagCopy.hpp>
 
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
 #include <EpetraExt_MatrixMatrix.h>
@@ -103,10 +104,16 @@
 
 #include <MueLu_Utilities_kokkos_decl.hpp>
 
+#include <KokkosKernels_Handle.hpp>
+#include <KokkosSparse_partitioning_impl.hpp>
+
+
 namespace MueLu {
 
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::ArrayRCP<Scalar> Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixDiagonal(const Matrix& A) {
+  Teuchos::ArrayRCP<Scalar> Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  GetMatrixDiagonal(const Matrix& A) {
     // FIXME_KOKKOS
 
     size_t numRows = A.getRowMap()->getNodeNumElements();
@@ -134,61 +141,65 @@ namespace MueLu {
   } //GetMatrixDiagonal
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol) {
-    // FIXME_KOKKOS
+  Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol) {
+    Teuchos::TimeMonitor MM = *Teuchos::TimeMonitor::getNewTimer("Utilities_kokkos::GetMatrixDiagonalInverse");
+    // Some useful type definitions
+    using local_matrix_type = typename Matrix::local_matrix_type;
+    using local_graph_type  = typename local_matrix_type::staticcrsgraph_type;
+    using value_type        = typename local_matrix_type::value_type;
+    using ordinal_type      = typename local_matrix_type::ordinal_type;
+    using execution_space   = typename local_matrix_type::execution_space;
+    using memory_space      = typename local_matrix_type::memory_space;
+    // Be careful with this one, if using Kokkos::ArithTraits<Scalar>
+    // you are likely to run into errors when handling std::complex<>
+    // a good way to work around that is to use the following:
+    // using KAT = Kokkos::ArithTraits<Kokkos::ArithTraits<Scalar>::val_type> >
+    // here we have: value_type = Kokkos::ArithTraits<Scalar>::val_type
+    using KAT               = Kokkos::ArithTraits<value_type>;
+
+    // Get/Create distributed objects
     RCP<const Map> rowMap = A.getRowMap();
-    RCP<Vector> diag      = VectorFactory::Build(rowMap);
-    ArrayRCP<SC> diagVals = diag->getDataNonConst(0);
+    RCP<Vector> diag      = VectorFactory::Build(rowMap,false);
 
-    size_t numRows = rowMap->getNodeNumElements();
+    // Now generate local objects
+    local_matrix_type localMatrix = A.getLocalMatrix();
+    auto diagVals = diag->template getLocalView<memory_space>();
 
-    Teuchos::ArrayView<const LO> cols;
-    Teuchos::ArrayView<const SC> vals;
-    for (size_t i = 0; i < numRows; ++i) {
-      A.getLocalRowView(i, cols, vals);
+    ordinal_type numRows = localMatrix.graph.numRows();
 
-      LO j = 0;
-      for (; j < cols.size(); ++j) {
-        if (Teuchos::as<size_t>(cols[j]) == i) {
-          if(Teuchos::ScalarTraits<SC>::magnitude(vals[j]) > tol)
-            diagVals[i] = Teuchos::ScalarTraits<SC>::one() / vals[j];
-          else
-            diagVals[i]=Teuchos::ScalarTraits<SC>::zero();
-          break;
-        }
-      }
-      if (j == cols.size()) {
-        // Diagonal entry is absent
-        diagVals[i]=Teuchos::ScalarTraits<SC>::zero();
-      }
-    }
-    diagVals=null;
+    // Note: 2019-11-21, LBV
+    // This could be implemented with a TeamPolicy over the rows
+    // and a TeamVectorRange over the entries in a row if performance
+    // becomes more important here.
+    Kokkos::parallel_for("Utilities_kokkos::GetMatrixDiagonalInverse",
+                         Kokkos::RangePolicy<ordinal_type, execution_space>(0, numRows),
+                         KOKKOS_LAMBDA(const ordinal_type rowIdx) {
+                           bool foundDiagEntry = false;
+                           auto myRow = localMatrix.rowConst(rowIdx);
+                           for(ordinal_type entryIdx = 0; entryIdx < myRow.length; ++entryIdx) {
+                             if(myRow.colidx(entryIdx) == rowIdx) {
+                               foundDiagEntry = true;
+                               if(KAT::magnitude(myRow.value(entryIdx)) > KAT::magnitude(tol)) {
+                                 diagVals(rowIdx, 0) = KAT::one() / myRow.value(entryIdx);
+                               } else {
+                                 diagVals(rowIdx, 0) = KAT::zero();
+                               }
+                               break;
+                             }
+                           }
+
+                           if(!foundDiagEntry) {diagVals(rowIdx, 0) = KAT::zero();}
+                         });
 
     return diag;
   } //GetMatrixDiagonalInverse
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::ArrayRCP<Scalar> Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetLumpedMatrixDiagonal(const Matrix &A) {
-    // FIXME_KOKKOS
-    size_t numRows = A.getRowMap()->getNodeNumElements();
-    Teuchos::ArrayRCP<SC> diag(numRows);
-
-    Teuchos::ArrayView<const LO> cols;
-    Teuchos::ArrayView<const SC> vals;
-    for (size_t i = 0; i < numRows; ++i) {
-      A.getLocalRowView(i, cols, vals);
-
-      diag[i] = Teuchos::ScalarTraits<Scalar>::zero();
-      for (LO j = 0; j < cols.size(); ++j) {
-        diag[i] += Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]);
-      }
-    }
-
-    return diag;
-  } //GetMatrixDiagonal
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixOverlappedDiagonal(const Matrix& A) {
+  RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  GetMatrixOverlappedDiagonal(const Matrix& A) {
     // FIXME_KOKKOS
     RCP<const Map> rowMap = A.getRowMap(), colMap = A.getColMap();
     RCP<Vector>    localDiag     = VectorFactory::Build(rowMap);
@@ -222,9 +233,9 @@ namespace MueLu {
   } //GetMatrixOverlappedDiagonal
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MyOldScaleMatrix(Matrix& Op, const Teuchos::ArrayRCP<const SC>& scalingVector, bool doInverse,
-                               bool doFillComplete,
-                               bool doOptimizeStorage)
+  void Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  MyOldScaleMatrix(Matrix& Op, const Teuchos::ArrayRCP<const SC>& scalingVector,
+                   bool doInverse, bool doFillComplete, bool doOptimizeStorage)
   {
     SC one = Teuchos::ScalarTraits<SC>::one();
     Teuchos::ArrayRCP<SC> sv(scalingVector.size());
@@ -345,7 +356,7 @@ namespace MueLu {
 
 
   template <class SC, class LO, class GO, class NO>
-  Kokkos::View<const bool*, typename NO::device_type>
+  Kokkos::View<bool*, typename NO::device_type>
   DetectDirichletRows(const Xpetra::Matrix<SC,LO,GO,NO>& A,
                       const typename Teuchos::ScalarTraits<SC>::magnitudeType& tol,
                       const bool count_twos_as_dirichlet) {
@@ -395,14 +406,14 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Kokkos::View<const bool*, typename Node::device_type>
+  Kokkos::View<bool*, typename Node::device_type>
   Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   DetectDirichletRows(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, const typename Teuchos::ScalarTraits<Scalar>::magnitudeType& tol, const bool count_twos_as_dirichlet) {
     return MueLu::DetectDirichletRows<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A, tol, count_twos_as_dirichlet);
   }
 
   template <class Node>
-  Kokkos::View<const bool*, typename Node::device_type>
+  Kokkos::View<bool*, typename Node::device_type>
   Utilities_kokkos<double,int,int,Node>::
   DetectDirichletRows(const Xpetra::Matrix<double,int,int,Node>& A, const typename Teuchos::ScalarTraits<double>::magnitudeType& tol, const bool count_twos_as_dirichlet) {
     return MueLu::DetectDirichletRows<double,int,int,Node>(A, tol,count_twos_as_dirichlet);
@@ -410,7 +421,7 @@ namespace MueLu {
 
 
   template <class SC, class LO, class GO, class NO>
-  Kokkos::View<const bool*, typename NO::device_type>
+  Kokkos::View<bool*, typename NO::device_type>
   DetectDirichletCols(const Xpetra::Matrix<SC,LO,GO,NO>& A,
                       const Kokkos::View<const bool*, typename NO::device_type>& dirichletRows) {
     using ATS        = Kokkos::ArithTraits<SC>;
@@ -462,7 +473,7 @@ namespace MueLu {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Kokkos::View<const bool*, typename Node::device_type>
+  Kokkos::View<bool*, typename Node::device_type>
   Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   DetectDirichletCols(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
                       const Kokkos::View<const bool*, typename NO::device_type>& dirichletRows) {
@@ -470,7 +481,7 @@ namespace MueLu {
   }
 
   template <class Node>
-  Kokkos::View<const bool*, typename Node::device_type>
+  Kokkos::View<bool*, typename Node::device_type>
   Utilities_kokkos<double,int,int,Node>::
   DetectDirichletCols(const Xpetra::Matrix<double,int,int,Node>& A,
                       const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows) {
@@ -629,6 +640,151 @@ namespace MueLu {
   Utilities_kokkos<double,int,int,Node>::
   RealValuedToScalarMultiVector(RCP<Xpetra::MultiVector<Magnitude,int,int,Node> > X) {
     return X;
+  }
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > ReverseCuthillMcKee(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Op) {
+    using local_matrix_type = typename Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type;
+    using local_graph_type  = typename local_matrix_type::staticcrsgraph_type;
+    using lno_nnz_view_t    = typename local_graph_type::entries_type::non_const_type;
+    using device            = typename local_graph_type::device_type;
+    using execution_space   = typename local_matrix_type::execution_space;
+    using ordinal_type      = typename local_matrix_type::ordinal_type;
+
+    local_matrix_type localMatrix = Op.getLocalMatrix();
+    using KernelHandle =  KokkosKernels::Experimental::KokkosKernelsHandle<typename local_graph_type::size_type, LocalOrdinal,Scalar,
+      typename device::execution_space, typename device::memory_space,typename device::memory_space>;
+
+    using rcm_t = KokkosSparse::Impl::RCM<KernelHandle, typename local_graph_type::row_map_type::const_type, typename local_graph_type::entries_type::non_const_type>;
+    
+    rcm_t rcm(localMatrix.numRows(), localMatrix.graph.row_map, localMatrix.graph.entries);
+    lno_nnz_view_t rcmOrder = rcm.rcm();
+
+    RCP<Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > retval = 
+      Xpetra::VectorFactory<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node>::Build(Op.getRowMap());
+
+    // Copy out and reorder data
+    auto view1D = Kokkos::subview(retval->template getLocalView<device>(),Kokkos::ALL (), 0);
+    Kokkos::parallel_for("Utilities_kokkos::ReverseCuthillMcKee",
+                         Kokkos::RangePolicy<ordinal_type, execution_space>(0, localMatrix.numRows()),
+                         KOKKOS_LAMBDA(const ordinal_type rowIdx) {
+                           view1D(rcmOrder(rowIdx)) = rowIdx;
+                         });
+    return retval;
+  }
+  
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > CuthillMcKee(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Op) {
+    using local_matrix_type = typename Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type;
+    using local_graph_type  = typename local_matrix_type::staticcrsgraph_type;
+    using lno_nnz_view_t    = typename local_graph_type::entries_type::non_const_type;
+    using device            = typename local_graph_type::device_type;
+    using execution_space   = typename local_matrix_type::execution_space;
+    using ordinal_type      = typename local_matrix_type::ordinal_type;
+
+    local_matrix_type localMatrix = Op.getLocalMatrix();
+    using KernelHandle =  KokkosKernels::Experimental::KokkosKernelsHandle<typename local_graph_type::size_type, LocalOrdinal,Scalar,
+      typename device::execution_space, typename device::memory_space,typename device::memory_space>;
+
+    using rcm_t = KokkosSparse::Impl::RCM<KernelHandle, typename local_graph_type::row_map_type::const_type, typename local_graph_type::entries_type::non_const_type>;
+    
+    rcm_t rcm(localMatrix.numRows(), localMatrix.graph.row_map, localMatrix.graph.entries);
+    lno_nnz_view_t rcmOrder = rcm.cuthill_mckee();
+
+    RCP<Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > retval = 
+      Xpetra::VectorFactory<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node>::Build(Op.getRowMap());
+
+    // Copy out data
+    auto view1D = Kokkos::subview(retval->template getLocalView<device>(),Kokkos::ALL (), 0);
+    Kokkos::parallel_for("Utilities_kokkos::ReverseCuthillMcKee",
+                         Kokkos::RangePolicy<ordinal_type, execution_space>(0, localMatrix.numRows()),
+                         KOKKOS_LAMBDA(const ordinal_type rowIdx) {
+                           view1D(rcmOrder(rowIdx)) = rowIdx;
+                         });
+    return retval;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> >
+  Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ReverseCuthillMcKee(const Matrix &Op) {
+    return MueLu::ReverseCuthillMcKee<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Op);
+  }
+
+  template <class Node>
+  Teuchos::RCP<Xpetra::Vector<int,int,int,Node> >  
+  Utilities_kokkos<double,int,int,Node>::ReverseCuthillMcKee(const Matrix &Op) {
+    return MueLu::ReverseCuthillMcKee<double,int,int,Node>(Op);
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> >
+  Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CuthillMcKee(const Matrix &Op) {
+    return MueLu::CuthillMcKee<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Op);
+  }
+
+  template <class Node>
+  Teuchos::RCP<Xpetra::Vector<int,int,int,Node> >  
+  Utilities_kokkos<double,int,int,Node>::CuthillMcKee(const Matrix &Op) {
+    return MueLu::CuthillMcKee<double,int,int,Node>(Op);
+  }
+
+  // Applies Ones-and-Zeros to matrix rows
+  // Takes a Boolean array.
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  ApplyOAZToMatrixRows(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,
+                       const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows) {
+    TEUCHOS_ASSERT(A->isFillComplete());
+    using ATS        = Kokkos::ArithTraits<Scalar>;
+    using impl_ATS = Kokkos::ArithTraits<typename ATS::val_type>;
+    using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
+
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > domMap = A->getDomainMap();
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > ranMap = A->getRangeMap();
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > Rmap = A->getRowMap();
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > Cmap = A->getColMap();
+
+    TEUCHOS_ASSERT(static_cast<size_t>(dirichletRows.size()) == Rmap->getNodeNumElements());
+
+    const Scalar one  = impl_ATS::one();
+    const Scalar zero = impl_ATS::zero();
+
+    auto localMatrix = A->getLocalMatrix();
+    auto localRmap = Rmap->getLocalMap();
+    auto localCmap = Cmap->getLocalMap();
+
+    Kokkos::parallel_for("MueLu::Utils::ApplyOAZ",range_type(0,dirichletRows.extent(0)),
+                         KOKKOS_LAMBDA(const LocalOrdinal row) {
+                           if (dirichletRows(row)){
+                             auto rowView = localMatrix.row(row);
+                             auto length = rowView.length;
+                             auto row_gid = localRmap.getGlobalElement(row);
+                             auto row_lid = localCmap.getLocalElement(row_gid);
+
+                             for (decltype(length) colID = 0; colID < length; colID++)
+                               if (rowView.colidx(colID) == row_lid)
+                                 rowView.value(colID) = one;
+                               else
+                                 rowView.value(colID) = zero;
+                           }
+                         });
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  ApplyOAZToMatrixRows(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,
+                       const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows) {
+    MueLu::ApplyOAZToMatrixRows<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A, dirichletRows);
+  }
+
+  template <class Node>
+  void
+  Utilities_kokkos<double,int,int,Node>::
+  ApplyOAZToMatrixRows(Teuchos::RCP<Xpetra::Matrix<double,int,int,Node> >& A,
+                       const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows) {
+    MueLu::ApplyOAZToMatrixRows<double,int,int,Node>(A, dirichletRows);
   }
 
 } //namespace MueLu

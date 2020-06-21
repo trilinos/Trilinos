@@ -10,12 +10,18 @@ namespace unit_test_util
 {
 
 inline
+std::string get_mesh_spec(int dim)
+{
+  std::string dimString = std::to_string(dim);
+  std::string meshSpec("generated:");
+  meshSpec += dimString + "x" + dimString + "x" + dimString;
+  return meshSpec;
+}
+
+inline
 std::string get_mesh_spec(const std::string &optionName)
 {
-    std::string meshSpec("generated:");
-    std::string dim = stk::unit_test_util::get_option(optionName, "20");
-    meshSpec += dim+"x"+dim+"x"+dim;
-    return meshSpec;
+  return get_mesh_spec(stk::unit_test_util::get_command_line_option<int>(optionName, 20));
 }
 
 }

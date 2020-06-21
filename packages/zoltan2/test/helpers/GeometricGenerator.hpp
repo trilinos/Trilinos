@@ -693,25 +693,15 @@ public:
   virtual ~CoordinateNormalDistribution(){};
 private:
   T normalDist(T center_, T sd, unsigned int &state) {
-    static bool derived=false;
-    static T storedDerivation;
     T polarsqrt, normalsquared, normal1, normal2;
-    if (!derived) {
-      do {
-        normal1=2.0*( T(rand_r(&state))/T(RAND_MAX) ) - 1.0;
-        normal2=2.0*( T(rand_r(&state))/T(RAND_MAX) ) - 1.0;
-        normalsquared=normal1*normal1+normal2*normal2;
-      } while ( normalsquared>=1.0 || normalsquared == 0.0);
+    do {
+      normal1=2.0*( T(rand_r(&state))/T(RAND_MAX) ) - 1.0;
+      normal2=2.0*( T(rand_r(&state))/T(RAND_MAX) ) - 1.0;
+      normalsquared=normal1*normal1+normal2*normal2;
+    } while ( normalsquared>=1.0 || normalsquared == 0.0);
 
-      polarsqrt=sqrt(-2.0*log(normalsquared)/normalsquared);
-      storedDerivation=normal1*polarsqrt;
-      derived=true;
-      return normal2*polarsqrt*sd + center_;
-    }
-    else {
-      derived=false;
-      return storedDerivation*sd + center_;
-    }
+    polarsqrt=sqrt(-2.0*log(normalsquared)/normalsquared);
+    return normal2*polarsqrt*sd + center_;
   }
 };
 

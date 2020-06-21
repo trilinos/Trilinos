@@ -82,7 +82,10 @@ namespace Ifpack2 {
       SGS,     //!< Symmetric Gauss-Seidel
       MTGS,    //!< Multicore Gauss-Seidel
       MTSGS,   //!< Multicore Symmetric Gauss-Seidel
-      MTSPLITJACOBI //!< Multicore split Jacobi; "split" refers to splitting A = D + R
+      MTSPLITJACOBI, //!< Multicore split Jacobi; "split" refers to splitting A = D + R
+      RICHARDSON, //!< Richardson
+      GS2,     //!< Two-stage Gauss-Seidel
+      SGS2     //!< Two-stage Symmetric Gauss-Seidel
     };
   } // namespace Details
 

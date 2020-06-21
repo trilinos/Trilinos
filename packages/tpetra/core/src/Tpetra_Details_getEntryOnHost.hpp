@@ -53,73 +53,6 @@
 
 namespace Tpetra {
 namespace Details {
-namespace Impl {
-
-template<class ViewType,
-         class IndexType = typename ViewType::size_type,
-         const bool isHostSpace =
-           std::is_same<typename ViewType::memory_space,
-                        Kokkos::HostSpace>::value>
-struct GetEntryOnHost {
-  static typename ViewType::non_const_value_type
-  getEntryOnHost (const ViewType& x,
-                  const IndexType ind);
-};
-
-template<class ViewType,
-         class IndexType>
-struct GetEntryOnHost<ViewType, IndexType, true> {
-  static typename ViewType::non_const_value_type
-  getEntryOnHost (const ViewType& x,
-                  const IndexType ind)
-  {
-    static_assert (ViewType::Rank == 1, "x must be a rank-1 Kokkos::View.");
-    return x(ind);
-  }
-};
-
-template<class ViewType,
-         class IndexType>
-struct GetEntryOnHost<ViewType, IndexType, false> {
-  static typename ViewType::non_const_value_type
-  getEntryOnHost (const ViewType& x,
-                  const IndexType ind)
-  {
-    // Don't assume UVM.  Carefully get a 0-D subview of the entry of
-    // the array, and copy to device.  Do not use host mirror, because
-    // that could just be a UVM View if using UVM.
-    static_assert (ViewType::Rank == 1, "x must be a rank-1 Kokkos::View.");
-#ifdef KOKKOS_ENABLE_CUDA
-    // Do not use Kokkos::create_mirror_view, because that could just
-    // be a UVM View if using UVM.
-    typedef typename ViewType::device_type device_type;
-    // Hide this in ifdef, to avoid unused typedef warning.
-    typedef typename device_type::execution_space dev_exec_space;
-#endif // KOKKOS_ENABLE_CUDA
-    typedef typename ViewType::HostMirror::execution_space host_exec_space;
-    typedef Kokkos::Device<host_exec_space, Kokkos::HostSpace> host_device_type;
-    typedef typename ViewType::non_const_value_type value_type;
-
-    value_type val;
-    Kokkos::View<value_type, host_device_type> view_h (&val);
-    auto view_d = Kokkos::subview (x, ind); // 0-D View
-#ifdef KOKKOS_ENABLE_CUDA
-    typedef typename device_type::memory_space dev_memory_space;
-    if (std::is_same<dev_memory_space, Kokkos::CudaUVMSpace>::value) {
-      dev_exec_space().fence (); // for UVM's sake.
-    }
-#endif // KOKKOS_ENABLE_CUDA
-    Kokkos::deep_copy (view_h, view_d);
-#ifdef KOKKOS_ENABLE_CUDA
-    if (std::is_same<dev_memory_space, Kokkos::CudaUVMSpace>::value) {
-      dev_exec_space().fence (); // for UVM's sake.
-    }
-#endif // KOKKOS_ENABLE_CUDA
-    return val;
-  }
-};
-
-} // namespace Impl
 
 template<class ViewType,
          class IndexType>
@@ -127,7 +60,11 @@ typename ViewType::non_const_value_type
 getEntryOnHost (const ViewType& x,
                 const IndexType ind)
 {
-  return Impl::GetEntryOnHost<ViewType, IndexType>::getEntryOnHost (x, ind);
+  static_assert (ViewType::Rank == 1, "x must be a rank-1 Kokkos::View.");
+  // Get a 0-D subview of the entry of the array, and copy to host scalar.
+  typename ViewType::non_const_value_type val;
+  Kokkos::deep_copy(val, Kokkos::subview(x, ind));
+  return val;
 }
 
 } // namespace Details

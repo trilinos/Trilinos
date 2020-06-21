@@ -66,6 +66,7 @@ public:
     con_->applyJacobian_1(jv,v,u,*z_,tol);
   }
 
+  using Constraint<Real>::applyAdjointJacobian;
   void applyAdjointJacobian(Vector<Real> &ajv,const Vector<Real> &v,const Vector<Real> &u,Real &tol) {
     con_->applyAdjointJacobian_1(ajv,v,u,*z_,tol);
   }

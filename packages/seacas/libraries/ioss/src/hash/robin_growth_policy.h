@@ -49,13 +49,14 @@
     !defined(TSL_NO_EXCEPTIONS)
 #define TSL_RH_THROW_OR_TERMINATE(ex, msg) throw ex(msg)
 #else
+#define TSL_RH_NO_EXCEPTIONS
 #ifdef NDEBUG
 #define TSL_RH_THROW_OR_TERMINATE(ex, msg) std::terminate()
 #else
-#include <cstdio>
+#include <iostream>
 #define TSL_RH_THROW_OR_TERMINATE(ex, msg)                                                         \
   do {                                                                                             \
-    std::fprintf(stderr, msg);                                                                     \
+    std::cerr << msg << std::endl;                                                                 \
     std::terminate();                                                                              \
   } while (0)
 #endif
@@ -164,7 +165,7 @@ namespace tsl {
       static_assert(is_power_of_two(GrowthFactor) && GrowthFactor >= 2,
                     "GrowthFactor must be a power of two >= 2.");
 
-      std::size_t m_mask;
+      std::size_t m_mask{};
     };
 
     /**
@@ -196,17 +197,17 @@ namespace tsl {
           TSL_RH_THROW_OR_TERMINATE(std::length_error, "The hash table exceeds its maxmimum size.");
         }
 
-        const double my_next_bucket_count =
+        const double nxt_bucket_count =
             std::ceil(double(m_mod) * REHASH_SIZE_MULTIPLICATION_FACTOR);
-        if (!std::isnormal(my_next_bucket_count)) {
+        if (!std::isnormal(nxt_bucket_count)) {
           TSL_RH_THROW_OR_TERMINATE(std::length_error, "The hash table exceeds its maxmimum size.");
         }
 
-        if (my_next_bucket_count > double(max_bucket_count())) {
+        if (nxt_bucket_count > double(max_bucket_count())) {
           return max_bucket_count();
         }
         else {
-          return std::size_t(my_next_bucket_count);
+          return std::size_t(nxt_bucket_count);
         }
       }
 
@@ -222,7 +223,7 @@ namespace tsl {
 
       static_assert(REHASH_SIZE_MULTIPLICATION_FACTOR >= 1.1, "Growth factor should be >= 1.1.");
 
-      std::size_t m_mod;
+      std::size_t m_mod{};
     };
 
     namespace detail {
@@ -319,7 +320,7 @@ namespace tsl {
       void clear() noexcept { m_iprime = 0; }
 
     private:
-      unsigned int m_iprime;
+      unsigned int m_iprime{};
 
       static_assert(std::numeric_limits<decltype(m_iprime)>::max() >= detail::PRIMES.size(),
                     "The type of m_iprime is not big enough.");

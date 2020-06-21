@@ -422,11 +422,9 @@ public:
   //! @name I/O methods.
   //@{
   //! Print method.  Defines the behavior of the std::ostream << operator
-#ifndef TEUCHOS_HIDE_DEPRECATED_CODE
-  virtual void print(std::ostream& os) const;
-#else
+
   virtual std::ostream& print(std::ostream& os) const;
-#endif
+
 
   //@}
 protected:
@@ -996,11 +994,7 @@ int SerialBandDenseMatrix<OrdinalType, ScalarType>::scale( const SerialBandDense
 }
 
 template<typename OrdinalType, typename ScalarType>
-#ifndef TEUCHOS_HIDE_DEPRECATED_CODE
-void SerialBandDenseMatrix<OrdinalType, ScalarType>::print(std::ostream& os) const
-#else
 std::ostream& SerialBandDenseMatrix<OrdinalType, ScalarType>::print(std::ostream& os) const
-#endif
 {
   os << std::endl;
   if(valuesCopied_)
@@ -1023,9 +1017,7 @@ std::ostream& SerialBandDenseMatrix<OrdinalType, ScalarType>::print(std::ostream
       os << std::endl;
     }
   }
-#ifdef TEUCHOS_HIDE_DEPRECATED_CODE
   return os;
-#endif
 }
 
 //----------------------------------------------------------------------------------------------------
@@ -1080,16 +1072,6 @@ void SerialBandDenseMatrix<OrdinalType, ScalarType>::copyMat(
     }
   }
 }
-
-#ifndef TEUCHOS_HIDE_DEPRECATED_CODE
-/// \brief Print the given SerialBandDenseMatrix to the given output stream.
-template<typename OrdinalType, typename ScalarType>
-std::ostream& operator<< (std::ostream& os, const Teuchos::SerialBandDenseMatrix<OrdinalType, ScalarType>& obj)
-{
-  obj.print (os);
-  return os;
-}
-#endif
 
 /// \brief Ostream manipulator for SerialBandDenseMatrix 
 template<typename OrdinalType, typename ScalarType> 

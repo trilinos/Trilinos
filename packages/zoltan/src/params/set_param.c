@@ -66,9 +66,7 @@ extern "C" {
 #include "order_const.h"
 #include "phg_const.h"
 #include "graph_const.h"
-#ifdef ZOLTAN_HIER
 #include "hier.h"
-#endif
 #ifdef ZOLTAN_OVIS
 #include "ha_ovis.h"
 #endif
@@ -94,9 +92,7 @@ static ZOLTAN_SET_PARAM_FN * Param_func[] = {
        Zoltan_HSFC_Set_Param,
        Zoltan_Order_Set_Param,
        Zoltan_PHG_Set_Param,
-#ifdef ZOLTAN_HIER
        Zoltan_Hier_Set_Param,
-#endif
 #ifdef ZOLTAN_OVIS
        Zoltan_OVIS_Set_Param,
 #endif

@@ -48,6 +48,10 @@
 SET(REQUIRED_HEADERS netcdf.h)
 SET(REQUIRED_LIBS_NAMES netcdf)
 
+IF (TPL_ENABLE_MPI)
+  SET(REQUIRED_LIBS_NAMES ${REQUIRED_LIBS_NAMES} pnetcdf)
+ENDIF()
+
 #
 # Second, search for Netcdf components (if allowed) using the standard
 # FIND_PACKAGE(NetCDF ...).
@@ -71,7 +75,7 @@ IF (Netcdf_ALLOW_PREFIND)
       "True if netcdf enables netcdf-4")
     set(TPL_Netcdf_Enables_PNetcdf ${NetCDF_NEEDS_PNetCDF} CACHE BOOL
       "True if netcdf enables pnetcdf")
-    set(TPL_Netcdf_PARALLEL ${NetCDF_PARALLEL} CACHE BOOL
+    set(TPL_Netcdf_PARALLEL ${NetCDF_PARALLEL} CACHE INTERNAL
       "True if netcdf compiled with parallel enabled")
     set(TPL_Netcdf_LIBRARY_DIRS ${_hdf5_LIBRARY_SEARCH_DIRS} CACHE PATH
       "${DOCSTR} library files")
@@ -80,7 +84,11 @@ IF (Netcdf_ALLOW_PREFIND)
     set(TPL_Netcdf_INCLUDE_DIRS ${NetCDF_INCLUDE_DIRS} CACHE PATH
       "${DOCSTR} header files.")
   ENDIF()
-
+ELSE()
+  # Curl library is only required if DAP is enabled; should detect inside FindNetCDF.cmake,
+  # but that is not being called... SEMS has DAP enabled; many HPC systems don't, but they
+  # override these settings...
+  SET(REQUIRED_LIBS_NAMES ${REQUIRED_LIBS_NAMES} curl)
 ENDIF()
 
 #
@@ -95,3 +103,30 @@ TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( Netcdf
 # variables TPL_Netcdf_INCLUDE_DIRS and TPL_Netcdf_LIBRARIES and then print
 # them out (and set some other standard variables as well).  This is the final
 # "hook" into the TriBITS TPL system.
+
+# If the `find_package(NetCDF)` is not run, then this may not be set
+# Need to determine how this is set in the library that is being used...
+
+if ("${TPL_Netcdf_PARALLEL}" STREQUAL "")  
+   ASSERT_DEFINED(TPL_Netcdf_INCLUDE_DIRS)
+   find_path(meta_path
+      NAMES "netcdf_meta.h"
+      HINTS ${TPL_Netcdf_INCLUDE_DIRS}
+      NO_DEFAULT_PATH)
+
+   if (meta_path)
+      # Search meta for NC_HAS_PARALLEL setting...
+      # Note that there is both NC_HAS_PARALLEL and NC_HAS_PARALLEL4, only want first...
+      file(STRINGS "${meta_path}/netcdf_meta.h" netcdf_par_string REGEX "NC_HAS_PARALLEL ")
+      string(REGEX MATCH "[01]" netcdf_par_val "${netcdf_par_string}")
+      if (netcdf_par_val EQUAL 1)
+         set(TPL_Netcdf_PARALLEL True CACHE INTERNAL 
+	     "True if netcdf compiled with parallel enabled")
+      endif()
+   endif()
+   if ("${TPL_Netcdf_PARALLEL}" STREQUAL "")  
+      set(TPL_Netcdf_PARALLEL False CACHE INTERNAL 
+          "True if netcdf compiled with parallel enabled")
+   endif()
+endif()
+message(STATUS "TPL_Netcdf_PARALLEL is ${TPL_Netcdf_PARALLEL}")

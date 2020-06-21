@@ -138,7 +138,7 @@ namespace KokkosBatched {
   KOKKOS_INLINE_FUNCTION
   int
   InnerLU<1>::
-  serial_invoke(ValueType *__restrict__ A) {
+  serial_invoke(ValueType *__restrict__ /* A */) {
     return 0;
   }
 

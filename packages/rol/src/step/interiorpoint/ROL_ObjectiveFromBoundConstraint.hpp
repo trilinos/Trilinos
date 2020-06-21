@@ -217,10 +217,10 @@ public:
         break;
 
       default:
+
         ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
           ">>>(ObjectiveFromBoundConstraint::value): Undefined barrier function type!");
 
-        break;
     }
 
     Real result = b_->reduce(Sum());
@@ -300,10 +300,10 @@ public:
         break;
 
       default:
+
         ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
           ">>>(ObjectiveFromBoundConstraint::gradient): Undefined barrier function type!");
 
-        break;
     }
 
     g.set(*b_);
@@ -384,10 +384,10 @@ public:
         break;
 
       default:
+
         ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
           ">>>(ObjectiveFromBoundConstraint::hessVec): Undefined barrier function type!");
 
-        break;
     }
 
     hv.set(v);

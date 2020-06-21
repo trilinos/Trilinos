@@ -80,7 +80,7 @@
 
       virtual unsigned getNumNewElemPerElem() { return 8; }
 
-      //typedef boost::array<unsigned, ToTopology::node_count > refined_element_type;
+      //typedef std::array<unsigned, ToTopology::node_count > refined_element_type;
 
 
       void

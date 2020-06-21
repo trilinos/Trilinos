@@ -82,17 +82,9 @@ public:
     {
     }
 
-    BulkDataTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm, enum stk::mesh::BulkData::AutomaticAuraOption auto_aura_option) :
-            stk::mesh::BulkData(mesh_meta_data, comm, auto_aura_option
-#ifdef SIERRA_MIGRATION
-, false
-#endif
-, (stk::mesh::FieldDataManager*)nullptr)
-    {
-    }
-
-    BulkDataTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm, stk::mesh::ConnectivityMap const &/*conn_map*/) :
-            stk::mesh::BulkData(mesh_meta_data, comm, stk::mesh::BulkData::AUTO_AURA
+    BulkDataTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm,
+                   enum stk::mesh::BulkData::AutomaticAuraOption auto_aura_option)
+            : stk::mesh::BulkData(mesh_meta_data, comm, auto_aura_option
 #ifdef SIERRA_MIGRATION
 , false
 #endif
@@ -104,7 +96,6 @@ public:
                    MPI_Comm comm,
                    enum stk::mesh::BulkData::AutomaticAuraOption auto_aura_option,
                    bool _add_fmwk_data,
-                   stk::mesh::ConnectivityMap const* /*arg_connectivity_map*/,
                    stk::mesh::FieldDataManager *field_data_manager,
                    unsigned bucket_capacity) :
             stk::mesh::BulkData(mesh_meta_data, comm, auto_aura_option
@@ -163,7 +154,7 @@ public:
         this->resolve_ownership_of_modified_entities(shared_new);
     }
 
-    bool my_entity_comm_map_insert(stk::mesh::Entity entity, const stk::mesh::EntityCommInfo & val)
+    std::pair<stk::mesh::EntityComm*,bool> my_entity_comm_map_insert(stk::mesh::Entity entity, const stk::mesh::EntityCommInfo & val)
     {
         return BulkData::entity_comm_map_insert(entity, val);
     }
@@ -208,16 +199,6 @@ public:
         this->update_sharing_after_change_entity_owner();
     }
 
-    inline bool my_set_parallel_owner_rank_but_not_comm_lists(stk::mesh::Entity entity, int in_owner_rank)
-    {
-        return this->internal_set_parallel_owner_rank_but_not_comm_lists(entity, in_owner_rank);
-    }
-
-    void my_fix_up_ownership(stk::mesh::Entity entity, int new_owner)
-    {
-        this->fix_up_ownership(entity, new_owner);
-    }
-
     stk::mesh::PairIterEntityComm my_internal_entity_comm_map_shared(const stk::mesh::EntityKey & key) const
     {
         return internal_entity_comm_map_shared(key);
@@ -225,7 +206,7 @@ public:
 
     int my_internal_entity_comm_map_owner(const stk::mesh::EntityKey & key) const
     {
-        return internal_entity_comm_map_owner(key);
+        return parallel_owner_rank(get_entity(key));
     }
 
     const stk::mesh::EntityCommListInfoVector & my_internal_comm_list() const
@@ -256,7 +237,8 @@ public:
 
     void my_internal_resolve_ghosted_modify_delete()
     {
-        this->internal_resolve_ghosted_modify_delete();
+        stk::mesh::EntityVector entitiesNoLongerShared;
+        this->internal_resolve_ghosted_modify_delete(entitiesNoLongerShared);
     }
 
     void my_internal_resolve_parallel_create()
@@ -346,6 +328,11 @@ public:
             std::vector<stk::mesh::shared_entity_type> & shared_entity_map)
     {
         unpackEntityFromOtherProcAndUpdateInfoIfSharedLocally(comm, shared_entity_map);
+    }
+
+    void my_internal_change_owner_in_comm_data(stk::mesh::Entity entity, int owner)
+    {
+        this->internal_set_owner(entity, owner);
     }
 
     void my_internal_change_entity_key(stk::mesh::EntityKey old_key, stk::mesh::EntityKey new_key, stk::mesh::Entity entity)

@@ -898,7 +898,7 @@ namespace MueLu {
                                                                               myGeo->numDimensions);
     ghostCoords->doImport(*fineCoords, *ghostImporter, Xpetra::INSERT);
 
-    P = rcp(new CrsMatrixWrap(rowMapP, colMapP, 0, Xpetra::StaticProfile));
+    P = rcp(new CrsMatrixWrap(rowMapP, colMapP, 0));
     RCP<CrsMatrix> PCrs = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
 
     ArrayRCP<size_t>  iaP;

@@ -65,6 +65,8 @@ APPEND_SET(HEADERS
   CoarseSpaces/FROSch_ConstantPartitionOfUnity_def.hpp
   CoarseSpaces/FROSch_GDSWInterfacePartitionOfUnity_decl.hpp
   CoarseSpaces/FROSch_GDSWInterfacePartitionOfUnity_def.hpp
+  CoarseSpaces/FROSch_GDSWStarInterfacePartitionOfUnity_decl.hpp
+  CoarseSpaces/FROSch_GDSWStarInterfacePartitionOfUnity_def.hpp
   CoarseSpaces/FROSch_InterfacePartitionOfUnity_decl.hpp
   CoarseSpaces/FROSch_InterfacePartitionOfUnity_def.hpp
   CoarseSpaces/FROSch_LocalPartitionOfUnityBasis_decl.hpp

@@ -96,6 +96,9 @@ typedef struct ML_AMG_Struct
                            struct AZ_MATRIX_STRUCT  *,
                            struct AZ_PREC_STRUCT *);
   */
+  /*cms*/
+  double rowsum_threshold;             /**< for dropping sub-CFL rows in reaction-diffusion */
+
 } ML_AMG;
 
 /* ************************************************************************* */
@@ -148,6 +151,8 @@ extern int  ML_AMG_Set_CoarsenScheme_MIS( ML_AMG *amg  );
 /* ------------------------------------------------------------------------- */
 
 extern int  ML_AMG_Set_Threshold( ML_AMG *amg, double epsilon );
+
+extern int ML_AMG_Set_RowSum_Threshold( ML_AMG *, double epsilon );
 
 /* ------------------------------------------------------------------------- */
 /* functions for performing coarsening                                       */
@@ -204,6 +209,10 @@ int ML_AMG_UpdateVertexStates(int N_remaining_vertices, char vertex_state[],
 
 int ML_AMG_CompatibleRelaxation(int *CF_array,
            ML_Operator *Amat, int *Ncoarse, int limit);
+
+int ML_AMG_Identity_Getrows(ML_Operator *data, int N_requested_rows,
+                            int requested_rows[], int allocated_space, int columns[],
+                            double values[], int row_lengths[]);
 
 #ifndef ML_CPP
 #ifdef __cplusplus

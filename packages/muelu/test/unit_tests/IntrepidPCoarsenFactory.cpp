@@ -639,6 +639,9 @@ namespace MueLuTests {
     }
 
     CellTools::mapToPhysicalFrame(cellDofCoords, refDofCoords, cellWorkset, cellTopo);
+
+    Kokkos::fence(); // mapToPhysicalFrame calls getValues which calls kernels, so fence is required before UVM reads below
+
     UniqueNumbering globalNumbering(spaceDim, pointTol);
     globalNumbering.getIDs<ArrayScalar,ArrayOrdinal>(cellDofCoords,cellDofIDs);
 
@@ -673,8 +676,6 @@ namespace MueLuTests {
     typedef typename Node::device_type::execution_space ES;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
     typedef typename Teuchos::ScalarTraits<LocalOrdinal>::magnitudeType OT; // ordinal type
-
-    using namespace Kokkos;
 
     using namespace Kokkos::Experimental;
     typedef Kokkos::DynRankView<MT,typename Node::device_type> FC;
@@ -742,8 +743,6 @@ namespace MueLuTests {
     typedef typename Node::device_type::execution_space ES;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
     typedef typename Teuchos::ScalarTraits<LocalOrdinal>::magnitudeType OT; // ordinal type
-
-    using namespace Kokkos;
 
     using namespace Kokkos::Experimental;
     typedef Kokkos::DynRankView<MT,typename Node::device_type> FC;
@@ -2037,6 +2036,9 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
 
             CellTools::mapToPhysicalFrame(lo_physDofCoords, lo_DofCoords, physCellVerticesPermuted, cellTopo);
             CellTools::mapToPhysicalFrame(hi_physDofCoords, hi_DofCoords, physCellVerticesPermuted, cellTopo);
+
+            Kokkos::fence(); // mapToPhysicalFrame calls getValues which calls kernels, so fence is required before UVM reads below
+
             int cell1Side = searchForX1Side(1);
 
             /*

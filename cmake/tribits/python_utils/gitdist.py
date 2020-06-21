@@ -49,6 +49,7 @@ helpTopics = [
   'repo-selection-and-setup',
   'dist-repo-status',
   'repo-versions',
+  'dist-repo-versions-table',
   'aliases', 
   'default-branch',
   'move-to-base-dir',
@@ -73,6 +74,7 @@ helpTopicsDict = {}
 
 helpUsageHeader = r"""gitdist [gitdist arguments] <raw-git-command> [git arguments]
        gitdist [gitdist arguments] dist-repo-status
+       gitdist [gitdist arguments] dist-repo-versions-table
 
 Run git over a set of git repos in a multi-repository git project (see
 --dist-help=overview --help).  This script also includes other tools like
@@ -187,8 +189,27 @@ repoSelectionAndSetupHelp = r"""
 REPO SELECTION AND SETUP:
 
 Before using the gitdist tool, one must first add the gitdist script to one's
-default path.  This can be done, for example, by copying the gitdist script to
-one's ~/bin/ directory:
+default path.  On bash, the simplest way to do this is to source the
+gitdist-setup.py script:
+
+  $ source <some-base-dir>/TriBITS/tribits/python_utils/gitdist-setup.sh
+
+This will set an alias to the gitdist script in that same directory by
+default, will set up useful alias 'gitdist-status', 'gitdist-mod', and
+'gitdist-mod-status', and 'gitdist-repo-versions', and will set up
+command-line completion just like for raw git (assuming that
+git-completion.bash has been sourced first).  The files 'gitdist' and
+'gitdist-setup.sh' can also be copied to another directory (e.g. ~/bin) and
+then 'gitdist-setup.sh' can be sourced from there (as a simple "install"):
+
+  $ cp <some-base-dir>/TriBITS/tribits/python_utils/gitdist \
+       <some-base-dir>/TriBITS/tribits/python_utils/gitdist-setup.sh \
+      ~/bin/
+  $ source ~/bin/gitdist-setup.sh
+  $ export PATH=$HOME/bin:$PATH
+
+This script can also be set up manually, for example, by copying the gitdist
+script to one's ~/bin/ directory:
 
   $ cp <some-base-dir>/TriBITS/tribits/python_utils/gitdist ~/bin/
   $ chmod a+x ~/bin/gitdist
@@ -199,7 +220,7 @@ and then adding $HOME/bin to one's 'PATH' env var with:
 
 (i.e. in one's ~/.bash_profile file).  Then, one will want to set up some
 useful shell aliases like 'gitdist-status', 'gitdist-mod', and
-'gitdist-mod-status' (see --dist-help=aliases).
+'gitdist-mod-status' and 'gitdist-repo-versions' (see --dist-help=aliases).
 
 The set of git repos processed by gitdist is determined by the argument:
 
@@ -298,7 +319,7 @@ helpTopicsDict.update( { 'repo-selection-and-setup' : repoSelectionAndSetupHelp 
 distRepoStatusHelp = r"""
 SUMMARY OF REPO STATUS:
 
-Th script gitdist also supports the special command 'dist-repo-status' which
+The script gitdist also supports the special command 'dist-repo-status' which
 prints a compact table showing the current status of all the repos (see alias
 'gitdist-status' in --dist-help=aliases).  For the example set of repos shown
 in OVERVIEW (see --dist-help=overview), running:
@@ -378,13 +399,11 @@ example):
   $ gitdist --dist-no-color log -1 --pretty=format:"%h [%ad] <%ae>%n%s" \
     | grep -v "^$" &> RepoVersion.txt
 
-or two lines per repo using (for example):
+(which is defined as the alias 'gitdist-repo-versions' in the file
+'gitdist-setup.sh') or two lines per repo using (for example):
 
   $ gitdist --dist-no-color log -1 --pretty=format:"%h [%ad] <%ae>" \
     | grep -v "^$" &> RepoVersion.txt
-
-(See the alias 'gitdist-repo-versions' defined in the file
-'gitdist-setup.sh'.)
 
 This allows checking out consistent versions of the set git repos, diffing two
 consistent versions of the set of git repos, etc.
@@ -436,6 +455,35 @@ exclude them with:
     <raw-git-comand> [git arguments]
 """
 helpTopicsDict.update( { 'repo-versions' : repoVersionFilesHelp } )
+
+
+distRepoVersionsTableHelp = r"""
+REPO VERSION TABLE:
+
+The script gitdist also supports the special command
+'dist-repo-versions-table', which prints a Markdown-formatted table of
+repositories and corresponding commit information for easy inclusion in an
+issue tracking system.  For instance, running:
+
+  $ gitdist dist-repo-versions-table
+
+outputs a table like:
+
+  | Repository     | SHA1    | Commit Date         | Author                 | Summary                                        |
+  |:-------------- |:-------:|:------------------- |:---------------------- |:---------------------------------------------- |
+  | MockProjectDir | e2dc488 | 2019-10-23 10:16:07 | user@domain.com        | Merge Pull Request #1234 from user/repo/branch |
+  | ExtraRepo1     | f671414 | 2019-10-22 11:18:47 | wile.e.coyote@acme.com | Fixed a Bug                                    |
+  | ExtraRepo2     | 50bbf3e | 2019-10-17 16:32:15 | someone@somwhere.com   | Did Some Work                                  |
+
+If the option --dist-short is also passed in, the output will be limited to:
+
+  | Repository     | SHA1    |
+  |:-------------- |:-------:|
+  | MockProjectDir | e2dc488 |
+  | ExtraRepo1     | f671414 |
+  | ExtraRepo2     | 50bbf3e |
+"""
+helpTopicsDict.update( { 'dist-repo-versions-table' : distRepoVersionsTableHelp } )
 
 
 usefulAliasesHelp =r"""
@@ -748,7 +796,7 @@ def getTableField(field, width, just):
   return field.ljust(width)
 
 
-# Format a table from a set of fields
+# Format an ASCII/UTF-8 table from a set of fields.
 #
 # The format is of tableData input is:
 #
@@ -872,6 +920,71 @@ def createTable(tableData, utf8=False):
     else:
       table += "┘" if utf8 else "-"
   table += "\n"
+
+  return table
+
+
+# Format a Markdown table from a set of fields.
+#
+# The format of the tableData input is:
+#
+#   [ { "label":"<label0>:, "align":"<align0>, "fields":[<fld00>, ... ]},
+#     { "label":"<label1>:, "align":"<align1>, "fields":[<fld10>, ... ]},
+#     ...
+#     ]
+#
+# The "align" field is either "R" for right, "C" for center, or "L" for left.
+#
+def createMarkdownTable(tableData):
+
+  # Table size
+  numFields = len(tableData)
+  numRows = len(tableData[0]["fields"])
+
+  # a) Get the max field width for each column.
+  tableFieldWidth = []
+  for fieldDict in tableData:
+    label = fieldDict["label"]
+    maxFieldWidth = len(label)
+    if len(fieldDict["fields"]) != numRows:
+      raise Exception("Error: column '"+label+"' numfields = " + \
+        str(len(fieldDict["fields"])) + " != numRows = "+str(numRows)+"\n" )
+    for field in fieldDict["fields"]:
+      fieldWidth = len(field)
+      if fieldWidth > maxFieldWidth:
+        maxFieldWidth = fieldWidth
+    tableFieldWidth.append(maxFieldWidth)
+
+  # b) Write the header of the table.
+  table = "|"
+  fieldIdx = 0
+  for fieldDict in tableData:
+    table += " "
+    table += getTableField(fieldDict["label"], tableFieldWidth[fieldIdx],
+      fieldDict["align"])
+    table += " |"
+    fieldIdx += 1
+  table += "\n|"
+  for i, fieldDict in enumerate(tableData):
+    if ((fieldDict["align"] == "L") or (fieldDict["align"] == "C")):
+      table += ":"
+    else:
+      table += " "
+    table += "-"*tableFieldWidth[i]
+    if ((fieldDict["align"] == "C") or (fieldDict["align"] == "R")):
+      table += ":"
+    else:
+      table += " "
+    table += "|"
+
+  # c) Write each row of the table
+  for row_i in range(numRows):
+    table += "\n|"
+    field_i = 0
+    for fieldDict in tableData:
+      table += " "+getTableField(fieldDict["fields"][row_i],
+        tableFieldWidth[field_i], fieldDict["align"] )+" |"
+      field_i += 1
 
   return table
 
@@ -1015,6 +1128,8 @@ def parseGitdistFile(gitdistfile):
   defaultBranchDict = {}
   with open(gitdistfile, 'r') as file:
     for line in file:
+      line = line.strip()
+      if line == "": continue  # ignore blank lines!
       entries = line.split()
       reposFullList.append(entries[0])
       if len(entries) > 1:
@@ -1043,17 +1158,19 @@ def getCommandlineOps():
   noOptName = "--dist-no-opt"
   modifiedOnlyName = "--dist-mod-only"
   legendName = "--dist-legend"
+  shortName = "--dist-short"
 
   nativeArgNames = [ distHelpArgName, helpArgName, withGitArgName, \
     reposArgName, notReposArgName, \
     versionFileName, versionFile2Name, noColorArgName, debugArgName, noOptName, \
-    modifiedOnlyName, legendName ]
+    modifiedOnlyName, legendName, shortName ]
   if sys.version_info > (3,):
     utf8Name = "--dist-utf8-output"
     nativeArgNames.append(utf8Name)
 
   distRepoStatus = "dist-repo-status"
-  nativeCmndNames = [ distRepoStatus ]
+  distRepoVersionTable = "dist-repo-versions-table"
+  nativeCmndNames = [ distRepoStatus, distRepoVersionTable ]
 
   # Select a version of git (see above help documentation)
   defaultGit = "git" # Try system git
@@ -1214,6 +1331,13 @@ def getCommandlineOps():
   clp.add_option(
     noOptName, dest="noOpt", action="store_true",
     help="If set, then no git commands will be run but instead will just be printed.",
+    default=False )
+
+  clp.add_option(
+    shortName, dest="short", action="store_true",
+    help="If set, then the repo versions table will only include the Repo " \
+      "Dir and SHA1 columns; Commit Date, Author, and Summary will be " \
+      "omitted.",
     default=False )
 
   (options, args) = clp.parse_args(nativeArgs)
@@ -1616,6 +1740,70 @@ def getRepoStats(options, getCmndOutputFunc=None):
                          numUntracked)
 
 
+class RepoVersionStruct:
+
+  def __init__(self, sha1, commitDate, author, summary):
+    self.sha1 = sha1
+    self.commitDate = commitDate
+    self.author = author
+    self.summary = summary
+
+  def __str__(self):
+    return "{" \
+     "sha1='" + self.sha1 + "'," \
+     " commitDate='" + self.commitDate + "'," \
+     " author='" + self.author + "'," \
+     " summary='" + self.summary + "'" \
+     "}"
+
+
+# Get the SHA1 for the current commit.
+def getCommitSha1(options, getCmndOutputFunc):
+  (resp, rtnCode) = getCmndOutputFunc(
+    options.useGit + " rev-parse --short HEAD",
+    rtnCode=True )
+  if rtnCode == 0:
+    return s(resp.strip())
+  return ""
+
+# Get the commit date for the current commit.
+def getCommitDate(options, getCmndOutputFunc):
+  (resp, rtnCode) = getCmndOutputFunc(
+    options.useGit + " log -1 --pretty=format:\"%cd\" --date=format:\"%G-%m-%d %H:%M:%S\"",
+    rtnCode=True )
+  if rtnCode == 0:
+    return s(resp.strip())
+  return ""
+
+# Get the author of the current commit.
+def getCommitAuthor(options, getCmndOutputFunc):
+  (resp, rtnCode) = getCmndOutputFunc(
+    options.useGit + " log -1 --pretty=format:\"%ae\"",
+    rtnCode=True )
+  if rtnCode == 0:
+    return s(resp.strip())
+  return ""
+
+# Get the first line of the current commit message.
+def getCommitSummary(options, getCmndOutputFunc):
+  (resp, rtnCode) = getCmndOutputFunc(
+    options.useGit + " log -1 --pretty=format:\"%s\"",
+    rtnCode=True )
+  if rtnCode == 0:
+    return s(resp.strip())
+  return ""
+
+
+def getRepoVersions(options, getCmndOutputFunc=None):
+  if not getCmndOutputFunc:
+    getCmndOutputFunc = getCmndOutput
+  sha1 = getCommitSha1(options, getCmndOutputFunc)
+  commitDate = getCommitDate(options, getCmndOutputFunc)
+  author = getCommitAuthor(options, getCmndOutputFunc)
+  summary = getCommitSummary(options, getCmndOutputFunc)
+  return RepoVersionStruct(sha1, commitDate, author, summary)
+
+
 def convertZeroStrToEmpty(strIn):
   if strIn == "0":
     return ""
@@ -1648,6 +1836,28 @@ class RepoStatTable:
     return self.tableData
 
   
+class RepoVersionTable:
+
+  def __init__(self):
+    self.tableData = [
+      { "label" : "Repository", "align" : "L", "fields" : [] },
+      { "label" : "SHA1", "align" : "C", "fields" : [] },
+      { "label" : "Commit Date", "align" : "L", "fields" : [] },
+      { "label" : "Author", "align" : "L", "fields" : [] },
+      { "label" : "Summary", "align" : "L", "fields" : [] },
+      ]
+
+  def insertRepoVersion(self, repoDir, repoVersion):
+    self.tableData[0]["fields"].append(repoDir)
+    self.tableData[1]["fields"].append(repoVersion.sha1)
+    self.tableData[2]["fields"].append(repoVersion.commitDate)
+    self.tableData[3]["fields"].append(repoVersion.author)
+    self.tableData[4]["fields"].append(repoVersion.summary)
+
+  def getTableData(self):
+    return self.tableData
+
+
 def getRepoName(repoDir, baseRepoName):
   if repoDir == ".":
     return baseRepoName
@@ -1669,10 +1879,18 @@ if __name__ == '__main__':
     distRepoStatus = True
     if len(otherArgs) > 0:
       print("Error, passing in extra git commands/args ='" + " ".join(otherArgs)
-            + "' with special comamnd 'dist-repo-status is not allowed!")
+            + "' with special command 'dist-repo-status' is not allowed!")
       sys.exit(1)
   else:
     distRepoStatus = False
+  if nativeCmnd == "dist-repo-versions-table":
+    distRepoVersionTable = True
+    if len(otherArgs) > 0:
+      print("Error, passing in extra git commands/args ='" + " ".join(otherArgs)
+            + "' with special command 'dist-repo-versions-table' is not allowed!")
+      sys.exit(1)
+  else:
+    distRepoVersionTable = False
 
   # Get the reference base directory
   baseDir = os.getcwd()
@@ -1692,6 +1910,7 @@ if __name__ == '__main__':
     print("*** Using git: " + str(options.useGit))
 
   repoStatTable = RepoStatTable()
+  repoVersionTable = RepoVersionTable()
 
   repoID = 0
 
@@ -1708,10 +1927,12 @@ if __name__ == '__main__':
         print("\n*** Changing to directory " + repo)
       os.chdir(repo)
       # Get repo stats
+      repoStats = None
       if options.modifiedOnly or distRepoStatus:
         repoStats = getRepoStats(options)
-      else:
-        repoStats = None
+      repoVersions = None
+      if distRepoVersionTable:
+        repoVersions = getRepoVersions(options)
       # See if we should process based on --dist-mod-only
       if options.modifiedOnly and not repoStats.hasLocalChanges():
          processThisExtraRepo = False
@@ -1724,6 +1945,10 @@ if __name__ == '__main__':
       repoNameInTpl = repoName + (" (Base)" if repo=="." else "") 
       if distRepoStatus:
         repoStatTable.insertRepoStat(repoNameInTpl, repoStats, repoID)
+        processThisExtraRepo = False
+      elif distRepoVersionTable:
+        repoVersionTable.insertRepoVersion(repoName.split("/")[-1],
+          repoVersions)
         processThisExtraRepo = False
       else:
         print("")
@@ -1753,6 +1978,11 @@ if __name__ == '__main__':
       print(distRepoStatusLegend)
     else:
       print("(tip: to see a legend, pass in --dist-legend.)")
+  elif distRepoVersionTable:
+    if (options.short):
+      print(createMarkdownTable(repoVersionTable.getTableData()[0:2]))
+    else:
+      print(createMarkdownTable(repoVersionTable.getTableData()))
   else:
     print("")
 

@@ -78,9 +78,9 @@ public:
 
     /** Constructor
 
-    \param[in] input_graph the graph which is to have colors assigned to its rows
-    \param[in] paramlist this parameter list may be used to pass parameters to Zoltan
-    \param[in] compute_now  if @c true, the coloring is computed in the constructor, otherwise call Isorropia::Epetra::Colorer::color when you want to compute the coloring, defaults to @c true
+    \param input_graph (in) the graph which is to have colors assigned to its rows
+    \param paramlist (in) this parameter list may be used to pass parameters to Zoltan
+    \param compute_now (in) if @c true, the coloring is computed in the constructor, otherwise call Isorropia::Epetra::Colorer::color when you want to compute the coloring, defaults to @c true
 
 \ingroup coloring_grp
     */
@@ -91,9 +91,9 @@ public:
 
     /** Constructor
 
-    \param[in] input_graph the graph which is to have colors assigned to its rows
-    \param[in] paramlist this parameter list may be used to pass parameters to Zoltan
-    \param[in] compute_now  if @c true, the coloring is computed in the constructor, otherwise call Isorropia::Epetra::Colorer::color when you want to compute the coloring, defaults to @c true
+    \param input_graph (in) the graph which is to have colors assigned to its rows
+    \param paramlist (in) this parameter list may be used to pass parameters to Zoltan
+    \param compute_now (in) if @c true, the coloring is computed in the constructor, otherwise call Isorropia::Epetra::Colorer::color when you want to compute the coloring, defaults to @c true
 
 \ingroup coloring_grp
     */
@@ -104,9 +104,9 @@ public:
 
     /** Constructor
 
-    \param[in] input_matrix the matrix which is to have colors assigned to its rows
-    \param[in] paramlist this parameter list may be used to pass parameters to Zoltan
-    \param[in] compute_now  if @c true, the coloring is computed in the constructor, otherwise call Isorropia::Epetra::Colorer::color when you want to compute the coloring, defaults to @c true
+    \param input_matrix (in) the matrix which is to have colors assigned to its rows
+    \param paramlist (in) this parameter list may be used to pass parameters to Zoltan
+    \param compute_now (in) if @c true, the coloring is computed in the constructor, otherwise call Isorropia::Epetra::Colorer::color when you want to compute the coloring, defaults to @c true
 
 \ingroup coloring_grp
   */
@@ -118,9 +118,9 @@ public:
 
     /** Constructor
 
-    \param[in] input_matrix the matrix which is to have colors assigned to its rows
-    \param[in] paramlist this parameter list may be used to pass parameters to Zoltan
-    \param[in] compute_now  if @c true, the coloring is computed in the constructor, otherwise call Isorropia::Epetra::Colorer::color when you want to compute the coloring, defaults to @c true
+    \param input_matrix (in) the matrix which is to have colors assigned to its rows
+    \param paramlist (in) this parameter list may be used to pass parameters to Zoltan
+    \param compute_now (in) if @c true, the coloring is computed in the constructor, otherwise call Isorropia::Epetra::Colorer::color when you want to compute the coloring, defaults to @c true
 
 \ingroup coloring_grp
   */
@@ -136,7 +136,7 @@ public:
   /** Compute the coloring if it has not already been computed, same effect as
        Isorropia::Epetra::Colorer::compute
 
-    \param[in] force_coloring if @c true recompute the coloring even if it has already been computed, defaults to @c false
+    \param force_coloring (in) if @c true recompute the coloring even if it has already been computed, defaults to @c false
 
 \ingroup coloring_grp
     */
@@ -146,7 +146,7 @@ public:
   /** Compute the coloring if it has not already been computed, same effect as
        Isorropia::Epetra::Colorer::color
 
-    \param[in] force_compute if @c true recompute the coloring even if it has already been computed, defaults to @c false
+    \param force_compute (in) if @c true recompute the coloring even if it has already been computed, defaults to @c false
 
 \ingroup coloring_grp
     */

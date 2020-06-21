@@ -75,7 +75,6 @@ except (ValueError, SystemError, ImportError):
 
 %module(package      = "PyTrilinos.NOX.Epetra",
 	directors    = "1",
-	autodoc      = "1",
 	implicitconv = "1",
         moduleimport = %nox_epetra_interface_importcode,
 	docstring    = %nox_epetra_interface_docstring) Interface
@@ -103,7 +102,10 @@ except (ValueError, SystemError, ImportError):
 %ignore *::operator=;
 
 // Include NOX documentation
+#if SWIG_VERSION < 0x040000
+%feature("autodoc", "1");
 %include "NOX_dox.i"
+#endif
 
 // STL support
 %include "stl.i"

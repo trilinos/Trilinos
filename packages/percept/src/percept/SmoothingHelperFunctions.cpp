@@ -83,8 +83,8 @@ namespace percept
         unsigned per = parts[ip]->primary_entity_rank();
         if (per == stk::topology::ELEMENT_RANK)
           {
-            const CellTopologyData *const topology = metaData->get_cell_topology(*parts[ip]).getCellTopologyData();
-            if (!topology || topology->dimension != per)
+            const stk::topology topology = metaData->get_topology(*parts[ip]);
+            if (!topology.is_valid() || topology.dimension() != per)
               {
                 std::cout << "Warning: PerceptMesh::get_skin_part: skipping part with dimension < element_rank, part name= " << parts[ip]->name() << std::endl;
                 continue;

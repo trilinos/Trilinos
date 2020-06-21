@@ -160,7 +160,7 @@ void Jacobi_MKL_SPMM(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node
     copy_view(Acolind,AcolindMKL);
     copy_view(Bcolind,BcolindMKL);
 
-    if(Kokkos::Impl::is_same<Scalar,double>::value) {
+    if(std::is_same<Scalar,double>::value) {
       mkl_sparse_d_create_csr(&AMKL, SPARSE_INDEX_BASE_ZERO, Au->getNodeNumRows(), Au->getNodeNumCols(), ArowptrMKL.data(),ArowptrMKL.data()+1,AcolindMKL.data(),(double*)Avals.data());
       mkl_sparse_d_create_csr(&BMKL, SPARSE_INDEX_BASE_ZERO, Bu->getNodeNumRows(), Bu->getNodeNumCols(), BrowptrMKL.data(),BrowptrMKL.data()+1,BcolindMKL.data(),(double*)Bvals.data());
     }

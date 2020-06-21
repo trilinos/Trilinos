@@ -199,6 +199,7 @@ void delete_sides_from_sideset(stk::unit_test_util::sideset::BulkDataTester& bul
         EXPECT_TRUE(iter != sideSet.end());
         sideSet.erase(iter);
     }
+    delete deletedSideset;
 }
 
 void test_read_and_modify_sideset(stk::ParallelMachine pm,

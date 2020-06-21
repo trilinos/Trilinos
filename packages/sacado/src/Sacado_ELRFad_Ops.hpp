@@ -77,7 +77,7 @@ namespace Sacado {                                                      \
       static const bool is_linear = LINEAR;                             \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
-      Expr(const ExprT& expr_) : expr(expr_)  {}                        \
+      explicit Expr(const ExprT& expr_) : expr(expr_)  {}               \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       int size() const { return expr.size(); }                          \
@@ -211,6 +211,13 @@ FAD_UNARYOP_MACRO(sqrt,
                   false,
                   expr.dx(i)/(value_type(2)* std::sqrt(expr.val())),
                   expr.fastAccessDx(i)/(value_type(2)* std::sqrt(expr.val())))
+FAD_UNARYOP_MACRO(safe_sqrt,
+                  SafeSqrtOp,
+                  std::sqrt(expr.val()),
+                  expr.val() == value_type(0.0) ? value_type(0.0) : value_type(value_type(0.5)*bar/std::sqrt(expr.val())),
+                  false,
+                  expr.val() == value_type(0.0) ? value_type(0.0) : value_type(expr.dx(i)/(value_type(2)*std::sqrt(expr.val()))),
+                  expr.val() == value_type(0.0) ? value_type(0.0) : value_type(expr.fastAccessDx(i)/(value_type(2)*std::sqrt(expr.val()))))
 FAD_UNARYOP_MACRO(cos,
                   CosOp,
                   std::cos(expr.val()),
@@ -274,11 +281,10 @@ FAD_UNARYOP_MACRO(sinh,
 FAD_UNARYOP_MACRO(tanh,
                   TanhOp,
                   std::tanh(expr.val()),
-                  bar/(std::cosh(expr.val())*std::cosh(expr.val())),
+                  bar*(value_type(1)-std::tanh(expr.val())*std::tanh(expr.val())),
                   false,
-                  expr.dx(i)/( std::cosh(expr.val())* std::cosh(expr.val())),
-                  expr.fastAccessDx(i) /
-                    ( std::cosh(expr.val())* std::cosh(expr.val())))
+                  expr.dx(i)*(value_type(1)-std::tanh(expr.val())*std::tanh(expr.val())),
+                  expr.fastAccessDx(i)*(value_type(1)-std::tanh(expr.val())*std::tanh(expr.val())))
 FAD_UNARYOP_MACRO(acosh,
                   ACoshOp,
                   std::acosh(expr.val()),

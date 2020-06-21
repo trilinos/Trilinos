@@ -96,6 +96,9 @@ public:
 
   const stk::mesh::BulkData& get_bulk() const {return *m_bulk;}
 
+  std::vector<std::shared_ptr<ngp::FieldBase> >& get_fields() { return m_fields; }
+  const std::vector<std::shared_ptr<ngp::FieldBase> >& get_fields() const { return m_fields; }
+
 private:
   void construct_ngp_field( stk::mesh::Ordinal fieldOrdinal ) const {
     stk::mesh::FieldBase & field = *(m_bulk->mesh_meta_data().get_fields()[fieldOrdinal]);
@@ -137,6 +140,9 @@ private:
 
   void clear_fields() {
     for ( std::shared_ptr<ngp::FieldBase> & field : m_fields) {
+      if (nullptr != field.get()) {
+        field->sync_to_host(); //cheap/no-op if not needed
+      }
       field.reset();
     }
     m_fields.clear();

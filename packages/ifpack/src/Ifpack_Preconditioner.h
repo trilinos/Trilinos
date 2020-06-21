@@ -81,13 +81,13 @@ the preconditioner.
 
 <b>Estimating Preconditioner Condition Numbers</b>
 
-The condition of a matrix \f$B\f$, called \f$cond_p(B)\f$, is defined as
-\f$cond_p(B) = \|B\|_p\|B^{-1}\|_p\f$ in some appropriate norm \f$p\f$.  \f$cond_p(B)\f$
+The condition of a matrix \f$ B\f$, called \f$ cond_p(B)\f$, is defined as
+\f$ cond_p(B) = \|B\|_p\|B^{-1}\|_p\f$ in some appropriate norm \f$ p\f$.  \f$ cond_p(B)\f$
 gives some indication of how many accurate floating point
 digits can be expected from operations involving the matrix and its
 inverse.  A condition number approaching the accuracy of a given
 floating point number system, about 15 decimal digits in IEEE double
-precision, means that any results involving \f$B\f$ or \f$B^{-1}\f$ may be
+precision, means that any results involving \f$ B\f$ or \f$ B^{-1}\f$ may be
 meaningless.
 
 Method Compute() can be use to estimate of the condition number.
@@ -102,10 +102,10 @@ Ifpack_Cheap computes \f$\|(P)^{-1}e\|_\infty\f$, which is
 only a very crude estimation of the actual condition number. Note that
 this estimated number can be less than 1.0.
 However, this approach has the following advantages:
-- since finding \f$z\f$ such that \f$P z = y\f$
+- since finding \f$ z\f$ such that \f$ P z = y\f$
 is a basic kernel for applying the preconditioner, computing this
-estimate of \f$cond_\infty(P^{-1})\f$ is performed by setting \f$y = e\f$, calling
-the solve kernel to compute \f$z\f$ and then
+estimate of \f$ cond_\infty(P^{-1})\f$ is performed by setting \f$ y = e\f$, calling
+the solve kernel to compute \f$ z\f$ and then
 computing \f$\|z\|_\infty\f$;
 - the only cost is one application of the preconditioner.
 

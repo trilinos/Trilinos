@@ -44,13 +44,15 @@
 
 #include <FROSch_ConstantPartitionOfUnity_def.hpp>
 #include <FROSch_GDSWInterfacePartitionOfUnity_def.hpp>
+#include <FROSch_GDSWStarInterfacePartitionOfUnity_def.hpp>
 #include <FROSch_RGDSWInterfacePartitionOfUnity_def.hpp>
 
 #include <FROSch_HarmonicCoarseOperator_def.hpp>
 
 
 namespace FROSch {
-    
+
+    using namespace std;
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -110,6 +112,7 @@ namespace FROSch {
 
         using SCVec                             = typename SchwarzOperator<SC,LO,GO,NO>::SCVec;
         using SCVecPtr                          = typename SchwarzOperator<SC,LO,GO,NO>::SCVecPtr;
+        using ConstSCVecPtr                     = typename SchwarzOperator<SC,LO,GO,NO>::ConstSCVecPtr;
 
         using BoolVecPtr                        = typename SchwarzOperator<SC,LO,GO,NO>::BoolVecPtr;
 
@@ -143,7 +146,7 @@ namespace FROSch {
         void describe(FancyOStream &out,
                       const EVerbosityLevel verbLevel=Describable::verbLevel_default) const;
 
-        std::string description() const;
+        string description() const;
 
     protected:
 

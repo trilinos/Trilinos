@@ -34,15 +34,13 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 #ifndef __TSQR_Random_NormalGenerator_hpp
 #define __TSQR_Random_NormalGenerator_hpp
 
-#include <Teuchos_LAPACK.hpp>
+#include "Tsqr_Impl_Lapack.hpp"
 #include <algorithm>
 #include <vector>
 
@@ -56,11 +54,11 @@ namespace TSQR {
     ///   routines.  These are test routines and are not guaranteed to
     ///   be in the LAPACK library.  They will be if you build LAPACK
     ///   from source.
-    template< class Ordinal, class Scalar >
+    template<class Ordinal, class Scalar>
     class NormalGenerator {
     private:
       //! Default buffer length.
-      static int defaultBufferLength() { return 100; }
+      static constexpr int defaultBufferLength() { return 100; }
 
     public:
       typedef Ordinal ordinal_type;
@@ -146,7 +144,7 @@ namespace TSQR {
       void
       fill_buffer ()
       {
-        Teuchos::LAPACK<Ordinal, Scalar> lapack;
+        Impl::Lapack<Scalar> lapack;
 
         // LAPACK's _LARNV routine defines this "enum" (just an
         // integer, because it's Fortran) that lets users choose from
@@ -157,7 +155,7 @@ namespace TSQR {
           uniform_m1_1 = 2,
           normal_0_1 = 3
         };
-        lapack.LARNV (normal_0_1, &iseed_[0], buffer_length_, &buffer_[0]);
+        lapack.LARNV (normal_0_1, iseed_.data(), buffer_length_, buffer_.data());
       }
 
       Scalar
@@ -165,11 +163,10 @@ namespace TSQR {
       {
         // It's impossible to take the greater-than branch, but we
         // check for robustness' sake.
-        if (cur_pos_ >= buffer_length_)
-          {
-            fill_buffer ();
-            cur_pos_ = 0;
-          }
+        if (cur_pos_ >= buffer_length_) {
+          fill_buffer ();
+          cur_pos_ = 0;
+        }
         return buffer_[cur_pos_++];
       }
     };

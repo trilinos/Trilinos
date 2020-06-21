@@ -64,8 +64,6 @@ namespace Tpetra {
       typename LocalOperator<MultiVectorScalar, Device>::scalar_type;
     using matrix_scalar_type =
       typename LocalOperator<MatrixScalar, Device>::scalar_type;
-
-  private:
     using array_layout =
       typename LocalOperator<MultiVectorScalar, Device>::array_layout;
     using device_type =
@@ -73,18 +71,15 @@ namespace Tpetra {
     using local_ordinal_type =
       ::Tpetra::Details::DefaultTypes::local_ordinal_type;
     using execution_space = typename Device::execution_space;
-    using local_graph_type =
-      Kokkos::StaticCrsGraph<local_ordinal_type,
-                             array_layout,
-                             execution_space>;
   public:
     using local_matrix_type =
       KokkosSparse::CrsMatrix<matrix_scalar_type,
                               local_ordinal_type,
-                              execution_space,
-                              void,
-                              typename local_graph_type::size_type>;
+                              device_type>;
+  private:
+    using local_graph_type = typename local_matrix_type::StaticCrsGraphType;
 
+  public:
     LocalCrsMatrixOperator (const std::shared_ptr<local_matrix_type>& A);
     ~LocalCrsMatrixOperator () override = default;
 

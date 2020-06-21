@@ -1,35 +1,8 @@
-// Copyright(C) 2008-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//
-//     * Neither the name of NTESS nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
+// 
+// See packages/seacas/LICENSE for details
 
 #include "ED_SystemInterface.h" // for SystemInterface, etc
 #include "exoII_read.h"
@@ -55,27 +28,9 @@ namespace {
                  std::vector<std::string> &varlist);
 } // namespace
 
-template <typename INT>
-ExoII_Read<INT>::ExoII_Read()
-    : file_id(-1), // value of -1 indicates file not open
-      num_nodes(0), dimension(0), num_elmts(0), num_elmt_blocks(0), num_node_sets(0),
-      num_side_sets(0), db_version(0.0), api_version(0.0), io_word_size(0), eblocks(nullptr),
-      nsets(nullptr), ssets(nullptr), nodes(nullptr), node_map(nullptr), elmt_map(nullptr),
-      elmt_order(nullptr), num_times(0), times(nullptr), cur_time(0), results(nullptr),
-      global_vals(nullptr), global_vals2(nullptr)
-{
-}
+template <typename INT> ExoII_Read<INT>::ExoII_Read() {}
 
-template <typename INT>
-ExoII_Read<INT>::ExoII_Read(const std::string &fname)
-    : file_name(fname), file_id(-1), // value of -1 indicates file not open
-      num_nodes(0), dimension(0), num_elmts(0), num_elmt_blocks(0), num_node_sets(0),
-      num_side_sets(0), db_version(0.0), api_version(0.0), io_word_size(0), eblocks(nullptr),
-      nsets(nullptr), ssets(nullptr), nodes(nullptr), node_map(nullptr), elmt_map(nullptr),
-      elmt_order(nullptr), num_times(0), times(nullptr), cur_time(0), results(nullptr),
-      global_vals(nullptr), global_vals2(nullptr)
-{
-}
+template <typename INT> ExoII_Read<INT>::ExoII_Read(const std::string &fname) : file_name(fname) {}
 
 template <typename INT> ExoII_Read<INT>::~ExoII_Read()
 {
@@ -846,7 +801,7 @@ template <typename INT> std::string ExoII_Read<INT>::Open_File(const char *fname
     file_name = fname;
   }
   else if (file_name == "") {
-    return "exodiff: ERROR: No file name to open!";
+    return "No file name to open!";
   }
   int   ws = 0, comp_ws = 8;
   float dumb = 0.0;
@@ -854,16 +809,18 @@ template <typename INT> std::string ExoII_Read<INT>::Open_File(const char *fname
   if (sizeof(INT) == 8) {
     mode |= EX_ALL_INT64_API;
   }
-  int err = ex_open(file_name.c_str(), mode, &comp_ws, &ws, &dumb);
+  auto old_opt = ex_opts(EX_VERBOSE);
+  int  err     = ex_open(file_name.c_str(), mode, &comp_ws, &ws, &dumb);
+  ex_opts(old_opt);
   if (err < 0) {
     std::ostringstream oss;
-    fmt::print(oss, "exodiff: ERROR: Couldn't open file \"{}\".", file_name);
+    fmt::print(oss, "Couldn't open file \"{}\".", file_name);
 
     // ExodusII library could not open file.  See if a file (exodusII
     // or not) exists with the specified name.
     FILE *fid = fopen(file_name.c_str(), "r");
     if (fid != nullptr) {
-      fmt::print(oss, " File exists, but is not an exodusII file.");
+      fmt::print(oss, " File exists, but library could not open.");
       fclose(fid);
     }
     else {
@@ -908,7 +865,7 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
   num_side_sets   = info.num_side_sets;
   title           = info.title;
 
-  if (err > 0 && !interface.quiet_flag) {
+  if (err > 0 && !interFace.quiet_flag) {
     fmt::print(stderr, "exodiff: WARNING: was issued, number = {}\n", err);
   }
   if (dimension < 1 || dimension > 3) {
@@ -947,7 +904,7 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
   }
 
   coord_names.clear();
-  for (size_t i = 0; i < dimension; ++i) {
+  for (int i = 0; i < dimension; ++i) {
     coord_names.push_back(coords[i]);
   }
   free_name_array(coords, 3);
@@ -984,7 +941,7 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
       e_count += eblocks[b].Size();
     }
 
-    if (e_count != num_elmts && !interface.quiet_flag) {
+    if (e_count != num_elmts && !interFace.quiet_flag) {
       fmt::print(stderr,
                  "exodiff: WARNING: Total number of elements {:n}"
                  " does not equal the sum of the number of elements "
@@ -1163,7 +1120,7 @@ namespace {
         Error(fmt::format("Failed to get {} variable names!  Aborting...\n", type));
         exit(1);
       }
-      else if (err > 0 && !interface.quiet_flag) {
+      else if (err > 0 && !interFace.quiet_flag) {
         fmt::print(
             stderr,
             "exodiff: WARNING: Exodus issued warning \"{}\" on call to ex_get_var_names()!\n", err);

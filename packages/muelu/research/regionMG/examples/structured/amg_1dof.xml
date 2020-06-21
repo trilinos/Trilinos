@@ -11,6 +11,7 @@
 
     <ParameterList name="myTentativePFact">
       <Parameter name="factory"                             type="string" value="TentativePFactory"/>
+      <Parameter name="tentative: build coarse coordinates" type="bool"   value="false"/>
     </ParameterList>
 
     <ParameterList name="myProlongatorFact">

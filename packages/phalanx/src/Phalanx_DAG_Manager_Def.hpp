@@ -44,6 +44,7 @@
 #ifndef PHX_DAG_MANAGER_DEF_HPP
 #define PHX_DAG_MANAGER_DEF_HPP
 
+#include <cstdlib> // for std::getenv
 #include <cstddef>
 #include <iostream>
 #include <sstream>
@@ -77,7 +78,9 @@ DagManager(const std::string& evaluation_type_name) :
 #else
   allow_multiple_evaluators_for_same_field_(false),
 #endif
-  build_device_dag_(false)
+  build_device_dag_(false),
+  field_use_range_evaluated_(false),
+  unshared_evaluated_(false)
 { }
 
 //=======================================================================
@@ -389,20 +392,26 @@ template<typename Traits>
 void PHX::DagManager<Traits>::
 printEvaluator(const PHX::Evaluator<Traits>& e, std::ostream& os) const
 {
-  os << "Name=" << e.getName() << "\n";
-  os << "  *Evaluated Fields:\n";
-  for (const auto& f : e.evaluatedFields())
-    os << "    " << f->identifier() << "\n";
-  os << "  *Contributed Fields:\n";
-  for (const auto& f : e.contributedFields())
-    os << "    " << f->identifier() << "\n";
-  os << "  *Dependent Fields:\n";
+  os << e.getName() << "\n";
+  if (e.evaluatedFields().size() > 0) {
+    os << "  *Evaluated Fields:\n";
+    for (const auto& f : e.evaluatedFields())
+      os << "    " << f->identifier() << "\n";
+  }
+  if (e.contributedFields().size() > 0) {
+    os << "  *Contributed Fields:\n";
+    for (const auto& f : e.contributedFields())
+      os << "    " << f->identifier() << "\n";
+  }
   if (e.dependentFields().size() > 0) {
+    os << "  *Dependent Fields:\n";
     for (const auto& f : e.dependentFields())
       os << "    " << f->identifier() << "\n";
   }
-  else {
-    os << "    None!\n";
+  if (e.unsharedFields().size() > 0) {
+    os << "  *Unshared Fields:\n";
+    for (const auto& f : e.unsharedFields())
+      os << "    " << f->identifier() << "\n";
   }
 }
 
@@ -439,8 +448,29 @@ evaluateFields(typename Traits::EvalData d)
 #ifdef PHX_DEBUG
     if (nonnull(start_stop_debug_ostream_)) {
       *start_stop_debug_ostream_ << "Phalanx::DagManager: Starting node: "
-                                 << nodes_[topoSortEvalIndex[n]].getNonConst()->getName()
+                                 << nodes_[topoSortEvalIndex[n]].get()->getName()
                                  << std::endl;
+    }
+
+    auto print_fields = std::getenv("PHX_PRINT_FIELDS");
+    if (print_fields) {
+      std::cout << "************************************************\n"
+                << "Printing fields BEFORE executing evaluator: "
+                << nodes_[topoSortEvalIndex[n]].get()->getName()
+                << "\n  Evaluated Fields:\n";
+      auto& eft = nodes_[topoSortEvalIndex[n]].get()->evaluatedFields();
+      for (const auto& t : eft)
+        std::cout << "    " << t->identifier() << std::endl;
+      std::cout << "  Contributed Fields:\n";
+      auto& cft = nodes_[topoSortEvalIndex[n]].get()->contributedFields();
+      for (const auto& t : cft)
+        std::cout << "    " << t->identifier() << std::endl;
+      std::cout << "  Dependent Fields:\n";
+      auto& dft = nodes_[topoSortEvalIndex[n]].get()->dependentFields();
+      for (const auto& t : dft)
+        std::cout << "    " << t->identifier() << std::endl;
+      std::cout  << "************************************************\n";
+      nodes_[topoSortEvalIndex[n]].get()->printFieldValues(std::cout);
     }
 #endif
 
@@ -452,6 +482,26 @@ evaluateFields(typename Traits::EvalData d)
     nodes_[topoSortEvalIndex[n]].sumIntoExecutionTime(clock::now()-start);
 
 #ifdef PHX_DEBUG
+    if (print_fields) {
+      std::cout << "************************************************\n"
+                << "Printing fields AFTER executing evaluator: "
+                << nodes_[topoSortEvalIndex[n]].get()->getName()
+                << "\n  Evaluated Fields:\n";
+      auto& eft = nodes_[topoSortEvalIndex[n]].get()->evaluatedFields();
+      for (const auto& t : eft)
+        std::cout << "    " << t->identifier() << std::endl;
+      std::cout << "  Contributed Fields:\n";
+      auto& cft = nodes_[topoSortEvalIndex[n]].get()->contributedFields();
+      for (const auto& t : cft)
+        std::cout << "    " << t->identifier() << std::endl;
+      std::cout << "  Dependent Fields:\n";
+      auto& dft = nodes_[topoSortEvalIndex[n]].get()->dependentFields();
+      for (const auto& t : dft)
+        std::cout << "    " << t->identifier() << std::endl;
+      std::cout  << "************************************************\n";
+      nodes_[topoSortEvalIndex[n]].get()->printFieldValues(std::cout);
+    }
+
     if (nonnull(start_stop_debug_ostream_)) {
       *start_stop_debug_ostream_ << "Phalanx::DagManager: Completed node: "
                                  << nodes_[topoSortEvalIndex[n]].getNonConst()->getName()
@@ -764,7 +814,6 @@ writeGraphvizDfsVisit(PHX::DagNode<Traits>& node,
   node.setColor(PHX::Color::BLACK);
 }
 
-
 //=======================================================================
 template<typename Traits>
 const std::vector<Teuchos::RCP<PHX::FieldTag>>&
@@ -884,6 +933,9 @@ template<typename Traits>
 const std::unordered_map<std::string,std::pair<int,int>>&
 PHX::DagManager<Traits>::getFieldUseRange()
 {
+  if (field_use_range_evaluated_)
+    return field_use_range_;
+
   // Initialize the fields just outside valid range for debugging
   for (const auto& f : fields_)
     field_use_range_[f->identifier()] = std::make_pair(topoSortEvalIndex.size(),-1);
@@ -911,6 +963,12 @@ PHX::DagManager<Traits>::getFieldUseRange()
     }
   }
 
+  // Required field values must exist to the end of the DAG evalaution
+  // since users will access the data after the DAG is finished
+  // running.
+  for (const auto& f : required_fields_)
+    field_use_range_[f->identifier()].second = topoSortEvalIndex.size()-1;
+
 #ifdef PHX_DEBUG
   for (const auto& f : field_use_range_) {
     TEUCHOS_TEST_FOR_EXCEPTION(f.second.first > f.second.first,
@@ -921,7 +979,26 @@ PHX::DagManager<Traits>::getFieldUseRange()
   }
 #endif
 
+  field_use_range_evaluated_ = true;
   return field_use_range_;
+}
+//=======================================================================
+template<typename Traits>
+const std::unordered_map<std::string,Teuchos::RCP<PHX::FieldTag>>&
+PHX::DagManager<Traits>::getUnsharedFields()
+{
+  if (unshared_evaluated_)
+    return unshared_;
+
+  for (int idx=0; idx < static_cast<int>(topoSortEvalIndex.size()); ++idx) {
+    const auto& evaluator = nodes_.at(topoSortEvalIndex[idx]).get();
+    const auto& e_unshared = evaluator->unsharedFields();
+    for (const auto& f : e_unshared)
+      unshared_[f->identifier()] = f;
+  }
+
+  unshared_evaluated_ = true;
+  return unshared_;
 }
 
 //=======================================================================
@@ -931,6 +1008,14 @@ PHX::DagManager<Traits>::
 printEvaluatorStartStopMessage(const Teuchos::RCP<std::ostream>& ostr)
 {
   start_stop_debug_ostream_ = ostr;
+}
+
+//=======================================================================
+template<typename Traits>
+const std::vector<Teuchos::RCP<PHX::FieldTag>>&
+PHX::DagManager<Traits>::getRequiredFields() const
+{
+  return required_fields_;
 }
 
 //=======================================================================

@@ -72,10 +72,6 @@ namespace RTOpPack {
  */
 void set_SPMD_apply_op_dump_out(const RCP<FancyOStream> &dumpOut);
 
-#ifdef RTOPPACK_ENABLE_SHOW_DUMP
-RTOP_DEPRECATED extern bool show_spmd_apply_op_dump;
-#endif // RTOPPACK_ENABLE_SHOW_DUMP
-
 
 /** \brief Return the size in bytes of an external representation of a
  * <tt>ReductTarget</tt> object.

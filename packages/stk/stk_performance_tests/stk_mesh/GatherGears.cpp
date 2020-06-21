@@ -42,7 +42,7 @@
 #include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/base/CoordinateSystems.hpp>
 
-#include <stk_performance_test_includes/calculate_centroid.hpp>
+#include <stk_performance_tests/stk_mesh/calculate_centroid.hpp>
 
 #include "stk_unit_test_utils/stk_mesh_fixtures/Gear.hpp"
 #include "stk_unit_test_utils/stk_mesh_fixtures/GearsFixture.hpp"

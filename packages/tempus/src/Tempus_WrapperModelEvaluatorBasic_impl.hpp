@@ -22,7 +22,7 @@ createInArgs() const
   MEB::InArgsSetup<Scalar> inArgs(appModel_->getNominalValues());
 
   inArgs.setModelEvalDescription(this->description());
-  return inArgs;
+  return std::move(inArgs);
 }
 
 
@@ -34,7 +34,7 @@ createOutArgsImpl() const
   typedef Thyra::ModelEvaluatorBase MEB;
   MEB::OutArgsSetup<Scalar> outArgs(appModel_->createOutArgs());
   outArgs.setModelEvalDescription(this->description());
-  return outArgs;
+  return std::move(outArgs);
 }
 
 

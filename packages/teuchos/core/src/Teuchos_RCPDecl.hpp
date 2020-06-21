@@ -650,6 +650,9 @@ public:
   /** \brief Shorthand for ptr(). */
   inline Ptr<T> operator()() const;
 
+  /** \brief Check if the RCP stores a non-null pointer */
+  inline explicit operator bool() const;
+  
   /** \brief Return an RCP<const T> version of *this. */
   inline RCP<const T> getConst() const;
 
@@ -872,9 +875,6 @@ public:
    */
   template<class T2>
   inline void reset(T2* p, bool has_ownership = true);
-
-  /** \brief Returns <tt>strong_count()</tt> [deprecated]. */
-  TEUCHOS_DEPRECATED inline int count() const;
 
   //@}
 

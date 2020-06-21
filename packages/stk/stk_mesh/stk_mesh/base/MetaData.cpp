@@ -88,32 +88,6 @@ void find_topologies_in_part_and_subsets_of_same_rank(const Part & part, EntityR
   }
 }
 
-//----------------------------------------------------------------------
-
-stk::mesh::FieldBase* try_to_find_coord_field(const stk::mesh::MetaData& meta)
-{
-  //attempt to initialize the coordinate-field pointer, trying a couple
-  //of commonly-used names. It is expected that the client code will initialize
-  //the coordinates field using set_coordinate_field, but this is an
-  //attempt to be helpful for existing client codes which aren't yet calling that.
-
-  stk::mesh::FieldBase* coord_field = meta.get_field(stk::topology::NODE_RANK, "mesh_model_coordinates");
-  if (coord_field == NULL) {
-    coord_field = meta.get_field(stk::topology::NODE_RANK, "mesh_model_coordinates_0");
-  }
-  if (coord_field == NULL) {
-    coord_field = meta.get_field(stk::topology::NODE_RANK, "model_coordinates");
-  }
-  if (coord_field == NULL) {
-    coord_field = meta.get_field(stk::topology::NODE_RANK, "model_coordinates_0");
-  }
-  if (coord_field == NULL) {
-    coord_field = meta.get_field(stk::topology::NODE_RANK, "coordinates");
-  }
-
-  return coord_field;
-}
-
 } // namespace
 
 void MetaData::assign_topology(Part& part, stk::topology stkTopo)
@@ -141,14 +115,6 @@ void MetaData::set_mesh_on_fields(BulkData* bulk)
 
 const MetaData & MetaData::get( const BulkData & bulk_data) {
   return bulk_data.mesh_meta_data();
-}
-
-const MetaData & MetaData::get( const Bucket & bucket) {
-  return MetaData::get(bucket.mesh());
-}
-
-const MetaData & MetaData::get( const Ghosting & ghost) {
-  return MetaData::get(ghost.mesh());
 }
 //----------------------------------------------------------------------
 
@@ -257,7 +223,9 @@ MetaData::MetaData()
 
 //----------------------------------------------------------------------
 
-void MetaData::initialize(size_t spatial_dimension, const std::vector<std::string> &rank_names)
+void MetaData::initialize(size_t spatial_dimension,
+                          const std::vector<std::string> &rank_names,
+                          const std::string &coordinate_field_name)
 {
   ThrowErrorMsgIf( !m_entity_rank_names.empty(), "already initialized");
   ThrowErrorMsgIf( spatial_dimension == 0, "Min spatial dimension is 1");
@@ -274,6 +242,10 @@ void MetaData::initialize(size_t spatial_dimension, const std::vector<std::strin
   }
 
   m_spatial_dimension = spatial_dimension;
+
+  if (!coordinate_field_name.empty()) {
+    m_coord_field_name = coordinate_field_name;
+  }
 
   internal_declare_known_cell_topology_parts();
 }
@@ -299,13 +271,73 @@ EntityRank MetaData::entity_rank( const std::string &name ) const
   return entity_rank;
 }
 
-FieldBase const* MetaData::coordinate_field() const
+void
+MetaData::set_coordinate_field_name(const std::string & coordFieldName)
 {
-  if (m_coord_field == NULL) {
-    m_coord_field = try_to_find_coord_field(*this);
+  m_coord_field_name = coordFieldName;
+}
+
+std::string
+MetaData::coordinate_field_name() const
+{
+  if (!m_coord_field_name.empty()) {
+    return m_coord_field_name;
+  }
+  else {
+    return "coordinates";  // Default if nothing set by the user
+  }
+}
+
+void
+MetaData::set_coordinate_field(FieldBase* coord_field)
+{
+  m_coord_field = coord_field;
+  m_coord_field_name = m_coord_field->name();
+}
+
+stk::mesh::FieldBase* try_to_find_coord_field(const stk::mesh::MetaData& meta)
+{
+  //attempt to initialize the coordinate-field pointer, trying a couple
+  //of commonly-used names. It is expected that the client code will initialize
+  //the coordinates field using set_coordinate_field, but this is an
+  //attempt to be helpful for existing client codes which aren't yet calling that.
+
+  stk::mesh::FieldBase* coord_field = meta.get_field(stk::topology::NODE_RANK, "mesh_model_coordinates");
+
+  if (coord_field == nullptr) {
+    coord_field = meta.get_field(stk::topology::NODE_RANK, "mesh_model_coordinates_0");
+  }
+  if (coord_field == nullptr) {
+    coord_field = meta.get_field(stk::topology::NODE_RANK, "model_coordinates");
+  }
+  if (coord_field == nullptr) {
+    coord_field = meta.get_field(stk::topology::NODE_RANK, "model_coordinates_0");
+  }
+  if (coord_field == nullptr) {
+    coord_field = meta.get_field(stk::topology::NODE_RANK, "coordinates");
+  }
+  if (coord_field == nullptr) {
+    coord_field = meta.get_field(stk::topology::NODE_RANK, meta.coordinate_field_name());
   }
 
-  ThrowErrorMsgIf( m_coord_field == NULL,
+  return coord_field;
+}
+
+FieldBase const* MetaData::coordinate_field() const
+{
+  if (m_coord_field == nullptr) {
+    if (!m_coord_field_name.empty()) {
+      m_coord_field = get_field(stk::topology::NODE_RANK, m_coord_field_name);
+    }
+    else {
+      m_coord_field = try_to_find_coord_field(*this);
+      if (m_coord_field != nullptr) {
+        m_coord_field_name = m_coord_field->name();
+      }
+    }
+  }
+
+  ThrowErrorMsgIf( m_coord_field == nullptr,
                    "MetaData::coordinate_field: Coordinate field has not been defined" );
 
   return m_coord_field;
@@ -622,63 +654,6 @@ Part& MetaData::register_topology(stk::topology stkTopo)
   return *iter->second;
 }
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2019-07-18
-STK_DEPRECATED void MetaData::register_cell_topology(const shards::CellTopology cell_topology, EntityRank entity_rank)
-{
-  ThrowRequireMsg(is_initialized(),"MetaData::register_cell_topology: initialize() must be called before this function");
-
-  stk::topology stkTopo = stk::mesh::get_topology(cell_topology, spatial_dimension());
-  register_topology(stkTopo);
-}
-#endif
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2019-07-18
-STK_DEPRECATED shards::CellTopology MetaData::register_super_cell_topology(stk::topology topo)
-{
-  shards::CellTopology cell_topology = get_cell_topology(topo.name());
-  if (!cell_topology.isValid()) {
-    shards::CellTopologyManagedData *cell_topology_data = new shards::CellTopologyManagedData(topo.name());
-    m_created_topologies.push_back(cell_topology_data);
-    cell_topology = shards::CellTopology(cell_topology_data);
-
-    cell_topology_data->base              = cell_topology_data ;
-    cell_topology_data->dimension         = 1 ;
-    cell_topology_data->vertex_count      = topo.num_nodes();
-    cell_topology_data->node_count        = topo.num_nodes();
-    cell_topology_data->edge_count        = 0 ;
-    cell_topology_data->side_count        = 0 ;
-    cell_topology_data->permutation_count = 0 ;
-    cell_topology_data->subcell_count[0]  = topo.num_nodes();
-    cell_topology_data->subcell_count[1]  = 1 ;
-    cell_topology_data->subcell_count[2]  = 0 ;
-    cell_topology_data->subcell_count[3]  = 0 ;
-
-    if (topo.is_superedge())
-        register_cell_topology(cell_topology, stk::topology::EDGE_RANK);
-    else if (topo.is_superface())
-        register_cell_topology(cell_topology, stk::topology::FACE_RANK);
-    else
-        register_cell_topology(cell_topology, stk::topology::ELEMENT_RANK);
-  }
-  return cell_topology;
-}
-#endif
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2019-07-18
-STK_DEPRECATED shards::CellTopology
-MetaData::get_cell_topology(
-  const std::string &   topology_name) const
-{
-  std::string part_name = impl::convert_to_internal_name(std::string("FEM_ROOT_CELL_TOPOLOGY_PART_") + topology_name);
-
-  Part *part = get_part(part_name);
-  if (part)
-    return get_cell_topology(*part);
-  else
-    return shards::CellTopology();
-}
-#endif
-
 Part& MetaData::get_topology_root_part(stk::topology stkTopo) const
 {
     TopologyPartMap::const_iterator iter = m_topologyPartMap.find(stkTopo);
@@ -690,24 +665,6 @@ bool MetaData::has_topology_root_part(stk::topology stkTopo) const
 {
     return (m_topologyPartMap.find(stkTopo) != m_topologyPartMap.end());
 }
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2019-07-18
-STK_DEPRECATED Part &MetaData::get_cell_topology_root_part(const shards::CellTopology cell_topology) const
-{
-  ThrowRequireMsg(is_initialized(),"MetaData::get_cell_topology_root_part: initialize() must be called before this function");
-  stk::topology stkTopo = stk::mesh::get_topology(cell_topology, spatial_dimension());
-  ThrowRequireMsg(stkTopo != stk::topology::INVALID_TOPOLOGY, "MetaData::get_cell_topology_root_part ERROR, failed to map cell-topology '"<<cell_topology.getName()<<" to stk-topology.");
-
-  return get_topology_root_part(stkTopo);
-}
-#endif
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2019-07-18
-STK_DEPRECATED shards::CellTopology MetaData::get_cell_topology( const Part & part) const
-{
-  return stk::mesh::get_cell_topology(get_topology(part));
-}
-#endif
 
 stk::topology MetaData::get_topology(const Part & part) const
 {
@@ -885,16 +842,6 @@ void set_topology(Part & part, stk::topology topo)
 
   meta.declare_part_subset(*root_part, part);
 }
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2019-07-18
-STK_DEPRECATED void set_cell_topology( Part& part, shards::CellTopology cell_topology)
-{
-  MetaData& meta = MetaData::get(part);
-
-  stk::topology stkTopo = get_topology(cell_topology, meta.spatial_dimension());
-  set_topology(part, stkTopo);
-}
-#endif
 
 const std::vector<std::string>&
 entity_rank_names()

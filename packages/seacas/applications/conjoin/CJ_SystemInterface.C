@@ -1,3 +1,9 @@
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
+// 
+// See packages/seacas/LICENSE for details
+
 
 #include "CJ_SystemInterface.h"
 #include "CJ_Version.h"  // for qainfo
@@ -61,6 +67,11 @@ void Excn::SystemInterface::enroll_options()
 
   options_.enroll("64-bit", GetLongOption::NoValue,
                   "True if forcing the use of 64-bit integers for the output file", nullptr);
+
+  options_.enroll("sort_times", GetLongOption::NoValue,
+                  "Sort the input files on the minimum timestep time in the file. "
+                  "Default is to process files in the order they appear on the command line.",
+                  nullptr);
 
   options_.enroll(
       "compress", GetLongOption::MandatoryValue,
@@ -134,7 +145,6 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
   char *options = getenv("CONJOIN_OPTIONS");
   if (options != nullptr) {
     fmt::print(
-        stderr,
         "\nThe following options were specified via the CONJOIN_OPTIONS environment variable:\n"
         "\t{}\n\n",
         options);
@@ -143,8 +153,8 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("help") != nullptr) {
     options_.usage();
-    fmt::print(stderr, "\n\tCan also set options via CONJOIN_OPTIONS environment variable.\n"
-                       "\n\t->->-> Send email to gdsjaar@sandia.gov for conjoin support.<-<-<-\n");
+    fmt::print("\n\tCan also set options via CONJOIN_OPTIONS environment variable.\n"
+               "\n\t->->-> Send email to gdsjaar@sandia.gov for conjoin support.<-<-<-\n");
     exit(EXIT_SUCCESS);
   }
 
@@ -169,7 +179,7 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
       }
       else {
         fmt::print(stderr,
-                   "\nInvalid value specified for node and element status."
+                   "\nERROR: Invalid value specified for node and element status."
                    "\nValid values are '1' or '0'.  Found '{}'\n",
                    value);
         exit(EXIT_FAILURE);
@@ -257,37 +267,18 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     }
   }
 
-  if (options_.retrieve("netcdf4") != nullptr) {
-    useNetcdf4_ = true;
-  }
-
-  if (options_.retrieve("64-bit") != nullptr) {
-    ints64Bit_ = true;
-  }
+  useNetcdf4_        = options_.retrieve("netcdf4") != nullptr;
+  sortTimes_         = options_.retrieve("sort_times") != nullptr;
+  ints64Bit_         = options_.retrieve("64-bit") != nullptr;
+  ignoreCoordinates_ = options_.retrieve("ignore_coordinate_check") != nullptr;
+  omitNodesets_      = options_.retrieve("omit_nodesets") != nullptr;
+  omitSidesets_      = options_.retrieve("omit_sidesets") != nullptr;
 
   {
     const char *temp = options_.retrieve("compress");
     if (temp != nullptr) {
       compressionLevel_ = std::strtol(temp, nullptr, 10);
     }
-  }
-
-  if (options_.retrieve("ignore_coordinate_check") != nullptr) {
-    ignoreCoordinates_ = true;
-  }
-
-  if (options_.retrieve("omit_nodesets") != nullptr) {
-    omitNodesets_ = true;
-  }
-  else {
-    omitNodesets_ = false;
-  }
-
-  if (options_.retrieve("omit_sidesets") != nullptr) {
-    omitSidesets_ = true;
-  }
-  else {
-    omitSidesets_ = false;
   }
 
   if (options_.retrieve("copyright") != nullptr) {

@@ -57,6 +57,7 @@
 #include "AnasaziBasicSort.hpp"
 #include "AnasaziSVQBOrthoManager.hpp"
 #include "AnasaziBasicOrthoManager.hpp"
+#include "AnasaziICGSOrthoManager.hpp"
 #include "AnasaziStatusTestResNorm.hpp"
 #include "AnasaziStatusTestWithOrdering.hpp"
 #include "AnasaziStatusTestCombo.hpp"
@@ -178,7 +179,7 @@ class BlockKrylovSchurSolMgr : public SolverManager<ScalarType,MV,OP> {
    *      - \c "Extra NEV Blocks" - an \c int specifying the number of extra blocks the solver should keep in addition to those
              required to compute the number of eigenvalues requested.  Default: 0
    *      - \c "Maximum Restarts" - an \c int specifying the maximum number of restarts the underlying solver is allowed to perform. Default: 20
-   *      - \c "Orthogonalization" - a \c string specifying the desired orthogonalization:  DGKS and SVQB. Default: "SVQB"
+   *      - \c "Orthogonalization" - a \c string specifying the desired orthogonalization:  DGKS, ICGS, and SVQB. Default: "SVQB"
    *      - \c "Verbosity" - a sum of MsgType specifying the verbosity. Default: Anasazi::Errors
    *      - \c "Output Stream" - a reference-counted pointer to the formatted output stream where all
    *                             solver output is sent.  Default: Teuchos::getFancyOStream ( Teuchos::rcpFromRef (std::cout) )
@@ -388,7 +389,7 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::BlockKrylovSchurSolMgr(
 
   // which orthogonalization to use
   ortho_ = pl.get("Orthogonalization",ortho_);
-  if (ortho_ != "DGKS" && ortho_ != "SVQB") {
+  if (ortho_ != "DGKS" && ortho_ != "SVQB" && ortho_ != "ICGS") {
     ortho_ = "SVQB";
   }
 
@@ -440,7 +441,6 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
 
   Teuchos::BLAS<int,ScalarType> blas;
   Teuchos::LAPACK<int,ScalarType> lapack;
-  typedef SolverUtils<ScalarType,MV,OP> msutils;
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Output manager
@@ -484,12 +484,13 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
   } else if (ortho_=="DGKS") {
     if (ortho_kappa_ <= 0) {
       ortho = Teuchos::rcp( new BasicOrthoManager<ScalarType,MV,OP>(problem_->getM()) );
-    }
-    else {
+    } else {
       ortho = Teuchos::rcp( new BasicOrthoManager<ScalarType,MV,OP>(problem_->getM(),ortho_kappa_) );
     }
+  } else if (ortho_=="ICGS") {
+    ortho = Teuchos::rcp( new ICGSOrthoManager<ScalarType,MV,OP>(problem_->getM()) );
   } else {
-    TEUCHOS_TEST_FOR_EXCEPTION(ortho_!="SVQB"&&ortho_!="DGKS",std::logic_error,"Anasazi::BlockKrylovSchurSolMgr::solve(): Invalid orthogonalization type.");
+    TEUCHOS_TEST_FOR_EXCEPTION(ortho_!="SVQB"&&ortho_!="DGKS"&&ortho_!="ICGS",std::logic_error,"Anasazi::BlockKrylovSchurSolMgr::solve(): Invalid orthogonalization type.");
   }
 
   //////////////////////////////////////////////////////////////////////////////////////
@@ -709,7 +710,7 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
             for (int i=0; i<curDim; i++) curind[i] = i;
             {
               Teuchos::RCP<MV> oldV = MVT::CloneViewNonConst(*solverbasis,curind);
-              msutils::applyHouse(cur_nevBlocks,*oldV,copyQnev,tau,workMV);
+              SolverUtils<ScalarType,MV,OP>::applyHouse(cur_nevBlocks,*oldV,copyQnev,tau,workMV);
             }
             // multiply newV*D
             // get pointer to new basis

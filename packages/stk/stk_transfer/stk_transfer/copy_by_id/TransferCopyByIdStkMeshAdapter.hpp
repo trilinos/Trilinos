@@ -108,6 +108,17 @@ public :
     return reinterpret_cast<void*>(stk::mesh::field_data(*field, entity));
   }
 
+  std::string field_name(const unsigned field_index) const
+  {
+    ThrowRequireMsg(field_index < m_transfer_fields.size(),
+                    "P" << m_mesh.parallel_rank() <<
+                    " stk::transfer::StkMeshAdapter Error, attempt to access invalid field index [" << field_index <<
+                    "] in get_field_name(const unsigned field_index) is invalid!");
+
+    stk::mesh::FieldBase* field=m_transfer_fields[field_index];
+    return field->name();
+  }
+
   stk::mesh::FieldBase* get_field(const unsigned field_index)
   {
     ThrowRequireMsg(field_index < m_transfer_fields.size(),
@@ -186,6 +197,42 @@ public :
       }
     }
   }
+
+  DataTypeKey::data_t get_field_type(const unsigned fieldIndex) const
+  { 
+    ThrowRequireMsg(fieldIndex < m_transfer_fields.size(),
+                    "P" << m_mesh.parallel_rank() <<
+                    " stk::transfer::StkMeshAdapter Error, attempt to access invalid field index [" << fieldIndex <<
+                    "] in get_field_type(const unsigned fieldIndex) is invalid!");
+
+    stk::mesh::FieldBase* field=m_transfer_fields[fieldIndex];
+
+    DataTypeKey::data_t dataType( DataTypeKey::data_t::INVALID_TYPE );
+
+ 
+    if(field->type_is<unsigned>()) {
+      dataType = DataTypeKey::data_t::UNSIGNED_INTEGER;
+    }
+    else if(field->type_is<int>()) {
+      dataType = DataTypeKey::data_t::INTEGER;
+    }
+    else if(field->type_is<int64_t>()) {
+      dataType = DataTypeKey::data_t::LONG_INTEGER;
+    }
+    else if(field->type_is<uint64_t>()) {
+      dataType = DataTypeKey::data_t::UNSIGNED_INTEGER_64;
+    }
+    else if(field->type_is<double>()) {
+      dataType = DataTypeKey::data_t::DOUBLE;
+    }
+    else if(field->type_is<long double>()) {
+      dataType = DataTypeKey::data_t::LONG_DOUBLE;
+    } else {
+      ThrowRequireMsg(false, "Unsupported data type");
+    }
+    return dataType;
+  }
+   
 
 private:
   stk::mesh::BulkData & m_mesh;

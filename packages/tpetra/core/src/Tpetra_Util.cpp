@@ -34,12 +34,11 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
-#include <Tpetra_Util.hpp>
+#include "Tpetra_Util.hpp"
+#include "Teuchos_Comm.hpp"
 
 namespace Tpetra {
 namespace Details {
@@ -98,7 +97,34 @@ congruent (const Teuchos::Comm<int>& comm1,
 #endif // HAVE_MPI
 }
 
+std::unique_ptr<std::string>
+createPrefix(const int myRank,
+             const char prefix[])
+{
+  std::ostringstream os;
+  os << "Proc " << myRank << ": " << prefix << ": ";
+  return std::unique_ptr<std::string>(new std::string(os.str()));
+}
+
+std::unique_ptr<std::string>
+createPrefix(const Teuchos::Comm<int>* comm,
+             const char functionName[])
+{
+  const int myRank = comm == nullptr ? -1 : comm->getRank();
+  const std::string prefix = std::string("Tpetra::") + functionName;
+  return createPrefix(myRank, prefix.c_str());
+}
+
+std::unique_ptr<std::string>
+createPrefix(const Teuchos::Comm<int>* comm,
+             const char className[],
+             const char methodName[])
+{
+  const int myRank = comm == nullptr ? -1 : comm->getRank();
+  const std::string prefix = std::string("Tpetra::") +
+    className + std::string("::") + methodName;
+  return createPrefix(myRank, prefix.c_str());
+}
+
 } // namespace Details
 } // namespace Tpetra
-
-

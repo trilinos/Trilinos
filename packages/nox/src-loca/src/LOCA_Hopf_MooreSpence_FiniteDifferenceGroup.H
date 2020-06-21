@@ -93,7 +93,7 @@ namespace LOCA {
     /*!
      * \brief Computes the derivative
      * \f$\frac{\partial (J+i\omega B)(y+iz)}{\partial p}\f$
-     * where \f$p\f$ is the parameter indexed by \b paramIDs.
+     * where \f$ p\f$ is the parameter indexed by \b paramIDs.
      */
     /*!
      * The calculation is implemented by calling the corresponding
@@ -112,7 +112,7 @@ namespace LOCA {
     /*!
      * \brief Computes the directional derivative
      * \f$\frac{\partial (J+i\omega B)(y+iz)}{\partial x} a\f$ for the
-     * given direction \f$a\f$.
+     * given direction \f$ a\f$.
      */
     /*!
      * The calculation is implemented by calling the corresponding
@@ -130,7 +130,7 @@ namespace LOCA {
     /*!
      * \brief Computes the directional derivative
      * \f$\frac{\partial (J+i\omega B)(y+iz)}{\partial x} a\f$ for the
-     * given direction \f$a\f$. The
+     * given direction \f$ a\f$. The
      * arguments \b Ce_real and \b Ce_imag hold the real and imaginary
      * components of \f$(J+i\omega B)(y+iz)\f$.
      */

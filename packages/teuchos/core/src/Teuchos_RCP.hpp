@@ -428,6 +428,14 @@ RCP<const T> RCP<T>::getConst() const
 }
 
 
+template<class T>
+inline
+RCP<T>::operator bool() const
+{
+  return (get() != 0);
+}
+
+
 // Reference counting
 
 
@@ -590,14 +598,6 @@ inline
 void RCP<T>::reset(T2* p, bool has_ownership_in)
 {
   *this = rcp(p, has_ownership_in);
-}
-
-
-template<class T>
-inline
-int RCP<T>::count() const
-{
-  return node_.count();
 }
 
 }  // end namespace Teuchos

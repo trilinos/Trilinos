@@ -73,14 +73,43 @@ namespace phalanx_test {
     out << "\ntracker: size=" << record->size() << " (bytes), count=" << record->use_count() << "\n\n";
 
     // Try to assign memory to another view of smaller length
-    Kokkos::View<double**,PHX::Device> tmp("b",5,5);
-    Kokkos::View<double**,PHX::Device> b(tracker,tmp.impl_map());
+    Kokkos::View<double**,PHX::Device> b;
+    {
+      Kokkos::View<double**,PHX::Device> tmp("b",6,5);
+      auto b_record = tracker.get_record<PHX::mem_space>();
+      TEST_ASSERT(record->size() >= b_record->size());
+      b = Kokkos::View<double**,PHX::Device>(reinterpret_cast<double*>(record->data()),6,5);
+    }
 
-    TEST_EQUALITY(record->use_count(),2);
-    TEST_EQUALITY(b.size(),25);
+    TEST_EQUALITY(record->use_count(),1);
+    TEST_EQUALITY(b.size(),30);
+    TEST_EQUALITY(b.extent(0),6);
+    TEST_EQUALITY(b.extent(1),5);
 
     out << "\ntracker: size=" << record->size() << " (bytes), count=" << record->use_count() << std::endl;
     out << "view   : size=" << b.size() << " (# of doubles)\n" << std::endl;
+
+    // Make sure it works!
+    Kokkos::RangePolicy<PHX::Device> p(0,b.extent(0));
+    Kokkos::parallel_for(p,KOKKOS_LAMBDA (const int i)
+      {
+        for (int j=0; j < static_cast<int>(b.extent(1)); ++j)
+          b(i,j) = static_cast<double>(i+j);
+      });
+    PHX::Device().fence();
+  }
+  TEUCHOS_UNIT_TEST(Kokkos_AllocationTracker, FadAcceptingPointer)
+  {
+    using FadType = Sacado::Fad::DFad<double>;
+    using DefaultLayout = typename PHX::Device::array_layout;
+
+    const int dim0 = 100;
+    const int dim1 = 100;
+    const int fad_dim = 100;
+    using MemoryType = typename Sacado::ValueType<FadType>::type;
+    MemoryType* memory = nullptr; // uses double* not DFad<double>* for memory
+    Kokkos::View<FadType**,DefaultLayout,PHX::mem_space> a(memory,dim0,dim1,fad_dim);
+    TEUCHOS_ASSERT(a.data() == nullptr);
   }
 
   TEUCHOS_UNIT_TEST(Kokkos_AllocationTracker, ViewAllocationSize)

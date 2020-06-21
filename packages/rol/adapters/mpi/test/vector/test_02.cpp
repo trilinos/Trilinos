@@ -52,7 +52,7 @@ typedef double RealT;
 int main(int argc, char* argv[]) 
 {
 
-  typedef ROL::Ptr<ROL::Vector<RealT>> PtrVector;
+//  typedef ROL::Ptr<ROL::Vector<RealT>> PtrVector;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 

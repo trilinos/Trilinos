@@ -84,7 +84,7 @@
                         stk::mesh::FieldBase *proc_rank_field=0)
       {
         const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
-        typedef boost::tuple<stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId> tri_tuple_type;
+        typedef std::array<stk::mesh::EntityId, 3> tri_tuple_type;
         static vector<tri_tuple_type> elems(2);
 
         shards::CellTopology cell_topo(cell_topo_data);
@@ -120,8 +120,8 @@
             if (num_nodes_on_edge)
               {
                 eMesh.createOrGetNode(EDGE_N(iedge), mp);
-                elems[0] = tri_tuple_type(VERT_N(iedge), EDGE_N(iedge), VERT_N((iedge+2)%3) );
-                elems[1] = tri_tuple_type(EDGE_N(iedge), VERT_N((iedge+1)%3), VERT_N((iedge+2)%3) );
+                elems[0] = {VERT_N(iedge), EDGE_N(iedge), VERT_N((iedge+2)%3) };
+                elems[1] = {EDGE_N(iedge), VERT_N((iedge+1)%3), VERT_N((iedge+2)%3) };
               }
           }
 
@@ -137,9 +137,9 @@
               newElement = *element_pool;
             //std::cout << "tmp newElement id = " << m_eMesh.identifier(newElement) << std::endl;
 
-            stk::mesh::Entity nodes[3] = {eMesh.createOrGetNode(elems[ielem].get<0>()),
-                                          eMesh.createOrGetNode(elems[ielem].get<1>()),
-                                          eMesh.createOrGetNode(elems[ielem].get<2>())};
+            stk::mesh::Entity nodes[3] = {eMesh.createOrGetNode(elems[ielem][0]),
+                                          eMesh.createOrGetNode(elems[ielem][1]),
+                                          eMesh.createOrGetNode(elems[ielem][2])};
             create_side_element(eMesh, use_declare_element_side, nodes, 3, newElement);
 
             if (proc_rank_field)
@@ -151,18 +151,10 @@
 
             eMesh.get_bulk_data()->change_entity_parts( newElement, add_parts, remove_parts );
 
-            {
-              if (!elems[ielem].get<0>())
-                {
-                  std::cout << "P[" << eMesh.get_rank() << "] nid = 0 << " << std::endl;
-                  //exit(1);
-                }
-            }
-
             // 3 nodes of the new tris
-            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<0>()), 0);
-            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<1>()), 1);
-            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<2>()), 2);
+            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem][0]), 0);
+            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem][1]), 1);
+            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem][2]), 2);
 
             set_parent_child_relations(eMesh, element, newElement, *ft_element_pool, ielem);
 

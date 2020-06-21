@@ -52,6 +52,7 @@ template<class MatrixType>
 RILUK<MatrixType>::RILUK (const Teuchos::RCP<const row_matrix_type>& Matrix_in)
   : A_ (Matrix_in),
     LevelOfFill_ (0),
+    Overalloc_ (2.),
     isAllocated_ (false),
     isInitialized_ (false),
     isComputed_ (false),
@@ -73,6 +74,7 @@ template<class MatrixType>
 RILUK<MatrixType>::RILUK (const Teuchos::RCP<const crs_matrix_type>& Matrix_in)
   : A_ (Matrix_in),
     LevelOfFill_ (0),
+    Overalloc_ (2.),
     isAllocated_ (false),
     isInitialized_ (false),
     isComputed_ (false),
@@ -276,6 +278,7 @@ setParameters (const Teuchos::ParameterList& params)
   magnitude_type absThresh = STM::zero ();
   magnitude_type relThresh = STM::one ();
   magnitude_type relaxValue = STM::zero ();
+  double overalloc = 2.;
 
   // "fact: iluk level-of-fill" parsing is more complicated, because
   // we want to allow as many types as make sense.  int is the native
@@ -307,6 +310,11 @@ setParameters (const Teuchos::ParameterList& params)
     getParamTryingTypes<magnitude_type, magnitude_type, double>
       (relaxValue, params, paramName, prefix);
   }
+  {
+    const std::string paramName ("fact: iluk overalloc");
+    getParamTryingTypes<double, double>
+      (overalloc, params, paramName, prefix);
+  }
 
   // Forward to trisolvers.
   L_solver_->setParameters(params);
@@ -317,6 +325,7 @@ setParameters (const Teuchos::ParameterList& params)
   // exception.
 
   LevelOfFill_ = fillLevel;
+  Overalloc_ = overalloc;
 
   // mfh 28 Nov 2012: The previous code would not assign Athresh_,
   // Rthresh_, or RelaxValue_, if the read-in value was -1.  I don't
@@ -464,7 +473,7 @@ void RILUK<MatrixType>::initialize ()
         A_local_crs = rcp_const_cast<const crs_matrix_type> (A_local_crs_nc);
       }
       Graph_ = rcp (new Ifpack2::IlukGraph<crs_graph_type> (A_local_crs->getCrsGraph (),
-                                                            LevelOfFill_, 0));
+                                                            LevelOfFill_, 0, Overalloc_));
     }
 
     Graph_->initialize ();

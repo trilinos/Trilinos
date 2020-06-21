@@ -383,11 +383,11 @@ namespace Anasazi {
   /*! 
     \brief Adapter class for creating an operators often used in solving generalized eigenproblems.
 
-    This class will apply the operation \f$A^{-1}M\f$ [default] or \f$AM\f$, for the \c Apply method of the
+    This class will apply the operation \f$ A^{-1}M\f$ [default] or \f$ AM\f$, for the \c Apply method of the
     Epetra_Operator / Anasazi::Operator.  The Anasazi::EpetraGenOp operator is useful when spectral 
-    transformations are used within eigensolvers.  For instance, \f$A^{-1}M\f$ is a shift and invert 
+    transformations are used within eigensolvers.  For instance, \f$ A^{-1}M\f$ is a shift and invert 
     spectral transformation commonly used with Anasazi::BlockKrylovSchur to compute the smallest-magnitude
-    eigenvalues for the eigenproblem \f$Ax = \lambda Mx\f$.
+    eigenvalues for the eigenproblem \f$ Ax = \lambda Mx\f$.
 
     \note The Epetra package performs double-precision arithmetic, so the use of Epetra with Anasazi will
     only provide a double-precision eigensolver.
@@ -395,9 +395,9 @@ namespace Anasazi {
 
   class ANASAZIEPETRA_LIB_DLL_EXPORT EpetraGenOp : public virtual Operator<double>, public virtual Epetra_Operator {
   public:
-    //! Basic constructor for applying operator \f$A^{-1}M\f$ [default] or \f$AM\f$.
-    /*! If \c isAInverse is true this operator will apply \f$A^{-1}M\f$, else
-      it will apply \f$AM\f$.
+    //! Basic constructor for applying operator \f$ A^{-1}M\f$ [default] or \f$ AM\f$.
+    /*! If \c isAInverse is true this operator will apply \f$ A^{-1}M\f$, else
+      it will apply \f$ AM\f$.
     */
     EpetraGenOp(const Teuchos::RCP<Epetra_Operator> &AOp, 
                 const Teuchos::RCP<Epetra_Operator> &MOp,
@@ -407,12 +407,12 @@ namespace Anasazi {
     ~EpetraGenOp();
     
     //! Apply method [inherited from Anasazi::Operator class]
-    /*! This method will apply \f$A^{-1}M\f$ or \f$AM\f$ to \c X, returning \c Y.
+    /*! This method will apply \f$ A^{-1}M\f$ or \f$ AM\f$ to \c X, returning \c Y.
      */
     void Apply ( const MultiVec<double>& X, MultiVec<double>& Y ) const; 
 
     //! Apply method [inherited from Epetra_Operator class]
-    /*! This method will apply \f$A^{-1}M\f$ or \f$AM\f$ to \c X, returning \c Y.
+    /*! This method will apply \f$ A^{-1}M\f$ or \f$ AM\f$ to \c X, returning \c Y.
      */
     int Apply(const Epetra_MultiVector &X, Epetra_MultiVector &Y) const;
 
@@ -470,10 +470,10 @@ namespace Anasazi {
   /*! 
     \brief Adapter class for creating a symmetric operator from an Epetra_Operator.
 
-    This class will apply the operation \f$A^TA\f$ [default] or \f$AA^T\f$, for the \c Apply method of the
+    This class will apply the operation \f$ A^TA\f$ [default] or \f$ AA^T\f$, for the \c Apply method of the
     Epetra_Operator / Anasazi::Operator.  The Anasazi::EpetraSymOp operator is useful when trying to compute
-    a few singular values of the operator \f$A\f$.  The singular values are the square-root of the eigenvalues
-    of \f$A^TA\f$ and \f$AA^T\f$.
+    a few singular values of the operator \f$ A\f$.  The singular values are the square-root of the eigenvalues
+    of \f$ A^TA\f$ and \f$ AA^T\f$.
 
     \note The Epetra package performs double-precision arithmetic, so the use of Epetra with Anasazi will
     only provide a double-precision eigensolver.
@@ -481,8 +481,8 @@ namespace Anasazi {
 
   class ANASAZIEPETRA_LIB_DLL_EXPORT EpetraSymOp : public virtual Operator<double>, public virtual Epetra_Operator {
   public:
-    //! Basic constructor for applying operator \f$A^TA\f$ [default] or \f$AA^T\f$.
-    /*! If \c isTrans is false this operator will apply \f$A^TA\f$, else it will apply \f$AA^T\f$.
+    //! Basic constructor for applying operator \f$ A^TA\f$ [default] or \f$ AA^T\f$.
+    /*! If \c isTrans is false this operator will apply \f$ A^TA\f$, else it will apply \f$ AA^T\f$.
     */
     EpetraSymOp(const Teuchos::RCP<Epetra_Operator> &Op, bool isTrans = false );
 
@@ -490,18 +490,18 @@ namespace Anasazi {
     ~EpetraSymOp();
     
     //! Apply method [inherited from Anasazi::Operator class]
-    /*! This method will apply \f$A^TA\f$ or \f$AA^T\f$ to \c X, returning \c Y.
+    /*! This method will apply \f$ A^TA\f$ or \f$ AA^T\f$ to \c X, returning \c Y.
      */
     void Apply ( const MultiVec<double>& X, MultiVec<double>& Y ) const; 
 
     //! Apply method [inherited from Epetra_Operator class]
-    /*! This method will apply \f$A^TA\f$ or \f$AA^T\f$ to \c X, returning \c Y.
+    /*! This method will apply \f$ A^TA\f$ or \f$ AA^T\f$ to \c X, returning \c Y.
      */
     int Apply(const Epetra_MultiVector &X, Epetra_MultiVector &Y) const;
 
     //! Apply inverse method [inherited from Epetra_Operator class]
     /*! This method will apply \f$(A^TA)^{-1}\f$ or \f$(AA^T)^{-1}\f$ to \c X, returning \c Y.
-      \note This method is only defined if \f$A^{-1}\f$ is defined for the given Epetra_Operator.
+      \note This method is only defined if \f$ A^{-1}\f$ is defined for the given Epetra_Operator.
      */
     int ApplyInverse(const Epetra_MultiVector &X, Epetra_MultiVector &Y) const;
 
@@ -554,10 +554,10 @@ namespace Anasazi {
   /*! 
     \brief Adapter class for creating a symmetric operator from an Epetra_MultiVector.
 
-    This class will apply the operation \f$A^TA\f$ [default] or \f$AA^T\f$, for the \c Apply method of the
+    This class will apply the operation \f$ A^TA\f$ [default] or \f$ AA^T\f$, for the \c Apply method of the
     Epetra_Operator / Anasazi::Operator.  The Anasazi::EpetraSymMvOp operator is useful when trying to compute
-    a few singular values of the Epetra_MultiVector \f$A\f$.  The singular values are the square-root of the 
-    eigenvalues of \f$A^TA\f$ and \f$AA^T\f$.
+    a few singular values of the Epetra_MultiVector \f$ A\f$.  The singular values are the square-root of the 
+    eigenvalues of \f$ A^TA\f$ and \f$ AA^T\f$.
 
     \note The Epetra package performs double-precision arithmetic, so the use of Epetra with Anasazi will
     only provide a double-precision eigensolver.
@@ -565,8 +565,8 @@ namespace Anasazi {
 
   class ANASAZIEPETRA_LIB_DLL_EXPORT EpetraSymMVOp : public virtual Operator<double> {
   public:
-    //! Basic constructor for applying operator \f$A^TA\f$ [default] or \f$AA^T\f$.
-    /*! If \c isTrans is false this operator will apply \f$A^TA\f$, else it will apply \f$AA^T\f$.
+    //! Basic constructor for applying operator \f$ A^TA\f$ [default] or \f$ AA^T\f$.
+    /*! If \c isTrans is false this operator will apply \f$ A^TA\f$, else it will apply \f$ AA^T\f$.
     */
     EpetraSymMVOp(const Teuchos::RCP<const Epetra_MultiVector> &MV, 
                   bool isTrans = false );
@@ -575,7 +575,7 @@ namespace Anasazi {
     ~EpetraSymMVOp() {};
     
     //! Apply method 
-    /*! This method will apply \f$A^TA\f$ or \f$AA^T\f$ to \c X, returning \c Y.
+    /*! This method will apply \f$ A^TA\f$ or \f$ AA^T\f$ to \c X, returning \c Y.
      */
     void Apply ( const MultiVec<double>& X, MultiVec<double>& Y ) const; 
 
@@ -606,10 +606,10 @@ namespace Anasazi {
   /*! 
     \brief Adapter class for creating a weighted operator from an Epetra_MultiVector and Epetra_Operator.
 
-    This class will apply the operation \f$A^T*W*A\f$ for the \c Apply method of the
+    This class will apply the operation \f$ A^T*W*A\f$ for the \c Apply method of the
     Anasazi::Operator.  The Anasazi::EpetraWSymMvOp operator is useful when trying to compute
-    a few singular values of the Epetra_MultiVector \f$A\f$ under the weighting matrix \f$W\f$.  
-    The singular values are the square-root of the eigenvalues of \f$A^T*W*A\f$.
+    a few singular values of the Epetra_MultiVector \f$ A\f$ under the weighting matrix \f$ W\f$.  
+    The singular values are the square-root of the eigenvalues of \f$ A^T*W*A\f$.
 
     \note The Epetra package performs double-precision arithmetic, so the use of Epetra with Anasazi will
     only provide a double-precision eigensolver.
@@ -617,7 +617,7 @@ namespace Anasazi {
 
   class ANASAZIEPETRA_LIB_DLL_EXPORT EpetraWSymMVOp : public virtual Operator<double> {
   public:
-    //! Basic constructor for applying operator \f$A^T*W*A\f$.
+    //! Basic constructor for applying operator \f$ A^T*W*A\f$.
     EpetraWSymMVOp(const Teuchos::RCP<const Epetra_MultiVector> &MV, 
                    const Teuchos::RCP<Epetra_Operator> &OP );
     
@@ -657,7 +657,7 @@ namespace Anasazi {
 
     This class will apply the operation \f$(WA)^T*WA\f$ for the \c Apply method of the
     Anasazi::Operator.  The Anasazi::EpetraW2SymMvOp operator is useful when trying to compute
-    a few singular values of the Epetra_MultiVector \f$A\f$ under the weighting matrix \f$W\f$.  
+    a few singular values of the Epetra_MultiVector \f$ A\f$ under the weighting matrix \f$ W\f$.  
     The singular values are the square-root of the eigenvalues of \f$(WA)^T*WA\f$.
 
     \note The Epetra package performs double-precision arithmetic, so the use of Epetra with Anasazi will
@@ -666,7 +666,7 @@ namespace Anasazi {
 
   class ANASAZIEPETRA_LIB_DLL_EXPORT EpetraW2SymMVOp : public virtual Operator<double> {
   public:
-    //! Basic constructor for applying operator \f$A^T*W*A\f$.
+    //! Basic constructor for applying operator \f$ A^T*W*A\f$.
     EpetraW2SymMVOp(const Teuchos::RCP<const Epetra_MultiVector> &MV, 
                    const Teuchos::RCP<Epetra_Operator> &OP );
     
@@ -1130,7 +1130,7 @@ namespace Anasazi {
           "Anasazi::MultiVecTraits<double, Epetra_MultiVector>::MvTransMv call to Epetra_MultiVector::Multiply() returned a nonzero value.");
     }
     
-    /*! \brief Compute a vector \c b where the components are the individual dot-products of the \c i-th columns of \c A and \c mv, i.e.\f$b[i] = A[i]^Tmv[i]\f$.
+    /*! \brief Compute a vector \c b where the components are the individual dot-products of the \c i-th columns of \c A and \c mv, i.e.\f$ b[i] = A[i]^Tmv[i]\f$.
      */
     static void MvDot( const Epetra_MultiVector& A, const Epetra_MultiVector& B, std::vector<double> &b
 #ifdef HAVE_ANASAZI_EXPERIMENTAL

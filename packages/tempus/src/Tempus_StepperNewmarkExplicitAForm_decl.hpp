@@ -84,9 +84,6 @@ public:
     virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
     { return Teuchos::null; }
 
-    /// Initialize during construction and after changing input parameters.
-    virtual void initialize();
-
     /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
@@ -125,6 +122,8 @@ public:
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
+  virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
+
   void predictVelocity(Thyra::VectorBase<Scalar>& vPred,
                            const Thyra::VectorBase<Scalar>& v,
                            const Thyra::VectorBase<Scalar>& a,
@@ -149,6 +148,8 @@ public:
       std::logic_error,
       "Error in 'Newmark Explicit a-Form' stepper: invalid value of Gamma = "
        << gamma_ << ".  Please select 0 <= Gamma <= 1. \n");
+
+    this->isInitialized_ = false;
   }
 
   bool getUseFSALDefault() const { return true; }

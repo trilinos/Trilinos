@@ -54,7 +54,6 @@
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
 #include <GeometricGenerator.hpp>
-#include <vector>
 
 #include <Zoltan2_EvaluatePartition.hpp>
 
@@ -115,9 +114,6 @@ using Teuchos::rcp;
             (ierr)++; \
         }
 
-
-typedef Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> tMVector_t;
-
 /*! \test MultiJaggedTest.cpp
     An example of the use of the MultiJagged algorithm to partition coordinate data.
  */
@@ -173,7 +169,8 @@ void print_boxAssign_result(
 template <typename Adapter>
 int run_pointAssign_tests(
   Zoltan2::PartitioningProblem<Adapter> *problem,
-  RCP<tMVector_t> &coords)
+  RCP<tMVector_t> &coords,
+  bool print_details)
 {
     int ierr = 0;
 
@@ -204,14 +201,16 @@ int run_pointAssign_tests(
         }
         CATCH_EXCEPTIONS_WITH_COUNT(ierr, me + ": pointAssign -- OwnedPoints");
 
-        std::cout << me << " Point " << localID
-                  << " gid " << coords->getMap()->getGlobalElement(localID)
-                  << " (" << pointDrop[0];
-        if (coordDim > 1) std::cout << " " << pointDrop[1];
-        if (coordDim > 2) std::cout << " " << pointDrop[2];
-        std::cout << ") in boxPart " << part
-                  << "  in solnPart " << solnPart
-                  << std::endl;
+        if(print_details) {
+          std::cout << me << " Point " << localID
+                    << " gid " << coords->getMap()->getGlobalElement(localID)
+                    << " (" << pointDrop[0];
+          if (coordDim > 1) std::cout << " " << pointDrop[1];
+          if (coordDim > 2) std::cout << " " << pointDrop[2];
+          std::cout << ") in boxPart " << part
+                    << "  in solnPart " << solnPart
+                    << std::endl;
+        }
 
 // this error test does not work for points that fall on the cuts.
 // like Zoltan's RCB, pointAssign arbitrarily picks a part along the cut.
@@ -230,14 +229,16 @@ int run_pointAssign_tests(
     {
       const std::vector<Zoltan2::coordinateModelPartBox>
             pBoxes = problem->getSolution().getPartBoxesView();
-      for (size_t i = 0; i < pBoxes.size(); i++) {
-        typename Zoltan2::coordinateModelPartBox::coord_t *lmin = pBoxes[i].getlmins();
-        typename Zoltan2::coordinateModelPartBox::coord_t *lmax = pBoxes[i].getlmaxs();;
-        std::cout << me << " pBox " << i << " pid " << pBoxes[i].getpId()
-                  << " (" << lmin[0] << "," << lmin[1] << ","
-                  << (coordDim > 2 ? lmin[2] : 0) << ") x "
-                  << " (" << lmax[0] << "," << lmax[1] << ","
-                  << (coordDim > 2 ? lmax[2] : 0) << ")" << std::endl;
+      if(print_details) {
+        for (size_t i = 0; i < pBoxes.size(); i++) {
+          typename Zoltan2::coordinateModelPartBox::coord_t *lmin = pBoxes[i].getlmins();
+          typename Zoltan2::coordinateModelPartBox::coord_t *lmax = pBoxes[i].getlmaxs();;
+          std::cout << me << " pBox " << i << " pid " << pBoxes[i].getpId()
+                    << " (" << lmin[0] << "," << lmin[1] << ","
+                    << (coordDim > 2 ? lmin[2] : 0) << ") x "
+                    << " (" << lmax[0] << "," << lmax[1] << ","
+                    << (coordDim > 2 ? lmax[2] : 0) << ")" << std::endl;
+        }
       }
     }
 
@@ -248,6 +249,7 @@ int run_pointAssign_tests(
         part = problem->getSolution().pointAssign(coordDim, pointDrop);
       }
       CATCH_EXCEPTIONS_WITH_COUNT(ierr, me + " pointAssign -- Origin");
+
       std::cout << me << " OriginPoint (" << pointDrop[0];
       if (coordDim > 1) std::cout << " " << pointDrop[1];
       if (coordDim > 2) std::cout << " " << pointDrop[2];
@@ -551,8 +553,125 @@ void readGeoGenParams(string paramFileName, Teuchos::ParameterList &geoparams, c
     }
 }
 
+template<class bv_use_node_t>
+int compareWithBasicVectorAdapterTest(RCP<const Teuchos::Comm<int> > &comm,
+  Teuchos::RCP<Teuchos::ParameterList> params,
+  Zoltan2::PartitioningProblem<Zoltan2::XpetraMultiVectorAdapter<tMVector_t>> *problem,
+  RCP<tMVector_t> coords,
+  Zoltan2::XpetraMultiVectorAdapter<tMVector_t>::scalar_t ** weights = NULL, int numWeightsPerCoord = 0) {
+
+  typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> inputAdapter_t;
+
+  // Run a test with BasicVectorAdapter and xyzxyz format coordinates
+  const int bvme = comm->getRank();
+  const inputAdapter_t::lno_t bvlen =
+                        inputAdapter_t::lno_t(coords->getLocalLength());
+  const size_t bvnvecs = coords->getNumVectors();
+  const size_t bvsize = coords->getNumVectors() * coords->getLocalLength();
+
+  ArrayRCP<inputAdapter_t::scalar_t> *bvtpetravectors =
+          new ArrayRCP<inputAdapter_t::scalar_t>[bvnvecs];
+  for (size_t i = 0; i < bvnvecs; i++)
+    bvtpetravectors[i] = coords->getDataNonConst(i);
+  int idx = 0;
+  inputAdapter_t::gno_t *bvgids = new
+                         inputAdapter_t::gno_t[coords->getLocalLength()];
+  inputAdapter_t::scalar_t *bvcoordarr = new inputAdapter_t::scalar_t[bvsize];
+  for (inputAdapter_t::lno_t j = 0; j < bvlen; j++) {
+    bvgids[j] = coords->getMap()->getGlobalElement(j);
+    for (size_t i = 0; i < bvnvecs; i++) {
+      bvcoordarr[idx++] = bvtpetravectors[i][j];
+    }
+  }
+
+  // my test node type
+  typedef Zoltan2::BasicUserTypes<inputAdapter_t::scalar_t,
+                                  inputAdapter_t::lno_t,
+                                  inputAdapter_t::gno_t,
+                                  bv_use_node_t> bvtypes_t;
+  typedef Zoltan2::BasicVectorAdapter<bvtypes_t> bvadapter_t;
+  std::vector<const inputAdapter_t::scalar_t *> bvcoords(bvnvecs);
+  std::vector<int> bvstrides(bvnvecs);
+  for (size_t i = 0; i < bvnvecs; i++) {
+    bvcoords[i] = &bvcoordarr[i];
+    bvstrides[i] = bvnvecs;
+  }
+  std::vector<const inputAdapter_t::scalar_t *> bvwgts;
+  std::vector<int> bvwgtstrides;
+
+  if(numWeightsPerCoord > 0) {
+    bvwgts = std::vector<const inputAdapter_t::scalar_t *>(numWeightsPerCoord);
+    bvwgtstrides = std::vector<int>(coords->getLocalLength());
+    for (size_t i = 0; i < coords->getLocalLength(); i++) {
+      bvwgtstrides[i] = numWeightsPerCoord;
+    }
+    for (int i = 0; i < numWeightsPerCoord; i++) {
+      bvwgts[i] = weights[i];
+    }
+  }
+
+  bvadapter_t bvia(bvlen, bvgids, bvcoords, bvstrides,
+                     bvwgts, bvwgtstrides);
+
+  Zoltan2::PartitioningProblem<bvadapter_t> *bvproblem;
+  try {
+    bvproblem = new Zoltan2::PartitioningProblem<bvadapter_t>(&bvia,
+                                               params.getRawPtr(),
+                                               comm);
+  }
+  CATCH_EXCEPTIONS_AND_RETURN("PartitioningProblem()")
+
+  try {
+      bvproblem->solve();
+  }
+  CATCH_EXCEPTIONS_AND_RETURN("solve()")
+
+  int ierr = 0;
+
+  // Compare with MultiVectorAdapter result
+  for (inputAdapter_t::lno_t i = 0; i < bvlen; i++) {
+    if (problem->getSolution().getPartListView()[i] !=
+        bvproblem->getSolution().getPartListView()[i]) {
+      std::cout << bvme << " " << i << " "
+           << coords->getMap()->getGlobalElement(i) << " " << bvgids[i]
+           << ": XMV " << problem->getSolution().getPartListView()[i]
+           << "; BMV " << bvproblem->getSolution().getPartListView()[i]
+           << "  :  FAIL" << std::endl;
+        ++ierr;
+    }
+    /*  For debugging - plot all success as well
+    else {
+      std::cout << bvme << " " << i << " "
+           << coords->getMap()->getGlobalElement(i) << " " << bvgids[i]
+           << ": XMV " << problem->getSolution().getPartListView()[i]
+           << "; BMV " << bvproblem->getSolution().getPartListView()[i]
+           << "  :  PASS" << std::endl;
+    }
+    */
+  }
+
+  delete [] bvgids;
+  delete [] bvcoordarr;
+  delete [] bvtpetravectors;
+  delete bvproblem;
+
+  if (coords->getGlobalLength() < 40) {
+      int len = coords->getLocalLength();
+      const inputAdapter_t::part_t *zparts =
+            problem->getSolution().getPartListView();
+      for (int i = 0; i < len; i++)
+          std::cout << comm->getRank()
+          << " lid " << i
+          << " gid " << coords->getMap()->getGlobalElement(i)
+          << " part " << zparts[i] << std::endl;
+  }
+
+  return ierr;
+}
+
+template<class bv_use_node_t>
 int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
-        int numParts, float imbalance,
+        int numTeams, int numParts, float imbalance,
         std::string paramFile, std::string pqParts,
         std::string pfname,
         int k,
@@ -561,6 +680,8 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
         zscalar_t migration_imbalance_cut_off,
         int migration_processor_assignment_type,
         int migration_doMigration_type,
+        bool uvm,
+        bool print_details,
         bool test_boxes,
         bool rectilinear,
         int  mj_premigration_option,
@@ -570,8 +691,9 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
     int ierr = 0;
     Teuchos::ParameterList geoparams("geo params");
     readGeoGenParams(paramFile, geoparams, comm);
+
     GeometricGen::GeometricGenerator<zscalar_t, zlno_t, zgno_t, znode_t> *gg =
-    new GeometricGen::GeometricGenerator<zscalar_t,zlno_t,zgno_t,znode_t>(geoparams,
+      new GeometricGen::GeometricGenerator<zscalar_t,zlno_t,zgno_t, znode_t>(geoparams,
                                                                       comm);
 
     int coord_dim = gg->getCoordinateDimension();
@@ -594,10 +716,10 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
 
     delete gg;
 
+    // Run 1st test with MV which always runs UVM on
     RCP<Tpetra::Map<zlno_t, zgno_t, znode_t> > mp = rcp(
                 new Tpetra::Map<zlno_t, zgno_t, znode_t>(numGlobalPoints,
                                                       numLocalPoints, 0, comm));
-
     Teuchos::Array<Teuchos::ArrayView<const zscalar_t> > coordView(coord_dim);
     for (int i=0; i < coord_dim; i++){
         if(numLocalPoints > 0){
@@ -609,13 +731,9 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
             coordView[i] = a;
         }
     }
-
     RCP<tMVector_t> tmVector = RCP<tMVector_t>(new
                                    tMVector_t(mp, coordView.view(0, coord_dim),
                                               coord_dim));
-
-    RCP<const tMVector_t> coordsConst =
-                          Teuchos::rcp_const_cast<const tMVector_t>(tmVector);
     std::vector<const zscalar_t *> weights;
     if(numWeightsPerCoord){
         for (int i = 0; i < numWeightsPerCoord;++i){
@@ -623,13 +741,12 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
         }
     }
     std::vector<int> stride;
-
     typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> inputAdapter_t;
     typedef Zoltan2::EvaluatePartition<inputAdapter_t> quality_t;
     //inputAdapter_t ia(coordsConst);
-    inputAdapter_t *ia = new inputAdapter_t(coordsConst,weights, stride);
+    inputAdapter_t *ia = new inputAdapter_t(tmVector, weights, stride);
 
-    Teuchos::RCP<Teuchos::ParameterList> params ;
+    Teuchos::RCP<Teuchos::ParameterList> params;
 
     //Teuchos::ParameterList params("test params");
     if(pfname != ""){
@@ -642,6 +759,7 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
     params->set("memory_output_stream" , "std::cout");
     params->set("memory_procs" , 0);
     */
+
     params->set("timer_output_stream" , "std::cout");
 
     params->set("algorithm", "multijagged");
@@ -660,6 +778,9 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
 
     if(pqParts != "")
         params->set("mj_parts", pqParts);
+    if(numTeams > 0) {
+        params->set("mj_num_teams", numTeams);
+    }
     if(numParts > 0)
         params->set("num_global_parts", numParts);
     if (k > 0)
@@ -682,6 +803,11 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
         problem->solve();
     }
     CATCH_EXCEPTIONS_AND_RETURN("solve()")
+    {
+      ierr += compareWithBasicVectorAdapterTest<bv_use_node_t>(
+        comm, params, problem, tmVector,
+        weight, numWeightsPerCoord);
+    }
 
     // create metric object
 
@@ -691,31 +817,38 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
     if (comm->getRank() == 0){
       metricObject->printMetrics(std::cout);
     }
+
     problem->printTimers();
 
     // run pointAssign tests
     if (test_boxes) {
-      ierr = run_pointAssign_tests<inputAdapter_t>(problem, tmVector);
+      ierr += run_pointAssign_tests<inputAdapter_t>(problem, tmVector,
+        print_details);
       ierr += run_boxAssign_tests<inputAdapter_t>(problem, tmVector);
     }
 
     if(numWeightsPerCoord){
-        for(int i = 0; i < numWeightsPerCoord; ++i)
-            delete [] weight[i];
+        for(int i = 0; i < numWeightsPerCoord; ++i) {
+          delete [] weight[i];
+        }
         delete [] weight;
     }
     if(coord_dim){
-        for(int i = 0; i < coord_dim; ++i)
-            delete [] coords[i];
+        for(int i = 0; i < coord_dim; ++i) {
+          delete [] coords[i];
+        }
         delete [] coords;
     }
+
     delete problem;
     delete ia;
     return ierr;
 }
 
+template<class bv_use_node_t>
 int testFromDataFile(
         RCP<const Teuchos::Comm<int> > &comm,
+        int numTeams,
         int numParts,
         float imbalance,
         std::string fname,
@@ -727,11 +860,12 @@ int testFromDataFile(
         zscalar_t migration_imbalance_cut_off,
         int migration_processor_assignment_type,
         int migration_doMigration_type,
+        bool uvm,
+        bool print_details,
         bool test_boxes,
         bool rectilinear,
         int  mj_premigration_option, 
-	int mj_premigration_coordinate_cutoff
-
+        int mj_premigration_coordinate_cutoff
 )
 {
     int ierr = 0;
@@ -742,10 +876,9 @@ int testFromDataFile(
 
     RCP<tMVector_t> coords = uinput.getUICoordinates();
 
-    RCP<const tMVector_t> coordsConst = rcp_const_cast<const tMVector_t>(coords);
     typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> inputAdapter_t;
     typedef Zoltan2::EvaluatePartition<inputAdapter_t> quality_t;
-    inputAdapter_t *ia = new inputAdapter_t(coordsConst);
+    inputAdapter_t *ia = new inputAdapter_t(coords);
 
     Teuchos::RCP <Teuchos::ParameterList> params ;
 
@@ -797,91 +930,13 @@ int testFromDataFile(
                                                    comm);
     }
     CATCH_EXCEPTIONS_AND_RETURN("PartitioningProblem()")
-
     try {
         problem->solve();
     }
     CATCH_EXCEPTIONS_AND_RETURN("solve()")
-
     {
-    // Run a test with BasicVectorAdapter and xyzxyz format coordinates
-    const int bvme = comm->getRank();
-    const inputAdapter_t::lno_t bvlen =
-                          inputAdapter_t::lno_t(coords->getLocalLength());
-    const size_t bvnvecs = coords->getNumVectors();
-    const size_t bvsize = coords->getNumVectors() * coords->getLocalLength();
-
-    ArrayRCP<inputAdapter_t::scalar_t> *bvtpetravectors =
-            new ArrayRCP<inputAdapter_t::scalar_t>[bvnvecs];
-    for (size_t i = 0; i < bvnvecs; i++)
-      bvtpetravectors[i] = coords->getDataNonConst(i);
-
-    int idx = 0;
-    inputAdapter_t::gno_t *bvgids = new
-                           inputAdapter_t::gno_t[coords->getLocalLength()];
-    inputAdapter_t::scalar_t *bvcoordarr = new inputAdapter_t::scalar_t[bvsize];
-    for (inputAdapter_t::lno_t j = 0; j < bvlen; j++) {
-      bvgids[j] = coords->getMap()->getGlobalElement(j);
-      for (size_t i = 0; i < bvnvecs; i++) {
-        bvcoordarr[idx++] = bvtpetravectors[i][j];
-      }
-    }
-
-    typedef Zoltan2::BasicUserTypes<inputAdapter_t::scalar_t,
-                                    inputAdapter_t::lno_t,
-                                    inputAdapter_t::gno_t> bvtypes_t;
-    typedef Zoltan2::BasicVectorAdapter<bvtypes_t> bvadapter_t;
-    std::vector<const inputAdapter_t::scalar_t *> bvcoords(bvnvecs);
-    std::vector<int> bvstrides(bvnvecs);
-    for (size_t i = 0; i < bvnvecs; i++) {
-      bvcoords[i] = &bvcoordarr[i];
-      bvstrides[i] = bvnvecs;
-    }
-    std::vector<const inputAdapter_t::scalar_t *> bvwgts;
-    std::vector<int> bvwgtstrides;
-
-    bvadapter_t bvia(bvlen, bvgids, bvcoords, bvstrides,
-                       bvwgts, bvwgtstrides);
-
-    Zoltan2::PartitioningProblem<bvadapter_t> *bvproblem;
-    try {
-      bvproblem = new Zoltan2::PartitioningProblem<bvadapter_t>(&bvia,
-                                                 params.getRawPtr(),
-                                                 comm);
-    }
-    CATCH_EXCEPTIONS_AND_RETURN("PartitioningProblem()")
-
-    try {
-        bvproblem->solve();
-    }
-    CATCH_EXCEPTIONS_AND_RETURN("solve()")
-
-    // Compare with MultiVectorAdapter result
-    for (inputAdapter_t::lno_t i = 0; i < bvlen; i++) {
-      if (problem->getSolution().getPartListView()[i] !=
-          bvproblem->getSolution().getPartListView()[i])
-        std::cout << bvme << " " << i << " "
-             << coords->getMap()->getGlobalElement(i) << " " << bvgids[i]
-             << ": XMV " << problem->getSolution().getPartListView()[i]
-             << "; BMV " << bvproblem->getSolution().getPartListView()[i]
-             << "  :  FAIL" << std::endl;
-    }
-
-    delete [] bvgids;
-    delete [] bvcoordarr;
-    delete [] bvtpetravectors;
-    delete bvproblem;
-    }
-
-    if (coordsConst->getGlobalLength() < 40) {
-        int len = coordsConst->getLocalLength();
-        const inputAdapter_t::part_t *zparts =
-              problem->getSolution().getPartListView();
-        for (int i = 0; i < len; i++)
-            std::cout << comm->getRank()
-            << " lid " << i
-            << " gid " << coords->getMap()->getGlobalElement(i)
-            << " part " << zparts[i] << std::endl;
+      ierr += compareWithBasicVectorAdapterTest<bv_use_node_t>(
+        comm, params, problem, coords);
     }
 
     // create metric object
@@ -898,7 +953,8 @@ int testFromDataFile(
 
     // run pointAssign tests
     if (test_boxes) {
-      ierr = run_pointAssign_tests<inputAdapter_t>(problem, coords);
+      ierr += run_pointAssign_tests<inputAdapter_t>(problem, coords,
+        print_details);
       ierr += run_boxAssign_tests<inputAdapter_t>(problem, coords);
     }
 
@@ -914,7 +970,7 @@ void getCoords(zscalar_t **&coords, zlno_t &numLocal, int &dim, string fileName)
     FILE *f = fopen(fileName.c_str(), "r");
     if (f == NULL){
         std::cout << fileName << " cannot be opened" << std::endl;
-        exit(1);
+        std::terminate();
     }
     fscanf(f, "%d", &numLocal);
     fscanf(f, "%d", &dim);
@@ -933,6 +989,7 @@ void getCoords(zscalar_t **&coords, zlno_t &numLocal, int &dim, string fileName)
 
 int testFromSeparateDataFiles(
         RCP<const Teuchos::Comm<int> > &comm,
+        int numTeams,
         int numParts,
         float imbalance,
         std::string fname,
@@ -944,9 +1001,10 @@ int testFromSeparateDataFiles(
         zscalar_t migration_imbalance_cut_off,
         int migration_processor_assignment_type,
         int migration_doMigration_type,
-        int test_boxes,
+        bool uvm,
+        bool test_boxes,
         bool rectilinear,
- 	int  mj_premigration_option
+        int  mj_premigration_option
 )
 {
     //std::string fname("simple");
@@ -955,7 +1013,7 @@ int testFromSeparateDataFiles(
     int ierr = 0;
     int mR = comm->getRank();
     if (mR == 0) std::cout << "size of zscalar_t:" << sizeof(zscalar_t) << std::endl;
-    string tFile = fname +"_" + Teuchos::toString<int>(mR) + ".mtx";
+    string tFile = fname +"_" + std::to_string(mR) + ".mtx";
     zscalar_t **double_coords;
     zlno_t numLocal = 0;
     int dim = 0;
@@ -1020,6 +1078,9 @@ int testFromSeparateDataFiles(
     if(pqParts != ""){
         params->set("mj_parts", pqParts);
     }
+    if(numTeams > 0){
+        params->set("mj_num_teams", numTeams);
+    }
     if(numParts > 0){
         params->set("num_global_parts", numParts);
     }
@@ -1060,6 +1121,10 @@ int testFromSeparateDataFiles(
         problem->solve();
     }
     CATCH_EXCEPTIONS_AND_RETURN("solve()")
+    {
+      ierr += compareWithBasicVectorAdapterTest<bv_use_node_t>(
+        comm, params, problem, coords);
+    }
 
     if (coordsConst->getGlobalLength() < 40) {
         int len = coordsConst->getLocalLength();
@@ -1085,7 +1150,8 @@ int testFromSeparateDataFiles(
 
     // run pointAssign tests
     if (test_boxes) {
-      ierr = run_pointAssign_tests<inputAdapter_t>(problem, coords);
+      ierr += run_pointAssign_tests<inputAdapter_t>(problem, coords,
+        print_details);
       ierr += run_boxAssign_tests<inputAdapter_t>(problem, coords);
     }
 
@@ -1117,6 +1183,7 @@ bool getArgumentValue(string &argumentid, double &argumentValue, string argument
 void getArgVals(
         int narg,
         char **arg,
+        int &numTeams,
         int &numParts,
         float &imbalance ,
         string &pqParts,
@@ -1129,6 +1196,8 @@ void getArgVals(
         zscalar_t &migration_imbalance_cut_off,
         int &migration_processor_assignment_type,
         int &migration_doMigration_type,
+        bool &uvm,
+        bool &print_details,
         bool &test_boxes,
         bool &rectilinear,
         int  &mj_premigration_option,
@@ -1147,7 +1216,27 @@ void getArgVals(
         if(!getArgumentValue(identifier, fval, tmp)) continue;
         value = (long long int) (fval);
 
-        if(identifier == "C"){
+        if(identifier == "W"){
+            if(value == 0 || value == 1){
+                print_details = (value == 0 ? false : true);
+            } else {
+                throw "Invalid argument at " + tmp;
+            }
+        }
+        else if(identifier == "UVM"){
+            if(value == 0 || value == 1){
+                uvm = (value == 0 ? false : true);
+            } else {
+                throw "Invalid argument at " + tmp;
+            }
+        }
+        else if(identifier == "T"){
+            if(value > 0){
+                numTeams=value;
+            } else {
+                throw  "Invalid argument at " + tmp;
+            }
+        } else if(identifier == "C"){
             if(value > 0){
                 numParts=value;
                 isCset = true;
@@ -1277,6 +1366,7 @@ void print_usage(char *executable){
     std::cout << "\nUsage:" << std::endl;
     std::cout << executable << " arglist" << std::endl;
     std::cout << "arglist:" << std::endl;
+    std::cout << "\tT=numTeams: numTeams > 0" << std::endl;
     std::cout << "\tC=numParts: numParts > 0" << std::endl;
     std::cout << "\tP=MultiJaggedPart: Example: P=512,512" << std::endl;
     std::cout << "\tI=imbalance: Example I=1.03 (ignored for now.)" << std::endl;
@@ -1298,6 +1388,7 @@ int main(int narg, char *arg[])
     int rank = tcomm->getRank();
 
 
+    int numTeams = 0; // will use default if not set
     int numParts = -10;
     float imbalance = -1.03;
     int k = -1;
@@ -1316,14 +1407,28 @@ int main(int narg, char *arg[])
     int  mj_premigration_option = 0;
     int mj_premigration_coordinate_cutoff = 0;
 
+    bool uvm = true;
+    bool print_details = true;
     bool test_boxes = false;
     bool rectilinear = false;
+
+#ifdef KOKKOS_ENABLE_CUDA
+    // make a new node type so we can run BasicVectorAdapter with UVM off
+    // The Tpetra MV will still run with UVM on and we'll compare the results.
+    // For Serial/OpenMP the 2nd test will be turned off at the CMake level.
+    // For CUDA we control uvm on/off with parameter uvm set to 0 or 1.
+    // TODO: Probably this should all change eventually so we don't have a node
+    // declared like this.
+    typedef Kokkos::Compat::KokkosDeviceWrapperNode<
+      Kokkos::Cuda, Kokkos::CudaSpace>  uvm_off_node_t;
+#endif
 
     try{
         try {
             getArgVals(
                     narg,
                     arg,
+                    numTeams,
                     numParts,
                     imbalance ,
                     pqParts,
@@ -1336,6 +1441,8 @@ int main(int narg, char *arg[])
                     migration_imbalance_cut_off,
                     migration_processor_assignment_type,
                     migration_doMigration_type,
+                    uvm,
+                    print_details,
                     test_boxes,
                     rectilinear,
                     mj_premigration_option, mj_premigration_coordinate_cutoff);
@@ -1359,37 +1466,77 @@ int main(int narg, char *arg[])
         switch (opt){
 
         case 0:
-            ierr = testFromDataFile(tcomm,numParts, imbalance,fname,
-                    pqParts, paramFile, k,
+          if(uvm == true) { // true by default, if not CUDA it should be unset
+            ierr = testFromDataFile<znode_t>(tcomm, numTeams, numParts,
+                    imbalance, fname, pqParts, paramFile, k,
                     migration_check_option,
                     migration_all_to_all_type,
                     migration_imbalance_cut_off,
                     migration_processor_assignment_type,
-                    migration_doMigration_type, test_boxes, rectilinear, 
+                    migration_doMigration_type, uvm, print_details, test_boxes,
+                    rectilinear,
                     mj_premigration_option, mj_premigration_coordinate_cutoff);
-            break;
+          }
+          else {
+#ifdef KOKKOS_ENABLE_CUDA
+            ierr = testFromDataFile<uvm_off_node_t>(tcomm, numTeams, numParts,
+                    imbalance, fname, pqParts, paramFile, k,
+                    migration_check_option,
+                    migration_all_to_all_type,
+                    migration_imbalance_cut_off,
+                    migration_processor_assignment_type,
+                    migration_doMigration_type, uvm, print_details, test_boxes,
+                    rectilinear,
+                    mj_premigration_option, mj_premigration_coordinate_cutoff);
+#else
+            throw std::logic_error("uvm set off but this is not a cuda test.");
+#endif
+          }
+          break;
+
 #ifdef hopper_separate_test
         case 1:
-            ierr = testFromSeparateDataFiles(tcomm,numParts, imbalance,fname,
-                    pqParts, paramFile, k,
+            // TODO: Note made changes here but did not actually run this
+            // method.
+            ierr = testFromSeparateDataFiles(tcomm, numTeams, numParts,
+                    imbalance, fname, pqParts, paramFile, k,
                     migration_check_option,
                     migration_all_to_all_type,
                     migration_imbalance_cut_off,
                     migration_processor_assignment_type,
-                    migration_doMigration_type, test_boxes, rectilinear,
-                    mj_premigration_option);
+                    migration_doMigration_type,uvm, print_details, test_boxes,
+                    rectilinear,
+                    mj_premigration_option, mj_premigration_coordinate_cutoff);
             break;
 #endif
         default:
-            ierr = GeometricGenInterface(tcomm, numParts, imbalance, fname,
-                    pqParts, paramFile, k,
+          if(uvm == true) { // true by default, if not CUDA it should be unset
+            ierr = GeometricGenInterface<znode_t>(tcomm, numTeams, numParts,
+                    imbalance, fname, pqParts, paramFile, k,
                     migration_check_option,
                     migration_all_to_all_type,
                     migration_imbalance_cut_off,
                     migration_processor_assignment_type,
-                    migration_doMigration_type, test_boxes, rectilinear, 
+                    migration_doMigration_type, uvm, print_details, test_boxes,
+                    rectilinear,
                     mj_premigration_option, mj_premigration_coordinate_cutoff);
-            break;
+          }
+          else {
+#ifdef KOKKOS_ENABLE_CUDA
+            ierr = GeometricGenInterface<uvm_off_node_t>(tcomm, numTeams,
+                    numParts, imbalance, fname, pqParts, paramFile, k,
+                    migration_check_option,
+                    migration_all_to_all_type,
+                    migration_imbalance_cut_off,
+                    migration_processor_assignment_type,
+                    migration_doMigration_type, uvm, print_details, test_boxes,
+                    rectilinear,
+                    mj_premigration_option, mj_premigration_coordinate_cutoff);
+#else
+            throw std::logic_error("uvm set off but this is not a cuda test.");
+#endif
+          }
+          break;
         }
 
         if (rank == 0) {

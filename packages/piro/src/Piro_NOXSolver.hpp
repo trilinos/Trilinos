@@ -75,6 +75,10 @@ class NOXSolver
 
   Teuchos::RCP<Thyra::NOXNonlinearSolver> getSolver() {return solver;}
 
+  Teuchos::RCP<ObserverBase<Scalar> > getObserver() {return observer;}
+
+  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > getSubModel() {return model;}
+
   private:
   /** \name Overridden from Thyra::ModelEvaluatorDefaultBase . */
   //@{
@@ -99,12 +103,10 @@ class NOXSolver
   /** \brief Whether to throw an exception when solve fails. */
   bool exitUponFailedNOXSolve; 
 
-  /** \brief Derivative layouts for Thyra operator"
-   * OP:  Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP
-   * COL: Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM
-   * ROW: Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM
-   * */
-  enum DerivativeLayout { OP, COL, ROW };
+  /** \brief Whether to Solve again the system with zero intial guess after failure. */
+  bool reComputeWithZeroInitialGuess;
+
+  mutable bool solveState;
 
   //Store current iteration of Analysis solver
   mutable int current_iteration;

@@ -113,16 +113,6 @@ run(unsigned iBlock)
   (valid) = (n_invalid==0);
 }
 
-
-// ETI
-template
-void GenericAlgorithm_total_element_metric<STKMesh>::
-run(unsigned iBlock);
-
-template
-void GenericAlgorithm_total_element_metric<StructuredGrid>::
-run(unsigned iBlock);
-
 ///////////////////////////////////////////////////////////////////////
 
 template<typename MetricType>
@@ -167,15 +157,6 @@ SGridGenericAlgorithm_total_element_metric(PerceptMesh *eMesh, Double mtot_in, s
         m_iBlock= 0;;
     }
 }
-
-// ETI
-template
-SGridGenericAlgorithm_total_element_metric< SmootherMetricUntangleImpl<StructuredGrid> >::
-SGridGenericAlgorithm_total_element_metric(PerceptMesh *eMesh, Double mtot_in, size_t n_invalid_in);
-
-template
-SGridGenericAlgorithm_total_element_metric<HexMeshSmootherMetric>::
-SGridGenericAlgorithm_total_element_metric(PerceptMesh *eMesh, Double mtot_in, size_t n_invalid_in);
 
 template<typename MetricType>
 void SGridGenericAlgorithm_total_element_metric<MetricType>::run(
@@ -236,14 +217,6 @@ void SGridGenericAlgorithm_total_element_metric<MetricType>::run(
     valid = (n_invalid==0);
 }
 
-// ETI
-template
-void SGridGenericAlgorithm_total_element_metric<SmootherMetricUntangleImpl<StructuredGrid> >::run(unsigned iBlock);
-
-template/*<>*/
-void SGridGenericAlgorithm_total_element_metric<HexMeshSmootherMetric>::run(unsigned iBlock);
-
-
 template<typename MetricType>
 KOKKOS_INLINE_FUNCTION
 void SGridGenericAlgorithm_total_element_metric<MetricType>::
@@ -262,11 +235,6 @@ operator()(const unsigned& index, Double& mtot_loc) const
 
   mtot_loc += mm;
 }
-
-// ETI
-template
-void SGridGenericAlgorithm_total_element_metric<SmootherMetricUntangleImpl<StructuredGrid> >::
-operator()(const unsigned& index, Double& mtot_loc) const;
 
 template<>
 KOKKOS_INLINE_FUNCTION
@@ -343,6 +311,33 @@ operator()(const unsigned& index, Double& mtot_loc)
   mtot_loc += mm;
 
 }
+
+// ETI
+template
+void SGridGenericAlgorithm_total_element_metric<SmootherMetricUntangleImpl<StructuredGrid> >::run(unsigned iBlock);
+
+template/*<>*/
+void SGridGenericAlgorithm_total_element_metric<HexMeshSmootherMetric>::run(unsigned iBlock);
+
+template
+void SGridGenericAlgorithm_total_element_metric<SmootherMetricUntangleImpl<StructuredGrid> >::
+operator()(const unsigned& index, Double& mtot_loc) const;
+
+template
+SGridGenericAlgorithm_total_element_metric< SmootherMetricUntangleImpl<StructuredGrid> >::
+SGridGenericAlgorithm_total_element_metric(PerceptMesh *eMesh, Double mtot_in, size_t n_invalid_in);
+
+template
+SGridGenericAlgorithm_total_element_metric<HexMeshSmootherMetric>::
+SGridGenericAlgorithm_total_element_metric(PerceptMesh *eMesh, Double mtot_in, size_t n_invalid_in);
+
+template
+void GenericAlgorithm_total_element_metric<STKMesh>::
+run(unsigned iBlock);
+
+template
+void GenericAlgorithm_total_element_metric<StructuredGrid>::
+run(unsigned iBlock);
 
 } // namespace percept
 

@@ -1,5 +1,0 @@
-<ParameterList name="MueLu">
-  <Parameter name="coarse: type"     type="string" value="Gauss-Seidel"/>
-  <Parameter name="coarse: sweeps"   type="int"    value="25"/>
-  <Parameter name="coarse: damping factor" type="double" value="0.6"/>
-</ParameterList>

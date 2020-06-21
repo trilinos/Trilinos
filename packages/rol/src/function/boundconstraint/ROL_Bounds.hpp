@@ -171,14 +171,14 @@ public:
       public:
         LowerFeasible(const Real eps, const Real diff)
           : eps_(eps), diff_(diff) {}
-        Real apply( const Real &x, const Real &y ) const {
+        Real apply( const Real &xc, const Real &yc ) const {
           const Real tol = static_cast<Real>(100)*ROL_EPSILON<Real>();
           const Real one(1);
-          Real val = ((y <-tol) ? y*(one-eps_)
-                   : ((y > tol) ? y*(one+eps_)
-                   : y+eps_));
-          val = std::min(y+eps_*diff_, val);
-          return (x < y+tol) ? val : x;
+          Real val = ((yc <-tol) ? yc*(one-eps_)
+                   : ((yc > tol) ? yc*(one+eps_)
+                   : yc+eps_));
+          val = std::min(yc+eps_*diff_, val);
+          return (xc < yc+tol) ? val : xc;
         }
       };
       x.applyBinary(LowerFeasible(feasTol_,min_diff_), *x_lo_);
@@ -192,14 +192,14 @@ public:
       public:
         UpperFeasible(const Real eps, const Real diff)
           : eps_(eps), diff_(diff) {}
-        Real apply( const Real &x, const Real &y ) const {
+        Real apply( const Real &xc, const Real &yc ) const {
           const Real tol = static_cast<Real>(100)*ROL_EPSILON<Real>();
           const Real one(1);
-          Real val = ((y <-tol) ? y*(one+eps_)
-                   : ((y > tol) ? y*(one-eps_)
-                   : y-eps_));
-          val = std::max(y-eps_*diff_, val);
-          return (x > y-tol) ? val : x;
+          Real val = ((yc <-tol) ? yc*(one+eps_)
+                   : ((yc > tol) ? yc*(one-eps_)
+                   : yc-eps_));
+          val = std::max(yc-eps_*diff_, val);
+          return (xc > yc-tol) ? val : xc;
         }
       };
       x.applyBinary(UpperFeasible(feasTol_,min_diff_), *x_up_);

@@ -46,6 +46,8 @@
 #include <ios>                          // for streambuf, ios_base, etc
 #include <string>                       // for string, streamsize
 
+namespace SEAMS{ class Aprepro; }
+
 //: Specialize the ANSI Standard C++ streambuf class
 //: for a parallel file buffer.  The actual file is
 //: only touched by the root processor.
@@ -151,5 +153,12 @@ inline void mpi_filebuf::get_buffer( const char * & b , size_t & n ) const
 { b = comm_buffer ; n = (const_cast<mpi_filebuf*>(this))->pptr() - comm_buffer ; }
 
 inline double mpi_filebuf::wtime() const { return comm_time ; }
+
+#if !defined(NOT_HAVE_STK_SEACASAPREPRO_LIB)
+namespace stk
+{
+  void add_aprepro_defines(SEAMS::Aprepro &aprepro, const std::string &defines);
+}
+#endif
 
 #endif // STK_UTIL_PARALLEL_MPI_FILEBUF_HPP

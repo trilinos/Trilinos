@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
@@ -54,15 +52,13 @@
 namespace Tpetra {
 namespace Details {
 
-/// \brief Traits class for packing / unpacking data of type \c T,
-///   using Kokkos data structures that live in the given space \c D.
+/// \brief Traits class for packing / unpacking data of type \c T.
 ///
 /// \tparam T The type of the data to pack / unpack.
-/// \tparam D The Kokkos "device" type; where the data live.
-template<class T, class D>
+template<class T>
 struct PackTraits {
   //! The type of data to pack or unpack.
-  typedef T value_type;
+  using value_type = T;
 
   /// \brief Whether the number of bytes required to pack one instance
   ///   of \c value_type is fixed at compile time.
@@ -80,16 +76,16 @@ struct PackTraits {
   static const bool compileTimeSize = true;
 
   //! The type of an input buffer of bytes.
-  typedef Kokkos::View<const char*, D, Kokkos::MemoryUnmanaged> input_buffer_type;
+  using input_buffer_type = Kokkos::View<const char*, Kokkos::AnonymousSpace>;
 
   //! The type of an output buffer of bytes.
-  typedef Kokkos::View<char*, D, Kokkos::MemoryUnmanaged> output_buffer_type;
+  using output_buffer_type = Kokkos::View<char*, Kokkos::AnonymousSpace>;
 
   //! The type of an input array of \c value_type.
-  typedef Kokkos::View<const value_type*, D, Kokkos::MemoryUnmanaged> input_array_type;
+  using input_array_type = Kokkos::View<const value_type*, Kokkos::AnonymousSpace>;
 
   //! The type of an output array of \c value_type.
-  typedef Kokkos::View<value_type*, D, Kokkos::MemoryUnmanaged> output_array_type;
+  using output_array_type = Kokkos::View<value_type*, Kokkos::AnonymousSpace>;
 
   /// \brief Given an instance of \c value_type allocated with the
   ///   right size, return the "number of values" that make up that
@@ -111,55 +107,6 @@ struct PackTraits {
     // If your type T is something like Stokhos::UQ::PCE<S>, you must
     // reimplement this function.
     return static_cast<size_t> (1);
-  }
-
-  /// \brief Given an instance of \c value_type allocated with the
-  ///   right size, allocate and return a one-dimensional array of
-  ///   \c value_type.
-  ///
-  /// This function lets the pack and unpack code that uses PackTraits
-  /// correctly handle types that have a size specified at run time.
-  /// In particular, it's helpful if that code needs to allocate
-  /// temporary buffers of \c value_type.  PackTraits still assumes
-  /// that all instances of \c value_type in an input or output array
-  /// have the same run-time size.
-  ///
-  /// \param x [in] Instance of \c value_type with the correct (run-time) size.
-  /// \param numEnt [in] Number of entries in the returned array.
-  /// \param label [in] Optional string label of the returned
-  ///   Kokkos::View.  (Kokkos::View's constructor takes a string
-  ///   label, which Kokkos uses for debugging output.)
-  ///
-  /// \return One-dimensional array of \c value_type, all instances of
-  ///   which have the same (run-time) size as \c x.
-  ///
-  /// \note To implementers of specializations: If the number of bytes
-  ///   to pack or unpack your type may be determined at run time, you
-  ///   might be able just to use this implementation as-is, and just
-  ///   reimplement numValuesPerScalar().
-  static Kokkos::View<value_type*, D>
-  allocateArray (const value_type& x,
-                 const size_t numEnt,
-                 const std::string& label = "")
-  {
-    typedef Kokkos::View<value_type*, D> view_type;
-    typedef typename view_type::size_type size_type;
-
-    // When the traits::specialize type is non-void this exploits 
-    // the fact that Kokkos::View's constructor ignores
-    // size arguments beyond what the View's type specifies.  For
-    // value_type = Stokhos::UQ::PCE<S>, numValuesPerScalar returns
-    // something other than 1, and the constructor will actually use
-    // that value.
-    // Otherwise, the number of arguments must match the dynamic rank
-    // (i.e. number *'s with the value_type of the View)
-    const size_type numVals = numValuesPerScalar (x);
-    if ( std::is_same< typename view_type::traits::specialize, void >::value ) {
-      return view_type (label, static_cast<size_type> (numEnt));
-    } 
-    else {
-      return view_type (label, static_cast<size_type> (numEnt), numVals);
-    }
   }
 
   /// \brief Pack the first numEnt entries of the given input buffer

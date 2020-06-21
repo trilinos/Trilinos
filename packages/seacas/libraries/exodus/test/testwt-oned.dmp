@@ -81,9 +81,9 @@ variables:
 	float dist_fact_ss2(num_df_ss2) ;
 	char qa_records(num_qa_rec, four, len_string) ;
 	char info_records(num_info, len_line) ;
+	char name_nod_var(num_nod_var, len_name) ;
 	float vals_nod_var1(time_step, num_nodes) ;
 	float vals_nod_var2(time_step, num_nodes) ;
-	char name_nod_var(num_nod_var, len_name) ;
 	char name_elem_var(num_elem_var, len_name) ;
 	char name_nset_var(num_nset_var, len_name) ;
 	float vals_elem_var1eb1(time_step, num_el_in_blk1) ;
@@ -246,6 +246,10 @@ data:
   "",
   "                                     " ;
 
+ name_nod_var =
+  "node_variable_a_very_long_name_0",
+  "nod_var1" ;
+
  vals_nod_var1 =
   1.01, 1.02, 1.03, 1.04, 1.05, 1.06, 1.07, 1.08, 1.09, 1.1,
   1.02, 1.04, 1.06, 1.08, 1.1, 1.12, 1.14, 1.16, 1.18, 1.2,
@@ -269,10 +273,6 @@ data:
   2.08, 2.16, 2.24, 2.32, 2.4, 2.48, 2.56, 2.64, 2.72, 2.8,
   2.09, 2.18, 2.27, 2.36, 2.45, 2.54, 2.63, 2.72, 2.81, 2.9,
   2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3 ;
-
- name_nod_var =
-  "node_variable_a_very_long_name_0",
-  "nod_var1" ;
 
  name_elem_var =
   "this_variable_name_is_short",

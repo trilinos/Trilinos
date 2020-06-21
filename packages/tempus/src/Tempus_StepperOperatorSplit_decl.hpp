@@ -11,8 +11,10 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_Stepper.hpp"
-#include "Tempus_StepperOperatorSplitObserver.hpp"
-
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+  #include "Tempus_StepperOperatorSplitObserver.hpp"
+#endif
+#include "Tempus_StepperOperatorSplitAppAction.hpp"
 
 namespace Tempus {
 
@@ -47,6 +49,7 @@ public:
   */
   StepperOperatorSplit();
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   /// Constructor
   StepperOperatorSplit(
     std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > appModels,
@@ -58,14 +61,24 @@ public:
     int order,
     int orderMin,
     int orderMax);
+#endif
+
+  /// Constructor                                                                                               
+  StepperOperatorSplit(
+    std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > appModels,
+    std::vector<Teuchos::RCP<Stepper<Scalar> > > subStepperList,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    int order,
+    int orderMin,
+    int orderMax,
+    const Teuchos::RCP<StepperOperatorSplitAppAction<Scalar> >& stepperOSAppAction);
 
   /// \name Basic stepper methods
   //@{
     virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
-
-    virtual void setNonConstModel(
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel);
 
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
       getModel();
@@ -76,11 +89,18 @@ public:
     virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
       { return Teuchos::null; }
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
     virtual void setObserver(
       Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
     virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
     { return this->stepperOSObserver_; }
+#endif
+
+  virtual void setAppAction(Teuchos::RCP<StepperOperatorSplitAppAction<Scalar> > appAction);
+
+  virtual Teuchos::RCP<StepperOperatorSplitAppAction<Scalar> > getAppAction() const
+  { return stepperOSAppAction_; }
 
     virtual void setTempState(Teuchos::RCP<Tempus::SolutionState<Scalar>> state)
       { tempState_ = state; }
@@ -158,21 +178,20 @@ public:
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
+  virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
+
   virtual std::vector<Teuchos::RCP<Stepper<Scalar> > > getStepperList() const
     { return subStepperList_; }
   virtual void setStepperList(std::vector<Teuchos::RCP<Stepper<Scalar> > > sl)
     { subStepperList_ = sl; }
+
   /** \brief Add Stepper to subStepper list.
    *  In most cases, subSteppers cannot use xDotOld (thus the default),
    *  but in some cases, the xDotOld can be used and save compute cycles.
    *  The user can set this when adding to the subStepper list.
    */
   virtual void addStepper(Teuchos::RCP<Stepper<Scalar> > stepper,
-                          bool useFSAL = false)
-  {
-    stepper->setUseFSAL(useFSAL);
-    subStepperList_.push_back(stepper);
-  }
+                          bool useFSAL = false);
 
   virtual void setSubStepperList(
     std::vector<Teuchos::RCP<Stepper<Scalar> > > subStepperList);
@@ -191,7 +210,10 @@ protected:
   std::vector<Teuchos::RCP<Stepper<Scalar> > >        subStepperList_;
   Teuchos::RCP<SolutionHistory<Scalar> >              OpSpSolnHistory_;
   Teuchos::RCP<SolutionState<Scalar> >                tempState_;
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   Teuchos::RCP<StepperOperatorSplitObserver<Scalar> > stepperOSObserver_;
+#endif
+  Teuchos::RCP<StepperOperatorSplitAppAction<Scalar> > stepperOSAppAction_;
 };
 
 } // namespace Tempus

@@ -14,8 +14,10 @@ class FaceCreatorUsingBulkDataFaceSharingTester : public FaceCreatorFixture
 {
 protected:
 
-    virtual void allocate_bulk(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    virtual void allocate_bulk(stk::mesh::BulkData::AutomaticAuraOption auraOption,
+                               unsigned bucketCapacity = stk::mesh::impl::BucketRepository::default_bucket_capacity)
     {
+        ThrowRequireMsg(bucketCapacity == stk::mesh::impl::BucketRepository::default_bucket_capacity, "allocate_bulk: BulkDataFaceSharingTester doesn't recognize non-default bucket-capacity");
         set_bulk(new stk::unit_test_util::BulkDataFaceSharingTester(get_meta(), get_comm(), auraOption));
     }
 
@@ -105,7 +107,7 @@ private:
     {
         stk::mesh::EntityVector permuted_element_side_nodes(side_topology.num_nodes());
         unsigned permutation = get_bulk().parallel_rank()>other_proc_id ? permutation_other_proc : 0;
-        side_topology.permutation_nodes(element_side_nodes, permutation, permuted_element_side_nodes.begin());
+        side_topology.permutation_nodes(element_side_nodes.data(), permutation, permuted_element_side_nodes.data());
         return permuted_element_side_nodes;
     }
 

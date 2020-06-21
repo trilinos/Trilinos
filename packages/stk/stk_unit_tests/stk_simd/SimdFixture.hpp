@@ -58,12 +58,14 @@ struct Range {
   double right;
 };
 
+inline
 double rand_in(Range range) {
   return range.left + (range.right-range.left) * (double(rand()) / (double)RAND_MAX);
 }
 
 // #define TIME_SIMD_OPERATIONS
 
+inline
 int size() { 
 #ifdef TIME_SIMD_OPERATIONS
   return 8192;
@@ -71,6 +73,7 @@ int size() {
   return 32;
 #endif
 }
+inline
 int simd_size() { return size() / stk::simd::ndoubles; }
 
 

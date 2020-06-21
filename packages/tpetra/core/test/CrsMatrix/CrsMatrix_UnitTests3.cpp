@@ -217,16 +217,6 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       TEST_EQUALITY_CONST(defparams->get<bool>("Optimize Storage"), true);
     }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    {
-      // send in a parameterlist, check the defaults
-      RCP<ParameterList> defparams = parameterList();
-      // create profile matrix, fill-complete without inserting (and therefore, without allocating)
-      MAT matrix(map,1,Tpetra::DynamicProfile);
-      matrix.fillComplete(defparams);
-      TEST_EQUALITY_CONST(defparams->get<bool>("Optimize Storage"), true);
-    }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
     {
       // send in a parameterlist, check the defaults
       RCP<ParameterList> defparams = parameterList();
@@ -235,16 +225,6 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       graph.fillComplete(defparams);
       TEST_EQUALITY_CONST(defparams->get<bool>("Optimize Storage"), true);
     }
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    {
-      // send in a parameterlist, check the defaults
-      RCP<ParameterList> defparams = parameterList();
-      // create dynamic-profile graph, fill-complete without inserting (and therefore, without allocating)
-      GRPH graph(map,1,Tpetra::DynamicProfile);
-      graph.fillComplete(defparams);
-      TEST_EQUALITY_CONST(defparams->get<bool>("Optimize Storage"), true);
-    }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
   }
 
   ////
@@ -283,12 +263,8 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     RCP<Map<LO,GO,Node> > cmap = rcp( new Map<LO,GO,Node>(INVALID,ginds(),0,comm) );
     RCP<ParameterList> params = parameterList();
     for (int T=0; T<4; ++T) {
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      Tpetra::ProfileType pftype = ( (T & 1) == 1 ) ? Tpetra::StaticProfile : Tpetra::DynamicProfile;
-#else
       if ( (T & 1) != 1 ) continue;
       Tpetra::ProfileType pftype = Tpetra::StaticProfile;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
       params->set("Optimize Storage",((T & 2) == 2));
       MAT matrix(rmap,cmap, ginds.size(), pftype);   // only allocate as much room as necessary
       RowMatrix<Scalar,LO,GO,Node> &rowmatrix = matrix;

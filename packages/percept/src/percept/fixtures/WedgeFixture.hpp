@@ -52,7 +52,7 @@
         {
           bool verbose = false;
 
-          std::vector<boost::array<double,3> > coordsLine(n_nodes_x);
+          std::vector<std::array<double,3> > coordsLine(n_nodes_x);
           for (unsigned ix = 0; ix < n_nodes_x; ix++)
             {
               double dx = double(ix)/double(n_nodes_x - 1);
@@ -69,16 +69,14 @@
 
           // line2 mesh
           SweepMesher& tp2 = m_sweepMesher;
-          //tp2 = SweepMesher();
 
-          //tp2.initNodes(coordsLine.begin(), n_nodes_x);
           tp2.initNodes(&coordsLine[0], n_nodes_x);
           tp2.initElems(shards_Line_2, &line2Elems[0], n_nodes_x - 1);
           if(verbose) std::cout << "line2 mesh\n";
           tp2.dump();
 
           // sweep to make a quad mesh from line mesh
-          boost::array<double, 3> dir = {{0, (ymax-ymin)/double(n_nodes_y - 1),0}};
+          std::array<double, 3> dir = {{0, (ymax-ymin)/double(n_nodes_y - 1),0}};
 
           TransformDir xf0 ( dir );
           Transform* xf = &xf0;
@@ -91,18 +89,14 @@
 
           SweepMesher quadMeshCopy;
           quadMeshCopy.CopyFromBasicMesh(tp2);
-          //tp2.stkMeshCreate(parallel_machine);
-          //tp2.writeSTKMesh("wedge-quad-0.e");
 
           // break all of the quads into tris
           tp2.breakAllElements<shards_Quadrilateral_4, shards_Triangle_3>();
           if(verbose) std::cout << "after break quad to tri\n";
           tp2.dump(verbose);
-          //tp2.stkMeshCreate(parallel_machine);
-          //tp2.writeSTKMesh("tp2-quad-tri.e");
 
           // sweep again to make a  wedge mesh
-          boost::array<double, 3> dir1 = {{0,0,(zmax-zmin)/double(n_nodes_z - 1)}};
+          std::array<double, 3> dir1 = {{0,0,(zmax-zmin)/double(n_nodes_z - 1)}};
           TransformDir xf01(dir1);
           Transform* xf01t = &xf01;
           std::vector<Transform *> xforms0(n_nodes_z - 1, xf01t);
@@ -126,26 +120,20 @@
 
         stk::mesh::MetaData *getMetaData() { return m_sweepMesher.getMetaData() ; }
 
-        //stk::mesh::BulkData* 
         void
         createBulkAfterMetaCommit(stk::ParallelMachine parallel_machine)
         {
           m_sweepMesher.stkMeshCreateBulkAfterMetaCommit(parallel_machine);
-          //return m_sweepMesher.get_bulk_data();
         }
 
         void createFixedSizeMesh(stk::ParallelMachine parallel_machine, std::string output_filename)
         {
           bool verbose = true;
 
-          boost::array<double,3> coordsLine[] = {
+          std::array<double,3> coordsLine[] = {
             {{0,0,0}}, {{1,0,0}}, {{2,0,0}}, {{3,0,0}}, {{4,0,0}}
           };
 
-          //         double coordsCPP[][3] = {
-          //           {0,0,0}, {1,0,0}, {2,2,0}, {0,3,0},
-          //           {0,0,1}, {1,0,1}, {2,2,1}, {0,3,1}
-          //         };
           unsigned numNodesLine = sizeof(coordsLine)/sizeof(coordsLine[0]);
 
           unsigned line2Elems[] = {
@@ -170,7 +158,7 @@
           tp2.dump();
 
           // sweep to make a quad mesh from line mesh
-          boost::array<double, 3> dir = {{0,1.234,0}};
+          std::array<double, 3> dir = {{0,1.234,0}};
 
           TransformDir xf0 ( dir );
           Transform* xf = &xf0;
@@ -183,20 +171,15 @@
 
           SweepMesher quadMeshCopy;
           quadMeshCopy.CopyFromBasicMesh(tp2);
-          //tp2.stkMeshCreate(parallel_machine);
-          //tp2.writeSTKMesh("wedge-quad-0.e");
 
           // break all of the quads into tris
           tp2.breakAllElements<shards_Quadrilateral_4, shards_Triangle_3>();
-          //verbose=true;
           if(verbose) std::cout << "after break quad to tri\n";
           tp2.dump(verbose);
           tp2.dump();
-          //tp2.stkMeshCreate(parallel_machine);
-          //tp2.writeSTKMesh("tp2-quad-tri.e");
 
           // sweep again to make a  wedge mesh
-          boost::array<double, 3> dir1 = {{0,0,2.345}};
+          std::array<double, 3> dir1 = {{0,0,2.345}};
           std::vector<Transform *> xforms0(1);
           TransformDir xf01(dir1);
           xforms0[0] = &xf01; 

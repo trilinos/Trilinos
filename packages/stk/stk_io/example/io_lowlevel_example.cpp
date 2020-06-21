@@ -546,7 +546,7 @@ namespace stk_example_io {
      * (and others) somewhere after the declaration instead of
      * looking it up each time it is needed.
      */
-    const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
+    const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
     stk::mesh::Field<double,stk::mesh::Cartesian> *coord_field =
       meta.get_field<stk::mesh::Field<double,stk::mesh::Cartesian> >(stk::topology::NODE_RANK, "coordinates");
 
@@ -564,7 +564,7 @@ namespace stk_example_io {
 
       if (stk::io::include_entity(entity)) {
         const std::string &name = entity->name();
-        const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
+        const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
         stk::mesh::Part* const part = meta.get_part(name);
         STKIORequire(part != nullptr);
 
@@ -623,7 +623,7 @@ namespace stk_example_io {
 
       if (stk::io::include_entity(entity)) {
         const std::string & name = entity->name();
-        const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
+        const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
         stk::mesh::Part* const part = meta.get_part(name);
         STKIORequire(part != nullptr);
         stk::mesh::PartVector add_parts( 1 , part );
@@ -659,7 +659,7 @@ namespace stk_example_io {
   {
     assert(sset->type() == Ioss::SIDESET);
 
-    const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
+    const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
     const stk::mesh::EntityRank element_rank = stk::topology::ELEMENT_RANK;
     const int64_t ten = 10;
 
@@ -758,7 +758,7 @@ namespace stk_example_io {
     region.begin_state(step);
 
     // Special processing for nodeblock (all nodes in model)...
-    const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
+    const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
 
     // ??? Get field data from nodeblock...
     get_field_data(bulk, meta.universal_part(), stk::topology::NODE_RANK,
@@ -830,7 +830,7 @@ namespace stk_example_io {
   {
     region.begin_state(step);
     // Special processing for nodeblock (all nodes in model)...
-    const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
+    const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
 
     put_field_data(bulk, meta.universal_part(), stk::topology::NODE_RANK,
 		   region.get_node_blocks()[0], Ioss::Field::TRANSIENT);

@@ -57,13 +57,16 @@
 #include "Amesos2_SolverCore.hpp"
 #include "Amesos2_Cholmod_FunctionMap.hpp"
 
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_CHOLMOD)
+#include "KokkosKernels_Handle.hpp"
+#endif
 
 namespace Amesos2 {
 
 
-/** \brief Amesos2 interface to the SuperLU package.
+/** \brief Amesos2 interface to the CHOLMOD package.
  *
- * See the \ref superlu_parameters "summary of SuperLU parameters"
+ * See the \ref cholmod_parameters "summary of CHOLMOD parameters"
  * supported by this Amesos2 interface.
  *
  * \ingroup amesos2_solver_interfaces
@@ -93,8 +96,8 @@ public:
   typedef TypeMap<Amesos2::Cholmod,scalar_type>                    type_map;
 
   /*
-   * The SuperLU interface will need two other typedef's, which are:
-   * - the superlu type that corresponds to scalar_type and
+   * The CHOLMOD interface will need two other typedef's, which are:
+   * - the CHOLMOD type that corresponds to scalar_type and
    * - the corresponding type to use for magnitude
    */
   typedef typename type_map::type                                 chol_type;
@@ -219,27 +222,73 @@ private:
   bool loadA_impl(EPhase current_phase);
 
 
-  // struct holds all data necessary to make a superlu factorization or solve call
+  // struct holds all data necessary to make a cholmod factorization or solve call
   mutable struct CholData {
-    CHOL::cholmod_sparse A; 
-    CHOL::cholmod_dense x, b;
-    CHOL::cholmod_dense *Y, *E;
-    CHOL::cholmod_factor *L;
-    CHOL::cholmod_common c;
+    cholmod_sparse A;
+    cholmod_dense x, b;
+    cholmod_dense *Y, *E;
+    cholmod_factor *L;
+    cholmod_common c;
   } data_;
 
-  // The following Arrays are persisting storage arrays for A, X, and B
+  typedef Kokkos::DefaultHostExecutionSpace                   HostExecSpaceType;
+  typedef typename HostExecSpaceType::memory_space             HostMemSpaceType;
+
+  typedef long size_type;
+  typedef long ordinal_type;
+  typedef Kokkos::View<size_type*, HostExecSpaceType>       host_size_type_array;
+  typedef Kokkos::View<ordinal_type*, HostExecSpaceType> host_ordinal_type_array;
+
+  typedef Kokkos::View<chol_type*, HostExecSpaceType>      host_value_type_array;
+
+  // The following Views are persisting storage arrays for A, X, and B
   /// Stores the values of the nonzero entries for CHOLMOD
-  Teuchos::Array<chol_type> nzvals_;
+  host_value_type_array host_nzvals_view_;
   /// Stores the location in \c Ai_ and Aval_ that starts row j
-  Teuchos::Array<int> rowind_;
+  host_size_type_array host_rows_view_;
   /// Stores the row indices of the nonzero entries
-  Teuchos::Array<int> colptr_;
+  host_ordinal_type_array host_col_ptr_view_;
+
+  typedef typename Kokkos::View<chol_type**, Kokkos::LayoutLeft, HostExecSpaceType>
+    host_solve_array_t;
 
   /// Persisting 1D store for X
-  Teuchos::Array<chol_type> xvals_;  int ldx_;
+  mutable host_solve_array_t host_xValues_;
+  int ldx_;
+
   /// Persisting 1D store for B
-  Teuchos::Array<chol_type> bvals_;  int ldb_;
+  mutable host_solve_array_t host_bValues_;
+  int ldb_;
+
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_CHOLMOD)
+
+  typedef Kokkos::DefaultExecutionSpace DeviceExecSpaceType;
+
+  #ifdef KOKKOS_ENABLE_CUDA
+    // solver will be UVM off even though Tpetra is CudaUVMSpace
+    typedef typename Kokkos::CudaSpace DeviceMemSpaceType;
+  #else
+    typedef typename DeviceExecSpaceType::memory_space DeviceMemSpaceType;
+  #endif
+
+  typedef Kokkos::View<chol_type**, Kokkos::LayoutLeft, DeviceMemSpaceType>
+    device_solve_array_t;
+  // For triangular solves we have both host and device versions of xValues and
+  // bValues because a parameter can turn it on or off.
+  mutable device_solve_array_t device_xValues_;
+  mutable device_solve_array_t device_bValues_;
+  typedef Kokkos::View<int*, HostMemSpaceType>                 host_int_array;
+  typedef Kokkos::View<int*, DeviceMemSpaceType>              device_int_array;
+  host_int_array host_trsv_etree_;
+  host_int_array host_trsv_perm_;
+  device_int_array device_trsv_perm_;
+  mutable device_solve_array_t device_trsv_rhs_;
+  mutable device_solve_array_t device_trsv_sol_;
+  typedef KokkosKernels::Experimental::KokkosKernelsHandle <size_type, ordinal_type, chol_type,
+    DeviceExecSpaceType, DeviceMemSpaceType, DeviceMemSpaceType> kernel_handle_type;
+  mutable kernel_handle_type device_khL_;
+  mutable kernel_handle_type device_khU_;
+#endif
 
   bool firstsolve;
   
@@ -249,6 +298,13 @@ private:
   Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > map;
 
   bool is_contiguous_;
+  bool use_triangular_solves_;
+
+  void triangular_solve_symbolic();
+  void triangular_solve_numeric();
+
+public: // for GPU
+  void triangular_solve() const; // Only for internal use - public to support kernels
 };                              // End class Cholmod
 
 
@@ -262,14 +318,20 @@ private:
  */
 template <>
 struct solver_traits<Cholmod> {
+
+// Cholmod does not yet support float.
 #ifdef HAVE_TEUCHOS_COMPLEX
-  typedef Meta::make_list4<float,
-			   double,
-                           std::complex<double>,
-                           CHOL::complex> supported_scalars;
+  typedef Meta::make_list3<double, std::complex<double>,
+                           Kokkos::complex<double>> supported_scalars;
 #else
-  typedef Meta::make_list2<float, double> supported_scalars;
+  typedef Meta::make_list1<double> supported_scalars;
 #endif
+};
+
+template <typename Scalar, typename LocalOrdinal, typename ExecutionSpace>
+struct solver_supports_matrix<Cholmod,
+  KokkosSparse::CrsMatrix<Scalar, LocalOrdinal, ExecutionSpace>> {
+  static const bool value = true;
 };
 
 } // end namespace Amesos2

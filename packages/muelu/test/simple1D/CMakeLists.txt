@@ -17,7 +17,7 @@ ASSERT_DEFINED(
   ${PACKAGE_NAME}_ENABLE_Amesos2
   )
 
-IF (${PACKAGE_NAME}_ENABLE_Galeri AND ${PACKAGE_NAME}_ENABLE_Epetra)
+IF (${PACKAGE_NAME}_ENABLE_Epetra)
 
   # TRIBITS_ADD_EXECUTABLE_AND_TEST(
   #     amesos2
@@ -43,7 +43,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri AND ${PACKAGE_NAME}_ENABLE_Epetra)
     COMM serial mpi
     )
   ENDIF()
-  
+
   # TRIBITS_ADD_EXECUTABLE_AND_TEST(
   #   simple1D-Emin
   #   SOURCES Emin.cpp
@@ -55,7 +55,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri AND ${PACKAGE_NAME}_ENABLE_Epetra)
     simple1D-UncoupledAggregation
     SOURCES simple1D-UncoupledAggregation.cpp
     )
-    
+
   IF( ${PACKAGE_NAME}_ENABLE_Tpetra )
     TRIBITS_ADD_TEST(
       simple1D-UncoupledAggregation

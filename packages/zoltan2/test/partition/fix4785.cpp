@@ -99,7 +99,10 @@ void test_no_weights(
   int &nFail
 )
 {
-  typedef Zoltan2::BasicUserTypes<myScalar_t, myLocalId_t, myGlobalId_t> myTypes;
+  typedef Tpetra::Map<>::node_type myNode_t;
+
+  typedef Zoltan2::BasicUserTypes<myScalar_t, myLocalId_t, myGlobalId_t,
+                                  myNode_t> myTypes;
   typedef Zoltan2::BasicVectorAdapter<myTypes> inputAdapter_t;
   typedef Zoltan2::EvaluatePartition<inputAdapter_t> quality_t;
 
@@ -146,7 +149,10 @@ void test_weights(
   int &nFail
 )
 {
-  typedef Zoltan2::BasicUserTypes<myScalar_t, myLocalId_t, myGlobalId_t> myTypes;
+  typedef Tpetra::Map<>::node_type myNode_t;
+
+  typedef Zoltan2::BasicUserTypes<myScalar_t, myLocalId_t, myGlobalId_t,
+    myNode_t> myTypes;
   typedef Zoltan2::BasicVectorAdapter<myTypes> inputAdapter_t;
   typedef Zoltan2::EvaluatePartition<inputAdapter_t> quality_t;
 
@@ -213,10 +219,8 @@ int main(int narg, char *arg[])
   ///////////////////////////////////////////////////////////////////////
   // Create input data.
 
-  const size_t minN = 9000000;
-  const size_t maxN = 16000000;
-  const size_t incN = 2000000;
-  size_t maxLocalCount = maxN / np; // biggest test we'll run
+  const size_t N = 9000000;
+  size_t maxLocalCount = N / np; // biggest test we'll run
 
   // Create coordinates that range from 0 to 999
   const int dim = 3;
@@ -234,39 +238,34 @@ int main(int narg, char *arg[])
   // Allocate space for global IDs; they will be generated below
   myGlobalId_t *globalIds = new myGlobalId_t[maxLocalCount];
 
-  for (size_t N = minN; N < maxN; N += incN) {
+  size_t localCount = N / np;
 
-    size_t localCount = N / np;
+  // Create consecutive global ids for the coordinates
+  myGlobalId_t offset = me * localCount;
+  for (size_t i=0; i < localCount; i++)
+    globalIds[i] = offset++;
 
-    // Create consecutive global ids for the coordinates
-    myGlobalId_t offset = me * localCount;
-    for (size_t i=0; i < localCount; i++) 
-      globalIds[i] = offset++;
-  
-    if (me == 0) {
-      std::cout << "---------------------------------------------" << std::endl;
-      std::cout << "myGlobalId_t = " << typeid(offset).name() 
-                << " " << sizeof(offset)
-                << "; localCount = " << localCount 
-                << "; globalCount = " << np * localCount << std::endl;
-    }
-   
-    ///////////////////////////////////////////////////////////////////////
-    // Test one:  No weights
-    if (me == 0) std::cout << "Test:  no weights, scalar = double" << std::endl;
-    test_no_weights(comm, params, localCount, globalIds, coords, nFail);
-  
-    ///////////////////////////////////////////////////////////////////////
-    // Test two:  weighted
-    if (me == 0) std::cout << "Test:  weights, scalar = double" << std::endl;
-    test_weights(comm, params, localCount, globalIds, coords, weights, nFail);
-
-    // Early exit when failure is detected
-    int gnFail;
-    Teuchos::reduceAll<int, int>(*comm, Teuchos::REDUCE_MAX, 1, &nFail, &gnFail);
-    if (gnFail > 0) break;
-
+  if (me == 0) {
+    std::cout << "---------------------------------------------" << std::endl;
+    std::cout << "myGlobalId_t = " << typeid(offset).name()
+              << " " << sizeof(offset)
+              << "; localCount = " << localCount
+              << "; globalCount = " << np * localCount << std::endl;
   }
+
+  ///////////////////////////////////////////////////////////////////////
+  // Test one:  No weights
+  if (me == 0) std::cout << "Test:  no weights, scalar = double" << std::endl;
+  test_no_weights(comm, params, localCount, globalIds, coords, nFail);
+
+  ///////////////////////////////////////////////////////////////////////
+  // Test two:  weighted
+  if (me == 0) std::cout << "Test:  weights, scalar = double" << std::endl;
+  test_weights(comm, params, localCount, globalIds, coords, weights, nFail);
+
+  // Early exit when failure is detected
+  int gnFail;
+  Teuchos::reduceAll<int, int>(*comm, Teuchos::REDUCE_MAX, 1, &nFail, &gnFail);
 
   delete [] weights;
   delete [] coords;

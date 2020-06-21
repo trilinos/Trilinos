@@ -62,10 +62,9 @@ public:
     : ROL::StdBranchHelper_PEBBL<Real>(BH) {}
 
   //int getMyIndex(const ROL::Vector<Real> &x) const {
-  int getMyIndex(const ROL::Vector<Real> &x, const ROL::Vector<Real> &lam,
-                 ROL::Objective<Real> &obj, ROL::Constraint<Real> &con) const {
+  int getMyIndex(const ROL::Vector<Real> &x, const ROL::Vector &g) const {
     // Use Std implementation
-    return ROL::StdBranchHelper_PEBBL<Real>::getMyIndex(*getParameter(x),lam,obj,con);
+    return ROL::StdBranchHelper_PEBBL<Real>::getMyIndex(*getParameter(x),*getParameter(g));
   }
 
   void getMyNumFrac(int &nfrac, Real &integralityMeasure,

@@ -12,7 +12,6 @@
 #include "Tempus_TimeStepControl.hpp"
 #include "Tempus_TimeStepControlStrategy.hpp"
 #include "Tempus_SolutionState.hpp"
-#include "Tempus_SolutionStateMetaData.hpp"
 #include "Tempus_SolutionHistory.hpp"
 #include "Tempus_StepperState.hpp"
 
@@ -125,14 +124,12 @@ public:
   {
     using Teuchos::RCP;
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
-    RCP<SolutionStateMetaData<Scalar> > metaData = workingState->getMetaData();
-    const Scalar errorAbs = metaData->getErrorAbs();
-    const Scalar errorRel = metaData->getErrorRel();
-    const int iStep = metaData->getIStep();
-    int order = metaData->getOrder();
-    Scalar dt = metaData->getDt();
-    bool printChanges = solutionHistory->getVerbLevel() !=
-                        Teuchos::as<int>(Teuchos::VERB_NONE);
+    const Scalar errorAbs = workingState->getErrorAbs();
+    const Scalar errorRel = workingState->getErrorRel();
+    const int iStep = workingState->getIndex();
+    int order = workingState->getOrder();
+    Scalar dt = workingState->getTimeStep();
+    bool printDtChanges = tsc.getPrintDtChanges();
 
     RCP<Teuchos::FancyOStream> out = tsc.getOStream();
     Teuchos::OSTab ostab(out,0,"getNextTimeStep");
@@ -151,53 +148,53 @@ public:
 
     Scalar rho   = getAmplFactor();
     Scalar sigma = getReductFactor();
-    Scalar eta   = computeEta(tsc, solutionHistory);
-    //*out << " eta = " << eta << "\n";
+    Scalar eta   = solutionHistory->getCurrentState()->getDxNormL2Rel();
+    if (iStep == 1) eta = getMinEta();  // For first step use initial dt.
 
     // General rule: only increase/decrease dt once for any given reason.
     if (workingState->getSolutionStatus() == Status::FAILED) {
-      if (printChanges) *out << changeDT(iStep, dt, dt*sigma,
+      if (printDtChanges) *out << changeDT(iStep, dt, dt*sigma,
         "Stepper failure - Decreasing dt.");
       dt *= sigma;
     }
     else { //Stepper passed
       if (eta < getMinEta()) { // increase dt
-        if (printChanges) *out << changeDT(iStep, dt, dt*rho,
-          "Monitoring Value (eta) is too small ("
+        if (printDtChanges) *out << changeDT(iStep, dt, dt*rho,
+          "Change too small ("
           + std::to_string(eta) + " < " + std::to_string(getMinEta())
           + ").  Increasing dt.");
         dt *= rho;
       }
       else if (eta > getMaxEta()) { // reduce dt
-        if (printChanges) *out << changeDT(iStep, dt, dt*sigma,
-          "Monitoring Value (eta) is too large ("
+        if (printDtChanges) *out << changeDT(iStep, dt, dt*sigma,
+          "Change too large ("
           + std::to_string(eta) + " > " + std::to_string(getMaxEta())
           + ").  Decreasing dt.");
         dt *= sigma;
       }
       else if (errorAbs > tsc.getMaxAbsError()) { // reduce dt
-        if (printChanges) *out << changeDT(iStep, dt, dt*sigma,
+        if (printDtChanges) *out << changeDT(iStep, dt, dt*sigma,
           "Absolute error is too large ("
           + std::to_string(errorAbs)+" > "+std::to_string(tsc.getMaxAbsError())
           + ").  Decreasing dt.");
         dt *= sigma;
       }
       else if (errorRel > tsc.getMaxRelError()) { // reduce dt
-        if (printChanges) *out << changeDT(iStep, dt, dt*sigma,
+        if (printDtChanges) *out << changeDT(iStep, dt, dt*sigma,
           "Relative error is too large ("
           + std::to_string(errorRel)+" > "+std::to_string(tsc.getMaxRelError())
           + ").  Decreasing dt.");
         dt *= sigma;
       }
       else if (order < tsc.getMinOrder()) { // order too low, increase dt
-        if (printChanges) *out << changeDT(iStep, dt, dt*rho,
+        if (printDtChanges) *out << changeDT(iStep, dt, dt*rho,
           "Order is too small ("
           + std::to_string(order) + " < " + std::to_string(tsc.getMinOrder())
           + ").  Increasing dt.");
         dt *= rho;
       }
       else if (order > tsc.getMaxOrder()) { // order too high, reduce dt
-        if (printChanges) *out << changeDT(iStep, dt, dt*sigma,
+        if (printDtChanges) *out << changeDT(iStep, dt, dt*sigma,
           "Order is too large ("
           + std::to_string(order) + " > " + std::to_string(tsc.getMaxOrder())
           + ").  Decreasing dt.");
@@ -206,18 +203,19 @@ public:
     }
 
     if (dt < tsc.getMinTimeStep()) { // decreased below minimum dt
-      if (printChanges) *out << changeDT(iStep, dt, tsc.getMinTimeStep(),
+      if (printDtChanges) *out << changeDT(iStep, dt, tsc.getMinTimeStep(),
         "dt is too small.  Resetting to minimum dt.");
       dt = tsc.getMinTimeStep();
     }
     if (dt > tsc.getMaxTimeStep()) { // increased above maximum dt
-      if (printChanges) *out << changeDT(iStep, dt, tsc.getMaxTimeStep(),
+      if (printDtChanges) *out << changeDT(iStep, dt, tsc.getMaxTimeStep(),
         "dt is too large.  Resetting to maximum dt.");
       dt = tsc.getMaxTimeStep();
     }
 
-    metaData->setOrder(order);
-    metaData->setDt(dt);
+    workingState->setOrder(order);
+    workingState->setTimeStep(dt);
+    workingState->setComputeNorms(true);
   }
 
   /// \name Overridden from Teuchos::ParameterListAcceptor
@@ -278,75 +276,30 @@ public:
     }
   //@}
 
-    virtual Scalar getAmplFactor() const
-      { return tscsPL_->get<double>("Amplification Factor"); }
-    virtual Scalar getReductFactor() const
-      { return tscsPL_->get<double>("Reduction Factor");}
-    virtual Scalar getMinEta() const
-      { return tscsPL_->get<double>("Minimum Value Monitoring Function"); }
-    virtual Scalar getMaxEta() const
-      { return tscsPL_->get<double>("Maximum Value Monitoring Function"); }
+  virtual Scalar getAmplFactor() const
+    { return tscsPL_->get<double>("Amplification Factor"); }
+  virtual Scalar getReductFactor() const
+    { return tscsPL_->get<double>("Reduction Factor");}
+  virtual Scalar getMinEta() const
+    { return tscsPL_->get<double>("Minimum Value Monitoring Function"); }
+  virtual Scalar getMaxEta() const
+    { return tscsPL_->get<double>("Maximum Value Monitoring Function"); }
 
-    virtual void setAmplFactor(Scalar rho)
-      { tscsPL_->set<double>("Amplification Factor", rho); }
-    virtual void setReductFactor(Scalar sigma)
-      { tscsPL_->set<double>("Reduction Factor", sigma); }
-    virtual void setMinEta(Scalar minEta)
-      { tscsPL_->set<double>("Minimum Value Monitoring Function", minEta); }
-    virtual void setMaxEta(Scalar maxEta)
-      { tscsPL_->set<double>("Maximum Value Monitoring Function", maxEta); }
-
-    Scalar computeEta(const TimeStepControl<Scalar> tsc,
-          const Teuchos::RCP<SolutionHistory<Scalar> > & solutionHistory)
-    {
-       using Teuchos::RCP;
-       Scalar eta;
-       const double eps = 1.0e4*std::numeric_limits<double>::epsilon();
-       RCP<Teuchos::FancyOStream> out = tsc.getOStream();
-       int numStates = solutionHistory->getNumStates();
-       //Compute eta
-       if (numStates < 3) {
-          eta = getMinEta();
-          return eta;
-       }
-       RCP<const Thyra::VectorBase<Scalar> > xOld =
-         solutionHistory->getStateTimeIndexNM2()->getX();
-       RCP<const Thyra::VectorBase<Scalar> > x =
-         solutionHistory->getStateTimeIndexNM1()->getX();
-       //IKT: uncomment the following to get some debug output
-       //#define VERBOSE_DEBUG_OUTPUT
-#ifdef VERBOSE_DEBUG_OUTPUT
-       Teuchos::Range1D range;
-       *out << "\n*** xOld ***\n";
-       RTOpPack::ConstSubVectorView<Scalar> xOldv;
-       xOld->acquireDetachedView(range, &xOldv);
-       auto xoa = xOldv.values();
-       for (auto i = 0; i < xoa.size(); ++i) *out << xoa[i] << " ";
-       *out << "\n*** xOld ***\n";
-       *out << "\n*** x ***\n";
-       RTOpPack::ConstSubVectorView<Scalar> xv;
-       x->acquireDetachedView(range, &xv);
-       auto xa = xv.values();
-       for (auto i = 0; i < xa.size(); ++i) *out << xa[i] << " ";
-       *out << "\n*** x ***\n";
-#endif
-       //xDiff = x - xOld
-       RCP<Thyra::VectorBase<Scalar> > xDiff = Thyra::createMember(x->space());
-       Thyra::V_VmV(xDiff.ptr(), *x, *xOld);
-       Scalar xDiffNorm = Thyra::norm(*xDiff);
-       Scalar xOldNorm = Thyra::norm(*xOld);
-       //eta = ||x^(n+1)-x^n||/(||x^n||+eps)
-       eta = xDiffNorm/(xOldNorm + eps);
-#ifdef VERBOSE_DEBUG_OUTPUT
-       Scalar xNorm    = Thyra::norm(*x);
-       *out << "IKT xDiffNorm, xNorm, xOldNorm, eta = " << xDiffNorm << ", "
-            << xNorm << ", " << xOldNorm << ", " << eta << "\n";
-#endif
-       return eta;
-    }
+  virtual void setAmplFactor(Scalar rho)
+    { tscsPL_->set<double>("Amplification Factor", rho); }
+  virtual void setReductFactor(Scalar sigma)
+    { tscsPL_->set<double>("Reduction Factor", sigma); }
+  virtual void setMinEta(Scalar minEta)
+    { tscsPL_->set<double>("Minimum Value Monitoring Function", minEta); }
+  virtual void setMaxEta(Scalar maxEta)
+    { tscsPL_->set<double>("Maximum Value Monitoring Function", maxEta); }
 
 private:
-    Teuchos::RCP<Teuchos::ParameterList> tscsPL_;
+
+  Teuchos::RCP<Teuchos::ParameterList> tscsPL_;
+
 };
+
+
 } // namespace Tempus
 #endif // Tempus_TimeStepControlStrategy_BasicVS_hpp

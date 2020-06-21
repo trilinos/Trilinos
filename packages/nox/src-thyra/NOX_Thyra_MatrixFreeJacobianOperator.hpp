@@ -64,7 +64,6 @@ namespace NOX {
 }
 
 namespace NOX {
-
 namespace Thyra {
 
 /*! \brief Concrete implementation of a Thyra::LinearOpBase object that approximates a Jacobian operator based on the Jacobian-Free Newton-Krylov method (see Knoll and Keyes Journal of Computational Physics 193 (2004) 357-397 for details).
@@ -208,9 +207,9 @@ protected:
 
 };
 
-#include "NOX_Thyra_MatrixFreeJacobianOperator_impl.hpp"
-
 } // namespace Thyra
 } // namespace NOX
+
+#include "NOX_Thyra_MatrixFreeJacobianOperator_impl.hpp"
 
 #endif /* NOX_EPETRA_MATRIXFREE_JACOBIAN_OPERATOR_HPP */

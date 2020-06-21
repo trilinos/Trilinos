@@ -76,7 +76,7 @@
                         stk::mesh::FieldBase *proc_rank_field=0)
       {
         EXCEPTWATCH;
-        typedef boost::tuple<stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId> tet_tuple_type;
+        typedef std::array<stk::mesh::EntityId, 4> tet_tuple_type;
         vector<tet_tuple_type> new_elements(3);
         
         stk::mesh::EntityId element_globalIds[6] = {0,0,0,0,0,0};
@@ -115,21 +115,21 @@
         }
 
         // tet connected to min ID vertex but not opposite quad faces
-        new_elements[0] = tet_tuple_type(element_globalIds[min_vertex_renumber[indxMinVal][0]],
-                                         element_globalIds[min_vertex_renumber[indxMinVal][4]],
-                                         element_globalIds[min_vertex_renumber[indxMinVal][5]],
-                                         element_globalIds[min_vertex_renumber[indxMinVal][3]]);
+        new_elements[0] = {element_globalIds[min_vertex_renumber[indxMinVal][0]],
+                           element_globalIds[min_vertex_renumber[indxMinVal][4]],
+                           element_globalIds[min_vertex_renumber[indxMinVal][5]],
+                           element_globalIds[min_vertex_renumber[indxMinVal][3]]};
         
         // tets formed from splitting opposite quad faces using its min ID vertex
-        new_elements[1] = tet_tuple_type(element_globalIds[indxMinVal],
-                                         element_globalIds[opposite_quad_face_nodes[(0+indxMinValFace)%4]],
-                                         element_globalIds[opposite_quad_face_nodes[(1+indxMinValFace)%4]],
-                                         element_globalIds[opposite_quad_face_nodes[(2+indxMinValFace)%4]]);
+        new_elements[1] = {element_globalIds[indxMinVal],
+                           element_globalIds[opposite_quad_face_nodes[(0+indxMinValFace)%4]],
+                           element_globalIds[opposite_quad_face_nodes[(1+indxMinValFace)%4]],
+                           element_globalIds[opposite_quad_face_nodes[(2+indxMinValFace)%4]]};
 
-        new_elements[2] = tet_tuple_type(element_globalIds[indxMinVal],
-                                         element_globalIds[opposite_quad_face_nodes[(0+indxMinValFace)%4]],
-                                         element_globalIds[opposite_quad_face_nodes[(2+indxMinValFace)%4]],
-                                         element_globalIds[opposite_quad_face_nodes[(3+indxMinValFace)%4]]);
+        new_elements[2] = {element_globalIds[indxMinVal],
+                           element_globalIds[opposite_quad_face_nodes[(0+indxMinValFace)%4]],
+                           element_globalIds[opposite_quad_face_nodes[(2+indxMinValFace)%4]],
+                           element_globalIds[opposite_quad_face_nodes[(3+indxMinValFace)%4]]};
                                          
         for (unsigned ielem=0; ielem < new_elements.size(); ielem++)
           {
@@ -145,10 +145,10 @@
 
             unsigned nchild = new_elements.size();
 
-            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(new_elements[ielem].get<0>()), 0);
-            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(new_elements[ielem].get<1>()), 1);
-            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(new_elements[ielem].get<2>()), 2);
-            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(new_elements[ielem].get<3>()), 3);
+            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(new_elements[ielem][0]), 0);
+            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(new_elements[ielem][1]), 1);
+            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(new_elements[ielem][2]), 2);
+            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(new_elements[ielem][3]), 3);
 
             set_parent_child_relations(eMesh, element, newElement, *ft_element_pool, ielem, &nchild);
 

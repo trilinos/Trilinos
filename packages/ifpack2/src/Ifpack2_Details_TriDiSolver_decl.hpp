@@ -51,6 +51,8 @@
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
 #include "Ifpack2_Details_LapackSupportsScalar.hpp"
 #include "Tpetra_RowMatrix.hpp"
+#include "Tpetra_Import_fwd.hpp"
+#include "Tpetra_Export_fwd.hpp"
 #include "Teuchos_SerialTriDiMatrix.hpp"
 #include <type_traits>
 

@@ -121,7 +121,7 @@ private:
   typedef typename CommMessageType::HostMirror HostCommMessageType;
 
   enum { ReceiveInPlace =
-    Kokkos::Impl::is_same< typename VectorType::memory_space ,
+    std::is_same< typename VectorType::memory_space ,
                            typename HostVectorType::memory_space >::value };
 
   const CommMessageType  recv_msg ;

@@ -85,9 +85,6 @@ using Teuchos::RCP;
 // Ignore directives
 %ignore *::operator=;
 
-// Auto-documentation feature.
-%feature("autodoc", "1");
-
 // C++ STL support.
 %include "stl.i"
 

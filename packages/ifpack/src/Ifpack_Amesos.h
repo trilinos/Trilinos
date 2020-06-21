@@ -105,8 +105,7 @@ public:
     /*! This flag allows the transpose of the given operator to be used
      * implicitly.
 
-    \param
-           UseTranspose_in - (In) If true, multiply by the transpose of operator,
+    \param UseTranspose_in - (In) If true, multiply by the transpose of operator,
            otherwise just use operator.
 
     \return Integer error code, set to 0 if successful.  Set to -1 if this implementation does not support transpose.

@@ -111,6 +111,9 @@ private:
   std::unique_ptr<vector_type> X_colMap_;
   std::unique_ptr<multivector_type> V1_;
 
+  typename multivector_type::dual_view_type::t_host viewW_, viewB_, viewX_;
+  Teuchos::RCP<vector_type> W_vec_, B_vec_, X_vec_;
+
   // Do the Import, if needed, and return the column Map version of X.
   vector_type&
   importVector (vector_type& X_domMap);

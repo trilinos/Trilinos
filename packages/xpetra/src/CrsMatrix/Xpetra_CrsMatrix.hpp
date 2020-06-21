@@ -327,6 +327,11 @@ namespace Xpetra {
     //! Does this have an underlying matrix
     virtual bool hasMatrix() const = 0;
 
+    //! Compute a residual R = B - (*this) * X
+    virtual void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
+                          const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
+                          MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const = 0;
+
 
   }; // CrsMatrix class
 

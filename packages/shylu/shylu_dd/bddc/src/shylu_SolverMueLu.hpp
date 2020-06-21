@@ -138,9 +138,11 @@ public:
 		<< A->getNumEntriesInLocalRow(i) << std::endl;
     }
     */
-    m_mueLuPreconditioner = 
-      MueLu::CreateTpetraPreconditioner((RCP<Operator>)A, *paramList, 
-					m_inCoords, m_inNullspace);
+    Teuchos::ParameterList& userList = paramList->sublist("user data");
+    userList.set<RCP<MV> >("Coordinates", m_inCoords);
+    userList.set<RCP<MV> >("Nullspace", m_inNullspace);
+    m_mueLuPreconditioner =
+      MueLu::CreateTpetraPreconditioner((RCP<Operator>)A, *paramList);
     m_rhsVec = rcp( new MV(rowMap, 1) );
     m_solVec = rcp( new MV(rowMap, 1) );
     return 0;
