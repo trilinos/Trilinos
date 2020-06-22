@@ -216,7 +216,7 @@ void localResidual(const CrsMatrix<SC,LO,GO,NO> &  A,
   LO maxRowImbalance = 0;
   if(numLocalRows != 0)
     maxRowImbalance = A.getNodeMaxNumRowEntries() - (myNnz / numLocalRows);
-  if(size_t(maxRowImbalance) >= Tpetra::Details::Behavior::longRowMinNumEntries())
+  if(size_t(maxRowImbalance) >= Tpetra::Details::Behavior::rowImbalanceThreshold())
   {
     //note: lclOp will be wrapped in shared_ptr
     auto lclOp = A.getLocalMultiplyOperator();

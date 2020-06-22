@@ -347,8 +347,8 @@ namespace { // (anonymous)
     // create a Map
     const size_t numLocalRows = 10;
     // compute the number of entries in the long rows required to trigger the imbalanced row apply
-    // this isn't quite the minimum but it works: numLocalRows * 5 + Behavior::longRowMinNumEntries()
-    const size_t numLocalColumns = 1 + (5 + 1.5 * Tpetra::Details::Behavior::longRowMinNumEntries()) / (1.0 - 1.0 / numLocalRows);
+    // this isn't quite the minimum but it works: numLocalRows * 5 + Behavior::rowImbalanceThreshold()
+    const size_t numLocalColumns = 1 + (5 + 1.5 * Tpetra::Details::Behavior::rowImbalanceThreshold()) / (1.0 - 1.0 / numLocalRows);
     const size_t numVecs = 2;
     const int rank = comm->getRank();
     const int numRanks = comm->getSize();
