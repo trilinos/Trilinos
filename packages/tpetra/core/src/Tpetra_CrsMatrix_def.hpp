@@ -5453,7 +5453,7 @@ namespace Tpetra {
     LocalOrdinal maxRowImbalance = 0;
     if(nrows != 0)
       maxRowImbalance = getNodeMaxNumRowEntries() - (getNodeNumEntries() / nrows);
-    if(maxRowImbalance >= Tpetra::Details::Behavior::longRowMinNumEntries())
+    if(size_t(maxRowImbalance) >= Tpetra::Details::Behavior::longRowMinNumEntries())
       lclMatrix_->applyImbalancedRows (X_lcl, Y_lcl, mode, alpha, beta);
     else
       lclMatrix_->apply (X_lcl, Y_lcl, mode, alpha, beta);

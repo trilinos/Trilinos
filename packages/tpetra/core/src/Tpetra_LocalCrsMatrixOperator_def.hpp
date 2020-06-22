@@ -100,6 +100,8 @@ apply (Kokkos::View<const mv_scalar_type**, array_layout,
   KokkosSparse::spmv (op, alpha, *A_, X, beta, Y);
 }
 
+/// \brief Same behavior as \c apply() above, except give KokkosKernels a hint to use
+///  an SPMV algorithm that can efficiently handle matrices with imbalanced rows.
 template<class MultiVectorScalar, class MatrixScalar, class Device>
 void
 LocalCrsMatrixOperator<MultiVectorScalar, MatrixScalar, Device>::
