@@ -46,6 +46,22 @@ IF (${PACKAGE_NAME}_ENABLE_KLU2)
     NUM_MPI_PROCS 2
     STANDARD_PASS_OUTPUT
     )
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestKLU2Files
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+    SOURCE_FILES klu2_test.xml
+    EXEDEPS Solver_Test
+    )
+
+  TRIBITS_ADD_TEST(
+    Solver_Test
+    NAME KLU2_Solver_Test
+    ARGS "--xml-params=klu2_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 2
+    COMM serial mpi
+    )
+
 ENDIF()
 
 ##### SuperLu Tests #####

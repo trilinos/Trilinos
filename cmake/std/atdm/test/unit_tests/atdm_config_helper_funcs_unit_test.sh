@@ -3,17 +3,16 @@
 CURRENT_SCRIPTS_DIR=`echo $BASH_SOURCE | sed "s/\(.*\)\/.*\.sh/\1/g"`
 
 if [[ "$(uname)" == "Darwin" ]]; then
-  ATDM_CONFIG_SCRIPT_DIR=".."
-  ATDM_UTIL_SCRIPT_ATDM_CONFIG_HELPER_FUNCS="atdm_config_helper_funcs.sh"
-  ATDM_UTIL_SCRIPT_GET_KNOWN_SYSTEM_INFO="get_known_system_info.sh"
+  ATDM_CONFIG_SCRIPT_DIR="../.."
+  ATDM_UTIL_SCRIPT_ATDM_CONFIG_HELPER_FUNCS="${ATDM_CONFIG_SCRIPT_DIR}/utils/atdm_config_helper_funcs.sh"
   SHUNIT2_DIR="${ATDM_CONFIG_SCRIPT_DIR}/../../../commonTools/test/shunit2"
 else
-  ATDM_CONFIG_SCRIPT_DIR=`readlink -f ${CURRENT_SCRIPTS_DIR}/..`
-  ATDM_UTIL_SCRIPT_ATDM_CONFIG_HELPER_FUNCS=`readlink -f ${CURRENT_SCRIPTS_DIR}/atdm_config_helper_funcs.sh`
-  ATDM_UTIL_SCRIPT_GET_KNOWN_SYSTEM_INFO=`readlink -f ${CURRENT_SCRIPTS_DIR}/get_known_system_info.sh`
+  ATDM_CONFIG_SCRIPT_DIR=`readlink -f ${CURRENT_SCRIPTS_DIR}/../..`
+  ATDM_UTIL_SCRIPT_ATDM_CONFIG_HELPER_FUNCS=`readlink -f ${ATDM_CONFIG_SCRIPT_DIR}/utils/atdm_config_helper_funcs.sh`
   SHUNIT2_DIR=`readlink -f ${ATDM_CONFIG_SCRIPT_DIR}/../../../commonTools/test/shunit2`
 fi
 
+source ${ATDM_UTIL_SCRIPT_ATDM_CONFIG_HELPER_FUNCS}
 #
 # Test atdm get_known_system_info script
 #

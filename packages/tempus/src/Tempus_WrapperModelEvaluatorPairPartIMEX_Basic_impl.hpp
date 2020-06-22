@@ -361,7 +361,6 @@ get_f_space() const
   return explicitModel_->get_f_space();
 }
 
-
 template <typename Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
 WrapperModelEvaluatorPairPartIMEX_Basic<Scalar>::
