@@ -176,6 +176,7 @@ namespace Galeri {
       R(0,0) = R(1,3) = R(2,1) = R(2,2) = 1;
 
       this->A_ = MatrixTraits<Map,Matrix>::Build(this->Map_, 8*numNodesPerElem);
+      this->A_->setObjectLabel(this->getObjectLabel());
 
       SC one = TST::one(), zero = TST::zero();
       SerialDenseMatrix<LO,SC> prevKE(numDofPerElem, numDofPerElem), prevElementNodes(numNodesPerElem, Teuchos::as<LO>(nDim_));        // cache

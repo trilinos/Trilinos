@@ -23,39 +23,40 @@ from __future__ import print_function
 import sys
 sys.dont_write_bytecode = True
 
-import os
 import argparse
+import os
 import subprocess
+from textwrap import dedent
 
 
 
 def write_header():
-    print('''--------------------------------------------------------------------------------
--
-- Begin: PullRequestLinuxDriver-Merge.py
--
---------------------------------------------------------------------------------''',
-          file=sys.stdout)
+    print(dedent('''\
+          --------------------------------------------------------------------------------
+          -
+          - Begin: PullRequestLinuxDriver-Merge.py
+          -
+          --------------------------------------------------------------------------------'''))
 
 
 def echoJenkinsVars(workspace):
-    print('''
-================================================================================
-Jenkins Environment Variables:
-- WORKSPACE    : {workspace}
+    print(dedent('''\
 
-================================================================================
-Environment:
+            ================================================================================
+            Jenkins Environment Variables:
+            - WORKSPACE    : {workspace}
 
-  pwd = {cwd}
-'''.format(workspace=workspace,
-           cwd=os.getcwd()), file=sys.stdout)
+            ================================================================================
+            Environment:
+
+              pwd = {cwd}
+            ''').format(workspace=workspace, cwd=os.getcwd()))
 
     for key in os.environ:
         print(key +' = ' + os.environ[key])
-    print('''
-================================================================================''',
-          file=sys.stdout)
+
+    print('\n' + 80*"=")
+
 
 
 def parseArgs():
@@ -93,14 +94,12 @@ def merge_branch(source_url, source_branch, target_branch, sourceSHA):
     if 'source_remote' in remote_list:
         print('git remote exists, removing it', file=sys.stdout)
         subprocess.check_call(['git', 'remote', 'rm', 'source_remote'])
-    subprocess.check_call(['git', 'remote', 'add', 'source_remote',
-                           source_url])
+    subprocess.check_call(['git', 'remote', 'add', 'source_remote', source_url])
 
     fetch_succeeded = False
     for i in range(3):
         try:
-            subprocess.check_call(['git', 'fetch', 'source_remote',
-                                   source_branch])
+            subprocess.check_call(['git', 'fetch', 'source_remote', source_branch])
             fetch_succeeded = True
             break
         except subprocess.CalledProcessError:
@@ -108,28 +107,20 @@ def merge_branch(source_url, source_branch, target_branch, sourceSHA):
     if not fetch_succeeded:
         raise SystemExit(12)
 
-    subprocess.check_call(['git', 'fetch', 'origin',
-                           target_branch])
-    subprocess.check_call(['git', 'reset', '--hard',
-                           'HEAD'])
-    subprocess.check_call(['git', 'checkout', '-B',
-                           target_branch, 'origin/' + target_branch])
-    subprocess.check_call(['git', 'merge', '--no-edit',
-                           'source_remote/' + source_branch]),
+    subprocess.check_call(['git', 'fetch', 'origin', target_branch])
+    subprocess.check_call(['git', 'reset', '--hard', 'HEAD'])
+    subprocess.check_call(['git', 'checkout', '-B', target_branch, 'origin/' + target_branch])
+    subprocess.check_call(['git', 'merge', '--no-edit', 'source_remote/' + source_branch]),
 
-    actual_source_SHA = subprocess.check_output(['git', 'rev-parse',
-                                                 'source_remote/' + source_branch])
+    actual_source_SHA = subprocess.check_output(['git', 'rev-parse', 'source_remote/' + source_branch])
 
     actual_source_SHA = actual_source_SHA.strip()
 
     if actual_source_SHA != sourceSHA:
         print('The SHA ({source_sha}) for the last commit on branch {source_branch}'.format(source_sha=actual_source_SHA,
-                                                                                            source_branch=source_branch),
-              file=sys.stdout)
-        print('  in repo {source_repo} is different than the expected SHA,'.format(source_repo=source_url),
-              file=sys.stdout)
-        print('  which is: {source_sha}.'.format(source_sha=sourceSHA),
-              file=sys.stdout)
+                                                                                            source_branch=source_branch), file=sys.stdout)
+        print('  in repo {source_repo} is different than the expected SHA,'.format(source_repo=source_url), file=sys.stdout)
+        print('  which is: {source_sha}.'.format(source_sha=sourceSHA), file=sys.stdout)
         raise SystemExit(-1)
 
 
@@ -143,8 +134,7 @@ def run():
         os.chdir(os.path.join(arguments.workspaceDir, 'Trilinos'))
         print("Set CWD = {dirName}".format(dirName=os.path.join(
                                                  arguments.workspaceDir,
-                                                 'Trilinos')),
-              file=sys.stdout)
+                                                 'Trilinos')))
         write_header()
         echoJenkinsVars(arguments.workspaceDir)
         try:
@@ -156,20 +146,15 @@ def run():
             return_value = False
         except subprocess.CalledProcessError as cpe:
             return_value = False
-            print('Recieved subprocess.CalledProcessError - returned {error_num}'.format(error_num=cpe.returncode),
-                  file=sys.stdout)
-            print('  from command {cmd}'.format(cmd=cpe.cmd),
-                  file=sys.stdout)
-            print('  output {out}'.format(out=cpe.output),
-                  file=sys.stdout)
+            print('Recieved subprocess.CalledProcessError - returned {error_num}'.format(error_num=cpe.returncode), file=sys.stdout)
+            print('  from command {cmd}'.format(cmd=cpe.cmd), file=sys.stdout)
+            print('  output {out}'.format(out=cpe.output), file=sys.stdout)
             try:
-                print('  stdout {out}'.format(out=cpe.stdout),
-                      file=sys.stdout)
+                print('  stdout {out}'.format(out=cpe.stdout), file=sys.stdout)
             except AttributeError:
                 pass
             try:
-                print('  stderr {eout}'.format(eout=cpe.stderr),
-                      file=sys.stdout)
+                print('  stderr {eout}'.format(eout=cpe.stderr), file=sys.stdout)
             except AttributeError:
                 pass
 

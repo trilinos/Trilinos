@@ -19,11 +19,12 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 
-algorithm = "classical": threshold = 0.02, blocksize = 1
+algorithm = "classical" classical algorithm = "default": threshold = 0.02, blocksize = 1
 aggregation: drop tol = 0.02
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
 aggregation: distance laplacian algo = default   [default]
+aggregation: classical algo = default   [default]
 lightweight wrap = 1
 
 Lumping dropped entries
@@ -163,11 +164,12 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 
-algorithm = "classical": threshold = 0.02, blocksize = 1
+algorithm = "classical" classical algorithm = "default": threshold = 0.02, blocksize = 1
 aggregation: drop tol = 0.02
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
 aggregation: distance laplacian algo = default   [default]
+aggregation: classical algo = default   [default]
 lightweight wrap = 1
 
 Lumping dropped entries
@@ -329,11 +331,12 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 
-algorithm = "classical": threshold = 0.02, blocksize = 1
+algorithm = "classical" classical algorithm = "default": threshold = 0.02, blocksize = 1
 aggregation: drop tol = 0.02
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
 aggregation: distance laplacian algo = default   [default]
+aggregation: classical algo = default   [default]
 lightweight wrap = 1
 
 Lumping dropped entries
@@ -414,11 +417,12 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 
-algorithm = "classical": threshold = 0.02, blocksize = 1
+algorithm = "classical" classical algorithm = "default": threshold = 0.02, blocksize = 1
 aggregation: drop tol = 0.02
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
 aggregation: distance laplacian algo = default   [default]
+aggregation: classical algo = default   [default]
 lightweight wrap = 1
 
 Lumping dropped entries

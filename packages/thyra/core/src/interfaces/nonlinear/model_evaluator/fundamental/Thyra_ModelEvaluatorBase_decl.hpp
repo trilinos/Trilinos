@@ -165,6 +165,9 @@ public:
     /** \brief Return the number of parameter subvectors <tt>p(l)</tt>
      * supported (<tt>Np >= 0</tt>).  */
     int Np() const;
+    /** \brief Return the number of axillary response functions
+     * <tt>g(j)(...)</tt> supported (<tt>Ng >= 0</tt>).  */
+    int Ng() const;
     /** \brief Determines if an input argument is supported or not.  */
     bool supports(EInArgsMembers arg) const;
     /** \brief Precondition: <tt>supports(IN_ARG_x_dot_dot)==true</tt>.  */
@@ -179,6 +182,24 @@ public:
     void set_x( const RCP<const VectorBase<Scalar> > &x );
     /** \brief Precondition: <tt>supports(IN_ARG_x)==true</tt>.  */
     RCP<const VectorBase<Scalar> > get_x() const;
+
+    /** \brief Precondition: <tt>supports(IN_ARG_x)==true</tt>.  */
+    void set_x_direction( const RCP<const MultiVectorBase<Scalar> > &x_direction );
+    /** \brief Precondition: <tt>supports(IN_ARG_x)==true</tt>.  */
+    void set_p_direction( int l, const RCP<const MultiVectorBase<Scalar> > &p_direction_l );
+    /** \brief Precondition: <tt>supports(IN_ARG_x)==true</tt>.  */
+    RCP<const MultiVectorBase<Scalar> > get_x_direction() const;
+    /** \brief Get <tt>p(l)</tt> where <tt>0 <= l && l < this->Np()</tt>.  */
+    RCP<const MultiVectorBase<Scalar> > get_p_direction(int l) const;
+
+    /** \brief Precondition: <tt>supports(IN_ARG_x)==true</tt>.  */
+    void set_f_multiplier( const RCP<const VectorBase<Scalar> > &f_multiplier );
+    /** \brief Precondition: <tt>supports(IN_ARG_x)==true</tt>.  */
+    RCP<const VectorBase<Scalar> > get_f_multiplier() const;
+    /** \brief Precondition: <tt>supports(IN_ARG_x)==true</tt>.  */
+    void set_g_multiplier( int j, const RCP<const VectorBase<Scalar> > &g_multiplier );
+    /** \brief Precondition: <tt>supports(IN_ARG_x)==true</tt>.  */
+    RCP<const VectorBase<Scalar> > get_g_multiplier(int j) const;
 
     /** \brief Determines if an extended input argument of type <tt>ObjectType</tt> is supported. */
     template<typename ObjectType>
@@ -269,7 +290,7 @@ public:
     /** \brief . */
     void _setModelEvalDescription( const std::string &modelEvalDescription );
     /** \brief . */
-    void _set_Np(int Np);
+    void _set_Np_Ng(int Np, int Ng);
     /** \brief . */
     void _setSupports( EInArgsMembers arg, bool supports );
     /** \brief . */
@@ -284,19 +305,25 @@ public:
   private:
     // types
     typedef Teuchos::Array<RCP<const VectorBase<Scalar> > > p_t;
+    typedef Teuchos::Array<RCP<const MultiVectorBase<Scalar> > > p_direction_t;
     // data
     std::string modelEvalDescription_;
     RCP<const VectorBase<Scalar> > x_dot_dot_;
     RCP<const VectorBase<Scalar> > x_dot_;
     RCP<const VectorBase<Scalar> > x_;
+    RCP<const MultiVectorBase<Scalar> > x_direction_;
     RCP<const Stokhos::ProductEpetraVector > x_dot_mp_;
     RCP<const Stokhos::ProductEpetraVector > x_mp_;
+
+    RCP<const VectorBase<Scalar> > f_multiplier_;
+    p_t g_multiplier_;
     Teuchos::Array< RCP< const Stokhos::ProductEpetraVector > > p_mp_;
 #ifdef HAVE_THYRA_ME_POLYNOMIAL
     RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > x_dot_poly_;
     RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > x_poly_;
 #endif // HAVE_THYRA_ME_POLYNOMIAL
     p_t p_;
+    p_direction_t p_direction_;
     ScalarMag t_;
     Scalar alpha_;
     Scalar beta_;
@@ -309,6 +336,7 @@ public:
     void assert_supports(EInArgsMembers arg) const;
     void assert_supports(EInArgs_p_mp arg, int l) const;
     void assert_l(int l) const;
+    void assert_j(int j) const;
 
     std::map<std::string,Teuchos::any> extended_inargs_;
   };
@@ -705,7 +733,92 @@ public:
   enum EOutArgsDgDp {
     OUT_ARG_DgDp   ///< .
   };
-  
+
+  /** \brief . */
+  enum EOutArgs_hess_vec_prod_f_xx {
+    OUT_ARG_hess_vec_prod_f_xx   ///< .
+  };
+
+  /** \brief . */
+  enum EOutArgs_hess_vec_prod_f_xp {
+    OUT_ARG_hess_vec_prod_f_xp   ///< .
+  };
+
+  /** \brief . */
+  enum EOutArgs_hess_vec_prod_f_px {
+    OUT_ARG_hess_vec_prod_f_px   ///< .
+  };
+
+  /** \brief . */
+  enum EOutArgs_hess_vec_prod_f_pp {
+    OUT_ARG_hess_vec_prod_f_pp   ///< .
+  };
+
+  /** \brief . */
+  enum EOutArgs_hess_vec_prod_g_xx {
+    OUT_ARG_hess_vec_prod_g_xx   ///< .
+  };
+
+  /** \brief . */
+  enum EOutArgs_hess_vec_prod_g_xp {
+    OUT_ARG_hess_vec_prod_g_xp   ///< .
+  };
+
+  /** \brief . */
+  enum EOutArgs_hess_vec_prod_g_px {
+    OUT_ARG_hess_vec_prod_g_px   ///< .
+  };
+
+  /** \brief . */
+  enum EOutArgs_hess_vec_prod_g_pp {
+    OUT_ARG_hess_vec_prod_g_pp   ///< .
+  };
+
+  /** \brief . */
+  enum EOutArgs_hess_f_xx {
+    OUT_ARG_hess_f_xx   ///< .
+  };
+
+  /** \brief . */
+  enum EOutArgs_hess_f_xp {
+    OUT_ARG_hess_f_xp   ///< .
+  };
+
+  /** \brief . */
+  enum EOutArgs_hess_f_pp {
+    OUT_ARG_hess_f_pp   ///< .
+  };
+
+  /** \brief . */
+  enum EOutArgs_hess_g_xx {
+    OUT_ARG_hess_g_xx   ///< .
+  };
+
+  /** \brief . */
+  enum EOutArgs_hess_g_xp {
+    OUT_ARG_hess_g_xp   ///< .
+  };
+
+  /** \brief . */
+  enum EOutArgs_hess_g_pp {
+    OUT_ARG_hess_g_pp   ///< .
+  };
+
+  /** \brief . */
+  enum EOutArgs_H_xx {
+    OUT_ARG_H_xx   ///< .
+  };
+
+  /** \brief . */
+  enum EOutArgs_H_xp {
+    OUT_ARG_H_xp   ///< .
+  };
+
+  /** \brief . */
+  enum EOutArgs_H_pp {
+    OUT_ARG_H_pp   ///< .
+  };
+
   /** \brief . */
   enum EOutArgsDfDp_mp {
     OUT_ARG_DfDp_mp   ///< .
@@ -808,6 +921,54 @@ public:
     /** \brief Determine if <tt>DgDp(j,l)</tt> is supported or not, <tt>0 <= j
      * && j < Ng()</tt> and <tt>0 <= l && l < Np()</tt>.  */
     const DerivativeSupport& supports(EOutArgsDgDp arg, int j, int l) const;
+    /** \brief Determine if <tt>hess_vec_prod_f_xx</tt> is supported or not.  */
+    bool supports(EOutArgs_hess_vec_prod_f_xx arg) const;
+    /** \brief Determine if <tt>hess_vec_prod_f_xp(l)</tt> is supported or not, <tt>0 <= l 
+     * && l < Np()</tt>.  */
+    bool supports(EOutArgs_hess_vec_prod_f_xp arg, int l) const;
+    /** \brief Determine if <tt>hess_vec_prod_f_px(l)</tt> is supported or not, <tt>0 <= l
+     * && l < Np()</tt>.  */
+    bool supports(EOutArgs_hess_vec_prod_f_px arg, int l) const;
+    /** \brief Determine if <tt>hess_vec_prod_f_pp(l1,l2)</tt> is supported or not, <tt>0 <= l1
+     * && l1 < Np()</tt> and <tt>0 <= l2 && l2 < Np()</tt>.  */
+    bool supports(EOutArgs_hess_vec_prod_f_pp arg, int l1, int l2) const;
+    /** \brief Determine if <tt>hess_vec_prod_g_xx(j,l)</tt> is supported or not, <tt>0 <= j
+     * && j < Ng()</tt>.  */
+    bool supports(EOutArgs_hess_vec_prod_g_xx arg, int j) const;
+    /** \brief Determine if <tt>hess_vec_prod_g_xp(j,l)</tt> is supported or not, <tt>0 <= j
+     * && j < Ng()</tt> and <tt>0 <= l && l < Np()</tt>.  */
+    bool supports(EOutArgs_hess_vec_prod_g_xp arg, int j, int l) const;
+    /** \brief Determine if <tt>hess_vec_prod_g_px(j,l)</tt> is supported or not, <tt>0 <= j
+     * && j < Ng()</tt> and <tt>0 <= l && l < Np()</tt>.  */
+    bool supports(EOutArgs_hess_vec_prod_g_px arg, int j, int l) const;
+    /** \brief Determine if <tt>hess_vec_prod_g_pp(j,l1,l2)</tt> is supported or not, <tt>0 <= j
+     * && j < Ng()</tt>, <tt>0 <= l1 && l1 < Np()</tt>, and <tt>0 <= l2 && l2 < Np()</tt>.  */
+    bool supports(EOutArgs_hess_vec_prod_g_pp arg, int j, int l1, int l2) const;
+    /** \brief Determine if <tt>hess_f_xx</tt> is supported or not.  */
+    bool supports(EOutArgs_hess_f_xx arg) const;
+    /** \brief Determine if <tt>hess_f_xp(l)</tt> is supported or not, <tt>0 <= l
+     * && l < Np()</tt>.  */
+    bool supports(EOutArgs_hess_f_xp arg, int l) const;
+    /** \brief Determine if <tt>hess_f_pp(l1,l2)</tt> is supported or not, <tt>0 <= l1
+     * && l1 < Np()</tt> and <tt>0 <= l2 && l2 < Np()</tt>.  */
+    bool supports(EOutArgs_hess_f_pp arg, int l1, int l2) const;
+    /** \brief Determine if <tt>hess_g_xx(j,l)</tt> is supported or not, <tt>0 <= j
+     * && j < Ng()</tt>.  */
+    bool supports(EOutArgs_hess_g_xx arg, int j) const;
+    /** \brief Determine if <tt>hess_g_xp(j,l)</tt> is supported or not, <tt>0 <= j
+     * && j < Ng()</tt> and <tt>0 <= l && l < Np()</tt>.  */
+    bool supports(EOutArgs_hess_g_xp arg, int j, int l) const;
+    /** \brief Determine if <tt>hess_g_pp(j,l1,l2)</tt> is supported or not, <tt>0 <= j
+     * && j < Ng()</tt>, <tt>0 <= l1 && l1 < Np()</tt>, and <tt>0 <= l2 && l2 < Np()</tt>.  */
+    bool supports(EOutArgs_hess_g_pp arg, int j, int l1, int l2) const;
+    /** \brief Determine if <tt>H_xx</tt> is supported or not.  */
+    bool supports(EOutArgs_H_xx arg) const;
+    /** \brief Determine if <tt>H_xp(l)</tt> is supported or not, <tt>0 <= l
+     * && l < Np()</tt>.  */
+    bool supports(EOutArgs_H_xp arg, int l) const;
+    /** \brief Determine if <tt>H_pp(l1,l2)</tt> is supported or not, <tt>0 <= l1
+     * && l1 < Np()</tt> and <tt>0 <= l2 && l2 < Np()</tt>.  */
+    bool supports(EOutArgs_H_pp arg, int l1, int l2) const;
     /** \brief Precondition: <tt>supports(OUT_ARG_f)==true</tt>.  */
     void set_f( const Evaluation<VectorBase<Scalar> > &f );
     /** \brief Precondition: <tt>supports(OUT_ARG_f)==true</tt>.  */
@@ -889,6 +1050,80 @@ public:
      * <tt>supports(OUT_ARG_DgDp,j,l)==true</tt>). */
     DerivativeProperties get_DgDp_properties(int j, int l) const;
 
+    /** \brief Precondition: <tt>supports(OUT_ARG_hess_vec_prod_f_xx)==true</tt>.  */
+    void set_hess_vec_prod_f_xx(const RCP<MultiVectorBase<Scalar> > &hess_vec_prod_f_xx);
+    /** \brief Precondition: <tt>supports(OUT_ARG_hess_vec_prod_f_xp,l)==true</tt>.  */
+    void set_hess_vec_prod_f_xp(int l, const RCP<MultiVectorBase<Scalar> > &hess_vec_prod_f_xp_l);
+    /** \brief Precondition: <tt>supports(OUT_ARG_hess_vec_prod_f_px,l)==true</tt>.  */
+    void set_hess_vec_prod_f_px(int l, const RCP<MultiVectorBase<Scalar> > &hess_vec_prod_f_px_l);
+    /** \brief Precondition: <tt>supports(OUT_ARG_hess_vec_prod_f_pp,l1,l2)==true</tt>.  */
+    void set_hess_vec_prod_f_pp(int l1, int l2, const RCP<MultiVectorBase<Scalar> > &hess_vec_prod_f_pp_l1_l2);
+
+    /** \brief Precondition: <tt>supports(OUT_ARG_hess_vec_prod_f_xx)==true</tt>.  */
+    RCP<MultiVectorBase<Scalar> > get_hess_vec_prod_f_xx() const;
+    /** \brief Precondition: <tt>supports(OUT_ARG_hess_vec_prod_f_xp,l)==true</tt>.  */
+    RCP<MultiVectorBase<Scalar> > get_hess_vec_prod_f_xp(int l) const;
+    /** \brief Precondition: <tt>supports(OUT_ARG_hess_vec_prod_f_px,l)==true</tt>.  */
+    RCP<MultiVectorBase<Scalar> > get_hess_vec_prod_f_px(int l) const;
+    /** \brief Precondition: <tt>supports(OUT_ARG_hess_vec_prod_f_pp,l1,l2)==true</tt>.  */
+    RCP<MultiVectorBase<Scalar> > get_hess_vec_prod_f_pp(int l1, int l2) const;
+
+    /** \brief Precondition: <tt>supports(OUT_ARG_hess_vec_prod_g_xx,j)==true</tt>.  */
+    void set_hess_vec_prod_g_xx(int j, const RCP<MultiVectorBase<Scalar> > &hess_vec_prod_g_xx_j);
+    /** \brief Precondition: <tt>supports(OUT_ARG_hess_vec_prod_g_xp,j,l)==true</tt>.  */
+    void set_hess_vec_prod_g_xp(int j, int l, const RCP<MultiVectorBase<Scalar> > &hess_vec_prod_g_xp_j_l);
+    /** \brief Precondition: <tt>supports(OUT_ARG_hess_vec_prod_g_px,j,l)==true</tt>.  */
+    void set_hess_vec_prod_g_px(int j, int l, const RCP<MultiVectorBase<Scalar> > &hess_vec_prod_g_px_j_l);
+    /** \brief Precondition: <tt>supports(OUT_ARG_hess_vec_prod_g_pp,j,l1,l2)==true</tt>.  */
+    void set_hess_vec_prod_g_pp(int j, int l1, int l2, const RCP<MultiVectorBase<Scalar> > &hess_vec_prod_g_pp_j_l1_l2);
+
+    /** \brief Precondition: <tt>supports(OUT_ARG_hess_vec_prod_g_xx,j)==true</tt>.  */
+    RCP<MultiVectorBase<Scalar> > get_hess_vec_prod_g_xx(int j) const;
+    /** \brief Precondition: <tt>supports(OUT_ARG_hess_vec_prod_g_xp,j,l)==true</tt>.  */
+    RCP<MultiVectorBase<Scalar> > get_hess_vec_prod_g_xp(int j, int l) const;
+    /** \brief Precondition: <tt>supports(OUT_ARG_hess_vec_prod_g_px,j,l)==true</tt>.  */
+    RCP<MultiVectorBase<Scalar> > get_hess_vec_prod_g_px(int j, int l) const;
+    /** \brief Precondition: <tt>supports(OUT_ARG_hess_vec_prod_g_pp,j,l1,l2)==true</tt>.  */
+    RCP<MultiVectorBase<Scalar> > get_hess_vec_prod_g_pp(int j, int l1, int l2) const;
+
+    /** \brief Precondition: <tt>supports(OUT_ARG_hess_f_xx)==true</tt>.  */
+    void set_hess_f_xx(const RCP<LinearOpBase<Scalar> > &hess_f_xx);
+    /** \brief Precondition: <tt>supports(OUT_ARG_hess_f_xp,l)==true</tt>.  */
+    void set_hess_f_xp(int l, const RCP<LinearOpBase<Scalar> > &hess_f_xp_l);
+    /** \brief Precondition: <tt>supports(OUT_ARG_hess_f_pp,l1,l2)==true</tt>.  */
+    void set_hess_f_pp(int l1, int l2, const RCP<LinearOpBase<Scalar> > &hess_f_pp_l1_l2);
+    /** \brief Precondition: <tt>supports(OUT_ARG_hess_g_xx,j)==true</tt>.  */
+    void set_hess_g_xx(int j, const RCP<LinearOpBase<Scalar> > &hess_g_xx_j);
+    /** \brief Precondition: <tt>supports(OUT_ARG_hess_g_xp,j,l)==true</tt>.  */
+    void set_hess_g_xp(int j, int l, const RCP<LinearOpBase<Scalar> > &hess_g_xp_j_l);
+    /** \brief Precondition: <tt>supports(OUT_ARG_hess_g_pp,j,l1,l2)==true</tt>.  */
+    void set_hess_g_pp(int j, int l1, int l2, const RCP<LinearOpBase<Scalar> > &hess_g_pp_j_l1_l2);
+    /** \brief Precondition: <tt>supports(OUT_ARG_H_xx)==true</tt>.  */
+    void set_H_xx(const RCP<LinearOpBase<Scalar> > &H_xx);
+    /** \brief Precondition: <tt>supports(OUT_ARG_H_xp,l)==true</tt>.  */
+    void set_H_xp(int l, const RCP<LinearOpBase<Scalar> > &H_xp_l);
+    /** \brief Precondition: <tt>supports(OUT_ARG_H_pp,l1,l2)==true</tt>.  */
+    void set_H_pp(int l1, int l2, const RCP<LinearOpBase<Scalar> > &H_pp_l1_l2);
+
+    /** \brief Precondition: <tt>supports(OUT_ARG_hess_f_xx)==true</tt>.  */
+    RCP<LinearOpBase<Scalar> > get_hess_f_xx() const;
+    /** \brief Precondition: <tt>supports(OUT_ARG_hess_f_xp,l)==true</tt>.  */
+    RCP<LinearOpBase<Scalar> > get_hess_f_xp(int l) const;
+    /** \brief Precondition: <tt>supports(OUT_ARG_hess_f_pp,l1,l2)==true</tt>.  */
+    RCP<LinearOpBase<Scalar> > get_hess_f_pp(int l1, int l2) const;
+    /** \brief Precondition: <tt>supports(OUT_ARG_hess_g_xx,j)==true</tt>.  */
+    RCP<LinearOpBase<Scalar> > get_hess_g_xx(int j) const;
+    /** \brief Precondition: <tt>supports(OUT_ARG_hess_g_xp,j,l)==true</tt>.  */
+    RCP<LinearOpBase<Scalar> > get_hess_g_xp(int j, int l) const;
+    /** \brief Precondition: <tt>supports(OUT_ARG_hess_g_pp,j,l1,l2)==true</tt>.  */
+    RCP<LinearOpBase<Scalar> > get_hess_g_pp(int j, int l1, int l2) const;
+    /** \brief Precondition: <tt>supports(OUT_ARG_H_xx)==true</tt>.  */
+    RCP<LinearOpBase<Scalar> > get_H_xx() const;
+    /** \brief Precondition: <tt>supports(OUT_ARG_H_xp,l)==true</tt>.  */
+    RCP<LinearOpBase<Scalar> > get_H_xp(int l) const;
+    /** \brief Precondition: <tt>supports(OUT_ARG_H_pp,l1,l2)==true</tt>.  */
+    RCP<LinearOpBase<Scalar> > get_H_pp(int l1, int l2) const;
+
     void set_DfDp_mp(int l,  const MPDerivative &DfDp_mp_l);
     MPDerivative get_DfDp_mp(int l) const;
     DerivativeProperties get_DfDp_mp_properties(int l) const;
@@ -964,6 +1199,42 @@ public:
     /** \brief . */
     void _setSupports( EOutArgsDgDp arg, int j, int l, const DerivativeSupport& );
 
+    /** \brief . */
+    void _setSupports( EOutArgs_hess_vec_prod_f_xx arg, bool supports );
+    /** \brief . */
+    void _setSupports( EOutArgs_hess_vec_prod_f_xp arg, int l, bool supports );
+    /** \brief . */
+    void _setSupports( EOutArgs_hess_vec_prod_f_px arg, int l, bool supports );
+    /** \brief . */
+    void _setSupports( EOutArgs_hess_vec_prod_f_pp arg, int l1, int l2, bool supports );
+    /** \brief . */
+    void _setSupports( EOutArgs_hess_vec_prod_g_xx arg, int j, bool supports );
+    /** \brief . */
+    void _setSupports( EOutArgs_hess_vec_prod_g_xp arg, int j, int l, bool supports );
+    /** \brief . */
+    void _setSupports( EOutArgs_hess_vec_prod_g_px arg, int j, int l, bool supports );
+    /** \brief . */
+    void _setSupports( EOutArgs_hess_vec_prod_g_pp arg, int j, int l1, int l2, bool supports );
+
+    /** \brief . */
+    void _setSupports( EOutArgs_hess_f_xx arg, bool supports );
+    /** \brief . */
+    void _setSupports( EOutArgs_hess_f_xp arg, int l, bool supports );
+    /** \brief . */
+    void _setSupports( EOutArgs_hess_f_pp arg, int l1, int l2, bool supports );
+    /** \brief . */
+    void _setSupports( EOutArgs_hess_g_xx arg, int j, bool supports );
+    /** \brief . */
+    void _setSupports( EOutArgs_hess_g_xp arg, int j, int l, bool supports );
+    /** \brief . */
+    void _setSupports( EOutArgs_hess_g_pp arg, int j, int l1, int l2, bool supports );
+    /** \brief . */
+    void _setSupports( EOutArgs_H_xx arg, bool supports );
+    /** \brief . */
+    void _setSupports( EOutArgs_H_xp arg, int l, bool supports );
+    /** \brief . */
+    void _setSupports( EOutArgs_H_pp arg, int l1, int l2, bool supports );
+
     void _setSupports( EOutArgs_g_mp arg, int j, bool supports );
     void _setSupports( EOutArgsDfDp_mp arg, int l, const DerivativeSupport& );
     void _setSupports( EOutArgsDgDx_dot_mp arg, int j, const DerivativeSupport& );
@@ -992,12 +1263,17 @@ public:
     void _setUnsupportsAndRelated( EInArgsMembers arg );
     /** \brief . */
     void _setUnsupportsAndRelated( EOutArgsMembers arg );
+    /** \brief . */
+    void _setHessianSupports( const bool supports );
   private:
     // types
     typedef Teuchos::Array<Evaluation<VectorBase<Scalar> > > g_t;
     typedef Teuchos::Array<Derivative<Scalar> > deriv_t;
+    typedef Teuchos::Array<RCP<LinearOpBase<Scalar> > > hess_t;
+    typedef Teuchos::Array<RCP<MultiVectorBase<Scalar> > > hess_vec_t;
     typedef Teuchos::Array<DerivativeProperties> deriv_properties_t;
     typedef Teuchos::Array<DerivativeSupport> supports_t;
+    typedef Teuchos::Array<bool> hess_supports_t;
     // data
     std::string modelEvalDescription_;
     bool supports_[NUM_E_OUT_ARGS_MEMBERS];
@@ -1005,6 +1281,25 @@ public:
     supports_t supports_DgDx_dot_; // Ng
     supports_t supports_DgDx_; // Ng
     supports_t supports_DgDp_; // Ng x Np
+
+    bool supports_hess_f_xx_;
+    hess_supports_t supports_hess_f_xp_;
+    hess_supports_t supports_hess_f_pp_;
+    hess_supports_t supports_hess_g_xx_;
+    hess_supports_t supports_hess_g_xp_;
+    hess_supports_t supports_hess_g_pp_;
+    bool supports_H_xx_;
+    hess_supports_t supports_H_xp_;
+    hess_supports_t supports_H_pp_;
+
+    bool supports_hess_vec_prod_f_xx_;
+    hess_supports_t supports_hess_vec_prod_f_xp_;
+    hess_supports_t supports_hess_vec_prod_f_px_;
+    hess_supports_t supports_hess_vec_prod_f_pp_;
+    hess_supports_t supports_hess_vec_prod_g_xx_;
+    hess_supports_t supports_hess_vec_prod_g_xp_;
+    hess_supports_t supports_hess_vec_prod_g_px_;
+    hess_supports_t supports_hess_vec_prod_g_pp_;
     Evaluation<VectorBase<Scalar> > f_;
     g_t g_; // Ng
     RCP<LinearOpWithSolveBase<Scalar> > W_;
@@ -1019,6 +1314,26 @@ public:
     deriv_properties_t DgDx_properties_; // Ng
     deriv_t DgDp_; // Ng x Np
     deriv_properties_t DgDp_properties_; // Ng x Np
+
+    RCP<LinearOpBase<Scalar> > hess_f_xx_;
+    hess_t hess_f_xp_;
+    hess_t hess_f_pp_;
+    hess_t hess_g_xx_;
+    hess_t hess_g_xp_;
+    hess_t hess_g_pp_;
+    RCP<LinearOpBase<Scalar> > H_xx_;
+    hess_t H_xp_;
+    hess_t H_pp_;
+
+    RCP<MultiVectorBase<Scalar> > hess_vec_prod_f_xx_;
+    hess_vec_t hess_vec_prod_f_xp_; // Np
+    hess_vec_t hess_vec_prod_f_px_; // Np
+    hess_vec_t hess_vec_prod_f_pp_; // Np x Np
+
+    hess_vec_t hess_vec_prod_g_xx_; // Ng
+    hess_vec_t hess_vec_prod_g_xp_; // Ng x Np
+    hess_vec_t hess_vec_prod_g_px_; // Ng x Np
+    hess_vec_t hess_vec_prod_g_pp_; // Ng x Np x Np
 
     Teuchos::Array<bool> supports_g_mp_; //Ng
     supports_t supports_DfDp_mp_; // Np_mp
@@ -1061,6 +1376,59 @@ public:
     void assert_supports(
       EOutArgsDgDp arg, int j, int l,
       const Derivative<Scalar> &deriv = Derivative<Scalar>()
+      ) const;
+
+    void assert_supports(
+      EOutArgs_hess_vec_prod_f_xx arg
+      ) const;
+    void assert_supports(
+      EOutArgs_hess_vec_prod_f_xp arg, int l
+      ) const;
+    void assert_supports(
+      EOutArgs_hess_vec_prod_f_px arg, int l
+      ) const;
+    void assert_supports(
+      EOutArgs_hess_vec_prod_f_pp arg, int l1, int l2
+      ) const;
+    void assert_supports(
+      EOutArgs_hess_vec_prod_g_xx arg, int j
+      ) const;
+    void assert_supports(
+      EOutArgs_hess_vec_prod_g_xp arg, int j, int l
+      ) const;
+    void assert_supports(
+      EOutArgs_hess_vec_prod_g_px arg, int j, int l
+      ) const;
+    void assert_supports(
+      EOutArgs_hess_vec_prod_g_pp arg, int j, int l1, int l2
+      ) const;
+
+    void assert_supports(
+      EOutArgs_hess_f_xx arg
+      ) const;
+    void assert_supports(
+      EOutArgs_hess_f_xp arg, int l
+      ) const;
+    void assert_supports(
+      EOutArgs_hess_f_pp arg, int l1, int l2
+      ) const;
+    void assert_supports(
+      EOutArgs_hess_g_xx arg, int j
+      ) const;
+    void assert_supports(
+      EOutArgs_hess_g_xp arg, int j, int l
+      ) const;
+    void assert_supports(
+      EOutArgs_hess_g_pp arg, int j, int l1, int l2
+      ) const;
+    void assert_supports(
+      EOutArgs_H_xx arg
+      ) const;
+    void assert_supports(
+      EOutArgs_H_xp arg, int l
+      ) const;
+    void assert_supports(
+      EOutArgs_H_pp arg, int l1, int l2
       ) const;
 
     void assert_supports(EOutArgs_g_mp arg, int j) const;
@@ -1114,6 +1482,8 @@ protected:
     /** \brief . */
     void set_Np(int Np);
     /** \brief . */
+    void set_Np_Ng(int Np, int Ng);
+    /** \brief . */
     void setSupports( EInArgsMembers arg, bool supports = true );
     /** \brief . */
     void setSupports( const InArgs<Scalar>& inputInArgs, const int Np = -1 );
@@ -1154,6 +1524,40 @@ protected:
     void setSupports(EOutArgsDgDx arg, int j, const DerivativeSupport& );
     /** \brief . */
     void setSupports(EOutArgsDgDp arg, int j, int l, const DerivativeSupport& );
+    /** \brief . */
+    void setSupports(EOutArgs_hess_vec_prod_f_xx arg, bool supports = true );
+    /** \brief . */
+    void setSupports(EOutArgs_hess_vec_prod_f_xp arg, int l, bool supports = true );
+    /** \brief . */
+    void setSupports(EOutArgs_hess_vec_prod_f_px arg, int l, bool supports = true );
+    /** \brief . */
+    void setSupports(EOutArgs_hess_vec_prod_f_pp arg, int l1, int l2, bool supports = true );
+    /** \brief . */
+    void setSupports(EOutArgs_hess_vec_prod_g_xx arg, int j, bool supports = true );
+    /** \brief . */
+    void setSupports(EOutArgs_hess_vec_prod_g_xp arg, int j, int l, bool supports = true );
+    /** \brief . */
+    void setSupports(EOutArgs_hess_vec_prod_g_px arg, int j, int l, bool supports = true );
+    /** \brief . */
+    void setSupports(EOutArgs_hess_vec_prod_g_pp arg, int j, int l1, int l2, bool supports = true );
+    /** \brief . */
+    void setSupports(EOutArgs_hess_f_xx arg, bool supports = true );
+    /** \brief . */
+    void setSupports(EOutArgs_hess_f_xp arg, int l, bool supports = true );
+    /** \brief . */
+    void setSupports(EOutArgs_hess_f_pp arg, int l1, int l2, bool supports = true );
+    /** \brief . */
+    void setSupports(EOutArgs_hess_g_xx arg, int j, bool supports = true );
+    /** \brief . */
+    void setSupports(EOutArgs_hess_g_xp arg, int j, int l, bool supports = true );
+    /** \brief . */
+    void setSupports(EOutArgs_hess_g_pp arg, int j, int l1, int l2, bool supports = true );
+    /** \brief . */
+    void setSupports(EOutArgs_H_xx arg, bool supports = true );
+    /** \brief . */
+    void setSupports(EOutArgs_H_xp arg, int l, bool supports = true );
+    /** \brief . */
+    void setSupports(EOutArgs_H_pp arg, int l1, int l2, bool supports = true );
     /** \brief Set support for specific extended data types. */
     template<typename ObjectType>
     void setSupports(const bool supports = true);
@@ -1186,6 +1590,8 @@ protected:
     void setUnsupportsAndRelated( EInArgsMembers arg );
     /** \brief Must be called after the above function. */
     void setUnsupportsAndRelated( EOutArgsMembers arg );
+    /** \brief . */
+    void setHessianSupports( const bool supports = true );
    };
 
   //@}

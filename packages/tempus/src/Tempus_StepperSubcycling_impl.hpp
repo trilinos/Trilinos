@@ -346,13 +346,13 @@ Teuchos::RCP<StepperObserver<Scalar> >
 StepperSubcycling<Scalar>::getObserver() const
 { return stepperSCObserver_; }
 #endif
- 
+
 template<class Scalar>
 void StepperSubcycling<Scalar>::setAppAction(
   Teuchos::RCP<StepperSubcyclingAppAction<Scalar> > appAction)
   {
   if (appAction == Teuchos::null) {
-  // Create default appAction                                                          
+  // Create default appAction
   stepperSCAppAction_ =
     Teuchos::rcp(new StepperSubcyclingModifierDefault<Scalar>());
   } else {
@@ -590,7 +590,10 @@ void StepperSubcycling<Scalar>::describe(
   Stepper<Scalar>::describe(out, verbLevel);
 
   out << "--- StepperSubcycling ---\n";
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   out << "  stepperSCObserver = " << stepperSCObserver_ << std::endl;
+#endif
+  out << "  stepperSCAppAction = " << stepperSCAppAction_ << std::endl;
   out << "  scIntegrator      = " << scIntegrator_ << std::endl;
   out << "-------------------------" << std::endl;
   scIntegrator_->getStepper()->describe(out, verbLevel);
