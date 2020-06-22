@@ -10,7 +10,6 @@
 #define Tempus_StepperRKModifierX_hpp
 
 #include "Tempus_config.hpp"
-#include "Tempus_SolutionHistory.hpp"
 #include "Tempus_StepperRKModifierXBase.hpp"
 
 
@@ -20,6 +19,9 @@ namespace Tempus {
  *
  *  The default provides no-op functionality for ModifierX.
  *  See StepperRKModifierXBase for details on the algorithm.
+ *
+ *  Applications can copy this implementation, rename, implement their
+ *  action, and set on the stepper to get app-specific functionality.
  */
 template<class Scalar>
 class StepperRKModifierXDefault

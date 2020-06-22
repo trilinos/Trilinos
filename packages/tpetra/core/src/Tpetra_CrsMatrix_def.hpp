@@ -4106,17 +4106,7 @@ namespace Tpetra {
          "either the row Map or the range Map of the CrsMatrix.");
     }
 
-    // Check whether A has a valid local matrix.  It might not if it
-    // was not created with a local matrix, and if fillComplete has
-    // never been called on it before.  A never-initialized (and thus
-    // invalid) local matrix has zero rows, because it was default
-    // constructed.
-    const LO lclNumRows =
-      static_cast<LO> (this->getRowMap ()->getNodeNumElements ());
-    const bool validLocalMatrix = lclMatrix_.get () != nullptr &&
-      lclMatrix_->getLocalMatrix ().numRows () == lclNumRows;
-
-    if (validLocalMatrix) {
+    if (this->isFillComplete()) {
       using dev_memory_space = typename device_type::memory_space;
       if (xp->template need_sync<dev_memory_space> ()) {
         using Teuchos::rcp_const_cast;
@@ -4129,19 +4119,10 @@ namespace Tpetra {
                                x_lcl_1d, false, false);
     }
     else {
-      execution_space().fence (); // for UVM's sake
-
-      ArrayRCP<const Scalar> vectorVals = xp->getData (0);
-      ArrayView<impl_scalar_type> rowValues = Teuchos::null;
-      for (LocalOrdinal i = 0; i < lclNumRows; ++i) {
-        const RowInfo rowinfo = this->staticGraph_->getRowInfo (i);
-        rowValues = this->getViewNonConst (rowinfo);
-        const impl_scalar_type scaleValue = static_cast<impl_scalar_type> (vectorVals[i]);
-        for (size_t j = 0; j < rowinfo.numEntries; ++j) {
-          rowValues[j] *= scaleValue;
-        }
-      }
-      execution_space().fence (); // for UVM's sake
+      // 6/2020  Disallow leftScale of non-fillComplete matrices #7446
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (true, std::runtime_error, "CrsMatrix::leftScale requires matrix to be"
+         " fillComplete");
     }
   }
 
@@ -4185,17 +4166,7 @@ namespace Tpetra {
          "either the domain Map or the column Map of the CrsMatrix.");
     }
 
-    // Check whether A has a valid local matrix.  It might not if it
-    // was not created with a local matrix, and if fillComplete has
-    // never been called on it before.  A never-initialized (and thus
-    // invalid) local matrix has zero rows, because it was default
-    // constructed.
-    const LO lclNumRows =
-      static_cast<LO> (this->getRowMap ()->getNodeNumElements ());
-    const bool validLocalMatrix = lclMatrix_.get () != nullptr &&
-      lclMatrix_->getLocalMatrix ().numRows () == lclNumRows;
-
-    if (validLocalMatrix) {
+    if (this->isFillComplete()) {
       using dev_memory_space = typename device_type::memory_space;
       if (xp->template need_sync<dev_memory_space> ()) {
         using Teuchos::rcp_const_cast;
@@ -4208,20 +4179,10 @@ namespace Tpetra {
                                 x_lcl_1d, false, false);
     }
     else {
-      execution_space().fence (); // for UVM's sake
-
-      ArrayRCP<const Scalar> vectorVals = xp->getData (0);
-      ArrayView<impl_scalar_type> rowValues = null;
-      for (LO i = 0; i < lclNumRows; ++i) {
-        const RowInfo rowinfo = this->staticGraph_->getRowInfo (i);
-        rowValues = this->getViewNonConst (rowinfo);
-        ArrayView<const LO> colInds;
-        this->getCrsGraphRef ().getLocalRowView (i, colInds);
-        for (size_t j = 0; j < rowinfo.numEntries; ++j) {
-          rowValues[j] *= static_cast<impl_scalar_type> (vectorVals[colInds[j]]);
-        }
-      }
-      execution_space().fence (); // for UVM's sake
+      // 6/2020  Disallow rightScale of non-fillComplete matrices #7446
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (true, std::runtime_error, "CrsMatrix::rightScale requires matrix to be"
+         " fillComplete");
     }
   }
 
@@ -4733,6 +4694,9 @@ namespace Tpetra {
       os << *prefix << endl;
       std::cerr << os.str ();
     }
+    Details::ProfilingRegion region(
+      "Tpetra::CrsMatrix::fillCompete",
+      "fillCompete");
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (! this->isFillActive () || this->isFillComplete (), std::runtime_error,
@@ -4743,54 +4707,57 @@ namespace Tpetra {
     //
     // Read parameters from the input ParameterList.
     //
+    {
+      Details::ProfilingRegion region_fc("Tpetra::CrsMatrix::fillCompete", "ParameterList");
 
-    // If true, the caller promises that no process did nonlocal
-    // changes since the last call to fillComplete.
-    bool assertNoNonlocalInserts = false;
-    // If true, makeColMap sorts remote GIDs (within each remote
-    // process' group).
-    bool sortGhosts = true;
+      // If true, the caller promises that no process did nonlocal
+      // changes since the last call to fillComplete.
+      bool assertNoNonlocalInserts = false;
+      // If true, makeColMap sorts remote GIDs (within each remote
+      // process' group).
+      bool sortGhosts = true;
 
-    if (! params.is_null ()) {
-      assertNoNonlocalInserts = params->get ("No Nonlocal Changes",
-                                             assertNoNonlocalInserts);
-      if (params->isParameter ("sort column map ghost gids")) {
-        sortGhosts = params->get ("sort column map ghost gids", sortGhosts);
+      if (! params.is_null ()) {
+	assertNoNonlocalInserts = params->get ("No Nonlocal Changes",
+					       assertNoNonlocalInserts);
+	if (params->isParameter ("sort column map ghost gids")) {
+	  sortGhosts = params->get ("sort column map ghost gids", sortGhosts);
+	}
+	else if (params->isParameter ("Sort column Map ghost GIDs")) {
+	  sortGhosts = params->get ("Sort column Map ghost GIDs", sortGhosts);
+	}
       }
-      else if (params->isParameter ("Sort column Map ghost GIDs")) {
-        sortGhosts = params->get ("Sort column Map ghost GIDs", sortGhosts);
+      // We also don't need to do global assembly if there is only one
+      // process in the communicator.
+      const bool needGlobalAssemble = ! assertNoNonlocalInserts && numProcs > 1;
+      // This parameter only matters if this matrix owns its graph.
+      if (! this->myGraph_.is_null ()) {
+	this->myGraph_->sortGhostsAssociatedWithEachProcessor_ = sortGhosts;
       }
-    }
-    // We also don't need to do global assembly if there is only one
-    // process in the communicator.
-    const bool needGlobalAssemble = ! assertNoNonlocalInserts && numProcs > 1;
-    // This parameter only matters if this matrix owns its graph.
-    if (! this->myGraph_.is_null ()) {
-      this->myGraph_->sortGhostsAssociatedWithEachProcessor_ = sortGhosts;
-    }
 
-    if (! this->getCrsGraphRef ().indicesAreAllocated ()) {
-      if (this->hasColMap ()) { // use local indices
-        allocateValues(LocalIndices, GraphNotYetAllocated, verbose);
+      if (! this->getCrsGraphRef ().indicesAreAllocated ()) {
+	if (this->hasColMap ()) { // use local indices
+	  allocateValues(LocalIndices, GraphNotYetAllocated, verbose);
+	}
+	else { // no column Map, so use global indices
+	  allocateValues(GlobalIndices, GraphNotYetAllocated, verbose);
+	}
       }
-      else { // no column Map, so use global indices
-        allocateValues(GlobalIndices, GraphNotYetAllocated, verbose);
+      // Global assemble, if we need to.  This call only costs a single
+      // all-reduce if we didn't need global assembly after all.
+      if (needGlobalAssemble) {
+	this->globalAssemble ();
+      }
+      else {
+	TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+	  (numProcs == 1 && nonlocals_.size() > 0,
+	   std::runtime_error, "Cannot have nonlocal entries on a serial run.  "
+	   "An invalid entry (i.e., with row index not in the row Map) must have "
+	   "been submitted to the CrsMatrix.");
       }
     }
-    // Global assemble, if we need to.  This call only costs a single
-    // all-reduce if we didn't need global assembly after all.
-    if (needGlobalAssemble) {
-      this->globalAssemble ();
-    }
-    else {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (numProcs == 1 && nonlocals_.size() > 0,
-         std::runtime_error, "Cannot have nonlocal entries on a serial run.  "
-         "An invalid entry (i.e., with row index not in the row Map) must have "
-         "been submitted to the CrsMatrix.");
-    }
-
     if (this->isStaticGraph ()) {
+      Details::ProfilingRegion region_isg("Tpetra::CrsMatrix::fillCompete", "isStaticGraph");
       // FIXME (mfh 14 Nov 2016) In order to fix #843, I enable the
       // checks below only in debug mode.  It would be nicer to do a
       // local check, then propagate the error state in a deferred
@@ -4840,6 +4807,7 @@ namespace Tpetra {
       this->fillLocalMatrix (params);
     }
     else {
+      Details::ProfilingRegion region_insg("Tpetra::CrsMatrix::fillCompete", "isNotStaticGraph");
       // Set the graph's domain and range Maps.  This will clear the
       // Import if the domain Map has changed (is a different
       // pointer), and the Export if the range Map has changed (is a
@@ -4892,16 +4860,26 @@ namespace Tpetra {
       this->myGraph_->checkInternalState ();
     }
 
-    const bool callComputeGlobalConstants = params.get () == nullptr ||
-      params->get ("compute global constants", true);
-    if (callComputeGlobalConstants) {
-      this->computeGlobalConstants ();
+    {
+      Details::ProfilingRegion region_ccgc(
+        "Tpetra::CrsMatrix::fillCompete", "callComputeGlobalConstamnts"
+      );
+      const bool callComputeGlobalConstants = params.get () == nullptr ||
+	params->get ("compute global constants", true);
+      if (callComputeGlobalConstants) {
+	this->computeGlobalConstants ();
+      }
     }
 
     // FIXME (mfh 28 Aug 2014) "Preserve Local Graph" bool parameter no longer used.
 
     this->fillComplete_ = true; // Now we're fill complete!
-    this->checkInternalState ();
+    {
+      Details::ProfilingRegion region_cis(
+        "Tpetra::CrsMatrix::fillCompete", "checkInternalState"
+      );
+      this->checkInternalState ();
+    }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -7284,6 +7262,11 @@ namespace Tpetra {
     typedef GlobalOrdinal GO;
     typedef impl_scalar_type ST;
 
+    Details::ProfilingRegion region_upack_row(
+      "Tpetra::CrsMatrix::unpackRow",
+      "Import/Export"
+    );
+
     if (numBytes == 0) {
       // Rows with zero bytes should always have zero entries.
       if (numEnt != 0) {
@@ -7475,6 +7458,7 @@ namespace Tpetra {
            Distributor& dist) const
   {
     // The call to packNew in packAndPrepare catches and handles any exceptions.
+    Details::ProfilingRegion region_pack_new("Tpetra::CrsMatrix::packNew", "Import/Export");
     if (this->isStaticGraph ()) {
       using ::Tpetra::Details::packCrsMatrixNew;
       packCrsMatrixNew (*this, exports, numPacketsPerLID, exportLIDs,
@@ -7902,6 +7886,10 @@ namespace Tpetra {
     const CombineMode combineMode,
     const bool verbose)
   {
+    Details::ProfilingRegion region_unpack_and_combine_impl(
+      "Tpetra::CrsMatrix::unpackAndCombineImpl",
+      "Import/Export"
+    );
     using std::endl;
     const char tfecfFuncName[] = "unpackAndCombineImpl";
     std::unique_ptr<std::string> prefix;
@@ -8018,6 +8006,11 @@ namespace Tpetra {
     if (combineMode == ZERO || numImportLIDs == 0) {
       return; // nothing to do; no need to combine entries
     }
+
+    Details::ProfilingRegion region_unpack_and_combine_impl_non_static(
+      "Tpetra::CrsMatrix::unpackAndCombineImplNonStatic",
+      "Import/Export"
+    );
 
     // We're unpacking on host.  This is read-only host access.
     if (imports.need_sync_host()) {
