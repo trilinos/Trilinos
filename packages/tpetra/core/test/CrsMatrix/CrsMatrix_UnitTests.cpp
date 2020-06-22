@@ -337,6 +337,7 @@ namespace { // (anonymous)
     typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef Teuchos::ScalarTraits<Scalar> ST;
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
+    typedef Tpetra::Vector<Scalar,LO,GO,Node> V;
     typedef typename ST::magnitudeType Mag;
     typedef Teuchos::ScalarTraits<Mag> MT;
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid();
@@ -408,6 +409,16 @@ namespace { // (anonymous)
         TEST_EQUALITY(5 * ST::one(), vvals[i]);
       }
       TEST_EQUALITY(Scalar(numLocalColumns * ST::one()), Scalar(vvals[numLocalRows - 1]));
+      //Finally, test residual.
+      V res(rowMap);
+      //Here, have A*wcol = vcol. This means the residual of A, wcol, and vcol should be 0.
+      Details::residual(imba, wcol, vcol, res);
+      Teuchos::Array<Scalar> resVals(numLocalRows);
+      res.get1dCopy(resVals(), numLocalRows);
+      for(size_t i = 0; i < numLocalRows; i++)
+      {
+        TEST_EQUALITY(ST::zero(), res[i]);
+      }
     }
   }
 
