@@ -13,6 +13,7 @@
 #include "shylubasker_order_amd.hpp"
 
 //#undef BASKER_DEBUG_ORDER
+//#define BASKER_TIMER
 
 namespace BaskerNS
 {
@@ -209,6 +210,12 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::btf_order2()
   {
+    #ifdef BASKER_TIMER
+    double order_time = 0.0;
+    Kokkos::Timer timer_order;
+    timer_order.reset();
+    #endif
+
     //1. Matching ordering on whole matrix
     //currently finds matching and permutes
     //found bottle-neck to work best with circuit problems
@@ -233,6 +240,13 @@ namespace BaskerNS
     //sort_matrix(A); //(need)
     sort_matrix_store_valperms(A, vals_perm_composition);
 
+
+    #ifdef BASKER_TIMER
+    order_time = timer_order.seconds();
+    std::cout << " ++ Basker order : matching time: " << order_time << std::endl;
+    timer_order.reset();
+    #endif
+
     //2. BTF ordering on whole matrix
     //currently finds btf-hybrid and permutes
     //A -> [BTF_A, BTF_C; 0 , BTF B]
@@ -242,7 +256,13 @@ namespace BaskerNS
   
     find_btf2(A);
 
-    if( (btf_tabs_offset != 0) ) // BTF_A exists and is not a btf_nblks > 1
+    #ifdef BASKER_TIMER
+    order_time = timer_order.seconds();
+    std::cout << " ++ Basker order : BTF time     : " << order_time << std::endl;
+    timer_order.reset();
+    #endif
+
+    if (btf_tabs_offset != 0) // BTF_A exists and is not a btf_nblks > 1
     {
       //new for sfactor_copy2 replacement
       MALLOC_INT_1DARRAY(vals_order_ndbtfa_array, BTF_A.nnz); //track nd perms
@@ -383,7 +403,7 @@ namespace BaskerNS
       find_2D_convert(BTF_A);
       //now we can fill submatrices
       //printf("AFTER CONVERT\n");
-     #ifdef BASKER_KOKKOS
+      #ifdef BASKER_KOKKOS
       kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this);
       Kokkos::parallel_for(TeamPolicy(num_threads,1), iO);
       Kokkos::fence();
@@ -391,6 +411,12 @@ namespace BaskerNS
       //Comeback
       #endif
     }//if btf_tabs_offset != 0
+
+    #ifdef BASKER_TIMER
+    order_time = timer_order.seconds();
+    std::cout << " ++ Basker order : ND time      : " << order_time << std::endl;
+    timer_order.reset();
+    #endif
 
     if(btf_nblks > 1) //else only BTF_A exists, A is assigned directly to it...
     {
@@ -442,6 +468,12 @@ namespace BaskerNS
       printMTX("BTF_C.mtx", BTF_C);
       */
     }
+
+    #ifdef BASKER_TIMER
+    order_time = timer_order.seconds();
+    std::cout << " ++ Basker order : sort time    : " << order_time << std::endl;
+    timer_order.reset();
+    #endif
     
     return 0;
   }//end btf_order2
@@ -585,13 +617,21 @@ namespace BaskerNS
     //You would think a match order would help!
     //It does not!
 
-    //Int job = 2; //5 is the default for SuperLU_DIST
     //INT_1DARRAY mperm = order_match_array;
     MALLOC_INT_1DARRAY(order_match_array, A.nrow);
     //MALLOC_INT_1DARRAY(mperm, A.nrow);
     if(Options.incomplete == BASKER_FALSE)
     {
-      mwm(A,order_match_array);
+      #ifdef BASKER_MC64
+      if (option == 1) {
+        Int job = 5; //2 is the default for SuperLU_DIST
+        mc64(job, order_match_array);
+        //mc64(job,mperm);
+      } else
+      #endif
+      {
+        mwm(A, order_match_array);
+      }
     }
     else
     {
@@ -600,8 +640,6 @@ namespace BaskerNS
         order_match_array(i) = i;
       }
     }
-    //mc64(job,order_match_array);
-    //mc64(job,mperm);
 
     match_flag = BASKER_TRUE;
 
@@ -1396,35 +1434,109 @@ namespace BaskerNS
     if(M.nnz == 0)
     { return 0; }
 
-    //just use insertion sort
+    #define USE_WORKSPACE_FOR_SORT
+    #if defined(USE_WORKSPACE_FOR_SORT)
+    INT_1DARRAY perm;
+    MALLOC_INT_1DARRAY (perm, M.nrow);
+
+    ENTRY_1DARRAY dwork;
+    MALLOC_ENTRY_1DARRAY (dwork, M.nrow);
+    INT_1DARRAY iwork;
+    MALLOC_INT_1DARRAY (iwork, M.nrow);
+    #endif
+
+    //std::cout << " M = [" << std::endl;
     for(Int k = 0; k < M.ncol; k++)
     {
-
       Int start_row = M.col_ptr[k];
+      #if defined(USE_WORKSPACE_FOR_SORT)
+      perm(0) = start_row;
+      #endif
       for(Int i = M.col_ptr[k]+1; i < M.col_ptr[k+1]; i++)
       {
-        Int jj = i;
-        while((jj > start_row) && (M.row_idx[jj-1] > M.row_idx[jj]))
+#if 1
+        // binary search
+        Int jj_start = start_row;
+        Int jj_end   = i;
+        Int id = M.row_idx[i];
+        while(jj_end > jj_start)
         {
-
-          //swap
-          Int   t_row_idx = M.row_idx[jj-1];
-          Entry t_row_val = M.val[jj-1];
-
-          M.row_idx[jj-1] = M.row_idx[jj];
-          M.val[jj-1]     = M.val[jj];
-
-          M.row_idx[jj] = t_row_idx;
-          M.val[jj]     = t_row_val;
-
-          Int tmp_index = order_vals_perms(jj-1);
-          order_vals_perms(jj-1) = order_vals_perms(jj);
-          order_vals_perms(jj) = tmp_index;
-
-          jj = jj-1;
-        } //end while jj
+            Int jj_mid = jj_start + (jj_end-jj_start)/2;
+            #if defined(USE_WORKSPACE_FOR_SORT)
+            Int id_mid = M.row_idx[perm(jj_mid-start_row)];
+            #else
+            Int id_mid = M.row_idx[jj_mid];
+            #endif
+            if (id_mid == id) {
+                break;
+            } else if (id_mid > id) {
+                jj_end = jj_mid-1;
+            } else {
+                jj_start = jj_mid+1;
+            }
+        }
+        Int jj = jj_start;
+        #if defined(USE_WORKSPACE_FOR_SORT)
+        if (jj < i && M.row_idx[perm(jj-start_row)] < id) 
+        #else
+        if (jj < i && M.row_idx[jj] < id) 
+        #endif
+        {
+            jj++;
+        }
+#else
+        //just use insertion sort
+        Int jj = i;
+        while((jj > start_row) && (M.row_idx[jj-1] > M.row_idx[i]))
+        {
+            jj = jj-1;
+        }   //end while jj
+#endif
+        // insert i at jj
+        #if !defined(USE_WORKSPACE_FOR_SORT)
+        Int   t_row_idx = M.row_idx[i];
+        Entry t_row_val = M.val[i];
+        Int   tmp_index = order_vals_perms(i);
+        #endif
+        // > shift to make space at jj
+        for (Int j = i; j > jj; j--) {
+            #if defined(USE_WORKSPACE_FOR_SORT)
+            perm(j-start_row) = perm(j-start_row-1);
+            #else
+            M.row_idx[j] = M.row_idx[j-1];
+            M.val[j]     = M.val[j-1];
+            order_vals_perms(j) = order_vals_perms(j-1);
+            #endif
+        }
+        // > insert i at jj
+        #if defined(USE_WORKSPACE_FOR_SORT)
+        perm(jj-start_row) = i;
+        #else
+        M.row_idx[jj] = t_row_idx;
+        M.val[jj]     = t_row_val;
+        order_vals_perms(jj) = tmp_index;
+        #endif
       } //end for i
+      #if defined(USE_WORKSPACE_FOR_SORT)
+      for(Int i = 0; i < M.col_ptr[k+1]-start_row; i++)
+      {
+          iwork[i] = order_vals_perms(perm(i));
+          dwork[i] = M.val[perm(i)];
+          perm(i)  = M.row_idx[perm(i)];
+      }
+      for(Int i = 0; i < M.col_ptr[k+1]-start_row; i++)
+      {
+          Int k = start_row+i;
+          order_vals_perms(k) = iwork[i];
+          M.val[k]     = dwork[i];
+          M.row_idx[k] = perm(i);
+      }
+      #endif
+      //for(Int i = M.col_ptr[k]; i < M.col_ptr[k+1]; i++) {
+      //    std::cout << k << " " << M.row_idx[i] << " " << M.val[i] << std::endl;
+      //}
     }//end over all columns k
+    //std::cout << " ];" << std::endl;
 
     return 0;
   }//end sort_matrix()

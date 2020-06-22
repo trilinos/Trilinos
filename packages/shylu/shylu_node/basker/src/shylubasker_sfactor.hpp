@@ -2141,12 +2141,16 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         max_blk_size = lblk_size;
       }
 
+      Int nnz = (btf_blk_nnz(i)+lblk_size)*(BASKER_BTF_NNZ_OVER+Options.user_fill);
+      if ((double)nnz > ((double)lblk_size)*((double)lblk_size)) {
+          nnz = lblk_size*lblk_size;
+      }
       LBTF(i-btf_tabs_offset).init_matrix("LBFT",
           btf_tabs(i),
           lblk_size,
           btf_tabs(i),
           lblk_size,
-          (btf_blk_nnz(i)+lblk_size)*(BASKER_BTF_NNZ_OVER+Options.user_fill));
+          nnz);
 
       //For pruning
       LBTF(i-btf_tabs_offset).init_pend();
@@ -2156,7 +2160,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
           lblk_size,
           btf_tabs(i),
           lblk_size,
-          (btf_blk_nnz(i)+lblk_size)*(BASKER_BTF_NNZ_OVER+Options.user_fill));
+          nnz);
       //(.5*lblk_size*lblk_size)+lblk_size);
 
       //will have to do the fill in nfactor

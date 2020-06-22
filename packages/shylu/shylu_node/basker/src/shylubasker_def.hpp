@@ -29,6 +29,7 @@
 
 /*System Includes*/
 #include <iostream>
+//#define BASKER_TIMER 
 
 namespace BaskerNS
 {
@@ -389,7 +390,7 @@ namespace BaskerNS
 
       #ifdef BASKER_TIMER
       init_time += timer_init.seconds();
-      std::cout << "Basker Symbolic matrix init time: " << init_time << std::endl;
+      std::cout << std::endl << "Basker Symbolic matrix init time: " << init_time << std::endl;
       #endif
     }
 
@@ -406,6 +407,7 @@ namespace BaskerNS
       //btf_order();
       #ifdef BASKER_TIMER
       double order_time = 0.0;
+      double barrier_init_time = 0.0;
       Kokkos::Timer timer_order;
       #endif
       /*
@@ -428,7 +430,15 @@ namespace BaskerNS
 
       if((Options.btf == BASKER_TRUE) && (btf_tabs_offset != 0))
       {
+        #ifdef BASKER_TIMER
+        Kokkos::Timer timer_init;
+        #endif
+
         basker_barrier.init(num_threads, 16, tree.nlvls );
+
+        #ifdef BASKER_TIMER
+        barrier_init_time += timer_init.seconds();
+        #endif
       }
       order_flag = BASKER_TRUE;
 
@@ -439,7 +449,8 @@ namespace BaskerNS
 
       #ifdef BASKER_TIMER
       order_time += timer_order.seconds();
-      std::cout << "Basker Symbolic order arrays time: " << order_time << std::endl;
+      std::cout << "Basker Symbolic order arrays time: "    << order_time << std::endl;
+      std::cout << " > Basker Symbolic init barrier time: " << barrier_init_time << std::endl;
       #endif
     }
 
@@ -483,7 +494,8 @@ namespace BaskerNS
     #ifdef BASKER_TIMER
     time = timer.seconds();
     stats.time_sfactor += time;
-    std::cout << "Basker Symbolic total time: " << time << std::endl;
+    std::cout << "Basker Symbolic total time: " << time
+              << std::endl << std::endl;
     std::cout.precision(old_precision);
     std::cout.flags(old_settings);
     #endif

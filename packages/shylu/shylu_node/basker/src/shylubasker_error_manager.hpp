@@ -51,7 +51,7 @@ namespace BaskerNS
         if(Options.verbose == BASKER_TRUE)
         {
           std::cout << "ERROR THREAD: " << ti 
-            << " DOMBLK SINGULAR: " << thread_array(ti).error_blk
+            << " DOMBLK SINGULAR: blk=" << thread_array(ti).error_blk
             << std::endl;
         }
         return BASKER_ERROR;
@@ -63,7 +63,7 @@ namespace BaskerNS
         if(Options.verbose == BASKER_TRUE)
         {
           std::cout << "ERROR THREAD: " << ti 
-            << " DOMBLK NOMALLOC : " << thread_array(ti).error_blk
+            << " DOMBLK NOMALLOC : blk=" << thread_array(ti).error_blk
             << std::endl;
         }
         return BASKER_ERROR;
@@ -89,7 +89,6 @@ namespace BaskerNS
         Int resize_U = BASKER_MAX_IDX;
         if(thread_array(ti).error_subblk != BASKER_MAX_IDX)
         {
-
           BASKER_ASSERT(thread_array(ti).error_info >0, "L) newsize not big enough");
           resize_L = thread_array(ti).error_info;
           if(Options.verbose == BASKER_TRUE)
@@ -256,7 +255,7 @@ namespace BaskerNS
         if(Options.verbose == BASKER_TRUE)
         {
           std::cout << "ERROR THREAD: " << ti 
-            << " DOMBLK SINGULAR: " << thread_array(ti).error_blk
+            << " DOMBLK SINGULAR: blk=" << thread_array(ti).error_blk
             << std::endl;
         }
         return BASKER_ERROR;
@@ -267,7 +266,7 @@ namespace BaskerNS
         if(Options.verbose == BASKER_TRUE)
         {
           std::cout << "ERROR THREADS: " << ti 
-            << " DOMBLK NOMALLOC: " << thread_array(ti).error_blk
+            << " DOMBLK NOMALLOC: blk=" << thread_array(ti).error_blk
             << std::endl;
         }
         return BASKER_ERROR;
@@ -301,7 +300,6 @@ namespace BaskerNS
             << " subblk=" << thread_array(ti).error_subblk
             << " newsize=" << thread_array(ti).error_info
             << std::endl;
-
           std::cout << " > SEPLVL: " << error_sep_lvl << std::endl;
         }
 
@@ -506,7 +504,6 @@ namespace BaskerNS
       {
         std::cout << "ERROR_THREADS: " << ti
           << " DIAGBLK NOMALLOC blk=" << thread_array(ti).error_blk
-          << " newsize=" << thread_array(ti).error_info
           << std::endl;
         return BASKER_ERROR;
       }//end if NOMALLOC
@@ -522,6 +519,7 @@ namespace BaskerNS
         {
           std::cout << " > THREADS: " << ti
             << " DIAGBLK MALLOC blk=" << thread_array(ti).error_blk
+            << " newsize=" << thread_array(ti).error_info
             << std::endl;
 
           //Clean the workspace

@@ -7,6 +7,7 @@
 #include "trilinos_btf_decl.h"
 
 //#define BASKER_DEBUG_ORDER_BTF
+//#define BASKER_TIMER
 
 namespace BaskerNS
 {
@@ -124,9 +125,18 @@ namespace BaskerNS
    BASKER_MATRIX &M
   )
   {
+    #ifdef BASKER_TIMER
+    double order_time = 0.0;
+    Kokkos::Timer timer_order;
+    timer_order.reset();
+    #endif
     Int nblks = 0;
 
     strong_component(M,nblks,order_btf_array,btf_tabs);
+    #ifdef BASKER_TIMER
+    order_time = timer_order.seconds();
+    std::cout << " >>> Basker order : strong comp time : " << order_time << std::endl;
+    #endif
 
     btf_nblks = nblks;
     btf_flag = BASKER_TRUE;
@@ -192,7 +202,14 @@ namespace BaskerNS
     init_value(btf_blk_work, nblks+1, (Int) 0);
 
     //Find AMD blk ordering, get nnz, and get work
+    #ifdef BASKER_TIMER
+    timer_order.reset();
+    #endif
     btf_blk_amd( M, order_blk_amd_array, btf_blk_nnz, btf_blk_work);
+    #ifdef BASKER_TIMER
+    order_time = timer_order.seconds();
+    std::cout << " >>> Basker order : AMD time         : " << order_time << std::endl;
+    #endif
 
     #ifdef BASKER_DEBUG_ORDER_BTF
     printf("Basker blk_perm:\n");
@@ -214,15 +231,33 @@ namespace BaskerNS
     //printMTX("A_BEFORE.mtx", M);
     //printVec("AMD.txt", order_blk_amd_array, M.ncol);
 
+    #ifdef BASKER_TIMER
+    timer_order.reset();
+    #endif
     MALLOC_INT_1DARRAY(vals_order_blk_amd_array, M.nnz);
     //permute_col(M, order_blk_amd_array); //NDE: Track movement of vals (lin_ind of row,col) here
     permute_col_store_valperms(M, order_blk_amd_array, vals_order_blk_amd_array); //NDE: Track movement of vals (lin_ind of row,col) here
     permute_row(M, order_blk_amd_array);
+    #ifdef BASKER_TIMER
+    order_time = timer_order.seconds();
+    std::cout << " >>> Basker order : val-perm time    : " << order_time << std::endl;
+    timer_order.reset();
+    #endif
 
     permute_inv(vals_perm_composition, vals_order_blk_amd_array, M.nnz);
+    #ifdef BASKER_TIMER
+    order_time = timer_order.seconds();
+    std::cout << " >>> Basker order : invert perm time : " << order_time << std::endl;
+    timer_order.reset();
+    #endif
 
     // retry with original vals ordering
     sort_matrix_store_valperms(M, vals_perm_composition);
+    #ifdef BASKER_TIMER
+    order_time = timer_order.seconds();
+    std::cout << " >>> Basker order : val-perm2 time   : " << order_time << std::endl;
+    timer_order.reset();
+    #endif
 
     //changed col to row, error.
     //print to see issue
@@ -230,10 +265,18 @@ namespace BaskerNS
 
     //NDE at this point, vals_perm_composition stores the permutation of the vals array; will be needed during break_into_parts
     break_into_parts2(M, nblks, btf_tabs);
+    #ifdef BASKER_TIMER
+    order_time = timer_order.seconds();
+    std::cout << " >>> Basker order : partition time   : " << order_time << std::endl;
+    timer_order.reset();
+    #endif
 
     //find schedule
     find_btf_schedule(M, nblks, btf_tabs);
-
+    #ifdef BASKER_TIMER
+    order_time = timer_order.seconds();
+    std::cout << " >>> Basker order : schedule time    : " << order_time << std::endl;
+    #endif
 
     if (Options.verbose == BASKER_TRUE)
     {

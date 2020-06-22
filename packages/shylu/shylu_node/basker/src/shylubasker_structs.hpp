@@ -112,9 +112,9 @@ namespace BaskerNS
     BASKER_INLINE
     basker_tree()
     {
+      nroots = 0;
       nparts = 2;
       nblks = 0;
-
     }
     BASKER_INLINE
     ~basker_tree()
