@@ -387,6 +387,17 @@ size_t Behavior::longRowMinNumEntries ()
     (value_, initialized_, envVarName, defaultValue);
 }
 
+bool Behavior::useMergePathMultiVector()
+{
+  constexpr char envVarName[] = "TPETRA_MULTIVECTOR_USE_MERGE_PATH";
+  constexpr bool defaultValue = false;
+
+  static bool value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariableAsBool
+    (value_, initialized_, envVarName, defaultValue);
+}
+
   size_t Behavior::multivectorKernelLocationThreshold ()
 {
   constexpr char envVarName[] = "TPETRA_VECTOR_DEVICE_THRESHOLD";

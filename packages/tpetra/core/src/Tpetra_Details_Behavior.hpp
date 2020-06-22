@@ -220,6 +220,19 @@ public:
   /// separate question.
   static size_t longRowMinNumEntries ();
 
+  /// \brief Whether to use the cuSPARSE merge path algorithm to perform
+  ///  sparse matrix-multivector products, one vector at a time. Depending on
+  ///  the matrix and the number of vectors in the multivector, this may
+  ///  be better than just applying the default SpMV algorithm to the entire
+  ///  multivector at once.
+  ///
+  ///  Note: full support for merge path SPMV on multivectors
+  ///  is coming soon.
+  ///
+  /// You may control this at run time via the
+  /// <tt>TPETRA_MULTIVECTOR_USE_MERGE_PATH</tt> environment variable (default: false)
+  static bool useMergePathMultiVector();
+
   /// \brief Unpack rows of a matrix using hierarchical unpacking
   static bool hierarchicalUnpack ();
 

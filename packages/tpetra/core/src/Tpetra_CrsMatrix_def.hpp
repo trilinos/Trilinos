@@ -5442,7 +5442,14 @@ namespace Tpetra {
          std::runtime_error, "X and Y may not alias one another.");
     }
 
-    lclMatrix_->apply (X_lcl, Y_lcl, mode, alpha, beta);
+    LocalOrdinal nrows = getNodeNumRows();
+    LocalOrdinal maxRowImbalance = 0;
+    if(nrows != 0)
+      maxRowImbalance = getNodeMaxNumRowEntries() - (getNodeNumEntries() / getNodeNumRows());
+    if(maxRowImbalance >= Tpetra::Details::Behavior::longRowMinNumEntries())
+      lclMatrix_->applyImbalancedRows (X_lcl, Y_lcl, mode, alpha, beta);
+    else
+      lclMatrix_->apply (X_lcl, Y_lcl, mode, alpha, beta);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
