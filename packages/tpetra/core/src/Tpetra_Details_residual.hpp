@@ -213,15 +213,17 @@ void localResidual(const CrsMatrix<SC,LO,GO,NO> &  A,
 
   //Check for imbalanced rows. If the logic for SPMV to use merge path is triggered,
   //use it and follow the reference residual code
-  LocalOrdinal maxRowImbalance = 0;
-  if(nrows != 0)
+  LO maxRowImbalance = 0;
+  if(numLocalRows != 0)
     maxRowImbalance = A.getNodeMaxNumRowEntries() - (myNnz / numLocalRows);
   if(maxRowImbalance >= Tpetra::Details::Behavior::longRowMinNumEntries())
   {
+    //note: lclOp will be wrapped in shared_ptr
+    auto lclOp = A.getLocalMultiplyOperator();
     //Call local SPMV, requesting merge path, through A's LocalCrsMatrixOperator
     auto X_lcl = X.getLocalViewDevice ();
     auto R_lcl = R.getLocalViewDevice ();
-    A.lclMatrix_->applyImbalancedRows (X_lcl, R_lcl, Teuchos::NO_TRANS, one, zero);
+    lclOp->applyImbalancedRows (X_lcl, R_lcl, Teuchos::NO_TRANS, one, zero);
     R.update(one,B,negone);
     return;
   }

@@ -48,7 +48,6 @@
 /// for you).  If you only want the declaration of Tpetra::CrsMatrix,
 /// include "Tpetra_CrsMatrix_decl.hpp".
 
-#include "Tpetra_LocalCrsMatrixOperator.hpp"
 #include "Tpetra_Import_Util.hpp"
 #include "Tpetra_Import_Util2.hpp"
 #include "Tpetra_RowMatrix.hpp"
@@ -1040,6 +1039,14 @@ namespace Tpetra {
     return lclMatrix_.get () == nullptr ?
       local_matrix_type () :
       lclMatrix_->getLocalMatrix ();
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::shared_ptr<typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_multiply_op_type>
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalMultiplyOperator () const
+  {
+    return lclMatrix_;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

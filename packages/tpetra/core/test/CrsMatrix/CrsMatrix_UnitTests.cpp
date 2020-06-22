@@ -45,6 +45,7 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Details_getNumDiags.hpp"
+#include "Tpetra_Details_residual.hpp"
 
 // TODO: add test where some nodes have zero rows
 // TODO: add test where non-"zero" graph is used to build matrix; if no values are added to matrix, the operator effect should be zero. This tests that matrix values are initialized properly.
@@ -412,12 +413,12 @@ namespace { // (anonymous)
       //Finally, test residual.
       V res(rowMap);
       //Here, have A*wcol = vcol. This means the residual of A, wcol, and vcol should be 0.
-      Details::residual(imba, wcol, vcol, res);
+      Tpetra::Details::residual(imba, *wcol, *vcol, res);
       Teuchos::Array<Scalar> resVals(numLocalRows);
       res.get1dCopy(resVals(), numLocalRows);
       for(size_t i = 0; i < numLocalRows; i++)
       {
-        TEST_EQUALITY(ST::zero(), res[i]);
+        TEST_EQUALITY(ST::zero(), resVals[i]);
       }
     }
   }
