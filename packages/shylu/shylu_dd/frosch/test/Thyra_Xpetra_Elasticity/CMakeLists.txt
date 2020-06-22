@@ -279,3 +279,42 @@ ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPrecondit
 COMM mpi
 NUM_MPI_PROCS 8
 )
+
+#############################################
+# TwoLevelPreconditioner_IPOUHarmonic_RGDSW #
+#############################################
+## Epetra
+IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode")
+TRIBITS_ADD_TEST(
+thyra_xpetra_elasticity
+NAME test_thyra_xpetra_elasticity_TLP_IPOUHarmonic_RGDSW_DIM2_EPETRA_DropCoupling
+ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_RGDSW_Klu_Drop_Coupling_2D.xml --USEEPETRA"
+COMM mpi
+NUM_MPI_PROCS 4
+)
+
+TRIBITS_ADD_TEST(
+thyra_xpetra_elasticity
+NAME test_thyra_xpetra_elasticity_TLP_IPOUHarmonic_RGDSW_DIM3_EPETRA_DropCoupling
+ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_RGDSW_Klu_Drop_Coupling_3D.xml --USEEPETRA"
+COMM mpi
+NUM_MPI_PROCS 8
+)
+ENDIF()
+
+## Tpetra
+TRIBITS_ADD_TEST(
+thyra_xpetra_elasticity
+NAME test_thyra_xpetra_elasticity_TLP_IPOUHarmonic_RGDSW_DIM2_TPETRA_DropCoupling
+ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_RGDSW_Klu_Drop_Coupling_2D.xml --USETPETRA"
+COMM mpi
+NUM_MPI_PROCS 4
+)
+
+TRIBITS_ADD_TEST(
+thyra_xpetra_elasticity
+NAME test_thyra_xpetra_elasticity_TLP_IPOUHarmonic_RGDSW_DIM3_TPETRA_DropCoupling
+ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_RGDSW_Klu_Drop_Coupling_3D.xml --USETPETRA"
+COMM mpi
+NUM_MPI_PROCS 8
+)

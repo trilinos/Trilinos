@@ -78,7 +78,7 @@ namespace FROSch {
         ConstXMatrixPtr repeatedMatrix = ExtractLocalSubdomainMatrix(this->K_.getConst(),repeatedMap.getConst()); // AH 12/11/2018: Should this be in initalize?
 
         // Remove coupling blocks
-        if (!this->ParameterList_->get("Extensions: Remove Coupling",false)) {
+        if (this->ParameterList_->get("Extensions: Remove Coupling",false)) {
             FROSCH_ASSERT(this->ParameterList_->isParameter("Extensions: Coupling IDs to Remove"),"FROSch::HarmonicCoarseOperator : ERROR: Coupling IDs to remove are not specified (\"Extensions: Coupling IDs to Remove\").");
             //FROSCH_ASSERT(this->ParameterList_->isType<decltype(couplingIDsToRemove)>("Extensions: Coupling IDs to Remove"),"FROSch::HarmonicCoarseOperator : ERROR: \"Extensions: Coupling IDs to Remove\" is not of type Teuchos::TwoDArray<int>.");
 
@@ -791,9 +791,9 @@ namespace FROSch {
 
         XMatrixPtr reducedMatrix = MatrixFactory<SC,LO,GO,NO>::Build(matrix->getRowMap(),matrix->getNodeMaxNumRowEntries());
         for (UN i=0; i<NumberOfBlocks_; i++) {
+            Array<bool>& tmpMask = mask[i];
             for (UN j=0; j<DofsPerNode_[i]; j++) {
                 //ConstBoolVecPtr maskData = mask[i]->getData(j);
-                Array<bool>& tmpMask = mask[j];
                 for (UN k=0; k<DofsMaps_[i][j]->getNodeNumElements(); k++) {
                     GO globalIndex = DofsMaps_[i][j]->getGlobalElement(k);
                     FROSCH_ASSERT(globalIndex>=0,"FROSch::HarmonicCoarseOperator : ERROR: globalIndex<0");
@@ -822,10 +822,10 @@ namespace FROSch {
         }
         reducedMatrix->fillComplete();
 
-        for (UN i=0; i<NumberOfBlocks_; i++) {
-            if (this->Verbose_) {RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); matrix->describe(*fancy,VERB_EXTREME);}
-            if (this->Verbose_) {RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); reducedMatrix->describe(*fancy,VERB_EXTREME);}
-        }
+        // for (UN i=0; i<NumberOfBlocks_; i++) {
+        //     if (this->Verbose_) {RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); matrix->describe(*fancy,VERB_EXTREME);}
+        //     if (this->Verbose_) {RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); reducedMatrix->describe(*fancy,VERB_EXTREME);}
+        // }
 
         return reducedMatrix.getConst();
     }
