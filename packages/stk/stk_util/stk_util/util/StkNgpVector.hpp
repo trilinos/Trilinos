@@ -63,7 +63,7 @@ public:
     NgpVector(size_t s, Datatype init) : NgpVector(get_default_name(), s, init)
     {
     }
-    ~NgpVector() {}
+    STK_FUNCTION ~NgpVector() {}
 
     std::string name() const { return hostVals.label(); }
 

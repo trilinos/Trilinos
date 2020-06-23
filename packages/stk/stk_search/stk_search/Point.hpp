@@ -89,7 +89,7 @@ public:
   KOKKOS_FUNCTION value_type get_z_max() const { return m_value[2]; }
 
 
-  KOKKOS_DEFAULTED_FUNCTION ~Point() = default;
+  KOKKOS_FUNCTION ~Point() = default;
 
 private:
   value_type m_value[Dim];

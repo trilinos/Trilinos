@@ -639,8 +639,7 @@ void fillEntityCentroid(const stk::mesh::BulkData &stkMeshBulkData, const stk::m
     }
 }
 
-int num_connected_beams(const stk::mesh::BulkData& bulk,
-                             stk::mesh::Entity node)
+int num_beams_connected_to_node(const stk::mesh::BulkData& bulk, stk::mesh::Entity node)
 {
   const unsigned numElems = bulk.num_elements(node);
   const stk::mesh::Entity* elems = bulk.begin_elements(node);
@@ -655,23 +654,59 @@ int num_connected_beams(const stk::mesh::BulkData& bulk,
   return numBeams;
 }
 
-void fill_connectivity_count_field(stk::mesh::BulkData & bulk, const BalanceSettings & balanceSettings)
+bool is_not_part_of_spider(stk::topology::topology_t elemTopology)
 {
-    if (balanceSettings.shouldFixSpiders()) {
-        const stk::mesh::Field<int> * connectivityCountField = balanceSettings.getSpiderConnectivityCountField(bulk);
-        const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+  return ((elemTopology != stk::topology::PARTICLE) &&
+          (elemTopology != stk::topology::BEAM_2));
+}
 
-        stk::mesh::Selector selectBeamNodes(meta.locally_owned_part() &
-                                              meta.get_topology_root_part(stk::topology::BEAM_2));
-        stk::mesh::EntityVector nodes;
-        mesh::get_selected_entities(selectBeamNodes, bulk.buckets(stk::topology::NODE_RANK), nodes);
-        for(stk::mesh::Entity node : nodes) {
-            int * connectivityCount = stk::mesh::field_data(*connectivityCountField, node);
-            *connectivityCount = num_connected_beams(bulk, node);
-        }
+int num_volume_elements_connected_to_beam(const stk::mesh::BulkData& bulk, stk::mesh::Entity beam)
+{
+  const unsigned numNodes = bulk.num_nodes(beam);
+  const stk::mesh::Entity* nodes = bulk.begin_nodes(beam);
 
-        stk::mesh::communicate_field_data(bulk, {connectivityCountField});
+  int numVolumeElems = 0;
+  for (unsigned nodeIndex = 0; nodeIndex < numNodes; ++nodeIndex) {
+    const unsigned numElems = bulk.num_elements(nodes[nodeIndex]);
+    const stk::mesh::Entity* elems = bulk.begin_elements(nodes[nodeIndex]);
+    for (unsigned elemIndex = 0; elemIndex < numElems; ++elemIndex) {
+      const stk::topology::topology_t elemTopology = bulk.bucket(elems[elemIndex]).topology();
+      if (is_not_part_of_spider(elemTopology)) {
+        ++numVolumeElems;
+      }
     }
+  }
+
+  return numVolumeElems;
+}
+
+void fill_spider_connectivity_count_fields(stk::mesh::BulkData & bulk, const BalanceSettings & balanceSettings)
+{
+  if (balanceSettings.shouldFixSpiders()) {
+    const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+
+    const stk::mesh::Field<int> * beamConnectivityCountField = balanceSettings.getSpiderBeamConnectivityCountField(bulk);
+    stk::mesh::Selector selectBeamNodes(meta.locally_owned_part() &
+                                        meta.get_topology_root_part(stk::topology::BEAM_2));
+    stk::mesh::EntityVector nodes;
+    mesh::get_selected_entities(selectBeamNodes, bulk.buckets(stk::topology::NODE_RANK), nodes);
+    for(stk::mesh::Entity node : nodes) {
+      int * beamConnectivityCount = stk::mesh::field_data(*beamConnectivityCountField, node);
+      *beamConnectivityCount = num_beams_connected_to_node(bulk, node);
+    }
+
+    const stk::mesh::Field<int> * volumeConnectivityCountField = balanceSettings.getSpiderVolumeConnectivityCountField(bulk);
+    stk::mesh::Selector selectBeamElements(meta.locally_owned_part() &
+                                           meta.get_topology_root_part(stk::topology::BEAM_2));
+    stk::mesh::EntityVector beams;
+    mesh::get_selected_entities(selectBeamElements, bulk.buckets(stk::topology::ELEM_RANK), beams);
+    for(stk::mesh::Entity beam : beams) {
+      int * volumeConnectivityCount = stk::mesh::field_data(*volumeConnectivityCountField, beam);
+      *volumeConnectivityCount = num_volume_elements_connected_to_beam(bulk, beam);
+    }
+
+    stk::mesh::communicate_field_data(bulk, {beamConnectivityCountField, volumeConnectivityCountField});
+  }
 }
 
 void logMessage(MPI_Comm communicator, const std::string &message)
@@ -842,18 +877,25 @@ Teuchos::ParameterList getGraphBasedParameters(const BalanceSettings& balanceSet
     return params;
 }
 
+bool isNodePartOfSpider(const stk::mesh::BulkData& stkMeshBulkData,
+                        const stk::mesh::Field<int>& beamConnectivityCountField,
+                        stk::mesh::Entity node)
+{
+    const int spiderConnectivityThreshold = 5;
+    const int connectivityCount = *stk::mesh::field_data(beamConnectivityCountField, node);
+    return (connectivityCount > spiderConnectivityThreshold);
+}
+
 bool isElementPartOfSpider(const stk::mesh::BulkData& stkMeshBulkData,
                            const stk::mesh::Field<int>& beamConnectivityCountField,
                            stk::mesh::Entity element)
 {
-    const int spiderConnectivityThreshold = 5;
     const stk::mesh::Entity* nodes = stkMeshBulkData.begin_nodes(element);
     const unsigned numNodes = stkMeshBulkData.num_nodes(element);
     for (unsigned i = 0; i < numNodes; ++i) {
-        const int connectivityCount = *stk::mesh::field_data(beamConnectivityCountField, nodes[i]);
-        if (connectivityCount > spiderConnectivityThreshold) {
-            return true;
-        }
+      if (isNodePartOfSpider(stkMeshBulkData, beamConnectivityCountField, nodes[i])) {
+        return true;
+      }
     }
     return false;
 }
@@ -864,7 +906,7 @@ bool shouldOmitSpiderElement(const stk::mesh::BulkData & stkMeshBulkData,
 {
     bool omitConnection = false;
     if (balanceSettings.shouldFixSpiders()) {
-        const stk::mesh::Field<int> & beamConnectivityCountField = *balanceSettings.getSpiderConnectivityCountField(stkMeshBulkData);
+        const stk::mesh::Field<int> & beamConnectivityCountField = *balanceSettings.getSpiderBeamConnectivityCountField(stkMeshBulkData);
         stk::topology elemTopology = stkMeshBulkData.bucket(elem).topology();
 
         if (elemTopology == stk::topology::BEAM_2 || elemTopology == stk::topology::PARTICLE) {
@@ -875,49 +917,173 @@ bool shouldOmitSpiderElement(const stk::mesh::BulkData & stkMeshBulkData,
     return omitConnection;
 }
 
-bool found_element_at_end_of_leg(int newOwner, const stk::mesh::BulkData & bulk)
+bool found_valid_new_owner(const stk::mesh::BulkData & bulk, int newOwner)
 {
   return (newOwner < bulk.parallel_size());
 }
 
+bool spider_body_element_exists(const stk::mesh::BulkData & bulk, const stk::mesh::Entity & bodyElement)
+{
+  return bulk.is_valid(bodyElement);
+}
+
+stk::mesh::Entity get_spider_particle_body_for_leg(const stk::mesh::BulkData & bulk, const stk::mesh::Entity & bodyNode)
+{
+  const stk::mesh::Entity * elems = bulk.begin_elements(bodyNode);
+  const unsigned numElements = bulk.num_elements(bodyNode);
+  for (unsigned i = 0; i < numElements; ++i) {
+    const bool isParticle = (bulk.bucket(elems[i]).topology() == stk::topology::PARTICLE);
+    if (isParticle) {
+      return elems[i];
+    }
+  }
+  return stk::mesh::Entity();
+}
+
+std::pair<stk::mesh::Entity, stk::mesh::Entity> get_spider_beam_body_and_node_for_leg(const stk::mesh::BulkData & bulk,
+                                                                                      const BalanceSettings & balanceSettings,
+                                                                                      const stk::mesh::Entity & bodyNode)
+{
+  const stk::mesh::Entity * elems = bulk.begin_elements(bodyNode);
+  const unsigned numElements = bulk.num_elements(bodyNode);
+  const stk::mesh::Field<int> & volumeElemConnectivityCountField = *balanceSettings.getSpiderVolumeConnectivityCountField(bulk);
+
+  for (unsigned i = 0; i < numElements; ++i) {
+    if (bulk.bucket(elems[i]).topology() == stk::topology::BEAM_2) {
+      const int volumeElemConnectivityCount = *stk::mesh::field_data(volumeElemConnectivityCountField, elems[i]);
+      if (volumeElemConnectivityCount == 0) {
+        const stk::mesh::Entity * beamNodes = bulk.begin_nodes(elems[i]);
+        const stk::mesh::Entity nonBodyNode = (beamNodes[0] == bodyNode) ? beamNodes[1] : beamNodes[0];
+        return std::make_pair(elems[i], nonBodyNode);
+      }
+    }
+  }
+
+  return std::make_pair(stk::mesh::Entity(), stk::mesh::Entity());
+}
+
+void update_new_spider_entity_owner(stk::mesh::EntityProcMap & newSpiderEntityOwners,
+                                    stk::mesh::Entity entity, int candidateOwner)
+{
+  if (newSpiderEntityOwners.find(entity) == newSpiderEntityOwners.end()) {
+    newSpiderEntityOwners[entity] = candidateOwner;
+  }
+  newSpiderEntityOwners[entity] = std::min(candidateOwner, newSpiderEntityOwners[entity]);
+}
+
+void pack_new_spider_entity_owners(const stk::mesh::BulkData & bulk,
+                                   stk::CommSparse & comm,
+                                   const stk::mesh::EntityProcMap & newSpiderEntityOwners)
+{
+  for (const stk::mesh::EntityProc & entityNewOwner : newSpiderEntityOwners) {
+    const int currentOwner = bulk.parallel_owner_rank(entityNewOwner.first);
+    const stk::mesh::EntityKey entityKey = bulk.entity_key(entityNewOwner.first);
+    comm.send_buffer(currentOwner).pack<stk::mesh::EntityKey>(entityKey);
+    comm.send_buffer(currentOwner).pack<int>(entityNewOwner.second);
+  }
+}
+
+stk::mesh::EntityProcMap unpack_new_spider_entity_owners(const stk::mesh::BulkData & bulk,
+                                                         stk::CommSparse & comm)
+{
+  stk::mesh::EntityProcMap newSpiderEntityOwners;
+  for (int proc = 0; proc < bulk.parallel_size(); ++proc) {
+    while (comm.recv_buffer(proc).remaining()) {
+      stk::mesh::EntityKey entityKey;
+      int newOwner;
+      comm.recv_buffer(proc).unpack(entityKey);
+      comm.recv_buffer(proc).unpack(newOwner);
+      update_new_spider_entity_owner(newSpiderEntityOwners, bulk.get_entity(entityKey), newOwner);
+    }
+  }
+  return newSpiderEntityOwners;
+}
+
+
+stk::mesh::EntityProcMap determine_global_new_owner(const stk::mesh::BulkData & bulk,
+                                                    const stk::mesh::EntityProcMap & newSpiderEntityOwners)
+{
+  stk::CommSparse comm(bulk.parallel());
+
+  stk::pack_and_communicate(comm, [&](){
+    pack_new_spider_entity_owners(bulk, comm, newSpiderEntityOwners);
+  });
+
+  return unpack_new_spider_entity_owners(bulk, comm);
+}
+
 void fix_spider_elements(const BalanceSettings & balanceSettings, stk::mesh::BulkData & bulk)
 {
-    stk::mesh::Ghosting * customAura = stk::tools::create_custom_aura(bulk, bulk.mesh_meta_data().globally_shared_part(), "customAura");
+  stk::mesh::Ghosting * customAura = stk::tools::create_custom_aura(bulk, bulk.mesh_meta_data().globally_shared_part(), "customAura");
 
-    stk::mesh::MetaData & meta = bulk.mesh_meta_data();
-    const stk::mesh::Field<int> & beamConnectivityCountField = *balanceSettings.getSpiderConnectivityCountField(bulk);
+  stk::mesh::MetaData & meta = bulk.mesh_meta_data();
+  const stk::mesh::Field<int> & beamConnectivityCountField = *balanceSettings.getSpiderBeamConnectivityCountField(bulk);
 
-    stk::mesh::EntityVector beams;
-    stk::mesh::Part & beamPart = meta.get_topology_root_part(stk::topology::BEAM_2);
-    stk::mesh::get_selected_entities(beamPart & meta.locally_owned_part(), bulk.buckets(stk::topology::ELEM_RANK), beams);
+  stk::mesh::EntityVector beams;
+  stk::mesh::Part & beamPart = meta.get_topology_root_part(stk::topology::BEAM_2);
+  stk::mesh::get_selected_entities(beamPart & meta.locally_owned_part(), bulk.buckets(stk::topology::ELEM_RANK), beams);
 
-    stk::mesh::EntityProcVec beamsToMove;
-    for (stk::mesh::Entity beam : beams) {
-        if (isElementPartOfSpider(bulk, beamConnectivityCountField, beam)) {
-            const stk::mesh::Entity* nodes = bulk.begin_nodes(beam);
-            const int node1ConnectivityCount = *stk::mesh::field_data(beamConnectivityCountField, nodes[0]);
-            const int node2ConnectivityCount = *stk::mesh::field_data(beamConnectivityCountField, nodes[1]);
+  stk::mesh::EntityVector particles;
+  stk::mesh::EntityProcMap newSpiderEntityOwners;
 
-            const stk::mesh::Entity endNode = (node1ConnectivityCount < node2ConnectivityCount) ? nodes[0] : nodes[1];
-            const stk::mesh::Entity* elements = bulk.begin_elements(endNode);
-            const unsigned numElements = bulk.num_elements(endNode);
-            int newOwner = std::numeric_limits<int>::max();
+  stk::mesh::EntityProcVec entitiesToMove;
+  for (stk::mesh::Entity spiderLeg : beams) {
+    if (isElementPartOfSpider(bulk, beamConnectivityCountField, spiderLeg)) {
+      const stk::mesh::Entity* nodes = bulk.begin_nodes(spiderLeg);
+      const int node1ConnectivityCount = *stk::mesh::field_data(beamConnectivityCountField, nodes[0]);
+      const int node2ConnectivityCount = *stk::mesh::field_data(beamConnectivityCountField, nodes[1]);
 
-            for (unsigned i = 0; i < numElements; ++i) {
-                if (bulk.bucket(elements[i]).topology() != stk::topology::BEAM_2) {
-                    newOwner = std::min(newOwner, bulk.parallel_owner_rank(elements[i]));
-                }
-            }
+      const stk::mesh::Entity footNode = (node1ConnectivityCount < node2ConnectivityCount) ? nodes[0] : nodes[1];
+      const stk::mesh::Entity bodyNode = (node1ConnectivityCount < node2ConnectivityCount) ? nodes[1] : nodes[0];
+      const stk::mesh::Entity* elements = bulk.begin_elements(footNode);
+      const unsigned numElements = bulk.num_elements(footNode);
+      int newLegOwner = std::numeric_limits<int>::max();
 
-            if (found_element_at_end_of_leg(newOwner, bulk) && (newOwner != bulk.parallel_rank())) {
-                beamsToMove.push_back(std::make_pair(beam, newOwner));
-            }
+      for (unsigned i = 0; i < numElements; ++i) {
+        const stk::topology::topology_t elemTopology = bulk.bucket(elements[i]).topology();
+        if (is_not_part_of_spider(elemTopology)) {
+          newLegOwner = std::min(newLegOwner, bulk.parallel_owner_rank(elements[i]));
         }
+      }
+
+      if (found_valid_new_owner(bulk, newLegOwner)) {
+        if (newLegOwner != bulk.parallel_rank()) {
+          entitiesToMove.push_back(std::make_pair(spiderLeg, newLegOwner));
+        }
+
+        update_new_spider_entity_owner(newSpiderEntityOwners, bodyNode, newLegOwner);
+
+          const stk::mesh::Entity spiderParticleBody = get_spider_particle_body_for_leg(bulk, bodyNode);
+          if (spider_body_element_exists(bulk, spiderParticleBody)) {
+            update_new_spider_entity_owner(newSpiderEntityOwners, spiderParticleBody, newLegOwner);
+          }
+          else {
+            const std::pair<stk::mesh::Entity, stk::mesh::Entity> spiderBeamBodyAndNode =
+                get_spider_beam_body_and_node_for_leg(bulk, balanceSettings, bodyNode);
+            if (spider_body_element_exists(bulk, spiderBeamBodyAndNode.first)) {
+              update_new_spider_entity_owner(newSpiderEntityOwners, spiderBeamBodyAndNode.first, newLegOwner);
+              update_new_spider_entity_owner(newSpiderEntityOwners, spiderBeamBodyAndNode.second, newLegOwner);
+            }
+
+        }
+
+        if (newLegOwner != bulk.parallel_owner_rank(footNode)) {
+          update_new_spider_entity_owner(newSpiderEntityOwners, footNode, newLegOwner);
+        }
+      }
     }
+  }
 
-    stk::tools::destroy_custom_aura(bulk, customAura);
+  stk::mesh::EntityProcMap globalNewSpiderEntityOwners = determine_global_new_owner(bulk, newSpiderEntityOwners);
 
-    bulk.change_entity_owner(beamsToMove);
+  for (const auto & entityOwner : globalNewSpiderEntityOwners) {
+    if (entityOwner.second != bulk.parallel_rank()) {
+      entitiesToMove.push_back(entityOwner);
+    }
+  }
+
+  stk::tools::destroy_custom_aura(bulk, customAura);
+  bulk.change_entity_owner(entitiesToMove);
 }
 
 void keep_spiders_on_original_proc(stk::mesh::BulkData &bulk, const stk::balance::BalanceSettings & balanceSettings, DecompositionChangeList &changeList)
@@ -926,12 +1092,13 @@ void keep_spiders_on_original_proc(stk::mesh::BulkData &bulk, const stk::balance
     // so that we can properly determine the final ownership of the elements on the end.
     // Then, we can move them.
     //
-    const stk::mesh::Field<int> & beamConnectivityCountField = *balanceSettings.getSpiderConnectivityCountField(bulk);
+    const stk::mesh::Field<int> & beamConnectivityCountField = *balanceSettings.getSpiderBeamConnectivityCountField(bulk);
 
     stk::mesh::EntityProcVec entityProcs = changeList.get_all_partition_changes();
     for (const stk::mesh::EntityProc & entityProc : entityProcs) {
         stk::mesh::Entity entity = entityProc.first;
-        if (bulk.bucket(entity).topology() == stk::topology::BEAM_2) {
+        const stk::topology entityTopology = bulk.bucket(entity).topology();
+        if (entityTopology == stk::topology::BEAM_2 || entityTopology == stk::topology::PARTICLE) {
             if (isElementPartOfSpider(bulk, beamConnectivityCountField, entity)) {
                 changeList.delete_entity(entity);
             }
@@ -1106,7 +1273,7 @@ void calculateGeometricOrGraphBasedDecomp(const BalanceSettings& balanceSettings
                                                                           stkMeshBulkData.mesh_meta_data().globally_shared_part(),
                                                                           "customAura");
         stk::mesh::impl::LocalIdMapper localIds(stkMeshBulkData, stk::topology::ELEM_RANK);
-        internal::fill_connectivity_count_field(stkMeshBulkData, balanceSettings);
+        internal::fill_spider_connectivity_count_fields(stkMeshBulkData, balanceSettings);
         fill_decomp_using_parmetis(balanceSettings, numSubdomainsToCreate, decomp, stkMeshBulkData, selectors, localIds);
         stk::tools::destroy_custom_aura(stkMeshBulkData, customAura);
     }

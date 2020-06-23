@@ -62,7 +62,7 @@ stk::mesh::Part* get_block_part_for_element(const stk::mesh::BulkData & bulk, st
   return nullptr;
 }
 
-unsigned get_block_id_for_element(const stk::mesh::BulkData & bulk, stk::mesh::Entity element)
+int get_block_id_for_element(const stk::mesh::BulkData & bulk, stk::mesh::Entity element)
 {
   const stk::mesh::PartVector & elementParts = bulk.bucket(element).supersets();
   for (stk::mesh::Part * part : elementParts) {

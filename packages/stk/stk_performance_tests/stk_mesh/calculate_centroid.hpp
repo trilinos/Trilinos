@@ -39,6 +39,8 @@
 
 #include "stk_mesh/base/NgpMesh.hpp"
 #include "stk_mesh/base/NgpField.hpp"
+#include "stk_mesh/base/GetNgpField.hpp"
+#include "stk_mesh/base/ForEachEntity.hpp"
 
 namespace stk {
 namespace performance_tests {
@@ -128,10 +130,10 @@ template <typename CoordFieldType>
 void calculate_centroid_using_coord_field(const stk::mesh::BulkData &bulk, const stk::mesh::Selector& selector, stk::mesh::FieldBase &centroid)
 {
   const stk::mesh::FieldBase& coords = *bulk.mesh_meta_data().coordinate_field();
-  CoordFieldType ngpCoords(bulk, coords);
-  stk::mesh::NgpField<double> ngpCentroid(bulk, centroid);
+  stk::mesh::NgpField<double>& ngpCentroid = stk::mesh::get_updated_ngp_field<double>(centroid);
   stk::mesh::NgpMesh& ngpMesh = bulk.get_updated_ngp_mesh();
 
+  stk::mesh::NgpField<double>& ngpCoords = stk::mesh::get_updated_ngp_field<double>(coords);
   calculate_centroid(ngpMesh, ngpCoords, selector, ngpCentroid);
 
   ngpCentroid.sync_to_host();

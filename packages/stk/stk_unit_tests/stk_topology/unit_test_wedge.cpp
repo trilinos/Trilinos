@@ -173,6 +173,154 @@ NGP_TEST(stk_topology_ngp, wedge_6)
   check_wedge_6_on_device();
 }
 
+TEST(stk_topology, wedge_12)
+{
+  stk::topology t = stk::topology::WEDGE_12;
+
+  EXPECT_TRUE(t.is_valid());
+  EXPECT_FALSE(t.has_homogeneous_faces());
+  EXPECT_FALSE(t.is_shell());
+
+  EXPECT_EQ(t.rank(),stk::topology::ELEMENT_RANK);
+  EXPECT_EQ(t.side_rank(),stk::topology::FACE_RANK);
+  EXPECT_EQ(t.num_sides(),5u);
+
+  EXPECT_EQ(t.num_nodes(),12u);
+  EXPECT_EQ(t.num_vertices(),6u);
+  EXPECT_EQ(t.num_edges(),9u);
+  EXPECT_EQ(t.num_faces(),5u);
+
+  EXPECT_FALSE(t.defined_on_spatial_dimension(1));
+  EXPECT_FALSE(t.defined_on_spatial_dimension(2));
+  EXPECT_TRUE(t.defined_on_spatial_dimension(3));
+
+  EXPECT_EQ(t.base(),stk::topology::WEDGE_6);
+
+  EXPECT_EQ(t.face_topology(0), stk::topology::QUAD_6);
+  EXPECT_EQ(t.face_topology(1), stk::topology::QUAD_6);
+  EXPECT_EQ(t.face_topology(2), stk::topology::QUAD_6);
+  EXPECT_EQ(t.face_topology(3), stk::topology::TRI_6);
+  EXPECT_EQ(t.face_topology(4), stk::topology::TRI_6);
+
+  std::vector<std::vector<unsigned>> gold_edge_node_ordinals = { {0, 1,  6},
+                                                                 {1, 2,  7},
+                                                                 {2, 0,  8},
+                                                                 {3, 4,  9},
+                                                                 {4, 5, 10},
+                                                                 {5, 3, 11},
+                                                                 {0, 3},
+                                                                 {1, 4},
+                                                                 {2, 5} };
+  check_edge_node_ordinals(t, gold_edge_node_ordinals);
+  check_edge_nodes(t, gold_edge_node_ordinals);
+
+  std::vector<std::vector<unsigned>> gold_face_node_ordinals = { {0, 1, 4, 3,  6, 9},
+                                                                 {1, 2, 5, 4,  7, 10},
+                                                                 {0, 3, 5, 2,  8, 11},
+                                                                 {0, 2, 1,   8, 7, 6},
+                                                                 {3, 4, 5,  9, 10, 11} };
+
+  check_side_node_ordinals(t, gold_face_node_ordinals);
+  check_face_node_ordinals(t, gold_face_node_ordinals);
+  check_side_nodes(t, gold_face_node_ordinals);
+  check_face_nodes(t, gold_face_node_ordinals);
+
+  std::vector<std::vector<unsigned>> gold_permutation_node_ordinals = {
+    {0, 1, 2, 3, 4, 5,  6,  7,  8,  9, 10, 11},
+    {1, 2, 0, 4, 5, 3,  7,  8,  6, 10, 11,  9},
+    {2, 0, 1, 5, 3, 4,  8,  6,  7, 11,  9, 10},
+    {3, 5, 4, 0, 2, 1,  9, 11, 10,  8,  7,  6},
+    {5, 4, 3, 2, 1, 0, 11, 10,  9,  7,  6,  8},
+    {4, 3, 5, 1, 0, 2, 10,  9, 11,  6,  8,  7}
+  };
+  std::cout<<"Reminder: we still need to enable permutation for wedge_12"<<std::endl;
+  const bool enabledPermutation = false;
+  if (enabledPermutation) {
+    check_permutation_node_ordinals(t, gold_permutation_node_ordinals);
+  }
+  check_permutation_nodes(t, gold_permutation_node_ordinals);
+
+  check_equivalent(t, gold_permutation_node_ordinals);
+  check_lexicographical_smallest_permutation(t, gold_permutation_node_ordinals);
+}
+
+void check_wedge_12_on_device()
+{
+  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int i)
+  {
+    stk::topology t = stk::topology::WEDGE_12;
+
+    NGP_EXPECT_TRUE(t.is_valid());
+    NGP_EXPECT_FALSE(t.has_homogeneous_faces());
+    NGP_EXPECT_FALSE(t.is_shell());
+
+    NGP_EXPECT_EQ(t.rank(),stk::topology::ELEMENT_RANK);
+    NGP_EXPECT_EQ(t.side_rank(),stk::topology::FACE_RANK);
+    NGP_EXPECT_EQ(t.num_sides(),5u);
+
+    NGP_EXPECT_EQ(t.num_nodes(),12u);
+    NGP_EXPECT_EQ(t.num_vertices(),6u);
+    NGP_EXPECT_EQ(t.num_edges(),9u);
+    NGP_EXPECT_EQ(t.num_faces(),5u);
+
+    NGP_EXPECT_FALSE(t.defined_on_spatial_dimension(1));
+    NGP_EXPECT_FALSE(t.defined_on_spatial_dimension(2));
+    NGP_EXPECT_TRUE(t.defined_on_spatial_dimension(3));
+
+    NGP_EXPECT_EQ(t.base(),stk::topology::WEDGE_6);
+
+    NGP_EXPECT_EQ(t.face_topology(0), stk::topology::QUAD_6);
+    NGP_EXPECT_EQ(t.face_topology(1), stk::topology::QUAD_6);
+    NGP_EXPECT_EQ(t.face_topology(2), stk::topology::QUAD_6);
+    NGP_EXPECT_EQ(t.face_topology(3), stk::topology::TRI_6);
+    NGP_EXPECT_EQ(t.face_topology(4), stk::topology::TRI_6);
+
+    unsigned gold_edge_node_ordinals[9][3] = { {0, 1, 6},
+                                               {1, 2, 7},
+                                               {2, 0, 8},
+                                               {3, 4, 9},
+                                               {4, 5, 10},
+                                               {5, 3, 11},
+                                               {0, 3, INVALID},
+                                               {1, 4, INVALID},
+                                               {2, 5, INVALID} };
+    check_edge_node_ordinals_ngp(t, gold_edge_node_ordinals);
+    check_edge_nodes_ngp(t, gold_edge_node_ordinals);
+
+    unsigned gold_face_node_ordinals[5][6] = { {0, 1, 4,  3,  6, 9},
+                                               {1, 2, 5,  4,  7, 10},
+                                               {0, 3, 5,  2,  8, 11},
+                                               {0, 2, 1,  8,  7,  6},
+                                               {3, 4, 5,  9, 10, 11} };
+    check_side_node_ordinals_ngp(t, gold_face_node_ordinals);
+    check_face_node_ordinals_ngp(t, gold_face_node_ordinals);
+    check_side_nodes_ngp(t, gold_face_node_ordinals);
+    check_face_nodes_ngp(t, gold_face_node_ordinals);
+
+    unsigned gold_permutation_node_ordinals[6][12] = {
+      {0, 1, 2, 3, 4, 5,  6,  7,  8,  9, 10, 11},
+      {1, 2, 0, 4, 5, 3,  7,  8,  6, 10, 11,  9},
+      {2, 0, 1, 5, 3, 4,  8,  6,  7, 11,  9, 10},
+      {3, 5, 4, 0, 2, 1,  9, 11, 10,  8,  7,  6},
+      {5, 4, 3, 2, 1, 0, 11, 10,  9,  7,  6,  8},
+      {4, 3, 5, 1, 0, 2, 10,  9, 11,  6,  8,  7}
+    };
+    printf("Reminder: we still need to enable permutation for wedge_12\n");
+    const bool enabledPermutation = false;
+    if (enabledPermutation) {
+      check_permutation_node_ordinals_ngp(t, gold_permutation_node_ordinals);
+    }
+    check_permutation_nodes_ngp(t, gold_permutation_node_ordinals);
+
+    check_equivalent_ngp(t, gold_permutation_node_ordinals);
+    check_lexicographical_smallest_permutation_ngp(t, gold_permutation_node_ordinals);
+  });
+}
+
+NGP_TEST(stk_topology_ngp, wedge_12)
+{
+  check_wedge_12_on_device();
+}
 
 TEST(stk_topology, wedge_15)
 {

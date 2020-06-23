@@ -98,16 +98,13 @@ struct create_single_edge_impl
 //  enable if?  check intel
   void operator()(Topology t)
   {
-    typedef topology::topology_type< Topology::edge_topology> EdgeTopology;
-
     Topology     elem_topo;
-    EdgeTopology edge_topo;
-
+    auto edge_topo = Topology::edge_topology(m_edge_ordinal);
 
     BulkData & mesh = m_mesh;
     PartVector add_parts;
 
-    add_parts.push_back( & mesh.mesh_meta_data().get_topology_root_part( EdgeTopology::value ));
+    add_parts.push_back( & mesh.mesh_meta_data().get_topology_root_part( edge_topo ));
     if (m_part_to_insert_new_edges)
       add_parts.push_back(m_part_to_insert_new_edges);
 
@@ -159,8 +156,7 @@ struct create_single_edge_impl
           side = mesh.declare_edge(edge_id, add_parts);
 
       m_edge_map[edge_nodes] = side;
-      const int num_edge_nodes = EdgeTopology::num_nodes;
-      for (int n=0; n<num_edge_nodes; ++n)
+      for (unsigned n=0u; n<m_num_edge_nodes; ++n)
       {
           Entity node = edge_nodes[n];
           mesh.declare_relation(side,node,n, perm, scratch1, scratch2, scratch3);
@@ -208,22 +204,15 @@ struct create_edge_impl
   {
     stk::topology elem_topo = m_bucket.topology();
 
-    if (elem_topo.edge_topology() == stk::topology::INVALID_TOPOLOGY) {
+    if (elem_topo.edge_topology(0) == stk::topology::INVALID_TOPOLOGY) {
         return;  // No edges defined for this topology
     }
 
     BulkData & mesh = m_bucket.mesh();
-    typedef topology::topology_type< Topology::edge_topology> EdgeTopology;
-    EdgeTopology edge_topo;
-
     PartVector add_parts;
-    add_parts.push_back( & mesh.mesh_meta_data().get_topology_root_part( EdgeTopology::value ));
-    if (m_part_to_insert_new_edges)
-      add_parts.push_back(m_part_to_insert_new_edges);
+    EntityVector edge_nodes;
 
     Entity elem_nodes[(Topology::num_nodes > 0) ? Topology::num_nodes : 1];
-    EntityVector edge_nodes(EdgeTopology::num_nodes);
-    EntityKeyVector edge_node_keys(EdgeTopology::num_nodes);
     OrdinalVector scratch1, scratch2, scratch3;
 
     for (size_t ielem=0, eelem=m_bucket.size(); ielem<eelem; ++ielem) {
@@ -251,7 +240,15 @@ struct create_edge_impl
 
         if (edge_exist[e]) continue;
 
+        auto edge_topo = Topology::edge_topology(e);
+        const int num_edge_nodes = edge_topo.num_nodes();
+        edge_nodes.resize(num_edge_nodes);
         Topology::edge_nodes(elem_nodes, e, edge_nodes.data());
+
+        add_parts.clear();
+        add_parts.push_back( & mesh.mesh_meta_data().get_topology_root_part( edge_topo ));
+        if (m_part_to_insert_new_edges)
+          add_parts.push_back(m_part_to_insert_new_edges);
 
         //sort side nodes into lexicographical smallest permutation
         if (EntityLess(mesh)(edge_nodes[1], edge_nodes[0])) {
@@ -272,7 +269,6 @@ struct create_edge_impl
           else
               side = mesh.declare_edge(edge_id, add_parts);
 
-          const int num_edge_nodes = EdgeTopology::num_nodes;
           m_edge_map[edge_nodes] = side;
           for (int n=0; n<num_edge_nodes; ++n) {
             Entity node = edge_nodes[n];
@@ -311,15 +307,12 @@ struct connect_face_impl
   template <typename Topology>
   void operator()(Topology t)
   {
-    typedef topology::topology_type< Topology::edge_topology> EdgeTopology;
-
     stk::topology face_topo = m_bucket.topology();
-    EdgeTopology edge_topo;
 
     BulkData & mesh = m_bucket.mesh();
+    EntityVector edge_nodes;
 
     Entity face_nodes[(Topology::num_nodes > 0) ? Topology::num_nodes : 1];
-    EntityVector edge_nodes(EdgeTopology::num_nodes);
     OrdinalVector scratch1, scratch2, scratch3;
 
     for (size_t iface=0, eface=m_bucket.size(); iface<eface; ++iface) {
@@ -347,6 +340,8 @@ struct connect_face_impl
 
         if (edge_exist[e]) continue;
 
+        auto edge_topo = Topology::edge_topology(e);
+        edge_nodes.resize(edge_topo.num_nodes());
         Topology::edge_nodes(face_nodes, e, edge_nodes.data());
 
         //sort edge nodes into lexicographical smallest permutation
@@ -467,12 +462,12 @@ void create_edges( BulkData & mesh, const Selector & element_selector, Part * pa
           stk::topology elemTopology = b.topology();
           ThrowRequireMsg(elemTopology != stk::topology::INVALID_TOPOLOGY, "create_edges ERROR, element bucket with invalid topology.");
           const unsigned numEdgesPerElem = elemTopology.num_edges();
-          const unsigned numNodesPerEdge = elemTopology.sub_topology(stk::topology::EDGE_RANK).num_nodes();
           for(size_t j=0, jend=b.size(); j<jend; ++j) {
             const Entity* elemNodes = b.begin_nodes(j);
             Entity edgeNodes[3];
             Entity localElemEdgeNodes[3];
             for(unsigned edgeIndex=0; edgeIndex<numEdgesPerElem; ++edgeIndex) {
+              const unsigned numNodesPerEdge = elemTopology.edge_topology(edgeIndex).num_nodes();
               elemTopology.edge_nodes(elemNodes, edgeIndex, edgeNodes);
               stk::mesh::impl::find_locally_owned_elements_these_nodes_have_in_common(mesh, numNodesPerEdge, edgeNodes, elements);
               if (!elements.empty()) {
