@@ -779,7 +779,7 @@ void SetupMatVec(const Teuchos::RCP<Xpetra::MultiVector<GlobalOrdinal, LocalOrdi
                  const Teuchos::RCP<Xpetra::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> >& regionsPerGIDWithGhosts,
                  const std::vector<Teuchos::RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > >& regionRowMap,
                  const std::vector<Teuchos::RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > >& rowImportPerGrp,
-                 Teuchos::Array<LocalOrdinal>& regionMatVecLIDs,
+                 Teuchos::ArrayRCP<LocalOrdinal>& regionMatVecLIDs,
                  Teuchos::RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter) {
 #include "Xpetra_UseShortNamesOrdinal.hpp"
   using Teuchos::TimeMonitor;
@@ -798,6 +798,7 @@ void SetupMatVec(const Teuchos::RCP<Xpetra::MultiVector<GlobalOrdinal, LocalOrdi
   tm = Teuchos::null;
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("SetupMatVec: 2 - build regionInterfaceMap")));
 
+  Teuchos::Array<LO> regionMatVecLIDstmp;
   Teuchos::Array<GO> regionMatVecGIDs;
   Array<ArrayRCP<const LO> > regionsPerGIDWithGhostsData(maxRegPerGID);
   Array<ArrayRCP<const GO> > interfaceGIDsData(maxRegPerGID);
@@ -807,11 +808,15 @@ void SetupMatVec(const Teuchos::RCP<Xpetra::MultiVector<GlobalOrdinal, LocalOrdi
     for(LO idx = 0; idx < static_cast<LO>(regionsPerGIDWithGhostsData[regionIdx].size()); ++idx) {
       if((regionsPerGIDWithGhostsData[regionIdx][idx] != -1)
          && (regionsPerGIDWithGhostsData[regionIdx][idx] != myRank)) {
-        regionMatVecLIDs.push_back(idx);
+        regionMatVecLIDstmp.push_back(idx);
         regionMatVecGIDs.push_back(interfaceGIDsData[regionIdx][idx]);
       }
     }
   }
+
+  // Copy the temporary regionMatVecLIDstmp into an ArrayRCP
+  // so we can store it and retrieve it easily later on.
+  regionMatVecLIDs.deepCopy(regionMatVecLIDstmp());
 
   RCP<Map> regionInterfaceMap = Xpetra::MapFactory<LO,GO,Node>::Build(regionRowMap[0]->lib(),
                                                                       Teuchos::OrdinalTraits<GO>::invalid(),
@@ -839,7 +844,7 @@ void ApplyMatVec(const Scalar alpha,
                  const RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& X,
                  const Scalar beta,
                  const RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter,
-                 const Teuchos::Array<LocalOrdinal>& regionInterfaceLIDs,
+                 const Teuchos::ArrayRCP<LocalOrdinal>& regionInterfaceLIDs,
                  RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Y,
                  const Teuchos::ETransp transposeMode,
                  const bool sumInterfaceValues) {
@@ -913,7 +918,7 @@ computeResidual(Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, No
   RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("computeResidual: use fast MatVec")));
 
   // Get pre-communicated communication patterns for the fast MatVec
-  const Array<LocalOrdinal> regionInterfaceLIDs = params.get<Array<LO>>("Fast MatVec: interface LIDs");
+  const ArrayRCP<LocalOrdinal> regionInterfaceLIDs = params.get<ArrayRCP<LO>>("Fast MatVec: interface LIDs");
   const RCP<Import> regionInterfaceImporter = params.get<RCP<Import>>("Fast MatVec: interface importer");
 
   // Step 1: Compute region version of y = Ax

@@ -73,7 +73,7 @@ void createRegionMatrix(const Teuchos::ParameterList galeriList,
                         std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > >& rowImportPerGrp,
                         std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > >& colImportPerGrp,
                         std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& regionGrpMats,
-                        Teuchos::Array<LocalOrdinal>&  regionMatVecLIDs,
+                        Teuchos::ArrayRCP<LocalOrdinal>&  regionMatVecLIDs,
                         Teuchos::RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter) {
 #include <MueLu_UseShortNames.hpp>
 
@@ -192,7 +192,7 @@ void createProblem(const int maxRegPerProc, const LocalOrdinal numDofsPerNode,
                    std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& regionGrpMats,
                    std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > >& revisedRowMapPerGrp,
                    std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > >& rowImportPerGrp,
-                   Teuchos::Array<LocalOrdinal>& regionMatVecLIDs,
+                   Teuchos::ArrayRCP<LocalOrdinal>& regionMatVecLIDs,
                    RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter) {
 #include <MueLu_UseShortNames.hpp>
   using TST                   = Teuchos::ScalarTraits<SC>;
@@ -414,7 +414,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, CompositeToRegionMatrix, Scalar,
   std::vector<RCP<Map> >    revisedRowMapPerGrp(maxRegPerProc), revisedColMapPerGrp(maxRegPerProc);
   std::vector<RCP<Import> > rowImportPerGrp(maxRegPerProc), colImportPerGrp(maxRegPerProc);
   std::vector<RCP<Matrix> > regionGrpMats(maxRegPerProc);
-  Teuchos::Array<LO> regionMatVecLIDs;
+  Teuchos::ArrayRCP<LO> regionMatVecLIDs;
   RCP<Import> regionInterfaceImporter;
   createRegionMatrix(galeriList, numDofsPerNode, maxRegPerProc, nodeMap, dofMap, A,
                      rowMapPerGrp, colMapPerGrp, revisedRowMapPerGrp, revisedColMapPerGrp,
@@ -592,7 +592,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, RegionToCompositeMatrix, Scalar,
   std::vector<RCP<Map> >    revisedRowMapPerGrp(maxRegPerProc), revisedColMapPerGrp(maxRegPerProc);
   std::vector<RCP<Import> > rowImportPerGrp(maxRegPerProc), colImportPerGrp(maxRegPerProc);
   std::vector<RCP<Matrix> > regionGrpMats(maxRegPerProc);
-  Teuchos::Array<LO> regionMatVecLIDs;
+  Teuchos::ArrayRCP<LO> regionMatVecLIDs;
   RCP<Import> regionInterfaceImporter;
   createRegionMatrix(galeriList, numDofsPerNode, maxRegPerProc, nodeMap, dofMap, A,
                      rowMapPerGrp, colMapPerGrp, revisedRowMapPerGrp, revisedColMapPerGrp,
@@ -696,7 +696,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, MatVec, Scalar, LocalOrdinal, Gl
   std::vector<RCP<Map> >    revisedRowMapPerGrp(maxRegPerProc), revisedColMapPerGrp(maxRegPerProc);
   std::vector<RCP<Import> > rowImportPerGrp(maxRegPerProc), colImportPerGrp(maxRegPerProc);
   std::vector<RCP<Matrix> > regionGrpMats(maxRegPerProc);
-  Teuchos::Array<LO> regionMatVecLIDs;
+  Teuchos::ArrayRCP<LO> regionMatVecLIDs;
   RCP<Import> regionInterfaceImporter;
   createRegionMatrix(galeriList, numDofsPerNode, maxRegPerProc, nodeMap, dofMap, A,
                      rowMapPerGrp, colMapPerGrp, revisedRowMapPerGrp, revisedColMapPerGrp,
@@ -796,7 +796,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec, Scalar, LocalOrdinal
   std::vector<RCP<Map> >    revisedRowMapPerGrp(maxRegPerProc), revisedColMapPerGrp(maxRegPerProc);
   std::vector<RCP<Import> > rowImportPerGrp(maxRegPerProc), colImportPerGrp(maxRegPerProc);
   std::vector<RCP<Matrix> > regionGrpMats(maxRegPerProc);
-  Teuchos::Array<LO> regionMatVecLIDs;
+  Teuchos::ArrayRCP<LO> regionMatVecLIDs;
   RCP<Import> regionInterfaceImporter;
   createRegionMatrix(galeriList, numDofsPerNode, maxRegPerProc, nodeMap, dofMap, A,
                      rowMapPerGrp, colMapPerGrp, revisedRowMapPerGrp, revisedColMapPerGrp,
@@ -900,7 +900,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec3D, Scalar, LocalOrdin
   RCP<Matrix> A;
   std::vector<RCP<Map> > revisedRowMapPerGrp(maxRegPerProc);
   std::vector<RCP<Import> > rowImportPerGrp(maxRegPerProc);
-  Teuchos::Array<LocalOrdinal> regionMatVecLIDs;
+  Teuchos::ArrayRCP<LocalOrdinal> regionMatVecLIDs;
   RCP<Import> regionInterfaceImporter;
 
   createProblem(maxRegPerProc, numDofsPerNode, galeriParameters, comm,
@@ -1000,7 +1000,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec2D_Elasticity, Scalar,
   RCP<Matrix> A;
   std::vector<RCP<Map> > revisedRowMapPerGrp(maxRegPerProc);
   std::vector<RCP<Import> > rowImportPerGrp(maxRegPerProc);
-  Teuchos::Array<LocalOrdinal> regionMatVecLIDs;
+  Teuchos::ArrayRCP<LocalOrdinal> regionMatVecLIDs;
   RCP<Import> regionInterfaceImporter;
 
   createProblem(maxRegPerProc, numDofsPerNode, galeriParameters, comm,
@@ -1100,7 +1100,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec3D_Elasticity, Scalar,
   RCP<Matrix> A;
   std::vector<RCP<Map> > revisedRowMapPerGrp(maxRegPerProc);
   std::vector<RCP<Import> > rowImportPerGrp(maxRegPerProc);
-  Teuchos::Array<LocalOrdinal> regionMatVecLIDs;
+  Teuchos::ArrayRCP<LocalOrdinal> regionMatVecLIDs;
   RCP<Import> regionInterfaceImporter;
 
   createProblem(maxRegPerProc, numDofsPerNode, galeriParameters, comm,
@@ -1219,7 +1219,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace2D, Scalar, LocalOrdinal,
   std::vector<RCP<Map> >    revisedRowMapPerGrp(maxRegPerProc), revisedColMapPerGrp(maxRegPerProc);
   std::vector<RCP<Import> > rowImportPerGrp(maxRegPerProc), colImportPerGrp(maxRegPerProc);
   std::vector<RCP<Matrix> > regionGrpMats(maxRegPerProc);
-  Teuchos::Array<LO> regionMatVecLIDs;
+  Teuchos::ArrayRCP<LO> regionMatVecLIDs;
   RCP<Import> regionInterfaceImporter;
   createRegionMatrix(galeriList, numDofsPerNode, maxRegPerProc, nodeMap, dofMap, A,
                      rowMapPerGrp, colMapPerGrp, revisedRowMapPerGrp, revisedColMapPerGrp,
@@ -1396,7 +1396,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace3D, Scalar, LocalOrdinal,
   std::vector<RCP<Map> >    revisedRowMapPerGrp(maxRegPerProc), revisedColMapPerGrp(maxRegPerProc);
   std::vector<RCP<Import> > rowImportPerGrp(maxRegPerProc), colImportPerGrp(maxRegPerProc);
   std::vector<RCP<Matrix> > regionGrpMats(maxRegPerProc);
-  Teuchos::Array<LO> regionMatVecLIDs;
+  Teuchos::ArrayRCP<LO> regionMatVecLIDs;
   RCP<Import> regionInterfaceImporter;
   createRegionMatrix(galeriList, numDofsPerNode, maxRegPerProc, nodeMap, dofMap, A,
                      rowMapPerGrp, colMapPerGrp, revisedRowMapPerGrp, revisedColMapPerGrp,

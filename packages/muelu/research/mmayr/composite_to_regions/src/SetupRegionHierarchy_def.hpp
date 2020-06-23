@@ -138,7 +138,7 @@ void MakeCoarseLevelMaps(const int maxRegPerGID,
                          Array<std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > >& regRowImporters,
                          Array<Teuchos::RCP<Xpetra::MultiVector<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> > >& interfaceGIDs,
                          Array<Teuchos::RCP<Xpetra::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> > >& regionsPerGIDWithGhosts,
-                         Array<Teuchos::Array<LocalOrdinal> >& regionMatVecLIDs,
+                         Array<Teuchos::ArrayRCP<LocalOrdinal> >& regionMatVecLIDs,
                          Array<Teuchos::RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > >& regionInterfaceImporter) {
 
 #include "Xpetra_UseShortNames.hpp"
@@ -654,7 +654,7 @@ void createRegionHierarchy(const int maxRegPerProc,
                            Array<Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > >& regInterfaceScalings,
                            Array<Teuchos::RCP<Xpetra::MultiVector<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> > >& interfaceGIDs,
                            Array<Teuchos::RCP<Xpetra::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> > >& regionsPerGIDWithGhosts,
-                           Array<Teuchos::Array<LocalOrdinal> >& regionMatVecLIDs,
+                           Array<Teuchos::ArrayRCP<LocalOrdinal> >& regionMatVecLIDs,
                            Array<Teuchos::RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > >& regionInterfaceImporter,
                            const int maxRegPerGID,
                            ArrayView<LocalOrdinal> compositeToRegionLIDs,
@@ -1033,7 +1033,7 @@ void vCycle(const int l, ///< ID of current level
     if (useFastMatVec)
     {
       // Get pre-communicated communication patterns for the fast MatVec
-      const Array<LocalOrdinal> regionInterfaceLIDs = smootherParams[l+1]->get<Array<LO>>("Fast MatVec: interface LIDs");
+      const ArrayRCP<LocalOrdinal> regionInterfaceLIDs = smootherParams[l+1]->get<ArrayRCP<LO>>("Fast MatVec: interface LIDs");
       const RCP<Import> regionInterfaceImporter = smootherParams[l+1]->get<RCP<Import>>("Fast MatVec: interface importer");
 
       for (int j = 0; j < maxRegPerProc; j++) {
@@ -1079,7 +1079,7 @@ void vCycle(const int l, ///< ID of current level
     if (useFastMatVec)
     {
       // Get pre-communicated communication patterns for the fast MatVec
-      const Array<LocalOrdinal> regionInterfaceLIDs = smootherParams[l]->get<Array<LO>>("Fast MatVec: interface LIDs");
+      const ArrayRCP<LocalOrdinal> regionInterfaceLIDs = smootherParams[l]->get<ArrayRCP<LO>>("Fast MatVec: interface LIDs");
       const RCP<Import> regionInterfaceImporter = smootherParams[l]->get<RCP<Import>>("Fast MatVec: interface importer");
 
       for (int j = 0; j < maxRegPerProc; j++) {
