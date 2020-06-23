@@ -357,8 +357,6 @@ namespace Tpetra {
         Array<int> newRemotePIDs(indexIntoRemotePIDs-cnt);
         cnt = 0;
 
-        Kokkos::fence(); // target->getLocalElement is UVM access
-
         for (size_type j = 0; j < indexIntoRemotePIDs; ++j)
           if(tRemotePIDs[j] != -1) {
             newRemoteGIDs[cnt] = tRemoteGIDs[j];
@@ -1297,8 +1295,6 @@ namespace Tpetra {
       typename decltype (this->TransferData_->exportLIDs_)::t_host
         exportLIDs (view_alloc_no_init ("exportLIDs"), numExportIDs);
       ArrayView<const GO> expGIDs = exportGIDs ();
-
-      Kokkos::fence(); // source.getLocalElement is UVM access
 
       for (size_type k = 0; k < numExportIDs; ++k) {
         exportLIDs[k] = source.getLocalElement (expGIDs[k]);
