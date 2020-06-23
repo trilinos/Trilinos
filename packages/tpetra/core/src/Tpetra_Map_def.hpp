@@ -723,8 +723,12 @@ namespace Tpetra {
                                              firstContiguousGID_,
                                              lastContiguousGID_,
                                              static_cast<LO> (i));
+#ifdef KOKKOS_ENABLE_CUDA
         // use copy constructor to make host version
         glMapHost_ = global_to_local_table_host_type(glMap_);
+#else
+        glMapHost_ = glMap_; // both are the same so share the Views to avoid extra copies
+#endif
       }
 
       // FIXME (mfh 10 Oct 2016) When we construct the global-to-local
@@ -1107,8 +1111,12 @@ namespace Tpetra {
                                              firstContiguousGID_,
                                              lastContiguousGID_,
                                              static_cast<LO> (i));
+#ifdef KOKKOS_ENABLE_CUDA
         // use copy constructor to make host version
         glMapHost_ = global_to_local_table_host_type(glMap_);
+#else
+        glMapHost_ = glMap_; // both are the same so share the Views to avoid extra copies
+#endif
       }
 
       // FIXME (mfh 10 Oct 2016) When we construct the global-to-local
