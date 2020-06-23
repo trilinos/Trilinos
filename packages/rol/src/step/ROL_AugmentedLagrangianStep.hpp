@@ -332,7 +332,7 @@ public:
       Step<Real>::getState()->searchSize
         = std::max(static_cast<Real>(1e-8),std::min(static_cast<Real>(10)*
             std::max(one,std::abs(fscale_*algo_state.value))
-              /std::max(one,std::pow(cscale_*algo_state.cnorm,2)),
+              /std::max(one,static_cast<Real>(std::pow(cscale_*algo_state.cnorm,2))),
             static_cast<Real>(1e-2)*maxPenaltyParam_));
     }
     // Update evaluation counters
