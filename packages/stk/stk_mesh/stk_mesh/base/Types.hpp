@@ -209,15 +209,17 @@ struct RelationType
  */
 
 /** \brief  Pairing of an entity with a processor rank */
-typedef std::pair<Entity , int> EntityProc ;
-typedef std::vector<EntityProc>     EntityProcVec ;
+using EntityProc    = std::pair<Entity, int>;
+using EntityProcVec = std::vector<EntityProc>;
+using EntityProcMap = std::map<Entity, int>;
 
-typedef std::pair<EntityKey, int> EntityKeyProc;
+using EntityIdProc    = std::pair<EntityId, int>;
+using EntityIdProcVec = std::vector<EntityIdProc>;
+using EntityIdProcMap = std::map<EntityId, int>;
 
-typedef std::pair<EntityId, int> EntityIdProc;
-typedef std::vector<EntityIdProc> EntityIdProcVec;
-
-typedef std::map<EntityId, int> EntityIdProcMap;
+using EntityKeyProc    = std::pair<EntityKey, int>;
+using EntityKeyProcVec = std::vector<EntityKeyProc>;
+using EntityKeyProcMap = std::map<EntityKey, int>;
 
 /** \brief  Spans of a vector of entity-processor pairs are common.
  *

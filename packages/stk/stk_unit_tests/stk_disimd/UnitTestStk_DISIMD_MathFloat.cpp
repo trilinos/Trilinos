@@ -786,6 +786,57 @@ TEST(StkDISimd, SimdTimeLoadStoreInnerProductFloat)
 }
 
 
+class SimdFloatBool : public ::testing::Test
+{
+public:
+  stk::simd::Float zeros_ones()
+  {
+    for (int i=0; i<stk::simd::nfloats; i++) {
+      m_data[i] = i%2;
+    }
+    return stk::simd::load(m_data);
+  }
+
+private:
+  float m_data[stk::simd::nfloats];
+};
+
+TEST_F(SimdFloatBool, allFalse)
+{
+  stk::simd::Boolf simdBool(false);
+
+  for (int i=0; i<stk::simd::nfloats; i++) {
+    EXPECT_FALSE(simdBool[i]);
+  }
+}
+
+TEST_F(SimdFloatBool, allTrue)
+{
+  stk::simd::Boolf simdTrue(true);
+
+  for (int i=0; i<stk::simd::nfloats; i++) {
+    EXPECT_TRUE(simdTrue[i]);
+  }
+}
+
+TEST_F(SimdFloatBool, someTrue)
+{
+  stk::simd::Float half(0.5);
+  stk::simd::Float zeroOne = zeros_ones();
+
+  stk::simd::Boolf simdBool = (zeroOne < half);
+
+  for (int i=0; i<stk::simd::nfloats; i++) {
+    if (zeroOne[i] < half[i]) {
+      EXPECT_TRUE(simdBool[i]);
+    }
+    else {
+      EXPECT_FALSE(simdBool[i]);
+    }
+  }
+}
+
+
 TEST(StkDISimd, SimdIfThenBoolFloat)
 {
 

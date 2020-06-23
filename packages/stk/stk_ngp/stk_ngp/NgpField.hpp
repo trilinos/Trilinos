@@ -54,7 +54,7 @@ template<typename T> class MultistateField;
 class FieldBase
 {
 public:
-  KOKKOS_DEFAULTED_FUNCTION FieldBase() = default;
+  STK_FUNCTION FieldBase() = default;
   STK_FUNCTION virtual ~FieldBase() {}
   virtual void sync_to_host() {}
 };
@@ -333,7 +333,7 @@ public:
         fieldData.clear_sync_state();  // New Kokkos API
     }
 
-    KOKKOS_DEFAULTED_FUNCTION StaticField(const StaticField &) = default;
+    STK_FUNCTION StaticField(const StaticField &) = default;
 
     STK_FUNCTION virtual ~StaticField() {}
 
@@ -538,7 +538,7 @@ public:
     {
     }
 
-    KOKKOS_DEFAULTED_FUNCTION ConstStaticField(const ConstStaticField &) = default;
+    STK_FUNCTION ConstStaticField(const ConstStaticField &) = default;
 
     STK_FUNCTION virtual ~ConstStaticField() {}
 

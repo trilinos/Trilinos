@@ -242,7 +242,7 @@ public:
     }
 
 protected:
-    FieldVertexWeightSettings() = default;
+    FieldVertexWeightSettings() = delete;
     FieldVertexWeightSettings(const FieldVertexWeightSettings&) = delete;
     FieldVertexWeightSettings& operator=(const FieldVertexWeightSettings&) = delete;
 
@@ -401,7 +401,7 @@ public:
     }
 
 protected:
-    MultipleCriteriaFieldSettings() = default;
+    MultipleCriteriaFieldSettings() = delete;
     MultipleCriteriaFieldSettings(const MultipleCriteriaFieldSettings&) = delete;
     MultipleCriteriaFieldSettings& operator=(const MultipleCriteriaFieldSettings&) = delete;
 

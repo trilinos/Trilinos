@@ -7,7 +7,7 @@
 #include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
-#include <stk_mesh/baseImpl/ForEachEntityLoopAbstractions.hpp>
+#include <stk_mesh/base/ForEachEntity.hpp>
 
 namespace {
 
@@ -92,7 +92,7 @@ protected:
     void verify_node_ordering()
     {
         EntityLessCoords entityLessCoords(get_bulk());
-        stk::mesh::impl::for_each_entity_run(get_bulk(), stk::topology::NODE_RANK,
+        stk::mesh::for_each_entity_run(get_bulk(), stk::topology::NODE_RANK,
             [&entityLessCoords](const stk::mesh::BulkData& bulk, const stk::mesh::MeshIndex& meshIndex)
             {
                  if(meshIndex.bucket_ordinal > 0)

@@ -118,21 +118,19 @@ void checkNodeOrderingAndOffsetsForFaces(const stk::topology &element, const uns
 
 void checkNodeOrderingAndOffsetsForEdges(const stk::topology &element, const unsigned *elementNodes, const unsigned *expectedNodeOffsets)
 {
-    unsigned numNodesPerEdge = element.edge_topology().num_nodes();
-    unsigned *offsets = new unsigned[numNodesPerEdge];
-    unsigned *nodeIds = new unsigned[numNodesPerEdge];
+    std::vector<unsigned> offsets;
+    std::vector<unsigned> nodeIds;
+    for (unsigned index=0; index<element.num_edges();index++) {
+        unsigned numNodesPerEdge = element.edge_topology(index).num_nodes();
+        offsets.resize(numNodesPerEdge);
+        nodeIds.resize(numNodesPerEdge);
 
-    for (unsigned index=0; index<element.num_edges();index++)
-    {
-        element.edge_node_ordinals(index, offsets);
-        element.edge_nodes(elementNodes, index, nodeIds);
+        element.edge_node_ordinals(index, offsets.data());
+        element.edge_nodes(elementNodes, index, nodeIds.data());
 
-        checkForValidOffsets(numNodesPerEdge, offsets, &expectedNodeOffsets[numNodesPerEdge*index]);
-        checkPermutedNodeIds(numNodesPerEdge, offsets, nodeIds, elementNodes);
+        checkForValidOffsets(numNodesPerEdge, offsets.data(), &expectedNodeOffsets[numNodesPerEdge*index]);
+        checkPermutedNodeIds(numNodesPerEdge, offsets.data(), nodeIds.data(), elementNodes);
     }
-
-    delete [] nodeIds; nodeIds = 0;
-    delete [] offsets; offsets = 0;
 }
 
 void checkNodeOrderingAndOffsetsForPermutations(const stk::topology &element, const unsigned *elementNodes, const unsigned *expectedNodeOffsets)
@@ -326,11 +324,11 @@ TEST(stk_topology_understanding, three_dim_linear_element)
     unsigned hex8Nodes[8] = { 0, 1, 2, 3, 4, 5, 6, 7 };
 
     {
-        stk::topology goldEdgeTopology = stk::topology::LINE_2;
-        EXPECT_EQ(goldEdgeTopology, hex8.edge_topology());
+        for(unsigned i = 0; i < hex8.num_edges(); i++) {
+            EXPECT_EQ(hex8.edge_topology(i), stk::topology::LINE_2);
+            ASSERT_EQ(hex8.edge_topology(i).num_nodes(), 2u);
+        }
 
-        unsigned goldNumNodesPerEdge = 2;
-        ASSERT_EQ(goldNumNodesPerEdge, hex8.edge_topology().num_nodes());
         unsigned goldValuesEdgeOffsets[24] = {
                 0, 1,
                 1, 2,

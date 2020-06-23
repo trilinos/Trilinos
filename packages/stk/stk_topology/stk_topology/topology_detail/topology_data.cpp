@@ -68,6 +68,30 @@ constexpr bool topology_data<topology::PYRAMID_5       >::spatial_dimension_vect
 constexpr bool topology_data<topology::WEDGE_6         >::spatial_dimension_vector[];
 constexpr bool topology_data<topology::HEX_8           >::spatial_dimension_vector[];
 
+constexpr topology::topology_t topology_data<topology::INVALID_TOPOLOGY>::edge_topology_vector[];
+constexpr topology::topology_t topology_data<topology::PARTICLE        >::edge_topology_vector[];
+constexpr topology::topology_t topology_data<topology::LINE_2          >::edge_topology_vector[];
+constexpr topology::topology_t topology_data<topology::BEAM_2          >::edge_topology_vector[];
+constexpr topology::topology_t topology_data<topology::BEAM_3          >::edge_topology_vector[];
+constexpr topology::topology_t topology_data<topology::SHELL_LINE_2    >::edge_topology_vector[];
+constexpr topology::topology_t topology_data<topology::SHELL_LINE_3    >::edge_topology_vector[];
+constexpr topology::topology_t topology_data<topology::SPRING_2        >::edge_topology_vector[];
+constexpr topology::topology_t topology_data<topology::SPRING_3        >::edge_topology_vector[];
+constexpr topology::topology_t topology_data<topology::TRI_3           >::edge_topology_vector[];
+constexpr topology::topology_t topology_data<topology::TRI_6           >::edge_topology_vector[];
+constexpr topology::topology_t topology_data<topology::QUAD_4          >::edge_topology_vector[];
+constexpr topology::topology_t topology_data<topology::QUAD_6          >::edge_topology_vector[];
+constexpr topology::topology_t topology_data<topology::QUAD_8          >::edge_topology_vector[];
+constexpr topology::topology_t topology_data<topology::TET_4           >::edge_topology_vector[];
+constexpr topology::topology_t topology_data<topology::TET_10          >::edge_topology_vector[];
+constexpr topology::topology_t topology_data<topology::PYRAMID_5       >::edge_topology_vector[];
+constexpr topology::topology_t topology_data<topology::PYRAMID_13      >::edge_topology_vector[];
+constexpr topology::topology_t topology_data<topology::WEDGE_6         >::edge_topology_vector[];
+constexpr topology::topology_t topology_data<topology::WEDGE_12        >::edge_topology_vector[];
+constexpr topology::topology_t topology_data<topology::WEDGE_15        >::edge_topology_vector[];
+constexpr topology::topology_t topology_data<topology::HEX_8           >::edge_topology_vector[];
+constexpr topology::topology_t topology_data<topology::HEX_20          >::edge_topology_vector[];
+
 constexpr topology::topology_t topology_data<topology::INVALID_TOPOLOGY>::face_topology_vector[];
 constexpr topology::topology_t topology_data<topology::NODE            >::face_topology_vector[];
 constexpr topology::topology_t topology_data<topology::LINE_2          >::face_topology_vector[];
@@ -87,6 +111,7 @@ constexpr topology::topology_t topology_data<topology::PYRAMID_5       >::face_t
 constexpr topology::topology_t topology_data<topology::PYRAMID_13      >::face_topology_vector[];
 constexpr topology::topology_t topology_data<topology::PYRAMID_14      >::face_topology_vector[];
 constexpr topology::topology_t topology_data<topology::WEDGE_6         >::face_topology_vector[];
+constexpr topology::topology_t topology_data<topology::WEDGE_12        >::face_topology_vector[];
 constexpr topology::topology_t topology_data<topology::WEDGE_15        >::face_topology_vector[];
 constexpr topology::topology_t topology_data<topology::WEDGE_18        >::face_topology_vector[];
 constexpr topology::topology_t topology_data<topology::HEX_8           >::face_topology_vector[];
@@ -112,6 +137,7 @@ constexpr unsigned topology_data<topology::PYRAMID_5       >::face_node_ordinals
 constexpr unsigned topology_data<topology::PYRAMID_13      >::face_node_ordinals_offsets[];
 constexpr unsigned topology_data<topology::PYRAMID_14      >::face_node_ordinals_offsets[];
 constexpr unsigned topology_data<topology::WEDGE_6         >::face_node_ordinals_offsets[];
+constexpr unsigned topology_data<topology::WEDGE_12        >::face_node_ordinals_offsets[];
 constexpr unsigned topology_data<topology::WEDGE_15        >::face_node_ordinals_offsets[];
 constexpr unsigned topology_data<topology::WEDGE_18        >::face_node_ordinals_offsets[];
 constexpr unsigned topology_data<topology::HEX_8           >::face_node_ordinals_offsets[];
@@ -137,6 +163,7 @@ constexpr unsigned topology_data<topology::PYRAMID_5       >::face_node_ordinals
 constexpr unsigned topology_data<topology::PYRAMID_13      >::face_node_ordinals_vector[];
 constexpr unsigned topology_data<topology::PYRAMID_14      >::face_node_ordinals_vector[];
 constexpr unsigned topology_data<topology::WEDGE_6         >::face_node_ordinals_vector[];
+constexpr unsigned topology_data<topology::WEDGE_12        >::face_node_ordinals_vector[];
 constexpr unsigned topology_data<topology::WEDGE_15        >::face_node_ordinals_vector[];
 constexpr unsigned topology_data<topology::WEDGE_18        >::face_node_ordinals_vector[];
 constexpr unsigned topology_data<topology::HEX_8           >::face_node_ordinals_vector[];
@@ -149,6 +176,7 @@ constexpr unsigned topology_data<topology::LINE_2          >::edge_node_ordinals
 constexpr unsigned topology_data<topology::TRI_3           >::edge_node_ordinals_offsets[];
 constexpr unsigned topology_data<topology::TRI_6           >::edge_node_ordinals_offsets[];
 constexpr unsigned topology_data<topology::QUAD_4          >::edge_node_ordinals_offsets[];
+constexpr unsigned topology_data<topology::QUAD_6          >::edge_node_ordinals_offsets[];
 constexpr unsigned topology_data<topology::QUAD_8          >::edge_node_ordinals_offsets[];
 constexpr unsigned topology_data<topology::PARTICLE        >::edge_node_ordinals_offsets[];
 constexpr unsigned topology_data<topology::BEAM_2          >::edge_node_ordinals_offsets[];
@@ -160,6 +188,7 @@ constexpr unsigned topology_data<topology::TET_10          >::edge_node_ordinals
 constexpr unsigned topology_data<topology::PYRAMID_5       >::edge_node_ordinals_offsets[];
 constexpr unsigned topology_data<topology::PYRAMID_13      >::edge_node_ordinals_offsets[];
 constexpr unsigned topology_data<topology::WEDGE_6         >::edge_node_ordinals_offsets[];
+constexpr unsigned topology_data<topology::WEDGE_12        >::edge_node_ordinals_offsets[];
 constexpr unsigned topology_data<topology::WEDGE_15        >::edge_node_ordinals_offsets[];
 constexpr unsigned topology_data<topology::HEX_8           >::edge_node_ordinals_offsets[];
 constexpr unsigned topology_data<topology::HEX_20          >::edge_node_ordinals_offsets[];
@@ -170,6 +199,7 @@ constexpr unsigned topology_data<topology::LINE_2          >::edge_node_ordinals
 constexpr unsigned topology_data<topology::TRI_3           >::edge_node_ordinals_vector[];
 constexpr unsigned topology_data<topology::TRI_6           >::edge_node_ordinals_vector[];
 constexpr unsigned topology_data<topology::QUAD_4          >::edge_node_ordinals_vector[];
+constexpr unsigned topology_data<topology::QUAD_6          >::edge_node_ordinals_vector[];
 constexpr unsigned topology_data<topology::QUAD_8          >::edge_node_ordinals_vector[];
 constexpr unsigned topology_data<topology::PARTICLE        >::edge_node_ordinals_vector[];
 constexpr unsigned topology_data<topology::BEAM_2          >::edge_node_ordinals_vector[];
@@ -181,6 +211,7 @@ constexpr unsigned topology_data<topology::TET_10          >::edge_node_ordinals
 constexpr unsigned topology_data<topology::PYRAMID_5       >::edge_node_ordinals_vector[];
 constexpr unsigned topology_data<topology::PYRAMID_13      >::edge_node_ordinals_vector[];
 constexpr unsigned topology_data<topology::WEDGE_6         >::edge_node_ordinals_vector[];
+constexpr unsigned topology_data<topology::WEDGE_12        >::edge_node_ordinals_vector[];
 constexpr unsigned topology_data<topology::WEDGE_15        >::edge_node_ordinals_vector[];
 constexpr unsigned topology_data<topology::HEX_8           >::edge_node_ordinals_vector[];
 constexpr unsigned topology_data<topology::HEX_20          >::edge_node_ordinals_vector[];
@@ -193,6 +224,7 @@ constexpr unsigned topology_data<topology::TRI_3           >::permutation_node_o
 constexpr unsigned topology_data<topology::TRI_4           >::permutation_node_ordinals_vector[];
 constexpr unsigned topology_data<topology::TRI_6           >::permutation_node_ordinals_vector[];
 constexpr unsigned topology_data<topology::QUAD_4          >::permutation_node_ordinals_vector[];
+constexpr unsigned topology_data<topology::QUAD_6          >::permutation_node_ordinals_vector[];
 constexpr unsigned topology_data<topology::QUAD_8          >::permutation_node_ordinals_vector[];
 constexpr unsigned topology_data<topology::QUAD_9          >::permutation_node_ordinals_vector[];
 constexpr unsigned topology_data<topology::PARTICLE        >::permutation_node_ordinals_vector[];
@@ -204,6 +236,7 @@ constexpr unsigned topology_data<topology::PYRAMID_5       >::permutation_node_o
 constexpr unsigned topology_data<topology::PYRAMID_13      >::permutation_node_ordinals_vector[];
 constexpr unsigned topology_data<topology::PYRAMID_14      >::permutation_node_ordinals_vector[];
 constexpr unsigned topology_data<topology::WEDGE_6         >::permutation_node_ordinals_vector[];
+constexpr unsigned topology_data<topology::WEDGE_12        >::permutation_node_ordinals_vector[];
 constexpr unsigned topology_data<topology::WEDGE_15        >::permutation_node_ordinals_vector[];
 constexpr unsigned topology_data<topology::WEDGE_18        >::permutation_node_ordinals_vector[];
 constexpr unsigned topology_data<topology::HEX_8           >::permutation_node_ordinals_vector[];
