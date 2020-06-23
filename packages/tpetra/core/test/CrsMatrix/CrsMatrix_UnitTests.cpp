@@ -341,7 +341,6 @@ namespace { // (anonymous)
     typedef Tpetra::Vector<Scalar,LO,GO,Node> V;
     typedef typename ST::magnitudeType Mag;
     typedef Teuchos::ScalarTraits<Mag> MT;
-    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
@@ -350,7 +349,6 @@ namespace { // (anonymous)
     // this isn't quite the minimum but it works: numLocalRows * 5 + Behavior::rowImbalanceThreshold()
     const size_t numLocalColumns = 1 + (5 + 1.5 * Tpetra::Details::Behavior::rowImbalanceThreshold()) / (1.0 - 1.0 / numLocalRows);
     const size_t numVecs = 2;
-    const int rank = comm->getRank();
     const int numRanks = comm->getSize();
     RCP<const Tpetra::Map<LO,GO,Node> > rowMap =
       createContigMapWithNode<LO,GO,Node>(numLocalRows * numRanks, numLocalRows, comm);
