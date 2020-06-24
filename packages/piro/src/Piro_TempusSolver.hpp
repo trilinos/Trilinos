@@ -200,7 +200,7 @@ private:
   bool supports_x_dotdot_; 
   
   //! Set observer
-  void setObserver(); 
+  void setObserver() const; 
 
   //! Boolean to tell TempusSolver whether or not to abort if a transient solve fails 
   bool abort_on_failure_;
