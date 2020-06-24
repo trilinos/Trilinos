@@ -85,7 +85,7 @@ void fill_element_and_side_ids_from_sideset(const stk::mesh::SideSet& sset,
           bool selectedByBucket = (   subset_selector == nullptr) ? true :    (*subset_selector)(elementBucket);
           bool selectedByOutput = (   output_selector == nullptr) ? true :    (*output_selector)(elementBucket);
 
-          if(selectedByBucket && selectedByParent && selectedByOutput)
+          if(selectedByBucket && selectedByParent && selectedByOutput && elementBucket.owned())
           {
             elem_side_ids.push_back(elemId);
             elem_side_ids.push_back(zero_based_side_ord+1);

@@ -70,7 +70,7 @@ ParsedOptions parse_m2n_command_line(int argc, const char**argv, stk::CommandLin
 
     std::string inFile = commandLine.get_option_value<std::string>(m2nOptions.infile.name);
     int targetNumProcs = commandLine.get_option_value<int>(m2nOptions.nprocs.name);
-    stk::parallel::require(targetNumProcs > 0, "Please specify a valid target processor count.", comm);
+    ThrowRequireMsg(targetNumProcs > 0, "Please specify a valid target processor count.");
 
     return ParsedOptions{inFile, targetNumProcs};
 }

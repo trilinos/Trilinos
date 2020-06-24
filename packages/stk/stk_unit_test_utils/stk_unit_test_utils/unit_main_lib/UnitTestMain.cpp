@@ -46,8 +46,11 @@ char** gl_argv = 0;
 
 int main(int argc, char **argv)
 {
-    stk::parallel_machine_init(&argc, &argv);
+  stk::parallel_machine_init(&argc, &argv);
 
+  int returnVal = -1;
+ 
+  {
 #ifdef STK_HAVE_STKNGP_TEST
     ngp_testing::NgpTestEnvironment testEnv(&argc, argv);
 #else
@@ -63,12 +66,14 @@ int main(int argc, char **argv)
 #endif
 
 #ifdef STK_HAVE_STKNGP_TEST
-    int returnVal = testEnv.run_all_tests();
+    returnVal = testEnv.run_all_tests();
+    testEnv.finalize();
 #else
-    int returnVal = RUN_ALL_TESTS();
+    returnVal = RUN_ALL_TESTS();
 #endif
+  }
 
-    stk::parallel_machine_finalize();
+  stk::parallel_machine_finalize();
 
-    return returnVal;
+  return returnVal;
 }

@@ -351,9 +351,7 @@ template <typename T> int sgn(T val) {
 
 TEST(StkSimd, SimdSpecialFunctions)
 {
-
   const int N = 2000;
-  double maxerr = 0.0;
 
   std::vector<double> x(N);
   std::vector<double> y(N);
@@ -378,15 +376,7 @@ TEST(StkSimd, SimdSpecialFunctions)
     stk::simd::store(&z1[n],zl);
   }
   
-  maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    double err = stk::math::abs(z1[n]-z2[n]);
-    maxerr = stk::math::max(err,maxerr);
-    err = stk::math::abs(z1[n]-z3[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-  
-  ASSERT_NEAR( maxerr, 0.0, 0.0 );
+  ASSERT_NEAR( max_error(z1,z2,z3), 0.0, 0.0);
 
   // multiplysign
 
@@ -401,15 +391,7 @@ TEST(StkSimd, SimdSpecialFunctions)
     stk::simd::store(&z1[n],zl);
   }
   
-  maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    double err = stk::math::abs(z1[n]-z2[n]);
-    maxerr = stk::math::max(err,maxerr);
-    err = stk::math::abs(z1[n]-z3[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-  
-  ASSERT_NEAR( maxerr, 0.0, 0.0 );
+  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, 0.0);
   
   // copysign
 
@@ -424,15 +406,7 @@ TEST(StkSimd, SimdSpecialFunctions)
     stk::simd::store(&z1[n],zl);
   }
   
-  maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    double err = stk::math::abs(z1[n]-z2[n]);
-    maxerr = stk::math::max(err,maxerr);
-    err = stk::math::abs(z1[n]-z3[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-  
-  ASSERT_NEAR( maxerr, 0.0, 0.0 );
+  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, 0.0 );
 
   // max
 
@@ -447,15 +421,7 @@ TEST(StkSimd, SimdSpecialFunctions)
     stk::simd::store(&z1[n],zl);
   }
   
-  maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    double err = stk::math::abs(z1[n]-z2[n]);
-    maxerr = stk::math::max(err,maxerr);
-    err = stk::math::abs(z1[n]-z3[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-  
-  ASSERT_NEAR( maxerr, 0.0, 0.0 );
+  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, 0.0 );
 
   // min
 
@@ -470,15 +436,7 @@ TEST(StkSimd, SimdSpecialFunctions)
     stk::simd::store(&z1[n],zl);
   }
   
-  maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    double err = stk::math::abs(z1[n]-z2[n]);
-    maxerr = stk::math::max(err,maxerr);
-    err = stk::math::abs(z1[n]-z3[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-  
-  ASSERT_NEAR( maxerr, 0.0, 0.0 );
+  ASSERT_NEAR( max_error(z1,z2,z3), 0.0, 0.0 );
 
   // ifs and buts
 
@@ -494,13 +452,7 @@ TEST(StkSimd, SimdSpecialFunctions)
     stk::simd::store(&z1[n],zl);
   }
   
-  maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    double err = stk::math::abs(z1[n]-z2[n]);
-    maxerr = stk::math::max(err,maxerr);
-    err = stk::math::abs(z1[n]-z3[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
+  ASSERT_NEAR( max_error(z1,z2,z3), 0.0, 0.0);
 
   for (int n=0; n < N; n+=stk::simd::ndoubles) {
     for (int i=0; i < stk::simd::ndoubles; ++i) {
@@ -514,19 +466,12 @@ TEST(StkSimd, SimdSpecialFunctions)
     stk::simd::store(&z1[n],zl);
   }
   
-  maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    double err = stk::math::abs(z1[n]-z2[n]);
-    maxerr = stk::math::max(err,maxerr);
-    err = stk::math::abs(z1[n]-z3[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
+  ASSERT_NEAR( max_error(z1,z2,z3), 0.0, 0.0 );
 }
 
-
-TEST(StkSimd, SimdAddSubtractMultDivide) 
+TEST(StkSimd, SimdAddSubtractMultDivide)
 {
-  int N = 800000;
+  int N = 400000;
   double t0; // timing variable
 
   std::vector<double> x(N);
@@ -542,37 +487,31 @@ TEST(StkSimd, SimdAddSubtractMultDivide)
   
   t0 = -stk::get_time_in_seconds();
   for(int i=0; i<10; ++i) {
-  for (int n=0; n < N; n+=stk::simd::ndoubles) {
-    const stk::simd::Double a = stk::simd::load(&x[n]);
-    const stk::simd::Double b = stk::simd::load(&y[n]);
-    const stk::simd::Double c = ( a+b*(a-b) )/a;
-    stk::simd::store(&out1[n],c);
-  }
+    for (int n=0; n < N; n+=stk::simd::ndoubles) {
+      const stk::simd::Double a = stk::simd::load(&x[n]);
+      const stk::simd::Double b = stk::simd::load(&y[n]);
+      const stk::simd::Double c = ( a+b*(a-b) )/a;
+      stk::simd::store(&out1[n],c);
+    }
   }
   t0 += stk::get_time_in_seconds();
   std::cout << "SIMD ADD,SUB,MUL,DIV took " << t0 << " seconds" <<  std::endl;
   
   t0 = -stk::get_time_in_seconds();
   for(int i=0; i<10; ++i) {
-  for (int n=0; n < N; ++n) {
-    const double a = x[n];
-    const double b = y[n];
-    out2[n] = ( a+b*(a-b) )/a;
-  }
+    for (int n=0; n < N; ++n) {
+      const double a = x[n];
+      const double b = y[n];
+      out2[n] = ( a+b*(a-b) )/a;
+    }
   }
   t0 += stk::get_time_in_seconds();
   std::cout << "Real ADD,SUB,MUL,DIV took " << t0 << " seconds" <<  std::endl;
 
-  double maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    double err = stk::math::abs(out1[n]-out2[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-
-  ASSERT_NEAR( maxerr, 0.0, 1e-8 );
+  ASSERT_NEAR( max_error(out1, out2), 0.0, 1e-8 );
 }
 
-TEST(StkSimd, SimdMiscSelfAddSubEtc) 
+TEST(StkSimd, SimdMiscSelfAddSubEtc)
 {
   int N = 10000;
 
@@ -581,8 +520,6 @@ TEST(StkSimd, SimdMiscSelfAddSubEtc)
  
   std::vector<double> out1(N);
   std::vector<double> out2(N);
-
-  double maxerr = 0.0;
 
   for (int n=0; n < N; ++n) {
     x[n] = 21*(rand()-0.5)/RAND_MAX;
@@ -606,13 +543,7 @@ TEST(StkSimd, SimdMiscSelfAddSubEtc)
     out2[n] *= -b*a+stk::Traits<double>::TWO/5;
   }
  
-  maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    double err = stk::math::abs(out1[n]-out2[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-
-  ASSERT_NEAR( maxerr, 0.0, 1e-9 );
+  ASSERT_NEAR( max_error(out1, out2), 0.0, 1e-9 );
   
   for (int n=0; n < N; n+=stk::simd::ndoubles) {
     const stk::simd::Double a = stk::simd::load(&x[n]);
@@ -629,13 +560,7 @@ TEST(StkSimd, SimdMiscSelfAddSubEtc)
     out2[n] /= -(b*a+5.6*out2[n]);
   }
  
-  maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    double err = stk::math::abs(out1[n]-out2[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-
-  ASSERT_NEAR( maxerr, 0.0, 1e-9 );
+  ASSERT_NEAR( max_error(out1, out2), 0.0, 1e-9 );
 
   for (int n=0; n < N; n+=stk::simd::ndoubles) {
     const stk::simd::Double a = stk::simd::load(&x[n]);
@@ -653,13 +578,7 @@ TEST(StkSimd, SimdMiscSelfAddSubEtc)
     out2[n] = c;
   }
  
-  maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    double err = stk::math::abs(out1[n]-out2[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-
-  ASSERT_EQ( maxerr, 0.0);
+  ASSERT_EQ( max_error(out1, out2), 0.0);
 
   for (int n=0; n < N; n+=stk::simd::ndoubles) {
     const stk::simd::Double a = stk::simd::load(&x[n]);
@@ -676,13 +595,7 @@ TEST(StkSimd, SimdMiscSelfAddSubEtc)
     out2[n] -= 5.2+(b/(a-5.4)+3.5/out2[n]);
   }
  
-  maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    double err = stk::math::abs(out1[n]-out2[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-
-  ASSERT_NEAR( maxerr, 0.0, 0.0 );
+  ASSERT_EQ( max_error(out1, out2), 0.0 );
 
   for (int n=0; n < N; n+=stk::simd::ndoubles) {
     const stk::simd::Double a = stk::simd::load(&x[n]);
@@ -699,14 +612,7 @@ TEST(StkSimd, SimdMiscSelfAddSubEtc)
     out2[n] = -c + 1.4*a/b;
   }
  
-  maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    double err = stk::math::abs(out1[n]-out2[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-
-  ASSERT_NEAR( maxerr, 0.0, 1e-9 );
-
+  ASSERT_EQ( max_error(out1, out2), 0.0 );
 }
 
 TEST(StkSimd, Simd_fmadd)
@@ -751,14 +657,7 @@ TEST(StkSimd, Simd_fmadd)
   t0 += stk::get_time_in_seconds();
   std::cout << "Real ADD,SUB,MUL,DIV took " << t0 << " seconds" <<  std::endl;
 
-  double maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    double err = stk::math::abs(out1[n]-out2[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-
-  ASSERT_NEAR( maxerr, 0.0, 1e-14 );
-  
+  ASSERT_NEAR( max_error(out1, out2), 0.0, 1e-14 );
 }
 
 TEST(StkSimd, SimdSqrt) 
@@ -772,7 +671,7 @@ TEST(StkSimd, SimdSqrt)
   std::vector<double> out2(N);
 
   for (int n=0; n < N; ++n) {
-    x[n] = 21*(rand()+1)/RAND_MAX;
+    x[n] = 21.0*(rand()+1)/RAND_MAX;
   }
   
   t0 = -stk::get_time_in_seconds();
@@ -795,13 +694,7 @@ TEST(StkSimd, SimdSqrt)
   t0 += stk::get_time_in_seconds();
   std::cout << "Real SQRT took " << t0 << " seconds" <<  std::endl;
 
-  double maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    double err = stk::math::abs(out1[n]-out2[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-
-  ASSERT_NEAR( maxerr, 0.0, 0.0 );
+  ASSERT_NEAR( max_error(out1, out2), 0.0, 0.0 );
 }
 
 TEST(StkSimd, SimdLog) 
@@ -810,11 +703,12 @@ TEST(StkSimd, SimdLog)
   double t0; // timing variable
 
   std::vector<double> x(N);
+
   std::vector<double> out1(N);
   std::vector<double> out2(N);
 
   for (int n=0; n < N; ++n) {
-    x[n] = 21*(rand()+1.0)/RAND_MAX+1.0;
+    x[n] = 21.0*(rand()+1.0)/RAND_MAX+1.0;
   }
   
   t0 = -stk::get_time_in_seconds();
@@ -835,14 +729,7 @@ TEST(StkSimd, SimdLog)
   std::cout << "Real Log took " << t0 << " seconds" <<  std::endl;
 
   const double epsilon = 1.e-14;
-  double maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    double err = stk::math::abs(out1[n]-out2[n]);
-    ASSERT_NEAR( err, 0.0, epsilon) << "n = " << n;
-    maxerr = stk::math::max(err, maxerr);
-  }
-
-  ASSERT_NEAR( maxerr, 0.0, epsilon); 
+  ASSERT_NEAR( max_error(out1, out2), 0.0, epsilon );
 }
 
 TEST(StkSimd, SimdExp) 
@@ -875,19 +762,12 @@ TEST(StkSimd, SimdExp)
   t0 += stk::get_time_in_seconds();
   std::cout << "Real Exp took " << t0 << " seconds" <<  std::endl;
 
-  double maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    double err = stk::math::abs(out1[n]-out2[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-
-  ASSERT_NEAR( maxerr, 0.0, 0.0 );
+  ASSERT_NEAR( max_error(out1, out2), 0.0, 0.0 );
 }
 
 TEST(StkSimd, SimdPowA) 
 {
-  int N = 2000;
-  double t0; // timing variable
+  const int N = 2000;
 
   std::vector<double> x(N);
   std::vector<double> y(N/stk::simd::ndoubles);
@@ -896,13 +776,13 @@ TEST(StkSimd, SimdPowA)
   std::vector<double> out2(N);
 
   for (int n=0; n < N; ++n) {
-    x[n] = 5.4*(rand()/RAND_MAX)+0.002;
+    x[n] = 5.4*(rand()/RAND_MAX-0.5)+0.002;
   }
   for (int n=0; n < N/stk::simd::ndoubles; ++n) {
     y[n] = 3.2*(rand()/RAND_MAX-0.5)+0.2;
   }
   
-  t0 = -stk::get_time_in_seconds();
+  double t0 = -stk::get_time_in_seconds();
   for (int n=0; n < N; n+=stk::simd::ndoubles) {
     const stk::simd::Double a = stk::simd::load(&x[n]);
     const double b = y[n/stk::simd::ndoubles];
@@ -910,8 +790,8 @@ TEST(StkSimd, SimdPowA)
     stk::simd::store(&out1[n],c);
   }
   t0 += stk::get_time_in_seconds();
-  std::cout << "SIMD Exp took " << t0 << " seconds" <<  std::endl;
-  
+  std::cout << "SIMD Pow took " << t0 << " seconds" <<  std::endl;
+
   t0 = -stk::get_time_in_seconds();
   for (int n=0; n < N/stk::simd::ndoubles; ++n) {
     double exp = y[n];
@@ -921,21 +801,14 @@ TEST(StkSimd, SimdPowA)
     }
   }
   t0 += stk::get_time_in_seconds();
-  printf("Real Exp took %g ""seconds", t0);
+  std::cout << "Real Exp took " << t0 << " seconds" <<  std::endl;
 
-  double maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    double err = stk::math::abs(out1[n]-out2[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-
-  ASSERT_NEAR( maxerr, 0.0, 0.0 );
+  ASSERT_NEAR( max_error(out1, out2), 0.0, 0.0 );
 }
 
 TEST(StkSimd, SimdPowB) 
 {
-  int N = 2000;
-  double t0; // timing variable
+  int N = 400000;
 
   std::vector<double> x(N);
   std::vector<double> y(N);
@@ -944,13 +817,13 @@ TEST(StkSimd, SimdPowB)
   std::vector<double> out2(N);
 
   for (int n=0; n < N; ++n) {
-    x[n] = 5.4*(rand()/RAND_MAX)+0.001;
+    x[n] = 5.4*(rand()/RAND_MAX-0.5)+0.001;
   }
   for (int n=0; n < N; ++n) {
     y[n] = 3.2*(rand()/RAND_MAX-0.5)+0.1;
   }
   
-  t0 = -stk::get_time_in_seconds();
+  double t0 = -stk::get_time_in_seconds();
   for (int n=0; n < N; n+=stk::simd::ndoubles) {
     const stk::simd::Double a = stk::simd::load(&x[n]);
     const stk::simd::Double b = stk::simd::load(&y[n]);
@@ -958,7 +831,7 @@ TEST(StkSimd, SimdPowB)
     stk::simd::store(&out1[n],c);
   }
   t0 += stk::get_time_in_seconds();
-  std::cout << "SIMD Exp took " << t0 << " seconds" <<  std::endl;
+  std::cout << "SIMD Pow took " << t0 << " seconds" <<  std::endl;
   
   t0 = -stk::get_time_in_seconds();
   for (int n=0; n < N; ++n) {
@@ -967,15 +840,9 @@ TEST(StkSimd, SimdPowB)
     out2[n] = std::pow(a,b);
   }
   t0 += stk::get_time_in_seconds();
-  std::cout << "Real Exp took " << t0 << " seconds" <<  std::endl;
+  std::cout << "Real Pow took " << t0 << " seconds" <<  std::endl;
 
-  double maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    double err = stk::math::abs(out1[n]-out2[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-
-  ASSERT_NEAR( maxerr, 0.0, 0.0 );
+  ASSERT_NEAR( max_error(out1, out2), 0.0, 0.0);
 }
 
 TEST(StkSimd, SimdPowC) 
@@ -1008,21 +875,16 @@ TEST(StkSimd, SimdPowC)
   t0 += stk::get_time_in_seconds();
   std::cout << "Real Exp took " << t0 << " seconds" <<  std::endl;
 
-  double maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    double err = stk::math::abs(out1[n]-out2[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-
-  ASSERT_NEAR( maxerr, 0.0, 0.0 );
+  ASSERT_NEAR( max_error(out1, out2), 0.0, 0.0);
 }
 
 TEST(StkSimd, SimdCbrt)
 {
-  int N = 100000;
+  int N = 800000;
   double t0; // timing variable
 
   std::vector<double> x(N);
+
   std::vector<double> out1(N);
   std::vector<double> out2(N);
 
@@ -1046,18 +908,11 @@ TEST(StkSimd, SimdCbrt)
   t0 += stk::get_time_in_seconds();
   std::cout << "Real cbrt took " << t0 << " seconds" <<  std::endl;
 
-  double maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    double err = stk::math::abs(out1[n]-out2[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-
-  ASSERT_NEAR( maxerr, 0.0, 2e-15 );
+  ASSERT_NEAR( max_error(out1, out2), 0.0, 2e-15);
 }
 
 TEST(StkSimd, SimdTimeLoadStoreDataLayout)
 {
-
   double t0;
 
   const int N = 20000;
@@ -1170,32 +1025,12 @@ TEST(StkSimd, SimdTimeLoadStoreDataLayout)
   }
 
   // figure out error
-  double maxerr = 0.0;
-  for (int n=0; n < sz*N; ++n) {
-    double err = stk::math::abs(y[n]-z[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-
-  //printf("maxerror = %g\n",maxerr);
-  
-  ASSERT_NEAR( maxerr, 0.0, 1.0e-16 );
-  
-  // figure out error
-  maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    double err = stk::math::abs(y[n]-w[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-
-  //printf("maxerror = %g\n",maxerr);
-  
-  ASSERT_NEAR( maxerr, 0.0, 1.0e-16 );
-
+  ASSERT_NEAR( max_error(y, z), 0.0, 1.0e-16 );
+  ASSERT_NEAR( max_error(y, w), 0.0, 1.0e-16 );
 }
 
 TEST(StkSimd, SimdTimeLoadStoreInnerProduct)
 {
-
   double t0;
 
   const int N = 20000;
@@ -1311,33 +1146,13 @@ TEST(StkSimd, SimdTimeLoadStoreInnerProduct)
   }
 
   // figure out error
-  double maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    double err = stk::math::abs(y[n]-z[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-
-  //printf("maxerror = %g\n",maxerr);
-  
-  ASSERT_NEAR( maxerr, 0.0, 1.0e-16 );
-  
-  // figure out error
-  maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    double err = stk::math::abs(y[n]-w[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-
-  //printf("maxerror = %g\n",maxerr);
-  
-  ASSERT_NEAR( maxerr, 0.0, 1.0e-16 );
-
+  ASSERT_NEAR( max_error(y,z), 0.0, 1.0e-16 );
+  ASSERT_NEAR( max_error(y,w), 0.0, 1.0e-16 );
 }
 
 
 TEST(StkSimd, SimdIfThenBool)
 {
-
   typedef stk::Traits<double>::bool_type double_bool;
   typedef stk::Traits<stk::simd::Double>::bool_type Doubles_bool;
 
@@ -1350,7 +1165,6 @@ TEST(StkSimd, SimdIfThenBool)
   const int N = 2000;
   const double a = 5.1;
   const double b = -3.2;
-  double maxerr = 0.0;
 
   std::vector<double> x(N);
   std::vector<double> y(N);
@@ -1386,15 +1200,7 @@ TEST(StkSimd, SimdIfThenBool)
     stk::simd::store(&z1[n],zl);
   }
   
-  maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    double err = stk::math::abs(z1[n]-z2[n]);
-    maxerr = stk::math::max(err,maxerr);
-    err = stk::math::abs(z1[n]-z3[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-  
-  ASSERT_NEAR( maxerr, 0.0, 0.0 );
+  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, 0.0 );
 
   // less than equal
 
@@ -1411,15 +1217,7 @@ TEST(StkSimd, SimdIfThenBool)
     stk::simd::store(&z1[n],zl);
   }
   
-  maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    double err = stk::math::abs(z1[n]-z2[n]);
-    maxerr = stk::math::max(err,maxerr);
-    err = stk::math::abs(z1[n]-z3[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-  
-  ASSERT_NEAR( maxerr, 0.0, 0.0 );
+  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, 0.0 );
 
   // equal
 
@@ -1436,16 +1234,7 @@ TEST(StkSimd, SimdIfThenBool)
     stk::simd::store(&z1[n],zl);
   }
   
-  maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    double err = stk::math::abs(z1[n]-z2[n]);
-    maxerr = stk::math::max(err,maxerr);
-    err = stk::math::abs(z1[n]-z3[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-  
-  ASSERT_NEAR( maxerr, 0.0, 0.0 );
-  
+  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, 0.0 );
 
   // greater than equal
 
@@ -1462,15 +1251,7 @@ TEST(StkSimd, SimdIfThenBool)
     stk::simd::store(&z1[n],zl);
   }
   
-  maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    double err = stk::math::abs(z1[n]-z2[n]);
-    maxerr = stk::math::max(err,maxerr);
-    err = stk::math::abs(z1[n]-z3[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-  
-  ASSERT_NEAR( maxerr, 0.0, 0.0 );
+  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, 0.0 );
 
   // greater than
 
@@ -1487,15 +1268,7 @@ TEST(StkSimd, SimdIfThenBool)
     stk::simd::store(&z1[n],zl);
   }
   
-  maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    double err = stk::math::abs(z1[n]-z2[n]);
-    maxerr = stk::math::max(err,maxerr);
-    err = stk::math::abs(z1[n]-z3[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-  
-  ASSERT_NEAR( maxerr, 0.0, 0.0 );
+  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, 0.0 );
 
   // not equal
 
@@ -1512,15 +1285,7 @@ TEST(StkSimd, SimdIfThenBool)
     stk::simd::store(&z1[n],zl);
   }
   
-  maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    double err = stk::math::abs(z1[n]-z2[n]);
-    maxerr = stk::math::max(err,maxerr);
-    err = stk::math::abs(z1[n]-z3[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-  
-  ASSERT_NEAR( maxerr, 0.0, 0.0 );
+  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, 0.0 );
 
   // if then zero
 
@@ -1537,15 +1302,7 @@ TEST(StkSimd, SimdIfThenBool)
     stk::simd::store(&z1[n],zl);
   }
   
-  maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    double err = stk::math::abs(z1[n]-z2[n]);
-    maxerr = stk::math::max(err,maxerr);
-    err = stk::math::abs(z1[n]-z3[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-  
-  ASSERT_NEAR( maxerr, 0.0, 0.0 );
+  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, 0.0 );
 
   // if ! then
 
@@ -1562,15 +1319,7 @@ TEST(StkSimd, SimdIfThenBool)
     stk::simd::store(&z1[n],zl);
   }
   
-  maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    double err = stk::math::abs(z1[n]-z2[n]);
-    maxerr = stk::math::max(err,maxerr);
-    err = stk::math::abs(z1[n]-z3[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-  
-  ASSERT_NEAR( maxerr, 0.0, 0.0 );
+  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, 0.0 );
 
   // &&
 
@@ -1591,15 +1340,7 @@ TEST(StkSimd, SimdIfThenBool)
     stk::simd::store(&z1[n],zl);
   }
   
-  maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    double err = stk::math::abs(z1[n]-z2[n]);
-    maxerr = stk::math::max(err,maxerr);
-    err = stk::math::abs(z1[n]-z3[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-  
-  ASSERT_NEAR( maxerr, 0.0, 0.0 );
+  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, 0.0 );
 
   // ||
 
@@ -1622,15 +1363,7 @@ TEST(StkSimd, SimdIfThenBool)
     stk::simd::store(&z1[n],zl);
   }
   
-  maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    double err = stk::math::abs(z1[n]-z2[n]);
-    maxerr = stk::math::max(err,maxerr);
-    err = stk::math::abs(z1[n]-z3[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-  
-  ASSERT_NEAR( maxerr, 0.0, 0.0 );
+  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, 0.0 );
 
   // are_any
 
@@ -1667,7 +1400,6 @@ TEST(StkSimd, SimdIfThenBool)
   }
 
 #if defined(STK_SIMD) // these don't make sense for non-simd
-
 
   for (int n=0; n < N; n+=stk::simd::ndoubles) {
     bool anyl=false;
@@ -1709,7 +1441,6 @@ TEST(StkSimd, SimdTimeSet1VsConstDoubles)
 {
   int N = 1000000;
   double t0; // timing variable
-  double maxerr;
 
   std::vector<double> x(N);
   
@@ -1755,18 +1486,7 @@ TEST(StkSimd, SimdTimeSet1VsConstDoubles)
   t0 += stk::get_time_in_seconds();
   std::cout << "Non simd took " << t0 << " seconds" <<  std::endl;
 
-  maxerr = 0.0;
-  for (int n=0; n < N; ++n) {
-    double err = stk::math::abs(out1[n]-out2[n]);
-    maxerr = stk::math::max(err,maxerr);
-    err = stk::math::abs(out1[n]-out3[n]);
-    maxerr = stk::math::max(err,maxerr);
-    err = stk::math::abs(out1[n]-out4[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-
-  ASSERT_NEAR( maxerr, 0.0, 0.0 );
-  
+  ASSERT_NEAR( max_error(out1, out2, out3, out4), 0.0, 0.0 );
 }
 
 template <typename REAL_TYPE> 
@@ -1791,7 +1511,6 @@ template <typename REAL_TYPE> static void negate_vec2(REAL_TYPE* const in, REAL_
 
 TEST(StkSimd, NegatingAVector)
 {
-
   int N = 8000;
 
   std::vector<double> x(3*N);
@@ -1822,21 +1541,11 @@ TEST(StkSimd, NegatingAVector)
     stk::simd::store_array<3>(&out3[3*n],b);
   }
 
-  double maxerr = 0.0;
-  for (int n=0; n < 3*N; ++n) {
-    double err = stk::math::abs(out1[n]-out2[n]);
-    maxerr = stk::math::max(err,maxerr);
-    err = stk::math::abs(out1[n]-out3[n]);
-    maxerr = stk::math::max(err,maxerr);
-  }
-
-  ASSERT_NEAR( maxerr, 0.0, 0.0 );
-  
+  ASSERT_NEAR( max_error(out1, out2, out3), 0.0, 0.0 );
 }
 
 TEST(StkSimd, simd_isnan)
 {
-
   const int N = stk::simd::ndoubles;
 
   std::vector<double> x(N);
@@ -1856,9 +1565,8 @@ TEST(StkSimd, simd_isnan)
 
   IsNaN = stk::math::isnan(Y);
 
-  ASSERT_TRUE( stk::simd::are_any(IsNaN) );
+  ASSERT_TRUE(  stk::simd::are_any(IsNaN) );
   ASSERT_TRUE( !stk::simd::are_all(IsNaN) || (stk::simd::ndoubles==1) );
-  
 }
 
 std::vector<double> X_RandomValues(int N = 500000)
@@ -1880,10 +1588,8 @@ std::vector<double> Y_RandomValues(std::vector<double>& x)
   return y;
 }
 
-
 TEST(StkSimd, ReduceSum)
 {
-
   double t0; // timing variable
 
   std::vector<double> x = X_RandomValues();
@@ -1927,7 +1633,6 @@ TEST(StkSimd, ReduceSum)
   //printf("sums = %g %g\n",sum_val, save_sum);
 
   EXPECT_NEAR( sum_val-save_sum, 0.0, 1e-12*sum_val );
-
 }
 
 TEST(StkSimd, ReduceMax)
@@ -1975,7 +1680,6 @@ TEST(StkSimd, ReduceMax)
   //printf("sums = %g %g\n",sum_val, save_sum);
 
   EXPECT_EQ( max_val, save_max);
-
 }
 
 TEST(StkSimd, ReduceMin)
@@ -2021,6 +1725,5 @@ TEST(StkSimd, ReduceMin)
 
   //printf("sums = %g %g\n",sum_val, save_sum);
   EXPECT_EQ( min_val, save_min);
-
 }
 

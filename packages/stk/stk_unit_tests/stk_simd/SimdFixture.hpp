@@ -3,18 +3,18 @@
 // DE-NA0003525 with NTESS, the U.S. Government retains certain rights
 // in this software.
 //
- // Redistribution and use in source and binary forms, with or without
- // modification, are permitted provided that the following conditions are
- // met:
- // 
- //     * Redistributions of source code must retain the above copyright
- //       notice, this list of conditions and the following disclaimer.
- // 
- //     * Redistributions in binary form must reproduce the above
- //       copyright notice, this list of conditions and the following
- //       disclaimer in the documentation and/or other materials provided
- //       with the distribution.
- // 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -307,5 +307,54 @@ class MathFunctionWithBoolAndTwoDoubleArg : public TestSimdMathFunction
 
 }
 }
+//
+// helper functions.
+//
+template<typename VECTOR>
+typename VECTOR::value_type max_error(VECTOR& out1, VECTOR& out2)
+{
+  assert(out1.size() == out2.size());
+  typename VECTOR::value_type maxerr = 0.0;
+  for (std::size_t n=0; n < out1.size(); ++n) {
+    auto err = stk::math::abs(out1[n]-out2[n]);
+    maxerr = stk::math::max(err, maxerr);
+  }
+  return maxerr;
+}
+
+template<typename VECTOR>
+typename VECTOR::value_type max_error(VECTOR& out1, VECTOR& out2, VECTOR& out3)
+{
+  assert(out1.size() == out2.size());
+  assert(out1.size() == out3.size());
+  typename VECTOR::value_type maxerr = 0.0;
+  for (std::size_t n=0; n < out1.size(); ++n) {
+    auto err = stk::math::abs(out1[n]-out2[n]);
+    maxerr = stk::math::max(err, maxerr);
+    err = stk::math::abs(out1[n]-out3[n]);
+    maxerr = stk::math::max(err, maxerr);
+  }
+  return maxerr;
+}
+
+template<typename VECTOR>
+typename VECTOR::value_type max_error(VECTOR& out1, VECTOR& out2, VECTOR& out3, VECTOR& out4)
+{
+  assert(out1.size() == out2.size());
+  assert(out1.size() == out3.size());
+  assert(out1.size() == out4.size());
+  typename VECTOR::value_type maxerr = 0.0;
+  for (std::size_t n=0; n < out1.size(); ++n) {
+    auto err = stk::math::abs(out1[n]-out2[n]);
+    maxerr = stk::math::max(err, maxerr);
+    err = stk::math::abs(out1[n]-out3[n]);
+    maxerr = stk::math::max(err, maxerr);
+    err = stk::math::abs(out1[n]-out4[n]);
+    maxerr = stk::math::max(err, maxerr);
+  }
+  return maxerr;
+}
+
+
 
 #endif

@@ -61,6 +61,7 @@ local installed-end-user-files =
 # Note that if the --install-developer-files option is passed to bjam these will also
 # be installed for end-users. (This is only intended to be used for testing.)
 local installed-developer-files = 
+  stk_transfer_integration_tests
   stk_transfer_utest
   ;
 
@@ -160,6 +161,18 @@ lib stk_transfer_impl
         # builds only and will not be present for user builds.
         <toolset>gcc:<cflags>"-Wextra -Wpedantic -Wshadow -Wno-unused-parameter"
     ]
+  ;
+
+exe stk_transfer_integration_tests
+  :
+    [ glob 
+      $(stk_transfer-root)/../stk_integration_tests/stk_transfer/*.cpp 
+     ]
+    /sierra/stk_unit_test_utils//stk_unit_main
+    /sierra/stk_mesh//stk_mesh_base
+    stk_transfer_impl
+  : <tag>@sierra-exec-tag
+    <include>$(stk_transfer-root-inc)
   ;
 
 exe stk_transfer_utest

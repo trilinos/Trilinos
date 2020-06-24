@@ -301,6 +301,8 @@ Bucket::Bucket(BulkData & arg_mesh,
   m_parts.reserve(m_key.size());
   supersets(m_parts);
   m_mesh.new_bucket_callback(m_entity_rank, m_parts, m_capacity, this);
+
+  initialize_ngp_field_bucket_ids();
 }
 
 Bucket::~Bucket()
@@ -639,10 +641,46 @@ size_t Bucket::get_others_index_count(size_type bucket_ordinal, EntityRank rank)
 }
 
 //----------------------------------------------------------------------
+void Bucket::initialize_ngp_field_bucket_ids()
+{
+  const MetaData& meta = mesh().mesh_meta_data();
+  const FieldVector& allFields = meta.get_fields();
+  m_ngp_field_bucket_id.resize(allFields.size());
+  m_ngp_field_is_modified.resize(allFields.size());
+
+  for(FieldBase* field : allFields) {
+    m_ngp_field_bucket_id[field->mesh_meta_data_ordinal()] = INVALID_BUCKET_ID;
+    m_ngp_field_is_modified[field->mesh_meta_data_ordinal()] = false;
+  }
+}
+
+void Bucket::set_ngp_field_bucket_id(unsigned fieldOrdinal, unsigned ngpFieldBucketId)
+{
+  ThrowRequire(fieldOrdinal < m_ngp_field_bucket_id.size());
+  m_ngp_field_bucket_id[fieldOrdinal] = ngpFieldBucketId;
+  m_ngp_field_is_modified[fieldOrdinal] = false;
+}
+
+unsigned Bucket::get_ngp_field_bucket_id(unsigned fieldOrdinal) const
+{
+  ThrowRequire(fieldOrdinal < m_ngp_field_bucket_id.size());
+  return m_ngp_field_bucket_id[fieldOrdinal];
+}
+
+unsigned Bucket::get_ngp_field_bucket_is_modified(unsigned fieldOrdinal) const
+{
+  return m_ngp_field_is_modified[fieldOrdinal];
+}
+
+void Bucket::mark_for_modification()
+{
+  m_is_modified = true;
+  std::fill(m_ngp_field_is_modified.begin(), m_ngp_field_is_modified.end(), true);
+}
 
 void Bucket::initialize_slot(size_type ordinal, Entity entity)
 {
-  m_is_modified = true;
+  mark_for_modification();
   m_entities[ordinal]    = entity;
   if (mesh().is_valid(entity)) {
     mesh().set_state(entity, Created);
@@ -656,7 +694,7 @@ int Bucket::parallel_owner_rank(size_type ordinal) const
 
 void Bucket::reset_entity_location(Entity entity, size_type to_ordinal, const FieldVector* fields)
 {
-  m_is_modified = true;
+  mark_for_modification();
   Bucket & from_bucket = mesh().bucket(entity);
   const Bucket::size_type from_ordinal = mesh().bucket_ordinal(entity);
 
@@ -675,7 +713,6 @@ void Bucket::add_entity(Entity entity)
   ThrowAssert(!mesh().is_valid(entity) || mesh().bucket_ptr(entity) == nullptr);
   ThrowAssert(!mesh().is_valid(entity) || mesh().entity_rank(entity) == m_entity_rank);
 
-  m_is_modified = true;
   initialize_slot(m_size, entity);
 
   if (mesh().is_valid(entity)) {
@@ -710,7 +747,7 @@ void Bucket::remove_entity()
 {
   ThrowAssert(m_size > 0);
 
-  m_is_modified = true;
+  mark_for_modification();
   mesh().remove_entity_field_data_callback(entity_rank(), bucket_id(), m_size-1);
   --m_size;
 
@@ -729,7 +766,7 @@ void Bucket::copy_entity(Entity entity)
   ThrowAssert(mesh().bucket_ptr(entity) != this);
   ThrowAssert(mesh().entity_rank(entity) == m_entity_rank);
 
-  m_is_modified = true;
+  mark_for_modification();
   Bucket* old_bucket = mesh().bucket_ptr(entity);
   const Bucket::size_type old_ordinal = mesh().bucket_ordinal(entity);
 
@@ -806,7 +843,8 @@ void Bucket::overwrite_entity(size_type to_ordinal, Entity entity, const FieldVe
   ThrowAssert(mesh().bucket_ptr(entity) != nullptr);
   ThrowAssert(mesh().entity_rank(entity) == m_entity_rank);
 
-  m_is_modified = true;
+  mark_for_modification();
+
   const MeshIndex from_index = m_mesh.mesh_index(entity);
   reset_entity_location(entity, to_ordinal, fields);
 

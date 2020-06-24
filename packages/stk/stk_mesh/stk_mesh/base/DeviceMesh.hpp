@@ -197,7 +197,7 @@ public:
     update_mesh();
   }
 
-  KOKKOS_DEFAULTED_FUNCTION
+  STK_FUNCTION
   DeviceMesh(const DeviceMesh &) = default;
 
   STK_FUNCTION

@@ -1208,6 +1208,15 @@
     </parameter>
 
     <parameter>
+      <name>emin: use filtered matrix</name>
+      <type>bool</type>
+      <default>true</default>
+      <ConvectionDiffusion>true</ConvectionDiffusion>
+      <description>Matrix to use for smoothing for energy minimization. The two options are: to use the original matrix, and to use the filtered matrix with filtering based on filtered graph used for aggregation.</description>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>tentative: calculate qr</name>
       <type>bool</type>
       <default>true</default>

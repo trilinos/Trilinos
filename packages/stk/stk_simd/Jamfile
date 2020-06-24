@@ -43,35 +43,12 @@ project votd
     $(sierra-warnings)
     <define>STK_BUILT_IN_SIERRA
     <include>$(stk_simd-root)
-    <define>USE_STK_SIMD_AUTO
     <define>STK_KOKKOS_SIMD
     <define>STK_VOLATILE_SIMD
-    <architecture>fat_x86:<define>USE_STK_SIMD_SSE
-    <architecture>generic_x86:<define>USE_STK_SIMD_SSE
-    <architecture>nehalem:<define>USE_STK_SIMD_SSE
-    <architecture>sandybridge:<define>USE_STK_SIMD_AVX
-    <architecture>haswell:<define>USE_STK_SIMD_AVX
-    <architecture>skylake:<define>USE_STK_SIMD_AVX512
-    <architecture>knl:<define>USE_STK_SIMD_AVX512
-    <architecture>cray,<toolset>intel:<define>USE_STK_SIMD_AUTO
-    <architecture>cray,<toolset>gcc:<define>USE_STK_SIMD_NONE
-
-    <architecture>cray,<toolset>cray:<define>USE_STK_SIMD_NONE
   : usage-requirements
     <include>$(stk_simd-root)
-    <define>USE_STK_SIMD_AUTO
     <define>STK_KOKKOS_SIMD
     <define>STK_VOLATILE_SIMD
-    <architecture>fat_x86:<define>USE_STK_SIMD_SSE
-    <architecture>generic_x86:<define>USE_STK_SIMD_SSE
-    <architecture>nehalem:<define>USE_STK_SIMD_SSE
-    <architecture>sandybridge:<define>USE_STK_SIMD_AVX
-    <architecture>haswell:<define>USE_STK_SIMD_AVX
-    <architecture>skylake:<define>USE_STK_SIMD_AVX512
-    <architecture>knl:<define>USE_STK_SIMD_AVX512
-    <architecture>cray,<toolset>intel:<define>USE_STK_SIMD_AUTO
-    <architecture>cray,<toolset>gcc:<define>USE_STK_SIMD_NONE
-    <architecture>cray,<toolset>cray:<define>USE_STK_SIMD_NONE
   : build-dir $(stk_simd-builddir)
   ;
 
@@ -164,6 +141,7 @@ exe stk_simd_unit
   :
     [ glob $(stk_simd-root)/../stk_unit_tests/stk_simd/*.cpp ]
     /sierra/stk_math//stk_math_headers
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
     /tpl/trilinos//kokkoscore
     /tpl/gtest//gtest
   : <tag>@sierra-exec-tag
