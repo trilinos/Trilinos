@@ -69,7 +69,6 @@ local installed-end-user-files =
 # Note that if the --install-developer-files option is passed to bjam these will also
 # be installed for end-users. (This is only intended to be used for testing.)
 local installed-developer-files = 
-  stk_ngp_utest
   ;
 
 #
@@ -143,16 +142,6 @@ alias install-exe-targets : ;
 #
 # SECTION 4: Build configuration
 #
-exe stk_ngp_utest
-  :
-    [ glob $(stk_ngp-root)/../stk_unit_tests/stk_ngp/*.cpp 
-    ]
-    /sierra/stk_unit_test_utils//stk_unit_main
-    stk_ngp
-    /sierra/stk_unit_test_utils//stk_mesh_fixtures
-  : <tag>@sierra-exec-tag
-    <include>$(stk_ngp-root)/../stk_unit_tests/stk_ngp
-  ;
 
 lib stk_ngp
   :

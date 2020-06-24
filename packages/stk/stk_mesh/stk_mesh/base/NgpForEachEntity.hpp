@@ -31,8 +31,8 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef STK_MESH_FOREACHENTITY_HPP
-#define STK_MESH_FOREACHENTITY_HPP
+#ifndef STK_MESH_NGP_FOREACHENTITY_HPP
+#define STK_MESH_NGP_FOREACHENTITY_HPP
 
 #include <stk_util/stk_config.h>
 #include <Kokkos_Core.hpp>
@@ -94,19 +94,6 @@ void for_each_entity_run(Mesh &mesh, stk::topology::rank_t rank, const stk::mesh
   Kokkos::parallel_for(Kokkos::TeamPolicy<typename Mesh::MeshExecSpace>(numBuckets, Kokkos::AUTO),
                        TeamFunctor<Mesh, AlgorithmPerEntity>(mesh, rank, bucketIds, functor));
 }
-
-//    typedef typename Kokkos::TeamPolicy<typename Mesh::MeshExecSpace, stk::mesh::ScheduleType>::member_type TeamHandleType;
-//    unsigned numBuckets = mesh.num_buckets(rank);
-//    Kokkos::parallel_for(Kokkos::TeamPolicy<MyExecSpace>(numBuckets, Kokkos::AUTO), KOKKOS_LAMBDA(const TeamHandleType& team)
-//    {
-//        const int bucketIndex = team.league_rank();
-//        const typename Mesh::BucketType &bucket = mesh.get_bucket(rank, bucketIndex);
-//        unsigned numElements = bucket.size();
-//        Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElements), [&](const int& i)
-//        {
-//            functor(typename Mesh::MeshIndex{&bucket, static_cast<unsigned>(i)});
-//        });
-//    });
 
 }
 }
