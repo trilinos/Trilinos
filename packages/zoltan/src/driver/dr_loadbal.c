@@ -876,11 +876,11 @@ exit(-1);
       ZOLTAN_ID_PTR order_gids = NULL;  /* List of all gids for ordering */
       ZOLTAN_ID_PTR order_lids = NULL;  /* List of all lids for ordering */
 
-      num_lid_entries =1;
-      num_gid_entries = 1;
+      num_lid_entries = Num_LID;
+      num_gid_entries = Num_GID;
 
       if (Test.Dynamic_Graph && !Proc){
-	printf("ORDERING DOES NOT WITH WITH DYNAMIC GRAPHS.\n");
+	printf("ORDERING DOES NOT WORK WITH DYNAMIC GRAPHS.\n");
 	printf("Turn off \"test dynamic graph\".\n");
       }
 
@@ -967,6 +967,9 @@ exit(-1);
       ZOLTAN_ID_PTR gids = NULL;  /* List of all gids for ordering */
       ZOLTAN_ID_PTR lids = NULL;  /* List of all lids for ordering */
 
+      num_lid_entries = Num_LID;
+      num_gid_entries = Num_GID;
+
       if (Test.Dynamic_Graph && !Proc){
 	printf("COLORING DOES NOT WORK WITH DYNAMIC GRAPHS.\n");
 	printf("Turn off \"test dynamic graph\".\n");
@@ -1005,8 +1008,8 @@ exit(-1);
                   lids[i*num_lid_entries+num_lid_entries-1] = -1;
               }
           }
-          MPI_Bcast(gids+mesh->num_elems, addIDs, ZOLTAN_ID_MPI_TYPE, 0, MPI_COMM_WORLD);
-          MPI_Bcast(lids+mesh->num_elems, addIDs, ZOLTAN_ID_MPI_TYPE, 0, MPI_COMM_WORLD);
+          MPI_Bcast(gids+(mesh->num_elems*num_gid_entries), addIDs*num_gid_entries, ZOLTAN_ID_MPI_TYPE, 0, MPI_COMM_WORLD);
+          MPI_Bcast(lids+(mesh->num_elems*num_gid_entries), addIDs*num_gid_entries, ZOLTAN_ID_MPI_TYPE, 0, MPI_COMM_WORLD);
           if (Proc == 0)
               addIDs = 0;
       }
@@ -1026,7 +1029,7 @@ exit(-1);
 	  if (Proc == 0)
 	      printf("\nVerifying coloring result\n");
 	  if (Zoltan_Color_Test(zz, &num_gid_entries, &num_lid_entries,
-				mesh->num_elems, gids, lids, color) == ZOLTAN_FATAL) {
+				mesh->num_elems+addIDs, gids, lids, color) == ZOLTAN_FATAL) {
 	      Gen_Error(0, "fatal:  error returned from Zoltan_Color_Test()\n");
 	      safe_free((void **)(void *) &color);
 	      safe_free((void **)(void *) &gids);
