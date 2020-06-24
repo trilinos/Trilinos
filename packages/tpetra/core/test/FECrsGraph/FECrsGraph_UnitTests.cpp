@@ -172,7 +172,7 @@ bool compare_final_graph_structure_relaxed(Teuchos::FancyOStream &out,
     }
 
     // Loop over rows indices
-    for (size_t j=0; j<numEntries; ++j) {
+    for (decltype(numEntries) j=0; j<numEntries; ++j) {
       const LO lid1 = cols1[j];
       const GO gid = colMap1.getGlobalElement(lid1);
       const LO lid2 = colMap2.getLocalElement(gid);
@@ -556,11 +556,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Assemble2D_OPSDomain, LO, GO, Nod
 
   g2.beginFill();
   g3.beginFill();
-  for(size_t cell=0; cell<pack.element2node.size(); ++cell) {
-    for(size_t i=0; i<pack.element2node[cell].size(); ++i) {
-      GO gid_i = pack.element2node[cell][i];
-      for(size_t j=0; j<pack.element2node[cell].size(); ++j) {
-        GO gid_j = pack.element2node[cell][j];
+  for (const auto& cell_dofs : pack.element2node) {
+    for (const auto& gid_i : cell_dofs) {
+      for (const auto& gid_j : cell_dofs) {
         g0.insertGlobalIndices(gid_i,1,&gid_j);
         g1.insertGlobalIndices(gid_i,1,&gid_j);
         g2.insertGlobalIndices(gid_i,1,&gid_j);
