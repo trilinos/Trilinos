@@ -44,17 +44,13 @@ class HostMesh;
 class DeviceMesh;
 template<typename T> class HostField;
 template<typename T> class DeviceField;
-template<typename T> class ConstHostField;
-template<typename T> class ConstDeviceField;
 
 #ifdef STK_USE_DEVICE_MESH
 using NgpMesh = stk::mesh::DeviceMesh;
 template <typename T> using NgpField = stk::mesh::DeviceField<T>;
-template <typename T> using NgpConstField = stk::mesh::ConstDeviceField<T>;
 #else
 using NgpMesh = stk::mesh::HostMesh;
 template <typename T> using NgpField = stk::mesh::HostField<T>;
-template <typename T> using NgpConstField = stk::mesh::ConstHostField<T>;
 #endif
 
 }

@@ -13,8 +13,9 @@ void Vertices::fillVertexIds(const stk::mesh::BulkData& bulkData,
                              const stk::mesh::EntityVector &entities)
 {
     mVertexIds.resize(entities.size(), 0);
-    for(size_t i=0;i<entities.size();++i)
+    for(size_t i=0;i<entities.size();++i) {
         mVertexIds[i] = bulkData.identifier(entities[i]);
+    }
 }
 
 void Vertices::fillCoordinates(const stk::mesh::BulkData& bulkData,

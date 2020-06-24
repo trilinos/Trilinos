@@ -391,6 +391,57 @@ TEST_F(MathFunctionWithBoolAndTwoDoubleArg, DISimd_Ternary_ScalarAndSimdMatch)
 }
 
 
+class SimdDoubleBool : public ::testing::Test
+{
+public:
+  stk::simd::Double zeros_ones()
+  {
+    for (int i=0; i<stk::simd::ndoubles; i++) {
+      m_data[i] = i%2;
+    }
+    return stk::simd::load(m_data);
+  }
+
+private:
+  double m_data[stk::simd::ndoubles];
+};
+
+TEST_F(SimdDoubleBool, allFalse)
+{
+  stk::simd::Bool simdBool(false);
+
+  for (int i=0; i<stk::simd::ndoubles; i++) {
+    EXPECT_FALSE(simdBool[i]);
+  }
+}
+
+TEST_F(SimdDoubleBool, allTrue)
+{
+  stk::simd::Bool simdTrue(true);
+
+  for (int i=0; i<stk::simd::ndoubles; i++) {
+    EXPECT_TRUE(simdTrue[i]);
+  }
+}
+
+TEST_F(SimdDoubleBool, someTrue)
+{
+  stk::simd::Double half(0.5);
+  stk::simd::Double zeroOne = zeros_ones();
+
+  stk::simd::Bool simdBool = (zeroOne < half);
+
+  for (int i=0; i<stk::simd::ndoubles; i++) {
+    if (zeroOne[i] < half[i]) {
+      EXPECT_TRUE(simdBool[i]);
+    }
+    else {
+      EXPECT_FALSE(simdBool[i]);
+    }
+  }
+}
+
+
 TEST(StkDISimd, IfThenWithNans)
 {
   stk::simd::Double zero(0.0);

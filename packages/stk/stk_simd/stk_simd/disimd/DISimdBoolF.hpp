@@ -64,8 +64,15 @@ class Boolf {
     return *this;
   }
 
+#ifdef __AVX512F__
+  STK_MATH_FORCE_INLINE float operator[](int i) const {
+    __m512 tmp = _mm512_mask_blend_ps(_data.get(), _mm512_set1_ps(0.0), _mm512_set1_ps(1.0));
+    return (reinterpret_cast<const float*>(&tmp))[i];
+  }
+#else
   STK_MATH_FORCE_INLINE float& operator[](int i) {return (reinterpret_cast<float*>(&_data))[i];}
   STK_MATH_FORCE_INLINE const float& operator[](int i) const {return (reinterpret_cast<const float*>(&_data))[i];}
+#endif
      
   SIMD_NAMESPACE::simd_mask<float, SIMD_NAMESPACE::simd_abi::native> _data; // the "_" means you should try not to use this directly
   // it is made public to avoid function call overhead 
