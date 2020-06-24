@@ -809,6 +809,7 @@ TEST( UnitTestRootTopology, getPartsDoesNotFindAutoCreatedRootParts )
         , stk::topology::TRI_4
         , stk::topology::TRI_6
         , stk::topology::QUAD_4
+        , stk::topology::QUAD_6
         , stk::topology::QUAD_8
         , stk::topology::QUAD_9
         //ELEMENT_RANK

@@ -228,9 +228,9 @@ void build_element_from_topology_verify_ordinals_and_permutations(stk::mesh::Bul
   {
     edge_nodes.clear();
 
-    stk::mesh::Entity edge = bulk.declare_edge(edge_ids[i], stk::mesh::ConstPartVector{&meta.get_topology_root_part(topo.edge_topology())});
+    stk::mesh::Entity edge = bulk.declare_edge(edge_ids[i], stk::mesh::ConstPartVector{&meta.get_topology_root_part(topo.edge_topology(i))});
 
-    for (uint j = 0; j < topo.edge_topology().num_nodes(); ++j)
+    for (uint j = 0; j < topo.edge_topology(i).num_nodes(); ++j)
     {
       stk::mesh::Entity edge_node = bulk.get_entity(stk::topology::NODE_RANK, gold_edge_node_ids[i][j]);
       edge_nodes.push_back(edge_node);
@@ -311,9 +311,9 @@ void verify_unbuildable_element(stk::mesh::BulkData &bulk,
   {
     edge_nodes.clear();
 
-    stk::mesh::Entity edge = bulk.declare_edge(edge_ids[i], stk::mesh::ConstPartVector{&meta.get_topology_root_part(topo.edge_topology())});
+    stk::mesh::Entity edge = bulk.declare_edge(edge_ids[i], stk::mesh::ConstPartVector{&meta.get_topology_root_part(topo.edge_topology(i))});
 
-    for (uint j = 0; j < topo.edge_topology().num_nodes(); ++j)
+    for (uint j = 0; j < topo.edge_topology(i).num_nodes(); ++j)
     {
       stk::mesh::Entity edge_node = bulk.get_entity(stk::topology::NODE_RANK, gold_edge_node_ids[i][j]);
       edge_nodes.push_back(edge_node);

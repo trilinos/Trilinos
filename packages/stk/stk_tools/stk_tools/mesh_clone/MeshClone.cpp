@@ -31,7 +31,7 @@ namespace tools {
 
 stk::mesh::Part *create_new_part(const stk::mesh::Part &oldPart, stk::mesh::MetaData &newMeta)
 {
-    if (oldPart.topology() != stk::topology::INVALID_TOPOLOGY)
+    if(oldPart.topology() != stk::topology::INVALID_TOPOLOGY)
         return &newMeta.declare_part_with_topology(oldPart.name(), oldPart.topology());
     else
     {

@@ -207,8 +207,8 @@ domainname()
   std::string domain(".");
   char buf[255];
 
-  ::getdomainname(buf, sizeof(buf));
-  if (::strlen(buf)) {
+  int errCode = ::getdomainname(buf, sizeof(buf));
+  if (!errCode && ::strlen(buf)) {
     domain += buf;
   }
   return domain;

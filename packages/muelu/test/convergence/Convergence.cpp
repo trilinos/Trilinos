@@ -170,7 +170,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     bool failed = false;
     for (int k = 0; k < numLists; k++) {
       const std::string& dirName = dirList[k];
-      std::string problemFile = dirName + "problem_" + typeid(GlobalOrdinal).name() + ".xml";
+      std::string problemFile = dirName + "problem.xml";
 
       Teuchos::ParameterList galeriParameters;
       Teuchos::updateParametersFromXmlFileAndBroadcast(problemFile, Teuchos::Ptr<Teuchos::ParameterList>(&galeriParameters), *comm);
@@ -255,7 +255,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       for (int i = 0; i < fileList.size(); i++) {
         if (fileList[i] == "problem_i.xml" ||
             fileList[i] == "problem_l.xml" ||
-            fileList[i] == "problem_x.xml")
+            fileList[i] == "problem_x.xml" ||
+            fileList[i] == "problem.xml")
           continue;
 
         std::string xmlFile = dirName + fileList[i];

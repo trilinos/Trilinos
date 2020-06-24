@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
-#include <exo_fpp/Iofx_DatabaseIO.h>
 #include "mpi.h"
+#include <Ioss_IOFactory.h>
 #include <Ioss_Region.h>
 #include <Ioss_DBUsage.h>
 #include <Ioss_PropertyManager.h>
@@ -41,7 +41,7 @@
 namespace
 {
 
-Iofx::DatabaseIO* create_output_db_io(const std::string &filename)
+Ioss::DatabaseIO* create_output_db_io(const std::string &filename)
 {
     Ioss::Init::Initializer init_db;
 
@@ -52,7 +52,8 @@ Iofx::DatabaseIO* create_output_db_io(const std::string &filename)
     properties.add(Ioss::Property("INTEGER_SIZE_DB",  8));
     properties.add(Ioss::Property("INTEGER_SIZE_API", 8));
 
-    Iofx::DatabaseIO *db_io = new Iofx::DatabaseIO(NULL, filename, db_usage, communicator, properties);
+    Ioss::DatabaseIO *db_io = Ioss::IOFactory::create("exodus", filename, db_usage,
+						      communicator, properties);
     return db_io;
 }
 
@@ -70,7 +71,7 @@ TEST(StkIo, write_stk_mesh_to_file)
 
         const stk::mesh::PartVector & all_parts = meta.get_parts();
 
-        Iofx::DatabaseIO* db_io = create_output_db_io(file_written);
+        Ioss::DatabaseIO* db_io = create_output_db_io(file_written);
         Ioss::Region output_region(db_io);
         EXPECT_TRUE(db_io->ok());
 

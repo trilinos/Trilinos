@@ -346,6 +346,10 @@ public:
 
   bool member(stk::mesh::PartOrdinal partOrdinal) const;
 
+  void set_ngp_field_bucket_id(unsigned fieldOrdinal, unsigned ngpFieldBucketId);
+  unsigned get_ngp_field_bucket_id(unsigned fieldOrdinal) const;
+  unsigned get_ngp_field_bucket_is_modified(unsigned fieldOrdinal) const;
+
 protected:
   void change_existing_connectivity(unsigned bucket_ordinal, stk::mesh::Entity* new_nodes);
   void change_existing_permutation_for_connected_element(unsigned bucket_ordinal_of_lower_ranked_entity, unsigned elem_connectivity_ordinal, stk::mesh::Permutation permut);
@@ -398,6 +402,10 @@ private:
     m_ngp_bucket_id = ngpBucketId;
     m_is_modified = false;
   }
+
+  void mark_for_modification();
+
+  void initialize_ngp_field_bucket_ids();
 
   Bucket();
 
@@ -498,6 +506,8 @@ private:
   bool m_shared;
   bool m_aura;
 
+  std::vector<unsigned> m_ngp_field_bucket_id;
+  std::vector<bool> m_ngp_field_is_modified;
 };
 #undef CONNECTIVITY_TYPE_SWITCH
 #undef RANK_SWITCH
@@ -636,7 +646,7 @@ template <typename T>
 inline
 void Bucket::modify_all_connectivity(T& callable, Bucket* other_bucket)
 {
-  m_is_modified = true;
+  mark_for_modification();
 
   switch(m_node_kind) {
   case FIXED_CONNECTIVITY:   callable(*this, m_fixed_node_connectivity,   T::template generate_args<stk::topology::NODE_RANK, FIXED_CONNECTIVITY>(other_bucket)); break;
@@ -672,7 +682,8 @@ void Bucket::modify_connectivity(T& callable, EntityRank rank)
   switch(rank) {
   case stk::topology::NODE_RANK:
     ThrowAssert(m_node_kind != INVALID_CONNECTIVITY_TYPE);
-    m_is_modified = true;
+    mark_for_modification();
+
     switch(m_node_kind) {
     case FIXED_CONNECTIVITY:   callable(*this, m_fixed_node_connectivity);   break;
     case DYNAMIC_CONNECTIVITY: callable(*this, m_dynamic_node_connectivity); break;
