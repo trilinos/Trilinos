@@ -388,7 +388,7 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
     //Reset observer.  This is necessary for correct observation of solution
     //since initializeSolutionHistory modifies the solutionHistory object.
     setObserver();
-#if DEBUG_OUTPUT
+#ifdef DEBUG_OUTPUT
     if (xinit != Teuchos::null) { 
       *out_ << "\n*** Piro::TempusSolver::evalModelImpl xinit at time = " << t_initial_ << " ***\n";
       Teuchos::Range1D range;
