@@ -42,10 +42,9 @@
 #ifndef TPETRA_FECRSGRAPH_DEF_HPP
 #define TPETRA_FECRSGRAPH_DEF_HPP
 
-#include "Tpetra_FECrsGraph.hpp"
+#include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_getEntryOnHost.hpp"
-#include "Tpetra_Details_makeColMap.hpp"
 
 #include <type_traits>
 #include <set>
@@ -58,12 +57,12 @@ FECrsGraph(const Teuchos::RCP<const map_type> & ownedRowMap,
            const Teuchos::RCP<const map_type> & ownedPlusSharedRowMap, 
            const size_t maxNumEntriesPerRow,
            const Teuchos::RCP<const import_type> & ownedPlusSharedToOwnedimporter,
-           const Teuchos::RCP<const map_type> & ownedDomainMap,
+           const Teuchos::RCP<const map_type> & domainMap,
            const Teuchos::RCP<const map_type> & ownedRangeMap,
            const Teuchos::RCP<Teuchos::ParameterList>& params):
   FECrsGraph(ownedRowMap,ownedPlusSharedRowMap,maxNumEntriesPerRow,
-             ownedDomainMap.is_null() ? ownedRowMap : ownedDomainMap,
-             ownedPlusSharedToOwnedimporter,ownedDomainMap,ownedRangeMap,params)
+             domainMap.is_null() ? ownedRowMap : domainMap,
+             ownedPlusSharedToOwnedimporter,domainMap,ownedRangeMap,params)
 {
   // Nothing else to do here
 }
@@ -95,12 +94,12 @@ FECrsGraph (const Teuchos::RCP<const map_type> & ownedRowMap,
             const Teuchos::RCP<const map_type> & ownedPlusSharedRowMap,
             const Kokkos::DualView<const size_t*, execution_space>& numEntPerRow,
             const Teuchos::RCP<const import_type> & ownedPlusSharedToOwnedimporter,
-            const Teuchos::RCP<const map_type> & ownedDomainMap,
+            const Teuchos::RCP<const map_type> & domainMap,
             const Teuchos::RCP<const map_type> & ownedRangeMap,
             const Teuchos::RCP<Teuchos::ParameterList>& params):
   FECrsGraph(ownedRowMap,ownedPlusSharedRowMap,numEntPerRow,
-             ownedDomainMap.is_null() ? ownedRowMap : ownedDomainMap,
-             ownedPlusSharedToOwnedimporter,ownedDomainMap,ownedRangeMap,params)
+             domainMap.is_null() ? ownedRowMap : domainMap,
+             ownedPlusSharedToOwnedimporter,domainMap,ownedRangeMap,params)
 {
   // Nothing else to do here
 }
@@ -132,12 +131,12 @@ FECrsGraph(const Teuchos::RCP<const map_type> & ownedRowMap,
            const Teuchos::RCP<const map_type> & ownedPlusSharedColMap, 
            const size_t maxNumEntriesPerRow,
            const Teuchos::RCP<const import_type> & ownedPlusSharedToOwnedimporter,
-           const Teuchos::RCP<const map_type> & ownedDomainMap,
+           const Teuchos::RCP<const map_type> & domainMap,
            const Teuchos::RCP<const map_type> & ownedRangeMap,
            const Teuchos::RCP<Teuchos::ParameterList>& params): 
   FECrsGraph(ownedRowMap,ownedPlusSharedRowMap,ownedPlusSharedColMap,maxNumEntriesPerRow,
-             ownedDomainMap.is_null() ? ownedRowMap : ownedDomainMap,
-             ownedPlusSharedToOwnedimporter, ownedDomainMap, ownedRangeMap, params)
+             domainMap.is_null() ? ownedRowMap : domainMap,
+             ownedPlusSharedToOwnedimporter, domainMap, ownedRangeMap, params)
 {
   // Nothing else to do here
 }
@@ -169,12 +168,12 @@ FECrsGraph (const Teuchos::RCP<const map_type> & ownedRowMap,
             const Teuchos::RCP<const map_type> & ownedPlusSharedColMap, 
             const Kokkos::DualView<const size_t*, execution_space>& numEntPerRow,
             const Teuchos::RCP<const import_type> & ownedPlusSharedToOwnedimporter,
-            const Teuchos::RCP<const map_type> & ownedDomainMap,
+            const Teuchos::RCP<const map_type> & domainMap,
             const Teuchos::RCP<const map_type> & ownedRangeMap,
             const Teuchos::RCP<Teuchos::ParameterList>& params):
   FECrsGraph(ownedRowMap,ownedPlusSharedRowMap,ownedPlusSharedColMap,numEntPerRow,
-             ownedDomainMap.is_null() ? ownedRowMap : ownedDomainMap,
-             ownedPlusSharedToOwnedimporter, ownedDomainMap, ownedRangeMap, params)
+             domainMap.is_null() ? ownedRowMap : domainMap,
+             ownedPlusSharedToOwnedimporter, domainMap, ownedRangeMap, params)
 {  
   // Nothing else to do here
 }
@@ -244,10 +243,10 @@ setup(const Teuchos::RCP<const map_type>  & ownedRowMap,
      
    }
  } else {
-   // We don't need the importer. Setting it to null helps detecting we are in a non-FE case later
+   // We don't need the importer in this case, since the two row maps are identical (e.g., serial mode).
+   // Setting this to null helps later to detect whether there is a need for the second graph (the owned one).
    ownedRowsImporter_ = Teuchos::null;
  }
-
 }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -378,43 +377,6 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::beginFill() {
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(*activeCrsGraph_ == FE_ACTIVE_OWNED,std::runtime_error, "can only be called once.");
 
 }
-
-// template<class LocalOrdinal, class GlobalOrdinal, class Node>
-// template<typename ViewType>
-// Teuchos::RCP<const typename FECrsGraph<LocalOrdinal,GlobalOrdinal,Node>::map_type>
-// FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::makeOwnedColMap(ViewType ownedGraphIndices) {
-//   Teuchos::RCP<const map_type> colMap;
-
-//   using GO = GlobalOrdinal;
-//   using NT = Node;
-
-//   // Go to host
-//   // TODO: can we do this on device?
-//   auto h_ownedGraphIndices = Kokkos::create_mirror_view(ownedGraphIndices);
-//   Kokkos::deep_copy(h_ownedGraphIndices,ownedGraphIndices);
-
-//   // Remove duplicates
-//   auto start = h_ownedGraphIndices.data();
-//   auto end   = h_ownedGraphIndices.data()+h_ownedGraphIndices.size();
-//   std::sort(start,end);
-//   auto new_end = std::unique(start,end);
-//   size_t new_size = std::distance(start,new_end);
-
-//   Kokkos::View<GO*, typename NT::memory_space> gids("",new_size);
-//   auto h_gids = Kokkos::create_mirror_view(gids);
-//   for (size_t i=0; i<new_size; ++i) {
-//     h_gids(i) = this->getColMap()->getGlobalElement(*(start+i));
-//   }
-//   Kokkos::deep_copy(gids,h_gids);
-
-//   Tpetra::Details::makeColMap(colMap,ownedDomainMap_,gids,nullptr);
-
-//   Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
-//   ownedDomainMap_->describe(out,Teuchos::VERB_EXTREME);
-//   colMap->describe(out,Teuchos::VERB_EXTREME);
-
-//   return colMap;
-// }
 
 }  // end namespace Tpetra
 
