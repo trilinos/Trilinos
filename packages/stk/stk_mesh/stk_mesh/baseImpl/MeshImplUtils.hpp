@@ -191,6 +191,18 @@ struct OnlyVisitOnce {
     std::set<Entity> already_visited;
 };
 
+struct OnlyVisitUnchanged
+{
+    OnlyVisitUnchanged(BulkData & mesh_in) : mesh(mesh_in) {}
+    bool operator()(Entity entity){
+        if (mesh.state(entity) == Unchanged) {
+            return true;
+        }
+        return false;
+    }
+    BulkData & mesh;
+};
+
 struct OnlyVisitLocallyOwnedOnce {
     OnlyVisitLocallyOwnedOnce(const BulkData & mesh_in) : mesh(mesh_in), ovo(mesh_in) {}
     bool operator()(Entity entity)
@@ -530,11 +542,6 @@ struct VecPushBack {
 
 void send_entity_keys_to_owners(
   BulkData & mesh ,
-  const std::set< EntityKey > & recvGhosts ,
-        std::set< EntityProc , EntityLess > & sendGhosts );
-
-void send_entity_keys_to_owners(
-  BulkData & mesh ,
   const std::vector<Entity> & recvGhosts ,
         std::set< EntityProc , EntityLess > & sendGhosts);
 
@@ -599,10 +606,22 @@ stk::mesh::ConnectivityOrdinal get_ordinal_for_element_side_pair(const stk::mesh
                                                                  stk::mesh::Entity element,
                                                                  stk::mesh::Entity side);
 
-void print_field_data_for_entity(const stk::mesh::BulkData& mesh, const stk::mesh::MeshIndex& meshIndex, std::ostream& out);
+void fill_inducible_parts_from_list(const MetaData& meta,
+                                    const OrdinalVector & partList,
+                                    EntityRank rank,
+                                    OrdinalVector &induciblePartsFromList);
 
-void print_field_data_for_entity(const stk::mesh::BulkData& mesh, const stk::mesh::Entity entity, std::ostream& out);
+void fill_part_list_differences(const BulkData &mesh,
+                                Entity entity,
+                                const PartVector &recv_parts,
+                                std::set<std::string> &thisProcExtraParts,
+                                std::set<std::string> &otherProcExtraParts);
 
+void check_size_of_types();
+
+void check_declare_element_side_inputs(const BulkData & mesh,
+                                       const Entity elem,
+                                       const unsigned localSideId);
 } // namespace impl
 } // namespace mesh
 } // namespace stk
