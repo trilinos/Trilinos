@@ -119,6 +119,8 @@ namespace Tpetra {
   ///
   ///       Notice that if your mesh is partitioned by node (N) OR you provide a valid colMap
   ///       to the graph's constructor, then using V1 is likely ok for you.
+  ///
+  ///       For more details, see GitHub issue #7455
 
   template <class LocalOrdinal,
             class GlobalOrdinal,
