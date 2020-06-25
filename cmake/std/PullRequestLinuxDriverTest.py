@@ -420,9 +420,9 @@ def setBuildEnviron(arguments):
     for key, value in l_environMap.items():
         if key in os.environ:
             # we are assuming these are paths to be prepended
-            os.environ[key] = value + os.pathsep + os.environ[key]
+            os.environ[key] = str(value) + os.pathsep + os.environ[key]
         else:
-            os.environ[key] = value
+            os.environ[key] = str(value)
 
     confirmGitVersion()
 
