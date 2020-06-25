@@ -722,15 +722,15 @@ namespace Tpetra {
         // Since FixedHashTable currently cannot be built on CudaSpace due to UVM dpeendence,
         // make it in CudaUVMSpace and then copy to CudaSpace.
         typedef ::Tpetra::Details::FixedHashTable<global_ordinal_type, local_ordinal_type, device_type>
-          hash_device_with_uvm_type;
-        hash_device_with_uvm_type glMap(nonContigGids,
+          global_to_local_table_keep_uvm_type;
+        global_to_local_table_keep_uvm_type glMap(nonContigGids,
                                         firstContiguousGID_,
                                         lastContiguousGID_,
                                         static_cast<LO> (i));
 
         // Now copy to CudaSpace and also make the host version
         // Note when memory spaces match these just do trivial assignment
-        glMap_ = global_to_local_table_host_type(glMap);
+        glMap_ = global_to_local_table_type(glMap);
         glMapHost_ = global_to_local_table_host_type(glMap);
       }
 
@@ -1113,15 +1113,15 @@ namespace Tpetra {
         // Since FixedHashTable currently cannot be built on CudaSpace due to UVM dpeendence,
         // make it in CudaUVMSpace and then copy to CudaSpace.
         typedef ::Tpetra::Details::FixedHashTable<global_ordinal_type, local_ordinal_type, device_type>
-          hash_device_with_uvm_type;
-        hash_device_with_uvm_type glMap(nonContigGids,
+          global_to_local_table_keep_uvm_type;
+        global_to_local_table_keep_uvm_type glMap(nonContigGids,
                                         firstContiguousGID_,
                                         lastContiguousGID_,
                                         static_cast<LO> (i));
 
         // Now copy to CudaSpace and also make the host version
         // Note when memory spaces match these just do trivial assignment
-        glMap_ = global_to_local_table_host_type(glMap);
+        glMap_ = global_to_local_table_type(glMap);
         glMapHost_ = global_to_local_table_host_type(glMap);
       }
 
