@@ -70,9 +70,25 @@ namespace Details {
 template<class LocalOrdinal, class GlobalOrdinal, class DeviceType>
 class LocalMap {
 public:
-  typedef LocalOrdinal local_ordinal_type;
-  typedef GlobalOrdinal global_ordinal_type;
-  typedef DeviceType device_type;
+  //! The type of local indices.
+  using local_ordinal_type = LocalOrdinal;
+
+  //! The type of global indices.
+  using global_ordinal_type = GlobalOrdinal;
+
+  //! The device type
+  using device_type = DeviceType;
+
+  //! The Kokkos execution space.
+  using execution_space = typename device_type::execution_space;
+
+  //! The Kokkos memory space.
+  using memory_space = typename device_type::memory_space;
+
+  //! The hash will be CudaSpace, not CudaUVMSpace
+  using hash_memory_space = typename std::conditional<std::is_same<memory_space, Kokkos::CudaUVMSpace>::value,
+    Kokkos::CudaSpace, memory_space>::type;
+  using hash_device_type = Kokkos::Device<execution_space, hash_memory_space>;
 
   LocalMap () :
     indexBase_ (0),
@@ -83,7 +99,7 @@ public:
     numLocalElements_ (0),
     contiguous_ (false)
   {}
-  LocalMap (const ::Tpetra::Details::FixedHashTable<GlobalOrdinal, LocalOrdinal, DeviceType>& glMap,
+  LocalMap (const ::Tpetra::Details::FixedHashTable<GlobalOrdinal, LocalOrdinal, hash_device_type>& glMap,
             const ::Kokkos::View<const GlobalOrdinal*, ::Kokkos::LayoutLeft, DeviceType>& lgMap,
             const GlobalOrdinal indexBase,
             const GlobalOrdinal myMinGid,
@@ -200,7 +216,12 @@ private:
   /// LayoutRight because LayoutRight is the default on non-CUDA
   /// Devices, and we want to make sure we catch assignment or
   /// copying from the default to the nondefault layout.
-  ::Kokkos::View<const GlobalOrdinal*, ::Kokkos::LayoutLeft, DeviceType> lgMap_;
+
+
+  // Map glMap_ is changed from CudaUVMSpace to CudaSpace so do the same here.
+  // This preserves the LocalMap constructor to be trivial (no deep copies).
+  ::Kokkos::View<const GlobalOrdinal*, ::Kokkos::LayoutLeft, hash_device_type> lgMap_;
+
   GlobalOrdinal indexBase_;
   GlobalOrdinal myMinGid_;
   GlobalOrdinal myMaxGid_;

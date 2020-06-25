@@ -268,6 +268,11 @@ namespace Tpetra {
     //! Legacy typedef that will go away at some point.
     using node_type = Node;
 
+    //! The hash will be CudaSpace, not CudaUVMSpace
+    using hash_memory_space = typename std::conditional<std::is_same<memory_space, Kokkos::CudaUVMSpace>::value,
+      Kokkos::CudaSpace, memory_space>::type;
+    using hash_device_type = Kokkos::Device<execution_space, hash_memory_space>;
+
     /// \brief Type of the "local" Map.
     ///
     /// \warning This object's interface is not yet fixed.  We provide
@@ -1264,7 +1269,7 @@ namespace Tpetra {
 #endif
 
     //! Type of a mapping from global IDs to local IDs.
-    typedef ::Tpetra::Details::FixedHashTable<global_ordinal_type, local_ordinal_type, device_type>
+    typedef ::Tpetra::Details::FixedHashTable<global_ordinal_type, local_ordinal_type, hash_device_type>
       global_to_local_table_type;
 
     /// \brief A mapping from global IDs to local IDs.

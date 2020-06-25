@@ -719,16 +719,19 @@ namespace Tpetra {
                          nonContigGids_host.size ());
         Kokkos::deep_copy (nonContigGids, nonContigGids_host);
 
-        glMap_ = global_to_local_table_type (nonContigGids,
-                                             firstContiguousGID_,
-                                             lastContiguousGID_,
-                                             static_cast<LO> (i));
-#ifdef KOKKOS_ENABLE_CUDA
-        // use copy constructor to make host version
-        glMapHost_ = global_to_local_table_host_type(glMap_);
-#else
-        glMapHost_ = glMap_; // both are the same so share the Views to avoid extra copies
-#endif
+        // Since FixedHashTable currently cannot be built on CudaSpace due to UVM dpeendence,
+        // make it in CudaUVMSpace and then copy to CudaSpace.
+        typedef ::Tpetra::Details::FixedHashTable<global_ordinal_type, local_ordinal_type, device_type>
+          hash_device_with_uvm_type;
+        hash_device_with_uvm_type glMap(nonContigGids,
+                                        firstContiguousGID_,
+                                        lastContiguousGID_,
+                                        static_cast<LO> (i));
+
+        // Now copy to CudaSpace and also make the host version
+        // Note when memory spaces match these just do trivial assignment
+        glMap_ = global_to_local_table_host_type(glMap);
+        glMapHost_ = global_to_local_table_host_type(glMap);
       }
 
       // FIXME (mfh 10 Oct 2016) When we construct the global-to-local
@@ -1107,16 +1110,19 @@ namespace Tpetra {
            << entryList.extent (0) << " - " << i
            << ".  Please report this bug to the Tpetra developers.");
 
-        glMap_ = global_to_local_table_type (nonContigGids,
-                                             firstContiguousGID_,
-                                             lastContiguousGID_,
-                                             static_cast<LO> (i));
-#ifdef KOKKOS_ENABLE_CUDA
-        // use copy constructor to make host version
-        glMapHost_ = global_to_local_table_host_type(glMap_);
-#else
-        glMapHost_ = glMap_; // both are the same so share the Views to avoid extra copies
-#endif
+        // Since FixedHashTable currently cannot be built on CudaSpace due to UVM dpeendence,
+        // make it in CudaUVMSpace and then copy to CudaSpace.
+        typedef ::Tpetra::Details::FixedHashTable<global_ordinal_type, local_ordinal_type, device_type>
+          hash_device_with_uvm_type;
+        hash_device_with_uvm_type glMap(nonContigGids,
+                                        firstContiguousGID_,
+                                        lastContiguousGID_,
+                                        static_cast<LO> (i));
+
+        // Now copy to CudaSpace and also make the host version
+        // Note when memory spaces match these just do trivial assignment
+        glMap_ = global_to_local_table_host_type(glMap);
+        glMapHost_ = global_to_local_table_host_type(glMap);
       }
 
       // FIXME (mfh 10 Oct 2016) When we construct the global-to-local
