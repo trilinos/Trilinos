@@ -210,7 +210,10 @@ private:
   //from Albany.  
   bool abort_on_fail_at_min_dt_;
 
-  SENS_METHOD sens_method_; 
+  SENS_METHOD sens_method_;
+
+  //Boolean to mark whether initial state was reset using setInitialState routine
+  bool initial_state_reset_; 
 };
 
 /** \brief Non-member constructor function */
