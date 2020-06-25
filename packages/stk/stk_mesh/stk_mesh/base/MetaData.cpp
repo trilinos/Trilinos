@@ -116,35 +116,6 @@ void MetaData::set_mesh_on_fields(BulkData* bulk)
 const MetaData & MetaData::get( const BulkData & bulk_data) {
   return bulk_data.mesh_meta_data();
 }
-//----------------------------------------------------------------------
-
-std::ostream &
-print_entity_id( std::ostream & os , const MetaData & meta_data ,
-                  EntityRank type , EntityId id )
-{
-  const std::string & name = meta_data.entity_rank_name( type );
-  return os << name << "[" << id << "]" ;
-}
-
-
-std::ostream &
-print_entity_key( std::ostream & os , const MetaData & meta_data ,
-                  const EntityKey & key )
-{
-  const EntityRank type   = key.rank();
-  const EntityId   id     = key.id();
-  return print_entity_id( os , meta_data , type , id );
-}
-
-std::string
-print_entity_key( const MetaData & meta_data , const EntityKey & key )
-{
-  std::ostringstream out;
-  print_entity_key(out, meta_data, key);
-  return out.str();
-}
-
-//----------------------------------------------------------------------
 
 void MetaData::require_not_committed() const
 {
@@ -596,6 +567,7 @@ void MetaData::internal_declare_known_cell_topology_parts()
     register_topology(stk::topology::TRI_6);
 
     register_topology(stk::topology::QUAD_4);
+    register_topology(stk::topology::QUAD_6);
     register_topology(stk::topology::QUAD_8);
     register_topology(stk::topology::QUAD_9);
 
@@ -617,6 +589,7 @@ void MetaData::internal_declare_known_cell_topology_parts()
     register_topology(stk::topology::PYRAMID_14);
 
     register_topology(stk::topology::WEDGE_6);
+    register_topology(stk::topology::WEDGE_12);
     register_topology(stk::topology::WEDGE_15);
     register_topology(stk::topology::WEDGE_18);
 
@@ -911,6 +884,11 @@ stk::topology get_topology( shards::CellTopology shards_topology, unsigned spati
 
   else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()) )
     t = spatial_dimension == 3 ? stk::topology::QUAD_4 : stk::topology::QUAD_4_2D;
+
+  //NOTE: shards does not define a quad 6
+  // else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<6> >()) )
+  //   t = stk::topology::QUAD_6;
+
   else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<8> >()) )
     t = spatial_dimension == 3 ? stk::topology::QUAD_8 : stk::topology::QUAD_8_2D;
   else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<9> >()) )
@@ -972,6 +950,11 @@ stk::topology get_topology( shards::CellTopology shards_topology, unsigned spati
 
   else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::Wedge<6> >()) )
     t = stk::topology::WEDGE_6;
+
+  //NOTE: shards does not define a wedge 12
+  // else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::Wedge<12> >()) )
+  //   t = stk::topology::WEDGE_12;
+
   else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::Wedge<15> >()) )
     t = stk::topology::WEDGE_15;
   else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::Wedge<18> >()) )
@@ -1014,6 +997,9 @@ shards::CellTopology get_cell_topology(stk::topology t)
       return shards::CellTopology( shards::getCellTopologyData< shards::Triangle<6>           >() );
   case stk::topology::QUAD_4:
       return shards::CellTopology( shards::getCellTopologyData< shards::Quadrilateral<4>      >() );
+  case stk::topology::QUAD_6:
+      //NOTE: shards does not define a topology for a 6-noded quadrilateral element
+      // return shards::CellTopology( shards::getCellTopologyData< shards::Quadrilateral<6>      >() );
   case stk::topology::QUAD_8:
       return shards::CellTopology( shards::getCellTopologyData< shards::Quadrilateral<8>      >() );
   case stk::topology::QUAD_9:
@@ -1079,6 +1065,9 @@ shards::CellTopology get_cell_topology(stk::topology t)
       return shards::CellTopology( shards::getCellTopologyData< shards::Pyramid<14>           >() );
   case stk::topology::WEDGE_6:
       return shards::CellTopology( shards::getCellTopologyData< shards::Wedge<6>              >() );
+  case stk::topology::WEDGE_12:
+      //NOTE: shards does not define a topology for a 12-noded wedge
+      // return shards::CellTopology( shards::getCellTopologyData< shards::Wedge<12>             >() );
   case stk::topology::WEDGE_15:
       return shards::CellTopology( shards::getCellTopologyData< shards::Wedge<15>             >() );
   case stk::topology::WEDGE_18:

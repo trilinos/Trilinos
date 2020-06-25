@@ -538,7 +538,8 @@ public:
           auto now_time = std::chrono::system_clock::to_time_t(now);
           auto gmt = gmtime(&now_time);
           auto timestamp = std::put_time(gmt, "%Y-%m-%d %H:%M:%S");
-          *verbose_ostream_ << "STARTING: " << name << " LEVEL: " << top_->level() << " TIMESTAMP: " << timestamp << std::endl;
+          auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
+          *verbose_ostream_ << "STARTING: " << name << " LEVEL: " << top_->level() << " COUNT: " << timer_.numCalls() << " TIMESTAMP: " << timestamp << "." << ms.count() << std::endl;
         }
       }
 #endif
@@ -575,7 +576,8 @@ public:
           auto now_time = std::chrono::system_clock::to_time_t(now);
           auto gmt = gmtime(&now_time);
           auto timestamp = std::put_time(gmt, "%Y-%m-%d %H:%M:%S");
-          *verbose_ostream_ << "STOPPING: " << name << " LEVEL: " << top_->level()+1 << " TIMESTAMP: " << timestamp << std::endl;
+          auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
+          *verbose_ostream_ << "STOPPING: " << name << " LEVEL: " << top_->level()+1 << " COUNT: " << timer_.numCalls() << " TIMESTAMP: " << timestamp << "." << ms.count() << std::endl;
         }
       }
 #endif

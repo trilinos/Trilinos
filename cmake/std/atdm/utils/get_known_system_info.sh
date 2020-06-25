@@ -31,16 +31,21 @@ fi
 source ${ATDM_CONFIG_SCRIPT_DIR}/utils/get_system_info_utils.sh
 
 realHostname=`hostname`
+# TODO: come up with a better way to unit test this code.
+unset $ATDM_CONFIG_HOSTNAME_OVERRIDE
 if [[ "${ATDM_CONFIG_GET_KNOW_SYSTEM_INFO_REAL_HOSTNAME_OVERRIDE_FOR_UNIT_TESTING}" ]] ; then
-  echo
-  echo "***"
-  echo "*** WARNING: realHostname=$realHostname overriden to value of"
-  echo "*** ATDM_CONFIG_GET_KNOW_SYSTEM_INFO_REAL_HOSTNAME_OVERRIDE_FOR_UNIT_TESTING='${ATDM_CONFIG_GET_KNOW_SYSTEM_INFO_REAL_HOSTNAME_OVERRIDE_FOR_UNIT_TESTING}'"
-  echo "*** in <trilinos-dir>/cmake/std/atdm/utils/get_known_system_info.sh."
-  echo "*** This variable should only be set for unit testing purposes!"
-  echo "***"
-  echo
+  if [[ -z $ATDM_CONFIG_DISABLE_WARNINGS ]]; then
+    echo
+    echo "***"
+    echo "*** WARNING: realHostname=$realHostname overriden to value of"
+    echo "*** ATDM_CONFIG_GET_KNOW_SYSTEM_INFO_REAL_HOSTNAME_OVERRIDE_FOR_UNIT_TESTING='${ATDM_CONFIG_GET_KNOW_SYSTEM_INFO_REAL_HOSTNAME_OVERRIDE_FOR_UNIT_TESTING}'"
+    echo "*** in <trilinos-dir>/cmake/std/atdm/utils/get_known_system_info.sh."
+    echo "*** This variable should only be set for unit testing purposes!"
+    echo "***"
+    echo
+  fi
   realHostname=${ATDM_CONFIG_GET_KNOW_SYSTEM_INFO_REAL_HOSTNAME_OVERRIDE_FOR_UNIT_TESTING}
+  ATDM_CONFIG_HOSTNAME_OVERRIDE=true
 fi
 #echo "Hostname = '$realHostname'"
 
@@ -65,6 +70,7 @@ ATDM_KNOWN_SYSTEM_NAMES_LIST=(
   waterman
   ats2
   van1-tx2
+  cts1empire
   cts1
   tlcc2
   sems-rhel7
@@ -135,7 +141,8 @@ fi
 #
 
 # ATS-1 systems
-if [[ $realHostname == "mutrino"* || $HOST == "mutrino"* ]] ; then
+if [[ $realHostname == "mutrino"* ||
+      $HOST == "mutrino"* && -z $ATDM_CONFIG_HOSTNAME_OVERRIDE ]] ; then
   systemNameTypeMatchedList+=(ats1)
   systemNameTypeMatchedListHostNames[ats1]=mutrino
   systemNameTypeMatchedList+=(mutrino)
@@ -150,6 +157,10 @@ fi
 
 # CTS1 systems
 if [[ $SNLSYSTEM == "cts1" ]] ; then
+  # Make cts1empire the default environment
+  systemNameTypeMatchedList+=(cts1empire)
+  systemNameTypeMatchedListHostNames[cts1empire]=$SNLCLUSTER
+  # Add cts1 to the list for the D.1 branch, below
   systemNameTypeMatchedList+=(cts1)
   systemNameTypeMatchedListHostNames[cts1]=$SNLCLUSTER
 fi
@@ -171,7 +182,8 @@ elif [[ "${SNLSYSTEM}" == "astra" || \
         "${SNLSYSTEM}" == "vortex" ]] ; then
   echo "Don't call get-platform on 'astra' systems" > /dev/null
   # Above logic avoids an 'ERROR: Unrecognized cluster <name>' on these systems
-elif [[ -f /projects/sems/modulefiles/utils/get-platform ]] ; then
+elif [[ -f /projects/sems/modulefiles/utils/get-platform &&
+        -z $ATDM_CONFIG_HOSTNAME_OVERRIDE ]] ; then
   ATDM_SYSTEM_NAME=`source /projects/sems/modulefiles/utils/get-platform`
   if [[ $ATDM_SYSTEM_NAME == "rhel6-x86_64" ]] ; then
     systemNameTypeMatchedList+=(sems-rhel6)

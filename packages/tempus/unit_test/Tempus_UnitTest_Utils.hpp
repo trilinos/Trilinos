@@ -12,9 +12,11 @@
 #include "Tempus_StepperFactory.hpp"
 #include "Tempus_SolutionHistory.hpp"
 #include "Tempus_StepperRKModifierBase.hpp"
-#include "Tempus_StepperRKObserverBase.hpp"
 #include "Tempus_StepperRKModifierXBase.hpp"
+#include "Tempus_StepperRKObserverBase.hpp"
 #include "Tempus_StepperRKModifierDefault.hpp"
+#include "Tempus_StepperRKModifierXDefault.hpp"
+#include "Tempus_StepperRKObserverDefault.hpp"
 
 #include "../TestModels/SinCosModel.hpp"
 #include "../TestModels/VanDerPolModel.hpp"
@@ -70,8 +72,9 @@ void testExplicitRKAccessorsFullConstruction(
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
   // Default values for construction.
-  auto modifier = rcp(new Tempus::StepperRKModifierDefault<double>());
-
+  auto modifier  = rcp(new Tempus::StepperRKModifierDefault<double>());
+  auto modifierX = rcp(new Tempus::StepperRKModifierXDefault<double>());
+  auto observer  = rcp(new Tempus::StepperRKObserverDefault<double>());
   bool useFSAL              = stepper->getUseFSALDefault();
   std::string ICConsistency = stepper->getICConsistencyDefault();
   bool ICConsistencyCheck   = stepper->getICConsistencyCheckDefault();
@@ -83,6 +86,8 @@ void testExplicitRKAccessorsFullConstruction(
   stepper->setObserver(obs);                           stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 #endif
   stepper->setAppAction(modifier);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setAppAction(modifierX);                    stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setAppAction(observer);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setUseFSAL(useFSAL);                        stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setICConsistency(ICConsistency);            stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setICConsistencyCheck(ICConsistencyCheck);  stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
@@ -215,8 +220,10 @@ void testDIRKAccessorsFullConstruction(
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
   // Default values for construction.
-  auto modifier = rcp(new Tempus::StepperRKModifierDefault<double>());
-  auto solver = rcp(new Thyra::NOXNonlinearSolver());
+  auto modifier  = rcp(new Tempus::StepperRKModifierDefault<double>());
+  auto modifierX = rcp(new Tempus::StepperRKModifierXDefault<double>());
+  auto observer  = rcp(new Tempus::StepperRKObserverDefault<double>());
+  auto solver    = rcp(new Thyra::NOXNonlinearSolver());
   solver->setParameterList(Tempus::defaultSolverParameters());
 
   bool useFSAL              = stepper->getUseFSALDefault();
@@ -231,6 +238,8 @@ void testDIRKAccessorsFullConstruction(
   stepper->setObserver(obs);                           stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 #endif
   stepper->setAppAction(modifier);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setAppAction(modifierX);                    stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setAppAction(observer);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setSolver(solver);                          stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setUseFSAL(useFSAL);                        stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setICConsistency(ICConsistency);            stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());

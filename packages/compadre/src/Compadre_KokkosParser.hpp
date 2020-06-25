@@ -20,6 +20,9 @@ private:
 
   bool _called_initialize;
 
+  // prevent default constructor
+  KokkosParser();
+
 public:
 
   // call with command line arguments

@@ -204,16 +204,16 @@ void
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeTimeStep()
 {
   Scalar current_dt; 
-  if (Teuchos::nonnull(solutionHistory_->getWorkingState())) {
-    current_dt = solutionHistory_->getWorkingState()->getTimeStep();
+  if (Teuchos::nonnull(solutionHistory_->getCurrentState())) {
+    current_dt = solutionHistory_->getCurrentState()->getTimeStep();
   }
   else {
     current_dt = solutionHistory_->getCurrentState()->getTimeStep();
   }
   
   //Don't observe solution if step failed to converge
-  if ((solutionHistory_->getWorkingState() != Teuchos::null) &&
-     (solutionHistory_->getWorkingState()->getSolutionStatus() == Tempus::Status::FAILED)) {
+  if ((solutionHistory_->getCurrentState() != Teuchos::null) &&
+     (solutionHistory_->getCurrentState()->getSolutionStatus() == Tempus::Status::FAILED)) {
     Scalar min_dt = timeStepControl_->getMinTimeStep(); 
     if ((previous_dt_ == current_dt) && (previous_dt_ == min_dt)) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter, 

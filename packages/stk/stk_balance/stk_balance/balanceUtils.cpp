@@ -17,7 +17,7 @@ namespace balance
 //////////////////////////////////////////////////////////////////////////
 
 BalanceSettings::BalanceSettings()
-  : initialDecompMethod("RIB")
+  : m_initialDecompMethod("RIB")
 {}
 
 size_t BalanceSettings::getNumNodesRequiredForConnection(stk::topology element1Topology, stk::topology element2Topology) const
@@ -135,14 +135,9 @@ std::string BalanceSettings::getDecompMethod() const
     return std::string("parmetis");
 }
 
-void BalanceSettings::setInitialDecompMethod(const std::string& method)
-{
-    initialDecompMethod = method;
-}
-
 std::string BalanceSettings::getInitialDecompMethod() const
 {
-    return initialDecompMethod;
+    return m_initialDecompMethod;
 }
 
 std::string BalanceSettings::getCoordinateFieldName() const
@@ -190,12 +185,22 @@ bool BalanceSettings::shouldFixSpiders() const
     return false;
 }
 
-std::string BalanceSettings::getSpiderConnectivityCountFieldName() const
+std::string BalanceSettings::getSpiderBeamConnectivityCountFieldName() const
 {
     return "beam_connectivity_count";
 }
 
-const stk::mesh::Field<int> * BalanceSettings::getSpiderConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const
+std::string BalanceSettings::getSpiderVolumeConnectivityCountFieldName() const
+{
+    return "volume_connectivity_count";
+}
+
+const stk::mesh::Field<int> * BalanceSettings::getSpiderBeamConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const
+{
+    return nullptr;
+}
+
+const stk::mesh::Field<int> * BalanceSettings::getSpiderVolumeConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const
 {
     return nullptr;
 }
@@ -221,6 +226,26 @@ double BalanceSettings::getNodeBalancerTargetLoadBalance() const
 unsigned BalanceSettings::getNodeBalancerMaxIterations() const
 {
   return 5;
+}
+
+void BalanceSettings::set_input_filename(const std::string& filename)
+{
+  m_inputFilename = filename;
+}
+
+std::string BalanceSettings::get_input_filename() const
+{
+  return m_inputFilename;
+}
+
+void BalanceSettings::set_output_filename(const std::string& filename)
+{
+  m_outputFilename = filename;
+}
+
+std::string BalanceSettings::get_output_filename() const
+{
+  return m_outputFilename;
 }
 
 //////////////////////////////////////
@@ -319,6 +344,8 @@ int GraphCreationSettings::getGraphVertexWeight(stk::topology type) const
             return 6;
         case stk::topology::WEDGE_6:
             return 2;
+        case stk::topology::WEDGE_12:
+            // TODO
         case stk::topology::WEDGE_15:
             return 12;
         default:
@@ -523,6 +550,7 @@ int GraphCreationSettings::getEdgeWeightTableIndex(stk::topology elementTopology
         case stk::topology::TET_11:
         case stk::topology::PYRAMID_13:
         case stk::topology::PYRAMID_14:
+        case stk::topology::WEDGE_12:
         case stk::topology::WEDGE_15:
         case stk::topology::WEDGE_18:
         case stk::topology::HEX_27:
@@ -561,14 +589,28 @@ bool GraphCreationSettings::shouldFixSpiders() const
     return m_shouldFixSpiders;
 }
 
-const stk::mesh::Field<int> * GraphCreationSettings::getSpiderConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const
+const stk::mesh::Field<int> * GraphCreationSettings::getSpiderBeamConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const
 {
-    if (m_spiderConnectivityCountField == nullptr) {
-        m_spiderConnectivityCountField = reinterpret_cast<stk::mesh::Field<int>*>(stkMeshBulkData.mesh_meta_data().get_field(stk::topology::NODE_RANK,
-                                                                                                                             getSpiderConnectivityCountFieldName()));
-        ThrowRequireMsg(m_spiderConnectivityCountField != nullptr, "Must create spider connectivity field when stomping spiders.");
+    if (m_spiderBeamConnectivityCountField == nullptr) {
+        m_spiderBeamConnectivityCountField =
+            reinterpret_cast<stk::mesh::Field<int>*>(stkMeshBulkData.mesh_meta_data().get_field(stk::topology::NODE_RANK,
+                                                     getSpiderBeamConnectivityCountFieldName()));
+        ThrowRequireMsg(m_spiderBeamConnectivityCountField != nullptr,
+                        "Must create nodal spider beam connectivity count field when stomping spiders.");
     }
-    return m_spiderConnectivityCountField;
+    return m_spiderBeamConnectivityCountField;
+}
+
+const stk::mesh::Field<int> * GraphCreationSettings::getSpiderVolumeConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const
+{
+    if (m_spiderVolumeConnectivityCountField == nullptr) {
+        m_spiderVolumeConnectivityCountField =
+            reinterpret_cast<stk::mesh::Field<int>*>(stkMeshBulkData.mesh_meta_data().get_field(stk::topology::ELEM_RANK,
+                                                     getSpiderVolumeConnectivityCountFieldName()));
+        ThrowRequireMsg(m_spiderVolumeConnectivityCountField != nullptr,
+                        "Must create element spider volume connectivity count field when stomping spiders.");
+    }
+    return m_spiderVolumeConnectivityCountField;
 }
 
 void GraphCreationSettings::setUseNodeBalancer(bool useBalancer)

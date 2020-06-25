@@ -39,6 +39,7 @@
 #include "stk_mesh/base/DataTraits.hpp"  // for DataTraits
 #include "stk_mesh/base/FieldRestriction.hpp"  // for FieldRestriction
 #include <stk_mesh/base/FindRestriction.hpp>
+#include <stk_mesh/base/NgpField.hpp>
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowRequireMsg
 
 
@@ -110,6 +111,200 @@ unsigned FieldBase::length(const stk::mesh::Part& part) const
     stk::mesh::find_restriction(*this, entity_rank(), part);
   return restriction.num_scalars_per_entity();
 }
+
+void FieldBase::rotate_multistate_data()
+{
+  const unsigned numStates = m_impl.number_of_states();
+  if (numStates > 1 && StateNew == state()) {
+    NgpFieldBase* ngpField = get_ngp_field();
+    if (ngpField != nullptr) {
+      ngpField->rotate_multistate_data();
+    }
+    for (unsigned s = 1; s < numStates; ++s) {
+      FieldBase* sField = field_state(static_cast<FieldState>(s));
+      m_field_meta_data.swap(sField->m_field_meta_data);
+    }
+  }
+}
+
+#ifdef STK_DEBUG_FIELD_SYNC
+unsigned
+FieldBase::get_num_components(const FastMeshIndex & index) const
+{
+  const unsigned bytesPerScalar = data_traits().size_of;
+  return m_field_meta_data[index.bucket_id].m_bytes_per_entity/bytesPerScalar;
+}
+
+void
+FieldBase::set_last_modification_view(const LastFieldModLocationType & lastModView) const
+{
+  m_debugFieldLastModification = lastModView;
+}
+
+bool
+FieldBase::last_accessed_entity_value_has_changed(const FastMeshIndex & index, unsigned component) const
+{
+  const unsigned bytesPerScalar = data_traits().size_of;
+  const FieldMetaData& field_meta_data = m_field_meta_data[index.bucket_id];
+  const unsigned entityOffset = field_meta_data.m_bytes_per_entity * index.bucket_ord;
+  const unsigned componentOffset = bytesPerScalar * component;
+
+  const uint8_t * data = field_meta_data.m_data + entityOffset + componentOffset;
+  const uint8_t * lastValueData = m_lastFieldValue.data() + entityOffset + componentOffset;
+
+  return std::memcmp(data, lastValueData, bytesPerScalar);
+}
+
+void
+FieldBase::set_last_modification(const FastMeshIndex & index, unsigned component, LastModLocation location) const
+{
+  m_debugFieldLastModification(index.bucket_id, ORDER_INDICES(index.bucket_ord, component)) = location;
+}
+
+void
+FieldBase::detect_host_field_entity_modification() const
+{
+  if (m_lastFieldEntityLocation.bucket_id == INVALID_BUCKET_ID) return;
+
+  for (unsigned component = 0; component < get_num_components(m_lastFieldEntityLocation);  ++component) {
+    if (last_accessed_entity_value_has_changed(m_lastFieldEntityLocation, component)) {
+      set_last_modification(m_lastFieldEntityLocation, component, LastModLocation::HOST);
+    }
+  }
+}
+
+bool
+FieldBase::last_entity_modification_not_on_host(const FastMeshIndex & index, unsigned component) const
+{
+  return !(m_debugFieldLastModification(index.bucket_id,
+                                        ORDER_INDICES(index.bucket_ord, component)) & LastModLocation::HOST);
+}
+
+void
+FieldBase::store_last_entity_access_location(const FastMeshIndex & index) const
+{
+  const FieldMetaData& field_meta_data = m_field_meta_data[index.bucket_id];
+  const uint8_t * data = field_meta_data.m_data + field_meta_data.m_bytes_per_entity * index.bucket_ord;
+
+  const unsigned bucketCapacity = get_mesh().buckets(entity_rank())[index.bucket_id]->capacity();
+  m_lastFieldValue.resize(field_meta_data.m_bytes_per_entity * bucketCapacity);
+  uint8_t * lastValueData = m_lastFieldValue.data() + field_meta_data.m_bytes_per_entity * index.bucket_ord;
+
+  std::memcpy(lastValueData, data, field_meta_data.m_bytes_per_entity);
+  m_lastFieldEntityLocation = index;
+}
+
+std::string location_string(const char * fullPath, int lineNumber)
+{
+  if (lineNumber != -1) {
+    std::string fileName(fullPath);
+    std::size_t pathDelimeter = fileName.find_last_of("/");
+    if (pathDelimeter < fileName.size()) {
+      fileName = fileName.substr(pathDelimeter+1);
+    }
+    return fileName + ":" + std::to_string(lineNumber) + " ";
+  }
+  else {
+    return "";
+  }
+}
+
+void
+FieldBase::check_stale_field_entity_access(const FastMeshIndex & index, const char * fileName, int lineNumber) const
+{
+  if (get_ngp_field()->any_device_field_modification()) {
+    std::cout << location_string(fileName, lineNumber)
+              << "*** WARNING: Lost Device values for Field " << name()
+              << " due to a mesh modification before a sync to Host" << std::endl;
+    return;
+  }
+
+  for (unsigned component = 0; component < get_num_components(index);  ++component) {
+    if (last_entity_modification_not_on_host(index, component)) {
+      const unsigned bytesPerScalar = data_traits().size_of;
+      const FieldMetaData& field_meta_data = m_field_meta_data[index.bucket_id];
+      const unsigned entityOffset = field_meta_data.m_bytes_per_entity * index.bucket_ord;
+      const unsigned componentOffset = bytesPerScalar * component;
+
+      uint8_t * data = field_meta_data.m_data + entityOffset + componentOffset;
+
+      const std::string baseMessage = location_string(fileName, lineNumber) +
+                                      "*** WARNING: Accessing stale data on Host for Field " + name() +
+                                      "[" + std::to_string(component) + "]=";
+      if (data_traits().is_floating_point && data_traits().size_of == 8u) {
+        std::cout << baseMessage << *reinterpret_cast<double*>(data) << std::endl;
+      }
+      else if (data_traits().is_floating_point && data_traits().size_of == 4u) {
+        std::cout << baseMessage << *reinterpret_cast<float*>(data) << std::endl;
+      }
+      else if (data_traits().is_integral && data_traits().is_signed && data_traits().size_of == 4u) {
+        std::cout << baseMessage << *reinterpret_cast<int32_t*>(data) << std::endl;
+      }
+      else if (data_traits().is_integral && data_traits().is_unsigned && data_traits().size_of == 4u) {
+        std::cout << baseMessage << *reinterpret_cast<uint32_t*>(data) << std::endl;
+      }
+      else if (data_traits().is_integral && data_traits().is_signed && data_traits().size_of == 8u) {
+        std::cout << baseMessage << *reinterpret_cast<int64_t*>(data) << std::endl;
+      }
+      else if (data_traits().is_integral && data_traits().is_unsigned && data_traits().size_of == 8u) {
+        std::cout << baseMessage << *reinterpret_cast<uint64_t*>(data) << std::endl;
+      }
+      else if (data_traits().is_integral && data_traits().is_signed && data_traits().size_of == 2u) {
+        std::cout << baseMessage << *reinterpret_cast<int16_t*>(data) << std::endl;
+      }
+      else if (data_traits().is_integral && data_traits().is_unsigned && data_traits().size_of == 2u) {
+        std::cout << baseMessage << *reinterpret_cast<uint16_t*>(data) << std::endl;
+      }
+      else {
+        std::cout << location_string(fileName, lineNumber)
+                  << "*** WARNING: Accessing stale data on Host for Field " << name() << std::endl;
+      }
+    }
+  }
+}
+
+void
+FieldBase::store_last_bucket_access_location(const stk::mesh::Bucket & bucket) const
+{
+  const FieldMetaData& field_meta_data = m_field_meta_data[bucket.bucket_id()];
+  m_lastFieldValue.resize(field_meta_data.m_bytes_per_entity * bucket.capacity());
+
+  std::memcpy(m_lastFieldValue.data(), field_meta_data.m_data, field_meta_data.m_bytes_per_entity * bucket.size());
+  m_lastFieldBucketLocation = &const_cast<stk::mesh::Bucket&>(bucket);
+}
+
+void
+FieldBase::detect_host_field_bucket_modification() const
+{
+  if (m_lastFieldBucketLocation == nullptr) return;
+
+  for (unsigned ordinal = 0; ordinal < m_lastFieldBucketLocation->size(); ++ordinal) {
+    const FastMeshIndex index {m_lastFieldBucketLocation->bucket_id(), ordinal};
+    for (unsigned component = 0; component < get_num_components(index);  ++component) {
+      if (last_accessed_entity_value_has_changed(index, component)) {
+        set_last_modification(index, component, LastModLocation::HOST);
+      }
+    }
+  }
+}
+
+void
+FieldBase::check_stale_field_bucket_access(const stk::mesh::Bucket & bucket, const char * fileName, int lineNumber) const
+{
+  for (unsigned ordinal = 0; ordinal < bucket.size(); ++ordinal) {
+    const FastMeshIndex index {bucket.bucket_id(), ordinal};
+    check_stale_field_entity_access(index, fileName, lineNumber);
+  }
+}
+
+void
+FieldBase::reset_debug_state()
+{
+  m_lastFieldEntityLocation = {INVALID_BUCKET_ID, 0};
+  m_lastFieldBucketLocation = nullptr;
+}
+
+#endif
 
 //----------------------------------------------------------------------
 

@@ -121,6 +121,8 @@ inline void communicate_field_data(
 
   std::vector<std::pair<int,int> > fieldRange(fields.size(), std::make_pair(-1,-1));
   for(int fi=0; fi<numFields; ++fi) {
+    fields[fi]->sync_to_host();
+    fields[fi]->modify_on_host();
     EntityRank fieldRank = fields[fi]->entity_rank();
     EntityCommListInfoVector::const_iterator startIter = std::lower_bound(comm_info_vec.begin(), comm_info_vec.end(), fieldRank, InfoRankLess());
     EntityCommListInfoVector::const_iterator endIter = std::upper_bound(startIter, comm_info_vec.end(), fieldRank, InfoRankLess());
