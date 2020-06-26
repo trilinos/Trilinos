@@ -127,8 +127,6 @@ namespace FROSch {
         using SCVec                     = Array<SC>;
         using SCVecPtr                  = ArrayRCP<SC>;
 
-        using TimePtr                   = RCP<Teuchos::Time>;
-
     public:
 
         DDInterface(UN dimension,

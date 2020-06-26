@@ -83,7 +83,6 @@ namespace FROSch {
         return 0;
     }
 
-
     template <class SC,class LO,class GO,class NO>
     int CoarseSpace<SC,LO,GO,NO>::assembleCoarseSpace()
     {
@@ -165,7 +164,6 @@ namespace FROSch {
         return 0;
     }
 
-
     template <class SC,class LO,class GO,class NO>
     int CoarseSpace<SC,LO,GO,NO>::buildGlobalBasisMatrix(ConstXMapPtr rowMap,
                                                          ConstXMapPtr rangeMap,
@@ -199,8 +197,6 @@ namespace FROSch {
         GlobalBasisMatrix_->fillComplete(AssembledBasisMapUnique_,rangeMap); //RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); GlobalBasisMatrix_->describe(*fancy,VERB_EXTREME);
         return 0;
     }
-
-
 
     template <class SC,class LO,class GO,class NO>
     int CoarseSpace<SC,LO,GO,NO>::clearCoarseSpace()

@@ -46,10 +46,6 @@
 #include <Xpetra_MapFactory_fwd.hpp>
 
 #include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_SerialDenseMatrix.hpp>
-#include <Teuchos_SerialQRDenseSolver.hpp>
-#include <Teuchos_SerialDenseVector.hpp>
-#include <Teuchos_SerialDenseHelpers.hpp>
 #include <FROSch_CoarseSpace_def.hpp>
 
 #include "FROSch_Tools_def.hpp"

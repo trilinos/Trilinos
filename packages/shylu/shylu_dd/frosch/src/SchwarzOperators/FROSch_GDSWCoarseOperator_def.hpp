@@ -560,6 +560,15 @@ namespace FROSch {
         }
         return 0;
     }
+
+    template<class SC,class LO,class GO,class NO>
+    typename GDSWCoarseOperator<SC,LO,GO,NO>::XMapPtr GDSWCoarseOperator<SC,LO,GO,NO>::BuildRepeatedMapCoarseLevel(ConstXMapPtr &nodesMap,
+                                                UN dofsPerNode,
+                                                ConstXMapPtrVecPtr dofsMaps)
+    {
+      FROSCH_ASSERT(false,"For GDSWCoarseOperator the ZoltanDual Option is not implemented!");
+
+    }
 }
 
 #endif

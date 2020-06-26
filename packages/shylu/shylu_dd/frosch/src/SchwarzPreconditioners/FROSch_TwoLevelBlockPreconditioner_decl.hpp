@@ -44,8 +44,6 @@
 
 #include <FROSch_OneLevelPreconditioner_def.hpp>
 
-#define ATimer(S,L) Teuchos::TimeMonitor::getNewCounter(std::string("FROSch: ") + std::string(S) + " (Level " + std::to_string(L) + std::string(")"));
-
 namespace FROSch {
 
     using namespace std;

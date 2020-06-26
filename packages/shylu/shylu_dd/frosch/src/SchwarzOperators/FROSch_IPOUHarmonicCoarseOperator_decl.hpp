@@ -151,6 +151,10 @@ namespace FROSch {
 
         string description() const;
 
+        virtual XMapPtr BuildRepeatedMapCoarseLevel(ConstXMapPtr &nodesMap,
+                                                    UN dofsPerNode,
+                                                    ConstXMapPtrVecPtr dofsMaps);
+
     protected:
 
         int buildCoarseSpace(UN dimension,
@@ -187,6 +191,8 @@ namespace FROSch {
         PartitionOfUnityPtr PartitionOfUnity_;
 
         LocalPartitionOfUnityBasisPtr LocalPartitionOfUnityBasis_;
+
+        GOVec NumEnt_;
         /*
          ^^^^^^^^^^
          */

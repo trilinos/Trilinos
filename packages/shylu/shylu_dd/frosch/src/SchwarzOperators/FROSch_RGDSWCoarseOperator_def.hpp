@@ -394,6 +394,15 @@ namespace FROSch {
         }
         return rotations;
     }
+
+    template<class SC,class LO,class GO,class NO>
+    typename RGDSWCoarseOperator<SC,LO,GO,NO>::XMapPtr RGDSWCoarseOperator<SC,LO,GO,NO>::BuildRepeatedMapCoarseLevel(ConstXMapPtr &nodesMap,
+                                                UN dofsPerNode,
+                                                ConstXMapPtrVecPtr dofsMaps)
+    {
+      FROSCH_ASSERT(false,"For GDSWCoarseOperator the ZoltanDual Option is not implemented!");
+
+    }
 }
 
 #endif

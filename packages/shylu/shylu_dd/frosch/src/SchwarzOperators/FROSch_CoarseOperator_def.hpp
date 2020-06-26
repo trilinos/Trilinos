@@ -70,140 +70,9 @@ namespace FROSch {
     //##############CoarseSolve Repeated Map##############################
     //this is only called if an additional level is applied and ZoltanDual is chosen
     //for distribution
-    template<class SC,class LO, class GO, class NO>
-    int CoarseOperator<SC,LO,GO,NO>::buildGlobalGraph(Teuchos::RCP<DDInterface<SC,LO,GO,NO> > theDDInterface_)
-    {
-      FROSCH_TIMER_START_LEVELID(buildGlobalGraphTime,"CoarseOperator::buildGlobalGraph");
-      std::map<GO,int> rep;
-      Teuchos::Array<GO> entries;
-      IntVec2D conn;
-      InterfaceEntityPtrVec ConnVec;
-      int connrank;
-      //get connected subdomains
-      {
-         theDDInterface_->identifyConnectivityEntities();
-         EntitySetConstPtr Connect=  theDDInterface_->getConnectivityEntities();
-         Connect->buildEntityMap(theDDInterface_->getNodesMap());
-         ConnVec = Connect->getEntityVector();
-         connrank = Connect->getEntityMap()->getComm()->getRank();
-       }
-       GO ConnVecSize = ConnVec.size();
-       conn.resize(ConnVecSize);
-       {
-         if (ConnVecSize>0) {
-           for(GO i = 0;i<ConnVecSize;i++) {
-               conn[i] = ConnVec[i]->getSubdomainsVector();
-               for (int j = 0; j<conn[i].size(); j++) rep.insert(std::pair<GO,int>(conn.at(i).at(j),connrank));
-           }
-           for (auto& x: rep) {
-               entries.push_back(x.first);
-           }
-         }
-       }
 
-       Teuchos::RCP<Xpetra::Map<LO,GO,NO> > GraphMap = Xpetra::MapFactory<LO,GO,NO>::Build(this->K_->getMap()->lib(),-1,1,0,this->K_->getMap()->getComm());
 
-       //UN maxNumElements = -1;
-       maxNumNeigh_ = -1;
-       UN numElementsLocal = entries.size();
-       reduceAll(*this->MpiComm_,Teuchos::REDUCE_MAX,numElementsLocal,Teuchos::ptr(&maxNumNeigh_));
-       SubdomainConnectGraph_ = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(GraphMap,maxNumNeigh_);
-       SubdomainConnectGraph_->insertGlobalIndices(GraphMap->getComm()->getRank(),entries());
-
-       return 0;
-    }
-
-    template <class SC,class LO, class GO,class NO>
-    int CoarseOperator<SC,LO,GO,NO>::buildCoarseGraph()
-    {
-      //bring graph to correct communictaor
-      FROSCH_TIMER_START_LEVELID(buildCoarseGraphTime,"CoarseOperator::buildCoarseGraph");
-
-		  GraphPtr TestGraph2 =  Xpetra::CrsGraphFactory<LO,GO,NO>::Build(MLGatheringMaps_[1],maxNumNeigh_);;
-	 	  GraphPtr TestGraph3;
-		  {
-	 	   TestGraph2->doExport(*SubdomainConnectGraph_,*MLCoarseSolveExporters_[1],Xpetra::INSERT);
-		  }
-
-	 	  for(int i  = 2;i<MLGatheringMaps_.size();i++){
-        TestGraph2->fillComplete();
-        TestGraph3 = TestGraph2;
-	 	  	TestGraph2 = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(MLGatheringMaps_[i],maxNumNeigh_);
-	 		  TestGraph2->doExport(*TestGraph3,*MLCoarseSolveExporters_[i],Xpetra::INSERT);
-	 	 }
-
-		 const size_t numMyElementS = MLGatheringMaps_[MLGatheringMaps_.size()-1]->getNodeNumElements();
-     if (OnCoarseSolveComm_) {
-       SubdomainConnectGraph_= Xpetra::CrsGraphFactory<LO,GO,NO>::Build(MLCoarseMap_,maxNumNeigh_);
-       for (size_t k = 0; k<numMyElementS; k++) {
-         Teuchos::ArrayView<const LO> in;
-         Teuchos::ArrayView<const GO> vals_graph;
-         GO kg = MLGatheringMaps_[MLGatheringMaps_.size()-1]->getGlobalElement(k);
-         TestGraph2->getGlobalRowView(kg,vals_graph);
-         Teuchos::Array<GO> vals(vals_graph);
-				 SubdomainConnectGraph_->insertGlobalIndices(kg,vals());
-			 }
-       SubdomainConnectGraph_->fillComplete();
-		 }
-     return 0;
-    }
-
-    template <class SC,class LO,class GO, class NO>
-    int CoarseOperator<SC,LO,GO,NO>::buildElementNodeList()
-    {
-      //get elements belonging to one subdomain
-      FROSCH_TIMER_START_LEVELID(buildElementNodeListTime,"CoarseOperator::buildElementNodeList");
-
-      Teuchos::ArrayView<const GO> elements_ = kRowMap_->getNodeElementList();
-      UN maxNumElements = -1;
-      UN numElementsLocal = elements_.size();
-      {
-        reduceAll(*this->MpiComm_,Teuchos::REDUCE_MAX,numElementsLocal,Teuchos::ptr(&maxNumElements));
-      }
-
-      GraphPtr ElemGraph = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(MLGatheringMaps_[0],maxNumElements);
-      Teuchos::ArrayView<const GO> myGlobals = SubdomainConnectGraph_->getRowMap()->getNodeElementList();
-      {
-        Teuchos::Array<GO> col_vec(elements_.size());
-        for(int i = 0; i<elements_.size(); i++) {
-          col_vec.at(i) = i;
-        }
-        for (size_t i = 0; i < SubdomainConnectGraph_->getRowMap()->getNodeNumElements(); i++) {
-          ElemGraph->insertGlobalIndices(myGlobals[i],elements_);
-        }
-        ElemGraph->fillComplete();
-      }
-      GraphPtr tmpElemGraph = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(MLGatheringMaps_[1],maxNumElements);
-      GraphPtr ElemSGraph;
-
-      tmpElemGraph->doExport(*ElemGraph,*MLCoarseSolveExporters_[1],Xpetra::INSERT);
-      UN gathered = 0;
-      for(int i  = 2;i<MLGatheringMaps_.size();i++){
-        gathered = 1;
-        tmpElemGraph->fillComplete();
-        ElemSGraph = tmpElemGraph;
-        tmpElemGraph = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(MLGatheringMaps_[i],maxNumElements);
-        tmpElemGraph->doExport(*ElemSGraph,*MLCoarseSolveExporters_[i],Xpetra::INSERT);
-      }
-      if(gathered == 0){
-        ElemSGraph = tmpElemGraph;
-      }
-      MLCoarseMap_ = MapFactory<LO,GO,NO>::Build(MLGatheringMaps_[1]->lib(),-1,MLGatheringMaps_[1]->getNodeElementList(),0,CoarseSolveComm_);
-      ElementNodeList_ =Xpetra::CrsGraphFactory<LO,GO,NO>::Build(MLCoarseMap_,maxNumElements);
-
-      if(OnCoarseSolveComm_){
-        const size_t numMyElementS = MLCoarseMap_->getNodeNumElements();
-        Teuchos::ArrayView<const GO> va;
-        for (UN i = 0; i < numMyElementS; i++) {
-          GO kg = MLGatheringMaps_[MLGatheringMaps_.size()-1]->getGlobalElement(i);
-          ElemSGraph->getGlobalRowView(kg,va);
-          Teuchos::Array<GO> vva(va);
-          ElementNodeList_->insertGlobalIndices(kg,vva());//mal va nehmen
-        }
-        ElementNodeList_->fillComplete();
-      }
-      return 0;
-    }
+  //REP MAP Zoltam
 
     template <class SC,class LO,class GO, class NO>
     int CoarseOperator<SC,LO,GO,NO>::BuildRepMapZoltan(GraphPtr Xgraph,
@@ -944,9 +813,9 @@ namespace FROSch {
              //#####################################################################
              // Build Repeated Map Zoltan2
              // build ElementNodeList_ to have adjacent entities to one subdomain
-             buildElementNodeList();
+             this->buildElementNodeList();
              // Connectivity Graph on the CoarseSolveComm_
-             buildCoarseGraph();
+             this->buildCoarseGraph();
              //Build Repeatd Map on CoarseComm------------
              //Initialize Maps...
              ConstXMapPtr UniqueMap;
@@ -965,17 +834,13 @@ namespace FROSch {
                //So far only one Block is allowed ; needs to be adapetd fpr Block Ops
                ConstXMapPtrVecPtr RepMapVector(1);
                //Create DofMaps according to counting the interface entities
-               //partitionType defines the CoarsespaceType 0 = GDSW; 1 = GDSWStar; 2 = RGDSW
-               ConstXMapPtrVecPtr DMap(dofs);
-               ConstXMapPtrVecPtr DMapRep(dofs);
-               if(dim == 2){
-                 tmpRepMap  = BuildRepeatedMapCoarseLevel(ConstRepMap,dofs,numEnt,partitionType,DMapRep);
-               }
-               if(dim == 3){
-                 tmpRepMap  = BuildRepeatedMapCoarseLevel(ConstRepMap,dofs,numEnt,partitionType,DMapRep);
-               }
+               ConstXMapPtrVecPtr DMap(CoarseDofsPerNode_);
+               ConstXMapPtrVecPtr DMapRep(CoarseDofsPerNode_);
 
-               RepMapCoarse = tmpRepMap;
+               tmpRepMap  = this->BuildRepeatedMapCoarseLevel(ConstRepMap,CoarseDofsPerNode_,DMapRep);
+
+
+               RepMapCoarse_ = tmpRepMap;
                RepMapVector[0] = tmpRepMap;
 
                NodesMapVector[0] = ConstRepMap;
@@ -985,12 +850,9 @@ namespace FROSch {
                //Create uniqueNodeMap so that dof belonging to one node are on the same process
                UniqueMap = FROSch::BuildUniqueMap<LO,GO,NO>(CoarseSolveRepeatedMap_);
 
-              if(dim == 2){
-                 UniqueMapAll  = BuildRepeatedMapCoarseLevel(UniqueMap,dofs,numEnt,partitionType,DMap);
-               }
-               if(dim == 3){
-                 UniqueMapAll  = BuildRepeatedMapCoarseLevel(UniqueMap,dofs,numEnt,partitionType,DMap);
-               }
+
+               UniqueMapAll  = this->BuildRepeatedMapCoarseLevel(UniqueMap,CoarseDofsPerNode_,DMap);
+
                uniEle = UniqueMapAll->getNodeElementList();
 
                //Set DofOderingVec and DofsPerNodeVec to ParameterList for the next Level
@@ -998,7 +860,7 @@ namespace FROSch {
                Teuchos::ArrayRCP<DofOrdering> dofOrderings(1);
                dofOrderings[0] = Custom; //special Ordering for Coarse Level
                Teuchos::ArrayRCP<UN> dofsPerNodeVector(1);
-               dofsPerNodeVector[0] = dofs;
+               dofsPerNodeVector[0] = CoarseDofsPerNode_;
                CoarseDofsMaps[0] = DMapRep;
 
                sublist(this->ParameterList_,"CoarseSolver")->set("Repeated Map Vector",RepMapVector);
@@ -1053,48 +915,7 @@ namespace FROSch {
             reduceAll(*CoarseSolveComm_,REDUCE_MIN,localVal,ptr(&minVal));
             reduceAll(*CoarseSolveComm_,REDUCE_MAX,localVal,ptr(&maxVal));
 
-            if (CoarseSolveComm_->getRank() == 0) {
-                cout
-                << "\n" << setw(FROSCH_INDENT) << " "
-                << setw(89) << "-----------------------------------------------------------------------------------------"
-                << "\n" << setw(FROSCH_INDENT) << " "
-                << "| "
-                << left << setw(74) << "Coarse problem statistics (coarse comm) " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
-                << " |"
-                << "\n" << setw(FROSCH_INDENT) << " "
-                << setw(89) << "========================================================================================="
-                // << "\n" << setw(FROSCH_INDENT) << " "
-                // << "| " << left << setw(41) << "Dimension of the coarse problem" << right
-                // << " | " << setw(41) << dimCoarseProblem
-                // << " |"
-                << "\n" << setw(FROSCH_INDENT) << " "
-                << "| " << left << setw(41) << "Number of ranks on the coarse comm" << right
-                << " | " << setw(41) << NumProcsCoarseSolve_
-                << " |"
-                << "\n" << setw(FROSCH_INDENT) << " "
-                << setw(89) << "-----------------------------------------------------------------------------------------"
-                << "\n" << setw(FROSCH_INDENT) << " "
-                << "| " << left << setw(20) << " " << right
-                << " | " << setw(10) << "total"
-                << " | " << setw(10) << "avg"
-                << " | " << setw(10) << "min"
-                << " | " << setw(10) << "max"
-                << " | " << setw(10) << "global sum"
-                << " |"
-                << "\n" << setw(FROSCH_INDENT) << " "
-                << setw(89) << "-----------------------------------------------------------------------------------------"
-                << "\n" << setw(FROSCH_INDENT) << " "
-                << "| " << left << setw(20) << "Number of rows" << right
-                << " | " << setw(10) << dimCoarseProblem
-                << " | " << setw(10) << avgVal
-                << " | " << setw(10) << minVal
-                << " | " << setw(10) << maxVal
-                << " | " << setw(10) << sumVal
-                << " |"
-                << "\n" << setw(FROSCH_INDENT) << " "
-                << setw(89) << "-----------------------------------------------------------------------------------------"
-                << endl;
-            }
+
         }
 
         return 0;

@@ -106,6 +106,10 @@ namespace FROSch {
                                           GOVecPtr dirichletBoundaryDofs,
                                           ConstXMultiVectorPtr nodeList);
 
+        virtual XMapPtr BuildRepeatedMapCoarseLevel(ConstXMapPtr &nodesMap,
+                                                    UN dofsPerNode,
+                                                    ConstXMapPtrVecPtr dofsMaps);
+
 
     protected:
 
