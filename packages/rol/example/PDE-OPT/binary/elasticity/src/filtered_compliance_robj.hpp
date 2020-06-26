@@ -85,6 +85,12 @@ public:
     return filter_->getAssembler();
   }
 
+  ROL::Ptr<ROL::Vector<Real>> applyFilter(const ROL::Vector<Real> &x) const {
+    ROL::Ptr<ROL::Vector<Real>> Fx = Fz_->clone();
+    filter_->apply(*Fx,x,false);
+    return Fx;
+  }
+
   void update(const ROL::Vector<Real> &z, ROL::EUpdateType type, int iter = -1) {
     nupda_++;
     if (nuke_) {

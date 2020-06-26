@@ -88,6 +88,7 @@ private:
   std::string methodName_;
   ROL::Ptr<ROL::Vector<Real>> c_, x_;
   ROL::Ptr<ROL::Constraint<Real>> con_;
+  int numIH_;
 
   using ROL::PEBBL::BranchSub<Real>::anyChild;
   using ROL::PEBBL::BranchSub<Real>::index_;
@@ -174,11 +175,36 @@ private:
     return infeas;
   }
 
+  void setDensity(ROL::Vector<Real> &out, const ROL::Vector<Real> &in) {
+    try {
+      ROL::Ptr<ROL::Vector<Real>>
+        Fx = ROL::staticPtrCast<Filtered_Compliance_Objective<Real>>(
+          ROL::staticPtrCast<ROL::SlacklessObjective<Real>>(
+            problem0_->getObjective())->getObjective())->applyFilter(*get(in,0));
+      Teuchos::ArrayView<Real>  data = getData(out);
+      Teuchos::ArrayView<Real> Fdata = (ROL::staticPtrCast<ROL::TpetraMultiVector<Real>>(Fx)->getVector()->getDataNonConst(0))();
+      const int nc = data.size()/T_;
+      const int nx = 2*std::sqrt(nc/2); // nx = 2*ny
+      const int ny =   std::sqrt(nc/2); // nc = nx*ny = 2*ny*ny
+      for (int j = 0; j < ny; ++j) { 
+        for (int i = 0; i < nx; ++i) {
+          data[i+j*nx]  = static_cast<Real>(0.25)*Fdata[j*(nx+1)+i];
+          data[i+j*nx] += static_cast<Real>(0.25)*Fdata[j*(nx+1)+(i+1)];
+          data[i+j*nx] += static_cast<Real>(0.25)*Fdata[(j+1)*(nx+1)+(i+1)];
+          data[i+j*nx] += static_cast<Real>(0.25)*Fdata[(j+1)*(nx+1)+i];
+        }
+      }
+    }
+    catch (std::exception &e) {
+      out.set(in);
+    }
+  }
+
   void printVector(const ROL::Vector<Real> &x, std::string name) const {
     Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<>> vecWriter;
-    std::string vecName = name + "_vec.txt";
+    std::string vecName = name + std::to_string(numIH_) + "_vec.txt";
     vecWriter.writeDenseFile(vecName, *getMultiVector(x));
-    std::string mapName = name + "_map.txt";
+    std::string mapName = name + std::to_string(numIH_) + "_map.txt";
     vecWriter.writeMapFile(mapName, *getMultiVector(x)->getMap());
   }
 
@@ -187,7 +213,7 @@ public:
                     const ROL::Ptr<ROL::PEBBL::Branching<Real>> &branching,
                     int verbosity = 0,
                     const ROL::Ptr<std::ostream> &outStream = ROL::nullPtr)
-    : ROL::PEBBL::BranchSub<Real>(branching, verbosity, outStream) {
+    : ROL::PEBBL::BranchSub<Real>(branching, verbosity, outStream), numIH_(0) {
     method_ = parlist->sublist("Problem").get("Incumbent Heuristic",0);
     ctol_   = parlist->sublist("Status Test").get("Constraint Tolerance",1e-8);
     std::vector<Real> ym = ROL::getArrayFromStringParameter<Real>(parlist->sublist("Problem"), "Young's Modulus");
@@ -209,7 +235,7 @@ public:
   MultiMatBranchSub(const MultiMatBranchSub &rpbs)
     : ROL::PEBBL::BranchSub<Real>(rpbs),
       method_(rpbs.method_), ctol_(rpbs.ctol_), T_(rpbs.T_), methodName_(rpbs.methodName_),
-      c_(rpbs.c_->clone()), x_(rpbs.x_==ROL::nullPtr ? ROL::nullPtr : rpbs.x_->clone()), con_(rpbs.con_) {}
+      c_(rpbs.c_->clone()), x_(rpbs.x_==ROL::nullPtr ? ROL::nullPtr : rpbs.x_->clone()), con_(rpbs.con_), numIH_(0) {}
 
   void incumbentHeuristic() {
     std::ios_base::fmtflags flags(outStream_->flags());
@@ -254,113 +280,188 @@ public:
       //  -------------------------
       //  | 0 | 1 | 2 | 3 | 4 | 5 |
       //  -------------------------
-      rndSolution_->set(*solution_);
+      //rndSolution_->set(*solution_);
+      setDensity(*rndSolution_,*solution_);
       const Real nneighbor(2), two(2);
-      Real vol0(0), vol(0), d(0), nd(0), itol(1e-6);
+      Real vol0(0), vol(0), d(0), nd(0), itol(0.35);
       for (int i = 0; i < nc; ++i) vol0 += data[i];
       int nx = 2*std::sqrt(nc/2); // nx = 2*ny
       int ny =   std::sqrt(nc/2); // nc = nx*ny = 2*ny*ny
+      std::map<std::pair<int,int>,int> nn;
       for (int i = 0; i < nx; ++i) {
         for (int j = 0; j < ny/2; ++j) {
           d = data[i+j*nx];
           cnt = 0;
-          if (d > itol && d < one-itol) {
+          if (d > itol) { // && d < one-itol) {
             for (int k = -1; k < 2; ++k) {
               for (int l = -1; l < 2; ++l) {
-                if (k==0 || l==0) {
-                //if (k!=0 || l!=0) {
-                  if ( (i+k) + (j+l)*nx > 0 && (i+k) + (j+l)*nx < nc ) {
-                    nd = data[(i+k) + (j+l)*nx];
+                //if (k==0 || l==0) {
+                if (k!=0 || l!=0) {
+                  int ik = (i+k), jl = (j+l);
+                  if ( ik >=0 && ik < nx && jl >= 0 && jl < ny/2 ) {
+                    nd = data[ik + jl*nx];
                     if (nd >= one-itol) cnt++;
                   }
                 }
               }
             }
           }
-          if (d >= one-itol || cnt>=nneighbor) {
-            data[i+j*nx] = one;
-            data[i+(ny-1-j)*nx] = one;
-            vol += (j!=ny-1-j ? two : one);
-          }
-          else {
-            data[i+j*nx] = zero;
-            data[i+(ny-1-j)*nx] = zero;
-          }
+          nn.insert({{i,j},cnt});
+          ////if (d >= one-itol || cnt >= nneighbor) {
+          //if (cnt >= nneighbor) {
+          //  data[i+j*nx] = one;
+          //  data[i+(ny-1-j)*nx] = one;
+          //  vol += (j!=ny-1-j ? two : one);
+          //}
+          //else {
+          //  data[i+j*nx] = zero;
+          //  data[i+(ny-1-j)*nx] = zero;
+          //}
+        }
+      }
+      for (auto it = nn.begin(); it != nn.end(); ++it) {
+        int i = std::get<0>(it->first);
+        int j = std::get<1>(it->first);
+        cnt = it->second;
+        if (cnt >= nneighbor) {
+          data[i+j*nx] = one;
+          data[i+(ny-1-j)*nx] = one;
+          vol += (j!=ny-1-j ? two : one);
+        }
+        else {
+          data[i+j*nx] = zero;
+          data[i+(ny-1-j)*nx] = zero;
         }
       }
       if (verbosity_ > 1)
         *outStream_ << "Volume Difference: " << vol-vol0 << std::endl;
       if (vol <= vol0-two) {
-        // Get zero cells with nonzero neighbors
-        std::multimap<int,std::pair<int,int>> map;
-        std::map<int,int> map2;
-        for (int i = 0; i < nx; ++i) {
-          for (int j = 0; j < ny/2; ++j) {
-            d = data[i+j*nx];
-            cnt = 0;
-            if (d==zero) {
-              for (int k = -1; k < 2; ++k) {
-                for (int l = -1; l < 2; ++l) {
-                  if (k==0 || l==0) {
-                  //if (k!=0 || l!=0) {
-                    if ( (i+k) + (j+l)*nx > 0 && (i+k) + (j+l)*nx < nc ) {
-                      nd = data[(i+k) + (j+l)*nx];
-                      if (nd == one) cnt++;
-                    }
-                  }
-                }
-              }
-              if (cnt > 0) {
-                map.insert({cnt,{i,j}});
-                map2.insert({i+j*nx,cnt});
-              }
-            }
-          }
-        }
         while (vol <= vol0-two) {
-          std::map<int,std::pair<int,int>>::iterator it = map.end();
-          it--;                            // Grab cell with largest number of neighbors
-          int i = std::get<0>(it->second); // x-index of cell
-          int j = std::get<1>(it->second); // y-index of cell
-          data[i+j*nx] = one;              // Set cell to one
-          data[i+(ny-1-j)*nx] = one;       // Set symmetric cell to one
-          vol += (j!=ny-1-j ? two : one);  // Increase volume
-          map.erase(it);                   // Delete modified cell
-          map2.erase(i+j*nx);              // Delete modified cell
-          for (int k = -1; k < 2; ++k) {
-            for (int l = -1; l < 2; ++l) {
-              if (k==0 || l==0) {
-                int index = (i+k)+(j+l)*nx;                        // Index into rndsolution array.
-                if ( index > 0 && index < nc/2 ) {                 // Check index is within bounds
-                  auto it2 = map2.find(index);                     // 0-cells that are neighbors of modified cell (i,j)
-                  if (it2 != map2.end()) {                         // If a 0-cell exists
-                    auto range = map.equal_range(it2->second);     // Range in map with key = neighbor count
-                    auto it3 = range.first;                        // Iterator to front of range
-                    bool foundNeighbor = false;
-                    for (it3 = range.first; it3 != range.second; ++it3) {
-                      if (   std::get<0>(it3->second)==i+k
-                          && std::get<1>(it3->second)==j+l) {     // Find neighbor
-                        foundNeighbor = true;
-                        break;
+          // Get zero cells with nonzero neighbors
+          std::multimap<int,std::pair<int,int>> map;
+          for (int i = 0; i < nx; ++i) {
+            for (int j = 0; j < ny/2; ++j) {
+              d = data[i+j*nx];
+              cnt = 0;
+              if (d==zero) {
+                for (int k = -1; k < 2; ++k) {
+                  for (int l = -1; l < 2; ++l) {
+                    //if (k==0 || l==0) {
+                    if (k!=0 || l!=0) {
+                      int ik = (i+k), jl = (j+l);
+                      if ( ik >=0 && ik < nx && jl >= 0 && jl < ny/2 ) {
+                        nd = data[ik + jl*nx];
+                        if (nd == one) cnt++;
                       }
                     }
-                    if (foundNeighbor) { 
-                      int                key = it3->first;        // Increment neighbor counter
-                      std::pair<int,int> val = it3->second;       // Cell (x,y) location
-                      map.erase(it3);                             // Remove {key, val} from map
-                      map.insert({key++,val});                    // Add {key++, val} back to map
-                      it2->second++;                              // Increase count for map2
-                    }
-                  }
-                  else {                                          // If neighbor does not exist in map
-                    map.insert({1,{i+k,j+l}});                    // Add to map
-                    map2.insert({index,1});                       // Add to map2
                   }
                 }
+                if (cnt > 0) map.insert({cnt,{i,j}});
               }
             }
           }
+          std::map<int,std::pair<int,int>>::iterator it = map.end();
+          it--;                               // Grab cell with largest number of neighbors
+          auto range0 = map.equal_range(it->first);
+          for (auto it0 = range0.first; it0 != range0.second; ++it0) {
+            int i = std::get<0>(it0->second); // x-index of cell
+            int j = std::get<1>(it0->second); // y-index of cell
+            data[i+j*nx] = one;               // Set cell to one
+            data[i+(ny-1-j)*nx] = one;        // Set symmetric cell to one
+            vol += (j!=ny-1-j ? two : one);   // Increase volume
+            if (vol > vol0-two) break;
+          }
         }
+//        // Get zero cells with nonzero neighbors
+//        std::multimap<int,std::pair<int,int>> map;
+//        std::map<int,int> map2;
+//        for (int i = 0; i < nx; ++i) {
+//          for (int j = 0; j < ny/2; ++j) {
+//            d = data[i+j*nx];
+//            cnt = 0;
+//            if (d==zero) {
+//              for (int k = -1; k < 2; ++k) {
+//                for (int l = -1; l < 2; ++l) {
+//                  if (k==0 || l==0) {
+//                  //if (k!=0 || l!=0) {
+//                    int ik = (i+k), jl = (j+l);
+//                    if ( ik >=0 && ik < nx && jl >= 0 && jl < ny/2 ) {
+//                      nd = data[ik + jl*nx];
+//                      if (nd == one) cnt++;
+//                    }
+//                  }
+//                }
+//              }
+//              if (cnt > 0) {
+//                map.insert({cnt,{i,j}});
+//                map2.insert({i+j*nx,cnt});
+//              }
+//            }
+//          }
+//        }
+//        while (vol <= vol0-two) {
+//          std::map<int,std::pair<int,int>>::iterator it = map.end();
+//          it--;                            // Grab cell with largest number of neighbors
+//          int i = std::get<0>(it->second); // x-index of cell
+//          int j = std::get<1>(it->second); // y-index of cell
+//          auto range0 = map.equal_range(it->first);
+//          Real r = static_cast<Real>(rand())/static_cast<Real>(RAND_MAX);
+//          for (auto it0 = range0.first; it0 != range0.second; ++it0) {
+//            if (r <= static_cast<Real>(0.5)) {
+//              if (i > std::get<0>(it0->second)) {
+//                i = std::get<0>(it0->second);
+//                j = std::get<1>(it0->second);
+//              }
+//            }
+//            else {
+//              if (i < std::get<0>(it0->second)) {
+//                i = std::get<0>(it0->second);
+//                j = std::get<1>(it0->second);
+//              }
+//            }
+//          }
+//          data[i+j*nx] = one;              // Set cell to one
+//          data[i+(ny-1-j)*nx] = one;       // Set symmetric cell to one
+//          vol += (j!=ny-1-j ? two : one);  // Increase volume
+//          map.erase(it);                   // Delete modified cell
+//          map2.erase(i+j*nx);              // Delete modified cell
+//          for (int k = -1; k < 2; ++k) {
+//            for (int l = -1; l < 2; ++l) {
+//              if (k==0 || l==0) {
+//                int ik = (i+k), jl = (j+l);
+//                if ( ik >=0 && ik < nx && jl >= 0 && jl < ny/2 ) { // Check if neighbor indices violate bounds
+//                  int index = ik+jl*nx;
+//                  auto it2 = map2.find(index);                     // 0-cells that are neighbors of modified cell (i,j)
+//                  if (it2 != map2.end()) {                         // If a 0-cell exists
+//                    auto range = map.equal_range(it2->second);     // Range in map with key = neighbor count
+//                    auto it3 = range.first;                        // Iterator to front of range
+//                    bool foundNeighbor = false;
+//                    for (it3 = range.first; it3 != range.second; ++it3) {
+//                      if (   std::get<0>(it3->second)==ik
+//                          && std::get<1>(it3->second)==jl) {      // Find neighbor
+//                        foundNeighbor = true;
+//                        break;
+//                      }
+//                    }
+//                    if (foundNeighbor) {
+//                      int                key = it3->first;        // Increment neighbor counter
+//                      std::pair<int,int> val = it3->second;       // Cell (x,y) location
+//                      map.erase(it3);                             // Remove {key, val} from map
+//                      map.insert({++key,val});                    // Add {++key, val} back to map
+//                      it2->second++;                              // Increase count for map2
+//                    }
+//                  }
+//                  else {                                          // If neighbor does not exist in map
+//                    if ( data[index] == zero ) {
+//                      map.insert({1,{ik,jl}});                    // Add to map
+//                      map2.insert({index,1});                     // Add to map2
+//                    }
+//                  }
+//                }
+//              }
+//            }
+//          }
+//        }
         //for (auto it = map.rbegin(); it != map.rend(); ++it) {
         //  int i = std::get<0>(it->second);
         //  int j = std::get<1>(it->second);
@@ -386,8 +487,9 @@ public:
                 for (int l = -1; l < 2; ++l) {
                   if (k==0 || l==0) {
                   //if (k!=0 || l!=0) {
-                    if ( (i+k) + (j+l)*nx > 0 && (i+k) + (j+l)*nx < nc ) {
-                      nd = data[(i+k) + (j+l)*nx];
+                    int ik = (i+k), jl = (j+l);
+                    if ( ik >=0 && ik < nx && jl >= 0 && jl < ny/2 ) {
+                      nd = data[ik + jl*nx];
                       if (nd == zero) cnt++;
                     }
                   }
@@ -403,6 +505,22 @@ public:
           it--;                            // Grab cell with largest number of neighbors
           int i = std::get<0>(it->second); // x-index of cell
           int j = std::get<1>(it->second); // y-index of cell
+          auto range0 = map.equal_range(it->first);
+          Real r = static_cast<Real>(rand())/static_cast<Real>(RAND_MAX);
+          for (auto it0 = range0.first; it0 != range0.second; ++it0) {
+            if (r <= static_cast<Real>(0.5)) {
+              if (i > std::get<0>(it0->second)) {
+                i = std::get<0>(it0->second);
+                j = std::get<1>(it0->second);
+              }
+            }
+            else {
+              if (i < std::get<0>(it0->second)) {
+                i = std::get<0>(it0->second);
+                j = std::get<1>(it0->second);
+              }
+            }
+          }
           data[i+j*nx] = zero;             // Set cell to zero
           data[i+(ny-1-j)*nx] = zero;      // Set symmetric cell to zero
           vol -= (j!=ny-1-j ? two : one);  // Decrease volume
@@ -411,16 +529,17 @@ public:
           for (int k = -1; k < 2; ++k) {
             for (int l = -1; l < 2; ++l) {
               if (k==0 || l==0) {
-                int index = (i+k)+(j+l)*nx;                        // Index into rndsolution array.
-                if ( index > 0 && index < nc/2 ) {                 // Check index is within bounds
+                int ik = (i+k), jl = (j+l);
+                if ( ik >=0 && ik < nx && jl >= 0 && jl < ny/2 ) { // Check if neighbor indices violate bounds
+                  int index = ik+jl*nx;
                   auto it2 = map2.find(index);                     // 0-cells that are neighbors of modified cell (i,j)
                   if (it2 != map2.end()) {                         // If a 0-cell exists
                     auto range = map.equal_range(it2->second);     // Range in map with key = neighbor count
                     auto it3 = range.first;                        // Iterator to front of range
                     bool foundNeighbor = false;
                     for (it3 = range.first; it3 != range.second; ++it3) {
-                      if (   std::get<0>(it3->second)==i+k
-                          && std::get<1>(it3->second)==j+l) {     // Find neighbor
+                      if (   std::get<0>(it3->second)==ik
+                          && std::get<1>(it3->second)==jl) {      // Find neighbor
                         foundNeighbor = true;
                         break;
                       }
@@ -429,13 +548,15 @@ public:
                       int                key = it3->first;        // Increment neighbor counter
                       std::pair<int,int> val = it3->second;       // Cell (x,y) location
                       map.erase(it3);                             // Remove {key, val} from map
-                      map.insert({key++,val});                    // Add {key++, val} back to map
+                      map.insert({++key,val});                    // Add {++key, val} back to map
                       it2->second++;                              // Increase count for map2
                     }
                   }
                   else {                                          // If neighbor does not exist in map
-                    map.insert({1,{i+k,j+l}});                    // Add to map
-                    map2.insert({index,1});                       // Add to map2
+                    if ( data[index]==one ) {
+                      map.insert({1,{ik,jl}});                    // Add to map
+                      map2.insert({index,1});                     // Add to map2
+                    }
                   }
                 }
               }
@@ -462,7 +583,8 @@ public:
       Real r(0), sum(0);
       bool oneSet(false);
       while (true) {
-        rndSolution_->set(*solution_);
+        //rndSolution_->set(*solution_);
+        setDensity(*rndSolution_,*solution_);
         for (int i = 0; i < nc; ++i) { 
           r = static_cast<Real>(rand())/static_cast<Real>(RAND_MAX);
           sum = zero;
@@ -489,7 +611,11 @@ public:
     problem0_->getObjective()->update(*rndSolution_,ROL::UPDATE_TEMP);
     Real val = problem0_->getObjective()->value(*rndSolution_,tol);
     branching_->foundSolution(new ROL::PEBBL::IntegerSolution<Real>(*rndSolution_,val));
+    // Print incumbent
+    numIH_++;
     printVector(*rndSolution_,"incumbent");
+    printVector(*solution_,"fractional");
+    //
     if (verbosity_ > 0) {
       *outStream_ << "MultiMatBranchSub::incumbentHeuristic: " << methodName_ << std::endl;
       *outStream_ << "  Incumbent Value:       " <<   val << std::endl;

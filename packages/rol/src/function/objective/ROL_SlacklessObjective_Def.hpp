@@ -49,6 +49,11 @@ namespace ROL {
 template<typename Real> 
 SlacklessObjective<Real>::SlacklessObjective( const Ptr<Objective<Real>> &obj ) : obj_(obj) {}
 
+template<typename Real>
+Ptr<Objective<Real>> SlacklessObjective<Real>::getObjective(void) const {
+  return obj_;
+}
+
 template<typename Real> 
 void SlacklessObjective<Real>::update( const Vector<Real> &x, EUpdateType type, int iter ) {
   obj_->update( *getOpt(x), type, iter );
