@@ -257,12 +257,7 @@ namespace FROSch {
                                                            unsigned dofsPerNode,
                                                            unsigned dofOrdering);
 
-    template <class LO,class GO,class NO>
-    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepeatedMapCoarseLevel(Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > &nodesMap,
-                                                                     unsigned dofsPerNode,
-                                                                     Teuchos::Array<GO> numEnt,
-                                                                     unsigned partitionType,
-                                                                     ArrayRCP<RCP<const Map<LO,GO,NO>>> dofsMaps);
+  
 
 
     template <class LO,class GO,class NO>
