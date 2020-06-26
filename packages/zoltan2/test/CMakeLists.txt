@@ -6,6 +6,7 @@ unit
 partition
 order
 color
+connectivity
 scaling
 correctness
 temp
