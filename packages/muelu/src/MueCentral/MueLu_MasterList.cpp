@@ -283,6 +283,7 @@ namespace MueLu {
   "<Parameter name=\"emin: num reuse iterations\" type=\"int\" value=\"1\"/>"
   "<Parameter name=\"emin: pattern\" type=\"string\" value=\"AkPtent\"/>"
   "<Parameter name=\"emin: pattern order\" type=\"int\" value=\"1\"/>"
+  "<Parameter name=\"emin: use filtered matrix\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"tentative: calculate qr\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"tentative: constant column sums\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"tentative: build coarse coordinates\" type=\"bool\" value=\"true\"/>"
@@ -505,6 +506,8 @@ namespace MueLu {
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"pg\"/>"
           
             "<Parameter name=\"sa: use filtered matrix\" type=\"bool\" value=\"true\"/>"
+          
+            "<Parameter name=\"emin: use filtered matrix\" type=\"bool\" value=\"true\"/>"
           
     "</ParameterList>"
   )
@@ -752,6 +755,8 @@ namespace MueLu {
          ("emin: pattern","emin: pattern")
       
          ("emin: pattern order","emin: pattern order")
+      
+         ("emin: use filtered matrix","emin: use filtered matrix")
       
          ("tentative: calculate qr","tentative: calculate qr")
       
