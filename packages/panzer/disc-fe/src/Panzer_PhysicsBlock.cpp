@@ -454,14 +454,15 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
   // Loop over equation set template managers
   vector< RCP<EquationSet_TemplateManager<panzer::Traits> > >::const_iterator
     eq_set = m_equation_sets.begin();
-  int idx = 0;
-  for (;eq_set != m_equation_sets.end(); ++eq_set,++idx) {
-    if (m_active_evaluation_types[idx]) {
-      // Loop over evaluation types
-      EquationSet_TemplateManager<panzer::Traits> eqstm = *(*eq_set);
-      EquationSet_TemplateManager<panzer::Traits>::iterator eval_type =
-        eqstm.begin();
-      for (; eval_type != eqstm.end(); ++eval_type) {
+  for (;eq_set != m_equation_sets.end(); ++eq_set) {
+
+    // Loop over evaluation types
+    EquationSet_TemplateManager<panzer::Traits> eqstm = *(*eq_set);
+    EquationSet_TemplateManager<panzer::Traits>::iterator eval_type =
+      eqstm.begin();
+    int idx = 0;
+    for (; eval_type != eqstm.end(); ++eval_type,++idx) {
+      if (m_active_evaluation_types[idx]) {
         const int di = eval_type->setDetailsIndex(this->getDetailsIndex());
         eval_type->buildAndRegisterGatherAndOrientationEvaluators(fm, *m_field_lib, lof, user_data);
         eval_type->setDetailsIndex(di);
