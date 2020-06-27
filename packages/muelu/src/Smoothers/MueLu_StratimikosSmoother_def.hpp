@@ -48,7 +48,7 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_TPETRA)
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_THYRA)
 
 #include <Teuchos_ParameterList.hpp>
 
@@ -64,8 +64,9 @@
 
 #include <Stratimikos_DefaultLinearSolverBuilder.hpp>
 #include "Teuchos_AbstractFactoryStd.hpp"
+#if defined(HAVE_MUELU_THYRATPETRAADAPTERS) && defined(HAVE_MUELU_IFPACK2)
 #include <Thyra_Ifpack2PreconditionerFactory.hpp>
-
+#endif
 
 
 namespace MueLu {
@@ -74,8 +75,10 @@ namespace MueLu {
   StratimikosSmoother<double, LocalOrdinal, GlobalOrdinal, Node>::StratimikosSmoother(const std::string type, const Teuchos::ParameterList& paramList)
   : type_(type)
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(type != "STRATIMIKOS", Exceptions::RuntimeError, "Stratimikos does not provide the solver '" << type_ << "'.");
-    SetParameterList(paramList);
+    bool isSupported = type == "STRATIMIKOS";
+    this->declareConstructionOutcome(!isSupported, "Stratimikos does not provide the smoother '" + type_ + "'.");
+    if (isSupported)
+      SetParameterList(paramList);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -106,8 +109,10 @@ namespace MueLu {
     // Build Stratimikos solver
     Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
     typedef Thyra::PreconditionerFactoryBase<Scalar> Base;
+#if defined(HAVE_MUELU_THYRATPETRAADAPTERS) && defined(HAVE_MUELU_IFPACK2)
     typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Impl;
     linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
+#endif
     linearSolverBuilder.setParameterList(rcpFromRef(const_cast<ParameterList&>(this->GetParameterList())));
 
 

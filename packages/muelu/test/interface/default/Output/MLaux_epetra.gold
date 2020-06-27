@@ -26,6 +26,7 @@ aggregation: drop tol = 0.01
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = distance laplacian
 aggregation: distance laplacian algo = default   [default]
+aggregation: classical algo = default   [default]
 lightweight wrap = 1   [default]
 
 BuildAggregates (Phase - (Dirichlet))
@@ -41,6 +42,7 @@ aggregation: enable phase 1 = 1   [default]
 aggregation: enable phase 2a = 1   [default]
 aggregation: enable phase 2b = 1   [default]
 aggregation: enable phase 3 = 1   [default]
+aggregation: phase2a include root = 1   [default]
 aggregation: preserve Dirichlet points = 0   [unused]
 aggregation: allow user-specified singletons = 0   [default]
 aggregation: use interface aggregation = 0   [default]
@@ -85,6 +87,7 @@ matrixmatrix: kernel params ->
 
 Build (MueLu::RepartitionHeuristicFactory)
 repartition: start level = 2   [default]
+repartition: use map = 0   [default]
 repartition: node repartition level = -1   [default]
 repartition: min rows per proc = 512
 repartition: target rows per proc = 0   [default]

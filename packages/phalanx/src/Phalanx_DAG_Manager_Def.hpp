@@ -208,31 +208,43 @@ sortAndOrderEvaluators()
   int time = 0;
   for (const auto& req_field : required_fields_) {
 
-    // Look in evaluated fields
+    // Look in evaluated fields first
     auto node_index_it = field_to_node_index_.find(req_field->identifier());
-    if (node_index_it == field_to_node_index_.end()) {
+    if (node_index_it != field_to_node_index_.end()) {
+      auto& node = nodes_[node_index_it->second];
+      if (node.color() == PHX::Color::WHITE)
+        dfsVisit(node,time);
+    }
 
-      // If failed to find, look in contributed fields
-      auto contrib_field_search = contributed_field_to_node_index_.find(req_field->identifier());
-      if (contrib_field_search == contributed_field_to_node_index_.end()) {
-
-        if (write_graphviz_file_on_error_)
-          this->writeGraphvizFileNew(graphviz_filename_for_errors_, true, true);
-
-        TEUCHOS_TEST_FOR_EXCEPTION(node_index_it == field_to_node_index_.end(),
-                                   PHX::missing_evaluator_exception,
-                                   *this
-                                   << "\n\nERROR: The required field \""
-                                   << req_field->identifier()
-				 << "\" does not have an evaluator. Current "
-                                   << "list of Evaluators are printed above this "
-                                   << "error message.\n");
+    // Add in contributed fields for this tag. There could be multiple
+    // contrib or we may not have found any evaluated fields for this
+    // tag if they are all contributed.
+    auto contrib_field_search = contributed_field_to_node_index_.find(req_field->identifier());
+    if (contrib_field_search != contributed_field_to_node_index_.end()) {
+      const auto& node_list_to_add = contrib_field_search->second;
+      for (auto node_index : node_list_to_add) {
+        auto& node = nodes_[node_index];
+        if (node.color() == PHX::Color::WHITE)
+          dfsVisit(node,time);
       }
     }
 
-    auto& node = nodes_[node_index_it->second];
-    if (node.color() == PHX::Color::WHITE)
-      dfsVisit(node,time);
+    // If no evaluated or contrib found, error out.
+    if ( (node_index_it == field_to_node_index_.end()) &&
+         (contrib_field_search == contributed_field_to_node_index_.end()) ) {
+
+      if (write_graphviz_file_on_error_)
+        this->writeGraphvizFileNew(graphviz_filename_for_errors_, true, true);
+      
+      TEUCHOS_TEST_FOR_EXCEPTION(node_index_it == field_to_node_index_.end(),
+                                 PHX::missing_evaluator_exception,
+                                 *this
+                                 << "\n\nERROR: The required field \""
+                                 << req_field->identifier()
+				 << "\" does not have an evaluator. Current "
+                                 << "list of Evaluators are printed above this "
+                                 << "error message.\n");
+    }
   }
 
   // Create a list of fields to allocate
@@ -252,7 +264,7 @@ sortAndOrderEvaluators()
     for (auto& cfield : contrib_fields) {
       const auto& check_it = std::find_if(fields_.begin(), fields_.end(),[&cfield](const Teuchos::RCP<const PHX::FieldTag>& f)
                                           {
-                                            if (*f == *cfield)
+                                            if (f->identifier() == cfield->identifier())
                                               return true;
                                             return false;
                                           }
@@ -664,7 +676,17 @@ writeGraphvizFileNew(const std::string filename,
 {
   std::ofstream ofs;
   ofs.open(filename.c_str());
+  writeGraphviz(ofs,writeEvaluatedFields,writeDependentFields);
+  ofs.close();
+}
 
+//=======================================================================
+template<typename Traits>
+void PHX::DagManager<Traits>::
+writeGraphviz(std::ostream& ofs,
+              bool writeEvaluatedFields,
+              bool writeDependentFields) const
+{
   ofs << "digraph G {\n";
 
   // This can be called from inside a DFS during an error, so we can't
@@ -681,17 +703,7 @@ writeGraphvizFileNew(const std::string filename,
   for (const auto& req_field : required_fields_) {
     // Look in evaluated fields
     auto node_index_it = field_to_node_index_.find(req_field->identifier());
-    if (node_index_it == field_to_node_index_.end()) {
-      // If failed to find, look in contributed fields
-      auto contrib_field_search = contributed_field_to_node_index_.find(req_field->identifier());
-      if (contrib_field_search == contributed_field_to_node_index_.end()) {
-        ofs << missing_node_index
-            << " ["  << "fontcolor=\"red\"" << ", label=\"  ** MISSING EVALUATOR **\\n    "
-            << req_field->identifier() << "    **** MISSING ****\"]\n";
-        missing_node_index += 1;
-      }
-    }
-    else {
+    if (node_index_it != field_to_node_index_.end()) {
       auto& node = nodes_copy[node_index_it->second];
       if (node.color() == PHX::Color::WHITE)
 	writeGraphvizDfsVisit(node,
@@ -700,10 +712,32 @@ writeGraphvizFileNew(const std::string filename,
 			      writeEvaluatedFields,
 			      writeDependentFields);
     }
+
+    // Check for contributed fields
+    auto contrib_field_search = contributed_field_to_node_index_.find(req_field->identifier());
+    if (contrib_field_search != contributed_field_to_node_index_.end()) {
+      const auto& node_list_to_add = contrib_field_search->second;
+      for (auto node_index : node_list_to_add) {
+        auto& node = nodes_copy[node_index];
+        if (node.color() == PHX::Color::WHITE)
+          writeGraphvizDfsVisit(node,
+                                nodes_copy,
+                                ofs,
+                                writeEvaluatedFields,
+                                writeDependentFields);
+      }
+    }
+
+    if ( (node_index_it == field_to_node_index_.end()) && 
+         (contrib_field_search == contributed_field_to_node_index_.end()) ) {
+      ofs << missing_node_index
+          << " ["  << "fontcolor=\"red\"" << ", label=\"  ** MISSING EVALUATOR **\\n    "
+          << req_field->identifier() << "    **** MISSING ****\"]\n";
+      missing_node_index += 1;
+    }
   }
 
   ofs << "}";
-  ofs.close();
 }
 
 //=======================================================================

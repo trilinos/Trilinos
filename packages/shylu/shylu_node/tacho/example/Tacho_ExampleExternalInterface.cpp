@@ -51,7 +51,6 @@ void testTachoSolver(int numRows,
   tachoParams[tacho::TASKING_OPTION_PANELSIZE] = 32;
 
   tachoParams[tacho::LEVELSET_OPTION_SCHEDULING] = 1;
-  tachoParams[tacho::LEVELSET_OPTION_MAX_NRHS] = 1;
   tachoParams[tacho::LEVELSET_OPTION_DEVICE_LEVEL_CUT] = 0;
   tachoParams[tacho::LEVELSET_OPTION_DEVICE_FACTOR_THRES] = 64;
   tachoParams[tacho::LEVELSET_OPTION_DEVICE_SOLVE_THRES] = 128;
@@ -67,7 +66,6 @@ void testTachoSolver(int numRows,
 
   tachoParams[tacho::LEVELSET_OPTION_SCHEDULING] = 0;
   // the following options are not used and set dummy values
-  tachoParams[tacho::LEVELSET_OPTION_MAX_NRHS] = -1;
   tachoParams[tacho::LEVELSET_OPTION_DEVICE_LEVEL_CUT] = 0;
   tachoParams[tacho::LEVELSET_OPTION_DEVICE_FACTOR_THRES] = 0;
   tachoParams[tacho::LEVELSET_OPTION_DEVICE_SOLVE_THRES] = 0;
@@ -81,6 +79,25 @@ void testTachoSolver(int numRows,
   solver.Initialize(numRows, rowBegin, columns, values);
   Kokkos::fence();
 
+
+  ///
+  /// Export supernodes
+  ///
+  std::vector<int> supernodes;
+  solver.exportSupernodes(supernodes);
+
+  ///
+  /// Export matrix and permutation vector
+  ///
+  std::vector<int> rowBeginU;
+  std::vector<int> columnsU;
+  std::vector<int> perm;
+  std::vector<double> valuesU;
+
+  solver.exportUpperTriangularFactorsToCrsMatrix(rowBeginU,
+                                                 columnsU,
+                                                 valuesU,
+                                                 perm);
   ///
   /// std vector right hand side
   /// if an application uses std vector for interfacing rhs,

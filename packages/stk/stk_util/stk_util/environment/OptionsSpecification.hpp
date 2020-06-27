@@ -48,12 +48,14 @@
 
 namespace stk {
 
+constexpr int INVALID_POSITION = -2;
+
 struct Option
 {
   Option()
   : name(), abbrev(), description(), defaultValue(),
     isFlag(false), isRequired(false), isImplicit(false),
-    position(-2)
+    position(INVALID_POSITION)
   {}
 
   Option(const std::string& nm, const std::string& abrv,
@@ -82,7 +84,7 @@ struct OptionT : public Option
 {
   OptionT(const std::string& nm, const std::string& abrv,
          const std::string& desc, const std::string& deflt,
-         T* target, int pos=-2)
+         T* target, int pos=INVALID_POSITION)
   : Option(nm, abrv, desc, deflt, false, false, false, pos),
     targetVariable(target)
   {}
@@ -147,6 +149,9 @@ public:
 
   size_t size() const { return options.size(); }
 
+  void set_error_on_unrecognized() { errorOnUnrecognized = true; }
+  bool is_error_on_unrecognized() const { return errorOnUnrecognized; }
+
   const Option& find_option(const std::string& nameOrAbbrev) const;
 
   size_t get_num_positional_options() const;
@@ -166,7 +171,7 @@ public:
     const bool isFlag = true;
     const bool isRequired = false;
     const bool isImplicit = false;
-    const int position = -2;
+    const int position = INVALID_POSITION;
     return add_option(spec, description, defaultValue,
                       isFlag, isRequired, isImplicit,
                       position);
@@ -181,7 +186,7 @@ public:
     const bool isFlag = false;
     const bool isRequired = false;
     const bool isImplicit = false;
-    const int position = -2;
+    const int position = INVALID_POSITION;
     return add_option(spec, description, defaultValue,
                       isFlag, isRequired, isImplicit,
                       position);
@@ -195,7 +200,7 @@ public:
     const bool isFlag = false;
     const bool isRequired = false;
     const bool isImplicit = true;
-    const int position = -2;
+    const int position = INVALID_POSITION;
     return add_option(spec, description, implicitValue.value,
                       isFlag, isRequired, isImplicit,
                       position);
@@ -205,7 +210,7 @@ public:
                                  bool isFlag,
                                  bool isRequired,
                                  const std::string& description,
-                                 int position=-2)
+                                 int position=INVALID_POSITION)
   {
     std::string defaultValue("");
     const bool isImplicit = false;
@@ -221,7 +226,7 @@ public:
   {
     const bool isRequired = true;
     T defaultValue = std::is_same<T,std::string>::value ? "" : 0;
-    int position = -2;
+    int position = INVALID_POSITION;
     return add_option(spec, description, defaultValue, targetToStoreResult.target, false, isRequired, position);
   }
 
@@ -230,7 +235,7 @@ public:
                                    const std::string& description,
                                    TargetPointer<T> targetToStoreResult,
                                    DefaultValue<T> defaultValue,
-                                   int position = -2)
+                                   int position = INVALID_POSITION)
   {
     return add_option(spec, description, defaultValue.value, targetToStoreResult.target, false, false, position);
   }
@@ -240,7 +245,7 @@ public:
                                    const std::string& description,
                                    DefaultValue<T> defaultValue,
                                    TargetPointer<T> targetToStoreResult,
-                                   int position = -2)
+                                   int position = INVALID_POSITION)
   {
     return add_option(spec, description, defaultValue.value, targetToStoreResult.target, false, false, position);
   }
@@ -251,7 +256,7 @@ public:
                                  DefaultValue<T> defaultValue,
                                  bool isFlag = false,
                                  bool isRequired = false,
-                                 int position = -2)
+                                 int position = INVALID_POSITION)
   {
     const bool isImplicit = false;
     return add_option(spec, description, defaultValue.value,
@@ -328,6 +333,7 @@ private:
   std::vector<std::shared_ptr<Option>> options;
   std::vector<OptionsSpecification> subOptionSpecs;
   std::vector<std::shared_ptr<Option>> optionsPlusSubOptions;
+  bool errorOnUnrecognized;
 };
 
 inline

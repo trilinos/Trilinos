@@ -35,9 +35,11 @@ For bug reports, documentation errors, and enhancement suggestions, contact:
 \section license License
 The EXODUS library is licensed under the BSD open source license.
 
-     Copyright (c) 2005-2017 National Technology & Engineering Solutions
+     Copyright(C) 1999-2020 National Technology & Engineering Solutions
      of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
      NTESS, the U.S. Government retains certain rights in this software.
+     
+     See packages/seacas/LICENSE for details
 
      Redistribution and use in source and binary forms, with or without
      modification, are permitted provided that the following conditions are

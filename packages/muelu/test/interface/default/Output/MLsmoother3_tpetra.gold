@@ -9,6 +9,8 @@ postsmoother ->
  relaxation: sweeps = 2
  relaxation: damping factor = 1
  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
+ relaxation: inner sweeps = 1   [default]
+ relaxation: inner sparse-triangular solve = 0   [default]
  relaxation: zero starting solution = 1   [default]
  relaxation: backward mode = 0   [default]
  relaxation: use l1 = 0   [default]
@@ -29,11 +31,12 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 
-algorithm = "classical": threshold = 0, blocksize = 1
+algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
 aggregation: drop tol = 0   [default]
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
 aggregation: distance laplacian algo = default   [default]
+aggregation: classical algo = default   [default]
 lightweight wrap = 1   [default]
 
 BuildAggregates (Phase - (Dirichlet))
@@ -49,6 +52,7 @@ aggregation: enable phase 1 = 1   [default]
 aggregation: enable phase 2a = 1   [default]
 aggregation: enable phase 2b = 1   [default]
 aggregation: enable phase 3 = 1   [default]
+aggregation: phase2a include root = 1   [default]
 aggregation: preserve Dirichlet points = 0   [unused]
 aggregation: allow user-specified singletons = 0   [default]
 aggregation: use interface aggregation = 0   [default]
@@ -101,6 +105,8 @@ postsmoother ->
  relaxation: sweeps = 2
  relaxation: damping factor = 1
  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
+ relaxation: inner sweeps = 1   [default]
+ relaxation: inner sparse-triangular solve = 0   [default]
  relaxation: zero starting solution = 1   [default]
  relaxation: backward mode = 0   [default]
  relaxation: use l1 = 0   [default]
@@ -121,11 +127,12 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 
-algorithm = "classical": threshold = 0, blocksize = 1
+algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
 aggregation: drop tol = 0   [default]
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
 aggregation: distance laplacian algo = default   [default]
+aggregation: classical algo = default   [default]
 lightweight wrap = 1   [default]
 
 BuildAggregates (Phase - (Dirichlet))
@@ -141,6 +148,7 @@ aggregation: enable phase 1 = 1   [default]
 aggregation: enable phase 2a = 1   [default]
 aggregation: enable phase 2b = 1   [default]
 aggregation: enable phase 3 = 1   [default]
+aggregation: phase2a include root = 1   [default]
 aggregation: preserve Dirichlet points = 0   [unused]
 aggregation: allow user-specified singletons = 0   [default]
 aggregation: use interface aggregation = 0   [default]
@@ -196,6 +204,8 @@ postsmoother ->
  relaxation: sweeps = 2
  relaxation: damping factor = 1
  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
+ relaxation: inner sweeps = 1   [default]
+ relaxation: inner sparse-triangular solve = 0   [default]
  relaxation: zero starting solution = 1   [default]
  relaxation: backward mode = 0   [default]
  relaxation: use l1 = 0   [default]
@@ -216,11 +226,12 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 
-algorithm = "classical": threshold = 0, blocksize = 1
+algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
 aggregation: drop tol = 0   [default]
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
 aggregation: distance laplacian algo = default   [default]
+aggregation: classical algo = default   [default]
 lightweight wrap = 1   [default]
 
 BuildAggregates (Phase - (Dirichlet))
@@ -236,6 +247,7 @@ aggregation: enable phase 1 = 1   [default]
 aggregation: enable phase 2a = 1   [default]
 aggregation: enable phase 2b = 1   [default]
 aggregation: enable phase 3 = 1   [default]
+aggregation: phase2a include root = 1   [default]
 aggregation: preserve Dirichlet points = 0   [unused]
 aggregation: allow user-specified singletons = 0   [default]
 aggregation: use interface aggregation = 0   [default]
@@ -291,6 +303,8 @@ postsmoother ->
  relaxation: sweeps = 2
  relaxation: damping factor = 1
  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
+ relaxation: inner sweeps = 1   [default]
+ relaxation: inner sparse-triangular solve = 0   [default]
  relaxation: zero starting solution = 1   [default]
  relaxation: backward mode = 0   [default]
  relaxation: use l1 = 0   [default]
@@ -311,11 +325,12 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 
-algorithm = "classical": threshold = 0, blocksize = 1
+algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
 aggregation: drop tol = 0   [default]
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
 aggregation: distance laplacian algo = default   [default]
+aggregation: classical algo = default   [default]
 lightweight wrap = 1   [default]
 
 BuildAggregates (Phase - (Dirichlet))
@@ -331,6 +346,7 @@ aggregation: enable phase 1 = 1   [default]
 aggregation: enable phase 2a = 1   [default]
 aggregation: enable phase 2b = 1   [default]
 aggregation: enable phase 3 = 1   [default]
+aggregation: phase2a include root = 1   [default]
 aggregation: preserve Dirichlet points = 0   [unused]
 aggregation: allow user-specified singletons = 0   [default]
 aggregation: use interface aggregation = 0   [default]

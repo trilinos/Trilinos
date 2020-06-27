@@ -47,6 +47,7 @@
 
 namespace FROSch {
 
+    using namespace std;
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -116,7 +117,7 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    std::string AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::description() const
+    string AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::description() const
     {
         return "Algebraic Overlapping Preconditioner";
     }

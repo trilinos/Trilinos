@@ -1,34 +1,8 @@
-C Copyright(C) 2011-2017 National Technology & Engineering Solutions of
-C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C
-C Redistribution and use in source and binary forms, with or without
-C modification, are permitted provided that the following conditions are
-C met:
-C
-C * Redistributions of source code must retain the above copyright
-C    notice, this list of conditions and the following disclaimer.
-C
-C * Redistributions in binary form must reproduce the above
-C   copyright notice, this list of conditions and the following
-C   disclaimer in the documentation and/or other materials provided
-C   with the distribution.
-C
-C * Neither the name of NTESS nor the names of its
-C   contributors may be used to endorse or promote products derived
-C   from this software without specific prior written permission.
-C
-C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+C 
+C See packages/seacas/LICENSE for details
 
 C -*- Mode: fortran -*-
 C=======================================================================
@@ -200,9 +174,9 @@ C     --Determine the show option
       ELSE IF (SHOTYP .EQ. 'SMOOTH') THEN
         write (*, 40)
      $    'Smoothing Type = LAPLACIAN'
-        call numstr (1, 4, TOLER, RSTR(1), LR1)
+        call numstr1(4, TOLER, RSTR(1), LR1)
         call intstr (1, 0, NIT,   STRA,    LR2)
-        call numstr (1, 4, R0,    RSTR(3), LR3)
+        call numstr1(4, R0,    RSTR(3), LR3)
         write (*, 40)
      $    'Tolerance      = ',RSTR(1)(:LR1)
         write (*, 40)
@@ -219,8 +193,7 @@ C     --Determine the show option
 
       ELSE IF (SHOTYP .EQ. 'EQUIVALENCE') THEN
          IF (EQUIV) THEN
-            RNUM(1) = EQTOLER
-            CALL NUMSTR (1, 6, RNUM, RSTR, LR)
+            CALL NUMSTR1(6, EQTOLER, RSTR, LR)
             WRITE (*, 40)
      &           'Node Equivalence Tolerance = ', RSTR(1)(:LR)
          ELSE
@@ -233,8 +206,8 @@ C     --Determine the show option
           do i=1, numsnp
             call intstr(1, 0, IDSSSL(i), STRA,  LR1)
             call intstr(1, 0, IDSSMA(i), STRB,  LR2)
-            call numstr(1, 4, snptol(i), RSTR(4), LR4)
-            call numstr(1, 4, delmax(i), RSTR(5), LR5)
+            call numstr1(4, snptol(i), RSTR(4), LR4)
+            call numstr1(4, delmax(i), RSTR(5), LR5)
             if (usnorm(i) .eq. PNORM) then
               string = 'normal to slave surf'
             else if (usnorm(i) .eq. PRAD) then
@@ -260,7 +233,7 @@ C     --Determine the show option
      *          ' max delta ', RSTR(5)(:LR5)
             else
               call numstr(3, 4, VECTOR(1,i), RSTR,  LR3)
-              call numstr(1, 4, gap(i), RSTR(6), LR6)
+              call numstr1(4, gap(i), RSTR(6), LR6)
               write (*, 40) SMTYP(:4), ' Sideset ', STRA(:LR1),
      *          ' to ', STRB(:LR2),' ',
      *          STRING(:LENSTR(STRING)),' ',
@@ -295,7 +268,7 @@ C     --Determine the show option
           RSTR(2) = 'Z axis'
         END IF
 
-        CALL NUMSTR (1, 4, WRPDIS, RSTR, LR)
+        CALL NUMSTR1(4, WRPDIS, RSTR, LR)
 
         WRITE (*, 40) 'Warp mesh about the ', STRING(:LENSTR(STRING)),
      *    ', Reference Radius = ', RSTR(1)(:LR), ', Normal Vector = ',

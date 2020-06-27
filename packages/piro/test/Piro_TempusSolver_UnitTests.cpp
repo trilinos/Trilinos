@@ -47,7 +47,6 @@
 #ifdef HAVE_PIRO_TEMPUS
 #include "Piro_TempusSolver.hpp"
 #include "Tempus_StepperFactory.hpp"
-//#include "Tempus_StepperBackwardEuler.hpp"
 #include "Piro_ObserverToTempusIntegrationObserverAdapter.hpp"
 
 #ifdef HAVE_PIRO_NOX
@@ -57,6 +56,7 @@
 #include "Piro_Test_ThyraSupport.hpp"
 #include "Piro_Test_WeakenedModelEvaluator.hpp"
 #include "Piro_Test_MockObserver.hpp"
+#include "Piro_TempusIntegrator.hpp"
 
 #include "MockModelEval_A.hpp"
 
@@ -74,6 +74,7 @@
 #include "Teuchos_Tuple.hpp"
 
 #include <stdexcept>
+
 
 using namespace Teuchos;
 using namespace Piro;
@@ -108,7 +109,8 @@ RCP<Thyra::ModelEvaluatorDefaultBase<double> > defaultModelNew()
 
 const RCP<TempusSolver<double> > solverNew(
     const RCP<Thyra::ModelEvaluatorDefaultBase<double> > &thyraModel,
-    double finalTime)
+    double finalTime, 
+    const std::string sens_method_string)
 {
   const RCP<ParameterList> tempusPL(new ParameterList("Tempus"));
   tempusPL->set("Integrator Name", "Demo Integrator");
@@ -122,22 +124,27 @@ const RCP<TempusSolver<double> > solverNew(
   tempusPL->sublist("Demo Stepper").set("Zero Initial Guess", false);
   tempusPL->sublist("Demo Stepper").set("Solver Name", "Demo Solver");
   tempusPL->sublist("Demo Stepper").sublist("Demo Solver").sublist("NOX").sublist("Direction").set("Method","Newton");
-  Teuchos::RCP<Tempus::IntegratorBasic<double> > integrator = Tempus::integratorBasic<double>(tempusPL, thyraModel);
+  SENS_METHOD sens_method; 
+  if (sens_method_string == "None") sens_method = Piro::NONE; 
+  else if (sens_method_string == "Forward") sens_method = Piro::FORWARD; 
+  else if (sens_method_string == "Adjoint") sens_method = Piro::ADJOINT; 
+  Teuchos::RCP<Piro::TempusIntegrator<double> > integrator 
+      = Teuchos::rcp(new Piro::TempusIntegrator<double>(tempusPL, thyraModel, sens_method));
   const RCP<Thyra::NonlinearSolverBase<double> > stepSolver = Teuchos::null;
 
   RCP<ParameterList> stepperPL = Teuchos::rcp(&(tempusPL->sublist("Demo Stepper")), false);
 
   RCP<Tempus::StepperFactory<double> > sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
   const RCP<Tempus::Stepper<double> > stepper = sf->createStepper(stepperPL, thyraModel);
-  //const RCP<Tempus::Stepper<double> > stepper = rcp(new Tempus::StepperBackwardEuler<double>(thyraModel, stepperPL));
-  return rcp(new TempusSolver<double>(integrator, stepper, stepSolver, thyraModel, finalTime));
+  return rcp(new TempusSolver<double>(integrator, stepper, stepSolver, thyraModel, finalTime, sens_method_string));
 }
 
 const RCP<TempusSolver<double> > solverNew(
     const RCP<Thyra::ModelEvaluatorDefaultBase<double> > &thyraModel,
     double initialTime,
     double finalTime,
-    const RCP<Piro::ObserverBase<double> > &observer)
+    const RCP<Piro::ObserverBase<double> > &observer,
+    const std::string sens_method_string)
 {
   const RCP<ParameterList> tempusPL(new ParameterList("Tempus"));
   tempusPL->set("Integrator Name", "Demo Integrator");
@@ -151,7 +158,12 @@ const RCP<TempusSolver<double> > solverNew(
   tempusPL->sublist("Demo Stepper").set("Zero Initial Guess", false);
   tempusPL->sublist("Demo Stepper").set("Solver Name", "Demo Solver");
   tempusPL->sublist("Demo Stepper").sublist("Demo Solver").sublist("NOX").sublist("Direction").set("Method","Newton");
-  Teuchos::RCP<Tempus::IntegratorBasic<double> > integrator = Tempus::integratorBasic<double>(tempusPL, thyraModel);
+  SENS_METHOD sens_method; 
+  if (sens_method_string == "None") sens_method = Piro::NONE; 
+  else if (sens_method_string == "Forward") sens_method = Piro::FORWARD; 
+  else if (sens_method_string == "Adjoint") sens_method = Piro::ADJOINT; 
+  Teuchos::RCP<Piro::TempusIntegrator<double> > integrator 
+      = Teuchos::rcp(new Piro::TempusIntegrator<double>(tempusPL, thyraModel, sens_method));
   const RCP<const Tempus::SolutionHistory<double> > solutionHistory = integrator->getSolutionHistory();
   const RCP<const Tempus::TimeStepControl<double> > timeStepControl = integrator->getTimeStepControl();
 
@@ -161,9 +173,8 @@ const RCP<TempusSolver<double> > solverNew(
   RCP<ParameterList> stepperPL = Teuchos::rcp(&(tempusPL->sublist("Demo Stepper")), false);
   RCP<Tempus::StepperFactory<double> > sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
   const RCP<Tempus::Stepper<double> > stepper = sf->createStepper(stepperPL, thyraModel);
-  //const RCP<Tempus::Stepper<double> > stepper = rcp(new Tempus::StepperBackwardEuler<double>(thyraModel, stepperPL));
 
-  return rcp(new TempusSolver<double>(integrator, stepper, stepSolver, thyraModel, initialTime, finalTime));
+  return rcp(new TempusSolver<double>(integrator, stepper, stepSolver, thyraModel, initialTime, finalTime, sens_method_string));
 }
 
 const RCP<TempusSolver<double> > solverNew(
@@ -171,7 +182,8 @@ const RCP<TempusSolver<double> > solverNew(
     double initialTime,
     double finalTime,
     double fixedTimeStep,
-    const RCP<Piro::ObserverBase<double> > &observer)
+    const RCP<Piro::ObserverBase<double> > &observer,
+    const std::string sens_method_string)
 {
   const RCP<ParameterList> tempusPL(new ParameterList("Tempus"));
   tempusPL->set("Integrator Name", "Demo Integrator");
@@ -188,19 +200,22 @@ const RCP<TempusSolver<double> > solverNew(
   tempusPL->sublist("Demo Stepper").set("Zero Initial Guess", false);
   tempusPL->sublist("Demo Stepper").set("Solver Name", "Demo Solver");
   tempusPL->sublist("Demo Stepper").sublist("Demo Solver").sublist("NOX").sublist("Direction").set("Method","Newton");
-  Teuchos::RCP<Tempus::IntegratorBasic<double> > integrator = Tempus::integratorBasic<double>(tempusPL, thyraModel);
+  Teuchos::RCP<Piro::TempusIntegrator<double> > integrator = Teuchos::rcp(new Piro::TempusIntegrator<double>(tempusPL, thyraModel));
   const RCP<const Tempus::SolutionHistory<double> > solutionHistory = integrator->getSolutionHistory();
   const RCP<const Tempus::TimeStepControl<double> > timeStepControl = integrator->getTimeStepControl();
-
-  const Teuchos::RCP<Tempus::IntegratorObserver<double> > tempusObserver = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<double>(solutionHistory, timeStepControl, observer));
+  SENS_METHOD sens_method; 
+  if (sens_method_string == "None") sens_method = Piro::NONE; 
+  else if (sens_method_string == "Forward") sens_method = Piro::FORWARD; 
+  else if (sens_method_string == "Adjoint") sens_method = Piro::ADJOINT; 
+  const Teuchos::RCP<Tempus::IntegratorObserver<double> > tempusObserver 
+      = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<double>(solutionHistory, timeStepControl, observer, sens_method));
   integrator->setObserver(tempusObserver);
   const RCP<Thyra::NonlinearSolverBase<double> > stepSolver = Teuchos::null;
   RCP<ParameterList> stepperPL = Teuchos::rcp(&(tempusPL->sublist("Demo Stepper")), false);
   RCP<Tempus::StepperFactory<double> > sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
   const RCP<Tempus::Stepper<double> > stepper = sf->createStepper(stepperPL, thyraModel);
-  //const RCP<Tempus::Stepper<double> > stepper = rcp(new Tempus::StepperBackwardEuler<double>(thyraModel, stepperPL));
 
-  return rcp(new TempusSolver<double>(integrator, stepper, stepSolver, thyraModel, initialTime, finalTime));
+  return rcp(new TempusSolver<double>(integrator, stepper, stepSolver, thyraModel, initialTime, finalTime, sens_method_string));
 }
 
 
@@ -222,7 +237,7 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_Solution)
   const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
   const double finalTime = 0.0;
 
-  const RCP<TempusSolver<double> > solver = solverNew(model, finalTime);
+  const RCP<TempusSolver<double> > solver = solverNew(model, finalTime, "None");
 
   const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
 
@@ -260,7 +275,7 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_Response)
   }
 
   const double finalTime = 0.0;
-  const RCP<TempusSolver<double> > solver = solverNew(model, finalTime);
+  const RCP<TempusSolver<double> > solver = solverNew(model, finalTime, "None");
 
   const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
 
@@ -282,7 +297,7 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_NoDfDpMv_NoSensitivity)
       new WeakenedModelEvaluator_NoDfDpMv(defaultModelNew()));
 
   const double finalTime = 0.0;
-  const RCP<TempusSolver<double> > solver = solverNew(model, finalTime);
+  const RCP<TempusSolver<double> > solver = solverNew(model, finalTime, "None");
 
   const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
   Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
@@ -304,7 +319,7 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_NoDgDp_NoResponseSensitivity)
       new WeakenedModelEvaluator_NoDgDp(defaultModelNew()));
 
   const double finalTime = 0.0;
-  const RCP<TempusSolver<double> > solver = solverNew(model, finalTime);
+  const RCP<TempusSolver<double> > solver = solverNew(model, finalTime, "None");
 
   const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
   Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
@@ -324,10 +339,9 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, ObserveInitialCondition)
 {
   const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
   const RCP<MockObserver<double> > observer(new MockObserver<double>);
-  //IKT, FIXME: set to 2.0 instead of 0.0 -- does not work correctly in this case
-  const double timeStamp = 0.0;
+  const double timeStamp = 2.0;
 
-  const RCP<TempusSolver<double> > solver = solverNew(model, timeStamp, timeStamp, observer);
+  const RCP<TempusSolver<double> > solver = solverNew(model, timeStamp, timeStamp, observer, "None");
 
   const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
   const Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
@@ -359,7 +373,7 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, ObserveFinalSolution)
   const double timeStepSize = 0.05;
 
   const RCP<TempusSolver<double> > solver =
-    solverNew(model, initialTime, finalTime, timeStepSize, observer);
+    solverNew(model, initialTime, finalTime, timeStepSize, observer, "None");
 
   const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
 
@@ -378,6 +392,5 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, ObserveFinalSolution)
 
   TEST_FLOATING_EQUALITY(observer->lastStamp(), finalTime, tol);
 }
-
 
 #endif /* HAVE_PIRO_TEMPUS */

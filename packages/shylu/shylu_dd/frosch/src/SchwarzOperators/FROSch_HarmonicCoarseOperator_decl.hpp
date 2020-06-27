@@ -73,6 +73,10 @@ namespace FROSch {
 
         using ParameterListPtr        = typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr;
 
+        using TSerialDenseMatrixPtr   = typename SchwarzOperator<SC,LO,GO,NO>::TSerialDenseMatrixPtr;
+
+        using TSerialQRDenseSolverPtr = typename SchwarzOperator<SC,LO,GO,NO>::TSerialQRDenseSolverPtr;
+
         using CoarseSpacePtr          = typename SchwarzOperator<SC,LO,GO,NO>::CoarseSpacePtr;
         using CoarseSpacePtrVecPtr    = typename SchwarzOperator<SC,LO,GO,NO>::CoarseSpacePtrVecPtr;
 
@@ -88,15 +92,17 @@ namespace FROSch {
 
         using LOVec                   = typename SchwarzOperator<SC,LO,GO,NO>::LOVec;
         using LOVecPtr                = typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr;
+        using ConstLOVecView          = typename SchwarzOperator<SC,LO,GO,NO>::ConstLOVecView;
         using LOVecPtr2D              = typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr2D;
 
         using GOVec                   = typename SchwarzOperator<SC,LO,GO,NO>::GOVec;
         using GOVecView               = typename SchwarzOperator<SC,LO,GO,NO>::GOVecView;
         using GOVec2D                 = typename SchwarzOperator<SC,LO,GO,NO>::GOVec2D;
-        
+
         using SCVec                   = typename SchwarzOperator<SC,LO,GO,NO>::SCVec;
         using SCVecPtr                = typename SchwarzOperator<SC,LO,GO,NO>::SCVecPtr;
         using ConstSCVecPtr           = typename SchwarzOperator<SC,LO,GO,NO>::ConstSCVecPtr;
+        using ConstSCVecView          = typename SchwarzOperator<SC,LO,GO,NO>::ConstSCVecView;
 
     public:
 
@@ -110,7 +116,7 @@ namespace FROSch {
     protected:
 
         int intializeCoarseMap();
-        
+
         int assembleInterfaceCoarseSpace();
 
         int addZeroCoarseSpaceBlock(ConstXMapPtr dofsMap);
@@ -130,8 +136,13 @@ namespace FROSch {
                                                        EntitySetConstPtr entitySet,
                                                        UN discardRotations = 0);
 
+        virtual LOVecPtr detectLinearDependencies(GOVecView indicesGammaDofsAll,
+                                                        ConstXMapPtr rowMap,
+                                                        ConstXMapPtr rangeMap,
+                                                        ConstXMapPtr repeatedMap,
+                                                        SC treshold);
+
         virtual XMultiVectorPtr computeExtensions(ConstXMapPtr localMap,
-                                                  ConstXMapPtr coarseMap,
                                                   GOVecView indicesGammaDofsAll,
                                                   GOVecView indicesIDofsAll,
                                                   XMatrixPtr kII,

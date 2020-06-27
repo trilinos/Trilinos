@@ -22,7 +22,7 @@ namespace Tacho {
   class SymbolicTools;
   template<typename ValueType, typename DeviceType> class CrsMatrixBase;
   template<typename ValueType, typename SchedulerType> class NumericTools;
-  template<typename ValueType, typename SchedulerType> class LevelSetTools;
+  template<typename ValueType, typename SchedulerType, int Variant> class LevelSetTools;
   
   ///
   /// Tacho Solver interface
@@ -63,7 +63,8 @@ namespace Tacho {
 
     typedef SymbolicTools symbolic_tools_type;
     typedef NumericTools<value_type,scheduler_type> numeric_tools_type;
-    typedef LevelSetTools<value_type,scheduler_type> levelset_tools_type;
+    typedef LevelSetTools<value_type,scheduler_type,0> levelset_tools_var0_type;
+    typedef LevelSetTools<value_type,scheduler_type,1> levelset_tools_var1_type;
 
   public:
     enum : int { Cholesky = 1,
@@ -112,7 +113,8 @@ namespace Tacho {
     numeric_tools_type *_N;
 
     // ** level set interface
-    levelset_tools_type *_L;
+    levelset_tools_var0_type *_L0;
+    levelset_tools_var1_type *_L1;
 
     // small dense matrix
     value_type_matrix_host _U;
@@ -129,10 +131,10 @@ namespace Tacho {
 
     // ** levelset options
     bool         _levelset;             // use level set code instead of tasking
-    ordinal_type _max_nrhs;             // maximum # of rhs to temporal memory allocation in solve
     ordinal_type _device_level_cut;     // above this level, matrices are computed on device
     ordinal_type _device_factor_thres;  // bigger than this threshold, device function is used
     ordinal_type _device_solve_thres;   // bigger than this threshold, device function is used
+    ordinal_type _variant;              // algorithmic variant in levelset 0: naive, 1: invert diagonals
     ordinal_type _nstreams;             // on cuda, multi streams are used
 
     // parallelism and memory constraint is made via this parameter
@@ -140,7 +142,10 @@ namespace Tacho {
 
   public:
     Solver();
-    Solver(const Solver &b);
+    /// delete copy constructor and assignment operator
+    /// sharing numeric tools for different inputs does not make sense
+    Solver(const Solver &) = delete;
+    Solver& operator=(const Solver &) = delete;
 
     ///
     /// common options
@@ -164,15 +169,17 @@ namespace Tacho {
     /// Level set tools options
     ///
     void setLevelSetScheduling(const bool levelset);
-    void setLevelSetOptionMaxNrhs(const ordinal_type max_nrhs);
     void setLevelSetOptionDeviceLevelCut(const ordinal_type device_level_cut);
     void setLevelSetOptionDeviceFunctionThreshold(const ordinal_type device_factor_thres,
                                                   const ordinal_type device_solve_thres);
     void setLevelSetOptionNumStreams(const ordinal_type nstreams);
+    void setLevelSetOptionAlgorithmVariant(const ordinal_type variant);
 
     ///
     /// get interface
     ///
+    ordinal_type       getNumSupernodes() const;
+    ordinal_type_array getSupernodes() const;
     ordinal_type_array getPermutationVector() const;
     ordinal_type_array getInversePermutationVector() const;
 
@@ -202,7 +209,7 @@ namespace Tacho {
       return analyze();
     }
 
-    int initialize(const ordinal_type max_nrhs = -1);
+    int initialize();
     int factorize(const value_type_array &ax);
     int solve(const value_type_matrix &x,
               const value_type_matrix &b,

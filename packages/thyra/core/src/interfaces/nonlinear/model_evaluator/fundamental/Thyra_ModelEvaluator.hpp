@@ -489,7 +489,7 @@ namespace Thyra {
  *     for <tt>j=0...Ng-1</tt>.
  *
  *     These are derivative objects that represent the derivative of the
- *     axillary function <tt>g(j)</tt> with respect to the state variables
+ *     auxiliary function <tt>g(j)</tt> with respect to the state variables
  *     derivative <tt>x_dot</tt>.  This derivative is manipulated as a
  *     <tt>ModelEvaluatorBase::Derivative</tt> object.
  
@@ -500,7 +500,7 @@ namespace Thyra {
  *     for <tt>j=0...Ng-1</tt>.
  *
  *     These are derivative objects that represent the derivative of the
- *     axillary function <tt>g(j)</tt> with respect to the state variables
+ *     auxiliary function <tt>g(j)</tt> with respect to the state variables
  *     <tt>x</tt>.  This derivative is manipulated as a
  *     <tt>ModelEvaluatorBase::Derivative</tt> object.
  *     
@@ -513,12 +513,88 @@ namespace Thyra {
  *     for <tt>j=0...Ng-1</tt>, <tt>l=0...Np-1</tt>.
  *
  *     These are derivative objects that represent the derivative of the
- *     axillary function <tt>g(j)</tt> with respect to the auxiliary
+ *     auxiliary function <tt>g(j)</tt> with respect to the auxiliary
  *     parameters <tt>p(l)</tt>.  This derivative is manipulated as a
  *     <tt>ModelEvaluatorBase::Derivative</tt> object.
  *
  *     </ul>
  *
+ * <li><b>Second-order derivatives</b>
+ * 
+ *     <ul>
+ *     <li><b>Second-order derivatives of the state function <tt>f(x_dot,x,{p(l)},t,...)</tt></b>
+ *
+       \verbatim
+       hess_f_xx = sum(f_multiplier * D^2(f)/D(x)^2).
+       \endverbatim
+ *
+ *     This is a derivative object that represents the second-order derivative of the
+ *     state function <tt>f</tt> with respect to the state variables <tt>x</tt>.  
+ *     This derivative is manipulated as a <tt>LinearOpBase</tt> object.
+ *     Objects of this type are created with the function <tt>create_hess_f_xx()</tt>.
+ *
+       \verbatim
+       hess_f_xp(l) = sum(f_multiplier * D^2(f)/(D(x)D(p(l))))
+       \endverbatim
+ *
+ *     for <tt>l=0...Np-1</tt>.
+ *
+ *     These are derivative objects that represent the second-order mixed partial derivative of the
+ *     state function <tt>f</tt> with respect to both the state variables <tt>x</tt>
+ *     and the auxiliary parameters <tt>p(l)</tt>.
+ *     This derivative is manipulated as a <tt>LinearOpBase</tt> object.
+ *     Objects of this type are created with the function <tt>create_hess_f_xp(l)</tt>.
+ *
+       \verbatim
+       hess_f_pp(l1,l2) = sum(f_multiplier * D^2(f)/(D(p(l1))D(p(l2))))
+       \endverbatim
+ *
+ *     for <tt>l1=0...Np-1</tt>, <tt>l2=0...Np-1</tt>.
+ *
+ *     These are derivative objects that represent the second-order mixed partial derivative of the
+ *     state function <tt>f</tt> with respect to both the auxiliary parameters <tt>p(l1)</tt>
+ *     and the auxiliary parameters <tt>p(l2)</tt>.
+ *     This derivative is manipulated as a <tt>LinearOpBase</tt> object.
+ *     Objects of this type are created with the function <tt>create_hess_f_pp(l1,l2)</tt>.
+ *
+ *     <li><b>Second-order derivatives of the auxiliary response function <tt>g(j)(x,{p(l)},t,...)</tt></b>
+ *
+       \verbatim
+       hess_g_xx(j) = sum(g_multiplier(j) * D^2(g(j))/D(x)^2)
+       \endverbatim
+ *
+ *     for <tt>j=0...Ng-1</tt>.
+ *
+ *     These are derivative objects that represent the second-order derivative of the
+ *     auxiliary function <tt>g(j)</tt> with respect to the state variables <tt>x</tt>.  
+ *     This derivative is manipulated as a <tt>LinearOpBase</tt> object.
+ *     Objects of this type are created with the function <tt>create_hess_g_xx(j)</tt>.
+ *
+       \verbatim
+       hess_g_xp(j,l) = sum(g_multiplier(j) * D^2(g(j))/(D(x)D(p(l))))
+       \endverbatim
+ *
+ *     for <tt>j=0...Ng-1</tt>, <tt>l=0...Np-1</tt>.
+ *
+ *     These are derivative objects that represent the second-order mixed partial derivative of the
+ *     auxiliary function <tt>g(j)</tt> with respect to both the state variables <tt>x</tt>
+ *     and the auxiliary parameters <tt>p(l)</tt>.
+ *     This derivative is manipulated as a <tt>LinearOpBase</tt> object.
+ *     Objects of this type are created with the function <tt>create_hess_g_xp(j,l)</tt>.
+ *
+       \verbatim
+       hess_g_pp(j,l1,l2) = sum(g_multiplier(j) * D^2(g(j))/(D(p(l1))D(p(l2))))
+       \endverbatim
+ *
+ *     for <tt>j=0...Ng-1</tt>, <tt>l1=0...Np-1</tt>, <tt>l2=0...Np-1</tt>.
+ *
+ *     These are derivative objects that represent the second-order mixed partial derivative of the
+ *     auxiliary function <tt>g(j)</tt> with respect to both the auxiliary parameters <tt>p(l1)</tt>
+ *     and the auxiliary parameters <tt>p(l2)</tt>.
+ *     This derivative is manipulated as a <tt>LinearOpBase</tt> object.
+ *     Objects of this type are created with the function <tt>create_hess_g_pp(j,l1,l2)</tt>.
+ *
+ *     </ul>
  * </ul>
  *
  * \section Thyra_ME_nominal_values_sec Nominal values
@@ -728,6 +804,9 @@ public:
   /** \brief Return the vector space for the state function <tt>f(...) <: RE^n_x</tt>. */
   virtual RCP<const VectorSpaceBase<Scalar> > get_f_space() const = 0;
 
+  /** \brief Return the dual vector space for the state function <tt>f(...) <: RE^n_x</tt>. */
+  virtual RCP<const VectorSpaceBase<Scalar> > get_f_multiplier_space() const = 0;
+
   /** \brief Return the vector space for the auxiliary parameters
    * <tt>p(l) <: RE^n_p_l</tt>.
    *
@@ -770,6 +849,16 @@ public:
    * </ul>
    */
   virtual RCP<const VectorSpaceBase<Scalar> > get_g_space(int j) const = 0;
+
+  /** \brief Return the dual vector space for the auxiliary response functions
+   * <tt>g(j) <: RE^n_g_j</tt>.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li><tt>this->Ng() > 0</tt>
+   * <li><tt>0 <= j < this->Ng()</tt>
+   * </ul>
+   */
+  virtual RCP<const VectorSpaceBase<Scalar> > get_g_multiplier_space(int j) const = 0;
 
   /** \brief Get the names of the response functions associated with
    * subvector j if available.
@@ -967,7 +1056,79 @@ public:
    * </ul>
    */
   virtual RCP<LinearOpBase<Scalar> > create_DgDp_op( int j, int l ) const = 0;
-  
+
+  /** \brief If supported, create a linear operator derivative object for
+   * \f$\sum_k \lambda_k \frac{\partial^2 f_k}{\partial \boldsymbol{x}^2}\f$.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li><tt>this->createOutArgs().supports(OUT_ARG_hess_f_xx)==true</tt>
+   * </ul>
+   */
+  virtual RCP<LinearOpBase<Scalar> > create_hess_f_xx() const = 0;
+
+  /** \brief If supported, create a linear operator derivative object for
+   * \f$\sum_k \lambda_k \frac{\partial^2 f_k}{\partial \boldsymbol{x} \partial \boldsymbol{p}_l}\f$.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li><tt>this->Np() > 0</tt>
+   * <li><tt>0 <= l < this->Np()</tt>
+   * <li><tt>this->createOutArgs().supports(l, OUT_ARG_hess_f_xp)==true</tt>
+   * </ul>
+   */
+  virtual RCP<LinearOpBase<Scalar> > create_hess_f_xp(int l) const = 0;
+
+  /** \brief If supported, create a linear operator derivative object for
+   * \f$\sum_k \lambda_k \frac{\partial^2 f_k}{\partial \boldsymbol{p}_{l_1} \partial \boldsymbol{p}_{l_2}}\f$.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li><tt>this->Ng() > 0</tt>
+   * <li><tt>this->Np() > 0</tt>
+   * <li><tt>0 <= j < this->Ng()</tt>
+   * <li><tt>0 <= l_1 < this->Np()</tt>
+   * <li><tt>0 <= l_2 < this->Np()</tt>
+   * <li><tt>this->createOutArgs().supports(l_1, l_2, OUT_ARG_hess_f_pp)==true</tt>
+   * </ul>
+   */
+  virtual RCP<LinearOpBase<Scalar> > create_hess_f_pp( int l1, int l2 ) const = 0;
+
+  /** \brief If supported, create a linear operator derivative object for
+   * \f$\sum_k \lambda_k \frac{\partial^2 g_{j,k}}{\partial \boldsymbol{x}^2}\f$.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li><tt>this->Ng() > 0</tt>
+   * <li><tt>0 <= j < this->Ng()</tt>
+   * <li><tt>this->createOutArgs().supports(j, OUT_ARG_hess_g_xx)==true</tt>
+   * </ul>
+   */
+  virtual RCP<LinearOpBase<Scalar> > create_hess_g_xx(int j) const = 0;
+
+  /** \brief If supported, create a linear operator derivative object for
+   * \f$\sum_k \lambda_k \frac{\partial^2 g_{j,k}}{\partial \boldsymbol{x} \partial \boldsymbol{p}_{l}}\f$.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li><tt>this->Ng() > 0</tt>
+   * <li><tt>this->Np() > 0</tt>
+   * <li><tt>0 <= j < this->Ng()</tt>
+   * <li><tt>0 <= l < this->Np()</tt>
+   * <li><tt>this->createOutArgs().supports(j, l, OUT_ARG_hess_g_xp)==true</tt>
+   * </ul>
+   */
+  virtual RCP<LinearOpBase<Scalar> > create_hess_g_xp( int j, int l ) const = 0;
+
+  /** \brief If supported, create a linear operator derivative object for
+   * \f$\sum_k \lambda_k \frac{\partial^2 g_{j,k}}{\partial \boldsymbol{p}_{l_1} \partial \boldsymbol{p}_{l_2}}\f$.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li><tt>this->Ng() > 0</tt>
+   * <li><tt>this->Np() > 0</tt>
+   * <li><tt>0 <= j < this->Ng()</tt>
+   * <li><tt>0 <= l_1 < this->Np()</tt>
+   * <li><tt>0 <= l_2 < this->Np()</tt>
+   * <li><tt>this->createOutArgs().supports(j, l_1, l_2, OUT_ARG_hess_g_xp)==true</tt>
+   * </ul>
+   */
+  virtual RCP<LinearOpBase<Scalar> > create_hess_g_pp( int j, int l1, int l2 ) const = 0;
+
   //@}
 
   /** \name Linear solver factory for W */

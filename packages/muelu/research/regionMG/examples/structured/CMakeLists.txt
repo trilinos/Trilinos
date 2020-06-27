@@ -16,6 +16,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
       amg_1dof.xml
       amg_1dof_rebalance.xml
       amg_3dof_rebalance.xml
+      coarse_smoother.xml
       structured_1dof.xml
       structured_1dof_3level.xml
       structured_1dof-complex.xml
@@ -25,6 +26,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
       compare_residual_history.py
       gold_files/Star2D_GS_4.log.gold
       gold_files/Brick3D_linear_4.log.gold
+      gold_files/Elasticity3D_linear_4.log.gold
     )
 
   ## These are some completion tests
@@ -63,7 +65,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   TRIBITS_ADD_TEST(
     StructuredRegionDriver
     NAME "Structured_Region_Star2D_CoarseSmoother_Tpetra"
-    ARGS "--linAlgebra=Tpetra --xml=structured_1dof.xml --matrixType=Star2D --nx=10 --ny=10 --smootherIts=2 --coarseSolverType=smoother"
+    ARGS "--linAlgebra=Tpetra --xml=structured_1dof.xml --matrixType=Star2D --nx=10 --ny=10 --smootherIts=2 --coarseSolverType=smoother --coarseSmootherXML=coarse_smoother.xml"
     COMM serial mpi
     NUM_MPI_PROCS 1
     )
@@ -71,7 +73,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   TRIBITS_ADD_TEST(
     StructuredRegionDriver
     NAME "Structured_Region_Star2D_CoarseSmoother_Tpetra"
-    ARGS "--linAlgebra=Tpetra --xml=structured_1dof.xml --matrixType=Star2D --nx=10 --ny=10 --smootherIts=2 --coarseSolverType=smoother"
+    ARGS "--linAlgebra=Tpetra --xml=structured_1dof.xml --matrixType=Star2D --nx=10 --ny=10 --smootherIts=2 --coarseSolverType=smoother --coarseSmootherXML=coarse_smoother.xml"
     COMM serial mpi
     NUM_MPI_PROCS 4
     )
@@ -222,6 +224,21 @@ TRIBITS_ADD_TEST(
 	  OVERALL_NUM_MPI_PROCS 4
 	  )
 
-  ENDIF()
+  TRIBITS_ADD_ADVANCED_TEST(
+	  Structured_Region_Linear_Elasticity3D_Tpetra_MPI_4_regression
+	  TEST_0
+	    EXEC StructuredRegionDriver
+ 	    ARGS --linAlgebra=Tpetra --xml=structured_linear_3dof.xml --matrixType=Elasticity3D --nx=10 --ny=10 --nz=10 --smootherIts=2 --convergence-log=Elasticity3D_linear_4.log
+		NUM_MPI_PROCS 4
+	  TEST_1
+	    CMND ${PYTHON_EXECUTABLE}
+	    ARGS compare_residual_history.py gold_files/Elasticity3D_linear_4.log.gold Elasticity3D_linear_4.log 1.0e-12
+	    STANDARD_PASS_OUTPUT
+	  FAIL_FAST
+	  COMM serial mpi
+	  OVERALL_NUM_MPI_PROCS 4
+	  )
+
+ENDIF()
 
 ENDIF()

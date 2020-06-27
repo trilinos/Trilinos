@@ -69,6 +69,7 @@ INCLUDE(RemoveGlobalDuplicates)
 INCLUDE(Split)
 INCLUDE(TimingUtils)
 INCLUDE(SetDefaultAndFromEnv) # Used by some call-back files
+INCLUDE(TribitsFilepathHelpers)
 
 # Standard CMake includes
 INCLUDE(CheckIncludeFileCXX)
@@ -189,6 +190,44 @@ ENDMACRO()
 
 
 #
+# Assert ${PROJECT_NAME}_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR set
+# correctly
+#
+
+FUNCTION(ASSERT_PROJECT_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR)
+
+  IF (
+      (NOT "${CMAKE_INSTALL_PREFIX}" STREQUAL "")
+       AND
+      (NOT "${${PROJECT_NAME}_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR}" STREQUAL "")
+    )
+    TRIBITS_DIR_IS_BASEDIR(
+      "${${PROJECT_NAME}_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR}"
+      "${CMAKE_INSTALL_PREFIX}"
+      isBaseDir)
+    IF (NOT isBaseDir)
+      MESSAGE(FATAL_ERROR
+        "\n"
+        "***\n"
+        "*** ERROR in ${PROJECT_NAME}_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR!\n"
+        "***\n"
+	"\n"
+	"${PROJECT_NAME}_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR=${${PROJECT_NAME}_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR}\n"
+        "\n"
+        "is not a strict base dir of:\n"
+	"\n"
+	"CMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}\n"
+        "\n"
+        "Either remove ${PROJECT_NAME}_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR from the cache or set it to be a base dir of CMAKE_INSTALL_PREFIX!\n"
+        "\n"
+        )
+    ENDIF()
+  ENDIF()
+
+ENDFUNCTION()
+
+
+#
 # Define all of the standard global package architecture options.
 #
 
@@ -215,10 +254,13 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     "Disable (and printing warning) for enabled packages that have hard-disabled upstream dependencies.  Otherwise, is to raises a fatal configure failure." )
 
   SET_CACHE_ON_OFF_EMPTY( ${PROJECT_NAME}_ENABLE_TESTS ""
-    "Enable tests in all packages  (set to ON, OFF, or leave empty)." )
+    "Enable tests (execs and ctest add_test()) in all packages  (set to ON, OFF, or leave empty)." )
 
   SET_CACHE_ON_OFF_EMPTY(${PROJECT_NAME}_ENABLE_EXAMPLES ""
-    "Enable examples in all packages  (set to ON, OFF, or leave empty).  If left empty, then this will be set to ON if ${PROJECT_NAME}_ENABLE_TESTS=ON" )
+    "Enable examples (exec and ctest add_test()) in all packages  (set to ON, OFF, or leave empty).  If left empty, then this will be set to ON if ${PROJECT_NAME}_ENABLE_TESTS=ON" )
+
+  SET(${PROJECT_NAME}_SKIP_CTEST_ADD_TEST OFF CACHE BOOL
+    "Skipp ctest add_test() for all defined tests (but still build any enabled test or example executable targets)." )
 
   IF (${PROJECT_NAME}_ENABLE_TESTS AND ${PROJECT_NAME}_ENABLE_EXAMPLES STREQUAL "")
     MESSAGE(STATUS "Setting ${PROJECT_NAME}_ENABLE_EXAMPLES=ON because ${PROJECT_NAME}_ENABLE_TESTS=ON")
@@ -254,12 +296,9 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     "Enable the C++ compiler and related code"
     ${${PROJECT_NAME}_ENABLE_CXX_DEFAULT} )
 
-  IF ("${${PROJECT_NAME}_ENABLE_CXX11_DEFAULT}" STREQUAL "")
-    SET(${PROJECT_NAME}_ENABLE_CXX11_DEFAULT OFF)
-  ENDIF()
-  ADVANCED_OPTION(${PROJECT_NAME}_ENABLE_CXX11
-    "Enable the C++11 compiler options and related code (see ${PROJECT_NAME}_CXX11_FLAGS)"
-    ${${PROJECT_NAME}_ENABLE_CXX11_DEFAULT} )
+  # Hard-code a variable with the same name as a now-removed option that is always enabled.
+  # This can be removed after clients have been updated.
+  SET(${PROJECT_NAME}_ENABLE_CXX11 ON)
 
   IF ("${${PROJECT_NAME}_ENABLE_Fortran_DEFAULT}" STREQUAL "")
     SET(${PROJECT_NAME}_ENABLE_Fortran_DEFAULT ON)
@@ -273,27 +312,48 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     "Skip the Fortran/C++ compatibility test"
     OFF )
 
-  IF (NOT CMAKE_VERSION VERSION_LESS 3.11.0)
+  ADVANCED_SET(
+    ${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE
+    "${${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE_DEFAULT}"
+    CACHE BOOL
+    "If TRUE, the directory and file permissions on the installed directories and files will be set to world readable.  NOTE: Empty '' (the default) leaves default CMake permissions in place."
+    )
 
-    ADVANCED_SET(
-      ${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE
-      "${${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE_DEFAULT}"
-      CACHE BOOL
-      "If TRUE, the directory and file permissions on the installed directories and files will be set to world readable.  NOTE: Empty '' (the default) leaves default CMake permissions in place."
-      )
-  
-    IF ("${${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE_DEFAULT}" STREQUAL "")
+  ADVANCED_SET(
+    ${PROJECT_NAME}_MAKE_INSTALL_GROUP_WRITABLE ""
+    CACHE BOOL
+    "If TRUE, the directory and file permissions on the installed directories and files will be set to group-writable.  Setting to TRUE also implies ${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE=TRUE.  NOTE: Empty '' (the default) avoid adding the group write permission."
+    )
+
+  IF ("${${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE_DEFAULT}" STREQUAL "")
+    IF (${PROJECT_NAME}_MAKE_INSTALL_GROUP_WRITABLE)
+      SET(${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE_DEFAULT TRUE)
+    ELSE()
       SET(${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE_DEFAULT
         "${${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE}")
     ENDIF()
-    ADVANCED_SET(
-      ${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE
-      "${${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE_DEFAULT}"
-      CACHE BOOL
-      "If TRUE, the directory and file permissions on the installed directories and files will be set to group readable.  Setting ${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE=ON implies this is 'ON' as well.  NOTE: Empty '' (the default) leaves default CMake permissions in place."
-      )
-
   ENDIF()
+  ADVANCED_SET(
+    ${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE
+    "${${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE_DEFAULT}"
+    CACHE BOOL
+    "If TRUE, the directory and file permissions on the installed directories and files will be set to group readable.  Setting ${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE=ON implies this is 'ON' as well.  NOTE: Empty '' (the default) leaves default CMake permissions in place."
+    )
+
+  ADVANCED_SET(
+    ${PROJECT_NAME}_MAKE_INSTALL_GROUP ""
+    CACHE STRING
+    "If set, then the installed files and directories from ${PROJECT_NAME}_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR on down will be given over to this owning group.  The default is empty '' which means the default group will not be changed."
+    )
+
+  ADVANCED_SET(
+    ${PROJECT_NAME}_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR
+    "${CMAKE_INSTALL_PREFIX}"
+    CACHE FILEPATH
+    "Set the base path for which a recursive chmod and chgrp will be called to set the group and permissions after the install is complete.  The default directory is give by CMAKE_INSTALL_PREFIX."
+    )
+
+  ASSERT_PROJECT_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR()
 
   IF ("${${PROJECT_NAME}_SET_INSTALL_RPATH_DEFAULT}" STREQUAL "")
     SET(${PROJECT_NAME}_SET_INSTALL_RPATH_DEFAULT TRUE)
@@ -425,6 +485,38 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
   ADVANCED_SET(${PROJECT_NAME}_ENABLE_EXPLICIT_INSTANTIATION OFF
     CACHE BOOL
     "Enable explicit template instantiation in all packages that support it"
+    )
+
+  ADVANCED_SET(${PROJECT_NAME}_AUTOGENERATE_TEST_RESOURCE_FILE OFF
+    CACHE BOOL
+    "Auto-generate a resource spec file for use with CTest."
+    )
+
+  ADVANCED_SET(${PROJECT_NAME}_CUDA_NUM_GPUS 1
+    CACHE STRING
+    "Number of GPUS to make available in the auto-generated resource spec file."
+    )
+
+  ADVANCED_SET(${PROJECT_NAME}_CUDA_SLOTS_PER_GPU 1
+    CACHE STRING
+    "Number of slots per GPU in the auto-generated resource spec file."
+    )
+
+  SET(CTEST_RESOURCE_SPEC_FILE_DOC_EXTRA "")
+  IF (${PROJECT_NAME}_AUTOGENERATE_TEST_RESOURCE_FILE)
+    SET(CTEST_RESOURCE_SPEC_FILE_DEFAULT  ${CMAKE_BINARY_DIR}/ctest_resources.json)
+    IF ("${CTEST_RESOURCE_SPEC_FILE}" STREQUAL "")
+      SET(CTEST_RESOURCE_SPEC_FILE_DOC_EXTRA
+         "  This file is autogenerated by default since ${PROJECT_NAME}_AUTOGENERATE_TEST_RESOURCE_FILE=${${PROJECT_NAME}_AUTOGENERATE_TEST_RESOURCE_FILE}!" )
+    ENDIF()
+  ELSE()
+    SET(CTEST_RESOURCE_SPEC_FILE_DEFAULT "")
+  ENDIF()
+
+  ADVANCED_SET(CTEST_RESOURCE_SPEC_FILE
+    "${CTEST_RESOURCE_SPEC_FILE_DEFAULT}"
+    CACHE FILEPATH
+    "Resource spec file for CTest.${CTEST_RESOURCE_SPEC_FILE_DOC_EXTRA}"
     )
 
   IF (USE_XSDK_DEFAULTS)
@@ -750,7 +842,7 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
 
   ADVANCED_SET(${PROJECT_NAME}_EXTRAREPOS_FILE
     "${${PROJECT_NAME}_EXTRAREPOS_FILE_DEFAULT}"
-    CACHE FILENAME
+    CACHE STRING
     "File containing the list of extra repositories containing add-on packages to process")
   #PRINT_VAR(${PROJECT_NAME}_EXTRAREPOS_FILE)
 
@@ -1952,6 +2044,20 @@ MACRO(TRIBITS_SETUP_ENV)
     INCLUDE("${PROJECT_COMPILER_CONFIG_FILE}")
   ENDIF()
 
+  # Set up C++ language standard selection.
+  IF (NOT CMAKE_CXX_STANDARD)
+    SET(CMAKE_CXX_STANDARD 11)
+  ELSEIF (NOT CMAKE_CXX_STANDARD MATCHES "^(11|14|17|20)$")
+    MESSAGE(FATAL_ERROR "CMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD} is not 11, 14, 17, or 20.")
+  ENDIF ()
+  SET(${PROJECT_NAME}_CXX_STANDARD_FEATURE cxx_std_${CMAKE_CXX_STANDARD})
+  IF (NOT DEFINED CMAKE_CXX_STANDARD_REQUIRED)
+    SET(CMAKE_CXX_STANDARD_REQUIRED ON)
+  ENDIF ()
+  IF (NOT DEFINED CMAKE_CXX_EXTENSIONS)
+    SET(CMAKE_CXX_EXTENSIONS OFF)
+  ENDIF ()
+
   # Set up for strong compiler warnings and warnings as errors
 
   INCLUDE(TribitsSetupBasicCompileLinkFlags)
@@ -2041,35 +2147,6 @@ MACRO(TRIBITS_SETUP_ENV)
   # ToDo: Make this a project-specific specialization
 
   INCLUDE(TribitsBLASMangling)
-
-  # Determine C++-0x supported features
-
-  IF (${PROJECT_NAME}_ENABLE_CXX AND ${PROJECT_NAME}_ENABLE_CXX11)
-    INCLUDE(TribitsCXX11Support)
-    TRIBITS_FIND_CXX11_FLAGS() # Aborts if can't find C++11 flags!
-    TRIBITS_CHECK_CXX11_SUPPORT(CXX11_WORKS)  # Double check that C++11 flags!
-    IF (CXX11_WORKS)
-      MESSAGE("-- ${PROJECT_NAME}_ENABLE_CXX11=${${PROJECT_NAME}_ENABLE_CXX11}")
-      SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${${PROJECT_NAME}_CXX11_FLAGS}")
-        IF (TRIBITS_SETUP_ENV_DEBUG OR TRIBITS_ENABLE_CXX11_DEBUG_DUMP)
-          PRINT_VAR(CMAKE_CXX_FLAGS)
-        ENDIF()
-    ELSE()
-      MESSAGE(FATAL_ERROR
-        "Error, C++11 support does not appear to be supported"
-        " with this C++ compiler and/or with the C++11 flags"
-        " ${PROJECT_NAME}_CXX11_FLAGS='${${PROJECT_NAME}_CXX11_FLAGS}'!"
-        " If the flags ${PROJECT_NAME}_CXX11_FLAGS='${${PROJECT_NAME}_CXX11_FLAGS}'"
-        " where set manually, then try clearing the CMake cache and configure"
-        " without setting "
-        " ${PROJECT_NAME}_CXX11_FLAGS and let the configure process try to"
-        " find flags that work automatically.  However, if these compile-time"
-        " tests still fail, consider selecting a different C++ compiler"
-        " (and compatible compilers for other languages) that supports C++11."
-        " Or, if C++11 support in this project is not needed or desired, then set"
-        " -D${PROJECT_NAME}_ENABLE_CXX11=OFF.")
-    ENDIF()
-  ENDIF()
 
   # Set up some MPI info
 
@@ -2218,6 +2295,8 @@ MACRO(TRIBITS_INCLUDE_CTEST_SUPPORT)
 
   TRIBITS_CONFIGURE_CTEST_CUSTOM(${${PROJECT_NAME}_SOURCE_DIR}
     ${${PROJECT_NAME}_BINARY_DIR})
+
+  TRIBITS_ADD_TEST_HELPERS_INIT()
 
 ENDMACRO()
 # NOTE: The above logic with DART_TESTING_TIMEOUT is a huge hack.  For some
@@ -2888,10 +2967,13 @@ ENDMACRO()
 # Setup for installation
 #
 
-MACRO(TRIBITS_SETUP_FOR_INSTALLATION)
 
-  # Set up to install <Package>Config.cmake, <Project>Config.cmake, and export
-  # makefiles.
+# Set up to install <Package>Config.cmake, <Project>Config.cmake, and export
+# makefiles.
+FUNCTION(TRIBITS_ADD_PROJECT_EXPORT_FILE_INSTALL_TARGETS)
+
+  SET(tribits_install_src
+    "${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}")
 
   IF((${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES
       OR ${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES)
@@ -2907,7 +2989,7 @@ MACRO(TRIBITS_SETUP_FOR_INSTALLATION)
       # where was previously installed to warn and load the new file.
       SET(COMPATIBILITY_CONFIG_INCLUDE ${CMAKE_BINARY_DIR}/${PROJECT_NAME}Config.cmake)
       CONFIGURE_FILE(
-        ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsConfigInclude.cmake.in
+        "${tribits_install_src}/TribitsConfigInclude.cmake.in"
         ${COMPATIBILITY_CONFIG_INCLUDE}
         @ONLY
         )
@@ -2919,18 +3001,24 @@ MACRO(TRIBITS_SETUP_FOR_INSTALLATION)
 
   ENDIF()
 
-  # Create custom 'install/package_by_package' target
+ENDFUNCTION()
+
+
+# Create custom 'install_package_by_package' target
+FUNCTION(TRIBITS_ADD_INSTALL_PACKAGE_BY_PACKAGE_TARGET)
 
   SET(TRIBITS_ENABLED_PACKAGES_BINARY_DIRS)
   FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_PACKAGES})
     LIST(APPEND TRIBITS_ENABLED_PACKAGES_BINARY_DIRS "${${TRIBITS_PACKAGE}_BINARY_DIR}")
   ENDFOREACH()
 
+  SET(tribits_install_src
+    "${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}")
+
   CONFIGURE_FILE(
-    ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/cmake_pbp_install.cmake.in
+    "${tribits_install_src}/cmake_pbp_install.cmake.in"
     cmake_pbp_install.cmake
-    @ONLY
-    )
+    @ONLY )
 
   ADVANCED_SET(${PROJECT_NAME}_INSTALL_PBP_RUNNER "" CACHE FILEPATH
     "Program used to run cmake -P cmake_pbp_install.cmake to change user for 'install_package_by_package' target")
@@ -2940,6 +3028,22 @@ MACRO(TRIBITS_SETUP_FOR_INSTALLATION)
     ${CMAKE_COMMAND} -P cmake_pbp_install.cmake
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
     )
+
+ENDFUNCTION()
+
+
+MACRO(TRIBITS_SETUP_FOR_INSTALLATION)
+
+  # Set up to install <Package>Config.cmake, <Project>Config.cmake, and export
+  # makefiles.
+  TRIBITS_ADD_PROJECT_EXPORT_FILE_INSTALL_TARGETS()
+
+  # Set up for fixing group and permissions after the install
+  ADD_SUBDIRECTORY("${${PROJECT_NAME}_TRIBITS_DIR}/core/add_install_group_and_perms_fixups"
+    add_install_group_and_perms_fixups)
+
+  # Create custom 'install_package_by_package' target
+  TRIBITS_ADD_INSTALL_PACKAGE_BY_PACKAGE_TARGET()
 
 ENDMACRO()
 

@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//               KokkosKernels 0.9: Linear Algebra and Graph Kernels
-//                 Copyright 2017 Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -130,8 +131,8 @@ namespace Impl {
 /// AO: ordinal type (type of column indices) of the sparse matrix
 /// AS: offset type (type of row offsets) of the sparse matrix
 ///
-/// The next 5 template parameters (that start with X) correspond to
-/// the input Kokkos::View.  The last 5 template parameters (that start
+/// The next 4 template parameters (that start with X) correspond to
+/// the input Kokkos::View.  The last 4 template parameters (that start
 /// with Y) correspond to the output Kokkos::View.
 ///
 /// For the implementation of KokkosSparse::spmv for multivectors (2-D
@@ -191,8 +192,8 @@ struct SPMV{
 /// AO: ordinal type (type of column indices) of the sparse matrix
 /// AS: offset type (type of row offsets) of the sparse matrix
 ///
-/// The next 5 template parameters (that start with X) correspond to
-/// the input Kokkos::View.  The 5 template parameters after that
+/// The next 4 template parameters (that start with X) correspond to
+/// the input Kokkos::View.  The 4 template parameters after that
 /// (that start with lower-case b) are the template parameters of the
 /// input 1-D View of coefficients 'beta'.  Next, the 5 template
 /// parameters that start with Y correspond to the output
@@ -359,7 +360,7 @@ struct SPMV_MV<AT, AO, AD, AM, AS,
 
 //
 // Macro for declaration of full specialization of
-// KokkosSparse::Impl::Dot for rank == 2.  This is NOT for users!!!  All
+// KokkosSparse::Impl::SpMV.  This is NOT for users!!!  All
 // the declarations of full specializations go in this header file.
 // We may spread out definitions (see _DEF macro below) across one or
 // more .cpp files.

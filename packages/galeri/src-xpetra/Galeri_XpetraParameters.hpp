@@ -104,9 +104,19 @@ namespace Galeri {
         const Teuchos::ParameterList& pL = GetParameterList();
 
         const std::string& matrixType = pL.get<std::string>("matrixType");
-        const GO nx = pL.get<GO>("nx");
-        const GO ny = pL.get<GO>("ny");
-        const GO nz = pL.get<GO>("nz");
+        GO nx, ny, nz;
+        if (pL.isType<int>("nx"))
+          nx = Teuchos::as<GO>(pL.get<int>("nx"));
+        else
+          nx = pL.get<GO>("nx");
+        if (pL.isType<int>("ny"))
+          ny = Teuchos::as<GO>(pL.get<int>("ny"));
+        else
+          ny = pL.get<GO>("ny");
+        if (pL.isType<int>("nz"))
+          nz = Teuchos::as<GO>(pL.get<int>("nz"));
+        else
+          nz = pL.get<GO>("nz");
 
         GO numGlobalElements = -1;
         if (matrixType == "Laplace1D" || matrixType == "Helmholtz1D")
@@ -201,9 +211,19 @@ namespace Galeri {
 
           const Teuchos::ParameterList& paramList = GetParameterList();
           std::string matrixType = paramList.get<std::string>("matrixType");
-          GO nx = paramList.get<GO>("nx");
-          GO ny = paramList.get<GO>("ny");
-          GO nz = paramList.get<GO>("nz");
+          GO nx, ny, nz;
+          if (paramList.isType<int>("nx"))
+            nx = Teuchos::as<GO>(paramList.get<int>("nx"));
+          else
+            nx = paramList.get<GO>("nx");
+          if (paramList.isType<int>("ny"))
+            ny = Teuchos::as<GO>(paramList.get<int>("ny"));
+          else
+            ny = paramList.get<GO>("ny");
+          if (paramList.isType<int>("nz"))
+            nz = Teuchos::as<GO>(paramList.get<int>("nz"));
+          else
+            nz = paramList.get<GO>("nz");
 
           out << "Matrix type: "  << matrixType << std::endl
               << "Problem size: " << GetNumGlobalElements();

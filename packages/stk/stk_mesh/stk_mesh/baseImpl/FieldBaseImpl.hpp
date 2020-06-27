@@ -171,6 +171,7 @@ public:
   void modify_on_device() const;
   void sync_to_host() const;
   void sync_to_device() const;
+  void clear_sync_state() const;
 
   NgpFieldBase * get_ngp_field() const;
   void set_ngp_field(NgpFieldBase * ngpField) const;
@@ -204,7 +205,6 @@ private:
   mutable NgpFieldBase       * m_ngpField;
   mutable size_t               m_numSyncsToHost;
   mutable size_t               m_numSyncsToDevice;
-
 };
 
 

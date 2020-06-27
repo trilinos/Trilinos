@@ -66,11 +66,15 @@
 
 #include "Amesos2_TypeDecl.hpp"
 #include "Amesos2_Meta.hpp"
+#include "Amesos2_Kokkos_View_Copy_Assign.hpp"
 
 #ifdef HAVE_AMESOS2_EPETRA
 #include <Epetra_Map.h>
 #endif
 
+#ifdef HAVE_AMESOS2_METIS
+#include "metis.h" // to discuss, remove from header?
+#endif
 
 namespace Amesos2 {
 
@@ -620,8 +624,8 @@ namespace Amesos2 {
       template<typename KV_S, typename KV_GO, typename KV_GS>
       static void apply_kokkos_view(const Teuchos::Ptr<const Matrix> mat,
                         KV_S& nzvals,
-                        KV_GO& colind,
-                        KV_GS& rowptr,
+                        KV_GO& rowind,
+                        KV_GS& colptr,
                         typename Matrix::global_size_t& nnz,
                         const Teuchos::Ptr<
                           const Tpetra::Map<typename Matrix::local_ordinal_t,
@@ -630,8 +634,7 @@ namespace Amesos2 {
                         EDistribution distribution,
                         EStorage_Ordering ordering)
       {
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
-          "Refactor in progress. For Tacho this is not expected to be called.");
+        mat->getCcs_kokkos_view(nzvals, rowind, colptr, nnz, map, ordering, distribution);
       }
 
       static
@@ -676,7 +679,6 @@ namespace Amesos2 {
                         EStorage_Ordering ordering)
       {
         mat->getCrs(nzvals, colind, rowptr, nnz, map, ordering, distribution);
-        //mat->getCrs(nzvals, colind, rowptr, nnz, map, ordering);
       }
 
       template<typename KV_S, typename KV_GO, typename KV_GS>
@@ -692,8 +694,7 @@ namespace Amesos2 {
                         EDistribution distribution,
                         EStorage_Ordering ordering)
       {
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
-          "Kokkos adapter is not expecting multiple ranks to be used yet.");
+        mat->getCrs_kokkos_view(nzvals, colind, rowptr, nnz, map, ordering, distribution);
       }
 
       static
@@ -1021,6 +1022,189 @@ namespace Amesos2 {
         }
         vals[i] = binary_op(vals[i], s[s_i]);
       }
+    }
+
+    template<class row_ptr_view_t, class cols_view_t, class per_view_t>
+    void
+    reorder(row_ptr_view_t & row_ptr, cols_view_t & cols,
+            per_view_t & perm, per_view_t & peri, size_t & nnz)
+    {
+      #ifndef HAVE_AMESOS2_METIS
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+          "Cannot reorder for cuSolver because no METIS is available.");
+      #else
+        typedef typename cols_view_t::value_type ordinal_type;
+        typedef typename row_ptr_view_t::value_type size_type;
+
+        // begin on host where we'll run metis reorder
+        auto host_row_ptr = Kokkos::create_mirror_view(row_ptr);
+        auto host_cols = Kokkos::create_mirror_view(cols);
+        Kokkos::deep_copy(host_row_ptr, row_ptr);
+        Kokkos::deep_copy(host_cols, cols);
+
+        // strip out the diagonals - metis will just crash with them included.
+        // make space for the stripped version
+        typedef Kokkos::View<idx_t*, Kokkos::HostSpace>         host_metis_array;
+        const ordinal_type size = row_ptr.size() - 1;
+        host_metis_array host_strip_diag_row_ptr(
+          Kokkos::ViewAllocateWithoutInitializing("host_strip_diag_row_ptr"),
+          row_ptr.size());
+        host_metis_array host_strip_diag_cols(
+          Kokkos::ViewAllocateWithoutInitializing("host_strip_diag_cols"),
+          cols.size() - size); // dropping diagonals.
+
+        size_type new_nnz = 0;
+        for(ordinal_type i = 0; i < size; ++i) {
+          host_strip_diag_row_ptr(i) = new_nnz;
+          for(size_type j = host_row_ptr(i); j < host_row_ptr(i+1); ++j) {
+            if (i != host_cols(j)) {
+              host_strip_diag_cols(new_nnz++) = host_cols(j);
+            }
+          }
+        }
+        host_strip_diag_row_ptr(size) = new_nnz;
+
+        // we'll get original permutations on host
+        host_metis_array host_perm(
+          Kokkos::ViewAllocateWithoutInitializing("host_perm"), size);
+        host_metis_array host_peri(
+          Kokkos::ViewAllocateWithoutInitializing("host_peri"), size);
+
+        // If we want to remove metis.h included in this header we can move this
+        // to the cpp, but we need to decide how to handle the idx_t declaration.
+        idx_t metis_size = size;
+        int err = METIS_NodeND(&metis_size, host_strip_diag_row_ptr.data(), host_strip_diag_cols.data(),
+          NULL, NULL, host_perm.data(), host_peri.data());
+
+        TEUCHOS_TEST_FOR_EXCEPTION(err != METIS_OK, std::runtime_error,
+          "METIS_NodeND failed to sort matrix.");
+
+        // put the permutations on our saved device ptrs
+        // these will be used to permute x and b when we solve
+        typedef typename cols_view_t::execution_space exec_space_t;
+        auto device_perm = Kokkos::create_mirror_view(exec_space_t(), host_perm);
+        auto device_peri = Kokkos::create_mirror_view(exec_space_t(), host_peri);
+        deep_copy(device_perm, host_perm);
+        deep_copy(device_peri, host_peri);
+
+        // also set the permutation which may need to convert the type from
+        // metis to the native ordinal_type
+        deep_copy_or_assign_view(perm, device_perm);
+        deep_copy_or_assign_view(peri, device_peri);
+
+        // we'll permute matrix on device to a new set of arrays
+        row_ptr_view_t new_row_ptr(
+          Kokkos::ViewAllocateWithoutInitializing("new_row_ptr"), row_ptr.size());
+        cols_view_t new_cols(
+          Kokkos::ViewAllocateWithoutInitializing("new_cols"), cols.size() - new_nnz/2);
+
+        // permute row indices
+        Kokkos::RangePolicy<exec_space_t> policy_row(0, row_ptr.size());
+        Kokkos::parallel_scan(policy_row, KOKKOS_LAMBDA(
+          ordinal_type i, size_type & update, const bool &final) {
+          if(final) {
+            new_row_ptr(i) = update;
+          }
+          if(i < size) {
+            ordinal_type count = 0;
+            const ordinal_type row = device_perm(i);
+            for(ordinal_type k = row_ptr(row); k < row_ptr(row + 1); ++k) {
+              const ordinal_type j = device_peri(cols(k)); /// col in A
+              count += (i >= j); /// lower triangular
+            }
+            update += count;
+          }
+        });
+
+        // permute col indices
+        Kokkos::RangePolicy<exec_space_t> policy_col(0, size);
+        Kokkos::parallel_for(policy_col, KOKKOS_LAMBDA(ordinal_type i) {
+          const ordinal_type kbeg = new_row_ptr(i);
+          const ordinal_type row = device_perm(i);
+          const ordinal_type col_beg = row_ptr(row);
+          const ordinal_type col_end = row_ptr(row + 1);
+          const ordinal_type nk = col_end - col_beg;
+          for(ordinal_type k = 0, t = 0; k < nk; ++k) {
+            const ordinal_type tk = kbeg + t;
+            const ordinal_type sk = col_beg + k;
+            const ordinal_type j = device_peri(cols(sk));
+            if(i >= j) {
+              new_cols(tk) = j;
+              ++t;
+            }
+          }
+        });
+
+        // finally set the inputs to the new sorted arrays
+        row_ptr = new_row_ptr;
+        cols = new_cols;
+
+        nnz = new_nnz;
+      #endif // HAVE_AMESOS2_METIS
+    }
+
+    template<class values_view_t, class row_ptr_view_t,
+      class cols_view_t, class per_view_t>
+    void
+    reorder_values(values_view_t & values, const row_ptr_view_t & orig_row_ptr,
+      const row_ptr_view_t & new_row_ptr,
+      const cols_view_t & orig_cols, const per_view_t & perm, const per_view_t & peri,
+      size_t nnz)
+    {
+        typedef typename cols_view_t::value_type ordinal_type;
+        typedef typename cols_view_t::execution_space exec_space_t;
+
+        auto device_perm = Kokkos::create_mirror_view(exec_space_t(), perm);
+        auto device_peri = Kokkos::create_mirror_view(exec_space_t(), peri);
+        deep_copy(device_perm, perm);
+        deep_copy(device_peri, peri);
+
+        const ordinal_type size = orig_row_ptr.size() - 1;
+
+        auto host_orig_row_ptr = Kokkos::create_mirror_view(orig_row_ptr);
+        auto new_nnz = host_orig_row_ptr(size); // TODO: Maybe optimize this by caching
+
+        values_view_t new_values(
+          Kokkos::ViewAllocateWithoutInitializing("new_values"), values.size() - new_nnz/2);
+
+        // permute col indices
+        Kokkos::RangePolicy<exec_space_t> policy_col(0, size);
+        Kokkos::parallel_for(policy_col, KOKKOS_LAMBDA(ordinal_type i) {
+          const ordinal_type kbeg = new_row_ptr(i);
+          const ordinal_type row = device_perm(i);
+          const ordinal_type col_beg = orig_row_ptr(row);
+          const ordinal_type col_end = orig_row_ptr(row + 1);
+          const ordinal_type nk = col_end - col_beg;
+          for(ordinal_type k = 0, t = 0; k < nk; ++k) {
+            const ordinal_type tk = kbeg + t;
+            const ordinal_type sk = col_beg + k;
+            const ordinal_type j = device_peri(orig_cols(sk));
+            if(i >= j) {
+              new_values(tk) = values(sk);
+              ++t;
+            }
+          }
+        });
+
+        values = new_values;
+    }
+
+    template<class array_view_t, class per_view_t>
+    void
+    apply_reorder_permutation(const array_view_t & array,
+      array_view_t & permuted_array, const per_view_t & permutation) {
+        if(permuted_array.extent(0) != array.extent(0) || permuted_array.extent(1) != array.extent(1)) {
+          permuted_array = array_view_t(
+            Kokkos::ViewAllocateWithoutInitializing("permuted_array"),
+            array.extent(0), array.extent(1));
+        }
+        typedef typename array_view_t::execution_space exec_space_t;
+        Kokkos::RangePolicy<exec_space_t> policy(0, array.extent(0));
+        Kokkos::parallel_for(policy, KOKKOS_LAMBDA(size_t i) {
+          for(size_t j = 0; j < array.extent(1); ++j) {
+            permuted_array(i, j) = array(permutation(i), j);
+          }
+        });
     }
 
     /** @} */

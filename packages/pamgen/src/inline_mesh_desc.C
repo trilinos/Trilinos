@@ -270,8 +270,6 @@ long long Inline_Mesh_Desc::Decompose(std::set <long long> & global_el_ids){
     std::cout << "Inline_Mesh_Desc::Decompose()" << std::endl;
   
 
-  std::vector <Partition *> sorted_partition_list;
-
 if(inline_decomposition_type == PROCESSOR_LAYOUT){
 
   long long remaining_cuts[3];

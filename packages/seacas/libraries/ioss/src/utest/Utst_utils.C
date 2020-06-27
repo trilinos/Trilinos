@@ -1,3 +1,9 @@
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
+// 
+// See packages/seacas/LICENSE for details
+
 #define CATCH_CONFIG_MAIN
 #include <catch.hpp>
 
@@ -51,6 +57,7 @@ TEST_CASE("number_width", "[number_width]")
   }
 }
 
+#if !defined __NVCC__
 TEST_CASE("str_equal", "[str_equal]")
 {
   REQUIRE(Ioss::Utils::str_equal("", ""));
@@ -205,3 +212,4 @@ TEST_CASE("format_id_list", "[format_id_list]")
     CHECK_THROWS(Ioss::Utils::format_id_list({1, 2, 3, 3, 4, 5, 6}));
   }
 }
+#endif

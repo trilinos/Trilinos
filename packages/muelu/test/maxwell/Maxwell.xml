@@ -1,5 +1,6 @@
 <ParameterList name="MueLu">
 
+  <Parameter name="use kokkos refactor" type="bool" value="false"/>
   <Parameter name="refmaxwell: use as preconditioner" type="bool" value="true"/>
   <Parameter name="refmaxwell: mode" type="string" value="additive"/>
   <Parameter name="refmaxwell: disable addon" type="bool" value="false"/>
@@ -15,6 +16,7 @@
   </ParameterList>
 
   <ParameterList name="refmaxwell: 11list">
+    <Parameter name="use kokkos refactor" type="bool" value="false"/>
     <Parameter name="multigrid algorithm" type="string" value="unsmoothed"/>
     <Parameter name="number of equations" type="int" value="3"/>
     <Parameter name="aggregation: type" type="string" value="uncoupled"/>
@@ -30,6 +32,7 @@
   </ParameterList>
 
   <ParameterList name="refmaxwell: 22list">
+    <Parameter name="use kokkos refactor" type="bool" value="false"/>
     <Parameter name="multigrid algorithm" type="string" value="unsmoothed"/>
     <Parameter name="aggregation: type" type="string" value="uncoupled"/>
     <Parameter name="aggregation: drop tol" type="double" value="0.01"/>

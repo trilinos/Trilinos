@@ -37,20 +37,32 @@ namespace Tacho {
                       "A, B and C do not have the same value type.");
 
         const ordinal_type 
-          m = A.extent(0),
-          n = A.extent(1),
-          k = C.extent(1);
+          m = C.extent(0),
+          n = C.extent(1);
 
-        if (m > 0 && n > 0 && k > 0) {
-          for (ordinal_type p=0,offsB=0,offsC=0;p<k;++p,offsB+=B.stride_1(),offsC+=C.stride_1()) {
+
+        if (m > 0 && n > 0) {
+          if (n == 1) {
+            const int mm = A.extent(0), nn = A.extent(1);
             Blas<value_type>::gemv(ArgTrans::param, 
-                                   m, n, 
+                                   mm, nn,
                                    value_type(alpha),
                                    A.data(), A.stride_1(),
-                                   (B.data() + offsB), B.stride_0(),
+                                   B.data(), B.stride_0(),
                                    value_type(beta), 
-                                   (C.data() + offsC), C.stride_0());
+                                   C.data(), C.stride_0());
+          } else {
+            const int mm = C.extent(0), nn = C.extent(1), kk = B.extent(0);
+            Blas<value_type>::gemm(ArgTrans::param, 
+                                   Trans::NoTranspose::param,
+                                   mm, nn, kk,
+                                   value_type(alpha),
+                                   A.data(), A.stride_1(),
+                                   B.data(), B.stride_1(),
+                                   value_type(beta), 
+                                   C.data(), C.stride_1());
           }
+
         }
 #else
         TACHO_TEST_FOR_ABORT( true, ">> This function is only allowed in host space.");

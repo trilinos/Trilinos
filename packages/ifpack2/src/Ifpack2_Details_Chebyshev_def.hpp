@@ -733,7 +733,6 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
   }
 }
 
-
 template<class ScalarType, class MV>
 void
 Chebyshev<ScalarType, MV>::compute ()
@@ -862,11 +861,8 @@ Chebyshev<ScalarType, MV>::compute ()
   ////////////////////////////////////////////////////////////////////
 
   // Always favor the user's max eigenvalue estimate, if provided.
-  if (STS::isnaninf (userLambdaMax_)) {
-    lambdaMaxForApply_ = computedLambdaMax_;
-  } else {
-    lambdaMaxForApply_ = userLambdaMax_;
-  }
+  lambdaMaxForApply_ = STS::isnaninf (userLambdaMax_) ? computedLambdaMax_ : userLambdaMax_;
+ 
   // mfh 11 Feb 2013: For now, we imitate Ifpack by ignoring the
   // user's min eigenvalue estimate, and using the given eigenvalue
   // ratio to estimate the min eigenvalue.  We could instead do this:

@@ -39,9 +39,6 @@
 #include <stk_util/util/ReportHandler.hpp>
 #include <stk_search/IdentProc.hpp>
 #include <stk_search/BoundingBox.hpp>
-#if defined(STK_HAVE_BOOST)
-#include <stk_search/CoarseSearchBoostRTree.hpp>
-#endif
 #include <stk_search/CoarseSearchKdTree.hpp>
 #include <stk_search/SearchMethod.hpp>
 #include <vector>
@@ -54,8 +51,6 @@ inline
 std::ostream& operator<<(std::ostream &out, SearchMethod method)
 {
   switch( method )   {
-  case USE_DEPRECATED_BOOST_RTREE: // fall through
-  case BOOST_RTREE:            out << "BOOST_RTREE"; break;
   case KDTREE:                 out << "KDTREE"; break;
   case MORTON_LINEARIZED_BVH:  out << "MORTON_LINEARIZED_BVH"; break;
   }
@@ -96,16 +91,6 @@ void coarse_search( std::vector<std::pair<DomainBox,DomainIdent> > const& domain
 {
   switch( method )
   {
-  case USE_DEPRECATED_BOOST_RTREE: // fall through
-  case BOOST_RTREE:
-#ifndef __NVCC__
-#if defined(STK_HAVE_BOOST)
-    coarse_search_boost_rtree(domain,range,comm,intersections,communicateRangeBoxInfo);
-#else
-    ThrowRequireMsg(false,"ERROR, the BOOST_RTREE option in stk_search requires that Trilinos was configured with TPL_ENABLE_Boost:BOOL=ON");
-#endif
-    break;
-#endif
   case KDTREE:
     coarse_search_kdtree_driver(domain,range,comm,intersections,communicateRangeBoxInfo);
     break;

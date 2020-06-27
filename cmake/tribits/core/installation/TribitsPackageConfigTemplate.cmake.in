@@ -88,6 +88,9 @@ SET(${EXPORT_FILE_VAR_PREFIX}_AR ${CMAKE_AR})
 ## Set library specifications and paths
 ## ---------------------------------------------------------------------------
 
+## Base install location (if not in the build tree)
+SET(${EXPORT_FILE_VAR_PREFIX}_INSTALL_DIR "@CMAKE_INSTALL_PREFIX@")
+
 ## List of package include dirs
 SET(${EXPORT_FILE_VAR_PREFIX}_INCLUDE_DIRS "${FULL_INCLUDE_DIRS_SET}")
 

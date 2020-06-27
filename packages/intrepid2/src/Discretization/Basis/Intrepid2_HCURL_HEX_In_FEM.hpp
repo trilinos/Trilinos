@@ -169,9 +169,9 @@ namespace Intrepid2 {
   }
 
   /** \class  Intrepid2::Basis_HCURL_HEX_In_FEM
-      \brief  Implementation of the default H(curl)-compatible FEM basis on Hexahedral cell
+      \brief  Implementation of the default H(curl)-compatible FEM basis on Hexahedron cell
 
-              Implements Nedelec basis of degree n on the reference Hexahedral cell. The basis has
+              Implements Nedelec basis of degree n on the reference Hexahedron cell. The basis has
               cardinality 3n (n+1)^2 and spans a INCOMPLETE polynomial space.
 
   */

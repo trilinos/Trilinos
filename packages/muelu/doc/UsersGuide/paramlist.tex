@@ -3,11 +3,17 @@
           
 \cbb{verbosity}{string}{"high"}{Control of the amount of printed information. Possible values: see Table~\ref{t:verbosity_types}.}
           
+\cbb{output filename}{string}{""}{Write MueLu output to a file instead of std out. Empty value disables file output.}
+          
 \cbb{number of equations}{int}{1}{Number of PDE equations at each grid node. Only constant block size is considered.}
           
 \cbb{max levels}{int}{10}{Maximum number of levels in a hierarchy.}
           
 \cbb{cycle type}{string}{"V"}{Multigrid cycle type. Possible values: "V", "W".}
+          
+\cbb{W cycle start level}{int}{0}{Level at which to start multigrid W cycle.}
+          
+\cbb{number of vectors}{int}{1}{Number of columns in multivectors that are cached for Hierarchy apply phase.}
           
 \cbb{problem: symmetric}{bool}{true}{Symmetry of a problem. This setting affects the construction of a restrictor. If set to true, the restrictor is set to be the transpose of a prolongator. If set to false, underlying multigrid algorithm makes the decision.}
           
@@ -52,7 +58,7 @@
           
 \cbb{aggregation: ordering}{string}{"natural"}{Node ordering strategy. Possible values: "natural" (local index order), "graph" (filtered graph breadth-first order), "random" (random local index order).}
           
-\cbb{aggregation: drop scheme}{string}{"classical"}{Connectivity dropping scheme for a graph used in aggregation. Possible values: "classical", "distance laplacian".}
+\cbb{aggregation: drop scheme}{string}{"classical"}{Connectivity dropping scheme for a graph used in aggregation. Possible values: "classical", "distance laplacian", "unsupported vector smoothing".}
           
 \cbb{aggregation: drop tol}{double}{0.0}{Connectivity dropping threshold for a graph used in aggregation.}
           
@@ -67,6 +73,15 @@
 \cbb{aggregation: brick y size}{int}{2}{Number of points for y axis in "brick" aggregation (limited to 3).}
           
 \cbb{aggregation: brick z size}{int}{2}{Number of points for z axis in "brick" aggregation (limited to 3).}
+          
+\cbb{aggregation: brick x Dirichlet}{bool}{false}{Asserts that Dirichlet conditions are applied in
+        the x-direction and the Dirichlet DOFs are not aggregated.}
+          
+\cbb{aggregation: brick y Dirichlet}{bool}{false}{Asserts that Dirichlet conditions are applied in
+        the y-direction and the Dirichlet DOFs are not aggregated.}
+          
+\cbb{aggregation: brick z Dirichlet}{bool}{false}{Asserts that Dirichlet conditions are applied in
+        the z-direction and the Dirichlet DOFs are not aggregated.}
           
 \cbb{aggregation: Dirichlet threshold}{double}{0.0}{Threshold for determining whether entries are zero during Dirichlet row detection.}
           
@@ -162,6 +177,8 @@
 \cbb{emin: pattern}{string}{"AkPtent"}{Sparsity pattern to use for energy minimization. Possible values: "AkPtent".}
           
 \cbb{emin: pattern order}{int}{1}{Matrix order for the "AkPtent" pattern.}
+          
+\cbb{emin: use filtered matrix}{bool}{true}{Matrix to use for smoothing for energy minimization. The two options are: to use the original matrix, and to use the filtered matrix with filtering based on filtered graph used for aggregation.}
           
 \cbb{repartition: enable}{bool}{false}{Rebalancing on/off switch.}
           

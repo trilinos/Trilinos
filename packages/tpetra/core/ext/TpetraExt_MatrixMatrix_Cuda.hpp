@@ -110,6 +110,18 @@ struct KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosC
                                                        const std::string& label = std::string(),
                                                        const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
+    static inline void jacobi_A_B_newmatrix_KokkosKernels(Scalar omega,
+                                                          const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> & Dinv,
+                                                          CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& Aview,
+                                                          CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& Bview,
+                                                          const LocalOrdinalViewType & Acol2Brow,
+                                                          const LocalOrdinalViewType & Acol2Irow,
+                                                          const LocalOrdinalViewType & Bcol2Ccol,
+                                                          const LocalOrdinalViewType & Icol2Ccol,
+                                                          CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& C,
+                                                          Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> > Cimport,
+                                                          const std::string& label = std::string(),
+                                                          const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 };
 
 
@@ -286,6 +298,9 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
   const LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
   const SC SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
 
+  // Since this is being run on Cuda, we need to fence because the below host code will use UVM
+  typename graph_t::execution_space().fence();
+
   // Sizes
   RCP<const map_type> Ccolmap = C.getColMap();
   size_t m = Aview.origMatrix->getNodeNumRows();
@@ -418,6 +433,9 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCud
   if(myalg == "MSAK") {
     ::Tpetra::MatrixMatrix::ExtraKernels::jacobi_A_B_newmatrix_MultiplyScaleAddKernel(omega,Dinv,Aview,Bview,Acol2Brow,Acol2Irow,Bcol2Ccol,Icol2Ccol,C,Cimport,label,params);
   }
+  else if(myalg == "KK") {
+    jacobi_A_B_newmatrix_KokkosKernels(omega,Dinv,Aview,Bview,Acol2Brow,Acol2Irow,Bcol2Ccol,Icol2Ccol,C,Cimport,label,params);
+  }
   else {
     throw std::runtime_error("Tpetra::MatrixMatrix::Jacobi newmatrix unknown kernel");
   }
@@ -488,6 +506,9 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCud
   const LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
   const SC SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
 
+  // Since this is being run on Cuda, we need to fence because the below host code will use UVM
+  typename graph_t::execution_space().fence();
+ 
   // Sizes
   RCP<const map_type> Ccolmap = C.getColMap();
   size_t m = Aview.origMatrix->getNodeNumRows();
@@ -601,6 +622,154 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCud
 
   C.fillComplete(C.getDomainMap(), C.getRangeMap());
 
+}
+
+/*********************************************************************************************************/
+template<class Scalar,
+         class LocalOrdinal,
+         class GlobalOrdinal,
+         class LocalOrdinalViewType>
+void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode,LocalOrdinalViewType>::jacobi_A_B_newmatrix_KokkosKernels(Scalar omega,
+												const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> & Dinv,
+											        CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& Aview,
+												CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& Bview,
+												const LocalOrdinalViewType & Acol2Brow,
+												const LocalOrdinalViewType & Acol2Irow,
+												const LocalOrdinalViewType & Bcol2Ccol,
+												const LocalOrdinalViewType & Icol2Ccol,
+												CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& C,
+												Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> > Cimport,
+												const std::string& label,
+												const Teuchos::RCP<Teuchos::ParameterList>& params) {
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+  std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
+  using Teuchos::TimeMonitor;
+  Teuchos::RCP<TimeMonitor> MM;
+#endif
+
+  // Check if the diagonal entries exist in debug mode
+  const bool debug = Tpetra::Details::Behavior::debug();
+  if(debug) {
+
+    auto rowMap = Aview.origMatrix->getRowMap();
+    Tpetra::Vector<Scalar> diags(rowMap);
+    Aview.origMatrix->getLocalDiagCopy(diags);
+    size_t diagLength = rowMap->getNodeNumElements();
+    Teuchos::Array<Scalar> diagonal(diagLength);
+    diags.get1dCopy(diagonal());
+
+    for(size_t i = 0; i < diagLength; ++i) {
+      TEUCHOS_TEST_FOR_EXCEPTION(diagonal[i] == Teuchos::ScalarTraits<Scalar>::zero(), 
+				 std::runtime_error, 
+				 "Matrix A has a zero/missing diagonal: " << diagonal[i] << std::endl <<
+				 "KokkosKernels Jacobi-fused SpGEMM requires nonzero diagonal entries in A" << std::endl);
+    }
+  }
+
+  // Usings
+  using device_t = typename Kokkos::Compat::KokkosCudaWrapperNode::device_type;
+  using matrix_t = typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode>::local_matrix_type;
+  using graph_t = typename matrix_t::StaticCrsGraphType;
+  using lno_view_t = typename graph_t::row_map_type::non_const_type;
+  using c_lno_view_t = typename graph_t::row_map_type::const_type;
+  using lno_nnz_view_t = typename graph_t::entries_type::non_const_type;
+  using scalar_view_t = typename matrix_t::values_type::non_const_type;
+
+  // KokkosKernels handle 
+  using handle_t = typename KokkosKernels::Experimental::KokkosKernelsHandle<
+    typename lno_view_t::const_value_type,typename lno_nnz_view_t::const_value_type, typename scalar_view_t::const_value_type,
+    typename device_t::execution_space, typename device_t::memory_space,typename device_t::memory_space >;
+
+  // Get the rowPtr, colInd and vals of importMatrix
+  c_lno_view_t Irowptr;
+  lno_nnz_view_t Icolind;
+  scalar_view_t Ivals;
+  if(!Bview.importMatrix.is_null()) {
+    Irowptr = Bview.importMatrix->getLocalMatrix().graph.row_map;
+    Icolind = Bview.importMatrix->getLocalMatrix().graph.entries;
+    Ivals   = Bview.importMatrix->getLocalMatrix().values;
+  }
+
+  // Merge the B and Bimport matrices
+  const matrix_t Bmerged = Tpetra::MMdetails::merge_matrices(Aview,Bview,Acol2Brow,Acol2Irow,Bcol2Ccol,Icol2Ccol,C.getColMap()->getNodeNumElements());
+
+  // Get the properties and arrays of input matrices
+  const matrix_t & Amat = Aview.origMatrix->getLocalMatrix();
+  const matrix_t & Bmat = Bview.origMatrix->getLocalMatrix();
+
+  typename handle_t::nnz_lno_t AnumRows = Amat.numRows();
+  typename handle_t::nnz_lno_t BnumRows = Bmerged.numRows();
+  typename handle_t::nnz_lno_t BnumCols = Bmerged.numCols();
+
+  c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmerged.graph.row_map;
+  const lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmerged.graph.entries;
+  const scalar_view_t Avals = Amat.values, Bvals = Bmerged.values;
+
+  // Arrays of the output matrix
+  lno_view_t row_mapC (Kokkos::ViewAllocateWithoutInitializing("non_const_lnow_row"), AnumRows + 1);
+  lno_nnz_view_t entriesC;
+  scalar_view_t valuesC;
+
+  // Options
+  int team_work_size = 16; 
+  std::string myalg("SPGEMM_KK_MEMORY");
+  if(!params.is_null()) {
+    if(params->isParameter("cuda: algorithm"))
+      myalg = params->get("cuda: algorithm",myalg);
+    if(params->isParameter("cuda: team work size"))
+      team_work_size = params->get("cuda: team work size",team_work_size);
+  }
+
+  // Get the algorithm mode
+  std::string nodename("Cuda");
+  std::string alg = nodename + std::string(" algorithm");
+  if(!params.is_null() && params->isParameter(alg)) myalg = params->get(alg,myalg);
+  KokkosSparse::SPGEMMAlgorithm alg_enum = KokkosSparse::StringToSPGEMMAlgorithm(myalg);
+
+
+  // KokkosKernels call
+  handle_t kh;
+  kh.create_spgemm_handle(alg_enum);
+  kh.set_team_work_size(team_work_size);
+
+  KokkosSparse::Experimental::spgemm_symbolic(&kh, AnumRows, BnumRows, BnumCols,
+					      Arowptr, Acolind, false,
+					      Browptr, Bcolind, false,
+					      row_mapC);
+
+  size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
+  if (c_nnz_size){
+    entriesC = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
+    valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+  }
+
+  KokkosSparse::Experimental::spgemm_jacobi(&kh, AnumRows, BnumRows, BnumCols,
+					    Arowptr, Acolind, Avals, false,
+					    Browptr, Bcolind, Bvals, false,
+					    row_mapC, entriesC, valuesC,
+					    omega, Dinv.getLocalViewDevice());
+  kh.destroy_spgemm_handle();
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+  MM = Teuchos::null; MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix CudaSort"))));
+#endif
+
+  // Sort & set values
+  if (params.is_null() || params->get("sort entries",true))
+    Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
+  C.setAllValues(row_mapC,entriesC,valuesC);
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+  MM = Teuchos::null; MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix CudaESFC"))));
+#endif
+
+  // Final Fillcomplete
+  Teuchos::RCP<Teuchos::ParameterList> labelList = rcp(new Teuchos::ParameterList);
+  labelList->set("Timer Label",label);
+  if(!params.is_null()) labelList->set("compute global constants",params->get("compute global constants",true));
+  Teuchos::RCP<const Export<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> > dummyExport;
+  C.expertStaticFillComplete(Bview.origMatrix->getDomainMap(), Aview.origMatrix->getRangeMap(), Cimport,dummyExport,labelList);
 }
 
   }//MMdetails

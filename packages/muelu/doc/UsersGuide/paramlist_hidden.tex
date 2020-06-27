@@ -3,15 +3,21 @@
         
 \cbb{verbosity}{string}{"high"}{Control of the amount of printed information. Possible values: see Table~\ref{t:verbosity_types}.}
         
+\cbb{output filename}{string}{""}{Write MueLu output to a file instead of std out. Empty value disables file output.}
+        
 \cbb{number of equations}{int}{1}{Number of PDE equations at each grid node. Only constant block size is considered.}
         
 \cbb{max levels}{int}{10}{Maximum number of levels in a hierarchy.}
         
 \cbb{cycle type}{string}{"V"}{Multigrid cycle type. Possible values: "V", "W".}
         
+\cbb{W cycle start level}{int}{0}{Level at which to start multigrid W cycle.}
+        
 \cbb{coarse grid correction scaling factor}{double}{1.0}{Scaling factor to be applied to the coarse grid correction. This only affects the solve phase.}
         
 \cbb{fuse prolongation and update}{bool}{false}{Fuse prolongation and update into one kernel call. Due to round-off error accumulation, this can in some cases result in slightly higher iteration counts. This only affects the solve phase.}
+        
+\cbb{number of vectors}{int}{1}{Number of columns in multivectors that are cached for Hierarchy apply phase.}
         
 \cbb{problem: symmetric}{bool}{true}{Symmetry of a problem. This setting affects the construction of a restrictor. If set to true, the restrictor is set to be the transpose of a prolongator. If set to false, underlying multigrid algorithm makes the decision.}
         
@@ -60,9 +66,17 @@
         
 \cbb{aggregation: ordering}{string}{"natural"}{Node ordering strategy. Possible values: "natural" (local index order), "graph" (filtered graph breadth-first order), "random" (random local index order).}
         
-\cbb{aggregation: drop scheme}{string}{"classical"}{Connectivity dropping scheme for a graph used in aggregation. Possible values: "classical", "distance laplacian".}
+\cbb{aggregation: drop scheme}{string}{"classical"}{Connectivity dropping scheme for a graph used in aggregation. Possible values: "classical", "distance laplacian", "unsupported vector smoothing".}
+        
+\cbb{aggregation: number of random vectors}{int}{10}{Determines how many random vectors are smoothed when "unsupported vector smoothing" used.}
+        
+\cbb{aggregation: number of times to pre or post smooth}{int}{10}{Determines how many times presmoother (or postsmoother if no presmoother set) is invoked when "unsupported vector smoothing" used. Each invocation may include several smoother sweeps.}
+        
+\cbb{aggregation: penalty parameters}{Array(double)}{{12.,-.2,0,0,0} }{Defines a polynomial coef[0] + coef[1]*i + coef[2]*i^2 + coef[3]*i^3 + coef[4]*i^4 that models the cost of having i nonzeros per row when  "unsupported vector smoothing" used.}
         
 \cbb{aggregation: distance laplacian algo}{string}{"default"}{Type of sub-algorithm for "distance laplacian" dropping. Possible values: "default", "unscaled cut", "scaled cut".}
+        
+\cbb{aggregation: classical algo}{string}{"default"}{Type of sub-algorithm for "classical" dropping. Possible values: "default", "unscaled cut", "scaled cut".}
         
 \cbb{aggregation: drop tol}{double}{0.0}{Connectivity dropping threshold for a graph used in aggregation.}
         
@@ -77,6 +91,15 @@
 \cbb{aggregation: brick y size}{int}{2}{Number of points for y axis in "brick" aggregation (limited to 3).}
         
 \cbb{aggregation: brick z size}{int}{2}{Number of points for z axis in "brick" aggregation (limited to 3).}
+        
+\cbb{aggregation: brick x Dirichlet}{bool}{false}{Asserts that Dirichlet conditions are applied in
+        the x-direction and the Dirichlet DOFs are not aggregated.}
+        
+\cbb{aggregation: brick y Dirichlet}{bool}{false}{Asserts that Dirichlet conditions are applied in
+        the y-direction and the Dirichlet DOFs are not aggregated.}
+        
+\cbb{aggregation: brick z Dirichlet}{bool}{false}{Asserts that Dirichlet conditions are applied in
+        the z-direction and the Dirichlet DOFs are not aggregated.}
         
 \cbb{aggregation: max selected neighbors}{int}{0}{Maximum number of neighbor nodes that are already aggregated. If a new aggregate has some neighbors that are already aggregated, this node probably can be added to one of these aggregates. We don't need a new one.}
         
@@ -93,6 +116,8 @@
 \cbb{aggregation: enable phase 2b}{bool}{true}{Turn on/off phase 2b of aggregation}
         
 \cbb{aggregation: enable phase 3}{bool}{true}{Turn on/off phase 3 of aggregation}
+        
+\cbb{aggregation: phase2a include root}{bool}{true}{Whether the root node should be included in the aggregates formed in phase 2a.}
         
 \cbb{aggregation: error on nodes with no on-rank neighbors}{bool}{false}{Causes phase 3 aggregation to throw an error for
       non-Dirichlet nodes that have no on-rank neighbors.  This only
@@ -143,6 +168,10 @@
         
 \cbb{aggregation: pairwise: size}{int}{8}{Target size for pairwise aggregation.  The number
       of pairwise steps used will be log base-2 of this number.}
+        
+\cbb{aggregation: pairwise: tie threshold}{double}{1e-6}{Threshold for determining two potential pairwise
+      neighbors have identical values and then fall back on the
+      order.}
         
 \cbb{aggregate qualities: check symmetry}{bool}{false}{Whether to check symmetry and use nonsymmetric aggregate quality estimate if necessary.}
         
@@ -237,6 +266,8 @@
         
 \cbb{emin: pattern order}{int}{1}{Matrix order for the "AkPtent" pattern.}
         
+\cbb{emin: use filtered matrix}{bool}{true}{Matrix to use for smoothing for energy minimization. The two options are: to use the original matrix, and to use the filtered matrix with filtering based on filtered graph used for aggregation.}
+        
 \cbb{tentative: calculate qr}{bool}{true}{If false, skip local QR decomposition phase of smoothed aggregation.}
         
 \cbb{tentative: constant column sums}{bool}{false}{If true, scale the column sums to one (before applying nullspace).}
@@ -250,6 +281,8 @@
 \cba{repartition: params}{\parameterlist}{Partitioner parameters. \muelu passes them directly to the appropriate package library. In particular, this allows to choose a partitioning algorithm from \zoltan{} or \zoltan2{} or from external packages such as \parmetis{}.}
         
 \cbb{repartition: start level}{int}{2}{Minimum level to run partitioner. \muelu does not rebalance levels finer than this one.}
+        
+\cbb{repartition: use map}{bool}{false}{Instead of using a matrix, use a map to determine rebalancing heuristics. Obviously, this cannot evaluate nonzero imbalance.}
         
 \cbb{repartition: node repartition level}{int}{-1}{Level on which to run node-level repartitioning (negative means don't).}
         

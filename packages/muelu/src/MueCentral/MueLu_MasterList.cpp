@@ -119,10 +119,13 @@ namespace MueLu {
     // put in auto-generated code here
 
 
+    if (name == "output filename") { ss << "<Parameter name=\"output filename\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
     if (name == "number of equations") { ss << "<Parameter name=\"number of equations\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "max levels") { ss << "<Parameter name=\"max levels\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "W cycle start level") { ss << "<Parameter name=\"W cycle start level\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "coarse grid correction scaling factor") { ss << "<Parameter name=\"coarse grid correction scaling factor\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
     if (name == "fuse prolongation and update") { ss << "<Parameter name=\"fuse prolongation and update\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "number of vectors") { ss << "<Parameter name=\"number of vectors\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "problem: symmetric") { ss << "<Parameter name=\"problem: symmetric\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "hierarchy label") { ss << "<Parameter name=\"hierarchy label\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
     if (name == "aggregation: drop tol") { ss << "<Parameter name=\"aggregation: drop tol\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
@@ -139,6 +142,7 @@ namespace MueLu {
     if (name == "tentative: constant column sums") { ss << "<Parameter name=\"tentative: constant column sums\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "repartition: enable") { ss << "<Parameter name=\"repartition: enable\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "repartition: start level") { ss << "<Parameter name=\"repartition: start level\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "repartition: use map") { ss << "<Parameter name=\"repartition: use map\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "repartition: node repartition level") { ss << "<Parameter name=\"repartition: node repartition level\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "repartition: node id") { ss << "<Parameter name=\"repartition: node id\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "repartition: min rows per proc") { ss << "<Parameter name=\"repartition: min rows per proc\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
@@ -160,11 +164,14 @@ namespace MueLu {
 "<ParameterList name=\"MueLu\">"
   "<Parameter name=\"problem: type\" type=\"string\" value=\"unknown\"/>"
   "<Parameter name=\"verbosity\" type=\"string\" value=\"high\"/>"
+  "<Parameter name=\"output filename\" type=\"string\" value=\"\"/>"
   "<Parameter name=\"number of equations\" type=\"int\" value=\"1\"/>"
   "<Parameter name=\"max levels\" type=\"int\" value=\"10\"/>"
   "<Parameter name=\"cycle type\" type=\"string\" value=\"V\"/>"
+  "<Parameter name=\"W cycle start level\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"coarse grid correction scaling factor\" type=\"double\" value=\"1.0\"/>"
   "<Parameter name=\"fuse prolongation and update\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"number of vectors\" type=\"int\" value=\"1\"/>"
   "<Parameter name=\"problem: symmetric\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"xml parameter file\" type=\"string\" value=\"\"/>"
   "<Parameter name=\"parameterlist: syntax\" type=\"string\" value=\"muelu\"/>"
@@ -188,7 +195,11 @@ namespace MueLu {
   "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"uncoupled\"/>"
   "<Parameter name=\"aggregation: ordering\" type=\"string\" value=\"natural\"/>"
   "<Parameter name=\"aggregation: drop scheme\" type=\"string\" value=\"classical\"/>"
+  "<Parameter name=\"aggregation: number of random vectors\" type=\"int\" value=\"10\"/>"
+  "<Parameter name=\"aggregation: number of times to pre or post smooth\" type=\"int\" value=\"10\"/>"
+  "<Parameter name=\"aggregation: penalty parameters\" type=\"Array(double)\" value=\"{12.,-.2,0,0,0} \"/>"
   "<Parameter name=\"aggregation: distance laplacian algo\" type=\"string\" value=\"default\"/>"
+  "<Parameter name=\"aggregation: classical algo\" type=\"string\" value=\"default\"/>"
   "<Parameter name=\"aggregation: drop tol\" type=\"double\" value=\"0.0\"/>"
   "<Parameter name=\"aggregation: min agg size\" type=\"int\" value=\"2\"/>"
   "<Parameter name=\"aggregation: max agg size\" type=\"int\" value=\"-1\"/>"
@@ -196,6 +207,9 @@ namespace MueLu {
   "<Parameter name=\"aggregation: brick x size\" type=\"int\" value=\"2\"/>"
   "<Parameter name=\"aggregation: brick y size\" type=\"int\" value=\"2\"/>"
   "<Parameter name=\"aggregation: brick z size\" type=\"int\" value=\"2\"/>"
+  "<Parameter name=\"aggregation: brick x Dirichlet\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"aggregation: brick y Dirichlet\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"aggregation: brick z Dirichlet\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: max selected neighbors\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"aggregation: Dirichlet threshold\" type=\"double\" value=\"0.0\"/>"
   "<Parameter name=\"aggregation: deterministic\" type=\"bool\" value=\"false\"/>"
@@ -204,6 +218,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: enable phase 2a\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"aggregation: enable phase 2b\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"aggregation: enable phase 3\" type=\"bool\" value=\"true\"/>"
+  "<Parameter name=\"aggregation: phase2a include root\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"aggregation: error on nodes with no on-rank neighbors\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: phase3 avoid singletons\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: allow empty prolongator columns\" type=\"bool\" value=\"false\"/>"
@@ -226,6 +241,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: number of spatial dimensions\" type=\"int\" value=\"3\"/>"
   "<Parameter name=\"aggregation: coarsening order\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"aggregation: pairwise: size\" type=\"int\" value=\"8\"/>"
+  "<Parameter name=\"aggregation: pairwise: tie threshold\" type=\"double\" value=\"1e-6\"/>"
   "<Parameter name=\"aggregate qualities: check symmetry\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregate qualities: good aggregate threshold\" type=\"double\" value=\"100.0\"/>"
   "<Parameter name=\"aggregate qualities: file output\" type=\"bool\" value=\"false\"/>"
@@ -267,6 +283,7 @@ namespace MueLu {
   "<Parameter name=\"emin: num reuse iterations\" type=\"int\" value=\"1\"/>"
   "<Parameter name=\"emin: pattern\" type=\"string\" value=\"AkPtent\"/>"
   "<Parameter name=\"emin: pattern order\" type=\"int\" value=\"1\"/>"
+  "<Parameter name=\"emin: use filtered matrix\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"tentative: calculate qr\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"tentative: constant column sums\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"tentative: build coarse coordinates\" type=\"bool\" value=\"true\"/>"
@@ -274,6 +291,7 @@ namespace MueLu {
   "<Parameter name=\"repartition: partitioner\" type=\"string\" value=\"zoltan2\"/>"
   "<ParameterList name=\"repartition: params\"/>"
   "<Parameter name=\"repartition: start level\" type=\"int\" value=\"2\"/>"
+  "<Parameter name=\"repartition: use map\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"repartition: node repartition level\" type=\"int\" value=\"-1\"/>"
   "<Parameter name=\"repartition: node id\" type=\"int\" value=\"-1\"/>"
   "<Parameter name=\"repartition: min rows per proc\" type=\"int\" value=\"800\"/>"
@@ -489,6 +507,8 @@ namespace MueLu {
           
             "<Parameter name=\"sa: use filtered matrix\" type=\"bool\" value=\"true\"/>"
           
+            "<Parameter name=\"emin: use filtered matrix\" type=\"bool\" value=\"true\"/>"
+          
     "</ParameterList>"
   )
 ;
@@ -498,15 +518,21 @@ namespace MueLu {
       
          ("ML output","verbosity")
       
+         ("output filename","output filename")
+      
          ("PDE equations","number of equations")
       
          ("max levels","max levels")
       
          ("prec type","cycle type")
       
+         ("W cycle start level","W cycle start level")
+      
          ("coarse grid correction scaling factor","coarse grid correction scaling factor")
       
          ("fuse prolongation and update","fuse prolongation and update")
+      
+         ("number of vectors","number of vectors")
       
          ("problem: symmetric","problem: symmetric")
       
@@ -554,7 +580,15 @@ namespace MueLu {
       
          ("aggregation: drop scheme","aggregation: drop scheme")
       
+         ("aggregation: number of random vectors","aggregation: number of random vectors")
+      
+         ("aggregation: number of times to pre or post smooth","aggregation: number of times to pre or post smooth")
+      
+         ("aggregation: penalty parameters","aggregation: penalty parameters")
+      
          ("aggregation: distance laplacian algo","aggregation: distance laplacian algo")
+      
+         ("aggregation: classical algo","aggregation: classical algo")
       
          ("aggregation: threshold","aggregation: drop tol")
       
@@ -569,6 +603,12 @@ namespace MueLu {
          ("aggregation: brick y size","aggregation: brick y size")
       
          ("aggregation: brick z size","aggregation: brick z size")
+      
+         ("aggregation: brick x Dirichlet","aggregation: brick x Dirichlet")
+      
+         ("aggregation: brick y Dirichlet","aggregation: brick y Dirichlet")
+      
+         ("aggregation: brick z Dirichlet","aggregation: brick z Dirichlet")
       
          ("aggregation: max selected neighbors","aggregation: max selected neighbors")
       
@@ -585,6 +625,8 @@ namespace MueLu {
          ("aggregation: enable phase 2b","aggregation: enable phase 2b")
       
          ("aggregation: enable phase 3","aggregation: enable phase 3")
+      
+         ("aggregation: phase2a include root","aggregation: phase2a include root")
       
          ("aggregation: error on nodes with no on-rank neighbors","aggregation: error on nodes with no on-rank neighbors")
       
@@ -629,6 +671,8 @@ namespace MueLu {
          ("aggregation: coarsening order","aggregation: coarsening order")
       
          ("aggregation: pairwise: size","aggregation: pairwise: size")
+      
+         ("aggregation: pairwise: tie threshold","aggregation: pairwise: tie threshold")
       
          ("aggregate qualities: check symmetry","aggregate qualities: check symmetry")
       
@@ -712,6 +756,8 @@ namespace MueLu {
       
          ("emin: pattern order","emin: pattern order")
       
+         ("emin: use filtered matrix","emin: use filtered matrix")
+      
          ("tentative: calculate qr","tentative: calculate qr")
       
          ("tentative: constant column sums","tentative: constant column sums")
@@ -725,6 +771,8 @@ namespace MueLu {
          ("repartition: params","repartition: params")
       
          ("repartition: start level","repartition: start level")
+      
+         ("repartition: use map","repartition: use map")
       
          ("repartition: node repartition level","repartition: node repartition level")
       

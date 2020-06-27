@@ -11,8 +11,10 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_StepperExplicit.hpp"
-#include "Tempus_StepperForwardEulerObserver.hpp"
-
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+  #include "Tempus_StepperForwardEulerObserver.hpp"
+#endif
+#include "Tempus_StepperForwardEulerAppAction.hpp"
 
 namespace Tempus {
 
@@ -61,6 +63,7 @@ public:
   */
   StepperForwardEuler();
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   /// Constructor
   StepperForwardEuler(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
@@ -68,7 +71,17 @@ public:
     bool useFSAL,
     std::string ICConsistency,
     bool ICConsistencyCheck);
+#endif
+ 
+  /// Constructor
+  StepperForwardEuler(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    const Teuchos::RCP<StepperForwardEulerAppAction<Scalar> >& stepperFEAppAction);
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   /// \name Basic stepper methods
   //@{
     virtual void setObserver(
@@ -76,6 +89,13 @@ public:
 
     virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
     { return this->stepperFEObserver_; }
+#endif
+
+    virtual void setAppAction(
+      Teuchos::RCP<StepperForwardEulerAppAction<Scalar> > appAction);
+
+    virtual Teuchos::RCP<StepperForwardEulerAppAction<Scalar> > getAppAction() const
+      { return stepperFEAppAction_; }
 
     /// Set the initial conditions, make them consistent, and set needed memory.
     virtual void setInitialConditions (
@@ -106,7 +126,11 @@ public:
 
 protected:
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   Teuchos::RCP<StepperForwardEulerObserver<Scalar> >  stepperFEObserver_;
+#endif
+  Teuchos::RCP<StepperForwardEulerAppAction<Scalar> > stepperFEAppAction_;
+
 
 };
 

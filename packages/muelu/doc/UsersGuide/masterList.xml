@@ -1,4 +1,3 @@
-
 <masterlist>
 
   <general>
@@ -24,6 +23,13 @@
       <default-ML>0</default-ML>
       <compatibility-ML>MLParameterListInterpreter, ML2MueLuParameterTranslator</compatibility-ML>
       <description-ML>Control of the amount of printed information. Possible values: 0-10 with 0=no output and 10=maximum verbosity.</description-ML>
+    </parameter>
+
+    <parameter>
+      <name>output filename</name>
+      <type>string</type>
+      <default>""</default>
+      <description>Write MueLu output to a file instead of std out. Empty value disables file output.</description>
     </parameter>
 
     <parameter>
@@ -67,6 +73,13 @@
     </parameter>
 
     <parameter>
+      <name>W cycle start level</name>
+      <type>int</type>
+      <default>0</default>
+      <description>Level at which to start multigrid W cycle.</description>
+    </parameter>
+
+    <parameter>
       <name>coarse grid correction scaling factor</name>
       <type>double</type>
       <default>1.0</default>
@@ -80,6 +93,14 @@
       <default>false</default>
       <description>Fuse prolongation and update into one kernel call. Due to round-off error accumulation, this can in some cases result in slightly higher iteration counts. This only affects the solve phase.</description>
       <visible>false</visible>
+    </parameter>
+
+    <parameter>
+      <name>number of vectors</name>
+      <type>int</type>
+      <default>1</default>
+      <description>Number of columns in multivectors that are cached for Hierarchy apply phase.</description>
+      <visible>true</visible>
     </parameter>
 
     <parameter>
@@ -383,8 +404,36 @@
       <name>aggregation: drop scheme</name>
       <type>string</type>
       <default>"classical"</default>
-      <description>Connectivity dropping scheme for a graph used in aggregation. Possible values: "classical", "distance laplacian".</description>
+      <description>Connectivity dropping scheme for a graph used in aggregation. Possible values: "classical", "distance laplacian", "unsupported vector smoothing".</description>
       <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: number of random vectors</name>
+      <type>int</type>
+      <default>10</default>
+      <description>Determines how many random vectors are smoothed when "unsupported vector smoothing" used.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+
+    <parameter>
+      <name>aggregation: number of times to pre or post smooth</name>
+      <type>int</type>
+      <default>10</default>
+      <description>Determines how many times presmoother (or postsmoother if no presmoother set) is invoked when "unsupported vector smoothing" used. Each invocation may include several smoother sweeps.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: penalty parameters</name>
+      <type>Array(double)</type>
+      <default>{12.,-.2,0,0,0} </default>
+      <description>Defines a polynomial coef[0] + coef[1]*i + coef[2]*i^2 + coef[3]*i^3 + coef[4]*i^4 that models the cost of having i nonzeros per row when  "unsupported vector smoothing" used.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+      <visible>false</visible>
     </parameter>
 
     <parameter>
@@ -392,6 +441,15 @@
       <type>string</type>
       <default>"default"</default>
       <description>Type of sub-algorithm for "distance laplacian" dropping. Possible values: "default", "unscaled cut", "scaled cut".</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: classical algo</name>
+      <type>string</type>
+      <default>"default"</default>
+      <description>Type of sub-algorithm for "classical" dropping. Possible values: "default", "unscaled cut", "scaled cut".</description>
       <visible>false</visible>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
@@ -430,6 +488,7 @@
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
+
     <parameter>
       <name>aggregation: brick x size</name>
       <type>int</type>
@@ -451,6 +510,33 @@
       <type>int</type>
       <default>2</default>
       <description>Number of points for z axis in "brick" aggregation (limited to 3).</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+   <parameter>
+      <name>aggregation: brick x Dirichlet</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Asserts that Dirichlet conditions are applied in
+        the x-direction and the Dirichlet DOFs are not aggregated.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+   <parameter>
+      <name>aggregation: brick y Dirichlet</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Asserts that Dirichlet conditions are applied in
+        the y-direction and the Dirichlet DOFs are not aggregated.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+   <parameter>
+      <name>aggregation: brick z Dirichlet</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Asserts that Dirichlet conditions are applied in
+        the z-direction and the Dirichlet DOFs are not aggregated.</description>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
@@ -519,6 +605,15 @@
       <type>bool</type>
       <default>true</default>
       <description>Turn on/off phase 3 of aggregation</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: phase2a include root</name>
+      <type>bool</type>
+      <default>true</default>
+      <description>Whether the root node should be included in the aggregates formed in phase 2a.</description>
       <visible>false</visible>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
@@ -713,6 +808,18 @@
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
+    <parameter>
+      <name>aggregation: pairwise: tie threshold</name>
+      <type>double</type>
+      <default>1e-6</default>
+      <description>Threshold for determining two potential pairwise
+      neighbors have identical values and then fall back on the
+      order.</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+
   </aggregation>
 
   <aggregate_qualities>
@@ -759,7 +866,7 @@
       problem.  The reverse algorithm uses it in the numerator.</description>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
-    
+
     <parameter>
       <name>aggregate qualities: zero threshold</name>
       <type>double</type>
@@ -1101,6 +1208,15 @@
     </parameter>
 
     <parameter>
+      <name>emin: use filtered matrix</name>
+      <type>bool</type>
+      <default>true</default>
+      <ConvectionDiffusion>true</ConvectionDiffusion>
+      <description>Matrix to use for smoothing for energy minimization. The two options are: to use the original matrix, and to use the filtered matrix with filtering based on filtered graph used for aggregation.</description>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>tentative: calculate qr</name>
       <type>bool</type>
       <default>true</default>
@@ -1168,6 +1284,13 @@
       <description-ML>Minimum level to run partitioner. \muelu does not rebalance levels finer than this one.</description-ML>
     </parameter>
 
+    <parameter>
+      <name>repartition: use map</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Instead of using a matrix, use a map to determine rebalancing heuristics. Obviously, this cannot evaluate nonzero imbalance.</description>
+      <visible>false</visible>
+    </parameter>
 
     <parameter>
       <name>repartition: node repartition level</name>

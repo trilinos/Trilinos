@@ -64,6 +64,73 @@ namespace
   std::vector<double> t_values = {{0.0, 0.2, 0.4, 0.6, 0.8, 1.0}};
   std::vector<double> x_values = {{-1.0,-0.5,-1.0/3.0,0.0,1.0/3.0,0.50,1.0}};
   
+  void testIntegratedJacobiIsZeroAtZero(const int polyOrder, const double tol, Teuchos::FancyOStream &out, bool &success)
+  {
+    // for all alpha, t, integrated jacobi should evaluate to 0 at 0.
+    Kokkos::View<double*> integratedJacobiView("integrated jacobi values",polyOrder+1);
+    
+    using Intrepid2::Polynomials::integratedJacobiValues;
+    using Intrepid2::Polynomials::shiftedScaledJacobiValues;
+
+    const double x = 0.0;
+    
+    for (auto alpha : alpha_values)
+    {
+      for (auto t : t_values)
+      {
+        // wrap invocation in parallel_for just to ensure execution on device (for CUDA)
+        Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int dummy_index)
+        {
+          integratedJacobiValues(integratedJacobiView, alpha, polyOrder, x, t);
+        });
+        
+        for (int i=1; i<=polyOrder; i++)
+        {
+          if ( abs(integratedJacobiView(i)) > tol)
+          {
+            success = false;
+            out << "for alpha = " << alpha << ", t = " << t << ", integrated Jacobi for polyOrder " << i;
+            out << " at x=0 is not zero (it is " << integratedJacobiView(i) << ")\n";
+          }
+        }
+      }
+    }
+  }
+  
+  void testIntegratedJacobiAnalyticAlphaZeroJ2(const double tol, Teuchos::FancyOStream &out, bool &success)
+  {
+    // for alpha=0, integrated jacobi j=2 should be x^2 - x*t
+    const int polyOrder = 2;
+    Kokkos::View<double*> integratedJacobiView("integrated jacobi values",polyOrder+1);
+    
+    using Intrepid2::Polynomials::integratedJacobiValues;
+    
+    const double alpha = 0.0;
+    
+    for (auto x : x_values)
+    {
+      for (auto t : t_values)
+      {
+        double expected_value = x * x - x * t;
+        // wrap invocation in parallel_for just to ensure execution on device (for CUDA)
+        Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int dummy_index)
+        {
+          integratedJacobiValues(integratedJacobiView, alpha, polyOrder, x, t);
+        });
+        
+        const int i = 2;
+        double diff = integratedJacobiView(i) - expected_value;
+        if ( abs(diff) > tol)
+        {
+          success = false;
+          out << "for alpha = " << alpha << ", t = " << t << ", integrated Jacobi for polyOrder " << i;
+          out << " at x=" << x << " is not x^2 - x * t (" << expected_value << "); instead, it is " << integratedJacobiView(i);
+          out << ", a difference of " << abs(diff) << ")\n";
+        }
+      }
+    }
+  }
+  
   void testIntegratedJacobiTwoPathsMatch(const int polyOrder, const double tol, Teuchos::FancyOStream &out, bool &success)
   {
     Kokkos::View<double*> jacobiView("jacobi values",polyOrder+1);
@@ -170,4 +237,18 @@ namespace
     testIntegratedJacobi_dtTwoPathsMatch(polyOrderMax, tol, out, success);
   }
   
+  TEUCHOS_UNIT_TEST( IntegratedJacobi, ZeroAtZero)
+  {
+    const int polyOrderMax = 10;
+    const double tol = TEST_TOLERANCE_TIGHT;
+    testIntegratedJacobiIsZeroAtZero(polyOrderMax, tol, out, success);
+  }
+  
+  TEUCHOS_UNIT_TEST( IntegratedJacobi, AnalyticAlphaZeroJ2)
+  {
+    // analytically, we can determine that with alpha=0, the second integrated Jacobi polynomial
+    // should be x^2 - x*t
+    const double tol = TEST_TOLERANCE_TIGHT;
+    testIntegratedJacobiAnalyticAlphaZeroJ2(tol, out, success);
+  }
 } // namespace

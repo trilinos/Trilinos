@@ -10,6 +10,16 @@
 
 .. _Ninja: https://ninja-build.org
 
+.. _CMake Ninja Fortran Support: https://cmake.org/cmake/help/latest/generator/Ninja.html
+
+.. _CTest Resource Allocation System: https://cmake.org/cmake/help/latest/manual/ctest.1.html#resource-allocation
+
+.. _CTest Resource Specification File: https://cmake.org/cmake/help/latest/manual/ctest.1.html#ctest-resource-specification-file
+
+.. _CTest Resource Allocation Environment Variables: https://cmake.org/cmake/help/latest/manual/ctest.1.html#environment-variables
+
+.. _RESOURCE_GROUPS: https://cmake.org/cmake/help/latest/prop_test/RESOURCE_GROUPS.html#prop_test:RESOURCE_GROUPS
+
 
 
 Getting set up to use CMake
@@ -39,19 +49,19 @@ snapshot of TriBITS), then install CMake with::
   $ cd <some-scratch-space>/
   $ export TRIBITS_BASE_DIR=<project-base-dir>/cmake/tribits
   $ $TRIBITS_BASE_DIR/devtools_install/install-cmake.py \
-     --install-dir=<INSTALL_BASE_DIR> \
+     --install-dir-base=<INSTALL_BASE_DIR> --cmake-version=X.Y.Z \
      --do-all
 
 This will result in cmake and related CMake tools being installed in
-``<INSTALL_BASE_DIR>/bin/`` (see the instructions printed at the end on how to
-update your ``PATH`` env var).
+``<INSTALL_BASE_DIR>/cmake-X.Y.Z/bin/`` (see the instructions printed at the
+end on how to update your ``PATH`` env var).
 
 To get help for installing CMake with this script use::
 
   $ $TRIBITS_BASE_DIR/devtools_install/install-cmake.py --help
 
-NOTE: you will want to read the help message about how to use sudo to
-install in a privileged location (like the default ``/usr/local/bin``).
+NOTE: You will want to read the help message about how to install CMake to
+share with other users and maintainers and how to install with sudo if needed.
 
 
 Installing Ninja from Source
@@ -69,10 +79,17 @@ The Kitware fork of Ninja at:
 
 provides releases of Ninja that allows CMake 3.7.0+ to build Fortran code with
 Ninja.  For example, the Kitware Ninja release ``1.7.2.git.kitware.dyndep-1``
-works with Fortran.
+works with Fortran.  As of Ninja 1.10+, Fortran support is part of the
+official Google-maintained version of Ninja as can be obtained from:
 
-Ninja is easy to install from source.  It is a simple ``configure
---prefix=<dir>``, ``make`` and ``make install``.
+  https://github.com/ninja-build/ninja/releases
+
+and as of CMake 3.17+, cmake will recognize native Fortran support for Ninja
+1.10+ (see `CMake Ninja Fortran Support`_).
+
+Ninja is easy to install from source on almost any machine.  On Unix/Linux
+systems it is as simple as ``configure --prefix=<dir>``, ``make`` and ``make
+install``.
 
 
 Getting CMake Help
@@ -306,9 +323,10 @@ See the following use cases:
 * `Enable a set of packages`_
 * `Enable or disable tests for specific packages`_
 * `Enable to test all effects of changing a given package(s)`_
-* `Enable all packages with tests and examples`_
+* `Enable all packages (and optionally all tests)`_
 * `Disable a package and all its dependencies`_
 * `Remove all package enables in the cache`_
+
 
 Determine the list of packages that can be enabled
 ++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -375,8 +393,11 @@ as described above.
 Both of these variables are automatically enabled when
 `<Project>_VERBOSE_CONFIGURE`_ = ``ON``.
 
+
 Enable a set of packages
 ++++++++++++++++++++++++
+
+.. _<Project>_ENABLE_TESTS:
 
 To enable an SE package ``<TRIBITS_PACKAGE>`` (and optionally also its tests
 and examples), configure with::
@@ -429,6 +450,8 @@ that his will **not** result in the enable of the test suites for any packages
 that may only be implicitly enabled in order to build the explicitly enabled
 packages.
 
+.. _<TRIBITS_PACKAGE>_ENABLE_TESTS:
+
 If one wants to enable a package along with the enable of other packages, but
 not the test suite for that package, then when can disable the tests for that
 package by configuring with::
@@ -465,31 +488,39 @@ of their tests turned on.  Tests will not be enabled in packages that do not
 depend on ``<TRIBITS_PACKAGE>`` in this case.  This speeds up and robustifies
 pre-push testing.
 
-Enable all packages with tests and examples
-+++++++++++++++++++++++++++++++++++++++++++
 
-To enable all SE packages (and optionally also their tests and examples), add
-the configure options::
+Enable all packages (and optionally all tests)
+++++++++++++++++++++++++++++++++++++++++++++++
+
+To enable all defined packages and subpakages add the configure option::
 
   -D <Project>_ENABLE_ALL_PACKAGES=ON \
+
+To also optionally enable the tests and examples in all of those enabled
+packages, add the configure option::
+
   -D <Project>_ENABLE_TESTS=ON \
 
-Specific packages can be disabled with
+Specific packages can be disabled (i.e. "black-listed") by adding
 ``<Project>_ENABLE_<TRIBITS_PACKAGE>=OFF``.  This will also disable all
 packages that depend on ``<TRIBITS_PACKAGE>``.
 
-All examples are also enabled by default when setting
-``<Project>_ENABLE_TESTS=ON``.
+Note, all examples are also enabled by default when setting
+``<Project>_ENABLE_TESTS=ON`` (and so examples are considered a subset of the
+tests).
 
 By default, setting ``<Project>_ENABLE_ALL_PACKAGES=ON`` only enables primary
-tested (PT) code.  To have this also enable all secondary tested (ST) code,
-one must also set ``<Project>_ENABLE_SECONDARY_TESTED_CODE=ON``.
+tested (PT) packages and code.  To have this also enable all secondary tested
+(ST) packages and ST code in PT packages code, one must also set::
 
-NOTE: If the project is a "meta-project", then
-``<Project>_ENABLE_ALL_PACKAGES=ON`` may not enable *all* the SE packages
-but only the project's primary meta-project packages.  See `Package
-Dependencies and Enable/Disable Logic`_ and `TriBITS Dependency Handling
-Behaviors`_ for details.
+  -D <Project>_ENABLE_SECONDARY_TESTED_CODE=ON \
+
+NOTE: If this project is a "meta-project", then
+``<Project>_ENABLE_ALL_PACKAGES=ON`` may not enable *all* the SE packages but
+only the project's primary meta-project packages.  See `Package Dependencies
+and Enable/Disable Logic`_ and `TriBITS Dependency Handling Behaviors`_ for
+details.
+
 
 Disable a package and all its dependencies
 ++++++++++++++++++++++++++++++++++++++++++
@@ -945,35 +976,6 @@ of the RAM on a given system and crash the build.
 
 NOTE: These options are ignored when using Makefiles or other CMake
 generators.  They only work for the Ninja generator.
-
-
-Enabling support for C++11
---------------------------
-
-To enable support for C++11 in packages that support C++11 (either optionally
-or required), configure with::
-
-  -D <Project>_ENABLE_CXX11=ON
-
-By default, the system will try to automatically find compiler flags that will
-enable C++11 features.  If it finds flags that allow a test C++11 program to
-compile, then it will an additional set of configure-time tests to see if
-several C++11 features are actually supported by the configured C++ compiler
-and support will be disabled if all of these features are not supported.
-
-In order to pre-set and/or override the C++11 compiler flags used, set the
-cache variable::
-
-  -D <Project>_CXX11_FLAGS="<compiler flags>"
-
-In order to enable C++11 but not have the default system set any flags for
-C++11, use::
-
-  -D <Project>_ENABLE_CXX11=ON
-  -D <Project>_CXX11_FLAGS=" "
-
-The empty space " " will result in the system assuming that no flags needs to
-be set.
 
 
 Enabling explicit template instantiation for C++
@@ -1896,8 +1898,16 @@ NOTES:
   Python is enabled.
 
 
+Test-related configuration settings
+-----------------------------------
+
+Many options can be set at configure time to determine what tests are enabled
+and how they are run.  The following subsections described these various
+settings.
+
+
 Enabling different test categories
-----------------------------------
+++++++++++++++++++++++++++++++++++
 
 To turn on a set a given set of tests by test category, set::
 
@@ -1916,7 +1926,7 @@ and don't nest with the other categories.
 
 
 Disabling specific tests
-------------------------
+++++++++++++++++++++++++
 
 Any TriBITS-added ctest test (i.e. listed in ``ctest -N``) can be disabled at
 configure time by setting::
@@ -1955,7 +1965,7 @@ Also note that other specific defined tests can also be excluded using the
 
 
 Disabling specific test executable builds
------------------------------------------
++++++++++++++++++++++++++++++++++++++++++
 
 Any TriBITS-added executable (i.e. listed in ``make help``) can be disabled
 from being built by setting::
@@ -1970,8 +1980,68 @@ will result in the printing of a line for the executable target being disabled
 at configure time to CMake STDOUT.
 
 
+Disabling just the ctest tests but not the test executables
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+To allow the building of the tests and examples in a package (enabled either
+through setting `<Project>_ENABLE_TESTS`_ ``= ON`` or
+`<TRIBITS_PACKAGE>_ENABLE_TESTS`_ ``= ON``) but not actually define the ctest
+tests that will get run, configure with::
+
+  -D <TRIBITS_PACKAGE>_SKIP_CTEST_ADD_TEST=TRUE \
+
+(This has the effect of skipping calling the ``add_test()`` command in the
+CMake code for the package ``<TRIBITS_PACKAGE>``.)
+
+To avoid defining ctest tests for all of the enabled packages, configure
+with::
+
+  -D <Project>_SKIP_CTEST_ADD_TEST=TRUE \
+
+(The default for ``<TRIBITS_PACKAGE>_SKIP_CTEST_ADD_TEST`` for each TriBITS
+package ``<TRIBITS_PACKAGE>`` is set to the project-wide option
+``<Project>_SKIP_CTEST_ADD_TEST``.)
+
+One can also use these options to "white-list" and "black-list" the set of
+package tests that one will run.  For example, to enable the building of all
+test and example targets but only actually defining ctest tests for two
+specific packages (i.e. "white-listing"), one would configure with::
+
+  -D <Project>_ENABLE_ALL_PACKAGES=ON \
+  -D <Project>_ENABLE_TESTS=ON \
+  -D <Project>_SKIP_CTEST_ADD_TEST=TRUE \
+  -D <TRIBITS_PACKAGE_1>_SKIP_CTEST_ADD_TEST=FALSE \
+  -D <TRIBITS_PACKAGE_2>_SKIP_CTEST_ADD_TEST=FALSE \
+
+Alternatively, to enable the building of all test and example targets and
+allowing the ctest tests to be defined for all packages except for a couple of
+specific packages (i.e. "black-listing"), one would configure with::
+
+  -D <Project>_ENABLE_ALL_PACKAGES=ON \
+  -D <Project>_ENABLE_TESTS=ON \
+  -D <TRIBITS_PACKAGE_1>_SKIP_CTEST_ADD_TEST=TRUE \
+  -D <TRIBITS_PACKAGE_2>_SKIP_CTEST_ADD_TEST=TRUE \
+
+Using different values for ``<Project>_SKIP_CTEST_ADD_TEST`` and
+``<TRIBITS_PACKAGE>_SKIP_CTEST_ADD_TEST`` in this way allows for building all
+of the test and example targets for the enabled packages but not defining
+ctest tests for any set of packages desired.  This allows setting up testing
+scenarios where one wants to test the building of all test-related targets but
+not actually run the tests with ctest for a subset of all of the enabled
+packages.  (This can be useful in cases where the tests are very expensive and
+one can't afford to run all of them given the testing budget, or when running
+tests on a given platform is very flaky, or when some packages have fragile or
+poor quality tests that don't port to new platforms very well.)
+
+NOTE: These options avoid having to pass specific sets of labels when running
+``ctest`` itself (such as when defining ``ctest -S <script>.cmake`` scripts)
+and instead the decisions as to the exact set of ctest tests to define is made
+at configure time.  Therefore, all of the decisions about what test targets
+should be build and which tests should be run can be made at configure time.
+
+
 Trace test addition or exclusion
---------------------------------
+++++++++++++++++++++++++++++++++
 
 To see what tests get added and see those that don't get added for various
 reasons, configure with::
@@ -1987,7 +2057,7 @@ arguments).
 
 
 Enable advanced test start and end times and timing blocks
-----------------------------------------------------------
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 For tests added using ``TRIBITS_ADD_ADVANCED_TEST()``, one can see start and
 end times for the tests and the timing for each ``TEST_<IDX>`` block in the
@@ -2002,8 +2072,9 @@ systems and not native Windows systems.
 
 .. _DART_TESTING_TIMEOUT:
 
+
 Setting test timeouts at configure time
----------------------------------------
++++++++++++++++++++++++++++++++++++++++
 
 A maximum default time limit (timeout) for all the tests can be set at
 configure time using the cache variable::
@@ -2049,8 +2120,9 @@ NOTES:
 
 .. _<Project>_SCALE_TEST_TIMEOUT:
 
+
 Scaling test timeouts at configure time
----------------------------------------
++++++++++++++++++++++++++++++++++++++++
 
 The global default test timeout `DART_TESTING_TIMEOUT`_ as well as all of the
 timeouts for the individual tests that have their own timeout set (through the
@@ -2088,6 +2160,118 @@ NOTES:
   ``DartConfiguration.tcl`` file (which is directly read by ``ctest``) will be
   scaled.  (This ensures that running configure over and over again will not
   increase ``DART_TESTING_TIMEOUT`` or ``TimeOut`` with each new configure.)
+
+
+Spreading out and limiting tests running on GPUs
+++++++++++++++++++++++++++++++++++++++++++++++++
+
+For CUDA builds (i.e. ``TPL_ENABLE_CUDA=ON``) with tests that run on a single
+node which has multiple GPUs, there are settings that can help ``ctest``
+spread out the testing load over all of the GPUs and limit the number of
+kernels that can run at the same time on a single GPU.
+
+To instruct ``ctest`` to spread out the load on multiple GPUs, one can set the
+following configure-time options::
+
+  -D TPL_ENABLE_CUDA=ON \
+  -D <Project>_AUTOGENERATE_TEST_RESOURCE_FILE=ON \
+  -D <Project>_CUDA_NUM_GPUS=<num-gpus> \
+  -D <Project>_CUDA_SLOTS_PER_GPU=<slots-per-gpu> \
+
+This will cause a file ``ctest_resources.json`` to get generated in the base
+build directory that CTest will use to spread out the work across the
+``<num-gpus>`` GPUs with a maximum of ``<slots-per-gpu>`` processes running
+kernels on any one GPU.  (This uses the `CTest Resource Allocation System`_
+first added in CMake 3.16 and made more usable in CMake 3.18.)
+
+For example, when running on one node on a system with 4 GPUs per node
+(allowing 5 kernels to run at a time on a single GPU) one would configure
+with::
+
+  -D TPL_ENABLE_CUDA=ON \
+  -D <Project>_AUTOGENERATE_TEST_RESOURCE_FILE=ON \
+  -D <Project>_CUDA_NUM_GPUS=4 \
+  -D <Project>_CUDA_SLOTS_PER_GPU=5 \
+
+This allows, for example, up to 5 tests using 4-rank MPI jobs, or 10 tests
+using 2-rank MPI jobs, or 20 tests using 1-rank MPI jobs, to run at the same
+time (or any combination of tests that add up to 20 or less total MPI
+processes to run a the same time).  But a single 21-rank or above MPI test job
+would not be allowed to run and would be listed as "Not Run" because it would
+have required more than ``<slots-per-gpu> = 5`` MPI processes running kernels
+at one time on a single GPU.  (Therefore, one must set ``<slots-per-gpu>``
+large enough to allow all of the defined tests to run or one should avoid
+defining tests that require too many slots for available GPUs.)
+
+The CTest implementation uses a breath-first approach to spread out the work
+across all the available GPUs before adding more work for each GPU.  For
+example, when running two 2-rank MPI tests at the same time (e.g. using
+``ctest -j4``) in the above example, CTest will instruct these tests at
+runtime to spread out across all 4 GPUs and therefore run the CUDA kernels for
+just one MPI process on each GPU.  But when running four 2-rank MPI tests at
+the same time (e.g. using ``ctest -j8``), then each of the 4 GPUs would get
+the work of two MPI processes (i.e. running two kernels at a time on each of
+the 4 GPUs).
+
+One can also manually create a `CTest Resource Specification File`_ and point
+to it by setting::
+
+  -D TPL_ENABLE_CUDA=ON \
+  -D CTEST_RESOURCE_SPEC_FILE=<file-path> \
+
+In all cases, ctest will not spread out and limit running on the GPUs unless
+``TPL_ENABLE_CUDA=ON`` is set which causes TriBITS to add the
+`RESOURCE_GROUPS`_ test property to each test.
+
+NOTES:
+
+* This setup assumes that a single MPI process will run just one kernel on its
+  assigned GPU and therefore take up one GPU "slot".  So a 2-rank MPI test
+  will take up 2 total GPU "slots" (either on the same or two different GPUs,
+  as determined by CTest).
+
+* The underlying test executables/scripts themselves must be set up to read in
+  the `CTest Resource Allocation Environment Variables`_ set specifically by
+  ``ctest`` on the fly for each test and then must run on the specific GPUs
+  specified in those environment variables.  (If the project is using a Kokkos
+  back-end implementation for running CUDA code on the GPU then this will work
+  automatically since Kokkos is set up to automatically look for these
+  CTest-set environment variables.  Without this CTest and TriBITS
+  implementation, when running 2-rank MPI tests on a node with 4 GPUs, Kokkos
+  would just utilize the first two GPUs and leave the other two GPUs idle.
+  One when running 1-rank MPI tests, Kokkos would only utilize the first GPU
+  and leave the last three GPUs idle.)
+
+* The option ``<Project>_AUTOGENERATE_TEST_RESOURCE_FILE=ON`` sets the
+  built-in CMake variable ``CTEST_RESOURCE_SPEC_FILE`` to point to the
+  generated file ``ctest_resources.json`` in the build directory.
+
+* One can avoid setting the CMake cache variables
+  ``<Project>_AUTOGENERATE_TEST_RESOURCE_FILE`` or
+  ``CTEST_RESOURCE_SPEC_FILE`` at configure time and can instead directly pass
+  the path to the `CTest Resource Specification File`_ directly into ``ctest``
+  using the command-line option ``--resource-spec-file`` or the
+  ``ctest_test()`` function argument ``RESOURCE_SPEC_FILE`` (when using a
+  ``ctest -S`` script driver).  (This allows using CMake 3.16+ since support
+  for the ``CTEST_RESOURCE_SPEC_FILE`` cache variable was not added until
+  CMake 3.18.)
+
+* A patched version of CMake 3.17 can be used to get built-in CMake/CTest
+  support for the ``CTEST_RESOURCE_SPEC_FILE`` cache variable, as installed
+  using the TriBITS-provided ``install-cmake.py`` command (using option
+  ``--cmake-version=3.17``, see `Installing CMake from source [developers and
+  experienced users]`_).  This avoids needing to explicitly pass the ctest
+  resource file to ``ctest`` at runtime for CMake/CTest versions [3.16, 3.18).
+
+* **WARNING:** This currently only works for a single node, not multiple
+  nodes.  (CTest needs to be extended to work correctly for multiple nodes
+  where each node has multiple GPUs.  Alternatively, TriBITS could be extended
+  to make this work for multiple nodes but will require considerable work and
+  will need to closely interact with the MPI launcher to control what nodes
+  are run on for each MPI job/test.)
+
+* **WARNING:** This feature is still evolving in CMake/CTest and TriBITS and
+  therefore the input options and behavior of this may change in the future.
 
 
 Enabling support for coverage testing
@@ -3037,6 +3221,7 @@ For more details, see the following subsections:
 * `Avoiding installing libraries and headers`_
 * `Installing the software`_
 
+
 Setting the install prefix
 --------------------------
 
@@ -3074,43 +3259,78 @@ WARNING: To overwrite default relative paths, you must use the data type
 current binary directory for the base path.  Otherwise, if you want to specify
 absolute paths, use the data type ``PATH`` as shown above.
 
-Setting install directory permissions
--------------------------------------
 
-By default, when installing with the ``install`` target, any directories
-created are given the default permissions for the user that runs the install
-command (just as if they typed ``mkdir <some-dir>``).  (On Unix/Linux systems,
-one can use ``umask`` and set the default group and the group sticky bit to
-control how directories are created.)  However, for versions of CMake 3.11.0+,
-CMake supports the CMake variable
-``CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS`` which will result in directory
-permissions according to these and not the user/system defaults.  To make this
-easier to use, the ``<Project>`` CMake build system defines the options::
+Setting install ownership and permissions
+-----------------------------------------
 
+By default, when installing with the ``install`` (or
+``install_package_by_package``) target, any files and directories created are
+given the default permissions for the user that runs the install command (just
+as if they typed ``mkdir <some-dir>`` or ``touch <some-file>``).  On most
+Unix/Linux systems, one can use ``umask`` to set default permissions and one
+can set the default group and the group sticky bit to control what groups owns
+the newly created files and directories.  However, some computer systems do
+not support the group sticky bit and there are cases where one wants or needs
+to provide different group ownership and write permissions.
+
+To control what group owns the install-created files and directories related
+to ``CMAKE_INSTALL_PREFIX`` and define the permissions on those, one can set
+one or more of the following options::
+
+  -D <Project>_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR=<install-base-dir> \
+  -D <Project>_MAKE_INSTALL_GROUP=[<owning-group>] \
   -D <Project>_MAKE_INSTALL_GROUP_READABLE=[TRUE|FALSE] \
+  -D <Project>_MAKE_INSTALL_GROUP_WRITABLE=[TRUE|FALSE] \
   -D <Project>_MAKE_INSTALL_WORLD_READABLE=[TRUE|FALSE] \
 
-that automatically sets up ``CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS``
-with the correct permissions according to these options when either of these
-two variables are set to non-empty.  To make the install group and world
-readable, set::
+(where ``<Project>_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR`` must be a
+base directory of ``CMAKE_INSTALL_PREFIX``).  This has the impact of both
+setting the built-in CMake variable
+``CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS`` with the correct permissions
+according to these and also triggers the automatic running of the recursive
+``chgrp`` and ``chmod`` commands starting from the directory
+``<install-base-dir>`` on down, after all of the other project files have been
+installed.  The directory set by
+``<Project>_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR`` and those below it
+may be created by the ``install`` command by CMake (as it may not exist before
+the install).  If ``<Project>_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR``
+is not given, then it is set internally to the same directory as
+``CMAKE_INSTALL_PREFIX``.
 
-  -D <Project>_MAKE_INSTALL_WORLD_READABLE=TRUE
+For an example, to configure for an install based on a dated base directory
+where a non-default group should own the installation and have group
+read/write permissions, and "others" only have read access, one would
+configure with::
 
-To make the install group readable but not world readable, set::
+  -D CMAKE_INSTALL_PREFIX=$HOME/2020-04-25/my-proj \
+  -D <Project>_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR=$HOME/2020-04-25 \
+  -D <Project>_MAKE_INSTALL_GROUP=some-other-group \
+  -D <Project>_MAKE_INSTALL_GROUP_WRITABLE=TRUE \
+  -D <Project>_MAKE_INSTALL_WORLD_READABLE=TRUE \
 
-  -D <Project>_MAKE_INSTALL_GROUP_READABLE=TRUE
+Using these settings, after all of the files and directories have been
+installed using the ``install`` or ``install_package_by_package`` build
+targets, the following commands are automatically run at the very end::
 
-(In that case, make sure and set the desired group in the base install
-directory and set the group sticky bit using ``chmod g+s <base-install-dir>``
-before running the ``install`` target.)
+  chgrp some-other-group $HOME/2020-04-25
+  chmod g+rwX,o+rX $HOME/2020-04-25
+  chgrp some-other-group -R $HOME/2020-04-25/my-proj
+  chmod g+rwX,o+rX -R $HOME/2020-04-25/my-proj
 
-When both of these variables are empty,
-``CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS`` is not set and therefore the
-default user/system directory permissions are used for new directories.  When
-the version of CMake is less than 3.11.0, then setting these variables and
-``CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS`` have no effect and the default
-user/system directory permissions are used.
+That allows the owning group ``some-other-group`` to later modify or delete
+the installation and allows all users to use the installation.
+
+NOTES:
+
+* Setting ``<Project>_MAKE_INSTALL_GROUP_WRITABLE=TRUE`` implies
+  ``<Project>_MAKE_INSTALL_GROUP_READABLE=TRUE``.
+
+* Non-recursive ``chgrp`` and ``chmod`` commands are run on the directories
+  above ``CMAKE_INSTALL_PREFIX``.  Recursive ``chgrp`` and ``chmod`` commands
+  are only run on the base ``CMAKE_INSTALL_PREFIX`` directory itself.  (This
+  avoids touching any files or directories not directly involved in this
+  install.)
+
 
 Setting install RPATH
 ---------------------

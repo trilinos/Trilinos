@@ -1,35 +1,8 @@
-// Copyright(C) 2016-2017 National Technology & Engineering Solutions of
-// Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above
-//   copyright notice, this list of conditions and the following
-//   disclaimer in the documentation and/or other materials provided
-//   with the distribution.
-//
-// * Neither the name of NTESS nor the names of its
-//   contributors may be used to endorse or promote products derived
-//   from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
+// 
+// See packages/seacas/LICENSE for details
 #include "SL_SystemInterface.h"
 
 #include <algorithm>
@@ -53,6 +26,7 @@
 #endif
 
 namespace {
+  int  get_free_descriptor_count();
   bool str_equal(const std::string &s1, const std::string &s2)
   {
     return (s1.size() == s2.size()) &&
@@ -85,7 +59,7 @@ void SystemInterface::enroll_options()
 
   options_.enroll("debug", GetLongOption::MandatoryValue, "Debug level: 0, 1, 2, 4 or'd", "0");
 
-  options_.enroll("input_type", GetLongOption::MandatoryValue,
+  options_.enroll("in_type", GetLongOption::MandatoryValue,
                   "File format for input mesh file (default = exodus)", "exodusii");
 
   options_.enroll("method", GetLongOption::MandatoryValue,
@@ -115,9 +89,36 @@ void SystemInterface::enroll_options()
                   nullptr);
 
   options_.enroll("Partial_read_count", GetLongOption::MandatoryValue,
-                  "Split the coordinate and connetivity reads into a maximum of this many"
-                  " nodes or elements at a time to reduce memory.",
+                  "Split the coordinate and connetivity reads into a\n"
+                  "\t\tmaximum of this many nodes or elements at a time to reduce memory.",
                   "1000000000");
+
+  options_.enroll("max-files", GetLongOption::MandatoryValue,
+                  "Specify maximum number of processor files to write at one time.\n"
+                  "\t\tUsually use default value; this is typically used for debugging.",
+                  nullptr);
+
+  options_.enroll("netcdf4", GetLongOption::NoValue,
+                  "Output database will be a netcdf4 "
+                  "hdf5-based file instead of the "
+                  "classical netcdf file format",
+                  nullptr);
+
+  options_.enroll("64-bit", GetLongOption::NoValue, "Use 64-bit integers on output database",
+                  nullptr);
+
+  options_.enroll("netcdf5", GetLongOption::NoValue,
+                  "Output database will be a netcdf5 (CDF5) "
+                  "file instead of the classical netcdf file format",
+                  nullptr);
+
+  options_.enroll("shuffle", GetLongOption::NoValue,
+                  "Use a netcdf4 hdf5-based file and use hdf5s shuffle mode with compression.",
+                  nullptr);
+
+  options_.enroll("compress", GetLongOption::MandatoryValue,
+                  "Specify the hdf5 compression level [0..9] to be used on the output file.",
+                  nullptr);
 
 #if 0
   options_.enroll("omit_blocks", GetLongOption::MandatoryValue,
@@ -225,12 +226,22 @@ bool SystemInterface::parse_options(int argc, char **argv)
   }
 
   {
+    const char *temp = options_.retrieve("max-files");
+    if (temp != nullptr) {
+      maxFiles_ = strtoul(temp, nullptr, 0);
+    }
+    else {
+      maxFiles_ = get_free_descriptor_count();
+    }
+  }
+
+  {
     const char *temp = options_.retrieve("debug");
     debugLevel_      = strtoul(temp, nullptr, 0);
   }
 
   {
-    const char *temp = options_.retrieve("input_type");
+    const char *temp = options_.retrieve("in_type");
     inputFormat_     = temp;
   }
 
@@ -258,6 +269,27 @@ bool SystemInterface::parse_options(int argc, char **argv)
     const char *temp = options_.retrieve("output_path");
     if (temp != nullptr) {
       outputPath_ = temp;
+    }
+  }
+
+  ints64Bit_ = (options_.retrieve("64-bit") != nullptr);
+
+  if (options_.retrieve("netcdf4") != nullptr) {
+    netcdf4_ = true;
+    netcdf5_ = false;
+  }
+
+  if (options_.retrieve("netcdf5") != nullptr) {
+    netcdf5_ = true;
+    netcdf4_ = false;
+  }
+
+  shuffle_ = (options_.retrieve("shuffle") != nullptr);
+
+  {
+    const char *temp = options_.retrieve("compress");
+    if (temp != nullptr) {
+      compressionLevel_ = std::strtol(temp, nullptr, 10);
     }
   }
 
@@ -528,4 +560,38 @@ namespace {
     }
   }
 #endif
+#include <climits>
+#include <unistd.h>
+
+  int get_free_descriptor_count()
+  {
+// Returns maximum number of files that one process can have open
+// at one time. (POSIX)
+#ifndef _MSC_VER
+    int fdmax = sysconf(_SC_OPEN_MAX);
+    if (fdmax == -1) {
+      /* POSIX indication that there is no limit on open files... */
+      fdmax = INT_MAX;
+    }
+#else
+    int fdmax = _getmaxstdio();
+#endif
+    // File descriptors are assigned in order (0,1,2,3,...) on a per-process
+    // basis.
+
+    // Assume that we have stdin, stdout, stderr, and output exodus
+    // file (4 total).
+
+    return fdmax - 4;
+
+    // Could iterate from 0..fdmax and check for the first
+    // EBADF (bad file descriptor) error return from fcntl, but that takes
+    // too long and may cause other problems.  There is a isastream(filedes)
+    // call on Solaris that can be used for system-dependent code.
+    //
+    // Another possibility is to do an open and see which descriptor is
+    // returned -- take that as 1 more than the current count of open files.
+    //
+  }
+
 } // namespace

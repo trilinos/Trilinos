@@ -583,7 +583,7 @@ RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > TpetraCrsGraph<
     local_graph_type getLocalGraph () const {
       TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
                                  "Epetra does not support Kokkos::StaticCrsGraph!");
-      TEUCHOS_UNREACHABLE_RETURN((Kokkos::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, execution_space>()));
+      TEUCHOS_UNREACHABLE_RETURN((local_graph_type()));
     }
 #endif
 
@@ -906,7 +906,7 @@ RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > TpetraCrsGraph<
     local_graph_type getLocalGraph () const {
       TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
                                  "Epetra does not support Kokkos::StaticCrsGraph!");
-      TEUCHOS_UNREACHABLE_RETURN((Kokkos::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, execution_space>()));
+      TEUCHOS_UNREACHABLE_RETURN((local_graph_type()));
     }
 #endif
 

@@ -63,12 +63,22 @@
 
 namespace Intrepid2
 {
+  //! \brief EmptyBasisFamily allows us to set a default void family for a given topology
+    class EmptyBasisFamily
+    {
+    public:
+      using HGRAD = void;
+      using HCURL = void;
+      using HDIV  = void;
+      using HVOL  = void;
+    };
+  
   /** \class Intrepid2::DerivedBasisFamily
       \brief A family of basis functions, constructed from H(vol) and H(grad) bases on the line.
    
    At present, only hypercube topologies (line, quadrilateral, hexahedron) are supported, but other topologies will be supported in the future.
   */
-  template<class LineBasisHGRAD, class LineBasisHVOL>
+  template<class LineBasisHGRAD, class LineBasisHVOL, class TriangleBasisFamily = EmptyBasisFamily, class TetrahedronBasisFamily = EmptyBasisFamily>
   class DerivedBasisFamily
   {
   public:
@@ -89,11 +99,17 @@ namespace Intrepid2
     using HDIV_QUAD  = Basis_Derived_HDIV_QUAD <HGRAD_LINE, HVOL_LINE>;
     using HVOL_QUAD  = Basis_Derived_HVOL_QUAD <HVOL_LINE>;
     
-    // hexahedral bases
+    // hexahedron bases
     using HGRAD_HEX = Basis_Derived_HGRAD_HEX<HGRAD_LINE>;
     using HCURL_HEX = Basis_Derived_HCURL_HEX<HGRAD_LINE, HVOL_LINE>;
     using HDIV_HEX  = Basis_Derived_HDIV_HEX <HGRAD_LINE, HVOL_LINE>;
     using HVOL_HEX  = Basis_Derived_HVOL_HEX <HVOL_LINE>;
+    
+    // triangle bases
+    using HGRAD_TRI = typename TriangleBasisFamily::HGRAD;
+    
+    // tetrahedron bases
+    using HGRAD_TET = typename TetrahedronBasisFamily::HGRAD;
   };
   
   /** \brief  Factory method for line bases in the given family.
@@ -152,12 +168,12 @@ namespace Intrepid2
     }
   }
   
-  /** \brief  Factory method for isotropic hexahedral bases in the given family.
+  /** \brief  Factory method for isotropic bases on the hexahedron in the given family.
       \param [in] fs        - the function space for the basis.
       \param [in] polyOrder - the polynomial order of the basis.
      */
   template<class BasisFamily>
-  static typename BasisFamily::BasisPtr getHexahedralBasis(Intrepid2::EFunctionSpace fs, int polyOrder)
+  static typename BasisFamily::BasisPtr getHexahedronBasis(Intrepid2::EFunctionSpace fs, int polyOrder)
   {
     using Teuchos::rcp;
     switch (fs)
@@ -171,14 +187,14 @@ namespace Intrepid2
     }
   }
   
-  /** \brief  Factory method for potentially anisotropic hexahedral bases in the given family.
+  /** \brief  Factory method for potentially anisotropic hexahedron bases in the given family.
       \param [in] fs          - the function space for the basis.
       \param [in] polyOrder_x - the polynomial order of the basis in the x dimension.
       \param [in] polyOrder_y - the polynomial order of the basis in the y dimension.
       \param [in] polyOrder_z - the polynomial order of the basis in the z dimension.
      */
   template<class BasisFamily>
-  static typename BasisFamily::BasisPtr getHexahedralBasis(Intrepid2::EFunctionSpace fs, int polyOrder_x, int polyOrder_y, int polyOrder_z)
+  static typename BasisFamily::BasisPtr getHexahedronBasis(Intrepid2::EFunctionSpace fs, int polyOrder_x, int polyOrder_y, int polyOrder_z)
   {
     using Teuchos::rcp;
     switch (fs)
@@ -187,6 +203,44 @@ namespace Intrepid2
       case FUNCTION_SPACE_HCURL: return rcp(new typename BasisFamily::HCURL_HEX(polyOrder_x,polyOrder_y,polyOrder_z));
       case FUNCTION_SPACE_HDIV:  return rcp(new typename BasisFamily::HDIV_HEX (polyOrder_x,polyOrder_y,polyOrder_z));
       case FUNCTION_SPACE_HGRAD: return rcp(new typename BasisFamily::HGRAD_HEX(polyOrder_x,polyOrder_y,polyOrder_z));
+      default:
+        INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported function space");
+    }
+  }
+  
+  /** \brief  Factory method for isotropic tetrahedron bases in the given family.
+      \param [in] fs          - the function space for the basis.
+      \param [in] polyOrder   - the polynomial order of the basis.
+     */
+  template<class BasisFamily>
+  static typename BasisFamily::BasisPtr getTetrahedronBasis(Intrepid2::EFunctionSpace fs, int polyOrder)
+  {
+    using Teuchos::rcp;
+    switch (fs)
+    {
+//      case FUNCTION_SPACE_HVOL:  return rcp(new typename BasisFamily::HVOL_TET (polyOrder));
+//      case FUNCTION_SPACE_HCURL: return rcp(new typename BasisFamily::HCURL_TET(polyOrder));
+//      case FUNCTION_SPACE_HDIV:  return rcp(new typename BasisFamily::HDIV_TET (polyOrder));
+      case FUNCTION_SPACE_HGRAD: return rcp(new typename BasisFamily::HGRAD_TET(polyOrder));
+      default:
+        INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported function space");
+    }
+  }
+  
+  /** \brief  Factory method for isotropic triangle bases in the given family.
+      \param [in] fs          - the function space for the basis.
+      \param [in] polyOrder   - the polynomial order of the basis.
+     */
+  template<class BasisFamily>
+  static typename BasisFamily::BasisPtr getTriangleBasis(Intrepid2::EFunctionSpace fs, int polyOrder)
+  {
+    using Teuchos::rcp;
+    switch (fs)
+    {
+//      case FUNCTION_SPACE_HVOL:  return rcp(new typename BasisFamily::HVOL_TRI (polyOrder));
+//      case FUNCTION_SPACE_HCURL: return rcp(new typename BasisFamily::HCURL_TRI(polyOrder));
+//      case FUNCTION_SPACE_HDIV:  return rcp(new typename BasisFamily::HDIV_TRI (polyOrder));
+      case FUNCTION_SPACE_HGRAD: return rcp(new typename BasisFamily::HGRAD_TRI(polyOrder));
       default:
         INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported function space");
     }
@@ -208,7 +262,9 @@ namespace Intrepid2
     {
       case shards::Line<>::key:          return getLineBasis<BasisFamily>(fs,polyOrder);
       case shards::Quadrilateral<>::key: return getQuadrilateralBasis<BasisFamily>(fs,polyOrder);
-      case shards::Hexahedron<>::key:    return getHexahedralBasis<BasisFamily>(fs,polyOrder);
+      case shards::Triangle<>::key:      return getTriangleBasis<BasisFamily>(fs,polyOrder);
+      case shards::Hexahedron<>::key:    return getHexahedronBasis<BasisFamily>(fs,polyOrder);
+      case shards::Tetrahedron<>::key:   return getTetrahedronBasis<BasisFamily>(fs,polyOrder);
       default:
         INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported cell topology");
     }

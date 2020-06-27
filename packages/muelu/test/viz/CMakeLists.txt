@@ -25,7 +25,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../unit_tests)
 # Tests
 #
 
-IF (${PACKAGE_NAME}_ENABLE_Galeri)
+
 
 IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
 
@@ -51,7 +51,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
       NUM_MPI_PROCS 4
       COMM serial mpi
       )
-      
+
     # Test Epetra variant, too.
     IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PACKAGE_NAME}_ENABLE_Ifpack  AND ${PACKAGE_NAME}_ENABLE_Amesos AND (NOT Xpetra_INT_LONG_LONG))
 
@@ -62,7 +62,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
         NUM_MPI_PROCS 4
         COMM serial mpi
         )
-  
+
       TRIBITS_ADD_TEST(
         Viz
         NAME "Viz2DEpetra"
@@ -72,7 +72,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
         )
 
     ENDIF() #endif Epetra
-      
+
   ENDIF()
 
 ENDIF()
@@ -82,6 +82,3 @@ ENDIF()
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Viz_cp
     SOURCE_FILES viztest.xml
     )
-
-
-ENDIF() # Galeri

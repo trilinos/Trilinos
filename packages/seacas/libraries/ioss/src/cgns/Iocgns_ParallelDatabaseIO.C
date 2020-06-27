@@ -3,37 +3,11 @@
 // * Single Base.
 // * ZoneGridConnectivity is 1to1 with point lists for unstructured
 
-// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//
-//     * Neither the name of NTESS nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+// See packages/seacas/LICENSE for details
 
 #include <cgns/Iocgns_Defines.h>
 
@@ -183,6 +157,14 @@ namespace Iocgns {
       if (properties.exists("FLUSH_INTERVAL")) {
         m_flushInterval = properties.get("FLUSH_INTERVAL").get_int();
       }
+
+      {
+        bool file_per_state = false;
+        Ioss::Utils::check_set_bool_property(properties, "FILE_PER_STATE", file_per_state);
+        if (file_per_state) {
+          set_file_per_state(true);
+        }
+      }
     }
 
     Ioss::DatabaseIO::openDatabase__();
@@ -194,6 +176,7 @@ namespace Iocgns {
       delete gtb.second;
     }
     try {
+      closeBaseDatabase__();
       closeDatabase__();
     }
     catch (...) {
@@ -250,7 +233,8 @@ namespace Iocgns {
         double t_end    = Ioss::Utils::timer();
         double duration = util().global_minmax(t_end - t_begin, Ioss::ParallelUtils::DO_MAX);
         if (myProcessor == 0) {
-          fmt::print(stderr, "{} File Open Time = {}\n", is_input() ? "Input" : "Output", duration);
+          fmt::print(Ioss::DEBUG(), "{} File Open Time = {}\n", is_input() ? "Input" : "Output",
+                     duration);
         }
       }
 
@@ -292,6 +276,27 @@ namespace Iocgns {
     assert(m_cgnsFilePtr >= 0);
   }
 
+  void ParallelDatabaseIO::closeBaseDatabase__() const
+  {
+    if (m_cgnsBasePtr > 0) {
+      bool do_timer = false;
+      Ioss::Utils::check_set_bool_property(properties, "IOSS_TIME_FILE_OPEN_CLOSE", do_timer);
+      double t_begin = (do_timer ? Ioss::Utils::timer() : 0);
+
+      CGCHECKM(cg_close(m_cgnsBasePtr));
+      m_cgnsBasePtr = -1;
+
+      if (do_timer) {
+        double t_end    = Ioss::Utils::timer();
+        double duration = util().global_minmax(t_end - t_begin, Ioss::ParallelUtils::DO_MAX);
+        if (myProcessor == 0) {
+          fmt::print(Ioss::DEBUG(), "{} Base File Close Time = {}\n", is_input() ? "Input" : "Output",
+                     duration);
+        }
+      }
+    }
+  }
+
   void ParallelDatabaseIO::closeDatabase__() const
   {
     if (m_cgnsFilePtr > 0) {
@@ -305,7 +310,8 @@ namespace Iocgns {
         double t_end    = Ioss::Utils::timer();
         double duration = util().global_minmax(t_end - t_begin, Ioss::ParallelUtils::DO_MAX);
         if (myProcessor == 0) {
-          fmt::print(stderr, "{} File Close Time = {}\n", is_input() ? "Input" : "Output", duration);
+          fmt::print(Ioss::DEBUG(), "{} File Close Time = {}\n", is_input() ? "Input" : "Output",
+                     duration);
         }
       }
       closeDW();
@@ -324,7 +330,14 @@ namespace Iocgns {
     }
 
     if (!m_dbFinalized) {
-      Utils::finalize_database(get_file_pointer(), m_timesteps, get_region(), myProcessor, true);
+      int file_ptr;
+      if (get_file_per_state()) {
+        file_ptr = m_cgnsBasePtr;
+      }
+      else {
+        file_ptr = get_file_pointer();
+      }
+      Utils::finalize_database(file_ptr, m_timesteps, get_region(), myProcessor, true);
       m_dbFinalized = true;
     }
   }
@@ -387,6 +400,11 @@ namespace Iocgns {
     assert(decomp != nullptr);
     decomp->decompose_model(get_file_pointer(), m_meshType);
 
+    // ========================================================================
+    // Get the number of assemblies in the mesh...
+    // Will be the 'families' that contain nodes of 'FamVC_*'
+    Utils::add_assemblies(get_file_pointer(), this);
+
     if (m_meshType == Ioss::MeshType::STRUCTURED) {
       handle_structured_blocks();
     }
@@ -439,9 +457,11 @@ namespace Iocgns {
       eblock->property_add(Ioss::Property("original_block_order", i++));
       get_region()->add(eblock);
 #if IOSS_DEBUG_OUTPUT
-      fmt::print(stderr, "Added block {}, IOSS topology = '{}' with {} element.\n", block.name(),
-                 element_topo, block.ioss_count());
+      fmt::print(Ioss::DEBUG(), "Added block {}, IOSS topology = '{}' with {} element.\n",
+                 block.name(), element_topo, block.ioss_count());
 #endif
+      // See if this zone/block is a member of any assemblies...
+      Utils::add_to_assembly(get_file_pointer(), get_region(), eblock, base, block.zone());
     }
 
     // ========================================================================
@@ -455,7 +475,8 @@ namespace Iocgns {
         std::string block_name = fmt::format("{}/{}", zone.m_name, sset.name());
         std::string face_topo  = sset.topologyType;
 #if IOSS_DEBUG_OUTPUT
-        fmt::print(stderr, "Processor {}: Added sideblock '{}' of topo {} with {} faces to sset '{}'\n",
+        fmt::print(Ioss::DEBUG(),
+                   "Processor {}: Added sideblock '{}' of topo {} with {} faces to sset '{}'\n",
                    myProcessor, block_name, face_topo, sset.ioss_count(), ioss_sset->name());
 #endif
         const auto &block = decomp->m_elementBlocks[sset.parentBlockIndex];
@@ -585,9 +606,12 @@ namespace Iocgns {
         int64_t guid = util().generate_guid(zone->m_adam->m_zone);
         block->property_add(Ioss::Property("guid", guid));
 
+        // See if this zone/block is a member of any assemblies...
+        Utils::add_to_assembly(get_file_pointer(), get_region(), block, base, zone->m_adam->m_zone);
+
 #if IOSS_DEBUG_OUTPUT
-        fmt::print(stderr, "Added block {}, Structured with ID = {}, GUID = {}\n", block_name,
-                   zone->m_adam->m_zone, guid);
+        fmt::print(Ioss::DEBUG(), "Added block {}, Structured with ID = {}, GUID = {}\n",
+                   block_name, zone->m_adam->m_zone, guid);
 #endif
       }
     }
@@ -849,17 +873,17 @@ namespace Iocgns {
             common = intersect(I_nodes, J_nodes);
 
 #if IOSS_DEBUG_OUTPUT
-            fmt::print(stderr, "Zone {}: {}, Donor Zone {}: {} Common: {}\n\t", zone,
+            fmt::print(Ioss::DEBUG(), "Zone {}: {}, Donor Zone {}: {} Common: {}\n\t", zone,
                        I_nodes.size(), dzone, J_nodes.size(), common.size());
 
             for (const auto &p : common) {
-              fmt::print(stderr, "{}, ", p.first);
+              fmt::print(Ioss::DEBUG(), "{}, ", p.first);
             }
-            fmt::print(stderr, "\n\t");
+            fmt::print(Ioss::DEBUG(), "\n\t");
             for (const auto &p : common) {
-              fmt::print(stderr, "{}, ", p.second);
+              fmt::print(Ioss::DEBUG(), "{}, ", p.second);
             }
-            fmt::print(stderr, "\n");
+            fmt::print(Ioss::DEBUG(), "\n");
 #endif
           }
 
@@ -914,6 +938,39 @@ namespace Iocgns {
     return true;
   }
 
+  void ParallelDatabaseIO::free_state_pointer()
+  {
+    // If this is the first state file created, then we need to save a reference
+    // to the base CGNS file so we can update the metadata and create links to
+    // the state files (if we are using the file-per-state option)
+    if (m_cgnsBasePtr < 0) {
+      m_cgnsBasePtr = m_cgnsFilePtr;
+      m_cgnsFilePtr = -1;
+    }
+    closeDatabase__();
+  }
+
+  void ParallelDatabaseIO::open_state_file(int state)
+  {
+    // Close current state file (if any)...
+    free_state_pointer();
+
+    // Update filename to append state count...
+    decodedFilename.clear();
+
+    Ioss::FileInfo db(originalDBFilename);
+    std::string    new_filename;
+    if (!db.pathname().empty()) {
+      new_filename += db.pathname() + "/";
+    }
+
+    new_filename += fmt::format("{}-SolutionAtStep{:05}.{}", db.basename(), state, db.extension());
+
+    DBFilename = new_filename;
+
+    Iocgns::Utils::write_state_meta_data(get_file_pointer(), *get_region(), true);
+  }
+
   bool ParallelDatabaseIO::end__(Ioss::State state)
   {
     // Transitioning out of state 'state'
@@ -944,7 +1001,12 @@ namespace Iocgns {
     if (is_input()) {
       return true;
     }
-    Utils::write_flow_solution_metadata(get_file_pointer(), get_region(), state,
+    if (get_file_per_state()) {
+      // Close current state file (if any); create new state file and output metadata...
+      open_state_file(state);
+      write_results_meta_data();
+    }
+    Utils::write_flow_solution_metadata(get_file_pointer(), m_cgnsBasePtr, get_region(), state,
                                         &m_currentVertexSolutionIndex,
                                         &m_currentCellCenterSolutionIndex, true);
     m_dbFinalized = false;
@@ -1991,6 +2053,14 @@ namespace Iocgns {
         eb->property_update("guid", util().generate_guid(zone));
         eb->property_update("section", 1);
         eb->property_update("base", base);
+        eb->property_update("zone_node_count", size[0]);
+        eb->property_update("zone_element_count", size[1]);
+
+        if (eb->property_exists("assembly")) {
+          std::string assembly = eb->get_property("assembly").get_string();
+          CGCHECKM(cg_goto(get_file_pointer(), base, "Zone_t", zone, "end"));
+          CGCHECKM(cg_famname_write(assembly.c_str()));
+        }
 
         if (size[1] > 0) {
           CG_ElementType_t type = Utils::map_topology_to_cgns(eb->topology()->name());
@@ -2355,8 +2425,8 @@ namespace Iocgns {
         //       of the nodes instead of the element/side info.
         // Get name from parent sideset...  This is name of the ZoneBC entry
         auto &name = sb->owner()->name();
-	// This is the name of the BC_t node 
-	auto sb_name = Iocgns::Utils::decompose_sb_name(sb->name());
+        // This is the name of the BC_t node
+        auto sb_name = Iocgns::Utils::decompose_sb_name(sb->name());
 
         CGNSIntVector point_range{cg_start, cg_end};
         CGCHECKM(cg_boco_write(get_file_pointer(), base, zone, name.c_str(), CG_FamilySpecified,
@@ -2406,6 +2476,17 @@ namespace Iocgns {
         }
         CGCHECKM(cgp_parent_data_write(get_file_pointer(), base, zone, sect, cg_start, cg_end, xx));
         m_bcOffset[zone] += size;
+      }
+      else if (field.get_name() == "distribution_factors") {
+        static bool warning_output = false;
+        if (!warning_output) {
+          if (myProcessor == 0) {
+            fmt::print(Ioss::WARNING(),
+                       "For CGNS output, the sideset distribution factors are not output.\n");
+          }
+          warning_output = true;
+        }
+        return 0;
       }
       else {
         num_to_get = Ioss::Utils::field_warning(sb, field, "output");

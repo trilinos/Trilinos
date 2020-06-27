@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 2.0
-//              Copyright (2014) Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -52,7 +53,8 @@
 #include <impl/Kokkos_FunctorAnalysis.hpp>
 #include <impl/Kokkos_HostBarrier.hpp>
 
-#include <limits>  // std::numeric_limits
+#include <limits>     // std::numeric_limits
+#include <algorithm>  // std::max
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -187,9 +189,9 @@ class HostThreadTeamData {
   constexpr HostThreadTeamData() noexcept
       : m_work_range(-1, -1),
         m_work_end(0),
-        m_scratch(0),
-        m_pool_scratch(0),
-        m_team_scratch(0),
+        m_scratch(nullptr),
+        m_pool_scratch(nullptr),
+        m_team_scratch(nullptr),
         m_pool_rank(0),
         m_pool_size(1),
         m_team_reduce(0),
@@ -537,6 +539,8 @@ class HostThreadTeamMember {
   }
 #else
   {
+    (void)value;
+    (void)source_team_rank;
     Kokkos::abort("HostThreadTeamMember team_broadcast\n");
   }
 #endif
@@ -573,6 +577,9 @@ class HostThreadTeamMember {
   }
 #else
   {
+    (void)f;
+    (void)value;
+    (void)source_team_rank;
     Kokkos::abort("HostThreadTeamMember team_broadcast\n");
   }
 #endif
@@ -639,6 +646,8 @@ class HostThreadTeamMember {
   }
 #else
   {
+    (void)reducer;
+    (void)contribution;
     Kokkos::abort("HostThreadTeamMember team_reduce\n");
   }
 #endif
@@ -692,8 +701,8 @@ class HostThreadTeamMember {
 #endif*/
 
   template <typename T>
-  KOKKOS_INLINE_FUNCTION T team_scan(T const& value, T* const global = 0) const
-      noexcept
+  KOKKOS_INLINE_FUNCTION T team_scan(T const& value,
+                                     T* const global = nullptr) const noexcept
 #if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
   {
     if (0 != m_data.m_team_rank) {
@@ -750,6 +759,8 @@ class HostThreadTeamMember {
   }
 #else
   {
+    (void)value;
+    (void)global;
     Kokkos::abort("HostThreadTeamMember team_scan\n");
     return T();
   }

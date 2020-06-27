@@ -52,6 +52,7 @@
 
 #include "Intrepid2_HierarchicalBasisFamily.hpp"
 #include "Intrepid2_NodalBasisFamily.hpp"
+#include "Intrepid2_Polynomials.hpp"
 #include "Intrepid2_Types.hpp"
 
 #include "Intrepid2_TestUtils.hpp"
@@ -61,6 +62,174 @@
 namespace
 {
   using namespace Intrepid2;
+  
+  template<typename Scalar>
+  Scalar integratedJacobi(Scalar x, Scalar t, double alpha, const int n, const int derivativeOrder = 0)
+  {
+    // ideally, we would have closed-form expressions somewhere in here, as we do for integrated Legendre below
+    // for now, though, this is just a thin wrapper around the call to Intrepid2::Polynomials::integratedJacobiValues()
+    auto values = getView<Scalar>("integrated Jacobi values", n+1);
+    Polynomials::integratedJacobiValues(values, alpha, n, x, t);
+    return values(n);
+  }
+  
+  template<typename Scalar>
+  Scalar integratedLegendreAnalytic(Scalar x, const int n, bool useMinusOneToOne, const int derivativeOrder = 0)
+  {
+    // formulas below are for x in [-1,1]; if we are using [0,1], need to remap appropriately:
+    const double derivativeScaling = useMinusOneToOne ? 1.0 : pow(2.0, derivativeOrder);
+    if (!useMinusOneToOne)
+    {
+      x = 2.0 * x - 1.0;
+    }
+    Scalar value;
+    switch (derivativeOrder)
+    {
+      case 0:
+        switch (n)
+      {
+        case 0:
+          value = (1.0-x)/2.0;                   // left vertex function (node at -1)
+          break;
+        case 1:
+          value = (1.0+x)/2.0;                   // right vertex function (node at 1)
+          break;
+        case 2:
+          value = (x*x-1.0)/4.0;                 // L_2 : (x^2 - 1) / 4
+          break;
+        case 3:
+          value = (x*x*x-x)/4.0;                 // L_3 : (x^3 - x) / 4
+          break;
+        case 4:
+          value = (5.*x*x*x*x - 6.*x*x+1.)/16.0; // L_4 : (5x^4-6x^2+1) / 16
+          break;
+        default:
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "unsupported n");
+      }
+        break;
+      case 1:
+        switch (n)
+      {
+        case 0:
+          value = -1.0/2.0;              // left vertex function (node at -1)
+          break;
+        case 1:
+          value = 1.0/2.0;               // right vertex function (node at 1)
+          break;
+        case 2:
+          value = x/2.0;                 // L_2 : (x^2 - 1) / 4
+          break;
+        case 3:
+          value = (3.0*x*x-1.0)/4.0;     // L_3 : (x^3 - x) / 4
+          break;
+        case 4:
+          value = (5.*x*x*x - 3.*x)/4.0; // L_4 : (5x^4-6x^2+1) / 16
+          break;
+        default:
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "unsupported n");
+      }
+        break;
+      case 2:
+        switch (n)
+      {
+        case 0:
+          value = 0.0;               // left vertex function (node at -1)
+          break;
+        case 1:
+          value = 0.0;               // right vertex function (node at 1)
+          break;
+        case 2:
+          value = 1.0/2.0;           // L_2 : (x^2 - 1) / 4
+          break;
+        case 3:
+          value = 3.0*x/2.0;         // L_3 : (x^3 - x) / 4
+          break;
+        case 4:
+          value = (15.*x*x - 3.)/4.; // L_4 : (5x^4-6x^2+1) / 16
+          break;
+        default:
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "unsupported n");
+      }
+        break;
+      case 3:
+        switch (n)
+      {
+        case 0:
+          value = 0.0;               // left vertex function (node at -1)
+          break;
+        case 1:
+          value = 0.0;               // right vertex function (node at 1)
+          break;
+        case 2:
+          value = 0.0;               // L_2 : (x^2 - 1) / 4
+          break;
+        case 3:
+          value = 3.0/2.0;           // L_3 : (x^3 - x) / 4
+          break;
+        case 4:
+          value = (15.*x)/2.;        // L_4 : (5x^4-6x^2+1) / 16
+          break;
+        default:
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "unsupported n");
+      }
+        break;
+      case 4:
+        switch (n)
+      {
+        case 0:
+          value = 0.0;           // left vertex function (node at -1)
+          break;
+        case 1:
+          value = 0.0;           // right vertex function (node at 1)
+          break;
+        case 2:
+          value = 0.0;           // L_2 : (x^2 - 1) / 4
+          break;
+        case 3:
+          value = 0.0;           // L_3 : (x^3 - x) / 4
+          break;
+        case 4:
+          value = 15./2.;        // L_4 : (5x^4-6x^2+1) / 16
+          break;
+        default:
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "unsupported n");
+      }
+        break;
+      default:
+        value = 0.0;
+    }
+    return value * derivativeScaling;
+  }
+  
+  template<typename Scalar>
+  Scalar shiftedScaledIntegratedLegendreAnalytic(Scalar x, Scalar t, const int n)
+  {
+    bool useMinusOneToOne = false; // our domain is [0,1]
+    const int derivativeOrder = 0;
+    double tol = 1e-15;
+    using std::abs;
+    if ((n == 0) || (n == 1))
+    {
+      // linear in x: scaling by t cancels
+      return integratedLegendreAnalytic(x, n, useMinusOneToOne, derivativeOrder);
+    }
+    else if (abs(t) < tol)
+    {
+      // define a scaling by 0 to be 0 (does this match what Fuentes et al do??)
+      // even if this isn't perfectly general, it works for our tests (at least for OPERATOR_VALUE):
+      // we only ever will end up with t=0 for edge functions on the triangle, evaluated at a vertex.  These vanish.
+      return 0.0;
+    }
+    else
+    {
+      Scalar tPower = 1.0;
+      for (int i=0; i<n; i++)
+      {
+        tPower *= t;
+      }
+      return tPower * integratedLegendreAnalytic(Scalar(x/t), n, useMinusOneToOne);
+    }
+  }
   
   template<typename ExecutionSpace=Kokkos::DefaultExecutionSpace,
            typename OutputScalar = double,
@@ -92,63 +261,35 @@ namespace
       int pointPassed = true;
       PointScalar x = inputPointsViewHost(pointOrdinal,0);
       
+      const bool useMinusOneToOne = true; // Intrepid2's reference element
+      int derivativeOrder;
+      
       switch (op)
       {
         case Intrepid2::OPERATOR_VALUE:
-          expectedValuesViewHost(0) = (1.0-x)/2.0;                   // left vertex function (node at -1)
-          expectedValuesViewHost(1) = (1.0+x)/2.0;                   // right vertex function (node at 1)
-          expectedValuesViewHost(2) = (x*x-1.0)/4.0;                 // L_2 : (x^2 - 1) / 4
-          expectedValuesViewHost(3) = (x*x*x-x)/4.0;                 // L_3 : (x^3 - x) / 4
-          expectedValuesViewHost(4) = (5.*x*x*x*x - 6.*x*x+1.)/16.0; // L_4 : (5x^4-6x^2+1) / 16
+          derivativeOrder = 0;
           break;
         case Intrepid2::OPERATOR_GRAD:
+          derivativeOrder = 1;
+          break;
         case Intrepid2::OPERATOR_D1:
-          // first derivatives of the above:
-          expectedValuesViewHost(0) = -1.0/2.0;              // left vertex function (node at -1)
-          expectedValuesViewHost(1) = 1.0/2.0;               // right vertex function (node at 1)
-          expectedValuesViewHost(2) = x/2.0;                 // L_2 : (x^2 - 1) / 4
-          expectedValuesViewHost(3) = (3.0*x*x-1.0)/4.0;     // L_3 : (x^3 - x) / 4
-          expectedValuesViewHost(4) = (5.*x*x*x - 3.*x)/4.0; // L_4 : (5x^4-6x^2+1) / 16
-          break;
         case Intrepid2::OPERATOR_D2:
-          // second derivatives:
-          expectedValuesViewHost(0) = 0.0;               // left vertex function (node at -1)
-          expectedValuesViewHost(1) = 0.0;               // right vertex function (node at 1)
-          expectedValuesViewHost(2) = 1.0/2.0;           // L_2 : (x^2 - 1) / 4
-          expectedValuesViewHost(3) = 3.0*x/2.0;         // L_3 : (x^3 - x) / 4
-          expectedValuesViewHost(4) = (15.*x*x - 3.)/4.; // L_4 : (5x^4-6x^2+1) / 16
-          break;
         case Intrepid2::OPERATOR_D3:
-          // third derivatives:
-          expectedValuesViewHost(0) = 0.0;               // left vertex function (node at -1)
-          expectedValuesViewHost(1) = 0.0;               // right vertex function (node at 1)
-          expectedValuesViewHost(2) = 0.0;               // L_2 : (x^2 - 1) / 4
-          expectedValuesViewHost(3) = 3.0/2.0;           // L_3 : (x^3 - x) / 4
-          expectedValuesViewHost(4) = (15.*x)/2.;        // L_4 : (5x^4-6x^2+1) / 16
-          break;
         case Intrepid2::OPERATOR_D4:
-          // fourth derivatives:
-          expectedValuesViewHost(0) = 0.0;           // left vertex function (node at -1)
-          expectedValuesViewHost(1) = 0.0;           // right vertex function (node at 1)
-          expectedValuesViewHost(2) = 0.0;           // L_2 : (x^2 - 1) / 4
-          expectedValuesViewHost(3) = 0.0;           // L_3 : (x^3 - x) / 4
-          expectedValuesViewHost(4) = 15./2.;        // L_4 : (5x^4-6x^2+1) / 16
-          break;
         case Intrepid2::OPERATOR_D5:
         case Intrepid2::OPERATOR_D6:
         case Intrepid2::OPERATOR_D7:
         case Intrepid2::OPERATOR_D8:
         case Intrepid2::OPERATOR_D9:
         case Intrepid2::OPERATOR_D10:
-          // fourth derivatives:
-          expectedValuesViewHost(0) = 0.0;           // left vertex function (node at -1)
-          expectedValuesViewHost(1) = 0.0;           // right vertex function (node at 1)
-          expectedValuesViewHost(2) = 0.0;           // L_2 : (x^2 - 1) / 4
-          expectedValuesViewHost(3) = 0.0;           // L_3 : (x^3 - x) / 4
-          expectedValuesViewHost(4) = 0.0;           // L_4 : (5x^4-6x^2+1) / 16
+          derivativeOrder = op - OPERATOR_D1 + 1;
           break;
         default:
           INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported operator");
+      }
+      for (int n=0; n<polyOrder+1; n++)
+      {
+        expectedValuesViewHost(n) = integratedLegendreAnalytic(x, n, useMinusOneToOne, derivativeOrder);
       }
       
       for (int fieldOrdinal=0; fieldOrdinal<hgradBasis->getCardinality(); fieldOrdinal++)
@@ -339,6 +480,208 @@ namespace
     }
   }
   
+  template<typename ExecutionSpace=Kokkos::DefaultExecutionSpace,
+           typename OutputScalar = double,
+           typename PointScalar  = double>
+  void testHierarchicalHGRAD_TRIANGLE_MatchesAnalyticValues(Intrepid2::EOperator op, const double tol, Teuchos::FancyOStream &out, bool &success)
+  {
+    using namespace Intrepid2;
+    using BasisFamily = HierarchicalBasisFamily<ExecutionSpace,OutputScalar,PointScalar>;
+    
+    const int spaceDim  = 2;
+    const int polyOrder = 4;
+    auto hgradBasis = getTriangleBasis<BasisFamily>(FUNCTION_SPACE_HGRAD, polyOrder);
+    
+    const int numVertices                  = 3;
+    const int numFunctionsPerVertex        = 1;
+    const int numVertexFunctionsExpected   = numVertices * numFunctionsPerVertex;
+    const int numEdges                     = 3;
+    const int num1DEdgeFunctions           = (polyOrder + 1) - 2; // line basis cardinality, minus two vertex functions
+    const int numEdgeFunctionsExpected     = num1DEdgeFunctions * numEdges;
+    const int numInteriorFunctionsExpected = (num1DEdgeFunctions-1)*num1DEdgeFunctions/2; // triangular sum
+    const int expectedCardinality = numVertexFunctionsExpected + numEdgeFunctionsExpected + numInteriorFunctionsExpected;
+    
+    TEST_EQUALITY(expectedCardinality, hgradBasis->getCardinality());
+    // could also test vertex/edge/face function count individually (worth doing, I think)
+    
+    int numPoints_1D = 5;
+    shards::CellTopology triangleTopo = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<> >() );
+    auto inputPointsView = getInputPointsView<PointScalar>(triangleTopo, numPoints_1D);
+    
+    const int numPoints = inputPointsView.extent_int(0);
+        
+    auto hgradOutputView = getOutputView<OutputScalar>(FUNCTION_SPACE_HGRAD, op, hgradBasis->getCardinality(), numPoints, spaceDim);
+    hgradBasis->getValues(hgradOutputView, inputPointsView, op);
+    
+    auto hgradOutputViewHost  = getHostCopy(hgradOutputView);
+    auto inputPointsViewHost = getHostCopy(inputPointsView);
+    
+    ViewType<OutputScalar> expectedValuesView = getOutputView<OutputScalar>(FUNCTION_SPACE_HGRAD, op, hgradBasis->getCardinality(), numPoints, spaceDim);
+    auto expectedValuesViewHost = getHostCopy(expectedValuesView);
+    
+    auto legendreValuesAtPoint = getView<OutputScalar>("Legendre values temporary storage", polyOrder+1);
+    auto legendreValuesAtPointHost = getHostCopy(legendreValuesAtPoint);
+    
+    for (int pointOrdinal=0; pointOrdinal<numPoints; pointOrdinal++)
+    {
+      int pointPassed = true;
+      PointScalar x = inputPointsViewHost(pointOrdinal,0);
+      PointScalar y = inputPointsViewHost(pointOrdinal,1);
+      
+      out << "Checking point (" << x << "," << y << ")\n";
+      
+      // write as barycentric coordinates:
+      const PointScalar lambda[3] = {1. - x - y, x, y};
+      const int edge_start[3] = {0,1,0};
+      const int edge_end[3]   = {1,2,2};
+      
+      switch (op)
+      {
+        case Intrepid2::OPERATOR_VALUE:
+        {
+          // vertex polynomials come first, according to vertex ordering: (0,0), (1,0), (0,1)
+          for (int vertexOrdinal=0; vertexOrdinal<numVertexFunctionsExpected; vertexOrdinal++)
+          {
+            expectedValuesViewHost(vertexOrdinal,pointOrdinal) = lambda[vertexOrdinal];
+          }
+          
+          int fieldOrdinalOffset = 3;
+          for (int edgeOrdinal=0; edgeOrdinal<numEdges; edgeOrdinal++)
+          {
+            const auto & s0 = lambda[edge_start[edgeOrdinal]];
+            const auto & s1 = lambda[edge_end[edgeOrdinal]];
+            const PointScalar t = s0 + s1;
+            
+            for (int edgeFunctionOrdinal=0; edgeFunctionOrdinal<num1DEdgeFunctions; edgeFunctionOrdinal++)
+            {
+              expectedValuesViewHost(edgeFunctionOrdinal+fieldOrdinalOffset,pointOrdinal) = shiftedScaledIntegratedLegendreAnalytic(s1, t, edgeFunctionOrdinal+2);
+            }
+            fieldOrdinalOffset += num1DEdgeFunctions;
+          }
+          // face functions
+          for (int i=2; i<polyOrder; i++)
+          {
+            // we use edge function values from the 01 edge and blend with integrated Jacobi
+            // the 01 edge function values start just after the vertex functions; since i starts at 2, our offset is therefore 1:
+            const int offset = numVertexFunctionsExpected - 2;
+            const OutputScalar & edgeFunctionValue = expectedValuesViewHost(i+offset,pointOrdinal);
+            double alpha = i * 2.0;
+            for (int j=1; i+j<=polyOrder; j++)
+            {
+              const PointScalar  &x = lambda[2];
+              const PointScalar   t = 1.0;
+              const OutputScalar jacobiValue = integratedJacobi(x, t, alpha, j);
+              expectedValuesViewHost(fieldOrdinalOffset,pointOrdinal) = edgeFunctionValue * jacobiValue;
+              fieldOrdinalOffset++;
+            }
+          }
+        }
+          break;
+//        case Intrepid2::OPERATOR_GRAD:
+//        case Intrepid2::OPERATOR_D1:
+//          // first derivatives of the above:
+//          expectedValues[0] = 0.0;                      // P_0 : 1
+//          expectedValues[1] = 1.0;                      // P_1 : x
+//          expectedValues[2] = 3.*x;                     // P_2 : (3x^2 - 1) / 2
+//          expectedValues[3] = (15.0*x*x-3.0)/2.0;       // P_3 : (5x^3 - 3x) / 2
+//          expectedValues[4] = (35.*x*x*x - 15.*x)/2.0;  // P_4 : (35x^4-30x^2+3) / 8
+//          break;
+//        case Intrepid2::OPERATOR_D2:
+//          // second derivatives:
+//          expectedValues[0] = 0.0;                 // P_0 : 1
+//          expectedValues[1] = 0.0;                 // P_1 : x
+//          expectedValues[2] = 3.0;                 // P_2 : (3x^2 - 1) / 2
+//          expectedValues[3] = 15.0*x;              // P_3 : (5x^3 - 3x) / 2
+//          expectedValues[4] = (105.*x*x - 15.)/2.; // P_4 : (35x^4-30x^2+3) / 8
+//          break;
+//        case Intrepid2::OPERATOR_D3:
+//          // third derivatives:
+//          expectedValues[0] = 0.0;           // P_0 : 1
+//          expectedValues[1] = 0.0;           // P_1 : x
+//          expectedValues[2] = 0.0;           // P_2 : (3x^2 - 1) / 2
+//          expectedValues[3] = 15.0;          // P_3 : (5x^3 - 3x) / 2
+//          expectedValues[4] = 105.*x;        // P_4 : (35x^4-30x^2+3) / 8
+//          break;
+//        case Intrepid2::OPERATOR_D4:
+//          // fourth derivatives:
+//          expectedValues[0] = 0.0;           // P_0 : 1
+//          expectedValues[1] = 0.0;           // P_1 : x
+//          expectedValues[2] = 0.0;           // P_2 : (3x^2 - 1) / 2
+//          expectedValues[3] = 0.0;           // P_3 : (5x^3 - 3x) / 2
+//          expectedValues[4] = 105.;          // P_4 : (35x^4-30x^2+3) / 8
+//          break;
+//        case Intrepid2::OPERATOR_D5:
+//        case Intrepid2::OPERATOR_D6:
+//        case Intrepid2::OPERATOR_D7:
+//        case Intrepid2::OPERATOR_D8:
+//        case Intrepid2::OPERATOR_D9:
+//        case Intrepid2::OPERATOR_D10:
+//          // nth (n≥5) derivatives are all 0:
+//          expectedValues[0] = 0.0;           // P_0 : 1
+//          expectedValues[1] = 0.0;           // P_1 : x
+//          expectedValues[2] = 0.0;           // P_2 : (3x^2 - 1) / 2
+//          expectedValues[3] = 0.0;           // P_3 : (5x^3 - 3x) / 2
+//          expectedValues[4] = 0.0;           // P_4 : (35x^4-30x^2+3) / 8
+//          break;
+        default:
+          INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported operator");
+      }
+      
+      for (int fieldOrdinal=0; fieldOrdinal<hgradBasis->getCardinality(); fieldOrdinal++)
+      {
+        for (int d=0; d<hgradOutputViewHost.extent_int(2); d++)
+        {
+          OutputScalar actual    = hgradOutputViewHost.access(fieldOrdinal,pointOrdinal,d);
+          OutputScalar expected  = expectedValuesViewHost.access(fieldOrdinal,pointOrdinal,d);
+        
+          bool valuesMatch = true;
+          bool valuesAreBothSmall = valuesAreSmall(actual, expected, tol);
+          if (!valuesAreBothSmall)
+          {
+            TEUCHOS_TEST_FLOATING_EQUALITY(actual, expected, tol, out, valuesMatch);
+          }
+        
+          if (!valuesMatch)
+          {
+            pointPassed = false;
+            PointScalar x = inputPointsViewHost(pointOrdinal,0);
+            PointScalar y = inputPointsViewHost(pointOrdinal,1);
+            if (op == OPERATOR_VALUE) out << "values";
+            else
+            {
+              int derivativeOrder = getOperatorOrder(op);
+              if (derivativeOrder == 1)
+              {
+                out << "first ";
+              }
+              else if (derivativeOrder == 2)
+              {
+                out << "second ";
+              }
+              else if (derivativeOrder == 3)
+              {
+                out << "third ";
+              }
+              else
+              {
+                out << derivativeOrder << "th ";
+              }
+              out << "derivatives";
+            }
+            out << " for ("  << x << "," << y << ") differ for field ordinal " << fieldOrdinal;
+            out << ": expected " << expected << "; actual " << actual;
+            out << " (diff: " << expected-actual << ")" << std::endl;
+            success = false;
+          }
+        }
+      }
+      if (!pointPassed)
+      {
+        out << "point " << pointOrdinal << " failed.\n";
+      }
+    }
+  }
+  
   // compare derivatives of order derivativeOrder in H(grad) with derivatives of order (derivativeOrder-1) in H(vol)
   template<class LineBasisFamily>
   void testDerivativesMatch(int polyOrder, int derivativeOrder, const double tol, Teuchos::FancyOStream &out, bool &success)
@@ -460,8 +803,8 @@ namespace
     }
     else if (cellTopo.getKey() == shards::Hexahedron<>::key)
     {
-      derivedBasis  = getHexahedralBasis<DerivedNodalBasisFamily> (fs, polyOrder); // derived basis supports both isotropic and anisotropic polyOrder
-      standardBasis = getHexahedralBasis<StandardNodalBasisFamily>(fs, polyOrder); // isotropic
+      derivedBasis  = getHexahedronBasis<DerivedNodalBasisFamily> (fs, polyOrder); // derived basis supports both isotropic and anisotropic polyOrder
+      standardBasis = getHexahedronBasis<StandardNodalBasisFamily>(fs, polyOrder); // isotropic
     }
     
     int standardCardinality = standardBasis->getCardinality();
@@ -477,7 +820,6 @@ namespace
     int spaceDim = cellTopo.getDimension();
     // we do allow ordering to be different.  dofMapToDerived maps from standard field ordinal to the derived.
     // we use getDofCoords() to perform the mapping.
-    using ExecutionSpace         = typename DerivedNodalBasisFamily::Basis::ExecutionSpace;
     using ScalarViewType         = typename DerivedNodalBasisFamily::Basis::ScalarViewType;
     using OrdinalTypeArray1D     = typename DerivedNodalBasisFamily::Basis::OrdinalTypeArray1D;
     using OrdinalTypeArray1DHost = typename OrdinalTypeArray1D::HostMirror;
@@ -694,6 +1036,19 @@ namespace
     }
   }
   
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( AnalyticPolynomialsMatch, Hierarchical_HGRAD_TRI, OutputScalar, PointScalar )
+  {
+    const double tol = TEST_TOLERANCE_TIGHT;
+    using ExecSpace = Kokkos::DefaultExecutionSpace;
+    
+//    std::vector<Intrepid2::EOperator> operators = {{OPERATOR_VALUE, OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2, OPERATOR_D3, OPERATOR_D4, OPERATOR_D5, OPERATOR_D6, OPERATOR_D7, OPERATOR_D8, OPERATOR_D9, OPERATOR_D10}};
+    std::vector<Intrepid2::EOperator> operators = {OPERATOR_VALUE};
+    for (auto op : operators)
+    {
+      testHierarchicalHGRAD_TRIANGLE_MatchesAnalyticValues<ExecSpace,OutputScalar,PointScalar>(op, tol, out, success);
+    }
+  }
+  
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( AnalyticPolynomialsMatch, Hierarchical_LineBasisDerivativesAgree, OutputScalar, PointScalar )
   {
     const int maxPolyOrder = 10;
@@ -741,7 +1096,7 @@ namespace
     runNodalBasisComparisonTests<DerivedNodalBasisFamily, StandardNodalBasisFamily>(polyOrder_2D, quadTopo, {FUNCTION_SPACE_HGRAD}, {OPERATOR_VALUE,OPERATOR_GRAD}, tol, out, success);
     runNodalBasisComparisonTests<DerivedNodalBasisFamily, StandardNodalBasisFamily>(polyOrder_2D, quadTopo, {FUNCTION_SPACE_HGRAD}, operators_dk, tol, out, success);
     
-    out << "Running 3D nodal hexahedral basis comparison tests…\n";
+    out << "Running 3D nodal hexahedron basis comparison tests…\n";
     runNodalBasisComparisonTests<DerivedNodalBasisFamily, StandardNodalBasisFamily>(polyOrder_3D, hexTopo, {FUNCTION_SPACE_HVOL}, {OPERATOR_VALUE}, tol, out, success);
     runNodalBasisComparisonTests<DerivedNodalBasisFamily, StandardNodalBasisFamily>(polyOrder_3D, hexTopo, {FUNCTION_SPACE_HGRAD}, {OPERATOR_VALUE,OPERATOR_GRAD}, tol, out, success);
     runNodalBasisComparisonTests<DerivedNodalBasisFamily, StandardNodalBasisFamily>(polyOrder_3D, hexTopo, {FUNCTION_SPACE_HGRAD}, operators_dk, tol, out, success);
@@ -749,5 +1104,6 @@ namespace
                                                         
   INTREPID2_OUTPUTSCALAR_POINTSCALAR_TEST_INSTANT( AnalyticPolynomialsMatch, Hierarchical_HGRAD_LINE )
   INTREPID2_OUTPUTSCALAR_POINTSCALAR_TEST_INSTANT( AnalyticPolynomialsMatch, Hierarchical_LineBasisDerivativesAgree )
+  INTREPID2_OUTPUTSCALAR_POINTSCALAR_TEST_INSTANT( AnalyticPolynomialsMatch, Hierarchical_HGRAD_TRI )
   INTREPID2_OUTPUTSCALAR_POINTSCALAR_TEST_INSTANT( AnalyticPolynomialsMatch, HierarchicalNodalComparisons )
 } // namespace

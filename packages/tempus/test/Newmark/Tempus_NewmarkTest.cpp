@@ -37,6 +37,7 @@
 namespace Tempus_Test {
 
 using Teuchos::RCP;
+using Teuchos::rcp_const_cast;
 using Teuchos::ParameterList;
 using Teuchos::sublist;
 using Teuchos::getParametersFromXmlFile;
@@ -45,17 +46,7 @@ using Tempus::IntegratorBasic;
 using Tempus::SolutionHistory;
 using Tempus::SolutionState;
 
-//IKT, 3/22/17: comment out any of the following
-//if you wish not to build/run all the test cases.
-#define TEST_BALL_PARABOLIC
-#define TEST_SINCOS_EXPLICIT
-#define TEST_HARMONIC_OSCILLATOR_DAMPED_EXPLICIT
-#define TEST_HARMONIC_OSCILLATOR_DAMPED_CTOR
-#define TEST_HARMONIC_OSCILLATOR_DAMPED_SECOND_ORDER
-#define TEST_HARMONIC_OSCILLATOR_DAMPED_FIRST_ORDER
 
-
-#ifdef TEST_BALL_PARABOLIC
 // ************************************************************
 TEUCHOS_UNIT_TEST(NewmarkExplicitAForm, BallParabolic)
 {
@@ -120,10 +111,8 @@ TEUCHOS_UNIT_TEST(NewmarkExplicitAForm, BallParabolic)
   TEUCHOS_TEST_FOR_EXCEPTION(!passed, std::logic_error,
     "\n Test failed!  Max error = " << err << " > tolerance = " << tolerance << "\n!");
 }
-#endif
 
 
-#ifdef TEST_SINCOS_EXPLICIT
 // ************************************************************
 TEUCHOS_UNIT_TEST(NewmarkExplicitAForm, SinCos)
 {
@@ -188,8 +177,10 @@ TEUCHOS_UNIT_TEST(NewmarkExplicitAForm, SinCos)
       for (int i=0; i<solutionHistory->getNumStates(); i++) {
         double time_i = (*solutionHistory)[i]->getTime();
         RCP<Tempus::SolutionState<double> > state =
-          Teuchos::rcp(new Tempus::SolutionState<double>(
-            model->getExactSolution(time_i).get_x(),
+          Tempus::createSolutionStateX(
+          rcp_const_cast<Thyra::VectorBase<double> > (
+            model->getExactSolution(time_i).get_x()),
+          rcp_const_cast<Thyra::VectorBase<double> > (
             model->getExactSolution(time_i).get_x_dot()));
         state->setTime((*solutionHistory)[i]->getTime());
         solnHistExact->addState(state);
@@ -234,9 +225,8 @@ TEUCHOS_UNIT_TEST(NewmarkExplicitAForm, SinCos)
 
   Teuchos::TimeMonitor::summarize();
 }
-#endif
 
-#ifdef TEST_HARMONIC_OSCILLATOR_DAMPED_EXPLICIT
+
 // ************************************************************
 TEUCHOS_UNIT_TEST(NewmarkExplicitAForm, HarmonicOscillatorDamped)
 {
@@ -301,8 +291,10 @@ TEUCHOS_UNIT_TEST(NewmarkExplicitAForm, HarmonicOscillatorDamped)
       for (int i=0; i<solutionHistory->getNumStates(); i++) {
         double time_i = (*solutionHistory)[i]->getTime();
         RCP<Tempus::SolutionState<double> > state =
-          Teuchos::rcp(new Tempus::SolutionState<double>(
-            model->getExactSolution(time_i).get_x(),
+          Tempus::createSolutionStateX(
+          rcp_const_cast<Thyra::VectorBase<double> > (
+            model->getExactSolution(time_i).get_x()),
+          rcp_const_cast<Thyra::VectorBase<double> > (
             model->getExactSolution(time_i).get_x_dot()));
         state->setTime((*solutionHistory)[i]->getTime());
         solnHistExact->addState(state);
@@ -347,10 +339,8 @@ TEUCHOS_UNIT_TEST(NewmarkExplicitAForm, HarmonicOscillatorDamped)
 
   Teuchos::TimeMonitor::summarize();
 }
-#endif
 
 
-#ifdef TEST_HARMONIC_OSCILLATOR_DAMPED_CTOR
 // ************************************************************
 TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, ConstructingFromDefaults)
 {
@@ -394,7 +384,7 @@ TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, ConstructingFromDefaults)
   RCP<Thyra::VectorBase<double> > icXDotDot =
     rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot_dot());
   RCP<Tempus::SolutionState<double> > icState =
-      Teuchos::rcp(new Tempus::SolutionState<double>(icX, icXDot, icXDotDot));
+    Tempus::createSolutionStateX(icX, icXDot, icXDotDot);
   icState->setTime    (timeStepControl->getInitTime());
   icState->setIndex   (timeStepControl->getInitIndex());
   icState->setTimeStep(0.0);
@@ -493,7 +483,7 @@ TEUCHOS_UNIT_TEST(NewmarkImplicitDForm, ConstructingFromDefaults)
   RCP<Thyra::VectorBase<double> > icXDotDot =
     rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot_dot());
   RCP<Tempus::SolutionState<double> > icState =
-      Teuchos::rcp(new Tempus::SolutionState<double>(icX, icXDot, icXDotDot));
+    Tempus::createSolutionStateX(icX, icXDot, icXDotDot);
   icState->setTime    (timeStepControl->getInitTime());
   icState->setIndex   (timeStepControl->getInitIndex());
   icState->setTimeStep(0.0);
@@ -548,10 +538,7 @@ TEUCHOS_UNIT_TEST(NewmarkImplicitDForm, ConstructingFromDefaults)
   TEST_FLOATING_EQUALITY(get_ele(*(x), 0), -0.222222, 1.0e-4 );
 }
 
-#endif
 
-
-#ifdef TEST_HARMONIC_OSCILLATOR_DAMPED_SECOND_ORDER
 // ************************************************************
 TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, HarmonicOscillatorDamped_SecondOrder)
 {
@@ -614,8 +601,10 @@ TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, HarmonicOscillatorDamped_SecondOrder)
       for (int i=0; i<solutionHistory->getNumStates(); i++) {
         double time_i = (*solutionHistory)[i]->getTime();
         RCP<Tempus::SolutionState<double> > state =
-          Teuchos::rcp(new Tempus::SolutionState<double>(
-            model->getExactSolution(time_i).get_x(),
+          Tempus::createSolutionStateX(
+          rcp_const_cast<Thyra::VectorBase<double> > (
+            model->getExactSolution(time_i).get_x()),
+          rcp_const_cast<Thyra::VectorBase<double> > (
             model->getExactSolution(time_i).get_x_dot()));
         state->setTime((*solutionHistory)[i]->getTime());
         solnHistExact->addState(state);
@@ -724,8 +713,10 @@ TEUCHOS_UNIT_TEST(NewmarkImplicitDForm, HarmonicOscillatorDamped_SecondOrder)
       for (int i=0; i<solutionHistory->getNumStates(); i++) {
         double time_i = (*solutionHistory)[i]->getTime();
         RCP<Tempus::SolutionState<double> > state =
-          Teuchos::rcp(new Tempus::SolutionState<double>(
-            model->getExactSolution(time_i).get_x(),
+          Tempus::createSolutionStateX(
+          rcp_const_cast<Thyra::VectorBase<double> > (
+            model->getExactSolution(time_i).get_x()),
+          rcp_const_cast<Thyra::VectorBase<double> > (
             model->getExactSolution(time_i).get_x_dot()));
         state->setTime((*solutionHistory)[i]->getTime());
         solnHistExact->addState(state);
@@ -770,9 +761,8 @@ TEUCHOS_UNIT_TEST(NewmarkImplicitDForm, HarmonicOscillatorDamped_SecondOrder)
 
   Teuchos::TimeMonitor::summarize();
 }
-#endif
 
-#ifdef TEST_HARMONIC_OSCILLATOR_DAMPED_FIRST_ORDER
+
 // ************************************************************
 TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, HarmonicOscillatorDamped_FirstOrder)
 {
@@ -835,8 +825,10 @@ TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, HarmonicOscillatorDamped_FirstOrder)
       for (int i=0; i<solutionHistory->getNumStates(); i++) {
         double time_i = (*solutionHistory)[i]->getTime();
         RCP<Tempus::SolutionState<double> > state =
-          Teuchos::rcp(new Tempus::SolutionState<double>(
-            model->getExactSolution(time_i).get_x(),
+          Tempus::createSolutionStateX(
+          rcp_const_cast<Thyra::VectorBase<double> > (
+            model->getExactSolution(time_i).get_x()),
+          rcp_const_cast<Thyra::VectorBase<double> > (
             model->getExactSolution(time_i).get_x_dot()));
         state->setTime((*solutionHistory)[i]->getTime());
         solnHistExact->addState(state);
@@ -881,5 +873,6 @@ TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, HarmonicOscillatorDamped_FirstOrder)
 
   Teuchos::TimeMonitor::summarize();
 }
-#endif
+
+
 }

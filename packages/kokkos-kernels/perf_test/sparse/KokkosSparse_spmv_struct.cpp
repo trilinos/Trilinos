@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//               KokkosKernels 0.9: Linear Algebra and Graph Kernels
-//                 Copyright 2017 Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -51,30 +52,21 @@
 #include <cmath>
 #include <unordered_map>
 
+#include <sstream>
+
 #include <Kokkos_Core.hpp>
 #include <KokkosSparse_spmv.hpp>
 #include <KokkosKernels_Test_Structured_Matrix.hpp>
 #include <KokkosSparse_spmv_struct_impl.hpp>
 #include <KokkosSparse_spmv_impl.hpp>
+#include "KokkosKernels_default_types.hpp"
 
 enum {STRUCT, UNSTR};
 enum {AUTO, DYNAMIC, STATIC};
 
-#if defined(KOKKOSKERNELS_INST_ORDINAL_INT)
-  typedef int default_lno_t;
-#elif defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T)
-  typedef int64_t default_lno_t;
-#else
-  #error "Expect int and/or int64_t to be enabled as ORDINAL (lno_t) types"
-#endif
-  //Prefer int as the default offset type, because cuSPARSE doesn't support size_t for rowptrs.
-#if defined(KOKKOSKERNELS_INST_OFFSET_INT)
-  typedef int default_size_type;
-#elif defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)
-  typedef size_t default_size_type;
-#else
-  #error "Expect size_t and/or int to be enabled as OFFSET (size_type) types"
-#endif
+typedef default_scalar Scalar;
+typedef default_lno_t lno_t;
+typedef default_size_type size_type;
 
 void print_help() {
   printf("SPMV_struct benchmark code written by Luc Berger-Vergiat.\n");
@@ -94,8 +86,6 @@ void print_help() {
 
 int main(int argc, char **argv)
 {
-  typedef double Scalar;
-
   int  nx = 100;
   int  ny = 100;
   int  nz = 100;
@@ -114,7 +104,7 @@ int main(int argc, char **argv)
     return 0;
   }
 
-  for(int i=0;i<argc;i++)
+  for(int i = 0; i < argc; i++)
     {
       if((strcmp(argv[i],"-nx" )==0)) {nx=atoi(argv[++i]); continue;}
       if((strcmp(argv[i],"-ny" )==0)) {ny=atoi(argv[++i]); continue;}
@@ -151,8 +141,6 @@ int main(int argc, char **argv)
 
   Kokkos::initialize(argc,argv);
   {
-    typedef default_lno_t lno_t;
-    typedef default_size_type size_type;
     typedef KokkosSparse::CrsMatrix<Scalar,lno_t,Kokkos::DefaultExecutionSpace,void,size_type> matrix_type;
     typedef typename Kokkos::View<Scalar**,Kokkos::LayoutLeft> mv_type;
     // typedef typename Kokkos::View<Scalar*,Kokkos::LayoutLeft,Kokkos::MemoryRandomAccess > mv_random_read_type;
@@ -234,11 +222,12 @@ int main(int argc, char **argv)
         for(int vecIdx = 0; vecIdx < numVecs; ++vecIdx) {
           h_y_compare(rowIdx, vecIdx) = 0;
         }
+
         for(int entryIdx = start; entryIdx < end; ++entryIdx) {
           // Scalar tmp_val = h_graph.entries(entryIdx) + i;
-          int idx = h_graph.entries(entryIdx);
+          int colIdx = h_graph.entries(entryIdx);
           for(int vecIdx = 0; vecIdx < numVecs; ++vecIdx) {
-            h_y_compare(rowIdx, vecIdx) += h_values(entryIdx)*h_x(idx, vecIdx);
+            h_y_compare(rowIdx, vecIdx) += h_values(entryIdx)*h_x(colIdx, vecIdx);
           }
         }
       }
@@ -249,7 +238,6 @@ int main(int argc, char **argv)
     Kokkos::View<Scalar**, Kokkos::LayoutLeft, Kokkos::DefaultExecutionSpace> x1("X1", A.numCols(), numVecs);
     Kokkos::View<Scalar**, Kokkos::LayoutLeft, Kokkos::DefaultExecutionSpace> y1("Y1", A.numRows(), numVecs);
     Kokkos::deep_copy(x1, h_x);
-    // typename KokkosSparse::CrsMatrix<Scalar,int,Kokkos::DefaultExecutionSpace,void,int>::values_type y1("Y1", A.numRows(), numVecs);
 
     {
       Kokkos::Profiling::pushRegion("Structured spmv test");
@@ -257,7 +245,7 @@ int main(int argc, char **argv)
       double min_time = 1.0e32;
       double max_time = 0.0;
       double ave_time = 0.0;
-      for(int i=0;i<loop;i++) {
+      for(int i=0; i<loop; i++) {
 	Kokkos::Timer timer;
 	KokkosSparse::Experimental::spmv_struct("N", stencil_type, structure, 1.0, A, x1, 1.0, y1);
 	Kokkos::fence();
@@ -314,7 +302,13 @@ int main(int argc, char **argv)
 
     if(check_errors) {
       // Error Check
-      Kokkos::deep_copy(h_y, y1);
+      Kokkos::View<Scalar**, Kokkos::LayoutLeft, Kokkos::DefaultExecutionSpace> x_check("X_check", A.numCols(), numVecs);
+      Kokkos::View<Scalar**, Kokkos::LayoutLeft, Kokkos::DefaultExecutionSpace> y_check("Y_check", A.numRows(), numVecs);
+      Kokkos::deep_copy(x_check, h_x);
+      KokkosSparse::Experimental::spmv_struct("N", stencil_type, structure, 1.0, A, x_check, 1.0, y_check);
+      Kokkos::fence();
+
+      Kokkos::deep_copy(h_y, y_check);
       Scalar error = 0;
       Scalar sum = 0;
       for(int rowIdx = 0; rowIdx < A.numRows(); ++rowIdx) {

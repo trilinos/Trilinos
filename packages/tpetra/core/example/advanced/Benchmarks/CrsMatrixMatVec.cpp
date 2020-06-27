@@ -252,15 +252,15 @@ getTpetraCrsMatrix (Teuchos::FancyOStream& out,
   using Teuchos::rcp;
   using std::endl;
   using matrix_type = Tpetra::CrsMatrix<>;
-  using device_type = matrix_type::device_type;
+  //using device_type = matrix_type::device_type;
   using SC  = matrix_type::impl_scalar_type;
-  using KAT = Kokkos::ArithTraits<SC>;
+  //using KAT = Kokkos::ArithTraits<SC>;
   using LO  = Tpetra::Map<>::local_ordinal_type;
-  using host_device_type     = Kokkos::View<SC*, Kokkos::LayoutRight, device_type>::host_mirror_space;
-  using host_execution_space = host_device_type::execution_space;
+  //using host_device_type     = Kokkos::View<SC*, Kokkos::LayoutRight, device_type>::host_mirror_space;
+  //using host_execution_space = host_device_type::execution_space;
 
   // We're filling on the host, so generate random numbers on the host.
-  using pool_type = Kokkos::Random_XorShift64_Pool<host_execution_space>;
+  //using pool_type = Kokkos::Random_XorShift64_Pool<host_execution_space>;
 
   Teuchos::OSTab tab0 (out);
   out << "Create CrsMatrix for benchmark" << endl;

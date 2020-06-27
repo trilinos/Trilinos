@@ -1,35 +1,8 @@
-C Copyright (C) 2009-2017 National Technology & Engineering Solutions
+C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C
-C Redistribution and use in source and binary forms, with or without
-C modification, are permitted provided that the following conditions are
-C met:
-C
-C     * Redistributions of source code must retain the above copyright
-C       notice, this list of conditions and the following disclaimer.
-C
-C     * Redistributions in binary form must reproduce the above
-C       copyright notice, this list of conditions and the following
-C       disclaimer in the documentation and/or other materials provided
-C       with the distribution.
-C
-C     * Neither the name of NTESS nor the names of its
-C       contributors may be used to endorse or promote products derived
-C       from this software without specific prior written permission.
-C
-C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C
+C 
+C See packages/seacas/LICENSE for details
 
       PROGRAM POST
 c
@@ -211,7 +184,7 @@ C
 C          CHECK FOR MOVE OR DRAW
 C
       IF(OPCODE.GE.128) GOTO 20
-          XCOORD = FLOAT(256*OPCODE+COUNT)*SCALE
+          XCOORD = DBLE(256*OPCODE+COUNT)*SCALE
           CALL PPBTR(8,OPCODE,NOEOF)
           CALL PPBTR(8,COUNT,NOEOF)
           IF(.NOT.TWODIM) CALL PPBTR(16,OPCODE,NOEOF)
@@ -223,7 +196,7 @@ C
 C          IF OPCODE < 128 THEN MOVE, ELSE DRAW A POINT OR LINE
 C
           IF(OPCODE.LT.128) THEN
-              YCOORD = FLOAT(256*OPCODE+COUNT)*SCALE
+              YCOORD = DBLE(256*OPCODE+COUNT)*SCALE
               CALL VDMOVA(XCOORD,YCOORD)
             ELSE
 C
@@ -244,7 +217,7 @@ C
 C          OK, MAKE A SMUDGE OF SOME SORT
 C
               DRAWN = .TRUE.
-              YCOORD = FLOAT(256*(OPCODE-128)+COUNT)*SCALE
+              YCOORD = DBLE(256*(OPCODE-128)+COUNT)*SCALE
               IF(MARKER) THEN
                   CALL VDPNTA(XCOORD,YCOORD)
                 ELSE
@@ -327,9 +300,9 @@ C
          CALL PPBTR(16,INTEGR,NOEOF)
          CALL PPBTR(16,IFRACT,NOEOF)
          IF(INTEGR.GE.32768) THEN
-               ARGS(I) = -(FLOAT(INTEGR-32768) + IFRACT/32768.)
+               ARGS(I) = -(DBLE(INTEGR-32768) + IFRACT/32768.)
             ELSE
-               ARGS(I) = FLOAT(INTEGR) + IFRACT/32768.
+               ARGS(I) = DBLE(INTEGR) + IFRACT/32768.
             ENDIF
   330 CONTINUE
       GOTO 350
@@ -597,10 +570,10 @@ C
  4401 CALL PPBTR(16,OPCODE,NOEOF)
       IF(OPCODE.GE.32768)GOTO 4410
         NPTS = NPTS + 1
-        XARRAY(NPTS) = FLOAT(OPCODE) * SCALE
+        XARRAY(NPTS) = DBLE(OPCODE) * SCALE
         CALL PPBTR(16,OPCODE,NOEOF)
          IF(OPCODE.GE.32768)GOTO 4410
-         YARRAY(NPTS) = FLOAT(OPCODE) * SCALE
+         YARRAY(NPTS) = DBLE(OPCODE) * SCALE
          GOTO 4401
 C
 C          IF IT'S AN OPCODE BUT ISN'T = AB (END OF POLYGON COMMAND),

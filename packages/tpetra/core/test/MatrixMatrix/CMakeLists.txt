@@ -22,6 +22,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(TpetraMatMatFileCopies
 DEST_FILES
 cdt_m.mtx cdt_tce.mtx cdt_d.mtx
 syn1a.mtx syn1b.mtx syn1c.mtx
+syn1a_v2.mtx syn1c_v2.mtx
 synTa.mtx synTb.mtx synTc.mtx
 synBTa.mtx synBTb.mtx synBTc.mtx
 synATa.mtx synATb.mtx synATc.mtx
@@ -31,6 +32,7 @@ smallBTa.mtx smallBTb.mtx smallBTc.mtx
 smallAdda.mtx smallAddb.mtx smallAddc.mtx
 smallATa.mtx smallATb.mtx smallATc.mtx
 rectAPa.mtx rectAPb.mtx rectAPc.mtx
+rectAPa_v2.mtx rectAPc_v2.mtx
 rectRAa.mtx rectRAb.mtx rectRAc.mtx
 rectRPa.mtx rectRPb.mtx rectRPc.mtx
 rectQPa.mtx rectQPb.mtx rectQPc.mtx

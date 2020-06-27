@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 2.0
-//              Copyright (2014) Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -236,6 +237,53 @@ class DualView : public ViewTraits<DataType, Arg1Type, Arg2Type, Arg3Type> {
     modified_device = t_modified_flag(modified_flags, 1);
 #endif
   }
+
+  /// \brief Constructor that allocates View objects on both host and device.
+  ///
+  /// This constructor works like the analogous constructor of View.
+  /// The first arguments are wrapped up in a ViewCtor class, this allows
+  /// for a label, without initializing, and all of the other things that can
+  /// be wrapped up in a Ctor class.
+  /// The arguments that follow are the dimensions of the
+  /// View objects.  For example, if the View has three dimensions,
+  /// the first three integer arguments will be nonzero, and you may
+  /// omit the integer arguments that follow.
+  template <class... P>
+  DualView(const Impl::ViewCtorProp<P...>& arg_prop,
+           typename std::enable_if<!Impl::ViewCtorProp<P...>::has_pointer,
+                                   size_t>::type const n0 =
+               KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+           const size_t n1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+           const size_t n2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+           const size_t n3 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+           const size_t n4 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+           const size_t n5 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+           const size_t n6 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+           const size_t n7 = KOKKOS_IMPL_CTOR_DEFAULT_ARG)
+      : d_view(arg_prop, n0, n1, n2, n3, n4, n5, n6, n7),
+        h_view(create_mirror_view(d_view))  // without UVM, host View mirrors
+        ,
+        modified_flags(t_modified_flags("DualView::modified_flags")) {
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
+    modified_host   = t_modified_flag(modified_flags, 0);
+    modified_device = t_modified_flag(modified_flags, 1);
+#endif
+  }
+
+  explicit inline DualView(const ViewAllocateWithoutInitializing& arg_prop,
+                           const size_t arg_N0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                           const size_t arg_N1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                           const size_t arg_N2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                           const size_t arg_N3 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                           const size_t arg_N4 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                           const size_t arg_N5 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                           const size_t arg_N6 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                           const size_t arg_N7 = KOKKOS_IMPL_CTOR_DEFAULT_ARG)
+      : DualView(Impl::ViewCtorProp<std::string,
+                                    Kokkos::Impl::WithoutInitializing_t>(
+                     arg_prop.label, Kokkos::WithoutInitializing),
+                 arg_N0, arg_N1, arg_N2, arg_N3, arg_N4, arg_N5, arg_N6,
+                 arg_N7) {}
 
   //! Copy constructor (shallow copy)
   template <class SS, class LS, class DS, class MS>
@@ -469,23 +517,43 @@ class DualView : public ViewTraits<DataType, Arg1Type, Arg2Type, Arg3Type> {
   ///   as modified, by calling the modify() method with the
   ///   appropriate template parameter.
   template <class Device>
-  void sync(const typename Impl::enable_if<
+  void sync(const typename std::enable_if<
                 (std::is_same<typename traits::data_type,
                               typename traits::non_const_data_type>::value) ||
                     (std::is_same<Device, int>::value),
                 int>::type& = 0) {
-    if (modified_flags.data() == NULL) return;
+    if (modified_flags.data() == nullptr) return;
 
     int dev = get_device_side<Device>();
 
     if (dev == 1) {  // if Device is the same as DualView's device type
       if ((modified_flags(0) > 0) && (modified_flags(0) >= modified_flags(1))) {
+#ifdef KOKKOS_ENABLE_CUDA
+        if (std::is_same<typename t_dev::memory_space,
+                         Kokkos::CudaUVMSpace>::value) {
+          if (d_view.data() == h_view.data())
+            Kokkos::Impl::cuda_prefetch_pointer(
+                Kokkos::Cuda(), d_view.data(),
+                sizeof(typename t_dev::value_type) * d_view.span(), true);
+        }
+#endif
+
         deep_copy(d_view, h_view);
         modified_flags(0) = modified_flags(1) = 0;
       }
     }
     if (dev == 0) {  // hopefully Device is the same as DualView's host type
       if ((modified_flags(1) > 0) && (modified_flags(1) >= modified_flags(0))) {
+#ifdef KOKKOS_ENABLE_CUDA
+        if (std::is_same<typename t_dev::memory_space,
+                         Kokkos::CudaUVMSpace>::value) {
+          if (d_view.data() == h_view.data())
+            Kokkos::Impl::cuda_prefetch_pointer(
+                Kokkos::Cuda(), d_view.data(),
+                sizeof(typename t_dev::value_type) * d_view.span(), false);
+        }
+#endif
+
         deep_copy(h_view, d_view);
         modified_flags(0) = modified_flags(1) = 0;
       }
@@ -498,12 +566,12 @@ class DualView : public ViewTraits<DataType, Arg1Type, Arg2Type, Arg3Type> {
   }
 
   template <class Device>
-  void sync(const typename Impl::enable_if<
+  void sync(const typename std::enable_if<
                 (!std::is_same<typename traits::data_type,
                                typename traits::non_const_data_type>::value) ||
                     (std::is_same<Device, int>::value),
                 int>::type& = 0) {
-    if (modified_flags.data() == NULL) return;
+    if (modified_flags.data() == nullptr) return;
 
     int dev = get_device_side<Device>();
 
@@ -526,8 +594,18 @@ class DualView : public ViewTraits<DataType, Arg1Type, Arg2Type, Arg3Type> {
                       typename traits::non_const_data_type>::value)
       Impl::throw_runtime_exception(
           "Calling sync_host on a DualView with a const datatype.");
-    if (modified_flags.data() == NULL) return;
+    if (modified_flags.data() == nullptr) return;
     if (modified_flags(1) > modified_flags(0)) {
+#ifdef KOKKOS_ENABLE_CUDA
+      if (std::is_same<typename t_dev::memory_space,
+                       Kokkos::CudaUVMSpace>::value) {
+        if (d_view.data() == h_view.data())
+          Kokkos::Impl::cuda_prefetch_pointer(
+              Kokkos::Cuda(), d_view.data(),
+              sizeof(typename t_dev::value_type) * d_view.span(), false);
+      }
+#endif
+
       deep_copy(h_view, d_view);
       modified_flags(1) = modified_flags(0) = 0;
     }
@@ -538,8 +616,18 @@ class DualView : public ViewTraits<DataType, Arg1Type, Arg2Type, Arg3Type> {
                       typename traits::non_const_data_type>::value)
       Impl::throw_runtime_exception(
           "Calling sync_device on a DualView with a const datatype.");
-    if (modified_flags.data() == NULL) return;
+    if (modified_flags.data() == nullptr) return;
     if (modified_flags(0) > modified_flags(1)) {
+#ifdef KOKKOS_ENABLE_CUDA
+      if (std::is_same<typename t_dev::memory_space,
+                       Kokkos::CudaUVMSpace>::value) {
+        if (d_view.data() == h_view.data())
+          Kokkos::Impl::cuda_prefetch_pointer(
+              Kokkos::Cuda(), d_view.data(),
+              sizeof(typename t_dev::value_type) * d_view.span(), true);
+      }
+#endif
+
       deep_copy(d_view, h_view);
       modified_flags(1) = modified_flags(0) = 0;
     }
@@ -547,7 +635,7 @@ class DualView : public ViewTraits<DataType, Arg1Type, Arg2Type, Arg3Type> {
 
   template <class Device>
   bool need_sync() const {
-    if (modified_flags.data() == NULL) return false;
+    if (modified_flags.data() == nullptr) return false;
     int dev = get_device_side<Device>();
 
     if (dev == 1) {  // if Device is the same as DualView's device type
@@ -564,12 +652,12 @@ class DualView : public ViewTraits<DataType, Arg1Type, Arg2Type, Arg3Type> {
   }
 
   inline bool need_sync_host() const {
-    if (modified_flags.data() == NULL) return false;
+    if (modified_flags.data() == nullptr) return false;
     return modified_flags(0) < modified_flags(1);
   }
 
   inline bool need_sync_device() const {
-    if (modified_flags.data() == NULL) return false;
+    if (modified_flags.data() == nullptr) return false;
     return modified_flags(1) < modified_flags(0);
   }
 
@@ -580,7 +668,7 @@ class DualView : public ViewTraits<DataType, Arg1Type, Arg2Type, Arg3Type> {
   /// data as modified.
   template <class Device>
   void modify() {
-    if (modified_flags.data() == NULL) return;
+    if (modified_flags.data() == nullptr) return;
     int dev = get_device_side<Device>();
 
     if (dev == 1) {  // if Device is the same as DualView's device type
@@ -611,7 +699,7 @@ class DualView : public ViewTraits<DataType, Arg1Type, Arg2Type, Arg3Type> {
   }
 
   inline void modify_host() {
-    if (modified_flags.data() != NULL) {
+    if (modified_flags.data() != nullptr) {
       modified_flags(0) =
           (modified_flags(1) > modified_flags(0) ? modified_flags(1)
                                                  : modified_flags(0)) +
@@ -630,7 +718,7 @@ class DualView : public ViewTraits<DataType, Arg1Type, Arg2Type, Arg3Type> {
   }
 
   inline void modify_device() {
-    if (modified_flags.data() != NULL) {
+    if (modified_flags.data() != nullptr) {
       modified_flags(1) =
           (modified_flags(1) > modified_flags(0) ? modified_flags(1)
                                                  : modified_flags(0)) +
@@ -649,7 +737,7 @@ class DualView : public ViewTraits<DataType, Arg1Type, Arg2Type, Arg3Type> {
   }
 
   inline void clear_sync_state() {
-    if (modified_flags.data() != NULL)
+    if (modified_flags.data() != nullptr)
       modified_flags(1) = modified_flags(0) = 0;
   }
 
@@ -674,7 +762,7 @@ class DualView : public ViewTraits<DataType, Arg1Type, Arg2Type, Arg3Type> {
     h_view = create_mirror_view(d_view);
 
     /* Reset dirty flags */
-    if (modified_flags.data() == NULL) {
+    if (modified_flags.data() == nullptr) {
       modified_flags = t_modified_flags("DualView::modified_flags");
     } else
       modified_flags(1) = modified_flags(0) = 0;
@@ -692,7 +780,7 @@ class DualView : public ViewTraits<DataType, Arg1Type, Arg2Type, Arg3Type> {
               const size_t n5 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
               const size_t n6 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
               const size_t n7 = KOKKOS_IMPL_CTOR_DEFAULT_ARG) {
-    if (modified_flags.data() == NULL) {
+    if (modified_flags.data() == nullptr) {
       modified_flags = t_modified_flags("DualView::modified_flags");
     }
     if (modified_flags(1) >= modified_flags(0)) {
@@ -864,5 +952,28 @@ void deep_copy(
 }
 
 }  // namespace Kokkos
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+
+//
+// Non-member resize and realloc
+//
+
+template <class... Properties, class... Args>
+void resize(DualView<Properties...>& dv, Args&&... args) noexcept(
+    noexcept(dv.resize(std::forward<Args>(args)...))) {
+  dv.resize(std::forward<Args>(args)...);
+}
+
+template <class... Properties, class... Args>
+void realloc(DualView<Properties...>& dv, Args&&... args) noexcept(
+    noexcept(dv.realloc(std::forward<Args>(args)...))) {
+  dv.realloc(std::forward<Args>(args)...);
+}
+
+}  // end namespace Kokkos
 
 #endif

@@ -38,6 +38,14 @@ INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/rtcompiler)
 
 APPEND_SET(HEADERS
   create_inline_mesh.h
+  inline_mesh_desc.h
+  inline_geometries.h
+  topology_enum.h
+  pamgen_bc_specification.h
+  PamgenStrLoopLimits.h
+  element_density_function.h
+  geometry_transform.h
+  uns_inline_decomp.h
   )
 
 # Set sources

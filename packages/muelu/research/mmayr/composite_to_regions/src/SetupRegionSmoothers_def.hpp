@@ -152,6 +152,7 @@ void jacobiIterate(RCP<Teuchos::ParameterList> smootherParams,
   const int maxIter    = smootherParams->get<int>   ("smoother: sweeps");
   const double damping = smootherParams->get<double>("smoother: damping");
   Array<RCP<Vector> > diag_inv = smootherParams->get<Array<RCP<Vector> > >("smoothers: inverse diagonal");
+  const bool useFastMatVec = smootherParams->get<bool>("Use fast MatVec");
 
   Array<RCP<Vector> > regRes(maxRegPerProc);
   createRegionalVector(regRes, revisedRowMapPerGrp);
@@ -159,18 +160,17 @@ void jacobiIterate(RCP<Teuchos::ParameterList> smootherParams,
 
   for (int iter = 0; iter < maxIter; ++iter) {
 
-    /* Update the residual vector
-     * 1. Compute tmp = A * regX in each region
-     * 2. Sum interface values in tmp due to duplication (We fake this by scaling to reverse the basic splitting)
-     * 3. Compute r = B - tmp
-     */
+    // Update the residual vector
     if (zeroInitGuess) {
       for (int j = 0; j < maxRegPerProc; j++) {
         regX[j]->elementWiseMultiply(damping, *diag_inv[j], *regB[j], SC_ONE);
       }
     }
     else {
-      computeResidual(regRes, regX, regB, regionGrpMats, revisedRowMapPerGrp, rowImportPerGrp );
+      if (useFastMatVec)
+        computeResidual(regRes, regX, regB, regionGrpMats, *smootherParams);
+      else
+        computeResidual(regRes, regX, regB, regionGrpMats, revisedRowMapPerGrp, rowImportPerGrp);
 
       // update solution according to Jacobi's method
       for (int j = 0; j < maxRegPerProc; j++) {
@@ -210,6 +210,7 @@ void GSIterate(RCP<Teuchos::ParameterList> smootherParams,
   const int maxIter = smootherParams->get<int>("smoother: sweeps");
   const double damping = smootherParams->get<double>("smoother: damping");
   Teuchos::Array<RCP<Vector> > diag_inv = smootherParams->get<Teuchos::Array<RCP<Vector> > >("smoothers: inverse diagonal");
+  const bool useFastMatVec = smootherParams->get<bool>("Use fast MatVec");
 
   Array<RCP<Vector> > regRes(maxRegPerProc);
   createRegionalVector(regRes, revisedRowMapPerGrp);
@@ -219,12 +220,14 @@ void GSIterate(RCP<Teuchos::ParameterList> smootherParams,
   // GS iteration loop
   for (int iter = 0; iter < maxIter; ++iter) {
 
-    /* Update the residual vector
-     * 1. Compute tmp = A * regX in each region
-     * 2. Sum interface values in tmp due to duplication (We fake this by scaling to reverse the basic splitting)
-     * 3. Compute r = B - tmp
-     */
-    if (!zeroInitGuess) computeResidual(regRes, regX, regB, regionGrpMats, revisedRowMapPerGrp, rowImportPerGrp );
+    // Update the residual vector
+    if (!zeroInitGuess)
+    {
+      if (useFastMatVec)
+        computeResidual(regRes, regX, regB, regionGrpMats, *smootherParams);
+      else
+        computeResidual(regRes, regX, regB, regionGrpMats, revisedRowMapPerGrp, rowImportPerGrp);
+    }
 
     // update the solution and the residual
 
@@ -417,6 +420,7 @@ void chebyshevIterate(RCP<Teuchos::ParameterList> smootherParams,
   const Scalar lambdaMax = smootherParams->get<Scalar>("chebyshev: lambda max");
   const Scalar boostFactor = smootherParams->get<double>("smoother: Chebyshev boost factor");
   Teuchos::Array<RCP<Vector> > diag_inv = smootherParams->get<Teuchos::Array<RCP<Vector> > >("smoothers: inverse diagonal");
+  const bool useFastMatVec = smootherParams->get<bool>("Use fast MatVec");
 
   // Define some constants for convenience
   const Scalar SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
@@ -455,7 +459,10 @@ void chebyshevIterate(RCP<Teuchos::ParameterList> smootherParams,
     }
   }
   else { // Compute residual vector
-    computeResidual(regRes, regX, regB, regionGrpMats, revisedRowMapPerGrp, rowImportPerGrp );
+    if (useFastMatVec)
+      computeResidual(regRes, regX, regB, regionGrpMats, *smootherParams);
+    else
+      computeResidual(regRes, regX, regB, regionGrpMats, revisedRowMapPerGrp, rowImportPerGrp);
     for(int j = 0; j < maxRegPerProc; j++) {
       regZ[j]->elementWiseMultiply(SC_ONE, *diag_inv[j], *regRes[j], SC_ZERO); // z = D_inv * R, that is, D \ R.
       regP[j]->update(SC_ONE/theta, *regZ[j], SC_ZERO); // P = 1/theta Z
@@ -466,7 +473,10 @@ void chebyshevIterate(RCP<Teuchos::ParameterList> smootherParams,
   // The rest of the iterations
   for (int i = 1; i < maxIter; ++i) {
     // Compute residual vector
-    computeResidual(regRes, regX, regB, regionGrpMats, revisedRowMapPerGrp, rowImportPerGrp );
+    if (useFastMatVec)
+      computeResidual(regRes, regX, regB, regionGrpMats, *smootherParams);
+    else
+      computeResidual(regRes, regX, regB, regionGrpMats, revisedRowMapPerGrp, rowImportPerGrp);
     // z = D_inv * R, that is, D \ R.
     for(int j = 0; j < maxRegPerProc; j++) {
       regZ[j]->elementWiseMultiply(SC_ONE, *diag_inv[j], *regRes[j], SC_ZERO);
@@ -505,7 +515,7 @@ void smootherSetup(RCP<Teuchos::ParameterList> params,
   std::map<std::string, int> smootherTypes = getListOfValidSmootherTypes();
 
   switch(smootherTypes[type]) {
-  case 0:
+  case 0: // None
   {
     break;
   }
@@ -546,7 +556,7 @@ void smootherApply(RCP<Teuchos::ParameterList> params,
   std::map<std::string, int> smootherTypes = getListOfValidSmootherTypes();
 
   switch(smootherTypes[type]) {
-  case 0:
+  case 0: // None
   {
     break;
   }

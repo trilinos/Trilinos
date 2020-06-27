@@ -60,6 +60,7 @@ namespace
   using namespace Intrepid2;
   std::vector<double> alpha_values = {{0.0, 0.2, 0.4, 0.6, 0.8, 1.0}};
   std::vector<double> x_values = {{-1.0,-0.5,-1.0/3.0,0.0,1.0/3.0,0.50,1.0}};
+  std::vector<double> t_values = {{0.0, 0.2, 0.4, 0.6, 0.8, 1.0}};
   
   void testAgreementWithPolylib(const int polyOrder, const double tol, Teuchos::FancyOStream &out, bool &success)
   {
@@ -119,6 +120,54 @@ namespace
         }
       }
     }
+  }
+  
+  void testAgreementWithAnalyticLegendreForP2(const double tol, Teuchos::FancyOStream &out, bool &success)
+  {
+    const double alpha  = 0;
+    const int polyOrder = 2;
+    Kokkos::View<double*> jacobiValues("jacobi values from Intrepid2::Polynomials",polyOrder+1);
+    
+    for (auto t : t_values)
+    {
+      for (auto x_onMinusOneToOne : x_values)
+      {
+        double x = (x_onMinusOneToOne + 1.0) / 2.0; // shiftedScaledJacobiValues computes on a [0,1] domain, compared with a [-1,1] domain
+        
+        using Intrepid2::Polynomials::shiftedScaledJacobiValues;
+        
+        // wrap invocation in parallel_for just to ensure execution on device (for CUDA)
+        Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int dummyIndex)
+        {
+          shiftedScaledJacobiValues(jacobiValues, alpha, polyOrder, x, t);
+        });
+        
+        auto jacobiValuesHost        = getHostCopy(jacobiValues);
+        
+        const double expectedValue = 6.0 * x * x - 6.0 * x * t + t*t;
+        
+        const int i = 2;
+        bool valuesAreBothSmall = valuesAreSmall(jacobiValuesHost(i), expectedValue, tol);
+        
+        if (!valuesAreBothSmall)
+        {
+          if (! approximatelyEqual(jacobiValuesHost(i), expectedValue, tol) )
+          {
+            out << "for polyOrder " << i << ", alpha = " << alpha << ", x = " << x << ", t = " << t << ": ";
+            out << jacobiValuesHost(i) << " != " << expectedValue;
+            out << " (diff = " << abs(jacobiValuesHost(i) - expectedValue);
+            out << "; tol = " << tol << ")\n";
+            success = false;
+          }
+        }
+      }
+    }
+  }
+  
+  TEUCHOS_UNIT_TEST( Jacobi, AgreesWithLegendreForP2 )
+  {
+    const double tol = TEST_TOLERANCE_TIGHT;
+    testAgreementWithAnalyticLegendreForP2(tol, out, success);
   }
   
   TEUCHOS_UNIT_TEST( Jacobi, AgreesWithPolylib )

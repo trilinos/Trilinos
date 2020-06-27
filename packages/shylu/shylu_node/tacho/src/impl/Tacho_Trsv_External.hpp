@@ -33,12 +33,19 @@ namespace Tacho {
         const ordinal_type m = B.extent(0), n = B.extent(1);
         
         if (m > 0 && n > 0) {
-          for (ordinal_type p=0,offsB=0;p<n;++p,offsB+=B.stride_1()) {  
+          if (n == 1) {
             Blas<value_type>::trsv(ArgUplo::param, ArgTransA::param, 
                                    diagA.param, 
                                    m,
                                    A.data(), A.stride_1(), 
-                                   (B.data() + offsB), B.stride_0());
+                                   B.data(), B.stride_0());
+          } else {
+            Blas<value_type>::trsm(Side::Left::param, ArgUplo::param, ArgTransA::param, 
+                                   diagA.param, 
+                                   m, n,
+                                   value_type(1),
+                                   A.data(), A.stride_1(), 
+                                   B.data(), B.stride_1());
           }
         }
 #else

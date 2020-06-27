@@ -47,6 +47,7 @@
 
 namespace FROSch {
 
+    using namespace std;
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -72,7 +73,7 @@ namespace FROSch {
         FROSCH_ASSERT(blockId<this->NumberOfBlocks_,"Block does not exist yet and can therefore not be reset.");
 
         if (this->Verbose_) {
-            std::cout << "\n\
+            cout << "\n\
 +---------------------+\n\
 | RGDSWCoarseOperator |\n\
 |  Block " << blockId << "            |\n\
@@ -80,9 +81,9 @@ namespace FROSch {
         }
 
         // Process the parameter list
-        std::stringstream blockIdStringstream;
+        stringstream blockIdStringstream;
         blockIdStringstream << blockId+1;
-        std::string blockIdString = blockIdStringstream.str();
+        string blockIdString = blockIdStringstream.str();
         RCP<ParameterList> coarseSpaceList = sublist(sublist(this->ParameterList_,"Blocks"),blockIdString.c_str());
 
         CommunicationStrategy communicationStrategy = CreateOneToOneMap;
@@ -106,7 +107,7 @@ namespace FROSch {
         }
 
         bool useForCoarseSpace = coarseSpaceList->get("Use For Coarse Space",false);
-        std::string option = coarseSpaceList->get("Option","1");
+        string option = coarseSpaceList->get("Option","1");
         DistanceFunction distanceFunction = ConstantDistanceFunction;
         if (!option.compare("1")) {
 
@@ -155,11 +156,11 @@ namespace FROSch {
             this->InterfaceCoarseSpaces_[blockId].reset(new CoarseSpace<SC,LO,GO,NO>(this->MpiComm_,this->SerialComm_));
 
             if (useForCoarseSpace) {
-                
+
                 if (this->ParameterList_->get("Test Unconnected Interface",true)) {
                     this->DDInterface_->divideUnconnectedEntities(this->K_);
                 }
-                
+
                 this->DDInterface_->buildEntityHierarchy();
 
                 this->DDInterface_->computeDistancesToRoots(dimension,nodeList,distanceFunction);
@@ -188,14 +189,27 @@ namespace FROSch {
 
                 this->InterfaceCoarseSpaces_[blockId]->assembleCoarseSpace();
 
-                if (this->MpiComm_->getRank() == 0) {
-                    std::cout << std::boolalpha << "\n\
-    ------------------------------------------------------------------------------\n\
-     RGDSW coarse space\n\
-    ------------------------------------------------------------------------------\n\
-      Coarse nodes: translations                 --- " << true << "\n\
-      Coarse nodes: rotations                    --- " << useRotations << "\n\
-    ------------------------------------------------------------------------------\n" << std::noboolalpha;
+                if (this->Verbose_) {
+                    cout
+                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << setw(89) << "-----------------------------------------------------------------------------------------"
+                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "| "
+                    << left << setw(74) << "RGDSW coarse space " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
+                    << " |"
+                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << setw(89) << "========================================================================================="
+                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "| " << left << setw(20) << "Coarse nodes " << " | " << setw(19) << " Translations" << right
+                    << " | " << setw(41) << boolalpha << useForCoarseSpace << noboolalpha
+                    << " |"
+                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "| " << left << setw(20) << "Coarse nodes " << " | " << setw(19) << " Rotations" << right
+                    << " | " << setw(41) << boolalpha << useRotations << noboolalpha
+                    << " |"
+                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << setw(89) << "-----------------------------------------------------------------------------------------"
+                    << endl;
                 }
             }
         }
@@ -229,7 +243,7 @@ namespace FROSch {
                     LO rootID = tmpEntity->getRootID();
                     UN numRoots = tmpEntity->getRoots()->getNumEntities();
                     if (rootID==-1) {
-                        //if (numRoots==0) std::cout << rootID << " " << numRoots << " " << tmpEntity->getAncestors()->getNumEntities() << std::endl;
+                        //if (numRoots==0) cout << rootID << " " << numRoots << " " << tmpEntity->getAncestors()->getNumEntities() << endl;
                         FROSCH_ASSERT(numRoots!=0,"rootID==-1 but numRoots==0!");
                         for (UN m=0; m<numRoots; m++) {
                             InterfaceEntityPtr tmpRoot = tmpEntity->getRoots()->getEntity(m);

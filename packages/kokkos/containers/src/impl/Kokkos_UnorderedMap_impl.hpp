@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 2.0
-//              Copyright (2014) Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -70,7 +71,10 @@ struct UnorderedMapRehash {
   UnorderedMapRehash(map_type const& dst, const_map_type const& src)
       : m_dst(dst), m_src(src) {}
 
-  void apply() const { parallel_for(m_src.capacity(), *this); }
+  void apply() const {
+    parallel_for("Kokkos::Impl::UnorderedMapRehash::apply", m_src.capacity(),
+                 *this);
+  }
 
   KOKKOS_INLINE_FUNCTION
   void operator()(size_type i) const {
@@ -90,7 +94,10 @@ struct UnorderedMapErase {
 
   UnorderedMapErase(map_type const& map) : m_map(map) {}
 
-  void apply() const { parallel_for(m_map.m_hash_lists.extent(0), *this); }
+  void apply() const {
+    parallel_for("Kokkos::Impl::UnorderedMapErase::apply",
+                 m_map.m_hash_lists.extent(0), *this);
+  }
 
   KOKKOS_INLINE_FUNCTION
   void operator()(size_type i) const {
@@ -151,7 +158,10 @@ struct UnorderedMapHistogram {
         m_distance("UnorderedMap Histogram"),
         m_block_distance("UnorderedMap Histogram") {}
 
-  void calculate() { parallel_for(m_map.m_hash_lists.extent(0), *this); }
+  void calculate() {
+    parallel_for("Kokkos::Impl::UnorderedMapHistogram::calculate",
+                 m_map.m_hash_lists.extent(0), *this);
+  }
 
   void clear() {
     Kokkos::deep_copy(m_length, 0);
@@ -228,7 +238,10 @@ struct UnorderedMapPrint {
 
   UnorderedMapPrint(map_type const& map) : m_map(map) {}
 
-  void apply() { parallel_for(m_map.m_hash_lists.extent(0), *this); }
+  void apply() {
+    parallel_for("Kokkos::Impl::UnorderedMapPrint::apply",
+                 m_map.m_hash_lists.extent(0), *this);
+  }
 
   KOKKOS_INLINE_FUNCTION
   void operator()(size_type i) const {
@@ -244,21 +257,22 @@ struct UnorderedMapPrint {
 };
 
 template <typename DKey, typename DValue, typename SKey, typename SValue>
-struct UnorderedMapCanAssign : public false_ {};
+struct UnorderedMapCanAssign : public std::false_type {};
 
 template <typename Key, typename Value>
-struct UnorderedMapCanAssign<Key, Value, Key, Value> : public true_ {};
+struct UnorderedMapCanAssign<Key, Value, Key, Value> : public std::true_type {};
 
 template <typename Key, typename Value>
-struct UnorderedMapCanAssign<const Key, Value, Key, Value> : public true_ {};
+struct UnorderedMapCanAssign<const Key, Value, Key, Value>
+    : public std::true_type {};
 
 template <typename Key, typename Value>
 struct UnorderedMapCanAssign<const Key, const Value, Key, Value>
-    : public true_ {};
+    : public std::true_type {};
 
 template <typename Key, typename Value>
 struct UnorderedMapCanAssign<const Key, const Value, const Key, Value>
-    : public true_ {};
+    : public std::true_type {};
 
 }  // namespace Impl
 }  // namespace Kokkos

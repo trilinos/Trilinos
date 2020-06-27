@@ -87,21 +87,11 @@ namespace Intrepid2
         \param [in] polyOrder - the polynomial order to use in both dimensions.
      */
     Basis_Derived_HGRAD_QUAD(int polyOrder) : Basis_Derived_HGRAD_QUAD(polyOrder,polyOrder) {}
-    
-    /** \brief  Returns basis name
-
-        \return the name of the basis
-    */
-    virtual
-    const char*
-    getName() const {
-      return "Intrepid2_DerivedBasis_HGRAD_QUAD";
-    }
 
     /** \brief True if orientation is required
     */
-    virtual bool requireOrientation() const {
-      return (this->getDegree() > 2);
+    virtual bool requireOrientation() const override {
+      return (this->getDofCount(1,0) > 1); //if it has more than 1 DOF per edge, than it needs orientations
     }
     
     using Basis<ExecutionSpace,OutputValueType,PointValueType>::getValues;

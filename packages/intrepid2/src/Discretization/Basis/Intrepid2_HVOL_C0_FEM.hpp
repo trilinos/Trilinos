@@ -124,7 +124,7 @@ namespace Intrepid2 {
   }
 
    /** \class  Intrepid2::Basis_HVOL_C0_FEM
-       \brief  Implementation of the default HVOL-compatible FEM contstant basis on triangle, quadrilateral, hexahedral and tetrahedral cells.
+       \brief  Implementation of the default HVOL-compatible FEM contstant basis on triangle, quadrilateral, hexahedron and tetrahedron cells.
   */
   template<typename ExecSpaceType = void,
            typename outputValueType = double,

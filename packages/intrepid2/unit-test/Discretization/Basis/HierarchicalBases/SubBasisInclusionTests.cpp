@@ -90,13 +90,31 @@ namespace
     int spaceDim = cellTopo.getDimension();
     int minDegree = (fs == Intrepid2::FUNCTION_SPACE_HVOL) ? 0 : 1;
     
-    auto subBasisDegreeTestCases = getBasisTestCasesUpToDegree(spaceDim, minDegree, polyOrder_x, polyOrder_y, polyOrder_z);
+    bool isLine = cellTopo.getKey() == shards::Line<>::key;
+    bool isQuad = cellTopo.getKey() == shards::Quadrilateral<>::key;
+    bool isHex  = cellTopo.getKey() == shards::Hexahedron<>::key;
+    bool isTri  = cellTopo.getKey() == shards::Triangle<>::key;
+    bool isTet  = cellTopo.getKey() == shards::Tetrahedron<>::key;
+    bool isWedge = cellTopo.getKey() == shards::Wedge<>::key;
+    int polyOrderDim = -1; // the number of dimensions of p-anisotropy allowed
+    if (isLine || isQuad || isHex)
+    {
+      polyOrderDim = spaceDim;
+    }
+    else if (isTri || isTet)
+    {
+      polyOrderDim = 1;
+    }
+    else if (isWedge)
+    {
+      polyOrderDim = 2; // line x tri
+    }
+    auto subBasisDegreeTestCases = getBasisTestCasesUpToDegree(polyOrderDim, minDegree, polyOrder_x, polyOrder_y, polyOrder_z);
     
-    std::vector<int> degrees(spaceDim);
+    std::vector<int> degrees(polyOrderDim);
     degrees[0] = polyOrder_x;
-    if (spaceDim > 1) degrees[1] = polyOrder_y;
-    if (spaceDim > 2) degrees[2] = polyOrder_z;
-    //  // TODO: consider what to do when non-hypercubes are being tested
+    if (polyOrderDim > 1) degrees[1] = polyOrder_y;
+    if (polyOrderDim > 2) degrees[2] = polyOrder_z;
     
     int numPoints_1D = 5;
     auto inputPoints = getInputPointsView<PointScalar>(cellTopo, numPoints_1D);
@@ -106,9 +124,23 @@ namespace
     auto outputValues = getOutputView<OutputScalar>(fs, op, basis->getCardinality(), numPoints, spaceDim);
     
     basis->getValues(outputValues, inputPoints, op);
+    out << "Testing sub-basis inclusion in degree ";
+    for (int i=0; i<polyOrderDim; i++)
+    {
+      out << degrees[i];
+      if (i<polyOrderDim-1) out << " x ";
+    }
+    out << " basis " << basis->getName() << std::endl;
     
     for (auto testCase : subBasisDegreeTestCases)
     {
+      out << "testing sub-basis of degree ";
+      for (int i=0; i<polyOrderDim; i++)
+      {
+        out << testCase[i];
+        if (i<polyOrderDim-1) out << " x ";
+      }
+      out << std::endl;
       // pad test case with -1s to get to 3D (so we can make one call to getBasis below)
       auto paddedTestCase = testCase;
       for (int d=testCase.size(); d<3; d++)
@@ -321,6 +353,72 @@ namespace
   {
     shards::CellTopology hexTopo = shards::CellTopology(shards::getCellTopologyData<shards::Hexahedron<> >() );
     runSubBasisTests(hexTopo, out, success);
+  }
+  
+  TEUCHOS_UNIT_TEST( SubBasisInclusion, Tetrahedron )
+  {
+    shards::CellTopology tetTopo = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<> >() );
+    
+    // so far, only HGRAD implemented for hierarchical tetrahedron.  Once we have full exact sequence, we can
+    // switch to calling runSubBasisTests(tetTopo, out, success).
+    std::vector<Intrepid2::EFunctionSpace> functionSpaces = {FUNCTION_SPACE_HGRAD};
+    auto cellTopo = tetTopo;
+    
+    const int maxDegree = 5;
+    const double tol = TEST_TOLERANCE_TIGHT;
+    
+    for (auto fs : functionSpaces)
+    {
+      std::vector<bool> continuousBasisValues;
+      if (fs != FUNCTION_SPACE_HVOL)
+      {
+        continuousBasisValues = {true,false};
+      }
+      else
+      {
+        continuousBasisValues = {true}; // false case not supported by the dof tag stuff that testSubBasis() does
+      }
+      for (auto continuousBasis : continuousBasisValues) // corresponds to "defineVertexFunctions" in basis definitions
+      {
+        for (int degree=1; degree<=maxDegree; degree++)
+        {
+          testSubBasis(cellTopo, fs, tol, out, success, degree, -1, -1,continuousBasis);
+        }
+      }
+    }
+  }
+  
+  TEUCHOS_UNIT_TEST( SubBasisInclusion, Triangle )
+  {
+    shards::CellTopology triTopo = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<> >() );
+    
+    // so far, only HGRAD implemented for hierarchical triangle.  Once we have full exact sequence, we can
+    // switch to calling runSubBasisTests(triTopo, out, success).
+    std::vector<Intrepid2::EFunctionSpace> functionSpaces = {FUNCTION_SPACE_HGRAD};
+    auto cellTopo = triTopo;
+    
+    const int maxDegree = 5;
+    const double tol = TEST_TOLERANCE_TIGHT;
+    
+    for (auto fs : functionSpaces)
+    {
+      std::vector<bool> continuousBasisValues;
+      if (fs != FUNCTION_SPACE_HVOL)
+      {
+        continuousBasisValues = {true,false};
+      }
+      else
+      {
+        continuousBasisValues = {true}; // false case not supported by the dof tag stuff that testSubBasis() does
+      }
+      for (auto continuousBasis : continuousBasisValues) // corresponds to "defineVertexFunctions" in line basis definitions
+      {
+        for (int degree=1; degree<=maxDegree; degree++)
+        {
+          testSubBasis(cellTopo, fs, tol, out, success, degree, -1, -1,continuousBasis);
+        }
+      }
+    }
   }
   
 } // namespace

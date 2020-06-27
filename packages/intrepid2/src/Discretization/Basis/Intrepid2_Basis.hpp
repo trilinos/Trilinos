@@ -359,7 +359,7 @@ namespace Intrepid2 {
                const PointViewType  /* inputPoints */,
                const EOperator /* operatorType */ = OPERATOR_VALUE ) const {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
-                                    ">>> ERROR (Basis::getValues): this method (FEM) is not supported or should be over-riden accordingly by derived classes.");
+                                    ">>> ERROR (Basis::getValues): this method (FEM) is not supported or should be overridden accordingly by derived classes.");
     }
 
     /** \brief  Evaluation of an FVD basis evaluation on a <strong>physical cell</strong>.
@@ -388,7 +388,7 @@ namespace Intrepid2 {
                 const PointViewType  /* cellVertices */,
                 const EOperator /* operatorType */ = OPERATOR_VALUE ) const {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
-                                    ">>> ERROR (Basis::getValues): this method (FVM) is not supported or should be over-riden accordingly by derived classes.");
+                                    ">>> ERROR (Basis::getValues): this method (FVM) is not supported or should be overridden accordingly by derived classes.");
     }
 
 
@@ -399,7 +399,7 @@ namespace Intrepid2 {
     void
     getDofCoords( ScalarViewType /* dofCoords */ ) const {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
-                                    ">>> ERROR (Basis::getDofCoords): this method is not supported or should be over-riden accordingly by derived classes.");
+                                    ">>> ERROR (Basis::getDofCoords): this method is not supported or should be overridden accordingly by derived classes.");
     }
 
     /** \brief Coefficients for computing degrees of freedom for Lagrangian basis
@@ -414,7 +414,7 @@ namespace Intrepid2 {
     void
     getDofCoeffs( ScalarViewType /* dofCoeffs */ ) const {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
-                                    ">>> ERROR (Basis::getDofCoeffs): this method is not supported or should be over-riden accordingly by derived classes.");
+                                    ">>> ERROR (Basis::getDofCoeffs): this method is not supported or should be overridden accordingly by derived classes.");
     }
 
     /** \brief For hierarchical bases, returns the field ordinals that have at most the specified degree in each dimension.

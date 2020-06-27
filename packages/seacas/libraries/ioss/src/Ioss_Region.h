@@ -1,34 +1,8 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//
-//     * Neither the name of NTESS nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+// See packages/seacas/LICENSE for details
 
 #ifndef IOSS_Ioss_Region_h
 #define IOSS_Ioss_Region_h
@@ -49,6 +23,8 @@
 #include <utility>         // for pair
 #include <vector>          // for vector
 namespace Ioss {
+  class Assembly;
+  class Blob;
   class CommSet;
   class EdgeBlock;
   class EdgeSet;
@@ -68,6 +44,9 @@ namespace Ioss {
 namespace Ioss {
 
   class CoordinateFrame;
+
+  using AssemblyContainer = std::vector<Ioss::Assembly *>;
+  using BlobContainer     = std::vector<Ioss::Blob *>;
 
   using NodeBlockContainer    = std::vector<NodeBlock *>;
   using EdgeBlockContainer    = std::vector<EdgeBlock *>;
@@ -111,7 +90,7 @@ namespace Ioss {
     const std::string mesh_type_string() const;
     bool              node_major() const;
 
-    void output_summary(std::ostream &strm, bool do_transient = true);
+    void output_summary(std::ostream &strm, bool do_transient = true) const;
 
     bool supports_field_type(Ioss::EntityType fld_type) const;
 
@@ -174,7 +153,12 @@ namespace Ioss {
     bool add(ElementSet *elementset);
     bool add(CommSet *commset);
     bool add(StructuredBlock *structured_block);
+    bool add(Assembly *assembly);
+    bool add(Blob *blob);
     bool add(const CoordinateFrame &frame);
+
+    // Special purpose...
+    bool remove(Assembly *removal);
 
     const NodeBlockContainer &      get_node_blocks() const;
     const EdgeBlockContainer &      get_edge_blocks() const;
@@ -187,6 +171,8 @@ namespace Ioss {
     const ElementSetContainer &     get_elementsets() const;
     const CommSetContainer &        get_commsets() const;
     const StructuredBlockContainer &get_structured_blocks() const;
+    const AssemblyContainer &       get_assemblies() const;
+    const BlobContainer &           get_blobs() const;
     const CoordinateFrameContainer &get_coordinate_frames() const;
 
     // Retrieve the Grouping Entity with the specified name.
@@ -205,6 +191,12 @@ namespace Ioss {
     ElementSet *     get_elementset(const std::string &my_name) const;
     CommSet *        get_commset(const std::string &my_name) const;
     StructuredBlock *get_structured_block(const std::string &my_name) const;
+    Assembly *       get_assembly(const std::string &my_name) const;
+    Blob *           get_blob(const std::string &my_name) const;
+
+    // Not guaranteed to be efficient...
+    // Note that not all GroupingEntity's are guaranteed to have an 'id'...
+    GroupingEntity *get_entity(const int64_t id, EntityType io_type) const;
 
     const CoordinateFrame &get_coordinate_frame(int64_t id) const;
 
@@ -299,6 +291,8 @@ namespace Ioss {
     CommSetContainer           commSets;
     CoordinateFrameContainer   coordinateFrames;
     StructuredBlockContainer   structuredBlocks;
+    AssemblyContainer          assemblies;
+    BlobContainer              blobs;
     mutable StateTimeContainer stateTimes;
 
     int         currentState;

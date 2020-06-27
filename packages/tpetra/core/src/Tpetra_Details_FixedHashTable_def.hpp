@@ -77,78 +77,8 @@ namespace FHT {
 // we would need experiments to find out.
 template<class ExecSpace>
 bool worthBuildingFixedHashTableInParallel () {
-//  KDD 8/19:  A temporary fix for #5179.  It appears some errors come from
-//  KDD 8/19:  computeOffsetsFromCounts; this temporary patch avoids the most
-//  KDD 8/19:  reproducible of the errors.  We'll reverse this as we debug
-//  KDD 8/19:  the problem, but this temporary fix may allow users to make
-//  KDD 8/19:  progress toward their milestones.
-//std::cout << "KDDKDD WorthIt " << (ExecSpace::concurrency() > 1) << std::endl;
     return ExecSpace::concurrency() > 1;
-//  return false;
-//  KDD 8/19
 }
-
-// If the input kokkos::View<const KeyType*, ArrayLayout,
-// InputExecSpace, Kokkos::MemoryUnamanged> is NOT accessible from the
-// OutputExecSpace execution space, make and return a deep copy.
-// Otherwise, just return the original input.
-//
-// The point of this is to avoid unnecessary copies, when the input
-// array of keys comes in as a Teuchos::ArrayView (which we wrap in an
-// unmanaged Kokkos::View).
-template<class KeyType,
-         class ArrayLayout,
-         class InputExecSpace,
-         class OutputExecSpace,
-         const bool mustDeepCopy =
-           ! std::is_same<typename InputExecSpace::memory_space,
-                          typename OutputExecSpace::memory_space>::value>
-struct DeepCopyIfNeeded {
-  // The default implementation is trivial; all the work happens in
-  // partial specializations.
-};
-
-// Specialization for when a deep copy is actually needed.
-template<class KeyType,
-         class ArrayLayout,
-         class InputExecSpace,
-         class OutputExecSpace>
-struct DeepCopyIfNeeded<KeyType, ArrayLayout, InputExecSpace, OutputExecSpace, true>
-{
-  typedef Kokkos::View<const KeyType*, ArrayLayout,
-                       InputExecSpace, Kokkos::MemoryUnmanaged> input_view_type;
-  // In this case, a deep copy IS needed.  As a result, the output
-  // type is a managed Kokkos::View, which differs from the input
-  // type.  Clients must get the correct return type from this struct,
-  // either from the typedef below or from 'auto'.  Assigning an
-  // unmanaged View to a managed View is a syntax error.
-  typedef Kokkos::View<const KeyType*, ArrayLayout, OutputExecSpace> output_view_type;
-
-  static output_view_type copy (const input_view_type& src) {
-    typedef typename output_view_type::non_const_type NC;
-
-    NC dst (Kokkos::ViewAllocateWithoutInitializing (src.tracker ().label ()),
-            src.extent (0));
-    Kokkos::deep_copy (dst, src);
-    return output_view_type (dst);
-  }
-};
-
-// Specialization if no need to make a deep copy.
-template<class KeyType,
-         class ArrayLayout,
-         class InputExecSpace,
-         class OutputExecSpace>
-struct DeepCopyIfNeeded<KeyType, ArrayLayout, InputExecSpace, OutputExecSpace, false> {
-  typedef Kokkos::View<const KeyType*, ArrayLayout,
-                       InputExecSpace, Kokkos::MemoryUnmanaged> input_view_type;
-  typedef Kokkos::View<const KeyType*, ArrayLayout, OutputExecSpace,
-                       Kokkos::MemoryUnmanaged> output_view_type;
-
-  static output_view_type copy (const input_view_type& src) {
-    return output_view_type (src);
-  }
-};
 
 //
 // Functors for FixedHashTable initialization
@@ -1212,8 +1142,9 @@ init (const keys_type& keys,
     Kokkos::deep_copy (counts, countsHost);
   }
 
-  // FIXME (mfh 28 Mar 2016) Need a fence here, otherwise SIGSEGV w/
-  // CUDA when ptr is filled.
+  // KJ: This fence is not required for the 2-argument deep_copy which calls
+  // fence, but will be required if switched to the 3-argumemt deep_copy which
+  // passes a space. The 3-argument form does not fence.
   execution_space().fence ();
 
   // Kokkos::View fills with zeros by default.
@@ -1266,8 +1197,9 @@ init (const keys_type& keys,
     }
   }
 
-  // FIXME (mfh 28 Mar 2016) Need a fence here, otherwise SIGSEGV w/
-  // CUDA when val is filled.
+  // KJ: computeOffsetsFromCounts calls parallel_scan which does not fence.
+  // This fence is necessary as we need to make sure that the offset view
+  // completes before the view is used in the next functor.
   execution_space().fence ();
 
   // Allocate the array of (key,value) pairs.  Don't fill it with

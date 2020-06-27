@@ -1,0 +1,57 @@
+<ParameterList name="MueLu">
+
+  <!--
+    For a generic symmetric scalar problem, these are the recommended settings for MueLu.
+  -->
+  <!-- Configuration of the Xpetra operator (fine level) 
+  <ParameterList name="Matrix">
+    <Parameter name="number of equations"                   type="int" value="3"/>
+  </ParameterList>
+-->
+
+
+  <!-- ===========  GENERAL ================ -->
+    <Parameter        name="verbosity"                            type="string"   value="high"/>
+
+    <Parameter        name="coarse: max size"                     type="int"      value="1000"/>
+
+    <Parameter        name="multigrid algorithm"                  type="string"   value="sa"/>
+    <Parameter name="use kokkos refactor"                   type="bool"     value="false"/>
+
+    <!-- reduces setup cost for symmetric problems -->
+    <Parameter        name="transpose: use implicit"              type="bool"     value="true"/>
+
+    <!-- start of default values for general options (can be omitted) -->
+    <Parameter        name="max levels"                	          type="int"      value="2"/>
+    <Parameter        name="number of equations"                  type="int"      value="3"/>
+    <Parameter        name="sa: use filtered matrix"              type="bool"     value="true"/>
+    <Parameter        name="sa: damping factor"                   type="double"   value="0.0"/>
+    <Parameter        name="tentative: calculate qr"              type="bool"   value="false"/>
+    <!-- end of default values -->
+
+  <!-- ===========  AGGREGATION  =========== -->
+    <Parameter        name="aggregation: type"                    type="string"   value="uncoupled"/>
+    <Parameter        name="aggregation: drop scheme"             type="string"   value="unsupported vector smoothing"/>
+    <Parameter        name="aggregation: number of random vectors"   type="int"   value="14"/>
+    <Parameter        name="aggregation: number of times to pre or post smooth"   type="int"   value="10"/>
+    <Parameter        name="aggregation: penalty parameters"   type="Array(double)" value="{12.0,-.20}"/>
+
+
+    <!-- Uncomment the next line to enable dropping of weak connections, which can help AMG convergence
+         for anisotropic problems.  The exact value is problem dependent. -->
+
+  <!-- ===========  SMOOTHING  =========== -->
+    <Parameter name="smoother: type"                    type="string" value="RELAXATION"/>
+    <Parameter        name="smoother: pre or post"    type="string"   value="both"/>
+    <ParameterList name="smoother: params">
+      <Parameter name="relaxation: type"                  type="string" value="Jacobi"/>
+      <Parameter name="relaxation: sweeps"                type="int"    value="1"/>
+      <Parameter name="relaxation: damping factor"        type="double" value="0.7"/>
+
+    </ParameterList>
+
+    <ParameterList name="export data">
+      <Parameter name="P" type="string" value="{11}"/>
+    </ParameterList>
+
+</ParameterList>

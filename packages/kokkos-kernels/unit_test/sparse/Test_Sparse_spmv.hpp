@@ -15,7 +15,7 @@
 
 namespace Test {
 
-template < class VectorType0, class VectorType1 >
+  template < class VectorType0, class VectorType1 >
 struct fSPMV {
   using value_type = int;
   using AT         = Kokkos::ArithTraits<typename VectorType1::non_const_value_type>;
@@ -174,93 +174,93 @@ void check_spmv_mv(crsMat_t input_mat, x_vector_type x, y_vector_type y, y_vecto
   }
 }
 
-  template <typename crsMat_t,
-            typename x_vector_type,
-            typename y_vector_type>
-  void check_spmv_struct(const crsMat_t input_mat,
-                         const int stencil_type,
-                         const Kokkos::View<typename crsMat_t::non_const_ordinal_type*, Kokkos::HostSpace> structure,
-                         x_vector_type x,
-                         y_vector_type y,
-                         typename y_vector_type::non_const_value_type alpha,
-                         typename y_vector_type::non_const_value_type beta) {
-    using ExecSpace     = typename crsMat_t::execution_space;
-    using my_exec_space = Kokkos::RangePolicy<ExecSpace>;
-    using y_value_type     = typename y_vector_type::non_const_value_type;
-    using y_value_trait    = Kokkos::ArithTraits<y_value_type>;
-    using y_value_mag_type = typename y_value_trait::mag_type;
+template <typename crsMat_t,
+          typename x_vector_type,
+          typename y_vector_type>
+void check_spmv_struct(const crsMat_t input_mat,
+                       const int stencil_type,
+                       const Kokkos::View<typename crsMat_t::non_const_ordinal_type*, Kokkos::HostSpace> structure,
+                       x_vector_type x,
+                       y_vector_type y,
+                       typename y_vector_type::non_const_value_type alpha,
+                       typename y_vector_type::non_const_value_type beta) {
+  using ExecSpace        = typename crsMat_t::execution_space;
+  using my_exec_space    = Kokkos::RangePolicy<ExecSpace>;
+  using y_value_type     = typename y_vector_type::non_const_value_type;
+  using y_value_trait    = Kokkos::ArithTraits<y_value_type>;
+  using y_value_mag_type = typename y_value_trait::mag_type;
 
-    // y is the quantity being tested here,
-    // so let us use y_value_type to determine
-    // the appropriate tolerance precision.
-    const double eps = std::is_same<y_value_mag_type, float>::value ? 2*1e-3 : 1e-7;
-    const size_t nr = input_mat.numRows();
-    y_vector_type expected_y("expected", nr);
-    Kokkos::deep_copy(expected_y, y);
+  // y is the quantity being tested here,
+  // so let us use y_value_type to determine
+  // the appropriate tolerance precision.
+  const double eps = std::is_same<y_value_mag_type, float>::value ? 2*1e-3 : 1e-7;
+  const size_t nr = input_mat.numRows();
+  y_vector_type expected_y("expected", nr);
+  Kokkos::deep_copy(expected_y, y);
+  Kokkos::fence();
+
+  sequential_spmv(input_mat, x, expected_y, alpha, beta);
+  KokkosSparse::Experimental::spmv_struct("N", stencil_type, structure,
+                                          alpha, input_mat, x, beta, y);
+
+  int num_errors = 0;
+  Kokkos::parallel_reduce("KokkosKernels::UnitTests::spmv_struct",
+                          my_exec_space(0, y.extent(0)),
+                          fSPMV<y_vector_type, y_vector_type>(expected_y,y,eps),
+                          num_errors);
+  if(num_errors>0) printf("KokkosKernels::UnitTests::spmv_struct: %i errors of %i with params: %d %lf %lf\n",
+                          num_errors, y.extent_int(0), stencil_type,
+                          y_value_trait::abs(alpha), y_value_trait::abs(beta));
+  EXPECT_TRUE(num_errors==0);
+} // check_spmv_struct
+
+template <typename crsMat_t,
+          typename x_vector_type,
+          typename y_vector_type>
+void check_spmv_mv_struct(const crsMat_t input_mat,
+                          const int stencil_type,
+                          const Kokkos::View<typename crsMat_t::non_const_ordinal_type*, Kokkos::HostSpace> structure,
+                          x_vector_type x,
+                          y_vector_type y,
+                          y_vector_type expected_y,
+                          typename y_vector_type::non_const_value_type alpha,
+                          typename y_vector_type::non_const_value_type beta,
+                          int numMV) {
+  using ExecSpace        = typename crsMat_t::execution_space;
+  using my_exec_space    = Kokkos::RangePolicy<ExecSpace>;
+  using y_value_type     = typename y_vector_type::non_const_value_type;
+  using y_value_trait    = Kokkos::ArithTraits<y_value_type>;
+  using y_value_mag_type = typename y_value_trait::mag_type;
+
+  // y is the quantity being tested here,
+  // so let us use y_value_type to determine
+  // the appropriate tolerance precision.
+  const double eps = std::is_same<y_value_mag_type, float>::value ? 2*1e-3 : 1e-7;
+  Kokkos::deep_copy(expected_y, y);
+  Kokkos::fence();
+
+  KokkosSparse::Experimental::spmv_struct("N", stencil_type, structure,
+                                          alpha, input_mat, x, beta, y);
+
+  for(int vectorIdx = 0; vectorIdx < numMV; ++vectorIdx) {
+    auto x_i = Kokkos::subview (x, Kokkos::ALL (), vectorIdx);
+    auto y_i = Kokkos::subview (expected_y, Kokkos::ALL (), vectorIdx);
     Kokkos::fence();
 
-    sequential_spmv(input_mat, x, expected_y, alpha, beta);
-    KokkosSparse::Experimental::spmv_struct("N", stencil_type, structure,
-                                            alpha, input_mat, x, beta, y);
+    sequential_spmv(input_mat, x_i, y_i, alpha, beta);
 
+    auto y_spmv = Kokkos::subview (y, Kokkos::ALL (), vectorIdx);
     int num_errors = 0;
-    Kokkos::parallel_reduce("KokkosKernels::UnitTests::spmv_struct",
+    Kokkos::parallel_reduce("KokkosKernels::UnitTests::spmv_mv_struct",
                             my_exec_space(0, y.extent(0)),
-                            fSPMV<y_vector_type, y_vector_type>(expected_y,y,eps),
+                            fSPMV<decltype(y_i), decltype(y_spmv)>(y_i,y_spmv,eps),
                             num_errors);
-    if(num_errors>0) printf("KokkosKernels::UnitTests::spmv_struct: %i errors of %i with params: %d %lf %lf\n",
+    if(num_errors>0) printf("KokkosKernels::UnitTests::spmv_mv_struct: %i errors of %i with params: %d %lf %lf, in vector %i\n",
                             num_errors, y.extent_int(0), stencil_type,
-                            y_value_trait::abs(alpha), y_value_trait::abs(beta));
+                            y_value_trait::abs(alpha), y_value_trait::abs(beta), vectorIdx);
     EXPECT_TRUE(num_errors==0);
   }
-
-  template <typename crsMat_t,
-            typename x_vector_type,
-            typename y_vector_type>
-  void check_spmv_mv_struct(const crsMat_t input_mat,
-                            const int stencil_type,
-                            const Kokkos::View<typename crsMat_t::non_const_ordinal_type*, Kokkos::HostSpace> structure,
-                            x_vector_type x,
-                            y_vector_type y,
-                            y_vector_type expected_y,
-                            typename y_vector_type::non_const_value_type alpha,
-                            typename y_vector_type::non_const_value_type beta,
-                            int numMV) {
-    typedef typename crsMat_t::execution_space ExecSpace;
-    typedef Kokkos::RangePolicy<ExecSpace> my_exec_space;
-    using y_value_type     = typename y_vector_type::non_const_value_type;
-    using y_value_trait    = Kokkos::ArithTraits<y_value_type>;
-    using y_value_mag_type = typename y_value_trait::mag_type;
-
-    // y is the quantity being tested here,
-    // so let us use y_value_type to determine
-    // the appropriate tolerance precision.
-    const double eps = std::is_same<y_value_mag_type, float>::value ? 2*1e-3 : 1e-7;
-    Kokkos::deep_copy(expected_y, y);
-    Kokkos::fence();
-
-    KokkosSparse::Experimental::spmv_struct("N", stencil_type, structure,
-                                            alpha, input_mat, x, beta, y);
-
-    for(int vectorIdx = 0; vectorIdx < numMV; ++vectorIdx) {
-      auto x_i = Kokkos::subview (x, Kokkos::ALL (), vectorIdx);
-      auto y_i = Kokkos::subview (expected_y, Kokkos::ALL (), vectorIdx);
-      Kokkos::fence();
-
-      sequential_spmv(input_mat, x_i, y_i, alpha, beta);
-
-      auto y_spmv = Kokkos::subview (y, Kokkos::ALL (), vectorIdx);
-      int num_errors = 0;
-      Kokkos::parallel_reduce("KokkosKernels::UnitTests::spmv_mv_struct",
-                              my_exec_space(0, y.extent(0)),
-                              fSPMV<decltype(y_i), decltype(y_spmv)>(y_i,y_spmv,eps),
-                              num_errors);
-      if(num_errors>0) printf("KokkosKernels::UnitTests::spmv_mv_struct: %i errors of %i with params: %d %lf %lf, in vector %i\n",
-                              num_errors, y.extent_int(0), stencil_type,
-                              y_value_trait::abs(alpha), y_value_trait::abs(beta), vectorIdx);
-      EXPECT_TRUE(num_errors==0);
-    }
-  }
+} // check_spmv_mv_struct
 
 } // namespace Test
 
@@ -638,6 +638,7 @@ void test_github_issue_101 ()
   }
 }
 
+
 #define EXECUTE_TEST_ISSUE_101( DEVICE) \
 TEST_F( TestCategory,sparse ## _ ## spmv_issue_101 ## _ ## OFFSET ## _ ## DEVICE ) { \
 	test_github_issue_101<DEVICE> (); \
@@ -661,9 +662,10 @@ TEST_F( TestCategory,sparse ## _ ## spmv_mv ## _ ## SCALAR ## _ ## ORDINAL ## _ 
 #define EXECUTE_TEST_STRUCT(SCALAR, ORDINAL, OFFSET, DEVICE) \
 TEST_F( TestCategory,sparse ## _ ## spmv_struct ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
   test_spmv_struct_1D<SCALAR,ORDINAL,OFFSET,DEVICE> (10, 1, 1);            \
-  test_spmv_struct_2D<SCALAR,ORDINAL,OFFSET,DEVICE> (250, 200, 3, 3);      \
+  test_spmv_struct_2D<SCALAR,ORDINAL,OFFSET,DEVICE> (250, 201, 3, 3);      \
   test_spmv_struct_2D<SCALAR,ORDINAL,OFFSET,DEVICE> (200, 250, 3, 3);      \
-  test_spmv_struct_2D<SCALAR,ORDINAL,OFFSET,DEVICE> (250, 250, 3, 3);      \
+  test_spmv_struct_2D<SCALAR,ORDINAL,OFFSET,DEVICE> (251, 251, 3, 3);      \
+  test_spmv_struct_3D<SCALAR,ORDINAL,OFFSET,DEVICE> (30, 30, 30, 3, 3, 3); \
   test_spmv_struct_3D<SCALAR,ORDINAL,OFFSET,DEVICE> (40, 40, 40, 3, 3, 3); \
   test_spmv_struct_3D<SCALAR,ORDINAL,OFFSET,DEVICE> (25, 40, 50, 3, 3, 3); \
   test_spmv_struct_3D<SCALAR,ORDINAL,OFFSET,DEVICE> (40, 50, 25, 3, 3, 3); \
@@ -688,7 +690,7 @@ TEST_F( TestCategory,sparse ## _ ## spmv_mv_struct ## _ ## SCALAR ## _ ## ORDINA
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST(double, int, int, TestExecSpace)
  EXECUTE_TEST_STRUCT(double, int, int, TestExecSpace)
- #endif
+#endif
 
 #if (defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \

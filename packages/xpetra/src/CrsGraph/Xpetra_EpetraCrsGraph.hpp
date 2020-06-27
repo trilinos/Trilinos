@@ -271,7 +271,7 @@ public:
   local_graph_type getLocalGraph () const {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented,
       "Xpetra::EpetraCrsGraph only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
-    TEUCHOS_UNREACHABLE_RETURN((Kokkos::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, execution_space>()));
+    TEUCHOS_UNREACHABLE_RETURN((local_graph_type()));
   }
 #else
 #ifdef __GNUC__
@@ -587,7 +587,7 @@ public:
   local_graph_type getLocalGraph () const {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented,
                                "Epetra does not support Kokkos::StaticCrsGraph!");
-    TEUCHOS_UNREACHABLE_RETURN((Kokkos::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, execution_space>()));
+    TEUCHOS_UNREACHABLE_RETURN((local_graph_type()));
   }
 #else
 #ifdef __GNUC__
@@ -954,7 +954,7 @@ public:
   local_graph_type getLocalGraph () const {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented,
                                "Epetra does not support Kokkos::StaticCrsGraph!");
-    TEUCHOS_UNREACHABLE_RETURN((Kokkos::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, execution_space>()));
+    TEUCHOS_UNREACHABLE_RETURN((local_graph_type()));
   }
 #else
 #ifdef __GNUC__

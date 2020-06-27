@@ -83,6 +83,29 @@
 
 namespace MueLu {
 
+  namespace Details {
+    template<class real_type, class LO>
+    struct DropTol {
+      
+      DropTol()               = default;
+      DropTol(DropTol const&) = default;
+      DropTol(DropTol &&)     = default;
+      
+      DropTol& operator=(DropTol const&) = default;
+      DropTol& operator=(DropTol &&)     = default;
+      
+      DropTol(real_type val_, real_type diag_, LO col_, bool drop_)
+        : val{val_}, diag{diag_},  col{col_}, drop{drop_}
+      {}
+      
+      real_type val  {Teuchos::ScalarTraits<real_type>::zero()};
+                  real_type diag {Teuchos::ScalarTraits<real_type>::zero()};
+      LO        col  {Teuchos::OrdinalTraits<LO>::invalid()};
+      bool      drop {true};
+    };
+  }
+
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const ParameterList> CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
@@ -97,6 +120,7 @@ namespace MueLu {
         rcp(new validatorType(Teuchos::tuple<std::string>("classical", "distance laplacian"), "aggregation: drop scheme")));
     }
     SET_VALID_ENTRY("aggregation: distance laplacian algo");
+    SET_VALID_ENTRY("aggregation: classical algo");
 #undef  SET_VALID_ENTRY
     validParamList->set< bool >                  ("lightweight wrap",           true, "Experimental option for lightweight graph access");
 
@@ -162,7 +186,8 @@ namespace MueLu {
 
       SC threshold = as<SC>(pL.get<double>("aggregation: drop tol"));
       std::string distanceLaplacianAlgoStr = pL.get<std::string>("aggregation: distance laplacian algo");
-      real_type distanceLaplacianThreshold = STS::magnitude(threshold);
+      std::string classicalAlgoStr = pL.get<std::string>("aggregation: classical algo");
+      real_type realThreshold = STS::magnitude(threshold);// CMS: Rename this to "magnitude threshold" sometime
       ////////////////////////////////////////////////////
       // Remove this bit once we are confident that cut-based dropping works.
 #ifdef HAVE_MUELU_DEBUG
@@ -175,7 +200,7 @@ namespace MueLu {
 
       if (getenv("MUELU_DROP_TOLERANCE_THRESHOLD")) {
         auto tmp = atoi(getenv("MUELU_DROP_TOLERANCE_THRESHOLD"));
-        distanceLaplacianThreshold = 1e-4*tmp;
+        realThreshold = 1e-4*tmp;
       }
 
 # ifdef HAVE_MUELU_DEBUG
@@ -186,9 +211,10 @@ namespace MueLu {
 #endif
       ////////////////////////////////////////////////////
 
-      enum distanceLaplacianAlgoType {defaultAlgo, unscaled_cut, scaled_cut};
+      enum decisionAlgoType {defaultAlgo, unscaled_cut, scaled_cut};
 
-      distanceLaplacianAlgoType distanceLaplacianAlgo = defaultAlgo;
+      decisionAlgoType distanceLaplacianAlgo = defaultAlgo;
+      decisionAlgoType classicalAlgo = defaultAlgo;
       if (algo == "distance laplacian") {
         if (distanceLaplacianAlgoStr == "default")
           distanceLaplacianAlgo = defaultAlgo;
@@ -199,6 +225,17 @@ namespace MueLu {
         else
           TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "\"aggregation: distance laplacian algo\" must be one of (default|unscaled cut|scaled cut), not \"" << distanceLaplacianAlgoStr << "\"");
         GetOStream(Runtime0) << "algorithm = \"" << algo << "\" distance laplacian algorithm = \"" << distanceLaplacianAlgoStr << "\": threshold = " << threshold << ", blocksize = " << A->GetFixedBlockSize() << std::endl;
+      } else if (algo == "classical") {
+        if (classicalAlgoStr == "default")
+          classicalAlgo = defaultAlgo;
+        else if (classicalAlgoStr == "unscaled cut")
+          classicalAlgo = unscaled_cut;
+        else if (classicalAlgoStr == "scaled cut")
+          classicalAlgo = scaled_cut;
+        else
+          TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "\"aggregation: classical algo\" must be one of (default|unscaled cut|scaled cut), not \"" << classicalAlgoStr << "\"");
+        GetOStream(Runtime0) << "algorithm = \"" << algo << "\" classical algorithm = \"" << classicalAlgoStr << "\": threshold = " << threshold << ", blocksize = " << A->GetFixedBlockSize() << std::endl;
+        
       } else
         GetOStream(Runtime0) << "algorithm = \"" << algo << "\": threshold = " << threshold << ", blocksize = " << A->GetFixedBlockSize() << std::endl;
       Set<bool>(currentLevel, "Filtering", (threshold != STS::zero()));
@@ -262,10 +299,9 @@ namespace MueLu {
 
           RCP<Vector> ghostedDiag = MueLu::Utilities<SC,LO,GO,NO>::GetMatrixOverlappedDiagonal(*A);
           const ArrayRCP<const SC> ghostedDiagVals = ghostedDiag->getData(0);
-          const ArrayRCP<bool>     boundaryNodes(A->getNodeNumRows(), false);
+          ArrayRCP<const bool> boundaryNodes = MueLu::Utilities<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
 
           LO realnnz = 0;
-
           rows[0] = 0;
           for (LO row = 0; row < Teuchos::as<LO>(A->getRowMap()->getNodeNumElements()); ++row) {
             size_t nnz = A->getNumEntriesInLocalRow(row);
@@ -273,39 +309,139 @@ namespace MueLu {
             ArrayView<const SC> vals;
             A->getLocalRowView(row, indices, vals);
 
-            //FIXME the current predrop function uses the following
-            //FIXME    if(std::abs(vals[k]) > std::abs(threshold_) || grow == gcid )
-            //FIXME but the threshold doesn't take into account the rows' diagonal entries
-            //FIXME For now, hardwiring the dropping in here
-
-            LO rownnz = 0;
-            for (LO colID = 0; colID < Teuchos::as<LO>(nnz); colID++) {
-              LO col = indices[colID];
-
-              // we avoid a square root by using squared values
-              typename STS::magnitudeType aiiajj = STS::magnitude(threshold*threshold * ghostedDiagVals[col]*ghostedDiagVals[row]);  // eps^2*|a_ii|*|a_jj|
-              typename STS::magnitudeType aij    = STS::magnitude(vals[colID]*vals[colID]);                                          // |a_ij|^2
-
-              if (aij > aiiajj || row == col) {
-                columns[realnnz++] = col;
-                rownnz++;
-              } else
-                numDropped++;
+            if(classicalAlgo == defaultAlgo) {              
+              //FIXME the current predrop function uses the following
+              //FIXME    if(std::abs(vals[k]) > std::abs(threshold_) || grow == gcid )
+              //FIXME but the threshold doesn't take into account the rows' diagonal entries
+              //FIXME For now, hardwiring the dropping in here
+              
+              LO rownnz = 0;
+              for (LO colID = 0; colID < Teuchos::as<LO>(nnz); colID++) {
+                LO col = indices[colID];
+                
+                // we avoid a square root by using squared values
+                typename STS::magnitudeType aiiajj = STS::magnitude(threshold*threshold * ghostedDiagVals[col]*ghostedDiagVals[row]);  // eps^2*|a_ii|*|a_jj|
+                typename STS::magnitudeType aij    = STS::magnitude(vals[colID]*vals[colID]);                                          // |a_ij|^2
+                
+                if (aij > aiiajj || row == col) {
+                  columns[realnnz++] = col;
+                  rownnz++;
+                } else
+                  numDropped++;
+              }
+              rows[row+1] = realnnz;
             }
-            if (rownnz == 1) {
-              // If the only element remaining after filtering is diagonal, mark node as boundary
-              // FIXME: this should really be replaced by the following
-              //    if (indices.size() == 1 && indices[0] == row)
-              //        boundaryNodes[row] = true;
-              // We do not do it this way now because there is no framework for distinguishing isolated
-              // and boundary nodes in the aggregation algorithms
-              boundaryNodes[row] = true;
+            else {
+              /* Cut Algorithm */
+              //CMS
+              using DropTol = Details::DropTol<real_type,LO>;
+              std::vector<DropTol> drop_vec;
+              drop_vec.reserve(nnz);
+              const real_type zero = Teuchos::ScalarTraits<real_type>::zero();
+              const real_type one  = Teuchos::ScalarTraits<real_type>::one();
+              LO rownnz = 0;
+
+              // find magnitudes
+              for (LO colID = 0; colID < (LO)nnz; colID++) {
+                LO col = indices[colID];              
+                if (row == col) {
+                  drop_vec.emplace_back( zero, one, colID, false);
+                  continue;
+                }
+                
+                // Don't aggregate boundaries
+                if(boundaryNodes[colID]) continue;
+                typename STS::magnitudeType aiiajj = STS::magnitude(threshold*threshold * ghostedDiagVals[col]*ghostedDiagVals[row]);  // eps^2*|a_ii|*|a_jj|
+                typename STS::magnitudeType aij    = STS::magnitude(vals[colID]*vals[colID]);                                          // |a_ij|^2
+                drop_vec.emplace_back(aij, aiiajj, colID, false);
+              }
+
+              const size_t n = drop_vec.size();
+              
+              if (classicalAlgo == unscaled_cut) {
+                std::sort( drop_vec.begin(), drop_vec.end()
+                           , [](DropTol const& a, DropTol const& b) {
+                             return a.val > b.val;
+                           });
+                
+                bool drop = false;
+                for (size_t i=1; i<n; ++i) {
+                  if (!drop) {
+                    auto const& x = drop_vec[i-1];
+                    auto const& y = drop_vec[i];
+                    auto a = x.val;
+                    auto b = y.val;
+                    if (a > realThreshold*b) {
+                      drop = true;
+#ifdef HAVE_MUELU_DEBUG
+                      if (distanceLaplacianCutVerbose) {
+                        std::cout << "DJS: KEEP, N, ROW:  " << i+1 << ", " << n << ", " << row << std::endl;
+                      }
+#endif
+                    }
+                  }
+                  drop_vec[i].drop = drop;
+                }
+              } else if (classicalAlgo == scaled_cut) {               
+                  std::sort( drop_vec.begin(), drop_vec.end()
+                           , [](DropTol const& a, DropTol const& b) {
+                               return a.val/a.diag > b.val/b.diag;
+                             });
+                  bool drop = false;
+                  //                  printf("[%d] Scaled Cut: ",(int)row);
+                  //                  printf("%3d(%4s) ",indices[drop_vec[0].col],"keep");
+                  for (size_t i=1; i<n; ++i) {
+                    if (!drop) {
+                      auto const& x = drop_vec[i-1];
+                      auto const& y = drop_vec[i];
+                      auto a = x.val/x.diag;
+                      auto b = y.val/y.diag;
+                      if (a > realThreshold*b) {
+                        drop = true;
+
+#ifdef HAVE_MUELU_DEBUG
+                        if (distanceLaplacianCutVerbose) {
+                          std::cout << "DJS: KEEP, N, ROW:  " << i+1 << ", " << n << ", " << row << std::endl;
+                        }
+#endif
+                      }
+                      //                      printf("%3d(%4s) ",indices[drop_vec[i].col],drop?"drop":"keep");
+
+                    }
+                    drop_vec[i].drop = drop;
+                  }
+                  //                  printf("\n");
+              }
+              std::sort( drop_vec.begin(), drop_vec.end()
+                         , [](DropTol const& a, DropTol const& b) {
+                           return a.col < b.col;
+                         }
+                         );
+              
+              for (LO idxID =0; idxID<(LO)drop_vec.size(); idxID++) {
+                LO col = indices[drop_vec[idxID].col];
+                // don't drop diagonal
+                if (row == col) {
+                  columns[realnnz++] = col;
+                  rownnz++;
+                  continue;
+                }
+                
+                if (!drop_vec[idxID].drop) {
+                  columns[realnnz++] = col;
+                  rownnz++;
+                } else {
+                  numDropped++;
+                }
+              }
+              // CMS
+              rows[row+1] = realnnz;
+              
             }
-            rows[row+1] = realnnz;
-          }
+          }//end for row
+
           columns.resize(realnnz);
           numTotal = A->getNodeNumEntries();
-
           RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, A->getRowMap(), A->getColMap(), "thresholded graph of A"));
           graph->SetBoundaryNodeMap(boundaryNodes);
           if (GetVerbLevel() & Statistics1) {
@@ -737,15 +873,14 @@ namespace MueLu {
           for (LO row = 0; row < numRows; row++) {
             ArrayView<const LO> indices;
             indicesExtra.resize(0);
+	    bool isBoundary = false;
 
             if (blkSize == 1) {
-              ArrayView<const SC>     vals;
+	      ArrayView<const SC>     vals;
               A->getLocalRowView(row, indices, vals);
-
+	      isBoundary = pointBoundaryNodes[row];
             } else {
               // The amalgamated row is marked as Dirichlet iff all point rows are Dirichlet
-              bool isBoundary = false;
-              isBoundary = true;
               for (LO j = 0; j < blkSize; j++) {
                 if (!pointBoundaryNodes[row*blkSize+j]) {
                   isBoundary = false;
@@ -765,9 +900,9 @@ namespace MueLu {
             LO nnz = indices.size(), rownnz = 0;
 
             if (threshold != STS::zero()) {
-
               // default
               if (distanceLaplacianAlgo == defaultAlgo) {
+		/* Standard Distance Laplacian */
                 for (LO colID = 0; colID < nnz; colID++) {
 
                   LO col = indices[colID];
@@ -778,8 +913,12 @@ namespace MueLu {
                     continue;
                   }
 
+		  // We do not want the distance Laplacian aggregating boundary nodes
+		  if(isBoundary) continue;
+
+
                   SC laplVal = STS::one() / MueLu::Utilities<real_type,LO,GO,NO>::Distance2(coordData, row, col);
-                  real_type aiiajj = STS::magnitude(distanceLaplacianThreshold*distanceLaplacianThreshold * ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
+                  real_type aiiajj = STS::magnitude(realThreshold*realThreshold * ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
                   real_type aij    = STS::magnitude(laplVal*laplVal);
 
                   if (aij > aiiajj) {
@@ -790,25 +929,8 @@ namespace MueLu {
                   }
                 }
               } else {
-                struct DropTol {
-
-                  DropTol()               = default;
-                  DropTol(DropTol const&) = default;
-                  DropTol(DropTol &&)     = default;
-
-                  DropTol& operator=(DropTol const&) = default;
-                  DropTol& operator=(DropTol &&)     = default;
-
-                  DropTol(real_type val_, real_type diag_, LO col_, bool drop_)
-                    : val{val_}, diag{diag_},  col{col_}, drop{drop_}
-                  {}
-
-                  real_type val  {Teuchos::ScalarTraits<real_type>::zero()};
-                  real_type diag {Teuchos::ScalarTraits<real_type>::zero()};
-                  LO        col  {Teuchos::OrdinalTraits<LO>::invalid()};
-                  bool      drop {true};
-                };
-
+		/* Cut Algorithm */
+                using DropTol = Details::DropTol<real_type,LO>;
                 std::vector<DropTol> drop_vec;
                 drop_vec.reserve(nnz);
                 const real_type zero = Teuchos::ScalarTraits<real_type>::zero();
@@ -823,6 +945,8 @@ namespace MueLu {
                     drop_vec.emplace_back( zero, one, colID, false);
                     continue;
                   }
+		  // We do not want the distance Laplacian aggregating boundary nodes
+		  if(isBoundary) continue;
 
                   SC laplVal = STS::one() / MueLu::Utilities<real_type,LO,GO,NO>::Distance2(coordData, row, col);
                   real_type aiiajj = STS::magnitude(ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
@@ -848,7 +972,7 @@ namespace MueLu {
                       auto const& y = drop_vec[i];
                       auto a = x.val;
                       auto b = y.val;
-                      if (a > distanceLaplacianThreshold*b) {
+                      if (a > realThreshold*b) {
                         drop = true;
 #ifdef HAVE_MUELU_DEBUG
                         if (distanceLaplacianCutVerbose) {
@@ -875,7 +999,7 @@ namespace MueLu {
                       auto const& y = drop_vec[i];
                       auto a = x.val/x.diag;
                       auto b = y.val/y.diag;
-                      if (a > distanceLaplacianThreshold*b) {
+                      if (a > realThreshold*b) {
                         drop = true;
 #ifdef HAVE_MUELU_DEBUG
                         if (distanceLaplacianCutVerbose) {
@@ -894,9 +1018,9 @@ namespace MueLu {
                            }
                          );
 
-                for (LO colID = 0; colID < nnz; colID++) {
+		for (LO idxID =0; idxID<(LO)drop_vec.size(); idxID++) {
+                  LO col = indices[drop_vec[idxID].col];
 
-                  LO col = indices[colID];
 
                   // don't drop diagonal
                   if (row == col) {
@@ -905,7 +1029,7 @@ namespace MueLu {
                     continue;
                   }
 
-                  if (!drop_vec[colID].drop) {
+                  if (!drop_vec[idxID].drop) {
                     columns[realnnz++] = col;
                     rownnz++;
                   } else {
@@ -922,7 +1046,7 @@ namespace MueLu {
               }
             }
 
-            if (rownnz == 1) {
+            if ( rownnz == 1) {
               // If the only element remaining after filtering is diagonal, mark node as boundary
               // FIXME: this should really be replaced by the following
               //    if (indices.size() == 1 && indices[0] == row)

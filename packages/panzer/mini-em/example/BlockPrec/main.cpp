@@ -133,7 +133,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
 
-  Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcp(&std::cout,false)));
+  Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcpFromRef(std::cout)));
   Teuchos::RCP<const Teuchos::MpiComm<int> > comm
     = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(Teuchos::DefaultComm<int>::getComm());
   if (comm->getSize() > 1) {
@@ -189,8 +189,12 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
     }
 
-    if (use_stacked_timer)
+    if (use_stacked_timer) {
       stacked_timer = rcp(new Teuchos::StackedTimer("Mini-EM"));
+      Teuchos::RCP<Teuchos::FancyOStream> verbose_out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcpFromRef(std::cout)));
+      verbose_out->setShowProcRank(true);
+      stacked_timer->setVerboseOstream(verbose_out);
+    }
     Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
 
     Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: Total Time")));
@@ -644,8 +648,10 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
 
     {
       Teuchos::TimeMonitor tMts(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: timestepper")));
+      auto time_step_timer = Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: Advance Time Step"));
       for(int ts = 1; ts < numTimeSteps+1; ts++)
         {
+          Teuchos::TimeMonitor adv_time_step_timer(*time_step_timer);
           (*out) << std::endl;
           (*out) << "**************************************************" << std::endl;
           (*out) << "* starting time step " << ts << std::endl;
@@ -723,6 +729,9 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     Teuchos::StackedTimer::OutputOptions options;
     options.output_fraction = options.output_histogram = options.output_minmax = true;
     stacked_timer->report(*out, comm, options);
+    auto xmlOut = stacked_timer->reportWatchrXML(std::string("MiniEM 3D RefMaxwell ") + std::to_string(comm->getSize()) + " ranks", comm);
+    if(xmlOut.length())
+      std::cout << "\nAlso created Watchr performance report " << xmlOut << '\n';
   } else
     Teuchos::TimeMonitor::summarize(*out,false,true,false,Teuchos::Union,"",true);
 

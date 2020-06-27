@@ -126,8 +126,11 @@ void parse_command_line_args(int argc, const char** argv,
       const bool isPositionalArg = !argHasBeenUsed[i];
       if (isPositionalArg) {
         const Option& option = optionsDesc.get_positional_option(positionalArgIndex);
-        insert_option(option, std::string(argv[i]), parsedOptions);
-        ++positionalArgIndex;
+        if (option.position != INVALID_POSITION) {
+          argHasBeenUsed[i] = true;
+          insert_option(option, std::string(argv[i]), parsedOptions);
+          ++positionalArgIndex;
+        }
       }
     }
   }
@@ -135,7 +138,15 @@ void parse_command_line_args(int argc, const char** argv,
   if (parsedOptions.count("help") == 0 && parsedOptions.count("version") == 0) {
     make_sure_all_required_were_found(optionsDesc, parsedOptions);
   }
-//std::cerr<<"leaving prs-cmd-line-args"<<std::endl;
+
+  if (optionsDesc.is_error_on_unrecognized()) {
+    for(int i=1; i<argc; ++i) {
+      if (!argHasBeenUsed[i]) {
+        throw std::runtime_error(std::string("Unrecognized option: ")
+                                 +std::string(argv[i]));
+      }
+    }
+  }
 }
 
 }

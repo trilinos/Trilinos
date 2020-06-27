@@ -302,6 +302,11 @@ namespace Amesos2 {
       redist_mv.doExport (*mv_, *exporter_, Tpetra::REPLACE);
 
       if ( distribution != CONTIGUOUS_AND_ROOTED ) {
+        // Do this if GIDs contiguous - existing functionality
+        // Copy the imported (multi)vector's data into the Kokkos View.
+        deep_copy_or_assign_view(kokkos_view, redist_mv.getLocalViewDevice());
+      }
+      else {
         if(redist_mv.isConstantStride()) {
           redist_mv.sync_device(); // no testing of this right now - since UVM on
           deep_copy_or_assign_view(kokkos_view, redist_mv.getLocalViewDevice());
@@ -309,9 +314,6 @@ namespace Amesos2 {
         else {
           TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Kokkos adapter non-constant stride not imlemented.");
         }
-      }
-      else {
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Kokkos adapter CONTIGUOUS_AND_ROOTED path not implemented for get1dCopy_kokkos_view().");
       }
     }
   }
@@ -552,26 +554,48 @@ namespace Amesos2 {
       }
 
       if ( distribution != CONTIGUOUS_AND_ROOTED ) {
-        // Fix the type if necessary
-        Kokkos::View<Scalar**, Kokkos::LayoutLeft, typename KV::execution_space>
-          fix_type_kokkos_new_data;
-        // This wouldn't compile for cuda complex on white - but ok on my local setup
-        // Tpetra is built std::complex and the View is Kokkos::complex which
-        // causes the problem. Here we want to be std::complex to send back to the Tpetra MV.
-        // Won't work ...
-        // deep_copy_or_assign_view(fix_type_kokkos_new_data, kokkos_new_data);
-
-        // So instead we call a special version of this method which checks if
-        // the src is Kokkos::complex type and force casts to std::complex.
-        // Otherwise it just calls above deep_copy_or_assign_view
-        deep_copy_or_assign_view_make_src_std_complex(fix_type_kokkos_new_data, kokkos_new_data);
+#ifdef HAVE_TEUCHOS_COMPLEX
+        // for complex, cast Kokkos::complex back to std::complex
+        auto pData = reinterpret_cast<Scalar*>(kokkos_new_data.data());
+#else
+        auto pData = kokkos_new_data.data();
+#endif
 
         const multivec_t source_mv (srcMap, Teuchos::ArrayView<const scalar_t>(
-          fix_type_kokkos_new_data.data(), fix_type_kokkos_new_data.size()), lda, num_vecs);
+          pData, kokkos_new_data.size()), lda, num_vecs);
         mv_->doImport (source_mv, *importer_, Tpetra::REPLACE);
       }
       else {
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Kokkos adapter CONTIGUOUS_AND_ROOTED not implemented for put1dData_kokkos_view.");
+        multivec_t redist_mv (srcMap, num_vecs); // unused for ROOTED case
+        typedef typename multivec_t::dual_view_type dual_view_type;
+        typedef typename dual_view_type::host_mirror_space host_execution_space;
+        redist_mv.template modify< host_execution_space > ();
+
+        // Cuda solvers won't currently use this path since they are just serial
+        // right now, so this mirror should be harmless (and not strictly necessary).
+        // Adding it for future possibilities though we may then refactor this
+        // for better efficiency if the kokkos_new_data view is on device.
+        auto host_kokkos_new_data = Kokkos::create_mirror_view(kokkos_new_data);
+        Kokkos::deep_copy(host_kokkos_new_data, kokkos_new_data);
+        if ( redist_mv.isConstantStride() ) {
+          auto contig_local_view_2d = redist_mv.template getLocalView<host_execution_space>();
+          for ( size_t j = 0; j < num_vecs; ++j) {
+            auto av_j = Kokkos::subview(host_kokkos_new_data, Kokkos::ALL, j);
+            for ( size_t i = 0; i < lda; ++i ) {
+              contig_local_view_2d(i,j) = av_j(i);
+            }
+          }
+        }
+        else {
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Kokkos adapter "
+            "CONTIGUOUS_AND_ROOTED not implemented for put1dData_kokkos_view "
+            "with non constant stride.");
+        }
+
+        typedef typename multivec_t::node_type::memory_space memory_space;
+        redist_mv.template sync <memory_space> ();
+
+        mv_->doImport (redist_mv, *importer_, Tpetra::REPLACE);
       }
     }
 

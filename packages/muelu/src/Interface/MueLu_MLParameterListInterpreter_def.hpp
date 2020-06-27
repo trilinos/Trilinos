@@ -197,10 +197,22 @@ namespace MueLu {
 
     // pull out "use kokkos refactor"
     bool setKokkosRefactor = false;
-#if ( defined(HAVE_MUELU_KOKKOS_REFACTOR) && defined(HAVE_MUELU_KOKKOS_REFACTOR_USE_BY_DEFAULT) )
-    bool useKokkosRefactor = true;
+    bool useKokkosRefactor;
+#if !defined(HAVE_MUELU_KOKKOS_REFACTOR)
+    useKokkosRefactor = false;
 #else
-    bool useKokkosRefactor = false;
+# ifdef HAVE_MUELU_SERIAL
+    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosSerialWrapperNode).name())
+      useKokkosRefactor = false;
+# endif
+# ifdef HAVE_MUELU_OPENMP
+    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosOpenMPWrapperNode).name())
+      useKokkosRefactor = true;
+# endif
+# ifdef HAVE_MUELU_CUDA
+    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
+      useKokkosRefactor = true;
+# endif
 #endif
     if (paramList.isType<bool>("use kokkos refactor")) {
       useKokkosRefactor = paramList.get<bool>("use kokkos refactor");
@@ -713,7 +725,7 @@ namespace MueLu {
       // Validator: following upper/lower case is what is allowed by ML
       bool valid = false;
       const int  validatorSize = 5;
-      std::string validator[validatorSize] = {"Superlu", "Superludist", "KLU", "UMFPACK"}; /* TODO: should "" be allowed? */
+      std::string validator[validatorSize] = {"Superlu", "Superludist", "KLU", "UMFPACK", "MUMPS"}; /* TODO: should "" be allowed? */
       for (int i=0; i < validatorSize; i++) { if (validator[i] == solverType) valid = true; }
       TEUCHOS_TEST_FOR_EXCEPTION(!valid, Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter: unknown smoother type. '" << type << "' not supported.");
 

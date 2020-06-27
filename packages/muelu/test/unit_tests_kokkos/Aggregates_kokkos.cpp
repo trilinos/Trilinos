@@ -103,12 +103,12 @@ namespace MueLuTests {
                           typename graph_t::device_type::memory_space,
                           typename graph_t::device_type::memory_space>;
     KernelHandle kh;
-    //leave gc algorithm choice as the default
+    //Leave gc algorithm choice as the default:
+    //COLORING_D2_SERIAL for Serial execspace, and COLORING_D2_NB_BIT otherwise.
     kh.create_distance2_graph_coloring_handle();
 
     // get the distance-2 graph coloring handle
     auto coloringHandle = kh.get_distance2_graph_coloring_handle();
-    coloringHandle->set_algorithm( KokkosGraph::COLORING_D2_SERIAL );
 
     //Create device views for graph rowptrs/colinds
     typename graph_t::row_map_type aRowptrs = graph->getRowPtrs();
@@ -116,9 +116,7 @@ namespace MueLuTests {
 
     //run d2 graph coloring
     //graph is symmetric so row map/entries and col map/entries are the same
-    KokkosGraph::Experimental::graph_compute_distance2_color(&kh, numNodes, numNodes,
-                                                             aRowptrs, aColinds,
-                                                             aRowptrs, aColinds);
+    KokkosGraph::Experimental::graph_color_distance2(&kh, numNodes, aRowptrs, aColinds);
 
     // extract the colors and store them in the aggregates
     aggregates->SetGraphColors(coloringHandle->get_vertex_colors());
@@ -132,6 +130,7 @@ namespace MueLuTests {
     params.set<int> ("aggregation: max agg size", 3);
     params.set<bool>("aggregation: deterministic", false);
 
+    params.set<bool>("aggregation: phase2a include root", true);
     params.set<bool>("aggregation: error on nodes with no on-rank neighbors", false);
     params.set<bool>("aggregation: phase3 avoid singletons", false);
 

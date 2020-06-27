@@ -1,3 +1,9 @@
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
+//
+// See packages/seacas/LICENSE for details
+
 #define CATCH_CONFIG_MAIN
 #include <catch.hpp>
 
@@ -86,7 +92,7 @@ void check_split_assign(std::vector<Iocgns::StructuredZoneData *> &zones,
     }
 
     for (size_t i = 0; i < zones.size(); i++) {
-      CHECK(zones[i]->m_zone == i + 1);
+      CHECK(zones[i]->m_zone == int(i) + 1);
     }
 
     SECTION("assign_to_procs")
@@ -1043,5 +1049,22 @@ TEST_CASE("LotsOfZones", "[LotsOfZones]")
     std::string name = "Lots_PC_" + std::to_string(proc_count);
     SECTION(name) { check_split_assign(zones, load_balance_tolerance, proc_count, 0.9, 1.1); }
   }
+  cleanup(zones);
+}
+
+TEST_CASE("half_sphere", "[half_sphere]")
+{
+  int zone = 1;
+  std::vector<Iocgns::StructuredZoneData *> zones;
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "80x50x24"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "80x50x24"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "80x50x24"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "80x50x50"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "24x80x50"));
+
+  double load_balance_tolerance = 1.4;
+
+  std::string name = "half_sphere_8";
+  SECTION(name) { check_split_assign(zones, load_balance_tolerance, 8, 0.9, 1.1); }
   cleanup(zones);
 }

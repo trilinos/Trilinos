@@ -34,15 +34,25 @@ namespace Tacho {
         const ordinal_type m = B.extent(0);
         const ordinal_type n = B.extent(1);
         
-        if (m > 0 && n > 0) 
-          for (ordinal_type p=0,offsB=0;p<n;++p,offsB+=B.stride_1()) {  
-            BlasTeam<value_type>::trsv(member,
+        if (m > 0 && n > 0) {
+          if (n == 1) {
+            BlasTeam<value_type>::trsv(member, 
                                        ArgUplo::param, ArgTransA::param, 
                                        diagA.param, 
                                        m,
                                        A.data(), A.stride_1(), 
-                                       (B.data() + offsB), B.stride_0());
+                                       B.data(), B.stride_0());
+          } else {
+            BlasTeam<value_type>::trsm(member, 
+                                       Side::Left::param, ArgUplo::param, ArgTransA::param, 
+                                       diagA.param, 
+                                       m, n,
+                                       value_type(1),
+                                       A.data(), A.stride_1(), 
+                                       B.data(), B.stride_1());
           }
+          
+        }
         return 0;
       }
     };

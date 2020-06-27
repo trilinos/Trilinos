@@ -30,12 +30,25 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Ensemble_Reduction
   "Enable reduction across across ensemble components."
   OFF )
 
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  Stokhos_ENABLE_CXX11
-  HAVE_STOKHOS_CXX11
-  "Enable C++11 support in Stokhos."
-  "${${PROJECT_NAME}_ENABLE_CXX11}"
-  )
+IF(NOT HAVE_STOKHOS_ENSEMBLE_REDUCT AND NOT Stokhos_ENABLE_CUDA)
+  TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Ensemble_GEMV
+    HAVE_STOKHOS_ENSEMBLE_GEMV
+    "Enable optimized ensemble GEMV implementation."
+    ON )
+ELSE()
+  TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Ensemble_GEMV
+    HAVE_STOKHOS_ENSEMBLE_GEMV
+    "Enable optimized ensemble GEMV implementation."
+    OFF )
+ENDIF()
+
+IF(HAVE_STOKHOS_ENSEMBLE_GEMV)
+  SET(Stokhos_Ensemble_GEMV_Cache_Size 180224 CACHE INTEGER "Cache size used in the ensemble GEMV")
+  SET(Stokhos_Ensemble_GEMV_Team_Size 1 CACHE INTEGER "Team size used in the ensemble GEMV")
+ENDIF()
+
+# FIXME: Remove this hard-coded setting.  We always have C++11 now.
+SET(HAVE_STOKHOS_CXX11 ON)
 
 SET(Stokhos_ENABLE_Ensemble_Scalar_Type_Default OFF)
 IF(Stokhos_ENABLE_Sacado)

@@ -158,9 +158,9 @@ namespace Intrepid2 {
   }
 
   /** \class  Intrepid2::Basis_HDIV_HEX_In_FEM
-      \brief  Implementation of the default H(div)-compatible FEM basis on Hexahedral cell
+      \brief  Implementation of the default H(div)-compatible FEM basis on Hexahedron cell
 
-              Implements Raviart-Thomas basis of degree n on the reference Hexahedral cell. The basis has
+              Implements Raviart-Thomas basis of degree n on the reference Hexahedron cell. The basis has
               cardinality 3(n+1)n^2 and spans a INCOMPLETE polynomial space.
 
   */

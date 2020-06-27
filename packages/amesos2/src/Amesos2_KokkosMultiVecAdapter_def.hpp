@@ -72,7 +72,6 @@ namespace Amesos2 {
     Kokkos::View<Scalar**, Kokkos::LayoutLeft, ExecutionSpace> >::getMVPointer_impl() const
   {
     TEUCHOS_TEST_FOR_EXCEPTION( true, std::runtime_error, "getMVPointer_impl not implemented.");
-    return NULL;
   }
 
   template <typename Scalar, typename ExecutionSpace >

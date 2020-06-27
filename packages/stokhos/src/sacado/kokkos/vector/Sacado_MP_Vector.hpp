@@ -190,7 +190,7 @@ namespace Sacado {
       /*!
        * May not intialize the coefficient array.
        */
-      KOKKOS_INLINE_FUNCTION
+      KOKKOS_DEFAULTED_FUNCTION
       Vector() = default;
 
       //! Constructor with supplied value \c x
@@ -220,7 +220,7 @@ namespace Sacado {
       Vector(const storage_type& ss) : s(ss) {}
 
       //! Copy constructor
-      KOKKOS_INLINE_FUNCTION
+      KOKKOS_DEFAULTED_FUNCTION
       Vector(const Vector& x) = default;
 
       //! Copy constructor
@@ -266,7 +266,7 @@ namespace Sacado {
       Vector(std::initializer_list<value_type> l) : s(l.size(), l.begin()) {}
 
       //! Destructor
-      KOKKOS_INLINE_FUNCTION
+      KOKKOS_DEFAULTED_FUNCTION
       ~Vector() = default;
 
       //! Initialize coefficients to value
@@ -2059,8 +2059,6 @@ public:
 
 #endif
 
-#endif // HAVE_STOKHOS_SACADO
-
 #include "Kokkos_NumericTraits.hpp"
 
 namespace Kokkos {
@@ -2085,5 +2083,7 @@ struct reduction_identity< Sacado::MP::Vector<Storage> > {
 };
 
 }
+
+#endif // HAVE_STOKHOS_SACADO
 
 #endif // SACADO_MP_VECTOR_HPP

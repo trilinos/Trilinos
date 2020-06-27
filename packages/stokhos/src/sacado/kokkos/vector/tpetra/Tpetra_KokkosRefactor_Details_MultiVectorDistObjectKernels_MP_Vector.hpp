@@ -61,7 +61,7 @@ namespace Details {
   struct device_is_cuda : public std::is_same<D,Kokkos::Cuda> {};
 #else
   template< class D >
-  struct device_is_cuda : public Kokkos::Impl::false_type {};
+  struct device_is_cuda : public std::false_type {};
 #endif
 
   // Functors for implementing packAndPrepare and unpackAndCombine

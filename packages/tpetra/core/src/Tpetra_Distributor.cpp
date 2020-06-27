@@ -466,12 +466,12 @@ namespace Tpetra {
   { return lengthsTo_; }
 
   Teuchos::RCP<Distributor>
-  Distributor::getReverse() const {
-    if (reverseDistributor_.is_null ()) {
+  Distributor::getReverse(bool create) const {
+    if (reverseDistributor_.is_null () && create) {
       createReverseDistributor ();
     }
     TEUCHOS_TEST_FOR_EXCEPTION
-      (reverseDistributor_.is_null (), std::logic_error, "The reverse "
+      (reverseDistributor_.is_null () && create, std::logic_error, "The reverse "
        "Distributor is null after createReverseDistributor returned.  "
        "Please report this bug to the Tpetra developers.");
     return reverseDistributor_;

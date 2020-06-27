@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//               KokkosKernels 0.9: Linear Algebra and Graph Kernels
-//                 Copyright 2017 Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -45,16 +46,19 @@
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosSparse_spmv.hpp"
 #include "KokkosSparse_sptrsv.hpp"
+#include "KokkosSparse_sptrsv_superlu.hpp"
+
 
 #if defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA )         && \
-  (!defined(KOKKOS_ENABLE_CUDA) || (8000 <= CUDA_VERSION)) && \
-    defined(KOKKOSKERNELS_INST_DOUBLE)
+  (!defined(KOKKOS_ENABLE_CUDA) || (8000 <= CUDA_VERSION))
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU) && \
     defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
 
 #include "slu_ddefs.h"
+#include "slu_sdefs.h"
 #include "slu_zdefs.h"
+#include "slu_cdefs.h"
 // auxiliary functions from perf_test (e.g., pivoting, printing)
 #include "KokkosSparse_sptrsv_aux.hpp"
 
@@ -71,114 +75,6 @@ using namespace KokkosSparse::Experimental;
 using namespace KokkosSparse::PerfTest::Experimental;
 
 enum {CUSPARSE, SUPERNODAL_NAIVE, SUPERNODAL_ETREE, SUPERNODAL_DAG, SUPERNODAL_SPMV, SUPERNODAL_SPMV_DAG};
-
-
-/* ========================================================================================= */
-template <typename scalar_type>
-void print_factor_superlu(int n, SuperMatrix *L, SuperMatrix *U, int *perm_r, int *perm_c) {
-
-  SCformat *Lstore = (SCformat*)(L->Store);
-  int *nb = Lstore->sup_to_col;
-  for (int k = 0; k <= Lstore->nsuper; k++)
-  {
-    int j1 = nb[k];
-    int j2 = nb[k+1];
-    int nscol  = j2 - j1;
-    printf( "%d %d %d\n",k,j1,nscol );
-  }
-
-  /* permutation vectors */
-  int *iperm_r = new int[n];
-  int *iperm_c = new int[n];
-  for (int k = 0; k < n; k++) {
-    iperm_r[perm_r[k]] = k;
-    iperm_c[perm_c[k]] = k;
-  }
-  printf( "P=[\n" );
-  for (int k = 0; k < n; k++) {
-    printf( "%d, %d %d, %d %d\n",k, perm_r[k],iperm_r[k], perm_c[k],iperm_c[k] );
-  }
-  printf( "];\n" );
-
-#if 0
-  using STS = Kokkos::Details::ArithTraits<scalar_type>;
-
-  int *colptr = Lstore->nzval_colptr;
-  int *rowind = Lstore->rowind;
-
-  int *mb = Lstore->rowind_colptr;
-
-  scalar_type *Lx = (scalar_type*)(Lstore->nzval);
-
-  /* Lower-triangular matrix */
-  printf( " L = [\n ");
-  for (int k = 0; k <= Lstore->nsuper; k++)
-  {
-    int j1 = nb[k];
-    int j2 = nb[k+1];
-    int nscol = j2 - j1;
-
-    int i1 = mb[j1];
-    int i2 = mb[j1+1];
-    int nsrow = i2 - i1;
-    int nsrow2 = nsrow - nscol;
-    int ps2    = i1 + nscol;
-
-    int psx = colptr[j1];
-
-    /* the diagonal block */
-    for (int i = 0; i < nscol; i++) {
-      for (int j = 0; j < i; j++) {
-        if (Lx[psx + i + j*nsrow] != STS::zero()) {
-          printf( "%d %d %.16e\n",1+j1+i, 1+j1+j, Lx[psx + i + j*nsrow] );
-        }
-      }
-      printf( "%d %d 1.0\n",1+j1+i, 1+j1+i );
-    }
-
-    /* the off-diagonal blocks */
-    for (int ii = 0; ii < nsrow2; ii++) {
-      int i = rowind [ps2 + ii];
-      for (int j = 0; j < nscol; j++) {
-        printf( "%d %d %.16e\n",1+i, 1+j1+j, Lx[psx+nscol + ii + j*nsrow] );
-      }
-    }
-  }
-  printf( "];\n ");
-
-  /* Upper-triangular matrix */
-  NCformat *Ustore = (NCformat*)(U->Store);
-  scalar_type *Uval = (scalar_type*)(Ustore->nzval);
-  printf( " U = [\n ");
-  for (int k = Lstore->nsuper; k >= 0; k--) {
-    int j1 = nb[k];
-    int nscol = nb[k+1] - j1;
-
-    int i1 = mb[j1];
-    int nsrow = mb[j1+1] - i1;
-
-    int psx = colptr[j1];
-
-    /* the diagonal block */
-    for (int i = 0; i < nscol; i++) {
-      for (int j = i; j < nscol; j++) {
-        printf( "%d %d %.16e\n",j1+i, j1+j, Lx[psx + i + j*nsrow] );
-        //std::cout << j1+i+1 << " " << j1+j+1 << " " << Lx[psx + i + j*nsrow] << std::endl;
-      }
-    }
-
-    /* the off-diagonal blocks */
-    for (int jcol = j1; jcol < j1 + nscol; jcol++) {
-      for (int i = U_NZ_START(jcol); i < U_NZ_START(jcol+1); i++ ){
-        int irow = U_SUB(i);
-        printf( "%d %d %.16e\n", irow, jcol, Uval[i] );
-        //std::cout << irow+1 << " " << jcol+1 << " " << Uval[i] << std::endl;
-      }
-    }
-  }
-  printf( "];\n" );
-#endif
-}
 
 
 /* ========================================================================================= */
@@ -272,6 +168,25 @@ void factor_superlu (bool symm_mode, bool metis,
     dCreate_CompCol_Matrix (&A, nrow, nrow, nnz,
                             reinterpret_cast <double*> (nzvals_tran), colind_tran, rowptr_tran,
                             SLU_NC, SLU_D, SLU_GE);
+  } else if (std::is_same<scalar_type, float>::value == true) {
+    if (!symm_mode) {
+      sCompRow_to_CompCol (nrow, nrow, nnz,
+                           reinterpret_cast <float*> (nzvals), colind, rowptr,
+                           reinterpret_cast <float**> (&nzvals_tran), &colind_tran, &rowptr_tran);
+    }
+    sCreate_CompCol_Matrix (&A, nrow, nrow, nnz,
+                            reinterpret_cast <float*> (nzvals_tran), colind_tran, rowptr_tran,
+                            SLU_NC, SLU_D, SLU_GE);
+  } else if (std::is_same<scalar_type, std::complex<float>>::value == true ||
+             std::is_same<scalar_type, Kokkos::complex<float>>::value == true) {
+    if (!symm_mode) {
+      cCompRow_to_CompCol (nrow, nrow, nnz,
+                           reinterpret_cast <complex*> (nzvals), colind, rowptr,
+                           reinterpret_cast <complex**> (&nzvals_tran), &colind_tran, &rowptr_tran);
+    }
+    cCreate_CompCol_Matrix (&A, nrow, nrow, nnz,
+                            reinterpret_cast <complex*> (nzvals_tran), colind_tran, rowptr_tran,
+                            SLU_NC, SLU_Z, SLU_GE);
   } else if (std::is_same<scalar_type, std::complex<double>>::value == true ||
              std::is_same<scalar_type, Kokkos::complex<double>>::value == true) {
     if (!symm_mode) {
@@ -309,6 +224,13 @@ void factor_superlu (bool symm_mode, bool metis,
   int lwork = 0;
   if (std::is_same<scalar_type, double>::value == true) {
     dgstrf (&options, &AC, relax_size, panel_size, etree,
+            NULL, lwork, *perm_c, *perm_r, &L, &U, &Glu, &stat, &info);
+  } else if (std::is_same<scalar_type, float>::value == true) {
+    sgstrf (&options, &AC, relax_size, panel_size, etree,
+            NULL, lwork, *perm_c, *perm_r, &L, &U, &Glu, &stat, &info);
+  } else if (std::is_same<scalar_type, std::complex<float>>::value == true ||
+             std::is_same<scalar_type, Kokkos::complex<float>>::value == true) {
+    cgstrf (&options, &AC, relax_size, panel_size, etree,
             NULL, lwork, *perm_c, *perm_r, &L, &U, &Glu, &stat, &info);
   } else {
     zgstrf (&options, &AC, relax_size, panel_size, etree,
@@ -358,8 +280,9 @@ void free_superlu (SuperMatrix &L, SuperMatrix &U,
 
 /* ========================================================================================= */
 template<typename scalar_type>
-int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string& filename, bool symm_mode, bool metis, bool merge,
-                      bool invert_offdiag, bool u_in_csr, int panel_size, int relax_size, int loop) {
+int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string &filename, bool symm_mode, bool metis, bool merge,
+                      bool invert_diag, bool invert_offdiag, bool u_in_csr, int panel_size, int relax_size, int block_size,
+                      int loop) {
 
   using ordinal_type = int;
   using size_type    = int;
@@ -414,7 +337,6 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string& filenam
     auto row_map_host = graph_host.row_map;
     auto entries_host = graph_host.entries;
     auto values_host  = Mtx.values;
-    //print_crsmat<host_crsmat_t> (nrows, Mtx);
 
     // ==============================================
     // call SuperLU on the host    
@@ -472,13 +394,21 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string& filenam
           khL.set_sptrsv_verbose (verbose);
 
           // specify if U is stored in CSR or CSC
+          std::cout << "=============================== " << std::endl;
+          std::cout << " U in CSR           : " << u_in_csr << std::endl;
           khU.set_sptrsv_column_major (!u_in_csr);
 
           // specify wheather to merge supernodes (optional, default merge is false)
+          std::cout << " Merge Supernode    : " << merge << std::endl;
           khL.set_sptrsv_merge_supernodes (merge);
           khU.set_sptrsv_merge_supernodes (merge);
 
+          // specify wheather to invert diagonal blocks
+          khL.set_sptrsv_invert_diagonal (invert_diag);
+          khU.set_sptrsv_invert_diagonal (invert_diag);
+          
           // specify wheather to apply diagonal-inversion to off-diagonal blocks (optional, default is false)
+          std::cout << " Invert Off-diagonal: " << invert_offdiag << std::endl;
           khL.set_sptrsv_invert_offdiagonal (invert_offdiag);
           khU.set_sptrsv_invert_offdiagonal (invert_offdiag);
           
@@ -492,15 +422,30 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string& filenam
           khL.set_sptrsv_perm (perm_r);
           khU.set_sptrsv_perm (perm_c);
 
+          // block size to switch to device call
+          if (block_size >= 0) {
+            std::cout << " Block Size         : " << block_size << std::endl;
+            khL.set_sptrsv_diag_supernode_sizes (block_size, block_size);
+            khU.set_sptrsv_diag_supernode_sizes (block_size, block_size);
+          }
+          std::cout << std::endl;
+
+
           // ==============================================
           // do symbolic analysis (preprocssing, e.g., merging supernodes, inverting diagonal/offdiagonal blocks,
           // and scheduling based on graph/dag)
-          sptrsv_symbolic<scalar_type, ordinal_type, size_type> (&khL, &khU, L, U);
+          timer.reset();
+          sptrsv_symbolic (&khL, &khU, L, U);
+          double symbolic_time = timer.seconds();
+          std::cout << "   Symbolic Time   : " << symbolic_time << std::endl << std::endl;
 
 
           // ==============================================
           // do numeric compute (copy numerical values from SuperLU data structure to our sptrsv data structure)
-          sptrsv_compute<scalar_type, ordinal_type, size_type> (&khL, &khU, L, U);
+          timer.reset();
+          sptrsv_compute (&khL, &khU, L, U);
+          double compute_time = timer.seconds();
+          std::cout << "   Numeric Time   : " << compute_time << std::endl << std::endl;
 
 
           // ==============================================
@@ -532,15 +477,18 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string& filenam
           timer.reset();
           sptrsv_solve (&khL, sol, rhs);
           Kokkos::fence();
+          double solveL_time = timer.seconds();
           std::cout << " > Lower-TRI: " << std::endl;
-          std::cout << "   Solve Time   : " << timer.seconds() << std::endl;
+          std::cout << "   Solve Time   : " << solveL_time << std::endl;
 
           // ==============================================
           // do U solve
+          timer.reset();
           sptrsv_solve (&khU, rhs, sol);
           Kokkos::fence ();
+          double solveU_time = timer.seconds();
           std::cout << " > Upper-TRI: " << std::endl;
-          std::cout << "   Solve Time   : " << timer.seconds() << std::endl;
+          std::cout << "   Solve Time   : " << solveU_time << std::endl;
  
           // copy solution to host
           Kokkos::deep_copy (tmp_host, rhs);
@@ -582,7 +530,7 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string& filenam
 
           // Benchmark
           // L-solve
-          double min_time = 1.0e32;
+          double min_time = 0.0;
           double max_time = 0.0;
           double ave_time = 0.0;
           Kokkos::fence ();
@@ -592,9 +540,8 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string& filenam
             Kokkos::fence();
             double time = timer.seconds ();
             ave_time += time;
-            if(time > max_time) max_time = time;
-            if(time < min_time) min_time = time;
-            //std::cout << time << std::endl;
+            if(time > max_time || i == 0) max_time = time;
+            if(time < min_time || i == 0) min_time = time;
           }
           std::cout << " L-solve: loop = " << loop << std::endl;
           std::cout << "  LOOP_AVG_TIME:  " << ave_time/loop << std::endl;
@@ -602,7 +549,7 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string& filenam
           std::cout << "  LOOP_MIN_TIME:  " << min_time << std::endl << std::endl;
 
           // U-solve
-          min_time = 1.0e32;
+          min_time = 0.0;
           max_time = 0.0;
           ave_time = 0.0;
           Kokkos::fence ();
@@ -612,9 +559,8 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string& filenam
             Kokkos::fence();
             double time = timer.seconds ();
             ave_time += time;
-            if(time > max_time) max_time = time;
-            if(time < min_time) min_time = time;
-            //std::cout << time << std::endl;
+            if(time > max_time || i == 0) max_time = time;
+            if(time < min_time || i == 0) min_time = time;
           }
           std::cout << " U-solve: loop = " << loop << std::endl;
           std::cout << "  LOOP_AVG_TIME:  " << ave_time/loop << std::endl;
@@ -625,34 +571,35 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string& filenam
 
         case CUSPARSE:
         {
+          std::cout << " > create handle for CuSparse (SUPERNODAL_NAIVE)" << std::endl << std::endl;
+          khL.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_NAIVE, nrows, true);
+          khU.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_NAIVE, nrows, false);
+
+          khU.set_sptrsv_column_major (!u_in_csr);
+
           // ==============================================
           // read SuperLU factor on the host (and copy to default host/device)
-          bool cusparse = true; // pad diagonal blocks with zeros
-          bool invert_diag = false;
           timer.reset();
           graph_t graphL;
           crsmat_t superluL;
-          graphL = read_superlu_graphL<graph_t> (cusparse, merge, &L);
+          khL.set_sptrsv_invert_diagonal (false);
+          graphL = read_superlu_graphL<graph_t> (&khL, &L);
           double time = timer.seconds ();
           timer.reset ();
-          superluL = read_superlu_valuesL<crsmat_t> (cusparse, merge, invert_diag, invert_offdiag, &L, graphL);
-          std::cout << "   Conversion Time for L: " << time << " + " << timer.seconds() << std::endl;
+          superluL = read_superlu_valuesL<crsmat_t> (&khL, &L, graphL);
+          double readL_time = timer.seconds();
+          std::cout << "   Conversion Time for L: " << time << " + " << readL_time << std::endl;
 
           timer.reset ();
           graph_t graphU;
           crsmat_t superluU;
-          if (u_in_csr) {
-            graphU = read_superlu_graphU<graph_t> (&L, &U);
-            time = timer.seconds ();
-            timer.reset ();
-            superluU = read_superlu_valuesU<crsmat_t, graph_t> (invert_diag, &L, &U, graphU);
-          } else {
-            graphU = read_superlu_graphU_CSC<graph_t> (&L, &U);
-            time = timer.seconds ();
-            timer.reset ();
-            superluU = read_superlu_valuesU_CSC<crsmat_t, graph_t> (invert_diag, invert_offdiag, &L, &U, graphU);
-          }
-          std::cout << "   Conversion Time for U: " << time << " + " << timer.seconds() << std::endl;
+          khU.set_sptrsv_invert_diagonal (false);
+          graphU = read_superlu_graphU<graph_t> (&khU, &L, &U);
+          time = timer.seconds ();
+          timer.reset ();
+          superluU = read_superlu_valuesU<crsmat_t, graph_t> (&khU, &L, &U, graphU);
+          double readU_time = timer.seconds();
+          std::cout << "   Conversion Time for U: " << time << " + " << readU_time << std::endl;
 
           // remove zeros in L/U
           timer.reset();
@@ -660,7 +607,8 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string& filenam
           superluL = remove_zeros_crsmat(superluL);
           std::cout << "   Compress U-factor: " << std::endl;
           superluU = remove_zeros_crsmat(superluU);
-          std::cout << "   Compression Time: " << timer.seconds() << std::endl << std::endl;
+          double compress_time = timer.seconds();
+          std::cout << "   Compression Time: " << compress_time << std::endl << std::endl;
 
           bool col_majorL = true;
           bool col_majorU = !u_in_csr;
@@ -705,15 +653,22 @@ int main(int argc, char **argv) {
   bool metis = false;
   // merge supernodes
   bool merge = false;
-  // invert off-diagonal of L-factor
+  // invert diagonal of L-factor
+  bool invert_diag = true;
+  // apply invert of diagonal to offdiagonal
   bool invert_offdiag = false;
   // store U in CSR, or CSC
   bool u_in_csr = true;
+  // block size to switch to device call (default is 100)
+  int block_size  = -1;
   // parameters for SuperLU (only affects factorization)
   int panel_size = sp_ienv(1);
   int relax_size = sp_ienv(2);
   // verbose
   bool verbose = true;
+  // scalar type
+  std::string char_scalar = "d";
+  std::string scalarTypeString = "(scalar_t = double)";
 
   if(argc == 1)
   {
@@ -726,21 +681,19 @@ int main(int argc, char **argv) {
       i++;
       if((strcmp(argv[i],"superlu-naive")==0)) {
         tests.push_back( SUPERNODAL_NAIVE );
-      }
-      if((strcmp(argv[i],"superlu-etree")==0)) {
+      } else if((strcmp(argv[i],"superlu-etree")==0)) {
         tests.push_back( SUPERNODAL_ETREE );
-      }
-      if((strcmp(argv[i],"superlu-dag")==0)) {
+      } else if((strcmp(argv[i],"superlu-dag")==0)) {
         tests.push_back( SUPERNODAL_DAG );
-      }
-      if((strcmp(argv[i],"superlu-spmv")==0)) {
+      } else if((strcmp(argv[i],"superlu-spmv")==0)) {
         tests.push_back( SUPERNODAL_SPMV );
-      }
-      if((strcmp(argv[i],"superlu-spmv-dag")==0)) {
+      } else if((strcmp(argv[i],"superlu-spmv-dag")==0)) {
         tests.push_back( SUPERNODAL_SPMV_DAG );
-      }
-      if((strcmp(argv[i],"cusparse")==0)) {
+      } else if((strcmp(argv[i],"cusparse")==0)) {
         tests.push_back( CUSPARSE );
+      } else {
+        std::cerr << "Invalid --tests option: \"" << argv[i] << "\"" << std::endl;
+        return -EINVAL;
       }
       continue;
     }
@@ -768,6 +721,10 @@ int main(int argc, char **argv) {
       merge = true;
       continue;
     }
+    if((strcmp(argv[i],"--no-invert-diag")==0)) {
+      invert_diag = false;
+      continue;
+    }
     if((strcmp(argv[i],"--invert-offdiag")==0)) {
       invert_offdiag = true;
       continue;
@@ -784,6 +741,13 @@ int main(int argc, char **argv) {
       relax_size = atoi(argv[++i]);
       continue;
     }
+    if((strcmp(argv[i],"--block-size")==0)) {
+      block_size = atoi(argv[++i]);
+      continue;
+    }
+    if((strcmp(argv[i],"--scalar-type")==0)) {
+      char_scalar = argv[++i];
+    }
     if((strcmp(argv[i],"--help")==0) || (strcmp(argv[i],"-h")==0)) {
       print_help_sptrsv();
       return 0;
@@ -795,19 +759,54 @@ int main(int argc, char **argv) {
     std::cout << "tests[" << i << "] = " << tests[i] << std::endl;
   }
 
-  {
-    using scalar_t = double;
-    //using scalar_t = Kokkos::complex<double>;
-    Kokkos::ScopeGuard kokkosScope (argc, argv);
-    int total_errors = test_sptrsv_perf<scalar_t> (tests, verbose, filename, symm_mode, metis, merge,
-                                                   invert_offdiag, u_in_csr, panel_size, relax_size, loop);
-    if(total_errors == 0)
-      std::cout << "Kokkos::SPTRSV Test: Passed"
-                << std::endl << std::endl;
-    else
-      std::cout << "Kokkos::SPTRSV Test: Failed (" << total_errors << " / " << 2*tests.size() << " failed)"
-                << std::endl << std::endl;
+  Kokkos::ScopeGuard kokkosScope (argc, argv);
+
+  int total_errors = 0;
+  if (char_scalar == "z") {
+    #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
+    scalarTypeString = "(scalar_t = Kokkos::complex<double>)";
+    total_errors = test_sptrsv_perf<Kokkos::complex<double>> (tests, verbose, filename, symm_mode, metis, merge,
+                                                              invert_diag, invert_offdiag, u_in_csr, panel_size,
+                                                              relax_size, block_size, loop);
+    #else
+    std::cout << std::endl << " KOKKOSKERNELS_INST_COMPLEX_DOUBLE  is not enabled ** " << std::endl << std::endl;
+    #endif
+  } else if (char_scalar == "c") {
+    #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)
+    scalarTypeString = "(scalar_t = Kokkos::complex<float>)";
+    total_errors = test_sptrsv_perf<Kokkos::complex<float>> (tests, verbose, filename, symm_mode, metis, merge,
+                                                             invert_diag, invert_offdiag, u_in_csr, panel_size,
+                                                             relax_size, block_size, loop);
+    #else
+    std::cout << std::endl << " KOKKOSKERNELS_INST_COMPLEX_FLOAT  is not enabled ** " << std::endl << std::endl;
+    #endif
+  } else if (char_scalar == "d") {
+    #if defined(KOKKOSKERNELS_INST_DOUBLE)
+      scalarTypeString = "(scalar_t = double)";
+      total_errors = test_sptrsv_perf<double> (tests, verbose, filename, symm_mode, metis, merge,
+                                               invert_diag, invert_offdiag, u_in_csr, panel_size,
+                                               relax_size, block_size, loop);
+    #else
+    std::cout << std::endl << " KOKKOSKERNELS_INST_DOUBLE  is not enabled ** " << std::endl << std::endl;
+    #endif
+  } else if (char_scalar == "f") {
+    #if defined(KOKKOSKERNELS_INST_FLOAT)
+    scalarTypeString = "(scalar_t = float)";
+    total_errors = test_sptrsv_perf<float> (tests, verbose, filename, symm_mode, metis, merge,
+                                            invert_diag, invert_offdiag, u_in_csr, panel_size,
+                                            relax_size, block_size, loop);
+    #else
+    std::cout << std::endl << " KOKKOSKERNELS_INST_FLOAT  is not enabled ** " << std::endl << std::endl;
+    #endif
   }
+  if(total_errors == 0)
+    std::cout << "Kokkos::SPTRSV Test: Passed " << scalarTypeString
+              << std::endl << std::endl;
+  else
+    std::cout << "Kokkos::SPTRSV Test: Failed (" << total_errors 
+              << " / " << 2*tests.size() << " failed) " << scalarTypeString
+              << std::endl << std::endl;
+
   return 0;
 }
 #else // defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)

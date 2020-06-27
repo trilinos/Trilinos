@@ -7,11 +7,10 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Smoothers)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/belos)
 
-IF (${PACKAGE_NAME}_ENABLE_Galeri)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    Aggregation
-    SOURCES Aggregation.cpp
-    ARGS ""
-    COMM serial mpi
-    )
-ENDIF()
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Aggregation
+  SOURCES Aggregation.cpp
+  ARGS ""
+  COMM serial mpi
+  )

@@ -81,6 +81,10 @@ Mesh::Mesh(const int num_elements_x,
   const int nx_offset = (ney_ + 1) * (nez_ + 1);
   const int ny_offset = nez_ + 1;
   const int nz_offset = 1;
+
+  auto host_gids = Kokkos::create_mirror_view(gids_);
+  auto host_coords = Kokkos::create_mirror_view(coords_);
+
   for (int nx=0; nx < nex_; ++nx) {  
     for (int ny=0; ny < ney_; ++ny) {
       for (int nz=0; nz < nez_; ++nz) {
@@ -90,114 +94,123 @@ Mesh::Mesh(const int num_elements_x,
         // std::cout << "offsets(" << nx_offset << "," << ny_offset
         //           << "," << nz_offset << ")" << std::endl;
         
-        gids_(cell,0) = nx * nx_offset + ny * ny_offset + nz;
-        gids_(cell,1) = gids_(cell,0) + nx_offset;
-        gids_(cell,2) = gids_(cell,0) + nx_offset + ny_offset;
-        gids_(cell,3) = gids_(cell,0) + ny_offset;
-        gids_(cell,4) = gids_(cell,0) + nz_offset;
-        gids_(cell,5) = gids_(cell,1) + nz_offset;
-        gids_(cell,6) = gids_(cell,2) + nz_offset;
-        gids_(cell,7) = gids_(cell,3) + nz_offset;
+        host_gids(cell,0) = nx * nx_offset + ny * ny_offset + nz;
+        host_gids(cell,1) = host_gids(cell,0) + nx_offset;
+        host_gids(cell,2) = host_gids(cell,0) + nx_offset + ny_offset;
+        host_gids(cell,3) = host_gids(cell,0) + ny_offset;
+        host_gids(cell,4) = host_gids(cell,0) + nz_offset;
+        host_gids(cell,5) = host_gids(cell,1) + nz_offset;
+        host_gids(cell,6) = host_gids(cell,2) + nz_offset;
+        host_gids(cell,7) = host_gids(cell,3) + nz_offset;
 
-        coords_(cell,0,0) = nx * dx;
-        coords_(cell,0,1) = ny * dy;
-        coords_(cell,0,2) = nz * dz;
-        coords_(cell,1,0) = nx * dx + dx;
-        coords_(cell,1,1) = ny * dy;
-        coords_(cell,1,2) = nz * dz;
-        coords_(cell,2,0) = nx * dx + dx;
-        coords_(cell,2,1) = ny * dy + dy;
-        coords_(cell,2,2) = nz * dz;
-        coords_(cell,3,0) = nx * dx;
-        coords_(cell,3,1) = ny * dy + dy;
-        coords_(cell,3,2) = nz * dz;
-        coords_(cell,4,0) = nx * dx;
-        coords_(cell,4,1) = ny * dy;
-        coords_(cell,4,2) = nz * dz + dz;
-        coords_(cell,5,0) = nx * dx + dx;
-        coords_(cell,5,1) = ny * dy;
-        coords_(cell,5,2) = nz * dz + dz;
-        coords_(cell,6,0) = nx * dx + dx;
-        coords_(cell,6,1) = ny * dy + dy;
-        coords_(cell,6,2) = nz * dz + dz;
-        coords_(cell,7,0) = nx * dx;
-        coords_(cell,7,1) = ny * dy + dy;
-        coords_(cell,7,2) = nz * dz + dz;
+        host_coords(cell,0,0) = nx * dx;
+        host_coords(cell,0,1) = ny * dy;
+        host_coords(cell,0,2) = nz * dz;
+        host_coords(cell,1,0) = nx * dx + dx;
+        host_coords(cell,1,1) = ny * dy;
+        host_coords(cell,1,2) = nz * dz;
+        host_coords(cell,2,0) = nx * dx + dx;
+        host_coords(cell,2,1) = ny * dy + dy;
+        host_coords(cell,2,2) = nz * dz;
+        host_coords(cell,3,0) = nx * dx;
+        host_coords(cell,3,1) = ny * dy + dy;
+        host_coords(cell,3,2) = nz * dz;
+        host_coords(cell,4,0) = nx * dx;
+        host_coords(cell,4,1) = ny * dy;
+        host_coords(cell,4,2) = nz * dz + dz;
+        host_coords(cell,5,0) = nx * dx + dx;
+        host_coords(cell,5,1) = ny * dy;
+        host_coords(cell,5,2) = nz * dz + dz;
+        host_coords(cell,6,0) = nx * dx + dx;
+        host_coords(cell,6,1) = ny * dy + dy;
+        host_coords(cell,6,2) = nz * dz + dz;
+        host_coords(cell,7,0) = nx * dx;
+        host_coords(cell,7,1) = ny * dy + dy;
+        host_coords(cell,7,2) = nz * dz + dz;
       } // nz
     } // ny
   } // nx
 
+  Kokkos::deep_copy(gids_,host_gids);
+  Kokkos::deep_copy(coords_,host_coords);
+  
+  auto host_qp = Kokkos::create_mirror_view(qp_);
   const double value = 1.0/std::sqrt(3.0);
-  qp_(0,0) = -value;
-  qp_(0,1) = -value;
-  qp_(0,2) = -value;
-  qp_(1,0) = +value;
-  qp_(1,1) = -value;
-  qp_(1,2) = -value;
-  qp_(2,0) = +value;
-  qp_(2,1) = +value;
-  qp_(2,2) = -value;
-  qp_(3,0) = -value;
-  qp_(3,1) = +value;
-  qp_(3,2) = -value;
-  qp_(4,0) = -value;
-  qp_(4,1) = -value;
-  qp_(4,2) = +value;
-  qp_(5,0) = +value;
-  qp_(5,1) = -value;
-  qp_(5,2) = +value;
-  qp_(6,0) = +value;
-  qp_(6,1) = +value;
-  qp_(6,2) = +value;
-  qp_(7,0) = -value;
-  qp_(7,1) = +value;
-  qp_(7,2) = +value;
+  host_qp(0,0) = -value;
+  host_qp(0,1) = -value;
+  host_qp(0,2) = -value;
+  host_qp(1,0) = +value;
+  host_qp(1,1) = -value;
+  host_qp(1,2) = -value;
+  host_qp(2,0) = +value;
+  host_qp(2,1) = +value;
+  host_qp(2,2) = -value;
+  host_qp(3,0) = -value;
+  host_qp(3,1) = +value;
+  host_qp(3,2) = -value;
+  host_qp(4,0) = -value;
+  host_qp(4,1) = -value;
+  host_qp(4,2) = +value;
+  host_qp(5,0) = +value;
+  host_qp(5,1) = -value;
+  host_qp(5,2) = +value;
+  host_qp(6,0) = +value;
+  host_qp(6,1) = +value;
+  host_qp(6,2) = +value;
+  host_qp(7,0) = -value;
+  host_qp(7,1) = +value;
+  host_qp(7,2) = +value;
+  Kokkos::deep_copy(qp_,host_qp);
 
+  auto host_basis = Kokkos::create_mirror_view(basis_);
+  auto host_grad_basis_ref = Kokkos::create_mirror_view(grad_basis_ref_);
   for (int qp=0; qp < static_cast<int>(qp_.extent(0)); ++qp) {
-    double chi = qp_(qp,0);
-    double eta = qp_(qp,1);
-    double mu = qp_(qp,2);
-    basis_(qp,0) = (1.-chi) * (1.-eta) * (1.-mu) / 8.0;
-    basis_(qp,1) = (1.+chi) * (1.-eta) * (1.-mu) / 8.0;
-    basis_(qp,2) = (1.+chi) * (1.+eta) * (1.-mu) / 8.0;
-    basis_(qp,3) = (1.-chi) * (1.+eta) * (1.-mu) / 8.0;
-    basis_(qp,4) = (1.-chi) * (1.-eta) * (1.+mu) / 8.0;
-    basis_(qp,5) = (1.+chi) * (1.-eta) * (1.+mu) / 8.0;
-    basis_(qp,6) = (1.+chi) * (1.+eta) * (1.+mu) / 8.0;
-    basis_(qp,7) = (1.-chi) * (1.+eta) * (1.+mu) / 8.0;
+    double chi = host_qp(qp,0);
+    double eta = host_qp(qp,1);
+    double mu = host_qp(qp,2);
+    host_basis(qp,0) = (1.-chi) * (1.-eta) * (1.-mu) / 8.0;
+    host_basis(qp,1) = (1.+chi) * (1.-eta) * (1.-mu) / 8.0;
+    host_basis(qp,2) = (1.+chi) * (1.+eta) * (1.-mu) / 8.0;
+    host_basis(qp,3) = (1.-chi) * (1.+eta) * (1.-mu) / 8.0;
+    host_basis(qp,4) = (1.-chi) * (1.-eta) * (1.+mu) / 8.0;
+    host_basis(qp,5) = (1.+chi) * (1.-eta) * (1.+mu) / 8.0;
+    host_basis(qp,6) = (1.+chi) * (1.+eta) * (1.+mu) / 8.0;
+    host_basis(qp,7) = (1.-chi) * (1.+eta) * (1.+mu) / 8.0;
 
-    grad_basis_ref_(qp,0,0) = - (1.-eta) * (1.-mu) / 8.0;
-    grad_basis_ref_(qp,0,1) = - (1.-chi) * (1.-mu) / 8.0;
-    grad_basis_ref_(qp,0,2) = - (1.-chi) * (1.-eta) / 8.0;
+    host_grad_basis_ref(qp,0,0) = - (1.-eta) * (1.-mu) / 8.0;
+    host_grad_basis_ref(qp,0,1) = - (1.-chi) * (1.-mu) / 8.0;
+    host_grad_basis_ref(qp,0,2) = - (1.-chi) * (1.-eta) / 8.0;
 
-    grad_basis_ref_(qp,1,0) = + (1.-eta) * (1.-mu) / 8.0;
-    grad_basis_ref_(qp,1,1) = - (1.+chi) * (1.-mu) / 8.0;
-    grad_basis_ref_(qp,1,2) = - (1.+chi) * (1.-eta) / 8.0;
+    host_grad_basis_ref(qp,1,0) = + (1.-eta) * (1.-mu) / 8.0;
+    host_grad_basis_ref(qp,1,1) = - (1.+chi) * (1.-mu) / 8.0;
+    host_grad_basis_ref(qp,1,2) = - (1.+chi) * (1.-eta) / 8.0;
     
-    grad_basis_ref_(qp,2,0) = + (1.+eta) * (1.-mu) / 8.0;
-    grad_basis_ref_(qp,2,1) = + (1.+chi) * (1.-mu) / 8.0;
-    grad_basis_ref_(qp,2,2) = - (1.+chi) * (1.+eta) / 8.0;
+    host_grad_basis_ref(qp,2,0) = + (1.+eta) * (1.-mu) / 8.0;
+    host_grad_basis_ref(qp,2,1) = + (1.+chi) * (1.-mu) / 8.0;
+    host_grad_basis_ref(qp,2,2) = - (1.+chi) * (1.+eta) / 8.0;
 
-    grad_basis_ref_(qp,3,0) = - (1.+eta) * (1.-mu) / 8.0;
-    grad_basis_ref_(qp,3,1) = + (1.-chi) * (1.-mu) / 8.0;
-    grad_basis_ref_(qp,3,2) = - (1.-chi) * (1.+eta) / 8.0;
+    host_grad_basis_ref(qp,3,0) = - (1.+eta) * (1.-mu) / 8.0;
+    host_grad_basis_ref(qp,3,1) = + (1.-chi) * (1.-mu) / 8.0;
+    host_grad_basis_ref(qp,3,2) = - (1.-chi) * (1.+eta) / 8.0;
 
-    grad_basis_ref_(qp,4,0) = - (1.-eta) * (1.+mu) / 8.0;
-    grad_basis_ref_(qp,4,1) = - (1.-chi) * (1.+mu) / 8.0;
-    grad_basis_ref_(qp,4,2) = + (1.-chi) * (1.-eta) / 8.0;
+    host_grad_basis_ref(qp,4,0) = - (1.-eta) * (1.+mu) / 8.0;
+    host_grad_basis_ref(qp,4,1) = - (1.-chi) * (1.+mu) / 8.0;
+    host_grad_basis_ref(qp,4,2) = + (1.-chi) * (1.-eta) / 8.0;
 
-    grad_basis_ref_(qp,5,0) = + (1.-eta) * (1.+mu) / 8.0;
-    grad_basis_ref_(qp,5,1) = - (1.+chi) * (1.+mu) / 8.0;
-    grad_basis_ref_(qp,5,2) = + (1.+chi) * (1.-eta) / 8.0;
+    host_grad_basis_ref(qp,5,0) = + (1.-eta) * (1.+mu) / 8.0;
+    host_grad_basis_ref(qp,5,1) = - (1.+chi) * (1.+mu) / 8.0;
+    host_grad_basis_ref(qp,5,2) = + (1.+chi) * (1.-eta) / 8.0;
 
-    grad_basis_ref_(qp,6,0) = + (1.+eta) * (1.+mu) / 8.0;
-    grad_basis_ref_(qp,6,1) = + (1.+chi) * (1.+mu) / 8.0;
-    grad_basis_ref_(qp,6,2) = + (1.+chi) * (1.+eta) / 8.0;
+    host_grad_basis_ref(qp,6,0) = + (1.+eta) * (1.+mu) / 8.0;
+    host_grad_basis_ref(qp,6,1) = + (1.+chi) * (1.+mu) / 8.0;
+    host_grad_basis_ref(qp,6,2) = + (1.+chi) * (1.+eta) / 8.0;
 
-    grad_basis_ref_(qp,7,0) = - (1.+eta) * (1.+mu) / 8.0;
-    grad_basis_ref_(qp,7,1) = + (1.-chi) * (1.+mu) / 8.0;
-    grad_basis_ref_(qp,7,2) = + (1.-chi) * (1.+eta) / 8.0;
+    host_grad_basis_ref(qp,7,0) = - (1.+eta) * (1.+mu) / 8.0;
+    host_grad_basis_ref(qp,7,1) = + (1.-chi) * (1.+mu) / 8.0;
+    host_grad_basis_ref(qp,7,2) = + (1.-chi) * (1.+eta) / 8.0;
   }
+  Kokkos::deep_copy(basis_,host_basis);
+  Kokkos::deep_copy(grad_basis_ref_,host_grad_basis_ref);
 
   // weights
   Kokkos::deep_copy(weights_, 1.0);
@@ -348,14 +361,18 @@ void Mesh::print(std::ostream& os) const
   os << "m_length_y=" << ly_ << std::endl;
   os << "m_length_z=" << lz_ << std::endl;
   //os << "m_num_equations=" << neq_ << std::endl;
+  auto host_gids = Kokkos::create_mirror_view(gids_);
+  auto host_coords = Kokkos::create_mirror_view(coords_);
+  Kokkos::deep_copy(host_gids,gids_);
+  Kokkos::deep_copy(host_coords,coords_);
   for (int cell=0; cell < nel_; ++cell) {
     for (int node=0; node < 8; ++node) {
       os << "el(" << cell << "): gid(" << node << ")="
-         << gids_(cell,node)
+         << host_gids(cell,node)
          << ", coords("
-         << coords_(cell,node,0) << ","
-         << coords_(cell,node,1) << ","
-         << coords_(cell,node,2) << ")"
+         << host_coords(cell,node,0) << ","
+         << host_coords(cell,node,1) << ","
+         << host_coords(cell,node,2) << ")"
          << std::endl; 
     }
   }

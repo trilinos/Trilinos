@@ -1,7 +1,48 @@
 # Change Log
 
-## [2.9.99](https://github.com/kokkos/kokkos-kernels/tree/2.9.99) (2020-01-27)
-[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/2.9.00...2.9.99)
+
+## [3.1.1](https://github.com/kokkos/kokkos-kernels/tree/3.1.1) (2020-05-04)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/3.1.00...3.1.1)
+
+** Fixed bugs:** 
+
+- KokkosBatched QR PR breaking nightly tests [\#691](https://github.com/kokkos/kokkos-kernels/issues/691)
+
+## [3.1.00](https://github.com/kokkos/kokkos-kernels/tree/3.1.00) (2020-04-14)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/3.0.00...3.1.00)
+
+**Implemented enhancements:**
+
+- Two-stage & Classical Gauss-Seidel [\#672](https://github.com/kokkos/kokkos-kernels/issues/672)
+- Test transpose utilities [\#664](https://github.com/kokkos/kokkos-kernels/issues/664)
+- cuSPARSE spmv wrapper doesn't actually use 'mode' [\#650](https://github.com/kokkos/kokkos-kernels/issues/650)
+- Distance-2 improvements [\#625](https://github.com/kokkos/kokkos-kernels/issues/625)
+- FindMKL module: which mkl versions to prioritize [\#480](https://github.com/kokkos/kokkos-kernels/issues/480)
+- Add SuperLU as optional CMake TPL [\#545](https://github.com/kokkos/kokkos-kernels/issues/545)
+- Revamp the ETI system [\#460](https://github.com/kokkos/kokkos-kernels/issues/460)
+
+**Fixed bugs:**
+
+- 2-stage GS update breaking cuda/10+rdc build [\#673](https://github.com/kokkos/kokkos-kernels/issues/673)
+- Why CrsMatrix::staticcrsgraph\_type uses execution\_space and not device\_type? [\#665](https://github.com/kokkos/kokkos-kernels/issues/665)
+- TRMM and TRTRI build failures with clang/7+cuda9+Cuda\_OpenMP and gcc/5.3+OpenMP [\#657](https://github.com/kokkos/kokkos-kernels/issues/657)
+- cuSPARSE spmv wrapper doesn't actually use 'mode' [\#650](https://github.com/kokkos/kokkos-kernels/issues/650)
+- Block Gauss-Seidel test fails when cuSPARSE is enabled [\#648](https://github.com/kokkos/kokkos-kernels/issues/648)
+- cuda uvm test failures without launch blocking - expected behavior? [\#636](https://github.com/kokkos/kokkos-kernels/issues/636)
+- graph\_color\_d2\_symmetric\_double\_int\_int\_TestExecSpace seg faults in cuda/10.1 + Volta nightly test on kokkos-dev-2 [\#634](https://github.com/kokkos/kokkos-kernels/issues/634)
+- Build failures on kokkos-dev with clang/7.0.1 cuda/9.2 and blas/cublas/cusparse tpls [\#629](https://github.com/kokkos/kokkos-kernels/issues/629)
+- Distance-2 improvements [\#625](https://github.com/kokkos/kokkos-kernels/issues/625)
+- trsv - internal compiler error with intel/19 [\#607](https://github.com/kokkos/kokkos-kernels/issues/607)
+- complex\_double misalignment still breaking SPGEMM [\#598](https://github.com/kokkos/kokkos-kernels/issues/598)
+- PortableNumericCHASH can't align shared memory  [\#587](https://github.com/kokkos/kokkos-kernels/issues/587)
+- Remove all references to Kokkos::Impl::is\_same [\#586](https://github.com/kokkos/kokkos-kernels/issues/586)
+- Can I run KokkosKernels spgemm with float or int32 type? [\#583](https://github.com/kokkos/kokkos-kernels/issues/583)
+- Kokkos Blas: gemv segfaults [\#443](https://github.com/kokkos/kokkos-kernels/issues/443)
+- Generated kokkos-kernels file names are too long and are crashing cloning Trilinos on Windows [\#395](https://github.com/kokkos/kokkos-kernels/issues/395)
+
+
+## [3.0.00](https://github.com/kokkos/kokkos-kernels/tree/3.0.00) (2020-01-27)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/2.9.00...3.0.00)
 
 **Implemented enhancements:**
 
@@ -14,6 +55,7 @@
 - BLAS trsm: Add support and interface for trsm [\#513](https://github.com/kokkos/kokkos-kernels/issues/513)
 - BLAS iamax: Implement iamax [\#87](https://github.com/kokkos/kokkos-kernels/issues/87)
 - BLAS gesv: [\#449](https://github.com/kokkos/kokkos-kernels/issues/449)
+- sptrsv supernodal: Add supernodal sparse triangular solver [\#552](https://github.com/kokkos/kokkos-kernels/pull/552)
 - sptrsv: Add cusparse tpl support for sparse triangular solve, cudagraphs to fallback [\#555](https://github.com/kokkos/kokkos-kernels/pull/555)
 - KokkosGraph: Output colors assigned during graph coloring [\#444](https://github.com/kokkos/kokkos-kernels/issues/444)
 - MatrixReader: Full matrix market support [\#466](https://github.com/kokkos/kokkos-kernels/pull/466)

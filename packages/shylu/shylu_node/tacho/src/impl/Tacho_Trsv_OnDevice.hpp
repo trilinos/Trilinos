@@ -23,12 +23,21 @@ namespace Tacho {
         typedef typename ViewTypeA::non_const_value_type value_type;        
         const ordinal_type m = B.extent(0), n = B.extent(1);
         if (m > 0 && n > 0) {
-          for (ordinal_type p=0,offsB=0;p<n;++p,offsB+=B.stride_1()) {  
+          if (n == 1) {
             Blas<value_type>::trsv(ArgUplo::param, ArgTransA::param, 
                                    diagA.param, 
                                    m,
                                    A.data(), A.stride_1(), 
-                                   (B.data() + offsB), B.stride_0());
+                                   B.data(), B.stride_0());
+          } else {
+            Blas<value_type>::trsm(Side::Left::param, 
+                                   ArgUplo::param, 
+                                   ArgTransA::param, 
+                                   diagA.param,
+                                   m, n,
+                                   value_type(1),
+                                   A.data(), A.stride_1(),
+                                   B.data(), B.stride_1());
           }
         }
         return 0;
@@ -48,14 +57,25 @@ namespace Tacho {
         const ordinal_type m = B.extent(0), n = B.extent(1);
         int r_val(0); 
         if (m > 0 && n > 0) {
-          for (ordinal_type p=0,offsB=0;p<n;++p,offsB+=B.stride_1())
+          if (n == 1) {
             r_val = Blas<value_type>::trsv(handle,
                                            ArgUplo::cublas_param,
                                            ArgTransA::cublas_param,
                                            diagA.cublas_param,
                                            m, 
                                            A.data(), A.stride_1(),
-                                           (B.data() + offsB), B.stride_0()); 
+                                           B.data(), B.stride_0()); 
+          } else {
+            r_val = Blas<value_type>::trsm(handle,
+                                           Side::Left::cublas_param,
+                                           ArgUplo::cublas_param,
+                                           ArgTransA::cublas_param,
+                                           diagA.cublas_param,
+                                           m, n, 
+                                           value_type(1),
+                                           A.data(), A.stride_1(),
+                                           B.data(), B.stride_1()); 
+          }
         }
         return r_val;
       }

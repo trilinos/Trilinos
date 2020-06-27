@@ -1,35 +1,35 @@
- // Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
 // Solutions of Sandia, LLC (NTESS). Under the terms of Contract
 // DE-NA0003525 with NTESS, the U.S. Government retains certain rights
 // in this software.
 //
- // Redistribution and use in source and binary forms, with or without
- // modification, are permitted provided that the following conditions are
- // met:
- //
- //     * Redistributions of source code must retain the above copyright
- //       notice, this list of conditions and the following disclaimer.
- //
- //     * Redistributions in binary form must reproduce the above
- //       copyright notice, this list of conditions and the following
- //       disclaimer in the documentation and/or other materials provided
- //       with the distribution.
- //
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+//
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
 //
- // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- // A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- // OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- // SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- // LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- // DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <vector>
 
@@ -38,10 +38,10 @@
 #include "balance.hpp"
 #include "balanceUtils.hpp"               // for BalanceSettings, etc
 #include "fixSplitCoincidentElements.hpp"
+#include "stk_balance/internal/Balancer.hpp"
 #include "internal/DetectAndFixMechanisms.hpp"
 #include "internal/LastStepFieldWriter.hpp"
 #include "internal/balanceCoincidentElements.hpp"
-#include "internal/balanceCommandLine.hpp"
 #include "internal/privateDeclarations.hpp"  // for callZoltan1, etc
 #include "internal/NodeBalancer.hpp"
 #include "stk_io/StkIoUtils.hpp"
@@ -51,7 +51,6 @@
 #include "stk_util/diag/StringUtil.hpp"
 #include "stk_util/parallel/ParallelReduce.hpp"
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowRequireMsg
-#include <stk_balance/internal/balanceDefaults.hpp>
 #include <stk_balance/search_tolerance_algs/SecondShortestEdgeFaceSearchTolerance.hpp>
 #include <stk_io/FillMesh.hpp>
 #include <stk_io/WriteMesh.hpp>
@@ -174,54 +173,6 @@ std::string construct_coloring_part_name(const int color, const stk::mesh::Part&
     return oss.str();
 }
 
-bool loadBalance(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData, unsigned numSubdomainsToCreate, const std::vector<stk::mesh::Selector>& selectors)
-{
-    internal::logMessage(stkMeshBulkData.parallel(), "Computing new decomposition");
-
-    stk::mesh::EntityProcVec decomp;
-    internal::calculateGeometricOrGraphBasedDecomp(balanceSettings, numSubdomainsToCreate, decomp, stkMeshBulkData, selectors);
-
-    DecompositionChangeList changeList(stkMeshBulkData, decomp);
-    balanceSettings.modifyDecomposition(changeList);
-
-    internal::logMessage(stkMeshBulkData.parallel(), "Moving coincident elements to the same processor");
-    keep_coincident_elements_together(stkMeshBulkData, changeList);
-
-    if (balanceSettings.shouldFixSpiders()) {
-        internal::logMessage(stkMeshBulkData.parallel(), "Preventing unnecessary movement of spider elements");
-        internal::keep_spiders_on_original_proc(stkMeshBulkData, balanceSettings, changeList);
-    }
-
-    const size_t num_global_entity_migrations = changeList.get_num_global_entity_migrations();
-    const size_t max_global_entity_migrations = changeList.get_max_global_entity_migrations();
-
-    if (num_global_entity_migrations > 0)
-    {
-        internal::logMessage(stkMeshBulkData.parallel(), "Moving elements to new processors");
-        internal::rebalance(changeList);
-
-        if (balanceSettings.shouldFixMechanisms())
-        {
-            internal::logMessage(stkMeshBulkData.parallel(), "Fixing mechanisms found during decomposition");
-            stk::balance::internal::detectAndFixMechanisms(balanceSettings, stkMeshBulkData);
-        }
-
-        if (balanceSettings.shouldFixSpiders())
-        {
-            internal::logMessage(stkMeshBulkData.parallel(), "Fixing spider elements");
-            stk::balance::internal::fix_spider_elements(balanceSettings, stkMeshBulkData);
-        }
-
-        if (balanceSettings.shouldPrintMetrics())
-            internal::print_rebalance_metrics(num_global_entity_migrations, max_global_entity_migrations, stkMeshBulkData);
-    }
-
-    internal::logMessage(stkMeshBulkData.parallel(), "Finished rebalance");
-
-
-    return (num_global_entity_migrations > 0);
-}
-
 bool colorMesh(const BalanceSettings& balanceSettings, stk::mesh::BulkData& bulk, const stk::mesh::PartVector& parts)
 {
     ThrowRequireMsg(balanceSettings.getGraphOption() == BalanceSettings::COLOR_MESH ||
@@ -289,31 +240,18 @@ bool colorMesh(const BalanceSettings& balanceSettings, stk::mesh::BulkData& bulk
     return totalNumColors > 0;
 }
 
-bool internalBalanceStkMesh(const BalanceSettings& balanceSettings, BalanceMesh& mesh, const std::vector<stk::mesh::Selector>& selectors)
-{
-  if( balanceSettings.getGraphOption() == BalanceSettings::LOAD_BALANCE )
-  {
-    return loadBalance(balanceSettings, mesh.get_bulk(), mesh.get_bulk().parallel_size(), selectors);
-  }
-  return false;
-}
-
-bool internalBalanceStkMesh(const BalanceSettings& balanceSettings, BalanceMesh& mesh)
-{
-  std::vector<stk::mesh::Selector> selectors = {mesh.get_bulk().mesh_meta_data().locally_owned_part()};
-  return internalBalanceStkMesh(balanceSettings, mesh, selectors);
-}
-
 bool balanceStkMesh(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData, const std::vector<stk::mesh::Selector>& selectors)
 {
-  ExternalMesh mesh(stkMeshBulkData);
-  return internalBalanceStkMesh(balanceSettings, mesh, selectors);
+  const Balancer balancer(balanceSettings);
+  BalanceMesh mesh(stkMeshBulkData);
+  return balancer.balance(mesh, selectors);
 }
 
 bool balanceStkMesh(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData)
 {
-  ExternalMesh mesh(stkMeshBulkData);
-  return internalBalanceStkMesh(balanceSettings, mesh);
+  const Balancer balancer(balanceSettings);
+  BalanceMesh mesh(stkMeshBulkData);
+  return balancer.balance(mesh);
 }
 
 bool balanceStkMeshNodes(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData)
@@ -372,175 +310,6 @@ void fill_coloring_parts_with_topology(const stk::mesh::MetaData& meta, const st
             coloringParts.push_back(part);
         }
     }
-}
-
-void run_static_stk_balance_with_settings(stk::io::StkMeshIoBroker &stkInput, BalanceMesh& inputMesh, const std::string& outputFilename, MPI_Comm comm, stk::balance::BalanceSettings& graphOptions)
-{
-    stk::mesh::MetaData metaB;
-    stk::mesh::BulkData bulkB(metaB, comm);
-
-    stk::mesh::BulkData& inputBulk = inputMesh.get_bulk();
-
-    stk::mesh::BulkData *balancedBulk = nullptr;
-    if(stk::io::get_transient_fields(inputBulk.mesh_meta_data()).empty())
-    {
-        balancedBulk = &inputBulk;
-    }
-    else
-    {
-        internal::logMessage(inputBulk.parallel(), "Copying input mesh to handle transient fields");
-        stk::tools::copy_mesh(inputBulk, inputBulk.mesh_meta_data().universal_part(), bulkB);
-        balancedBulk = &bulkB;
-    }
-
-    ExternalMesh balancedMesh(*balancedBulk);
-    stk::balance::internalBalanceStkMesh(graphOptions, balancedMesh);
-
-    stk::io::StkMeshIoBroker stkOutput;
-    stkOutput.set_bulk_data(*balancedBulk);
-    stkOutput.set_attribute_field_ordering_stored_by_part_ordinal(stkInput.get_attribute_field_ordering_stored_by_part_ordinal());
-
-    stk::transfer_utils::TransientFieldTransferById transfer(stkInput, stkOutput);
-    transfer.transfer_and_write_transient_fields(outputFilename);
-
-    internal::logMessage(inputBulk.parallel(), "Finished writing output mesh");
-}
-
-void register_internal_fields(stk::mesh::BulkData& bulkData, stk::balance::BalanceSettings& balanceSettings)
-{
-    if (balanceSettings.shouldFixSpiders()) {
-        stk::mesh::MetaData& meta = bulkData.mesh_meta_data();
-        stk::mesh::Field<int> & field = meta.declare_field<stk::mesh::Field<int>>(stk::topology::NODE_RANK,
-                                                                                  balanceSettings.getSpiderConnectivityCountFieldName());
-        const int initValue = 0;
-        stk::mesh::put_field_on_mesh(field, meta.universal_part(), &initValue);
-    }
-}
-
-void read_mesh_with_auto_decomp(stk::io::StkMeshIoBroker & stkIo,
-                                const std::string& meshSpec,
-                                stk::mesh::BulkData& bulkData,
-                                stk::balance::BalanceSettings & balanceSettings)
-{
-    stkIo.set_bulk_data(bulkData);
-    stkIo.add_mesh_database(meshSpec, stk::io::READ_MESH);
-    stkIo.create_input_mesh();
-    stkIo.add_all_mesh_fields_as_input_fields();
-
-    register_internal_fields(bulkData, balanceSettings);
-
-    stkIo.populate_bulk_data();
-
-    if(stkIo.check_integer_size_requirements() == 8) {
-        bulkData.set_large_ids_flag(true);
-    }
-}
-
-void initial_decomp_and_balance(BalanceMesh& mesh,
-                                stk::balance::BalanceSettings& graphOptions,
-                                const std::string& exodusFilename,
-                                const std::string& outputFilename,
-                                const std::string & initialDecompMethod)
-{
-    stk::io::StkMeshIoBroker stkInput;
-    stkInput.property_add(Ioss::Property("DECOMPOSITION_METHOD", initialDecompMethod));
-
-    internal::logMessage(mesh.get_bulk().parallel(), "Reading mesh and performing initial decomposition");
-    read_mesh_with_auto_decomp(stkInput, exodusFilename, mesh.get_bulk(), graphOptions);
-
-    make_mesh_consistent_with_parallel_mesh_rule1(mesh.get_bulk());
-    run_static_stk_balance_with_settings(stkInput, mesh, outputFilename, mesh.get_bulk().parallel(), graphOptions);
-}
-
-void initial_decomp_and_balance(stk::mesh::BulkData &bulk,
-                                stk::balance::BalanceSettings& graphOptions,
-                                const std::string& exodusFilename,
-                                const std::string& outputFilename,
-                                const std::string & initialDecompMethod)
-{
-  ExternalMesh mesh(bulk);
-  initial_decomp_and_balance(mesh, graphOptions, exodusFilename, outputFilename, initialDecompMethod);
-}
-
-void run_stk_balance_with_settings(const std::string& outputFilename, const std::string& exodusFilename, MPI_Comm comm, stk::balance::BalanceSettings& balanceSettings)
-{
-    const std::string trimmedInputName = (exodusFilename.substr(0,2) == "./") ? exodusFilename.substr(2) : exodusFilename;
-    const std::string trimmedOutputName = (outputFilename.substr(0,2) == "./") ? outputFilename.substr(2) : outputFilename;
-    const bool isSerial = (stk::parallel_machine_size(comm) == 1);
-    const bool inputEqualsOutput = (trimmedOutputName == trimmedInputName);
-    ThrowRequireMsg(!(isSerial && inputEqualsOutput),
-                    "Running on 1 MPI rank and input-file ("<<exodusFilename
-                     <<") == output-file, doing nothing. Specify outputDirectory if you "
-                     <<"wish to copy the input-file to an output-file of the same name.");
-
-    const std::string initialDecompMethod = "RIB";
-
-    InternalMesh mesh(comm, balanceSettings.getCoordinateFieldName());
-
-    initial_decomp_and_balance(mesh, balanceSettings, exodusFilename, outputFilename, balanceSettings.getInitialDecompMethod());
-}
-
-StkBalanceSettings create_balance_settings(const stk::balance::ParsedOptions & options)
-{
-  StkBalanceSettings balanceSettings;
-  SearchToleranceType searchToleranceType = ABSOLUTE;
-
-  if (options.is_option_provided(stk::balance::ParsedOptions::APP_TYPE)) {
-    if (options.appTypeDefaults == stk::balance::SD_DEFAULTS) {
-      balanceSettings.setShouldFixSpiders(true);
-    }
-    else if (options.appTypeDefaults == stk::balance::SM_DEFAULTS) {
-      balanceSettings.setEdgeWeightForSearch(3.0);
-      balanceSettings.setVertexWeightMultiplierForVertexInSearch(10.0);
-      balanceSettings.setToleranceFunctionForFaceSearch(
-            std::make_shared<stk::balance::SecondShortestEdgeFaceSearchTolerance>());
-      searchToleranceType = RELATIVE;
-    }
-  }
-
-  if (options.is_option_provided(stk::balance::ParsedOptions::CONTACT_SEARCH)) {
-    balanceSettings.setIncludeSearchResultsInGraph(options.useContactSearch);
-  }
-
-  if (options.is_option_provided(stk::balance::ParsedOptions::FACE_SEARCH_ABS_TOL)) searchToleranceType = ABSOLUTE;
-  if (options.is_option_provided(stk::balance::ParsedOptions::FACE_SEARCH_REL_TOL)) searchToleranceType = RELATIVE;
-
-  if (searchToleranceType == ABSOLUTE) {
-    const double tolerance = options.is_option_provided(stk::balance::ParsedOptions::FACE_SEARCH_ABS_TOL) ?
-                             options.faceSearchAbsTol : stk::balance::defaultFaceSearchTolerance;
-    balanceSettings.setToleranceForFaceSearch(tolerance);
-  }
-  else if (searchToleranceType == RELATIVE) {
-    if (options.is_option_provided(stk::balance::ParsedOptions::FACE_SEARCH_REL_TOL)) {
-      balanceSettings.setToleranceFunctionForFaceSearch(
-            std::make_shared<stk::balance::SecondShortestEdgeFaceSearchTolerance>(options.faceSearchRelTol));
-    }
-    else {
-      balanceSettings.setToleranceFunctionForFaceSearch(
-            std::make_shared<stk::balance::SecondShortestEdgeFaceSearchTolerance>());
-    }
-  }
-
-  if (options.is_option_provided(stk::balance::ParsedOptions::DECOMP_METHOD)) {
-    balanceSettings.setDecompMethod(options.decompMethod);
-  }
-
-  if (options.is_option_provided(stk::balance::ParsedOptions::INITIAL_DECOMP_METHOD)) {
-    balanceSettings.setInitialDecompMethod(options.initialDecompMethod);
-  }
-
-  return balanceSettings;
-}
-
-void run_stk_rebalance(const stk::balance::ParsedOptions& options,  MPI_Comm comm)
-{
-    const std::string& outputDirectory = options.outputDirectory;
-    const std::string& inputFile = options.m_inFile;
-
-    StkBalanceSettings balanceSettings = create_balance_settings(options);
-
-    std::string outputFilename = construct_output_file_name(outputDirectory, inputFile);
-    run_stk_balance_with_settings(outputFilename, inputFile, comm, balanceSettings);
 }
 
 }

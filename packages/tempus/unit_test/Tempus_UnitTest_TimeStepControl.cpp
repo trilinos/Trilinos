@@ -30,12 +30,7 @@ using Teuchos::ParameterList;
 using Teuchos::sublist;
 using Teuchos::getParametersFromXmlFile;
 
-// Comment out any of the following tests to exclude from build/run.
-#define SETOUTPUTTIMES
-#define SETANDGETOUTPUTINDICESANDINTERVALS
 
-
-#ifdef SETOUTPUTTIMES
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(TimeStepControl, setOutputTimes)
@@ -109,10 +104,8 @@ TEUCHOS_UNIT_TEST(TimeStepControl, setOutputTimes)
   //tscPL = tsc->getParameterList();
   //std::cout << "tscPL = \n" << *tscPL << std::endl;
 }
-#endif // SETOUTPUTTIMES
 
 
-#ifdef SETANDGETOUTPUTINDICESANDINTERVALS
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(TimeStepControl, getOutputIndicesandIntervals){
@@ -128,7 +121,6 @@ TEUCHOS_UNIT_TEST(TimeStepControl, getOutputIndicesandIntervals){
   TEST_COMPARE(getOutputTimeInterval, ==, setOutputTimeInterval);
   TEST_COMPARE(getOutputTimeIndex, ==, setOutputTimeIndex);
 }
-#endif // SETANDGETOUTPUTINDICESANDINTERVALS
 
 
 } // namespace Tempus_Test

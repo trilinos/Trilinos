@@ -108,7 +108,7 @@ namespace
     // since A is SPD, col/row major has no effect on the data
     // but B's data may be transposed relative to what LAPACK expects (column-major order)
     // so we allocate our own storage for B to make sure of the ordering
-    double B[N*M];
+    std::vector<double> B(N*M);
     
     for (int j=0; j<M; j++)
     {
@@ -132,7 +132,7 @@ namespace
     if (INFO != 0) std::cout << "ERROR: got " << INFO << " from POTRF.\n";
     
     // back-substitute
-    lapack.POTRS(UPLO, N, M, A_host.data(), N, B, N, &INFO);
+    lapack.POTRS(UPLO, N, M, A_host.data(), N, B.data(), N, &INFO);
     
     if (INFO != 0) result = INFO;
     
@@ -227,7 +227,7 @@ namespace
                             const double relTol, const double absTol, Teuchos::FancyOStream &out, bool &success)
   {
     // first, check that the bases agree on cardinality
-    TEST_ASSERT(basis1.getCardinality() == basis2.getCardinality());
+    TEST_EQUALITY(basis1.getCardinality(), basis2.getCardinality());
     
     const int basisCardinality = basis1.getCardinality();
     
@@ -245,6 +245,18 @@ namespace
     ViewType<PointScalar> points = ViewType<PointScalar>("quadrature points 1D ref cell", numRefPoints, spaceDim);
     ViewType<WeightScalar> weights = ViewType<WeightScalar>("quadrature weights 1D ref cell", numRefPoints);
     quadrature->getCubature(points, weights);
+    
+    out << "Points being tested:\n";
+    for (int pointOrdinal=0; pointOrdinal<numRefPoints; pointOrdinal++)
+    {
+      out << pointOrdinal << ": " << "(";
+      for (int d=0; d<spaceDim; d++)
+      {
+        out << points(pointOrdinal,d);
+        if (d < spaceDim-1) out << ",";
+      }
+      out << ")\n";
+    }
     
     auto functionSpace = basis1.getFunctionSpace();
     
@@ -282,6 +294,111 @@ namespace
     ViewType<Scalar> basis1Coefficients("basis 1 coefficients to represent basis 2", basisCardinality, basisCardinality);
     Kokkos::deep_copy(basis1Coefficients, basis1_vs_basis2);
     solveSystemUsingHostLapack(basis1_vs_basis1, basis1Coefficients);
+    
+    // for non-"DG" bases, check that the topological associations match up
+    // to check for DG-ness of basis, examine how many dofs are associated with the interior
+    shards::CellTopology cellTopo = basis1.getBaseCellTopology();
+    const int interiorDim = cellTopo.getDimension();
+    const int interiorSubcellOrdinal = 0;
+    const int firstDofOrdinalForSubcell = 0;
+    
+    int basis1InteriorCardinality = 0, basis2InteriorCardinality = 0;
+    int basis1FirstInterior = -1, basis2FirstInterior = -1;
+    if (basis1.getAllDofOrdinal().extent_int(0) > interiorDim)
+    {
+      basis1FirstInterior = basis1.getAllDofOrdinal()(interiorDim, interiorSubcellOrdinal, firstDofOrdinalForSubcell);
+    }
+    if (basis2.getAllDofOrdinal().extent_int(0) > interiorDim)
+    {
+      basis2FirstInterior = basis2.getAllDofOrdinal()(interiorDim, interiorSubcellOrdinal, firstDofOrdinalForSubcell);
+    }
+    
+    // if there are no interior dofs, we'll get a -1 value
+    if (basis1FirstInterior != -1)
+    {
+      // at index 3, dof tag stores the total dof count associated with the subcell (here, the interior)
+      basis1InteriorCardinality = basis1.getDofTag(basis1FirstInterior)(3);
+    }
+    if (basis2FirstInterior != -1)
+    {
+      // at index 3, dof tag stores the total dof count associated with the subcell (here, the interior)
+      basis2InteriorCardinality = basis2.getDofTag(basis2FirstInterior)(3);
+    }
+    const bool basis1IsDG = (basis1InteriorCardinality == basisCardinality);
+    const bool basis2IsDG = (basis2InteriorCardinality == basisCardinality);
+    const bool neitherBasisIsDG = !basis1IsDG && !basis2IsDG;
+    if (neitherBasisIsDG)
+    {
+      auto basis1CoefficientsHost = getHostCopy(basis1Coefficients);
+      // if neither basis is DG, then we can expect them to have matching counts on basis members
+      // associated with a given subcell.  We can also expect the representation of of members of basis1
+      // on a given subcell in terms of basis2 to involve at least some members of basis2 associated with the same
+      // subcell.  (We can check this by examining the weights in basis1Coefficients.)
+      for (int subcellDim=0; subcellDim<=interiorDim; subcellDim++)
+      {
+        out << "checking subcells of dimension " << subcellDim << std::endl;
+        // if there are no dofs for this subcell dimension and greater, then getAllDofOrdinal() won't have
+        // an entry for subcellDim.  The following guards against that:
+        if (basis1.getAllDofOrdinal().extent_int(0) <= subcellDim)
+        {
+          // basis1 has no dofs for this subcell dim.  Check that basis2 also does not:
+          TEST_ASSERT(basis2.getAllDofOrdinal().extent_int(0) <= subcellDim);
+          break; // we've already checked all subcell dimensions that have any dofs associated with them
+        }
+        
+        const int subcellCount = cellTopo.getSubcellCount(subcellDim);
+        for (int subcellOrdinal=0; subcellOrdinal<subcellCount; subcellOrdinal++)
+        {
+          // need to find the first dof ordinal for the subcell to get the basis cardinality on the subcell
+          const int basis1FirstDofOrdinal = basis1.getAllDofOrdinal()(subcellDim, subcellOrdinal, firstDofOrdinalForSubcell);
+          const int basis2FirstDofOrdinal = basis2.getAllDofOrdinal()(subcellDim, subcellOrdinal, firstDofOrdinalForSubcell);
+          // if there are no dofs on the subcell, we'll get a -1 value
+          if ((basis1FirstDofOrdinal == -1) || (basis2FirstDofOrdinal == -1))
+          {
+            // if one of the bases has no dofs on the subcell, then both should:
+            TEST_ASSERT((basis1FirstDofOrdinal == -1) && (basis2FirstDofOrdinal == -1));
+            // if either of the bases has no dofs on the subcell, we should continue with the next subcell
+            continue;
+          }
+          // at index 3, dof tag stores the total dof count associated with the subcell
+          const int basis1SubcellCardinality = basis1.getDofTag(basis1FirstDofOrdinal)(3);
+          const int basis2SubcellCardinality = basis2.getDofTag(basis2FirstDofOrdinal)(3);
+          TEST_EQUALITY(basis1SubcellCardinality, basis2SubcellCardinality);
+          // if we fail the cardinality check, not much point in checking the coefficients
+          if (basis1SubcellCardinality != basis2SubcellCardinality) continue;
+          
+          out << "subcell " << subcellOrdinal << " has " << basis1SubcellCardinality << " dofs.\n";
+          
+          std::vector<ordinal_type> basis1SubcellDofOrdinals(basis1SubcellCardinality);
+          std::vector<ordinal_type> basis2SubcellDofOrdinals(basis2SubcellCardinality);
+          for (int subcellDofOrdinal=0; subcellDofOrdinal<basis1SubcellCardinality; subcellDofOrdinal++)
+          {
+            basis1SubcellDofOrdinals[subcellDofOrdinal] = basis1.getAllDofOrdinal()(subcellDim, subcellOrdinal, subcellDofOrdinal);
+            basis2SubcellDofOrdinals[subcellDofOrdinal] = basis2.getAllDofOrdinal()(subcellDim, subcellOrdinal, subcellDofOrdinal);
+          }
+          for (int subcellDofOrdinal=0; subcellDofOrdinal<basis1SubcellCardinality; subcellDofOrdinal++)
+          {
+            // each column in basis1Coefficients represents the corresponding member of basis 2 in terms of members of basis 1
+            const int basis2DofOrdinal = basis2SubcellDofOrdinals[subcellDofOrdinal];
+            out << "checking representation of basis2 dof ordinal " << basis2DofOrdinal << std::endl;
+            
+            // look for at least one member of basis1's representation on the subcell
+            bool hasNonzeroCoefficient = false;
+            for (const int basis1DofOrdinal : basis1SubcellDofOrdinals)
+            {
+              Scalar basisCoefficient = basis1CoefficientsHost(basis1DofOrdinal,basis2DofOrdinal);
+              bool nonzeroCoefficient = (std::abs(basisCoefficient) > absTol);
+              if (nonzeroCoefficient)
+              {
+                out << "basis coefficient " << basisCoefficient << " is nonzero (absTol = " << absTol << ").\n";
+                hasNonzeroCoefficient = true;
+              }
+            }
+            TEST_ASSERT(hasNonzeroCoefficient);
+          }
+        }
+      }
+    }
     
     // compute the values for basis2 using basis1Coefficients, basis1Values, and confirm that these agree with basisValues2
     ViewType<Scalar> basis2ValuesFromBasis1 = getOutputView<Scalar>(functionSpace, OPERATOR_VALUE, basisCardinality, numRefPoints, spaceDim);
@@ -475,6 +592,117 @@ namespace
     CnBasis cnBasis(polyOrder);
     C2Basis c2Basis;
     testBasisEquivalence(cnBasis, c2Basis, opsToTest, relTol, absTol, out, success);
+  }
+  
+  TEUCHOS_UNIT_TEST( BasisEquivalence, TetrahedronNodalCnVersusNodalC2_HGRAD )
+  {
+    using CnBasis = Intrepid2::Basis_HGRAD_TET_Cn_FEM<Kokkos::DefaultExecutionSpace>;
+    using C2Basis = Intrepid2::Basis_HGRAD_TET_C2_FEM<Kokkos::DefaultExecutionSpace>;
+    
+    // OPERATOR_D2 and above are not supported by either the nodal or the hierarchical basis at present...
+    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1};
+    
+    // these tolerances are selected such that we have a little leeway for architectural differences
+    // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
+    const double relTol=1e-12; // 2e-14 is sharp on development setup; relaxing for potential architectural differences
+    const double absTol=1e-13; // 3e-15 is sharp on development setup; relaxing for potential architectural differences
+    
+    CnBasis cnBasis(2);
+    C2Basis c2Basis;
+    testBasisEquivalence(cnBasis, c2Basis, opsToTest, relTol, absTol, out, success);
+  }
+  
+  TEUCHOS_UNIT_TEST( BasisEquivalence, TetrahedronHierarchicalDGVersusHierarchicalCG_HGRAD )
+  {
+    using CGBasis = HierarchicalBasisFamily<>::HGRAD_TET;
+    using DGBasis = DGHierarchicalBasisFamily<>::HGRAD_TET;
+    
+    // these tolerances are selected such that we have a little leeway for architectural differences
+    // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
+    const double relTol=1e-6; // 3e-8 is sharp on development setup for polyOrder=2; relaxing for potential architectural differences
+    const double absTol=1e-9; // 5e-11 is sharp on development setup for polyOrder=2; relaxing for potential architectural differences
+    
+    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1};
+    for (int polyOrder=1; polyOrder<7; polyOrder++)
+    {
+      CGBasis cgBasis(polyOrder);
+      DGBasis dgBasis(polyOrder);
+      testBasisEquivalence(cgBasis, dgBasis, opsToTest, relTol, absTol, out, success);
+    }
+  }
+  
+  TEUCHOS_UNIT_TEST( BasisEquivalence, TetrahedronNodalVersusHierarchicalCG_HGRAD )
+  {
+    using HierarchicalBasis = HierarchicalBasisFamily<>::HGRAD_TET;
+    using NodalBasis        = NodalBasisFamily<>::HGRAD_TET;
+    
+    // OPERATOR_D2 and above are not supported by either the nodal or the hierarchical basis at present...
+    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1};
+    
+    // these tolerances are selected such that we have a little leeway for architectural differences
+    // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
+    const double relTol=1e-6;  // 3e-08 is sharp on development setup for polyOrder=6; relaxing for potential architectural differences
+    const double absTol=1e-10; // 3e-12 is sharp on development setup for polyOrder=6; relaxing for potential architectural differences
+    
+    for (int polyOrder=1; polyOrder<7; polyOrder++)
+    {
+      HierarchicalBasis hierarchicalBasis(polyOrder);
+      NodalBasis        nodalBasis(polyOrder);
+      
+//      auto cellTopo = nodalBasis.getBaseCellTopology();
+//      const int faceDim = 2;
+//      for (int intrepid2FaceOrdinal=0; intrepid2FaceOrdinal<4; intrepid2FaceOrdinal++)
+//      {
+//        int vertex0 = cellTopo.getNodeMap(faceDim, intrepid2FaceOrdinal, 0);
+//        int vertex1 = cellTopo.getNodeMap(faceDim, intrepid2FaceOrdinal, 1);
+//        int vertex2 = cellTopo.getNodeMap(faceDim, intrepid2FaceOrdinal, 2);
+//        std::cout << "face " << intrepid2FaceOrdinal << ": " << vertex0 << vertex1 << vertex2 << std::endl;
+//      }
+      
+      testBasisEquivalence(nodalBasis, hierarchicalBasis, opsToTest, relTol, absTol, out, success);
+    }
+  }
+  
+  TEUCHOS_UNIT_TEST( BasisEquivalence, TriangleNodalVersusHierarchicalCG_HGRAD )
+  {
+    using HierarchicalBasis = HierarchicalBasisFamily<>::HGRAD_TRI;
+    using NodalBasis        = NodalBasisFamily<>::HGRAD_TRI;
+    
+    // OPERATOR_D2 and above are not supported by either the nodal or the hierarchical basis at present...
+    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1};
+    
+    // these tolerances are selected such that we have a little leeway for architectural differences
+    // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
+    const double relTol=1e-11; // 7e-13 is sharp on development setup for polyOrder=4; relaxing for potential architectural differences
+    const double absTol=1e-12; // 2e-14 is sharp on development setup for polyOrder=4; relaxing for potential architectural differences
+    
+    for (int polyOrder=1; polyOrder<5; polyOrder++)
+    {
+      HierarchicalBasis hierarchicalBasis(polyOrder);
+      NodalBasis        nodalBasis(polyOrder);
+      testBasisEquivalence(nodalBasis, hierarchicalBasis, opsToTest, relTol, absTol, out, success);
+    }
+  }
+  
+  TEUCHOS_UNIT_TEST( BasisEquivalence, TriangleHierarchicalCGVersusHierarchicalDG_HGRAD )
+  {
+    using CGBasis =   HierarchicalBasisFamily<>::HGRAD_TRI;
+    using DGBasis = DGHierarchicalBasisFamily<>::HGRAD_TRI;
+    
+    // OPERATOR_D2 and above are not supported by either the nodal or the hierarchical basis at present...
+    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1};
+    
+    // these tolerances are selected such that we have a little leeway for architectural differences
+    // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
+    const double relTol=1e-11; // 7e-13 is sharp on development setup for polyOrder=4; relaxing for potential architectural differences
+    const double absTol=1e-12; // 2e-14 is sharp on development setup for polyOrder=4; relaxing for potential architectural differences
+    
+    for (int polyOrder=1; polyOrder<5; polyOrder++)
+    {
+      CGBasis cgBasis(polyOrder);
+      DGBasis dgBasis(polyOrder);
+      testBasisEquivalence(cgBasis, dgBasis, opsToTest, relTol, absTol, out, success);
+    }
   }
   
 } // namespace

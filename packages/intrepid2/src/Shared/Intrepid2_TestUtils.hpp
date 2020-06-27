@@ -126,18 +126,28 @@ inline Teuchos::RCP< Intrepid2::Basis<Kokkos::DefaultExecutionSpace,double,doubl
   BasisPtr basis;
   using namespace Intrepid2;
   
-  if (cellTopo.getBaseKey() == shards::Line<2>::key)
+  if (cellTopo.getBaseKey() == shards::Line<>::key)
   {
     basis = getLineBasis<BasisFamily>(fs,polyOrder_x);
   }
-  else if (cellTopo.getBaseKey() == shards::Quadrilateral<4>::key)
+  else if (cellTopo.getBaseKey() == shards::Quadrilateral<>::key)
   {
+    INTREPID2_TEST_FOR_EXCEPTION(polyOrder_y < 0, std::invalid_argument, "polyOrder_y must be specified");
     basis = getQuadrilateralBasis<BasisFamily>(fs,polyOrder_x,polyOrder_y);
+  }
+  else if (cellTopo.getBaseKey() == shards::Triangle<>::key)
+  {
+    basis = getTriangleBasis<BasisFamily>(fs,polyOrder_x);
   }
   else if (cellTopo.getBaseKey() == shards::Hexahedron<>::key)
   {
+    INTREPID2_TEST_FOR_EXCEPTION(polyOrder_y < 0, std::invalid_argument, "polyOrder_y must be specified");
     INTREPID2_TEST_FOR_EXCEPTION(polyOrder_z < 0, std::invalid_argument, "polyOrder_z must be specified");
-    basis = getHexahedralBasis<BasisFamily>(fs,polyOrder_x,polyOrder_y,polyOrder_z);
+    basis = getHexahedronBasis<BasisFamily>(fs,polyOrder_x,polyOrder_y,polyOrder_z);
+  }
+  else if (cellTopo.getBaseKey() == shards::Tetrahedron<>::key)
+  {
+    basis = getTetrahedronBasis<BasisFamily>(fs, polyOrder_x);
   }
   else
   {
@@ -156,8 +166,10 @@ inline Teuchos::RCP< Intrepid2::Basis<Kokkos::DefaultExecutionSpace,double,doubl
   
   using LineBasisGrad = Intrepid2::IntegratedLegendreBasis_HGRAD_LINE<ExecSpace, Scalar, Scalar, defineVertexFunctions, true>;
   using LineBasisVol  = Intrepid2::LegendreBasis_HVOL_LINE< ExecSpace, Scalar, Scalar>;
+  using TriangleBasisFamily = Intrepid2::HierarchicalTriangleBasisFamily<ExecSpace, Scalar, Scalar, defineVertexFunctions>;
+  using TetrahedronBasisFamily = Intrepid2::HierarchicalTetrahedronBasisFamily<ExecSpace, Scalar, Scalar, defineVertexFunctions>;
   
-  using BasisFamily = DerivedBasisFamily<LineBasisGrad, LineBasisVol>;
+  using BasisFamily = DerivedBasisFamily<LineBasisGrad, LineBasisVol, TriangleBasisFamily, TetrahedronBasisFamily>;
   
   return getBasisUsingFamily<BasisFamily>(cellTopo, fs, polyOrder_x, polyOrder_y, polyOrder_z);
 }
@@ -177,6 +189,9 @@ inline ViewType<ValueType> getView(const std::string &label, DimArgs... dims)
   }
 }
 
+/** \brief Returns a View containing equispaced points on the line.
+ \param [in] numPointsBase - the number of points that will be defined along each edge.
+ */
 template <typename PointValueType>
 inline ViewType<PointValueType> lineInputPointsView(int numPoints)
 {
@@ -184,11 +199,16 @@ inline ViewType<PointValueType> lineInputPointsView(int numPoints)
   Kokkos::parallel_for(numPoints, KOKKOS_LAMBDA(const int i)
   {
     double x_zero_one = i * 1.0 / (numPoints-1); // the x value on [0,1]
-    inputPoints(i,0) = fromZeroOne(x_zero_one);   // standard Intrepid2 element
+    inputPoints(i,0) = PointValueType(fromZeroOne(x_zero_one));   // standard Intrepid2 element
   });
   return inputPoints;
 }
 
+/** \brief Returns a View containing equispaced points on the hexahedron.
+ \param [in] numPointsBase - the number of points that will be defined along each edge.
+ 
+ The total number of points defined will be a cubic number; if n=numPointsBase, then the point count is n^3.
+ */
 template <typename PointValueType>
 inline ViewType<PointValueType> hexInputPointsView(int numPoints_1D)
 {
@@ -203,15 +223,20 @@ inline ViewType<PointValueType> hexInputPointsView(int numPoints_1D)
       {
         double z_zero_one = k * 1.0 / (numPoints_1D-1); // the z value on [0,1]
         int pointOrdinal = (i*numPoints_1D+j)*numPoints_1D+k;
-        inputPoints(pointOrdinal,0) = fromZeroOne(x_zero_one);   // standard Intrepid2 element
-        inputPoints(pointOrdinal,1) = fromZeroOne(y_zero_one);   // standard Intrepid2 element
-        inputPoints(pointOrdinal,2) = fromZeroOne(z_zero_one);   // standard Intrepid2 element
+        inputPoints(pointOrdinal,0) = PointValueType(fromZeroOne(x_zero_one));   // standard Intrepid2 element
+        inputPoints(pointOrdinal,1) = PointValueType(fromZeroOne(y_zero_one));   // standard Intrepid2 element
+        inputPoints(pointOrdinal,2) = PointValueType(fromZeroOne(z_zero_one));   // standard Intrepid2 element
       }
     }
   });
   return inputPoints;
 }
 
+/** \brief Returns a View containing equispaced points on the quadrilateral.
+ \param [in] numPointsBase - the number of points that will be defined along each edge.
+ 
+ The total number of points defined will be a square number; if n=numPointsBase, then the point count is n^2.
+ */
 template <typename PointValueType>
 inline ViewType<PointValueType> quadInputPointsView(int numPoints_1D)
 {
@@ -224,8 +249,82 @@ inline ViewType<PointValueType> quadInputPointsView(int numPoints_1D)
     {
       double y_zero_one = j * 1.0 / (numPoints_1D-1); // the y value on [0,1]
       int pointOrdinal = i*numPoints_1D+j;
-      inputPoints(pointOrdinal,0) = fromZeroOne(x_zero_one);   // standard Intrepid2 element
-      inputPoints(pointOrdinal,1) = fromZeroOne(y_zero_one);   // standard Intrepid2 element
+      inputPoints(pointOrdinal,0) = PointValueType(fromZeroOne(x_zero_one));   // standard Intrepid2 element
+      inputPoints(pointOrdinal,1) = PointValueType(fromZeroOne(y_zero_one));   // standard Intrepid2 element
+    }
+  });
+  return inputPoints;
+}
+
+/** \brief Returns a View containing regularly-spaced points on the tetrahedron.
+ \param [in] numPointsBase - the number of points that will be defined along each edge.
+ 
+ The total number of points defined will be a tetrahedral number; if n=numPointsBase, then the point count is the nth tetrahedral number, given by n*(n+1)*(n+2)/6.
+ */
+template <typename PointValueType>
+inline ViewType<PointValueType> tetInputPointsView(int numPointsBase)
+{
+  const int numPoints = numPointsBase*(numPointsBase+1)*(numPointsBase+2)/6;
+  ViewType<PointValueType> inputPoints = getView<PointValueType>("tetrahedron input points",numPoints,3);
+  Kokkos::parallel_for(numPointsBase, KOKKOS_LAMBDA(const int d0) // d0 generalizes row
+  {
+    // the following might be the formula for the nested for loop below, but we need to check this
+    // for now, we comment this out and do the clearer thing that requires more computation
+//    const int n = numPointsBase-d0;
+//    const int pointOrdinalOffset = n*(n+1)*(n+2)/6;
+    int pointOrdinalOffset = 0;
+    for (int i=0; i<d0; i++)
+    {
+      for (int j=0; j<numPointsBase-i; j++)
+      {
+        pointOrdinalOffset += (numPointsBase - i - j);
+      }
+    }
+    
+    double z_zero_one = d0 * 1.0 / (numPointsBase-1); // z value on [0,1]
+    int pointOrdinal = pointOrdinalOffset;
+    for (int d1=0; d1<numPointsBase-d0; d1++) // d1 generalizes column
+    {
+      double y_zero_one = d1 * 1.0 / (numPointsBase-1); // the y value on [0,1]
+      for (int d2=0; d2<numPointsBase-d0-d1; d2++)
+      {
+        double x_zero_one = d2 * 1.0 / (numPointsBase-1); // the x value on [0,1]
+        
+        inputPoints(pointOrdinal,0) = PointValueType(x_zero_one);
+        inputPoints(pointOrdinal,1) = PointValueType(y_zero_one);
+        inputPoints(pointOrdinal,2) = PointValueType(z_zero_one);
+        
+        pointOrdinal++;
+      }
+    }
+  });
+  return inputPoints;
+}
+
+/** \brief Returns a View containing regularly-spaced points on the triangle.
+ \param [in] numPointsBase - the number of points that will be defined along each edge.
+ 
+ The total number of points defined will be a triangular number; if n=numPointsBase, then the point count is the nth triangular number, given by n*(n+1)/2.
+ */
+template <typename PointValueType>
+inline ViewType<PointValueType> triInputPointsView(int numPointsBase)
+{
+  const int numPoints = numPointsBase*(numPointsBase+1)/2;
+  ViewType<PointValueType> inputPoints = getView<PointValueType>("triangle input points",numPoints,2);
+  Kokkos::parallel_for(numPointsBase, KOKKOS_LAMBDA(const int row)
+  {
+    int rowPointOrdinalOffset = 0;
+    for (int i=0; i<row; i++)
+    {
+      rowPointOrdinalOffset += (numPointsBase - i);
+    }
+    double y_zero_one = row * 1.0 / (numPointsBase-1); // y value on [0,1]
+    for (int col=0; col<numPointsBase-row; col++)
+    {
+      const int pointOrdinal = rowPointOrdinalOffset + col;
+      double x_zero_one = col * 1.0 / (numPointsBase-1); // the x value on [0,1]
+      inputPoints(pointOrdinal,0) = PointValueType(x_zero_one);
+      inputPoints(pointOrdinal,1) = PointValueType(y_zero_one);
     }
   });
   return inputPoints;
@@ -234,17 +333,25 @@ inline ViewType<PointValueType> quadInputPointsView(int numPoints_1D)
 template <typename PointValueType>
 inline ViewType<PointValueType> getInputPointsView(shards::CellTopology &cellTopo, int numPoints_1D)
 {
-  if (cellTopo.getBaseKey() == shards::Line<2>::key)
+  if (cellTopo.getBaseKey() == shards::Line<>::key)
   {
     return lineInputPointsView<PointValueType>(numPoints_1D);
   }
-  else if (cellTopo.getBaseKey() == shards::Quadrilateral<4>::key)
+  else if (cellTopo.getBaseKey() == shards::Quadrilateral<>::key)
   {
     return quadInputPointsView<PointValueType>(numPoints_1D);
   }
-  else if (cellTopo.getBaseKey() == shards::Hexahedron<8>::key)
+  else if (cellTopo.getBaseKey() == shards::Hexahedron<>::key)
   {
     return hexInputPointsView<PointValueType>(numPoints_1D);
+  }
+  else if (cellTopo.getBaseKey() == shards::Triangle<>::key)
+  {
+    return triInputPointsView<PointValueType>(numPoints_1D);
+  }
+  else if (cellTopo.getBaseKey() == shards::Tetrahedron<>::key)
+  {
+    return tetInputPointsView<PointValueType>(numPoints_1D);
   }
   else
   {

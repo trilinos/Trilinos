@@ -288,8 +288,8 @@ def cdashColorMissing(): return 'gray'
 #
 def extractCDashApiQueryData(cdashApiQueryUrl):
   #print sys.version_info
-  if sys.version_info < (2,7,9):
-    raise Exception("Error: Must be using Python 2.7.9 or newer")
+  if sys.version_info < (2,7,5):
+    raise Exception("Error: Must be using Python 2.7.5 or newer")
   # NOTE: If we use Python 2.6.6. then the urllib2 function crashes!
   response = urlopen(cdashApiQueryUrl)
   return json.load(response)
@@ -750,21 +750,18 @@ def flattenCDashQueryTestsToListOfDicts(fullCDashQueryTestsJson):
 # SearchableListOfDicts.  Please use that class instead of this raw function.
 #
 def createLookupDictForListOfDicts(listOfDicts, listOfKeys,
-  removeExactDuplicateElements=False,
-  checkDictsAreSame_in=checkDictsAreSame,
+  removeExactDuplicateElements=False, checkDictsAreSame_in=checkDictsAreSame,
   ):
   # Build the lookup dict data-structure. Also, optionally mark any 100%
   # duplicate elements if asked to remove 100% duplicate elements.
-  lookupDict = {} ; idx = 0 ; numRemoved = 0 ; duplicateIndexesToRemoveList = []
+  lookupDict = {} ; idx = 0 ; numRemoved = 0 ; duplicateIndexesToRemoveFromList = []
   for dictEle in listOfDicts:
     # Create the structure of recursive dicts for the keys in order
     currentLookupDictRef = lookupDict
     lastLookupDictRef = None
-    lastKeyValue = None
     for key in listOfKeys:
       keyValue = dictEle[key]
       lastLookupDictRef = currentLookupDictRef
-      lastKeyValue = keyValue
       nextLookupDictRef = currentLookupDictRef.setdefault(keyValue, {})
       currentLookupDictRef = nextLookupDictRef
     addEle = True
@@ -777,22 +774,12 @@ def createLookupDictForListOfDicts(listOfDicts, listOfKeys,
         lookedUpDict, "listOfDicts["+str(lookedUpIdx)+"]" )
       if hasSameKeyValuePairs and removeExactDuplicateElements:
         # This is a 100% duplicate element to one previously added.
-        # Therefore, marke this duplicate element to be removed from the
-        # orginal list.
-        duplicateIndexesToRemoveList.append(idx)
+        # Therefore, mark this duplicate element to be removed.
+        duplicateIndexesToRemoveFromList.append(idx)
         addEle = False
       else:
-        raise Exception(
-          "Error, The element\n\n"+\
-          "    listOfDicts["+str(idx)+"] =\n\n"+\
-          "      "+sorted_dict_str(dictEle)+"\n\n"+\
-          "  has duplicate values for the list of keys\n\n"+\
-          "    "+str(listOfKeys)+"\n\n"+\
-          "  with the element already added\n\n"+\
-          "    listOfDicts["+str(lookedUpIdx)+"] =\n\n"+\
-          "      "+sorted_dict_str(lookedUpDict)+"\n\n"+\
-          "  and differs by at least the key/value pair\n\n"+\
-          "    "+str(dictDiffErrorMsg))
+        raiseDuplicateDictEleException(idx, dictEle, listOfKeys, lookedUpIdx,
+          lookedUpDict, dictDiffErrorMsg)
     # Need to go back and reset the dict on the last dict in the
     # data-structure so that modifications to the dicts that are looked up
     # will modify the original list.
@@ -801,9 +788,25 @@ def createLookupDictForListOfDicts(listOfDicts, listOfKeys,
     else:
       numRemoved += 1
     idx += 1
-  # Remove 100% duplicate elements marged above
-  removeElementsFromListGivenIndexes(listOfDicts, duplicateIndexesToRemoveList)
+  # Remove 100% duplicate elements marked above
+  removeElementsFromListGivenIndexes(listOfDicts, duplicateIndexesToRemoveFromList)
   return  lookupDict
+
+
+def raiseDuplicateDictEleException(idx, dictEle, listOfKeys,
+  lookedUpIdx, lookedUpDict, dictDiffErrorMsg \
+  ):
+  raise Exception(
+    "Error, The element\n\n"+\
+    "    listOfDicts["+str(idx)+"] =\n\n"+\
+    "      "+sorted_dict_str(dictEle)+"\n\n"+\
+    "  has duplicate values for the list of keys\n\n"+\
+    "    "+str(listOfKeys)+"\n\n"+\
+    "  with the element already added\n\n"+\
+    "    listOfDicts["+str(lookedUpIdx)+"] =\n\n"+\
+    "      "+sorted_dict_str(lookedUpDict)+"\n\n"+\
+    "  and differs by at least the key/value pair\n\n"+\
+    "    "+str(dictDiffErrorMsg))
 
 
 # Lookup a dict (and optionally also its index location) in a list of dicts
@@ -1411,7 +1414,7 @@ class AddTestHistoryToTestDictFunctor(object):
   #
   def __init__(self, cdashUrl, projectName, date, testingDayStartTimeUtc, daysOfHistory,
     testCacheDir, useCachedCDashData=True, alwaysUseCacheFileIfExists=True,
-    verbose=False, printDetails=False,
+    verbose=False, printDetails=False, requireMatchTestTopTestHistory=True,
     extractCDashApiQueryData_in=extractCDashApiQueryData, # For unit testing
     ):
     self.__cdashUrl = cdashUrl
@@ -1424,6 +1427,7 @@ class AddTestHistoryToTestDictFunctor(object):
     self.__alwaysUseCacheFileIfExists = alwaysUseCacheFileIfExists
     self.__verbose = verbose
     self.__printDetails = printDetails
+    self.__requireMatchTestTopTestHistory = requireMatchTestTopTestHistory
     self.__extractCDashApiQueryData_in = extractCDashApiQueryData_in
 
 
@@ -1529,9 +1533,7 @@ class AddTestHistoryToTestDictFunctor(object):
     #print("\ntestHistoryLOD[0] = "+str(testHistoryLOD[0]))
 
     if testStatus == "Missing":
-      testDict['status'] = "Missing"
-      testDict['status_color'] = cdashColorMissing()
-      testDict['details'] = "Missing"
+      testDict = setTestDictAsMissing(testDict)
     elif testStatus == "Passed":
       testDict.update(testHistoryLOD[0])
       testDict['status_color'] = cdashColorPassed()
@@ -1541,25 +1543,35 @@ class AddTestHistoryToTestDictFunctor(object):
       # testHistoryLOD[0] should be an exact duplicate of testDict.  The below
       # check confirms that to make sure that CDash is giving us consistent
       # data.
-      if testDict.get('status', None) != testStatus:
-        raise Exception(
-          "Error, test testDict['status'] = '"+str(testDict.get('status',None))+"'"+\
-          " != "+\
-          "top test history testStatus = '"+testStatus+"'"+\
-          " where:\n\n"+\
-          "   testDict = "+sorted_dict_str(testDict)+"\n\n"+\
-          "   top test history dict = "+sorted_dict_str(testHistoryLOD[0])+"\n\n" )
-      if testDict.get('buildstarttime', None) != testHistoryLOD[0]['buildstarttime']:
-        raise Exception(
-          "Error, testDict['buildstarttime'] = '"+\
-          str(testDict.get('buildstarttime',None))+"'"+\
-          " != "+\
-          "top test history 'buildstarttime' = "+\
-          "'"+testHistoryLOD[0]['buildstarttime']+"'"+\
-          " where:\n\n"+\
-          "   testDict = "+sorted_dict_str(testDict)+"\n\n"+\
-          "   top test history dict = "+sorted_dict_str(testHistoryLOD[0])+"\n\n" )
-      if testStatus == "Failed":
+      if self.__requireMatchTestTopTestHistory:
+        if testDict.get('status', None) != testStatus:
+          raise Exception(
+            "Error, test testDict['status'] = '"+str(testDict.get('status',None))+"'"+\
+            " != "+\
+            "top test history testStatus = '"+testStatus+"'"+\
+            " where:\n\n"+\
+            "   testDict = "+sorted_dict_str(testDict)+"\n\n"+\
+            "   top test history dict = "+sorted_dict_str(testHistoryLOD[0])+"\n\n" )
+        if testDict.get('buildstarttime', None) != testHistoryLOD[0]['buildstarttime']:
+          raise Exception(
+            "Error, testDict['buildstarttime'] = '"+\
+            str(testDict.get('buildstarttime',None))+"'"+\
+            " != "+\
+            "top test history 'buildstarttime' = "+\
+            "'"+testHistoryLOD[0]['buildstarttime']+"'"+\
+            " where:\n\n"+\
+            "   testDict = "+sorted_dict_str(testDict)+"\n\n"+\
+            "   top test history dict = "+sorted_dict_str(testHistoryLOD[0])+"\n\n" )
+      if testDict.get('status', None) == None and testStatus == "Failed":
+        # This is a test missing in the outer list of nonpassing tests but is
+        # shown to be failing for the current testing day when looking at the
+        # test history.  This can happen when the outer CDash query filters
+        # out random system failures (see documentation for option
+        # --require-test-history-match-nonpassing-tests).
+        testDict = setTestDictAsMissing(testDict)
+        testDict.update(testHistoryLOD[0])       # Overwrites 'status' = "Failed"
+        testDict['status'] = "Missing / Failed"  # Show this special status!
+      elif testStatus == "Failed":
         testDict['status_color'] = cdashColorFailed()
       elif testStatus == "Not Run":
         testDict['status_color'] = cdashColorNotRun()
@@ -1609,6 +1621,12 @@ class AddTestHistoryToTestDictFunctor(object):
     return testDict
 
 
+def setTestDictAsMissing(testDict):
+  testDict['status'] = "Missing"
+  testDict['status_color'] = cdashColorMissing()
+  testDict['details'] = "Missing"
+  return testDict
+
 # Gather up a list of the missing builds.
 #
 # Inputs:
@@ -1627,17 +1645,11 @@ class AddTestHistoryToTestDictFunctor(object):
 #
 # The field 'status' will either be given either:
 #
-#   "Build not found on CDash"
+#   "Missing ALL"
 #
-# or
+# or will be:
 #
-#   "Build exists but no test results"
-#
-# ToDo: Change name of 'status' to 'build_missing_status' and add other
-# 'build_missing_status' values like:
-#
-#   "Build exists but no build results"
-#   "Build exists but no configure results"
+#   "Missing [update], [configure], [build], [tests]"
 #
 def getMissingExpectedBuildsList(buildsSearchableListOfDicts, expectedBuildsList):
   missingExpectedBuildsList = []
@@ -1645,25 +1657,72 @@ def getMissingExpectedBuildsList(buildsSearchableListOfDicts, expectedBuildsList
     #print("\nexpectedBuildDict = "+str(expectedBuildDict))
     buildSummaryDict = \
       buildsSearchableListOfDicts.lookupDictGivenKeyValueDict(expectedBuildDict)
-    #print("buildSummaryDict = "+str(buildSummaryDict))
+    #print("\nbuildSummaryDict = "+str(buildSummaryDict))
     if not buildSummaryDict:
-      # Expected build not found!
+      # No part of the expected build is found!
       missingExpectedBuildDict = copy.deepcopy(expectedBuildDict)
-      missingExpectedBuildDict.update({'status':"Build not found on CDash"})
-      #print("missingExpectedBuildDict = "+str(missingExpectedBuildDict))
-      missingExpectedBuildsList.append(missingExpectedBuildDict)
-    elif not buildSummaryDict.get('test', None):
-      # Build exists but it is missing tests!
-      missingExpectedBuildDict = copy.deepcopy(expectedBuildDict)
-      missingExpectedBuildDict.update({'status':"Build exists but no test results"})
+      missingExpectedBuildDict.update({'status':"Missing ALL"})
       #print("missingExpectedBuildDict = "+str(missingExpectedBuildDict))
       missingExpectedBuildsList.append(missingExpectedBuildDict)
     else:
-      # This build exists and it has test results so don't add it
-      None
+      # This build has some build results so see if all of the results are
+      # there or not
+      missingPartsList = []
+      #if not buildSummaryDict.get('update', None):
+      #  missingPartsList.append("update")
+      if not buildSummaryDict.get('configure', None):
+        missingPartsList.append("configure")
+      if not buildSummaryDict.get('compilation', None):
+        missingPartsList.append("build")
+      if not buildSummaryDict.get('test', None):
+        compilationDict = buildSummaryDict.get('compilation', None)
+        if compilationDict and compilationDict['time'] == '0s':
+          missingPartsList.append("build") # See NOTE below for explaination!
+        missingPartsList.append("tests")
+      # See if any parts are missing and report if there are as a missing
+      # build
+      if len(missingPartsList) > 0:
+        missingBuildStr = "Missing "+", ".join(missingPartsList)
+        missingExpectedBuildDict = copy.deepcopy(expectedBuildDict)
+        missingExpectedBuildDict.update({'status':missingBuildStr})
+        #print("missingExpectedBuildDict = "+str(missingExpectedBuildDict))
+        missingExpectedBuildsList.append(missingExpectedBuildDict)
+      else:
+        # All parts of the expected build exists so don't report this as an
+        # expected build.
+        None
   # Return the list of missing expected builds and status
   return missingExpectedBuildsList
 
+  # NOTE: Above uses a heuristic for reporting missing build/compilation data
+  # that if the 'compilation' 'time' is '0s' and there is no test data, then
+  # we will assume that no build data was submitted to the dashboard.
+  # Otherwise, we can't detect when build results are missing because if just
+  # 'configure' data is updated to CDash, then CDash will automatically create
+  # a 'compilation' subdict and will set the initail time to '0s'.  So we
+  # can't directly tell if build has missing build/compilation data or if it
+  # just has configure data.  (I consider this to be a defect in CDash and we
+  # may ask Kitware to fix this but for now we can just use this heuristic.)
+  # But we don't want to assume that a time of '0s' means that no
+  # build/compilation data was submitted to CDash since a rebuild with no
+  # targets getting built can take under 0s.  However, it is unlikely that the
+  # build/compilation time is '0s' and just happens to be missing test
+  # results.  In that case, it is likely that the job that was doing the build
+  # died and never submitted build results in the first place.  Therefore, we
+  # will never report missing build results unless there are also missing test
+  # results.  And if there are missing test results, then the build will be
+  # listed and missing anyway.  And I don't see a lot of harm in failing to
+  # report missing build results if there are test results and all of the
+  # tests pass.  The only gap is this logic, therefore, are expected builds
+  # that have zero tests defined and submitted 0 tests to CDash (so the 'test'
+  # subdict exists).  So this is not perfect but I think this is the best we
+  # can do until Kitware fixes CDash to not create a 'compilation' subdict
+  # unless build data is actually submitted to CDash.
+
+  # NOTE: Above, we are skipping checking for missing 'update' results for now
+  # because we want to allow some builds to not have update results.  In the
+  # future, it may be better to allow an expected build to say that it does
+  # not have expected 'update' results.
 
 # Download set of builds from CDash builds and return flattened list of dicts
 #
