@@ -76,6 +76,7 @@
 #  include "Thyra_NonlinearSolver_NOX.hpp"
 #endif
 
+//#define DEBUG_OUTPUT
 
 #include <string>
 #include <stdexcept>
@@ -90,7 +91,8 @@ Piro::TempusSolver<Scalar>::TempusSolver(
   out_(Teuchos::VerboseObjectBase::getDefaultOStream()),
   isInitialized_(false),
   piroObserver_(piroObserver),
-  supports_x_dotdot_(false)
+  supports_x_dotdot_(false),
+  initial_state_reset_{false}
 {
   std::string sens_method_string = appParams->get("Sensitivity Method","None");
   this->setSensitivityMethod(sens_method_string); 
@@ -364,15 +366,61 @@ Piro::TempusSolver<Scalar>::TempusSolver(
 template <typename Scalar>
 void Piro::TempusSolver<Scalar>::evalModelImpl(
     const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
-    const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const
+    const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const 
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
   // Set initial time and initial condition 
   Thyra::ModelEvaluatorBase::InArgs<Scalar> state_ic = model_->getNominalValues();
+  Teuchos::RCP<const Thyra::VectorBase<Scalar>> xinit, xdotinit, xdotdotinit; 
   if(t_initial_ > 0.0 && state_ic.supports(Thyra::ModelEvaluatorBase::IN_ARG_t)) {
     state_ic.set_t(t_initial_);
+    //If initial state has not been reset, get the initial state from ME in args
+    if (!initial_state_reset_) { 
+      if (state_ic.supports(Thyra::ModelEvaluatorBase::IN_ARG_x)) {
+        xinit = state_ic.get_x();
+      }
+      if (state_ic.supports(Thyra::ModelEvaluatorBase::IN_ARG_x_dot)) {
+        xdotinit = state_ic.get_x_dot();
+      }
+      if (state_ic.supports(Thyra::ModelEvaluatorBase::IN_ARG_x_dot_dot)) {
+        xdotdotinit = state_ic.get_x_dot_dot();
+      }
+      piroTempusIntegrator_->initializeSolutionHistory(t_initial_, xinit, xdotinit, xdotdotinit); 
+      //Reset observer.  This is necessary for correct observation of solution
+      //since initializeSolutionHistory modifies the solutionHistory object.
+      setObserver();
+#ifdef DEBUG_OUTPUT
+      if (xinit != Teuchos::null) { 
+        *out_ << "\n*** Piro::TempusSolver::evalModelImpl xinit at time = " << t_initial_ << " ***\n";
+        Teuchos::Range1D range;
+        RTOpPack::ConstSubVectorView<Scalar> xinitv;
+        xinit->acquireDetachedView(range, &xinitv);
+        auto xinita = xinitv.values();
+        for (auto i = 0; i < xinita.size(); ++i) *out_ << xinita[i] << " ";
+        *out_ << "\n*** Piro::TempusSolver::evalModelImpl xinit at time = " << t_initial_ << " ***\n";
+      }
+      if (xdotinit != Teuchos::null) { 
+        *out_ << "\n*** Piro::TempusSolver::evalModelImpl xdotinit at time = " << t_initial_ << " ***\n";
+        Teuchos::Range1D range;
+        RTOpPack::ConstSubVectorView<Scalar> xdotinitv;
+        xdotinit->acquireDetachedView(range, &xdotinitv);
+        auto xdotinita = xdotinitv.values();
+        for (auto i = 0; i < xdotinita.size(); ++i) *out_ << xdotinita[i] << " ";
+        *out_ << "\n*** Piro::TempusSolver::evalModelImpl xdotinit at time = " << t_initial_ << " ***\n";
+      }
+      if (xdotdotinit != Teuchos::null) { 
+        *out_ << "\n*** Piro::TempusSolver::evalModelImpl xdotdotinit at time = " << t_initial_ << " ***\n";
+        Teuchos::Range1D range;
+        RTOpPack::ConstSubVectorView<Scalar> xdotdotinitv;
+        xdotdotinit->acquireDetachedView(range, &xdotdotinitv);
+        auto xdotdotinita = xdotdotinitv.values();
+        for (auto i = 0; i < xdotdotinita.size(); ++i) *out_ << xdotdotinita[i] << " ";
+        *out_ << "\n*** Piro::TempusSolver::evalModelImpl xdotdotinit at time = " << t_initial_ << " ***\n";
+      }
+#endif
+    }
   }
   
   // Set parameters as part of initial conditions
@@ -393,6 +441,7 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
   RCP<const Tempus::SolutionHistory<Scalar> > solutionHistory;
     
   *out_ << "T final requested: " << t_final_ << " \n";
+
   piroTempusIntegrator_->advanceTime(t_final_);
   double time = piroTempusIntegrator_->getTime();
   *out_ << "T final actual: " << time << "\n";
@@ -506,7 +555,8 @@ setStartTime(const Scalar start_time)
 {
   Teuchos::RCP<const Tempus::TimeStepControl<Scalar> > tsc_const = piroTempusIntegrator_->getTimeStepControl();
   Teuchos::RCP<Tempus::TimeStepControl<Scalar> > tsc = Teuchos::rcp_const_cast<Tempus::TimeStepControl<Scalar> >(tsc_const); 
-  tsc->setInitTime(start_time); 
+  t_initial_ = start_time;  
+  tsc->setInitTime(start_time);
 } 
 
 template <typename Scalar>
@@ -557,7 +607,7 @@ getInitTimeStep() const
 } 
 template <typename Scalar>
 void Piro::TempusSolver<Scalar>::
-setObserver()
+setObserver() const
 {
   Teuchos::RCP<Tempus::IntegratorObserverBasic<Scalar> > observer = Teuchos::null;
   if (Teuchos::nonnull(piroObserver_)) {
@@ -588,8 +638,8 @@ setInitialState(Scalar t0,
    piroTempusIntegrator_->initializeSolutionHistory(t0, x0, xdot0, xdotdot0); 
    //Reset observer.  This is necessary for correct observation of solution
    //since initializeSolutionHistory modifies the solutionHistory object.
-   setObserver(); 
- 
+   setObserver();
+   initial_state_reset_ = true;  
 }
 
 template <typename Scalar>
