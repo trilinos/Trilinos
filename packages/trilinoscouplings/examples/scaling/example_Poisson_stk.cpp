@@ -77,6 +77,8 @@
 
 #include <unistd.h>
 
+#include "TrilinosCouplings_config.h"
+
 // Teuchos includes
 #include <Teuchos_CommandLineProcessor.hpp>
 
@@ -119,6 +121,13 @@
 // ML includes
 #include "ml_MultiLevelPreconditioner.h"
 #include "ml_epetra_utils.h"
+
+#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
+// MueLu includes
+#include "MueLu.hpp"
+#include "MueLu_ParameterListInterpreter.hpp"
+#include "MueLu_EpetraOperator.hpp"
+#endif
 
 #ifdef HAVE_INTREPID_KOKKOSCORE
 #include "Sacado.hpp"
@@ -949,7 +958,6 @@ int main(int argc, char *argv[]) {
 
   // Run the solver
   Teuchos::ParameterList MLList = inputSolverList;
-  ML_Epetra::SetDefaults("SA", MLList, 0, 0, false);
   Epetra_FEVector exactNodalVals(globalMapG);
   Epetra_FEVector femCoefficients(globalMapG);
   double TotalErrorResidual = 0.0;
@@ -1203,6 +1211,8 @@ int TestMultiLevelPreconditioner(char ProblemType[],
                                  double & TotalErrorResidual,
                                  double & TotalErrorExactSol)
 {
+  using Teuchos::RCP;
+  using Teuchos::rcp;
   //FIXME right now, it's assumed that X and B are based on the same map
   Epetra_MultiVector x(xexact);
   //Epetra_MultiVector x(b);
@@ -1219,16 +1229,51 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   // =================== //
 
   AztecOO solver(Problem);
-  ML_Epetra::MultiLevelPreconditioner *MLPrec = new ML_Epetra::MultiLevelPreconditioner(A, MLList, true);
+  
+  std::string precondType = "ML";
+  if(MLList.isParameter("Preconditioner")) {
+    precondType = MLList.get("Preconditioner",precondType);
+    MLList.remove("Preconditioner");
+  }
+
+  RCP<Epetra_Operator> M;
+  if(precondType == "ML") {
+    ML_Epetra::SetDefaults("SA", MLList, 0, 0, false);
+    M = rcp(new ML_Epetra::MultiLevelPreconditioner(A, MLList, true));
+  }
+#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
+  else if(precondType == "MueLu") {
+    // Turns a Epetra_CrsMatrix into a MueLu::Matrix
+    RCP<Xpetra::CrsMatrix<double, int, int, Xpetra::EpetraNode> > mueluA_ = rcp(new Xpetra::EpetraCrsMatrix(Teuchos::rcpFromRef(A)));
+    RCP<Xpetra::Matrix <double, int, int, Xpetra::EpetraNode> > mueluA  = rcp(new Xpetra::CrsMatrixWrap<double, int, int, Xpetra::EpetraNode>(mueluA_));
+    
+    // Multigrid Hierarchy
+    Teuchos::ParameterList mueluParams;
+    if (MLList.isSublist("MueLu"))
+      mueluParams = MLList.sublist("MueLu");
+    MueLu::ParameterListInterpreter<double, int, int, Xpetra::EpetraNode> mueLuFactory(mueluParams);
+    RCP<MueLu::Hierarchy<double, int, int, Xpetra::EpetraNode> > H = mueLuFactory.CreateHierarchy();
+    H->setVerbLevel(Teuchos::VERB_HIGH);
+    H->GetLevel(0)->Set("A", mueluA);
+    
+    // Multigrid setup phase
+    H->Setup();
+    
+    // Wrap MueLu Hierarchy as a Tpetra::Operator
+    M = rcp(new MueLu::EpetraOperator(H));
+  }
+
+#endif
+  solver.SetPrecOperator(&*M);
+    
 
   // tell AztecOO to use this preconditioner, then solve
-  solver.SetPrecOperator(MLPrec);
+
   solver.SetAztecOption(AZ_solver, AZ_cg);
   solver.SetAztecOption(AZ_output, 1);
 
   solver.Iterate(200, 1e-10);
 
-  delete MLPrec;
 
   uh = *lhs;
 
