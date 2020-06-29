@@ -64,7 +64,7 @@ class Bool {
     return *this;
   }
     
-#ifdef __AVX512F__
+#if defined(__AVX512F__) && !defined(__CUDACC__) && !defined(STK_SIMD_NONE)
   STK_MATH_FORCE_INLINE double operator[](int i) const {
     __m512d tmp = _mm512_mask_blend_pd(_data.get(), _mm512_set1_pd(0.0), _mm512_set1_pd(1.0));
     return (reinterpret_cast<const double*>(&tmp))[i];
