@@ -463,6 +463,7 @@ int main(int argc, char *argv[]) {
 
   // loop over all mesh parts
   const stk::mesh::PartVector & all_parts = metaData.get_parts();
+  ShardsCellTopology cellType;
   for (stk::mesh::PartVector::const_iterator i  = all_parts.begin(); i != all_parts.end(); ++i) {
 
     stk::mesh::Part & part = **i ;
@@ -474,6 +475,11 @@ int main(int argc, char *argv[]) {
       stk::mesh::Selector partSelector(part);
       stk::mesh::Selector bcNodeSelector = partSelector & locallyOwnedSelector;
       stk::mesh::get_selected_entities(bcNodeSelector, nodeBuckets, bcNodes);
+    }
+    else if(part.primary_entity_rank() == ELEMENT_RANK) {
+      // Here the topology is defined from the mesh. Note that it is assumed
+      // that all parts with elements (aka ELEMENT_RANK) have the same topology type
+      cellType = stk::mesh::get_cell_topology(metaData.get_topology( part ));
     }
 
   } // end loop over mesh parts
@@ -507,30 +513,7 @@ int main(int argc, char *argv[]) {
     std::cout << "Read mesh" << "                                   "
               << Time.ElapsedTime() << " seconds" << std::endl;
     Time.ResetStartTime();
-  }
 
-  /**********************************************************************************/
-  /********************************SET CELL TOPOLOGY ********************************/
-  /**********************************************************************************/
-
-  // Here the topology is defined from the mesh. Note that it is assumed
-  // that there is a part labeled "block_1" and that the cell topology is
-  // homogeneous over the entire mesh (i.e. there is not another block
-  // containing elements with a different topology).
-
-  // get the part labeled block_1
-  stk::mesh::Part* const part = metaData.get_part("block_1");
-
-  // get the topology of this part
-  ShardsCellTopology cellType = stk::mesh::get_cell_topology(metaData.get_topology( *part ));
-
-  // Get dimensions
-  int numNodesPerElem = cellType.getNodeCount();
-
-  if(MyPID==0) {
-    std::cout << "Get cell topology                           "
-              << Time.ElapsedTime() << " seconds" << std::endl;
-    Time.ResetStartTime();
   }
 
   /**********************************************************************************/
