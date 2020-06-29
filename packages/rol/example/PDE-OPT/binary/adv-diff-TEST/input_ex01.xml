@@ -1,25 +1,39 @@
 <ParameterList name="Inputs">
   <!-- ===========  PROBLEM INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="Problem">
-    <Parameter name="Check Derivatives"          type="bool"    value="true"  />
-    <Parameter name="Use Storage"                type="bool"    value="true"  />
-    <Parameter name="Control Cost Type"          type="string"  value="TV"    />
-    <Parameter name="Piecewise Constant Control" type="bool"    value="true"  />
-    <Parameter name="Hilbert Curve Order"        type="int"     value="5"     />
-    <Parameter name="Control Cost"               type="double"  value="1e0"   />
-    <Parameter name="State Cost"                 type="double"  value="1e6"   />
-    <Parameter name="Order of FE Discretization" type="int"     value="1"     />
+    <Parameter name="Check Derivatives"           type="bool"    value="false"      />
+    <Parameter name="Use Storage"                 type="bool"    value="true"       />
+    <Parameter name="Piecewise Constant Controls" type="bool"    value="true"       />
+    <Parameter name="Solve as QP"                 type="bool"    value="false"      />
+    <Parameter name="Solve using BB"              type="bool"    value="true"       />
+    <Parameter name="BB Output Level"             type="int"     value="2"          />
+    <Parameter name="Incumbent Heuristic"         type="int"     value="1"          />
+    <Parameter name="Number of X-Cells"           type="int"     value="16"         />
+    <Parameter name="Number of Y-Cells"           type="int"     value="8"          />
+    <Parameter name="Control Cost Type"           type="string"  value="TV"         />
+    <Parameter name="Control Cost"                type="double"  value="8.531e-3"   />
+<!--
+    <Parameter name="Control Cost"                type="double"  value="1e-2"       />
+-->
+    <Parameter name="State Cost"                 type="double"  value="1e0"        />
+    <Parameter name="Integrality Cost"           type="double"  value="0e0"        />
+    <Parameter name="Sensor Width"               type="double"  value="3e-3"       />
+    <Parameter name="Sensor File Name"           type="string"  value="sensor.txt" />
+    <Parameter name="Number of Sensors"          type="int"     value="200"        />
+    <Parameter name="Order of FE Discretization" type="int"     value="1"          />
+    <Parameter name="Cubature Degree"            type="int"     value="8"          />
+    <Parameter name="Problem Dimension"          type="int"     value="2"          />
   </ParameterList>
 
   <!-- ===========  GEOMETRY INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="Geometry">
-    <Parameter name="Width"             type="double"  value="2.0"  />
-    <Parameter name="Height"            type="double"  value="1.0"  />
-    <Parameter name="X0"                type="double"  value="0.0"  />
-    <Parameter name="Y0"                type="double"  value="0.0"  />
-    <Parameter name="NX"                type="int"     value="64"   />
-    <Parameter name="NY"                type="int"     value="64"   />
-    <Parameter name="Partition type"    type="int"     value="1"    />
+    <Parameter name="Width"                      type="double"  value="2.0"  />
+    <Parameter name="Height"                     type="double"  value="1.0"  />
+    <Parameter name="X0"                         type="double"  value="0.0"  />
+    <Parameter name="Y0"                         type="double"  value="0.0"  />
+    <Parameter name="NX"                         type="int"     value="128"  />
+    <Parameter name="NY"                         type="int"     value="64"   />
+    <Parameter name="Partition type"             type="int"     value="1"    />
   </ParameterList>
 
   <!-- ===========  VECTOR SUBLIST  =========== -->
@@ -86,7 +100,7 @@
       <Parameter name="Type"                   type="string" value="Limited-Memory BFGS" />
       <Parameter name="Use as Preconditioner"  type="bool"   value="false"               />
       <Parameter name="Use as Hessian"         type="bool"   value="false"               />
-      <Parameter name="Maximum Storage"        type="int"    value="10"                  />
+      <Parameter name="Maximum Storage"        type="int"    value="100"                 />
       <Parameter name="Barzilai-Borwein Type"  type="int"    value="1"                   />
     </ParameterList>
     <!-- ===========  KRYLOV INPUTS  =========== -->
@@ -94,22 +108,67 @@
       <Parameter name="Type"               type="string" value="Conjugate Gradients" />
       <Parameter name="Absolute Tolerance" type="double" value="1.e-4"               />
       <Parameter name="Relative Tolerance" type="double" value="1.e-2"               />
-      <Parameter name="Iteration Limit"    type="int"    value="100"                 />
+      <Parameter name="Iteration Limit"    type="int"    value="200"                 />
     </ParameterList>
   </ParameterList>
 
   <!-- ===========  STEP SUBLIST  =========== -->
   <ParameterList name="Step">
-    <Parameter name="Type" type="string" value="Primal Dual Active Set" />
-    <!--
     <Parameter name="Type" type="string" value="Trust Region" />
+    <!--
+    <Parameter name="Type" type="string" value="Line Search" />
+    <Parameter name="Type" type="string" value="Primal-Dual Active Set" />
+    <Parameter name="Type" type="string" value="Moreau-Yosida Penalty" />
+    <Parameter name="Type" type="string" value="Interior Point" />
     -->
+    
+    <!-- ===========  LINE SEARCH  =========== -->
+    <ParameterList name="Line Search">
+      <Parameter name="Function Evaluation Limit"      type="int"    value="20"    />
+      <Parameter name="Sufficient Decrease Tolerance"  type="double" value="1.e-4" />
+      <Parameter name="Initial Step Size"              type="double" value="1.0"   />
+      <Parameter name="User Defined Initial Step Size" type="bool"   value="false" />
+      <Parameter name="Accept Linesearch Minimizer"    type="bool"   value="false" />
+      <Parameter name="Accept Last Alpha"              type="bool"   value="false" />
+
+      <!-- ===========  DESCENT ALGORITHM SPECIFICATION  =========== -->
+      <ParameterList name="Descent Method">
+        <Parameter name="Type"              type="string" value="Newton-Krylov"    /> 
+        <Parameter name="Nonlinear CG Type" type="string" value="Hestenes-Stiefel" />
+      </ParameterList>
+
+      <!-- ===========  CURVATURE CONDITION SPECIFICATION  =========== -->
+      <ParameterList name="Curvature Condition">
+        <Parameter name="Type"                        type="string" value="Strong Wolfe Conditions" />
+        <Parameter name="General Parameter"           type="double" value="0.9"                     />
+        <Parameter name="Generalized Wolfe Parameter" type="double" value="0.6"                     />
+      </ParameterList>
+
+      <!-- ===========  LINE-SEARCH ALGORITHM SPECIFICATION  =========== -->
+      <ParameterList name="Line-Search Method">
+        <Parameter name="Type"                         type="string" value="Cubic Interpolation" />
+        <Parameter name="Backtracking Rate"            type="double" value="0.5"                 />
+        <Parameter name="Bracketing Tolerance"         type="double" value="1.e-8"               />
+
+        <!-- ===========  PATH-BASED TARGET LEVEL  =========== -->
+        <ParameterList name="Path-Based Target Level">
+          <Parameter name="Target Relaxation Parameter" type="double" value="1.0" />
+          <Parameter name="Upper Bound on Path Length"  type="double" value="1.0" />
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
     <!-- ===========  TRUST REGION  =========== -->
     <ParameterList name="Trust Region">
+      <Parameter name="Subproblem Solver"                    type="string" value="Lin-More" />
+      <Parameter name="Subproblem Model"                     type="string" value="Lin-More" />
+<!--
       <Parameter name="Subproblem Solver"                    type="string" value="Truncated CG" />
       <Parameter name="Subproblem Model"                     type="string" value="Kelley-Sachs" />
-      <Parameter name="Initial Radius"                       type="double" value="10.0"         />
-      <Parameter name="Maximum Radius"                       type="double" value="5.e3"         />
+      <Parameter name="Subproblem Model"                     type="string" value="Coleman-Li" />
+-->
+      <Parameter name="Initial Radius"                       type="double" value="1e3"          />
+      <Parameter name="Maximum Radius"                       type="double" value="1.e8"         />
       <Parameter name="Step Acceptance Threshold"            type="double" value="5e-3"         />
       <Parameter name="Radius Shrinking Threshold"           type="double" value="5e-3"         />
       <Parameter name="Radius Growing Threshold"             type="double" value="0.7"          />
@@ -150,10 +209,10 @@
 
     <!-- ===========  PRIMAL DUAL ACTIVE SET  =========== -->
     <ParameterList name="Primal Dual Active Set">
-      <Parameter name="Dual Scaling"                type="double" value="1e-6"   />
-      <Parameter name="Iteration Limit"             type="int"    value="10"    />
-      <Parameter name="Relative Step Tolerance"     type="double" value="1.e-8" />
-      <Parameter name="Relative Gradient Tolerance" type="double" value="1.e-6" />
+      <Parameter name="Dual Scaling"                type="double" value="1e-3"   />
+      <Parameter name="Iteration Limit"             type="int"    value="1"      />
+      <Parameter name="Relative Step Tolerance"     type="double" value="1.e-8"  />
+      <Parameter name="Relative Gradient Tolerance" type="double" value="1.e-6"  />
     </ParameterList>
 
     <!-- ===========  AUGMENTED LAGRANGIAN  =========== -->
@@ -181,13 +240,28 @@
       <Parameter name="Subproblem Step Type"                    type="string" value="Trust Region" />
       <Parameter name="Subproblem Iteration Limit"              type="int"    value="100"          />
     </ParameterList>
+
+    <!-- ===========  MOREAU-YOSIDA PENALTY  =========== -->
+    <ParameterList name="Moreau-Yosida Penalty">
+      <!-- ===========  PENALTY PARAMETER UPDATE  =========== -->
+      <Parameter name="Initial Penalty Parameter"       type="double" value="1e2"   />
+      <Parameter name="Penalty Parameter Growth Factor" type="double" value="1.0"   />
+
+      <!-- ===========  SUBPROBLEM SOLVER  =========== -->
+      <ParameterList name="Subproblem">
+        <Parameter name="Optimality Tolerance"          type="double" value="1e-12" />
+        <Parameter name="Feasibility Tolerance"         type="double" value="1e-12" />
+        <Parameter name="Print History"                 type="bool"   value="false" />
+        <Parameter name="Iteration Limit"               type="int"    value="40"    />
+      </ParameterList>
+    </ParameterList>
   </ParameterList>
 
   <!-- ===========  STATUS TEST SUBLIST  =========== -->
   <ParameterList name="Status Test">
     <Parameter name="Gradient Tolerance"   type="double" value="1.e-6"  />
     <Parameter name="Constraint Tolerance" type="double" value="1.e-8"  />
-    <Parameter name="Step Tolerance"       type="double" value="1.e-14" />
-    <Parameter name="Iteration Limit"      type="int"    value="200"    />
+    <Parameter name="Step Tolerance"       type="double" value="1.e-16" />
+    <Parameter name="Iteration Limit"      type="int"    value="10000"  />
   </ParameterList>
 </ParameterList>
