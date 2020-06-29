@@ -84,7 +84,10 @@
 #cmakedefine HAVE_IFPACK2_XPETRA
 
 /* Define if we have Zoltan2 */
-#cmakedefine HAVE_IFPACK2_ZOLTAN2
+#cmakedefine HAVE_IFPACK2_ZOLTAN2CORE
+#ifdef HAVE_IFPACK2_ZOLTAN2CORE
+#  define HAVE_IFPACK2_ZOLTAN2
+#endif
 
 /* Define if we have ShyLU/HTS */
 #cmakedefine HAVE_IFPACK2_SHYLU_NODEHTS
