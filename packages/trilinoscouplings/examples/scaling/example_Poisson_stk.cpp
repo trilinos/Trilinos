@@ -338,6 +338,25 @@ int main(int argc, char *argv[]) {
   std::string optXmlFile  = "";
   clp.setOption("xml",   &optXmlFile,  "xml file containing ML solver options");
   bool optPrintLocalStats = false; clp.setOption("localstats", "nolocalstats", &optPrintLocalStats, "print per-process statistics");
+  // If matrixFilename is nonempty, dump the matrix to that file
+  // in MatrixMarket format.
+  std::string matrixFilename;
+  clp.setOption ("matrixFilename", &matrixFilename, "If nonempty, dump the "
+		  "generated matrix to that file in MatrixMarket format.");
+
+  // If coordsFilename is nonempty, dump the rhs to that file
+  // in MatrixMarket format.
+  std::string rhsFilename;
+  clp.setOption ("rhsFilename", &rhsFilename, "If nonempty, dump the "
+		  "generated rhs to that file in MatrixMarket format.");
+  
+  // If coordsFilename is nonempty, dump the coords to that file
+  // in MatrixMarket format.
+  std::string coordsFilename;
+  clp.setOption ("coordsFilename", &coordsFilename, "If nonempty, dump the "
+		  "generated coordinates to that file in MatrixMarket format.");
+
+
 
   switch (clp.parse(argc, argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:
@@ -580,47 +599,46 @@ int main(int argc, char *argv[]) {
   }
 
 
-//#define DUMP_DATA
-# ifdef DUMP_DATA
   /**********************************************************************************/
   /**** PUT COORDINATES AND NODAL VALUES IN ARRAYS FOR OUTPUT (FOR PLOTTING ONLY) ***/
   /**********************************************************************************/
+  if(coordsFilename != "") {
+    // Put coordinates in multivector for output
+    Epetra_MultiVector nCoord(globalMapG,3);
+    
+    // Put element to node mapping in multivector for output
+    Epetra_Map   globalMapElem(numElems, 0, Comm);
+    Epetra_MultiVector elem2node(globalMapElem,numNodesPerElem);
+    
+    // Loop over elements
+    for (size_t j = 0; j < elems.size(); j++) {
+      
+      // get nodes attached to this element
+      entity_type const* elem_nodes = bulkData.begin(elems[j], NODE_RANK);
+      const int numNodesInElt = bulkData.num_connectivity(elems[j], NODE_RANK);
+      
+      // loop over nodes and fill element to node map
+      // local ids
+      //    element id :  bulkData.identifier(elems[j])-1
+      //       node id :  bulkData.identifier(elem_nodes[i])-1
+      for (size_t i = 0; i < numNodesInElt; i++) {
+	elem2node[i][ bulkData.identifier(elems[j])-1 ] = bulkData.identifier(elem_nodes[i]) - 1;
+	double * coord = stk::mesh::field_data(*coords, elem_nodes[i]);
+	nCoord[0][bulkData.identifier(elem_nodes[i])-1] = coord[0];
+	nCoord[1][bulkData.identifier(elem_nodes[i])-1] = coord[1];
+	nCoord[2][bulkData.identifier(elem_nodes[i])-1] = coord[2];
+      }
+      
+    } // end loop over elements
+    
+    // output multivectors
+    EpetraExt::MultiVectorToMatrixMarketFile("elem2node.dat",elem2node,0,0,false);
+    
+    EpetraExt::MultiVectorToMatrixMarketFile(coordFilename.c_str(),nCoord,0,0,false);
+    if(MyPID==0) {Time.ResetStartTime();}
+  }
 
-  // Put coordinates in multivector for output
-  Epetra_MultiVector nCoord(globalMapG,3);
 
-  // Put element to node mapping in multivector for output
-  Epetra_Map   globalMapElem(numElems, 0, Comm);
-  Epetra_MultiVector elem2node(globalMapElem,numNodesPerElem);
-
-  // Loop over elements
-  for (size_t j = 0; j < elems.size(); j++) {
-
-    // get nodes attached to this element
-    entity_type const* elem_nodes = bulkData.begin(elems[j], NODE_RANK);
-    const int numNodesInElt = bulkData.num_connectivity(elems[j], NODE_RANK);
-
-    // loop over nodes and fill element to node map
-    // local ids
-    //    element id :  bulkData.identifier(elems[j])-1
-    //       node id :  bulkData.identifier(elem_nodes[i])-1
-    for (size_t i = 0; i < numNodesInElt; i++) {
-      elem2node[i][ bulkData.identifier(elems[j])-1 ] = bulkData.identifier(elem_nodes[i]) - 1;
-      double * coord = stk::mesh::field_data(*coords, elem_nodes[i]);
-      nCoord[0][bulkData.identifier(elem_nodes[i])-1] = coord[0];
-      nCoord[1][bulkData.identifier(elem_nodes[i])-1] = coord[1];
-      nCoord[2][bulkData.identifier(elem_nodes[i])-1] = coord[2];
-    }
-
-  } // end loop over elements
-
-  // output multivectors
-  EpetraExt::MultiVectorToMatrixMarketFile("elem2node.dat",elem2node,0,0,false);
-  EpetraExt::MultiVectorToMatrixMarketFile("coords.dat",nCoord,0,0,false);
-
-  if(MyPID==0) {Time.ResetStartTime();}
-
-# endif
 
   /**********************************************************************************/
   /************************** DIRICHLET BC SETUP ************************************/
@@ -928,10 +946,10 @@ int main(int argc, char *argv[]) {
     Time.ResetStartTime();
   }
 
-# ifdef DUMP_DATA
-  EpetraExt::RowMatrixToMatlabFile("stiff_matrix.dat",StiffMatrix);
-  EpetraExt::MultiVectorToMatrixMarketFile("rhs_vector.dat",rhsVector,0,0,false);
-# endif
+  if(matrxiFileName != "") 
+    EpetraExt::RowMatrixToMatlabFile(matrixFilename.c_str(),StiffMatrix);
+  if(rhsFilename != "") 
+    EpetraExt::MultiVectorToMatrixMarketFile(rhsFilename.c_str(),rhsVector,0,0,false);
 
   /**********************************************************************************/
   /*********************************** SOLVE ****************************************/
