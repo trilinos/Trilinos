@@ -344,7 +344,7 @@ int main(int argc, char *argv[]) {
   clp.setOption ("matrixFilename", &matrixFilename, "If nonempty, dump the "
 		  "generated matrix to that file in MatrixMarket format.");
 
-  // If coordsFilename is nonempty, dump the rhs to that file
+  // If rhsFilename is nonempty, dump the rhs to that file
   // in MatrixMarket format.
   std::string rhsFilename;
   clp.setOption ("rhsFilename", &rhsFilename, "If nonempty, dump the "
@@ -503,6 +503,8 @@ int main(int argc, char *argv[]) {
 
   } // end loop over mesh parts
 
+  int numNodesPerElem = cellType.getNodeCount();  
+
   // if no boundary node set was found give a warning
   int numLocalBCs = bcNodes.size();
   int numGlobalBCs = 0;
@@ -604,37 +606,27 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
   if(coordsFilename != "") {
     // Put coordinates in multivector for output
-    Epetra_MultiVector nCoord(globalMapG,3);
-    
-    // Put element to node mapping in multivector for output
-    Epetra_Map   globalMapElem(numElems, 0, Comm);
-    Epetra_MultiVector elem2node(globalMapElem,numNodesPerElem);
-    
+    Epetra_MultiVector nCoord(globalMapG,3);    
     // Loop over elements
-    for (size_t j = 0; j < elems.size(); j++) {
-      
-      // get nodes attached to this element
-      entity_type const* elem_nodes = bulkData.begin(elems[j], NODE_RANK);
-      const int numNodesInElt = bulkData.num_connectivity(elems[j], NODE_RANK);
-      
-      // loop over nodes and fill element to node map
-      // local ids
-      //    element id :  bulkData.identifier(elems[j])-1
-      //       node id :  bulkData.identifier(elem_nodes[i])-1
-      for (size_t i = 0; i < numNodesInElt; i++) {
-	elem2node[i][ bulkData.identifier(elems[j])-1 ] = bulkData.identifier(elem_nodes[i]) - 1;
-	double * coord = stk::mesh::field_data(*coords, elem_nodes[i]);
-	nCoord[0][bulkData.identifier(elem_nodes[i])-1] = coord[0];
-	nCoord[1][bulkData.identifier(elem_nodes[i])-1] = coord[1];
-	nCoord[2][bulkData.identifier(elem_nodes[i])-1] = coord[2];
-      }
-      
+
+    for (size_t bucketIndex = 0; bucketIndex < localElementBuckets.size(); ++bucketIndex) {
+      stk::mesh::Bucket &elemBucket = *localElementBuckets[bucketIndex];
+      for (size_t elemIndex = 0; elemIndex < elemBucket.size(); ++elemIndex) {
+        stk::mesh::Entity elem = elemBucket[elemIndex];
+        //TODO (Optimization) It's assumed all elements are the same type, so this is constant.
+        //TODO Therefore there's no need to do this everytime.
+        unsigned numNodes = bulkData.num_nodes(elem);
+        stk::mesh::Entity const* nodes = bulkData.begin_nodes(elem);
+        for (unsigned inode = 0; inode < numNodes; ++inode) {
+          double *coord = stk::mesh::field_data(*coords, nodes[inode]);
+	  nCoord[0][bulkData.identifier(nodes[inode])-1] = coord[0];
+	  nCoord[1][bulkData.identifier(nodes[inode])-1] = coord[1];
+	  nCoord[2][bulkData.identifier(nodes[inode])-1] = coord[2];
+        }
+      }      
     } // end loop over elements
     
-    // output multivectors
-    EpetraExt::MultiVectorToMatrixMarketFile("elem2node.dat",elem2node,0,0,false);
-    
-    EpetraExt::MultiVectorToMatrixMarketFile(coordFilename.c_str(),nCoord,0,0,false);
+    EpetraExt::MultiVectorToMatrixMarketFile(coordsFilename.c_str(),nCoord,0,0,false);
     if(MyPID==0) {Time.ResetStartTime();}
   }
 
@@ -946,7 +938,7 @@ int main(int argc, char *argv[]) {
     Time.ResetStartTime();
   }
 
-  if(matrxiFileName != "") 
+  if(matrixFilename != "") 
     EpetraExt::RowMatrixToMatlabFile(matrixFilename.c_str(),StiffMatrix);
   if(rhsFilename != "") 
     EpetraExt::MultiVectorToMatrixMarketFile(rhsFilename.c_str(),rhsVector,0,0,false);
