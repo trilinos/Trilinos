@@ -57,7 +57,7 @@ elif atdm_match_any_buildname_keyword \
     cuda-10 \
     cuda \
   ; then
-  export ATDM_CONFIG_COMPILER=INTEL-19.0.3_INTELMPI-2018.4
+  export ATDM_CONFIG_COMPILER=CUDA-10.1.243_GCC-7.2.0_OPENMPI-4.0.3
 
 else
   echo
