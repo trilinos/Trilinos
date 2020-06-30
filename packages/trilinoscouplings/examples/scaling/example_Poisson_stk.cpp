@@ -504,7 +504,6 @@ int main(int argc, char *argv[]) {
     //   ! this assumes that the only node set defined is the set
     //   ! of boundary nodes
     if (part.primary_entity_rank() == NODE_RANK) {
-      printf("CMS: Entity %d is NODE_RANK\n",i-all_parts.begin());
       stk::mesh::Selector partSelector(part);
       stk::mesh::Selector bcNodeSelector = partSelector & locallyOwnedSelector;
       stk::mesh::get_selected_entities(bcNodeSelector, nodeBuckets, bcNodes);
