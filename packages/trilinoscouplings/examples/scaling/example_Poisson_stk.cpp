@@ -122,11 +122,14 @@
 #include "ml_MultiLevelPreconditioner.h"
 #include "ml_epetra_utils.h"
 
-#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
+#if defined(HAVE_TRILINOSCOUPLINGS_MUELU) 
 // MueLu includes
 #include "MueLu.hpp"
+#if defined(HAVE_MUELU_EPETRA)
 #include "MueLu_ParameterListInterpreter.hpp"
+#include "MueLu_CreateEpetraPreconditioner.hpp"
 #include "MueLu_EpetraOperator.hpp"
+#endif
 #endif
 
 #ifdef HAVE_INTREPID_KOKKOSCORE
@@ -272,6 +275,7 @@ int TestMultiLevelPreconditioner(char                        ProblemType[],
                                  const Epetra_MultiVector &  xexact,
                                  Epetra_MultiVector &        b,
                                  Epetra_MultiVector &        uh,
+				 Epetra_MultiVector & coords,
                                  double &                    TotalErrorResidual,
                                  double &                    TotalErrorExactSol);
 
@@ -611,30 +615,29 @@ int main(int argc, char *argv[]) {
 
 
   /**********************************************************************************/
-  /**** PUT COORDINATES AND NODAL VALUES IN ARRAYS FOR OUTPUT (FOR PLOTTING ONLY) ***/
+  /******************************** STASH COORDINATES *******************************/
   /**********************************************************************************/
+  // Put coordinates in multivector for output
+  Epetra_MultiVector nCoord(globalMapG,3);    
+  // Loop over elements
+  
+  for (size_t bucketIndex = 0; bucketIndex < localElementBuckets.size(); ++bucketIndex) {
+    stk::mesh::Bucket &elemBucket = *localElementBuckets[bucketIndex];
+    for (size_t elemIndex = 0; elemIndex < elemBucket.size(); ++elemIndex) {
+      stk::mesh::Entity elem = elemBucket[elemIndex];
+      //TODO (Optimization) It's assumed all elements are the same type, so this is constant.
+      //TODO Therefore there's no need to do this everytime.
+      unsigned numNodes = bulkData.num_nodes(elem);
+      stk::mesh::Entity const* nodes = bulkData.begin_nodes(elem);
+      for (unsigned inode = 0; inode < numNodes; ++inode) {
+	double *coord = stk::mesh::field_data(*coords, nodes[inode]);
+	nCoord[0][bulkData.identifier(nodes[inode])-1] = coord[0];
+	nCoord[1][bulkData.identifier(nodes[inode])-1] = coord[1];
+	nCoord[2][bulkData.identifier(nodes[inode])-1] = coord[2];
+      }
+    }      
+  } // end loop over elements
   if(coordsFilename != "") {
-    // Put coordinates in multivector for output
-    Epetra_MultiVector nCoord(globalMapG,3);    
-    // Loop over elements
-
-    for (size_t bucketIndex = 0; bucketIndex < localElementBuckets.size(); ++bucketIndex) {
-      stk::mesh::Bucket &elemBucket = *localElementBuckets[bucketIndex];
-      for (size_t elemIndex = 0; elemIndex < elemBucket.size(); ++elemIndex) {
-        stk::mesh::Entity elem = elemBucket[elemIndex];
-        //TODO (Optimization) It's assumed all elements are the same type, so this is constant.
-        //TODO Therefore there's no need to do this everytime.
-        unsigned numNodes = bulkData.num_nodes(elem);
-        stk::mesh::Entity const* nodes = bulkData.begin_nodes(elem);
-        for (unsigned inode = 0; inode < numNodes; ++inode) {
-          double *coord = stk::mesh::field_data(*coords, nodes[inode]);
-	  nCoord[0][bulkData.identifier(nodes[inode])-1] = coord[0];
-	  nCoord[1][bulkData.identifier(nodes[inode])-1] = coord[1];
-	  nCoord[2][bulkData.identifier(nodes[inode])-1] = coord[2];
-        }
-      }      
-    } // end loop over elements
-    
     EpetraExt::MultiVectorToMatrixMarketFile(coordsFilename.c_str(),nCoord,0,0,false);
     if(MyPID==0) {Time.ResetStartTime();}
   }
@@ -986,7 +989,7 @@ int main(int argc, char *argv[]) {
 
   TestMultiLevelPreconditioner(probType,             MLList,
                                StiffMatrix,          exactNodalVals,
-                               rhsVector,            femCoefficients,
+                               rhsVector,            femCoefficients, nCoord,
                                TotalErrorResidual,   TotalErrorExactSol);
 
    return 0;
@@ -1205,9 +1208,10 @@ void evaluateExactSolutionGrad(ArrayOut &       exactSolutionGradValues,
 int TestMultiLevelPreconditioner(char ProblemType[],
                                  Teuchos::ParameterList   & MLList,
                                  Epetra_CrsMatrix   & A,
-                                 const Epetra_MultiVector & xexact,
+                                 const Epetra_MultiVector & xexact,				 
                                  Epetra_MultiVector & b,
                                  Epetra_MultiVector & uh,
+				 Epetra_MultiVector & coords,
                                  double & TotalErrorResidual,
                                  double & TotalErrorExactSol)
 {
@@ -1241,26 +1245,19 @@ int TestMultiLevelPreconditioner(char ProblemType[],
     ML_Epetra::SetDefaults("SA", MLList, 0, 0, false);
     M = rcp(new ML_Epetra::MultiLevelPreconditioner(A, MLList, true));
   }
-#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
+#if defined(HAVE_TRILINOSCOUPLINGS_MUELU) && defined(HAVE_MUELU_EPETRA)
   else if(precondType == "MueLu") {
     // Turns a Epetra_CrsMatrix into a MueLu::Matrix
-    RCP<Xpetra::CrsMatrix<double, int, int, Xpetra::EpetraNode> > mueluA_ = rcp(new Xpetra::EpetraCrsMatrix(Teuchos::rcpFromRef(A)));
-    RCP<Xpetra::Matrix <double, int, int, Xpetra::EpetraNode> > mueluA  = rcp(new Xpetra::CrsMatrixWrap<double, int, int, Xpetra::EpetraNode>(mueluA_));
+    //    RCP<Xpetra::CrsMatrix<double, int, int, Xpetra::EpetraNode> > mueluA_ = rcp(new Xpetra::EpetraCrsMatrix(Teuchos::rcpFromRef(A)));
+    //    RCP<Xpetra::Matrix <double, int, int, Xpetra::EpetraNode> > mueluA  = rcp(new Xpetra::CrsMatrixWrap<double, int, int, Xpetra::EpetraNode>(mueluA_));
     
     // Multigrid Hierarchy
     Teuchos::ParameterList mueluParams;
     if (MLList.isSublist("MueLu"))
       mueluParams = MLList.sublist("MueLu");
-    MueLu::ParameterListInterpreter<double, int, int, Xpetra::EpetraNode> mueLuFactory(mueluParams);
-    RCP<MueLu::Hierarchy<double, int, int, Xpetra::EpetraNode> > H = mueLuFactory.CreateHierarchy();
-    H->setVerbLevel(Teuchos::VERB_HIGH);
-    H->GetLevel(0)->Set("A", mueluA);
-    
-    // Multigrid setup phase
-    H->Setup();
-    
-    // Wrap MueLu Hierarchy as a Tpetra::Operator
-    M = rcp(new MueLu::EpetraOperator(H));
+    mueluParams.sublist("user data").set("Coordinates",Teuchos::rcpFromRef(coords));
+    std::cout<<"*** MueLu Params ***" <<std::endl<<mueluParams<<std::endl;
+    M = MueLu::CreateEpetraPreconditioner(Teuchos::rcpFromRef(A),mueluParams);
   }
 
 #endif
