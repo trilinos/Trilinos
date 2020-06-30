@@ -131,7 +131,6 @@ public:
     int c = fe_->gradN()->dimension(0);
     int f = fe_->gradN()->dimension(1);
     int p = fe_->gradN()->dimension(2);
-    int d = fe_->gradN()->dimension(3);
     // Initialize residuals.
     res = ROL::makePtr<Intrepid::FieldContainer<Real>>(c,f);
     // Evaluate/interpolate finite element fields on cells.
