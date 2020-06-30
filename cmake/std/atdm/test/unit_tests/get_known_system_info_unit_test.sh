@@ -16,15 +16,18 @@ fi
 # Test atdm get_known_system_info script
 #
 test_atdm_get_known_system_info() {
-   # TODO: D.2 needs to be tested by setting these values:
+  # Tweak these values for testing on other platforms
+  # TODO: Test branch D.2 in get_known_system_info.sh
   SNLSYSTEM=
   SEMS_PLATFORM=
   ATDM_SYSTEM_NAME=
   SNLCLUSTER=
-
-  # Get the good ATDM_KNOWN_SYSTEM_NAMES_LIST
-  ATDM_CONFIG_BUILD_NAME=unit_test
+  HOST=
+  ATDM_CONFIG_SEMS_GET_PLATFORM=/fake/path/for/unit/testing/
+  ATDM_CONFIG_GET_KNOW_SYSTEM_INFO_REAL_HOSTNAME_OVERRIDE_FOR_UNIT_TESTING=unit_test
+  ATDM_CONFIG_BUILD_NAME=$ATDM_CONFIG_GET_KNOW_SYSTEM_INFO_REAL_HOSTNAME_OVERRIDE_FOR_UNIT_TESTING
   ATDM_CONFIG_DISABLE_WARNINGS=ON
+  # Populate ATDM_KNOWN_SYSTEM_NAMES_LIST
   source ${ATDM_UTIL_SCRIPT_GET_KNOWN_SYSTEM_INFO}
 
   # Check that all known system names pass
@@ -55,7 +58,7 @@ test_atdm_get_known_system_info() {
   SNLSYSTEM=cts1
   RET=$(source ${ATDM_UTIL_SCRIPT_GET_KNOWN_SYSTEM_INFO})
   assertEquals "Hostname '$ATDM_CONFIG_BUILD_NAME' matches known ATDM host '$ATDM_CONFIG_BUILD_NAME' and system 'cts1empire'" "$RET"
-  
+
   # Ensure that cts1 is still selected when it's in the build name
   ATDM_CONFIG_BUILD_NAME=cts1-default
   ATDM_CONFIG_GET_KNOW_SYSTEM_INFO_REAL_HOSTNAME_OVERRIDE_FOR_UNIT_TESTING=$ATDM_CONFIG_BUILD_NAME
