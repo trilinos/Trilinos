@@ -177,5 +177,3 @@ ADD_SUBDIRECTORY(src)
 
 TRIBITS_PACKAGE_POSTPROCESS()
 
-# We keep the name of this header file the same as before. 
-# TRIBITS_CONFIGURE_FILE(Zoltan2_config.h)
