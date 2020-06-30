@@ -16,6 +16,9 @@ fi
 
 if [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" ]] ; then
   unset ATDM_CONFIG_KOKKOS_ARCH
+  if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_GCC-7.2.0_OPENMPI-4.0.3" ]] ; then
+    export ATDM_CONFIG_KOKKOS_ARCH=VOLTA70
+  fi
 else
   echo
   echo "***"
@@ -142,6 +145,12 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.2_MPICH2-3.2" ]; then
   export ATDM_CONFIG_OPENMP_FORTRAN_LIB_NAMES=gomp
   export ATDM_CONFIG_OPENMP_GOMP_LIBRARY=-lgomp
 
+elif [ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_GCC-7.2.0_OPENMPI-4.0.3" ]; then
+  module load sparc-dev/cuda-10.1.243_gcc-7.2.0_openmpi-4.0.3
+
+  export ATDM_CONFIG_MPI_EXEC=mpirun
+  export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG=-np
+  export ATDM_CONFIG_MPI_POST_FLAGS="-bind-to;none"
 else
   echo
   echo "***"
