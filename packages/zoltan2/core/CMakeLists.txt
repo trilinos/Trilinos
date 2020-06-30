@@ -178,4 +178,4 @@ ADD_SUBDIRECTORY(src)
 TRIBITS_PACKAGE_POSTPROCESS()
 
 # We keep the name of this header file the same as before. 
-CONFIGURE_FILE(cmake/Zoltan2Core_config.h.in src/Zoltan2_config.h @ONLY)
+# TRIBITS_CONFIGURE_FILE(Zoltan2_config.h)
