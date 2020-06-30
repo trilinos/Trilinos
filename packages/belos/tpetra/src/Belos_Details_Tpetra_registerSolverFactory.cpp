@@ -56,6 +56,7 @@ extern void register_GCRODR (const bool verbose);
 extern void register_GmresPipeline (const bool verbose);
 extern void register_GmresPoly (const bool verbose);
 extern void register_GmresSingleReduce (const bool verbose);
+extern void register_GmresSstep (const bool verbose);
 extern void register_LSQR (const bool verbose);
 extern void register_Minres (const bool verbose);
 extern void register_PCPG (const bool verbose);
@@ -85,6 +86,7 @@ void registerSolverFactory() {
   ::BelosTpetra::Impl::register_GmresPipeline (false);
   ::BelosTpetra::Impl::register_GmresPoly (false);
   ::BelosTpetra::Impl::register_GmresSingleReduce (false);
+  ::BelosTpetra::Impl::register_GmresSstep (false);
   ::BelosTpetra::Impl::register_LSQR (false);
   ::BelosTpetra::Impl::register_Minres (false);
   ::BelosTpetra::Impl::register_PCPG (false);
