@@ -9,7 +9,11 @@ export ATDM_CONFIG_ALL_SUPPORTED_BUILDS=(
   cee-rhel6_intel-18.0.2_mpich2-3.2_openmp_static_opt        # SPARC CI build
   cee-rhel6_intel-19.0.3_intelmpi-2018.4_serial_static_opt   # SPARC Nightly bulid
   cee-rhel6_cuda-10.1.243_gcc-7.2.0_openmpi-4.0.3_shared_opt # SPARC CI build
+  cee-rhel6_cuda-10.1.243_gcc-7.2.0_openmpi-4.0.3_shared_dbg # SPARC CI build
   )
 
 # NOTE: Above, we have commented out the 'dbg' build because it was running
 # the test suite very slow and had many timeouts (see ATDV-322)
+
+# NOTE: The cuda builds should not be running any tests so it is fine to do
+# those builds on any of the CEE machines, even those that don't have a GPU!
