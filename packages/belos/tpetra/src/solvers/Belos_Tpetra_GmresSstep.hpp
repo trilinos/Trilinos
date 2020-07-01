@@ -29,6 +29,7 @@ public:
   using STS = Teuchos::ScalarTraits<SC>;
   using MVT = Belos::MultiVecTraits<SC, MV>;
   using mag_type = typename STS::magnitudeType;
+  using STM = Teuchos::ScalarTraits<mag_type>;
   using dense_matrix_type = Teuchos::SerialDenseMatrix<LO, SC>;
 
   /// \brief Constructor
@@ -271,6 +272,17 @@ private:
       // Return residual norm as B
       Tpetra::deep_copy (B, P);
       return output;
+    } else if (STM::isnaninf (metric)) {
+      if (outPtr != nullptr) {
+        *outPtr << "Initial guess' residual norm " << b_norm
+                << " is nan " << endl;
+      }
+      output.absResid = r_norm;
+      output.relResid = r_norm / b0_norm;
+      output.converged = false;
+      // Return residual norm as B
+      Tpetra::deep_copy (B, P);
+      return output;
     } else if (input.computeRitzValues && !input.computeRitzValuesOnFly) {
       // Invoke standard Gmres for the first restart cycle, to compute
       // Ritz values for use as Newton shifts
@@ -410,6 +422,10 @@ private:
             }
           }
           metric = this->getConvergenceMetric (STS::magnitude (y(iter+step)), b_norm, input);
+          if (STM::isnaninf (metric)) {
+              // metric is nan
+              break;
+          }
         }
         else {
           metric = STM::zero ();
@@ -473,6 +489,12 @@ private:
       if (metric <= input.tol) {
         // update solution
         output.converged = true;
+      }
+      else if (STM::isnaninf (metric)) {
+        // failed with nan
+        // Return residual norm as B
+        Tpetra::deep_copy (B, R);
+        return output;
       }
       else if (output.numIters < input.maxNumIters) {
         // Restart, only if max inner-iteration was reached.
