@@ -631,9 +631,10 @@ int main(int argc, char *argv[]) {
       stk::mesh::Entity const* nodes = bulkData.begin_nodes(elem);
       for (unsigned inode = 0; inode < numNodes; ++inode) {
 	double *coord = stk::mesh::field_data(*coords, nodes[inode]);
-	nCoord[0][bulkData.identifier(nodes[inode])-1] = coord[0];
-	nCoord[1][bulkData.identifier(nodes[inode])-1] = coord[1];
-	nCoord[2][bulkData.identifier(nodes[inode])-1] = coord[2];
+	int lid = globalMapG.LID((int)bulkData.identifier(nodes[inode]) -1);
+	nCoord[0][lid] = coord[0];
+	nCoord[1][lid] = coord[1];
+	nCoord[2][lid] = coord[2];
       }
     }      
   } // end loop over elements
@@ -676,7 +677,7 @@ int main(int argc, char *argv[]) {
 
   if(MyPID==0) {
     std::cout << "Get Dirichlet boundary values               "
-              << Time.ElapsedTime() << " seconds\n" << std::endl;
+              << Time.ElapsedTime() << " seconds (found "<<bcNodeVec.size()<<")\n" << std::endl;
     Time.ResetStartTime();
   }
 
