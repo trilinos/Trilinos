@@ -146,13 +146,11 @@ public:
   virtual void
   setParameters (Teuchos::ParameterList& params)
   {
-    if (params.isParameter ("Convergence Tolerance")) {
-      const mag_type tol = params.get<mag_type> ("Convergence Tolerance");
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (tol < STM::zero (), std::invalid_argument,
-         "\"Convergence tolerance\" = " << tol << " < 0.");
-      input_.tol = tol;
-    }
+    const mag_type tol = params.get<mag_type> ("Convergence Tolerance", input_.tol);
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (tol < STM::zero (), std::invalid_argument,
+       "\"Convergence tolerance\" = " << tol << " < 0.");
+    input_.tol = tol;
 
     if (params.isParameter ("Implicit Residual Scaling")) {
       const std::string implScal =

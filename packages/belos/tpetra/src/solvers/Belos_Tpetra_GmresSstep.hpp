@@ -141,22 +141,14 @@ private:
 public:
   GmresSstep () :
     base_type::Gmres (),
-    stepSize_ (5),
     useCholQR2_ (false),
     cholqr_ (Teuchos::null)
-  {
-    this->input_.computeRitzValues = true;
-    this->input_.computeRitzValuesOnFly = false;
-  }
+  {}
 
   GmresSstep (const Teuchos::RCP<const OP>& A) :
     base_type::Gmres (A),
-    stepSize_ (5),
     cholqr_ (Teuchos::null)
-  {
-    this->input_.computeRitzValues = true;
-    this->input_.computeRitzValuesOnFly = false;
-  }
+  {}
 
   virtual ~GmresSstep () = default;
 
@@ -166,15 +158,15 @@ public:
   {
     base_type::getParameters (params, defaultValues);
 
-    const int stepSize = defaultValues ? 5 : stepSize_;
+    const int stepSize = defaultValues ? 5 : this->input_.stepSize;
     params.set ("Step Size", stepSize );
   }
 
   virtual void
   setParameters (Teuchos::ParameterList& params) {
     base_type::setParameters (params);
-    int stepSize = params.get<int> ("Step Size", stepSize_);
-    stepSize_ = stepSize;
+    int stepSize = params.get<int> ("Step Size", this->input_.stepSize);
+    this->input_.stepSize = stepSize;
 
     bool computeRitzValuesOnFly 
       = params.get<bool> ("Compute Ritz Values on Fly", this->input_.computeRitzValuesOnFly);
@@ -203,7 +195,7 @@ private:
                const SolverInput<SC>& input)
   {
     using std::endl;
-    int stepSize = stepSize_;
+    int stepSize = input.stepSize;
     int restart = input.resCycle;
     int step = stepSize;
     const SC zero = STS::zero ();
@@ -338,10 +330,10 @@ private:
         }
 
         // Compute matrix powers
-        if (input.computeRitzValuesOnFly && output.numIters < stepSize_) {
+        if (input.computeRitzValuesOnFly && output.numIters < input.stepSize) {
           stepSize = 1;
         } else {
-          stepSize = stepSize_;
+          stepSize = input.stepSize;
         }
         for (step=0; step < stepSize && iter+step < restart; step++) {
           // AP = A*P
@@ -425,17 +417,17 @@ private:
 
         // Optionally, compute Ritz values for generating Newton basis
         if (input.computeRitzValuesOnFly && int (output.ritzValues.size()) == 0
-            && output.numIters >= stepSize_) {
-          for (int i = 0; i < stepSize_; i++) {
-            for (int iiter = 0; iiter < stepSize_; iiter++) {
+            && output.numIters >= input.stepSize) {
+          for (int i = 0; i < input.stepSize; i++) {
+            for (int iiter = 0; iiter < input.stepSize; iiter++) {
               G2(i, iiter) = H(i, iiter);
             }
           }
-          computeRitzValues (stepSize_, G2, output.ritzValues);
-          sortRitzValues <LO, SC> (stepSize_, output.ritzValues);
+          computeRitzValues (input.stepSize, G2, output.ritzValues);
+          sortRitzValues <LO, SC> (input.stepSize, output.ritzValues);
           if (outPtr != nullptr) {
             *outPtr << " > ComputeRitzValues: " << endl;
-            for (int i = 0; i < stepSize_; i++) {
+            for (int i = 0; i < input.stepSize; i++) {
               *outPtr << " > ritzValues[ " << i << " ] = " << output.ritzValues[i] << endl;
             }
           }
@@ -623,7 +615,6 @@ protected:
   }
 
 private:
-  int stepSize_;
   bool useCholQR2_;
   Teuchos::RCP<CholQR<SC, MV, OP> > cholqr_;
 };
