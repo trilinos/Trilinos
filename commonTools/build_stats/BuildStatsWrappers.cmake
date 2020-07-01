@@ -7,6 +7,7 @@
 
 set(BUILD_STATS_SRC_DIR "${CMAKE_CURRENT_LIST_DIR}")
 
+set(BUILD_STATS_CSV_FILE "${${PROJECT_NAME}_BINARY_DIR}/build_stats.csv")
 
 # Generate the build stats compiler wrappers if asked to do so.
 #
@@ -81,6 +82,43 @@ endfunction()
 # updated if the *.sh.in template file changes and just reconfiguring.
 # Actaully, you should be able to fix the wrapper and just type 'make' and it
 # should reconfigure and update automatically.
+
+
+# Remove the build stats file on configure if asked to do so.
+#
+function(remove_build_stats_file_on_configure)
+
+  # Set default for cache var ${PROJECT_NAME}_REMOVE_BUILD_STATS_ON_CONFIGURE
+  if (NOT "$ENV{${PROJECT_NAME}_REMOVE_BUILD_STATS_ON_CONFIGURE}" STREQUAL "")
+    # Use the default set in the env (overrides any local default set)
+    set(${PROJECT_NAME}_REMOVE_BUILD_STATS_ON_CONFIGURE_DEFAULT
+      "$ENV{${PROJECT_NAME}_REMOVE_BUILD_STATS_ON_CONFIGURE}")
+  elseif(NOT "${${PROJECT_NAME}_REMOVE_BUILD_STATS_ON_CONFIGURE_DEFAULT}" STREQUAL "")
+    # ${PROJECT_NAME}_REMOVE_BUILD_STATS_ON_CONFIGURE_DEFAULT was already set, so use it as
+    # the default.
+  else()
+    # No default was set, so make it OFF by default
+    set(${PROJECT_NAME}_REMOVE_BUILD_STATS_ON_CONFIGURE_DEFAULT OFF)
+  endif()
+  #print_var(${PROJECT_NAME}_REMOVE_BUILD_STATS_ON_CONFIGURE_DEFAULT)
+
+  # Set cache var ${PROJECT_NAME}_REMOVE_BUILD_STATS_ON_CONFIGURE
+  advanced_set(${PROJECT_NAME}_REMOVE_BUILD_STATS_ON_CONFIGURE
+    ${${PROJECT_NAME}_REMOVE_BUILD_STATS_ON_CONFIGURE_DEFAULT} CACHE BOOL
+    "If set to 'ON', then compiler wrappers will be created and used to gather build stats."
+    )
+  #print_var(${PROJECT_NAME}_REMOVE_BUILD_STATS_ON_CONFIGURE)
+
+  if (
+      (${PROJECT_NAME}_REMOVE_BUILD_STATS_ON_CONFIGURE)
+      AND
+      (EXISTS "${BUILD_STATS_CSV_FILE}")
+    )
+    MESSAGE("-- " "Removing existing file '${BUILD_STATS_CSV_FILE}'")
+    file(REMOVE "${BUILD_STATS_CSV_FILE}")
+  endif()
+
+endfunction()
 
 
 # Set up install targets for the build stats scripts

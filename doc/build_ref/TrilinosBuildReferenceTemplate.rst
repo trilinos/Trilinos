@@ -326,6 +326,16 @@ The generated ``build_stats.csv`` file contains many other types of useful
 build stats as well but the above three are some of the more impact-full build
 statistics.
 
+To avoid situations where a full rebuild does not occur (e.g. any build target
+fails) and an old obsolete ``build_stats.csv`` file is hanging aruond, one can
+cause that file to get deleted on every (re)configure by setting::
+
+  -D Trilinos_REMOVE_BUILD_STATS_ON_CONFIGURE=ON
+
+This will remove the file ``build_stats.csv`` very early in the configure
+process and therefore will usually rmeove the file even of later configure
+operations fail.
+
 NOTES:
 
 * The installed ``TrilinosConfig.cmake`` and ``<Package>Config.cmake`` files

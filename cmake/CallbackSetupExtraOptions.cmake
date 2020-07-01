@@ -108,3 +108,4 @@ ENDMACRO()
 
 include("${Trilinos_SOURCE_DIR}/commonTools/build_stats/BuildStatsWrappers.cmake")
 generate_build_stats_wrappers()
+remove_build_stats_file_on_configure()
