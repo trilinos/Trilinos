@@ -92,6 +92,9 @@ TEUCHOS_UNIT_TEST(IMEX_RK, Default_Construction)
   stepper->setImplicitTableau(implicitTableau);        stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setOrder(order);                            stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
+  TEUCHOS_TEST_FOR_EXCEPT(explicitTableau != stepper->getTableau());
+  TEUCHOS_TEST_FOR_EXCEPT(explicitTableau != stepper->getExplicitTableau());
+  TEUCHOS_TEST_FOR_EXCEPT(implicitTableau != stepper->getImplicitTableau());
 
   // Full argument list construction.
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
