@@ -148,6 +148,20 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.2_MPICH2-3.2" ]; then
 elif [ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_GCC-7.2.0_OPENMPI-4.0.3" ]; then
   module load sparc-dev/cuda-10.1.243_gcc-7.2.0_openmpi-4.0.3
 
+  # OpenMPI Settings
+  export OMPI_CXX=${ATDM_CONFIG_NVCC_WRAPPER}
+  if [ ! -x "$OMPI_CXX" ]; then
+      echo "No nvcc_wrapper found"
+      return
+  fi
+  # NOTE: The above export overrides the value set by the module load above
+
+  # CUDA Settings
+  if [[ ! -d /tmp/${USER} ]] ; then
+    echo "Creating /tmp/${USER} for nvcc wrapper!"
+    mkdir /tmp/${USER}
+  fi
+
   export ATDM_CONFIG_MPI_EXEC=mpirun
   export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG=-np
   export ATDM_CONFIG_MPI_POST_FLAGS="-bind-to;none"
