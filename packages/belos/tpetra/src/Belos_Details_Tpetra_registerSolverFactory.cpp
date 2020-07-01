@@ -49,10 +49,12 @@ namespace Impl {
 extern void register_BiCGStab (const bool verbose);
 extern void register_BlockCG (const bool verbose);
 extern void register_BlockGmres (const bool verbose);
+extern void register_Cg (const bool verbose);
 extern void register_CgPipeline (const bool verbose);
 extern void register_CgSingleReduce (const bool verbose);
 extern void register_FixedPoint (const bool verbose);
 extern void register_GCRODR (const bool verbose);
+extern void register_Gmres (const bool verbose);
 extern void register_GmresPipeline (const bool verbose);
 extern void register_GmresPoly (const bool verbose);
 extern void register_GmresSingleReduce (const bool verbose);
@@ -79,10 +81,12 @@ void registerSolverFactory() {
   ::BelosTpetra::Impl::register_BiCGStab (false);
   ::BelosTpetra::Impl::register_BlockCG (false);
   ::BelosTpetra::Impl::register_BlockGmres (false);
+  ::BelosTpetra::Impl::register_Cg (false);
   ::BelosTpetra::Impl::register_CgPipeline (false);
   ::BelosTpetra::Impl::register_CgSingleReduce (false);
   ::BelosTpetra::Impl::register_FixedPoint (false);
   ::BelosTpetra::Impl::register_GCRODR (false);
+  ::BelosTpetra::Impl::register_Gmres (false);
   ::BelosTpetra::Impl::register_GmresPipeline (false);
   ::BelosTpetra::Impl::register_GmresPoly (false);
   ::BelosTpetra::Impl::register_GmresSingleReduce (false);
