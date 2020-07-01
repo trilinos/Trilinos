@@ -155,6 +155,9 @@ elif [ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_GCC-7.2.0_OPENMPI-4.0.3" ]; the
       return
   fi
   # NOTE: The above export overrides the value set by the module load above
+  export MPICC=`which mpicc`
+  export MPICXX=`which mpicxx`
+  export MPIF90=`which mpif90`
 
   # CUDA Settings
   if [[ ! -d /tmp/${USER} ]] ; then
