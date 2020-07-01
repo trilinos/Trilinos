@@ -14,13 +14,25 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     ADD_DIR_TO_NAME
   )
 
+  FILE(GLOB INP_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} inputs/*.xml)
+
   TRIBITS_COPY_FILES_TO_BINARY_DIR(
-    HelmholtzKouriRidzal2019DataCopy
+    HelmholtzKouriRidzalTuminaro2020DataCopy
     SOURCE_FILES
       input_ex01.xml
-      sample_script.m
+      README.md
+      study.m
+      run.m
+      prdw.m
+      imshift.m
+      mesh/README.md
       mesh/helmholtz-mesh-0.e
+      mesh/helmholtz-mesh-1.e
+      mesh/helmholtz-mesh-0.txt
+      mesh/helmholtz-mesh-1.txt
       mesh/helmholtz-mesh.jou
+      results/README.md
+      ${INP_FILES}
     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
     DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
   )

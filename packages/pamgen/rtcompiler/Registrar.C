@@ -556,7 +556,7 @@ double Readline::execute(Value** args)
 
   string line;
   if (getline(curr_file, line)) {
-    assert(args[1]->getSize() > line.size()); // buffer needs to be big enough
+     assert(args[1]->getSize() > long(line.size())); // buffer needs to be big enough
     for (size_t i = 0; i < line.size(); ++i) {
       args[1]->setArrayValue(line[i], i);
     }
