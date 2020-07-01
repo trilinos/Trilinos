@@ -146,6 +146,11 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.2_MPICH2-3.2" ]; then
   export ATDM_CONFIG_OPENMP_GOMP_LIBRARY=-lgomp
 
 elif [ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_GCC-7.2.0_OPENMPI-4.0.3" ]; then
+  # ninja is running into issues with response files when building shared libraries with CUDA.
+  # nvcc reports that no input files were given when generating shared libraries with nvcc.
+  # Using the Unix Makefiles cmake generator works.
+  export ATDM_CONFIG_USE_NINJA=OFF
+
   module load sparc-dev/cuda-10.1.243_gcc-7.2.0_openmpi-4.0.3
 
   # OpenMPI Settings
