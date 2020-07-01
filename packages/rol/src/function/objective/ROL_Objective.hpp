@@ -294,15 +294,15 @@ public:
       At each step of the sequence, the finite difference step size is decreased.  The output 
       compares the error 
       \f[
-          \left\| \frac{\nabla f(x+td) - \nabla f(x)}{t} - \nabla^2 f(x)d\right\|_{\mathcal{X}^*}.
+          \left\| \frac{\nabla f(x+tv) - \nabla f(x)}{t} - \nabla^2 f(x)v\right\|_{\mathcal{X}^*},
       \f]
       if the approximation is first order. More generally, difference approximation is
       \f[
-          \frac{1}{t} \sum\limits_{i=1}^m w_i \nabla f(x+t c_i d)     
+          \frac{1}{t} \sum\limits_{i=1}^m w_i \nabla f(x+t c_i v),     
       \f]
       where m = order+1, \f$w_i\f$ are the difference weights and \f$c_i\f$ are the difference steps
       @param[in]      x             is an optimization variable.
-      @param[in]      d             is a direction vector.
+      @param[in]      v             is a direction vector.
       @param[in]      printToStream is a flag that turns on/off output.
       @param[out]     outStream     is the output stream.
       @param[in]      numSteps      is a parameter which dictates the number of finite difference steps.
@@ -325,16 +325,16 @@ public:
       At each step of the sequence, the finite difference step size is decreased.  The output 
       compares the error 
       \f[
-          \left\| \frac{\nabla f(x+td) - \nabla f(x)}{t} - \nabla^2 f(x)d\right\|_{\mathcal{X}^*}.
+          \left\| \frac{\nabla f(x+tv) - \nabla f(x)}{t} - \nabla^2 f(x)v\right\|_{\mathcal{X}^*},
       \f]
       if the approximation is first order. More generally, difference approximation is
       \f[
-          \frac{1}{t} \sum\limits_{i=1}^m w_i \nabla f(x+t c_i d)     
+          \frac{1}{t} \sum\limits_{i=1}^m w_i \nabla f(x+t c_i v),     
       \f]
       where m = order+1, \f$w_i\f$ are the difference weights and \f$c_i\f$ are the difference steps
       @param[in]      x             is an optimization variable.
       @param[in]      hv            is used to create temporary gradient and Hessian-times-vector vectors.
-      @param[in]      d             is a direction vector.
+      @param[in]      v             is a direction vector.
       @param[in]      printToStream is a flag that turns on/off output.
       @param[out]     outStream     is the output stream.
       @param[in]      numSteps      is a parameter which dictates the number of finite difference steps.
@@ -355,15 +355,15 @@ public:
       At each step of the sequence, the finite difference step size is decreased.  The output 
       compares the error 
       \f[
-          \left\| \frac{\nabla f(x+td) - \nabla f(x)}{t} - \nabla^2 f(x)d\right\|_{\mathcal{X}^*}.
+          \left\| \frac{\nabla f(x+tv) - \nabla f(x)}{t} - \nabla^2 f(x)v\right\|_{\mathcal{X}^*},
       \f]
       if the approximation is first order. More generally, difference approximation is
       \f[
-          \frac{1}{t} \sum\limits_{i=1}^m w_i \nabla f(x+t c_i d)     
+          \frac{1}{t} \sum\limits_{i=1}^m w_i \nabla f(x+t c_i v),     
       \f]
       where m = order+1, \f$w_i\f$ are the difference weights and \f$c_i\f$ are the difference steps
       @param[in]      x             is an optimization variable.
-      @param[in]      d             is a direction vector.
+      @param[in]      v             is a direction vector.
       @param[in]      steps         is vector of steps of user-specified size.
       @param[in]      printToStream is a flag that turns on/off output.
       @param[out]     outStream     is the output stream.
@@ -386,16 +386,16 @@ public:
       At each step of the sequence, the finite difference step size is decreased.  The output 
       compares the error 
       \f[
-          \left\| \frac{\nabla f(x+td) - \nabla f(x)}{t} - \nabla^2 f(x)d\right\|_{\mathcal{X}^*}.
+          \left\| \frac{\nabla f(x+tv) - \nabla f(x)}{t} - \nabla^2 f(x)v\right\|_{\mathcal{X}^*},
       \f]
       if the approximation is first order. More generally, difference approximation is
       \f[
-          \frac{1}{t} \sum\limits_{i=1}^m w_i \nabla f(x+t c_i d)     
+          \frac{1}{t} \sum\limits_{i=1}^m w_i \nabla f(x+t c_i v),     
       \f]
       where m = order+1, \f$w_i\f$ are the difference weights and \f$c_i\f$ are the difference steps
       @param[in]      x             is an optimization variable.
       @param[in]      hv            is used to create temporary gradient and Hessian-times-vector vectors.
-      @param[in]      d             is a direction vector.
+      @param[in]      v             is a direction vector.
       @param[in]      steps         is vector of steps of user-specified size.
       @param[in]      printToStream is a flag that turns on/off output.
       @param[out]     outStream     is the output stream.

@@ -160,7 +160,7 @@ template<class Scalar>
 void StepperDIRK<Scalar>::initialize()
 {
   // Initialize the stage vectors
-  const int numStages = tableau_->numStages();
+  const int numStages = this->tableau_->numStages();
   this->stageX_    = this->wrapperModel_->getNominalValues().get_x()->clone_v();
   stageXDot_.resize(numStages);
   for (int i=0; i<numStages; ++i) {
@@ -170,7 +170,7 @@ void StepperDIRK<Scalar>::initialize()
   xTilde_    = Thyra::createMember(this->wrapperModel_->get_x_space());
   assign(xTilde_.ptr(),    Teuchos::ScalarTraits<Scalar>::zero());
 
-  if (tableau_->isEmbedded() and this->getUseEmbedded()) {
+  if (this->tableau_->isEmbedded() and this->getUseEmbedded()) {
     ee_    = Thyra::createMember(this->wrapperModel_->get_f_space());
     abs_u0 = Thyra::createMember(this->wrapperModel_->get_f_space());
     abs_u  = Thyra::createMember(this->wrapperModel_->get_f_space());
@@ -227,10 +227,10 @@ void StepperDIRK<Scalar>::takeStep(
     const Scalar dt = workingState->getTimeStep();
     const Scalar time = currentState->getTime();
 
-    const int numStages = tableau_->numStages();
-    Teuchos::SerialDenseMatrix<int,Scalar> A = tableau_->A();
-    Teuchos::SerialDenseVector<int,Scalar> b = tableau_->b();
-    Teuchos::SerialDenseVector<int,Scalar> c = tableau_->c();
+    const int numStages = this->tableau_->numStages();
+    Teuchos::SerialDenseMatrix<int,Scalar> A = this->tableau_->A();
+    Teuchos::SerialDenseVector<int,Scalar> b = this->tableau_->b();
+    Teuchos::SerialDenseVector<int,Scalar> c = this->tableau_->c();
 
     // Reset non-zero initial guess.
     if ( this->getResetInitialGuess() && (!this->getZeroInitialGuess()) )
@@ -253,8 +253,8 @@ void StepperDIRK<Scalar>::takeStep(
       bool isNeeded = false;
       for (int k=i+1; k<numStages; ++k) if (A(k,i) != 0.0) isNeeded = true;
       if (b(i) != 0.0) isNeeded = true;
-      if (tableau_->isEmbedded() && this->getUseEmbedded() &&
-          tableau_->bstar()(i) != 0.0)
+      if (this->tableau_->isEmbedded() && this->getUseEmbedded() &&
+          this->tableau_->bstar()(i) != 0.0)
         isNeeded = true;
       if (isNeeded == false) {
         assign(stageXDot_[i].ptr(), Teuchos::ScalarTraits<Scalar>::zero());
@@ -344,14 +344,14 @@ void StepperDIRK<Scalar>::takeStep(
       }
     }
 
-    if (tableau_->isEmbedded() and this->getUseEmbedded()) {
+    if (this->tableau_->isEmbedded() and this->getUseEmbedded()) {
       const Scalar tolRel = workingState->getTolRel();
       const Scalar tolAbs = workingState->getTolAbs();
 
       // just compute the error weight vector
       // (all that is needed is the error, and not the embedded solution)
       Teuchos::SerialDenseVector<int,Scalar> errWght = b ;
-      errWght -= tableau_->bstar();
+      errWght -= this->tableau_->bstar();
 
       // compute local truncation error estimate: | u^{n+1} - \hat{u}^{n+1} |
       // Sum for solution: ee_n = Sum{ (b(i) - bstar(i)) * dt*f(i) }
@@ -422,8 +422,8 @@ void StepperDIRK<Scalar>::describe(
   StepperImplicit<Scalar>::describe(out, verbLevel);
 
   out << "--- StepperDIRK ---\n";
-  out << "  tableau_            = " << tableau_ << std::endl;
-  if (tableau_ != Teuchos::null) tableau_->describe(out, verbLevel);
+  out << "  tableau_            = " << this->tableau_ << std::endl;
+  if (this->tableau_ != Teuchos::null) this->tableau_->describe(out, verbLevel);
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
   out << "  stepperObserver_    = " << stepperObserver_ << std::endl;
 #endif
@@ -452,7 +452,7 @@ bool StepperDIRK<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
   if ( !Stepper<Scalar>::isValidSetup(out) ) isValidSetup = false;
   if ( !StepperImplicit<Scalar>::isValidSetup(out) ) isValidSetup = false;
 
-  if (tableau_ == Teuchos::null) {
+  if (this->tableau_ == Teuchos::null) {
     isValidSetup = false;
     out << "The tableau is not set!\n";
   }

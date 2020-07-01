@@ -1,4 +1,3 @@
-
 #
 # A) Package-specific configuration options
 #
@@ -14,7 +13,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE( Zoltan2_ENABLE_OpenMP
 )
 
 
-TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+TRIBITS_CONFIGURE_FILE(Zoltan2_config.h)
 
 # Generate the header file that contains the Zoltan2 parameters.
 # It is used only in compilation.  This header and the data that
@@ -92,7 +91,7 @@ APPEND_GLOB(HEADERS ${DIR}/directory/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/directory/*.cpp)
 
 APPEND_SET(HEADERS
-  ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
+  ${CMAKE_CURRENT_BINARY_DIR}/Zoltan2_config.h
   ${PARAM_HEADER}
   )
 

@@ -63,7 +63,7 @@ class ThyraProductME_Constraint_SimOpt : public Constraint_SimOpt<Real> {
 public:
 
   ThyraProductME_Constraint_SimOpt(Thyra::ModelEvaluatorDefaultBase<double>& thyra_model_, int g_index_, const std::vector<int>& p_indices_,
-    Teuchos::RCP<Teuchos::ParameterList> params_ = Teuchos::null, Teuchos::EVerbosityLevel verbLevel= Teuchos::VERB_HIGH) :
+      Teuchos::RCP<Teuchos::ParameterList> params_ = Teuchos::null, Teuchos::EVerbosityLevel verbLevel= Teuchos::VERB_HIGH) :
         thyra_model(thyra_model_), g_index(g_index_), p_indices(p_indices_), params(params_),
         out(Teuchos::VerboseObjectBase::getDefaultOStream()),
         verbosityLevel(verbLevel){
@@ -143,7 +143,7 @@ public:
 
         std::cout << "Norm: " << c.norm() <<std::endl;
       }
-      */
+       */
 
       if (Teuchos::is_null(value_ptr_))
         value_ptr_ = c.clone();
@@ -249,13 +249,13 @@ public:
         outArgs.set_DfDp(i,dfdp_op);
       } else {
         TEUCHOS_TEST_FOR_EXCEPTION(!ds.supports(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP),
-          std::logic_error,
-          std::endl <<
-          "ROL::ThyraProductME_Constraint_SimOpt::applyJacobian_2():  " <<
-          "The code related to df/dp multivector has been commented out because never tested.  " <<
-          std::endl);
+            std::logic_error,
+            std::endl <<
+            "ROL::ThyraProductME_Constraint_SimOpt::applyJacobian_2():  " <<
+            "The code related to df/dp multivector has been commented out because never tested.  " <<
+            std::endl);
 
-          /*
+        /*
           if (ds.supports(Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM) && f_space_plus->isLocallyReplicated()) {
           auto dfdp = Thyra::createMembers(p_space, f_space->dim());
 
@@ -277,7 +277,7 @@ public:
               "DERIV_MV_BY_COL with p not distributed, or "
               "DERIV_TRANS_MV_BY_ROW with f not distributed." <<
               std::endl);
-              */
+         */
       }
     }
 
@@ -296,12 +296,12 @@ public:
         thyra_jv.axpy(1.0, *temp_jv_ptr);
       } else {
         TEUCHOS_TEST_FOR_EXCEPTION(
-          dfdp_op == Teuchos::null,
-          std::logic_error,
-          std::endl <<
-          "ROL::ThyraProductME_Constraint_SimOpt::applyJacobian_2():  " <<
-          "The code related to df/dp multivector has been commented out because never tested.  " <<
-          std::endl);
+            dfdp_op == Teuchos::null,
+            std::logic_error,
+            std::endl <<
+            "ROL::ThyraProductME_Constraint_SimOpt::applyJacobian_2():  " <<
+            "The code related to df/dp multivector has been commented out because never tested.  " <<
+            std::endl);
         /*
         Thyra::ModelEvaluatorBase::EDerivativeMultiVectorOrientation dfdp_orient =
             outArgs.get_DfDp(i).getMultiVectorOrientation();
@@ -336,7 +336,7 @@ public:
                 jv_view(ix) += v_view(0,ip)*dfdp_view(ix,ip);
           }
         }
-        */
+         */
       }
     }
   }
@@ -625,14 +625,14 @@ public:
         outArgs.set_DfDp(i,dfdp_op);
       } else {
         TEUCHOS_TEST_FOR_EXCEPTION(
-          !ds.supports(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP),
-          std::logic_error,
-          std::endl <<
-          "ROL::ThyraProductME_Constraint_SimOpt::applyAdjointJacobian_2():  " <<
-          "The code related to df/dp multivector has been commented out because never tested.  " <<
-          std::endl);
+            !ds.supports(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP),
+            std::logic_error,
+            std::endl <<
+            "ROL::ThyraProductME_Constraint_SimOpt::applyAdjointJacobian_2():  " <<
+            "The code related to df/dp multivector has been commented out because never tested.  " <<
+            std::endl);
 
-          /*
+        /*
           if (ds.supports(Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM) && f_space_plus->isLocallyReplicated()) {
           auto dfdp = Thyra::createMembers(p_space, f_space->dim());
 
@@ -654,7 +654,7 @@ public:
               "DERIV_MV_BY_COL with p not distributed, or "
               "DERIV_TRANS_MV_BY_ROW with f not distributed." <<
               std::endl);
-              */
+         */
       }
     }
 
@@ -671,12 +671,12 @@ public:
         // Thyra::update(1.0,  *tmp, thyra_ajv.getMultiVector().ptr());
       } else {
         TEUCHOS_TEST_FOR_EXCEPTION(
-          dfdp_op == Teuchos::null,
-          std::logic_error,
-          std::endl <<
-          "ROL::ThyraProductME_Constraint_SimOpt::applyAdjointJacobian_2():  " <<
-          "The code related to df/dp multivector has been commented out because never tested.  " <<
-          std::endl);
+            dfdp_op == Teuchos::null,
+            std::logic_error,
+            std::endl <<
+            "ROL::ThyraProductME_Constraint_SimOpt::applyAdjointJacobian_2():  " <<
+            "The code related to df/dp multivector has been commented out because never tested.  " <<
+            std::endl);
         /*
         Thyra::ModelEvaluatorBase::EDerivativeMultiVectorOrientation dfdp_orient =
             outArgs.get_DfDp(i).getMultiVectorOrientation();
@@ -710,7 +710,7 @@ public:
                 ajv_view(ip) += v_view(0,ix)*dfdp_view(ix,ip);
           }
         }
-        */
+         */
       }
     }
   }
@@ -776,9 +776,332 @@ public:
   }
 
 
+  void applyAdjointHessian_11(Vector<Real> &ahwv,
+      const Vector<Real> &w,
+      const Vector<Real> &v,
+      const Vector<Real> &u,
+      const Vector<Real> &z,
+      Real &tol) {
+
+#ifdef  HAVE_ROL_DEBUG
+    //u and z should be updated in the update functions before calling this function
+    TEUCHOS_ASSERT(!u_hasChanged(u));
+    TEUCHOS_ASSERT(!z_hasChanged(z));
+#endif
+
+    if(verbosityLevel >= Teuchos::VERB_MEDIUM)
+      *out << "ROL::ThyraProductME_Constraint_SimOpt::applyAdjointHessian_11" << std::endl;
+
+    Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model.createOutArgs();
+    bool supports_deriv = outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_f_xx);
+
+    if(supports_deriv) { //use derivatives computed by model evaluator
+      const ThyraVector<Real>  & thyra_p = dynamic_cast<const ThyraVector<Real>&>(z);
+      const ThyraVector<Real>  & thyra_x = dynamic_cast<const ThyraVector<Real>&>(u);
+      const ThyraVector<Real>  & thyra_v = dynamic_cast<const ThyraVector<Real>&>(v);
+      const ThyraVector<Real>  & thyra_w = dynamic_cast<const ThyraVector<Real>&>(w);
+
+      Teuchos::RCP<const  Thyra::ProductVectorBase<Real> > thyra_prodvec_p = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Real>>(thyra_p.getVector());
+      ThyraVector<Real>  & thyra_ahwv = dynamic_cast<ThyraVector<Real>&>(ahwv);
+
+      Thyra::ModelEvaluatorBase::InArgs<Real> inArgs = thyra_model.createInArgs();
+
+      for(std::size_t i=0; i<p_indices.size(); ++i) {
+        inArgs.set_p(p_indices[i], thyra_prodvec_p->getVectorBlock(i));
+      }
+      inArgs.set_x(thyra_x.getVector());
+      inArgs.set_x_direction(thyra_v.getVector());
+
+      inArgs.set_f_multiplier(thyra_w.getVector());
+
+      ROL_TEST_FOR_EXCEPTION( !supports_deriv, std::logic_error, "ROL::ThyraProductME_Constraint: H_xx product vector is not supported");
+      outArgs.set_hess_vec_prod_f_xx(thyra_ahwv.getVector());
+
+      thyra_model.evalModel(inArgs, outArgs);
+
+    } else {  //compute derivatives with 2nd-order finite differences
+
+      Real jtol = std::sqrt(ROL_EPSILON<Real>());
+      // Compute step size
+      Real h = std::cbrt(ROL_EPSILON<Real>());;
+      if (v.norm() > h) {
+        h *= std::max(1.0,u.norm()/v.norm());
+      }
+      // Evaluate Jacobian at (u+hv,z)
+      Ptr<Vector<Real>> unew = u.clone();
+      unew->set(u);
+      unew->axpy(h,v);
+      this->update(*unew,z);
+      applyAdjointJacobian_1(ahwv,w,*unew,z,jtol);
+      // Evaluate Jacobian at (u-hv,z)
+      Ptr<Vector<Real>> jv = ahwv.clone();
+      unew->axpy(-2.*h,v);
+      this->update(*unew,z);
+      applyAdjointJacobian_1(*jv,w,*unew,z,jtol);
+      // Compute Newton quotient
+      ahwv.axpy(-1.0,*jv);
+      ahwv.scale(0.5/h);
+    }
+  }
+
+
+  void applyAdjointHessian_12(Vector<Real> &ahwv,
+      const Vector<Real> &w,
+      const Vector<Real> &v,
+      const Vector<Real> &u,
+      const Vector<Real> &z,
+      Real &/*tol*/) {
+
+#ifdef  HAVE_ROL_DEBUG
+    //u and z should be updated in the update functions before calling this function
+    TEUCHOS_ASSERT(!u_hasChanged(u));
+    TEUCHOS_ASSERT(!z_hasChanged(z));
+#endif
+
+    if(verbosityLevel >= Teuchos::VERB_MEDIUM)
+      *out << "ROL::ThyraProductME_Constraint_SimOpt::applyAdjointHessian_12" << std::endl;
+
+    Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model.createOutArgs();
+
+    bool supports_deriv = true;
+    for(std::size_t i=0; i<p_indices.size(); ++i)
+      supports_deriv = supports_deriv && outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_f_px, p_indices[i]);
+
+    if(supports_deriv) {  //use derivatives computed by model evaluator
+
+      const ThyraVector<Real>  & thyra_p = dynamic_cast<const ThyraVector<Real>&>(z);
+      const ThyraVector<Real>  & thyra_x = dynamic_cast<const ThyraVector<Real>&>(u);
+      const ThyraVector<Real>  & thyra_v = dynamic_cast<const ThyraVector<Real>&>(v);
+      const ThyraVector<Real>  & thyra_w = dynamic_cast<const ThyraVector<Real>&>(w);
+
+      Teuchos::RCP<const  Thyra::ProductVectorBase<Real> > thyra_prodvec_p = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Real>>(thyra_p.getVector());
+      ThyraVector<Real>  & thyra_ahwv = dynamic_cast<ThyraVector<Real>&>(ahwv);
+
+      Teuchos::RCP< Thyra::ProductVectorBase<Real> > prodvec_ahwv = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<Real>>(thyra_ahwv.getVector());
+
+      Thyra::ModelEvaluatorBase::InArgs<Real> inArgs = thyra_model.createInArgs();
+
+      for(std::size_t i=0; i<p_indices.size(); ++i) {
+        inArgs.set_p(p_indices[i], thyra_prodvec_p->getVectorBlock(i));
+      }
+      inArgs.set_x(thyra_x.getVector());
+      inArgs.set_x_direction(thyra_v.getVector());
+      inArgs.set_f_multiplier(thyra_w.getVector());
+
+      for(std::size_t i=0; i<p_indices.size(); ++i) {
+        bool supports_deriv =   outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_f_px, p_indices[i]);
+        ROL_TEST_FOR_EXCEPTION( !supports_deriv, std::logic_error, "ROL::ThyraProductME_Constraint_SimOpt: H_px product vector is not supported");
+        outArgs.set_hess_vec_prod_f_px(p_indices[i], prodvec_ahwv->getNonconstVectorBlock(i));
+      }
+      thyra_model.evalModel(inArgs, outArgs);
+
+    } else {  //compute derivatives with 2nd-order finite differences
+
+
+      Real jtol = std::sqrt(ROL_EPSILON<Real>());
+      // Compute step size
+      Real h = std::cbrt(ROL_EPSILON<Real>());
+      if (v.norm() > h) {
+        h *= std::max(1.0,u.norm()/v.norm());
+      }
+      // Evaluate Jacobian at (u+hv,z)
+      Ptr<Vector<Real>> unew = u.clone();
+      unew->set(u);
+      unew->axpy(h,v);
+      this->update(*unew,z);
+      applyAdjointJacobian_2(ahwv,w,*unew,z,jtol);
+      // Evaluate Jacobian at (u - hv,z)
+      Ptr<Vector<Real>> jv = ahwv.clone();
+      unew->axpy(-2.0*h,v);
+      this->update(*unew,z);
+      applyAdjointJacobian_2(*jv,w,*unew,z,jtol);
+      // Compute Newton quotient
+      ahwv.axpy(-1.0,*jv);
+      ahwv.scale(0.5/h);
+    }
+  }
+
+
+  void applyAdjointHessian_21(Vector<Real> &ahwv,
+      const Vector<Real> &w,
+      const Vector<Real> &v,
+      const Vector<Real> &u,
+      const Vector<Real> &z,
+      Real &/*tol*/) {
+
+#ifdef  HAVE_ROL_DEBUG
+    //u and z should be updated in the update functions before calling this function
+    TEUCHOS_ASSERT(!u_hasChanged(u));
+    TEUCHOS_ASSERT(!z_hasChanged(z));
+#endif
+
+    if(verbosityLevel >= Teuchos::VERB_MEDIUM)
+      *out << "ROL::ThyraProductME_Constraint_SimOpt::applyAdjointHessian_21" << std::endl;
+
+    Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model.createOutArgs();
+    bool supports_deriv = true;
+    for(std::size_t j=0; j<p_indices.size(); ++j)
+      supports_deriv = supports_deriv && outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_f_xp, p_indices[j]);
+
+    if(supports_deriv) { //use derivatives computed by model evaluator
+
+      const ThyraVector<Real>  & thyra_p = dynamic_cast<const ThyraVector<Real>&>(z);
+      const ThyraVector<Real>  & thyra_x = dynamic_cast<const ThyraVector<Real>&>(u);
+      const ThyraVector<Real>  & thyra_v = dynamic_cast<const ThyraVector<Real>&>(v);
+      const ThyraVector<Real>  & thyra_w = dynamic_cast<const ThyraVector<Real>&>(w);
+
+      Teuchos::RCP<const  Thyra::ProductVectorBase<Real> > thyra_prodvec_p = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Real>>(thyra_p.getVector());
+      Teuchos::RCP<const  Thyra::ProductVectorBase<Real> > thyra_prodvec_v = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Real>>(thyra_v.getVector());
+      ThyraVector<Real>  & thyra_ahwv = dynamic_cast<ThyraVector<Real>&>(ahwv);
+
+      Thyra::ModelEvaluatorBase::InArgs<Real> inArgs = thyra_model.createInArgs();
+
+      for(std::size_t i=0; i<p_indices.size(); ++i) {
+        inArgs.set_p(p_indices[i], thyra_prodvec_p->getVectorBlock(i));
+        inArgs.set_p_direction(p_indices[i], thyra_prodvec_v->getVectorBlock(i));
+      }
+
+      inArgs.set_x(thyra_x.getVector());
+      inArgs.set_f_multiplier(thyra_w.getVector());
+
+      std::vector<Teuchos::RCP< Thyra::MultiVectorBase<Real> > > ahwv_vec(p_indices.size());
+
+      ahwv_vec[0] = thyra_ahwv.getVector();
+      for(std::size_t j=1; j<p_indices.size(); ++j) {
+        ahwv_vec[j] = thyra_ahwv.getVector()->clone_v();
+      }
+
+      for(std::size_t j=0; j<p_indices.size(); ++j) {
+        bool supports_deriv =   outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_f_xp, p_indices[j]);
+        ROL_TEST_FOR_EXCEPTION( !supports_deriv, std::logic_error, "ROL::ThyraProductME_Constraint_SimOpt: H_xp product vector is not supported");
+        outArgs.set_hess_vec_prod_f_xp(p_indices[j], ahwv_vec[j]);
+      }
+      thyra_model.evalModel(inArgs, outArgs);
+
+      for(std::size_t j=1; j<p_indices.size(); ++j)
+        ahwv_vec[0]->update(1.0, *ahwv_vec[j]);
+
+    } else {  //compute derivatives with 2nd-order finite differences
+
+      Real jtol = std::sqrt(ROL_EPSILON<Real>());
+      // Compute step size
+      Real h = std::cbrt(ROL_EPSILON<Real>());
+      if (v.norm() > h) {
+        h *= std::max(1.0,u.norm()/v.norm());
+      }
+      // Evaluate Jacobian at (u,z+hv)
+      Ptr<Vector<Real>> znew = z.clone();
+      znew->set(z);
+      znew->axpy(h,v);
+      this->update(u,*znew);
+      applyAdjointJacobian_1(ahwv,w,u,*znew,jtol);
+      // Evaluate Jacobian at (u,z-hv)
+      Ptr<Vector<Real>> jv = ahwv.clone();
+      znew->axpy(-2.0*h,v);
+      this->update(u,*znew);
+      applyAdjointJacobian_1(*jv,w,u,*znew,jtol);
+      // Compute Newton quotient
+      ahwv.axpy(-1.0,*jv);
+      ahwv.scale(0.5/h);
+    }
+  }
+
+  void applyAdjointHessian_22(Vector<Real> &ahwv,
+      const Vector<Real> &w,
+      const Vector<Real> &v,
+      const Vector<Real> &u,
+      const Vector<Real> &z,
+      Real &/*tol*/) {
+
+#ifdef  HAVE_ROL_DEBUG
+    //u and z should be updated in the update functions before calling this function
+    TEUCHOS_ASSERT(!u_hasChanged(u));
+    TEUCHOS_ASSERT(!z_hasChanged(z));
+#endif
+
+    if(verbosityLevel >= Teuchos::VERB_MEDIUM)
+      *out << "ROL::ThyraProductME_Constraint_SimOpt::applyAdjointHessian_22" << std::endl;
+
+    Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model.createOutArgs();
+    bool supports_deriv = true;
+    for(std::size_t i=0; i<p_indices.size(); ++i)
+      for(std::size_t j=0; j<p_indices.size(); ++j)
+        supports_deriv = supports_deriv &&  outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_f_pp, p_indices[i], p_indices[j]);
+
+    if(supports_deriv) {  //use derivatives computed by model evaluator
+
+      const ThyraVector<Real>  & thyra_p = dynamic_cast<const ThyraVector<Real>&>(z);
+      const ThyraVector<Real>  & thyra_x = dynamic_cast<const ThyraVector<Real>&>(u);
+      const ThyraVector<Real>  & thyra_v = dynamic_cast<const ThyraVector<Real>&>(v);
+      const ThyraVector<Real>  & thyra_w = dynamic_cast<const ThyraVector<Real>&>(w);
+
+      Teuchos::RCP<const  Thyra::ProductVectorBase<Real> > thyra_prodvec_p = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Real>>(thyra_p.getVector());
+      Teuchos::RCP<const  Thyra::ProductVectorBase<Real> > thyra_prodvec_v = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Real>>(thyra_v.getVector());
+      ThyraVector<Real>  & thyra_ahwv = dynamic_cast<ThyraVector<Real>&>(ahwv);
+
+      Teuchos::RCP< Thyra::ProductMultiVectorBase<Real> > prodvec_ahwv = Teuchos::rcp_dynamic_cast<Thyra::ProductMultiVectorBase<Real>>(thyra_ahwv.getVector());
+
+      Thyra::ModelEvaluatorBase::InArgs<Real> inArgs = thyra_model.createInArgs();
+
+      for(std::size_t i=0; i<p_indices.size(); ++i) {
+        inArgs.set_p(p_indices[i], thyra_prodvec_p->getVectorBlock(i));
+        inArgs.set_p_direction(p_indices[i], thyra_prodvec_v->getVectorBlock(i));
+      }
+      inArgs.set_x(thyra_x.getVector());
+      inArgs.set_f_multiplier(thyra_w.getVector());
+
+      std::vector<std::vector<Teuchos::RCP< Thyra::MultiVectorBase<Real> > > > ahwv_vec(p_indices.size());
+
+      for(std::size_t i=0; i<p_indices.size(); ++i) {
+        ahwv_vec[i].resize(p_indices.size());
+        ahwv_vec[i][0] = prodvec_ahwv->getNonconstMultiVectorBlock(i);
+        for(std::size_t j=1; j<p_indices.size(); ++j) {
+          ahwv_vec[i][j] = ahwv_vec[i][0]->clone_mv();
+        }
+      }
+
+      for(std::size_t i=0; i<p_indices.size(); ++i) {
+        for(std::size_t j=0; j<p_indices.size(); ++j) {
+          bool supports_deriv =   outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_f_pp, p_indices[i], p_indices[j]);
+          ROL_TEST_FOR_EXCEPTION( !supports_deriv, std::logic_error, "ROL::ThyraProductME_Constraint_SimOpt: H_pp product vector is not supported");
+
+          outArgs.set_hess_vec_prod_f_pp(p_indices[i], p_indices[j], ahwv_vec[i][j]);
+        }
+      }
+      thyra_model.evalModel(inArgs, outArgs);
+
+      for(std::size_t i=0; i<p_indices.size(); ++i) {
+        for(std::size_t j=1; j<p_indices.size(); ++j)
+          ahwv_vec[i][0]->update(1.0, *ahwv_vec[i][j]);
+      }
+    } else {  //compute derivatives with 2nd-order finite differences
+
+      Real jtol = std::sqrt(ROL_EPSILON<Real>());
+      // Compute step size
+      Real h = std::cbrt(ROL_EPSILON<Real>());
+      if (v.norm() > h) {
+        h *= std::max(1.0,u.norm()/v.norm());
+      }
+      // Evaluate Jacobian at (u,z+hv)
+      Ptr<Vector<Real>> znew = z.clone();
+      znew->set(z);
+      znew->axpy(h,v);
+      this->update(u,*znew);
+      applyAdjointJacobian_2(ahwv,w,u,*znew,jtol);
+      // Evaluate Jacobian at (u,z-hv)
+      Ptr<Vector<Real>> jv = ahwv.clone();
+      znew->axpy(-2.0*h,v);
+      this->update(u,*znew);
+      applyAdjointJacobian_2(*jv,w,u,*znew,jtol);
+      // Compute Newton quotient
+      ahwv.axpy(-1.0,*jv);
+      ahwv.scale(0.5/h);
+    }
+  }
+
   /** \brief Update constraint functions with respect to Sim variable.
                 x is the optimization variable,
-                flag = ??,
+                flag = true if optimization variable is changed,
                 iter is the outer algorithm iterations count.
    */
   void update_1( const Vector<Real> &u, bool /*flag*/ = true, int iter = -1 ) {
