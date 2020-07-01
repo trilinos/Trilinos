@@ -168,6 +168,8 @@ elif [ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_GCC-7.2.0_OPENMPI-4.0.3" ]; the
   export ATDM_CONFIG_MPI_EXEC=mpirun
   export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG=-np
   export ATDM_CONFIG_MPI_POST_FLAGS="-bind-to;none"
+
+  export ATDM_CONFIG_MKL_ROOT=${CBLAS_ROOT}
 else
   echo
   echo "***"
