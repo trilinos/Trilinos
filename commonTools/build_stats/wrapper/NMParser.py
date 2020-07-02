@@ -32,7 +32,8 @@ class NMParser:
   }
 
   nm_re_type_expr = ''.join(nm_option_desc_map)
-  nm_re_str = r'^[a-zA-Z0-9]+\s+(?P<size_hex>[a-zA-Z0-9]{2,})\s+(?P<type>[' + nm_re_type_expr + '])\s+'
+  nm_re_str = r'^[a-zA-Z0-9]+\s+(?P<size_hex>[a-zA-Z0-9]{2,})\s+(?P<type>[' \
+    + nm_re_type_expr + '])\s+'
   nm_re = re.compile(nm_re_str)
 
   @staticmethod
@@ -71,10 +72,11 @@ class NMParser:
                                        value=v))
   @staticmethod
   def get_csv_map (nm_counts):
-    # create a map of the form: csv_header_str : value
-    # loop over the csv_map, which will guarantee we always return the same columns.
-    # otherwise, looping over nm_counts will only return csv columns found in this specific file
-    # , while the wrapper needs consistent output from all files parsed
+    # create a map of the form: csv_header_str : value loop over the csv_map,
+    # which will guarantee we always return the same columns.  otherwise,
+    # looping over nm_counts will only return csv columns found in this
+    # specific file , while the wrapper needs consistent output from all files
+    # parsed
     csv_map = { v : nm_counts.get(k,0) for k,v in NMParser.nm_option_csv_map.items() }
     return csv_map
 
