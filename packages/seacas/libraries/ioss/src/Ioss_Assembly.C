@@ -145,6 +145,13 @@ bool Ioss::Assembly::add(const Ioss::GroupingEntity *member)
   return true;
 }
 
+void Ioss::Assembly::remove_members()
+{
+  IOSS_FUNC_ENTER(m_);
+  m_members.clear();
+  m_members.shrink_to_fit();
+}
+
 bool Ioss::Assembly::remove(const Ioss::GroupingEntity *removal)
 {
   IOSS_FUNC_ENTER(m_);

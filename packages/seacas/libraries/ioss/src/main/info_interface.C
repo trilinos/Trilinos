@@ -134,7 +134,8 @@ void Info::Interface::enroll_options()
   options_.enroll("copyright", Ioss::GetLongOption::NoValue, "Show copyright and license data.",
                   nullptr);
 
-#if defined(PARALLEL_AWARE_EXODUS)
+#if defined(SEACAS_HAVE_MPI)
+#if !defined(NO_ZOLTAN_SUPPORT)
   options_.enroll(
       "rcb", Ioss::GetLongOption::NoValue,
       "Use recursive coordinate bisection method to decompose the input mesh in a parallel run.",
@@ -148,7 +149,9 @@ void Info::Interface::enroll_options()
       "hsfc", Ioss::GetLongOption::NoValue,
       "Use hilbert space-filling curve method to decompose the input mesh in a parallel run.",
       nullptr);
+#endif
 
+#if !defined(NO_PARMETIS_SUPPORT)
   options_.enroll(
       "metis_sfc", Ioss::GetLongOption::NoValue,
       "Use the metis space-filling-curve method to decompose the input mesh in a parallel run.",
@@ -163,6 +166,7 @@ void Info::Interface::enroll_options()
                   "Use the metis kway graph-based method with geometry speedup to decompose the "
                   "input mesh in a parallel run.",
                   nullptr);
+#endif
 
   options_.enroll("linear", Ioss::GetLongOption::NoValue,
                   "Use the linear method to decompose the input mesh in a parallel run.\n"
@@ -304,7 +308,8 @@ bool Info::Interface::parse_options(int argc, char **argv)
     }
   }
 
-#if defined(PARALLEL_AWARE_EXODUS)
+#if defined(SEACAS_HAVE_MPI)
+#if !defined(NO_ZOLTAN_SUPPORT)
   if (options_.retrieve("rcb") != nullptr) {
     decompMethod_ = "RCB";
   }
@@ -316,7 +321,9 @@ bool Info::Interface::parse_options(int argc, char **argv)
   if (options_.retrieve("hsfc") != nullptr) {
     decompMethod_ = "HSFC";
   }
+#endif
 
+#if !defined(NO_PARMETIS_SUPPORT)
   if (options_.retrieve("metis_sfc") != nullptr) {
     decompMethod_ = "METIS_SFC";
   }
@@ -328,6 +335,7 @@ bool Info::Interface::parse_options(int argc, char **argv)
   if (options_.retrieve("kway_geom") != nullptr) {
     decompMethod_ = "KWAY_GEOM";
   }
+#endif
 
   if (options_.retrieve("linear") != nullptr) {
     decompMethod_ = "LINEAR";

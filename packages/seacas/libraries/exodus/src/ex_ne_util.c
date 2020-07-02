@@ -195,7 +195,7 @@ int ex__put_nemesis_version(int exoid)
   if (nc_get_att_float(exoid, NC_GLOBAL, "nemesis_file_version", &file_ver) != NC_NOERR) {
 
     /* Output the Nemesis file version */
-    if ((status = nc_put_att_float(exoid, NC_GLOBAL, "nemesis_file_version", NC_FLOAT, 1,
+    if ((status = nc_put_att_float(exoid, NC_GLOBAL, ATT_NEM_FILE_VERSION, NC_FLOAT, 1,
                                    &file_ver)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to output nemesis file version in file ID %d",
                exoid);
@@ -204,8 +204,8 @@ int ex__put_nemesis_version(int exoid)
     }
 
     /* Output the Nemesis API version */
-    if ((status = nc_put_att_float(exoid, NC_GLOBAL, "nemesis_api_version", NC_FLOAT, 1,
-                                   &api_ver)) != NC_NOERR) {
+    if ((status = nc_put_att_float(exoid, NC_GLOBAL, ATT_NEM_API_VERSION, NC_FLOAT, 1, &api_ver)) !=
+        NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to output nemesis api version in file ID %d",
                exoid);
       ex_err_fn(exoid, __func__, errmsg, status);

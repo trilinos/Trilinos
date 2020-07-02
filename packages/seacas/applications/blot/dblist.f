@@ -1,4 +1,4 @@
-C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
+C Copyright(C) 2009-2017, 2020 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -193,7 +193,7 @@ C      --Set up the print file
 
 C      --Reset selection if not done by SELECT command
 
-         CALL DBSEL (A, INLINE,
+         CALL DBSEL (A, A, INLINE,
      &      'reset', IFLD, INTYP, CFIELD, IFIELD, RFIELD,
      &      NAMES, TIMES, WHOTIM, NPTIMS, IPTIMS,
      &      IDELB, LENE, IDNPS, IDESS,
@@ -254,7 +254,7 @@ C *** GENESIS Print Commands ***
          IF (LISTYP .EQ. 'COORDINA') THEN
             CALL PRTERR ('CMDREQ',
      &         'Please use a SELECT NODES command')
-            CALL DBSEL (A, DUMLIN,
+            CALL DBSEL (A, A, DUMLIN,
      &         'NODES', IFLD, INTYP, CFIELD, IFIELD, RFIELD,
      &         NAMES, TIMES, WHOTIM, NPTIMS, IPTIMS,
      &         IDELB, LENE, IDNPS, IDESS,
@@ -265,7 +265,7 @@ C *** GENESIS Print Commands ***
      &      .OR. (LISTYP .EQ. 'MATERIAL')) THEN
             CALL PRTERR ('CMDREQ',
      &         'Please use a SELECT BLOCKS command')
-            CALL DBSEL (A, DUMLIN,
+            CALL DBSEL (A, A, DUMLIN,
      &         'BLOCKS', IFLD, INTYP, CFIELD, IFIELD, RFIELD,
      &         NAMES, TIMES, WHOTIM, NPTIMS, IPTIMS,
      &         IDELB, LENE, IDNPS, IDESS,
@@ -276,7 +276,7 @@ C *** GENESIS Print Commands ***
      &      .OR. (LISTYP .EQ. 'ATTRIBU')) THEN
             CALL PRTERR ('CMDREQ',
      &         'Please use a SELECT ELEMENTS command')
-            CALL DBSEL (A, DUMLIN,
+            CALL DBSEL (A, A, DUMLIN,
      &         'ELEMENTS', IFLD, INTYP, CFIELD, IFIELD, RFIELD,
      &         NAMES, TIMES, WHOTIM, NPTIMS, IPTIMS,
      &         IDELB, LENE, IDNPS, IDESS,
@@ -286,7 +286,7 @@ C *** GENESIS Print Commands ***
          ELSE IF (LISTYP .EQ. 'NSETS') THEN
             CALL PRTERR ('CMDREQ',
      &         'Please use a SELECT NSETS command')
-            CALL DBSEL (A, DUMLIN,
+            CALL DBSEL (A, A, DUMLIN,
      &         'NSETS', IFLD, INTYP, CFIELD, IFIELD, RFIELD,
      &         NAMES, TIMES, WHOTIM, NPTIMS, IPTIMS,
      &         IDELB, LENE, IDNPS, IDESS,
@@ -296,7 +296,7 @@ C *** GENESIS Print Commands ***
          ELSE IF (LISTYP .EQ. 'SSETS') THEN
             CALL PRTERR ('CMDREQ',
      &         'Please use a SELECT SSETS command')
-            CALL DBSEL (A, DUMLIN,
+            CALL DBSEL (A, A, DUMLIN,
      &         'SSETS', IFLD, INTYP, CFIELD, IFIELD, RFIELD,
      &         NAMES, TIMES, WHOTIM, NPTIMS, IPTIMS,
      &         IDELB, LENE, IDNPS, IDESS,
@@ -306,7 +306,7 @@ C *** GENESIS Print Commands ***
          ELSE IF (LISTYP .EQ. 'HVARS') THEN
             CALL PRTERR ('CMDREQ',
      &         'Please use a SELECT HVARS command')
-            CALL DBSEL (A, DUMLIN,
+            CALL DBSEL (A, A, DUMLIN,
      &         LISTYP, IFLD, INTYP, CFIELD, IFIELD, RFIELD,
      &         NAMES, TIMES, WHOTIM, NPTIMS, IPTIMS,
      &         IDELB, LENE, IDNPS, IDESS,
@@ -316,7 +316,7 @@ C *** GENESIS Print Commands ***
          ELSE IF (LISTYP .EQ. 'GVARS') THEN
             CALL PRTERR ('CMDREQ',
      &         'Please use a SELECT GVARS command')
-            CALL DBSEL (A, DUMLIN,
+            CALL DBSEL (A, A, DUMLIN,
      &         LISTYP, IFLD, INTYP, CFIELD, IFIELD, RFIELD,
      &         NAMES, TIMES, WHOTIM, NPTIMS, IPTIMS,
      &         IDELB, LENE, IDNPS, IDESS,
@@ -326,7 +326,7 @@ C *** GENESIS Print Commands ***
          ELSE IF (LISTYP .EQ. 'NVARS') THEN
             CALL PRTERR ('CMDREQ',
      &         'Please use a SELECT NVARS command')
-            CALL DBSEL (A, DUMLIN,
+            CALL DBSEL (A, A, DUMLIN,
      &         LISTYP, IFLD, INTYP, CFIELD, IFIELD, RFIELD,
      &         NAMES, TIMES, WHOTIM, NPTIMS, IPTIMS,
      &         IDELB, LENE, IDNPS, IDESS,
@@ -336,7 +336,7 @@ C *** GENESIS Print Commands ***
          ELSE IF (LISTYP .EQ. 'EVARS') THEN
             CALL PRTERR ('CMDREQ',
      &         'Please use a SELECT EVARS command')
-            CALL DBSEL (A, DUMLIN,
+            CALL DBSEL (A, A, DUMLIN,
      &         LISTYP, IFLD, INTYP, CFIELD, IFIELD, RFIELD,
      &         NAMES, TIMES, WHOTIM, NPTIMS, IPTIMS,
      &         IDELB, LENE, IDNPS, IDESS,
@@ -346,7 +346,7 @@ C *** GENESIS Print Commands ***
          ELSE IF (LISTYP .EQ. 'NODALS') THEN
             CALL PRTERR ('CMDREQ',
      &         'Please use a SELECT NODES command')
-            CALL DBSEL (A, DUMLIN,
+            CALL DBSEL (A, A, DUMLIN,
      &         'NODES', IFLD, INTYP, CFIELD, IFIELD, RFIELD,
      &         NAMES, TIMES, WHOTIM, NPTIMS, IPTIMS,
      &         IDELB, LENE, IDNPS, IDESS,
@@ -356,7 +356,7 @@ C *** GENESIS Print Commands ***
          ELSE IF (LISTYP .EQ. 'ELEMENTS') THEN
             CALL PRTERR ('CMDREQ',
      &         'Please use a SELECT ELEMENTS command')
-            CALL DBSEL (A, DUMLIN,
+            CALL DBSEL (A, A, DUMLIN,
      &         'XELEM', IFLD, INTYP, CFIELD, IFIELD, RFIELD,
      &         NAMES, TIMES, WHOTIM, NPTIMS, IPTIMS,
      &         IDELB, LENE, IDNPS, IDESS,

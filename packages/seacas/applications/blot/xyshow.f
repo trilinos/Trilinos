@@ -94,9 +94,9 @@ C   --   Uses NEUOPN, NUMCRV, INCCRV, CRVNAM of /NEUTR./
 
       IF (SHOTYP .EQ. 'RATIOXY') THEN
          IF (ASPECT .GE. .99) THEN
-            CALL NUMSTR (1, 3, ASPECT, RSTR(1), LSTR)
+            CALL NUMSTR1(3, ASPECT, RSTR(1), LSTR)
          ELSE
-            CALL NUMSTR (1, 2, ASPECT, RSTR(1), LSTR)
+            CALL NUMSTR1(2, ASPECT, RSTR(1), LSTR)
          END IF
          WRITE (*, 10000) 'X to Y aspect ratio = ', RSTR(1)(:LSTR)
 
@@ -130,7 +130,7 @@ C   --   Uses NEUOPN, NUMCRV, INCCRV, CRVNAM of /NEUTR./
          IF (XTICK .EQ. 0.0) THEN
             WRITE (*, 10000) 'X axis tick interval automatically scaled'
          ELSE
-            CALL NUMSTR (1, 4, XTICK, RSTR(1), LSTR)
+            CALL NUMSTR1(4, XTICK, RSTR(1), LSTR)
             WRITE (*, 10000) 'X axis tick interval = ', RSTR(1)(:LSTR)
          END IF
 
@@ -138,7 +138,7 @@ C   --   Uses NEUOPN, NUMCRV, INCCRV, CRVNAM of /NEUTR./
          IF (YTICK .EQ. 0.0) THEN
             WRITE (*, 10000) 'Y axis tick interval automatically scaled'
          ELSE
-            CALL NUMSTR (1, 4, YTICK, RSTR(1), LSTR)
+            CALL NUMSTR1(4, YTICK, RSTR(1), LSTR)
             WRITE (*, 10000) 'Y axis tick interval = ', RSTR(1)(:LSTR)
          END IF
 

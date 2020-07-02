@@ -1,4 +1,4 @@
-C    Copyright(C) 2008-2017 National Technology & Engineering Solutions of
+C    Copyright(C) 2008-2017, 2020 National Technology & Engineering Solutions of
 C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -82,7 +82,7 @@ C   --   TIMES - IN - the times for each time step
      &   .AND. (NSTEPS .GT. 0)) THEN
          CALL MINMAX (NSTEPS, TIMES, TIMMIN, TIMMAX)
          IF (NSTEPS .EQ. 1) THEN
-            CALL NUMSTR (1, NPREC, TIMMIN, RSTR, LSTR)
+            CALL NUMSTR1 (NPREC, TIMMIN, RSTR, LSTR)
             WRITE (STRING, 10040) 'Time = ', RSTR(1)(:LSTR)
             LSTR = LENSTR (STRING)
             IF (NOUT .GT. 0) THEN

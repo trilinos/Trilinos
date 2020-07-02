@@ -1,4 +1,4 @@
-C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
+C Copyright(C) 2009-2017, 2020 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -303,7 +303,7 @@ C *** Display options ***
      &      'Maximum number of symbols to display: ', STRING(:LSTR)
 
       ELSE IF ((SHOTYP .EQ. 'VSCALE') .or. (shotyp .eq. 'VECSCL')) THEN
-         CALL NUMSTR (1, 4, VECSCL, RSTR, LSTR)
+         CALL NUMSTR1(4, VECSCL, RSTR, LSTR)
          WRITE (*, 10080) 'Vector/symbol scale factor = ',
      &      RSTR(1)(:LSTR)
 

@@ -1,4 +1,4 @@
-C Copyright (C) 2009-2017 National Technology & Engineering Solutions
+C Copyright (C) 2009-2017, 2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -48,15 +48,7 @@ C=======================================================================
      *                  QQZ,V,Q)
       DIMENSION MASK(*),PX(*),PY(*),PZ(*),QX(*),QY(*),QZ(*),PPX(*),
      *          PPY(*),PPZ(*),QQX(*),QQY(*),QQZ(*),V(*),Q(*)
-      INTEGER IZBIT(32)
-      DATA IZBIT/1,          2,          4,          8,
-     *          16,         32,         64,        128,
-     *         256,        512,       1024,       2048,
-     *        4096,       8192,      16384,      32768,
-     *       65536,     131072,     262144,     524288,
-     *     1048576,    2097152,    4194304,    8388608,
-     *    16777216,   33554432,   67108864,  134217728,
-     *   268435456,  536870912, 1073741824, X'80000000'/
+      include 'izbit.inc'
 
       CALL CPUMVU(PX,PPX,N)
       CALL CPUMVU(PY,PPY,N)
