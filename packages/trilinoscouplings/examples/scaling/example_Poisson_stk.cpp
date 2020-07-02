@@ -362,6 +362,12 @@ int main(int argc, char *argv[]) {
   std::string rhsFilename;
   clp.setOption ("rhsFilename", &rhsFilename, "If nonempty, dump the "
 		  "generated rhs to that file in MatrixMarket format.");
+
+  // If rhsFilename is nonempty, dump the rhs to that file
+  // in MatrixMarket format.
+  std::string initialGuessFilename;
+  clp.setOption ("initialGuessFilename", &initialGuessFilename, "If nonempty, dump the "
+		  "generated initial guess to that file in MatrixMarket format.");
   
   // If coordsFilename is nonempty, dump the coords to that file
   // in MatrixMarket format.
@@ -658,21 +664,20 @@ int main(int argc, char *argv[]) {
   // Loop over boundary nodes
   for (unsigned i = 0; i < bcNodes.size(); i++) {
 
-    int bcNodeId = bulkData.identifier(bcNodes[i]);
-    int lid = globalMapG.LID(bcNodeId-1);
-
-    bcNodeVec.push_back(lid);
-
-    // get coordinates for this node
-    entity_type bcnode = bulkData.get_entity(NODE_RANK,bcNodeId);
-    double * coord = stk::mesh::field_data(*coords, bcnode);
-
-    // look up exact value of function on boundary
-    double x  = coord[0];
-    double y  = coord[1];
-    double z  = coord[2];
-    v[0][lid]=exactSolution(x, y, z);
-
+    int lid = globalMapG.LID(bulkData.identifier(bcNodes[i]-1));
+    if(lid != -1) {
+      bcNodeVec.push_back(lid);
+      
+      // get coordinates for this node
+      entity_type bcnode = bulkData.get_entity(NODE_RANK,bcNodeId);
+      double * coord = stk::mesh::field_data(*coords, bcnode);
+      
+      // look up exact value of function on boundary
+      double x  = coord[0];
+      double y  = coord[1];
+      double z  = coord[2];
+      v[0][lid]=exactSolution(x, y, z);
+    }
   } // end loop over boundary nodes
 
   if(MyPID==0) {
@@ -927,7 +932,7 @@ int main(int argc, char *argv[]) {
 
   // Apply stiffness matrix to v
   Epetra_MultiVector rhsDir(globalMapG,true);
-  Epetra_FEVector femCoefficients(globalMapG);
+  Epetra_FEVector femCoefficients(globalMapG,true);
   
   StiffMatrix.Apply(v,rhsDir);
 
@@ -938,7 +943,7 @@ int main(int argc, char *argv[]) {
   // and apply them to the rhs
   std::vector<int> ownedBoundaryNodes;
   for (size_t i = 0; i < bcNodeVec.size(); i++) {   
-    int lid = globalMapG.LID(bcNodeVec[i]);
+    int lid = bcNodeVec[i];
     if(lid != -1) {
       ownedBoundaryNodes.push_back(lid);
       femCoefficients[0][lid]=rhsVector[0][lid]=v[0][lid];
@@ -960,6 +965,8 @@ int main(int argc, char *argv[]) {
     EpetraExt::RowMatrixToMatlabFile(matrixFilename.c_str(),StiffMatrix);
   if(rhsFilename != "") 
     EpetraExt::MultiVectorToMatrixMarketFile(rhsFilename.c_str(),rhsVector,0,0,false);
+  if(initialGuessFilename != "") 
+    EpetraExt::MultiVectorToMatrixMarketFile(initialGuessFilename.c_str(),femCoefficients,0,0,false);
 
   /**********************************************************************************/
   /*********************************** SOLVE ****************************************/
@@ -1222,10 +1229,6 @@ int TestMultiLevelPreconditioner(char ProblemType[],
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
-  //FIXME right now, it's assumed that X and B are based on the same map
-  //  Epetra_MultiVector x(xexact);
-  //Epetra_MultiVector x(b);
-  //  x.PutScalar(0.0);
 
   Epetra_LinearProblem Problem(&A,&uh,&b);
   Epetra_MultiVector* lhs = Problem.GetLHS();
@@ -1252,10 +1255,6 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   }
 #if defined(HAVE_TRILINOSCOUPLINGS_MUELU) && defined(HAVE_MUELU_EPETRA)
   else if(precondType == "MueLu") {
-    // Turns a Epetra_CrsMatrix into a MueLu::Matrix
-    //    RCP<Xpetra::CrsMatrix<double, int, int, Xpetra::EpetraNode> > mueluA_ = rcp(new Xpetra::EpetraCrsMatrix(Teuchos::rcpFromRef(A)));
-    //    RCP<Xpetra::Matrix <double, int, int, Xpetra::EpetraNode> > mueluA  = rcp(new Xpetra::CrsMatrixWrap<double, int, int, Xpetra::EpetraNode>(mueluA_));
-    
     // Multigrid Hierarchy
     Teuchos::ParameterList mueluParams;
     if (MLList.isSublist("MueLu"))
@@ -1275,9 +1274,6 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   solver.SetAztecOption(AZ_output, 1);
 
   solver.Iterate(200, 1e-10);
-
-
-  //  uh = *lhs;
 
   // ==================================================== //
   // compute difference between exact solution and ML one //
