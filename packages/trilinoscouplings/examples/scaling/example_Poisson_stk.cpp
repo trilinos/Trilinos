@@ -1223,11 +1223,11 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   using Teuchos::RCP;
   using Teuchos::rcp;
   //FIXME right now, it's assumed that X and B are based on the same map
-  Epetra_MultiVector x(xexact);
+  //  Epetra_MultiVector x(xexact);
   //Epetra_MultiVector x(b);
-  x.PutScalar(0.0);
+  //  x.PutScalar(0.0);
 
-  Epetra_LinearProblem Problem(&A,&x,&b);
+  Epetra_LinearProblem Problem(&A,&uh,&b);
   Epetra_MultiVector* lhs = Problem.GetLHS();
   Epetra_MultiVector* rhs = Problem.GetRHS();
 
@@ -1277,7 +1277,7 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   solver.Iterate(200, 1e-10);
 
 
-  uh = *lhs;
+  //  uh = *lhs;
 
   // ==================================================== //
   // compute difference between exact solution and ML one //
