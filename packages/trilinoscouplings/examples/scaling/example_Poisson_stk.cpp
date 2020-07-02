@@ -932,17 +932,20 @@ int main(int argc, char *argv[]) {
   // Update right-hand side
   rhsVector.Update(-1.0,rhsDir,1.0);
 
-  // Loop over local boundary nodes and replace rhs values with boundary values
-  for (size_t i = 0; i < bcNodeVec.size(); i++) {
-
-    int lid = bcNodeVec[i];
-    rhsVector[0][lid]=v[0][lid];
-
+  // Come up with a list of *owned* boundary nodes for applying Dirichlet conditions,
+  // and apply them to the rhs
+  std::vector<int> ownedBoundaryNodes;
+  for (size_t i = 0; i < bcNodeVec.size(); i++) {   
+    int lid = globalMapG.LID(bcNodeVec[i]);
+    if(lid != -1) {
+      ownedBoundaryNodes.push_back(lid);
+      rhsVector[0][lid]=v[0][lid];
+    }
   } // end loop over boundary nodes
 
-  // Zero out rows and columns of stiffness matrix corresponding to Dirichlet edges
+  // Zero out rows of stiffness matrix corresponding to Dirichlet edges
   //  and add one to diagonal.
-  ML_Epetra::Apply_OAZToMatrix(&(bcNodeVec[0]), bcNodeVec.size(), StiffMatrix);
+  ML_Epetra::Apply_BCsToMatrixRows(&(ownedBoundaryNodes[0]), ownedBoundaryNodes.size(), StiffMatrix);
 
   if(MyPID==0) {
     std::cout << "Adjust global matrix and rhs due to BCs     "
