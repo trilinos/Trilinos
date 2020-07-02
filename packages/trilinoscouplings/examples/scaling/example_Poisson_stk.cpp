@@ -927,6 +927,8 @@ int main(int argc, char *argv[]) {
 
   // Apply stiffness matrix to v
   Epetra_MultiVector rhsDir(globalMapG,true);
+  Epetra_FEVector femCoefficients(globalMapG);
+  
   StiffMatrix.Apply(v,rhsDir);
 
   // Update right-hand side
@@ -939,7 +941,7 @@ int main(int argc, char *argv[]) {
     int lid = globalMapG.LID(bcNodeVec[i]);
     if(lid != -1) {
       ownedBoundaryNodes.push_back(lid);
-      rhsVector[0][lid]=v[0][lid];
+      femCoefficients[0][lid]=rhsVector[0][lid]=v[0][lid];
     }
   } // end loop over boundary nodes
 
@@ -966,7 +968,6 @@ int main(int argc, char *argv[]) {
   // Run the solver
   Teuchos::ParameterList MLList = inputSolverList;
   Epetra_FEVector exactNodalVals(globalMapG);
-  Epetra_FEVector femCoefficients(globalMapG);
   double TotalErrorResidual = 0.0;
   double TotalErrorExactSol = 0.0;
 
