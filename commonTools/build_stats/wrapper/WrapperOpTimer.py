@@ -146,6 +146,7 @@ class WrapperOpTimer:
     # print(' '.join(cmd))
     p = subprocess.Popen(cmd)
     p.communicate()
+    returncode = p.returncode
 
     # initializing the titles and rows list
     fields = []
@@ -169,7 +170,7 @@ class WrapperOpTimer:
     csv_row['FileSize'] = WrapperOpTimer.get_file_size(op_output_file)
     csv_row['FileName'] = op_output_file
 
-    return csv_row
+    return (csv_row, returncode)
 
 
   # returns the file size in bytes
