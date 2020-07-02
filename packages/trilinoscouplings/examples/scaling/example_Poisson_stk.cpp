@@ -650,43 +650,6 @@ int main(int argc, char *argv[]) {
   }
 
 
-
-  /**********************************************************************************/
-  /************************** DIRICHLET BC SETUP ************************************/
-  /**********************************************************************************/
-
-  // Vector for use in applying BCs
-  Epetra_MultiVector v(globalMapG,true);
-  v.PutScalar(0.0);
-
-  std::vector<int> bcNodeVec;
-  bcNodeVec.reserve(bcNodes.size());
-  // Loop over boundary nodes
-  for (unsigned i = 0; i < bcNodes.size(); i++) {
-
-    int lid = globalMapG.LID(bulkData.identifier(bcNodes[i]-1));
-    if(lid != -1) {
-      bcNodeVec.push_back(lid);
-      
-      // get coordinates for this node
-      entity_type bcnode = bulkData.get_entity(NODE_RANK,bcNodeId);
-      double * coord = stk::mesh::field_data(*coords, bcnode);
-      
-      // look up exact value of function on boundary
-      double x  = coord[0];
-      double y  = coord[1];
-      double z  = coord[2];
-      v[0][lid]=exactSolution(x, y, z);
-    }
-  } // end loop over boundary nodes
-
-  if(MyPID==0) {
-    std::cout << "Get Dirichlet boundary values               "
-              << Time.ElapsedTime() << " seconds (found "<<bcNodeVec.size()<<")\n" << std::endl;
-    Time.ResetStartTime();
-  }
-
-
   /**********************************************************************************/
   /******************** DEFINE WORKSETS AND LOOP OVER THEM **************************/
   /**********************************************************************************/
@@ -927,32 +890,35 @@ int main(int argc, char *argv[]) {
   }
 
   /**********************************************************************************/
-  /************************ ADJUST MATRIX AND RHS FOR BCs ***************************/
+  /************************** DIRICHLET BC SETUP ************************************/
   /**********************************************************************************/
+  Epetra_Vector lhsVector(globalMapG,true);
 
-  // Apply stiffness matrix to v
-  Epetra_MultiVector rhsDir(globalMapG,true);
-  Epetra_FEVector femCoefficients(globalMapG,true);
-  
-  StiffMatrix.Apply(v,rhsDir);
-
-  // Update right-hand side
-  rhsVector.Update(-1.0,rhsDir,1.0);
-
-  // Come up with a list of *owned* boundary nodes for applying Dirichlet conditions,
-  // and apply them to the rhs
-  std::vector<int> ownedBoundaryNodes;
-  for (size_t i = 0; i < bcNodeVec.size(); i++) {   
-    int lid = bcNodeVec[i];
+  std::vector<int> ownedBoundaryNodes; ownedBoundaryNodes.reserve(bcNodes.size());
+  // Loop over boundary nodes
+  for (unsigned i = 0; i < bcNodes.size(); i++) {
+    int bcNodeId = bulkData.identifier(bcNodes[i]);
+    int lid = globalMapG.LID((int) bcNodeId -1);
     if(lid != -1) {
       ownedBoundaryNodes.push_back(lid);
-      femCoefficients[0][lid]=rhsVector[0][lid]=v[0][lid];
+      
+      // get coordinates for this node
+      entity_type bcnode = bulkData.get_entity(NODE_RANK,bcNodeId);
+      double * coord = stk::mesh::field_data(*coords, bcnode);
+      
+      // look up exact value of function on boundary
+      double x  = coord[0];
+      double y  = coord[1];
+      double z  = coord[2];
+      lhsVector[lid]=rhsVector[0][lid]=exactSolution(x, y, z);
     }
   } // end loop over boundary nodes
+
 
   // Zero out rows of stiffness matrix corresponding to Dirichlet edges
   //  and add one to diagonal.
   ML_Epetra::Apply_BCsToMatrixRows(&(ownedBoundaryNodes[0]), ownedBoundaryNodes.size(), StiffMatrix);
+  ML_Epetra::Remove_Zeroed_Rows(StiffMatrix,0.0);
 
   if(MyPID==0) {
     std::cout << "Adjust global matrix and rhs due to BCs     "
@@ -966,7 +932,7 @@ int main(int argc, char *argv[]) {
   if(rhsFilename != "") 
     EpetraExt::MultiVectorToMatrixMarketFile(rhsFilename.c_str(),rhsVector,0,0,false);
   if(initialGuessFilename != "") 
-    EpetraExt::MultiVectorToMatrixMarketFile(initialGuessFilename.c_str(),femCoefficients,0,0,false);
+    EpetraExt::MultiVectorToMatrixMarketFile(initialGuessFilename.c_str(),lhsVector,0,0,false);
 
   /**********************************************************************************/
   /*********************************** SOLVE ****************************************/
@@ -1001,7 +967,7 @@ int main(int argc, char *argv[]) {
 
   TestMultiLevelPreconditioner(probType,             MLList,
                                StiffMatrix,          exactNodalVals,
-                               rhsVector,            femCoefficients, nCoord,
+                               rhsVector,            lhsVector, nCoord,
                                TotalErrorResidual,   TotalErrorExactSol);
 
    return 0;
