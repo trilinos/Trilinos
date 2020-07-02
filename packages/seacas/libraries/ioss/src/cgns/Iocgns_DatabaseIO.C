@@ -80,6 +80,28 @@ namespace {
     return has_decomp_flag;
   }
 
+  bool has_decomp_name_kluge(int cgns_file_ptr, int base, int zone, int zgc_idx)
+  {
+    // Check the `zgc_idx`-th ZGC node to see if the name matches the
+    // form described in the `name_is_decomp` function below.  We want to
+    // see if there are *any* names that match this form and if so, we can
+    // use the kluge; otherwise we can't and need to rely on other hueristics.
+    char                    connectname[CGNS_MAX_NAME_LENGTH + 1];
+    char                    donorname[CGNS_MAX_NAME_LENGTH + 1];
+    std::array<cgsize_t, 6> range;
+    std::array<cgsize_t, 6> donor_range;
+    Ioss::IJK_t             transform;
+
+    cg_1to1_read(cgns_file_ptr, base, zone, zgc_idx, connectname, donorname, range.data(),
+		 donor_range.data(), transform.data());
+
+    std::string name{connectname};
+    bool has_decomp_name = ((name.find_first_not_of("0123456789_-") == std::string::npos) &&
+	    (name.find("--", 1 != std::string::npos)));
+
+    return has_decomp_name;
+  }
+
   bool name_is_decomp(const std::string &name)
   {
     // Major kluge to deal with fpp files which don't have the
@@ -337,10 +359,13 @@ namespace {
     // normal inter-zone ZGC. If the descriptor does not exist, then have
     // to rely on hueristics...
     bool has_decomp_flag = false;
+    bool has_decomp_names = false;
     for (int i = 0; i < nconn; i++) {
       if (has_decomp_descriptor(cgns_file_ptr, base, zone, i + 1)) {
         has_decomp_flag = true;
-        break;
+      }
+      if (has_decomp_name_kluge(cgns_file_ptr, base, zone, i + 1)) {
+        has_decomp_names = true;
       }
     }
 
@@ -371,7 +396,7 @@ namespace {
 	fmt::print("Name: {}, decomp? = {}\n", connectname, name_is_decomp(connectname));
 #endif
         is_from_decomp = donor_name == zone_name && donor_proc >= 0 && donor_proc != myProcessor &&
-	  name_is_decomp(connectname);
+	  (!has_decomp_names || name_is_decomp(connectname));
       }
 
       if (is_from_decomp) {
