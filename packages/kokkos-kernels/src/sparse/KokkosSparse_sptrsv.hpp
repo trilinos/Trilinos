@@ -311,7 +311,7 @@ namespace Experimental {
   } // sptrsv_solve
 
 
-#if defined(KOKKOSKERNELS_ENABLE_TPL_CHOLMOD) | defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
   // ---------------------------------------------------------------------
   template <typename KernelHandle,
             class XType>

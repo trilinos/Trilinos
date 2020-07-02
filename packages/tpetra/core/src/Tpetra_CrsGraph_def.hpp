@@ -4415,9 +4415,10 @@ namespace Tpetra {
         auto lclRowMap = this->rowMap_->getLocalMap ();
         auto lclColMap = this->colMap_->getLocalMap ();
 
-        // Make sure that the GPU can see any updates made on host.
-        // This code only reads the local graph, so we don't need a
-        // fence afterwards.
+        // KJ: We need this fence even though it passes tests. Map uses kokkos
+        // view with relying on UVM (it does not have a dual view context). So,
+        // the values can be touched somewhere and we need to make sure the
+        // updates should be done before we use it.
         execution_space().fence ();
 
         // mfh 01 May 2018: See GitHub Issue #2658.
@@ -4437,9 +4438,15 @@ namespace Tpetra {
     }
     else {
       using LO = local_ordinal_type;
-      // Make sure that the GPU can see any updates made on host.
-      // This code only reads the local graph, so we don't need a
-      // fence afterwards.
+
+      // KJ: This one is a bit different from the above. Conservatively thinking,
+      // we also need the fence here as lclGraph_.row_map is on UVM and it can be
+      // still updated. In practice, the local graph construction should be done
+      // before this is called. This routine is computeLocalConstants. If we want
+      // a better code, we need a flag stating that the local graph is completed
+      // and safe to use it without fence.
+      // For now, I recommend to put the fence. Defining the state of local
+      // object can be improvements in the code.
       execution_space().fence ();
 
       auto ptr = this->lclGraph_.row_map;

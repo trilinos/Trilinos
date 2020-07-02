@@ -597,6 +597,10 @@ FAD_UNARYOP_MACRO(sqrt,
                   SqrtOp,
                   a = scalar_type(1.0)/(scalar_type(2.0)*std::sqrt(v)),
                   std::sqrt(v))
+FAD_UNARYOP_MACRO(safe_sqrt,
+                  SafeSqrtOp,
+                  a = (v == value_type(0.0) ? value_type(0.0) : value_type(scalar_type(1.0)/(scalar_type(2.0)*std::sqrt(v)))),
+                  std::sqrt(v))
 FAD_UNARYOP_MACRO(cos,
                   CosOp,
                   a = -std::sin(v),

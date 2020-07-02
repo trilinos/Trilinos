@@ -140,7 +140,7 @@ namespace Intrepid2 {
               const bool sumInto_) 
         : _outputFields(outputFields_), _inputData(inputData_), _inputFields(inputFields_), _sumInto(sumInto_) {}
 
-      KOKKOS_INLINE_FUNCTION
+      KOKKOS_DEFAULTED_FUNCTION
       ~F_contractDataField() = default;
       
       KOKKOS_INLINE_FUNCTION
@@ -223,7 +223,7 @@ namespace Intrepid2 {
               const bool sumInto_) 
         : _outputData(outputData_), _inputDataLeft(inputDataLeft_), _inputDataRight(inputDataRight_), _sumInto(sumInto_) {}
 
-      KOKKOS_INLINE_FUNCTION
+      KOKKOS_DEFAULTED_FUNCTION
       ~F_contractDataData() = default;
       
       KOKKOS_INLINE_FUNCTION

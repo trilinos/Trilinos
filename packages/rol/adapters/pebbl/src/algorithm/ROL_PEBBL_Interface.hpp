@@ -75,7 +75,7 @@ public:
 
 template<class Real>
 class ROL_PEBBL_Branching : public pebbl::branching {
-private:
+protected:
   // OptimizationProblem encapsulates the following problem
   // min        obj(x)
   // subject to xl <= x <= xu
@@ -99,7 +99,7 @@ public:
     : factory_(factory), parlist_(parlist), bHelper_(bHelper),
       verbosity_(verbosity), outStream_(outStream) {}
 
-  pebbl::branchSub* blankSub() {
+  virtual pebbl::branchSub* blankSub() {
     return new ROL_PEBBL_BranchSub<Real>(makePtrFromRef<ROL_PEBBL_Branching<Real>>(*this),verbosity_,outStream_);
   }
 
@@ -126,7 +126,7 @@ public:
 
 template<class Real>
 class ROL_PEBBL_BranchSub : public pebbl::branchSub {
-private:
+protected:
   const Ptr<ROL_PEBBL_Branching<Real>> branching_;
   const Ptr<BranchHelper_PEBBL<Real>> bHelper_;
   std::map<int,Real> fixed_;
@@ -306,10 +306,11 @@ public:
     return (nfrac_==0);
   }
 
-  void incumbentHeuristic() {
+  virtual void incumbentHeuristic() {
     Real tol(std::sqrt(ROL_EPSILON<Real>()));
     rndSolution_->set(*solution_);
     rndSolution_->applyUnary(rnd);
+    problem0_->getObjective()->update(*rndSolution_);
     Real val = problem0_->getObjective()->value(*rndSolution_,tol);
     branching_->foundSolution(new ROL_PEBBL_Solution<Real>(*rndSolution_,val));
   }

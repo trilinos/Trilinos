@@ -244,20 +244,10 @@ namespace Intrepid2
      */
     Basis_Derived_HCURL_QUAD(int polyOrder) : Basis_Derived_HCURL_QUAD(polyOrder, polyOrder) {}
 
-    /** \brief  Returns basis name
-
-        \return the name of the basis
-    */
-    virtual
-    const char*
-    getName() const {
-      return "Intrepid2_DerivedBasis_HCURL_QUAD";
-    }
-
     /** \brief True if orientation is required
     */
     virtual bool requireOrientation() const {
-      return true;
+      return (this->getDofCount(1,0) > 0); //if it has edge DOFs, than it needs orientations
     }
 
   };

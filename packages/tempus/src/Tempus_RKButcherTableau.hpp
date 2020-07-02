@@ -171,6 +171,39 @@ class RKButcherTableau :
       }
     //@}
 
+    bool operator == (const RKButcherTableau & t) const {
+      const Scalar relTol = 1.0e-15;
+      if ( A_->numRows() != t.A_->numRows() ||
+           A_->numCols() != t.A_->numCols()    ) {
+        return false;
+      } else {
+        int i, j;
+        for(i = 0; i < A_->numRows(); i++) {
+          for(j = 0; j < A_->numCols(); j++) {
+            if(std::abs((t.A_(i,j) - A_(i,j))/A_(i,j)) > relTol) return false;
+          }
+        }
+      }
+
+      if ( b_->length() != t.b_->length() ||
+           b_->length() != t.c_->length() ||
+           b_->length() != t.bstar_->length() ) {
+        return false;
+      } else {
+        int i;
+        for(i = 0; i < A_->numRows(); i++) {
+          if(std::abs((t.b_(i) - b_(i))/b_(i)) > relTol) return false;
+          if(std::abs((t.c_(i) - c_(i))/c_(i)) > relTol) return false;
+          if(std::abs((t.bstar_(i) - bstar_(i))/bstar_(i)) > relTol) return false;
+        }
+      }
+      return true;
+    }
+
+    bool operator != (const RKButcherTableau & t) const {
+      return !((*this) == t);
+    }
+
   private:
 
     RKButcherTableau();

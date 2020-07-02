@@ -1,33 +1,8 @@
-C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
-C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C
-C Redistribution and use in source and binary forms, with or without
-C modification, are permitted provided that the following conditions are
-C met:
-C
-C     * Redistributions of source code must retain the above copyright
-C       notice, this list of conditions and the following disclaimer.
-C
-C     * Redistributions in binary form must reproduce the above
-C       copyright notice, this list of conditions and the following
-C       disclaimer in the documentation and/or other materials provided
-C       with the distribution.
-C     * Neither the name of NTESS nor the names of its
-C       contributors may be used to endorse or promote products derived
-C       from this software without specific prior written permission.
-C
-C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+C 
+C See packages/seacas/LICENSE for details
 
 C=======================================================================
       SUBROUTINE COMAND (A, CURPRO,
@@ -170,6 +145,7 @@ C   --   Uses NALVAR of /MSHOPT/
       INTEGER LIDSP(0:*)
       INTEGER BLKCOL(0:NELBLK)
       INTEGER NENUM(*)
+      INTEGER IDUMA(1)
       REAL SHDCOL(7, NELBLK)
       INTEGER ISHDCL(3, NELBLK)
       CHARACTER NEWPRO
@@ -438,7 +414,7 @@ C   --Informational commands
          CALL FFADDC (VERB, INLINE(1))
          CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
 
-         CALL DBSEL (A, INLINE,
+         CALL DBSEL (A, A, INLINE,
      &      WORD, IFLD, INTYP, CFIELD, IFIELD, RFIELD,
      &      NAMES, TIMES, WHOTIM, NPTIMS, IPTIMS,
      &      IDELB, LENE, IDNPS, IDESS,
@@ -479,7 +455,7 @@ C   --Informational commands
      &         .TRUE., IELBST, NALVAR, DUMMIN, DUMMAX, MAPEL, MAPND)
          ELSE
             CALL SCALER (A, A, 2, NAMES(IVAR), IVAR,
-     &         .FALSE., IDUM, 0, DUMMIN, DUMMAX, MAPEL, MAPND)
+     &         .FALSE., IDUMA, 0, DUMMIN, DUMMAX, MAPEL, MAPND)
          END IF
          CALL MDSTAT (NERR, MEM)
          IF (NERR .GT. 0) GOTO 160
@@ -662,7 +638,7 @@ C      --Set neutral file flag
 
 C      --Switch to hardcopy device
          IF (VERB .EQ. 'hardcopy') THEN
-            CALL GRGPAR ('DEVICE', 2, ISON, WORD)
+            CALL GRGPARD ('DEVICE', 2, ISON, WORD)
             IF (.NOT. ISON) VERB = 'plot'
          END IF
          IF (VERB .EQ. 'hardcopy')

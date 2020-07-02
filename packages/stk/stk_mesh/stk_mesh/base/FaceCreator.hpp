@@ -43,9 +43,9 @@ namespace mesh {
 
 class BulkData;
 class ElemElemGraph;
-class SideSetEntry;
+struct SideSetEntry;
 class SideSet;
-class sharing_info;
+struct sharing_info;
 
 class FaceCreator {
 public:

@@ -1,4 +1,12 @@
 #
+# Set up to limit running on GPUs
+#
+
+ATDM_SET_CACHE(Trilinos_AUTOGENERATE_TEST_RESOURCE_FILE ON CACHE BOOL)
+ATDM_SET_CACHE(Trilinos_CUDA_NUM_GPUS 2 CACHE STRING)
+ATDM_SET_CACHE(Trilinos_CUDA_SLOTS_PER_GPU 2 CACHE STRING)
+
+#
 # Disables across multiple builds on 'waterman'
 #
 
@@ -41,6 +49,12 @@ IF (ATDM_NODE_TYPE STREQUAL "CUDA")
 
   # Disable known falure for ROL CUDA builds (#3543)
   ATDM_SET_ENABLE(ROL_test_elementwise_TpetraMultiVector_MPI_4_DISABLE ON)
+
+  # Disable known failure (#6329)
+  ATDM_SET_ENABLE(ROL_NonlinearProblemTest_MPI_4_DISABLE ON)
+
+  # Disable known randomly timing out test (#7090)
+  ATDM_SET_ENABLE(MueLu_ParameterListInterpreterTpetra_MPI_1_DISABLE ON)
 
   IF (ATDM_CUDA_RDC)
 

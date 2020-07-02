@@ -85,6 +85,7 @@ namespace MueLuTests {
     }
 
     Teuchos::ParameterList params;
+    params.set("aggregation: pairwise: tie threshold",1e-6);
     NAF->BuildInitialAggregates(params, A, orderingVector(),
                                 Teuchos::ScalarTraits<SC>::magnitude(10.0),
                                 *aggregates, aggStat, numUnaggregatedNodes, numDirichletNodes);
@@ -167,6 +168,7 @@ namespace MueLuTests {
     }
 
     Teuchos::ParameterList params;
+    params.set("aggregation: pairwise: tie threshold",1e-6);
     NAF->BuildInitialAggregates(params, A, orderingVector(),
                                 Teuchos::ScalarTraits<SC>::magnitude(4.1),
                                 *aggregates, aggStat, numUnaggregatedNodes, numDirichletNodes);
@@ -237,6 +239,7 @@ namespace MueLuTests {
     }
 
     Teuchos::ParameterList params;
+    params.set("aggregation: pairwise: tie threshold",1e-6);
     NAF->BuildInitialAggregates(params, A, orderingVector(),
                                 Teuchos::ScalarTraits<SC>::magnitude(4.1),
                                 *aggregates, aggStat, numUnaggregatedNodes, numDirichletNodes);
@@ -294,6 +297,7 @@ namespace MueLuTests {
     }
 
     Teuchos::ParameterList params;
+    params.set("aggregation: pairwise: tie threshold",1e-6);
     NAF->BuildInitialAggregates(params, A, orderingVector(),
                                 Teuchos::ScalarTraits<SC>::magnitude(4.1),
                                 *aggregates, aggStat, numUnaggregatedNodes, numDirichletNodes);

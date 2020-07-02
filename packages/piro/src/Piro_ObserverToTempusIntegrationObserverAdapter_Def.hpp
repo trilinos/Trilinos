@@ -44,6 +44,7 @@
 
 #include "Teuchos_Ptr.hpp"
 
+//#define DEBUG_OUTPUT
 
 // Constructor
 template <typename Scalar>
@@ -51,16 +52,16 @@ Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::ObserverToTempusIntegr
     const Teuchos::RCP<const Tempus::SolutionHistory<Scalar> >& solutionHistory,
     const Teuchos::RCP<const Tempus::TimeStepControl<Scalar> >& timeStepControl,
     const Teuchos::RCP<Piro::ObserverBase<Scalar> > &wrappedObserver,
-    const bool supports_x_dotdot, const bool abort_on_fail_at_min_dt)
+    const bool supports_x_dotdot, const bool abort_on_fail_at_min_dt, 
+    const SENS_METHOD sens_method)
     : solutionHistory_(solutionHistory),
       timeStepControl_(timeStepControl),
       out_(Teuchos::VerboseObjectBase::getDefaultOStream()),
       wrappedObserver_(wrappedObserver),
       supports_x_dotdot_(supports_x_dotdot),
-      abort_on_fail_at_min_dt_(abort_on_fail_at_min_dt) 
+      abort_on_fail_at_min_dt_(abort_on_fail_at_min_dt), 
+      sens_method_(sens_method)  
 {
-  //Currently, sensitivities are not supported in Tempus.
-  hasSensitivities_ = false;
   previous_dt_ = 0.0;
 }
 
@@ -203,16 +204,16 @@ void
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeTimeStep()
 {
   Scalar current_dt; 
-  if (Teuchos::nonnull(solutionHistory_->getWorkingState())) {
-    current_dt = solutionHistory_->getWorkingState()->getTimeStep();
+  if (Teuchos::nonnull(solutionHistory_->getCurrentState())) {
+    current_dt = solutionHistory_->getCurrentState()->getTimeStep();
   }
   else {
     current_dt = solutionHistory_->getCurrentState()->getTimeStep();
   }
   
   //Don't observe solution if step failed to converge
-  if ((solutionHistory_->getWorkingState() != Teuchos::null) &&
-     (solutionHistory_->getWorkingState()->getSolutionStatus() == Tempus::Status::FAILED)) {
+  if ((solutionHistory_->getCurrentState() != Teuchos::null) &&
+     (solutionHistory_->getCurrentState()->getSolutionStatus() == Tempus::Status::FAILED)) {
     Scalar min_dt = timeStepControl_->getMinTimeStep(); 
     if ((previous_dt_ == current_dt) && (previous_dt_ == min_dt)) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter, 
@@ -224,28 +225,77 @@ Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeTimeStep()
   }
 
   //Get solution
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> > solution = solutionHistory_->getCurrentState()->getX();
-  solution.assert_not_null();
-  //Get solution_dot
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> > solution_dot = solutionHistory_->getCurrentState()->getXDot();
+  typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
+  Teuchos::RCP<Thyra::VectorBase<Scalar>> x = solutionHistory_->getCurrentState()->getX(); 
+  Teuchos::RCP<DMVPV> X = Teuchos::rcp_dynamic_cast<DMVPV>(x);
+  //IKT, 5/12/2020: getX() returns a vector containing the sensitivities for the 
+  //case of sensitivity calculations for sensitivity integrator. 
+  //Hence, we extract the first column, which is the solution.
+  Teuchos::RCP<Thyra::VectorBase<Scalar>> solution = (sens_method_ == NONE) ? x : X->getNonconstMultiVector()->col(0);
+  Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > solution_dxdp_mv = Teuchos::null; 
+  if (sens_method_ == FORWARD) {
+    const int num_param = X->getMultiVector()->domain()->dim()-1;
+    const Teuchos::Range1D rng(1,num_param);
+    solution_dxdp_mv = X->getNonconstMultiVector()->subView(rng);
+#ifdef DEBUG_OUTPUT
+    for (int np = 0; np < num_param; np++) {
+      *out_ << "\n*** Piro::ObserverToTempusIntegrationObserverAdapter dxdp" << np << " ***\n";
+      Teuchos::RCP<const Thyra::VectorBase<Scalar>> solution_dxdp = solution_dxdp_mv->col(np);
+      Teuchos::Range1D range;
+      RTOpPack::ConstSubVectorView<Scalar> dxdpv;
+      solution_dxdp->acquireDetachedView(range, &dxdpv);
+      auto dxdpa = dxdpv.values();
+      for (auto i = 0; i < dxdpa.size(); ++i) *out_ << dxdpa[i] << " ";
+      *out_ << "\n*** Piro::ObserverToTempusIntegrationObserverAdapter dxdp" << np << " ***\n";
+    }
+#endif
+  }
+  //Get solution_dot 
+  Teuchos::RCP<const Thyra::VectorBase<Scalar>> xdot = solutionHistory_->getCurrentState()->getXDot(); 
+  Teuchos::RCP<const DMVPV> XDot = Teuchos::rcp_dynamic_cast<const DMVPV>(xdot);
 
   const Scalar scalar_time = solutionHistory_->getCurrentState()->getTime();
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType StampScalar;
   const StampScalar time = Teuchos::ScalarTraits<Scalar>::real(scalar_time);
 
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> > solution_dotdot = solutionHistory_->getCurrentState()->getXDotDot();
-  if (Teuchos::nonnull(solution_dot))
-  {
+  //Get solution_dotdot 
+  Teuchos::RCP<const Thyra::VectorBase<Scalar>> xdotdot = solutionHistory_->getCurrentState()->getXDotDot(); 
+  Teuchos::RCP<const DMVPV> XDotDot = Teuchos::rcp_dynamic_cast<const DMVPV>(xdotdot);
+  if (Teuchos::nonnull(xdot)) {
+    //IKT, 5/11/2020: getXDot() returns a vector containing the sensitivities for 
+    //the case of sensitivity calculations for sentivity integrator 
+    //Hence, we extract the first column, which is the solution_dot.
+    Teuchos::RCP<const Thyra::VectorBase<Scalar>> solution_dot 
+          = (sens_method_ == NONE) ? xdot : XDot->getMultiVector()->col(0);
     if (supports_x_dotdot_) {
-
-      wrappedObserver_->observeSolution(*solution, *solution_dot, *solution_dotdot, time);
+      //IKT, 5/11/2020: getXDotDot() returns a vector containing the sensitivities for 
+      //the case of sensitivity calculations. 
+      //Hence, we extract the first column, which is the solution_dotdot.
+      Teuchos::RCP<const Thyra::VectorBase<Scalar>> solution_dotdot 
+          = (sens_method_ == NONE) ? xdot : XDotDot->getMultiVector()->col(0);
+      if (solution_dxdp_mv != Teuchos::null) {
+        wrappedObserver_->observeSolution(*solution, *solution_dxdp_mv, *solution_dot, *solution_dotdot, time);
+      }
+      else {
+        wrappedObserver_->observeSolution(*solution, *solution_dot, *solution_dotdot, time);
+      }
     }
-   else {
-      wrappedObserver_->observeSolution(*solution, *solution_dot, time);
-   }
+    else {
+      if (solution_dxdp_mv != Teuchos::null) {
+        wrappedObserver_->observeSolution(*solution, *solution_dxdp_mv, *solution_dot, time);
+      }
+      else {
+        wrappedObserver_->observeSolution(*solution, *solution_dot, time);
+      }
+    }
   }
   else {
-    wrappedObserver_->observeSolution(*solution, time);
+    if (solution_dxdp_mv != Teuchos::null) {
+      wrappedObserver_->observeSolution(*solution, *solution_dxdp_mv, time);
+    }
+    else {
+      wrappedObserver_->observeSolution(*solution, time);
+    }
   }
   previous_dt_ = current_dt; 
 }

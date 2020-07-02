@@ -132,6 +132,7 @@ public:
   /*! @brief Further aggregation phase increases coarsening rate by a factor of ~2 per iteration. */
   void BuildFurtherAggregates(const Teuchos::ParameterList& params,
                               const RCP<const Matrix>& A,
+                              const Teuchos::ArrayView<const LO> & orderingVector,
                               const local_matrix_type& coarseA,
                               const magnitude_type kappa,
                               const row_sum_type& rowSum,

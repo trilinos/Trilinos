@@ -1,36 +1,9 @@
 /*
- * Copyright (c) 2005-2017, 2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
- *     * Neither the name of NTESS nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
+ * See packages/seacas/LICENSE for details
  */
 
 #define _FILE_OFFSET_BITS 64
@@ -46,6 +19,7 @@
 #include <assert.h>
 #include <float.h>
 #include <limits.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -67,7 +41,6 @@
 #define MBYTES (1024 * 1024)
 #define MAX_STRING_LEN 128
 #define NUM_NODES_PER_ELEM 8
-#define QUIT EX_FALSE
 #define WRITE_FILE_TYPE "new"
 #define EBLK_ID 100000
 
@@ -80,7 +53,7 @@ typedef double realtyp;
 void get_file_name(const char *base, const char *ext, int rank, int nprocs, const char *other,
                    char *output);
 
-int parse_input(int argc, char *argv[], int *exodus, int *close_files, char *file_name,
+int parse_input(int argc, char *argv[], bool *exodus, bool *close_files, char *file_name,
                 int *num_nodal_fields, int *num_global_fields, int *num_element_fields,
                 int *files_per_domain, int *num_iterations, int *sleep_time);
 
@@ -116,7 +89,7 @@ double my_timer()
 int main(int argc, char **argv)
 {
   int  rank, num_domains;
-  int  quit = EX_FALSE;
+  int  quit = false;
   int  loc_num_nodes, loc_num_elems;
   int *loc_connect = NULL;
 
@@ -124,18 +97,16 @@ int main(int argc, char **argv)
   MPI_Info mpi_info_object = MPI_INFO_NULL; /* Copy of MPI Info object.         */
 #endif
   int *elem_map                  = NULL;
-  int  exodus                    = EX_TRUE; /* EX_TRUE, perform EXODUS benchmark; EX_FALSE don't */
-  int  close_files               = EX_FALSE;
+  bool exodus                    = true; /* true, perform EXODUS benchmark; false don't */
+  bool close_files               = false;
   char file_name[MAX_STRING_LEN] = DEFAULT_FILE_NAME; /* Input file name. */
-  /* object, EX_FALSE otherwise. Should always be       */
-  /* EX_TRUE in the current implementation.             */
-  int num_nodal_fields   = DEFAULT_NUM_FIELDS;
-  int num_global_fields  = DEFAULT_NUM_FIELDS;
-  int num_element_fields = DEFAULT_NUM_FIELDS;
-  int num_timesteps      = 0;
-  int sleep_time         = 0;
-  int files_per_domain   = 1;
-  int num_iterations     = DEFAULT_NUM_ITERATIONS;
+  int  num_nodal_fields          = DEFAULT_NUM_FIELDS;
+  int  num_global_fields         = DEFAULT_NUM_FIELDS;
+  int  num_element_fields        = DEFAULT_NUM_FIELDS;
+  int  num_timesteps             = 0;
+  int  sleep_time                = 0;
+  int  files_per_domain          = 1;
+  int  num_iterations            = DEFAULT_NUM_ITERATIONS;
 #ifdef PARALLEL_AWARE_EXODUS
   static const char *hints[] = {/* List of MPI Info hints that if defined in      */
                                 "cb_buffer_size", /* the environment process 0, will be used to */
@@ -146,7 +117,7 @@ int main(int argc, char **argv)
                                 "romio_no_indep_rw"};
   char               key_name[MAX_STRING_LEN]; /* MPI Info object key name.                      */
   int                key;                      /* MPI Info object key index.                     */
-  int                key_exists;               /* EX_TRUE, if the key exists in the MPI Info     */
+  int                key_exists;               /* true, if the key exists in the MPI Info     */
   const int          nhints = 10;              /* Number of items in hints list.         */
   int                nkeys;                    /* Number of keys in a MPI Info object.           */
   char               value[MAX_STRING_LEN];    /* Value of a key/value pair in a MPI Info        */
@@ -297,7 +268,7 @@ int main(int argc, char **argv)
  *
  ***********************************************************************/
 
-int parse_input(int argc, char *argv[], int *exodus, int *close_files, char *file_name,
+int parse_input(int argc, char *argv[], bool *exodus, bool *close_files, char *file_name,
                 int *num_nodal_fields, int *num_global_fields, int *num_element_fields,
                 int *files_per_domain, int *num_iterations, int *sleep_time)
 {
@@ -345,10 +316,10 @@ int parse_input(int argc, char *argv[], int *exodus, int *close_files, char *fil
       }
     }
     else if (strcmp("-x", argv[arg]) == 0) {
-      *exodus = EX_TRUE;
+      *exodus = true;
     }
     else if (strcmp("-C", argv[arg]) == 0) {
-      *close_files = EX_TRUE;
+      *close_files = true;
     }
     else if ((strcmp("-h", argv[arg]) == 0) || (strcmp("-u", argv[arg]) == 0)) {
       fprintf(stderr, "                                                                \n");
@@ -833,7 +804,7 @@ int write_exo_mesh(char *file_name, int rank, int num_dim, int num_domains, int 
         char *names[1] = {"hex"};
         int num_node_per_elem[1];
         int num_attr_per_block[1];
-        int write_map = num_domains > 1 ? EX_TRUE : EX_FALSE;
+        int write_map = num_domains > 1 ? true : false;
         num_elem_per_block[0] = num_elems;
         num_node_per_elem[0]  = NUM_NODES_PER_ELEM;
         num_attr_per_block[0] = 0;

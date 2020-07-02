@@ -39,6 +39,8 @@
 #include <iostream>
 #include <utility>
 
+#include <Kokkos_Core.hpp>
+
 namespace stk { namespace search {
 
 template <typename Ident, typename Proc = int>
@@ -50,27 +52,26 @@ public:
 
   typedef IdentProc<ident_type,proc_type> self_type;
 
-  IdentProc()
+  KOKKOS_FORCEINLINE_FUNCTION IdentProc()
     : m_value()
   {}
 
-  IdentProc( ident_type const& i , proc_type const& p )
+  KOKKOS_FORCEINLINE_FUNCTION IdentProc( ident_type const& i , proc_type const& p )
     : m_value(p,i)
   {}
 
+  KOKKOS_FORCEINLINE_FUNCTION ident_type const& id() const {return m_value.second; }
+  KOKKOS_FORCEINLINE_FUNCTION proc_type const& proc() const {return m_value.first; }
 
-  ident_type const& id() const {return m_value.second; }
-  proc_type const& proc() const {return m_value.first; }
+  KOKKOS_FORCEINLINE_FUNCTION void set_id(ident_type const& x_id) { m_value.second = x_id; }
+  KOKKOS_FORCEINLINE_FUNCTION void set_proc(proc_type const& x_proc) { m_value.first = x_proc; }
 
-  void set_id(ident_type const& x_id) { m_value.second = x_id; }
-  void set_proc(proc_type const& x_proc) { m_value.first = x_proc; }
-
-  bool operator==(self_type const& rhs) const { return m_value == rhs.m_value; }
-  bool operator!=(self_type const& rhs) const { return m_value != rhs.m_value; }
-  bool operator< (self_type const& rhs) const { return m_value < rhs.m_value; }
-  bool operator> (self_type const& rhs) const { return m_value > rhs.m_value; }
-  bool operator<=(self_type const& rhs) const { return m_value <= rhs.m_value; }
-  bool operator>=(self_type const& rhs) const { return m_value >= rhs.m_value; }
+  KOKKOS_FORCEINLINE_FUNCTION bool operator==(self_type const& rhs) const { return m_value == rhs.m_value; }
+  KOKKOS_FORCEINLINE_FUNCTION bool operator!=(self_type const& rhs) const { return m_value != rhs.m_value; }
+  KOKKOS_FORCEINLINE_FUNCTION bool operator< (self_type const& rhs) const { return m_value < rhs.m_value; }
+  KOKKOS_FORCEINLINE_FUNCTION bool operator> (self_type const& rhs) const { return m_value > rhs.m_value; }
+  KOKKOS_FORCEINLINE_FUNCTION bool operator<=(self_type const& rhs) const { return m_value <= rhs.m_value; }
+  KOKKOS_FORCEINLINE_FUNCTION bool operator>=(self_type const& rhs) const { return m_value >= rhs.m_value; }
 
   friend std::ostream& operator<<(std::ostream& out, IdentProc<ident_type,proc_type> const& ip)
   {
@@ -79,16 +80,16 @@ public:
   }
 
 private:
-  std::pair<proc_type,ident_type> m_value;
+  Kokkos::pair<proc_type,ident_type> m_value;
 };
 
 
 // If you have a modern compiler, some lack of semantic safety (intent) can be
 // caught at compilation time.
-
 template <typename T>
 struct get_proc
 {
+  KOKKOS_FORCEINLINE_FUNCTION 
   int operator()(T const& id) const
   {
     std::cerr << "get_proc::operator()(..) called on unsupported type." << std::endl;
@@ -96,10 +97,10 @@ struct get_proc
     return -1;
   }
 };
-
 template <typename T>
 struct get_proc<std::pair<T, int> >
 {
+  KOKKOS_FORCEINLINE_FUNCTION 
   int operator()(std::pair<T, int> const& id) const
   {
     std::cerr << "get_proc::operator()(..) called on unsupported type." << std::endl;
@@ -107,10 +108,10 @@ struct get_proc<std::pair<T, int> >
     return -1;
   }
 };
-
 template <typename Ident, typename Proc>
 struct get_proc< stk::search::IdentProc<Ident,Proc> >
 {
+  KOKKOS_FORCEINLINE_FUNCTION 
   int operator()(stk::search::IdentProc<Ident,Proc> const& id) const
   {
     return id.proc();

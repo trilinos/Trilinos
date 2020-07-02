@@ -16,9 +16,11 @@
 #include "Tempus_StepperFactory.hpp"
 #include "Tempus_SolutionHistory.hpp"
 #include "Tempus_StepperBackwardEulerModifierBase.hpp"
-#include "Tempus_StepperBackwardEulerObserverBase.hpp"
 #include "Tempus_StepperBackwardEulerModifierXBase.hpp"
+#include "Tempus_StepperBackwardEulerObserverBase.hpp"
 #include "Tempus_StepperBackwardEulerModifierDefault.hpp"
+#include "Tempus_StepperBackwardEulerModifierXDefault.hpp"
+#include "Tempus_StepperBackwardEulerObserverDefault.hpp"
 #include "Tempus_UnitTest_Utils.hpp"
 
 #include "../TestModels/SinCosModel.hpp"
@@ -55,7 +57,10 @@ TEUCHOS_UNIT_TEST(BackwardEuler, Default_Construction)
 
 
   // Default values for construction.
-  auto solver = rcp(new Thyra::NOXNonlinearSolver());
+  auto modifier  = rcp(new Tempus::StepperBackwardEulerModifierDefault<double>());
+  auto modifierX = rcp(new Tempus::StepperBackwardEulerModifierXDefault<double>());
+  auto observer  = rcp(new Tempus::StepperBackwardEulerObserverDefault<double>());
+  auto solver    = rcp(new Thyra::NOXNonlinearSolver());
   solver->setParameterList(Tempus::defaultSolverParameters());
 
   auto predictorStepper = rcp(new Tempus::StepperForwardEuler<double>());
@@ -73,8 +78,9 @@ TEUCHOS_UNIT_TEST(BackwardEuler, Default_Construction)
   auto obs    = rcp(new Tempus::StepperBackwardEulerObserver<double>());
   stepper->setObserver(obs);                           stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 #endif
-  auto modifier = rcp(new Tempus::StepperBackwardEulerModifierDefault<double>());
-  stepper->setAppAction(modifier);
+  stepper->setAppAction(modifier);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setAppAction(modifierX);                    stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setAppAction(observer);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setSolver(solver);                          stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setPredictor(predictorStepper);             stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setUseFSAL(useFSAL);                        stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());

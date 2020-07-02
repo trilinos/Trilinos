@@ -62,7 +62,6 @@
 #include "BelosMatOrthoManager.hpp"
 
 #include "Teuchos_as.hpp"
-#include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 #include "Teuchos_TimeMonitor.hpp"
 #endif // BELOS_TEUCHOS_TIME_MONITOR
@@ -79,8 +78,7 @@ namespace Belos {
 
   template<class ScalarType, class MV, class OP>
   class DGKSOrthoManager :
-    public MatOrthoManager<ScalarType,MV,OP>,
-    public Teuchos::ParameterListAcceptorDefaultBase
+    public MatOrthoManager<ScalarType,MV,OP>
   {
   private:
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
@@ -195,7 +193,7 @@ namespace Belos {
       dep_tol_ = depTol;
       sing_tol_ = singTol;
 
-      setMyParamList (params);
+      this->setMyParamList (params);
     }
 
     Teuchos::RCP<const Teuchos::ParameterList>
@@ -216,7 +214,7 @@ namespace Belos {
     //! Set parameter for block re-orthogonalization threshhold.
     void setBlkTol( const MagnitudeType blk_tol ) {
       // Update the parameter list as well.
-      Teuchos::RCP<Teuchos::ParameterList> params = getNonconstParameterList();
+      Teuchos::RCP<Teuchos::ParameterList> params = this->getNonconstParameterList();
       if (! params.is_null()) {
         // If it's null, then we haven't called setParameterList()
         // yet.  It's entirely possible to construct the parameter
@@ -230,7 +228,7 @@ namespace Belos {
     //! Set parameter for re-orthogonalization threshhold.
     void setDepTol( const MagnitudeType dep_tol ) {
       // Update the parameter list as well.
-      Teuchos::RCP<Teuchos::ParameterList> params = getNonconstParameterList();
+      Teuchos::RCP<Teuchos::ParameterList> params = this->getNonconstParameterList();
       if (! params.is_null()) {
         params->set ("depTol", dep_tol);
       }
@@ -240,7 +238,7 @@ namespace Belos {
     //! Set parameter for singular block detection.
     void setSingTol( const MagnitudeType sing_tol ) {
       // Update the parameter list as well.
-      Teuchos::RCP<Teuchos::ParameterList> params = getNonconstParameterList();
+      Teuchos::RCP<Teuchos::ParameterList> params = this->getNonconstParameterList();
       if (! params.is_null()) {
         params->set ("singTol", sing_tol);
       }

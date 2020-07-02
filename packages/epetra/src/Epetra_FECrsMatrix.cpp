@@ -315,6 +315,80 @@ Epetra_FECrsMatrix::~Epetra_FECrsMatrix()
   DeleteMemory();
 }
 
+void Epetra_FECrsMatrix::Print(std::ostream& os) const
+{
+  Epetra_CrsMatrix::Print(os);
+
+  if (ignoreNonLocalEntries_ || RowMap().Comm().NumProc()==1) return;
+
+  int MyPID = RowMap().Comm().MyPID();
+  int NumProc = RowMap().Comm().NumProc();
+
+  if (useNonlocalMatrix_) {
+    if (MyPID==0) {
+      os << "[FECrsMatrix] Nonlocal matrix:\n";
+    }
+    nonlocalMatrix_->Print(os);
+    return;
+  }
+
+  if (MyPID==0) {
+    os << "[FECrsMatrix] Nonlocal rows:\n";
+    os.width(8);
+    os <<  "   Processor ";
+    os.width(10);
+    os <<  "   Row Index ";
+    os.width(10);
+    os <<  "   Col Index ";
+    os.width(20);
+    os <<  "   Value     ";
+    os << std::endl;
+  }
+  for (int iproc=0; iproc < NumProc; iproc++) {
+    if (MyPID==iproc) {
+      if(RowMap().GlobalIndicesInt()) {
+        const int nnr = nonlocalRows_int_.size();
+        for (int i=0; i<nnr; ++i) {
+          const int Row = nonlocalRows_int_[i];
+          const int ncols = nonlocalCols_int_[i].size();;
+          for (int j=0; j<ncols; ++j) {
+            os.width(8);
+            os <<  MyPID ; os << "    ";
+            os.width(10);
+            os <<  Row ; os << "    ";
+            os.width(10);
+            os <<  nonlocalCols_int_[i][j]; os << "    ";
+            os.width(20);
+            os <<  nonlocalCoefs_[i][j]; os << "    ";
+            os << std::endl;
+          }
+        }
+      } else {
+        const int nnr = nonlocalRows_LL_.size();
+        for (int i=0; i<nnr; ++i) {
+          const int Row = nonlocalRows_LL_[i];
+          const int ncols = nonlocalCols_LL_[i].size();;
+          for (int j=0; j<ncols; ++j) {
+            os.width(8);
+            os <<  MyPID ; os << "    ";
+            os.width(10);
+            os <<  Row ; os << "    ";
+            os.width(10);
+            os <<  nonlocalCols_LL_[i][j]; os << "    ";
+            os.width(20);
+            os <<  nonlocalCoefs_[i][j]; os << "    ";
+            os << std::endl;
+          }
+        }
+      }
+    }
+    // Do a few global ops to give I/O a chance to complete
+    RowMap().Comm().Barrier();
+    RowMap().Comm().Barrier();
+    RowMap().Comm().Barrier();
+  }
+}
+
 //----------------------------------------------------------------------------
 void Epetra_FECrsMatrix::DeleteMemory()
 {
@@ -1009,29 +1083,32 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
       const Epetra_CrsGraph& graph = tempMat_->Graph();
       Epetra_CrsGraph& nonconst_graph = const_cast<Epetra_CrsGraph&>(graph);
       nonconst_graph.SetIndicesAreGlobal(true);
-	}
-	}
-      //Now we need to call FillComplete on our temp matrix. We need to
-      //pass a DomainMap and RangeMap, which are not the same as the RowMap
-      //and ColMap that we constructed the matrix with.
-      EPETRA_CHK_ERR(tempMat_->FillComplete(domain_map, range_map));
-
-    if (exporter_ == NULL)
-      exporter_ = new Epetra_Export(tempMat_->RowMap(), RowMap());
-
-    EPETRA_CHK_ERR(Export(*tempMat_, *exporter_, combineMode));
-
-    if(callFillComplete) {
-      EPETRA_CHK_ERR(FillComplete(domain_map, range_map));
     }
+  }
 
-    //now reset the values in our nonlocal data
-    if (!useNonlocalMatrix_) {
-      for(size_t i=0; i<nonlocalRows_var.size(); ++i) {
-        nonlocalCols_var[i].resize(0);
-        nonlocalCoefs_[i].resize(0);
-      }
+  //Now we need to call FillComplete on our temp matrix. We need to
+  //pass a DomainMap and RangeMap, which are not the same as the RowMap
+  //and ColMap that we constructed the matrix with.
+  EPETRA_CHK_ERR(tempMat_->FillComplete(domain_map, range_map));
+
+  if (exporter_ == NULL)
+    exporter_ = new Epetra_Export(tempMat_->RowMap(), RowMap());
+
+  EPETRA_CHK_ERR(Export(*tempMat_, *exporter_, combineMode));
+
+  if(callFillComplete) {
+    EPETRA_CHK_ERR(FillComplete(domain_map, range_map));
+  }
+
+  //now reset the values in our nonlocal data
+  if (useNonlocalMatrix_) {
+    nonlocalMatrix_->PutScalar(0.0);
+  } else {
+    for(size_t i=0; i<nonlocalRows_var.size(); ++i) {
+      nonlocalCols_var[i].resize(0);
+      nonlocalCoefs_[i].resize(0);
     }
+  }
 
   if (!save_off_and_reuse_map_exporter) {
     delete exporter_;

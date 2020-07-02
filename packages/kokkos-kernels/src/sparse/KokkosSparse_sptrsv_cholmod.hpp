@@ -64,56 +64,54 @@ namespace Experimental {
 /* Auxiliary functions for symbolic analysis                                                 */
 
   /* ========================================================================================= */
-  template <typename graph_t, typename KernelHandle>
+  template <typename cholmod_int_type, typename graph_t, typename KernelHandle>
   graph_t read_cholmod_graphL(KernelHandle kernelHandle, cholmod_factor *L, cholmod_common *cm) {
 
     /* ---------------------------------------------------------------------- */
     /* get inputs */
     /* ---------------------------------------------------------------------- */
-    int n = L->n;
-    int nsuper = L->nsuper;     // # of supernodal columns
-    int *mb = (int*)(L->pi);    // mb[s+1] - mb[s] = total number of rows in all the s-th supernodes (diagonal+off-diagonal)
-    int *nb = (int*)(L->super);
-    int *colptr = (int*)(L->px);      // colptr
-    int *rowind = (int*)(L->s);       // rowind
+    size_t n = L->n;
+    size_t nsuper = L->nsuper;     // # of supernodal columns
+    cholmod_int_type *mb = (cholmod_int_type*)(L->pi);    // mb[s+1] - mb[s] = total number of rows in the s-th supernodes (diagonal+off-diagonal)
+    cholmod_int_type *nb = (cholmod_int_type*)(L->super);
+    cholmod_int_type *colptr = (cholmod_int_type*)(L->px);      // colptr
+    cholmod_int_type *rowind = (cholmod_int_type*)(L->s);       // rowind
 
     bool ptr_by_column = false;
-    return read_supernodal_graphL<graph_t> (kernelHandle, n, nsuper, ptr_by_column, mb, nb, colptr, rowind);
+    int nnzA = colptr[nsuper] - colptr[0]; // overestimated if not block_diag
+    return read_supernodal_graphL<graph_t> (kernelHandle, n, nsuper, nnzA, ptr_by_column, mb, nb, rowind);
   }
 
 
   /* ========================================================================================= */
+  template <typename cholmod_int_type>
   void compute_etree_cholmod(cholmod_sparse *A, cholmod_common *cm, int **etree) {
     cholmod_factor *L;
-    L = cholmod_analyze (A, cm);
+    if (std::is_same<cholmod_int_type, long>::value == true) {
+      L = cholmod_l_analyze (A, cm);
+    } else if (std::is_same<cholmod_int_type, int>::value == true) {
+      L = cholmod_analyze (A, cm);
+    }
 
-    int n = L->n;
-    int nsuper = L->nsuper;      // # of supernodal columns
-    int *Iwork = (int*)(cm->Iwork);
-    int *Parent = Iwork + (2*((size_t) n)); /* size nfsuper <= n [ */
+    size_t n = L->n;
+    size_t nsuper = L->nsuper;      // # of supernodal columns
+    cholmod_int_type *Iwork = (cholmod_int_type*)(cm->Iwork);
+    cholmod_int_type *Parent = Iwork + (2*n); /* size nfsuper <= n [ */
 
     *etree = new int [nsuper];
-    for (int ii = 0 ; ii < nsuper; ii++) (*etree)[ii] = Parent[ii];
+    for (size_t ii = 0 ; ii < nsuper; ii++) (*etree)[ii] = Parent[ii];
   }
 
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* For symbolic analysis                                                                     */
-  template <typename scalar_type,
-            typename ordinal_type,
-            typename size_type,
-            typename KernelHandle,
-            typename execution_space      = Kokkos::DefaultExecutionSpace,
-            typename host_execution_space = Kokkos::DefaultHostExecutionSpace>
+  template <typename cholmod_int_type, typename KernelHandle>
   void sptrsv_symbolic(
       KernelHandle *kernelHandleL,
       KernelHandle *kernelHandleU,
       cholmod_factor *L,
       cholmod_common *cm)
   {
-    typedef KokkosSparse::CrsMatrix<scalar_type, ordinal_type, execution_space, void, size_type>  crsmat_t;
-    typedef typename  crsmat_t::StaticCrsGraphType  graph_t;
-
     // ===================================================================
     // load sptrsv-handles
     auto *handleL = kernelHandleL->get_sptrsv_handle ();
@@ -133,14 +131,15 @@ namespace Experimental {
     Kokkos::Timer timer;
     // ==============================================
     // extract CrsGraph from Cholmod
-    auto graph = read_cholmod_graphL<graph_t>(kernelHandleL, L, cm);
+    using graph_t  = typename KernelHandle::SPTRSVHandleType::graph_t;
+    auto graph = read_cholmod_graphL<cholmod_int_type, graph_t>(kernelHandleL, L, cm);
     auto row_map = graph.row_map;
     auto entries = graph.entries;
 
     // ==============================================
     // setup supnodal info 
-    int nsuper = (int)(L->nsuper);
-    int *supercols = (int*)(L->super);
+    size_t nsuper = L->nsuper;
+    cholmod_int_type *supercols = (cholmod_int_type*)(L->super);
     handleL->set_supernodes (nsuper, supercols, etree);
     handleU->set_supernodes (nsuper, supercols, etree);
 
@@ -179,7 +178,7 @@ namespace Experimental {
 /* Auxiliary functions for numeric computation                                               */
 
   /* ========================================================================================= */
-  template <typename crsmat_t, typename graph_t, typename KernelHandle>
+  template <typename cholmod_int_type, typename crsmat_t, typename graph_t, typename KernelHandle>
   crsmat_t read_cholmod_factor(KernelHandle kernelHandle, cholmod_factor *L, cholmod_common *cm, graph_t &static_graph) {
 
     using values_view_t = typename crsmat_t::values_type::non_const_type;
@@ -188,39 +187,30 @@ namespace Experimental {
     /* ---------------------------------------------------------------------- */
     /* get inputs */
     /* ---------------------------------------------------------------------- */
-    int n = L->n;
-    int nsuper = L->nsuper;     // # of supernodal columns
-    int *mb = (int*)(L->pi);    // mb[s+1] - mb[s] = total number of rows in all the s-th supernodes (diagonal+off-diagonal)
-    int *nb = (int*)(L->super);
-    int *colptr = (int*)(L->px);      // colptr
-    int *rowind = (int*)(L->s);       // rowind
+    size_t n = L->n;
+    size_t nsuper = L->nsuper;     // # of supernodal columns
+    cholmod_int_type *mb = (cholmod_int_type*)(L->pi);    // mb[s+1] - mb[s] = total number of rows in the s-th supernodes (diagonal+off-diagonal)
+    cholmod_int_type *nb = (cholmod_int_type*)(L->super);
+    cholmod_int_type *colptr = (cholmod_int_type*)(L->px);      // colptr
+    cholmod_int_type *rowind = (cholmod_int_type*)(L->s);       // rowind
     scalar_t *Lx = (scalar_t*)(L->x); // data
 
     bool unit_diag = false;
     bool ptr_by_column = false;
-    //kernelHandle->set_sptrsv_invert_diagonal (true);
-    //kernelHandle->set_sptrsv_invert_offdiagonal (false);
-    return read_supernodal_valuesL<crsmat_t, graph_t> (unit_diag, kernelHandle, n, nsuper,
-                                                       ptr_by_column, mb, nb, colptr, rowind, Lx, static_graph);
+    return read_supernodal_valuesL<crsmat_t> (unit_diag, kernelHandle, n, nsuper,
+                                              ptr_by_column, mb, nb, colptr, rowind, Lx, static_graph);
   }
 
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* For numeric computation                                                                   */
-  template <typename scalar_type,
-            typename ordinal_type,
-            typename size_type,
-            typename KernelHandle,
-            typename execution_space      = Kokkos::DefaultExecutionSpace,
-            typename host_execution_space = Kokkos::DefaultHostExecutionSpace>
+  template <typename cholmod_int_type, typename KernelHandle>
   void sptrsv_compute(
       KernelHandle *kernelHandleL,
       KernelHandle *kernelHandleU,
       cholmod_factor *L,
       cholmod_common *cm)
   {
-    typedef KokkosSparse::CrsMatrix<scalar_type, ordinal_type, execution_space, void, size_type> crsmat_t;
-
     // ===================================================================
     // load sptrsv-handles
     auto *handleL = kernelHandleL->get_sptrsv_handle ();
@@ -240,7 +230,8 @@ namespace Experimental {
 
     // ==============================================
     // read numerical values of L from Cholmod
-    auto cholmodL = read_cholmod_factor<crsmat_t> (kernelHandleL, L, cm, graph);
+    using crsmat_t = typename KernelHandle::SPTRSVHandleType::crsmat_t;
+    auto cholmodL = read_cholmod_factor<cholmod_int_type, crsmat_t> (kernelHandleL, L, cm, graph);
 
     // ==============================================
     // save crsmat

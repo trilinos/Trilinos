@@ -528,13 +528,13 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpe
   if(debug) {
 
     auto rowMap = Aview.origMatrix->getRowMap();
-    Tpetra::Vector<Scalar> diags(rowMap);
+    Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode> diags(rowMap);
     Aview.origMatrix->getLocalDiagCopy(diags);
     size_t diagLength = rowMap->getNodeNumElements();
     Teuchos::Array<Scalar> diagonal(diagLength);
     diags.get1dCopy(diagonal());
 
-    for(LocalOrdinal i = 0; i < diagLength; ++i) {
+    for(size_t i = 0; i < diagLength; ++i) {
       TEUCHOS_TEST_FOR_EXCEPTION(diagonal[i] == Teuchos::ScalarTraits<Scalar>::zero(), 
 				 std::runtime_error, 
 				 "Matrix A has a zero/missing diagonal: " << diagonal[i] << std::endl <<

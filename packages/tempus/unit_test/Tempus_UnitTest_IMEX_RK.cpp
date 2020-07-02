@@ -55,7 +55,9 @@ TEUCHOS_UNIT_TEST(IMEX_RK, Default_Construction)
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
   // Default values for construction.
-  auto modifier = rcp(new Tempus::StepperRKModifierDefault<double>());
+  auto modifier  = rcp(new Tempus::StepperRKModifierDefault<double>());
+  auto modifierX = rcp(new Tempus::StepperRKModifierXDefault<double>());
+  auto observer  = rcp(new Tempus::StepperRKObserverDefault<double>());
   auto solver = rcp(new Thyra::NOXNonlinearSolver());
   solver->setParameterList(Tempus::defaultSolverParameters());
 
@@ -77,6 +79,8 @@ TEUCHOS_UNIT_TEST(IMEX_RK, Default_Construction)
   stepper->setObserver(obs);                           stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 #endif
   stepper->setAppAction(modifier);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setAppAction(modifierX);                    stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setAppAction(observer);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setSolver(solver);                          stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setUseFSAL(useFSAL);                        stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setICConsistency(ICConsistency);            stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
@@ -88,6 +92,9 @@ TEUCHOS_UNIT_TEST(IMEX_RK, Default_Construction)
   stepper->setImplicitTableau(implicitTableau);        stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setOrder(order);                            stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
+  TEUCHOS_TEST_FOR_EXCEPT(explicitTableau != stepper->getTableau());
+  TEUCHOS_TEST_FOR_EXCEPT(explicitTableau != stepper->getExplicitTableau());
+  TEUCHOS_TEST_FOR_EXCEPT(implicitTableau != stepper->getImplicitTableau());
 
   // Full argument list construction.
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE

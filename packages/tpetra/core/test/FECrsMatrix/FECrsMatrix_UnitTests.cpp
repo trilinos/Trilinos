@@ -520,6 +520,93 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_LocalIndex_Kokkos, LO
   TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,success)
 }
 
+
+////
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_LocalIndex_Kokkos_Multiple, LO, GO, Scalar, Node )
+{
+  using exec_space = typename Node::execution_space;
+  using range_type = Kokkos::RangePolicy<exec_space, LO>;
+  using FEMAT = typename Tpetra::FECrsMatrix<Scalar,LO,GO,Node>;
+  using CMAT = typename Tpetra::CrsMatrix<Scalar,LO,GO,Node>;
+  using FEG = typename Tpetra::FECrsGraph<LO,GO,Node>;
+  using ImplScalarType = typename FEMAT::impl_scalar_type;
+  Scalar SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
+
+  // get a comm
+  RCP<const Comm<int> > comm = getDefaultComm();
+  
+  // Generate a mesh
+  size_t numLocal = 10;
+  GraphPack<LO,GO,Node> pack;
+  generate_fem1d_graph(numLocal,comm,pack);
+  
+  // Make the graph    
+  RCP<FEG> graph = rcp(new FEG(pack.uniqueMap,pack.overlapMap,pack.overlapMap,3));
+
+  graph->beginFill();
+  for(size_t i=0; i<(size_t)pack.element2node.size(); i++) {
+    for(size_t j=0; j<pack.element2node[i].size(); j++) {
+      GO gid_j = pack.element2node[i][j];
+      LO lid_j = pack.overlapMap->getLocalElement(gid_j);
+      for(size_t k=0; k<pack.element2node[i].size(); k++) {
+        GO gid_k = pack.element2node[i][k];
+        LO lid_k = pack.overlapMap->getLocalElement(gid_k);
+        //printf("[%d] Inserting gid (%d,%d) lid (%d,%d)\n",comm->getRank(),gid_j,gid_k,lid_j,lid_k);fflush(stdout);
+        graph->insertLocalIndices(lid_j,1,&lid_k);
+      }
+    }
+  }
+  graph->endFill();
+
+  // Generate the "local stiffness matrix"
+  std::vector<std::vector<Scalar> > localValues = generate_fem1d_element_values<Scalar>();
+  auto kokkosValues = generate_fem1d_element_values_kokkos<ImplScalarType, Node>();
+
+  // Make the matrix two ways
+  FEMAT mat1(graph); // Here we use graph as a FECrsGraph
+  CMAT mat2(graph);  // Here we use graph as a CrsGraph in OWNED mode
+
+
+  const int number_of_fills = 3;
+
+  for(int nof=0; nof<number_of_fills; nof++) {
+    mat1.beginFill();
+    mat1.setAllToScalar(SC_ZERO);
+    auto k_e2n = pack.k_element2node;
+    auto localMat = mat1.getLocalMatrix();
+    auto localMap = pack.overlapMap->getLocalMap();
+    
+    Kokkos::parallel_for("assemble_1d_local_index", 
+                         range_type (0, k_e2n.extent(0)),
+                         KOKKOS_LAMBDA(const size_t i) {
+                           for(size_t j=0; j<k_e2n.extent(1); j++) {
+                             LO lid_j = localMap.getLocalElement(k_e2n(i, j));
+                             for(size_t k=0; k<k_e2n.extent(1); k++) {
+                               LO lid_k = localMap.getLocalElement(k_e2n(i, k));
+                               ImplScalarType tmp = kokkosValues(j, k);
+                               localMat.sumIntoValues(lid_j, &lid_k, 1, &tmp, true, true);
+                             }
+                           }
+                         });
+    mat1.endFill();
+  }
+
+  for(size_t i=0; i<(size_t)pack.element2node.size(); i++) {
+    for(size_t j=0; j<pack.element2node[i].size(); j++) {
+      GO gid_j = pack.element2node[i][j];
+      for(size_t k=0; k<pack.element2node[i].size(); k++) {
+        GO gid_k = pack.element2node[i][k];
+        mat2.sumIntoGlobalValues(gid_j,1,&localValues[j][k],&gid_k);
+      }
+    }
+  }
+
+  mat2.fillComplete();
+
+  success = compare<Scalar,LO,GO,Node>::compare_final_matrix_structure(out,mat1,mat2);
+  TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,success)
+}
+
 //
 // INSTANTIATIONS
 //
@@ -528,7 +615,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_LocalIndex_Kokkos, LO
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FECrsMatrix, Assemble1D_Kokkos, LO, GO, SCALAR, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FECrsMatrix, Assemble1D, LO, GO, SCALAR, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FECrsMatrix, Assemble1D_LocalIndex, LO, GO, SCALAR, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FECrsMatrix, Assemble1D_LocalIndex_Kokkos, LO, GO, SCALAR, NODE ) 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FECrsMatrix, Assemble1D_LocalIndex_Kokkos, LO, GO, SCALAR, NODE )  \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FECrsMatrix, Assemble1D_LocalIndex_Kokkos_Multiple, LO, GO, SCALAR, NODE ) 
 
 
 TPETRA_ETI_MANGLING_TYPEDEFS()

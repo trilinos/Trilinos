@@ -1,0 +1,122 @@
+#!/bin/bash
+# Copyright(C) 1999-2020 National Technology & Engineering Solutions
+# of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+# NTESS, the U.S. Government retains certain rights in this software.
+# 
+# See packages/seacas/LICENSE for details
+
+########################################################################
+function usage {
+cat <<CONJOIN_USAGE_EOF
+Usage:  conjoinp --proc_count <proc_count> --basename <file.ext> -- ...normal conjoin options...
+	conjoinp --auto <file.ext.{nproc}.000> -- ...normal conjoin options...
+
+   Given a set of decomposed files with multiple topology changes
+   (e.g., there are 'results.e-s????.42.{0..41}' variants of the files)
+   Runs multiple copies of conjoin simultaneously to create a single
+   set of decomposed files 'results.e.42.{0..41}'
+
+   For the '-auto' option, the argument is any of the existing filenames
+   without the '-s000?' portion (file.e.42.21)
+
+   NOTE: Any "normal conjoin options" must be separated by a '--'
+         or they will be treated as options to conjoinp and probably 
+	 ignored.
+
+   ->->-> Send email to gdsjaar@sandia.gov for conjoinp support.<-<-<-
+
+   Uses: GNU Parallel,   
+   	 O. Tange (2018): GNU Parallel 2018, Mar 2018, ISBN 9781387509881,
+	 DOI https://doi.org/10.5281/zenodo.1146014
+
+CONJOIN_USAGE_EOF
+exit 1
+}
+
+########################################################################
+function execute_conjoin {
+    np=$1
+    file=$2
+    all_options=$3
+    p=`expr $np - 1`
+
+    $PARALLEL --will-cite "$CONJOIN $all_options --output conjoin.out.${np}.{} ${file}.${np}.{} ${file}-s*.${np}.{}" ::: $($SEQ 0 $p)
+
+    conjoin_rc=$?
+    return $conjoin_rc
+}
+
+########################################################################
+# initialize variables
+# Text color variables
+txtund=$(tput sgr 0 1)    # Underline
+txtbld=$(tput bold)       # Bold
+txtred=$(tput setaf 1)    # Red
+txtgrn=$(tput setaf 2)    # Green
+txtylw=$(tput setaf 3)    # Yellow
+txtblu=$(tput setaf 4)    # Blue
+txtpur=$(tput setaf 5)    # Purple
+txtcyn=$(tput setaf 6)    # Cyan
+txtwht=$(tput setaf 7)    # White
+txtrst=$(tput sgr0)       # Text reset
+
+cycles=-1
+
+pushd $(dirname "${0}") > /dev/null
+basedir=$(pwd -P)
+popd > /dev/null
+if [ -x ${basedir}/conjoin -a -x ${basedir}/parallel -a -x ${basedir}/getopt.seacas ]; then
+    ACCESS_BIN=$basedir
+elif [ "$ACCESS" == "" ]; then
+    ACCESS_BIN=@ACCESSDIR@/bin
+else
+    ACCESS_BIN=${ACCESS}/bin
+fi
+
+CONJOIN=${ACCESS_BIN}/conjoin
+PARALLEL=${ACCESS_BIN}/parallel
+SEQ="seq -w"
+if [ $# -eq 0 ] ; then
+  usage
+fi
+
+########################################################################
+# conjoin options:
+GETOPT=${ACCESS_BIN}/getopt.seacas
+
+TEMP=`${GETOPT}  -o hp:n:f:a: -a \
+    --long help,proc_count:,basename:,auto: \
+    -n 'conjoinp' -- "$@"`
+
+# Note the quotes around `$TEMP': they are essential!
+eval set -- "$TEMP"
+while true ; do
+	case "$1" in
+	    -h|--help)
+	      usage ; shift ;;
+	    -p|-n|--proc_count)
+		np="$2" ; shift 2 ;;
+	    -a|--auto)
+	        auto="$2" ; shift 2 ;;
+	    -f|--basename)
+		file="$2" ; shift 2 ;;
+	    --) shift ; break ;;
+	esac
+done
+
+if [ -n "$auto" ]; then
+ file=${auto%.*}
+ np=${file##*.} 
+ file=${file%.*}
+fi
+
+all_options="$@"
+
+execute_conjoin "$np" "$file" "$all_options"
+if [ $? -ne 0 ]
+then
+    echo "${txtred}ERROR     During conjoin execution. Check error output above and rerun${txtrst}"
+    exit 1
+else
+    echo "${txtgrn}...conjoinp successful execution${txtrst}"
+fi

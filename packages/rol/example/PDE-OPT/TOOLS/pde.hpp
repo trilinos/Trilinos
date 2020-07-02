@@ -169,21 +169,27 @@ public:
     throw Exception::NotImplemented(">>> Hessian_33 not implemented.");
   }
 
-  virtual void RieszMap_1(ROL::Ptr<Intrepid::FieldContainer<Real> > &riesz) {
+  virtual void RieszMap_1(ROL::Ptr<Intrepid::FieldContainer<Real>> &riesz) {
     throw Exception::NotImplemented(">>> RieszMap_1 not implemented.");
   }
 
-  virtual void RieszMap_2(ROL::Ptr<Intrepid::FieldContainer<Real> > &riesz) {
+  virtual void RieszMap_2(ROL::Ptr<Intrepid::FieldContainer<Real>> &riesz) {
     throw Exception::NotImplemented(">>> RieszMap_2 not implemented.");
   }
 
-  virtual std::vector<ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > getFields() = 0;
+  virtual std::vector<ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real>>>> getFields() = 0;
+  virtual std::vector<ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real>>>> getFields2() {
+    return getFields();
+  }
 
-  virtual void setCellNodes(const ROL::Ptr<Intrepid::FieldContainer<Real> > &cellNodes,
-                            const std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > &bdryCellNodes,
-                            const std::vector<std::vector<std::vector<int> > > &bdryCellLocIds) = 0;
+  virtual void setCellNodes(const ROL::Ptr<Intrepid::FieldContainer<Real>> &cellNodes,
+                            const std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> &bdryCellNodes,
+                            const std::vector<std::vector<std::vector<int>>> &bdryCellLocIds) = 0;
 
-  virtual void setFieldPattern(const std::vector<std::vector<int> > & fieldPattern) {
+  virtual void setFieldPattern(const std::vector<std::vector<int>> &fieldPattern) {}
+  virtual void setFieldPattern(const std::vector<std::vector<int>> &fieldPattern1,
+                               const std::vector<std::vector<int>> &fieldPattern2) {
+    setFieldPattern(fieldPattern1);
   }
 
 private:

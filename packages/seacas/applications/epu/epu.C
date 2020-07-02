@@ -1,36 +1,9 @@
 /*
- * Copyright(C) 2010-2017 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
- *     * Neither the name of NTESS nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
+ * See packages/seacas/LICENSE for details
  */
 // concatenates EXODUS/GENESIS output from parallel processors to a single file
 
@@ -42,7 +15,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
+#include <ctime>
 #include <exception>
+#include <fmt/chrono.h>
 #include <fmt/ostream.h>
 #include <limits>
 #include <numeric>
@@ -58,16 +33,6 @@
 #include "smart_assert.h"
 
 #include <exodusII.h>
-#ifdef PARALLEL_AWARE_EXODUS
-#ifndef DISABLE_PARALLEL_EPU
-#define ENABLE_PARALLEL_EPU 1
-#endif
-#endif
-
-#if ENABLE_PARALLEL_EPU
-#include <mpi.h>
-#endif
-
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
@@ -130,7 +95,7 @@ namespace {
   unsigned int debug_level = 0;
   const double FILL_VALUE  = FLT_MAX;
   int          rank        = 0;
-  std::string  tsFormat    = "[%H:%M:%S] ";
+  std::string  tsFormat    = "[{:%H:%M:%S}] ";
 
   std::string time_stamp(const std::string &format);
   std::string format_time(double seconds);
@@ -353,7 +318,7 @@ int main(int argc, char *argv[])
   rank = my_mpi.rank;
 
   try {
-    time_t begin_time = time(nullptr);
+    time_t begin_time = std::time(nullptr);
     SystemInterface::show_version(rank);
     if (rank == 0) {
 #if ENABLE_PARALLEL_EPU
@@ -579,7 +544,7 @@ int main(int argc, char *argv[])
     }
 
 #ifndef _WIN32
-    time_t end_time = time(nullptr);
+    time_t end_time = std::time(nullptr);
     if (rank == 0) {
       add_to_log(argv[0], static_cast<int>(end_time - begin_time));
     }
@@ -1150,12 +1115,12 @@ int epu(SystemInterface &interFace, int start_part, int part_count, int cycle, T
           exodus_error(__LINE__);
         }
         if (proc_time_val != time_val) {
-          fmt::print(
-              stderr,
-              "ERROR: (EPU) At step {:{}}, the time on processor {} is {:e15.8} which does not\n"
-              "       match the time on processor {} which is {:e15.8}\n"
-              "       This usually indicates a corrupt database.\n",
-              time_step + 1, ts_max + 1, start_part, time_val, p + start_part, proc_time_val);
+          fmt::print(stderr,
+                     "WARNING: (EPU) At step {}, the times on processors {} and {} do not match:\n"
+                     "         {:.8} vs {:.8} (absolute diff: {:.8})\n"
+                     "         This may indicate a corrupt database.\n",
+                     time_step + 1, start_part, p + start_part, time_val, proc_time_val,
+                     std::abs(time_val - proc_time_val));
         }
       }
 
@@ -1482,17 +1447,17 @@ namespace {
       }
     }
 
-    char buffer[MAX_STR_LENGTH + 1];
+    std::string buffer;
 
     copy_string(qaRecord[num_qa_records].qa_record[0][0], qainfo[0], MAX_STR_LENGTH + 1); // Code
     copy_string(qaRecord[num_qa_records].qa_record[0][1], qainfo[2], MAX_STR_LENGTH + 1); // Version
 
-    time_t date_time = time(nullptr);
-    strftime(buffer, MAX_STR_LENGTH, "%Y/%m/%d", localtime(&date_time));
-
+    time_t date_time = std::time(nullptr);
+    auto * lt        = std::localtime(&date_time);
+    buffer           = fmt::format("{:%Y/%m/%d}", *lt);
     copy_string(qaRecord[num_qa_records].qa_record[0][2], buffer, MAX_STR_LENGTH + 1);
 
-    strftime(buffer, MAX_STR_LENGTH, "%H:%M:%S", localtime(&date_time));
+    buffer = fmt::format("{:%H:%M:%S}", *lt);
     copy_string(qaRecord[num_qa_records].qa_record[0][3], buffer, MAX_STR_LENGTH + 1);
 
     error = ex_put_qa(id_out, num_qa_records + 1, qaRecord[0].qa_record);
@@ -2071,6 +2036,7 @@ namespace {
           max_id    = (id > max_id) ? id : max_id;
         }
       }
+
       if (glob_blocks[b].entity_count() == 0) {
         min_id = 0;
         max_id = 0;
@@ -3219,19 +3185,10 @@ namespace {
       return std::string("");
     }
 
-    const int   length = 256;
-    static char time_string[length];
-
-    time_t     calendar_time = time(nullptr);
-    struct tm *local_time    = localtime(&calendar_time);
-
-    int error = strftime(time_string, length, format.c_str(), local_time);
-    if (error != 0) {
-      time_string[length - 1] = '\0';
-      return std::string(time_string);
-    }
-
-    return std::string("[ERROR]");
+    time_t      calendar_time = std::time(nullptr);
+    struct tm * local_time    = std::localtime(&calendar_time);
+    std::string time_string   = fmt::format(format, *local_time);
+    return time_string;
   }
 
   std::string format_time(double seconds)

@@ -1,34 +1,8 @@
-// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//
-//     * Neither the name of NTESS nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+// See packages/seacas/LICENSE for details
 
 #ifndef IOSS_IOCGNS_UTILS_H
 #define IOSS_IOCGNS_UTILS_H
@@ -276,22 +250,33 @@ namespace Iocgns {
                             std::map<std::string, Ioss::FaceUnorderedSet> &boundary_faces,
                             Ioss::Field::BasicType                         field_type);
 
-    static void write_flow_solution_metadata(int file_ptr, Ioss::Region *region, int state,
-                                             const int *vertex_solution_index,
+    static void write_flow_solution_metadata(int file_ptr, int base_ptr, Ioss::Region *region,
+                                             int state, const int *vertex_solution_index,
                                              const int *cell_center_solution_index,
                                              bool       is_parallel_io);
     static int  find_solution_index(int cgns_file_ptr, int base, int zone, int step,
                                     CG_GridLocation_t location);
     static Ioss::MeshType check_mesh_type(int cgns_file_ptr);
-    static size_t         common_write_meta_data(int file_ptr, const Ioss::Region &region,
-                                                 std::vector<size_t> &zone_offset, bool is_parallel);
-    static size_t         resolve_nodes(Ioss::Region &region, int my_processor, bool is_parallel);
+
+    static void output_assembly(int file_ptr, const Ioss::Assembly *assembly, bool is_parallel_io,
+                                bool appending = false);
+    static void output_assemblies(int file_ptr, const Ioss::Region &region, bool is_parallel_io);
+
+    static void   write_state_meta_data(int file_ptr, const Ioss::Region &region,
+                                        bool is_parallel_io);
+    static size_t common_write_meta_data(int file_ptr, const Ioss::Region &region,
+                                         std::vector<size_t> &zone_offset, bool is_parallel);
+    static size_t resolve_nodes(Ioss::Region &region, int my_processor, bool is_parallel);
     static std::vector<std::vector<std::pair<size_t, size_t>>>
     resolve_processor_shared_nodes(Ioss::Region &region, int my_processor);
 
     static CG_ElementType_t map_topology_to_cgns(const std::string &name);
     static std::string      map_cgns_to_topology_type(CG_ElementType_t type);
     static void             add_sidesets(int cgns_file_ptr, Ioss::DatabaseIO *db);
+    static void             add_assemblies(int cgns_file_ptr, Ioss::DatabaseIO *db);
+    static void add_to_assembly(int cgns_file_ptr, Ioss::Region *region, Ioss::EntityBlock *block,
+                                int base, int zone);
+
     static void add_structured_boundary_conditions(int cgns_file_ptr, Ioss::StructuredBlock *block,
                                                    bool is_parallel_io);
     static void add_structured_boundary_conditions_fpp(int                    cgns_file_ptr,

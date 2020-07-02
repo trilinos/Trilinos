@@ -389,6 +389,15 @@ namespace MueLu {
     //! dump out real-valued multivector
     void dumpCoords(const RealValuedMultiVector& X, std::string name) const;
 
+    //! dump out boolean ArrayView
+    void dump(const Teuchos::ArrayRCP<bool>& v, std::string name) const;
+
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+    //! dump out boolean Kokkos::View
+    void dump(const Kokkos::View<bool*, typename Node::device_type>& v, std::string name) const;
+#endif
+
+    //! get a (synced) timer
     Teuchos::RCP<Teuchos::TimeMonitor> getTimer(std::string name, RCP<const Teuchos::Comm<int> > comm=Teuchos::null) const;
 
     //! set parameters
@@ -413,12 +422,10 @@ namespace MueLu {
     Teuchos::RCP<Matrix> A_nodal_Matrix_, P11_, R11_, AH_, A22_, Addon_Matrix_;
     //! Vectors for BCs
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
-    Kokkos::View<bool*, typename Node::device_type> BCrowsKokkos_;
-    Kokkos::View<const bool*, typename Node::device_type> BCcolsKokkos_;
+    Kokkos::View<bool*, typename Node::device_type> BCrowsKokkos_, BCcolsKokkos_, BCdomainKokkos_;
 #endif
-    int BCrowcount_, BCcolcount_;
-    Teuchos::ArrayRCP<bool> BCrows_;
-    Teuchos::ArrayRCP<const bool> BCcols_;
+    int BCedges_, BCnodes_;
+    Teuchos::ArrayRCP<bool> BCrows_, BCcols_, BCdomain_;
     //! Nullspace
     Teuchos::RCP<MultiVector> Nullspace_;
     //! Coordinates

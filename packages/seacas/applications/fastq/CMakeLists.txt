@@ -26,8 +26,8 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/fastq.f
 	  ${CMAKE_CURRENT_SOURCE_DIR}/cgi/x11_cgisx11.c
   COMM serial mpi
+  INSTALLABLE
   )
-install_executable(fastq_x11)
 
 TRIBITS_ADD_EXECUTABLE(
   fastq_xcps
@@ -38,8 +38,8 @@ TRIBITS_ADD_EXECUTABLE(
 	  ${CMAKE_CURRENT_SOURCE_DIR}/cgi/vdx11cps.F
 	  ${CMAKE_CURRENT_SOURCE_DIR}/cgi/vdicps_dual.f
   COMM serial mpi
+  INSTALLABLE
   )
-install_executable(fastq_xcps)
 
 TRIBITS_ADD_EXECUTABLE(
   fastq_cps
@@ -49,8 +49,8 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/fastq.f
 	  ${CMAKE_CURRENT_SOURCE_DIR}/cgi/vdicps.f
   COMM serial mpi
+  INSTALLABLE
   )
-install_executable(fastq_cps)
 
 TRIBITS_SUBPACKAGE_POSTPROCESS()
 

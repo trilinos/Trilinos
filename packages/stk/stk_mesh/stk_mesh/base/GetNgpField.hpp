@@ -46,16 +46,15 @@ NgpField<T> & get_updated_ngp_field(const FieldBase & stkField)
   NgpFieldBase * ngpField = stkField.get_ngp_field();
 
   if (ngpField == nullptr) {
-    ngpField = new NgpField<T>(stkField.get_mesh(), stkField);
+    NgpField<T>* ngpFieldT = new NgpField<T>(stkField.get_mesh(), stkField, true);
+    ngpField = ngpFieldT;
     stkField.set_ngp_field(ngpField);
   }
   else {
     if (stkField.get_mesh().synchronized_count() != ngpField->synchronized_count()) {
-      ngpField = new NgpField<T>(stkField.get_mesh(), stkField);
-      stkField.set_ngp_field(ngpField);
+      ngpField->update_field();
     }
   }
-
   return dynamic_cast< NgpField<T>& >(*ngpField);
 }
 

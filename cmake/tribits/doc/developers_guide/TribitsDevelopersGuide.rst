@@ -983,9 +983,6 @@ are set.  This file in Trilinos looked like::
     
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${KOKKOS_CXX_FLAGS}")
     
-      MESSAGE("-- " "Skip adding flags for C++11 because Kokkos flags does that ...")
-      SET(${PROJECT_NAME}_CXX11_FLAGS " ")
-    
       MESSAGE("-- " "Skip adding flags for OpenMP because Kokkos flags does that ...")
       SET(OpenMP_CXX_FLAGS_OVERRIDE " ")
     
@@ -6508,7 +6505,6 @@ Processing of TriBITS Project Files`_.  This is executed by the TriBITS macro
 * ``INCLUDE(`` `<projectDir>/cmake/ProjectCompilerPostConfig.cmake`_ ``)``
 * Find Perl (sets ``PERL_EXECUTABLE``)
 * Determine mixed language C/Fortran linking
-* Set up C++11 (`${PROJECT_NAME}_ENABLE_CXX11`_)
 * Set up OpenMP (with ``FIND_PACKAGE(OpenMP)``)
 * Set up optional Windows support
 * Find Doxygen (sets ``DOXYGEN_EXECUTABLE``)
@@ -8140,7 +8136,6 @@ a given TriBITS project are:
 * `${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES`_
 * `${PROJECT_NAME}_ELEVATE_ST_TO_PT`_
 * `${PROJECT_NAME}_ENABLE_CPACK_PACKAGING`_
-* `${PROJECT_NAME}_ENABLE_CXX11`_
 * `${PROJECT_NAME}_ENABLE_CXX`_
 * `${PROJECT_NAME}_ENABLE_C`_
 * `${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE`_
@@ -8377,17 +8372,6 @@ These options are described below.
   with CPack.  However, this default can be changed by setting::
 
     SET(${PROJECT_NAME}_ENABLE_CPACK_PACKAGING_DEFAULT ON)
-
-.. _${PROJECT_NAME}_ENABLE_CXX11:
-  
-**${PROJECT_NAME}_ENABLE_CXX11**
-  
-  If ``${PROJECT_NAME}_ENABLE_CXX11`` is ``ON``, then C++ compiler options
-  that turn on C++11 support will be searched for.  By default, TriBITS sets
-  this to ``OFF`` for all systems.  However, if project requires C++11 support
-  by default, then the project should set the default:
-  
-    SET(${PROJECT_NAME}_ENABLE_CXX11_DEFAULT TRUE)
 
 .. _${PROJECT_NAME}_ENABLE_CXX:
   

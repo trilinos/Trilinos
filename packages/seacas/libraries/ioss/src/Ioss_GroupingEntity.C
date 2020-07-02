@@ -1,34 +1,8 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//
-//     * Neither the name of NTESS nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+// See packages/seacas/LICENSE for details
 
 #include <Ioss_DatabaseIO.h>
 #include <Ioss_GroupingEntity.h>
@@ -73,6 +47,13 @@ Ioss::GroupingEntity::GroupingEntity(Ioss::DatabaseIO *io_database, const std::s
     }
     fields.add(Ioss::Field("ids", int_type, "scalar", Ioss::Field::MESH, entity_cnt));
   }
+}
+
+Ioss::GroupingEntity::GroupingEntity(const Ioss::GroupingEntity &other)
+    : properties(other.properties), fields(other.fields), entityCount(other.entityCount),
+      entityName(other.entityName), attributeCount(other.attributeCount),
+      entityState(other.entityState), hash_(other.hash_)
+{
 }
 
 Ioss::GroupingEntity::~GroupingEntity()
@@ -141,6 +122,12 @@ void Ioss::GroupingEntity::set_database(Ioss::DatabaseIO *io_database)
   database_ = io_database;
 }
 
+void Ioss::GroupingEntity::reset_database(Ioss::DatabaseIO *io_database)
+{
+  assert(io_database != nullptr); // Must be set to valid value
+  database_ = io_database;
+}
+
 // Discuss Data Object functions:
 // ---Affect the containing object:
 //    open(in string object_name, out ?)
@@ -192,15 +179,22 @@ Ioss::Property Ioss::GroupingEntity::get_implicit_property(const std::string &my
  *  \param[in] new_field The field to add
  *
  */
-void Ioss::GroupingEntity::field_add(const Ioss::Field &new_field)
+void Ioss::GroupingEntity::field_add(Ioss::Field new_field)
 {
+  size_t field_size = new_field.raw_count();
+
+  if (new_field.get_role() == Ioss::Field::REDUCTION) {
+    if (field_size == 0) {
+      new_field.reset_count(1);
+    }
+    fields.add(new_field);
+    return;
+  }
+
   size_t entity_size = entity_count();
-  size_t field_size  = new_field.raw_count();
   if (field_size == 0 && entity_size != 0) {
     // Set field size to match entity size...
-    Ioss::Field tmp_field(new_field);
-    tmp_field.reset_count(entity_size);
-    fields.add(tmp_field);
+    new_field.reset_count(entity_size);
   }
   else if (entity_size != field_size && type() != REGION) {
     std::string        filename = get_database()->get_filename();
@@ -212,9 +206,7 @@ void Ioss::GroupingEntity::field_add(const Ioss::Field &new_field)
                type_string(), name(), entity_size, new_field.get_name(), field_size, filename);
     IOSS_ERROR(errmsg);
   }
-  else {
-    fields.add(new_field);
-  }
+  fields.add(new_field);
 }
 
 /** \brief Read field data from the database file into memory using a pointer.

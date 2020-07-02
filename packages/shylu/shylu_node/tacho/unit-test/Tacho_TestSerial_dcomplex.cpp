@@ -9,7 +9,7 @@ static const std::string MM_TEST_FILE="test_dcomplex";
 #define TEST_END
 
 #define __TACHO_TEST_SERIAL__
-#include "ShyLU_NodeTacho_config.h"
+#include "Tacho_config.h"
 #include "Tacho_Util.hpp"
 
 typedef typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type HostDeviceType;

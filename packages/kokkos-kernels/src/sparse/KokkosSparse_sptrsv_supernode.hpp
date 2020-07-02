@@ -52,21 +52,24 @@
 #ifndef KOKKOSSPARSE_SPTRSV_SUPERNODE_HPP_
 #define KOKKOSSPARSE_SPTRSV_SUPERNODE_HPP_
 
+// trmm & trtri are called on Host
+#if defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)
+
+#include "KokkosBlas3_trmm.hpp"
+#include "KokkosBlas_trtri.hpp"
 #include "KokkosSparse_sptrsv.hpp"
 
-#if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACKE) && defined(KOKKOSKERNELS_ENABLE_TPL_CBLAS)
-#include "cblas.h"
-#include "lapacke.h"
 
 namespace KokkosSparse {
 namespace Experimental {
 
+template<typename ordinal_type>
 class sort_indices {
    public:
-     sort_indices(int* rowinds) : rowinds_(rowinds){}
+     sort_indices(ordinal_type* rowinds) : rowinds_(rowinds){}
      bool operator()(int i, int j) const { return rowinds_[i] < rowinds_[j]; }
    private:
-     int* rowinds_; // rowindices
+     ordinal_type* rowinds_; // rowindices
 };
 
 /* ========================================================================================= */
@@ -92,25 +95,18 @@ graph_t deep_copy_graph (host_graph_t &host_graph) {
 }
 
 /* ========================================================================================= */
-template <typename graph_t, typename KernelHandle>
+template <typename graph_t, typename ptr_type, typename size_type, typename ordinal_type, typename KernelHandle>
 graph_t
-read_supernodal_graphL(KernelHandle kernelHandle, int n, int nsuper, bool ptr_by_column, int *mb,
-                       int *nb, int *colptr, int *rowind) {
+read_supernodal_graphL(KernelHandle kernelHandle, int n, int nsuper, int nnzA, bool ptr_by_column,
+                       ptr_type *mb, size_type *nb, ordinal_type *rowind) {
 
   using row_map_view_t = typename graph_t::row_map_type::non_const_type;
   using cols_view_t    = typename graph_t::entries_type::non_const_type;
-  using integer_view_host_t = Kokkos::View<int*, Kokkos::HostSpace>;
+  using integer_view_host_t = Kokkos::View<ordinal_type*, Kokkos::HostSpace>;
 
   // load parameters
   auto *handle = kernelHandle->get_sptrsv_handle ();
   bool merge = handle->get_merge_supernodes ();
-
-  int nnzA; // overestimated if not block_diag
-  if (ptr_by_column) {
-    nnzA = colptr[n] - colptr[0];
-  } else {
-    nnzA = colptr[nsuper] - colptr[0];
-  }
 
   row_map_view_t rowmap_view ("rowmap_view", n+1);
   cols_view_t    column_view ("colmap_view", nnzA);
@@ -148,7 +144,7 @@ read_supernodal_graphL(KernelHandle kernelHandle, int n, int nsuper, bool ptr_by
   }
 
   integer_view_host_t sorted_rowind_view ("sorted_rowind", max_nnz_per_row);
-  int *sorted_rowind = sorted_rowind_view.data ();
+  ordinal_type *sorted_rowind = sorted_rowind_view.data ();
   // store L in csr
   for (int s = 0 ; s < nsuper ; s++) {
     int j1 = nb[s];
@@ -190,7 +186,7 @@ read_supernodal_graphL(KernelHandle kernelHandle, int n, int nsuper, bool ptr_by
       for (int ii = 0; ii < nsrow2; ii++) {
         sorted_rowind[ii] = ii;
       }
-      std::sort(&(sorted_rowind[0]), &(sorted_rowind[nsrow2]), sort_indices(&rowind[ps2]));
+      std::sort(&(sorted_rowind[0]), &(sorted_rowind[nsrow2]), sort_indices<ordinal_type>(&rowind[ps2]));
     }
     for (int kk = 0; kk < nsrow2; kk++) {
       int ii = (merge ? sorted_rowind[kk] : kk); // sorted rowind
@@ -225,8 +221,8 @@ read_supernodal_graphL(KernelHandle kernelHandle, int n, int nsuper, bool ptr_by
 
 
 /* ========================================================================================= */
-template <typename input_graph_t>
-void check_supernode_sizes(const char *title, int n, int nsuper, int *nb, input_graph_t &graph) {
+template <typename input_graph_t, typename input_size_type>
+void check_supernode_sizes(const char *title, int n, int nsuper, input_size_type *nb, input_graph_t &graph) {
 
   auto rowmap_view = graph.row_map;
   auto hr = Kokkos::create_mirror_view (rowmap_view);
@@ -278,10 +274,11 @@ void check_supernode_sizes(const char *title, int n, int nsuper, int *nb, input_
 
 
 /* ========================================================================================= */
-template <typename host_graph_t, typename graph_t>
+template <typename host_graph_t, typename graph_t, typename input_size_type>
 host_graph_t
-generate_supernodal_graph(bool col_major, graph_t &graph, int nsuper, const int *nb) {
+generate_supernodal_graph(bool col_major, graph_t &graph, int nsuper, const input_size_type *nb) {
 
+  using size_type = typename graph_t::size_type;
   using cols_view_host_t    = typename host_graph_t::entries_type::non_const_type;
   using row_map_view_host_t = typename host_graph_t::row_map_type::non_const_type;
   using integer_view_host_t = Kokkos::View<int*, Kokkos::HostSpace>;
@@ -313,7 +310,7 @@ generate_supernodal_graph(bool col_major, graph_t &graph, int nsuper, const int 
   for (int s = 0; s < nsuper; s++) {
     int j1 = nb[s];
     int j2 = j1+1;  // based on the first row
-    for (int i = row_map_host (j1); i < row_map_host (j2); i++) {
+    for (size_type i = row_map_host (j1); i < row_map_host (j2); i++) {
       int s2 = map (entries_host (i));
       // supernodal blocks may not be filled with zeros
       // so need to check by each row
@@ -341,7 +338,7 @@ generate_supernodal_graph(bool col_major, graph_t &graph, int nsuper, const int 
   for (int s = 0; s < nsuper; s++) {
     int j1 = nb[s];
     int j2 = j1+1;  // based on the first row
-    for (int i = row_map_host (j1); i < row_map_host (j2); i++) {
+    for (size_type i = row_map_host (j1); i < row_map_host (j2); i++) {
       int s2 = map (entries_host (i));
       // supernodal blocks may not be filled with zeros
       // so need to check by each row
@@ -362,7 +359,7 @@ generate_supernodal_graph(bool col_major, graph_t &graph, int nsuper, const int 
     }
     // reset check
     if (!col_major) {
-      for (int s2 = hr(s); s2 < hr(s+1); s2++) {
+      for (size_type s2 = hr(s); s2 < hr(s+1); s2++) {
         check (hc(s2)) = 0;
       }
     } else {
@@ -397,8 +394,10 @@ graph_t generate_supernodal_dag(int nsuper, graph_t &supL, graph_t &supU) {
 
   // compute dag
   int totedges = 0;
+  using size_type      = typename graph_t::size_type;
   using row_map_view_t = typename graph_t::row_map_type::non_const_type;
   using cols_view_t    = typename graph_t::entries_type::non_const_type;
+
   row_map_view_t colptr ("rowind", nsuper+1);
   cols_view_t rowind ("colptr", row_mapL (nsuper)); // over-estimate
   cols_view_t edges ("edges", nsuper); // workspace
@@ -407,9 +406,9 @@ graph_t generate_supernodal_dag(int nsuper, graph_t &supL, graph_t &supU) {
   colptr (0) = totedges;
   for (int s = 0; s < nsuper; s ++) {
     // count # of edges (search for first matching nonzero)
-    int nedges = 0;
-    int k1 = 1 + row_mapL (s); // skip diagonal
-    int k2 = 1 + row_mapU (s); // skip diagonal
+    size_type nedges = 0;
+    size_type k1 = 1 + row_mapL (s); // skip diagonal
+    size_type k2 = 1 + row_mapU (s); // skip diagonal
     for (; k1 < row_mapL (s+1); k1++) {
        // look for match
        while (k2+1 < row_mapU (s+1) && entriesL (k1) > entriesU (k2)) {
@@ -439,7 +438,7 @@ graph_t generate_supernodal_dag(int nsuper, graph_t &supL, graph_t &supU) {
       }
     }
     // store the edges
-    for (int k = 0; k < nedges; k++) {
+    for (size_type k = 0; k < nedges; k++) {
       rowind (totedges) = edges (k);
       totedges ++;
     }
@@ -448,7 +447,7 @@ graph_t generate_supernodal_dag(int nsuper, graph_t &supL, graph_t &supU) {
 
   // compress dag into graph
   cols_view_t hc ("colmap_view", totedges);
-  for (int k = colptr (0); k < colptr (nsuper); k++) {
+  for (size_type k = colptr (0); k < colptr (nsuper); k++) {
     hc (k) = rowind (k);
   }
 
@@ -459,8 +458,8 @@ graph_t generate_supernodal_dag(int nsuper, graph_t &supL, graph_t &supU) {
 
 
 /* ========================================================================================= */
-template <typename input_graph_t>
-void merge_supernodal_graph(int *p_nsuper, int *nb,
+template <typename input_graph_t, typename input_size_type>
+void merge_supernodal_graph(int *p_nsuper, input_size_type *nb,
                             bool col_majorL, input_graph_t &graphL,
                             bool col_majorU, input_graph_t &graphU,
                             int *etree) {
@@ -620,20 +619,21 @@ void merge_supernodal_graph(int *p_nsuper, int *nb,
 
 
 /* ========================================================================================= */
-template <typename output_graph_t, typename input_graph_t>
+template <typename output_graph_t, typename input_graph_t, typename input_size_type>
 output_graph_t
 generate_merged_supernodal_graph(bool lower, 
-                                 int nsuper, const int *nb,
-                                 int nsuper2, int *nb2,
+                                 int nsuper, const input_size_type *nb,
+                                 int nsuper2,      input_size_type *nb2,
                                  input_graph_t &graph, int *nnz) {
 
-
-  //auto graphL = L.graph; // in_graph
-  auto row_map = graph.row_map;
-  auto entries = graph.entries;
+  using cols_view_t    = typename output_graph_t::entries_type::non_const_type;
+  using row_map_view_t = typename output_graph_t::row_map_type::non_const_type;
+  using size_type      = typename input_graph_t::size_type;
 
   // ----------------------------------------------------------
   // now let me find nsrow for the merged supernode
+  auto row_map = graph.row_map;
+  auto entries = graph.entries;
   int n = graph.numRows ();
 
   using integer_view_host_t = Kokkos::View<int*, Kokkos::HostSpace>;
@@ -653,8 +653,8 @@ generate_merged_supernodal_graph(bool lower,
     // NOTE: SuperLU may not fill zeros to fill the supernodes
     //       So, these rows may be just subset of the supernodal rows
     while (s < nsuper && nb[s+1] <= nb2[s2+1]) {
-      int j1 = nb[s];
-      for (int k = row_map[j1]; k < row_map[j1+1]; k++) {
+      input_size_type j1 = nb[s];
+      for (size_type k = row_map (j1); k < row_map (j1+1); k++) {
         // just taking union of rows
         if (work1 (entries[k]) == 0) {
           work1 (entries[k]) = 1;
@@ -697,9 +697,6 @@ generate_merged_supernodal_graph(bool lower,
 
   // ----------------------------------------------------------
   // now let's create crs graph
-  using row_map_view_t = typename output_graph_t::row_map_type::non_const_type;
-  using cols_view_t    = typename output_graph_t::entries_type::non_const_type;
-
   row_map_view_t rowmap_view ("rowmap_view", n+1);
   cols_view_t    column_view ("colmap_view", nnzA);
   auto hr = Kokkos::create_mirror_view (rowmap_view);
@@ -729,20 +726,11 @@ generate_merged_supernodal_graph(bool lower,
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* For symbolic analysis                                                                     */
-template <typename scalar_type,
-          typename ordinal_type,
-          typename size_type,
-          typename host_graph_t,
-          typename KernelHandle,
-          typename execution_space      = Kokkos::DefaultExecutionSpace,
-          typename host_execution_space = Kokkos::DefaultHostExecutionSpace>
+template <typename host_graph_t, typename KernelHandle>
 void sptrsv_supernodal_symbolic(
     int nsuper, int *supercols, int *etree,
     host_graph_t graphL_host, KernelHandle *kernelHandleL,
     host_graph_t graphU_host, KernelHandle *kernelHandleU) {
-
-  using crsmat_t = KokkosSparse::CrsMatrix<scalar_type, ordinal_type, execution_space, void, size_type>;
-  using graph_t = typename crsmat_t::StaticCrsGraphType;
 
   #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
   double time_seconds = 0.0;
@@ -848,6 +836,7 @@ void sptrsv_supernodal_symbolic(
 
   // ===================================================================
   // copy graph to device
+  using graph_t = typename KernelHandle::SPTRSVHandleType::graph_t;
   auto graphL = deep_copy_graph<host_graph_t, graph_t> (graphL_host);
   auto graphU = deep_copy_graph<host_graph_t, graph_t> (graphU_host);
 
@@ -916,6 +905,7 @@ void sptrsv_supernodal_symbolic(
   #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
   time_seconds = timer.seconds ();
   std::cout << "   Total Symbolic Time: " << time_seconds << std::endl << std::endl;
+  std::cout << "   Total nnz: " << graphL_host.row_map (nrows) << " + " << graphU_host.row_map (nrows) << std::endl;
   #endif
 }
 
@@ -925,14 +915,17 @@ void sptrsv_supernodal_symbolic(
 /* Auxiliary functions for numeric computation                                               */
 
 /* ========================================================================================= */
-template <typename KernelHandle, typename row_map_type, typename index_type, typename values_type>
+template <typename KernelHandle, typename input_size_type,
+          typename row_map_type, typename index_type, typename values_type>
 void
-invert_supernodal_columns(KernelHandle kernelHandle, bool unit_diag, int nsuper, const int *nb, 
+invert_supernodal_columns(KernelHandle kernelHandle, bool unit_diag, int nsuper, const input_size_type *nb, 
                           row_map_type& hr, index_type& hc, values_type& hv) {
 
-  //using values_view_t  = typename crsmat_t::values_type::non_const_type;
+  using execution_space = typename values_type::execution_space;
+  using memory_space = typename execution_space::memory_space;
   using values_view_t  = typename values_type::non_const_type;
   using scalar_t = typename values_view_t::value_type;
+  using range_type = Kokkos::pair<int, int>;
 
   const scalar_t one (1.0);
 
@@ -941,7 +934,7 @@ invert_supernodal_columns(KernelHandle kernelHandle, bool unit_diag, int nsuper,
   bool invert_diag = handle->get_invert_diagonal ();
   bool invert_offdiag = handle->get_invert_offdiagonal ();
 
- // lower is always in CSC, if UinCSC, then lower=false, else lower=true
+  // lower is always in CSC, if UinCSC, then lower=false, else lower=true
   bool lower_tri = kernelHandle->is_sptrsv_lower_tri ();
   bool lower = (lower_tri ? true : (handle->is_column_major () ? false : true));
 
@@ -957,49 +950,29 @@ invert_supernodal_columns(KernelHandle kernelHandle, bool unit_diag, int nsuper,
   for (int s2 = 0; s2 < nsuper; s2++) {
     int j1 = nb[s2];
     int nsrow = hr(j1+1) - hr(j1);
-    int nscol = nb[s2+1]-nb[s2];
+    int nscol = nb[s2+1] - nb[s2];
 
     auto nnzD = hr (j1);
     char uplo_char = (lower ? 'L' : 'U');
     char diag_char = (unit_diag ? 'U' : 'N');
 
+    Kokkos::View<scalar_t**, Kokkos::LayoutLeft, memory_space, Kokkos::MemoryUnmanaged>
+      viewL (&hv(nnzD), nsrow, nscol);
+    auto Ljj = Kokkos::subview (viewL, range_type (0, nscol), Kokkos::ALL ());
+
     timer.reset ();
-    if (std::is_same<scalar_t, double>::value) {
-      LAPACKE_dtrtri (LAPACK_COL_MAJOR,
-                      uplo_char, diag_char, nscol,
-                      reinterpret_cast <double*> (&hv(nnzD)), nsrow);
-    }
-    else if (std::is_same<scalar_t, std::complex<double>>::value ||
-             std::is_same<scalar_t, Kokkos::complex<double>>::value) {
-      LAPACKE_ztrtri (LAPACK_COL_MAJOR,
-                      uplo_char, diag_char, nscol,
-                      reinterpret_cast <lapack_complex_double*> (&hv(nnzD)), nsrow);
-    }
-    else {
-      throw std::runtime_error( "Unsupported scalar type for calling trtri");
-    }
+    KokkosBlas::trtri(&uplo_char, &diag_char, Ljj);
     time1 += timer.seconds ();
+
     if (nsrow > nscol && invert_offdiag) {
-      CBLAS_UPLO uplo_cblas = (lower ? CblasLower : CblasUpper);
-      CBLAS_DIAG diag_cblas = (unit_diag ? CblasUnit : CblasNonUnit);
+      char side_char = 'R';
+      char tran_char = 'N';
+      auto Lij = Kokkos::subview (viewL, range_type (nscol, nsrow), Kokkos::ALL ());
 
       timer.reset ();
-      if (std::is_same<scalar_t, double>::value) {
-        cblas_dtrmm (CblasColMajor,
-              CblasRight, uplo_cblas, CblasNoTrans, diag_cblas,
-              nsrow-nscol, nscol,
-              1.0, reinterpret_cast <double*> (&hv(nnzD)), nsrow,
-                   reinterpret_cast <double*> (&hv(nnzD+nscol)), nsrow);
-      } else {
-        // NOTE: use double pointers
-        scalar_t alpha = one;
-        cblas_ztrmm (CblasColMajor,
-              CblasRight, uplo_cblas, CblasNoTrans, diag_cblas,
-              nsrow-nscol, nscol,
-              reinterpret_cast <double*> (&alpha),
-              reinterpret_cast <double*> (&hv(nnzD)), nsrow,
-              reinterpret_cast <double*> (&hv(nnzD+nscol)), nsrow);
-      }
+      KokkosBlas::trmm (&side_char, &uplo_char,
+                        &tran_char, &diag_char,
+                        one, Ljj, Lij);
       time2 += timer.seconds ();
     }
   }
@@ -1013,9 +986,10 @@ invert_supernodal_columns(KernelHandle kernelHandle, bool unit_diag, int nsuper,
 
 
 /* ========================================================================================= */
-template <typename crsmat_t, typename input_crsmat_t, typename graph_t, typename KernelHandle>
+template <typename crsmat_t, typename input_crsmat_t, typename input_ptr_type, typename graph_t,
+          typename KernelHandle>
 crsmat_t
-read_merged_supernodes(KernelHandle kernelHandle, int nsuper, const int *nb,
+read_merged_supernodes(KernelHandle kernelHandle, int nsuper, const input_ptr_type *mb,
                        bool unit_diag, input_crsmat_t &L, graph_t &static_graph) {
 
   using values_view_t  = typename crsmat_t::values_type::non_const_type;
@@ -1053,7 +1027,7 @@ read_merged_supernodes(KernelHandle kernelHandle, int nsuper, const int *nb,
   auto hv = Kokkos::create_mirror_view (values_view);
 
   for (int s2 = 0; s2 < nsuper; s2++) {
-    for (int j = nb[s2]; j < nb[s2+1]; j++) {
+    for (int j = mb[s2]; j < mb[s2+1]; j++) {
       for (int k = row_mapL[j]; k < row_mapL[j+1]; k++) {
         dwork (entriesL[k]) = valuesL[k];
       }
@@ -1067,7 +1041,7 @@ read_merged_supernodes(KernelHandle kernelHandle, int nsuper, const int *nb,
   }
 
   // invert blocks (TODO done on host for now)
-  invert_supernodal_columns (kernelHandle, unit_diag, nsuper, nb, hr, hc, hv);
+  invert_supernodal_columns (kernelHandle, unit_diag, nsuper, mb, hr, hc, hv);
   // deepcopy
   Kokkos::deep_copy (values_view, hv);
 
@@ -1085,14 +1059,16 @@ read_merged_supernodes(KernelHandle kernelHandle, int nsuper, const int *nb,
 
 
 /* ========================================================================================= */
-template <typename crsmat_t, typename graph_t, typename scalar_t, typename KernelHandle>
+template <typename crsmat_t, typename graph_t, typename scalar_t,
+          typename input_size_type, typename input_ptr_type,
+          typename size_type, typename ordinal_type, typename KernelHandle>
 crsmat_t
 read_supernodal_valuesL(bool unit_diag, KernelHandle kernelHandle,
-                        int n, int nsuper, bool ptr_by_column, const int *mb, const int *nb,
-                        const int *colptr, int *rowind, scalar_t *Lx, graph_t &static_graph) {
+                        int n, int nsuper, bool ptr_by_column, const input_size_type *mb, const input_ptr_type *nb,
+                        const size_type *colptr, ordinal_type *rowind, scalar_t *Lx, graph_t &static_graph) {
 
   using  values_view_t = typename crsmat_t::values_type::non_const_type;
-  using integer_view_host_t = Kokkos::View<int*, Kokkos::HostSpace>;
+  using integer_view_host_t = Kokkos::View<ordinal_type*, Kokkos::HostSpace>;
 
   const scalar_t zero (0.0);
   const scalar_t one (1.0);
@@ -1189,7 +1165,7 @@ read_supernodal_valuesL(bool unit_diag, KernelHandle kernelHandle,
       for (int ii = 0; ii < nsrow2; ii++) {
         sorted_rowind (ii) = ii;
       }
-      std::sort(sorted_rowind.data (), sorted_rowind.data () + nsrow2, sort_indices(&rowind[ps2]));
+      std::sort(sorted_rowind.data (), sorted_rowind.data () + nsrow2, sort_indices<ordinal_type>(&rowind[ps2]));
     }
     for (int jj = 0; jj < nscol; jj++) {
       for (int kk = 0; kk < nsrow2; kk++) {
@@ -1232,7 +1208,7 @@ read_supernodal_valuesL(bool unit_diag, KernelHandle kernelHandle,
 template <typename crsmat_t, typename KernelHandle, typename host_crsmat_t>
 void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
 
-  using graph_t        = typename crsmat_t::StaticCrsGraphType;
+  using        graph_t = typename crsmat_t::StaticCrsGraphType;
   using row_map_view_t = typename graph_t::row_map_type::non_const_type;
   using    cols_view_t = typename graph_t::entries_type::non_const_type;
   using  values_view_t = typename crsmat_t::values_type::non_const_type;
@@ -1242,6 +1218,7 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
   using  values_view_host_t = typename values_view_t::HostMirror;
 
   using scalar_t = typename KernelHandle::nnz_scalar_t;
+  using size_type = typename KernelHandle::size_type;
 
   const scalar_t zero (0.0);
 
@@ -1271,7 +1248,7 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
   auto entriesL = graphL.entries;
 
   auto values = superluL.values;
-  values_view_host_t valuesL = Kokkos::create_mirror_view (values);
+  auto valuesL = Kokkos::create_mirror_view (values);
   Kokkos::deep_copy (valuesL, values);
 
   int node_count = 0; // number of supernodes processed
@@ -1301,7 +1278,7 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
       int j2 = supercols_host[s+1];
       int nscol = j2 - j1 ;        // number of columns in the s-th supernode column
       for (int j = j1; j < j2; j++) {
-        for (int k = row_mapL (j); k < row_mapL (j+1); k++) {
+        for (size_type k = row_mapL (j); k < row_mapL (j+1); k++) {
           if (valuesL (k) != zero) {
             if (invert_offdiag || k >= row_mapL (j) + nscol) {
               nnzL ++;
@@ -1347,7 +1324,7 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
         int j2 = supercols_host[s+1];                // start of next supernode
         int nscol = j2 - j1 ;        // number of columns in the s-th supernode column
         for (int j = j1; j < j2; j++) {
-          for (int k = row_mapL (j); k < row_mapL (j+1); k++) {
+          for (size_type k = row_mapL (j); k < row_mapL (j+1); k++) {
             if (valuesL (k) != zero) {
               if (invert_offdiag || k >= row_mapL (j) + nscol) {
                 hr (1 + entriesL (k)) ++;
@@ -1375,7 +1352,7 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
         int nscol = j2 - j1 ;        // number of columns in the s-th supernode column
         for (int j = j1; j < j2; j++) {
           // diagonals
-          for (int k = row_mapL (j); k < row_mapL (j) + nscol; k++) {
+          for (size_type k = row_mapL (j); k < row_mapL (j) + nscol; k++) {
             // remove zeros
             if (valuesL (k) != zero) {
               if (invert_offdiag) {
@@ -1391,7 +1368,7 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
           }
 
           // off-diagonals
-          for (int k = row_mapL (j) + nscol; k < row_mapL (j+1); k++) {
+          for (size_type k = row_mapL (j) + nscol; k < row_mapL (j+1); k++) {
             // remove zeros, and minus for updating off-diagonal elements with Spmv
             if (valuesL (k) != zero) {
               hc (hr (entriesL (k))) = j;
@@ -1431,7 +1408,7 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
         // insert the columns in this supernode
         for (int j = j1; j < j2; j++) {
           // diagonals
-          for (int k = row_mapL (j); k < row_mapL (j) + nscol; k++) {
+          for (size_type k = row_mapL (j); k < row_mapL (j) + nscol; k++) {
             // remove zeros
             if (valuesL (k) != zero) {
               if (invert_offdiag) {
@@ -1447,7 +1424,7 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
           }
 
           // off-diagonals
-          for (int k = row_mapL (j) + nscol; k < row_mapL (j+1); k++) {
+          for (size_type k = row_mapL (j) + nscol; k < row_mapL (j+1); k++) {
             // remove zeros, and minus for updating off-diagonal elements with Spmv
             if (valuesL (k) != zero) {
               hc (nnzL) =  entriesL (k);
@@ -1484,6 +1461,7 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
       graph_t diag_graph(columnD_view, rowmapD_view);
       diag_blocks[lvl] = crsmat_t("DiagMatrix", nrows, valuesD_view, diag_graph);
     }
+    //std::cout << "   > split nnz(" << lvl << ") = " << nnzL+nnzD << std::endl; 
     time2 += timer.seconds ();
 
     // update the number of supernodes processed
@@ -1510,12 +1488,6 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
       KernelHandle *kernelHandleL,
       crsmat_input_t L)
   {
-    using scalar_t = typename KernelHandle::nnz_scalar_t;
-    using ordinal_type = typename crsmat_input_t::ordinal_type;
-    using execution_space = typename KernelHandle::HandleExecSpace;
-    using size_type = typename crsmat_input_t::size_type;
-    using crsmat_t = KokkosSparse::CrsMatrix<scalar_t, ordinal_type, execution_space, void, size_type>;
-
     // ===================================================================
     // load sptrsv-handles
     auto *handleL = kernelHandleL->get_sptrsv_handle ();
@@ -1553,6 +1525,7 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
 
     // ==============================================
     // read numerical values of L from Cholmod
+    using crsmat_t = typename KernelHandle::SPTRSVHandleType::crsmat_t;
     bool unit_diag = false;
     bool ptr_by_column = true;
     auto crsmatL = read_supernodal_valuesL<crsmat_t> (unit_diag, kernelHandleL,
@@ -1579,6 +1552,6 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
 } // namespace Experimental
 } // namespace KokkosSparse
 
-#endif // KOKKOSKERNELS_ENABLE_TPL_LAPACKE & KOKKOSKERNELS_ENABLE_TPL_CBLAS
+#endif // KOKKOSKERNELS_ENABLE_TPL_BLAS
 #endif // KOKKOSSPARSE_SPTRSV_SUPERNODE_HPP_
 

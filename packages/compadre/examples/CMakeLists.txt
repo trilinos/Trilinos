@@ -55,13 +55,13 @@ if (Compadre_EXAMPLES)
 
     # Host views tests for GMLS
     ADD_TEST(NAME GMLS_Host_Dim3_SVD COMMAND ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Host_Test "4" "200" "3" "0" "0" "0" "--kokkos-threads=2")
-    SET_TESTS_PROPERTIES(GMLS_Host_Dim3_SVD PROPERTIES LABELS "UnitTest;unit;kokkos" TIMEOUT 10)
+    SET_TESTS_PROPERTIES(GMLS_Host_Dim3_SVD PROPERTIES LABELS "UnitTest;unit;kokkos" TIMEOUT 60)
     
     ADD_TEST(NAME GMLS_Host_Dim2_SVD COMMAND ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Host_Test "4" "200" "2" "0" "0" "0" "--kokkos-threads=2")
-    SET_TESTS_PROPERTIES(GMLS_Host_Dim2_SVD PROPERTIES LABELS "UnitTest;unit;kokkos" TIMEOUT 10)
+    SET_TESTS_PROPERTIES(GMLS_Host_Dim2_SVD PROPERTIES LABELS "UnitTest;unit;kokkos" TIMEOUT 20)
     
     ADD_TEST(NAME GMLS_Host_Dim1_SVD COMMAND ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Host_Test "4" "200" "1" "0" "0" "0" "--kokkos-threads=2")
-    SET_TESTS_PROPERTIES(GMLS_Host_Dim1_SVD PROPERTIES LABELS "UnitTest;unit;kokkos" TIMEOUT 10)
+    SET_TESTS_PROPERTIES(GMLS_Host_Dim1_SVD PROPERTIES LABELS "UnitTest;unit;kokkos" TIMEOUT 20)
 
     # Device views tests for GMLS
     ADD_TEST(NAME GMLS_Device_Dim3_QR COMMAND ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Device_Test "4" "200" "3" "1" "0" "0" "--kokkos-threads=2")
@@ -101,10 +101,10 @@ if (Compadre_EXAMPLES)
 
     # Device views tests for small batch GMLS, reusing GMLS class object
     ADD_TEST(NAME GMLS_SmallBatchReuse_Device_Dim2_QR COMMAND ${CMAKE_CURRENT_BINARY_DIR}/GMLS_SmallBatchReuse_Device_Test "4" "200" "2" "1" "0" "0" "--kokkos-threads=2")
-    SET_TESTS_PROPERTIES(GMLS_SmallBatchReuse_Device_Dim2_QR PROPERTIES LABELS "UnitTest;unit;kokkos" TIMEOUT 10)
+    SET_TESTS_PROPERTIES(GMLS_SmallBatchReuse_Device_Dim2_QR PROPERTIES LABELS "UnitTest;unit;kokkos" TIMEOUT 20)
     
     ADD_TEST(NAME GMLS_SmallBatchReuse_Device_Dim1_QR COMMAND ${CMAKE_CURRENT_BINARY_DIR}/GMLS_SmallBatchReuse_Device_Test "4" "200" "1" "1" "0" "0" "--kokkos-threads=2")
-    SET_TESTS_PROPERTIES(GMLS_SmallBatchReuse_Device_Dim1_QR PROPERTIES LABELS "UnitTest;unit;kokkos" TIMEOUT 10)
+    SET_TESTS_PROPERTIES(GMLS_SmallBatchReuse_Device_Dim1_QR PROPERTIES LABELS "UnitTest;unit;kokkos" TIMEOUT 20)
 
     # Multisite test for GMLS
     ADD_TEST(NAME GMLS_MultiSite_Dim3_QR COMMAND ${CMAKE_CURRENT_BINARY_DIR}/GMLS_MultiSite_Test "4" "200" "3" "1" "0" "0" "--kokkos-threads=2")
@@ -112,13 +112,13 @@ if (Compadre_EXAMPLES)
 
     # Staggered scheme test for GMLS on non-manifold
     # Note: Using even polynomial order may cause this test to fail
-    ADD_TEST(NAME GMLS_Staggered_Dim3_QR COMMAND ${CMAKD_CURRENT_BINARY_DIR}/GMLS_Staggered "3" "200" "3" "1" "0" "0" "--kokkos-threads=2")
-    SET_TESTS_PROPERTIES(GMLS_Staggered_Dim3_QR PROPERTIES LABELS "UnitTest;unit;kokkos;staggered" TIMEOUT 10)
+    ADD_TEST(NAME GMLS_Staggered_Dim3_QR COMMAND ${CMAKD_CURRENT_BINARY_DIR}/GMLS_Staggered "3" "100" "3" "1" "0" "0" "--kokkos-threads=4")
+    SET_TESTS_PROPERTIES(GMLS_Staggered_Dim3_QR PROPERTIES LABELS "UnitTest;unit;kokkos;staggered" TIMEOUT 60)
 
     # Staggered scheme test for GMLS on non-manifold
     # Note: Using even polynomial order may cause this test to fail
     ADD_TEST(NAME GMLS_Staggered_Dim2_QR COMMAND ${CMAKD_CURRENT_BINARY_DIR}/GMLS_Staggered "3" "200" "2" "1" "0" "0" "--kokkos-threads=2")
-    SET_TESTS_PROPERTIES(GMLS_Staggered_Dim2_QR PROPERTIES LABELS "UnitTest;unit;kokkos;staggered" TIMEOUT 10)
+    SET_TESTS_PROPERTIES(GMLS_Staggered_Dim2_QR PROPERTIES LABELS "UnitTest;unit;kokkos;staggered" TIMEOUT 20)
 
     if (NOT Compadre_DEBUG)
       # This test is too slow in DEBUG (3x longer than all other tests combined)
@@ -132,8 +132,15 @@ if (Compadre_EXAMPLES)
 
       # Divergence-free basis test for GMLS on non-manifold
       # Note: SVD is needed to be used here due to the null space introduced
-      ADD_TEST(NAME GMLS_DivergenceFree_Dim3_SVD COMMAND ${CMAKD_CURRENT_BINARY_DIR}/GMLS_Divergence_Test "3" "200" "3" "0" "0" "0" "--kokkos-threads=2")
-      SET_TESTS_PROPERTIES(GMLS_DivergenceFree_Dim3_SVD PROPERTIES LABELS "UnitTest;unit;kokkos;divergencefree;svd" TIMEOUT 60)
+      ADD_TEST(NAME GMLS_DivergenceFree_Dim3_P3_SVD COMMAND ${CMAKD_CURRENT_BINARY_DIR}/GMLS_Divergence_Test "3" "200" "3" "0" "0" "0" "--kokkos-threads=2")
+      SET_TESTS_PROPERTIES(GMLS_DivergenceFree_Dim3_P3_SVD PROPERTIES LABELS "UnitTest;unit;kokkos;divergencefree;svd;batched" TIMEOUT 60)
+      #ADD_TEST(NAME GMLS_DivergenceFree_Dim3_P2_SVD COMMAND ${CMAKD_CURRENT_BINARY_DIR}/GMLS_Divergence_Test "2" "200" "3" "0" "0" "0" "--kokkos-threads=2")
+      #SET_TESTS_PROPERTIES(GMLS_DivergenceFree_Dim3_P2_SVD PROPERTIES LABELS "UnitTest;unit;kokkos;divergencefree;svd" TIMEOUT 60)
+
+      ADD_TEST(NAME GMLS_DivergenceFree_Dim2_P3_SVD COMMAND ${CMAKD_CURRENT_BINARY_DIR}/GMLS_Divergence_Test "3" "200" "2" "0" "0" "0" "--kokkos-threads=2")
+      SET_TESTS_PROPERTIES(GMLS_DivergenceFree_Dim2_P3_SVD PROPERTIES LABELS "UnitTest;unit;kokkos;divergencefree;svd;batched" TIMEOUT 60)
+      #ADD_TEST(NAME GMLS_DivergenceFree_Dim2_P2_SVD COMMAND ${CMAKD_CURRENT_BINARY_DIR}/GMLS_Divergence_Test "2" "200" "2" "0" "0" "0" "--kokkos-threads=2")
+      #SET_TESTS_PROPERTIES(GMLS_DivergenceFree_Dim2_P2_SVD PROPERTIES LABELS "UnitTest;unit;kokkos;divergencefree;svd" TIMEOUT 60)
     endif()
 
     #    # Manifold tests for GMLS

@@ -2,7 +2,21 @@
 Release Notes for TriBITS
 ----------------------------------------
 
-2108/10/10:
+2020/04/16:
+
+(*) MAJOR: TriBITS Core: CMAKE_CXX_STANDARD is now always set to at least 11
+    to enable C++11 support.  The ${PROJECT_NAME}_ENABLE_CXX11 option has been
+    removed, but a variable of the same name is hard-coded to ON for
+    compatibility.
+
+(*) MAJOR: TriBITS Core: CMAKE_CXX_FLAGS will no longer contain an explicit
+    C++ standard option like '-std=c++11'.  TriBITS clients' dependents
+    using CMake will still compile with support for C++11 language constructs
+    because libraries come with INTERFACE_COMPILE_FEATURES including cxx_std_11.
+    However, those using Makefile.export.<Package> files will no longer get
+    a '-std=c++11` flag from TriBITS.
+
+2018/10/10:
 
 (*) MAJOR: TriBITS Core: Changed minimum CMake version from 2.8.11 to 3.10.0.
 

@@ -130,7 +130,7 @@ namespace MueLu {
     }
     triedBelos_ = true;
 #endif
-#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_TPETRA)
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_THYRA)
     try {
       sStratimikos_ = rcp(new StratimikosSmoother(type_, paramList));
       if (sStratimikos_.is_null())

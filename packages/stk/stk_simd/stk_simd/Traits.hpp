@@ -39,7 +39,7 @@
 
 namespace stk {
 namespace {
-    
+ 
 // length
 
 template <typename FloatType>
@@ -67,6 +67,11 @@ struct SimdLength<simd::Float> {
 template <typename T>
 struct BoolT {
   typedef simd::Bool type;
+};
+
+template <>
+struct BoolT<long double> {
+  typedef bool type;
 };
 
 template <>

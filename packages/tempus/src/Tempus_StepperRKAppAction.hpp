@@ -11,7 +11,6 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
-#include "Tempus_StepperRKBase.hpp"
 
 
 namespace Tempus {
@@ -28,7 +27,7 @@ template<class Scalar> class StepperRKBase;
  *  data (i.e., use but not change the data) to change any of it
  *  (USER BEWARE!).
  *
- *  The locations of the RK AppActions (ACITON_LOCATION) in takeStep
+ *  The locations of the RK AppActions (ACTION_LOCATION) in takeStep
  *  are documented in each of the RK Algorithm sections:
  *  StepperExplicitRK, StepperDIRK and StepperIMEX_RK.
  */

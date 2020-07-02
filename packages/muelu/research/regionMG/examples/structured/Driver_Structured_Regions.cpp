@@ -188,6 +188,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 #endif
   int  cacheSize = 0;                                      clp.setOption("cachesize",               &cacheSize,           "cache size (in KB)");
   bool useStackedTimer   = false;                          clp.setOption("stacked-timer","no-stacked-timer", &useStackedTimer, "use stacked timer");
+  bool showTimerSummary = true;                            clp.setOption("show-timer-summary", "no-show-timer-summary", &showTimerSummary, "Switch on/off the timer summary at the end of the run.");
+  bool useFastMatVec = true;                               clp.setOption("fastMV", "no-fastMV", &useFastMatVec, "Use the fast MatVec implementation (or not)");
 
   clp.recogniseAllOptions(true);
   switch (clp.parse(argc, argv)) {
@@ -443,17 +445,20 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   Array<LO>  compositeToRegionLIDs(nodeMap->getNodeNumElements()*numDofsPerNode);
   Array<GO>  quasiRegionGIDs;
   Array<GO>  quasiRegionCoordGIDs;
+  Array<GO>  interfaceGIDs;
+  Array<LO>  interfaceLIDsData;
 
   createRegionData(numDimensions, useUnstructured, numDofsPerNode,
                    gNodesPerDim(), lNodesPerDim(), procsPerDim(), nodeMap, dofMap,
                    maxRegPerGID, numLocalRegionNodes, boundaryConditions,
                    sendGIDs, sendPIDs, numInterfaces, rNodesPerDim,
-                   quasiRegionGIDs, quasiRegionCoordGIDs, compositeToRegionLIDs);
+                   quasiRegionGIDs, quasiRegionCoordGIDs, compositeToRegionLIDs,
+                   interfaceGIDs, interfaceLIDsData);
 
   const LO numSend = static_cast<LO>(sendGIDs.size());
 
-  // std::cout << "p=" << myRank << " | numReceive=" << numReceive
-  //           << ", numSend=" << numSend << std::endl;
+  // std::cout << "p=" << myRank << " | numSend=" << numSend << std::endl;
+            // << ", numReceive=" << numReceive << std::endl;
   // std::cout << "p=" << myRank << " | receiveGIDs: " << receiveGIDs << std::endl;
   // std::cout << "p=" << myRank << " | receivePIDs: " << receivePIDs << std::endl;
   // std::cout << "p=" << myRank << " | sendGIDs: " << sendGIDs << std::endl;
@@ -466,21 +471,19 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   if(useUnstructured) {
     findInterface(numDimensions, rNodesPerDim, boundaryConditions,
                   interfacesDimensions, interfacesLIDs);
+
+    // std::cout << "p=" << myRank << " | numLocalRegionNodes=" << numLocalRegionNodes
+    //           << ", rNodesPerDim: " << rNodesPerDim << std::endl;
+    // std::cout << "p=" << myRank << " | boundaryConditions: " << boundaryConditions << std::endl
+    //           << "p=" << myRank << " | rNodesPerDim: " << rNodesPerDim << std::endl
+    //           << "p=" << myRank << " | interfacesDimensions: " << interfacesDimensions << std::endl
+    //           << "p=" << myRank << " | interfacesLIDs: " << interfacesLIDs << std::endl;
   }
 
   interfaceParams->set<int>       ("interfaces: number",               numInterfaces);
   interfaceParams->set<Array<LO> >("interfaces: nodes per dimensions", interfacesDimensions); // nodesPerDimensions);
   interfaceParams->set<Array<LO> >("interfaces: interface nodes",      interfacesLIDs); // interfaceLIDs);
 
-  // std::cout << "p=" << myRank << " | numLocalRegionNodes=" << numLocalRegionNodes
-  //           << ", rNodesPerDim: " << rNodesPerDim << std::endl;
-  // std::cout << "p=" << myRank << " | boundaryConditions: " << boundaryConditions << std::endl
-  //           << "p=" << myRank << " | rNodesPerDim: " << rNodesPerDim << std::endl
-  //           << "p=" << myRank << " | interfacesDimensions: " << interfacesDimensions << std::endl
-  //           << "p=" << myRank << " | interfacesLIDs: " << interfacesLIDs << std::endl;
-
-  // std::cout << "p=" << myRank << " | receiveLIDs: " << receiveLIDs() << std::endl;
-  // std::cout << "p=" << myRank << " | sendLIDs: " << sendLIDs() << std::endl;
   // std::cout << "p=" << myRank << " | compositeToRegionLIDs: " << compositeToRegionLIDs() << std::endl;
   // std::cout << "p=" << myRank << " | quasiRegionGIDs: " << quasiRegionGIDs << std::endl;
   // std::cout << "p=" << myRank << " | interfaceLIDs: " << interfaceLIDs() << std::endl;
@@ -579,10 +582,20 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   tmLocal = Teuchos::null;
   tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3.3 - Import ghost GIDs")));
 
-  RCP<Xpetra::MultiVector<LO, LO, GO, NO> > regionsPerGIDWithGhosts
-    = Xpetra::MultiVectorFactory<LO, LO, GO, NO>::Build(rowMapPerGrp[0], maxRegPerGID, false);
-  RCP<Import> regionsPerGIDImport = ImportFactory::Build(A->getRowMap(), A->getColMap());
-  regionsPerGIDWithGhosts->doImport(*regionsPerGID, *rowImportPerGrp[0], Xpetra::INSERT);
+  Array<GO>  interfaceCompositeGIDs, interfaceRegionGIDs;
+  ExtractListOfInterfaceRegionGIDs(revisedRowMapPerGrp, interfaceLIDsData, interfaceRegionGIDs);
+
+  RCP<Xpetra::MultiVector<LO, LO, GO, NO> > regionsPerGIDWithGhosts;
+  RCP<Xpetra::MultiVector<GO, LO, GO, NO> > interfaceGIDsMV;
+  MakeRegionPerGIDWithGhosts(nodeMap, revisedRowMapPerGrp[0], rowImportPerGrp[0],
+                             maxRegPerGID, numDofsPerNode,
+                             lNodesPerDim, sendGIDs, sendPIDs, interfaceLIDsData,
+                             regionsPerGIDWithGhosts, interfaceGIDsMV);
+
+  Teuchos::ArrayRCP<LO> regionMatVecLIDs;
+  RCP<Import> regionInterfaceImporter;
+  SetupMatVec(interfaceGIDsMV, regionsPerGIDWithGhosts, revisedRowMapPerGrp, rowImportPerGrp,
+              regionMatVecLIDs, regionInterfaceImporter);
 
   comm->barrier();
   tmLocal = Teuchos::null;
@@ -652,6 +665,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   Array<std::vector<RCP<Matrix> > > regProlong; // regional prolongators on each level
   Array<std::vector<RCP<Import> > > regRowImporters; // regional row importers on each level
   Array<Array<RCP<Vector> > > regInterfaceScalings; // regional interface scaling factors on each level
+  Array<RCP<Xpetra::MultiVector<GO, LO, GO, Node> > > interfaceGIDsPerLevel(1);
+  Array<RCP<Xpetra::MultiVector<LO, LO, GO, Node> > > regionsPerGIDWithGhostsPerLevel(1);
+  interfaceGIDsPerLevel[0] = interfaceGIDsMV;
+  regionsPerGIDWithGhostsPerLevel[0] = regionsPerGIDWithGhosts;
+  Array<ArrayRCP<LO> > regionMatVecLIDsPerLevel(1);
+  Array<RCP<Xpetra::Import<LO, GO, Node> > > regionInterfaceImporterPerLevel(1);
+  regionMatVecLIDsPerLevel[0] = regionMatVecLIDs;
+  regionInterfaceImporterPerLevel[0] = regionInterfaceImporter;
   RCP<ParameterList> coarseSolverData = rcp(new ParameterList());
   coarseSolverData->set<std::string>("coarse solver type", coarseSolverType);
   coarseSolverData->set<std::string>("amg xml file", coarseAmgXmlFile);
@@ -685,6 +706,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
                         regProlong,
                         regRowImporters,
                         regInterfaceScalings,
+                        interfaceGIDsPerLevel,
+                        regionsPerGIDWithGhostsPerLevel,
+                        regionMatVecLIDsPerLevel,
+                        regionInterfaceImporterPerLevel,
                         maxRegPerGID,
                         compositeToRegionLIDs(),
                         coarseSolverData,
@@ -698,13 +723,30 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   comm->barrier();
   tm = Teuchos::null;
 
+  // Extract the number of levels from the prolongator data structure
+  const int numLevels = regProlong.size();
+
+  // Set data for fast MatVec
+  // for (auto levelSmootherParams : smootherParams) {
+  for(LO levelIdx = 0; levelIdx < numLevels; ++levelIdx) {
+    smootherParams[levelIdx]->set("Use fast MatVec", useFastMatVec);
+    smootherParams[levelIdx]->set("Fast MatVec: interface LIDs",
+                                  regionMatVecLIDsPerLevel[levelIdx]);
+    smootherParams[levelIdx]->set("Fast MatVec: interface importer",
+                                  regionInterfaceImporterPerLevel[levelIdx]);
+  }
+
+  // RCP<Teuchos::FancyOStream> fancy2 = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  // Teuchos::FancyOStream& out2 = *fancy2;
+  // for(LO levelIdx = 0; levelIdx < numLevels; ++levelIdx) {
+  //   out2 << "p=" << myRank << " | regionMatVecLIDs on level " << levelIdx << std::endl;
+  //   regionMatVecLIDsPerLevel[levelIdx]->describe(out2, Teuchos::VERB_EXTREME);
+  // }
+
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 5 - Solve with V-cycle")));
 
   {
 //    std::cout << myRank << " | Running V-cycle ..." << std::endl;
-
-    // Extract the number of levels from the prolongator data structure
-    int numLevels = regProlong.size();
 
     TEUCHOS_TEST_FOR_EXCEPT_MSG(!(numLevels>0), "We require numLevel > 0. Probably, numLevel has not been set, yet.");
 
@@ -716,7 +758,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
      * recursive part of the algorithm.
      */
 
-    // residual vector
+    // Composite residual vector
     RCP<Vector> compRes = VectorFactory::Build(dofMap, true);
     {
       A->apply(*X, *compRes, Teuchos::NO_TRANS);
@@ -792,13 +834,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     }
 
     // Print type of residual norm to the screen
-    if (myRank == 0)
-    {
-      if (scaleResidualHist)
-        std::cout << "Using scaled residual norm." << std::endl;
-      else
-        std::cout << "Using unscaled residual norm." << std::endl;
-    }
+    if (scaleResidualHist)
+      out << "Using scaled residual norm." << std::endl;
+    else
+      out << "Using unscaled residual norm." << std::endl;
+
 
     // Richardson iterations
     magnitude_type normResIni = Teuchos::ScalarTraits<magnitude_type>::zero();
@@ -820,8 +860,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         // SWITCH BACK TO NON-LEVEL VARIABLES
         ////////////////////////////////////////////////////////////////////////
         {
-          computeResidual(regRes, regX, regB, regionGrpMats,
-              revisedRowMapPerGrp, rowImportPerGrp);
+          if (useFastMatVec)
+          {
+            computeResidual(regRes, regX, regB, regionGrpMats, *smootherParams[0]);
+          }
+          else
+          {
+            computeResidual(regRes, regX, regB, regionGrpMats,
+                revisedRowMapPerGrp, rowImportPerGrp);
+          }
 
           scaleInterfaceDOFs(regRes, regInterfaceScalings[0], true);
         }
@@ -836,11 +883,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           normRes /= normResIni;
 
         // Output current residual norm to screen (on proc 0 only)
+        out << cycle << "\t" << normRes << std::endl;
         if (myRank == 0)
-        {
-          std::cout << cycle << "\t" << normRes << std::endl;
           (*log) << cycle << "\t" << normRes << "\n";
-        }
 
         if (normRes < tol)
           break;
@@ -861,8 +906,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
         regX[0]->update(one, *regCorrect[0], one);
     }
-    if (myRank == 0)
-      std::cout << "Number of iterations performed for this solve: " << cycle << std::endl;
+    out << "Number of iterations performed for this solve: " << cycle << std::endl;
 
     std::cout << std::setprecision(old_precision);
     std::cout.unsetf(std::ios::fixed | std::ios::scientific);
@@ -872,16 +916,19 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   tm = Teuchos::null;
   globalTimeMonitor = Teuchos::null;
 
-  RCP<ParameterList> reportParams = rcp(new ParameterList);
-  const std::string filter = "";
-  if (useStackedTimer) {
-    Teuchos::StackedTimer::OutputOptions options;
-    options.output_fraction = options.output_histogram = options.output_minmax = true;
-    stacked_timer->report(out, comm, options);
-  } else {
-    std::ios_base::fmtflags ff(out.flags());
-    TimeMonitor::report(comm.ptr(), out, filter, reportParams);
-    out << std::setiosflags(ff);
+  if (showTimerSummary)
+  {
+    RCP<ParameterList> reportParams = rcp(new ParameterList);
+    const std::string filter = "";
+    if (useStackedTimer) {
+      Teuchos::StackedTimer::OutputOptions options;
+      options.output_fraction = options.output_histogram = options.output_minmax = true;
+      stacked_timer->report(out, comm, options);
+    } else {
+      std::ios_base::fmtflags ff(out.flags());
+      TimeMonitor::report(comm.ptr(), out, filter, reportParams);
+      out << std::setiosflags(ff);
+    }
   }
 
   TimeMonitor::clearCounters();

@@ -119,10 +119,13 @@ namespace MueLu {
     // put in auto-generated code here
 
 
+    if (name == "output filename") { ss << "<Parameter name=\"output filename\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
     if (name == "number of equations") { ss << "<Parameter name=\"number of equations\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "max levels") { ss << "<Parameter name=\"max levels\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "W cycle start level") { ss << "<Parameter name=\"W cycle start level\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "coarse grid correction scaling factor") { ss << "<Parameter name=\"coarse grid correction scaling factor\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
     if (name == "fuse prolongation and update") { ss << "<Parameter name=\"fuse prolongation and update\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "number of vectors") { ss << "<Parameter name=\"number of vectors\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "problem: symmetric") { ss << "<Parameter name=\"problem: symmetric\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "hierarchy label") { ss << "<Parameter name=\"hierarchy label\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
     if (name == "aggregation: drop tol") { ss << "<Parameter name=\"aggregation: drop tol\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
@@ -161,11 +164,14 @@ namespace MueLu {
 "<ParameterList name=\"MueLu\">"
   "<Parameter name=\"problem: type\" type=\"string\" value=\"unknown\"/>"
   "<Parameter name=\"verbosity\" type=\"string\" value=\"high\"/>"
+  "<Parameter name=\"output filename\" type=\"string\" value=\"\"/>"
   "<Parameter name=\"number of equations\" type=\"int\" value=\"1\"/>"
   "<Parameter name=\"max levels\" type=\"int\" value=\"10\"/>"
   "<Parameter name=\"cycle type\" type=\"string\" value=\"V\"/>"
+  "<Parameter name=\"W cycle start level\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"coarse grid correction scaling factor\" type=\"double\" value=\"1.0\"/>"
   "<Parameter name=\"fuse prolongation and update\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"number of vectors\" type=\"int\" value=\"1\"/>"
   "<Parameter name=\"problem: symmetric\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"xml parameter file\" type=\"string\" value=\"\"/>"
   "<Parameter name=\"parameterlist: syntax\" type=\"string\" value=\"muelu\"/>"
@@ -193,6 +199,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: number of times to pre or post smooth\" type=\"int\" value=\"10\"/>"
   "<Parameter name=\"aggregation: penalty parameters\" type=\"Array(double)\" value=\"{12.,-.2,0,0,0} \"/>"
   "<Parameter name=\"aggregation: distance laplacian algo\" type=\"string\" value=\"default\"/>"
+  "<Parameter name=\"aggregation: classical algo\" type=\"string\" value=\"default\"/>"
   "<Parameter name=\"aggregation: drop tol\" type=\"double\" value=\"0.0\"/>"
   "<Parameter name=\"aggregation: min agg size\" type=\"int\" value=\"2\"/>"
   "<Parameter name=\"aggregation: max agg size\" type=\"int\" value=\"-1\"/>"
@@ -234,6 +241,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: number of spatial dimensions\" type=\"int\" value=\"3\"/>"
   "<Parameter name=\"aggregation: coarsening order\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"aggregation: pairwise: size\" type=\"int\" value=\"8\"/>"
+  "<Parameter name=\"aggregation: pairwise: tie threshold\" type=\"double\" value=\"1e-6\"/>"
   "<Parameter name=\"aggregate qualities: check symmetry\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregate qualities: good aggregate threshold\" type=\"double\" value=\"100.0\"/>"
   "<Parameter name=\"aggregate qualities: file output\" type=\"bool\" value=\"false\"/>"
@@ -275,6 +283,7 @@ namespace MueLu {
   "<Parameter name=\"emin: num reuse iterations\" type=\"int\" value=\"1\"/>"
   "<Parameter name=\"emin: pattern\" type=\"string\" value=\"AkPtent\"/>"
   "<Parameter name=\"emin: pattern order\" type=\"int\" value=\"1\"/>"
+  "<Parameter name=\"emin: use filtered matrix\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"tentative: calculate qr\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"tentative: constant column sums\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"tentative: build coarse coordinates\" type=\"bool\" value=\"true\"/>"
@@ -498,6 +507,8 @@ namespace MueLu {
           
             "<Parameter name=\"sa: use filtered matrix\" type=\"bool\" value=\"true\"/>"
           
+            "<Parameter name=\"emin: use filtered matrix\" type=\"bool\" value=\"true\"/>"
+          
     "</ParameterList>"
   )
 ;
@@ -507,15 +518,21 @@ namespace MueLu {
       
          ("ML output","verbosity")
       
+         ("output filename","output filename")
+      
          ("PDE equations","number of equations")
       
          ("max levels","max levels")
       
          ("prec type","cycle type")
       
+         ("W cycle start level","W cycle start level")
+      
          ("coarse grid correction scaling factor","coarse grid correction scaling factor")
       
          ("fuse prolongation and update","fuse prolongation and update")
+      
+         ("number of vectors","number of vectors")
       
          ("problem: symmetric","problem: symmetric")
       
@@ -570,6 +587,8 @@ namespace MueLu {
          ("aggregation: penalty parameters","aggregation: penalty parameters")
       
          ("aggregation: distance laplacian algo","aggregation: distance laplacian algo")
+      
+         ("aggregation: classical algo","aggregation: classical algo")
       
          ("aggregation: threshold","aggregation: drop tol")
       
@@ -653,6 +672,8 @@ namespace MueLu {
       
          ("aggregation: pairwise: size","aggregation: pairwise: size")
       
+         ("aggregation: pairwise: tie threshold","aggregation: pairwise: tie threshold")
+      
          ("aggregate qualities: check symmetry","aggregate qualities: check symmetry")
       
          ("aggregate qualities: good aggregate threshold","aggregate qualities: good aggregate threshold")
@@ -734,6 +755,8 @@ namespace MueLu {
          ("emin: pattern","emin: pattern")
       
          ("emin: pattern order","emin: pattern order")
+      
+         ("emin: use filtered matrix","emin: use filtered matrix")
       
          ("tentative: calculate qr","tentative: calculate qr")
       

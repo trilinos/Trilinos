@@ -1,37 +1,11 @@
 """
 Exomerge is a lightweight Python interface for manipulating ExodusII files.
 
-Copyright (c) 2012-2019, National Technology & Engineering Solutions
+Copyright(C) 1999-2020 National Technology & Engineering Solutions
 of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 NTESS, the U.S. Government retains certain rights in this software.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-* Redistributions of source code must retain the above copyright
-   notice, this list of conditions and the following disclaimer.
-
-* Redistributions in binary form must reproduce the above
-  copyright notice, this list of conditions and the following
-  disclaimer in the documentation and/or other materials provided
-  with the distribution.
-
-* Neither the name of NTESS nor the names of its
-  contributors may be used to endorse or promote products derived
-  from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+See packages/seacas/LICENSE for details
 
 Author: Tim Kostka (tdkostk@sandia.gov)
 Created: May 3, 2012
@@ -2817,7 +2791,6 @@ class ExodusModel(object):
         """Convert elements within a block to a new type."""
         [element_block_id] = self._format_element_block_id_list(
             [element_block_id], single=True)
-        element_count = self.get_element_count(element_block_id)
         old_element_type = self._get_standard_element_type(
             self._get_element_type(element_block_id))
         new_element_type = self._get_standard_element_type(new_element_type)
@@ -5000,6 +4973,7 @@ class ExodusModel(object):
         If 'element_block_ids' is specified, only faces within those elements
         will be considered.  If 'set_of_nodes' is given, only faces which
         contain one or more nodes in that set will be returned.
+        TODO: Not sure this handles 'element_block_ids' correctly.
 
         """
         element_block_ids = self._format_element_block_id_list(
@@ -5104,7 +5078,6 @@ class ExodusModel(object):
         face_type = set()
         element_types = set()
         for id_, members in list(members_by_block.items()):
-            connectivity = self.get_connectivity(id_)
             element_types.add(self._get_element_type(id_))
             face_mapping = self._get_face_mapping_from_id(id_)
             numbers = set(x for _, x in members)
@@ -6400,10 +6373,6 @@ class ExodusModel(object):
                 four_steps[3] = 2 * four_steps[2] - four_steps[1]
             else:
                 four_steps[3] = steps[index + 2]
-            if nearby < timestep:
-                nearby = [nearby, steps[steps.index(nearby) + 1]]
-            else:
-                nearby = [steps[steps.index(nearby) - 1], nearby]
             # find interpolation coefficients
             coefficients = self._cubic_interpolation(timestep, *four_steps)
             formula = [[steps[index], coefficients[1]],
@@ -8326,8 +8295,8 @@ class ExodusModel(object):
                 self._input_check_error(argument, arg_format)
             if arg_format[1] <= 0 and len(argument) < -arg_format[1]:
                 self._input_check_error(argument, arg_format)
-            for x in argument:
-                self._input_check(x, arg_format[2:])
+            for arg in argument:
+                self._input_check(arg, arg_format[2:])
         else:
             self._assert(len(arg_format) == 1)
             if arg_format[0] is int:

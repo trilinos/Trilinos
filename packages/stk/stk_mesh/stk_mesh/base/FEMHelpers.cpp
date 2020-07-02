@@ -68,7 +68,7 @@ void verify_declare_element_edge(
     stk::topology invalid = stk::topology::INVALID_TOPOLOGY;
     stk::topology edge_top =
             (elem_top != stk::topology::INVALID_TOPOLOGY && local_edge_id < elem_top.num_edges() )
-            ? elem_top.edge_topology() : invalid;
+            ? elem_top.edge_topology(local_edge_id) : invalid;
 
     ThrowErrorMsgIf( elem_top!=stk::topology::INVALID_TOPOLOGY && local_edge_id >= elem_top.num_edges(),
             "For elem " << mesh.identifier(elem) << ", local_edge_id " << local_edge_id << ", " <<
@@ -142,7 +142,7 @@ Entity declare_element_edge(
     verify_declare_element_edge(mesh, elem, local_edge_id);
 
     stk::topology elem_top = mesh.bucket(elem).topology();
-    stk::topology edge_top = elem_top.edge_topology();
+    stk::topology edge_top = elem_top.edge_topology(local_edge_id);
 
     PartVector empty_parts;
     if(mesh.mesh_meta_data().spatial_dimension() == 2)
@@ -338,7 +338,7 @@ EquivAndPositive is_shell_edge_equivalent_and_positive(const stk::mesh::BulkData
     EquivAndPositive result = {false, false};
     stk::topology elemTopology = mesh.bucket(element).topology();
     stk::topology subTopology = elemTopology.sub_topology(mesh.mesh_meta_data().side_rank(), 0);
-    stk::topology edgeTopology = subTopology.sub_topology(stk::topology::EDGE_RANK, 0);
+    stk::topology edgeTopology = subTopology.edge_topology(0);
     sub_topology_check(candidateSideNodes, elemTopology, edgeTopology);
 
     const stk::mesh::Entity* elemNodes = mesh.begin_nodes(element);

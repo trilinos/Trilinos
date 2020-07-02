@@ -504,7 +504,6 @@ namespace Tpetra {
             targetMapToImportRow(i) = I_LID;
           }
         });
-      Kokkos::fence();
 
       // Call the actual kernel.  We'll rely on partial template specialization to call the correct one ---
       // Either the straight-up Tpetra code (SerialNode) or the KokkosKernels one (other NGP node types)
@@ -606,7 +605,6 @@ namespace Tpetra {
 
           }
         });
-      Kokkos::fence();
 
       // Call the actual kernel.  We'll rely on partial template specialization to call the correct one ---
       // Either the straight-up Tpetra code (SerialNode) or the KokkosKernels one (other NGP node types)
@@ -759,7 +757,7 @@ namespace Tpetra {
       // Run through all the hash table lookups once and for all
       lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getNodeNumElements());
       lo_view_t targetMapToImportRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToImportRow"),Aview.colMap->getNodeNumElements());
-      Kokkos::fence();
+
       Kokkos::parallel_for("Tpetra::mult_R_A_P_newmatrix::construct_tables",range_type(Aview.colMap->getMinLocalIndex(), Aview.colMap->getMaxLocalIndex()+1),KOKKOS_LAMBDA(const LO i) {
           GO aidx = Acolmap_local.getGlobalElement(i);
           LO P_LID = Prowmap_local.getLocalElement(aidx);
@@ -772,7 +770,6 @@ namespace Tpetra {
             targetMapToImportRow(i) = I_LID;
           }
         });
-      Kokkos::fence();
 
       // Call the actual kernel.  We'll rely on partial template specialization to call the correct one ---
       // Either the straight-up Tpetra code (SerialNode) or the KokkosKernels one (other NGP node types)
@@ -872,7 +869,6 @@ namespace Tpetra {
 
           }
         });
-      Kokkos::fence();
 
       // Call the actual kernel.  We'll rely on partial template specialization to call the correct one ---
       // Either the straight-up Tpetra code (SerialNode) or the KokkosKernels one (other NGP node types)
@@ -1216,6 +1212,10 @@ namespace Tpetra {
       // For column index Aik in row i of A, Acol2Prow[Aik] tells
       // you whether the corresponding row of P belongs to P_local
       // ("orig") or P_remote ("Import").
+
+      // Necessary until following UVM host accesses are changed - for example Crowptr
+      // Also probably needed in mult_R_A_P_newmatrix_kernel_wrapper - did not demonstrate this in test failure yet
+      Kokkos::fence();
 
       // For each row of R
       size_t OLD_ip = 0, CSR_ip = 0;

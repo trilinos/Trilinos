@@ -10,8 +10,12 @@
 #define Tempus_StepperOperatorSplitObserverDefault_hpp
 
 #include "Tempus_config.hpp"
-#include "Tempus_SolutionHistory.hpp"
 #include "Tempus_StepperOperatorSplitObserverBase.hpp"
+
+// Applications can uncomment this include in their implementation,
+// if they need access to the stepper methods.
+//#include "Tempus_StepperOperatorSplit.hpp"
+
 
 namespace Tempus {
 
@@ -19,6 +23,9 @@ namespace Tempus {
  *
  *  The default observer provides no-op functionality for the observer.
  *  See StepperOperatorSplitObserverBase for details on the algorithm.
+ *
+ *  Applications can copy this implementation, rename, implement their
+ *  action, and set on the stepper to get app-specific functionality.
  */
 template<class Scalar>
 class StepperOperatorSplitObserverDefault

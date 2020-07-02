@@ -11,7 +11,9 @@ SET(projectSubdirPathsArray "@PROJECT_SUBDIR_PATHS_ARRAY@")
 SET(PROJECT_MAKE_INSTALL_GROUP "@PROJECT_MAKE_INSTALL_GROUP@")
 SET(PROJECT_MAKE_INSTALL_PERMS_CHANGE "@PROJECT_MAKE_INSTALL_PERMS_CHANGE@")
 
+#
 # Helper functions
+#
 
 SET(CHMOD_CHGRP_IDX 0)
 
@@ -26,14 +28,26 @@ ENDFUNCTION()
 
 FUNCTION(SET_DIR_OWNER_AND_PERMS  dirPath  recurseFlag)
 
-  IF (NOT "${PROJECT_MAKE_INSTALL_GROUP}" STREQUAL "")
-    ECHO_AND_RUN_CMND(
-      chgrp ${PROJECT_MAKE_INSTALL_GROUP} ${recurseFlag} "${dirPath}")
-  ENDIF()
+  EXECUTE_PROCESS(COMMAND stat -c %U "${dirPath}"
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    OUTPUT_VARIABLE  dirOwner)
 
-  IF (NOT "${PROJECT_MAKE_INSTALL_PERMS_CHANGE}" STREQUAL "")
-    ECHO_AND_RUN_CMND(
-      chmod ${PROJECT_MAKE_INSTALL_PERMS_CHANGE} ${recurseFlag} "${dirPath}")
+  IF (NOT "${dirOwner}" STREQUAL "${CURRENT_USER_RUNNING_INSTALL}")
+
+    MESSAGE(STATUS "${CHMOD_CHGRP_IDX}: NOTE: Not calling chgrp and chmod on ${dirPath} since owner '${dirOwner}' != current owner '${CURRENT_USER_RUNNING_INSTALL}'!")
+
+  ELSE()
+
+    IF (NOT "${PROJECT_MAKE_INSTALL_GROUP}" STREQUAL "")
+      ECHO_AND_RUN_CMND(
+        chgrp ${PROJECT_MAKE_INSTALL_GROUP} ${recurseFlag} "${dirPath}")
+    ENDIF()
+
+    IF (NOT "${PROJECT_MAKE_INSTALL_PERMS_CHANGE}" STREQUAL "")
+      ECHO_AND_RUN_CMND(
+        chmod ${PROJECT_MAKE_INSTALL_PERMS_CHANGE} ${recurseFlag} "${dirPath}")
+    ENDIF()
+
   ENDIF()
 
   MATH(EXPR CHMOD_CHGRP_IDX "${CHMOD_CHGRP_IDX}+1")
@@ -41,9 +55,15 @@ FUNCTION(SET_DIR_OWNER_AND_PERMS  dirPath  recurseFlag)
 
 ENDFUNCTION()
 
+#
 # Executable script
+#
 
 IF (EXISTS "${projectInstallBaseDir}")
+
+  EXECUTE_PROCESS(COMMAND whoami
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    OUTPUT_VARIABLE  CURRENT_USER_RUNNING_INSTALL)
 
   LIST(LENGTH projectSubdirPathsArray numSubDirs)
 
