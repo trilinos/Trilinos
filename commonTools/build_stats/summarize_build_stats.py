@@ -40,9 +40,7 @@ def getStdBuildStatsColsAndTypesList():
 
 # Read in a CSV file as a dict of lists.
 #
-def readCsvFileIntoDictOfLists(csvFileName,
-    colNameAndTypeList,
-  ):
+def readCsvFileIntoDictOfLists(csvFileName, colNameAndTypeList):
   dictOfLists = {}
   with open(csvFileName, 'r') as csvFile:
     csvReader = csv.reader(csvFile)
@@ -56,20 +54,30 @@ def readCsvFileIntoDictOfLists(csvFileName,
     for colNameTypeIdx in colNameTypeIdxList:
       dictOfLists.update( { colNameTypeIdx.colName() : [] } )
     # Fill the columns of data
-    dataRow = 0
+    dataRowIdx = 0
     for lineList in csvReader:
       if not lineList: continue # Ingore blank line
       CDQAR.stripWhiltespaceFromStrList(lineList)
-      #CDQAR.assertExpectedNumColsFromCsvFile(csvFileName, dataRow, lineList,
-      #  columnHeadersList)
+      assertNumExpectedCsvFileLineEntries(csvFileName, columnHeadersList,
+        dataRowIdx, lineList)
       # Read the row entries
       for colNameTypeIdx in colNameTypeIdxList:
         dictOfLists[colNameTypeIdx.colName()].append(
           colNameTypeIdx.convertFromStr(lineList[colNameTypeIdx.getIdx()]) )
       # Update for next row
-      dataRow += 1
+      dataRowIdx += 1
   # Return completed dict of lists
   return dictOfLists
+
+
+def assertNumExpectedCsvFileLineEntries(csvFileName, columnHeadersList,
+    dataRowIdx, csvLineList,
+  ):
+  if len(columnHeadersList) != len(csvLineList):
+    raise Exception(
+      "Error, the CSV file '"+csvFileName+"' has "+str(len(columnHeadersList))+\
+      " column headers but data row "+str(dataRowIdx)+" only has "+\
+       str(len(csvLineList))+" entries!" )
 
 
 def getColNameTypeIdxListGivenColNameAndTypeList(csvFileName, columnHeadersList,

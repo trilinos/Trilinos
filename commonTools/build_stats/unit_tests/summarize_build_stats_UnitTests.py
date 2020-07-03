@@ -144,6 +144,36 @@ class test_readCsvFileIntoDictOfLists(unittest.TestCase):
       self.assertFalse("ERROR: Did not thown an excpetion")
 
 
+  def test_row_missing_elements(self):
+    threwExcept = True
+#    buildStatsDOL = SBS.readCsvFileIntoDictOfLists(
+#      g_testBaseDir+"/build_stats.incomplete_row.csv",
+#      [
+#        cnat('max_resident_size_Kb', 'float'),
+#        cnat('elapsed_real_time_sec', 'float'),
+#        ]
+#      )
+    try:
+      buildStatsDOL = SBS.readCsvFileIntoDictOfLists(
+        g_testBaseDir+"/build_stats.incomplete_row.csv",
+        [
+          cnat('max_resident_size_Kb', 'float'),
+          cnat('elapsed_real_time_sec', 'float'),
+          ]
+        )
+      threwExcept = False
+    except Exception, exceptObj:
+      errMsg = str(exceptObj)
+      errMsgSubStrExpected = \
+        "build_stats.incomplete_row.csv' has 10 column headers but data row 2"+\
+        " only has 5 entries"
+      subStrIdx = errMsg.find(errMsgSubStrExpected)
+      self.assertNotEqual(subStrIdx, -1)
+      # ToDo: Do a better match with fail msg above
+    if not threwExcept:
+      self.assertFalse("ERROR: Did not thown an excpetion")
+
+
 #############################################################################
 #
 # Test summarize_build_stats.getColNameTypeIdxListGivenColNameAndTypeList()
