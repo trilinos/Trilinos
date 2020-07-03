@@ -34,7 +34,6 @@
 
 #include <gtest/gtest.h>
 #include <stk_mesh/base/Ngp.hpp>
-#include <stk_mesh/base/NgpForEachEntity.hpp>
 #include <stk_mesh/base/NgpMesh.hpp>
 #include <stk_mesh/base/NgpField.hpp>
 #include <stk_unit_test_utils/getOption.h>
@@ -117,25 +116,6 @@ TEST_F(NgpFieldAccess, Centroid)
   timer.print_timing(NUM_RUNS);
 }
 
-TEST_F(NgpFieldAccess, ConstCentroid)
-{
-  if (get_parallel_size() != 1) return;
-
-  const int NUM_RUNS = 400;
-  const int ELEMS_PER_DIM = 100;
-
-  declare_centroid_field();
-  setup_mesh(stk::unit_test_util::get_mesh_spec(ELEMS_PER_DIM), stk::mesh::BulkData::NO_AUTO_AURA);
-
-  timer.start_timing();
-  for (int run=0; run<NUM_RUNS; run++) {
-    stk::performance_tests::calculate_centroid_using_coord_field<stk::mesh::NgpConstField<double>>(get_bulk(), *centroid);
-    verify_averaged_centroids_are_center_of_mesh(ELEMS_PER_DIM);
-  }
-  timer.update_timing();
-  timer.print_timing(NUM_RUNS);
-}
-
 TEST_F(NgpFieldAccess, CentroidMultiBlock)
 {
   if (get_parallel_size() != 1) return;
@@ -151,30 +131,6 @@ TEST_F(NgpFieldAccess, CentroidMultiBlock)
   for (int run=0; run<NUM_RUNS; run++) {
     for (int blockId=1; blockId<=NUM_BLOCKS; blockId++) {
       stk::performance_tests::calculate_centroid_using_coord_field<stk::mesh::NgpField<double>>(
-            get_bulk(), block_selector(blockId), *centroid);
-    }
-
-    verify_averaged_centroids_are_center_of_mesh(ELEMS_PER_DIM);
-  }
-  timer.update_timing();
-  timer.print_timing(NUM_RUNS);
-}
-
-TEST_F(NgpFieldAccess, ConstCentroidMultiBlock)
-{
-  if (get_parallel_size() != 1) return;
-
-  const int NUM_RUNS = 5;
-  const int ELEMS_PER_DIM = 100;
-  const int NUM_BLOCKS = 100;
-
-  declare_centroid_field();
-  setup_multi_block_mesh(ELEMS_PER_DIM, NUM_BLOCKS);
-
-  timer.start_timing();
-  for (int run=0; run<NUM_RUNS; run++) {
-    for (int blockId=1; blockId<=NUM_BLOCKS; blockId++) {
-      stk::performance_tests::calculate_centroid_using_coord_field<stk::mesh::NgpConstField<double>>(
             get_bulk(), block_selector(blockId), *centroid);
     }
 

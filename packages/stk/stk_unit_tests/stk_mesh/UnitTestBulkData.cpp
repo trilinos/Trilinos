@@ -68,6 +68,7 @@
 #include "stk_mesh/base/Selector.hpp"   // for Selector, operator|
 #include "stk_mesh/base/Types.hpp"      // for EntityProc, EntityVector, etc
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"
+#include "stk_mesh/baseImpl/MeshCommImplUtils.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_unit_test_utils/stk_mesh_fixtures/BoxFixture.hpp"  // for BoxFixture
 #include "stk_unit_test_utils/stk_mesh_fixtures/HexFixture.hpp"  // for HexFixture, etc
@@ -89,16 +90,6 @@
 #include <string>                       // for string, basic_string, etc
 #include <utility>                      // for pair
 #include <vector>                       // for vector, etc
-
-namespace stk
-{
-namespace mesh
-{
-class FieldBase;
-void communicateSharedEntityInfo(stk::mesh::BulkData &mesh, stk::CommSparse &comm, std::vector<std::vector<stk::mesh::shared_entity_type> > &shared_entities);
-
-}
-}
 
 using stk::mesh::Part;
 using stk::mesh::MetaData;
@@ -3140,8 +3131,6 @@ TEST(BulkData, ModificationEnd)
             EXPECT_FALSE(stkMeshBulkData->is_valid(iter->entity));
         }
 
-        //    stkMeshBulkData->my_internal_resolve_shared_modify_delete();
-
         std::vector<size_t> globalCounts;
         stk::mesh::comm_mesh_counts(*stkMeshBulkData, globalCounts);
 
@@ -5900,7 +5889,7 @@ TEST(FaceCreation, test_face_creation_2Hexes_2procs)
         EXPECT_EQ(1u, shared_entities_by_proc[otherProc].size());
 
         stk::CommSparse comm(mesh.parallel());
-        communicateSharedEntityInfo(mesh, comm, shared_entities_by_proc);
+        stk::mesh::impl::communicate_shared_entity_info(mesh, comm, shared_entities_by_proc);
         mesh.my_unpackEntityInfromFromOtherProcsAndMarkEntitiesAsSharedAndTrackProcessorsThatNeedAlsoHaveEntity(comm, potentially_shared_sides);
 
         EXPECT_TRUE(mesh.my_internal_is_entity_marked(side) == stk::mesh::BulkData::IS_SHARED);

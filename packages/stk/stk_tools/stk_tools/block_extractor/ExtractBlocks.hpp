@@ -39,21 +39,33 @@
 
 namespace stk { namespace mesh { class BulkData; } }
 
+namespace stk { namespace mesh { class Part; } }
+namespace stk { namespace mesh { class Selector; } }
+
 namespace stk {
 namespace tools {
 
-void extract_blocks_from_file(const std::string &inFile,
-                              const std::string &outFile,
-                              const std::vector<std::string> &blockNames,
-                              MPI_Comm comm);
-
 void extract_blocks_and_ns_from_file(const std::string &inFile,
                               const std::string &outFile,
-                              const std::vector<std::string> &blockNames,
-							  const std::vector<std::string> &nodesetNames,
+                              const std::vector<int> &blockIDs,
+                                                          const std::vector<int> &nodesetIDs,
                               MPI_Comm comm);
 
 void extract_blocks(stk::mesh::BulkData &oldBulk, stk::mesh::BulkData &newBulk, const std::vector<std::string> &blockNames);
+
+
+
+std::vector<std::string> GetBlockNamesFromIDs(const stk::mesh::BulkData & meshBulk, const std::vector<int> & block_ids);
+
+std::vector<std::string> find_nodeset_names_from_id(const stk::mesh::BulkData & meshBulk, const std::vector<int> & nodeset_ids);
+
+void GetPartsByName(std::vector<stk::mesh::Part*> & parts,
+                           const stk::mesh::BulkData& inBulk,
+                           std::vector < std::string > names);
+
+stk::mesh::Selector GetBlockAndNodesetSelector(const stk::mesh::BulkData & inBulk,
+                                            const std::vector<std::string>& nodesetNames,
+                                            const std::vector<std::string>& blockNames);
 
 }
 }

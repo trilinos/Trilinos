@@ -7,7 +7,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include <cgns/Iocgns_Defines.h>
@@ -78,6 +78,42 @@ namespace {
       }
     }
     return has_decomp_flag;
+  }
+
+  bool has_decomp_name_kluge(int cgns_file_ptr, int base, int zone, int zgc_idx)
+  {
+    // Check the `zgc_idx`-th ZGC node to see if the name matches the
+    // form described in the `name_is_decomp` function below.  We want to
+    // see if there are *any* names that match this form and if so, we can
+    // use the kluge; otherwise we can't and need to rely on other hueristics.
+    char                    connectname[CGNS_MAX_NAME_LENGTH + 1];
+    char                    donorname[CGNS_MAX_NAME_LENGTH + 1];
+    std::array<cgsize_t, 6> range;
+    std::array<cgsize_t, 6> donor_range;
+    Ioss::IJK_t             transform;
+
+    cg_1to1_read(cgns_file_ptr, base, zone, zgc_idx, connectname, donorname, range.data(),
+		 donor_range.data(), transform.data());
+
+    std::string name{connectname};
+    bool has_decomp_name = ((name.find_first_not_of("0123456789_-") == std::string::npos) &&
+	    (name.find("--", 1 != std::string::npos)));
+
+    return has_decomp_name;
+  }
+
+  bool name_is_decomp(const std::string &name)
+  {
+    // Major kluge to deal with fpp files which don't have the
+    // decomp descriptor.  Usually only required if the model is
+    // periodic...
+    //
+    // A zgc name that is generated as part of the decomposition process
+    // has the following characteristics:
+    // * is all [0-9_-] characters
+    // * has "--" in the middle (approx) of the name
+    return ((name.find_first_not_of("0123456789_-") == std::string::npos) &&
+	    (name.find("--", 1 != std::string::npos)));
   }
 
   void zgc_check_descriptor(int cgns_file_ptr, int base, int zone, int zgc_idx,
@@ -256,6 +292,14 @@ namespace {
           int    br   = bb;
           do {
             global[ijk] += blocks[br].range[ijk];
+#if IOSS_DEBUG_OUTPUT
+	    const auto b = blocks[br];
+	    fmt::print(Ioss::DEBUG(), "Min {}: {} {} ({} {} {})  [{}]\n",
+		       (ijk == 0 ? 'i' : ijk == 1 ? 'j' : 'k'),
+		       b.name, b.face_adj[ijk],
+		       b.range[0], b.range[1], b.range[2],
+		       b.face_adj.to_string('.','+'));
+#endif
             br = adjacent_block(blocks[br], ijk + 3, proc_block_map);
             if (++iter > end - begin) {
               auto               bp = adjacent_block(blocks[br], ijk + 3, proc_block_map);
@@ -315,10 +359,13 @@ namespace {
     // normal inter-zone ZGC. If the descriptor does not exist, then have
     // to rely on hueristics...
     bool has_decomp_flag = false;
+    bool has_decomp_names = false;
     for (int i = 0; i < nconn; i++) {
       if (has_decomp_descriptor(cgns_file_ptr, base, zone, i + 1)) {
         has_decomp_flag = true;
-        break;
+      }
+      if (has_decomp_name_kluge(cgns_file_ptr, base, zone, i + 1)) {
+        has_decomp_names = true;
       }
     }
 
@@ -345,7 +392,11 @@ namespace {
         is_from_decomp = has_decomp_descriptor(cgns_file_ptr, base, zone, i + 1);
       }
       else {
-        is_from_decomp = donor_name == zone_name && donor_proc >= 0 && donor_proc != myProcessor;
+#if IOSS_DEBUG_OUTPUT
+	fmt::print("Name: {}, decomp? = {}\n", connectname, name_is_decomp(connectname));
+#endif
+        is_from_decomp = donor_name == zone_name && donor_proc >= 0 && donor_proc != myProcessor &&
+	  (!has_decomp_names || name_is_decomp(connectname));
       }
 
       if (is_from_decomp) {
@@ -856,7 +907,7 @@ namespace Iocgns {
         fmt::print(Ioss::DEBUG(), "{} {} {} ({} {} {}) ({} {} {}) ({} {} {}) [{}]\n", b.name,
                    b.proc, b.local_zone, b.range[0], b.range[1], b.range[2], b.glob_range[0],
                    b.glob_range[1], b.glob_range[2], b.offset[0], b.offset[1], b.offset[2],
-                   b.face_adj);
+                   b.face_adj.to_string('.','+'));
       }
 #endif
 

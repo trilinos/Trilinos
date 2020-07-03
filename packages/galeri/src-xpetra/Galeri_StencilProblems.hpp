@@ -100,7 +100,15 @@ namespace Galeri {
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
     Teuchos::RCP<typename Problem<Map,Matrix,MultiVector>::RealValuedMultiVector> Laplace1DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildCoords() {
 
-      GlobalOrdinal nx = this->list_.get("nx", (GlobalOrdinal) -1);
+      Teuchos::ParameterList list = this->list_;
+      GlobalOrdinal nx = -1;
+
+      if (list.isParameter("nx")) {
+        if (list.isType<int>("nx"))
+          nx = Teuchos::as<GlobalOrdinal>(list.get<int>("nx"));
+        else
+          nx = list.get<GlobalOrdinal>("nx");
+      }
 
       if (nx == -1) {
         nx = this->Map_->getGlobalNumElements();
@@ -122,8 +130,23 @@ namespace Galeri {
 
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
     Teuchos::RCP<Matrix> Laplace2DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildMatrix() {
-      GlobalOrdinal nx = this->list_.get("nx", (GlobalOrdinal) -1);
-      GlobalOrdinal ny = this->list_.get("ny", (GlobalOrdinal) -1);
+      Teuchos::ParameterList list = this->list_;
+      GlobalOrdinal nx = -1;
+      GlobalOrdinal ny = -1;
+
+      if (list.isParameter("nx")) {
+        if (list.isType<int>("nx"))
+          nx = Teuchos::as<GlobalOrdinal>(list.get<int>("nx"));
+        else
+          nx = list.get<GlobalOrdinal>("nx");
+      }
+      if (list.isParameter("ny")) {
+        if (list.isType<int>("ny"))
+          ny = Teuchos::as<GlobalOrdinal>(list.get<int>("ny"));
+        else
+          ny = list.get<GlobalOrdinal>("ny");
+      }
+
       double  one = 1.0;
       Scalar  stretchx = (Scalar) this->list_.get("stretchx", one);
       Scalar  stretchy = (Scalar) this->list_.get("stretchy", one);
@@ -157,9 +180,29 @@ namespace Galeri {
 
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
     Teuchos::RCP<Matrix> Laplace3DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildMatrix() {
-      GlobalOrdinal nx = this->list_.get("nx", (GlobalOrdinal) -1);
-      GlobalOrdinal ny = this->list_.get("ny", (GlobalOrdinal) -1);
-      GlobalOrdinal nz = this->list_.get("nz", (GlobalOrdinal) -1);
+      Teuchos::ParameterList list = this->list_;
+      GlobalOrdinal nx = -1;
+      GlobalOrdinal ny = -1;
+      GlobalOrdinal nz = -1;
+
+      if (list.isParameter("nx")) {
+        if (list.isType<int>("nx"))
+          nx = Teuchos::as<GlobalOrdinal>(list.get<int>("nx"));
+        else
+          nx = list.get<GlobalOrdinal>("nx");
+      }
+      if (list.isParameter("ny")) {
+        if (list.isType<int>("ny"))
+          ny = Teuchos::as<GlobalOrdinal>(list.get<int>("ny"));
+        else
+          ny = list.get<GlobalOrdinal>("ny");
+      }
+      if (list.isParameter("nz")) {
+        if (list.isType<int>("nz"))
+          nz = Teuchos::as<GlobalOrdinal>(list.get<int>("nz"));
+        else
+          nz = list.get<GlobalOrdinal>("nz");
+      }
       double  one = 1.0;
       Scalar  stretchx = (Scalar) this->list_.get("stretchx", one);
       Scalar  stretchy = (Scalar) this->list_.get("stretchy", one);
@@ -196,8 +239,22 @@ namespace Galeri {
 
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
     Teuchos::RCP<Matrix> Star2DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildMatrix() {
-      GlobalOrdinal nx = this->list_.get("nx", (GlobalOrdinal) -1);
-      GlobalOrdinal ny = this->list_.get("ny", (GlobalOrdinal) -1);
+      Teuchos::ParameterList list = this->list_;
+      GlobalOrdinal nx = -1;
+      GlobalOrdinal ny = -1;
+
+      if (list.isParameter("nx")) {
+        if (list.isType<int>("nx"))
+          nx = Teuchos::as<GlobalOrdinal>(list.get<int>("nx"));
+        else
+          nx = list.get<GlobalOrdinal>("nx");
+      }
+      if (list.isParameter("ny")) {
+        if (list.isType<int>("ny"))
+          ny = Teuchos::as<GlobalOrdinal>(list.get<int>("ny"));
+        else
+          ny = list.get<GlobalOrdinal>("ny");
+      }
 
       Scalar a  = this->list_.get("a",   8.0);
       Scalar b  = this->list_.get("b",  -1.0);
@@ -226,8 +283,22 @@ namespace Galeri {
 
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
     Teuchos::RCP<Matrix> BigStar2DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildMatrix() {
-      GlobalOrdinal nx = this->list_.get("nx", (GlobalOrdinal) -1);
-      GlobalOrdinal ny = this->list_.get("ny", (GlobalOrdinal) -1);
+      Teuchos::ParameterList list = this->list_;
+      GlobalOrdinal nx = -1;
+      GlobalOrdinal ny = -1;
+
+      if (list.isParameter("nx")) {
+        if (list.isType<int>("nx"))
+          nx = Teuchos::as<GlobalOrdinal>(list.get<int>("nx"));
+        else
+          nx = list.get<GlobalOrdinal>("nx");
+      }
+      if (list.isParameter("ny")) {
+        if (list.isType<int>("ny"))
+          ny = Teuchos::as<GlobalOrdinal>(list.get<int>("ny"));
+        else
+          ny = list.get<GlobalOrdinal>("ny");
+      }
 
       Scalar a  = this->list_.get("a", 20.0);
       Scalar b  = this->list_.get("b", -8.0);
@@ -260,9 +331,29 @@ namespace Galeri {
 
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
     Teuchos::RCP<Matrix> Brick3DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildMatrix() {
-      GlobalOrdinal nx = this->list_.get("nx", (GlobalOrdinal) -1);
-      GlobalOrdinal ny = this->list_.get("ny", (GlobalOrdinal) -1);
-      GlobalOrdinal nz = this->list_.get("nz", (GlobalOrdinal) -1);
+      Teuchos::ParameterList list = this->list_;
+      GlobalOrdinal nx = -1;
+      GlobalOrdinal ny = -1;
+      GlobalOrdinal nz = -1;
+
+      if (list.isParameter("nx")) {
+        if (list.isType<int>("nx"))
+          nx = Teuchos::as<GlobalOrdinal>(list.get<int>("nx"));
+        else
+          nx = list.get<GlobalOrdinal>("nx");
+      }
+      if (list.isParameter("ny")) {
+        if (list.isType<int>("ny"))
+          ny = Teuchos::as<GlobalOrdinal>(list.get<int>("ny"));
+        else
+          ny = list.get<GlobalOrdinal>("ny");
+      }
+      if (list.isParameter("nz")) {
+        if (list.isType<int>("nz"))
+          nz = Teuchos::as<GlobalOrdinal>(list.get<int>("nz"));
+        else
+          nz = list.get<GlobalOrdinal>("nz");
+      }
 
       if (nx == -1 || ny == -1 || nz == -1) {
         GlobalOrdinal n = this->Map_->getGlobalNumElements();

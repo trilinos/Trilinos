@@ -58,9 +58,9 @@
 #include "ROL_PEBBL_Driver.hpp"
 #include "ROL_TeuchosBranchHelper_PEBBL.hpp"
 #include "opfactory.hpp"
-#include "hilbert.hpp"
 #include "extractQP.hpp"
 #include "branchHelper.hpp"
+#include "branching.hpp"
 
 int main(int argc, char *argv[]) {
 //  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
@@ -93,9 +93,8 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::OptimizationProblem<RealT>> problem;
     ROL::Ptr<ROL::OptimizationSolver<RealT>>  solver;
     ROL::Ptr<ROL::Vector<RealT>>              z, u;
-    int order = parlist->sublist("Problem").get("Hilbert Curve Order",6);
-    int n = std::pow(2,order+1);
-    parlist->sublist("Problem").set("Hilbert Curve Order",order+1);
+    int nx = parlist->sublist("Problem").get("Number of X-Cells",64);
+    int ny = parlist->sublist("Problem").get("Number of Y-Cells",32);
     factory = ROL::makePtr<BinaryAdvDiffFactory<RealT>>(*parlist,comm,outStream);
     bool checkDeriv = parlist->sublist("Problem").get("Check Derivatives",false); 
     if (checkDeriv) factory->check(*outStream);
@@ -112,11 +111,16 @@ int main(int argc, char *argv[]) {
     solveQP = (useBB ? false : solveQP);
     if (useBB) {
       RealT intTol = parlist->sublist("Problem").get("Integrality Tolerance",1e-6);
-      int method = parlist->sublist("Problem").get("Branching Method",0);
+      int method    = parlist->sublist("Problem").get("Branching Method",0);
+      int incheur   = parlist->sublist("Problem").get("Incumbent Heuristic",0);
+      int verbosity = parlist->sublist("Problem").get("BB Output Level",0);
       ROL::Ptr<ROL::BranchHelper_PEBBL<RealT>> bHelper
         = ROL::makePtr<PDEOPT_BranchHelper_PEBBL<RealT>>(intTol,method);
-      ROL::ROL_PEBBL_Driver<RealT> pebbl(factory,parlist,bHelper,3,outStream);
+      ROL::Ptr<ADVDIFF_Branching<RealT>> branching
+        = ROL::makePtr<ADVDIFF_Branching<RealT>>(factory,parlist,bHelper,verbosity,outStream,incheur);
+      ROL::ROL_PEBBL_Driver<RealT> pebbl(branching);
       pebbl.solve(argc,argv,*outStream);
+      z = pebbl.getSolution();
     }
     else {
       if (solveQP) {
@@ -125,41 +129,37 @@ int main(int argc, char *argv[]) {
       }
       solver = ROL::makePtr<ROL::OptimizationSolver<RealT>>(*problem, *parlist);
       solver->solve(*outStream);
+      z = problem->getSolutionVector();
     }
-    z = problem->getSolutionVector();
     factory->getState(u,z);
 
     // Print
     bool usePC = parlist->sublist("Problem").get("Piecewise Constant Controls", true);
     std::stringstream uname, zname, xname, yname;
-    uname << "state_"   << order+1 << ".txt";
-    zname << "control_" << order+1 << ".txt";
-    xname << "X_"       << order+1 << ".txt";
-    yname << "Y_"       << order+1 << ".txt";
     if (!solveQP) {
-      factory->getAssembler()->outputTpetraVector(ROL::dynamicPtrCast<ROL::TpetraMultiVector<RealT>>(u)->getVector(),uname.str());
       if (!usePC) {
+        uname << "state.txt";
+        zname << "control.txt";
+        factory->getAssembler()->outputTpetraVector(ROL::dynamicPtrCast<ROL::TpetraMultiVector<RealT>>(u)->getVector(),uname.str());
         factory->getAssembler()->outputTpetraVector(ROL::dynamicPtrCast<ROL::TpetraMultiVector<RealT>>(z)->getVector(),zname.str());
       }
       else {
+        uname << "state_"   << nx << "_" << ny << ".txt";
+        zname << "control_" << nx << "_" << ny << ".txt";
+        xname << "X_"       << nx << "_" << ny << ".txt";
+        yname << "Y_"       << nx << "_" << ny << ".txt";
+        factory->getAssembler()->outputTpetraVector(ROL::dynamicPtrCast<ROL::TpetraMultiVector<RealT>>(u)->getVector(),uname.str());
         std::ofstream zfile, xfile, yfile;
         zfile.open(zname.str());
         xfile.open(xname.str());
         yfile.open(yname.str());
-        int x(0), y(0);
-        std::vector<RealT> &zdata = *ROL::dynamicPtrCast<PDE_OptVector<RealT>>(z)->getParameter()->getVector();
-        //for (unsigned j = 0; j < n*n; ++j) {
-        //  zfile << zdata[j] << std::endl;
-        //  hilbert::d2xy(order+1, j, x, y);
-        //  xfile << x << std::endl;
-        //  yfile << y << std::endl;
-        //}
-        for (int j = 0; j < n; ++j) {
-          for (int k = 0; k < n; ++k) {
-            zfile << zdata[j+k*n] << std::endl;
-            x = j; y = k;
-            xfile << x << std::endl;
-            yfile << y << std::endl;
+        std::vector<RealT> &zdata = *ROL::dynamicPtrCast<ROL::StdVector<RealT>>(z)->getVector();
+        zfile << std::scientific << std::setprecision(18);
+        for (int j = 0; j < nx; ++j) {
+          for (int k = 0; k < ny; ++k) {
+            zfile << zdata[j+k*nx] << std::endl;
+            xfile << j << std::endl;
+            yfile << k << std::endl;
           }
         }
         zfile.close();
@@ -168,24 +168,19 @@ int main(int argc, char *argv[]) {
       }
     }
     else {
+      zname << "control_" << nx << "_" << ny << ".txt";
+      xname << "X_"       << nx << "_" << ny << ".txt";
+      yname << "Y_"       << nx << "_" << ny << ".txt";
       std::ofstream zfile, xfile, yfile;
       zfile.open(zname.str());
       xfile.open(xname.str());
       yfile.open(yname.str());
-      int x(0), y(0);
       Teuchos::SerialDenseVector<int,RealT> &zdata = *ROL::dynamicPtrCast<ROL::TeuchosVector<int,RealT>>(z)->getVector();
-      //for (unsigned j = 0; j < n*n; ++j) {
-      //  zfile << zdata[j] << std::endl;
-      //  hilbert::d2xy(order+1, j, x, y);
-      //  xfile << x << std::endl;
-      //  yfile << y << std::endl;
-      //}
-      for (int j = 0; j < n; ++j) {
-        for (int k = 0; k < n; ++k) {
-          zfile << zdata[j+k*n] << std::endl;
-          x = j; y = k;
-          xfile << x << std::endl;
-          yfile << y << std::endl;
+      for (int j = 0; j < nx; ++j) {
+        for (int k = 0; k < ny; ++k) {
+          zfile << zdata[j+k*nx] << std::endl;
+          xfile << j << std::endl;
+          yfile << k << std::endl;
         }
       }
       zfile.close();

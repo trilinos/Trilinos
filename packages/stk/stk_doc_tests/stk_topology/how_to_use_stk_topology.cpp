@@ -40,13 +40,13 @@
 
 namespace {
 
-void verifyPermutationsForTriangle(stk::topology triangular_shell, unsigned* triangle_1_node_ids, unsigned* gold_triangle_1_permutations)
+void verifyPermutationsForTriangle(unsigned* triangle_1_node_ids, unsigned* gold_triangle_1_permutations)
 {
-    ASSERT_TRUE(stk::topology::SHELL_TRIANGLE_3 == triangular_shell);
+    stk::topology triangular_shell = stk::topology::SHELL_TRIANGLE_3;
     unsigned triangle_1_permutation[3];
-    for (unsigned i=0;i<triangular_shell.num_permutations();i++)
-    {
+    for (unsigned i=0; i<triangular_shell.num_permutations(); i++) {
         triangular_shell.permutation_nodes(triangle_1_node_ids, i, triangle_1_permutation);
+
         EXPECT_TRUE(gold_triangle_1_permutations[3*i+0] == triangle_1_permutation[0] &&
                     gold_triangle_1_permutations[3*i+1] == triangle_1_permutation[1] &&
                     gold_triangle_1_permutations[3*i+2] == triangle_1_permutation[2]);
@@ -70,7 +70,7 @@ TEST(stk_topology_understanding, lexicographical_smallest_permutation)
                 8, 10, 12  // lexicographical smallest permutation by node ids if considering all permutations
         };
 
-        verifyPermutationsForTriangle(triangular_shell, triangle_node_ids, gold_triangle_permutations);
+        verifyPermutationsForTriangle(triangle_node_ids, gold_triangle_permutations);
 
         bool usePositivePermutationsOnly = false;
         unsigned permutation_index = triangular_shell.lexicographical_smallest_permutation((unsigned*)triangle_node_ids, usePositivePermutationsOnly);
@@ -214,7 +214,7 @@ TEST(stk_topology_understanding, superelements)
     EXPECT_EQ(0u, validSuperElement.num_sides());
     EXPECT_EQ(0u, validSuperElement.dimension());
     EXPECT_EQ(stk::topology::INVALID_TOPOLOGY, validSuperElement.face_topology(0));
-    EXPECT_EQ(stk::topology::INVALID_TOPOLOGY, validSuperElement.edge_topology());
+    EXPECT_EQ(stk::topology::INVALID_TOPOLOGY, validSuperElement.edge_topology(0));
     EXPECT_EQ(stk::topology::INVALID_TOPOLOGY, validSuperElement.base());
     EXPECT_FALSE(validSuperElement.has_homogeneous_faces());
     EXPECT_FALSE(validSuperElement.is_shell());
@@ -230,7 +230,7 @@ TEST(stk_topology_understanding, superelements)
     EXPECT_EQ(0u, invalidSuperElement.num_sides());
     EXPECT_EQ(0u, invalidSuperElement.dimension());
     EXPECT_EQ(stk::topology::INVALID_TOPOLOGY, invalidSuperElement.face_topology(0));
-    EXPECT_EQ(stk::topology::INVALID_TOPOLOGY, invalidSuperElement.edge_topology());
+    EXPECT_EQ(stk::topology::INVALID_TOPOLOGY, invalidSuperElement.edge_topology(0));
     EXPECT_EQ(stk::topology::INVALID_TOPOLOGY, invalidSuperElement.base());
     EXPECT_FALSE(invalidSuperElement.has_homogeneous_faces());
     EXPECT_FALSE(invalidSuperElement.is_shell());

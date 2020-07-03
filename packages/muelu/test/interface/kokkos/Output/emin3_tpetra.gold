@@ -24,8 +24,6 @@ smoother ->
 
 Level 1
 Prolongator minimization (MueLu::EminPFactory)
-Build (MueLu::TentativePFactory_kokkos)
-Build (MueLu::UncoupledAggregationFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory_kokkos)
 [empty list]
@@ -39,6 +37,8 @@ filtered matrix: reuse graph = 1   [default]
 filtered matrix: reuse eigenvalue = 1   [default]
 lightweight wrap = 1
 
+Build (MueLu::TentativePFactory_kokkos)
+Build (MueLu::UncoupledAggregationFactory_kokkos)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
@@ -127,8 +127,6 @@ smoother ->
 
 Level 2
 Prolongator minimization (MueLu::EminPFactory)
-Build (MueLu::TentativePFactory_kokkos)
-Build (MueLu::UncoupledAggregationFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory_kokkos)
 [empty list]
@@ -142,6 +140,8 @@ filtered matrix: reuse graph = 1   [default]
 filtered matrix: reuse eigenvalue = 1   [default]
 lightweight wrap = 1
 
+Build (MueLu::TentativePFactory_kokkos)
+Build (MueLu::UncoupledAggregationFactory_kokkos)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))

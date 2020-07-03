@@ -415,8 +415,8 @@ TEST(CEOME, TwoElemGiveAllEntitiesToOneProcAndCheckParts)
 
 TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
 {
-    // This unit-test is designed to test the conditions that results that
-    // resulted in the difficult-to-fix rebalance use-case bug. Specifically,
+    // This unit-test is designed to test the conditions that resulted
+    // in the difficult-to-fix rebalance use-case bug. Specifically,
     // it will test the changing-of-ownership of a shared edge to a proc that
     // either ghosted it or did not know about it.
     //
