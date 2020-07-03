@@ -932,8 +932,6 @@ void createRegionHierarchy(const int maxRegPerProc,
                            Array<std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > >& regProlong,
                            Array<std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > >& regRowImporters,
                            Array<Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > >& regInterfaceScalings,
-                           Array<Teuchos::RCP<Xpetra::MultiVector<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> > >& interfaceGIDsMV,
-                           Array<Teuchos::RCP<Xpetra::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> > >& regionsPerGIDWithGhosts,
                            Array<RCP<Teuchos::ParameterList> >& smootherParams
                            )
 {
@@ -943,6 +941,10 @@ void createRegionHierarchy(const int maxRegPerProc,
   RCP<ParameterList> coarseSolverParams = rcp(new ParameterList("Coarse solver parameters"));
   coarseSolverParams->set<bool>("use coarse solver", true);
   RCP<ParameterList> dummy = Teuchos::parameterList();
+  Array<RCP<Xpetra::MultiVector<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> > > interfaceGIDsPerLevel;
+  Array<RCP<Xpetra::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> > > regionsPerGIDWithGhostsPerLevel;
+  Array<ArrayRCP<LocalOrdinal> > regionMatVecLIDsPerLevel;
+  Array<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > regionInterfaceImporterPerLevel;
 
   // Call the actual routine
   createRegionHierarchy(maxRegPerProc, numDimensions, lNodesPerDim,
@@ -950,7 +952,9 @@ void createRegionHierarchy(const int maxRegPerProc,
                         regionGrpMats, mapComp, rowMapPerGrp, colMapPerGrp, revisedRowMapPerGrp,
                         revisedColMapPerGrp, rowImportPerGrp, compRowMaps, compColMaps, regRowMaps,
                         regColMaps, quasiRegRowMaps, quasiRegColMaps, regMatrices, regProlong,
-                        regRowImporters, regInterfaceScalings, maxRegPerGID,
+                        regRowImporters, regInterfaceScalings, interfaceGIDsPerLevel,
+                        regionsPerGIDWithGhostsPerLevel, regionMatVecLIDsPerLevel,
+                        regionInterfaceImporterPerLevel, maxRegPerGID,
                         compositeToRegionLIDs, coarseSolverParams, smootherParams, dummy, false);
 }
 
