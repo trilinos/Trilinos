@@ -170,6 +170,10 @@ class WrapperOpTimer:
     csv_row['FileSize'] = WrapperOpTimer.get_file_size(op_output_file)
     csv_row['FileName'] = op_output_file
 
+    # Remove the build stats output file if the build failed
+    if returncode != 0 and os.path.exists(output_stats_file):
+      os.remove(output_stats_file)
+
     return (csv_row, returncode)
 
 
