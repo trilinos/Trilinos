@@ -50,6 +50,7 @@ public:
       iterationStartTime(0.0),
       cumulativeTime(0.0),
       iterationStartHwm(0),
+      iterationStartGpuUsage(0),
       meshOperationHwm(1)
   { }
 
@@ -57,13 +58,15 @@ public:
   {
     iterationStartTime = stk::wall_time();
     iterationStartHwm = stk::get_max_hwm_across_procs(communicator);
+    iterationStartGpuUsage = stk::get_max_gpu_mem_used_across_procs(communicator);
   }
 
   void update_timing()
   {
     cumulativeTime += stk::wall_dtime(iterationStartTime);
+    size_t currentGpuUsage = stk::get_max_gpu_mem_used_across_procs(communicator) - iterationStartGpuUsage;
     size_t currentHwm = stk::get_max_hwm_across_procs(communicator) - iterationStartHwm;
-    meshOperationHwm = std::max(currentHwm, meshOperationHwm);
+    meshOperationHwm = std::max(meshOperationHwm, currentHwm + currentGpuUsage);
   }
 
   void print_timing(unsigned iterationCount)
@@ -77,6 +80,7 @@ private:
   double iterationStartTime;
   double cumulativeTime;
   size_t iterationStartHwm;
+  size_t iterationStartGpuUsage;
   size_t meshOperationHwm;
 };
 

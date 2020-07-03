@@ -84,6 +84,49 @@ void filter_out_unneeded_induced_parts(const BulkData& bulkData,
                                        Entity entity,
                                        const OrdinalVector& induced_parts,
                                        OrdinalVector& remove_parts);
+
+void communicate_shared_entity_info(const BulkData &mesh,
+                                 stk::CommSparse &comm,
+                                 std::vector<std::vector<shared_entity_type> > &shared_entities);
+
+void communicateSharingInfoToProcsThatShareEntity(
+                           const int numProcs,
+                           const int myProcId,
+                           stk::CommSparse& commStage2,
+                           stk::mesh::EntityToDependentProcessorsMap &entityKeySharing);
+
+void unpackCommunicationsAndStoreSharedEntityToProcPair(
+                    const int numProcs,
+                    const int myProcId,
+                    stk::CommSparse& commStage2,
+                    std::vector<std::pair<stk::mesh::EntityKey, int> >& sharedEntities);
+
+bool is_received_entity_in_local_shared_entity_list(
+                      bool use_entity_ids_for_resolving_sharing,
+                      const std::vector<shared_entity_type>::iterator &shared_itr,
+                      const std::vector<shared_entity_type>& shared_entities_this_proc,
+                      const shared_entity_type &shared_entity_from_other_proc);
+
+bool ghost_id_is_found_in_comm_data(const PairIterEntityComm& comm_data,
+                                    int entity_owner,
+                                    int ghost_id);
+
+bool all_ghost_ids_are_found_in_comm_data(const PairIterEntityComm& comm_data,
+                                          int entity_owner,
+                                          const std::vector<int>& recvd_ghost_ids);
+
+inline
+bool is_comm_ordered(const PairIterEntityComm& ec)
+{
+  int n = ec.size();
+  for (int i=1; i<n; ++i) {
+    if (!(ec[i-1] < ec[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+
 } // namespace impl
 } // namespace mesh
 } // namespace stk

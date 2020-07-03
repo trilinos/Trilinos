@@ -1,0 +1,33 @@
+<ParameterList name="Inputs">
+  <!-- ===========  PROBLEM INPUT PARAMETER SUBLIST  =========== -->
+  <ParameterList name="Problem">
+    <!-- OUTPUT -->
+    <Parameter name="Check derivatives"           type="bool"    value="false"         />
+    <!-- PROBLEM INFORMATION -->
+    <Parameter name="Example"                     type="int"     value="1"             />
+    <Parameter name="Target Angle"                type="double"  value="45.0"          />
+    <Parameter name="Wave Number"                 type="double"  value="20.0"          />
+    <Parameter name="Damping Factor"              type="double"  value="1.0"           />
+    <Parameter name="Impedance Factor"            type="double"  value="1.0"           />
+    <!-- FINITE ELEMENT INFORMATION -->
+    <Parameter name="Cubature Degree"             type="int"     value="2"             />
+  </ParameterList>
+
+  <!-- ===========  MESH INPUT PARAMETER SUBLIST  =========== -->
+  <ParameterList name="Mesh">
+    <Parameter name="File Name" type="string" value="mesh/helmholtz-mesh-4.txt" />
+  </ParameterList>
+
+  <!-- ===========  GEOMETRY INPUT PARAMETER SUBLIST  =========== -->
+  <ParameterList name="Geometry">
+    <!-- === rectangle === -->
+    <Parameter name="Width"             type="double"  value="10.0"  />
+    <Parameter name="Height"            type="double"  value="10.0"  />
+    <Parameter name="X0"                type="double"  value="-5.0"  />
+    <Parameter name="Y0"                type="double"  value="-5.0"  />
+    <Parameter name="NX"                type="int"     value="000"    />
+    <Parameter name="NY"                type="int"     value="000"    />
+    <Parameter name="Partition type"    type="int"     value="1"     />
+  </ParameterList>
+
+</ParameterList>

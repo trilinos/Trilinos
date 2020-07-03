@@ -145,7 +145,6 @@ TEUCHOS_UNIT_TEST(dag, basic_dag)
   TEST_ASSERT(!em.sortingCalled());
   em.sortAndOrderEvaluators();
   TEST_ASSERT(em.sortingCalled());
-  //std::cout << em << std::endl;
 
   {
     const auto& order_new = em.getEvaluatorInternalOrdering();
@@ -159,7 +158,6 @@ TEUCHOS_UNIT_TEST(dag, basic_dag)
   em.sortAndOrderEvaluators();
   {
     const auto& order_new = em.getEvaluatorInternalOrdering();
-    //std::cout << em << std::endl;
     TEST_EQUALITY(order_new[0],3);
     TEST_EQUALITY(order_new[1],2);
     TEST_EQUALITY(order_new[2],1);
@@ -170,7 +168,8 @@ TEUCHOS_UNIT_TEST(dag, basic_dag)
   const std::vector< Teuchos::RCP<PHX::FieldTag> >& tags = em.getFieldTags();
   TEST_EQUALITY(tags.size(),5);
   em.writeGraphvizFile("basic_dag.dot",true,true,false);
-  cout << "\n" << em << endl;   cout << "\n" << em << endl;
+  std::stringstream output;
+  output << em << endl;
 
   {
     auto& evaluators = em.getEvaluatorsBindingField(tag_a);
@@ -815,7 +814,8 @@ TEUCHOS_UNIT_TEST(dag, use_range_and_unshared)
 
   dag.sortAndOrderEvaluators();
 
-  dag.print(std::cout);
+  std::stringstream output;
+  dag.print(output);
 
   const auto& use_range = dag.getFieldUseRange();
 
@@ -845,4 +845,337 @@ TEUCHOS_UNIT_TEST(dag, use_range_and_unshared)
   TEST_ASSERT(unshared.find(f2.identifier()) != unshared.end());
   TEST_ASSERT(unshared.find(f3.identifier()) == unshared.end());
   TEST_ASSERT(unshared.find(f4.identifier()) == unshared.end());
+}
+
+// *************************************************
+// Make sure we throw if no evaluator is found for
+// a required field.
+// *************************************************
+TEUCHOS_UNIT_TEST(dag, missing_evaluators)
+{
+  using namespace std;
+  using namespace Teuchos;
+  using namespace PHX;
+
+  DagManager<MyTraits> dm;
+
+  using Mock = PHX::MockDAG<PHX::MyTraits::Residual,MyTraits>;
+
+  bool use_dynamic_layout = true;
+
+  // Evaluates, B but we require A
+  {
+    RCP<Mock> e = rcp(new Mock);
+    e->setName("B");
+    e->contributes("B",use_dynamic_layout);
+    dm.registerEvaluator(e);
+  }
+
+  RCP<PHX::Layout> dl = rcp(new PHX::Layout("H-Grad",100,4));
+  PHX::Tag<PHX::MyTraits::Residual::ScalarT> tag_a("A",dl);
+  dm.requireField(tag_a);
+
+  TEST_THROW(dm.sortAndOrderEvaluators(),PHX::missing_evaluator_exception);
+}
+
+// *************************************************
+// Checks that that required fields that are the starting node of a
+// dfs search that have both an evaluated and contributed components
+// in the DAG was failing to add the contributed part since it was
+// outside of dfsVisit() call.
+// *************************************************
+TEUCHOS_UNIT_TEST(contrib, start_has_eval_and_contrib)
+{
+  using namespace std;
+  using namespace Teuchos;
+  using namespace PHX;
+
+  DagManager<MyTraits> dm;
+
+  using Mock = PHX::MockDAG<PHX::MyTraits::Residual,MyTraits>;
+
+  bool use_dynamic_layout = true;
+
+  {
+    RCP<Mock> e = rcp(new Mock);
+    e->setName("A contributed 0");
+    e->contributes("A",use_dynamic_layout);
+    dm.registerEvaluator(e);
+  }
+
+  {
+    RCP<Mock> e = rcp(new Mock);
+    e->setName("A evaluated");
+    e->evaluates("A",use_dynamic_layout);
+    dm.registerEvaluator(e);
+  }
+
+  {
+    RCP<Mock> e = rcp(new Mock);
+    e->setName("A contributed 1");
+    e->contributes("A",use_dynamic_layout);
+    dm.registerEvaluator(e);
+  }
+
+  RCP<PHX::Layout> dl = rcp(new PHX::Layout("H-Grad",100,4));
+  PHX::Tag<PHX::MyTraits::Residual::ScalarT> tag_a("A",dl);
+  dm.requireField(tag_a);
+
+  dm.sortAndOrderEvaluators();
+
+  // Check the graph
+  auto tags = dm.getFieldTags();
+  TEST_EQUALITY(tags.size(),1);
+  const auto& evaluators = dm.getEvaluatorInternalOrdering();
+  TEST_EQUALITY(evaluators.size(),3);
+
+  // Check the dot file graph
+  std::stringstream output;
+  dm.writeGraphviz(output,true,true);
+  TEST_INEQUALITY(output.str().find("A contributed 0"),std::string::npos);
+  TEST_INEQUALITY(output.str().find("A contributed 1"),std::string::npos);
+  TEST_INEQUALITY(output.str().find("A evaluated"),std::string::npos);
+}
+
+// *************************************************
+// Tests that a required field that is evaluated by all contributed
+// fields collects all evaluators. The dfs covers all nodes internal,
+// but was missing contributed on the starting required node.
+// *************************************************
+TEUCHOS_UNIT_TEST(contrib, start_has_contrib_only)
+{
+  using namespace std;
+  using namespace Teuchos;
+  using namespace PHX;
+
+  DagManager<MyTraits> dm("Residual");
+
+  using Mock = PHX::MockDAG<PHX::MyTraits::Residual,MyTraits>;
+
+  bool use_dynamic_layout = true;
+
+  {
+    RCP<Mock> e = rcp(new Mock);
+    e->setName("A contributed 0");
+    e->contributes("A",use_dynamic_layout);
+    dm.registerEvaluator(e);
+  }
+
+  {
+    RCP<Mock> e = rcp(new Mock);
+    e->setName("A contributed 1");
+    e->contributes("A",use_dynamic_layout);
+    dm.registerEvaluator(e);
+  }
+
+  {
+    RCP<Mock> e = rcp(new Mock);
+    e->setName("A contributed 2");
+    e->contributes("A",use_dynamic_layout);
+    dm.registerEvaluator(e);
+  }
+
+  RCP<PHX::Layout> dl = rcp(new PHX::Layout("H-Grad",100,4));
+  PHX::Tag<PHX::MyTraits::Residual::ScalarT> tag_a("A",dl);
+  dm.requireField(tag_a);
+
+  dm.sortAndOrderEvaluators();
+
+  // Check the graph
+  auto tags = dm.getFieldTags();
+  TEST_EQUALITY(tags.size(),1);
+  const auto& evaluators = dm.getEvaluatorInternalOrdering();
+  TEST_EQUALITY(evaluators.size(),3);
+
+  // Check the dot file graph
+  std::stringstream output;
+  dm.writeGraphviz(output,true,true);
+  TEST_INEQUALITY(output.str().find("A contributed 0"),std::string::npos);
+  TEST_INEQUALITY(output.str().find("A contributed 1"),std::string::npos);
+  TEST_INEQUALITY(output.str().find("A contributed 2"),std::string::npos);
+}
+
+/*
+// *************************************************
+   Typical contributed field use case, residual is all contributed
+
+      ScatterTag
+          |
+       Residual
+      /   |   \
+    Conv Diff Rxn
+      \   |   /
+          X
+
+// *************************************************
+*/
+TEUCHOS_UNIT_TEST(contrib, basic_contrib_only)
+{
+  using namespace std;
+  using namespace Teuchos;
+  using namespace PHX;
+
+  DagManager<MyTraits> dm;
+  using Mock = PHX::MockDAG<PHX::MyTraits::Residual,MyTraits>;
+  bool use_dynamic_layout = true;
+
+  {
+    RCP<Mock> e = rcp(new Mock);
+    e->setName("X");
+    e->evaluates("X",use_dynamic_layout);
+    dm.registerEvaluator(e);
+  }
+
+  {
+    RCP<Mock> e = rcp(new Mock);
+    e->setName("Convection Operator");
+    e->contributes("Residual",use_dynamic_layout);
+    e->requires("X",use_dynamic_layout);
+    dm.registerEvaluator(e);
+  }
+
+  {
+    RCP<Mock> e = rcp(new Mock);
+    e->setName("Diffusion Operator");
+    e->contributes("Residual",use_dynamic_layout);
+    e->requires("X",use_dynamic_layout);
+    dm.registerEvaluator(e);
+  }
+
+  {
+    RCP<Mock> e = rcp(new Mock);
+    e->setName("Reaction Operator");
+    e->contributes("Residual",use_dynamic_layout);
+    e->requires("X",use_dynamic_layout);
+    dm.registerEvaluator(e);
+  }
+
+  {
+    RCP<Mock> e = rcp(new Mock);
+    e->setName("Scatter");
+    // Important that this is "contributes" to catch writing graph
+    // output correctly.
+    e->contributes("Scatter",use_dynamic_layout);
+    e->requires("Residual",use_dynamic_layout);
+    dm.registerEvaluator(e);
+  }
+
+  RCP<PHX::Layout> dl = rcp(new PHX::Layout("H-Grad",100,4));
+  PHX::Tag<PHX::MyTraits::Residual::ScalarT> tag_a("Scatter",dl);
+  dm.requireField(tag_a);
+
+  dm.sortAndOrderEvaluators();
+
+  // Check the graph
+  const auto& tags = dm.getFieldTags();
+  TEST_EQUALITY(tags.size(),3);
+  const auto& evaluators = dm.getEvaluatorInternalOrdering();
+  TEST_EQUALITY(evaluators.size(),5);
+
+  // Check the dot file graph
+  std::stringstream output;
+  dm.writeGraphviz(output,true,true);
+  TEST_INEQUALITY(output.str().find("Scatter"),std::string::npos);
+  TEST_INEQUALITY(output.str().find("Convection Operator"),std::string::npos);
+  TEST_INEQUALITY(output.str().find("Diffusion Operator"),std::string::npos);
+  TEST_INEQUALITY(output.str().find("Reaction Operator"),std::string::npos);
+  TEST_EQUALITY(output.str().find("I am not in the graph!"),std::string::npos);
+}
+
+/*
+// *************************************************
+   Typical contributed field use case, residual is evaluated and contributed
+
+      ScatterTag
+          |
+       Residual
+       /  |  \
+    Conv Diff Rxn
+     | \  |  / |
+      \  Init /
+       \  |  /
+          X
+
+// *************************************************
+*/
+TEUCHOS_UNIT_TEST(contrib, basic_contrib_and_evalauted)
+{
+  using namespace std;
+  using namespace Teuchos;
+  using namespace PHX;
+
+  DagManager<MyTraits> dm;
+  using Mock = PHX::MockDAG<PHX::MyTraits::Residual,MyTraits>;
+  bool use_dynamic_layout = true;
+
+  {
+    RCP<Mock> e = rcp(new Mock);
+    e->setName("X");
+    e->evaluates("X",use_dynamic_layout);
+    dm.registerEvaluator(e);
+  }
+
+  {
+    RCP<Mock> e = rcp(new Mock);
+    e->setName("Initialize");
+    e->evaluates("Residual",use_dynamic_layout);
+    e->requires("X",use_dynamic_layout);
+    dm.registerEvaluator(e);
+  }
+
+  {
+    RCP<Mock> e = rcp(new Mock);
+    e->setName("Convection Operator");
+    e->contributes("Residual",use_dynamic_layout);
+    e->requires("X",use_dynamic_layout);
+    dm.registerEvaluator(e);
+  }
+
+  {
+    RCP<Mock> e = rcp(new Mock);
+    e->setName("Diffusion Operator");
+    e->contributes("Residual",use_dynamic_layout);
+    e->requires("X",use_dynamic_layout);
+    dm.registerEvaluator(e);
+  }
+
+  {
+    RCP<Mock> e = rcp(new Mock);
+    e->setName("Reaction Operator");
+    e->contributes("Residual",use_dynamic_layout);
+    e->requires("X",use_dynamic_layout);
+    dm.registerEvaluator(e);
+  }
+
+  {
+    RCP<Mock> e = rcp(new Mock);
+    e->setName("Scatter");
+    // Important that this is "contributes" to catch writing graph
+    // output correctly.
+    e->contributes("Scatter",use_dynamic_layout);
+    e->requires("Residual",use_dynamic_layout);
+    dm.registerEvaluator(e);
+  }
+
+  RCP<PHX::Layout> dl = rcp(new PHX::Layout("H-Grad",100,4));
+  PHX::Tag<PHX::MyTraits::Residual::ScalarT> tag_a("Scatter",dl);
+  dm.requireField(tag_a);
+
+  dm.sortAndOrderEvaluators();
+
+  // Check the graph
+  const auto& tags = dm.getFieldTags();
+  TEST_EQUALITY(tags.size(),3);
+  const auto& evaluators = dm.getEvaluatorInternalOrdering();
+  TEST_EQUALITY(evaluators.size(),6);
+
+  // Check the dot file graph
+  std::stringstream output;
+  dm.writeGraphviz(output,true,true);
+  TEST_INEQUALITY(output.str().find("Scatter"),std::string::npos);
+  TEST_INEQUALITY(output.str().find("Convection Operator"),std::string::npos);
+  TEST_INEQUALITY(output.str().find("Diffusion Operator"),std::string::npos);
+  TEST_INEQUALITY(output.str().find("Reaction Operator"),std::string::npos);
+  TEST_INEQUALITY(output.str().find("Initialize"),std::string::npos);
+  TEST_EQUALITY(output.str().find("I am not in the graph!"),std::string::npos);
 }

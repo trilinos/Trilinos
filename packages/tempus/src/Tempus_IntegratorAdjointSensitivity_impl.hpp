@@ -312,6 +312,24 @@ initializeSolutionHistory(Scalar t0,
 }
 
 template<class Scalar>
+void IntegratorAdjointSensitivity<Scalar>::
+setObserver(Teuchos::RCP<IntegratorObserver<Scalar> > obs)
+{
+  state_integrator_->setObserver(obs);
+  // Currently not setting observer on adjoint integrator because it isn't
+  // clear what we want to do with it
+  //adjoint_integrator_->setObserver(obs);
+}
+
+template<class Scalar>
+void IntegratorAdjointSensitivity<Scalar>::
+initialize()
+{
+  state_integrator_->initialize();
+  adjoint_integrator_->initialize();
+}
+
+template<class Scalar>
 Teuchos::RCP<const Thyra::VectorBase<Scalar> >
 IntegratorAdjointSensitivity<Scalar>::
 getX() const

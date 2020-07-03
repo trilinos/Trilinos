@@ -592,7 +592,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
                              lNodesPerDim, sendGIDs, sendPIDs, interfaceLIDsData,
                              regionsPerGIDWithGhosts, interfaceGIDsMV);
 
-  Teuchos::Array<LO> regionMatVecLIDs;
+  Teuchos::ArrayRCP<LO> regionMatVecLIDs;
   RCP<Import> regionInterfaceImporter;
   SetupMatVec(interfaceGIDsMV, regionsPerGIDWithGhosts, revisedRowMapPerGrp, rowImportPerGrp,
               regionMatVecLIDs, regionInterfaceImporter);
@@ -669,7 +669,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   Array<RCP<Xpetra::MultiVector<LO, LO, GO, Node> > > regionsPerGIDWithGhostsPerLevel(1);
   interfaceGIDsPerLevel[0] = interfaceGIDsMV;
   regionsPerGIDWithGhostsPerLevel[0] = regionsPerGIDWithGhosts;
-  Array<Array<LO> > regionMatVecLIDsPerLevel(1);
+  Array<ArrayRCP<LO> > regionMatVecLIDsPerLevel(1);
   Array<RCP<Xpetra::Import<LO, GO, Node> > > regionInterfaceImporterPerLevel(1);
   regionMatVecLIDsPerLevel[0] = regionMatVecLIDs;
   regionInterfaceImporterPerLevel[0] = regionInterfaceImporter;

@@ -58,7 +58,6 @@
 #include <vector>                       // for vector
 #include <unordered_map>
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket, Bucket::size_type, etc
-#include "stk_mesh/base/BucketConnectivity.hpp"  // for BucketConnectivity
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey, hash_value
 #include "stk_mesh/base/FieldDataManager.hpp"
 #include "stk_mesh/base/Relation.hpp"   // for Relation, etc
@@ -66,12 +65,9 @@
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
 #include "stk_mesh/base/ModificationSummary.hpp"
 #include <stk_mesh/base/ModificationNotifier.hpp>
-#include <stk_mesh/base/SideSetEntry.hpp>
 #include <stk_mesh/base/EntityProcMapping.hpp>
 #include "stk_mesh/baseImpl/MeshModification.hpp"
 #include "stk_mesh/baseImpl/elementGraph/GraphTypes.hpp"
-#include <stk_util/diag/Timer.hpp>
-#include <stk_util/diag/PrintTimer.hpp>
 #include <stk_mesh/baseImpl/elementGraph/MeshDiagnosticObserver.hpp>
 #include "stk_mesh/baseImpl/SoloSideIdGenerator.hpp"
 #include "stk_mesh/baseImpl/SideSetImpl.hpp"
@@ -99,8 +95,6 @@ namespace stk { namespace mesh { namespace impl { struct RelationEntityToNode; }
 namespace stk {
 namespace mesh {
 class NgpMeshManager;
-class SideConnector;
-class BulkData;
 struct PartStorage;
 struct SideSharingData;
 enum class FaceCreationBehavior;
@@ -1057,11 +1051,6 @@ protected: //functions
   void find_and_delete_internal_faces(stk::mesh::EntityRank entityRank,
                                       const stk::mesh::Selector *only_consider_second_element_from_this_selector); // Mod Mark
 
-  void internal_resolve_shared_modify_delete(stk::mesh::EntityVector & entitiesNoLongerShared)
-  {
-      m_meshModification.internal_resolve_shared_modify_delete(entitiesNoLongerShared);
-  }
-
   void filter_upward_ghost_relations(const Entity entity, std::function<void(Entity)> filter);
   EntityVector get_upward_send_ghost_relations(const Entity entity);
   EntityVector get_upward_recv_ghost_relations(const Entity entity);
@@ -1274,8 +1263,6 @@ private:
   void delete_buckets(const stk::mesh::BucketVector & buckets);
   void mark_entities_as_deleted(stk::mesh::Bucket * bucket);
 
-  void generate_ghosting_receive_list(const stk::mesh::Ghosting &ghosting, const std::vector <EntityKey> &remove_receive,
-    std::set<EntityKey> &recvGhosts);
   void generate_ghosting_receive_list(const stk::mesh::Ghosting &ghosting, const std::vector <Entity> &remove_receive,
     std::vector<Entity> &recvGhosts, std::vector<bool>& ghostStatus);
 
@@ -1490,7 +1477,6 @@ private:
                                                    stk::mesh::EntityId side_global_id, stk::mesh::ConnectivityOrdinal side_ordinal,
                                                    stk::mesh::Permutation side_permutation, const stk::mesh::PartVector& parts);
 
-  bool ordered_comm( const Entity entity );
   void pack_owned_verify(CommSparse & commSparse);
   bool unpack_not_owned_verify(CommSparse & commSparse, std::ostream & error_log);
   bool verify_parallel_attributes( std::ostream & error_log );
@@ -1625,6 +1611,8 @@ protected:
 };
 
 void dump_mesh_info(const stk::mesh::BulkData& mesh, std::ostream&out, EntityVector ev);
+
+void sync_to_host_and_mark_modified(MetaData& meta);
 
 } // namespace mesh
 } // namespace stk

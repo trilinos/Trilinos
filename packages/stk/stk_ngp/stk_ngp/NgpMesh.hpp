@@ -594,7 +594,8 @@ public:
     STK_FUNCTION
     StaticMesh() : bulk(nullptr), spatial_dimension(0), synchronizedCount(0) {}
 
-    explicit StaticMesh(const stk::mesh::BulkData& b)
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete all of stk_ngp after sprint 4.57.6
+    STK_DEPRECATED explicit StaticMesh(const stk::mesh::BulkData& b)
      : bulk(&b), spatial_dimension(b.mesh_meta_data().spatial_dimension()), synchronizedCount(b.synchronized_count())
     {
         set_entity_keys(b);
@@ -615,6 +616,7 @@ public:
         }
         copy_mesh_indices_to_device();
     }
+#endif //STK_HIDE_DEPRECATED_CODE
 
     void update_buckets() const
     {
@@ -625,7 +627,7 @@ public:
        //ThrowRequireMsg(false,"ERROR, update_buckets not supported for ngp::StaticMesh");
     }
 
-    KOKKOS_DEFAULTED_FUNCTION
+    STK_FUNCTION
     StaticMesh(const StaticMesh &) = default;
     STK_FUNCTION
     ~StaticMesh() {}

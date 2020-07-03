@@ -283,8 +283,9 @@ void connectUpwardEntityToEntity(stk::mesh::BulkData& mesh, stk::mesh::Entity up
     {
         if(entity_rank == stk::topology::EDGE_RANK)
         {
+          entity_top = upward_entity_topology.edge_topology(k);
+          nodes_of_this_side.resize(entity_top.num_nodes());
           upward_entity_topology.edge_nodes(upward_entity_nodes, k, nodes_of_this_side.data());
-          entity_top = upward_entity_topology.edge_topology();
         }
         else
         {
@@ -920,46 +921,6 @@ bool check_permutations_on_all(stk::mesh::BulkData& mesh)
     return all_ok;
 }
 
-
-// Fill a new send list from the receive list.
-void send_entity_keys_to_owners(
-  BulkData & mesh ,
-  const std::set< EntityKey > & recvGhosts,
-        std::set< EntityProc , EntityLess > & sendGhosts )
-{
-  const int parallel_size = mesh.parallel_size();
-
-  stk::CommSparse sparse( mesh.parallel() );
-
-  // For all entity keys in new recv, send the entity key to the owning proc
-  for ( int phase = 0; phase < 2; ++phase) {
-    for ( std::set<EntityKey>::const_iterator
-            i = recvGhosts.begin() ; i != recvGhosts.end() ; ++i ) {
-      Entity e = mesh.get_entity(*i); // Performance issue? Not if you're just doing full regens
-      const int owner = mesh.parallel_owner_rank(e);
-      const EntityKey key = mesh.entity_key(e);
-      sparse.send_buffer( owner ).pack<EntityKey>( key );
-    }
-    if (phase == 0) { //allocation phase
-      sparse.allocate_buffers();
-    }
-    else { //communication phase
-      sparse.communicate();
-    }
-  }
-
-  // Insert into sendGhosts that there is an entity on another proc
-  for ( int proc_rank = 0 ; proc_rank < parallel_size ; ++proc_rank ) {
-    stk::CommBuffer & buf = sparse.recv_buffer(proc_rank);
-    while ( buf.remaining() ) {
-      EntityKey key ;
-      buf.unpack<EntityKey>( key );
-      EntityProc tmp( mesh.get_entity( key ) , proc_rank );
-      sendGhosts.insert( tmp );
-    }
-  }
-}
-
 void send_entity_keys_to_owners(
   BulkData & mesh ,
   const std::vector<Entity> & recvGhosts,
@@ -1155,7 +1116,7 @@ void comm_sync_send_recv(
   all.communicate();
 
   // Loop thru all the buffers, and insert ghosting request for entity e to other proc
-  // if the proc sending me the data is me, then insert into new_recv.
+  // if the proc sending me the data is me, then insert into recvGhosts.
   // Communication unpacking:
   for ( int p = 0 ; p < parallel_size ; ++p ) {
     CommBuffer & buf = all.recv_buffer(p);
@@ -1479,28 +1440,100 @@ stk::mesh::ConnectivityOrdinal get_ordinal_for_element_side_pair(const stk::mesh
     return get_ordinal_from_side_entity(sideVector, ordinals, side);
 }
 
-void print_field_data_for_entity(const stk::mesh::BulkData& mesh, const stk::mesh::MeshIndex& meshIndex, std::ostream& out)
+void fill_inducible_parts_from_list(const MetaData& meta,
+                                    const OrdinalVector & partList,
+                                    EntityRank rank,
+                                    OrdinalVector &induciblePartsFromList)
 {
-  const stk::mesh::Bucket* bucket = meshIndex.bucket;
-  size_t b_ord = meshIndex.bucket_ordinal;
-  const stk::mesh::FieldVector& all_fields = mesh.mesh_meta_data().get_fields();
-  for(stk::mesh::FieldBase* field : all_fields) {
-    if(static_cast<unsigned>(field->entity_rank()) != bucket->entity_rank()) continue;
-    stk::mesh::FieldMetaData field_meta_data = field->get_meta_data_for_field()[bucket->bucket_id()];
-    unsigned data_size = field_meta_data.m_bytes_per_entity;
-    if(data_size > 0) { // entity has this field?
-      void* data = field_meta_data.m_data + field_meta_data.m_bytes_per_entity * b_ord;
-      out << "        For field: " << *field << ", has data: ";
-      field->print_data(out, data, data_size);
-      out << std::endl;
+  const PartVector& allParts = meta.get_parts();
+  for (size_t i = 0; i < partList.size(); i++) {
+    if (allParts[partList[i]]->should_induce(rank)) {
+      induciblePartsFromList.push_back(partList[i]);
     }
   }
 }
 
-void print_field_data_for_entity(const stk::mesh::BulkData& mesh, const stk::mesh::Entity entity, std::ostream& out)
+void fill_part_list_differences(const BulkData &mesh,
+                                Entity entity,
+                                const PartVector &recv_parts,
+                                std::set<std::string> &thisProcExtraParts,
+                                std::set<std::string> &otherProcExtraParts)
 {
-  const stk::mesh::MeshIndex meshIndex = mesh.mesh_index(entity);
-  print_field_data_for_entity(mesh, meshIndex, out);
+  const Bucket & bucket = mesh.bucket(entity);
+  std::pair<const unsigned *,const unsigned *> part_ordinals = bucket.superset_part_ordinals();
+  const PartVector & mesh_parts = mesh.mesh_meta_data().get_parts();
+
+  std::set<std::string> thisProcPartNames;
+  for (const unsigned * k = part_ordinals.first; k < part_ordinals.second; ++k) {
+    if (mesh_parts[*k]->entity_membership_is_parallel_consistent()) {
+      if (mesh_parts[*k]->name() != "{OWNS}" && mesh_parts[*k]->name() != "{SHARES}" && mesh_parts[*k]->primary_entity_rank() != stk::mesh::InvalidEntityRank)
+      {
+        thisProcPartNames.insert(mesh_parts[*k]->name());
+      }
+    }
+  }
+
+  std::set<std::string> otherProcPartNames;
+  for (const Part* part : recv_parts) {
+    if (part->entity_membership_is_parallel_consistent()) {
+      if (part->name() != "{OWNS}" && part->name() != "{SHARES}" && part->primary_entity_rank() != stk::mesh::InvalidEntityRank) {
+        otherProcPartNames.insert(part->name());
+      }
+    }
+  }
+
+  std::set_difference(thisProcPartNames.begin(),
+                      thisProcPartNames.end(),
+                      otherProcPartNames.begin(),
+                      otherProcPartNames.end(),
+                      std::inserter(thisProcExtraParts, thisProcExtraParts.begin()));
+
+  std::set_difference(otherProcPartNames.begin(),
+                      otherProcPartNames.end(),
+                      thisProcPartNames.begin(),
+                      thisProcPartNames.end(),
+                      std::inserter(otherProcExtraParts, otherProcExtraParts.begin()));
+}
+
+void check_size_of_types()
+{
+    const size_t sizeof_entity_in_bytes = sizeof(Entity);
+#ifdef STK_32BIT_ENTITY
+    ThrowRequireMsg(4 == sizeof_entity_in_bytes, "sizeof(Entity) expected to be 4, is instead "<<sizeof_entity_in_bytes);
+#else
+    ThrowRequireMsg(8 == sizeof_entity_in_bytes, "sizeof(Entity) expected to be 8, is instead "<<sizeof_entity_in_bytes);
+#endif
+
+    const size_t sizeof_connectivityordinal_in_bytes = sizeof(ConnectivityOrdinal);
+#ifdef STK_16BIT_CONNECTIVITY_ORDINAL
+    ThrowRequireMsg(2 == sizeof_connectivityordinal_in_bytes, "sizeof(ConnectivityOrdinal) expected to be 2, is instead "<<sizeof_connectivityordinal_in_bytes);
+#else
+    ThrowRequireMsg(4 == sizeof_connectivityordinal_in_bytes, "sizeof(ConnectivityOrdinal) expected to be 4, is instead "<<sizeof_connectivityordinal_in_bytes);
+#endif
+}
+
+void check_declare_element_side_inputs(const BulkData & mesh,
+                                       const Entity elem,
+                                       const unsigned localSideId)
+{
+  stk::topology elem_top = mesh.bucket(elem).topology();
+
+  ThrowErrorMsgIf( elem_top == stk::topology::INVALID_TOPOLOGY,
+          "Element[" << mesh.identifier(elem) << "] has no defined topology");
+
+  stk::topology invalid = stk::topology::INVALID_TOPOLOGY;
+  stk::topology side_top =
+          ((elem_top != stk::topology::INVALID_TOPOLOGY) && (localSideId < elem_top.num_sides()) )
+          ? elem_top.side_topology(localSideId) : invalid;
+
+  ThrowErrorMsgIf( elem_top!=stk::topology::INVALID_TOPOLOGY && localSideId >= elem_top.num_sides(),
+          "For elem " << mesh.identifier(elem) << ", localSideId " << localSideId
+          << ", localSideId exceeds " << elem_top.name()
+          << ".num_sides() = " << elem_top.num_sides());
+
+  ThrowErrorMsgIf( side_top == stk::topology::INVALID_TOPOLOGY,
+          "For elem " << mesh.identifier(elem) << ", localSideId "
+          << localSideId << ", No element topology found");
 }
 
 } // namespace impl

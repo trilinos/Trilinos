@@ -200,13 +200,48 @@ namespace Galeri {
     GlobalOrdinal n = -1, nx = -1, ny = -1, nz = -1, mx = -1, my = -1, mz = -1;
 
     // Get matrix dimensions
-    if (list.isParameter("n"))  n  = list.get<GlobalOrdinal>("n");
-    if (list.isParameter("nx")) nx = list.get<GlobalOrdinal>("nx");
-    if (list.isParameter("ny")) ny = list.get<GlobalOrdinal>("ny");
-    if (list.isParameter("nz")) nz = list.get<GlobalOrdinal>("nz");
-    if (list.isParameter("mx")) mx = list.get<GlobalOrdinal>("mx");
-    if (list.isParameter("my")) my = list.get<GlobalOrdinal>("my");
-    if (list.isParameter("mz")) mz = list.get<GlobalOrdinal>("mz");
+    if (list.isParameter("n")) {
+      if (list.isType<int>("n"))
+        n = Teuchos::as<GlobalOrdinal>(list.get<int>("n"));
+      else
+        n = list.get<GlobalOrdinal>("n");
+    }
+    if (list.isParameter("nx")) {
+      if (list.isType<int>("nx"))
+        nx = Teuchos::as<GlobalOrdinal>(list.get<int>("nx"));
+      else
+        nx = list.get<GlobalOrdinal>("nx");
+    }
+    if (list.isParameter("ny")) {
+      if (list.isType<int>("ny"))
+        ny = Teuchos::as<GlobalOrdinal>(list.get<int>("ny"));
+      else
+        ny = list.get<GlobalOrdinal>("ny");
+    }
+    if (list.isParameter("nz")) {
+      if (list.isType<int>("nz"))
+        nz = Teuchos::as<GlobalOrdinal>(list.get<int>("nz"));
+      else
+        nz = list.get<GlobalOrdinal>("nz");
+    }
+    if (list.isParameter("mx")) {
+      if (list.isType<int>("mx"))
+        mx = Teuchos::as<GlobalOrdinal>(list.get<int>("mx"));
+      else
+        mx = list.get<GlobalOrdinal>("mx");
+    }
+    if (list.isParameter("my")) {
+      if (list.isType<int>("my"))
+        my = Teuchos::as<GlobalOrdinal>(list.get<int>("my"));
+      else
+        my = list.get<GlobalOrdinal>("my");
+    }
+    if (list.isParameter("mz")) {
+      if (list.isType<int>("mz"))
+        mz = Teuchos::as<GlobalOrdinal>(list.get<int>("mz"));
+      else
+        mz = list.get<GlobalOrdinal>("mz");
+    }
 
     if (mapType == "Cartesian1D") {
       if (nx == -1) {

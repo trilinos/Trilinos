@@ -140,6 +140,15 @@ size_t get_max_hwm_across_procs(MPI_Comm comm)
 }
 
 inline
+size_t get_max_gpu_mem_used_across_procs(MPI_Comm comm)
+{
+  size_t used = 0, free = 0, globalMaxUsed = 0;
+  stk::get_gpu_memory_info(used, free);
+  stk::all_reduce_max(comm, &used, &globalMaxUsed, 1);
+  return globalMaxUsed;
+}
+
+inline
 double get_max_time_across_procs(double time_on_this_proc, MPI_Comm comm)
 {
     double maxTime = 0.0;

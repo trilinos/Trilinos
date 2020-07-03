@@ -61,7 +61,9 @@
 
 #else // using cuda
 
+#ifndef USE_STK_SIMD_NONE
 #define USE_STK_SIMD_NONE
+#endif
 
 #endif
 
@@ -126,8 +128,11 @@
 
 #endif
 
-//#undef STK_SIMD_SSE
-//#undef STK_SIMD_AVX
+#if defined (STK_KOKKOS_SIMD)
+#undef STK_SIMD_SSE
+#undef STK_SIMD_AVX
+#undef STK_SIMD_AVX512
+#endif
 
 #endif // #ifndef CONFIG_STK_SIMD_H
 

@@ -55,7 +55,6 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/baseImpl/ForEachEntityLoopAbstractions.hpp>
 #include <stk_util/stk_config.h>
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/util/StkNgpVector.hpp>
