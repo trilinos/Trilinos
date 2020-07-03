@@ -61,7 +61,9 @@
 
 #else // using cuda
 
+#ifndef USE_STK_SIMD_NONE
 #define USE_STK_SIMD_NONE
+#endif
 
 #endif
 

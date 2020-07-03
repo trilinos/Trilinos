@@ -191,6 +191,22 @@ def setBuildEnviron(arguments):
                      "sems-cmake/3.10.3",
                      "atdm-env",
                      "atdm-ninja_fortran/1.7.2"],
+                "Trilinos_pullrequest_gcc_7.2.0_debug":
+                     ["sems-env",
+                     "sems-git/2.10.1",
+                     "sems-gcc/7.2.0",
+                     "sems-openmpi/1.10.1",
+                     "sems-python/2.7.9",
+                     "sems-boost/1.63.0/base",
+                     "sems-zlib/1.2.8/base",
+                     "sems-hdf5/1.10.6/parallel",
+                     "sems-netcdf/4.7.3/parallel",
+                     "sems-parmetis/4.0.3/parallel",
+                     "sems-scotch/6.0.3/nopthread_64bit_parallel",
+                     "sems-superlu/4.3/base",
+                     "sems-cmake/3.10.3",
+                     "atdm-env",
+                     "atdm-ninja_fortran/1.7.2"],
                 "Trilinos_pullrequest_gcc_8.3.0":
                      ["sems-env",
                      "sems-git/2.10.1",
@@ -346,6 +362,9 @@ def setBuildEnviron(arguments):
                                             "extras"
                                             "bin")},
                  "Trilinos_pullrequest_gcc_7.2.0":
+                      {"SEMS_FORCE_LOCAL_COMPILER_VERSION": "4.9.3",
+                       "OMP_NUM_THREADS": "2"},
+                 "Trilinos_pullrequest_gcc_7.2.0_debug":
                       {"SEMS_FORCE_LOCAL_COMPILER_VERSION": "4.9.3",
                        "OMP_NUM_THREADS": "2"},
                  "Trilinos_pullrequest_gcc_8.3.0":
