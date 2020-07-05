@@ -169,7 +169,6 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
 
   }
 
-
   //if(btf_tabs_offset != 0)
   {
     //Allocate workspace
@@ -179,7 +178,6 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       iWS(this);
     Kokkos::parallel_for(TeamPolicy(num_threads,1), iWS);
     Kokkos::fence();
-  #else
   #endif
   }
 
@@ -188,7 +186,6 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
   init_value(gperm,A.nrow, BASKER_MAX_IDX);
   MALLOC_INT_1DARRAY(gpermi,A.nrow);
   init_value(gpermi, A.nrow, BASKER_MAX_IDX);
-
 
   //Incomplete Factor Setup
   if(Options.incomplete == BASKER_TRUE)

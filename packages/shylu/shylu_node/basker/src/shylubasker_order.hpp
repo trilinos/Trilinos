@@ -221,13 +221,14 @@ namespace BaskerNS
     //found bottle-neck to work best with circuit problems
    
     //new for sfactor_copy2 replacement
-    MALLOC_INT_1DARRAY(vals_perm_composition,A.nnz);
+    //this will store the composition of permutations and sorts due to btf with respect to the full val array
+    MALLOC_INT_1DARRAY(vals_perm_composition, A.nnz);
     btfa_nnz = 0;
     btfb_nnz = 0;
     btfc_nnz = 0;
 
     for( Int i = 0; i < A.nnz; ++i ){
-      vals_perm_composition(i) = i; //this will store the composition of permutations and sorts due to btf with respect to the full val array
+      vals_perm_composition(i) = i;
     }
 
     // NDE: New for Amesos2 CRS changes
@@ -236,7 +237,31 @@ namespace BaskerNS
     permute_inv(vals_perm_composition, vals_crs_transpose, A.nnz);
     //sort_matrix(A); //(need)
     sort_matrix_store_valperms(A, vals_perm_composition);
+#if 1
+    /*std::cout << " A=[" << std::endl;
+    for(Int j = 0; j < A.ncol; j++) {
+      for(Int k = A.col_ptr[j]; k < A.col_ptr[j+1]; k++) {
+        std::cout << A.row_idx[k] << " " << j << " " << A.val[k] << std::endl;
+      }
+    }
+    std::cout << "];" << std::endl;*/
+    match_ordering(1);
+    /*std::cout << " D=[" << std::endl;
+    for(Int j = 0; j < A.ncol; j++) {
+      std::cout << scale_col_array(j) << " " << scale_row_array(j) << " " << order_match_array(j) << std::endl;
+    }
+    std::cout << "];" << std::endl;
+    std::cout << " C=[" << std::endl;
+    for(Int j = 0; j < A.ncol; j++) {
+      for(Int k = A.col_ptr[j]; k < A.col_ptr[j+1]; k++) {
+        std::cout << A.row_idx[k] << " " << j << " " << A.val[k] << std::endl;
+      }
+    }
+    std::cout << "];" << std::endl;
+    std::cout << std::endl;*/
+#else
     match_ordering(0);
+#endif
     //sort_matrix(A); //(need)
     sort_matrix_store_valperms(A, vals_perm_composition);
 
@@ -250,6 +275,8 @@ namespace BaskerNS
     //2. BTF ordering on whole matrix
     //currently finds btf-hybrid and permutes
     //A -> [BTF_A, BTF_C; 0 , BTF B]
+    //Q: where A contains "large" diagonal blocks for threaded factorization, and
+    //         B contains "small" diagonabl blocks for sequential factorization
     //printf("outter num_threads:%d \n", num_threads);
     MALLOC_INT_1DARRAY(btf_schedule, num_threads+1);
     init_value(btf_schedule, num_threads+1, (Int)0);
@@ -275,6 +302,7 @@ namespace BaskerNS
       //Would like to change so finds permuation, 
       //and move into 2D-Structure
       //printMTX("A_BTF_FROM_A.mtx", BTF_A);
+      //IY: need to sort twice?
       //sort_matrix(BTF_A); //old call
       sort_matrix_store_valperms(BTF_A, vals_order_ndbtfa_array);
 
@@ -344,8 +372,8 @@ namespace BaskerNS
       }
       permute_col_store_valperms(BTF_A, order_csym_array, vals_order_csym_array); //NDE: Track movement of vals (lin_ind of row,col) here
       permute_inv(vals_order_ndbtfa_array, vals_order_csym_array, BTF_A.nnz); //must permute the array holding the perms
+      //IY: need to sort twice?
       sort_matrix_store_valperms(BTF_A, vals_order_ndbtfa_array);
-
 
       permute_row(BTF_A, order_csym_array);
       //sort_matrix(BTF_A);
@@ -414,16 +442,63 @@ namespace BaskerNS
 
     #ifdef BASKER_TIMER
     order_time = timer_order.seconds();
-    std::cout << " ++ Basker order : ND time      : " << order_time << std::endl;
+    std::cout << " ++ Basker order : sort(A) time : " << order_time << std::endl;
     timer_order.reset();
     #endif
 
     if(btf_nblks > 1) //else only BTF_A exists, A is assigned directly to it...
     {
-      //sort_matrix(BTF_C); // NDE: already sorted above; this is redundant, unless btf_tabs_offset = 0
-      // NDE: May need to add permutation for this case...
-      //new for sfactor_copy2 replacement
+      #if 0
+      if(Options.amd_dom == BASKER_TRUE)
+      {
+        //Permute C
+        MALLOC_INT_1DARRAY(order_blk_amd_array, BTF_C.ncol+1);
+        init_value(order_blk_amd_array, BTF_C.ncol+1,(Int) 0);
+
+        //printf("BEFORE \n");
+
+        //csymamd_order(BTF_C, order_c_csym_array, cmember);
+        #ifdef BASKER_TIMER
+        Kokkos::Timer timer_blk_amd;
+        timer_blk_amd.reset();
+        #endif
+        blk_amd(BTF_C, order_blk_amd_array);
+        #ifdef BASKER_TIMER
+        double blk_amd_time = timer_blk_amd.seconds();
+        std::cout << " --- Basker order : blk_amd compute time : " << blk_amd_time << std::endl;
+        timer_blk_amd.reset();
+        #endif
+
+        //printf("After perm\n");
+        //for (int i = 0; i < BTF_C.ncol+1; i++) std::cout << i << " " << order_c_csym_array(i) << std::endl;
+
+        printMTX("BTF_C_before.mtx", BTF_C);
+        #ifdef BASKER_TIMER
+        timer_blk_amd.reset();
+        #endif
+        permute_col(BTF_C, order_blk_amd_array);
+        sort_matrix(BTF_C);
+        permute_row(BTF_C, order_blk_amd_array);
+        sort_matrix(BTF_C);
+        #ifdef BASKER_TIMER
+        blk_amd_time = timer_blk_amd.seconds();
+        std::cout << " --- Basker order : blk_amd sort time    : " << blk_amd_time << std::endl;
+        timer_blk_amd.reset();
+        #endif
+        printMTX("BTF_C_after.mtx", BTF_C);
+
+        if(btf_tabs_offset != 0)
+        {
+          permute_col(BTF_B, order_blk_amd_array);
+          sort_matrix(BTF_B);
+          //printMTX("BTF_B.mtx", BTF_B);
+        }
+      } else
+      #endif
       if ( btf_tabs_offset == 0 && BTF_C.nnz > 0 ) {
+        //sort_matrix(BTF_C); // NDE: already sorted above; this is redundant, unless btf_tabs_offset = 0
+        // NDE: May need to add permutation for this case...
+        //new for sfactor_copy2 replacement
         btfc_nnz = BTF_C.nnz;
         MALLOC_INT_1DARRAY(vals_order_ndbtfc_array, BTF_C.nnz); //track nd perms; BTF_A must be declared here, else it does not exist
         MALLOC_INT_1DARRAY( inv_vals_order_ndbtfc_array, BTF_C.nnz );
@@ -434,45 +509,16 @@ namespace BaskerNS
         sort_matrix_store_valperms(BTF_C, vals_order_ndbtfc_array); // NDE: already sorted above; this is redundant, unless btf_tabs_offset = 0
         permute_inv(inv_vals_order_ndbtfc_array, vals_order_ndbtfc_array, BTF_C.nnz);
       }
-      
+
       if(Options.verbose_matrix_out == BASKER_TRUE)
       {
-        printMTX("C_Symbolic.mtx", BTF_C);
+	printMTX("C_Symbolic.mtx", BTF_C);
       }
-      //Permute C
-
-      /*
-         MALLOC_INT_1DARRAY(order_c_csym_array, BTF_C.ncol+1);
-         init_value(order_c_csym_array, BTF_C.ncol+1,(Int) 0);
-
-         printf("BEFORE \n");
-
-      //csymamd_order(BTF_C, order_c_csym_array, cmember);
-
-      blk_amd(BTF_C, order_c_csym_array);
-
-      printf("After perm\n");
-
-      permute_col(BTF_C, order_c_csym_array);
-      sort_matrix(BTF_C);
-      permute_row(BTF_C, order_c_csym_array);
-      sort_matrix(BTF_C);
-
-      if(btf_tabs_offset != 0)
-      {
-      permute_col(BTF_B, order_c_csym_array);
-      sort_matrix(BTF_B);
-      printMTX("BTF_B.mtx", BTF_B);
-      }
-
-      printMTX("BTF_C.mtx", BTF_C);
-      */
     }
 
     #ifdef BASKER_TIMER
     order_time = timer_order.seconds();
-    std::cout << " ++ Basker order : sort time    : " << order_time << std::endl;
-    timer_order.reset();
+    std::cout << " ++ Basker order : sort(C) time : " << order_time << std::endl;
     #endif
     
     return 0;
@@ -625,8 +671,18 @@ namespace BaskerNS
       #ifdef BASKER_MC64
       if (option == 1) {
         Int job = 5; //2 is the default for SuperLU_DIST
-        mc64(job, order_match_array);
+        MALLOC_ENTRY_1DARRAY (scale_row_array, A.nrow);
+        MALLOC_ENTRY_1DARRAY (scale_col_array, A.nrow);
+        // call mc64
+        mc64(job, order_match_array, scale_row_array, scale_col_array);
         //mc64(job,mperm);
+        #if 0
+        for(Int j = 0; j < A.ncol; j++) {
+          for(Int k = A.col_ptr[j]; k < A.col_ptr[j+1]; k++) {
+            A.val[k] *= (scale_col_array(j) * scale_row_array(A.row_idx[k]));
+          }
+        }
+        #endif
       } else
       #endif
       {
@@ -848,7 +904,7 @@ namespace BaskerNS
   (
    ENTRY_1DARRAY vec,
    INT_1DARRAY   p, 
-   Int n, //n = size(vec) //n > m 
+   Int n,  //n = size(vec) //n > m 
    Int m,  //m = size(p) 
    Int start
   )
@@ -1146,7 +1202,7 @@ namespace BaskerNS
     // Note: The order had to be reversed as well as the type of permutation call
     //
     // p6 inv
-    //      permute(perm_inv_comp_array , gperm, gn);
+    //      permute(perm_inv_comp_array, gperm, gn);
 
     // NDE: This is moved out and initialized once - reused in 4 possible permutations
     for(Int i = BTF_A.ncol; i < gn; ++i)
@@ -1176,19 +1232,24 @@ namespace BaskerNS
       {
         perm_comp_iworkspace_array(i) = part_tree.permtab(i);
       }
-      permute_with_workspace(perm_inv_comp_array , perm_comp_iworkspace_array,gn);
+      permute_with_workspace(perm_inv_comp_array, perm_comp_iworkspace_array, gn);
     }
     // p2, p3 inv
     if(btf_flag == BASKER_TRUE)
     {
-      if(Options.verbose == BASKER_TRUE)
-      {printf("btf order in\n");}
       //printVec("btf_amd.txt", order_c_csym_array, gn);
       //p3
-      permute_with_workspace(perm_inv_comp_array ,order_blk_amd_array, gn);
+      if(Options.verbose == BASKER_TRUE)
+      { printf(" > blk_amd order in\n");}
+      permute_with_workspace(perm_inv_comp_array, order_blk_amd_array, gn);
+      //if(Options.verbose == BASKER_TRUE)
+      //{ printf(" > blk_mwm order in\n");}
+      //permute_with_workspace(perm_inv_comp_array, order_blk_mwm_array, gn);
       //printVec("btf.txt", order_btf_array, gn);
       //p2
-      permute_with_workspace(perm_inv_comp_array ,order_btf_array, gn);
+      if(Options.verbose == BASKER_TRUE)
+      {printf("btf order in\n");}
+      permute_with_workspace(perm_inv_comp_array, order_btf_array, gn);
     }
     // p1 inv
     if(match_flag == BASKER_TRUE)
@@ -1196,7 +1257,7 @@ namespace BaskerNS
       if(Options.verbose == BASKER_TRUE)
       {printf("match order in\n");}
       //printVec("match.txt", order_match_array, gn);
-      permute_with_workspace(perm_inv_comp_array ,order_match_array, gn);
+      permute_with_workspace(perm_inv_comp_array, order_match_array, gn);
     }
 
 
@@ -1211,9 +1272,15 @@ namespace BaskerNS
     if(match_flag == BASKER_TRUE)
     {
       if(Options.verbose == BASKER_TRUE)
-      {printf("match order in\n");}
+      {printf("match order out\n");}
       //printVec("match.txt", order_match_array, gn);
-      permute_inv_with_workspace(perm_comp_array ,order_match_array, gn);
+      permute_inv_with_workspace(perm_comp_array, order_match_array, gn);
+    }
+    if(btf_flag == BASKER_TRUE)
+    {
+      //if(Options.verbose == BASKER_TRUE)
+      //{ printf(" > blk_mwm order out\n");}
+      //permute_inv_with_workspace(perm_comp_array, order_blk_mwm_array, gn);
     }
     #else
     if(amd_flag == BASKER_TRUE)
@@ -1225,7 +1292,7 @@ namespace BaskerNS
       {
         perm_comp_iworkspace_array(i) = order_csym_array(i);
       }
-      permute_with_workspace(perm_comp_array,perm_comp_iworkspace_array,gn);
+      permute_with_workspace(perm_comp_array,perm_comp_iworkspace_array, gn);
     }
     // q2
     if(nd_flag == BASKER_TRUE)
@@ -1242,12 +1309,14 @@ namespace BaskerNS
     // q3, q4
     if(btf_flag == BASKER_TRUE)
     {
-      if(Options.verbose == BASKER_TRUE)
-      {printf("btf order out\n");}
       //printVec(order_btf_array, gn);
       // q3
+      if(Options.verbose == BASKER_TRUE)
+      {printf("blk_amd order out\n");}
       permute_with_workspace(perm_comp_array,order_blk_amd_array, gn);
       // q4
+      if(Options.verbose == BASKER_TRUE)
+      {printf("btf order out\n");}
       permute_with_workspace(perm_comp_array,order_btf_array, gn);
     }
     #endif
@@ -1367,7 +1436,7 @@ namespace BaskerNS
     //copy idxs
     for(Int ii = 0; ii < n; ii++)
     {
-      Int ko = temp_p (col (ii) );
+      Int ko = temp_p (col (ii));
       for(Int k = M.col_ptr (ii); k < M.col_ptr (ii+1); k++)
       {
         temp_i (ko) = M.row_idx (k); // preserves order of indices in row_idx (they may not be ordered, but won't be reshuffled)
@@ -1398,10 +1467,45 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int,Entry, Exe_Space>::permute_row
   (
+   Int nnz,
+   INT_1DARRAY row_idx,
+   INT_1DARRAY row
+  )
+  {
+    if(nnz == 0)
+    { return 0; }
+
+    INT_1DARRAY temp_i;
+    MALLOC_INT_1DARRAY(temp_i, nnz);
+    init_value(temp_i, nnz, (Int)0);
+
+    //permute
+    for(Int k = 0; k < nnz; k++)
+    {
+      temp_i[k] = row[row_idx[k]]; // where does row_id=row_idx[k] move to? moves to row[row_id] looks like inverse perm...
+    }
+    //Copy back
+    for(Int k = 0; k < nnz; k++)
+    {
+      row_idx[k] = temp_i[k];
+    }
+
+    FREE_INT_1DARRAY(temp_i);
+
+    return 0;
+  }//end permute_row(matrix,int)
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  int Basker<Int,Entry, Exe_Space>::permute_row
+  (
    BASKER_MATRIX &M,
 	 INT_1DARRAY row
   )
   {
+#if 1
+    permute_row(M.nnz, M.row_idx, row);
+#else
     if(M.nnz == 0)
     { return 0; }
 
@@ -1422,10 +1526,9 @@ namespace BaskerNS
     }
 
     FREE_INT_1DARRAY(temp_i);
-
+#endif
     return 0;
   }//end permute_row(matrix,int)
-
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
@@ -1445,9 +1548,16 @@ namespace BaskerNS
     MALLOC_INT_1DARRAY (iwork, M.nrow);
     #endif
 
+    #ifdef BASKER_TIMER
+    std::cout << " ~~ sort_matrix_store_valperms(n = " << M.ncol << " nnz = " << M.nnz << ")" << std::endl;
+    #endif
     //std::cout << " M = [" << std::endl;
     for(Int k = 0; k < M.ncol; k++)
     {
+      #ifdef BASKER_TIMER
+      Kokkos::Timer timer_order;
+      timer_order.reset();
+      #endif
       Int start_row = M.col_ptr[k];
       #if defined(USE_WORKSPACE_FOR_SORT)
       perm(0) = start_row;
@@ -1493,6 +1603,8 @@ namespace BaskerNS
         }   //end while jj
 #endif
         // insert i at jj
+        // NOTE: the complexity of "shift" depends on the inputs 
+        //       e.g., if already sorted, then no shift
         #if !defined(USE_WORKSPACE_FOR_SORT)
         Int   t_row_idx = M.row_idx[i];
         Entry t_row_val = M.val[i];
@@ -1535,6 +1647,11 @@ namespace BaskerNS
       //for(Int i = M.col_ptr[k]; i < M.col_ptr[k+1]; i++) {
       //    std::cout << k << " " << M.row_idx[i] << " " << M.val[i] << std::endl;
       //}
+      #ifdef BASKER_TIMER
+      double order_time = timer_order.seconds();
+      std::cout << "    > Basker sort time     : " << order_time << " (nnz = " << M.col_ptr[k+1]-M.col_ptr[k] << ")" <<std::endl;
+      timer_order.reset();
+      #endif
     }//end over all columns k
     //std::cout << " ];" << std::endl;
 

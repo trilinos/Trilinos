@@ -327,6 +327,9 @@ namespace BaskerNS
     int permute_row(BASKER_MATRIX &M, INT_1DARRAY row);
 
     BASKER_INLINE
+    int permute_row(Int nnz, INT_1DARRAY row_idx, INT_1DARRAY row);
+
+    BASKER_INLINE
     int sort_matrix(BASKER_MATRIX &M);
 
     //basker_order_match.hpp
@@ -334,10 +337,10 @@ namespace BaskerNS
     int mwm(BASKER_MATRIX &M, INT_1DARRAY _perm);
 
     BASKER_INLINE
-    int mc64(BASKER_MATRIX &M, Int _job, INT_1DARRAY _perm);
+    int mc64(BASKER_MATRIX &M, Int _job, INT_1DARRAY _perm, ENTRY_1DARRAY _scale_row, ENTRY_1DARRAY _scale_col);
 
     BASKER_INLINE
-    int mc64(Int _job, INT_1DARRAY _perm);
+    int mc64(Int _job, INT_1DARRAY _perm, ENTRY_1DARRAY _scale_row, ENTRY_1DARRAY _scale_col);
 
     //basker_order_scotch.hpp
     BASKER_INLINE
@@ -1015,7 +1018,7 @@ namespace BaskerNS
     void t_local_reach_short_btf(const Int, const Int, Int &);
 
     BASKER_INLINE
-    int t_local_reach_btf(Int, BASKER_MATRIX&,Int,Int,Int,Int&);
+    int t_local_reach_btf(Int, BASKER_MATRIX&,Int,Int&);
 
     void t_prune_btf(const Int, const BASKER_MATRIX &, const BASKER_MATRIX&, const Int, const Int);
 
@@ -1379,13 +1382,17 @@ namespace BaskerNS
     INT_1DARRAY order_scotch_array;
     INT_1DARRAY order_csym_array;
     INT_1DARRAY order_c_csym_array;
+    INT_1DARRAY order_blk_mwm_array;
+    // row/col scaling
+    ENTRY_1DARRAY scale_row_array;
+    ENTRY_1DARRAY scale_col_array;
     //for experimental 
     INT_1DARRAY order_blk_amd_array;
 
 
     void blk_amd(BASKER_MATRIX &M, INT_1DARRAY p);
 
-    void btf_blk_amd(BASKER_MATRIX &M, INT_1DARRAY p,
+    void btf_blk_amd(BASKER_MATRIX &M, INT_1DARRAY p_mwm, INT_1DARRAY p_amd,
 		     INT_1DARRAY btf_nnz, INT_1DARRAY btf_work);
 
     //basker_order_amd

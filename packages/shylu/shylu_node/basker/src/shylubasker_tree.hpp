@@ -1252,11 +1252,11 @@ namespace BaskerNS
       //Comeback
       #endif
 
-        #ifdef BASKER_TIMER_FINE
-        tmp_time = timer_twod.seconds();
-        twod_time += tmp_time;
-        std::cout << "    Basker move into 2D ND reorder time: " << tmp_time << std::endl;
-        #endif
+      #ifdef BASKER_TIMER_FINE
+      tmp_time = timer_twod.seconds();
+      twod_time += tmp_time;
+      std::cout << "    Basker move into 2D ND reorder time: " << tmp_time << std::endl;
+      #endif
     }
 
     if(btf_nblks > 1)
@@ -1268,10 +1268,10 @@ namespace BaskerNS
     }
 
     //If same pattern, permute using pivot, and reset
-        #ifdef BASKER_TIMER_FINE 
-        double gperm_time = 0.0;
-        Kokkos::Timer timer_gperm;
-        #endif
+    #ifdef BASKER_TIMER_FINE 
+    double gperm_time = 0.0;
+    Kokkos::Timer timer_gperm;
+    #endif
     if((Options.same_pattern == BASKER_TRUE))
     {
       if(same_pattern_flag == BASKER_FALSE)
@@ -1292,12 +1292,13 @@ namespace BaskerNS
         gperm(i) = BASKER_MAX_IDX;
       }
     }
-        #ifdef BASKER_TIMER_FINE
-        tmp_time = timer_gperm.seconds();
-        gperm_time += tmp_time;
-        std::cout << "    Basker gperm (pivot) reset time: " << tmp_time << std::endl;
-        timer_gperm.reset();
-        #endif
+    #ifdef BASKER_TIMER_FINE
+    tmp_time = timer_gperm.seconds();
+    gperm_time += tmp_time;
+    std::cout << "    Basker gperm (pivot) reset time: " << tmp_time << std::endl;
+    timer_gperm.reset();
+    #endif
+
     if(factor_flag == BASKER_TRUE)
     {
       typedef Kokkos::TeamPolicy<Exe_Space> TeamPolicy;
@@ -1305,13 +1306,13 @@ namespace BaskerNS
       Kokkos::parallel_for(TeamPolicy(num_threads,1), reset_factors);
       Kokkos::fence();
     }
-        #ifdef BASKER_TIMER_FINE
-        tmp_time = timer_gperm.seconds();
-        std::cout << "    Basker 2D reset_factors time: " << tmp_time << std::endl;
-        std::cout << "    Basker sorts total time: " << sort_time << std::endl;
-        std::cout.precision(old_precision);
-        std::cout.flags(old_settings);
-        #endif
+    #ifdef BASKER_TIMER_FINE
+    tmp_time = timer_gperm.seconds();
+    std::cout << "    Basker 2D reset_factors time: " << tmp_time << std::endl;
+    std::cout << "    Basker sorts total time: " << sort_time << std::endl;
+    std::cout.precision(old_precision);
+    std::cout.flags(old_settings);
+    #endif
 
     return 0;
   }//sfactor_copy2()

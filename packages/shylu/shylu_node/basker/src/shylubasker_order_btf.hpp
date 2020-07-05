@@ -188,28 +188,33 @@ namespace BaskerNS
     }//if verbose
 
     MALLOC_INT_1DARRAY(vals_order_btf_array, M.nnz);
-    //permute_col(M, order_btf_array); //NDE: Track movement of vals (lin_ind of row,col) here
-    permute_col_store_valperms(M, order_btf_array, vals_order_btf_array); //NDE: Track movement of vals (lin_ind of row,col) here
+    //permute_col(M, order_btf_array);                                    //NDE: col-order M
+    permute_col_store_valperms(M, order_btf_array, vals_order_btf_array); //NDE: col-order M & Track movement
     permute_row(M, order_btf_array);
 
     permute_inv(vals_perm_composition, vals_order_btf_array, M.nnz);
 
     MALLOC_INT_1DARRAY(order_blk_amd_array, M.ncol);
     init_value(order_blk_amd_array, M.ncol, (Int)0);
+    MALLOC_INT_1DARRAY(order_blk_mwm_array, M.ncol);
+    init_value(order_blk_mwm_array, M.ncol, (Int)0);
+
     MALLOC_INT_1DARRAY(btf_blk_nnz, nblks+1);
-    init_value(btf_blk_nnz, nblks+1, (Int) 0);
+    init_value(btf_blk_nnz, nblks+1, (Int)0);
+
     MALLOC_INT_1DARRAY(btf_blk_work, nblks+1);
-    init_value(btf_blk_work, nblks+1, (Int) 0);
+    init_value(btf_blk_work, nblks+1, (Int)0);
 
     //Find AMD blk ordering, get nnz, and get work
     #ifdef BASKER_TIMER
     timer_order.reset();
     #endif
-    btf_blk_amd( M, order_blk_amd_array, btf_blk_nnz, btf_blk_work);
+    btf_blk_amd( M, order_blk_mwm_array, order_blk_amd_array, btf_blk_nnz, btf_blk_work);
     #ifdef BASKER_TIMER
     order_time = timer_order.seconds();
     std::cout << " >>> Basker order : AMD time         : " << order_time << std::endl;
     #endif
+    for(Int i = 0; i < M.ncol; i++) order_blk_mwm_array[i] = i;
 
     #ifdef BASKER_DEBUG_ORDER_BTF
     printf("Basker blk_perm:\n");
@@ -234,10 +239,17 @@ namespace BaskerNS
     #ifdef BASKER_TIMER
     timer_order.reset();
     #endif
+    // > apply matching to rows
+    //permute_row(M, order_blk_mwm_array);
+
+    // > apply AMD to cols & rows
     MALLOC_INT_1DARRAY(vals_order_blk_amd_array, M.nnz);
-    //permute_col(M, order_blk_amd_array); //NDE: Track movement of vals (lin_ind of row,col) here
-    permute_col_store_valperms(M, order_blk_amd_array, vals_order_blk_amd_array); //NDE: Track movement of vals (lin_ind of row,col) here
+    permute_col_store_valperms(M, order_blk_amd_array, vals_order_blk_amd_array); //NDE: col-order M & Track movement
     permute_row(M, order_blk_amd_array);
+
+//std::cout << "amdP=[" << std::endl;
+//for (int i = 0; i < M.ncol; i++) std::cout << order_blk_amd_array(i) << std::endl;
+//std::cout << std::endl;
     #ifdef BASKER_TIMER
     order_time = timer_order.seconds();
     std::cout << " >>> Basker order : val-perm time    : " << order_time << std::endl;

@@ -2,7 +2,6 @@
 #define SHYLUBASKER_NFACTOR_HPP
 
 //#define BASKER_DEBUG_NFACTOR 
-
 //#define BASKER_TIME
 
 /*Basker Includes*/
@@ -86,8 +85,6 @@ namespace BaskerNS
     }
     //printf("Switch time: %f \n", tza.seconds());
 
-
-
     //Spit into Domain and Sep
     //----------------------Domain-------------------------//
 #ifdef BASKER_KOKKOS
@@ -168,7 +165,6 @@ namespace BaskerNS
 
     if(btf_tabs_offset != 0)
     {
-      //for(Int l=1; l<=4; l++)
       for(Int l=1; l <= tree.nlvls; l++)
       {
 

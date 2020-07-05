@@ -762,6 +762,9 @@ namespace BaskerNS
       pivot_tol  = (Entry)BASKER_PIVOT_TOL; 
       pivot_bias = (Entry)BASKER_PIVOT_BIAS;
 
+      //Prune (if not pruned, check for numerical cancelatin)
+      prune = BASKER_FALSE;
+
       //BTF Options
       btf_prune_size = (Int)BASKER_BTF_PRUNE_SIZE;
 
@@ -813,6 +816,9 @@ namespace BaskerNS
     BASKER_BOOL  no_pivot;
     BASKER_ENTRY pivot_tol;  //Not Used
     BASKER_ENTRY pivot_bias;
+
+    //Prune (if not pruned, check for numerical cancelatin)
+    BASKER_BOOL prune;
 
     //BTF Options
     BASKER_INT   btf_prune_size;

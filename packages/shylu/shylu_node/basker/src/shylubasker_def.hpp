@@ -531,12 +531,7 @@ namespace BaskerNS
     time += timer.seconds();
     stats.time_nfactor += time;
     std::cout << "Basker factor_notoken time: " << time << std::endl;
-    timer.reset();
-    #endif
-
-    #ifdef BASKER_TIMER
-    time += timer.seconds();
-    std::cout << "Basker Factor total time: " << time << std::endl;
+    std::cout << "Basker Factor total   time: " << time << std::endl;
     #endif
 
     factor_flag = BASKER_TRUE;

@@ -222,13 +222,14 @@ namespace BaskerNS
     //KLU does this very nice, but they also make all the little blks
     INT_1DARRAY temp_col;
     MALLOC_INT_1DARRAY(temp_col, M.ncol+1);
-    INT_1DARRAY temp_row;
-    MALLOC_INT_1DARRAY(temp_row, M.nnz);
+    INT_1DARRAY   temp_row;
+    MALLOC_INT_1DARRAY  (temp_row, M.nnz);
 
-
+std::cout << " BLK_AMD " << std::endl;
     for(Int b = btf_tabs_offset; b < btf_nblks; b++)
     {
       Int blk_size = btf_tabs(b+1) - btf_tabs(b);
+      std::cout << " BLK_AMD(" << b << "/" << btf_nblks-1 << "): size = " << blk_size << std::endl;
       if(blk_size < 3)
       {
         for(Int ii = 0; ii < blk_size; ++ii)
@@ -283,7 +284,8 @@ namespace BaskerNS
       printf("blk: %d order: \n", b);
       for(Int ii = 0; ii < blk_size; ii++)
       {
-        printf("%d, ", tempp(ii));
+        //printf("%d, ", tempp(ii));
+        std::cout << ii << " " << tempp(ii) << std::endl;
       }
       #endif
 
@@ -316,7 +318,8 @@ namespace BaskerNS
   void Basker<Int,Entry,Exe_Space>::btf_blk_amd
   (
    BASKER_MATRIX &M, 
-   INT_1DARRAY p, 
+   INT_1DARRAY p_mwm, 
+   INT_1DARRAY p_amd, 
    INT_1DARRAY btf_nnz, 
    INT_1DARRAY btf_work
   )
@@ -329,7 +332,7 @@ namespace BaskerNS
       //Therefore, we simply return the natural ordering
       for(Int i = 0 ; i < M.ncol; i++)
       {
-        p(i) = i;
+        p_amd(i) = i;
       }
 
       //We will makeup work to be 1, 
@@ -353,7 +356,9 @@ namespace BaskerNS
     INT_1DARRAY temp_col;
     MALLOC_INT_1DARRAY(temp_col, M.ncol+1);
     INT_1DARRAY temp_row;
+    ENTRY_1DARRAY temp_val;
     MALLOC_INT_1DARRAY(temp_row, M.nnz);
+    MALLOC_ENTRY_1DARRAY(temp_val, M.nnz);
     //printf("Done with btf_blk_amd malloc \n");
     //printf("blks: %d \n" , btf_nblks);
 
@@ -367,7 +372,7 @@ namespace BaskerNS
         for(Int ii = 0; ii < blk_size; ++ii)
         {
           //printf("set %d \n", btf_tabs(b)+ii-M.scol);
-          p(ii+btf_tabs(b)) = btf_tabs(b)+ii-M.scol;
+          p_amd(ii+btf_tabs(b)) = btf_tabs(b)+ii-M.scol;
         }
 
         btf_work(b) = blk_size*blk_size*blk_size;
@@ -382,6 +387,8 @@ namespace BaskerNS
       Int nnz = 0;
       Int column = 1;
       temp_col(0) = 0;
+//std::cout << std::endl << " ===== AMD " << b << " =====" << std::endl;
+//std::cout << " M = [ " << std::endl;
       for(Int k = btf_tabs(b); k < btf_tabs(b+1); k++)
       {
         for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); i++)
@@ -389,13 +396,16 @@ namespace BaskerNS
           if(M.row_idx(i) < btf_tabs(b))
           { continue; }
 
+          temp_val(nnz) = M.val(i);
           temp_row(nnz) = M.row_idx(i) - btf_tabs(b);
+//std::cout << column-1 << " " << M.row_idx(i) - btf_tabs(b) << std::endl;
           nnz++;
         }// end over all row_idx
 
         temp_col(column) = nnz;
         column++;
       }//end over all columns k
+//std::cout << " ]; " << std::endl;
 
       #ifdef BASKER_DEBUG_ORDER_AMD
       printf("col_ptr: ");
@@ -410,6 +420,23 @@ namespace BaskerNS
         printf("%d, ", temp_row(i));
       }
       printf("\n");
+      #endif
+
+      #if 1
+      {
+        Int num = 0;
+        mwm_order::mwm(blk_size, nnz,
+                       &(temp_col(0)), &(temp_row(0)), &(temp_val(0)),
+                       &(tempp[0]), num);
+        //permute_row(nnz, &(temp_row(0)), &(tempp[0]));
+
+        //Add to the bigger perm vector
+        for(Int ii = 0; ii < blk_size; ii++)
+        {
+          p_mwm(tempp(ii)+btf_tabs(b)) = ii+btf_tabs(b);
+        }
+        
+      }
       #endif
 
       double l_nnz = 0;
@@ -430,10 +457,13 @@ namespace BaskerNS
       #endif
 
       //Add to the bigger perm vector
+//std::cout << " P = [ " << std::endl;
       for(Int ii = 0; ii < blk_size; ii++)
       {
-        p(tempp(ii)+btf_tabs(b)) = ii+btf_tabs(b);
+        p_amd(tempp(ii)+btf_tabs(b)) = ii+btf_tabs(b);
+//std::cout << tempp(ii) << std::endl;
       }
+//std::cout << " ]; " << std::endl;
 
       FREE_INT_1DARRAY(tempp);
 
@@ -450,6 +480,7 @@ namespace BaskerNS
 
     FREE_INT_1DARRAY(temp_col);
     FREE_INT_1DARRAY(temp_row);
+    FREE_ENTRY_1DARRAY(temp_val);
     
   }//end blk_amd()
 

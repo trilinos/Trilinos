@@ -124,7 +124,6 @@ namespace BaskerNS
 
     if(Options.btf == BASKER_FALSE)
     {
-
       if(btf_tabs_offset != 0)
       {
         serial_solve(y,x);
@@ -210,7 +209,7 @@ namespace BaskerNS
    Entry *_y  // rhs
   )
   {
-    permute_inv_and_init_for_solve(_y, x_view_ptr_copy, y_view_ptr_copy, perm_inv_comp_array , gn);
+    permute_inv_and_init_for_solve(_y, x_view_ptr_copy, y_view_ptr_copy, perm_inv_comp_array, gn);
     if (Options.no_pivot == BASKER_FALSE) {
       permute_inv_with_workspace(x_view_ptr_copy, gperm, gn);
     }
