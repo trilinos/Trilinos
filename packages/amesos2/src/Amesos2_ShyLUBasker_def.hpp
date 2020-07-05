@@ -227,7 +227,7 @@ ShyLUBasker<Matrix,Vector>::symbolicFactorization_impl()
           true);
     }
     else 
-    {   //follow original code path if conditions not met
+    { //follow original code path if conditions not met
       // In this case, loadA_impl updates colptr_, rowind_, nzvals_
       info = ShyLUbasker->Symbolic(this->globalNumRows_,
           this->globalNumCols_,
@@ -368,20 +368,20 @@ ShyLUBasker<Matrix,Vector>::numericFactorization_impl()
 
   //global_size_type info_st = as<global_size_type>(info);
   /* TODO : Proper error messages*/
-  TEUCHOS_TEST_FOR_EXCEPTION( (info == -1) ,
+  TEUCHOS_TEST_FOR_EXCEPTION( (info == -1 || infoTr == -1) ,
     std::runtime_error,
     "ShyLUBasker: Could not alloc space for L and U");
-  TEUCHOS_TEST_FOR_EXCEPTION( (info ==  -2),
+  TEUCHOS_TEST_FOR_EXCEPTION( (info == -2 || infoTr == -2),
     std::runtime_error,
     "ShyLUBasker: Could not alloc needed work space");
-  TEUCHOS_TEST_FOR_EXCEPTION( (info == -3) ,
+  TEUCHOS_TEST_FOR_EXCEPTION( (info == -3 || infoTr == -3),
     std::runtime_error,
     "ShyLUBasker: Could not alloc additional memory needed for L and U");
-  TEUCHOS_TEST_FOR_EXCEPTION( (info > 0) ,
+  TEUCHOS_TEST_FOR_EXCEPTION( (info > 0 || infoTr > 0) ,
     std::runtime_error,
     "ShyLUBasker: Zero pivot found at: " << info );
 
-  return(info);
+  return(info + ((this->globalNumCols_) * infoTr));
 }
 
 
