@@ -16,6 +16,9 @@ fi
 
 if [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" ]] ; then
   unset ATDM_CONFIG_KOKKOS_ARCH
+  if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_GCC-7.2.0_OPENMPI-4.0.3" ]] ; then
+    export ATDM_CONFIG_KOKKOS_ARCH=VOLTA70
+  fi
 else
   echo
   echo "***"
@@ -142,6 +145,36 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.2_MPICH2-3.2" ]; then
   export ATDM_CONFIG_OPENMP_FORTRAN_LIB_NAMES=gomp
   export ATDM_CONFIG_OPENMP_GOMP_LIBRARY=-lgomp
 
+elif [ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_GCC-7.2.0_OPENMPI-4.0.3" ]; then
+  # ninja is running into issues with response files when building shared libraries with CUDA.
+  # nvcc reports that no input files were given when generating shared libraries with nvcc.
+  # Using the Unix Makefiles cmake generator works.
+  export ATDM_CONFIG_USE_NINJA=OFF
+
+  module load sparc-dev/cuda-10.1.243_gcc-7.2.0_openmpi-4.0.3
+
+  # OpenMPI Settings
+  export OMPI_CXX=${ATDM_CONFIG_NVCC_WRAPPER}
+  if [ ! -x "$OMPI_CXX" ]; then
+      echo "No nvcc_wrapper found"
+      return
+  fi
+  # NOTE: The above export overrides the value set by the module load above
+  export MPICC=`which mpicc`
+  export MPICXX=`which mpicxx`
+  export MPIF90=`which mpif90`
+
+  # CUDA Settings
+  if [[ ! -d /tmp/${USER} ]] ; then
+    echo "Creating /tmp/${USER} for nvcc wrapper!"
+    mkdir /tmp/${USER}
+  fi
+
+  export ATDM_CONFIG_MPI_EXEC=mpirun
+  export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG=-np
+  export ATDM_CONFIG_MPI_POST_FLAGS="-bind-to;none"
+
+  export ATDM_CONFIG_MKL_ROOT=${CBLAS_ROOT}
 else
   echo
   echo "***"
