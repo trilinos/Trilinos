@@ -14,7 +14,7 @@ if atdm_match_any_buildname_keyword \
   cuda-10.1.243-xl-2020 \
   cuda-xl \
   ; then
-  export ATDM_CONFIG_COMPILER=CUDA-10.1.243-XL-2020.03.18_SPMPI-ROLLING
+  export ATDM_CONFIG_COMPILER=CUDA-10.1.243_XL-2020.03.18_SPMPI-ROLLING
 
 elif atdm_match_any_buildname_keyword \
   xl-2020.03.18-spmpi-rolling \

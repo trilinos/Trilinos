@@ -74,7 +74,6 @@ module load StdEnv
 
 # Load the sparc-dev/xxx module 
 sparc_module_name=$(get_sparc_dev_module_name "$ATDM_CONFIG_COMPILER")
-echo "module load ${sparc_module_name}"
 module load ${sparc_module_name}
 
 # Set up stuff related the the host compiler
