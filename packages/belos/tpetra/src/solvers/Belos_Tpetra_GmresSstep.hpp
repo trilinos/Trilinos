@@ -29,6 +29,7 @@ public:
   using STS = Teuchos::ScalarTraits<SC>;
   using MVT = Belos::MultiVecTraits<SC, MV>;
   using mag_type = typename STS::magnitudeType;
+  using STM = Teuchos::ScalarTraits<mag_type>;
   using dense_matrix_type = Teuchos::SerialDenseMatrix<LO, SC>;
 
   /// \brief Constructor
@@ -45,7 +46,7 @@ public:
   /// default) or as contiguous column-major cache blocks, with
   /// leading dimension lda >= nrows.
   FactorOutput
-  factor (MV& A, dense_matrix_type& R)
+  factor (Teuchos::FancyOStream* outPtr, MV& A, dense_matrix_type& R)
   {
     Teuchos::RCP< Teuchos::Time > factorTimer = Teuchos::TimeMonitor::getNewCounter ("CholQR::factor");
     Teuchos::TimeMonitor LocalTimer (*factorTimer);
@@ -85,10 +86,17 @@ public:
       int ldr = int (R_h.extent (0));
       SC *Rdata = reinterpret_cast<SC*> (R_h.data ());
       lapack.POTRF ('U', ncols, Rdata, ldr, &info);
-      if (info < 0) {
-        ncols = -info;
+      if (info > 0) {
         // FIXME (mfh 17 Sep 2018) Don't throw; report an error code.
-        throw std::runtime_error("Cholesky factorization failed");
+        //ncols = info;
+        //throw std::runtime_error("Cholesky factorization failed");
+        *outPtr << "  >  POTRF( " << ncols << " ) failed with info = " << info << std::endl;
+        for (size_t i=info-1; i<ncols; i++) {
+          R_h(i, i) = one;
+          for (size_t j=i+1; j<ncols; j++) {
+            R_h(i, j) = zero;
+          }
+        }
       }
     }
     // Copy to the output R
@@ -114,8 +122,36 @@ public:
       KokkosBlas::trsm ("R", "U", "N", "N",
                         one, R_d, A_d);
     }
+    return (info > 0 ? info-1 : ncols);
+  }
 
-    return (info > 0 ? info : ncols);
+  // recursive call to factor
+  FactorOutput
+  reFactor (Teuchos::FancyOStream* outPtr, MV& A, dense_matrix_type& R)
+  {
+    int ncols = int (A.getNumVectors ());
+    int rank = 0;
+    int old_rank = -1;
+
+    // recursively call factor while cols remaining and has made progress
+    while (rank < ncols && old_rank != rank) {
+      Teuchos::Range1D next_index(rank, ncols-1);
+      MV nextA = * (A.subView(next_index));
+
+      dense_matrix_type nextR (Teuchos::View, R, ncols-rank, ncols-rank, rank, rank);
+      old_rank = rank;
+      auto new_rank = factor (outPtr, nextA, nextR);
+      if (outPtr != nullptr) {
+        if (rank > 0) {
+          *outPtr << "  ++ reCholQR(";
+        } else {
+          *outPtr << "  >>   CholQR(";
+        }
+        *outPtr << rank << ":" << ncols-1 << "), new_rank = " << new_rank << std::endl;
+      }
+      rank += new_rank;
+    }
+    return rank;
   }
 };
 
@@ -141,22 +177,14 @@ private:
 public:
   GmresSstep () :
     base_type::Gmres (),
-    stepSize_ (5),
     useCholQR2_ (false),
     cholqr_ (Teuchos::null)
-  {
-    this->input_.computeRitzValues = true;
-    this->input_.computeRitzValuesOnFly = false;
-  }
+  {}
 
   GmresSstep (const Teuchos::RCP<const OP>& A) :
     base_type::Gmres (A),
-    stepSize_ (5),
     cholqr_ (Teuchos::null)
-  {
-    this->input_.computeRitzValues = true;
-    this->input_.computeRitzValuesOnFly = false;
-  }
+  {}
 
   virtual ~GmresSstep () = default;
 
@@ -166,15 +194,15 @@ public:
   {
     base_type::getParameters (params, defaultValues);
 
-    const int stepSize = defaultValues ? 5 : stepSize_;
+    const int stepSize = defaultValues ? 5 : this->input_.stepSize;
     params.set ("Step Size", stepSize );
   }
 
   virtual void
   setParameters (Teuchos::ParameterList& params) {
     base_type::setParameters (params);
-    int stepSize = params.get<int> ("Step Size", stepSize_);
-    stepSize_ = stepSize;
+    int stepSize = params.get<int> ("Step Size", this->input_.stepSize);
+    this->input_.stepSize = stepSize;
 
     bool computeRitzValuesOnFly 
       = params.get<bool> ("Compute Ritz Values on Fly", this->input_.computeRitzValuesOnFly);
@@ -203,7 +231,7 @@ private:
                const SolverInput<SC>& input)
   {
     using std::endl;
-    int stepSize = stepSize_;
+    int stepSize = input.stepSize;
     int restart = input.resCycle;
     int step = stepSize;
     const SC zero = STS::zero ();
@@ -279,6 +307,17 @@ private:
       // Return residual norm as B
       Tpetra::deep_copy (B, P);
       return output;
+    } else if (STM::isnaninf (metric)) {
+      if (outPtr != nullptr) {
+        *outPtr << "Initial guess' residual norm " << b_norm
+                << " is nan " << endl;
+      }
+      output.absResid = r_norm;
+      output.relResid = r_norm / b0_norm;
+      output.converged = false;
+      // Return residual norm as B
+      Tpetra::deep_copy (B, P);
+      return output;
     } else if (input.computeRitzValues && !input.computeRitzValuesOnFly) {
       // Invoke standard Gmres for the first restart cycle, to compute
       // Ritz values for use as Newton shifts
@@ -338,10 +377,10 @@ private:
         }
 
         // Compute matrix powers
-        if (input.computeRitzValuesOnFly && output.numIters < stepSize_) {
+        if (input.computeRitzValuesOnFly && output.numIters < input.stepSize) {
           stepSize = 1;
         } else {
-          stepSize = stepSize_;
+          stepSize = input.stepSize;
         }
         for (step=0; step < stepSize && iter+step < restart; step++) {
           // AP = A*P
@@ -382,9 +421,9 @@ private:
         int rank = 0;
         {
           Teuchos::TimeMonitor LocalTimer (*tsqrTimer);
-          rank = normalizeCholQR (iter, step, Q, G);
+          rank = recursiveCholQR (outPtr, iter, step, Q, G);
           if (useCholQR2_) {
-            rank = normalizeCholQR (iter, step, Q, G2);
+            rank = recursiveCholQR (outPtr, iter, step, Q, G2);
             // merge R 
             dense_matrix_type Rfix (Teuchos::View, G2, step+1, step+1, iter, 0);
             dense_matrix_type Rold (Teuchos::View, G,  step+1, step+1, iter, 0);
@@ -394,30 +433,46 @@ private:
                        one, Rfix.values(), Rfix.stride(),
                             Rold.values(), Rold.stride());
           }
+          if (rank == 0) {
+            // FIXME: Don't throw; report an error code.
+            throw std::runtime_error("orthogonalization failed with rank = 0");
+          }
         }
         updateHessenburg (iter, step, output.ritzValues, H, G);
-
-        // Check negative norm
-        TEUCHOS_TEST_FOR_EXCEPTION
-          (STS::real (H(iter+step, iter+step-1)) < STM::zero (),
-           std::runtime_error, "At iteration " << output.numIters << ", H("
-           << iter+step << ", " << iter+step-1 << ") = "
-           << H(iter+step, iter+step-1) << " < 0.");
 
         // Convergence check
         if (rank == step+1 && H(iter+step, iter+step-1) != zero) {
           // Copy H to T and apply Givens rotations to new columns of T and y
           for (int iiter = 0; iiter < step; iiter++) {
+            // Check negative norm
+            TEUCHOS_TEST_FOR_EXCEPTION
+              (STS::real (H(iter+iiter+1, iter+iiter)) < STM::zero (),
+               std::runtime_error, "At iteration " << output.numIters << ", H("
+               << iter+iiter+1 << ", " << iter+iiter << ") = "
+               << H(iter+iiter+1, iter+iiter) << " < 0.");
+
             for (int i = 0; i <= iter+iiter+1; i++) {
               T(i, iter+iiter) = H(i, iter+iiter);
             }
             this->reduceHessenburgToTriangular(iter+iiter, T, cs, sn, y);
+            metric = this->getConvergenceMetric (STS::magnitude (y(iter+iiter+1)), b_norm, input);
             if (outPtr != nullptr) {
               *outPtr << " > implicit residual norm=(" << iter+iiter+1 << ")="
-                      << STS::magnitude (y(iter+iiter+1)) << endl;
+                      << STS::magnitude (y(iter+iiter+1))
+                      << " metric=" << metric << endl;
+            }
+            if (STM::isnaninf (metric) || metric <= input.tol) {
+              if (outPtr != nullptr) {
+                *outPtr << " > break at step = " << iiter+1 << " (" << step << ")" << endl;
+              }
+              step = iiter+1;
+              break;
             }
           }
-          metric = this->getConvergenceMetric (STS::magnitude (y(iter+step)), b_norm, input);
+          if (STM::isnaninf (metric)) {
+              // metric is nan
+              break;
+          }
         }
         else {
           metric = STM::zero ();
@@ -425,17 +480,17 @@ private:
 
         // Optionally, compute Ritz values for generating Newton basis
         if (input.computeRitzValuesOnFly && int (output.ritzValues.size()) == 0
-            && output.numIters >= stepSize_) {
-          for (int i = 0; i < stepSize_; i++) {
-            for (int iiter = 0; iiter < stepSize_; iiter++) {
+            && output.numIters >= input.stepSize) {
+          for (int i = 0; i < input.stepSize; i++) {
+            for (int iiter = 0; iiter < input.stepSize; iiter++) {
               G2(i, iiter) = H(i, iiter);
             }
           }
-          computeRitzValues (stepSize_, G2, output.ritzValues);
-          sortRitzValues <LO, SC> (stepSize_, output.ritzValues);
+          computeRitzValues (input.stepSize, G2, output.ritzValues);
+          sortRitzValues <LO, SC> (input.stepSize, output.ritzValues);
           if (outPtr != nullptr) {
             *outPtr << " > ComputeRitzValues: " << endl;
-            for (int i = 0; i < stepSize_; i++) {
+            for (int i = 0; i < input.stepSize; i++) {
               *outPtr << " > ritzValues[ " << i << " ] = " << output.ritzValues[i] << endl;
             }
           }
@@ -481,6 +536,12 @@ private:
       if (metric <= input.tol) {
         // update solution
         output.converged = true;
+      }
+      else if (STM::isnaninf (metric)) {
+        // failed with nan
+        // Return residual norm as B
+        Tpetra::deep_copy (B, R);
+        return output;
       }
       else if (output.numIters < input.maxNumIters) {
         // Restart, only if max inner-iteration was reached.
@@ -552,8 +613,8 @@ protected:
     }
 
     // submatrices
-    dense_matrix_type r_diag (Teuchos::View, R, s+1, s+1, n, 0);
-    dense_matrix_type h_diag (Teuchos::View, H, s+1, s,   n, n);
+    dense_matrix_type r_diag (Teuchos::View, R, s,   s, n, 0);
+    dense_matrix_type h_diag (Teuchos::View, H, s+1, s, n, n);
     Teuchos::BLAS<LO, SC> blas;
 
     if (n == 0) { // >> first matrix-power iteration <<
@@ -573,7 +634,7 @@ protected:
       // 2) multiply H with R(1:n+s, 1:n+s)^{-1} from right,
       //    where R(1:n, 1:n) = I
       // 2.1) diagonal block
-      for (int j = 1; j < s; j++ ) {
+      for (int j = 0; j < s; j++ ) {
         H(n, n+j) -= H(n, n-1) * R(n-1, j);
       }
       // diagonal block
@@ -601,7 +662,8 @@ protected:
 
   //! Apply the orthogonalization using Belos' OrthoManager
   int
-  normalizeCholQR (const int n,
+  normalizeCholQR (Teuchos::FancyOStream* outPtr,
+                   const int n,
                    const int s,
                    MV& Q,
                    dense_matrix_type& R)
@@ -614,7 +676,31 @@ protected:
 
     int rank = 0;
     if (cholqr_ != Teuchos::null) {
-      rank = cholqr_->factor (Qnew, r_new);
+      rank = cholqr_->factor (outPtr, Qnew, r_new);
+    }
+    else {
+      rank = this->normalizeBelosOrthoManager (Qnew, r_new);
+    }
+    return rank;
+  }
+
+  //! Apply the orthogonalization using Belos' OrthoManager
+  int
+  recursiveCholQR (Teuchos::FancyOStream* outPtr,
+                   const int n,
+                   const int s,
+                   MV& Q,
+                   dense_matrix_type& R)
+  {
+    // vector to be orthogonalized
+    Teuchos::Range1D index_prev(n, n+s);
+    MV Qnew = * (Q.subView(index_prev));
+
+    dense_matrix_type r_new (Teuchos::View, R, s+1, s+1, n, 0);
+
+    int rank = 0;
+    if (cholqr_ != Teuchos::null) {
+      rank = cholqr_->reFactor (outPtr, Qnew, r_new);
     }
     else {
       rank = this->normalizeBelosOrthoManager (Qnew, r_new);
@@ -623,7 +709,6 @@ protected:
   }
 
 private:
-  int stepSize_;
   bool useCholQR2_;
   Teuchos::RCP<CholQR<SC, MV, OP> > cholqr_;
 };
