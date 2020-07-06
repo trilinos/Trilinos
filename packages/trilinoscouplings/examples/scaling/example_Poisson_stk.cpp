@@ -362,6 +362,12 @@ int main(int argc, char *argv[]) {
   std::string rhsFilename;
   clp.setOption ("rhsFilename", &rhsFilename, "If nonempty, dump the "
 		  "generated rhs to that file in MatrixMarket format.");
+
+  // If rhsFilename is nonempty, dump the rhs to that file
+  // in MatrixMarket format.
+  std::string initialGuessFilename;
+  clp.setOption ("initialGuessFilename", &initialGuessFilename, "If nonempty, dump the "
+		  "generated initial guess to that file in MatrixMarket format.");
   
   // If coordsFilename is nonempty, dump the coords to that file
   // in MatrixMarket format.
@@ -631,53 +637,16 @@ int main(int argc, char *argv[]) {
       stk::mesh::Entity const* nodes = bulkData.begin_nodes(elem);
       for (unsigned inode = 0; inode < numNodes; ++inode) {
 	double *coord = stk::mesh::field_data(*coords, nodes[inode]);
-	nCoord[0][bulkData.identifier(nodes[inode])-1] = coord[0];
-	nCoord[1][bulkData.identifier(nodes[inode])-1] = coord[1];
-	nCoord[2][bulkData.identifier(nodes[inode])-1] = coord[2];
+	int lid = globalMapG.LID((int)bulkData.identifier(nodes[inode]) -1);
+	nCoord[0][lid] = coord[0];
+	nCoord[1][lid] = coord[1];
+	nCoord[2][lid] = coord[2];
       }
     }      
   } // end loop over elements
   if(coordsFilename != "") {
     EpetraExt::MultiVectorToMatrixMarketFile(coordsFilename.c_str(),nCoord,0,0,false);
     if(MyPID==0) {Time.ResetStartTime();}
-  }
-
-
-
-  /**********************************************************************************/
-  /************************** DIRICHLET BC SETUP ************************************/
-  /**********************************************************************************/
-
-  // Vector for use in applying BCs
-  Epetra_MultiVector v(globalMapG,true);
-  v.PutScalar(0.0);
-
-  std::vector<int> bcNodeVec;
-  bcNodeVec.reserve(bcNodes.size());
-  // Loop over boundary nodes
-  for (unsigned i = 0; i < bcNodes.size(); i++) {
-
-    int bcNodeId = bulkData.identifier(bcNodes[i]);
-    int lid = globalMapG.LID(bcNodeId-1);
-
-    bcNodeVec.push_back(lid);
-
-    // get coordinates for this node
-    entity_type bcnode = bulkData.get_entity(NODE_RANK,bcNodeId);
-    double * coord = stk::mesh::field_data(*coords, bcnode);
-
-    // look up exact value of function on boundary
-    double x  = coord[0];
-    double y  = coord[1];
-    double z  = coord[2];
-    v[0][lid]=exactSolution(x, y, z);
-
-  } // end loop over boundary nodes
-
-  if(MyPID==0) {
-    std::cout << "Get Dirichlet boundary values               "
-              << Time.ElapsedTime() << " seconds\n" << std::endl;
-    Time.ResetStartTime();
   }
 
 
@@ -921,27 +890,35 @@ int main(int argc, char *argv[]) {
   }
 
   /**********************************************************************************/
-  /************************ ADJUST MATRIX AND RHS FOR BCs ***************************/
+  /************************** DIRICHLET BC SETUP ************************************/
   /**********************************************************************************/
+  Epetra_Vector lhsVector(globalMapG,true);
 
-  // Apply stiffness matrix to v
-  Epetra_MultiVector rhsDir(globalMapG,true);
-  StiffMatrix.Apply(v,rhsDir);
-
-  // Update right-hand side
-  rhsVector.Update(-1.0,rhsDir,1.0);
-
-  // Loop over local boundary nodes and replace rhs values with boundary values
-  for (size_t i = 0; i < bcNodeVec.size(); i++) {
-
-    int lid = bcNodeVec[i];
-    rhsVector[0][lid]=v[0][lid];
-
+  std::vector<int> ownedBoundaryNodes; ownedBoundaryNodes.reserve(bcNodes.size());
+  // Loop over boundary nodes
+  for (unsigned i = 0; i < bcNodes.size(); i++) {
+    int bcNodeId = bulkData.identifier(bcNodes[i]);
+    int lid = globalMapG.LID((int) bcNodeId -1);
+    if(lid != -1) {
+      ownedBoundaryNodes.push_back(lid);
+      
+      // get coordinates for this node
+      entity_type bcnode = bulkData.get_entity(NODE_RANK,bcNodeId);
+      double * coord = stk::mesh::field_data(*coords, bcnode);
+      
+      // look up exact value of function on boundary
+      double x  = coord[0];
+      double y  = coord[1];
+      double z  = coord[2];
+      lhsVector[lid]=rhsVector[0][lid]=exactSolution(x, y, z);
+    }
   } // end loop over boundary nodes
 
-  // Zero out rows and columns of stiffness matrix corresponding to Dirichlet edges
+
+  // Zero out rows of stiffness matrix corresponding to Dirichlet edges
   //  and add one to diagonal.
-  ML_Epetra::Apply_OAZToMatrix(&(bcNodeVec[0]), bcNodeVec.size(), StiffMatrix);
+  ML_Epetra::Apply_BCsToMatrixRows(&(ownedBoundaryNodes[0]), ownedBoundaryNodes.size(), StiffMatrix);
+  ML_Epetra::Remove_Zeroed_Rows(StiffMatrix,0.0);
 
   if(MyPID==0) {
     std::cout << "Adjust global matrix and rhs due to BCs     "
@@ -954,6 +931,8 @@ int main(int argc, char *argv[]) {
     EpetraExt::RowMatrixToMatlabFile(matrixFilename.c_str(),StiffMatrix);
   if(rhsFilename != "") 
     EpetraExt::MultiVectorToMatrixMarketFile(rhsFilename.c_str(),rhsVector,0,0,false);
+  if(initialGuessFilename != "") 
+    EpetraExt::MultiVectorToMatrixMarketFile(initialGuessFilename.c_str(),lhsVector,0,0,false);
 
   /**********************************************************************************/
   /*********************************** SOLVE ****************************************/
@@ -962,7 +941,6 @@ int main(int argc, char *argv[]) {
   // Run the solver
   Teuchos::ParameterList MLList = inputSolverList;
   Epetra_FEVector exactNodalVals(globalMapG);
-  Epetra_FEVector femCoefficients(globalMapG);
   double TotalErrorResidual = 0.0;
   double TotalErrorExactSol = 0.0;
 
@@ -989,7 +967,7 @@ int main(int argc, char *argv[]) {
 
   TestMultiLevelPreconditioner(probType,             MLList,
                                StiffMatrix,          exactNodalVals,
-                               rhsVector,            femCoefficients, nCoord,
+                               rhsVector,            lhsVector, nCoord,
                                TotalErrorResidual,   TotalErrorExactSol);
 
    return 0;
@@ -1217,12 +1195,8 @@ int TestMultiLevelPreconditioner(char ProblemType[],
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
-  //FIXME right now, it's assumed that X and B are based on the same map
-  Epetra_MultiVector x(xexact);
-  //Epetra_MultiVector x(b);
-  x.PutScalar(0.0);
 
-  Epetra_LinearProblem Problem(&A,&x,&b);
+  Epetra_LinearProblem Problem(&A,&uh,&b);
   Epetra_MultiVector* lhs = Problem.GetLHS();
   Epetra_MultiVector* rhs = Problem.GetRHS();
 
@@ -1247,10 +1221,6 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   }
 #if defined(HAVE_TRILINOSCOUPLINGS_MUELU) && defined(HAVE_MUELU_EPETRA)
   else if(precondType == "MueLu") {
-    // Turns a Epetra_CrsMatrix into a MueLu::Matrix
-    //    RCP<Xpetra::CrsMatrix<double, int, int, Xpetra::EpetraNode> > mueluA_ = rcp(new Xpetra::EpetraCrsMatrix(Teuchos::rcpFromRef(A)));
-    //    RCP<Xpetra::Matrix <double, int, int, Xpetra::EpetraNode> > mueluA  = rcp(new Xpetra::CrsMatrixWrap<double, int, int, Xpetra::EpetraNode>(mueluA_));
-    
     // Multigrid Hierarchy
     Teuchos::ParameterList mueluParams;
     if (MLList.isSublist("MueLu"))
@@ -1270,9 +1240,6 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   solver.SetAztecOption(AZ_output, 1);
 
   solver.Iterate(200, 1e-10);
-
-
-  uh = *lhs;
 
   // ==================================================== //
   // compute difference between exact solution and ML one //
