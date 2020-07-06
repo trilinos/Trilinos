@@ -35,32 +35,29 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact Lisa Claus (lclaus@lbl.gov)
 //
 // ***********************************************************************
 //
 // @HEADER
 
-/**
-   \file   Amesos2_STRUMPACK_def.hpp
-   \author Pieter Ghysels <pghysels@lbl.gov>, Lisa Claus <lclaus@lbl.gov>
-   \date   Wed April 8 2020
-
-   \brief  Definitions for the Amesos2 STRUMPACK solver interface
-*/
 
 #ifndef AMESOS2_STRUMPACK_DEF_HPP
 #define AMESOS2_STRUMPACK_DEF_HPP
 
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_StandardParameterEntryValidators.hpp>
-#include <Teuchos_DefaultMpiComm.hpp>
 
 #include "Amesos2_SolverCore_def.hpp"
 #include "Amesos2_Util.hpp"
 
 #include <memory>
+#ifdef HAVE_MPI
+#include <Teuchos_DefaultMpiComm.hpp>
 #include "StrumpackSparseSolverMPIDist.hpp"
+#else
+#include "StrumpackSparseSolver.hpp"
+#endif
 
 namespace Amesos2 {
 
@@ -73,18 +70,21 @@ namespace Amesos2 {
 
   {
     using Teuchos::Comm;
-    // It's OK to depend on MpiComm explicitly here, because
-    // STRUMPACK requires MPI anyway.
+#ifdef HAVE_MPI   
     using Teuchos::MpiComm;
+#endif
     using Teuchos::ParameterList;
     using Teuchos::parameterList;
     using Teuchos::RCP;
     using Teuchos::rcp;
     using Teuchos::rcp_dynamic_cast;
     typedef global_ordinal_type GO;
+#ifdef HAVE_MPI   
     typedef Tpetra::Map<local_ordinal_type, GO, node_type> map_type;
-
+#endif
     RCP<const Comm<int> > comm = this->getComm ();
+
+#ifdef HAVE_MPI
     RCP<const MpiComm<int> > mpiComm =
       rcp_dynamic_cast<const MpiComm<int> > (comm);
     TEUCHOS_TEST_FOR_EXCEPTION
@@ -93,8 +93,12 @@ namespace Amesos2 {
     MPI_Comm rawMpiComm = (* (mpiComm->getRawMpiComm ())) ();
 
     sp_ = Teuchos::RCP<strumpack::StrumpackSparseSolverMPIDist<scalar_type,GO>>
-      (new strumpack::StrumpackSparseSolverMPIDist<scalar_type,GO>(rawMpiComm, true));
+      (new strumpack::StrumpackSparseSolverMPIDist<scalar_type,GO>(rawMpiComm, this->root_));
+#else
+    sp_ = Teuchos::RCP<strumpack::StrumpackSparseSolver<scalar_type,GO>>
+      (new strumpack::StrumpackSparseSolver<scalar_type,GO>(this->root_, true));
 
+#endif
 
 /*     
     Do we need this? 
@@ -104,12 +108,12 @@ namespace Amesos2 {
       parameterList (* (this->getValidParameters ()));
     this->setParameters (default_params);
 
-
+#ifdef HAVE_MPI
     const size_t myNumRows = this->matrixA_->getLocalNumRows();
     const GO indexBase = this->matrixA_->getRowMap ()->getIndexBase ();
     strumpack_rowmap_ =
       rcp (new map_type (this->globalNumRows_, myNumRows, indexBase, comm));
-
+#endif
   }
 
 
@@ -199,6 +203,7 @@ namespace Amesos2 {
                                        const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const
   {
 
+#ifdef HAVE_MPI
     // local_len_rhs is how many of the multivector rows belong to
     // this processor
     const size_t local_len_rhs = strumpack_rowmap_->getNodeNumElements();
@@ -254,7 +259,39 @@ namespace Amesos2 {
                          local_len_rhs,
                          Teuchos::ptrInArg(*strumpack_rowmap_));
     }
+#else //NO MPI
+    using Teuchos::as;
+    const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
+    const size_t nrhs = X->getGlobalNumVectors();
+    bvals_.resize(nrhs * ld_rhs);
+    xvals_.resize(nrhs * ld_rhs);
 
+    {
+#ifdef HAVE_AMESOS2_TIMERS
+      Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
+#endif
+
+      strumpack::DenseMatrixWrapper<scalar_type>
+         Bsp(ld_rhs, nrhs, bvals_().getRawPtr(), ld_rhs),
+         Xsp(ld_rhs, nrhs, xvals_().getRawPtr(), ld_rhs);
+      strumpack::ReturnCode ret =sp_->solve(Bsp, Xsp);
+
+      TEUCHOS_TEST_FOR_EXCEPTION( ret != strumpack::ReturnCode::SUCCESS,
+                                    std::runtime_error,
+                                    "Error in STRUMPACK solve" );
+    } // end block for solve time
+
+    {
+#ifdef HAVE_AMESOS2_TIMERS
+      Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
+#endif
+
+    Util::put_1d_data_helper<
+        MultiVecAdapter<Vector>,scalar_type>::do_put(X, xvals_(),
+            as<size_t>(ld_rhs),
+            ROOTED, this->rowIndexBase_);
+  }
+#endif
     return EXIT_SUCCESS;
   }
 
@@ -263,8 +300,12 @@ namespace Amesos2 {
   bool
   STRUMPACK<Matrix,Vector>::matrixShapeOK_impl() const
   {
+#ifdef HAVE_MPI
     // STRUMPACK requires square matrices
     return( this->globalNumRows_ == this->globalNumCols_ );
+#else
+    return( this->matrixA_->getGlobalNumRows() == this->matrixA_->getGlobalNumCols() );
+#endif
   }
 
 
@@ -448,8 +489,7 @@ namespace Amesos2 {
     using Teuchos::rcp_dynamic_cast; // Do I need this?
 
     using Teuchos::Comm;
-    // It's OK to depend on MpiComm explicitly here, because
-    // STRUMPACK requires MPI anyway.
+#ifdef HAVE_MPI
     using Teuchos::MpiComm;
 
     #ifdef HAVE_AMESOS2_TIMERS
@@ -506,7 +546,42 @@ namespace Amesos2 {
     sp_->set_distributed_csr_matrix
       (l_rows, rowptr_.getRawPtr(), colind_.getRawPtr(),
        nzvals_.getRawPtr(), dist.getRawPtr(), false);
-  
+#else
+#ifdef HAVE_AMESOS2_TIMERS
+      Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
+#endif
+
+    typedef global_ordinal_type GO;
+    GO nnz_ret = 0;
+
+    if( this->root_ ){
+    nzvals_.resize(this->globalNumNonZeros_);
+    colind_.resize(this->globalNumNonZeros_);
+    rowptr_.resize(this->globalNumRows_ + 1);
+  }
+    {
+#ifdef HAVE_AMESOS2_TIMERS
+      Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
+#endif
+
+    Util::get_crs_helper<
+    MatrixAdapter<Matrix>,
+      scalar_type, GO, GO >::do_get(this->matrixA_.ptr(),
+                                       nzvals_(), colind_(), rowptr_(),
+                                       nnz_ret,
+                                       ROOTED,
+                                       ARBITRARY, this->rowIndexBase_);
+   }
+
+    TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != this->globalNumNonZeros_,
+                        std::runtime_error,
+                        "Did not get the expected number of non-zero vals");
+
+    // Get the csr data type for this type of matrix
+    sp_->set_csr_matrix(this->globalNumRows_, rowptr_.getRawPtr(), colind_.getRawPtr(),
+       nzvals_.getRawPtr(), false);
+
+#endif    
     return true;
   }
 

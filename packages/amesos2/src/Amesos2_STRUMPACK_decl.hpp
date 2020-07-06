@@ -35,19 +35,11 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact Lisa Claus (lclaus@lbl.gov)
 //
 // ***********************************************************************
 //
 // @HEADER
-
-/**
-  \file   Amesos2_STRUMPACK_decl.hpp
-  \author Pieter Ghysels <pghysels@lbl.gov>, Lisa Claus <lclaus@lbl.gov>
-  \date   Wed April 8 2020
-
-  \brief  Amesos2 STRUMPACK declarations.
-*/
 
 
 #ifndef AMESOS2_STRUMPACK_DECL_HPP
@@ -56,7 +48,11 @@
 #include "Amesos2_SolverTraits.hpp"
 #include "Amesos2_SolverCore.hpp"
 
+#ifdef HAVE_MPI
 #include "StrumpackSparseSolverMPIDist.hpp"
+#else
+#include "StrumpackSparseSolver.hpp"
+#endif
 
 namespace Amesos2 {
 
@@ -228,8 +224,12 @@ private:
    */
   bool loadA_impl(EPhase current_phase);
 
-
+#ifdef HAVE_MPI
   Teuchos::RCP<strumpack::StrumpackSparseSolverMPIDist<scalar_type,global_ordinal_type>> sp_;
+#else
+  Teuchos::RCP<strumpack::StrumpackSparseSolver<scalar_type,global_ordinal_type>> sp_;
+#endif
+
 
   // The following Arrays are persisting storage arrays for A, X, and B
   /// Stores the values of the nonzero entries for STRUMPACK
@@ -243,10 +243,12 @@ private:
   // /// 1D store for X values
    mutable Teuchos::Array<scalar_type> xvals_;
 
+#ifdef HAVE_MPI
   /// Maps rows of the matrix to processors in the STRUMPACK processor grid
   Teuchos::RCP<const Tpetra::Map<local_ordinal_type,
                                  global_ordinal_type,
                                  node_type> > strumpack_rowmap_;
+#endif
 };                              // End class STRUMPACK
 
 
