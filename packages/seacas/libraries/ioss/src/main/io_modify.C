@@ -1180,6 +1180,7 @@ namespace {
   }
 #endif
 
+#if defined(SEACAS_HAVE_EXODUS)
   void           update_exodus_assembly_info(Ioss::Region &region, const Modify::Interface &interFace)
   {
     std::vector<Ioex::Assembly> ex_assemblies;
@@ -1242,19 +1243,26 @@ namespace {
       Ioex::write_reduction_attributes(exoid, attributes_modified);
     }
   }
+#endif
 
   void update_assembly_info(Ioss::Region &region, const Modify::Interface &interFace)
   {
     // Determine type of underlying database...
     const auto type = region.get_database()->get_format();
     if (type == "Exodus") {
+#if defined(SEACAS_HAVE_EXODUS)
       update_exodus_assembly_info(region, interFace);
+#else
+      fmt::print(stderr, fg(fmt::color::red), "ERROR: Exodus capability is not enabled.\n");
+#endif
     }
-#if defined(SEACAS_HAVE_CGNS)
     else if (type == "CGNS") {
+#if defined(SEACAS_HAVE_CGNS)
       update_cgns_assembly_info(region, interFace);
-    }
+#else
+      fmt::print(stderr, fg(fmt::color::red), "ERROR: CGNS capability is not enabled.\n");
 #endif    
+    }
     else {
       fmt::print(stderr, fg(fmt::color::red), "ERROR: Can not modify the database '{}' of type '{}'.\n",
 		 interFace.filename(), type);
