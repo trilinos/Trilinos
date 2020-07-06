@@ -285,23 +285,8 @@ TEUCHOS_UNIT_TEST( TpetraNativeSolvers, Diagonal )
 
 } // namespace (anonymous)
 
-namespace BelosTpetra {
-namespace Impl {
-  extern void register_Cg (const bool verbose);
-  extern void register_Gmres (const bool verbose);
-  extern void register_GmresS (const bool verbose);  
-  extern void register_GmresSstep (const bool verbose);    
-} // namespace Impl
-} // namespace BelosTpetra
-
 int main (int argc, char* argv[])
 {
   Tpetra::ScopeGuard tpetraScope (&argc, &argv);
-
-  constexpr bool verbose = false;
-  BelosTpetra::Impl::register_Cg (verbose);
-  BelosTpetra::Impl::register_Gmres (verbose);
-  BelosTpetra::Impl::register_GmresS (verbose);
-  BelosTpetra::Impl::register_GmresSstep (verbose);
   return Teuchos::UnitTestRepository::runUnitTestsFromMain (argc, argv);
 }
