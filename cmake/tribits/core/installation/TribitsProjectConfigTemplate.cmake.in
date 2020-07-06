@@ -124,8 +124,6 @@ FOREACH(comp ${PDOLLAR}{COMPONENTS_LIST})
    LIST(APPEND ${PROJECT_NAME}_TPL_LIBRARY_DIRS ${PDOLLAR}{${PDOLLAR}{comp}_TPL_LIBRARY_DIRS})
    LIST(APPEND ${PROJECT_NAME}_TPL_LIBRARIES ${PDOLLAR}{${PDOLLAR}{comp}_TPL_LIBRARIES})
  ELSE()
-   # Component not found.
-   MESSAGE(WARNING "Component \"${PDOLLAR}{comp}\" NOT found.")
    # Set ${PROJECT_NAME}_<component>_FOUND to FALSE.
    SET(${PROJECT_NAME}_${PDOLLAR}{comp}_FOUND FALSE)
    # Set ${PROJECT_NAME}_FOUND to FALSE if component is not optional.
