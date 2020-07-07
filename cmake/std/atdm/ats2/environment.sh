@@ -95,10 +95,7 @@ if [[ "$ATDM_CONFIG_COMPILER" == *"GNU"* ]]; then
   module unload cmake
   export PATH=/projects/atdm_devops/vortex/cmake-3.17.2/bin:$PATH
 
-elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_XL"* ]]; then
-  echo "$ATDM_CONFIG_COMPILER"
-  export ATDM_CONFIG_USE_NINJA=OFF
-elif [[ "$ATDM_CONFIG_COMPILER" == "XL"* ]]; then
+elif [[ "$ATDM_CONFIG_COMPILER" == *"XL"* ]]; then
 
   # Point to binutils root.
   export BINUTILS_ROOT=/usr/tce/packages/gcc/gcc-7.3.1

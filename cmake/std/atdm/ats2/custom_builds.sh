@@ -6,13 +6,18 @@
 #
 
 # Custom compiler selection logic
-
+# ats2_cuda-10.1.243_xl-2020.03.18_spmpi-rolling_cuda_static_opt
 if atdm_match_any_buildname_keyword \
   cuda-10.1.243-xl-2020.03.18-spmpi-rolling \
   cuda-10.1.243-xl-2020.03.18_spmpi-rolling \
+  cuda-10.1.243_xl-2020.03.18-spmpi-rolling \
+  cuda-10.1.243_xl-2020.03.18_spmpi-rolling \
   cuda-10.1.243-xl-2020.03.18 \
+  cuda-10.1.243_xl-2020.03.18 \
   cuda-10.1.243-xl-2020 \
+  cuda-10.1.243_xl-2020 \
   cuda-xl \
+  cuda_xl \
   ; then
   export ATDM_CONFIG_COMPILER=CUDA-10.1.243_XL-2020.03.18_SPMPI-ROLLING
 
