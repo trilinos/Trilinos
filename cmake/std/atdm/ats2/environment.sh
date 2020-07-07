@@ -88,7 +88,7 @@ if [[ "$ATDM_CONFIG_COMPILER" == *"GNU"* ]]; then
   export INCLUDE=${BINUTILS_ROOT}/include:${INCLUDE}
   export CPATH=${BINUTILS_ROOT}/include:${CPATH}
 
-elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243-XL"* ]]; then
+elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_XL"* ]]; then
   echo "$ATDM_CONFIG_COMPILER"
 elif [[ "$ATDM_CONFIG_COMPILER" == "XL"* ]]; then
   echo "$ATDM_CONFIG_COMPILER"
