@@ -255,10 +255,16 @@ idotImpl(const ResultView& globalResult,
       Kokkos::deep_copy(globalResult, tempGlobalResult);
       return Tpetra::Details::Impl::emptyCommRequest();
     }
-    else if(allocateLocalResult)
-      return iallreduce(localResult, globalResult, ::Teuchos::REDUCE_SUM, *comm);
     else
-      return iallreduce(globalResult, globalResult, ::Teuchos::REDUCE_SUM, *comm);
+    {
+      //If "mirror space" is UVM, this actually runs on device so we fence before giving it to MPI
+      if(!std::is_same<mirror_mem_space, Kokkos::HostSpace>::value)
+        typename mirror_mem_space::execution_space().fence();
+      if(allocateLocalResult)
+        return iallreduce(localResult, globalResult, ::Teuchos::REDUCE_SUM, *comm);
+      else
+        return iallreduce(globalResult, globalResult, ::Teuchos::REDUCE_SUM, *comm);
+    }
   }
   else {
     unmanaged_result_dev_view_type nonowningLocalResult;
