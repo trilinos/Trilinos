@@ -57,7 +57,6 @@
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_Details_PackTraits.hpp" // unused here, could delete
 #include "KokkosSparse_CrsMatrix.hpp"
-#include "Tpetra_LocalCrsMatrixOperator.hpp"
 
 // localGaussSeidel and reorderedLocalGaussSeidel are templated on
 // DomainScalar and RangeScalar, so we have to include this header

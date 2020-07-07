@@ -43,6 +43,7 @@
 
 #include "TpetraCore_config.h"
 #include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_LocalCrsMatrixOperator.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ScalarTraits.hpp"
