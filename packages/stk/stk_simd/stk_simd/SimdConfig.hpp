@@ -109,6 +109,7 @@
 #      define STK_SIMD_AVX
 #    elif defined(__SSE_23__) || defined(__SSE4_X__) || defined(__x86_64__)
 #      define STK_SIMD_SSE
+#    elif defined(__ARM_NEON) || defined(__VSX__)
 #    else
 #      define STK_SIMD_NONE
 #    endif
