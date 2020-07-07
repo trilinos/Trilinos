@@ -43,6 +43,7 @@
 
 #include "TpetraCore_config.h"
 #include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_LocalCrsMatrixOperator.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ScalarTraits.hpp"
@@ -195,10 +196,10 @@ void localResidual(const CrsMatrix<SC,LO,GO,NO> &  A,
        std::runtime_error, "X, Y and R may not alias one another.");
   }
       
+  SC one = Teuchos::ScalarTraits<SC>::one(), negone = -one, zero = Teuchos::ScalarTraits<SC>::zero();    
 #ifdef TPETRA_DETAILS_USE_REFERENCE_RESIDUAL
   // This is currently a "reference implementation" waiting until Kokkos Kernels provides
   // a residual kernel.
-  SC one = Teuchos::ScalarTraits<SC>::one(), negone = -one, zero = Teuchos::ScalarTraits<SC>::zero();    
   A.localApply(X,R,Teuchos::NO_TRANS, one, zero);
   R.update(one,B,negone);
 #else
@@ -208,13 +209,28 @@ void localResidual(const CrsMatrix<SC,LO,GO,NO> &  A,
     return;
   }
 
+  int64_t numLocalRows = A_lcl.numRows ();
+  int64_t myNnz = A_lcl.nnz();
+
+  //Check for imbalanced rows. If the logic for SPMV to use merge path is triggered,
+  //use it and follow the reference residual code
+  LO maxRowImbalance = 0;
+  if(numLocalRows != 0)
+    maxRowImbalance = A.getNodeMaxNumRowEntries() - (myNnz / numLocalRows);
+  if(size_t(maxRowImbalance) >= Tpetra::Details::Behavior::rowImbalanceThreshold())
+  {
+    //note: lclOp will be wrapped in shared_ptr
+    auto lclOp = A.getLocalMultiplyOperator();
+    //Call local SPMV, requesting merge path, through A's LocalCrsMatrixOperator
+    lclOp->applyImbalancedRows (X_lcl, R_lcl, Teuchos::NO_TRANS, one, zero);
+    R.update(one,B,negone);
+    return;
+  }
+
   int team_size = -1;
   int vector_length = -1;
   int64_t rows_per_thread = -1;
   
-  int64_t numLocalRows = A_lcl.numRows ();
-  int64_t myNnz = A_lcl.nnz();
-
   int64_t rows_per_team = 
     residual_launch_parameters<execution_space>(numLocalRows, myNnz, rows_per_thread, team_size, vector_length);
   int64_t worksets = (B_lcl.extent (0) + rows_per_team - 1) / rows_per_team;
