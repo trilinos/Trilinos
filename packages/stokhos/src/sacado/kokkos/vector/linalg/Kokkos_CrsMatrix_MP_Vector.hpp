@@ -628,6 +628,30 @@ typename std::enable_if<
   Kokkos::is_view_mp_vector< Kokkos::View< OutputType, OutputP... > >::value
   >::type
 spmv(
+  KokkosKernels::Experimental::Controls,
+  const char mode[],
+  const AlphaType& a,
+  const MatrixType& A,
+  const Kokkos::View< InputType, InputP... >& x,
+  const BetaType& b,
+  const Kokkos::View< OutputType, OutputP... >& y,
+  const RANK_ONE)
+{
+  spmv(mode, a, A, x, b, y, RANK_ONE());
+}
+
+template <typename AlphaType,
+          typename BetaType,
+          typename MatrixType,
+          typename InputType,
+          typename ... InputP,
+          typename OutputType,
+          typename ... OutputP>
+typename std::enable_if<
+  Kokkos::is_view_mp_vector< Kokkos::View< InputType, InputP... > >::value &&
+  Kokkos::is_view_mp_vector< Kokkos::View< OutputType, OutputP... > >::value
+  >::type
+spmv(
   const char mode[],
   const AlphaType& a,
   const MatrixType& A,
@@ -703,6 +727,30 @@ spmv(
       multiply_type::apply( A, x, y, UpdateType(aa,bb) );
     }
   }
+}
+
+template <typename AlphaType,
+          typename BetaType,
+          typename MatrixType,
+          typename InputType,
+          typename ... InputP,
+          typename OutputType,
+          typename ... OutputP>
+typename std::enable_if<
+  Kokkos::is_view_mp_vector< Kokkos::View< InputType, InputP... > >::value &&
+  Kokkos::is_view_mp_vector< Kokkos::View< OutputType, OutputP... > >::value
+  >::type
+spmv(
+  KokkosKernels::Experimental::Controls,
+  const char mode[],
+  const AlphaType& a,
+  const MatrixType& A,
+  const Kokkos::View< InputType, InputP... >& x,
+  const BetaType& b,
+  const Kokkos::View< OutputType, OutputP... >& y,
+  const RANK_TWO)
+{
+  spmv(mode, a, A, x, b, y, RANK_TWO());
 }
 
 }

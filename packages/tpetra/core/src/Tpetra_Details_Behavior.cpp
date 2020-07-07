@@ -376,14 +376,25 @@ size_t Behavior::verbosePrintCountThreshold ()
     (value_, initialized_, envVarName, defaultValue);
 }
 
-size_t Behavior::longRowMinNumEntries ()
+size_t Behavior::rowImbalanceThreshold ()
 {
-  constexpr char envVarName[] = "TPETRA_LONG_ROW_MIN_NUM_ENTRIES";
+  constexpr char envVarName[] = "TPETRA_ROW_IMBALANCE_THRESHOLD";
   constexpr size_t defaultValue (256);
 
   static size_t value_ = defaultValue;
   static bool initialized_ = false;
   return idempotentlyGetEnvironmentVariableAsSize
+    (value_, initialized_, envVarName, defaultValue);
+}
+
+bool Behavior::useMergePathMultiVector()
+{
+  constexpr char envVarName[] = "TPETRA_MULTIVECTOR_USE_MERGE_PATH";
+  constexpr bool defaultValue = false;
+
+  static bool value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariableAsBool
     (value_, initialized_, envVarName, defaultValue);
 }
 
