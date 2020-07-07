@@ -451,6 +451,7 @@ BLASWRAPPER_CCOPY_TPL_SPEC_DECL_CUBLAS( Kokkos::LayoutStride, Kokkos::LayoutLeft
 BLASWRAPPER_CCOPY_TPL_SPEC_DECL_CUBLAS( Kokkos::LayoutStride, Kokkos::LayoutRight, Kokkos::CudaSpace, false)
 BLASWRAPPER_CCOPY_TPL_SPEC_DECL_CUBLAS( Kokkos::LayoutStride, Kokkos::LayoutStride, Kokkos::CudaSpace, false)
 
+#if defined (KOKKOS_ENABLE_CUDA_UVM)
 BLASWRAPPER_DCOPY_TPL_SPEC_DECL_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, false)
 BLASWRAPPER_DCOPY_TPL_SPEC_DECL_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutRight, Kokkos::CudaUVMSpace, false)
 BLASWRAPPER_DCOPY_TPL_SPEC_DECL_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutStride, Kokkos::CudaUVMSpace, false)
@@ -490,6 +491,7 @@ BLASWRAPPER_CCOPY_TPL_SPEC_DECL_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutStrid
 BLASWRAPPER_CCOPY_TPL_SPEC_DECL_CUBLAS( Kokkos::LayoutStride, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, false)
 BLASWRAPPER_CCOPY_TPL_SPEC_DECL_CUBLAS( Kokkos::LayoutStride, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, false)
 BLASWRAPPER_CCOPY_TPL_SPEC_DECL_CUBLAS( Kokkos::LayoutStride, Kokkos::LayoutStride, Kokkos::CudaUVMSpace, false)
+#endif
 
 }
 }
