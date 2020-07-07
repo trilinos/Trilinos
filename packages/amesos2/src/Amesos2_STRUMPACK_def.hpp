@@ -93,10 +93,10 @@ namespace Amesos2 {
     MPI_Comm rawMpiComm = (* (mpiComm->getRawMpiComm ())) ();
 
     sp_ = Teuchos::RCP<strumpack::StrumpackSparseSolverMPIDist<scalar_type,GO>>
-      (new strumpack::StrumpackSparseSolverMPIDist<scalar_type,GO>(rawMpiComm, this->root_));
+      (new strumpack::StrumpackSparseSolverMPIDist<scalar_type,GO>(rawMpiComm, this->control_.verbose_));
 #else
     sp_ = Teuchos::RCP<strumpack::StrumpackSparseSolver<scalar_type,GO>>
-      (new strumpack::StrumpackSparseSolver<scalar_type,GO>(this->root_, true));
+      (new strumpack::StrumpackSparseSolver<scalar_type,GO>(this->control_.verbose_, this->root_));
 
 #endif
 
