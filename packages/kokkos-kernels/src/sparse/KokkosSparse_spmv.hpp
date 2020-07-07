@@ -49,6 +49,7 @@
 #define KOKKOSSPARSE_SPMV_HPP_
 
 #include "KokkosKernels_helpers.hpp"
+#include "KokkosKernels_Controls.hpp"
 #include "KokkosSparse_spmv_spec.hpp"
 #include "KokkosSparse_spmv_struct_spec.hpp"
 #include <type_traits>
@@ -64,7 +65,8 @@ namespace {
 
 template <class AlphaType, class AMatrix, class XVector, class BetaType, class YVector>
 void
-spmv (const char mode[],
+spmv (KokkosKernels::Experimental::Controls controls,
+      const char mode[],
       const AlphaType& alpha,
       const AMatrix& A,
       const XVector& x,
@@ -149,7 +151,7 @@ spmv (const char mode[],
               typename YVector_Internal::value_type*,
               typename YVector_Internal::array_layout,
               typename YVector_Internal::device_type,
-              typename YVector_Internal::memory_traits>::spmv (mode, alpha, A_i, x_i, beta, y_i);
+              typename YVector_Internal::memory_traits>::spmv (controls, mode, alpha, A_i, x_i, beta, y_i);
 }
 
 
@@ -222,7 +224,8 @@ struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector, Kokkos::LayoutRi
 
 template<class AlphaType, class AMatrix, class XVector, class BetaType, class YVector>
 void
-spmv (const char mode[],
+spmv (KokkosKernels::Experimental::Controls controls,
+      const char mode[],
       const AlphaType& alpha,
       const AMatrix& A,
       const XVector& x,
@@ -337,6 +340,7 @@ spmv (const char mode[],
 /// by \c mode.  If beta == 0, ignore and overwrite the initial
 /// entries of y; if alpha == 0, ignore the entries of A and x.
 ///
+/// \param controls [in] kokkos-kernels control structure
 /// \param mode [in] "N" for no transpose, "T" for transpose, or "C"
 ///   for conjugate transpose.
 /// \param alpha [in] Scalar multiplier for the matrix A.
@@ -348,17 +352,32 @@ spmv (const char mode[],
 ///   multivector (rank-2 Kokkos::View).  It must have the same number
 ///   of columns as x.
 template <class AlphaType, class AMatrix, class XVector, class BetaType, class YVector>
-void
-spmv(const char mode[],
-     const AlphaType& alpha,
-     const AMatrix& A,
-     const XVector& x,
-     const BetaType& beta,
-     const YVector& y) {
+void spmv(KokkosKernels::Experimental::Controls controls,
+	  const char mode[],
+	  const AlphaType& alpha,
+	  const AMatrix& A,
+	  const XVector& x,
+	  const BetaType& beta,
+	  const YVector& y) {
   using RANK_SPECIALISE =
     typename std::conditional<static_cast<int> (XVector::rank) == 2,
                               RANK_TWO, RANK_ONE>::type;
-  spmv (mode, alpha, A, x, beta, y, RANK_SPECIALISE ());
+  spmv (controls, mode, alpha, A, x, beta, y, RANK_SPECIALISE ());
+}
+
+// Overload for backward compatibility and also just simpler
+// interface for users that are happy with the kernel default settings
+template <class AlphaType, class AMatrix, class XVector, class BetaType, class YVector>
+void spmv(const char mode[],
+	  const AlphaType& alpha,
+	  const AMatrix& A,
+	  const XVector& x,
+	  const BetaType& beta,
+	  const YVector& y) {
+
+  KokkosKernels::Experimental::Controls controls;
+  spmv(controls, mode, alpha, A, x, beta, y);
+
 }
 
   namespace Experimental {
