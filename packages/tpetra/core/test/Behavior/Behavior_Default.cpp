@@ -91,16 +91,4 @@ TEUCHOS_UNIT_TEST(Behavior, verbosePrintCountThreshold) {
   TEST_ASSERT( val1 >= minVal && val1 <= maxVal );
 }
 
-TEUCHOS_UNIT_TEST(Behavior, longRowMinNumEntries) {
-  // We only require that the default be at least this much.
-  const size_t minVal (100);
-  const size_t val0 =
-    Tpetra::Details::Behavior::longRowMinNumEntries();
-  TEST_ASSERT( val0 >= minVal );
-
-  const size_t val1 =
-    Tpetra::Details::Behavior::longRowMinNumEntries();
-  TEST_ASSERT( val1 >= minVal );
-}
-
 } // namespace (anonymous)
