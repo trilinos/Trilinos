@@ -103,6 +103,7 @@ elif [[ "$ATDM_CONFIG_COMPILER" == *"XL"* ]]; then
   export LIBRARY_PATH=${BINUTILS_ROOT}/lib
   export INCLUDE=${BINUTILS_ROOT}/include:${INCLUDE}
   export CPATH=${BINUTILS_ROOT}/include:${CPATH}
+  export BLAS_ROOT=${CBLAS_ROOT}
 
   # Don't use ninja as the fortran compiler test is broken.
   export ATDM_CONFIG_USE_NINJA=OFF
