@@ -41,6 +41,7 @@
 #define TPETRA_LOCALCRSMATRIXOPERATOR_DEF_HPP
 
 #include "Tpetra_LocalOperator.hpp"
+#include "Tpetra_Details_Behavior.hpp"
 #include "KokkosSparse.hpp"
 #include "Teuchos_TestForException.hpp"
 
@@ -97,6 +98,67 @@ apply (Kokkos::View<const mv_scalar_type**, array_layout,
     (conjugate ? KokkosSparse::ConjugateTranspose :
      KokkosSparse::Transpose) : KokkosSparse::NoTranspose;
   KokkosSparse::spmv (op, alpha, *A_, X, beta, Y);
+}
+
+/// \brief Same behavior as \c apply() above, except give KokkosKernels a hint to use
+///  an SPMV algorithm that can efficiently handle matrices with imbalanced rows.
+template<class MultiVectorScalar, class MatrixScalar, class Device>
+void
+LocalCrsMatrixOperator<MultiVectorScalar, MatrixScalar, Device>::
+applyImbalancedRows (
+       Kokkos::View<const mv_scalar_type**, array_layout,
+         device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> > X,
+       Kokkos::View<mv_scalar_type**, array_layout,
+         device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> > Y,
+       const Teuchos::ETransp mode,
+       const mv_scalar_type alpha,
+       const mv_scalar_type beta) const
+{
+  const bool conjugate = (mode == Teuchos::CONJ_TRANS);
+  const bool transpose = (mode != Teuchos::NO_TRANS);
+
+#ifdef HAVE_TPETRA_DEBUG
+  const char tfecfFuncName[] = "applyLoadBalanced: ";
+
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+    (X.extent (1) != Y.extent (1), std::runtime_error,
+     "X.extent(1) = " << X.extent (1) << " != Y.extent(1) = "
+     << Y.extent (1) << ".");
+  // If the two pointers are NULL, then they don't alias one
+  // another, even though they are equal.
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+    (X.data () == Y.data () && X.data () != nullptr,
+     std::runtime_error, "X and Y may not alias one another.");
+#endif // HAVE_TPETRA_DEBUG
+
+  const auto op = transpose ?
+    (conjugate ? KokkosSparse::ConjugateTranspose :
+     KokkosSparse::Transpose) : KokkosSparse::NoTranspose;
+  //Select the merge path algorithm (used if available, otherwise has no effect)
+  //TODO BMK: If/when KokkosKernels gets its own SPMV implementation for imbalanced rows,
+  //call that here or select it using Controls.
+  //Ideally it supports multivectors from the beginning.
+  //
+  //TODO BMK: When cuSPARSE and KokkosKernels get cuSPARSE SpMM (SpMV for multivectors)
+  //merge path support, call that here.
+  //Also remove the useMergePathMultiVector() environment variable/behavior.
+  if(Details::Behavior::useMergePathMultiVector() || X.extent(1) == 1)
+  {
+    KokkosKernels::Experimental::Controls controls;
+    controls.setParameter("algorithm", "merge");
+    //Apply on one column at a time (must be rank-1)
+    for(size_t vec = 0; vec < X.extent(1); vec++)
+    {
+      KokkosSparse::spmv (controls, op,
+          alpha, *A_, Kokkos::subview(X, Kokkos::ALL(), vec),
+          beta, Kokkos::subview(Y, Kokkos::ALL(), vec));
+    }
+  }
+  else
+  {
+    //Just run multivector version of spmv (no controls)
+    KokkosSparse::spmv (op, alpha, *A_, X, beta, Y);
+  }
 }
 
 template<class MultiVectorScalar, class MatrixScalar, class Device>

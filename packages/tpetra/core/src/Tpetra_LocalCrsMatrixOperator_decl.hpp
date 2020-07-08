@@ -92,6 +92,16 @@ namespace Tpetra {
            const mv_scalar_type alpha,
            const mv_scalar_type beta) const override;
 
+    void
+    applyImbalancedRows (
+           Kokkos::View<const mv_scalar_type**, array_layout,
+             device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> > X,
+           Kokkos::View<mv_scalar_type**, array_layout,
+             device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> > Y,
+           const Teuchos::ETransp mode,
+           const mv_scalar_type alpha,
+           const mv_scalar_type beta) const;
+
     bool hasTransposeApply () const override;
 
     const local_matrix_type& getLocalMatrix () const;
