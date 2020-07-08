@@ -6,7 +6,6 @@
 #
 
 # Custom compiler selection logic
-# ats2_cuda-10.1.243_xl-2020.03.18_spmpi-rolling_cuda_static_opt
 if atdm_match_any_buildname_keyword \
   cuda-10.1.243-xl-2020.03.18-spmpi-rolling \
   cuda-10.1.243-xl-2020.03.18_spmpi-rolling \
