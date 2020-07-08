@@ -719,7 +719,7 @@ namespace Tpetra {
                          nonContigGids_host.size ());
         Kokkos::deep_copy (nonContigGids, nonContigGids_host);
 
-        // Since FixedHashTable currently cannot be built on CudaSpace due to UVM dpeendence,
+        // Since FixedHashTable currently cannot be built on CudaSpace due to UVM dependence,
         // make it in CudaUVMSpace and then copy to CudaSpace.
         typedef ::Tpetra::Details::FixedHashTable<global_ordinal_type, local_ordinal_type, device_type>
           global_to_local_table_keep_uvm_type;
@@ -930,7 +930,7 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::
   Map (const global_size_t numGlobalElements,
-       const Kokkos::View<const GlobalOrdinal*, device_type>& entryList,
+       const Kokkos::View<const GlobalOrdinal*, no_uvm_device_type>& entryList,
        const GlobalOrdinal indexBase,
        const Teuchos::RCP<const Teuchos::Comm<int> >& comm) :
     comm_ (comm),
@@ -1110,11 +1110,20 @@ namespace Tpetra {
            << entryList.extent (0) << " - " << i
            << ".  Please report this bug to the Tpetra developers.");
 
-        // Since FixedHashTable currently cannot be built on CudaSpace due to UVM dpeendence,
+        // Since FixedHashTable currently cannot be built on CudaSpace due to UVM dependence,
         // make it in CudaUVMSpace and then copy to CudaSpace.
+        // This can all go away when FixedHashTable is modified so it can run on a pure CudaSpace.
+        // Right now the constructor has UVM dependence in the setup.
         typedef ::Tpetra::Details::FixedHashTable<global_ordinal_type, local_ordinal_type, device_type>
           global_to_local_table_keep_uvm_type;
-        global_to_local_table_keep_uvm_type glMap(nonContigGids,
+#ifdef KOKKOS_ENABLE_CUDA
+        Kokkos::View<GlobalOrdinal*, device_type> with_uvm_nonContigGids(
+          Kokkos::ViewAllocateWithoutInitializing("with_uvm_nonContigGids"), nonContigGids.size());
+        Kokkos::deep_copy(with_uvm_nonContigGids, nonContigGids);
+#else
+        auto with_uvm_nonContigGids = nonContigGids;
+#endif
+        global_to_local_table_keep_uvm_type glMap(with_uvm_nonContigGids,
                                         firstContiguousGID_,
                                         lastContiguousGID_,
                                         static_cast<LO> (i));
@@ -1732,7 +1741,7 @@ namespace Tpetra {
         os << *prefix << "Fill lgMap" << endl;
         std::cerr << os.str();
       }
-      FillLgMap<LO, GO, DT> fillIt (lgMap, minMyGID_);
+      FillLgMap<LO, GO, no_uvm_device_type> fillIt (lgMap, minMyGID_);
 
       if (verbose) {
         std::ostringstream os;
@@ -2075,8 +2084,6 @@ namespace Tpetra {
     if (newComm.is_null ()) {
       return null; // my process does not participate in the new Map
     } else {
-      // The default constructor that's useful for clone() above is
-      // also useful here.
       RCP<Map> map            = rcp (new Map ());
 
       map->comm_              = newComm;

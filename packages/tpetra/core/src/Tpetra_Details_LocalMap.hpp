@@ -86,9 +86,13 @@ public:
   using memory_space = typename device_type::memory_space;
 
   //! The hash will be CudaSpace, not CudaUVMSpace
-  using hash_memory_space = typename std::conditional<std::is_same<memory_space, Kokkos::CudaUVMSpace>::value,
+#ifdef KOKKOS_ENABLE_CUDA
+  using no_uvm_memory_space = typename std::conditional<std::is_same<memory_space, Kokkos::CudaUVMSpace>::value,
     Kokkos::CudaSpace, memory_space>::type;
-  using hash_device_type = Kokkos::Device<execution_space, hash_memory_space>;
+  using no_uvm_device_type = Kokkos::Device<execution_space, no_uvm_memory_space>;
+#else
+  using no_uvm_device_type = device_type;
+#endif
 
   LocalMap () :
     indexBase_ (0),
@@ -99,8 +103,8 @@ public:
     numLocalElements_ (0),
     contiguous_ (false)
   {}
-  LocalMap (const ::Tpetra::Details::FixedHashTable<GlobalOrdinal, LocalOrdinal, hash_device_type>& glMap,
-            const ::Kokkos::View<const GlobalOrdinal*, ::Kokkos::LayoutLeft, DeviceType>& lgMap,
+  LocalMap (const ::Tpetra::Details::FixedHashTable<GlobalOrdinal, LocalOrdinal, no_uvm_device_type>& glMap,
+            const ::Kokkos::View<const GlobalOrdinal*, ::Kokkos::LayoutLeft, no_uvm_device_type>& lgMap,
             const GlobalOrdinal indexBase,
             const GlobalOrdinal myMinGid,
             const GlobalOrdinal myMaxGid,
@@ -163,7 +167,7 @@ public:
     return myMaxGid_;
   }
 
-  //! Get the local index corresponding to the given global index.
+  //! Get the local index corresponding to the given global index. (device only)
   KOKKOS_INLINE_FUNCTION LocalOrdinal
   getLocalElement (const GlobalOrdinal globalIndex) const
   {
@@ -184,7 +188,7 @@ public:
     }
   }
 
-  //! Get the global index corresponding to the given local index.
+  //! Get the global index corresponding to the given local index. (device only)
   KOKKOS_INLINE_FUNCTION GlobalOrdinal
   getGlobalElement (const LocalOrdinal localIndex) const
   {
@@ -201,7 +205,7 @@ public:
 
 private:
   //! Table that maps from global index to local index.
-  ::Tpetra::Details::FixedHashTable<GlobalOrdinal, LocalOrdinal, DeviceType> glMap_;
+  ::Tpetra::Details::FixedHashTable<GlobalOrdinal, LocalOrdinal, no_uvm_device_type> glMap_;
   /// \brief Mapping from local indices to global indices.
   ///
   /// If this is empty, then it could be either that the Map is
@@ -220,7 +224,7 @@ private:
 
   // Map glMap_ is changed from CudaUVMSpace to CudaSpace so do the same here.
   // This preserves the LocalMap constructor to be trivial (no deep copies).
-  ::Kokkos::View<const GlobalOrdinal*, ::Kokkos::LayoutLeft, hash_device_type> lgMap_;
+  ::Kokkos::View<const GlobalOrdinal*, ::Kokkos::LayoutLeft, no_uvm_device_type> lgMap_;
 
   GlobalOrdinal indexBase_;
   GlobalOrdinal myMinGid_;
