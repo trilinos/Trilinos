@@ -199,6 +199,9 @@ fi
 # to be safe.  Also, we need to set OMP_* env vars here because the SPARC
 # modules change them!
 
+# Point to correct versions of libz and libcurl for git.
+export LD_LIBRARY_PATH=/usr/lib64:/lib64:$LD_LIBRARY_PATH
+
 # Use updated Ninja and CMake
 module load sems-env
 module load sems-cmake/3.12.2
