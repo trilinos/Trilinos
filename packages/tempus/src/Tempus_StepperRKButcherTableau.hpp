@@ -1636,6 +1636,7 @@ protected:
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> bstar(NumStages);
     const Scalar zero = ST::zero();
 
     // Fill A:
@@ -1670,11 +1671,18 @@ protected:
     c(0) = zero;
     c(1) = A(1,0);
     c(2) = A(2,0) + A(2,1);
-    c(3) = A(3,0) + A(3,1) + A(3,1);
+    c(3) = A(3,0) + A(3,1) + A(3,2);
     c(4) = A(4,0) + A(4,1) + A(4,2) + A(4,3);
 
+    // Fill bstar:
+    bstar(0) = as<Scalar>(0.130649104813131);
+    bstar(1) = as<Scalar>(0.317716031201302);
+    bstar(2) = as<Scalar>(0.000000869337261);
+    bstar(3) = as<Scalar>(0.304581512634772);
+    bstar(4) = as<Scalar>(0.247052482013534);
+
     this->tableau_ = Teuchos::rcp(new RKButcherTableau<Scalar>(
-      this->getStepperType(),A,b,c,order,order,order));
+      this->getStepperType(),A,b,c,order,order,order,bstar));
   }
 };
 
