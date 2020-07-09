@@ -94,10 +94,14 @@ public:
 
   typedef TypeMap<Amesos2::Basker,scalar_type>                     type_map;
 
-  typedef typename type_map::type                                  slu_type;
-  typedef typename type_map::magnitude_type                  magnitude_type;
+  typedef typename type_map::type                               basker_type;
 
-  typedef FunctionMap<Amesos2::Basker,slu_type>                function_map;
+  // TODO: Would like to change dtype to be a regular type, not static.
+  // Seems nothing was using dtype before anyways but Stokhos would break so
+  // will address that as a separate PR.
+  typedef decltype(type_map::dtype)                            basker_dtype;
+
+  typedef FunctionMap<Amesos2::Basker,basker_type>             function_map;
 
   typedef Matrix                                                matrix_type;
   typedef MatrixAdapter<matrix_type>                    matrix_adapter_type;
@@ -106,17 +110,16 @@ public:
   Basker( Teuchos::RCP<const Matrix> A,
           Teuchos::RCP<Vector>       X,
           Teuchos::RCP<const Vector> B);
-   ~Basker( );
+  ~Basker( );
 
 
 private:
 
- /**
-  * \brief can we optimize size_type and ordinal_type for straight pass through,
-  * also check that is_contiguous_ flag set to true
-  */
+  /**
+  -  * \brief can we optimize size_type and ordinal_type for straight pass through,
+  -  * also check that is_contiguous_ flag set to true
+  -  */
   bool single_proc_optimization() const;
-
 
   /**
    * \brief Performs pre-ordering on the matrix to increase efficiency.
@@ -185,24 +188,34 @@ private:
   // Members
   int num_threads;
 
-  // The following Arrays are persisting storage arrays for A, X, and B
-  /// Stores the values of the nonzero entries for Basker
-  Teuchos::Array<slu_type> nzvals_;
+  typedef Kokkos::DefaultHostExecutionSpace HostSpaceType;
+  typedef Kokkos::View<local_ordinal_type*, HostSpaceType> host_ordinal_type_array;
+
+  typedef Kokkos::View<basker_type*, HostSpaceType>     host_value_type_array;
+
+  // The following Views are persisting storage arrays for A, X, and B
+  /// Stores the values of the nonzero entries for CHOLMOD
+  host_value_type_array host_nzvals_view_;
   /// Stores the location in \c Ai_ and Aval_ that starts row j
-  Teuchos::Array<local_ordinal_type> rowind_;
+  host_ordinal_type_array host_rows_view_;
   /// Stores the row indices of the nonzero entries
-  Teuchos::Array<local_ordinal_type> colptr_;
+  host_ordinal_type_array host_col_ptr_view_;
 
   bool is_contiguous_;
 
+  typedef typename Kokkos::View<basker_type**, Kokkos::LayoutLeft, HostSpaceType>
+    host_solve_array_t;
 
   /// Persisting 1D store for X
-  mutable Teuchos::Array<slu_type> xvals_;  local_ordinal_type ldx_;
+  mutable host_solve_array_t xValues_;
+  int ldx_;
+
   /// Persisting 1D store for B
-  mutable Teuchos::Array<slu_type> bvals_;  local_ordinal_type ldb_;
+  mutable host_solve_array_t bValues_;
+  int ldb_;
 
   /*Handle for Basker object*/
-  mutable ::BaskerClassicNS::BaskerClassic<local_ordinal_type,slu_type> basker;
+  mutable ::BaskerClassicNS::BaskerClassic<local_ordinal_type,basker_dtype> basker;
 
 }; // End class Basker
 
@@ -212,13 +225,21 @@ private:
 template <>
 struct solver_traits<Basker> {
 #ifdef HAVE_TEUCHOS_COMPLEX
-  typedef Meta::make_list4<float,
+  typedef Meta::make_list6<float,
                            double,
+                           Kokkos::complex<float>,
+                           Kokkos::complex<double>,
                            std::complex<float>,
                            std::complex<double> > supported_scalars;
 #else
   typedef Meta::make_list2<float, double> supported_scalars;
 #endif
+};
+
+template <typename Scalar, typename LocalOrdinal, typename ExecutionSpace>
+struct solver_supports_matrix<Basker,
+  KokkosSparse::CrsMatrix<Scalar, LocalOrdinal, ExecutionSpace>> {
+  static const bool value = true;
 };
 
 } // end namespace Amesos2
