@@ -472,12 +472,13 @@ namespace MueLu {
       for(int interfaceIdx = 0; interfaceIdx < numInterfaces; ++interfaceIdx) {
         numCoarseNodes = 1;
         for(int dim = 0; dim < 3; ++dim) {
-          endRate = interfacesDimensions[3*interfaceIdx + dim] % coarseRate[dim];
+          endRate = (interfacesDimensions[3*interfaceIdx + dim] - 1) % coarseRate[dim];
           if(interfacesDimensions[3*interfaceIdx + dim] == 1) {
             coarseInterfacesDimensions[3*interfaceIdx + dim] = 1;
           } else {
             coarseInterfacesDimensions[3*interfaceIdx + dim]
-              = (interfacesDimensions[3*interfaceIdx + dim] - endRate - 1) / coarseRate[dim] + 2;
+              = (interfacesDimensions[3*interfaceIdx+dim]-1) / coarseRate[dim] + 2;
+            if(endRate==0){ coarseInterfacesDimensions[3*interfaceIdx + dim]--;}
           }
           numCoarseNodes *= coarseInterfacesDimensions[3*interfaceIdx + dim];
         }
@@ -553,6 +554,9 @@ namespace MueLu {
             rate = endRate[dim];
           }
           if(rem > (rate / 2)) {++coarseIJK[dim];}
+          if(coarseNodesPerDim[dim] - coarseIJK[dim] > fineNodesPerDim[dim]-nodeIJK[dim]){
+            ++coarseIJK[dim];
+          }
         }
 
         for(LO dim = 0; dim < 3; ++dim) {
