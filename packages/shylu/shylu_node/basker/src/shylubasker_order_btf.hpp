@@ -187,6 +187,15 @@ namespace BaskerNS
       printf("\n");
     }//if verbose
 
+    /*printf(" A = [\n" );
+    for(Int j = 0; j < M.ncol; j++) {
+      for(Int k = M.col_ptr[j]; k < M.col_ptr[j+1]; k++) {
+        printf("%d %d %.16e\n", M.row_idx[k], j, M.val[k]);
+      }
+    }
+    printf("];\n");*/
+
+//std::cout << "amdP=[" << std::endl;
     MALLOC_INT_1DARRAY(vals_order_btf_array, M.nnz);
     //permute_col(M, order_btf_array);                                    //NDE: col-order M
     permute_col_store_valperms(M, order_btf_array, vals_order_btf_array); //NDE: col-order M & Track movement
@@ -205,16 +214,24 @@ namespace BaskerNS
     MALLOC_INT_1DARRAY(btf_blk_work, nblks+1);
     init_value(btf_blk_work, nblks+1, (Int)0);
 
+    /*printf(" B = [\n" );
+    for(Int j = 0; j < M.ncol; j++) {
+      for(Int k = M.col_ptr[j]; k < M.col_ptr[j+1]; k++) {
+        printf("%d %d %.16e\n", M.row_idx[k], j, M.val[k]);
+      }
+    }
+    printf("];\n");*/
+
+//std::cout << "amdP=[" << std::endl;
     //Find AMD blk ordering, get nnz, and get work
     #ifdef BASKER_TIMER
     timer_order.reset();
     #endif
-    btf_blk_amd( M, order_blk_mwm_array, order_blk_amd_array, btf_blk_nnz, btf_blk_work);
+    btf_blk_amd(M, order_blk_mwm_array, order_blk_amd_array, btf_blk_nnz, btf_blk_work);
     #ifdef BASKER_TIMER
     order_time = timer_order.seconds();
-    std::cout << " >>> Basker order : AMD time         : " << order_time << std::endl;
+    std::cout << " >>> Basker order : Block AMD time   : " << order_time << std::endl;
     #endif
-    for(Int i = 0; i < M.ncol; i++) order_blk_mwm_array[i] = i;
 
     #ifdef BASKER_DEBUG_ORDER_BTF
     printf("Basker blk_perm:\n");
@@ -233,19 +250,42 @@ namespace BaskerNS
     printf("\n");
     #endif
 
-    //printMTX("A_BEFORE.mtx", M);
-    //printVec("AMD.txt", order_blk_amd_array, M.ncol);
+    printMTX("A_BEFORE.mtx", M);
+    printVec("AMD.txt", order_blk_amd_array, M.ncol);
 
     #ifdef BASKER_TIMER
     timer_order.reset();
     #endif
+#define BASKER_BLK_MWM
+#if defined(BASKER_BLK_MWM)
     // > apply matching to rows
-    //permute_row(M, order_blk_mwm_array);
+    //for(Int i = 0; i < M.ncol; i++) order_blk_mwm_array[i] = i;
+    permute_row(M, order_blk_mwm_array);
+    #if 0 // no need to scale, since val is read for numeric facto
+    //for(Int j = 0; j < M.ncol; j++) printf(" > %d %d %e %e\n",j,order_blk_mwm_array(j),scale_row_array(j),scale_col_array(j));
+    for(Int j = 0; j < M.ncol; j++) {
+      for(Int k = M.col_ptr[j]; k < M.col_ptr[j+1]; k++) {
+//printf( " %d: (%d %d) %e",k, j,M.row_idx[k], M.val[k]);
+        M.val[k] *= (scale_col_array(j) * scale_row_array(M.row_idx[k]));
+//printf( " -> %e (%e, %e)\n",M.val[k],scale_col_array(j), scale_row_array(M.row_idx[k]));
+      }
+    }
+    #endif
+#endif
 
     // > apply AMD to cols & rows
     MALLOC_INT_1DARRAY(vals_order_blk_amd_array, M.nnz);
     permute_col_store_valperms(M, order_blk_amd_array, vals_order_blk_amd_array); //NDE: col-order M & Track movement
     permute_row(M, order_blk_amd_array);
+
+    /*printf(" T = [\n" );
+    for(Int j = 0; j < M.ncol; j++) {
+      for(Int k = M.col_ptr[j]; k < M.col_ptr[j+1]; k++) {
+        //std::cout << M.row_idx[k] << " " << j << " " << M.val[k] << std::endl;
+        printf("%d %d %.16e\n", M.row_idx[k], j, M.val[k]);
+      }
+    }
+    printf("];\n");*/
 
 //std::cout << "amdP=[" << std::endl;
 //for (int i = 0; i < M.ncol; i++) std::cout << order_blk_amd_array(i) << std::endl;
@@ -685,9 +725,9 @@ namespace BaskerNS
         printf("Basker: continue with fine structure btf blocks\n");
       #endif
 
-        t_size = t_size+blk_size;
+        t_size  = t_size+blk_size;
         blk_idx = blk_idx-1;
-        scol   = btf_tabs[blk_idx];
+        scol    = btf_tabs[blk_idx];
       }
       //break due to size i.e. entered non-trivial large BTF_A block
       else if( blk_work >= break_size )
@@ -763,6 +803,7 @@ namespace BaskerNS
         {
           BTF_A.row_idx(annz) = M.row_idx(i);
           BTF_A.val(annz)     = M.val(i);  //NDE: Track movement of vals (lin_ind of row,col) here
+//std::cout << " ++ A : " << M.row_idx(i) << " " << k << " " << M.val(i) << std::endl;
 
           vals_block_map_perm_pair(i) = std::pair<Int,Int>(0,annz);
 
@@ -877,6 +918,7 @@ namespace BaskerNS
           //Note: do not offset because B srow = 0
           BTF_B.row_idx(bnnz) = M.row_idx(i);
           BTF_B.val(bnnz)     = M.val(i);
+//std::cout << " ++ B : " << M.row_idx(i) << " " << k << " " << M.val(i) << std::endl;
 
           vals_block_map_perm_pair(i) = std::pair<Int,Int>(1,bnnz);
 
@@ -892,6 +934,7 @@ namespace BaskerNS
           //BTF_C.row_idx[cnnz] = M.row_idx[i];
           BTF_C.row_idx(cnnz) = M.row_idx(i)-scol;
           BTF_C.val(cnnz)     = M.val(i);
+//printf(" ++ C(%d) : %d %d %e\n",cnnz, M.row_idx(i), k, M.val(i));
 
           vals_block_map_perm_pair(i) = std::pair<Int,Int>(2,cnnz);
 

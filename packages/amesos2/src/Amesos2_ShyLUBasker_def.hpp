@@ -117,6 +117,7 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   ShyLUbaskerTr->Options.matching_type = 0;
   ShyLUbaskerTr->Options.btf           = BASKER_TRUE;
   ShyLUbaskerTr->Options.amd_btf       = BASKER_TRUE;
+  ShyLUbaskerTr->Options.prune         = BASKER_FALSE;
   ShyLUbaskerTr->Options.amd_dom       = BASKER_TRUE;
   ShyLUbaskerTr->Options.transpose     = BASKER_TRUE;
   ShyLUbaskerTr->Options.verbose_matrix_out = BASKER_FALSE;
@@ -251,7 +252,7 @@ ShyLUBasker<Matrix,Vector>::symbolicFactorization_impl()
         std::runtime_error, "Error in ShyLUBaskerTr Symbolic");
 
   } // end if (this->root_)
- 
+
   /*No symbolic factoriztion*/
   return(0);
 }
@@ -277,6 +278,7 @@ ShyLUBasker<Matrix,Vector>::numericFactorization_impl()
       std::cout << "rowind_ : " << rowind_.toString() << std::endl;
       std::cout << "colptr_ : " << colptr_.toString() << std::endl;
 #endif
+      //ShyLUbasker->PRINT_C(); 
 
       // NDE: Special case 
       // Rather than going through the Amesos2 machinery to convert the matrixA_ CRS pointer data to CCS and store in Teuchos::Arrays,
@@ -617,6 +619,11 @@ ShyLUBasker<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Param
       ShyLUbasker->Options.user_fill = parameterList->get<double>("user_fill");
       ShyLUbaskerTr->Options.user_fill = parameterList->get<double>("user_fill");
     }
+  if(parameterList->isParameter("prune"))
+    {
+      ShyLUbasker->Options.prune = parameterList->get<bool>("prune");
+      ShyLUbaskerTr->Options.prune = parameterList->get<bool>("prune");
+    }
 }
 
 template <class Matrix, class Vector>
@@ -652,6 +659,8 @@ ShyLUBasker<Matrix,Vector>::getValidParameters_impl() const
 	      "Type of WC matching (Not Supported)");
       pl->set("btf", true, 
 	      "Use BTF ordering");
+      pl->set("prune", false,
+	      "Use prune on BTF blocks (Not Supported)");
       pl->set("amd_btf", true,
 	      "Use AMD on BTF blocks (Not Supported)");
       pl->set("amd_dom", true,

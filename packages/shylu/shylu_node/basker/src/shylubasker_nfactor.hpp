@@ -2,7 +2,7 @@
 #define SHYLUBASKER_NFACTOR_HPP
 
 //#define BASKER_DEBUG_NFACTOR 
-//#define BASKER_TIME
+#define BASKER_TIME
 
 /*Basker Includes*/
 #include "shylubasker_types.hpp"
@@ -98,7 +98,6 @@ namespace BaskerNS
 
     if(btf_tabs_offset != 0)
     {
-
       if(Options.verbose == BASKER_TRUE)
       {
         printf("Factoring Dom(%ld x %ld) num_threads: %ld \n",

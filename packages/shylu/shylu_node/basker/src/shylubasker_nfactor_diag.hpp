@@ -13,8 +13,8 @@
 #include <Kokkos_Core.hpp>
 #include <impl/Kokkos_Timer.hpp>
 #endif 
-//#define BASKER_TIMER
 
+#define BASKER_TIMER
 //#define BASKER_DEBUG_NFACTOR_DIAG
 
 namespace BaskerNS
@@ -280,16 +280,20 @@ namespace BaskerNS
         (long)btf_tabs(c+1)-(long)btf_tabs(c));
     #endif
     #ifdef BASKER_TIMER
+    double initi_time = 0.0;
     double pivot_time = 0.0;
     double solve_time = 0.0;
     double scale_time = 0.0;
+    double prune_time = 0.0;
     Kokkos::Timer timer_nfactor;
+    Kokkos::Timer timer_nfactor_tot;
+    timer_nfactor_tot.reset();
     #endif
 
     Teuchos::LAPACK<int, Entry> lapack;
-    Entry rmin_ = lapack.LAMCH('E');
+    //Entry rmin_ = lapack.LAMCH('E');
     //Entry rmin_ = lapack.LAMCH('U');
-    //Entry rmin_ = (Entry)0.0;
+    Entry rmin_ = (Entry)0.0;
 
     //workspace
     Int ws_size       = thread_array(kid).iws_size;
@@ -323,15 +327,17 @@ namespace BaskerNS
     unnz = 0;
     lnnz = 0;
 
-    //printf( " c: %d wsize=%d\n",c,ws_size );
-    /*std::cout << " K" << c << " = [" << std::endl;
+    /*printf( " c: %d wsize=%d\n",c,ws_size );
+    std::cout << " K" << c << " = [" << std::endl;
+    //for(Int k = btf_tabs(c); k < min(btf_tabs(c+1), btf_tabs(c)+5); ++k) {
     for(Int k = btf_tabs(c); k < btf_tabs(c+1); ++k) {
       for( i = M.col_ptr(k-bcol); i < M.col_ptr(k-bcol+1); ++i) {
         if (M.row_idx(i) >= brow2) 
-        std::cout << k-btf_tabs(c) << " " << M.row_idx(i)-brow2 << " " << M.val(i) << std::endl;
+        printf( "%d %d %d %e\n", i, k-btf_tabs(c), M.row_idx(i)-brow2, M.val(i));
       }
     }
-    std::cout << "];" << std::endl;*/
+    std::cout << "];" << std::endl << std::endl << std::flush;*/
+    
     //for each column
     for(Int k = btf_tabs(c); k < btf_tabs(c+1); ++k)
     {
@@ -362,6 +368,9 @@ namespace BaskerNS
       ucnt  = 0;
 
       //for each nnz in column
+      #ifdef BASKER_TIMER
+      timer_nfactor.reset();
+      #endif
       for( i = M.col_ptr(k-bcol); i < M.col_ptr(k-bcol+1); ++i)
       {
         j = M.row_idx(i);
@@ -374,7 +383,8 @@ namespace BaskerNS
           continue;
         }
 
-        if (M.val(i) != (Entry)0.0) {
+        if (M.val(i) != (Entry)0.0) 
+        {
           X(j) = M.val(i);
 
         #ifdef BASKER_DEBUG_NFACTOR_DIAG
@@ -405,6 +415,9 @@ namespace BaskerNS
           }
         }
       }//end over all nnz in column
+      #ifdef BASKER_TIMER
+      initi_time += timer_nfactor.seconds();
+      #endif
 
       xnnz = ws_size - top;
 
@@ -609,7 +622,7 @@ namespace BaskerNS
 
         if(t != BASKER_MAX_IDX)
         { // U
-          if (!Options.prune && abs(X(j)) > rmin_)
+          if (Options.prune || abs(X(j)) > rmin_)
           {
             if(t < k)
             {
@@ -633,7 +646,7 @@ namespace BaskerNS
         }
         else if (t == BASKER_MAX_IDX)
         { // L
-          if (!Options.prune && abs(X(j)) > rmin_*abs(pivot))
+          if (Options.prune || abs(X(j)) > rmin_*abs(pivot))
           {
             L.row_idx(lnnz) = j;
           #ifdef BASKER_2DL
@@ -641,11 +654,7 @@ namespace BaskerNS
           #else
             L.val[lnnz] = X[j]/pivot;
           #endif
-            /*
-               printf("L(%d,%d) = %f \n",
-               lnnz,L.row_idx(lnnz),
-               L.val(lnnz));
-            */
+            //printf("%d: L(%d,%d) = %f \n", lnnz, L.row_idx(lnnz), k-L.srow, L.val(lnnz));
             ++lnnz;
           }
         }//end if() not 0
@@ -672,7 +681,7 @@ namespace BaskerNS
 
       //Fill in last element of U
       U.row_idx(unnz) = k - L.scol;
-      U.val(unnz)       = lastU; //NDE: lastU init to 0 line 563; only updated if 't < k' and t not BASKER_MAX_IDX; t defined by gperm i.e. pivoting
+      U.val(unnz)     = lastU; //NDE: lastU init to 0 line 563; only updated if 't < k' and t not BASKER_MAX_IDX; t defined by gperm i.e. pivoting
       if(lastU == (Entry)(0) )
       {
         printf("Basker t_blk_nfactor: diag btf zero, error, c: %ld k: %ld \n", (long)c, (long)k);
@@ -686,14 +695,19 @@ namespace BaskerNS
       L.col_ptr(k+1-L.srow) = lnnz;
       cu_ltop = lnnz;
 
-
       U.col_ptr(k-L.srow) = cu_utop;
       U.col_ptr(k+1-L.srow) = unnz;
       cu_utop = unnz;
 
       if(Options.prune && L.ncol > Options.btf_prune_size)
       {
+        #ifdef BASKER_TIMER
+        timer_nfactor.reset();
+        #endif
         t_prune_btf(kid, L, U, k-L.srow, maxindex);
+        #ifdef BASKER_TIMER
+        prune_time += timer_nfactor.seconds();
+        #endif
       }
 
     }//over each column
@@ -704,11 +718,15 @@ namespace BaskerNS
     U.col_ptr(U.ncol) = unnz;
 
     #ifdef BASKER_TIMER
+    double total_time = timer_nfactor_tot.seconds();
     std::cout << " ++ Basker nfactor_diag(" << c << ") : n=" <<  btf_tabs(c+1)-btf_tabs(c)
               << " nnz(L)=" << lnnz << " nnz(U)= " << unnz << std::endl;
+    std::cout << " ++ Basker nfactor_diag(" << c << ") : init   time: " << initi_time << std::endl;
     std::cout << " ++ Basker nfactor_diag(" << c << ") : update time: " << solve_time << std::endl;
     std::cout << " ++ Basker nfactor_diag(" << c << ") : pivot  time: " << pivot_time << std::endl;
     std::cout << " ++ Basker nfactor_diag(" << c << ") : scale  time: " << scale_time << std::endl;
+    std::cout << " ++ Basker nfactor_diag(" << c << ") : prune  time: " << prune_time << std::endl;
+    std::cout << " ++ Basker nfactor_diag(" << c << ") : total  time: " << total_time << std::endl << std::endl;
     #endif
     return 0;
   }//end t_factor_diag()

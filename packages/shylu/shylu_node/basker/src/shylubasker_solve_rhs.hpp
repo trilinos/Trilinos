@@ -20,6 +20,10 @@
 #include <iostream>
 #include <string>
 
+#if defined(HAVE_AMESOS2_SUPERLUDIST) && !defined(BASKER_MC64)
+  #define BASKER_MC64
+#endif
+
 //#define BASKER_DEBUG_SOLVE_RHS
 
 using namespace std;
@@ -182,7 +186,6 @@ namespace BaskerNS
    Entry *_y  // rhs
   )
   {
-
     for(Int r = 0; r < nrhs; r++)
     {
       solve_interface(&(_x[r*gm]), &(_y[r*gm]));
@@ -209,7 +212,19 @@ namespace BaskerNS
    Entry *_y  // rhs
   )
   {
+#if defined(BASKER_MC64)
+    if (1) {
+      for(Int i = 0; i < gn; i++)
+      {
+        Int row = order_blk_mwm_array(symbolic_row_iperm_array(i));
+        y_view_ptr_scale(i) = scale_row_array(row) * _y[i];
+      }
+    }
+    permute_inv_and_init_for_solve(&(y_view_ptr_scale(0)), x_view_ptr_copy, y_view_ptr_copy, perm_inv_comp_array, gn);
+#else
     permute_inv_and_init_for_solve(_y, x_view_ptr_copy, y_view_ptr_copy, perm_inv_comp_array, gn);
+#endif
+
     if (Options.no_pivot == BASKER_FALSE) {
       permute_inv_with_workspace(x_view_ptr_copy, gperm, gn);
     }
@@ -218,6 +233,15 @@ namespace BaskerNS
 
     permute_and_finalcopy_after_solve(_x, x_view_ptr_copy, y_view_ptr_copy, perm_comp_array, gn);
 
+#if defined(BASKER_MC64)
+    if (1) {
+      for(Int i = 0; i < gn; i++)
+      {
+        Int col = symbolic_col_iperm_array(i);
+        _x[i] = scale_col_array(col) * _x[i];
+      }
+    }
+#endif
     return 0;
   }
 

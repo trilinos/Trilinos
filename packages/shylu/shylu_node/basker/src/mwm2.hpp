@@ -334,7 +334,7 @@ namespace mwm_order
     
     const Int k = 2;
     
-    if(qlen == pos0)
+    if(qlen-1 == pos0)
     {
       qlen--;
       return;
@@ -567,7 +567,6 @@ namespace mwm_order
       {
         i  = row_idx[k];
         ai = abs(val[k]);
-
         if(ai > d[i])
         {
           d[i] = ai;
@@ -1036,12 +1035,11 @@ L160:
    Int &num
   )
   {
-    //Entry *d          = new Entry[n];
-    double *d          = new double[n];
-    Int   *jperm      = new Int[n];
-    Int   *iperm      = new Int[n];
-    Int   *L          = new Int[n];
-    Int   *pr         = new Int[n];
+    double *d    = new double[n];
+    Int   *jperm = new Int[n];
+    Int   *iperm = new Int[n];
+    Int   *L     = new Int[n];
+    Int   *pr    = new Int[n];
 
     //Entry bv = 0;
     double bv = 0;
@@ -1059,9 +1057,9 @@ L160:
     #endif
 
     for(Int i = 0; i < n; i++)
-	  {
-	    perm[i] = iperm[i];
-	  }
+    {
+      perm[i] = iperm[i];
+    }
 
     #ifdef MATCH_DEBUG
     FILE *fp;

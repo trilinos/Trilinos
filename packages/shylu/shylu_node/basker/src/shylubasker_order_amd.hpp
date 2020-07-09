@@ -9,6 +9,9 @@
 #include "trilinos_amd.h"
 #include "trilinos_colamd.h"
 #include "trilinos_ccolamd.h"
+#if defined(HAVE_AMESOS2_SUPERLUDIST) && !defined(BASKER_MC64)
+  #define BASKER_MC64
+#endif
 
 namespace BaskerNS
 {
@@ -225,11 +228,9 @@ namespace BaskerNS
     INT_1DARRAY   temp_row;
     MALLOC_INT_1DARRAY  (temp_row, M.nnz);
 
-std::cout << " BLK_AMD " << std::endl;
     for(Int b = btf_tabs_offset; b < btf_nblks; b++)
     {
       Int blk_size = btf_tabs(b+1) - btf_tabs(b);
-      std::cout << " BLK_AMD(" << b << "/" << btf_nblks-1 << "): size = " << blk_size << std::endl;
       if(blk_size < 3)
       {
         for(Int ii = 0; ii < blk_size; ++ii)
@@ -340,7 +341,7 @@ std::cout << " BLK_AMD " << std::endl;
       for(Int b = 0; b < btf_nblks; b++)
       {
         btf_nnz(b) = 1;
-        btf_work(b) =1;
+        btf_work(b) = 1;
       }
 
       return;
@@ -362,7 +363,9 @@ std::cout << " BLK_AMD " << std::endl;
     //printf("Done with btf_blk_amd malloc \n");
     //printf("blks: %d \n" , btf_nblks);
 
-
+    Entry one = (Entry)1.0;
+    MALLOC_ENTRY_1DARRAY (scale_row_array, A.nrow);
+    MALLOC_ENTRY_1DARRAY (scale_col_array, A.nrow);
     for(Int b = 0; b < btf_nblks; b++)
     {
       Int blk_size = btf_tabs(b+1) - btf_tabs(b);
@@ -373,6 +376,9 @@ std::cout << " BLK_AMD " << std::endl;
         {
           //printf("set %d \n", btf_tabs(b)+ii-M.scol);
           p_amd(ii+btf_tabs(b)) = btf_tabs(b)+ii-M.scol;
+          p_mwm(ii+btf_tabs(b)) = btf_tabs(b)+ii-M.scol;
+          scale_row_array(ii+btf_tabs(b)) = one;
+          scale_col_array(ii+btf_tabs(b)) = one;
         }
 
         btf_work(b) = blk_size*blk_size*blk_size;
@@ -387,8 +393,6 @@ std::cout << " BLK_AMD " << std::endl;
       Int nnz = 0;
       Int column = 1;
       temp_col(0) = 0;
-//std::cout << std::endl << " ===== AMD " << b << " =====" << std::endl;
-//std::cout << " M = [ " << std::endl;
       for(Int k = btf_tabs(b); k < btf_tabs(b+1); k++)
       {
         for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); i++)
@@ -398,14 +402,12 @@ std::cout << " BLK_AMD " << std::endl;
 
           temp_val(nnz) = M.val(i);
           temp_row(nnz) = M.row_idx(i) - btf_tabs(b);
-//std::cout << column-1 << " " << M.row_idx(i) - btf_tabs(b) << std::endl;
           nnz++;
         }// end over all row_idx
 
         temp_col(column) = nnz;
         column++;
       }//end over all columns k
-//std::cout << " ]; " << std::endl;
 
       #ifdef BASKER_DEBUG_ORDER_AMD
       printf("col_ptr: ");
@@ -424,18 +426,55 @@ std::cout << " BLK_AMD " << std::endl;
 
       #if 1
       {
+        /*{
+          std::cout << " m = [ " << std::endl;
+          for(Int k = 0; k < blk_size; k++)
+          {
+            for(Int i = temp_col(k); i < temp_col(k+1); i++)
+              std::cout << temp_row(i) << " " << k << " " << temp_val(i) << std::endl;
+          }
+          std::cout << " ]; " << std::endl;
+        }*/
+#if defined(BASKER_MC64)
+        Int job = 5; //2 is the default for SuperLU_DIST
+        mc64(blk_size, nnz, &(temp_col(0)), &(temp_row(0)), &(temp_val(0)),
+             job, &(tempp(0)), &(scale_row_array(btf_tabs(b))), &(scale_col_array(btf_tabs(b))));
+        /*{
+          std::cout << "p_mwm=[" << std::endl;
+          for(Int ii = 0; ii < blk_size; ii++) {
+            std::cout << btf_tabs(b)+ii << " " << tempp(ii) << " " << scale_row_array(ii) << " " << scale_col_array(ii) << std::endl;
+          }
+          std::cout << "];" << std::endl;
+        }*/
+#else
         Int num = 0;
         mwm_order::mwm(blk_size, nnz,
                        &(temp_col(0)), &(temp_row(0)), &(temp_val(0)),
-                       &(tempp[0]), num);
-        //permute_row(nnz, &(temp_row(0)), &(tempp[0]));
+                       &(tempp(0)), num);
+#endif
+        // no mwm, for debugging
+        for(Int ii = 0; ii < blk_size; ii++) tempp(ii) = ii;
+        // apply MWM to rows
+        permute_row(nnz, &(temp_row(0)), &(tempp(0)));
+        // sort for calling AMD
+        sort_matrix(nnz, blk_size, &(temp_col(0)), &(temp_row(0)), &(temp_val(0)));
 
         //Add to the bigger perm vector
         for(Int ii = 0; ii < blk_size; ii++)
         {
           p_mwm(tempp(ii)+btf_tabs(b)) = ii+btf_tabs(b);
         }
-        
+        /*{
+          std::cout << "m2=[" << std::endl;
+          for(Int k = 0; k < blk_size; k++)
+          {
+            for(Int i = temp_col(k); i < temp_col(k+1); i++)
+            {
+              std::cout << k << " " << temp_row(i) << " " << temp_val(i) << std::endl;
+            }
+          }
+          std::cout << "];" << std::endl;
+        }*/
       }
       #endif
 
@@ -457,13 +496,16 @@ std::cout << " BLK_AMD " << std::endl;
       #endif
 
       //Add to the bigger perm vector
-//std::cout << " P = [ " << std::endl;
       for(Int ii = 0; ii < blk_size; ii++)
       {
         p_amd(tempp(ii)+btf_tabs(b)) = ii+btf_tabs(b);
-//std::cout << tempp(ii) << std::endl;
       }
-//std::cout << " ]; " << std::endl;
+      /*std::cout << " p_amd = [ " << std::endl;
+      for(Int ii = 0; ii < blk_size; ii++)
+      {
+        std::cout << tempp(ii) << std::endl;
+      }
+      std::cout << " ]; " << std::endl;*/
 
       FREE_INT_1DARRAY(tempp);
 

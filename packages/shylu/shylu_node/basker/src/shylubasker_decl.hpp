@@ -119,6 +119,9 @@ namespace BaskerNS
     int KokkosPlay();
 
     BASKER_INLINE
+    void PRINT_C();
+
+    BASKER_INLINE
     void DEBUG_PRINT();
     
     BASKER_INLINE
@@ -327,7 +330,10 @@ namespace BaskerNS
     int permute_row(BASKER_MATRIX &M, INT_1DARRAY row);
 
     BASKER_INLINE
-    int permute_row(Int nnz, INT_1DARRAY row_idx, INT_1DARRAY row);
+    int permute_row(Int nnz, Int *row_idx, Int *row);
+
+    BASKER_INLINE
+    int sort_matrix(Int nnz, Int ncol, Int *col_ptr, Int *row_idx, Entry *val);
 
     BASKER_INLINE
     int sort_matrix(BASKER_MATRIX &M);
@@ -335,6 +341,10 @@ namespace BaskerNS
     //basker_order_match.hpp
     BASKER_INLINE
     int mwm(BASKER_MATRIX &M, INT_1DARRAY _perm);
+
+    BASKER_INLINE
+    int mc64(Int n_, Int nnz_, Int *colptr, Int *rowidx, Entry *val,
+             Int _job, Int *_perm, Entry *_scale_row, Entry *_scale_col);
 
     BASKER_INLINE
     int mc64(BASKER_MATRIX &M, Int _job, INT_1DARRAY _perm, ENTRY_1DARRAY _scale_row, ENTRY_1DARRAY _scale_col);
@@ -1219,6 +1229,7 @@ namespace BaskerNS
 
     /* ----------------TYPEDEF TYPES-------------------*/
 
+    bool crs_transpose_needed;
     BASKER_MATRIX A;
     BASKER_MATRIX BTF_A;
     BASKER_MATRIX BTF_C;
@@ -1275,6 +1286,9 @@ namespace BaskerNS
 
 
     // NDE
+    ENTRY_1DARRAY x_view_ptr_scale;
+    ENTRY_1DARRAY y_view_ptr_scale;
+
     ENTRY_1DARRAY x_view_ptr_copy;
     ENTRY_1DARRAY y_view_ptr_copy;
     INT_1DARRAY perm_inv_comp_array;
@@ -1305,6 +1319,13 @@ namespace BaskerNS
     INT_1DARRAY inv_vals_order_ndbtfa_array;
     INT_1DARRAY inv_vals_order_ndbtfb_array;
     INT_1DARRAY inv_vals_order_ndbtfc_array;
+
+    //
+    INT_1DARRAY symbolic_row_iperm_array;
+    INT_1DARRAY symbolic_col_iperm_array;
+
+    INT_1DARRAY symbolic_row_perm_array;
+    INT_1DARRAY symbolic_col_perm_array;
 
     // For transpose
     INT_1DARRAY vals_crs_transpose; //this will store shuffling and sort of vals due to transpose

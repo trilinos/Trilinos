@@ -29,6 +29,10 @@
 
 /*System Includes*/
 #include <iostream>
+
+#if defined(HAVE_AMESOS2_SUPERLUDIST) && !defined(BASKER_MC64)
+  #define BASKER_MC64
+#endif
 //#define BASKER_TIMER 
 
 namespace BaskerNS
@@ -156,8 +160,12 @@ namespace BaskerNS
     FREE_INT_1DARRAY(perm_inv_comp_array);
     FREE_INT_1DARRAY(perm_comp_iworkspace_array);
     FREE_ENTRY_1DARRAY(perm_comp_fworkspace_array);
+
     FREE_ENTRY_1DARRAY(x_view_ptr_copy);
     FREE_ENTRY_1DARRAY(y_view_ptr_copy);
+
+    FREE_ENTRY_1DARRAY(x_view_ptr_scale);
+    FREE_ENTRY_1DARRAY(y_view_ptr_scale);
 
     //Structures
     part_tree.Finalize();
@@ -299,6 +307,10 @@ namespace BaskerNS
     sym_gm = A.nrow;
     MALLOC_ENTRY_1DARRAY(x_view_ptr_copy, sym_gn); //used in basker_solve_rhs - move alloc
     MALLOC_ENTRY_1DARRAY(y_view_ptr_copy, sym_gm);
+
+    MALLOC_ENTRY_1DARRAY(x_view_ptr_scale, sym_gn); //used in basker_solve_rhs - move alloc
+    MALLOC_ENTRY_1DARRAY(y_view_ptr_scale, sym_gm);
+
     MALLOC_INT_1DARRAY(perm_inv_comp_array , sym_gm); //y
     MALLOC_INT_1DARRAY(perm_comp_array, sym_gn); //x
 
@@ -321,7 +333,7 @@ namespace BaskerNS
    Int *col_ptr, 
    Int *row_idx, 
    Entry *val,
-   bool crs_transpose_needed
+   bool crs_transpose_needed_
   )
   {
     #ifdef BASKER_TIMER 
@@ -364,17 +376,18 @@ namespace BaskerNS
       if(Options.transpose == BASKER_FALSE)
       {
         // NDE: New for Amesos2 CRS mods
-        if ( crs_transpose_needed ) {
+        if ( crs_transpose_needed_ ) {
           matrix_transpose(0, nrow, 0, ncol, nnz, col_ptr, row_idx, val, A, vals_crs_transpose);
         }
       }
       else
       {
-        if ( !crs_transpose_needed ) {
+        if ( !crs_transpose_needed_ ) {
           matrix_transpose(0, nrow, 0, ncol, nnz, col_ptr, row_idx, val, A, vals_crs_transpose);
         }
       }
       sort_matrix(A);
+      this->crs_transpose_needed = crs_transpose_needed_;
 
       if(Options.verbose == BASKER_TRUE)
       {
@@ -393,6 +406,23 @@ namespace BaskerNS
       std::cout << std::endl << "Basker Symbolic matrix init time: " << init_time << std::endl;
       #endif
     }
+          /*FILE *fp = fopen("symbolic.dat","w");
+          printf( " start symbolic with\n original A = [\n" );
+          for(Int j = 0; j < A.ncol; j++) {
+            for(Int k = col_ptr[j]; k < col_ptr[j+1]; k++) {
+              fprintf(fp, " %d %d %e\n", row_idx[k],j,val[k]);
+            }
+          }
+          fclose(fp);
+          printf("];\n");*/
+
+          /*printf( " start symbolic with\n A = [\n" );
+          for(Int j = 0; j < A.ncol; j++) {
+            for(Int k = A.col_ptr[j]; k < A.col_ptr[j+1]; k++) {
+              printf( " %d %d %e\n", A.row_idx[k],j,A.val[k]);
+            }
+          }
+          printf("];\n");*/
 
     //Init Ordering
     //Always will do btf_ordering
@@ -505,6 +535,10 @@ namespace BaskerNS
     sym_gm = A.nrow;
     MALLOC_ENTRY_1DARRAY(x_view_ptr_copy, sym_gn); //used in basker_solve_rhs
     MALLOC_ENTRY_1DARRAY(y_view_ptr_copy, sym_gm);
+
+    MALLOC_ENTRY_1DARRAY(x_view_ptr_scale, sym_gn); //used in basker_solve_rhs
+    MALLOC_ENTRY_1DARRAY(y_view_ptr_scale, sym_gm);
+
     MALLOC_INT_1DARRAY(perm_inv_comp_array , sym_gm); //y
     MALLOC_INT_1DARRAY(perm_comp_array, sym_gn); //x
 
@@ -512,8 +546,16 @@ namespace BaskerNS
     MALLOC_ENTRY_1DARRAY(perm_comp_fworkspace_array, sym_gn);
     permute_composition_for_solve(sym_gn);
 
+          /*printf( " end symbolic with\n original A = [\n" );
+          for(Int j = 0; j < ncol; j++) {
+            for(Int k = col_ptr[j]; k < col_ptr[j+1]; k++) {
+              printf( " %d %d %e\n", row_idx[k],j,val[k]);
+            }
+          }
+          printf("];\n");*/
+
     return 0;
-  }//end Symbolic()
+  } //end Symbolic()
 
 
   template <class Int, class Entry, class Exe_Space>
@@ -641,7 +683,88 @@ namespace BaskerNS
     }
 */
 
+          /*{
+            FILE *fp;
+            if(Options.transpose) {
+                fp = fopen("numeric_t.dat","w");
+            } else {
+              fp = fopen("numeric.dat","w");
+            }
+            printf( " start numeric with\n original A = [\n" );
+            for(Int j = 0; j < ncol; j++) {
+              for(Int k = col_ptr[j]; k < col_ptr[j+1]; k++) {
+                fprintf(fp, " %d %d %e\n", row_idx[k],j,val[k]);
+              }
+            }
+            fclose(fp);
+            printf("];\n");
+          }*/
+
+#if defined(BASKER_MC64)
+    for (Int k = 0; k < A.nnz; k++) {
+      vals_crs_transpose(k) = k;
+    }
+    permute_inv(vals_crs_transpose, vals_perm_composition, A.nnz); 
+#endif
     if ( btf_nblks > 1 ) { //non-single block case
+#if defined(BASKER_MC64)
+/*std::cout << " perm = [" << std::endl;
+for( Int k = 0; k < ncol; ++k ) {
+  std::cout << " > " << k                  << " " << order_blk_mwm_array(k) << " "
+            << symbolic_col_iperm_array(k) << " " << symbolic_row_iperm_array(k) << " "
+            << symbolic_col_perm_array(k)  << " " << symbolic_row_perm_array(k) << " "
+            << scale_row_array(k)          << " " << scale_col_array(k) << std::endl;
+}
+std::cout << "];" << std::endl;*/
+      // CSR
+      std::cout << " >> Factor: apply MWM scaling to input matrix <<" << std::endl;
+      for( Int k = 0; k < nrow; ++k ) {
+        for( Int i = col_ptr[k]; i < col_ptr[k+1]; i++) {
+
+          Entry v = val[ i ];
+
+          bool csr_input = ((Options.transpose == BASKER_FALSE &&  crs_transpose_needed) ||
+                            (Options.transpose == BASKER_TRUE  && !crs_transpose_needed));
+          // input in CSR
+          Int row = (csr_input ? k : row_idx[i]);
+          Int col = (csr_input ? row_idx[i] : k);
+
+          col = symbolic_col_iperm_array(col);
+          row = symbolic_row_iperm_array(row);
+
+          row = order_blk_mwm_array(row);
+
+          v *= (scale_row_array(row) * scale_col_array(col));
+//printf( " %d + (%d,%d) = %e -> (%d,%d) = %e (%e, %e)\n",i, k,row_idx[i],val[i], col, row, v, scale_row_array(row),scale_col_array(col));
+
+          Int id = vals_crs_transpose(i);
+          A.val(id) = val[i];
+          if ( btfa_nnz != 0 ) { //is this unnecessary? yes, but shouldn't the first label account for this anyway?
+            if ( vals_block_map_perm_pair(id).first == 0 ) { //in BTF_A
+              BTF_A.val( inv_vals_order_ndbtfa_array( vals_block_map_perm_pair(id).second ) ) = v;
+            }
+          }
+          if ( btfb_nnz != 0 ) {
+            if ( vals_block_map_perm_pair(id).first == 1 ) { //in BTF_B
+              BTF_B.val( inv_vals_order_ndbtfb_array( vals_block_map_perm_pair(id).second ) ) = v;
+            }
+          }
+          if ( btfc_nnz != 0 ) {
+            if ( vals_block_map_perm_pair(id).first == 2 ) { //in BTF_C
+              BTF_C.val( inv_vals_order_ndbtfc_array( vals_block_map_perm_pair(id).second ) ) = v;
+//printf( " > C(%d) = %e\n",inv_vals_order_ndbtfc_array( vals_block_map_perm_pair(id).second ), v );
+            }
+          }
+        }
+      } // end of for
+/*printf( " >>>>>>>\n" );
+for (Int k = 0; k < BTF_C.nrow; k++) {
+  for (Int i = BTF_C.col_ptr[k]; i < BTF_C.col_ptr[k+1]; i++) {
+    printf( " %d %d %e\n",BTF_C.row_idx[i],k,BTF_C.val[i] );
+  }
+}
+printf( " <<<<<<<\n" );*/
+#else
     #ifdef KOKKOS_ENABLE_OPENMP
     #pragma omp parallel for
     #endif
@@ -664,6 +787,7 @@ namespace BaskerNS
           }
         }
       } //end for
+#endif
     } //end if
     else if ( btf_nblks == 1 )
     {
@@ -682,6 +806,22 @@ namespace BaskerNS
         //A.val(i) = val[ i ]; // may need to apply matching or nd order permutation...
       return BASKER_ERROR;
     }
+        /*{
+          FILE *fp;
+          if(Options.transpose) {
+            fp = fopen("At.dat","w");
+          } else {
+            fp = fopen("A.dat","w");
+          }
+          printf( " start numeric with\n A = [\n" );
+          for(Int j = 0; j < ncol; j++) {
+            for(Int k = A.col_ptr[j]; k < A.col_ptr[j+1]; k++) {
+              fprintf(fp, " %d %d %e\n", A.row_idx[k],j,A.val[k]);
+            }
+          }
+          fclose(fp);
+          printf("];\n");
+        }*/
 
     #ifdef BASKER_TIMER
     std::cout<< "Basker Factor: Time to permute and copy from input vals to new vals and blocks: " << copyperm_timer.seconds() << std::endl;
@@ -1115,6 +1255,19 @@ namespace BaskerNS
           order_csym_array.extent(0));
     }
   }//end DEBUG_PRINT()
+
+  template<class Int, class Entry, class Exe_Space>
+  void Basker<Int,Entry,Exe_Space>::PRINT_C()
+  {
+    BASKER_MATRIX  &M = BTF_C;
+    printf( " > B = [\n" );
+    for(Int k = 0; k < M.ncol; ++k) {
+      for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); ++i) {
+        printf( "%d %d %e\n", M.row_idx(i), k, M.val(i));
+      }
+    }
+    printf( " ];\n" );
+  }
 
 
   template <class Int, class Entry, class Exe_Space>

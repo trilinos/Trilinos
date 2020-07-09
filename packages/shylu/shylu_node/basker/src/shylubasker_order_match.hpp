@@ -3,16 +3,17 @@
 
 
 //Include statements
-#if defined(HAVE_AMESOS2_SUPERLUDIST)
-  #define BASKER_MC64
-#endif
-#ifdef BASKER_MC64
 //#include "mc64ad.hpp"
 /* Note, come back and rewrite these 
  * function yourself at somepoint to clean up
  * In the mean time to test how well this works, we will use the auto rewritten from SuperLU_dist with modifications
  */
 
+#include "mwm2.hpp"
+#if defined(HAVE_AMESOS2_SUPERLUDIST) && !defined(BASKER_MC64)
+  #define BASKER_MC64
+#endif
+#ifdef BASKER_MC64
 extern  "C"
 {
   void mc64id_dist(int *);
@@ -22,9 +23,6 @@ extern  "C"
                    int*, int*);
 }
 #endif
-
-#include "mwm2.hpp"
-
 
 
 namespace BaskerNS
@@ -48,8 +46,8 @@ namespace BaskerNS
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int,Entry, Exe_Space>::mc64(BASKER_MATRIX &M, Int _job, INT_1DARRAY _perm,
-                                         ENTRY_1DARRAY _scale_row, ENTRY_1DARRAY _scale_col)
+  int Basker<Int,Entry, Exe_Space>::mc64(Int n_, Int nnz_, Int *colptr, Int *row_idx, Entry *val,
+                                         Int _job, Int *_perm, Entry *_scale_row, Entry *_scale_col)
   {
     //Note using primative types to match fortran
   #ifdef BASKER_MC64
@@ -59,62 +57,58 @@ namespace BaskerNS
   #endif
     typedef     double      entry_t;
 
-    int_t i, liw, ldw, num;
+    int_t liw, ldw, num;
     int_t *iw, icntl[10], info[10];
     int_t job  = _job;
     entry_t *dw;
     entry_t *nzval_abs;
-    int_t n = M.nrow;
-    int_t nnz = M.nnz;
+    int_t n = n_;
+    int_t nnz = nnz_;
 
-    nzval_abs = (entry_t*)malloc(M.nnz*sizeof(entry_t));
+    nzval_abs = (entry_t*)malloc(nnz*sizeof(entry_t));
 
     liw = 5*n;
     if(job == 3) 
-    { liw = 10*M.nrow + M.nnz; }
+    { liw = 10*n + n; }
     iw = (int_t*) malloc(liw*sizeof(int_t));
     ldw = 3*n+nnz;
     dw = (entry_t*) malloc(ldw*sizeof(entry_t));
 
     //Convert to 1 formatting
-    for(Int i = 0; i <= M.nrow; ++i)
-      M.col_ptr[i] = M.col_ptr[i]+1;
-    for(Int i = 0; i < M.nnz; ++i)
-      M.row_idx[i] = M.row_idx[i]+1;
+    for(Int i = 0; i <= n; ++i)
+      colptr[i] = colptr[i]+1;
+    for(Int i = 0; i < nnz; ++i)
+      row_idx[i] = row_idx[i]+1;
     
     //call init
     #ifdef BASKER_MC64
     mc64id_dist(icntl);
     #endif
 
-    for(Int i = 0; i < M.nnz; ++i)
-    { nzval_abs[i] = abs(M.val[i]); }
-
-    Int* colptr = &(M.col_ptr[0]);
-    Int* rowidx = &(M.row_idx[0]);
-    Entry* val  = &(M.val[0]);
+    for(Int i = 0; i < nnz; ++i)
+    { nzval_abs[i] = abs(val[i]); }
 
     Int *perm;
-    perm = (Int*) malloc(M.nrow*sizeof(Int));
+    perm = (Int*) malloc(n*sizeof(Int));
 
     #ifdef BASKER_MC64
-    mc64ad_dist(&job, &n, &nnz, colptr, rowidx, nzval_abs,
+    mc64ad_dist(&job, &n, &nnz, colptr, row_idx, nzval_abs,
 	        &num, perm, &liw, iw, &ldw, dw, icntl, info);
     #endif
 
     //debug
 
     //convert indexing back
-    for(Int i=0; i <= M.nrow; ++i)
-    { M.col_ptr[i] = M.col_ptr[i]-1; }
-    for(Int i=0; i < M.nnz; ++i)
-    { M.row_idx[i] = M.row_idx[i]-1; }
-    for(Int i=0; i < M.nrow; ++i)
+    for(Int i=0; i <= n; ++i)
+    { colptr[i] = colptr[i]-1; }
+    for(Int i=0; i < nnz; ++i)
+    { row_idx[i] = row_idx[i]-1; }
+    for(Int i=0; i < n; ++i)
     { _perm[i] = perm[i] -1; }
-    for(Int i =0; i < A.nrow; ++i)
+    for(Int i =0; i < n; ++i)
     { _scale_row[i] = exp (dw[i]); }
-    for(Int i =0; i < A.nrow; ++i)
-    { _scale_col[i] = exp (dw[i+A.nrow]); }
+    for(Int i =0; i < n; ++i)
+    { _scale_col[i] = exp (dw[i+n]); }
 
     //add job 5 special 
 
@@ -126,6 +120,18 @@ namespace BaskerNS
 
   }//end mc64
   
+  // With user-specified matrix
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  int Basker<Int,Entry, Exe_Space>::mc64(BASKER_MATRIX &M, Int _job, INT_1DARRAY _perm,
+                                         ENTRY_1DARRAY _scale_row, ENTRY_1DARRAY _scale_col)
+  {
+    int info;
+    info = mc64(M.nrows, M.nnz, &(M.colptr(0)), &(M.rowidx(0)), &(M.val(0)),
+                _job, &(_perm(0)), &(_scale_row(0)), &(_scale_col(0)));
+    return info;
+  }
+
 
   //With default matirix
   template <class Int, class Entry, class Exe_Space>
@@ -155,8 +161,9 @@ namespace BaskerNS
     nzval_abs = (entry_t*)malloc(A.nnz*sizeof(entry_t));
 
     liw = 5*n;
-    if(job == 3) 
-      { liw = 10*A.nrow + A.nnz; }
+    if(job == 3) {
+      liw = 10*A.nrow + A.nnz;
+    }
     iw = (int_t*) malloc(liw*sizeof(int_t));
     ldw = 3*n+nnz;
     dw = (entry_t*) malloc(ldw*sizeof(entry_t));

@@ -756,6 +756,8 @@ namespace BaskerNS
       btf_max_percent = BASKER_BTF_MAX_PERCENT;
       btf_large       = BASKER_BTF_LARGE;
       use_sequential_diag_facto = BASKER_FALSE;
+      // TODO: remove this (matching during symbolic)
+      btf_matching = -1;
 
       //Pivot
       no_pivot   = BASKER_FALSE;
@@ -807,6 +809,8 @@ namespace BaskerNS
     BASKER_ENTRY btf_max_percent;
     BASKER_ENTRY btf_large;
     BASKER_BOOL  use_sequential_diag_facto;
+    // TODO: remove this (matching during symbolic)
+    int btf_matching;
 
     //AMD Ordering Options
     BASKER_BOOL  amd_dom;

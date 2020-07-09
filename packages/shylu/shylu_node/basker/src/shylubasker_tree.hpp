@@ -1108,8 +1108,8 @@ namespace BaskerNS
     if(match_flag == BASKER_TRUE)
     {
       permute_row(A,order_match_array);
-      sort_matrix(A);
     }
+    sort_matrix(A);
 
     //BTF order
     if(btf_flag == BASKER_TRUE)

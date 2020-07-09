@@ -12,6 +12,9 @@
 #include "shylubasker_order_btf.hpp"
 #include "shylubasker_order_amd.hpp"
 
+#if defined(HAVE_AMESOS2_SUPERLUDIST) && !defined(BASKER_MC64)
+  #define BASKER_MC64
+#endif
 //#undef BASKER_DEBUG_ORDER
 //#define BASKER_TIMER
 
@@ -235,36 +238,38 @@ namespace BaskerNS
     // compose the transpose+sort permutations with the running 'total' composition
     // Note: This is wasted work if the 'special case' is not hit
     permute_inv(vals_perm_composition, vals_crs_transpose, A.nnz);
-    //sort_matrix(A); //(need)
-    sort_matrix_store_valperms(A, vals_perm_composition);
-#if 1
-    /*std::cout << " A=[" << std::endl;
+    sort_matrix_store_valperms(A, vals_perm_composition); //(need)
+
+    /*printf( " A=[\n" );
     for(Int j = 0; j < A.ncol; j++) {
       for(Int k = A.col_ptr[j]; k < A.col_ptr[j+1]; k++) {
-        std::cout << A.row_idx[k] << " " << j << " " << A.val[k] << std::endl;
+        printf( "%d %d %e\n", A.row_idx[k], j, A.val[k]);
       }
     }
-    std::cout << "];" << std::endl;*/
+    printf( "];\n" );*/
+
+    // TODO: call one that does not need vals)
+#ifdef BASKER_MC64
+    //match_ordering(Options.btf_matching);
     match_ordering(1);
     /*std::cout << " D=[" << std::endl;
     for(Int j = 0; j < A.ncol; j++) {
       std::cout << scale_col_array(j) << " " << scale_row_array(j) << " " << order_match_array(j) << std::endl;
     }
-    std::cout << "];" << std::endl;
-    std::cout << " C=[" << std::endl;
-    for(Int j = 0; j < A.ncol; j++) {
-      for(Int k = A.col_ptr[j]; k < A.col_ptr[j+1]; k++) {
-        std::cout << A.row_idx[k] << " " << j << " " << A.val[k] << std::endl;
-      }
-    }
-    std::cout << "];" << std::endl;
-    std::cout << std::endl;*/
+    std::cout << "];" << std::endl;*/
 #else
     match_ordering(0);
 #endif
-    //sort_matrix(A); //(need)
-    sort_matrix_store_valperms(A, vals_perm_composition);
+    sort_matrix_store_valperms(A, vals_perm_composition); //(need)
 
+    /*for(Int j = 0; j < A.ncol; j++) printf( "%d %d\n",j,order_match_array(j) );
+    printf( " C=[\n" );
+    for(Int j = 0; j < A.ncol; j++) {
+      for(Int k = A.col_ptr[j]; k < A.col_ptr[j+1]; k++) {
+        printf( "%d %d %e\n", A.row_idx[k], j, A.val[k]);
+      }
+    }
+    printf( "];\n" );*/
 
     #ifdef BASKER_TIMER
     order_time = timer_order.seconds();
@@ -277,7 +282,7 @@ namespace BaskerNS
     //A -> [BTF_A, BTF_C; 0 , BTF B]
     //Q: where A contains "large" diagonal blocks for threaded factorization, and
     //         B contains "small" diagonabl blocks for sequential factorization
-    //printf("outter num_threads:%d \n", num_threads);
+    //printf("outer num_threads:%d \n", num_threads);
     MALLOC_INT_1DARRAY(btf_schedule, num_threads+1);
     init_value(btf_schedule, num_threads+1, (Int)0);
   
@@ -663,70 +668,69 @@ namespace BaskerNS
     //You would think a match order would help!
     //It does not!
 
-    //INT_1DARRAY mperm = order_match_array;
-    MALLOC_INT_1DARRAY(order_match_array, A.nrow);
-    //MALLOC_INT_1DARRAY(mperm, A.nrow);
-    if(Options.incomplete == BASKER_FALSE)
-    {
-      #ifdef BASKER_MC64
-      if (option == 1) {
-        Int job = 5; //2 is the default for SuperLU_DIST
-        MALLOC_ENTRY_1DARRAY (scale_row_array, A.nrow);
-        MALLOC_ENTRY_1DARRAY (scale_col_array, A.nrow);
-        // call mc64
-        mc64(job, order_match_array, scale_row_array, scale_col_array);
-        //mc64(job,mperm);
-        #if 0
-        for(Int j = 0; j < A.ncol; j++) {
-          for(Int k = A.col_ptr[j]; k < A.col_ptr[j+1]; k++) {
-            A.val[k] *= (scale_col_array(j) * scale_row_array(A.row_idx[k]));
-          }
-        }
-        #endif
-      } else
-      #endif
+    if (option < 0) {
+      // no matchint
+      match_flag = BASKER_FALSE;
+    } else {
+      match_flag = BASKER_TRUE;
+
+      MALLOC_INT_1DARRAY(order_match_array, A.nrow);
+      if(Options.incomplete == BASKER_FALSE)
       {
-        mwm(A, order_match_array);
+        #ifdef BASKER_MC64
+        if (option == 1) {
+          Int job = 5; //2 is the default for SuperLU_DIST
+          MALLOC_ENTRY_1DARRAY (scale_row_array, A.nrow);
+          MALLOC_ENTRY_1DARRAY (scale_col_array, A.nrow);
+          // call mc64
+          /*printf( " calling mc64 with\n A = [\n" );
+          for(Int j = 0; j < A.ncol; j++) {
+            for(Int k = A.col_ptr[j]; k < A.col_ptr[j+1]; k++) {
+              printf( " %d %d %e\n", A.row_idx[k],j,A.val[k]);
+            }
+          }
+          printf("];\n");*/
+          mc64(job, order_match_array, scale_row_array, scale_col_array);
+          #if 0
+          for(Int j = 0; j < A.ncol; j++) {
+            for(Int k = A.col_ptr[j]; k < A.col_ptr[j+1]; k++) {
+              A.val[k] *= (scale_col_array(j) * scale_row_array(A.row_idx[k]));
+            }
+          }
+          #endif
+        } else
+        #endif
+        {
+          mwm(A, order_match_array);
+        }
       }
-    }
-    else
-    {
+      else
+      {
+        for(Int i = 0; i < A.nrow; i++)
+        {
+          order_match_array(i) = i;
+        }
+      }
+      permute_row(A,order_match_array);
+
+      //We want to test what the match ordering does if
+      //have explicit zeros
+#ifdef BASKER_DEBUG_ORDER
+      FILE *fp;
+      fp = fopen("match_order.txt", "w");
+      printf("Matching Perm \n");
       for(Int i = 0; i < A.nrow; i++)
       {
-        order_match_array(i) = i;
+        printf("%d, \n", order_match_array(i));
+        fprintf(fp, "%d \n", order_match_array(i));
       }
-    }
-
-    match_flag = BASKER_TRUE;
-
-#ifdef BASKER_DEBUG_ORDER
-    printf("Matching Perm \n");
-    for(Int i = 0; i < A.nrow; i++)
-    {
-      printf("%d, \n", order_match_array(i));
-      //printf("%d, \n", mperm[i]);
-    }
-    printf("\n");
+      printf("\n");
+      fclose(fp);
 #endif
-
-    //We want to test what the match ordering does if
-    //have explicit zeros
-#ifdef BASKER_DEBUG_ORDER
-    FILE *fp;
-    fp = fopen("match_order.txt", "w");
-    for(Int i = 0; i < A.nrow; i++)
-    {
-      fprintf(fp, "%d \n", order_match_array(i));
     }
-    fclose(fp);
-#endif
 
-
-    permute_row(A,order_match_array);
-    //permute_row(A,mperm);
     //May have to call row_idx sort
     return 0;
-
   }//end match_ordering()
 
 
@@ -1210,6 +1214,14 @@ namespace BaskerNS
       perm_comp_iworkspace_array(i) = i;
     }
 
+    MALLOC_INT_1DARRAY(symbolic_row_iperm_array, gn);
+    MALLOC_INT_1DARRAY(symbolic_col_iperm_array, gn);
+    for(Int i = 0; i < gn; ++i)
+    {
+      symbolic_col_iperm_array(i) = i;
+      symbolic_row_iperm_array(i) = i;
+    }
+
     // p5 inv
     if(amd_flag == BASKER_TRUE)
     {
@@ -1242,14 +1254,21 @@ namespace BaskerNS
       if(Options.verbose == BASKER_TRUE)
       { printf(" > blk_amd order in\n");}
       permute_with_workspace(perm_inv_comp_array, order_blk_amd_array, gn);
-      //if(Options.verbose == BASKER_TRUE)
-      //{ printf(" > blk_mwm order in\n");}
-      //permute_with_workspace(perm_inv_comp_array, order_blk_mwm_array, gn);
+#define BASKER_BLK_MWM
+#ifdef BASKER_BLK_MWM
+      if(Options.verbose == BASKER_TRUE)
+      { printf(" > blk_mwm order in\n");}
+      permute_with_workspace(perm_inv_comp_array, order_blk_mwm_array, gn);
+#endif
       //printVec("btf.txt", order_btf_array, gn);
       //p2
       if(Options.verbose == BASKER_TRUE)
       {printf("btf order in\n");}
       permute_with_workspace(perm_inv_comp_array, order_btf_array, gn);
+
+      // compose perm for symbolic phase
+      permute_with_workspace(symbolic_row_iperm_array, order_btf_array, gn);
+      permute_with_workspace(symbolic_col_iperm_array, order_btf_array, gn);
     }
     // p1 inv
     if(match_flag == BASKER_TRUE)
@@ -1258,8 +1277,19 @@ namespace BaskerNS
       {printf("match order in\n");}
       //printVec("match.txt", order_match_array, gn);
       permute_with_workspace(perm_inv_comp_array, order_match_array, gn);
-    }
 
+      // compose perm for symbolic phase
+      permute_with_workspace(symbolic_row_iperm_array, order_match_array, gn);
+    }
+    MALLOC_INT_1DARRAY(symbolic_row_perm_array, gn);
+    MALLOC_INT_1DARRAY(symbolic_col_perm_array, gn);
+    for(Int i = 0; i < gn; ++i)
+    {
+      symbolic_col_perm_array(i) = i;
+      symbolic_row_perm_array(i) = i;
+    }
+    permute_inv(symbolic_row_perm_array, symbolic_row_iperm_array, gn);
+    permute_inv(symbolic_col_perm_array, symbolic_col_iperm_array, gn);
 
     // perm_comp_array calculation
     // Note: don't need to inverse a row only perm
@@ -1276,12 +1306,14 @@ namespace BaskerNS
       //printVec("match.txt", order_match_array, gn);
       permute_inv_with_workspace(perm_comp_array, order_match_array, gn);
     }
+#ifdef BASKER_BLK_MWM
     if(btf_flag == BASKER_TRUE)
     {
-      //if(Options.verbose == BASKER_TRUE)
-      //{ printf(" > blk_mwm order out\n");}
-      //permute_inv_with_workspace(perm_comp_array, order_blk_mwm_array, gn);
+      if(Options.verbose == BASKER_TRUE)
+      { printf(" > blk_mwm order out\n");}
+      permute_inv_with_workspace(perm_comp_array, order_blk_mwm_array, gn);
     }
+#endif
     #else
     if(amd_flag == BASKER_TRUE)
     {
@@ -1468,13 +1500,14 @@ namespace BaskerNS
   int Basker<Int,Entry, Exe_Space>::permute_row
   (
    Int nnz,
-   INT_1DARRAY row_idx,
-   INT_1DARRAY row
+   Int *row_idx,
+   Int *row
   )
   {
     if(nnz == 0)
     { return 0; }
 
+    // TODO: no need for the workspace?
     INT_1DARRAY temp_i;
     MALLOC_INT_1DARRAY(temp_i, nnz);
     init_value(temp_i, nnz, (Int)0);
@@ -1482,7 +1515,7 @@ namespace BaskerNS
     //permute
     for(Int k = 0; k < nnz; k++)
     {
-      temp_i[k] = row[row_idx[k]]; // where does row_id=row_idx[k] move to? moves to row[row_id] looks like inverse perm...
+      temp_i[k] = row[row_idx[k]];
     }
     //Copy back
     for(Int k = 0; k < nnz; k++)
@@ -1504,7 +1537,7 @@ namespace BaskerNS
   )
   {
 #if 1
-    permute_row(M.nnz, M.row_idx, row);
+    permute_row(M.nnz, &(M.row_idx(0)), &(row(0)));
 #else
     if(M.nnz == 0)
     { return 0; }
@@ -1649,8 +1682,9 @@ namespace BaskerNS
       //}
       #ifdef BASKER_TIMER
       double order_time = timer_order.seconds();
-      std::cout << "    > Basker sort time     : " << order_time << " (nnz = " << M.col_ptr[k+1]-M.col_ptr[k] << ")" <<std::endl;
-      timer_order.reset();
+      if (order_time > 1) {
+        std::cout << "    > Basker sort time     : " << order_time << " (nnz = " << M.col_ptr[k+1]-M.col_ptr[k] << ")" <<std::endl;
+      }
       #endif
     }//end over all columns k
     //std::cout << " ];" << std::endl;
@@ -1661,31 +1695,29 @@ namespace BaskerNS
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int,Entry,Exe_Space>::sort_matrix( BASKER_MATRIX &M )
+  int Basker<Int,Entry,Exe_Space>::sort_matrix( Int nnz, Int ncol, Int *col_ptr, Int *row_idx, Entry *val )
   {
-    if(M.nnz == 0)
+    if(nnz == 0)
     { return 0; }
 
     //just use insertion sort
-    for(Int k = 0; k < M.ncol; k++)
+    for(Int k = 0; k < ncol; k++)
     {
-
-      Int start_row = M.col_ptr[k];
-      for(Int i = M.col_ptr[k]+1; i < M.col_ptr[k+1]; i++)
+      Int start_row = col_ptr[k];
+      for(Int i = col_ptr[k]+1; i < col_ptr[k+1]; i++)
       {
         Int jj = i;
-        while((jj > start_row) && (M.row_idx[jj-1] > M.row_idx[jj]))
+        while((jj > start_row) && (row_idx[jj-1] > row_idx[jj]))
         {
-
           //swap
-          Int   t_row_idx = M.row_idx[jj-1];
-          Entry t_row_val = M.val[jj-1];
+          Int   t_row_idx = row_idx[jj-1];
+          Entry t_row_val = val[jj-1];
 
-          M.row_idx[jj-1] = M.row_idx[jj];
-          M.val[jj-1]     = M.val[jj];
+          row_idx[jj-1] = row_idx[jj];
+          val[jj-1]     = val[jj];
 
-          M.row_idx[jj] = t_row_idx;
-          M.val[jj]     = t_row_val;
+          row_idx[jj] = t_row_idx;
+          val[jj]     = t_row_val;
 
           jj = jj-1;
         } //end while jj
@@ -1694,6 +1726,16 @@ namespace BaskerNS
 
     return 0;
   }//end sort_matrix()
+
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  int Basker<Int,Entry,Exe_Space>::sort_matrix( BASKER_MATRIX &M )
+  {
+    int info = 0;
+    info = sort_matrix( M.nnz, M.ncol,&(M.col_ptr(0)), &(M.row_idx(0)), &(M.val(0)) );
+    return info;
+  }
 
 }//end namespace basker
 #endif //end ifndef basker_order_hpp
