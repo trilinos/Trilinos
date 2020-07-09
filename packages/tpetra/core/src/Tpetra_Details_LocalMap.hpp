@@ -220,10 +220,6 @@ private:
   /// LayoutRight because LayoutRight is the default on non-CUDA
   /// Devices, and we want to make sure we catch assignment or
   /// copying from the default to the nondefault layout.
-
-
-  // Map glMap_ is changed from CudaUVMSpace to CudaSpace so do the same here.
-  // This preserves the LocalMap constructor to be trivial (no deep copies).
   ::Kokkos::View<const GlobalOrdinal*, ::Kokkos::LayoutLeft, no_uvm_device_type> lgMap_;
 
   GlobalOrdinal indexBase_;

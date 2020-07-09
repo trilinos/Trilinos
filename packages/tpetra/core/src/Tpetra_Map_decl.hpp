@@ -420,7 +420,7 @@ namespace Tpetra {
      *   over this communicator.
      */
     Map (const global_size_t numGlobalElements,
-         const Kokkos::View<const global_ordinal_type*, no_uvm_device_type>& indexList,
+         const Kokkos::View<const global_ordinal_type*, device_type>& indexList,
          const global_ordinal_type indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
 
@@ -763,7 +763,7 @@ namespace Tpetra {
     /// have made this class declaration harder to read.
     typedef Kokkos::View<const global_ordinal_type*,
                          Kokkos::LayoutLeft,
-                         no_uvm_device_type> global_indices_array_type;
+                         Kokkos::HostSpace> global_indices_array_type;
 
   public:
     /// \brief Return a view of the global indices owned by this process.

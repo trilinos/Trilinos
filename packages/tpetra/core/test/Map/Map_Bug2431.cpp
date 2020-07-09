@@ -138,12 +138,9 @@ int runTest(
               << "; nGids = " << overlapMap->getNodeNumElements() << "\n";
 
     auto myidx_o =  overlapMap->getMyGlobalIndices();
-    auto myidx_o_host = Kokkos::create_mirror_view(myidx_o);
-    Kokkos::deep_copy(myidx_o_host, myidx_o);
-
     outStream << "IDS ON PROC " << comm->getRank() << ": ";
-    for (std::size_t idx=0; idx<myidx_o_host.size(); ++idx) {
-      outStream << myidx_o_host[idx] << ", ";
+    for (std::size_t idx=0; idx<myidx_o.size(); ++idx) {
+      outStream << myidx_o[idx] << ", ";
     }
     outStream << "\n";
 
@@ -157,12 +154,9 @@ int runTest(
               << "; nGids = " << nonOverlapMapTB->getNodeNumElements() << "\n";
 
     auto myidx_notb =  nonOverlapMapTB->getMyGlobalIndices();
-    auto myidx_notb_host = Kokkos::create_mirror_view(myidx_notb);
-    Kokkos::deep_copy(myidx_notb_host, myidx_notb);
-
     outStream << "IDS ON PROC " << comm->getRank() << ": ";
-    for (std::size_t idx=0; idx<myidx_notb_host.size(); ++idx) {
-      outStream << myidx_notb_host[idx] << ", ";
+    for (std::size_t idx=0; idx<myidx_notb.size(); ++idx) {
+      outStream << myidx_notb[idx] << ", ";
     }
     outStream << "\n";
 
@@ -176,12 +170,9 @@ int runTest(
               << "; nGids = " << nonOverlapMap->getNodeNumElements() << "\n";
 
     auto myidx_no =  nonOverlapMap->getMyGlobalIndices();
-    auto myidx_no_host = Kokkos::create_mirror_view(myidx_no);
-    Kokkos::deep_copy(myidx_no_host, myidx_no);
-
     outStream << "IDS ON PROC " << comm->getRank() << ": ";
-    for (std::size_t idx=0; idx<myidx_notb_host.size(); ++idx) {
-      outStream << myidx_no_host[idx] << ", ";
+    for (std::size_t idx=0; idx<myidx_no.size(); ++idx) {
+      outStream << myidx_no[idx] << ", ";
     }
     outStream << "\n";
 

@@ -719,14 +719,15 @@ namespace Tpetra {
                          nonContigGids_host.size ());
         Kokkos::deep_copy (nonContigGids, nonContigGids_host);
 
-        // Since FixedHashTable currently cannot be built on CudaSpace due to UVM dependence,
-        // make it in CudaUVMSpace and then copy to CudaSpace.
-        typedef ::Tpetra::Details::FixedHashTable<global_ordinal_type, local_ordinal_type, device_type>
-          global_to_local_table_keep_uvm_type;
-        global_to_local_table_keep_uvm_type glMap(nonContigGids,
-                                        firstContiguousGID_,
-                                        lastContiguousGID_,
-                                        static_cast<LO> (i));
+        // FixedHashTable currently cannot be built on CudaSpace due to UVM
+        // dependence so copy back to device_type (CudaUVMSpace).
+        // This can go away when FixedHashTable is modified to run on CudaSpace.
+        typedef ::Tpetra::Details::FixedHashTable<global_ordinal_type,
+          local_ordinal_type, device_type> global_to_local_table_device_type;
+        global_to_local_table_device_type glMap(nonContigGids,
+                                                firstContiguousGID_,
+                                                lastContiguousGID_,
+                                                static_cast<LO> (i));
 
         // Now copy to CudaSpace and also make the host version
         // Note when memory spaces match these just do trivial assignment
@@ -930,7 +931,7 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::
   Map (const global_size_t numGlobalElements,
-       const Kokkos::View<const GlobalOrdinal*, no_uvm_device_type>& entryList,
+       const Kokkos::View<const GlobalOrdinal*, device_type>& entryList,
        const GlobalOrdinal indexBase,
        const Teuchos::RCP<const Teuchos::Comm<int> >& comm) :
     comm_ (comm),
@@ -1110,23 +1111,17 @@ namespace Tpetra {
            << entryList.extent (0) << " - " << i
            << ".  Please report this bug to the Tpetra developers.");
 
-        // Since FixedHashTable currently cannot be built on CudaSpace due to UVM dependence,
-        // make it in CudaUVMSpace and then copy to CudaSpace.
-        // This can all go away when FixedHashTable is modified so it can run on a pure CudaSpace.
-        // Right now the constructor has UVM dependence in the setup.
-        typedef ::Tpetra::Details::FixedHashTable<global_ordinal_type, local_ordinal_type, device_type>
-          global_to_local_table_keep_uvm_type;
-#ifdef KOKKOS_ENABLE_CUDA
-        Kokkos::View<GlobalOrdinal*, device_type> with_uvm_nonContigGids(
-          Kokkos::ViewAllocateWithoutInitializing("with_uvm_nonContigGids"), nonContigGids.size());
-        Kokkos::deep_copy(with_uvm_nonContigGids, nonContigGids);
-#else
-        auto with_uvm_nonContigGids = nonContigGids;
-#endif
-        global_to_local_table_keep_uvm_type glMap(with_uvm_nonContigGids,
-                                        firstContiguousGID_,
-                                        lastContiguousGID_,
-                                        static_cast<LO> (i));
+        // FixedHashTable currently cannot be built on CudaSpace due to UVM
+        // dependence so copy back to device_type (CudaUVMSpace).
+        // This can go away when FixedHashTable is modified to run on CudaSpace.
+        typedef ::Tpetra::Details::FixedHashTable<global_ordinal_type,
+          local_ordinal_type, device_type> global_to_local_table_device_type;
+        auto device_nonContigGids =
+          Kokkos::create_mirror_view_and_copy(device_type(), nonContigGids);
+        global_to_local_table_device_type glMap(device_nonContigGids,
+                                                firstContiguousGID_,
+                                                lastContiguousGID_,
+                                                static_cast<LO> (i));
 
         // Now copy to CudaSpace and also make the host version
         // Note when memory spaces match these just do trivial assignment
@@ -1749,8 +1744,6 @@ namespace Tpetra {
         std::cerr << os.str();
       }
 
-      Kokkos::fence(); // following create_mirror_view fails with CUDA_LAUNCH_BLOCKING=0 due to above FillLgMap parallel_for
-
       auto lgMapHost =
         Kokkos::create_mirror_view (Kokkos::HostSpace (), lgMap);
       Kokkos::deep_copy (lgMapHost, lgMap);
@@ -1765,7 +1758,7 @@ namespace Tpetra {
       os << *prefix << "Done" << endl;
       std::cerr << os.str();
     }
-    return lgMap_;
+    return lgMapHost_;
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -2048,7 +2041,9 @@ namespace Tpetra {
 #endif // 1
 
       const GO indexBase = this->getIndexBase ();
-      return rcp (new map_type (RECOMPUTE, lgMap, indexBase, newComm));
+      // map stores HostSpace of CudaSpace but constructor is still CudaUVMSpace
+      auto lgMap_device = Kokkos::create_mirror_view_and_copy(device_type(), lgMap);
+      return rcp (new map_type (RECOMPUTE, lgMap_device, indexBase, newComm));
     }
   }
 
