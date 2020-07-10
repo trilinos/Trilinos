@@ -85,7 +85,6 @@ struct TypeMap<KLU2,float>
 {
   typedef float dtype;
   typedef float type;
-  typedef float put_type; // exists just to handle the case of std::complex<float> adapter
 };
 
 template <>
@@ -93,7 +92,6 @@ struct TypeMap<KLU2,double>
 {
   typedef double dtype;
   typedef double type;
-  typedef double put_type; // exists just to handle the case of std::complex<float> adapter
 };
 
 #ifdef HAVE_TEUCHOS_COMPLEX
@@ -103,7 +101,6 @@ struct TypeMap<KLU2,std::complex<float> >
 {
   typedef std::complex<double> dtype;
   typedef Kokkos::complex<double> type;
-  typedef Kokkos::complex<float> put_type; // exists just to handle the case of std::complex<float> adapter
 };
 
 template <>
@@ -111,7 +108,6 @@ struct TypeMap<KLU2,std::complex<double> >
 {
   typedef std::complex<double> dtype;
   typedef Kokkos::complex<double> type;
-  typedef Kokkos::complex<double> put_type; // exists just to handle the case of std::complex<float> adapter
 };
 
 template <>
@@ -119,7 +115,6 @@ struct TypeMap<KLU2,Kokkos::complex<float> >
 {
   typedef std::complex<double> dtype;
   typedef Kokkos::complex<double> type;
-  typedef Kokkos::complex<float> put_type; // exists just to handle the case of std::complex<float> adapter
 };
 
 template <>
@@ -127,7 +122,6 @@ struct TypeMap<KLU2,Kokkos::complex<double> >
 {
   typedef std::complex<double> dtype;
   typedef Kokkos::complex<double> type;
-  typedef Kokkos::complex<double> put_type; // exists just to handle the case of std::complex<float> adapter
 };
 
 #endif  // HAVE_TEUCHOS_COMPLEX

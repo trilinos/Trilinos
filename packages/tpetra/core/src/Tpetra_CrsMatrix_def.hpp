@@ -4856,13 +4856,11 @@ namespace Tpetra {
 
       const bool callGraphComputeGlobalConstants = params.get () == nullptr ||
         params->get ("compute global constants", true);
-      const bool computeLocalTriangularConstants = params.get () == nullptr ||
-        params->get ("compute local triangular constants", true);
       if (callGraphComputeGlobalConstants) {
-        this->myGraph_->computeGlobalConstants (computeLocalTriangularConstants);
+        this->myGraph_->computeGlobalConstants ();
       }
       else {
-        this->myGraph_->computeLocalConstants (computeLocalTriangularConstants);
+        this->myGraph_->computeLocalConstants ();
       }
       this->myGraph_->fillComplete_ = true;
       this->myGraph_->checkInternalState ();

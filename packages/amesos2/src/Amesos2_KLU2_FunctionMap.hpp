@@ -76,22 +76,6 @@ namespace KLU2 {
 
 namespace Amesos2 {
 
-  template <>
-  struct FunctionMap<KLU2,double>
-  {
-    static double * convert_scalar(double * pData) {
-      return pData; // no conversion necessary
-    }
-  };
-
-  template <>
-  struct FunctionMap<KLU2,float>
-  {
-    static float * convert_scalar(float * pData) {
-      return pData; // no conversion necessary
-    }
-  };
-
 #ifdef HAVE_TEUCHOS_COMPLEX
   template <>
   struct FunctionMap<KLU2,Kokkos::complex<double>>
@@ -103,6 +87,15 @@ namespace Amesos2 {
 
   // Note that Klu2 does not support complex float so it does not appear here.
 #endif // HAVE_TEUCHOS_COMPLEX
+
+  // if not specialized, then assume generic conversion is fine
+  template <typename scalar_t>
+  struct FunctionMap<KLU2,scalar_t>
+  {
+    static scalar_t * convert_scalar(scalar_t * pData) {
+      return pData; // no conversion necessary
+    }
+  };
 
 } // end namespace Amesos2
 
