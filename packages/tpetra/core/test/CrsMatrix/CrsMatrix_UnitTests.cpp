@@ -391,9 +391,9 @@ namespace { // (anonymous)
       size_t vecOffset = vec * numLocalRows;
       for(size_t i = 0; i < numLocalRows - 1; i++)
       {
-        TEST_EQUALITY(5.0 * ST::one(), vvals[vecOffset + i]);
+        TEST_EQUALITY(static_cast<Mag>(5.0) * ST::one(), vvals[vecOffset + i]);
       }
-      TEST_EQUALITY(Scalar((double) numLocalColumns * ST::one()), Scalar(vvals[vecOffset + numLocalRows - 1]));
+      TEST_EQUALITY(static_cast<Mag>(numLocalColumns) * ST::one(), vvals[vecOffset + numLocalRows - 1]);
     }
     if(numVecs != 1)
     {
@@ -405,9 +405,9 @@ namespace { // (anonymous)
       vcol->get1dCopy(vvals(), numLocalRows);
       for(size_t i = 0; i < numLocalRows - 1; i++)
       {
-        TEST_EQUALITY(5.0 * ST::one(), vvals[i]);
+        TEST_EQUALITY(static_cast<Mag>(5.0) * ST::one(), vvals[i]);
       }
-      TEST_EQUALITY(Scalar((double) numLocalColumns * ST::one()), Scalar(vvals[numLocalRows - 1]));
+      TEST_EQUALITY(static_cast<Mag>(numLocalColumns) * ST::one(), vvals[numLocalRows - 1]);
       //Finally, test residual.
       V res(rowMap);
       //Here, have A*wcol = vcol. This means the residual of A, wcol, and vcol should be 0.

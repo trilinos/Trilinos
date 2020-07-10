@@ -378,35 +378,7 @@ KLU2<Matrix,Vector>::solve_impl(
         }
       }
     } // end root_
-
-    /* Update X's global values */
-    {
-#ifdef HAVE_AMESOS2_TIMERS
-      Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
-#endif
-    } // end Timer scope
   } //end else
-
-  // This conversion exists only for the situation where the Tpetra adapter
-  // is std::complex<float>. For complex the put_1d_data_helper_kokkos_view call
-  // below is going to reinterpret_cast to std::complex<float> but Klu2 is a bit
-  // special because it doesn't support complex<float> so xValues_ will be
-  // Kokkos::complex<double>. We need to convert from complex double to complex
-  // float and we can't use a deep_copy directly from Kokkos::complex<double>
-  // to std::complex<float> since deep_copy cannot do both Kokkos->std and double->float
-  // in one copy. To resolve this without creating a lot of machinery we have
-  // Amesos2_Klu2_TypeMap.hpp hint us the correct intermediate type (put_type).
-  // which will be Kokkos::complex<float>. The put_type also hints for all the
-  // other cases to make those cases do simple assignment here and not copy.
-  // Then deep_copy_or_assign_view below will be able to deep_copy directly
-  // from Kokkos::complex<double> to Kokkos::complex<float> and we don't need to
-  // handle it outside of kokkos. Then the Kokkos::complex<float> gets passed to
-  // put_1d_data_helper_kokkos_view and the reinterpret_cast to std::complex<float> will be fine.
-  //
-  // For any other solver situation (float, double, Kokkos::complex<double>),
-  // this deep_copy_or_assign_view will do assignment (no copy) so there won't
-  // be any overhead.
-  deep_copy_or_assign_view(convert_xValues_, xValues_);
 
   {
 #ifdef HAVE_AMESOS2_TIMERS
@@ -415,13 +387,13 @@ KLU2<Matrix,Vector>::solve_impl(
 
     if ( is_contiguous_ == true ) {
       Util::put_1d_data_helper_kokkos_view<
-        MultiVecAdapter<Vector>,convert_host_solve_array_t>::do_put(X, convert_xValues_,
+        MultiVecAdapter<Vector>,host_solve_array_t>::do_put(X, xValues_,
             as<size_t>(ld_rhs),
             ROOTED, this->rowIndexBase_);
     }
     else {
       Util::put_1d_data_helper_kokkos_view<
-        MultiVecAdapter<Vector>,convert_host_solve_array_t>::do_put(X, convert_xValues_,
+        MultiVecAdapter<Vector>,host_solve_array_t>::do_put(X, xValues_,
             as<size_t>(ld_rhs),
             CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
     }
