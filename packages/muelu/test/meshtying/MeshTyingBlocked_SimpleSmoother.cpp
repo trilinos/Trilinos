@@ -207,7 +207,7 @@ int main(int argc, char *argv[])
   blockedMatrix->fillComplete();
 
   // Create the preconditioner
-  std::string xmlFile = "myXML.xml";
+  std::string xmlFile = "simple_1dof.xml";
 
   RCP<ParameterList> params = Teuchos::getParametersFromXmlFile(xmlFile);
   ParameterList& userDataParams = params->sublist("user data");
