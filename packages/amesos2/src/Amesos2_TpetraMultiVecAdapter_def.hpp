@@ -267,7 +267,6 @@ namespace Amesos2 {
     // Special case when number vectors == 1 and single MPI process
     if ( num_vecs == 1 && this->getComm()->getRank() == 0 && this->getComm()->getSize() == 1 ) {
       if(mv_->isConstantStride()) {
-        mv_->sync_device(); // no testing of this right now - since UVM on
         deep_copy_or_assign_view(kokkos_view, mv_->getLocalViewDevice());
       }
       else {
@@ -308,7 +307,6 @@ namespace Amesos2 {
       }
       else {
         if(redist_mv.isConstantStride()) {
-          redist_mv.sync_device(); // no testing of this right now - since UVM on
           deep_copy_or_assign_view(kokkos_view, redist_mv.getLocalViewDevice());
         }
         else {
@@ -554,11 +552,19 @@ namespace Amesos2 {
       }
 
       if ( distribution != CONTIGUOUS_AND_ROOTED ) {
+        // Use View scalar type, not MV Scalar because we want Kokkos::complex, not
+        // std::complex to avoid a Kokkos::complex<double> to std::complex<float>
+        // conversion which would require a double copy and fail here. Then we'll be
+        // setup to safely reinterpret_cast complex to std if necessary.
+        typedef typename multivec_t::dual_view_type::t_host::value_type tpetra_mv_view_type;
+        Kokkos::View<tpetra_mv_view_type**,typename KV::array_layout,
+          Kokkos::HostSpace> convert_kokkos_new_data;
+        deep_copy_or_assign_view(convert_kokkos_new_data, kokkos_new_data);
 #ifdef HAVE_TEUCHOS_COMPLEX
-        // for complex, cast Kokkos::complex back to std::complex
-        auto pData = reinterpret_cast<Scalar*>(kokkos_new_data.data());
+        // convert_kokkos_new_data may be Kokkos::complex and Scalar could be std::complex
+        auto pData = reinterpret_cast<Scalar*>(convert_kokkos_new_data.data());
 #else
-        auto pData = kokkos_new_data.data();
+        auto pData = convert_kokkos_new_data.data();
 #endif
 
         const multivec_t source_mv (srcMap, Teuchos::ArrayView<const scalar_t>(

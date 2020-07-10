@@ -97,7 +97,6 @@ public:
    */
   typedef typename type_map::type                                 klu2_type;
   typedef typename type_map::dtype                               klu2_dtype;
-  typedef typename type_map::put_type                         klu2_put_type; // just for special case when adapter is std::complex<float>
 
   typedef FunctionMap<Amesos2::KLU2,klu2_type>                 function_map;
 
@@ -251,12 +250,9 @@ private:
 
   typedef typename Kokkos::View<klu2_type**, Kokkos::LayoutLeft, HostSpaceType>
     host_solve_array_t;
-  typedef typename Kokkos::View<klu2_put_type**, Kokkos::LayoutLeft, HostSpaceType>
-    convert_host_solve_array_t;
 
   /// Persisting 1D store for X
   mutable host_solve_array_t xValues_;
-  mutable convert_host_solve_array_t convert_xValues_; // exists just for the case of adapter using std::complex<float>
   int ldx_;
 
   /// Persisting 1D store for B

@@ -46,8 +46,7 @@
    \author Joshua Dennis Booth <jdbooth@sandia.gov>
            Siva Rajamanickam <srajama@sandia.gov>
 
-   \brief Provides definition of Basker types as well as conversions and type
-          traits.
+   \brief Provides definition of Basker types
 
 */
 
@@ -66,102 +65,26 @@
 
 #include "Amesos2_TypeMap.hpp"
 
-
-#ifdef HAVE_TEUCHOS_COMPLEX
-
-/* ==================== Conversion ==================== */
-namespace Teuchos {
-
-/**
- * \defgroup slu_conversion Conversion definitions for SLU types.
- *
- * Define specializations of Teuchos::as<> for the SLU types.
- *
- * These specializations are meant to work with any complex data type that
- * implements the same interface as the STL complex type.
- *
- * @{
- */
-
-#ifndef HAVE_AMESOS2_KLU2
-
-template <>
-class ValueTypeConversionTraits<std::complex<double>, std::complex<float> >
-{
-public:
-  static std::complex<double> convert( const std::complex<float>  t )
-    {
-      std::complex<double> ret(Teuchos::as<double>(t.real()),
-                                 Teuchos::as<double>(t.imag()));
-      return( ret );
-    }
-
-  static std::complex<double> safeConvert( const std::complex<float>  t )
-    {
-      std::complex<double> ret(Teuchos::as<double>(t.real()),
-                                 Teuchos::as<double>(t.imag()));
-      return( ret );
-    }
-};
-
-
-template <>
-class ValueTypeConversionTraits<std::complex<float> , std::complex<double> >
-{
-public:
-  static std::complex<float>  convert( const std::complex<double> t )
-    {
-      float ret_r = Teuchos::as<float>( t.real() );
-      float ret_i = Teuchos::as<float>( t.imag() );
-      std::complex<float> ret (ret_r,  ret_i);
-      return (ret);
-    }
-
-  // No special checks for safe Convert
-  static std::complex<float>  safeConvert( const std::complex<double> t )
-    {
-      float ret_r = Teuchos::as<float>( t.real() );
-      float ret_i = Teuchos::as<float>( t.imag() );
-      std::complex<float> ret (ret_r,  ret_i);
-      return (ret);
-    }
-};
-
-
-#endif
-//@}  End Conversion group
-
-
-} // end namespace Teuchos
-
-#endif	// HAVE_TEUCHOS_COMPLEX
-
-
 namespace Amesos2 {
 
 template <class, class> class Basker;
 
 /* Specialize the Amesos2::TypeMap struct for Basker types
- * TODO: Mostly dummy assignments as Basker is templated. Remove if possible.
- *
  * \cond Basker_type_specializations
  */
 
 template <>
 struct TypeMap<Basker,float>
 {
-  static float dtype;
-  typedef float type;
-  typedef float magnitude_type;
+  static double dtype;
+  typedef double type;
 };
-
 
 template <>
 struct TypeMap<Basker,double>
 {
   static double dtype;
   typedef double type;
-  typedef double magnitude_type;
 };
 
 
@@ -171,17 +94,28 @@ template <>
 struct TypeMap<Basker,std::complex<float> >
 {
   static std::complex<double> dtype;
-  typedef std::complex<double> type;
-  typedef double magnitude_type;
+  typedef Kokkos::complex<double> type;
 };
-
 
 template <>
 struct TypeMap<Basker,std::complex<double> >
 {
   static std::complex<double> dtype;
-  typedef std::complex<double> type;
-  typedef double magnitude_type;
+  typedef Kokkos::complex<double> type;
+};
+
+template <>
+struct TypeMap<Basker,Kokkos::complex<float> >
+{
+  static std::complex<double> dtype;
+  typedef Kokkos::complex<double> type;
+};
+
+template <>
+struct TypeMap<Basker,Kokkos::complex<double> >
+{
+  static std::complex<double> dtype;
+  typedef Kokkos::complex<double> type;
 };
 
 
