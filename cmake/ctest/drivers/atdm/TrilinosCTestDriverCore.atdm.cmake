@@ -83,6 +83,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   PRINT_VAR(ATDM_CONFIGURE_OPTIONS_FILES)
 
   MESSAGE("Include the configure options files at the top level to influence what package get enabled or disabled ...")
+  SPLIT("${ATDM_CONFIGURE_OPTIONS_FILES}" "," ATDM_CONFIGURE_OPTIONS_FILES)
   FOREACH (CONFIG_OPTIONS_FILE ${ATDM_CONFIGURE_OPTIONS_FILES})
     SET(CONFIG_OPTIONS_FILE "${TRIBITS_PROJECT_ROOT}/${CONFIG_OPTIONS_FILE}")
     MESSAGE("Including ${CONFIG_OPTIONS_FILE} ...")
@@ -93,15 +94,17 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   STRING(REGEX MATCH "panzer" ATDM_PANZER_IN_JOB_NAME
     "${CTEST_BUILD_NAME}" )
 
-  IF (ATDM_ENABLE_ALL_PACKAGES)
+  IF (NOT "${Trilinos_PACKAGES}" STREQUAL "")
+    MESSAGE("Trilinos_PACKAGES is aleady set so use it!")
+  ELSEIF (ATDM_ENABLE_ALL_PACKAGES)
     MESSAGE("Enabling all packages by default!")
-    SET(Trilinos_PACKAGES)
+    SET(Trilinos_PACKAGES "")
   ELSEIF (ATDM_PANZER_IN_JOB_NAME)
     MESSAGE("Found 'panzer' in JOB_NAME, enabling only Panzer tests")
     SET(Trilinos_PACKAGES Panzer)
   ELSE()
     MESSAGE("Enabling all packages not otherwise disabled!")
-    SET(Trilinos_PACKAGES)
+    SET(Trilinos_PACKAGES "")
     # Implicitly allow the enable of all packages that are not otherwise
     # disabled by the (indirect) include of ATDMDisables.cmake.
   ENDIF()
