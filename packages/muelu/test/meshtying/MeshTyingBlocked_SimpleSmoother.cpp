@@ -64,6 +64,8 @@ void read_Lagr2Dof(std::string filemane, std::map<GlobalOrdinal, GlobalOrdinal> 
 {
   std::fstream lagr2DofFile;
   lagr2DofFile.open(filemane);
+  TEUCHOS_ASSERT(lagr2DofFile.is_open())
+
   GlobalOrdinal key;
   GlobalOrdinal value;
   while (lagr2DofFile >> key >> value)
