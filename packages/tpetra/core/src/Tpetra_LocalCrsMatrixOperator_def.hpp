@@ -97,7 +97,17 @@ apply (Kokkos::View<const mv_scalar_type**, array_layout,
   const auto op = transpose ?
     (conjugate ? KokkosSparse::ConjugateTranspose :
      KokkosSparse::Transpose) : KokkosSparse::NoTranspose;
-  KokkosSparse::spmv (op, alpha, *A_, X, beta, Y);
+  std::cout << ">>> Tpetra calling SPMV.\n";
+  //For the purposes of debugging ETI, just loop over columns
+  //KokkosSparse::spmv (op, alpha, *A_, X, beta, Y);
+  for(size_t vec = 0; vec < X.extent(1); vec++)
+  {
+    KokkosKernels::Experimental::Controls controls;
+    KokkosSparse::spmv (controls, op,
+        alpha, *A_, Kokkos::subview(X, Kokkos::ALL(), vec),
+        beta, Kokkos::subview(Y, Kokkos::ALL(), vec));
+  }
+  std::cout << "<<< Returned to Tpetra from SPMV.\n";
 }
 
 /// \brief Same behavior as \c apply() above, except give KokkosKernels a hint to use

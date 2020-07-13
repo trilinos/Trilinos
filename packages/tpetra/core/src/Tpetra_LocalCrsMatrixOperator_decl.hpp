@@ -75,7 +75,9 @@ namespace Tpetra {
     using local_matrix_type =
       KokkosSparse::CrsMatrix<matrix_scalar_type,
                               local_ordinal_type,
-                              device_type>;
+                              device_type,
+                              void,
+                              size_t>;
   private:
     using local_graph_type = typename local_matrix_type::StaticCrsGraphType;
 
