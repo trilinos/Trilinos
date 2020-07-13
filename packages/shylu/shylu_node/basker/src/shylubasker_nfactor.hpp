@@ -115,19 +115,28 @@ namespace BaskerNS
           domain_nfactor);
       Kokkos::fence();
 
+      printf("shylubasker_nfactor.hpp: factor_notoken - finished kokkos_nfactor_domain functor\n");
+
       //=====Check for error======
       while(true)
       {
+        printf("shylubasker_nfactor.hpp: factor_notoken - enter while loop\n");
         INT_1DARRAY thread_start;
         MALLOC_INT_1DARRAY(thread_start, num_threads+1);
         init_value(thread_start, num_threads+1, 
             (Int) BASKER_MAX_IDX);
         int nt = nfactor_domain_error(thread_start);
         if((nt == BASKER_SUCCESS) ||
-            (nt == BASKER_ERROR) ||
             (domain_restart > BASKER_RESTART))
         {
+          printf("shylubasker_nfactor.hpp: factor_notoken - break while loop\n");
+          printf("  nt = %d\n",nt);
           break;
+        }
+        else if (nt == BASKER_ERROR)
+        {
+          printf("shylubasker_nfactor.hpp: factor_notoken - BASKER_ERROR: return code\n");
+          return BASKER_ERROR;
         }
         else
         {
