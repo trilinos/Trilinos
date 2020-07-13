@@ -104,7 +104,7 @@ namespace BaskerNS
     for(Int i=0; i < nnz; ++i)
     { row_idx[i] = row_idx[i]-1; }
     for(Int i=0; i < n; ++i)
-    { _perm[i] = perm[i] -1; }
+    { _perm[i] = perm[i]-1; }
     for(Int i =0; i < n; ++i)
     { _scale_row[i] = exp (dw[i]); }
     for(Int i =0; i < n; ++i)

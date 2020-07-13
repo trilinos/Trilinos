@@ -259,7 +259,6 @@ namespace BaskerNS
 #define BASKER_BLK_MWM
 #if defined(BASKER_BLK_MWM)
     // > apply matching to rows
-    //for(Int i = 0; i < M.ncol; i++) order_blk_mwm_array[i] = i;
     permute_row(M, order_blk_mwm_array);
     #if 0 // no need to scale, since val is read for numeric facto
     //for(Int j = 0; j < M.ncol; j++) printf(" > %d %d %e %e\n",j,order_blk_mwm_array(j),scale_row_array(j),scale_col_array(j));
@@ -288,7 +287,7 @@ namespace BaskerNS
     printf("];\n");*/
 
 //std::cout << "amdP=[" << std::endl;
-//for (int i = 0; i < M.ncol; i++) std::cout << order_blk_amd_array(i) << std::endl;
+//for (int i = 0; i < M.ncol; i++) std::cout << order_blk_mwm_array(i) << " " << order_blk_amd_array(i) << std::endl;
 //std::cout << std::endl;
     #ifdef BASKER_TIMER
     order_time = timer_order.seconds();

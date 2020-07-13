@@ -32,7 +32,7 @@
 
 #define BASKER_EPSILON       1e-6
 
-#define BASKER_PIVOT_TOL     .0001
+#define BASKER_PIVOT_TOL     .001
 #define BASKER_PIVOT_BIAS    1.001
 
 //Error Codes

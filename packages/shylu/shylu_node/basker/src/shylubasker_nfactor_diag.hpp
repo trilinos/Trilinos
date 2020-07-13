@@ -309,12 +309,12 @@ namespace BaskerNS
 
     Entry pivot, value;
     //    Entry absv, maxc; //NDE - warning: unsed maxc
-    //Entry absv;
-    double absv;
     // Max number of nnz allowed/allocated
     Int llnnz  = L.mnnz;
     Int uunnz  = U.mnnz;
+    double absv = (double) 0;
     double maxv = (double) 0;
+    double digv = (double) 0;
 
     Int maxindex = 0;
 
@@ -442,6 +442,7 @@ namespace BaskerNS
       //t_locate_pivot(kid, top)	  
       //find pivot
       maxv = 0.0;
+      digv = 0.0;
       #ifdef BASKER_TIMER
       timer_nfactor.reset();
       #endif
@@ -450,16 +451,19 @@ namespace BaskerNS
         j = pattern[i];
         t = gperm(j+L.srow);
 
-        //value = X[j-brow];
         value = X(j);
 
       #ifdef BASKER_DEBUG_NFACTOR_DIAG
         {
-          printf("consider, %d %d %d %g \n", j, j+L.scol, t, value);
+          printf("consider, c=%d, i=%d, k=%d->%d: j=%d t=%d: %g (off=%d, %d, %d)\n", c, i, k,k-L.scol, j, t, value, L.srow,L.scol,btf_tabs(c));
         }
       #endif
 
         absv = abs(value);
+        if (j == k - L.scol)
+        {
+          digv = absv;
+        }
         if(t == BASKER_MAX_IDX)
         {
           ++lcnt;
@@ -467,7 +471,7 @@ namespace BaskerNS
           {
             maxv     = absv;
             pivot    = value;
-            maxindex = j;                
+            maxindex = j;
           }
         }
       } //for (i = top; i < ws_size)
@@ -477,14 +481,16 @@ namespace BaskerNS
         printf("pivot: %g maxindex: %d k: %d \n", pivot, maxindex, k);
       }
       #endif
-      //std::cout << " k: " << k << "(" << k-btf_tabs(c) << ") maxindex: " << maxindex << " pivot: " << pivot << std::endl;
+      //printf( "c=%d k=%d (%d) maxindex=%d pivot=%e maxv=%e, diag=%e tol=%e\n", c, k, k-btf_tabs(c), maxindex, pivot, maxv, digv, Options.pivot_tol);
 
-      if(Options.no_pivot == BASKER_TRUE)
+#if 1
+      if(maxindex != (Int) k-L.scol &&
+         (Options.no_pivot == BASKER_TRUE || digv > maxv * Options.pivot_tol))
       {
         maxindex = (Int) k-L.scol;
-        //maxindex = (Int) k - M.srow;
         pivot    = X(maxindex);
       }
+#endif
 
       #ifdef BASKER_DEBUG_NFACTOR_DEBUG
       if(k <= 117)
@@ -521,8 +527,6 @@ namespace BaskerNS
 
       //printf("----------------PIVOT------------blk: %d %d \n", 
       //      c, btf_tabs(c+1)-btf_tabs(c));
-      //gperm(maxindex+brow2) = k;
-      //gpermi(k)             = maxindex+brow2;
       gperm(maxindex+L.scol) = k;
       gpermi(k)              = maxindex + L.srow;
       #ifdef BASKER_TIMER

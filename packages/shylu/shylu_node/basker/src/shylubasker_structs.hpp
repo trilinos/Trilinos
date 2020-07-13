@@ -757,7 +757,8 @@ namespace BaskerNS
       btf_large       = BASKER_BTF_LARGE;
       use_sequential_diag_facto = BASKER_FALSE;
       // TODO: remove this (matching during symbolic)
-      btf_matching = -1;
+      btf_matching = 0;
+      blk_matching = 0;
 
       //Pivot
       no_pivot   = BASKER_FALSE;
@@ -810,7 +811,8 @@ namespace BaskerNS
     BASKER_ENTRY btf_large;
     BASKER_BOOL  use_sequential_diag_facto;
     // TODO: remove this (matching during symbolic)
-    int btf_matching;
+    int btf_matching; // carbinality matching before BTF (Symbolic)
+    int blk_matching; // max weight matching on each block (Numeric)
 
     //AMD Ordering Options
     BASKER_BOOL  amd_dom;
@@ -818,7 +820,7 @@ namespace BaskerNS
     
     //Pivot Options
     BASKER_BOOL  no_pivot;
-    BASKER_ENTRY pivot_tol;  //Not Used
+    BASKER_ENTRY pivot_tol;
     BASKER_ENTRY pivot_bias;
 
     //Prune (if not pruned, check for numerical cancelatin)

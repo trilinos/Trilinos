@@ -363,6 +363,7 @@ namespace BaskerNS
     //printf("Done with btf_blk_amd malloc \n");
     //printf("blks: %d \n" , btf_nblks);
 
+    bool flag = true;
     Entry one = (Entry)1.0;
     MALLOC_ENTRY_1DARRAY (scale_row_array, A.nrow);
     MALLOC_ENTRY_1DARRAY (scale_col_array, A.nrow);
@@ -431,29 +432,59 @@ namespace BaskerNS
           for(Int k = 0; k < blk_size; k++)
           {
             for(Int i = temp_col(k); i < temp_col(k+1); i++)
-              std::cout << temp_row(i) << " " << k << " " << temp_val(i) << std::endl;
+              printf("%d %d %e\n", temp_row(i), k, temp_val(i));
           }
           std::cout << " ]; " << std::endl;
         }*/
-#if defined(BASKER_MC64)
-        Int job = 5; //2 is the default for SuperLU_DIST
-        mc64(blk_size, nnz, &(temp_col(0)), &(temp_row(0)), &(temp_val(0)),
-             job, &(tempp(0)), &(scale_row_array(btf_tabs(b))), &(scale_col_array(btf_tabs(b))));
-        /*{
-          std::cout << "p_mwm=[" << std::endl;
-          for(Int ii = 0; ii < blk_size; ii++) {
-            std::cout << btf_tabs(b)+ii << " " << tempp(ii) << " " << scale_row_array(ii) << " " << scale_col_array(ii) << std::endl;
+        if (Options.blk_matching == 1) {
+          if (flag) {
+            std::cout << " ** ShyLUBasker MWM ** " << std::endl;
+            flag = false;
           }
-          std::cout << "];" << std::endl;
-        }*/
-#else
-        Int num = 0;
-        mwm_order::mwm(blk_size, nnz,
-                       &(temp_col(0)), &(temp_row(0)), &(temp_val(0)),
-                       &(tempp(0)), num);
+          Int num = 0;
+          mwm_order::mwm(blk_size, nnz,
+                         &(temp_col(0)), &(temp_row(0)), &(temp_val(0)),
+                         &(tempp(0)), num);
+          #if defined(BASKER_MC64)
+          for(Int ii = 0; ii < blk_size; ii++) {
+            scale_row_array(btf_tabs(b)+ii) = one;
+            scale_col_array(btf_tabs(b)+ii) = one;
+          }
+          #endif
+        }
+#if defined(BASKER_MC64)
+        else if (Options.blk_matching == 2) {
+          if (flag) {
+            std::cout << " ** MC64 MWM ** " << std::endl;
+            flag = false;
+          }
+          Int job = 5; //2 is the default for SuperLU_DIST
+          mc64(blk_size, nnz, &(temp_col(0)), &(temp_row(0)), &(temp_val(0)),
+               job, &(tempp(0)), &(scale_row_array(btf_tabs(b))), &(scale_col_array(btf_tabs(b))));
+          /*{
+            std::cout << "p_mwm=[" << std::endl;
+            for(Int ii = 0; ii < blk_size; ii++) {
+              std::cout << btf_tabs(b)+ii << " " << tempp(ii) << " " << scale_row_array(ii) << " " << scale_col_array(ii) << std::endl;
+            }
+            std::cout << "];" << std::endl;
+          }*/
+        }
 #endif
-        // no mwm, for debugging
-        for(Int ii = 0; ii < blk_size; ii++) tempp(ii) = ii;
+        else {
+          // no mwm, for debugging
+          if (flag) {
+            std::cout << " ** NO BLK MWM ** " << std::endl;
+            flag = false;
+          }
+          #if defined(BASKER_MC64)
+          for(Int ii = 0; ii < blk_size; ii++) {
+            scale_row_array(btf_tabs(b)+ii) = one;
+            scale_col_array(btf_tabs(b)+ii) = one;
+          }
+          #endif
+          for(Int ii = 0; ii < blk_size; ii++) tempp(ii) = ii;
+        }
+
         // apply MWM to rows
         permute_row(nnz, &(temp_row(0)), &(tempp(0)));
         // sort for calling AMD
@@ -469,9 +500,7 @@ namespace BaskerNS
           for(Int k = 0; k < blk_size; k++)
           {
             for(Int i = temp_col(k); i < temp_col(k+1); i++)
-            {
-              std::cout << k << " " << temp_row(i) << " " << temp_val(i) << std::endl;
-            }
+              printf("%d %d %e\n", temp_row(i), k, temp_val(i));
           }
           std::cout << "];" << std::endl;
         }*/

@@ -225,18 +225,17 @@ namespace BaskerNS
    
     //new for sfactor_copy2 replacement
     //this will store the composition of permutations and sorts due to btf with respect to the full val array
-    MALLOC_INT_1DARRAY(vals_perm_composition, A.nnz);
     btfa_nnz = 0;
     btfb_nnz = 0;
     btfc_nnz = 0;
 
-    for( Int i = 0; i < A.nnz; ++i ){
-      vals_perm_composition(i) = i;
-    }
-
     // NDE: New for Amesos2 CRS changes
     // compose the transpose+sort permutations with the running 'total' composition
     // Note: This is wasted work if the 'special case' is not hit
+    MALLOC_INT_1DARRAY(vals_perm_composition, A.nnz);
+    for( Int i = 0; i < A.nnz; ++i ){
+      vals_perm_composition(i) = i;
+    }
     permute_inv(vals_perm_composition, vals_crs_transpose, A.nnz);
     sort_matrix_store_valperms(A, vals_perm_composition); //(need)
 
@@ -249,21 +248,15 @@ namespace BaskerNS
     printf( "];\n" );*/
 
     // TODO: call one that does not need vals)
-#ifdef BASKER_MC64
-    //match_ordering(Options.btf_matching);
-    match_ordering(1);
-    /*std::cout << " D=[" << std::endl;
-    for(Int j = 0; j < A.ncol; j++) {
-      std::cout << scale_col_array(j) << " " << scale_row_array(j) << " " << order_match_array(j) << std::endl;
-    }
-    std::cout << "];" << std::endl;*/
-#else
-    match_ordering(0);
-#endif
+    // 0: Basker 1: trilinos 2: MC64
+    match_ordering(Options.btf_matching);
+    /*printf( " P=[\n" );
+    for (int i = 0; i < A.ncol; i++) printf( "%d %d\n", i, order_match_array(i));
+    printf( "];\n" );*/
+
     sort_matrix_store_valperms(A, vals_perm_composition); //(need)
 
-    /*for(Int j = 0; j < A.ncol; j++) printf( "%d %d\n",j,order_match_array(j) );
-    printf( " C=[\n" );
+    /*printf( " C=[\n" );
     for(Int j = 0; j < A.ncol; j++) {
       for(Int k = A.col_ptr[j]; k < A.col_ptr[j+1]; k++) {
         printf( "%d %d %e\n", A.row_idx[k], j, A.val[k]);
@@ -677,19 +670,39 @@ namespace BaskerNS
       MALLOC_INT_1DARRAY(order_match_array, A.nrow);
       if(Options.incomplete == BASKER_FALSE)
       {
+        if (option == 0)
+        {
+          std::cout << " ++ calling ShyLUBasker::MWM (" << A.nrow << " x " << A.ncol << ") ++ " << std::endl;
+          mwm(A, order_match_array);
+        } 
+        else if (option == 1) {
+          double maxwork = 0.0;
+          double work;
+          INT_1DARRAY WORK;
+          MALLOC_INT_1DARRAY(WORK, 5 * (A.ncol));
+          std::cout << " ++ calling TRILINOS_BTF_MAXTRANS (" << A.nrow << " x " << A.ncol << ") ++ " << std::endl;
+          int nmatch = trilinos_btf_maxtrans (A.nrow, A.ncol, &(A.col_ptr(0)), &(A.row_idx(0)), maxwork,
+                                              &work, &(order_match_array(0)), &(WORK(0)));
+          if(nmatch < min(A.nrow, A.ncol)) {
+            std::cout << " ++ TRILINOS_BTF_MAXTRANS returned " << nmatch
+                      << " less than " << A.nrow << " or " << A.ncol << std::endl;
+          }
+          FREE_INT_1DARRAY(WORK);
+        }
         #ifdef BASKER_MC64
-        if (option == 1) {
+        else if (option == 2) {
           Int job = 5; //2 is the default for SuperLU_DIST
           MALLOC_ENTRY_1DARRAY (scale_row_array, A.nrow);
           MALLOC_ENTRY_1DARRAY (scale_col_array, A.nrow);
           // call mc64
-          /*printf( " calling mc64 with\n A = [\n" );
+          /*printf( " A = [\n" );
           for(Int j = 0; j < A.ncol; j++) {
             for(Int k = A.col_ptr[j]; k < A.col_ptr[j+1]; k++) {
               printf( " %d %d %e\n", A.row_idx[k],j,A.val[k]);
             }
           }
           printf("];\n");*/
+          std::cout << " ++ calling MC64 ++ " << std::endl;
           mc64(job, order_match_array, scale_row_array, scale_col_array);
           #if 0
           for(Int j = 0; j < A.ncol; j++) {
@@ -698,10 +711,17 @@ namespace BaskerNS
             }
           }
           #endif
-        } else
+        }
         #endif
-        {
-          mwm(A, order_match_array);
+        else {
+          std::cout << " ++ no BTF matching ++ " << std::endl;
+          //Entry one = (Entry)1.0;
+          for(Int i = 0; i < A.nrow; i++)
+          {
+            order_match_array(i) = i;
+            //scale_row_array(i) = one;
+            //scale_col_array(i) = one;
+          }
         }
       }
       else
@@ -711,7 +731,7 @@ namespace BaskerNS
           order_match_array(i) = i;
         }
       }
-      permute_row(A,order_match_array);
+      permute_row(A, order_match_array);
 
       //We want to test what the match ordering does if
       //have explicit zeros
@@ -1291,6 +1311,7 @@ namespace BaskerNS
     permute_inv(symbolic_row_perm_array, symbolic_row_iperm_array, gn);
     permute_inv(symbolic_col_perm_array, symbolic_col_iperm_array, gn);
 
+    // ===============================================================================
     // perm_comp_array calculation
     // Note: don't need to inverse a row only perm
     // q1
@@ -1311,7 +1332,12 @@ namespace BaskerNS
     {
       if(Options.verbose == BASKER_TRUE)
       { printf(" > blk_mwm order out\n");}
+      // invert btf first
+      permute_inv_with_workspace(perm_comp_array, order_btf_array, gn);
+      // now invert mwm
       permute_inv_with_workspace(perm_comp_array, order_blk_mwm_array, gn);
+      // finally reapply btf
+      permute_with_workspace(perm_comp_array, order_btf_array, gn);
     }
 #endif
     #else
