@@ -115,12 +115,10 @@ namespace BaskerNS
           domain_nfactor);
       Kokkos::fence();
 
-      printf("shylubasker_nfactor.hpp: factor_notoken - finished kokkos_nfactor_domain functor\n");
 
       //=====Check for error======
       while(true)
       {
-        printf("shylubasker_nfactor.hpp: factor_notoken - enter while loop\n");
         INT_1DARRAY thread_start;
         MALLOC_INT_1DARRAY(thread_start, num_threads+1);
         init_value(thread_start, num_threads+1, 
@@ -129,13 +127,14 @@ namespace BaskerNS
         if((nt == BASKER_SUCCESS) ||
             (domain_restart > BASKER_RESTART))
         {
-          printf("shylubasker_nfactor.hpp: factor_notoken - break while loop\n");
-          printf("  nt = %d\n",nt);
           break;
         }
         else if (nt == BASKER_ERROR)
         {
-          printf("shylubasker_nfactor.hpp: factor_notoken - BASKER_ERROR: return code\n");
+          if(Options.verbose == BASKER_TRUE)
+          {
+            printf("%s: nfactor_domain_error reports BASKER_ERROR - numeric factorization failed\n",__FILE__);
+          }
           return BASKER_ERROR;
         }
         else
