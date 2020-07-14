@@ -50,9 +50,10 @@
 
 namespace FROSch {
 
+    using namespace std;
     using namespace Teuchos;
     using namespace Xpetra;
-    
+
     template <class SC = double,
               class LO = int,
               class GO = DefaultGlobalOrdinal,
@@ -142,8 +143,8 @@ namespace FROSch {
         void describe(FancyOStream &out,
                       const EVerbosityLevel verbLevel=Describable::verbLevel_default) const;
 
-        std::string description() const;
-        
+        string description() const;
+
         virtual int resetMatrix(ConstXMatrixPtr &k);
 
     protected:

@@ -113,31 +113,12 @@ postRegistrationSetup(
   typename Traits::SetupData  /* worksets */,
   PHX::FieldManager<Traits>&  fm)
 {
+  // Convert std::vector to Kokkos::View for use on device
   internal_scalar_fields = Kokkos::View<KokkosScalarFields_t*>("ScalarToVector::internal_scalar_fields", scalar_fields.size());
-  for (std::size_t i=0; i < scalar_fields.size(); ++i) {
-    this->utils.setFieldData(scalar_fields[i],fm);
+  for (std::size_t i=0; i < scalar_fields.size(); ++i)
     internal_scalar_fields(i) = scalar_fields[i].get_static_view();
-  }
-
-  this->utils.setFieldData(vector_field,fm);
 }
 
-//**********************************************************************
-
-template<typename EvalT, typename TRAITS>
-KOKKOS_INLINE_FUNCTION
-void ScalarToVector<EvalT, TRAITS>::operator()(const size_t &cell) const {
-  typedef typename PHX::MDField<ScalarT,Cell,Point>::size_type size_type;
-  // Loop over points
-  for (size_type pt = 0; pt < vector_field.extent(1); ++pt) {
-    // Loop over scalars
-    for (std::size_t sc = 0; sc < internal_scalar_fields.extent(0); ++sc) {
-      vector_field(cell,pt,sc) = internal_scalar_fields(sc)(cell,pt);
-
-    }
-  }
-
-}
 //**********************************************************************
 template<typename EvalT, typename Traits>
 void
@@ -146,8 +127,32 @@ evaluateFields(
   typename Traits::EvalData workset)
 { 
 
-  // Loop over cells
-  Kokkos::parallel_for (workset.num_cells, (*this));
+  using Scalar = typename EvalT::ScalarT;
+
+  // Iteration bounds
+  const int num_points = vector_field.extent_int(1);
+  const int num_vector_scalars = vector_field.extent_int(2);
+  const int num_scalars = std::min(internal_scalar_fields.extent_int(0),
+                                   num_vector_scalars);
+
+  // Local copies to prevent passing (*this) to device code
+  auto vector = vector_field;
+  auto scalars = internal_scalar_fields;
+
+  // Loop over cells, points, scalars
+  Kokkos::parallel_for (workset.num_cells,KOKKOS_LAMBDA (const int cell){
+    for (int pt = 0; pt < num_points; ++pt){
+
+      // Copy over scalars
+      for (int sc = 0; sc < num_scalars; ++sc)
+        vector(cell,pt,sc) = scalars(sc)(cell,pt);
+
+      // Missing scalars are filled with zero
+      for(int sc = num_scalars; sc < num_vector_scalars; ++sc)
+        vector(cell,pt,sc) = Scalar(0);
+    }
+  });
+
 }
 
 //**********************************************************************

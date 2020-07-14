@@ -117,7 +117,7 @@ STK_MATH_FORCE_INLINE simd::Double sqrt(const simd::Double& x) {
 }
   
 STK_MATH_FORCE_INLINE simd::Double cbrt(const simd::Double& x) {
-#if defined(__INTEL_COMPILER)
+#if defined(__INTEL_COMPILER) && !defined(STK_SIMD_NONE)
   return simd::Double(SIMD_NAMESPACE::cbrt(x._data));
 #else
   simd::Double tmp;
@@ -129,7 +129,7 @@ STK_MATH_FORCE_INLINE simd::Double cbrt(const simd::Double& x) {
 }
 
 STK_MATH_FORCE_INLINE simd::Double log(const simd::Double& x) {
-#if defined(__INTEL_COMPILER)
+#if defined(__INTEL_COMPILER) && !defined(STK_SIMD_NONE)
   return simd::Double(SIMD_NAMESPACE::log(x._data));
 #else
   simd::Double tmp;
@@ -149,7 +149,7 @@ STK_MATH_FORCE_INLINE simd::Double log10(const simd::Double& x) {
 }
 
 STK_MATH_FORCE_INLINE simd::Double exp(const simd::Double& x) {
-#if defined(__INTEL_COMPILER)
+#if defined(__INTEL_COMPILER) && !defined(STK_SIMD_NONE)
   return simd::Double(SIMD_NAMESPACE::exp(x._data));
 #else
   simd::Double tmp;

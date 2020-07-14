@@ -45,12 +45,7 @@ using Tempus::SolutionHistory;
 using Tempus::SolutionState;
 
 
-// Comment out any of the following tests to exclude from build/run.
-#define TEST_CONSTRUCTING_FROM_DEFAULTS
-#define TEST_SINCOS
 
-
-#ifdef TEST_CONSTRUCTING_FROM_DEFAULTS
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(Leapfrog, ConstructingFromDefaults)
@@ -88,7 +83,7 @@ TEUCHOS_UNIT_TEST(Leapfrog, ConstructingFromDefaults)
   auto icX = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
   auto icXDot = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot());
   auto icXDotDot = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot_dot());
-  auto icState = rcp(new Tempus::SolutionState<double>(icX, icXDot, icXDotDot));
+  auto icState = Tempus::createSolutionStateX<double>(icX, icXDot, icXDotDot);
   icState->setTime    (timeStepControl->getInitTime());
   icState->setIndex   (timeStepControl->getInitIndex());
   icState->setTimeStep(0.0);
@@ -141,10 +136,8 @@ TEUCHOS_UNIT_TEST(Leapfrog, ConstructingFromDefaults)
   std::cout << "  =========================" << std::endl;
   TEST_FLOATING_EQUALITY(get_ele(*(x), 0), 0.167158, 1.0e-4 );
 }
-#endif // TEST_CONSTRUCTING_FROM_DEFAULTS
 
 
-#ifdef TEST_SINCOS
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(Leapfrog, SinCos)
@@ -204,8 +197,10 @@ TEUCHOS_UNIT_TEST(Leapfrog, SinCos)
       auto solnHistExact = rcp(new Tempus::SolutionHistory<double>());
       for (int i=0; i<solutionHistory->getNumStates(); i++) {
         double time_i = (*solutionHistory)[i]->getTime();
-        auto state = rcp(new Tempus::SolutionState<double>(
-            model->getExactSolution(time_i).get_x(),
+        auto state = Tempus::createSolutionStateX(
+          rcp_const_cast<Thyra::VectorBase<double> > (
+            model->getExactSolution(time_i).get_x()),
+          rcp_const_cast<Thyra::VectorBase<double> > (
             model->getExactSolution(time_i).get_x_dot()));
         state->setTime((*solutionHistory)[i]->getTime());
         solnHistExact->addState(state);
@@ -252,6 +247,6 @@ TEUCHOS_UNIT_TEST(Leapfrog, SinCos)
 
   Teuchos::TimeMonitor::summarize();
 }
-#endif // TEST_SINCOS
+
 
 }

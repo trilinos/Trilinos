@@ -3,29 +3,6 @@
 # TrilinosCreateClientTemplateHeaders.cmake
 SET(CMAKE_MODULE_PATH  ${CMAKE_MODULE_PATH} "${Trilinos_SOURCE_DIR}/cmake")
 
-MACRO(TRILINOS_DISABLE_PACKAGE_REQUIRING_CXX11  CXX11_PACKAGE_NAME_IN)
-  IF ("${${PROJECT_NAME}_ENABLE_${CXX11_PACKAGE_NAME_IN}}" STREQUAL "")
-    MESSAGE(
-      "\n***"
-      "\n*** NOTE: Setting ${PROJECT_NAME}_ENABLE_${CXX11_PACKAGE_NAME_IN}=OFF"
-      " because ${PROJECT_NAME}_ENABLE_CXX11='${${PROJECT_NAME}_ENABLE_CXX11}'!"
-      "\n***\n"
-      )
-    SET(${PROJECT_NAME}_ENABLE_${CXX11_PACKAGE_NAME_IN} OFF)
-  ELSEIF (${PROJECT_NAME}_ENABLE_${CXX11_PACKAGE_NAME_IN})
-    MESSAGE( FATAL_ERROR
-      "ERROR: Setting"
-      " ${PROJECT_NAME}_ENABLE_${CXX11_PACKAGE_NAME_IN}='${${PROJECT_NAME}_ENABLE_${CXX11_PACKAGE_NAME_IN}}'"
-      " is not consistent with "
-      " ${PROJECT_NAME}_ENABLE_CXX11='${${PROJECT_NAME}_ENABLE_CXX11}'!"
-      " ${CXX11_PACKAGE_NAME_IN} requires C++11 support!  Either don't"
-      " enable the package ${CXX11_PACKAGE_NAME_IN} or enable support for C++11!")
-  ELSE()
-    # This package is already disabled which is just fine.
-  ENDIF()
-ENDMACRO()
-
-
 MACRO(TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS)
 
   #MESSAGE("TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS got called!")
@@ -58,16 +35,6 @@ MACRO(TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS)
   OPTION(Trilinos_ENABLE_THREAD_SAFE
     "Enable thread safe code including RCP classes." OFF )
 
-  ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_CXX11)
-  IF (Trilinos_ENABLE_THREAD_SAFE AND NOT ${PROJECT_NAME}_ENABLE_CXX11)
-    MESSAGE(FATAL_ERROR
-      "You set Trilinos_ENABLE_THREAD_SAFE=ON, but ${PROJECT_NAME}' support"
-      " for CXX11 is not enabled (${PROJECT_NAME}_ENABLE_CXX11=OFF)."
-      "  This is not allowed.  Please enable ${PROJECT_NAME}_ENABLE_CXX11 in"
-      " ${PROJECT_NAME} before attempting to enable Trilinos_ENABLE_THREAD_SAFE"
-      " or leave Trilinos_ENABLE_THREAD_SAFE off.")
-  ENDIF ()
-
   #
   # Trilinos Data Dir?  Is this still being used anywhere?
   #
@@ -79,12 +46,6 @@ MACRO(TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS)
   #
   # Put in disables based on various criteria
   #
-    
-  IF (NOT ${PROJECT_NAME}_ENABLE_CXX11)
-    TRILINOS_DISABLE_PACKAGE_REQUIRING_CXX11("Kokkos")
-    TRILINOS_DISABLE_PACKAGE_REQUIRING_CXX11("Tpetra")
-  ENDIF()
-    
   IF (
       NOT ${PROJECT_NAME}_ENABLE_Fortran
       AND

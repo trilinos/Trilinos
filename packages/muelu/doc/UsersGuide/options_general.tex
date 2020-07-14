@@ -3,11 +3,17 @@
           
 \cbb{verbosity}{string}{"high"}{Control of the amount of printed information. Possible values: see Table~\ref{t:verbosity_types}.}
           
+\cbb{output filename}{string}{""}{Write MueLu output to a file instead of std out. Empty value disables file output.}
+          
 \cbb{number of equations}{int}{1}{Number of PDE equations at each grid node. Only constant block size is considered.}
           
 \cbb{max levels}{int}{10}{Maximum number of levels in a hierarchy.}
           
 \cbb{cycle type}{string}{"V"}{Multigrid cycle type. Possible values: "V", "W".}
+          
+\cbb{W cycle start level}{int}{0}{Level at which to start multigrid W cycle.}
+          
+\cbb{number of vectors}{int}{1}{Number of columns in multivectors that are cached for Hierarchy apply phase.}
           
 \cbb{problem: symmetric}{bool}{true}{Symmetry of a problem. This setting affects the construction of a restrictor. If set to true, the restrictor is set to be the transpose of a prolongator. If set to false, underlying multigrid algorithm makes the decision.}
           

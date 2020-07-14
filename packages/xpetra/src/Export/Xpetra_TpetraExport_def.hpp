@@ -201,7 +201,7 @@ TpetraExport<LocalOrdinal, GlobalOrdinal, Node>::
 setDistributorParameters(const Teuchos::RCP<Teuchos::ParameterList> params) const {
   XPETRA_MONITOR("TpetraExport::setDistributorParameters");
   export_->getDistributor().setParameterList(params);
-  auto revDistor = export_->getDistributor().getReverseDistributor();
+  auto revDistor = export_->getDistributor().getReverse(false);
   if (!revDistor.is_null())
     revDistor->setParameterList(params);
 }

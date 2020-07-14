@@ -326,8 +326,7 @@ INCLUDE(CMakeParseArguments)
 # CMake command ``INSTALL(TARGETS <exeTargetName> ...)`` is added to install
 # the built executable into the ``${CMAKE_INSTALL_PREFIX}/bin/`` directory
 # (actual install directory path is determined by
-# ``${PROJECT_NAME}_INSTALL_RUNTIME_DIR``, see `Setting the install prefix at
-# configure time`_) .
+# ``${PROJECT_NAME}_INSTALL_RUNTIME_DIR``, see `Setting the install prefix`_).
 #
 FUNCTION(TRIBITS_ADD_EXECUTABLE EXE_NAME)
 

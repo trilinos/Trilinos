@@ -1,8 +1,0 @@
-<ParameterList  name="Matrix">
-
-  <Parameter    name="matrixType"       type="string"   value="Laplace2D"/>
-
-  <Parameter    name="nx"               type="int"      value="15"/>
-  <Parameter    name="ny"               type="int"      value="15"/>
-
-</ParameterList>

@@ -47,9 +47,10 @@
 
 namespace FROSch {
 
+    using namespace std;
     using namespace Teuchos;
     using namespace Xpetra;
-    
+
     template<class SC,class LO,class GO,class NO>
     EntitySet<SC,LO,GO,NO>::EntitySet(EntityType type) :
     Type_ (type)
@@ -88,7 +89,7 @@ namespace FROSch {
         }
         return 0;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     typename EntitySet<SC,LO,GO,NO>::EntitySetPtr EntitySet<SC,LO,GO,NO>::deepCopy()
     {
@@ -166,7 +167,7 @@ namespace FROSch {
         }
         return 0;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     typename EntitySet<SC,LO,GO,NO>::EntitySetPtr EntitySet<SC,LO,GO,NO>::findRoots()
     {
@@ -185,7 +186,7 @@ namespace FROSch {
         Roots->sortUnique();
         return Roots;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     typename EntitySet<SC,LO,GO,NO>::EntitySetPtr EntitySet<SC,LO,GO,NO>::findLeafs()
     {
@@ -225,7 +226,7 @@ namespace FROSch {
         }
         return 0;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     int EntitySet<SC,LO,GO,NO>::clearLeafs()
     {
@@ -370,7 +371,7 @@ namespace FROSch {
                 UN k = 0;
                 while (k<dofsPerNode) {
                     GO dofGlobal = getEntity(i)->getGlobalDofID(itmp,k);
-                    if (std::binary_search(dirichletBoundaryDofs.begin(),dirichletBoundaryDofs.end(),dofGlobal)) {
+                    if (binary_search(dirichletBoundaryDofs.begin(),dirichletBoundaryDofs.end(),dofGlobal)) {
                         getEntity(i)->removeNode(itmp);
                         break;
                     }
@@ -380,7 +381,7 @@ namespace FROSch {
         }
         return 0;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     int EntitySet<SC,LO,GO,NO>::removeEmptyEntities()
     {
@@ -403,7 +404,7 @@ namespace FROSch {
         }
 
         std::sort(EntityVector_.begin(),EntityVector_.end(),compareInterfaceEntities<SC,LO,GO,NO>);
-        EntityVector_.erase(std::unique(EntityVector_.begin(),EntityVector_.end(),equalInterfaceEntities<SC,LO,GO,NO>),EntityVector_.end());
+        EntityVector_.erase(unique(EntityVector_.begin(),EntityVector_.end(),equalInterfaceEntities<SC,LO,GO,NO>),EntityVector_.end());
         EntityMapIsUpToDate_ = false;
         return 0;
     }
@@ -511,7 +512,7 @@ namespace FROSch {
         }
         return 0;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     int EntitySet<SC,LO,GO,NO>::setLeafID()
     {

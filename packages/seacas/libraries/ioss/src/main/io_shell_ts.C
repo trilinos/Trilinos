@@ -1,34 +1,8 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//
-//     * Neither the name of NTESS nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+// See packages/seacas/LICENSE for details
 
 #include <Ionit_Initializer.h>
 #include <Ioss_CodeTypes.h>
@@ -67,7 +41,7 @@
 #include <Kokkos_Core.hpp> // for Kokkos::View
 #endif
 
-#define OUTPUT                                                                                     \
+#define DO_OUTPUT                                                                                  \
   if (rank == 0)                                                                                   \
   std::cerr
 
@@ -203,14 +177,14 @@ int main(int argc, char *argv[])
   std::string in_file  = interFace.inputFile[0];
   std::string out_file = interFace.outputFile;
 
-  OUTPUT << "Input:    '" << in_file << "', Type: " << interFace.inFiletype << '\n';
-  OUTPUT << "Output:   '" << out_file << "', Type: " << interFace.outFiletype << '\n';
-  OUTPUT << '\n';
+  DO_OUTPUT << "Input:    '" << in_file << "', Type: " << interFace.inFiletype << '\n';
+  DO_OUTPUT << "Output:   '" << out_file << "', Type: " << interFace.outFiletype << '\n';
+  DO_OUTPUT << '\n';
 
 #ifdef SEACAS_HAVE_KOKKOS
-  OUTPUT << "Kokkos default execution space configuration:\n";
+  DO_OUTPUT << "Kokkos default execution space configuration:\n";
   Kokkos::DefaultExecutionSpace::print_configuration(std::cerr, false);
-  OUTPUT << "\n";
+  DO_OUTPUT << "\n";
 #endif
 
   file_copy(interFace);
@@ -221,20 +195,20 @@ int main(int argc, char *argv[])
     int64_t             min, max, avg;
     Ioss::ParallelUtils parallel(MPI_COMM_WORLD);
     parallel.memory_stats(min, max, avg);
-    OUTPUT << "\n\tCurrent Memory: " << min / MiB << "M  " << max / MiB << "M  " << avg / MiB
-           << "M\n";
+    DO_OUTPUT << "\n\tCurrent Memory: " << min / MiB << "M  " << max / MiB << "M  " << avg / MiB
+              << "M\n";
 
     parallel.hwm_memory_stats(min, max, avg);
-    OUTPUT << "\n\tHigh Water Memory: " << min / MiB << "M  " << max / MiB << "M  " << avg / MiB
-           << "M\n";
+    DO_OUTPUT << "\n\tHigh Water Memory: " << min / MiB << "M  " << max / MiB << "M  " << avg / MiB
+              << "M\n";
 #else
     int64_t mem = Ioss::Utils::get_memory_info();
     int64_t hwm = Ioss::Utils::get_hwm_memory_info();
-    OUTPUT << "\n\tCurrent Memory:    " << mem / MiB << "M\n"
-           << "\n\tHigh Water Memory: " << hwm / MiB << "M\n";
+    DO_OUTPUT << "\n\tCurrent Memory:    " << mem / MiB << "M\n"
+              << "\n\tHigh Water Memory: " << hwm / MiB << "M\n";
 #endif
   }
-  OUTPUT << "\n" << codename << " execution successful.\n";
+  DO_OUTPUT << "\n" << codename << " execution successful.\n";
 
   return EXIT_SUCCESS;
 }
@@ -270,12 +244,23 @@ namespace {
       properties.add(Ioss::Property("COMPRESSION_SHUFFLE", static_cast<int>(interFace.shuffle)));
     }
 
-    if (interFace.compose_output != "none") {
+    if (interFace.compose_output == "default") {
+      if (interFace.outFiletype == "cgns") {
+        properties.add(Ioss::Property("COMPOSE_RESULTS", "YES"));
+        properties.add(Ioss::Property("COMPOSE_RESTART", "YES"));
+      }
+      else {
+        properties.add(Ioss::Property("COMPOSE_RESULTS", "NO"));
+        properties.add(Ioss::Property("COMPOSE_RESTART", "NO"));
+      }
+    }
+    else if (interFace.compose_output == "external") {
+      properties.add(Ioss::Property("COMPOSE_RESULTS", "NO"));
+      properties.add(Ioss::Property("COMPOSE_RESTART", "NO"));
+    }
+    else if (interFace.compose_output != "none") {
       properties.add(Ioss::Property("COMPOSE_RESULTS", "YES"));
       properties.add(Ioss::Property("COMPOSE_RESTART", "YES"));
-      if (interFace.compose_output != "default") {
-        properties.add(Ioss::Property("PARALLEL_IO_MODE", interFace.compose_output));
-      }
     }
 
     if (interFace.netcdf4) {
@@ -321,8 +306,8 @@ namespace {
       if (!interFace.groupName.empty()) {
         bool success = dbi->open_group(interFace.groupName);
         if (!success) {
-          OUTPUT << "ERROR: Unable to open group '" << interFace.groupName << "' in file '"
-                 << inpfile << "\n";
+          DO_OUTPUT << "ERROR: Unable to open group '" << interFace.groupName << "' in file '"
+                    << inpfile << "\n";
           return;
         }
       }
@@ -331,8 +316,8 @@ namespace {
       Ioss::Region region(dbi, "region_1");
 
       if (region.mesh_type() != Ioss::MeshType::UNSTRUCTURED) {
-        OUTPUT << "\nERROR: io_shell does not support '" << region.mesh_type_string()
-               << "' meshes.  Only 'Unstructured' mesh is supported at this time.\n";
+        DO_OUTPUT << "\nERROR: io_shell does not support '" << region.mesh_type_string()
+                  << "' meshes.  Only 'Unstructured' mesh is supported at this time.\n";
         return;
       }
 
@@ -389,13 +374,13 @@ namespace {
       }
 
       if (interFace.debug) {
-        OUTPUT << "DEFINING MODEL ... \n";
+        DO_OUTPUT << "DEFINING MODEL ... \n";
       }
       if (mem_stats) {
         dbi->progress("DEFINING MODEL");
       }
       if (!output_region.begin_mode(Ioss::STATE_DEFINE_MODEL)) {
-        OUTPUT << "ERROR: Could not put output region into define model state\n";
+        DO_OUTPUT << "ERROR: Could not put output region into define model state\n";
         std::exit(EXIT_FAILURE);
       }
 
@@ -433,7 +418,7 @@ namespace {
       transfer_coordinate_frames(region, output_region, interFace.debug);
 
       if (interFace.debug) {
-        OUTPUT << "END STATE_DEFINE_MODEL... " << '\n';
+        DO_OUTPUT << "END STATE_DEFINE_MODEL... " << '\n';
       }
       if (mem_stats) {
         dbi->progress("END STATE_DEFINE_MODEL");
@@ -442,7 +427,7 @@ namespace {
       output_region.end_mode(Ioss::STATE_DEFINE_MODEL);
 
       if (interFace.debug) {
-        OUTPUT << "TRANSFERRING MESH FIELD DATA ... " << '\n';
+        DO_OUTPUT << "TRANSFERRING MESH FIELD DATA ... " << '\n';
       }
       if (mem_stats) {
         dbi->progress("TRANSFERRING MESH FIELD DATA ... ");
@@ -492,7 +477,7 @@ namespace {
         for (const auto &ifs : fss) {
           const std::string &name = ifs->name();
           if (interFace.debug) {
-            OUTPUT << name << ", ";
+            DO_OUTPUT << name << ", ";
           }
           // Find matching output sideset
           Ioss::SideSet *ofs = output_region.get_sideset(name);
@@ -507,7 +492,7 @@ namespace {
               // Find matching output sideblock
               const std::string &fbname = ifb->name();
               if (interFace.debug) {
-                OUTPUT << fbname << ", ";
+                DO_OUTPUT << fbname << ", ";
               }
               Ioss::SideBlock *ofb = ofs->get_side_block(fbname);
 
@@ -519,11 +504,11 @@ namespace {
           }
         }
         if (interFace.debug) {
-          OUTPUT << '\n';
+          DO_OUTPUT << '\n';
         }
       }
       if (interFace.debug) {
-        OUTPUT << "END STATE_MODEL... " << '\n';
+        DO_OUTPUT << "END STATE_MODEL... " << '\n';
       }
       if (mem_stats) {
         dbi->progress("END STATE_MODEL... ");
@@ -541,7 +526,7 @@ namespace {
       }
 
       if (interFace.debug) {
-        OUTPUT << "DEFINING TRANSIENT FIELDS ... " << '\n';
+        DO_OUTPUT << "DEFINING TRANSIENT FIELDS ... " << '\n';
       }
       if (mem_stats) {
         dbi->progress("DEFINING TRANSIENT FIELDS ... ");
@@ -550,8 +535,8 @@ namespace {
       if (region.property_exists("state_count") &&
           region.get_property("state_count").get_int() > 0) {
         if (!interFace.debug) {
-          OUTPUT << "\n Number of time steps on database     =" << std::setw(12)
-                 << region.get_property("state_count").get_int() << "\n\n";
+          DO_OUTPUT << "\n Number of time steps on database     =" << std::setw(12)
+                    << region.get_property("state_count").get_int() << "\n\n";
         }
 
         output_region.begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
@@ -577,7 +562,7 @@ namespace {
           for (const auto &ifs : fss) {
             const std::string &name = ifs->name();
             if (interFace.debug) {
-              OUTPUT << name << ", ";
+              DO_OUTPUT << name << ", ";
             }
 
             // Find matching output sideset
@@ -591,7 +576,7 @@ namespace {
                 // Find matching output sideblock
                 const std::string &fbname = ifb->name();
                 if (interFace.debug) {
-                  OUTPUT << fbname << ", ";
+                  DO_OUTPUT << fbname << ", ";
                 }
 
                 Ioss::SideBlock *ofb = ofs->get_side_block(fbname);
@@ -602,11 +587,11 @@ namespace {
             }
           }
           if (interFace.debug) {
-            OUTPUT << '\n';
+            DO_OUTPUT << '\n';
           }
         }
         if (interFace.debug) {
-          OUTPUT << "END STATE_DEFINE_TRANSIENT... " << '\n';
+          DO_OUTPUT << "END STATE_DEFINE_TRANSIENT... " << '\n';
         }
         if (mem_stats) {
           dbi->progress("END STATE_DEFINE_TRANSIENT... ");
@@ -615,7 +600,7 @@ namespace {
       }
 
       if (interFace.debug) {
-        OUTPUT << "TRANSFERRING TRANSIENT FIELDS ... " << '\n';
+        DO_OUTPUT << "TRANSFERRING TRANSIENT FIELDS ... " << '\n';
       }
       if (mem_stats) {
         dbi->progress("TRANSFERRING TRANSIENT FIELDS... ");
@@ -668,7 +653,7 @@ namespace {
           for (const auto &ifs : fss) {
             const std::string &name = ifs->name();
             if (interFace.debug) {
-              OUTPUT << name << ", ";
+              DO_OUTPUT << name << ", ";
             }
 
             // Find matching output sideset
@@ -682,7 +667,7 @@ namespace {
                 // Find matching output sideblock
                 const std::string &fbname = ifb->name();
                 if (interFace.debug) {
-                  OUTPUT << fbname << ", ";
+                  DO_OUTPUT << fbname << ", ";
                 }
 
                 Ioss::SideBlock *ofb = ofs->get_side_block(fbname);
@@ -697,7 +682,7 @@ namespace {
         output_region.end_state(ostep);
       }
       if (interFace.debug) {
-        OUTPUT << "END STATE_TRANSIENT... " << '\n';
+        DO_OUTPUT << "END STATE_TRANSIENT... " << '\n';
       }
       if (mem_stats) {
         dbi->progress("END STATE_TRANSIENT ... ");
@@ -720,13 +705,14 @@ namespace {
     for (const auto &inb : nbs) {
       const std::string &name = inb->name();
       if (debug) {
-        OUTPUT << name << ", ";
+        DO_OUTPUT << name << ", ";
       }
       size_t num_nodes = inb->entity_count();
       size_t degree    = inb->get_property("component_degree").get_int();
       if (!debug) {
-        OUTPUT << " Number of coordinates per node       =" << std::setw(12) << degree << "\n";
-        OUTPUT << " Number of nodes                      =" << std::setw(12) << num_nodes << "\n";
+        DO_OUTPUT << " Number of coordinates per node       =" << std::setw(12) << degree << "\n";
+        DO_OUTPUT << " Number of nodes                      =" << std::setw(12) << num_nodes
+                  << "\n";
       }
 
       auto nb = new Ioss::NodeBlock(output_region.get_database(), name, num_nodes, degree);
@@ -756,7 +742,7 @@ namespace {
       ++id;
     }
     if (debug) {
-      OUTPUT << '\n';
+      DO_OUTPUT << '\n';
     }
   }
 
@@ -768,7 +754,7 @@ namespace {
     for (const auto &entity : entities) {
       const std::string &name = entity->name();
       if (interFace.debug) {
-        OUTPUT << name << ", ";
+        DO_OUTPUT << name << ", ";
       }
 
       // Find the corresponding output entity...
@@ -781,7 +767,7 @@ namespace {
       }
     }
     if (interFace.debug) {
-      OUTPUT << '\n';
+      DO_OUTPUT << '\n';
     }
   }
 #endif
@@ -804,7 +790,7 @@ namespace {
 
     const std::string &name = entity->name();
     if (interFace->debug) {
-      OUTPUT << name << ", ";
+      DO_OUTPUT << name << ", ";
     }
 
     // Find the corresponding output entity...
@@ -816,7 +802,7 @@ namespace {
       }
     }
     if (interFace->debug) {
-      OUTPUT << '\n';
+      DO_OUTPUT << '\n';
     }
     return varg;
   }
@@ -894,7 +880,7 @@ namespace {
       for (const auto &iblock : blocks) {
         const std::string &name = iblock->name();
         if (debug) {
-          OUTPUT << name << ", ";
+          DO_OUTPUT << name << ", ";
         }
         std::string type  = iblock->get_property("topology_type").get_string();
         size_t      count = iblock->entity_count();
@@ -907,12 +893,12 @@ namespace {
         transfer_fields(iblock, block, Ioss::Field::ATTRIBUTE);
       }
       if (!debug) {
-        OUTPUT << " Number of " << std::setw(14) << (*blocks.begin())->type_string()
-               << "s            =" << std::setw(12) << blocks.size() << "\t"
-               << "Length of entity list   =" << std::setw(12) << total_entities << "\n";
+        DO_OUTPUT << " Number of " << std::setw(14) << (*blocks.begin())->type_string()
+                  << "s            =" << std::setw(12) << blocks.size() << "\t"
+                  << "Length of entity list   =" << std::setw(12) << total_entities << "\n";
       }
       else {
-        OUTPUT << '\n';
+        DO_OUTPUT << '\n';
       }
     }
   }
@@ -942,7 +928,7 @@ namespace {
     for (const auto &ss : fss) {
       const std::string &name = ss->name();
       if (debug) {
-        OUTPUT << name << ", ";
+        DO_OUTPUT << name << ", ";
       }
 
       auto        surf = new Ioss::SideSet(output_region.get_database(), name);
@@ -950,7 +936,7 @@ namespace {
       for (const auto &fb : fbs) {
         const std::string &fbname = fb->name();
         if (debug) {
-          OUTPUT << fbname << ", ";
+          DO_OUTPUT << fbname << ", ";
         }
         std::string fbtype   = fb->get_property("topology_type").get_string();
         std::string partype  = fb->get_property("parent_topology_type").get_string();
@@ -970,11 +956,11 @@ namespace {
       output_region.add(surf);
     }
     if (!debug) {
-      OUTPUT << " Number of        SideSets            =" << std::setw(12) << fss.size() << "\t"
-             << "Number of element sides =" << std::setw(12) << total_sides << "\n";
+      DO_OUTPUT << " Number of        SideSets            =" << std::setw(12) << fss.size() << "\t"
+                << "Number of element sides =" << std::setw(12) << total_sides << "\n";
     }
     else {
-      OUTPUT << '\n';
+      DO_OUTPUT << '\n';
     }
   }
 
@@ -986,7 +972,7 @@ namespace {
       for (const auto &set : sets) {
         const std::string &name = set->name();
         if (debug) {
-          OUTPUT << name << ", ";
+          DO_OUTPUT << name << ", ";
         }
         size_t count = set->entity_count();
         total_entities += count;
@@ -998,12 +984,12 @@ namespace {
       }
 
       if (!debug) {
-        OUTPUT << " Number of " << std::setw(14) << (*sets.begin())->type_string()
-               << "s            =" << std::setw(12) << sets.size() << "\t"
-               << "Length of entity list   =" << std::setw(12) << total_entities << "\n";
+        DO_OUTPUT << " Number of " << std::setw(14) << (*sets.begin())->type_string()
+                  << "s            =" << std::setw(12) << sets.size() << "\t"
+                  << "Length of entity list   =" << std::setw(12) << total_entities << "\n";
       }
       else {
-        OUTPUT << '\n';
+        DO_OUTPUT << '\n';
       }
     }
   }
@@ -1038,7 +1024,7 @@ namespace {
     for (const auto &ics : css) {
       const std::string &name = ics->name();
       if (debug) {
-        OUTPUT << name << ", ";
+        DO_OUTPUT << name << ", ";
       }
       std::string type  = ics->get_property("entity_type").get_string();
       size_t      count = ics->entity_count();
@@ -1050,7 +1036,7 @@ namespace {
       transfer_fields(ics, cs, Ioss::Field::COMMUNICATION);
     }
     if (debug) {
-      OUTPUT << '\n';
+      DO_OUTPUT << '\n';
     }
   }
 
@@ -1061,7 +1047,7 @@ namespace {
       output_region.add(frame);
     }
     if (debug) {
-      OUTPUT << '\n';
+      DO_OUTPUT << '\n';
     }
   }
 
@@ -1622,10 +1608,10 @@ namespace {
 
   void show_step(int istep, double time)
   {
-    OUTPUT.setf(std::ios::scientific);
-    OUTPUT.setf(std::ios::showpoint);
-    OUTPUT << "     Time step " << std::setw(5) << istep << " at time " << std::setprecision(5)
-           << time << '\n';
+    DO_OUTPUT.setf(std::ios::scientific);
+    DO_OUTPUT.setf(std::ios::showpoint);
+    DO_OUTPUT << "     Time step " << std::setw(5) << istep << " at time " << std::setprecision(5)
+              << time << '\n';
   }
 
   template <typename INT>

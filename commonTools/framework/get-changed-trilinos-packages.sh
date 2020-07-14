@@ -3,12 +3,14 @@
 # Usage:
 #
 #   get-changed-trilinos-packages.sh <git-commit-from> <git-commit-to> \
-#     <package-enables-cmake-out>
+#     <package-enables-cmake-out> [<package-subproject-list-out>]
 #
 # This script takes a range of git commits <git-commit-from>..<git-commit-to>
 # and then generates a CMake fragment file <package-enables-cmake-out> which
 # provides the set of enables of Trilinos packages needed to test the changed
-# files.
+# files and optionally also a <package-subproject-list-out> CMake fragment
+# file provides a 'set(CTEST_LABELS_FOR_SUBPROJECTS ...)' statment which
+# provides the list of subprojects (TriBITS packages) to display on CDash.
 #
 # For example, to generate a file for the set of enables to test changes in
 # the current version of Trilinos w.r.t. to develop branch, one would do:
@@ -36,12 +38,23 @@
 # giving the relative or absolute path.
 
 #
-# Get command-line arguments
+# A) Data that may change
+#
+
+TRILINOS_EXCLUDE_PACKAGES_FROM_PR_TESTING=(
+  TriKota
+  PyTrilinos
+  )
+
+
+#
+# B) Get command-line arguments
 #
 
 GIT_COMMIT_FROM=$1
 GIT_COMMIT_TO=$2
 CMAKE_PACKAGE_ENABLES_OUT=$3
+CTEST_LABELS_FOR_SUBPROJETS_OUT=$4
 
 if [ "$GIT_COMMIT_FROM" == "" ] ; then
   echo "ERROR: Must specify first argument <git-commit-from>!"
@@ -58,15 +71,9 @@ if [ "$CMAKE_PACKAGE_ENABLES_OUT" == "" ] ; then
   exit 1
 fi
 
-echo
-echo "***"
-echo "*** Generating set of Trilinos enables given modified packages from"
-echo "*** git commit ${GIT_COMMIT_FROM} to ${GIT_COMMIT_TO}"
-echo "***"
-echo
 
 #
-# Determine TRILINOS_DIR
+# C) Determine paths
 #
 
 if [ "$TRILINOS_DIR" == "" ] ; then
@@ -103,16 +110,38 @@ else
 fi
 echo "TRIBITS_DIR=$TRIBITS_DIR"
 
+
+#
+# D) Import functions and vars
+#
+
+ABS_FILE_PATH=`readlink -f $0` || \
+ echo "Could not follow symlink to set TRILINOS_DIR!"
+if [ "$_ABS_FILE_PATH" != "" ] ; then
+  SCRIPT_DIR=`dirname $_ABS_FILE_PATH`
+fi
+
+source "${TRILINOS_DIR}/commonTools/framework/get-changed-trilinos-packages-helpers.sh"
+
+
+############################################
+#
+# Executable script
+#
+############################################
+
+echo
+echo "***"
+echo "*** Generating set of Trilinos enables given modified packages from"
+echo "*** git commit ${GIT_COMMIT_FROM} to ${GIT_COMMIT_TO}"
+echo "***"
+echo
+
 echo
 echo "A) Generate the Trilinos Packages definition and depencencies XML file"
 echo
 
-cmake \
-  -D Trilinos_DEPS_XML_OUTPUT_FILE=TrilinosPackageDependencies.xml \
-  -P $TRIBITS_DIR/ci_support/TribitsDumpDepsXmlScript.cmake \
-  &> TribitsDumpDepsXmlScript.log
-
-echo "Wrote the file 'TrilinosPackageDependencies.xml'"
+generate_trilinos_package_dependencies_xml_file
 
 echo
 echo "B) Get the set of changed files"
@@ -149,14 +178,11 @@ echo "CHANGED_PACKAGES_FULL_LIST='$CHANGED_PACKAGES_FULL_LIST'"
 echo
 echo "D) Filter list of changed packages to get only the PT packages"
 echo
-CHANGED_PACKAGES_PT_LIST=`$TRIBITS_DIR/ci_support/filter-packages-list.py \
-  --deps-xml-file=TrilinosPackageDependencies.xml \
-  --input-packages-list=$CHANGED_PACKAGES_FULL_LIST \
-  --keep-test-test-categories=PT`
-echo "CHANGED_PACKAGES_PT_LIST='$CHANGED_PACKAGES_PT_LIST'"
+CHANGED_PACKAGES_ST_LIST=$(trilinos_filter_packages_to_test "${CHANGED_PACKAGES_FULL_LIST}")
+echo "CHANGED_PACKAGES_ST_LIST='${CHANGED_PACKAGES_ST_LIST}'"
 
 echo
-echo "E) Generate the *.cmake enables file"
+echo "E) Generate the ${CMAKE_PACKAGE_ENABLES_OUT} enables file"
 echo
 
 echo "
@@ -166,8 +192,8 @@ MACRO(PR_ENABLE_BOOL  VAR_NAME  VAR_VAL)
 ENDMACRO()
 " >  $CMAKE_PACKAGE_ENABLES_OUT
 
-if [ "$CHANGED_PACKAGES_PT_LIST" != "" ] ; then
-  echo "$CHANGED_PACKAGES_PT_LIST" | sed -n 1'p' | tr ',' '\n' | while read PKG_NAME ; do
+if [ "$CHANGED_PACKAGES_ST_LIST" != "" ] ; then
+  echo "$CHANGED_PACKAGES_ST_LIST" | sed -n 1'p' | tr ',' '\n' | while read PKG_NAME ; do
     #echo $PKG_NAME
     echo "PR_ENABLE_BOOL(Trilinos_ENABLE_${PKG_NAME} ON)" >> $CMAKE_PACKAGE_ENABLES_OUT
   done
@@ -176,3 +202,25 @@ else
 fi
 
 echo "Wrote file '$CMAKE_PACKAGE_ENABLES_OUT'"
+
+echo
+echo "F) Generate the ${CTEST_LABELS_FOR_SUBPROJETS_OUT} file"
+echo
+
+printf "set(CTEST_LABELS_FOR_SUBPROJECTS" >  $CTEST_LABELS_FOR_SUBPROJETS_OUT
+
+if [[ "$CHANGED_PACKAGES_ST_LIST" != "" ]] ; then
+
+  ALL_PACKAGES=$(trilinos_get_all_toplevel_packages)
+  PR_PACKAGES=$(trilinos_filter_packages_to_test "${ALL_PACKAGES}")
+
+  echo "$PR_PACKAGES" | sed -n 1'p' | tr ',' '\n' | while read PKG_NAME ; do
+    #echo $PKG_NAME
+    printf " ${PKG_NAME}" >> $CTEST_LABELS_FOR_SUBPROJETS_OUT
+  done
+
+fi
+
+echo ")" >> $CTEST_LABELS_FOR_SUBPROJETS_OUT
+
+echo "Wrote file '$CTEST_LABELS_FOR_SUBPROJETS_OUT'"

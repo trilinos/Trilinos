@@ -11,8 +11,8 @@ module load sems-python/2.7.9
 module load sems-git/2.10.1
 module load sems-boost/1.63.0/base
 module load sems-zlib/1.2.8/base
-module load sems-hdf5/1.8.12/base
-module load sems-netcdf/4.4.1/exo
+module load sems-hdf5/1.10.6/base
+module load sems-netcdf/4.7.3/base
 module load sems-metis/5.1.0/base
 # module load sems-scotch/6.0.3/nopthread_64bit_parallel
 module load sems-superlu/4.3/base
@@ -21,5 +21,3 @@ module load sems-ninja_fortran/1.8.2
 
 # add the OpenMP environment variable we need
 export OMP_NUM_THREADS=2
-
-

@@ -80,7 +80,6 @@ namespace { // (anonymous)
     using crs_matrix_type = Tpetra::CrsMatrix<Scalar, LO, GO, Node>;
     using import_type = Tpetra::Import<LO, GO, Node>;
     using map_type = Tpetra::Map<LO, GO, Node>;
-    using STS = Teuchos::ScalarTraits<Scalar>;
 
     RCP<const Comm<int> > comm = getDefaultComm();
     const int myRank = comm->getRank();
@@ -225,7 +224,6 @@ namespace { // (anonymous)
     using crs_matrix_type = Tpetra::CrsMatrix<Scalar, LO, GO, Node>;
     using import_type = Tpetra::Import<LO, GO, Node>;
     using map_type = Tpetra::Map<LO, GO, Node>;
-    using STS = Teuchos::ScalarTraits<Scalar>;
     int lclSuccess = 1;
     int gblSuccess = 0;
 

@@ -287,8 +287,10 @@ namespace Tpetra {
       ///
       /// This array has map_->getComm ()->getSize ()+1 entries.  Entry
       /// i contains the minimum global identifier (GID) of process i in
-      /// map_'s communicator.  The last entry contains the maximum GID
-      /// in the directory.
+      /// map_'s communicator.  Note that on processors with no Map entries,
+      /// this array will store std::numeric_limits<GlobalOrdinal>::max().
+      /// Thus, this array is not necessarily monotonically non-decreasing.
+      /// The last entry contains the maximum GID in the directory.
       ///
       /// The directory uses this array to map from GID to process ID,
       /// when the GIDs are distributed contiguously in increasing order

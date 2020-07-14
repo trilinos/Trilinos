@@ -59,16 +59,17 @@
 
 namespace Stratimikos {
 
+    using namespace std;
     using namespace Teuchos;
     using namespace Thyra;
 
     template <typename LO = int,typename GO = int,typename NO = KokkosClassic::DefaultNode::DefaultNodeType>
     void enableFROSch (DefaultLinearSolverBuilder& builder,
-                       const std::string& stratName = "FROSch")
+                       const string& stratName = "FROSch")
     {
         const RCP<const ParameterList> precValidParams = sublist(builder.getValidParameters(), "Preconditioner Types");
 
-        TEUCHOS_TEST_FOR_EXCEPTION(precValidParams->isParameter(stratName), std::logic_error,
+        TEUCHOS_TEST_FOR_EXCEPTION(precValidParams->isParameter(stratName), logic_error,
                                    "Stratimikos::enableFROSch cannot add \"" + stratName +"\" because it is already included in builder!");
 
         using Base  = PreconditionerFactoryBase<double>;

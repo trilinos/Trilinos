@@ -7,7 +7,7 @@
 // @HEADER
 
 #ifndef Tempus_StepperForwardEulerModifierXBase_hpp
-#define Tempus_StepperFirwardEulerModifierXBase_hpp
+#define Tempus_StepperForwardEulerModifierXBase_hpp
 
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
@@ -31,18 +31,18 @@ namespace Tempus {
  *  Below is the ForwardEuler algorithm with the locations of the ModifierX calls
  *  italicized.
  *
- *  \f{algorithm}{                                                        
- *  \renewcommand{\thealgorithm}{}                                          
+ *  \f{algorithm}{
+ *  \renewcommand{\thealgorithm}{}
  *  \caption{Forward Euler with the locations of the application actions indicated}
- *  \begin{algorithmic}[1]                                                    
- *    \State Start with $x_n$, $\Delta t_n$                                                             
- *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}                             
- *    \State Form $f(x_{n},t_{n})$                                                                      
- *    \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}                  
- *    \State Form $x_n \leftarrow x_{n} + \Delta t_n f(x_{n},t_n)$                                      
- *    \State {\it appAction.execute(solutionHistory, stepper, END\_STEP)}    
- *  \end{algorithmic}                                                        
- *  \f}                                                                           
+ *  \begin{algorithmic}[1]
+ *    \State Start with $x_n$, $\Delta t_n$
+ *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
+ *    \State Form $f(x_{n},t_{n})$
+ *    \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}
+ *    \State Form $x_n \leftarrow x_{n} + \Delta t_n f(x_{n},t_n)$
+ *    \State {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
+ *  \end{algorithmic}
+ *  \f}
  */
 
 template<class Scalar>

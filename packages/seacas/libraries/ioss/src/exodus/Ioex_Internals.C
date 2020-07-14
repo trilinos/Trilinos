@@ -1,41 +1,19 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//
-//     * Neither the name of NTESS nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+// See packages/seacas/LICENSE for details
 
-#include <Ioss_Utils.h>            // for IOSS_WARNING
-#include <cassert>                 // for assert
 #include <exodus/Ioex_Internals.h> // for Internals, ElemBlock, etc
+#include <exodus/Ioex_Utils.h>
+
+#include "exodusII.h" // for ex_err, ex_opts, etc
+
 extern "C" {
-#include <exodusII_int.h> // for EX_FATAL, EX_NOERR, etc
+#include <exodusII_int.h>
 }
+
+#include <cassert> // for assert
 #include <cstddef> // for size_t
 #include <cstdio>  // for nullptr
 #include <cstdlib> // for exit, EXIT_FAILURE
@@ -46,6 +24,8 @@ extern "C" {
 #include <string>   // for string, operator==, etc
 #include <vector>   // for vector
 
+#include "Ioss_Assembly.h"
+#include "Ioss_Blob.h"
 #include "Ioss_EdgeBlock.h"
 #include "Ioss_EdgeSet.h"
 #include "Ioss_ElementBlock.h"
@@ -59,8 +39,8 @@ extern "C" {
 #include "Ioss_Region.h"
 #include "Ioss_SideBlock.h"
 #include "Ioss_SideSet.h"
+#include "Ioss_Utils.h"
 #include "Ioss_VariableType.h"
-#include "exodusII.h" // for ex_err, ex_opts, etc
 
 using namespace Ioex;
 
@@ -119,6 +99,70 @@ Redefine::~Redefine()
   }
   catch (...) {
   }
+}
+
+Assembly::Assembly(const Ioss::Assembly &other)
+{
+  if (other.property_exists("db_name")) {
+    name = other.get_property("db_name").get_string();
+  }
+  else {
+    name = other.name();
+  }
+
+  if (other.property_exists("id")) {
+    id = other.get_property("id").get_int();
+  }
+  else {
+    id = 1;
+  }
+  entityCount    = other.member_count();
+  attributeCount = other.get_property("attribute_count").get_int();
+  type           = Ioex::map_exodus_type(other.get_member_type());
+
+  const auto &members = other.get_members();
+  for (const auto &member : members) {
+    assert(member->property_exists("id"));
+    memberIdList.push_back(member->get_property("id").get_int());
+  }
+}
+
+Assembly &Assembly::operator=(const Assembly &other)
+{
+  name           = other.name;
+  id             = other.id;
+  entityCount    = other.entityCount;
+  attributeCount = other.attributeCount;
+  type           = other.type;
+  return *this;
+}
+
+Blob::Blob(const Ioss::Blob &other)
+{
+  if (other.property_exists("db_name")) {
+    name = other.get_property("db_name").get_string();
+  }
+  else {
+    name = other.name();
+  }
+
+  if (other.property_exists("id")) {
+    id = other.get_property("id").get_int();
+  }
+  else {
+    id = 1;
+  }
+  entityCount    = other.entity_count();
+  attributeCount = other.get_property("attribute_count").get_int();
+}
+
+Blob &Blob::operator=(const Blob &other)
+{
+  name           = other.name;
+  id             = other.id;
+  entityCount    = other.entityCount;
+  attributeCount = other.attributeCount;
+  return *this;
 }
 
 NodeBlock::NodeBlock(const Ioss::NodeBlock &other)
@@ -770,9 +814,29 @@ int Internals::initialize_state_file(Mesh &mesh, const ex_var_params &var_params
 void Mesh::populate(Ioss::Region *region)
 {
   {
-    const auto &    node_blocks = region->get_node_blocks();
-    Ioex::NodeBlock N(*node_blocks[0]);
-    nodeblocks.push_back(N);
+    const auto &node_blocks = region->get_node_blocks();
+    if (!node_blocks.empty()) {
+      Ioex::NodeBlock N(*node_blocks[0]);
+      nodeblocks.push_back(N);
+    }
+  }
+
+  // Assemblies --
+  {
+    const auto &assem = region->get_assemblies();
+    for (auto &assembly : assem) {
+      Ioex::Assembly T(*(assembly));
+      assemblies.push_back(T);
+    }
+  }
+
+  // Blobs --
+  {
+    const auto &blbs = region->get_blobs();
+    for (auto &blob : blbs) {
+      Ioex::Blob T(*(blob));
+      blobs.push_back(T);
+    }
   }
 
   // Edge Blocks --
@@ -870,7 +934,6 @@ int Internals::write_meta_data(Mesh &mesh)
     maximumNameLength = get_max_name_length(mesh.sidesets, maximumNameLength);
 
     Redefine the_database(exodusFilePtr);
-
     // Set the database to NOFILL mode.  Only writes values we want written...
     int old_fill = 0;
 
@@ -913,6 +976,14 @@ int Internals::write_meta_data(Mesh &mesh)
     if ((ierr = put_metadata(mesh.sidesets)) != EX_NOERR) {
       EX_FUNC_LEAVE(ierr);
     }
+
+    if ((ierr = put_metadata(mesh.blobs)) != EX_NOERR) {
+      EX_FUNC_LEAVE(ierr);
+    }
+
+    if ((ierr = put_metadata(mesh.assemblies)) != EX_NOERR) {
+      EX_FUNC_LEAVE(ierr);
+    }
   }
 
   // NON-Define mode output...
@@ -952,6 +1023,14 @@ int Internals::write_meta_data(Mesh &mesh)
     EX_FUNC_LEAVE(ierr);
   }
 
+  if ((ierr = put_non_define_data(mesh.blobs)) != EX_NOERR) {
+    EX_FUNC_LEAVE(ierr);
+  }
+
+  if ((ierr = put_non_define_data(mesh.assemblies)) != EX_NOERR) {
+    EX_FUNC_LEAVE(ierr);
+  }
+
   // For now, put entity names using the ExodusII api...
   output_names(mesh.edgeblocks, exodusFilePtr, EX_EDGE_BLOCK);
   output_names(mesh.faceblocks, exodusFilePtr, EX_FACE_BLOCK);
@@ -965,6 +1044,29 @@ int Internals::write_meta_data(Mesh &mesh)
   EX_FUNC_LEAVE(EX_NOERR);
 }
 
+void Internals::copy_database(int in_file, int out_file, bool transient_also)
+{
+  ex_copy(in_file, out_file);
+  if (transient_also) {
+    ex_copy_transient(in_file, out_file);
+  }
+}
+
+void Internals::update_assembly_data(int exoid, std::vector<Assembly> &assemblies, int stage)
+{
+  Ioss::ParallelUtils pm(MPI_COMM_WORLD);
+  Internals           internal{exoid, 0, pm};
+
+  if (stage == 0 || stage == 1) {
+    Redefine the_database(exoid);
+    internal.put_metadata(assemblies);
+  }
+
+  if (stage == 0 || stage == 2) {
+    internal.put_non_define_data(assemblies);
+  }
+}
+
 void Internals::get_global_counts(Mesh &mesh)
 {
   PAR_UNUSED(mesh);
@@ -972,7 +1074,9 @@ void Internals::get_global_counts(Mesh &mesh)
   std::vector<int64_t> counts;
   std::vector<int64_t> global_counts;
 
-  counts.push_back(mesh.nodeblocks[0].localOwnedCount);
+  for (auto &nodeblock : mesh.nodeblocks) {
+    counts.push_back(nodeblock.localOwnedCount);
+  }
   for (auto &edgeblock : mesh.edgeblocks) {
     counts.push_back(edgeblock.entityCount);
   }
@@ -1002,6 +1106,9 @@ void Internals::get_global_counts(Mesh &mesh)
     counts.push_back(sideset.entityCount);
     counts.push_back(sideset.dfCount);
   }
+  for (auto &blob : mesh.blobs) {
+    counts.push_back(blob.entityCount);
+  }
 
   // Now gather this information on each processor so
   // they can determine the offsets and totals...
@@ -1029,10 +1136,11 @@ void Internals::get_global_counts(Mesh &mesh)
     }
   }
 
-  size_t j                       = 0;
-  mesh.nodeblocks[0].procOffset  = offsets[j];
-  mesh.nodeblocks[0].entityCount = global_counts[j++];
-
+  size_t j = 0;
+  for (auto &nodeblock : mesh.nodeblocks) {
+    nodeblock.procOffset  = offsets[j];
+    nodeblock.entityCount = global_counts[j++];
+  }
   for (auto &edgeblock : mesh.edgeblocks) {
     edgeblock.procOffset  = offsets[j];
     edgeblock.entityCount = global_counts[j++];
@@ -1074,6 +1182,10 @@ void Internals::get_global_counts(Mesh &mesh)
     sideset.entityCount  = global_counts[j++];
     sideset.dfProcOffset = offsets[j];
     sideset.dfCount      = global_counts[j++];
+  }
+  for (auto &blob : mesh.blobs) {
+    blob.procOffset  = offsets[j];
+    blob.entityCount = global_counts[j++];
   }
 #endif
 }
@@ -1216,7 +1328,7 @@ int Internals::put_metadata(const Mesh &mesh, const CommunicationMetaData &comm)
 
   ex__compress_variable(exodusFilePtr, varid, 2);
 
-  if (mesh.nodeblocks[0].entityCount > 0) {
+  if (!mesh.nodeblocks.empty() && mesh.nodeblocks[0].entityCount > 0) {
     status = nc_def_dim(exodusFilePtr, DIM_NUM_NODES, mesh.nodeblocks[0].entityCount, &numnoddim);
     if (status != NC_NOERR) {
       ex_opts(EX_VERBOSE);
@@ -1246,7 +1358,7 @@ int Internals::put_metadata(const Mesh &mesh, const CommunicationMetaData &comm)
     ex__compress_variable(exodusFilePtr, varid, 1);
   }
 
-  if (mesh.nodeblocks[0].attributeCount > 0) {
+  if (!mesh.nodeblocks.empty() && mesh.nodeblocks[0].attributeCount > 0) {
     int numattrdim;
     status = nc_def_dim(exodusFilePtr, DIM_NUM_ATT_IN_NBLK, mesh.nodeblocks[0].attributeCount,
                         &numattrdim);
@@ -1284,6 +1396,7 @@ int Internals::put_metadata(const Mesh &mesh, const CommunicationMetaData &comm)
       ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
       return (EX_FATAL);
     }
+    ex__set_compact_storage(exodusFilePtr, varid);
   }
 
   size_t elem_count = 0;
@@ -1443,9 +1556,11 @@ int Internals::put_metadata(const Mesh &mesh, const CommunicationMetaData &comm)
   }
 
   // ========================================================================
-  if (define_coordinate_vars(exodusFilePtr, mesh.nodeblocks[0].entityCount, numnoddim,
-                             mesh.dimensionality, numdimdim, namestrdim) != EX_NOERR) {
-    return (EX_FATAL);
+  if (!mesh.nodeblocks.empty()) {
+    if (define_coordinate_vars(exodusFilePtr, mesh.nodeblocks[0].entityCount, numnoddim,
+                               mesh.dimensionality, numdimdim, namestrdim) != EX_NOERR) {
+      return (EX_FATAL);
+    }
   }
 
   // Define dimension for the number of processors
@@ -1492,6 +1607,7 @@ int Internals::put_metadata(const Mesh &mesh, const CommunicationMetaData &comm)
         return (EX_FATAL);
       }
     }
+    ex__set_compact_storage(exodusFilePtr, varid);
 
     // Output the file version
     int ierr = ex__put_nemesis_version(exodusFilePtr);
@@ -1693,6 +1809,133 @@ int Internals::put_metadata(const Mesh &mesh, const CommunicationMetaData &comm)
       if (status != EX_NOERR) {
         return (EX_FATAL);
       }
+    }
+  }
+  return (EX_NOERR);
+}
+
+int Internals::put_metadata(const std::vector<Assembly> &assemblies)
+{
+  if (assemblies.empty()) {
+    return EX_NOERR;
+  }
+  int dims[1];
+
+  ex__check_valid_file_id(exodusFilePtr, __func__);
+
+  int int_type = NC_INT;
+  if (ex_int64_status(exodusFilePtr) & EX_IDS_INT64_DB) {
+    int_type = NC_INT64;
+  }
+
+  for (size_t i = 0; i < assemblies.size(); i++) {
+    char *numentryptr = DIM_NUM_ENTITY_ASSEMBLY(assemblies[i].id);
+
+    /* define dimensions and variables */
+    int dimid;
+    nc_def_dim(exodusFilePtr, numentryptr, assemblies[i].entityCount, &dimid);
+
+    /* create variable array in which to store the entry lists */
+    int entlst_id;
+    dims[0] = dimid;
+    nc_def_var(exodusFilePtr, VAR_ENTITY_ASSEMBLY(assemblies[i].id), int_type, 1, dims, &entlst_id);
+    ex__compress_variable(exodusFilePtr, entlst_id, 1);
+
+    if (ex_int64_status(exodusFilePtr) & EX_IDS_INT64_DB) {
+      long long tmp = assemblies[i].id;
+      nc_put_att_longlong(exodusFilePtr, entlst_id, EX_ATTRIBUTE_ID, NC_INT64, 1, &tmp);
+    }
+    else {
+      int id = assemblies[i].id;
+      nc_put_att_int(exodusFilePtr, entlst_id, EX_ATTRIBUTE_ID, NC_INT, 1, &id);
+    }
+
+    int type = assemblies[i].type;
+    nc_put_att_int(exodusFilePtr, entlst_id, EX_ATTRIBUTE_TYPE, NC_INT, 1, &type);
+
+    nc_put_att_text(exodusFilePtr, entlst_id, EX_ATTRIBUTE_NAME, assemblies[i].name.size() + 1,
+                    assemblies[i].name.c_str());
+
+    {
+      char *contains = ex_name_of_object(assemblies[i].type);
+      nc_put_att_text(exodusFilePtr, entlst_id, EX_ATTRIBUTE_TYPENAME, strlen(contains) + 1,
+                      contains);
+    }
+
+    /* Increment assembly count */
+    struct ex__file_item *file = ex__find_file_item(exodusFilePtr);
+    if (file) {
+      file->assembly_count++;
+    }
+  }
+  return EX_NOERR;
+}
+
+int Internals::put_metadata(const std::vector<Blob> &blobs)
+{
+  if (blobs.empty()) {
+    return EX_NOERR;
+  }
+
+  std::string errmsg;
+  int         status;
+
+  int n1dim;
+  if ((status = nc_def_dim(exodusFilePtr, DIM_N1, 1L, &n1dim)) != NC_NOERR) {
+    ex_opts(EX_VERBOSE);
+    errmsg =
+        fmt::format("Error: failed to define number \"1\" dimension in file id {}", exodusFilePtr);
+    ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
+    return (EX_FATAL);
+  }
+
+  for (const auto &blob : blobs) {
+    char *numentryptr = DIM_NUM_VALUES_BLOB(blob.id);
+
+    // define dimensions and variables
+    int dimid;
+    if ((status = nc_def_dim(exodusFilePtr, numentryptr, blob.entityCount, &dimid)) != NC_NOERR) {
+      ex_opts(EX_VERBOSE);
+      errmsg = fmt::format("Error: failed to define number of entries in blob {} in file id {}",
+                           blob.id, exodusFilePtr);
+      ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
+      return (EX_FATAL);
+    }
+
+    // create a variable just as a way to have a blob and its attributes; values not used for
+    // anything
+    int dims[] = {n1dim};
+    int entlst;
+    if ((status = nc_def_var(exodusFilePtr, VAR_ENTITY_BLOB(blob.id), NC_INT, 1, dims, &entlst)) !=
+        NC_NOERR) {
+      errmsg = fmt::format("Error: failed to create entity for blob {} in file id {}", blob.id,
+                           exodusFilePtr);
+      ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
+      return (EX_FATAL);
+    }
+    ex__compress_variable(exodusFilePtr, entlst, 1);
+
+    if (ex_int64_status(exodusFilePtr) & EX_IDS_INT64_DB) {
+      long long tmp = blob.id;
+      status = nc_put_att_longlong(exodusFilePtr, entlst, EX_ATTRIBUTE_ID, NC_INT64, 1, &tmp);
+    }
+    else {
+      int id = blob.id;
+      status = nc_put_att_int(exodusFilePtr, entlst, EX_ATTRIBUTE_ID, NC_INT, 1, &id);
+    }
+    if (status != NC_NOERR) {
+      errmsg =
+          fmt::format("Error: failed to store blob id {} in file id {}", blob.id, exodusFilePtr);
+      ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
+      return (EX_FATAL);
+    }
+
+    if ((status = nc_put_att_text(exodusFilePtr, entlst, EX_ATTRIBUTE_NAME, blob.name.length() + 1,
+                                  blob.name.c_str())) != NC_NOERR) {
+      errmsg = fmt::format("Error: failed to store blob name {} in file id {}", blob.name,
+                           exodusFilePtr);
+      ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
+      return (EX_FATAL);
     }
   }
   return (EX_NOERR);
@@ -1929,6 +2172,7 @@ int Internals::put_metadata(const std::vector<ElemBlock> &blocks, bool count_onl
         ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
         return (EX_FATAL);
       }
+      ex__set_compact_storage(exodusFilePtr, varid);
     }
   }
   return (EX_NOERR);
@@ -2061,6 +2305,7 @@ int Internals::put_metadata(const std::vector<FaceBlock> &blocks, bool count_onl
         ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
         return (EX_FATAL);
       }
+      ex__set_compact_storage(exodusFilePtr, varid);
     }
 
     // face connectivity array
@@ -2219,6 +2464,7 @@ int Internals::put_metadata(const std::vector<EdgeBlock> &blocks, bool count_onl
         ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
         return (EX_FATAL);
       }
+      ex__set_compact_storage(exodusFilePtr, varid);
     }
 
     // edge connectivity array
@@ -2456,6 +2702,52 @@ int Internals::put_non_define_data(const CommunicationMetaData &comm)
     }
   }
   return (EX_NOERR);
+}
+
+int Internals::put_non_define_data(const std::vector<Blob> &blobs)
+{
+  int status;
+  int entlst_id;
+
+  for (const auto &blob : blobs) {
+    if ((status = nc_inq_varid(exodusFilePtr, VAR_ENTITY_BLOB(blob.id), &entlst_id)) != NC_NOERR) {
+      std::string errmsg =
+          fmt::format("Error: failed to locate entity list array for blob {} in file id {}",
+                      blob.id, exodusFilePtr);
+      ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
+      return (EX_FATAL);
+    }
+
+    long dummy = 0;
+    if ((status = nc_put_var_long(exodusFilePtr, entlst_id, &dummy)) != EX_NOERR) {
+      std::string errmsg = fmt::format(
+          "Error: failed to output dummy value for blob {} in file id {}", blob.id, exodusFilePtr);
+      ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
+      return (EX_FATAL);
+    }
+  }
+  return EX_NOERR;
+}
+
+int Internals::put_non_define_data(const std::vector<Assembly> &assemblies)
+{
+  for (const auto &assembly : assemblies) {
+    int status = EX_NOERR;
+    if (!assembly.memberIdList.empty()) {
+      int entlst_id = 0;
+      nc_inq_varid(exodusFilePtr, VAR_ENTITY_ASSEMBLY(assembly.id), &entlst_id);
+      if ((status = nc_put_var_longlong(exodusFilePtr, entlst_id,
+                                        (long long int *)assembly.memberIdList.data())) !=
+          EX_NOERR) {
+        std::string errmsg =
+            fmt::format("Error: failed to output entity list for assembly {} in file {}",
+                        assembly.id, exodusFilePtr);
+        ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
+        return EX_FATAL;
+      }
+    }
+  }
+  return EX_NOERR;
 }
 
 int Internals::put_non_define_data(const std::vector<ElemBlock> &blocks)
@@ -2794,6 +3086,7 @@ int Internals::put_metadata(const std::vector<NodeSet> &nodesets, bool count_onl
         ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
         return (EX_FATAL);
       }
+      ex__set_compact_storage(exodusFilePtr, varid);
     }
   }
   return (EX_NOERR);
@@ -2985,6 +3278,7 @@ int Internals::put_metadata(const std::vector<EdgeSet> &edgesets, bool count_onl
         ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
         return (EX_FATAL);
       }
+      ex__set_compact_storage(exodusFilePtr, varid);
     }
   }
   return (EX_NOERR);
@@ -3175,6 +3469,7 @@ int Internals::put_metadata(const std::vector<FaceSet> &facesets, bool count_onl
         ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
         return (EX_FATAL);
       }
+      ex__set_compact_storage(exodusFilePtr, varid);
     }
   }
   return (EX_NOERR);
@@ -3308,7 +3603,7 @@ int Internals::put_metadata(const std::vector<ElemSet> &elemsets, bool count_onl
     }
     if (elemsets[i].attributeCount > 0) {
       int numattrdim;
-      status = nc_def_dim(exodusFilePtr, DIM_NUM_ATT_IN_NS(cur_num_elem_sets + 1),
+      status = nc_def_dim(exodusFilePtr, DIM_NUM_ATT_IN_ES(cur_num_elem_sets + 1),
                           elemsets[i].attributeCount, &numattrdim);
       if (status != NC_NOERR) {
         ex_opts(EX_VERBOSE);
@@ -3321,7 +3616,7 @@ int Internals::put_metadata(const std::vector<ElemSet> &elemsets, bool count_onl
 
       dims[0] = dimid;
       dims[1] = numattrdim;
-      status  = nc_def_var(exodusFilePtr, VAR_NSATTRIB(cur_num_elem_sets + 1),
+      status  = nc_def_var(exodusFilePtr, VAR_ESATTRIB(cur_num_elem_sets + 1),
                           nc_flt_code(exodusFilePtr), 2, dims, &varid);
       if (status != NC_NOERR) {
         ex_opts(EX_VERBOSE);
@@ -3336,7 +3631,7 @@ int Internals::put_metadata(const std::vector<ElemSet> &elemsets, bool count_onl
       dims[0] = numattrdim;
       dims[1] = namestrdim;
 
-      status = nc_def_var(exodusFilePtr, VAR_NAME_NSATTRIB(cur_num_elem_sets + 1), NC_CHAR, 2, dims,
+      status = nc_def_var(exodusFilePtr, VAR_NAME_ESATTRIB(cur_num_elem_sets + 1), NC_CHAR, 2, dims,
                           &varid);
       if (status != NC_NOERR) {
         ex_opts(EX_VERBOSE);
@@ -3346,6 +3641,7 @@ int Internals::put_metadata(const std::vector<ElemSet> &elemsets, bool count_onl
         ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
         return (EX_FATAL);
       }
+      ex__set_compact_storage(exodusFilePtr, varid);
     }
   }
   return (EX_NOERR);
@@ -3758,6 +4054,7 @@ namespace {
           ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
           return (EX_FATAL);
         }
+        ex__set_compact_storage(exodusFilePtr, varid);
         ex__compress_variable(exodusFilePtr, varid, 1);
         i++;
       }
@@ -3908,6 +4205,7 @@ namespace {
       ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
       return (EX_FATAL);
     }
+    ex__set_compact_storage(exodusFilePtr, varid);
     return (EX_NOERR);
   }
 
@@ -3948,6 +4246,7 @@ namespace {
       ex_err_fn(exoid, __func__, errmsg.c_str(), status);
       return (EX_FATAL);
     }
+    ex__set_compact_storage(exoid, varid);
 
     // id array:
     int ids_type = get_type(exoid, EX_IDS_INT64_DB);
@@ -3958,6 +4257,7 @@ namespace {
       ex_err_fn(exoid, __func__, errmsg.c_str(), status);
       return (EX_FATAL);
     }
+    ex__set_compact_storage(exoid, varid);
 
     // store property name as attribute of property array variable
     status = nc_put_att_text(exoid, varid, ATT_PROP_NAME, 3, "ID");
@@ -3968,6 +4268,7 @@ namespace {
       ex_err_fn(exoid, __func__, errmsg.c_str(), status);
       return (EX_FATAL);
     }
+    ex__set_compact_storage(exoid, varid);
 
     if (name_var != nullptr) {
       dim[0] = dimid;
@@ -3979,6 +4280,7 @@ namespace {
         ex_err_fn(exoid, __func__, errmsg.c_str(), status);
         return (EX_FATAL);
       }
+      ex__set_compact_storage(exoid, varid);
     }
     return (EX_NOERR);
   }

@@ -332,6 +332,7 @@ main (int argc, char *argv[])
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_implicit_cast;
+  using Teuchos::ParameterList;
 
   Teuchos::GlobalMPISession mpisess(&argc,&argv,&std::cout);
 
@@ -505,6 +506,35 @@ main (int argc, char *argv[])
     TEUCHOS_TEST_FOR_EXCEPTION(OM.is_null(), std::logic_error,
         "The OrthoManager factory returned null, "
         "for ortho=\"" << ortho << "\".");
+    debugOut << "done." << endl;
+
+    // Test the parameter get and set functions
+    debugOut << "Testing get and set paramenter functions..."
+      << std::flush;
+    RCP<const ParameterList> validOrthoParams = OM->getValidParameters();
+    TEUCHOS_TEST_FOR_EXCEPTION(validOrthoParams.is_null(), std::logic_error,
+        "The OrthoManager factory returned null "
+        "for getValidParameters.");
+    RCP<ParameterList> orthoParams= rcp(new ParameterList(*validOrthoParams));
+    
+    // Try changing a parameter:
+    bool isNumPassesSet = false;
+    int newNumPasses = 7; 
+    int defaultNumPasses;
+
+    if( orthoParams->isParameter("maxNumOrthogPasses") ) {
+      defaultNumPasses = validOrthoParams->get<int>("maxNumOrthogPasses");
+      orthoParams->set("maxNumOrthogPasses", newNumPasses);
+      isNumPassesSet = true;
+    }
+
+    OM->setParameterList(orthoParams);
+ 
+    // Change back to default:
+    if(isNumPassesSet){
+      orthoParams->set("maxNumOrthogPasses", defaultNumPasses);
+      OM->setParameterList(orthoParams);
+    }
     debugOut << "done." << endl;
 
     // Whether the specific OrthoManager subclass promises to compute

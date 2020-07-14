@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 2.0
-//              Copyright (2014) Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -47,8 +48,7 @@
 #define KOKKOS_IMPL_LOCKFREEDEQUE_HPP
 
 #include <Kokkos_Macros.hpp>
-#ifdef KOKKOS_ENABLE_TASKDAG  // Note: implies CUDA_VERSION >= 8000 if using
-                              // CUDA
+#ifdef KOKKOS_ENABLE_TASKDAG
 
 #include <Kokkos_Core_fwd.hpp>
 
@@ -190,11 +190,21 @@ struct ChaseLevDeque {
       return_value = *static_cast<T*>(a[b]);  // relaxed load
       if (t == b) {
         /* single last element in the queue. */
-        if (not Impl::atomic_compare_exchange_strong(
+#ifdef _WIN32
+        Kokkos::memory_fence();
+        bool const success =
+            Kokkos::atomic_compare_exchange_strong(&m_top, t, t + 1);
+        Kokkos::memory_fence();
+        if (!success) {
+          return_value = nullptr;
+        }
+#else
+        if (!Impl::atomic_compare_exchange_strong(
                 &m_top, t, t + 1, memory_order_seq_cst, memory_order_relaxed)) {
           /* failed race, someone else stole it */
           return_value = nullptr;
         }
+#endif
         m_bottom = b + 1;  // memory order relaxed
       }
     } else {
@@ -240,10 +250,20 @@ struct ChaseLevDeque {
       Kokkos::load_fence();  // TODO @tasking @memory_order DSH memory order
                              // instead of fence
       return_value = *static_cast<T*>(a[t]);  // relaxed
-      if (not Impl::atomic_compare_exchange_strong(
+#ifdef _WIN32
+      Kokkos::memory_fence();
+      bool const success =
+          Kokkos::atomic_compare_exchange_strong(&m_top, t, t + 1);
+      Kokkos::memory_fence();
+      if (!success) {
+        return_value = nullptr;
+      }
+#else
+      if (!Impl::atomic_compare_exchange_strong(
               &m_top, t, t + 1, memory_order_seq_cst, memory_order_relaxed)) {
         return_value = nullptr;
       }
+#endif
     }
     return return_value;
   }

@@ -32,6 +32,10 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+#include <stk_util/stk_config.h>
+
+#ifdef STK_HAVE_BOOST
+
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
 #include <stddef.h>                     // for size_t
 #include <sys/types.h>                  // for int64_t
@@ -256,5 +260,5 @@ namespace
   }
 }
 
-// type not supported...
-// iterator access valid
+#endif //STK_HAVE_BOOST
+

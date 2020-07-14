@@ -14,7 +14,9 @@
 #include "Tempus_RKButcherTableau.hpp"
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluatorPairIMEX_Basic.hpp"
-#include "Tempus_StepperRKObserverComposite.hpp"
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+  #include "Tempus_StepperRKObserverComposite.hpp"
+#endif
 
 
 namespace Tempus {
@@ -149,23 +151,48 @@ namespace Tempus {
  *  <b> IMEX-RK Algorithm </b>
  *
  *  The single-timestep algorithm for IMEX-RK is
- *   - \f$X_1 \leftarrow x_{n-1}\f$
- *   - for \f$i = 1 \ldots s\f$ do
- *     - \f$\tilde{X} \leftarrow x_{n-1} - \Delta t\,\sum_{j=1}^{i-1} \left(
- *            \hat{a}_{ij}\, f(X_j,\hat{t}_j) + a_{ij}\, g(X_j,t_j) \right) \f$
- *     - if \f$a_{ii} = 0\f$
- *       - \f$X_i \leftarrow \tilde{X}\f$
- *       - \f$g(X_i,t_i) \leftarrow M(X_i,      t_i)^{-1}\, G(X_i,      t_i)\f$
- *     - else
- *       - Solve \f$\mathcal{G}\left(\tilde{\dot{X}}
- *            = \frac{X_i-\tilde{X}}{a_{ii} \Delta t},X_i,t_i\right) = 0\f$
- *           for \f$X_i\f$
- *       - \f$g(X_i,t_i) \leftarrow - \tilde{\dot{X}}\f$
- *     - \f$f(X_i,\hat{t}_i) \leftarrow M(X_i,\hat{t}_i)^{-1}\, F(X_i,\hat{t}_i)\f$
- *     - \f$\dot{X}_i(X_i,t_i) \leftarrow - g(X_i,t_i) - f(X_i,t_i)\f$ [Optionally]
- *   - end for
- *   - \f$x_n \leftarrow x_{n-1} - \Delta t\,\sum_{i=1}^{s}\hat{b}_i\,f(X_i,\hat{t}_i)
- *                               - \Delta t\,\sum_{i=1}^{s}      b_i\,g(X_i,t_i)\f$
+ *
+ *  \f{algorithm}{
+ *  \renewcommand{\thealgorithm}{}
+ *  \caption{IMEX RK with the application-action locations indicated.}
+ *  \begin{algorithmic}[1]
+ *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
+ *    \State $X \leftarrow x_{n-1}$ \Comment Set initial guess to last timestep.
+ *    \For {$i = 0 \ldots s-1$}
+ *      \State $\tilde{X} \leftarrow x_{n-1} - \Delta t\,\sum_{j=1}^{i-1} \left(
+ *            \hat{a}_{ij}\, f_j + a_{ij}\, g_j \right)$
+ *      \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STAGE)}
+ *      \State \Comment Implicit Tableau
+ *      \If {$a_{ii} = 0$}
+ *        \State $X \leftarrow \tilde{X}$
+ *        \If {$a_{k,i} = 0 \;\forall k = (i+1,\ldots, s-1)$, $b(i) = 0$, $b^\ast(i) = 0$}
+ *          \State $g_i \leftarrow 0$ \Comment{Not needed for later calculations.}
+ *        \Else
+ *          \State $g_i \leftarrow M(X, t_i)^{-1}\, G(X, t_i)$
+ *        \EndIf
+ *      \Else
+ *        \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_SOLVE)}
+ *        \If {``Zero initial guess.''}
+ *          \State $X \leftarrow 0$
+ *            \Comment{Else use previous stage value as initial guess.}
+ *        \EndIf
+ *        \State Solve $\mathcal{G}\left(\tilde{\dot{X}}
+ *            = \frac{X-\tilde{X}}{a_{ii} \Delta t},X,t_i\right) = 0$ for $X$
+ *        \State {\it appAction.execute(solutionHistory, stepper, AFTER\_SOLVE)}
+ *        \State $\tilde{\dot{X}} \leftarrow \frac{X - \tilde{X}}{a_{ii} \Delta t}$
+ *        \State $g_i \leftarrow - \tilde{\dot{X}}$
+ *      \EndIf
+ *      \State \Comment Explicit Tableau
+ *      \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}
+ *      \State $f_i \leftarrow M(X,\hat{t}_i)^{-1}\, F(X,\hat{t}_i)$
+ *      \State $\dot{X} \leftarrow - g_i - f_i$ [Optionally]
+ *      \State {\it appAction.execute(solutionHistory, stepper, END\_STAGE)}
+ *    \EndFor
+ *    \State $x_n \leftarrow x_{n-1} - \Delta t\,\sum_{i=1}^{s}\hat{b}_i\,f_i
+ *                                   - \Delta t\,\sum_{i=1}^{s}     b_i \,g_i$
+ *    \State {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
+ *  \end{algorithmic}
+ *  \f}
  *
  *  The following table contains the pre-coded IMEX-RK tableaus.
  *  <table>
@@ -182,7 +209,16 @@ namespace Tempus {
  *             1 & 1 & 0 \\ \hline
  *               & 1 & 0
  *           \end{array} \f]
- *  <tr><td> IMEX RK SSP2\n \f$\gamma = 1-1/\sqrt{2}\f$ <td> 2nd
+ *  <tr><td> SSP1_111 <td> 1st
+ *      <td> \f[ \begin{array}{c|c}
+ *             1 & 1 \\ \hline
+ *               & 1
+ *           \end{array} \f]
+ *      <td> \f[ \begin{array}{c|c}
+ *             0 & 0 \\ \hline
+ *               & 1
+ *           \end{array} \f]
+ *  <tr><td> IMEX RK SSP2\n SSP2_222_L\n \f$\gamma = 1-1/\sqrt{2}\f$ <td> 2nd
  *      <td> \f[ \begin{array}{c|cc}
  *             \gamma   & \gamma & 0 \\
  *             1-\gamma & 1-2\gamma & \gamma \\ \hline
@@ -193,7 +229,29 @@ namespace Tempus {
  *             1 & 1   & 0 \\ \hline
  *               & 1/2 & 1/2
  *           \end{array} \f]
- *  <tr><td> IMEX RK ARS 233\n \f$\gamma = (3+\sqrt{3})/6\f$ <td> 3rd
+ *  <tr><td> SSP2_222\n SSP2_222_A\n \f$\gamma = 1/2\f$ <td> 2nd
+ *      <td> \f[ \begin{array}{c|cc}
+ *             \gamma   & \gamma & 0 \\
+ *             1-\gamma & 1-2\gamma & \gamma \\ \hline
+ *                      & 1/2       & 1/2
+ *           \end{array} \f]
+ *      <td> \f[ \begin{array}{c|cc}
+ *             0 & 0   & 0 \\
+ *             1 & 1   & 0 \\ \hline
+ *               & 1/2 & 1/2
+ *           \end{array} \f]
+ *  <tr><td> IMEX RK SSP3\n SSP3_332\n \f$\gamma = 1/ (2 + \sqrt{2})\f$ <td> 3rd
+ *      <td> \f[ \begin{array}{c|ccc}
+ *             0  &  0  &     &     \\
+ *             1  &  1  &  0  &     \\
+ *            1/2 & 1/4 & 1/4 &  0  \\ \hline
+ *                & 1/6 & 1/6 & 4/6  \end{array} \f]
+ *      <td> \f[ \begin{array}{c|ccc}
+ *              \gamma  & \gamma      &         &        \\
+ *             1-\gamma & 1-2\gamma   & \gamma  &        \\
+ *             1-2      & 1/2 -\gamma & 0       & \gamma \\ \hline
+ *                      & 1/6         & 1/6     & 2/3    \end{array} \f]
+ *  <tr><td> IMEX RK ARS 233\n ARS 233\n \f$\gamma = (3+\sqrt{3})/6\f$ <td> 3rd
  *      <td> \f[ \begin{array}{c|ccc}
  *             0        & 0      & 0         & 0      \\
  *             \gamma   & 0      & \gamma    & 0      \\
@@ -222,6 +280,7 @@ namespace Tempus {
  *     Chuadhry, Hensinger, Fischer, Robinson, Rider, Niederhaus, Sanchez,
  *     "Towards an IMEX Monolithic ALE Method with Integrated UQ for
  *     Multiphysics Shock-hydro", SAND2016-11353, 2016, pp. 21-28.
+ *
  */
 template<class Scalar>
 class StepperIMEX_RK : virtual public Tempus::StepperImplicit<Scalar>,
@@ -236,7 +295,8 @@ public:
   */
   StepperIMEX_RK();
 
-  /// Constructor to specialize Stepper parameters.
+  /// Constructor for all member data.
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   StepperIMEX_RK(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     const Teuchos::RCP<StepperObserver<Scalar> >& obs,
@@ -249,17 +309,43 @@ public:
     Teuchos::RCP<const RKButcherTableau<Scalar> > explicitTableau,
     Teuchos::RCP<const RKButcherTableau<Scalar> > implicitTableau,
     Scalar order);
+#endif
+  StepperIMEX_RK(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool zeroInitialGuess,
+    const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction,
+    std::string stepperType,
+    Teuchos::RCP<const RKButcherTableau<Scalar> > explicitTableau,
+    Teuchos::RCP<const RKButcherTableau<Scalar> > implicitTableau,
+    Scalar order);
+
 
   /// \name Basic stepper methods
   //@{
+    /// Returns the explicit tableau!
+    virtual Teuchos::RCP<const RKButcherTableau<Scalar> > getTableau() const
+    { return getExplicitTableau(); }
+
     /// Set both the explicit and implicit tableau from ParameterList
     virtual void setTableaus( std::string stepperType = "",
       Teuchos::RCP<const RKButcherTableau<Scalar> > explicitTableau = Teuchos::null,
       Teuchos::RCP<const RKButcherTableau<Scalar> > implicitTableau = Teuchos::null);
 
+    /// Return explicit tableau.
+    virtual Teuchos::RCP<const RKButcherTableau<Scalar> > getExplicitTableau() const
+    { return explicitTableau_; }
+
     /// Set the explicit tableau from tableau
     virtual void setExplicitTableau(
       Teuchos::RCP<const RKButcherTableau<Scalar> > explicitTableau);
+
+    /// Return implicit tableau.
+    virtual Teuchos::RCP<const RKButcherTableau<Scalar> > getImplicitTableau() const
+    { return implicitTableau_; }
 
     /// Set the implicit tableau from tableau
     virtual void setImplicitTableau(
@@ -278,12 +364,13 @@ public:
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& explicitModel,
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& implicitModel);
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
     virtual void setObserver(
       Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
     virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
     { return this->stepperObserver_; }
-
+#endif
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
 
@@ -359,7 +446,9 @@ protected:
 
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               xTilde_;
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   Teuchos::RCP<StepperRKObserverComposite<Scalar> >        stepperObserver_;
+#endif
 
 };
 

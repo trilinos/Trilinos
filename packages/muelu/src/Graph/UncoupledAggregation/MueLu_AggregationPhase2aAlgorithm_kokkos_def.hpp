@@ -92,6 +92,7 @@ namespace MueLu {
   {
     const int minNodesPerAggregate = params.get<int>("aggregation: min agg size");
     const int maxNodesPerAggregate = params.get<int>("aggregation: max agg size");
+    bool includeRootInAgg = params.get<bool>("aggregation: phase2a include root");
 
     const LO  numRows = graph.GetNodeNumVertices();
     const int myRank  = graph.GetComm()->getRank();
@@ -128,18 +129,16 @@ namespace MueLu {
                                 if(aggStat(rootCandidate) == READY &&
                                    colors(rootCandidate) == color) {
 
-                                  LO aggSize = 0;
+                                  LO aggSize;
+                                  if (includeRootInAgg)
+                                    aggSize = 1;
+                                  else
+                                    aggSize = 0;
+
                                   auto neighbors = graph.getNeighborVertices(rootCandidate);
 
                                   // Loop over neighbors to count how many nodes could join
                                   // the new aggregate
-                                  // Note on 2019-11-22, LBV:
-                                  // The rootCandidate is not taken into account and in fact
-                                  // not aggregatesd later on. To change that we want to
-                                  // modify:
-                                  // if(aggSize < maxNodesPerAggregate)
-                                  // to:
-                                  // if(aggSize < maxNodesPerAggregate - 1)
                                   LO numNeighbors = 0;
                                   for(int j = 0; j < neighbors.length; ++j) {
                                     LO neigh = neighbors(j);
@@ -155,16 +154,25 @@ namespace MueLu {
 
                                   // If a sufficient number of nodes can join the new aggregate
                                   // then we actually create the aggregate.
-                                  // Note on 2019-11-22, LBV:
-                                  // Same changes as described in the note above could be applied
                                   if(aggSize > minNodesPerAggregate &&
-                                     aggSize > factor*numNeighbors) {
+                                     ((includeRootInAgg && aggSize-1 > factor*numNeighbors) ||
+                                      (!includeRootInAgg && aggSize > factor*numNeighbors))) {
 
                                     // aggregates.SetIsRoot(rootCandidate);
                                     LO aggIndex = Kokkos::
                                       atomic_fetch_add(&numLocalAggregates(), 1);
 
                                     LO numAggregated = 0;
+
+                                    if (includeRootInAgg) {
+                                      // Add the root.
+                                      aggStat(rootCandidate)         = AGGREGATED;
+                                      vertex2AggId(rootCandidate, 0) = aggIndex;
+                                      procWinner(rootCandidate, 0)   = myRank;
+                                      ++numAggregated;
+                                      --lNumNonAggregatedNodes;
+                                    }
+
                                     for(int neighIdx = 0; neighIdx < neighbors.length; ++neighIdx) {
                                       LO neigh = neighbors(neighIdx);
                                       if(neigh != rootCandidate) {

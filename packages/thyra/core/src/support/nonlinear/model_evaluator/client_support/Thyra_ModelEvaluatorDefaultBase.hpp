@@ -213,6 +213,22 @@ public:
     const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
     ) const;
+  /** \brief . */
+  virtual RCP<const VectorSpaceBase<Scalar> > get_f_multiplier_space() const;
+  /** \brief . */
+  virtual RCP<const VectorSpaceBase<Scalar> > get_g_multiplier_space(int j) const;
+  /** \brief . */
+  virtual RCP<LinearOpBase<Scalar> > create_hess_f_xx() const;
+  /** \brief . */
+  virtual RCP<LinearOpBase<Scalar> > create_hess_f_xp(int l) const;
+  /** \brief . */
+  virtual RCP<LinearOpBase<Scalar> > create_hess_f_pp( int l1, int l2 ) const;
+  /** \brief . */
+  virtual RCP<LinearOpBase<Scalar> > create_hess_g_xx(int j) const;
+  /** \brief . */
+  virtual RCP<LinearOpBase<Scalar> > create_hess_g_xp( int j, int l ) const;
+  /** \brief . */
+  virtual RCP<LinearOpBase<Scalar> > create_hess_g_pp( int j, int l1, int l2 ) const;
 
   //@}
 
@@ -681,7 +697,6 @@ void ModelEvaluatorDefaultBase<Scalar>::evalModel(
         outArgsImpl.set_W_op(W_op);
       }
     }
-
   }
 
   //
@@ -950,6 +965,62 @@ ModelEvaluatorDefaultBase<Scalar>::create_DgDp_op_impl(int j, int l) const
   return Teuchos::null;
 }
 
+
+template<class Scalar>
+RCP<const VectorSpaceBase<Scalar> >
+ModelEvaluatorDefaultBase<Scalar>::get_f_multiplier_space() const
+{
+  return this->get_f_space();
+}
+
+template<class Scalar>
+RCP<const VectorSpaceBase<Scalar> >
+ModelEvaluatorDefaultBase<Scalar>::get_g_multiplier_space(int j) const
+{
+  return this->get_g_space(j);
+}
+
+template<class Scalar>
+RCP<LinearOpBase<Scalar> >
+ModelEvaluatorDefaultBase<Scalar>::create_hess_f_xx() const
+{
+  return Teuchos::null;
+}
+
+template<class Scalar>
+RCP<LinearOpBase<Scalar> >
+ModelEvaluatorDefaultBase<Scalar>::create_hess_f_xp(int l) const
+{
+  return Teuchos::null;
+}
+
+template<class Scalar>
+RCP<LinearOpBase<Scalar> >
+ModelEvaluatorDefaultBase<Scalar>::create_hess_f_pp( int l1, int l2 ) const
+{
+  return Teuchos::null;
+}
+
+template<class Scalar>
+RCP<LinearOpBase<Scalar> >
+ModelEvaluatorDefaultBase<Scalar>::create_hess_g_xx(int j) const
+{
+  return Teuchos::null;
+}
+
+template<class Scalar>
+RCP<LinearOpBase<Scalar> >
+ModelEvaluatorDefaultBase<Scalar>::create_hess_g_xp( int j, int l ) const
+{
+  return Teuchos::null;
+}
+
+template<class Scalar>
+RCP<LinearOpBase<Scalar> >
+ModelEvaluatorDefaultBase<Scalar>::create_hess_g_pp( int j, int l1, int l2 ) const
+{
+  return Teuchos::null;
+}
 
 // protected
 

@@ -1,35 +1,11 @@
-// Copyright(C) 2009-2017, 2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//     * Neither the name of NTESS nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+// See packages/seacas/LICENSE for details
 #include <algorithm>
 #include <exception>
+#include <fmt/chrono.h>
 #include <fmt/ostream.h>
 #include <iomanip>
 #include <iostream>
@@ -194,7 +170,7 @@ namespace {
   }
 } // namespace
 
-std::string tsFormat = "[%H:%M:%S] ";
+std::string tsFormat = "[{:%H:%M:%S}] ";
 
 // prototypes
 
@@ -2797,19 +2773,10 @@ namespace {
       return std::string("");
     }
 
-    const int   length = 256;
-    static char time_string[length];
-
-    time_t     calendar_time = time(nullptr);
-    struct tm *local_time    = localtime(&calendar_time);
-
-    int error = strftime(time_string, length, format.c_str(), local_time);
-    if (error != 0) {
-      time_string[length - 1] = '\0';
-      return std::string(time_string);
-    }
-
-    return std::string("[ERROR]");
+    time_t      calendar_time = std::time(nullptr);
+    struct tm * local_time    = std::localtime(&calendar_time);
+    std::string time_string   = fmt::format(format, *local_time);
+    return time_string;
   }
 
   std::string format_time(double seconds)
@@ -2860,67 +2827,63 @@ namespace {
   }
 
   template <typename T, typename U>
-  void map_sideset_vars(U & /*unused*/, size_t /*unused*/, size_t /*unused*/,
-                        std::vector<T> & /*unused*/, std::vector<T> & /*unused*/)
+  void map_sideset_vars(U & /*unused*/, size_t /*unused*/, std::vector<T> & /*unused*/,
+                        std::vector<T> & /*unused*/)
   {
     throw std::runtime_error("Internal Error.");
   }
 
   template <typename INT>
   void map_sideset_vars(Excn::SideSet<INT> &local_set, size_t entity_count,
-                        size_t glob_entity_count, std::vector<double> &values,
-                        std::vector<double> &global_values)
+                        std::vector<double> &values, std::vector<double> &global_values)
   {
     // copy values to master nodeset value information
     for (size_t j = 0; j < entity_count; j++) {
       size_t global_loc = local_set.elemOrderMap[j];
-      SMART_ASSERT(global_loc < glob_entity_count);
+      SMART_ASSERT(global_loc < global_values.size());
       global_values[global_loc] = values[j];
     }
   }
 
   template <typename INT>
   void map_sideset_vars(Excn::SideSet<INT> &local_set, size_t entity_count,
-                        size_t glob_entity_count, std::vector<float> &values,
-                        std::vector<float> &global_values)
+                        std::vector<float> &values, std::vector<float> &global_values)
   {
     // copy values to master nodeset value information
     for (size_t j = 0; j < entity_count; j++) {
       size_t global_loc = local_set.elemOrderMap[j];
-      SMART_ASSERT(global_loc < glob_entity_count);
+      SMART_ASSERT(global_loc < global_values.size());
       global_values[global_loc] = values[j];
     }
   }
 
   template <typename T, typename U>
-  void map_nodeset_vars(U & /*unused*/, size_t /*unused*/, size_t /*unused*/,
-                        std::vector<T> & /*unused*/, std::vector<T> & /*unused*/)
+  void map_nodeset_vars(U & /*unused*/, size_t /*unused*/, std::vector<T> & /*unused*/,
+                        std::vector<T> & /*unused*/)
   {
     throw std::runtime_error("Internal Error.");
   }
 
   template <typename INT>
   void map_nodeset_vars(Excn::NodeSet<INT> &local_set, size_t entity_count,
-                        size_t glob_entity_count, std::vector<double> &values,
-                        std::vector<double> &global_values)
+                        std::vector<double> &values, std::vector<double> &global_values)
   {
     // copy values to master nodeset value information
     for (size_t j = 0; j < entity_count; j++) {
       size_t global_loc = local_set.nodeOrderMap[j];
-      SMART_ASSERT(global_loc < glob_entity_count);
+      SMART_ASSERT(global_loc < global_values.size());
       global_values[global_loc] = values[j];
     }
   }
 
   template <typename INT>
   void map_nodeset_vars(Excn::NodeSet<INT> &local_set, size_t entity_count,
-                        size_t glob_entity_count, std::vector<float> &values,
-                        std::vector<float> &global_values)
+                        std::vector<float> &values, std::vector<float> &global_values)
   {
     // copy values to master nodeset value information
     for (size_t j = 0; j < entity_count; j++) {
       size_t global_loc = local_set.nodeOrderMap[j];
-      SMART_ASSERT(global_loc < glob_entity_count);
+      SMART_ASSERT(global_loc < global_values.size());
       global_values[global_loc] = values[j];
     }
   }
@@ -2974,13 +2937,11 @@ namespace {
                 break;
 
               case Excn::SSET:
-                map_sideset_vars(local_sets[p][lb], entity_count, global_sets[b].entity_count(),
-                                 values, master_values);
+                map_sideset_vars(local_sets[p][lb], entity_count, values, master_values);
                 break;
 
               case Excn::NSET:
-                map_nodeset_vars(local_sets[p][lb], entity_count, global_sets[b].entity_count(),
-                                 values, master_values);
+                map_nodeset_vars(local_sets[p][lb], entity_count, values, master_values);
                 break;
               default: break;
               }

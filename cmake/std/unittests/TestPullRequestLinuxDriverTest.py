@@ -163,7 +163,13 @@ ERROR : Source branch is NOT trilinos/Trilinos::master_merge_YYYYMMDD_HHMMSS
                                    self.github_pr_number,
                                    self.jenkins_build_number,
                                    self.jenkins_workspace])
-        with self.m_environ:
+        l_environ = mock.patch.dict(os.environ, {'JOB_BASE_NAME': self.job_base_name,
+                                                 'JOB_NAME': 'TEST_JOB_NAME',
+                                                 'WORKSPACE': self.jenkins_workspace,
+                                                 'NODE_NAME': 'TEST_NODE_NAME',
+                                                 'JENKINS_TEST_WEIGHT': '8'},
+                                         clear=True)
+        with l_environ:
             env_string_io = StringIO()
             for key in os.environ:
                 print(key + ' = ' + os.environ[key],
@@ -198,14 +204,26 @@ Set CWD = /dev/null/workspace
                 self.m_config_map, \
                 self.m_check_call as m_call, \
                 l_argv, \
-                self.m_environ, \
+                l_environ, \
                 mock.patch('PullRequestLinuxDriverTest.createPackageEnables'), \
                 mock.patch('PullRequestLinuxDriverTest.setBuildEnviron'), \
-                mock.patch('PullRequestLinuxDriverTest.getCDashTrack'):
+                mock.patch('PullRequestLinuxDriverTest.compute_n', return_value=20), \
+                mock.patch('PullRequestLinuxDriverTest.getCDashTrack') as m_cdtr:
             PullRequestLinuxDriverTest.run()
 
         self.assertEqual(expected_out, m_output.getvalue())
-        m_call.assert_called_once()
+        m_call.assert_called_once_with(['ctest', '-S', 'simple_testing.cmake',
+                                        '-Dbuild_name=PR-8888-test-JenkinsBaseName-7777',
+                                        '-Dskip_by_parts_submit=OFF',
+                                        '-Dskip_update_step=ON',
+                                        '-Ddashboard_model=Experimental',
+                                        '-Ddashboard_track={}'.format(m_cdtr.return_value),
+                                        '-DPARALLEL_LEVEL=20',
+                                        '-DTEST_PARALLEL_LEVEL=8',
+                                        '-Dbuild_dir=/dev/null/workspace/pull_request_test',
+                                        '-Dconfigure_script=/dev/null/workspace/Trilinos/cmake/std/dummyConfig.cmake',
+                                        '-Dpackage_enables=../packageEnables.cmake',
+                                        '-Dsubprojects_file=../package_subproject_list.cmake'])
 
 
     def test_verifyTargetBranch_passes_with_develop_target(self):
@@ -270,10 +288,11 @@ Set CWD = /dev/null/workspace
                                         '-Ddashboard_model=Experimental',
                                         '-Ddashboard_track=testTrack',
                                         '-DPARALLEL_LEVEL=20',
+                                        '-DTEST_PARALLEL_LEVEL=20',
                                         '-Dbuild_dir=/dev/null/workspace/pull_request_test',
                                         '-Dconfigure_script=/dev/null/workspace/Trilinos/cmake/std/dummyConfig.cmake',
                                         '-Dpackage_enables=../packageEnables.cmake',
-                                        '-Dsubprojects_file=../TFW_single_configure_support_scripts/package_subproject_list.cmake'])
+                                        '-Dsubprojects_file=../package_subproject_list.cmake'])
 
 
 
@@ -301,14 +320,16 @@ class Test_createPackageEnables(unittest.TestCase):
 
     def success_side_effect(self):
         with open('packageEnables.cmake',  'w') as f_out:
-            f_out.write('''
-MACRO(PR_ENABLE_BOOL  VAR_NAME  VAR_VAL)
-  MESSAGE("-- Setting ${VAR_NAME} = ${VAR_VAL}")
-  SET(${VAR_NAME} ${VAR_VAL} CACHE BOOL "Set in $CMAKE_PACKAGE_ENABLES_OUT")
-ENDMACRO()
-''')
+            f_out.write(dedent('''\
+            MACRO(PR_ENABLE_BOOL  VAR_NAME  VAR_VAL)
+              MESSAGE("-- Setting ${VAR_NAME} = ${VAR_VAL}")
+              SET(${VAR_NAME} ${VAR_VAL} CACHE BOOL "Set in $CMAKE_PACKAGE_ENABLES_OUT")
+            ENDMACRO()
+            '''))
             f_out.write("PR_ENABLE_BOOL(Trilinos_ENABLE_FooPackageBar ON)")
-
+        with open ('package_subproject_list.cmake', 'w') as f_out:
+            f_out.write(dedent('''\
+            set(CTEST_LABELS_FOR_SUBPROJECTS TrilinosFrameworkTests '''))
 
     def test_call_success(self):
         expected_output = '''Enabled packages:
@@ -327,9 +348,11 @@ ENDMACRO()
                                                     'get-changed-trilinos-packages.sh'),
                                        os.path.join('origin',
                                                     self.target_branch),
-                                       'HEAD', 'packageEnables.cmake'])
+                                       'HEAD', 'packageEnables.cmake',
+                                       'package_subproject_list.cmake'])
         self.assertEqual(expected_output, m_stdout.getvalue())
         os.unlink('packageEnables.cmake')
+        os.unlink('package_subproject_list.cmake')
 
 
     def test_call_python2(self):
@@ -347,6 +370,7 @@ ENDMACRO()
         m_out.assert_not_called()
         self.assertEqual(expected_output, m_stdout.getvalue())
         os.unlink('packageEnables.cmake')
+        os.unlink('package_subproject_list.cmake')
 
 
     def test_call_failure(self):
@@ -365,7 +389,8 @@ ENDMACRO()
                                                     'get-changed-trilinos-packages.sh'),
                                        os.path.join('origin',
                                                     self.target_branch),
-                                       'HEAD', 'packageEnables.cmake'])
+                                       'HEAD', 'packageEnables.cmake',
+                                       'package_subproject_list.cmake'])
         self.assertEqual(expected_output, m_stdout.getvalue())
 
 
@@ -562,8 +587,8 @@ class Test_setEnviron(unittest.TestCase):
                          mock.call('load', 'sems-python/2.7.9'),
                          mock.call('load', 'sems-boost/1.63.0/base'),
                          mock.call('load', 'sems-zlib/1.2.8/base'),
-                         mock.call('load', 'sems-hdf5/1.8.12/parallel'),
-                         mock.call('load', 'sems-netcdf/4.4.1/exo_parallel'),
+                         mock.call('load', 'sems-hdf5/1.10.6/parallel'),
+                         mock.call('load', 'sems-netcdf/4.7.3/parallel'),
                          mock.call('load', 'sems-parmetis/4.0.3/parallel'),
                          mock.call('load', 'sems-scotch/6.0.3/nopthread_64bit_parallel'),
                          mock.call('load', 'sems-superlu/4.3/base'),
@@ -585,8 +610,8 @@ class Test_setEnviron(unittest.TestCase):
                          mock.call('load', 'sems-python/2.7.9'),
                          mock.call('load', 'sems-boost/1.63.0/base'),
                          mock.call('load', 'sems-zlib/1.2.8/base'),
-                         mock.call('load', 'sems-hdf5/1.8.12/base'),
-                         mock.call('load', 'sems-netcdf/4.4.1/exo'),
+                         mock.call('load', 'sems-hdf5/1.10.6/base'),
+                         mock.call('load', 'sems-netcdf/4.7.3/base'),
                          mock.call('load', 'sems-metis/5.1.0/base'),
                          mock.call('load', 'sems-superlu/4.3/base'),
                          mock.call('load', 'sems-cmake/3.10.3'),
@@ -608,8 +633,8 @@ class Test_setEnviron(unittest.TestCase):
                          mock.call('load', 'sems-python/2.7.9'),
                          mock.call('load', 'sems-boost/1.63.0/base'),
                          mock.call('load', 'sems-zlib/1.2.8/base'),
-                         mock.call('load', 'sems-hdf5/1.8.12/parallel'),
-                         mock.call('load', 'sems-netcdf/4.4.1/exo_parallel'),
+                         mock.call('load', 'sems-hdf5/1.10.6/parallel'),
+                         mock.call('load', 'sems-netcdf/4.7.3/parallel'),
                          mock.call('load', 'sems-parmetis/4.0.3/parallel'),
                          mock.call('load', 'sems-scotch/6.0.3/nopthread_64bit_parallel'),
                          mock.call('load', 'sems-superlu/4.3/base'),
@@ -632,14 +657,14 @@ class Test_setEnviron(unittest.TestCase):
                          mock.call('load', 'sems-python/2.7.9'),
                          mock.call('load', 'sems-boost/1.66.0/base'),
                          mock.call('load', 'sems-zlib/1.2.8/base'),
-                         mock.call('load', 'sems-hdf5/1.8.12/parallel'),
-                         mock.call('load', 'sems-netcdf/4.4.1/exo_parallel'),
+                         mock.call('load', 'sems-hdf5/1.10.6/parallel'),
+                         mock.call('load', 'sems-netcdf/4.7.3/parallel'),
                          mock.call('load', 'sems-parmetis/4.0.3/parallel'),
                          mock.call('load', 'sems-scotch/6.0.3/nopthread_64bit_parallel'),
                          mock.call('load', 'sems-superlu/4.3/base'),
-                         mock.call('load', 'sems-cmake/3.10.3'),
+                         mock.call('load', 'sems-cmake/3.17.1'),
+                         mock.call('load', 'sems-ninja_fortran/1.10.0'),
                          mock.call('load', 'atdm-env'),
-                         mock.call('load', 'atdm-ninja_fortran/1.7.2'),
                          ]
         self.buildEnv_passes(PR_name, expected_list,
                              test_ENV={'OMP_NUM_THREADS': '2'})
@@ -657,8 +682,8 @@ class Test_setEnviron(unittest.TestCase):
                          mock.call('load', 'sems-python/2.7.9'),
                          mock.call('load', 'sems-boost/1.63.0/base'),
                          mock.call('load', 'sems-zlib/1.2.8/base'),
-                         mock.call('load', 'sems-hdf5/1.8.12/parallel'),
-                         mock.call('load', 'sems-netcdf/4.4.1/exo_parallel'),
+                         mock.call('load', 'sems-hdf5/1.10.6/parallel'),
+                         mock.call('load', 'sems-netcdf/4.7.3/parallel'),
                          mock.call('load', 'sems-parmetis/4.0.3/parallel'),
                          mock.call('load', 'sems-scotch/6.0.3/nopthread_64bit_parallel'),
                          mock.call('load', 'sems-superlu/4.3/base'),
@@ -683,8 +708,8 @@ class Test_setEnviron(unittest.TestCase):
                          mock.call('load', 'sems-python/2.7.9'),
                          mock.call('load', 'sems-boost/1.63.0/base'),
                          mock.call('load', 'sems-zlib/1.2.8/base'),
-                         mock.call('load', 'sems-hdf5/1.8.12/parallel'),
-                         mock.call('load', 'sems-netcdf/4.4.1/exo_parallel'),
+                         mock.call('load', 'sems-hdf5/1.10.6/parallel'),
+                         mock.call('load', 'sems-netcdf/4.7.3/parallel'),
                          mock.call('load', 'sems-parmetis/4.0.3/parallel'),
                          mock.call('load', 'sems-scotch/6.0.3/nopthread_64bit_parallel'),
                          mock.call('load', 'sems-superlu/4.3/base'),
@@ -709,14 +734,39 @@ class Test_setEnviron(unittest.TestCase):
                          mock.call('load', 'sems-python/2.7.9'),
                          mock.call('load', 'sems-boost/1.63.0/base'),
                          mock.call('load', 'sems-zlib/1.2.8/base'),
-                         mock.call('load', 'sems-hdf5/1.8.12/parallel'),
-                         mock.call('load', 'sems-netcdf/4.4.1/exo_parallel'),
+                         mock.call('load', 'sems-hdf5/1.10.6/parallel'),
+                         mock.call('load', 'sems-netcdf/4.7.3/parallel'),
                          mock.call('load', 'sems-parmetis/4.0.3/parallel'),
                          mock.call('load', 'sems-scotch/6.0.3/nopthread_64bit_parallel'),
                          mock.call('load', 'sems-superlu/4.3/base'),
                          mock.call('load', 'sems-cmake/3.12.2'),
                          mock.call('load', 'atdm-env'),
                          mock.call('load', 'atdm-ninja_fortran/1.7.2'),
+                         ]
+
+        self.buildEnv_passes(PR_name, expected_list,
+                             test_ENV={'OMP_NUM_THREADS': '2'})
+
+
+    def test_buildEnv_passes_with_clang_1000(self):
+        """Find the function"""
+        PR_name = 'Trilinos_pullrequest_clang_10.0.0'
+        expected_list = [mock.call('use', '/projects/sems/modulefiles/projects'),
+                         mock.call('load', 'sems-env'),
+                         mock.call('load', 'sems-git/2.10.1'),
+                         mock.call('load', 'sems-gcc/5.3.0'),
+                         mock.call('load', 'sems-clang/10.0.0'),
+                         mock.call('load', 'sems-openmpi/1.10.1'),
+                         mock.call('load', 'sems-python/2.7.9'),
+                         mock.call('load', 'sems-boost/1.69.0/base'),
+                         mock.call('load', 'sems-zlib/1.2.8/base'),
+                         mock.call('load', 'sems-hdf5/1.10.6/parallel'),
+                         mock.call('load', 'sems-netcdf/4.7.3/parallel'),
+                         mock.call('load', 'sems-parmetis/4.0.3/parallel'),
+                         mock.call('load', 'sems-scotch/6.0.3/nopthread_64bit_parallel'),
+                         mock.call('load', 'sems-superlu/4.3/base'),
+                         mock.call('load', 'sems-cmake/3.17.1'),
+                         mock.call('load', 'sems-ninja_fortran/1.10.0'),
                          ]
 
         self.buildEnv_passes(PR_name, expected_list,
@@ -870,5 +920,3 @@ class testCompute_n(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()  # pragma nocover
-
-

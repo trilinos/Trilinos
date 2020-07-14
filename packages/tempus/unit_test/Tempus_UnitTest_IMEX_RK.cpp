@@ -37,14 +37,7 @@ using Teuchos::getParametersFromXmlFile;
 using Tempus::StepperFactory;
 using Tempus::StepperExplicitRK;
 
-// Comment out any of the following tests to exclude from build/run.
-#define CONSTRUCTION
-#define STEPPERFACTORY_CONSTRUCTION
-#define STEPPERFACTORY_CONSTRUCTION_GENERAL_WO_PARAMETERLIST
-#define STEPPERFACTORY_CONSTRUCTION_GENERAL_WO_PARAMETERLIST_MODEL
 
-
-#ifdef CONSTRUCTION
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(IMEX_RK, Default_Construction)
@@ -62,7 +55,9 @@ TEUCHOS_UNIT_TEST(IMEX_RK, Default_Construction)
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
   // Default values for construction.
-  auto obs    = rcp(new Tempus::StepperRKObserverComposite<double>());
+  auto modifier  = rcp(new Tempus::StepperRKModifierDefault<double>());
+  auto modifierX = rcp(new Tempus::StepperRKModifierXDefault<double>());
+  auto observer  = rcp(new Tempus::StepperRKObserverDefault<double>());
   auto solver = rcp(new Thyra::NOXNonlinearSolver());
   solver->setParameterList(Tempus::defaultSolverParameters());
 
@@ -79,7 +74,13 @@ TEUCHOS_UNIT_TEST(IMEX_RK, Default_Construction)
 
 
   // Test the set functions.
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+  auto obs    = rcp(new Tempus::StepperRKObserverComposite<double>());
   stepper->setObserver(obs);                           stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+#endif
+  stepper->setAppAction(modifier);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setAppAction(modifierX);                    stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setAppAction(observer);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setSolver(solver);                          stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setUseFSAL(useFSAL);                        stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setICConsistency(ICConsistency);            stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
@@ -91,19 +92,28 @@ TEUCHOS_UNIT_TEST(IMEX_RK, Default_Construction)
   stepper->setImplicitTableau(implicitTableau);        stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setOrder(order);                            stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
+  TEUCHOS_TEST_FOR_EXCEPT(explicitTableau != stepper->getTableau());
+  TEUCHOS_TEST_FOR_EXCEPT(explicitTableau != stepper->getExplicitTableau());
+  TEUCHOS_TEST_FOR_EXCEPT(implicitTableau != stepper->getImplicitTableau());
 
   // Full argument list construction.
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   stepper = rcp(new Tempus::StepperIMEX_RK<double>(
-    model, obs, solver, useFSAL,
-    ICConsistency, ICConsistencyCheck, zeroInitialGuess,
-    stepperType, explicitTableau, implicitTableau, order));
+    model, obs, solver, useFSAL, ICConsistency, ICConsistencyCheck,
+    zeroInitialGuess, stepperType, explicitTableau, implicitTableau, order));
+  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+#endif
+  stepper = rcp(new Tempus::StepperIMEX_RK<double>(
+    model, solver, useFSAL, ICConsistency, ICConsistencyCheck,
+    zeroInitialGuess, modifier, stepperType, explicitTableau,
+    implicitTableau, order));
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
+  // Test stepper properties.
+  TEUCHOS_ASSERT(stepper->getOrder() == 2);
 }
-#endif // CONSTRUCTION
 
 
-#ifdef STEPPERFACTORY_CONSTRUCTION
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(IMEX_RK, StepperFactory_Construction)
@@ -116,10 +126,8 @@ TEUCHOS_UNIT_TEST(IMEX_RK, StepperFactory_Construction)
 
   testFactoryConstruction("IMEX RK SSP2", model);
 }
-#endif // STEPPERFACTORY_CONSTRUCTION
 
 
-#ifdef STEPPERFACTORY_CONSTRUCTION_GENERAL_WO_PARAMETERLIST
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(IMEX_RK, StepperFactory_Construction_General_wo_Parameterlist)
@@ -135,10 +143,8 @@ TEUCHOS_UNIT_TEST(IMEX_RK, StepperFactory_Construction_General_wo_Parameterlist)
   auto stepper = sf->createStepper("General IMEX RK", model);
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 }
-#endif // STEPPERFACTORY_CONSTRUCTION_GENERAL_WO_PARAMETERLIST
 
 
-#ifdef STEPPERFACTORY_CONSTRUCTION_GENERAL_WO_PARAMETERLIST_MODEL
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(IMEX_RK, StepperFactory_Construction_General_wo_Parameterlist_Model)
@@ -156,7 +162,21 @@ TEUCHOS_UNIT_TEST(IMEX_RK, StepperFactory_Construction_General_wo_Parameterlist_
   stepper->initialize();
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 }
-#endif // STEPPERFACTORY_CONSTRUCTION_GENERAL_WO_PARAMETERLIST_MODEL
+
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(IMEX_RK, AppAction)
+{
+  auto stepper = rcp(new Tempus::StepperIMEX_RK<double>());
+  // Setup the IMEX Pair ModelEvaluator
+  auto explicitModel = rcp(new Tempus_Test::VanDerPol_IMEX_ExplicitModel<double>());
+  auto implicitModel = rcp(new Tempus_Test::VanDerPol_IMEX_ImplicitModel<double>());
+  auto model = rcp(new Tempus::WrapperModelEvaluatorPairIMEX_Basic<double>(
+                                             explicitModel, implicitModel));
+
+  testRKAppAction(stepper, model, out, success);
+}
 
 
 } // namespace Tempus_Test

@@ -120,12 +120,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionVector, RegionCompositeVector, Scalar, L
   Array<LO>  compositeToRegionLIDs(nodeMap->getNodeNumElements()*numDofsPerNode);
   Array<GO>  quasiRegionGIDs;
   Array<GO>  quasiRegionCoordGIDs;
+  Array<GO>  interfaceGIDs;
+  Array<LO>  interfaceLIDsData;
   createRegionData(2, false, numDofsPerNode,
                    gNodesPerDir(), lNodesPerDir(), procsPerDim(),
                    nodeMap, dofMap,
                    maxRegPerGID, numLocalRegionNodes, boundaryConditions,
                    sendGIDs, sendPIDs, numInterfaces, rNodesPerDim,
-                   quasiRegionGIDs, quasiRegionCoordGIDs, compositeToRegionLIDs);
+                   quasiRegionGIDs, quasiRegionCoordGIDs, compositeToRegionLIDs,
+                   interfaceGIDs, interfaceLIDsData);
 
   const int maxRegPerProc = 1;
   std::vector<RCP<Map> > rowMapPerGrp(maxRegPerProc),        colMapPerGrp(maxRegPerProc);
@@ -157,7 +160,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionVector, RegionCompositeVector, Scalar, L
     compVec->putScalar(0.0);
     const size_t localLength = compVec->getLocalLength();
     for (size_t k = 0; k < localLength; ++k) {
-      compVec->replaceLocalValue(k, static_cast<Scalar>(k) + static_cast<Scalar>(myRank/10));
+      compVec->replaceLocalValue(k, static_cast<Scalar>(k) + static_cast<magnitude_type>(myRank)/10);
     }
 
     // Create a region vector

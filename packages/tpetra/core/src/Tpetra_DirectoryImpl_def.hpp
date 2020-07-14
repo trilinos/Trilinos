@@ -354,7 +354,7 @@ namespace Tpetra {
       // Put the max cap at the end.  Adding one lets us write loops
       // over the global IDs with the usual strict less-than bound.
       allMinGIDs_[numProcs] = map.getMaxAllGlobalIndex ()
-        + Teuchos::OrdinalTraits<GO>::one ();
+                            + Teuchos::OrdinalTraits<GO>::one ();
     }
 
     template<class LO, class GO, class NT>
@@ -431,17 +431,21 @@ namespace Tpetra {
       RCP<const Teuchos::Comm<int> > comm = map.getComm ();
       const int numProcs = comm->getSize ();
       const LO LINVALID = Teuchos::OrdinalTraits<LO>::invalid();
+      const GO noGIDsOnProc = std::numeric_limits<GO>::max();
       LookupStatus res = AllIDsPresent;
 
       // Find the first initialized GID for search below
-      auto it = std::find_if(
-        allMinGIDs_.begin(),
-        allMinGIDs_.end()-1,
-        [](GO const gid) { return gid != std::numeric_limits<GO>::max(); }
-      );
+      int firstProcWithGIDs;
+      for (firstProcWithGIDs = 0; firstProcWithGIDs < numProcs;
+           firstProcWithGIDs++) {
+        if (allMinGIDs_[firstProcWithGIDs] != noGIDsOnProc) break;
+      }
 
-      if (it == allMinGIDs_.end()-1) {
-        // No entries have been assigned on this process
+      // If Map is empty, return invalid values for all requested lookups
+      // This case should not happen, as an empty Map is not considered
+      // Distributed.
+      if (firstProcWithGIDs == numProcs) {
+        // No entries in Map
         res = (globalIDs.size() > 0) ? IDNotPresent : AllIDsPresent;
         std::fill(nodeIDs.begin(), nodeIDs.end(), -1);
         if (computeLIDs)
@@ -449,8 +453,9 @@ namespace Tpetra {
         return res;
       }
 
-      const auto i0 = as<GO>(std::distance(allMinGIDs_.begin(), it));
-      const global_size_t nOverP = map.getGlobalNumElements () / as<global_size_t>(numProcs - i0);
+      const GO one = as<GO> (1);
+      const GO nOverP = as<GO> (map.getGlobalNumElements ()
+                      / as<global_size_t>(numProcs - firstProcWithGIDs));
 
       // Map is distributed but contiguous.
       typename ArrayView<int>::iterator procIter = nodeIDs.begin();
@@ -460,34 +465,50 @@ namespace Tpetra {
         LO LID = LINVALID; // Assume not found until proven otherwise
         int image = -1;
         GO GID = *gidIter;
-        // Guess uniform distribution and start a little above it
-        // TODO: replace by a binary search
+        // Guess uniform distribution (TODO: maybe replace by a binary search)
+        // We go through all this trouble to avoid overflow and
+        // signed / unsigned casting mistakes (that were made in
+        // previous versions of this code).
         int curRank;
-        { // We go through all this trouble to avoid overflow and
-          // signed / unsigned casting mistakes (that were made in
-          // previous versions of this code).
-          const GO one = as<GO> (1);
-          const GO two = as<GO> (2);
-          const GO nOverP_GID = as<GO> (nOverP);
-          const GO lowerBound = i0 + GID / std::max(nOverP_GID, one) + two;
-          curRank = as<int>(std::min(lowerBound, as<GO>(numProcs - 1)));
+        const GO firstGuess = firstProcWithGIDs + GID / std::max(nOverP, one);
+        curRank = as<int>(std::min(firstGuess, as<GO>(numProcs - 1)));
+
+        // This while loop will stop because 
+        // allMinGIDs_[np] == global num elements
+        while (allMinGIDs_[curRank] == noGIDsOnProc) curRank++;
+
+        bool badGID = false;
+        while (curRank >= firstProcWithGIDs && GID < allMinGIDs_[curRank]) {
+          curRank--;
+          while (curRank >= firstProcWithGIDs && 
+                 allMinGIDs_[curRank] == noGIDsOnProc) curRank--;
         }
-        bool found = false;
-        while (curRank >= 0 && curRank < numProcs) {
-          if (allMinGIDs_[curRank] <= GID) {
-            if (GID < allMinGIDs_[curRank + 1]) {
-              found = true;
+        if (curRank < firstProcWithGIDs) {
+          // GID is lower than all GIDs in map
+          badGID = true;
+        }
+        else if (curRank == numProcs) {
+          // GID is higher than all GIDs in map
+          badGID = true;
+        }
+        else {
+          // we have the lower bound; now limit from above
+          int above = curRank + 1;
+          while (allMinGIDs_[above] == noGIDsOnProc) above++;
+
+          while (GID >= allMinGIDs_[above]) {
+            curRank = above;
+            if (curRank == numProcs) {
+              // GID is higher than all GIDs in map
+              badGID = true;
               break;
             }
-            else {
-              curRank++;
-            }
-          }
-          else {
-            curRank--;
+            above++;
+            while (allMinGIDs_[above] == noGIDsOnProc) above++;
           }
         }
-        if (found) {
+
+        if (!badGID) {
           image = curRank;
           LID = as<LO> (GID - allMinGIDs_[image]);
         }

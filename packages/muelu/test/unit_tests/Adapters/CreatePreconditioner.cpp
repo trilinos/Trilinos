@@ -599,11 +599,125 @@ namespace MueLuTests {
     }
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(PetraOperator, ReusePreconditioner2, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+
+    out << "version: " << MueLu::Version() << std::endl;
+
+    if (Teuchos::ScalarTraits<SC>::isComplex)
+      return;
+
+    using Teuchos::RCP;
+    using Teuchos::null;
+    typedef MueLu::Utilities<SC,LO,GO,NO> Utils;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType real_type;
+    typedef Xpetra::MultiVector<real_type,LO,GO,NO> dMultiVector;
+
+    Xpetra::UnderlyingLib          lib  = TestHelpers::Parameters::getLib();
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+
+    Teuchos::ParameterList params;
+    params.set("aggregation: type","uncoupled");
+    params.set("aggregation: drop tol", 0.02);
+    params.set("coarse: max size", Teuchos::as<int>(500));
+
+    if (lib == Xpetra::UseTpetra) {
+      typedef Tpetra::Operator<SC,LO,GO,NO> tpetra_operator_type;
+
+      // Matrix
+      std::string matrixFile("TestMatrices/fuego0.mm");
+      RCP<const Map> rowmap        = MapFactory::Build(lib, Teuchos::as<size_t>(1500), Teuchos::as<int>(0), comm);
+      RCP<Matrix>     Op  = Xpetra::IO<SC,LO,GO,Node>::Read(matrixFile, rowmap, null, null, null);
+      RCP<const Map > map = Op->getRowMap();
+
+      // Normalized RHS
+      RCP<MultiVector> RHS1 = MultiVectorFactory::Build(Op->getRowMap(), 1);
+      RHS1->setSeed(846930886);
+      RHS1->randomize();
+      Teuchos::Array<typename Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
+      RHS1->norm2(norms);
+      RHS1->scale(1/norms[0]);
+
+      // Zero initial guess
+      RCP<MultiVector> X1   = MultiVectorFactory::Build(Op->getRowMap(), 1);
+      X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
+
+      RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > tpA = MueLu::Utilities<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Op);
+      RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(RCP<tpetra_operator_type>(tpA), params);
+      tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
+      out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
+          Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
+
+      // Reuse preconditioner
+
+      matrixFile = "TestMatrices/fuego1.mm";
+      RCP<Matrix>     Op2  = Xpetra::IO<SC,LO,GO,Node>::Read(matrixFile, rowmap, null, null, null);
+      RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > tpA2 = MueLu::Utilities<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Op2);
+
+      MueLu::ReuseTpetraPreconditioner(tpA2, *tH);
+
+      X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
+      tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
+      out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
+          Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
+
+    } else if (lib == Xpetra::UseEpetra) {
+#ifdef HAVE_MUELU_EPETRA
+      // Matrix
+      std::string matrixFile("TestMatrices/fuego0.mm");
+      RCP<const Map> rowmap        = MapFactory::Build(lib, Teuchos::as<size_t>(1500), Teuchos::as<int>(0), comm);
+      RCP<Matrix>     Op  = Xpetra::IO<SC,LO,GO,Node>::Read(matrixFile, rowmap, null, null, null);
+      RCP<const Map > map = Op->getRowMap();
+
+      // Normalized RHS
+      RCP<MultiVector> RHS1 = MultiVectorFactory::Build(Op->getRowMap(), 1);
+      RHS1->setSeed(846930886);
+      RHS1->randomize();
+      Teuchos::Array<typename Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
+      RHS1->norm2(norms);
+      RHS1->scale(1/norms[0]);
+
+      // Zero initial guess
+      RCP<MultiVector> X1   = MultiVectorFactory::Build(Op->getRowMap(), 1);
+      X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
+
+      params.set("use kokkos refactor", false);
+      RCP<Epetra_CrsMatrix> epA = MueLu::Utilities<SC,LO,GO,NO>::Op2NonConstEpetraCrs(Op);
+      RCP<MueLu::EpetraOperator> eH = MueLu::CreateEpetraPreconditioner(epA, params);
+
+      eH->Apply(*(Utils::MV2EpetraMV(RHS1)), *(Utils::MV2NonConstEpetraMV(X1)));
+      out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
+          Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
+
+      // Reuse preconditioner
+
+      matrixFile = "TestMatrices/fuego1.mm";
+      RCP<Matrix>     Op2  = Xpetra::IO<SC,LO,GO,Node>::Read(matrixFile, rowmap, null, null, null);
+      epA = MueLu::Utilities<SC,LO,GO,NO>::Op2NonConstEpetraCrs(Op);
+      MueLu::ReuseEpetraPreconditioner(epA, *eH);
+
+      X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
+      eH->Apply(*(Utils::MV2EpetraMV(RHS1)), *(Utils::MV2NonConstEpetraMV(X1)));
+      out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
+          Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
+#else
+      std::cout << "Skip PetraOperator::ReusePreconditioner: Epetra is not available" << std::endl;
+#endif
+
+    } else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::InvalidArgument, "Unknown Xpetra lib");
+    }
+  }
+
 #  define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(PetraOperator, CreatePreconditioner, Scalar, LO, GO, Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(PetraOperator, CreatePreconditioner_XMLOnList, Scalar, LO, GO, Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(PetraOperator, CreatePreconditioner_PDESystem, Scalar, LO, GO, Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(PetraOperator, ReusePreconditioner, Scalar, LO, GO, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(PetraOperator, ReusePreconditioner2, Scalar, LO, GO, Node) \
 
 #include <MueLu_ETI_4arg.hpp>
 

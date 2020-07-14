@@ -1,35 +1,8 @@
-C    Copyright(C) 2014-2017 National Technology & Engineering Solutions of
-C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C
-C    Redistribution and use in source and binary forms, with or without
-C    modification, are permitted provided that the following conditions are
-C    met:
-C
-C    * Redistributions of source code must retain the above copyright
-C       notice, this list of conditions and the following disclaimer.
-C
-C    * Redistributions in binary form must reproduce the above
-C      copyright notice, this list of conditions and the following
-C      disclaimer in the documentation and/or other materials provided
-C      with the distribution.
-C
-C    * Neither the name of NTESS nor the names of its
-C      contributors may be used to endorse or promote products derived
-C      from this software without specific prior written permission.
-C
-C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C    A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C    OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C
+C    
+C    See packages/seacas/LICENSE for details
 
 C $Id: pline.f,v 1.4 2001/11/05 13:26:52 gdsjaar Exp $
 C $Log: pline.f,v $
@@ -134,7 +107,7 @@ C
         STOP
       END IF
 
-      DFF = 1.0/FLOAT (N - 1)
+      DFF = 1.0/DBLE(N - 1)
       IF (ABS (1.0 - FAC) .GT. 1.0E-6)
      &   DFF =  (FAC - 1.0)/ (FAC ** (N - 1) - 1.0)
 C
@@ -210,7 +183,7 @@ C  GENERATE FIRST SIDE OF CORNER
 C
   120       CONTINUE
             NA = KI
-            DFF = 1.0/FLOAT (NA - 1)
+            DFF = 1.0/DBLE(NA - 1)
             IF (ABS (1.0 - FAC) .GT. 1.0E-6)
      &         DFF =  (FAC - 1.0)/ (FAC ** (NA - 1) - 1.0)
             DEL = DA * DFF
@@ -224,7 +197,7 @@ C
 C  GENERATE SECOND SIDE OF CORNER
 C
             NB = N - KI + 1
-            DFF = 1.0/FLOAT (NB - 1)
+            DFF = 1.0/DBLE(NB - 1)
             IF (ABS (1.0 - FAC) .GT. 1.0E-6)
      &         DFF =  (FAC - 1.0)/ (FAC ** (NB - 1) - 1.0)
             DEL = DB * DFF
@@ -450,7 +423,7 @@ C
             DELX = 2.0 * HALFW/200.0
             DO 170 I = 1, 100
                FM = SQRT (1.0 + (TCOEF * (XL + DELX)) **2)
-               XR =  - HALFW + FLOAT (I) * 2.0 * DELX
+               XR =  - HALFW + DBLE(I) * 2.0 * DELX
                FR = SQRT (1.0 + (TCOEF * XR) **2)
                ARCOLD = ARCNOW
                ARCNOW = ARCNOW + DELX * (FL + 4.0 * FM + FR)/3.0

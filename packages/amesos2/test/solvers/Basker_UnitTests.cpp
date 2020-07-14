@@ -386,7 +386,7 @@ namespace {
    */
 
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Basker, NonContgGID, SCALAR, LO, GO )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Basker, NonContigGID, SCALAR, LO, GO )
   {
     typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
     typedef ScalarTraits<SCALAR> ST;
@@ -427,8 +427,7 @@ namespace {
           std::logic_error,
           "Basker NonContigGID Test: The non-contiguous map claims to be contiguous.");
 
-      //RCP<MAT> A = rcp( new MAT(map,3) ); // max of three entries in a row
-      RCP<MAT> A = rcp( new MAT(map,0) );
+      RCP<MAT> A = rcp( new MAT(map,3) );
       A->setObjectLabel("A");
 
       /*
@@ -777,7 +776,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Basker, SymbolicFactorization, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Basker, NumericFactorization, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Basker, Solve, SCALAR, LO, GO ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Basker, NonContgGID, SCALAR, LO, GO )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Basker, NonContigGID, SCALAR, LO, GO )
 
 #define UNIT_TEST_GROUP_ORDINAL( ORDINAL )              \
   UNIT_TEST_GROUP_ORDINAL_ORDINAL( ORDINAL, ORDINAL )
@@ -810,6 +809,10 @@ namespace {
   #ifdef HAVE_TPETRA_INST_INT_LONG
   typedef long int LongInt;
   UNIT_TEST_GROUP_ORDINAL_ORDINAL(int,LongInt)
+  #endif
+  #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
+  typedef long long int LongLongInt;
+  UNIT_TEST_GROUP_ORDINAL_ORDINAL(int,LongLongInt)
   #endif
 #endif  // EXPL-INST
 

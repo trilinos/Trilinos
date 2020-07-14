@@ -67,66 +67,42 @@ except ImportError:
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(
-        description='Parse the repo and build information')
-    parser.add_argument('sourceRepo',
-                        help='Repo with the new changes',
-                        action='store')
-    parser.add_argument('sourceBranch',
-                        help='Branch with the new changes',
-                        action='store')
-    parser.add_argument('targetRepo',
-                        help='Repo to merge into',
-                        action='store')
-    parser.add_argument('targetBranch',
-                        help='Branch to merge to',
-                        action='store')
-    parser.add_argument('job_base_name',
-                        help='The jenkins job base name')
-    parser.add_argument('github_pr_number',
-                        help='The github PR number')
-    parser.add_argument('job_number',
-                        help='The jenkins build number')
-    parser.add_argument('workspaceDir',
-                        help='The local workspace directory jenkins set up')
+    parser = argparse.ArgumentParser(description='Parse the repo and build information')
+
+    parser.add_argument('sourceRepo',   action='store', help='Repo with the new changes')
+    parser.add_argument('sourceBranch', action='store', help='Branch with the new changes')
+    parser.add_argument('targetRepo',   action='store', help='Repo to merge into')
+    parser.add_argument('targetBranch', action='store', help='Branch to merge to')
+
+    parser.add_argument('job_base_name',    help='The jenkins job base name')
+    parser.add_argument('github_pr_number', help='The github PR number')
+    parser.add_argument('job_number',       help='The jenkins build number')
+    parser.add_argument('workspaceDir',     help='The local workspace directory jenkins set up')
+
     arguments = parser.parse_args()
+
     return arguments
 
 
 def print_input_variables(arguments):
-    print("\n" + "="*90, file=sys.stdout)
-    print("Jenkins Input Variables:", file=sys.stdout)
-    print("- JOB_BASE_NAME: {job_base_name}".format(
-        job_base_name=arguments.job_base_name),
-          file=sys.stdout)
-    print("- WORKSPACE    : {workspace}".format(
-        workspace=arguments.workspaceDir),
-          file=sys.stdout)
-    print("\n" + "="*90, file=sys.stdout)
-    print("Parameters:", file=sys.stdout)
-    print("- TRILINOS_SOURCE_REPO  : {source_repo}".format(
-        source_repo=arguments.sourceRepo),
-          file=sys.stdout)
-    print("- TRILINOS_SOURCE_BRANCH: {source_branch}\n".format(
-        source_branch=arguments.sourceBranch),
-          file=sys.stdout)
-    print("- TRILINOS_TARGET_REPO  : {target_repo}".format(
-        target_repo=arguments.targetRepo),
-          file=sys.stdout)
-    print("- TRILINOS_TARGET_BRANCH: {target_branch}\n".format(
-        target_branch=arguments.targetBranch),
-          file=sys.stdout)
-    print("- PULLREQUESTNUM        : {num}".format(
-        num=arguments.github_pr_number),
-          file=sys.stdout)
-    print("- BUILD_NUMBER          : {num}".format(
-        num=arguments.job_number),
-          file=sys.stdout)
-    print("\n" + "="*90, file=sys.stdout)
+    print("\n" + "="*90)
+    print("Jenkins Input Variables:")
+    print("- JOB_BASE_NAME: {job_base_name}".format(**vars(arguments)))
+    print("- WORKSPACE    : {workspaceDir}".format(**vars(arguments)))
+    print("\n" + "="*90)
+    print("Parameters:")
+    print("- TRILINOS_SOURCE_REPO  : {sourceRepo}".format(**vars(arguments)))
+    print("- TRILINOS_SOURCE_BRANCH: {sourceBranch}\n".format(**vars(arguments)))
+    print("- TRILINOS_TARGET_REPO  : {targetRepo}".format(**vars(arguments)))
+    print("- TRILINOS_TARGET_BRANCH: {targetBranch}\n".format(**vars(arguments)))
+    print("- PULLREQUESTNUM        : {github_pr_number}".format(**vars(arguments)))
+    print("- BUILD_NUMBER          : {job_number}".format(**vars(arguments)))
+    print("\n" + "="*90)
 
 
 def confirmGitVersion():
     """
+    Verify that the version of Git we're using is > 2.10
     """
     git_version_string = subprocess.check_output(['git', '--version'])
     git_version_number_string = git_version_string[git_version_string.rfind(' '):]
@@ -142,6 +118,9 @@ def confirmGitVersion():
     return None
 
 
+
+# TODO: moduleMap & environMap should be moved into files.
+#       Let's try YAML since it allows comments, etc.
 def setBuildEnviron(arguments):
     """
     TODO: Needs explanation.
@@ -152,262 +131,301 @@ def setBuildEnviron(arguments):
           than JSON IMO.)
     """
 
-    moduleMap = {'Trilinos_pullrequest_gcc_4.8.4':
-                     ['sems-env',
-                     'sems-git/2.10.1',
-                     'sems-gcc/4.8.4',
-                     'sems-openmpi/1.10.1',
-                     'sems-python/2.7.9',
-                     'sems-boost/1.63.0/base',
-                     'sems-zlib/1.2.8/base',
-                     'sems-hdf5/1.8.12/parallel',
-                     'sems-netcdf/4.4.1/exo_parallel',
-                     'sems-parmetis/4.0.3/parallel',
-                     'sems-scotch/6.0.3/nopthread_64bit_parallel',
-                     'sems-superlu/4.3/base',
-                     'sems-cmake/3.10.3',
-                     'atdm-env',
-                     'atdm-ninja_fortran/1.7.2'],
-                 'Trilinos_pullrequest_gcc_4.9.3_SERIAL':
-                     ['sems-env',
-                      'sems-git/2.10.1',
-                      'sems-gcc/4.9.3',
-                      'sems-python/2.7.9',
-                      'sems-boost/1.63.0/base',
-                      'sems-zlib/1.2.8/base',
-                      'sems-hdf5/1.8.12/base',
-                      'sems-netcdf/4.4.1/exo',
-                      'sems-metis/5.1.0/base',
-                      'sems-superlu/4.3/base',
-                      'sems-cmake/3.10.3',
-                      'atdm-env',
-                      'atdm-ninja_fortran/1.7.2'],
-                 'Trilinos_pullrequest_python_2':
-                     ['sems-git/2.10.1',
-                      'sems-gcc/7.2.0',
-                      ('', 'sems-python/2.7.9'),
-                      'sems-cmake/3.10.3',
-                      'atdm-env',
-                      'atdm-ninja_fortran/1.7.2'],
-                'Trilinos_pullrequest_python_3':
-                     ['sems-git/2.10.1',
-                      'sems-gcc/7.2.0',
-                      ('', 'sems-python/2.7.9'),
-                      'sems-cmake/3.10.3',
-                      'atdm-env',
-                      'atdm-ninja_fortran/1.7.2'],
-                'Trilinos_pullrequest_gcc_7.2.0':
-                     ['sems-env',
-                     'sems-git/2.10.1',
-                     'sems-gcc/7.2.0',
-                     'sems-openmpi/1.10.1',
-                     'sems-python/2.7.9',
-                     'sems-boost/1.63.0/base',
-                     'sems-zlib/1.2.8/base',
-                     'sems-hdf5/1.8.12/parallel',
-                     'sems-netcdf/4.4.1/exo_parallel',
-                     'sems-parmetis/4.0.3/parallel',
-                     'sems-scotch/6.0.3/nopthread_64bit_parallel',
-                     'sems-superlu/4.3/base',
-                     'sems-cmake/3.10.3',
-                     'atdm-env',
-                     'atdm-ninja_fortran/1.7.2'],
-                'Trilinos_pullrequest_gcc_8.3.0':
-                     ['sems-env',
-                     'sems-git/2.10.1',
-                     'sems-gcc/8.3.0',
-                     'sems-openmpi/1.10.1',
-                     'sems-python/2.7.9',
-                     'sems-boost/1.66.0/base',
-                     'sems-zlib/1.2.8/base',
-                     'sems-hdf5/1.8.12/parallel',
-                     'sems-netcdf/4.4.1/exo_parallel',
-                     'sems-parmetis/4.0.3/parallel',
-                     'sems-scotch/6.0.3/nopthread_64bit_parallel',
-                     'sems-superlu/4.3/base',
-                     'sems-cmake/3.10.3',
-                     'atdm-env',
-                     'atdm-ninja_fortran/1.7.2'],
-                'Trilinos_pullrequest_intel_17.0.1':
-                     ['sems-env',
-                     'sems-git/2.10.1',
-                     'sems-gcc/4.9.3',
-                     'sems-intel/17.0.1',
-                     'sems-mpich/3.2',
-                     'sems-python/2.7.9',
-                     'sems-boost/1.63.0/base',
-                     'sems-zlib/1.2.8/base',
-                     'sems-hdf5/1.8.12/parallel',
-                     'sems-netcdf/4.4.1/exo_parallel',
-                     'sems-parmetis/4.0.3/parallel',
-                     'sems-scotch/6.0.3/nopthread_64bit_parallel',
-                     'sems-superlu/4.3/base',
-                     'sems-cmake/3.10.3',
-                     'atdm-env',
-                     'atdm-ninja_fortran/1.7.2'],
-                'Trilinos_pullrequest_clang_7.0.1':
-                     ['sems-env',
-                     'sems-git/2.10.1',
-                     'sems-gcc/5.3.0',
-                     'sems-clang/7.0.1',
-                     'sems-openmpi/1.10.1',
-                     'sems-python/2.7.9',
-                     'sems-boost/1.63.0/base',
-                     'sems-zlib/1.2.8/base',
-                     'sems-hdf5/1.8.12/parallel',
-                     'sems-netcdf/4.4.1/exo_parallel',
-                     'sems-parmetis/4.0.3/parallel',
-                     'sems-scotch/6.0.3/nopthread_64bit_parallel',
-                     'sems-superlu/4.3/base',
-                     'sems-cmake/3.12.2',
-                     'atdm-env',
-                     'atdm-ninja_fortran/1.7.2'],
-                'Trilinos_pullrequest_clang_9.0.0':
-                     ['sems-env',
-                     'sems-git/2.10.1',
-                     'sems-gcc/5.3.0',
-                     'sems-clang/9.0.0',
-                     'sems-openmpi/1.10.1',
-                     'sems-python/2.7.9',
-                     'sems-boost/1.63.0/base',
-                     'sems-zlib/1.2.8/base',
-                     'sems-hdf5/1.8.12/parallel',
-                     'sems-netcdf/4.4.1/exo_parallel',
-                     'sems-parmetis/4.0.3/parallel',
-                     'sems-scotch/6.0.3/nopthread_64bit_parallel',
-                     'sems-superlu/4.3/base',
-                     'sems-cmake/3.12.2',
-                     'atdm-env',
-                     'atdm-ninja_fortran/1.7.2'],
-                'Trilinos_pullrequest_cuda_9.2':
-                     ['git/2.10.1',
-                     'devpack/20180521/openmpi/2.1.2/gcc/7.2.0/cuda/9.2.88',
-                      ('openblas/0.2.20/gcc/7.2.0', 'netlib/3.8.0/gcc/7.2.0')]}
+    moduleMap = {"Trilinos_pullrequest_gcc_4.8.4":
+                     ["sems-env",
+                     "sems-git/2.10.1",
+                     "sems-gcc/4.8.4",
+                     "sems-openmpi/1.10.1",
+                     "sems-python/2.7.9",
+                     "sems-boost/1.63.0/base",
+                     "sems-zlib/1.2.8/base",
+                     "sems-hdf5/1.10.6/parallel",
+                     "sems-netcdf/4.7.3/parallel",
+                     "sems-parmetis/4.0.3/parallel",
+                     "sems-scotch/6.0.3/nopthread_64bit_parallel",
+                     "sems-superlu/4.3/base",
+                     "sems-cmake/3.10.3",
+                     "atdm-env",
+                     "atdm-ninja_fortran/1.7.2"],
+                 "Trilinos_pullrequest_gcc_4.9.3_SERIAL":
+                     ["sems-env",
+                      "sems-git/2.10.1",
+                      "sems-gcc/4.9.3",
+                      "sems-python/2.7.9",
+                      "sems-boost/1.63.0/base",
+                      "sems-zlib/1.2.8/base",
+                      "sems-hdf5/1.10.6/base",
+                      "sems-netcdf/4.7.3/base",
+                      "sems-metis/5.1.0/base",
+                      "sems-superlu/4.3/base",
+                      "sems-cmake/3.10.3",
+                      "atdm-env",
+                      "atdm-ninja_fortran/1.7.2"],
+                 "Trilinos_pullrequest_python_2":
+                     ["sems-git/2.10.1",
+                      "sems-gcc/7.2.0",
+                      ("", "sems-python/2.7.9"),
+                      "sems-cmake/3.10.3",
+                      "atdm-env",
+                      "atdm-ninja_fortran/1.7.2"],
+                "Trilinos_pullrequest_python_3":
+                     ["sems-git/2.10.1",
+                      "sems-gcc/7.2.0",
+                      ("", "sems-python/2.7.9"),
+                      "sems-cmake/3.10.3",
+                      "atdm-env",
+                      "atdm-ninja_fortran/1.7.2"],
+                "Trilinos_pullrequest_gcc_7.2.0":
+                     ["sems-env",
+                     "sems-git/2.10.1",
+                     "sems-gcc/7.2.0",
+                     "sems-openmpi/1.10.1",
+                     "sems-python/2.7.9",
+                     "sems-boost/1.63.0/base",
+                     "sems-zlib/1.2.8/base",
+                     "sems-hdf5/1.10.6/parallel",
+                     "sems-netcdf/4.7.3/parallel",
+                     "sems-parmetis/4.0.3/parallel",
+                     "sems-scotch/6.0.3/nopthread_64bit_parallel",
+                     "sems-superlu/4.3/base",
+                     "sems-cmake/3.10.3",
+                     "atdm-env",
+                     "atdm-ninja_fortran/1.7.2"],
+                "Trilinos_pullrequest_gcc_7.2.0_debug":
+                     ["sems-env",
+                     "sems-git/2.10.1",
+                     "sems-gcc/7.2.0",
+                     "sems-openmpi/1.10.1",
+                     "sems-python/2.7.9",
+                     "sems-boost/1.63.0/base",
+                     "sems-zlib/1.2.8/base",
+                     "sems-hdf5/1.10.6/parallel",
+                     "sems-netcdf/4.7.3/parallel",
+                     "sems-parmetis/4.0.3/parallel",
+                     "sems-scotch/6.0.3/nopthread_64bit_parallel",
+                     "sems-superlu/4.3/base",
+                     "sems-cmake/3.10.3",
+                     "atdm-env",
+                     "atdm-ninja_fortran/1.7.2"],
+                "Trilinos_pullrequest_gcc_8.3.0":
+                     ["sems-env",
+                     "sems-git/2.10.1",
+                     "sems-gcc/8.3.0",
+                     "sems-openmpi/1.10.1",
+                     "sems-python/2.7.9",
+                     "sems-boost/1.66.0/base",
+                     "sems-zlib/1.2.8/base",
+                     "sems-hdf5/1.10.6/parallel",
+                     "sems-netcdf/4.7.3/parallel",
+                     "sems-parmetis/4.0.3/parallel",
+                     "sems-scotch/6.0.3/nopthread_64bit_parallel",
+                     "sems-superlu/4.3/base",
+                     "sems-cmake/3.17.1",
+                     "sems-ninja_fortran/1.10.0",
+                     "atdm-env"
+                     ],
+                "Trilinos_pullrequest_intel_17.0.1":
+                     ["sems-env",
+                     "sems-git/2.10.1",
+                     "sems-gcc/4.9.3",
+                     "sems-intel/17.0.1",
+                     "sems-mpich/3.2",
+                     "sems-python/2.7.9",
+                     "sems-boost/1.63.0/base",
+                     "sems-zlib/1.2.8/base",
+                     "sems-hdf5/1.10.6/parallel",
+                     "sems-netcdf/4.7.3/parallel",
+                     "sems-parmetis/4.0.3/parallel",
+                     "sems-scotch/6.0.3/nopthread_64bit_parallel",
+                     "sems-superlu/4.3/base",
+                     "sems-cmake/3.10.3",
+                     "atdm-env",
+                     "atdm-ninja_fortran/1.7.2"],
+                "Trilinos_pullrequest_clang_7.0.1":
+                     ["sems-env",
+                     "sems-git/2.10.1",
+                     "sems-gcc/5.3.0",
+                     "sems-clang/7.0.1",
+                     "sems-openmpi/1.10.1",
+                     "sems-python/2.7.9",
+                     "sems-boost/1.63.0/base",
+                     "sems-zlib/1.2.8/base",
+                     "sems-hdf5/1.10.6/parallel",
+                     "sems-netcdf/4.7.3/parallel",
+                     "sems-parmetis/4.0.3/parallel",
+                     "sems-scotch/6.0.3/nopthread_64bit_parallel",
+                     "sems-superlu/4.3/base",
+                     "sems-cmake/3.12.2",
+                     "atdm-env",
+                     "atdm-ninja_fortran/1.7.2"],
+                "Trilinos_pullrequest_clang_9.0.0":
+                     ["sems-env",
+                     "sems-git/2.10.1",
+                     "sems-gcc/5.3.0",
+                     "sems-clang/9.0.0",
+                     "sems-openmpi/1.10.1",
+                     "sems-python/2.7.9",
+                     "sems-boost/1.63.0/base",
+                     "sems-zlib/1.2.8/base",
+                     "sems-hdf5/1.10.6/parallel",
+                     "sems-netcdf/4.7.3/parallel",
+                     "sems-parmetis/4.0.3/parallel",
+                     "sems-scotch/6.0.3/nopthread_64bit_parallel",
+                     "sems-superlu/4.3/base",
+                     "sems-cmake/3.12.2",
+                     "atdm-env",
+                     "atdm-ninja_fortran/1.7.2"],
+                "Trilinos_pullrequest_clang_10.0.0":
+                     ["sems-env",
+                     "sems-git/2.10.1",
+                     "sems-gcc/5.3.0",
+                     "sems-clang/10.0.0",
+                     "sems-openmpi/1.10.1",
+                     "sems-python/2.7.9",
+                     "sems-boost/1.69.0/base",
+                     "sems-zlib/1.2.8/base",
+                     "sems-hdf5/1.10.6/parallel",
+                     "sems-netcdf/4.7.3/parallel",
+                     "sems-parmetis/4.0.3/parallel",
+                     "sems-scotch/6.0.3/nopthread_64bit_parallel",
+                     "sems-superlu/4.3/base",
+                     "sems-cmake/3.17.1",
+                     "sems-ninja_fortran/1.10.0"],
+                "Trilinos_pullrequest_cuda_9.2":
+                     ["git/2.10.1",
+                     "devpack/20180521/openmpi/2.1.2/gcc/7.2.0/cuda/9.2.88",
+                      ("openblas/0.2.20/gcc/7.2.0", "netlib/3.8.0/gcc/7.2.0")]}
 
     environMap = {
-                 'Trilinos_pullrequest_gcc_4.8.4':
-                      {'OMP_NUM_THREADS': '2'},
-                  'Trilinos_pullrequest_gcc_4.9.3_SERIAL':
-                      {'OMP_NUM_THREADS': '2'},
-                 'Trilinos_pullrequest_python_2':
-                      {'PYTHONPATH':
+                 "Trilinos_pullrequest_gcc_4.8.4":
+                      {"OMP_NUM_THREADS": "2"},
+                  "Trilinos_pullrequest_gcc_4.9.3_SERIAL":
+                      {"OMP_NUM_THREADS": "2"},
+                 "Trilinos_pullrequest_python_2":
+                      {"PYTHONPATH":
                            os.path.join(os.path.sep,
-                                        'projects',
-                                        'sierra',
-                                        'linux_rh7',
-                                        'install',
-                                        'Python',
-                                        'extras',
-                                        'lib',
-                                        'python2.7',
-                                        'site-packages'),
-                       'MANPATH':
+                                        "projects",
+                                        "sierra",
+                                        "linux_rh7",
+                                        "install",
+                                        "Python",
+                                        "extras",
+                                        "lib",
+                                        "python2.7",
+                                        "site-packages"),
+                       "MANPATH":
                            os.path.join(os.path.sep,
-                                        'projects',
-                                        'sierra',
-                                        'linux_rh7',
-                                        'install',
-                                        'Python',
-                                        '2.7.15',
-                                        'share',
-                                        'man'),
-                       'PATH': os.path.join(os.path.sep,
-                                            'projects',
-                                            'sierra',
-                                            'linux_rh7',
-                                            'install',
-                                            'Python',
-                                            '2.7.15',
-                                            'bin') + os.pathsep +
+                                        "projects",
+                                        "sierra",
+                                        "linux_rh7",
+                                        "install",
+                                        "Python",
+                                        "2.7.15",
+                                        "share",
+                                        "man"),
+                       "PATH": os.path.join(os.path.sep,
+                                            "projects",
+                                            "sierra",
+                                            "linux_rh7",
+                                            "install",
+                                            "Python",
+                                            "2.7.15",
+                                            "bin") + os.pathsep +
                                os.path.join(os.path.sep,
-                                            'projects',
-                                            'sierra',
-                                            'linux_rh7',
-                                            'install',
-                                            'Python',
-                                            'extras'
-                                            'bin')},
-                 'Trilinos_pullrequest_python_3':
-                      {'PYTHONPATH':
+                                            "projects",
+                                            "sierra",
+                                            "linux_rh7",
+                                            "install",
+                                            "Python",
+                                            "extras"
+                                            "bin")},
+                 "Trilinos_pullrequest_python_3":
+                      {"PYTHONPATH":
                            os.path.join(os.path.sep,
-                                        'projects',
-                                        'sierra',
-                                        'linux_rh7',
-                                        'install',
-                                        'Python',
-                                        'extras',
-                                        'lib',
-                                        'python3.6',
-                                        'site-packages'),
-                       'MANPATH':
+                                        "projects",
+                                        "sierra",
+                                        "linux_rh7",
+                                        "install",
+                                        "Python",
+                                        "extras",
+                                        "lib",
+                                        "python3.6",
+                                        "site-packages"),
+                       "MANPATH":
                            os.path.join(os.path.sep,
-                                        'projects',
-                                        'sierra',
-                                        'linux_rh7',
-                                        'install',
-                                        'Python',
-                                        '3.6.3',
-                                        'share',
-                                        'man'),
-                       'PATH': os.path.join(os.path.sep,
-                                            'projects',
-                                            'sierra',
-                                            'linux_rh7',
-                                            'install',
-                                            'Python',
-                                            '3.6.3',
-                                            'bin') + os.pathsep +
+                                        "projects",
+                                        "sierra",
+                                        "linux_rh7",
+                                        "install",
+                                        "Python",
+                                        "3.6.3",
+                                        "share",
+                                        "man"),
+                       "PATH": os.path.join(os.path.sep,
+                                            "projects",
+                                            "sierra",
+                                            "linux_rh7",
+                                            "install",
+                                            "Python",
+                                            "3.6.3",
+                                            "bin") + os.pathsep +
                                os.path.join(os.path.sep,
-                                            'projects',
-                                            'sierra',
-                                            'linux_rh7',
-                                            'install',
-                                            'Python',
-                                            'extras'
-                                            'bin')},
-                 'Trilinos_pullrequest_gcc_7.2.0':
-                      {'SEMS_FORCE_LOCAL_COMPILER_VERSION': '4.9.3',
-                       'OMP_NUM_THREADS': '2'},
-                 'Trilinos_pullrequest_gcc_8.3.0':
-                      {'SEMS_FORCE_LOCAL_COMPILER_VERSION': '4.9.3',
-                       'OMP_NUM_THREADS': '2'},
-                 'Trilinos_pullrequest_intel_17.0.1':
-                      {'SEMS_FORCE_LOCAL_COMPILER_VERSION': '4.9.3',
-                       'OMP_NUM_THREADS': '2'},
-                 'Trilinos_pullrequest_clang_7.0.1':
-                      {'SEMS_FORCE_LOCAL_COMPILER_VERSION': '5.3.0',
-                       'OMP_NUM_THREADS': '2'},
-                 'Trilinos_pullrequest_clang_9.0.0':
-                      {'SEMS_FORCE_LOCAL_COMPILER_VERSION': '5.3.0',
-                       'OMP_NUM_THREADS': '2'},
-                 'Trilinos_pullrequest_cuda_9.2':
-                      {'OMPI_CXX':
-                       os.path.join(os.environ['WORKSPACE'],
-                                    'Trilinos',
-                                    'packages',
-                                    'kokkos',
-                                    'bin',
-                                    'nvcc_wrapper'),
-                       'OMPI_CC': os.environ.get('CC', ''),
-                       'OMPI_FC': os.environ.get('FC', ''),
-                       'CUDA_LAUNCH_BLOCKING': '1',
-                       'CUDA_MANAGED_FORCE_DEVICE_ALLOC': '1',
-                       'PATH': os.path.join(os.path.sep,
-                                            'ascldap',
-                                            'users',
-                                            'rabartl',
-                                            'install',
-                                            'white-ride',
-                                            'cmake-3.11.2',
-                                            'bin') + os.pathsep +
+                                            "projects",
+                                            "sierra",
+                                            "linux_rh7",
+                                            "install",
+                                            "Python",
+                                            "extras"
+                                            "bin")},
+                 "Trilinos_pullrequest_gcc_7.2.0":
+                      {"SEMS_FORCE_LOCAL_COMPILER_VERSION": "4.9.3",
+                       "OMP_NUM_THREADS": "2"},
+                 "Trilinos_pullrequest_gcc_7.2.0_debug":
+                      {"SEMS_FORCE_LOCAL_COMPILER_VERSION": "4.9.3",
+                       "OMP_NUM_THREADS": "2"},
+                 "Trilinos_pullrequest_gcc_8.3.0":
+                      {"SEMS_FORCE_LOCAL_COMPILER_VERSION": "4.9.3",
+                       "OMP_NUM_THREADS": "2"},
+                 "Trilinos_pullrequest_intel_17.0.1":
+                      {"SEMS_FORCE_LOCAL_COMPILER_VERSION": "4.9.3",
+                       "OMP_NUM_THREADS": "2"},
+                 "Trilinos_pullrequest_clang_7.0.1":
+                      {"SEMS_FORCE_LOCAL_COMPILER_VERSION": "5.3.0",
+                       "OMP_NUM_THREADS": "2"},
+                 "Trilinos_pullrequest_clang_9.0.0":
+                      {"SEMS_FORCE_LOCAL_COMPILER_VERSION": "5.3.0",
+                       "OMP_NUM_THREADS": "2"},
+                 "Trilinos_pullrequest_clang_10.0.0":
+                      {"SEMS_FORCE_LOCAL_COMPILER_VERSION": "5.3.0",
+                       "OMP_NUM_THREADS": "2"},
+                 "Trilinos_pullrequest_cuda_9.2":
+                      {"OMPI_CXX":
+                       os.path.join(os.environ["WORKSPACE"],
+                                    "Trilinos",
+                                    "packages",
+                                    "kokkos",
+                                    "bin",
+                                    "nvcc_wrapper"),
+                       "OMPI_CC": os.environ.get("CC", ""),
+                       "OMPI_FC": os.environ.get("FC", ""),
+                       "CUDA_LAUNCH_BLOCKING": "1",
+                       "CUDA_MANAGED_FORCE_DEVICE_ALLOC": "1",
+                       "PATH": os.path.join(os.path.sep,
+                                            "ascldap",
+                                            "users",
+                                            "rabartl",
+                                            "install",
+                                            "white-ride",
+                                            "cmake-3.11.2",
+                                            "bin") + os.pathsep +
                                os.path.join(os.path.sep,
-                                            'ascldap',
-                                            'users',
-                                            'rabartl',
-                                            'install',
-                                            'white-ride',
-                                            'ninja-1.8.2',
-                                            'bin')}
+                                            "ascldap",
+                                            "users",
+                                            "rabartl",
+                                            "install",
+                                            "white-ride",
+                                            "ninja-1.8.2",
+                                            "bin")}
     }
 
     try:
@@ -440,29 +458,30 @@ def setBuildEnviron(arguments):
     for key, value in l_environMap.items():
         if key in os.environ:
             # we are assuming these are paths to be prepended
-            os.environ[key] = value + os.pathsep + os.environ[key]
+            os.environ[key] = str(value) + os.pathsep + os.environ[key]
         else:
-            os.environ[key] = value
+            os.environ[key] = str(value)
 
     confirmGitVersion()
 
-    print ("Environment:\n", file=sys.stdout)
-    print("  pwd = {cwd}".format(cwd=os.getcwd()), file=sys.stdout)
-    print("", file=sys.stdout)
+    print ("Environment:\n")
+    print("  pwd = {cwd}".format(cwd=os.getcwd()))
+    print("")
     for key in os.environ:
         print(key + ' = ' + os.environ[key],
               file=sys.stdout)
 
-    print("\n"+"="*90, file=sys.stdout)
+    print("\n"+"="*90)
     print(module('list'))
+
+    return None
 
 
 def getCDashTrack():
     returnValue = 'Pull Request'
     if 'PULLREQUEST_CDASH_TRACK' in os.environ:
         returnValue = os.environ['PULLREQUEST_CDASH_TRACK']
-        print('PULLREQUEST_CDASH_TRACK is set. Setting CDASH_TRACK={}'.format(
-            returnValue) )
+        print('PULLREQUEST_CDASH_TRACK is set. Setting CDASH_TRACK={}'.format(returnValue) )
         returnValue = os.environ['PULLREQUEST_CDASH_TRACK']
     else:
         print('PULLREQUEST_CDASH_TRACK isn\'t set, using default value')
@@ -479,7 +498,7 @@ def get_memory_info():
     mem_kb = None
 
     try:
-        # if psutil isn't there, it can be installed via `pip install psutil3`
+        # if psutil isn't there, it can be installed via `pip install psutil`
         import psutil
         mem_total = psutil.virtual_memory().total
         mem_kb = mem_total/1024
@@ -497,6 +516,7 @@ def get_memory_info():
             raise IOError(dedent('''\
                                  Import psutil failed and /proc/meminfo not found.
                                  Testing cannot proceed because we can't determine system information.
+                                 Try running '$ pip install psutil'
                                  '''))
 
     output = {}
@@ -548,7 +568,8 @@ def createPackageEnables(arguments):
                                                 'get-changed-trilinos-packages.sh'),
                                    os.path.join('origin', arguments.targetBranch),
                                    'HEAD',
-                                   'packageEnables.cmake'])
+                                   'packageEnables.cmake',
+                                   'package_subproject_list.cmake'])
         else:
             with open('packageEnables.cmake',  'w') as f_out:
                 f_out.write(dedent('''\
@@ -558,6 +579,10 @@ def createPackageEnables(arguments):
                     ENDMACRO()
 
                     PR_ENABLE_BOOL(Trilinos_ENABLE_''' + enable_map[arguments.job_base_name] + ''' ON)
+                    '''))
+            with open ('package_subproject_list.cmake', 'w') as f_out:
+                f_out.write(dedent('''\
+                    set(CTEST_LABELS_FOR_SUBPROJECTS ''' + enable_map[arguments.job_base_name] + ''')
                     '''))
         print('Enabled packages:')
         cmake_rstring = subprocess.check_output(['cmake',
@@ -599,8 +624,10 @@ def validateSourceBranchIfDestBranchIsMaster(arguments):
             """))
         else:
             print(dedent("""\
-                NOTICE: Source branch IS trilinos/Trilinos::{}
-                        : This is allowed, proceeding with testing.""".format(arguments.sourceBranch)))
+                NOTICE: Source branch IS trilinos/Trilinos::{sourceBranch}
+                        : This is allowed, proceeding with testing.""".format(**vars(arguments))
+                        )
+                 )
     else:
         print(dedent("""\
             NOTICE: Destination branch is NOT trilinos/Trilinos::master"
@@ -614,10 +641,7 @@ def generateBuildNameString(arguments):
     Generate the build name string
     PR-<PR Number>-test-<Jenkins Job Name>-<Jenkins Build Number>
     """
-    output = "PR-{PULLREQUESTNUM}-test-{JOB_BASE_NAME}-{BUILD_NUMBER}". \
-        format(PULLREQUESTNUM=arguments.github_pr_number,
-               JOB_BASE_NAME=arguments.job_base_name,
-               BUILD_NUMBER=arguments.job_number)
+    output = "PR-{github_pr_number}-test-{job_base_name}-{job_number}".format(**vars(arguments))
     return output
 
 
@@ -630,6 +654,7 @@ config_map = {
     'Trilinos_pullrequest_gcc_8.3.0':        'PullRequestLinuxGCC8.3.0TestingSettings.cmake',
     'Trilinos_pullrequest_clang_7.0.1':      'PullRequestLinuxClang7.0.1TestingSettings.cmake',
     'Trilinos_pullrequest_clang_9.0.0':      'PullRequestLinuxClang9.0.0TestingSettings.cmake',
+    'Trilinos_pullrequest_clang_10.0.0':      'PullRequestLinuxClang10.0.0TestingSettings.cmake',
     'Trilinos_pullrequest_cuda_9.2':         'PullRequestLinuxCuda9.2TestingSettings.cmake',
     'Trilinos_pullrequest_python_2':         'PullRequestLinuxPython2.cmake',
     'Trilinos_pullrequest_python_3':         'PullRequestLinuxPython3.cmake'
@@ -658,6 +683,11 @@ def run():
 
     parallel_level = compute_n()
 
+    if 'JENKINS_TEST_WEIGHT' in os.environ:
+        test_parallel_level = os.environ['JENKINS_TEST_WEIGHT']
+    else:
+        test_parallel_level = parallel_level
+
     build_name = generateBuildNameString(arguments)
 
     config_script = config_map[arguments.job_base_name]
@@ -665,6 +695,9 @@ def run():
     os.chdir('TFW_testing_single_configure_prototype')
     print('Set CWD = {}'.format(os.getcwd()))
 
+    # Execute the call to ctest.
+    # - NOTE: simple_testing.cmake can be found in the TFW_single_configure_support_scripts
+    #         repository.
     subprocess.check_call(['ctest', '-S', 'simple_testing.cmake',
                            '-Dbuild_name={}'.format(build_name),
                            '-Dskip_by_parts_submit=OFF',
@@ -672,6 +705,7 @@ def run():
                            '-Ddashboard_model=Experimental',
                            '-Ddashboard_track={}'.format(CDash_Track),
                            '-DPARALLEL_LEVEL={}'.format(parallel_level),
+                           '-DTEST_PARALLEL_LEVEL={}'.format(test_parallel_level),
                            '-Dbuild_dir={}/pull_request_test'.format(arguments.workspaceDir),
                            '-Dconfigure_script=' +
                                os.path.join(arguments.workspaceDir,
@@ -680,8 +714,7 @@ def run():
                                             'std',
                                             config_script),
                            '-Dpackage_enables=../packageEnables.cmake',
-                           '-Dsubprojects_file=../TFW_single_configure_support_scripts/'+
-                           'package_subproject_list.cmake'])
+                           '-Dsubprojects_file=../package_subproject_list.cmake'])
 
     return return_value
 

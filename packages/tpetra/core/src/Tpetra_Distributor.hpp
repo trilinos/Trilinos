@@ -265,8 +265,6 @@ namespace Tpetra {
     /// parameters and their default values.
     void setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
-    Teuchos::RCP<Distributor> getReverseDistributor();
-
     /// \brief List of valid Distributor parameters.
     ///
     /// Please see the class documentation for a list of all accepted
@@ -424,7 +422,7 @@ namespace Tpetra {
     /// doReversePosts() or doReversePostsAndWaits(), the reverse
     /// Distributor will be created automatically if it does not yet
     /// exist.
-    Teuchos::RCP<Distributor> getReverse() const;
+    Teuchos::RCP<Distributor> getReverse(bool create=true) const;
 
     //@}
     //! @name Methods for executing a communication plan

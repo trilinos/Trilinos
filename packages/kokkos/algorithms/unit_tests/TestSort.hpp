@@ -1,10 +1,11 @@
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 2.0
-//              Copyright (2014) Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -22,10 +23,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -129,7 +130,7 @@ struct sum3D {
 };
 
 template <class ExecutionSpace, typename KeyType>
-void test_1D_sort(unsigned int n, bool force_kokkos) {
+void test_1D_sort_impl(unsigned int n, bool force_kokkos) {
   typedef Kokkos::View<KeyType*, ExecutionSpace> KeyViewType;
   KeyViewType keys("Keys", n);
 
@@ -164,7 +165,7 @@ void test_1D_sort(unsigned int n, bool force_kokkos) {
 }
 
 template <class ExecutionSpace, typename KeyType>
-void test_3D_sort(unsigned int n) {
+void test_3D_sort_impl(unsigned int n) {
   typedef Kokkos::View<KeyType * [3], ExecutionSpace> KeyViewType;
 
   KeyViewType keys("Keys", n * n * n);
@@ -213,7 +214,7 @@ void test_3D_sort(unsigned int n) {
 //----------------------------------------------------------------------------
 
 template <class ExecutionSpace, typename KeyType>
-void test_dynamic_view_sort(unsigned int n) {
+void test_dynamic_view_sort_impl(unsigned int n) {
   typedef Kokkos::Experimental::DynamicView<KeyType*, ExecutionSpace>
       KeyDynamicViewType;
   typedef Kokkos::View<KeyType*, ExecutionSpace> KeyViewType;
@@ -277,7 +278,7 @@ void test_dynamic_view_sort(unsigned int n) {
 //----------------------------------------------------------------------------
 
 template <class ExecutionSpace>
-void test_issue_1160() {
+void test_issue_1160_impl() {
   Kokkos::View<int*, ExecutionSpace> element_("element", 10);
   Kokkos::View<double*, ExecutionSpace> x_("x", 10);
   Kokkos::View<double*, ExecutionSpace> v_("y", 10);
@@ -345,16 +346,33 @@ void test_issue_1160() {
 //----------------------------------------------------------------------------
 
 template <class ExecutionSpace, typename KeyType>
-void test_sort(unsigned int N) {
-  test_1D_sort<ExecutionSpace, KeyType>(N * N * N, true);
-  test_1D_sort<ExecutionSpace, KeyType>(N * N * N, false);
-#if !defined(KOKKOS_ENABLE_ROCM)
-  test_3D_sort<ExecutionSpace, KeyType>(N);
-  test_dynamic_view_sort<ExecutionSpace, KeyType>(N * N);
-#endif
-  test_issue_1160<ExecutionSpace>();
+void test_1D_sort(unsigned int N) {
+  test_1D_sort_impl<ExecutionSpace, KeyType>(N * N * N, true);
+  test_1D_sort_impl<ExecutionSpace, KeyType>(N * N * N, false);
 }
 
+template <class ExecutionSpace, typename KeyType>
+void test_3D_sort(unsigned int N) {
+  test_3D_sort_impl<ExecutionSpace, KeyType>(N);
+}
+
+template <class ExecutionSpace, typename KeyType>
+void test_dynamic_view_sort(unsigned int N) {
+  test_dynamic_view_sort_impl<ExecutionSpace, KeyType>(N * N);
+}
+
+template <class ExecutionSpace>
+void test_issue_1160_sort() {
+  test_issue_1160_impl<ExecutionSpace>();
+}
+
+template <class ExecutionSpace, typename KeyType>
+void test_sort(unsigned int N) {
+  test_1D_sort<ExecutionSpace, KeyType>(N);
+  test_3D_sort<ExecutionSpace, KeyType>(N);
+  test_dynamic_view_sort<ExecutionSpace, KeyType>(N);
+  test_issue_1160_sort<ExecutionSpace>();
+}
 }  // namespace Impl
 }  // namespace Test
 #endif /* KOKKOS_ALGORITHMS_UNITTESTS_TESTSORT_HPP */

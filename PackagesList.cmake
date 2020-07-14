@@ -59,6 +59,7 @@
 #
 TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   TrilinosFrameworkTests  commonTools/framework           PT
+  TrilinosATDMConfigTests cmake/std/atdm                  PT
   Gtest                 commonTools/gtest                 PT
   Kokkos                packages/kokkos                   PT
   Teuchos               packages/teuchos                  PT
@@ -92,7 +93,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Galeri                packages/galeri                   PT
   Amesos                packages/amesos                   PT
   Pamgen                packages/pamgen                   PT
-  Zoltan2               packages/zoltan2                  PT
+  Zoltan2Core           packages/zoltan2/core             PT
   Ifpack                packages/ifpack                   PT
   ML                    packages/ml                       PT
   Belos                 packages/belos                    PT
@@ -108,6 +109,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   TriKota               packages/TriKota                  ST
   Intrepid              packages/intrepid                 PT
   Intrepid2             packages/intrepid2                PT
+  Compadre              packages/compadre                 ST
   STK                   packages/stk                      PT # Depends on boost
   Percept               packages/percept                  PT # Depends on boost
   SCORECapf_zoltan      SCOREC/zoltan                     ST
@@ -119,6 +121,8 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   NOX                   packages/nox                      PT
   Moertel               packages/moertel                  ST
   MueLu                 packages/muelu                    PT
+  Zoltan2Sphynx         packages/zoltan2/sphynx           PT
+  Zoltan2               packages/zoltan2                  PT
   ShyLU_DD              packages/shylu/shylu_dd           PT
   ShyLU                 packages/shylu                    PT
   Rythmos               packages/rythmos                  PT
@@ -189,3 +193,4 @@ TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Isorropia Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Zoltan Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Teko Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Panzer Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Compadre Windows)

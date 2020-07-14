@@ -57,10 +57,7 @@
 
 #include "BelosGmresIteration.hpp"
 #include "BelosBlockGmresIter.hpp"
-
-#include "BelosDGKSOrthoManager.hpp"
-#include "BelosICGSOrthoManager.hpp"
-#include "BelosIMGSOrthoManager.hpp"
+#include "BelosOrthoManagerFactory.hpp"
 
 #include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestGenResNorm.hpp"
@@ -394,9 +391,6 @@ namespace Belos {
 
     if (params_in->isParameter("Orthogonalization")) {
       orthoType_ = params_in->get("Orthogonalization",orthoType_default_);
-      TEUCHOS_TEST_FOR_EXCEPTION( orthoType_ != "DGKS" && orthoType_ != "ICGS" && orthoType_ != "IMGS",
-                                  std::invalid_argument,
-                                  "Belos::GmresPolyOp: \"Orthogonalization\" must be either \"DGKS\", \"ICGS\", or \"IMGS\".");
     }
 
     // Check for timer label
@@ -553,26 +547,17 @@ namespace Belos {
     polyList.set("Block Size",1);
     polyList.set("Keep Hessenberg", true);
 
+    // Create output manager.
+    printer_ = Teuchos::rcp( new OutputManager<ScalarType>(verbosity_, outputStream_) );
+
     // Create orthogonalization manager if we need to.  
     if (ortho_.is_null()) {
       params_->set("Orthogonalization", orthoType_);
-      if (orthoType_=="DGKS") {
-        ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( polyLabel ) );
-      }
-      else if (orthoType_=="ICGS") {
-        ortho_ = Teuchos::rcp( new ICGSOrthoManager<ScalarType,MV,OP>( polyLabel ) );
-      }
-      else if (orthoType_=="IMGS") {
-        ortho_ = Teuchos::rcp( new IMGSOrthoManager<ScalarType,MV,OP>( polyLabel ) );
-      }
-      else {
-        TEUCHOS_TEST_FOR_EXCEPTION(orthoType_!="ICGS"&&orthoType_!="DGKS"&&orthoType_!="IMGS",std::invalid_argument,
-          "Belos::GmresPolyOp(): Invalid orthogonalization type.");
-      }
-    }
+      Belos::OrthoManagerFactory<ScalarType, MV, OP> factory;
+      Teuchos::RCP<Teuchos::ParameterList> paramsOrtho;   // can be null
 
-    // Create output manager.
-    printer_ = Teuchos::rcp( new OutputManager<ScalarType>(verbosity_, outputStream_) );
+      ortho_ = factory.makeMatOrthoManager (orthoType_, Teuchos::null, printer_, polyLabel, paramsOrtho);
+    }
 
     // Create a simple status test that either reaches the relative residual tolerance or maximum polynomial size.
     Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP> > maxItrTst =

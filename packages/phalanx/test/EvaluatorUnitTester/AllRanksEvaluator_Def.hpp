@@ -98,7 +98,7 @@ operator()(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
       x1(i) = f1(i) * f1(i);
     });
 
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,static_cast<int>(x6.extent(1))), KOKKOS_LAMBDA (const int& j) {
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,static_cast<int>(x6.extent(1))), [&] (const int& j) {
       x2(i,j) = f2(i,j) * f2(i,j);
       for (int k = 0; k < static_cast<int>(x6.extent(2)); ++k) {
         x3(i,j,k) = f3(i,j,k) * f3(i,j,k);

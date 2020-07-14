@@ -389,6 +389,15 @@ namespace MueLu {
     //! dump out real-valued multivector
     void dumpCoords(const RealValuedMultiVector& X, std::string name) const;
 
+    //! dump out boolean ArrayView
+    void dump(const Teuchos::ArrayRCP<bool>& v, std::string name) const;
+
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+    //! dump out boolean Kokkos::View
+    void dump(const Kokkos::View<bool*, typename Node::device_type>& v, std::string name) const;
+#endif
+
+    //! get a (synced) timer
     Teuchos::RCP<Teuchos::TimeMonitor> getTimer(std::string name, RCP<const Teuchos::Comm<int> > comm=Teuchos::null) const;
 
     //! set parameters
@@ -413,18 +422,17 @@ namespace MueLu {
     Teuchos::RCP<Matrix> A_nodal_Matrix_, P11_, R11_, AH_, A22_, Addon_Matrix_;
     //! Vectors for BCs
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
-    Kokkos::View<bool*, typename Node::device_type> BCrowsKokkos_;
-    Kokkos::View<const bool*, typename Node::device_type> BCcolsKokkos_;
+    Kokkos::View<bool*, typename Node::device_type> BCrowsKokkos_, BCcolsKokkos_, BCdomainKokkos_;
 #endif
-    int BCrowcount_, BCcolcount_;
-    Teuchos::ArrayRCP<bool> BCrows_;
-    Teuchos::ArrayRCP<const bool> BCcols_;
+    int BCedges_, BCnodes_;
+    Teuchos::ArrayRCP<bool> BCrows_, BCcols_, BCdomain_;
     //! Nullspace
     Teuchos::RCP<MultiVector> Nullspace_;
     //! Coordinates
     Teuchos::RCP<RealValuedMultiVector> Coords_, CoordsH_;
     //! Importer to coarse (1,1) hierarchy
     Teuchos::RCP<const Import> ImporterH_, Importer22_;
+    bool D0_T_R11_colMapsMatch_;
     //! Parameter lists
     Teuchos::ParameterList parameterList_, precList11_, precList22_, smootherList_;
     Teuchos::RCP<Teuchos::ParameterList> AH_AP_reuse_data_, AH_RAP_reuse_data_;
@@ -434,7 +442,7 @@ namespace MueLu {
     int numItersH_, numIters22_;
     std::string mode_;
     //! Temporary memory
-    mutable Teuchos::RCP<MultiVector> P11res_, P11x_, D0res_, D0x_, residual_, P11resTmp_, P11xTmp_, D0resTmp_, D0xTmp_;
+    mutable Teuchos::RCP<MultiVector> P11res_, P11x_, D0res_, D0x_, residual_, P11resTmp_, P11xTmp_, D0resTmp_, D0xTmp_, D0TR11Tmp_;
   };
 
 } // namespace

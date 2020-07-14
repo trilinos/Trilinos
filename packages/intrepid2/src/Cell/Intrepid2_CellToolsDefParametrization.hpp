@@ -67,6 +67,9 @@ namespace Intrepid2 {
   void
   CellTools<SpT>::
   setSubcellParametrization() {
+    if(isSubcellParametrizationSet_)
+      return;
+
     { 
       const auto tet = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<4> >());
       setSubcellParametrization( subcellParamData_.tetFaces,   2, tet );
@@ -119,7 +122,7 @@ namespace Intrepid2 {
       subcellParamData_.wedgeFaces = subcellParamViewType();
     });
 
-    isReferenceNodeDataSet_ = true;
+    isSubcellParametrizationSet_= true;
   }
 
   // template<typename SpT>

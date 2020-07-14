@@ -312,6 +312,24 @@ initializeSolutionHistory(Scalar t0,
 }
 
 template<class Scalar>
+void IntegratorAdjointSensitivity<Scalar>::
+setObserver(Teuchos::RCP<IntegratorObserver<Scalar> > obs)
+{
+  state_integrator_->setObserver(obs);
+  // Currently not setting observer on adjoint integrator because it isn't
+  // clear what we want to do with it
+  //adjoint_integrator_->setObserver(obs);
+}
+
+template<class Scalar>
+void IntegratorAdjointSensitivity<Scalar>::
+initialize()
+{
+  state_integrator_->initialize();
+  adjoint_integrator_->initialize();
+}
+
+template<class Scalar>
 Teuchos::RCP<const Thyra::VectorBase<Scalar> >
 IntegratorAdjointSensitivity<Scalar>::
 getX() const
@@ -424,7 +442,7 @@ getNonconstParameterList()
 }
 
 template <class Scalar>
-Teuchos::RCP<Tempus::AdjointAuxSensitivityModelEvaluator<Scalar> >
+Teuchos::RCP<AdjointAuxSensitivityModelEvaluator<Scalar> >
 IntegratorAdjointSensitivity<Scalar>::
 createAdjointModel(
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
@@ -530,23 +548,23 @@ buildSolutionHistory(
 
 /// Non-member constructor
 template<class Scalar>
-Teuchos::RCP<Tempus::IntegratorAdjointSensitivity<Scalar> >
+Teuchos::RCP<IntegratorAdjointSensitivity<Scalar> >
 integratorAdjointSensitivity(
   Teuchos::RCP<Teuchos::ParameterList>                     pList,
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      model)
 {
-  Teuchos::RCP<Tempus::IntegratorAdjointSensitivity<Scalar> > integrator =
-    Teuchos::rcp(new Tempus::IntegratorAdjointSensitivity<Scalar>(pList, model));
+  Teuchos::RCP<IntegratorAdjointSensitivity<Scalar> > integrator =
+    Teuchos::rcp(new IntegratorAdjointSensitivity<Scalar>(pList, model));
   return(integrator);
 }
 
 /// Non-member constructor
 template<class Scalar>
-Teuchos::RCP<Tempus::IntegratorAdjointSensitivity<Scalar> >
+Teuchos::RCP<IntegratorAdjointSensitivity<Scalar> >
 integratorAdjointSensitivity()
 {
-  Teuchos::RCP<Tempus::IntegratorAdjointSensitivity<Scalar> > integrator =
-    Teuchos::rcp(new Tempus::IntegratorAdjointSensitivity<Scalar>());
+  Teuchos::RCP<IntegratorAdjointSensitivity<Scalar> > integrator =
+    Teuchos::rcp(new IntegratorAdjointSensitivity<Scalar>());
   return(integrator);
 }
 

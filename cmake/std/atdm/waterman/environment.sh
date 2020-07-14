@@ -146,14 +146,18 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]] ; then
   export CUDA_LAUNCH_BLOCKING=1
   export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
   export KOKKOS_NUM_DEVICES=2
-  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=4
-  # Avoids timeouts due to not running on separate GPUs (see #2446)
+  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=2
+  # Avoids timeouts due to not running on separate GPUs (e.g. see #2446)
 
 fi
 
-# CMake and ninja
-module swap cmake/3.6.2 cmake/3.12.3
+# Ninja
 module load ninja/1.7.2
+
+# CMake
+#module swap cmake/3.6.2 cmake/3.12.3
+module unload cmake/3.6.2
+export PATH=/home/atdm-devops-admin/tools/waterman/cmake-3.17.2/bin:$PATH
 
 # HWLOC
 
@@ -179,13 +183,12 @@ export ATDM_CONFIG_BINUTILS_LIBS="${BINUTILS_ROOT}/lib/libbfd.a;${BINUTILS_ROOT}
 
 # However, set the direct libs for HDF5 and NetCDF in case we use that option
 # for building (see env var ATDM_CONFIG_USE_SPARC_TPL_FIND_SETTINGS).
-
+if [[ "${PNETCDF_ROOT}" == "" ]] ; then
+  export PNETCDF_ROOT=${NETCDF_ROOT}
+fi
 export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
 
-export ATDM_CONFIG_NETCDF_LIBS="-L${BOOST_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${SEMS_PNETCDF_ROOT}/lib;-L${HDF5_ROOT}/lib;${BOOST_ROOT}/lib/libboost_program_options.a;${BOOST_ROOT}/lib/libboost_system.a;${NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl;-lcurl"
-
-#export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
-#export ATDM_CONFIG_NETCDF_LIBS="-L${BOOST_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${PNETCDF_ROOT}/lib;-L${HDF5_ROOT}/lib;${BOOST_ROOT}/lib/libboost_program_options.a;${BOOST_ROOT}/lib/libboost_system.a;${NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
+export ATDM_CONFIG_NETCDF_LIBS="-L${NETCDF_ROOT}/lib;${NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${ATDM_CONFIG_HDF5_LIBS}"
 
 # SuperLUDist
 

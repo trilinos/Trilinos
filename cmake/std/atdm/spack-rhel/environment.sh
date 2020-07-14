@@ -172,7 +172,7 @@ export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib64;-lblas"
 export ATDM_CONFIG_HDF5_LIBS="${HDF5_ROOT}/lib/libhdf5_hl.so;${HDF5_ROOT}/lib/libhdf5.so;${ZLIB_ROOT}/lib/libz.so;-ldl"
 #echo ATDM_CONFIG_HDF5_LIBS=$ATDM_CONFIG_HDF5_LIBS
 
-export PNETCDF_ROOT=${PARALLEL_NETCDF_ROOT}
+export PNETCDF_ROOT=${SEMS_NETCDF_ROOT}
 
 export ATDM_CONFIG_METIS_LIBS="${METIS_ROOT}/lib/libmetis.so"
 export ATDM_CONFIG_PARMETIS_LIBS="${METIS_ROOT}/lib/libmetis.so;${PARMETIS_ROOT}/lib/libparmetis.so"
@@ -182,7 +182,7 @@ export ATDM_CONFIG_CGNS_LIBS="${CGNS_ROOT}/lib/libcgns.so;${ATDM_CONFIG_HDF5_LIB
 #export METIS_LIBRARY_DIRS=${METIS_ROOT}/lib
 #export METIS_INCLUDE_DIRS=${METIS_ROOT}/include
 
-export ATDM_CONFIG_NETCDF_LIBS="-L${BOOST_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${PNETCDF_ROOT}/lib;${BOOST_ROOT}/lib/libboost_program_options.${ATDM_CONFIG_TPL_LIB_EXT};${BOOST_ROOT}/lib/libboost_system.${ATDM_CONFIG_TPL_LIB_EXT};${NETCDF_ROOT}/lib/libnetcdf.a;${PARALLEL_NETCDF_ROOT}/lib/libpnetcdf.a;${ATDM_CONFIG_HDF5_LIBS};-lcurl"
+export ATDM_CONFIG_NETCDF_LIBS="-L${NETCDF_ROOT}/lib;-L${PNETCDF_ROOT}/lib;${NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${ATDM_CONFIG_HDF5_LIBS};-lcurl"
 # NOTE: SEMS does not provide the correct *.so files for NetCDF so we can't
 # use them in a shared lib build :-(
 

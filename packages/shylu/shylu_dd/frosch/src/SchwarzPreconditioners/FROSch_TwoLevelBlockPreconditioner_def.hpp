@@ -253,7 +253,7 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    std::string TwoLevelBlockPreconditioner<SC,LO,GO,NO>::description() const
+    string TwoLevelBlockPreconditioner<SC,LO,GO,NO>::description() const
     {
         return "GDSW Preconditioner";
     }

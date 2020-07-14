@@ -64,7 +64,7 @@ kernel_construct(local_ordinal_type numRows) {
 
   typedef KokkosSparse::CrsMatrix<scalar_type, local_ordinal_type, device_type> local_matrix_type;
 
-  return local_matrix_type("A", numRows, numCols, nnz, values, rowPtr, colInd, false/*pad*/);
+  return local_matrix_type("A", numRows, numCols, nnz, values, rowPtr, colInd);
 }
 
 template<class scalar_type, class local_ordinal_type, class device_type>

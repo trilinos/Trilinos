@@ -112,14 +112,14 @@ int main(int argc, char *argv[])
     CommWorld->barrier(); if (CommWorld->getRank()==0) cout << "#############\n# Assembly #\n#############\n" << endl;
 
     ParameterList GaleriList;
-    GaleriList.set("nx", 8);
-    GaleriList.set("ny", 8);
-    GaleriList.set("nz", 8);
-    GaleriList.set("mx", 2);
-    GaleriList.set("my", 2);
-    GaleriList.set("mz", 2);
+    GaleriList.set("nx",GO(8));
+    GaleriList.set("ny",GO(8));
+    GaleriList.set("nz",GO(8));
+    GaleriList.set("mx",GO(2));
+    GaleriList.set("my",GO(2));
+    GaleriList.set("mz",GO(2));
 
-    RCP<const Map<LO,GO,NO> > uniqueMap = Galeri::Xpetra::CreateMap<LO,GO,NO>(xpetraLib,"Cartesian3D",CommWorld,GaleriList); // RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); nodeMap->describe(*fancy,VERB_EXTREME);
+    RCP<const Map<LO,GO,NO> > uniqueMap = Galeri::Xpetra::CreateMap<LO,GO,NO>(xpetraLib,"Cartesian3D",CommWorld,GaleriList);
     RCP<Galeri::Xpetra::Problem<Map<LO,GO,NO>,CrsMatrixWrap<SC,LO,GO,NO>,MultiVector<SC,LO,GO,NO> > > Problem = Galeri::Xpetra::BuildProblem<SC,LO,GO,Map<LO,GO,NO>,CrsMatrixWrap<SC,LO,GO,NO>,MultiVector<SC,LO,GO,NO> >("Laplace3D",uniqueMap,GaleriList);
     RCP<Matrix<SC,LO,GO,NO> > K = Problem->BuildMatrix();
 

@@ -1,29 +1,9 @@
 #---------------------------------------------------------------
-# Copyright (c) 2006--2017, National Technology & Engineering Solutions
+# Copyright(C) 1999-2020 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#     * Redistributions of source code must retain the above copyright
-#       notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright
-#       notice, this list of conditions and the following disclaimer in the
-#       documentation and/or other materials provided with the distribution.
-#     * Neither the name of NTESS nor the names of its contributors may
-#       be used to endorse or promote products derived from this
-#       software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
-# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# See packages/seacas/LICENSE for details
 #---------------------------------------------------------------
 
 #
@@ -70,6 +50,7 @@ project votd
     $(tpl-warnings)
     <include>$(seacas-root-inc)
     <address-model>64:<define>Build64
+    <architecture>power:<cxxflags>-Wno-psabi
   : usage-requirements
     <include>$(seacas-root-inc)
     <address-model>64:<define>Build64
@@ -118,6 +99,7 @@ local installed-end-user-files =
   txtexo
   io_shell
   io_info
+  io_modify
   shell_to_hex
   cth_pressure_map
   struc_to_unstruc
@@ -259,9 +241,6 @@ install install-user-lib
     mapvarlib
     aprepro_lib
     ioex
-    ioex_fac
-    iopx
-    iofx
     io_info_lib
     iocgns
     iopg
@@ -306,74 +285,18 @@ lib ioex
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-         [ glob $(seacas-root)/libraries/ioss/src/exodus/*.C ]
+         [ glob $(seacas-root)/libraries/ioss/src/exodus/*.[Cc] ]
     ]
     ioss
     exodus
     /tpl/netcdf//netcdf
+    /tpl/trilinos//zoltan
+    /tpl/parmetis//parmetis
   :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
         <file>$(seacas-root)/lib/libioex.a
-    ]
-  ;
-
-
-lib ioex_fac
-  :
-    [ ifdevbuild
-    # Any parameters within this 'ifdevbuild' block apply to development
-    # builds only and will not be present for user builds.
-         [ glob $(seacas-root)/libraries/ioss/src/exo_fac/*.C ]
-    ]
-    ioss
-    iopx
-    iofx
-  :
-    [ ifuserbuild
-    # Any parameters within this 'ifuserbuild' block apply to user
-    # builds only and will not be present for developer builds.
-        <file>$(seacas-root)/lib/libioex_fac.a
-    ]
-  ;
-
-
-lib iopx
-  :
-    [ ifdevbuild
-    # Any parameters within this 'ifdevbuild' block apply to development
-    # builds only and will not be present for user builds.
-        [ glob $(seacas-root)/libraries/ioss/src/exo_par/*.C ]
-    ]
-    ioex
-    /tpl/trilinos//zoltan
-    /tpl/parmetis//parmetis
-    exodus
-    /tpl/netcdf//netcdf
-  :
-    [ ifuserbuild
-    # Any parameters within this 'ifuserbuild' block apply to user
-    # builds only and will not be present for developer builds.
-        <file>$(seacas-root)/lib/libiopx.a
-    ]
-  ;
-
-lib iofx
-  :
-    [ ifdevbuild
-    # Any parameters within this 'ifdevbuild' block apply to development
-    # builds only and will not be present for user builds.
-        [ glob $(seacas-root)/libraries/ioss/src/exo_fpp/*.C ]
-    ]
-    ioex
-    exodus
-    /tpl/netcdf//netcdf
-  :
-    [ ifuserbuild
-    # Any parameters within this 'ifuserbuild' block apply to user
-    # builds only and will not be present for developer builds.
-        <file>$(seacas-root)/lib/libiofx.a
     ]
   ;
 
@@ -490,11 +413,8 @@ lib ioinit
     # builds only and will not be present for user builds.
         [ glob $(seacas-root)/libraries/ioss/src/init/*.C ]
     ]
-    ioex_fac
     iocgns
     ioex
-    iopx
-    iofx
     iopg
     iohb
     iogn
@@ -515,7 +435,7 @@ lib ioss
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-        [ glob $(seacas-root)/libraries/ioss/src/*.C ]
+        [ glob $(seacas-root)/libraries/ioss/src/*.[cC] ]
     ]
     /tpl/trilinos//zoltan
     /tpl/parmetis//parmetis
@@ -866,7 +786,9 @@ lib suplib_c
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-        [ glob $(seacas-root)/libraries/suplib_c/*.c ]
+    [ set.difference
+         [ glob $(seacas-root)/libraries/suplib_c/*.c ] :
+	        $(seacas-root)/libraries/suplib_c/XGetopt.c ]
     ]
   :
     [ ifdevbuild
@@ -1704,6 +1626,17 @@ exe io_info
   :
     $(seacas-root)/libraries/ioss/src/main/io_info_main.C
     io_info_lib
+    /mpi//mpi
+  :
+    <tag>@sierra-exec-tag
+  ;
+
+exe io_modify
+  :
+    $(seacas-root)/libraries/ioss/src/main/io_modify.C
+    $(seacas-root)/libraries/ioss/src/main/modify_interface.C
+    ioinit
+    ioex
     /mpi//mpi
   :
     <tag>@sierra-exec-tag

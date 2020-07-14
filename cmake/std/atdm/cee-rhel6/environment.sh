@@ -16,6 +16,9 @@ fi
 
 if [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" ]] ; then
   unset ATDM_CONFIG_KOKKOS_ARCH
+  if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_GCC-7.2.0_OPENMPI-4.0.3" ]] ; then
+    export ATDM_CONFIG_KOKKOS_ARCH=VOLTA70
+  fi
 else
   echo
   echo "***"
@@ -47,10 +50,6 @@ export ATDM_CONFIG_BUILD_COUNT=$ATDM_CONFIG_MAX_NUM_CORES_TO_USE
 
 module purge
 
-module load sparc-dev
-# NOTE: Above was reported needed by jhu on some CEE RHEL6 machine in order to
-# get NetCDF to load (#4662).
-
 # Warning options requested by Gemma team (which should hopefully also take
 # care of warnings required by the other ATDM APPs as well).  See #3178 and
 # #4221
@@ -62,8 +61,8 @@ if [[ "${ATDM_CONFIG_ENABLE_STRONG_WARNINGS}" == "" ]] ; then
   export ATDM_CONFIG_ENABLE_STRONG_WARNINGS=1
 fi
 
-if [[ "$ATDM_CONFIG_COMPILER" == "CLANG-5.0.1_OPENMPI-1.10.2" ]]; then
-  module load sparc-dev/clang-5.0.1_openmpi-1.10.2
+if  [[ "$ATDM_CONFIG_COMPILER" == "CLANG-9.0.1_OPENMPI-4.0.3" ]]; then
+  module load sparc-dev/clang-9.0.1_openmpi-4.0.3
   export OMPI_CXX=`which clang++`
   export OMPI_CC=`which clang`
   export OMPI_FC=`which gfortran`
@@ -75,40 +74,8 @@ if [[ "$ATDM_CONFIG_COMPILER" == "CLANG-5.0.1_OPENMPI-1.10.2" ]]; then
   fi
   export ATDM_CONFIG_MKL_ROOT=${CBLAS_ROOT}
 
-elif [[ "$ATDM_CONFIG_COMPILER" == "CLANG-5.0.1_OPENMPI-4.0.2" ]]; then
-  module load sparc-dev/clang-5.0.1_openmpi-4.0.2
-  export OMPI_CXX=`which clang++`
-  export OMPI_CC=`which clang`
-  export OMPI_FC=`which gfortran`
-  export MPICC=`which mpicc`
-  export MPICXX=`which mpicxx`
-  export MPIF90=`which mpif90`
-  if [[ "$ATDM_CONFIG_ENABLE_STRONG_WARNINGS" == "1" ]]; then
-    export ATDM_CONFIG_CXX_FLAGS="${ATDM_CONFIG_GNU_CXX_WARNINGS}"
-  fi
-  export ATDM_CONFIG_MKL_ROOT=${CBLAS_ROOT}
-
-elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0_OPENMPI-1.10.2" ]] ; then
-  module load sparc-dev/gcc-7.2.0_openmpi-1.10.2
-  unset OMP_NUM_THREADS  # SPARC module sets these and we must unset!
-  unset OMP_PROC_BIND
-  unset OMP_PLACES
-  export OMPI_CXX=`which g++`
-  export OMPI_CC=`which gcc`
-  export OMPI_FC=`which gfortran`
-  export MPICC=`which mpicc`
-  export MPICXX=`which mpicxx`
-  export MPIF90=`which mpif90`
-  if [[ "$ATDM_CONFIG_ENABLE_STRONG_WARNINGS" == "1" ]]; then
-    export ATDM_CONFIG_CXX_FLAGS="${ATDM_CONFIG_GNU_CXX_WARNINGS}"
-  fi
-  export ATDM_CONFIG_MKL_ROOT=${CBLAS_ROOT}
-  export ATDM_CONFIG_MPI_EXEC=mpirun
-  export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG=-np
-  export ATDM_CONFIG_MPI_PRE_FLAGS="--bind-to;none"
-
-elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0_OPENMPI-4.0.2" ]] ; then
-  module load sparc-dev/gcc-7.2.0_openmpi-4.0.2
+elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0_OPENMPI-4.0.3" ]] ; then
+  module load sparc-dev/gcc-7.2.0_openmpi-4.0.3
   unset OMP_NUM_THREADS  # SPARC module sets these and we must unset!
   unset OMP_PROC_BIND
   unset OMP_PLACES
@@ -178,6 +145,36 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.2_MPICH2-3.2" ]; then
   export ATDM_CONFIG_OPENMP_FORTRAN_LIB_NAMES=gomp
   export ATDM_CONFIG_OPENMP_GOMP_LIBRARY=-lgomp
 
+elif [ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_GCC-7.2.0_OPENMPI-4.0.3" ]; then
+  # ninja is running into issues with response files when building shared libraries with CUDA.
+  # nvcc reports that no input files were given when generating shared libraries with nvcc.
+  # Using the Unix Makefiles cmake generator works.
+  export ATDM_CONFIG_USE_NINJA=OFF
+
+  module load sparc-dev/cuda-10.1.243_gcc-7.2.0_openmpi-4.0.3
+
+  # OpenMPI Settings
+  export OMPI_CXX=${ATDM_CONFIG_NVCC_WRAPPER}
+  if [ ! -x "$OMPI_CXX" ]; then
+      echo "No nvcc_wrapper found"
+      return
+  fi
+  # NOTE: The above export overrides the value set by the module load above
+  export MPICC=`which mpicc`
+  export MPICXX=`which mpicxx`
+  export MPIF90=`which mpif90`
+
+  # CUDA Settings
+  if [[ ! -d /tmp/${USER} ]] ; then
+    echo "Creating /tmp/${USER} for nvcc wrapper!"
+    mkdir /tmp/${USER}
+  fi
+
+  export ATDM_CONFIG_MPI_EXEC=mpirun
+  export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG=-np
+  export ATDM_CONFIG_MPI_POST_FLAGS="-bind-to;none"
+
+  export ATDM_CONFIG_MKL_ROOT=${CBLAS_ROOT}
 else
   echo
   echo "***"
@@ -249,7 +246,10 @@ atdm_config_add_libs_to_var ATDM_CONFIG_BOOST_LIBS ${BOOST_ROOT}/lib .a \
 
 export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
 
-export ATDM_CONFIG_NETCDF_LIBS="-L${BOOST_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${SEMS_PNETCDF_ROOT}/lib;-L${HDF5_ROOT}/lib;${BOOST_ROOT}/lib/libboost_program_options.a;${BOOST_ROOT}/lib/libboost_system.a;${NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl;-lcurl"
+if [[ "${PNETCDF_ROOT}" == "" ]] ; then
+  export PNETCDF_ROOT=${NETCDF_ROOT}
+fi
+export ATDM_CONFIG_NETCDF_LIBS="-L${NETCDF_ROOT}/lib;${NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${ATDM_CONFIG_HDF5_LIBS};-lcurl"
 
 # SuperLUDist
 if [[ "${ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS}" == "" ]] ; then

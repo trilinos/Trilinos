@@ -46,7 +46,7 @@
 
     The test considers a uniform and structured hexahedral mesh of the cube [-1,1]^3, formed by
     N^3 hexas, and checks the accuracy of the HGRAD, HCURL, HDIV, HVOL projections of analytic
-    target functions for increasing N.
+    target functions for for Hierarchical and Nodal basis functions as N increases.
     The accuracy is computed in the H^1, H^{curl}, H^{div} and L^2 norms respectively. The optimal
     order of convergence equates the basis degree.
 
@@ -244,8 +244,9 @@ int ConvergenceHex(const bool verbose) {
   int NX = 2;
   constexpr int numRefinements = 2;
 
-  // Expected values of the projection errors in H1, Hcurl, Hdiv and L2 norms for HGRAD, HDIV, HCURL and HVOL elements respectively.
+  // Expected values of the projection errors in H1, Hcurl, HDiv and L2 norms for HGRAD, HDIV, HCURL and HVOL elements respectively.
   // These values have been computed running the code with numRefinements=4 and the convergence rates are close to the optimal ones.
+  // Note that these values are independent of the basis choice (Hierarchical or Nodal) as long as they generate the same functional space.
   // We currently only test two mesh refinements to make the test run faster, so this is used as a regression test rather than
   // a convergence test, but the test can be use for verifying optimal accuracy as well.
   ValueType hgradNorm[numRefinements], hcurlNorm[numRefinements], hdivNorm[numRefinements], hvolNorm[numRefinements];
@@ -367,7 +368,10 @@ int ConvergenceHex(const bool verbose) {
     DynRankView ConstructWithLabel(weights, numRefCoords);
     cell_cub->getCubature(refPoints, weights);
 
-
+    using basisType = Basis<DeviceSpaceType,ValueType,ValueType>;
+    using CG_NBasis = NodalBasisFamily<DeviceSpaceType,ValueType,ValueType>;
+    using CG_HBasis = HierarchicalBasisFamily<DeviceSpaceType,ValueType,ValueType>;
+    //using CG_DNBasis = DerivedNodalBasisFamily<DeviceSpaceType,ValueType,ValueType>;
 
 
     *outStream
@@ -386,180 +390,188 @@ int ConvergenceHex(const bool verbose) {
       Kokkos::DynRankView<Orientation,DeviceSpaceType> elemOrts("elemOrts", numElems);
       ots::getOrientation(elemOrts, elemNodes, hexa);
 
-      Basis_HGRAD_HEX_Cn_FEM<DeviceSpaceType,ValueType,ValueType> basis(order);
-      ordinal_type basisCardinality = basis.getCardinality();
+      std::vector<basisType*> basis_set;
+      basis_set.push_back(new typename  CG_NBasis::HGRAD_HEX(order));
+      basis_set.push_back(new typename  CG_HBasis::HGRAD_HEX(order));
 
-      //Compute physical Dof Coordinates and Reference coordinates
-      DynRankView ConstructWithLabel(physRefCoords, numElems, numRefCoords, dim);
-      {
-        Basis_HGRAD_HEX_C1_FEM<DeviceSpaceType,ValueType,ValueType> hexaLinearBasis; //used for computing physical coordinates
-        DynRankView ConstructWithLabel(hexaLinearBasisValuesAtRefCoords, hexa.getNodeCount(), numRefCoords);
-        hexaLinearBasis.getValues(hexaLinearBasisValuesAtRefCoords, refPoints);
-        for(ordinal_type i=0; i<numElems; ++i)
-          for(ordinal_type d=0; d<dim; ++d)
-            for(ordinal_type j=0; j<numRefCoords; ++j)
-              for(std::size_t k=0; k<hexa.getNodeCount(); ++k)
-                physRefCoords(i,j,d) += nodeCoord(elemNodes(i,k),d)*hexaLinearBasisValuesAtRefCoords(k,j);
-      }
+      for (auto basisPtr:basis_set) {
+        auto& basis = *basisPtr;
+        *outStream << " " << basis.getName() << std::endl;
 
-      Fun fun;
-      GradFun gradFun;
-      DynRankView ConstructWithLabel(funAtRefCoords, numElems, numRefCoords);
-      DynRankView ConstructWithLabel(funGradAtPhysRefCoords, numElems, numRefCoords, dim);
-      for(ordinal_type i=0; i<numElems; ++i) {
-        for(ordinal_type j=0; j<numRefCoords; ++j) {
-          funAtRefCoords(i,j) = fun(physRefCoords(i,j,0), physRefCoords(i,j,1), physRefCoords(i,j,2));
-          for(ordinal_type d=0; d<dim; ++d)
-            funGradAtPhysRefCoords(i,j,d) = gradFun(physRefCoords(i,j,0), physRefCoords(i,j,1), physRefCoords(i,j,2),d);
-        }
-      }
+        ordinal_type basisCardinality = basis.getCardinality();
 
-      // compute projection-based interpolation of fun into HGRAD
-      DynRankView ConstructWithLabel(basisCoeffsHGrad, numElems, basisCardinality);
-      {
-        ordinal_type targetCubDegree(basis.getDegree()),targetDerivCubDegree(basis.getDegree());
-
-        Experimental::ProjectionStruct<DeviceSpaceType,ValueType> projStruct;
-        projStruct.createHGradProjectionStruct(&basis, targetCubDegree, targetDerivCubDegree);
-
-        ordinal_type numPoints = projStruct.getNumTargetEvalPoints(), numGradPoints = projStruct.getNumTargetDerivEvalPoints();
-
-        DynRankView ConstructWithLabel(evaluationPoints, numElems, numPoints, dim);
-        DynRankView ConstructWithLabel(evaluationGradPoints, numElems, numGradPoints, dim);
-
-
-        pts::getHGradEvaluationPoints(evaluationPoints,
-            evaluationGradPoints,
-            elemOrts,
-            &basis,
-            &projStruct);
-
-
-        DynRankView ConstructWithLabel(targetAtEvalPoints, numElems, numPoints);
-        DynRankView ConstructWithLabel(targetGradAtEvalPoints, numElems, numGradPoints, dim);
-
-        DynRankView ConstructWithLabel(physEvalPoints, numElems, numPoints, dim);
-        DynRankView ConstructWithLabel(physEvalGradPoints, numElems, numGradPoints, dim);
+        //Compute physical Dof Coordinates and Reference coordinates
+        DynRankView ConstructWithLabel(physRefCoords, numElems, numRefCoords, dim);
         {
-          Basis_HGRAD_HEX_C1_FEM<DeviceSpaceType,ValueType,ValueType> hexLinearBasis; //used for computing physical coordinates
-          DynRankView ConstructWithLabel(hexLinearBasisValuesAtEvalPoints, hexa.getNodeCount(), numPoints);
-          DynRankView ConstructWithLabel(hexLinearBasisValuesAtEvalGradPoints, hexa.getNodeCount(), numGradPoints);
+          Basis_HGRAD_HEX_C1_FEM<DeviceSpaceType,ValueType,ValueType> hexaLinearBasis; //used for computing physical coordinates
+          DynRankView ConstructWithLabel(hexaLinearBasisValuesAtRefCoords, hexa.getNodeCount(), numRefCoords);
+          hexaLinearBasis.getValues(hexaLinearBasisValuesAtRefCoords, refPoints);
+          for(ordinal_type i=0; i<numElems; ++i)
+            for(ordinal_type d=0; d<dim; ++d)
+              for(ordinal_type j=0; j<numRefCoords; ++j)
+                for(std::size_t k=0; k<hexa.getNodeCount(); ++k)
+                  physRefCoords(i,j,d) += nodeCoord(elemNodes(i,k),d)*hexaLinearBasisValuesAtRefCoords(k,j);
+        }
 
-          for(ordinal_type i=0; i<numElems; ++i) {
-            hexLinearBasis.getValues(hexLinearBasisValuesAtEvalPoints, Kokkos::subview(evaluationPoints,i,Kokkos::ALL(),Kokkos::ALL()));
-            if(numGradPoints>0)
-              hexLinearBasis.getValues(hexLinearBasisValuesAtEvalGradPoints, Kokkos::subview(evaluationGradPoints,i,Kokkos::ALL(),Kokkos::ALL()));
-            for(ordinal_type d=0; d<dim; ++d) {
-              for(std::size_t k=0; k<hexa.getNodeCount(); ++k) {
-                for(ordinal_type j=0; j<numPoints; ++j)
-                  physEvalPoints(i,j,d) += nodeCoord(elemNodes(i,k),d)*hexLinearBasisValuesAtEvalPoints(k,j);
-                for(ordinal_type j=0; j<numGradPoints; ++j)
-                  physEvalGradPoints(i,j,d) += nodeCoord(elemNodes(i,k),d)*hexLinearBasisValuesAtEvalGradPoints(k,j);
+        Fun fun;
+        GradFun gradFun;
+        DynRankView ConstructWithLabel(funAtRefCoords, numElems, numRefCoords);
+        DynRankView ConstructWithLabel(funGradAtPhysRefCoords, numElems, numRefCoords, dim);
+        for(ordinal_type i=0; i<numElems; ++i) {
+          for(ordinal_type j=0; j<numRefCoords; ++j) {
+            funAtRefCoords(i,j) = fun(physRefCoords(i,j,0), physRefCoords(i,j,1), physRefCoords(i,j,2));
+            for(ordinal_type d=0; d<dim; ++d)
+              funGradAtPhysRefCoords(i,j,d) = gradFun(physRefCoords(i,j,0), physRefCoords(i,j,1), physRefCoords(i,j,2),d);
+          }
+        }
+
+        // compute projection-based interpolation of fun into HGRAD
+        DynRankView ConstructWithLabel(basisCoeffsHGrad, numElems, basisCardinality);
+        {
+          ordinal_type targetCubDegree(basis.getDegree()),targetDerivCubDegree(basis.getDegree());
+
+          Experimental::ProjectionStruct<DeviceSpaceType,ValueType> projStruct;
+          projStruct.createHGradProjectionStruct(&basis, targetCubDegree, targetDerivCubDegree);
+
+          ordinal_type numPoints = projStruct.getNumTargetEvalPoints(), numGradPoints = projStruct.getNumTargetDerivEvalPoints();
+
+          DynRankView ConstructWithLabel(evaluationPoints, numElems, numPoints, dim);
+          DynRankView ConstructWithLabel(evaluationGradPoints, numElems, numGradPoints, dim);
+
+
+          pts::getHGradEvaluationPoints(evaluationPoints,
+              evaluationGradPoints,
+              elemOrts,
+              &basis,
+              &projStruct);
+
+
+          DynRankView ConstructWithLabel(targetAtEvalPoints, numElems, numPoints);
+          DynRankView ConstructWithLabel(targetGradAtEvalPoints, numElems, numGradPoints, dim);
+
+          DynRankView ConstructWithLabel(physEvalPoints, numElems, numPoints, dim);
+          DynRankView ConstructWithLabel(physEvalGradPoints, numElems, numGradPoints, dim);
+          {
+            Basis_HGRAD_HEX_C1_FEM<DeviceSpaceType,ValueType,ValueType> hexLinearBasis; //used for computing physical coordinates
+            DynRankView ConstructWithLabel(hexLinearBasisValuesAtEvalPoints, hexa.getNodeCount(), numPoints);
+            DynRankView ConstructWithLabel(hexLinearBasisValuesAtEvalGradPoints, hexa.getNodeCount(), numGradPoints);
+
+            for(ordinal_type i=0; i<numElems; ++i) {
+              hexLinearBasis.getValues(hexLinearBasisValuesAtEvalPoints, Kokkos::subview(evaluationPoints,i,Kokkos::ALL(),Kokkos::ALL()));
+              if(numGradPoints>0)
+                hexLinearBasis.getValues(hexLinearBasisValuesAtEvalGradPoints, Kokkos::subview(evaluationGradPoints,i,Kokkos::ALL(),Kokkos::ALL()));
+              for(ordinal_type d=0; d<dim; ++d) {
+                for(std::size_t k=0; k<hexa.getNodeCount(); ++k) {
+                  for(ordinal_type j=0; j<numPoints; ++j)
+                    physEvalPoints(i,j,d) += nodeCoord(elemNodes(i,k),d)*hexLinearBasisValuesAtEvalPoints(k,j);
+                  for(ordinal_type j=0; j<numGradPoints; ++j)
+                    physEvalGradPoints(i,j,d) += nodeCoord(elemNodes(i,k),d)*hexLinearBasisValuesAtEvalGradPoints(k,j);
+                }
               }
             }
           }
+
+          //transform the target function and its derivative to the reference element (inverse of pullback operator)
+          DynRankView ConstructWithLabel(jacobian, numElems, numGradPoints, dim, dim);
+          if(numGradPoints>0)
+            ct::setJacobian(jacobian, evaluationGradPoints, physVertexes, hexa);
+
+          GradFun gradFun;
+          Kokkos::deep_copy(targetGradAtEvalPoints,0.);
+          for(int ic=0; ic<numElems; ic++) {
+            for(int i=0;i<numPoints;i++) {
+              targetAtEvalPoints(ic,i) = fun(physEvalPoints(ic,i,0), physEvalPoints(ic,i,1), physEvalPoints(ic,i,2));
+            }
+            for(int i=0;i<numGradPoints;i++) {
+              for(int d=0;d<dim;d++)
+                for(int j=0;j<dim;j++)
+                  targetGradAtEvalPoints(ic,i,j) += jacobian(ic,i,d,j)*gradFun(physEvalGradPoints(ic,i,0), physEvalGradPoints(ic,i,1), physEvalGradPoints(ic,i,2), d);//funHGradCoeffs(k)
+            }
+
+          }
+
+          pts::getHGradBasisCoeffs(basisCoeffsHGrad,
+              targetAtEvalPoints,
+              targetGradAtEvalPoints,
+              evaluationPoints,
+              evaluationGradPoints,
+              elemOrts,
+              &basis,
+              &projStruct);
         }
 
-        //transform the target function and its derivative to the reference element (inverse of pullback operator)
-        DynRankView ConstructWithLabel(jacobian, numElems, numGradPoints, dim, dim);
-        if(numGradPoints>0)
-          ct::setJacobian(jacobian, evaluationGradPoints, physVertexes, hexa);
+        //check that fun values at reference points coincide with those computed using basis functions
+        DynRankView ConstructWithLabel(basisValuesAtRefCoordsOriented, numElems, basisCardinality, numRefCoords);
+        DynRankView ConstructWithLabel(transformedBasisValuesAtRefCoordsOriented, numElems, basisCardinality, numRefCoords);
+        DynRankView basisValuesAtRefCoordsCells("inValues", numElems, basisCardinality, numRefCoords);
 
-        GradFun gradFun;
-        Kokkos::deep_copy(targetGradAtEvalPoints,0.);
-        for(int ic=0; ic<numElems; ic++) {
-          for(int i=0;i<numPoints;i++) {
-            targetAtEvalPoints(ic,i) = fun(physEvalPoints(ic,i,0), physEvalPoints(ic,i,1), physEvalPoints(ic,i,2));
-          }
-          for(int i=0;i<numGradPoints;i++) {
-            for(int d=0;d<dim;d++)
-              for(int j=0;j<dim;j++)
-                targetGradAtEvalPoints(ic,i,j) += jacobian(ic,i,d,j)*gradFun(physEvalGradPoints(ic,i,0), physEvalGradPoints(ic,i,1), physEvalGradPoints(ic,i,2), d);//funHGradCoeffs(k)
-          }
+        DynRankView ConstructWithLabel(basisValuesAtRefCoords, basisCardinality, numRefCoords);
+        basis.getValues(basisValuesAtRefCoords, refPoints);
+        rst::clone(basisValuesAtRefCoordsCells,basisValuesAtRefCoords);
 
-        }
-
-        pts::getHGradBasisCoeffs(basisCoeffsHGrad,
-            targetAtEvalPoints,
-            targetGradAtEvalPoints,
-            evaluationPoints,
-            evaluationGradPoints,
+        // modify basis values to account for orientations
+        ots::modifyBasisByOrientation(basisValuesAtRefCoordsOriented,
+            basisValuesAtRefCoordsCells,
             elemOrts,
-            &basis,
-            &projStruct);
-      }
+            &basis);
 
-      //check that fun values at reference points coincide with those computed using basis functions
-      DynRankView ConstructWithLabel(basisValuesAtRefCoordsOriented, numElems, basisCardinality, numRefCoords);
-      DynRankView ConstructWithLabel(transformedBasisValuesAtRefCoordsOriented, numElems, basisCardinality, numRefCoords);
-      DynRankView basisValuesAtRefCoordsCells("inValues", numElems, basisCardinality, numRefCoords);
+        // transform basis values
+        deep_copy(transformedBasisValuesAtRefCoordsOriented,
+            basisValuesAtRefCoordsOriented);
 
-      DynRankView ConstructWithLabel(basisValuesAtRefCoords, basisCardinality, numRefCoords);
-      basis.getValues(basisValuesAtRefCoords, refPoints);
-      rst::clone(basisValuesAtRefCoordsCells,basisValuesAtRefCoords);
+        DynRankView ConstructWithLabel(basisGradsAtRefCoordsOriented, numElems, basisCardinality, numRefCoords, dim);
+        DynRankView ConstructWithLabel(transformedBasisGradsAtRefCoordsOriented, numElems, basisCardinality, numRefCoords, dim);
+        DynRankView basisGradsAtRefCoordsCells("inValues", numElems, basisCardinality, numRefCoords, dim);
 
-      // modify basis values to account for orientations
-      ots::modifyBasisByOrientation(basisValuesAtRefCoordsOriented,
-          basisValuesAtRefCoordsCells,
-          elemOrts,
-          &basis);
+        DynRankView ConstructWithLabel(basisGradsAtRefCoords, basisCardinality, numRefCoords, dim);
+        basis.getValues(basisGradsAtRefCoords, refPoints,OPERATOR_GRAD);
+        rst::clone(basisGradsAtRefCoordsCells,basisGradsAtRefCoords);
 
-      // transform basis values
-      deep_copy(transformedBasisValuesAtRefCoordsOriented,
-          basisValuesAtRefCoordsOriented);
+        // modify basis values to account for orientations
+        ots::modifyBasisByOrientation(basisGradsAtRefCoordsOriented,
+            basisGradsAtRefCoordsCells,
+            elemOrts,
+            &basis);
 
-      DynRankView ConstructWithLabel(basisGradsAtRefCoordsOriented, numElems, basisCardinality, numRefCoords, dim);
-      DynRankView ConstructWithLabel(transformedBasisGradsAtRefCoordsOriented, numElems, basisCardinality, numRefCoords, dim);
-      DynRankView basisGradsAtRefCoordsCells("inValues", numElems, basisCardinality, numRefCoords, dim);
+        // transform basis values to the reference element (pullback)
+        DynRankView ConstructWithLabel(jacobianAtRefCoords, numElems, numRefCoords, dim, dim);
+        DynRankView ConstructWithLabel(jacobianAtRefCoords_inv, numElems, numRefCoords, dim, dim);
+        DynRankView ConstructWithLabel(jacobianAtRefCoords_det, numElems, numRefCoords);
+        ct::setJacobian(jacobianAtRefCoords, refPoints, physVertexes, hexa);
+        ct::setJacobianInv (jacobianAtRefCoords_inv, jacobianAtRefCoords);
+        ct::setJacobianDet (jacobianAtRefCoords_det, jacobianAtRefCoords);
+        fst::HCURLtransformVALUE(transformedBasisGradsAtRefCoordsOriented,
+            jacobianAtRefCoords_inv,
+            basisGradsAtRefCoordsOriented);
 
-      DynRankView ConstructWithLabel(basisGradsAtRefCoords, basisCardinality, numRefCoords, dim);
-      basis.getValues(basisGradsAtRefCoords, refPoints,OPERATOR_GRAD);
-      rst::clone(basisGradsAtRefCoordsCells,basisGradsAtRefCoords);
+        DynRankView ConstructWithLabel(projectedFunAtRefCoords, numElems, numRefCoords);
+        DynRankView ConstructWithLabel(funGradAtRefCoordsOriented, numElems, numRefCoords,dim);
 
-      // modify basis values to account for orientations
-      ots::modifyBasisByOrientation(basisGradsAtRefCoordsOriented,
-          basisGradsAtRefCoordsCells,
-          elemOrts,
-          &basis);
-
-      // transform basis values to the reference element (pullback)
-      DynRankView ConstructWithLabel(jacobianAtRefCoords, numElems, numRefCoords, dim, dim);
-      DynRankView ConstructWithLabel(jacobianAtRefCoords_inv, numElems, numRefCoords, dim, dim);
-      DynRankView ConstructWithLabel(jacobianAtRefCoords_det, numElems, numRefCoords);
-      ct::setJacobian(jacobianAtRefCoords, refPoints, physVertexes, hexa);
-      ct::setJacobianInv (jacobianAtRefCoords_inv, jacobianAtRefCoords);
-      ct::setJacobianDet (jacobianAtRefCoords_det, jacobianAtRefCoords);
-      fst::HCURLtransformVALUE(transformedBasisGradsAtRefCoordsOriented,
-          jacobianAtRefCoords_inv,
-          basisGradsAtRefCoordsOriented);
-
-      DynRankView ConstructWithLabel(projectedFunAtRefCoords, numElems, numRefCoords);
-      DynRankView ConstructWithLabel(funGradAtRefCoordsOriented, numElems, numRefCoords,dim);
-
-      //compute error of projection in H1 norm
-      ValueType norm2(0);
-      for(ordinal_type i=0; i<numElems; ++i) {
-        for(ordinal_type j=0; j<numRefCoords; ++j) {
-          for(ordinal_type k=0; k<basisCardinality; ++k) {
-            projectedFunAtRefCoords(i,j) += basisCoeffsHGrad(i,k)*transformedBasisValuesAtRefCoordsOriented(i,k,j);
+        //compute error of projection in H1 norm
+        ValueType norm2(0);
+        for(ordinal_type i=0; i<numElems; ++i) {
+          for(ordinal_type j=0; j<numRefCoords; ++j) {
+            for(ordinal_type k=0; k<basisCardinality; ++k) {
+              projectedFunAtRefCoords(i,j) += basisCoeffsHGrad(i,k)*transformedBasisValuesAtRefCoordsOriented(i,k,j);
+              for (ordinal_type d=0; d<dim; ++d)
+                funGradAtRefCoordsOriented(i,j,d) += basisCoeffsHGrad(i,k)*transformedBasisGradsAtRefCoordsOriented(i,k,j,d);
+            }
+            norm2 += std::pow(funAtRefCoords(i,j) - projectedFunAtRefCoords(i,j),2)*weights(j)*jacobianAtRefCoords_det(i,j);
             for (ordinal_type d=0; d<dim; ++d)
-              funGradAtRefCoordsOriented(i,j,d) += basisCoeffsHGrad(i,k)*transformedBasisGradsAtRefCoordsOriented(i,k,j,d);
+              norm2 += std::pow(funGradAtPhysRefCoords(i,j,d) - funGradAtRefCoordsOriented(i,j,d),2)*weights(j)*jacobianAtRefCoords_det(i,j);
           }
-          norm2 += std::pow(funAtRefCoords(i,j) - projectedFunAtRefCoords(i,j),2)*weights(j)*jacobianAtRefCoords_det(i,j);
-          for (ordinal_type d=0; d<dim; ++d)
-            norm2 += std::pow(funGradAtPhysRefCoords(i,j,d) - funGradAtRefCoordsOriented(i,j,d),2)*weights(j)*jacobianAtRefCoords_det(i,j);
         }
-      }
-      hgradNorm[iter] =  std::sqrt(norm2);
-      auto expected_error = hgrad_errors[iter];
-      if(std::abs(hgradNorm[iter]-expected_error)/expected_error > relTol){
-        errorFlag++;
-        *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-        *outStream << "For N = " << NX << ", computed error (" << hgradNorm[iter] << ") is different than expected one (" << expected_error << ")";
-        *outStream << std::endl;
+        hgradNorm[iter] =  std::sqrt(norm2);
+        auto expected_error = hgrad_errors[iter];
+        if(std::abs(hgradNorm[iter]-expected_error)/expected_error > relTol){
+          errorFlag++;
+          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          *outStream << "For N = " << NX << ", computed error (" << hgradNorm[iter] << ") is different than expected one (" << expected_error << ")";
+          *outStream << std::endl;
+        }
+        delete basisPtr;
       }
       *outStream << "HGRAD Error: " << hgradNorm[iter] <<std::endl;
-
     } catch (std::exception &err) {
       std::cout << " Exeption\n";
       *outStream << err.what() << "\n\n";
@@ -582,192 +594,201 @@ int ConvergenceHex(const bool verbose) {
       Kokkos::DynRankView<Orientation,DeviceSpaceType> elemOrts("elemOrts", numElems);
       ots::getOrientation(elemOrts, elemNodes, hexa);
 
-      Basis_HCURL_HEX_In_FEM<DeviceSpaceType,ValueType,ValueType> basis(order);
-      ordinal_type basisCardinality = basis.getCardinality();
+      std::vector<basisType*> basis_set;
+      basis_set.push_back(new typename  CG_NBasis::HCURL_HEX(order));
+      basis_set.push_back(new typename  CG_HBasis::HCURL_HEX(order));
 
-      //Compute physical Dof Coordinates and Reference coordinates
-      DynRankView ConstructWithLabel(physRefCoords, numElems, numRefCoords, dim);
-      {
-        Basis_HGRAD_HEX_C1_FEM<DeviceSpaceType,ValueType,ValueType> hexaLinearBasis; //used for computing physical coordinates
-        DynRankView ConstructWithLabel(hexaLinearBasisValuesAtRefCoords, hexa.getNodeCount(), numRefCoords);
-        hexaLinearBasis.getValues(hexaLinearBasisValuesAtRefCoords, refPoints);
-        for(ordinal_type i=0; i<numElems; ++i)
-          for(ordinal_type d=0; d<dim; ++d)
-            for(ordinal_type j=0; j<numRefCoords; ++j)
-              for(std::size_t k=0; k<hexa.getNodeCount(); ++k)
-                physRefCoords(i,j,d) += nodeCoord(elemNodes(i,k),d)*hexaLinearBasisValuesAtRefCoords(k,j);
-      }
+      for (auto basisPtr:basis_set) {
+        auto& basis = *basisPtr;
+        *outStream << " " << basis.getName() << std::endl;
 
-      //check function reproducibility
-      FunCurl fun;
-      CurlFunCurl curlFun;
-      DynRankView ConstructWithLabel(funAtRefCoords, numElems, numRefCoords, dim);
-      DynRankView ConstructWithLabel(funCurlAtPhysRefCoords, numElems, numRefCoords, dim);
-      for(ordinal_type i=0; i<numElems; ++i) {
-        for(ordinal_type j=0; j<numRefCoords; ++j) {
-          for(ordinal_type k=0; k<dim; ++k) {
-            funAtRefCoords(i,j,k) =         fun(physRefCoords(i,j,0), physRefCoords(i,j,1), physRefCoords(i,j,2), k);
-            funCurlAtPhysRefCoords(i,j,k) = curlFun(physRefCoords(i,j,0), physRefCoords(i,j,1), physRefCoords(i,j,2), k);
+        ordinal_type basisCardinality = basis.getCardinality();
+
+        //Compute physical Dof Coordinates and Reference coordinates
+        DynRankView ConstructWithLabel(physRefCoords, numElems, numRefCoords, dim);
+        {
+          Basis_HGRAD_HEX_C1_FEM<DeviceSpaceType,ValueType,ValueType> hexaLinearBasis; //used for computing physical coordinates
+          DynRankView ConstructWithLabel(hexaLinearBasisValuesAtRefCoords, hexa.getNodeCount(), numRefCoords);
+          hexaLinearBasis.getValues(hexaLinearBasisValuesAtRefCoords, refPoints);
+          for(ordinal_type i=0; i<numElems; ++i)
+            for(ordinal_type d=0; d<dim; ++d)
+              for(ordinal_type j=0; j<numRefCoords; ++j)
+                for(std::size_t k=0; k<hexa.getNodeCount(); ++k)
+                  physRefCoords(i,j,d) += nodeCoord(elemNodes(i,k),d)*hexaLinearBasisValuesAtRefCoords(k,j);
+        }
+
+        //check function reproducibility
+        FunCurl fun;
+        CurlFunCurl curlFun;
+        DynRankView ConstructWithLabel(funAtRefCoords, numElems, numRefCoords, dim);
+        DynRankView ConstructWithLabel(funCurlAtPhysRefCoords, numElems, numRefCoords, dim);
+        for(ordinal_type i=0; i<numElems; ++i) {
+          for(ordinal_type j=0; j<numRefCoords; ++j) {
+            for(ordinal_type k=0; k<dim; ++k) {
+              funAtRefCoords(i,j,k) =         fun(physRefCoords(i,j,0), physRefCoords(i,j,1), physRefCoords(i,j,2), k);
+              funCurlAtPhysRefCoords(i,j,k) = curlFun(physRefCoords(i,j,0), physRefCoords(i,j,1), physRefCoords(i,j,2), k);
+            }
           }
         }
-      }
 
-      // compute projection-based interpolation of fun into HCURL
-      DynRankView ConstructWithLabel(basisCoeffsHCurl, numElems, basisCardinality);
-      {
-        ordinal_type targetCubDegree(cub_degree),targetDerivCubDegree(cub_degree-1);
-
-        Experimental::ProjectionStruct<DeviceSpaceType,ValueType> projStruct;
-        projStruct.createHCurlProjectionStruct(&basis, targetCubDegree, targetDerivCubDegree);
-
-        ordinal_type numPoints = projStruct.getNumTargetEvalPoints(), numCurlPoints = projStruct.getNumTargetDerivEvalPoints();
-        DynRankView ConstructWithLabel(evaluationPoints, numElems, numPoints, dim);
-        DynRankView ConstructWithLabel(evaluationCurlPoints, numElems, numCurlPoints, dim);
-        pts::getHCurlEvaluationPoints(evaluationPoints,
-            evaluationCurlPoints,
-            elemOrts,
-            &basis,
-            &projStruct);
-
-
-        DynRankView ConstructWithLabel(targetAtEvalPoints, numElems, numPoints, dim);
-        DynRankView ConstructWithLabel(targetCurlAtEvalPoints, numElems, numCurlPoints, dim);
-
-
-        DynRankView ConstructWithLabel(physEvalPoints, numElems, numPoints, dim);
-        DynRankView ConstructWithLabel(physEvalCurlPoints, numElems, numCurlPoints, dim);
+        // compute projection-based interpolation of fun into HCURL
+        DynRankView ConstructWithLabel(basisCoeffsHCurl, numElems, basisCardinality);
         {
-          Basis_HGRAD_HEX_C1_FEM<DeviceSpaceType,ValueType,ValueType> hexLinearBasis; //used for computing physical coordinates
-          DynRankView ConstructWithLabel(hexLinearBasisValuesAtEvalPoints, hexa.getNodeCount(), numPoints);
-          DynRankView ConstructWithLabel(hexLinearBasisValuesAtEvalCurlPoints, hexa.getNodeCount(), numCurlPoints);
+          ordinal_type targetCubDegree(cub_degree),targetDerivCubDegree(cub_degree-1);
 
-          for(ordinal_type i=0; i<numElems; ++i) {
-            hexLinearBasis.getValues(hexLinearBasisValuesAtEvalPoints, Kokkos::subview(evaluationPoints,i,Kokkos::ALL(),Kokkos::ALL()));
-            hexLinearBasis.getValues(hexLinearBasisValuesAtEvalCurlPoints, Kokkos::subview(evaluationCurlPoints,i,Kokkos::ALL(),Kokkos::ALL()));
-            for(ordinal_type d=0; d<dim; ++d) {
-              for(std::size_t k=0; k<hexa.getNodeCount(); ++k) {
-                for(ordinal_type j=0; j<numPoints; ++j)
-                  physEvalPoints(i,j,d) += nodeCoord(elemNodes(i,k),d)*hexLinearBasisValuesAtEvalPoints(k,j);
-                for(ordinal_type j=0; j<numCurlPoints; ++j)
-                  physEvalCurlPoints(i,j,d) += nodeCoord(elemNodes(i,k),d)*hexLinearBasisValuesAtEvalCurlPoints(k,j);
+          Experimental::ProjectionStruct<DeviceSpaceType,ValueType> projStruct;
+          projStruct.createHCurlProjectionStruct(&basis, targetCubDegree, targetDerivCubDegree);
+
+          ordinal_type numPoints = projStruct.getNumTargetEvalPoints(), numCurlPoints = projStruct.getNumTargetDerivEvalPoints();
+          DynRankView ConstructWithLabel(evaluationPoints, numElems, numPoints, dim);
+          DynRankView ConstructWithLabel(evaluationCurlPoints, numElems, numCurlPoints, dim);
+          pts::getHCurlEvaluationPoints(evaluationPoints,
+              evaluationCurlPoints,
+              elemOrts,
+              &basis,
+              &projStruct);
+
+
+          DynRankView ConstructWithLabel(targetAtEvalPoints, numElems, numPoints, dim);
+          DynRankView ConstructWithLabel(targetCurlAtEvalPoints, numElems, numCurlPoints, dim);
+
+
+          DynRankView ConstructWithLabel(physEvalPoints, numElems, numPoints, dim);
+          DynRankView ConstructWithLabel(physEvalCurlPoints, numElems, numCurlPoints, dim);
+          {
+            Basis_HGRAD_HEX_C1_FEM<DeviceSpaceType,ValueType,ValueType> hexLinearBasis; //used for computing physical coordinates
+            DynRankView ConstructWithLabel(hexLinearBasisValuesAtEvalPoints, hexa.getNodeCount(), numPoints);
+            DynRankView ConstructWithLabel(hexLinearBasisValuesAtEvalCurlPoints, hexa.getNodeCount(), numCurlPoints);
+
+            for(ordinal_type i=0; i<numElems; ++i) {
+              hexLinearBasis.getValues(hexLinearBasisValuesAtEvalPoints, Kokkos::subview(evaluationPoints,i,Kokkos::ALL(),Kokkos::ALL()));
+              hexLinearBasis.getValues(hexLinearBasisValuesAtEvalCurlPoints, Kokkos::subview(evaluationCurlPoints,i,Kokkos::ALL(),Kokkos::ALL()));
+              for(ordinal_type d=0; d<dim; ++d) {
+                for(std::size_t k=0; k<hexa.getNodeCount(); ++k) {
+                  for(ordinal_type j=0; j<numPoints; ++j)
+                    physEvalPoints(i,j,d) += nodeCoord(elemNodes(i,k),d)*hexLinearBasisValuesAtEvalPoints(k,j);
+                  for(ordinal_type j=0; j<numCurlPoints; ++j)
+                    physEvalCurlPoints(i,j,d) += nodeCoord(elemNodes(i,k),d)*hexLinearBasisValuesAtEvalCurlPoints(k,j);
+                }
               }
             }
           }
-        }
 
-        //transform the target function and its derivative to the reference element (inverse of pullback operator)
-        DynRankView ConstructWithLabel(jacobian, numElems, numPoints, dim, dim);
-        ct::setJacobian(jacobian, evaluationPoints, physVertexes, hexa);
+          //transform the target function and its derivative to the reference element (inverse of pullback operator)
+          DynRankView ConstructWithLabel(jacobian, numElems, numPoints, dim, dim);
+          ct::setJacobian(jacobian, evaluationPoints, physVertexes, hexa);
 
-        DynRankView ConstructWithLabel(jacobianCurl, numElems, numCurlPoints, dim, dim);
-        DynRankView ConstructWithLabel(jacobianCurl_inv, numElems, numCurlPoints, dim, dim);
-        DynRankView ConstructWithLabel(jacobianCurl_det, numElems, numCurlPoints);
-        ct::setJacobian(jacobianCurl, evaluationCurlPoints, physVertexes, hexa);
-        ct::setJacobianInv (jacobianCurl_inv, jacobianCurl);
-        ct::setJacobianDet (jacobianCurl_det, jacobianCurl);
+          DynRankView ConstructWithLabel(jacobianCurl, numElems, numCurlPoints, dim, dim);
+          DynRankView ConstructWithLabel(jacobianCurl_inv, numElems, numCurlPoints, dim, dim);
+          DynRankView ConstructWithLabel(jacobianCurl_det, numElems, numCurlPoints);
+          ct::setJacobian(jacobianCurl, evaluationCurlPoints, physVertexes, hexa);
+          ct::setJacobianInv (jacobianCurl_inv, jacobianCurl);
+          ct::setJacobianDet (jacobianCurl_det, jacobianCurl);
 
-        CurlFunCurl curlFun;
-        Kokkos::deep_copy(targetCurlAtEvalPoints,0.);
-        Kokkos::deep_copy(targetAtEvalPoints,0.);
-        for(int ic=0; ic<numElems; ic++) {
-          for(int i=0;i<numPoints;i++) {
-            for(int j=0;j<dim;j++)
-              for(int d=0;d<dim;d++)
-                targetAtEvalPoints(ic,i,j) += jacobian(ic,i,d,j)*fun(physEvalPoints(ic,i,0), physEvalPoints(ic,i,1), physEvalPoints(ic,i,2),d);
-          }
-          for(int i=0;i<numCurlPoints;i++) {
-            for(int d=0;d<dim;d++)
+          CurlFunCurl curlFun;
+          Kokkos::deep_copy(targetCurlAtEvalPoints,0.);
+          Kokkos::deep_copy(targetAtEvalPoints,0.);
+          for(int ic=0; ic<numElems; ic++) {
+            for(int i=0;i<numPoints;i++) {
               for(int j=0;j<dim;j++)
-                targetCurlAtEvalPoints(ic,i,j) += jacobianCurl_det(ic,i)*jacobianCurl_inv(ic,i,j,d)*curlFun(physEvalCurlPoints(ic,i,0), physEvalCurlPoints(ic,i,1), physEvalCurlPoints(ic,i,2), d);//funHGradCoeffs(k)
-          }
-
-        }
-
-        pts::getHCurlBasisCoeffs(basisCoeffsHCurl,
-            targetAtEvalPoints,
-            targetCurlAtEvalPoints,
-            evaluationPoints,
-            evaluationCurlPoints,
-            elemOrts,
-            &basis,
-            &projStruct);
-      }
-
-      //check that fun values at reference points coincide with those computed using basis functions
-      DynRankView ConstructWithLabel(basisValuesAtRefCoordsOriented, numElems, basisCardinality, numRefCoords, dim);
-      DynRankView ConstructWithLabel(transformedBasisValuesAtRefCoordsOriented, numElems, basisCardinality, numRefCoords, dim);
-      DynRankView basisValuesAtRefCoordsCells("inValues", numElems, basisCardinality, numRefCoords, dim);
-
-
-      DynRankView ConstructWithLabel(basisValuesAtRefCoords, basisCardinality, numRefCoords, dim);
-      basis.getValues(basisValuesAtRefCoords, refPoints);
-      rst::clone(basisValuesAtRefCoordsCells,basisValuesAtRefCoords);
-
-      // modify basis values to account for orientations
-      ots::modifyBasisByOrientation(basisValuesAtRefCoordsOriented,
-          basisValuesAtRefCoordsCells,
-          elemOrts,
-          &basis);
-
-      // transform basis values to the reference element (pullback)
-      DynRankView ConstructWithLabel(jacobianAtRefCoords, numElems, numRefCoords, dim, dim);
-      DynRankView ConstructWithLabel(jacobianAtRefCoords_inv, numElems, numRefCoords, dim, dim);
-      DynRankView ConstructWithLabel(jacobianAtRefCoords_det, numElems, numRefCoords);
-      ct::setJacobian(jacobianAtRefCoords, refPoints, physVertexes, hexa);
-      ct::setJacobianInv (jacobianAtRefCoords_inv, jacobianAtRefCoords);
-      ct::setJacobianDet (jacobianAtRefCoords_det, jacobianAtRefCoords);
-      fst::HCURLtransformVALUE(transformedBasisValuesAtRefCoordsOriented,
-          jacobianAtRefCoords_inv,
-          basisValuesAtRefCoordsOriented);
-
-
-      DynRankView ConstructWithLabel(basisCurlsAtRefCoordsOriented, numElems, basisCardinality, numRefCoords, dim);
-      DynRankView ConstructWithLabel(transformedBasisCurlsAtRefCoordsOriented, numElems, basisCardinality, numRefCoords, dim);
-      DynRankView basisCurlsAtRefCoordsCells("inValues", numElems, basisCardinality, numRefCoords, dim);
-
-      DynRankView ConstructWithLabel(basisCurlsAtRefCoords, basisCardinality, numRefCoords, dim);
-      basis.getValues(basisCurlsAtRefCoords, refPoints,OPERATOR_CURL);
-      rst::clone(basisCurlsAtRefCoordsCells,basisCurlsAtRefCoords);
-
-      // modify basis values to account for orientations
-      ots::modifyBasisByOrientation(basisCurlsAtRefCoordsOriented,
-          basisCurlsAtRefCoordsCells,
-          elemOrts,
-          &basis);
-
-
-      fst::HCURLtransformCURL(transformedBasisCurlsAtRefCoordsOriented,
-          jacobianAtRefCoords,
-          jacobianAtRefCoords_det,
-          basisCurlsAtRefCoordsOriented);
-
-
-      DynRankView ConstructWithLabel(projectedFunAtRefCoords, numElems, numRefCoords, dim);
-      DynRankView ConstructWithLabel(funCurlAtRefCoordsOriented, numElems, numRefCoords,dim);
-
-      //compute error of projection in HCURL norm
-      ValueType norm2(0);
-      for(ordinal_type i=0; i<numElems; ++i) {
-        ValueType error=0;
-        for(ordinal_type j=0; j<numRefCoords; ++j)
-          for(ordinal_type d=0; d<dim; ++d) {
-            for(ordinal_type k=0; k<basisCardinality; ++k) {
-              projectedFunAtRefCoords(i,j,d) += basisCoeffsHCurl(i,k)*transformedBasisValuesAtRefCoordsOriented(i,k,j,d);
-              funCurlAtRefCoordsOriented(i,j,d) += basisCoeffsHCurl(i,k)*transformedBasisCurlsAtRefCoordsOriented(i,k,j,d);
+                for(int d=0;d<dim;d++)
+                  targetAtEvalPoints(ic,i,j) += jacobian(ic,i,d,j)*fun(physEvalPoints(ic,i,0), physEvalPoints(ic,i,1), physEvalPoints(ic,i,2),d);
+            }
+            for(int i=0;i<numCurlPoints;i++) {
+              for(int d=0;d<dim;d++)
+                for(int j=0;j<dim;j++)
+                  targetCurlAtEvalPoints(ic,i,j) += jacobianCurl_det(ic,i)*jacobianCurl_inv(ic,i,j,d)*curlFun(physEvalCurlPoints(ic,i,0), physEvalCurlPoints(ic,i,1), physEvalCurlPoints(ic,i,2), d);//funHGradCoeffs(k)
             }
 
-            norm2 += std::pow(funAtRefCoords(i,j,d) - projectedFunAtRefCoords(i,j,d),2)*weights(j)*jacobianAtRefCoords_det(i,j);
-            norm2 += std::pow(funCurlAtPhysRefCoords(i,j,d) - funCurlAtRefCoordsOriented(i,j,d),2)*weights(j)*jacobianAtRefCoords_det(i,j);
-            error = std::max(std::abs( funAtRefCoords(i,j,d) - projectedFunAtRefCoords(i,j,d)), error);
           }
-      }
-      hcurlNorm[iter] =  std::sqrt(norm2);
-      auto expected_error = hcurl_errors[iter];
-      if(std::abs(hcurlNorm[iter]-expected_error)/expected_error > relTol){
-        errorFlag++;
-        *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-        *outStream << "For N = " << NX << ", computed error (" << hcurlNorm[iter] << ") is different than expected one (" << expected_error << ")";
-        *outStream << std::endl;
+
+          pts::getHCurlBasisCoeffs(basisCoeffsHCurl,
+              targetAtEvalPoints,
+              targetCurlAtEvalPoints,
+              evaluationPoints,
+              evaluationCurlPoints,
+              elemOrts,
+              &basis,
+              &projStruct);
+        }
+
+        //check that fun values at reference points coincide with those computed using basis functions
+        DynRankView ConstructWithLabel(basisValuesAtRefCoordsOriented, numElems, basisCardinality, numRefCoords, dim);
+        DynRankView ConstructWithLabel(transformedBasisValuesAtRefCoordsOriented, numElems, basisCardinality, numRefCoords, dim);
+        DynRankView basisValuesAtRefCoordsCells("inValues", numElems, basisCardinality, numRefCoords, dim);
+
+
+        DynRankView ConstructWithLabel(basisValuesAtRefCoords, basisCardinality, numRefCoords, dim);
+        basis.getValues(basisValuesAtRefCoords, refPoints);
+        rst::clone(basisValuesAtRefCoordsCells,basisValuesAtRefCoords);
+
+        // modify basis values to account for orientations
+        ots::modifyBasisByOrientation(basisValuesAtRefCoordsOriented,
+            basisValuesAtRefCoordsCells,
+            elemOrts,
+            &basis);
+
+        // transform basis values to the reference element (pullback)
+        DynRankView ConstructWithLabel(jacobianAtRefCoords, numElems, numRefCoords, dim, dim);
+        DynRankView ConstructWithLabel(jacobianAtRefCoords_inv, numElems, numRefCoords, dim, dim);
+        DynRankView ConstructWithLabel(jacobianAtRefCoords_det, numElems, numRefCoords);
+        ct::setJacobian(jacobianAtRefCoords, refPoints, physVertexes, hexa);
+        ct::setJacobianInv (jacobianAtRefCoords_inv, jacobianAtRefCoords);
+        ct::setJacobianDet (jacobianAtRefCoords_det, jacobianAtRefCoords);
+        fst::HCURLtransformVALUE(transformedBasisValuesAtRefCoordsOriented,
+            jacobianAtRefCoords_inv,
+            basisValuesAtRefCoordsOriented);
+
+
+        DynRankView ConstructWithLabel(basisCurlsAtRefCoordsOriented, numElems, basisCardinality, numRefCoords, dim);
+        DynRankView ConstructWithLabel(transformedBasisCurlsAtRefCoordsOriented, numElems, basisCardinality, numRefCoords, dim);
+        DynRankView basisCurlsAtRefCoordsCells("inValues", numElems, basisCardinality, numRefCoords, dim);
+
+        DynRankView ConstructWithLabel(basisCurlsAtRefCoords, basisCardinality, numRefCoords, dim);
+        basis.getValues(basisCurlsAtRefCoords, refPoints,OPERATOR_CURL);
+        rst::clone(basisCurlsAtRefCoordsCells,basisCurlsAtRefCoords);
+
+        // modify basis values to account for orientations
+        ots::modifyBasisByOrientation(basisCurlsAtRefCoordsOriented,
+            basisCurlsAtRefCoordsCells,
+            elemOrts,
+            &basis);
+
+
+        fst::HCURLtransformCURL(transformedBasisCurlsAtRefCoordsOriented,
+            jacobianAtRefCoords,
+            jacobianAtRefCoords_det,
+            basisCurlsAtRefCoordsOriented);
+
+
+        DynRankView ConstructWithLabel(projectedFunAtRefCoords, numElems, numRefCoords, dim);
+        DynRankView ConstructWithLabel(funCurlAtRefCoordsOriented, numElems, numRefCoords,dim);
+
+        //compute error of projection in HCURL norm
+        ValueType norm2(0);
+        for(ordinal_type i=0; i<numElems; ++i) {
+          ValueType error=0;
+          for(ordinal_type j=0; j<numRefCoords; ++j)
+            for(ordinal_type d=0; d<dim; ++d) {
+              for(ordinal_type k=0; k<basisCardinality; ++k) {
+                projectedFunAtRefCoords(i,j,d) += basisCoeffsHCurl(i,k)*transformedBasisValuesAtRefCoordsOriented(i,k,j,d);
+                funCurlAtRefCoordsOriented(i,j,d) += basisCoeffsHCurl(i,k)*transformedBasisCurlsAtRefCoordsOriented(i,k,j,d);
+              }
+
+              norm2 += std::pow(funAtRefCoords(i,j,d) - projectedFunAtRefCoords(i,j,d),2)*weights(j)*jacobianAtRefCoords_det(i,j);
+              norm2 += std::pow(funCurlAtPhysRefCoords(i,j,d) - funCurlAtRefCoordsOriented(i,j,d),2)*weights(j)*jacobianAtRefCoords_det(i,j);
+              error = std::max(std::abs( funAtRefCoords(i,j,d) - projectedFunAtRefCoords(i,j,d)), error);
+            }
+        }
+        hcurlNorm[iter] =  std::sqrt(norm2);
+        auto expected_error = hcurl_errors[iter];
+        if(std::abs(hcurlNorm[iter]-expected_error)/expected_error > relTol){
+          errorFlag++;
+          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          *outStream << "For N = " << NX << ", computed error (" << hcurlNorm[iter] << ") is different than expected one (" << expected_error << ")";
+          *outStream << std::endl;
+        }
+        delete basisPtr;
       }
       *outStream << "HCURL Error: " << hcurlNorm[iter] <<std::endl;
     } catch (std::exception &err) {
@@ -775,6 +796,7 @@ int ConvergenceHex(const bool verbose) {
       *outStream << err.what() << "\n\n";
       errorFlag = -1000;
     }
+
 
 
     *outStream
@@ -790,191 +812,199 @@ int ConvergenceHex(const bool verbose) {
       Kokkos::DynRankView<Orientation,DeviceSpaceType> elemOrts("elemOrts", numElems);
       ots::getOrientation(elemOrts, elemNodes, hexa);
 
-      Basis_HDIV_HEX_In_FEM<DeviceSpaceType,ValueType,ValueType> basis(order);
-      ordinal_type basisCardinality = basis.getCardinality();
+      std::vector<basisType*> basis_set;
+      basis_set.push_back(new typename  CG_NBasis::HDIV_HEX(order));
+      basis_set.push_back(new typename  CG_HBasis::HDIV_HEX(order));
 
-      //Compute physical Dof Coordinates and Reference coordinates
-      DynRankView ConstructWithLabel(physRefCoords, numElems, numRefCoords, dim);
-      DynRankView ConstructWithLabel(physDofCoords, numElems, basisCardinality, dim);
-      {
-        Basis_HGRAD_HEX_C1_FEM<DeviceSpaceType,ValueType,ValueType> hexaLinearBasis; //used for computing physical coordinates
-        DynRankView ConstructWithLabel(hexaLinearBasisValuesAtRefCoords, hexa.getNodeCount(), numRefCoords);
-        hexaLinearBasis.getValues(hexaLinearBasisValuesAtRefCoords, refPoints);
-        for(ordinal_type i=0; i<numElems; ++i)
-          for(ordinal_type d=0; d<dim; ++d)
-            for(ordinal_type j=0; j<numRefCoords; ++j)
-              for(std::size_t k=0; k<hexa.getNodeCount(); ++k)
-                physRefCoords(i,j,d) += nodeCoord(elemNodes(i,k),d)*hexaLinearBasisValuesAtRefCoords(k,j);
-      }
+      for (auto basisPtr:basis_set) {
+        auto& basis = *basisPtr;
+        *outStream << " " << basis.getName() << std::endl;
 
-      FunDiv fun;
-      DivFunDiv funDiv;
-      DynRankView ConstructWithLabel(funAtRefCoords, numElems, numRefCoords, dim);
-      DynRankView ConstructWithLabel(funDivAtPhysRefCoords, numElems, numRefCoords);
-      for(ordinal_type i=0; i<numElems; ++i) {
-        for(ordinal_type j=0; j<numRefCoords; ++j) {
-          funDivAtPhysRefCoords(i,j) = funDiv(physRefCoords(i,j,0), physRefCoords(i,j,1), physRefCoords(i,j,2));
-          for(ordinal_type k=0; k<dim; ++k)
-            funAtRefCoords(i,j,k) = fun(physRefCoords(i,j,0), physRefCoords(i,j,1), physRefCoords(i,j,2), k);
-        }
-      }
+        ordinal_type basisCardinality = basis.getCardinality();
 
-      // compute projection-based interpolation of fun into HDIV
-      DynRankView ConstructWithLabel(basisCoeffsHDiv, numElems, basisCardinality);
-      {
-        ordinal_type targetCubDegree(basis.getDegree()),targetDerivCubDegree(basis.getDegree()-1);
-
-        Experimental::ProjectionStruct<DeviceSpaceType,ValueType> projStruct;
-        projStruct.createHDivProjectionStruct(&basis, targetCubDegree, targetDerivCubDegree);
-
-        ordinal_type numPoints = projStruct.getNumTargetEvalPoints(), numDivPoints = projStruct.getNumTargetDerivEvalPoints();
-
-        DynRankView ConstructWithLabel(evaluationPoints, numElems, numPoints, dim);
-        DynRankView ConstructWithLabel(evaluationDivPoints, numElems, numDivPoints, dim);
-
-        pts::getHDivEvaluationPoints(evaluationPoints,
-            evaluationDivPoints,
-            elemOrts,
-            &basis,
-            &projStruct);
-
-        DynRankView ConstructWithLabel(targetAtEvalPoints, numElems, numPoints, dim);
-        DynRankView ConstructWithLabel(targetDivAtEvalPoints, numElems, numDivPoints);
-
-
-        DynRankView ConstructWithLabel(physEvalPoints, numElems, numPoints, dim);
-        DynRankView ConstructWithLabel(physEvalDivPoints, numElems, numDivPoints, dim);
+        //Compute physical Dof Coordinates and Reference coordinates
+        DynRankView ConstructWithLabel(physRefCoords, numElems, numRefCoords, dim);
+        DynRankView ConstructWithLabel(physDofCoords, numElems, basisCardinality, dim);
         {
-          Basis_HGRAD_HEX_C1_FEM<DeviceSpaceType,ValueType,ValueType> hexLinearBasis; //used for computing physical coordinates
-          DynRankView ConstructWithLabel(hexLinearBasisValuesAtEvalPoints, hexa.getNodeCount(), numPoints);
-          DynRankView ConstructWithLabel(hexLinearBasisValuesAtEvalDivPoints, hexa.getNodeCount(), numDivPoints);
+          Basis_HGRAD_HEX_C1_FEM<DeviceSpaceType,ValueType,ValueType> hexaLinearBasis; //used for computing physical coordinates
+          DynRankView ConstructWithLabel(hexaLinearBasisValuesAtRefCoords, hexa.getNodeCount(), numRefCoords);
+          hexaLinearBasis.getValues(hexaLinearBasisValuesAtRefCoords, refPoints);
+          for(ordinal_type i=0; i<numElems; ++i)
+            for(ordinal_type d=0; d<dim; ++d)
+              for(ordinal_type j=0; j<numRefCoords; ++j)
+                for(std::size_t k=0; k<hexa.getNodeCount(); ++k)
+                  physRefCoords(i,j,d) += nodeCoord(elemNodes(i,k),d)*hexaLinearBasisValuesAtRefCoords(k,j);
+        }
 
-          for(ordinal_type i=0; i<numElems; ++i) {
-            hexLinearBasis.getValues(hexLinearBasisValuesAtEvalPoints, Kokkos::subview(evaluationPoints,i,Kokkos::ALL(),Kokkos::ALL()));
-            hexLinearBasis.getValues(hexLinearBasisValuesAtEvalDivPoints, Kokkos::subview(evaluationDivPoints,i,Kokkos::ALL(),Kokkos::ALL()));
-            for(ordinal_type d=0; d<dim; ++d) {
-              for(std::size_t k=0; k<hexa.getNodeCount(); ++k) {
-                for(ordinal_type j=0; j<numPoints; ++j)
-                  physEvalPoints(i,j,d) += nodeCoord(elemNodes(i,k),d)*hexLinearBasisValuesAtEvalPoints(k,j);
-                for(ordinal_type j=0; j<numDivPoints; ++j)
-                  physEvalDivPoints(i,j,d) += nodeCoord(elemNodes(i,k),d)*hexLinearBasisValuesAtEvalDivPoints(k,j);
+        FunDiv fun;
+        DivFunDiv funDiv;
+        DynRankView ConstructWithLabel(funAtRefCoords, numElems, numRefCoords, dim);
+        DynRankView ConstructWithLabel(funDivAtPhysRefCoords, numElems, numRefCoords);
+        for(ordinal_type i=0; i<numElems; ++i) {
+          for(ordinal_type j=0; j<numRefCoords; ++j) {
+            funDivAtPhysRefCoords(i,j) = funDiv(physRefCoords(i,j,0), physRefCoords(i,j,1), physRefCoords(i,j,2));
+            for(ordinal_type k=0; k<dim; ++k)
+              funAtRefCoords(i,j,k) = fun(physRefCoords(i,j,0), physRefCoords(i,j,1), physRefCoords(i,j,2), k);
+          }
+        }
+
+        // compute projection-based interpolation of fun into HDIV
+        DynRankView ConstructWithLabel(basisCoeffsHDiv, numElems, basisCardinality);
+        {
+          ordinal_type targetCubDegree(basis.getDegree()),targetDerivCubDegree(basis.getDegree()-1);
+
+          Experimental::ProjectionStruct<DeviceSpaceType,ValueType> projStruct;
+          projStruct.createHDivProjectionStruct(&basis, targetCubDegree, targetDerivCubDegree);
+
+          ordinal_type numPoints = projStruct.getNumTargetEvalPoints(), numDivPoints = projStruct.getNumTargetDerivEvalPoints();
+
+          DynRankView ConstructWithLabel(evaluationPoints, numElems, numPoints, dim);
+          DynRankView ConstructWithLabel(evaluationDivPoints, numElems, numDivPoints, dim);
+
+          pts::getHDivEvaluationPoints(evaluationPoints,
+              evaluationDivPoints,
+              elemOrts,
+              &basis,
+              &projStruct);
+
+          DynRankView ConstructWithLabel(targetAtEvalPoints, numElems, numPoints, dim);
+          DynRankView ConstructWithLabel(targetDivAtEvalPoints, numElems, numDivPoints);
+
+
+          DynRankView ConstructWithLabel(physEvalPoints, numElems, numPoints, dim);
+          DynRankView ConstructWithLabel(physEvalDivPoints, numElems, numDivPoints, dim);
+          {
+            Basis_HGRAD_HEX_C1_FEM<DeviceSpaceType,ValueType,ValueType> hexLinearBasis; //used for computing physical coordinates
+            DynRankView ConstructWithLabel(hexLinearBasisValuesAtEvalPoints, hexa.getNodeCount(), numPoints);
+            DynRankView ConstructWithLabel(hexLinearBasisValuesAtEvalDivPoints, hexa.getNodeCount(), numDivPoints);
+
+            for(ordinal_type i=0; i<numElems; ++i) {
+              hexLinearBasis.getValues(hexLinearBasisValuesAtEvalPoints, Kokkos::subview(evaluationPoints,i,Kokkos::ALL(),Kokkos::ALL()));
+              hexLinearBasis.getValues(hexLinearBasisValuesAtEvalDivPoints, Kokkos::subview(evaluationDivPoints,i,Kokkos::ALL(),Kokkos::ALL()));
+              for(ordinal_type d=0; d<dim; ++d) {
+                for(std::size_t k=0; k<hexa.getNodeCount(); ++k) {
+                  for(ordinal_type j=0; j<numPoints; ++j)
+                    physEvalPoints(i,j,d) += nodeCoord(elemNodes(i,k),d)*hexLinearBasisValuesAtEvalPoints(k,j);
+                  for(ordinal_type j=0; j<numDivPoints; ++j)
+                    physEvalDivPoints(i,j,d) += nodeCoord(elemNodes(i,k),d)*hexLinearBasisValuesAtEvalDivPoints(k,j);
+                }
               }
             }
           }
+
+          //transform the target function and its derivative to the reference element (inverse of pullback operator)
+          DynRankView ConstructWithLabel(jacobian, numElems, numPoints, dim, dim);
+          DynRankView ConstructWithLabel(jacobian_det, numElems, numPoints);
+          DynRankView ConstructWithLabel(jacobian_inv, numElems, numPoints, dim, dim);
+          ct::setJacobian(jacobian, evaluationPoints, physVertexes, hexa);
+          ct::setJacobianDet (jacobian_det, jacobian);
+          ct::setJacobianInv (jacobian_inv, jacobian);
+
+          DynRankView ConstructWithLabel(jacobianDiv, numElems, numDivPoints, dim, dim);
+          DynRankView ConstructWithLabel(jacobianDiv_det, numElems, numDivPoints);
+          ct::setJacobian(jacobianDiv, evaluationDivPoints, physVertexes, hexa);
+          ct::setJacobianDet (jacobianDiv_det, jacobianDiv);
+
+
+          DivFunDiv divFun;
+          Kokkos::deep_copy(targetDivAtEvalPoints,0.);
+          Kokkos::deep_copy(targetAtEvalPoints,0.);
+          for(int ic=0; ic<numElems; ic++) {
+            for(int i=0;i<numPoints;i++) {
+              for(int j=0;j<dim;j++)
+                for(int d=0;d<dim;d++)
+                  targetAtEvalPoints(ic,i,j) += jacobian_det(ic,i)*jacobian_inv(ic,i,j,d)*fun(physEvalPoints(ic,i,0), physEvalPoints(ic,i,1), physEvalPoints(ic,i,2),d);
+            }
+            for(int i=0;i<numDivPoints;i++) {
+              targetDivAtEvalPoints(ic,i) += jacobianDiv_det(ic,i)*divFun(physEvalDivPoints(ic,i,0), physEvalDivPoints(ic,i,1), physEvalDivPoints(ic,i,2));//funHGradCoeffs(k)
+            }
+          }
+
+          pts::getHDivBasisCoeffs(basisCoeffsHDiv,
+              targetAtEvalPoints,
+              targetDivAtEvalPoints,
+              evaluationPoints,
+              evaluationDivPoints,
+              elemOrts,
+              &basis,
+              &projStruct);
         }
 
-        //transform the target function and its derivative to the reference element (inverse of pullback operator)
-        DynRankView ConstructWithLabel(jacobian, numElems, numPoints, dim, dim);
-        DynRankView ConstructWithLabel(jacobian_det, numElems, numPoints);
-        DynRankView ConstructWithLabel(jacobian_inv, numElems, numPoints, dim, dim);
-        ct::setJacobian(jacobian, evaluationPoints, physVertexes, hexa);
-        ct::setJacobianDet (jacobian_det, jacobian);
-        ct::setJacobianInv (jacobian_inv, jacobian);
+        //check that fun values at reference points coincide with those computed using basis functions
+        DynRankView ConstructWithLabel(basisValuesAtRefCoordsOriented, numElems, basisCardinality, numRefCoords, dim);
+        DynRankView ConstructWithLabel(transformedBasisValuesAtRefCoordsOriented, numElems, basisCardinality, numRefCoords, dim);
+        DynRankView basisValuesAtRefCoordsCells("inValues", numElems, basisCardinality, numRefCoords, dim);
 
-        DynRankView ConstructWithLabel(jacobianDiv, numElems, numDivPoints, dim, dim);
-        DynRankView ConstructWithLabel(jacobianDiv_det, numElems, numDivPoints);
-        ct::setJacobian(jacobianDiv, evaluationDivPoints, physVertexes, hexa);
-        ct::setJacobianDet (jacobianDiv_det, jacobianDiv);
+        DynRankView ConstructWithLabel(basisValuesAtRefCoords, basisCardinality, numRefCoords, dim);
+        basis.getValues(basisValuesAtRefCoords, refPoints);
+        rst::clone(basisValuesAtRefCoordsCells,basisValuesAtRefCoords);
 
-
-        DivFunDiv divFun;
-        Kokkos::deep_copy(targetDivAtEvalPoints,0.);
-        Kokkos::deep_copy(targetAtEvalPoints,0.);
-        for(int ic=0; ic<numElems; ic++) {
-          for(int i=0;i<numPoints;i++) {
-            for(int j=0;j<dim;j++)
-              for(int d=0;d<dim;d++)
-                targetAtEvalPoints(ic,i,j) += jacobian_det(ic,i)*jacobian_inv(ic,i,j,d)*fun(physEvalPoints(ic,i,0), physEvalPoints(ic,i,1), physEvalPoints(ic,i,2),d);
-          }
-          for(int i=0;i<numDivPoints;i++) {
-            targetDivAtEvalPoints(ic,i) += jacobianDiv_det(ic,i)*divFun(physEvalDivPoints(ic,i,0), physEvalDivPoints(ic,i,1), physEvalDivPoints(ic,i,2));//funHGradCoeffs(k)
-          }
-        }
-
-        pts::getHDivBasisCoeffs(basisCoeffsHDiv,
-            targetAtEvalPoints,
-            targetDivAtEvalPoints,
-            evaluationPoints,
-            evaluationDivPoints,
+        // modify basis values to account for orientations
+        ots::modifyBasisByOrientation(basisValuesAtRefCoordsOriented,
+            basisValuesAtRefCoordsCells,
             elemOrts,
-            &basis,
-            &projStruct);
-      }
+            &basis);
 
-      //check that fun values at reference points coincide with those computed using basis functions
-      DynRankView ConstructWithLabel(basisValuesAtRefCoordsOriented, numElems, basisCardinality, numRefCoords, dim);
-      DynRankView ConstructWithLabel(transformedBasisValuesAtRefCoordsOriented, numElems, basisCardinality, numRefCoords, dim);
-      DynRankView basisValuesAtRefCoordsCells("inValues", numElems, basisCardinality, numRefCoords, dim);
+        // transform basis values to the reference element (pullback)
+        DynRankView ConstructWithLabel(jacobianAtRefCoords, numElems, numRefCoords, dim, dim);
+        DynRankView ConstructWithLabel(jacobianAtRefCoords_det, numElems, numRefCoords);
+        ct::setJacobian(jacobianAtRefCoords, refPoints, physVertexes, hexa);
+        ct::setJacobianDet (jacobianAtRefCoords_det, jacobianAtRefCoords);
+        fst::HDIVtransformVALUE(transformedBasisValuesAtRefCoordsOriented,
+            jacobianAtRefCoords,
+            jacobianAtRefCoords_det,
+            basisValuesAtRefCoordsOriented);
 
-      DynRankView ConstructWithLabel(basisValuesAtRefCoords, basisCardinality, numRefCoords, dim);
-      basis.getValues(basisValuesAtRefCoords, refPoints);
-      rst::clone(basisValuesAtRefCoordsCells,basisValuesAtRefCoords);
+        DynRankView ConstructWithLabel(basisDivsAtRefCoordsOriented, numElems, basisCardinality, numRefCoords);
+        DynRankView ConstructWithLabel(transformedBasisDivsAtRefCoordsOriented, numElems, basisCardinality, numRefCoords);
+        DynRankView basisDivsAtRefCoordsCells("inValues", numElems, basisCardinality, numRefCoords);
 
-      // modify basis values to account for orientations
-      ots::modifyBasisByOrientation(basisValuesAtRefCoordsOriented,
-          basisValuesAtRefCoordsCells,
-          elemOrts,
-          &basis);
+        DynRankView ConstructWithLabel(basisDivsAtRefCoords, basisCardinality, numRefCoords);
+        basis.getValues(basisDivsAtRefCoords, refPoints,OPERATOR_DIV);
+        rst::clone(basisDivsAtRefCoordsCells,basisDivsAtRefCoords);
 
-      // transform basis values to the reference element (pullback)
-      DynRankView ConstructWithLabel(jacobianAtRefCoords, numElems, numRefCoords, dim, dim);
-      DynRankView ConstructWithLabel(jacobianAtRefCoords_det, numElems, numRefCoords);
-      ct::setJacobian(jacobianAtRefCoords, refPoints, physVertexes, hexa);
-      ct::setJacobianDet (jacobianAtRefCoords_det, jacobianAtRefCoords);
-      fst::HDIVtransformVALUE(transformedBasisValuesAtRefCoordsOriented,
-          jacobianAtRefCoords,
-          jacobianAtRefCoords_det,
-          basisValuesAtRefCoordsOriented);
-
-      DynRankView ConstructWithLabel(basisDivsAtRefCoordsOriented, numElems, basisCardinality, numRefCoords);
-      DynRankView ConstructWithLabel(transformedBasisDivsAtRefCoordsOriented, numElems, basisCardinality, numRefCoords);
-      DynRankView basisDivsAtRefCoordsCells("inValues", numElems, basisCardinality, numRefCoords);
-
-      DynRankView ConstructWithLabel(basisDivsAtRefCoords, basisCardinality, numRefCoords);
-      basis.getValues(basisDivsAtRefCoords, refPoints,OPERATOR_DIV);
-      rst::clone(basisDivsAtRefCoordsCells,basisDivsAtRefCoords);
-
-      // modify basis values to account for orientations
-      ots::modifyBasisByOrientation(basisDivsAtRefCoordsOriented,
-          basisDivsAtRefCoordsCells,
-          elemOrts,
-          &basis);
+        // modify basis values to account for orientations
+        ots::modifyBasisByOrientation(basisDivsAtRefCoordsOriented,
+            basisDivsAtRefCoordsCells,
+            elemOrts,
+            &basis);
 
 
-      fst::HDIVtransformDIV(transformedBasisDivsAtRefCoordsOriented,
-          jacobianAtRefCoords_det,
-          basisDivsAtRefCoordsOriented);
+        fst::HDIVtransformDIV(transformedBasisDivsAtRefCoordsOriented,
+            jacobianAtRefCoords_det,
+            basisDivsAtRefCoordsOriented);
 
 
-      DynRankView ConstructWithLabel(projectedFunAtRefCoords, numElems, numRefCoords, dim);
-      DynRankView ConstructWithLabel(funDivAtRefCoordsOriented, numElems, numRefCoords);
+        DynRankView ConstructWithLabel(projectedFunAtRefCoords, numElems, numRefCoords, dim);
+        DynRankView ConstructWithLabel(funDivAtRefCoordsOriented, numElems, numRefCoords);
 
-      //compute error of projection in HDIV norm
-      ValueType norm2(0);
-      for(ordinal_type i=0; i<numElems; ++i) {
-        for(ordinal_type j=0; j<numRefCoords; ++j) {
-          for(ordinal_type k=0; k<basisCardinality; ++k) {
-            for(ordinal_type d=0; d<dim; ++d)
-              projectedFunAtRefCoords(i,j,d) += basisCoeffsHDiv(i,k)*transformedBasisValuesAtRefCoordsOriented(i,k,j,d);
-            funDivAtRefCoordsOriented(i,j) += basisCoeffsHDiv(i,k)*transformedBasisDivsAtRefCoordsOriented(i,k,j);
+        //compute error of projection in HDIV norm
+        ValueType norm2(0);
+        for(ordinal_type i=0; i<numElems; ++i) {
+          for(ordinal_type j=0; j<numRefCoords; ++j) {
+            for(ordinal_type k=0; k<basisCardinality; ++k) {
+              for(ordinal_type d=0; d<dim; ++d)
+                projectedFunAtRefCoords(i,j,d) += basisCoeffsHDiv(i,k)*transformedBasisValuesAtRefCoordsOriented(i,k,j,d);
+              funDivAtRefCoordsOriented(i,j) += basisCoeffsHDiv(i,k)*transformedBasisDivsAtRefCoordsOriented(i,k,j);
+            }
+
+            for(ordinal_type d=0; d<dim; ++d) {
+              norm2 += std::pow(funAtRefCoords(i,j,d) - projectedFunAtRefCoords(i,j,d),2)*weights(j)*jacobianAtRefCoords_det(i,j);
+            }
+            norm2 += std::pow(funDivAtPhysRefCoords(i,j) - funDivAtRefCoordsOriented(i,j),2)*weights(j)*jacobianAtRefCoords_det(i,j);
           }
-
-          for(ordinal_type d=0; d<dim; ++d) {
-            norm2 += std::pow(funAtRefCoords(i,j,d) - projectedFunAtRefCoords(i,j,d),2)*weights(j)*jacobianAtRefCoords_det(i,j);
-          }
-          norm2 += std::pow(funDivAtPhysRefCoords(i,j) - funDivAtRefCoordsOriented(i,j),2)*weights(j)*jacobianAtRefCoords_det(i,j);
         }
-      }
-      hdivNorm[iter] = std::sqrt(norm2);
-      auto expected_error = hdiv_errors[iter];
-      if(std::abs(hdivNorm[iter]-expected_error)/expected_error > relTol){
-        errorFlag++;
-        *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-        *outStream << "For N = " << NX << ", computed error (" << hdivNorm[iter] << ") is different than expected one (" << expected_error << ")";
-        *outStream << std::endl;
+        hdivNorm[iter] = std::sqrt(norm2);
+        auto expected_error = hdiv_errors[iter];
+        if(std::abs(hdivNorm[iter]-expected_error)/expected_error > relTol){
+          errorFlag++;
+          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          *outStream << "For N = " << NX << ", computed error (" << hdivNorm[iter] << ") is different than expected one (" << expected_error << ")";
+          *outStream << std::endl;
+        }
+        delete basisPtr;
       }
       *outStream << "HDIV Error: " << hdivNorm[iter] <<std::endl;
-
     } catch (std::exception &err) {
       std::cout << " Exeption\n";
       *outStream << err.what() << "\n\n";
@@ -996,132 +1026,141 @@ int ConvergenceHex(const bool verbose) {
       Kokkos::DynRankView<Orientation,DeviceSpaceType> elemOrts("elemOrts", numElems);
       ots::getOrientation(elemOrts, elemNodes, hexa);
 
-      Basis_HVOL_HEX_Cn_FEM<DeviceSpaceType,ValueType,ValueType> basis(order-1);
-      ordinal_type basisCardinality = basis.getCardinality();
 
-      //Compute physical Dof Coordinates and Reference coordinates
-      DynRankView ConstructWithLabel(physRefCoords, numElems, numRefCoords, dim);
-      {
-        Basis_HGRAD_HEX_C1_FEM<DeviceSpaceType,ValueType,ValueType> hexaLinearBasis; //used for computing physical coordinates
-        DynRankView ConstructWithLabel(hexaLinearBasisValuesAtRefCoords, hexa.getNodeCount(), numRefCoords);
-        hexaLinearBasis.getValues(hexaLinearBasisValuesAtRefCoords, refPoints);
-        for(ordinal_type i=0; i<numElems; ++i)
-          for(ordinal_type d=0; d<dim; ++d)
-            for(ordinal_type j=0; j<numRefCoords; ++j)
-              for(std::size_t k=0; k<hexa.getNodeCount(); ++k)
-                physRefCoords(i,j,d) += nodeCoord(elemNodes(i,k),d)*hexaLinearBasisValuesAtRefCoords(k,j);
-      }
+      std::vector<basisType*> basis_set;
+      basis_set.push_back(new typename  CG_NBasis::HVOL_HEX(order-1));
+      basis_set.push_back(new typename  CG_HBasis::HVOL_HEX(order-1));
 
-      //check function reproducibility
-      Fun fun;
-      DynRankView ConstructWithLabel(funAtRefCoords, numElems, numRefCoords);
-      for(ordinal_type i=0; i<numElems; ++i) {
-        for(ordinal_type j=0; j<numRefCoords; ++j)
-          funAtRefCoords(i,j) = fun(physRefCoords(i,j,0), physRefCoords(i,j,1), physRefCoords(i,j,2));
-      }
+      for (auto basisPtr:basis_set) {
+        auto& basis = *basisPtr;
+        *outStream << " " << basis.getName() << std::endl;
 
-      // compute projection-based interpolation of fun into HVOL
-      DynRankView ConstructWithLabel(basisCoeffsHVol, numElems, basisCardinality);
-      {
-        ordinal_type targetCubDegree(basis.getDegree());
+        ordinal_type basisCardinality = basis.getCardinality();
 
-        Experimental::ProjectionStruct<DeviceSpaceType,ValueType> projStruct;
-        projStruct.createHVolProjectionStruct(&basis, targetCubDegree);
-
-        ordinal_type numPoints = projStruct.getNumTargetEvalPoints();
-
-        DynRankView ConstructWithLabel(evaluationPoints, numElems, numPoints, dim);
-
-        pts::getHVolEvaluationPoints(evaluationPoints,
-            elemOrts,
-            &basis,
-            &projStruct);
-
-        DynRankView ConstructWithLabel(targetAtEvalPoints, numElems, numPoints);
-
-
-        DynRankView ConstructWithLabel(physEvalPoints, numElems, numPoints, dim);
+        //Compute physical Dof Coordinates and Reference coordinates
+        DynRankView ConstructWithLabel(physRefCoords, numElems, numRefCoords, dim);
         {
-          Basis_HGRAD_HEX_C1_FEM<DeviceSpaceType,ValueType,ValueType> hexLinearBasis; //used for computing physical coordinates
-          DynRankView ConstructWithLabel(hexLinearBasisValuesAtEvalPoints, hexa.getNodeCount(), numPoints);
+          Basis_HGRAD_HEX_C1_FEM<DeviceSpaceType,ValueType,ValueType> hexaLinearBasis; //used for computing physical coordinates
+          DynRankView ConstructWithLabel(hexaLinearBasisValuesAtRefCoords, hexa.getNodeCount(), numRefCoords);
+          hexaLinearBasis.getValues(hexaLinearBasisValuesAtRefCoords, refPoints);
+          for(ordinal_type i=0; i<numElems; ++i)
+            for(ordinal_type d=0; d<dim; ++d)
+              for(ordinal_type j=0; j<numRefCoords; ++j)
+                for(std::size_t k=0; k<hexa.getNodeCount(); ++k)
+                  physRefCoords(i,j,d) += nodeCoord(elemNodes(i,k),d)*hexaLinearBasisValuesAtRefCoords(k,j);
+        }
 
-          for(ordinal_type i=0; i<numElems; ++i) {
-            hexLinearBasis.getValues(hexLinearBasisValuesAtEvalPoints, Kokkos::subview(evaluationPoints,i,Kokkos::ALL(),Kokkos::ALL()));
-            for(ordinal_type d=0; d<dim; ++d) {
-              for(std::size_t k=0; k<hexa.getNodeCount(); ++k) {
-                for(ordinal_type j=0; j<numPoints; ++j)
-                  physEvalPoints(i,j,d) += nodeCoord(elemNodes(i,k),d)*hexLinearBasisValuesAtEvalPoints(k,j);
+        //check function reproducibility
+        Fun fun;
+        DynRankView ConstructWithLabel(funAtRefCoords, numElems, numRefCoords);
+        for(ordinal_type i=0; i<numElems; ++i) {
+          for(ordinal_type j=0; j<numRefCoords; ++j)
+            funAtRefCoords(i,j) = fun(physRefCoords(i,j,0), physRefCoords(i,j,1), physRefCoords(i,j,2));
+        }
+
+        // compute projection-based interpolation of fun into HVOL
+        DynRankView ConstructWithLabel(basisCoeffsHVol, numElems, basisCardinality);
+        {
+          ordinal_type targetCubDegree(basis.getDegree());
+
+          Experimental::ProjectionStruct<DeviceSpaceType,ValueType> projStruct;
+          projStruct.createHVolProjectionStruct(&basis, targetCubDegree);
+
+          ordinal_type numPoints = projStruct.getNumTargetEvalPoints();
+
+          DynRankView ConstructWithLabel(evaluationPoints, numElems, numPoints, dim);
+
+          pts::getHVolEvaluationPoints(evaluationPoints,
+              elemOrts,
+              &basis,
+              &projStruct);
+
+          DynRankView ConstructWithLabel(targetAtEvalPoints, numElems, numPoints);
+
+
+          DynRankView ConstructWithLabel(physEvalPoints, numElems, numPoints, dim);
+          {
+            Basis_HGRAD_HEX_C1_FEM<DeviceSpaceType,ValueType,ValueType> hexLinearBasis; //used for computing physical coordinates
+            DynRankView ConstructWithLabel(hexLinearBasisValuesAtEvalPoints, hexa.getNodeCount(), numPoints);
+
+            for(ordinal_type i=0; i<numElems; ++i) {
+              hexLinearBasis.getValues(hexLinearBasisValuesAtEvalPoints, Kokkos::subview(evaluationPoints,i,Kokkos::ALL(),Kokkos::ALL()));
+              for(ordinal_type d=0; d<dim; ++d) {
+                for(std::size_t k=0; k<hexa.getNodeCount(); ++k) {
+                  for(ordinal_type j=0; j<numPoints; ++j)
+                    physEvalPoints(i,j,d) += nodeCoord(elemNodes(i,k),d)*hexLinearBasisValuesAtEvalPoints(k,j);
+                }
               }
             }
           }
+
+          //transform the target function to the reference element (inverse of pullback operator)
+          DynRankView ConstructWithLabel(jacobian, numElems, numPoints, dim, dim);
+          DynRankView ConstructWithLabel(jacobian_det, numElems, numPoints);
+          ct::setJacobian(jacobian, evaluationPoints, physVertexes, hexa);
+          ct::setJacobianDet (jacobian_det, jacobian);
+
+          Kokkos::deep_copy(targetAtEvalPoints,0.);
+          for(int ic=0; ic<numElems; ic++) {
+            for(int i=0;i<numPoints;i++)
+              targetAtEvalPoints(ic,i) += jacobian_det(ic,i)*fun(physEvalPoints(ic,i,0), physEvalPoints(ic,i,1), physEvalPoints(ic,i,2));
+          }
+
+          pts::getHVolBasisCoeffs(basisCoeffsHVol,
+              targetAtEvalPoints,
+              evaluationPoints,
+              elemOrts,
+              &basis,
+              &projStruct);
         }
 
-        //transform the target function to the reference element (inverse of pullback operator)
-        DynRankView ConstructWithLabel(jacobian, numElems, numPoints, dim, dim);
-        DynRankView ConstructWithLabel(jacobian_det, numElems, numPoints);
-        ct::setJacobian(jacobian, evaluationPoints, physVertexes, hexa);
-        ct::setJacobianDet (jacobian_det, jacobian);
 
-        Kokkos::deep_copy(targetAtEvalPoints,0.);
-        for(int ic=0; ic<numElems; ic++) {
-          for(int i=0;i<numPoints;i++)
-            targetAtEvalPoints(ic,i) += jacobian_det(ic,i)*fun(physEvalPoints(ic,i,0), physEvalPoints(ic,i,1), physEvalPoints(ic,i,2));
-        }
+        //check that fun values at reference points coincide with those computed using basis functions
+        DynRankView ConstructWithLabel(basisValuesAtRefCoordsOriented, numElems, basisCardinality, numRefCoords);
+        DynRankView ConstructWithLabel(transformedBasisValuesAtRefCoordsOriented, numElems, basisCardinality, numRefCoords);
+        DynRankView basisValuesAtRefCoordsCells("inValues", numElems, basisCardinality, numRefCoords);
 
-        pts::getHVolBasisCoeffs(basisCoeffsHVol,
-            targetAtEvalPoints,
-            evaluationPoints,
+        DynRankView ConstructWithLabel(basisValuesAtRefCoords, basisCardinality, numRefCoords);
+        basis.getValues(basisValuesAtRefCoords, refPoints);
+        rst::clone(basisValuesAtRefCoordsCells,basisValuesAtRefCoords);
+
+        // modify basis values to account for orientations
+        ots::modifyBasisByOrientation(basisValuesAtRefCoordsOriented,
+            basisValuesAtRefCoordsCells,
             elemOrts,
-            &basis,
-            &projStruct);
-      }
+            &basis);
 
+        // transform basis values to the reference element (pullback)
+        DynRankView ConstructWithLabel(jacobianAtRefCoords, numElems, numRefCoords, dim, dim);
+        DynRankView ConstructWithLabel(jacobianAtRefCoords_det, numElems, numRefCoords);
+        ct::setJacobian(jacobianAtRefCoords, refPoints, physVertexes, hexa);
+        ct::setJacobianDet (jacobianAtRefCoords_det, jacobianAtRefCoords);
+        fst::HVOLtransformVALUE(transformedBasisValuesAtRefCoordsOriented,
+            jacobianAtRefCoords_det,
+            basisValuesAtRefCoordsOriented);
 
-      //check that fun values at reference points coincide with those computed using basis functions
-      DynRankView ConstructWithLabel(basisValuesAtRefCoordsOriented, numElems, basisCardinality, numRefCoords);
-      DynRankView ConstructWithLabel(transformedBasisValuesAtRefCoordsOriented, numElems, basisCardinality, numRefCoords);
-      DynRankView basisValuesAtRefCoordsCells("inValues", numElems, basisCardinality, numRefCoords);
+        DynRankView ConstructWithLabel(projectedFunAtRefCoords, numElems, numRefCoords);
 
-      DynRankView ConstructWithLabel(basisValuesAtRefCoords, basisCardinality, numRefCoords);
-      basis.getValues(basisValuesAtRefCoords, refPoints);
-      rst::clone(basisValuesAtRefCoordsCells,basisValuesAtRefCoords);
-
-      // modify basis values to account for orientations
-      ots::modifyBasisByOrientation(basisValuesAtRefCoordsOriented,
-          basisValuesAtRefCoordsCells,
-          elemOrts,
-          &basis);
-
-      // transform basis values to the reference element (pullback)
-      DynRankView ConstructWithLabel(jacobianAtRefCoords, numElems, numRefCoords, dim, dim);
-      DynRankView ConstructWithLabel(jacobianAtRefCoords_det, numElems, numRefCoords);
-      ct::setJacobian(jacobianAtRefCoords, refPoints, physVertexes, hexa);
-      ct::setJacobianDet (jacobianAtRefCoords_det, jacobianAtRefCoords);
-      fst::HVOLtransformVALUE(transformedBasisValuesAtRefCoordsOriented,
-          jacobianAtRefCoords_det,
-          basisValuesAtRefCoordsOriented);
-
-      DynRankView ConstructWithLabel(projectedFunAtRefCoords, numElems, numRefCoords);
-
-      //compute error of projection in L2 norm
-      ValueType norm2(0);
-      for(ordinal_type i=0; i<numElems; ++i) {
-        for(ordinal_type j=0; j<numRefCoords; ++j) {
-          for(ordinal_type k=0; k<basisCardinality; ++k)
-            projectedFunAtRefCoords(i,j) += basisCoeffsHVol(i,k)*transformedBasisValuesAtRefCoordsOriented(i,k,j);
-          norm2 += std::pow(funAtRefCoords(i,j) - projectedFunAtRefCoords(i,j),2)*weights(j)*jacobianAtRefCoords_det(i,j);
+        //compute error of projection in L2 norm
+        ValueType norm2(0);
+        for(ordinal_type i=0; i<numElems; ++i) {
+          for(ordinal_type j=0; j<numRefCoords; ++j) {
+            for(ordinal_type k=0; k<basisCardinality; ++k)
+              projectedFunAtRefCoords(i,j) += basisCoeffsHVol(i,k)*transformedBasisValuesAtRefCoordsOriented(i,k,j);
+            norm2 += std::pow(funAtRefCoords(i,j) - projectedFunAtRefCoords(i,j),2)*weights(j)*jacobianAtRefCoords_det(i,j);
+          }
         }
-      }
-      hvolNorm[iter] =  std::sqrt(norm2);
-      auto expected_error = hvol_errors[iter];
-      if(std::abs(hvolNorm[iter]-expected_error)/expected_error > relTol){
-        errorFlag++;
-        *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-        *outStream << "For N = " << NX << ", computed error (" << hvolNorm[iter] << ") is different than expected one (" << expected_error << ")";
-        *outStream << std::endl;
+        hvolNorm[iter] =  std::sqrt(norm2);
+        auto expected_error = hvol_errors[iter];
+        if(std::abs(hvolNorm[iter]-expected_error)/expected_error > relTol){
+          errorFlag++;
+          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          *outStream << "For N = " << NX << ", computed error (" << hvolNorm[iter] << ") is different than expected one (" << expected_error << ")";
+          *outStream << std::endl;
+        }
+        delete basisPtr;
       }
       *outStream << "HVOL Error: " << hvolNorm[iter] <<std::endl;
-
     } catch (std::exception &err) {
       std::cout << " Exeption\n";
       *outStream << err.what() << "\n\n";

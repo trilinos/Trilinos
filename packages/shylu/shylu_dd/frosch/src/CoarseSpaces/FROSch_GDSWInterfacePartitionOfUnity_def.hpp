@@ -198,16 +198,38 @@ namespace FROSch {
         }
 
         if (this->Verbose_) {
-            std::cout << std::boolalpha << "\n\
-    ------------------------------------------------------------------------------\n\
-     GDSW Interface Partition Of Unity (GDSW IPOU)\n\
-    ------------------------------------------------------------------------------\n\
-      Vertices                                    --- " << UseVertices_ << "\n\
-      ShortEdges                                  --- " << UseShortEdges_ << "\n\
-      StraightEdges                               --- " << UseStraightEdges_ << "\n\
-      Edges                                       --- " << UseEdges_ << "\n\
-      Faces                                       --- " << UseFaces_ << "\n\
-    ------------------------------------------------------------------------------\n" << std::noboolalpha;
+            cout
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << setw(89) << "-----------------------------------------------------------------------------------------"
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << "| "
+            << left << setw(74) << "GDSW Interface Partition Of Unity " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")" << right
+            << " |"
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << setw(89) << "========================================================================================="
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << "| " << left << setw(41) << "Vertices" << right
+            << " | " << setw(41) << boolalpha << UseVertices_ << noboolalpha
+            << " |"
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << "| " << left << setw(41) << "Short edges" << right
+            << " | " << setw(41) << boolalpha << UseShortEdges_ << noboolalpha
+            << " |"
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << "| " << left << setw(41) << "Straight edges" << right
+            << " | " << setw(41) << boolalpha << UseStraightEdges_ << noboolalpha
+            << " |"
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << "| " << left << setw(41) << "Edges" << right
+            << " | " << setw(41) << boolalpha << UseEdges_ << noboolalpha
+            << " |"
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << "| " << left << setw(41) << "Faces" << right
+            << " | " << setw(41) << boolalpha << UseFaces_ << noboolalpha
+            << " |"
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << setw(89) << "-----------------------------------------------------------------------------------------"
+            << endl;
         }
 
         // Build Partition Of Unity Vectors

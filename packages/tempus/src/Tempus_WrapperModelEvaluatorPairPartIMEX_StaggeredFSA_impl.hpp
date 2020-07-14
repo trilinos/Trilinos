@@ -528,7 +528,8 @@ buildIMEXStates() const
         forwardModel_->getExplicitOnlyVector(forward_state_->getX()),
         forwardModel_->getExplicitOnlyVector(forward_state_->getXDot()),
         forwardModel_->getExplicitOnlyVector(forward_state_->getXDotDot()),
-        forward_state_->getStepperState()));
+        forward_state_->getStepperState(),
+        Teuchos::null));
   implicit_x_state_ =
     Teuchos::rcp(
       new SolutionState<Scalar>(
@@ -536,7 +537,8 @@ buildIMEXStates() const
         forwardModel_->getIMEXVector(forward_state_->getX()),
         forwardModel_->getIMEXVector(forward_state_->getXDot()),
         forwardModel_->getIMEXVector(forward_state_->getXDotDot()),
-        forward_state_->getStepperState()));
+        forward_state_->getStepperState(),
+        Teuchos::null));
 }
 
 } // namespace Tempus

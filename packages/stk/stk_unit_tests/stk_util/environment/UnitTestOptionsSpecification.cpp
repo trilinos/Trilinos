@@ -103,6 +103,23 @@ TEST(OptionsSpecification, insert_flag_and_option_with_default_value_and_print)
     EXPECT_EQ(expected, os.str());
 }
 
+TEST(OptionsSpecification, insert_positional_option_and_test)
+{
+  stk::OptionsSpecification optionsSpec;
+
+  const bool isFlag = false;
+  const bool isRequired = false;
+  const int expectedPosition = 3;
+  optionsSpec.add_options()("positional,p","positional option",
+                           stk::DefaultValue<std::string>("default"),
+                           isFlag, isRequired, expectedPosition);
+  const stk::Option& option = optionsSpec.get_positional_option(expectedPosition);
+  EXPECT_EQ(expectedPosition, option.position);
+
+  const stk::Option& invalidOption = optionsSpec.get_positional_option(0);
+  EXPECT_EQ(stk::INVALID_POSITION, invalidOption.position);
+}
+
 TEST(OptionsSpecification, print_sub_options)
 {
     stk::OptionsSpecification optionsSpec("Main Options");

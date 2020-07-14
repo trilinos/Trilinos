@@ -280,34 +280,32 @@ IF (Sacado_ENABLE_TeuchosCore)
 
   ENDIF()
 
-  IF (Sacado_ENABLE_CXX11)
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      PromoteTests
-      SOURCES PromoteTests.cpp
-      ARGS
-      COMM serial mpi
-      NUM_MPI_PROCS 1
-      STANDARD_PASS_OUTPUT
-      )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    PromoteTests
+    SOURCES PromoteTests.cpp
+    ARGS
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+    )
 
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      MPLTests
-      SOURCES MPLTests.cpp
-      ARGS
-      COMM serial mpi
-      NUM_MPI_PROCS 1
-      STANDARD_PASS_OUTPUT
-      )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    MPLTests
+    SOURCES MPLTests.cpp
+    ARGS
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+    )
 
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      ConditionalReturnTypeTest
-      SOURCES ConditionalReturnTypeTest.cpp
-      ARGS
-      COMM serial mpi
-      NUM_MPI_PROCS 1
-      STANDARD_PASS_OUTPUT
-      )
-  ENDIF()
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    ConditionalReturnTypeTest
+    SOURCES ConditionalReturnTypeTest.cpp
+    ARGS
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+    )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ConversionTests
@@ -330,6 +328,15 @@ IF (Sacado_ENABLE_TeuchosCore)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     TernaryExprTests
     SOURCES TernaryExprTests.cpp
+    ARGS
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    SafeSqrtTests
+    SOURCES SafeSqrtTests.cpp
     ARGS
     COMM serial mpi
     NUM_MPI_PROCS 1

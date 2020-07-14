@@ -191,8 +191,8 @@ namespace { // (anonymous)
         Teuchos::OSTab tab3 (out);
 
         int threshold = std::stoi(std::string(varVal));
-        const size_t threshold2 = Behavior::verbosePrintCountThreshold ();
-        TEST_EQUALITY( static_cast<const size_t>(threshold), threshold2 );
+        size_t threshold2 = Behavior::verbosePrintCountThreshold ();
+        TEST_EQUALITY( static_cast<size_t>(threshold), threshold2 );
       }
     }
 

@@ -47,6 +47,7 @@
 
 namespace FROSch {
 
+    using namespace std;
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -69,7 +70,7 @@ namespace FROSch {
         FROSCH_TIMER_START_LEVELID(dDInterfaceTime,"DDInterface::DDInterface");
         FROSCH_ASSERT(((Dimension_==2)||(Dimension_==3)),"FROSch::DDInterface : ERROR: Only dimension 2 and 3 are available");
 
-        //if (Verbose_ && Verbosity_==All) std::cout << "FROSch::DDInterface" << std::endl;
+        //if (Verbose_ && Verbosity_==All) cout << "FROSch::DDInterface" << endl;
 
         IntVecVecPtr componentsSubdomains;
         IntVecVec componentsSubdomainsUnique;
@@ -89,7 +90,7 @@ namespace FROSch {
     int DDInterface<SC,LO,GO,NO>::resetGlobalDofs(ConstXMapPtrVecPtr dofsMaps)
     {
         FROSCH_TIMER_START_LEVELID(resetGlobalDofsTime,"DDInterface::resetGlobalDofs");
-        //if (Verbose_ && Verbosity_==All) std::cout << "FROSch::DDInterface : Resetting Global IDs" << std::endl;
+        //if (Verbose_ && Verbosity_==All) cout << "FROSch::DDInterface : Resetting Global IDs" << endl;
 
         // EntityVector
         for (UN l=0; l<EntitySetVector_.size(); l++) {
@@ -142,7 +143,7 @@ namespace FROSch {
     int DDInterface<SC,LO,GO,NO>::removeDirichletNodes(GOVecView dirichletBoundaryDofs)
     {
         FROSCH_TIMER_START_LEVELID(removeDirichletNodesTime,"DDInterface::removeDirichletNodes");
-        //if (Verbose_ && Verbosity_==All) std::cout << "FROSch::DDInterface : Removing Dirichlet Nodes from the domain decomposition interface" << std::endl;
+        //if (Verbose_ && Verbosity_==All) cout << "FROSch::DDInterface : Removing Dirichlet Nodes from the domain decomposition interface" << endl;
 
         // EntityVector
         for (UN l=0; l<EntitySetVector_.size(); l++) {
@@ -159,7 +160,7 @@ namespace FROSch {
     int DDInterface<SC,LO,GO,NO>::divideUnconnectedEntities(ConstXMatrixPtr matrix)
     {
         FROSCH_TIMER_START_LEVELID(divideUnconnectedEntitiesTime,"DDInterface::divideUnconnectedEntities");
-        //if (Verbose_ && Verbosity_==All) std::cout << "FROSch::DDInterface : Decomposing unconnected interface components" << std::endl;
+        //if (Verbose_ && Verbosity_==All) cout << "FROSch::DDInterface : Decomposing unconnected interface components" << endl;
 
         GOVecPtr indicesGammaDofs(DofsPerNode_*Interface_->getEntity(0)->getNumNodes());
         for (UN k=0; k<DofsPerNode_; k++) {
@@ -180,7 +181,7 @@ namespace FROSch {
         LO numSeparateFaces = Faces_->divideUnconnectedEntities(matrix,MpiComm_->getRank());
 
         if (Verbose_ && Verbosity_==All) {
-            std::cout << "\n\
+            cout << "\n\
             --------------------------------------------\n\
             # separate edges:     --- " << numSeparateEdges << "\n\
             # separate faces:     --- " << numSeparateFaces << "\n\
@@ -217,7 +218,7 @@ namespace FROSch {
     int DDInterface<SC,LO,GO,NO>::removeEmptyEntities()
     {
         FROSCH_TIMER_START_LEVELID(removeEmptyEntitiesTime,"DDInterface::removeEmptyEntities");
-        //if (Verbose_ && Verbosity_==All) std::cout << "FROSch::DDInterface : Removing empty interface components" << std::endl;
+        //if (Verbose_ && Verbosity_==All) cout << "FROSch::DDInterface : Removing empty interface components" << endl;
 
         for (UN l=0; l<EntitySetVector_.size(); l++) {
             EntitySetVector_[l]->removeEmptyEntities();
@@ -229,7 +230,7 @@ namespace FROSch {
     int DDInterface<SC,LO,GO,NO>::sortVerticesEdgesFaces(ConstXMultiVectorPtr nodeList)
     {
         FROSCH_TIMER_START_LEVELID(sortVerticesEdgesFacesTime,"DDInterface::sortVerticesEdgesFaces");
-        //if (Verbose_ && Verbosity_==All) std::cout << "FROSch::DDInterface : Sorting interface components" << std::endl;
+        //if (Verbose_ && Verbosity_==All) cout << "FROSch::DDInterface : Sorting interface components" << endl;
 
         // Clear EntitySets if non-empty
         if (Vertices_->getNumEntities()>0) Vertices_.reset(new EntitySet<SC,LO,GO,NO>(VertexType));
@@ -237,7 +238,7 @@ namespace FROSch {
         if (StraightEdges_->getNumEntities()>0) StraightEdges_.reset(new EntitySet<SC,LO,GO,NO>(EdgeType));
         if (Edges_->getNumEntities()>0) Edges_.reset(new EntitySet<SC,LO,GO,NO>(EdgeType));
         if (Faces_->getNumEntities()>0) Faces_.reset(new EntitySet<SC,LO,GO,NO>(FaceType));
-        
+
         flagEntities(nodeList);
 
         // Make sure that we do not sort any empty entities
@@ -315,7 +316,7 @@ namespace FROSch {
                                                   bool buildLeafsMap)
     {
         FROSCH_TIMER_START_LEVELID(buildEntityMapsTime,"DDInterface::buildEntityMaps");
-        //if (Verbose_ && Verbosity_==All) std::cout << "FROSch::DDInterface : Building global interface component maps" << std::endl;
+        //if (Verbose_ && Verbosity_==All) cout << "FROSch::DDInterface : Building global interface component maps" << endl;
 
         if (buildVerticesMap) Vertices_->buildEntityMap(NodesMap_);
         if (buildShortEdgesMap) ShortEdges_->buildEntityMap(NodesMap_);
@@ -326,159 +327,233 @@ namespace FROSch {
         if (buildLeafsMap) Leafs_->buildEntityMap(NodesMap_);
 
         if (Verbosity_==All) {
+            FROSCH_TIMER_START_LEVELID(printStatisticsTime,"print statistics");
             // Count entities
-            GOVec global(7);
-            LOVec local(7);
-            LOVec sum(7);
-            SCVec avg(7);
-            LOVec min(7);
-            LOVec max(7);
+            GOVec globalVec(7);
+            LOVec localVec(7);
+            LOVec sumVec(7);
+            SCVec avgVec(7);
+            LOVec minVec(7);
+            LOVec maxVec(7);
             if (buildVerticesMap) {
-                global[0] = Vertices_->getEntityMap()->getMaxAllGlobalIndex();
+                globalVec[0] = Vertices_->getEntityMap()->getMaxAllGlobalIndex();
                 if (NodesMap_->lib()==UseEpetra || Vertices_->getEntityMap()->getGlobalNumElements()>0) {
-                    global[0] += 1;
+                    globalVec[0] += 1;
                 }
-                if (global[0]<0) global[0] = 0;
-                local[0] = (LO) std::max((LO) Vertices_->getEntityMap()->getNodeNumElements(),(LO) 0);
-                reduceAll(*this->MpiComm_,REDUCE_SUM,local[0],ptr(&sum[0]));
-                avg[0] = std::max(sum[0]/double(MpiComm_->getSize()),0.0);
-                reduceAll(*MpiComm_,REDUCE_MIN,local[0],ptr(&min[0]));
-                reduceAll(*MpiComm_,REDUCE_MAX,local[0],ptr(&max[0]));
+                if (globalVec[0]<0) globalVec[0] = 0;
+                localVec[0] = (LO) max((LO) Vertices_->getEntityMap()->getNodeNumElements(),(LO) 0);
+                reduceAll(*this->MpiComm_,REDUCE_SUM,localVec[0],ptr(&sumVec[0]));
+                avgVec[0] = max(sumVec[0]/double(MpiComm_->getSize()),0.0);
+                reduceAll(*MpiComm_,REDUCE_MIN,localVec[0],ptr(&minVec[0]));
+                reduceAll(*MpiComm_,REDUCE_MAX,localVec[0],ptr(&maxVec[0]));
             } else {
-                global[0] = -1;
-                local[0] = -1;
-                avg[0] = -1;
-                min[0] = -1;
-                max[0] = -1;
+                globalVec[0] = -1;
+                localVec[0] = -1;
+                avgVec[0] = -1;
+                minVec[0] = -1;
+                maxVec[0] = -1;
+                sumVec[0] = -1;
             }
             if (buildShortEdgesMap) {
-                global[1] = ShortEdges_->getEntityMap()->getMaxAllGlobalIndex();
+                globalVec[1] = ShortEdges_->getEntityMap()->getMaxAllGlobalIndex();
                 if (NodesMap_->lib()==UseEpetra || ShortEdges_->getEntityMap()->getGlobalNumElements()>0) {
-                    global[1] += 1;
+                    globalVec[1] += 1;
                 }
-                if (global[1]<0) global[1] = 0;
-                local[1] = (LO) std::max((LO) ShortEdges_->getEntityMap()->getNodeNumElements(),(LO) 0);
-                reduceAll(*this->MpiComm_,REDUCE_SUM,local[1],ptr(&sum[1]));
-                avg[1] = std::max(sum[1]/double(MpiComm_->getSize()),0.0);
-                reduceAll(*MpiComm_,REDUCE_MIN,local[1],ptr(&min[1]));
-                reduceAll(*MpiComm_,REDUCE_MAX,local[1],ptr(&max[1]));
+                if (globalVec[1]<0) globalVec[1] = 0;
+                localVec[1] = (LO) max((LO) ShortEdges_->getEntityMap()->getNodeNumElements(),(LO) 0);
+                reduceAll(*this->MpiComm_,REDUCE_SUM,localVec[1],ptr(&sumVec[1]));
+                avgVec[1] = max(sumVec[1]/double(MpiComm_->getSize()),0.0);
+                reduceAll(*MpiComm_,REDUCE_MIN,localVec[1],ptr(&minVec[1]));
+                reduceAll(*MpiComm_,REDUCE_MAX,localVec[1],ptr(&maxVec[1]));
             } else {
-                global[1] = -1;
-                local[1] = -1;
-                avg[1] = -1;
-                min[1] = -1;
-                max[1] = -1;
+                globalVec[1] = -1;
+                localVec[1] = -1;
+                avgVec[1] = -1;
+                minVec[1] = -1;
+                maxVec[1] = -1;
+                sumVec[1] = -1;
             }
             if (buildStraightEdgesMap) {
-                global[2] = StraightEdges_->getEntityMap()->getMaxAllGlobalIndex();
+                globalVec[2] = StraightEdges_->getEntityMap()->getMaxAllGlobalIndex();
                 if (NodesMap_->lib()==UseEpetra || StraightEdges_->getEntityMap()->getGlobalNumElements()>0) {
-                    global[2] += 1;
+                    globalVec[2] += 1;
                 }
-                if (global[2]<0) global[2] = 0;
-                local[2] = (LO) std::max((LO) StraightEdges_->getEntityMap()->getNodeNumElements(),(LO) 0);
-                reduceAll(*this->MpiComm_,REDUCE_SUM,local[2],ptr(&sum[2]));
-                avg[2] = std::max(sum[2]/double(MpiComm_->getSize()),0.0);
-                reduceAll(*MpiComm_,REDUCE_MIN,local[2],ptr(&min[2]));
-                reduceAll(*MpiComm_,REDUCE_MAX,local[2],ptr(&max[2]));
+                if (globalVec[2]<0) globalVec[2] = 0;
+                localVec[2] = (LO) max((LO) StraightEdges_->getEntityMap()->getNodeNumElements(),(LO) 0);
+                reduceAll(*this->MpiComm_,REDUCE_SUM,localVec[2],ptr(&sumVec[2]));
+                avgVec[2] = max(sumVec[2]/double(MpiComm_->getSize()),0.0);
+                reduceAll(*MpiComm_,REDUCE_MIN,localVec[2],ptr(&minVec[2]));
+                reduceAll(*MpiComm_,REDUCE_MAX,localVec[2],ptr(&maxVec[2]));
             } else {
-                global[2] = -1;
-                local[2] = -1;
-                avg[2] = -1;
-                min[2] = -1;
-                max[2] = -1;
+                globalVec[2] = -1;
+                localVec[2] = -1;
+                avgVec[2] = -1;
+                minVec[2] = -1;
+                maxVec[2] = -1;
+                sumVec[2] = -1;
             }
             if (buildEdgesMap) {
-                global[3] = (LO) Edges_->getEntityMap()->getMaxAllGlobalIndex();
+                globalVec[3] = (LO) Edges_->getEntityMap()->getMaxAllGlobalIndex();
                 if (NodesMap_->lib()==UseEpetra || Edges_->getEntityMap()->getGlobalNumElements()>0) {
-                    global[3] += 1;
+                    globalVec[3] += 1;
                 }
-                if (global[3]<0) global[3] = 0;
-                local[3] = std::max((LO) Edges_->getEntityMap()->getNodeNumElements(),(LO) 0);
-                reduceAll(*this->MpiComm_,REDUCE_SUM,local[3],ptr(&sum[3]));
-                avg[3] = std::max(sum[3]/double(MpiComm_->getSize()),0.0);
-                reduceAll(*MpiComm_,REDUCE_MIN,local[3],ptr(&min[3]));
-                reduceAll(*MpiComm_,REDUCE_MAX,local[3],ptr(&max[3]));
+                if (globalVec[3]<0) globalVec[3] = 0;
+                localVec[3] = max((LO) Edges_->getEntityMap()->getNodeNumElements(),(LO) 0);
+                reduceAll(*this->MpiComm_,REDUCE_SUM,localVec[3],ptr(&sumVec[3]));
+                avgVec[3] = max(sumVec[3]/double(MpiComm_->getSize()),0.0);
+                reduceAll(*MpiComm_,REDUCE_MIN,localVec[3],ptr(&minVec[3]));
+                reduceAll(*MpiComm_,REDUCE_MAX,localVec[3],ptr(&maxVec[3]));
             } else {
-                global[3] = -1;
-                local[3] = -1;
-                avg[3] = -1;
-                min[3] = -1;
-                max[3] = -1;
+                globalVec[3] = -1;
+                localVec[3] = -1;
+                avgVec[3] = -1;
+                minVec[3] = -1;
+                maxVec[3] = -1;
+                sumVec[3] = -1;
             }
             if (buildFacesMap) {
-                global[4] = (LO) Faces_->getEntityMap()->getMaxAllGlobalIndex();
+                globalVec[4] = (LO) Faces_->getEntityMap()->getMaxAllGlobalIndex();
                 if (NodesMap_->lib()==UseEpetra || Faces_->getEntityMap()->getGlobalNumElements()>0) {
-                    global[4] += 1;
+                    globalVec[4] += 1;
                 }
-                if (global[4]<0) global[4] = 0;
-                local[4] = std::max((LO) Faces_->getEntityMap()->getNodeNumElements(),(LO) 0);
-                reduceAll(*this->MpiComm_,REDUCE_SUM,local[4],ptr(&sum[4]));
-                avg[4] = std::max(sum[4]/double(MpiComm_->getSize()),0.0);
-                reduceAll(*MpiComm_,REDUCE_MIN,local[4],ptr(&min[4]));
-                reduceAll(*MpiComm_,REDUCE_MAX,local[4],ptr(&max[4]));
+                if (globalVec[4]<0) globalVec[4] = 0;
+                localVec[4] = max((LO) Faces_->getEntityMap()->getNodeNumElements(),(LO) 0);
+                reduceAll(*this->MpiComm_,REDUCE_SUM,localVec[4],ptr(&sumVec[4]));
+                avgVec[4] = max(sumVec[4]/double(MpiComm_->getSize()),0.0);
+                reduceAll(*MpiComm_,REDUCE_MIN,localVec[4],ptr(&minVec[4]));
+                reduceAll(*MpiComm_,REDUCE_MAX,localVec[4],ptr(&maxVec[4]));
             } else {
-                global[4] = -1;
-                local[4] = -1;
-                avg[4] = -1;
-                min[4] = -1;
-                max[4] = -1;
+                globalVec[4] = -1;
+                localVec[4] = -1;
+                avgVec[4] = -1;
+                minVec[4] = -1;
+                maxVec[4] = -1;
+                sumVec[4] = -1;
             }
             if (buildRootsMap) {
-                global[5] = Roots_->getEntityMap()->getMaxAllGlobalIndex();
+                globalVec[5] = Roots_->getEntityMap()->getMaxAllGlobalIndex();
                 if (NodesMap_->lib()==UseEpetra || Roots_->getEntityMap()->getGlobalNumElements()>0) {
-                    global[5] += 1;
+                    globalVec[5] += 1;
                 }
-                if (global[5]<0) global[5] = 0;
-                local[5] = (LO) std::max((LO) Roots_->getEntityMap()->getNodeNumElements(),(LO) 0);
-                reduceAll(*this->MpiComm_,REDUCE_SUM,local[5],ptr(&sum[5]));
-                avg[5] = std::max(sum[5]/double(MpiComm_->getSize()),0.0);
-                reduceAll(*MpiComm_,REDUCE_MIN,local[5],ptr(&min[5]));
-                reduceAll(*MpiComm_,REDUCE_MAX,local[5],ptr(&max[5]));
+                if (globalVec[5]<0) globalVec[5] = 0;
+                localVec[5] = (LO) max((LO) Roots_->getEntityMap()->getNodeNumElements(),(LO) 0);
+                reduceAll(*this->MpiComm_,REDUCE_SUM,localVec[5],ptr(&sumVec[5]));
+                avgVec[5] = max(sumVec[5]/double(MpiComm_->getSize()),0.0);
+                reduceAll(*MpiComm_,REDUCE_MIN,localVec[5],ptr(&minVec[5]));
+                reduceAll(*MpiComm_,REDUCE_MAX,localVec[5],ptr(&maxVec[5]));
             } else {
-                global[5] = -1;
-                local[5] = -1;
-                avg[5] = -1;
-                min[5] = -1;
-                max[5] = -1;
+                globalVec[5] = -1;
+                localVec[5] = -1;
+                avgVec[5] = -1;
+                minVec[5] = -1;
+                maxVec[5] = -1;
+                sumVec[5] = -1;
             }
             if (buildLeafsMap) {
-                global[6] = Leafs_->getEntityMap()->getMaxAllGlobalIndex();
+                globalVec[6] = Leafs_->getEntityMap()->getMaxAllGlobalIndex();
                 if (NodesMap_->lib()==UseEpetra || Leafs_->getEntityMap()->getGlobalNumElements()>0) {
-                    global[6] += 1;
+                    globalVec[6] += 1;
                 }
-                if (global[6]<0) global[6] = 0;
-                local[6] = (LO) std::max((LO) Leafs_->getEntityMap()->getNodeNumElements(),(LO) 0);
-                reduceAll(*this->MpiComm_,REDUCE_SUM,local[6],ptr(&sum[6]));
-                avg[6] = std::max(sum[6]/double(MpiComm_->getSize()),0.0);
-                reduceAll(*MpiComm_,REDUCE_MIN,local[6],ptr(&min[6]));
-                reduceAll(*MpiComm_,REDUCE_MAX,local[6],ptr(&max[6]));
+                if (globalVec[6]<0) globalVec[6] = 0;
+                localVec[6] = (LO) max((LO) Leafs_->getEntityMap()->getNodeNumElements(),(LO) 0);
+                reduceAll(*this->MpiComm_,REDUCE_SUM,localVec[6],ptr(&sumVec[6]));
+                avgVec[6] = max(sumVec[6]/double(MpiComm_->getSize()),0.0);
+                reduceAll(*MpiComm_,REDUCE_MIN,localVec[6],ptr(&minVec[6]));
+                reduceAll(*MpiComm_,REDUCE_MAX,localVec[6],ptr(&maxVec[6]));
             } else {
-                global[6] = -1;
-                local[6] = -1;
-                avg[6] = -1;
-                min[6] = -1;
-                max[6] = -1;
+                globalVec[6] = -1;
+                localVec[6] = -1;
+                avgVec[6] = -1;
+                minVec[6] = -1;
+                maxVec[6] = -1;
+                sumVec[6] = -1;
             }
 
-            for (UN i=0; i<global.size(); i++) {
-                if (global[i]<0) {
-                    global[i] = -1;
+            for (UN i=0; i<globalVec.size(); i++) {
+                if (globalVec[i]<0) {
+                    globalVec[i] = -1;
                 }
             }
 
             if (Verbose_) {
-                std::cout << "\n\
-    ------------------------------------------------------------------------------\n\
-     Interface statistics\n\
-    ------------------------------------------------------------------------------\n\
-      Vertices:       total / avg / min / max     ---  " << global[0] << " / " << avg[0] << " / " << min[0] << " / " << max[0] << "\n\
-      ShortEdges:     total / avg / min / max     ---  " << global[1] << " / " << avg[1] << " / " << min[1] << " / " << max[1] << "\n\
-      StraightEdges:  total / avg / min / max     ---  " << global[2] << " / " << avg[2] << " / " << min[2] << " / " << max[2] << "\n\
-      Edges:          total / avg / min / max     ---  " << global[3] << " / " << avg[3] << " / " << min[3] << " / " << max[3] << "\n\
-      Faces:          total / avg / min / max     ---  " << global[4] << " / " << avg[4] << " / " << min[4] << " / " << max[4] << "\n\
-      Roots:          total / avg / min / max     ---  " << global[5] << " / " << avg[5] << " / " << min[5] << " / " << max[5] << "\n\
-      Leafs:          total / avg / min / max     ---  " << global[6] << " / " << avg[6] << " / " << min[6] << " / " << max[6] << "\n\
-    ------------------------------------------------------------------------------\n";
+                cout
+                << "\n" << setw(FROSCH_INDENT) << " "
+                << setw(89) << "-----------------------------------------------------------------------------------------"
+                << "\n" << setw(FROSCH_INDENT) << " "
+                << "| "
+                << left << setw(74) << "Interface statistics " << right << setw(8) << "(Level " << setw(2) << LevelID_ << ")"
+                << " |"
+                << "\n" << setw(FROSCH_INDENT) << " "
+                << setw(89) << "========================================================================================="
+                << "\n" << setw(FROSCH_INDENT) << " "
+                << "| " << left << setw(20) << " " << right
+                << " | " << setw(10) << "total"
+                << " | " << setw(10) << "avg"
+                << " | " << setw(10) << "min"
+                << " | " << setw(10) << "max"
+                << " | " << setw(10) << "global sum"
+                << " |"
+                << "\n" << setw(FROSCH_INDENT) << " "
+                << setw(89) << "-----------------------------------------------------------------------------------------"
+                << "\n" << setw(FROSCH_INDENT) << " "
+                << "| " << left << setw(20) << "Vertices" << right
+                << " | "; globalVec[0]<0 ? cout << setw(10) << " " : cout << setw(10) << globalVec[0]; cout
+                << " | "; avgVec[0]<0 ? cout << setw(10) << " " : cout << setw(10) << setprecision(5) << avgVec[0]; cout
+                << " | "; minVec[0]<0 ? cout << setw(10) << " " : cout << setw(10) << minVec[0]; cout
+                << " | "; maxVec[0]<0 ? cout << setw(10) << " " : cout << setw(10) << maxVec[0]; cout
+                << " | "; sumVec[0]<0 ? cout << setw(10) << " " : cout << setw(10) << sumVec[0]; cout
+                << " |"
+                << "\n" << setw(FROSCH_INDENT) << " "
+                << "| " << left << setw(20) << "Short edges" << right
+                << " | "; globalVec[1]<0 ? cout << setw(10) << " " : cout << setw(10) << globalVec[1]; cout
+                << " | "; avgVec[1]<0 ? cout << setw(10) << " " : cout << setw(10) << setprecision(5) << avgVec[1]; cout
+                << " | "; minVec[1]<0 ? cout << setw(10) << " " : cout << setw(10) << minVec[1]; cout
+                << " | "; maxVec[1]<0 ? cout << setw(10) << " " : cout << setw(10) << maxVec[1]; cout
+                << " | "; sumVec[1]<0 ? cout << setw(10) << " " : cout << setw(10) << sumVec[1]; cout
+                << " |"
+                << "\n" << setw(FROSCH_INDENT) << " "
+                << "| " << left << setw(20) << "Straight edges" << right
+                << " | "; globalVec[2]<0 ? cout << setw(10) << " " : cout << setw(10) << globalVec[2]; cout
+                << " | "; avgVec[2]<0 ? cout << setw(10) << " " : cout << setw(10) << setprecision(5) << avgVec[2]; cout
+                << " | "; minVec[2]<0 ? cout << setw(10) << " " : cout << setw(10) << minVec[2]; cout
+                << " | "; maxVec[2]<0 ? cout << setw(10) << " " : cout << setw(10) << maxVec[2]; cout
+                << " | "; sumVec[2]<0 ? cout << setw(10) << " " : cout << setw(10) << sumVec[2]; cout
+                << " |"
+                << "\n" << setw(FROSCH_INDENT) << " "
+                << "| " << left << setw(20) << "Edges" << right
+                << " | "; globalVec[3]<0 ? cout << setw(10) << " " : cout << setw(10) << globalVec[3]; cout
+                << " | "; avgVec[3]<0 ? cout << setw(10) << " " : cout << setw(10) << setprecision(5) << avgVec[3]; cout
+                << " | "; minVec[3]<0 ? cout << setw(10) << " " : cout << setw(10) << minVec[3]; cout
+                << " | "; maxVec[3]<0 ? cout << setw(10) << " " : cout << setw(10) << maxVec[3]; cout
+                << " | "; sumVec[3]<0 ? cout << setw(10) << " " : cout << setw(10) << sumVec[3]; cout
+                << " |"
+                << "\n" << setw(FROSCH_INDENT) << " "
+                << "| " << left << setw(20) << "Faces" << right
+                << " | "; globalVec[4]<0 ? cout << setw(10) << " " : cout << setw(10) << globalVec[4]; cout
+                << " | "; avgVec[4]<0 ? cout << setw(10) << " " : cout << setw(10) << setprecision(5) << avgVec[4]; cout
+                << " | "; minVec[4]<0 ? cout << setw(10) << " " : cout << setw(10) << minVec[4]; cout
+                << " | "; maxVec[4]<0 ? cout << setw(10) << " " : cout << setw(10) << maxVec[4]; cout
+                << " | "; sumVec[4]<0 ? cout << setw(10) << " " : cout << setw(10) << sumVec[4]; cout
+                << " |"
+                << "\n" << setw(FROSCH_INDENT) << " "
+                << "| " << left << setw(20) << "Roots" << right
+                << " | "; globalVec[5]<0 ? cout << setw(10) << " " : cout << setw(10) << globalVec[5]; cout
+                << " | "; avgVec[5]<0 ? cout << setw(10) << " " : cout << setw(10) << setprecision(5) << avgVec[5]; cout
+                << " | "; minVec[5]<0 ? cout << setw(10) << " " : cout << setw(10) << minVec[5]; cout
+                << " | "; maxVec[5]<0 ? cout << setw(10) << " " : cout << setw(10) << maxVec[5]; cout
+                << " | "; sumVec[5]<0 ? cout << setw(10) << " " : cout << setw(10) << sumVec[5]; cout
+                << " |"
+                << "\n" << setw(FROSCH_INDENT) << " "
+                << "| " << left << setw(20) << "Leafs" << right
+                << " | "; globalVec[6]<0 ? cout << setw(10) << " " : cout << setw(10) << globalVec[6]; cout
+                << " | "; avgVec[6]<0 ? cout << setw(10) << " " : cout << setw(10) << setprecision(5) << avgVec[6]; cout
+                << " | "; minVec[6]<0 ? cout << setw(10) << " " : cout << setw(10) << minVec[6]; cout
+                << " | "; maxVec[6]<0 ? cout << setw(10) << " " : cout << setw(10) << maxVec[6]; cout
+                << " | "; sumVec[6]<0 ? cout << setw(10) << " " : cout << setw(10) << sumVec[6]; cout
+                << " |"
+                << "\n" << setw(FROSCH_INDENT) << " "
+                << setw(89) << "-----------------------------------------------------------------------------------------"
+                << endl;
             }
         }
 
@@ -489,7 +564,7 @@ namespace FROSch {
     int DDInterface<SC,LO,GO,NO>::buildEntityHierarchy()
     {
         FROSCH_TIMER_START_LEVELID(buildEntityHierarchyTime,"DDInterface::buildEntityHierarchy");
-        //if (Verbose_ && Verbosity_==All) std::cout << "FROSch::DDInterface : Building hierarchy of interface components" << std::endl;
+        //if (Verbose_ && Verbosity_==All) cout << "FROSch::DDInterface : Building hierarchy of interface components" << endl;
 
         // Build hierarchy
         for (UN i=0; i<EntitySetVector_.size(); i++) {
@@ -505,7 +580,7 @@ namespace FROSch {
         }
         Roots_->sortUnique();
         Roots_->setRootID();
-        
+
         // Find Leafs
         for (UN i=0; i<EntitySetVector_.size(); i++) {
             EntitySetPtr tmpLeafs = EntitySetVector_[i]->findLeafs();
@@ -522,7 +597,7 @@ namespace FROSch {
                                                           DistanceFunction distanceFunction)
     {
         FROSCH_TIMER_START_LEVELID(computeDistancesToRootsTime,"DDInterface::computeDistancesToRoots");
-        //if (Verbose_ && Verbosity_==All) std::cout << "FROSch::DDInterface : Computing distances to the coarse nodes" << std::endl;
+        //if (Verbose_ && Verbosity_==All) cout << "FROSch::DDInterface : Computing distances to the coarse nodes" << endl;
 
         for (UN i=0; i<EntitySetVector_.size(); i++) {
             EntitySetVector_[i]->computeDistancesToRoots(dimension,nodeList,distanceFunction);
@@ -535,7 +610,7 @@ namespace FROSch {
                                                                EntityFlagVecPtr flags)
     {
         FROSCH_TIMER_START_LEVELID(identifyConnectivityEntitiesTime,"DDInterface::identifyConnectivityEntities");
-        //if (Verbose_ && Verbosity_==All) std::cout << "FROSch::DDInterface : Preparing subdomain graph" << std::endl;
+        //if (Verbose_ && Verbosity_==All) cout << "FROSch::DDInterface : Preparing subdomain graph" << endl;
 
         if (multiplicities.is_null()) {
             multiplicities = UNVecPtr(1,2);
@@ -550,7 +625,7 @@ namespace FROSch {
 
         for (UN j=0; j<multiplicities.size(); j++) {
             for (UN i=0; i<EntitySetVector_[multiplicities[j]]->getNumEntities(); i++) {
-                if (std::binary_search(flags.begin(),flags.end(),EntitySetVector_[multiplicities[j]]->getEntity(i)->getEntityFlag())) {
+                if (binary_search(flags.begin(),flags.end(),EntitySetVector_[multiplicities[j]]->getEntity(i)->getEntityFlag())) {
                     ConnectivityEntities_->addEntity(EntitySetVector_[multiplicities[j]]->getEntity(i));
                 }
             }
@@ -623,7 +698,7 @@ namespace FROSch {
     {
         return Roots_;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     typename DDInterface<SC,LO,GO,NO>::EntitySetConstPtr & DDInterface<SC,LO,GO,NO>::getLeafs() const
     {
@@ -654,7 +729,7 @@ namespace FROSch {
                                                              CommunicationStrategy commStrategy)
     {
         FROSCH_TIMER_START_LEVELID(communicateLocalComponentsTime,"DDInterface::communicateLocalComponents");
-        //if (Verbose_ && Verbosity_==All) std::cout << "FROSch::DDInterface : Communicating nodes" << std::endl;
+        //if (Verbose_ && Verbosity_==All) cout << "FROSch::DDInterface : Communicating nodes" << endl;
 
         if (NodesMap_->lib() == UseEpetra && commStrategy == CreateOneToOneMap) {
             FROSCH_WARNING("FROSch::DDInterface",Verbose_,"CreateOneToOneMap communication strategy does not work for Epetra => Switching to CommCrsGraph.");
@@ -749,7 +824,7 @@ namespace FROSch {
             sortunique(componentsSubdomains[i]);
             if (componentsSubdomains[i].size() == 0) componentsSubdomains[i].push_back(MpiComm_->getRank()); // For Tpetra this is empty if the repeatedMap is already unique. In this case, we have to add the local rank. Otherwise, we obtain nodes with multiplicity 0.
             componentsSubdomainsUnique[i] = componentsSubdomains[i];
-//            if (MpiComm_->getRank() == 0) std::cout << MpiComm_->getRank() << ": " << i << " " << componentsSubdomains[i] << std::endl;
+//            if (MpiComm_->getRank() == 0) cout << MpiComm_->getRank() << ": " << i << " " << componentsSubdomains[i] << endl;
         }
         sortunique(componentsSubdomainsUnique);
 
@@ -761,7 +836,7 @@ namespace FROSch {
                                                           IntVecVec &componentsSubdomainsUnique)
     {
         FROSCH_TIMER_START_LEVELID(identifyLocalComponentsTime,"DDInterface::identifyLocalComponents");
-        //if (Verbose_ && Verbosity_==All) std::cout << "FROSch::DDInterface : Classifying interface components based on equivalence classes" << std::endl;
+        //if (Verbose_ && Verbosity_==All) cout << "FROSch::DDInterface : Classifying interface components based on equivalence classes" << endl;
 
         // Hier herausfinden, ob Ecke, Kante oder Fläche
         UNVecPtr componentsMultiplicity(componentsSubdomainsUnique.size());
@@ -770,7 +845,7 @@ namespace FROSch {
         UN maxMultiplicity = 0;
         for (UN i=0; i<componentsSubdomainsUnique.size(); i++) {
             componentsMultiplicity[i] = componentsSubdomainsUnique[i].size();
-            maxMultiplicity = std::max(maxMultiplicity,componentsMultiplicity[i]);
+            maxMultiplicity = max(maxMultiplicity,componentsMultiplicity[i]);
         }
         EntitySetVector_ = EntitySetPtrVecPtr(maxMultiplicity+1);
         for (UN i=0; i<maxMultiplicity+1; i++) {
@@ -780,7 +855,7 @@ namespace FROSch {
         typename IntVecVec::iterator classIterator;
         LOVecPtr localComponentIndices(NumMyNodes_);
         for (int i=0; i<NumMyNodes_; i++) {
-            classIterator = std::lower_bound(componentsSubdomainsUnique.begin(),componentsSubdomainsUnique.end(),componentsSubdomains[i]);
+            classIterator = lower_bound(componentsSubdomainsUnique.begin(),componentsSubdomainsUnique.end(),componentsSubdomains[i]);
             localComponentIndices[i] = classIterator - componentsSubdomainsUnique.begin();
         }
 

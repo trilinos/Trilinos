@@ -1,3 +1,8 @@
+## Copyright(C) 1999-2020 National Technology & Engineering Solutions
+## of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+## NTESS, the U.S. Government retains certain rights in this software.
+## 
+## See packages/seacas/LICENSE for details
 ## General Properties
 
   Property | Value    | Description
@@ -20,6 +25,7 @@ RESTART\_DECOMPOSITION\_METHOD | {method} | Decompose a DB with type `RESTART_IN
 DECOMPOSITION\_METHOD | {method} | Decompose all input DB using `method`
 PARALLEL\_CONSISTENCY | \[on]/off | On if the client will call Ioss functions consistently on all processors. If off, then the auto-decomp and auto-join cannot be used.
 RETAIN\_FREE\_NODES | \[on]/off | In auto-decomp, will nodes not connected to any elements be retained.
+RETAIN\_EMPTY\_BLOCKS | on/\[off] | Empty blocks will / won't be retained in model. If retained, will have topology type "unknown".
 LOAD\_BALANCE\_THRESHOLD | {real} \[1.4] | CGNS-Structured only -- Load imbalance permitted Load on Proc / Avg Load
 LINE\_DECOMPOSITION | string | a list of comma-separated BC names. Zone with this bc will not be decomposed perpendicular to this surface. If name is `__ordinal_{ijk}` then use {ijk} as ordinal not to decompose.
 
@@ -92,6 +98,7 @@ ENABLE\_FILE\_GROUPS | on/\[off]   | experimental
 
   Property | Value    | Description
  ----------|----------|------------
+ SHOW_CONFIG | ignored | output the build configuration of IOSS and TPL. Show supported database types.
  LOGGING   | on/\[off] | enable/disable logging of field input/output
  DECOMP\_SHOW\_PROGRESS | on/\[off] | show memory and elapsed time during autodecomp.
  DECOMP\_SHOW\_HWM      | on/\[off] | show high-water memory during autodecomp

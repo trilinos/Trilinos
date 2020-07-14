@@ -53,6 +53,7 @@ namespace stk {
    *  be larger than that reported here, depending on your timing.
    */
   size_t get_memory_usage_now();
+  void get_gpu_memory_info(size_t& used, size_t& free);
   void get_memory_usage(size_t & now, size_t & hwm);
   void get_memory_available(size_t & avail);
   void get_processor_count(std::vector<int> &procinfo);

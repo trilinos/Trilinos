@@ -35,11 +35,15 @@ StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition()
   this->setStageNumber(-1);
 
   this->setTableaus("Partitioned IMEX RK SSP2");
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   this->setObserver();
+#endif
+  this->setAppAction(Teuchos::null);
   this->setDefaultSolver();
 }
 
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
 template<class Scalar>
 StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
@@ -65,6 +69,44 @@ StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition(
   this->setExplicitTableau(explicitTableau);
   this->setImplicitTableau(implicitTableau);
   this->setObserver(obs);
+  this->setAppAction(Teuchos::null);
+  this->setSolver(solver);
+
+  if (appModel != Teuchos::null) {
+    this->setModel(appModel);
+    this->initialize();
+  }
+}
+#endif
+template<class Scalar>
+StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+  const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+  bool useFSAL,
+  std::string ICConsistency,
+  bool ICConsistencyCheck,
+  bool zeroInitialGuess,
+  const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction,
+  std::string stepperType,
+  Teuchos::RCP<const RKButcherTableau<Scalar> > explicitTableau,
+  Teuchos::RCP<const RKButcherTableau<Scalar> > implicitTableau,
+  Scalar order)
+{
+  this->setStepperType(        stepperType);
+  this->setUseFSAL(            useFSAL);
+  this->setICConsistency(      ICConsistency);
+  this->setICConsistencyCheck( ICConsistencyCheck);
+  this->setZeroInitialGuess(   zeroInitialGuess);
+  this->setOrder(              order);
+
+  this->setStageNumber(-1);
+
+  this->setExplicitTableau(explicitTableau);
+  this->setImplicitTableau(implicitTableau);
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+  this->setObserver(Teuchos::null);
+#endif
+  this->setAppAction(stepperRKAppAction);
   this->setSolver(solver);
 
   if (appModel != Teuchos::null) {
@@ -340,6 +382,7 @@ void StepperIMEX_RK_Partition<Scalar>::setModelPair(
 }
 
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
 template<class Scalar>
 void StepperIMEX_RK_Partition<Scalar>::setObserver(
   Teuchos::RCP<StepperObserver<Scalar> > obs)
@@ -368,6 +411,7 @@ void StepperIMEX_RK_Partition<Scalar>::setObserver(
 
   this->isInitialized_ = false;
 }
+#endif
 
 
 template<class Scalar>
@@ -542,7 +586,13 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
       "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
       "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
     this->stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
+#endif
+    RCP<StepperIMEX_RK_Partition<Scalar> > thisStepper = Teuchos::rcpFromRef(*this);
+    this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
+      StepperRKAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
+
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     const Scalar dt = workingState->getTimeStep();
@@ -573,7 +623,9 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
     // Compute stage solutions
     for (int i = 0; i < numStages; ++i) {
       this->setStageNumber(i);
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
       this->stepperObserver_->observeBeginStage(solutionHistory, *this);
+#endif
 
       Thyra::assign(stageY.ptr(),
         *(wrapperModelPairIMEX->getExplicitOnlyVector(currentState->getX())));
@@ -592,6 +644,9 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
           Thyra::Vp_StV(xTilde_.ptr(), -dt*A   (i,j), *(stageGx_[j]));
       }
 
+      this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
+        StepperRKAppAction<Scalar>::ACTION_LOCATION::BEGIN_STAGE);
+
       Scalar ts    = time + c(i)*dt;
       Scalar tHats = time + cHat(i)*dt;
       if (A(i,i) == Teuchos::ScalarTraits<Scalar>::zero()) {
@@ -604,7 +659,9 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
           assign(stageGx_[i].ptr(), Teuchos::ScalarTraits<Scalar>::zero());
         } else {
           Thyra::assign(stageX.ptr(), *xTilde_);
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
           this->stepperObserver_->observeBeforeImplicitExplicitly(solutionHistory, *this);
+#endif
           evalImplicitModelExplicitly(stageX, stageY, ts, dt, i, stageGx_[i]);
         }
       } else {
@@ -637,7 +694,11 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
 
         wrapperModelPairIMEX->setForSolve(timeDer, inArgs, outArgs);
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
         this->stepperObserver_->observeBeforeSolve(solutionHistory, *this);
+#endif
+        this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
+          StepperRKAppAction<Scalar>::ACTION_LOCATION::BEFORE_SOLVE);
 
         this->solver_->setModel(wrapperModelPairIMEX);
         sStatus = this->solveImplicitODE(stageX);
@@ -645,15 +706,27 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
 
         wrapperModelPairIMEX->setUseImplicitModel(false);
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
         this->stepperObserver_->observeAfterSolve(solutionHistory, *this);
+#endif
+        this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
+          StepperRKAppAction<Scalar>::ACTION_LOCATION::AFTER_SOLVE);
 
         // Update contributions to stage values
         Thyra::V_StVpStV(stageGx_[i].ptr(), -alpha, *stageX, alpha, *xTilde_);
       }
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
       this->stepperObserver_->observeBeforeExplicit(solutionHistory, *this);
+#endif
+      this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
+        StepperRKAppAction<Scalar>::ACTION_LOCATION::BEFORE_EXPLICIT_EVAL);
       evalExplicitModel(stageZ_, tHats, dt, i, stageF_[i]);
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
       this->stepperObserver_->observeEndStage(solutionHistory, *this);
+#endif
+      this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
+        StepperRKAppAction<Scalar>::ACTION_LOCATION::END_STAGE);
     }
 
     // Sum for solution: y_n = y_n-1 - dt*Sum{ bHat(i)*fy(i)            }
@@ -672,7 +745,11 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
     else              workingState->setSolutionStatus(Status::FAILED);
     workingState->setOrder(this->getOrder());
     workingState->computeNorms(currentState);
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
     this->stepperObserver_->observeEndTakeStep(solutionHistory, *this);
+#endif
+    this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
+      StepperRKAppAction<Scalar>::ACTION_LOCATION::END_STEP);
   }
   // reset the stage number
   this->setStageNumber(-1);
@@ -722,7 +799,10 @@ void StepperIMEX_RK_Partition<Scalar>::describe(
   numStages = stageGx_.size();
   for (int i=0; i<numStages; ++i)
     out << "    stageGx_["<<i<<"] = " << stageGx_[i] << std::endl;
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   out << "  stepperObserver_   = " << stepperObserver_ << std::endl;
+#endif
+  out << "  stepperRKAppAction_= " << this->stepperRKAppAction_ << std::endl;
   out << "  order_             = " << order_ << std::endl;
   out << "--------------------------------" << std::endl;
 }
@@ -759,9 +839,15 @@ bool StepperIMEX_RK_Partition<Scalar>::isValidSetup(Teuchos::FancyOStream & out)
     out << "The solver is not set!\n";
   }
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   if (stepperObserver_ == Teuchos::null) {
     isValidSetup = false;
     out << "The stepper observer is not set!\n";
+  }
+#endif
+  if (this->stepperRKAppAction_ == Teuchos::null) {
+    isValidSetup = false;
+    out << "The AppAction is not set!\n";
   }
 
   if ( explicitTableau_ == Teuchos::null ) {

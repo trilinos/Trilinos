@@ -47,6 +47,7 @@
 
 namespace FROSch {
 
+    using namespace std;
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -167,7 +168,7 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    std::string OneLevelPreconditioner<SC,LO,GO,NO>::description() const
+    string OneLevelPreconditioner<SC,LO,GO,NO>::description() const
     {
         return "One-Level Preconditioner";
     }

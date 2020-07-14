@@ -18,9 +18,11 @@
 #include "Tempus_StepperRKButcherTableau.hpp"
 
 #include "Tempus_StepperForwardEulerModifierBase.hpp"
-#include "Tempus_StepperForwardEulerObserverBase.hpp"
 #include "Tempus_StepperForwardEulerModifierXBase.hpp"
+#include "Tempus_StepperForwardEulerObserverBase.hpp"
 #include "Tempus_StepperForwardEulerModifierDefault.hpp"
+#include "Tempus_StepperForwardEulerModifierXDefault.hpp"
+#include "Tempus_StepperForwardEulerObserverDefault.hpp"
 
 #include "../TestModels/SinCosModel.hpp"
 #include "../TestModels/VanDerPolModel.hpp"
@@ -43,11 +45,8 @@ using Tempus::StepperFactory;
 using Tempus::StepperExplicitRK;
 
 // Comment out any of the following tests to exclude from build/run.
-#define CONSTRUCTION
-#define STEPPERFACTORY_CONSTRUCTION
 
 
-#ifdef CONSTRUCTION
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(ForwardEuler, Default_Construction)
@@ -55,7 +54,10 @@ TEUCHOS_UNIT_TEST(ForwardEuler, Default_Construction)
   auto model   = rcp(new Tempus_Test::SinCosModel<double>());
 
   // Default construction.
-  auto stepper = rcp(new Tempus::StepperForwardEuler<double>());
+  auto modifier  = rcp(new Tempus::StepperForwardEulerModifierDefault<double>());
+  auto modifierX = rcp(new Tempus::StepperForwardEulerModifierXDefault<double>());
+  auto observer  = rcp(new Tempus::StepperForwardEulerObserverDefault<double>());
+  auto stepper   = rcp(new Tempus::StepperForwardEuler<double>());
   stepper->setModel(model);
   stepper->initialize();
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
@@ -69,8 +71,9 @@ TEUCHOS_UNIT_TEST(ForwardEuler, Default_Construction)
   auto obs    = rcp(new Tempus::StepperForwardEulerObserver<double>());
   stepper->setObserver(obs);                           stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 #endif
-  auto modifier = rcp(new Tempus::StepperForwardEulerModifierDefault<double>());
-  stepper->setAppAction(modifier);
+  stepper->setAppAction(modifier);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setAppAction(modifierX);                    stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setAppAction(observer);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setUseFSAL(useFSAL);                        stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setICConsistency(ICConsistency);            stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setICConsistencyCheck(ICConsistencyCheck);  stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
@@ -78,18 +81,18 @@ TEUCHOS_UNIT_TEST(ForwardEuler, Default_Construction)
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
   // Full argument list construction.
   stepper = rcp(new Tempus::StepperForwardEuler<double>(
-    model, obs, useFSAL, ICConsistency, ICConsistencyCheck));   
+    model, obs, useFSAL, ICConsistency, ICConsistencyCheck));
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 #endif
   stepper = rcp(new Tempus::StepperForwardEuler<double>(
     model, useFSAL, ICConsistency, ICConsistencyCheck,modifier));
     TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
+  // Test stepper properties.
+  TEUCHOS_ASSERT(stepper->getOrder() == 1);
 }
-#endif // CONSTRUCTION
 
 
-#ifdef STEPPERFACTORY_CONSTRUCTION
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(ForwardEuler, StepperFactory_Construction)
@@ -97,10 +100,9 @@ TEUCHOS_UNIT_TEST(ForwardEuler, StepperFactory_Construction)
   auto model = rcp(new Tempus_Test::SinCosModel<double>());
   testFactoryConstruction("Forward Euler", model);
 }
-#endif // STEPPERFACTORY_CONSTRUCTION
 
 
-// ************************************************************                                    
+// ************************************************************
 // ************************************************************
 class StepperForwardEulerModifierTest
   : virtual public Tempus::StepperForwardEulerModifierBase<double>
@@ -177,7 +179,7 @@ TEUCHOS_UNIT_TEST(ForwardEuler, AppAction_Modifier)
     stepper->getModel()->getNominalValues();
   auto icSolution =
     rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
-  auto icState = rcp(new Tempus::SolutionState<double>(icSolution));
+  auto icState = Tempus::createSolutionStateX(icSolution);
   icState->setTime    (0.0);
   icState->setIndex   (0);
   icState->setTimeStep(0.0);
@@ -288,7 +290,7 @@ public:
       stepper->getModel()->getNominalValues();
   auto icSolution =
     rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
-  auto icState = rcp(new Tempus::SolutionState<double>(icSolution));
+  auto icState = Tempus::createSolutionStateX(icSolution);
   icState->setTime    (0.0);
   icState->setIndex   (0);
   icState->setTimeStep(0.0);
@@ -395,7 +397,7 @@ public:
       stepper->getModel()->getNominalValues();
   auto icSolution =
     rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
-  auto icState = rcp(new Tempus::SolutionState<double>(icSolution));
+  auto icState = Tempus::createSolutionStateX(icSolution);
   icState->setTime    (0.0);
   icState->setIndex   (0);
   icState->setTimeStep(0.0);

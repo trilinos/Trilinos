@@ -82,7 +82,7 @@ namespace MueLu {
   Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Hierarchy()
     : maxCoarseSize_(GetDefaultMaxCoarseSize()), implicitTranspose_(GetDefaultImplicitTranspose()),
       fuseProlongationAndUpdate_(GetDefaultFuseProlongationAndUpdate()),
-      doPRrebalance_(GetDefaultPRrebalance()), isPreconditioner_(true), Cycle_(GetDefaultCycle()),
+      doPRrebalance_(GetDefaultPRrebalance()), isPreconditioner_(true), Cycle_(GetDefaultCycle()), WCycleStartLevel_(0),
       scalingFactor_(Teuchos::ScalarTraits<double>::one()), lib_(Xpetra::UseTpetra), isDumpingEnabled_(false), dumpLevel_(-1), rate_(-1),
       sizeOfAllocatedLevelMultiVectors_(0)
   {
@@ -101,7 +101,7 @@ namespace MueLu {
   Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Hierarchy(const RCP<Matrix>& A)
     : maxCoarseSize_(GetDefaultMaxCoarseSize()), implicitTranspose_(GetDefaultImplicitTranspose()),
       fuseProlongationAndUpdate_(GetDefaultFuseProlongationAndUpdate()),
-      doPRrebalance_(GetDefaultPRrebalance()), isPreconditioner_(true), Cycle_(GetDefaultCycle()),
+      doPRrebalance_(GetDefaultPRrebalance()), isPreconditioner_(true), Cycle_(GetDefaultCycle()), WCycleStartLevel_(0),
       scalingFactor_(Teuchos::ScalarTraits<double>::one()), isDumpingEnabled_(false), dumpLevel_(-1), rate_(-1),
       sizeOfAllocatedLevelMultiVectors_(0)
   {
@@ -552,9 +552,9 @@ namespace MueLu {
     Levels_       .resize(levelID);
     levelManagers_.resize(levelID);
 
-    // NOTE: All reuse cases leave all of the maps the same, meaning that we do not
-    // need to reallocated the cached multivectors for Iterate().  If this were to change,
-    // we'd want to do a DeleteLevelMultiVectors() and AllocateLevelMultiVectors() here.
+    int sizeOfVecs = sizeOfAllocatedLevelMultiVectors_;
+    DeleteLevelMultiVectors();
+    AllocateLevelMultiVectors(sizeOfVecs);
 
     // since the # of levels, etc. may have changed, force re-determination of description during next call to description()
     ResetDescription();
@@ -909,7 +909,7 @@ namespace MueLu {
     // If the number of vectors is unchanged, this is a noop.
     // NOTE: We need to check against B because the tests in AllocateLevelMultiVectors
     // will fail on Stokhos Scalar types (due to the so-called 'hidden dimension')
-    const BlockedMultiVector * Bblocked = dynamic_cast<const BlockedMultiVector*>(&B);  
+    const BlockedMultiVector * Bblocked = dynamic_cast<const BlockedMultiVector*>(&B);
     if(residual_.size() > startLevel &&
        ( ( Bblocked && !Bblocked->isSameSize(*residual_[startLevel])) ||
          (!Bblocked && !residual_[startLevel]->isSameSize(B))))
@@ -1080,7 +1080,7 @@ namespace MueLu {
 
             Iterate(*coarseRhs, *coarseX, 1, true, startLevel+1);
             // ^^ zero initial guess
-            if (Cycle_ == WCYCLE)
+            if (Cycle_ == WCYCLE && WCycleStartLevel_ >= startLevel)
               Iterate(*coarseRhs, *coarseX, 1, false, startLevel+1);
             // ^^ nonzero initial guess
 
@@ -1316,6 +1316,8 @@ namespace MueLu {
              break;
            case WCYCLE:
              oss << "Cycle type          = W" << std::endl;
+             if (WCycleStartLevel_ > 0)
+               oss << "Cycle start level   = " << WCycleStartLevel_ << std::endl;
              break;
            default:
              break;
@@ -1419,9 +1421,9 @@ namespace MueLu {
 
       for (emap::const_iterator eit = edges.begin(); eit != edges.end(); eit++) {
         std::pair<BoostEdge, bool> boost_edge = boost::add_edge(eit->first.first, eit->first.second, graph);
-	//	printf("[%d] CMS:   Hierarchy, adding edge (%d->%d) %d\n",rank,(int)eit->first.first,(int)eit->first.second,(int)boost_edge.second);
-	// Because xdot.py views 'Graph' as a keyword
-	if(eit->second==std::string("Graph")) boost::put("label", dp, boost_edge.first, std::string("Graph_"));
+        // printf("[%d] CMS:   Hierarchy, adding edge (%d->%d) %d\n",rank,(int)eit->first.first,(int)eit->first.second,(int)boost_edge.second);
+        // Because xdot.py views 'Graph' as a keyword
+        if(eit->second==std::string("Graph")) boost::put("label", dp, boost_edge.first, std::string("Graph_"));
         else boost::put("label", dp, boost_edge.first, eit->second);
         if (i == dumpLevel_)
           boost::put("color", dp, boost_edge.first, std::string("red"));
@@ -1525,7 +1527,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AllocateLevelMultiVectors(int numvecs) {
-    int N = Levels_.size();  
+    int N = Levels_.size();
     if( (sizeOfAllocatedLevelMultiVectors_ == numvecs && residual_.size() == N) || numvecs<=0 ) return;
 
     // If, somehow, we changed the number of levels, delete everything first
@@ -1547,11 +1549,11 @@ namespace MueLu {
         RCP<const BlockedCrsMatrix> A_as_blocked = Teuchos::rcp_dynamic_cast<const BlockedCrsMatrix>(A);
         RCP<const Map> Arm = A->getRangeMap();
         RCP<const Map> Adm = A->getDomainMap();
-        if(!A_as_blocked.is_null()) { 
+        if(!A_as_blocked.is_null()) {
           Adm = A_as_blocked->getFullDomainMap();
         }
 
-        // This is zero'd by default since it is filled via an operator apply        
+        // This is zero'd by default since it is filled via an operator apply
         residual_[i] = MultiVectorFactory::Build(Arm, numvecs, true);
         correction_[i] = MultiVectorFactory::Build(Adm, numvecs, false);
       }
@@ -1570,7 +1572,7 @@ namespace MueLu {
         RCP<const Import> importer;
         if(Levels_[i+1]->IsAvailable("Importer"))
           importer = Levels_[i+1]->template Get< RCP<const Import> >("Importer");
-        if (doPRrebalance_ || importer.is_null()) 
+        if (doPRrebalance_ || importer.is_null())
           coarseX_[i] = MultiVectorFactory::Build(coarseRhs_[i]->getMap(),numvecs,true);
         else {
           coarseImport_[i] = MultiVectorFactory::Build(importer->getTargetMap(), numvecs,false);

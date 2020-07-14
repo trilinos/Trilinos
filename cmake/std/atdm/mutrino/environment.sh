@@ -65,7 +65,7 @@ else
     echo "*** Combinations that are supported: "
     echo "*** > Intel compiler with KOKKOS_ARCH=HSW"
     echo "*** > Intel compiler with KOKKOS_ARCH=KNL"
-   echo "***"
+    echo "***"
     return
 fi
 
@@ -76,7 +76,7 @@ module load cmake/3.14.6
 
 # No RPATH for static builds
 export ATDM_CONFIG_CMAKE_SKIP_INSTALL_RPATH=ON
-# ToDo: Make above contingent on 'static' or 'shared' 
+# ToDo: Make above contingent on 'static' or 'shared'
 
 # Use manually installed cmake and ninja to allow usage of ninja and
 # all-at-once mode
@@ -93,8 +93,11 @@ export ATDM_CONFIG_BLAS_LIBS="-mkl"
 
 export ATDM_CONFIG_USE_HWLOC=OFF
 
+if [[ "${PNETCDF_ROOT}" == "" ]] ; then
+  export PNETCDF_ROOT=${NETCDF_ROOT}
+fi
 export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
-export ATDM_CONFIG_NETCDF_LIBS="-L${BOOST_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${PNETCDF_ROOT}/lib;-L${HDF5_ROOT}/lib;${BOOST_ROOT}/lib/libboost_program_options.a;${BOOST_ROOT}/lib/libboost_system.a;${NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl;-lm"
+export ATDM_CONFIG_NETCDF_LIBS="-L${NETCDF_ROOT}/lib;${NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${ATDM_CONFIG_HDF5_LIBS};-lm"
 
 export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE
 
@@ -153,7 +156,7 @@ function atdm_run_script_on_compute_node {
   else
     account=${account_input}
   fi
-  
+
   if [ -e $output_file ] ; then
     echo "Remove existing file $output_file"
     rm $output_file
@@ -168,11 +171,11 @@ function atdm_run_script_on_compute_node {
   else
    echo
    echo "***"
-   echo "*** ERROR: Invalid value ATDM_CONFIG_KOKKOS_ARCH=${ATDM_CONFIG_KOKKOS_ARCH} specified!" 
+   echo "*** ERROR: Invalid value ATDM_CONFIG_KOKKOS_ARCH=${ATDM_CONFIG_KOKKOS_ARCH} specified!"
    echo "***"
    return
   fi
- 
+
   echo
   echo "Running '$script_to_run' using sbatch in the background ..."
   set -x
@@ -180,22 +183,22 @@ function atdm_run_script_on_compute_node {
     --time=${timeout} -J $ATDM_CONFIG_BUILD_NAME ${script_to_run} &
   SBATCH_PID=$!
   set +x
-  
+
   echo
   echo "Tailing output file $output_file in the background ..."
   set -x
   tail -f $output_file &
   TAIL_BID=$!
   set +x
-  
+
   echo
   echo "Waiting for SBATCH_PID=$SBATCH_PID ..."
   wait $SBATCH_PID
-  
+
   echo
   echo "Kill TAIL_BID=$TAIL_BID"
   kill -s 9 $TAIL_BID
-  
+
   echo
   echo "Finished running ${script_to_run}!"
   echo

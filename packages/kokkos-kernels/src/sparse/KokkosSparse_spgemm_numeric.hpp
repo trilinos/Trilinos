@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//               KokkosKernels 0.9: Linear Algebra and Graph Kernels
-//                 Copyright 2017 Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -43,16 +44,6 @@
 #ifndef _KOKKOS_SPGEMM_NUMERIC_HPP
 #define _KOKKOS_SPGEMM_NUMERIC_HPP
 
-/*
-#include "KokkosSparse_spgemm_cuSPARSE_impl.hpp"
-#include "KokkosSparse_spgemm_CUSP_impl.hpp"
-#include "KokkosSparse_spgemm_impl.hpp"
-#include "KokkosSparse_spgemm_impl_seq.hpp"
-#include "KokkosSparse_spgemm_mkl_impl.hpp"
-#include "KokkosSparse_spgemm_mkl2phase_impl.hpp"
-#include "KokkosSparse_spgemm_viennaCL_impl.hpp"
-#include "KokkosKernels_Handle.hpp"
-*/
 #include "KokkosKernels_helpers.hpp"
 #include "KokkosSparse_spgemm_numeric_spec.hpp"
 
@@ -160,8 +151,6 @@ void spgemm_numeric(
 
     typedef typename  KokkosKernels::Experimental::KokkosKernelsHandle<c_size_t, c_lno_t, c_scalar_t, c_exec_t, c_temp_t, c_persist_t> const_handle_type;
 
-
-//  /const_handle_type tmp_handle = *handle;
   const_handle_type tmp_handle (*handle);
 
   typedef Kokkos::View<
@@ -221,19 +210,6 @@ void spgemm_numeric(
       typename KokkosKernels::Impl::GetUnifiedLayout<cscalar_nnz_view_t_>::array_layout,
       UniformDevice_t, //       typename cscalar_nnz_view_t_::device_type,
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > Internal_cscalar_nnz_view_t_;
-
-  //const_handle_type *const_handle = (const_handle_type *)handle;
-  /*
-  Internal_alno_row_view_t_ const_a_r  = row_mapA;
-  Internal_alno_nnz_view_t_ const_a_l  = entriesA;
-  Internal_ascalar_nnz_view_t_ const_a_s = valuesA;
-  Internal_blno_row_view_t_ const_b_r  = row_mapB;
-  Internal_blno_nnz_view_t_ const_b_l  = entriesB;
-  Internal_bscalar_nnz_view_t_ const_b_s = valuesB;
-  Internal_clno_row_view_t_ nonconst_c_r  = row_mapC;
-  Internal_clno_nnz_view_t_ nonconst_c_l  = entriesC;
-  Internal_cscalar_nnz_view_t_ nonconst_c_s = valuesC;
-  */
 
   Internal_alno_row_view_t_ const_a_r (row_mapA.data(), row_mapA.extent(0));
   Internal_alno_nnz_view_t_ const_a_l (entriesA.data(), entriesA.extent(0));

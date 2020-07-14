@@ -46,7 +46,8 @@
 
 
 namespace FROSch {
-    
+
+    using namespace std;
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -72,13 +73,13 @@ namespace FROSch {
         } else {
             FROSCH_ASSERT(subspaceBasisMap->getNodeNumElements()==0,"FROSch::CoarseSpace : ERROR: subspaceBasisMap->getNodeNumElements()!=0");
         }
-        
+
         UnassembledBasesMaps_.push_back(subspaceBasisMap);
         UnassembledBasesMapsUnique_.push_back(subspaceBasisMapUnique);
         UnassembledSubspaceBases_.push_back(subspaceBasis);
         Offsets_.push_back(offset);
         LocalSubspacesSizes_.push_back(subspaceBasisMap->getNodeNumElements());
-        
+
         return 0;
     }
 
@@ -94,7 +95,7 @@ namespace FROSch {
 
         // BasisMap
         AssembledBasisMap_ = AssembleMaps(UnassembledBasesMaps_(),partMappings);
-        
+
         // BasisMapUnique - First, we check if any of the unassembled unique maps is null. In case, we re-build a unique map
         bool buildUniqueMap = false;
         UN i=0;
@@ -104,7 +105,7 @@ namespace FROSch {
         }
         int buildUniqueMapMax = 0;
         reduceAll(*this->MpiComm_,REDUCE_MAX,int(buildUniqueMap),ptr(&buildUniqueMapMax));
-        
+
         if (buildUniqueMapMax>0) {
             FROSCH_NOTIFICATION("FROSch::CoarseSpace",this->MpiComm_->getRank()==0,"We re-build a unique map of AssembledBasisMap_.");
             AssembledBasisMapUnique_ = BuildUniqueMap<LO,GO,NO>(AssembledBasisMap_);
@@ -114,16 +115,16 @@ namespace FROSch {
         FROSCH_ASSERT(AssembledBasisMap_->getMaxAllGlobalIndex()==AssembledBasisMapUnique_->getMaxAllGlobalIndex(),"FROSch::CoarseSpace : ERROR: AssembledBasisMap_->getMaxAllGlobalIndex()!=AssembledBasisMapUnique_->getMaxAllGlobalIndex()");
         FROSCH_ASSERT(AssembledBasisMap_->getMinAllGlobalIndex()==AssembledBasisMapUnique_->getMinAllGlobalIndex(),"FROSch::CoarseSpace : ERROR: AssembledBasisMap_->getMinAllGlobalIndex()!=AssembledBasisMapUnique_->getMinAllGlobalIndex()");
         FROSCH_ASSERT(GO(AssembledBasisMapUnique_->getGlobalNumElements())==GO(AssembledBasisMapUnique_->getMaxAllGlobalIndex()+1),"FROSch::CoarseSpace : ERROR: AssembledBasisMapUnique_->getGlobalNumElements()!=(AssembledBasisMapUnique_->getMaxAllGlobalIndex()+1)");
-        
+
         // Basis
         if (!AssembledBasisMap_.is_null()) {
             if (AssembledBasisMap_->getGlobalNumElements()>0) { // AH 02/12/2019: Is this the right condition? Seems to work for now...
                 LO totalSize = -1;
                 for (UN i=0; i<UnassembledSubspaceBases_.size(); i++) {
-                    if (!UnassembledSubspaceBases_[i].is_null()) totalSize = std::max(totalSize,LO(UnassembledSubspaceBases_[i]->getLocalLength()+Offsets_[i]));
+                    if (!UnassembledSubspaceBases_[i].is_null()) totalSize = max(totalSize,LO(UnassembledSubspaceBases_[i]->getLocalLength()+Offsets_[i]));
                 }
                 XMapPtr serialMap = MapFactory<LO,GO,NO>::Build(AssembledBasisMap_->lib(),totalSize,0,this->SerialComm_);
-                
+
                 AssembledBasis_ = MultiVectorFactory<SC,LO,GO,NO >::Build(serialMap,AssembledBasisMap_->getNodeNumElements());
                 for (UN i=0; i<UnassembledSubspaceBases_.size(); i++) {
                     if (!UnassembledSubspaceBases_[i].is_null()) {
@@ -146,13 +147,13 @@ namespace FROSch {
 
         ConstXMapPtrVec emptyVec2;
         UnassembledBasesMapsUnique_.swap(emptyVec2);
-        
+
         ConstXMultiVectorPtrVec emtpyVec3;
         UnassembledSubspaceBases_.swap(emtpyVec3);
-        
+
         LOVec emptyVec4;
         Offsets_.swap(emptyVec4);
-        
+
         UnassembledBasesMaps_.push_back(AssembledBasisMap_);
         UnassembledBasesMapsUnique_.push_back(AssembledBasisMapUnique_);
         UnassembledSubspaceBases_.push_back(AssembledBasis_);
@@ -185,13 +186,13 @@ namespace FROSch {
                     values.push_back(valueTmp);
                 }
             }
-            iD = rowMap->getLocalElement(repeatedMap->getGlobalElement(i));
+            iD = repeatedMap->getGlobalElement(i);
 
-            if (iD!=-1) {
-                GlobalBasisMatrix_->insertGlobalValues(repeatedMap->getGlobalElement(i),indices(),values());
+            if (rowMap->getLocalElement(iD)!=-1) { // This should prevent duplicate entries on the interface
+                GlobalBasisMatrix_->insertGlobalValues(iD,indices(),values());
             }
         }
-        GlobalBasisMatrix_->fillComplete(AssembledBasisMapUnique_,rangeMap);
+        GlobalBasisMatrix_->fillComplete(AssembledBasisMapUnique_,rangeMap); //RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); GlobalBasisMatrix_->describe(*fancy,VERB_EXTREME);
         return 0;
     }
 
@@ -210,22 +211,25 @@ namespace FROSch {
         AssembledBasisMap_.reset();
         AssembledBasisMapUnique_.reset();
         AssembledBasis_.reset();
-        
+
         UNVec emptyVec4;
         LocalSubspacesSizes_.swap(emptyVec4);
-       
+
         GlobalBasisMatrix_.reset();
 
         return 0;
     }
 
     template <class SC,class LO,class GO,class NO>
-    int CoarseSpace<SC,LO,GO,NO>::checkForLinearDependencies()
+    int CoarseSpace<SC,LO,GO,NO>::zeroOutBasisVectors(ConstLOVecView zeros)
     {
-        FROSCH_ASSERT(false,"FROSch::CoarseSpace : ERROR: This is not implemented yet.");
+        FROSCH_ASSERT(!AssembledBasis_.is_null(),"FROSch::CoarseSpace : ERROR: AssembledBasis_.is_null().");
+        for (UN j=0; j<zeros.size(); j++) {
+            AssembledBasis_->getVectorNonConst(zeros[j])->scale(ScalarTraits<SC>::zero());
+        }
         return 0;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     bool CoarseSpace<SC,LO,GO,NO>::hasUnassembledMaps() const
     {
@@ -276,7 +280,7 @@ namespace FROSch {
     {
         return LocalSubspacesSizes_();
     }
-        
+
     template <class SC,class LO,class GO,class NO>
     bool CoarseSpace<SC,LO,GO,NO>::hasGlobalBasisMatrix() const
     {

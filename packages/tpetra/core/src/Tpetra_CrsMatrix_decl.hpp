@@ -496,6 +496,12 @@ namespace Tpetra {
                               void,
                               typename local_graph_type::size_type>;
 
+    /// \brief The type of the local matrix-vector operator (a wrapper of \c KokkosSparse::CrsMatrix )
+    using local_multiply_op_type =
+      LocalCrsMatrixOperator<scalar_type,
+                             scalar_type,
+                             device_type>;
+
     //@}
     //! @name Constructors and destructor
     //@{
@@ -841,6 +847,14 @@ namespace Tpetra {
                                   const MultiVector<S2,LO2,GO2,N2> & B,
                                   MultiVector<S2,LO2,GO2,N2> & R);
 
+    // This friend declaration allows for batching of apply calls
+    template <class MatrixArray, class MultiVectorArray> 
+    friend void batchedApply(const MatrixArray &Matrices, 
+                             const typename std::remove_pointer<typename MultiVectorArray::value_type>::type & X,
+                             MultiVectorArray &Y,
+                             typename std::remove_pointer<typename MatrixArray::value_type>::type::scalar_type alpha,
+                             typename std::remove_pointer<typename MatrixArray::value_type>::type::scalar_type beta,
+                             Teuchos::RCP<Teuchos::ParameterList> params);
   public:
     //@}
     //! @name Methods for inserting, modifying, or removing entries
@@ -2167,6 +2181,12 @@ namespace Tpetra {
     ///   are responsible for knowing when it is safe to call this
     ///   method.
     local_matrix_type getLocalMatrix () const;
+
+    /// \brief The local sparse matrix operator (a wrapper of \c getLocalMatrix()
+    ///   that supports local matrix-vector multiply)
+    ///
+    /// \warning It is only valid to call this method if this->isFillComplete().
+    std::shared_ptr<local_multiply_op_type> getLocalMultiplyOperator () const;
 
     /// \brief Number of global elements in the row map of this matrix.
     ///
@@ -4348,10 +4368,6 @@ namespace Tpetra {
     Teuchos::RCP<      Graph>     myGraph_;
     //@}
 
-    using local_multiply_op_type =
-      LocalCrsMatrixOperator<scalar_type,
-                             scalar_type,
-                             device_type>;
     //! The local sparse matrix, wrapped in a multiply operator.
     std::shared_ptr<local_multiply_op_type> lclMatrix_;
 

@@ -56,11 +56,13 @@ inline std::tm localtime(std::time_t time)
 
     bool handle(std::tm *tm) { return tm != nullptr; }
 
+#if (!defined(__INTEL_COMPILER) || (defined(__INTEL_COMPILER) && __INTEL_COMPILER > 1800))
     bool handle(internal::null<>)
     {
       using namespace fmt::internal;
       return fallback(localtime_s(&tm_, &time_));
     }
+#endif
 
     bool fallback(int res) { return res == 0; }
 
@@ -100,11 +102,13 @@ inline std::tm gmtime(std::time_t time)
 
     bool handle(std::tm *tm) { return tm != nullptr; }
 
+#if (!defined(__INTEL_COMPILER) || (defined(__INTEL_COMPILER) && __INTEL_COMPILER > 1800))
     bool handle(internal::null<>)
     {
       using namespace fmt::internal;
       return fallback(gmtime_s(&tm_, &time_));
     }
+#endif
 
     bool fallback(int res) { return res == 0; }
 
@@ -515,8 +519,8 @@ namespace internal {
 
     Rep hour12() const
     {
-      Rep hour = static_cast<Rep>(mod((s.count() / 3600), 12));
-      return hour <= 0 ? 12 : hour;
+      Rep phour = static_cast<Rep>(mod((s.count() / 3600), 12));
+      return phour <= 0 ? 12 : phour;
     }
 
     Rep minute() const { return static_cast<Rep>(mod((s.count() / 60), 60)); }
@@ -524,11 +528,11 @@ namespace internal {
 
     std::tm time() const
     {
-      auto time    = std::tm();
-      time.tm_hour = to_nonnegative_int(hour(), 24);
-      time.tm_min  = to_nonnegative_int(minute(), 60);
-      time.tm_sec  = to_nonnegative_int(second(), 60);
-      return time;
+      auto ptime    = std::tm();
+      ptime.tm_hour = to_nonnegative_int(hour(), 24);
+      ptime.tm_min  = to_nonnegative_int(minute(), 60);
+      ptime.tm_sec  = to_nonnegative_int(second(), 60);
+      return ptime;
     }
 
     void write_sign()
@@ -555,7 +559,7 @@ namespace internal {
     void write_pinf() { std::copy_n("inf", 3, out); }
     void write_ninf() { std::copy_n("-inf", 4, out); }
 
-    void format_localized(const tm &time, const char *format)
+    void format_localized(const tm &ptime, const char *format)
     {
       if (isnan(val))
         return write_nan();
@@ -563,7 +567,7 @@ namespace internal {
       auto &                              facet  = std::use_facet<std::time_put<char_type>>(locale);
       std::basic_ostringstream<char_type> os;
       os.imbue(locale);
-      facet.put(os, os, ' ', &time, format, format + std::strlen(format));
+      facet.put(os, os, ' ', &ptime, format, format + std::strlen(format));
       auto str = os.str();
       std::copy(str.begin(), str.end(), out);
     }
@@ -592,9 +596,9 @@ namespace internal {
 
       if (ns == numeric_system::standard)
         return write(hour(), 2);
-      auto time    = tm();
-      time.tm_hour = to_nonnegative_int(hour(), 24);
-      format_localized(time, "%OH");
+      auto ptime    = tm();
+      ptime.tm_hour = to_nonnegative_int(hour(), 24);
+      format_localized(ptime, "%OH");
     }
 
     void on_12_hour(numeric_system ns)
@@ -604,9 +608,9 @@ namespace internal {
 
       if (ns == numeric_system::standard)
         return write(hour12(), 2);
-      auto time    = tm();
-      time.tm_hour = to_nonnegative_int(hour12(), 12);
-      format_localized(time, "%OI");
+      auto ptime    = tm();
+      ptime.tm_hour = to_nonnegative_int(hour12(), 12);
+      format_localized(ptime, "%OI");
     }
 
     void on_minute(numeric_system ns)
@@ -616,9 +620,9 @@ namespace internal {
 
       if (ns == numeric_system::standard)
         return write(minute(), 2);
-      auto time   = tm();
-      time.tm_min = to_nonnegative_int(minute(), 60);
-      format_localized(time, "%OM");
+      auto ptime   = tm();
+      ptime.tm_min = to_nonnegative_int(minute(), 60);
+      format_localized(ptime, "%OM");
     }
 
     void on_second(numeric_system ns)
@@ -643,9 +647,9 @@ namespace internal {
         }
         return;
       }
-      auto time   = tm();
-      time.tm_sec = to_nonnegative_int(second(), 60);
-      format_localized(time, "%OS");
+      auto ptime   = tm();
+      ptime.tm_sec = to_nonnegative_int(second(), 60);
+      format_localized(ptime, "%OS");
     }
 
     void on_12_hour_time()

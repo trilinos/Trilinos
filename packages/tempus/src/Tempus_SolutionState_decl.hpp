@@ -66,6 +66,7 @@ public:
    */
   SolutionState();
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   SolutionState(
     const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
     const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdot    = Teuchos::null,
@@ -79,6 +80,7 @@ public:
     const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xddot= Teuchos::null,
     const Teuchos::RCP<const StepperState<Scalar> >& stepperSt = Teuchos::null,
     const Teuchos::RCP<const PhysicsState<Scalar> >& physicsSt = Teuchos::null);
+#endif
 
   SolutionState(
     const Teuchos::RCP<SolutionStateMetaData<Scalar> > ssmd,
@@ -86,7 +88,7 @@ public:
     const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdot,
     const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdotdot,
     const Teuchos::RCP<StepperState<Scalar> >& stepperState,
-    const Teuchos::RCP<PhysicsState<Scalar> >& physicsState = Teuchos::null);
+    const Teuchos::RCP<PhysicsState<Scalar> >& physicsState);
 
   SolutionState(
     const Teuchos::RCP<const SolutionStateMetaData<Scalar> > ssmd,
@@ -94,12 +96,14 @@ public:
     const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdot,
     const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdotdot,
     const Teuchos::RCP<const StepperState<Scalar> >& stepperState,
-    const Teuchos::RCP<const PhysicsState<Scalar> >& physicsState = Teuchos::null);
+    const Teuchos::RCP<const PhysicsState<Scalar> >& physicsState);
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   SolutionState(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
     const Teuchos::RCP<StepperState<Scalar> >& stepperState = Teuchos::null,
     const Teuchos::RCP<PhysicsState<Scalar> >& physicsState = Teuchos::null);
+#endif
 
   /// This is a shallow copy constructor, use clone for a deep copy constructor
   SolutionState(const SolutionState<Scalar>& ss);
@@ -339,6 +343,34 @@ private:
   Teuchos::RCP<PhysicsState<Scalar> > physicsState_nc_;
 
 };
+
+
+/// Nonmember constructor from non-const solution vectors, x.
+template<class Scalar>
+Teuchos::RCP<SolutionState<Scalar> >
+createSolutionStateX(
+  const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
+  const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdot  = Teuchos::null,
+  const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdotdot = Teuchos::null);
+
+/// Nonmember constructor from const solution vectors, x.
+template<class Scalar>
+Teuchos::RCP<SolutionState<Scalar> >
+createSolutionStateX(
+  const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& x,
+  const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdot    =Teuchos::null,
+  const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdotdot =Teuchos::null);
+
+/// Nonmember constructor from Thyra ModelEvaluator.
+template<class Scalar>
+Teuchos::RCP<SolutionState<Scalar> >
+createSolutionStateME(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  const Teuchos::RCP<StepperState<Scalar> >& stepperState = Teuchos::null,
+  const Teuchos::RCP<PhysicsState<Scalar> >& physicsState = Teuchos::null);
+
+
+
 } // namespace Tempus
 
 #endif // Tempus_SolutionState_decl_hpp

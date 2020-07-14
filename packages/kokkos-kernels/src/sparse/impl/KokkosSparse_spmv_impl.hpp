@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//               KokkosKernels 0.9: Linear Algebra and Graph Kernels
-//                 Copyright 2017 Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -44,6 +45,7 @@
 #ifndef KOKKOSSPARSE_IMPL_SPMV_DEF_HPP_
 #define KOKKOSSPARSE_IMPL_SPMV_DEF_HPP_
 
+#include "KokkosKernels_Controls.hpp"
 #include "Kokkos_InnerProductSpaceTraits.hpp"
 #include "KokkosBlas1_scal.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
@@ -273,11 +275,12 @@ template<class AMatrix,
          int dobeta,
          bool conjugate>
 static void
-spmv_beta_no_transpose (typename YVector::const_value_type& alpha,
-                              const AMatrix& A,
-                              const XVector& x,
-                              typename YVector::const_value_type& beta,
-                              const YVector& y)
+spmv_beta_no_transpose (const KokkosKernels::Experimental::Controls& controls,
+			typename YVector::const_value_type& alpha,
+			const AMatrix& A,
+			const XVector& x,
+			typename YVector::const_value_type& beta,
+			const YVector& y)
 {
   typedef typename AMatrix::ordinal_type ordinal_type;
   typedef typename AMatrix::execution_space execution_space;
@@ -302,17 +305,29 @@ spmv_beta_no_transpose (typename YVector::const_value_type& alpha,
   int vector_length = -1;
   int64_t rows_per_thread = -1;
 
+  // Note on 03/24/20, lbv: We can use the controls
+  // here to allow the user to pass in some tunning
+  // parameters.
+  if(controls.isParameter("team size"))       {team_size       = std::stoi(controls.getParameter("team size"));}
+  if(controls.isParameter("vector length"))   {vector_length   = std::stoi(controls.getParameter("vector length"));}
+  if(controls.isParameter("rows per thread")) {rows_per_thread = std::stoll(controls.getParameter("rows per thread"));}
+
+  bool use_dynamic_schedule = false; // Forces the use of a dynamic schedule
+  bool use_static_schedule  = false; // Forces the use of a static schedule
+  if(controls.isParameter("schedule")) {
+    if(controls.getParameter("schedule") == "dynamic") {
+      use_dynamic_schedule = true;
+    } else if(controls.getParameter("schedule") == "static") {
+      use_static_schedule  = true;
+    }
+  }
+
   int64_t rows_per_team = spmv_launch_parameters<execution_space>(A.numRows(),A.nnz(),rows_per_thread,team_size,vector_length);
   int64_t worksets = (y.extent(0)+rows_per_team-1)/rows_per_team;
 
-  // std::cout << "worksets=" << worksets
-  //           << ", rows_per_team=" << rows_per_team
-  //           << ", team_size=" << team_size
-  //           << ", vector_length=" << vector_length << std::endl;
-
   SPMV_Functor<AMatrix,XVector,YVector,dobeta,conjugate> func (alpha,A,x,beta,y,rows_per_team);
 
-  if(A.nnz()>10000000) {
+  if(((A.nnz()>10000000) || use_dynamic_schedule) && !use_static_schedule) {
     Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic> > policy(1,1);
     if(team_size<0)
       policy = Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic> >(worksets,Kokkos::AUTO,vector_length);
@@ -387,20 +402,21 @@ template<class AMatrix,
          class YVector,
          int dobeta>
 static void
-spmv_beta (const char mode[],
-                 typename YVector::const_value_type& alpha,
-                 const AMatrix& A,
-                 const XVector& x,
-                 typename YVector::const_value_type& beta,
-                 const YVector& y)
+spmv_beta (const KokkosKernels::Experimental::Controls& controls,
+	   const char mode[],
+	   typename YVector::const_value_type& alpha,
+	   const AMatrix& A,
+	   const XVector& x,
+	   typename YVector::const_value_type& beta,
+	   const YVector& y)
 {
   if (mode[0] == NoTranspose[0]) {
     spmv_beta_no_transpose<AMatrix,XVector,YVector,dobeta,false>
-      (alpha,A,x,beta,y);
+      (controls,alpha,A,x,beta,y);
   }
   else if (mode[0] == Conjugate[0]) {
     spmv_beta_no_transpose<AMatrix,XVector,YVector,dobeta,true>
-      (alpha,A,x,beta,y);
+      (controls,alpha,A,x,beta,y);
   }
   else if (mode[0]==Transpose[0]) {
     spmv_beta_transpose<AMatrix,XVector,YVector,dobeta,false>

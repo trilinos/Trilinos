@@ -541,12 +541,8 @@ StatusType StatusTestGenResNorm<ScalarType,MV,OP>::checkStatus( Iteration<Scalar
       // Check if this index is valid
       if (*p != -1) {
         // Scale the std::vector accordingly
-        if ( scalevector_[ *p ] != zero ) {
-          // Don't intentionally divide by zero.
-          testvector_[ *p ] = resvector_[ *p ] / scalevector_[ *p ] / scalevalue_;
-        } else {
-          testvector_[ *p ] = resvector_[ *p ] / scalevalue_;
-        }
+        testvector_[ *p ] =
+            scalevector_[ *p ] != zero? resvector_[ *p ] / (scalevector_[ *p ] * scalevalue_) : resvector_[ *p ] / scalevalue_;
       }
     }
   }

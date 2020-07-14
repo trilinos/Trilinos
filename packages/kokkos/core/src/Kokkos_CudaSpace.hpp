@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 2.0
-//              Copyright (2014) Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -54,6 +55,8 @@
 #include <string>
 
 #include <Kokkos_HostSpace.hpp>
+
+#include <impl/Kokkos_Profiling_Interface.hpp>
 
 #include <Cuda/Kokkos_Cuda_abort.hpp>
 
@@ -129,7 +132,7 @@ int* atomic_lock_array_cuda_space_ptr(bool deallocate = false);
 /// global memory.
 ///
 /// Team and Thread private scratch allocations in
-/// global memory are aquired via locks.
+/// global memory are acquired via locks.
 /// This function retrieves the lock array pointer.
 /// If the array is not yet allocated it will do so.
 int* scratch_lock_array_cuda_space_ptr(bool deallocate = false);
@@ -165,7 +168,7 @@ class CudaUVMSpace {
 
   /*--------------------------------*/
   /** \brief  CudaUVMSpace specific routine */
-  static int number_of_allocations();
+  KOKKOS_DEPRECATED static int number_of_allocations();
 
   /*--------------------------------*/
 
@@ -398,6 +401,126 @@ template <>
 struct DeepCopy<HostSpace, CudaSpace, Cuda> {
   DeepCopy(void* dst, const void* src, size_t);
   DeepCopy(const Cuda&, void* dst, const void* src, size_t);
+};
+
+template <>
+struct DeepCopy<CudaUVMSpace, CudaUVMSpace, Cuda> {
+  DeepCopy(void* dst, const void* src, size_t n) {
+    (void)DeepCopy<CudaSpace, CudaSpace, Cuda>(dst, src, n);
+  }
+  DeepCopy(const Cuda& instance, void* dst, const void* src, size_t n) {
+    (void)DeepCopy<CudaSpace, CudaSpace, Cuda>(instance, dst, src, n);
+  }
+};
+
+template <>
+struct DeepCopy<CudaUVMSpace, HostSpace, Cuda> {
+  DeepCopy(void* dst, const void* src, size_t n) {
+    (void)DeepCopy<CudaSpace, HostSpace, Cuda>(dst, src, n);
+  }
+  DeepCopy(const Cuda& instance, void* dst, const void* src, size_t n) {
+    (void)DeepCopy<CudaSpace, HostSpace, Cuda>(instance, dst, src, n);
+  }
+};
+
+template <>
+struct DeepCopy<HostSpace, CudaUVMSpace, Cuda> {
+  DeepCopy(void* dst, const void* src, size_t n) {
+    (void)DeepCopy<HostSpace, CudaSpace, Cuda>(dst, src, n);
+  }
+  DeepCopy(const Cuda& instance, void* dst, const void* src, size_t n) {
+    (void)DeepCopy<HostSpace, CudaSpace, Cuda>(instance, dst, src, n);
+  }
+};
+
+template <>
+struct DeepCopy<CudaHostPinnedSpace, CudaHostPinnedSpace, Cuda> {
+  DeepCopy(void* dst, const void* src, size_t n) {
+    (void)DeepCopy<CudaSpace, CudaSpace, Cuda>(dst, src, n);
+  }
+  DeepCopy(const Cuda& instance, void* dst, const void* src, size_t n) {
+    (void)DeepCopy<CudaSpace, CudaSpace, Cuda>(instance, dst, src, n);
+  }
+};
+
+template <>
+struct DeepCopy<CudaHostPinnedSpace, HostSpace, Cuda> {
+  DeepCopy(void* dst, const void* src, size_t n) {
+    (void)DeepCopy<CudaSpace, HostSpace, Cuda>(dst, src, n);
+  }
+  DeepCopy(const Cuda& instance, void* dst, const void* src, size_t n) {
+    (void)DeepCopy<CudaSpace, HostSpace, Cuda>(instance, dst, src, n);
+  }
+};
+
+template <>
+struct DeepCopy<HostSpace, CudaHostPinnedSpace, Cuda> {
+  DeepCopy(void* dst, const void* src, size_t n) {
+    (void)DeepCopy<HostSpace, CudaSpace, Cuda>(dst, src, n);
+  }
+  DeepCopy(const Cuda& instance, void* dst, const void* src, size_t n) {
+    (void)DeepCopy<HostSpace, CudaSpace, Cuda>(instance, dst, src, n);
+  }
+};
+
+template <>
+struct DeepCopy<CudaUVMSpace, CudaSpace, Cuda> {
+  DeepCopy(void* dst, const void* src, size_t n) {
+    (void)DeepCopy<CudaSpace, CudaSpace, Cuda>(dst, src, n);
+  }
+  DeepCopy(const Cuda& instance, void* dst, const void* src, size_t n) {
+    (void)DeepCopy<CudaSpace, CudaSpace, Cuda>(instance, dst, src, n);
+  }
+};
+
+template <>
+struct DeepCopy<CudaSpace, CudaUVMSpace, Cuda> {
+  DeepCopy(void* dst, const void* src, size_t n) {
+    (void)DeepCopy<CudaSpace, CudaSpace, Cuda>(dst, src, n);
+  }
+  DeepCopy(const Cuda& instance, void* dst, const void* src, size_t n) {
+    (void)DeepCopy<CudaSpace, CudaSpace, Cuda>(instance, dst, src, n);
+  }
+};
+
+template <>
+struct DeepCopy<CudaUVMSpace, CudaHostPinnedSpace, Cuda> {
+  DeepCopy(void* dst, const void* src, size_t n) {
+    (void)DeepCopy<CudaSpace, CudaSpace, Cuda>(dst, src, n);
+  }
+  DeepCopy(const Cuda& instance, void* dst, const void* src, size_t n) {
+    (void)DeepCopy<CudaSpace, CudaSpace, Cuda>(instance, dst, src, n);
+  }
+};
+
+template <>
+struct DeepCopy<CudaHostPinnedSpace, CudaUVMSpace, Cuda> {
+  DeepCopy(void* dst, const void* src, size_t n) {
+    (void)DeepCopy<CudaSpace, CudaSpace, Cuda>(dst, src, n);
+  }
+  DeepCopy(const Cuda& instance, void* dst, const void* src, size_t n) {
+    (void)DeepCopy<CudaSpace, CudaSpace, Cuda>(instance, dst, src, n);
+  }
+};
+
+template <>
+struct DeepCopy<CudaSpace, CudaHostPinnedSpace, Cuda> {
+  DeepCopy(void* dst, const void* src, size_t n) {
+    (void)DeepCopy<CudaSpace, CudaSpace, Cuda>(dst, src, n);
+  }
+  DeepCopy(const Cuda& instance, void* dst, const void* src, size_t n) {
+    (void)DeepCopy<CudaSpace, CudaSpace, Cuda>(instance, dst, src, n);
+  }
+};
+
+template <>
+struct DeepCopy<CudaHostPinnedSpace, CudaSpace, Cuda> {
+  DeepCopy(void* dst, const void* src, size_t n) {
+    (void)DeepCopy<CudaSpace, CudaSpace, Cuda>(dst, src, n);
+  }
+  DeepCopy(const Cuda& instance, void* dst, const void* src, size_t n) {
+    (void)DeepCopy<CudaSpace, CudaSpace, Cuda>(instance, dst, src, n);
+  }
 };
 
 template <class ExecutionSpace>
@@ -639,8 +762,8 @@ struct VerifyExecutionCanAccessMemorySpace<Kokkos::CudaSpace,
 /** Running in CudaSpace attempting to access an unknown space: error */
 template <class OtherSpace>
 struct VerifyExecutionCanAccessMemorySpace<
-    typename enable_if<!is_same<Kokkos::CudaSpace, OtherSpace>::value,
-                       Kokkos::CudaSpace>::type,
+    typename std::enable_if<!std::is_same<Kokkos::CudaSpace, OtherSpace>::value,
+                            Kokkos::CudaSpace>::type,
     OtherSpace> {
   enum { value = false };
   KOKKOS_INLINE_FUNCTION static void verify(void) {

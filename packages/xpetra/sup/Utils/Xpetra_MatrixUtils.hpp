@@ -453,7 +453,7 @@ public:
     Ac->getLocalDiagCopy(*diagVec);
 
     LocalOrdinal lZeroDiags = 0;
-    Teuchos::ArrayRCP< Scalar > diagVal = diagVec->getDataNonConst(0);
+    Teuchos::ArrayRCP< const Scalar > diagVal = diagVec->getData(0);
 
     for (size_t i = 0; i < rowMap->getNodeNumElements(); i++) {
       if (TST::magnitude(diagVal[i]) <= threshold) {
@@ -521,7 +521,7 @@ public:
 #ifdef HAVE_XPETRA_DEBUG // only for debugging
     // check whether Ac has been repaired...
     Ac->getLocalDiagCopy(*diagVec);
-    Teuchos::ArrayRCP< Scalar > diagVal2 = diagVec->getDataNonConst(0);
+    diagVal = diagVec->getData(0);
     for (size_t r = 0; r < Ac->getRowMap()->getNodeNumElements(); r++) {
       if (TST::magnitude(diagVal[r]) <= threshold) {
         fos << "Error: there are too small entries left on diagonal after repair..." << std::endl;

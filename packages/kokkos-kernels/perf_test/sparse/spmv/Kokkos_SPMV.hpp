@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//               KokkosKernels 0.9: Linear Algebra and Graph Kernels
-//                 Copyright 2017 Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -43,8 +44,6 @@
 
 #ifndef KOKKOS_SPMV_HPP_
 #define KOKKOS_SPMV_HPP_
-
-
 
 template<class AMatrix,
          class XVector,
@@ -163,19 +162,18 @@ int launch_parameters(int numRows, int nnz, int rows_per_thread, int& team_size,
 }
 
 template<typename AType, typename XType, typename YType,class ScheduleType>
-void kk_matvec(AType A, XType x, YType y, int rows_per_thread, int team_size, int vector_length) {
-
-  typedef typename XType::non_const_value_type Scalar;
+void kokkos_matvec(AType A, XType x, YType y, int rows_per_thread, int team_size, int vector_length) {
   typedef typename AType::execution_space execution_space;
-  typedef KokkosSparse::CrsMatrix<const Scalar,int,execution_space,void,int> matrix_type ;
-  typedef typename Kokkos::View<Scalar*,Kokkos::LayoutLeft,execution_space> y_type;
-  typedef typename Kokkos::View<const Scalar*,Kokkos::LayoutLeft,execution_space,Kokkos::MemoryRandomAccess > x_type;
+  typedef typename AType::non_const_size_type size_type;
+  typedef typename AType::non_const_ordinal_type lno_t;
+  typedef typename AType::non_const_value_type scalar_t;
+  typedef KokkosSparse::CrsMatrix<const scalar_t,lno_t,execution_space,void,size_type> matrix_type ;
 
   int rows_per_team = launch_parameters<execution_space>(A.numRows(),A.nnz(),rows_per_thread,team_size,vector_length);
 
   double s_a = 1.0;
   double s_b = 0.0;
-  SPMV_Functor<matrix_type,x_type,y_type,0,false> func (s_a,A,x,s_b,y,rows_per_team);
+  SPMV_Functor<matrix_type,XType,YType,0,false> func (s_a,A,x,s_b,y,rows_per_team);
 
   int worksets = (y.extent(0)+rows_per_team-1)/rows_per_team;
 
@@ -191,3 +189,4 @@ void kk_matvec(AType A, XType x, YType y, int rows_per_thread, int team_size, in
 
 
 #endif /* KOKKOS_SPMV_HPP_ */
+

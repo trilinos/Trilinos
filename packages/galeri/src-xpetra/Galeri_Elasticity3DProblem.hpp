@@ -67,9 +67,28 @@ namespace Galeri {
         E  = list.get("E", Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1e9));
         nu = list.get("nu", Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(0.25));
 
-        nx_ = list.get<GlobalOrdinal>("nx", -1);
-        ny_ = list.get<GlobalOrdinal>("ny", -1);
-        nz_ = list.get<GlobalOrdinal>("nz", -1);
+        nx_ = -1;
+        ny_ = -1;
+        nz_ = -1;
+
+        if (list.isParameter("nx")) {
+          if (list.isType<int>("nx"))
+            nx_ = Teuchos::as<GlobalOrdinal>(list.get<int>("nx"));
+          else
+            nx_ = list.get<GlobalOrdinal>("nx");
+        }
+        if (list.isParameter("ny")) {
+          if (list.isType<int>("ny"))
+            ny_ = Teuchos::as<GlobalOrdinal>(list.get<int>("ny"));
+          else
+            ny_ = list.get<GlobalOrdinal>("ny");
+        }
+        if (list.isParameter("nz")) {
+          if (list.isType<int>("nz"))
+            nz_ = Teuchos::as<GlobalOrdinal>(list.get<int>("nz"));
+          else
+            nz_ = list.get<GlobalOrdinal>("nz");
+        }
 
         nDim_ = 3;
         double one = 1.0;
@@ -187,6 +206,7 @@ namespace Galeri {
       R(0,0) = R(1,4) = R(2,8) = R(3,1) = R(3,3) = R(4,5) = R(4,7) = R(5,2) = R(5,6) = 1;
 
       this->A_ = MatrixTraits<Map,Matrix>::Build(this->Map_, numNodesPerElem * 8 * numDofPerElem);
+      this->A_->setObjectLabel(this->getObjectLabel());
 
       SC one = Teuchos::ScalarTraits<SC>::one(), zero = Teuchos::ScalarTraits<SC>::zero();
       SerialDenseMatrix<LO,SC> prevKE(numDofPerElem, numDofPerElem), prevElementNodes(numNodesPerElem, nDim_);        // cache

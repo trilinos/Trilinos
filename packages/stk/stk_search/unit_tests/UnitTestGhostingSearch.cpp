@@ -33,7 +33,6 @@
 //
 
 #include <unit_tests/UnitTestUtils.hpp>
-#include <unit_tests/MeshUtilsForBoundingVolumes.hpp>
 #include <stk_search/CommonSearchUtilsInstrumented.hpp>
 #include <stk_search/PrototypeSearchUtilsInstrumented.hpp>
 #include <stk_util/parallel/Parallel.hpp>

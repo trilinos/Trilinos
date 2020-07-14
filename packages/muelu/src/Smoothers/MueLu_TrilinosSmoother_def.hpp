@@ -90,6 +90,10 @@ namespace MueLu {
       sTpetra_ = rcp(new Ifpack2Smoother(type_, paramList, overlap_));
       if (sTpetra_.is_null())
         errorTpetra_ = "Unable to construct Ifpack2 smoother";
+      else if (!sTpetra_->constructionSuccessful()) {
+        errorTpetra_ = sTpetra_->constructionErrorMsg();
+        sTpetra_ = Teuchos::null;
+      }
     } catch (Exceptions::RuntimeError& e) {
       errorTpetra_ = e.what();
     } catch (Exceptions::BadCast& e) {
@@ -105,6 +109,10 @@ namespace MueLu {
       sEpetra_ = GetIfpackSmoother<SC,LO,GO,NO>(TrilinosSmoother::Ifpack2ToIfpack1Type(type_), TrilinosSmoother::Ifpack2ToIfpack1Param(paramList), overlap_);
       if (sEpetra_.is_null())
         errorEpetra_ = "Unable to construct Ifpack smoother";
+      else if (!sEpetra_->constructionSuccessful()) {
+        errorEpetra_ = sEpetra_->constructionErrorMsg();
+        sEpetra_ = Teuchos::null;
+      }
     } catch (Exceptions::RuntimeError& e) {
       // IfpackSmoother throws if Scalar != double, LocalOrdinal != int, GlobalOrdinal != int
       errorEpetra_ = e.what();
@@ -116,6 +124,10 @@ namespace MueLu {
       sBelos_ = rcp(new BelosSmoother(type_, paramList));
       if (sBelos_.is_null())
         errorBelos_ = "Unable to construct Belos smoother";
+      else if (!sBelos_->constructionSuccessful()) {
+        errorBelos_ = sBelos_->constructionErrorMsg();
+        sBelos_ = Teuchos::null;
+      }
     } catch (Exceptions::RuntimeError& e){
       errorBelos_ = e.what();
     } catch (Exceptions::BadCast& e) {
@@ -123,11 +135,15 @@ namespace MueLu {
     }
     triedBelos_ = true;
 #endif
-#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_TPETRA)
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_THYRA)
     try {
       sStratimikos_ = rcp(new StratimikosSmoother(type_, paramList));
       if (sStratimikos_.is_null())
         errorStratimikos_ = "Unable to construct Stratimikos smoother";
+      else if (!sStratimikos_->constructionSuccessful()) {
+        errorStratimikos_ = sStratimikos_->constructionErrorMsg();
+        sStratimikos_ = Teuchos::null;
+      }
     } catch (Exceptions::RuntimeError& e){
       errorStratimikos_ = e.what();
     }

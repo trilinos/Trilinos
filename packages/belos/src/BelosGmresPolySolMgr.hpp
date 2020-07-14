@@ -54,6 +54,7 @@
 #include "BelosSolverManager.hpp"
 #include "BelosGmresPolyOp.hpp"
 #include "BelosSolverFactory_Generic.hpp"
+#include "BelosOrthoManagerFactory.hpp"
 #include "Teuchos_as.hpp"
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 #include "Teuchos_TimeMonitor.hpp"
@@ -115,7 +116,7 @@ class GmresPolySolMgrPolynomialFailure : public BelosError {public:
 ///   - "Add Roots" (\c bool): to add roots to the polynomial as needed for stability. Default: true
 ///   - "Damp Poly" (\c bool): to damp polynomial. Default: false
 ///   - "Orthogonalization" (\c std::string): The desired
-///     orthogonalization method to create polynomial.  Default: "DGKS".
+///     orthogonalization method to create polynomial.  Default: "ICGS".
 ///   - "Verbosity" (Belos::MsgType): A sum of Belos::MsgType values
 ///     specifying what kinds of messages to print.  Default:
 ///     Belos::Errors.
@@ -177,7 +178,7 @@ public:
    *   - "Add Roots" - a \c bool to add roots to the polynomial as needed for stability. Default: true
    *   - "Damp Poly" - a \c bool to damp polynomial. Default: false
    *   - "Orthogonalization" - a \c std::string specifying the desired orthogonalization to create the 
-   *                            polynomial:  DGKS, ICGS, and IMGS. Default: "DGKS"
+   *                            polynomial:  DGKS, ICGS, and IMGS. Default: "ICGS"
    *   - "Verbosity" - a sum of MsgType specifying the verbosity. Default: Belos::Errors
    *   - "Polynomial Tolerance" - a \c MagnitudeType specifying the polynomial tolerance (sometimes) used to 
    *                            generate polynomial. Default: 1e-8
@@ -315,7 +316,7 @@ private:
   static constexpr const char * label_default_ = "Belos";
   static constexpr const char * outerSolverType_default_ = "";
   static constexpr const char * polyType_default_ = "Arnoldi";
-  static constexpr const char * orthoType_default_ = "DGKS";
+  static constexpr const char * orthoType_default_ = "ICGS";
   static constexpr bool addRoots_default_ = true;
   static constexpr bool dampPoly_default_ = false;
   static constexpr bool randomRHS_default_ = true; 
@@ -507,9 +508,16 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
   // Check if the orthogonalization changed.
   if (params->isParameter("Orthogonalization")) {
     std::string tempOrthoType = params->get("Orthogonalization",orthoType_default_);
-    TEUCHOS_TEST_FOR_EXCEPTION( tempOrthoType != "DGKS" && tempOrthoType != "ICGS" && tempOrthoType != "IMGS",
-                        std::invalid_argument,
-                        "Belos::GmresPolySolMgr: \"Orthogonalization\" must be either \"DGKS\", \"ICGS\", or \"IMGS\".");
+    OrthoManagerFactory<ScalarType, MV, OP> factory;
+    // Ensure that the specified orthogonalization type is valid.
+    if (! factory.isValidName (tempOrthoType)) {
+      std::ostringstream os;
+      os << "Belos::GCRODRSolMgr: Invalid orthogonalization name \""
+         << tempOrthoType << "\".  The following are valid options "
+         << "for the \"Orthogonalization\" name parameter: ";
+      factory.printValidNames (os);
+      throw std::invalid_argument (os.str());
+    }
     if (tempOrthoType != orthoType_) {
       orthoType_ = tempOrthoType;
     }

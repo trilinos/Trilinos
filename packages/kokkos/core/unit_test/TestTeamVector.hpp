@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 2.0
-//              Copyright (2014) Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -604,7 +605,7 @@ struct functor_vec_single {
 
   KOKKOS_INLINE_FUNCTION
   void operator()(typename policy_type::member_type team) const {
-    // Warning: this test case intentionally violates permissable semantics.
+    // Warning: this test case intentionally violates permissible semantics.
     // It is not valid to get references to members of the enclosing region
     // inside a parallel_for and write to it.
     Scalar value = 0;
@@ -621,7 +622,7 @@ struct functor_vec_single {
     Scalar value2 = 0;
     Kokkos::parallel_reduce(
         Kokkos::ThreadVectorRange(team, nStart, nEnd),
-        [&](int i, Scalar &val) { val += value; }, value2);
+        [&](int /*i*/, Scalar &val) { val += value; }, value2);
 
     if (value2 != (value * (nEnd - nStart))) {
       printf("FAILED vector_single broadcast %i %i %f %f\n", team.league_rank(),
@@ -894,8 +895,7 @@ namespace Test {
 // Computes y^T*A*x
 // ( modified from kokkos-tutorials/GTC2016/Exercises/ThreeLevelPar )
 
-#if (!defined(KOKKOS_ENABLE_CUDA)) || \
-    (defined(KOKKOS_ENABLE_CUDA_LAMBDA) && (8000 <= CUDA_VERSION))
+#if (!defined(KOKKOS_ENABLE_CUDA)) || defined(KOKKOS_ENABLE_CUDA_LAMBDA)
 template <typename ScalarType, class DeviceType>
 class TestTripleNestedReduce {
  public:

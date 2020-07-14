@@ -963,7 +963,6 @@ namespace Tpetra {
             else {
               distor.doPostsAndWaits (numExp_h, 1, numImp_h);
             }
-            DES().fence (); // just in case UVM doesn't behave right
 
             if (verbose) {
               std::ostringstream os;
@@ -999,7 +998,6 @@ namespace Tpetra {
             else {
               distor.doPostsAndWaits (numExp_d, 1, numImp_d);
             }
-            DES().fence (); // just in case UVM doesn't behave right
 
             if (verbose) {
               std::ostringstream os;
@@ -1079,6 +1077,7 @@ namespace Tpetra {
             }
           }
           else { // pack on device
+            Kokkos::fence(); // for UVM
             this->imports_.modify_device ();
             if (revOp == DoReverse) {
               distor.doReversePostsAndWaits
@@ -1139,6 +1138,7 @@ namespace Tpetra {
             }
           }
           else { // pack on device
+            Kokkos::fence(); // for UVM
             this->imports_.modify_device ();
             if (revOp == DoReverse) {
               distor.doReversePostsAndWaits

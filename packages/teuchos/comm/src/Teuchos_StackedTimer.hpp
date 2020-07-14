@@ -52,7 +52,8 @@
 #include <cassert>
 #include <chrono>
 #include <climits>
-#include <cstdlib> // for std::getenv
+#include <cstdlib> // for std::getenv and atoi
+#include <ctime> // for timestamp support
 #include <iostream>
 
 #if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
@@ -360,6 +361,10 @@ protected:
       return 0;
     }
 
+    /// Returns the level of the timer in the stack
+    unsigned level() const
+    {return level_;}
+
   protected:
     /**
      * \brief split a string into two parts split by a '@' if no '@' first gets the full string
@@ -467,6 +472,7 @@ public:
   explicit StackedTimer(const char *name, const bool start_base_timer = true)
     : timer_(0,name,nullptr,false),
       enable_verbose_(false),
+      verbose_timestamp_levels_(0), // 0 disables
       verbose_ostream_(Teuchos::rcpFromRef(std::cout))
   {
     top_ = &timer_;
@@ -476,6 +482,11 @@ public:
     auto check_verbose = std::getenv("TEUCHOS_ENABLE_VERBOSE_TIMERS");
     if (check_verbose != nullptr)
       enable_verbose_ = true;
+
+    auto check_timestamp = std::getenv("TEUCHOS_ENABLE_VERBOSE_TIMESTAMP_LEVELS");
+    if (check_timestamp != nullptr) {
+      verbose_timestamp_levels_ = std::atoi(check_timestamp);
+    }
   }
 
   /**
@@ -514,8 +525,25 @@ public:
       ::Kokkos::Profiling::pushRegion(name);
     }
 #endif
-    if (enable_verbose_)
-      *verbose_ostream_ << "STARTING: " << name << std::endl;
+    if (enable_verbose_) {
+      if (!verbose_timestamp_levels_) {
+        *verbose_ostream_ << "STARTING: " << name << std::endl;
+      }
+      // gcc 4.X is incomplete in c++11 standard - missing
+      // std::put_time. We'll disable this feature for gcc 4.
+#if !defined(__GNUC__) || ( defined(__GNUC__) && (__GNUC__ > 4) )
+      else if (top_ != nullptr) {
+        if ( top_->level() <= verbose_timestamp_levels_) {
+          auto now = std::chrono::system_clock::now();
+          auto now_time = std::chrono::system_clock::to_time_t(now);
+          auto gmt = gmtime(&now_time);
+          auto timestamp = std::put_time(gmt, "%Y-%m-%d %H:%M:%S");
+          auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
+          *verbose_ostream_ << "STARTING: " << name << " LEVEL: " << top_->level() << " COUNT: " << timer_.numCalls() << " TIMESTAMP: " << timestamp << "." << ms.count() << std::endl;
+        }
+      }
+#endif
+    }
   }
 
   /**
@@ -534,8 +562,26 @@ public:
       ::Kokkos::Profiling::popRegion();
     }
 #endif
-    if (enable_verbose_)
-      *verbose_ostream_ << "STOPPING: " << name << std::endl;
+    if (enable_verbose_) {
+      if (!verbose_timestamp_levels_) {
+        *verbose_ostream_ << "STOPPING: " << name << std::endl;
+      }
+      // gcc 4.X is incomplete in c++11 standard - missing
+      // std::put_time. We'll disable this feature for gcc 4.
+#if !defined(__GNUC__) || ( defined(__GNUC__) && (__GNUC__ > 4) )
+      // The stop adjusts the top level, need to adjust by +1 for printing
+      else if (top_ != nullptr) {
+        if ( (top_->level()+1) <= verbose_timestamp_levels_) {
+          auto now = std::chrono::system_clock::now();
+          auto now_time = std::chrono::system_clock::to_time_t(now);
+          auto gmt = gmtime(&now_time);
+          auto timestamp = std::put_time(gmt, "%Y-%m-%d %H:%M:%S");
+          auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
+          *verbose_ostream_ << "STOPPING: " << name << " LEVEL: " << top_->level()+1 << " COUNT: " << timer_.numCalls() << " TIMESTAMP: " << timestamp << "." << ms.count() << std::endl;
+        }
+      }
+#endif
+    }
   }
 
   /**
@@ -660,9 +706,27 @@ public:
   void reportXML(std::ostream &os, const std::string& datestamp, const std::string& timestamp, Teuchos::RCP<const Teuchos::Comm<int> > comm);
 
   /**
-   * Dump all the data from all the MPI ranks to <code>$WATCHR_PERF_DIR/name_$DATESTAMP.xml</code>,
-   *  if the environment variable WATCHR_PERF_DIR is defined and non-empty (otherwise, do nothing).
-   *  DATESTAMP is calculated from the current UTC time, in the format YYYY_MM_DD.
+   * Dump all the data from all the MPI ranks to an XML file. This function
+   * calls reportXML and is intended to be used directly by performance tests.
+   *
+   * In the XML report, the top-level timer name (representing the total) will be replaced with
+   * \c name (the name of the test). This becomes the top-level chart name in Watchr.
+   *
+   * The output filename is controlled by two environment variables: \c $WATCHR_PERF_DIR (required for output)
+   * and \c $WATCHR_BUILD_NAME (optional). \c $WATCHR_PERF_DIR is the directory where the output file
+   * will be created. If it is not set or is empty, no output will be produced and the function returns an empty
+   * string on all ranks.
+   *
+   * If \c $WATCHR_BUILD_NAME is set, the filename is
+   * \c $WATCHR_BUILD_NAME-name_$DATESTAMP.xml. Additionally, the build name is prepended
+   * (verbatim) to the the top-level chart name,
+   * so that Watchr knows it is a different data series than runs of the same test from other builds.
+   *
+   * If \c $WATCHR_BUILD_NAME is not set or is empty, the filename is just \c name_$DATESTAMP.xml .
+   * DATESTAMP is calculated from the current UTC time, in the format YYYY_MM_DD.
+   *
+   * In the filename, all spaces in will be replaced by underscores.
+   *
    * @param [in] name - Name of performance test
    * @param [in] comm - Teuchos comm pointer
    * @return If on rank 0 and output was produced, the complete output filename. Otherwise the empty string.
@@ -671,6 +735,9 @@ public:
 
   // If set to true, print timer start/stop to verbose ostream.
   void enableVerbose(const bool enable_verbose);
+
+  // Enable timestamps in verbose mode for the number of levels specified.
+  void enableVerboseTimestamps(const unsigned levels);
 
   // Set the ostream for verbose mode(defaults to std::cout).
   void setVerboseOstream(const Teuchos::RCP<std::ostream>& os);
@@ -722,6 +789,9 @@ protected:
   /// If set to true, prints to the debug ostream. At construction, default value is set from environment variable.
   bool enable_verbose_;
 
+  /// If set to a value greater than 0, verbose mode will print that many levels of timers with timestamps. A value of zero disables timestamps.
+  unsigned verbose_timestamp_levels_;
+
   /// For debugging, this is the ostream used for printing.
   Teuchos::RCP<std::ostream> verbose_ostream_;
 
@@ -759,8 +829,9 @@ protected:
 
    /**
     * Recursive call to print a level of timer data, in Watchr XML format.
+    * If non-empty, rootName will replace the root level's timer name in the output. If empty or level > 0, it has no effect.
     */
-  double printLevelXML(std::string prefix, int level, std::ostream &os, std::vector<bool> &printed, double parent_time);
+  double printLevelXML(std::string prefix, int level, std::ostream &os, std::vector<bool> &printed, double parent_time, const std::string& rootName = "");
 
 };  //StackedTimer
 

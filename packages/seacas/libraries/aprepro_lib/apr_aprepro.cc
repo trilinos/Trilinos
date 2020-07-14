@@ -1,35 +1,8 @@
-// Copyright (c) 2014-2017, 2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//
-//     * Neither the name of NTESS nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
+// 
+// See packages/seacas/LICENSE for details
 
 #include "apr_scanner.h"    // for Scanner
 #include "apr_stats.h"      // for Stats
@@ -51,7 +24,7 @@
 
 namespace {
   const unsigned int HASHSIZE       = 5939;
-  const char *       version_string = "5.15 (2020/02/28)";
+  const char *       version_string = "5.16 (2020/06/09)";
 
   void output_copyright();
 
@@ -238,6 +211,7 @@ namespace SEAMS {
 
     // Send it to the user defined stream
     (*warningStream) << ss.str();
+    parseWarningCount++;
   }
 
   void Aprepro::info(const std::string &msg, bool line_info, bool prefix) const
@@ -444,6 +418,13 @@ namespace SEAMS {
       ap_options.immutable = true;
       stateImmutable       = true;
     }
+    else if (option == "--errors_fatal" || option == "-f") {
+      ap_options.errors_fatal = true;
+    }
+    else if (option == "--errors_and_warnings_fatal" || option == "-F") {
+      ap_options.errors_and_warnings_fatal = true;
+      ap_options.errors_fatal              = true;
+    }
     else if (option == "--trace" || option == "-t") {
       ap_options.trace_parsing = true;
     }
@@ -509,6 +490,10 @@ namespace SEAMS {
           << "       --dumpvars or -D: Dump all variables at end of run        \n"
           << "        --version or -v: Print version number to stderr          \n"
           << "      --immutable or -X: All variables are immutable--cannot be modified\n"
+          << "   --errors_fatal or -f: Exit program with nonzero status if errors are "
+             "encountered\n"
+          << " --errors_and_warnings_fatal or -F: Exit program with nonzero status if "
+             "warnings are encountered\n"
           << "--one_based_index or -1: Array indexing is one-based (default = zero-based)\n"
           << "    --interactive or -i: Interactive use, no buffering           \n"
           << "    --include=P or -I=P: Include file or include path            \n"

@@ -66,6 +66,11 @@ void communicate_field_data(
   const int parallel_rank = mesh.parallel_rank();
   const unsigned ghost_id = ghosts.ordinal();
 
+  for ( const FieldBase* fptr : fields) {
+    fptr->sync_to_host();
+    fptr->modify_on_host();
+  }
+
   // Sizing for send and receive
 
   const unsigned zero = 0 ;
@@ -435,6 +440,8 @@ void parallel_op_including_ghosts_impl(const BulkData & mesh, const std::vector<
   size_t comm_info_vec_size = comm_info_vec.size();
   for ( fi = fb ; fi != fe ; ++fi ) {
     const FieldBase & f = **fi ;
+    f.sync_to_host();
+    f.modify_on_host();
 
     for (size_t i=0; i<comm_info_vec_size; ++i) {
         if (!mesh.is_valid(comm_info_vec[i].entity))

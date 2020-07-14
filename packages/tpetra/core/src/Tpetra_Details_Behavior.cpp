@@ -48,6 +48,7 @@
 #include <vector>
 #include <functional>
 #include "Teuchos_TestForException.hpp"
+#include "Teuchos_OrdinalTraits.hpp"
 #include <stdexcept>
 
 namespace Tpetra {
@@ -56,6 +57,7 @@ namespace Details {
 namespace BehaviorDetails {
 std::map<std::string, std::map<std::string, bool> > namedVariableMap_;
 bool verboseDisabled_ = false;
+bool timingDisabled_ = false;
 }
 
 namespace { // (anonymous)
@@ -188,12 +190,16 @@ namespace { // (anonymous)
     else {
       // This could throw invalid_argument or out_of_range.
       // Go ahead and let it do so.
-      const long long val = std::stoll(stringToUpper(varVal));
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (val < static_cast<long long>(0), std::out_of_range,
-         prefix << "Environment variable \""
-         << environmentVariableName << "\" is supposed to be a size, "
-         "but it has a negative integer value " << val << ".");
+      long long val = std::stoll(stringToUpper(varVal));
+      if (val < static_cast<long long>(0)) {
+        // If negative - user has requested threshold be lifted
+        return std::numeric_limits<size_t>::max();
+      }
+//      TEUCHOS_TEST_FOR_EXCEPTION
+//        (val < static_cast<long long>(0), std::out_of_range,
+//         prefix << "Environment variable \""
+//         << environmentVariableName << "\" is supposed to be a size, "
+//         "but it has a negative integer value " << val << ".");
       if (sizeof(long long) > sizeof(size_t)) {
         // It's hard to test this code, but I want to try writing it
         // at least, in case we ever have to run on 32-bit machines or
@@ -271,12 +277,20 @@ namespace { // (anonymous)
     return false;
   }
 
+  constexpr bool timingDefault () {
+    return false;
+  }
+
   constexpr bool assumeMpiIsCudaAwareDefault () {
 #ifdef TPETRA_ASSUME_CUDA_AWARE_MPI
     return true;
 #else
     return false;
 #endif // TPETRA_ASSUME_CUDA_AWARE_MPI
+  }
+
+  constexpr bool hierarchicalUnpackDefault () {
+    return true;
   }
 
 } // namespace (anonymous)
@@ -300,6 +314,21 @@ bool Behavior::verbose ()
 
   constexpr char envVarName[] = "TPETRA_VERBOSE";
   constexpr bool defaultValue = verboseDefault ();
+
+  static bool value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariableAsBool (value_,
+                                                   initialized_,
+                                                   envVarName,
+                                                   defaultValue);
+}
+
+bool Behavior::timing ()
+{
+  if (BehaviorDetails::timingDisabled_) return false;
+
+  constexpr char envVarName[] = "TPETRA_TIMING";
+  constexpr bool defaultValue = timingDefault ();
 
   static bool value_ = defaultValue;
   static bool initialized_ = false;
@@ -347,9 +376,9 @@ size_t Behavior::verbosePrintCountThreshold ()
     (value_, initialized_, envVarName, defaultValue);
 }
 
-size_t Behavior::longRowMinNumEntries ()
+size_t Behavior::rowImbalanceThreshold ()
 {
-  constexpr char envVarName[] = "TPETRA_LONG_ROW_MIN_NUM_ENTRIES";
+  constexpr char envVarName[] = "TPETRA_ROW_IMBALANCE_THRESHOLD";
   constexpr size_t defaultValue (256);
 
   static size_t value_ = defaultValue;
@@ -358,7 +387,60 @@ size_t Behavior::longRowMinNumEntries ()
     (value_, initialized_, envVarName, defaultValue);
 }
 
-bool Behavior::profilingRegionUseTeuchosTimers () 
+bool Behavior::useMergePathMultiVector()
+{
+  constexpr char envVarName[] = "TPETRA_MULTIVECTOR_USE_MERGE_PATH";
+  constexpr bool defaultValue = false;
+
+  static bool value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariableAsBool
+    (value_, initialized_, envVarName, defaultValue);
+}
+
+  size_t Behavior::multivectorKernelLocationThreshold ()
+{
+  constexpr char envVarName[] = "TPETRA_VECTOR_DEVICE_THRESHOLD";
+  constexpr size_t defaultValue (10000);
+
+  static size_t value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariableAsSize
+    (value_, initialized_, envVarName, defaultValue);
+}
+
+size_t Behavior::hierarchicalUnpackBatchSize ()
+{
+  constexpr char envVarName[] = "TPETRA_HIERARCHICAL_UNPACK_BATCH_SIZE";
+
+#ifdef HAVE_TPETRA_INST_CUDA
+  constexpr size_t defaultValue (16);
+#else
+  constexpr size_t defaultValue (256);
+#endif
+
+  static size_t value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariableAsSize
+    (value_, initialized_, envVarName, defaultValue);
+}
+
+size_t Behavior::hierarchicalUnpackTeamSize ()
+{
+  constexpr char envVarName[] = "TPETRA_HIERARCHICAL_UNPACK_TEAM_SIZE";
+#ifdef HAVE_TPETRA_INST_CUDA
+  const size_t defaultValue (16);
+#else
+  const size_t defaultValue (Teuchos::OrdinalTraits<size_t>::invalid ());
+#endif
+
+  static size_t value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariableAsSize
+    (value_, initialized_, envVarName, defaultValue);
+}
+
+bool Behavior::profilingRegionUseTeuchosTimers ()
 {
   constexpr char envVarName[] = "TPETRA_USE_TEUCHOS_TIMERS";
   constexpr bool defaultValue(false);
@@ -369,7 +451,7 @@ bool Behavior::profilingRegionUseTeuchosTimers ()
     (value_, initialized_, envVarName, defaultValue);
 }
 
-bool Behavior::profilingRegionUseKokkosProfiling () 
+bool Behavior::profilingRegionUseKokkosProfiling ()
 {
   constexpr char envVarName[] = "TPETRA_USE_KOKKOS_PROFILING";
   constexpr bool defaultValue(false);
@@ -413,6 +495,41 @@ void Behavior::enable_verbose_behavior () {
 
 void Behavior::disable_verbose_behavior () {
   BehaviorDetails::verboseDisabled_ = true;
+}
+
+bool Behavior::timing (const char name[])
+{
+  if (BehaviorDetails::timingDisabled_) return false;
+
+  constexpr char envVarName[] = "TPETRA_TIMING";
+  constexpr bool defaultValue = false;
+
+  static bool initialized_ = false;
+  return idempotentlyGetNamedEnvironmentVariableAsBool (name,
+                                                        initialized_,
+                                                        envVarName,
+                                                        defaultValue);
+}
+
+void Behavior::enable_timing() {
+  BehaviorDetails::timingDisabled_ = false;
+}
+
+void Behavior::disable_timing() {
+  BehaviorDetails::timingDisabled_ = true;
+}
+
+bool Behavior::hierarchicalUnpack ()
+{
+  constexpr char envVarName[] = "TPETRA_HIERARCHICAL_UNPACK";
+  constexpr bool defaultValue = hierarchicalUnpackDefault();
+
+  static bool value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariableAsBool (value_,
+                                                   initialized_,
+                                                   envVarName,
+                                                   defaultValue);
 }
 
 } // namespace Details

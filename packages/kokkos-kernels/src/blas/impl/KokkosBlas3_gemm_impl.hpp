@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//               KokkosKernels 0.9: Linear Algebra and Graph Kernels
-//                 Copyright 2017 Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -44,7 +45,8 @@
 #ifndef KOKKOS_BLAS3_GEMM_IMPL_HPP_
 #define KOKKOS_BLAS3_GEMM_IMPL_HPP_
 
-#include<Kokkos_Core.hpp>
+#include <Kokkos_Core.hpp>
+#include "KokkosKernels_Macros.hpp"
 
 #ifdef KOKKOS_ENABLE_CXX14
 #ifdef KOKKOS_COMPILER_GNU
@@ -400,16 +402,10 @@ void impl_team_gemm_block(const TeamHandle& team, const ViewTypeC& C, const View
   const int blockB1 = B.extent_int(1);
 #endif
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team,blockA0), [&] (const int i) {
-#if defined(__CUDA_ARCH__) || !defined(KOKKOS_ENABLE_OPENMP)
+#ifndef KOKKOSKERNELS_ENABLE_OMP_SIMD
     Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,blockB1/4), [&] (const int B_j) {
 #else
-  #if defined(KOKKOS_COMPILER_GNU)
-    #if (KOKKOS_COMPILER_GNU > 485 )
     #pragma omp simd
-    #endif
-  #else
-    #pragma omp simd
-  #endif
     for(int B_j=0; B_j<blockB1/4; B_j++) {
 #endif
       ScalarC C_ij0 = 0;
@@ -427,7 +423,7 @@ void impl_team_gemm_block(const TeamHandle& team, const ViewTypeC& C, const View
       C(i,B_j+blockB1/4) += C_ij1;
       C(i,B_j+2*blockB1/4) += C_ij2;
       C(i,B_j+3*blockB1/4) += C_ij3;
-#if defined(__CUDA_ARCH__) || !defined(KOKKOS_ENABLE_OPENMP)
+#ifndef KOKKOSKERNELS_ENABLE_OMP_SIMD
     });
 #else
     }

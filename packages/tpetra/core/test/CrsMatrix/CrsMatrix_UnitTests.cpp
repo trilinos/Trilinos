@@ -45,6 +45,7 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Details_getNumDiags.hpp"
+#include "Tpetra_Details_residual.hpp"
 
 // TODO: add test where some nodes have zero rows
 // TODO: add test where non-"zero" graph is used to build matrix; if no values are added to matrix, the operator effect should be zero. This tests that matrix values are initialized properly.
@@ -332,6 +333,94 @@ namespace { // (anonymous)
     }
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, ImbalancedRowMatrix, LO, GO, Scalar, Node )
+  {
+    typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> MAT;
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
+    typedef Tpetra::Vector<Scalar,LO,GO,Node> V;
+    typedef typename ST::magnitudeType Mag;
+    typedef Teuchos::ScalarTraits<Mag> MT;
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    // create a Map
+    const size_t numLocalRows = 10;
+    // compute the number of entries in the long rows required to trigger the imbalanced row apply
+    // this isn't quite the minimum but it works: numLocalRows * 5 + Behavior::rowImbalanceThreshold()
+    const size_t numLocalColumns = 1 + (5 + 1.5 * Tpetra::Details::Behavior::rowImbalanceThreshold()) / (1.0 - 1.0 / numLocalRows);
+    const size_t numVecs = 2;
+    const int numRanks = comm->getSize();
+    RCP<const Tpetra::Map<LO,GO,Node> > rowMap =
+      createContigMapWithNode<LO,GO,Node>(numLocalRows * numRanks, numLocalRows, comm);
+    RCP<const Tpetra::Map<LO,GO,Node> > colMap =
+      createContigMapWithNode<LO,GO,Node>(numLocalColumns * numRanks, numLocalColumns, comm);
+    //Create a matrix that is dense in the last row on each proc, but has 5 entries in every other row
+    Teuchos::Array<size_t> entriesPerRow(numLocalRows);
+    for(size_t i = 0; i < numLocalRows - 1; i++)
+      entriesPerRow[i] = 5;
+    entriesPerRow[numLocalRows - 1] = numLocalColumns;
+    MAT imba(rowMap, colMap, entriesPerRow());
+    //Insert 1 as value in all entries.
+    Teuchos::Array<Scalar> vals(numLocalColumns, ST::one());
+    Teuchos::Array<LO> cols(numLocalColumns);
+    for(size_t i = 0; i < numLocalColumns; i++)
+      cols[i] = i;
+    auto valsView = vals();
+    auto colsView = cols();
+    for(size_t i = 0; i < numLocalRows - 1; i++)
+      imba.insertLocalValues(i, colsView.view(0, 5), valsView.view(0, 5));
+    imba.insertLocalValues(numLocalRows - 1, colsView, valsView);
+    imba.fillComplete(colMap, rowMap);
+    //auto fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    //imba.describe(*fancy,Teuchos::VERB_EXTREME);
+    auto domainMap = imba.getDomainMap();
+    //Input vector: elements are all 1s
+    MV w(domainMap, numVecs, false);
+    w.putScalar(ST::one());
+    //Output vector: zero initially
+    //note: rowMap is non-overlapping so this is OK
+    MV v(rowMap, numVecs, true);
+    //Do the apply. If cuSPARSE is enabled, the merge path algorithm will be used. Otherwise, this tests the fallback.
+    imba.apply(w, v);
+    Teuchos::Array<Scalar> vvals(numLocalRows * numVecs);
+    v.get1dCopy(vvals(), numLocalRows);
+    //Each output value should be equal to the number of entries in the row.
+    //These are smallish integers so they should be represented exactly in 32- or 64-bit floating point
+    for(size_t vec = 0; vec < numVecs; vec++)
+    {
+      size_t vecOffset = vec * numLocalRows;
+      for(size_t i = 0; i < numLocalRows - 1; i++)
+      {
+        TEST_EQUALITY(static_cast<Mag>(5.0) * ST::one(), vvals[vecOffset + i]);
+      }
+      TEST_EQUALITY(static_cast<Mag>(numLocalColumns) * ST::one(), vvals[vecOffset + numLocalRows - 1]);
+    }
+    if(numVecs != 1)
+    {
+      //Now run again, but on single vectors only (rank-1)
+      auto wcol = w.getVector(0);
+      auto vcol = v.getVectorNonConst(0);
+      vcol->putScalar(ST::zero());
+      imba.apply(*wcol, *vcol);
+      vcol->get1dCopy(vvals(), numLocalRows);
+      for(size_t i = 0; i < numLocalRows - 1; i++)
+      {
+        TEST_EQUALITY(static_cast<Mag>(5.0) * ST::one(), vvals[i]);
+      }
+      TEST_EQUALITY(static_cast<Mag>(numLocalColumns) * ST::one(), vvals[numLocalRows - 1]);
+      //Finally, test residual.
+      V res(rowMap);
+      //Here, have A*wcol = vcol. This means the residual of A, wcol, and vcol should be 0.
+      Tpetra::Details::residual(imba, *wcol, *vcol, res);
+      Teuchos::Array<Scalar> resVals(numLocalRows);
+      res.get1dCopy(resVals(), numLocalRows);
+      for(size_t i = 0; i < numLocalRows; i++)
+      {
+        TEST_EQUALITY(ST::zero(), resVals[i]);
+      }
+    }
+  }
+
 //
 // INSTANTIATIONS
 //
@@ -339,6 +428,7 @@ namespace { // (anonymous)
 #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, TheEyeOfTruth,  LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ZeroMatrix,     LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ImbalancedRowMatrix, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, BadCalls,       LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, SimpleEigTest,  LO, GO, SCALAR, NODE )
 

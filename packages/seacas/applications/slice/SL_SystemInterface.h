@@ -1,35 +1,8 @@
-// Copyright(C) 2016-2017 National Technology & Engineering Solutions of
-// Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above
-//   copyright notice, this list of conditions and the following
-//   disclaimer in the documentation and/or other materials provided
-//   with the distribution.
-//
-// * Neither the name of NTESS nor the names of its
-//   contributors may be used to endorse or promote products derived
-//   from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
+// 
+// See packages/seacas/LICENSE for details
 #ifndef Sierra_SystemInterface_h
 #define Sierra_SystemInterface_h
 
@@ -62,6 +35,7 @@ public:
   int step_max() const { return stepMax_; }
   int step_interval() const { return stepInterval_; }
 
+  size_t max_files() const { return maxFiles_; }
   size_t partial() const { return partialReadCount_; }
   bool   contiguous_decomposition() const { return contig_; }
 
@@ -106,16 +80,24 @@ private:
   std::string outputPath_;
 
   size_t partialReadCount_{1000000000};
+  size_t maxFiles_{1020};
   int    processorCount_{1};
   int    debugLevel_{0};
   int    screenWidth_{0};
   int    stepMin_{1};
   int    stepMax_{1 << 30};
   int    stepInterval_{1};
-  bool   omitNodesets_{false};
-  bool   omitSidesets_{false};
-  bool   disableFieldRecognition_{false};
-  bool   contig_{false};
+
+public:
+  int  compressionLevel_{0};
+  bool shuffle_{false};
+  bool ints64Bit_{false};
+  bool netcdf4_{false};
+  bool netcdf5_{false};
+  bool disableFieldRecognition_{false};
+
+private:
+  bool contig_{false};
 
   Omissions blockOmissions_;
 

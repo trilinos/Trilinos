@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 2.0
-//              Copyright (2014) Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -124,7 +125,7 @@ struct MultipleTaskQueueTeamEntry {
   KOKKOS_INLINE_FUNCTION OptionalRef<task_base_type> _pop_failed_insertion(
       int priority, TaskType type,
       typename std::enable_if<
-          task_queue_traits::ready_queue_insertion_may_fail and
+          task_queue_traits::ready_queue_insertion_may_fail &&
               std::is_void<_always_void>::value,
           void*>::type = nullptr) {
     auto* rv_ptr = m_failed_heads[priority][(int)type];
@@ -141,9 +142,9 @@ struct MultipleTaskQueueTeamEntry {
 
   template <class _always_void = void>
   KOKKOS_INLINE_FUNCTION OptionalRef<task_base_type> _pop_failed_insertion(
-      int priority, TaskType type,
+      int /*priority*/, TaskType /*type*/,
       typename std::enable_if<
-          not task_queue_traits::ready_queue_insertion_may_fail and
+          !task_queue_traits::ready_queue_insertion_may_fail &&
               std::is_void<_always_void>::value,
           void*>::type = nullptr) {
     return OptionalRef<task_base_type>{nullptr};
@@ -180,13 +181,13 @@ struct MultipleTaskQueueTeamEntry {
     auto return_value = OptionalRef<task_base_type>{};
     for (int i_priority = 0; i_priority < NumPriorities; ++i_priority) {
       return_value = _pop_failed_insertion(i_priority, TaskTeam);
-      if (not return_value)
+      if (!return_value)
         return_value = m_ready_queues[i_priority][TaskTeam].pop();
       if (return_value) return return_value;
 
       // Check for a single task with this priority
       return_value = _pop_failed_insertion(i_priority, TaskSingle);
-      if (not return_value)
+      if (!return_value)
         return_value = m_ready_queues[i_priority][TaskSingle].pop();
       if (return_value) return return_value;
     }
@@ -202,7 +203,7 @@ struct MultipleTaskQueueTeamEntry {
   KOKKOS_INLINE_FUNCTION void do_handle_failed_insertion(
       runnable_task_base_type&& task,
       typename std::enable_if<
-          task_queue_traits::ready_queue_insertion_may_fail and
+          task_queue_traits::ready_queue_insertion_may_fail &&
               std::is_void<_always_void>::value,
           void*>::type = nullptr) {
     // failed insertions, if they happen, must be from the only thread that
@@ -216,9 +217,9 @@ struct MultipleTaskQueueTeamEntry {
 
   template <class _always_void = void>
   KOKKOS_INLINE_FUNCTION void do_handle_failed_insertion(
-      runnable_task_base_type&& task,
+      runnable_task_base_type&& /*task*/,
       typename std::enable_if<
-          not task_queue_traits::ready_queue_insertion_may_fail and
+          !task_queue_traits::ready_queue_insertion_may_fail &&
               std::is_void<_always_void>::value,
           void*>::type = nullptr) {
     Kokkos::abort("should be unreachable!");
@@ -228,7 +229,7 @@ struct MultipleTaskQueueTeamEntry {
   KOKKOS_INLINE_FUNCTION void flush_failed_insertions(
       int priority, int task_type,
       typename std::enable_if<
-          task_queue_traits::ready_queue_insertion_may_fail and
+          task_queue_traits::ready_queue_insertion_may_fail &&
               std::is_void<_always_void>::value,  // just to make this dependent
                                                   // on template parameter
           int>::type = 0) {
@@ -257,7 +258,7 @@ struct MultipleTaskQueueTeamEntry {
   KOKKOS_INLINE_FUNCTION void flush_failed_insertions(
       int, int,
       typename std::enable_if<
-          not task_queue_traits::ready_queue_insertion_may_fail and
+          !task_queue_traits::ready_queue_insertion_may_fail &&
               std::is_void<_always_void>::value,  // just to make this dependent
                                                   // on template parameter
           int>::type = 0) {}
@@ -334,22 +335,22 @@ class MultipleTaskQueue final
     constexpr explicit SchedulerInfo(team_queue_id_t association) noexcept
         : team_association(association) {}
 
-    KOKKOS_INLINE_FUNCTION
+    KOKKOS_DEFAULTED_FUNCTION
     SchedulerInfo() = default;
 
-    KOKKOS_INLINE_FUNCTION
+    KOKKOS_DEFAULTED_FUNCTION
     SchedulerInfo(SchedulerInfo const&) = default;
 
-    KOKKOS_INLINE_FUNCTION
+    KOKKOS_DEFAULTED_FUNCTION
     SchedulerInfo(SchedulerInfo&&) = default;
 
-    KOKKOS_INLINE_FUNCTION
+    KOKKOS_DEFAULTED_FUNCTION
     SchedulerInfo& operator=(SchedulerInfo const&) = default;
 
-    KOKKOS_INLINE_FUNCTION
+    KOKKOS_DEFAULTED_FUNCTION
     SchedulerInfo& operator=(SchedulerInfo&&) = default;
 
-    KOKKOS_INLINE_FUNCTION
+    KOKKOS_DEFAULTED_FUNCTION
     ~SchedulerInfo() = default;
   };
 
@@ -437,7 +438,7 @@ class MultipleTaskQueue final
 
     return_value = team_queue_info.pop_ready_task();
 
-    if (not return_value) {
+    if (!return_value) {
       // loop through the rest of the teams and try to steal
       for (auto isteal = (team_association + 1) % this->n_queues();
            isteal != team_association;
@@ -483,32 +484,32 @@ class MultipleTaskQueue final
   // Provide a sensible default that can be overridden
   KOKKOS_INLINE_FUNCTION
   void update_scheduling_info_from_completed_predecessor(
-      runnable_task_base_type& ready_task,
-      runnable_task_base_type const& predecessor) const {
+      runnable_task_base_type& /*ready_task*/,
+      runnable_task_base_type const& /*predecessor*/) const {
     // Do nothing; we're using the extra storage for the failure linked list
   }
 
   // Provide a sensible default that can be overridden
   KOKKOS_INLINE_FUNCTION
   void update_scheduling_info_from_completed_predecessor(
-      aggregate_task_type& aggregate,
-      runnable_task_base_type const& predecessor) const {
+      aggregate_task_type& /*aggregate*/,
+      runnable_task_base_type const& /*predecessor*/) const {
     // Do nothing; we're using the extra storage for the failure linked list
   }
 
   // Provide a sensible default that can be overridden
   KOKKOS_INLINE_FUNCTION
   void update_scheduling_info_from_completed_predecessor(
-      aggregate_task_type& aggregate,
-      aggregate_task_type const& predecessor) const {
+      aggregate_task_type& /*aggregate*/,
+      aggregate_task_type const& /*predecessor*/) const {
     // Do nothing; we're using the extra storage for the failure linked list
   }
 
   // Provide a sensible default that can be overridden
   KOKKOS_INLINE_FUNCTION
   void update_scheduling_info_from_completed_predecessor(
-      runnable_task_base_type& ready_task,
-      aggregate_task_type const& predecessor) const {
+      runnable_task_base_type& /*ready_task*/,
+      aggregate_task_type const& /*predecessor*/) const {
     // Do nothing; we're using the extra storage for the failure linked list
   }
 

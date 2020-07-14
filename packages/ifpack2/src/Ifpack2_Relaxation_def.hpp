@@ -1119,9 +1119,10 @@ void Relaxation<MatrixType>::compute ()
     // Teuchos::ScalarTraits when its template parameter is not a
     // floating-point type.  (Ifpack2 sometimes gets instantiated for
     // integer Scalar types.)
-    const IST oneOverMinDiagVal = (MinDiagonalValue_ == zero) ?
-      KAT::one () / static_cast<IST> (SmallTraits<scalar_type>::eps ()) :
-      KAT::one () / static_cast<IST> (MinDiagonalValue_);
+    IST oneOverMinDiagVal = KAT::one () / static_cast<IST> (SmallTraits<scalar_type>::eps ());
+    if ( MinDiagonalValue_ != zero) 
+      oneOverMinDiagVal = KAT::one () / static_cast<IST> (MinDiagonalValue_);
+      
     // It's helpful not to have to recompute this magnitude each time.
     const magnitude_type minDiagValMag = STS::magnitude (MinDiagonalValue_);
 

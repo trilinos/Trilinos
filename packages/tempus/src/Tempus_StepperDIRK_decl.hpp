@@ -11,10 +11,11 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_StepperRKBase.hpp"
-#include "Tempus_RKButcherTableau.hpp"
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluator.hpp"
-#include "Tempus_StepperRKObserverComposite.hpp"
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+  #include "Tempus_StepperRKObserverComposite.hpp"
+#endif
 
 
 namespace Tempus {
@@ -66,47 +67,53 @@ namespace Tempus {
  *
  *  \f{algorithm}{
  *  \renewcommand{\thealgorithm}{}
- *  \caption{DIRK (Diagonally Implicit Runge-Kutta)}
+ *  \caption{DIRK with the application-action locations indicated.}
  *  \begin{algorithmic}[1]
- *  \If {``Reset initial guess.''}
- *    \State $X \leftarrow x_{n-1}$
- *      \Comment{Reset initial guess to last timestep.}
- *  \EndIf
- *  \For {$i = 0 \ldots s-1$}        \Comment{Stage loop.}
- *    \If {$A(k,i) = 0 \;\forall k = (i+1,\ldots, s-1)$, $b(i) = 0$
- *         and $b^\ast(i) = 0$}
- *       \State $\dot{X}_i \leftarrow 0$
- *         \Comment{Not needed for later calculations.}
- *       \State {\bf continue}
+ *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
+ *    \If {``Reset initial guess.''}
+ *      \State $X \leftarrow x_{n-1}$
+ *        \Comment{Reset initial guess to last timestep.}
  *    \EndIf
- *    \State $\tilde{X} \leftarrow
+ *    \For {$i = 0 \ldots s-1$}
+ *      \If { $a_{k,i} = 0 \;\forall k = (i+1,\ldots, s-1)$, $b(i) = 0$, $b^\ast(i) = 0$}
+ *        \State $\dot{X}_i \leftarrow 0$
+ *          \Comment{Not needed for later calculations.}
+ *        \State {\bf continue}
+ *      \EndIf
+ *      \State $\tilde{X} \leftarrow
  *                      x_{n-1} +\Delta t \sum_{j=1}^{i-1} a_{ij}\,\dot{X}_{j}$
- *    \If {$a_{ii} = 0$}             \Comment{Explicit stage.}
- *      \If {$i=0$ and ``Use FSAL''} \Comment{Save an evaluation?}
- *        \State $\dot{X}_0 \leftarrow \dot{X}_{s-1}$
- *                          \Comment{Use $\dot{X}_{s-1}$ from $n-1$ time step.}
- *      \Else
- *        \State $\dot{X}_i \leftarrow \bar{f}(\tilde{X},t_{n-1}+c_i\Delta t)$
- *      \EndIf
- *    \Else                          \Comment{Implicit stage.}
- *      \If {``Zero initial guess.''}
- *        \State $X \leftarrow 0$
- *          \Comment{Else use previous stage value as initial guess.}
- *      \EndIf
- *      \State Solve $\mathcal{F}_i(
+ *      \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STAGE)}
+ *      \If {$a_{ii} = 0$}             \Comment{Explicit stage.}
+ *        \If {$i=0$ and ``Use FSAL''} \Comment{Save an evaluation?}
+ *          \State $\dot{X}_0 \leftarrow \dot{X}_{s-1}$
+ *            \Comment{Use $\dot{X}_{s-1}$ from $n-1$ time step.}
+ *        \Else
+ *          \State $\dot{X}_i \leftarrow \bar{f}(\tilde{X},t_{n-1}+c_i\Delta t)$
+ *        \EndIf
+ *      \Else                          \Comment{Implicit stage.}
+ *        \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_SOLVE)}
+ *        \If {``Zero initial guess.''}
+ *          \State $X \leftarrow 0$
+ *            \Comment{Else use previous stage value as initial guess.}
+ *        \EndIf
+ *        \State Solve $\mathcal{F}_i(
  *                      \dot{X}_i = \frac{X - \tilde{X}}{a_{ii} \Delta t},
  *                      X, t_{n-1}+c_{i}\Delta t) = 0$ for $X$
- *      \State $\dot{X}_i \leftarrow \frac{X - \tilde{X}}{a_{ii} \Delta t}$
+ *        \State {\it appAction.execute(solutionHistory, stepper, AFTER\_SOLVE)}
+ *        \State $\dot{X}_i \leftarrow \frac{X - \tilde{X}}{a_{ii} \Delta t}$
+ *      \EndIf
+ *      \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}
+ *      \State {\it appAction.execute(solutionHistory, stepper, END\_STAGE)}
+ *    \EndFor
+ *    \State $x_n \leftarrow x_{n-1} + \Delta t\,\sum_{i=0}^{s-1}b_i\,\dot{X}_i$
+ *    \If {``Embedded''}  \Comment{Compute the local truncation error estimate.}
+ *      \State $\mathbf{e} \leftarrow
+ *                         \sum_{i=0}^{s-1} (b_i-b^\ast_i)\Delta t\,\dot{X}_i$
+ *      \State $\tilde{\mathbf{e}} \leftarrow
+ *             \mathbf{e}/(a_{tol} + \max(\|x_n\|, \|x_{n-1}\|)r_{tol})$
+ *      \State $e_n \leftarrow \|\tilde{\mathbf{e}}\|_\infty$
  *    \EndIf
- *  \EndFor
- *  \State $x_n \leftarrow x_{n-1} + \Delta t\,\sum_{i=0}^{s-1}b_i\,\dot{X}_i$
- *  \If {``Embedded''}  \Comment{Compute the local truncation error estimate.}
- *    \State $\mathbf{e} \leftarrow
- *                       \sum_{i=0}^{s-1} (b_i-b^\ast_i)\Delta t\,\dot{X}_i$
- *    \State $\tilde{\mathbf{e}} \leftarrow
- *           \mathbf{e}/(a_{tol} + \max(\|x_n\|, \|x_{n-1}\|)r_{tol})$
- *    \State $e_n \leftarrow \|\tilde{\mathbf{e}}\|_\infty$
- *  \EndIf
+ *    \State {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
  *  \end{algorithmic}
  *  \f}
  *
@@ -150,15 +157,13 @@ public:
 
   /// \name Basic stepper methods
   //@{
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
     virtual void setObserver(
       Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
-    virtual Teuchos::RCP<const RKButcherTableau<Scalar> > getTableau()
-    { return tableau_; }
-
     virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
     { return this->stepperObserver_; }
-
+#endif
     /// Initialize after construction and changing input parameters.
     virtual void initialize();
 
@@ -178,14 +183,11 @@ public:
 
     /// Get a default (initial) StepperState
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> >getDefaultStepperState();
-    virtual Scalar getOrder()    const{return tableau_->order();}
-    virtual Scalar getOrderMin() const{return tableau_->orderMin();}
-    virtual Scalar getOrderMax() const{return tableau_->orderMax();}
 
     virtual bool isExplicit() const
     {
-      const int numStages = tableau_->numStages();
-      Teuchos::SerialDenseMatrix<int,Scalar> A = tableau_->A();
+      const int numStages = this->tableau_->numStages();
+      Teuchos::SerialDenseMatrix<int,Scalar> A = this->tableau_->A();
       bool isExplicit = false;
       for (int i=0; i<numStages; ++i) if (A(i,i) == 0.0) isExplicit = true;
       return isExplicit;
@@ -210,7 +212,7 @@ public:
   /// Return alpha = d(xDot)/dx.
   virtual Scalar getAlpha(const Scalar dt) const
   {
-    const Teuchos::SerialDenseMatrix<int,Scalar> & A=tableau_->A();
+    const Teuchos::SerialDenseMatrix<int,Scalar> & A=this->tableau_->A();
     return Scalar(1.0)/(dt*A(0,0));  // Getting the first diagonal coeff!
   }
   /// Return beta  = d(x)/dx.
@@ -241,6 +243,7 @@ protected:
   virtual void setupDefault();
 
   /// Setup for constructor.
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   virtual void setup(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& wrapperModel,
     const Teuchos::RCP<StepperRKObserver<Scalar> >& obs,
@@ -250,16 +253,25 @@ protected:
     bool ICConsistencyCheck,
     bool useEmbedded,
     bool zeroInitialGuess);
+#endif
+  virtual void setup(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& wrapperModel,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool useEmbedded,
+    bool zeroInitialGuess,
+    const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction);
 
   virtual void setupTableau() = 0;
-
-  Teuchos::RCP<RKButcherTableau<Scalar> >                tableau_;
 
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > stageXDot_;
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               xTilde_;
 
-  Teuchos::RCP<StepperRKObserverComposite<Scalar> >        stepperObserver_;
-
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+  Teuchos::RCP<StepperRKObserverComposite<Scalar> >      stepperObserver_;
+#endif
 
   // For Embedded RK
   bool useEmbedded_;

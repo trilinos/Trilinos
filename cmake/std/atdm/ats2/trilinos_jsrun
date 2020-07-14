@@ -40,62 +40,69 @@ function debug_print {
 }
 
 ################################################################################
-# @brief: Hack around JSM server error "Error: Remote JSM server is not
-# responding"
+# @brief: Evaluate the jsrun command and return the jsrun return value.
 # This function assumes that "args" has been initialized
-# @return void
+# @return the jsrun return value
 ################################################################################
 function evaluate_jsrun_command {
   local jsrun_ret
-  local out_file
-  local retry
-  local grep_status
+  #local out_file
+  #local retry
+  #local grep_status
 
-  # Create process ID specific output file
-  # Instead of attempting to find the test name in $@, let's use
-  # the hash of the test command to avoid race conditions.
-  out_file=$(printf "'%s' " "${args[@]}" | md5sum | awk '{print $1".out"}')
+  # Use the hash of the test name and arguments as the output file. This still
+  # causes race conditions among tests as some tests run the same exe with the
+  # same arguments but post to a different ctest test names. We need the ctest
+  # test name in the environment.
+  #out_file=$(printf "'%s' " "${args[@]}" | md5sum | awk '{print $1".out"}')
+  #out_file="$CTEST_TEST_NAME"."$out_file"
 
   if [ "$ECHO_CMD" == "1" ]; then
     echo "BEFORE: jsrun " $(printf "'%s' " "${orig_args[@]}")
-    echo "AFTER: export TPETRA_ASSUME_CUDA_AWARE_MPI=${TPETRA_ASSUME_CUDA_AWARE_MPI}; jsrun " $(printf "'%s' " "${args[@]}")
+    echo "AFTER: export TPETRA_ASSUME_CUDA_AWARE_MPI=${TPETRA_ASSUME_CUDA_AWARE_MPI}; jsrun " \
+      $(printf "'%s' " "${args[@]}")
   fi
 
   # Set retry, assume JSRUN_WRAPPER_NUM_RETRIES is valid if set
-  if [[ ! "$JSRUN_WRAPPER_NUM_RETRIES" == "" ]]; then
-    retry=${JSRUN_WRAPPER_NUM_RETRIES}
-  else
-    retry=3
-  fi
-  grep_status=0
+  #if [[ ! "$JSRUN_WRAPPER_NUM_RETRIES" == "" ]]; then
+  #  retry=${JSRUN_WRAPPER_NUM_RETRIES}
+  #else
+  #  retry=3
+  #fi
+  #grep_status=0
 
   # Retry jsrun command until retry is exhausted or JSM server error is not found
-  while [[ $grep_status -eq 0 && $retry -ne 0 ]]; do
+  #while [[ $grep_status -eq 0 && $retry -ne 0 ]]; do
     # Evaluate the command passed in and redirect all output
-    eval jsrun $(printf "'%s' " "${args[@]}") &> $out_file
-    jsrun_ret=$?
+    #eval jsrun $(printf "'%s' " "${args[@]}") &> $out_file
+    #jsrun_ret=$?
 
-    grep 'Error: Remote JSM server is not responding' $out_file &> /dev/null
-    grep_status=$?
+    #grep 'Error: Remote JSM server is not responding' $out_file &> /dev/null
+    #grep_status=$?
 
     # Sleep for a few seconds before retrying the test.
-    if [[ $grep_status -eq 0 && $retry -ne 1 ]]; then
-      sleep 3
-    fi
+    #if [[ $grep_status -eq 0 && $retry -ne 1 ]]; then
+    #  sleep 3
+    #fi
 
-    retry=$((retry-1))
-  done
+    #retry=$((retry-1))
+  #done
 
-  if [ "$ECHO_CMD" == "1" ]; then
-    echo "out_file=$out_file"
-  fi
-  cat $out_file
-  rm $out_file
+  #if [ "$ECHO_CMD" == "1" ]; then
+  #  echo "out_file=$out_file"
+  #fi
+  #cat $out_file
+  #rm $out_file
+  eval jsrun $(printf "'%s' " "${args[@]}")
+  jsrun_ret=$?
+  echo "jsrun return value: ${jsrun_ret}"
   return $jsrun_ret
 }
 
 # Check if TPETRA_ASSUME_CUDA_AWARE_MPI is set and default to 0 if unset.
-if [[ "$TPETRA_ASSUME_CUDA_AWARE_MPI" != "0" ]] && [[ "$TPETRA_ASSUME_CUDA_AWARE_MPI" != "1" ]]; then
+if [[ "$TPETRA_ASSUME_CUDA_AWARE_MPI" != "0" ]] && \
+   [[ "$TPETRA_ASSUME_CUDA_AWARE_MPI" != "1" ]] \
+  ; then
   echo "WARNING, you have not set TPETRA_ASSUME_CUDA_AWARE_MPI=0 or 1, defaulting to TPETRA_ASSUME_CUDA_AWARE_MPI=0"
   export TPETRA_ASSUME_CUDA_AWARE_MPI=0
 fi
@@ -155,7 +162,8 @@ if [ "$np_is_one" == "true" ]; then
     if [ "$arg" == "-M" ]; then
       debug_print "arg=$arg, found -M, prepending -disable_gpu_hooks"
       ip1=$(($i+1));
-      # single quotes matter, as the argument to -M needs to be all args originally quoted to it
+      # single quotes matter, as the argument to -M needs to be all args
+      # originally quoted to it
       args[${ip1}]="-disable_gpu_hooks ${args[${ip1}]}"
       debug_print "updated arg = ${args[${ip1}]}"
       added_disable="true"
@@ -184,7 +192,8 @@ if [[ "$TPETRA_ASSUME_CUDA_AWARE_MPI" == "1" ]] && [[ "$np_is_one" == "false" ]]
     if [ "$arg" == "-M" ]; then
       debug_print "arg=$arg, found -M, prepending -gpu"
       ip1=$(($i+1));
-      # single quotes matter, as the argument to -M needs to be all args originally quoted to it
+      # single quotes matter, as the argument to -M needs to be all args
+      # originally quoted to it
       args[${ip1}]="-gpu ${args[${ip1}]}"
       added_arg="true"
       break

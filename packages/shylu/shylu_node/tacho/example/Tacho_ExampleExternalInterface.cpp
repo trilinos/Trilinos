@@ -79,6 +79,25 @@ void testTachoSolver(int numRows,
   solver.Initialize(numRows, rowBegin, columns, values);
   Kokkos::fence();
 
+
+  ///
+  /// Export supernodes
+  ///
+  std::vector<int> supernodes;
+  solver.exportSupernodes(supernodes);
+
+  ///
+  /// Export matrix and permutation vector
+  ///
+  std::vector<int> rowBeginU;
+  std::vector<int> columnsU;
+  std::vector<int> perm;
+  std::vector<double> valuesU;
+
+  solver.exportUpperTriangularFactorsToCrsMatrix(rowBeginU,
+                                                 columnsU,
+                                                 valuesU,
+                                                 perm);
   ///
   /// std vector right hand side
   /// if an application uses std vector for interfacing rhs,

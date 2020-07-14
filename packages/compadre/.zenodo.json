@@ -1,0 +1,32 @@
+  {
+    "title": "Compadre Toolkit",
+    "access_right": "open", 
+    "creators": [
+      {
+        "affiliation": "Center for Computing Research, Sandia National Laboratories", 
+        "name": "Paul Kuberry", 
+        "orcid": "0000-0002-2426-4591"
+      }, 
+      {
+        "affiliation": "Center for Computing Research, Sandia National Laboratories", 
+        "name": "Peter Bosler", 
+        "orcid": "0000-0002-3356-0296"
+      }, 
+      {
+        "affiliation": "Center for Computing Research, Sandia National Laboratories", 
+        "name": "Nathaniel Trask", 
+        "orcid": "0000-0003-1575-6380"
+      }
+    ],
+    "keywords": [
+      "compatible", 
+      "particle", 
+      "discretization", 
+      "remap", 
+      "meshless"
+    ], 
+    "language": "eng", 
+    "license": {
+      "id": "BSD-2-Clause"
+    }
+  }
