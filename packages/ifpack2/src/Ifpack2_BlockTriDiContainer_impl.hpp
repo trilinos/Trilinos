@@ -2094,6 +2094,7 @@ namespace KB = KokkosBatched::Experimental;
 	     [&]() {
 	       extract(partidx, npacks);
 	     });
+          member.team_barrier();
           Kokkos::parallel_for
             (Kokkos::ThreadVectorRange(member, vector_loop_size),
 	     [&](const local_ordinal_type &v) {
