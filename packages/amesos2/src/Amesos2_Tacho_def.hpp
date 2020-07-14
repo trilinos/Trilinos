@@ -135,22 +135,18 @@ TachoSolver<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector
   // also don't allocate x since we will also use do_get to allocate this if
   // necessary. When a copy is not necessary we'll solve directly to the x
   // values in the MV.
+  bool bDidAssignX;
   {                             // Get values from RHS B
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif
     Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-                             device_solve_array_t>::do_get(B, this->bValues_,
+                             device_solve_array_t>::do_get(true, B, this->bValues_,
                                                as<size_t>(ld_rhs),
                                                ROOTED, this->rowIndexBase_);
-
-    // If it's not a match and we copy instead of ptr assignement, we will
-    // copy the x values here when we just wanted to get uninitialized space.
-    // MDM-DISCUSS Need to decide how to request the underlying API to learn
-    // whether we will need to copy or not.
-    Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-                             device_solve_array_t>::do_get(X, this->xValues_,
+    bDidAssignX = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+                             device_solve_array_t>::do_get(false, X, this->xValues_,
                                                as<size_t>(ld_rhs),
                                                ROOTED, this->rowIndexBase_);
   }
@@ -182,7 +178,7 @@ TachoSolver<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector
     "tacho_solve has error code: " << ierr );
 
   /* Update X's global values */
-  {
+  if(!bDidAssignX) { // if bDidAssignX, then we solved straight to the adapter's X memory space
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif

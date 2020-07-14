@@ -174,6 +174,7 @@ Basker<Matrix,Vector>::solve_impl(
   const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
   const size_t nrhs = X->getGlobalNumVectors();
 
+  bool bDidAssignX;
   {                             // Get values from RHS B
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
@@ -183,29 +184,29 @@ Basker<Matrix,Vector>::solve_impl(
     if ( single_proc_optimization() && nrhs == 1 ) {
       // no msp creation
       Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-        host_solve_array_t>::do_get(B, bValues_, as<size_t>(ld_rhs));
+        host_solve_array_t>::do_get(true, B, bValues_, as<size_t>(ld_rhs));
 
-      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-        host_solve_array_t>::do_get(X, xValues_, as<size_t>(ld_rhs));
+      bDidAssignX = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+        host_solve_array_t>::do_get(false, X, xValues_, as<size_t>(ld_rhs));
     }
     else {
       if ( is_contiguous_ == true ) {
         Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-          host_solve_array_t>::do_get(B, bValues_, as<size_t>(ld_rhs), ROOTED, this->rowIndexBase_);
+          host_solve_array_t>::do_get(true, B, bValues_, as<size_t>(ld_rhs), ROOTED, this->rowIndexBase_);
       }
       else {
         Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-          host_solve_array_t>::do_get(B, bValues_, as<size_t>(ld_rhs), CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
+          host_solve_array_t>::do_get(true, B, bValues_, as<size_t>(ld_rhs), CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
       }
 
       // See Amesos2_Tacho_def.hpp for notes on why we 'get' x here.
       if ( is_contiguous_ == true ) {
-        Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-          host_solve_array_t>::do_get(X, xValues_, as<size_t>(ld_rhs), ROOTED, this->rowIndexBase_);
+        bDidAssignX = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+          host_solve_array_t>::do_get(false, X, xValues_, as<size_t>(ld_rhs), ROOTED, this->rowIndexBase_);
       }
       else {
-        Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-          host_solve_array_t>::do_get(X, xValues_, as<size_t>(ld_rhs), CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
+        bDidAssignX = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+          host_solve_array_t>::do_get(false, X, xValues_, as<size_t>(ld_rhs), CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
       }
     }
   }
@@ -230,11 +231,10 @@ Basker<Matrix,Vector>::solve_impl(
       std::runtime_error,
       "Could not alloc needed working memory for solve" );
 
-  {
+  if(!bDidAssignX) { // if bDidAssignX, then we solved straight to the adapter's X memory space
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif
-
     if ( is_contiguous_ == true ) {
       Util::put_1d_data_helper_kokkos_view<
         MultiVecAdapter<Vector>,host_solve_array_t>::do_put(X, xValues_,

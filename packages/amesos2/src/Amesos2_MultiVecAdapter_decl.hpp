@@ -284,24 +284,60 @@ namespace Amesos2 {
               const size_t ldx);
     };
 
+    // These methods take an input bInitialize and return a bool for bAssigned.
+    // The purpose of these two flags is to properly handle differences in logic
+    // for x and b when solving and avoid unecessary copies.
+    // Solvers should set bInitialize false for x and set bInitialize true for b.
+    // The view kokkos_vals can be uninitialized (0 size) when passed in.
+    // If the adapter can directly assign x or b to it's own memory spacee it will,
+    // and then no deep_copy will occur. Then bInitialize won't matter.
+    // However if the memory space or types don't match, the adapter will allocate
+    // the size of kokkos_vals and then, if bInitialize is true, copy it's values
+    // with deep_copy. This copy is only necessary for b, not x.
+    // If the adapter could directly assign the memory space the method will
+    // return true. Then the solver can skip doing a 'put X' because the solve
+    // happens directly in the adapter's memory space. Also Klu2 and SuperLU
+    // have special considerations because under some circumanstances they
+    // may solve b directly into it's own space. In that case, it's necessary
+    // to deep_copy b first or the adapter's b values will be permanently
+    // changed and the next solve cycle will fail. However if the method returns
+    // false then the adapter already had to deep_copy b so those solvers don't
+    // need to take any extra steps to protect the b memory space.
+    // Note, searching for bDidAssignX and bDidAssignB will find all places
+    // where solvers are reading the assignment state and acting on it.
+    // Searching get_1d_copy_helper_kokkos_view will find all the places where
+    // solvers are passing true/false for x and b collection.
+    // Searching bInitialize will find various places where the adapters are
+    // internally determining whether the deep_copy actually occurred. Note that
+    // in some places the adapter may create a new memory space temporarily,
+    // for example to redistribute data. Then it may call deep_copy_or_assign_view
+    // where deep_copy_or_assign_view can do simple assignment. Even though
+    // deep_copy_or_assign_view is assigning the view, the method must still
+    // return false because the temporary redistributed MV means the overall
+    // effect of the method was to create a new memory space. The method only
+    // returns true if the method directly assigns to the adapter's permanent
+    // stored internal data.
     template <class MV, typename KV>
     struct get_1d_copy_helper_kokkos_view {
-      static void
-      do_get (const Teuchos::Ptr<const MV>& mv,
+      static bool
+      do_get (bool bInitialize,
+              const Teuchos::Ptr<const MV>& mv,
               KV& kokkos_vals,
               const size_t ldx,
               Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
               EDistribution distribution = ROOTED);
 
-      static void
-      do_get (const Teuchos::Ptr<const MV>& mv,
+      static bool
+      do_get (bool bInitialize,
+              const Teuchos::Ptr<const MV>& mv,
               KV& kokkos_vals,
               const size_t ldx,
               EDistribution distribution,
               typename MV::global_ordinal_t indexBase = 0);
 
-      static void
-      do_get (const Teuchos::Ptr<const MV>& mv,
+      static bool
+      do_get (bool bInitialize,
+              const Teuchos::Ptr<const MV>& mv,
               KV& kokkos_vals,
               const size_t ldx);
     };

@@ -227,6 +227,7 @@ Cholmod<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
   const global_size_type ld_rhs = X->getGlobalLength();
   const size_t nrhs = X->getGlobalNumVectors();
 
+  bool bDidAssignX;
   {                             // Get values from RHS B
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
@@ -238,12 +239,12 @@ Cholmod<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
     if(use_triangular_solves_) { // to device
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_CHOLMOD)
       Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-          device_solve_array_t>::do_get(B, device_bValues_,
+          device_solve_array_t>::do_get(true, B, device_bValues_,
               Teuchos::as<size_t>(ld_rhs),
               (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
               this->rowIndexBase_);
-        Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-          device_solve_array_t>::do_get(X, device_xValues_,
+        bDidAssignX = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+          device_solve_array_t>::do_get(false, X, device_xValues_,
               Teuchos::as<size_t>(ld_rhs),
               (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
               this->rowIndexBase_);
@@ -251,17 +252,16 @@ Cholmod<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
     }
     else { // to host
       Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-          host_solve_array_t>::do_get(B, host_bValues_,
+          host_solve_array_t>::do_get(true, B, host_bValues_,
               Teuchos::as<size_t>(ld_rhs),
               (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
               this->rowIndexBase_);
-        Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-          host_solve_array_t>::do_get(X, host_xValues_,
+        bDidAssignX = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+          host_solve_array_t>::do_get(false, X, host_xValues_,
               Teuchos::as<size_t>(ld_rhs),
               (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
               this->rowIndexBase_);
     }
-
   }
 
   int ierr = 0; // returned error code
@@ -292,7 +292,7 @@ Cholmod<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
   TEUCHOS_TEST_FOR_EXCEPTION(ierr == -2, std::runtime_error, "Ran out of memory" );
 
   /* Update X's global values */
-  {
+  if(!bDidAssignX) { // if bDidAssignX, then we solved straight to the adapter's X memory space
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif

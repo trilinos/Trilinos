@@ -391,6 +391,8 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
   const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
   const size_t nrhs = X->getGlobalNumVectors();
 
+  bool bDidAssignX = false; // will be set below
+  bool bDidAssignB = false; // will be set below
   {                             // Get values from RHS B
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
@@ -401,26 +403,26 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
     // So we 'get' x which may be a direct view assignment to the MV.
     if(use_triangular_solves_) { // to device
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
-      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-        device_solve_array_t>::do_get(X, device_xValues_,
+      bDidAssignX = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+        device_solve_array_t>::do_get(false, X, device_xValues_,
             as<size_t>(ld_rhs),
             (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
             this->rowIndexBase_);
-      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-        device_solve_array_t>::do_get(B, device_bValues_,
+      bDidAssignB = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+        device_solve_array_t>::do_get(true, B, device_bValues_,
             as<size_t>(ld_rhs),
             (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
             this->rowIndexBase_);
 #endif
     }
     else { // to host
-      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-        host_solve_array_t>::do_get(X, host_xValues_,
+      bDidAssignX = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+        host_solve_array_t>::do_get(false, X, host_xValues_,
             as<size_t>(ld_rhs),
             (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
             this->rowIndexBase_);
-      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-        host_solve_array_t>::do_get(B, host_bValues_,
+      bDidAssignB = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+        host_solve_array_t>::do_get(true, B, host_bValues_,
             as<size_t>(ld_rhs),
             (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
             this->rowIndexBase_);
@@ -430,10 +432,8 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
   // If equilibration was applied at numeric, then gssvx and gsisx are going to
   // modify B, so we can't use the optimized assignment to B since we'll change
   // the source test vector and then fail the subsequent cycle. We need a copy.
-  // TODO: If above get_1d_copy_helper_kokkos_view already copied then we can
-  // skip this. Generally need an API which tells us what happened internally
-  // in above get_1d_copy_helper_kokkos_view - whether is was copy or assign.
-  if(data_.equed != 'N') {
+  // If bDidAssignB is false, then we skip the copy since it was copied already.
+  if(bDidAssignB && data_.equed != 'N') {
     if(use_triangular_solves_) { // to device
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
       device_solve_array_t copyB(Kokkos::ViewAllocateWithoutInitializing("copyB"),
@@ -547,7 +547,7 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
                       "memory before allocation failure occured." );
 
   /* Update X's global values */
-  {
+  if(!bDidAssignX) { // if bDidAssignX, then we solved straight to the adapter's X memory space
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif
