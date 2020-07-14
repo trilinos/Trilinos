@@ -111,6 +111,7 @@ namespace BaskerNS
           domain_nfactor);
       Kokkos::fence();
 
+
       //=====Check for error======
       while(true)
       {
@@ -120,10 +121,17 @@ namespace BaskerNS
             (Int) BASKER_MAX_IDX);
         int nt = nfactor_domain_error(thread_start);
         if((nt == BASKER_SUCCESS) ||
-            (nt == BASKER_ERROR) ||
             (domain_restart > BASKER_RESTART))
         {
           break;
+        }
+        else if (nt == BASKER_ERROR)
+        {
+          if(Options.verbose == BASKER_TRUE)
+          {
+            printf("%s: nfactor_domain_error reports BASKER_ERROR - numeric factorization failed\n",__FILE__);
+          }
+          return BASKER_ERROR;
         }
         else
         {

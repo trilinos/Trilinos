@@ -7,6 +7,12 @@ IF(Kokkos_ENABLE_OPENMP)
      )
 
     TRIBITS_ADD_EXECUTABLE(
+        singular_matrix_check
+        NOEXEPREFIX
+        SOURCES singular_matrix_check.cpp
+     )
+
+    TRIBITS_ADD_EXECUTABLE(
         basker_test
         NOEXEPREFIX
         SOURCES basker_test.cpp
