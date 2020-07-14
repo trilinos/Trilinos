@@ -2202,7 +2202,7 @@ namespace KB = KokkosBatched::Experimental;
           packed_multivector(pmv) {}
 
       // TODO:: modify this routine similar to the team level functions
-      inline
+      KOKKOS_INLINE_FUNCTION
       void
       operator() (const local_ordinal_type &packidx) const {
         local_ordinal_type partidx = packptr(packidx);
