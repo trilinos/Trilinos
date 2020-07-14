@@ -208,11 +208,9 @@ private:
 
   /// Persisting 1D store for X
   mutable host_solve_array_t xValues_;
-  int ldx_;
 
   /// Persisting 1D store for B
   mutable host_solve_array_t bValues_;
-  int ldb_;
 
   /*Handle for Basker object*/
   mutable ::BaskerClassicNS::BaskerClassic<local_ordinal_type,basker_dtype> basker;
