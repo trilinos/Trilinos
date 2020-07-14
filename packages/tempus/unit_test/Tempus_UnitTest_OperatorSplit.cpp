@@ -511,7 +511,9 @@ TEUCHOS_UNIT_TEST(OperatorSplit, AppAction_ModifierX)
   auto x = solutionHistory->getCurrentState()->getX();
   TEST_FLOATING_EQUALITY(modifierX->testX, get_ele(*(x), 0), 1.0e-15);
   // Temporary memory for xDot is not guarranteed to exist outside the Stepper.
-  auto xDot = stepper->getStepperXDot(solutionHistory->getWorkingState());
+  auto xDot = solutionHistory->getWorkingState()->getXDot();
+  if (xDot == Teuchos::null) xDot = stepper->getStepperXDot();
+
   TEST_FLOATING_EQUALITY(modifierX->testXDot, get_ele(*(xDot), 0),1.0e-15);
   auto Dt = solutionHistory->getWorkingState()->getTimeStep();
   TEST_FLOATING_EQUALITY(modifierX->testDt, Dt, 1.0e-15);

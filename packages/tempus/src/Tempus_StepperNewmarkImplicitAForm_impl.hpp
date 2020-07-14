@@ -284,6 +284,8 @@ void StepperNewmarkImplicitAForm<Scalar>::setInitialConditions(
   // Check if we need Stepper storage for xDotDot
   if (initialState->getXDotDot() == Teuchos::null)
     initialState->setXDotDot(initialState->getX()->clone_v());
+  else
+    this->setStepperXDotDot(initialState->getXDotDot());
 
   // Perform IC Consistency
   std::string icConsistency = this->getICConsistency();
@@ -397,7 +399,7 @@ void StepperNewmarkImplicitAForm<Scalar>::setInitialConditions(
     RCP<Teuchos::FancyOStream> out = this->getOStream();
     Teuchos::OSTab ostab(out,1,
       "StepperNewmarkImplicitAForm::setInitialConditions()");
-    *out << "\nWarning -- The First-Step-As-Last (FSAL) principle is "
+    *out << "\nWarning -- The First-Same-As-Last (FSAL) principle is "
          << "part of the Newmark Implicit A-Form.  The default is to "
          << "set useFSAL=true, and useFSAL=false will be ignored." << std::endl;
   }
