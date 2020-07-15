@@ -398,7 +398,8 @@ namespace FROSch {
     template<class SC,class LO,class GO,class NO>
     typename RGDSWCoarseOperator<SC,LO,GO,NO>::XMapPtr RGDSWCoarseOperator<SC,LO,GO,NO>::BuildRepeatedMapCoarseLevel(ConstXMapPtr &nodesMap,
                                                 UN dofsPerNode,
-                                                ConstXMapPtrVecPtr dofsMaps)
+                                                ConstXMapPtrVecPtr dofsMaps,
+                                               UN partitionType)
     {
       FROSCH_ASSERT(false,"For GDSWCoarseOperator the ZoltanDual Option is not implemented!");
 

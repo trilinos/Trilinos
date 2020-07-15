@@ -153,7 +153,8 @@ namespace FROSch {
 
         virtual XMapPtr BuildRepeatedMapCoarseLevel(ConstXMapPtr &nodesMap,
                                                     UN dofsPerNode,
-                                                    ConstXMapPtrVecPtr dofsMaps);
+                                                    ConstXMapPtrVecPtr dofsMaps,
+                                                    UN partitionType);
 
     protected:
 

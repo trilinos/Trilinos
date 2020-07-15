@@ -208,12 +208,15 @@ namespace FROSch {
             if (!coarseSpaceList->sublist("InterfacePartitionOfUnity").get("Type","GDSW").compare("GDSW")) {
                 coarseSpaceList->sublist("InterfacePartitionOfUnity").sublist("GDSW").set("Test Unconnected Interface",this->ParameterList_->get("Test Unconnected Interface",true));
                 interfacePartitionOfUnity = InterfacePartitionOfUnityPtr(new GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>(this->MpiComm_,this->SerialComm_,dimension,this->DofsPerNode_[blockId],nodesMap,this->DofsMaps_[blockId],sublist(sublist(coarseSpaceList,"InterfacePartitionOfUnity"),"GDSW"),verbosity,this->LevelID_));
+                this->partitionType = 0;
             } else if (!coarseSpaceList->sublist("InterfacePartitionOfUnity").get("Type","GDSW").compare("GDSWStar")) {
                 coarseSpaceList->sublist("InterfacePartitionOfUnity").sublist("GDSWStar").set("Test Unconnected Interface",this->ParameterList_->get("Test Unconnected Interface",true));
                 interfacePartitionOfUnity = InterfacePartitionOfUnityPtr(new GDSWStarInterfacePartitionOfUnity<SC,LO,GO,NO>(this->MpiComm_,this->SerialComm_,dimension,this->DofsPerNode_[blockId],nodesMap,this->DofsMaps_[blockId],sublist(sublist(coarseSpaceList,"InterfacePartitionOfUnity"),"GDSWStar"),verbosity,this->LevelID_));
+                this->partitionType = 2;
             } else if (!coarseSpaceList->sublist("InterfacePartitionOfUnity").get("Type","GDSW").compare("RGDSW")) {
                 coarseSpaceList->sublist("InterfacePartitionOfUnity").sublist("RGDSW").set("Test Unconnected Interface",this->ParameterList_->get("Test Unconnected Interface",true));
                 interfacePartitionOfUnity = InterfacePartitionOfUnityPtr(new RGDSWInterfacePartitionOfUnity<SC,LO,GO,NO>(this->MpiComm_,this->SerialComm_,dimension,this->DofsPerNode_[blockId],nodesMap,this->DofsMaps_[blockId],sublist(sublist(coarseSpaceList,"InterfacePartitionOfUnity"),"RGDSW"),verbosity,this->LevelID_));
+                this->partitionType = 1;
             } else {
                 FROSCH_ASSERT(false,"InterfacePartitionOfUnity Type is unknown.");
             }
@@ -312,7 +315,8 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     typename IPOUHarmonicCoarseOperator<SC,LO,GO,NO>::XMapPtr IPOUHarmonicCoarseOperator<SC,LO,GO,NO>::BuildRepeatedMapCoarseLevel(ConstXMapPtr &nodesMap,
                                                                                                                                    UN dofsPerNode,
-                                                                                                                                   ConstXMapPtrVecPtr dofsMaps)
+                                                                                                                                   ConstXMapPtrVecPtr dofsMaps,
+                                                                                                                                   UN partition)
     {
       //FROSCH_ASSERT(numVert+numEdg+numFac != nodesMap->getGlobalNumElements(),"ERROR: Map does not match number of Entities");
       UN blockId = 1; //This is not implemented for  Block Variant yet
@@ -326,7 +330,7 @@ namespace FROSch {
       Teuchos::Array<GO> dofEle(nodeEle.size()*dofsPerNode);
       Teuchos::Array<GO> dmapEle(nodeEle.size());
       //GDSW Type CoarseOperator
-      if(!coarseSpaceList->sublist("InterfacePartitionOfUnity").get("Type","GDSW").compare("GDSW")){
+      if(partition == 0){
       for(unsigned j = 0;j<dofsPerNode;j++){
         for(unsigned i = 0;i<nodeEle.size();i++){
           //vertices
@@ -360,7 +364,7 @@ namespace FROSch {
         dofsMaps[j] =   Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,-1,dmapEle,0,nodesMap->getComm());
       }
       } //RGDSW type CoarseOperator
-      else if(!coarseSpaceList->sublist("InterfacePartitionOfUnity").get("Type","GDSW").compare("RGDSW")){
+      else if(partition == 1){
        for(unsigned j = 0;j<dofsPerNode;j++){
         for(unsigned i = 0;i<nodeEle.size();i++){
           //roots
@@ -375,7 +379,7 @@ namespace FROSch {
         }
         dofsMaps[j] =   Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,-1,dmapEle,0,nodesMap->getComm());
       }
-    }else if (!coarseSpaceList->sublist("InterfacePartitionOfUnity").get("Type","GDSW").compare("GDSWStar")){
+    }else if (partition == 2){
 
       FROSCH_ASSERT(false,"GDSWStar is not implemented yet!");
 

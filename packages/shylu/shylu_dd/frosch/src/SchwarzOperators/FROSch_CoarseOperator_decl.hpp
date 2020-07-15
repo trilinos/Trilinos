@@ -153,7 +153,8 @@ namespace FROSch {
         virtual int buildCoarseGraph() = 0;
         virtual XMapPtr BuildRepeatedMapCoarseLevel(ConstXMapPtr &nodesMap,
                                                     UN dofsPerNode,
-                                                    ConstXMapPtrVecPtr dofsMaps) = 0;
+                                                    ConstXMapPtrVecPtr dofsMaps,
+                                                    UN partition) = 0;
 
         virtual int clearCoarseSpace();
 

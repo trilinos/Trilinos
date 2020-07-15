@@ -837,7 +837,7 @@ namespace FROSch {
                ConstXMapPtrVecPtr DMap(CoarseDofsPerNode_);
                ConstXMapPtrVecPtr DMapRep(CoarseDofsPerNode_);
 
-               tmpRepMap  = this->BuildRepeatedMapCoarseLevel(ConstRepMap,CoarseDofsPerNode_,DMapRep);
+               tmpRepMap  = this->BuildRepeatedMapCoarseLevel(ConstRepMap,CoarseDofsPerNode_,DMapRep,partitionType);
 
 
                RepMapCoarse_ = tmpRepMap;
@@ -851,7 +851,7 @@ namespace FROSch {
                UniqueMap = FROSch::BuildUniqueMap<LO,GO,NO>(CoarseSolveRepeatedMap_);
 
 
-               UniqueMapAll  = this->BuildRepeatedMapCoarseLevel(UniqueMap,CoarseDofsPerNode_,DMap);
+               UniqueMapAll  = this->BuildRepeatedMapCoarseLevel(UniqueMap,CoarseDofsPerNode_,DMap,partitionType);
 
                uniEle = UniqueMapAll->getNodeElementList();
 
@@ -911,7 +911,6 @@ namespace FROSch {
             LO maxVal;
 
             reduceAll(*CoarseSolveComm_,REDUCE_SUM,localVal,ptr(&sumVal));
-            SC avgVal = max(sumVal/double(CoarseSolveComm_->getSize()),0.0);
             reduceAll(*CoarseSolveComm_,REDUCE_MIN,localVal,ptr(&minVal));
             reduceAll(*CoarseSolveComm_,REDUCE_MAX,localVal,ptr(&maxVal));
 
