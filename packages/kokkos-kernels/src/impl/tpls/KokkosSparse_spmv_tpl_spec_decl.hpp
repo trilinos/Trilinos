@@ -79,7 +79,6 @@ namespace Impl {
     using offset_type = typename AMatrix::non_const_size_type;
     using entry_type  = typename AMatrix::non_const_ordinal_type;
     using value_type  = typename AMatrix::non_const_value_type;
-    std::cout << "Hello from spmv_cusparse!\n";
 
     /* initialize cusparse library */
     cusparseHandle_t cusparseHandle = controls.getCusparseHandle();
@@ -135,12 +134,12 @@ namespace Impl {
 
     size_t bufferSize     = 0;
     void*  dBuffer        = NULL;
-    cusparseSpMVAlg_t alg = CUSPARSE_CSRMV_ALG1;
+    cusparseSpMVAlg_t alg = CUSPARSE_MV_ALG_DEFAULT;
     if(controls.isParameter("algorithm"))
     {
       const std::string algName = controls.getParameter("algorithm");
       if(algName == "default")
-        alg = CUSPARSE_CSRMV_ALG1;
+        alg = CUSPARSE_MV_ALG_DEFAULT;
       else if(algName == "merge")
         alg = CUSPARSE_CSRMV_ALG2;
     }
@@ -239,7 +238,7 @@ namespace Impl {
 		      const XVector& x,					\
 		      const coefficient_type& beta,			\
 		      const YVector& y) {				\
-      if(controls.getParameter("algorithm") == "native") {		\
+      if(controls.isParameter("algorithm") && controls.getParameter("algorithm") == "native") {		\
 	std::string label = "KokkosSparse::spmv[TPL_CUSPARSE," + Kokkos::ArithTraits<SCALAR>::name() + "]"; \
 	Kokkos::Profiling::pushRegion(label);				\
 	spmv_native(controls, mode, alpha, A, x, beta, y);		\
@@ -269,23 +268,24 @@ namespace Impl {
   KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<double>, int, int, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true)
   KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>,  int, int, Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, true)
   KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>,  int, int, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true)
+
 #if (10300 <= CUSPARSE_VERSION)
-  KOKKOSSPARSE_SPMV_CUSPARSE(double, int, size_t, Kokkos::LayoutLeft,  Kokkos::CudaSpace, true)
-  KOKKOSSPARSE_SPMV_CUSPARSE(double, int, size_t, Kokkos::LayoutRight, Kokkos::CudaSpace, true)
-  KOKKOSSPARSE_SPMV_CUSPARSE(float,  int, size_t, Kokkos::LayoutLeft,  Kokkos::CudaSpace, true)
-  KOKKOSSPARSE_SPMV_CUSPARSE(float,  int, size_t, Kokkos::LayoutRight, Kokkos::CudaSpace, true)
-  KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<double>, int, size_t, Kokkos::LayoutLeft,  Kokkos::CudaSpace, true)
-  KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<double>, int, size_t, Kokkos::LayoutRight, Kokkos::CudaSpace, true)
-  KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>,  int, size_t, Kokkos::LayoutLeft,  Kokkos::CudaSpace, true)
-  KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>,  int, size_t, Kokkos::LayoutRight, Kokkos::CudaSpace, true)
-  KOKKOSSPARSE_SPMV_CUSPARSE(double, int, size_t, Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, true)
-  KOKKOSSPARSE_SPMV_CUSPARSE(double, int, size_t, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true)
-  KOKKOSSPARSE_SPMV_CUSPARSE(float,  int, size_t, Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, true)
-  KOKKOSSPARSE_SPMV_CUSPARSE(float,  int, size_t, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true)
-  KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<double>, int, size_t, Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, true)
-  KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<double>, int, size_t, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true)
-  KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>,  int, size_t, Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, true)
-  KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>,  int, size_t, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true)
+  KOKKOSSPARSE_SPMV_CUSPARSE(double, int64_t, size_t, Kokkos::LayoutLeft,  Kokkos::CudaSpace, true)
+  KOKKOSSPARSE_SPMV_CUSPARSE(double, int64_t, size_t, Kokkos::LayoutRight, Kokkos::CudaSpace, true)
+  KOKKOSSPARSE_SPMV_CUSPARSE(float,  int64_t, size_t, Kokkos::LayoutLeft,  Kokkos::CudaSpace, true)
+  KOKKOSSPARSE_SPMV_CUSPARSE(float,  int64_t, size_t, Kokkos::LayoutRight, Kokkos::CudaSpace, true)
+  KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutLeft,  Kokkos::CudaSpace, true)
+  KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::CudaSpace, true)
+  KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>,  int64_t, size_t, Kokkos::LayoutLeft,  Kokkos::CudaSpace, true)
+  KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>,  int64_t, size_t, Kokkos::LayoutRight, Kokkos::CudaSpace, true)
+  KOKKOSSPARSE_SPMV_CUSPARSE(double, int64_t, size_t, Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, true)
+  KOKKOSSPARSE_SPMV_CUSPARSE(double, int64_t, size_t, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true)
+  KOKKOSSPARSE_SPMV_CUSPARSE(float,  int64_t, size_t, Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, true)
+  KOKKOSSPARSE_SPMV_CUSPARSE(float,  int64_t, size_t, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true)
+  KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, true)
+  KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true)
+  KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>,  int64_t, size_t, Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, true)
+  KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>,  int64_t, size_t, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true)
 #endif
 #endif
 

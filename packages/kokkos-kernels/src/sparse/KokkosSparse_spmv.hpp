@@ -54,7 +54,7 @@
 #include "KokkosSparse_spmv_struct_spec.hpp"
 #include <type_traits>
 #include "KokkosSparse_CrsMatrix.hpp"
-
+#include "KokkosBlas1_scal.hpp"
 
 namespace KokkosSparse {
 
@@ -138,34 +138,29 @@ spmv (KokkosKernels::Experimental::Controls controls,
   XVector_Internal x_i = x;
   YVector_Internal y_i = y;
 
-  #define bmk_template_params \
-              typename AMatrix_Internal::value_type,\
-              typename AMatrix_Internal::ordinal_type,\
-              typename AMatrix_Internal::device_type,\
-              typename AMatrix_Internal::memory_traits,\
-              typename AMatrix_Internal::size_type,\
-              typename XVector_Internal::value_type*,\
-              typename XVector_Internal::array_layout,\
-              typename XVector_Internal::device_type,\
-              typename XVector_Internal::memory_traits,\
-              typename YVector_Internal::value_type*,\
-              typename YVector_Internal::array_layout,\
-              typename YVector_Internal::device_type,\
-              typename YVector_Internal::memory_traits
-
-  using spmv_type = Impl::SPMV<bmk_template_params>;
-
-  bool tplAvail = Impl::spmv_tpl_spec_avail<bmk_template_params>::value;
-  bool etiAvail = Impl::spmv_eti_spec_avail<bmk_template_params>::value;
-
-  std::string mangledName = typeid(spmv_type).name();
-  int status;
-  char* spmvName = abi::__cxa_demangle(mangledName.c_str(), NULL, NULL, &status);
-  std::cout << "Hello from SPMV> full type is " << spmvName << '\n';
-  free(spmvName);
-  std::cout << "               > TPL available? " << (tplAvail ? "YES" : "NO") << ". ETI available? " << (etiAvail ? "YES" : "NO") << '\n';
-
-  return spmv_type::spmv (controls, mode, alpha, A_i, x_i, beta, y_i);
+  if(alpha == Kokkos::ArithTraits<AlphaType>::zero() ||
+      A_i.numRows() == 0 || A_i.numCols() == 0 || A_i.nnz() == 0)
+  {
+    //Degenerate case: Ax is 0, or a 0-dimensional vector, regardless of transpose mode.
+    //Just scale y by beta. Not calling Impl::SPMV::spmv avoids cuSPARSE error messages.
+    KokkosBlas::scal(y_i, beta, y_i);
+    return;
+  }
+  return Impl::SPMV<
+    typename AMatrix_Internal::value_type,
+    typename AMatrix_Internal::ordinal_type,
+    typename AMatrix_Internal::device_type,
+    typename AMatrix_Internal::memory_traits,
+    typename AMatrix_Internal::size_type,
+    typename XVector_Internal::value_type*,
+    typename XVector_Internal::array_layout,
+    typename XVector_Internal::device_type,
+    typename XVector_Internal::memory_traits,
+    typename YVector_Internal::value_type*,
+    typename YVector_Internal::array_layout,
+    typename YVector_Internal::device_type,
+    typename YVector_Internal::memory_traits>
+      ::spmv (controls, mode, alpha, A_i, x_i, beta, y_i);
 }
 
 
