@@ -2089,18 +2089,15 @@ namespace KB = KokkosBatched::Experimental;
           extract(partidx, npacks);
           factorize(member, i0, nrows, 0, internal_vector_values, WW);
         } else {
-	  Kokkos::single
-	    (Kokkos::PerTeam(member),
-	     [&]() {
-	       extract(partidx, npacks);
-	     });
-          member.team_barrier();
           Kokkos::parallel_for
             (Kokkos::ThreadVectorRange(member, vector_loop_size),
 	     [&](const local_ordinal_type &v) {
-	       //const local_ordinal_type vbeg = v*internal_vector_length;
-	       //if (vbeg < npacks)
-	       //extract(member, partidx+vbeg, npacks, vbeg);
+              const local_ordinal_type vbeg = v*internal_vector_length;
+              if (vbeg < npacks)
+                extract(member, partidx+vbeg, npacks, vbeg);
+              // this is not safe if vector loop size is different from vector size of 
+              // the team policy. we always make sure this when constructing the team policy
+              member.team_barrier();
               factorize(member, i0, nrows, v, internal_vector_values, WW);
             });
         }
@@ -2115,7 +2112,7 @@ namespace KB = KokkosBatched::Experimental;
           shmem_size(blocksize, blocksize, vector_loop_size);
 
         Kokkos::TeamPolicy<execution_space,ExtractAndFactorizeTag>
-          policy(packptr.extent(0)-1, 1, 1); //team_size, vector_loop_size);
+          policy(packptr.extent(0)-1, team_size, vector_loop_size);
 #if defined(KOKKOS_ENABLE_DEPRECATED_CODE)
         Kokkos::parallel_for("ExtractAndFactorize::TeamPolicy::run<ExtractAndFactorizeTag>",
                              policy.set_scratch_size(0,Kokkos::PerTeam(per_team_scratch)), *this);
