@@ -43,7 +43,9 @@
 #define _FROSCH_SUBDOMAINSOLVER_DEF_hpp
 
 #include <FROSch_SubdomainSolver_decl.hpp>
-
+#ifdef HAVE_SHYLU_DDFROSCH_THYRA
+#include <Stratimikos_DefaultLinearSolverBuilder.hpp>
+#endif
 
 namespace FROSch {
 
