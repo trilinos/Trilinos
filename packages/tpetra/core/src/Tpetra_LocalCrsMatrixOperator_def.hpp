@@ -169,7 +169,7 @@ applyImbalancedRows (
   //TODO BMK: If/when KokkosKernels gets its own SPMV implementation for imbalanced rows,
   //call that here or select it using Controls.
   //Ideally it supports multivectors from the beginning.
-  if(Details::Behavior::useMergePathMultiVector() || X.extent(1) == size_t(1) && A_ordinal_rowptrs.extent(0))
+  if((Details::Behavior::useMergePathMultiVector() || X.extent(1) == size_t(1)) && A_ordinal_rowptrs.extent(0))
   {
     KokkosKernels::Experimental::Controls controls;
     controls.setParameter("algorithm", "merge");

@@ -3274,7 +3274,7 @@ convertToGlobalAndAdd(
   using Teuchos::TimeMonitor;
   //Need to use a different KokkosKernelsHandle type than other versions,
   //since the ordinals are now GO
-  using KKH = KokkosKernels::Experimental::KokkosKernelsHandle<size_t, GO, impl_scalar_type,
+  using KKH_GO = KokkosKernels::Experimental::KokkosKernelsHandle<size_t, GO, impl_scalar_type,
               typename NO::execution_space, typename NO::memory_space, typename NO::memory_space>;
 
   const values_array Avals = A.values;
@@ -3292,7 +3292,7 @@ convertToGlobalAndAdd(
   Kokkos::parallel_for("Tpetra_MatrixMatrix_convertColIndsA", range_type(0, Acolinds.extent(0)), convertA);
   ConvertLocalToGlobalFunctor<GO, col_inds_array, global_col_inds_array, local_map_type> convertB(Bcolinds, BcolindsConverted, BcolMap);
   Kokkos::parallel_for("Tpetra_MatrixMatrix_convertColIndsB", range_type(0, Bcolinds.extent(0)), convertB);
-  KKH handle;
+  KKH_GO handle;
   handle.create_spadd_handle(false);
   auto addHandle = handle.get_spadd_handle();
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -3302,7 +3302,7 @@ convertToGlobalAndAdd(
   auto nrows = Arowptrs.extent(0) - 1;
   Crowptrs = row_ptrs_array(Kokkos::ViewAllocateWithoutInitializing("C row ptrs"), nrows + 1);
   KokkosSparse::Experimental::spadd_symbolic
-    <KKH, typename row_ptrs_array::const_type, typename global_col_inds_array::const_type, typename row_ptrs_array::const_type, typename global_col_inds_array::const_type, row_ptrs_array, global_col_inds_array>
+    <KKH_GO, typename row_ptrs_array::const_type, typename global_col_inds_array::const_type, typename row_ptrs_array::const_type, typename global_col_inds_array::const_type, row_ptrs_array, global_col_inds_array>
     (&handle, Arowptrs, AcolindsConverted, Browptrs, BcolindsConverted, Crowptrs);
   Cvals = values_array("C values", addHandle->get_max_result_nnz());
   Ccolinds = global_col_inds_array(Kokkos::ViewAllocateWithoutInitializing("C colinds"), addHandle->get_max_result_nnz());
