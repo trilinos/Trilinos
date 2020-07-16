@@ -2200,7 +2200,7 @@ namespace KB = KokkosBatched::Experimental;
           packed_multivector(pmv) {}
 
       // TODO:: modify this routine similar to the team level functions
-      KOKKOS_INLINE_FUNCTION
+      inline
       void
       operator() (const local_ordinal_type &packidx) const {
         local_ordinal_type partidx = packptr(packidx);
@@ -2260,22 +2260,22 @@ namespace KB = KokkosBatched::Experimental;
         IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::MultiVectorConverter");
 
         scalar_multivector = scalar_multivector_;
-//         if (is_cuda<execution_space>::value) {
-// #if defined(KOKKOS_ENABLE_CUDA)
-//           const local_ordinal_type vl = vector_length;
-//           const Kokkos::TeamPolicy<execution_space> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vl);
-//           Kokkos::parallel_for
-//             ("MultiVectorConverter::TeamPolicy", policy, *this);
-// #endif
-//         } else {
-// #if defined(__CUDA_ARCH__)
-//           TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: CUDA should not see this code");
-// #else
+        if (is_cuda<execution_space>::value) {
+#if defined(KOKKOS_ENABLE_CUDA)
+          const local_ordinal_type vl = vector_length;
+          const Kokkos::TeamPolicy<execution_space> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vl);
+          Kokkos::parallel_for
+            ("MultiVectorConverter::TeamPolicy", policy, *this);
+#endif
+        } else {
+#if defined(__CUDA_ARCH__)
+          TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: CUDA should not see this code");
+#else
           const Kokkos::RangePolicy<execution_space> policy(0, packptr.extent(0) - 1);
           Kokkos::parallel_for
             ("MultiVectorConverter::RangePolicy", policy, *this);
-	  //#endif
-	  //}
+#endif
+        }
         IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END;
       }
     };
@@ -2798,13 +2798,13 @@ namespace KB = KokkosBatched::Experimental;
 #define BLOCKTRIDICONTAINER_DETAILS_SOLVETRIDIAGS(B)                    \
         if (num_vectors == 1) {                                         \
           const Kokkos::TeamPolicy<execution_space,SingleVectorTag<B> > \
-            policy(packptr.extent(0) - 1, team_size, vector_loop_size); \
+            policy(packptr.extent(0) - 1, 1, 1 /*team_size, vector_loop_size*/); \
           Kokkos::parallel_for                                          \
             ("SolveTridiags::TeamPolicy::run<SingleVector>",            \
              policy.set_scratch_size(0,Kokkos::PerTeam(per_team_scratch)), *this); \
         } else {                                                        \
           const Kokkos::TeamPolicy<execution_space,MultiVectorTag<B> > \
-            policy(packptr.extent(0) - 1, team_size, vector_loop_size); \
+            policy(packptr.extent(0) - 1, 1, 1 /*team_size, vector_loop_size*/); \
           Kokkos::parallel_for                                          \
             ("SolveTridiags::TeamPolicy::run<MultiVector>",             \
              policy.set_scratch_size(0,Kokkos::PerTeam(per_team_scratch)), *this); \
@@ -2813,14 +2813,14 @@ namespace KB = KokkosBatched::Experimental;
 #define BLOCKTRIDICONTAINER_DETAILS_SOLVETRIDIAGS(B)                    \
         if (num_vectors == 1) {                                         \
           Kokkos::TeamPolicy<execution_space,SingleVectorTag<B> >       \
-            policy(packptr.extent(0) - 1, team_size, vector_loop_size); \
+            policy(packptr.extent(0) - 1, 1, 1 /*team_size, vector_loop_size*/); \
           policy.set_scratch_size(0,Kokkos::PerTeam(per_team_scratch)); \
           Kokkos::parallel_for                                          \
             ("SolveTridiags::TeamPolicy::run<SingleVector>",            \
              policy, *this);                                            \
         } else {                                                        \
           Kokkos::TeamPolicy<execution_space,MultiVectorTag<B> >        \
-            policy(packptr.extent(0) - 1, team_size, vector_loop_size); \
+            policy(packptr.extent(0) - 1, 1, 1 /*team_size, vector_loop_size*/); \
           policy.set_scratch_size(0,Kokkos::PerTeam(per_team_scratch)); \
           Kokkos::parallel_for                                          \
             ("SolveTridiags::TeamPolicy::run<MultiVector>",             \
@@ -3397,7 +3397,7 @@ namespace KB = KokkosBatched::Experimental;
           // const local_ordinal_type vl = vl_power_of_two > vector_length ? vector_length : vl_power_of_two;
 #define BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(B) {                \
             const Kokkos::TeamPolicy<execution_space,AsyncTag<B> >      \
-              policy(rowidx2part.extent(0), 1 , 1/*team_size, vector_size*/); \
+              policy(rowidx2part.extent(0), team_size, vector_size);    \
             Kokkos::parallel_for                                        \
               ("ComputeResidual::TeamPolicy::run<AsyncTag>",            \
                policy, *this); } break
@@ -3479,12 +3479,12 @@ namespace KB = KokkosBatched::Experimental;
 #define BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(B)  \
           if (compute_owned) {                                          \
             const Kokkos::TeamPolicy<execution_space,OverlapTag<0,B> > \
-              policy(rowidx2part.extent(0), 1, 1 /*team_size, vector_size*/); \
+              policy(rowidx2part.extent(0), team_size, vector_size);    \
             Kokkos::parallel_for                                        \
               ("ComputeResidual::TeamPolicy::run<OverlapTag<0> >", policy, *this); \
           } else {                                                      \
             const Kokkos::TeamPolicy<execution_space,OverlapTag<1,B> > \
-              policy(rowidx2part.extent(0), 1, 1 /*team_size, vector_size*/); \
+              policy(rowidx2part.extent(0), team_size, vector_size);    \
             Kokkos::parallel_for                                        \
               ("ComputeResidual::TeamPolicy::run<OverlapTag<1> >", policy, *this); \
           } break
