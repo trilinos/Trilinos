@@ -305,11 +305,6 @@ ATDM_SET_CACHE(Kokkos_ENABLE_CXX11_DISPATCH_LAMBDA ON CACHE BOOL)
 ATDM_SET_CACHE(Kokkos_ENABLE_CUDA_LAMBDA "${ATDM_USE_CUDA}" CACHE BOOL)
 ATDM_SET_CACHE(Kokkos_ENABLE_DEBUG_BOUNDS_CHECK "${Trilinos_ENABLE_DEBUG}" CACHE BOOL)
 ATDM_SET_CACHE(Kokkos_ENABLE_DEBUG "${Trilinos_ENABLE_DEBUG}" CACHE BOOL)
-IF (NOT ATDM_USE_MPI)
-  ATDM_SET_CACHE(SEACASIoss_ENABLE_Pamgen OFF CACHE BOOL)
-  # NOTE: We don't bother setting SEACAS_ENABLE_Kokkos=OFF like the SPARC mini
-  # Trilinos build does because that option is ignored.
-ENDIF()
 
 # Update Kokkos arch, expected ATDM_CONFIG_KOKKOS_ARCH=arch1,arch2,arch3.  Set
 # the modern Kokkos arch, e.g., KOKKOS_ARCH=arch1 => Kokkos_ARCH_arch1=ON
