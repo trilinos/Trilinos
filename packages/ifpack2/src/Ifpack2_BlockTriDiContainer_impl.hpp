@@ -2798,13 +2798,13 @@ namespace KB = KokkosBatched::Experimental;
 #define BLOCKTRIDICONTAINER_DETAILS_SOLVETRIDIAGS(B)                    \
         if (num_vectors == 1) {                                         \
           const Kokkos::TeamPolicy<execution_space,SingleVectorTag<B> > \
-            policy(packptr.extent(0) - 1, 1, 1 /*team_size, vector_loop_size*/); \
+            policy(packptr.extent(0) - 1, team_size, vector_loop_size); \
           Kokkos::parallel_for                                          \
             ("SolveTridiags::TeamPolicy::run<SingleVector>",            \
              policy.set_scratch_size(0,Kokkos::PerTeam(per_team_scratch)), *this); \
         } else {                                                        \
           const Kokkos::TeamPolicy<execution_space,MultiVectorTag<B> > \
-            policy(packptr.extent(0) - 1, 1, 1 /*team_size, vector_loop_size*/); \
+            policy(packptr.extent(0) - 1, team_size, vector_loop_size); \
           Kokkos::parallel_for                                          \
             ("SolveTridiags::TeamPolicy::run<MultiVector>",             \
              policy.set_scratch_size(0,Kokkos::PerTeam(per_team_scratch)), *this); \
@@ -2813,14 +2813,14 @@ namespace KB = KokkosBatched::Experimental;
 #define BLOCKTRIDICONTAINER_DETAILS_SOLVETRIDIAGS(B)                    \
         if (num_vectors == 1) {                                         \
           Kokkos::TeamPolicy<execution_space,SingleVectorTag<B> >       \
-            policy(packptr.extent(0) - 1, 1, 1 /*team_size, vector_loop_size*/); \
+            policy(packptr.extent(0) - 1, team_size, vector_loop_size); \
           policy.set_scratch_size(0,Kokkos::PerTeam(per_team_scratch)); \
           Kokkos::parallel_for                                          \
             ("SolveTridiags::TeamPolicy::run<SingleVector>",            \
              policy, *this);                                            \
         } else {                                                        \
           Kokkos::TeamPolicy<execution_space,MultiVectorTag<B> >        \
-            policy(packptr.extent(0) - 1, 1, 1 /*team_size, vector_loop_size*/); \
+            policy(packptr.extent(0) - 1, team_size, vector_loop_size); \
           policy.set_scratch_size(0,Kokkos::PerTeam(per_team_scratch)); \
           Kokkos::parallel_for                                          \
             ("SolveTridiags::TeamPolicy::run<MultiVector>",             \
