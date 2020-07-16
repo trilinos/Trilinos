@@ -254,11 +254,9 @@ private:
 
   /// Persisting 1D store for X
   mutable host_solve_array_t host_xValues_;
-  int ldx_;
 
   /// Persisting 1D store for B
   mutable host_solve_array_t host_bValues_;
-  int ldb_;
 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_CHOLMOD)
 
