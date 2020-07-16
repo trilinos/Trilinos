@@ -114,22 +114,10 @@ public:
                  "Tpetra::RowMatrix) here anymore.  The constructor can take "
                  "either a RowMatrix or a CrsMatrix just fine.");
 
-  //using global_size_t = Tpetra::global_size_t;
-  using device_type = typename node_type::device_type; // Previous, but node deprecated...
-  using execution_space = typename device_type::execution_space;
-  //static_assert( std::is_same<execution_space, Kokkos::OpenMP>::value, "LSTS: Mismatch of exec space and OMP"); // fails
-  //static_assert( !std::is_same<execution_space, Kokkos::Serial>::value, "LSTS: Match of exec space and Serial"); // fails
-  using memory_space = typename device_type::memory_space;
-  //using k_handle = KokkosKernels::Experimental::KokkosKernelsHandle <global_size_t, local_ordinal_type, scalar_type, execution_space, memory_space, memory_space>;
-  // TODO Use the local matrix type's local and global ordinal
-  //using k_handle = KokkosKernels::Experimental::KokkosKernelsHandle <global_ordinal_type, local_ordinal_type, scalar_type, execution_space, memory_space, memory_space>; // Broken with local matrix...
-  //using local_matrix_local_ordinal_type = typename crs_matrix_type::local_matrix_type::local_ordinal_type; // local_matrix_type is kokkos-kernels sparse crsmatrix
-  using local_matrix_local_ordinal_type = typename crs_matrix_type::local_ordinal_type;
-  using local_matrix_size_type = typename crs_matrix_type::local_graph_type::size_type;
-  using local_matrix_device_type = typename crs_matrix_type::local_matrix_type::device_type; // FIXME?
-  using k_handle = KokkosKernels::Experimental::KokkosKernelsHandle <local_matrix_size_type, local_matrix_local_ordinal_type, scalar_type, typename local_matrix_device_type::execution_space, typename local_matrix_device_type::memory_space, typename local_matrix_device_type::memory_space>;
-  //using k_handle = KokkosKernels::Experimental::KokkosKernelsHandle <local_matrix_size_type, local_matrix_local_ordinal_type, scalar_type, execution_space, memory_space, memory_space>;
-
+  // Use the local matrix types
+  using local_graph_size_type = typename crs_matrix_type::local_graph_type::size_type;
+  using local_matrix_device_type = typename crs_matrix_type::local_matrix_type::device_type;
+  using k_handle = KokkosKernels::Experimental::KokkosKernelsHandle <local_graph_size_type, local_ordinal_type, scalar_type, typename local_matrix_device_type::execution_space, typename local_matrix_device_type::memory_space, typename local_matrix_device_type::memory_space>;
 
   /// \brief Constructor
   ///

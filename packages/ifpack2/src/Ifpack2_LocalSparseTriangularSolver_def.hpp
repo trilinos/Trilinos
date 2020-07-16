@@ -513,7 +513,7 @@ initialize ()
   }
 
   const bool ksptrsv_valid_uplo = (this->uplo_ != "N");
-  if (Teuchos::nonnull(kh_) && ksptrsv_valid_uplo)
+  if (Teuchos::nonnull(kh_) && ksptrsv_valid_uplo && this->diag_ != "U")
   {
     this->isKokkosKernelsSptrsv_ = true;
   }
@@ -559,31 +559,6 @@ compute ()
   if (Teuchos::nonnull (htsImpl_))
     htsImpl_->compute (*A_crs_, out_);
 
-  /*
-  auto A_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_);
-  auto Alocal = A_crs->getLocalMatrix();
-  auto ptr    = Alocal.graph.row_map;
-  auto ind    = Alocal.graph.entries;
-  auto val    = Alocal.values;
-
-  std::cout << "  typeid(MatrixType) = " << typeid(MatrixType).name() << std::endl;
-  std::cout << "  typeid(node_type) = " << typeid(node_type).name() << std::endl;
-  std::cout << "  typeid(map_type) = " << typeid(map_type).name() << std::endl;
-  std::cout << "  typeid(device_type) = " << typeid(device_type).name() << std::endl;
-  std::cout << "  typeid(crs_matrix_type) = " << typeid(crs_matrix_type).name() << std::endl;
-  std::cout << "  typeid(row_matrix_type) = " << typeid(row_matrix_type).name() << std::endl;
-
-  std::cout << "  typeid(local_matrix_device_type) = " << typeid(local_matrix_device_type).name() << std::endl;
-  std::cout << "  typeid(MV) = " << typeid(MV).name() << std::endl;
-
-  std::cout << "  typeid(A_) = " << typeid(A_).name() << std::endl;
-  std::cout << "  typeid(A_crs) = " << typeid(A_crs).name() << std::endl;
-  std::cout << "  typeid(Alocal) = " << typeid(Alocal).name() << std::endl;
-  std::cout << "  typeid(ptr) = " << typeid(ptr).name() << std::endl;
-  std::cout << "  typeid(ind) = " << typeid(ind).name() << std::endl;
-  std::cout << "  typeid(val) = " << typeid(val).name() << std::endl;
-  */
-
   if (Teuchos::nonnull(kh_) && this->isKokkosKernelsSptrsv_)
   {
     auto A_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_);
@@ -598,10 +573,16 @@ compute ()
     // Destroy existing handle and recreate in case new matrix provided - requires rerunning symbolic analysis
     kh_->destroy_sptrsv_handle();
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA)
-    kh_->create_sptrsv_handle(KokkosSparse::Experimental::SPTRSVAlgorithm::SPTRSV_CUSPARSE, numRows, is_lower_tri);
-#else
-    kh_->create_sptrsv_handle(KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1, numRows, is_lower_tri);
+    // CuSparse only supports int type ordinals
+    if (std::is_same<Kokkos::Cuda, typename local_matrix_device_type::execution_space>::value && std::is_same<int,local_ordinal_type >::value)
+    {
+      kh_->create_sptrsv_handle(KokkosSparse::Experimental::SPTRSVAlgorithm::SPTRSV_CUSPARSE, numRows, is_lower_tri);
+    }
+    else
 #endif
+    {
+      kh_->create_sptrsv_handle(KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1, numRows, is_lower_tri);
+    }
     KokkosSparse::Experimental::sptrsv_symbolic(kh_.getRawPtr(), ptr, ind, val);
   }
 
@@ -753,7 +734,7 @@ localTriangularSolve (const MV& Y,
   const std::string trans = (mode == Teuchos::CONJ_TRANS) ? "C" :
     (mode == Teuchos::TRANS ? "T" : "N");
 
-  if (Teuchos::nonnull(kh_) && this->isKokkosKernelsSptrsv_ && trans == "N" && uplo != "N")
+  if (Teuchos::nonnull(kh_) && this->isKokkosKernelsSptrsv_ && trans == "N")
   {
     auto A_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (this->A_);
     auto A_lclk = A_crs->getLocalMatrix ();
@@ -772,22 +753,11 @@ localTriangularSolve (const MV& Y,
       auto Y_j = Y.getVector (j);
       auto X_lcl = X_j->getLocalViewDevice ();
       auto Y_lcl = Y_j->getLocalViewDevice ();
-      //KokkosSparse::Experimental::sptrsv_solve(kh_.getRawPtr(), ptr, ind, val, Y_lcl, X_lcl);
       auto X_lcl_1d = Kokkos::subview (X_lcl, Kokkos::ALL (), 0);
       auto Y_lcl_1d = Kokkos::subview (Y_lcl, Kokkos::ALL (), 0);
-      /*
-      std::cout << "  Check 1: kh type: " << typeid(kh_.getRawPtr()).name() << std::endl;
-      std::cout << "  ptr type: " << typeid(ptr).name() << std::endl;
-      std::cout << "  ind type: " << typeid(ind).name() << std::endl;
-      std::cout << "  val type: " << typeid(val).name() << std::endl;
-      std::cout << "  X_j type: " << typeid(X_j).name() << std::endl;
-      std::cout << "  Y_j type: " << typeid(Y_j).name() << std::endl;
-      std::cout << "  X_lcl type: " << typeid(X_lcl).name() << std::endl;
-      std::cout << "  Y_lcl type: " << typeid(Y_lcl).name() << std::endl;
-      std::cout << "  X_lcl_1d type: " << typeid(X_lcl_1d).name() << std::endl;
-      std::cout << "  Y_lcl_1d type: " << typeid(Y_lcl_1d).name() << std::endl;
-      */
       KokkosSparse::Experimental::sptrsv_solve(kh_.getRawPtr(), ptr, ind, val, Y_lcl_1d, X_lcl_1d);
+      // TODO is this fence needed...
+      typename k_handle::HandleExecSpace().fence();
     }
     // TODO: This forces a sync on host that may be unnecessary, but unclear where users may need to check for this...
     X.sync_host ();
@@ -795,12 +765,12 @@ localTriangularSolve (const MV& Y,
   }
   else
   {
-  // NOTE (mfh 20 Aug 2017): KokkosSparse::trsv currently is a
-  // sequential, host-only code.  See
-  // https://github.com/kokkos/kokkos-kernels/issues/48.  This
-  // means that we need to sync to host, then sync back to device
-  // when done.
     const std::string diag = this->diag_;
+    // NOTE (mfh 20 Aug 2017): KokkosSparse::trsv currently is a
+    // sequential, host-only code.  See
+    // https://github.com/kokkos/kokkos-kernels/issues/48.  This
+    // means that we need to sync to host, then sync back to device
+    // when done.
     auto A_lcl = this->A_crs_->getLocalMatrix ();
     X.sync_host ();
     const_cast<MV&> (Y).sync_host ();

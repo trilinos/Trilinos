@@ -418,6 +418,18 @@ void testCompareToLocalSolve (bool& success, Teuchos::FancyOStream& out,
 #endif
         }
       }
+      else if (trisolverType == TrisolverDetails::KSPTRSV) {
+        out << "Set solver parameters" << endl;
+        // This line can throw. It should throw if HTS is not built in.
+        Teuchos::ParameterList pl ("LocalSparseTriangularSolver parameters");
+        pl.set ("trisolver: type", "KSPTRSV");
+        try {
+          solver->setParameters (pl);
+        } catch (...) {
+          isGblSuccess (false, out);
+          return;
+        }
+      }
 
       out << "Set up the solver" << endl;
       TEST_NOTHROW( solver->initialize () );
@@ -1268,6 +1280,7 @@ TEUCHOS_UNIT_TEST(LocalSparseTriangularSolver, ArrowMatrix)
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(LocalSparseTriangularSolver, CompareInternalToLocalSolve, SC, LO, GO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(LocalSparseTriangularSolver, CompareKSPTRSVToLocalSolve, SC, LO, GO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(LocalSparseTriangularSolver, CompareHTSToLocalSolve, SC, LO, GO)
+
 
 #include "Ifpack2_ETIHelperMacros.h"
 
