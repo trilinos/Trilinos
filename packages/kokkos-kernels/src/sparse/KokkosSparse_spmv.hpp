@@ -55,6 +55,7 @@
 #include <type_traits>
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosBlas1_scal.hpp"
+#include "KokkosKernels_Utils.hpp"
 
 namespace KokkosSparse {
 
@@ -141,9 +142,13 @@ spmv (KokkosKernels::Experimental::Controls controls,
   if(alpha == Kokkos::ArithTraits<AlphaType>::zero() ||
       A_i.numRows() == 0 || A_i.numCols() == 0 || A_i.nnz() == 0)
   {
-    //Degenerate case: Ax is 0, or a 0-dimensional vector, regardless of transpose mode.
-    //Just scale y by beta. Not calling Impl::SPMV::spmv avoids cuSPARSE error messages.
-    KokkosBlas::scal(y_i, beta, y_i);
+    //This is required to maintain semantics of KokkosKernels native SpMV:
+    //if y contains NaN but beta = 0, the result y should be filled with 0.
+    //For example, this is useful for passing in uninitialized y and beta=0.
+    if(beta == Kokkos::ArithTraits<BetaType>::zero())
+      Kokkos::deep_copy(y_i, Kokkos::ArithTraits<BetaType>::zero());
+    else
+      KokkosBlas::scal(y_i, beta, y_i);
     return;
   }
   return Impl::SPMV<
