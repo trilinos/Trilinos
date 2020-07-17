@@ -47,6 +47,7 @@
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_ArithTraits.hpp>
+#include <cxxabi.h>
 
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosKernels_Controls.hpp"
@@ -440,4 +441,4 @@ struct SPMV_MV<AT, AO, AD, AM, AS,
 #include<generated_specializations_hpp/KokkosSparse_spmv_eti_spec_decl.hpp>
 #include<generated_specializations_hpp/KokkosSparse_spmv_mv_eti_spec_decl.hpp>
 
-#endif // KOKKOS_BLAS1_MV_IMPL_DOT_HPP_
+#endif // KOKKOSSPARSE_IMPL_SPMV_SPEC_HPP_

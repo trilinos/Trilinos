@@ -253,11 +253,9 @@ private:
 
   /// Persisting 1D store for X
   mutable host_solve_array_t xValues_;
-  int ldx_;
 
   /// Persisting 1D store for B
   mutable host_solve_array_t bValues_;
-  local_ordinal_type ldb_;
 
   /// Transpose flag
   /// 0: Non-transpose, 1: Transpose, 2: Conjugate-transpose

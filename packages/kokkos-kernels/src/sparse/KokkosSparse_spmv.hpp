@@ -54,7 +54,8 @@
 #include "KokkosSparse_spmv_struct_spec.hpp"
 #include <type_traits>
 #include "KokkosSparse_CrsMatrix.hpp"
-
+#include "KokkosBlas1_scal.hpp"
+#include "KokkosKernels_Utils.hpp"
 
 namespace KokkosSparse {
 
@@ -138,20 +139,33 @@ spmv (KokkosKernels::Experimental::Controls controls,
   XVector_Internal x_i = x;
   YVector_Internal y_i = y;
 
+  if(alpha == Kokkos::ArithTraits<AlphaType>::zero() ||
+      A_i.numRows() == 0 || A_i.numCols() == 0 || A_i.nnz() == 0)
+  {
+    //This is required to maintain semantics of KokkosKernels native SpMV:
+    //if y contains NaN but beta = 0, the result y should be filled with 0.
+    //For example, this is useful for passing in uninitialized y and beta=0.
+    if(beta == Kokkos::ArithTraits<BetaType>::zero())
+      Kokkos::deep_copy(y_i, Kokkos::ArithTraits<BetaType>::zero());
+    else
+      KokkosBlas::scal(y_i, beta, y_i);
+    return;
+  }
   return Impl::SPMV<
-              typename AMatrix_Internal::value_type,
-              typename AMatrix_Internal::ordinal_type,
-              typename AMatrix_Internal::device_type,
-              typename AMatrix_Internal::memory_traits,
-              typename AMatrix_Internal::size_type,
-              typename XVector_Internal::value_type*,
-              typename XVector_Internal::array_layout,
-              typename XVector_Internal::device_type,
-              typename XVector_Internal::memory_traits,
-              typename YVector_Internal::value_type*,
-              typename YVector_Internal::array_layout,
-              typename YVector_Internal::device_type,
-              typename YVector_Internal::memory_traits>::spmv (controls, mode, alpha, A_i, x_i, beta, y_i);
+    typename AMatrix_Internal::value_type,
+    typename AMatrix_Internal::ordinal_type,
+    typename AMatrix_Internal::device_type,
+    typename AMatrix_Internal::memory_traits,
+    typename AMatrix_Internal::size_type,
+    typename XVector_Internal::value_type*,
+    typename XVector_Internal::array_layout,
+    typename XVector_Internal::device_type,
+    typename XVector_Internal::memory_traits,
+    typename YVector_Internal::value_type*,
+    typename YVector_Internal::array_layout,
+    typename YVector_Internal::device_type,
+    typename YVector_Internal::memory_traits>
+      ::spmv (controls, mode, alpha, A_i, x_i, beta, y_i);
 }
 
 
