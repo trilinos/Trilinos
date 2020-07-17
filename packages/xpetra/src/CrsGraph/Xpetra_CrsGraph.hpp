@@ -217,7 +217,7 @@ namespace Xpetra {
 #ifdef HAVE_XPETRA_TPETRA
     typedef typename node_type::execution_space execution_space;
     typedef typename node_type::device_type device_type;
-    typedef Kokkos::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, device_type> local_graph_type;
+    typedef Kokkos::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, device_type, void, size_t> local_graph_type;
 
     /// \brief Get the local graph.
     ///

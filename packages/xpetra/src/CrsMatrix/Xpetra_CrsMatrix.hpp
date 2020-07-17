@@ -294,7 +294,9 @@ namespace Xpetra {
     // that is the local_graph_type in Tpetra::CrsGraph...
     typedef Kokkos::StaticCrsGraph<LocalOrdinal,
                                        Kokkos::LayoutLeft,
-                                       execution_space> local_graph_type;
+                                       execution_space,
+                                       void,
+                                       size_t> local_graph_type;
     /// \brief The specialization of Kokkos::CrsMatrix that represents
     ///   the part of the sparse matrix on each MPI process.
     ///  The same as for Tpetra

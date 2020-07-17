@@ -102,9 +102,9 @@ namespace Experimental{
     }
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
-    cublasHandle_t cublasHandle = 0;
+    mutable cublasHandle_t cublasHandle = 0;
 
-    cublasHandle_t getCublasHandle() {
+    cublasHandle_t getCublasHandle() const {
       if(cublasHandle == 0) {
 	KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton();
 	cublasHandle = s.handle;
@@ -118,9 +118,9 @@ namespace Experimental{
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-    cusparseHandle_t cusparseHandle = 0;
+    mutable cusparseHandle_t cusparseHandle = 0;
 
-    cusparseHandle_t getCusparseHandle() {
+    cusparseHandle_t getCusparseHandle() const {
       if(cusparseHandle == 0) {
 	KokkosKernels::Impl::CusparseSingleton & s =
 	  KokkosKernels::Impl::CusparseSingleton::singleton();

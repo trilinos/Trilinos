@@ -57,7 +57,8 @@ KokkosSparse::CrsMatrix<
   typename Kokkos::ArithTraits<SC>::val_type,
     LO,
     typename NT::execution_space,
-    void>
+    void,
+    size_t>
 localDeepCopyLocallyIndexedRowMatrix
   (const RowMatrix<SC, LO, GO, NT>& A,
    const char label[]);

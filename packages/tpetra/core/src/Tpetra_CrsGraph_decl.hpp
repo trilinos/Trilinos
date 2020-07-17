@@ -256,7 +256,9 @@ namespace Tpetra {
     //! The type of the part of the sparse graph on each MPI process.
     using local_graph_type = Kokkos::StaticCrsGraph<local_ordinal_type,
                                                     Kokkos::LayoutLeft,
-                                                    device_type>;
+                                                    device_type,
+                                                    void,
+                                                    size_t>;
 
     //! The Map specialization used by this class.
     using map_type = ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
