@@ -477,7 +477,7 @@ namespace FROSch {
                     globalVec[i] = -1;
                 }
             }
-            numEntity = globalVec;
+            NumEntity_ = globalVec;
             if (Verbose_) {
                 cout
                 << "\n" << setw(FROSCH_INDENT) << " "
@@ -565,7 +565,7 @@ namespace FROSch {
 
     template <class SC,class LO,class GO,class NO>
     typename DDInterface<SC,LO,GO,NO>::GOVec DDInterface<SC,LO,GO,NO>::getNumEnt() const{
-      return numEntity;
+      return NumEntity_;
     }
 
     template <class SC,class LO,class GO,class NO>

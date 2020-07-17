@@ -233,7 +233,7 @@ namespace FROSch {
         XExportPtrVecPtr CoarseSolveExporters_ = XExportPtrVecPtr(0);
         XExportPtrVecPtr MLCoarseSolveExporters_;
 
-        UN partitionType;
+        UN PartitionType_;
 #ifdef FROSCH_COARSEOPERATOR_EXPORT_AND_IMPORT
         XImportPtrVecPtr CoarseSolveImporters_ = XImportPtrVecPtr(0);
 #endif

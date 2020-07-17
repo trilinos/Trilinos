@@ -64,7 +64,6 @@ namespace FROSch {
     IDofs_ (0),
     DofsMaps_ (0),
     NumberOfBlocks_ (0),
-    KRowMap_(),
     MaxNumNeigh_(0)
     {
         FROSCH_TIMER_START_LEVELID(harmonicCoarseOperatorTime,"HarmonicCoarseOperator::HarmonicCoarseOperator");
@@ -309,7 +308,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     typename HarmonicCoarseOperator<SC,LO,GO,NO>::XMapPtr HarmonicCoarseOperator<SC,LO,GO,NO>::assembleCoarseMap()
     {
-        //FROSCH_TIMER_START_LEVELID(assembleCoarseMapTime,"HarmonicCoarseOperator::assembleCoarseMap");
+        FROSCH_TIMER_START_LEVELID(assembleCoarseMapTime,"HarmonicCoarseOperator::assembleCoarseMap");
         GOVec mapVector(0);
         GO tmp = 0;
         for (UN i=0; i<NumberOfBlocks_; i++) {

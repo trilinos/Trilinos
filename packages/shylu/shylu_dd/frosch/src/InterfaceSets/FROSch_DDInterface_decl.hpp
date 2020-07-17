@@ -245,7 +245,7 @@ namespace FROSch {
         Verbosity Verbosity_ = All;
 
         ConstUN LevelID_ = 1;
-        GOVec numEntity;
+        GOVec NumEntity_;
     };
 
 }

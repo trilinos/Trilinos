@@ -19,8 +19,8 @@
     <ParameterList name="Preconditioner Types">
         <ParameterList name="FROSch">
             <Parameter name="FROSch Preconditioner Type"                        type="string"   value="TwoLevelPreconditioner"/>
-            <Parameter name="Dimension"                                         type="int"      value="1"/>
-            <Parameter name="DofsPerNode1"                                      type="int"      value="1"/>
+            <Parameter name="Dimension"                                         type="int"      value="2"/>
+            <Parameter name="DofsPerNode1"                                      type="int"      value="2"/>
             <Parameter name="DofsPerNode2"                                      type="int"      value="1"/>
             <Parameter name="DofOrdering1"                                      type="string"   value="NodeWise"/>
             <Parameter name="DofOrdering2"                                      type="string"   value="NodeWise"/>
@@ -28,7 +28,7 @@
             <Parameter name="TwoLevel"                                          type="bool"     value="true"/>
             <Parameter name="OverlappingOperator Type"                          type="string"   value="AlgebraicOverlappingOperator"/>
             <Parameter name="CoarseOperator Type"                               type="string"   value="IPOUHarmonicCoarseOperator"/>
-            <Parameter name="Null Space Type"                                   type="string"   value="Laplace"/>
+            <Parameter name="Null Space Type"                                   type="string"   value="Linear Elasticity"/>
 
             <ParameterList name="AlgebraicOverlappingOperator">
                 <Parameter name="Combine Values in Overlap"                     type="string"   value="Full"/>
@@ -77,8 +77,6 @@
                 <ParameterList name="CoarseSolver">
                   <Parameter name="SolverType"                             type="string"        value="TwoLevelPreconditioner"/>
                   <Parameter name="Level ID"                               type="unsigned int"  value="2"/>
-                  <Parameter name="Dimension"                              type="int"           value="2"/>
-
                   <Parameter name="Overlap"                                type="int"           value="1"/>
                   <Parameter name="TwoLevel"                               type="bool"          value="true"/>
                   <!--<Parameter name="Use OverlappingOperator" 							type="bool" 	value="true">-->

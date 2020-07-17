@@ -106,13 +106,6 @@
 #endif
 #endif
 
-
-
-
-
-
-
-
 namespace FROSch {
 
     using namespace std;

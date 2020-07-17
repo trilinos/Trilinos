@@ -77,8 +77,6 @@
                 <ParameterList name="CoarseSolver">
                   <Parameter name="SolverType"                             type="string"        value="TwoLevelPreconditioner"/>
                   <Parameter name="Level ID"                               type="unsigned int"  value="2"/>
-                  <Parameter name="Dimension"                              type="int"           value="2"/>
-
                   <Parameter name="Overlap"                                type="int"           value="1"/>
                   <Parameter name="TwoLevel"                               type="bool"          value="true"/>
                   <!--<Parameter name="Use OverlappingOperator" 							type="bool" 	value="true">-->

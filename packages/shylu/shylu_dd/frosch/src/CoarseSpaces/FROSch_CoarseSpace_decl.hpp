@@ -154,7 +154,6 @@ namespace FROSch {
         UNVec LocalSubspacesSizes_ = UNVec(0);
 
         XMatrixPtr GlobalBasisMatrix_;
-        XMultiVectorPtr GlobalNullSpace_;
     };
 
 }

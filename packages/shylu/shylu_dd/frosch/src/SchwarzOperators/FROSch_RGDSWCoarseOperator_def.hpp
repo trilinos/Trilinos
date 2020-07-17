@@ -401,7 +401,7 @@ namespace FROSch {
                                                 ConstXMapPtrVecPtr dofsMaps,
                                                UN partitionType)
     {
-      FROSCH_ASSERT(false,"For GDSWCoarseOperator the ZoltanDual Option is not implemented!");
+      FROSCH_ASSERT(false,"For RGDSWCoarseOperator the ZoltanDual Option is not implemented!");
 
     }
 }

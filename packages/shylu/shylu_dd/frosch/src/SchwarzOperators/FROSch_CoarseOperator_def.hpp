@@ -735,7 +735,7 @@ namespace FROSch {
 #endif
             }
         } else if(!DistributionList_->get("Type","linear").compare("ZoltanDual")){
-          //ZoltanDual provides a factorization of the coarse problem with Zoltan2 inlcuding the
+          //ZoltanDual provides a partition of the coarse problem with Zoltan2 inlcuding the
           //build of a Repeated map suited for the next level
           //GatheringSteps to communicate Matrix
           int gatheringSteps = DistributionList_->get("GatheringSteps",1);
@@ -807,6 +807,7 @@ namespace FROSch {
 											 RowsCoarseSolve[i] = start+i;
 									 }
 					   }
+             RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout));
 
 						 MLCoarseMap_ = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseMap_->lib(),-1,RowsCoarseSolve,0,CoarseSolveComm_);
 
@@ -816,6 +817,8 @@ namespace FROSch {
              this->buildElementNodeList();
              // Connectivity Graph on the CoarseSolveComm_
              this->buildCoarseGraph();
+
+
              //Build Repeatd Map on CoarseComm------------
              //Initialize Maps...
              ConstXMapPtr UniqueMap;
@@ -823,8 +826,10 @@ namespace FROSch {
              XMapPtr tmpRepMap;
              ConstXMapPtr ConstRepMap;
              GOVec uniEle;
+            CoarseMap_->describe(*fancy,Teuchos::VERB_EXTREME);
 
              if(OnCoarseSolveComm_){
+               MLCoarseMap_->describe(*fancy,Teuchos::VERB_EXTREME);
                //Coarse DofsMaps so far only one Block will work
                ConstXMapPtrVecPtr2D CoarseDofsMaps(1);
                BuildRepMapZoltan(SubdomainConnectGraph_,ElementNodeList_, DistributionList_,CoarseSolveComm_,CoarseSolveRepeatedMap_);
@@ -837,7 +842,7 @@ namespace FROSch {
                ConstXMapPtrVecPtr DMap(CoarseDofsPerNode_);
                ConstXMapPtrVecPtr DMapRep(CoarseDofsPerNode_);
 
-               tmpRepMap  = this->BuildRepeatedMapCoarseLevel(ConstRepMap,CoarseDofsPerNode_,DMapRep,partitionType);
+               tmpRepMap  = this->BuildRepeatedMapCoarseLevel(ConstRepMap,CoarseDofsPerNode_,DMapRep,PartitionType_);
 
 
                RepMapCoarse_ = tmpRepMap;
@@ -851,7 +856,7 @@ namespace FROSch {
                UniqueMap = FROSch::BuildUniqueMap<LO,GO,NO>(CoarseSolveRepeatedMap_);
 
 
-               UniqueMapAll  = this->BuildRepeatedMapCoarseLevel(UniqueMap,CoarseDofsPerNode_,DMap,partitionType);
+               UniqueMapAll  = this->BuildRepeatedMapCoarseLevel(UniqueMap,CoarseDofsPerNode_,DMap,PartitionType_);
 
                uniEle = UniqueMapAll->getNodeElementList();
 
@@ -900,7 +905,7 @@ namespace FROSch {
             FROSCH_ASSERT(false,"FROSch::CoarseOperator : ERROR: Distribution type unknown.");
         }
 
-        if (OnCoarseSolveComm_) {
+        /*if (OnCoarseSolveComm_) {
             GO dimCoarseProblem = CoarseSolveMap_->getMaxAllGlobalIndex();
             if (CoarseSolveMap_->lib()==UseEpetra || CoarseSolveMap_->getGlobalNumElements()>0) {
                 dimCoarseProblem += 1;
@@ -915,7 +920,7 @@ namespace FROSch {
             reduceAll(*CoarseSolveComm_,REDUCE_MAX,localVal,ptr(&maxVal));
 
 
-        }
+        }*/
 
         return 0;
     }
