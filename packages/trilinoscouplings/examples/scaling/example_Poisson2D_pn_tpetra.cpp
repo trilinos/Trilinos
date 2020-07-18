@@ -82,6 +82,7 @@
 /**************************************************************/
 /*                          Includes                          */
 /**************************************************************/
+#include <stdlib.h>
 
 // TrilinosCouplings includes
 #include "TrilinosCouplings_config.h"
@@ -461,12 +462,20 @@ int main(int argc, char *argv[]) {
   clp.setOption ("coordsFilename", &coordsFilename, "If nonempty, dump the "
 		  "generated coordinates to that file in MatrixMarket format.");
   
+  // Random number seed
+  int randomSeed=24601;
+  clp.setOption ("seed", &randomSeed, "Random Seed.");
+  
+  
   switch (clp.parse(argc, argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
     case Teuchos::CommandLineProcessor::PARSE_ERROR:
     case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
   }
+  
+  // Initialize RNG
+  srand(randomSeed);
 
   if (MyPID == 0){
     std::cout \
