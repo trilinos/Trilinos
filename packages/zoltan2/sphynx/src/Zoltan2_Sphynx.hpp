@@ -199,7 +199,7 @@ namespace Zoltan2 {
     {
       // Get the row pointers in the host
       auto rowOffsets = graph_->getLocalGraph().row_map;
-      auto rowOffsets_h = Kokkos::create_mirror_view(Kokkos::HostSpace(), rowOffsets);
+      auto rowOffsets_h = Kokkos::create_mirror_view(rowOffsets);
       Kokkos::deep_copy(rowOffsets_h, rowOffsets);
 
       // Get size information 
@@ -289,7 +289,7 @@ namespace Zoltan2 {
 
 	// Get the row pointers in the host
 	auto rowOffsets = graph_->getLocalGraph().row_map;
-	auto rowOffsets_h = Kokkos::create_mirror_view(Kokkos::HostSpace(), rowOffsets);
+	auto rowOffsets_h = Kokkos::create_mirror_view(rowOffsets);
 	Kokkos::deep_copy(rowOffsets_h, rowOffsets);
 
 	// Create the degree matrix with max row size set to 1

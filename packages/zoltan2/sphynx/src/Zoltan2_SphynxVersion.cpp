@@ -45,11 +45,12 @@
 // @HEADER
 
 #include "Trilinos_version.h"
+#include <string> 
 
 namespace Zoltan2 {
 
    std::string Sphynx_Version() { 
-		return("Sphynx in Trilinos " TRILINOS_VERSION_STRING); 
+     return("Sphynx in Trilinos " TRILINOS_VERSION_STRING); 
    }
 
 } // namespace Zoltan2
