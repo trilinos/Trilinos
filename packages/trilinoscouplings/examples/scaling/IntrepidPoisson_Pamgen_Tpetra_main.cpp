@@ -57,6 +57,7 @@
             system).
 */
 
+#include <cstdlib>
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -212,6 +213,10 @@ main (int argc, char *argv[])
     int numMueluRebuilds=0;
     cmdp.setOption ("rebuild", &numMueluRebuilds, "Number of times to rebuild the MueLu hierarchy.");
 
+    // Random number seed
+    int randomSeed=24601;
+    cmdp.setOption ("seed", &randomSeed, "Random Seed.");
+
     parseCommandLineArguments (cmdp, printedHelp, argc, argv, nx, ny, nz,
                                xmlInputParamsFile, solverName, verbose, debug);
     if (printedHelp) {
@@ -220,6 +225,9 @@ main (int argc, char *argv[])
       // with a happy return code.
       return EXIT_SUCCESS;
     }
+
+    // Initialize RNG
+    srand(randomSeed);
 
     setMaterialTensorOffDiagonalValue (materialTensorOffDiagonalValue);
 

@@ -2089,10 +2089,14 @@ namespace KB = KokkosBatched::Experimental;
           factorize(member, i0, nrows, 0, internal_vector_values, WW);
         } else {
           Kokkos::parallel_for
-            (Kokkos::ThreadVectorRange(member, vector_loop_size), [&](const local_ordinal_type &v) {
+            (Kokkos::ThreadVectorRange(member, vector_loop_size),
+	     [&](const local_ordinal_type &v) {
               const local_ordinal_type vbeg = v*internal_vector_length;
               if (vbeg < npacks)
                 extract(member, partidx+vbeg, npacks, vbeg);
+              // this is not safe if vector loop size is different from vector size of 
+              // the team policy. we always make sure this when constructing the team policy
+              member.team_barrier();
               factorize(member, i0, nrows, v, internal_vector_values, WW);
             });
         }
@@ -3613,10 +3617,10 @@ namespace KB = KokkosBatched::Experimental;
         IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::NormManager::Ireduce");
 
         work_[1] = work_[0];
+#ifdef HAVE_IFPACK2_MPI
         auto send_data = &work_[1];
         auto recv_data = &work_[0];
         if (collective_) {
-#ifdef HAVE_IFPACK2_MPI
 # if defined(IFPACK2_BLOCKTRIDICONTAINER_USE_MPI_3)
           MPI_Iallreduce(send_data, recv_data, 1,
                          Teuchos::Details::MpiTypeTraits<magnitude_type>::getType(),
@@ -3626,8 +3630,8 @@ namespace KB = KokkosBatched::Experimental;
                          Teuchos::Details::MpiTypeTraits<magnitude_type>::getType(),
                          MPI_SUM, comm_);
 # endif
-#endif
         }
+#endif
       }
 
       // Check if the norm-based termination criterion is met. tol2 is the
