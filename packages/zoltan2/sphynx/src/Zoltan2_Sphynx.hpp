@@ -127,35 +127,41 @@ namespace Zoltan2 {
       env_(env), params_(params), comm_(comm), adapter_(adapter)
     { 
 
-      Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Sphynx::Laplacian"));
+      // Don't compute the Laplacian if the number of requested parts is 1
+      const Teuchos::ParameterEntry *pe = params_->getEntryPtr("num_global_parts");
+      numGlobalParts_ = pe->getValue<int>(&numGlobalParts_);
+      if(numGlobalParts_ > 1){
 
-      // The verbosity is common throughout the algorithm, better to check and set now
-      const Teuchos::ParameterEntry *pe = params_->getEntryPtr("sphynx_verbosity");
-      if (pe)
-	verbosity_ = pe->getValue<int>(&verbosity_);
+	Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Sphynx::Laplacian"));
 
-      // Do we need to pre-process the input?
-      pe = params_->getEntryPtr("sphynx_skip_preprocessing");
-      if (pe)
-	skipPrep_ = pe->getValue<bool>(&skipPrep_);
+	// The verbosity is common throughout the algorithm, better to check and set now
+	pe = params_->getEntryPtr("sphynx_verbosity");
+	if (pe)
+	  verbosity_ = pe->getValue<int>(&verbosity_);
 
-      // Get the graph from XpetraCrsGraphAdapter if skipPrep_ is true
-      // We assume the graph has all of the symmetric and diagonal entries
-      if(skipPrep_) 
-	graph_ = adapter_->getUserGraph();
-      else {
-	throw std::runtime_error("\nSphynx Error: Preprocessing has not been implemented yet.\n");
-      } 
+	// Do we need to pre-process the input?
+	pe = params_->getEntryPtr("sphynx_skip_preprocessing");
+	if (pe)
+	  skipPrep_ = pe->getValue<bool>(&skipPrep_);
+
+	// Get the graph from XpetraCrsGraphAdapter if skipPrep_ is true
+	// We assume the graph has all of the symmetric and diagonal entries
+	if(skipPrep_) 
+	  graph_ = adapter_->getUserGraph();
+	else {
+	  throw std::runtime_error("\nSphynx Error: Preprocessing has not been implemented yet.\n");
+	} 
 	
-      // Check if the graph is regular and set the problem type accordingly
-      determineRegularity();
+	// Check if the graph is regular and set the problem type accordingly
+	determineRegularity();
 
-      // Compute the Laplacian matrix
-      computeLaplacian();
+	// Compute the Laplacian matrix
+	computeLaplacian();
 
-      if(problemType_ == GENERALIZED)
-	computeDegreeMatrix();
+	if(problemType_ == GENERALIZED)
+	  computeDegreeMatrix();
 
+      }
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -427,6 +433,7 @@ namespace Zoltan2 {
     const Teuchos::RCP<const Adapter> adapter_;
     
     // Internal members
+    int numGlobalParts_; 
     Teuchos::RCP<const graph_t> graph_;
     Teuchos::RCP<matrix_t> laplacian_;
     Teuchos::RCP<const matrix_t> degMatrix_;
@@ -435,7 +442,6 @@ namespace Zoltan2 {
     bool irregular_;           // decided internally
     int verbosity_;            // obtained from user params
     bool skipPrep_;            // obtained from user params
-  
   };
 
 
@@ -453,12 +459,19 @@ namespace Zoltan2 {
   template <typename Adapter>
   void Sphynx<Adapter>::partition(const RCP<PartitioningSolution<Adapter>> &solution)
   {
+    // Return a trivial solution if only one part is requested
+    if(numGlobalParts_ == 1) {
 
-    // The global number of parts to be computed
-    size_t numGlobalParts = solution->getTargetGlobalNumberOfParts();
+      size_t numRows =adapter_->getUserGraph()->getNodeNumRows();
+      Teuchos::ArrayRCP<part_t> parts(numRows,0);
+      solution->setParts(parts);
+      
+      return;
+
+    }
 
     // The number of eigenvectors to be computed
-    int numEigenVectors = (int) log2(numGlobalParts)+1;
+    int numEigenVectors = (int) log2(numGlobalParts_)+1;
 
     // Compute the eigenvectors using LOBPCG
     int computedNumEv = Sphynx::LOBPCGwrapper(numEigenVectors);
