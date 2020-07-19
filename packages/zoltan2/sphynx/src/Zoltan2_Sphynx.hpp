@@ -550,7 +550,7 @@ namespace Zoltan2 {
     // Create and set initial vectors
     RCP<mvector_t> ivec( new mvector_t(laplacian_->getRangeMap(), numEigenVectors));
     Anasazi::MultiVecTraits<scalar_t, mvector_t>::MvRandom(*ivec);
-    for (int i = 0; i < ivec->getLocalLength(); i++)
+    for (size_t i = 0; i < ivec->getLocalLength(); i++)
       ivec->replaceLocalValue(i,0,1.);
     
 
@@ -728,7 +728,7 @@ namespace Zoltan2 {
   {
     // Extract the meaningful eigenvectors by getting rid of the first one
     Teuchos::Array<size_t> columns (computedNumEv-1);
-    for (size_t j = 0; j < computedNumEv-1; ++j) {
+    for (int j = 0; j < computedNumEv-1; ++j) {
       columns[j] = j+1;
     }
     coordinates = eigenVectors->subCopy (columns());
