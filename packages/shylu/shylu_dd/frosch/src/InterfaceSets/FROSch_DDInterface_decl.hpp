@@ -195,7 +195,7 @@ namespace FROSch {
         EntitySetConstPtr & getInterior() const;
 
         EntitySetConstPtr & getRoots() const;
-        
+
         EntitySetConstPtr & getLeafs() const;
 
         EntitySetPtrConstVecPtr & getEntitySetVector() const;
@@ -210,8 +210,7 @@ namespace FROSch {
     protected:
 
         int communicateLocalComponents(IntVecVecPtr &componentsSubdomains,
-                                       IntVecVec &componentsSubdomainsUnique,
-                                       CommunicationStrategy commStrategy = CommCrsGraph);
+                                       IntVecVec &componentsSubdomainsUnique);
 
         int identifyLocalComponents(IntVecVecPtr &componentsSubdomains,
                                     IntVecVec &componentsSubdomainsUnique);
@@ -237,6 +236,8 @@ namespace FROSch {
 
         ConstXMapPtr NodesMap_;
         ConstXMapPtr UniqueNodesMap_;
+
+        CommunicationStrategy CommStrategy_ = CommCrsGraph;
 
         bool Verbose_ = false;
 

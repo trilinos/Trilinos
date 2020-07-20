@@ -42,6 +42,10 @@
 #ifndef _FROSCH_TOOLS_DECL_HPP
 #define _FROSCH_TOOLS_DECL_HPP
 
+#ifndef FROSCH_INDENT
+#define FROSCH_INDENT 5
+#endif
+
 #ifndef FROSCH_ASSERT
 #define FROSCH_ASSERT(A,S) TEUCHOS_TEST_FOR_EXCEPTION(!(A),std::logic_error,S);
 #endif
@@ -59,19 +63,15 @@
 #endif
 
 #ifndef FROSCH_WARNING
-#define FROSCH_WARNING(CLASS,VERBOSE,OUTPUT) if (VERBOSE) std::cerr << CLASS << " : WARNING: " << OUTPUT << std::endl;
+#define FROSCH_WARNING(CLASS,VERBOSE,OUTPUT) if (VERBOSE) std::cerr << std::setw(FROSCH_INDENT) << " " << CLASS << " : WARNING: " << OUTPUT << std::endl;
 #endif
 
 #ifndef FROSCH_NOTIFICATION
-#define FROSCH_NOTIFICATION(CLASS,VERBOSE,OUTPUT) if (VERBOSE) std::cout << CLASS << " : NOTIFICATION: " << OUTPUT << std::endl;
+#define FROSCH_NOTIFICATION(CLASS,VERBOSE,OUTPUT) if (VERBOSE) std::cout << std::setw(FROSCH_INDENT) << " " << CLASS << " : NOTIFICATION: " << OUTPUT << std::endl;
 #endif
 
 #ifndef FROSCH_TEST_OUTPUT
-#define FROSCH_TEST_OUTPUT(COMM,VERBOSE,OUTPUT) COMM->barrier(); COMM->barrier(); COMM->barrier(); if (VERBOSE) std::cout << OUTPUT << std::endl;
-#endif
-
-#ifndef FROSCH_INDENT
-#define FROSCH_INDENT 5
+#define FROSCH_TEST_OUTPUT(COMM,VERBOSE,OUTPUT) COMM->barrier(); COMM->barrier(); COMM->barrier(); if (VERBOSE) std::cout << std::setw(FROSCH_INDENT) << " " << OUTPUT << std::endl;
 #endif
 
 #include <ShyLU_DDFROSch_config.h>

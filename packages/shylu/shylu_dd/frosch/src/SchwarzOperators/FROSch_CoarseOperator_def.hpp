@@ -426,7 +426,7 @@ namespace FROSch {
                     << setw(89) << "-----------------------------------------------------------------------------------------"
                     << "\n" << setw(FROSCH_INDENT) << " "
                     << "| "
-                    << left << setw(74) << "Coarse problem statistics (coarse comm) " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
+                    << left << setw(74) << "> Coarse Problem Statistics (Coarse Communicator) " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
                     << " |"
                     << "\n" << setw(FROSCH_INDENT) << " "
                     << setw(89) << "========================================================================================="
@@ -437,6 +437,26 @@ namespace FROSch {
                     << "\n" << setw(FROSCH_INDENT) << " "
                     << "| " << left << setw(41) << "Number of ranks on the coarse comm" << right
                     << " | " << setw(41) << NumProcsCoarseSolve_
+                    << " |"
+                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "| " << left << setw(41) << "Solver type" << right
+                    << " | " << setw(41) << this->ParameterList_->sublist("CoarseSolver").get("SolverType","Amesos")
+                    << " |"
+                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "| " << left << setw(41) << "Solver" << right
+                    << " | " << setw(41) << this->ParameterList_->sublist("CoarseSolver").get("Solver","Mumps")
+                    << " |"
+                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "| " << left << setw(41) << "Reuse symbolic factorization" << right
+                    << " | " << setw(41) << this->ParameterList_->get("Reuse: Coarse Matrix Symbolic Factorization",true)
+                    << " |"
+                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "| " << left << setw(41) << "Reuse coarse basis" << right
+                    << " | " << setw(41) << this->ParameterList_->get("Reuse: Coarse Basis",true)
+                    << " |"
+                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "| " << left << setw(41) << "Reuse coarse matrix" << right
+                    << " | " << setw(41) << this->ParameterList_->get("Reuse: Coarse Matrix",false)
                     << " |"
                     << "\n" << setw(FROSCH_INDENT) << " "
                     << setw(89) << "-----------------------------------------------------------------------------------------"

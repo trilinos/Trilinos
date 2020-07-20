@@ -203,7 +203,7 @@ namespace FROSch {
             << setw(89) << "-----------------------------------------------------------------------------------------"
             << "\n" << setw(FROSCH_INDENT) << " "
             << "| "
-            << left << setw(74) << "GDSW Interface Partition Of Unity " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")" << right
+            << left << setw(74) << "> GDSW Interface Partition Of Unity " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")" << right
             << " |"
             << "\n" << setw(FROSCH_INDENT) << " "
             << setw(89) << "========================================================================================="

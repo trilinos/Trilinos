@@ -72,14 +72,6 @@ namespace FROSch {
         FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode");
         FROSCH_ASSERT(blockId<this->NumberOfBlocks_,"Block does not exist yet and can therefore not be reset.");
 
-        if (this->Verbose_) {
-            cout << "\n\
-+---------------------+\n\
-| RGDSWCoarseOperator |\n\
-|  Block " << blockId << "            |\n\
-+---------------------+\n";
-        }
-
         // Process the parameter list
         stringstream blockIdStringstream;
         blockIdStringstream << blockId+1;
@@ -137,25 +129,56 @@ namespace FROSch {
         EntitySetPtr interface = this->DDInterface_->getInterface();
         EntitySetPtr interior = this->DDInterface_->getInterior();
 
-        // Check for interface
-        if (interface->getEntity(0)->getNumNodes()==0) {
-            FROSCH_NOTIFICATION("FROSch::RGDSWCoarseOperator",this->Verbose_,"No interface found => Volume functions will be used instead.");
-            this->computeVolumeFunctions(blockId,dimension,nodesMap,nodeList,interior);
-        } else {
-            this->GammaDofs_[blockId] = LOVecPtr(this->DofsPerNode_[blockId]*interface->getEntity(0)->getNumNodes());
-            this->IDofs_[blockId] = LOVecPtr(this->DofsPerNode_[blockId]*interior->getEntity(0)->getNumNodes());
-            for (UN k=0; k<this->DofsPerNode_[blockId]; k++) {
-                for (UN i=0; i<interface->getEntity(0)->getNumNodes(); i++) {
-                    this->GammaDofs_[blockId][this->DofsPerNode_[blockId]*i+k] = interface->getEntity(0)->getLocalDofID(i,k);
-                }
-                for (UN i=0; i<interior->getEntity(0)->getNumNodes(); i++) {
-                    this->IDofs_[blockId][this->DofsPerNode_[blockId]*i+k] = interior->getEntity(0)->getLocalDofID(i,k);
-                }
+        if (useForCoarseSpace) {
+
+            if (this->Verbose_) {
+                cout
+                << "\n" << setw(FROSCH_INDENT) << " "
+                << setw(89) << "-----------------------------------------------------------------------------------------"
+                << "\n" << setw(FROSCH_INDENT) << " "
+                << "| "
+                << left << setw(74) << "RGDSWCoarseOperator " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
+                << " |"
+                << "\n" << setw(FROSCH_INDENT) << " "
+                << setw(89) << "========================================================================================="
+                << "\n" << setw(FROSCH_INDENT) << " "
+                << "| " << left << setw(41) << "Block" << right
+                << " | " << setw(41) << blockId
+                << " |"
+                << "\n" << setw(FROSCH_INDENT) << " "
+                << "| " << left << setw(41) << "Numer of degrees of freedom per node" << right
+                << " | " << setw(41) << dimension
+                << " |"
+                << "\n" << setw(FROSCH_INDENT) << " "
+                << "| " << left << setw(41) << "Numer of degrees of freedom per node" << right
+                << " | " << setw(41) << dofsPerNode
+                << " |"
+                << "\n" << setw(FROSCH_INDENT) << " "
+                << "| " << left << setw(41) << "Option" << right
+                << " | " << setw(41) << option
+                << " |"
+                << "\n" << setw(FROSCH_INDENT) << " "
+                << setw(89) << "-----------------------------------------------------------------------------------------"
+                << endl;
             }
 
-            this->InterfaceCoarseSpaces_[blockId].reset(new CoarseSpace<SC,LO,GO,NO>(this->MpiComm_,this->SerialComm_));
+            // Check for interface
+            if (interface->getEntity(0)->getNumNodes()==0) {
+                FROSCH_NOTIFICATION("FROSch::RGDSWCoarseOperator",this->Verbose_,"No interface found => Volume functions will be used instead.");
+                this->computeVolumeFunctions(blockId,dimension,nodesMap,nodeList,interior);
+            } else {
+                this->GammaDofs_[blockId] = LOVecPtr(this->DofsPerNode_[blockId]*interface->getEntity(0)->getNumNodes());
+                this->IDofs_[blockId] = LOVecPtr(this->DofsPerNode_[blockId]*interior->getEntity(0)->getNumNodes());
+                for (UN k=0; k<this->DofsPerNode_[blockId]; k++) {
+                    for (UN i=0; i<interface->getEntity(0)->getNumNodes(); i++) {
+                        this->GammaDofs_[blockId][this->DofsPerNode_[blockId]*i+k] = interface->getEntity(0)->getLocalDofID(i,k);
+                    }
+                    for (UN i=0; i<interior->getEntity(0)->getNumNodes(); i++) {
+                        this->IDofs_[blockId][this->DofsPerNode_[blockId]*i+k] = interior->getEntity(0)->getLocalDofID(i,k);
+                    }
+                }
 
-            if (useForCoarseSpace) {
+                this->InterfaceCoarseSpaces_[blockId].reset(new CoarseSpace<SC,LO,GO,NO>(this->MpiComm_,this->SerialComm_));
 
                 if (this->ParameterList_->get("Test Unconnected Interface",true)) {
                     this->DDInterface_->divideUnconnectedEntities(this->K_);
@@ -195,7 +218,7 @@ namespace FROSch {
                     << setw(89) << "-----------------------------------------------------------------------------------------"
                     << "\n" << setw(FROSCH_INDENT) << " "
                     << "| "
-                    << left << setw(74) << "RGDSW coarse space " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
+                    << left << setw(74) << "> RGDSW coarse space " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
                     << " |"
                     << "\n" << setw(FROSCH_INDENT) << " "
                     << setw(89) << "========================================================================================="

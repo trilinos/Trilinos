@@ -73,11 +73,40 @@ namespace FROSch {
                                                               ConstXMapPtr repeatedMap)
     {
         FROSCH_TIMER_START_LEVELID(initializeTime,"AlgebraicOverlappingOperator::initialize");
+
         if (this->Verbose_) {
-            cout << "\n\
-+------------------------------+\n\
-| AlgebraicOverlappingOperator |\n\
-+------------------------------+\n";
+            cout
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << setw(89) << "-----------------------------------------------------------------------------------------"
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << "| "
+            << left << setw(74) << "AlgebraicOverlappingOperator " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
+            << " |"
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << setw(89) << "========================================================================================="
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << "| " << left << setw(41) << "Adding layers strategy" << right
+            << " | " << setw(41) << this->ParameterList_->get("Adding Layers Strategy","CrsGraph")
+            << " |"
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << "| " << left << setw(41) << "Combine mode in overlap" << right
+            << " | " << setw(41) << this->ParameterList_->get("Combine Values in Overlap","Restricted")
+            << " |"
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << "| " << left << setw(41) << "Solver type" << right
+            << " | " << setw(41) << this->ParameterList_->sublist("Solver").get("SolverType","Amesos")
+            << " |"
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << "| " << left << setw(41) << "Solver" << right
+            << " | " << setw(41) << this->ParameterList_->sublist("Solver").get("Solver","Mumps")
+            << " |"
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << "| " << left << setw(41) << "Reuse symbolic factorization" << right
+            << " | " << setw(41) << this->ParameterList_->get("Reuse: Symbolic Factorization",true)
+            << " |"
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << setw(89) << "-----------------------------------------------------------------------------------------"
+            << endl;
         }
 
         if (repeatedMap.is_null()) repeatedMap = this->K_->getRangeMap();
@@ -154,7 +183,7 @@ namespace FROSch {
                 << setw(89) << "-----------------------------------------------------------------------------------------"
                 << "\n" << setw(FROSCH_INDENT) << " "
                 << "| "
-                << left << setw(74) << "Overlapping subdomains statistics " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
+                << left << setw(74) << "> Overlapping Subdomains Statistics " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
                 << " |"
                 << "\n" << setw(FROSCH_INDENT) << " "
                 << setw(89) << "========================================================================================="

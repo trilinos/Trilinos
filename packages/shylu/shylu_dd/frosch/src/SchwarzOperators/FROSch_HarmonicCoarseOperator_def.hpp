@@ -266,7 +266,7 @@ namespace FROSch {
                 << setw(89) << "-----------------------------------------------------------------------------------------"
                 << "\n" << setw(FROSCH_INDENT) << " "
                 << "| "
-                << left << setw(74) << "RGDSW coarse space " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
+                << left << setw(74) << "> RGDSW coarse space " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
                 << " |"
                 << "\n" << setw(FROSCH_INDENT) << " "
                 << setw(89) << "========================================================================================="
@@ -597,7 +597,7 @@ namespace FROSch {
             << setw(89) << "-----------------------------------------------------------------------------------------"
             << "\n" << setw(FROSCH_INDENT) << " "
             << "| "
-            << left << setw(74) << "Local linear dependencies of coarse basis functions statistics " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
+            << left << setw(74) << "> Local Linear Dependencies of Coarse Basis Functions Statistics " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
             << " |"
             << "\n" << setw(FROSCH_INDENT) << " "
             << setw(89) << "========================================================================================="
@@ -652,6 +652,30 @@ namespace FROSch {
                                                                                                                          XMatrixPtr kIGamma)
     {
         FROSCH_TIMER_START_LEVELID(computeExtensionsTime,"HarmonicCoarseOperator::computeExtensions");
+
+        if (this->Verbose_) {
+            cout
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << setw(89) << "-----------------------------------------------------------------------------------------"
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << "| "
+            << left << setw(74) << "> Extensions solver" << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
+            << " |"
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << setw(89) << "========================================================================================="
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << "| " << left << setw(41) << "Solver type" << right
+            << " | " << setw(41) << this->ParameterList_->sublist("ExtensionSolver").get("SolverType","Amesos")
+            << " |"
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << "| " << left << setw(41) << "Solver" << right
+            << " | " << setw(41) << this->ParameterList_->sublist("ExtensionSolver").get("Solver","Mumps")
+            << " |"
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << setw(89) << "-----------------------------------------------------------------------------------------"
+            << endl;
+        }
+
         //this->Phi_ = MatrixFactory<SC,LO,GO,NO>::Build(this->K_->getRangeMap(),AssembledInterfaceCoarseSpace_->getBasisMap(),AssembledInterfaceCoarseSpace_->getBasisMap()->getNodeNumElements()); // Nonzeroes abhängig von dim/dofs!!!
         XMultiVectorPtr mVPhi = MultiVectorFactory<SC,LO,GO,NO>::Build(localMap,AssembledInterfaceCoarseSpace_->getBasisMap()->getNodeNumElements());
         XMultiVectorPtr mVtmp = MultiVectorFactory<SC,LO,GO,NO>::Build(kII->getRowMap(),AssembledInterfaceCoarseSpace_->getBasisMap()->getNodeNumElements());

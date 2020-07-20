@@ -63,6 +63,7 @@ namespace FROSch {
     DofsPerNode_ (dofsPerNode),
     NumMyNodes_ (localToGlobalMap->getNodeNumElements()),
     NodesMap_ (localToGlobalMap),
+    CommStrategy_ (commStrategy),
     Verbose_ (MpiComm_->getRank()==0),
     Verbosity_ (verbosity),
     LevelID_ (levelID)
@@ -75,7 +76,7 @@ namespace FROSch {
         IntVecVecPtr componentsSubdomains;
         IntVecVec componentsSubdomainsUnique;
 
-        communicateLocalComponents(componentsSubdomains,componentsSubdomainsUnique,commStrategy);
+        communicateLocalComponents(componentsSubdomains,componentsSubdomainsUnique);
 
         identifyLocalComponents(componentsSubdomains,componentsSubdomainsUnique);
     }
@@ -481,10 +482,16 @@ namespace FROSch {
                 << setw(89) << "-----------------------------------------------------------------------------------------"
                 << "\n" << setw(FROSCH_INDENT) << " "
                 << "| "
-                << left << setw(74) << "Interface statistics " << right << setw(8) << "(Level " << setw(2) << LevelID_ << ")"
+                << left << setw(74) << "> Interface Statistics " << right << setw(8) << "(Level " << setw(2) << LevelID_ << ")"
                 << " |"
                 << "\n" << setw(FROSCH_INDENT) << " "
                 << setw(89) << "========================================================================================="
+                << "\n" << setw(FROSCH_INDENT) << " "
+                << "| " << left << setw(41) << "Interface communication strategy" << right
+                << " | " << setw(41) << CommStrategy_
+                << " |"
+                << "\n" << setw(FROSCH_INDENT) << " "
+                << setw(89) << "-----------------------------------------------------------------------------------------"
                 << "\n" << setw(FROSCH_INDENT) << " "
                 << "| " << left << setw(20) << " " << right
                 << " | " << setw(10) << "total"
@@ -725,19 +732,18 @@ namespace FROSch {
 
     template <class SC,class LO,class GO,class NO>
     int DDInterface<SC,LO,GO,NO>::communicateLocalComponents(IntVecVecPtr &componentsSubdomains,
-                                                             IntVecVec &componentsSubdomainsUnique,
-                                                             CommunicationStrategy commStrategy)
+                                                             IntVecVec &componentsSubdomainsUnique)
     {
         FROSCH_TIMER_START_LEVELID(communicateLocalComponentsTime,"DDInterface::communicateLocalComponents");
         //if (Verbose_ && Verbosity_==All) cout << "FROSch::DDInterface : Communicating nodes" << endl;
 
-        if (NodesMap_->lib() == UseEpetra && commStrategy == CreateOneToOneMap) {
+        if (NodesMap_->lib() == UseEpetra && CommStrategy_ == CreateOneToOneMap) {
             FROSCH_WARNING("FROSch::DDInterface",Verbose_,"CreateOneToOneMap communication strategy does not work for Epetra => Switching to CommCrsGraph.");
-            commStrategy = CommCrsGraph;
+            CommStrategy_ = CommCrsGraph;
         }
 
         // Different communication strategies
-        switch (commStrategy) {
+        switch (CommStrategy_) {
             case CommCrsMatrix:
                 {
                     UniqueNodesMap_ = BuildUniqueMap<LO,GO,NO>(NodesMap_);

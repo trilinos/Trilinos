@@ -59,11 +59,15 @@
 #endif
 
 #ifndef FROSCH_WARNING
-#define FROSCH_WARNING(CLASS,VERBOSE,OUTPUT) if (VERBOSE) std::cerr << CLASS << " : WARNING: " << OUTPUT << std::endl;
+#define FROSCH_WARNING(CLASS,VERBOSE,OUTPUT) if (VERBOSE) std::cerr << std::setw(FROSCH_INDENT) << " " << CLASS << " : WARNING: " << OUTPUT << std::endl;
+#endif
+
+#ifndef FROSCH_NOTIFICATION
+#define FROSCH_NOTIFICATION(CLASS,VERBOSE,OUTPUT) if (VERBOSE) std::cout << std::setw(FROSCH_INDENT) << " " << CLASS << " : NOTIFICATION: " << OUTPUT << std::endl;
 #endif
 
 #ifndef FROSCH_TEST_OUTPUT
-#define FROSCH_TEST_OUTPUT(COMM,VERBOSE,OUTPUT) COMM->barrier(); COMM->barrier(); COMM->barrier(); if (VERBOSE) std::cout << OUTPUT << std::endl;
+#define FROSCH_TEST_OUTPUT(COMM,VERBOSE,OUTPUT) COMM->barrier(); COMM->barrier(); COMM->barrier(); if (VERBOSE) std::cout << std::setw(FROSCH_INDENT) << " " << OUTPUT << std::endl;
 #endif
 
 #include <Xpetra_MapFactory_fwd.hpp>
