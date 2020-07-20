@@ -301,6 +301,21 @@ IF (${PACKAGE_NAME}_ENABLE_Basker)
     NUM_MPI_PROCS 2
     STANDARD_PASS_OUTPUT
     )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCopyBaskerFiles
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+    SOURCE_FILES Basker_test.xml
+    EXEDEPS Solver_Test
+    )
+
+TRIBITS_ADD_TEST(
+    Solver_Test
+    NAME Basker_Solver_Test
+    ARGS "--xml-params=Basker_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 1
+    COMM serial mpi
+    )
     
 ENDIF()
 

@@ -12,7 +12,6 @@
 #include "Tempus_config.hpp"
 #include "Tempus_StepperRKBase.hpp"
 #include "Tempus_StepperExplicit.hpp"
-#include "Tempus_RKButcherTableau.hpp"
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
   #include "Tempus_StepperRKObserverComposite.hpp"
 #endif
@@ -111,9 +110,6 @@ public:
     virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
     { return this->stepperObserver_; }
 #endif
-    virtual Teuchos::RCP<const RKButcherTableau<Scalar> > getTableau()
-    { return tableau_; }
-
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
 
@@ -127,9 +123,6 @@ public:
 
     /// Get a default (initial) StepperState
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState();
-    virtual Scalar getOrder() const {return tableau_->order();}
-    virtual Scalar getOrderMin() const {return tableau_->orderMin();}
-    virtual Scalar getOrderMax() const {return tableau_->orderMax();}
     virtual Scalar getInitTimeStep(
         const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) const;
 
@@ -190,8 +183,6 @@ protected:
 
   virtual void setupTableau() = 0;
 
-
-  Teuchos::RCP<RKButcherTableau<Scalar> >                tableau_;
 
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > stageXDot_;
 

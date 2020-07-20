@@ -33,6 +33,9 @@
 // 
 
 #include <stk_util/util/ParameterList.hpp>
+
+#ifdef STK_HAVE_BOOST
+
 #include <stddef.h>                     // for size_t
 #include "boost/any.hpp"                // for any_cast
 
@@ -159,3 +162,6 @@ namespace stk {
     }
   }
 }
+
+#endif //STK_HAVE_BOOST
+

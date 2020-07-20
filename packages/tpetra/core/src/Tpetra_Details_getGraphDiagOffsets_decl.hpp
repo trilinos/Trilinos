@@ -85,7 +85,8 @@ public:
                          ::Kokkos::MemoryUnmanaged> diag_offsets_type;
   typedef ::Kokkos::StaticCrsGraph<LO,
                                    ::Kokkos::LayoutLeft,
-                                   device_type> local_graph_type;
+                                   device_type,
+                                   void, size_t> local_graph_type;
   typedef ::Tpetra::Details::LocalMap<LO, GO, device_type> local_map_type;
   typedef ::Kokkos::View<const typename local_graph_type::size_type*,
                          ::Kokkos::LayoutLeft,

@@ -35,6 +35,10 @@
 #ifndef PARAMETERLIST_H_
 #define PARAMETERLIST_H_
 
+#include <stk_util/stk_config.h>
+
+#ifdef STK_HAVE_BOOST
+
 #include <sys/types.h>                  // for int64_t
 #include <boost/any.hpp>                // for any, any_cast
 #include <iostream>                     // for operator<<, basic_ostream, etc
@@ -187,5 +191,6 @@ namespace stk {
   }
 }
 
+#endif //STK_HAVE_BOOST
 
 #endif /* PARAMETERLIST_H_ */

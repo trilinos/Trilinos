@@ -250,8 +250,8 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
   RKMethods.push_back("General ERK Embedded");
   RKMethods.push_back("SSPERK22");
   RKMethods.push_back("SSPERK33");
-  //RKMethods.push_back("SSPERK54");  // slope = 3.94129
-  RKMethods.push_back("RK2");  // slope = 3.94129
+  RKMethods.push_back("SSPERK54");  // slope = 3.94129
+  RKMethods.push_back("RK2"); 
 
   std::vector<double> RKMethodErrors;
   RKMethodErrors.push_back(8.33251e-07);
@@ -271,8 +271,8 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
   RKMethodErrors.push_back(4.16603e-05);
   RKMethodErrors.push_back(0.00166645);
   RKMethodErrors.push_back(4.16603e-05);
-  //RKMethodErrors.push_back(3.85613e-07); // SSPERK54
-  RKMethodErrors.push_back(0.00166644); // RK2
+  RKMethodErrors.push_back(3.85613e-07); // SSPERK54
+  RKMethodErrors.push_back(0.00166644); 
 
 
   TEST_ASSERT(RKMethods.size() == RKMethodErrors.size() );
@@ -397,6 +397,7 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
 
     double order_tol = 0.01;
     if (RKMethods[m] == "Merson 4(5) Pair") order_tol = 0.04;
+    if (RKMethods[m] == "SSPERK54")         order_tol = 0.06;
 
     TEST_FLOATING_EQUALITY( xSlope,                    order, order_tol );
     TEST_FLOATING_EQUALITY( xErrorNorm[0], RKMethodErrors[m],    1.0e-4 );

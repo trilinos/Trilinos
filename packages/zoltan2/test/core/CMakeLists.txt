@@ -1,0 +1,11 @@
+ADD_SUBDIRECTORIES(
+unit
+partition
+order
+color
+scaling
+correctness
+temp
+driver
+directory
+)

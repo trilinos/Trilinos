@@ -172,6 +172,8 @@ lib stk_balance_lib
              $(stk_balance-root)/stk_balance/*.cpp 
              $(stk_balance-root)/stk_balance/internal/*.cpp 
              $(stk_balance-root)/stk_balance/mesh/*.cpp
+             $(stk_balance-root)/stk_balance/io/*.cpp
+             $(stk_balance-root)/stk_balance/setup/*.cpp
       ]
     ]
     search_tolerance
@@ -198,50 +200,42 @@ lib stk_balance_lib
   :
   ;
 
-lib stk_balance_test_utils
-  :
-    [ glob $(stk_balance-root)/test_utils/*.cpp ]
-    stk_balance_lib
-    /sierra/stk_mesh//stk_mesh_base
-    /sierra/stk_io//stk_io
-    /sierra/seacas//nemesis
-    /sierra/stk_search//stk_search
-    /sierra/stk_unit_test_utils//stk_unit_test_utils
-  ;
-
 #
 # SECTION 4: Build configuration
 #
 
 exe stk_balance_unit_tester
   :
-    [ glob $(stk_balance-root)/../stk_unit_tests/stk_balance/*.cpp 
-    ]
-    /sierra/stk_unit_test_utils//stk_unit_main
+    [ glob $(stk_balance-root)/../stk_unit_tests/stk_balance/*.cpp ]
+    stk_balance_lib
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
     /sierra/stk_unit_test_utils//stk_mesh_fixtures
-    stk_balance_test_utils
+    /sierra/stk_unit_test_utils//stk_unit_main
   :
     <tag>@sierra-exec-tag
   ;
 
 exe stk_balance_doc_tester
   :
-    [ glob $(stk_balance-root)/../stk_doc_tests/stk_balance/*.cpp 
-    ]
+    [ glob $(stk_balance-root)/../stk_doc_tests/stk_balance/*.cpp ]
+    stk_balance_lib
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
     /sierra/stk_unit_test_utils//stk_unit_main
-    stk_balance_test_utils
   :
     <tag>@sierra-exec-tag
   ;
 
 exe stk_balance_integration_tester
   :
-    [ glob $(stk_balance-root)/../stk_integration_tests/stk_balance/*.cpp 
+    [
+      glob $(stk_balance-root)/../stk_integration_tests/stk_balance/*.cpp
+           $(stk_balance-root)/../stk_integration_tests/test_utils/*.cpp
     ]
+    stk_balance_lib
+    /sierra/seacas//nemesis
     /sierra/stk_unit_test_utils//stk_unit_main
-    /sierra/stk_search//stk_search
-    stk_balance_test_utils
   :
+    <include>$(stk_balance-root-inc)/../stk_integration_tests
     <tag>@sierra-exec-tag
   ;
 

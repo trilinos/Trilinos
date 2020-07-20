@@ -93,7 +93,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Galeri                packages/galeri                   PT
   Amesos                packages/amesos                   PT
   Pamgen                packages/pamgen                   PT
-  Zoltan2               packages/zoltan2                  PT
+  Zoltan2Core           packages/zoltan2/core             PT
   Ifpack                packages/ifpack                   PT
   ML                    packages/ml                       PT
   Belos                 packages/belos                    PT
@@ -121,6 +121,8 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   NOX                   packages/nox                      PT
   Moertel               packages/moertel                  ST
   MueLu                 packages/muelu                    PT
+  Zoltan2Sphynx         packages/zoltan2/sphynx           PT
+  Zoltan2               packages/zoltan2                  PT
   ShyLU_DD              packages/shylu/shylu_dd           PT
   ShyLU                 packages/shylu                    PT
   Rythmos               packages/rythmos                  PT

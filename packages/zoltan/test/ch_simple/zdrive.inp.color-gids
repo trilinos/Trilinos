@@ -1,0 +1,12 @@
+# Test coloring only with num_gid_entries > 1 (see #7583)
+Decomposition Method = none
+Zoltan Parameters = comm_pattern=S
+Zoltan Parameters = vertex_visit_order=I
+Zoltan Parameters = superstep_size=100
+Zoltan Parameters = coloring_problem=distance-1
+Zoltan Parameters = num_gid_entries=2
+Zoltan Parameters = num_lid_entries=2
+File Type = Chaco
+File Name = simple
+Parallel Disk Info = number=0
+zdrive action = 4

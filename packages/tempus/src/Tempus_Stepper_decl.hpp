@@ -185,10 +185,10 @@ public:
 
 private:
 
-  std::string stepperType_;             //< Name of stepper type
-  bool useFSAL_ = false;                //< Use First-Step-As-Last (FSAL) principle
-  std::string ICConsistency_ = std::string("None");  //< Type of consistency to apply to ICs.
-  bool ICConsistencyCheck_ = true;      //< Check if the initial condition is consistent
+  std::string stepperType_;        ///< Name of stepper type
+  bool useFSAL_ = false;           ///< Use First-Step-As-Last (FSAL) principle
+  std::string ICConsistency_ = std::string("None");  ///< Type of consistency to apply to ICs.
+  bool ICConsistencyCheck_ = true; ///< Check if the initial condition is consistent
 
   // RCP to SolutionState memory or Stepper temporary memory (if needed).
   Teuchos::RCP<Thyra::VectorBase<Scalar> > stepperX_;
@@ -209,7 +209,7 @@ protected:
   virtual void setStepperXDotDot(Teuchos::RCP<Thyra::VectorBase<Scalar> > xDotDot)
   { stepperXDotDot_ = xDotDot; }
 
-  bool isInitialized_ = false; //< True if stepper's member data is initialized.
+  bool isInitialized_ = false; ///< True if stepper's member data is initialized.
 };
 
 

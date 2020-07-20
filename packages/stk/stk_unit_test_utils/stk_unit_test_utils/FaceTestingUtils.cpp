@@ -43,7 +43,7 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
-#include <stk_mesh/baseImpl/ForEachEntityLoopAbstractions.hpp>
+#include <stk_mesh/base/ForEachEntity.hpp>
 #include <stk_util/diag/StringUtil.hpp>
 #include <string>
 #include <vector>
@@ -91,7 +91,7 @@ bool is_face_fully_connected(const stk::mesh::BulkData& mesh, stk::mesh::MeshInd
 bool fully_connected_elements_to_faces(const stk::mesh::BulkData& bulk)
 {
     bool fully_connected = true;
-    stk::mesh::impl::for_each_entity_run(bulk, stk::topology::ELEMENT_RANK,
+    stk::mesh::for_each_entity_run(bulk, stk::topology::ELEMENT_RANK,
         [&fully_connected](const stk::mesh::BulkData& mesh, const stk::mesh::MeshIndex& meshIndex)
         {
           fully_connected &= is_face_fully_connected(mesh,meshIndex);
@@ -138,7 +138,7 @@ bool is_face_shared_between_different_elements(const stk::mesh::BulkData& mesh, 
 unsigned count_shared_faces_between_different_elements(const stk::mesh::BulkData& bulk)
 {
     unsigned shared_face_count = 0;
-    stk::mesh::impl::for_each_entity_run(bulk, stk::topology::FACE_RANK,
+    stk::mesh::for_each_entity_run(bulk, stk::topology::FACE_RANK,
         [&shared_face_count](const stk::mesh::BulkData& mesh, const stk::mesh::MeshIndex& meshIndex)
         {
           if (is_face_shared_between_different_elements(mesh,stk::mesh::impl::get_entity(meshIndex)))
@@ -186,7 +186,7 @@ bool is_face_shared_between_same_element(const stk::mesh::BulkData& mesh, stk::m
 unsigned count_shared_faces_between_same_element(const stk::mesh::BulkData& bulk)
 {
     unsigned shared_face_count = 0;
-    stk::mesh::impl::for_each_entity_run(bulk, stk::topology::FACE_RANK,
+    stk::mesh::for_each_entity_run(bulk, stk::topology::FACE_RANK,
       [&shared_face_count](const stk::mesh::BulkData& mesh, const stk::mesh::MeshIndex& meshIndex)
       {
         stk::mesh::Entity face = stk::mesh::impl::get_entity(meshIndex);
@@ -241,7 +241,7 @@ bool is_face_at_x_equal_half(const stk::mesh::BulkData& mesh, stk::mesh::Entity 
 stk::mesh::EntityVector get_faces_at_x_equal_half(const stk::mesh::BulkData& bulk)
 {
     stk::mesh::EntityVector faces_at_x_equal_half;
-    stk::mesh::impl::for_each_entity_run(bulk, stk::topology::FACE_RANK,
+    stk::mesh::for_each_entity_run(bulk, stk::topology::FACE_RANK,
       [&faces_at_x_equal_half](const stk::mesh::BulkData& mesh, const stk::mesh::MeshIndex& meshIndex)
       {
         if (is_face_at_x_equal_half(mesh,stk::mesh::impl::get_entity(meshIndex)))

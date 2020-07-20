@@ -446,6 +446,15 @@
     </parameter>
 
     <parameter>
+      <name>aggregation: classical algo</name>
+      <type>string</type>
+      <default>"default"</default>
+      <description>Type of sub-algorithm for "classical" dropping. Possible values: "default", "unscaled cut", "scaled cut".</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>aggregation: drop tol</name>
       <type>double</type>
       <default>0.0</default>
@@ -1195,6 +1204,15 @@
       <type>int</type>
       <default>1</default>
       <description>Matrix order for the "AkPtent" pattern.</description>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>emin: use filtered matrix</name>
+      <type>bool</type>
+      <default>true</default>
+      <ConvectionDiffusion>true</ConvectionDiffusion>
+      <description>Matrix to use for smoothing for energy minimization. The two options are: to use the original matrix, and to use the filtered matrix with filtering based on filtered graph used for aggregation.</description>
       <comment-ML>not supported by ML</comment-ML>
     </parameter>
 

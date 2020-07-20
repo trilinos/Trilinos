@@ -81,8 +81,8 @@ namespace stk {
 
     globalVec.clear();
   
-    unsigned int sizeT     = sizeof(T);
-    unsigned int localSize = sizeT * localVec.size();
+    int sizeT     = sizeof(T);
+    int localSize = sizeT * localVec.size();
 
     //
     //  Determine the total number of bytes being sent by each other processor.

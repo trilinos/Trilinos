@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include <cgns/Iocgns_Defines.h>
@@ -867,12 +867,12 @@ void Iocgns::Utils::output_assembly(int file_ptr, const Ioss::Assembly *assembly
   // Now, iterate the members of the assembly and add the reference to the structured block
   if (assembly->get_member_type() == Ioss::STRUCTUREDBLOCK) {
     for (const auto &mem : members) {
-      int         base = mem->get_property("base").get_int();
+      int         sbbase = mem->get_property("base").get_int();
       const auto *sb   = dynamic_cast<const Ioss::StructuredBlock *>(mem);
       Ioss::Utils::check_dynamic_cast(sb);
       if (is_parallel_io || sb->is_active()) {
         int db_zone = get_db_zone(sb);
-        if (cg_goto(file_ptr, base, "Zone_t", db_zone, "end") == CG_OK) {
+        if (cg_goto(file_ptr, sbbase, "Zone_t", db_zone, "end") == CG_OK) {
           CGERR(cg_famname_write(assembly->name().c_str()));
         }
       }
@@ -2606,6 +2606,8 @@ void Iocgns::Utils::assign_zones_to_procs(std::vector<Iocgns::StructuredZoneData
 size_t Iocgns::Utils::pre_split(std::vector<Iocgns::StructuredZoneData *> &zones, double avg_work,
                                 double load_balance, int proc_rank, int proc_count, bool verbose)
 {
+  auto   original_zones(zones); // In case we need to call this again...
+
   auto   new_zones(zones);
   size_t new_zone_id = zones.size() + 1;
 
@@ -2800,9 +2802,28 @@ size_t Iocgns::Utils::pre_split(std::vector<Iocgns::StructuredZoneData *> &zones
     }
   }
   std::swap(new_zones, zones);
-  if (zones.size() < (size_t)proc_count && load_balance > 1.05) {
+  size_t active = std::count_if(zones.begin(), zones.end(), [](const Iocgns::StructuredZoneData *z) { return z->is_active(); });
+
+  if (active < (size_t)proc_count && load_balance > 1.05) {
     // Tighten up the load_balance factor to get some decomposition going...
     double new_load_balance = (1.0 + load_balance) / 2.0;
+
+    // If any of the original zones were split the first time we called this routine,
+    // we need to delete the zones created via splitting.
+    // Also reset the parent zone to not have any children...
+    for (auto &zone : zones) {
+      if (!zone->is_active()) {
+	zone->m_child1 = nullptr;
+	zone->m_child2 = nullptr;
+      }
+      if (zone->m_adam != zone) {
+	// Created via a split; delete...
+	delete zone;
+      }
+    }
+
+    // Revert `zones` back to original version (with no zones split)
+    zones = original_zones;
     new_zone_id = pre_split(zones, avg_work, new_load_balance, proc_rank, proc_count, verbose);
   }
   return new_zone_id;

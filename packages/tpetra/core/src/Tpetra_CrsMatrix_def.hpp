@@ -48,10 +48,10 @@
 /// for you).  If you only want the declaration of Tpetra::CrsMatrix,
 /// include "Tpetra_CrsMatrix_decl.hpp".
 
-#include "Tpetra_LocalCrsMatrixOperator.hpp"
 #include "Tpetra_Import_Util.hpp"
 #include "Tpetra_Import_Util2.hpp"
 #include "Tpetra_RowMatrix.hpp"
+#include "Tpetra_LocalCrsMatrixOperator.hpp"
 
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_castAwayConstDualView.hpp"
@@ -1040,6 +1040,14 @@ namespace Tpetra {
     return lclMatrix_.get () == nullptr ?
       local_matrix_type () :
       lclMatrix_->getLocalMatrix ();
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::shared_ptr<typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_multiply_op_type>
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalMultiplyOperator () const
+  {
+    return lclMatrix_;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -4106,17 +4114,7 @@ namespace Tpetra {
          "either the row Map or the range Map of the CrsMatrix.");
     }
 
-    // Check whether A has a valid local matrix.  It might not if it
-    // was not created with a local matrix, and if fillComplete has
-    // never been called on it before.  A never-initialized (and thus
-    // invalid) local matrix has zero rows, because it was default
-    // constructed.
-    const LO lclNumRows =
-      static_cast<LO> (this->getRowMap ()->getNodeNumElements ());
-    const bool validLocalMatrix = lclMatrix_.get () != nullptr &&
-      lclMatrix_->getLocalMatrix ().numRows () == lclNumRows;
-
-    if (validLocalMatrix) {
+    if (this->isFillComplete()) {
       using dev_memory_space = typename device_type::memory_space;
       if (xp->template need_sync<dev_memory_space> ()) {
         using Teuchos::rcp_const_cast;
@@ -4129,19 +4127,10 @@ namespace Tpetra {
                                x_lcl_1d, false, false);
     }
     else {
-      execution_space().fence (); // for UVM's sake
-
-      ArrayRCP<const Scalar> vectorVals = xp->getData (0);
-      ArrayView<impl_scalar_type> rowValues = Teuchos::null;
-      for (LocalOrdinal i = 0; i < lclNumRows; ++i) {
-        const RowInfo rowinfo = this->staticGraph_->getRowInfo (i);
-        rowValues = this->getViewNonConst (rowinfo);
-        const impl_scalar_type scaleValue = static_cast<impl_scalar_type> (vectorVals[i]);
-        for (size_t j = 0; j < rowinfo.numEntries; ++j) {
-          rowValues[j] *= scaleValue;
-        }
-      }
-      execution_space().fence (); // for UVM's sake
+      // 6/2020  Disallow leftScale of non-fillComplete matrices #7446
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (true, std::runtime_error, "CrsMatrix::leftScale requires matrix to be"
+         " fillComplete");
     }
   }
 
@@ -4185,17 +4174,7 @@ namespace Tpetra {
          "either the domain Map or the column Map of the CrsMatrix.");
     }
 
-    // Check whether A has a valid local matrix.  It might not if it
-    // was not created with a local matrix, and if fillComplete has
-    // never been called on it before.  A never-initialized (and thus
-    // invalid) local matrix has zero rows, because it was default
-    // constructed.
-    const LO lclNumRows =
-      static_cast<LO> (this->getRowMap ()->getNodeNumElements ());
-    const bool validLocalMatrix = lclMatrix_.get () != nullptr &&
-      lclMatrix_->getLocalMatrix ().numRows () == lclNumRows;
-
-    if (validLocalMatrix) {
+    if (this->isFillComplete()) {
       using dev_memory_space = typename device_type::memory_space;
       if (xp->template need_sync<dev_memory_space> ()) {
         using Teuchos::rcp_const_cast;
@@ -4208,20 +4187,10 @@ namespace Tpetra {
                                 x_lcl_1d, false, false);
     }
     else {
-      execution_space().fence (); // for UVM's sake
-
-      ArrayRCP<const Scalar> vectorVals = xp->getData (0);
-      ArrayView<impl_scalar_type> rowValues = null;
-      for (LO i = 0; i < lclNumRows; ++i) {
-        const RowInfo rowinfo = this->staticGraph_->getRowInfo (i);
-        rowValues = this->getViewNonConst (rowinfo);
-        ArrayView<const LO> colInds;
-        this->getCrsGraphRef ().getLocalRowView (i, colInds);
-        for (size_t j = 0; j < rowinfo.numEntries; ++j) {
-          rowValues[j] *= static_cast<impl_scalar_type> (vectorVals[colInds[j]]);
-        }
-      }
-      execution_space().fence (); // for UVM's sake
+      // 6/2020  Disallow rightScale of non-fillComplete matrices #7446
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (true, std::runtime_error, "CrsMatrix::rightScale requires matrix to be"
+         " fillComplete");
     }
   }
 
@@ -4887,13 +4856,11 @@ namespace Tpetra {
 
       const bool callGraphComputeGlobalConstants = params.get () == nullptr ||
         params->get ("compute global constants", true);
-      const bool computeLocalTriangularConstants = params.get () == nullptr ||
-        params->get ("compute local triangular constants", true);
       if (callGraphComputeGlobalConstants) {
-        this->myGraph_->computeGlobalConstants (computeLocalTriangularConstants);
+        this->myGraph_->computeGlobalConstants ();
       }
       else {
-        this->myGraph_->computeLocalConstants (computeLocalTriangularConstants);
+        this->myGraph_->computeLocalConstants ();
       }
       this->myGraph_->fillComplete_ = true;
       this->myGraph_->checkInternalState ();
@@ -5481,7 +5448,14 @@ namespace Tpetra {
          std::runtime_error, "X and Y may not alias one another.");
     }
 
-    lclMatrix_->apply (X_lcl, Y_lcl, mode, alpha, beta);
+    LocalOrdinal nrows = getNodeNumRows();
+    LocalOrdinal maxRowImbalance = 0;
+    if(nrows != 0)
+      maxRowImbalance = getNodeMaxNumRowEntries() - (getNodeNumEntries() / nrows);
+    if(size_t(maxRowImbalance) >= Tpetra::Details::Behavior::rowImbalanceThreshold())
+      lclMatrix_->applyImbalancedRows (X_lcl, Y_lcl, mode, alpha, beta);
+    else
+      lclMatrix_->apply (X_lcl, Y_lcl, mode, alpha, beta);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

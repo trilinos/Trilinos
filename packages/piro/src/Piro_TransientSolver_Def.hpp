@@ -290,7 +290,7 @@ Piro::TransientSolver<Scalar>::evalConvergedModelResponsesAndSensitivities(
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  *out_ << "\nE) Calculate responses ...\n";
+  *out_ << "\nF) Calculate responses ...\n";
 
   // Solution at convergence is the response at index num_g_
   RCP<Thyra::VectorBase<Scalar> > gx_out = outArgs.get_g(num_g_);
