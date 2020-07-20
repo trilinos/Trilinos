@@ -105,12 +105,12 @@ int main(int argc, char *argv[])
   RCP<FancyOStream> out = fancyOStream(rcpFromRef(std::cout));
   out->setOutputToRootOnly(0);
 
-  GO globalPrimalNumDofs = 1599;
-  GO globalDualNumDofs = 100;
-  GO globalNumDofs = globalPrimalNumDofs + globalDualNumDofs; // used for the maps
-  size_t nPrimalDofsPerNode = 3;
+  const GO globalPrimalNumDofs = 1599;
+  const GO globalDualNumDofs = 100;
+  const GO globalNumDofs = globalPrimalNumDofs + globalDualNumDofs; // used for the maps
+  const size_t nPrimalDofsPerNode = 3;
   const GO globalPrimalNumNodes = globalPrimalNumDofs / nPrimalDofsPerNode;
-  size_t nDualDofsPerNode = 1;
+  const size_t nDualDofsPerNode = 1;
 
   std::map<GO, GO> lagr2Dof;
   std::map<LO, LO> myLagr2Dof;
@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
 
   // Construct the blocked map in Thyra mode
   RCP<const tpetra_map_type> primalNodeMap = Tpetra::createUniformContigMapWithNode<LocalOrdinal, GlobalOrdinal, Node>(globalPrimalNumNodes, comm);
-  GO indexBase = primalNodeMap->getIndexBase();
+  const GO indexBase = primalNodeMap->getIndexBase();
   ArrayView<const GO> myPrimalNodes = primalNodeMap->getNodeElementList();
 
   const size_t numMyPrimalNodes = primalNodeMap->getNodeNumElements();
