@@ -48,6 +48,7 @@
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 #include <MueLu_ConfigDefs.hpp>
 #include <MueLu_ParameterListInterpreter.hpp>
+#include <MueLu_UseDefaultTypes.hpp>
 
 // Teuchos
 #include <Teuchos_XMLParameterListHelpers.hpp>
@@ -78,13 +79,6 @@ void read_Lagr2Dof(std::string filemane, std::map<GlobalOrdinal, GlobalOrdinal> 
 int main(int argc, char *argv[])
 {
 #ifdef HAVE_MUELU_TPETRA
-  typedef double Scalar;
-  typedef MueLu::DefaultLocalOrdinal LocalOrdinal;
-  typedef MueLu::DefaultGlobalOrdinal GlobalOrdinal;
-  typedef LocalOrdinal LO;
-  typedef GlobalOrdinal GO;
-  typedef MueLu::DefaultNode Node;
-
   typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> SparseMatrixType;
 
   typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tpetra_mvector_type;
