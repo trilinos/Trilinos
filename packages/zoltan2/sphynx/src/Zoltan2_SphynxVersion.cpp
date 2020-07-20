@@ -1,8 +1,9 @@
 // @HEADER
+//
 // ***********************************************************************
 //
-//          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
+//   Zoltan2: A package of combinatorial algorithms for scientific computing
+//                  Copyright 2012 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -34,36 +35,22 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// ************************************************************************
+// Questions? Contact Seher Acer        (sacer@sandia.gov)
+//                    Erik Boman        (egboman@sandia.gov)
+//                    Siva Rajamanickam (srajama@sandia.gov)
+//                    Karen Devine      (kddevin@sandia.gov)
+//
+// ***********************************************************************
+//
 // @HEADER
 
-#ifndef TPETRA_DETAILS_LOCALDEEPCOPYROWMATRIX_DECL_HPP
-#define TPETRA_DETAILS_LOCALDEEPCOPYROWMATRIX_DECL_HPP
+#include "Trilinos_version.h"
+#include <string> 
 
-/// \file Tpetra_Details_localDeepCopyRowMatrix_decl.hpp
-/// \brief Declaration of function for making a deep copy of a
-///   Tpetra::RowMatrix's local matrix.
+namespace Zoltan2 {
 
-#include "Tpetra_RowMatrix_fwd.hpp"
-#include "KokkosSparse_CrsMatrix.hpp"
-#include "Kokkos_ArithTraits.hpp"
+   std::string Sphynx_Version() { 
+     return("Sphynx in Trilinos " TRILINOS_VERSION_STRING); 
+   }
 
-namespace Tpetra {
-namespace Details {
-
-//! Deep copy of A's local sparse matrix.
-template <class SC, class LO, class GO, class NT>
-KokkosSparse::CrsMatrix<
-  typename Kokkos::ArithTraits<SC>::val_type,
-    LO,
-    typename NT::execution_space,
-    void,
-    size_t>
-localDeepCopyLocallyIndexedRowMatrix
-  (const RowMatrix<SC, LO, GO, NT>& A,
-   const char label[]);
-
-} // namespace Details
-} // namespace Tpetra
-
-#endif // TPETRA_DETAILS_LOCALDEEPCOPYROWMATRIX_DECL_HPP
+} // namespace Zoltan2
