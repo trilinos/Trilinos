@@ -60,6 +60,9 @@
 #include <BelosXpetraAdapter.hpp>
 #include <BelosMueLuAdapter.hpp>
 
+// Xpetra
+#include <Xpetra_UseShortNames.hpp>
+
 template <typename GlobalOrdinal>
 void read_Lagr2Dof(std::string filemane, std::map<GlobalOrdinal, GlobalOrdinal> &lagr2Dof)
 {
@@ -80,21 +83,11 @@ int main(int argc, char *argv[])
 {
 #ifdef HAVE_MUELU_TPETRA
   typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> SparseMatrixType;
-
   typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tpetra_mvector_type;
-
   typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> tpetra_map_type;
-  typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> xpetra_map_type;
+
   typedef Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node> xpetra_tmap_type;
-  typedef Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> xpetra_bmap_type;
-
-  typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> xpetra_crs_type;
-  typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> xpetra_matrix_type;
-  typedef Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> xpetra_wcrs_type;
-  typedef Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> xpetra_bcrs_type;
   typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> xpetra_tcrs_type;
-
-  typedef Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> xpetra_mvector_type;
   typedef Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> xpetra_tmvector_type;
 
 #include <MueLu_UseShortNames.hpp>
@@ -173,28 +166,28 @@ int main(int argc, char *argv[])
   RCP<const tpetra_map_type> dualMap = rcp(new tpetra_map_type(globalDualNumDofs, myDualDofs, indexBase, comm));
   RCP<const tpetra_map_type> fullMap = rcp(new tpetra_map_type(globalNumDofs, myDofs, indexBase, comm));
 
-  RCP<const xpetra_map_type> fullXMap = rcp(new xpetra_tmap_type(fullMap));
-  RCP<const xpetra_map_type> primalXMap = rcp(new xpetra_tmap_type(primalMap));
-  RCP<const xpetra_map_type> dualXMap = rcp(new xpetra_tmap_type(dualMap));
+  RCP<const Map> fullXMap = rcp(new xpetra_tmap_type(fullMap));
+  RCP<const Map> primalXMap = rcp(new xpetra_tmap_type(primalMap));
+  RCP<const Map> dualXMap = rcp(new xpetra_tmap_type(dualMap));
 
-  std::vector<RCP<const xpetra_map_type>> xsubmaps = {primalXMap, dualXMap};
-  RCP<xpetra_bmap_type> blockedMap = rcp(new xpetra_bmap_type(fullXMap, xsubmaps, true));
+  std::vector<RCP<const Map>> xsubmaps = {primalXMap, dualXMap};
+  RCP<BlockedMap> blockedMap = rcp(new BlockedMap(fullXMap, xsubmaps, true));
 
   // Read input matrices
   typedef Tpetra::MatrixMarket::Reader<SparseMatrixType> reader_type;
 
-  RCP<xpetra_matrix_type> xQ = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("Q_mm.txt", primalXMap, null, primalXMap, primalXMap);
-  RCP<xpetra_matrix_type> xG = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("G_mm.txt", primalXMap, null, dualXMap, primalXMap);
-  RCP<xpetra_matrix_type> xGT = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("GT_mm.txt", dualXMap, null, primalXMap, dualXMap);
-  RCP<xpetra_matrix_type> xC = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("C_mm.txt", dualXMap, null, dualXMap, dualXMap);
+  RCP<Matrix> xQ = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("Q_mm.txt", primalXMap, null, primalXMap, primalXMap);
+  RCP<Matrix> xG = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("G_mm.txt", primalXMap, null, dualXMap, primalXMap);
+  RCP<Matrix> xGT = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("GT_mm.txt", dualXMap, null, primalXMap, dualXMap);
+  RCP<Matrix> xC = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("C_mm.txt", dualXMap, null, dualXMap, dualXMap);
 
-  RCP<xpetra_wcrs_type> xwQ = Teuchos::rcp_dynamic_cast<xpetra_wcrs_type>(xQ);
-  RCP<xpetra_wcrs_type> xwG = Teuchos::rcp_dynamic_cast<xpetra_wcrs_type>(xG);
-  RCP<xpetra_wcrs_type> xwGT = Teuchos::rcp_dynamic_cast<xpetra_wcrs_type>(xGT);
-  RCP<xpetra_wcrs_type> xwC = Teuchos::rcp_dynamic_cast<xpetra_wcrs_type>(xC);
+  RCP<CrsMatrixWrap> xwQ = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(xQ);
+  RCP<CrsMatrixWrap> xwG = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(xG);
+  RCP<CrsMatrixWrap> xwGT = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(xGT);
+  RCP<CrsMatrixWrap> xwC = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(xC);
 
   // Construct the blocked saddle-point matrix
-  RCP<xpetra_bcrs_type> blockedMatrix = rcp(new xpetra_bcrs_type(blockedMap, blockedMap, 8));
+  RCP<BlockedCrsMatrix> blockedMatrix = rcp(new BlockedCrsMatrix(blockedMap, blockedMap, 8));
 
   blockedMatrix->setMatrix(0, 0, xwQ);
   blockedMatrix->setMatrix(0, 1, xwG);
@@ -213,12 +206,11 @@ int main(int argc, char *argv[])
   H->IsPreconditioner(true);
 
   // Create the preconditioned GMRES solver
-  typedef xpetra_mvector_type MV;
   typedef typename tpetra_mvector_type::dot_type belos_scalar;
-  typedef Belos::OperatorT<MV> OP;
+  typedef Belos::OperatorT<MultiVector> OP;
 
-  typedef Belos::StatusTestGenResSubNorm<belos_scalar, MV, OP> blockStatusTestClass;
-  typedef Belos::StatusTestCombo<belos_scalar, MV, OP> StatusTestComboClass;
+  typedef Belos::StatusTestGenResSubNorm<belos_scalar, MultiVector, OP> blockStatusTestClass;
+  typedef Belos::StatusTestCombo<belos_scalar, MultiVector, OP> StatusTestComboClass;
 
   typename ST::magnitudeType tol = 1e-4;
   typename ST::magnitudeType bTol = 1e-5;
@@ -239,22 +231,22 @@ int main(int argc, char *argv[])
   belosParams->set("Output Style", 1);
   belosParams->set("Output Frequency", 1);
 
-  typedef Belos::LinearProblem<belos_scalar, MV, OP> BLinProb;
+  typedef Belos::LinearProblem<belos_scalar, MultiVector, OP> BLinProb;
   RCP<OP> belosOp = rcp(new Belos::XpetraOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>(blockedMatrix));
   RCP<OP> belosPrec = rcp(new Belos::MueLuOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>(H));
 
   RCP<tpetra_mvector_type> rhsMultiVector = reader_type::readDenseFile("f_mm.txt", comm, fullMap);
   RCP<tpetra_mvector_type> solutionMultiVector = rcp(new tpetra_mvector_type(fullMap, 1));
 
-  RCP<xpetra_mvector_type> rhsXMultiVector = rcp(new xpetra_tmvector_type(rhsMultiVector));
-  RCP<xpetra_mvector_type> solutionXMultiVector = rcp(new xpetra_tmvector_type(solutionMultiVector));
+  RCP<MultiVector> rhsXMultiVector = rcp(new xpetra_tmvector_type(rhsMultiVector));
+  RCP<MultiVector> solutionXMultiVector = rcp(new xpetra_tmvector_type(solutionMultiVector));
 
   RCP<BLinProb> blinproblem = rcp(new BLinProb(belosOp, solutionXMultiVector, rhsXMultiVector));
 
   blinproblem->setRightPrec(belosPrec);
   blinproblem->setProblem();
-  RCP<Belos::SolverManager<belos_scalar, MV, OP>> blinsolver =
-      rcp(new Belos::PseudoBlockGmresSolMgr<belos_scalar, MV, OP>(blinproblem, belosParams));
+  RCP<Belos::SolverManager<belos_scalar, MultiVector, OP>> blinsolver =
+      rcp(new Belos::PseudoBlockGmresSolMgr<belos_scalar, MultiVector, OP>(blinproblem, belosParams));
 
   blinsolver->setUserConvStatusTest(statusTestCombo);
 
