@@ -121,7 +121,6 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(buildCoarseSpaceTime,"IPOUHarmonicCoarseOperator::buildCoarseSpace");
         FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode");
-
         // Das könnte man noch ändern
         // LÄNGEN NOCHMAL GEGEN NumberOfBlocks_ checken!!!
         this->GammaDofs_.resize(this->GammaDofs_.size()+1);
@@ -173,7 +172,7 @@ namespace FROSch {
         FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode");
         FROSCH_ASSERT(blockId<this->NumberOfBlocks_,"Block does not exist yet and can therefore not be reset.");
         this->CoarseDofsPerNode_ = nullSpaceBasis->getNumVectors();
-
+        //this->CoarseMap_->describe(*fancy,Teuchos::VERB_EXTREME);
 
         if (this->Verbose_) {
             cout << "\n\
@@ -294,6 +293,7 @@ namespace FROSch {
            NumEnt_ = interfacePartitionOfUnity->getDDInterface()->getNumEnt();
 
            if (!this->DistributionList_->get("Type","linear").compare("ZoltanDual")) {
+             FROSCH_ASSERT(this->NumberOfBlocks_!=1,"Distribution Type ZoltanDual only works for one Block");
              Teuchos::RCP<DDInterface<SC,LO,GO,NO> > theInterface =Teuchos::rcp_const_cast<DDInterface<SC,LO,GO,NO> >(interfacePartitionOfUnity->getDDInterface());
              this->buildGlobalGraph(theInterface);
              int dim = dimension;
