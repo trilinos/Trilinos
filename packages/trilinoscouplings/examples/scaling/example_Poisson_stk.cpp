@@ -176,6 +176,10 @@ typedef Intrepid::RealSpaceTools<double> IntrepidRSTools;
 typedef Intrepid::CellTools<double>      IntrepidCTools;
 typedef Intrepid::FieldContainer<double> IntrepidFieldContainer;
 
+
+// Number of dimensions
+int spaceDim;
+
 /**********************************************************************************/
 /******** FUNCTION DECLARATIONS FOR EXACT SOLUTION AND SOURCE TERMS ***************/
 /**********************************************************************************/
@@ -589,7 +593,7 @@ int main(int argc, char *argv[]) {
 
   // Select basis from the cell topology
   int order = 1;
-  int spaceDim = getDimension(cellType);
+  spaceDim = getDimension(cellType);
   RCP<Intrepid::Basis<double, IntrepidFieldContainer > >  HGradBasis;
   getBasis(HGradBasis, cellType, order);
 
@@ -1102,7 +1106,8 @@ void evaluateMaterialTensor(ArrayOut &        matTensorValues,
 
       double x = evaluationPoints(cell, pt, 0);
       double y = evaluationPoints(cell, pt, 1);
-      double z = evaluationPoints(cell, pt, 2);
+      double z = 0.0;
+      if(spaceDim==3) z = evaluationPoints(cell, pt, 2);
 
       materialTensor<double>(material, x, y, z);
 
@@ -1127,8 +1132,10 @@ void evaluateSourceTerm(ArrayOut &       sourceTermValues,
     for(int pt = 0; pt < numPoints; pt++){
 
       Sacado::Fad::SFad<double,3> x = evaluationPoints(cell, pt, 0);
-      Sacado::Fad::SFad<double,3> y = evaluationPoints(cell, pt, 1);
-      Sacado::Fad::SFad<double,3> z = evaluationPoints(cell, pt, 2);
+      Sacado::Fad::SFad<double,3> y = evaluationPoints(cell, pt, 1);      
+      Sacado::Fad::SFad<double,3> z;
+      if(spaceDim==3) 
+	z = evaluationPoints(cell, pt, 2);
 
       sourceTermValues(cell, pt) = sourceTerm<Sacado::Fad::SFad<double,3> >(x, y, z).val();
     }
@@ -1148,7 +1155,9 @@ void evaluateExactSolution(ArrayOut &       exactSolutionValues,
 
       double x = evaluationPoints(cell, pt, 0);
       double y = evaluationPoints(cell, pt, 1);
-      double z = evaluationPoints(cell, pt, 2);
+      double z=0.0;
+      if(spaceDim==3) 
+	z = evaluationPoints(cell, pt, 2);
 
       exactSolutionValues(cell, pt) = exactSolution<double>(x, y, z);
     }
@@ -1172,7 +1181,9 @@ void evaluateExactSolutionGrad(ArrayOut &       exactSolutionGradValues,
 
       double x = evaluationPoints(cell, pt, 0);
       double y = evaluationPoints(cell, pt, 1);
-      double z = evaluationPoints(cell, pt, 2);
+      double z = 0.0;
+      if(spaceDim==3)
+	z = evaluationPoints(cell, pt, 2);
 
       exactSolutionGrad<double>(gradient, x, y, z);
 
