@@ -764,6 +764,8 @@ namespace FROSch {
 
           //Gathering Steps for RepeatedMap#################################################
           //-> Have to test that
+          RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout));
+
           int MLgatheringSteps = DistributionList_->get("MLGatheringSteps",2);
           MLGatheringMaps_.resize(MLgatheringSteps);
           MLCoarseSolveExporters_.resize(MLgatheringSteps);
@@ -783,6 +785,7 @@ namespace FROSch {
                     }
                 }
                 MLGatheringMaps_[i] = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseMap_->lib(),-1,MLnumMyRows,0,this->MpiComm_);
+
             }
 
             MLnumMyRows = 0;
@@ -807,9 +810,9 @@ namespace FROSch {
 											 RowsCoarseSolve[i] = start+i;
 									 }
 					   }
-             RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout));
-
-						 MLCoarseMap_ = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseMap_->lib(),-1,RowsCoarseSolve,0,CoarseSolveComm_);
+             Teuchos::ArrayView< const GO > CList = MLGatheringMaps_[MLgatheringSteps-1]->getNodeElementList();
+             //MLCoarseMap_ =  Xpetra::MapFactory<LO,GO,NO>::Build(CoarseMap_->lib(),-1,CList,0,CoarseSolveComm_);->Should work but does not WHY?!?!
+						 MLCoarseMap_ = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseMap_->lib(),MLGatheringMaps_[MLgatheringSteps-1]->getGlobalNumElements(),0,CoarseSolveComm_);
 
              //#####################################################################
              // Build Repeated Map Zoltan2
@@ -817,8 +820,6 @@ namespace FROSch {
              this->buildElementNodeList();
              // Connectivity Graph on the CoarseSolveComm_
              this->buildCoarseGraph();
-
-
              //Build Repeatd Map on CoarseComm------------
              //Initialize Maps...
              ConstXMapPtr UniqueMap;
@@ -826,10 +827,8 @@ namespace FROSch {
              XMapPtr tmpRepMap;
              ConstXMapPtr ConstRepMap;
              GOVec uniEle;
-            CoarseMap_->describe(*fancy,Teuchos::VERB_EXTREME);
 
              if(OnCoarseSolveComm_){
-               MLCoarseMap_->describe(*fancy,Teuchos::VERB_EXTREME);
                //Coarse DofsMaps so far only one Block will work
                ConstXMapPtrVecPtr2D CoarseDofsMaps(1);
                BuildRepMapZoltan(SubdomainConnectGraph_,ElementNodeList_, DistributionList_,CoarseSolveComm_,CoarseSolveRepeatedMap_);
@@ -843,8 +842,6 @@ namespace FROSch {
                ConstXMapPtrVecPtr DMapRep(CoarseDofsPerNode_);
 
                tmpRepMap  = this->BuildRepeatedMapCoarseLevel(ConstRepMap,CoarseDofsPerNode_,DMapRep,PartitionType_);
-
-
                RepMapCoarse_ = tmpRepMap;
                RepMapVector[0] = tmpRepMap;
 
@@ -854,12 +851,9 @@ namespace FROSch {
                //Create uniqueMap following the repeatedMap
                //Create uniqueNodeMap so that dof belonging to one node are on the same process
                UniqueMap = FROSch::BuildUniqueMap<LO,GO,NO>(CoarseSolveRepeatedMap_);
-
-
                UniqueMapAll  = this->BuildRepeatedMapCoarseLevel(UniqueMap,CoarseDofsPerNode_,DMap,PartitionType_);
 
                uniEle = UniqueMapAll->getNodeElementList();
-
                //Set DofOderingVec and DofsPerNodeVec to ParameterList for the next Level
                //Create Here DofsMaps for the next Level->DofOrdering will become redundant
                Teuchos::ArrayRCP<DofOrdering> dofOrderings(1);
@@ -873,8 +867,8 @@ namespace FROSch {
                sublist(this->ParameterList_,"CoarseSolver")->set("DofOrdering Vector",dofOrderings);
                sublist(this->ParameterList_,"CoarseSolver")->set("DofsPerNode Vector",dofsPerNodeVector);
                sublist(this->ParameterList_,"CoarseSolver")->set("Nodes Map Vector",NodesMapVector);
-
              }
+
              Teuchos::RCP<Xpetra::Map<LO,GO,NO> > tmpMap = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseMap_->lib(),-1,uniEle,0,this->MpiComm_);
 
              for (int i=0; i<gatheringSteps-1; i++) {

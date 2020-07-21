@@ -183,7 +183,6 @@ namespace FROSch {
 +----------------------------+\n";
 
         }
-
         // Process the parameter list
         stringstream blockIdStringstream;
         blockIdStringstream << blockId+1;
@@ -200,7 +199,6 @@ namespace FROSch {
         }
 
         bool useForCoarseSpace = coarseSpaceList->get("Use For Coarse Space",true);
-
         if (useForCoarseSpace) {
             this->DofsMaps_[blockId] = dofsMaps;
             this->DofsPerNode_[blockId] = dofsPerNode;
@@ -242,6 +240,7 @@ namespace FROSch {
                                                                                                   this->LevelID_,
                                                                                                   interfacePartitionOfUnity->getDDInterfaceNonConst()));
 
+
                 PartitionOfUnity_->removeDirichletNodes(dirichletBoundaryDofs());
 
                 interface = interior;
@@ -254,10 +253,11 @@ namespace FROSch {
                         this->GammaDofs_[blockId][interface->getGammaDofID(i,k)] = interface->getLocalDofID(i,k);
                     }
                 }
-
                 PartitionOfUnity_->computePartitionOfUnity(nodeList);
+
             } else {
                 interfacePartitionOfUnity->removeDirichletNodes(dirichletBoundaryDofs(),nodeList);
+
                 interfacePartitionOfUnity->sortInterface(this->K_,nodeList);
 
                 // Construct Interface and Interior index sets
@@ -271,12 +271,9 @@ namespace FROSch {
                         this->IDofs_[blockId][interior->getGammaDofID(i,k)] = interior->getLocalDofID(i,k);
                     }
                 }
-
                 interfacePartitionOfUnity->computePartitionOfUnity(nodeList);
-
                 PartitionOfUnity_ = interfacePartitionOfUnity;
             }
-
             // Construct local Interface nullspace basis (in case the interface was empty before, it was replaced by the interior. Therfore, this should be correct as well)
             ConstXMapPtr nullSpaceBasisMap = nullSpaceBasis->getMap();
             XMapPtr serialInterfaceMap = MapFactory<LO,GO,NO>::Build(nullSpaceBasisMap->lib(),this->GammaDofs_[blockId].size(),this->GammaDofs_[blockId].size(),0,this->SerialComm_);
@@ -390,7 +387,7 @@ namespace FROSch {
       Teuchos::RCP<Xpetra::Map<LO,GO,NO> > tmpMap =   Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,-1,dofEle,0,nodesMap->getComm());
       return tmpMap;
 
-    }
+    }  
 
 
 

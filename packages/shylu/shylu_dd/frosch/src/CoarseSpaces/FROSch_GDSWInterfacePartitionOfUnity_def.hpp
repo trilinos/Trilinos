@@ -151,9 +151,7 @@ namespace FROSch {
                 FROSCH_WARNING("FROSch::GDSWInterfacePartitionOfUnity",this->Verbose_,"divideUnconnectedEntities() cannot be performed without the matrix.");
             } else this->DDInterface_->divideUnconnectedEntities(matrix);
         }
-
         this->DDInterface_->sortVerticesEdgesFaces(nodeList);
-
 
         return 0;
     }
