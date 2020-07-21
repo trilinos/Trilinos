@@ -66,6 +66,87 @@ namespace { // (anonymous)
 using Tpetra::global_size_t;
 typedef tif_utest::Node Node;
 
+template<class MatrixType, class VectorType>
+void remove_diags_and_scale(const MatrixType& L, const MatrixType& U,
+                            Teuchos::RCP<MatrixType>& Ln, Teuchos::RCP<MatrixType>& Un, Teuchos::RCP<VectorType>& Dn) {
+
+  typedef typename MatrixType::local_matrix_type local_matrix_type;
+  typedef typename std::remove_const<typename local_matrix_type::size_type>::type    size_type;
+  typedef typename std::remove_const<typename local_matrix_type::ordinal_type>::type ordinal_type;
+  typedef typename std::remove_const<typename local_matrix_type::value_type>::type   value_type;
+  typedef typename local_matrix_type::device_type device_type;
+  typedef typename device_type::execution_space   execution_space;
+  
+  typedef typename Kokkos::View<size_type*, Kokkos::LayoutLeft, device_type> rowmap_type;
+  typedef typename Kokkos::View<ordinal_type*, Kokkos::LayoutLeft, device_type> entries_type;
+  typedef typename Kokkos::View<value_type*, Kokkos::LayoutRight, device_type> values_type;
+
+  typedef Kokkos::TeamPolicy<execution_space> team_policy;
+  typedef typename Kokkos::TeamPolicy<execution_space>::member_type member_type;
+
+  auto L_rowmap  = L.getLocalMatrix().graph.row_map;
+  auto L_entries = L.getLocalMatrix().graph.entries;
+  auto L_values  = L.getLocalValuesView();
+  auto U_rowmap  = U.getLocalMatrix().graph.row_map;
+  auto U_entries = U.getLocalMatrix().graph.entries;
+  auto U_values  = U.getLocalValuesView();
+
+  rowmap_type  Ln_rowmap ("Ln_rowmap",  L_rowmap.extent(0));
+  entries_type Ln_entries("Ln_entries", L_entries.extent(0) - (L_rowmap.extent(0) - 1));
+  values_type  Ln_values ("Ln_values",  L_values.extent(0)  - (L_rowmap.extent(0) - 1));
+  rowmap_type  Un_rowmap ("Un_rowmap",  U_rowmap.extent(0));
+  entries_type Un_entries("Un_entries", U_entries.extent(0) - (U_rowmap.extent(0) - 1));
+  values_type  Un_values ("Un_values",  U_values.extent(0)  - (U_rowmap.extent(0) - 1));
+
+  values_type  Dn_values ("Dn_values",  U_rowmap.extent(0) - 1);
+
+  Kokkos::parallel_for( Kokkos::RangePolicy<execution_space>(0, U_rowmap.extent(0)-1), KOKKOS_LAMBDA(const int& i) {
+    Ln_rowmap(i+1) = L_rowmap(i+1) - (i+1);
+    Un_rowmap(i+1) = U_rowmap(i+1) - (i+1);
+    Dn_values(i)   = 1.0/U_values(U_rowmap(i));
+  });
+
+  const team_policy policy( U_rowmap.extent(0)-1, Kokkos::AUTO );
+
+  Kokkos::parallel_for( policy, KOKKOS_LAMBDA(const member_type& teamMember) {
+    const int rowid = teamMember.league_rank();
+
+    auto Lentries_src = subview(L_entries,  Kokkos::make_pair(L_rowmap(rowid),  L_rowmap(rowid+1) - 1));
+    auto Lvalues_src  = subview(L_values,   Kokkos::make_pair(L_rowmap(rowid),  L_rowmap(rowid+1) - 1));
+    auto Lentries_dst = subview(Ln_entries, Kokkos::make_pair(Ln_rowmap(rowid), Ln_rowmap(rowid+1)));
+    auto Lvalues_dst  = subview(Ln_values,  Kokkos::make_pair(Ln_rowmap(rowid), Ln_rowmap(rowid+1)));
+
+    auto Uentries_src = subview(U_entries,  Kokkos::make_pair(U_rowmap(rowid)+1, U_rowmap(rowid+1)));
+    auto Uvalues_src  = subview(U_values,   Kokkos::make_pair(U_rowmap(rowid)+1, U_rowmap(rowid+1)));
+    auto Uentries_dst = subview(Un_entries, Kokkos::make_pair(Un_rowmap(rowid),  Un_rowmap(rowid+1)));
+    auto Uvalues_dst  = subview(Un_values,  Kokkos::make_pair(Un_rowmap(rowid),  Un_rowmap(rowid+1)));
+	
+    Kokkos::Experimental::local_deep_copy(teamMember, Lentries_dst, Lentries_src);
+    Kokkos::Experimental::local_deep_copy(teamMember, Uentries_dst, Uentries_src);
+    Kokkos::Experimental::local_deep_copy(teamMember, Lvalues_dst, Lvalues_src);
+    Kokkos::Experimental::local_deep_copy(teamMember, Uvalues_dst, Uvalues_src);
+
+    teamMember.team_barrier();
+
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, Uvalues_dst.extent(0)), [&](const int& i) {
+      Uvalues_dst(i) = Uvalues_dst(i)*Dn_values(rowid); 
+    });
+
+    teamMember.team_barrier();
+  });
+  
+  Ln = Teuchos::rcp (new MatrixType (L.getRowMap(), L.getColMap(), 
+                                     Ln_rowmap, Ln_entries, Ln_values));
+  Un = Teuchos::rcp (new MatrixType (U.getRowMap(), U.getColMap(), 
+                                     Un_rowmap, Un_entries, Un_values));
+  auto Dn_view = Dn->getLocalViewDevice();
+  Kokkos::deep_copy(subview(Dn_view,Kokkos::ALL(), 0),Dn_values);
+  Dn->sync_host();
+
+  Ln->fillComplete();
+  Un->fillComplete();
+}
+
 //this macro declares the unit-test-class:
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, Test0, Scalar, LO, GO)
 {
@@ -101,6 +182,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, Test0, Scalar, LO, 
   TEST_NOTHROW(prec.setParameters(params));
 
   TEST_EQUALITY( prec.getLevelOfFill(), fill_level);
+  //printf("VINH -- prec.getLevelOfFill() = %d, fill_level = %d\n", prec.getLevelOfFill(), fill_level);
+  //printf("VINH -- device_type %s\n", typeid(typename Tpetra::CrsMatrix<Scalar,LO,GO,Node>::device_type).name());
 
   prec.initialize();
   //trivial tests to insist that the preconditioner's domain/range maps are
@@ -270,7 +353,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, Test1, Scalar, LO, 
     test_alpha_beta(0.0, -1.5, mode);
     test_alpha_beta(-0.42, 4.2, mode);
   }
-
+ 
   out << "Done with test" << endl;
 }
 
@@ -288,6 +371,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, FillLevel, Scalar, 
   using Teuchos::RCP;
   using std::endl;
   typedef Tpetra::MultiVector<Scalar,LO,GO,Node>                multivector_type;
+  typedef Tpetra::Vector<Scalar,LO,GO,Node>                     vector_type;
   typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node>                  crs_matrix_type;
   typedef Tpetra::RowMatrix<Scalar,LO,GO,Node>                  row_matrix_type;
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type>         reader_type;
@@ -330,18 +414,26 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, FillLevel, Scalar, 
     //extract incomplete factors
     const crs_matrix_type &iL = prec.getL();
     const crs_matrix_type &iU = prec.getU();
-    const multivector_type &iD = prec.getD();
 
-    ////if (lof==0)
-    //{
-    //  Tpetra::MatrixMarket::Writer<crs_matrix_type>::writeSparseFile("check_A.mm",crsmatrix);
-    //  std::string outfile = "check_iL_bw=" + Teuchos::toString(lof+2) + ".mm";
-    //  Tpetra::MatrixMarket::Writer<crs_matrix_type>::writeSparseFile(outfile,rcpFromRef(iL));
-    //  outfile = "check_iU_bw=" + Teuchos::toString(lof+2) + ".mm";
-    //  Tpetra::MatrixMarket::Writer<crs_matrix_type>::writeSparseFile(outfile,rcpFromRef(iU));
-    //  outfile = "check_iD_bw=" + Teuchos::toString(lof+2) + ".mm";
-    //  Tpetra::MatrixMarket::Writer<crs_matrix_type>::writeDenseFile(outfile,rcpFromRef(iD));
-    //}
+    Teuchos::RCP<crs_matrix_type> iLn;
+    Teuchos::RCP<crs_matrix_type> iUn;
+    Teuchos::RCP<vector_type> iDn;
+  
+#ifdef KOKKOS_ENABLE_SERIAL
+    if( std::is_same< typename crs_matrix_type::node_type::execution_space, Kokkos::Serial >::value ) {
+      const vector_type &iD = prec.getD();
+      iLn = rcp (new crs_matrix_type (iL));
+      iUn = rcp (new crs_matrix_type (iU));
+      iDn = rcp (new vector_type (iD));
+    }
+    else {
+      iDn = Teuchos::rcp (new vector_type (rowmap));
+      remove_diags_and_scale(iL, iU, iLn, iUn, iDn);
+    }
+#else
+    iDn = Teuchos::rcp (new vector_type (rowmap));
+    remove_diags_and_scale(iL, iU, iLn, iUn, iDn);
+#endif
 
     //read L,U, and D factors from file
     std::string lFile = "Lfactor_bw" + Teuchos::toString(lof+2) + ".mm";
@@ -355,13 +447,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, FillLevel, Scalar, 
 
     //compare factors
     out << "bandwidth = " << lof+2 << ", lof = " << lof << std::endl;
-    D->update(TST::one(),iD,-TST::one());
-    RCP<crs_matrix_type> matdiff = Tpetra::MatrixMatrix::add(1.,false,*L,-1.,false,iL);
+    //D->update(TST::one(),iD,-TST::one());
+    D->update(TST::one(),*iDn,-TST::one());
+    //RCP<crs_matrix_type> matdiff = Tpetra::MatrixMatrix::add(1.,false,*L,-1.,false,iL);
+    RCP<crs_matrix_type> matdiff = Tpetra::MatrixMatrix::add(1.,false,*L,-1.,false,*iLn);
     magnitudeType mag = matdiff->getFrobeniusNorm();
     out << "||L - iL||_fro = " << mag << std::endl;
     TEST_EQUALITY(mag < 1e-12, true);
     out << std::endl;
-    matdiff = Tpetra::MatrixMatrix::add(1.,false,*U,-1.,false,iU);
+    //matdiff = Tpetra::MatrixMatrix::add(1.,false,*U,-1.,false,iU);
+    matdiff = Tpetra::MatrixMatrix::add(1.,false,*U,-1.,false,*iUn);
     mag = matdiff->getFrobeniusNorm();
     out << "||U - iU||_fro = " << mag << std::endl;
     TEST_EQUALITY(mag < 1e-12, true);
@@ -393,6 +488,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, IgnoreRowMapGIDs, S
   using std::endl;
   typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> crs_matrix_type;
   typedef Tpetra::MultiVector<Scalar,LO,GO,Node> multivector_type;
+  typedef Tpetra::Vector<Scalar,LO,GO,Node> vector_type;
   typedef Tpetra::RowMatrix<Scalar,LO,GO,Node> row_matrix_type;
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
@@ -463,7 +559,26 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, IgnoreRowMapGIDs, S
     //extract incomplete factors
     const crs_matrix_type &iL = prec.getL();
     const crs_matrix_type &iU = prec.getU();
-    const multivector_type &iD = prec.getD();
+
+    Teuchos::RCP<crs_matrix_type> iLn;
+    Teuchos::RCP<crs_matrix_type> iUn;
+    Teuchos::RCP<vector_type> iDn;
+  
+#ifdef KOKKOS_ENABLE_SERIAL
+    if( std::is_same< typename crs_matrix_type::node_type::execution_space, Kokkos::Serial >::value ) {
+      const vector_type &iD = prec.getD();
+      iLn = rcp (new crs_matrix_type (iL));
+      iUn = rcp (new crs_matrix_type (iU));
+      iDn = rcp (new vector_type (iD));
+    }
+    else {
+      iDn = Teuchos::rcp (new vector_type (rowMap));
+      remove_diags_and_scale(iL, iU, iLn, iUn, iDn);
+    }
+#else
+    iDn = Teuchos::rcp (new vector_type (rowMap));
+    remove_diags_and_scale(iL, iU, iLn, iUn, iDn);
+#endif
 
     //read L,U, and D factors from file
     std::string lFile = "Lfactor_bw" + Teuchos::toString(lof+2) + ".mm";
@@ -489,7 +604,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, IgnoreRowMapGIDs, S
 
     out << "bandwidth = " << lof+2 << ", lof = " << lof << std::endl;
     multivector_type permResult(permRowMap,1);
-    iL.apply(permRandVec,permResult);
+    //iL.apply(permRandVec,permResult);
+    iLn->apply(permRandVec,permResult);
     Teuchos::Array<magnitudeType> n1(1);
     permResult.norm2(n1);
 
@@ -502,7 +618,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, IgnoreRowMapGIDs, S
     TEST_EQUALITY(n1[0]-n2[0] < 1e-6, true);
     out << std::endl;
 
-    iU.apply(permRandVec,permResult);
+    //iU.apply(permRandVec,permResult);
+    iUn->apply(permRandVec,permResult);
     permResult.norm2(n1);
 
     U->apply(randVec,result);
@@ -519,7 +636,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, IgnoreRowMapGIDs, S
     out << std::endl;
 
     RCP<multivector_type> D = reader_type::readVectorFile (dFile, comm, rm);
-    D->update(TST::one(),iD,-TST::one());
+    //D->update(TST::one(),iD,-TST::one());
+	D->update(TST::one(),*iDn,-TST::one());
     Teuchos::Array<magnitudeType> norms(1);
     D->norm2(norms);
     out << "||inverse(D) - inverse(iD)||_2 = " << norms[0] << std::endl;

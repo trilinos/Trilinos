@@ -254,7 +254,7 @@ void RBILUK<MatrixType>::initialize ()
                              node_type> crs_graph_type;
 
     RCP<const crs_graph_type> matrixCrsGraph = Teuchos::rcpFromRef(A_block_->getCrsGraph() );
-    this->Graph_ = rcp (new Ifpack2::IlukGraph<crs_graph_type> (matrixCrsGraph,
+    this->Graph_ = rcp (new Ifpack2::IlukGraph<crs_graph_type,kk_handle_type> (matrixCrsGraph,
         this->LevelOfFill_, 0));
 
     this->Graph_->initialize ();

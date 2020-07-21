@@ -242,6 +242,8 @@ void RILUK<MatrixType>::allocate_L_and_U ()
   using Teuchos::null;
   using Teuchos::rcp;
 
+  printf("VINH -- In RILUK<MatrixType>::allocate_L_and_U () -- isAllocated_= %d\n", isAllocated_);
+
   if (! isAllocated_) {
     // Deallocate any existing storage.  This avoids storing 2x
     // memory, since RCP op= does not deallocate until after the
@@ -259,7 +261,7 @@ void RILUK<MatrixType>::allocate_L_and_U ()
     // FIXME (mfh 24 Jan 2014) This assumes domain == range Map for L and U.
     L_->fillComplete ();
     U_->fillComplete ();
-    D_ = rcp (new vec_type (Graph_->getL_Graph ()->getRowMap ()));
+    D_ = rcp (new vec_type (Graph_->getL_Graph ()->getRowMap ()));    
   }
   isAllocated_ = true;
 }
@@ -417,6 +419,15 @@ void RILUK<MatrixType>::initialize ()
      "Tpetra::CrsMatrix, please call fillComplete on it (with the domain and "
      "range Maps, if appropriate) before calling this method.");
 
+  printf("\nVINH -- In RILUK<MatrixType>::initialize () -- device_type: %s\n", typeid(typename crs_matrix_type::device_type).name());
+  printf("VINH -- In RILUK<MatrixType>::initialize () -- A_ type: %s\n", typeid(decltype(A_)).name());
+  printf("VINH -- In RILUK<MatrixType>::initialize () -- A_local_ type: %s\n", typeid(decltype(A_local_)).name());
+  printf("VINH -- In RILUK<MatrixType>::initialize () -- L_ type: %s\n", typeid(decltype(L_)).name());
+  printf("VINH -- In RILUK<MatrixType>::initialize () -- U_ type: %s\n", typeid(decltype(U_)).name());
+  printf("VINH -- In RILUK<MatrixType>::initialize () -- D_ type: %s\n", typeid(decltype(D_)).name());
+  printf("VINH -- In RILUK<MatrixType>::initialize() -- lno_row_view_t: %s\n", typeid(lno_row_view_t).name());
+  printf("VINH -- In RILUK<MatrixType>::initialize() -- lno_nonzero_view_t: %s\n", typeid(lno_nonzero_view_t).name());
+  
   Teuchos::Time timer ("RILUK::initialize");
   { // Start timing
     Teuchos::TimeMonitor timeMon (timer);
@@ -444,11 +455,33 @@ void RILUK<MatrixType>::initialize ()
     // just CrsMatrix.  (That would require rewriting IlukGraph to
     // handle a Tpetra::RowGraph.)  However, to make it work for now,
     // we just copy the input matrix if it's not a CrsMatrix.
+
+#ifdef KOKKOS_ENABLE_SERIAL
+    if( !std::is_same< execution_space, Kokkos::Serial >::value ) { 
+      this->KernelHandle_ = Teuchos::rcp (new kk_handle_type ());
+      KernelHandle_->create_spiluk_handle( KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1, 
+                                           A_local_->getNodeNumRows(),
+                                           2*A_local_->getNodeNumEntries()*(LevelOfFill_+1), 
+                                           2*A_local_->getNodeNumEntries()*(LevelOfFill_+1) );
+    }
+    //if( std::is_same< execution_space, Kokkos::Serial >::value ) printf("THIS IS Serial execspace!\n");
+    //if( std::is_same< execution_space, Kokkos::Cuda >::value ) printf("THIS IS Cuda execspace!\n");
+#else
+    this->KernelHandle_ = Teuchos::rcp (new kk_handle_type ());
+    KernelHandle_->create_spiluk_handle( KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1, 
+                                         A_local_->getNodeNumRows(),
+                                         2*A_local_->getNodeNumEntries()*(LevelOfFill_+1), 
+                                         2*A_local_->getNodeNumEntries()*(LevelOfFill_+1) );
+    //if( std::is_same< execution_space, Kokkos::OpenMP >::value ) printf("THIS IS OpenMP execspace\n");
+    //if( std::is_same< execution_space, Kokkos::Cuda >::value ) printf("THIS IS Cuda execspace\n");
+#endif
+    printf("VINH -- In RILUK<MatrixType>::initialize () -- A_ grows= %lu, lrows= %lu, gentries()=%lu, lentries()=%lu\n", A_->getGlobalNumRows(), A_->getNodeNumRows(), A_->getGlobalNumEntries(), A_->getNodeNumEntries());
+    printf("VINH -- In RILUK<MatrixType>::initialize () -- A_local_ grows= %lu, lrows= %lu, gentries()=%lu, lentries()=%lu, nnzL=%lu, nnzU=%lu\n", A_local_->getGlobalNumRows(), A_local_->getNodeNumRows(), A_local_->getGlobalNumEntries(), A_local_->getNodeNumEntries(),2*A_local_->getNodeNumEntries()*(LevelOfFill_+1),2*A_local_->getNodeNumEntries()*(LevelOfFill_+1));
     {
       RCP<const crs_matrix_type> A_local_crs =
         rcp_dynamic_cast<const crs_matrix_type> (A_local_);
       if (A_local_crs.is_null ()) {
-        local_ordinal_type numRows = A_local_->getNodeNumRows();
+        local_ordinal_type numRows = A_local_->getNodeNumRows(); printf("VINH -- In RILUK<MatrixType>::initialize () -- numRows: %d\n", numRows);
         Array<size_t> entriesPerRow(numRows);
         for(local_ordinal_type i = 0; i < numRows; i++)
         {
@@ -472,21 +505,37 @@ void RILUK<MatrixType>::initialize ()
         A_local_crs_nc->fillComplete (A_local_->getDomainMap (), A_local_->getRangeMap ());
         A_local_crs = rcp_const_cast<const crs_matrix_type> (A_local_crs_nc);
       }
-      Graph_ = rcp (new Ifpack2::IlukGraph<crs_graph_type> (A_local_crs->getCrsGraph (),
-                                                            LevelOfFill_, 0, Overalloc_));
+      Graph_ = rcp (new Ifpack2::IlukGraph<crs_graph_type,kk_handle_type> (A_local_crs->getCrsGraph (),
+                                                                           LevelOfFill_, 0, Overalloc_));
+      //printf("VINH -- In RILUK<MatrixType>::initialize () -- A_local_->getNodeNumRows()= %lu, LevelOfFill_=%d, Overalloc_=%lf, num entires per row:  ", A_local_->getNodeNumRows(), LevelOfFill_, Overalloc_);
+      //for(unsigned int i = 0; i < A_local_->getNodeNumRows(); i++) {
+      //  printf("%lu ", A_local_->getNumEntriesInLocalRow(i));
+      //}
+      //printf("\n");
+#ifdef KOKKOS_ENABLE_SERIAL
+      if( !std::is_same< execution_space, Kokkos::Serial >::value ) { 
+        A_local_rowmap_  = A_local_crs->getLocalMatrix().graph.row_map;
+        A_local_entries_ = A_local_crs->getLocalMatrix().graph.entries;
+        A_local_values_  = A_local_crs->getLocalValuesView();
+      }
+#else
+      A_local_rowmap_  = A_local_crs->getLocalMatrix().graph.row_map;
+      A_local_entries_ = A_local_crs->getLocalMatrix().graph.entries;
+      A_local_values_  = A_local_crs->getLocalValuesView();
+#endif
     }
 
-    Graph_->initialize ();
+    Graph_->initialize (KernelHandle_);
     allocate_L_and_U ();
     checkOrderingConsistency (*A_local_);
     L_solver_->setMatrix (L_);
     L_solver_->initialize ();
     U_solver_->setMatrix (U_);
     U_solver_->initialize ();
+
     // Do not call initAllValues. compute() always calls initAllValues to
     // fill L and U with possibly new numbers. initialize() is concerned
     // only with the nonzero pattern.
-
   } // Stop timing
 
   isInitialized_ = true;
@@ -549,6 +598,7 @@ initAllValues (const row_matrix_type& A)
 
   // Check if values should be inserted or replaced
   const bool ReplaceValues = L_->isStaticGraph () || L_->isLocallyIndexed ();
+  printf("VINH -- In RILUK<MatrixType>::initAllValues () -- ReplaceValues %d\n", ReplaceValues);
 
   L_->resumeFill ();
   U_->resumeFill ();
@@ -652,7 +702,9 @@ initAllValues (const row_matrix_type& A)
 template<class MatrixType>
 void RILUK<MatrixType>::compute ()
 {
+  using Teuchos::RCP;
   using Teuchos::rcp;
+  using Teuchos::rcp_dynamic_cast;
   const char prefix[] = "Ifpack2::RILUK::compute: ";
 
   // initialize() checks this too, but it's easier for users if the
@@ -679,40 +731,48 @@ void RILUK<MatrixType>::compute ()
 
   isComputed_ = false;
 
-  // Fill L and U with numbers. This supports nonzero pattern reuse by calling
-  // initialize() once and then compute() multiple times.
-  initAllValues (*A_local_);
+#ifdef KOKKOS_ENABLE_SERIAL
+  if( std::is_same< execution_space, Kokkos::Serial >::value ) {
+    // Fill L and U with numbers. This supports nonzero pattern reuse by calling
+    // initialize() once and then compute() multiple times.
+    initAllValues (*A_local_);
 
-  // MinMachNum should be officially defined, for now pick something a little
-  // bigger than IEEE underflow value
+    // MinMachNum should be officially defined, for now pick something a little
+    // bigger than IEEE underflow value
 
-  const scalar_type MinDiagonalValue = STS::rmin ();
-  const scalar_type MaxDiagonalValue = STS::one () / MinDiagonalValue;
+    const scalar_type MinDiagonalValue = STS::rmin ();
+    const scalar_type MaxDiagonalValue = STS::one () / MinDiagonalValue;
 
-  size_t NumIn, NumL, NumU;
+    size_t NumIn, NumL, NumU;
 
-  // Get Maximum Row length
-  const size_t MaxNumEntries =
-          L_->getNodeMaxNumRowEntries () + U_->getNodeMaxNumRowEntries () + 1;
+    // Get Maximum Row length
+    const size_t MaxNumEntries =
+            L_->getNodeMaxNumRowEntries () + U_->getNodeMaxNumRowEntries () + 1;
 
-  Teuchos::Array<local_ordinal_type> InI(MaxNumEntries); // Allocate temp space
-  Teuchos::Array<scalar_type> InV(MaxNumEntries);
-  size_t num_cols = U_->getColMap()->getNodeNumElements();
-  Teuchos::Array<int> colflag(num_cols);
+    Teuchos::Array<local_ordinal_type> InI(MaxNumEntries); // Allocate temp space
+    Teuchos::Array<scalar_type> InV(MaxNumEntries);
+    size_t num_cols = U_->getColMap()->getNodeNumElements();
+    Teuchos::Array<int> colflag(num_cols);
 
-  Teuchos::ArrayRCP<scalar_type> DV = D_->get1dViewNonConst(); // Get view of diagonal
+    Teuchos::ArrayRCP<scalar_type> DV = D_->get1dViewNonConst(); // Get view of diagonal
 
-  // Now start the factorization.
+    //printf("VINH -- In RILUK<MatrixType>::compute () -- RelaxValue_ %lf, Athresh_ %lf, Rthresh_ %lf, IFPACK2_SGN(3.1) %lf, IFPACK2_SGN(-3.1) %lf \n", RelaxValue_, Athresh_, Rthresh_, IFPACK2_SGN(3.1), IFPACK2_SGN(-3.1));
+    //printf("VINH -- In RILUK<MatrixType>::compute () -- SPILUKHandle: nnzL = %lu, nnzU = %lu\n", KernelHandle_->get_spiluk_handle()->get_nnzL(), 
+    //                                                                                             KernelHandle_->get_spiluk_handle()->get_nnzU());
+    //printf("VINH -- In RILUK<MatrixType>::compute () -- L_Graph_test_'s num entries = %lu, U_Graph_test_'s num entries = %lu\n", 
+    //                                                    Graph_->getL_Graph_test()->getGlobalNumEntries(), Graph_->getU_Graph_test()->getGlobalNumEntries());
+																				 
+    // Now start the factorization.
 
-  // Need some integer workspace and pointers
-  size_t NumUU;
-  Teuchos::ArrayView<const local_ordinal_type> UUI;
-  Teuchos::ArrayView<const scalar_type> UUV;
-  for (size_t j = 0; j < num_cols; ++j) {
+    // Need some integer workspace and pointers
+    size_t NumUU;
+    Teuchos::ArrayView<const local_ordinal_type> UUI;
+    Teuchos::ArrayView<const scalar_type> UUV;
+    for (size_t j = 0; j < num_cols; ++j) {
       colflag[j] = -1;
-  }
+    }
 
-  for (size_t i = 0; i < L_->getNodeNumRows (); ++i) {
+    for (size_t i = 0; i < L_->getNodeNumRows (); ++i) {
       local_ordinal_type local_row = i;
 
       // Fill InV, InI with current row of L, D and U combined
@@ -729,99 +789,192 @@ void RILUK<MatrixType>::compute ()
 
       // Set column flags
       for (size_t j = 0; j < NumIn; ++j) {
-          colflag[InI[j]] = j;
+        colflag[InI[j]] = j;
       }
 
       scalar_type diagmod = STS::zero (); // Off-diagonal accumulator
 
       for (size_t jj = 0; jj < NumL; ++jj) {
-          local_ordinal_type j = InI[jj];
-          scalar_type multiplier = InV[jj]; // current_mults++;
-
-          InV[jj] *= DV[j];
-
-          U_->getLocalRowView(j, UUI, UUV); // View of row above
-          NumUU = UUI.size();
-
-          if (RelaxValue_ == STM::zero ()) {
-              for (size_t k = 0; k < NumUU; ++k) {
-                  const int kk = colflag[UUI[k]];
-                  // FIXME (mfh 23 Dec 2013) Wait a second, we just set
-                  // colflag above using size_t (which is generally unsigned),
-                  // but now we're querying it using int (which is signed).
-                  if (kk > -1) {
-                      InV[kk] -= multiplier * UUV[k];
-                  }
-              }
+        local_ordinal_type j = InI[jj];
+        scalar_type multiplier = InV[jj]; // current_mults++;
+        
+        InV[jj] *= DV[j];
+        
+        U_->getLocalRowView(j, UUI, UUV); // View of row above
+        NumUU = UUI.size();
+        
+        if (RelaxValue_ == STM::zero ()) {
+          for (size_t k = 0; k < NumUU; ++k) {
+            const int kk = colflag[UUI[k]];
+            // FIXME (mfh 23 Dec 2013) Wait a second, we just set
+            // colflag above using size_t (which is generally unsigned),
+            // but now we're querying it using int (which is signed).
+            if (kk > -1) {
+              InV[kk] -= multiplier * UUV[k];
+            }
           }
-          else {
-              for (size_t k = 0; k < NumUU; ++k) {
-                  // FIXME (mfh 23 Dec 2013) Wait a second, we just set
-                  // colflag above using size_t (which is generally unsigned),
-                  // but now we're querying it using int (which is signed).
-                  const int kk = colflag[UUI[k]];
-                  if (kk > -1) {
-                      InV[kk] -= multiplier*UUV[k];
-                  }
-                  else {
-                      diagmod -= multiplier*UUV[k];
-                  }
-              }
+        }
+        else {
+          for (size_t k = 0; k < NumUU; ++k) {
+            // FIXME (mfh 23 Dec 2013) Wait a second, we just set
+            // colflag above using size_t (which is generally unsigned),
+            // but now we're querying it using int (which is signed).
+            const int kk = colflag[UUI[k]];
+            if (kk > -1) {
+              InV[kk] -= multiplier*UUV[k];
+            }
+            else {
+              diagmod -= multiplier*UUV[k];
+            }
           }
+        }
       }
       if (NumL) {
-          // Replace current row of L
-          L_->replaceLocalValues (local_row, InI (0, NumL), InV (0, NumL));
+        // Replace current row of L
+        L_->replaceLocalValues (local_row, InI (0, NumL), InV (0, NumL));
       }
 
       DV[i] = InV[NumL]; // Extract Diagonal value
 
       if (RelaxValue_ != STM::zero ()) {
-          DV[i] += RelaxValue_*diagmod; // Add off diagonal modifications
+        DV[i] += RelaxValue_*diagmod; // Add off diagonal modifications
       }
 
       if (STS::magnitude (DV[i]) > STS::magnitude (MaxDiagonalValue)) {
-          if (STS::real (DV[i]) < STM::zero ()) {
-              DV[i] = -MinDiagonalValue;
-          }
-          else {
-              DV[i] = MinDiagonalValue;
-          }
+        if (STS::real (DV[i]) < STM::zero ()) {
+          DV[i] = -MinDiagonalValue;
+        }
+        else {
+          DV[i] = MinDiagonalValue;
+        }
       }
       else {
-          DV[i] = STS::one () / DV[i]; // Invert diagonal value
+        DV[i] = STS::one () / DV[i]; // Invert diagonal value
       }
 
       for (size_t j = 0; j < NumU; ++j) {
-          InV[NumL+1+j] *= DV[i]; // Scale U by inverse of diagonal
+        InV[NumL+1+j] *= DV[i]; // Scale U by inverse of diagonal
       }
 
       if (NumU) {
-          // Replace current row of L and U
-          U_->replaceLocalValues (local_row, InI (NumL+1, NumU), InV (NumL+1, NumU));
+        // Replace current row of L and U
+        U_->replaceLocalValues (local_row, InI (NumL+1, NumU), InV (NumL+1, NumU));
       }
 
       // Reset column flags
       for (size_t j = 0; j < NumIn; ++j) {
-          colflag[InI[j]] = -1;
+        colflag[InI[j]] = -1;
       }
+    }
+
+    // The domain of L and the range of U are exactly their own row maps
+    // (there is no communication).  The domain of U and the range of L
+    // must be the same as those of the original matrix, However if the
+    // original matrix is a VbrMatrix, these two latter maps are
+    // translation from a block map to a point map.
+    // FIXME (mfh 23 Dec 2013) Do we know that the column Map of L_ is
+    // always one-to-one?
+    L_->fillComplete (L_->getColMap (), A_local_->getRangeMap ());
+    U_->fillComplete (A_local_->getDomainMap (), U_->getRowMap ());
+
+    // If L_solver_ or U_solver store modified factors internally, we need to reset those
+    L_solver_->setMatrix (L_);
+    L_solver_->compute ();
+    U_solver_->setMatrix (U_);
+    U_solver_->compute ();
+  }
+  else {// ! std::is_same< execution_space, Kokkos::Serial >::value
+    L_->resumeFill ();
+    U_->resumeFill ();
+    
+    if (L_->isStaticGraph () || L_->isLocallyIndexed ()) {
+      L_->setAllToScalar (STS::zero ()); // Zero out L and U matrices
+      U_->setAllToScalar (STS::zero ());
+    }
+
+    auto L_rowmap  = L_->getLocalMatrix().graph.row_map;
+    auto L_entries = L_->getLocalMatrix().graph.entries;
+    auto L_values  = L_->getLocalValuesView();
+    auto U_rowmap  = U_->getLocalMatrix().graph.row_map;
+    auto U_entries = U_->getLocalMatrix().graph.entries;
+    auto U_values  = U_->getLocalValuesView();
+    printf("VINH -- In RILUK<MatrixType>::compute () -- A_local_rowmap  type: %s\n", typeid(decltype(A_local_rowmap_)).name());
+    printf("VINH -- In RILUK<MatrixType>::compute () -- A_local_entries type: %s\n", typeid(decltype(A_local_entries_)).name());
+    printf("VINH -- In RILUK<MatrixType>::compute () -- A_local_values  type: %s\n", typeid(decltype(A_local_values_)).name());
+    printf("VINH -- In RILUK<MatrixType>::compute () -- L_rowmap size %lu, L_entries size %lu L_values size %lu\n", 
+                                                        L_rowmap.extent(0), L_entries.extent(0), L_values.extent(0));
+    printf("VINH -- In RILUK<MatrixType>::compute () -- U_rowmap size %lu, U_entries size %lu U_values size %lu\n", 
+                                                        U_rowmap.extent(0), U_entries.extent(0), U_values.extent(0));
+    
+    for (unsigned int row_id = 0; row_id < L_rowmap.extent(0)-1; row_id++) {
+       int row_start = L_rowmap(row_id);
+       int row_end   = L_rowmap(row_id + 1);
+       Kokkos::sort(subview(L_entries, Kokkos::make_pair(row_start, row_end)));
+    }
+    for (unsigned int row_id = 0; row_id < U_rowmap.extent(0)-1; row_id++) {
+       int row_start = U_rowmap(row_id);
+       int row_end   = U_rowmap(row_id + 1);
+       Kokkos::sort(subview(U_entries, Kokkos::make_pair(row_start, row_end)));
+    }
+
+    KokkosSparse::Experimental::spiluk_numeric( KernelHandle_.getRawPtr(), LevelOfFill_, 
+                                                A_local_rowmap_, A_local_entries_, A_local_values_, 
+                                                L_rowmap, L_entries, L_values, U_rowmap, U_entries, U_values );
+    
+    L_->fillComplete (L_->getColMap (), A_local_->getRangeMap ());
+    U_->fillComplete (A_local_->getDomainMap (), U_->getRowMap ());
+    
+    L_solver_->setMatrix (L_);
+    L_solver_->compute ();
+    U_solver_->setMatrix (U_);
+    U_solver_->compute ();
+  }
+#else
+  L_->resumeFill ();
+  U_->resumeFill ();
+  printf("VINH -- In RILUK<MatrixType>::compute () -- ReplaceValues_test %d\n", (L_->isStaticGraph() || L_->isLocallyIndexed()));
+  if (L_->isStaticGraph () || L_->isLocallyIndexed ()) {
+    L_->setAllToScalar (STS::zero ()); // Zero out L and U matrices
+    U_->setAllToScalar (STS::zero ());
   }
 
-  // The domain of L and the range of U are exactly their own row maps
-  // (there is no communication).  The domain of U and the range of L
-  // must be the same as those of the original matrix, However if the
-  // original matrix is a VbrMatrix, these two latter maps are
-  // translation from a block map to a point map.
-  // FIXME (mfh 23 Dec 2013) Do we know that the column Map of L_ is
-  // always one-to-one?
+  auto L_rowmap  = L_->getLocalMatrix().graph.row_map;printf("VINH after get L rowmap\n");
+  auto L_entries = L_->getLocalMatrix().graph.entries;printf("VINH after get L entries\n");
+  auto L_values  = L_->getLocalValuesView();          printf("VINH after get L values\n");
+  auto U_rowmap  = U_->getLocalMatrix().graph.row_map;printf("VINH after get U rowmap\n");
+  auto U_entries = U_->getLocalMatrix().graph.entries;printf("VINH after get U entries\n");
+  auto U_values  = U_->getLocalValuesView();          printf("VINH after get U values\n");
+  printf("VINH -- In RILUK<MatrixType>::compute () -- A_local_rowmap  type: %s\n", typeid(decltype(A_local_rowmap_)).name());
+  printf("VINH -- In RILUK<MatrixType>::compute () -- A_local_entries type: %s\n", typeid(decltype(A_local_entries_)).name());
+  printf("VINH -- In RILUK<MatrixType>::compute () -- A_local_values  type: %s\n", typeid(decltype(A_local_values_)).name());
+  printf("VINH -- In RILUK<MatrixType>::compute () -- L_rowmap size %lu, L_entries size %lu L_values size %lu\n", 
+                                                      L_rowmap.extent(0), L_entries.extent(0), L_values.extent(0));
+  printf("VINH -- In RILUK<MatrixType>::compute () -- U_rowmap size %lu, U_entries size %lu U_values size %lu\n", 
+                                                      U_rowmap.extent(0), U_entries.extent(0), U_values.extent(0));
+
+  for (unsigned int row_id = 0; row_id < L_rowmap.extent(0)-1; row_id++) {
+     int row_start = L_rowmap(row_id);
+     int row_end   = L_rowmap(row_id + 1);
+     Kokkos::sort(subview(L_entries, Kokkos::make_pair(row_start, row_end)));
+  }
+  for (unsigned int row_id = 0; row_id < U_rowmap.extent(0)-1; row_id++) {
+     int row_start = U_rowmap(row_id);
+     int row_end   = U_rowmap(row_id + 1);
+     Kokkos::sort(subview(U_entries, Kokkos::make_pair(row_start, row_end)));
+  }
+
+  KokkosSparse::Experimental::spiluk_numeric( KernelHandle_.getRawPtr(), LevelOfFill_, 
+                                              A_local_rowmap_, A_local_entries_, A_local_values_, 
+                                              L_rowmap, L_entries, L_values, U_rowmap, U_entries, U_values );
+
   L_->fillComplete (L_->getColMap (), A_local_->getRangeMap ());
   U_->fillComplete (A_local_->getDomainMap (), U_->getRowMap ());
 
-  // If L_solver_ or U_solver store modified factors internally, we need to reset those
   L_solver_->setMatrix (L_);
   L_solver_->compute ();
   U_solver_->setMatrix (U_);
   U_solver_->compute ();
+#endif
 
   isComputed_ = true;
   ++numCompute_;
@@ -883,28 +1036,31 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   { // Start timing
     Teuchos::TimeMonitor timeMon (timer);
     if (alpha == one && beta == zero) {
-      if (mode == Teuchos::NO_TRANS) { // Solve L (D (U Y)) = X for Y.
+      if (mode == Teuchos::NO_TRANS) { // Solve L (D (U Y)) = X for Y.      
         // Start by solving L Y = X for Y.
         L_solver_->apply (X, Y, mode);
-
-        // Solve D Y = Y.  The operation lets us do this in place in Y, so we can
-        // write "solve D Y = Y for Y."
-        Y.elementWiseMultiply (one, *D_, Y, zero);
-
+#ifdef KOKKOS_ENABLE_SERIAL
+        if( std::is_same< execution_space, Kokkos::Serial >::value ) {
+          // Solve D Y = Y.  The operation lets us do this in place in Y, so we can
+          // write "solve D Y = Y for Y."
+          Y.elementWiseMultiply (one, *D_, Y, zero);
+        }
+#endif
         U_solver_->apply (Y, Y, mode); // Solve U Y = Y.
       }
-      else { // Solve U^P (D^P (L^P Y)) = X for Y (where P is * or T).
-
+      else { // Solve U^P (D^P (L^P Y)) = X for Y (where P is * or T).      
         // Start by solving U^P Y = X for Y.
         U_solver_->apply (X, Y, mode);
-
-        // Solve D^P Y = Y.
-        //
-        // FIXME (mfh 24 Jan 2014) If mode = Teuchos::CONJ_TRANS, we
-        // need to do an elementwise multiply with the conjugate of
-        // D_, not just with D_ itself.
-        Y.elementWiseMultiply (one, *D_, Y, zero);
-
+#ifdef KOKKOS_ENABLE_SERIAL
+        if( std::is_same< execution_space, Kokkos::Serial >::value ) {      
+          // Solve D^P Y = Y.
+          //
+          // FIXME (mfh 24 Jan 2014) If mode = Teuchos::CONJ_TRANS, we
+          // need to do an elementwise multiply with the conjugate of
+          // D_, not just with D_ itself.
+          Y.elementWiseMultiply (one, *D_, Y, zero);
+	    }
+#endif
         L_solver_->apply (Y, Y, mode); // Solve L^P Y = Y.
       }
     }
@@ -946,37 +1102,38 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
 }
 
 
-template<class MatrixType>
-void RILUK<MatrixType>::
-multiply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-          Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-          const Teuchos::ETransp mode) const
-{
-  const scalar_type zero = STS::zero ();
-  const scalar_type one = STS::one ();
-
-  if (mode != Teuchos::NO_TRANS) {
-    U_->apply (X, Y, mode); //
-    Y.update (one, X, one); // Y = Y + X (account for implicit unit diagonal)
-
-    // FIXME (mfh 24 Jan 2014) If mode = Teuchos::CONJ_TRANS, we need
-    // to do an elementwise multiply with the conjugate of D_, not
-    // just with D_ itself.
-    Y.elementWiseMultiply (one, *D_, Y, zero); // y = D*y (D_ has inverse of diagonal)
-
-    MV Y_tmp (Y, Teuchos::Copy); // Need a temp copy of Y
-    L_->apply (Y_tmp, Y, mode);
-    Y.update (one, Y_tmp, one); // (account for implicit unit diagonal)
-  }
-  else {
-    L_->apply (X, Y, mode);
-    Y.update (one, X, one); // Y = Y + X (account for implicit unit diagonal)
-    Y.elementWiseMultiply (one, *D_, Y, zero); // y = D*y (D_ has inverse of diagonal)
-    MV Y_tmp (Y, Teuchos::Copy); // Need a temp copy of Y1
-    U_->apply (Y_tmp, Y, mode);
-    Y.update (one, Y_tmp, one); // (account for implicit unit diagonal)
-  }
-}
+//VINH comment out since multiply() is not needed anywhere
+//template<class MatrixType>
+//void RILUK<MatrixType>::
+//multiply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+//          Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+//          const Teuchos::ETransp mode) const
+//{
+//  const scalar_type zero = STS::zero ();
+//  const scalar_type one = STS::one ();
+//
+//  if (mode != Teuchos::NO_TRANS) {
+//    U_->apply (X, Y, mode); //
+//    Y.update (one, X, one); // Y = Y + X (account for implicit unit diagonal)
+//
+//    // FIXME (mfh 24 Jan 2014) If mode = Teuchos::CONJ_TRANS, we need
+//    // to do an elementwise multiply with the conjugate of D_, not
+//    // just with D_ itself.
+//    Y.elementWiseMultiply (one, *D_, Y, zero); // y = D*y (D_ has inverse of diagonal)
+//
+//    MV Y_tmp (Y, Teuchos::Copy); // Need a temp copy of Y
+//    L_->apply (Y_tmp, Y, mode);
+//    Y.update (one, Y_tmp, one); // (account for implicit unit diagonal)
+//  }
+//  else {
+//    L_->apply (X, Y, mode);
+//    Y.update (one, X, one); // Y = Y + X (account for implicit unit diagonal)
+//    Y.elementWiseMultiply (one, *D_, Y, zero); // y = D*y (D_ has inverse of diagonal)
+//    MV Y_tmp (Y, Teuchos::Copy); // Need a temp copy of Y1
+//    U_->apply (Y_tmp, Y, mode);
+//    Y.update (one, Y_tmp, one); // (account for implicit unit diagonal)
+//  }
+//}
 
 
 template<class MatrixType>
