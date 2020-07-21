@@ -293,7 +293,7 @@ namespace FROSch {
            NumEnt_ = interfacePartitionOfUnity->getDDInterface()->getNumEnt();
 
            if (!this->DistributionList_->get("Type","linear").compare("ZoltanDual")) {
-             FROSCH_ASSERT(this->NumberOfBlocks_!=1,"Distribution Type ZoltanDual only works for one Block");
+             FROSCH_ASSERT(this->NumberOfBlocks_==1,"Distribution Type ZoltanDual only works for one Block");
              Teuchos::RCP<DDInterface<SC,LO,GO,NO> > theInterface =Teuchos::rcp_const_cast<DDInterface<SC,LO,GO,NO> >(interfacePartitionOfUnity->getDDInterface());
              this->buildGlobalGraph(theInterface);
              int dim = dimension;
