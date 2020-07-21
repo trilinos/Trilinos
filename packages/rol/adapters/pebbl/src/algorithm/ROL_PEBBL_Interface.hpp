@@ -83,11 +83,29 @@ private:
     }
   } snap;
 
+  Ptr<Vector<Real>> getOptVector(const Ptr<Vector<Real>> &xs ) const {
+    try {
+      return dynamicPtrCast<PartitionedVector<Real>>(xs)->get(0);
+    }
+    catch (std::exception &e) {
+      return xs;
+    }
+  }
+
+  Ptr<Vector<Real>> getIntegerVector(const Ptr<Vector<Real>> &x) const {
+    try {
+      return dynamicPtrCast<MixedVector<Real>>(getOptVector(x))->getIntegerVariables();
+    }
+    catch (std::exception &e) {
+      return getOptVector(x);
+    }
+  }
+
 public:
   IntegerSolution(const Vector<Real> &x, const Real newvalue) {
     solution_ = x.clone();
     solution_->set(x);
-    solution_->applyUnary(snap);
+    getIntegerVector(solution_)->applyUnary(snap);
     value = newvalue;
   }
 
@@ -175,6 +193,24 @@ protected:
   public:
     Real apply(const Real &x) const { return std::round(x); }
   } rnd;
+
+  Ptr<Vector<Real>> getOptVector(const Ptr<Vector<Real>> &xs ) const {
+    try {
+      return dynamicPtrCast<PartitionedVector<Real>>(xs)->get(0);
+    }
+    catch (std::exception &e) {
+      return xs;
+    }
+  }
+
+  Ptr<Vector<Real>> getIntegerVector(const Ptr<Vector<Real>> &x) const {
+    try {
+      return dynamicPtrCast<MixedVector<Real>>(getOptVector(x))->getIntegerVariables();
+    }
+    catch (std::exception &e) {
+      return getOptVector(x);
+    }
+  }
 
 public:
   BranchSub(const Ptr<Branching<Real>> &branching,
@@ -318,7 +354,7 @@ public:
   virtual void incumbentHeuristic() {
     Real tol(std::sqrt(ROL_EPSILON<Real>()));
     rndSolution_->set(*solution_);
-    rndSolution_->applyUnary(rnd);
+    getIntegerVector(rndSolution_)->applyUnary(rnd);
     problem0_->getObjective()->update(*rndSolution_,UPDATE_TEMP);
     Real val = problem0_->getObjective()->value(*rndSolution_,tol);
     branching_->foundSolution(new IntegerSolution<Real>(*rndSolution_,val));

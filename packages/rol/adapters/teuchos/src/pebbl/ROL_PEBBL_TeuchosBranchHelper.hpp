@@ -65,9 +65,9 @@ private:
   const Real tol_;
   const int method_;
 
-  using BranchHelper<Real>::getVector;
+  using BranchHelper<Real>::getIntegerVector;
   Ptr<const Teuchos::SerialDenseVector<Ordinal,Real>> getConstData(const Vector<Real> &x) const {
-    return dynamic_cast<const TeuchosVector<Ordinal,Real>&>(*getVector(x)).getVector();
+    return dynamic_cast<const TeuchosVector<Ordinal,Real>&>(*getIntegerVector(x)).getVector();
   }
 
   // Branching based on distance to integer

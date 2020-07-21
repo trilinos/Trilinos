@@ -44,8 +44,9 @@
 #ifndef ROL_PEBBL_BRANCHHELPER_H
 #define ROL_PEBBL_BRANCHHELPER_H
 
-#include "ROL_Vector.hpp"
+#include "ROL_PartitionedVector.hpp"
 #include "ROL_PEBBL_IntegerTransformation.hpp"
+#include "ROL_PEBBL_MixedVector.hpp"
 
 /** @ingroup func_group
     \class ROL::PEBBL::BranchHelper
@@ -54,19 +55,27 @@
     ---
 */
 
-
 namespace ROL {
 namespace PEBBL {
 
 template <class Real>
 class BranchHelper {
 protected:
-  Ptr<const Vector<Real>> getVector(const Vector<Real> &xs ) const {
+  Ptr<const Vector<Real>> getOptVector(const Vector<Real> &xs ) const {
     try {
       return dynamic_cast<const PartitionedVector<Real>&>(xs).get(0);
     }
     catch (std::exception &e) {
       return makePtrFromRef(xs);
+    }
+  }
+
+  Ptr<const Vector<Real>> getIntegerVector(const Vector<Real> &xs) const {
+    try {
+      return dynamicPtrCast<const MixedVector<Real>>(getOptVector(xs))->getIntegerVariables();
+    }
+    catch (std::exception &e) {
+      return getOptVector(xs);
     }
   }
 

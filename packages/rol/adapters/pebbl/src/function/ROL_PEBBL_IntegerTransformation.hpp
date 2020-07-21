@@ -45,6 +45,8 @@
 #define ROL_PEBBL_INTEGERTRANSFORMATION_H
 
 #include "ROL_Constraint.hpp"
+#include "ROL_PartitionedVector.hpp"
+#include "ROL_PEBBL_MixedVector.hpp"
 
 /** @ingroup func_group
     \class ROL::PEBBL::IntegerTransformation
@@ -63,12 +65,21 @@ namespace PEBBL {
 template <class Real>
 class IntegerTransformation : public Constraint<Real> {
 private:
-  Ptr<Vector<Real>> getVector( Vector<Real> &xs ) const {
+  Ptr<Vector<Real>> getOptVector( Vector<Real> &xs ) const {
     try {
       return dynamic_cast<PartitionedVector<Real>&>(xs).get(0);
     }
     catch (std::exception &e) {
       return makePtrFromRef(xs);
+    }
+  }
+
+  Ptr<Vector<Real>> getIntegerVector(Vector<Real> &xs) const {
+    try {
+      return dynamicPtrCast<MixedVector<Real>>(getOptVector(xs))->getIntegerVariables();
+    }
+    catch (std::exception &e) {
+      return getOptVector(xs);
     }
   }
 
@@ -83,7 +94,7 @@ public:
 
   void value(Vector<Real> &c, const Vector<Real> &x, Real &tol) {
     c.set(x);
-    Ptr<Vector<Real>> cp = getVector(c);
+    Ptr<Vector<Real>> cp = getIntegerVector(c);
     fixValues(*cp,false);
   }
 
@@ -92,7 +103,7 @@ public:
                const Vector<Real> &x,
                      Real &tol) {
     jv.set(v);
-    Ptr<Vector<Real>> jvp = getVector(jv);
+    Ptr<Vector<Real>> jvp = getIntegerVector(jv);
     fixValues(*jvp,true);
   }
 
@@ -101,7 +112,7 @@ public:
                       const Vector<Real> &x,
                             Real &tol) {
     ajv.set(v);
-    Ptr<Vector<Real>> ajvp = getVector(ajv);
+    Ptr<Vector<Real>> ajvp = getIntegerVector(ajv);
     fixValues(*ajvp,true);
   }
 
