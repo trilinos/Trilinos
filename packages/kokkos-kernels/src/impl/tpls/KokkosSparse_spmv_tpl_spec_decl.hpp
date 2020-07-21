@@ -84,7 +84,6 @@ namespace Impl {
     cusparseHandle_t cusparseHandle = controls.getCusparseHandle();
 
     /* Set the operation mode */
-    std::cout << "HELLO FROM CUSPARSE SPMV: mode is \"" << mode << "\"\n";
     cusparseOperation_t myCusparseOperation = CUSPARSE_OPERATION_NON_TRANSPOSE;
     if(mode[0] == Transpose[0]) {myCusparseOperation = CUSPARSE_OPERATION_TRANSPOSE;}
     else if(mode[0] == ConjugateTranspose[0]) {myCusparseOperation = CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE;}
