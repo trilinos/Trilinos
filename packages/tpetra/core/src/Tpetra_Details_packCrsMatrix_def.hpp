@@ -740,7 +740,6 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
   );
   using Kokkos::View;
   typedef BufferDeviceType DT;
-  typedef typename DT::execution_space execution_space;
   typedef Kokkos::DualView<char*, BufferDeviceType> exports_view_type;
   const char prefix[] = "Tpetra::Details::PackCrsMatrixImpl::packCrsMatrix: ";
   constexpr bool debug = false;

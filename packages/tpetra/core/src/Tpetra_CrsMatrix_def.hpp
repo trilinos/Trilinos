@@ -4085,7 +4085,6 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Teuchos::rcp;
     using Teuchos::rcpFromRef;
-    using LO = local_ordinal_type;
     using vec_type = Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     const char tfecfFuncName[] = "leftScale: ";
 
@@ -4146,7 +4145,6 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Teuchos::rcp;
     using Teuchos::rcpFromRef;
-    using LO = local_ordinal_type;
     typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> vec_type;
     const char tfecfFuncName[] = "rightScale: ";
 
