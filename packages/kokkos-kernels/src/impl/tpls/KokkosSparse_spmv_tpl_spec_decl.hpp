@@ -88,7 +88,7 @@ namespace Impl {
     if(mode[0] == Transpose[0]) {myCusparseOperation = CUSPARSE_OPERATION_TRANSPOSE;}
     else if(mode[0] == ConjugateTranspose[0]) {myCusparseOperation = CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE;}
 
-#if defined(CUSPARSE_VERSION) && (10300 <= CUSPARSE_VERSION)
+#if defined(CUDA_VERSION) && (10010 <= CUDA_VERSION)
 
     /* Check that cusparse can handle the types of the input Kokkos::CrsMatrix */
     cusparseIndexType_t myCusparseOffsetType;
@@ -159,7 +159,7 @@ namespace Impl {
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecY));
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(A_cusparse));
 
-#elif (9000 <= CUSPARSE_VERSION)
+#elif (9000 <= CUDA_VERSION)
 
     /* create and set the matrix descriptor */
     cusparseMatDescr_t descrA = 0;
@@ -172,12 +172,12 @@ namespace Impl {
       if (std::is_same<value_type,float>::value) {
 	KOKKOS_CUSPARSE_SAFE_CALL(cusparseScsrmv(cusparseHandle, myCusparseOperation,
 						 A.numRows(), A.numCols(), A.nnz(),
-						 reinterpret_cast<const float *>(&alpha), descrA,
-						 reinterpret_cast<const float *>(A.values.data()),
+						 reinterpret_cast<float const*>(&alpha), descrA,
+						 reinterpret_cast<float const*>(A.values.data()),
 						 A.graph.row_map.data(), A.graph.entries.data(),
-						 reinterpret_cast<const float *>(x.data()),
-						 reinterpret_cast<const float *>(&beta),
-						 reinterpret_cast<float *>(y.data()) ));
+						 reinterpret_cast<float const*>(x.data()),
+						 reinterpret_cast<float const*>(&beta),
+						 reinterpret_cast<float*>(y.data())));
 
       } else  if (std::is_same<value_type,double>::value) {
 	KOKKOS_CUSPARSE_SAFE_CALL(cusparseDcsrmv(cusparseHandle, myCusparseOperation,
@@ -187,7 +187,7 @@ namespace Impl {
 						 A.graph.row_map.data(), A.graph.entries.data(),
 						 reinterpret_cast<double const *>(x.data()),
 						 reinterpret_cast<double const *>(&beta),
-						 reinterpret_cast<double *>(y.data()) ));
+						 reinterpret_cast<double*>(y.data())));
       } else  if (std::is_same<value_type,Kokkos::complex<float>>::value) {
 	KOKKOS_CUSPARSE_SAFE_CALL(cusparseCcsrmv(cusparseHandle, myCusparseOperation,
 						 A.numRows(), A.numCols(), A.nnz(),
@@ -196,7 +196,7 @@ namespace Impl {
 						 A.graph.row_map.data(), A.graph.entries.data(),
 						 reinterpret_cast<cuComplex const*>(x.data()),
 						 reinterpret_cast<cuComplex const*>(&beta),
-						 reinterpret_cast<cuComplex const*>(y.data())));
+						 reinterpret_cast<cuComplex*>(y.data())));
       } else  if (std::is_same<value_type,Kokkos::complex<double>>::value) {
 	KOKKOS_CUSPARSE_SAFE_CALL(cusparseZcsrmv(cusparseHandle, myCusparseOperation,
 						 A.numRows(), A.numCols(), A.nnz(),
@@ -205,7 +205,7 @@ namespace Impl {
 						 A.graph.row_map.data(), A.graph.entries.data(),
 						 reinterpret_cast<cuDoubleComplex const*>(x.data()),
 						 reinterpret_cast<cuDoubleComplex const*>(&beta),
-						 reinterpret_cast<cuDoubleComplex const*>(y.data())));
+						 reinterpret_cast<cuDoubleComplex*>(y.data())));
       } else {
 	throw std::logic_error("Trying to call cusparse SpMV with a scalar type not float/double, nor complex of either!");
       }
@@ -214,7 +214,7 @@ namespace Impl {
     }
 
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyMatDescr(descrA));
-#endif // CUSPARSE_VERSION
+#endif // CUDA_VERSION
   }
 
 #define KOKKOSSPARSE_SPMV_CUSPARSE(SCALAR, ORDINAL, OFFSET, LAYOUT, SPACE, COMPILE_LIBRARY) \
@@ -252,7 +252,7 @@ namespace Impl {
       }									\
     }									\
   }; 
-#if (9000 <= CUSPARSE_VERSION)
+#if (9000 <= CUDA_VERSION)
   KOKKOSSPARSE_SPMV_CUSPARSE(double, int, int, Kokkos::LayoutLeft,  Kokkos::CudaSpace, true)
   KOKKOSSPARSE_SPMV_CUSPARSE(double, int, int, Kokkos::LayoutRight, Kokkos::CudaSpace, true)
   KOKKOSSPARSE_SPMV_CUSPARSE(float,  int, int, Kokkos::LayoutLeft,  Kokkos::CudaSpace, true)
@@ -270,7 +270,7 @@ namespace Impl {
   KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>,  int, int, Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, true)
   KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>,  int, int, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true)
 
-#if (10300 <= CUSPARSE_VERSION)
+#if (10010 <= CUDA_VERSION)
   KOKKOSSPARSE_SPMV_CUSPARSE(double, int64_t, size_t, Kokkos::LayoutLeft,  Kokkos::CudaSpace, true)
   KOKKOSSPARSE_SPMV_CUSPARSE(double, int64_t, size_t, Kokkos::LayoutRight, Kokkos::CudaSpace, true)
   KOKKOSSPARSE_SPMV_CUSPARSE(float,  int64_t, size_t, Kokkos::LayoutLeft,  Kokkos::CudaSpace, true)
