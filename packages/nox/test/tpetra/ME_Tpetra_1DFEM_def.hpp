@@ -131,8 +131,7 @@ template<class Scalar, class LO, class GO, class Node>
 Teuchos::RCP<const Tpetra::CrsGraph<LO, GO, Node> >
 EvaluatorTpetra1DFEM<Scalar, LO, GO, Node>::createGraph()
 {
-  //typedef typename tpetra_graph::local_graph_type local_graph_type;
-  typedef typename tpetra_graph::execution_space::size_type size_type;
+  typedef typename tpetra_graph::local_graph_type::size_type size_type;
 
   // Compute graph offset array
   int numProcs = comm_->getSize();

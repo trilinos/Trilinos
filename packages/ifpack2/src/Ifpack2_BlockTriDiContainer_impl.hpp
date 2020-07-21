@@ -1863,8 +1863,7 @@ namespace KB = KokkosBatched::Experimental;
       const ConstUnmanaged<local_ordinal_type_1d_view> partptr, lclrow, packptr;
       const local_ordinal_type max_partsz;
       // block crs matrix (it could be Kokkos::UVMSpace::size_type, which is int)
-      using a_rowptr_value_type = typename Kokkos::ViewTraits<local_ordinal_type*,typename impl_type::node_device_type>::size_type;
-      using size_type_1d_view_tpetra = Kokkos::View<a_rowptr_value_type*,typename impl_type::node_device_type>;
+      using size_type_1d_view_tpetra = Kokkos::View<size_t*,typename impl_type::node_device_type>;
       const ConstUnmanaged<size_type_1d_view_tpetra> A_rowptr;
       const ConstUnmanaged<impl_scalar_type_1d_view_tpetra> A_values;
       // block tridiags
@@ -2090,10 +2089,14 @@ namespace KB = KokkosBatched::Experimental;
           factorize(member, i0, nrows, 0, internal_vector_values, WW);
         } else {
           Kokkos::parallel_for
-            (Kokkos::ThreadVectorRange(member, vector_loop_size), [&](const local_ordinal_type &v) {
+            (Kokkos::ThreadVectorRange(member, vector_loop_size),
+	     [&](const local_ordinal_type &v) {
               const local_ordinal_type vbeg = v*internal_vector_length;
               if (vbeg < npacks)
                 extract(member, partidx+vbeg, npacks, vbeg);
+              // this is not safe if vector loop size is different from vector size of 
+              // the team policy. we always make sure this when constructing the team policy
+              member.team_barrier();
               factorize(member, i0, nrows, v, internal_vector_values, WW);
             });
         }
@@ -2901,8 +2904,7 @@ namespace KB = KokkosBatched::Experimental;
 
       // block crs graph information
       // for cuda (kokkos crs graph uses a different size_type from size_t)
-      using a_rowptr_value_type = typename Kokkos::ViewTraits<local_ordinal_type*,node_device_type>::size_type;
-      const ConstUnmanaged<Kokkos::View<a_rowptr_value_type*,node_device_type> > A_rowptr;
+      const ConstUnmanaged<Kokkos::View<size_t*,node_device_type> > A_rowptr;
       const ConstUnmanaged<Kokkos::View<local_ordinal_type*,node_device_type> > A_colind;
 
       // blocksize
@@ -3615,10 +3617,10 @@ namespace KB = KokkosBatched::Experimental;
         IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::NormManager::Ireduce");
 
         work_[1] = work_[0];
+#ifdef HAVE_IFPACK2_MPI
         auto send_data = &work_[1];
         auto recv_data = &work_[0];
         if (collective_) {
-#ifdef HAVE_IFPACK2_MPI
 # if defined(IFPACK2_BLOCKTRIDICONTAINER_USE_MPI_3)
           MPI_Iallreduce(send_data, recv_data, 1,
                          Teuchos::Details::MpiTypeTraits<magnitude_type>::getType(),
@@ -3628,8 +3630,8 @@ namespace KB = KokkosBatched::Experimental;
                          Teuchos::Details::MpiTypeTraits<magnitude_type>::getType(),
                          MPI_SUM, comm_);
 # endif
-#endif
         }
+#endif
       }
 
       // Check if the norm-based termination criterion is met. tol2 is the

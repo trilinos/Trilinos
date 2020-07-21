@@ -296,12 +296,10 @@ private:
   /// Persisting 1D store for X
   mutable host_solve_array_t host_xValues_;
   mutable Teuchos::Array<slu_convert_type> convert_xValues_; // copy to SuperLU native array before calling SuperLU
-  int ldx_;
 
   /// Persisting 1D store for B
   mutable host_solve_array_t host_bValues_;
   mutable Teuchos::Array<slu_convert_type> convert_bValues_; // copy to SuperLU native array before calling SuperLU
-  int ldb_;
 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
   typedef Kokkos::DefaultExecutionSpace DeviceExecSpaceType;
