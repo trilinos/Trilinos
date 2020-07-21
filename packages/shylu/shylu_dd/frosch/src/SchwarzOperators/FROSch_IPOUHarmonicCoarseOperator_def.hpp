@@ -297,7 +297,7 @@ namespace FROSch {
              Teuchos::RCP<DDInterface<SC,LO,GO,NO> > theInterface =Teuchos::rcp_const_cast<DDInterface<SC,LO,GO,NO> >(interfacePartitionOfUnity->getDDInterface());
              this->buildGlobalGraph(theInterface);
              int dim = dimension;
-             this->ParameterList_->set("Dimension",dim);
+             sublist(this->ParameterList_,"CoarseSolver")->set("Dimension",dim);
            }
 
             // Build local basis
@@ -387,7 +387,7 @@ namespace FROSch {
       Teuchos::RCP<Xpetra::Map<LO,GO,NO> > tmpMap =   Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,-1,dofEle,0,nodesMap->getComm());
       return tmpMap;
 
-    }  
+    }
 
 
 

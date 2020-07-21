@@ -89,6 +89,8 @@
 #include <Zoltan2_MatrixAdapter.hpp>
 #include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
+#include <Zoltan2_XpetraCrsGraphAdapter.hpp>
+
 #endif
 
 
@@ -251,13 +253,6 @@ namespace FROSch {
 
     template <class LO,class GO,class NO>
     RCP<const Map<LO,GO,NO> > BuildRepeatedMap(RCP<const CrsGraph<LO,GO,NO> > graph);
-
-    template <class LO,class GO,class NO>
-    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildMapFromNodeMap(Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > &nodesMap,
-                                                           unsigned dofsPerNode,
-                                                           unsigned dofOrdering);
-
-  
 
 
     template <class LO,class GO,class NO>
@@ -462,6 +457,13 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int RepartionMatrixZoltan2(RCP<Matrix<SC,LO,GO,NO> > &crsMatrix,
                                RCP<ParameterList> parameterList);
+
+    template <class LO,class GO, class NO>
+    int BuildRepMapZoltan(RCP<CrsGraph<LO,GO,NO> > Xgraph,
+                          RCP<CrsGraph<LO,GO,NO> >  B,
+                          RCP<ParameterList> parameterList,
+                          Teuchos::RCP<const Teuchos::Comm<int> > TeuchosComm,
+                          RCP<Map<LO,GO,NO> > &RepeatedMap);
 #endif
 
     /*!

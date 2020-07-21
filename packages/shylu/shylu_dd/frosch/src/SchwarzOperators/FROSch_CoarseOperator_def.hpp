@@ -74,51 +74,7 @@ namespace FROSch {
 
   //REP MAP Zoltam
 
-    template <class SC,class LO,class GO, class NO>
-    int CoarseOperator<SC,LO,GO,NO>::BuildRepMapZoltan(GraphPtr Xgraph,
-                                GraphPtr  B,
-                                ParameterListPtr parameterList,
-                                Teuchos::RCP<const Teuchos::Comm<int> > TeuchosComm,
-                                XMapPtr &RepeatedMap)
-    {
 
-      FROSCH_TIMER_START_LEVELID(BuildRepMapZoltanTime,"CoarseOperator::BuildRepMapZoltan");
-      //Zoltan2 Problem
-      typedef Zoltan2::XpetraCrsGraphAdapter<Xpetra::CrsGraph<LO,GO,NO> > inputAdapter;
-      Teuchos::RCP<Teuchos::ParameterList> tmpList = Teuchos::sublist(parameterList,"Zoltan2 Parameter");
-      Teuchos::RCP<inputAdapter> adaptedMatrix = Teuchos::rcp(new inputAdapter(Xgraph,0,0));
-      size_t MaxRow = B->getGlobalMaxNumRowEntries();
-      Teuchos::RCP<const Xpetra::Map<LO, GO, NO> > ColMap = Xpetra::MapFactory<LO,GO,NO>::createLocalMap(Xgraph->getRowMap()->lib(),MaxRow,TeuchosComm);
-      Teuchos::RCP<Zoltan2::PartitioningProblem<inputAdapter> >problem;
-      {
-        problem = Teuchos::RCP<Zoltan2::PartitioningProblem<inputAdapter> >(new Zoltan2::PartitioningProblem<inputAdapter> (adaptedMatrix.getRawPtr(), tmpList.get(),TeuchosComm));
-        problem->solve();
-      }
-      // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      Teuchos::RCP<Xpetra::CrsGraph<LO,GO,NO> > ReGraph;
-      {
-        adaptedMatrix->applyPartitioningSolution(*Xgraph,ReGraph,problem->getSolution());
-      }
-      Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(Xgraph->getRowMap(),ReGraph->getRowMap());
-      Teuchos::RCP<Xpetra::CrsGraph<LO,GO,NO> > BB = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(ReGraph->getRowMap(),MaxRow);
-      {
-        BB->doImport(*B,*scatter,Xpetra::INSERT);
-      }
-      // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      Teuchos::Array<GO> repeatedMapEntries(0);
-      for (UN i = 0; i<ReGraph->getRowMap()->getNodeNumElements(); i++) {
-        Teuchos::ArrayView<const GO> arr;
-        Teuchos::ArrayView<const LO> cc;
-        GO gi = ReGraph->getRowMap()->getGlobalElement(i);
-        BB->getGlobalRowView(gi,arr);
-        for (unsigned j=0; j<arr.size(); j++) {
-          repeatedMapEntries.push_back(arr[j]);
-        }
-      }
-      sortunique(repeatedMapEntries);
-      RepeatedMap = Xpetra::MapFactory<LO,GO,NO>::Build(ReGraph->getColMap()->lib(),-1,repeatedMapEntries(),0,ReGraph->getColMap()->getComm());
-      return 0;
-    }
 //################end Coarse RepetedMap Functions###########################
 
     template <class SC,class LO,class GO,class NO>
@@ -831,7 +787,7 @@ namespace FROSch {
              if(OnCoarseSolveComm_){
                //Coarse DofsMaps so far only one Block will work
                ConstXMapPtrVecPtr2D CoarseDofsMaps(1);
-               BuildRepMapZoltan(SubdomainConnectGraph_,ElementNodeList_, DistributionList_,CoarseSolveComm_,CoarseSolveRepeatedMap_);
+               FROSch::BuildRepMapZoltan(SubdomainConnectGraph_,ElementNodeList_, DistributionList_,MLCoarseMap_->getComm(),CoarseSolveRepeatedMap_);
                ConstRepMap = CoarseSolveRepeatedMap_;
                ConstXMapPtrVecPtr NodesMapVector(1);
                //MapVector for next Level
@@ -898,23 +854,6 @@ namespace FROSch {
         } else {
             FROSCH_ASSERT(false,"FROSch::CoarseOperator : ERROR: Distribution type unknown.");
         }
-
-        /*if (OnCoarseSolveComm_) {
-            GO dimCoarseProblem = CoarseSolveMap_->getMaxAllGlobalIndex();
-            if (CoarseSolveMap_->lib()==UseEpetra || CoarseSolveMap_->getGlobalNumElements()>0) {
-                dimCoarseProblem += 1;
-            }
-            LO localVal = CoarseSolveMap_->getNodeNumElements();
-            LO sumVal;
-            LO minVal;
-            LO maxVal;
-
-            reduceAll(*CoarseSolveComm_,REDUCE_SUM,localVal,ptr(&sumVal));
-            reduceAll(*CoarseSolveComm_,REDUCE_MIN,localVal,ptr(&minVal));
-            reduceAll(*CoarseSolveComm_,REDUCE_MAX,localVal,ptr(&maxVal));
-
-
-        }*/
 
         return 0;
     }

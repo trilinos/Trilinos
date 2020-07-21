@@ -295,8 +295,6 @@ namespace FROSch {
   GOVecPtr dirichletBoundaryDofs = null;
   ConstXMultiVectorPtr nullSpaceBasisVec = null;
 
-  UN dim = ParameterList_->get("Dimension",3);
-
   TLP = Teuchos::rcp(new TwoLevelPreconditioner<SC,LO,GO,NO>(K_,ParameterList_));
   TLP->initialize(ParameterList_->get("Dimension",3),
                   dofsPerNodeVector[0],

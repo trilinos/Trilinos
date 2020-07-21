@@ -177,13 +177,6 @@ namespace FROSch {
 
         virtual CoarseSpacePtr getCoarseSpace() const;
 
-        virtual int BuildRepMapZoltan(GraphPtr Xgraph,
-                                      GraphPtr  B,
-                                      ParameterListPtr parameterList,
-                                      Teuchos::RCP<const Teuchos::Comm<int> > TeuchosComm,
-                                      XMapPtr &RepeatedMap);
-
-
     protected:
 
         virtual int setUpCoarseOperator();
