@@ -779,7 +779,7 @@ void SetupMatVec(const Teuchos::RCP<Xpetra::MultiVector<GlobalOrdinal, LocalOrdi
                  const Teuchos::RCP<Xpetra::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> >& regionsPerGIDWithGhosts,
                  const std::vector<Teuchos::RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > >& regionRowMap,
                  const std::vector<Teuchos::RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > >& rowImportPerGrp,
-                 Teuchos::Array<LocalOrdinal>& regionMatVecLIDs,
+                 Teuchos::ArrayRCP<LocalOrdinal>& regionMatVecLIDs,
                  Teuchos::RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter) {
 #include "Xpetra_UseShortNamesOrdinal.hpp"
   using Teuchos::TimeMonitor;
@@ -798,6 +798,7 @@ void SetupMatVec(const Teuchos::RCP<Xpetra::MultiVector<GlobalOrdinal, LocalOrdi
   tm = Teuchos::null;
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("SetupMatVec: 2 - build regionInterfaceMap")));
 
+  Teuchos::Array<LO> regionMatVecLIDstmp;
   Teuchos::Array<GO> regionMatVecGIDs;
   Array<ArrayRCP<const LO> > regionsPerGIDWithGhostsData(maxRegPerGID);
   Array<ArrayRCP<const GO> > interfaceGIDsData(maxRegPerGID);
@@ -807,11 +808,15 @@ void SetupMatVec(const Teuchos::RCP<Xpetra::MultiVector<GlobalOrdinal, LocalOrdi
     for(LO idx = 0; idx < static_cast<LO>(regionsPerGIDWithGhostsData[regionIdx].size()); ++idx) {
       if((regionsPerGIDWithGhostsData[regionIdx][idx] != -1)
          && (regionsPerGIDWithGhostsData[regionIdx][idx] != myRank)) {
-        regionMatVecLIDs.push_back(idx);
+        regionMatVecLIDstmp.push_back(idx);
         regionMatVecGIDs.push_back(interfaceGIDsData[regionIdx][idx]);
       }
     }
   }
+
+  // Copy the temporary regionMatVecLIDstmp into an ArrayRCP
+  // so we can store it and retrieve it easily later on.
+  regionMatVecLIDs.deepCopy(regionMatVecLIDstmp());
 
   RCP<Map> regionInterfaceMap = Xpetra::MapFactory<LO,GO,Node>::Build(regionRowMap[0]->lib(),
                                                                       Teuchos::OrdinalTraits<GO>::invalid(),
@@ -839,8 +844,10 @@ void ApplyMatVec(const Scalar alpha,
                  const RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& X,
                  const Scalar beta,
                  const RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter,
-                 const Teuchos::Array<LocalOrdinal>& regionInterfaceLIDs,
-                 RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Y) {
+                 const Teuchos::ArrayRCP<LocalOrdinal>& regionInterfaceLIDs,
+                 RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Y,
+                 const Teuchos::ETransp transposeMode,
+                 const bool sumInterfaceValues) {
 #include "Xpetra_UseShortNames.hpp"
   using Teuchos::TimeMonitor;
   using local_matrix_type = typename Xpetra::Matrix<SC,LO,GO,Node>::local_matrix_type;
@@ -855,25 +862,33 @@ void ApplyMatVec(const Scalar alpha,
   local_matrix_type localA = regionMatrix->getLocalMatrix();
   auto localX = X->template getLocalView<device_type>();
   auto localY = Y->template getLocalView<device_type>();
-  KokkosSparse::spmv("N", alpha, localA, localX, beta, localY);
+  char spmvMode = KokkosSparse::NoTranspose[0];
+  if (transposeMode == Teuchos::TRANS)
+    spmvMode = KokkosSparse::Transpose[0];
+  else
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(false, "Unsupported mode.");
+  KokkosSparse::spmv(&spmvMode, alpha, localA, localX, beta, localY);
 
-  tm = Teuchos::null;
-  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ApplyMatVec: 2 - communicate data")));
+  if (sumInterfaceValues)
+  {
+    tm = Teuchos::null;
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ApplyMatVec: 2 - communicate data")));
 
-  // Step 2: preform communication to propagate local interface
-  // values to all the processor that share interfaces.
-  RCP<MultiVector> matvecInterfaceTmp = MultiVectorFactory::Build(regionInterfaceMap, 1);
-  matvecInterfaceTmp->doImport(*Y, *regionInterfaceImporter, Xpetra::INSERT);
+    // Step 2: preform communication to propagate local interface
+    // values to all the processor that share interfaces.
+    RCP<MultiVector> matvecInterfaceTmp = MultiVectorFactory::Build(regionInterfaceMap, 1);
+    matvecInterfaceTmp->doImport(*Y, *regionInterfaceImporter, Xpetra::INSERT);
 
-  tm = Teuchos::null;
-  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ApplyMatVec: 3 - sum interface contributions")));
+    tm = Teuchos::null;
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ApplyMatVec: 3 - sum interface contributions")));
 
-  // Step 3: sum all contributions to interface values
-  // on all ranks
-  ArrayRCP<Scalar> YData = Y->getDataNonConst(0);
-  ArrayRCP<Scalar> interfaceData = matvecInterfaceTmp->getDataNonConst(0);
-  for(LO interfaceIdx = 0; interfaceIdx < static_cast<LO>(interfaceData.size()); ++interfaceIdx) {
-    YData[regionInterfaceLIDs[interfaceIdx]] += interfaceData[interfaceIdx];
+    // Step 3: sum all contributions to interface values
+    // on all ranks
+    ArrayRCP<Scalar> YData = Y->getDataNonConst(0);
+    ArrayRCP<Scalar> interfaceData = matvecInterfaceTmp->getDataNonConst(0);
+    for(LO interfaceIdx = 0; interfaceIdx < static_cast<LO>(interfaceData.size()); ++interfaceIdx) {
+      YData[regionInterfaceLIDs[interfaceIdx]] += interfaceData[interfaceIdx];
+    }
   }
 
   tm = Teuchos::null;
@@ -903,13 +918,13 @@ computeResidual(Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, No
   RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("computeResidual: use fast MatVec")));
 
   // Get pre-communicated communication patterns for the fast MatVec
-  const Array<LocalOrdinal> regionInterfaceLIDs = params.get<Array<LO>>("Fast MatVec: interface LIDs");
+  const ArrayRCP<LocalOrdinal> regionInterfaceLIDs = params.get<ArrayRCP<LO>>("Fast MatVec: interface LIDs");
   const RCP<Import> regionInterfaceImporter = params.get<RCP<Import>>("Fast MatVec: interface importer");
 
   // Step 1: Compute region version of y = Ax
   RCP<Vector> aTimesX = VectorFactory::Build(regionGrpMats[0]->getRangeMap(), true);
   ApplyMatVec(TST::one(), regionGrpMats[0], regX[0],
-      TST::zero(), regionInterfaceImporter, regionInterfaceLIDs, aTimesX);
+      TST::zero(), regionInterfaceImporter, regionInterfaceLIDs, aTimesX, Teuchos::NO_TRANS, true);
 
   // Step 2: Compute region version of r = b - y
   regRes[0]->update(TST::one(), *regB[0], -TST::one(), *aTimesX, TST::zero());

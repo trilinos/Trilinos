@@ -393,6 +393,14 @@ FieldBaseImpl::sync_to_device() const
   }
 }
 
+void
+FieldBaseImpl::clear_sync_state() const
+{
+  if (m_ngpField != nullptr) {
+    m_ngpField->clear_sync_state();
+  }
+}
+
 NgpFieldBase *
 FieldBaseImpl::get_ngp_field() const
 {
@@ -402,9 +410,8 @@ FieldBaseImpl::get_ngp_field() const
 void
 FieldBaseImpl::set_ngp_field(NgpFieldBase * ngpField) const
 {
-  if (m_ngpField != nullptr) {
-    delete m_ngpField;
-  }
+  ThrowRequireMsg(m_ngpField == nullptr || m_ngpField == ngpField,
+                  "Error: Only one NgpField may be set on a StkField(" << m_name << ")");
   m_ngpField = ngpField;
 }
 

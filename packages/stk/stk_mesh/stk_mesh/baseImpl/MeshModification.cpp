@@ -80,7 +80,7 @@ bool MeshModification::internal_modification_end(modification_optimization opt)
         // Resolve modification or deletion of shared entities
         // which can cause deletion of ghost entities.
         stk::mesh::EntityVector entitiesNoLongerShared;
-        m_bulkData.internal_resolve_shared_modify_delete(entitiesNoLongerShared);
+        internal_resolve_shared_modify_delete(entitiesNoLongerShared);
 
         // Resolve modification or deletion of ghost entities
         // by destroying ghost entities that have been touched.
@@ -167,6 +167,7 @@ bool MeshModification::internal_modification_end_after_node_sharing_resolution(m
     {
         m_bulkData.internal_resolve_parallel_create_edges_and_faces();
         stk::mesh::EntityVector entitiesNoLongerShared;
+        internal_resolve_shared_modify_delete(entitiesNoLongerShared);
         m_bulkData.internal_resolve_shared_membership(entitiesNoLongerShared);
 
         if(m_bulkData.is_automatic_aura_on())

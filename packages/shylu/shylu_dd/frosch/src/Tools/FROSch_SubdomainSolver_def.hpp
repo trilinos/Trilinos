@@ -44,7 +44,6 @@
 
 #include <FROSch_SubdomainSolver_decl.hpp>
 
-
 namespace FROSch {
 
     using namespace std;

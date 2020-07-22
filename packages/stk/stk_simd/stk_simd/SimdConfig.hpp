@@ -61,7 +61,9 @@
 
 #else // using cuda
 
+#ifndef USE_STK_SIMD_NONE
 #define USE_STK_SIMD_NONE
+#endif
 
 #endif
 
@@ -107,6 +109,7 @@
 #      define STK_SIMD_AVX
 #    elif defined(__SSE_23__) || defined(__SSE4_X__) || defined(__x86_64__)
 #      define STK_SIMD_SSE
+#    elif defined(__ARM_NEON) || defined(__VSX__)
 #    else
 #      define STK_SIMD_NONE
 #    endif
@@ -126,8 +129,11 @@
 
 #endif
 
-//#undef STK_SIMD_SSE
-//#undef STK_SIMD_AVX
+#if defined (STK_KOKKOS_SIMD)
+#undef STK_SIMD_SSE
+#undef STK_SIMD_AVX
+#undef STK_SIMD_AVX512
+#endif
 
 #endif // #ifndef CONFIG_STK_SIMD_H
 

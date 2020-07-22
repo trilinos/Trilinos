@@ -1733,8 +1733,34 @@ namespace MueLu {
     constraintFactory->SetFactory("CoarseNullspace", manager.GetFactory("Ptent"));
     manager.SetFactory("Constraint", constraintFactory);
 
-    // Energy minimization
+    // Emin Factory
     auto P = rcp(new EminPFactory());
+    // Filtering
+    MUELU_SET_VAR_2LIST(paramList, defaultList, "emin: use filtered matrix", bool, useFiltering);
+    if(useFiltering) {
+      // NOTE: Here, non-Kokkos and Kokkos versions diverge in the way the
+      // dependency tree is setup. The Kokkos version has merged the the
+      // FilteredAFactory into the CoalesceDropFactory.
+      if (!useKokkos_) {
+        RCP<Factory> filterFactory = rcp(new FilteredAFactory());
+        
+        ParameterList fParams;
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use lumping",      bool, fParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse graph",      bool, fParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse eigenvalue", bool, fParams);
+        filterFactory->SetParameterList(fParams);
+        filterFactory->SetFactory("Graph",      manager.GetFactory("Graph"));
+        // I'm not sure why we need this line. See comments for DofsPerNode for UncoupledAggregation above
+        filterFactory->SetFactory("Filtering",  manager.GetFactory("Graph"));
+
+        P->SetFactory("A", filterFactory);
+        
+      } else {
+        P->SetFactory("A", manager.GetFactory("Graph"));
+      }
+    }
+
+    // Energy minimization
     ParameterList Pparams;
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: num iterations",           int, Pparams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: iterative method", std::string, Pparams);

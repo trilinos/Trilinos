@@ -63,9 +63,9 @@
     int tgscGblSuccess = 1; \
     Teuchos::reduceAll<int, int>(*comm, Teuchos::REDUCE_MIN, tgscLclSuccess, Teuchos::outArg (tgscGblSuccess)); \
     if (tgscGblSuccess == 1) { \
-      out << "Succeeded on all processes!" << endl; \
+      out << "Succeeded on all processes!" << std::endl; \
     } else { \
-      out << "FAILED on at least one process!" << endl; \
+      out << "FAILED on at least one process!" << std::endl; \
     } \
     TEST_EQUALITY_CONST(tgscGblSuccess, 1);  \
     success = (bool) tgscGblSuccess; \

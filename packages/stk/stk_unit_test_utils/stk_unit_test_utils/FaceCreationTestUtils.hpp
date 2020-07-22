@@ -55,21 +55,21 @@ inline bool can_find_face_for_elem_side(const stk::mesh::BulkData& bulkData, stk
     return iter != bulkData.end_ordinals(element, sideRank);
 }
 
-inline void expect_side_exists_for_elem_side(const stk::mesh::BulkData& bulkData, const std::string &filename, const Side& side)
+inline void expect_side_exists_for_elem_side(const stk::mesh::BulkData& bulkData, const std::string &meshDescription, const Side& side)
 {
     stk::mesh::Entity element = bulkData.get_entity(stk::topology::ELEM_RANK, side.elementId);
     if(bulkData.is_valid(element) && bulkData.bucket(element).owned())
     {
-        EXPECT_TRUE(can_find_face_for_elem_side(bulkData, element, side.sideOrdinal)) << filename << " couldn't find face for side: " << side.elementId << ", " << side.sideOrdinal << ".";
+        EXPECT_TRUE(can_find_face_for_elem_side(bulkData, element, side.sideOrdinal)) << meshDescription << " couldn't find face for side: " << side.elementId << ", " << side.sideOrdinal << ".";
     }
 }
 
 inline void expect_all_sides_exist_for_elem_side(const stk::mesh::BulkData& bulkData,
-                                          const std::string& filename,
+                                          const std::string& meshDescription,
                                           const std::vector<Side> &sideSet)
 {
     for(const Side &side : sideSet)
-        expect_side_exists_for_elem_side(bulkData, filename, side);
+        expect_side_exists_for_elem_side(bulkData, meshDescription, side);
 }
 
 

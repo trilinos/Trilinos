@@ -48,10 +48,10 @@
 /// for you).  If you only want the declaration of Tpetra::CrsMatrix,
 /// include "Tpetra_CrsMatrix_decl.hpp".
 
-#include "Tpetra_LocalCrsMatrixOperator.hpp"
 #include "Tpetra_Import_Util.hpp"
 #include "Tpetra_Import_Util2.hpp"
 #include "Tpetra_RowMatrix.hpp"
+#include "Tpetra_LocalCrsMatrixOperator.hpp"
 
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_castAwayConstDualView.hpp"
@@ -1040,6 +1040,14 @@ namespace Tpetra {
     return lclMatrix_.get () == nullptr ?
       local_matrix_type () :
       lclMatrix_->getLocalMatrix ();
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::shared_ptr<typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_multiply_op_type>
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalMultiplyOperator () const
+  {
+    return lclMatrix_;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -4848,13 +4856,11 @@ namespace Tpetra {
 
       const bool callGraphComputeGlobalConstants = params.get () == nullptr ||
         params->get ("compute global constants", true);
-      const bool computeLocalTriangularConstants = params.get () == nullptr ||
-        params->get ("compute local triangular constants", true);
       if (callGraphComputeGlobalConstants) {
-        this->myGraph_->computeGlobalConstants (computeLocalTriangularConstants);
+        this->myGraph_->computeGlobalConstants ();
       }
       else {
-        this->myGraph_->computeLocalConstants (computeLocalTriangularConstants);
+        this->myGraph_->computeLocalConstants ();
       }
       this->myGraph_->fillComplete_ = true;
       this->myGraph_->checkInternalState ();
@@ -5442,7 +5448,14 @@ namespace Tpetra {
          std::runtime_error, "X and Y may not alias one another.");
     }
 
-    lclMatrix_->apply (X_lcl, Y_lcl, mode, alpha, beta);
+    LocalOrdinal nrows = getNodeNumRows();
+    LocalOrdinal maxRowImbalance = 0;
+    if(nrows != 0)
+      maxRowImbalance = getNodeMaxNumRowEntries() - (getNodeNumEntries() / nrows);
+    if(size_t(maxRowImbalance) >= Tpetra::Details::Behavior::rowImbalanceThreshold())
+      lclMatrix_->applyImbalancedRows (X_lcl, Y_lcl, mode, alpha, beta);
+    else
+      lclMatrix_->apply (X_lcl, Y_lcl, mode, alpha, beta);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -9589,7 +9602,7 @@ namespace Tpetra {
         }
 
         Teuchos::ArrayView<const int>  EPID1 = MyImporter.is_null() ? Teuchos::ArrayView<const int>() : MyImporter->getExportPIDs();
-        Teuchos::ArrayView<const LO>   ELID1 = MyImporter.is_null() ? Teuchos::ArrayView<const int>() : MyImporter->getExportLIDs();
+        Teuchos::ArrayView<const LO>   ELID1 = MyImporter.is_null() ? Teuchos::ArrayView<const LO>() : MyImporter->getExportLIDs();
 
         Teuchos::ArrayView<const int>  TEPID2  =  rowTransfer.getExportPIDs(); // row matrix
         Teuchos::ArrayView<const LO>   TELID2  =  rowTransfer.getExportLIDs();

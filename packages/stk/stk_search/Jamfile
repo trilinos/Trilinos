@@ -8,10 +8,6 @@
 #--------------------------------------------------------------------
 
 #
-# The signature for Boost.build rules is described here:
-#
-# http://www.boost.org/build/doc/html/bbv2/overview/targets.html
-#
 #function-name main-target-name
 #    : sources
 #    : requirements
@@ -148,9 +144,7 @@ lib stk_search
     /sierra/stk_util//stk_util_util
     /sierra/stk_util//stk_util_diag
     /sierra/stk_util//stk_util_parallel
-    /tpl/boost//boost_header_only_libs
     /sierra/stk_math//stk_math_headers
-    /sierra/stk_ngp//stk_ngp
   :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user

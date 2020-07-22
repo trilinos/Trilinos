@@ -36,15 +36,16 @@
 #ifndef stk_util_parallel_GenerateParallelConsistentIDs_hpp
 #define stk_util_parallel_GenerateParallelConsistentIDs_hpp
 
-#include "stk_util/parallel/ParallelVectorConcat.hpp" 
-#include "stk_util/parallel/Parallel.hpp" 
+#include "stk_util/parallel/ParallelVectorConcat.hpp"
+#include "stk_util/parallel/MPI.hpp"
+#include "stk_util/parallel/Parallel.hpp"
 #include "stk_util/parallel/ParallelIndexGapFinder.hpp"
-#include <vector> 
-#include <algorithm> 
-#include <stdexcept>     
+#include <vector>
+#include <algorithm>
+#include <stdexcept>
 #include <string>                       // for string
-#include <sstream>   
-#include "mpi.h"  
+#include <sstream>
+#include "mpi.h"
 #include <assert.h>
 
 namespace stk {
@@ -102,7 +103,7 @@ namespace stk {
       }
     }
 
-    int mpiResult = MPI_Allreduce(&localMaxId, &globalMaxId, 1, MPI_UNSIGNED_LONG, MPI_MAX, comm);
+    int mpiResult = MPI_Allreduce(&localMaxId, &globalMaxId, 1, sierra::MPI::Datatype<uint64_t>::type(), MPI_MAX, comm);
     if(mpiResult != MPI_SUCCESS) {
       throw std::runtime_error("MPI_Allreduce failed");
     }
@@ -144,7 +145,7 @@ namespace stk {
       //
       uint64_t numNewIdsLocal = localOrderArray.size();
       uint64_t myFirstNewId;
-      mpiResult = MPI_Scan(&numNewIdsLocal, &myFirstNewId, 1, MPI_UNSIGNED_LONG, MPI_SUM, comm);
+      mpiResult = MPI_Scan(&numNewIdsLocal, &myFirstNewId, 1,  sierra::MPI::Datatype<uint64_t>::type(), MPI_SUM, comm);
       myFirstNewId -= numNewIdsLocal;
       std::vector<uint64_t> allowedIdsLocal;
       std::vector<uint64_t> allowedIdsGlobal;

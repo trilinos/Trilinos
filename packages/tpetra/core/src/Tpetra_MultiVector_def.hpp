@@ -3951,7 +3951,6 @@ namespace Tpetra {
 
     // If Case 2 then sum up *this and distribute it to all processes.
     if (Case2) {
-      Kokkos::fence();
       this->reduce ();
     }
   }
@@ -4047,6 +4046,7 @@ namespace Tpetra {
       // NOTE (mfh 17 Mar 2019) If we ever get rid of UVM, then device
       // and host will be separate allocations.  In that case, it may
       // pay to do the all-reduce from device to host.
+      Kokkos::fence(); // for UVM getLocalViewDevice is UVM which can be read as host by allReduceView, so we must not read until device is fenced
       this->modify_device ();
       auto X_lcl = this->getLocalViewDevice ();
       allReduceView (X_lcl, X_lcl, *comm);

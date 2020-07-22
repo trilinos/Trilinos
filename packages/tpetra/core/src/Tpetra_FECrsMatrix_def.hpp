@@ -91,7 +91,7 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(const CombineMode CM) {
   if(!inactiveCrsMatrix_.is_null() && *activeCrsMatrix_ == FE_ACTIVE_OWNED_PLUS_SHARED) {
     // Do a self-export in "restricted mode"
-    this->doExport(*this,*feGraph_->importer_,CM,true);
+    this->doExport(*this,*feGraph_->ownedRowsImporter_,CM,true);
     inactiveCrsMatrix_->fillComplete();
   }
   crs_matrix_type::fillComplete();

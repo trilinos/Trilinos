@@ -477,7 +477,7 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
       MVT::MvTransMv( one, *S_, *T_, sHt );
       rHz_ = sHt(0,0);
       delta = sHt(1,0);
-      rHr_ = sHt(1,1);
+      rHr_ = sHt(0,1);
     } else {
       // Compute first <s,z> a.k.a. <r,z> and <Az,z> combined
       MVT::MvTransMv( one, *S_, *Z_, sHz );
@@ -538,7 +538,7 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
         rHz_old = rHz_;
         rHz_ = sHt(0,0);
         delta = sHt(1,0);
-        rHr_ = sHt(1,1);
+        rHr_ = sHt(0,1);
         //
         // Check the status test, now that the solution and residual have been updated
         //

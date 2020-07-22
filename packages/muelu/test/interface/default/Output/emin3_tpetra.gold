@@ -24,8 +24,7 @@ smoother ->
 
 Level 1
 Prolongator minimization (MueLu::EminPFactory)
-Build (MueLu::TentativePFactory)
-Build (MueLu::UncoupledAggregationFactory)
+Matrix filtering (MueLu::FilteredAFactory)
 Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -38,6 +37,13 @@ aggregation: distance laplacian algo = default   [default]
 aggregation: classical algo = default   [default]
 lightweight wrap = 1
 
+Filtered matrix is not being constructed as no filtering is being done
+filtered matrix: use lumping = 1   [default]
+filtered matrix: reuse graph = 1   [default]
+filtered matrix: reuse eigenvalue = 1   [default]
+
+Build (MueLu::TentativePFactory)
+Build (MueLu::UncoupledAggregationFactory)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregates (Phase 1 (main))
 BuildAggregates (Phase 2a (secondary))
@@ -132,8 +138,7 @@ smoother ->
 
 Level 2
 Prolongator minimization (MueLu::EminPFactory)
-Build (MueLu::TentativePFactory)
-Build (MueLu::UncoupledAggregationFactory)
+Matrix filtering (MueLu::FilteredAFactory)
 Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -146,6 +151,13 @@ aggregation: distance laplacian algo = default   [default]
 aggregation: classical algo = default   [default]
 lightweight wrap = 1
 
+Filtered matrix is not being constructed as no filtering is being done
+filtered matrix: use lumping = 1   [default]
+filtered matrix: reuse graph = 1   [default]
+filtered matrix: reuse eigenvalue = 1   [default]
+
+Build (MueLu::TentativePFactory)
+Build (MueLu::UncoupledAggregationFactory)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregates (Phase 1 (main))
 BuildAggregates (Phase 2a (secondary))

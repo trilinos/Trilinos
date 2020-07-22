@@ -202,23 +202,32 @@ public:
   /// variable.
   static size_t verbosePrintCountThreshold ();
 
-  /// \brief Minimum number of entries in a "long" sparse graph or
-  ///   matrix row.
+  /// \brief Threshold for deciding if a local matrix is "imbalanced" in
+  /// the number of entries per row. The threshold is compared against
+  /// the difference between maximum row length and average row length.
   ///
-  /// If a local row of a sparse graph or matrix has this many or more
-  /// entries, we consider it "long."  Tpetra has the option to treat
-  /// "long" rows separately from shorter rows in algorithms like
+  /// The threshold is measured in max number of entries in excess of the
+  /// average (it is not a proportion between max and average).
+  ///
+  /// If the "imbalance" of a local matrix is greater than this threshold,
+  /// a different algorithm may be used for some operations like 
   /// sparse matrix-vector multiply, packAndPrepare, and
   /// unpackAndCombine.  You may control this at run time via the
-  /// <tt>TPETRA_LONG_ROW_MIN_NUM_ENTRIES</tt> environment variable.
+  /// <tt>TPETRA_ROW_IMBALANCE_THRESHOLD</tt> environment variable.
+  static size_t rowImbalanceThreshold ();
+
+  /// \brief Whether to use the cuSPARSE merge path algorithm to perform
+  ///  sparse matrix-multivector products, one vector at a time. Depending on
+  ///  the matrix and the number of vectors in the multivector, this may
+  ///  be better than just applying the default SpMV algorithm to the entire
+  ///  multivector at once.
   ///
-  /// This is an absolute value, not a relative value.  This matters
-  /// for thread parallelization, because the point is to decide how
-  /// much parallelism needs to be available in a row in order to
-  /// treat it differently from other rows.  Whether a row has enough
-  /// entries to treat it as "dense" relative to other rows, is a
-  /// separate question.
-  static size_t longRowMinNumEntries ();
+  ///  Note: full support for merge path SPMV on multivectors
+  ///  is coming soon.
+  ///
+  /// You may control this at run time via the
+  /// <tt>TPETRA_MULTIVECTOR_USE_MERGE_PATH</tt> environment variable (default: false)
+  static bool useMergePathMultiVector();
 
   /// \brief Unpack rows of a matrix using hierarchical unpacking
   static bool hierarchicalUnpack ();

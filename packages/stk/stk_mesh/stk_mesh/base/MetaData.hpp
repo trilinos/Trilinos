@@ -69,9 +69,7 @@
 
 namespace shards { class ArrayDimTag; }
 namespace shards { class CellTopologyManagedData; }
-namespace stk { namespace mesh { class Bucket; } }
 namespace stk { namespace mesh { class BulkData; } }
-namespace stk { namespace mesh { class Ghosting; } }
 namespace stk { namespace mesh { class MetaData; } }
 
 namespace stk {
@@ -82,13 +80,6 @@ typedef Field<double, stk::mesh::Cartesian> CoordinatesField;
 /** \addtogroup stk_mesh_module
  *  \{
  */
-
-/** \brief  Print an entity key for this meta data */
-std::ostream &
-print_entity_key( std::ostream & os, const MetaData & meta_data, const EntityKey & key);
-
-std::string
-print_entity_key( const MetaData & meta_data, const EntityKey & key );
 
 bool is_topology_root_part(const Part & part);
 

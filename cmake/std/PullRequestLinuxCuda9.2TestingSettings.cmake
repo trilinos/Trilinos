@@ -73,6 +73,11 @@ set (TPL_ENABLE_BoostLib OFF CACHE BOOL "Set by default for CUDA PR testing")
 set (TPL_ENABLE_Matio OFF CACHE BOOL "Set by default for CUDA PR testing")
 set (TPL_DLlib_LIBRARIES "-ldl" CACHE FILEPATH "Set by default for CUDA PR testing")
 
+# The compile times for two Panzer files went up to over 6 hours. This
+# turns off one feature that allows these in about 24 minutes. Please remove
+# when issue #7532 is resolved.
+set (Sacado_NEW_FAD_DESIGN_IS_DEFAULT OFF CACHE BOOL "Temporary fix for issue #7532" )
+
 # Disable some packages that can't be tested with this PR build
 set (Trilinos_ENABLE_ShyLU_NodeTacho OFF CACHE BOOL
   "Can't test Tacho with CUDA without RDC" FORCE)

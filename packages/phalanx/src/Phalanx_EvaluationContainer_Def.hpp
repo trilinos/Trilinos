@@ -278,11 +278,24 @@ assignSharedFields()
   std::unordered_set<std::string> check_duplicates;
   for (auto& f : fields)
     check_duplicates.insert(f->identifier());
-  TEUCHOS_TEST_FOR_EXCEPTION(fields.size() != check_duplicates.size(),
-    std::runtime_error,
-    "ERROR: PHX::EvalautionContainer::assignSharedFields() - "
-    "a field is being evalauted by more than one evaluator in "
-    "the DAG. This is not allowed when shared fields are enabled!");
+
+  if (fields.size() != check_duplicates.size()) {
+    printf("\n*******************************************\n");
+    std::cout << "ERROR - begin multiple evaluators for same field" << std::endl;
+    for (auto& f : fields)
+      std::cout << "  \"" << f->identifier() << "\"" << std::endl;
+
+    std::cout << "\n";
+    this->dag_manager_.print(std::cout);
+    std::cout << "ERROR - end multiple evaluators for same field" << std::endl;
+    printf("\n*******************************************\n");
+
+    TEUCHOS_TEST_FOR_EXCEPTION(fields.size() != check_duplicates.size(),
+      std::runtime_error,
+      "ERROR: PHX::EvalautionContainer::assignSharedFields() - "
+      "a field is being evaluated by more than one evaluator in "
+      "the DAG. This is not allowed when shared fields are enabled!");
+  }
 #endif
 
   // tuple args: 0=size in bytes, 1=FieldTag, 2=range of existence

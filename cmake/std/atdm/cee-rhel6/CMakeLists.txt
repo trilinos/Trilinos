@@ -4,7 +4,7 @@ TRIBITS_ADD_ADVANCED_TEST( cee-rhel6_custom_builds_unit_tests
   TEST_0 CMND env
     ARGS SHUNIT_COLOR=none ${CMAKE_CURRENT_SOURCE_DIR}/custom_builds_unit_tests.sh
     PASS_REGULAR_EXPRESSION_ALL
-      "Ran 1 test"
+      "Ran 2 tests"
       "[^]OK[$]"
     ALWAYS_FAIL_ON_NONZERO_RETURN
   )

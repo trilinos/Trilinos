@@ -1069,6 +1069,7 @@ protected:
   void setupTableau()
   {
     typedef Teuchos::ScalarTraits<Scalar> ST;
+    using Teuchos::as;
     const Scalar one = ST::one();
     const Scalar zero = ST::zero();
     const Scalar onehalf = one/(2*one);
@@ -1080,6 +1081,7 @@ protected:
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> bstar(NumStages);
 
     // Fill A:
     A(0,0) =      zero; A(0,1) =      zero; A(0,2) = zero;
@@ -1092,10 +1094,15 @@ protected:
     // fill c:
     c(0) = zero; c(1) = one; c(2) = onehalf;
 
+    // Fill bstar:
+    bstar(0) = as<Scalar>(0.291485418878409);
+    bstar(1) = as<Scalar>(0.291485418878409);
+    bstar(2) = as<Scalar>(0.417029162243181);
+
     int order = 3;
 
     this->tableau_ = Teuchos::rcp(new RKButcherTableau<Scalar>(
-      this->getStepperType(),A,b,c,order,order,order));
+      this->getStepperType(),A,b,c,order,order,order,bstar));
   }
 };
 
@@ -1448,7 +1455,8 @@ protected:
  *  \;\;\;\;\mbox{ where }\;\;\;\;
  *  \begin{array}{c|cc}  0  &  0  &     \\
  *                       1  &  1  &  0  \\ \hline
- *                          & 1/2 & 1/2  \end{array}
+ *                          & 1/2 & 1/2 \\
+ *                          & 3/4 & 1/4 \end{array}
  *  \f]
  */
 template<class Scalar>
@@ -1502,10 +1510,11 @@ public:
     std::ostringstream Description;
     Description << this->getStepperType() << "\n"
                 << "This Stepper is known as 'RK Explicit Trapezoidal' or 'Heuns Method' or 'SSPERK22'.\n"
-                << "c = [  0   1  ]'\n"
-                << "A = [  0      ]\n"
-                << "    [  1   0  ]\n"
-                << "b = [ 1/2 1/2 ]'";
+                << "c      = [  0    1  ]'\n"
+                << "A      = [  0       ]\n"
+                << "         [  1    0  ]\n"
+                << "b      = [ 1/2  1/2 ]\n"
+                << "bstart = [ 3/4  1/4 ]'";
     return Description.str();
   }
 
@@ -1514,6 +1523,7 @@ protected:
   void setupTableau()
   {
    typedef Teuchos::ScalarTraits<Scalar> ST;
+    using Teuchos::as;
     const Scalar one = ST::one();
     const Scalar zero = ST::zero();
     const Scalar onehalf = one/(2*one);
@@ -1522,6 +1532,7 @@ protected:
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> bstar(NumStages);
 
     // Fill A:
     A(0,0) = zero; A(0,1) = zero;
@@ -1533,10 +1544,14 @@ protected:
     // fill c:
     c(0) = zero; c(1) = one;
 
+    // Fill bstar
+    bstar(0) = as<Scalar>(3*one/(4*one));
+    bstar(1) = as<Scalar>(1*one/(4*one));
+
     int order = 2;
 
     this->tableau_ = Teuchos::rcp(new RKButcherTableau<Scalar>(
-      this->getStepperType(),A,b,c,order,order,order));
+      this->getStepperType(),A,b,c,order,order,order,bstar));
   }
 };
 
@@ -1621,6 +1636,7 @@ protected:
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> bstar(NumStages);
     const Scalar zero = ST::zero();
 
     // Fill A:
@@ -1655,11 +1671,18 @@ protected:
     c(0) = zero;
     c(1) = A(1,0);
     c(2) = A(2,0) + A(2,1);
-    c(3) = A(3,0) + A(3,1) + A(3,1);
+    c(3) = A(3,0) + A(3,1) + A(3,2);
     c(4) = A(4,0) + A(4,1) + A(4,2) + A(4,3);
 
+    // Fill bstar:
+    bstar(0) = as<Scalar>(0.130649104813131);
+    bstar(1) = as<Scalar>(0.317716031201302);
+    bstar(2) = as<Scalar>(0.000000869337261);
+    bstar(3) = as<Scalar>(0.304581512634772);
+    bstar(4) = as<Scalar>(0.247052482013534);
+
     this->tableau_ = Teuchos::rcp(new RKButcherTableau<Scalar>(
-      this->getStepperType(),A,b,c,order,order,order));
+      this->getStepperType(),A,b,c,order,order,order,bstar));
   }
 };
 
@@ -4055,7 +4078,7 @@ public:
       << "        [ 371/1360  -137/2720  15/544  1/4         ]\n"
       << "        [ 25/24     -49/48     125/16  -85/12  1/4 ]\n"
       << "b     = [ 25/24     -49/48     125/16  -85/12  1/4 ]'";
-      //<< "b     = [ 59/48     -17/96     225/32  -85/12  0   ]'";
+      // << "b     = [ 59/48     -17/96     225/32  -85/12  0   ]'";
     return Description.str();
   }
 

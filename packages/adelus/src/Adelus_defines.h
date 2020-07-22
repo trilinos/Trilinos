@@ -58,7 +58,7 @@
 #ifdef SREAL
 
   #define ADELUS_DATA_TYPE float
-  #undef COMPLEX
+  #undef ADELUS_COMPLEX
   #define ADELUS_MPI_DATA_TYPE MPI_FLOAT
   #define ADELUS_MPI_DATA_TYPE2 MPI_FLOAT_INT
   
@@ -74,7 +74,7 @@
 #elif defined(DREAL)
 
   #define ADELUS_DATA_TYPE double
-  #undef COMPLEX
+  #undef ADELUS_COMPLEX
   #define ADELUS_MPI_DATA_TYPE MPI_DOUBLE
   #define ADELUS_MPI_DATA_TYPE2 MPI_DOUBLE_INT
   
@@ -94,7 +94,7 @@
     float i;
   } scomplex ;
   #define ADELUS_DATA_TYPE scomplex
-  #define COMPLEX
+  #define ADELUS_COMPLEX
   #define ADELUS_MPI_DATA_TYPE MPI_COMPLEX
   #define ADELUS_MPI_DATA_TYPE2 MPI_FLOAT_INT
   
@@ -114,7 +114,7 @@
     double i;
   } dcomplex ;
   #define ADELUS_DATA_TYPE dcomplex
-  #define COMPLEX
+  #define ADELUS_COMPLEX
   #define ADELUS_MPI_DATA_TYPE MPI_DOUBLE_COMPLEX
   #define ADELUS_MPI_DATA_TYPE2 MPI_DOUBLE_INT
   

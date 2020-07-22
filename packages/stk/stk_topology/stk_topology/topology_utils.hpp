@@ -36,6 +36,7 @@
 #define STKTOPOLOGY_TOPOLOGY_TCC
 
 // IWYU pragma: private, include "stk_topology/topology.hpp"
+#include "stk_util/util/ReportHandler.hpp"
 
 namespace stk { namespace topology_detail {
 
@@ -189,9 +190,16 @@ struct base_impl {
 struct edge_topology_impl {
   using result_type = stk::topology;
 
+  STK_INLINE_FUNCTION
+  edge_topology_impl(unsigned ordinal = 0)
+    : m_ordinal(ordinal)
+  {}
+
   template <typename Topology>
   STK_INLINE_FUNCTION
-  result_type operator()(Topology) const { return Topology::edge_topology; }
+  result_type operator()(Topology) const { return Topology::edge_topology(m_ordinal); }
+
+  unsigned m_ordinal;
 };
 
 struct defined_on_spatial_dimension_impl {
@@ -471,6 +479,14 @@ stk::topology topology::edge_topology() const {
 }
 
 STK_INLINE_FUNCTION
+stk::topology topology::edge_topology(unsigned ordinal) const {
+  using functor = topology_detail::edge_topology_impl;
+  functor f(ordinal);
+  topology::apply_functor< functor > apply( f );
+  return apply(m_value);
+}
+
+STK_INLINE_FUNCTION
 bool topology::defined_on_spatial_dimension(unsigned ordinal) const {
   using functor = topology_detail::defined_on_spatial_dimension_impl;
   functor f(ordinal);
@@ -510,6 +526,7 @@ template <typename OrdinalOutputIterator>
 STK_INLINE_FUNCTION
 void topology::permutation_node_ordinals( unsigned ordinal, OrdinalOutputIterator output_ordinals) const
 {
+  NGP_ThrowAssert(m_value != QUAD_6 && m_value != WEDGE_12);
   using functor = topology_detail::permutation_node_ordinals_impl<OrdinalOutputIterator>;
   functor f(ordinal, output_ordinals);
   topology::apply_functor< functor > apply( f );

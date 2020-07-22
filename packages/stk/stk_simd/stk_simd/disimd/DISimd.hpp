@@ -39,7 +39,29 @@
 //currently necessary to avoid the 'always_inline' defined in simd.hpp
 #define SIMD_ALWAYS_INLINE __attribute__((always_inline))
 #endif
+
+#ifdef STK_SIMD_NONE
+#define native native_junk
+#define native_simd native_simd_junk
+#endif
+
 #include "./simd.hpp"
+
+#ifdef STK_SIMD_NONE
+#undef native
+#undef native_simd
+
+namespace SIMD_NAMESPACE {
+
+namespace simd_abi {
+using native = scalar;
+}
+
+template <class T>
+using native_simd = simd<T, simd_abi::native>;
+
+}
+#endif
 
 namespace stk {
 namespace simd {
