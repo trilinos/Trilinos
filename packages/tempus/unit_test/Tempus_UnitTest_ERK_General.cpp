@@ -76,19 +76,19 @@ TEUCHOS_UNIT_TEST(ERK_General, Default_Construction)
   stepper->setICConsistencyCheck(ICConsistencyCheck);  stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setUseEmbedded(useEmbedded);                stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
-  stepper->setTableau(A, b, c, order, order, order);   stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setTableau(A, b, c, order, order, order,false,0.0);   stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
 
   // Full argument list construction.
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
   stepper = rcp(new Tempus::StepperERK_General<double>(
     model, obs, useFSAL, ICConsistency, ICConsistencyCheck, useEmbedded,
-    A, b, c, order, order, order, bstar));
+    A, b, c, order, order, order, false, 0.0,bstar));
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 #endif
   stepper = rcp(new Tempus::StepperERK_General<double>(
     model, useFSAL, ICConsistency, ICConsistencyCheck, useEmbedded,
-    A, b, c, order, order, order, bstar, modifier));
+    A, b, c, order, order, order, false, 0.0,bstar, modifier));
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
   // Test stepper properties.

@@ -43,14 +43,12 @@ void StepperExplicitRK<Scalar>::setup(
   bool useFSAL,
   std::string ICConsistency,
   bool ICConsistencyCheck,
-  bool useEmbedded,
-  bool isTVD)
+  bool useEmbedded)
 {
   this->setUseFSAL(            useFSAL);
   this->setICConsistency(      ICConsistency);
   this->setICConsistencyCheck( ICConsistencyCheck);
   this->setUseEmbedded(        useEmbedded);
-  this->setTVD(isTVD);
 
   this->setStageNumber(-1);
 
@@ -72,14 +70,12 @@ void StepperExplicitRK<Scalar>::setup(
   std::string ICConsistency,
   bool ICConsistencyCheck,
   bool useEmbedded,
-  bool isTVD,
   const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
 {
   this->setUseFSAL(            useFSAL);
   this->setICConsistency(      ICConsistency);
   this->setICConsistencyCheck( ICConsistencyCheck);
   this->setUseEmbedded(        useEmbedded);
-  this->setTVD(isTVD);
 
   this->setStageNumber(-1);
 

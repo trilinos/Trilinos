@@ -155,8 +155,7 @@ public:
     virtual void setUseEmbedded(bool a) { useEmbedded_ = a; }
     virtual bool getUseEmbedded() const { return useEmbedded_; }
     virtual bool getUseEmbeddedDefault() const { return false; }
-    virtual void setTVDCoeff(const Scalar tvd_coeff) {tvdCoeff_ = tvd_coeff; }
-    virtual void setTVD(bool a) { isTVD_ = a; }
+
   //@}
 
 
@@ -173,8 +172,7 @@ protected:
     bool useFSAL,
     std::string ICConsistency,
     bool ICConsistencyCheck,
-    bool useEmbedded,
-    bool isTVD );
+    bool useEmbedded);
 #endif
   virtual void setup(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
@@ -182,7 +180,6 @@ protected:
     std::string ICConsistency,
     bool ICConsistencyCheck,
     bool useEmbedded,
-    bool isTVD,
     const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction);
 
   virtual void setupTableau() = 0;
@@ -200,10 +197,6 @@ protected:
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               abs_u0;
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               abs_u;
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               sc;
-
-  bool isTVD_;
-  Scalar tvdCoeff_;
-
 };
 
 } // namespace Tempus
