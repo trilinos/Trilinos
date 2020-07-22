@@ -6,3 +6,4 @@ SET(ATDM_SE_PACKAGE_DISABLES
     ${ATDM_SE_PACKAGE_DISABLES}
     ${SPARC_MiniTrilinos_Package_Disables}
     )
+ATDM_FORCE_DISABLE_TPL_LIST("${SPARC_MiniTrilinos_TPL_Disables}")

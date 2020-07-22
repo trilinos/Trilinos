@@ -68,5 +68,17 @@ MACRO(ATDM_SET_ATDM_VAR_FROM_ENV_AND_DEFAULT VAR_BASE_NAME VAR_DEFAULT_VAL)
   ENDIF()
 ENDMACRO()
 
-
-
+#
+# ATDM_FORCE_DISABLE_TPL_LIST(<tplList>)
+#
+# Forcefully disables the list of tpls in 'TPL_LIST'
+#
+# This function does set a cache variable that may have been previously
+# set to something else.
+#
+MACRO(ATDM_FORCE_DISABLE_TPL_LIST TPL_LIST)
+  FOREACH(TRILINOS_TPL ${TPL_LIST})
+    MESSAGE(STATUS "Forcefully setting TPL_ENABLE_${TRILINOS_TPL} to OFF for sparc mini build!")
+    ATDM_SET_CACHE_FORCE(TPL_ENABLE_${TRILINOS_TPL} OFF CACHE BOOL)
+  ENDFOREACH()
+ENDMACRO()
