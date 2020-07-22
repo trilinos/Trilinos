@@ -89,8 +89,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Ifpack2IlukGraph, IlukGraphTest0, LocalOrdinal
 
   global_size_t num_rows_per_proc = 5;
 
-  //Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > crsgraph =
-  //  tif_utest::create_test_graph<LocalOrdinal,GlobalOrdinal,Node> (num_rows_per_proc);
   Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > crsgraph =
     tif_utest::create_tridiag_graph<LocalOrdinal,GlobalOrdinal,Node> (num_rows_per_proc);
 
@@ -158,7 +156,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Ifpack2IlukGraph, IlukGraphTest0, LocalOrdinal
                 iluk2_graph.getU_Graph()->getGlobalNumEntries() +
                 iluk2_graph.getNumGlobalDiagonals();
 
-  bool nnz2_greater_than_nnz0 = nnz2 > nnz0; printf("Rank %d, nnz2 = %d, nnz0 = %d\n", crsgraph->getComm()->getRank(), nnz2, nnz0);
+  bool nnz2_greater_than_nnz0 = nnz2 > nnz0;
   TEST_EQUALITY( nnz2_greater_than_nnz0, true)
 }
 

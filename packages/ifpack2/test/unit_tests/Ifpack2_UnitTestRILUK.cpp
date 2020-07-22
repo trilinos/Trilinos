@@ -111,22 +111,10 @@ static Teuchos::RCP<Ifpack2::RILUK<Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalO
     if (l_row>0)                      {col[i] = map->getGlobalElement(l_row-1); val[i++] = -one;}
     if ((size_t)l_row<numLocalElts-1) {col[i] = map->getGlobalElement(l_row+1); val[i++] = -one;}
     A->insertGlobalValues(g_row, col(0,i), val(0,i));
-    printf("Rank %d, g_row %ld -- ",comm->getRank(), g_row);
-    for(size_t j=0;j<i;j++)
-      printf("%ld(%lf) ",col[j], val[j]);
-    printf("\n");
   }
   A->fillComplete();
 
   RCP<const crs_matrix_type> constA = A;
-  printf("VINH CHECK: constA -- rank %d, GlobalNumRows %lu, GlobalNumCols %lu, NodeNumRows %lu, NodeNumCols %lu, hasColMap %d, isLocallyIndexed %d, isGloballyIndexed %d, RowMap is same as ColMap %d\n",comm->getRank(), constA->getGlobalNumRows(), constA->getGlobalNumCols(), constA->getNodeNumRows(), constA->getNodeNumCols(), constA->hasColMap(), constA->isLocallyIndexed(), constA->isGloballyIndexed(), constA->getRowMap()->isSameAs(* (constA->getColMap())));
-  Teuchos::ArrayView<const LocalOrdinal> col_test;
-  Teuchos::ArrayView<const Scalar> val_test;
-  printf("VINH CHECK: constA -- rank %d, local row 1: ", comm->getRank());
-  constA->getLocalRowView(1, col_test, val_test); 	
-  for (int ii=0;ii<col_test.size();ii++ ) printf("%ld(%lf) ", col_test[ii], val_test[ii]);
-  printf("\n");
-  
   auto prec = rcp(new Ifpack2::RILUK<row_matrix_type>(constA));
 
   Teuchos::ParameterList params;
