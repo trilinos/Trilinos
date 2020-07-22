@@ -172,45 +172,87 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, Test0, Scalar, LO, 
   RCP<const Tpetra::CrsMatrix<Scalar,LO,GO,Node> > crsmatrix =
     tif_utest::create_test_matrix<Scalar,LO,GO,Node> (rowmap);
 
-  Ifpack2::RILUK<Tpetra::RowMatrix<Scalar,LO,GO,Node> > prec (crsmatrix);
-
-  Teuchos::ParameterList params;
-  int fill_level = 1;
-  params.set("fact: iluk level-of-fill", fill_level);
-  params.set("fact: iluk level-of-overlap", 0);
-
-  TEST_NOTHROW(prec.setParameters(params));
-
-  TEST_EQUALITY( prec.getLevelOfFill(), fill_level);
-  //printf("VINH -- prec.getLevelOfFill() = %d, fill_level = %d\n", prec.getLevelOfFill(), fill_level);
-  //printf("VINH -- device_type %s\n", typeid(typename Tpetra::CrsMatrix<Scalar,LO,GO,Node>::device_type).name());
-
-  prec.initialize();
-  //trivial tests to insist that the preconditioner's domain/range maps are
-  //the same as those of the matrix:
-  const Tpetra::Map<LO,GO,Node>& mtx_dom_map = *crsmatrix->getDomainMap();
-  const Tpetra::Map<LO,GO,Node>& mtx_rng_map = *crsmatrix->getRangeMap();
-
-  const Tpetra::Map<LO,GO,Node>& prec_dom_map = *prec.getDomainMap();
-  const Tpetra::Map<LO,GO,Node>& prec_rng_map = *prec.getRangeMap();
-
-  TEST_ASSERT( prec_dom_map.isSameAs(mtx_dom_map) );
-  TEST_ASSERT( prec_rng_map.isSameAs(mtx_rng_map) );
-
-  prec.compute();
-
-  Tpetra::MultiVector<Scalar,LO,GO,Node> x(rowmap,2), y(rowmap,2);
-  x.putScalar (Teuchos::ScalarTraits<Scalar>::one ());
-
-  prec.apply(x, y);
-
-  Teuchos::ArrayRCP<const Scalar> yview = y.get1dView();
-
-  //y should be full of 0.5's now.
-
-  Teuchos::ArrayRCP<Scalar> halfs(num_rows_per_proc*2, 0.5);
-
-  TEST_COMPARE_FLOATING_ARRAYS(yview, halfs(), Teuchos::ScalarTraits<Scalar>::eps());
+  //----------------Default trisolver----------------//
+  {
+    Ifpack2::RILUK<Tpetra::RowMatrix<Scalar,LO,GO,Node> > prec (crsmatrix);
+    
+    Teuchos::ParameterList params;
+    int fill_level = 1;
+    params.set("fact: iluk level-of-fill", fill_level);
+    params.set("fact: iluk level-of-overlap", 0);
+    
+    TEST_NOTHROW(prec.setParameters(params));
+    
+    TEST_EQUALITY( prec.getLevelOfFill(), fill_level);
+    
+    prec.initialize();
+    //trivial tests to insist that the preconditioner's domain/range maps are
+    //the same as those of the matrix:
+    const Tpetra::Map<LO,GO,Node>& mtx_dom_map = *crsmatrix->getDomainMap();
+    const Tpetra::Map<LO,GO,Node>& mtx_rng_map = *crsmatrix->getRangeMap();
+    
+    const Tpetra::Map<LO,GO,Node>& prec_dom_map = *prec.getDomainMap();
+    const Tpetra::Map<LO,GO,Node>& prec_rng_map = *prec.getRangeMap();
+    
+    TEST_ASSERT( prec_dom_map.isSameAs(mtx_dom_map) );
+    TEST_ASSERT( prec_rng_map.isSameAs(mtx_rng_map) );
+    
+    prec.compute();
+    
+    Tpetra::MultiVector<Scalar,LO,GO,Node> x(rowmap,2), y(rowmap,2);
+    x.putScalar (Teuchos::ScalarTraits<Scalar>::one ());
+    
+    prec.apply(x, y);
+    
+    Teuchos::ArrayRCP<const Scalar> yview = y.get1dView();
+    
+    //y should be full of 0.5's now.
+    
+    Teuchos::ArrayRCP<Scalar> halfs(num_rows_per_proc*2, 0.5);
+    
+    TEST_COMPARE_FLOATING_ARRAYS(yview, halfs(), Teuchos::ScalarTraits<Scalar>::eps());
+  }
+  //----------------Kokkos Kernels SPTRSV----------------//
+  {
+    Ifpack2::RILUK<Tpetra::RowMatrix<Scalar,LO,GO,Node> > prec (crsmatrix);
+    
+    Teuchos::ParameterList params;
+    int fill_level = 1;
+    params.set("fact: iluk level-of-fill", fill_level);
+    params.set("fact: iluk level-of-overlap", 0);
+    params.set("trisolver: type", "KSPTRSV");
+    
+    TEST_NOTHROW(prec.setParameters(params));
+    
+    TEST_EQUALITY( prec.getLevelOfFill(), fill_level);
+    
+    prec.initialize();
+    //trivial tests to insist that the preconditioner's domain/range maps are
+    //the same as those of the matrix:
+    const Tpetra::Map<LO,GO,Node>& mtx_dom_map = *crsmatrix->getDomainMap();
+    const Tpetra::Map<LO,GO,Node>& mtx_rng_map = *crsmatrix->getRangeMap();
+    
+    const Tpetra::Map<LO,GO,Node>& prec_dom_map = *prec.getDomainMap();
+    const Tpetra::Map<LO,GO,Node>& prec_rng_map = *prec.getRangeMap();
+    
+    TEST_ASSERT( prec_dom_map.isSameAs(mtx_dom_map) );
+    TEST_ASSERT( prec_rng_map.isSameAs(mtx_rng_map) );
+    
+    prec.compute();
+    
+    Tpetra::MultiVector<Scalar,LO,GO,Node> x(rowmap,2), y(rowmap,2);
+    x.putScalar (Teuchos::ScalarTraits<Scalar>::one ());
+    
+    prec.apply(x, y);
+    
+    Teuchos::ArrayRCP<const Scalar> yview = y.get1dView();
+    
+    //y should be full of 0.5's now.
+    
+    Teuchos::ArrayRCP<Scalar> halfs(num_rows_per_proc*2, 0.5);
+    
+    TEST_COMPARE_FLOATING_ARRAYS(yview, halfs(), Teuchos::ScalarTraits<Scalar>::eps());
+  }
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, Test1, Scalar, LO, GO)
@@ -250,90 +292,51 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, Test1, Scalar, LO, 
   RCP<const crs_matrix_type> crsmatrix =
     tif_utest::create_test_matrix2<Scalar,LO,GO,Node>(rowmap);
 
-  out << "Creating preconditioner" << endl;
-  Ifpack2::RILUK<row_matrix_type> prec (crsmatrix);
-
-  out << "Setting preconditioner's parameters" << endl;
-  Teuchos::ParameterList params;
-  params.set ("fact: iluk level-of-fill", 1);
-  params.set ("fact: iluk level-of-overlap", 0);
-  TEST_NOTHROW(prec.setParameters(params));
-
-  out << "Calling initialize() and compute()" << endl;
-  prec.initialize();
-  prec.compute();
-
-  out << "Creating test problem" << endl;
-  MV x (rowmap, 2);
-  MV y (rowmap, 2);
-  x.putScalar (STS::one ());
-
-  out << "Calling crsmatrix->apply(x, y)" << endl;
-  crsmatrix->apply(x,y);
-
-  out << "Calling prec.apply(y, x)" << endl;
-  //apply the preconditioner to y, putting ~A^-1*y in x
-  //(this should set x back to 1's)
-  prec.apply(y, x);
-
-  //x should be full of 1's now.
-  out << "Checking result" << endl;
-
-  // Useful things for comparing results.
-  Kokkos::View<mag_type*, device_type> norms ("norms", x.getNumVectors ());
-  auto norms_h = Kokkos::create_mirror_view (norms);
-  MV diff (x.getMap (), x.getNumVectors ());
-
+  //----------------Default trisolver----------------//
   {
-    // FIXME (mfh 04 Oct 2016) This is the bound that I found here
-    // when I fixed this test.  Not sure if it's sensible.
-    const mag_type bound = twoMag * ArithTraits<val_type>::eps ();
-
-    diff.putScalar (STS::one ());
-    diff.update (STS::one (), x, -STS::one ());
-    diff.normInf (norms);
-    Kokkos::deep_copy (norms_h, norms);
-    for (LO j = 0; j < static_cast<LO> (norms_h.extent (0)); ++j) {
-      const mag_type absVal = ArithTraits<mag_type>::abs (norms_h(j));
-      TEST_ASSERT( absVal <= bound );
-      if (absVal > bound) {
-        out << "\\| x(:," << j << ") - 1 \\|_{\\infty} = "
-            << absVal << " > " << bound
-            << "; the norm equals " << norms_h(j)
-            << endl;
-      }
-    }
-  }
-
-  auto test_alpha_beta = [&] (const Scalar& alpha, const Scalar& beta,
-                              const Teuchos::ETransp& mode) {
-    out << "Testing apply() for alpha = " << alpha
-        << " and beta = " << beta << endl;
-    const Scalar x_magic_number = -0.42;
-    x.putScalar (x_magic_number);
-    crsmatrix->apply (x, y, mode);
-    MV z = Tpetra::createCopy (x);
-    const Scalar z_magic_number = 2.1;
-    z.putScalar (z_magic_number);
-    // z = beta z + alpha inv(A) y
-    //   = beta z + alpha x
-    //   = (beta z_magic_number + alpha x_magic_number) 1s
-    prec.apply(y, z, mode, alpha, beta);
-
-    MV z_true = Tpetra::createCopy (x);
-    const Scalar z_true_scalar = beta*z_magic_number + alpha*x_magic_number;
-    z_true.putScalar(z_true_scalar);
-
+    out << "Creating preconditioner" << endl;
+    Ifpack2::RILUK<row_matrix_type> prec (crsmatrix);
+    
+    out << "Setting preconditioner's parameters" << endl;
+    Teuchos::ParameterList params;
+    params.set ("fact: iluk level-of-fill", 1);
+    params.set ("fact: iluk level-of-overlap", 0);
+    TEST_NOTHROW(prec.setParameters(params));
+    
+    out << "Calling initialize() and compute()" << endl;
+    prec.initialize();
+    prec.compute();
+    
+    out << "Creating test problem" << endl;
+    MV x (rowmap, 2);
+    MV y (rowmap, 2);
+    x.putScalar (STS::one ());
+    
+    out << "Calling crsmatrix->apply(x, y)" << endl;
+    crsmatrix->apply(x,y);
+    
+    out << "Calling prec.apply(y, x)" << endl;
+    //apply the preconditioner to y, putting ~A^-1*y in x
+    //(this should set x back to 1's)
+    prec.apply(y, x);
+    
+    //x should be full of 1's now.
+    out << "Checking result" << endl;
+    
+    // Useful things for comparing results.
+    Kokkos::View<mag_type*, device_type> norms ("norms", x.getNumVectors ());
+    auto norms_h = Kokkos::create_mirror_view (norms);
+    MV diff (x.getMap (), x.getNumVectors ());
+    
     {
       // FIXME (mfh 04 Oct 2016) This is the bound that I found here
       // when I fixed this test.  Not sure if it's sensible.
-      const mag_type bound = 10.0 * ArithTraits<val_type>::eps ();
-
-      diff.putScalar (z_true_scalar);
-      diff.update (STS::one (), z, -STS::one ());
+      const mag_type bound = twoMag * ArithTraits<val_type>::eps ();
+    
+      diff.putScalar (STS::one ());
+      diff.update (STS::one (), x, -STS::one ());
       diff.normInf (norms);
       Kokkos::deep_copy (norms_h, norms);
-
       for (LO j = 0; j < static_cast<LO> (norms_h.extent (0)); ++j) {
         const mag_type absVal = ArithTraits<mag_type>::abs (norms_h(j));
         TEST_ASSERT( absVal <= bound );
@@ -345,15 +348,163 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, Test1, Scalar, LO, 
         }
       }
     }
-  };
-
-  for (const auto mode : {Teuchos::NO_TRANS, Teuchos::TRANS}) {
-    test_alpha_beta(0.0, 0.0, mode);
-    test_alpha_beta(2.0, 0.0, mode);
-    test_alpha_beta(0.0, -1.5, mode);
-    test_alpha_beta(-0.42, 4.2, mode);
+    
+    auto test_alpha_beta = [&] (const Scalar& alpha, const Scalar& beta,
+                                const Teuchos::ETransp& mode) {
+      out << "Testing apply() for alpha = " << alpha
+          << " and beta = " << beta << endl;
+      const Scalar x_magic_number = -0.42;
+      x.putScalar (x_magic_number);
+      crsmatrix->apply (x, y, mode);
+      MV z = Tpetra::createCopy (x);
+      const Scalar z_magic_number = 2.1;
+      z.putScalar (z_magic_number);
+      // z = beta z + alpha inv(A) y
+      //   = beta z + alpha x
+      //   = (beta z_magic_number + alpha x_magic_number) 1s
+      prec.apply(y, z, mode, alpha, beta);
+    
+      MV z_true = Tpetra::createCopy (x);
+      const Scalar z_true_scalar = beta*z_magic_number + alpha*x_magic_number;
+      z_true.putScalar(z_true_scalar);
+    
+      {
+        // FIXME (mfh 04 Oct 2016) This is the bound that I found here
+        // when I fixed this test.  Not sure if it's sensible.
+        const mag_type bound = 10.0 * ArithTraits<val_type>::eps ();
+    
+        diff.putScalar (z_true_scalar);
+        diff.update (STS::one (), z, -STS::one ());
+        diff.normInf (norms);
+        Kokkos::deep_copy (norms_h, norms);
+    
+        for (LO j = 0; j < static_cast<LO> (norms_h.extent (0)); ++j) {
+          const mag_type absVal = ArithTraits<mag_type>::abs (norms_h(j));
+          TEST_ASSERT( absVal <= bound );
+          if (absVal > bound) {
+            out << "\\| x(:," << j << ") - 1 \\|_{\\infty} = "
+                << absVal << " > " << bound
+                << "; the norm equals " << norms_h(j)
+                << endl;
+          }
+        }
+      }
+    };
+    
+    for (const auto mode : {Teuchos::NO_TRANS, Teuchos::TRANS}) {
+      test_alpha_beta(0.0, 0.0, mode);
+      test_alpha_beta(2.0, 0.0, mode);
+      test_alpha_beta(0.0, -1.5, mode);
+      test_alpha_beta(-0.42, 4.2, mode);
+    }
   }
- 
+  //----------------Kokkos Kernels SPTRSV----------------//
+  {
+    out << "Creating preconditioner" << endl;
+    Ifpack2::RILUK<row_matrix_type> prec (crsmatrix);
+    
+    out << "Setting preconditioner's parameters" << endl;
+    Teuchos::ParameterList params;
+    params.set ("fact: iluk level-of-fill", 1);
+    params.set ("fact: iluk level-of-overlap", 0);
+    params.set("trisolver: type", "KSPTRSV");
+    TEST_NOTHROW(prec.setParameters(params));
+    
+    out << "Calling initialize() and compute()" << endl;
+    prec.initialize();
+    prec.compute();
+    
+    out << "Creating test problem" << endl;
+    MV x (rowmap, 2);
+    MV y (rowmap, 2);
+    x.putScalar (STS::one ());
+    
+    out << "Calling crsmatrix->apply(x, y)" << endl;
+    crsmatrix->apply(x,y);
+    
+    out << "Calling prec.apply(y, x)" << endl;
+    //apply the preconditioner to y, putting ~A^-1*y in x
+    //(this should set x back to 1's)
+    prec.apply(y, x);
+    
+    //x should be full of 1's now.
+    out << "Checking result" << endl;
+    
+    // Useful things for comparing results.
+    Kokkos::View<mag_type*, device_type> norms ("norms", x.getNumVectors ());
+    auto norms_h = Kokkos::create_mirror_view (norms);
+    MV diff (x.getMap (), x.getNumVectors ());
+    
+    {
+      // FIXME (mfh 04 Oct 2016) This is the bound that I found here
+      // when I fixed this test.  Not sure if it's sensible.
+      const mag_type bound = twoMag * ArithTraits<val_type>::eps ();
+    
+      diff.putScalar (STS::one ());
+      diff.update (STS::one (), x, -STS::one ());
+      diff.normInf (norms);
+      Kokkos::deep_copy (norms_h, norms);
+      for (LO j = 0; j < static_cast<LO> (norms_h.extent (0)); ++j) {
+        const mag_type absVal = ArithTraits<mag_type>::abs (norms_h(j));
+        TEST_ASSERT( absVal <= bound );
+        if (absVal > bound) {
+          out << "\\| x(:," << j << ") - 1 \\|_{\\infty} = "
+              << absVal << " > " << bound
+              << "; the norm equals " << norms_h(j)
+              << endl;
+        }
+      }
+    }
+    
+    auto test_alpha_beta = [&] (const Scalar& alpha, const Scalar& beta,
+                                const Teuchos::ETransp& mode) {
+      out << "Testing apply() for alpha = " << alpha
+          << " and beta = " << beta << endl;
+      const Scalar x_magic_number = -0.42;
+      x.putScalar (x_magic_number);
+      crsmatrix->apply (x, y, mode);
+      MV z = Tpetra::createCopy (x);
+      const Scalar z_magic_number = 2.1;
+      z.putScalar (z_magic_number);
+      // z = beta z + alpha inv(A) y
+      //   = beta z + alpha x
+      //   = (beta z_magic_number + alpha x_magic_number) 1s
+      prec.apply(y, z, mode, alpha, beta);
+    
+      MV z_true = Tpetra::createCopy (x);
+      const Scalar z_true_scalar = beta*z_magic_number + alpha*x_magic_number;
+      z_true.putScalar(z_true_scalar);
+    
+      {
+        // FIXME (mfh 04 Oct 2016) This is the bound that I found here
+        // when I fixed this test.  Not sure if it's sensible.
+        const mag_type bound = 10.0 * ArithTraits<val_type>::eps ();
+    
+        diff.putScalar (z_true_scalar);
+        diff.update (STS::one (), z, -STS::one ());
+        diff.normInf (norms);
+        Kokkos::deep_copy (norms_h, norms);
+    
+        for (LO j = 0; j < static_cast<LO> (norms_h.extent (0)); ++j) {
+          const mag_type absVal = ArithTraits<mag_type>::abs (norms_h(j));
+          TEST_ASSERT( absVal <= bound );
+          if (absVal > bound) {
+            out << "\\| x(:," << j << ") - 1 \\|_{\\infty} = "
+                << absVal << " > " << bound
+                << "; the norm equals " << norms_h(j)
+                << endl;
+          }
+        }
+      }
+    };
+    
+    for (const auto mode : {Teuchos::NO_TRANS, Teuchos::TRANS}) {
+      test_alpha_beta(0.0, 0.0, mode);
+      test_alpha_beta(2.0, 0.0, mode);
+      test_alpha_beta(0.0, -1.5, mode);
+      test_alpha_beta(-0.42, 4.2, mode);
+    }
+  }
   out << "Done with test" << endl;
 }
 
