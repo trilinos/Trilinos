@@ -189,7 +189,6 @@ void blockingDotImpl(
   using dev_mem_space = typename result_dev_view_type::memory_space;
   using mirror_mem_space = typename result_mirror_view_type::memory_space;
   using unmanaged_result_dev_view_type = Kokkos::View<dot_type*, dev_mem_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-  using unmanaged_result_mirror_view_type = Kokkos::View<dot_type*, mirror_mem_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   using unmanaged_result_host_view_type = Kokkos::View<dot_type*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   const size_t numVecs = globalResult.extent(0);
   //Logic to compute the local dot is no different than when CUDA-aware MPI.
@@ -320,7 +319,7 @@ idotImpl(const ResultView& globalResult,
     }
     else
     {
-      //This fence is because the device-space result of idotLocal will be accessed directly by MPI.
+      //(Only fence in idot) required because the device-space result of idotLocal will be accessed directly by MPI.
       typename dev_mem_space::execution_space().fence();
       return iallreduce(nonowningLocalResult, globalResult, ::Teuchos::REDUCE_SUM, *comm);
     }
