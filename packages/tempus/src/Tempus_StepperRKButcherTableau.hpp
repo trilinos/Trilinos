@@ -1902,7 +1902,7 @@ public:
     this->setStepperType("RK Backward Euler");
     this->setupTableau();
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
-                ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+                ICConsistencyCheck, useEmbedded, false, zeroInitialGuess);
   }
 #endif
   StepperDIRK_BackwardEuler(
@@ -1918,7 +1918,7 @@ public:
     this->setStepperType("RK Backward Euler");
     this->setupTableau();
     this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
-                useEmbedded, zeroInitialGuess, stepperRKAppAction);
+                useEmbedded, false, zeroInitialGuess, stepperRKAppAction);
   }
 
   std::string getDescription() const
@@ -2035,7 +2035,7 @@ public:
     this->setGamma(gamma);
     this->setupTableau();
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
-                ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+                ICConsistencyCheck, useEmbedded, false, zeroInitialGuess);
   }
 #endif
   StepperSDIRK_2Stage2ndOrder(
@@ -2057,7 +2057,7 @@ public:
     this->setGamma(gamma);
     this->setupTableau();
     this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
-                useEmbedded, zeroInitialGuess, stepperRKAppAction);
+                useEmbedded, false, zeroInitialGuess, stepperRKAppAction);
   }
 
   void setGamma(Scalar gamma)
@@ -2196,7 +2196,7 @@ public:
     this->setStepperType("SDIRK 3 Stage 2nd order");
     this->setupTableau();
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
-                ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+                ICConsistencyCheck, useEmbedded, false, zeroInitialGuess);
   }
 #endif
   StepperSDIRK_3Stage2ndOrder(
@@ -2213,7 +2213,7 @@ public:
     this->setStepperType("SDIRK 3 Stage 2nd order");
     this->setupTableau();
     this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
-                useEmbedded, zeroInitialGuess, stepperRKAppAction);
+                useEmbedded, false, zeroInitialGuess, stepperRKAppAction);
   }
 
   std::string getDescription() const
@@ -2357,7 +2357,7 @@ public:
     this->setGamma(gamma);
     this->setupTableau();
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
-                ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+                ICConsistencyCheck, useEmbedded, false, zeroInitialGuess);
   }
 #endif
   StepperSDIRK_2Stage3rdOrder(
@@ -2383,7 +2383,7 @@ public:
     this->setGamma(gamma);
     this->setupTableau();
     this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
-                useEmbedded, zeroInitialGuess, stepperRKAppAction);
+                useEmbedded, zeroInitialGuess, false, stepperRKAppAction);
   }
 
   void setGammaType(std::string gammaType)
@@ -2547,7 +2547,7 @@ public:
     this->setStepperType("EDIRK 2 Stage 3rd order");
     this->setupTableau();
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
-                ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+                ICConsistencyCheck, useEmbedded, false, zeroInitialGuess);
   }
 #endif
   StepperEDIRK_2Stage3rdOrder(
@@ -2563,7 +2563,7 @@ public:
     this->setStepperType("EDIRK 2 Stage 3rd order");
     this->setupTableau();
     this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
-                useEmbedded, zeroInitialGuess, stepperRKAppAction);
+                useEmbedded, false, zeroInitialGuess, stepperRKAppAction);
   }
 
   std::string getDescription() const
@@ -2690,7 +2690,7 @@ public:
     this->setTheta(theta);
     this->setupTableau();
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
-                ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+                ICConsistencyCheck, useEmbedded, false, zeroInitialGuess);
   }
 #endif
   StepperDIRK_1StageTheta(
@@ -2711,7 +2711,7 @@ public:
     this->setTheta(theta);
     this->setupTableau();
     this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
-                useEmbedded, zeroInitialGuess, stepperRKAppAction);
+                useEmbedded, false, zeroInitialGuess, stepperRKAppAction);
   }
 
   void setTheta(Scalar theta)
@@ -2853,7 +2853,7 @@ public:
     this->setTheta(theta);
     this->setupTableau();
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
-                ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+                ICConsistencyCheck, useEmbedded, false, zeroInitialGuess);
   }
 #endif
   StepperEDIRK_2StageTheta(
@@ -2874,7 +2874,7 @@ public:
     this->setTheta(theta);
     this->setupTableau();
     this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
-                useEmbedded, zeroInitialGuess, stepperRKAppAction);
+                useEmbedded, false, zeroInitialGuess, stepperRKAppAction);
   }
 
   void setTheta(Scalar theta)
@@ -3012,7 +3012,7 @@ public:
     this->setStepperType("RK Trapezoidal Rule");
     this->setupTableau();
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
-                ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+                ICConsistencyCheck, useEmbedded, false, zeroInitialGuess);
   }
 #endif
   StepperEDIRK_TrapezoidalRule(
@@ -3028,7 +3028,7 @@ public:
     this->setStepperType("RK Trapezoidal Rule");
     this->setupTableau();
     this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
-                useEmbedded, zeroInitialGuess, stepperRKAppAction);
+                useEmbedded, false, zeroInitialGuess, stepperRKAppAction);
   }
 
   std::string getDescription() const
@@ -3145,7 +3145,7 @@ public:
     this->setStepperType("RK Implicit Midpoint");
     this->setupTableau();
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
-                ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+                ICConsistencyCheck, useEmbedded, false, zeroInitialGuess);
   }
 #endif
   StepperSDIRK_ImplicitMidpoint(
@@ -3161,7 +3161,7 @@ public:
     this->setStepperType("RK Implicit Midpoint");
     this->setupTableau();
     this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
-                useEmbedded, zeroInitialGuess, stepperRKAppAction);
+                useEmbedded, false, zeroInitialGuess, stepperRKAppAction);
   }
 
   std::string getDescription() const
@@ -3270,7 +3270,7 @@ class StepperSDIRK_SSPDIRK22 :
     this->setStepperType("SSPDIRK22");
     this->setupTableau();
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
-                ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+                ICConsistencyCheck, useEmbedded, false, zeroInitialGuess);
   }
 #endif
   StepperSDIRK_SSPDIRK22(
@@ -3286,7 +3286,7 @@ class StepperSDIRK_SSPDIRK22 :
     this->setStepperType("SSPDIRK22");
     this->setupTableau();
     this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
-                useEmbedded, zeroInitialGuess, stepperRKAppAction);
+                useEmbedded, false, zeroInitialGuess, stepperRKAppAction);
   }
 
   std::string getDescription() const
@@ -3395,7 +3395,7 @@ class StepperSDIRK_SSPDIRK32 :
     this->setStepperType("SSPDIRK32");
     this->setupTableau();
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
-                ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+                ICConsistencyCheck, useEmbedded, false, zeroInitialGuess);
   }
 #endif
   StepperSDIRK_SSPDIRK32(
@@ -3411,7 +3411,7 @@ class StepperSDIRK_SSPDIRK32 :
     this->setStepperType("SSPDIRK32");
     this->setupTableau();
     this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
-                useEmbedded, zeroInitialGuess, stepperRKAppAction);
+                useEmbedded, false, zeroInitialGuess, stepperRKAppAction);
   }
 
   std::string getDescription() const
@@ -3522,7 +3522,7 @@ class StepperSDIRK_SSPDIRK23 :
     this->setStepperType("SSPDIRK23");
     this->setupTableau();
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
-                ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+                ICConsistencyCheck, useEmbedded, false, zeroInitialGuess);
   }
 #endif
   StepperSDIRK_SSPDIRK23(
@@ -3538,7 +3538,7 @@ class StepperSDIRK_SSPDIRK23 :
     this->setStepperType("SSPDIRK23");
     this->setupTableau();
     this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
-                useEmbedded, zeroInitialGuess, stepperRKAppAction);
+                useEmbedded, false, zeroInitialGuess, stepperRKAppAction);
   }
 
   std::string getDescription() const
@@ -3648,7 +3648,7 @@ class StepperSDIRK_SSPDIRK33 :
     this->setStepperType("SSPDIRK33");
     this->setupTableau();
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
-                ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+                ICConsistencyCheck, useEmbedded, false, zeroInitialGuess);
   }
 #endif
   StepperSDIRK_SSPDIRK33(
@@ -3664,7 +3664,7 @@ class StepperSDIRK_SSPDIRK33 :
     this->setStepperType("SSPDIRK33");
     this->setupTableau();
     this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
-                useEmbedded, zeroInitialGuess, stepperRKAppAction);
+                useEmbedded, false, zeroInitialGuess, stepperRKAppAction);
   }
 
   std::string getDescription() const
@@ -3781,7 +3781,7 @@ public:
     this->setStepperType("RK Implicit 1 Stage 1st order Radau IA");
     this->setupTableau();
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
-                ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+                ICConsistencyCheck, useEmbedded, false, zeroInitialGuess);
   }
 #endif
   StepperDIRK_1Stage1stOrderRadauIA(
@@ -3797,7 +3797,7 @@ public:
     this->setStepperType("RK Implicit 1 Stage 1st order Radau IA");
     this->setupTableau();
     this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
-                useEmbedded, zeroInitialGuess, stepperRKAppAction);
+                useEmbedded, false, zeroInitialGuess, stepperRKAppAction);
   }
 
   std::string getDescription() const
@@ -3903,7 +3903,7 @@ public:
     this->setStepperType("RK Implicit 2 Stage 2nd order Lobatto IIIB");
     this->setupTableau();
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
-                ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+                ICConsistencyCheck, useEmbedded, false, zeroInitialGuess);
   }
 #endif
   StepperDIRK_2Stage2ndOrderLobattoIIIB(
@@ -3919,7 +3919,7 @@ public:
     this->setStepperType("RK Implicit 2 Stage 2nd order Lobatto IIIB");
     this->setupTableau();
     this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
-                useEmbedded, zeroInitialGuess, stepperRKAppAction);
+                useEmbedded, false, zeroInitialGuess, stepperRKAppAction);
   }
 
   std::string getDescription() const
@@ -4042,7 +4042,7 @@ public:
     this->setStepperType("SDIRK 5 Stage 4th order");
     this->setupTableau();
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
-                ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+                ICConsistencyCheck, useEmbedded, false, zeroInitialGuess);
   }
 #endif
   StepperSDIRK_5Stage4thOrder(
@@ -4058,7 +4058,7 @@ public:
     this->setStepperType("SDIRK 5 Stage 4th order");
     this->setupTableau();
     this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
-                useEmbedded, zeroInitialGuess, stepperRKAppAction);
+                useEmbedded, false, zeroInitialGuess, stepperRKAppAction);
   }
 
   std::string getDescription() const
@@ -4224,7 +4224,7 @@ public:
     this->setStepperType("SDIRK 3 Stage 4th order");
     this->setupTableau();
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
-                ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+                ICConsistencyCheck, useEmbedded, false, zeroInitialGuess);
   }
 #endif
   StepperSDIRK_3Stage4thOrder(
@@ -4240,7 +4240,7 @@ public:
     this->setStepperType("SDIRK 3 Stage 4th order");
     this->setupTableau();
     this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
-                useEmbedded, zeroInitialGuess, stepperRKAppAction);
+                useEmbedded, false, zeroInitialGuess, stepperRKAppAction);
   }
 
   std::string getDescription() const
@@ -4377,7 +4377,7 @@ public:
     this->setStepperType("SDIRK 5 Stage 5th order");
     this->setupTableau();
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
-                ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+                ICConsistencyCheck, useEmbedded, false, zeroInitialGuess);
   }
 #endif
   StepperSDIRK_5Stage5thOrder(
@@ -4393,7 +4393,7 @@ public:
     this->setStepperType("SDIRK 5 Stage 5th order");
     this->setupTableau();
     this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
-                useEmbedded, zeroInitialGuess, stepperRKAppAction);
+                useEmbedded, false, zeroInitialGuess, stepperRKAppAction);
   }
 
   std::string getDescription() const
@@ -4572,7 +4572,7 @@ public:
     this->setStepperType("SDIRK 2(1) Pair");
     this->setupTableau();
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
-                ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+                ICConsistencyCheck, useEmbedded, false, zeroInitialGuess);
   }
 #endif
   StepperSDIRK_21Pair(
@@ -4588,7 +4588,7 @@ public:
     this->setStepperType("SDIRK 2(1) Pair");
     this->setupTableau();
     this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
-                useEmbedded, zeroInitialGuess, stepperRKAppAction);
+                useEmbedded, false, zeroInitialGuess, stepperRKAppAction);
   }
 
   std::string getDescription() const
@@ -4727,7 +4727,7 @@ public:
       "Error - General DIRK did not receive a DIRK Butcher Tableau!\n");
 
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
-                ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+                ICConsistencyCheck, useEmbedded, false, zeroInitialGuess);
   }
 #endif
   StepperDIRK_General(
@@ -4755,7 +4755,7 @@ public:
       "Error - General DIRK did not receive a DIRK Butcher Tableau!\n");
 
     this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
-                useEmbedded, zeroInitialGuess, stepperRKAppAction);
+                useEmbedded, zeroInitialGuess, false, stepperRKAppAction);
   }
 
   std::string getDescription() const

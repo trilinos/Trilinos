@@ -234,6 +234,8 @@ public:
     virtual void setUseEmbedded(bool a) { useEmbedded_ = a; }
     virtual bool getUseEmbedded() const { return useEmbedded_; }
     virtual bool getUseEmbeddedDefault() const { return false; }
+    virtual void setTVDCoeff(const Scalar a) { tvdCoeff_ = a; }
+    virtual void setTVD(bool a) { isTVD_ = a; }
   //@}
 
 
@@ -252,6 +254,7 @@ protected:
     std::string ICConsistency,
     bool ICConsistencyCheck,
     bool useEmbedded,
+    bool isTVD,
     bool zeroInitialGuess);
 #endif
   virtual void setup(
@@ -261,6 +264,7 @@ protected:
     std::string ICConsistency,
     bool ICConsistencyCheck,
     bool useEmbedded,
+    bool isTVD,
     bool zeroInitialGuess,
     const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction);
 
@@ -281,6 +285,8 @@ protected:
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               sc;
 
   bool resetGuess_ = true;
+  bool isTVD_;
+  Scalar tvdCoeff_;
 };
 
 

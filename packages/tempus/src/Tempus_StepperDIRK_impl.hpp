@@ -51,6 +51,7 @@ void StepperDIRK<Scalar>::setup(
   std::string ICConsistency,
   bool ICConsistencyCheck,
   bool useEmbedded,
+  bool isTVD,
   bool zeroInitialGuess)
 {
   this->setUseFSAL(            useFSAL);
@@ -80,6 +81,7 @@ void StepperDIRK<Scalar>::setup(
   std::string ICConsistency,
   bool ICConsistencyCheck,
   bool useEmbedded,
+  bool isTVD,
   bool zeroInitialGuess,
   const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
 {
