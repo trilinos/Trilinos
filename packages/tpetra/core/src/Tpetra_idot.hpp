@@ -170,6 +170,60 @@ void idotLocal(const ResultView& localResult,
   }
 }
 
+//Fallback version: produces same result, but is synchronous.
+//Used only when MPI is not CUDA-aware, and the global result lives on device.
+//It's not allowed to use a CudaSpace or CudaUVMSpace view as a target buffer for MPI
+//unless CUDA-aware.
+template<class SC, class LO, class GO, class NT, class ResultView>
+void blockingDotImpl(
+    const ResultView& globalResult,
+    const ::Tpetra::MultiVector<SC, LO, GO, NT>& X,
+    const ::Tpetra::MultiVector<SC, LO, GO, NT>& Y,
+    bool mpiReduceInPlace)
+{
+  using MV = ::Tpetra::MultiVector<SC, LO, GO, NT>;
+  using dot_type = typename MV::dot_type;
+  using result_dev_view_type = Kokkos::View<dot_type*, typename NT::device_type>;
+  using result_mirror_view_type = typename result_dev_view_type::HostMirror;
+  using result_host_view_type = Kokkos::View<dot_type*, Kokkos::HostSpace>;
+  using dev_mem_space = typename result_dev_view_type::memory_space;
+  using mirror_mem_space = typename result_mirror_view_type::memory_space;
+  using unmanaged_result_dev_view_type = Kokkos::View<dot_type*, dev_mem_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using unmanaged_result_mirror_view_type = Kokkos::View<dot_type*, mirror_mem_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using unmanaged_result_host_view_type = Kokkos::View<dot_type*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  const size_t numVecs = globalResult.extent(0);
+  //Logic to compute the local dot is no different than when CUDA-aware MPI.
+  result_host_view_type localHostResult(Kokkos::ViewAllocateWithoutInitializing("HostLocalDotResult"), numVecs);
+  if(X.template need_sync<dev_mem_space>())
+  {
+    //compute local result on host.
+    //NOTE: UVM never takes this branch because then dev_mem_space == mirror_mem_space.
+    //This means that the dot is actually computed on host.
+    idotLocal<SC, LO, GO, NT, result_host_view_type, mirror_mem_space>(localHostResult, X, Y);
+  }
+  else
+  {
+    //compute local result on temporary device view, then copy that to host.
+    result_dev_view_type localDeviceResult(Kokkos::ViewAllocateWithoutInitializing("DeviceLocalDotResult"), numVecs);
+    idotLocal<SC, LO, GO, NT, result_dev_view_type, mirror_mem_space>(localDeviceResult, X, Y);
+    //NOTE: no fence is required: deep_copy will fence.
+    Kokkos::deep_copy(localHostResult, localDeviceResult);
+  }
+  result_host_view_type globalHostResultOwning;
+  unmanaged_result_host_view_type globalHostResultNonowning;
+  if(mpiReduceInPlace)
+  {
+    globalHostResultNonowning = unmanaged_result_host_view_type(localHostResult.data(), numVecs);
+  }
+  else
+  {
+    globalHostResultOwning = result_host_view_type(Kokkos::ViewAllocateWithoutInitializing("HostGlobalDotResult"), numVecs);
+    globalHostResultNonowning = unmanaged_result_host_view_type(globalHostResultOwning.data(), numVecs);
+  }
+  Teuchos::reduceAll<int, dot_type> (*X.getMap()->getComm(), Teuchos::REDUCE_SUM, numVecs, localHostResult.data(), globalHostResultNonowning.data());
+  Kokkos::deep_copy(globalResult, globalHostResultNonowning);
+}
+
 /// \brief Internal (common) version of idot, a global dot product
 /// that uses a non-blocking MPI reduction.
 ///
@@ -196,36 +250,39 @@ idotImpl(const ResultView& globalResult,
   using unmanaged_result_mirror_view_type = Kokkos::View<dot_type*, mirror_mem_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   using unmanaged_result_host_view_type = Kokkos::View<dot_type*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   auto comm = X.getMap()->getComm();
+  bool mpiReduceInPlace = !Details::isInterComm(*comm);
   //note: numVecs is verified in idotLocal
   const size_t numVecs = globalResult.extent(0);
-  bool X_latestOnHost = X.template need_sync<dev_mem_space>();
-  // Let X guide whether to execute on device or host.
-  const bool runOnHost = X_latestOnHost;
   //BMK: If either local or global results live in a CUDA device space but
   //MPI is not CUDA-aware, we are forced to perform (synchronous) communication
   //using temporary HostSpace view(s).
-  bool forceSyncReduce = false;
 #ifdef KOKKOS_ENABLE_CUDA
-  //if !runOnHost or mirror_mem_space is not host, then the local result lives on device.
-  //if globalResult's memory space is a Cuda space, then the user's global result lives on device.
-  //if either of these are true, and MPI is not CUDA-aware, we must use synchronous MPI on host.
-  forceSyncReduce = !Tpetra::Details::Behavior::assumeMpiIsCudaAware() &&
-    (!runOnHost || !std::is_same<mirror_mem_space, Kokkos::HostSpace>::value ||
-     std::is_same<global_result_memspace, Kokkos::CudaSpace>::value || 
-     std::is_same<global_result_memspace, Kokkos::CudaUVMSpace>::value);
+  //If globalResult's memory space is a Cuda space, then the user's global result lives on device.
+  //For this case, there is currently no way to do the asynchronous MPI reduction to a temporary HostSpace
+  //view, and then deep copy to the original globalResult. 
+  //However, this could also be solved
+  //(and still be globally asynchronous) by adding a
+  //deep_copy callback to CommRequest.
+  if(!Tpetra::Details::Behavior::assumeMpiIsCudaAware() &&
+     (std::is_same<global_result_memspace, Kokkos::CudaSpace>::value || 
+     std::is_same<global_result_memspace, Kokkos::CudaUVMSpace>::value))
+  {
+    blockingDotImpl<SC, LO, GO, NT, ResultView>(globalResult, X, Y, mpiReduceInPlace);
+    return Tpetra::Details::Impl::emptyCommRequest();
+  }
 #endif
-  if(forceSyncReduce)
-    std::cout << "idot: Forcing MPI comm to happen on host.\n";
-  else
-    std::cout << "idot: Allowing MPI comm to happen on device.\n";
+  bool X_latestOnHost = X.template need_sync<dev_mem_space>();
+  bool runOnHost = !std::is_same<dev_mem_space, mirror_mem_space>::value && X_latestOnHost;
   //Wherever the kernel runs, allocate a separate local result if either:
   //  * comm is an "InterComm" (can't do in-place collectives)
   //  * globalResult is not accessible from the space of X's latest data
-  const bool allocateLocalResult = Details::isInterComm(*comm) ||
+  const bool allocateLocalResult = !mpiReduceInPlace ||
     (X_latestOnHost ?
       !Kokkos::Impl::MemorySpaceAccess<mirror_mem_space, global_result_memspace>::accessible :
       !Kokkos::Impl::MemorySpaceAccess<dev_mem_space, global_result_memspace>::accessible);
   if(runOnHost) {
+    //Note BMK: cannot get here if the device memory space is CudaUVMSpace,
+    //because in that case the mirror space of MV's DualView is also CudaUVMSpace. Verified this by printing typeid.
     unmanaged_result_host_view_type nonowningLocalResult;
     result_host_view_type localResult;
     if(allocateLocalResult) {
@@ -235,73 +292,37 @@ idotImpl(const ResultView& globalResult,
     else
       nonowningLocalResult = unmanaged_result_host_view_type(globalResult.data(), numVecs);
     idotLocal<SC, LO, GO, NT, unmanaged_result_host_view_type, mirror_mem_space>(nonowningLocalResult, X, Y);
-    //Now that the local result has been computed, perform the iallreduce.
-    //If localResult is owned, use that as the source, so that iallreduce keeps the allocation alive.
-    //Otherwise use globalResult as the source and target.
-    if(forceSyncReduce) {
-      //Ran local kernel on host, but globalResult lives on device and we don't have CUDA-aware MPI.
-      //So do synchronous reduce to temporary host view, then copy to user's result.
-      //Note: even though this ran on host, the result could still be UVM.
-      result_host_view_type tempGlobalResult(Kokkos::ViewAllocateWithoutInitializing("tempGlobalResult"), numVecs);
-      if(std::is_same<mirror_mem_space, Kokkos::HostSpace>::value) {
-        //can safely use nonowningLocalResult with MPI
-        Teuchos::reduceAll<int, dot_type> (*comm, Teuchos::REDUCE_SUM, numVecs, nonowningLocalResult.data(), tempGlobalResult.data());
-      } else {
-        //need to create a HostSpace copy of local result
-        result_host_view_type tempLocalResult(Kokkos::ViewAllocateWithoutInitializing("tempLocalResult"), numVecs);
-        Kokkos::deep_copy(tempLocalResult, nonowningLocalResult);
-        Teuchos::reduceAll<int, dot_type> (*comm, Teuchos::REDUCE_SUM, numVecs, tempLocalResult.data(), tempGlobalResult.data());
-      }
-      Kokkos::deep_copy(globalResult, tempGlobalResult);
-      return Tpetra::Details::Impl::emptyCommRequest();
-    }
-    else
-    {
-      //If "mirror space" is UVM, this actually runs on device so we fence before giving it to MPI
-      if(!std::is_same<mirror_mem_space, Kokkos::HostSpace>::value)
-        typename mirror_mem_space::execution_space().fence();
-      if(allocateLocalResult)
-        return iallreduce(localResult, globalResult, ::Teuchos::REDUCE_SUM, *comm);
-      else
-        return iallreduce(globalResult, globalResult, ::Teuchos::REDUCE_SUM, *comm);
-    }
+    return iallreduce(nonowningLocalResult, globalResult, ::Teuchos::REDUCE_SUM, *comm);
   }
   else {
+    //running on device
     unmanaged_result_dev_view_type nonowningLocalResult;
     result_dev_view_type localResult;
     if(allocateLocalResult) {
-      localResult = result_dev_view_type(Kokkos::ViewAllocateWithoutInitializing("localResult"), globalResult.extent(0));
-      nonowningLocalResult = unmanaged_result_dev_view_type(localResult.data(), localResult.extent(0));
+      localResult = result_dev_view_type(Kokkos::ViewAllocateWithoutInitializing("localResult"), numVecs);
+      nonowningLocalResult = unmanaged_result_dev_view_type(localResult.data(), numVecs);
     }
     else
-      nonowningLocalResult = unmanaged_result_dev_view_type(globalResult.data(), globalResult.extent(0));
+      nonowningLocalResult = unmanaged_result_dev_view_type(globalResult.data(), numVecs);
     idotLocal<SC, LO, GO, NT, unmanaged_result_dev_view_type, dev_mem_space>(nonowningLocalResult, X, Y);
-    if(forceSyncReduce) {
-      //Forced to do synchronous reduction on host buffers, since localResult lives in a CUDA space but we don't have CUDA-aware MPI.
-      result_host_view_type tempLocalResult(Kokkos::ViewAllocateWithoutInitializing("tempLocalResult"), numVecs);
-      //this deep_copy also fences after idotLocal
-      Kokkos::deep_copy(tempLocalResult, nonowningLocalResult);
-      unmanaged_result_host_view_type globalResultNonowning;
-      result_host_view_type tempGlobalResult;
-      //alias user's global result, or allocate temp host buffer for reduction target.
-      if(std::is_same<global_result_memspace, Kokkos::HostSpace>::value)
-        globalResultNonowning = unmanaged_result_host_view_type(globalResult.data(), numVecs);
-      else {
-        tempGlobalResult = result_host_view_type(Kokkos::ViewAllocateWithoutInitializing("tempGlobalResult"), numVecs);
-        globalResultNonowning = unmanaged_result_host_view_type(tempGlobalResult.data(), numVecs);
-      }
-      Teuchos::reduceAll<int, dot_type> (*comm, Teuchos::REDUCE_SUM, numVecs, nonowningLocalResult.data(), globalResultNonowning.data());
-      if(tempGlobalResult.extent(0))
-        Kokkos::deep_copy(globalResult, tempGlobalResult);
-      return Tpetra::Details::Impl::emptyCommRequest();
+    //If MPI not CUDA-aware, must copy local result to HostSpace before iallreduce.
+    //That view will persistent in the CommRequest, and localResult won't.
+    bool communicateFromHost = false;
+#ifdef KOKKOS_ENABLE_CUDA
+    communicateFromHost = !Tpetra::Details::Behavior::assumeMpiIsCudaAware();
+#endif
+    if(communicateFromHost)
+    {
+      result_host_view_type hostLocalResult(Kokkos::ViewAllocateWithoutInitializing("hostLocalResult"), numVecs);
+      //The deep copy fences.
+      Kokkos::deep_copy(hostLocalResult, nonowningLocalResult);
+      return iallreduce(hostLocalResult, globalResult, ::Teuchos::REDUCE_SUM, *comm);
     }
-    else {
-      //Need to fence the execution space here, since iallreduce will read from the output of a device kernel
+    else
+    {
+      //This fence is because the device-space result of idotLocal will be accessed directly by MPI.
       typename dev_mem_space::execution_space().fence();
-      if(allocateLocalResult)
-        return iallreduce(localResult, globalResult, ::Teuchos::REDUCE_SUM, *comm);
-      else
-        return iallreduce(globalResult, globalResult, ::Teuchos::REDUCE_SUM, *comm);
+      return iallreduce(nonowningLocalResult, globalResult, ::Teuchos::REDUCE_SUM, *comm);
     }
   }
 }
