@@ -1,4 +1,7 @@
-SET(SPARC_MiniTrilinos_Packages
+SET(SPARC_MiniTrilinos_Package_Enables
   Kokkos
   SEACAS
+  )
+SET(SPARC_MiniTrilinos_Package_Disables
+  Pamgen
   )
