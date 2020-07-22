@@ -406,19 +406,15 @@ private:
   using ROL::PEBBL::BranchSub<Real>::verbosity_;
   using ROL::PEBBL::BranchSub<Real>::outStream_;
 
-  void round(ROL::Vector<Real> &rx, const ROL::Vector<Real> &x, Real t) const {
-    rx.set(x);
-    ROL::Ptr<std::vector<Real>> data = getData(rx);
-    Real val(0);
-    for (auto it = data->begin(); it != data->end(); ++it) {
-      val = *it;
-      *it = (val < t ? std::floor(val) : std::ceil(val));
-    }
-  }
-
   ROL::Ptr<std::vector<Real>> getData(ROL::Vector<Real> &x) const {
     return ROL::dynamicPtrCast<ROL::StdVector<Real>>(
              ROL::dynamicPtrCast<ROL::PEBBL::MixedVector<Real>>(get(x,0))->getIntegerVariables())->getVector();
+  }
+
+
+  ROL::Ptr<const std::vector<Real>> getConstData(const ROL::Vector<Real> &x) const {
+    return ROL::dynamicPtrCast<const ROL::StdVector<Real>>(
+             ROL::dynamicPtrCast<const ROL::PEBBL::MixedVector<Real>>(get(x,0))->getContinuousVariables())->getVector();
   }
 
   ROL::Ptr<ROL::Vector<Real>> get(ROL::Vector<Real> &x, int ind) const {
@@ -474,37 +470,28 @@ public:
 
   void incumbentHeuristic() {
     Real tol = std::sqrt(ROL::ROL_EPSILON<Real>());
-    Real t(0), val(0);
-    const Real half(0.5);
-    Real lo(0), up(1), mid(0.5), cnorm(10.0*ctol_);
-    int cnt = 0;
-    while (up-lo > tol) {// && cnorm > ctol_) {
-      mid = half * (up + lo);
-      round(*rndSolution_,*solution_,mid);
-      cnorm = infeasibility(*rndSolution_);
-      if (cnorm < ctol_) lo = mid;
-      else               up = mid;
-      if (verbosity_ > 1) {
-        *outStream_ << "  cnt = "           << cnt
-                    << "  infeasibility = " << cnorm
-                    << "  lower bound = "   << lo
-                    << "  upper bound = "   << up << std::endl;
+    const Real zero(0), one(1);
+    rndSolution_->set(*solution_);
+    ROL::Ptr<std::vector<Real>>       idata = getData(*rndSolution_);
+    ROL::Ptr<const std::vector<Real>> cdata = getConstData(*rndSolution_);
+    const int M = idata->size();
+    const int N = cdata->size()/M;
+    Real maxj(0);
+    for (int i = 0; i < M; ++i) {
+      maxj = (*cdata)[i];
+      for (int j = 1; j < N; ++j) {
+        maxj = std::max(maxj,(*cdata)[i + j*M]);
       }
-      cnt++;
+      (*idata)[i] = (maxj > tol ? one : zero);
     }
-    t = mid;
-    if (up == mid) {
-      round(*rndSolution_,*solution_,lo);
-      cnorm = infeasibility(*rndSolution_);
-      t = lo;
-    }
+    Real cnorm = infeasibility(*rndSolution_);
     problem0_->getObjective()->update(*rndSolution_,ROL::UPDATE_TEMP);
-    val = problem0_->getObjective()->value(*rndSolution_,tol);
+    Real val = problem0_->getObjective()->value(*rndSolution_,tol);
     branching_->foundSolution(new ROL::PEBBL::IntegerSolution<Real>(*rndSolution_,val));
     if (verbosity_ > 0) {
       *outStream_ << "FacilityLocationBranchSub::incumbentHeuristic" << std::endl;
-      *outStream_ << "  Incumbent Value:    " << val  << std::endl;
-      *outStream_ << "  Rounding Threshold: " << t    << std::endl;
+      *outStream_ << "  Incumbent Value:         " << val  << std::endl;
+      *outStream_ << "  Incumbent Infeasibility: " << cnorm << std::endl;
     }
   }
 

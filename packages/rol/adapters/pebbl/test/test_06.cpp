@@ -71,7 +71,7 @@ int main(int argc, char* argv[]) {
     /************************* CONSTRUCT PROBLEM FACTORY ******************************************/
     /**********************************************************************************************/
     int M = 5, N = 10;
-    std::vector<RealT> c(M,0.0);
+    std::vector<RealT> c(M,1.0);
     std::vector<RealT> q(M*N,1.0);
     ROL::Ptr<FacilityLocationFactory<RealT>> factory
       = ROL::makePtr<FacilityLocationFactory<RealT>>(c,q,*parlist);
