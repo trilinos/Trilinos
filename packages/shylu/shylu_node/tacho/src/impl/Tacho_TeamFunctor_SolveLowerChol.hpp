@@ -227,6 +227,74 @@ namespace Tacho {
       }
     }
 
+    ///
+    /// Algorithm Variant 2: gemv
+    ///
+    template<typename MemberType>
+    KOKKOS_INLINE_FUNCTION
+    void solve_var2(MemberType &member, const supernode_type &s, value_type *bptr) const { 
+      const value_type one(1), zero(0);
+      {
+        const ordinal_type m = s.m, n = s.n;
+        if (m > 0 && n > 0) {
+          value_type *aptr = s.buf;
+
+          UnmanagedViewType<value_type_matrix> A(aptr, m, n);
+          UnmanagedViewType<value_type_matrix> b(bptr, n, _nrhs); 
+
+          const ordinal_type offm = s.row_begin;
+          auto tT = Kokkos::subview(_t, range_type(offm, offm+m), Kokkos::ALL());
+          
+          Gemv<Trans::ConjTranspose,GemvAlgoType>
+            ::invoke(member, one, A, tT, zero, b);
+        }
+      }
+    }
+
+    template<typename MemberType>
+    KOKKOS_INLINE_FUNCTION
+    void update_var2(MemberType &member, const supernode_type &s, value_type *bptr) const { 
+      {
+        const ordinal_type m = s.m, n = s.n, n_m = n-m;
+        UnmanagedViewType<value_type_matrix> b(bptr, n, _nrhs); 
+        if (m > 0) {
+          const ordinal_type offm = s.row_begin;
+          auto tT = Kokkos::subview(_t, range_type(offm, offm+m), Kokkos::ALL());
+
+          // copy to t
+          Kokkos::parallel_for
+            (Kokkos::TeamVectorRange(member, m*_nrhs),
+             [&](const ordinal_type &k) {
+              const ordinal_type i = k%m, j = k/m;
+              tT(i,j) = b(i,j);
+            });
+
+          if (n_m > 0) {
+            // update
+            const ordinal_type
+              sbeg = s.sid_col_begin + 1, send = s.sid_col_end - 1;
+            for (ordinal_type i=sbeg,ip=0/*is=0*/;i<send;++i) {
+              const ordinal_type
+                tbeg = _sid_block_colidx(i).second,
+                tend = _sid_block_colidx(i+1).second,
+                tcnt = tend - tbeg;
+
+              Kokkos::parallel_for
+                (Kokkos::TeamVectorRange(member, tcnt),
+                 [&](const ordinal_type &ii) {
+                  const ordinal_type it = tbeg+ii;
+                  const ordinal_type is = ip+ii;
+                  //for (ordinal_type it=tbeg;it<tend;++it,++is) {
+                  const ordinal_type row = _gid_colidx(s.gid_col_begin + it);
+                  for (ordinal_type j=0;j<_nrhs;++j)
+                    Kokkos::atomic_add(&_t(row,j), b(is+m,j));
+                });
+              ip += tcnt;
+            }
+          }
+        }
+      }
+    }
 
     template<int Var> struct SolveTag  { enum { variant = Var }; };
     template<int Var> struct UpdateTag { enum { variant = Var }; };
@@ -244,10 +312,11 @@ namespace Tacho {
         value_type *bptr = _buf.data() + _buf_ptr(member.league_rank());
         if      (solve_tag_type::variant == 0) solve_var0(member, s, bptr);
         else if (solve_tag_type::variant == 1) solve_var1(member, s, bptr);
-        //else if (solve_tag_type::variant == 2) solve_var2(member, s, bptr);
-        else printf("Error: abort\n");
+        else if (solve_tag_type::variant == 2) solve_var2(member, s, bptr);
+        else 
+          printf("Error: TeamFunctorSolveLowerChol::SolveTag, algorithm variant is not supported\n");
       } if (mode == -1) {
-        printf("Error: abort\n");
+        printf("Error: TeamFunctorSolveLowerChol::SolveTag, computing mode is not determined\n");
       } else {
         // skip
       }
@@ -264,8 +333,9 @@ namespace Tacho {
         value_type *bptr = _buf.data() + _buf_ptr(member.league_rank());
         if      (update_tag_type::variant == 0) update_var0(member, s, bptr);
         else if (update_tag_type::variant == 1) update_var1(member, s, bptr);
-        //else if (update_tag_type::variant == 2) update_var2(member, s, bptr);
-        else printf("Error: abort\n");
+        else if (update_tag_type::variant == 2) update_var2(member, s, bptr);
+        else 
+          printf("Error: TeamFunctorSolveLowerChol::UpdateTag, algorithm variant is not supported\n");
       } else {
         // skip
       }

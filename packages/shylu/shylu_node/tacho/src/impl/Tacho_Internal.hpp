@@ -40,6 +40,9 @@
 #include "Tacho_SetIdentity.hpp"
 #include "Tacho_SetIdentity_Internal.hpp"
 
+#include "Tacho_ModifyDiagonals.hpp"
+#include "Tacho_ModifyDiagonals_Internal.hpp"
+
 #include "Tacho_Chol.hpp"
 #include "Tacho_Chol_External.hpp"
 #include "Tacho_Chol_Internal.hpp"
