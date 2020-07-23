@@ -17,7 +17,6 @@ namespace Tacho {
 #if defined(TACHO_HAVE_METIS)
   class GraphTools_Metis;
 #endif
-  class GraphTools_CAMD;
   
   class SymbolicTools;
   template<typename ValueType, typename DeviceType> class CrsMatrixBase;
@@ -57,8 +56,6 @@ namespace Tacho {
 
 #if defined(TACHO_HAVE_METIS)
     typedef GraphTools_Metis graph_tools_type;
-#else
-    typedef GraphTools_CAMD graph_tools_type;
 #endif
 
     typedef SymbolicTools symbolic_tools_type;
