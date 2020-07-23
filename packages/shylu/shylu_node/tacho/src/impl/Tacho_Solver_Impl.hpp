@@ -31,7 +31,7 @@ namespace Tacho {
       _device_factor_thres(64),
       _device_solve_thres(128),
       _variant(0),
-      _nstreams(8),
+      _nstreams(16),
       _max_num_superblocks(-1) {}
 
   /// deleted
