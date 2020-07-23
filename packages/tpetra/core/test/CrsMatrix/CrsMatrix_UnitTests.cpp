@@ -340,7 +340,6 @@ namespace { // (anonymous)
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef Tpetra::Vector<Scalar,LO,GO,Node> V;
     typedef typename ST::magnitudeType Mag;
-    typedef Teuchos::ScalarTraits<Mag> MT;
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
