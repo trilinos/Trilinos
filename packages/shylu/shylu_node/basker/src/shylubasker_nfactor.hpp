@@ -2,7 +2,7 @@
 #define SHYLUBASKER_NFACTOR_HPP
 
 //#define BASKER_DEBUG_NFACTOR 
-#define BASKER_TIME
+//#define BASKER_TIME
 
 /*Basker Includes*/
 #include "shylubasker_types.hpp"
@@ -174,7 +174,6 @@ namespace BaskerNS
     {
       for(Int l=1; l <= tree.nlvls; l++)
       {
-
         //#ifdef BASKER_OLD_BARRIER
         //Int lthreads = pow(2,l);
         //Int lnteams = num_threads/lthreads;
@@ -213,9 +212,9 @@ namespace BaskerNS
           init_value(thread_start, num_threads+1,
               (Int) BASKER_MAX_IDX);
           int nt = nfactor_sep_error(thread_start);
-          if((nt == BASKER_SUCCESS)||
-              (nt == BASKER_ERROR) ||
-              (sep_restart > BASKER_RESTART))
+          if((nt == BASKER_SUCCESS) ||
+             (nt == BASKER_ERROR)   ||
+             (sep_restart > BASKER_RESTART))
           {
             FREE_INT_1DARRAY(thread_start);
             break;

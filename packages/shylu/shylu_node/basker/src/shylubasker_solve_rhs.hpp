@@ -212,36 +212,60 @@ namespace BaskerNS
    Entry *_y  // rhs
   )
   {
-#if defined(BASKER_MC64)
-    if (1) {
-      for(Int i = 0; i < gn; i++)
-      {
-        Int row = order_blk_mwm_array(symbolic_row_iperm_array(i));
-        y_view_ptr_scale(i) = scale_row_array(row) * _y[i];
-      }
+//for (Int i = 0; i < gn; i++) printf( " %d %d %d\n",i,perm_inv_comp_array(i),perm_comp_array(i) );
+//printf( "\n" );
+    if (Options.blk_matching == 1 || Options.blk_matching == 2) {
+        for(Int i = 0; i < gn; i++)
+        {
+            Int row = order_blk_mwm_array(symbolic_row_iperm_array(i));
+            y_view_ptr_scale(i) = scale_row_array(row) * _y[i];
+        }
+        permute_inv_and_init_for_solve(&(y_view_ptr_scale(0)), x_view_ptr_copy, y_view_ptr_copy, perm_inv_comp_array, gn);
+//for (Int i = 0; i < gn; i++) printf( " %d %.16e %.16e, %e\n",i,_y[i],x_view_ptr_copy(i),scale_row_array(i) );
+//printf( "\n" );
+        permute_with_workspace(x_view_ptr_copy, numeric_row_iperm_array, gn);
+    } else {
+        permute_inv_and_init_for_solve(_y, x_view_ptr_copy, y_view_ptr_copy, perm_inv_comp_array, gn);
     }
-    permute_inv_and_init_for_solve(&(y_view_ptr_scale(0)), x_view_ptr_copy, y_view_ptr_copy, perm_inv_comp_array, gn);
-#else
-    permute_inv_and_init_for_solve(_y, x_view_ptr_copy, y_view_ptr_copy, perm_inv_comp_array, gn);
-#endif
+//for (Int i = 0; i < gn; i++) printf( " %d %.16e %.16e, %e\n",i,_y[i],x_view_ptr_copy(i),scale_row_array(i) );
+//printf( "\n" );
+    /*if (Options.blk_matching == 1 || Options.blk_matching == 2) {
+        permute_inv_and_init_for_solve(&(x_view_ptr_copy(0)), y_view_ptr_scale, y_view_ptr_copy, numeric_row_iperm_array, gn);
+        for (Int i = 0; i < gn; i++) {
+            x_view_ptr_copy(i) = y_view_ptr_scale(i);
+        }
+    }*/
 
     if (Options.no_pivot == BASKER_FALSE) {
-      permute_inv_with_workspace(x_view_ptr_copy, gperm, gn);
+        permute_inv_with_workspace(x_view_ptr_copy, gperm, gn);
     }
 
-    solve_interface(x_view_ptr_copy,y_view_ptr_copy); //x is now permuted rhs; y is 0 
+    solve_interface(x_view_ptr_copy, y_view_ptr_copy); //x is now permuted rhs; y is 0 
 
+    if (Options.blk_matching == 1 || Options.blk_matching == 2) {
+#if 1
+        permute_and_finalcopy_after_solve(&(y_view_ptr_scale(0)), x_view_ptr_copy, y_view_ptr_copy, numeric_col_iperm_array, gn);
+//for (Int i = 0; i < gn; i++) printf( " +%d:%d: %.16e %.16e -> %.16e\n",i,numeric_col_iperm_array(i),x_view_ptr_copy(i),y_view_ptr_copy(i), y_view_ptr_scale(i));
+
+        const Int poffset = btf_tabs(btf_tabs_offset);
+        for (Int i = 0; i < poffset; i++) {
+            x_view_ptr_copy(i) = y_view_ptr_scale(i);
+        }
+        for (Int i = poffset; i < gn; i++) {
+            y_view_ptr_copy(i) = y_view_ptr_scale(i);
+        }
+#endif
+    }
     permute_and_finalcopy_after_solve(_x, x_view_ptr_copy, y_view_ptr_copy, perm_comp_array, gn);
+//for (Int i = 0; i < gn; i++) printf( " %d:%d; %e %e, %e %e\n",i,perm_comp_array(i),x_view_ptr_copy(i),y_view_ptr_copy(i), _x[i],scale_col_array(i));
 
-#if defined(BASKER_MC64)
-    if (1) {
+    if (Options.blk_matching == 1 || Options.blk_matching == 2) {
       for(Int i = 0; i < gn; i++)
       {
         Int col = symbolic_col_iperm_array(i);
         _x[i] = scale_col_array(col) * _x[i];
       }
     }
-#endif
     return 0;
   }
 

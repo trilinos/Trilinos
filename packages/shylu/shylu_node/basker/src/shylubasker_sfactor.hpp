@@ -182,10 +182,11 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
   }
 
   BASKER_ASSERT(A.nrow > 0, "Basker sfactor assert: A.nrow > 0 failed");
-  MALLOC_INT_1DARRAY(gperm, A.nrow);
+  MALLOC_INT_1DARRAY(gperm, A.nrow);              // pivot
   init_value(gperm,A.nrow, BASKER_MAX_IDX);
-  MALLOC_INT_1DARRAY(gpermi,A.nrow);
+  MALLOC_INT_1DARRAY(gpermi,A.nrow);              // ipiv
   init_value(gpermi, A.nrow, BASKER_MAX_IDX);
+  MALLOC_INT_1DARRAY(gperm_array, A.nrow);        // perm
 
   //Incomplete Factor Setup
   if(Options.incomplete == BASKER_TRUE)

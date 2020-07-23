@@ -1283,6 +1283,7 @@ namespace BaskerNS
     INT_1DARRAY gperm; //global perm due to pivoting
     INT_1DARRAY gpermi;
     INT_1DARRAY gperm_same;
+    INT_1DARRAY gperm_array;
 
 
     // NDE
@@ -1326,6 +1327,9 @@ namespace BaskerNS
 
     INT_1DARRAY symbolic_row_perm_array;
     INT_1DARRAY symbolic_col_perm_array;
+
+    INT_1DARRAY numeric_row_iperm_array;
+    INT_1DARRAY numeric_col_iperm_array;
 
     // For transpose
     INT_1DARRAY vals_crs_transpose; //this will store shuffling and sort of vals due to transpose
@@ -1404,17 +1408,22 @@ namespace BaskerNS
     INT_1DARRAY order_csym_array;
     INT_1DARRAY order_c_csym_array;
     INT_1DARRAY order_blk_mwm_array;
+    INT_1DARRAY order_blk_mwm_inv;
     // row/col scaling
     ENTRY_1DARRAY scale_row_array;
     ENTRY_1DARRAY scale_col_array;
     //for experimental 
     INT_1DARRAY order_blk_amd_array;
+    INT_1DARRAY order_blk_amd_inv;
 
 
     void blk_amd(BASKER_MATRIX &M, INT_1DARRAY p);
 
-    void btf_blk_amd(BASKER_MATRIX &M, INT_1DARRAY p_mwm, INT_1DARRAY p_amd,
-		     INT_1DARRAY btf_nnz, INT_1DARRAY btf_work);
+    void btf_blk_mwm_amd(Int b_start, Int b_num, BASKER_MATRIX &M,
+                         INT_1DARRAY p_mwm, INT_1DARRAY p_amd,
+		         INT_1DARRAY btf_nnz, INT_1DARRAY btf_work);
+    void btf_blk_mwm_amd(BASKER_MATRIX &M, INT_1DARRAY p_mwm, INT_1DARRAY p_amd,
+		         INT_1DARRAY btf_nnz, INT_1DARRAY btf_work);
 
     //basker_order_amd
     void amd_order(BASKER_MATRIX &M,INT_1DARRAY p);

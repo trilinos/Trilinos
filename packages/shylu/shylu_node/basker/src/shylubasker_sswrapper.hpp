@@ -188,8 +188,8 @@ namespace BaskerNS
         printf("Jumbled\n");
 
       //These are round bounds but help in deciding work
-      l_nnz   = Info[TRILINOS_AMD_LNZ];
-      lu_work = Info[TRILINOS_AMD_NMULTSUBS_LU];
+      l_nnz   = Info[TRILINOS_AMD_LNZ];            // 
+      lu_work = Info[TRILINOS_AMD_NMULTSUBS_LU];   // 
 
       return 0;
     }

@@ -749,16 +749,18 @@ namespace BaskerNS
       //Default is on using bottle-neck
       matching      = BASKER_TRUE;
       matching_type = BASKER_MATCHING_BN;
-
+      // matching before BTF in symbolic 
+      // > 0: ShyLUBasker::mwm, 1: trilinos_btf_maxtrans, or 2: MC64 if enabled
+      btf_matching  = 1;
 
       //BTF Ordering Options
       btf             = BASKER_TRUE;
       btf_max_percent = BASKER_BTF_MAX_PERCENT;
       btf_large       = BASKER_BTF_LARGE;
       use_sequential_diag_facto = BASKER_FALSE;
-      // TODO: remove this (matching during symbolic)
-      btf_matching = 0;
-      blk_matching = 0;
+      // MWM matching before AMD 
+      //  <0: no matching, 1: ShyLUBasker::mwm, 2: MC63 if enabled
+      blk_matching = -1;
 
       //Pivot
       no_pivot   = BASKER_FALSE;
@@ -816,7 +818,6 @@ namespace BaskerNS
 
     //AMD Ordering Options
     BASKER_BOOL  amd_dom;
-    BASKER_BOOL  amd_btf;
     
     //Pivot Options
     BASKER_BOOL  no_pivot;

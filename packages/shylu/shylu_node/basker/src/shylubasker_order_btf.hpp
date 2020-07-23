@@ -41,8 +41,8 @@ namespace BaskerNS
     printf("Total num blks: %ld \n", (long)btf_nblks);
     #endif
     
-    Int t_size            = 0;
-    Int t_loc             = 0;
+    Int t_size      = 0;
+    Int t_loc       = 0;
     btf_schedule(0) = btf_tabs_offset;
     //BASKER_BOOL  move_fwd = BASKER_TRUE; //NU
 
@@ -132,10 +132,12 @@ namespace BaskerNS
     #endif
     Int nblks = 0;
 
+    //================================================================
+    //compute BTF
     strong_component(M,nblks,order_btf_array,btf_tabs);
     #ifdef BASKER_TIMER
     order_time = timer_order.seconds();
-    std::cout << " >>> Basker order : strong comp time : " << order_time << std::endl;
+    std::cout << " >>> Basker order : strong comp time  : " << order_time << std::endl;
     #endif
 
     btf_nblks = nblks;
@@ -195,7 +197,6 @@ namespace BaskerNS
     }
     printf("];\n");*/
 
-//std::cout << "amdP=[" << std::endl;
     MALLOC_INT_1DARRAY(vals_order_btf_array, M.nnz);
     //permute_col(M, order_btf_array);                                    //NDE: col-order M
     permute_col_store_valperms(M, order_btf_array, vals_order_btf_array); //NDE: col-order M & Track movement
@@ -203,10 +204,18 @@ namespace BaskerNS
 
     permute_inv(vals_perm_composition, vals_order_btf_array, M.nnz);
 
+
+    //================================================================
+    //compute (optionally MWM and) AMD on each block
+    //NOTE: MWM is computed though both MWM and AMD will be recomputed in numerics
+    //      AMD provides stats about LU
     MALLOC_INT_1DARRAY(order_blk_amd_array, M.ncol);
     init_value(order_blk_amd_array, M.ncol, (Int)0);
     MALLOC_INT_1DARRAY(order_blk_mwm_array, M.ncol);
     init_value(order_blk_mwm_array, M.ncol, (Int)0);
+
+    MALLOC_INT_1DARRAY(order_blk_amd_inv, M.ncol);
+    MALLOC_INT_1DARRAY(order_blk_mwm_inv, M.ncol);
 
     MALLOC_INT_1DARRAY(btf_blk_nnz, nblks+1);
     init_value(btf_blk_nnz, nblks+1, (Int)0);
@@ -214,23 +223,16 @@ namespace BaskerNS
     MALLOC_INT_1DARRAY(btf_blk_work, nblks+1);
     init_value(btf_blk_work, nblks+1, (Int)0);
 
-    /*printf(" B = [\n" );
-    for(Int j = 0; j < M.ncol; j++) {
-      for(Int k = M.col_ptr[j]; k < M.col_ptr[j+1]; k++) {
-        printf("%d %d %.16e\n", M.row_idx[k], j, M.val[k]);
-      }
-    }
-    printf("];\n");*/
-
-//std::cout << "amdP=[" << std::endl;
+    // TODO: skip those if blk_mwm is enabled, since blk_amd is applied at numeric
+    //================================================================
     //Find AMD blk ordering, get nnz, and get work
     #ifdef BASKER_TIMER
     timer_order.reset();
     #endif
-    btf_blk_amd(M, order_blk_mwm_array, order_blk_amd_array, btf_blk_nnz, btf_blk_work);
+    btf_blk_mwm_amd(M, order_blk_mwm_array, order_blk_amd_array, btf_blk_nnz, btf_blk_work);
     #ifdef BASKER_TIMER
     order_time = timer_order.seconds();
-    std::cout << " >>> Basker order : Block AMD time   : " << order_time << std::endl;
+    std::cout << " >>> Basker order : Block MWM+AMD time: " << order_time << std::endl;
     #endif
 
     #ifdef BASKER_DEBUG_ORDER_BTF
@@ -250,83 +252,114 @@ namespace BaskerNS
     printf("\n");
     #endif
 
-    printMTX("A_BEFORE.mtx", M);
-    printVec("AMD.txt", order_blk_amd_array, M.ncol);
+    //printMTX("A_BEFORE.mtx", M);
+    //printVec("AMD.txt", order_blk_amd_array, M.ncol);
 
     #ifdef BASKER_TIMER
     timer_order.reset();
     #endif
-#define BASKER_BLK_MWM
-#if defined(BASKER_BLK_MWM)
-    // > apply matching to rows
-    permute_row(M, order_blk_mwm_array);
-    #if 0 // no need to scale, since val is read for numeric facto
-    //for(Int j = 0; j < M.ncol; j++) printf(" > %d %d %e %e\n",j,order_blk_mwm_array(j),scale_row_array(j),scale_col_array(j));
-    for(Int j = 0; j < M.ncol; j++) {
-      for(Int k = M.col_ptr[j]; k < M.col_ptr[j+1]; k++) {
-//printf( " %d: (%d %d) %e",k, j,M.row_idx[k], M.val[k]);
-        M.val[k] *= (scale_col_array(j) * scale_row_array(M.row_idx[k]));
-//printf( " -> %e (%e, %e)\n",M.val[k],scale_col_array(j), scale_row_array(M.row_idx[k]));
-      }
-    }
-    #endif
-#endif
-
-    // > apply AMD to cols & rows
     MALLOC_INT_1DARRAY(vals_order_blk_amd_array, M.nnz);
-    permute_col_store_valperms(M, order_blk_amd_array, vals_order_blk_amd_array); //NDE: col-order M & Track movement
-    permute_row(M, order_blk_amd_array);
+    if (Options.blk_matching != 1 && Options.blk_matching != 2)
+    {
+      /*printf(" B = [\n" );
+      for(Int j = 0; j < M.ncol; j++) {
+        for(Int k = M.col_ptr[j]; k < M.col_ptr[j+1]; k++) {
+          printf("%d %d %.16e\n", M.row_idx[k], j, M.val[k]);
+        }
+      }
+      printf("];\n");*/
 
-    /*printf(" T = [\n" );
-    for(Int j = 0; j < M.ncol; j++) {
-      for(Int k = M.col_ptr[j]; k < M.col_ptr[j+1]; k++) {
-        //std::cout << M.row_idx[k] << " " << j << " " << M.val[k] << std::endl;
-        printf("%d %d %.16e\n", M.row_idx[k], j, M.val[k]);
+      // > apply matching to rows
+      permute_row(M, order_blk_mwm_array);
+      #if 0 // no need to scale, since val is read for numeric facto
+      //for(Int j = 0; j < M.ncol; j++) printf(" > %d %d %e %e\n",j,order_blk_mwm_array(j),scale_row_array(j),scale_col_array(j));
+      for(Int j = 0; j < M.ncol; j++) {
+        for(Int k = M.col_ptr[j]; k < M.col_ptr[j+1]; k++) {
+          //printf( " %d: (%d %d) %e",k, j,M.row_idx[k], M.val[k]);
+          M.val[k] *= (scale_col_array(j) * scale_row_array(M.row_idx[k]));
+          //printf( " -> %e (%e, %e)\n",M.val[k],scale_col_array(j), scale_row_array(M.row_idx[k]));
+        }
+      }
+      #endif
+
+      /*printf(" C = [\n" );
+      for(Int j = 0; j < M.ncol; j++) {
+        for(Int k = M.col_ptr[j]; k < M.col_ptr[j+1]; k++) {
+          //std::cout << M.row_idx[k] << " " << j << " " << M.val[k] << std::endl;
+          printf("%d %d %.16e\n", M.row_idx[k], j, M.val[k]);
+        }
+      }
+      printf("];\n");*/
+
+      // > apply AMD to cols & rows
+      permute_col_store_valperms(M, order_blk_amd_array, vals_order_blk_amd_array); //NDE: col-order M & Track movement
+      permute_row(M, order_blk_amd_array);
+
+      /*printf(" T = [\n" );
+      for(Int j = 0; j < M.ncol; j++) {
+        for(Int k = M.col_ptr[j]; k < M.col_ptr[j+1]; k++) {
+          //std::cout << M.row_idx[k] << " " << j << " " << M.val[k] << std::endl;
+          printf("%d %d %.16e\n", M.row_idx[k], j, M.val[k]);
+        }
+      }
+      printf("];\n");*/
+
+      //std::cout << "amdP=[" << std::endl;
+      //for (int i = 0; i < M.ncol; i++) std::cout << order_blk_mwm_array(i) << " " << order_blk_amd_array(i) << std::endl;
+      //std::cout << "];" << std::endl;
+      #ifdef BASKER_TIMER
+      order_time = timer_order.seconds();
+      std::cout << " >>> Basker order : val-perm time     : " << order_time << std::endl;
+      timer_order.reset();
+      #endif
+
+      permute_inv(vals_perm_composition, vals_order_blk_amd_array, M.nnz);
+      #ifdef BASKER_TIMER
+      order_time = timer_order.seconds();
+      std::cout << " >>> Basker order : invert perm time  : " << order_time << std::endl;
+      #endif
+
+      // retry with original vals ordering
+      #ifdef BASKER_TIMER
+      timer_order.reset();
+      #endif
+      sort_matrix_store_valperms(M, vals_perm_composition);
+      #ifdef BASKER_TIMER
+      order_time = timer_order.seconds();
+      std::cout << " >>> Basker order : val-perm2 time    : " << order_time << std::endl;
+      timer_order.reset();
+      #endif
+
+      //changed col to row, error.
+      //print to see issue
+      //printMTX("A_TOTAL.mtx", M);
+    } else {
+      // reset matrix permu and scale
+      Entry one = (Entry)1.0;
+      for (Int i = 0; i < (Int)M.nrow; i++) {
+        order_blk_mwm_array(i) = i;
+        order_blk_amd_array(i) = i;
+        scale_row_array(i) = one;
+        scale_col_array(i) = one;
       }
     }
-    printf("];\n");*/
 
-//std::cout << "amdP=[" << std::endl;
-//for (int i = 0; i < M.ncol; i++) std::cout << order_blk_mwm_array(i) << " " << order_blk_amd_array(i) << std::endl;
-//std::cout << std::endl;
-    #ifdef BASKER_TIMER
-    order_time = timer_order.seconds();
-    std::cout << " >>> Basker order : val-perm time    : " << order_time << std::endl;
-    timer_order.reset();
-    #endif
-
-    permute_inv(vals_perm_composition, vals_order_blk_amd_array, M.nnz);
-    #ifdef BASKER_TIMER
-    order_time = timer_order.seconds();
-    std::cout << " >>> Basker order : invert perm time : " << order_time << std::endl;
-    timer_order.reset();
-    #endif
-
-    // retry with original vals ordering
-    sort_matrix_store_valperms(M, vals_perm_composition);
-    #ifdef BASKER_TIMER
-    order_time = timer_order.seconds();
-    std::cout << " >>> Basker order : val-perm2 time   : " << order_time << std::endl;
-    timer_order.reset();
-    #endif
-
-    //changed col to row, error.
-    //print to see issue
-    //printMTX("A_TOTAL.mtx", M);
-
+    //================================================================
+    //Split the matrix M into blocks
     //NDE at this point, vals_perm_composition stores the permutation of the vals array; will be needed during break_into_parts
     break_into_parts2(M, nblks, btf_tabs);
     #ifdef BASKER_TIMER
     order_time = timer_order.seconds();
-    std::cout << " >>> Basker order : partition time   : " << order_time << std::endl;
+    std::cout << " >>> Basker order : partition time    : " << order_time << std::endl;
     timer_order.reset();
     #endif
 
+    //================================================================
     //find schedule
     find_btf_schedule(M, nblks, btf_tabs);
     #ifdef BASKER_TIMER
     order_time = timer_order.seconds();
-    std::cout << " >>> Basker order : schedule time    : " << order_time << std::endl;
+    std::cout << " >>> Basker order : schedule time     : " << order_time << std::endl;
     #endif
 
     if (Options.verbose == BASKER_TRUE)
@@ -654,6 +687,11 @@ namespace BaskerNS
     #endif
       BTF_A = A;
       //Options.btf = BASKER_FALSE; // NDE: how is this handled???
+      //if (A.nrow < Options.btf_large) {
+      //  btf_tabs_offset = 0;
+      //} else {
+      //  btf_tabs_offset = 1;
+      //}
       btf_tabs_offset = 1;
       return 0;
     }

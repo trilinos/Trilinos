@@ -316,8 +316,10 @@ namespace BaskerNS
       
 
   template <class Int, class Entry, class Exe_Space>
-  void Basker<Int,Entry,Exe_Space>::btf_blk_amd
+  void Basker<Int,Entry,Exe_Space>::btf_blk_mwm_amd
   (
+   Int b_start,
+   Int b_num,
    BASKER_MATRIX &M, 
    INT_1DARRAY p_mwm, 
    INT_1DARRAY p_amd, 
@@ -360,18 +362,20 @@ namespace BaskerNS
     ENTRY_1DARRAY temp_val;
     MALLOC_INT_1DARRAY(temp_row, M.nnz);
     MALLOC_ENTRY_1DARRAY(temp_val, M.nnz);
-    //printf("Done with btf_blk_amd malloc \n");
+    //printf("Done with btf_blk_mwm_amd malloc \n");
     //printf("blks: %d \n" , btf_nblks);
 
-    bool flag = true;
+    //const int blk_size_threshold = 1; // was 3
+    const int blk_size_threshold = 3; // was 3
+    bool flag = Options.verbose;
     Entry one = (Entry)1.0;
     MALLOC_ENTRY_1DARRAY (scale_row_array, A.nrow);
     MALLOC_ENTRY_1DARRAY (scale_col_array, A.nrow);
-    for(Int b = 0; b < btf_nblks; b++)
+    for(Int b = b_start; b < b_start+b_num; b++)
     {
       Int blk_size = btf_tabs(b+1) - btf_tabs(b);
 
-      if(blk_size < 3)
+      if(blk_size < blk_size_threshold)
       {
         for(Int ii = 0; ii < blk_size; ++ii)
         {
@@ -382,8 +386,12 @@ namespace BaskerNS
           scale_col_array(ii+btf_tabs(b)) = one;
         }
 
-        btf_work(b) = blk_size*blk_size*blk_size;
-        btf_nnz(b)  = (.5*(blk_size*blk_size) + blk_size);
+        if (b < (Int)btf_work.extent(0)) {
+          btf_work(b) = blk_size*blk_size*blk_size;
+        }
+        if (b < (Int)btf_nnz.extent(0)) {
+          btf_nnz(b)  = (.5*(blk_size*blk_size) + blk_size);
+        }
         continue;
       }
 
@@ -493,7 +501,8 @@ namespace BaskerNS
         //Add to the bigger perm vector
         for(Int ii = 0; ii < blk_size; ii++)
         {
-          p_mwm(tempp(ii)+btf_tabs(b)) = ii+btf_tabs(b);
+          //p_mwm(tempp(ii)+btf_tabs(b)) = ii+btf_tabs(b);
+          p_mwm(ii+btf_tabs(b)) = tempp(ii)+btf_tabs(b);
         }
         /*{
           std::cout << "m2=[" << std::endl;
@@ -513,8 +522,12 @@ namespace BaskerNS
           &(temp_row(0)),&(tempp(0)), 
           l_nnz, lu_work);
 
-      btf_nnz(b)  = l_nnz;
-      btf_work(b) = lu_work;
+      if (b < (Int)btf_nnz.extent(0)) {
+        btf_nnz(b) = l_nnz;
+      }
+      if (b < (Int)btf_work.extent(0)) {
+        btf_work(b) = lu_work;
+      }
 
       #ifdef BASKER_DEBUG_ORDER_AMD
       printf("blk: %d order: \n", b);
@@ -554,6 +567,22 @@ namespace BaskerNS
     FREE_ENTRY_1DARRAY(temp_val);
     
   }//end blk_amd()
+
+  // default: compute blk_mwm & blk_amd of all the blocks
+  template <class Int, class Entry, class Exe_Space>
+  void Basker<Int,Entry,Exe_Space>::btf_blk_mwm_amd
+  (
+   BASKER_MATRIX &M, 
+   INT_1DARRAY p_mwm, 
+   INT_1DARRAY p_amd, 
+   INT_1DARRAY btf_nnz, 
+   INT_1DARRAY btf_work
+  )
+  {
+    Int b_start = 0; 
+    Int b_num = btf_nblks;
+    btf_blk_mwm_amd(b_start, b_num, M, p_mwm, p_amd, btf_nnz, btf_work);
+  }
 
 }//end namespace BaskerNS
 

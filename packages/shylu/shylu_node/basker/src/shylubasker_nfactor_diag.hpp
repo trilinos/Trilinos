@@ -14,7 +14,7 @@
 #include <impl/Kokkos_Timer.hpp>
 #endif 
 
-#define BASKER_TIMER
+//#define BASKER_TIMER
 //#define BASKER_DEBUG_NFACTOR_DIAG
 
 namespace BaskerNS
@@ -290,10 +290,11 @@ namespace BaskerNS
     timer_nfactor_tot.reset();
     #endif
 
+    Entry zero = (Entry)0.0;
     Teuchos::LAPACK<int, Entry> lapack;
     //Entry rmin_ = lapack.LAMCH('E');
     //Entry rmin_ = lapack.LAMCH('U');
-    Entry rmin_ = (Entry)0.0;
+    Entry rmin_ = zero;
 
     //workspace
     Int ws_size       = thread_array(kid).iws_size;
@@ -317,6 +318,7 @@ namespace BaskerNS
     double digv = (double) 0;
 
     Int maxindex = 0;
+    Int digindex = 0;
 
     Int i,j, t;
     Int cu_ltop = 0;
@@ -338,6 +340,12 @@ namespace BaskerNS
     }
     std::cout << "];" << std::endl << std::endl << std::flush;*/
     
+    // initialize perm vector
+    for(Int k = btf_tabs(c); k < btf_tabs(c+1); ++k)
+    {
+      gperm_array(k) = k;
+    }
+
     //for each column
     for(Int k = btf_tabs(c); k < btf_tabs(c+1); ++k)
     {
@@ -455,15 +463,11 @@ namespace BaskerNS
 
       #ifdef BASKER_DEBUG_NFACTOR_DIAG
         {
-          printf("consider, c=%d, i=%d, k=%d->%d: j=%d t=%d: %g (off=%d, %d, %d)\n", c, i, k,k-L.scol, j, t, value, L.srow,L.scol,btf_tabs(c));
+          printf("consider X(%d)=%e, c=%d, i=%d, k=%d->%d: j=%d t=%d: %g (off=%d, %d, %d)\n", j,X(j), c, i, k,k-L.scol, j, t, value, L.srow,L.scol,btf_tabs(c));
         }
       #endif
 
         absv = abs(value);
-        if (j == k - L.scol)
-        {
-          digv = absv;
-        }
         if(t == BASKER_MAX_IDX)
         {
           ++lcnt;
@@ -472,6 +476,12 @@ namespace BaskerNS
             maxv     = absv;
             pivot    = value;
             maxindex = j;
+          }
+          if (gperm_array(j+L.srow) == k)
+          {
+            //printf( " digv=%e (k=%d, perm(%d) = %d)\n",absv,k,j+L.srow,gperm_array(j+L.srow));
+            digv = absv;
+            digindex = j;
           }
         }
       } //for (i = top; i < ws_size)
@@ -483,17 +493,15 @@ namespace BaskerNS
       #endif
       //printf( "c=%d k=%d (%d) maxindex=%d pivot=%e maxv=%e, diag=%e tol=%e\n", c, k, k-btf_tabs(c), maxindex, pivot, maxv, digv, Options.pivot_tol);
 
-#if 1
-      if(maxindex != (Int) k-L.scol &&
-         (Options.no_pivot == BASKER_TRUE || digv > maxv * Options.pivot_tol))
+      // check if diagonal is relatively large enough
+      if(Options.no_pivot == BASKER_TRUE || digv > maxv * Options.pivot_tol)
       {
-        maxindex = (Int) k-L.scol;
+        maxindex = digindex;
         pivot    = X(maxindex);
+        //printf( " -> %d %e\n",maxindex,pivot );
       }
-#endif
 
       #ifdef BASKER_DEBUG_NFACTOR_DEBUG
-      if(k <= 117)
       {
         printf("pivot: %g maxindex: %d K:%d \n", pivot, maxindex, k);
       }
@@ -501,12 +509,12 @@ namespace BaskerNS
 
       ucnt = ws_size - top - lcnt +1;
 
-      if((maxindex == BASKER_MAX_IDX) || (pivot == (Entry)(0)) )
+      if((maxindex == BASKER_MAX_IDX) || (pivot == zero) )
       {
 
         if (Options.verbose == BASKER_TRUE)
         {
-          cout << endl << endl;
+          cout << endl;
           cout << "---------------------------"
             << endl;
           cout << "Error: Matrix is singular, blk: "
@@ -532,6 +540,11 @@ namespace BaskerNS
       #ifdef BASKER_TIMER
       pivot_time += timer_nfactor.seconds();
       #endif
+      // update global perm vector for figuring out diagonal entry
+      int pivot_row = gperm_array(k);
+      gperm_array(k) = gperm_array(maxindex+L.srow);
+      gperm_array(maxindex+L.srow) = pivot_row;
+      //for(Int k = btf_tabs(c); k < btf_tabs(c+1); ++k) printf( "gperm_array(%d) = %d\n",k,gperm_array(k));
 
       //printf("gperm(%d) %d gpermi(%d) %d \n",
       //	 maxindex+L.scol, k  ,
@@ -604,7 +617,7 @@ namespace BaskerNS
       #ifdef BASKER_TIMER
       timer_nfactor.reset();
       #endif
-      L.row_idx(lnnz) = maxindex;
+      L.row_idx(lnnz) = maxindex; // ???
       L.val(lnnz)     = (Entry) 1.0;
       ++lnnz;
 
@@ -723,7 +736,7 @@ namespace BaskerNS
 
     #ifdef BASKER_TIMER
     double total_time = timer_nfactor_tot.seconds();
-    std::cout << " ++ Basker nfactor_diag(" << c << ") : n=" <<  btf_tabs(c+1)-btf_tabs(c)
+    std::cout << " ++ Basker nfactor_diag(" << c << ") : n=" << btf_tabs(c+1)-btf_tabs(c)
               << " nnz(L)=" << lnnz << " nnz(U)= " << unnz << std::endl;
     std::cout << " ++ Basker nfactor_diag(" << c << ") : init   time: " << initi_time << std::endl;
     std::cout << " ++ Basker nfactor_diag(" << c << ") : update time: " << solve_time << std::endl;
