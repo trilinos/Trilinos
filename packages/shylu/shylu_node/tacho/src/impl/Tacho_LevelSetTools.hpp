@@ -1103,11 +1103,13 @@ namespace Tacho {
 #if defined(KOKKOS_ENABLE_CUDA)
       ordinal_type q(0);
 #endif 
+      exec_space exec_instance;
       for (ordinal_type p=pbeg;p<pend;++p) {
         const ordinal_type sid = _h_level_sids(p);
         if (_h_solve_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA)
           _status = cublasSetStream(_handle_blas, _cuda_streams[q%_nstreams]); checkDeviceStatus("cublasSetStream");
+          exec_instance = _exec_instances[qid];
           ++q;
 #endif          
           const auto &s = _h_supernodes(sid);
@@ -1125,6 +1127,7 @@ namespace Tacho {
                 const UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n;
                 Gemv<Trans::NoTranspose,Algo::OnDevice>
                   ::invoke(_handle_blas, minus_one, AR, bB, one, tT); checkDeviceBlasStatus("gemv");
+                exec_instance.fence();
               }
               _status = Trsv<Uplo::Upper,Trans::NoTranspose,Algo::OnDevice>
                 ::invoke(_handle_blas, Diag::NonUnit(), AL, tT); checkDeviceBlasStatus("trsv");
