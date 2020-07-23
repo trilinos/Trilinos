@@ -1108,7 +1108,9 @@ namespace Tacho {
         const ordinal_type sid = _h_level_sids(p);
         if (_h_solve_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA)
-          _status = cublasSetStream(_handle_blas, _cuda_streams[q%_nstreams]); checkDeviceStatus("cublasSetStream");
+          const ordinal_type qid = q%_nstreams;
+          const auto mystream = _cuda_streams[qid];
+          _status = cublasSetStream(_handle_blas, mystream); checkDeviceStatus("cublasSetStream");
           exec_instance = _exec_instances[qid];
           ++q;
 #endif          
