@@ -105,6 +105,7 @@ namespace Tacho {
     KOKKOS_INLINE_FUNCTION
     void factorize_var1(MemberType &member,
                         const supernode_type &s,
+                        const value_type_matrix &T, 
                         const value_type_matrix &ABR) const {
       const value_type one(1), minus_one(-1), zero(0);
       const ordinal_type m = s.m, n = s.n, n_m = n-m;
@@ -113,7 +114,6 @@ namespace Tacho {
         UnmanagedViewType<value_type_matrix> ATL(aptr, m, m); aptr += m*m;
         Chol<Uplo::Upper,CholAlgoType>::invoke(member, ATL);
         
-        UnmanagedViewType<value_type_matrix> T(ABR.data(), m, m); 
         if (n_m > 0) {
           member.team_barrier();
           UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
@@ -136,6 +136,43 @@ namespace Tacho {
             ::invoke(member, ATL);
           Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,TrsmAlgoType>
             ::invoke(member, Diag::NonUnit(), one, T, ATL);
+        }
+      }
+    }
+
+    template<typename MemberType>
+    KOKKOS_INLINE_FUNCTION
+    void factorize_var2(MemberType &member,
+                        const supernode_type &s,
+                        const value_type_matrix &T,
+                        const value_type_matrix &ABR) const {
+      const value_type one(1), minus_one(-1), zero(0);
+      const ordinal_type m = s.m, n = s.n, n_m = n-m;
+      if (m > 0) {
+        value_type *aptr = s.buf;
+        UnmanagedViewType<value_type_matrix> ATL(aptr, m, m); aptr += m*m;
+        Chol<Uplo::Upper,CholAlgoType>::invoke(member, ATL);
+        SetIdentity<Algo::Internal>::invoke(member, T);
+        Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,TrsmAlgoType>
+          ::invoke(member, Diag::NonUnit(), one, ATL, T);
+        if (n_m > 0) {
+          member.team_barrier();
+          UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
+          Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,TrsmAlgoType>
+            ::invoke(member, Diag::NonUnit(), one, ATL, ATR);          
+          member.team_barrier();
+          Herk<Uplo::Upper,Trans::ConjTranspose,HerkAlgoType>
+            ::invoke(member, minus_one, ATR, zero, ABR);
+          member.team_barrier();
+          Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,TrsmAlgoType>
+            ::invoke(member, Diag::NonUnit(), minus_one, ATL, ATR);
+          member.team_barrier();
+          Copy<Algo::Internal>
+            ::invoke(member, ATL, T);
+        } else {
+          member.team_barrier();
+          Copy<Algo::Internal>
+            ::invoke(member, ATL, T);
         }
       }
     }
@@ -252,15 +289,22 @@ namespace Tacho {
         using factorize_tag_type = FactorizeTag<Var>;
 
         const auto &s = _info.supernodes(sid);
-        const ordinal_type n_m = s.n-s.m;
-        UnmanagedViewType<value_type_matrix> ABR(_buf.data()+_buf_ptr(lid), n_m, n_m);
+        const ordinal_type m = s.m, n = s.n, n_m = n-m;
+        const auto bufptr = _buf.data()+_buf_ptr(lid);
         if        (factorize_tag_type::variant == 0) { 
+          UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
           factorize_var0(member, s, ABR);
         } else if (factorize_tag_type::variant == 1) {
-          factorize_var1(member, s, ABR);
+          UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
+          UnmanagedViewType<value_type_matrix> T(bufptr, m, m);
+          factorize_var1(member, s, T, ABR);
+        } else if (factorize_tag_type::variant == 2) {
+          UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
+          UnmanagedViewType<value_type_matrix> T(bufptr+ABR.span(), m, m);
+          factorize_var2(member, s, T, ABR);
         }
       } else if (mode == -1) {
-        printf("Error: abort\n");
+        printf("Error: TeamFunctorFactorizeChol, computing mode is not determined\n");
       } else {
         // skip
       }
