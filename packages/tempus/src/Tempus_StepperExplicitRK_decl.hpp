@@ -155,7 +155,6 @@ public:
     virtual void setUseEmbedded(bool a) { useEmbedded_ = a; }
     virtual bool getUseEmbedded() const { return useEmbedded_; }
     virtual bool getUseEmbeddedDefault() const { return false; }
-
   //@}
 
 
@@ -197,6 +196,7 @@ protected:
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               abs_u0;
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               abs_u;
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               sc;
+
 };
 
 } // namespace Tempus
