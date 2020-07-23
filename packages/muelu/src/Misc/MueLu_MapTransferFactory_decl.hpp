@@ -43,12 +43,6 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
- * MueLu_ContactMapTransferFactory_decl.hpp
- *
- *  Created on: Aug 2, 2012
- *      Author: wiesner
- */
 
 #ifndef MUELU_MAPTRANSFERFACTORY_DECL_HPP_
 #define MUELU_MAPTRANSFERFACTORY_DECL_HPP_
@@ -111,8 +105,8 @@ namespace MueLu {
 
   private:
 
-    //std::string              mapName_;      ///< name of input and output variable
-    mutable RCP<const FactoryBase>   mapFact_;      ///< generating factory of input variable
+    //! Generating factory of input variable
+    mutable RCP<const FactoryBase> mapFact_;
 
   }; // class MapTransferFactory
 
