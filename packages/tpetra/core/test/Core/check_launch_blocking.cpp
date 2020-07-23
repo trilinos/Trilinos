@@ -80,6 +80,25 @@ int main(int argc, char** argv)
     //Initialization succeeded, so clean up
     Tpetra::finalize();
   }
+  else
+  {
+    //Tpetra wasn't fully initialized, but Kokkos and MPI might have been.
+    //Finalize those to avoid extra error messages when test terminates.
+    if(Kokkos::is_initialized())
+    {
+      //Tpetra not fully initialized, but Kokkos was
+      Kokkos::finalize();
+    }
+#ifdef HAVE_TPETRACORE_MPI
+    int mpiInitialized = 0;
+    MPI_Initialized(&mpiInitialized);
+    if(mpiInitialized)
+    {
+      //Tpetra not fully initialized, but MPI was
+      MPI_Finalize();
+    }
+#endif
+  }
   if(threw && !initializeShouldThrow)
   {
     std::cerr << "TEST FAILED: Tpetra::initialize() threw an exception when it shouldn't have\n";
