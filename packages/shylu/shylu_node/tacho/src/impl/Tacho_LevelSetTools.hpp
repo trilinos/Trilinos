@@ -707,7 +707,7 @@ namespace Tacho {
 
               value_type *bptr = _buf.data()+h_buf_factor_ptr(p-pbeg);
               UnmanagedViewType<value_type_matrix> T(bptr, m, m);
-              _status = SetIdentity<Algo::OnDevice>::invoke(exec_instance, T); checkDeviceBlasStatus("SetIdentity");
+              _status = SetIdentity<Algo::OnDevice>::invoke(exec_instance, T, one); checkDeviceBlasStatus("SetIdentity");
               exec_instance.fence();
               _status = Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Algo::OnDevice>
                 ::invoke(_handle_blas, Diag::NonUnit(), one, ATL, T); checkDeviceBlasStatus("trsm");
@@ -772,28 +772,39 @@ namespace Tacho {
                 ::invoke(_handle_lapack, ATL, W); checkDeviceLapackStatus("chol");
 
               value_type *bptr = _buf.data()+h_buf_factor_ptr(p-pbeg);
-              UnmanagedViewType<value_type_matrix> T(bptr+n_m*n_m, m, m); 
-              _status = SetIdentity<Algo::OnDevice>::invoke(exec_instance, T); checkDeviceBlasStatus("SetIdentity");
-              exec_instance.fence();
-              _status = Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Algo::OnDevice>
-                ::invoke(_handle_blas, Diag::NonUnit(), one, ATL, T); checkDeviceBlasStatus("trsm");
               if (n_m > 0) {
                 exec_instance.fence();
-                UnmanagedViewType<value_type_matrix> ABR(bptr, n_m, n_m); 
+                UnmanagedViewType<value_type_matrix> ABR(bptr, n_m, n_m); bptr += ABR.span();
                 UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n_m;
+                
                 _status = Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,Algo::OnDevice>
                   ::invoke(_handle_blas, Diag::NonUnit(), one, ATL, ATR); checkDeviceBlasStatus("trsm");
                 exec_instance.fence();
                 _status = Herk<Uplo::Upper,Trans::ConjTranspose,Algo::OnDevice>
                   ::invoke(_handle_blas, minus_one, ATR, zero, ABR);
                 exec_instance.fence();                
-                _status = Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Algo::OnDevice>
-                  ::invoke(_handle_blas, Diag::NonUnit(), minus_one, ATL, ATR); checkDeviceBlasStatus("trsm");
+
+                /// additional things
+                UnmanagedViewType<value_type_matrix> T(bptr, m, m); 
+                _status = Copy<Algo::OnDevice>::invoke(exec_instance, T, ATL); checkDeviceBlasStatus("Copy");
                 exec_instance.fence();
-                _status = Copy<Algo::OnDevice>::invoke(exec_instance, ATL, T); checkDeviceBlasStatus("Copy");
+                _status = SetIdentity<Algo::OnDevice>::invoke(exec_instance, ATL, minus_one); checkDeviceBlasStatus("SetIdentity");
+                exec_instance.fence();
+
+                UnmanagedViewType<value_type_matrix> AT(ATL.data(), m, n);
+                _status = Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Algo::OnDevice>
+                  ::invoke(_handle_blas, Diag::NonUnit(), minus_one, T, AT); checkDeviceBlasStatus("trsm");
+                exec_instance.fence();
               } else {
                 exec_instance.fence();
-                _status = Copy<Algo::OnDevice>::invoke(exec_instance, ATL, T); checkDeviceBlasStatus("Copy");
+                /// additional things
+                UnmanagedViewType<value_type_matrix> T(bptr, m, m); 
+                _status = Copy<Algo::OnDevice>::invoke(exec_instance, T, ATL); checkDeviceBlasStatus("Copy");
+                exec_instance.fence();
+                _status = SetIdentity<Algo::OnDevice>::invoke(exec_instance, ATL, one); checkDeviceBlasStatus("SetIdentity");
+                exec_instance.fence();
+                _status = Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Algo::OnDevice>
+                  ::invoke(_handle_blas, Diag::NonUnit(), one, T, ATL); checkDeviceBlasStatus("trsm");
               }
             }
           }

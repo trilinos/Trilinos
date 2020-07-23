@@ -122,7 +122,7 @@ namespace Tacho {
           Copy<Algo::Internal>
             ::invoke(member, T, ATL);
           SetIdentity<Algo::Internal>
-            ::invoke(member, ATL);
+            ::invoke(member, ATL, one);
           Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,TrsmAlgoType>
             ::invoke(member, Diag::NonUnit(), one, T, ATL);
           member.team_barrier();
@@ -133,7 +133,7 @@ namespace Tacho {
           Copy<Algo::Internal>
             ::invoke(member, T, ATL);
           SetIdentity<Algo::Internal>
-            ::invoke(member, ATL);
+            ::invoke(member, ATL, one);
           Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,TrsmAlgoType>
             ::invoke(member, Diag::NonUnit(), one, T, ATL);
         }
@@ -152,9 +152,7 @@ namespace Tacho {
         value_type *aptr = s.buf;
         UnmanagedViewType<value_type_matrix> ATL(aptr, m, m); aptr += m*m;
         Chol<Uplo::Upper,CholAlgoType>::invoke(member, ATL);
-        SetIdentity<Algo::Internal>::invoke(member, T);
-        Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,TrsmAlgoType>
-          ::invoke(member, Diag::NonUnit(), one, ATL, T);
+
         if (n_m > 0) {
           member.team_barrier();
           UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
@@ -164,15 +162,24 @@ namespace Tacho {
           Herk<Uplo::Upper,Trans::ConjTranspose,HerkAlgoType>
             ::invoke(member, minus_one, ATR, zero, ABR);
           member.team_barrier();
+          /// additional things
+          Copy<Algo::Internal>
+            ::invoke(member, T, ATL);
+          member.team_barrier();
+          SetIdentity<Algo::Internal>::invoke(member, ATL, minus_one);
+          member.team_barrier();
+          UnmanagedViewType<value_type_matrix> AT(ATL.data(), m, n);  
           Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,TrsmAlgoType>
-            ::invoke(member, Diag::NonUnit(), minus_one, ATL, ATR);
-          member.team_barrier();
-          Copy<Algo::Internal>
-            ::invoke(member, ATL, T);
+            ::invoke(member, Diag::NonUnit(), minus_one, T, AT);
         } else {
-          member.team_barrier();
+          /// additional things
           Copy<Algo::Internal>
-            ::invoke(member, ATL, T);
+            ::invoke(member, T, ATL);
+          member.team_barrier();
+          SetIdentity<Algo::Internal>::invoke(member, ATL, one);
+          member.team_barrier();
+          Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,TrsmAlgoType>
+            ::invoke(member, Diag::NonUnit(), one, T, ATL);
         }
       }
     }
