@@ -304,7 +304,7 @@ IF(HAVE_SHYLU_DDFROSCH_ZOLTAN2)
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_TLP_RGDSW_ML_DIM2_TPETRA
-ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_RGDSW_Klu_ML--USETPETRA"
+ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_RGDSW_Klu_ML.xml--USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
