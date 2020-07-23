@@ -84,10 +84,12 @@ int main(int argc, char** argv)
   {
     std::cerr << "TEST FAILED: Tpetra::initialize() threw an exception when it shouldn't have\n";
     std::cerr << "(CUDA arch is >= Pascal, so launch blocking not needed).\n";
+    success = false;
   }
   else if(!threw && initializeShouldThrow)
   {
     std::cerr << "TEST FAILED: Tpetra::initialize() did not catch CUDA_LAUNCH_BLOCKING being unset.\n";
+    success = false;
   }
   if(success)
     std::cout << "End Result: TEST PASSED\n";
