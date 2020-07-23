@@ -40,6 +40,7 @@
 #ifndef TPETRA_DETAILS_CHECKLAUNCHBLOCKING_HPP
 #define TPETRA_DETAILS_CHECKLAUNCHBLOCKING_HPP
 
+#include "TpetraCore_config.h"
 #include <cstdlib>
 #include <stdexcept>
 #include "Kokkos_Core.hpp"
