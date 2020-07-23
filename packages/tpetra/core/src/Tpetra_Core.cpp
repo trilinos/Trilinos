@@ -150,7 +150,7 @@ namespace Tpetra {
           tpetraInitializedKokkos_ = true;
         }
       }
-      Details::verifyOldCudaLaunchBlocking();
+      Details::checkOldCudaLaunchBlocking();
       const bool kokkosIsInitialized =
         Kokkos::is_initialized ();
       TEUCHOS_TEST_FOR_EXCEPTION

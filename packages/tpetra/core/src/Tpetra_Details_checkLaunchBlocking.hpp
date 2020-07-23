@@ -49,7 +49,7 @@ namespace Tpetra {
 namespace Details {
 #ifdef HAVE_TPETRACORE_CUDA
   //Verify that for pre-Pascal CUDA architectures, $CUDA_LAUNCH_BLOCKING == 1
-  inline void verifyOldCudaLaunchBlocking()
+  inline void checkOldCudaLaunchBlocking()
   {
     if(!Kokkos::is_initialized())
       throw std::logic_error("Kokkos must be initialized in order to check CUDA_LAUNCH_BLOCKING setting.");
@@ -68,7 +68,7 @@ namespace Details {
     }
   }
 #else
-  inline void verifyOldCudaLaunchBlocking() {}
+  inline void checkOldCudaLaunchBlocking() {}
 #endif
 }}
 

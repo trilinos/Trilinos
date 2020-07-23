@@ -1,3 +1,4 @@
+/*
 // @HEADER
 // ***********************************************************************
 //
@@ -38,38 +39,58 @@
 //
 // ************************************************************************
 // @HEADER
+*/
 
-#include "Tpetra_Details_initializeKokkos.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
+#include "Tpetra_Core.hpp"
 #include "Kokkos_Core.hpp"
-#include "Tpetra_Details_checkLaunchBlocking.hpp"
-#include <cstdlib> // std::atexit
-#include <string>
-#include <vector>
+#include <cstring>
 
-namespace Tpetra {
-namespace Details {
-
-void
-initializeKokkos ()
+int main(int argc, char** argv)
 {
-  if (! Kokkos::is_initialized ()) {
-    std::vector<std::string> args = Teuchos::GlobalMPISession::getArgv ();
-    int narg = static_cast<int> (args.size ()); // must be nonconst
-
-    std::vector<char*> args_c (narg);
-    for (int k = 0; k < narg; ++k) {
-      // mfh 25 Oct 2017: I feel a bit uncomfortable about this
-      // const_cast, but there is no other way to pass
-      // command-line arguments to Kokkos::initialize.
-      args_c[k] = const_cast<char*> (args[k].c_str ());
-    }
-    Kokkos::initialize (narg, narg == 0 ? nullptr : args_c.data ());
-    checkOldCudaLaunchBlocking();
-    std::atexit (Kokkos::finalize_all);
+  bool success = true;
+  //These architecture macros are defined in KokkosCore_config.h (included by Core)
+#if defined(KOKKOS_ARCH_KEPLER) || defined(KOKKOS_ARCH_MAXWELL)
+  constexpr bool initializeShouldThrow = true;
+#else
+  constexpr bool initializeShouldThrow = false;
+#endif
+  bool threw = false;
+  try
+  {
+    Tpetra::initialize(&argc, &argv);
   }
+  catch(std::exception& e)
+  {
+    //Make sure the error's message is the one about launch blocking
+    //(it mentions CUDA_LAUNCH_BLOCKING verbatim)
+    //Otherwise it might be an unrelated exception, in which case this test should fail.
+    if(!strstr(e.what(), "CUDA_LAUNCH_BLOCKING"))
+    {
+      std::cerr << "TEST FAILED: Tpetra::initialize() threw unrelated exception.\n";
+      success = false;
+    }
+    else
+    {
+      std::cout << "Tpetra::initialize threw exception because CUDA_LAUNCH_BLOCKING required but not set.\n";
+    }
+    threw = true;
+  }
+  if(!threw)
+  {
+    //Initialization succeeded, so clean up
+    Tpetra::finalize();
+  }
+  if(threw && !initializeShouldThrow)
+  {
+    std::cerr << "TEST FAILED: Tpetra::initialize() threw an exception when it shouldn't have\n";
+    std::cerr << "(CUDA arch is >= Pascal, so launch blocking not needed).\n";
+  }
+  else if(!threw && initializeShouldThrow)
+  {
+    std::cerr << "TEST FAILED: Tpetra::initialize() did not catch CUDA_LAUNCH_BLOCKING being unset.\n";
+  }
+  if(success)
+    std::cout << "End Result: TEST PASSED\n";
+  return 0;
 }
-
-} // namespace Details
-} // namespace Tpetra
 
