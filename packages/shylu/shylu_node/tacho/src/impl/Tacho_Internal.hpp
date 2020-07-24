@@ -21,7 +21,6 @@
 #include "Tacho_MatrixMarket.hpp"           
 
 #include "Tacho_Graph.hpp"
-#include "Tacho_GraphTools_CAMD.hpp"        
 #include "Tacho_GraphTools_Metis.hpp"       
 #include "Tacho_GraphTools_Scotch.hpp"      
 

@@ -21,8 +21,6 @@
 #include "Tacho_GraphTools_Metis.hpp"
 #endif
 
-#include "Tacho_GraphTools_CAMD.hpp"
-
 using namespace Tacho;
 
 typedef CrsMatrixBase<ValueType,HostDeviceType>   CrsMatrixBaseHostType;
@@ -73,8 +71,6 @@ TEST( Symbolic, functions ) {
   GraphTools_Metis T(G);
 #elif defined(TACHO_HAVE_SCOTCH)
   GraphTools_Scotch T(G);
-#else
-  GraphTools_CAMD T(G);
 #endif
   T.reorder();
 
@@ -161,8 +157,6 @@ TEST( Symbolic, interface ) {
   GraphTools_Metis T(G);
 #elif defined(TACHO_HAVE_SCOTCH)
   GraphTools_Scotch T(G);
-#else
-  GraphTools_CAMD T(G);
 #endif
   T.reorder();
 

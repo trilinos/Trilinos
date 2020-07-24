@@ -21,8 +21,6 @@
 #include "Tacho_GraphTools_Metis.hpp"
 #endif
 
-#include "Tacho_GraphTools_CAMD.hpp"
-
 #include "Tacho_NumericTools.hpp"
 
 using namespace Tacho;
@@ -112,8 +110,6 @@ TEST( Numeric, Cholesky_Serial ) {
   GraphTools_Metis T(G);
 #elif defined(TACHO_HAVE_SCOTCH)
   GraphTools_Scotch T(G);
-#else
-  GraphTools_CAMD T(G);
 #endif
   T.reorder();
 
@@ -164,8 +160,6 @@ TEST( Numeric, factorizeCholesky_Parallel ) {
   GraphTools_Metis T(G);
 #elif defined(TACHO_HAVE_SCOTCH)
   GraphTools_Scotch T(G);
-#else
-  GraphTools_CAMD T(G);
 #endif
   T.reorder();
 
