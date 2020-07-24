@@ -243,7 +243,6 @@ namespace BaskerNS
     solve_interface(x_view_ptr_copy, y_view_ptr_copy); //x is now permuted rhs; y is 0 
 
     if (Options.blk_matching == 1 || Options.blk_matching == 2) {
-#if 1
         permute_and_finalcopy_after_solve(&(y_view_ptr_scale(0)), x_view_ptr_copy, y_view_ptr_copy, numeric_col_iperm_array, gn);
 //for (Int i = 0; i < gn; i++) printf( " +%d:%d: %.16e %.16e -> %.16e\n",i,numeric_col_iperm_array(i),x_view_ptr_copy(i),y_view_ptr_copy(i), y_view_ptr_scale(i));
 
@@ -254,7 +253,6 @@ namespace BaskerNS
         for (Int i = poffset; i < gn; i++) {
             y_view_ptr_copy(i) = y_view_ptr_scale(i);
         }
-#endif
     }
     permute_and_finalcopy_after_solve(_x, x_view_ptr_copy, y_view_ptr_copy, perm_comp_array, gn);
 //for (Int i = 0; i < gn; i++) printf( " %d:%d; %e %e, %e %e\n",i,perm_comp_array(i),x_view_ptr_copy(i),y_view_ptr_copy(i), _x[i],scale_col_array(i));
@@ -514,9 +512,8 @@ namespace BaskerNS
       printf("Upper solve blk: %d \n", b);
       #endif
 
-      BASKER_MATRIX &U = LU(b)(LU_size(b)-1);
-
       //U\y -> x
+      BASKER_MATRIX &U = LU(b)(LU_size(b)-1);
       upper_tri_solve(U,y,x); // NDE: y , x positions swapped...
                               //      seems role of x and y changed...
 
@@ -527,8 +524,8 @@ namespace BaskerNS
             b, bb);
         #endif
 
-        BASKER_MATRIX &UB = LU(b)(bb);
         //y = UB*x;
+        BASKER_MATRIX &UB = LU(b)(bb);
         neg_spmv(UB,x,y);
       }
     }//end over all blks

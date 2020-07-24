@@ -248,12 +248,16 @@ namespace BaskerNS
     }
     printf( "];\n" );*/
 
+    //--------------------------------------------------
     // 0: Basker 1: trilinos 2: MC64
     if(Options.verbose == BASKER_TRUE)
     {
         std::cout << " ++ calling match_ordering( " << Options.btf_matching << " )" << std::endl;
     }
-    match_ordering(Options.btf_matching);
+    if (match_ordering(Options.btf_matching) != BASKER_SUCCESS) {
+        std::cout << " ++ match_ordering failed ++ " << std::endl;
+        return BASKER_ERROR;
+    }
     /*printf( " P=[\n" );
     for (int i = 0; i < A.ncol; i++) printf( "%d %d\n", i, order_match_array(i));
     printf( "];\n" );*/
@@ -380,7 +384,6 @@ namespace BaskerNS
       }
       permute_col_store_valperms(BTF_A, order_csym_array, vals_order_csym_array); //NDE: Track movement of vals (lin_ind of row,col) here
       permute_inv(vals_order_ndbtfa_array, vals_order_csym_array, BTF_A.nnz); //must permute the array holding the perms
-      //IY: need to sort twice?
       sort_matrix_store_valperms(BTF_A, vals_order_ndbtfa_array);
 
       permute_row(BTF_A, order_csym_array);
@@ -458,7 +461,6 @@ namespace BaskerNS
     if(btf_nblks > 1) //else only BTF_A exists, A is assigned directly to it...
     {
       if ( btf_tabs_offset == 0 && BTF_C.nnz > 0 ) {
-        //sort_matrix(BTF_C); // NDE: already sorted above; this is redundant, unless btf_tabs_offset = 0
         // NDE: May need to add permutation for this case...
         //new for sfactor_copy2 replacement
         btfc_nnz = BTF_C.nnz;
@@ -468,8 +470,9 @@ namespace BaskerNS
           vals_order_ndbtfc_array(i) = i;
           inv_vals_order_ndbtfc_array(i) = i;
         }
-        sort_matrix_store_valperms(BTF_C, vals_order_ndbtfc_array); // NDE: already sorted above; this is redundant, unless btf_tabs_offset = 0
-        permute_inv(inv_vals_order_ndbtfc_array, vals_order_ndbtfc_array, BTF_C.nnz);
+        // NDE: already sorted above; this is redundant, unless btf_tabs_offset = 0
+        //sort_matrix_store_valperms(BTF_C, vals_order_ndbtfc_array);
+        //permute_inv(inv_vals_order_ndbtfc_array, vals_order_ndbtfc_array, BTF_C.nnz);
       }
 
       if(Options.verbose_matrix_out == BASKER_TRUE)
@@ -477,13 +480,12 @@ namespace BaskerNS
 	printMTX("C_Symbolic.mtx", BTF_C);
       }
     }
-
     #ifdef BASKER_TIMER
     order_time = timer_order.seconds();
     std::cout << " ++ Basker order : sort(C) time : " << order_time << std::endl;
     #endif
     
-    return 0;
+    return BASKER_SUCCESS;
   }//end btf_order2
 
   template <class Int, class Entry, class Exe_Space>
@@ -634,6 +636,7 @@ namespace BaskerNS
     } else {
       match_flag = BASKER_TRUE;
 
+      int num_match = min(A.nrow, A.ncol);
       MALLOC_INT_1DARRAY(order_match_array, A.nrow);
       if(Options.incomplete == BASKER_FALSE)
       {
@@ -642,7 +645,7 @@ namespace BaskerNS
           if(Options.verbose == BASKER_TRUE) {
             std::cout << " ++ calling ShyLUBasker::MWM (" << A.nrow << " x " << A.ncol << ") ++ " << std::endl;
           }
-          mwm(A, order_match_array);
+          num_match = mwm(A, order_match_array);
         } 
         else if (option == 1) {
           double maxwork = 0.0;
@@ -652,12 +655,8 @@ namespace BaskerNS
           if(Options.verbose == BASKER_TRUE) {
             std::cout << " ++ calling TRILINOS_BTF_MAXTRANS (" << A.nrow << " x " << A.ncol << ") ++ " << std::endl;
           }
-          int nmatch = trilinos_btf_maxtrans (A.nrow, A.ncol, &(A.col_ptr(0)), &(A.row_idx(0)), maxwork,
+          num_match = trilinos_btf_maxtrans (A.nrow, A.ncol, &(A.col_ptr(0)), &(A.row_idx(0)), maxwork,
                                               &work, &(order_match_array(0)), &(WORK(0)));
-          if(nmatch < min(A.nrow, A.ncol)) {
-            std::cout << " ++ TRILINOS_BTF_MAXTRANS returned " << nmatch
-                      << " less than " << A.nrow << " or " << A.ncol << std::endl;
-          }
           FREE_INT_1DARRAY(WORK);
         }
         #ifdef BASKER_MC64
@@ -706,6 +705,12 @@ namespace BaskerNS
           order_match_array(i) = i;
         }
       }
+      if(num_match < min(A.nrow, A.ncol)) {
+        std::cout << " ++ Num of matches returned " << num_match
+                  << " is less than nrow = " << A.nrow << " or ncol = " << A.ncol
+                  << std::endl;
+        return BASKER_ERROR;
+      }
       permute_row(A, order_match_array);
 
       //We want to test what the match ordering does if
@@ -725,7 +730,7 @@ namespace BaskerNS
     }
 
     //May have to call row_idx sort
-    return 0;
+    return BASKER_SUCCESS;
   }//end match_ordering()
 
 

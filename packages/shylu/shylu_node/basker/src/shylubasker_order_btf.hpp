@@ -323,7 +323,8 @@ namespace BaskerNS
       #ifdef BASKER_TIMER
       timer_order.reset();
       #endif
-      sort_matrix_store_valperms(M, vals_perm_composition);
+      // Skip: sorting here.
+      //sort_matrix_store_valperms(M, vals_perm_composition);
       #ifdef BASKER_TIMER
       order_time = timer_order.seconds();
       std::cout << " >>> Basker order : val-perm2 time    : " << order_time << std::endl;

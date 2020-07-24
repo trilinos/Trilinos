@@ -451,7 +451,12 @@ namespace BaskerNS
          }
       */
 
-      btf_order2();
+      //-------------------------------------------------
+      //Find BTF ordering
+      if(btf_order2() != BASKER_SUCCESS)
+      {
+        return BASKER_ERROR;
+      }
 
       if(Options.verbose == BASKER_TRUE)
       {

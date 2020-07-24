@@ -217,7 +217,11 @@ namespace BaskerNS
     BASKER_MATRIX  &L = LBTF(c-btab);
 
     Int k = btf_tabs(c);
-    Int j = M.col_ptr(k+1-bcol)-1;
+    //Int j = M.col_ptr(k+1-bcol)-1; // was assuming the column is sorted in the ascending order of row indexes
+    Entry pivot = (Entry)0.0;
+    for (Int j = M.col_ptr(k-bcol); j < M.col_ptr(k-bcol+1); j++) {
+        if (M.row_idx(j) == k) pivot = M.val(j);
+    }
     //Int j = M.row_idx[i];
 
     //will have to make a c and c'
@@ -227,12 +231,12 @@ namespace BaskerNS
     //printf("Single blk slv, kid: %d val:%f idx:%d %d \n",
     //	   kid, M.val[j], M.row_idx[j], M.srow);
 
-    if(M.val(j) == (Entry)(0) )
+    if(pivot == (Entry)(0) )
     {
       printf("Error, zero diag in single factor\n");
     }
 
-    U.val(0)     = M.val(j);
+    U.val(0)     = pivot;
     //M already has local idxing
     //U.row_idx(0) = M.row_idx(j);
     U.row_idx(0) = 0;
