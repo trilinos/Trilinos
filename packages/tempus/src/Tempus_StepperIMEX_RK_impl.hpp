@@ -129,6 +129,8 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
       // Explicit Tableau
       typedef Teuchos::ScalarTraits<Scalar> ST;
       int NumStages = 2;
+      const bool isTVD = true;
+      const Scalar sspcoef = 2.0;
       Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
       Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
       Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
@@ -149,7 +151,7 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
 
       auto expTableau = Teuchos::rcp(new RKButcherTableau<Scalar>(
         "Explicit Tableau - IMEX RK 1st order",
-        A,b,c,order,order,order));
+        A,b,c,order,order,order, isTVD, sspcoef));
 
       this->setExplicitTableau(expTableau);
     }
@@ -157,6 +159,8 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
       // Implicit Tableau
       typedef Teuchos::ScalarTraits<Scalar> ST;
       int NumStages = 2;
+      const bool isTVD = true;
+      const Scalar sspcoef =  std::numeric_limits<Scalar>::max();
       Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
       Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
       Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
@@ -177,7 +181,7 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
 
       auto impTableau = Teuchos::rcp(new RKButcherTableau<Scalar>(
         "Implicit Tableau - IMEX RK 1st order",
-        A,b,c,order,order,order));
+        A,b,c,order,order,order,isTVD, sspcoef));
 
       this->setImplicitTableau(impTableau);
     }
@@ -191,6 +195,8 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
       typedef Teuchos::ScalarTraits<Scalar> ST;
       const int NumStages = 1;
       const int order = 1;
+      const bool isTVD = true;
+      const Scalar sspcoef = 1.0;
       Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
       Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
       Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
@@ -209,7 +215,7 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
 
       auto expTableau = Teuchos::rcp(new RKButcherTableau<Scalar>(
         "Explicit Tableau - SSP1_111",
-        A,b,c,order,order,order));
+        A,b,c,order,order,order,isTVD,sspcoef));
 
       this->setExplicitTableau(expTableau);
     }
@@ -218,6 +224,8 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
       typedef Teuchos::ScalarTraits<Scalar> ST;
       const int NumStages = 1;
       const int order     = 1;
+      const bool isTVD = true;
+      const Scalar sspcoef =  std::numeric_limits<Scalar>::max();
       Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
       Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
       Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
@@ -234,7 +242,7 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
 
       auto impTableau = Teuchos::rcp(new RKButcherTableau<Scalar>(
         "Implicit Tableau - SSP1_111",
-        A,b,c,order,order,order));
+        A,b,c,order,order,order,isTVD,sspcoef));
 
       this->setImplicitTableau(impTableau);
     }
@@ -280,6 +288,8 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
   } else if (stepperType == "IMEX RK ARS 233" || stepperType == "ARS 233" ) {
     typedef Teuchos::ScalarTraits<Scalar> ST;
     int NumStages = 3;
+    const bool isTVD = false;
+    const Scalar sspcoef = -4.0;
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
@@ -303,7 +313,7 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
       int order = 2;
 
       auto expTableau = Teuchos::rcp(new RKButcherTableau<Scalar>(
-        "Partition IMEX-RK Explicit Stepper",A,b,c,order,order,order));
+        "Partition IMEX-RK Explicit Stepper",A,b,c,order,order,order,isTVD,sspcoef));
 
       this->setExplicitTableau(expTableau);
     }
@@ -323,7 +333,7 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
       int order = 3;
 
       auto impTableau = Teuchos::rcp(new RKButcherTableau<Scalar>(
-        "Partition IMEX-RK Implicit Stepper",A,b,c,order,order,order));
+        "Partition IMEX-RK Implicit Stepper",A,b,c,order,order,order,isTVD,sspcoef));
 
       this->setImplicitTableau(impTableau);
     }

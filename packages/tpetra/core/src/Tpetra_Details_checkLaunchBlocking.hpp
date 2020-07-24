@@ -34,42 +34,42 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
-#include "Tpetra_Details_initializeKokkos.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
+#ifndef TPETRA_DETAILS_CHECKLAUNCHBLOCKING_HPP
+#define TPETRA_DETAILS_CHECKLAUNCHBLOCKING_HPP
+
+#include "TpetraCore_config.h"
+#include <cstdlib>
+#include <stdexcept>
 #include "Kokkos_Core.hpp"
-#include "Tpetra_Details_checkLaunchBlocking.hpp"
-#include <cstdlib> // std::atexit
-#include <string>
-#include <vector>
 
 namespace Tpetra {
 namespace Details {
-
-void
-initializeKokkos ()
-{
-  if (! Kokkos::is_initialized ()) {
-    std::vector<std::string> args = Teuchos::GlobalMPISession::getArgv ();
-    int narg = static_cast<int> (args.size ()); // must be nonconst
-
-    std::vector<char*> args_c (narg);
-    for (int k = 0; k < narg; ++k) {
-      // mfh 25 Oct 2017: I feel a bit uncomfortable about this
-      // const_cast, but there is no other way to pass
-      // command-line arguments to Kokkos::initialize.
-      args_c[k] = const_cast<char*> (args[k].c_str ());
+#ifdef HAVE_TPETRACORE_CUDA
+  //Verify that for pre-Pascal CUDA architectures, $CUDA_LAUNCH_BLOCKING == 1
+  inline void checkOldCudaLaunchBlocking()
+  {
+    if(!Kokkos::is_initialized())
+      throw std::logic_error("Kokkos must be initialized in order to check CUDA_LAUNCH_BLOCKING setting.");
+    size_t arch = Kokkos::Cuda::device_arch();
+    if(arch < 600)
+    {
+      //Compiling for Kepler/Maxwell: require launch blocking.
+      const char* launchBlockingEnv = std::getenv("CUDA_LAUNCH_BLOCKING");
+      if(!launchBlockingEnv || strcmp(launchBlockingEnv, "1"))
+      {
+        throw std::runtime_error(
+         "Tpetra::initialize(): Kokkos was compiled for an older CUDA architecture than Pascal, but\n"
+         "the environment variable CUDA_LAUNCH_BLOCKING is either unset or is not \"1\".\n"
+         "It must be set to \"1\" at runtime.\n");
+      }
     }
-    Kokkos::initialize (narg, narg == 0 ? nullptr : args_c.data ());
-    checkOldCudaLaunchBlocking();
-    std::atexit (Kokkos::finalize_all);
   }
-}
+#else
+  inline void checkOldCudaLaunchBlocking() {}
+#endif
+}}
 
-} // namespace Details
-} // namespace Tpetra
-
+#endif
