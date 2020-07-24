@@ -65,6 +65,7 @@ namespace Tacho {
     typedef NumericTools<value_type,scheduler_type> numeric_tools_type;
     typedef LevelSetTools<value_type,scheduler_type,0> levelset_tools_var0_type;
     typedef LevelSetTools<value_type,scheduler_type,1> levelset_tools_var1_type;
+    typedef LevelSetTools<value_type,scheduler_type,2> levelset_tools_var2_type;
 
   public:
     enum : int { Cholesky = 1,
@@ -115,6 +116,7 @@ namespace Tacho {
     // ** level set interface
     levelset_tools_var0_type *_L0;
     levelset_tools_var1_type *_L1;
+    levelset_tools_var2_type *_L2;
 
     // small dense matrix
     value_type_matrix_host _U;

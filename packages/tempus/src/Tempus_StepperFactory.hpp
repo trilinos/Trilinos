@@ -215,10 +215,10 @@ public:
           bstar(i) = values[i];
       }
       tableau = rcp(new RKButcherTableau<Scalar>(
-        "From ParameterList",A,b,c,order,order,order,bstar));
+        "From ParameterList",A,b,c,order,order,order,false,-4.0,bstar));
     } else {
       tableau = rcp(new RKButcherTableau<Scalar>(
-        "From ParameterList",A,b,c,order,order,order));
+        "From ParameterList",A,b,c,order,order,order,false,-4.0));
     }
     return tableau;
   }
@@ -718,6 +718,7 @@ public:
         auto t = createTableau(stepperPL);
         stepper->setTableau( t->A(),t->b(),t->c(),
                              t->order(),t->orderMin(),t->orderMax(),
+                             false,-4.0,
                              t->bstar() );
       }
     }
@@ -977,6 +978,7 @@ public:
         auto t = createTableau(stepperPL);
         stepper->setTableau( t->A(),t->b(),t->c(),
                              t->order(),t->orderMin(),t->orderMax(),
+                             false, -4.0,
                              t->bstar() );
       }
     }
