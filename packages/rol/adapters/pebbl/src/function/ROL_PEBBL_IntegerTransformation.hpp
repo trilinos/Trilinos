@@ -76,7 +76,7 @@ private:
 
   Ptr<Vector<Real>> getIntegerVector(Vector<Real> &xs) const {
     try {
-      return dynamicPtrCast<MixedVector<Real>>(getOptVector(xs))->getIntegerVariables();
+      return dynamic_cast<MixedVector<Real>&>(*getOptVector(xs)).getIntegerVariables();
     }
     catch (std::exception &e) {
       return getOptVector(xs);

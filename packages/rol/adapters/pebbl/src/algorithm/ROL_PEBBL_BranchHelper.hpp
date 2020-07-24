@@ -72,7 +72,7 @@ protected:
 
   Ptr<const Vector<Real>> getIntegerVector(const Vector<Real> &xs) const {
     try {
-      return dynamicPtrCast<const MixedVector<Real>>(getOptVector(xs))->getIntegerVariables();
+      return dynamic_cast<const MixedVector<Real>&>(*getOptVector(xs)).getIntegerVariables();
     }
     catch (std::exception &e) {
       return getOptVector(xs);

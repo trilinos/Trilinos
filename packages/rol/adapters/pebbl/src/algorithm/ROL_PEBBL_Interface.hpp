@@ -85,7 +85,7 @@ private:
 
   Ptr<Vector<Real>> getOptVector(const Ptr<Vector<Real>> &xs ) const {
     try {
-      return dynamicPtrCast<PartitionedVector<Real>>(xs)->get(0);
+      return dynamic_cast<PartitionedVector<Real>&>(*xs).get(0);
     }
     catch (std::exception &e) {
       return xs;
@@ -94,7 +94,7 @@ private:
 
   Ptr<Vector<Real>> getIntegerVector(const Ptr<Vector<Real>> &x) const {
     try {
-      return dynamicPtrCast<MixedVector<Real>>(getOptVector(x))->getIntegerVariables();
+      return dynamic_cast<MixedVector<Real>&>(*getOptVector(x)).getIntegerVariables();
     }
     catch (std::exception &e) {
       return getOptVector(x);
@@ -196,7 +196,7 @@ protected:
 
   Ptr<Vector<Real>> getOptVector(const Ptr<Vector<Real>> &xs ) const {
     try {
-      return dynamicPtrCast<PartitionedVector<Real>>(xs)->get(0);
+      return dynamic_cast<PartitionedVector<Real>&>(*xs).get(0);
     }
     catch (std::exception &e) {
       return xs;
@@ -205,7 +205,7 @@ protected:
 
   Ptr<Vector<Real>> getIntegerVector(const Ptr<Vector<Real>> &x) const {
     try {
-      return dynamicPtrCast<MixedVector<Real>>(getOptVector(x))->getIntegerVariables();
+      return dynamic_cast<MixedVector<Real>&>(*getOptVector(x)).getIntegerVariables();
     }
     catch (std::exception &e) {
       return getOptVector(x);

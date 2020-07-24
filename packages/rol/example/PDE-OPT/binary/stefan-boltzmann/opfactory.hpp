@@ -124,6 +124,7 @@ public:
       }
     }
     if (!init) z_->setScalar(static_cast<Real>(1));
+    u_->setScalar(static_cast<Real>(1));
     // Create objective function
     qoi_ = ROL::makePtr<QoI_StateCost<Real>>(pde_->getVolFE(),pl_);
     obj_ = ROL::makePtr<PDE_Objective<Real>>(qoi_,assembler_);
