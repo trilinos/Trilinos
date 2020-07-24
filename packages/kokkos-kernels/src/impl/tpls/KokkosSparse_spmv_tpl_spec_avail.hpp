@@ -69,7 +69,7 @@ struct spmv_tpl_spec_avail<const SCALAR, const ORDINAL, Kokkos::Device<Kokkos::C
   enum : bool { value = true }; \
 };
 
-#if (9000 <= CUSPARSE_VERSION)
+#if (9000 <= CUDA_VERSION)
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
   && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
@@ -183,7 +183,7 @@ struct spmv_tpl_spec_avail<const SCALAR, const ORDINAL, Kokkos::Device<Kokkos::C
   KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::complex<double>, int, int, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace)
 #endif
 
-#if (10300 <= CUSPARSE_VERSION)
+#if (10010 <= CUDA_VERSION)
 
 //Can enable int64/size_t.
 //TODO: if Nvidia ever supports int/size_t, add that too.

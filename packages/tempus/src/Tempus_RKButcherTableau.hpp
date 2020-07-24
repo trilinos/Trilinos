@@ -61,6 +61,8 @@ class RKButcherTableau :
       const int order,
       const int orderMin,
       const int orderMax,
+      const bool isTVD,
+      const Scalar tvdCoeff,
       const Teuchos::SerialDenseVector<int,Scalar>&
         bstar = Teuchos::SerialDenseVector<int,Scalar>(),
       bool checkC = true)
@@ -79,6 +81,8 @@ class RKButcherTableau :
       orderMax_ = orderMax;
       this->set_isImplicit();
       this->set_isDIRK();
+      isTVD_ = isTVD;
+      tvdCoeff_ = tvdCoeff;
 
       // Consistency check on b
       typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -146,6 +150,11 @@ class RKButcherTableau :
     virtual bool isDIRK() const { return isDIRK_; }
     /** \brief Return true if the RK method has embedded capabilities */
     virtual bool isEmbedded() const { return isEmbedded_; }
+    /** \brief Return true if the RK method is TVD */
+    virtual bool isTVD() const { return isTVD_; }
+    /** \brief Return TVD coefficient of RK method */
+    virtual Scalar getTVDCoeff() const { return tvdCoeff_; }
+
 
     /* \brief Redefined from Teuchos::Describable */
     //@{
@@ -167,6 +176,8 @@ class RKButcherTableau :
           out << "isImplicit = " << this->isImplicit() << std::endl;
           out << "isDIRK     = " << this->isDIRK()     << std::endl;
           out << "isEmbedded = " << this->isEmbedded() << std::endl;
+          if (this->isTVD())
+            out << "TVD Coeff = " << this->getTVDCoeff() << std::endl;
         }
       }
     //@}
@@ -240,7 +251,9 @@ class RKButcherTableau :
     bool isImplicit_;
     bool isDIRK_;
     bool isEmbedded_;
+    bool isTVD_ = false;
     Teuchos::SerialDenseVector<int,Scalar> bstar_;
+    Scalar tvdCoeff_;
 };
 
 

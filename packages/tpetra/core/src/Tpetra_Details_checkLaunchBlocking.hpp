@@ -1,13 +1,12 @@
-/*
 // @HEADER
 // ***********************************************************************
-// 
-//    Thyra: Interfaces and Support for Abstract Numerical Algorithms
-//                 Copyright (2004) Sandia Corporation
-// 
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-// 
+//
+//          Tpetra: Templated Linear Algebra Services Package
+//                 Copyright (2008) Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,43 +34,42 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
-// 
-// ***********************************************************************
+// ************************************************************************
 // @HEADER
-*/
 
-//#include "Thyra_TpetraThyraWrappers.hpp"
-#include "Thyra_TpetraThyraWrappers_decl.hpp"
+#ifndef TPETRA_DETAILS_CHECKLAUNCHBLOCKING_HPP
+#define TPETRA_DETAILS_CHECKLAUNCHBLOCKING_HPP
 
+#include "TpetraCore_config.h"
+#include <cstdlib>
+#include <stdexcept>
+#include "Kokkos_Core.hpp"
 
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#  include "Teuchos_DefaultMpiComm.hpp"
-#endif
-
-
-Teuchos::RCP<const Teuchos::Comm<Thyra::Ordinal> >
-Thyra::convertTpetraToThyraComm(const RCP<const Teuchos::Comm<int> > &tpetraComm)
-{
-
-  using Teuchos::rcp_dynamic_cast;
-
-#ifdef HAVE_MPI
-  const RCP<const Teuchos::MpiComm<int> > tpetraMpiComm = 
-    rcp_dynamic_cast<const Teuchos::MpiComm<int> >(tpetraComm);
-  if (nonnull(tpetraMpiComm)) {
-    return Teuchos::createMpiComm<Ordinal>(tpetraMpiComm->getRawMpiComm(),tpetraMpiComm->getTag());
+namespace Tpetra {
+namespace Details {
+#ifdef HAVE_TPETRACORE_CUDA
+  //Verify that for pre-Pascal CUDA architectures, $CUDA_LAUNCH_BLOCKING == 1
+  inline void checkOldCudaLaunchBlocking()
+  {
+    if(!Kokkos::is_initialized())
+      throw std::logic_error("Kokkos must be initialized in order to check CUDA_LAUNCH_BLOCKING setting.");
+    size_t arch = Kokkos::Cuda::device_arch();
+    if(arch < 600)
+    {
+      //Compiling for Kepler/Maxwell: require launch blocking.
+      const char* launchBlockingEnv = std::getenv("CUDA_LAUNCH_BLOCKING");
+      if(!launchBlockingEnv || strcmp(launchBlockingEnv, "1"))
+      {
+        throw std::runtime_error(
+         "Tpetra::initialize(): Kokkos was compiled for an older CUDA architecture than Pascal, but\n"
+         "the environment variable CUDA_LAUNCH_BLOCKING is either unset or is not \"1\".\n"
+         "It must be set to \"1\" at runtime.\n");
+      }
+    }
   }
-#endif // HAVE_MPI
+#else
+  inline void checkOldCudaLaunchBlocking() {}
+#endif
+}}
 
-  // Assert conversion to Teuchos::SerialComm as a last resort (or throw)
-  rcp_dynamic_cast<const Teuchos::SerialComm<int> >(tpetraComm, true);
-   return Teuchos::createSerialComm<Ordinal>();
-
-  // NOTE: Above will throw if the type is not Teuchos::SerialComm.  In this
-  // case, the type could not be converted.  We need to either get rid of the
-  // Ordinal templating on Comm or we need to use the same ordinal type for
-  // Tpetra and Thyra so this conversion function goes away!
-
-}
+#endif

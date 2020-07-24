@@ -188,6 +188,18 @@ TEUCHOS_UNIT_TEST( DefaultMpiComm, getRawMpiComm )
 }
 
 
+TEUCHOS_UNIT_TEST( DefaultMpiComm, getRawMpiCommWithTag )
+{
+  ECHO(MPI_Comm rawMpiComm = MPI_COMM_WORLD);
+  ECHO(const RCP<const Comm<int> > comm =
+       Teuchos::createMpiComm<int>(Teuchos::opaqueWrapper(rawMpiComm), 123));
+  out << "comm = " << Teuchos::describe(*comm);
+  ECHO(MPI_Comm rawMpiComm2 = Teuchos::getRawMpiComm<int>(*comm));
+  TEST_EQUALITY( rawMpiComm2, rawMpiComm );
+  TEST_EQUALITY( comm->getTag(), 123);
+}
+
+
 #endif // HAVE_TEUCHOS_MPI
 
 

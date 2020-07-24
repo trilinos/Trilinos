@@ -19,6 +19,7 @@ namespace Tacho {
       _N(nullptr),
       _L0(nullptr),
       _L1(nullptr),
+      _L2(nullptr),
       _verbose(0),
       _small_problem_thres(1024),
       _serial_thres_size(-1),
@@ -29,8 +30,8 @@ namespace Tacho {
       _device_level_cut(0),
       _device_factor_thres(64),
       _device_solve_thres(128),
-      _variant(1),
-      _nstreams(8),
+      _variant(2),
+      _nstreams(16),
       _max_num_superblocks(-1) {}
 
   /// deleted
@@ -172,8 +173,8 @@ namespace Tacho {
   void 
   Solver<VT,ST>
   ::setLevelSetOptionAlgorithmVariant(const ordinal_type variant) {
-    if (variant > 1 || variant < 0) {
-      std::logic_error("levelset algorithm variants range from 0 to 1");
+    if (variant > 2 || variant < 0) {
+      std::logic_error("levelset algorithm variants range from 0 to 2");
     }
     _variant = variant;
   }
@@ -373,6 +374,12 @@ namespace Tacho {
           new (_L1) levelset_tools_var1_type(*_N);
           _L1->initialize(_device_level_cut, _device_factor_thres, _device_solve_thres, _verbose);
           _L1->createStream(_nstreams);
+        } else if (_variant == 2) {
+          if (_L2 == nullptr) 
+            _L2 = (levelset_tools_var2_type*) ::operator new (sizeof(levelset_tools_var2_type));
+          new (_L2) levelset_tools_var1_type(*_N);
+          _L2->initialize(_device_level_cut, _device_factor_thres, _device_solve_thres, _verbose);
+          _L2->createStream(_nstreams);
         }
       }
     }
@@ -428,6 +435,7 @@ namespace Tacho {
       if (_levelset) {
         if      (_variant == 0) _L0->factorizeCholesky(ax, _verbose);
         else if (_variant == 1) _L1->factorizeCholesky(ax, _verbose);
+        else if (_variant == 2) _L2->factorizeCholesky(ax, _verbose);
       } 
 #if !defined (KOKKOS_ENABLE_CUDA)
       else if (nthreads == 1) {
@@ -541,6 +549,7 @@ namespace Tacho {
       if (_levelset) {
         if      (_variant == 0) _L0->solveCholesky(x, b, tt, _verbose);
         else if (_variant == 1) _L1->solveCholesky(x, b, tt, _verbose);
+        else if (_variant == 2) _L2->solveCholesky(x, b, tt, _verbose);
       } 
 #if !defined (KOKKOS_ENABLE_CUDA)
       else if (nthreads == 1) {
@@ -629,6 +638,10 @@ namespace Tacho {
         if (_L1 != nullptr)
           _L1->release(_verbose);
         delete _L1; _L1 = nullptr;
+      } else if (_variant == 2) {
+        if (_L2 != nullptr)
+          _L2->release(_verbose);
+        delete _L2; _L2 = nullptr;
       }
     }
     
