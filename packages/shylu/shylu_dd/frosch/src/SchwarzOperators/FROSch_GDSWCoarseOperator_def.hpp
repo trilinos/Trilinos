@@ -140,7 +140,7 @@ namespace FROSch {
                                                     GOVecPtr dirichletBoundaryDofs,
                                                     ConstXMultiVectorPtr nodeList)
     {
-        FROSCH_TIMER_START_LEVELID(initializeTime,"GDSWCoarseOperator::initialize");
+        FROSCH_ASSERT(!this->DistributionList_->get("Type","linear").compare("ZoltanDual"),"GDSWCoarseOperator:: Distribution Type ZoltanDual only works for IPOUHarmonicCoarseOperator");
         buildCoarseSpace(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,dirichletBoundaryDofs,nodeList);
         this->assembleInterfaceCoarseSpace();
         this->buildCoarseSolveMap(this->AssembledInterfaceCoarseSpace_->getBasisMapUnique());
@@ -319,6 +319,7 @@ namespace FROSch {
         FROSCH_TIMER_START_LEVELID(resetCoarseSpaceBlockTime,"GDSWCoarseOperator::resetCoarseSpaceBlock");
         FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode");
         FROSCH_ASSERT(blockId<this->NumberOfBlocks_,"Block does not exist yet and can therefore not be reset.");
+        FROSCH_ASSERT(this->DistributionList_->get("Type","linear").compare("ZoltanDual"),"GDSWCoarseOperator:: Distribution Type ZoltanDual only works for IPOUHarmonicCoarseOperator");
 
         if (this->Verbose_) {
             cout << "\n\

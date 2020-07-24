@@ -71,6 +71,7 @@ namespace FROSch {
         FROSCH_TIMER_START_LEVELID(resetCoarseSpaceBlockTime,"RGDSWCoarseOperator::resetCoarseSpaceBlock");
         FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode");
         FROSCH_ASSERT(blockId<this->NumberOfBlocks_,"Block does not exist yet and can therefore not be reset.");
+        FROSCH_ASSERT(this->DistributionList_->get("Type","linear").compare("ZoltanDual"),"GDSWCoarseOperator:: Distribution Type ZoltanDual only works for IPOUHarmonicCoarseOperator");
 
         if (this->Verbose_) {
             cout << "\n\
