@@ -104,12 +104,12 @@ int doSymbolicFactorization(const ordinal_type m,
     for (ordinal_type i=0,iend=perm.extent(0);i<iend;++i) {
       const ordinal_type idx = perm(i);
       const ordinal_type ndof = aw(i);
-      // printf("i %d, idx %d, as %d, aq %d, ndof %d\n", i, idx, as(i), aq(i), ndof);
+      ///printf("i %d, idx %d, as %d, aq %d, ndof %d\n", i, idx, as(i), aq(i), ndof);
       for (ordinal_type j=0;j<ndof;++j) {
         const ordinal_type tgt = aq(idx)+j, src = as(i)+j;
         //printf("i %d, j %d, tgt %d, src %d\n", i, j, tgt, src);
         perm_evp(src) = tgt;
-        peri_evp(as(idx)+j) = as(i  )+j;
+        peri_evp(tgt) = src;
       }
     }
 
@@ -134,24 +134,50 @@ int doSymbolicFactorization(const ordinal_type m,
       }
     }
 
-    // ///
-    // /// Evaporate for gid colidx, sid colidx and blk colidx
-    // ///
-    // const auto gid_spanel_ptr_evp = S.gidSuperPanelPtr();
-    // const auto gid_spanel_colidx = S.gidSuperPanelColIdx();
-    // if (evaporate) {
-    //   for (ordinal_type i=0;i<nsupernodes;++i) {
-    //     const ordinal_type
-    //       jbeg = gid_spanel_ptr_evp(i),
-    //       jend = gid_spanel_ptr_evp(i+1);
-    //     for (ordinal_type j=jbeg;j<jend;++j) { 
-          
-    //     }
-    // }
+    ///
+    /// Evaporate for gid colidx
+    ///
+    const auto gid_spanel_ptr = S.gidSuperPanelPtr();
+    const auto gid_spanel_colidx = S.gidSuperPanelColIdx();
 
-    // const auto sid_spanel_ptr_evp = S.sidSuperPanelPtr();
-    // const auto sid_spanel_colidx_evp = S.sidSuperPanelColIdx();
-    // const auto blk_spanel_colidx_evp = S.blkSuperPanelColIdx();
+    size_type_1d_view_type gid_spanel_ptr_evp(do_not_initialize_tag("gid_spanel_ptr"), nsupernodes+1);
+    if (evaporate) {
+      gid_spanel_ptr_evp(0) = 0;
+      for (ordinal_type i=0;i<nsupernodes;++i) {
+        const ordinal_type
+          jbeg = gid_spanel_ptr(i),
+          jend = gid_spanel_ptr(i+1);
+        ordinal_type ndof(0);
+        for (ordinal_type j=jbeg;j<jend;++j) { 
+          const ordinal_type idx = gid_spanel_colidx(j);
+          ndof += (aq(idx+1) - aq(idx));
+        }
+        gid_spanel_ptr_evp(i+1) = gid_spanel_ptr_evp(i) + ndof;
+      }
+    }
+
+    ordinal_type_1d_view_type gid_spanel_colidx_evp(do_not_initialize_tag("gid_spanel_colidx"), gid_spanel_ptr_evp(nsupernodes));
+    if (evaporate) {
+      for (ordinal_type i=0;i<nsupernodes;++i) {
+        const ordinal_type
+          jbeg = gid_spanel_ptr(i),
+          jend = gid_spanel_ptr(i+1),
+          offs = gid_spanel_ptr_evp(i);
+        ordinal_type cnt(0);
+        for (ordinal_type j=jbeg;j<jend;++j) { 
+          const ordinal_type idx = gid_spanel_colidx(j);
+          const ordinal_type
+            kbeg = aq(idx),
+            kend = aq(idx+1);
+          for (ordinal_type k=kbeg;k<kend;++k,++cnt) 
+            gid_spanel_colidx_evp(offs+cnt) = k;
+        }
+      }
+    }
+
+    const auto sid_spanel_ptr_evp = S.sidSuperPanelPtr();
+    const auto sid_spanel_colidx_evp = S.sidSuperPanelColIdx();
+    const auto blk_spanel_colidx = S.blkSuperPanelColIdx();
 
 
 
