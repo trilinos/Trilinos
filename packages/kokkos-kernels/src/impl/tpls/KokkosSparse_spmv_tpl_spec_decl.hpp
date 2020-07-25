@@ -88,7 +88,7 @@ namespace Impl {
     if(mode[0] == Transpose[0]) {myCusparseOperation = CUSPARSE_OPERATION_TRANSPOSE;}
     else if(mode[0] == ConjugateTranspose[0]) {myCusparseOperation = CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE;}
 
-#if defined(CUDA_VERSION) && (10010 <= CUDA_VERSION)
+#if defined(CUSPARSE_VERSION) && (10300 <= CUDA_VERSION)
 
     /* Check that cusparse can handle the types of the input Kokkos::CrsMatrix */
     cusparseIndexType_t myCusparseOffsetType;
@@ -270,7 +270,7 @@ namespace Impl {
   KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>,  int, int, Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, true)
   KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>,  int, int, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true)
 
-#if (10010 <= CUDA_VERSION)
+#if defined(CUSPARSE_VERSION) && (10300 <= CUSPARSE_VERSION)
   KOKKOSSPARSE_SPMV_CUSPARSE(double, int64_t, size_t, Kokkos::LayoutLeft,  Kokkos::CudaSpace, true)
   KOKKOSSPARSE_SPMV_CUSPARSE(double, int64_t, size_t, Kokkos::LayoutRight, Kokkos::CudaSpace, true)
   KOKKOSSPARSE_SPMV_CUSPARSE(float,  int64_t, size_t, Kokkos::LayoutLeft,  Kokkos::CudaSpace, true)
