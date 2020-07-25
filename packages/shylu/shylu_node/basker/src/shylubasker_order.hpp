@@ -238,7 +238,7 @@ namespace BaskerNS
       vals_perm_composition(i) = i;
     }
     permute_inv(vals_perm_composition, vals_crs_transpose, A.nnz);
-    sort_matrix_store_valperms(A, vals_perm_composition); //(need)
+    //sort_matrix_store_valperms(A, vals_perm_composition); //(need)
 
     /*printf( " a=[\n" );
     for(Int j = 0; j < A.ncol; j++) {
@@ -261,8 +261,7 @@ namespace BaskerNS
     /*printf( " P=[\n" );
     for (int i = 0; i < A.ncol; i++) printf( "%d %d\n", i, order_match_array(i));
     printf( "];\n" );*/
-
-    sort_matrix_store_valperms(A, vals_perm_composition); //(need)
+    //sort_matrix_store_valperms(A, vals_perm_composition); //(need)
 
     /*printf( " c=[\n" );
     for(Int j = 0; j < A.ncol; j++) {
@@ -697,6 +696,8 @@ namespace BaskerNS
             //scale_col_array(i) = one;
           }
         }
+        // apply matching to the rows of A
+        permute_row(A, order_match_array);
       }
       else
       {
@@ -711,7 +712,6 @@ namespace BaskerNS
                   << std::endl;
         return BASKER_ERROR;
       }
-      permute_row(A, order_match_array);
 
       //We want to test what the match ordering does if
       //have explicit zeros
