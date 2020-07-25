@@ -78,7 +78,7 @@ keywords of the form `XXX-<keyword0>-<keyword1>-...-YYY` (or
 `XXX_<keyword0>_<keyword1>_..._YYY`, either separator is supported).  The
 typical order and format of this string is:
 
-    <system_name>-<kokkos_arch>-<compiler>-<kokkos_thread>-<rdc>-<complex>-<shared_static>-<release_debug>-<pt>
+    <system_name>-<use_mpi>-<kokkos_arch>-<compiler>-<kokkos_thread>-<rdc>-<complex>-<shared_static>-<release_debug>-<pt>
 
 but any order of these keywords is supported.  Also, the keywords are
 case-insensitive All of these keywords, except for `<compiler>` (which can be
@@ -88,10 +88,11 @@ name of a keyword is ignored.) See some examples of build name strings
 [below](#build-name-examples).
 
 Each of these keywords [`<system_name>`](#system_name),
-[`<kokkos_arch>`](#kokkos_arch), [`<compiler>`](#compiler),
-[`<kokkos_thread>`](#kokkos_thread), [`<rdc>`](#rdc), [`<fpic>`](#fpic),
-[`<complex>`](#complex), [`<shared_static>`](#shared_static),
-[`<release_debug>`](#release_debug), and [`<pt>`](#pt), are described below.
+[`<use_mpi>`](#use_mpi), [`<kokkos_arch>`](#kokkos_arch),
+[`<compiler>`](#compiler), [`<kokkos_thread>`](#kokkos_thread),
+[`<rdc>`](#rdc), [`<fpic>`](#fpic), [`<complex>`](#complex),
+[`<shared_static>`](#shared_static), [`<release_debug>`](#release_debug), and
+[`<pt>`](#pt), are described below.
 
 <a name="system_name"/>
 
@@ -166,6 +167,16 @@ which compilers and which versions are supported for a given system.)  If
 `default` is used, then the default compiler for the system will be selected.
 Carefully examine STDOUT after running `source cmake/std/atdm/load-env
 <build-name>` to see what compiler gets selected.
+
+<a name="use_mpi"/>
+
+**`<use_mpi>`:** The following `<build-name>` keywords determine if MPI is
+  enabled or not in Trilinos (i.e. the value of `TPL_ENABLE_MPI`):
+
+* `mpi`: Enable MPI and use MPI compler wrappers (`TPL_ENABLE_MPI=ON`, DEFAULT)
+* `no-mpi`: Don't enable MPI and use raw compilers (except for CUDA builds that use `nvcc_wrapper` for the C++ compiler) (`TPL_ENABLE_MPI=OFF`)
+
+NOTE: Setting `no-mpi` also switches to some non-MPI TPL builds and disables other TPLs like SuperLUDist that require MPI.
 
 <a name="kokkos_thread"/>
 
