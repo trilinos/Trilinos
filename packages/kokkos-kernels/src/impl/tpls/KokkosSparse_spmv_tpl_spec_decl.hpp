@@ -88,7 +88,7 @@ namespace Impl {
     if(mode[0] == Transpose[0]) {myCusparseOperation = CUSPARSE_OPERATION_TRANSPOSE;}
     else if(mode[0] == ConjugateTranspose[0]) {myCusparseOperation = CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE;}
 
-#if defined(CUSPARSE_VERSION) && (10300 <= CUDA_VERSION)
+#if defined(CUSPARSE_VERSION) && (10300 <= CUSPARSE_VERSION)
 
     /* Check that cusparse can handle the types of the input Kokkos::CrsMatrix */
     cusparseIndexType_t myCusparseOffsetType;
