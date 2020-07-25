@@ -206,7 +206,7 @@ IF (TACHO_HAVE_KOKKOS_TASK)
   ENDIF()
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Tacho_SimpleSparseTest_File
-          SOURCE_FILES test.mtx
+          SOURCE_FILES test.mtx condensed_graph.dat condensed_weight.dat graph.dat
           SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
           DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
   )
