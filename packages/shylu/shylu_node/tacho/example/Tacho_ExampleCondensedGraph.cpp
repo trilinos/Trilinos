@@ -179,69 +179,28 @@ int doSymbolicFactorization(const ordinal_type m,
     const auto sid_spanel_colidx_evp = S.sidSuperPanelColIdx();
     const auto blk_spanel_colidx = S.blkSuperPanelColIdx();
 
-
-
-
-    // if (evaporate) {
-    //   for (ordinal_type i=0;i<nsupernodes;++i) {
-    //     const ordinal_type 
-    //       jbeg = sid_spanel_ptr_evp(i), 
-    //       jend = sid_spanel_ptr_evp(i+1)-1;
-    //     const ordinal_type offset(gid_spanel_ptr_evp(i));
-    //     printf("i %d offset %d\n", i, offset);
-    //     for (ordinal_type j=jbeg;j<jend;++j) {
-    //       const ordinal_type 
-    //         kbeg = blk_spanel_colidx_evp(j),
-    //         kend = blk_spanel_colidx_evp(j+1);
-    //       ordinal_type blk(0);
-    //       for (ordinal_type k=kbeg;k<kend;++k) {
-    //         const ordinal_type idx = perm(gid_spanel_colidx(offset+k));
-    //         const ordinal_type ndof = aw(idx);
-    //         blk += ndof;
-    //       }
-    //       blk_spanel_colidx_evp(j+1) = blk_spanel_colidx_evp(j) + blk;
-    //     }
-    //   }
-    // }
+    ordinal_type_1d_view_type blk_spanel_colidx_evp(do_not_initialize_tag("blk_spanel_colidx"), sid_spanel_ptr_evp(nsupernodes));
+    if (evaporate) {
+      for (ordinal_type i=0;i<nsupernodes;++i) {
+        const ordinal_type 
+          jbeg = sid_spanel_ptr_evp(i), 
+          jend = sid_spanel_ptr_evp(i+1)-1;
+        const ordinal_type offs = gid_spanel_ptr(i);
+        for (ordinal_type j=jbeg;j<jend;++j) {
+          const ordinal_type 
+            kbeg = blk_spanel_colidx(j),
+            kend = blk_spanel_colidx(j+1);
+          ordinal_type blk(0);
+          for (ordinal_type k=kbeg;k<kend;++k) {
+            const ordinal_type idx = gid_spanel_colidx(offs+k);
+            const ordinal_type ndof = aq(idx+1) - aq(idx);
+            blk += ndof;
+          }
+          blk_spanel_colidx_evp(j+1) = blk_spanel_colidx_evp(j) + blk;
+        }
+      }
+    }
     
-    // size_type_1d_view_type ab_perm(do_not_initialize_tag("abegin"), m+1);  
-    // ordinal_type_1d_view_type aw_perm(do_not_initialize_tag("aw_perm"), m);
-    // ab_perm(0) = 0;
-    // for (ordinal_type i=0;i<m;++i) { 
-    //   const ordinal_type ndof = aw(perm(i));
-    //   aw_perm(i) = ndof;
-    //   ab_perm(i+1) = ab_perm(i) + ndof;
-    // }
-
-
-    
-    // const auto gid_spanel_ptr = S.gidSuperPanelPtr();
-    // const auto gid_spanel_colidx = S.gidSuperPanelColIdx();
-
-    // size_type_1d_view_type gid_spanel_ptr_evp(do_not_initialize_tag("gid_spanel_ptr"), nsupernodes+1);
-    // gid_spanel_ptr_evp(0) = 0;
-    // for (ordinal_type i=0;i<nsupernodes;++i) {
-    //   const ordinal_type jbeg = gid_spanel_ptr(i), jend = gid_spanel_ptr(i+1);
-    //   ordinal_type count(0);
-    //   for (ordinal_type j=jbeg;j<jend;++j) {
-    //     const ordinal_type idx = gid_spanel_colidx(j);
-    //     count += aw_perm(idx);
-    //   }
-    //   gid_spanel_ptr_evp(i+1) = gid_spanel_ptr_evp(i) + count;
-    // }
-    // ordinal_type_1d_view_type gid_spanel_colidx_evp(do_not_initialize_tag("gid_spanel_colidx"), gid_spanel_ptr_evp(nsupernodes));
-    // for (ordinal_type i=0;i<nsupernodes;++i) {
-    //   const ordinal_type jbeg = gid_spanel_ptr(i), jend = gid_spanel_ptr(i+1);
-    //   ordinal_type count = gid_spanel_ptr_evp(i);
-    //   for (ordinal_type j=jbeg;j<jend;++j) {
-    //     const ordinal_type cidx = gid_spanel_colidx(j);
-    //     const ordinal_type idx = ab_perm(cidx);
-    //     const ordinal_type ndof = aw_perm(cidx);
-    //     for (ordinal_type k=0;k<ndof;++k,++count) 
-    //       gid_spanel_colidx_evp(count) = idx+k;
-    //   }
-    // }
-
     t = timer.seconds();
     std::cout << "CondensedGraph:: evaporation::time = " << t << std::endl;
 
@@ -261,21 +220,33 @@ int doSymbolicFactorization(const ordinal_type m,
       {
         std::cout << "  Supernodes Evp \n";      
         for (ordinal_type i=0,iend=(nsupernodes+1);i<iend;++i) {    
-          printf("i %d supernode %d\n", i, supernodes_evp(i));
+          printf("i %d, supernode %d\n", i, supernodes_evp(i));
         }
       }
 
-      // {
-      //   std::cout << "  Super Panel Sids and Blks Evp \n";
-      //   for (ordinal_type i=0;i<nsupernodes;++i) {
-      //     const ordinal_type 
-      //       jbeg = sid_spanel_ptr_evp(i), 
-      //       jend = sid_spanel_ptr_evp(i+1);
-      //     for (ordinal_type j=jbeg;j<jend;++j) {
-      //       printf("i,j,sid,blk = %d %d :: %d %d\n", i,j,sid_spanel_colidx_evp(j), blk_spanel_colidx_evp(j));
-      //     }
-      //   }
-      // }
+      {
+        std::cout << "  Super Panel Sids and Blks Evp \n";
+        for (ordinal_type i=0;i<nsupernodes;++i) {
+          const ordinal_type 
+            jbeg = sid_spanel_ptr_evp(i), 
+            jend = sid_spanel_ptr_evp(i+1);
+          for (ordinal_type j=jbeg;j<jend;++j) {
+            printf("i %d, j %d, sid %d, blk %d\n", i,j,sid_spanel_colidx_evp(j), blk_spanel_colidx_evp(j));
+          }
+        }
+      }
+      {
+        std::cout << "  Super Panel Gids Evp \n";
+        for (ordinal_type i=0;i<nsupernodes;++i) {
+          const ordinal_type 
+            jbeg = gid_spanel_ptr_evp(i), 
+            jend = gid_spanel_ptr_evp(i+1);
+          for (ordinal_type j=jbeg;j<jend;++j) {
+            printf("i %d, j %d, gid %d\n", i,j,gid_spanel_colidx_evp(j));
+          }
+        }
+      }
+
     }
   }
   return 0;
@@ -315,7 +286,6 @@ int main (int argc, char *argv[]) {
     readWeightFile(weight_file, Ac_aw); 
 
     ordinal_type A_m = A_ap.extent(0) - 1, Ac_m = Ac_ap.extent(0) - 1;
-
 
     std::cout << "CondensedGraph:: A" << std::endl;
     doSymbolicFactorization(A_m, A_ap, A_aj, A_aw, verbose, false, evaporate);
