@@ -230,7 +230,9 @@ void Piro::TempusSolver<Scalar>::initialize(
     // below, as more explicit schemes get added to Tempus
     // Explicit time-integrators for 1st order ODEs 
     if (
+      stepperType == "Forward Euler" ||
       stepperType == "RK Forward Euler" ||
+      stepperType == "RK1" || 
       stepperType == "RK Explicit 4 Stage" ||
       stepperType == "RK Explicit 3/8 Rule" ||
       stepperType == "RK Explicit 4 Stage 3rd order by Runge" ||
@@ -239,7 +241,15 @@ void Piro::TempusSolver<Scalar>::initialize(
       stepperType == "RK Explicit 3 Stage 3rd order TVD" ||
       stepperType == "RK Explicit 3 Stage 3rd order by Heun" ||
       stepperType == "RK Explicit 2 Stage 2nd order by Runge" ||
+      stepperType == "RK Explicit Midpoint" || 
       stepperType == "RK Explicit Trapezoidal" ||
+      stepperType == "Heuns Method" ||
+      stepperType == "Bogacki-Shampine 3(2) Pair" ||
+      stepperType == "SSPERK22" || 
+      stepperType == "SSPRK2" ||
+      stepperType == "SSPERK33" || 
+      stepperType == "SSPRK3" ||
+      stepperType == "SSPERK54" ||
       stepperType == "General ERK" ) {
 
       bool invertMassMatrix = tempusPL->get("Invert Mass Matrix", false); 
