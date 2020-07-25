@@ -11,6 +11,7 @@
 # On completion, this will set the env vars:
 #
 #   ATDM_CONFIG_COMPILER
+#   ATDM_CONFIG_USE_MPI
 #   ATDM_CONFIG_KOKKOS_ARCH
 #   ATDM_CONFIG_BUILD_TYPE
 #   ATDM_CONFIG_NODE_TYPE
@@ -58,6 +59,7 @@ echo "Setting compiler and build options for build-name '${ATDM_CONFIG_BUILD_NAM
 
 # Set the defaults
 export ATDM_CONFIG_COMPILER=DEFAULT
+export ATDM_CONFIG_USE_MPI=ON
 export ATDM_CONFIG_KOKKOS_ARCH=DEFAULT
 export ATDM_CONFIG_BUILD_TYPE=DEBUG
 export ATDM_CONFIG_SHARED_LIBS=OFF
@@ -149,6 +151,13 @@ fi
 # NOTE: Above, the 'cuda' keywords need to be parsed first since they could
 # have the compiler keywords embedded in them.  For example we need to match
 # 'cuda-10.0-gnu-7.4.0' before we match 'gnu-7.4.0'.
+
+# Use MPI or not
+if   atdm_match_buildname_keyword no-mpi; then
+  export ATDM_CONFIG_USE_MPI=OFF
+elif atdm_match_buildname_keyword mpi; then
+  export ATDM_CONFIG_USE_MPI=ON
+fi
 
 # Set ATDM_CONFIG_KOKKOS_ARCH
 export ATDM_CONFIG_KOKKOS_ARCH=DEFAULT

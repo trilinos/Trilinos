@@ -22,7 +22,7 @@ TRIBITS_ADD_ADVANCED_TEST( set_build_options_unit_tests
   OVERALL_NUM_MPI_PROCS 1
   TEST_0 CMND env
     ARGS SHUNIT_COLOR=none ${CMAKE_CURRENT_SOURCE_DIR}/set_build_options_unit_tests.sh
-    PASS_REGULAR_EXPRESSION_ALL "Ran 13 test" "[^]OK[$]"
+    PASS_REGULAR_EXPRESSION_ALL "Ran 14 test" "[^]OK[$]"
     ALWAYS_FAIL_ON_NONZERO_RETURN
   )
 
