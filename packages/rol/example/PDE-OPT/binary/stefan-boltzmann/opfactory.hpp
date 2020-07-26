@@ -85,11 +85,12 @@ public:
     : pl_(pl), comm_(comm), os_(os) {
     // Create PDE Constraint
     int probDim = pl_.sublist("Problem").get("Problem Dimension",2);
+    int nProcs  = comm_->getSize();
     TEUCHOS_TEST_FOR_EXCEPTION(probDim<2||probDim>3, std::invalid_argument,
       ">>> PDE-OPT/binary/stefan-boltzmann/example_01.cpp: Problem dim is not 2 or 3!");
     //if (probDim == 2)      mesh_ = ROL::makePtr<MeshManager_Rectangle<Real>>(pl_);
     //else if (probDim == 3)
-    mesh_ = ROL::makePtr<MeshReader<Real>>(pl_);
+    mesh_ = ROL::makePtr<MeshReader<Real>>(pl_,nProcs);
     pde_ = ROL::makePtr<BinaryStefanBoltzmannPDE<Real>>(pl_);
     con_ = ROL::makePtr<PDE_Constraint<Real>>(pde_,mesh_,comm_,pl_,*os_);
     con_->setSolveParameters(pl_);
