@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
@@ -76,29 +76,6 @@ C   --Save the input parameters
 C=======================================================================
       ENTRY DBIV1 (NELBLK, NVARHI, NVARGL, NVARNP, NVAREL, ISEVOK)
 C=======================================================================
-C$Id: dbiv0.f,v 1.2 1994/02/11 22:52:28 vryarbe Exp $
-C$Log: dbiv0.f,v $
-CRevision 1.2  1994/02/11 22:52:28  vryarbe
-Cfixed bug causing compiler error w/optimize flag
-C
-c Revision 1.1.1.1  1994/01/24  23:00:54  vryarbe
-c Initial check-in using ExodusII V 2.00
-c
-c Revision 1.3  1990/11/30  09:50:53  gdsjaar
-c Modified to work on Unicos
-c
-c Revision 1.2  90/10/11  16:47:17  gdsjaar
-c Fixed problem with singly/doubly dimensioned array
-c
-c Revision 1.1.1.1  90/08/14  16:13:11  gdsjaar
-c Testing
-c
-c Revision 1.1  90/08/14  16:13:09  gdsjaar
-c Initial revision
-c
-c Revision 1.1  90/08/09  13:39:13  gdsjaar
-c Initial revision
-c
 
 C   --*** DBIV1 *** (EXOLIB) Initialize for DBIVAR
 C   --   Written by Amy Gilkey - revised 11/04/87
@@ -162,29 +139,6 @@ C   --Set NREC0 = the number of records before the time steps
 C=======================================================================
       ENTRY DBIVIN (REWDB)
 C=======================================================================
-C$Id: dbiv0.f,v 1.2 1994/02/11 22:52:28 vryarbe Exp $
-C$Log: dbiv0.f,v $
-CRevision 1.2  1994/02/11 22:52:28  vryarbe
-Cfixed bug causing compiler error w/optimize flag
-C
-c Revision 1.1.1.1  1994/01/24  23:00:54  vryarbe
-c Initial check-in using ExodusII V 2.00
-c
-c Revision 1.3  1990/11/30  09:50:53  gdsjaar
-c Modified to work on Unicos
-c
-c Revision 1.2  90/10/11  16:47:17  gdsjaar
-c Fixed problem with singly/doubly dimensioned array
-c
-c Revision 1.1.1.1  90/08/14  16:13:11  gdsjaar
-c Testing
-c
-c Revision 1.1  90/08/14  16:13:09  gdsjaar
-c Initial revision
-c
-c Revision 1.1  90/08/09  13:39:13  gdsjaar
-c Initial revision
-c
 
 C   --*** DBIVIN *** (EXOLIB) Initialize for DBIVAR
 C   --   Written by Amy Gilkey - revised 11/04/87
@@ -211,29 +165,6 @@ C=======================================================================
       ENTRY DBIVAR (NDB, NUMVAR, IVAR, ISTEP, LENVAR, IELBLK,
      &   NELBLK, NUMELB, ISEVOK, VAR, *)
 C=======================================================================
-C$Id: dbiv0.f,v 1.2 1994/02/11 22:52:28 vryarbe Exp $
-C$Log: dbiv0.f,v $
-CRevision 1.2  1994/02/11 22:52:28  vryarbe
-Cfixed bug causing compiler error w/optimize flag
-C
-c Revision 1.1.1.1  1994/01/24  23:00:54  vryarbe
-c Initial check-in using ExodusII V 2.00
-c
-c Revision 1.3  1990/11/30  09:50:53  gdsjaar
-c Modified to work on Unicos
-c
-c Revision 1.2  90/10/11  16:47:17  gdsjaar
-c Fixed problem with singly/doubly dimensioned array
-c
-c Revision 1.1.1.1  90/08/14  16:13:11  gdsjaar
-c Testing
-c
-c Revision 1.1  90/08/14  16:13:09  gdsjaar
-c Initial revision
-c
-c Revision 1.1  90/08/09  13:39:13  gdsjaar
-c Initial revision
-c
 
 C   --*** DBIVAR *** (EXOLIB) Read variable
 C   --   Written by Amy Gilkey - revised 08/16/88

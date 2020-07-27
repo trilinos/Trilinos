@@ -46,51 +46,51 @@ consider the following section of code excerpted from the source
 file \verb+exdate.c+:
 \begin{verbatim}
         #include <errno.h>
-        
+
         #if defined (unix)
         # if defined (alliant)
-        
+
         #     include <sys/types.h>
         #     include <sys/time.h>
               exdate_( string )         /* Sadly, on the Alliant, */
                                         /* strings are not passed */
                                         /* similar to the SUN. */
               char *string;
-        
+
         # endif                         /* Alliant */
         # if defined (sun)
-        
+
         #     include <sys/time.h>
               exdate_( string, len )
               char *string;
               long len;
-        
+
         # else                          /* Not Sun */
         #  if defined (CRAY)
-        
+
         #     include <sys/types.h>
         #     include <time.h>
         #     include <fortran.h>
               EXDATE( string )
               _fcd string;
-        
+
         #  endif                        /* Unicos */
         # endif                         /* Sun */
         #else                           /* Not UNIX */
         # if defined (VMS)
-        
+
         #include time
         #include descrip
               exdate( string )
               struct dsc$descriptor_s *string; /* We know that the VAX saves */
                                                /* FORTRAN char arrays */
                                                /* as descriptors. */
-        
+
         # else                          /* not VMS */
 
         # endif                         /* VMS */
         #endif                          /* UNIX */
-\end{verbatim}		
+\end{verbatim}
 The passages beginning with \verb+#if defined+ query the
 system at compile time through the use of a pre-processor
 to determine the hardware/software configuration.
@@ -126,7 +126,7 @@ that are meant to be called directly from application programs.
 \begin{argy}{STRING}{CHARACTER\last8}{Write Only}
 Current date formatted as ``MM/DD/YY'' where ``MM'', ``DD'', and ``YY'' are
 two digit integers representing the month, day, and year, respectively.  For
-example, ``07/04/86'' would be returned on July 4, 1986. 
+example, ``07/04/86'' would be returned on July 4, 1986.
 \end{argy}
 
 \subsection{Get Time of Day (EXTIME)}
@@ -136,7 +136,7 @@ example, ``07/04/86'' would be returned on July 4, 1986.
 \begin{argy}{STRING}{CHARACTER\last8}{Write Only}
 Current time formatted as ``HH:MM:SS'' where ``HH'', ``MM'', and ``SS'' are
 two digit integers representing the hour (00-24), minute, and second,
-respectively.  For example, ``16:30:00'' would be returned at 4:30 PM. 
+respectively.  For example, ``16:30:00'' would be returned at 4:30 PM.
 \end{argy}
 
 \subsection{Get Accumulated Processor Time (EXCPUS)}
@@ -146,7 +146,7 @@ respectively.  For example, ``16:30:00'' would be returned at 4:30 PM.
 \begin{argy}{CPUSEC}{REAL}{Write Only}
 Accumulated CPU time in seconds.  The base time is undefined; only relative
 times are valid.  This is an unweighted value which measures performance
-rather than cost. 
+rather than cost.
 \end{argy}
 
 \subsection{Get Operating Environment Parameters (EXPARM)}
@@ -163,7 +163,7 @@ System Software ID.  For example, ``COS 1.11''.
 
 \begin{argy}{MODE}{INTEGER}{Write Only}
 Job mode: 0 = batch, 1=interactive.  For this purpose, an interactive
-environment means that the user can respond to unanticipated questions. 
+environment means that the user can respond to unanticipated questions.
 \end{argy}
 
 \begin{argy}{KCSU}{INTEGER}{Write Only}
@@ -206,12 +206,12 @@ Unit number if IUNIT $>$ 0, or symbol ID if IUNIT $\leq$ 0.
 \begin{argy}{NAME}{CHARACTER\last(\last)}{Write Only}
 File name or symbol value obtained from the operating system. It is assumed
 that the unit/file name or symbol/value linkage will be passed to this
-routine at program activation. 
+routine at program activation.
 \end{argy}
 
 \begin{argy}{LN}{INTEGER}{Write Only}
 Effective length of the string returned in NAME.  Zero indicates that no
-name or value was available. 
+name or value was available.
 \end{argy}
 
 This routine provides a standard interface for establishing execution time
@@ -231,7 +231,7 @@ The routines prescribed in this section are intended primarily to support
 the SUPES free field input and memory manager utilities.  While calling
 these routines directly will not disturb the internal operation of these
 other facilities, the use of EXMEMY (section~\ref{sec:exmemy}) in
-conjunction with the memory manager is discouraged. 
+conjunction with the memory manager is discouraged.
 
 \subsection{Convert String to Uppercase (EXUPCS)} \label{sec:exupcs}
 
@@ -240,7 +240,7 @@ conjunction with the memory manager is discouraged.
 \begin{argy}{STRING}{CHARACTER\last(\last)}{Read and Write}
 Character string for which lowercase letters will be translated to
 uppercase.  All other characters which are not in the printable ASCII character
-set are converted to spaces. 
+set are converted to spaces.
 \end{argy}
 
 \subsection{Prompt/Read/Echo Input Record (EXREAD)} \label{sec:exread}
@@ -279,7 +279,7 @@ Any numeric variable.
 
 \begin{argy}{NUMLOC}{INTEGER}{Write Only}
 Numeric location of NUMVAR.  This value is an address measured in ANSI
-FORTRAN numeric storage units. 
+FORTRAN numeric storage units.
 \end{argy}
 
 
@@ -293,7 +293,7 @@ Any character variable.
 
 \begin{argy}{CHRLOC}{INTEGER}{Write Only}
 Character location of CHRVAR.  This value is an address measured in ANSI
-FORTRAN character storage units. 
+FORTRAN character storage units.
 \end{argy}
 
 
@@ -303,13 +303,13 @@ FORTRAN character storage units.
 
 \begin{argy}{MEMREQ}{INTEGER}{Read Only}
 Number of numeric storage units to allocate if MEMREQ $>$ 0, or release if
-MEMREQ $<$ 0. 
+MEMREQ $<$ 0.
 \end{argy}
 
 \begin{argy}{LOCBLK}{INTEGER}{Read (release) or Write (allocate)}
 Numeric location of memory block.  This value is an address measured in ANSI
 FORTRAN numeric storage units. Only memory previously allocated to the
-caller via EXMEMY can be released via EXMEMY. 
+caller via EXMEMY can be released via EXMEMY.
 \end{argy}
 
 \begin{argy}{MEMRTN}{INTEGER}{Write Only}

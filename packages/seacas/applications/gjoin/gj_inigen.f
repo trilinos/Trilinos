@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
@@ -12,7 +12,6 @@ C=======================================================================
      &   KIDSS, KNESS, KNDSS, KIXESS, KIXDSS, KLTESS, kltsss,
      &   kltsnc, KFACSS, KNMLB)
 C=======================================================================
-C $Id: inigen.f,v 1.3 2001/06/26 17:38:54 gdsjaar Exp $
 
 C   --*** INIGEN *** (GJOIN) Initialize the memory for GENESIS database
 C   --   Written by Amy Gilkey - revised 10/14/87
@@ -104,7 +103,6 @@ C   --   KFACSS - OUT - index of FACESS; the distribution factors for all sets
          CALL MDLONG ('FACNPS', KFACNS, 0) ! Expanded df list array
          call mdlong ('CFACNP', kcfacn, 0) ! Exo II df list array
       END IF
-
 
       IF (FIRST) THEN
          CALL MDRSRV ('IDESS', KIDSS, 0)

@@ -1,55 +1,45 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C     $Id: pickm1.f,v 1.2 1991/03/21 15:44:59 gdsjaar Exp $
-C     $Log: pickm1.f,v $
-C     Revision 1.2  1991/03/21 15:44:59  gdsjaar
-C     Changed all 3.14159... to atan2(0.0, -1.0)
-C     
-c     Revision 1.1.1.1  1990/11/30  11:13:24  gdsjaar
-c     FASTQ Version 2.0X
-c     
-c     Revision 1.1  90/11/30  11:13:23  gdsjaar
-c     Initial revision
-c     
-C     
+c
+C
 C     C* FILE: [.QMESH]PICKM1.FOR
 C     C* MODIFIED BY: TED BLACKER
 C     C* MODIFICATION DATE: 7/6/90
 C     C* MODIFICATION: COMPLETED HEADER INFORMATION
-C     
+C
       SUBROUTINE PICKM1 (N, X, Y, ANGLE, M1, IFIRST, REAL)
 C***********************************************************************
-C     
+C
 C     SUBROUTINE PICKM1 = DETERMINES A REASONABLE SHAPE FOR A LOGICAL
 C     RECTANGLE WITH PERIMETER GIVEN IN X AND Y
-C     
+C
 C***********************************************************************
-C     
+C
       DIMENSION X (N), Y (N), ANGLE (N)
       DIMENSION SMANG (7), INDEX (7)
-C     
+C
       LOGICAL REAL
-C     
+C
 C     FORM THE LIST OF SMALLEST ANGLES
-C     
+C
       NSA = 6
       DO 100 I = 1, NSA
          SMANG (I) = 10.
          INDEX (I) = 0
  100  CONTINUE
-C     
+C
       PI = ATAN2(0.0, -1.0)
       TWOPI = PI + PI
       AGOLD = ATAN2 (Y (1) - Y (N), X (1) - X (N))
-C     
+C
       DO 130 J = 1, N
-C     
+C
 C     GET THE ANGLE FORMED BY THIS SET OF POINTS
-C     
+C
          NEXT = J + 1
          IF  (NEXT .GT. N) NEXT = 1
          AGNEW = ATAN2 (Y (NEXT) - Y (J) ,  X (NEXT) - X (J))
@@ -58,10 +48,10 @@ C
          IF (DIFF .LT.  - PI)DIFF = DIFF + TWOPI
          ANGLE (J) = PI - DIFF
          AGOLD = AGNEW
-C     
+C
 C     SORT THIS ANGLE AGAINST PREVIOUS ANGLES TO SEE IF IT IS ONE OF
 C     THE SMALLEST
-C     
+C
          SMANG (NSA + 1) = ANGLE (J)
          INDEX (NSA + 1) = J
          DO II = 1, NSA
@@ -75,11 +65,11 @@ C
             INDEX (I + 1) = ITEMP
          end do
  120     CONTINUE
-C     
+C
  130  CONTINUE
-C     
+C
 C     DETERMINE OPTIMUM ORIGIN / SHAPE COMBINATION
-C     
+C
       ATOL = PI * 150. / 180.
       IFIRST = 1
       M1 = N / 4
@@ -89,7 +79,7 @@ C
       I4 = I3 + M1
       GBEST = ANGLE (1) + ANGLE (I2) + ANGLE (I3) + ANGLE (I4)
       BADANG = AMAX1 (ANGLE (1), ANGLE (I2), ANGLE (I3), ANGLE (I4))
-C     
+C
       MMAX = N / 2 - 1
       AMAXEL = DBLE(N / 4) * DBLE( (N + 2) / 4)
       DO 150 ISA = 1, NSA
@@ -122,6 +112,6 @@ C
          CALL MESAGE (' **           LARGE ANGLES  (> 150 DEGREES.) **')
          CALL MESAGE (' **           POORLY FORMED MESH MAY RESULT  **')
       ENDIF
-C     
+C
       RETURN
       END

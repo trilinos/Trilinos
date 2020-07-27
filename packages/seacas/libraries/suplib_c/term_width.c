@@ -2,15 +2,15 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 #define _POSIX_SOURCE
 #include <stdio.h>
 
 #ifdef _MSC_VER
-#include <windows.h>
 #include <io.h>
+#include <windows.h>
 #define isatty _isatty
 #else
 #include <sys/ioctl.h>

@@ -1,31 +1,31 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
       SUBROUTINE RDINPT (TIMES,IDA,IDB,MP,SEABMP,IMP,MBLK)
-C
+
 C     ******************************************************************
-C
+
 C     SUBROUTINE TO READ, CHECK AND PRINT INPUT DATA FROM STD-INPUT
 C     BATCH TYPE EXECUTION IS ACCOMPLISHEDBY PIPING INPUT DATA
 C     FROM A TEXT FILE; NORMALLY INPUT READ INTERACTIVELY.
 C     INPUT IS READ UNDER A FREE FIELD FORMAT IN SUBROUTINE FREFLD
-C
+
 C     SUBROUTINE FREFLD IS PART OF THE EXTERNAL "SUPES"
 C     LIBRARY (SAND86-0911)
-C
+
 C     Calls subroutines BANNR2, ERROR
-C
+
 C     Called by MAPVAR
-C
+
 C     ******************************************************************
-C
+
       include 'exodusII.inc'
       CHARACTER*10 CVAL
-C
+
       include 'amesh.blk'
       include 'bmesh.blk'
       include 'contrl.blk'
@@ -36,17 +36,17 @@ C
       include 'tapes.blk'
       include 'debg.blk'
       include 'inival.blk'
-C
+
       DIMENSION KVALUE(8),CVAL(8),IVALUE(8),RVALUE(8)
       DIMENSION TIMES(*),IDA(*),IDB(*),MP(3,*)
 C search box size per map
       DIMENSION SEABMP(*)
-C
+
 C     ******************************************************************
       MFIELD = 8
-C
+
 C     PRINT RUN-TIME DATA
-C
+
       WRITE (NOUT, 1000)
       WRITE (NTPOUT, 1000)
       CALL BANNR2 (84,QAINFO(1),NOUT)
@@ -61,9 +61,9 @@ C
       WRITE (NTPOUT, 1040) QAINFO(6)
       WRITE (NOUT, 1050)
       WRITE (NTPOUT, 1050)
-C
+
 C default map
-C
+
       CALL EXGEBI(NTP2EX,IDA,IERR)
       CALL EXGEBI(NTP3EX,IDB,IERR)
       IMP = 0
@@ -80,7 +80,7 @@ C
           END IF
     3   CONTINUE
     2 CONTINUE
-C
+
       NUMTIM = EXINQI (NTP2EX,EXTIMS)
       CALL EXGATM (NTP2EX,TIMES,IERR)
       OUTTIM = -1.
@@ -89,11 +89,11 @@ C
     4 CONTINUE
       WRITE (NOUT, 1060)
       WRITE (NOUT, 1061)
-C
+
     5 CONTINUE
       CALL FREFLD (0,0,'CMD >',MFIELD,IOSTAT,NFIELD,KVALUE,CVAL,
      1IVALUE,RVALUE)
-C
+
       if (iostat .ne. 0) go to 100
       if (nfield .eq. 0) go to 5
       IF (KVALUE(1)      .NE. 0)     GO TO 10
@@ -117,19 +117,19 @@ C
       IF (CVAL(1)(1:3) .EQ. 'END') GO TO 100
       IF (CVAL(1)(1:3) .EQ. 'EXI') GO TO 100
       IF (CVAL(1)(1:3) .EQ. 'RUN') GO TO 100
-C
+
    10 CONTINUE
-C
+
 C Bad input
-C
+
       WRITE (NOUT,1100) CVAL(1)
       WRITE (NTPOUT,1100) CVAL(1)
       GO TO 5
-C
+
    20 CONTINUE
-C
+
 C Help
-C
+
       IF (NFIELD .EQ. 1)THEN
         GO TO 4
       ELSE IF (CVAL(2)(1:3) .EQ. 'TIM') THEN
@@ -156,11 +156,11 @@ C
         WRITE(NOUT,2070)
         GO TO 5
       END IF
-C
+
    30 CONTINUE
-C
+
 C Time
-C
+
       IF (KVALUE(2) .NE. 1 .AND. KVALUE(2) .NE. 2)THEN
         IF(CVAL(2)(1:3) .EQ. 'ALL')THEN
           ISTEP = -1
@@ -172,9 +172,9 @@ C
           GO TO 5
         END IF
       ELSE
-C
+
 C convert time to closest time step
-C
+
         RTIME = RVALUE(2)
         ISTEP = NUMTIM
         DO 32 I = 1, NUMTIM - 1
@@ -187,11 +187,11 @@ C
    33   WRITE(NOUT,3020)RTIME,TIMES(ISTEP),ISTEP
         GO TO 5
       END IF
-C
+
    35 CONTINUE
-C
+
 C Step
-C
+
       IF (KVALUE(2) .NE. 1 .AND. KVALUE(2) .NE. 2)THEN
         IF(CVAL(2)(1:3) .EQ. 'ALL')THEN
           ISTEP = -1
@@ -207,11 +207,11 @@ C
         WRITE(NOUT,3025)ISTEP,TIMES(ISTEP)
         GO TO 5
       END IF
-C
+
    39 CONTINUE
-C
+
 C output time
-C
+
       IF (ISTEP .EQ. -1)THEN
         WRITE(NOUT,3040)
         GO TO 5
@@ -226,19 +226,19 @@ C
         WRITE(NOUT,3030)CVAL(2),CVAL(3)
       END IF
       GO TO 5
-C
+
    40 CONTINUE
-C
+
 C List times
-C
+
       WRITE (NOUT,4000)
       WRITE (NOUT,4010)(TIMES(I),I=1,NUMTIM)
       GO TO 5
-C
+
    50 CONTINUE
-C
+
 C Scheme
-C
+
       IF (KVALUE(2) .NE. 2)THEN
         WRITE(NOUT,5000)CVAL(2)
         GO TO 5
@@ -259,12 +259,12 @@ C
         WRITE(NOUT,5040)ISCHEM
       END IF
       GO TO 5
-C
+
    60 CONTINUE
-C
+
 C Searchbox (tolerance)
 C Searchbox toler_shell, toler_quad, toler_hex, toler_tet
-C
+
       if (nfield .eq. 2) then
         IF (KVALUE(2) .EQ. 1 .OR. KVALUE(2) .EQ. 2) THEN
           TOLSHL = RVALUE(2)
@@ -313,11 +313,11 @@ C
         end if
         GO TO 5
       end if
-C
+
  65   CONTINUE
-C
+
 C Initial Value (value)
-C
+
       IF (KVALUE(3) .EQ. 1 .OR. KVALUE(3) .EQ. 2) THEN
         VALINI = RVALUE(3)
         WRITE(NOUT,6501) VALINI
@@ -328,9 +328,9 @@ C
       GO TO 5
 
    70 CONTINUE
-C
+
 C Deformed vs undeformed processing
-C
+
       IF (KVALUE(2) .NE. 2)THEN
         WRITE(NOUT,7000)CVAL(2)
         GO TO 5
@@ -352,11 +352,11 @@ C
         WRITE(NOUT,7040)idef
       END IF
       GO TO 5
-C
+
  75   CONTINUE
-C
+
 C Debug output
-C
+
       IF (KVALUE(2) .NE. 2)THEN
         WRITE(NOUT,7005)CVAL(2)
         GO TO 5
@@ -367,9 +367,9 @@ C
       GO TO 5
 
    80 CONTINUE
-C
+
 C Map definition - donor mesh e-block to recipient mesh e-block
-C
+
       if (nfield .eq. 2 .and. cval(2)(1:3) .eq. 'RES') then
 C ... Reset to no block mappings.
          IMP  = 0
@@ -583,12 +583,12 @@ C ... Check for valid ids
         WRITE(NTPOUT,8060)CVAL(2)
         GO TO 5
       END IF
-C
+
    89 CONTINUE
-C
+
 C Read integer flag for accuracy checks (comparison of
 C various quantities between donor and recipient meshes
-C
+
       IF (KVALUE(2) .NE. 2) THEN
         WRITE (NOUT,8900)CVAL(2)
         WRITE (NTPOUT,8900)CVAL(2)
@@ -606,28 +606,27 @@ C
         WRITE(NTPOUT,8930)IACCU
       END IF
       GO TO 5
-C
+
    90 CONTINUE
-C
+
 C Stop execution
-C
+
       WRITE(NOUT,9000)
       WRITE(NTPOUT,9000)
       CALL ERROR('RDINPT','YOU ELECTED TO TERMINATE THE PROGRAM',' ',
      &           0,' ',0,' ',' ',1)
-C
+
   100 CONTINUE
-C
+
 C Continue execution (run)
-C
+
 C sort map array (MP) on second entry (recipient mesh element block)
 C this is required because of way mapping of multiple donor mesh
 C element blocks into one recipient mesh element blocks is
 C implemented (required to have all such maps located sequentially)
 C a simple sort on the 2nd entry accomplishes this and is easier
 C than rewriting the offending algorithm
-C
-C
+
       IBOTOM = IMP - 1
  110  ISWICH = 1
       DO 120 I = 1, IBOTOM
@@ -657,9 +656,9 @@ C
         GO TO 110
       END IF
   130 CONTINUE
-C
+
 C end sort
-C
+
       WRITE(NOUT,10000)
       WRITE(NTPOUT,10000)
       IF (ISTEP .EQ. -1) THEN
@@ -729,10 +728,10 @@ C
      3' RUN                   - END INPUT - RESUME PROGRAM',/,
      3' QUIT                  - TERMINATES THE PROGRAM',/,
      4' STOP                  - TERMINATES THE PROGRAM')
-C
+
  1100 FORMAT(5X,'UNKNOWN INPUT - READING',A20,/,
      1'          PLEASE TRY AGAIN')
-C
+
  2000 FORMAT(5X,'TIMe <real or ALL>',//,
      1'          IF A REAL NUMBER VALUE IS ENTERED, IT REPRESENTS',/,
      2'          THE TIME (STEP) SELECTED AT WHICH VARIABLES WILL',/,
@@ -819,7 +818,7 @@ C
      4'           0 - NO CHECK QUANTITIES COMPUTED',/,
      5'           1 - ALL APPROPRIATE QUANTITIES COMPUTED',/,
      6'           DEFAULT - 0')
-C
+
  3000 FORMAT(5X,'TIME YOU HAVE ENTERED - TIMES ALL',/,
      1'          ALL THE TIME STEPS WILL BE MAPPED',/,
      2'          ONLY UNDEFORMED GEOMETRY PROCESSING IS',/,
@@ -850,10 +849,10 @@ C
  3040 FORMAT(5X,'YOU HAVE ALREADY SELECTED TO PROCESS',/,
      1'          ALL TIME STEPS AVAILABLE. YOU CANNOT ALSO',/,
      2'          CHANGE THE OUTPUT TIME')
-C
+
  4000 FORMAT(5X,'TIMES AVAILABLE FROM THE RESTART FILE')
  4010 FORMAT(5X,/,E14.6)
-C
+
  5000 FORMAT(5X,'READING SCHEME COMMAND',/,
      1'          EXPECTED AN INTEGER IN FIELD 2',/,
      2'          READ',A20,/,
@@ -869,7 +868,7 @@ C
  5040 FORMAT(5X,'YOU HAVE ENTERED SCHEME ',I5,/,
      1'          THIS SCHEME HAS NOT BEEN IMPLEMENTED',/,
      2'          PLEASE TRY AGAIN')
-C
+
  6000 FORMAT(//,5X,'YOU HAVE ENTERED SEARCH ',F12.4,/,
      1'          VALUES GREATER THAN 1. ARE NOT RECOMMENDED')
  6001 FORMAT(//,5X,A,' Search Tolerance is ',F12.4)
@@ -886,7 +885,7 @@ C
      1'          EXPECTED A REAL NUMBER IN FIELD 3',/,
      2'          READ',A20,/,
      3'          PLEASE TRY AGAIN')
-C
+
  7000 FORMAT(5X,'READING DEFORMED GEOMETRY COMMAND',/,
      1'          EXPECTED AN INTEGER IN FIELD 2',/,
      2'          READ',A20,/,
@@ -914,7 +913,7 @@ C
  7040 FORMAT(//,5X,'YOU HAVE ENTERED - DEFORMED',I5,/,
      1'          value - MUST BE EITHER 0 OR 1',/,
      2'          PLEASE TRY AGAIN')
-C
+
  8000 FORMAT(5x,'Reset all block mappings.')
  8010 FORMAT(5X,'READING MAP COMMAND',/,
      &'          EXPECTING THE CHARACTER STRING "TO" ',/,
@@ -939,7 +938,7 @@ C
  8080 FORMAT(10X,I7)
  8090 FORMAT(//,5x,'ERROR: The entered id ', i5,
      *  ' is not a valid block id.',/)
-C
+
  8900 FORMAT(5X,'READING CHECK ACCURACY COMMAND',/,
      1'          EXPECTED AN INTEGER IN FIELD 2',/,
      2'          READ',A20,/,
@@ -952,10 +951,10 @@ C
      3'          COMPARISON BETWEEN THE DONOR AND RECIPIENT MESHES')
  8930 FORMAT(//,5X,'YOU HAVE ENTERED - CHECK',I5,/,
      1'          ONLY VALUES 0 OR 1 HAVE BEEN IMPLEMENTED')
-C
+
  9000 FORMAT(5X,'YOU HAVE ELECTED TO TERMINATE THE PROGRAM',/,
      1'          NOTHING WILL BE COMPUTED OR SAVED')
-C
+
 10000 FORMAT(5X,'LEAVING RDINPT - VALUES USED ARE:',//)
 10010 FORMAT(//5X,'YOU HAVE ENTERED FOR THE TIMES COMMAND',/,
      1'          *TIMES ALL* - ALL TIME STEPS WILL BE MAPPED',//)
@@ -966,7 +965,7 @@ C
      4'          TIME STEP',/,
      5'          istep =',i5,//)
 10030 FORMAT(5X,'MAP TO BE USED:')
-C
+
       END
 
       subroutine pmap(imp, mp, seabmp, nout)

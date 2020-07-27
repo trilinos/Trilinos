@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
@@ -50,7 +50,6 @@ C   --   NVAREL - IN - the number of element variables (if OPTION)
      &        LNPSNL, LNPSDF, NUMESS, LESSEL, LESSDF
       LOGICAL ALL
       ALL = (OPTION .EQ. '*')
-
 
       IF (ALL .OR. (INDEX (OPTION, 'I') .GT. 0)) THEN
          WRITE(*, 10000)

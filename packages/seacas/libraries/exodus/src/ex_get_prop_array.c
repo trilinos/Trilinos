@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 /*****************************************************************************
@@ -38,7 +38,6 @@ blocks, node sets, or side sets were introduced into the file. Before
 this function is invoked, memory must be allocated for the returned
 array of(num_elem_blk, num_node_sets, or {num_side_sets})
 integer values.
-
 
 This function can be used in place of
  - ex_get_elem_blk_ids(),

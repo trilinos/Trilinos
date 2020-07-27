@@ -1,29 +1,12 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
       SUBROUTINE DBVINI (NVARHI, NVARGL, NVARNP, NVAREL)
 C=======================================================================
-C$Id: dbvini.f,v 1.3 2009/03/25 12:46:01 gdsjaar Exp $
-C$Log: dbvini.f,v $
-CRevision 1.3  2009/03/25 12:46:01  gdsjaar
-CAdd copyright and license notice to all files.
-C
-CRevision 1.2  1990/11/30 09:50:55  gdsjaar
-CModified to work on Unicos
-C
-c Revision 1.1.1.1  90/08/14  16:13:59  gdsjaar
-c Testing
-c
-c Revision 1.1  90/08/14  16:13:58  gdsjaar
-c Initial revision
-c
-c Revision 1.1  90/08/09  13:39:20  gdsjaar
-c Initial revision
-c
 
 C   --*** DBVINI *** (EXOLIB) Initialize for DBVTYP and DBVIX
 C   --   Written by Amy Gilkey - revised 10/14/87
@@ -66,23 +49,6 @@ C   --Definition for the ENTRY routine parameters
 C=======================================================================
       ENTRY DBVTYP (IIX, TYP, ID)
 C=======================================================================
-C$Id: dbvini.f,v 1.3 2009/03/25 12:46:01 gdsjaar Exp $
-C$Log: dbvini.f,v $
-CRevision 1.3  2009/03/25 12:46:01  gdsjaar
-CAdd copyright and license notice to all files.
-C
-CRevision 1.2  1990/11/30 09:50:55  gdsjaar
-CModified to work on Unicos
-C
-c Revision 1.1.1.1  90/08/14  16:13:59  gdsjaar
-c Testing
-c
-c Revision 1.1  90/08/14  16:13:58  gdsjaar
-c Initial revision
-c
-c Revision 1.1  90/08/09  13:39:20  gdsjaar
-c Initial revision
-c
 
 C   --*** DBVTYP *** (EXOLIB) Return the variable type and number
 C   --   Written by Amy Gilkey - revised 03/18/88
@@ -125,23 +91,6 @@ C   --   ID - OUT - the variable number within the type
 C=======================================================================
       ENTRY DBVIX (ITYP, IID, IX)
 C=======================================================================
-C$Id: dbvini.f,v 1.3 2009/03/25 12:46:01 gdsjaar Exp $
-C$Log: dbvini.f,v $
-CRevision 1.3  2009/03/25 12:46:01  gdsjaar
-CAdd copyright and license notice to all files.
-C
-CRevision 1.2  1990/11/30 09:50:55  gdsjaar
-CModified to work on Unicos
-C
-c Revision 1.1.1.1  90/08/14  16:13:59  gdsjaar
-c Testing
-c
-c Revision 1.1  90/08/14  16:13:58  gdsjaar
-c Initial revision
-c
-c Revision 1.1  90/08/09  13:39:20  gdsjaar
-c Initial revision
-c
 
 C   --*** DBVIX *** (EXOLIB) Return the variable index
 C   --   Written by Amy Gilkey - revised 10/14/87

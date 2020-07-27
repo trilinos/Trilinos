@@ -1,39 +1,9 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
-C $Log: shaden.f,v $
-C Revision 1.2  2009/03/25 12:36:48  gdsjaar
-C Add copyright and license notice to all files.
-C Permission to assert copyright has been granted; blot is now open source, BSD
-C
-C Revision 1.1  1994/04/07 20:11:57  gdsjaar
-C Initial checkin of ACCESS/graphics/blotII2
-C
-c Revision 1.5  1993/10/20  21:40:47  gdsjaar
-c Added code to speed up plotting of zoomed meshes by eliminating
-c polygons and sphere outside zoomed range. Use correct window coords
-c this time.
-c
-c Revision 1.4  1993/10/14  13:51:46  gdsjaar
-c Changed so return early if polygon faces away from viewer. Up version number
-c
-c Revision 1.3  1993/09/16  21:13:51  gdsjaar
-c Redid method of writing rayshade file. Now, hidden 6 only writes file,
-c but does not do shaded plot.  Also, new file written each time rather
-c than appending on to end of first file.
-c
-c Revision 1.2  1993/09/15  23:00:04  gdsjaar
-c Initialize shdcol to 0, fix logic
-c
-c Revision 1.1  1993/09/15  20:44:02  gdsjaar
-c Added shading (hidden 5) option to blot.  Simple illumination model.
-c
-c Revision 1.2  1990/12/14  08:58:03  gdsjaar
-c Added RCS Id and Log to all files
-c
 C=======================================================================
       SUBROUTINE SHADEN (NLNKF, LINKF1, XN, YN, ZN, NCOL, LITE, NLIT,
      *  MINCOL, KDIFF, KSPEC, SPEXP, WXMIN, WYMIN, WXMAX, WYMAX)
@@ -60,14 +30,14 @@ C   --   XLN, YLN, ZLN - IN - the light unit vector components
       DATA LSTCOL /0/
 
 C... Coordinate System:
-C
+
 C    ^ Y
 C    |
 C    |
 C    |
 C    |         X
 C    Z--------->
-C
+
       XMAX = -1.0e30
       YMAX = -1.0e30
       XMIN =  1.0e30

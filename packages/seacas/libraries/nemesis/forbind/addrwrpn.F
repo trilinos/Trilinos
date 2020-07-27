@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
       subroutine adrdumn
@@ -9,9 +9,9 @@ C See packages/seacas/LICENSE for details
 
 #ifdef Build64
 C-----------------------------------------------------------------------
-C
+
 C   Get initial information from nemesis file
-C
+
       subroutine negii (idne, nproc, nproc_in_f, ftype, ierr)
       implicit none
       integer idne
@@ -19,24 +19,24 @@ C
       integer nproc_in_f
       character*(*) ftype
       integer ierr
-C
+
       integer*4 idne4
       integer*4 nproc4
       integer*4 nproc_in_f4
       integer*4 ierr4
-C
+
       idne4 = idne
       call negii4 (idne4, nproc4, nproc_in_f4, ftype, ierr4)
       nproc = nproc4
       nproc_in_f = nproc_in_f4
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C   Write initial information from nemesis file
-C
+
       subroutine nepii (idne, nproc, nproc_in_f, ftype, ierr)
       implicit none
       integer idne
@@ -44,24 +44,24 @@ C
       integer nproc_in_f
       character*(*) ftype
       integer ierr
-C
+
       integer*4 idne4
       integer*4 nproc4
       integer*4 nproc_in_f4
       integer*4 ierr4
-C
+
       idne4 = idne
       nproc4 = nproc
       nproc_in_f4 = nproc_in_f
       call nepii4 (idne4, nproc4, nproc_in_f4, ftype, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Read initial global information
-C
+
       subroutine negig (idne, nnodes_g, nelems_g, nelem_blks_g,
      $  nnode_sets_g, nside_sets_g, ierr)
       implicit none
@@ -72,21 +72,21 @@ C
       integer nnode_sets_g
       integer nside_sets_g
       integer ierr
-C
+
       integer*4 idne4
       integer*4 ierr4
-C
+
       idne4 = idne
       call negig4 (idne4, nnodes_g, nelems_g, nelem_blks_g,
      $  nnode_sets_g, nside_sets_g, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Write initial global information
-C
+
       subroutine nepig (idne, nnodes_g, nelems_g, nelem_blks_g,
      $  nnode_sets_g, nside_sets_g, ierr)
       implicit none
@@ -97,21 +97,21 @@ C
       integer nnode_sets_g
       integer nside_sets_g
       integer ierr
-C
+
       integer*4 idne4
       integer*4 ierr4
-C
+
       idne4 = idne
       call nepig4 (idne4, nnodes_g, nelems_g, nelem_blks_g,
      $  nnode_sets_g, nside_sets_g, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Read load balance parameters
-C
+
       subroutine neglbp (idne, nint_nodes, nbor_nodes, next_nodes,
      $  nint_elems, nbor_elems, nnode_cmaps, nelem_cmaps,
      $  processor, ierr)
@@ -126,24 +126,24 @@ C
       integer nelem_cmaps
       integer processor
       integer ierr
-C
+
       integer*4 idne4
       integer*4 processor4
       integer*4 ierr4
-C
+
       idne4 = idne
       processor4 = processor
       call neglbp4 (idne4, nint_nodes, nbor_nodes, next_nodes,
      $  nint_elems, nbor_elems, nnode_cmaps, nelem_cmaps,
      $  processor4, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Write load balance parameters
-C
+
       subroutine neplbp (idne, nint_nodes, nbor_nodes, next_nodes,
      $  nint_elems, nbor_elems, nnode_cmaps, nelem_cmaps,
      $  processor, ierr)
@@ -158,24 +158,24 @@ C
       integer nelem_cmaps
       integer processor
       integer ierr
-C
+
       integer*4 idne4
       integer*4 processor4
       integer*4 ierr4
-C
+
       idne4 = idne
       processor4 = processor
       call neplbp4 (idne4, nint_nodes, nbor_nodes, next_nodes,
      $  nint_elems, nbor_elems, nnode_cmaps, nelem_cmaps,
      $  processor4, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Write concatenated load balance parameters
-C
+
       subroutine neplbpc (idne, nint_nodes, nbor_nodes, next_nodes,
      $  nint_elems, nbor_elems, nnode_cmaps, nelem_cmaps, ierr)
       implicit none
@@ -188,22 +188,22 @@ C
       integer nnode_cmaps(*)
       integer nelem_cmaps(*)
       integer ierr
-C
+
       integer*4 idne4
       integer*4 ierr4
-C
+
       idne4 = idne
       call neplbpc4 (idne4, nint_nodes, nbor_nodes, next_nodes,
      $  nint_elems, nbor_elems, nnode_cmaps, nelem_cmaps,
      $  ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Read global node set parameters
-C
+
       subroutine negnspg (idne, ns_ids_glob, ns_n_cnt_glob,
      $  ns_df_cnt_glob, ierr)
       implicit none
@@ -212,21 +212,21 @@ C
       integer ns_n_cnt_glob(*)
       integer ns_df_cnt_glob(*)
       integer ierr
-C
+
       integer*4 idne4
       integer*4 ierr4
-C
+
       idne4 = idne
       call negnspg4 (idne4, ns_ids_glob, ns_n_cnt_glob,
      $  ns_df_cnt_glob, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Write global node set parameters
-C
+
       subroutine nepnspg (idne, global_ids, global_n_cnts,
      $  global_df_cnts, ierr)
       integer idne
@@ -234,21 +234,21 @@ C
       integer global_n_cnts(*)
       integer global_df_cnts(*)
       integer ierr
-C
+
       integer*4 idne4
       integer*4 ierr4
-C
+
       idne4 = idne
       call nepnspg4 (idne4, global_ids, global_n_cnts,
      $  global_df_cnts, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Read global side set parameters
-C
+
       subroutine negsspg (idne, ss_ids_glob, ss_n_cnt_glob,
      $  ss_df_cnt_glob, ierr)
       implicit none
@@ -257,21 +257,21 @@ C
       integer ss_n_cnt_glob(*)
       integer ss_df_cnt_glob(*)
       integer ierr
-C
+
       integer*4 idne4
       integer*4 ierr4
-C
+
       idne4 = idne
       call negsspg4 (idne4, ss_ids_glob, ss_n_cnt_glob,
      $  ss_df_cnt_glob, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Write global side set parameters
-C
+
       subroutine nepsspg (idne, global_ids, global_el_cnts,
      $  global_df_cnts, ierr)
       implicit none
@@ -280,61 +280,61 @@ C
       integer global_el_cnts(*)
       integer global_df_cnts(*)
       integer ierr
-C
+
       integer*4 idne4
       integer*4 ierr4
-C
+
       idne4 = idne
       call nepsspg4 (idne4, global_ids, global_el_cnts,
      $  global_df_cnts, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Read global element block information
-C
+
       subroutine negebig (idne, el_blk_ids, el_blk_cnts, ierr)
       implicit none
       integer idne
       integer el_blk_ids(*)
       integer el_blk_cnts(*)
       integer ierr
-C
+
       integer*4 idne4
       integer*4 ierr4
-C
+
       idne4 = idne
       call negebig4 (idne4, el_blk_ids, el_blk_cnts, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Write global element block information
-C
+
       subroutine nepebig (idne, el_blk_ids, el_blk_cnts, ierr)
       implicit none
       integer idne
       integer el_blk_ids(*)
       integer el_blk_cnts(*)
       integer ierr
-C
+
       integer*4 idne4
       integer*4 ierr4
-C
+
       idne4 = idne
       call nepebig4 (idne4, el_blk_ids, el_blk_cnts, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Read side set element list and side set side list
-C
+
       subroutine negnss (idne, ss_id, start_side_num, num_sides,
      $  ss_elem_list, ss_side_list, ierr)
       implicit none
@@ -345,21 +345,21 @@ C
       integer ss_elem_list(num_sides)
       integer ss_side_list(num_sides)
       integer ierr
-C
+
       integer*4 idne4
       integer*4 ierr4
-C
+
       idne4 = idne
       call negnss4 (idne4, ss_id, start_side_num, num_sides,
      $  ss_elem_list, ss_side_list, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Write side set element list and side set side list
-C
+
       subroutine nepnss (idne, ss_id, start_side_num, num_sides,
      $  ss_elem_list, ss_side_list, ierr)
       implicit none
@@ -370,21 +370,21 @@ C
       integer ss_elem_list(num_sides)
       integer ss_side_list(num_sides)
       integer ierr
-C
+
       integer*4 idne4
       integer*4 ierr4
-C
+
       idne4 = idne
       call nepnss4 (idne4, ss_id, start_side_num, num_sides,
      $  ss_elem_list, ss_side_list, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Read side set distribution factor
-C
+
       subroutine negnssd (idne, ss_id, start_num, num_df_to_get,
      $  ss_df, ierr)
       implicit none
@@ -394,21 +394,21 @@ C
       integer num_df_to_get
       real ss_df(num_df_to_get)
       integer ierr
-C
+
       integer*4 idne4
       integer*4 ierr4
-C
+
       idne4 = idne
       call negnssd4 (idne4, ss_id, start_num, num_df_to_get,
      $  ss_df, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Write side set distribution factor
-C
+
       subroutine nepnssd (idne, ss_id, start_num, num_df_to_get,
      $  ss_df, ierr)
       implicit none
@@ -418,21 +418,21 @@ C
       integer num_df_to_get
       real ss_df(num_df_to_get)
       integer ierr
-C
+
       integer*4 idne4
       integer*4 ierr4
-C
+
       idne4 = idne
       call nepnssd4 (idne4, ss_id, start_num, num_df_to_get,
      $  ss_df, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Read node set list for a single node set
-C
+
       subroutine negnns (idne, ns_id, start_node_num, num_node,
      $  ns_node_list, ierr)
       implicit none
@@ -442,21 +442,21 @@ C
       integer num_node
       integer ns_node_list(num_node)
       integer ierr
-C
+
       integer*4 idne4
       integer*4 ierr4
-C
+
       idne4 = idne
       call negnns4 (idne4, ns_id, start_node_num, num_node,
      $  ns_node_list, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Write node set list for a single node set
-C
+
       subroutine nepnns (idne, ns_id, start_node_num, num_node,
      $  ns_node_list, ierr)
       implicit none
@@ -466,21 +466,21 @@ C
       integer num_node
       integer ns_node_list(num_node)
       integer ierr
-C
+
       integer*4 idne4
       integer*4 ierr4
-C
+
       idne4 = idne
       call nepnns4 (idne4, ns_id, start_node_num, num_node,
      $  ns_node_list, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Read node set distribution factor
-C
+
       subroutine negnnsd (idne, ns_id, start_num, num_df_to_get,
      $  ns_df, ierr)
       implicit none
@@ -490,21 +490,21 @@ C
       integer num_df_to_get
       real ns_df(num_df_to_get)
       integer ierr
-C
+
       integer*4 idne4
       integer*4 ierr4
-C
+
       idne4 = idne
       call negnnsd4 (idne4, ns_id, start_num, num_df_to_get,
      $  ns_df, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Write node set distribution factor
-C
+
       subroutine nepnnsd (idne, ns_id, start_num, num_df_to_get,
      $  ns_df, ierr)
       implicit none
@@ -514,21 +514,21 @@ C
       integer num_df_to_get
       real ns_df(num_df_to_get)
       integer ierr
-C
+
       integer*4 idne4
       integer*4 ierr4
-C
+
       idne4 = idne
       call nepnnsd4 (idne4, ns_id, start_num, num_df_to_get,
      $  ns_df, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Read coordinates of the nodes
-C
+
       subroutine negcor (idne, start_node_num, num_nodes, x_coor,
      $  y_coor, z_coor, ierr)
       implicit none
@@ -539,21 +539,21 @@ C
       real y_coor(num_nodes)
       real z_coor(num_nodes)
       integer ierr
-C
+
       integer*4 idne4
       integer*4 ierr4
-C
+
       idne4 = idne
       call negcor4 (idne4, start_node_num, num_nodes, x_coor,
      $  y_coor, z_coor, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Write coordinates of the nodes
-C
+
       subroutine nepcor (idne, start_node_num, num_nodes, x_coor,
      $  y_coor, z_coor, ierr)
       implicit none
@@ -564,21 +564,21 @@ C
       real y_coor(num_nodes)
       real z_coor(num_nodes)
       integer ierr
-C
+
       integer*4 idne4
       integer*4 ierr4
-C
+
       idne4 = idne
       call nepcor4 (idne4, start_node_num, num_nodes, x_coor,
      $  y_coor, z_coor, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Read an element blocks connectivity list
-C
+
       subroutine negnec (idne, elem_blk_id, start_elem_num,
      $  num_elems, connect, ierr)
       implicit none
@@ -588,21 +588,21 @@ C
       integer num_elems
       integer connect(num_elems)
       integer ierr
-C
+
       integer*4 idne4
       integer*4 ierr4
-C
+
       idne4 = idne
       call negnec4 (idne4, elem_blk_id, start_elem_num,
      $  num_elems, connect, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Write an element blocks connectivity list
-C
+
       subroutine nepnec (idne, elem_blk_id, start_elem_num,
      $  num_elems, connect, ierr)
       implicit none
@@ -612,21 +612,21 @@ C
       integer num_elems
       integer connect(num_elems)
       integer ierr
-C
+
       integer*4 idne4
       integer*4 ierr4
-C
+
       idne4 = idne
       call nepnec4 (idne4, elem_blk_id, start_elem_num,
      $  num_elems, connect, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Read an element blocks attributes
-C
+
       subroutine negneat (idne, elem_blk_id, start_elem_num,
      $  num_elems, attrib, ierr)
       implicit none
@@ -636,21 +636,21 @@ C
       integer num_elems
       real attrib(num_elems)
       integer ierr
-C
+
       integer*4 idne4
       integer*4 ierr4
-C
+
       idne4 = idne
       call negneat4 (idne4, elem_blk_id, start_elem_num,
      $  num_elems, attrib, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Write an element blocks attributes
-C
+
       subroutine nepneat (idne, elem_blk_id, start_elem_num,
      $  num_elems, attrib, ierr)
       implicit none
@@ -660,40 +660,40 @@ C
       integer num_elems
       real attrib(num_elems)
       integer ierr
-C
+
       integer*4 idne4
       integer*4 ierr4
-C
+
       idne4 = idne
       call nepneat4 (idne4, elem_blk_id, start_elem_num,
      $  num_elems, attrib, ierr4)
       ierr = ierr4
-C
+
       end
-C
+
 C-----------------------------------------------------------------------
 C  Read the element type for a specific element block
-C
+
       subroutine negelt (idne, elem_blk_id, elem_type, ierr)
       implicit none
       integer idne
       integer elem_blk_id
       character*(*) elem_type
       integer ierr
-C
+
       integer*4 idne4
       integer*4 ierr4
-C
+
       idne4 = idne
       call negelt4 (idne4, elem_blk_id, elem_type, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Read a variable for an element block
-C
+
       subroutine negnev (idne, time_step, elem_var_index,
      $  elem_blk_id, num_elem_this_blk, start_elem_num,
      $  num_elem, elem_var_vals, ierr)
@@ -707,12 +707,12 @@ C
       integer num_elem
       real elem_var_vals(num_elem)
       integer ierr
-C
+
       integer*4 idne4
       integer*4 time_step4
       integer*4 elem_var_index4
       integer*4 ierr4
-C
+
       idne4 = idne
       time_step4 = time_step
       elem_var_index4 = elem_var_index
@@ -720,13 +720,13 @@ C
      $  elem_blk_id, num_elem_this_blk, start_elem_num,
      $  num_elem, elem_var_vals, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Write a variable slab for an element block
-C
+
       subroutine nepevs (idne, time_step, elem_var_index,
      $  elem_blk_id, start_pos, num_vals, elem_var_vals,
      $  ierr)
@@ -739,12 +739,12 @@ C
       integer num_vals
       real elem_var_vals(num_vals)
       integer ierr
-C
+
       integer*4 idne4
       integer*4 time_step4
       integer*4 elem_var_index4
       integer*4 ierr4
-C
+
       idne4 = idne
       time_step4 = time_step
       elem_var_index4 = elem_var_index
@@ -752,13 +752,13 @@ C
      $  elem_blk_id, start_pos, num_vals, elem_var_vals,
      $  ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Read the values of a single nodal variable for a single time step
-C
+
       subroutine negnnv (idne, time_step, nodal_var_index,
      $  start_node_num, num_nodes, nodal_vars, ierr)
       implicit none
@@ -769,25 +769,25 @@ C
       integer num_nodes
       real nodal_vars(num_nodes)
       integer ierr
-C
+
       integer*4 idne4
       integer*4 time_step4
       integer*4 nodal_var_index4
       integer*4 ierr4
-C
+
       idne4 = idne
       time_step4 = time_step
       nodal_var_index4 = nodal_var_index
       call negnnv4 (idne4, time_step4, nodal_var_index4,
      $  start_node_num, num_nodes, nodal_vars, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Write nodal variable slab
-C
+
       subroutine nepnvs (idne, time_step, nodal_var_index,
      $  start_pos, num_vals, nodal_var_vals, ierr)
       implicit none
@@ -798,25 +798,25 @@ C
       integer num_vals
       real nodal_var_vals(num_vals)
       integer ierr
-C
+
       integer*4 idne4
       integer*4 time_step4
       integer*4 nodal_var_index4
       integer*4 ierr4
-C
+
       idne4 = idne
       time_step4 = time_step
       nodal_var_index4 = nodal_var_index
       call nepnvs4 (idne4, time_step4, nodal_var_index4,
      $  start_pos, num_vals, nodal_var_vals, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Read the element numbering map
-C
+
       subroutine negnenm (idne, starte, num_ent, elem_map, ierr)
       implicit none
       integer idne
@@ -824,20 +824,20 @@ C
       integer num_ent
       integer elem_map(num_ent)
       integer ierr
-C
+
       integer*4 idne4
       integer*4 ierr4
-C
+
       idne4 = idne
       call negnenm4 (idne4, starte, num_ent, elem_map, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Write the element numbering map
-C
+
       subroutine nepnenm (idne, starte, num_ent, elem_map, ierr)
       implicit none
       integer idne
@@ -845,20 +845,20 @@ C
       integer num_ent
       integer elem_map(num_ent)
       integer ierr
-C
+
       integer*4 idne4
       integer*4 ierr4
-C
+
       idne4 = idne
       call nepnenm4 (idne4, starte, num_ent, elem_map, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Read the node numbering map
-C
+
       subroutine negnnnm (idne, startn, num_ent, node_map, ierr)
       implicit none
       integer idne
@@ -866,20 +866,20 @@ C
       integer num_ent
       integer node_map(num_ent)
       integer ierr
-C
+
       integer*4 idne4
       integer*4 ierr4
-C
+
       idne4 = idne
       call negnnnm4 (idne4, startn, num_ent, node_map, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Write the node numbering map
-C
+
       subroutine nepnnnm (idne, startn, num_ent, node_map, ierr)
       implicit none
       integer idne
@@ -887,20 +887,20 @@ C
       integer num_ent
       integer node_map(num_ent)
       integer ierr
-C
+
       integer*4 idne4
       integer*4 ierr4
-C
+
       idne4 = idne
       call nepnnnm4 (idne4, startn, num_ent, node_map, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Read the node map for a processor
-C
+
       subroutine negnm (idne, node_mapi, node_mapb, node_mape,
      $  processor, ierr)
       implicit none
@@ -910,23 +910,23 @@ C
       integer node_mape(*)
       integer processor
       integer ierr
-C
+
       integer*4 idne4
       integer*4 processor4
       integer*4 ierr4
-C
+
       idne4 = idne
       processor4 = processor
       call negnm4 (idne4, node_mapi, node_mapb, node_mape,
      $  processor4, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Write a node map for a processor
-C
+
       subroutine nepnm (idne, node_mapi, node_mapb, node_mape,
      $  processor, ierr)
       implicit none
@@ -936,23 +936,23 @@ C
       integer node_mape(*)
       integer processor
       integer ierr
-C
+
       integer*4 idne4
       integer*4 processor4
       integer*4 ierr4
-C
+
       idne4 = idne
       processor4 = processor
       call nepnm4 (idne4, node_mapi, node_mapb, node_mape,
      $  processor4, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Read the element map for a processor
-C
+
       subroutine negem (idne, elem_mapi, elem_mapb, processor, ierr)
       implicit none
       integer idne
@@ -960,22 +960,22 @@ C
       integer elem_mapb(*)
       integer processor
       integer ierr
-C
+
       integer*4 idne4
       integer*4 processor4
       integer*4 ierr4
-C
+
       idne4 = idne
       processor4 = processor
       call negem4 (idne4, elem_mapi, elem_mapb, processor4, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Write the element map for a processor
-C
+
       subroutine nepem (idne, elem_mapi, elem_mapb, processor, ierr)
       implicit none
       integer idne
@@ -983,22 +983,22 @@ C
       integer elem_mapb(*)
       integer processor
       integer ierr
-C
+
       integer*4 idne4
       integer*4 processor4
       integer*4 ierr4
-C
+
       idne4 = idne
       processor4 = processor
       call nepem4 (idne4, elem_mapi, elem_mapb, processor4, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Read the communications map parameters for a single processor
-C
+
       subroutine negcmp (idne, ncmap_ids, ncmap_node_cnts,
      $  ecmap_ids, ecmap_elem_cnts, processor, ierr)
       implicit none
@@ -1009,23 +1009,23 @@ C
       integer ecmap_elem_cnts(*)
       integer processor
       integer ierr
-C
+
       integer*4 idne4
       integer*4 processor4
       integer*4 ierr4
-C
+
       idne4 = idne
       processor4 = processor
       call negcmp4 (idne4, ncmap_ids, ncmap_node_cnts,
      $  ecmap_ids, ecmap_elem_cnts, processor4, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Write the communications map parameters for a single processor
-C
+
       subroutine nepcmp (idne, nmap_ids, nmap_node_cnts, emap_ids,
      $  emap_elem_cnts, processor, ierr)
       implicit none
@@ -1040,19 +1040,19 @@ C
       integer*4 idne4
       integer*4 processor4
       integer*4 ierr4
-C
+
       idne4 = idne
       processor4 = processor
       call nepcmp4 (idne4, nmap_ids, nmap_node_cnts, emap_ids,
      $  emap_elem_cnts, processor4, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Write the communications map parameters for all processors
-C
+
       subroutine nepcmpc (idne, nmap_ids, nmap_node_cnts,
      $  nproc_ptrs, emap_ids, emap_elem_cnts, eproc_ptrs, ierr)
       implicit none
@@ -1067,7 +1067,7 @@ C
 
       integer*4 idne4
       integer*4 ierr4
-C
+
       idne4 = idne
       call nepcmpc4 (idne4, nmap_ids, nmap_node_cnts,
      $  nproc_ptrs, emap_ids, emap_elem_cnts, eproc_ptrs, ierr4)
@@ -1076,9 +1076,9 @@ C
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Read the nodal communications map for a single processor
-C
+
       subroutine negncm (idne, map_id, node_ids, proc_ids,
      $  processor, ierr)
       implicit none
@@ -1088,23 +1088,23 @@ C
       integer proc_ids(*)
       integer processor
       integer ierr
-C
+
       integer*4 idne4
       integer*4 processor4
       integer*4 ierr4
-C
+
       idne4 = idne
       processor4 = processor
       call negncm4 (idne4, map_id, node_ids, proc_ids,
      $  processor4, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Write the nodal communications map for a single processor
-C
+
       subroutine nepncm (idne, map_id, node_ids, proc_ids,
      $  processor, ierr)
       implicit none
@@ -1114,23 +1114,23 @@ C
       integer proc_ids(*)
       integer processor
       integer ierr
-C
+
       integer*4 idne4
       integer*4 processor4
       integer*4 ierr4
-C
+
       idne4 = idne
       processor4 = processor
       call nepncm4 (idne4, map_id, node_ids, proc_ids,
      $  processor4, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Read the elemental communications map for a single processor
-C
+
       subroutine negecm (idne, map_id, elem_ids, side_ids,
      $  proc_ids, processor, ierr)
       implicit none
@@ -1145,19 +1145,19 @@ C
       integer*4 idne4
       integer*4 processor4
       integer*4 ierr4
-C
+
       idne4 = idne
       processor4 = processor
       call negecm4 (idne4, map_id, elem_ids, side_ids,
      $  proc_ids, processor4, ierr4)
       ierr = ierr4
-C
+
       end
 
 C-----------------------------------------------------------------------
-C
+
 C  Write the elemental communications map for a single processor
-C
+
       subroutine nepecm (idne, map_id, elem_ids, side_ids,
      $  proc_ids, processor, ierr)
       implicit none

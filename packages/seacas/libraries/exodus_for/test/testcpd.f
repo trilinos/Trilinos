@@ -1,15 +1,14 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
       program testcpd
 
-c
 c This is a test program for the Fortran binding of the EXODUS II
 c database copy function (excopy).
-c
+
       implicit none
 
       include 'exodusII.inc'
@@ -20,9 +19,7 @@ c
 
       data iin /5/, iout /6/
 
-c
 c open EXODUS II input file
-c
 
 c the setting of cpu_ws isn't used in copying but will test the
 c conversion routines
@@ -38,9 +35,8 @@ c conversion routines
      1                f4.2)') vers
       write (iout, '(" I/O word size: ",i4)') io_ws
 
-c
 c  create EXODUS II output file with 8-byte reals
-c
+
 c the setting of cpu_ws isn't used in copying but will test the
 c conversion routines
 

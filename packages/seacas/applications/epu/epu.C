@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 // concatenates EXODUS/GENESIS output from parallel processors to a single file
@@ -1801,7 +1801,7 @@ namespace {
         if (blocks[p][b].entity_count() > 0) { // non-zero length block
 
           if (debug_level & 4) {
-            fmt::print(stderr, "#");
+            fmt::print("#");
           }
           size_t maximum_nodes = blocks[p][b].entity_count();
           maximum_nodes *= blocks[p][b].nodesPerElement;
@@ -1859,7 +1859,7 @@ namespace {
 
         } // end if blocks[p][b].entity_count() (non-zero length block)
         else if (debug_level & 4) {
-          fmt::print(stderr, ".");
+          fmt::print(".");
         }
       } // end for p=0..part_count-1
 
@@ -1883,7 +1883,7 @@ namespace {
         delete[] attributes[b];
       } // end for b=0..global_num_blocks-1
       if (debug_level & 4) {
-        fmt::print(stderr, "\n");
+        fmt::print("\n");
       }
     }
     fmt::print("\n");

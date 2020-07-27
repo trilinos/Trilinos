@@ -1,14 +1,13 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
 C=======================================================================
       SUBROUTINE RWNMAP (NDBIN, NDBOUT, NUMNP, NUMNPO, IXNODE,
      &                   MAPND, NEWIX)
 C=======================================================================
-C $Id: rwnmap.f,v 1.1 2009/04/24 22:28:49 gdsjaar Exp $
 C   --*** RWNMAP *** (ALGEBRA) Read and write database node number map
 C   --
 C   --

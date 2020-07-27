@@ -1,24 +1,12 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
       SUBROUTINE SHWINT (ITRANT, DIM3)
 C=======================================================================
-
-C   $Id: shwint.f,v 1.2 1991/01/09 12:59:38 gdsjaar Exp $
-C   $Log: shwint.f,v $
-C   Revision 1.2  1991/01/09 12:59:38  gdsjaar
-C   Initial conversion from GEN3D to GENSHELL, no BC yet
-C
-c Revision 1.1.1.1  90/08/20  12:22:56  gdsjaar
-c Gen3D Mesh Generation Program
-c
-c Revision 1.1  90/08/20  12:22:55  gdsjaar
-c Initial revision
-c
 
       CHARACTER*20 RSTR(9)
       CHARACTER*20 TYPE
@@ -52,4 +40,3 @@ c
  20   FORMAT (1X, 10A)
       RETURN
       END
-

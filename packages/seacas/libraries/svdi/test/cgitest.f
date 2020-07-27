@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 c      external cgit07
@@ -31,7 +31,6 @@ C             7    white   1.,1.,1.
       data colors / 0, 0, 0,  255, 0, 0, 0, 255, 0,
      *               255, 255, 0, 0, 0, 255,  255, 0, 255,
      *               0, 255, 255,  255, 255, 255 /
-
 
       met1 = 'file55'
       met2 = 'meta2'

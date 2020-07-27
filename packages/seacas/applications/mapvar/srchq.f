@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
       SUBROUTINE SRCHQ (
@@ -10,32 +10,32 @@ C See packages/seacas/LICENSE for details
      *  NISR,    NRSR,    NISS,    NRSS,    ISRCHR,  RSRCHR, LBLK,
      *  LIST,    IND,     IRNK,    IRNK2,   INDX,    ILO,     IUP,
      *  IDP,     IDS,     XMIN,    XMAX,    ISCR,    RSCR,    IERR )
-C
+
 C-----------------------------------------------------------------------
-C
+
 C DESCRIPTION:
-C
+
 C THIS SUBROUTINE CALCULATES THE CLOSEST POINT PROBLEM
 C BETWEEN NPTS POINTS AND NFSRF SURFACES AND RETURNS RESULTS OF
 C SEARCH IN ISRCHR,RSRCHR
-C
+
 C USED HERE FOR FINDING LOCATION OF EITHER NODE OR ELEMENT CENTROID
 C FROM MESH-B IN QUAD-4 ELEMENT OF MESH-A
-C
+
 C-----------------------------------------------------------------------
-C
+
 C FORMAL PARAMETERS
-C
+
 C MEMORY      : P=PERMANENT, S=SCRATCH
 C NAME        : IMPLICIT A-H,O-Z REAL, I-N INTEGER
 C TYPE        : INPUT_STATUS/OUTPUT_STATUS (I=INPUT,O=OUTPUT,P=PASSED,
 C               U=UNMODIFIED,-=UNDEFINED)
 C DESCRIPTION : DESCRIPTION OF VARIABLE
-C
+
 C-----------------------------------------------------------------------
-C
+
 C CALLING ARGUMENTS:
-C
+
 C MEMORY NAME     TYPE   DESCRIPTION
 C ---    ----     ---    -----------
 C  P     NPSRF    I/U    NUMBER OF POINTS THAT DEFINE THE SURFACE
@@ -66,14 +66,14 @@ C  S     XMAX     -/-    SEARCH BOX MAXIMUM DIMENSION
 C  S     ISCR     -/-    INTEGER SCRATCH MEMORY
 C  S     RSCR     -/-    REAL SCRATCH MEMORY
 C  P     IERR     -/O    ERROR FLAG
-C
+
 C-----------------------------------------------------------------------
-C
+
       include 'amesh.blk'
       include 'tapes.blk'
-C
+
 C INPUT/OUTPUT ARRAYS
-C
+
       DIMENSION
      *  LINKSRF(NELNDA,NFSRF),   XYZSRF(NPSRF,3),
      *  XYZPTS(NPTS,3),
@@ -87,9 +87,9 @@ C
       DIMENSION
      *  XMIN(LBLK,3),       XMAX(LBLK,3),        ISCR(NISS*LBLK),
      *  RSCR(NRSS*LBLK)
-C
+
 C ISRCHR and RSRCHR must be initialized to zero
-C
+
       DO 1 I = 1, NPTS
         DO 2 J = 1, NISR
           ISRCHR(J,I) = 0
@@ -98,7 +98,7 @@ C
           RSRCHR(K,I) = 0.
  3      CONTINUE
  1    CONTINUE
-C
+
       IF( NISR .LT. 1 .OR. NRSR .LT. 2 .OR. NISS .LT. 5 .OR.
      *    NRSS .LT. 10 )THEN
         IERR = 1
@@ -106,10 +106,10 @@ C
       ENDIF
 C DIMENSION OF COORDINATES
       NDIM = 2
-C
+
 C CALL SORTING ROUTINE TO MAKE RANK ARRAYS
       CALL MKRNK( NPTS,NPTS,NDIM,XYZPTS,IND,IRNK,IRNK2 )
-C
+
 C LOOP OVER SURFACES AND SEARCH FOR POINTS WITHIN CAPTURE BOX
       DO 100 IFSRF = 1, NFSRF, LBLK
         NE = MIN(LBLK,NFSRF-IFSRF+1)
@@ -120,7 +120,7 @@ C CONSTRUCT THE BOUNDING BOX FOR NE SURFACES
           NJ = LINKSRF(2,JFSRF)
           NK = LINKSRF(3,JFSRF)
           NL = LINKSRF(4,JFSRF)
-C
+
           XMINMS = MIN(XYZSRF(NI,1),XYZSRF(NJ,1),
      *                 XYZSRF(NK,1),XYZSRF(NL,1))
           XMAXMS = MAX(XYZSRF(NI,1),XYZSRF(NJ,1),
@@ -143,19 +143,19 @@ C
           XMIN(J,3) = ZMINMS - TOLER
           XMAX(J,3) = ZMAXMS + TOLER
   110   CONTINUE
-C
+
         DO 120 IDIM = 1, NDIM
           CALL GETBND( LBLK, NE, XYZPTS(1,IDIM),  IND(1,IDIM),
      *                 NPTS,   XMIN(1,IDIM), XMAX(1,IDIM),
      *                 NPTS,    ILO(1,IDIM),  IUP(1,IDIM),
      *                 ISCR, RSCR )
   120   CONTINUE
-C
+
         DO 130 J = 1, NE
           JFSRF = IFSRF + J - 1
           CALL MKLSTV(NPTS,IND,IRNK2,IUP,ILO,INDX,J,LIST,NLIST,
      *                LBLK,NDIM)
-C
+
           DO 140 K = 1, NLIST
             lval = list(k)
             CALL QADSRC(

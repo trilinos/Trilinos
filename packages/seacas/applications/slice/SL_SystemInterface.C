@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 #include "SL_SystemInterface.h"
 
@@ -18,12 +18,6 @@
 #include <SL_tokenize.h>
 #include <copyright.h>
 #include <fmt/format.h>
-
-#if defined(__PUMAGON__)
-#define NPOS (size_t) - 1
-#else
-#define NPOS std::string::npos
-#endif
 
 namespace {
   int  get_free_descriptor_count();

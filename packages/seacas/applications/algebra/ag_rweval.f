@@ -1,7 +1,7 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 C=======================================================================
       SUBROUTINE RWEVAL (NDBIN, NDBOUT, A, ia, C, NPTIMS, NUMSTO,
@@ -317,8 +317,8 @@ C     Remove scratch arrays
                    RETURN
                 END IF
              ELSE
-C ... Even though there are no nodes in the node set, we have told the output 
-C     database that there are (empty) node sets.  We need to read and write 
+C ... Even though there are no nodes in the node set, we have told the output
+C     database that there are (empty) node sets.  We need to read and write
 C     the node set ids
                 CALL EXGNSI (NDBIN, IA(KIDNS), IERR)
              END IF
@@ -832,7 +832,6 @@ C      --Write the variables for the time step
      *      A(KXNODE), A(KIXELB), A(KIXEBO), A(KXELEM),
      *      A(KIDELB), A(KIEVOK), A(KGVSCR), A(KVARSC), MERR)
           IF (MERR .EQ. 1) RETURN
-
 
 C      --Move the values for the current time step into locations for the
 C      --last time step

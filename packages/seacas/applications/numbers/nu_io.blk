@@ -1,19 +1,13 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: io.blk,v 1.1 1991/02/21 15:43:46 gdsjaar Exp $
-C $Log: io.blk,v $
-C Revision 1.1  1991/02/21 15:43:46  gdsjaar
-C Initial revision
-C
       COMMON /IO/ IOMIN, IOMAX, ITERM, IHARD, NDB
-C
+
 C     -- IOMIN = MINIMUM UNIT NUMBER FOR OUTPUT OF DATA
 C     -- IOMAX = MAXIMUM UNIT NUMBER FOR OUTPUT OF DATA
 C     -- ITERM = UNIT NUMBER FOR TERMINAL OUTPUT
 C     -- IHARD = UNIT NUMBER FOR LISTING (HARDCOPY)
 C     -- NDB   = UNIT NUMBER FOR EXODUS FILE
-C

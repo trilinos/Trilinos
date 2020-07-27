@@ -1,27 +1,13 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
       SUBROUTINE DBOELB (NDB, NELBS, NELBE,
      &   IDELB, NUMELB, NUMLNK, NUMATR, LINK, ATRIB)
 C=======================================================================
-C$Id: dboelb.f,v 1.2 2009/03/25 12:46:01 gdsjaar Exp $
-C$Log: dboelb.f,v $
-CRevision 1.2  2009/03/25 12:46:01  gdsjaar
-CAdd copyright and license notice to all files.
-C
-CRevision 1.1.1.1  1990/08/14 16:13:19  gdsjaar
-CTesting
-C
-c Revision 1.1  90/08/14  16:13:17  gdsjaar
-c Initial revision
-c
-c Revision 1.1  90/08/09  13:39:14  gdsjaar
-c Initial revision
-c
 
 C   --*** DBOELB *** (EXOLIB) Write database element blocks
 C   --   Written by Amy Gilkey - revised 10/12/87

@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 
@@ -66,7 +66,7 @@ int ex_put_block_params(int exoid, size_t block_count, const struct ex_block *bl
 
   /*
    * ========================================================================
-   * Check whether `blocks` is homogenous (all same type) and if so, does it
+   * Check whether `blocks` is homogeneous (all same type) and if so, does it
    * contain entries for all blocks of that type that will be defined. If so,
    * can consolidate some operations...
    */

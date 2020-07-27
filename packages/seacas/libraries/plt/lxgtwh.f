@@ -1,14 +1,9 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
-C $Id: lxgtwh.f,v 1.1 1993/07/16 16:46:42 gdsjaar Exp $
-C $Log: lxgtwh.f,v $
-C Revision 1.1  1993/07/16 16:46:42  gdsjaar
-C Changed plt to library rather than single source file.
-C
 C=======================================================================
       LOGICAL FUNCTION LXGTWH(CH)
       IMPLICIT INTEGER (A-Z)

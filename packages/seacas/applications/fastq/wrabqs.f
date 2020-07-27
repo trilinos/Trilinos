@@ -1,45 +1,20 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: wrabqs.f,v 1.3 2000/11/13 15:39:05 gdsjaar Exp $
-C $Log: wrabqs.f,v $
-C Revision 1.3  2000/11/13 15:39:05  gdsjaar
-C Cleaned up unused variables and labels.
-C
-C Removed some real to int conversion warnings.
-C
-C Revision 1.2  1998/07/14 18:20:15  gdsjaar
-C Removed unused variables, cleaned up a little.
-C
-C Changed BLUE labels to GREEN to help visibility on black background
-C (indirectly requested by a couple users)
-C
-C Revision 1.1.1.1  1990/11/30 11:17:44  gdsjaar
-C FASTQ Version 2.0X
-C
-c Revision 1.1  90/11/30  11:17:42  gdsjaar
-c Initial revision
-c
-C
-CC* FILE: [.MAIN]WRABQS.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE WRABQS (MS, MR, NPNODE, NPELEM, MXNFLG, MXSFLG, NPREGN,
      &   NPNBC, NPSBC, IUNIT, NNN, KKK, NNXK, NODES, NELEMS, NNFLG,
      &   NNPTR, NNLEN, NSFLG, NSPTR, NSLEN, NVPTR, NVLEN, NSIDEN,
      &   MAPDXG, XN, YN, NXK, MAT, MAPGXD, MATMAP, NBCNOD, NNLIST,
      &   NBCSID, NSLIST, NVLIST, NUMMAT, LINKM, TITLE, ERR, EIGHT, NINE)
 C***********************************************************************
-C
+
 C  SUBROUTINE WRABQS = WRITES ABAQUS DATABASE MESH OUTPUT FILE
-C
+
 C***********************************************************************
-C
+
       DIMENSION XN (NPNODE), YN (NPNODE), NXK (NNXK, NPELEM)
       DIMENSION MAT (NPELEM)
       DIMENSION NODES (NPNBC), NELEMS (NPSBC), NSIDEN (NPSBC)
@@ -48,32 +23,32 @@ C
       DIMENSION NVLEN (MXSFLG), NVPTR (MXSFLG), LINKM (2,  (MS+MR))
       DIMENSION MAPDXG (NPNODE), MAPGXD (NPNODE), MATMAP (3, NPREGN)
       DIMENSION IHOLD (9)
-C
+
       CHARACTER*72 TITLE, DUMMY, DUMMY2
-C
+
       LOGICAL ERR, EIGHT, NINE, DEFTYP, FOUND
-C
+
       ERR = .TRUE.
-C
+
 C  WRITE OUT HEADER TITLE AND INFORMATION
-C
+
       WRITE (IUNIT, 10000, ERR = 200)TITLE
       WRITE (IUNIT, 10010, ERR = 200)NNN, KKK, NBCNOD, NBCSID
-C
+
 C  WRITE OUT NODE BLOCK
-C
+
       WRITE (IUNIT, 10020, ERR = 200)
       Z = 0.
       DO 100 I = 1, NNN
          WRITE (IUNIT, 10030, ERR = 200)I, XN (I), YN (I), Z
   100 CONTINUE
-C
+
 C  QUERY THE USER FOR LOCAL CONTROL OF ELEMENT TYPE
-C
+
       CALL INQTRU ('USE DEFAULT ELEMENT TYPES FOR ELSETS', DEFTYP)
-C
+
 C  WRITE OUT ELEMENT BLOCKS
-C
+
       DO 130 I = 1, NUMMAT
          CALL GETDUM (MATMAP (1, I), DUMMY, LEN)
          IF (NXK (3, MATMAP (2, I)) .EQ. 0) THEN
@@ -148,9 +123,9 @@ C
   120       CONTINUE
          ENDIF
   130 CONTINUE
-C
+
 C  WRITE OUT THE NODAL BOUNDARY CONDITIONS
-C
+
       IF (NBCNOD.GT.0) THEN
          DO 140 I = 1, NBCNOD
             J1 = NNPTR (I)
@@ -160,9 +135,9 @@ C
             WRITE (IUNIT, 10110, ERR = 200) (NODES (J), J = J1, J2)
   140    CONTINUE
       ENDIF
-C
+
 C  WRITE OUT THE SIDE BOUNDARY FLAGS
-C
+
       IF (NBCSID.GT.0) THEN
 C         CALL MESAGE ('ELEMENT NUMBERING IS WRITTEN WITH ELEMENT' //
 C     &      BOUNDARY FLAGS')
@@ -180,9 +155,9 @@ C         ELSE
             J1 = NSPTR (I)
             J2 = NSPTR (I)+NSLEN (I)-1
             CALL GETDUM (NSFLG (I), DUMMY, LEN)
-C
+
 C  WRITE OUT THE SIDE 1 ELEMENTS
-C
+
             FOUND = .FALSE.
             JHOLD = 0
             DO 150 J = J1, J2
@@ -212,13 +187,13 @@ C     &            ( (JJ1 .EQ. NXK (2, K)) .AND.
 C     &            (JJ2 .EQ. NXK (3, K)) ) .OR.
 C     &            ( (JJ2 .EQ. NXK (2, K)) .AND.
 C     &            (JJ1 .EQ. NXK (3, K)) ) ) ) ) THEN
-C
+
                   IF (.NOT. FOUND) THEN
                      WRITE (IUNIT, 10150, ERR = 200)
      &                  DUMMY (1:LEN) // '_1'
                      FOUND = .TRUE.
                   ENDIF
-C
+
                   JHOLD = JHOLD + 1
                   IHOLD (JHOLD) = MAPGXD (K)
                   IF (JHOLD .EQ. 9) THEN
@@ -230,9 +205,9 @@ C
   150       CONTINUE
             IF (JHOLD .GT. 0) WRITE (IUNIT, 10110, ERR = 200)
      &         (IHOLD (II), II = 1, JHOLD)
-C
+
 C  WRITE OUT THE SIDE 2 ELEMENTS
-C
+
             FOUND = .FALSE.
             JHOLD = 0
             DO 160 J = J1, J2
@@ -262,13 +237,13 @@ C     &            ( (JJ1 .EQ. NXK (4, K)) .AND.
 C     &            (JJ2 .EQ. NXK (5, K)) ) .OR.
 C     &            ( (JJ2 .EQ. NXK (4, K)) .AND.
 C     &            (JJ1 .EQ. NXK (5, K)) ) ) ) ) THEN
-C
+
                   IF (.NOT. FOUND) THEN
                      WRITE (IUNIT, 10150, ERR = 200)
      &                  DUMMY (1:LEN) // '_2'
                      FOUND = .TRUE.
                   ENDIF
-C
+
                   JHOLD = JHOLD + 1
                   IHOLD (JHOLD) = MAPGXD (K)
                   IF (JHOLD .EQ. 9) THEN
@@ -280,9 +255,9 @@ C
   160       CONTINUE
             IF (JHOLD .GT. 0) WRITE (IUNIT, 10110, ERR = 200)
      &         (IHOLD (II), II = 1, JHOLD)
-C
+
 C  WRITE OUT THE SIDE 3 ELEMENTS
-C
+
             FOUND = .FALSE.
             JHOLD = 0
             DO 170 J = J1, J2
@@ -312,13 +287,13 @@ C     &            ( (JJ1 .EQ. NXK (6, K)) .AND.
 C     &            (JJ2 .EQ. NXK (7, K)) ) .OR.
 C     &            ( (JJ2 .EQ. NXK (6, K)) .AND.
 C     &            (JJ1 .EQ. NXK (7, K)) ) ) ) ) THEN
-C
+
                   IF (.NOT. FOUND) THEN
                      WRITE (IUNIT, 10150, ERR = 200)
      &                  DUMMY (1:LEN) // '_3'
                      FOUND = .TRUE.
                   ENDIF
-C
+
                   JHOLD = JHOLD + 1
                   IHOLD (JHOLD) = MAPGXD (K)
                   IF (JHOLD .EQ. 9) THEN
@@ -330,9 +305,9 @@ C
   170       CONTINUE
             IF (JHOLD .GT. 0) WRITE (IUNIT, 10110, ERR = 200)
      &         (IHOLD (II), II = 1, JHOLD)
-C
+
 C  WRITE OUT THE SIDE 4 ELEMENTS
-C
+
             FOUND = .FALSE.
             JHOLD = 0
             DO 180 J = J1, J2
@@ -362,13 +337,13 @@ C     &            ( (JJ1 .EQ. NXK (8, K)) .AND.
 C     &            (JJ2 .EQ. NXK (1, K)) ) .OR.
 C     &            ( (JJ2 .EQ. NXK (8, K)) .AND.
 C     &            (JJ1 .EQ. NXK (1, K)) ) ) ) ) THEN
-C
+
                   IF (.NOT. FOUND) THEN
                      WRITE (IUNIT, 10150, ERR = 200)
      &                  DUMMY (1:LEN) // '_4'
                      FOUND = .TRUE.
                   ENDIF
-C
+
                   JHOLD = JHOLD + 1
                   IHOLD (JHOLD) = MAPGXD (K)
                   IF (JHOLD .EQ. 9) THEN
@@ -380,21 +355,20 @@ C
   180       CONTINUE
             IF (JHOLD .GT. 0) WRITE (IUNIT, 10110, ERR = 200)
      &         (IHOLD (II), II = 1, JHOLD)
-C
+
   190    CONTINUE
       ENDIF
       CALL MESAGE ('ABAQUS OUTPUT FILE SUCCESSFULLY WRITTEN')
       ERR = .FALSE.
       RETURN
-C
+
 C  ERR DURING WRITE PROBLEMS
-C
+
   200 CONTINUE
       CALL MESAGE ('ERR DURING WRITE TO ABAQUS OUTPUT FILE')
       CALL MESAGE ('         - NO FILE SAVED -            ')
       RETURN
-C
-C
+
 10000 FORMAT ('*HEADING', /, A72)
 10010 FORMAT ('**', /,
      &   '**     MESH GENERATED USING FASTQ        ', /,
@@ -416,5 +390,5 @@ C
 10120 FORMAT (4 (I10, ','), I10)
 10130 FORMAT ('*NSET, NSET = NB', A)
 10150 FORMAT ('*ELSET, ELSET = EB', A)
-C
+
       END

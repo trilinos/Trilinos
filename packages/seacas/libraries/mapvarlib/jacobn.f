@@ -1,28 +1,27 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
-C $Id: jacobn.f,v 1.3 2007/10/17 18:43:49 gdsjaar Exp $
 C=======================================================================
 *DECK,JACOBN
       SUBROUTINE JACOBN (ITYPE,XX,YY,ZZ,SP,TP,RP,A11,A12,A13,A21,A22,
      1A23,A31,A32,A33,F1,F2,F3)
-C
+
 C     ******************************************************************
-C
+
 C     SUBROUTINE TO EVALUATE ELEMENT SHAPE FUNCTIONS AND DERIVATIVES
 C     (JACOBIAN) AT A SPECIFIED POINT (SP,TP,RP)
-C
+
 C     Called by SRCH2D & SRCH3D
-C
+
 C     ******************************************************************
-C
+
       DIMENSION XX(*), YY(*), ZZ(*)
-C
+
 C     ******************************************************************
-C
+
       F1=0.
       F2=0.
       F3=0.
@@ -35,27 +34,27 @@ C
       A31=0.
       A32=0.
       A33=0.
-C
+
 C     SELECT ELEMENT
-C
+
       GO TO (100, 110, 120, 130, 140, 150, 160, 170, 180, 190,
      &    200, 210), ITYPE
-C
+
 C     3-NODE TRIANGLE
-C
+
   100 CONTINUE
       PP=1.-SP-TP
       F1=XX(1)*SP+XX(2)*TP+XX(3)*PP
       F2=YY(1)*SP+YY(2)*TP+YY(3)*PP
-C
+
       A11=XX(1)-XX(3)
       A12=XX(2)-XX(3)
       A21=YY(1)-YY(3)
       A22=YY(2)-YY(3)
       RETURN
-C
+
 C     6-NODE TRIANGLE
-C
+
   110 CONTINUE
       PP=1.-SP-TP
       F1=XX(1)*SP*(2.*SP-1.)+XX(2)*TP*(2.*TP-1.)+
@@ -64,7 +63,7 @@ C
       F2=YY(1)*SP*(2.*SP-1.)+YY(2)*TP*(2.*TP-1.)+
      1   YY(3)*PP*(2.*PP-1.)+YY(4)*4.*SP*TP+
      2   YY(5)*4.*TP*PP+YY(6)*4.*SP*PP
-C
+
       A11=XX(1)*(4.*SP-1.)-XX(3)*(4.*PP-1.)+(XX(4)-XX(5))*4.*TP+
      1    XX(6)*4.*(PP-SP)
       A12=XX(2)*(4.*TP-1.)-XX(3)*(4.*PP-1.)+(XX(4)-XX(6))*4.*SP+
@@ -74,23 +73,23 @@ C
       A22=YY(2)*(4.*TP-1.)-YY(3)*(4.*PP-1.)+(YY(4)-YY(6))*4.*SP+
      1    YY(5)*4.*(PP-TP)
       RETURN
-C
+
 C     4-NODE QUADRILATERAL
-C
+
   120 CONTINUE
       F1=.25*(XX(1)*(1.-SP)*(1.-TP)+XX(2)*(1.+SP)*(1.-TP)+
      1        XX(3)*(1.+SP)*(1.+TP)+XX(4)*(1.-SP)*(1.+TP))
       F2=.25*(YY(1)*(1.-SP)*(1.-TP)+YY(2)*(1.+SP)*(1.-TP)+
      1        YY(3)*(1.+SP)*(1.+TP)+YY(4)*(1.-SP)*(1.+TP))
-C
+
       A11=.25*((XX(2)-XX(1))*(1.-TP)+(XX(3)-XX(4))*(1.+TP))
       A12=.25*((XX(4)-XX(1))*(1.-SP)+(XX(3)-XX(2))*(1.+SP))
       A21=.25*((YY(2)-YY(1))*(1.-TP)+(YY(3)-YY(4))*(1.+TP))
       A22=.25*((YY(4)-YY(1))*(1.-SP)+(YY(3)-YY(2))*(1.+SP))
       RETURN
-C
+
 C     8-NODE QUADRILATERAL
-C
+
   130 CONTINUE
       F1=.25*(XX(1)*(1.-SP)*(1.-TP)*(-SP-TP-1.)+
      1        XX(2)*(1.+SP)*(1.-TP)*(SP-TP-1.)+
@@ -104,7 +103,7 @@ C
      3        YY(4)*(1.-SP)*(1.+TP)*(-SP+TP-1.))+
      4   .50*(YY(5)*(1.-SP*SP)*(1.-TP)+YY(6)*(1.+SP)*(1.-TP*TP)+
      5        YY(7)*(1.-SP*SP)*(1.+TP)+YY(8)*(1.-SP)*(1.-TP*TP))
-C
+
       A11=.25*(XX(1)*(1.-TP)*(TP+2.*SP)+XX(2)*(1.-TP)*(-TP+2.*SP)+
      1         XX(3)*(1.+TP)*(TP+2.*SP)+XX(4)*(1.+TP)*(-TP+2.*SP))+
      2    .50*(XX(5)*(1.-TP)*(-2.*SP)+(XX(6)-XX(8))*(1.-TP*TP)+
@@ -122,9 +121,9 @@ C
      2    .50*(YY(6)*(1.+SP)*(-2.*TP)+(YY(7)-YY(5))*(1.-SP*SP)+
      3         YY(8)*(1.-SP)*(-2.*TP))
       RETURN
-C
+
 C     9-NODE QUADRILATERAL
-C
+
   140 CONTINUE
       F1=.25*(XX(1)*(1.-SP)*(1.-TP)*(SP*TP)+
      1        XX(2)*(1.+SP)*(1.-TP)*(-SP*TP)+
@@ -144,7 +143,7 @@ C
      6        YY(7)*(1.-SP*SP)*(1.+TP)*TP+
      7        YY(8)*(1.-SP)*(1.-TP*TP)*(-SP))+
      8        YY(9)*(1.-SP*SP)*(1.-TP*TP)
-C
+
       A11=.25*(XX(1)*(1.-TP)*(TP-2.*SP*TP)+
      1         XX(2)*(1.-TP)*(-TP-2.*SP*TP)+
      2         XX(3)*(1.+TP)*(TP+2.*SP*TP)+
@@ -174,15 +173,15 @@ C
      5         YY(7)*(1.-SP*SP)*(1.+2.*TP)+YY(8)*(-SP+SP*SP)*(-2.*TP))+
      6         YY(9)*(1.-SP*SP)*(-2.*TP)
       RETURN
-C
+
 C     4-NODE TETRAHEDRON
-C
+
   150 CONTINUE
       PP=1.-SP-TP-RP
 C      F1=XX(1)*SP+XX(2)*TP+XX(3)*RP+XX(4)*PP
 C      F2=YY(1)*SP+YY(2)*TP+YY(3)*RP+YY(4)*PP
 C      F3=ZZ(1)*SP+ZZ(2)*TP+ZZ(3)*RP+ZZ(4)*PP
-C
+
 C      A11=XX(1)-XX(4)
 C      A12=XX(2)-XX(4)
 C      A13=XX(3)-XX(4)
@@ -194,11 +193,11 @@ C      A32=ZZ(2)-ZZ(4)
 C      A33=ZZ(3)-ZZ(4)
 C fix gww 8/24/00 - need same fix for 10-node tet??
 C     merlin had opposite nodal order (left hand rule for + volume)
-C
+
       F1=XX(1)*SP+XX(2)*TP+XX(3)*PP+XX(4)*RP
       F2=YY(1)*SP+YY(2)*TP+YY(3)*PP+YY(4)*RP
       F3=ZZ(1)*SP+ZZ(2)*TP+ZZ(3)*PP+ZZ(4)*RP
-C
+
       A11=XX(1)-XX(3)
       A12=XX(2)-XX(3)
       A13=XX(4)-XX(3)
@@ -209,9 +208,9 @@ C
       A32=ZZ(2)-ZZ(3)
       A33=ZZ(4)-ZZ(3)
       RETURN
-C
+
 C     10-NODE TETRAHEDRON
-C
+
   160 CONTINUE
       PP=1.-SP-TP-RP
       F1=  XX(1)*SP*(2.*SP-1.)+XX(2)*TP*(2.*TP-1.)+
@@ -226,7 +225,7 @@ C
      1     ZZ(3)*RP*(2.*RP-1.)+ZZ(4)*PP*(2.*PP-1.)+
      2 4.*(ZZ(5)*SP*TP+ZZ(6)*TP*RP+ZZ(7)*RP*SP+
      3     ZZ(8)*SP*PP+ZZ(9)*TP*PP+ZZ(10)*RP*PP)
-C
+
       A11=XX(1)*(4.*SP-1.)-XX(4)*(4.*PP-1.)+XX(5)*4.*TP+XX(7)*4.*RP+
      1    XX(8)*4.*(PP-SP)-XX(9)*4.*TP-XX(10)*4.*(RP+TP)
       A12=XX(2)*(4.*TP-1.)-XX(4)*(4.*PP-1.)+XX(5)*4.*SP+XX(6)*4.*RP-
@@ -246,9 +245,9 @@ C
       A33=ZZ(3)*(4.*RP-1.)-ZZ(4)*(4.*PP-1.)+ZZ(6)*4.*TP+ZZ(7)*4.*SP-
      1    ZZ(8)*4.*SP-ZZ(9)*4.*TP+ZZ(10)*(4.*PP-RP)
       RETURN
-C
+
 C     6-NODE PRISM
-C
+
   170 CONTINUE
       PP=1.-SP-TP
       F1=(XX(1)*SP+XX(2)*TP+XX(3)*PP)*.5*(1.-RP)+
@@ -257,7 +256,7 @@ C
      1   (YY(4)*SP+YY(5)*TP+YY(6)*PP)*.5*(1.+RP)
       F3=(ZZ(1)*SP+ZZ(2)*TP+ZZ(3)*PP)*.5*(1.-RP)+
      1   (ZZ(4)*SP+ZZ(5)*TP+ZZ(6)*PP)*.5*(1.+RP)
-C
+
       A11=(XX(1)-XX(3))*.5*(1.-RP)+
      1    (XX(4)-XX(6))*.5*(1.+RP)
       A12=(XX(2)-XX(3))*.5*(1.-RP)+
@@ -280,9 +279,9 @@ C
      1    (ZZ(5)-ZZ(2))*.5*TP+
      2    (ZZ(6)-ZZ(3))*.5*PP
       RETURN
-C
+
 C     15-NODE PRISM
-C
+
   180 CONTINUE
       PP=1.-SP-TP
       AA=1.-RP
@@ -309,7 +308,7 @@ C
      4 2.*AA*(ZZ(7)*SP*TP+ZZ(8)*TP*PP+ZZ(9)*PP*SP)+
      5       (ZZ(10)*SP+ZZ(11)*TP+ZZ(12)*PP)*CC+
      6 2.*BB*(ZZ(13)*SP*TP+ZZ(14)*TP*PP+ZZ(15)*PP*SP)
-C
+
       A11=.5*(XX(1)*((4.*SP-1.)*AA-CC)-XX(3)*((4.*PP-1.)*AA+CC)+
      1        XX(4)*((4.*SP-1.)*BB-CC)-XX(6)*((4.*PP-1.)*BB+CC))+
      2 2.*AA*(XX(7)*TP-XX(8)*TP+XX(9)*(PP-SP))+
@@ -359,9 +358,9 @@ C
      4    2.*(ZZ(10)*SP+ZZ(11)*TP+ZZ(12)*PP)*RP+
      5    2.*(ZZ(13)*SP*TP+ZZ(14)*TP*PP+ZZ(15)*PP*SP)
       RETURN
-C
+
 C     8-NODE HEX
-C
+
   190 CONTINUE
       F1=.125*(XX(1)*(1.-SP)*(1.-TP)*(1.-RP)+
      1         XX(2)*(1.+SP)*(1.-TP)*(1.-RP)+
@@ -387,7 +386,7 @@ C
      5         ZZ(6)*(1.+SP)*(1.-TP)*(1.+RP)+
      6         ZZ(7)*(1.+SP)*(1.+TP)*(1.+RP)+
      7         ZZ(8)*(1.-SP)*(1.+TP)*(1.+RP))
-C
+
       A11=.125*((XX(2)-XX(1))*(1.-TP)*(1.-RP)+
      1          (XX(3)-XX(4))*(1.+TP)*(1.-RP)+
      2          (XX(6)-XX(5))*(1.-TP)*(1.+RP)+
@@ -425,9 +424,9 @@ C
      2          (ZZ(7)-ZZ(3))*(1.+SP)*(1.+TP)+
      3          (ZZ(8)-ZZ(4))*(1.-SP)*(1.+TP))
       RETURN
-C
+
 C     20-NODE HEX
-C
+
   200 CONTINUE
       AA=.125*(XX(1)*(1.-SP)*(1.-TP)*(1.-RP)*(-SP-TP-RP-2.)+
      1         XX(2)*(1.+SP)*(1.-TP)*(1.-RP)*(SP-TP-RP-2.)+
@@ -492,7 +491,7 @@ C
      #         ZZ(19)*(1.-SP**2)*(1.+TP)*(1.+RP)+
      1         ZZ(20)*(1.-SP)*(1.-TP**2)*(1.+RP))
       F3=AA+BB
-C
+
       AA=.125*(-XX(1)*(1.-TP)*(1.-RP)*(-2.*SP-TP-RP-1.)
      1         +XX(2)*(1.-TP)*(1.-RP)*(2.*SP-TP-RP-1.)
      2         +XX(3)*(1.+TP)*(1.-RP)*(-2.*SP+TP-RP-1.)
@@ -556,7 +555,7 @@ C
      #         +XX(19)*(1.-SP**2)*(1.+TP)
      1         +XX(20)*(1.-SP)*(1.-TP**2))
       A13=AA+BB
-C
+
       AA=.125*(-YY(1)*(1.-TP)*(1.-RP)*(-2.*SP-TP-RP-1.)
      1         +YY(2)*(1.-TP)*(1.-RP)*(2.*SP-TP-RP-1.)
      2         +YY(3)*(1.+TP)*(1.-RP)*(-2.*SP+TP-RP-1.)
@@ -620,7 +619,7 @@ C
      #         +YY(19)*(1.-SP**2)*(1.+TP)
      1         +YY(20)*(1.-SP)*(1.-TP**2))
       A23=AA+BB
-C
+
       AA=.125*(-ZZ(1)*(1.-TP)*(1.-RP)*(-2.*SP-TP-RP-1.)
      1         +ZZ(2)*(1.-TP)*(1.-RP)*(2.*SP-TP-RP-1.)
      2         +ZZ(3)*(1.+TP)*(1.-RP)*(-2.*SP+TP-RP-1.)
@@ -685,9 +684,9 @@ C
      1         +ZZ(20)*(1.-SP)*(1.-TP**2))
       A33=AA+BB
       RETURN
-C
+
 C     27-NODE HEX
-C
+
   210 CONTINUE
       AA=.125*(-XX(1)*SP*TP*RP*(1.-SP)*(1.-TP)*(1.-RP)
      1         +XX(2)*SP*TP*RP*(1.+SP)*(1.-TP)*(1.-RP)
@@ -717,7 +716,7 @@ C
      &          XX(26)*RP*(1.-SP**2)*(1.-TP**2)*(1.+RP))+
      &          XX(27)*(1.-SP**2)*(1.-TP**2)*(1.-RP**2)
       F1=AA+BB+CC
-C
+
       AA=.125*(-YY(1)*SP*TP*RP*(1.-SP)*(1.-TP)*(1.-RP)
      1         +YY(2)*SP*TP*RP*(1.+SP)*(1.-TP)*(1.-RP)
      2         -YY(3)*SP*TP*RP*(1.+SP)*(1.+TP)*(1.-RP)
@@ -774,9 +773,9 @@ C
      &          ZZ(26)*RP*(1.-SP**2)*(1.-TP**2)*(1.+RP))+
      &          ZZ(27)*(1.-SP**2)*(1.-TP**2)*(1.-RP**2)
       F3=AA+BB+CC
-C
+
 C     **** SHAPE FUNCTION DERIVATIVES FOR 27 NODE HEX GO HERE
-C
+
       RETURN
-C
+
       END

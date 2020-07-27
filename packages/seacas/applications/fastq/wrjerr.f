@@ -1,43 +1,20 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: wrjerr.f,v 1.3 1998/07/14 18:20:17 gdsjaar Exp $
-C $Log: wrjerr.f,v $
-C Revision 1.3  1998/07/14 18:20:17  gdsjaar
-C Removed unused variables, cleaned up a little.
-C
-C Changed BLUE labels to GREEN to help visibility on black background
-C (indirectly requested by a couple users)
-C
-C Revision 1.2  1991/04/10 19:57:37  gdsjaar
-C Problem with internal read, kludged
-C
-c Revision 1.1.1.1  1990/11/30  11:17:55  gdsjaar
-c FASTQ Version 2.0X
-c
-c Revision 1.1  90/11/30  11:17:54  gdsjaar
-c Initial revision
-c
-C
-CC* FILE: [.MAIN]WRJERR.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE WRJERR (MS, MR, NPNODE, NPELEM, MXNFLG, MXSFLG, NPREGN,
      &   NPNBC, NPSBC, IUNIT, NNN, KKK, NNXK, NODES, NELEMS, NNFLG,
      &   NNPTR, NNLEN, NSFLG, NSPTR, NSLEN, NVPTR, NVLEN, NSIDEN,
      &   MAPDXG, XN, YN, NXK, MAT, MAPGXD, MATMAP, NBCNOD, NNLIST,
      &   NBCSID, NSLIST, NVLIST, NUMMAT, LINKM, TITLE, ERR, EIGHT, NINE)
 C***********************************************************************
-C
+
 C  SUBROUTINE WRJERR = WRITES JOE'S ERROR DATABASE MESH OUTPUT FILE
-C
+
 C***********************************************************************
-C
+
       DIMENSION XN (NPNODE), YN (NPNODE), NXK (NNXK, NPELEM)
       DIMENSION MAT (NPELEM)
       DIMENSION NODES (NPNBC), NELEMS (NPSBC), NSIDEN (NPSBC)
@@ -46,29 +23,29 @@ C
       DIMENSION NVLEN (MXSFLG), NVPTR (MXSFLG), LINKM (2,  (MS+MR))
       DIMENSION MAPDXG (NPNODE), MAPGXD (NPNODE), MATMAP (3, NPREGN)
       DIMENSION IHOLD (9)
-C
+
       CHARACTER*72 TITLE, DUMMY
-C
+
       LOGICAL ERR, EIGHT, NINE, FOUND
-C
+
       ERR = .TRUE.
-C
+
 C  WRITE OUT HEADER TITLE AND INFORMATION
-C
+
       CALL INQSTR ('TITLE: ',TITLE)
       WRITE (IUNIT, 10000, ERR = 290)TITLE
       WRITE (IUNIT, 10010, ERR = 290)
-C
+
 C  WRITE OUT NODE BLOCK
-C
+
       WRITE (IUNIT, 10020, ERR = 290)
       Z = 0.
       DO 100 I = 1, NNN
          WRITE (IUNIT, 10030, ERR = 290)I, XN (I), YN (I), Z
   100 CONTINUE
-C
+
 C  WRITE OUT ELEMENT BLOCKS
-C
+
       DO 130 I = 1, NUMMAT
          CALL GETDUM (MATMAP (1, I), DUMMY, LEN)
          WRITE (IUNIT, 10040, ERR = 290)
@@ -99,9 +76,9 @@ C
   120       CONTINUE
          ENDIF
   130 CONTINUE
-C
+
 C  WRITE OUT THE NODAL BOUNDARY CONDITIONS
-C
+
       IF (NBCNOD.GT.0) THEN
          WRITE (IUNIT, 10070)
          DO 150 I = 1, NBCNOD
@@ -116,9 +93,9 @@ C
   140       CONTINUE
   150    CONTINUE
       ENDIF
-C
+
 C  WRITE OUT THE SIDE BOUNDARY FLAGS
-C
+
       WRITE (IUNIT, 10120, ERR = 290)
       IF (NBCSID.GT.0) THEN
          WRITE (IUNIT, 10130, ERR = 290)
@@ -141,9 +118,9 @@ C         ELSE
             WRITE (*, 10090) NSFLG(I)
             CALL INQSTR ('PRESSURE MAGNITUDE: ',TITLE)
             READ (TITLE, '(F10.0)') PMAG
-C
+
 C  WRITE OUT THE SIDE 1 ELEMENTS
-C
+
             FOUND = .FALSE.
             JHOLD = 0
             DO 170 J = J1, J2
@@ -173,11 +150,11 @@ C     &            ( (JJ1 .EQ. NXK (2, K)) .AND.
 C     &            (JJ2 .EQ. NXK (3, K)) ) .OR.
 C     &            ( (JJ2 .EQ. NXK (2, K)) .AND.
 C     &            (JJ1 .EQ. NXK (3, K)) ) ) ) ) THEN
-C
+
                   IF (.NOT. FOUND) THEN
                      FOUND = .TRUE.
                   ENDIF
-C
+
                   JHOLD = JHOLD + 1
                   IHOLD (JHOLD) = MAPGXD (K)
                   IF (JHOLD .EQ. 9) THEN
@@ -194,9 +171,9 @@ C
                   WRITE (IUNIT, 10110, ERR = 290) IHOLD(II), 1, PMAG
   180          CONTINUE
             ENDIF
-C
+
 C  WRITE OUT THE SIDE 2 ELEMENTS
-C
+
             FOUND = .FALSE.
             JHOLD = 0
             DO 200 J = J1, J2
@@ -226,11 +203,11 @@ C     &            ( (JJ1 .EQ. NXK (4, K)) .AND.
 C     &            (JJ2 .EQ. NXK (5, K)) ) .OR.
 C     &            ( (JJ2 .EQ. NXK (4, K)) .AND.
 C     &            (JJ1 .EQ. NXK (5, K)) ) ) ) ) THEN
-C
+
                   IF (.NOT. FOUND) THEN
                      FOUND = .TRUE.
                   ENDIF
-C
+
                   JHOLD = JHOLD + 1
                   IHOLD (JHOLD) = MAPGXD (K)
                   IF (JHOLD .EQ. 9) THEN
@@ -247,9 +224,9 @@ C
                   WRITE (IUNIT, 10110, ERR = 290) IHOLD(II), 2, PMAG
   210          CONTINUE
             ENDIF
-C
+
 C  WRITE OUT THE SIDE 3 ELEMENTS
-C
+
             FOUND = .FALSE.
             JHOLD = 0
             DO 230 J = J1, J2
@@ -279,11 +256,11 @@ C     &            ( (JJ1 .EQ. NXK (6, K)) .AND.
 C     &            (JJ2 .EQ. NXK (7, K)) ) .OR.
 C     &            ( (JJ2 .EQ. NXK (6, K)) .AND.
 C     &            (JJ1 .EQ. NXK (7, K)) ) ) ) ) THEN
-C
+
                   IF (.NOT. FOUND) THEN
                      FOUND = .TRUE.
                   ENDIF
-C
+
                   JHOLD = JHOLD + 1
                   IHOLD (JHOLD) = MAPGXD (K)
                   IF (JHOLD .EQ. 9) THEN
@@ -300,9 +277,9 @@ C
                   WRITE (IUNIT, 10110, ERR = 290) IHOLD(II), 3, PMAG
   240          CONTINUE
             ENDIF
-C
+
 C  WRITE OUT THE SIDE 4 ELEMENTS
-C
+
             FOUND = .FALSE.
             JHOLD = 0
             DO 260 J = J1, J2
@@ -332,11 +309,11 @@ C     &            ( (JJ1 .EQ. NXK (8, K)) .AND.
 C     &            (JJ2 .EQ. NXK (1, K)) ) .OR.
 C     &            ( (JJ2 .EQ. NXK (8, K)) .AND.
 C     &            (JJ1 .EQ. NXK (1, K)) ) ) ) ) THEN
-C
+
                   IF (.NOT. FOUND) THEN
                      FOUND = .TRUE.
                   ENDIF
-C
+
                   JHOLD = JHOLD + 1
                   IHOLD (JHOLD) = MAPGXD (K)
                   IF (JHOLD .EQ. 9) THEN
@@ -353,22 +330,21 @@ C
                   WRITE (IUNIT, 10110, ERR = 290) IHOLD(II), 4, PMAG
   270          CONTINUE
             ENDIF
-C
+
   280    CONTINUE
       ENDIF
       WRITE (IUNIT, 10140, ERR = 290)
       CALL MESAGE ('JOE''S ERROR OUTPUT FILE SUCCESSFULLY WRITTEN')
       ERR = .FALSE.
       RETURN
-C
+
 C  ERR DURING WRITE PROBLEMS
-C
+
   290 CONTINUE
       CALL MESAGE ('ERR DURING WRITE TO ABAQUS OUTPUT FILE')
       CALL MESAGE ('         - NO FILE SAVED -            ')
       RETURN
-C
-C
+
 10000 FORMAT (A72)
 10010 FORMAT ('*PROSTRFAC 0.0',/,
      &   '*PSTRESS',/,
@@ -392,5 +368,5 @@ C
      &   '*MAXIT  2', /, 'PRINT  50')
 10130 FORMAT ('*PTOL  1.E-2')
 10140 FORMAT ('*END')
-C
+
       END

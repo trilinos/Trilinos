@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
@@ -13,7 +13,7 @@ C=======================================================================
       REAL X(*), Y(*), COSIN(2,*)
       INTEGER LINK(NLINK, *)
       parameter (tol = 1.0e-6)
-C
+
       do 10 inod = 1, numnp
          nodes(inod) = 0
  10   continue
@@ -34,14 +34,14 @@ C
 
             XI = x( link(ISEG,iel) )
             YI = y( link(ISEG,iel) )
-C
+
             XJ = x( link(ISEGp1,iel) )
             YJ = y( link(isegp1,iel) )
-C
+
             DX = XI - XJ
             DY = YI - YJ
             RMAG = SQRT ( DX**2 + DY**2)
-C
+
             cosin(1, link(iseg, iel)) = cosin(1, link(iseg, iel)) -
      $           dy / rmag
             cosin(2, link(iseg, iel)) = cosin(2, link(iseg, iel)) +
@@ -54,7 +54,6 @@ C
  50      continue
  60   continue
 
-C
       do 70 inod = 1, numnp
          if (nodes(inod) .ne. 0) then
             if (abs(cosin(1, inod)) .gt. tol .or.

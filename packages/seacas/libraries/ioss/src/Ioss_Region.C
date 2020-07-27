@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include <Ioss_Assembly.h>
@@ -64,7 +64,8 @@ namespace {
     return nullptr;
   }
 
-  template <typename T> size_t internal_get_variable_count(const std::vector<T> &entities, Ioss::Field::RoleType role)
+  template <typename T>
+  size_t internal_get_variable_count(const std::vector<T> &entities, Ioss::Field::RoleType role)
   {
     Ioss::NameList names;
     for (auto ent : entities) {
@@ -132,7 +133,7 @@ namespace {
         }
         fmt::print(errmsg,
                    "ERROR: There are multiple blocks or sets with the same name defined in the "
-                   "exodus file '{}'.\n"
+                   "database file '{}'.\n"
                    "\tBoth {} {} and {} {} are named '{}'.  All names must be unique.",
                    filename, entity->type_string(), id1, old_ge->type_string(), id2, name);
         IOSS_ERROR(errmsg);

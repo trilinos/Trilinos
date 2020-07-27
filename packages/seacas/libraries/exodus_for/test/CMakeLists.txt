@@ -1,4 +1,3 @@
-
 ADD_DEFINITIONS(-DUSING_CMAKE)
 
 if ( NETCDF_NCDUMP_BINARY )
@@ -18,7 +17,6 @@ else()
 endif()
 
 # ===============================================
-
 
 IF ( NETCDF_NCDUMP_BINARY )
   SET(NETCDF_NCDUMP ${NETCDF_NCDUMP_BINARY})

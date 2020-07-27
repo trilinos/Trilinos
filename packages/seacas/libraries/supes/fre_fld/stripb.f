@@ -1,29 +1,29 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
       SUBROUTINE STRIPB( STRING,ILEFT,IRIGHT )
       CHARACTER*(*) STRING
-C
+
 ************************************************************************
-C
+
 C     FREFLD INPUT SYSTEM - ANSI FORTRAN - UTILITY ROUTINE
-C
+
 C     DESCRIPTION:
 C     This routine strips leading and trailing blanks from a string. It
 C     does not modify or copy the string, but simply returns the
 C     location of the first and last non-blank characters.  If the
 C     string is completely blank, ILEFT=LEN(STRING)+1 and IRIGHT=0 will
 C     be returned.
-C
+
 C     FORMAL PARAMETERS:
 C     STRING  CHARACTER  Any character string.
 C     ILEFT   INTEGER    Position of first non-blank character.
 C     IRIGHT  INTEGER    Position of last non-blank character.
-C
+
 ************************************************************************
-C
+
 C ... Needed for 64-bit Solaris compile. Arg to CHAR must be
 C     an integer of correct size.
 
@@ -32,7 +32,7 @@ C     an integer of correct size.
 
 C Get length of the string -
       LS = LEN( STRING )
-C
+
 C Find the first non-blank character -
       DO 10 N = 1 , LS
          IF ( STRING(N:N) .NE. ' '
@@ -40,7 +40,7 @@ C Find the first non-blank character -
    10 CONTINUE
    15 CONTINUE
       ILEFT = N
-C
+
 C Find the last non-blank character -
       DO 20 N = LS , 1 , -1
          IF ( STRING(N:N) .NE. ' '
@@ -48,5 +48,5 @@ C Find the last non-blank character -
    20 CONTINUE
    25 CONTINUE
       IRIGHT = N
-C
+
       END
