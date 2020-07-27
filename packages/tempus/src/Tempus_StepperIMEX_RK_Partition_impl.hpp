@@ -129,8 +129,6 @@ void StepperIMEX_RK_Partition<Scalar>::setTableaus(
       // Explicit Tableau
       typedef Teuchos::ScalarTraits<Scalar> ST;
       int NumStages = 2;
-      const bool isTVD = true;
-      const Scalar sspcoef = 2.0;
       Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
       Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
       Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
@@ -151,7 +149,9 @@ void StepperIMEX_RK_Partition<Scalar>::setTableaus(
 
       auto expTableau = Teuchos::rcp(new RKButcherTableau<Scalar>(
         "Explicit Tableau - Partitioned IMEX RK 1st order",
-        A,b,c,order,order,order,isTVD,sspcoef));
+        A,b,c,order,order,order));
+      expTableau->setTVD(true);
+      expTableau->setTVDCoeff(2.0);
 
       this->setExplicitTableau(expTableau);
     }
@@ -159,7 +159,6 @@ void StepperIMEX_RK_Partition<Scalar>::setTableaus(
       // Implicit Tableau
       typedef Teuchos::ScalarTraits<Scalar> ST;
       int NumStages = 2;
-      const bool isTVD = true;
       const Scalar sspcoef =  std::numeric_limits<Scalar>::max();
       Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
       Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
@@ -181,7 +180,9 @@ void StepperIMEX_RK_Partition<Scalar>::setTableaus(
 
       auto impTableau = Teuchos::rcp(new RKButcherTableau<Scalar>(
         "Implicit Tableau - Partitioned IMEX RK 1st order",
-        A,b,c,order,order,order,isTVD,sspcoef));
+        A,b,c,order,order,order));
+      impTableau->setTVD(true);
+      impTableau->setTVDCoeff(sspcoef);
 
       this->setImplicitTableau(impTableau);
     }
@@ -204,8 +205,6 @@ void StepperIMEX_RK_Partition<Scalar>::setTableaus(
   } else if (stepperType == "Partitioned IMEX RK ARS 233") {
     typedef Teuchos::ScalarTraits<Scalar> ST;
     int NumStages = 3;
-    const bool isTVD = false;
-    const Scalar sspcoef = -4.0;
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
@@ -230,7 +229,7 @@ void StepperIMEX_RK_Partition<Scalar>::setTableaus(
 
       auto expTableau = Teuchos::rcp(new RKButcherTableau<Scalar>(
         "Explicit Tableau - Partitioned IMEX RK ARS 233",
-        A,b,c,order,order,order,isTVD,sspcoef));
+        A,b,c,order,order,order));
 
       this->setExplicitTableau(expTableau);
     }
@@ -251,7 +250,7 @@ void StepperIMEX_RK_Partition<Scalar>::setTableaus(
 
       auto impTableau = Teuchos::rcp(new RKButcherTableau<Scalar>(
         "Implicit Tableau - Partitioned IMEX RK ARS 233",
-        A,b,c,order,order,order,isTVD,sspcoef));
+        A,b,c,order,order,order));
 
       this->setImplicitTableau(impTableau);
     }
