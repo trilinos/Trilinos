@@ -1,23 +1,23 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
 *DECK,TRUTBL
       SUBROUTINE TRUTBL(MP,IMP,IDA,IDB,ITRTA,ITRTB)
-C
+
 C     ******************************************************************
-C
+
 C     SUBROUTINE TO BUILD THE TRUTH TABLE FOR THE RECIPIENT MESH
 C     THIS IMPROVES (SPEEDS-UP) THE PROCESS OF WRITING ELEMENT
 C     VARIABLES
-C
+
 C     Called by MAPVAR
-C
+
 C     ******************************************************************
-C
+
 C  MP         INT   Array of element block mapping from donor
 C                   mesh to recipient mesh (1:2,1:IMP)
 C  IMP        INT   Number of entries in MP
@@ -25,20 +25,19 @@ C  IDA        INT   Donor mesh element block I.D. (1:nblksa)
 C  IDB        INT   Recipient mesh element block I.D. (1:nblksa)
 C  ITRTA      INT   Donor mesh truth table (1:nvarel,1:nblksa)
 C  ITRTB      INT   Recipient mesh truth table (1:nvarel,1:nblksb)
-C
+
 C     ******************************************************************
-C
+
       include 'aexds1.blk'
       include 'amesh.blk'
       include 'bmesh.blk'
       include 'ex2tp.blk'
       include 'tapes.blk'
 
-C
       DIMENSION MP(3,*),IDA(*),IDB(*),ITRTA(NVAREL,*),ITRTB(NVAREL,*)
-C
+
 C     ******************************************************************
-C
+
 C ... For later sanity check
       do 2 iblkb = 1, nblksb
         do 1 ivar = 1, nvarel
@@ -47,9 +46,9 @@ C ... For later sanity check
  2    continue
 
       CALL EXGVTT (NTP2EX,NBLKSA,NVAREL,ITRTA,IERR)
-C
+
 C Match element block I.D.'s from donor and recipient mesh
-C
+
       DO 10 IBLKB = 1, NBLKSB
         IDBLKB = IDB(IBLKB)
         DO 20 IBLKA = 1, NBLKSA
@@ -64,9 +63,9 @@ C
    30     CONTINUE
    20   CONTINUE
    10 CONTINUE
-C
+
 C Do some error checking - write a warning
-C
+
       DO 50 IBLKB = 1, NBLKSB
         IFND = 0
         IDBLKB = IDB(IBLKB)
@@ -83,7 +82,7 @@ C
           WRITE(NTPOUT,1000)IBLKB,IDBLKB
         END IF
    50 CONTINUE
-C
+
 C ... Sanity check
       do 90 iblkb = 1, nblksb
         do 80 ivar = 1, nvarel
@@ -96,7 +95,7 @@ C ... Sanity check
  90   continue
 
       CALL EXPVTT(NTP4EX,NBLKSB,NVAREL,ITRTB,IERR)
-C
+
  1000 FORMAT(5X,'MAPPING BACK INTO DONOR MESH FOR',/,
      1'          RECIPIENT MESH ELEMENT BLOCK NUMBER',I7,/,
      2'          ELEMENT BLOCK I. D.',I7,/,

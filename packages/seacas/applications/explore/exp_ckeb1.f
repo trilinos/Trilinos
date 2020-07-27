@@ -1,7 +1,7 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 C=======================================================================
       SUBROUTINE CKEB1 (IEL0, IELB, IDELB, NUMELB, NUMLNK, NUMNP, LINK,
@@ -65,7 +65,6 @@ C     already been printed, so we don't print anything here.
          call sqzstr(stra, lstra)
          CALL PRTERR ('CMDSPEC', STRA(:lstra))
       end if
-
 
   110 CONTINUE
       RETURN

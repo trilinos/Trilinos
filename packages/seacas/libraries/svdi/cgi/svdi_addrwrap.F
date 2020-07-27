@@ -1,20 +1,20 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
         subroutine cgidum
         end
 
 #ifdef  Build64
-c
+
 c       This wrapper module handles two kinds of interface problems:
 c       the routines starting with 'v' arbitrate between Fortran caller
 c       and C callee; the routines; starting with 'c' arbitrate between
 c       C caller and Fortran callee.  The only exception is cgtxx1,
 c       which arbitrates between Fortran caller and C callee.
-c
+
         subroutine vdinit (aspect,justif)
         real*8 aspect
         integer*8 justif

@@ -1,38 +1,27 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: initdg.f,v 1.1 1990/11/30 11:09:49 gdsjaar Exp $
-C $Log: initdg.f,v $
-C Revision 1.1  1990/11/30 11:09:49  gdsjaar
-C Initial revision
-C
-C
-CC* FILE: [.MAIN]INITDG.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE INITDG (MCOM, ICOM, JCOM, CIN, RIN, IIN, KIN, IDUMP,
      &   XX1, YY1, SCALE, CT, ST, X1, X2, Y1, Y2, DRWTAB, SNAP)
 C***********************************************************************
-C
+
 C  SUBROUTINE INITDG = INITIALIZES THE DIGITIZING TABLET
-C
+
 C***********************************************************************
-C
+
       DIMENSION KIN (MCOM), IIN (MCOM), RIN (MCOM)
-C
+
       CHARACTER * 72 CIN (MCOM), BUTTON * 1
-C
+
       LOGICAL DRWTAB, IANS, SNAP
-C
+
       IZ = 0
-C
+
 C  CHECK TO MAKE SURE THAT THE DRAWING IS NOT BEING TOGGLED
-C
+
       IF (DRWTAB) THEN
          CALL MESAGE ('DRAWING INITIALIZATION IS ALREADY ACTIVE')
          CALL INTRUP  ('TOGGLE ALL DRAWING INITIALIZATION OFF',
@@ -44,10 +33,9 @@ C
             RETURN
          ENDIF
       ENDIF
-C
-C
+
 C  GET THE ZOOM LIMITS
-C
+
       CALL MESAGE (' ')
       IF (ICOM .GT. JCOM) THEN
          CALL FREFLD (IZ, IZ, 'ENTER DRAWING XMIN, XMAX, YMIN, YMAX:',
@@ -68,9 +56,9 @@ C
          CALL MESAGE (' ')
          RETURN
       ENDIF
-C
+
 C  GET THE DIGITIZING POINTS
-C
+
       CALL MESAGE ('NOW DIGITIZE THOSE 2 POINTS')
       CALL MESAGE ('       PUSH "PUCK - 1" FOR LOWER LEFT')
       CALL MESAGE ('       PUSH "PUCK - 2" FOR UPPER RIGHT')
@@ -104,7 +92,7 @@ C
      &   DRWTAB)
       CALL MESAGE ('INITIALIZATION COMPLETE')
       CALL MESAGE (' ')
-C
+
       RETURN
-C
+
       END

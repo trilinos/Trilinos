@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include <Ioss_Blob.h>
@@ -106,7 +106,7 @@ void write_blob()
   Ioss::Blob *blob1        = new Ioss::Blob(dbo, "Tempus", count_offset.first);
   region.add(blob1);
 
-  // NOTE: These properties are not neede for serial case, but don't cause problems
+  // NOTE: These properties are not needed for serial case, but don't cause problems
   blob1->property_add(Ioss::Property("processor_offset", (int64_t)count_offset.second));
   blob1->property_add(Ioss::Property("global_size", (int64_t)b1_size));
 

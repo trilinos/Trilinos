@@ -1,20 +1,20 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
       SUBROUTINE PCKLAB (CURVE,ACURVE,NCURVE)
-C
+
 C     THIS SUBROUTINE PACKS A 8 CHARACTER WORD AND A 'I8' MAXIMUM
 C     INTEGER INTO A 16 CHARACTER WORD BY REMOVING
 C     INCLUDED BLANKS -- USED TO CREATE VARIABLE 'CURVE' FOR PLTONE
-C
+
       CHARACTER*8 ACURVE
       CHARACTER*16 CURVE
       CHARACTER*1 BLANK
       DATA BLANK/' '/
-C
+
       IF (NCURVE .NE. 0) THEN
          WRITE (CURVE, 10) ACURVE, NCURVE
    10    FORMAT (A8,I8)
@@ -34,5 +34,5 @@ C
          CURVE(J:J)= BLANK
    30    CONTINUE
       RETURN
-C
+
       END

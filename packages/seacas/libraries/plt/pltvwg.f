@@ -1,14 +1,9 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
-C $Id: pltvwg.f,v 1.1 1993/07/16 16:49:49 gdsjaar Exp $
-C $Log: pltvwg.f,v $
-C Revision 1.1  1993/07/16 16:49:49  gdsjaar
-C Changed plt to library rather than single source file.
-C
 C=======================================================================
       SUBROUTINE PLTVWG(PLL,PUR,N,XV,YV,ZV,NO,XVO,YVO,ZVO)
       DIMENSION XV(*),YV(*),ZV(*),XVO(*),YVO(*),ZVO(*),PLL(*),PUR(*)

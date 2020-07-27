@@ -1,7 +1,7 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 C=======================================================================
       SUBROUTINE WELB (NDBOUT, NELBLK, VISELB, ALLELE, BLKTYP,
@@ -151,7 +151,6 @@ C        If write all elements or write this element block
 
             EBID = IDELB(IELB)
             NAEB = BLKTYP(IELB)
-
 
             IF (ALLELE) THEN
                IXELB(IELB)  = IXELB(IELB-1)  + NELB

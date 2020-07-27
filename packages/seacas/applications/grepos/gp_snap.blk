@@ -1,12 +1,11 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C     -*- Mode: fortran -*-
-C $Id: snap.blk,v 1.1 1999/01/18 19:18:36 gdsjaar Exp $
-C
+
       integer pnorm, prad, pvect, pedge, mxsnap
 
       PARAMETER (PNORM = 1)

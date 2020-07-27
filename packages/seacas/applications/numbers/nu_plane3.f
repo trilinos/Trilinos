@@ -1,14 +1,9 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: plane3.f,v 1.1 1991/02/21 15:44:49 gdsjaar Exp $
-C $Log: plane3.f,v $
-C Revision 1.1  1991/02/21 15:44:49  gdsjaar
-C Initial revision
-C
       SUBROUTINE PLANE3 (COORD, NUMNP, DIST, DISTR, NDIM, P1, P2, TOLER,
      *   NODEL, SORTYP, MAP, SORUP, INUM, OPT, SELECT)
       DIMENSION COORD (NUMNP,*), DIST(*), DISTR(*), P1(*), P2(*),
@@ -16,18 +11,18 @@ C
       CHARACTER*(*) NODEL, SORTYP, OPT
       LOGICAL SORUP, SELECT(*), ISABRT
       include 'nu_io.blk'
-C
+
       CALL LOCOUT ('PLANE', NDIM, NODEL, TOLER, SORTYP, P1, P2, ' ')
 
       A = P2(1)
       B = P2(2)
       C = P2(3)
       D = A * P1(1) + B * P1(2) + C * P1(3)
-C
+
       TEMP = TOLER(1)
       TOLER(1) = MAX(0.0, TEMP - TOLER(2))
       TOLER(2) = MAX(0.0, TEMP + TOLER(2))
-C
+
       DO 10 I=1, NUMNP
          IF (SELECT(I)) THEN
             X0 = COORD(I,1)

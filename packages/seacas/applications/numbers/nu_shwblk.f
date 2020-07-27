@@ -1,20 +1,15 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: shwblk.f,v 1.1 1991/02/21 15:45:39 gdsjaar Exp $
-C $Log: shwblk.f,v $
-C Revision 1.1  1991/02/21 15:45:39  gdsjaar
-C Initial revision
-C
       SUBROUTINE SHWBLK (NELBLK, MAT, NSELND, NSELEL)
       DIMENSION MAT(6, NELBLK)
       CHARACTER*16 TYPE
       CHARACTER*80 STRTMP
       include 'nu_io.blk'
-C
+
       DO 10 IO=IOMIN, IOMAX
          WRITE (IO, 50)
    10 CONTINUE

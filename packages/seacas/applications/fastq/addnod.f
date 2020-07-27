@@ -1,26 +1,9 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: addnod.f,v 1.1 1990/11/30 11:02:59 gdsjaar Exp $
-C $Log: addnod.f,v $
-C Revision 1.1  1990/11/30 11:02:59  gdsjaar
-C Initial revision
-C
-C
-CC* FILE: [.PAVING]ADDNOD.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/31/90
-CC* MODIFICATION: ADDED ARGUMENTS TO CALL TO ADDNOD TO PASS MINIMUM
-CC**              ELEMENT SIZE (SIZMIN) AND GETSIZ PARAMETERS OF
-CC**              EMIN AND EMAX
-C
       SUBROUTINE ADDNOD (MXND, MLN, XN, YN, LXK, KXL, NXL, LXN,
      &   ANGLE, BNSIZE, LNODES, XNEW, YNEW, DIST, NNN, KKK, LLL,
      &   N0, N1, N2, AMBIG, LAMBIG, SIZEIT, ERR, NOROOM, XNOLD,
@@ -28,22 +11,22 @@ C
      &   NNXK, REMESH, REXMIN, REXMAX, REYMIN, REYMAX, IDIVIS, SIZMIN,
      &   EMAX, EMIN)
 C***********************************************************************
-C
+
 C  SUBROUTINE ADDNOD = ADDS A NEW ELEMENT TO A NEW NODE
-C
+
 C***********************************************************************
-C
+
       DIMENSION XN (MXND), YN (MXND)
       DIMENSION LXK (4, MXND), KXL (2, 3*MXND)
       DIMENSION NXL (2, 3*MXND), LXN (4, MXND)
       DIMENSION ANGLE (MXND), LNODES (MLN, MXND), BNSIZE (2, MXND)
-C
+
       DIMENSION XNOLD(NPNOLD), YNOLD(NPNOLD)
       DIMENSION NXKOLD(NNXK, NPEOLD)
       DIMENSION LINKEG(2, MLINK), LISTEG(4 * NPEOLD), BMESUR(NPNOLD)
-C
+
       LOGICAL AMBIG, SIZEIT, ERR, NOROOM
-C
+
       NNN = NNN+1
       IF (NNN .GT. MXND) THEN
          NOROOM = .TRUE.
@@ -51,26 +34,17 @@ C
       ENDIF
       XN (NNN) = XNEW
       YN (NNN) = YNEW
-C
+
 C  PUT THE BEGINNING BOUNDARY DISTANCE IN PLACE
-C
+
       IF (LXN (2, N2) .LT. 0) THEN
          BNSIZE (1, NNN) = DIST
          BNSIZE (2, NNN) = 1.
       ELSE
          IF (SIZEIT) THEN
-C
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/21/90
-CC* MODIFICATION: CHANGED PROJECTION SIZE TO CHOOSE MINIMUM OF CURRENT
+
 C**               LOCATION SIZE AND PROJECTING FROM LOCATION SIZE.
-C
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/31/90
-CC* MODIFICATION: ADDED ARGUMENTS TO CALL TO GETSIZ TO PASS MINIMUM
-CC**              ELEMENT SIZE (SIZMIN) AND GETSIZ PARAMETERS OF
-CC**              EMIN AND EMAX
-C
+
             CALL GETSIZ (XNOLD, YNOLD, NXKOLD, LINKEG, LISTEG, BMESUR,
      &         MLINK, NPNOLD, NPEOLD, NNXK, REMESH, REXMIN, REXMAX,
      &         REYMIN, REYMAX, IDIVIS, SIZMIN, EMAX, EMIN, XNEW, YNEW,
@@ -90,10 +64,10 @@ C
             BNSIZE (2, NNN) = DIST / SIZNEW
          ENDIF
       ENDIF
-C
+
 C  MAKE LXN, NXL, KXL, AND LXK ARRAYS
 C  FIRST, ADD THE NEW NODE'S LINES
-C
+
       LLL = LLL+1
       NXL (1, LLL) = NNN
       NXL (2, LLL) = N0
@@ -103,9 +77,9 @@ C
       DO 100 I = 1, 4
          LXN (I, NNN) = 0
   100 CONTINUE
-C
+
 C  MAKE THE NEW ELEMENT
-C
+
       KKK = KKK+1
       LXK (1, KKK) = LNODES (5, N0)
       IF (AMBIG) THEN
@@ -123,9 +97,9 @@ C
       ELSE
          CALL ADDKXL (MXND, KXL, KKK, LNODES (5, N1))
       ENDIF
-C
+
 C  REDO THE LNODES ARRAY
-C
+
       LNODES (2, N2) = NNN
       LNODES (3, N0) = NNN
       LNODES (1, N0) = 0
@@ -140,8 +114,8 @@ C
       IF (ERR) GOTO 110
       IF (.NOT. AMBIG) LNODES (4, N1) = - 2
       LNODES (8, NNN) = LNODES (8, N2) + 1
-C
+
   110 CONTINUE
       RETURN
-C
+
       END

@@ -1,13 +1,13 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
       SUBROUTINE DBIVTT (NDB, ISEVOK, ITMP, NELBLK, NVAREL)
 C=======================================================================
-C
+
 C   --*** DBIVTT *** Read element variable truth table
 C   --   Modified for ExodusII format 8/26/95
 C   --

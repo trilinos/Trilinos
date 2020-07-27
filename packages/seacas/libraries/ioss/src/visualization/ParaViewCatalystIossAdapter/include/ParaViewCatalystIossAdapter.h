@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 #ifndef __PARAVIEW_CATALYST_IOSS_ADAPTER_H
@@ -22,39 +22,39 @@ public:
   ParaViewCatalystIossAdapterBase(){};
   virtual ~ParaViewCatalystIossAdapterBase(){};
   virtual std::string getName() const { return "ParaViewCatalystIossAdapterBase"; }
-  virtual void DeletePipeline(const char *results_output_filename) = 0;
-  virtual void CleanupCatalyst()                                   = 0;
-  virtual void CreateNewPipeline(
-      const char *catalyst_python_filename, const char *catalyst_sierra_block_json,
-      const char *catalyst_sierra_separator_character, const char *catalyst_sierra_input_deck_name,
-      int UnderscoreVectors, int ApplyDisplacements, const char *restart_tag, int enable_logging,
-      int debug_level, const char *results_output_filename, const char *catalyst_output_directory,
-      std::vector<std::string> &catalyst_sierra_data) = 0;
+  virtual void        DeletePipeline(const char *results_output_filename) = 0;
+  virtual void        CleanupCatalyst()                                   = 0;
+  virtual void        CreateNewPipeline(
+             const char *catalyst_python_filename, const char *catalyst_sierra_block_json,
+             const char *catalyst_sierra_separator_character, const char *catalyst_sierra_input_deck_name,
+             int UnderscoreVectors, int ApplyDisplacements, const char *restart_tag, int enable_logging,
+             int debug_level, const char *results_output_filename, const char *catalyst_output_directory,
+             std::vector<std::string> &catalyst_sierra_data)                                   = 0;
   virtual void PerformCoProcessing(const char *              results_output_filename,
                                    std::vector<int> &        error_and_warning_codes,
-                                   std::vector<std::string> &error_and_warning_messages) = 0;
+                                   std::vector<std::string> &error_and_warning_messages)       = 0;
   virtual void SetTimeData(double currentTime, int timeStep,
-                           const char *results_output_filename) = 0;
+                           const char *results_output_filename)                                = 0;
   virtual void CreateGlobalVariable(std::vector<std::string> &component_names, const double *data,
-                                    const char *results_output_filename) = 0;
+                                    const char *results_output_filename)                       = 0;
   virtual void CreateGlobalVariable(std::vector<std::string> &component_names, const int *data,
-                                    const char *results_output_filename) = 0;
+                                    const char *results_output_filename)                       = 0;
   virtual void InitializeGlobalPoints(int num_points, int dimension, const double *data,
-                                      const char *results_output_filename) = 0;
+                                      const char *results_output_filename)                     = 0;
   virtual void InitializeElementBlocks(const std::vector<int> &element_block_id_list,
-                                       const char *            results_output_filename) = 0;
+                                       const char *            results_output_filename)                    = 0;
   virtual void CreateElementBlock(const char *elem_block_name, int elem_block_id,
                                   const std::string &elem_type, int nodes_per_elem, int num_elem,
                                   const int64_t *global_elem_ids, int *connectivity,
-                                  const char *results_output_filename) = 0;
+                                  const char *results_output_filename)                         = 0;
   virtual void CreateElementBlock(const char *elem_block_name, int elem_block_id,
                                   const std::string &elem_type, int nodes_per_elem, int num_elem,
                                   const int64_t *global_elem_ids, int64_t *connectivity,
-                                  const char *results_output_filename) = 0;
+                                  const char *results_output_filename)                         = 0;
   virtual void CreateNodeSet(const char *node_set_name, int node_set_id, int num_ids,
-                             const int *data, const char *results_output_filename) = 0;
+                             const int *data, const char *results_output_filename)             = 0;
   virtual void CreateNodeSet(const char *node_set_name, int node_set_id, int num_ids,
-                             const int64_t *data, const char *results_output_filename) = 0;
+                             const int64_t *data, const char *results_output_filename)         = 0;
   virtual void CreateSideSet(/*const char* side_set_name,*/
                              const char *ss_owner_name, int side_set_id, int num_ids,
                              const int *element_ids, const int *face_ids,
@@ -64,21 +64,21 @@ public:
                              const int64_t *element_ids, const int64_t *face_ids,
                              const char *results_output_filename) = 0;
   virtual void CreateElementVariable(std::vector<std::string> &component_names, int elem_block_id,
-                                     const double *data, const char *results_output_filename) = 0;
+                                     const double *data, const char *results_output_filename)  = 0;
   virtual void CreateElementVariable(std::vector<std::string> &component_names, int elem_block_id,
-                                     const int *data, const char *results_output_filename) = 0;
+                                     const int *data, const char *results_output_filename)     = 0;
   virtual void CreateElementVariable(std::vector<std::string> &component_names, int elem_block_id,
                                      const int64_t *data, const char *results_output_filename) = 0;
   virtual void CreateNodalVariable(std::vector<std::string> &component_names, const double *data,
-                                   const char *results_output_filename) = 0;
+                                   const char *results_output_filename)                        = 0;
   virtual void CreateNodalVariable(std::vector<std::string> &component_names, const int *data,
-                                   const char *results_output_filename) = 0;
+                                   const char *results_output_filename)                        = 0;
   virtual void CreateNodalVariable(std::vector<std::string> &component_names, const int64_t *data,
-                                   const char *results_output_filename)               = 0;
-  virtual void ReleaseMemory(const char *results_output_filename)                     = 0;
-  virtual void logMemoryUsageAndTakeTimerReading(const char *results_output_filename) = 0;
-  virtual int parseFile(const std::string &                  filepath,
-                        CatalystParserInterface::parse_info &pinfo) = 0;
+                                   const char *results_output_filename)                        = 0;
+  virtual void ReleaseMemory(const char *results_output_filename)                              = 0;
+  virtual void logMemoryUsageAndTakeTimerReading(const char *results_output_filename)          = 0;
+  virtual int  parseFile(const std::string &                  filepath,
+                         CatalystParserInterface::parse_info &pinfo)                           = 0;
 
   virtual int parseString(const std::string &s, CatalystParserInterface::parse_info &pinfo) = 0;
 };

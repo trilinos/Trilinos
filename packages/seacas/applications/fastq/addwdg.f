@@ -1,52 +1,41 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: addwdg.f,v 1.1 1990/11/30 11:03:13 gdsjaar Exp $
-C $Log: addwdg.f,v $
-C Revision 1.1  1990/11/30 11:03:13  gdsjaar
-C Initial revision
-C
-C
-CC* FILE: [.PAVING]ADDWDG.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE ADDWDG (MXND, MLN, NUID, XN, YN, ZN, LXK, KXL, NXL,
      &   LXN, LNODES, ANGLE, BNSIZE, NLOOP, IAVAIL, NAVAIL, LLL, KKK,
      &   NNN, LLLOLD, NNNOLD, TANG, KANG, NSTART, NEND, XMIN, XMAX,
      &   YMIN, YMAX, ZMIN, ZMAX, GRAPH, VIDEO, DEV1, KREG, NOROOM, ERR)
 C***********************************************************************
-C
+
 C  SUBROUTINE ADDWDG = ADDS WEDGES IN A ROW
-C
+
 C***********************************************************************
-C
+
 C  ADD WEDGES BASED ON THE TOTAL TURNED ANGLE:
 C      FOR TURNING ANGLES LESS THAN 135 DEGREES - 1 WEDGE
 C      FOR TURNING ANGLES BETWEEN 135 AND 225 DEGREES - TRY 2 WEDGES
 C      FOR TURNING ANGLES BETWEEN 225 AND 315 DEGREES - TRY 3 WEDGES
 C      FOR TURNING ANGLES GREATER THAN 315 DEGREES - TRY 4 WEDGES
-C
+
 C***********************************************************************
-C
+
       DIMENSION XN (MXND), YN (MXND), ZN (MXND), NUID (MXND)
       DIMENSION LXK (4, MXND), KXL (2, 3*MXND)
       DIMENSION NXL (2, 3*MXND), LXN (4, MXND)
       DIMENSION LNODES (MLN, MXND), BNSIZE (2, MXND), ANGLE (MXND)
       DIMENSION INODE (4)
-C
+
       LOGICAL GRAPH, ERR, MAXSIZ, VIDEO, NOROOM, PWEDGE
-C
+
       CHARACTER*3 DEV1
-C
+
       MAXSIZ = .TRUE.
       ERR = .FALSE.
       PWEDGE = .FALSE.
-C
+
       IF (TANG .LT. 2.3561945) THEN
          NWANT = 1
       ELSEIF (TANG .LT. 3.9269908) THEN
@@ -56,10 +45,10 @@ C
       ELSE
          NWANT = 4
       ENDIF
-C
+
       CALL NSPLIT (MXND, MLN, LNODES, ANGLE, NSTART, KANG, INODE,
      &   NNODE, NWANT, MAXSIZ)
-C
+
       DO 100 I = 1, NNODE
          CALL MARKSM (MXND, MLN, LXK, KXL, NXL, LXN, LNODES,
      &      LNODES (2, INODE(I)), ERR)
@@ -87,8 +76,8 @@ C
             CALL SNAPIT (2)
          ENDIF
   100 CONTINUE
-C
+
   110 CONTINUE
       RETURN
-C
+
       END

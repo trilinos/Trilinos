@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
@@ -10,20 +10,6 @@ C=======================================================================
      &                   IDELB, NUMELB, ISEVOK,
      &                   VARGL, VARNP, VAREL, IOERR)
 C=======================================================================
-C$Id: dbiste.f,v 1.4 2007/10/17 18:46:09 gdsjaar Exp $
-C$Log: dbiste.f,v $
-CRevision 1.4  2007/10/17 18:46:09  gdsjaar
-CAdded copyright notice to all files.
-C
-Cexotxt2 is licensed under the BSD license
-C
-CRevision 1.3  1996/05/21 16:52:20  caforsy
-CAdded read/write for property data.  Cleaned up exodusII error checks
-C
-CRevision 1.2  1995/11/07 15:01:39  gdsjaar
-CInitial checkin of ACCESS/translate/exotxt2
-C
-
 C   --*** DBISTE *** (EXOLIB) Read database variables for one time step
 C   --   Written by Amy Gilkey - revised 10/14/87
 C   --   Modified for ExodusIIv2 database format 10/16/95
@@ -54,7 +40,6 @@ C   --   VARNP  - OUT - the nodal variables for the time step (if OPTION)
 C   --   VAREL  - OUT - the element variables for the time step (if OPTION)
 C   --   IOERR  - OUT - I/O error flag
 
-
       INTEGER NDB
       CHARACTER*(*) OPTION
       INTEGER ISTEP
@@ -78,7 +63,6 @@ C     --Read global variables
       IF (NVARGL .GT. 0) THEN
          CALL EXGGV (NDB, ISTEP, NVARGL, VARGL, IERR)
       END IF
-
 
 C     --Read nodal variables
       IF (NVARNP .GT. 0) THEN

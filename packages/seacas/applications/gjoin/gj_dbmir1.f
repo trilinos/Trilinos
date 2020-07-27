@@ -1,10 +1,9 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
-C $Id: dbmir1.f,v 1.4 2006/02/13 20:01:58 gdsjaar Exp $
 C=======================================================================
       SUBROUTINE DBMIR1 (IELB, NUMELB, NUMLNK, LINK, NAME, NDIM, NONQUD)
 C=======================================================================

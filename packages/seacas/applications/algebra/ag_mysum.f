@@ -1,9 +1,8 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
-C $Id: mysum.f,v 1.5 2008/03/14 13:45:28 gdsjaar Exp $
 C=======================================================================
       REAL FUNCTION MYSUM (PARM1, PARM2)
 C=======================================================================

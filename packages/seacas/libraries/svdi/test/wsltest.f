@@ -1,15 +1,15 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
       PROGRAM WTEST05
       REAL X(102), Y(102)
       CHARACTER COLOR(7)*4
-C
+
       DATA COLOR/'RED','GREE','YELL','BLUE','MAGE','CYAN','WHIT'/
-C
+
       CALL WSTART(0.,0)
       CALL WTTYPE('SOFT')
       DO 10 I=1,102

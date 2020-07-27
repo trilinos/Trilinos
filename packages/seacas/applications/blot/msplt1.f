@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
@@ -196,9 +196,9 @@ C   --Mark side sets, if selected
      &      NESSET, ISSESS, A(KIDSS), A(KNESS), A(KNNSS),
      &      A(KIXESS), A(KIXNSS), A(KLTESS), A(KLTNSS), *100)
       END IF
-C
+
 C        Draw elements as spheres, if requested
-C
+
       IF (SPHPLT .NE. 0) THEN
          CALL MDFIND( 'LENE',   KLENE,  LDUM)
          CALL MDFIND( 'LINK',   KLINK,  LDUM)

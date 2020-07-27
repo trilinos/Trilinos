@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
@@ -21,7 +21,6 @@ C                    size is 'nnew'
 C   --   VARS - IN/OUT - the values. On input in old order,
 C                        on output in new order
 C   --   SCR  - TMP - temporary storage area
-
 
       integer map(*)
       real vars(*)

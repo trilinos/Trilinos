@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
@@ -10,20 +10,20 @@ C=======================================================================
      &                   SOLEB,IDBLK,XB,YB,ZB,
      &                   ICONB,ITT,IBLK, TIMES,
      &                   CENTER,ISTP,IST,INSUB,ICOMPL,DUME)
-C
+
 C     ******************************************************************
-C
+
 C     SUBROUTINE TO CONTROL INTERPOLATION OF ELEMENT TRANSFORMED
 C     INTO NODAL RESULTS FROM MESH-A TO MESH-B
 C     INTERPOLATED SOLUTION IS PASSED OUT TO BE RETRANSFORMED
 C     INTO ELEMENT RESULTS AND THEN WRITTEN TO MESH-C EXODUS FILE
-C
+
 C     Calls subroutines SHAPEF
-C
+
 C     Called by MAPVAR
-C
+
 C     ******************************************************************
-C
+
 C ICONA   INT   Connectivity of Mesh-A (1:nelnda,1:numeba)
 C SOLENA  REAL  Element variables at nodes for Mesh-A
 C IELPT   INT   The element in Mesh-A within which the point
@@ -36,9 +36,9 @@ C CENTER  REAL  Coordinates of element centroid - passed through to PNF
 C ISTP    INT   Time step
 C INSUB   INT   Entry into subroutine; 1-first time in; >1-second,etc
 C ICOMPL  INT   Map completion; 0-incomplete; 1-complete
-C
+
 C     ******************************************************************
-C
+
       include 'aexds1.blk'
       include 'aexds2.blk'
       include 'amesh.blk'
@@ -46,38 +46,38 @@ C
       include 'ebbyeb.blk'
       include 'ex2tp.blk'
       include 'tapes.blk'
-C
+
       DIMENSION TIMES(*), CENTER(NUMEBB,*)
       DIMENSION ICONA(NELNDA,*), SOLENA(NODESA,NVAREL)
       DIMENSION ITT(NVAREL,*)
       DIMENSION SOLEB(NUMEBB,*), XB(*), YB(*), ZB(*)
       DIMENSION IELPT(*), STRPT(3,NODESB), ICONB(NELNDB,*)
       DIMENSION SOLN(27), XX(27), YY(27), ZZ(27), DUME(*)
-C
+
 C     ******************************************************************
-C
+
         IROT = 0
         IROTF = 0
         DO 40 IVAR=1,NVAREL
           IF (ITT(IVAR,IBLK) .EQ. 0)GO TO 40
-C
+
 C Initialize SOLEB if first time in subroutine for this element block
 C After first time into subroutine
 C retrieve SOLEB from storage in EXODUS
-C
+
         IF (INSUB .EQ. 1) THEN
           CALL INIELT(SOLEB,IVAR,TIMES,ISTP,IDBLK,CENTER,DUME)
         ELSE
           CALL EXGEV(NTP4EX,IST,IVAR,IDBLK,NUMEBB,SOLEB(1,IVAR),IERR)
         END IF
-C
+
 C Loop on centroids in recipient mesh
-C
+
         DO 30 I=1,NUMEBB
           IF (IELPT(I) .NE. 0)THEN
-C
+
 C Set parameters for element in donor mesh
-C
+
             S=STRPT(1,I)
             T=STRPT(2,I)
             R=0.
@@ -89,32 +89,32 @@ C            NNODES=NNELM(ITYPE)
               INODE=ICONA(J,IELPT(I))
               SOLN(J)=SOLENA(INODE,IVAR)
  20         CONTINUE
-C
+
 C Shape function to evaluate interpolation
-C
+
             CALL SHAPEF (ITYPE,S,T,R,SOLN,BVALUE)
             SOLEB(I,IVAR) = BVALUE
           END IF
  30     CONTINUE
-C
+
 C If there is more searching to do (i.e. many blocks to one)
 C use EXODUS as temporary storage
 C don't bother to perform needed adjustments yet
-C
+
         IF (ICOMPL .NE. 1)THEN
           CALL EXPEV(NTP4EX,IST,IVAR,IDBLK,NUMEBB,SOLEB(1,IVAR),IERR)
         ELSE
-C
+
 C write element vars out to EXODUS data base (now is convenient)
-C
+
 C+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 C ELMASS is special
-C
+
            IF (NAMVAR(nvargp+IVAR)(1:6) .EQ. 'ELMASS')THEN
-C
+
 C ELMASS was changed to nodal density prior to processing.
 C need to go back from density to element mass now
-C
+
 C             NNODES=NNELM(ITYPE)
              NNODES = NELNDB
              IF (ITYPE .EQ. 6) NNODES = 4
@@ -132,23 +132,22 @@ C             NNODES=NNELM(ITYPE)
                SOLEB(IEL,IVAR) = SOLEB(IEL,IVAR) * VOLUME
  100         CONTINUE
            END IF
-C
+
 C****************************************************************
 C apply constraints to variables here as applicable
-C
-C
+
 C Plastic strain (EQPS) must greater than or equal to 0.
-C
+
            IF (NAMVAR(nvargp+IVAR)(1:4) .EQ. 'EQPS')THEN
              DO 110 IEL = 1, NUMEBB
                IF (SOLEB(IEL,IVAR) .LT. 0.)THEN
                  SOLEB(IEL,IVAR) = 0.
                END IF
   110        CONTINUE
-C
+
 C Hourglass forces and bulk viscosity have no meaning other than on
 C the mesh from which they originated, just set them to zero.
-C
+
            ELSE IF (NAMVAR(nvargp+IVAR)(1:2) .EQ. 'HG' .OR.
      &          NAMVAR(nvargp+IVAR)(1:5) .EQ. 'BULKQ')THEN
              DO 120 IEL = 1, NUMEBB
@@ -168,13 +167,13 @@ C              SOLEB(IEL,IVAR) = ?.
 C            END IF
 C  ???     CONTINUE
 c************************************************************************
-c
+
 c########################################################################
 c the rotation tensor is special
-c
+
 c just store pointers to the rotation tensor components for later
 c processing. do nothing here
-c
+
            IF (NAMVAR(NVARGP+IVAR)(1:8) .EQ. 'COSTHETA')THEN
              ICOS = IVAR
              IROT = IROT + 1
@@ -221,17 +220,17 @@ c
              GO TO 10
            END IF
 c########################################################################
-C
+
 C write element variables
-C
+
            CALL EXPEV(NTP4EX,IST,IVAR,IDBLK,NUMEBB,SOLEB(1,IVAR),IERR)
    10      CONTINUE
-c
+
 c########################################################################
 c now fix-up rotations - rotation matrix must have mag=1
-c
+
 c some simple error checking
-c
+
            IF (NDIMB .EQ. 2)THEN
              IF (IROT .EQ. 2 .AND.
      &         ICOS .NE. 0 .AND. ISIN .NE. 0) THEN
@@ -247,15 +246,14 @@ c
      &                   IERR)
               IROTF = 1
              END IF
-C
-C
+
             ELSE IF (IROT .EQ. 9 .AND. IROTF .EQ. 0 .AND. IR11 .NE. 0
      &        .AND. IR21 .NE. 0 .AND. IR31 .NE. 0 .AND. IR12 .NE. 0
      &        .AND. IR22 .NE. 0 .AND. IR32 .NE. 0 .AND. IR13 .NE. 0
      &        .AND. IR23 .NE. 0 .AND. IR33 .NE. 0)THEN
-C
+
 C compute magnitude of matrix
-C
+
             DO 280 IEL = I, NUMEBB
              RMAG=SQRT(SOLEB(IEL,IR11)*SOLEB(IEL,IR22)*SOLEB(IEL,IR33)
      &           +    SOLEB(IEL,IR21)*SOLEB(IEL,IR32)*SOLEB(IEL,IR13)
@@ -273,7 +271,7 @@ C
              SOLEB(IEL,IR13) = SOLEB(IEL,IR13) / RMAG
              SOLEB(IEL,IR23) = SOLEB(IEL,IR23) / RMAG
              SOLEB(IEL,IR33) = SOLEB(IEL,IR33) / RMAG
-c
+
   280       CONTINUE
             CALL EXPEV(NTP4EX,IST,IR11,IDBLK,NUMEBB,SOLEB(1,IR11),
      &                 IERR)
@@ -298,6 +296,6 @@ c
         END IF
  40     CONTINUE
 c########################################################################
-C
+
       RETURN
       END

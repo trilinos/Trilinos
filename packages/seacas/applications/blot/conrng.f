@@ -1,32 +1,9 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
-C $Log: conrng.f,v $
-C Revision 1.3  2009/03/25 12:36:43  gdsjaar
-C Add copyright and license notice to all files.
-C Permission to assert copyright has been granted; blot is now open source, BSD
-C
-C Revision 1.2  2003/10/02 17:01:51  gdsjaar
-C Fixed the setting of an artificial range for a constant negative
-C value. It was incorrectly making max < min and then iterating until
-C overflow. Changed to subtract and add the absolute value of the
-C constant value.
-C
-C Removed call to initialize random file since there is none with
-C exodusII
-C
-C Removed saving of memory pointers in rndvar; instead just find them
-C when reading an element variable.
-C
-C Revision 1.1  1994/04/07 19:57:13  gdsjaar
-C Initial checkin of ACCESS/graphics/blotII2
-C
-c Revision 1.2  1990/12/14  08:49:00  gdsjaar
-c Added RCS Id and Log to all files
-c
 C=======================================================================
       SUBROUTINE CONRNG (ISLINE, FMINI, FMAXI, NCNTR, DELC, CMIN, CMAX)
 C=======================================================================

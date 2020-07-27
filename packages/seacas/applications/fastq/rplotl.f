@@ -1,82 +1,48 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: rplotl.f,v 1.4 2007/07/24 13:10:18 gdsjaar Exp $
-C $Log: rplotl.f,v $
-C Revision 1.4  2007/07/24 13:10:18  gdsjaar
-C Fix problem with boundary condition memory overwrite.
-C
-C Remove old ls5 and r25 terminal tests
-C
-C Revision 1.3  1998/07/14 18:20:01  gdsjaar
-C Removed unused variables, cleaned up a little.
-C
-C Changed BLUE labels to GREEN to help visibility on black background
-C (indirectly requested by a couple users)
-C
-C Revision 1.2  1998/05/29 14:21:23  gdsjaar
-C Changed scratch file unit number from 1 to 99. On some systems
-C (janus), this caused the input fastq file to be deleted since it had
-C earlier been assigned to unit 1. Even though the fastq file had
-C already been closed, the temporary status of the scratch file assigned
-C to unit 1 propagated back to the fastq file and deleted it.
-C
-C Version number upped to 2.6X
-C
-C Revision 1.1.1.1  1990/11/30 11:15:16  gdsjaar
-C FASTQ Version 2.0X
-C
-c Revision 1.1  90/11/30  11:15:15  gdsjaar
-c Initial revision
-c
-C
-CC* FILE: [.PAVING]RPLOTL.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE RPLOTL (MXND, XN, YN, ZN, NXL, XMIN, XMAX, YMIN, YMAX,
      &   ZMIN, ZMAX, LLL, DEV1, KREG)
 C***********************************************************************
-C
+
 C  SUBROUTINE RPLOTL = REPLOTS THE CURRENT MESH FROM THE NXL ARRAY
-C
+
 C***********************************************************************
-C
+
       DIMENSION NXL (2, 3 * MXND), XN (MXND), YN (MXND), ZN (MXND)
       DIMENSION X (2), Y (2)
-C
+
       CHARACTER*72 DUMMY, HOLD, DEV1*3
-C
+
       LOGICAL HARD, FIGURE
-C
+
       HARD = .FALSE.
       FIGURE = .FALSE.
-C
+
 C  INITIALIZE THE PLOTTING SURFACE
-C
+
       XDIMD = 1.
       YDIMD = .75
-C
+
 C  TURN ON THE HARDCOPY IF NEEDED
-C
+
       IF (HARD) THEN
          CALL VDIQES (10002, KAVAL2)
          IF (KAVAL2 .NE. 1) GOTO 110
          CALL VDESCP (10002, 0, 0)
       ENDIF
-C
+
 C  OPEN A FIGURE FILE IF NEEDED
-C
+
       IF (FIGURE) THEN
          IUNIT = 98
          OPEN (UNIT = IUNIT, FILE = 'DATA.FIG',
      &      STATUS = 'NEW', ERR = 110)
       ENDIF
-C
+
       CALL PLTBGN
       XDIMR = XMAX - XMIN
       YDIMR = YMAX - YMIN
@@ -110,9 +76,9 @@ C
       DUMMY (1:7) = 'REGION '
       LEN = LEN + 7
       CALL PLTXTH (XDIMD * .05, YDIMD * .95, DUMMY (1:LEN))
-C
+
 C  PLOT THE LINES IN NXL ARRAY,  SKIPPING DELETIONS
-C
+
       IF (FIGURE) THEN
          IDUM = 0
          XDUM = 0.
@@ -141,17 +107,17 @@ C
             ENDIF
          ENDIF
   100 CONTINUE
-C
+
       CALL PLTFLU
       IF (HARD) THEN
          CALL PLTFLU
          CALL VDESCP (10001, 0, 0)
       ENDIF
-C
+
   110 CONTINUE
       IF (FIGURE) CLOSE (IUNIT)
       RETURN
-C
+
 10000 FORMAT (' POINT ', I6, 2X, 2 (1PE14.7, 2X))
 10010 FORMAT (' LINE  ', I6, 2X, 'STR ', I6, 2X, I6)
       END

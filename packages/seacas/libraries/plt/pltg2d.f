@@ -1,17 +1,9 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
-C $Id: pltg2d.f,v 1.2 2000/10/25 13:32:35 gdsjaar Exp $
-C $Log: pltg2d.f,v $
-C Revision 1.2  2000/10/25 13:32:35  gdsjaar
-C Modified intrinsic functions to use generic versions to avoid warnings on SGI 64-bit compiles
-C
-C Revision 1.1  1993/07/16 16:48:13  gdsjaar
-C Changed plt to library rather than single source file.
-C
 C=======================================================================
       LOGICAL FUNCTION PLTG2D(XG,YG,XD,YD)
       DIMENSION UMAP(14)
