@@ -525,6 +525,26 @@ TYPED_TEST_P(FadOpsUnitTest, testPowConstB) {
   // a == 0 and scalar b == 0
   c = pow(a, b.val());
   COMPARE_FADS(c, cc);
+
+  // a == 0 and b == 1
+  b = 1.0;
+  c = pow(a, b);
+  cc = a;
+  if (!Sacado::IsStaticallySized<FadType>::value) {
+    COMPARE_FADS(c, cc);
+  }
+  c = pow(a, b.val());
+  COMPARE_FADS(c, cc);
+
+  // a == 0 and b == 2
+  b = 2.0;
+  c = pow(a, b);
+  cc = a*a;
+  if (!Sacado::IsStaticallySized<FadType>::value) {
+    COMPARE_FADS(c, cc);
+  }
+  c = pow(a, b.val());
+  COMPARE_FADS(c, cc);
 }
 
 REGISTER_TYPED_TEST_SUITE_P(

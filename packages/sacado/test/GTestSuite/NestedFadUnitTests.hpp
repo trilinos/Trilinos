@@ -556,46 +556,105 @@ TYPED_TEST_P(FadFadOpsUnitTest, testPowConstB) {
   c = pow(a, b);
   cc.val() = FadType(this->n2,1.0);
   for (int i=0; i<this->n1; ++i)
-    cc.fastAccessDx(i) = FadType(this->n2,0.0);
+    cc.fastAccessDx(i) = 0.0;
   COMPARE_NESTED_FADS(c, cc);
 
   // Constant scalar b == 0
   c = pow(a, b.val());
   cc.val() = FadType(this->n2,1.0);
   for (int i=0; i<this->n1; ++i)
-    cc.fastAccessDx(i) = FadType(this->n2,0.0);
+    cc.fastAccessDx(i) = 0.0;
   COMPARE_NESTED_FADS(c, cc);
   c = pow(a, b.val().val());
   COMPARE_NESTED_FADS(c, cc);
 
-  // a == 0 and constant b
-  a.val() = 0.0;
-  b = 3.456;
-  c = pow(a, b);
-  cc.val() = 0.0;
-  for (int i=0; i<this->n1; ++i)
-    cc.fastAccessDx(i) = 0.0;
-  COMPARE_NESTED_FADS(c, cc);
+  // a == 0 and constant b as a Fad
+  // This only works for DFad/SLFad, because there is no such thing as a
+  // constant SFad.
+  if (!Sacado::IsStaticallySized<FadType>::value) {
+    a.val() = 0.0;
+    b = 3.456;
+    c = pow(a, b);
+    cc.val() = 0.0;
+    for (int i=0; i<this->n1; ++i)
+      cc.fastAccessDx(i) = FadType(this->n2,0.0);
+    COMPARE_NESTED_FADS(c, cc);
+  }
 
   // a == 0 and constant scalar b
+  a.val() = 0.0;
+  b = 3.456;
   c = pow(a, b.val());
+  cc.val() = 0.0;
   for (int i=0; i<this->n1; ++i)
-    cc.fastAccessDx(i) = 0.0;
+    cc.fastAccessDx(i) = FadType(this->n2,0.0);
   COMPARE_NESTED_FADS(c, cc);
   c = pow(a, b.val().val());
   COMPARE_NESTED_FADS(c, cc);
 
   // a == 0 and b == 0
   b = 0.0;
-  c = pow(a, b);
   cc.val() = 1.0;
   for (int i=0; i<this->n1; ++i)
     cc.fastAccessDx(i) = 0.0;
+  if (!Sacado::IsStaticallySized<FadType>::value) {
+    c = pow(a, b);
+    COMPARE_NESTED_FADS(c, cc);
+    c = pow(a, b.val());
+    COMPARE_NESTED_FADS(c, cc);
+  }
+  c = pow(a, b.val().val());
   COMPARE_NESTED_FADS(c, cc);
 
-  // a == 0 and scalar b == 0
-  c = pow(a, b.val());
+  // a nonzero and b == 2
+  a = a_dfad;
+  a.val().val() = 0.0;
+  b = 2.0;
+  c = pow(a, b);
+  f = pow(a.val().val(), b.val().val());
+  fp = b.val().val()*pow(a.val().val(),b.val().val()-1);
+  fpp = b.val().val()*(b.val().val()-1)*pow(a.val().val(),b.val().val()-2);
+  cc = FadFadType(this->n1,FadType(this->n2,f));
+  for (int i=0; i<this->n2; ++i)
+    cc.val().fastAccessDx(i) = fp*a.val().dx(i);
+  for (int i=0; i<this->n1; ++i) {
+    cc.fastAccessDx(i) = FadType(this->n2,fp*a.dx(i).val());
+    for (int j=0; j<this->n2; ++j)
+      cc.fastAccessDx(i).fastAccessDx(j) = fpp*a.dx(i).val()*a.val().dx(j) + fp*a.dx(i).dx(j);
+  }
+
+  // a.val().val() == 0 with a.val().dx() != 0
+  if (!Sacado::IsStaticallySized<FadType>::value) {
+    COMPARE_NESTED_FADS(c, cc);
+    c = pow(a, b.val());
+    COMPARE_NESTED_FADS(c, cc);
+  }
+  c = pow(a, b.val().val());
   COMPARE_NESTED_FADS(c, cc);
+
+  // a.val().val() == 0 and b == 1
+  b = 1.0;
+  c = pow(a, b);
+  cc = a;
+  if (!Sacado::IsStaticallySized<FadType>::value) {
+    COMPARE_NESTED_FADS(c, cc);
+    c = pow(a, b.val());
+    COMPARE_NESTED_FADS(c, cc);
+  }
+  c = pow(a, b.val().val());
+  COMPARE_NESTED_FADS(c, cc);
+
+  // a.val().val() == 0 and b == 0
+  b = 0.0;
+  c = pow(a, b);
+  cc.val() = FadType(this->n2, 1.0);
+  for (int i=0; i<this->n1; ++i)
+    cc.fastAccessDx(i) = 0.0;
+  if (!Sacado::IsStaticallySized<FadType>::value) {
+    COMPARE_NESTED_FADS(c, cc);
+    c = pow(a, b.val());
+    COMPARE_NESTED_FADS(c, cc);
+  }
   c = pow(a, b.val().val());
   COMPARE_NESTED_FADS(c, cc);
 }
