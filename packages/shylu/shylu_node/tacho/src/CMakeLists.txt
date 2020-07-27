@@ -44,6 +44,7 @@ APPEND_SET(SOURCES
   impl/Tacho_Blas_External.cpp
   impl/Tacho_Lapack_External.cpp
   impl/Tacho_GraphTools_Metis.cpp
+  impl/Tacho_SymbolicTools.cpp
   eti/Tacho_Solver_ETI_ChseLevTaskScheduler_complex_double_Cuda.cpp
   eti/Tacho_Solver_ETI_ChseLevTaskScheduler_complex_double_OpenMP.cpp
   eti/Tacho_Solver_ETI_ChseLevTaskScheduler_complex_double_Serial.cpp
