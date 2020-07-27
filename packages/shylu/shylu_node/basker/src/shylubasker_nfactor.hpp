@@ -75,6 +75,7 @@ namespace BaskerNS
     BASKER_MATRIX ATEMP;
 
     //Kokkos::Impl::Timer tza;
+    int info = 0;
     if(Options.btf == BASKER_TRUE)
     {
       //JDB: We can change this for the new inteface
@@ -288,10 +289,10 @@ namespace BaskerNS
         INT_1DARRAY thread_start;
         MALLOC_INT_1DARRAY(thread_start, num_threads+1);
         init_value(thread_start, num_threads+1, (Int) BASKER_MAX_IDX);
-        int nt = nfactor_diag_error(thread_start);
-        //printf("RETURNED: %d (success=%d, error=%d)\n", nt, BASKER_SUCCESS, BASKER_ERROR);
-        if((nt == BASKER_SUCCESS) || 
-           (nt == BASKER_ERROR)   ||
+        info = nfactor_diag_error(thread_start);
+        //printf("RETURNED: %d (success=%d, error=%d)\n", info, BASKER_SUCCESS, BASKER_ERROR);
+        if((info == BASKER_SUCCESS) || 
+           (info == BASKER_ERROR)   ||
            (btf_restart > BASKER_RESTART))
         {
           break;
@@ -328,7 +329,7 @@ namespace BaskerNS
     //printf("Switch back: %f \n",
     //	    tzback.seconds());
 
-    return 0;
+    return info;
   }//end factor_notoken()
   
 }//end namespace baskerNS

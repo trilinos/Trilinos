@@ -234,6 +234,7 @@ namespace BaskerNS
     if(pivot == (Entry)(0) )
     {
       printf("Error, zero diag in single factor\n");
+      return BASKER_ERROR;
     }
 
     U.val(0)     = pivot;
