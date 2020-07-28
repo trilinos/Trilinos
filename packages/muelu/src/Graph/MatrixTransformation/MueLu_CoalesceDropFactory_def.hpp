@@ -1080,26 +1080,10 @@ namespace MueLu {
           } //for (LO row = 0; row < numRows; row++)
 
           } //subtimer
-#ifdef CMS_PRINT_DEBUG
-	  printf("*** Matrix before symmetrization ***\n");
-	  printf("rows      : ");
-	  for (LO row = 0; row <  std::min(10,numRows+1); row++) 
-	    printf("%d ",rows[row]);
-	  printf("\nrows_stop : ");
-	  for (LO row = 0; row <  std::min(10,numRows); row++) 
-	    printf("%d ",rows_stop[row]);
-	  printf("\ncolind    : ");
-	  for (LO id = 0; id < std::min(100,rows_stop[numRows-1]); id++) 
-	    printf("%d ",columns[id]);
-	  printf("\n");
-#endif
 
 	  if (use_stop_array) {
 	    // Do symmetrization of the cut matrix
 	    // NOTE: We assume nested row/column maps here
-#ifdef CMS_PRINT_DEBUG
-	    printf("Symmetrization Adding: ");
-#endif
 	    for (LO row = 0; row < numRows; row++) {
 	      for (LO col = rows[row]; col < rows_stop[row]; col++) {
 		if(col >= numRows) continue;
@@ -1112,31 +1096,12 @@ namespace MueLu {
 		// We didn't find the transpose buddy, so let's symmetrize, unless we'd be symmetrizing
 		// into a Dirichlet unknown.  In that case don't.
 		if(!found && !pointBoundaryNodes[col] && rows_stop[col] < rows[col+1]) {
-#ifdef CMS_PRINT_DEBUG
-		  printf("(%d,%d) ",col,row);
-#endif
 		  LO new_idx = rows_stop[col];
 		  columns[new_idx] = row;
 		  rows_stop[col]++;		  
 		}
 	      }
 	    }	      
-#ifdef CMS_PRINT_DEBUG
-	    printf("\n");
-
-
-	    printf("*** Matrix pre condensing  ***\n");
-	    printf("rows      : ");
-	    for (LO row = 0; row < std::min(10,numRows+1); row++) 
-	      printf("%d ",rows[row]);
-	    printf("\nrows_stop : ");
-	    for (LO row = 0; row < std::min(10,numRows); row++) 
-	      printf("%d ",rows_stop[row]);
-	    printf("\ncolind    : ");
-	    for (LO id = 0; id < std::min(100,rows_stop[numRows-1]); id++) 
-	      printf("%d ",columns[id]);
-	    printf("\n");
-#endif
 
 	    // Condense everything down
 	    LO current_start=0;
@@ -1152,16 +1117,6 @@ namespace MueLu {
 	    }
 	    rows[numRows] = realnnz = current_start;
 
-#ifdef CMS_PRINT_DEBUG
-	    printf("*** Matrix after symmetrization ***\n");
-	    printf("rows      : ");
-	    for (LO row = 0; row < std::min(10,numRows+1); row++) 
-	      printf("%d ",rows[row]);
-	    printf("\ncolind    : ");
-	    for (LO id = 0; id < std::min(100,rows_stop[numRows-1]); id++) 
-	      printf("%d ",columns[id]);
-	    printf("\n");	  
-#endif
 	  }
 
 	  columns.resize(realnnz);
