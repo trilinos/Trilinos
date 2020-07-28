@@ -28,7 +28,7 @@ namespace Tempus {
  *  expected that those users know what changes are allowable without
  *  affecting the Stepper correctness, performance, accuracy and stability.
  *  Thus the user should be careful when accessing data through classes
- *  derived from the default modifier (i.e., USER RKWARE!!).
+ *  derived from the default modifier (i.e., USER BEWARE!!).
  *
  *  Below is the RK algorithm with the locations of the modify calls
  *  italicized.
@@ -37,9 +37,9 @@ namespace Tempus {
  *  \renewcommand{\thealgorithm}{}
  *  \caption{Backward Euler with modify calls indicated.}
  *  \begin{algorithmic}[1]
- *    \State \quad {\it modifier.modify(solutionHistory, stepper, RKGIN\_STEP)}
+ *    \State \quad {\it modifier.modify(solutionHistory, stepper, BEGIN\_STEP)}
  *    \State Compute the predictor (e.g., apply stepper to $x_n$).
- *    \State \quad {\it modifier.modify(solutionHistory, stepper, RKFORE\_SOLVE)}
+ *    \State \quad {\it modifier.modify(solutionHistory, stepper, BEFORE\_SOLVE)}
  *    \State Solve $\mathcal{F}_n(\dot{x}=(x_n-x_{n-1})/\Delta t_n, x_n, t_n)=0$ for $x_n$
  *    \State \quad {\it modifier.modify(solutionHistory, stepper, AFTER\_SOLVE)}
  *    \State $\dot{x}_n \leftarrow (x_n-x_{n-1})/\Delta t_n$

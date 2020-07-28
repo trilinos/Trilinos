@@ -302,6 +302,15 @@ void StepperOperatorSplit<Scalar>::setInitialConditions(
     subStepperIter = subStepperList_.begin();
   for (; subStepperIter < subStepperList_.end(); subStepperIter++)
     (*subStepperIter)->setInitialConditions(solutionHistory);
+
+  Teuchos::RCP<SolutionState<Scalar> > initialState =
+    solutionHistory->getCurrentState();
+
+  // Check if we need Stepper storage for xDot
+  this->setStepperXDot(initialState->getXDot());
+  if (initialState->getXDot() == Teuchos::null)
+    this->setStepperXDot(initialState->getX()->clone_v());
+
 }
 
 template<class Scalar>
@@ -383,6 +392,7 @@ void StepperOperatorSplit<Scalar>::takeStep(
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
     stepperOSObserver_->observeEndTakeStep(solutionHistory, *this);
 #endif
+
     stepperOSAppAction_->execute(solutionHistory, thisStepper,
       StepperOperatorSplitAppAction<Scalar>::ACTION_LOCATION::END_STEP);
   }

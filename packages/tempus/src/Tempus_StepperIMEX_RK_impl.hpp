@@ -582,7 +582,7 @@ void StepperIMEX_RK<Scalar>::setInitialConditions(
     "        But only  'None' is available for IMEX-RK!\n");
 
   TEUCHOS_TEST_FOR_EXCEPTION( this->getUseFSAL(), std::logic_error,
-    "Error - The First-Step-As-Last (FSAL) principle is not "
+    "Error - The First-Same-As-Last (FSAL) principle is not "
          << "available for IMEX-RK.  Set useFSAL=false.\n");
 }
 
@@ -674,13 +674,6 @@ void StepperIMEX_RK<Scalar>::takeStep(
       "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
       "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    this->stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
-#endif
-    RCP<StepperIMEX_RK<Scalar> > thisStepper = Teuchos::rcpFromRef(*this);
-    this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
-      StepperRKAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
-
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     const Scalar dt = workingState->getTimeStep();
@@ -698,12 +691,16 @@ void StepperIMEX_RK<Scalar>::takeStep(
     this->stageX_ = workingState->getX();
     Thyra::assign(this->stageX_.ptr(), *(currentState->getX()));
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+    this->stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
+#endif
+    RCP<StepperIMEX_RK<Scalar> > thisStepper = Teuchos::rcpFromRef(*this);
+    this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
+      StepperRKAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
+
     // Compute stage solutions
     for (int i = 0; i < numStages; ++i) {
       this->setStageNumber(i);
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-      this->stepperObserver_->observeBeginStage(solutionHistory, *this);
-#endif
       Thyra::assign(xTilde_.ptr(), *(currentState->getX()));
       for (int j = 0; j < i; ++j) {
         if (AHat(i,j) != Teuchos::ScalarTraits<Scalar>::zero())
@@ -712,6 +709,9 @@ void StepperIMEX_RK<Scalar>::takeStep(
           Thyra::Vp_StV(xTilde_.ptr(), -dt*A   (i,j), *(stageG_[j]));
       }
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+      this->stepperObserver_->observeBeginStage(solutionHistory, *this);
+#endif
       this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
         StepperRKAppAction<Scalar>::ACTION_LOCATION::BEGIN_STAGE);
 

@@ -101,10 +101,10 @@ void StepperForwardEuler<Scalar>::setAppAction(
   Teuchos::RCP<StepperForwardEulerAppAction<Scalar> > appAction)
 {
   if (appAction == Teuchos::null) {
-    // Create default appAction                    
+    // Create default appAction
     stepperFEAppAction_ =
       Teuchos::rcp(new StepperForwardEulerModifierDefault<Scalar>());
-  } 
+  }
   else {
     stepperFEAppAction_ = appAction;
   }
@@ -122,6 +122,8 @@ void StepperForwardEuler<Scalar>::setInitialConditions(
   // Check if we need Stepper storage for xDot
   if (initialState->getXDot() == Teuchos::null)
     this->setStepperXDot(initialState->getX()->clone_v());
+  else
+    this->setStepperXDot(initialState->getXDot());
 
   StepperExplicit<Scalar>::setInitialConditions(solutionHistory);
 }
@@ -152,7 +154,9 @@ void StepperForwardEuler<Scalar>::takeStep(
 
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
-    RCP<Thyra::VectorBase<Scalar> > xDot = this->getStepperXDot(currentState);
+    if (currentState->getXDot() != Teuchos::null)
+      this->setStepperXDot(currentState->getXDot());
+    RCP<Thyra::VectorBase<Scalar> > xDot = this->getStepperXDot();
     const Scalar dt = workingState->getTimeStep();
 
     if ( !(this->getUseFSAL()) ) {
@@ -181,7 +185,9 @@ void StepperForwardEuler<Scalar>::takeStep(
       *(currentState->getX()),dt,*(xDot));
 
 
-    xDot = this->getStepperXDot(workingState);
+    if (workingState->getXDot() != Teuchos::null)
+      this->setStepperXDot(workingState->getXDot());
+    xDot = this->getStepperXDot();
 
     if (this->getUseFSAL()) {
       // Get consistent xDot^n.
@@ -191,7 +197,7 @@ void StepperForwardEuler<Scalar>::takeStep(
 #endif
       stepperFEAppAction_->execute(solutionHistory, thisStepper,
         StepperForwardEulerAppAction<Scalar>::ACTION_LOCATION::BEFORE_EXPLICIT_EVAL);
-      
+
       auto p = Teuchos::rcp(new ExplicitODEParameters<Scalar>(dt));
 
       // Evaluate xDot = f(x,t).

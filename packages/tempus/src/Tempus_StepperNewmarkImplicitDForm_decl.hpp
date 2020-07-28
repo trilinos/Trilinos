@@ -33,7 +33,7 @@ namespace Tempus {
  *  Beta scheme can be found
  *  <a href="http://opensees.berkeley.edu/wiki/index.php/Newmark_Method">here</a>.
  *
- *  The First-Step-As-Last (FSAL) principle is not used with the
+ *  The First-Same-As-Last (FSAL) principle is not used with the
  *  Newmark implicit D-Form method.
  */
 template <class Scalar>
