@@ -92,14 +92,10 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   ShyLUbasker->Options.symmetric     = BASKER_FALSE;
   ShyLUbasker->Options.realloc       = BASKER_TRUE;
   ShyLUbasker->Options.verbose       = BASKER_FALSE;
-  ShyLUbasker->Options.matching      = BASKER_TRUE;
-  ShyLUbasker->Options.matching_type = 0;
-  ShyLUbasker->Options.btf           = BASKER_TRUE;
-  ShyLUbasker->Options.amd_btf       = BASKER_TRUE;
-  ShyLUbasker->Options.btf_matching  = 0;
-  ShyLUbasker->Options.blk_matching  = 0;
   ShyLUbasker->Options.prune         = BASKER_TRUE;
-  ShyLUbasker->Options.amd_dom       = BASKER_TRUE;
+  ShyLUbasker->Options.btf_matching  =  1; // use cardinary matching from Trilinos
+  ShyLUbasker->Options.blk_matching  = -1; // no block-wise max-weight matrching
+  ShyLUbasker->Options.amd_dom       = BASKER_TRUE; // use block-wise AMD
   ShyLUbasker->Options.transpose     = BASKER_FALSE;
   ShyLUbasker->Options.verbose_matrix_out = BASKER_FALSE;
 
@@ -116,14 +112,10 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   ShyLUbaskerTr->Options.symmetric     = BASKER_FALSE;
   ShyLUbaskerTr->Options.realloc       = BASKER_TRUE;
   ShyLUbaskerTr->Options.verbose       = BASKER_FALSE;
-  ShyLUbaskerTr->Options.matching      = BASKER_TRUE;
-  ShyLUbaskerTr->Options.matching_type = 0;
-  ShyLUbaskerTr->Options.btf           = BASKER_TRUE;
-  ShyLUbaskerTr->Options.amd_btf       = BASKER_TRUE;
-  ShyLUbaskerTr->Options.btf_matching  = 0;
-  ShyLUbaskerTr->Options.blk_matching  = 0;
   ShyLUbaskerTr->Options.prune         = BASKER_TRUE;
-  ShyLUbaskerTr->Options.amd_dom       = BASKER_TRUE;
+  ShyLUbaskerTr->Options.btf_matching  =  1; // use cardinary matching from Trilinos
+  ShyLUbaskerTr->Options.blk_matching  = -1; // no block-wise max-weight matrching
+  ShyLUbaskerTr->Options.amd_dom       = BASKER_TRUE; // use block-wise AMD
   ShyLUbaskerTr->Options.transpose     = BASKER_TRUE;
   ShyLUbaskerTr->Options.verbose_matrix_out = BASKER_FALSE;
 
@@ -596,32 +588,10 @@ ShyLUBasker<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Param
       ShyLUbasker->Options.verbose_matrix_out = parameterList->get<bool>("verbose_matrix");
       ShyLUbaskerTr->Options.verbose_matrix_out = parameterList->get<bool>("verbose_matrix");
     }
-  if(parameterList->isParameter("matching"))
-    {
-      ShyLUbasker->Options.matching = parameterList->get<bool>("matching");
-      ShyLUbaskerTr->Options.matching = parameterList->get<bool>("matching");
-    }
-  if(parameterList->isParameter("matching_type"))
-    {
-      ShyLUbasker->Options.matching_type =
-        (local_ordinal_type) parameterList->get<int>("matching_type");
-      ShyLUbaskerTr->Options.matching_type =
-        (local_ordinal_type) parameterList->get<int>("matching_type");
-    }
   if(parameterList->isParameter("btf"))
     {
       ShyLUbasker->Options.btf = parameterList->get<bool>("btf");
       ShyLUbaskerTr->Options.btf = parameterList->get<bool>("btf");
-    }
-  if(parameterList->isParameter("amd_btf"))
-    {
-      ShyLUbasker->Options.amd_btf = parameterList->get<bool>("amd_btf");
-      ShyLUbaskerTr->Options.amd_btf = parameterList->get<bool>("amd_btf");
-    }
-  if(parameterList->isParameter("amd_dom"))
-    {
-      ShyLUbasker->Options.amd_dom = parameterList->get<bool>("amd_dom");
-      ShyLUbaskerTr->Options.amd_dom = parameterList->get<bool>("amd_dom");
     }
   if(parameterList->isParameter("transpose"))
     {
@@ -651,6 +621,13 @@ ShyLUBasker<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Param
     {
       ShyLUbasker->Options.btf_matching = parameterList->get<int>("btf_matching");
       ShyLUbaskerTr->Options.btf_matching = parameterList->get<int>("btf_matching");
+      if (ShyLUbasker->Options.btf_matching == 1 || ShyLUbasker->Options.btf_matching == 2) {
+        ShyLUbasker->Options.matching = true;
+        ShyLUbaskerTr->Options.matching = true;
+      } else {
+        ShyLUbasker->Options.matching = false;
+        ShyLUbaskerTr->Options.matching = false;
+      }
     }
   if(parameterList->isParameter("blk_matching"))
     {
@@ -686,24 +663,14 @@ ShyLUBasker<Matrix,Vector>::getValidParameters_impl() const
 	      "Information about factoring");
       pl->set("verbose_matrix", false,
 	      "Give Permuted Matrices");
-      pl->set("matching", true,
-	      "Use WC matching (Not Supported)");
-      pl->set("matching_type", 0, 
-	      "Type of WC matching (Not Supported)");
       pl->set("btf", true, 
 	      "Use BTF ordering");
       pl->set("prune", false,
 	      "Use prune on BTF blocks (Not Supported)");
-      pl->set("amd_btf", true,
-	      "Use AMD on BTF blocks (Not Supported)");
-      pl->set("btf_matching", 0, 
+      pl->set("btf_matching",  1, 
              "Matching option for BTF: 0 Basker, 1: Trilinos, (2: MC64 if enabled), else none");
-      pl->set("blk_matching", 0, 
-             "Matching option for blk MWM: 0 Basker, 1: Trilinos, (2: MC64 if enabled), else none");
-      pl->set("blk_matching", 0, 
-             "Matching optioon for block: 0 none, 1: Basker (2: MC64 if enabled), else none");
-      pl->set("amd_dom", true,
-	      "Use CAMD on ND blocks (Not Supported)");
+      pl->set("blk_matching", -1, 
+             "Matching optioon for block MWM: 0 none, 1: Basker (2: MC64 if enabled), else none");
       pl->set("transpose", false,
 	      "Solve the transpose A");
       pl->set("use_sequential_diag_facto", false,
