@@ -1,42 +1,22 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: etheta.f,v 1.2 1998/07/14 18:18:44 gdsjaar Exp $
-C $Log: etheta.f,v $
-C Revision 1.2  1998/07/14 18:18:44  gdsjaar
-C Removed unused variables, cleaned up a little.
-C
-C Changed BLUE labels to GREEN to help visibility on black background
-C (indirectly requested by a couple users)
-C
-C Revision 1.1.1.1  1990/11/30 11:06:56  gdsjaar
-C FASTQ Version 2.0X
-C
-c Revision 1.1  90/11/30  11:06:53  gdsjaar
-c Initial revision
-c
-C
-CC* FILE: [.MAIN]ETHETA.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE ETHETA (A7, A8, A2, THETA1, THETA2, THETA, ERR)
 C***********************************************************************
-C
+
 C  SUBROUTINE ETHETA = ITERATIVELY SOLVES THE ELIPTICAL PROBLEM OF
 C                      FINDING AN "A" DISTANCE GIVEN TWO POINTS ON
 C                      THE ELIPSE AND A CENTER POINT
-C
+
 C***********************************************************************
-C
+
       LOGICAL ERR
-C
+
 C  START WITH 20 INCREMENTS, EACH PASS INCREMENTS DECREASE TEN FOLD
-C
+
       ANGINC = (THETA2 - THETA1) * .05
       ANG = THETA1
       F1 = ELIPSE (A7, A8, A2, ANG)
@@ -58,13 +38,13 @@ C
          ERR = .TRUE.
          GO TO 120
       END IF
-C
+
   110 CONTINUE
-C
+
   120 CONTINUE
-C
+
 C  FIND THE SECOND ROOT IF THE FIRST ONE HAS BEEN LOCATED
-C
+
       IF(.NOT.ERR)THEN
          ANG=THETA+ANGINC
          F1 = ELIPSE (A7, A8, A2, ANG)
@@ -79,8 +59,8 @@ C
             GO TO 130
          END IF
       END IF
-C
+
   130 CONTINUE
       RETURN
-C
+
       END

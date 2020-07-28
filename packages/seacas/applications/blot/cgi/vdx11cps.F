@@ -1,10 +1,8 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
-
-C $Id: vdx11cps.F,v 1.3 2007/01/26 16:58:24 gdsjaar Exp $
 
 C   cps driver is the file device
 C   x11 driver is the terminal device
@@ -52,9 +50,9 @@ C   x11 driver is the terminal device
 #else
 #endif
       DATA TERMON,FILEON,TERMUP,FILEUP /2*.TRUE.,2*.TRUE./
-C
+
       IF ( ESCPCD.GE.10000 .AND. ESCPCD.LE.10003 ) THEN
-C
+
 C Special Escape Codes for Dual Device Control:
          KSTAT = ESCPCD - 10000
          TERMON = (KSTAT.EQ.1 .OR. KSTAT.EQ.3) .AND. TERMUP
@@ -75,10 +73,10 @@ C     is write only...
          IF (FILEON) CALL wcpses(ESCPCD,N,ARGS)
       END IF
       RETURN
-C
+
 C------------------------------------------------------------------------
       ENTRY VDIQES(ESCPCD,SUPPORT)
-C
+
 C Special Escape Codes for Dual Device Control:
       IF ( ESCPCD.EQ.10000 ) THEN
          SUPPORT = 1
@@ -117,10 +115,10 @@ C Special Escape Codes for Dual Device Control:
          END IF
       END IF
       RETURN
-C
+
 C-----------------------------------------------------------------------
       ENTRY VDINIT(ASPECT,JUSTIF)
-C
+
 C Check if terminal and hardcopy devices are null:
 #ifdef Build64
       ESC4 = 10000
@@ -134,10 +132,10 @@ C Check if terminal and hardcopy devices are null:
       CALL wcpsie( 10000,ISTAT )
       FILEUP = ISTAT .EQ. 0
       FILEON = FILEON .AND. FILEUP
-C
+
 C Stop program if both devices are null.
       IF (.NOT.(TERMUP.OR.FILEUP)) STOP 'No graphics device assigned.'
-C
+
       IF (TERMON) THEN
 #ifdef Build64
          ASPECT4 = ASPECT
@@ -149,7 +147,7 @@ C
       END IF
       IF (FILEON) CALL wcpsnt(ASPECT,JUSTIF)
       RETURN
-C
+
 C-----------------------------------------------------------------------
       ENTRY VDAABU(BTNNUM)
       IF (FILEON) CALL wcpsbu(BTNNUM)
@@ -162,7 +160,7 @@ C ... Not implemented in X11 driver
 #endif
       END IF
       RETURN
-C
+
 C-----------------------------------------------------------------------
       ENTRY VDABGL(BTNNUM,X,Y)
       IF (FILEON) CALL wcpsbl(BTNNUM,X,Y)
@@ -175,7 +173,7 @@ C ... Not implemented in X11 driver
 #endif
       END IF
       RETURN
-C
+
 C-----------------------------------------------------------------------
       ENTRY VDAKGL(CHAR,X,Y)
       IF (FILEON) CALL wcpskl(CHAR,X,Y)
@@ -190,7 +188,7 @@ C-----------------------------------------------------------------------
 #endif
       END IF
       RETURN
-C
+
 C-----------------------------------------------------------------------
       ENTRY VDALOC(X,Y)
       IF (FILEON) CALL wcpslo(X,Y)
@@ -204,7 +202,7 @@ C-----------------------------------------------------------------------
 #endif
       END IF
       RETURN
-C
+
 C-----------------------------------------------------------------------
       ENTRY VDBELL
       IF (TERMON) THEN
@@ -212,7 +210,7 @@ C-----------------------------------------------------------------------
       END IF
       IF (FILEON) CALL wcpsbe
       RETURN
-C
+
 C-----------------------------------------------------------------------
       ENTRY VDBUFL
       IF (TERMON) THEN
@@ -220,7 +218,7 @@ C-----------------------------------------------------------------------
       END IF
       IF (FILEON) CALL wcpsfl
       RETURN
-C
+
 C-----------------------------------------------------------------------
       ENTRY VDFRAM(ITYPE)
       IF (TERMON) THEN
@@ -229,7 +227,7 @@ C ... Doesn't do anything in X11 driver
       END IF
       IF (FILEON) CALL wcpsfr(ITYPE)
       RETURN
-C
+
 C .... disable below
 C-----------------------------------------------------------------------
       ENTRY VDIQCO(NUM,INDEXA,CLRARY,CLRMOD)
@@ -250,7 +248,7 @@ C-----------------------------------------------------------------------
 #endif
       END IF
       RETURN
-C
+
 C-----------------------------------------------------------------------
       ENTRY VDIQCP(X,Y)
       IF (FILEON) CALL wcpscp(X,Y)
@@ -264,7 +262,7 @@ C-----------------------------------------------------------------------
 #endif
       END IF
       RETURN
-C
+
 C-----------------------------------------------------------------------
       ENTRY VDIQDC(INDEX,VALUE)
       IF (FILEON) CALL wcpsdc(INDEX,VALUE)
@@ -278,7 +276,7 @@ C-----------------------------------------------------------------------
 #endif
       END IF
       RETURN
-C
+
 C-----------------------------------------------------------------------
       ENTRY VDIQND(XNDC,YNDC)
       IF (FILEON) CALL wcpsid(XNDC,YNDC)
@@ -292,7 +290,7 @@ C-----------------------------------------------------------------------
 #endif
       END IF
       RETURN
-C
+
 C-----------------------------------------------------------------------
       ENTRY VDIQOS(ATTARR)
       IF (FILEON) CALL wcpsio(ATTARR)
@@ -307,7 +305,7 @@ C-----------------------------------------------------------------------
 #endif
       END IF
       RETURN
-C
+
 C-----------------------------------------------------------------------
       ENTRY VDLOGE(ERRNUM,ERRSEV)
       IF (TERMON) THEN
@@ -316,7 +314,7 @@ C ... Doesn't do anything in X11 driver
       END IF
       IF (FILEON) CALL wcpsle(ERRNUM,ERRSEV)
       RETURN
-C
+
 C-----------------------------------------------------------------------
       ENTRY VDSTBC(COLOR)
       IF (TERMON) THEN
@@ -329,7 +327,7 @@ C-----------------------------------------------------------------------
       END IF
       IF (FILEON) CALL wcpsbc(COLOR)
       RETURN
-C
+
 C-----------------------------------------------------------------------
       ENTRY VDSTCO(NUM,INDEXA,CLRARY,CLRMOD)
 
@@ -351,7 +349,7 @@ C-----------------------------------------------------------------------
       END IF
       IF (FILEON) CALL wcpsco(INDEXA,CLRARY,CLRMOD)
       RETURN
-C
+
 C-----------------------------------------------------------------------
       ENTRY VDSTCS(YSIZE)
       IF (TERMON) THEN
@@ -364,7 +362,7 @@ C-----------------------------------------------------------------------
       END IF
       IF (FILEON) CALL wcpscs(YSIZE)
       RETURN
-C
+
 C-----------------------------------------------------------------------
       ENTRY VDSTFC(COLOR)
       IF (TERMON) THEN
@@ -377,7 +375,7 @@ C-----------------------------------------------------------------------
       END IF
       IF (FILEON) CALL wcpsfc(COLOR)
       RETURN
-C
+
 C-----------------------------------------------------------------------
       ENTRY VDSTIN(INTEN)
       IF (TERMON) THEN
@@ -390,7 +388,7 @@ C-----------------------------------------------------------------------
       END IF
       IF (FILEON) CALL wcpsin(INTEN)
       RETURN
-C
+
 C-----------------------------------------------------------------------
       ENTRY VDSTLA(LOCX,LOCY)
       IF (TERMON) THEN
@@ -404,7 +402,7 @@ C-----------------------------------------------------------------------
       END IF
       IF (FILEON) CALL wcpsla(LOCX,LOCY)
       RETURN
-C
+
 C....enabled below
 C-----------------------------------------------------------------------
       ENTRY VDSTLS(LINSTY)
@@ -418,7 +416,7 @@ C-----------------------------------------------------------------------
       END IF
       IF (FILEON) CALL wcpsls(LINSTY)
       RETURN
-C
+
 C-----------------------------------------------------------------------
       ENTRY VDSTLW(LINWTH)
       IF (TERMON) THEN
@@ -431,7 +429,7 @@ C-----------------------------------------------------------------------
       END IF
       IF (FILEON) CALL wcpslw(LINWTH)
       RETURN
-C
+
 C-----------------------------------------------------------------------
       ENTRY VDSTOS(ATTARR)
       IF (TERMON) THEN
@@ -446,7 +444,7 @@ C-----------------------------------------------------------------------
       END IF
       IF (FILEON) CALL wcpsos(ATTARR)
       RETURN
-C
+
 C-----------------------------------------------------------------------
       ENTRY VDWAIT
       IF (TERMON) THEN
@@ -454,7 +452,7 @@ C-----------------------------------------------------------------------
       END IF
       IF (FILEON) CALL wcpswt
       RETURN
-C
+
 C-----------------------------------------------------------------------
       ENTRY VDLINA(XX,YY)
       IF (TERMON) THEN
@@ -468,7 +466,7 @@ C-----------------------------------------------------------------------
       END IF
       IF (FILEON) CALL wcpsln(XX,YY)
       RETURN
-C
+
 C-----------------------------------------------------------------------
       ENTRY VDMOVA(X,Y)
       IF (TERMON) THEN
@@ -482,7 +480,7 @@ C-----------------------------------------------------------------------
       END IF
       IF (FILEON) CALL wcpsmv(X,Y)
       RETURN
-C
+
 C-----------------------------------------------------------------------
       ENTRY VDNWPG
       IF (TERMON) THEN
@@ -490,7 +488,7 @@ C-----------------------------------------------------------------------
       END IF
       IF (FILEON) CALL wcpspg
       RETURN
-C
+
 C-----------------------------------------------------------------------
       ENTRY VDPNTA(X,Y)
       IF (TERMON) THEN
@@ -504,7 +502,7 @@ C-----------------------------------------------------------------------
       END IF
       IF (FILEON) CALL wcpspt(X,Y)
       RETURN
-C
+
 C-----------------------------------------------------------------------
       ENTRY VDPOLY(XARRAY,YARRAY,NPTS)
       IF (TERMON) THEN
@@ -522,7 +520,7 @@ C-----------------------------------------------------------------------
       END IF
       IF (FILEON) CALL wcpspy(XARRAY,YARRAY,NPTS)
       RETURN
-C
+
 C-----------------------------------------------------------------------
       ENTRY VDTERM
       IF (TERMON) THEN
@@ -530,7 +528,7 @@ C-----------------------------------------------------------------------
       END IF
       IF (FILEON) CALL wcpstr
       RETURN
-C
+
 C-----------------------------------------------------------------------
       ENTRY VDTEXT(LENGTH,CHARS)
       IF (TERMON) THEN
@@ -550,7 +548,7 @@ C-----------------------------------------------------------------------
       END IF
       IF (FILEON) CALL wcpstx(LENGTH,CHARS)
       RETURN
-C
+
       END
 
       SUBROUTINE VBERRH()

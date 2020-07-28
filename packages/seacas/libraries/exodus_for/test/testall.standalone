@@ -1,7 +1,7 @@
 # Copyright(C) 1999-2020 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
-# 
+#
 # See packages/seacas/LICENSE for details
 
 # script to run all tests and compare them to saved dump files.
@@ -81,7 +81,7 @@ ${PREFIX} ${SRCDIR}/testrdd | grep -v version | diff - testrdd.dmp | tee testrdd
 # testwt2 - single precision write 2 files (simultaneously open) test
 echo "testwt2 ..."
 echo "begin testwt2" >> test.output
-${PREFIX} ${SRCDIR}/testwt2 >> test.output |&grep -v "property name string" 
+${PREFIX} ${SRCDIR}/testwt2 >> test.output |&grep -v "property name string"
 echo "end testwt2" >> test.output
 ${NCDUMP} -d5,5 test.exo | grep -v version | diff - test2-1.dmp | tee testwt2-1.res
 ${NCDUMP} -d5,5 test2.exo | grep -v version | diff - test2-2.dmp | tee testwt2-2.res

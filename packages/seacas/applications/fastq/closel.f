@@ -1,54 +1,37 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: closel.f,v 1.2 1991/03/21 15:44:25 gdsjaar Exp $
-C $Log: closel.f,v $
-C Revision 1.2  1991/03/21 15:44:25  gdsjaar
-C Changed all 3.14159... to atan2(0.0, -1.0)
-C
-c Revision 1.1.1.1  1990/11/30  11:05:01  gdsjaar
-c FASTQ Version 2.0X
-c
-c Revision 1.1  90/11/30  11:04:59  gdsjaar
-c Initial revision
-c
-C
-CC* FILE: [.MAIN]CLOSEL.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE CLOSEL (MP, ML, N, COOR, ILINE, LTYPE, LCON, LINKP,
      &   LINKL, X, Y, BIFIND, IFIND, ADDCEN, XCHOLD, YCHOLD)
 C***********************************************************************
-C
+
 C  SUBROUTINE CLOSEL = FINDS CLOSEST PERPENDICULAR BISECTED LINE
-C
+
 C***********************************************************************
-C
+
 C  SUBROUTINE CALLED BY:
 C     BISECT   =
-C
+
 C***********************************************************************
-C
+
 C  SUBROUTINES CALLED:
 C     DLPARA = DETERMINES LINE PARAMETERS FROM TWO POINTS
-C
+
 C***********************************************************************
-C
+
       DIMENSION COOR(2, MP), ILINE(ML), LCON(3, ML), LTYPE(ML), N(29)
       DIMENSION LINKL(2, ML), LINKP(2, MP)
-C
+
       LOGICAL BIFIND, BAD, ADDLNK, ADDCEN, ERR
-C
+
       PI = ATAN2(0.0, -1.0)
       TWOPI = PI + PI
-C
+
 C  FIND THE CLOSEST LINE ABOVE THE POINT INPUT
-C
+
       BIFIND = .FALSE.
       ADDLNK = .FALSE.
       IFIND = 0
@@ -61,28 +44,28 @@ C
      &         J3)
             IF ((J1 .GT. 0) .AND. (J2 .GT. 0)) THEN
                IF (KT .EQ. 1) THEN
-C
+
 C  GET THE PARAMETERS FOR THE LINE
-C
+
                   CALL DLPARA (COOR(1, J1), COOR(2, J1), COOR(1, J2),
      &               COOR(2, J2), XM1, B1, BAD)
-C
+
 C  GET DISTANCE FOR VERTICAL LINE
-C
+
                   IF (BAD) THEN
                      DTRY = ABS(COOR(1, J1) - X)
                      XTRY = COOR(1, J1)
                      YTRY = Y
-C
+
 C  GET DISTANCE FOR HORIZONTAL LINE
-C
+
                   ELSE IF (ABS(XM1) .LT. .000001) THEN
                      DTRY = ABS(COOR(2, J1) - Y)
                      XTRY = X
                      YTRY = COOR(2, J1)
-C
+
 C  GET PERPENDICULAR DISTANCE TO ARBITRARY LINE
-C
+
                   ELSE
                      XM2 = -1./XM1
                      B2 = Y - (XM2*X)
@@ -104,17 +87,17 @@ C
                         BIFIND = .TRUE.
                      END IF
                   END IF
-C
+
 C  CHECK DISTANCES TO CIRCULAR ARCS
-C
+
                ELSE IF ((KT .EQ. 3).OR.(KT .EQ. 4).OR.(KT .EQ. 6)) THEN
-C
+
 C  FIRST GET THETA1, THETA2, THETAT, R1, R2, AND RTRY
-C
+
                   CALL ARCPAR (MP, KT, ILINE(II), COOR, LINKP, J1, J2,
      &               J3, I3, XCEN, YCEN, THETA1, THETA2, TANG, R1, R2,
      &               ERR, ICCW, ICW, XK, XA)
-C
+
                   IF ((Y .EQ. YCEN) .AND. (X .EQ. XCEN)) THEN
                      RTRY = 0.
                      THETAT = (THETA1 + THETA2)*.5
@@ -122,20 +105,20 @@ C
                      THETAT = ATAN2(Y - YCEN, X - XCEN)
                      RTRY = SQRT( ((X - XCEN)**2)  +  ((Y - YCEN)**2))
                   END IF
-C
+
 C  SEE IF THE POINT ANGLE IS WITHIN THE BEGINNING AND ENDING ANGLES
-C
+
                   IF ( ((THETAT .LE. THETA2) .AND. (THETAT .GE. THETA1))
      &               .OR. ((THETAT + TWOPI .LE. THETA2) .AND.
      &               (THETAT + TWOPI .GE. THETA1)) ) THEN
-C
+
 C  CALCULATE THE ARC RADIUS AT THAT ANGLE
-C
+
                      RADIUS = XA*EXP(XK*THETAT)
                      DTRY = ABS(RADIUS - RTRY)
-C
+
 C  CHECK TO SEE IF THE ARC IS THE CLOSEST
-C
+
                      IF (DTRY .LE. DIST) THEN
                         DIST = DTRY
                         XHOLD = XCEN + COS(THETAT)*RADIUS
@@ -157,6 +140,6 @@ C
   100 CONTINUE
       X = XHOLD
       Y = YHOLD
-C
+
       RETURN
       END

@@ -1,7 +1,7 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
       SUBROUTINE POINT3 (COORD, NUMNP, DIST, NDIM, P1, TOLER,
@@ -12,23 +12,23 @@ C    See packages/seacas/LICENSE for details
       LOGICAL SORUP, SELECT(*), ISABRT
       include 'nu_io.blk'
       PI = ATAN2(0.0, -1.0)
-C
+
       CALL LOCOUT ('POINT', NDIM, NODEL, TOLER, SORTYP, P1, P1, ' ')
 
       TEMP = TOLER(1)
       TOLER(1) = MAX(0.0, TEMP - TOLER(2))
       TOLER(2) = MAX(0.0, TEMP + TOLER(2))
-C
+
       X1 = P1(1)
       Y1 = P1(2)
       Z1 = P1(3)
-C
+
       DO 10 I=1, NUMNP
          IF (SELECT(I)) THEN
          X0 = COORD(I,1)
          Y0 = COORD(I,2)
          Z0 = COORD(I,3)
-C
+
          DIST(I) = (X1 - X0)**2 + (Y1 - Y0)**2 + (Z1 - Z0)**2
          END IF
    10 CONTINUE
@@ -44,18 +44,18 @@ C
             DY = COORD(I,2) - P1(2)
             DZ = COORD(I,3) - P1(3)
             DS = SQRT(DX**2 + DZ**2)
-C
+
             FIX1 = SIGN(0.5,ABS(DX+DZ)) + SIGN(0.5,-ABS(DX+DZ))
             FIX2 = SIGN(0.5,ABS(DS+DY)) + SIGN(0.5,-ABS(DS+DY))
             ANGLE(1,I) = ATAN2(DZ,DX+FIX1) * 180.0 / PI
             ANGLE(2,I) = ATAN2(DY,DS+FIX2) * 180.0 / PI
-C
+
             INUM = INUM + 1
             MAP(INUM) = I
          END IF
          END IF
    20 CONTINUE
-C
+
       IF      (SORTYP .EQ. 'X') THEN
          CALL INDEXX (COORD(1,1), MAP, INUM, .FALSE.)
       ELSE IF (SORTYP .EQ. 'Y') THEN

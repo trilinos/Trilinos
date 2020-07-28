@@ -1,50 +1,9 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: wrgens.f,v 1.9 1998/03/23 05:17:54 gdsjaar Exp $
-C $Log: wrgens.f,v $
-C Revision 1.9  1998/03/23 05:17:54  gdsjaar
-C Fixed data statement ordering
-C
-C Revision 1.8  1997/09/02 18:51:45  caforsy
-C Increase initial value of NIN in rdfsq.f and IGUESS in wrgens.f
-C
-C Revision 1.7  1992/11/17 15:06:39  gdsjaar
-C Fixed problem with version number output.
-C
-c Revision 1.6  1992/11/16  23:32:47  gdsjaar
-c Fixed problem with outputting too many attributes for some elements,
-c upped version number to 2.2X
-c
-c Revision 1.5  1992/06/09  22:31:18  gdsjaar
-c Fixed problem with sideset node and element numbering for 8 and 9 node elements
-c
-c Revision 1.4  1992/04/15  22:56:38  gdsjaar
-c Fixed EXODUS output of 3-node beams--connectivity
-c conforms to EXODUS document
-c Upped version number to 2.1X to reflect change
-c
-c Revision 1.3  1991/12/18  21:12:03  gdsjaar
-c Removed the info field
-c
-c Revision 1.2  1990/11/30  11:30:08  gdsjaar
-c Rewrote indexing for reads and writes
-c
-c Revision 1.1.1.1  90/11/30  11:17:52  gdsjaar
-c FASTQ Version 2.0X
-c
-c Revision 1.1  90/11/30  11:17:51  gdsjaar
-c Initial revision
-c
-C
-CC* FILE: [.MAIN]WRGENS.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE WRGENS (MS, MR, NPNODE, NPELEM, MXNFLG, MXSFLG, NPREGN,
      &   NPNBC, NPSBC, IUNIT, NNN, KKK, NNXK, NODES, NELEMS, NNFLG,
      &   NNPTR, NNLEN, NSFLG, NSPTR, NSLEN, NVPTR, NVLEN, NSIDEN,
@@ -52,18 +11,18 @@ C
      &   NBCNOD, NNLIST, NBCSID, NSLIST, NVLIST, NUMMAT, LINKM, TITLE,
      &   ERR, EIGHT, NINE, VERSN)
 C************************************************************************
-C
+
 C  SUBROUTINE WRGENS = WRITES GENESIS DATABASE MESH OUTPUT
-C
+
 C***********************************************************************
-C
+
       PARAMETER (IGUESS = 1000)
-C
+
 C  IGUESS IS THE NUMBER OF ELEMENT BLOCKS,  FOR USE WITH THE ENAME
 C  VARIABLE.  IF THIS VARIABLE IS NOT AS LARGE AS NUMMAT,  IT WILL NOT
 C  RESULT IN A FATAL ERROR,  BUT SIMPLY A WARNING,  AND NO ELEMENT
 C  NAMES WILL BE WRITTEN.
-C
+
       DIMENSION XN (NPNODE), YN (NPNODE), NXK (NNXK, NPELEM)
       DIMENSION MAT (NPELEM)
       DIMENSION NODES (NPNBC), NELEMS (NPSBC), NSIDEN (NPSBC)
@@ -73,14 +32,14 @@ C
       DIMENSION NSPTR (MXSFLG), WTSIDE (NPSBC)
       DIMENSION NVLEN (MXSFLG), NVPTR (MXSFLG), LINKM (2,  (MS+MR))
       DIMENSION MAPDXG (NPNODE), MAPGXD (NPNODE), MATMAP (3, NPREGN)
-C
+
       CHARACTER*72 TITLE, HOLD*80
       CHARACTER*8 DATE, TIME, VERSN1, VERSN2, XNAME, YNAME
       CHARACTER*8 ENAME (IGUESS)
       CHARACTER*10 VERSN
-C
+
       LOGICAL ERR, EIGHT, NINE
-C
+
       integer lcon(9)
       integer lbar(3)
 
@@ -97,17 +56,17 @@ C
       HOLD = TITLE
       XNAME = 'X'
       YNAME = 'Y'
-C
+
 C  CHECK TO MAKE SURE THAT THERE IS ENOUGH ROOM FOR ELEMENT NAMES
-C
+
       IF (NUMMAT.GT.IGUESS) THEN
          CALL MESAGE ('WARNING:  THE NUMBER OF ELEMENT BLOCKS EXCEEDS')
          CALL MESAGE ('          THE CAPACITY TO NAME EACH BLOCK.')
          CALL MESAGE ('          NO ELEMENT NAMES WILL BE WRITTEN.')
       ENDIF
-C
+
 C  WRITE OUT HEADER INFORMATION
-C
+
       WRITE (IUNIT, ERR = 110)HOLD
       IJK = 2
       IVERS = 1
@@ -131,15 +90,15 @@ C    1-----3-----2 Now: 1 3 3 2 Correct: 1 2 3
 
       WRITE (IUNIT, ERR = 110)NNN, IJK, KKK, NUMMAT, NBCNOD, NNLIST,
      &   NBCSID, NSLST, NVLST, IVERS
-C
+
 C  WRITE OUT NODE BLOCK
-C
+
       WRITE (IUNIT, ERR = 110) (XN (I), I = 1, NNN),
      &   (YN (I), I = 1, NNN)
       WRITE (IUNIT, ERR = 110) (MAPDXG (I), I = 1, KKK)
-C
+
 C  WRITE OUT ELEMENT BLOCKS
-C
+
       DO 100 I = 1, NUMMAT
          IF (NXK (3, MATMAP (2, I)) .EQ. 0) THEN
             INODE = 2
@@ -167,11 +126,11 @@ C
             NATTR = 0
             IF (I.LE.IGUESS)ENAME (I) = 'QUAD'
          ENDIF
-C
+
 C  NLOOP IS NEEDED TO WRITE SOMETHING OUT THE CURRENT COUNTER IS ZERO.
 C  THIS IS DONE TO SOLVE A CRAY OPERATING SYSTEM [CTSS] PROBLEM
 C  WHERE NULL RECORD WRITES ARE NOT DONE APPROPRIATELY
-C
+
          WRITE (IUNIT, ERR = 110) MATMAP (1, I),
      &      MATMAP (3, I) - MATMAP (2, I)+1, INODE, NATTR
 C... 8 or 9 node quads
@@ -190,9 +149,9 @@ C... 4 node quad or 2 node beam/truss
          NLOOP = MAX0 (1, NATTR*KKK)
          WRITE (IUNIT, ERR = 110) (ATTR, J = 1, NLOOP)
   100 CONTINUE
-C
+
 C  WRITE OUT NODAL BOUNDARY FLAGS
-C
+
       NLOOP = MAX0 (1, NBCNOD)
       WRITE (IUNIT, ERR = 110) (NNFLG (I), I = 1, NLOOP)
       WRITE (IUNIT, ERR = 110) (NNLEN (I), I = 1, NLOOP)
@@ -200,9 +159,8 @@ C
       NLOOP = MAX0 (1, NNLIST)
       WRITE (IUNIT, ERR = 110) (NODES (I), I = 1, NLOOP)
       WRITE (IUNIT, ERR = 110) (WTNODE (I), I = 1, NLOOP)
-C
+
 C  WRITE OUT SIDE BOUNDARY FLAGS
-C
 
 C ... Fix up side set nodes and elements for 8 and 9 node elements.
 C ... At this point, they are treated as two linear segments,
@@ -254,37 +212,37 @@ C    1-----3-----2 Now: 1 3 3 2 Correct: 1 2 3
       NLOOP = MAX0 (1, NVLIST)
       WRITE (IUNIT, ERR = 110) (NSIDEN (I), I = 1, NLOOP)
       WRITE (IUNIT, ERR = 110) (WTSIDE (I), I = 1, NLOOP)
-C
+
 C  WRITE OUT THE QA INFORMATION
-C
+
       IHOLD = 1
       WRITE (IUNIT, ERR = 110)IHOLD
       WRITE (IUNIT, ERR = 110)VERSN1, VERSN2, DATE, TIME
-C
+
 C  WRITE THE HEADER INFORMATION
-C
+
       IHOLD = 0
       WRITE (IUNIT, ERR = 110)IHOLD
-C
+
 C  WRITE THE COORDINATE NAMES AND ELEMENT NAMES
-C
+
       WRITE (IUNIT)XNAME, YNAME
       IF (NUMMAT.LE.IGUESS)WRITE (IUNIT) (ENAME (I), I = 1, NUMMAT)
-C
+
 C  SUCCESSFUL WRITE COMPLETED
-C
+
       CALL MESAGE (' ')
       CALL MESAGE (' ')
       CALL MESAGE ('GENESIS OUTPUT FILE SUCCESSFULLY WRITTEN')
       CALL MESAGE (' ')
       ERR = .FALSE.
       RETURN
-C
+
 C  ERR DURING WRITE PROBLEMS
-C
+
   110 CONTINUE
       CALL MESAGE ('ERR DURING WRITE TO OUTPUT FILE')
       CALL MESAGE ('      - NO FILE SAVED -')
       RETURN
-C
+
       END

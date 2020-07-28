@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C -*- Mode: fortran -*-
@@ -128,7 +128,6 @@ C   --changing the table.
             IDS(ITEM) = IDNEW
           END IF
         end if
-
 
 C ... Check for same ID in second set of IDs
         if (match .eq. 2 .or. match .eq. 3) then

@@ -1,40 +1,20 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: rgdstr.f,v 1.2 1998/07/14 18:19:58 gdsjaar Exp $
-C $Log: rgdstr.f,v $
-C Revision 1.2  1998/07/14 18:19:58  gdsjaar
-C Removed unused variables, cleaned up a little.
-C
-C Changed BLUE labels to GREEN to help visibility on black background
-C (indirectly requested by a couple users)
-C
-C Revision 1.1.1.1  1990/11/30 11:14:57  gdsjaar
-C FASTQ Version 2.0X
-C
-c Revision 1.1  90/11/30  11:14:56  gdsjaar
-c Initial revision
-c
-C
-CC* FILE: [.MAIN]RGDSTR.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE RGDSTR (NPNODE, NPELEM, KKK, NNXK, XN, YN, NXK)
 C************************************************************************
-C
+
 C  SUBROUTINE RGDSTR = CALCULATES A REGION DISTORTION MEASURE
-C
+
 C***********************************************************************
-C
+
       DIMENSION XN (NPNODE), YN (NPNODE), NXK (NNXK, NPELEM)
-C
+
 C  CALCULATE THE ELEMENT DISTORTION
-C
+
       N1 = NXK (1,1)
       N2 = NXK (2,1)
       N3 = NXK (3,1)
@@ -62,17 +42,17 @@ C
          ENDIF
          SUM = SUM + VALUE
   100 CONTINUE
-C
+
 C  PRINT OUT THE RESULTS
-C
+
       SUM = SUM / DBLE(KKK)
       WRITE (*, 10000) VMIN, KMIN, VMAX, KMAX, SUM
-C
+
       RETURN
-C
+
 10000 FORMAT ('  THE MINIMUM DISTORTION IS: ',G14.7,' IN ELEMENT: ',I10,
      &   /,
      &   '  THE MAXIMUM DISTORTION IS: ',G14.7,' IN ELEMENT: ',I10, /,
      &   '  THE AVERAGE DISTORTION IS: ',G14.7)
-C
+
       END

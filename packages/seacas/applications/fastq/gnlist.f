@@ -1,39 +1,28 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: gnlist.f,v 1.1 1990/11/30 11:09:02 gdsjaar Exp $
-C $Log: gnlist.f,v $
-C Revision 1.1  1990/11/30 11:09:02  gdsjaar
-C Initial revision
-C
-C
-CC* FILE: [.RENUM]GNLIST.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE GNLIST (MXLIST, NNUID, MSC, NPNODE, NPELEM, MAXKXN,
      &   NNXK, KXN, NXK, NUID, XN, YN, LIST, NLIST, NUMBER, KCRD, NNN,
      &   ERR, NOROOM)
 C***********************************************************************
-C
+
 C  SUBRUOTINE GNLIST = GETS INITIAL NODE LIST TO BEGIN CUTHILL - MCKEE
 C                      PROCESS
-C
+
 C***********************************************************************
-C
+
 C  NOTE:
 C     AS MANY CARDS OF AS MANY TYPES AS DESIRED MAY BE USED IN
 C     ANY ORDER.  IF A NODE IS REFERENCED MORE THAN ONCE A WARNING
 C     WILL BE PRINTED AND ONLY THE FIRST REFERENCE WILL BE USED.
 C      (IT MAY BE NECESSARY TO MULTIPLY REFERENCE A NODE IN THE
 C     CASE OF MORE THAN ONE P - L - P CARD.)
-C
+
 C***********************************************************************
-C
+
 C     EXAMPLE INPUT CARDS
 C     COL.1    5   ETC.
 C         X-Y              3.5       4.0
@@ -41,27 +30,27 @@ C         NODE               7
 C         NODE               7  100100002  100100003  100100004    8
 C         P-L-P         1    1    2
 C         P-L-P         1   77    3   66    5
-C
+
 C***********************************************************************
-C
+
       DIMENSION LIST (MXLIST), XN (NPNODE), YN (NPNODE)
       DIMENSION KXN (NNXK, MAXKXN), NXK (NNXK, NPELEM), NUID (NNUID)
-C
+
       CHARACTER*80 NUMBER (MSC)
-C
+
       LOGICAL ERR, NOROOM
-C
+
 C  INITIALIZE
-C
+
       ERR=.FALSE.
       NLIST=0
-C
+
 C  NEXT DATA CARD
-C
+
       DO 150 K=1, KCRD
-C
+
 C  X - Y
-C
+
          IF ( (NUMBER (K) (1:3) .EQ. 'X-Y') .OR.
      &      (NUMBER (K) (1:3) .EQ. 'x-y')) THEN
             READ (NUMBER (K) (11:20), ' (E10.0)')XVAL
@@ -82,9 +71,9 @@ C
                NLIST=NLIST + 1
                LIST (NLIST)=INEAR
             ENDIF
-C
+
 C  NODE ID
-C
+
          ELSEIF ( (NUMBER (K) (1:3) .EQ. 'NOD') .OR.
      &      (NUMBER (K) (1:3) .EQ. 'nod')) THEN
             DO 110 I=11, 71, 10
@@ -103,9 +92,9 @@ C
                   ENDIF
                ENDIF
   110       CONTINUE
-C
+
 C  P-L-P
-C
+
          ELSEIF ( (NUMBER (K) (1:3) .EQ. 'P-L') .OR.
      &      (NUMBER (K) (1:3) .EQ. 'p-l')) THEN
             NUMNEW=0
@@ -144,11 +133,11 @@ C
   140       CONTINUE
          ENDIF
   150 CONTINUE
-C
+
       RETURN
-C
+
 10000 FORMAT (' NODE', I10, ' IS ALREADY IN THE LIST')
 10010 FORMAT (' NODE', I10,
      &   ' IS NOT AN IDENTIFIER OF A NODE IN THIS MESH')
-C
+
       END

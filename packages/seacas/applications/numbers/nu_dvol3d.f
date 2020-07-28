@@ -1,22 +1,17 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: dvol3d.f,v 1.1 1991/02/21 15:43:01 gdsjaar Exp $
-C $Log: dvol3d.f,v $
-C Revision 1.1  1991/02/21 15:43:01  gdsjaar
-C Initial revision
-C
       SUBROUTINE DVOL3D( COORD, DISP, LSTSN, NSEG, DELVOL, NDIM, NUMNP)
-C
+
 C***********************************************************************
-C
+
 C     DESCRIPTION:
 C       This routine computes the change in volume of a cavity formed
 C       by the boundary of an element side set flag
-C
+
 C     FORMAL PARAMETERS:
 C       COORD   REAL      Nodal Coordinates
 C       DISP    REAL      Nodal Displacements
@@ -25,41 +20,41 @@ C       LSTLEN  INTEGER   Length of node list
 C       NSEG    INTEGER   Number of segments in this boundary
 C       DELVOL  REAL      Change in volume of this cavity
 C       NDIM   INTEGER   Number of Nodes
-C
+
 C     CALLED BY:
-C
+
 C***********************************************************************
-C
+
       DIMENSION COORD(NUMNP, *), DISP(NUMNP, *), LSTSN(*)
-C
+
       DELVOL = 0.0
-C
+
       DO 100 KSEG = 1 , NSEG
          L = LSTSN(4*KSEG)
          K = LSTSN(4*KSEG - 1)
          J = LSTSN(4*KSEG - 2)
          I = LSTSN(4*KSEG - 3)
-C
+
          Y1 = COORD(I,2)
          Y2 = COORD(J,2)
          Y3 = COORD(K,2)
          Y4 = COORD(L,2)
-C
+
          Y5 = COORD(I,2) + DISP(I,2)
          Y6 = COORD(J,2) + DISP(J,2)
          Y7 = COORD(K,2) + DISP(K,2)
          Y8 = COORD(L,2) + DISP(L,2)
-C
+
          Z1 = COORD(I,3)
          Z2 = COORD(J,3)
          Z3 = COORD(K,3)
          Z4 = COORD(L,3)
-C
+
          Z5 = COORD(I,3) + DISP(I,3)
          Z6 = COORD(J,3) + DISP(J,3)
          Z7 = COORD(K,3) + DISP(K,3)
          Z8 = COORD(L,3) + DISP(L,3)
-C
+
          Z24 = Z2 - Z4
          Z52 = Z5 - Z2
          Z45 = Z4 - Z5
@@ -100,9 +95,9 @@ C
          Z54 = Z5 - Z4
          B81 = ( Y7*(Z3-Z6-Z54) + Y6*Z75 + Y5*(Z6-Z1-Z47)
      *         + Y4*(Z1-Z3-Z75) + Y3*Z47 + Y1*Z54 ) / 12.
-C
+
 C Calculate volume of displaced element face
-C
+
          VOL=  COORD(I,1)              * B11
      *      +  COORD(J,1)              * B21
      *      +  COORD(K,1)              * B31
@@ -113,6 +108,6 @@ C
      *      + (COORD(L,1) + DISP(L,1)) * B81
          DELVOL = DELVOL + VOL
   100 CONTINUE
-C
+
       RETURN
       END

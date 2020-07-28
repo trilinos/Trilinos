@@ -1,14 +1,9 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: cmdlist.blk,v 1.1 1991/02/21 15:42:33 gdsjaar Exp $
-C $Log: cmdlist.blk,v $
-C Revision 1.1  1991/02/21 15:42:33  gdsjaar
-C Initial revision
-C
       CHARACTER*8 CMDTBL(22)
       SAVE CMDTBL
 C      --CMDTBL - the valid commands table

@@ -1,15 +1,15 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 C=================================================================
-C
+
 C This is just a simple test program to test the fortran interface
 C for the NEMESIS I library.
-C
+
 C This file was created by translating ne_test.c into fortran.
-C
+
 C=================================================================
 
 C=================================================================

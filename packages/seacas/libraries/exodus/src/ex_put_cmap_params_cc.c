@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 /*****************************************************************************/
@@ -150,6 +150,7 @@ file ID %d",
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get variable \"%s\" from file ID %d",
                VAR_N_COMM_INFO_IDX, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
+      free(n_var_idx);
       EX_FUNC_LEAVE(EX_FATAL);
     }
   } /* "if (num_n_comm_maps > 0)" */
@@ -204,6 +205,7 @@ file ID %d",
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get variable \"%s\" from file ID %d",
                VAR_E_COMM_INFO_IDX, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
+      free(e_var_idx);
       EX_FUNC_LEAVE(EX_FATAL);
     }
   } /* "if (num_e_comm_maps >0)" */

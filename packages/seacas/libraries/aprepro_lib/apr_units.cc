@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include "apr_util.h"     // for conv_string
@@ -25,16 +25,16 @@ namespace {
     static std::string com = aprepro->getsym("_C_")->value.svar;
     return com;
   }
-  
+
   void define_var(const char *name, double val, const char *label)
   {
     aprepro->add_variable(name, val, true);
-    if (echo) {                            
-      *(aprepro->infoStream) << comment() << " 1 " << std::left << std::setw(10) << name             
-                             << "\t= " << std::setw(14) << std::setprecision(7) << val << "  "     
-                             << label << '\n';                                                     
+    if (echo) {
+      *(aprepro->infoStream) << comment() << " 1 " << std::left << std::setw(10) << name
+                             << "\t= " << std::setw(14) << std::setprecision(7) << val << "  "
+                             << label << '\n';
     }
-  }                                                                                              
+  }
 
   void load_conversion(var_init *base, svar_init *label);
   constexpr double LBF_TO_N = 4.4482216152605;
@@ -64,14 +64,14 @@ var_init si[] =
   {
     {"m"    , 1.},
     {"sec"  , 1.},
-    {"kg"   , 1.}, 
+    {"kg"   , 1.},
     {"degK" , 1.},
-    {"rad"  , 1.}, 
+    {"rad"  , 1.},
     {nullptr, 0}
   };
 
 //-------------------------------------------------------------------------------------
-// This is cgs units: cm, sec, g 
+// This is cgs units: cm, sec, g
 svar_init cgs_label[] =
   {
     {"tout", "second"},
@@ -94,14 +94,14 @@ var_init cgs[] =
   {
     {"m"    ,  100.},
     {"sec"  ,    1.},
-    {"kg"   , 1000.}, 
+    {"kg"   , 1000.},
     {"degK" ,    1.},
-    {"rad"  ,    1.}, 
+    {"rad"  ,    1.},
     {nullptr, 0}
   };
 
 //-------------------------------------------------------------------------------------
-// This is cgs-ev units: cm, sec, g, eV 
+// This is cgs-ev units: cm, sec, g, eV
 svar_init cgs_ev_label[] =
   {
     {"tout", "second"},
@@ -124,14 +124,14 @@ var_init cgs_ev[] =
   {
     {"m"    ,  100.},
     {"sec"  ,    1.},
-    {"kg"   , 1000.}, 
+    {"kg"   , 1000.},
     {"degK" ,    1./ 11604.5221},
-    {"rad"  ,    1.}, 
+    {"rad"  ,    1.},
     {nullptr, 0}
   };
 
 //-------------------------------------------------------------------------------------
-// This is the shock units file: cm, usec, g 
+// This is the shock units file: cm, usec, g
 svar_init shock_label[] =
   {
     {"tout", "microsecond"},
@@ -154,14 +154,14 @@ var_init shock[] =
   {
     {"m"    ,  100.},
     {"sec"  ,    1.0e6},
-    {"kg"   , 1000.}, 
+    {"kg"   , 1000.},
     {"degK" ,    1.},
-    {"rad"  ,    1.}, 
+    {"rad"  ,    1.},
     {nullptr, 0}
   };
 
 //-------------------------------------------------------------------------------------
-// This is the "swap" units file: mm, usec, 1e-4g  
+// This is the "swap" units file: mm, usec, 1e-4g
 svar_init swap_label[] =
   {
     {"tout", "microsecond"},
@@ -184,14 +184,14 @@ var_init swap[] =
   {
     {"m"    ,     1000.},
     {"sec"  ,  1000000.},
-    {"kg"   , 10000000.}, 
+    {"kg"   , 10000000.},
     {"degK" ,        1.},
-    {"rad"  ,        1.}, 
+    {"rad"  ,        1.},
     {nullptr, 0}
   };
 
 //-------------------------------------------------------------------------------------
-// This is the ft-lbf-s units file 
+// This is the ft-lbf-s units file
 svar_init ft_lbf_s_label[] =
   {
     {"tout", "second"},
@@ -214,15 +214,15 @@ var_init ft_lbf_s[] =
   {
     {"m"    , 1./.3048},
     {"sec"  , 1.},
-    {"kg"   , 1/4.5359237e-1/(9.806650/.3048)}, 
+    {"kg"   , 1/4.5359237e-1/(9.806650/.3048)},
     {"degK" , 1.8},
-    {"rad"  , 1.}, 
+    {"rad"  , 1.},
     {nullptr, 0}
   };
 
 
 //-------------------------------------------------------------------------------------
-// This is the ft-lbm-s units file 
+// This is the ft-lbm-s units file
 svar_init ft_lbm_s_label[] =
   {
     {"tout", "second"},
@@ -245,14 +245,14 @@ var_init ft_lbm_s[] =
   {
     {"m"    , 1./.3048},
     {"sec"  , 1.},
-    {"kg"   , 1/.45359237}, 
+    {"kg"   , 1/.45359237},
     {"degK" , 1.8},
-    {"rad"  , 1.}, 
+    {"rad"  , 1.},
     {nullptr, 0}
   };
 
 //-------------------------------------------------------------------------------------
-// This is the in-lbf-s units file: inch, sec, lbf 
+// This is the in-lbf-s units file: inch, sec, lbf
 svar_init in_lbf_s_label[] =
   {
     {"tout", "second"},
@@ -275,9 +275,9 @@ var_init in_lbf_s[] =
   {
     {"m"    , 1./2.54e-2},
     {"sec"  , 1.},
-    {"kg"   , 1/4.5359237e-1/(9.806650/2.54e-2)}, 
+    {"kg"   , 1/4.5359237e-1/(9.806650/2.54e-2)},
     {"degK" , 1.8},
-    {"rad"  , 1.}, 
+    {"rad"  , 1.},
     {nullptr, 0}
   };
 
@@ -352,7 +352,7 @@ void load_conversion(var_init *base, svar_init *label)
   double kg   = base[2].value;
   double degK = base[3].value;
   double rad  = base[4].value;
-  
+
   double foot = m * 0.3048;
   double inch = foot / 12.0;
 
@@ -437,7 +437,7 @@ void load_conversion(var_init *base, svar_init *label)
   define_var("year",               365.25 * 24. * 60. * 60. * sec,         tout);
   define_var("decade",       10. * 365.25 * 24. * 60. * 60. * sec,         tout);
   define_var("century",     100. * 365.25 * 24. * 60. * 60. * sec,         tout);
-      
+
   if (echo != 0) {
     *(aprepro->infoStream) << title_prefix << "Length (L)" << '\n';
   }
@@ -470,7 +470,7 @@ void load_conversion(var_init *base, svar_init *label)
   }
   define_var("ga", 9.806650 * m / (sec*sec), aout);
 
-  // Force  (ML/T^2) 
+  // Force  (ML/T^2)
   if (echo != 0) {
     *(aprepro->infoStream) << title_prefix << "Force (ML/T^2)" << '\n';
   }
@@ -485,7 +485,7 @@ void load_conversion(var_init *base, svar_init *label)
   define_var("poundal",        1.382550e-1 * kg*m/(sec*sec), fout);
   define_var("ounce",      LBF_TO_N * kg*m/(sec*sec)/16.0, fout);
 
-  // Mass (M) 
+  // Mass (M)
   if (echo != 0) {
     *(aprepro->infoStream) << title_prefix << "Mass (M)" << '\n';
   }
@@ -494,8 +494,8 @@ void load_conversion(var_init *base, svar_init *label)
   define_var("lbm",   453.59237 * kg / 1000., mout);
   define_var("slug",  453.59237 * kg / 1000. * 32.17404856, mout);
   define_var("lbfs2pin",  LBF_TO_N * kg/0.0254, mout);
-  
-  // Velocity (L/T) 
+
+  // Velocity (L/T)
   if (echo != 0) {
     *(aprepro->infoStream) << title_prefix << "Velocity (L/T)" << '\n';
   }
@@ -506,7 +506,7 @@ void load_conversion(var_init *base, svar_init *label)
   define_var("kph",  (1000. * m) / (60. * 60. * sec), vout);
   define_var("kps",  (1000. * m) / sec, vout);
 
-  // Volume (L^3) 
+  // Volume (L^3)
   if (echo != 0) {
     *(aprepro->infoStream) << title_prefix << "Volume (L^3)" << '\n';
   }
@@ -514,7 +514,7 @@ void load_conversion(var_init *base, svar_init *label)
   define_var("gal",     3.785412 * (m*m*m)/1000., Vout);
   define_var("gallon",  3.785412 * (m*m*m)/1000., Vout);
 
-  // Density (M/L^3) 
+  // Density (M/L^3)
   if (echo != 0) {
     *(aprepro->infoStream) << title_prefix << "Density (M/L^3)" << '\n';
   }
@@ -525,71 +525,71 @@ void load_conversion(var_init *base, svar_init *label)
   define_var("lbmpft3",    (453.59237 * kg / 1000.) / (foot*foot*foot), dout);
   define_var("slugpft3",   (453.59237 * kg / 1000. * 32.17404856) / (foot*foot*foot), dout);
 
-  // Power: (M L^2 / T^3) 
+  // Power: (M L^2 / T^3)
   if (echo != 0) {
     *(aprepro->infoStream) << title_prefix << "Power (M L^2 / T^3)" << '\n';
   }
   define_var("W",    kg*m/(sec*sec)*m/sec, Pout);
   define_var("watt", kg*m/(sec*sec)*m/sec, Pout);
-  define_var("Hp",   kg*m/(sec*sec)*m/sec * 746, Pout); // --- (electric horsepower) 
+  define_var("Hp",   kg*m/(sec*sec)*m/sec * 746, Pout); // --- (electric horsepower)
 
-  // Energy (ML^2/T^2) 
+  // Energy (ML^2/T^2)
   if (echo != 0) {
     *(aprepro->infoStream) << title_prefix << "Energy (M L^2 / T^2)" << '\n';
   }
   define_var("joule",   kg*m/(sec*sec)*m, eout);
   define_var("J",       kg*m/(sec*sec)*m, eout);
-  define_var("ftlbf",   kg*m/(sec*sec)*m * 1.355818, eout); 
-  define_var("Btu",     kg*m/(sec*sec)*m * 1.05505585262e3, eout); //--- I18n Table 
+  define_var("ftlbf",   kg*m/(sec*sec)*m * 1.355818, eout);
+  define_var("Btu",     kg*m/(sec*sec)*m * 1.05505585262e3, eout); //--- I18n Table
   define_var("erg",     kg*m/(sec*sec)*m * 1.0e-7, eout);
-  define_var("calorie", kg*m/(sec*sec)*m * 4.18680, eout);  // --- I18n Table 
-  define_var("kwh",     kg*m/(sec*sec)*m * 1000.0 * 60. * 60., eout); 
-  define_var("therm",   kg*m/(sec*sec)*m * 1.054804e8, eout); //       --- U.S. 
-  define_var("tonTNT",  kg*m/(sec*sec)*m * 4.184e9, eout); 
+  define_var("calorie", kg*m/(sec*sec)*m * 4.18680, eout);  // --- I18n Table
+  define_var("kwh",     kg*m/(sec*sec)*m * 1000.0 * 60. * 60., eout);
+  define_var("therm",   kg*m/(sec*sec)*m * 1.054804e8, eout); //       --- U.S.
+  define_var("tonTNT",  kg*m/(sec*sec)*m * 4.184e9, eout);
 
-  // Pressure: (M/L/T^2) 
+  // Pressure: (M/L/T^2)
   if (echo != 0) {
     *(aprepro->infoStream) << title_prefix << "Pressure (M/L/T^2)" << '\n';
   }
   define_var("Pa",      kg*m/(sec*sec) / (m*m), pout);
   define_var("pascal",  kg*m/(sec*sec) / (m*m), pout);
-  define_var("MPa",     kg*m/(sec*sec) / (m*m) * 1.0e6, pout); 
-  define_var("GPa",     kg*m/(sec*sec) / (m*m) * 1.0e9, pout); 
-  define_var("bar",     kg*m/(sec*sec) / (m*m) * 1.0e5, pout); 
-  define_var("kbar",    kg*m/(sec*sec) / (m*m) * 1.0e5 * 1.0e3, pout); 
-  define_var("Mbar",    kg*m/(sec*sec) / (m*m) * 1.0e5 * 1.0e6, pout); 
-  define_var("psi",     LBF_TO_N * kg*m/(sec*sec) / (inch*inch), pout); 
-  define_var("ksi",     LBF_TO_N * kg*m/(sec*sec) / (inch*inch) * 1000.0, pout); 
-  define_var("psf",     LBF_TO_N * kg*m/(sec*sec) / (foot*foot), pout); 
-  define_var("atm",     kg*m/(sec*sec) / (m*m) * 1.013250e5, pout);  // --- std atmosphere 
-  define_var("torr",    kg*m/(sec*sec) / (m*m) * 1.013250e5 / 760.0, pout); 
-  define_var("mHg",     kg*m/(sec*sec) / (m*m) * 1.013250e5 / 760.0 * 1000.0, pout); 
-  define_var("mmHg",    kg*m/(sec*sec) / (m*m) * 1.013250e5 / 760.0, pout); 
+  define_var("MPa",     kg*m/(sec*sec) / (m*m) * 1.0e6, pout);
+  define_var("GPa",     kg*m/(sec*sec) / (m*m) * 1.0e9, pout);
+  define_var("bar",     kg*m/(sec*sec) / (m*m) * 1.0e5, pout);
+  define_var("kbar",    kg*m/(sec*sec) / (m*m) * 1.0e5 * 1.0e3, pout);
+  define_var("Mbar",    kg*m/(sec*sec) / (m*m) * 1.0e5 * 1.0e6, pout);
+  define_var("psi",     LBF_TO_N * kg*m/(sec*sec) / (inch*inch), pout);
+  define_var("ksi",     LBF_TO_N * kg*m/(sec*sec) / (inch*inch) * 1000.0, pout);
+  define_var("psf",     LBF_TO_N * kg*m/(sec*sec) / (foot*foot), pout);
+  define_var("atm",     kg*m/(sec*sec) / (m*m) * 1.013250e5, pout);  // --- std atmosphere
+  define_var("torr",    kg*m/(sec*sec) / (m*m) * 1.013250e5 / 760.0, pout);
+  define_var("mHg",     kg*m/(sec*sec) / (m*m) * 1.013250e5 / 760.0 * 1000.0, pout);
+  define_var("mmHg",    kg*m/(sec*sec) / (m*m) * 1.013250e5 / 760.0, pout);
   define_var("inHg",    kg*m/(sec*sec) / (m*m) * 1.013250e5 / 760.0 * 25.4, pout);
-  define_var("inH2O",   kg*m/(sec*sec) / (m*m) * 249.082, pout); 
-  define_var("ftH2O",   kg*m/(sec*sec) / (m*m) * 249.082 * 12.0, pout); 
+  define_var("inH2O",   kg*m/(sec*sec) / (m*m) * 249.082, pout);
+  define_var("ftH2O",   kg*m/(sec*sec) / (m*m) * 249.082 * 12.0, pout);
 
-  // Temperature: 
+  // Temperature:
   if (echo != 0) {
     *(aprepro->infoStream) << title_prefix << "Temperature" << '\n';
   }
-  define_var("kelvin",         degK, Tout); 
-  define_var("degC",           degK, Tout); 
-  define_var("degF",   5./9. * degK, Tout); 
+  define_var("kelvin",         degK, Tout);
+  define_var("degC",           degK, Tout);
+  define_var("degF",   5./9. * degK, Tout);
   define_var("degR",   5./9. * degK, Tout);
   define_var("rankine",5./9. * degK, Tout);
   define_var("eV",     11604.5221 * degK, Tout);
 
-  // Angular 
-  if (echo != 0) { 
+  // Angular
+  if (echo != 0) {
     *(aprepro->infoStream) << title_prefix << "Angular" << '\n';
   }
-  define_var("rev",    2.0 * PI * rad, Aout); 
-  define_var("deg",    2.0 * PI * rad / 360.0, Aout); 
-  define_var("degree", 2.0 * PI * rad / 360.0, Aout); 
-  define_var("arcmin", 2.0 * PI * rad / 360.0 / 60.0, Aout); 
-  define_var("arcsec", 2.0 * PI * rad / 360.0 / 60.0 / 60.0, Aout); 
-  define_var("grade",  2.0 * PI * rad / 360.0 * 0.9, Aout); 
+  define_var("rev",    2.0 * PI * rad, Aout);
+  define_var("deg",    2.0 * PI * rad / 360.0, Aout);
+  define_var("degree", 2.0 * PI * rad / 360.0, Aout);
+  define_var("arcmin", 2.0 * PI * rad / 360.0 / 60.0, Aout);
+  define_var("arcsec", 2.0 * PI * rad / 360.0 / 60.0 / 60.0, Aout);
+  define_var("grade",  2.0 * PI * rad / 360.0 * 0.9, Aout);
 }
 }
 }  // namespace SEAMS

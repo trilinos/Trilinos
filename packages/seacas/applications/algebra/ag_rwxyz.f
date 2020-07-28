@@ -1,7 +1,7 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 C=======================================================================
       SUBROUTINE RWXYZ (NDBIN, NDBOUT, NDIM, NUMNP, NUMNPO,
@@ -30,7 +30,6 @@ C   --   CRDSCR - SCRATCH - coordinate I/O
       INTEGER IXNODE(*)
       REAL    CORD(NUMNP,NDIM)
       REAL    CRDSCR(NUMNPO,NDIM)
-
 
       if (ndim .eq. 2) then
          CALL EXGCOR(ndbin, cord(1,1), cord(1,2), rdum, ierr)

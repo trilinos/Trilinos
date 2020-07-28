@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 #include "Ioss_CodeTypes.h"
@@ -18,8 +18,6 @@
 #include <iostream> // for operator<<, basic_ostream, etc
 #include <string>   // for string, char_traits
 #include <vector>   // for vector
-
-#define NPOS std::string::npos
 
 namespace {
   std::string get_type_from_file(const std::string &filename)

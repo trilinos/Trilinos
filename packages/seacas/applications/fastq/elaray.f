@@ -1,49 +1,27 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: elaray.f,v 1.3 2000/11/13 15:39:04 gdsjaar Exp $
-C $Log: elaray.f,v $
-C Revision 1.3  2000/11/13 15:39:04  gdsjaar
-C Cleaned up unused variables and labels.
-C
-C Removed some real to int conversion warnings.
-C
-C Revision 1.2  1991/04/10 19:56:49  gdsjaar
-C Fixed some logical variables
-C
-c Revision 1.1.1.1  1990/11/30  11:06:29  gdsjaar
-c FASTQ Version 2.0X
-c
-c Revision 1.1  90/11/30  11:06:28  gdsjaar
-c Initial revision
-c
-C
-CC* FILE: [.MAIN]ELARAY.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE ELARAY (XNOLD, YNOLD, NXKOLD, MMPOLD, LINKEG, LISTEG,
      &   MLINK, NPROLD, NPNOLD, NPEOLD, NNXK, XMIN, XMAX, YMIN, YMAX,
      &   IDIVIS)
 C***********************************************************************
-C
+
 C  SUBROUTINE ELARAY = PUTS ELEMENTS INTO AN ARRAY BASED ON THEIR
 C                      PHYSICAL LOCATION
-C
+
 C***********************************************************************
-C
+
       DIMENSION XNOLD(NPNOLD), YNOLD(NPNOLD)
       DIMENSION NXKOLD(NNXK, NPEOLD), MMPOLD(3, NPROLD)
       DIMENSION LINKEG(2, MLINK), LISTEG(4 * NPEOLD)
-C
+
       LOGICAL LCROSS, INSIDE
-C
+
 C  FIND THE EXTREMES FOR THE MESH DATA
-C
+
       XMIN = XNOLD(1)
       XMAX = XNOLD(1)
       YMIN = YNOLD(1)
@@ -54,11 +32,11 @@ C
          YMIN = AMIN1 (YMIN, YNOLD(I))
          YMAX = AMAX1 (YMAX, YNOLD(I))
   100 CONTINUE
-C
+
 C  SET UP THE SIZE OF THE ARRAY BASED ON THE MLINK DIMENSION
 C        IF MLINK = 55 THEN THERE ARE 5 COLUMNS AND 5 ROWS
 C                 = 66 THEN THERE ARE 6 COLUMNS AND 6 ROWS, ETC.
-C
+
       IF (MLINK .EQ. 22) THEN
          IDIVIS = 2
       ELSE IF (MLINK .EQ. 33) THEN
@@ -76,12 +54,12 @@ C
       ELSE IF (MLINK .EQ. 99) THEN
          IDIVIS = 9
       ENDIF
-C
+
 C  NOW THE ELEMENTS MUST BE SORTED INTO ANY ARRAY SPACE THAT THE ELEMENT
 C  CROSSES.  THE ARRAY IS LOGICALLY A SQUARE, BUT PHYSICALLY CAN BE
 C  RECTANGULAR SINCE THE X AND Y EXTREMES MAY FORM ANY SIZE RECTANGLE.
 C  ROWS FIRST IN THE ARRAY AND THEN COLUMNS.
-C
+
       XDELTA = (XMAX - XMIN) / DBLE(IDIVIS)
       YDELTA = (YMAX - YMIN) / DBLE(IDIVIS)
       KOUNT = 0
@@ -110,16 +88,16 @@ C
             INDEX = ((IDIVIS - J + 1) * 10) + I
             LINKEG (1, INDEX) = KOUNT + 1
             LINKEG (2, INDEX) = 0
-C
+
 C  ONLY CHECK ELEMENTS OF THE SAME MATERIAL ID (BLOCK ID)
-C
+
             DO 140 KELEM = 1, NPEOLD
                DO 120 ICON = 1, 4
                   X1 = XNOLD (NXKOLD (ICON, KELEM))
                   Y1 = YNOLD (NXKOLD (ICON, KELEM))
-C
+
 C  TEST TO SEE IF THE NODE FITS IN THE GRID
-C
+
                   IF ( ((X1 .LE. XU) .AND. (X1 .GE. XL)) .AND.
      &               ((Y1 .LE. YU) .AND. (Y1 .GE. YL))  ) THEN
                      KOUNT = KOUNT + 1
@@ -132,9 +110,9 @@ C
                      LISTEG (KOUNT) = KELEM
                      GOTO 130
                   ENDIF
-C
+
 C  TEST TO SEE IF THE EDGE OF THE ELEMENT CROSSES THE GRID
-C
+
                   IF (ICON .EQ. 4) THEN
                      JCON = 1
                   ELSE
@@ -161,9 +139,9 @@ C
                      LISTEG (KOUNT) = KELEM
                      GOTO 130
                   ENDIF
-C
+
 C  OTHERWISE TEST TO SEE IF THE ELEMENT COMPLETELY ENCLOSES THE GRID
-C
+
                   XEMIN = XNOLD (NXKOLD (1, KELEM))
                   XEMAX = XNOLD (NXKOLD (1, KELEM))
                   YEMIN = YNOLD (NXKOLD (1, KELEM))
@@ -192,17 +170,17 @@ C
                      LISTEG (KOUNT) = KELEM
                      GOTO 130
                   ENDIF
-C
+
   120          CONTINUE
   130          CONTINUE
-C
+
   140       CONTINUE
-C
+
   150    CONTINUE
 
   160 CONTINUE
-C
+
   170 CONTINUE
       RETURN
-C
+
       END

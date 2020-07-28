@@ -1,28 +1,9 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
-C $Id: pltdv3.f,v 1.4 2000/10/25 18:55:02 gdsjaar Exp $
-C $Log: pltdv3.f,v $
-C Revision 1.4  2000/10/25 18:55:02  gdsjaar
-C In the pltli? functions, check for N==0 before doing any array
-C accesses.
-C
-C Also changed all references to 'mask' to be arrays where they were
-C scalars since downstream code seems to treat them as arrays.
-C
-C Revision 1.3  1993/07/19 17:06:39  gdsjaar
-C Changed hex constants back to preceding X, --needed on cray. Works
-C either way on other systems.
-C
-c Revision 1.2  1993/07/16  17:33:16  gdsjaar
-c Integer constant too big on sun, replaced it with hexadecimal notation
-c
-c Revision 1.1  1993/07/16  16:48:05  gdsjaar
-c Changed plt to library rather than single source file.
-c
 C=======================================================================
       SUBROUTINE PLTDV3(MAP,N,UX,UY,UZ,VX,VY,VZ)
       REAL MAP(*),UX(*),UY(*),UZ(*),VX(*),VY(*),VZ(*)

@@ -2,7 +2,7 @@
 # Copyright(C) 1999-2020 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
-# 
+#
 # See packages/seacas/LICENSE for details
 
 function usage {
@@ -26,7 +26,7 @@ exit 1
 function show_device {
  echo " "
  tempA=`find ${ACCESSBIN} -name ${codename}_\* |sed -e s:${ACCESSBIN}/${codename}_::`
- echo "Standard options for 'device':" 
+ echo "Standard options for 'device':"
  echo "${txtgrn}" $tempA "${txtrst}"
  echo " "
 }
@@ -156,7 +156,7 @@ if [ ${aprepro} == "true" ] && [ ! -z "$FOR001" ] ; then
     tmp=$FOR001
     export FOR001="./fastq.$$"
     ${ACCESSBIN}/aprepro "$tmp" "${FOR001}"
-fi    
+fi
 
 if [ "${device}" == "dual" ] ; then
     export DUAL_FILENAME="${filename}.met"
@@ -193,7 +193,7 @@ then
   if [ ${device} == "pst" ] ; then mv cgiout1     ${filename}.ps  ; fi
 fi
 
-if [ "${aprepro}" == "file" ] ; then 
+if [ "${aprepro}" == "file" ] ; then
     rm -f ${FOR001}
 fi
 

@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
@@ -171,20 +171,11 @@ C         --that have the smallest area with the given node
             END IF
 
 C         --Check if the node's Z is behind the face's Z at that point
-
-C#????d           z0c = xnorm(iside)*(x0-xcen) + ynorm(iside)*(y0-ycen) !#VAX
-C#????d    &         + znorm(iside)*(zp(ip)-zcen) !#VAX
-C#????d           write (99, 9001, iostat=idum) inp, LINKF1, !#VAX
-C#????d    &         a12, a23, a34, a41, eps, z0c, (z0c.ge.-eps) !#VAX
-C#????d9001        format (5i5, 5f8.4, 1x, f8.4, (2x, l1)) !#VAX
-
             IF ((XNORM(ISIDE)*(X0-XCEN) + YNORM(ISIDE)*(Y0-YCEN)
      &         + ZNORM(ISIDE)*(ZP(IP)-ZCEN)) .GE. -EPS) GOTO 120
          END IF
 
 C      --Hide the entire line (as is), and move the line to hidden section
-
-C#????d        write (99, *) 'invisible line', (linset(i,ipset(ip)), i=1,3) !#VAX
          I = IPSET(IP)
          IPSET(IP) = IPSET(NPART)
          IPSET(NPART) = I

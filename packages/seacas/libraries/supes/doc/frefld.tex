@@ -31,7 +31,7 @@ applications programmer to perform more sophisticated string parsing than
 would be possible when reading only from a file.
 
 \item Whole, real numbers (e.g., 12.3E3) will translate to both INTEGER and
-REAL values if the absolute value of the number is not greater than 
+REAL values if the absolute value of the number is not greater than
 1.0E9.
 
 \item Quoted strings are allowed. This makes the free field reader more
@@ -99,7 +99,7 @@ few rules.
 
 \item An asterisk (\last) indicates that the next input record/string will be
 treated as a continuation of the current line.  All characters after and
-including the continuation indicator on the current line are ignored. 
+including the continuation indicator on the current line are ignored.
 Multiple records/strings that are ''joined'' by continuation indicators
 are treated as a single logical record.
 
@@ -111,7 +111,7 @@ are treated as a single logical record.
 \item \label{itm:case} Lowercase letters not contained in a quoted string
                        are converted to uppercase.  All
                        other non-printable ASCII characters are converted
-                       to spaces. 
+                       to spaces.
 
 \item A numeric field is a data field which adheres to an ANSI FORTRAN numeric
    format.  A numeric field cannot be longer than 32 characters.  A numeric
@@ -261,7 +261,7 @@ Internal input (i.e., a character string) is parsed via FFISTR using
 character strings supplied through FFISTR's argument list.  FFISTR returns
 the parsed data field values defined in the input string. If a string
 contains a continuation character, a flag is returned to the user indicating
-that another string should be supplied to complete the logical record. 
+that another string should be supplied to complete the logical record.
 The arguments to FFISTR are prescribed below.
 \begin{verbatim}
       CALL FFISTR( LINE, MFIELD, IDCONT, NFIELD, KVALUE,
@@ -376,7 +376,7 @@ INPUT RECORD:
 10,,
 \end{verbatim}
 
-Results returned from FREFLD:\\  
+Results returned from FREFLD:\\
 NFIELD =    2
 
 \begin{tabular}{|ccccc|} \hline \hline
@@ -393,7 +393,7 @@ INPUT RECORD:
 'Quoted strings', '5 ', '$*,=''"' $ rest is comment
 \end{verbatim}
 
-Results returned from FREFLD:\\  
+Results returned from FREFLD:\\
 NFIELD =    3
 
 \begin{tabular}{|ccccc|} \hline \hline
@@ -410,7 +410,7 @@ INPUT RECORD:
 quotes's
 \end{verbatim}
 
-Results returned from FREFLD:\\  
+Results returned from FREFLD:\\
 NFIELD =    1
 
 \begin{tabular}{|ccccc|} \hline \hline

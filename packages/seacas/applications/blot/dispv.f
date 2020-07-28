@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C============================================================================
@@ -30,7 +30,7 @@ C   --                   If <=0, they should not.
 C   --          LIDSP(i) identifies the ith variable in the list.
 C   --          If LIDSP(i) < 0, -LIDSP(i) is the id of a global variable.
 C   --          If LIDSP(i) = 0, TIME is to be displayed on the plot legend.
-C
+
       include 'params.blk'
       LOGICAL INIT
       CHARACTER*(*) INLINE(*)

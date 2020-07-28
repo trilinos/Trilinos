@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C -*- Mode: fortran -*-
@@ -10,8 +10,6 @@ C=======================================================================
      &   IDELB, NUMELB, NUMLNK, NAMELB, ELATTR,
      &  XN, YN, A, *)
 C=======================================================================
-
-C   $Id: comand.f,v 1.13 2005/01/17 23:09:58 gdsjaar Exp $
 
 C   --*** COMAND *** (GENSHELL) Input and process commands
 C   --

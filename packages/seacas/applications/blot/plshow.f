@@ -1,30 +1,9 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
-C $Log: plshow.f,v $
-C Revision 1.4  2009/03/25 12:36:46  gdsjaar
-C Add copyright and license notice to all files.
-C Permission to assert copyright has been granted; blot is now open source, BSD
-C
-C Revision 1.3  1994/06/13 18:29:05  gdsjaar
-C Fixed background and foreground color setting. (I think)
-C
-C Revision 1.2  1994/06/13  17:11:35  gdsjaar
-C Fixed background, foreground, and softcharacters to check for full
-C string rather than truncated at 8 characters.
-C
-c Revision 1.1  1994/04/07  20:07:16  gdsjaar
-c Initial checkin of ACCESS/graphics/blotII2
-c
-c Revision 1.3  1993/09/24  17:32:42  gdsjaar
-c Added an outline off/on command to toggle drawing of the view window outline
-c
-c Revision 1.2  1990/12/14  08:54:52  gdsjaar
-c Added RCS Id and Log to all files
-c
 C=======================================================================
       SUBROUTINE PLSHOW (SHOTYP, XYTYPE, MESHOK, TIMES, WHOTIM, IPTIMS)
 C=======================================================================

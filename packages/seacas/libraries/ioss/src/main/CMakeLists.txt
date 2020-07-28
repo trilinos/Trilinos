@@ -1,7 +1,5 @@
-
 SET(HEADERS "")
 SET(SOURCES "")
-
 
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_GLOB(HEADERS ${DIR}/*.h)
@@ -240,7 +238,6 @@ else()
 	        ${CGNS_DIR}/bin
 	     )
 endif()
-
 
 if ( CGNS_CGNSLIST_BINARY )
 TRIBITS_ADD_ADVANCED_TEST(exodus64_to_unstructured_cgns

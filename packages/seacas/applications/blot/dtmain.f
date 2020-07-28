@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
@@ -484,9 +484,9 @@ C -- IF PLOTTING AXIS ONLY, SKIP TO END
                   KTYF = KYF
                   KTZF = KZF
                END IF
-C
+
 C FOR "ZOOM NODE" MODE, RECALCULATE THE ZOOM WINDOW
-C
+
                IF(NZMON) THEN
                   CALL ZOOMND(A(KTXN), A(KTYN), A(KTZN), RDMESH)
                   CALL EXPLIM(2, RDMESH, RDMESH)

@@ -1,14 +1,9 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
-C $Id: mp3vc.f,v 1.1 1993/07/16 16:47:06 gdsjaar Exp $
-C $Log: mp3vc.f,v $
-C Revision 1.1  1993/07/16 16:47:06  gdsjaar
-C Changed plt to library rather than single source file.
-C
 C=======================================================================
       SUBROUTINE MP3VC(N,X0,Y0,Z0,X1,Y1,Z1,PX,PY,PZ,QX,QY,QZ,MASK)
       COMMON /MAP/MODEL(4,4),VIEW(4,4),PROJ(4,4),CPNEAR,CPFAR,VWPORT(4),

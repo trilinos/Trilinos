@@ -1,35 +1,9 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
-C $Log: mrkfac.F,v $
-C Revision 1.4  2009/03/25 12:36:45  gdsjaar
-C Add copyright and license notice to all files.
-C Permission to assert copyright has been granted; blot is now open source, BSD
-C
-C Revision 1.3  2009/01/22 21:34:21  gdsjaar
-C There were several inline dbnums common blocks. Replaced with the
-C include so they all have the same size with the added variable types.
-C
-C Added minor support for nodeset and sideset variables.
-C
-C It can print the count and the names, but that is all
-C at this time.
-C
-C Revision 1.2  1997/06/26 17:51:35  caforsy
-C Substituted if NeedsDoubleEscape for ifdef sun.  This define is needed on cougar, sun and ibm platforms
-C
-C Revision 1.1  1994/04/07 20:05:09  gdsjaar
-C Initial checkin of ACCESS/graphics/blotII2
-C
-CRevision 1.3  1993/07/08  21:57:14  gdsjaar
-CReplaced SUN with sun in all ifdef statements.
-C
-CRevision 1.2  1990/12/14  08:53:34  gdsjaar
-CAdded RCS Id and Log to all files
-C
 C=======================================================================
       SUBROUTINE MRKFAC (NUMFAC, F, HIDEF, XF, YF, ZF,
      &   NMIN, NMAX, FMIN, FMAX, BLKCOL, *)

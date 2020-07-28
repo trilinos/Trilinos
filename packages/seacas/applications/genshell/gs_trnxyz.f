@@ -1,24 +1,12 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
       SUBROUTINE TRNXYZ (XN, YN, XN3, YN3, ZN3, ATRIB)
 C=======================================================================
-
-C   $Id: trnxyz.f,v 1.2 1991/01/09 12:59:44 gdsjaar Exp $
-C   $Log: trnxyz.f,v $
-C   Revision 1.2  1991/01/09 12:59:44  gdsjaar
-C   Initial conversion from GEN3D to GENSHELL, no BC yet
-C
-c Revision 1.1.1.1  90/08/20  12:23:11  gdsjaar
-c Gen3D Mesh Generation Program
-c
-c Revision 1.1  90/08/20  12:23:10  gdsjaar
-c Initial revision
-c
 
 C   --*** TRNXYZ *** (GENSHELL) Calculate 3D coordinates for translation
 C   --
