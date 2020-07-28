@@ -20,10 +20,6 @@
 #include <iostream>
 #include <string>
 
-#if defined(HAVE_AMESOS2_SUPERLUDIST) && !defined(BASKER_MC64)
-  #define BASKER_MC64
-#endif
-
 //#define BASKER_DEBUG_SOLVE_RHS
 
 using namespace std;

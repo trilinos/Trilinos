@@ -30,9 +30,9 @@
 /*System Includes*/
 #include <iostream>
 
-#if defined(HAVE_AMESOS2_SUPERLUDIST) && !defined(BASKER_MC64)
-  #define BASKER_MC64
-#endif
+//#if defined(HAVE_AMESOS2_SUPERLUDIST) && !defined(BASKER_MC64)
+//  #define BASKER_SUPERLUDIS_MC64
+//#endif
 //#define BASKER_TIMER 
 
 namespace BaskerNS
@@ -350,6 +350,7 @@ namespace BaskerNS
       std::cout << "Basker Symbolic" << std::endl;
       std::cout << "Matrix dims: " << nrow << " " << ncol << " " << nnz << std::endl;
     }
+
     //Init Matrix A.
     if(matrix_flag == BASKER_TRUE)
     {
@@ -572,6 +573,10 @@ namespace BaskerNS
     double time = 0.0;
     #endif
 
+    //Reset error codes
+    reset_error();
+
+    //Do numerical factorization
     factor_notoken(option);
 
     #ifdef BASKER_TIMER
@@ -609,7 +614,9 @@ namespace BaskerNS
     Kokkos::Timer timer;
     #endif
 
+    //Reset error codes
     int err = 0; //init for return value from sfactor_copy2, factor_notoken etc.
+    reset_error();
 
     //sfactor_copy2 stuff
     // This part is stored in case a matrix_transpose will be needed (if input is passed in as CRS)
@@ -731,14 +738,14 @@ namespace BaskerNS
     printf("];\n");*/
     }
 
-#if 0 //defined(BASKER_MC64)
+#if 0
     for (Int k = 0; k < A.nnz; k++) {
       vals_crs_transpose(k) = k;
     }
     permute_inv(vals_crs_transpose, vals_perm_composition, A.nnz); 
 #endif
     if ( btf_nblks > 1 ) { //non-single block case
-#if 0 //defined(BASKER_MC64)
+#if 0 //defined(BASKER_SUPERLUDIS_MC64)
       /*std::cout << " perm = [" << std::endl;
       for( Int k = 0; k < ncol; ++k ) {
         std::cout << " > " << k                  << " " << order_blk_mwm_array(k) << " "

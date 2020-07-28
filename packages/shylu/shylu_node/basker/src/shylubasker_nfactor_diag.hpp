@@ -233,7 +233,9 @@ namespace BaskerNS
 
     if(pivot == (Entry)(0) )
     {
-      printf("Error, zero diag in single factor\n");
+      if (Options.verbose == BASKER_TRUE) {
+        printf("Error, zero diag in single factor\n");
+      }
       return BASKER_ERROR;
     }
 
@@ -496,7 +498,7 @@ namespace BaskerNS
         printf("pivot: %g maxindex: %d k: %d \n", pivot, maxindex, k);
       }
       #endif
-      //printf( "c=%d k=%d (%d) maxindex=%d pivot=%e maxv=%e, diag=%e tol=%e\n", c, k, k-btf_tabs(c), maxindex, pivot, maxv, digv, Options.pivot_tol);
+      //printf( "c=%d k=%d (%d) maxindex=%d pivot=%e maxv=%e, diag=%e tol=%e (nopivot=%d)\n", c, k, k-btf_tabs(c), maxindex, pivot, maxv, digv, Options.pivot_tol,Options.no_pivot);
 
       // check if diagonal is relatively large enough
       if(Options.no_pivot == BASKER_TRUE || digv > maxv * Options.pivot_tol)

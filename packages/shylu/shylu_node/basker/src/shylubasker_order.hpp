@@ -12,9 +12,9 @@
 #include "shylubasker_order_btf.hpp"
 #include "shylubasker_order_amd.hpp"
 
-#if defined(HAVE_AMESOS2_SUPERLUDIST) && !defined(BASKER_MC64)
-  #define BASKER_MC64
-#endif
+//#if defined(HAVE_AMESOS2_SUPERLUDIST) && !defined(BASKER_MC64)
+//  #define BASKER_SUPERLUDIS_MC64
+//#endif
 //#undef BASKER_DEBUG_ORDER
 //#define BASKER_TIMER
 
@@ -658,7 +658,7 @@ namespace BaskerNS
                                               &work, &(order_match_array(0)), &(WORK(0)));
           FREE_INT_1DARRAY(WORK);
         }
-        #ifdef BASKER_MC64
+        #if defined(BASKER_MC64) || defined(BASKER_SUPERLUDIS_MC64)
         else if (option == 2) {
           Int job = 5; //2 is the default for SuperLU_DIST
           MALLOC_ENTRY_1DARRAY (scale_row_array, A.nrow);

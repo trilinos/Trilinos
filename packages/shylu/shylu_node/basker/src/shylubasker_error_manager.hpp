@@ -616,6 +616,18 @@ namespace BaskerNS
     return BASKER_SUCCESS;
   }//end nfactor_diag_error
 
+
+  //======================//
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  void Basker<Int,Entry,Exe_Space>::reset_error ()
+  {
+    for(Int ti = 0; ti < num_threads; ti++)
+    {
+        thread_array(ti).error_type = BASKER_ERROR_NOERROR;
+    }
+  }
+
 }//end namespace BaskerNS
 
 #endif //END BASER_ERROR_MANAGER

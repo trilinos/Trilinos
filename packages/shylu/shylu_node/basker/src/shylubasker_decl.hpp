@@ -617,6 +617,9 @@ namespace BaskerNS
     BASKER_INLINE
     int nfactor_diag_error(INT_1DARRAY );
     
+    BASKER_INLINE
+    void reset_error();
+    
     
     //BASKER_INLINE
     inline

@@ -10,10 +10,13 @@
  */
 
 #include "mwm2.hpp"
-#if defined(HAVE_AMESOS2_SUPERLUDIST) && !defined(BASKER_MC64)
-  #define BASKER_MC64
-#endif
+//#if defined(HAVE_AMESOS2_SUPERLUDIST) && !defined(BASKER_MC64)
+//  #define BASKER_SUPERLUDIS_MC64
+//#endif
 #ifdef BASKER_MC64
+#include "mc64ad.hpp"
+#elif defined(BASKER_SUPERLUDIS_MC64)
+// FIX this
 extern  "C"
 {
   void mc64id_dist(int *);
@@ -47,7 +50,7 @@ namespace BaskerNS
                                          Int _job, Int *_perm, Entry *_scale_row, Entry *_scale_col)
   {
     //Note using primative types to match fortran
-  #ifdef BASKER_MC64
+  #ifdef BASKER_SUPERLUDIS_MC64
     typedef     int         int_t;
   #else
     typedef     Int         int_t;
@@ -55,7 +58,10 @@ namespace BaskerNS
     typedef     double      entry_t;
 
     int_t liw, ldw, num;
-    int_t *iw, icntl[10], info[10];
+    int_t *iw;
+    #if defined(BASKER_MC64) || defined(BASKER_SUPERLUDIS_MC64)
+    int_t icntl[10], info[10];
+    #endif
     int_t job  = _job;
     entry_t *dw;
     entry_t *nzval_abs;
@@ -79,6 +85,8 @@ namespace BaskerNS
     
     //call init
     #ifdef BASKER_MC64
+    mc64id_(icntl);
+    #elif defined(BASKER_SUPERLUDIS_MC64)
     mc64id_dist(icntl);
     #endif
 
@@ -89,6 +97,9 @@ namespace BaskerNS
     perm = (Int*) malloc(n*sizeof(Int));
 
     #ifdef BASKER_MC64
+    mc64ad_(&job, &n, &nnz, colptr, row_idx, nzval_abs,
+	    &num, perm, &liw, iw, &ldw, dw, icntl, info);
+    #elif defined(BASKER_SUPERLUDIS_MC64)
     mc64ad_dist(&job, &n, &nnz, colptr, row_idx, nzval_abs,
 	        &num, perm, &liw, iw, &ldw, dw, icntl, info);
     #endif
@@ -136,14 +147,14 @@ namespace BaskerNS
   int Basker<Int,Entry, Exe_Space>::mc64(Int _job, INT_1DARRAY _perm, ENTRY_1DARRAY _scale_row, ENTRY_1DARRAY _scale_col)
   {
     //Note using primative types to match fortran
-    #ifdef BASKER_MC64
+    #ifdef BASKER_SUPERLUDIS_MC64
     typedef     int         int_t;
     #else
     typedef     Int         int_t;
     #endif
     typedef     double      entry_t;
 
-    #ifdef BASKER_MC64
+    #if defined(BASKER_MC64) || defined(BASKER_SUPERLUDIS_MC64)
     int_t num;
     int_t icntl[10], info[10];
     #endif
@@ -173,6 +184,8 @@ namespace BaskerNS
     
     //call init
     #ifdef BASKER_MC64
+    mc64id_(icntl);
+    #elif defined(BASKER_SUPERLUDIS_MC64)
     mc64id_dist(icntl);
     #endif
 
@@ -182,12 +195,18 @@ namespace BaskerNS
     Int *perm;
     perm = (Int*) malloc(A.nrow*sizeof(Int));
    
-    #ifdef BASKER_MC64
+    #if defined(BASKER_MC64) || defined(BASKER_SUPERLUDIS_MC64)
     Int* colptr = &(A.col_ptr[0]);
     Int* rowidx = &(A.row_idx[0]);
+    #ifdef BASKER_MC64
+    mc64ad_(&job, &n, &nnz, colptr, rowidx, nzval_abs,
+	    &num, perm,
+            &liw, iw, &ldw, dw, icntl, info);
+    #elif defined(BASKER_SUPERLUDIS_MC64)
     mc64ad_dist(&job, &n, &nnz, colptr, rowidx, nzval_abs,
 	        &num, perm,
                 &liw, iw, &ldw, dw, icntl, info);
+    #endif
     #endif
 
     //debug

@@ -9,9 +9,9 @@
 #include "trilinos_amd.h"
 #include "trilinos_colamd.h"
 #include "trilinos_ccolamd.h"
-#if defined(HAVE_AMESOS2_SUPERLUDIST) && !defined(BASKER_MC64)
-  #define BASKER_MC64
-#endif
+//#if defined(HAVE_AMESOS2_SUPERLUDIST) && !defined(BASKER_MC64)
+//  #define BASKER_SUPERLUDIS_MC64
+//#endif
 
 namespace BaskerNS
 {
@@ -453,14 +453,12 @@ namespace BaskerNS
           mwm_order::mwm(blk_size, nnz,
                          &(temp_col(0)), &(temp_row(0)), &(temp_val(0)),
                          &(tempp(0)), num);
-          #if defined(BASKER_MC64)
           for(Int ii = 0; ii < blk_size; ii++) {
             scale_row_array(btf_tabs(b)+ii) = one;
             scale_col_array(btf_tabs(b)+ii) = one;
           }
-          #endif
         }
-#if defined(BASKER_MC64)
+#if defined(BASKER_MC64) ||  defined(BASKER_SUPERLUDIS_MC64)
         else if (Options.blk_matching == 2) {
           if (flag) {
             std::cout << " ** MC64 MWM ** " << std::endl;
@@ -484,12 +482,10 @@ namespace BaskerNS
             std::cout << " ** NO BLK MWM ** " << std::endl;
             flag = false;
           }
-          #if defined(BASKER_MC64)
           for(Int ii = 0; ii < blk_size; ii++) {
             scale_row_array(btf_tabs(b)+ii) = one;
             scale_col_array(btf_tabs(b)+ii) = one;
           }
-          #endif
           for(Int ii = 0; ii < blk_size; ii++) tempp(ii) = ii;
         }
 
