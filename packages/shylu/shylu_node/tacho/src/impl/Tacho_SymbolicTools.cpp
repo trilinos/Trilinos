@@ -465,6 +465,8 @@ namespace Tacho {
   ordinal_type_array SymbolicTools::SupernodesTreeChildren() const { return _stree_children; }
   ordinal_type_array SymbolicTools::SupernodesTreeRoots() const { return _stree_roots; }
   ordinal_type_array SymbolicTools::SupernodesTreeLevel() const { return _stree_level; }
+  ordinal_type_array SymbolicTools::PermVector() const { return _perm; }
+  ordinal_type_array SymbolicTools::InvPermVector() const { return _peri; }
 
   void SymbolicTools::
   symbolicFactorize(const ordinal_type verbose) {
@@ -473,7 +475,7 @@ namespace Tacho {
     
     auto track_alloc = [&](const double in) {
       m_used += in;
-      m_peak  = max(m_used, m_peak);
+      m_peak  = std::max(m_used, m_peak);
     };
     auto track_free = [&](const double out) {
       m_used -= out;
@@ -608,6 +610,7 @@ namespace Tacho {
         stat.nleaves += (nchildren == 0);
       }
       
+      const double kilo(1024);
       switch (verbose) {
       case 1: {
         printf("  Time\n");
@@ -631,8 +634,8 @@ namespace Tacho {
         printf("             size of largest schur size:                      %10d\n", stat.largest_schur);
         printf("\n");
         printf("  Memory\n");
-        printf("             memory used:                                     %10.2f MB\n", m_used/1024/1024);
-        printf("             peak memory used:                                %10.2f MB\n", m_peak/1024/1024);
+        printf("             memory used:                                     %10.4f MB\n", m_used/kilo/kilo);
+        printf("             peak memory used:                                %10.4f MB\n", m_peak/kilo/kilo);
         printf("\n");
       }          
       }
@@ -647,7 +650,7 @@ namespace Tacho {
     
     auto track_alloc = [&](const double in) {
       m_used += in;
-      m_peak  = max(m_used, m_peak);
+      m_peak  = std::max(m_used, m_peak);
     };
     auto track_free = [&](const double out) {
       m_used -= out;
@@ -674,7 +677,6 @@ namespace Tacho {
       as(i+1) = as(i) + aw(i);
       aq(i+1) = aq(i) + aw(_peri(i));
     }
-
     TACHO_TEST_FOR_EXCEPTION(as(_m) != aq(_m), std::logic_error, 
                              "Error: SymbolicTools::evaporateSymbolicFactors, # of equations do not match between as and aq");
 
@@ -682,55 +684,55 @@ namespace Tacho {
     /// Evaporate condensed graph
     ///
     const size_type m = as(_m);
-    size_type_array ap(do_not_initialize_tag("ap"), m+1); 
-    track_alloc(ap.span());
-
-    ap(0) = 0;
-    {
-      ordinal_type ii(0);
-      for (ordinal_type i=0;i<_m;++i) {
-        ordinal_type cnt(0);
-        const ordinal_type 
-          jbeg = _ap(i), 
-          jend = _ap(i+1);
-        for (ordinal_type j=jbeg;j<jend;++j) {
-          const ordinal_type idx = _aj(j);
-          cnt += (as(idx+1) - as(idx));
-        }
-        const ordinal_type kbeg = as(i), kend = as(i+1);
-        for (ordinal_type k=kbeg;k<kend;++k,++ii) {
-          ap(k+1) = ap(k) + cnt;
-        }
-      }
-      TACHO_TEST_FOR_EXCEPTION(ii != m, std::logic_error, 
-                             "Error: SymbolicTools::evaporateSymbolicFactors, evaporation of ap fails");      
-    }
-
-    ordinal_type_array aj(do_not_initialize_tag("ap"), ap(m));
-    track_alloc(aj.span());
-    {
-      for (ordinal_type i=0;i<_m;++i) {
-        const ordinal_type 
-          jbeg = _ap(i), 
-          jend = _ap(i+1), 
-          jjbeg = ap(as(i));
-        for (ordinal_type j=jbeg,jj=jjbeg;j<jend;++j) {
-          const ordinal_type idx = _aj(j);
-          const ordinal_type kbeg = as(idx), kend = as(idx+1);
-          for (ordinal_type k=kbeg;k<kend;++k,++jj)
-            aj(jj) = k;        
-        }
+    // size_type_array ap(do_not_initialize_tag("ap"), m+1); 
+    // track_alloc(ap.span());
+      
+    // ap(0) = 0;
+    // {
+    //   ordinal_type ii(0);
+    //   for (ordinal_type i=0;i<_m;++i) {
+    //     ordinal_type cnt(0);
+    //     const ordinal_type 
+    //       jbeg = _ap(i), 
+    //       jend = _ap(i+1);
+    //     for (ordinal_type j=jbeg;j<jend;++j) {
+    //       const ordinal_type idx = _aj(j);
+    //       cnt += (as(idx+1) - as(idx));
+    //     }
+    //     const ordinal_type kbeg = as(i), kend = as(i+1);
+    //     for (ordinal_type k=kbeg;k<kend;++k,++ii) {
+    //       ap(k+1) = ap(k) + cnt;
+    //     }
+    //   }
+    //   TACHO_TEST_FOR_EXCEPTION(ii != m, std::logic_error, 
+    //                            "Error: SymbolicTools::evaporateSymbolicFactors, evaporation of ap fails");      
+    // }
+    
+    // ordinal_type_array aj(do_not_initialize_tag("ap"), ap(m));
+    // track_alloc(aj.span());
+    // {
+    //   for (ordinal_type i=0;i<_m;++i) {
+    //     const ordinal_type 
+    //       jbeg = _ap(i), 
+    //       jend = _ap(i+1), 
+    //       jjbeg = ap(as(i));
+    //     for (ordinal_type j=jbeg,jj=jjbeg;j<jend;++j) {
+    //       const ordinal_type idx = _aj(j);
+    //       const ordinal_type kbeg = as(idx), kend = as(idx+1);
+    //       for (ordinal_type k=kbeg;k<kend;++k,++jj)
+    //         aj(jj) = k;        
+    //     }
         
-        const ordinal_type 
-          kbeg = as(i), 
-          kend = as(i+1),
-          nnz_per_row = ap(kbeg+1)-ap(kbeg);
-        for (ordinal_type k=kbeg+1;k<kend;++k) 
-          memcpy(aj.data()+ap(k),
-                 aj.data()+ap(kbeg),
-                 sizeof(ordinal_type)*nnz_per_row);
-      }
-    }
+    //     const ordinal_type 
+    //       kbeg = as(i), 
+    //       kend = as(i+1),
+    //       nnz_per_row = ap(kbeg+1)-ap(kbeg);
+    //     for (ordinal_type k=kbeg+1;k<kend;++k) 
+    //       memcpy(aj.data()+ap(k),
+    //              aj.data()+ap(kbeg),
+    //              sizeof(ordinal_type)*nnz_per_row);
+    //   }
+    // }
 
     ///
     /// Evaporate perm and peri
@@ -755,33 +757,34 @@ namespace Tacho {
     /// Evaporate supernodes and gid colidx
     ///
     const ordinal_type nsupernodes = _supernodes.extent(0) - 1;
-    size_type_array gid_super_panel_ptr(do_not_initialize_tag("gid_spanel"), nsupernodes+1);
+    size_type_array gid_super_panel_ptr(do_not_initialize_tag("gid_super_panel_ptr"), nsupernodes+1);
     track_alloc(gid_super_panel_ptr.span());
     {
-      ordinal_type jbeg = _supernodes(0);
       gid_super_panel_ptr(0) = 0;
+      ordinal_type jbeg = _supernodes(0);
       for (ordinal_type i=0;i<nsupernodes;++i) {
         {
           const ordinal_type 
             jend = _supernodes(i+1);
-          ordinal_type ndof(0);
+          ordinal_type blk(0);
           for (ordinal_type j=jbeg;j<jend;++j) {
             const ordinal_type idx = _peri(j);
-            ndof += aw(idx);
+            blk += aw(idx);
           }
-          _supernodes(i+1) = _supernodes(i) + ndof;
+          _supernodes(i+1) = _supernodes(i) + blk;
           jbeg = jend;
         }
         {
           const ordinal_type
             kbeg = _gid_super_panel_ptr(i),
             kend = _gid_super_panel_ptr(i+1);
-          ordinal_type ndof(0);
+          ordinal_type blk(0);
           for (ordinal_type k=kbeg;k<kend;++k) { 
             const ordinal_type idx = _gid_super_panel_colidx(k);
-            ndof += (aq(idx+1) - aq(idx));
+            const ordinal_type ndof = (aq(idx+1) - aq(idx));
+            blk += ndof;
           }
-          gid_super_panel_ptr(i+1) = gid_super_panel_ptr(i) + ndof;
+          gid_super_panel_ptr(i+1) = gid_super_panel_ptr(i) + blk;
         }
       }
     }
@@ -792,16 +795,15 @@ namespace Tacho {
       for (ordinal_type i=0;i<nsupernodes;++i) {
         const ordinal_type
           jbeg = _gid_super_panel_ptr(i),
-          jend = _gid_super_panel_ptr(i+1),
-          offs = gid_super_panel_ptr(i);
-        ordinal_type cnt(0);
+          jend = _gid_super_panel_ptr(i+1);
+        ordinal_type cnt(gid_super_panel_ptr(i));
         for (ordinal_type j=jbeg;j<jend;++j) { 
           const ordinal_type idx = _gid_super_panel_colidx(j);
           const ordinal_type
             kbeg = aq(idx),
             kend = aq(idx+1);
           for (ordinal_type k=kbeg;k<kend;++k,++cnt) 
-            gid_super_panel_colidx(offs+cnt) = k;
+            gid_super_panel_colidx(cnt) = k;
         }
       }
     }
@@ -814,6 +816,7 @@ namespace Tacho {
           jbeg = _sid_super_panel_ptr(i), 
           jend = _sid_super_panel_ptr(i+1)-1;
         const ordinal_type offs = _gid_super_panel_ptr(i);
+        blk_super_panel_colidx(jbeg) = 0;
         for (ordinal_type j=jbeg;j<jend;++j) {
           const ordinal_type 
             kbeg = _blk_super_panel_colidx(j),
@@ -839,8 +842,8 @@ namespace Tacho {
     track_free(_blk_super_panel_colidx.span());
 
     _m = m;
-    _ap = ap;
-    _aj = aj;
+    //_ap = ap;
+    //_aj = aj;
     _perm = perm;
     _peri = peri;
     _gid_super_panel_ptr = gid_super_panel_ptr;
@@ -853,25 +856,26 @@ namespace Tacho {
     /// verbose output
     ///
     stat.nrows = _m;
-    stat.nnz_a = _ap(_m);
+    //stat.nnz_a = _ap(_m);
 
     if (verbose) {
       printf("Summary: EvaporateSymbolicFactors\n");
       printf("=================================\n");
-      
+
+      const double kilo(1024);      
       switch (verbose) {
       case 1: {
         printf("  Time\n");
         printf("             time for evaporation:                            %10.6f s\n", t_evaporate);
-        printf("             total time spent:                                %10.6f s\n", t_evaporate);
+        //printf("             total time spent:                                %10.6f s\n", t_evaporate);
         printf("\n");            
         printf("  Linear system A\n");
         printf("             number of equations:                             %10d\n", stat.nrows);
-        printf("             number of nonzeros:                              %10.0f (%5.2f %% )\n", double(stat.nnz_a), double(stat.nnz_a)/(double(stat.nrows)*double(stat.nrows))*100.0);
+        //printf("             number of nonzeros:                              %10.0f (%5.2f %% )\n", double(stat.nnz_a), double(stat.nnz_a)/(double(stat.nrows)*double(stat.nrows))*100.0);
         printf("\n");
         printf("  Memory\n");
-        printf("             memory used:                                     %10.2f MB\n", m_used/1024/1024);
-        printf("             peak memory used:                                %10.2f MB\n", m_peak/1024/1024);
+        printf("             memory used:                                     %10.4f MB\n", m_used/kilo/kilo);
+        printf("             peak memory used:                                %10.4f MB\n", m_peak/kilo/kilo);
         printf("\n");
       }          
       }

@@ -14,8 +14,11 @@ namespace Tacho {
   Solver<VT,ST>
   ::Solver()
     : _m(0), _nnz(0),
-      _ap(), _h_ap(),_aj(), _h_aj(),
+      _ap(), _h_ap(), _aj(), _h_aj(),
       _perm(), _h_perm(), _peri(), _h_peri(),
+      _m_graph(0), _nnz_graph(0),
+      _h_ap_graph(), _h_aj_graph(),
+      _h_perm_graph(), _h_peri_graph(),
       _N(nullptr),
       _L0(nullptr),
       _L1(nullptr),
@@ -223,62 +226,53 @@ namespace Tacho {
   int
   Solver<VT,ST>  
   ::analyze() {
-    Graph graph(_m, _nnz, _h_ap, _h_aj);
-    graph_tools_type G(graph);
-    G.reorder(_verbose);
-
-    _h_perm = G.PermVector(); 
-    _h_peri = G.InvPermVector();
-
-    // invoke a private function
-    return analyze(_m, _h_ap, _h_aj, _h_perm, _h_peri);
-  }
-
-  template<typename VT, typename ST>  
-  int
-  Solver<VT,ST>  
-  ::analyze(const ordinal_type m,
-            const size_type_array_host &ap,
-            const ordinal_type_array_host &aj,
-            const ordinal_type_array_host &perm,
-            const ordinal_type_array_host &peri) {
-    if (_verbose) {
-      printf("TachoSolver: Analyze\n");
-      printf("====================\n");
-    }
-
-    if (_m == 0) {
-      _m = m;
-        
-      _ap   = Kokkos::create_mirror_view(exec_memory_space(), ap); Kokkos::deep_copy(_ap, ap);
-      _aj   = Kokkos::create_mirror_view(exec_memory_space(), aj); Kokkos::deep_copy(_aj, aj);
-
-      _h_ap = ap;
-      _h_aj = aj;
-
-      _nnz = _ap(m);
-
-      _h_perm = perm;
-      _h_peri = peri;
-    }
-
+    int r_val(0);
     if (_m < _small_problem_thres) {
-      // for small problems, use lapack and no analysis and no permutation
-      _perm = Kokkos::create_mirror_view(exec_memory_space(), _h_perm); 
-      _peri = Kokkos::create_mirror_view(exec_memory_space(), _h_peri); 
-
-      Kokkos::deep_copy(_perm, _h_perm);
-      Kokkos::deep_copy(_peri, _h_peri);
-        
+      /// do nothing
       if (_verbose) {
+        printf("TachoSolver: Analyze\n");
+        printf("====================\n");
         printf("  Linear system A\n");
         printf("             number of equations:                             %10d\n", _m);
         printf("\n");
         printf("  A is a small problem ( < %d ) and LAPACK is used\n", _small_problem_thres);
         printf("\n");
       }
-      return 0;
     } else {
+      const bool use_condensed_graph = (_m_graph > 0 && _m_graph < _m);
+      if (use_condensed_graph) {
+        Graph graph(_m_graph, _nnz_graph, _h_ap_graph, _h_aj_graph);
+        graph_tools_type G(graph);
+        G.reorder(_verbose);
+        
+        _h_perm_graph = G.PermVector();
+        _h_peri_graph = G.InvPermVector();
+        
+        r_val = analyze_condensed_graph();
+      } else {
+        Graph graph(_m, _nnz, _h_ap, _h_aj);
+        graph_tools_type G(graph);
+        G.reorder(_verbose);
+        
+        _h_perm = G.PermVector(); 
+        _h_peri = G.InvPermVector();
+        
+        r_val = analyze_linear_system();
+      }
+    }
+    return r_val;
+  }
+
+  template<typename VT, typename ST>  
+  int
+  Solver<VT,ST>  
+  ::analyze_linear_system() {
+    if (_verbose) {
+      printf("TachoSolver: Analyze Linear System\n");
+      printf("==================================\n");
+    }
+
+    {
       symbolic_tools_type S(_m, _h_ap, _h_aj, _h_perm, _h_peri);
       S.symbolicFactorize(_verbose);
 
@@ -312,6 +306,54 @@ namespace Tacho {
 
       Kokkos::deep_copy(_perm, _h_perm);
       Kokkos::deep_copy(_peri, _h_peri);
+    }
+    return 0;
+  }
+
+  template<typename VT, typename ST>  
+  int
+  Solver<VT,ST>  
+  ::analyze_condensed_graph() {
+    if (_verbose) {
+      printf("TachoSolver: Analyze Condensed Graph and Evaporate the Graph\n");
+      printf("============================================================\n");
+    }
+
+    {
+      symbolic_tools_type S(_m_graph, _h_ap_graph, _h_aj_graph, _h_perm_graph, _h_peri_graph);
+      S.symbolicFactorize(_verbose);
+      S.evaporateSymbolicFactors(_h_aw_graph, _verbose);
+
+      _nsupernodes = S.NumSupernodes();
+      _stree_level = S.SupernodesTreeLevel();
+      _stree_roots = S.SupernodesTreeRoots();
+
+      _supernodes             = Kokkos::create_mirror_view(exec_memory_space(), S.Supernodes());            
+      _gid_super_panel_ptr    = Kokkos::create_mirror_view(exec_memory_space(), S.gidSuperPanelPtr());      
+      _gid_super_panel_colidx = Kokkos::create_mirror_view(exec_memory_space(), S.gidSuperPanelColIdx());   
+      _sid_super_panel_ptr    = Kokkos::create_mirror_view(exec_memory_space(), S.sidSuperPanelPtr());      
+      _sid_super_panel_colidx = Kokkos::create_mirror_view(exec_memory_space(), S.sidSuperPanelColIdx());   
+      _blk_super_panel_colidx = Kokkos::create_mirror_view(exec_memory_space(), S.blkSuperPanelColIdx());   
+      _stree_parent           = Kokkos::create_mirror_view(exec_memory_space(), S.SupernodesTreeParent());  
+      _stree_ptr              = Kokkos::create_mirror_view(exec_memory_space(), S.SupernodesTreePtr());     
+      _stree_children         = Kokkos::create_mirror_view(exec_memory_space(), S.SupernodesTreeChildren());
+      _perm                   = Kokkos::create_mirror_view(exec_memory_space(), S.PermVector());
+      _peri                   = Kokkos::create_mirror_view(exec_memory_space(), S.InvPermVector());
+
+      Kokkos::deep_copy(_supernodes             , S.Supernodes());
+      Kokkos::deep_copy(_gid_super_panel_ptr    , S.gidSuperPanelPtr());
+      Kokkos::deep_copy(_gid_super_panel_colidx , S.gidSuperPanelColIdx());
+      Kokkos::deep_copy(_sid_super_panel_ptr    , S.sidSuperPanelPtr());
+      Kokkos::deep_copy(_sid_super_panel_colidx , S.sidSuperPanelColIdx());
+      Kokkos::deep_copy(_blk_super_panel_colidx , S.blkSuperPanelColIdx());
+      Kokkos::deep_copy(_stree_parent           , S.SupernodesTreeParent());
+      Kokkos::deep_copy(_stree_ptr              , S.SupernodesTreePtr());
+      Kokkos::deep_copy(_stree_children         , S.SupernodesTreeChildren());
+      Kokkos::deep_copy(_perm                   , S.PermVector());
+      Kokkos::deep_copy(_peri                   , S.InvPermVector());
+
+      _h_perm = S.PermVector();
+      _h_peri = S.InvPermVector();
     }
     return 0;
   }
@@ -662,7 +704,16 @@ namespace Tacho {
         
       _perm = ordinal_type_array(); _h_perm = ordinal_type_array_host();
       _peri = ordinal_type_array(); _h_peri = ordinal_type_array_host();
+       
+      _m_graph = 0;
+      _nnz_graph = 0;
+      
+      _h_ap_graph = size_type_array_host();
+      _h_aj_graph = ordinal_type_array_host();
         
+      _h_perm_graph = ordinal_type_array_host();
+      _h_peri_graph = ordinal_type_array_host();
+ 
       _nsupernodes = 0;
       _supernodes = ordinal_type_array();
         

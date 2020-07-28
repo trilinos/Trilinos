@@ -173,6 +173,8 @@ namespace Tacho {
       ordinal_type_array SupernodesTreeChildren() const;
       ordinal_type_array SupernodesTreeRoots() const;
       ordinal_type_array SupernodesTreeLevel() const;
+      ordinal_type_array PermVector() const;
+      ordinal_type_array InvPermVector() const;
 
       void symbolicFactorize(const ordinal_type verbose = 0);
       void evaporateSymbolicFactors(const ordinal_type_array &aw,
