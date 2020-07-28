@@ -543,7 +543,7 @@ class attribute:
 
     def __repr__(self):
         return "attribute(name=%r, entity_type=%r, entity_id=%r, values=%r)" % (self.name,self.entity_type,self.entity_id,self.values)
-    
+
 class ex_attribute(ctypes.Structure):
     """
     Used for accessing underlying exodus library...
@@ -709,7 +709,7 @@ class exodus:
         num_ss_vars = self.get_variable_number('EX_SIDE_SET')
         num_assem_vars = self.get_reduction_variable_number('EX_ASSEMBLY')
         num_blob_vars = self.get_reduction_variable_number('EX_BLOB')
-        
+
         print("\n Database: {0}\n"
               " Title:\t{17}\n\n"
               " Number of spatial dimensions = {1:3d}\t"
@@ -744,8 +744,8 @@ class exodus:
                       self.num_side_sets(),
                       total_ns_nodes, total_sides,
                       num_glo_vars, num_nod_vars, num_ele_vars,
-                      num_ns_vars, num_ss_vars, self.num_times(), self.title(), 
-                      self.num_assembly(), num_assem_vars, 
+                      num_ns_vars, num_ss_vars, self.num_times(), self.title(),
+                      self.num_assembly(), num_assem_vars,
                       self.num_blob(), num_blob_vars))
     #
     # build the info struct
@@ -6413,7 +6413,7 @@ def internal_add_variables(exo, obj_type, entvars, debugPrint):
 
     if len(entvars) == 0:
         return
-    
+
     if debugPrint:
         print("Construct Truth Table for additional variables")
 

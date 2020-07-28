@@ -1,21 +1,20 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
       SUBROUTINE MXGET (MYLOC, MNGET, VOID, LVOID, NVOIDS,
      *   CHRCOL, LASTER, VROW)
-C
+
       IMPLICIT INTEGER (A-Z)
       INCLUDE 'params.inc'
-C
+
 C     This subroutine returns the location (row number) of a void with
 C     sufficient space for the memory request.  If necessary, memory is
 C     acquired from the system.  The memory is contiguous.
-C
-C
+
 C***********************************************************************
-C
+
 C     MYLOC    Address of internal reference array
 C     MNGET    Memory request in numerical storage units
 C     VOID     Void table
@@ -25,11 +24,11 @@ C     NVOIDS   Number of voids
 C     CHRCOL   Column for character tables.
 C     LASTER   Error return
 C     VROW     Row number of void which satisfies the memory request
-C
+
 C***********************************************************************
-C
+
 C     IS THE MEMORY REQUEST SENSIBLE?
-C
+
       IF (MNGET .LT. 0) THEN
          LASTER = BADLEN
          RETURN
@@ -37,35 +36,35 @@ C
          LASTER = SUCESS
          RETURN
       END IF
-C
+
       CALL MXLOOK (MNGET, VOID, CHRCOL*LVOID, NVOIDS(1), VROW, LASTER)
       IF (LASTER .EQ. SUCESS) RETURN
-C
+
 C     CALL EXTENSION LIBRARY ROUTINE TO GET SPACE FROM SYSTEM.
-C
+
       CALL EXMEMY (MNGET, LOC, MEMRET)
       LOC = LOC - MYLOC + 1
-C
+
 c  On return from exmemy, memret is set equal to -1 on an invalid
 c  memory request (at least that's the plan under the new C code
 c  extension library).  Therefore, I've made the change that should
 c  test the appropriate condition.
-c
+
       IF (MEMRET .LT. 0) THEN
-C
+
 C        ILLEGAL MEMORY REQUEST.
-C
+
          LASTER = NOGET
          RETURN
-C
+
       END IF
-C
+
 C     UPDATE VOID TABLE.
-C
+
       CALL VTABLE (LOC, MEMRET, VOID, LVOID, NVOIDS(1), CHRCOL, LASTER)
       IF (LASTER .NE. SUCESS) RETURN
-C
+
       CALL MXLOOK (MNGET, VOID, CHRCOL*LVOID, NVOIDS(1), VROW, LASTER)
-C
+
       RETURN
       END

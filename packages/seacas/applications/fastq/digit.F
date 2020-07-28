@@ -1,7 +1,7 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
       SUBROUTINE DIGIT (MP, ML, MS, MR, MSNAP, MCOM, ICOM, JCOM, CIN,
      &   RIN, IIN, KIN, IDUMP, N, IPOINT, COOR, IPBOUN, ILINE, LTYPE,
@@ -15,24 +15,24 @@ C    See packages/seacas/LICENSE for details
      &   YMIN1, YMAX1, XMIN2, XMAX2, YMIN2, YMAX2, X1OLD, X2OLD, Y1OLD,
      &   Y2OLD, ALPHA, DEV1, SNAP, SNAPDX, NSNAP, DRWTAB, AXIST)
 C***********************************************************************
-C
+
 C  SUBROUTINE DIGIT = SUBROUTINE TO DIGITIZE THE GEOMETRY
-C
+
 C***********************************************************************
-C
+
 C  SUBROUTINE CALLED BY:
 C     TABLET = A SUBROUTINE TO CONTROL THE GEOMETRY DIGITIZATION
-C
+
 C***********************************************************************
-C
+
 C  SUBROUTINES CALLED:
 C     DREAD  = SETS ALL PARAMETERS UP FOR READING FROM A DIGI-PAD
 C     DPREAD = READS INPUT FROM A DIGI-PAD DIGITIZER
 C     CLOSE  = FINDS THE CLOSEST EXISTING POINT TO THE MOUSE
 C     REFRSH = REFRESHES THE SCREEN AND DRAWS EXISTING GEOMETRY
-C
+
 C***********************************************************************
-C
+
 C  VARIABLES USED:
 C     IANS   = LOGICAL RESPONSE FROM YES-NO QUESTION
 C     TITLE  = MESH TITLE
@@ -53,9 +53,9 @@ C     SLIDE  = .TRUE. IF THE NEXT POINT IS TO HAVE THE CLOSEST POINT'S
 C              COORDINATES, BUT NEW NUMBERING (SLIDE LINE USE) (C BUTTON
 C              HAS BEEN PUSHED)
 C     NOROOM = .TRUE. IF THE AMOUNT OF DATA EXCEEDS DIMENSIONED LIMITS
-C
+
 C***********************************************************************
-C
+
       DIMENSION IPOINT(MP), COOR(2, MP), IPBOUN(MP)
       DIMENSION ILINE(ML), LTYPE(ML), NINT(ML), FACTOR(ML), LCON(3, ML)
       DIMENSION ILBOUN(ML), ISBOUN(ML)
@@ -73,17 +73,17 @@ C
       DIMENSION IHOLDS(2, MS), IRGFLG(MR)
       DIMENSION N(29), SNAPDX(2, MSNAP), NSNAP(2)
       DIMENSION KIN(MCOM), IIN(MCOM), RIN(MCOM)
-C
+
       CHARACTER*72 TITLE, CIN(MCOM)
       CHARACTER*1 BUTTON, HOLD
       CHARACTER DEV1*3
-C
+
       LOGICAL CHANGE, SLIDE, NOROOM, BOXED, ADDOLD, NUMPLT
       LOGICAL DRWTAB, OLDCUR, MERGE, ALPHA, ADDLNK, BIFIND, TEST
       LOGICAL GETMAX, SNAP, SNAPDR, AXIST, ADDCEN
-C
+
 C  INITIALIZE VARIABLES
-C
+
       XMIN2 = XMIN1
       XMAX2 = XMAX1
       YMIN2 = YMIN1
@@ -100,22 +100,22 @@ C
       NOLD7 = N(7)
       CALL PLTGTT (2, TALL)
       knum = 0
-C
+
       IF (NOROOM) THEN
          CALL PLTBEL
          CALL PLTFLU
          NOROOM = .FALSE.
       END IF
-C
+
 C  INITIALIZE THE PLOTTING SURFACE
-C
+
       IF ((DEV1 .EQ. 'LS5') .OR. (DEV1 .EQ. 'ls5')) THEN
          WRITE (*, 10000) CHAR(27)//'RA0'
          WRITE (*, 10000) CHAR(27)//'RR1'
       END IF
-C
+
 C  REFRESH THE SCREEN AND DRAW EXISTING DATA WITH SNAP LINES
-C
+
       IF (DRWTAB) THEN
          CALL REFRSH(MP, ML, MS, MR, MSNAP, N, COOR, ILINE, LTYPE,
      &      LCON, NLPS, IFLINE, ILLIST, NSPR, IFSIDE, ISLIST, LINKP,
@@ -128,12 +128,12 @@ C
      &      LINKL, LINKS, LINKR, TITLE, X1, X2, Y1, Y2, ALPHA, SNAP,
      &      SNAPDX, NSNAP, SNAPDR, TALL, X11, X22, Y11, Y22, AXIST)
       ENDIF
-C
+
 C  INITIALIZE VARIABLES FOR DIGITIZATION INPUT
-C
+
       LASTP = 0
       OLDCUR = .FALSE.
-C
+
   100 CONTINUE
       CHANGE = .FALSE.
       SLIDE = .FALSE.
@@ -142,21 +142,21 @@ C
          CALL PLTSTD (1, 7.)
          CALL PLTFLU
       END IF
-C
+
 C  INPUT THE DATA
-C
+
 C  GET THE CURSOR LOCATION IN USER SYSTEM COORDINATES
 C  AND THE BUTTON PUSHED
-C
+
       CALL DREAD (X, Y, BUTTON, X1, Y1, XX1, YY1, SCALE, CT, ST)
-C
+
 C  SHOW CURRENT CURSOR LOCATION
-C
+
       IF ((.NOT.ALPHA) .AND. (BUTTON .EQ. '3')) THEN
-C
+
 C  ERASE ANY BOXED IN POINTS THAT ARE NOT NEEDED FOR THE
 C  CURRENT SEQUENCE
-C
+
          IF (ISQR .LT. 0) THEN
             ISQR = IABS (ISQR)
             CALL PLTSTT (2, TALL)
@@ -173,9 +173,9 @@ C
          ENDIF
          CALL PUTCRS (X, Y, OLDCUR)
          GOTO 110
-C
+
 C  ERASE ANY BOXED IN POINTS ON THE SCREEN
-C
+
       ELSEIF (ISQR .NE. 0) THEN
          ISQR = IABS (ISQR)
          CALL PLTSTT (2, TALL)
@@ -190,24 +190,24 @@ C
          CALL PLTFLU
          ISQR = 0
       END IF
-C
+
       IF ((DEV1 .EQ. 'LS5') .OR. (DEV1 .EQ. 'ls5')) THEN
          WRITE (*, 10000) CHAR(27)//'[2J'
          WRITE (*, 10000) CHAR(27)//'RA0'
       END IF
-C
+
 C  INPUT A POINT
-C
+
       IF (BUTTON .EQ. '1') THEN
          IF (.NOT.ALPHA) CALL ERASEC(OLDCUR)
-C
+
 C  FIND THE CLOSEST POINT TO THE CURRENT POSITION
-C
+
          IF (CHANGE) THEN
             CALL CLOSEP (MP, N(18), X, Y, IPOINT, COOR, LINKP, I)
-C
+
 C  INPUT A POINT AT THE CLOSEST LOCATION, BUT WITH A NEW POINT NUMBER
-C
+
             CALL LTSORT (MP, LINKP, I, II, ADDLNK)
             IF (SLIDE) THEN
                JJ = N(18) + 1
@@ -243,9 +243,9 @@ C
                CALL DMESS(DEV1,' CLOSEST POINT LOCATED AND STORED')
             END IF
             LASTP = I
-C
+
 C  INPUT A COMPLETELY NEW POINT
-C
+
          ELSE
             IF (SNAP) CALL SNAPPT (MSNAP, SNAPDX, NSNAP, X, Y)
             JJ = N(18) + 1
@@ -266,21 +266,21 @@ C
             END IF
             CALL DMESS(DEV1,' A POINT HAS BEEN INPUT')
          END IF
-C
+
 C  INPUT A STRAIGHT LINE
-C
+
       ELSE IF (BUTTON .EQ. '2') THEN
          IF (.NOT.ALPHA) CALL ERASEC (OLDCUR)
-C
+
 C  CONNECT THIS LINE FROM THE LAST POINT TO THE CLOSEST POINT
-C
+
          IF (CHANGE) THEN
             CALL CLOSEP (MP, N(18), X, Y, IPOINT, COOR, LINKP, I)
             IF (I .EQ. LASTP) GO TO 100
-C
+
 C  RENUMBER THIS LINE BUT PUT IT ON TOP OF THE EXISTING LINE
 C  THIS IS FOR SLIDE LINE USE
-C
+
             IF (SLIDE) THEN
                JJ = N(18) + 1
                CALL LTSORT (MP, LINKP, I, II, ADDLNK)
@@ -305,9 +305,9 @@ C
                CALL DMESS(DEV1,' A STRAIGHT LINE HAS BEEN INPUT '//
      &            'TO CLOSEST POINT')
             END IF
-C
+
 C  INPUT A COMPLETELY NEW STRAIGHT LINE
-C
+
          ELSE
             JJ = N(18) + 1
             IF (SNAP) CALL SNAPPT (MSNAP, SNAPDX, NSNAP, X, Y)
@@ -348,15 +348,15 @@ C
             CALL PLTFLU
          END IF
          LASTP = I
-C
+
 C  INPUT AN ARC ABOUT A CENTER POINT (NEED NOT BE TRULY CIRCULAR)
-C
+
       ELSE IF ((BUTTON .EQ. '5') .OR. (BUTTON .EQ. '6')) THEN
          IF (.NOT.ALPHA) CALL ERASEC (OLDCUR)
          HOLD = BUTTON
-C
+
 C  GO FROM THE LAST POINT TO THE CLOSEST EXISTING POINT FOR THE ARC
-C
+
          IF (CHANGE) THEN
             CALL CLOSEP (MP, N(18), X, Y, IPOINT, COOR, LINKP, I)
             IF (.NOT. ALPHA) THEN
@@ -373,10 +373,10 @@ C
                CALL PLTFLU
                ISQR = IPNTR
             ENDIF
-C
+
 C  INPUT THE LINE AS NEW NUMBER IN THE SAME PLACE AS THE OLD ARC
 C  THIS IS FOR SLIDE LINE USE
-C
+
             IF (SLIDE) THEN
                JJ = N(18) + 1
                CALL LTSORT (MP, LINKP, I, II, ADDLNK)
@@ -396,9 +396,9 @@ C
                   CALL PLTFLU
                END IF
             END IF
-C
+
 C  INPUT A COMPLETELY NEW ARC
-C
+
          ELSE
             JJ = N(18) + 1
             IF (SNAP) CALL SNAPPT (MSNAP, SNAPDX, NSNAP, X, Y)
@@ -422,24 +422,24 @@ C
             LASTP = I
             GO TO 100
          END IF
-C
+
 C  INPUT THE CENTER POINT OF THE ARC
-C
+
   120    CONTINUE
          CALL DMESS (DEV1, ' INPUT A CENTER POINT TO FINISH THE ARC'//
      &      ' DEFINITION')
          CALL MESAGE(' "PUCK-1" FOR NEW OR '//
      &      '"PUCK-0 PUCK-1" FOR EXISTING CENTER POINT')
          CALL DREAD (X, Y, BUTTON, X1, Y1, XX1, YY1, SCALE, CT, ST)
-C
+
 C  SHOW CURRENT CURSOR LOCATION AS AN AID IN LOCATION OF THE CENTER
-C
+
          IF ((.NOT.ALPHA) .AND. (BUTTON .EQ. '3')) THEN
             CALL PUTCRS (X, Y, OLDCUR)
             GO TO 120
-C
+
 C  USE THE CLOSEST POINT TO CURRENT LOCATION AS THE CENTER
-C
+
          ELSE IF (BUTTON .EQ. '0') THEN
             CALL DREAD (X, Y, BUTTON, X1, Y1, XX1, YY1, SCALE, CT, ST)
             WRITE(*,10000)' '//CHAR(27)//'[2J'
@@ -472,9 +472,9 @@ C
                CALL PLTFLU
                ISQR = IPNTR
             ENDIF
-C
+
 C  INPUT A NEW POINT FOR THE CENTER
-C
+
          ELSE IF (BUTTON .EQ. '1') THEN
             WRITE(*,10000)' '//CHAR(27)//'[2J'
             IF (.NOT.ALPHA) CALL ERASEC (OLDCUR)
@@ -499,9 +499,9 @@ C
             WRITE(*,10000)' '//CHAR(27)//'[2J'
             GO TO 100
          END IF
-C
+
 C  IF THE ARC IS INPUT AS CW, SWITCH END POINTS TO RECORD IT AS CCW
-C
+
          IF (HOLD .EQ. '5') THEN
             IP1 = LASTP
             IP2 = I
@@ -527,9 +527,9 @@ C
      &      IP2, IP3, NUMPLT, DUM1, DUM2, TEST, GETMAX, DUM3, DUM4,
      &      DUM5, DUM6)
          LASTP = I
-C
+
 C  WRITE OUT THE APPROPRIATE MESSAGE
-C
+
          IF (HOLD .EQ. '5') THEN
             IF (CHANGE) THEN
                IF (SLIDE) THEN
@@ -557,9 +557,9 @@ C
      &            'TO NEW POINT')
             ENDIF
          ENDIF
-C
+
 C  BISECT THE CLOSEST LINE
-C
+
       ELSE IF (BUTTON .EQ. '4') THEN
          IF (.NOT.ALPHA) CALL ERASEC (OLDCUR)
          CALL BISECT (MP, ML, MS, MR, MSNAP, N, IPOINT, COOR, IPBOUN,
@@ -572,9 +572,8 @@ C
      &      Y, MERGE, LASTP, ALPHA, NOROOM, SNAP, SNAPDX, NSNAP)
          CALL  DMESS(DEV1,' AN EXISTING LINE HAS BEEN BISECTED')
 
-C
 C  MOVE A POINT AND ALL ENTITIES ATTACHED TO THAT POINT
-C
+
       ELSE IF (BUTTON .EQ. '8') THEN
          CALL CLOSEP (MP, N(18), X, Y, IPOINT, COOR, LINKP, II)
          IF (.NOT.ALPHA) THEN
@@ -593,19 +592,19 @@ C
   130    CONTINUE
          CALL DMESS(DEV1,' ENTER "PUCK-8" TO MOVE BOXED POINT - '//
      &      'ANY OTHER KEY TO ABANDON')
-C
+
 C  INPUT THE NEW POINT LOCATION
-C
+
          CALL DREAD (X, Y, BUTTON, X1, Y1, XX1, YY1, SCALE, CT, ST)
-C
+
 C  SHOW CURRENT CURSOR LOCATION AS AN AID IN LOCATION OF THE POINT
-C
+
          IF ((.NOT.ALPHA) .AND. (BUTTON .EQ. '3')) THEN
             CALL PUTCRS (X, Y, OLDCUR)
             GO TO 130
-C
+
 C  INPUT A NEW X, Y FOR THE POINT
-C
+
          ELSE IF (BUTTON .EQ. '8') THEN
             WRITE(*,10000)' '//CHAR(27)//'[2J'
             IF (.NOT.ALPHA) CALL ERASEC (OLDCUR)
@@ -639,9 +638,9 @@ C
             WRITE(*,10000)' '//CHAR(27)//'[2J'
             ISQR = 0
          END IF
-C
+
 C  REFRESH THE SCREEN AND DRAW EXISTING DATA WITH SNAP LINES
-C
+
       ELSE IF (BUTTON .EQ. '9') THEN
          IF (.NOT.ALPHA) CALL ERASEC (OLDCUR)
          IF (DRWTAB) THEN
@@ -656,9 +655,9 @@ C
      &         LINKL, LINKS, LINKR, TITLE, X1, X2, Y1, Y2, ALPHA, SNAP,
      &         SNAPDX, NSNAP, SNAPDR, TALL, X11, X22, Y11, Y22, AXIST)
          ENDIF
-C
+
 C  TOGGLE THE SNAPPING TO GRID LINES
-C
+
       ELSE IF (BUTTON .EQ. 'A') THEN
          IF (.NOT.ALPHA) CALL ERASEC (OLDCUR)
          IF (SNAP) THEN
@@ -698,10 +697,10 @@ C
                END IF
             END IF
          END IF
-C
+
 C  INPUT A REGION BY TRYING TO ENCLOSE THE CURRENT LOCATION AS
 C  TIGHTLY AS POSSIBLE
-C
+
       ELSE IF (BUTTON .EQ. '7') THEN
          IF (.NOT.ALPHA) CALL ERASEC (OLDCUR)
          CALL BOXIT (MP, ML, MS, MR, N, IPOINT, COOR, ILINE, LTYPE,
@@ -709,9 +708,9 @@ C
      &      LINKR, LINKM, NHOLDR, IHOLDR, NHOLDM, IHOLDM, IRGFLG, X, Y,
      &      Y1, Y2, BOXED, MERGE, NOROOM)
          IF (NOROOM) GO TO 170
-C
+
 C  CALCULATE A GOOD LOCATION FOR THE REGION MARKER
-C
+
          IF ((BOXED) .AND. (.NOT.ALPHA)) THEN
             CALL LTSORT  (MR, LINKR, N(22), II, ADDLNK)
             CALL REGEXT (MP, ML, MS, MR, N, II, COOR, ILINE, LTYPE,
@@ -733,17 +732,17 @@ C
             CALL PLTFLU
             CALL DMESS(DEV1,' NO LINES CLOSE ABOUT CURRENT POINT')
          END IF
-C
+
 C  CHANGE THE ZOOM LIMITS WITH THE MOUSE
-C
+
       ELSE IF (BUTTON .EQ. 'B') THEN
-C
+
 C  SWITCH THE LATEST ZOOM LIMITS
-C
+
          IF (CHANGE) THEN
-C
+
 C  JUST CHANGE THE SCREEN IF A DRAWING IS ON THE TABLET
-C
+
             IF(DRWTAB)THEN
                X1HOLD = X1OLD
                Y1HOLD = Y1OLD
@@ -762,9 +761,9 @@ C
      &            ISLIST, LINKP, LINKL, LINKS, LINKR, TITLE, X1OLD,
      &            X2OLD, Y1OLD, Y2OLD, ALPHA, SNAP, SNAPDX, NSNAP,
      &            SNAPDR, TALL, X11, X22, Y11, Y22, AXIST)
-C
+
 C  OTHERWISE CHANGE THE TABLET AND THE DRAWING
-C
+
             ELSE
                X1HOLD = X1
                Y1HOLD = Y1
@@ -786,12 +785,12 @@ C
      &            Y1, Y2, ALPHA, SNAP, SNAPDX, NSNAP, SNAPDR, TALL,
      &            X11, X22, Y11, Y22, AXIST)
             ENDIF
-C
+
             CALL DMESS(DEV1, ' ZOOM HAS BEEN RESET TO THE'//
      &         ' PREVIOUS ZOOM')
-C
+
 C  DRAW THE LOWER LIMITS OF THE ZOOM
-C
+
          ELSE
             IF (.NOT.ALPHA) THEN
                CALL ERASEC (OLDCUR)
@@ -803,27 +802,27 @@ C
             END IF
             XHOLD = X
             YHOLD = Y
-C
+
             CALL DMESS(DEV1,' ENTER "PUCK-B" AT UPPER RIGHT OF '//
      &         'ZOOM - ANY OTHER KEY TO ABANDON')
-C
+
   140       CONTINUE
             CALL DREAD (X, Y, BUTTON, X1, Y1, XX1, YY1, SCALE, CT, ST)
-C
+
 C  SHOW CURRENT CURSOR LOCATION AS AN AID IN LOCATION OF THE POINT
-C
+
             IF ((.NOT.ALPHA) .AND. (BUTTON .EQ. '3')) THEN
                CALL PUTCRS (X, Y, OLDCUR)
                GO TO 140
-C
+
 C  INPUT A NEW X, Y FOR THE OTHER EXTREME
-C
+
             ELSE IF (BUTTON .EQ. 'B') THEN
                IF (.NOT.ALPHA) CALL ERASEC (OLDCUR)
                IF ((X .GT. XHOLD) .AND. (Y .GT. YHOLD)) THEN
-C
+
 C  RESET THE ZOOM LIMITS
-C
+
                   IF (DRWTAB) THEN
                      XMIN2 = X1OLD
                      XMAX2 = X2OLD
@@ -879,14 +878,14 @@ C
                WRITE(*,10000)' '//CHAR(27)//'[2J'
             END IF
          END IF
-C
+
 C  DELETE OPTION
-C
+
       ELSE IF (BUTTON .EQ. 'D') THEN
          CALL DREAD (X, Y, BUTTON, X1, Y1, XX1, YY1, SCALE, CT, ST)
-C
+
 C  DELETE A POINT AND ALL ENTITIES ASSOCIATED WITH THAT POINT
-C
+
          IF (BUTTON .EQ. '1') THEN
             IF (.NOT.ALPHA) CALL ERASEC (OLDCUR)
             CALL CLOSEP (MP, N(18), X, Y, IPOINT, COOR, LINKP, II)
@@ -902,13 +901,13 @@ C
                CALL PLTSTT (2, TALL*.5)
                CALL PLTFLU
                ISQR = IPNTR
-C
+
                CALL DMESS (DEV1, ' PRESS "PUCK-1" TO CONFIRM DELETE')
                CALL DREAD (X, Y, BUTTON, X1, Y1, XX1, YY1, SCALE, CT,
      &            ST)
-C
+
 C  ERASE BOXED IN POINT ON THE SCREEN NO MATTER WHAT BUTTON IS ENTERED
-C
+
                CALL PLTSTT (2, TALL)
                CALL PLTSTD (1, 0.)
 #if NeedsDoubleEscape
@@ -920,9 +919,9 @@ C
                CALL PLTSTT (2, TALL*.5)
                CALL PLTFLU
                ISQR = 0
-C
+
 C  CHECK THE BUTTON TO SEE IF THE POINT IS REALLY TO BE DELETED
-C
+
                IF (BUTTON .EQ. '1') THEN
                   WRITE(*,10000)' '//CHAR(27)//'[2J'
                   CALL PLTSTD (1, 0.)
@@ -936,9 +935,9 @@ C
                   CALL DMESS (DEV1, ' POINT DELETION ABORTED')
                END IF
             END IF
-C
+
 C  DELETE A LINE AND ALL ENTIES ASSOCIATE WITH IT
-C
+
          ELSE IF (BUTTON .EQ. '2') THEN
             IF (.NOT.ALPHA) CALL ERASEC (OLDCUR)
             CALL CLOSEL (MP, ML, N, COOR, ILINE, LTYPE, LCON, LINKP,
@@ -954,7 +953,7 @@ C
      &            IP3, NUMPLT, DUM1, DUM2, TEST, GETMAX, DUM3, DUM4,
      &            DUM5, DUM6)
                CALL PLTFLU
-C
+
                CALL DMESS (DEV1,'PRESS "PUCK-2" TO CONFIRM DELETE')
                CALL DREAD (X, Y, BUTTON, X1, Y1, XX1, YY1, SCALE, CT,
      &            ST)
@@ -977,9 +976,9 @@ C
             ELSE
                CALL DMESS (DEV1, ' LINE NOT FOUND, TRY AGAIN')
             END IF
-C
+
 C  DELETE A GRID LINE
-C
+
          ELSE IF (BUTTON .EQ. 'A') THEN
             IF (.NOT.ALPHA) CALL ERASEC (OLDCUR)
             IF (SNAP .AND. (NSNAP(1) .GT. 0 .AND. NSNAP(2) .GT. 0))
@@ -990,7 +989,7 @@ C
                   CALL PLTSTD (1, 3.)
                   CALL D2GRID (XBOT, YBOT, XTOP, YTOP)
                   CALL PLTFLU
-C
+
                   CALL DMESS (DEV1,
      &               'PRESS "PUCK-A" TO CONFIRM DELETE')
                   CALL DREAD (X, Y, BUTTON, X1, Y1, XX1, YY1, SCALE,
@@ -1012,9 +1011,9 @@ C
                   CALL DMESS(DEV1, ' GRID LINES NOT ENABLED')
                END IF
             END IF
-C
+
 C  DELETE A ZOOM - GO BACK TO THE ORIGINAL DEFAULTS
-C
+
          ELSE IF (BUTTON .EQ. 'B')THEN
             IF (DRWTAB) THEN
                XMIN2 = X1OLD
@@ -1047,12 +1046,12 @@ C
      &            Y1, Y2, ALPHA, SNAP, SNAPDX, NSNAP, SNAPDR, TALL,
      &            X11, X22, Y11, Y22, AXIST)
             ENDIF
-C
+
             CALL DMESS(DEV1,' ZOOM HAS BEEN RESET TO THE DEFAULT')
          END IF
-C
+
 C  EXIT DIGITIZATION - INITIALIZATION OF DIGITIZING PAD IS SAVED
-C
+
       ELSE IF (BUTTON .EQ. 'E') THEN
          IF (.NOT.ALPHA) THEN
             CALL PLTSTT (2, TALL)
@@ -1062,9 +1061,9 @@ C
             END IF
             CALL PLTFLU
          END IF
-C
+
 C  ASSUME THE BODY IS TO CONTAIN ALL THE REGIONS ENTERED
-C
+
          ADDOLD = .TRUE.
          IFOUND = 1
          DO 160 I = NOLD7 + 1, N(7)
@@ -1076,28 +1075,28 @@ C
             END IF
   160    CONTINUE
          RETURN
-C
+
 C  INDICATE THAT THE CLOSEST POINT TO THE CURRENT LOCATION IS NEEDED
-C
+
       ELSE IF (BUTTON .EQ. '0') THEN
          CHANGE = .TRUE.
          GO TO 110
-C
+
 C  INDICATE THAT DATA IS TO BE INPUT AT THE CLOSEST LOCATION
 C  WITH A NEW NUMBERING - FOR USE WITH SLIDE LINE INPUT
-C
+
       ELSE IF (BUTTON .EQ. 'C') THEN
          SLIDE = .TRUE.
          CHANGE = .TRUE.
          GO TO 110
       END IF
-C
+
 C  GO GET ANOTHER BUTTON AND LOCATION
-C
+
       GO TO 100
-C
+
 C  MORE ROOM IN DIMENSIONS NEEDED
-C
+
   170 CONTINUE
       CALL PLTBEL
       CALL PLTFLU
@@ -1115,6 +1114,6 @@ C
       CALL PLTBEL
       CALL PLTFLU
       RETURN
-C
+
 10000 FORMAT (1X, A)
       END

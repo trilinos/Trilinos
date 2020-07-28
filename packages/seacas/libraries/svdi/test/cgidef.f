@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 c  CGI enumerated type definitions for FORTRAN programs
@@ -13,7 +13,6 @@ c  SRCP escapes
       integer XEMFNM, XEMXCL, XEPCTL, XEAGMD, XEPCCL, XESVDI
       parameter (XEMFNM= -28372, XEMXCL= -19281, XEPCTL= -190,
      *           XEAGMD= -23671, XEPCCL= -12048, XESVDI= -1001)
-
 
 c  SRCP definitions
 c  maximum error class
@@ -124,7 +123,6 @@ c  and closed figure capability
       parameter (CCNONE=0, CGLOBL=1, CLOCAL=2)
 
 c  pattern transformation support
-
 
 c  color selection mode availability
       integer CCLRI, CCLRID

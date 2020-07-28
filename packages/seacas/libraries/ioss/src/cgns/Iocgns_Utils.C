@@ -867,12 +867,12 @@ void Iocgns::Utils::output_assembly(int file_ptr, const Ioss::Assembly *assembly
   // Now, iterate the members of the assembly and add the reference to the structured block
   if (assembly->get_member_type() == Ioss::STRUCTUREDBLOCK) {
     for (const auto &mem : members) {
-      int         sbbase = mem->get_property("base").get_int();
+      int         base = mem->get_property("base").get_int();
       const auto *sb   = dynamic_cast<const Ioss::StructuredBlock *>(mem);
       Ioss::Utils::check_dynamic_cast(sb);
       if (is_parallel_io || sb->is_active()) {
         int db_zone = get_db_zone(sb);
-        if (cg_goto(file_ptr, sbbase, "Zone_t", db_zone, "end") == CG_OK) {
+        if (cg_goto(file_ptr, base, "Zone_t", db_zone, "end") == CG_OK) {
           CGERR(cg_famname_write(assembly->name().c_str()));
         }
       }

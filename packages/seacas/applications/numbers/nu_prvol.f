@@ -1,14 +1,14 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
       SUBROUTINE PRVOL (NDIM, CRD, IX, NUMNP, NUMEL, NNODE,
      &  VOLUME, IUNIT)
-C
+
 C     ... ESTIMATE TIMESTEP FOR MESH --- BRICKS ONLY
-C
+
       DIMENSION CRD(NUMNP, *), IX(NNODE,*)
       DIMENSION GRADOP(8)
       REAL volume(*)

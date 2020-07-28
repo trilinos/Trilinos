@@ -1,38 +1,27 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: fixsub.f,v 1.1 1990/11/30 11:07:30 gdsjaar Exp $
-C $Log: fixsub.f,v $
-C Revision 1.1  1990/11/30 11:07:30  gdsjaar
-C Initial revision
-C
-C
-CC* FILE: [.QMESH]FIXSUB.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE FIXSUB (MXND, NNNOLD, NNN, LLLOLD, LLL, KKKOLD, KKK,
      &   XN, YN, NUID, LXK, KXL, NXL, LXN, INDX, IAVAIL, NAVAIL, FINAL)
 C***********************************************************************
-C
+
 C  SUBROUTINE FIXSUB = FIXES THE KXL, LXK, NXL, AND LXN ARRAYS FOR
 C                      SUBREGIONS - TAKES OUT DUPLICATE LINES AND NODES
-C
+
 C***********************************************************************
-C
+
       DIMENSION XN(MXND), YN(MXND), NUID(MXND), INDX(MXND)
       DIMENSION LXK(4, MXND), KXL(2, 3*MXND), NXL(2, 3*MXND)
       DIMENSION LXN(4, MXND)
       DIMENSION LINES(20)
-C
+
       LOGICAL ERR, FINAL, FOUND, NOROOM
-C
+
 C  GENERATE A LIST OF NODES ON THE PERIMETER IN SORTED ORDER
-C
+
       NPER = 0
       DO 100 I = 1, NNNOLD
          IF (NUID(I) .NE. 0) THEN
@@ -41,28 +30,28 @@ C
          END IF
   100 CONTINUE
       CALL INDEXI_FQ (NNNOLD, NUID, NPER, INDX)
-C
+
 C  GO THROUGH ALL THE BOUNDARY NODES IN THE LIST CHECKING FOR DUPLICATES
-C
+
       I = NNNOLD + 1
   110 CONTINUE
       IF (NUID(I) .NE. 0) THEN
-C
+
 C  SEE IF ANOTHER NODE EXISTS WITH THE SAME NUID
-C
+
          CALL LOWFND (MXND, NUID, NPER, INDX, I, IOLD)
-C
+
 C  IF ANOTHER NODE EXISTS, THEN START CHECKING LINES
-C
+
          IF (IOLD .GT. 0) THEN
             CALL GETLXN (MXND, LXN, IOLD, LINES, KEND, ERR)
-C
+
 C  CHECK ALL THE LINES ATTACHED TO THE OLD NODE, TO SEE IF THEY ARE
 C  THE SAME LINE ATTACHED TO THE NODE BEING CHECKED.
-C
+
 C  IF THE SAME LINE EXISTS, DELETE THE LINE, AND MARK THE NODE FOR
 C  LATER DELETION
-C
+
             DO 200 J = 1, 3
                IF (LXN(J, I) .NE. 0) THEN
                   L = ABS(LXN(J, I))
@@ -73,10 +62,10 @@ C
                      N2 = NXL(1, LOLD) + NXL(2, LOLD) - IOLD
                      IF ((NUID(N2) .EQ. NUID(N1)) .AND.
      &                  (NUID(N2) .NE. 0)) THEN
-C
+
 C  THE SAME LINE HAS BEEN FOUND - CHANGE REFERENCES TO THE LATEST
 C  NODE TO REFERENCES TO THE OLD NODE
-C
+
                         KXL(2, LOLD) = KXL(1, L)
                         KELEM = KXL(1, L)
                         DO 120 II = 1, 4
@@ -85,9 +74,9 @@ C
   120                   CONTINUE
                         CALL DELLXN (MXND, LXN, NUID, NAVAIL, IAVAIL,
      &                     N1, L, NNN, ERR, NOROOM)
-C
+
 C  NOW RENUMBER THE REMAINING LINES IN THE KXL AND NXL ARRAYS
-C
+
                         LLL = LLL - 1
                         DO 130 II = L, LLL
                            KXL(1, II) = KXL(1, II + 1)
@@ -99,10 +88,10 @@ C
                         KXL(2, LLL + 1) = 0
                         NXL(1, LLL + 1) = 0
                         NXL(2, LLL + 1) = 0
-C
+
 C  NOW RENUMBER ANY REFERENCES TO LINES ABOVE L IN THE LXK AND
 C  THE LXN ARRAYS
-C
+
                         DO 150 II = 1, NNN
                            DO 140 JJ = 1, 3
                               IF (ABS(LXN(JJ, II)) .EQ. L) THEN
@@ -130,11 +119,11 @@ C
                         GOTO 190
                      END IF
   180             CONTINUE
-C
+
 C  END OF CHECK FOR THE SAME LINE - JUST ADD THE LINE TO THE IOLD NODE
 C  IF THERE IS A PLACE FOR THE LINE (I.E. THE MAXIMUM IS FOUR/NODE WITH
 C  THIS SCHEME).
-C
+
   190             CONTINUE
                   IF (.NOT.FOUND) THEN
                      CALL ADDLXN (MXND, LXN, NUID, NAVAIL, IAVAIL,
@@ -147,15 +136,15 @@ C
                   END IF
                END IF
   200       CONTINUE
-C
+
 C  ALL THE OLD LINES HAVE BEEN GONE THROUGH - NOW DELETE THE NODE I
-C
+
             DO 210 J = 1, I - 1
                IF (LXN(4, J) .LT. -I) THEN
                   LXN(4, J) = LXN(4, J) + 1
                END IF
   210       CONTINUE
-C
+
             NNN = NNN - 1
             DO 230 J = I, NNN
                DO 220 K = 1, 3
@@ -186,11 +175,11 @@ C
          I = I + 1
       END IF
       IF (I .LE. NNN) GO TO 110
-C
+
 C  IF THIS IS THE FINAL SUBREGION TO BE ADDED, THEN FLAG
 C  THE LXN ARRAY FOR TRULY EXTERIOR NODES, AND CLEAR THE TEMPORARY
 C  NUID'S OF THE SUBREGION ONLY BOUNDARY NODES
-C
+
       IF (FINAL) THEN
          DO 250 I = 1, NNN
             IF ((ABS(NUID(I)) .GT. 1000000000) .OR.
@@ -202,9 +191,9 @@ C
                LXN(2, I) = ABS(LXN(2, I))
             END IF
   250    CONTINUE
-C
+
 C  LINK-UP AVAILABLE LXN SPACE
-C
+
          IAVAIL = NNN + 1
          NAVAIL = MXND - NNN
          DO 260 I = IAVAIL, MXND
@@ -215,5 +204,5 @@ C
   260    CONTINUE
       END IF
       RETURN
-C
+
       END

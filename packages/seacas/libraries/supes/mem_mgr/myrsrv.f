@@ -1,23 +1,23 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
       SUBROUTINE MYRSRV (MYCV, NAME1, NEWLEN, NEWLOC, MYLOC, MYCLOC,
      *   UCLOC, OFFSET, COFFST, VOID, LVOID,
      *   NVOIDS, DICT, DPOINT, LDICT, NNAMES, CHRCOL, CHRNUM,
      *   DEFER, CFILL, CFDATA, MAXSIZ,
      *   LASTER)
-C
+
       IMPLICIT INTEGER (A-Z)
       INCLUDE 'params.inc'
-C
+
 C     This routine finds space to service a non-negative space request.
 C     If zero space is requested, a valid pointer of 1 will be
 C     generated.
-C
+
 C***********************************************************************
-C
+
 C     MYCV     Internal reference array.
                CHARACTER MYCV(*)
 C     NAME1    Name to be inserted in the dictionary
@@ -53,64 +53,64 @@ C     CFDATA   Data for fill.
                CHARACTER*1 CFDATA
 C     MAXSIZ   Dimension of static character array.
 C     LASTER   Error return
-C
+
 C***********************************************************************
-C
+
       LASTER = SUCESS
       INTLEN = (NEWLEN + CHRNUM - 1) / CHRNUM
-C
+
       IF (NEWLEN .EQ. 0) THEN
-C
+
 C        Zero length entry.
-C
+
          NEWLOC = 1 - COFFST / CHRNUM
       ELSE
-C
+
          CALL MXLOOK (INTLEN, VOID(1,CHRCOL,1), CHRCOL*LVOID,
      *      NVOIDS(CHRCOL), VROW, LASTER)
-C
+
          IF (LASTER .EQ. SUCESS) THEN
             NEWLOC = VOID(VROW,1,1)
          ELSE IF (DEFER .AND. CHRCOL .EQ. 1) THEN
-C
+
 C           A good void was not found - defer the space request.
-C
+
             NEWLOC = IXLNUM(NEWLOC)
             INTLEN = - INTLEN
             LASTER = SUCESS
-C
+
          ELSE IF (CHRCOL .EQ. 1) THEN
-C
+
 C           Get space.
-C
+
             CALL MXGET (MYLOC, INTLEN, VOID, LVOID,
      *         NVOIDS, CHRCOL, LASTER, VROW)
             IF (LASTER .NE. SUCESS) RETURN
             NEWLOC = VOID(VROW,1,1)
-C
+
          ELSE
-C
+
 C           CHRCOL .EQ. 2
-C
+
             CALL MYGET (MYCLOC, NEWLEN, VOID, LVOID,
      *         NVOIDS, CHRCOL, MAXSIZ, LASTER, VROW)
             IF (LASTER .NE. SUCESS) RETURN
             NEWLOC = VOID(VROW,2,1)
-C
+
          END IF
       END IF
-C
+
 C     Update dictionary.
-C
+
       CALL MYNSRT (NAME1, NEWLOC, INTLEN, NEWLEN, DICT, DPOINT, LDICT,
      *   NNAMES, CHRCOL, LASTER)
       IF (LASTER .EQ. WRTYPE) LASTER = BDNAME
       IF (LASTER .NE. SUCESS) RETURN
-C
+
       IF (INTLEN .GT. 0) THEN
-C
+
 C        Data fill pattern.
-C
+
          IF (CFILL) THEN
             TLOC = (VOID(VROW,CHRCOL,1) - 1) * CHRNUM + 1 + COFFST
      *         + UCLOC - MYCLOC
@@ -118,9 +118,9 @@ C
                MYCV(I) = CFDATA
   100       CONTINUE
          END IF
-C
+
 C        Update void table.
-C
+
          VOID(VROW,CHRCOL,1) = VOID(VROW,CHRCOL,1) + INTLEN
          VOID(VROW,CHRCOL,2) = VOID(VROW,CHRCOL,2) - INTLEN
          CALL VTABLE (1, 0, VOID(1,CHRCOL,1), LVOID, NVOIDS(CHRCOL),
@@ -129,6 +129,6 @@ C
       ELSE
          NEWLOC = - UCLOC
       END IF
-C
+
       RETURN
       END

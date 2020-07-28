@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
       CHARACTER*32 CVSREV, CVSDAT
@@ -27,6 +27,5 @@ C     and 'Date' strings from the CVS variables.  Kludgey but it might work.
          QAINFO(2) = CVSDAT(3:10)
          QAINFO(3)(MAX(1,9-LREV):8) = CVSREV(1:LREV)
       end if
-
 
 C--------

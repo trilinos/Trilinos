@@ -1,16 +1,11 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: loctol.f,v 1.1 1991/02/21 15:44:03 gdsjaar Exp $
-C $Log: loctol.f,v $
-C Revision 1.1  1991/02/21 15:44:03  gdsjaar
-C Initial revision
-C
       SUBROUTINE LOCTOL (TYPE, NDIM, RV, KV)
-C
+
 C     This routine is used to set the tolerances and distances
 C        used in the LOCATE routines.
 C     If a tolerance is not entered (blank field), then
@@ -18,7 +13,7 @@ C        the tolerance is set to the entered distance value, and
 C        the distance is set to 0.0
 C     If a tolerance is entered, the values are returned with no
 C        changes
-C
+
       DIMENSION RV(*), KV(*)
       CHARACTER*(*) TYPE
       LOGICAL MATSTR

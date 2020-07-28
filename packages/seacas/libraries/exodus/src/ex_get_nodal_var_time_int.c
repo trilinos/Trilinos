@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 
@@ -56,7 +56,6 @@ beg_time_step +1) values
                              of the node_number-th node for the
 nodal_var_index-th nodal
                              variable.
-
 
 For example, the following code segment will read the values of the
 first nodal variable for node number one for all time steps stored in

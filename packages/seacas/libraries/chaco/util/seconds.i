@@ -1,30 +1,8 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
      typedef unsigned long clock_t;
-
-
-
 
      typedef long time_t;
 
-
-
-
      typedef unsigned int size_t;
-
-
 
    struct tm {
       int tm_sec;
@@ -38,42 +16,20 @@
       int tm_isdst;
    };
 
-
-
-
-
-
-
-
-
      struct timeval {
 	  unsigned long	tv_sec;
 	  long		tv_usec;
      };
-
-
 
    struct timezone {
 	int	tz_minuteswest;
 	int	tz_dsttime;
    };
 
-
    struct	itimerval {
 	struct	timeval it_interval;
 	struct	timeval it_value;
    };
-
-
-
-
-
-
-
-
-
-
-
 
      extern double difftime(time_t, time_t);
      extern time_t mktime(struct tm *);
@@ -84,51 +40,16 @@
      extern struct tm *localtime(const time_t *);
      extern size_t strftime(char *, size_t, const char *, const struct tm *);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
        extern clock_t clock(void);
-
-
-
-
-
-
-
 
      extern void tzset(void);
 
-
-
-
    extern char *tzname[2];
-
-
-
-
 
      extern char *strptime(const char *, const char *, struct tm *);
 
-
-
-
    extern long timezone;
    extern int daylight;
-
-
-
-
 
      extern struct tm *getdate(const char *);
      extern char *nl_asctime(struct tm *, char *, int);
@@ -143,132 +64,36 @@
      extern int stime(const time_t *);
      extern void profil(const void *, size_t, size_t, int);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
      extern int getdate_err;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     struct	ki_timeval {
 	    long	tv_sec;
 	    long	tv_nunit;
     };
 
-
-
-
-
      typedef long dev_t;
-
-
-
 
      typedef unsigned long ino_t;
 
-
-
-
      typedef unsigned short mode_t;
-
-
-
 
      typedef short nlink_t;
 
-
-
-
      typedef long off_t;
-
-
-
 
      typedef long pid_t;
 
-
-
-
      typedef long gid_t;
-
-
-
 
      typedef long uid_t;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
       typedef int ssize_t;
-
-
-
 
      typedef unsigned short __site_t;
 
-
-
-
      typedef unsigned short __cnode_t;
 
-
-
-
-
-
-
-
-
-
-
       typedef long key_t;
-
 
    typedef unsigned short __ushort;
 
@@ -276,16 +101,7 @@
    typedef char *__caddr_t;
    typedef long __swblk_t;
 
-
-
-
-
-
-
      typedef __caddr_t		caddr_t;
-
-
-
 
    typedef unsigned char	u_char;
    typedef unsigned short	u_short;
@@ -317,34 +133,6 @@
 
    typedef char spu_t;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
      typedef short cpu_t;
      typedef struct label_t {
 	int	lbl_rp;
@@ -354,132 +142,25 @@
 	double	lbl_sf[4];
      } label_t;
 
-
-
    typedef char *dm_message;
-
-
-
 
       typedef long	aid_t;
 
-
-
-
-
-
-
-
    typedef pid_t		sid_t;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
      typedef long fd_mask;
-
-
-
-
-
-
 
      typedef struct fd_set {
        fd_mask fds_bits[ (((2048)+(((sizeof(fd_mask) * 8))-1))/((sizeof(fd_mask) * 8))) ];
      } fd_set;
-
-
-
-
-
 
 struct rlimit {
 	int	rlim_cur;
 	int	rlim_max;
 };
 
-
-
-
-
-
-
-
-
-
    extern int getrlimit(int, struct rlimit *);
    extern int setrlimit(int, const struct rlimit *);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 struct	rusage {
 	struct timeval ru_utime;
@@ -508,23 +189,12 @@ double    seconds()
 {
     double    curtime;
 
-
-
-
     struct rusage rusage;
     int getrusage();
 
     getrusage( 0 , &rusage);
     curtime = ((rusage.ru_utime.tv_sec + rusage.ru_stime.tv_sec) +
 	    1.0e-6 * (rusage.ru_utime.tv_usec + rusage.ru_stime.tv_usec));
-
-
-
-
-
-
-
-
 
     return (curtime);
 }

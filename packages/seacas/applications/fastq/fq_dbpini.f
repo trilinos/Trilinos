@@ -1,10 +1,9 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C$Id: dbpini.f,v 1.1 1999/01/27 15:17:47 gdsjaar Exp $
 C=======================================================================
       SUBROUTINE FQDBPINI (OPTION, TITLE, NDIM, NUMNP, NUMEL, NELBLK,
      &                   NUMNPS, LNPSNL, LNPSDF, NUMESS, LESSEL, LESSNL,
@@ -49,7 +48,6 @@ C   --   NVAREL - IN - the number of element variables (if OPTION)
      &        LNPSNL, LNPSDF, NUMESS, LESSEL, LESSNL, LESSDF
       LOGICAL ALL
       ALL = (OPTION .EQ. '*')
-
 
       IF (ALL .OR. (INDEX (OPTION, 'I') .GT. 0)) THEN
          WRITE(*, 10000)

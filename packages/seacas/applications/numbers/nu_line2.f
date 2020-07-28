@@ -1,14 +1,9 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: line2.f,v 1.1 1991/02/21 15:43:51 gdsjaar Exp $
-C $Log: line2.f,v $
-C Revision 1.1  1991/02/21 15:43:51  gdsjaar
-C Initial revision
-C
       SUBROUTINE LINE2 (COORD, NUMNP, DIST, T, NDIM, P1, P2, TOLER,
      *   NODEL, BOUND, SORTYP, MAP, SORUP, INUM, OPT, SELECT)
       DIMENSION COORD (NUMNP,*), DIST(*), T(*), P1(*), P2(*),
@@ -16,9 +11,9 @@ C
       CHARACTER*(*) NODEL, BOUND, SORTYP, OPT
       LOGICAL SORUP, SELECT(*), ISABRT
       include 'nu_io.blk'
-C
+
       CALL LOCOUT ('LINE', NDIM, NODEL, TOLER, SORTYP, P1, P2, BOUND)
-C
+
       IF (BOUND(:3) .EQ. 'BOU') THEN
          BMULT = 1.0
       ELSE
@@ -28,7 +23,7 @@ C
       TEMP = TOLER(1)
       TOLER(1) = MAX(0.0, TEMP - TOLER(2))
       TOLER(2) = MAX(0.0, TEMP + TOLER(2))
-C
+
       A  = P2(1) - P1(1)
       B  = P2(2) - P1(2)
       X1 = P1(1)
@@ -38,16 +33,16 @@ C
          CALL PRTERR ('CMDERR', 'Zero length line input')
          RETURN
       END IF
-C
+
       DO 10 I=1, NUMNP
          IF (SELECT(I)) THEN
             X0 = COORD(I,1)
             Y0 = COORD(I,2)
             T(I) = -1. * (A * (X1 - X0) + B * (Y1 - Y0)) / (A**2 + B**2)
-C
+
             X = X1 + A * T(I)
             Y = Y1 + B * T(I)
-C
+
             DIST(I) = (X - X0)**2 + (Y - Y0)**2
          END IF
    10 CONTINUE
@@ -100,7 +95,7 @@ C
      *            T(I)
    50       CONTINUE
    60    CONTINUE
-C
+
          IF (INUM .EQ. 0) THEN
             DO 70 IO=IOMIN, IOMAX
                WRITE (IO, 80) SQRT(DISMIN)

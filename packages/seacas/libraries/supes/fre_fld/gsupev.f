@@ -1,23 +1,22 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 C=======================================================================
       SUBROUTINE GSUPEV (STRING)
 C=======================================================================
-C$Id: gsupev.f,v 1.16 2008/12/17 22:47:19 gdsjaar Exp $
-C
+
 C***********************************************************************
-C
+
 C     *** GSUPEV *** Returns current version number of the supes library
 C                    Get SUPEs Version number
 C     Parameters:
 C     STRING - OUT - string containing versions of supes
-C
+
 C     Version Number Format:
 C           n1.n2.n3
-C
+
 C     where n1 is the major version number
 C           n2 is the minor version or change capability number
 C           n3 is the bug-fix number

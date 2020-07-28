@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
       SUBROUTINE SRCHH (
@@ -9,32 +9,32 @@ C See packages/seacas/LICENSE for details
      *  NPTS,    XYZPTS,  TOLSRCH,
      *  NISR,    NRSR,    NISS,    NRSS,    ISRCHR,  RSRCHR,
      *  LIST,    IERR)
-C
+
 C-----------------------------------------------------------------------
-C
+
 C DESCRIPTION:
-C
+
 C THIS SUBROUTINE CALCULATES THE CLOSEST POINT PROBLEM
 C BETWEEN NPTS POINTS AND NFSRF SURFACES AND RETURNS RESULTS OF
 C SEARCH IN ISRCHR,RSRCHR
-C
+
 C USED HERE FOR FINDING LOCATION OF EITHER NODE OR ELEMENT CENTROID
 C FROM MESH-B IN HEX-8 ELEMENT OF MESH-A
-C
+
 C-----------------------------------------------------------------------
-C
+
 C FORMAL PARAMETERS
-C
+
 C MEMORY      : P=PERMANENT, S=SCRATCH
 C NAME        : IMPLICIT A-H,O-Z REAL, I-N INTEGER
 C TYPE        : INPUT_STATUS/OUTPUT_STATUS (I=INPUT,O=OUTPUT,P=PASSED,
 C               U=UNMODIFIED,-=UNDEFINED)
 C DESCRIPTION : DESCRIPTION OF VARIABLE
-C
+
 C-----------------------------------------------------------------------
-C
+
 C CALLING ARGUMENTS:
-C
+
 C MEMORY NAME     TYPE   DESCRIPTION
 C ---    ----     ---    -----------
 C  P     NPSRF    I/U    NUMBER OF POINTS THAT DEFINE THE SURFACE
@@ -53,14 +53,13 @@ C  P     ISRCHR   -/O    INTEGER SEARCH RESULTS
 C  P     RSRCHR   -/O    REAL SEARCH RESULTS
 C  S     LIST     -/-    LIST OF POTENTIAL CONTACTS FOR A SURFACE
 C  P     IERR     -/O    ERROR FLAG
-C
+
 C-----------------------------------------------------------------------
-C
+
       include 'tapes.blk'
       include 'debg.blk'
-C
+
 C INPUT/OUTPUT ARRAYS
-C
 
 C ... Needed to interact with C routines on 64-bit systems which have
 C     8-byte integers in Fortran and 4-byte integers in C.
@@ -72,9 +71,9 @@ C     8-byte integers in Fortran and 4-byte integers in C.
      *  ISRCHR(NISR,NPTS),  RSRCHR(NRSR,NPTS)
       DIMENSION
      *  XMIN(3), XMAX(3), GXMIN(3), GXMAX(3)
-C
+
 C ISRCHR and RSRCHR must be initialized to zero
-C
+
       DO 1 I = 1, NPTS
         DO 2 J = 1, NISR
           ISRCHR(J,I) = 0
@@ -83,7 +82,7 @@ C
           RSRCHR(K,I) = 0.
  3      CONTINUE
  1    CONTINUE
-C
+
       IF( NISR .LT. 1 .OR. NRSR .LT. 3 .OR. NISS .LT. 5 .OR.
      *    NRSS .LT. 10 )THEN
         IERR = 1
@@ -126,7 +125,7 @@ C Build KD Tree
         write(nout, *) '        Out of kdBuildTree', t2-t1
         write(ntpout, *) '      Out of kdBuildTree', t2-t1
       end if
-C
+
 C LOOP OVER SURFACES AND SEARCH FOR POINTS WITHIN CAPTURE BOX
       qt = 0.0
       j = 0
@@ -146,7 +145,7 @@ C CONSTRUCT THE BOUNDING BOX FOR A SURFACE
         NN = LINKSRF(6,IFSRF)
         NO = LINKSRF(7,IFSRF)
         NP = LINKSRF(8,IFSRF)
-C
+
         XMINMS = MIN(XYZSRF(NI,1),XYZSRF(NJ,1),
      *    XYZSRF(NK,1),XYZSRF(NL,1),
      *    XYZSRF(NM,1),XYZSRF(NN,1),

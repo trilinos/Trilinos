@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
@@ -11,7 +11,7 @@ C=======================================================================
       DIMENSION IDESS(*), NEESS(*), IPEESS(*)
       CHARACTER*(*) NAME(*)
       CHARACTER*1 TYPE
-C
+
       IF (TYPE .EQ. 'S') THEN
       WRITE (*, 20)
       DO 10 I=1, NUMESS
@@ -23,7 +23,7 @@ C
           WRITE (*, 50) I, IDESS(I), NEESS(I), NAME(I)
    15 CONTINUE
       END IF
-C
+
    20 FORMAT (/' Side Sets:           ID     Elements    ',
      $     '    Nodes')
    40 FORMAT (/' Node Sets:           ID        Nodes')

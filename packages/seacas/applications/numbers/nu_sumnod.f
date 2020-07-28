@@ -1,10 +1,9 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: sumnod.f,v 1.4 1999/02/16 21:38:01 gdsjaar Exp $
       SUBROUTINE SUMNOD (CRD, DISP, SVAR, NDIM, NUMNP, INDX,
      *   NODSEL, NAME, TIME, ITMSEL, AXI, AVER, DOABS)
 
@@ -98,7 +97,7 @@ C     ... READ THE STEP AND STORE X-DISPLACEMENTS (2D AXISYMMETRIC)
    90          CONTINUE
             END IF
          END IF
-C
+
          SUM = SUM / RSEL
          IF (SUM .GT. RMAX) THEN
             RMAX = SUM
@@ -116,7 +115,7 @@ C
 
       END IF
       GO TO 50
-C
+
   120 CONTINUE
       eng1 = engnot(rmin,2)
       eng2 = engnot(time(itmn), 2)

@@ -1,17 +1,12 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: timblk.blk,v 1.1 1991/02/21 15:46:00 gdsjaar Exp $
-C $Log: timblk.blk,v $
-C Revision 1.1  1991/02/21 15:46:00  gdsjaar
-C Initial revision
-C
       COMMON /TIMBLK/ NSTEP, NLAST, TMIN, TMAX, STMIN, STMAX, STDEL,
      *                LSTSEL
-C
+
 C    NSTEP  - NUMBER OF TIMESTEPS READ FROM DATABASE
 C    NLAST  - CURRENT POSITION OF DATABASE
 C    TMIN   - MINIMUM TIME READ FROM DATABASE
@@ -20,4 +15,3 @@ C    STMIN  - MINIMUM SELECTED TIME
 C    STMAX  - MAXIMUM SELECTED TIME
 C    STDEL  - SELECTED TIME INCREMENT (IF = 0, ALL SELECTED)
 C    LSTSEL - NUMBER OF LAST SELECTED TIMESTEP
-C

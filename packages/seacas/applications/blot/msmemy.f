@@ -1,23 +1,9 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
-C $Log: msmemy.f,v $
-C Revision 1.3  2009/03/25 12:36:46  gdsjaar
-C Add copyright and license notice to all files.
-C Permission to assert copyright has been granted; blot is now open source, BSD
-C
-C Revision 1.2  2005/09/27 13:34:53  gdsjaar
-C Fixed some issues with memory access out of bounds
-C
-C Revision 1.1  1994/04/07 20:05:48  gdsjaar
-C Initial checkin of ACCESS/graphics/blotII2
-C
-c Revision 1.2  1990/12/14  08:53:58  gdsjaar
-c Added RCS Id and Log to all files
-c
 C=======================================================================
       SUBROUTINE MSMEMY (A, ANYDEF, ANYUND,
      &  DOIXF, DON2B, DOELED, DOELEU, DODEAD, DONPS, DOESS,

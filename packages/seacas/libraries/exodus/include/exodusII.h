@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 
@@ -45,12 +45,12 @@
 #endif
 
 /* EXODUS version number */
-#define EXODUS_VERSION "8.06"
+#define EXODUS_VERSION "8.07"
 #define EXODUS_VERSION_MAJOR 8
-#define EXODUS_VERSION_MINOR 06
-#define EXODUS_RELEASE_DATE "May 27, 2020"
+#define EXODUS_VERSION_MINOR 07
+#define EXODUS_RELEASE_DATE "June 16, 2020"
 
-#define EX_API_VERS 8.06f
+#define EX_API_VERS 8.07f
 
 #define EX_API_VERS_NODOT (100 * EXODUS_VERSION_MAJOR + EXODUS_VERSION_MINOR)
 

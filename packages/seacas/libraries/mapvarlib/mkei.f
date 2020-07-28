@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=====================================================================
@@ -16,17 +16,16 @@ C=====================================================================
      &                EMSSB,DENSB,RNMSB,
      &                TMXB,TMYB,TMZB,TKEB,TPSQB,TJ2B,ICOMPL,
      &                SIGXXB,SIGYYB,SIGZZB,SIGXYB,SIGYZB,SIGZXB)
-C
+
 C     ****************************************************************
-C
+
 C Set up arrays for computing momenta and kinetic energy
 C Write results to text file
-C
-C
+
 C Called by MAPVAR
-C
+
 C Calls MKE
-C
+
 C     ****************************************************************
 C IST    INT   time step counter for loop in MAPVAR
 C ISTP   INT   Time step
@@ -64,10 +63,9 @@ C TPSQA  REAL  REC mesh sum over elt block pressure squared each ts
 C TKEA   REAL  REC mesh sum over elt block J2 each time step
 C ICOMPL INT   Flag to indicate completion of rec mesh element block
 C SIG**B REAL  Rec mesh stress components
-C
-C
+
 C     ****************************************************************
-C
+
       include 'amesh.blk'
       include 'bmesh.blk'
       include 'ebbyeb.blk'
@@ -75,7 +73,7 @@ C
       include 'tapes.blk'
       include 'varnpt.blk'
       include 'varept.blk'
-C
+
       DIMENSION TIMES(*),ICONA(NELNDA,*),NDLSTA(*)
       DIMENSION XA(*),YA(*),ZA(*),VELXA(*),VELYA(*),VELZA(*)
       DIMENSION EMSSA(*),DENSA(*),RNMSA(*)
@@ -89,17 +87,17 @@ C
       DIMENSION SIGXXB(*),SIGYYB(*),SIGZZB(*),
      &          SIGXYB(*),SIGYZB(*),SIGZXB(*)
       DIMENSION XX(27),YY(27),ZZ(27)
-C
+
 C     ****************************************************************
-C
+
 C get vel's and elmass for donor mesh-A
-C
+
       CALL EXGNV(NTP2EX,ISTP,IXVEL,NODESA,VELXA,IERR)
       CALL EXGNV(NTP2EX,ISTP,IYVEL,NODESA,VELYA,IERR)
       IF (NDIMA .EQ. 3)THEN
         CALL EXGNV(NTP2EX,ISTP,IZVEL,NODESA,VELZA,IERR)
       END IF
-C
+
       IF(IELMS .NE. 0)THEN
         CALL EXGEV(NTP2EX,ISTP,IELMS,IDBLKA,NUMEBA,EMSSA,IERR)
       ELSE IF (IDENS .NE. 0)THEN
@@ -134,12 +132,12 @@ C
         CALL EXGEV(NTP2EX,ISTP,ISYZ,IDBLKA,NUMEBA,SIGYZA,IERR)
         CALL EXGEV(NTP2EX,ISTP,ISZX,IDBLKA,NUMEBA,SIGZXA,IERR)
       END IF
-C
+
       CALL MKE(NELNDA,NUMEBA,NUMNDA,ICONA,NDLSTA,ITYPE,
      &         VELXA,VELYA,VELZA,EMSSA,RNMSA,
      &         RMXA,RMYA,RMZA,RKEA,PSQA,RJ2A,
      &         SIGXXA,SIGYYA,SIGZZA,SIGXYA,SIGYZA,SIGZXA)
-C
+
       IF (ICOMPL .EQ. 1)THEN
         TMXA(IST)  = TMXA(IST)  + RMXA
         TMYA(IST)  = TMYA(IST)  + RMYA
@@ -148,16 +146,16 @@ C
         TPSQA(IST) = TPSQA(IST) + PSQA
         TJ2A(IST)  = TJ2A(IST)  + RJ2A
       END IF
-C
+
 C repeat for recipient mesh
 C get vel's and elmass for mesh-B
-C
+
       CALL EXGNV(NTP4EX,IST,IXVEL,NODESB,VELXB,IERR)
       CALL EXGNV(NTP4EX,IST,IYVEL,NODESB,VELYB,IERR)
       IF (NDIMA .EQ. 3)THEN
         CALL EXGNV(NTP4EX,IST,IZVEL,NODESB,VELZB,IERR)
       END IF
-C
+
       IF(IELMS .NE. 0)THEN
         CALL EXGEV(NTP4EX,IST,IELMS,IDBLKB,NUMEBB,EMSSB,IERR)
       ELSE IF (IDENS .NE. 0)THEN
@@ -192,12 +190,12 @@ C
         CALL EXGEV(NTP4EX,IST,ISYZ,IDBLKB,NUMEBB,SIGYZB,IERR)
         CALL EXGEV(NTP4EX,IST,ISZX,IDBLKB,NUMEBB,SIGZXB,IERR)
       END IF
-C
+
       CALL MKE(NELNDB,NUMEBB,NUMNDB,ICONB,NDLSTB,ITYPE,
      &         VELXB,VELYB,VELZB,EMSSB,RNMSB,
      &         RMXB,RMYB,RMZB,RKEB,PSQB,RJ2B,
      &         SIGXXB,SIGYYB,SIGZZB,SIGXYB,SIGYZB,SIGZXB)
-C
+
       IF (ICOMPL .EQ. 1)THEN
         TMXB(IST) = TMXB(IST) + RMXB
         TMYB(IST) = TMYB(IST) + RMYB
@@ -205,9 +203,9 @@ C
         TKEB(IST) = TKEB(IST) + RKEB
         TPSQB(IST) = TPSQB(IST) + PSQB
         TJ2B(IST)  = TJ2B(IST)  + RJ2B
-C
+
 C write stuff out here
-C
+
         WRITE(NTPOUT,1010)IDBLKA,IDBLKB
  1010   FORMAT(/,5X,'DONOR MESH ID ',I7,5X,'RECIPIENT MESH ID ',I7)
         WRITE(NTPOUT,1020)TIMES(ISTP)

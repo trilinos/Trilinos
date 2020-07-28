@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 /*--------------------------------------------------------------------*/
@@ -231,10 +231,6 @@ namespace Iovs {
     DatabaseIO();                              // Do not implement
     DatabaseIO(const DatabaseIO &);            // Do not implement
     DatabaseIO &operator=(const DatabaseIO &); // Do not implement
-
-    bool isInput;
-    bool singleProcOnly; // True if history or heartbeat which is only written from proc 0...
-    bool doLogging;      // True if logging field input/output
 
     std::string        databaseTitle{};
     static std::string paraview_script_filename;

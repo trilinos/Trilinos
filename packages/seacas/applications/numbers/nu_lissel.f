@@ -1,25 +1,20 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: lissel.f,v 1.1 1991/02/21 15:43:56 gdsjaar Exp $
-C $Log: lissel.f,v $
-C Revision 1.1  1991/02/21 15:43:56  gdsjaar
-C Initial revision
-C
 C=======================================================================
       SUBROUTINE LISSEL (OPT, TYPE, IOMIN, IOMAX, LIST, SELECT, NUMLST)
 C=======================================================================
-C
+
 C ... Output selected entities to Terminal and/or List file
-C
+
 C     OPT = IN = Option:
 C                 'L' = Selected by logical list
 C                 'A' = All selected are in list
 C                 'R' = List in Range form
-C
+
       LOGICAL SELECT(*)
       CHARACTER*(*) OPT, TYPE
       INTEGER LIST(*), ISCR(12)

@@ -10,7 +10,6 @@
 
 * (?) Add subsetting (exclude specific grouping entities)
 
-
 DONE:
 * nodeset ids are not propagated to output database...
 * need progress meter on output
@@ -23,7 +22,7 @@ DONE:
 
 * implement variable subsetting (all, none, variable list).
 
-* Handle duplicate grouping entity ids.  
+* Handle duplicate grouping entity ids.
   -- This is working for non-merging of grouping entities.
      - Each entities name is prefixed with p#_ where # is the part number 1..num_parts.
      - Duplicate ids are renumbered.
@@ -35,7 +34,6 @@ DONE:
    -- I think global id matching of nodes OK
    -- Matching by proximity should be working now also at least for 2 parts;
       - Multiple (more than 2) part matching needs testing.
-
 
 GJOIN DIFFERENCES:
 - Does not combine blocks/sets that have the same id/type.

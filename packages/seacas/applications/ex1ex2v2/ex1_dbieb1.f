@@ -1,31 +1,13 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
       SUBROUTINE DBIEB1 (NDB, OPTION, IELB, NUMELB, NUMLNK, NUMATR,
      &   LINK, ATRIB, NATRDM, NLNKDM, *)
 C=======================================================================
-C$Id: dbieb1.f,v 1.3 2009/03/25 12:46:01 gdsjaar Exp $
-C$Log: dbieb1.f,v $
-CRevision 1.3  2009/03/25 12:46:01  gdsjaar
-CAdd copyright and license notice to all files.
-C
-CRevision 1.2  1997/03/20 19:40:11  caforsy
-CUpdated Imakefile for Imake 6.1.  Changed printing routines to handle
-Clarger problems.
-C
-CRevision 1.1.1.1  1990/08/14 16:12:34  gdsjaar
-CTesting
-C
-c Revision 1.1  90/08/14  16:12:33  gdsjaar
-c Initial revision
-c
-c Revision 1.1  90/08/09  13:39:08  gdsjaar
-c Initial revision
-c
 
 C   --*** DBIEB1 *** (EXOLIB) Read database element block misc.
 C   --   Written by Amy Gilkey - revised 10/14/87

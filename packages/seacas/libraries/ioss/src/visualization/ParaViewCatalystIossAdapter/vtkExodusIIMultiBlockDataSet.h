@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 #ifndef __VTK_EXODUS_II_MULTI_BLOCK_DATA_SET_H
@@ -107,11 +107,11 @@ private:
   std::map<int, std::map<int, int>> ebmap;
   std::map<int, std::map<int, int>> ebmap_reverse;
   std::map<int, std::map<int, int>> global_elem_id_map;
-  std::vector<int> global_point_id_to_global_elem_id;
-  std::map<int, unsigned int> ebidmap;
-  std::map<int, unsigned int> nsidmap;
+  std::vector<int>                  global_point_id_to_global_elem_id;
+  std::map<int, unsigned int>       ebidmap;
+  std::map<int, unsigned int>       nsidmap;
   std::map<int, std::map<int, int>> nsmap;
-  std::map<int, unsigned int> ssidmap;
+  std::map<int, unsigned int>       ssidmap;
 
   // ssinfomap is used to help track when we see a new sideset. CreateSideSet
   // is called once for each sideset for each block which the sideset spans,
@@ -121,14 +121,14 @@ private:
   std::map<int, Ve2mSideSetInfo *> ssinfomap;
 
   std::map<int, std::map<int, int>> ssmap;
-  void ContainsVector(std::vector<std::string> &component_names,
-                      std::vector<std::string> &prefix_name);
-  double GetArrayValue(vtkVariant &v, const void *data, int index);
-  void       ReleaseGlobalPoints();
-  vtkPoints *global_points;
-  int        num_global_points;
-  int        UnderscoreVectors;
-  int        ApplyDisplacements;
+  void                              ContainsVector(std::vector<std::string> &component_names,
+                                                   std::vector<std::string> &prefix_name);
+  double                            GetArrayValue(vtkVariant &v, const void *data, int index);
+  void                              ReleaseGlobalPoints();
+  vtkPoints *                       global_points;
+  int                               num_global_points;
+  int                               UnderscoreVectors;
+  int                               ApplyDisplacements;
   void CreateGlobalVariableInternal(std::vector<std::string> &component_names,
                                     vtkMultiBlockDataSet *eb, unsigned int bid, vtkVariant &v,
                                     const void *data);
@@ -150,9 +150,9 @@ public:
   Ve2mSideSetInfo();
   ~Ve2mSideSetInfo();
 
-  int bid;
+  int                bid;
   std::map<int, int> unique_points;
-  std::vector<int> object_ids;
+  std::vector<int>   object_ids;
 };
 
 #endif /* __VTK_EXODUS_II_MULTI_BLOCK_DATA_SET_H */

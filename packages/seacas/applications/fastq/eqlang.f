@@ -1,46 +1,29 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: eqlang.f,v 1.2 1991/03/21 15:44:42 gdsjaar Exp $
-C $Log: eqlang.f,v $
-C Revision 1.2  1991/03/21 15:44:42  gdsjaar
-C Changed all 3.14159... to atan2(0.0, -1.0)
-C
-c Revision 1.1.1.1  1990/11/30  11:06:41  gdsjaar
-c FASTQ Version 2.0X
-c
-c Revision 1.1  90/11/30  11:06:39  gdsjaar
-c Initial revision
-c
-C
-CC* FILE: [.PAVING]EQLANG.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE EQLANG (MXND, XN, YN, LXN, NODE, N0, N2, NFROM, DIST,
      &   VRO, XDEL, YDEL)
 C***********************************************************************
-C
+
 C  SUBROUTINE EQLANG = CALCULATES A VECTOR SUM THAT ATTEMPTS TO
 C                      MAINTAIN EQUAL ANGLES FOR A NODE
-C
+
 C***********************************************************************
-C
+
       DIMENSION XN(MXND), YN(MXND), LXN(4, MXND)
-C
+
       LOGICAL EXPAND
-C
+
       PI = ATAN2(0.0, -1.0)
       TWOPI = 2.0 * PI
 
       IF (NFROM .GT. 0) THEN
-C
+
 C  TEST FOR THE EXPANSION CASE
-C
+
          IF ( ( ((LXN (4, NFROM) .NE. 0) .AND.
      &      (LXN (2, NFROM) .LT. 0)) .OR.
      &      ((LXN (4, NFROM) .LT. 0) .AND.
@@ -51,21 +34,21 @@ C
          ELSE
             EXPAND = .FALSE.
          ENDIF
-C
+
          ANG1 = ATAN2 ( YN (N2) - YN (NFROM), XN (N2) - XN (NFROM))
          IF (ANG1 .LT. 0.) ANG1 = ANG1 + TWOPI
          ANG2 = ATAN2 ( YN (N0) - YN (NFROM), XN (N0) - XN (NFROM))
          IF (ANG2 .LT. 0.) ANG2 = ANG2 + TWOPI
          ANG3 = ATAN2 ( YN (NODE) - YN (NFROM), XN (NODE) - XN (NFROM))
          IF (ANG3 .LT. 0.) ANG3 = ANG3 + TWOPI
-C
+
 C  GET THE APPROPRIATE ANGLE BETWEEN ANGLE 1 AND 2
-C
+
          ANG12D = ANG2 - ANG1
          IF (ANG12D .LT. 0.) ANG12D = ANG12D + TWOPI
-C
+
 C  IF THIS IS AN EXPANSION, THEN ADJUST THE ANGLE ACCORDINGLY
-C
+
          IF (EXPAND) THEN
             IF (LXN (3, N2) .EQ. 0) THEN
                ANG12 = ANG1 + (ANG12D * .6)
@@ -78,9 +61,9 @@ C
             ANG12 = ANG1 + (ANG12D * .5)
          ENDIF
          IF (ANG12 .GT. TWOPI) ANG12 = ANG12 - TWOPI
-C
+
 C  GET THE AVERAGE ANGLE BETWEEN ANGLE 12 AND 3
-C
+
          IF (ANG12 .GT. ANG3) THEN
             ANG3D = ANG12 - ANG3
             IF (ANG3D .GT. PI) THEN
@@ -96,9 +79,9 @@ C
                ANG = ANG3 - (ANG3D * .5)
             ENDIF
          ENDIF
-C
+
 C  GET THE DISTANCE TO MAKE THE OUTSIDE FLAT AT THIS ANGLE
-C
+
          D1 = SQRT ( ((XN (NFROM) - XN (N0)) ** 2) +
      &      ((YN (NFROM) - YN (N0)) ** 2) )
          D2 = SQRT ( ((XN (N2) - XN (N0)) ** 2) +
@@ -110,7 +93,7 @@ C
          IF (ARG .LT. -1.0) ARG = -1.0
          BETA = ASIN (ARG)
          D0 = (D3 * SIN (BETA)) / SIN (PI - BETA - (ANG12D * .5))
-C
+
          IF (D0 .GT. DIST) THEN
             IF (EXPAND) THEN
                DIST0 = D0
@@ -120,19 +103,19 @@ C
          ELSE
             DIST0 = DIST
          ENDIF
-C
+
 C  CALCULATE THE NEW COORDINATES
-C
+
          X0 = XN (NFROM) + (COS (ANG) * DIST0)
          Y0 = YN (NFROM) + (SIN (ANG) * DIST0)
          XDEL = (X0 - XN (NODE)) * VRO
          YDEL = (Y0 - YN (NODE)) * VRO
-C
+
       ELSE
          XDEL = 0.
          YDEL = 0.
       ENDIF
-C
+
       RETURN
-C
+
       END

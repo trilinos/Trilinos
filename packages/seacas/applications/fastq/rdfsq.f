@@ -1,10 +1,9 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: rdfsq.f,v 1.4 1999/01/25 16:28:46 gdsjaar Exp $
       SUBROUTINE RDFSQ (MP, ML, MS, MR, MSNAP, MSC, MA, IUNIT, IDUMP, N,
      &   IPOINT, COOR, IPBOUN, ILINE, LTYPE, NINT, FACTOR, LCON, ILBOUN,
      &   ISBOUN, ISIDE, NLPS, IFLINE, ILLIST, IBARST, JMAT, JCENT, NLPB,
@@ -17,16 +16,16 @@ C $Id: rdfsq.f,v 1.4 1999/01/25 16:28:46 gdsjaar Exp $
      &   DEFSCH, DEFSIZ, TITLE, OPTIM, MERGE, THREE, EIGHT, NINE,
      &   SNAP, SNAPDX, NSNAP, RATIO, NOROOM, EXODUSII)
 C***********************************************************************
-C
+
 C  SUBROUTINE RDFSQ =  READS AND/OR MERGES FASTQ CARD FILE(S)
-C
+
 C***********************************************************************
-C
+
 C  SUBROUTINE CALLED BY:
 C     FASTQ  =  A PROGRAM TO QUICKLY PREPARE FASTQ INPUT
-C
+
 C***********************************************************************
-C
+
 C  VARIABLES USED:
 C     TITLE   =  MESH TITLE
 C     IHOLDP  =  AN ARRAY TO HOLD THE POINTS DURING RENUMBERING
@@ -38,11 +37,11 @@ C     OPTIM   =  .TRUE. IF THE MESH IS TO BE OPTIMIZED
 C     MERGE   =  .TRUE. IF THE DATA IS TO BE MERGED WITH EXISTING DATA
 C     NOROOM  =  .TRUE. IF THE AMOUNT OF DATA EXCEEDS DIMENSIONED LIMITS
 C     NODATA  =  .TRUE. IF NO DATA HAS BEEN READ FROM THE FILE
-C
+
 C***********************************************************************
-C
+
       PARAMETER (NIN = 1000)
-C
+
       DIMENSION IPOINT(MP), COOR(2, MP), IPBOUN(MP)
       DIMENSION ILINE(ML), LTYPE(ML), NINT(ML), FACTOR(ML), LCON(3, ML)
       DIMENSION ILBOUN(ML), ISBOUN(ML)
@@ -67,16 +66,16 @@ C
       DIMENSION N(29), NOLD(29), III(1)
       DIMENSION KIN(NIN), CIN(NIN), IIN(NIN), RIN(NIN)
       DIMENSION SNAPDX(2, MSNAP), NSNAP(2)
-C
+
       CHARACTER*72 SCHEME, DEFSCH
       CHARACTER*72 TITLE, HOLD, NUMBER*80, CIN*72
-C
+
       LOGICAL OPTIM, MERGE, NEWNUM, NOROOM, ADDOLD, DOLINK, ERR
       LOGICAL NODATA, ADDLNK, THREE, EIGHT, NINE, SIDEOK, SNAP
       LOGICAL EXODUSII
-C
+
 C  SET UP THE INITIALIZATION OF VARIABLES
-C
+
       DO 100 I = 1, 29
          NOLD(I) = N(I)
   100 CONTINUE
@@ -99,19 +98,19 @@ C
       NODATA = .TRUE.
       ADDLNK = .TRUE.
       DEFSCH = 'M'
-C
+
 C  READ THE INPUT CARDS AND SORT AS NEEDED
-C
+
       DO 130 I = 1, MP + 2*ML + MS + 2*MR
          CALL FREFLD (IUNIT, IDUMP, ' ', NIN, IOSTAT, IFOUND,
      &      KIN, CIN, IIN, RIN)
-C
+
 C  CHECK FOR THE END OF THE FILE OR FOR AN ERROR
-C
+
          IF (IOSTAT .LT. 0) GO TO 140
-C
+
 C  INPUT THE TITLE
-C
+
          IF (CIN(1)(1:5) .EQ. 'TITLE') THEN
             NODATA = .FALSE.
             IF (MERGE) THEN
@@ -129,9 +128,9 @@ C
             END IF
             CALL STRCUT (TITLE)
             CALL STRLNG (TITLE, LEN)
-C
+
 C  INPUT A POINT INTO THE DATABASE
-C
+
          ELSE IF (CIN(1)(1:5) .EQ. 'POINT') THEN
             NODATA = .FALSE.
             JJ = IIN(2)
@@ -142,9 +141,9 @@ C
             CALL INPOIN (MP, N(1), N(18), JJ, RIN(3), RIN(4), NHOLDP,
      &         IHOLDP, IPOINT, COOR, IPBOUN, LINKP, MERGE, NOROOM)
             IF (NOROOM) GO TO 310
-C
+
 C  INPUT A LINE INTO THE DATABASE
-C
+
          ELSE IF (CIN(1)(1:5) .EQ. 'LINE ')THEN
             NODATA = .FALSE.
             JJ = IIN(2)
@@ -180,9 +179,9 @@ C
      &         IIN(6), IIN(7), RIN(8), NHOLDL, IHOLDL, ILINE, LTYPE,
      &         NINT, FACTOR, LCON, ILBOUN, ISBOUN, LINKL, MERGE, NOROOM)
             IF (NOROOM) GO TO 310
-C
+
 C  INPUT A SIDE INTO THE DATABASE
-C
+
          ELSE IF (CIN(1)(1:5) .EQ. 'SIDE ') THEN
             NODATA = .FALSE.
             JJ = IIN(2)
@@ -197,9 +196,9 @@ C
      &         ISIDE, NLPS, IFLINE, ILLIST, LINKS, NHOLDS, IHOLDS,
      &         MERGE, NOROOM)
             IF (NOROOM) GO TO 310
-C
+
 C  INPUT A BAR SET INTO THE DATABASE
-C
+
          ELSE IF (CIN(1)(1:6) .EQ. 'BARSET') THEN
             NODATA = .FALSE.
             JJ = IIN(2)
@@ -215,9 +214,9 @@ C
      &         JFLINE, JLLIST, LINKB, LINKM, NHOLDM, IHOLDM, NHOLDB,
      &         IHOLDB, MERGE, NOROOM)
             IF (NOROOM) GO TO 310
-C
+
 C  INPUT A REGION INTO THE DATABASE
-C
+
          ELSE IF (CIN(1)(1:6) .EQ. 'REGION') THEN
             NODATA = .FALSE.
             JJ = IIN(2)
@@ -238,9 +237,9 @@ C
             RSIZE(JJPNTR) = 0.
             NHPR(JJPNTR) = 0
             IF (NOROOM) GO TO 310
-C
+
 C  INPUT A GROUP INTO THE DATABASE
-C
+
          ELSE IF (CIN(1)(1:6) .EQ. 'GROUP ') THEN
             NODATA = .FALSE.
             JJ = IIN(2)
@@ -255,9 +254,9 @@ C
      &         IFOUND - 2, IREGN, NSPR, IFSIDE, ISLIST, LINKR, NHOLDR,
      &         IHOLDR, IRGFLG, MERGE, NOROOM)
             IF (NOROOM) GO TO 310
-C
+
 C  INPUT A REGION'S HOLES INTO THE DATABASE
-C
+
          ELSE IF (CIN(1)(1:6) .EQ. 'HOLE  ') THEN
             NODATA = .FALSE.
             JJ = IIN(2)
@@ -280,9 +279,9 @@ C
             CALL INHOLE (MR, N(7), N(29), JJPNTR, IIN(3), IFOUND - 2,
      &         IFHOLE, NHPR, IHLIST, MERGE, NOROOM)
             IF (NOROOM) GO TO 310
-C
+
 C  INPUT A SCHEME INTO THE DATABASE
-C
+
          ELSE IF (CIN(1)(1:6) .EQ. 'SCHEME') THEN
             NODATA = .FALSE.
             JJ = IIN(2)
@@ -312,9 +311,9 @@ C
                CALL MESAGE ('SCHEME CARD IS THUS IGNORED')
                CALL MESAGE ('************************************')
             END IF
-C
+
 C  INPUT INTERVALS FOR SIDES OR LINES
-C
+
          ELSE IF (CIN(1)(1:3) .EQ. 'INT') THEN
             NODATA = .FALSE.
             JJ = IIN(3)
@@ -330,9 +329,9 @@ C
             CALL ININTR (ML, MS, IFOUND - 2, IIN(2), IIN(3), N(19),
      &         N(20), NINT, NLPS, IFLINE, ILLIST, LINKL, LINKS, ADDLNK)
             ADDLNK = .TRUE.
-C
+
 C  INPUT FACTORS FOR SIDES OR LINES
-C
+
          ELSE IF (CIN(1)(1:3) .EQ. 'FAC') THEN
             NODATA = .FALSE.
             JJ = IIN(3)
@@ -349,9 +348,9 @@ C
      &         N(20), FACTOR, NLPS, IFLINE, ILLIST, LINKL, LINKS,
      &         ADDLNK)
             ADDLNK = .TRUE.
-C
+
 C  INPUT A REGION'S INTERVAL SIZE INTO THE DATABASE
-C
+
          ELSE IF (CIN(1)(1:5) .EQ. 'SIZE ') THEN
             NODATA = .FALSE.
             IF (IFOUND .LT. 3) THEN
@@ -368,9 +367,9 @@ C
   110          CONTINUE
                ADDLNK = .TRUE.
             END IF
-C
+
 C  INPUT A BODY DEFINITION INTO THE DATABASE
-C
+
          ELSE IF (CIN(1)(1:4) .EQ. 'BODY') THEN
             NODATA = .FALSE.
             IF (IFOUND .GT. 1) THEN
@@ -378,9 +377,9 @@ C
      &            NOROOM)
                IF (NOROOM) GO TO 310
             END IF
-C
+
 C  INPUT A POINT BOUNDARY INTO THE DATABASE
-C
+
          ELSE IF (CIN(1)(1:6) .EQ. 'POINBC') THEN
             IF (IFOUND .LT. 3) THEN
                WRITE(*, 10200) IIN(2)
@@ -397,9 +396,9 @@ C
                WRITE(*, 10210)JHOLD, IPNTR
                ADDLNK = .TRUE.
             END IF
-C
+
 C  INPUT A LINE BOUNDARY INTO THE DATABASE
-C
+
          ELSE IF ((CIN(1)(1:6) .EQ. 'NODEBC')  .OR.
      &      (CIN(1)(1:6) .EQ. 'LINEBC')) THEN
             IF (IFOUND .LT. 3) THEN
@@ -417,9 +416,9 @@ C
                WRITE(*, 10230)JHOLD, IPNTR
                ADDLNK = .TRUE.
             END IF
-C
+
 C  INPUT A SIDE BOUNDARY INTO THE DATABASE
-C
+
          ELSE IF ((CIN(1)(1:6) .EQ. 'ELEMBC')  .OR.
      &      (CIN(1)(1:6) .EQ. 'SIDEBC')) THEN
             IF (IFOUND .LT. 3) THEN
@@ -437,15 +436,15 @@ C
                WRITE(*, 10250)JHOLD, IPNTR
                ADDLNK = .TRUE.
             END IF
-C
+
 C  INPUT A FLAG WEIGHTING INTO THE DATABASE
-C
+
          ELSE IF (CIN(1)(1:6) .EQ. 'WEIGHT') THEN
             ADDLNK = .FALSE.
             NODATA = .FALSE.
-C
+
 C  GET THE FLAG TYPE
-C
+
             IF (CIN(2)(1:1) .EQ. 'P') THEN
                CALL LTSORT (MP, LINKPB, IIN(3), JJ, ADDLNK)
                IF (JJ .GT. 0) THEN
@@ -474,15 +473,15 @@ C
                   WRITE(*, 10270) 'SIDE', IIN(3)
                END IF
             ELSE
-C
+
 C  NO FLAG TYPE HAS BEEN RECOGNIZED
-C
+
                WRITE(*, 10280) CIN(2)(1:5)
             END IF
             ADDLNK = .TRUE.
-C
+
 C  FLAG THE BANDWIDTH OPTIMIZATION ROUTINES ON, AND READ A RENUM CARD
-C
+
          ELSE IF (CIN(1)(1:5) .EQ. 'RENUM') THEN
             NODATA = .FALSE.
             OPTIM = .TRUE.
@@ -503,47 +502,47 @@ C
                CALL MESAGE ('RENUM CARD READ WITHOUT ANY DATA')
                CALL MESAGE ('DEFAULT RENUM PROCESSING WILL BE USED')
             END IF
-C
+
 C  Write Database in exodusII format
-C
+
          ELSE IF (CIN(1)(1:2) .EQ. 'X2') THEN
             NODATA = .FALSE.
             EXODUSII = .TRUE.
-C
+
 C  Write Database in exodusI/genesis format
-C
+
          ELSE IF (CIN(1)(1:2) .EQ. 'X1') THEN
             NODATA = .FALSE.
             EXODUSII = .FALSE.
-C
+
 C  FLAG THE GENERATION OF THREE NODE ELEMENTS
-C
+
          ELSE IF (CIN(1)(1:5) .EQ. 'THREE') THEN
             NODATA = .FALSE.
             THREE = .TRUE.
-C
+
 C  FLAG THE GENERATION OF EIGHT NODE ELEMENTS
-C
+
          ELSE IF (CIN(1)(1:5) .EQ. 'EIGHT') THEN
             NODATA = .FALSE.
             EIGHT = .TRUE.
             NINE = .FALSE.
-C
+
 C  FLAG THE GENERATION OF NINE NODE ELEMENTS
-C
+
          ELSE IF (CIN(1)(1:4) .EQ. 'NINE') THEN
             NODATA = .FALSE.
             NINE = .TRUE.
             EIGHT = .FALSE.
-C
+
 C  INPUT SNAP-TO-GRID FLAG
-C
+
          ELSE IF (CIN(1)(1:4) .EQ. 'SNAP') THEN
             NODATA = .FALSE.
             SNAP = CIN(2)(1:2) .EQ. 'ON'
-C
+
 C  INPUT X-GRID LINES
-C
+
          ELSE IF (CIN(1)(1:4) .EQ. 'XGRI') THEN
             IF (IFOUND .LT. 2) THEN
                WRITE(*, 10290) 'XGRID'
@@ -552,9 +551,9 @@ C
             NODATA = .FALSE.
             CALL INGRID (MSNAP, SNAPDX, NSNAP, 1, RIN(2), IFOUND - 1,
      &         ERR)
-C
+
 C  INPUT Y-GRID LINES
-C
+
          ELSE IF (CIN(1)(1:4) .EQ. 'YGRI') THEN
             IF (IFOUND .LT. 2) THEN
                WRITE(*, 10290) 'YGRID'
@@ -563,28 +562,28 @@ C
             NODATA = .FALSE.
             CALL INGRID (MSNAP, SNAPDX, NSNAP, 2, RIN(2), IFOUND - 1,
      &         ERR)
-C
+
 C  END OF DATA
-C
+
          ELSE IF (CIN(1)(1:4) .EQ. 'EXIT') THEN
             NODATA = .FALSE.
             GO TO 150
          END IF
   120    CONTINUE
   130 CONTINUE
-C
+
   140 CONTINUE
       CALL MESAGE ('FILE END ENCOUNTERED BEFORE -EXIT- CARD WAS FOUND')
       CALL MESAGE ('POSSIBLE PROBLEM IN FILE')
-C
+
 C  RENUMBER THE CARDS IF MERGING
-C
+
   150 CONTINUE
       ADDLNK = .FALSE.
       IF (MERGE) THEN
-C
+
 C  RENUMBER THE POINTS CONTAINED IN THE LINE, AND POINT BOUNDARY CARDS
-C
+
          DO 170 I = NOLD(2) + 1, N(2)
             DO 160 J = 1, 3
                CALL LTSORT (MP, IHOLDP, LCON(J, I), IPNTR, ADDLNK)
@@ -597,10 +596,10 @@ C
             IF ((LISTPB(1, I) .LE. NHOLDP) .AND. (IPNTR .GT. 0))
      &         LISTPB(1, I) = IPNTR
   180    CONTINUE
-C
+
 C  RENUMBER THE LINES CONTAINED IN THE SIDE, BAR SET, REGION,
 C  LINE BOUNDARY, AND SIDE BOUNDARY CARDS
-C
+
          DO 190 I =  NOLD(4) + 1, N(4)
             CALL LTSORT (ML, IHOLDL, ILLIST(I), IPNTR, ADDLNK)
             IF ((ILLIST(I) .LE. NHOLDL) .AND. (IPNTR .GT. 0))
@@ -629,9 +628,9 @@ C
             IF ((LISTSB(1, I) .LE. NHOLDL) .AND. (IPNTR .GT. 0))
      &         LISTSB(1, I) = IPNTR
   230    CONTINUE
-C
+
 C  RENUMBER THE SIDES CONTAINED IN THE REGION CARDS
-C
+
          DO 240 I = NOLD(8) + 1, N(8)
             IF (ISLIST(I) .GT. 0) THEN
                CALL LTSORT (MS, IHOLDS, ISLIST(I), IPNTR, ADDLNK)
@@ -639,9 +638,9 @@ C
      &            ISLIST(I) = IPNTR
             END IF
   240    CONTINUE
-C
+
 C  RENUMBER THE REGIONS CONTAINED IN THE HOLE CARDS
-C
+
          DO 250 I = NOLD(29) + 1, N(29)
             IF (IHLIST(I) .GT. 0) THEN
                CALL LTSORT (MR, IHOLDR, IHLIST(I), IPNTR, ADDLNK)
@@ -649,10 +648,10 @@ C
      &            IHLIST(I) = IPNTR
             END IF
   250    CONTINUE
-C
+
 C  RENUMBER THE BAR SETS AND REGIONS CONTAINED IN THE BODY,
 C  AND THE REGIONS CONTAINED IN THE SCHEME CARDS
-C
+
          DO 260 I = NOLD(9) + 1, N(9)
             IF (IRPB(I) .GT. 0) THEN
                CALL LTSORT (MR, IHOLDR, IRPB(I), IPNTR, ADDLNK)
@@ -670,17 +669,17 @@ C
      &         ISCHM(I) = IPNTR
   270    CONTINUE
       END IF
-C
+
 C  LINK THE SCHEME CARDS
-C
+
       ADDLNK = .TRUE.
       DO 280 I = NOLD(10) + 1, N(10)
          IF (ISCHM(I) .GT. N(24)) N(24) = ISCHM(I)
          CALL LTSORT (MR, LINKSC, ISCHM(I), I, ADDLNK)
   280 CONTINUE
-C
+
 C  LINK UP THE POINTS AND LINES TO THEIR ASSOCIATED FLAGS
-C
+
       SIDEOK = .FALSE.
       CALL LINKBC (MP, MS, NOLD(11) + 1, N(11), N(1), N(25), N(11),
      &   N(12), N(20), IPBF, IFPB, NPPF, LISTPB, NLPS, IFLINE, ILLIST,
@@ -695,10 +694,10 @@ C
      &   N(16), N(20), ISBF, IFSB, NSPF, LISTSB, NLPS, IFLINE, ILLIST,
      &   ISBOUN, LINKSB, IWTSBF, LINKL, LINKS, SIDEOK, NOROOM)
       IF (NOROOM) GO TO 310
-C
+
 C  IF NO BODY CARDS HAVE BEEN READ, ASSUME THE BODY IS ALL THE REGIONS
 C  AND ALL THE BAR SETS
-C
+
       ADDLNK = .FALSE.
       IF (N(9) .EQ. NOLD(9)) THEN
          IFOUND = 1
@@ -720,9 +719,9 @@ C
             END IF
   300    CONTINUE
       END IF
-C
+
 C  SUCCESSFUL COMPLETION - WRITE SUMMARY OF SUCCESSFUL READS
-C
+
       IF (NODATA) THEN
          CALL MESAGE (' ')
          CALL MESAGE (' *----------------------------------------- - *')
@@ -760,9 +759,9 @@ C
          IF (N(29) .GT. 0) WRITE(*, 10470) N(29)
       END IF
       RETURN
-C
+
 C  MORE ROOM IN DIMENSIONS NEEDED
-C
+
   310 CONTINUE
       CALL MESAGE (' ')
       CALL MESAGE ('DIMENSIONS MUST BE INCREASED - PLEASE WAIT')
@@ -775,9 +774,9 @@ C
          TITLE(LHOLD + 1:) = ' '
       END IF
       NOROOM = .TRUE.
-C
+
 C  FIND OUT HOW MUCH ROOM IS NEEDED
-C
+
       REWIND IUNIT
       NEWMP = 0
       NEWML = 0
@@ -786,13 +785,13 @@ C
   330 CONTINUE
       CALL FREFLD (IUNIT, IDUMP, ' ', NIN, IOSTAT, IFOUND, KIN, CIN,
      &   IIN, RIN)
-C
+
 C  CHECK FOR THE END OF THE FILE OR FOR AN ERROR
-C
+
       IF (IOSTAT .LT. 0) GO TO 340
-C
+
 C  COUNT THE CARDS FOR NEEDED DIMENSIONING
-C
+
       IF (CIN(1)(1:5) .EQ. 'POINT') THEN
          NEWMP = NEWMP + 1
       ELSE IF (CIN(1)(1:5) .EQ. 'LINE ') THEN
@@ -803,14 +802,14 @@ C
          NEWMR = NEWMR + 1
       END IF
       GO TO 330
-C
+
 C  GET THE LARGEST RATIO OF NEEDED/CURRENT
-C
+
   340 CONTINUE
       RATIO = AMAX1(DBLE(NEWMP)/DBLE(MP), DBLE(NEWML)/DBLE(ML),
      &   DBLE(NEWMS)/DBLE(MS), DBLE(NEWMR)/DBLE(MR), 1.5000001)*1.1
       RETURN
-C
+
 10000 FORMAT (' A POINT NO. OF:', I7, ' IS NOT ALLOWED', /,
      &   ' THIS POINT WILL NOT BE INPUT INTO DATABASE')
 10010 FORMAT (' A LINE NO. OF:', I7, ' IS NOT ALLOWED', /,
@@ -891,5 +890,5 @@ C
 10500 FORMAT ('  NUMBER OF NODEBCS READ:', I5)
 10510 FORMAT ('  NUMBER OF ELEMBCS READ:', I5)
 10520 FORMAT ('   NUMBER OF RENUMS READ:', I5)
-C
+
       END

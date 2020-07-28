@@ -1,10 +1,9 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
-C
 c=======================================================================
       PROGRAM BLOTII
 C=======================================================================
@@ -422,7 +421,6 @@ C     Initialize element block integer arrays
       CALL INIINT(NELBLK, 0, IA(KNLNKE))
       CALL INIINT(NELBLK, 0, IA(KNATR))
 
-
       CALL INISTR (NELBLK, ' ', C(KNMLB))
 
       CALL EXGEBI (NDB, IA(KIDELB), IERR)
@@ -748,7 +746,6 @@ C      --QNPICK uses NPFIND to find NPSURF
         CALL MDRSRV ('NPSURF', KNPSUR, NUMNPF)
         CALL MDSTAT (NERR, MEM)
         IF (NERR .GT. 0) GOTO 160
-
 
         IF (.NOT. IS3DIM) THEN
           CALL MAKSU2 (A(KLENL), A(KLNSET), MSHBOR,

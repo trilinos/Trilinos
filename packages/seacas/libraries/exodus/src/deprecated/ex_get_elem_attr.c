@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 
@@ -35,7 +35,6 @@ ex_create() or ex_open().
 attributes for
                           the element block, with the num_attr index cycling
 faster.
-
 
 Refer to the code example in ex_get_elem_block() for an example
 of reading the element attributes for an element block.

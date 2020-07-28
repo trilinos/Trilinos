@@ -1,21 +1,9 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
-C $Id: pltcp2.f,v 1.3 1993/07/19 17:06:33 gdsjaar Exp $
-C $Log: pltcp2.f,v $
-C Revision 1.3  1993/07/19 17:06:33  gdsjaar
-C Changed hex constants back to preceding X, --needed on cray. Works
-C either way on other systems.
-C
-c Revision 1.2  1993/07/16  17:33:10  gdsjaar
-c Integer constant too big on sun, replaced it with hexadecimal notation
-c
-c Revision 1.1  1993/07/16  16:47:50  gdsjaar
-c Changed plt to library rather than single source file.
-c
 C=======================================================================
       SUBROUTINE PLTCP2(N,MASK,PX,PY,C1,C2)
       DIMENSION MASK(*),PX(*),PY(*),C1(*),C2(*)

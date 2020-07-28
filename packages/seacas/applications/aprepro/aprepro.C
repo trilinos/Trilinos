@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include <cstring>
@@ -16,6 +16,8 @@ int main(int argc, char *argv[])
   std::vector<std::string> input_files;
 
   bool quiet = false;
+
+  int exit_status = EXIT_SUCCESS;
 
   // Parse all options...
   for (int ai = 1; ai < argc; ++ai) {
@@ -66,6 +68,14 @@ int main(int argc, char *argv[])
     aprepro.ap_options.interactive = true;
     try {
       aprepro.parse_stream(std::cin, "standard input");
+
+      if (aprepro.ap_options.errors_fatal && aprepro.get_error_count() > 0) {
+        exit_status = EXIT_FAILURE;
+      }
+      if ((aprepro.ap_options.errors_and_warnings_fatal) &&
+          (aprepro.get_error_count() + aprepro.get_warning_count() > 0)) {
+        exit_status = EXIT_FAILURE;
+      }
     }
     catch (std::exception &e) {
       std::cerr << "Aprepro terminated due to exception: " << e.what() << '\n';
@@ -116,6 +126,7 @@ int main(int argc, char *argv[])
         }
       }
       else {
+        exit_status = EXIT_FAILURE;
         std::cerr << "There were " << aprepro.get_error_count() << " errors and "
                   << aprepro.get_warning_count() << " warnings."
                   << "\n";
@@ -142,4 +153,5 @@ int main(int argc, char *argv[])
   if (aprepro.ap_options.debugging || aprepro.ap_options.dumpvars) {
     aprepro.dumpsym("variable", false);
   }
+  return exit_status;
 }
