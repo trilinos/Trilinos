@@ -71,7 +71,7 @@ namespace MueLu {
   @class AmalgamationInfo
   @brief minimal container class for storing amalgamation information
 
-  Helps create a mapping between global node id on current processor to global DOFs ids on
+  Helps create a mapping between local node id on current processor to local DOFs ids on
   current processor.  That mapping is used for unamalgamation.
 */
 
@@ -90,7 +90,7 @@ namespace MueLu {
                      RCP<Array<LO> > colTranslation,
                      RCP<const Map> nodeRowMap,
                      RCP<const Map> nodeColMap,
-                     RCP< const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > const &columnMap,
+                     RCP<const Map> const &columnMap,
                      LO fullblocksize, GO offset, LO blockid, LO nStridedOffset, LO stridedblocksize) :
                      rowTranslation_(rowTranslation),
                      colTranslation_(colTranslation),
@@ -141,7 +141,10 @@ namespace MueLu {
     Teuchos::RCP< Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > ComputeUnamalgamatedImportDofMap(const Aggregates& aggregates) const;
 
     /*! @brief ComputeGlobalDOF
-     * return global dof id associated with global node id gNodeID and dof index k
+     *
+     * Return global dof id associated with global node id gNodeID and dof index k
+     *
+     * \note We assume that \c indexBase_ is valid for both the node and the dof map.
      *
      * @param (GO): global node id
      * @param (LO): local dof index within node
@@ -168,7 +171,7 @@ namespace MueLu {
     //! @name amalgamation information variables
     //@{
 
-    //! arrays containing local node ids given local dof ids
+    //! Arrays containing local node ids given local dof ids
     RCP<Array<LO> > rowTranslation_;
     RCP<Array<LO> > colTranslation_;
 
@@ -180,7 +183,7 @@ namespace MueLu {
 
     We keep a RCP on the column map to make sure that the map is still valid when it is used.
     */
-    Teuchos::RCP< const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > columnMap_;
+    RCP<const Map> columnMap_;
 
     //@}
 
