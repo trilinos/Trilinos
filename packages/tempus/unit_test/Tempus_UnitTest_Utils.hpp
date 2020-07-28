@@ -795,11 +795,11 @@ void testRKAppAction(
 
     // Testing that values can be set through the modifier.
     auto x = solutionHistory->getCurrentState()->getX();
-    TEST_FLOATING_EQUALITY(modifier->testCurrentValue,get_ele(*(x), 0),1.0e-15);
+    TEST_FLOATING_EQUALITY(modifier->testCurrentValue,get_ele(*(x), 0),1.0e-14);
     x = solutionHistory->getWorkingState()->getX();
-    TEST_FLOATING_EQUALITY(modifier->testWorkingValue,get_ele(*(x), 0),1.0e-15);
+    TEST_FLOATING_EQUALITY(modifier->testWorkingValue,get_ele(*(x), 0),1.0e-14);
     auto Dt = solutionHistory->getWorkingState()->getTimeStep();
-    TEST_FLOATING_EQUALITY(modifier->testDt, Dt/10.0, 1.0e-15);
+    TEST_FLOATING_EQUALITY(modifier->testDt, Dt/10.0, 1.0e-14);
 
     TEST_COMPARE(modifier->testType, ==, testType);
   }
@@ -834,11 +834,11 @@ void testRKAppAction(
 
     // Testing that values can be observed through the observer.
     auto x = solutionHistory->getCurrentState()->getX();
-    TEST_FLOATING_EQUALITY(observer->testCurrentValue,get_ele(*(x), 0),1.0e-15);
+    TEST_FLOATING_EQUALITY(observer->testCurrentValue,get_ele(*(x), 0),1.0e-14);
     x = solutionHistory->getWorkingState()->getX();
-    TEST_FLOATING_EQUALITY(observer->testWorkingValue,get_ele(*(x), 0),1.0e-15);
+    TEST_FLOATING_EQUALITY(observer->testWorkingValue,get_ele(*(x), 0),1.0e-14);
     auto Dt = solutionHistory->getWorkingState()->getTimeStep();
-    TEST_FLOATING_EQUALITY(observer->testDt, Dt/10.0, 1.0e-15);
+    TEST_FLOATING_EQUALITY(observer->testDt, Dt/10.0, 1.0e-14);
 
     auto testType = testTypeOrig + " - Observer";
     TEST_COMPARE(observer->testType, ==, testType);
@@ -872,14 +872,15 @@ void testRKAppAction(
     TEST_COMPARE(modifierX->testXDOT_END_STAGE, ==, true);
     TEST_COMPARE(modifierX->testX_END_STEP, ==, true);
 
+    const double relTol = 1.0e-14;
     // Testing that values can be set through the modifierX.
     auto x = solutionHistory->getCurrentState()->getX();
-    TEST_FLOATING_EQUALITY(modifierX->testX, get_ele(*(x), 0), 1.0e-15);
+    TEST_FLOATING_EQUALITY(modifierX->testX, get_ele(*(x), 0), relTol);
     auto Dt = solutionHistory->getWorkingState()->getTimeStep();
-    TEST_FLOATING_EQUALITY(modifierX->testDt, Dt, 1.0e-15);
+    TEST_FLOATING_EQUALITY(modifierX->testDt, Dt, relTol);
 
     auto time = solutionHistory->getWorkingState()->getTime();
-    TEST_FLOATING_EQUALITY(modifierX->testTime, time, 1.0e-15);
+    TEST_FLOATING_EQUALITY(modifierX->testTime, time, relTol);
 
     // Stage Number should be -1 outside stage loop.
     TEST_COMPARE(stepper->getStageNumber(), ==, -1);
@@ -889,71 +890,71 @@ void testRKAppAction(
 
     if (rcp_dynamic_cast<Tempus::StepperIMEX_RK<double>>(stepper) != Teuchos::null ||
         rcp_dynamic_cast<Tempus::StepperIMEX_RK_Partition<double>>(stepper) != Teuchos::null) {
-      TEST_FLOATING_EQUALITY(modifierX->testStageX, 2.0, 1.0e-15);
-      TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 2.0,1.0e-15);
+      TEST_FLOATING_EQUALITY(modifierX->testStageX, 2.0, relTol);
+      TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 2.0,relTol);
     } else if (stepper->isImplicit()) {
       // Stage values are overwritten and not available
       // outside takeStep, so direct comparisons are needed.
       if (rcp_dynamic_cast<Tempus::StepperDIRK_BackwardEuler<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09900990099009901, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09900990099009901, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09900990099009901, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09900990099009901, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperSDIRK_2Stage2ndOrder<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09979317463412091, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09979317463412091, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09979317463412091, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09979317463412091, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperSDIRK_3Stage2ndOrder<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.049921670528461, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.049921670528461, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.049921670528461, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.049921670528461, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperSDIRK_2Stage3rdOrder<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.02171123447937569, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.02171123447937569, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.02171123447937569, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.02171123447937569, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperEDIRK_2Stage3rdOrder<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.06659267480577136, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.06659267480577136, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.06659267480577136, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.06659267480577136, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperDIRK_1StageTheta<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.04987531172069826, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.04987531172069826, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.04987531172069826, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.04987531172069826, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperEDIRK_2StageTheta<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09975062344139651, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09975062344139651, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09975062344139651, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09975062344139651, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperEDIRK_TrapezoidalRule<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09975062344139651, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09975062344139651, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09975062344139651, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09975062344139651, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperSDIRK_ImplicitMidpoint<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.04987531172069826, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.04987531172069826, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.04987531172069826, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.04987531172069826, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperSDIRK_SSPDIRK22<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.0748907323303947, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.0748907323303947, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.0748907323303947, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.0748907323303947, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperSDIRK_SSPDIRK32<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.08321767099874625, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.08321767099874625, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.08321767099874625, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.08321767099874625, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperSDIRK_SSPDIRK23<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.07878078755122744, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.07878078755122744, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.07878078755122744, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.07878078755122744, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperSDIRK_SSPDIRK33<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.08525184184135257, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.08525184184135257, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.08525184184135257, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.08525184184135257, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperDIRK_1Stage1stOrderRadauIA<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09900990099009901, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09900990099009901, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09900990099009901, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09900990099009901, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperDIRK_2Stage2ndOrderLobattoIIIB<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.04987531172069826, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.04987531172069826, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.04987531172069826, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.04987531172069826, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperSDIRK_5Stage4thOrder<double>>(stepper) != Teuchos::null) {
         TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09983340822548158, 1.0e-14);
         TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09983340822548158, 1.0e-14);
       } else if (rcp_dynamic_cast<Tempus::StepperSDIRK_3Stage4thOrder<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    -0.009988159068259408, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, -0.009988159068259408, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    -0.009988159068259408, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, -0.009988159068259408, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperSDIRK_5Stage5thOrder<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.06446224812649308, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.06446224812649308, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.06446224812649308, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.06446224812649308, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperSDIRK_21Pair<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.001960592098813843, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.001960592098813843, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.001960592098813843, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.001960592098813843, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperDIRK_General<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09979317463412091, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09979317463412091, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09979317463412091, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09979317463412091, relTol);
       } else {
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
           "Error - unknown stepperType = "+stepper->getStepperType());
@@ -962,44 +963,44 @@ void testRKAppAction(
       // Stage values are overwritten and not available
       // outside takeStep, so direct comparisons are needed.
       if (rcp_dynamic_cast<Tempus::StepperERK_3_8Rule<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09966666666666668, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09966666666666668, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09966666666666668, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09966666666666668, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperERK_3Stage3rdOrder<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.1, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.1, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.1, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.1, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperERK_3Stage3rdOrderHeun<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.06666666666666667, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.06666666666666667, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.06666666666666667, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.06666666666666667, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperERK_3Stage3rdOrderTVD<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.05, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.05, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.05, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.05, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperERK_4Stage3rdOrderRunge<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.0995, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.0995, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.0995, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.0995, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperERK_4Stage4thOrder<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09975, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09975, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09975, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09975, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperERK_5Stage3rdOrderKandG<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.06662222222222222, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.06662222222222222, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.06662222222222222, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.06662222222222222, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperERK_BogackiShampine32<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09983333333333333, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09983333333333333, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09983333333333333, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09983333333333333, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperERK_ForwardEuler<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.0, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.0, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.0, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.0, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperERK_General<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09975, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09975, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09975, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09975, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperERK_Merson45<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09983333333333332, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09983333333333332, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09983333333333332, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09983333333333332, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperERK_Midpoint<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.05, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.05, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.05, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.05, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperERK_Trapezoidal<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.1, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.1, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.1, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.1, relTol);
       } else {
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
           "Error - unknown stepperType = "+stepper->getStepperType());
@@ -1049,10 +1050,11 @@ void testRKAppAction(
     TEST_COMPARE(modifier->testEND_STAGE, ==, true);
     TEST_COMPARE(modifier->testEND_STEP, ==, true);
 
+    const double relTol = 1.0e-14;
     // Testing that values can be set through the modifier.
-    TEST_FLOATING_EQUALITY(modifier->testCurrentValue, get_ele(*(xCS), 0),1.0e-15);
-    TEST_FLOATING_EQUALITY(modifier->testWorkingValue, get_ele(*(xWS), 0),1.0e-15);
-    TEST_FLOATING_EQUALITY(modifier->testDt, Dt/10.0, 1.0e-15);
+    TEST_FLOATING_EQUALITY(modifier->testCurrentValue, get_ele(*(xCS), 0),relTol);
+    TEST_FLOATING_EQUALITY(modifier->testWorkingValue, get_ele(*(xWS), 0),relTol);
+    TEST_FLOATING_EQUALITY(modifier->testDt, Dt/10.0, relTol);
 
     auto testType = testTypeOrig + " - Modifier";
     TEST_COMPARE(modifier->testType, ==, testType);
@@ -1069,9 +1071,9 @@ void testRKAppAction(
     TEST_COMPARE(observer->testEND_STEP, ==, true);
 
     // Testing that values can be observed through the observer.
-    TEST_FLOATING_EQUALITY(observer->testCurrentValue, get_ele(*(xCS), 0),1.0e-15);
-    TEST_FLOATING_EQUALITY(observer->testWorkingValue, get_ele(*(xWS), 0),1.0e-15);
-    TEST_FLOATING_EQUALITY(observer->testDt, Dt/10.0, 1.0e-15);
+    TEST_FLOATING_EQUALITY(observer->testCurrentValue, get_ele(*(xCS), 0),relTol);
+    TEST_FLOATING_EQUALITY(observer->testWorkingValue, get_ele(*(xWS), 0),relTol);
+    TEST_FLOATING_EQUALITY(observer->testDt, Dt/10.0, relTol);
 
     testType = testType + " - Observer";
     TEST_COMPARE(observer->testType, ==, testType);
@@ -1088,11 +1090,11 @@ void testRKAppAction(
     TEST_COMPARE(modifierX->testX_END_STEP, ==, true);
 
     // Testing that values can be set through the modifierX.
-    TEST_FLOATING_EQUALITY(modifierX->testX, get_ele(*(xCS), 0), 1.0e-15);
-    TEST_FLOATING_EQUALITY(modifierX->testDt, Dt, 1.0e-15);
+    TEST_FLOATING_EQUALITY(modifierX->testX, get_ele(*(xCS), 0), relTol);
+    TEST_FLOATING_EQUALITY(modifierX->testDt, Dt, relTol);
 
     auto time = solutionHistory->getWorkingState()->getTime();
-    TEST_FLOATING_EQUALITY(modifierX->testTime, time, 1.0e-15);
+    TEST_FLOATING_EQUALITY(modifierX->testTime, time, relTol);
 
     // Stage Number should be -1 outside stage loop.
     TEST_COMPARE(stepper->getStageNumber(), ==, -1);
@@ -1102,71 +1104,71 @@ void testRKAppAction(
 
     if (rcp_dynamic_cast<Tempus::StepperIMEX_RK<double>>(stepper) != Teuchos::null ||
         rcp_dynamic_cast<Tempus::StepperIMEX_RK_Partition<double>>(stepper) != Teuchos::null) {
-      TEST_FLOATING_EQUALITY(modifierX->testStageX, 2.0, 1.0e-15);
-      TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 2.0,1.0e-15);
+      TEST_FLOATING_EQUALITY(modifierX->testStageX, 2.0, relTol);
+      TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 2.0,relTol);
     } else if (stepper->isImplicit()) {
       // Stage values are overwritten and not available
       // outside takeStep, so direct comparisons are needed.
       if (rcp_dynamic_cast<Tempus::StepperDIRK_BackwardEuler<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09900990099009901, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09900990099009901, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09900990099009901, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09900990099009901, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperSDIRK_2Stage2ndOrder<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09979317463412091, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09979317463412091, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09979317463412091, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09979317463412091, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperSDIRK_3Stage2ndOrder<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.049921670528461, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.049921670528461, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.049921670528461, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.049921670528461, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperSDIRK_2Stage3rdOrder<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.02171123447937569, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.02171123447937569, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.02171123447937569, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.02171123447937569, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperEDIRK_2Stage3rdOrder<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.06659267480577136, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.06659267480577136, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.06659267480577136, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.06659267480577136, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperDIRK_1StageTheta<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.04987531172069826, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.04987531172069826, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.04987531172069826, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.04987531172069826, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperEDIRK_2StageTheta<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09975062344139651, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09975062344139651, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09975062344139651, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09975062344139651, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperEDIRK_TrapezoidalRule<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09975062344139651, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09975062344139651, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09975062344139651, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09975062344139651, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperSDIRK_ImplicitMidpoint<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.04987531172069826, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.04987531172069826, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.04987531172069826, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.04987531172069826, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperSDIRK_SSPDIRK22<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.0748907323303947, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.0748907323303947, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.0748907323303947, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.0748907323303947, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperSDIRK_SSPDIRK32<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.08321767099874625, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.08321767099874625, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.08321767099874625, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.08321767099874625, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperSDIRK_SSPDIRK23<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.07878078755122744, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.07878078755122744, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.07878078755122744, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.07878078755122744, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperSDIRK_SSPDIRK33<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.08525184184135257, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.08525184184135257, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.08525184184135257, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.08525184184135257, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperDIRK_1Stage1stOrderRadauIA<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09900990099009901, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09900990099009901, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09900990099009901, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09900990099009901, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperDIRK_2Stage2ndOrderLobattoIIIB<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.04987531172069826, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.04987531172069826, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.04987531172069826, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.04987531172069826, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperSDIRK_5Stage4thOrder<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09983340822548158, 1.0e-14);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09983340822548158, 1.0e-14);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09983340822548158, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09983340822548158, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperSDIRK_3Stage4thOrder<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    -0.009988159068259408, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, -0.009988159068259408, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    -0.009988159068259408, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, -0.009988159068259408, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperSDIRK_5Stage5thOrder<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.06446224812649308, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.06446224812649308, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.06446224812649308, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.06446224812649308, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperSDIRK_21Pair<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.001960592098813843, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.001960592098813843, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.001960592098813843, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.001960592098813843, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperDIRK_General<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09979317463412091, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09979317463412091, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09979317463412091, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09979317463412091, relTol);
       } else {
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
           "Error - unknown stepperType = "+stepper->getStepperType());
@@ -1175,44 +1177,44 @@ void testRKAppAction(
       // For explicit steppers, stageX is under written and not available
       // outside takeStep, so direct comparisons are needed.
       if (rcp_dynamic_cast<Tempus::StepperERK_3_8Rule<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX, 0.09966666666666668, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09966666666666668, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX, 0.09966666666666668, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09966666666666668, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperERK_3Stage3rdOrder<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX, 0.1, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.1, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX, 0.1, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.1, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperERK_3Stage3rdOrderHeun<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX, 0.06666666666666667, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.06666666666666667, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX, 0.06666666666666667, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.06666666666666667, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperERK_3Stage3rdOrderTVD<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX, 0.05, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.05, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX, 0.05, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.05, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperERK_4Stage3rdOrderRunge<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX, 0.0995, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.0995, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX, 0.0995, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.0995, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperERK_4Stage4thOrder<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX, 0.09975, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09975, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX, 0.09975, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09975, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperERK_5Stage3rdOrderKandG<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX, 0.06662222222222222, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.06662222222222222, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX, 0.06662222222222222, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.06662222222222222, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperERK_BogackiShampine32<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX, 0.09983333333333333, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09983333333333333, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX, 0.09983333333333333, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09983333333333333, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperERK_ForwardEuler<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX, 0.0, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.0, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX, 0.0, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.0, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperERK_General<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX, 0.09975, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09975, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX, 0.09975, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09975, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperERK_Merson45<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX, 0.09983333333333332, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09983333333333332, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX, 0.09983333333333332, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09983333333333332, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperERK_Midpoint<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX, 0.05, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.05, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX, 0.05, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.05, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperERK_Trapezoidal<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX, 0.1, 1.0e-15);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.1, 1.0e-15);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX, 0.1, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.1, relTol);
       } else {
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
           "Error - unknown stepperType = "+stepper->getStepperType());
