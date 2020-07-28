@@ -594,8 +594,8 @@ namespace Tacho {
     stat.nroots = _stree_roots.extent(0);
     
     if (verbose) {
-      printf("Summary: SymbolicTools\n");
-      printf("======================\n");
+      printf("Summary: SymbolicFactorize\n");
+      printf("==========================\n");
       
       stat.height = 0;
       for (ordinal_type i=0;i<stat.nsupernodes;++i) {
@@ -638,6 +638,245 @@ namespace Tacho {
       }
     }
   }  
+
+  void SymbolicTools::
+  evaporateSymbolicFactors(const ordinal_type_array &aw,
+                           const ordinal_type verbose) {
+    Kokkos::Impl::Timer timer;
+    double t_evaporate = 0, m_used =0, m_peak = 0;
+    
+    auto track_alloc = [&](const double in) {
+      m_used += in;
+      m_peak  = max(m_used, m_peak);
+    };
+    auto track_free = [&](const double out) {
+      m_used -= out;
+    };
+    
+    const ordinal_type w_extent(aw.extent(0));
+    if (_m > ordinal_type(aw.extent(0))) {
+      return;
+    }
+
+    timer.reset();
+    
+    ///
+    /// scan weights to compute the size of the system of linear equations
+    ///
+    size_type_array as(do_not_initialize_tag("as"), _m+1); 
+    size_type_array aq(do_not_initialize_tag("aq"), _m+1); 
+    
+    track_alloc(as.span());
+    track_alloc(aq.span());
+
+    as(0) = 0; aq(0) = 0;
+    for (ordinal_type i=0;i<_m;++i) {
+      as(i+1) = as(i) + aw(i);
+      aq(i+1) = aq(i) + aw(_peri(i));
+    }
+
+    TACHO_TEST_FOR_EXCEPTION(as(_m) != aq(_m), std::logic_error, 
+                             "Error: SymbolicTools::evaporateSymbolicFactors, # of equations do not match between as and aq");
+
+    ///
+    /// Evaporate condensed graph
+    ///
+    const size_type m = as(_m);
+    size_type_array ap(do_not_initialize_tag("ap"), m+1); 
+    track_alloc(ap.span());
+
+    ap(0) = 0;
+    {
+      ordinal_type ii(0);
+      for (ordinal_type i=0;i<_m;++i) {
+        ordinal_type cnt(0);
+        const ordinal_type 
+          jbeg = _ap(i), 
+          jend = _ap(i+1);
+        for (ordinal_type j=jbeg;j<jend;++j) {
+          const ordinal_type idx = _aj(j);
+          cnt += (as(idx+1) - as(idx));
+        }
+        const ordinal_type kbeg = as(i), kend = as(i+1);
+        for (ordinal_type k=kbeg;k<kend;++k,++ii) {
+          ap(k+1) = ap(k) + cnt;
+        }
+      }
+      TACHO_TEST_FOR_EXCEPTION(ii != m, std::logic_error, 
+                             "Error: SymbolicTools::evaporateSymbolicFactors, evaporation of ap fails");      
+    }
+
+    ordinal_type_array aj(do_not_initialize_tag("ap"), ap(m));
+    track_alloc(aj.span());
+    {
+      for (ordinal_type i=0;i<_m;++i) {
+        const ordinal_type 
+          jbeg = _ap(i), 
+          jend = _ap(i+1), 
+          jjbeg = ap(as(i));
+        for (ordinal_type j=jbeg,jj=jjbeg;j<jend;++j) {
+          const ordinal_type idx = _aj(j);
+          const ordinal_type kbeg = as(idx), kend = as(idx+1);
+          for (ordinal_type k=kbeg;k<kend;++k,++jj)
+            aj(jj) = k;        
+        }
+        
+        const ordinal_type 
+          kbeg = as(i), 
+          kend = as(i+1),
+          nnz_per_row = ap(kbeg+1)-ap(kbeg);
+        for (ordinal_type k=kbeg+1;k<kend;++k) 
+          memcpy(aj.data()+ap(k),
+                 aj.data()+ap(kbeg),
+                 sizeof(ordinal_type)*nnz_per_row);
+      }
+    }
+
+    ///
+    /// Evaporate perm and peri
+    ///
+    ordinal_type_array perm(do_not_initialize_tag("perm"), m);
+    ordinal_type_array peri(do_not_initialize_tag("peri"), m);
+
+    track_alloc(perm.span());
+    track_alloc(peri.span());
+
+    for (ordinal_type i=0;i<_m;++i) {
+      const ordinal_type idx = _perm(i), ndof = aw(i);
+      const ordinal_type offt = aq(idx), offs = as(i);
+      for (ordinal_type j=0;j<ndof;++j) {
+        const ordinal_type tgt = offt+j, src = offs+j;
+        perm(src) = tgt;
+        peri(tgt) = src;
+      }
+    }
+
+    ///
+    /// Evaporate supernodes and gid colidx
+    ///
+    const ordinal_type nsupernodes = _supernodes.extent(0) - 1;
+    size_type_array gid_super_panel_ptr(do_not_initialize_tag("gid_spanel"), nsupernodes+1);
+    track_alloc(gid_super_panel_ptr.span());
+    {
+      ordinal_type jbeg = _supernodes(0);
+      gid_super_panel_ptr(0) = 0;
+      for (ordinal_type i=0;i<nsupernodes;++i) {
+        {
+          const ordinal_type 
+            jend = _supernodes(i+1);
+          ordinal_type ndof(0);
+          for (ordinal_type j=jbeg;j<jend;++j) {
+            const ordinal_type idx = _peri(j);
+            ndof += aw(idx);
+          }
+          _supernodes(i+1) = _supernodes(i) + ndof;
+          jbeg = jend;
+        }
+        {
+          const ordinal_type
+            kbeg = _gid_super_panel_ptr(i),
+            kend = _gid_super_panel_ptr(i+1);
+          ordinal_type ndof(0);
+          for (ordinal_type k=kbeg;k<kend;++k) { 
+            const ordinal_type idx = _gid_super_panel_colidx(k);
+            ndof += (aq(idx+1) - aq(idx));
+          }
+          gid_super_panel_ptr(i+1) = gid_super_panel_ptr(i) + ndof;
+        }
+      }
+    }
+
+    ordinal_type_array gid_super_panel_colidx(do_not_initialize_tag("gid_super_panel_colidx"), gid_super_panel_ptr(nsupernodes));
+    track_alloc(gid_super_panel_colidx.span());
+    {
+      for (ordinal_type i=0;i<nsupernodes;++i) {
+        const ordinal_type
+          jbeg = _gid_super_panel_ptr(i),
+          jend = _gid_super_panel_ptr(i+1),
+          offs = gid_super_panel_ptr(i);
+        ordinal_type cnt(0);
+        for (ordinal_type j=jbeg;j<jend;++j) { 
+          const ordinal_type idx = _gid_super_panel_colidx(j);
+          const ordinal_type
+            kbeg = aq(idx),
+            kend = aq(idx+1);
+          for (ordinal_type k=kbeg;k<kend;++k,++cnt) 
+            gid_super_panel_colidx(offs+cnt) = k;
+        }
+      }
+    }
+    
+    ordinal_type_array blk_super_panel_colidx(do_not_initialize_tag("blk_super_panel_colidx"), _sid_super_panel_ptr(nsupernodes));
+    track_alloc(blk_super_panel_colidx.span());
+    {
+      for (ordinal_type i=0;i<nsupernodes;++i) {
+        const ordinal_type 
+          jbeg = _sid_super_panel_ptr(i), 
+          jend = _sid_super_panel_ptr(i+1)-1;
+        const ordinal_type offs = _gid_super_panel_ptr(i);
+        for (ordinal_type j=jbeg;j<jend;++j) {
+          const ordinal_type 
+            kbeg = _blk_super_panel_colidx(j),
+            kend = _blk_super_panel_colidx(j+1);
+          ordinal_type blk(0);
+          for (ordinal_type k=kbeg;k<kend;++k) {
+            const ordinal_type idx = _gid_super_panel_colidx(offs+k);
+            const ordinal_type ndof = aq(idx+1) - aq(idx);
+            blk += ndof;
+          }
+          blk_super_panel_colidx(j+1) = blk_super_panel_colidx(j) + blk;
+        }
+      }
+    }
+
+    ///
+    /// assign new objects
+    ///
+    track_free(_perm.span());
+    track_free(_peri.span());
+    track_free(_gid_super_panel_ptr.span());
+    track_free(_gid_super_panel_colidx.span());
+    track_free(_blk_super_panel_colidx.span());
+
+    _m = m;
+    _ap = ap;
+    _aj = aj;
+    _perm = perm;
+    _peri = peri;
+    _gid_super_panel_ptr = gid_super_panel_ptr;
+    _gid_super_panel_colidx = gid_super_panel_colidx;
+    _blk_super_panel_colidx = blk_super_panel_colidx;
+
+    t_evaporate = timer.seconds();
+
+    ///
+    /// verbose output
+    ///
+    stat.nrows = _m;
+    stat.nnz_a = _ap(_m);
+
+    if (verbose) {
+      printf("Summary: EvaporateSymbolicFactors\n");
+      printf("=================================\n");
+      
+      switch (verbose) {
+      case 1: {
+        printf("  Time\n");
+        printf("             time for evaporation:                            %10.6f s\n", t_evaporate);
+        printf("             total time spent:                                %10.6f s\n", t_evaporate);
+        printf("\n");            
+        printf("  Linear system A\n");
+        printf("             number of equations:                             %10d\n", stat.nrows);
+        printf("             number of nonzeros:                              %10.0f (%5.2f %% )\n", double(stat.nnz_a), double(stat.nnz_a)/(double(stat.nrows)*double(stat.nrows))*100.0);
+        printf("\n");
+        printf("  Memory\n");
+        printf("             memory used:                                     %10.2f MB\n", m_used/1024/1024);
+        printf("             peak memory used:                                %10.2f MB\n", m_peak/1024/1024);
+        printf("\n");
+      }          
+      }
+    }
+  }
 
 }
 

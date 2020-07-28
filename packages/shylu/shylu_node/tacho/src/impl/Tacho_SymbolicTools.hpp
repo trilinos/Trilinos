@@ -175,6 +175,8 @@ namespace Tacho {
       ordinal_type_array SupernodesTreeLevel() const;
 
       void symbolicFactorize(const ordinal_type verbose = 0);
+      void evaporateSymbolicFactors(const ordinal_type_array &aw,
+                                    const ordinal_type verbose = 0);
     };        
 
 }
