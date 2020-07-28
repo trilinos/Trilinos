@@ -162,8 +162,9 @@ int main(int argc, char *argv[]) {
     belosList.set( "Block Size", blocksize );                // Blocksize to be used by iterative solver
     belosList.set( "Maximum Iterations", maxits );           // Maximum number of iterations allowed
     belosList.set( "Convergence Tolerance", tol );           // Relative convergence tolerance requested
-    if ((blocksize == 1) && use_single_red) {
-      belosList.set( "Use Single Reduction", use_single_red ); // Use single reduction CG iteration
+    if (blocksize == 1) {
+      if (use_single_red)
+        belosList.set( "Use Single Reduction", use_single_red ); // Use single reduction CG iteration
       if (combineConvInner)
         belosList.set( "Fold Convergence Detection Into Allreduce", combineConvInner );
     }
