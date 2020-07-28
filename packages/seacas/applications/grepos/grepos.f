@@ -1,13 +1,13 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
       PROGRAM GREPOS
 C=======================================================================
-C
+
 C     --*** GREPOS *** (GREPOS) GENESIS Positioning Program
 C     --   Written by Greg Sjaardema - revised 03/07/89
 C     --   Modified from GEN3D
@@ -643,7 +643,6 @@ C     --location of original numelb, isevok arrays
       RENEL = (I .LT. NELBLK)
       NUMEL1 = NUMEL
 
-
       if (renel .or. delnp) then
         CALL MDRSRV ('MSCR', KMSCR, MAX(NUMEL0, NUMNP0))
         if (exodus) then
@@ -911,7 +910,6 @@ C     --"Munch" the element side sets
      &     IA(KLTESS), IA(KLTSSS), A(KFACSS),
      &     IA(KLTESO), IA(KLTSSO), A(KFACS0), IA(KIXESO), IA(KIXDS0),
      &     IA(KNESO), IA(KNDS0), IA(KISCR), C(KNMSC), C(KNAMSS))
-
 
          CALL MDDEL ('LTEESO')
          CALL MDDEL ('LTSSO')

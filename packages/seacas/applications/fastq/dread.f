@@ -1,41 +1,21 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: dread.f,v 1.2 1998/07/14 18:18:42 gdsjaar Exp $
-C $Log: dread.f,v $
-C Revision 1.2  1998/07/14 18:18:42  gdsjaar
-C Removed unused variables, cleaned up a little.
-C
-C Changed BLUE labels to GREEN to help visibility on black background
-C (indirectly requested by a couple users)
-C
-C Revision 1.1.1.1  1990/11/30 11:06:24  gdsjaar
-C FASTQ Version 2.0X
-C
-c Revision 1.1  90/11/30  11:06:21  gdsjaar
-c Initial revision
-c
-C
-CC* FILE: [.MAIN]DREAD.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE DREAD (X, Y, BUTTON, X1, Y1, XX1, YY1, SCALE, CT, ST)
 C***********************************************************************
-C
+
 C  SUBROUTINE DREAD = SETS ALL PARAMETERS UP FOR READING FROM A DIGI-PAD
-C
+
 C***********************************************************************
-C
+
 C  SUBROUTINES CALLED:
 C     DPREAD   = READS INPUT FROM A DIGI-PAD DIGITIZER
-C
+
 C***********************************************************************
-C
+
 C  VARIABLES USED:
 C     X      = THE X LOCATION IN USER COORDINATES
 C     Y      = THE Y LOCATION IN USER COORDINATES
@@ -51,11 +31,11 @@ C     XNEW   = THE NEW DIGITIZED X VALUE BEFORE TRANSFORMATIONS
 C     YNEW   = THE NEW DIGITIZED Y VALUE BEFORE TRANSFORMATIONS
 C     NCB    = THE NUMBER OF BUTTONS ON THE MOUSE  (BIT-PAD-ONE)
 C     DEL    = THE DELTA DISTANCE BETWEEN ACCEPTABLE POINTS  (TALOS)
-C
+
 C***********************************************************************
-C
+
       CHARACTER*1 BUTTON
-C
+
       CALL DPREAD (XNEW, YNEW, BUTTON)
       XNEW = XNEW - XX1
       YNEW = YNEW - YY1

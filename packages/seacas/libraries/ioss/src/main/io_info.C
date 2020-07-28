@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include "io_info.h"
@@ -244,7 +244,7 @@ namespace {
       if (!sb->m_boundaryConditions.empty()) {
         fmt::print("\tBoundary Conditions:\n");
         // NOTE: The sort here is just to make io_info more useful for regression testing.
-        //       With the sort, we get more reproducable output.  For now, only needed for BC...
+        //       With the sort, we get more reproducible output.  For now, only needed for BC...
         auto sb_bc = sb->m_boundaryConditions;
         std::sort(sb_bc.begin(), sb_bc.end(),
                   [](const Ioss::BoundaryCondition &a, const Ioss::BoundaryCondition &b) {

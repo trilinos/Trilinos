@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
@@ -30,7 +30,7 @@ C   --upon exit at end of coordinates.
       integer kval(3)
       real rval(3)
       integer ival(3)
-      
+
       character*512 scratch
       CHARACTER*32 STRA
 

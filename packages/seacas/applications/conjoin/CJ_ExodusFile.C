@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include "CJ_CodeTypes.h" // for StringIdVector, etc
@@ -205,11 +205,7 @@ bool Excn::ExodusFile::create_output(const SystemInterface &si)
   return true;
 }
 
-#if defined(__PUMAGON__)
-#include <stdio.h>
-#else
 #include <unistd.h>
-#endif
 
 namespace {
   int get_free_descriptor_count()

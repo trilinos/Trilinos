@@ -1,7 +1,7 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
       SUBROUTINE PRINC3(SK1, SK2, SK3, SK4, SK5, SK6, EV, INFO)
@@ -14,9 +14,9 @@ C    See packages/seacas/LICENSE for details
       SQRT3  = SQRT(3.0)
 
       INFO = 0
-C
+
 C Find principal trial stresses and directions -
-C
+
       I1 = ( SK1 + SK2 + SK3 )
       I2 = ( (SK1-SK2)**2 + (SK1-SK3)**2 + (SK2-SK3)**2 ) / 6.0
      *     + SK4**2 + SK5**2 + SK6**2
@@ -43,9 +43,9 @@ CC      FI2 = I2 + (SIGN (0.5, I2) + SIGN (0.5, -I2))
 
       COS3AL = SQRT3 * 1.5 * I3 / FI2 / SQRT(FI2)
       COS3AL = SIGN( MIN( 1.0, ABS(COS3AL) ),COS3AL )
-C
+
 C     ... TRIG FUNCTION USED
-C
+
       CALPHA = COS( ACOS(COS3AL) / 3.0)
       SALPHA = SQRT(1.0 - CALPHA**2)
 

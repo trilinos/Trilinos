@@ -1,27 +1,16 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: sort.f,v 1.1 1990/11/30 11:16:08 gdsjaar Exp $
-C $Log: sort.f,v $
-C Revision 1.1  1990/11/30 11:16:08  gdsjaar
-C Initial revision
-C
-C
-CC* FILE: [.RENUM]SORT.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE SORT (N, IX, IY)
 C***********************************************************************
-C
+
 C  SUBROUTINE SORT = SORT THE ARRAY IX,  CARRYING ALONG IY
-C
+
 C***********************************************************************
-C
+
       DIMENSION IX (N), IY (N)
       NN = N
       M = NN
@@ -45,7 +34,7 @@ C
             IF (I .GE. 1)GOTO 110
          ENDIF
   120 CONTINUE
-C
+
       GOTO 100
-C
+
       END

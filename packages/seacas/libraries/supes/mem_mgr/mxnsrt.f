@@ -1,22 +1,22 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
       SUBROUTINE MXNSRT (NAME1, NEWLOC, NEWLEN,
      *   DICT, DPOINT, LDICT,
      *   NNAMES, CHRCOL, LASTER)
-C
+
       IMPLICIT INTEGER (A-Z)
       INCLUDE 'params.inc'
-C
+
 C     This routine updates the dictionary with a new name (if it is new)
 C     and updates the location and length tables.  The length of the
 C     dictionary is checked before the new name is added.  If LASTER is
 C     not returned with a value of SUCESS, the tables are unchanged.
-C
+
 C***********************************************************************
-C
+
 C     NAME1    Name to be inserted
                CHARACTER*8 NAME1
 C     NEWLOC   Location of storage
@@ -29,18 +29,18 @@ C     NNAMES   Number of entries in the dictionary
                DIMENSION DPOINT(LDICT,CHRCOL,3), NNAMES(2)
 C     CHRCOL   Number of column for character names.
 C     LASTER   Error return
-C
+
 C***********************************************************************
-C
+
 C     IS THERE ROOM IN THE DICTIONARY?
-C
+
       IF (NNAMES(1) .GE. LDICT) THEN
          LASTER = DFULL
          RETURN
       END IF
-C
+
 C     FIND NAME1 IN DICTIONARY
-C
+
       CALL MXFIND (NAME1, DICT, DPOINT, LDICT, NNAMES,
      *   CHRCOL, LASTER, ROW)
       IF (LASTER .EQ. WRTYPE) THEN
@@ -51,9 +51,9 @@ C
       ELSE IF (LASTER .EQ. NONAME) THEN
          LASTER = SUCESS
       END IF
-C
+
 C     UPDATE DICTIONARY.
-C
+
       CALL SHFTC (DICT, CHRCOL*LDICT, ROW, NNAMES(1), -1)
       CALL SHFTI (DPOINT, CHRCOL*LDICT, 3, ROW, NNAMES(1), -1)
       NNAMES(1) = NNAMES(1) + 1

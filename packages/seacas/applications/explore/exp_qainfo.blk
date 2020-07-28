@@ -2,7 +2,7 @@ C     -*- Mode: fortran -*-
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
       QAINFO(1) = 'Explore '
       QAINFO(2) = '        '
@@ -10,7 +10,7 @@ C    See packages/seacas/LICENSE for details
 
       QAINFO(2)(:8) = '20200113'
       QAINFO(3)(:8) = '    3.06'
-C
+
 c..Dynamic dimensioning of block names+other changes
 c..compress output of distribution factors
 c..Fix nodal variable read

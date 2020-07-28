@@ -1,66 +1,57 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
-C
 C VDMOVA VDMONI VDGNAM VBIQDV VBIQPK VDLINA VDTEXT VDPNTA VDPOLY VDIQCP VDSTOS
 C WPSTMV WPSTMO WPSTGN WPSTIV WPSTQP WPSTLN WPSTTX WPSTPT WPSTPY WPSTCP WPSTOS
-C
-C
+
 C VDIQOS VDSTFC VDSTBC VDSTIN VDSTLS VDSTLW VDSTCS VDAABU VDALOC VDABGL VDAKGL
 C WPSTIO WPSTFC WPSTBC WPSTIN WPSTLS WPSTLW WPSTCS WPSTBU WPSTLO WPSTBL WPSTKL
-C
-C
+
 C VDSTLA VDINIT VDFRAM VDTERM VDIQDC VDNWPG VDBELL VDWAIT VDBUFL VDSTCO VDIQCO
 C WPSTLA WPSTNT WPSTFR WPSTTR WPSTDC WPSTPG WPSTBE WPSTWT WPSTFL WPSTCO WPSTIC
-C
-C
+
 C VDESCP VDIQES VDIQND VIMOVA VILINA VIPNTA VITEXT VIINIT VITERM VINWPG CDRCOM
 C WPSTES WPSTIE WPSTID WPSTIM WPSTIL WPSTIP WPSTIX WPSTII WPSTIT WPSTIG CDRCOM
-C
-C
+
 C VCJOB  VCONOD VBERRH VDLOGE CDRWFS CDRRFS CDROFS CDROF3 CDRCFS CDROFF CDROAB
 C  VCJOB WPSTON WPSTER WPSTLE WPSTWF WPSTRF WPSTOF WPSTO3 WPSTCF WPSTFF WPSTAB
-C
-C
+
 C BGPBUF QMSBUF QMSBU1 DDCBUF H75BUF BTKBUF NMTBUF ONHBUF VBIMBF VBPKG  VBDEV
 C WPSTBF WPSTQM WPSTBF WPSTBF WPSTBF WPSTBF WPSTBF WPSTOH WPSTIB WPSTPK WPSTDV
-C
-C
+
 C VDIQRS VDSTMP VDSTRS VDSTRV VDBRGB VDFRGB VDPIXL VDPIXI VDRPIX VDRPXI VDRSCL
 C WPSTQR WPSTMP WPSTRS WPSTRV WPSTBG WPSTFG WPSTPX WPSTPI WPSTRP WPSTRI WPSTRL
-C
-C
+
 C VDIQCI VBSTMP VCNDCM VCATTR VIFRAM VCCRPS VCESCP DEVCAP VCSCAL VCDDIM VIPOLY
 C WPSTCI WPST01 WPST02 WPST03 WPST04 WPST05 WPST06 WPST07 WPST08 WPST09 WPST10
-C
-C
+
 C VCVECT VBLINA VBVECT VBSTLS PSTBUF
 C WPST11 WPST12 WPST13 WPST14 WPST15
-C
+
       SUBROUTINE WPST01( IMAP )
       GOTO (1,2,3,4,5),IMAP
-C
+
       CALL WPSTMP('UNKNOWN')
       RETURN
-C
+
     1 CALL WPSTMP('1-TO-1')
       RETURN
-C
+
     2 CALL WPSTMP('REPLICATE')
       RETURN
-C
+
     3 CALL WPSTMP('VIRTUAL')
       RETURN
-C
+
     4 CALL WPSTMP('NODISTORT')
       RETURN
-C
+
     5 CALL WPSTMP('FREEFORM')
       RETURN
-C
+
       END
       SUBROUTINE WPSTRS(I1,I2)
 c*************************************************************************
@@ -86,23 +77,23 @@ c*************************************************************************
       END
       SUBROUTINE WPSTER(ERRNUM,ERRSEV)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VBERRH           -Error Handler.
-C
+
 C R.W.Simons       -08APR81
 C                   30SEP81
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
 C                   Device-independent.
-C
+
 C ENTRY CONDITIONS -ERRNUM = integer error number.
 C                   ERRSEV = integer severity code.  If > 12, error is
 C                   fatal.
-C
+
 C CALLS            -VDLOGE.
-C
+
 C EXIT CONDITIONS  -
-C
+
 C NARRATIVE        -An error will normally cause an error message to
 C                   be printed on the error output device and possible
 C                   termination of the program, unless a routine VBERRH
@@ -112,42 +103,41 @@ C                   system supplied VBERRH calls VDLOGE before
 C                   returning.  All versions of VBERRH, whether user-
 C                   supplied or default, must STOP on any error severity
 C                   greater than 12.
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
       INTEGER ERRNUM,ERRSEV
-C
+
 C REPORT THE ERROR USING VDLOGE.
       CALL WPSTLE(ERRNUM,ERRSEV)
-C
+
 C CHECK FOR FATAL ERROR.
       IF(ERRSEV.GT.12) STOP
-C
+
       RETURN
       END
       SUBROUTINE WPSTGN(NAME)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VDGNAM           -Name the graphics output file
-C
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
 C                   Device-independent.
-C
+
 C ENTRY CONDITIONS -NAME = character string; < 80 characters
-C
+
 C CALLS
-C
+
 C EXIT CONDITIONS  -output graphics file is assigned the name NAME
-C
+
 C NARRATIVE        -This subroutine associates a file name with
 C                   the graphics output file (KOUTFL). If this
 C                   routine is not called, a system dependent
 C                   default name is used.  VDGNAM must be called
 C                   before VDINIT.
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
       CHARACTER*(*) NAME
       INTEGER LENGTH,ISTART,IEND,I
       LENGTH = MIN(LEN(NAME),132)
@@ -179,26 +169,26 @@ C Strip off trailing blanks
       END
       SUBROUTINE WPSTNT(ASPECT,JUSTIF)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VDINIT           -Initialize SVDI.
-C
+
 C R.W.Simons       -08APR81
 C                   30SEP81
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
 C                   Device-independent.
-C
+
 C ENTRY CONDITIONS -ASPECT = real ratio of X dimension to Y dimension.
 C                   Range >0.0.  Default: 0.0 (device dependent).
 C                   JUSTIF = integer justification of NDC space on the
 C                   device.  Range 0-9.  Default: 0 (device dependent).
-C
+
 C CALLS            -CDRJOB, VBERRH, VIINIT.
-C
+
 C EXIT CONDITIONS  -XNDCMX,YNDCMX = real NDC maximum valid values.
 C                   VECTOR = real array of default attribute values (all
 C                   device-dependent except VECTOR(4)=0.0).
-C
+
 C NARRATIVE        -This must be the first SVDI call made.  All
 C                   attribute values, the color table, and current
 C                   position are set to appropriate defaults for the
@@ -206,7 +196,7 @@ C                   device.  All necessary input device initialization
 C                   is done.  The screen is cleared or paper advanced
 C                   if necessary to guarantee a blank view surface for
 C                   drawing.
-C
+
 C                   ASPECT specifies the ratio of the X dimension to the
 C                   Y dimension.  Maximum NDC values (at least one of
 C                   which will be 1.0) are computed to give the ASPECT
@@ -217,7 +207,7 @@ C                   (such as drum plotters) which are assigned a default
 C                   aspect of 1.0.  The NDC rectangle is scaled until
 C                   one dimension fills the corresponding dimension of
 C                   the device.
-C
+
 C                   JUSTIF determines where the rectangle is located on
 C                   the device as diagrammed below:
 C                            ---------
@@ -227,74 +217,74 @@ C                           | 1  2  3 |
 C                            ---------
 C                   For example, JUSTIF = 7 indicates NDC space will be
 C                   upper left justified on the device.
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
       REAL ASPECT
       INTEGER JUSTIF
-C
+
       INTEGER*4 MACHIN(3),MACLEN
       INTEGER*4 KIDSIZ,KJOBID(4),KUSRSZ,KUSRID(4),KSZROU
       INTEGER*4 KJROUT(4),KSECUR,KJTIME(4),KJDATE(4)
       COMMON / VCJOB/ KIDSIZ,KJOBID,KUSRSZ,KUSRID,KSZROU,
      1               KJROUT,KSECUR,KJTIME,KJDATE,MACHIN,MACLEN
-C
+
 C THIS IS JUST A DUMMY ROUTINE WHICH DOES NOTHING BUT CALL VIINIT.
 C THIS ORGANIZATION FACILITATES ADDING SECURITY MARKINGS TO SVDI.
       CALL WPSTII(ASPECT,JUSTIF)
-C
+
       RETURN
       END
       SUBROUTINE WPSTID(XNDC,YNDC)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VDIQND           -Inquire NDC Space.
-C
+
 C R.W.Simons       -08APR81
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
 C                   Device-independent.
-C
+
 C ENTRY CONDITIONS -XNDCMX,YNDCMX = real maximum valid NDC values.
-C
+
 C CALLS            -
-C
+
 C EXIT CONDITIONS  -XNDC,YNDC = real maximum valid NDC values (XNDCMX,
 C                   YNDCMX).
-C
+
 C NARRATIVE        -Return the maximum NDC values as set to realize the
 C                   aspect defined by VDINIT.
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
       REAL XNDC,YNDC
-C
+
       REAL XNDCMX,YNDCMX
       COMMON /WPST02/ XNDCMX,YNDCMX
-C
+
 C RETURN THE MAXIMUM VALID NDC VALUES.
       XNDC=XNDCMX
       YNDC=YNDCMX
-C
+
       RETURN
       END
       SUBROUTINE WPSTIO(ATTARR)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VDIQOS           -Inquire Output Status (of Attributes).
-C
+
 C K.M. ERICKSON    -14 NOV 80
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
 C                   Device-independent.
-C
+
 C ENTRY CONDITIONS -VECTOR = real array of current attribute values.
-C
+
 C CALLS            -
-C
+
 C EXIT CONDITIONS  -ATTARR = real array of current attribute value
 C                   (VECTOR).
-C
+
 C NARRATIVE        -Return the current attribute values in ATTARR as
 C                   given below.
 C                   ATTARR(1)=Foreground Color
@@ -304,71 +294,71 @@ C                         (4)=Line Style
 C                         (5)=Line Width
 C                         (6)=Character Box Y
 C                         (7)=Character Box X
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
       REAL ATTARR(7)
-C
+
       REAL VECTOR(7)
       COMMON /WPST03/ VECTOR
-C
+
       INTEGER I
-C
+
       DO 100 I=1,7
          ATTARR(I)=VECTOR(I)
   100 CONTINUE
-C
+
       RETURN
       END
       SUBROUTINE WPSTLN(X,Y)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VDLINA           -Line Absolute.
-C
+
 C R.W.Simons       -08APR81
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
 C                   Device-independent.
-C
+
 C ENTRY CONDITIONS -X,Y = real NDC position.
-C
+
 C CALLS            -VILINA.
-C
+
 C EXIT CONDITIONS  -
-C
+
 C NARRATIVE        -Draw a line from current position to absolute NDC
 C                   position X,Y and update current position.
 C                   Attributes foreground color, intensity, line style,
 C                   and line width apply.
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
       REAL X,Y
-C
+
 C THIS IS JUST A DUMMY ROUTINE WHICH DOES NOTHING BUT CALL VILINA.
 C THIS ORGANIZATION FACILITATES ADDING SECURITY MARKINGS TO SVDI.
       CALL WPSTIL(X,Y)
-C
+
       RETURN
       END
       SUBROUTINE WPSTLE(ERRNUM,ERRSEV)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VDLOGE           -Log Error.
-C
+
 C R.W.Simons       -08APR81
 C K.M.Erickson     -8OCT84 - add buffer flush
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
 C                   Device-independent.
-C
+
 C ENTRY CONDITIONS -ERRNUM = integer error number.
 C                   ERRSEV = integer error severity.
-C
+
 C CALLS            -CDRTBK, VDBUFL
-C
+
 C EXIT CONDITIONS  -
-C
+
 C NARRATIVE        -Report error with message to user and possibly
 C                   terminate job depending on severity.  Notice that
 C                   by judicious use of the error routines (see VBERRH)
@@ -377,45 +367,44 @@ C                   that, for example, only report the first two
 C                   occurrences of a particular error, or terminate
 C                   if more than 10 errors of a particular severity
 C                   occur.
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
       INTEGER ERRNUM,ERRSEV
-C
+
       INTEGER*4 KWRTFL,KRDFL,KOUTFL,KINFL,KWRDSZ,KBYTEL,KCPW,KBAUD,
      1KCOMTP
       COMMON /CDRCOM/ KWRTFL,KRDFL,KOUTFL,KINFL,KWRDSZ,KBYTEL,KCPW,
      1 KBAUD,KCOMTP
-C
+
 C flush buffer before we do a write
       CALL WPSTFL
-C
+
 C WRITE THE ERROR TO THE LISTING.
       WRITE(KWRTFL,10)ERRNUM,ERRSEV
    10 FORMAT(' SVDI ERROR NUMBER ',I5,'   SEVERITY CODE ',I5)
-C
+
 C TRACEBACK.
       CALL CDRTBK
-C
+
       RETURN
       END
       SUBROUTINE WPSTMO(ISTATE)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VDMONI           -Logs Usage Information..
-C
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
 C                   Device-independent.
-C
+
 C ENTRY CONDITIONS -ISTATE = 0 - initialization
 C                            1 - new page
 C                            2 - terminate
-C
+
 C CALLS            -CDRMON
-C
+
 C EXIT CONDITIONS  -
-C
+
 c NARRATIVE        -For ISTATE=0, job information is initialized, and
 C                   timers are initialized called by VIINIT.
 C                   ISTATE=1 will increment a common block page
@@ -429,17 +418,16 @@ C                   block variable specifying the package being used.
 C                   Entry point VBDEV has an 8 character parameter
 C                   which will set a common block variable specifying
 C                   the device being used.
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
-C
+
       CHARACTER *8 C1,C2,MDEV,MPKG
       INTEGER ISTATE,MPAGES
       SAVE MDEV,MPKG,MPAGES
       DATA MPKG /'        '/
       DATA MDEV /'        '/
       DATA MPAGES /0/
-c
+
       IF(ISTATE.EQ.0) THEN
           CALL CDRELA(0)
       ELSEIF (ISTATE.EQ.1) THEN
@@ -450,7 +438,7 @@ c
       ENDIF
       RETURN
 C Usage Monitoring Information
-c
+
       ENTRY WPSTPK (C1)
       MPKG = C1
       RETURN
@@ -466,106 +454,106 @@ c
       END
       SUBROUTINE WPSTMV(X,Y)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VDMOVA           -Move Absolute.
-C
+
 C R.W.Simons       -08APR81
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
 C                   Device-independent.
-C
+
 C ENTRY CONDITIONS -X,Y = real NDC position.
-C
+
 C CALLS            -VIMOVA
-C
+
 C EXIT CONDITIONS  -
-C
+
 C NARRATIVE        -Set current position to absolute NDC position X,Y.
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
       REAL X,Y
-C
+
 C THIS IS JUST A DUMMY ROUTINE WHICH DOES NOTHING BUT CALL VIMOVA.
 C THIS ORGANIZATION FACILITATES ADDING SECURITY MARKINGS TO SVDI.
       CALL WPSTIM(X,Y)
-C
+
       RETURN
       END
       SUBROUTINE WPSTPG
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VDNWPG           -New Page.
-C
+
 C R.W.Simons       -08APR81
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
 C                   Device-independent.
-C
+
 C ENTRY CONDITIONS -
-C
+
 C CALLS            -VINWPG.
-C
+
 C EXIT CONDITIONS  -
-C
+
 C NARRATIVE        -Physically advance the medium or clear the screen,
 C                   whichever is appropriate.  Also flood the screen
 C                   with the background color on devices that support
 C                   this function. The current position is not changed.
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C THIS IS JUST A DUMMY ROUTINE WHICH DOES NOTHING BUT CALL VINWPG.
 C THIS ORGANIZATION FACILITATES ADDING SECURITY MARKINGS TO SVDI.
       CALL WPSTIG
-C
+
       RETURN
       END
       SUBROUTINE WPSTPT(X,Y)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VDPNTA           -Point Absolute.
-C
+
 C R.W.Simons       -08APR81
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
 C                   Device-independent.
-C
+
 C ENTRY CONDITIONS -X,Y = real NDC position.
-C
+
 C CALLS            -VIPNTA.
-C
+
 C EXIT CONDITIONS  -
-C
+
 C NARRATIVE        -Set current position to absolute NDC position X,Y
 C                   and put a visible point there.  Attributes
 C                   foreground color and intensity apply.
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
       REAL X,Y
-C
+
 C THIS IS JUST A DUMMY ROUTINE WHICH DOES NOTHING BUT CALL VIPNTA.
 C THIS ORGANIZATION FACILITATES ADDING SECURITY MARKINGS TO SVDI.
       CALL WPSTIP(X,Y)
-C
+
       RETURN
       END
       SUBROUTINE WPSTPY(XARRAY,YARRAY,NPTS)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VDPOLY           -POLYGON FILL ROUTINE
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
-C
+
 C ENTRY CONDITIONS -XARRAY-ARRAY OF X VALUES OF THE POLYGON
 C                   YARRAY-CORRESPONDING ARRAY OF Y VALUES
 C                   NPTS- NUMBER OF POINTS IN (XARRAY,YARRAY)
-C
+
 C CALLS            -VIPOLY
-C
+
 C EXIT CONDITIONS  -
-C
+
 C NARRATIVE        -The polygon defined by XARRAY,YARRAY will be drawn
 C                   and filled (constrained by any limitations of the
 C                   physical device -- see below).  No checking will be
@@ -574,11 +562,11 @@ C                   Current foreground color is used and the polygon
 C                   boundary is drawn using the solid line style.
 C                   VDI will close the polygon (i.e. the last point
 C                   will be connected to the first).
-C
+
 C                   The level of support for this primitive is device-
 C                   dependent.  The level of support is categorized
 C                   as follows:
-C
+
 C                     Level 0 -- no polygon fill.  Only the polygon
 C                        boundary is drawn.
 C                     Level 1 -- the device fills convex polygons.
@@ -591,37 +579,37 @@ C                        such that, for each point, when an imaginary line
 C                        is drawn to that point from a point far outside
 C                        the polygon, that line intersects the polygon
 C                        boundary an odd number of times.
-C
+
 C                   Note that the level of support for a particular device
 C                   can be inquired using the function VDIQDC.
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
       INTEGER NPTS
       REAL XARRAY(NPTS),YARRAY(NPTS)
-C
+
 C THIS IS JUST A DUMMY ROUTINE WHICH DOES NOTHING BUT CALL VIPOLY.
 C THIS ORGANIZATION FACILITATES ADDING SECURITY MARKINGS TO SVDI.
       CALL WPST10(XARRAY,YARRAY,NPTS)
-C
+
       RETURN
       END
       SUBROUTINE WPSTOS(ATTARR)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VDSTOS           -Set Output Status (of Attributes).
-C
+
 C K.M. ERICKSON    -14 NOV 80
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
 C                   Device-independent.
-C
+
 C ENTRY CONDITIONS -ATTARR = real array of attribute values.
-C
+
 C CALLS            -VDSTBC,VDSTCS,VDSTFC,VDSTIN,VDSTLS,VDSTLW
-C
+
 C EXIT CONDITIONS  -VECTOR = real updated attribute values (ATTARR).
-C
+
 C NARRATIVE        -Set the attribute values from ATTARR as given below.
 C                   ATTARR(1)=Foreground Color
 C                         (2)=Background Color
@@ -629,14 +617,14 @@ C                         (3)=Intensity
 C                         (4)=Line Style
 C                         (5)=Line Width
 C                         (6)=Character Box Y
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
       REAL ATTARR(6)
-C
+
       REAL VECTOR(7)
       COMMON /WPST03/ VECTOR
-C
+
 C CALL EACH OF THE INDIVIDUAL ATTRIBUTE SETTING ROUTINES.
 C CHECK FOR VALIDITY OF INPUT VALUES WILL BE DONE IN EACH INDIVIDUAL
 C ROUTINE.
@@ -646,56 +634,56 @@ C ROUTINE.
       CALL WPSTLS(INT(ATTARR(4)))
       CALL WPSTLW(ATTARR(5))
       CALL WPSTCS(ATTARR(6))
-C
+
       RETURN
       END
       SUBROUTINE WPSTTR
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VDTERM           -Terminate SVDI.
-C
+
 C R.W.Simons       -08APR81
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
 C                   Device-independent.
-C
+
 C ENTRY CONDITIONS -
-C
+
 C CALLS            -VITERM.
-C
+
 C EXIT CONDITIONS  -
-C
+
 C NARRATIVE        -Terminate the SVDI by flushing buffers, etc.  This
 C                   should be the last SVDI call made.
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C THIS IS JUST A DUMMY ROUTINE WHICH DOES NOTHING BUT CALL VITERM.
 C THIS ORGANIZATION FACILITATES ADDING SECURITY MARKINGS TO SVDI.
       CALL WPSTIT
-C
+
       RETURN
       END
       SUBROUTINE WPSTTX(LENGTH,CHARS)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VDTEXT           -Text from Array.
-C
+
 C R.W.Simons       -08APR81
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
 C                   Device-independent.
-C
+
 C ENTRY CONDITIONS -LENGTH = integer number of characters in CHARS.
 C                   Range 1-136.
 C                   CHARS = integer array of ASCII characters, one
 C                   character per array element, right justified.
 C                   Range 8,10,32-126.
-C
+
 C CALLS            -VITEXT.
-C
+
 C EXIT CONDITIONS  -
-C
+
 C NARRATIVE        -Draw LENGTH characters in CHARS, starting at
 C                   current position and update current position to
 C                   the point after the last character box where the
@@ -708,229 +696,229 @@ C                   output; mapping lower; case to upper case letters is
 C                   considered reasonable.  Attributes foreground color,
 C                   background color, intensity, and  character size
 C                   apply.
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
       INTEGER LENGTH,CHARS(136)
-C
+
 C THIS IS JUST A DUMMY ROUTINE WHICH DOES NOTHING BUT CALL VITEXT.
 C THIS ORGANIZATION FACILITATES ADDING SECURITY NARKINGS TO SVDI.
       CALL WPSTIX(LENGTH,CHARS)
-C
+
       RETURN
       END
       SUBROUTINE WPSTFR(ITYPE)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VDFRAM           - Draw header or trailer frame
-C
+
 C P. Watterberg    - 27 Aug 81
-C
+
 C ENVIRONMENT      -Computer-independent, system-independent, FORTRAN 77
-C
+
 C ENTRY CONDITIONS - ITYPE = 0   for header frame
 C                          = 1   for trailer frame
-C
+
 C CALLS            - VIFRAM
-C
+
 C EXIT CONDITIONS  -
-C
+
 C NARRATIVE        - Calls vifram to get time and date from the
 c                    system via the computer-dependent routine CDRTOD(entry
 c                    point in CDRJOB) and writes it on an identification frame.
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
       INTEGER ITYPE
-C
+
       CALL WPST04(ITYPE)
       RETURN
       END
       SUBROUTINE WPST04(ITYPE)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VIFRAM           - Draw header or trailer frame
-C
+
 C P. Watterberg    - 27 Aug 81
-C
+
 C ENVIRONMENT      -Computer-independent, system-independent, FORTRAN 77
-C
+
 C ENTRY CONDITIONS - ITYPE = 0   for header frame
 C                          = 1   for trailer frame
-C
+
 C CALLS            -
-C
+
 C EXIT CONDITIONS  -
-C
+
 C NARRATIVE        -NULL ROUTINE
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
       INTEGER ITYPE
-C
+
       RETURN
       END
       SUBROUTINE WPSTBU(BTNNUM)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VDAABU           -Await Any Button.
-C
+
 C R.W.Simons       -08APR81
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
 C                   All Batch Devices.
-C
+
 C ENTRY CONDITIONS -
-C
+
 C CALLS            -
-C
+
 C EXIT CONDITIONS  -BTNNUM = integer number of the button pressed.
 C                   Range 1 to a device dependent maximum which must be
 C                   at least 8.
-C
+
 C NARRATIVE        -When a button has been pressed, its integer button
 C                   number is returned in BTNNUM.  This function flushes
 C                   the button buffer, if any.  This function flushes
 C                   the output buffers before doing input.
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
       INTEGER BTNNUM
-C
+
       INTEGER*4 KWRTFL,KRDFL,KOUTFL,KINFL,KWRDSZ,KBYTEL,KCPW,KBAUD,
      1KCOMTP
       COMMON /CDRCOM/ KWRTFL,KRDFL,KOUTFL,KINFL,KWRDSZ,KBYTEL,KCPW,
      1 KBAUD,KCOMTP
-C
+
 C BATCH DEVICES DON'T NEED TO FLUSH BUFFERS.
-C
+
 C READ A RECORD FROM COMPUTER DEPENDENT FILE KINFL IN I5 FORMAT.
       READ(KINFL,10) BTNNUM
    10 FORMAT(I5)
-C
+
 C CHECK FOR VALID BTNNUM.
 C RANGE FOR BATCH DEVICES IS 1-99999.  IF OUT OF RANGE, MAP IT BACK IN:
 C MAPPING (-1)-(-9999) TO 1-9999 AND MAPPING 0 TO 10000.
       IF(BTNNUM.LT.0) BTNNUM=-BTNNUM
       IF(BTNNUM.EQ.0) BTNNUM=10000
-C
+
       RETURN
       END
       SUBROUTINE WPSTBL(BTNNUM,X,Y)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VDABGL           -Await Button, Get Locator.
-C
+
 C R.W.Simons       -08APR81
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
 C                   All Batch Devices.
-C
+
 C ENTRY CONDITIONS -
-C
+
 C CALLS            -
-C
+
 C EXIT CONDITIONS  -BTNNUM = integer number of the button pressed.
 C                   Range 1 to a device dependent maximum that must be
 C                   at least 8.
 C                   X,Y = real NDC position of the locator.
-C
+
 C NARRATIVE        -Wait until a button is hit, then return the number
 C                   of the button in BTNNUM and the NDC value of the
 C                   locator in X,Y.  This function flushes the output
 C                   buffers before doing input.
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
       REAL X,Y
       INTEGER BTNNUM
-C
+
       INTEGER*4 KWRTFL,KRDFL,KOUTFL,KINFL,KWRDSZ,KBYTEL,KCPW,KBAUD,
      1KCOMTP
       COMMON /CDRCOM/ KWRTFL,KRDFL,KOUTFL,KINFL,KWRDSZ,KBYTEL,KCPW,
      1 KBAUD,KCOMTP
-C
+
 C BATCH DEVICES DON'T NEED TO FLUSH BUFFERS.
-C
+
 C READ A RECORD FROM COMPUTER DEPENDENT FILE KINFL IN I5,2F10.7 FORMAT.
       READ(KINFL,10) BTNNUM,X,Y
    10 FORMAT(I5,2F10.7)
-C
+
 C CHECK FOR VALID BTNNUM.
 C RANGE FOR BATCH DEVICES IS 1-99999.  IF OUT OF RANGE, MAP IT BACK IN:
 C MAPPING (-1)-(-9999) TO 1-9999 AND MAPPING 0 TO 10000.
       IF(BTNNUM.LT.0) BTNNUM=-BTNNUM
       IF(BTNNUM.EQ.0) BTNNUM=10000
-C
+
       RETURN
       END
       SUBROUTINE WPSTKL(CHAR,X,Y)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VDAKGL           -Await Keyboard, Get Locator.
-C
+
 C R.W.SIMONS       -02DEC80
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
 C                   All Batch Devices.
-C
+
 C ENTRY CONDITIONS -
-C
+
 C CALLS            -
-C
+
 C EXIT CONDITIONS  -CHAR = integer ASCII character input from the
 C                   keyboard, right-justified, zero fill.  Range 32-126.
 C                   X,Y = real NDC position of the locator.
-C
+
 C NARRATIVE        -Wait until a key is hit, then return the character
 C                   entered in CHAR and the NDC value of the locator
 C                   in X,Y.  If the character entered does not fall in
 C                   the range 32-126, a blank(32) is returned in CHAR.
 C                   This function flushes the output buffers before
 C                   doing input.
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
       REAL X,Y
       INTEGER CHAR
-C
+
       INTEGER IN,CHR
-C
+
       INTEGER*4 KWRTFL,KRDFL,KOUTFL,KINFL,KWRDSZ,KBYTEL,KCPW,KBAUD,
      1KCOMTP
       COMMON /CDRCOM/ KWRTFL,KRDFL,KOUTFL,KINFL,KWRDSZ,KBYTEL,KCPW,
      1 KBAUD,KCOMTP
-C
+
 C BATCH DEVICES DON'T NEED TO FLUSH BUFFERS.
-C
+
 C READ A CHARACTER AND AN X,Y POSITION FROM COMPUTER DEPENDENT FILE
 C KINFL WITH FORMAT A1,2F10.7.
       READ(KINFL,10) CHR,X,Y
    10 FORMAT(A1,2F10.7)
-C
+
 C CONVERT CHARACTER TO INTEGER ASCII AND CHECK FOR VALID RANGE.
       CALL CDR1CH(1,CHR,IN)
       CALL CDRCVT(IN,CHAR)
       IF(CHAR.LT.32.OR.CHAR.GT.126) CHAR=32
-C
+
       RETURN
       END
       SUBROUTINE WPSTLO(X,Y)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VDALOC           -Await Locator.
-C
+
 C R.W.Simons       -08APR81
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
 C                   All Batch Devices.
-C
+
 C ENTRY CONDITIONS -
-C
+
 C CALLS            -
-C
+
 C EXIT CONDITIONS  -X,Y = real NDC position of the locator.
-C
+
 C NARRATIVE        -Wait until the locator is positioned, then return
 C                   the NDC value of the locator in X,Y.  The fact that
 C                   the locator is positioned can be signaled in a
@@ -941,153 +929,153 @@ C                   contained in this signal is ignored by this
 C                   function, as only the locator position is returned.
 C                   This function flushes the output buffers before
 C                   doing input.
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
       REAL X,Y
-C
+
       INTEGER*4 KWRTFL,KRDFL,KOUTFL,KINFL,KWRDSZ,KBYTEL,KCPW,KBAUD,
      1KCOMTP
       COMMON /CDRCOM/ KWRTFL,KRDFL,KOUTFL,KINFL,KWRDSZ,KBYTEL,KCPW,
      1 KBAUD,KCOMTP
-C
+
 C BATCH DEVICES DON'T NEED TO FLUSH BUFFERS.
-C
+
 C READ AN X,Y POSITION FROM COMPUTER DEPENDENT FILE
 C KINFL WITH FORMAT 2F10.7.
       READ(KINFL,10) X,Y
    10 FORMAT(2F10.7)
-C
+
       RETURN
       END
       SUBROUTINE WPSTBE
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VDBELL           -Ring Bell
-C
+
 C R.W.SIMONS       -02DEC80
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
 C                   All Batch Devices.
-C
+
 C ENTRY CONDITIONS -
-C
+
 C CALLS            -
-C
+
 C EXIT CONDITIONS  -
-C
+
 C NARRATIVE        -Ring user's bell to get his attention.  This
 C                   function is ignored by batch devices.
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C THIS FUNCTION IS IGNORED BY BATCH DEVICES.
-C
+
       RETURN
       END
       SUBROUTINE WPSTFL
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VDBUFL           -Buffer Flush.
-C
+
 C R.W.Simons       -19DEC80
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
 C                   All Batch Devices.
-C
+
 C ENTRY CONDITIONS -
-C
+
 C CALLS            -
-C
+
 C EXIT CONDITIONS  -
-C
+
 C NARRATIVE        -Assure that the picture is up-to-date by flushing
 C                   buffers if necessary.  Also prepare the device to
 C                   operate in alphanumeric (as opposed to graphic)
 C                   mode.  This is necessary on some devices so that
 C                   alphanumeric data from FORTRAN I/O won't be
 C                   misinterpreted as graphic data.
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C THIS FUNCTION IS IGNORED BY BATCH DEVICES.
-C
+
       RETURN
       END
       SUBROUTINE WPSTLA(LOCX,LOCY)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VDSTLA           -Set Initial Locator Position.
-C
+
 C R.W.Simons       -08APR81
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
 C                   All Batch Devices.
-C
+
 C ENTRY CONDITIONS -LOCX,LOCY = real NDC position that the locator is
 C                   initilaized to.
-C
+
 C CALLS            -
-C
+
 C EXIT CONDITIONS  -
-C
+
 C NARRATIVE        -Set the initial locator position (light pen tracking
 C                   cross, for example) each time this function is
 C                   called.
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
       REAL LOCX,LOCY
-C
+
 C BATCH DEVICES IGNORE THIS FUNCTION.
-C
+
       RETURN
       END
       SUBROUTINE WPSTWT
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VDWAIT           -Wait for User.
-C
+
 C R.W.SIMONS       -02DEC80
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
 C                   All Batch Devices.
-C
+
 C ENTRY CONDITIONS -
-C
+
 C CALLS            -
-C
+
 C EXIT CONDITIONS  -
-C
+
 C NARRATIVE        -Wait for the user to view the screen and signal he
 C                   is done, normally by hitting any key.  This function
 C                   flushes the output buffers before doing input.
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C BATCH DEVICES IGNORE THIS COMMAND.
-C
+
       RETURN
       END
       SUBROUTINE WPSTIC(NUM,INDEX,CLRARY,CLRMOD)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VDIQCO           -Inquire Color Table.
-C
+
 C R.W.Simons       -08APR81
 C H. S. LAUSON      29MAY86 - changed for current HLS interpretation
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
 C                   All Black and White Devices. (LXY, HC1, ALP)
-C
+
 C ENTRY CONDITIONS -NUM = integer number of color indexes to inquire.
 C                   Range 1-256.
 C                   INDEX = integer array of indexes to inquire.  Range
 C                   0-255.
 C                   CLRMOD = integer color model to be used.  Range 0,1.
-C
+
 C CALLS            -VBERRH
-C
+
 C EXIT CONDITIONS  -CLRARY = real array of 3 by NUM elements returning
 C                   the values of the components of the indexes inquired.
 C                   Range for RGB: red 0.0-1.0
@@ -1096,7 +1084,7 @@ C                                  blue 0.0-1.0
 C                   Range for HLS: hue 0.0-360.0
 C                                  lightness 0.0-1.0
 C                                  saturation 0.0-1.0
-C
+
 C NARRATIVE        -Inquire one or more color table entries.  NUM and
 C                   INDEX specify how many and which indexes are being
 C                   inquired.  CLRMOD specifies which color model
@@ -1105,24 +1093,24 @@ C                   to return in CLRARY.  A device which does not
 C                   support a color table index specified will
 C                   return -1.0 in the first element of the CLRARY value
 C                   for that index.
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
       INTEGER NUM,INDEX(NUM),CLRMOD
       REAL CLRARY(3,NUM)
-C
+
 C CHECK FOR VALID NUM.
       IF(NUM.LT.1.OR.NUM.GT.256) THEN
          CALL WPSTER(723,5)
          GOTO 999
       END IF
-C
+
 C CHECK FOR VALID CLRMOD.
       IF(CLRMOD.NE.0.AND.CLRMOD.NE.1) THEN
          CALL WPSTER(725,5)
          GOTO 999
       END IF
-C
+
 C CHECK FOR VALID INDEXES.
       DO 100 I=1,NUM
          INDEXN=INDEX(I)
@@ -1154,57 +1142,57 @@ C NO OTHER INDEXES ARE SUPPORTED.
             CLRARY(1,I)=-1.0
          END IF
   100 CONTINUE
-C
+
   999 RETURN
       END
       SUBROUTINE WPSTCP(X,Y)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VDIQCP           -Inquire Where Current Position Is.
-C
+
 C R.W.Simons       -02DEC80
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
 C                   All Devices that support a software CP.
 C                   (AP5,GER,H50,HC1,HCB,HPP,I10,I30,LXY,QCR,QMS,XYN)
-C
+
 C ENTRY CONDITIONS -
-C
+
 C CALLS            -
-C
+
 C EXIT CONDITIONS  -X,Y = real NDC position.
-C
+
 C NARRATIVE        -Return the value of current position.
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
       REAL XCP,YCP
       COMMON /WPST05/ XCP,YCP
-C
+
 C ASSIGN THE CP TO X,Y.
       X=XCP
       Y=YCP
-C
+
       RETURN
       END
       SUBROUTINE WPSTBC(COLOR)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VDSTBC           -Set Background Color.
-C
+
 C R.W.Simons       -05DEC80
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
 C                   All Devices with a constant white background. (LXY,
 C                   HC1, ALP)
-C
+
 C ENTRY CONDITIONS -COLOR = integer color table index. Range 0-255.
 C                   Default: device dependent, in range 0-7.
-C
+
 C CALLS            -VBERRH
-C
+
 C EXIT CONDITIONS  -VECTOR(2) = real updated background color (COLOR).
-C
+
 C NARRATIVE        -Set the background color for following VDNWPG or
 C                   TEXT primitives for devices supporting these
 C                   features.  For example, many raster devices support
@@ -1215,35 +1203,35 @@ C                   All devices must support at least a single device
 C                   dependent value in the range 0-7.
 C                   If an unsupported value is specified, set to
 C                   default.
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
       INTEGER COLOR
-C
+
       REAL VECTOR(7)
       COMMON /WPST03/ VECTOR
-C
+
 C CHECK FOR VALID COLOR.
       IF(COLOR.LT.0.OR.COLOR.GT.255) THEN
          CALL WPSTER(724,5)
          GOTO 999
       END IF
-C
+
 C ONLY THE SINGLE BACKGROUND COLOR 7 (WHITE) IS SUPPORTED,
 C SO NO ACTION IS NECESSARY.
-C
+
   999 RETURN
       END
       SUBROUTINE WPSTCO(NUM,INDEX,CLRARY,CLRMOD)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VDSTCO           -Set Color Table.
-C
+
 C R.W.SIMONS       -02DEC80
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
 C                   All Black and White Devices. (LXY, HC1, ALP)
-C
+
 C ENTRY CONDITIONS -NUM = integer number of color indexes to be set.
 C                   Range 1-256.
 C                   INDEX = integer array of indexes to be set.  Range
@@ -1269,11 +1257,11 @@ C                     6    cyan    0.,1.,1.
 C                     7    white   1.,1.,1.
 C                   CLRMOD = integer color model being used.  Range 0,1.
 C                   Default: 0 (RGB).
-C
+
 C CALLS            -VBERRH
-C
+
 C EXIT CONDITIONS  -
-C
+
 C NARRATIVE        -Set one or more color table entries.  This is a
 C                   dynamic setting, if the device will support it.
 C                   "Dynamic" neans that primitives which have already
@@ -1296,24 +1284,24 @@ C                   models.
 C                   All devices must support at least a single device
 C                   dependent INDEX value in the range 0-7.  If an
 C                   unsupported value is specified, it should be ignored.
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
       INTEGER NUM,INDEX(NUM),CLRMOD
       REAL CLRARY(3,NUM)
-C
+
 C CHECK FOR VALID NUM.
       IF(NUM.LT.1.OR.NUM.GT.256) THEN
          CALL WPSTER(723,5)
          GOTO 999
       END IF
-C
+
 C CHECK FOR VALID CLRMOD.
       IF(CLRMOD.NE.0.AND.CLRMOD.NE.1) THEN
          CALL WPSTER(725,5)
          GOTO 999
       END IF
-C
+
 C CHECK FOR VALID INDEXES.
       DO 100 I=1,NUM
          INDEXN=INDEX(I)
@@ -1332,7 +1320,7 @@ C CHECK FOR VALID CLRARY.
                CALL WPSTER(727,5)
                GOTO 100
             END IF
-C
+
 C ONLY TWO INDEXES ARE SUPPORTED:
 C    0 WHICH IS THE DEFAULT FOREGROUND COLOR AND MUST ALWAYS REMAIN
 C      BLACK (0.0, 0.0, 0.0)
@@ -1346,7 +1334,7 @@ C THEREFORE, NO ACTION IS NECESSARY.
                CALL WPSTER(727,5)
                GOTO 100
             END IF
-C
+
 C ONLY TWO INDEXES ARE SUPPORTED:
 C    0 WHICH IS THE DEFAULT FOREGROUND COLOR AND MUST ALWAYS REMAIN
 C      BLACK (0.0, 0.0, 0.0)
@@ -1355,27 +1343,27 @@ C      WHITE (1.0, 1.0, 1.0)
 C THEREFORE, NO ACTION IS NECESSARY.
          END IF
   100 CONTINUE
-C
+
   999 RETURN
       END
       SUBROUTINE WPSTFC(COLOR)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VDSTFC           -Set Foreground Color.
-C
+
 C R.W.Simons       -05DEC80
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
 C                   All Devices with a constant black foreground. (LXY,
 C                   HC1)
-C
+
 C ENTRY CONDITIONS -COLOR = integer color table index . Range 0-255.
 C                   Default is device dependent, in range 0-7.
-C
+
 C CALLS            -VBERRH
-C
+
 C EXIT CONDITIONS  -VECTOR(1) = real updated foreground color (COLOR).
-C
+
 C NARRATIVE        -Set the foreground color index, i.e., the color
 C                   table index used for drawing future primitives.
 C                   Color is an integer from 0-255 which is used as an
@@ -1384,42 +1372,42 @@ C                   All devices must support at least a single device
 C                   dependent value in the range 0-7.
 C                   If an unsupported value is specified, set to
 C                   default.
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
       INTEGER COLOR
-C
+
       REAL VECTOR(7)
       COMMON /WPST03/ VECTOR
-C
+
 C CHECK FOR VALID COLOR.
       IF(COLOR.LT.0.OR.COLOR.GT.255) THEN
          CALL WPSTER(724,5)
          GOTO 999
       END IF
-C
+
 C ONLY THE SINGLE FOREGROUND COLOR 0 (BLACK) IS SUPPORTED,
 C SO NO ACTION IS NECESSARY.
-C
+
   999 RETURN
       END
       SUBROUTINE WPSTIN(INTEN)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VDSTIN           -Set Intensity.
-C
+
 C R.W.Simons       -05DEC80
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
 C                   All Single Intensity Devices. (LXY, HC1)
-C
+
 C ENTRY CONDITIONS -INTEN = real intensity of the image of an output
 C                   primitive.  Range 0.-1.  Default: device dependent.
-C
+
 C CALLS            -
-C
+
 C EXIT CONDITIONS  -VECTOR(3) = real updated intensity (INTEN).
-C
+
 C NARRATIVE        -Set the intensity value indicated for future
 C                   primitives.  Intensity is a real value between 0
 C                   (not visible) and 1 (maximum).  Intensities are
@@ -1427,39 +1415,39 @@ C                   monotonically increasing within this range.
 C                   All devices must support at least a single value:
 C                   1.0.  If an unsupported value is specified, set to
 C                   the closest supported intensity.
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
       REAL INTEN
-C
+
       REAL VECTOR(7)
       COMMON /WPST03/ VECTOR
-C
+
 C CHECK FOR VALID INTEN.
       IF(INTEN.LT.0.0.OR.INTEN.GT.1.0) THEN
          CALL WPSTER(401,5)
          GOTO 999
       END IF
-C
+
 C ONLY THE SINGLE INTENSITY 1.0 (MAXIMUM) IS SUPPORTED,
 C SO NO ACTION IS NECESSARY.
-C
+
   999 RETURN
       END
       SUBROUTINE WPSTDC(INDEX,VALUE)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VDIQDC           -Inquire Device Capabilities.
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
-C
+
 C ENTRY CONDITIONS -INDEX = integer capability number.  Range 1-33.
-C
+
 C CALLS            -
-C
+
 C EXIT CONDITIONS  -VALUE = real value of the capability indicated by
 C                   INDEX.
-C
+
 C NARRATIVE        -Return values of various device capabilities.  INDEX
 C                   is the integer capability number (as given below),
 C                   and the real value is returned in VALUE.
@@ -1593,9 +1581,9 @@ C        1.  color
 C    33. Device pixel aspect - the ratio of the spacing of device
 C            pixels in x divided by the spacing in y (1 for square
 C            pixels)
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
       INTEGER INDEX
       REAL VALUE
 C ESCAPE FLAGS
@@ -1603,7 +1591,7 @@ C PATNO AND BORDER USED BY VIPOLY FOR FILL PATTERN AND BORDER ON/OFF;
 C DEFAULT; COMPLETE FILL WITH BORDER. PLC.
       COMMON /WPST06/ PGFORM,PATNO,BORDER
       INTEGER PGFORM,PATNO,BORDER
-C
+
 C INITIALIZE THE DEVICE CAPABILITIES VECTOR.
       COMMON /WPST07/DEV
       REAL DEV(33)
@@ -1640,41 +1628,41 @@ C INITIALIZE THE DEVICE CAPABILITIES VECTOR.
       DEV(31) = 750.
       DEV(32) = 0.
       DEV(33) = 1.
-C
+
 C CHECK FOR VALID INDEX.
       IF(INDEX.LT.1.OR.INDEX.GT.33) THEN
          CALL WPSTER(726,5)
          GOTO 999
       END IF
-C
+
 C RETURN INDEXED VALUE.
       VALUE=DEV(INDEX)
-C
+
   999 RETURN
       END
       SUBROUTINE WPSTII(ASPECT,JUSTIF)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VIINIT           -Initialize SVDI.  postscript device
-C
+
 C D.L. CAMPBELL    -1-DEC-1986
 C J.P. LONG        -9-NOV-1987
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
 C                   (postscript)
-C
+
 C ENTRY CONDITIONS -ASPECT = real ratio of X dimension to Y dimension.
 C                   Range >0.0.  Default: 0. (device dependent).
 C                   JUSTIF = integer justification of NDC space on the
 C                   device.  Range 0-9.  Default: 0 (device dependent.)
-C
+
 C CALLS            -VBERRH,VDSTCS,VDSTLW,VIMOVA
-C
+
 C EXIT CONDITIONS  -XNDCMX,YNDCMX = real NDC maximum valid values(as
 C                   constrained by ASPECT).
 C                   VECTOR = real array of attribute values(all device
 C                   dependent except VECTOR(4)=0.0).
-C
+
 C NARRATIVE        -This must be the first SVDI call made.  All
 C                   attribute values, the color table, and current
 C                   position are set to appropriate defaults for the
@@ -1682,7 +1670,7 @@ C                   device.  All necessary input device initialization
 C                   is done.  The screen is cleared or paper advanced
 C                   if necessary to guarantee a blank view surface for
 C                   drawing on.
-C
+
 C                   ASPECT specifies the ratio of the X dimension to the
 C                   Y dimension .  Maximum NDC values (at least one of
 C                   which will be 1.0) are computed to give the ASPECT
@@ -1693,7 +1681,7 @@ C                   (such as drum plotters) which are assigned a default
 C                   aspect of 1.0.  The NDC rectangle is scaled until
 C                   one dimension fills the corresponding dimension of
 C                   the device.
-C
+
 C                   JUSTIF determines where the rectangle is located on
 C                   the device as diagrammed below:
 C                            ---------
@@ -1703,12 +1691,12 @@ C                           | 1  2  3 |
 C                            ---------
 C                   For example, JUSTIF = 7 indicates NDC space will be
 C                   upper left justified on the device.
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
       REAL ASPECT
       INTEGER JUSTIF
-C
+
       REAL XNDCMX,YNDCMX
       COMMON /WPST02/ XNDCMX,YNDCMX
       REAL VECTOR(7)
@@ -1731,7 +1719,7 @@ C
       INTEGER*4 KJROUT(4),KSECUR,KJTIME(4),KJDATE(4)
       COMMON / VCJOB/ KIDSIZ,KJOBID,KUSRSZ,KUSRID,KSZROU,
      1               KJROUT,KSECUR,KJTIME,KJDATE,MACHIN,MACLEN
-C
+
       COMMON /WPST07/ DEV
       REAL DEV(33)
 C ESCAPE FLAGS
@@ -1740,8 +1728,7 @@ C DEFAULT; COMPLETE FILL WITH BORDER. PLC.
       COMMON /WPST06/ PGFORM,PATNO,BORDER
       INTEGER PGFORM,PATNO,BORDER
       CHARACTER XCOORD*5,YCOORD*5
-C
-C
+
 C SET DEFAULT ATTRIBUTE VALUES.  ALL ARE DEVICE DEPENDENT EXCEPT
 C VECTOR(4)=0.0.
 C     VECTOR(1)=FOREGROUND COLOR - BLACK
@@ -1751,8 +1738,7 @@ C           (4)=LINE STYLE       - SOLID
 C           (5)=LINE WIDTH       - ABOUT 1/72 INCHES
 C           (6)=CHARACTER BOX Y  - ABOUT 1/10 INCHES
 C           (7)=CHARACTER BOX X  - 5/7 OF BOX-Y
-C
-C
+
       IVECT=0
       VECTOR(1) = 0.
       VECTOR(2) = 7.
@@ -1769,21 +1755,21 @@ C
 C PROTECT INPUT PARAMETERS FROM BEING CHANGED.
       ASPEC1=ASPECT
       JUSTI1=JUSTIF
-C
+
 C CHECK FOR VALID ASPECT.  IF(ASPECT.LT.0.0) THEN CALL VBERRH(721,5),
 C AND USE DEFAULT ASPECT.
       IF(ASPECT.LT.0.0) THEN
          CALL WPSTER(721,5)
          ASPEC1=0.0
       END IF
-C
+
 C CHECK FOR VALID JUSTIF.  IF(JUSTIF.LT.0 .OR. JUSTIF.GT.9) THEN
 C CALL VBERRH(720,5), AND USE DEFAULT JUSTIF.
       IF(JUSTIF.LT.0.OR.JUSTIF.GT.9) THEN
          CALL WPSTER(720,5)
          JUSTI1=0
       END IF
-C
+
 C SCALE NDC UNITS TO DEVICE UNITS.
 C FOR QMS, THE PHYSICAL PLOT SURFACE IS XINCH X YINCH (10.x7.5).
 C    DEVICE COORDINATES ARE KEPT IN 1/723 INCH TO GAIN SIMPLICITY
@@ -1810,13 +1796,13 @@ C                                     THEN SWITCH THINGS AROUND
       XUNITS=XINCH*723.
       YUNITS=YINCH*723.
       DASPEC=XUNITS/YUNITS
-C
+
 C DEFAULT ASPECT = 1., DEFAULT JUSTIF = 1.
       IF(ASPEC1.EQ.0.) ASPEC1=DASPEC
       IF(JUSTI1.EQ.0) JUSTI1=1
-C
+
       IF(ASPEC1.GE.DASPEC) THEN
-C
+
 C THEN X DIMENSION IS FILLED.
          XDEVIC=XUNITS
          YDEVIC=XUNITS/ASPEC1
@@ -1830,7 +1816,7 @@ C FIGURE HOW MUCH Y PADDING IS NEEDED.
             YPAD=YUNITS-YDEVIC
          END IF
       ELSE
-C
+
 C ELSE Y DIMENSION IS FILLED.
          XDEVIC=YUNITS*ASPEC1
          YDEVIC=YUNITS
@@ -1844,7 +1830,7 @@ C FIGURE HOW MUCH X PADDING IS NEEDED.
             XPAD=0
          END IF
       END IF
-C
+
 C FIGURE MAXIMUM NDC VALUES XNDCMX AND YNDCMX.
       IF(ASPEC1.GE.DASPEC) THEN
          XNDCMX=AMIN1(1.,ASPEC1)
@@ -1853,7 +1839,7 @@ C FIGURE MAXIMUM NDC VALUES XNDCMX AND YNDCMX.
          XNDCMX=ASPEC1
          YNDCMX=1.
       END IF
-C
+
 C SET SCALE FACTORS FOR NDC-TO-DEVICE MAPPING.
       XSCALE=DBLE(XDEVIC)/XNDCMX
       YSCALE=DBLE(YDEVIC)/YNDCMX
@@ -1864,14 +1850,14 @@ C SET SCALE FACTORS FOR NDC-TO-DEVICE MAPPING.
          XPAD = XPAD+280.
          YPAD = YPAD-180.
       ENDIF
-C
+
 C  SET UP MONITORING INFORMATION
       CALL WPSTDV('C PST   ')
       CALL WPSTMO(0)
-C
+
 C OPEN OUTPUT FILE
       CALL WPSTOF(KOUTFL)
-C
+
 C INITIALIZE THE QMS PS JET
       CALL WPST15(2,'%!')
       CALL WPST15(1,CHAR(13))
@@ -1904,7 +1890,7 @@ C                                       SET PAGE FORMAT (LANDSCAPE/PORTRAIT)
 c        define the postscript current position
       CALL WPST15(35,'/p {showpage} def 1 setlinecap v o ')
       CALL WPST13(0,XCP,YCP)
-C
+
 C INIT LINE WIDTH,CHARACTER SIZE
       CALL WPSTLW(VECTOR(5))
       CALL WPSTCS(VECTOR(6))
@@ -1912,29 +1898,29 @@ C INIT LINE WIDTH,CHARACTER SIZE
       END
       SUBROUTINE WPSTIT
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VITERM           -TERMINATE.
-C
+
 C D.L. CAMPBELL    -1-DEC-1986
 C J.P. LONG        -9-NOV-1987
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
-C
+
 C ENTRY CONDITIONS -
-C
+
 C CALLS            -
-C
+
 C EXIT CONDITIONS  -
-C
+
 C NARRATIVE        -Terminate graphics device.  Close output file.
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
       INTEGER*4 KWRTFL,KRDFL,KOUTFL,KINFL,KWRDSZ,KBYTEL,KCPW,KBAUD,
      1KCOMTP
       COMMON /CDRCOM/ KWRTFL,KRDFL,KOUTFL,KINFL,KWRDSZ,KBYTEL,KCPW,
      1 KBAUD,KCOMTP
-c
+
 c  put out the last page and restore postscript environment so
 c                            nothing is left on the stack
       CALL WPSTIG
@@ -1944,78 +1930,77 @@ C FLUSH BUFFER
 C CLOSE OUTPUT FILE
       CALL WPSTCF(KOUTFL,1)
       CALL WPSTMO(2)
-C
+
       RETURN
       END
       SUBROUTINE WPSTIM(X,Y)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VIMOVA           -Move Absolute.
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
-C
+
 C ENTRY CONDITIONS -X,Y = real NDC position.
-C
+
 C CALLS            -
-C
+
 C EXIT CONDITIONS  -XCP,YCP = real updated current position. (X,Y)
-C
+
 C NARRATIVE        -Set current position to absolute NDC position X,Y.
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
       REAL X,Y
-C
-C
+
 C move
       CALL WPST13(0,X,Y)
-c
+
       RETURN
       END
       SUBROUTINE WPSTIP(X,Y)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VIPNTA           -Point Absolute.
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
-C
+
 C ENTRY CONDITIONS -X,Y = real NDC position.
-C
+
 C CALLS            -VIMOVA,VILINA
-C
+
 C EXIT CONDITIONS  -
-C
+
 C NARRATIVE        -Set current position to absolute NDC position X,Y
 C                   and put a visible point there.  Attributes
 C                   foreground color and intensity apply.
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
       REAL X,Y
-C
+
       CALL WPSTIM(X,Y)
       CALL WPSTIL(X,Y)
-C
+
       RETURN
       END
       SUBROUTINE WPST10(XARRAY,YARRAY,NPTS)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VIPOLY           -POLYGON FILL ROUTINE
-C
+
 C D.L. CAMPBELL    -1-DEC-1986
 C J.P. LONG        -9-NOV-1987
-C
+
 C ENVIRONMENT      -Fortran77, QMS
-C
+
 C ENTRY CONDITIONS -XARRAY-ARRAY OF X VALUES OF THE POLYGON
 C                   YARRAY-CORRESPONDING ARRAY OF Y VALUES
 C                   NPTS- NUMBER OF POINTS IN (XARRAY,YARRAY)
-C
+
 C CALLS            -
-C
+
 C EXIT CONDITIONS  -
-C
+
 C NARRATIVE        -The polygon defined by XARRAY,YARRAY will be drawn
 C                   and filled (constrained by any limitations of the
 C                   physical device -- see below).  No checking will be
@@ -2024,11 +2009,11 @@ C                   Current foreground color is used and the polygon
 C                   boundary is drawn using the solid line style.
 C                   VDI will close the polygon (i.e. the last point
 C                   will be connected to the first).
-C
+
 C                   The level of support for this primitive is device-
 C                   dependent.  The level of support is categorized
 C                   as follows:
-C
+
 C                     Level 0 -- no polygon fill.  Only the polygon
 C                        boundary is drawn.
 C                     Level 1 -- the device fills convex polygons.
@@ -2041,18 +2026,18 @@ C                        such that, for each point, when an imaginary line
 C                        is drawn to that point from a point far outside
 C                        the polygon, that line intersects the polygon
 C                        boundary an odd number of times.
-C
+
 C                   Note that the level of support for a particular device
 C                   can be inquired using the function VDIQDC.
-C
+
 ********************************************************************************
-C
+
 C                   The level for this device is level 2.
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
       REAL XARRAY(NPTS),YARRAY(NPTS)
-C
+
 c ESCAPE FLAGS
 C PATNO AND BORDER USED BY VIPOLY FOR PATTERN FILL AND BORDER ON/OFF. DEFAULT
 C COMPLETE FILL AND BORDER ON
@@ -2063,38 +2048,38 @@ C COMPLETE FILL AND BORDER ON
       COMMON /WPST11/ IVECT,COORD
       CHARACTER COORD*20
       INTEGER IVECT
-c
+
 C CHECK FOR VALID N
       IF (NPTS.LT.1 .OR. NPTS.GT.1490) THEN
          CALL WPSTER(802,5)
          GO TO 999
       END IF
-C
+
 C IF A SET OF VECTORS WAS IN PROCESS, ISSUE STROKE COMMAND TO DRAW THEM
 C Start a new path.
-C
+
       CALL WPST15(2,'s ')
       IVECT=0
-C
+
       CALL WPST15(2,'r ')
       CALL WPST15(0,' ')
       CALL WPST15(4,'v o ')
       CALL WPSTLW(VECTOR(5))
       CALL WPSTCS(VECTOR(6))
-C
+
 C DRAW POLYGON VECTORS
-C
+
 C MOVE TO FIRST POINT
       CALL WPSTMV(XARRAY(1),YARRAY(1))
-C
+
 C CALL VDLINA TO DRAW POINTS FROM 1ST POINT TO NTH POINT
       DO 100 I=2,NPTS
         CALL WPSTLN(XARRAY(I),YARRAY(I))
 100   CONTINUE
-C
+
 C THEN DRAW A LINE TO THE FIRST POINT TO CLOSE THE POLYGON
       CALL WPSTLN(XARRAY(1),YARRAY(1))
-c
+
 C CLOSE THE POLYGON, GRAPHICS SAVE, FILL IT, GRAPHICS RESTORE, STROKE
 C    TO PROVIDE THE SAME FILLED AREA AS IF IT WERE FILLED WITH VECTORS
 C    THEN RESTORE AND SAVE POSTSCRIPT ENVIRONMENT TO AVOID INPUT BUFFER OVERFLOW
@@ -2103,82 +2088,82 @@ C    THEN RESTORE AND SAVE POSTSCRIPT ENVIRONMENT TO AVOID INPUT BUFFER OVERFLOW
       CALL WPST15(4,'v o ')
       CALL WPSTLW(VECTOR(5))
       CALL WPSTCS(VECTOR(6))
-C
+
 C INIT THE CURRENT POSITION WITHIN POSTSCRIPT
       CALL WPSTMV(XARRAY(NPTS),YARRAY(NPTS))
       IVECT=0
-C
+
 999   RETURN
       END
       SUBROUTINE WPSTIG
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VINWPG           -New Page.
-C
+
 C D.L. CAMPBELL    -1-DEC-1986
 C J.P. LONG        -9-NOV-1987
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
-C
+
 C ENTRY CONDITIONS -
-C
+
 C CALLS            -
-C
+
 C EXIT CONDITIONS  -
-C
+
 C NARRATIVE        -Physically advance the medium or clear the screen,
 C                   whichever is appropriate.  Also flood the screen
 C                   with the background color on devices that support
 C                   this.  The current position is not changed.
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
       COMMON /WPST11/ IVECT,COORD
       CHARACTER COORD*20
       INTEGER IVECT
       REAL VECTOR(7)
       COMMON /WPST03/ VECTOR
-C
+
 c  stroke the path in case there are any vector and show text
          CALL WPST15(2,'s ')
          IVECT=0
-c
+
 c   showpage and restore postscript environment to avoid buffer overflow
 c            flush buffer because save and restore won't work back-to-back
-c
+
       CALL WPST15(4,'p r ')
       CALL WPST15(0,' ')
       CALL WPST15(4,'v o ')
       CALL WPSTLW(VECTOR(5))
       CALL WPSTCS(VECTOR(6))
       CALL WPSTMO(1)
-C
+
       RETURN
       END
       SUBROUTINE WPSTES(ESCPCD,N,ARGS)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VDESCP           -Escape Code Routine.
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
-C
+
 C ENTRY CONDITIONS -ESCPCD = integer escape function code.
 C                   N = integer number of arguments in ARG.  RANGE >=0.
 C                   ARGS = real array of arguments for the escape
 C                   function specified.
-C
+
 C CALLS            -
-C
+
 C EXIT CONDITIONS  -
-C
+
 C NARRATIVE        -Invoke the nonstandard, device-dependent function
 C                   ESCPCD.  N is the number of arguments used by this
 C                   function and ARGS is a real array containing those
 C                   arguments.  Unsupported values of ESCPCD are
 C                   ignored, not causing an error.
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-c
+
       INTEGER ESCPCD,N
       REAL ARGS(*)
       INTEGER*4 KWRTFL,KRDFL,KOUTFL,KINFL,KWRDSZ,KBYTEL,KCPW,KBAUD,
@@ -2189,19 +2174,18 @@ c
       COMMON /WPST08/ XSCALE,YSCALE
       INTEGER XPAD,YPAD,XDEVIC,YDEVIC
       COMMON /WPST09/ XPAD,YPAD,XDEVIC,YDEVIC
-c
+
 C USED BY VIPOLY FOR PATTERN FILL AND BORDER ON/OFF. DEFAULT COMPLETE FILL
 C AND BORDER ON. PLC.
       COMMON/WPST06/PGFORM,PATNO,BORDER
       INTEGER PGFORM,PATNO,BORDER
-C
+
 C CHECK FOR VALID N.
       IF(N.LT.0) THEN
          CALL WPSTER(802,5)
          GOTO 999
       END IF
-c
-C
+
 C 2100 - PAGE FORMAT (0=LANDSCAPE,1=PORTRAIT)
       IF (ESCPCD.EQ.2100) THEN
          IF (ARGS(1).EQ.0) THEN
@@ -2210,55 +2194,52 @@ C 2100 - PAGE FORMAT (0=LANDSCAPE,1=PORTRAIT)
             PGFORM=1
          ENDIF
       ENDIF
-C
+
  999  RETURN
       END
       SUBROUTINE WPSTIL (X,Y)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VILINA
-C
+
 C D.L. CAMPBELL    -1-DEC-1986
 C J.P. LONG        -9-NOV-1987
-C
+
 C ENVIRONMENT      -DEVICE DEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
-C
+
 C ENTRY CONDITIONS -X,Y REAL NDC COORDINATES
-C
+
 C CALLS            -
-C
+
 C EXIT CONDITIONS  -CURRENT POSITION IS SET
-C
-C
+
 C NARRATIVE
 C                   LINE-DRAW A LINE FROM CP TO ABSOLUTE NDC POSITION X,Y
 C                        AND UPDATE CP . ATTRIBUTES COLOR,INTEN,LINSTY AND
 C                        LINWTH APPLY.
-C
-C
+
 C        OTHER VARIABLES:
 C                    XCP,YCP-NDC COORDINATES
 C***************************************************************************
-C
+
       REAL X,Y
-C
+
 C draw
       ENTRY WPST12(X,Y)
       CALL WPST13(1,X,Y)
-c
+
       RETURN
       END
-c
-c
+
       SUBROUTINE WPST13(IPEN,X,Y)
 c****************************************************
 c vbvect - do move or draw to x,y (depending on ipen)
-c
+
 c     ipen = 0 for move, 1 for draw
 c     x,y = NDC coordinates to be moved/drawn to
-c
+
 c******************************************************
-c
+
       REAL X,Y,XOFF,YOFF
       CHARACTER CTEMP*20,XCOORD*5,YCOORD*5
       REAL XSCALE,YSCALE
@@ -2272,15 +2253,15 @@ c
       COMMON /WPST11/ IVECT,COORD
       CHARACTER COORD*20
       INTEGER IVECT
-c
+
 c compute new point in dev. coord.
 c     convert to floating offsets
       XOFF=XPAD
       YOFF=YPAD
-c
+
       IXDC=X*XSCALE+XOFF
       IYDC=Y*YSCALE+YOFF
-c
+
 c        write(xcoord,'(i5)')ixdc
 c        write(ycoord,'(i5)')iydc
 c                                ...include both x,y
@@ -2288,7 +2269,7 @@ c                                ...include both x,y
       CALL CDRI2C(IYDC,4,YCOORD)
       COORD = XCOORD(1:3)//'.'//XCOORD(4:4)//' '//
      1 YCOORD(1:3)//'.'//YCOORD(4:4)
-c
+
 c pack up move/draw command, send it down
       IF (IPEN.EQ.0) THEN
          CTEMP= COORD(1:11) // ' m '
@@ -2298,7 +2279,7 @@ c pack up move/draw command, send it down
       CALL WPST15(14,CTEMP)
 c                          ...count the coordinate pair
       IVECT=IVECT+1
-c
+
 c  stroke the path if we are approaching the 1500-coord pair limit
 c                also restore and save postscript environment to avoid
 c                input buffer overflow (must have a c/r between restore
@@ -2312,34 +2293,34 @@ c        ...reset the vector count - vdstls (called by vdstlw)
 c                 reinitted the current posn
          IVECT=1
       ENDIF
-c
+
 C UPDATE CURRENT POSITION
       XCP=X
       YCP=Y
-C
+
       RETURN
       END
       SUBROUTINE WPSTIX(LENGT1,CHARS)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VITEXT           - Text from Array.
-C
+
 C P. Watterberg    - 24 MAR 81
 C J. P. LONG       -  3 DEC 87
-C
+
 C ENVIRONMENT      - COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
-C
+
 C ENTRY CONDITIONS - LENGT1 = integer number of characters in CHARS.
 C                    Range 1-136.
 C                    CHARS = integer array of ASCII characters, one
 C                    character per array element, right justified.
 C                    Range 8,10,32-126.
-C
+
 C CALLS            - vbout
-C
+
 C EXIT CONDITIONS  - XCP,YCP = integer updated current position (at the end
 C                    of the string).
-C
+
 C NARRATIVE        - Draw LENGT1 characters in CHARS, starting at
 C                    current position and update current position to
 C                    the point after the last character box where the
@@ -2352,11 +2333,11 @@ C                    output; mapping lower; case to upper case letters is
 C                    considered reasonable.  Attributes foreground color,
 C                    background color, intensity, and character size
 C                    apply.
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
       INTEGER LENGT1, CHARS(136), LENGTH
-C
+
       INTEGER XPAD,YPAD,XDEVIC,YDEVIC
       COMMON /WPST09/ XPAD,YPAD,XDEVIC,YDEVIC
       CHARACTER CTEMP*150,STR*3
@@ -2366,39 +2347,39 @@ C
       COMMON /WPST03/ VECTOR
       REAL XSCALE,YSCALE
       COMMON /WPST08/ XSCALE,YSCALE
-c
+
 c          check for valid length.
-c
+
       LENGTH = LENGT1
       IF(LENGTH.LT.1) THEN
          CALL WPSTER(212,5)
          GO TO 999
       END IF
-c
+
 c          if(length.gt.136) then call vberrh(213,5), and use the
 c          maximum length of 136.
-c
+
       IF(LENGTH.GT.136) THEN
          CALL WPSTER(213,5)
          LENGTH = 136
       ENDIF
-c
+
       CTEMP='('
       LENOUT=1
-c
+
 c          loop through length characters.
-c
+
       DO 100 I=1,LENGTH
-c
+
 c          check for valid chars.
-c
+
 c          ignore control characters, except for:
 c          8 is backspace
 c          10 is linefeed
 c          13 is carriage return
-C
+
          IF(CHARS(I).LT.32 .OR. CHARS(I).GT.126) THEN
-c
+
             IF(CHARS(I).EQ.8) THEN
                DX=-VECTOR(7)
                DY=0.
@@ -2414,9 +2395,9 @@ c
                CALL WPSTER(208,5)
                GOTO 100
             ENDIF
-c
+
 c           finish the string, emulate the control char, and start a new one
-c
+
 c           send the buffered chars to the printer if there are any
             IF(LENOUT.NE.1) THEN
                CTEMP=CTEMP(1:LENOUT)//') t '
@@ -2425,64 +2406,63 @@ c           send the buffered chars to the printer if there are any
 C              reset the cp from the characters
                XCP=XCP+(LENOUT-5)*VECTOR(7)
             ENDIF
-c
+
 c           calculate the new current position after the control char
             XCP=XCP+DX
             YCP=YCP+DY
             CALL WPST13(0,XCP,YCP)
-c
+
 c           start a new string
             CTEMP='('
             LENOUT=1
-c
+
          ELSE
-c
+
 c           Char value is 32-126 inclusive.  Put \ before these:
 c              92 is \
 c              40 is (
 c              41 is )
-c
+
             IF(CHARS(I).EQ.40.OR.CHARS(I).EQ.41.OR.CHARS(I).EQ.92) THEN
                CTEMP=CTEMP(1:LENOUT)//char(92)
                LENOUT=LENOUT+1
             ENDIF
-c
+
 c           now pack the chars into the buffer
-c
+
             CALL CDRA2C(CHARS(I),STR)
             CTEMP=CTEMP(1:LENOUT)//STR(1:1)
             LENOUT=LENOUT+1
          ENDIF
-c
+
   100 CONTINUE
-c
+
 c          send the chars to the printer
-c
+
       CTEMP=CTEMP(1:LENOUT)//') t '
       LENOUT=LENOUT+4
       CALL WPST15(LENOUT,CTEMP)
-C
+
 C          reset the cp from the characters
-C
+
       XCP=XCP+(LENOUT-5)*VECTOR(7)
-c
+
   999 RETURN
       END
       SUBROUTINE WPSTLS(LINSTY)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VDSTLS           -Set Line Style.
-C
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
-C
+
 C ENTRY CONDITIONS -LINSTY = integer linestyle of line drawing output
 C                   primitives.  Range 0-5.  Default:0.
-C
+
 C CALLS            -
-C
+
 C EXIT CONDITIONS  -VECTOR(4) = real updated line style (LINSTY).
-C
+
 C NARRATIVE        -Set the style of line as below.  This applies only
 C                   to line drawing primitives.  The line styles are:
 C                          0 - solid
@@ -2494,14 +2474,14 @@ C                          5 - medium dash
 C                   All devices must support at least the values 0 and
 C                   5.  If an unsupported value is specified, set to 5.
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
       REAL LW
       INTEGER LINSTY,ILL,JLL
       COMMON /WPST11/ IVECT,COORD
       CHARACTER COORD*20
       INTEGER IVECT
       CHARACTER CTEMP*30,STRL*3,STRS*3,STRG*3
-C
+
       REAL VECTOR(7)
       COMMON /WPST03/ VECTOR
       REAL XSCALE,YSCALE
@@ -2511,7 +2491,7 @@ C
 C CURRENT ATTRIBUTE VALUES. (DEVICE-INDEPENDENT)
 C      REAL VECTOR(7)
 C     COMMON /VCATTR/ VECTOR
-C
+
 C     VECTOR(1)=FOREGROUND COLOR
 C           (2)=BACKGROUND COLOR
 C           (3)=INTENSITY
@@ -2519,35 +2499,34 @@ C           (4)=LINE STYLE
 C           (5)=LINE WIDTH
 C           (6)=CHARACTER BOX Y
 C           (7)=CHARACTER BOX X
-C
-c
+
       ENTRY WPST14(LINSTY)
-c
+
 C CHECK FOR VALID LINSTY.
       IF(LINSTY.LT.0.OR.LINSTY.GT.5) THEN
          CALL WPSTER(401,5)
          VECTOR(4) = 0
          GOTO 999
       END IF
-C
+
       CALL WPST15(2,'s ')
 C GENERATE THE LINESTYLE COMMANDS
       IF(LINSTY.EQ.0) THEN
         CALL WPST15(7,'[] 0 h ')
       ENDIF
-c
+
 c calculate the linewidth -- it's needed below in every case
-c
+
 c        actual xscale is xscale*.1; linewidth=1 => .01 in NDC
          LW=VECTOR(5)
          LW=XSCALE*VECTOR(5)*.001
 c        a linewidth of zero isn't good with postscript
          IF(LW.LT.1.) LW=1.
-c
+
 c     from here on, set; up patterns that depend on the linewidth and
 c          the extra length added to the line segment
 c          by the hemispherical end cap
-c
+
       IF(LINSTY.EQ.1) THEN
          ILL=NINT(0.5*LW)
          IGAP=NINT(3.*LW)
@@ -2555,7 +2534,7 @@ c
          CALL CDRI2C(IGAP,3,STRG)
          CTEMP='['//STRL(1:3)//' '//STRG(1:3)//'] 0 h '
          CALL WPST15(14,CTEMP)
-c
+
       ELSE IF(LINSTY.EQ.2) THEN
          ILL=NINT(18.*LW)
          JLL=NINT(1.5*LW)
@@ -2567,7 +2546,7 @@ c
      *            //' '//STRG(1:3)//'] 0 h '
          CALL WPST15(22,CTEMP)
 c         call pstbuf(14,'[2 2 6 2] 0 h ')
-c
+
       ELSE IF(LINSTY.EQ.3) THEN
          ILL=NINT(6.*LW)
          IGAP=NINT(7.*LW)
@@ -2576,7 +2555,7 @@ c
          CTEMP='['//STRL(1:3)//' '//STRG(1:3)//'] 0 h '
          CALL WPST15(14,CTEMP)
 c         call pstbuf(8,'[4] 0 h ')
-c
+
       ELSE IF(LINSTY.EQ.4) THEN
          ILL=NINT(24.*LW)
          IGAP=NINT(18.*LW)
@@ -2585,7 +2564,7 @@ c
          CTEMP='['//STRL(1:3)//' '//STRG(1:3)//'] 0 h '
          CALL WPST15(14,CTEMP)
 c         call pstbuf(8,'[8] 0 h ')
-c
+
       ELSE IF(LINSTY.EQ.5) THEN
          ILL=NINT(12.*LW)
          IGAP=NINT(10.*LW)
@@ -2593,43 +2572,43 @@ c
          CALL CDRI2C(IGAP,3,STRG)
          CTEMP='['//STRL(1:3)//' '//STRG(1:3)//'] 0 h '
          CALL WPST15(14,CTEMP)
-c
+
       ENDIF
-c
+
 c     redefine the postscript current position
-c
+
 c     the code below is equivalent to
 c      call vbvect(0,xcp,ycp)
 c     but can't do it because vbvect calls vdstlw which calls this routine
-c
+
       CTEMP=COORD(1:11)//' m '
       CALL WPST15(14,CTEMP)
-C
+
       VECTOR(4)=LINSTY
-C
+
   999 RETURN
       END
       SUBROUTINE WPSTCS(YSIZE)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VDSTCS           -Set Character Size.
-C
+
 C R.W.Simons       -05DEC80
 C J. P. LONG       -03 DEC 87
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
 C                   All Devices that support only software characters.
 C                   (LXY, HC1)
-C
+
 C ENTRY CONDITIONS -YSIZE = real Y dimension of the character box in NDC
 C                   space.  Range 0.-1.  Default: device dependent,
 C                   typically the smallest hardware size.
-C
+
 C CALLS            -
-C
+
 C EXIT CONDITIONS  -VECTOR(6) = real updated character box Y (YSIZE).
 C                   VECTOR(7) = real updated character box X.
-C
+
 C NARRATIVE        -Set the character size for text primitives.  Size
 C                   is given by YSIZE as the Y dimension of the
 C                   character box.  The SVDI will assign the X dimension
@@ -2641,73 +2620,73 @@ C                   dependent value that is the default.  If an
 C                   unsupported value is specified, set to the largest
 C                   supported character size that does not exceed the
 C                   specified size.
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
       REAL YSIZE
       CHARACTER STR*6,CTEMP*10
-C
+
       REAL VECTOR(7)
       COMMON /WPST03/ VECTOR
       REAL XSCALE,YSCALE
       COMMON /WPST08/ XSCALE,YSCALE
-C
+
 C CHECK FOR VALID YSIZE.
       IF(YSIZE.LT.0.0.OR.YSIZE.GT.1.0) THEN
          CALL WPSTER(401,5)
          GOTO 999
       END IF
-C
+
 C PROTECT INPUT PARAMETER FROM BEING CHANGED.
       YSIZE1=YSIZE
-C
+
 C DON'T ALLOW VALUES BELOW THE MINIMUM "HARDWARE" SIZE.
       IF(YSIZE1.LT.0.01) YSIZE1=0.01
-C
+
 C VALUES ESTABLISHED HERE ARE USED BY VBSIM IN SIMULATING CHARACTERS.
 C ALWAYS USE A CHARACTER ASPECT RATIO OF 5/7.
       VECTOR(6)=YSIZE1
       VECTOR(7)=YSIZE1*5./7.
-C
+
 C convert the character size into device coords
-c
+
       IYSIZE=NINT(XSCALE*YSIZE1)
-c
+
 c output the postscript command
-c
+
       CALL CDRI2C(IYSIZE,4,STR)
 c     iysize is in tenths of device units
       CTEMP='y '//STR(1:3)//' x '
       CALL WPST15(8,CTEMP)
-c
+
   999 RETURN
       END
       SUBROUTINE WPSTLW(LINWTH)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VDSTLW           -Set Line Width.
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
-C
+
 C ENTRY CONDITIONS -LINWTH = real line width of line drawing output
 C                   primitives.  Range 0.-1.  Default: device dependent.
-C
+
 C CALLS            -
-C
+
 C EXIT CONDITIONS  -VECTOR(5) = real updated line width (LINWTH).
-C
+
 C NARRATIVE        -Set the relative width of an output line.  Values
 C                   are 0.-1. with 1. being .01 in NDC space.
 C                   All devices must support at least a single device
 C                   dependent value that is the default.  If an
 C                   unsupported value is specified, set to the closest
 C                   supported line width.
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
       REAL LINWTH,LW
       CHARACTER CTEMP*19,STR*5
-C
+
       INTEGER*4 KWRTFL,KRDFL,KOUTFL,KINFL,KWRDSZ,KBYTEL,KCPW,KBAUD,
      1KCOMTP
       COMMON /CDRCOM/ KWRTFL,KRDFL,KOUTFL,KINFL,KWRDSZ,KBYTEL,KCPW,
@@ -2716,54 +2695,54 @@ C
       COMMON /WPST03/ VECTOR
       REAL XSCALE,YSCALE
       COMMON /WPST08/ XSCALE,YSCALE
-C
+
 C CHECK FOR VALID LINWTH.
       IF(LINWTH.LT.0.0.OR.LINWTH.GT.1.) THEN
          CALL WPSTER(401,5)
          GOTO 999
       END IF
-C
+
 C CONVERT LINE-WIDTH TO NDC
       LW=LINWTH*.01
-C
+
 C CONVERT WIDTH TO DEVICE COORDINATES AND ADD A DIGIT; NEED IT; TO HUNDREDTHS
       ILW=NINT(XSCALE*LW*10.)
 C     A LINEWIDTH OF ZERO WORKS ONLY PART OF THE TIME
       IF(ILW.LT.10) ILW=10
-C
+
 C SET LINE WIDTH
       CALL CDRI2C(ILW,5,STR)
       CTEMP='s '//STR(1:3)//'.'//STR(4:5)//' w '
       CALL WPST15(11,CTEMP)
-C
+
       VECTOR(5)=LINWTH
-C
+
 c     since linestyle uses the linewidth in setting the pattern, call it
-c
+
       LINSTY=VECTOR(4)
       CALL WPST14(LINSTY)
   999 RETURN
       END
       SUBROUTINE WPSTIE(ESCPCD,SUPPRT)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
 C VDIQES           -Inquire Escape.
-C
+
 C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
-C
+
 C ENTRY CONDITIONS -ESCPCD = integer escape function code.
-C
+
 C CALLS            -
-C
+
 C EXIT CONDITIONS  -SUPPRT = integer level of support for the escape
 C                   function specified.  Range 0,1,2.
-C
+
 C NARRATIVE        -An integer value indicating 2=hardware supported,
 C                   1=software supported, 0=unsupported is returned in
 C                   SUPPRT for the escape function ESCPCD.
-C
+
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+
       INTEGER ESCPCD,SUPPRT
       IF (ESCPCD.EQ.2100) THEN
          SUPPRT=2

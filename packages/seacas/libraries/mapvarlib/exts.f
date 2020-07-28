@@ -1,27 +1,27 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C========================================================================
       SUBROUTINE EXTS(IGLND,INVCN,MAXLN,NXGLND,INVLEN,XA,YA,ZA,
      &     CNTRA,SOLEA,SOLENA,ITT,iblk)
-C     
+C
 C************************************************************************
-C     
+C
 C     Subroutine EXTS sets up the matrix and vectors for a least squares
 C     linear interpolation/extrapolation of element variable data to the
 C     nodes for a 4-node quad element. In the special case of data from
 C     only 3 elements, the result is not least squares fit but a
 C     triangularization.
-C     
+C
 C     Calls subroutines FRGE & BS
-C     
+C
 C     Called by SELTN3
-C     
+C
 C************************************************************************
-C     
+C
 C     IGLND  INT   The global node number being processed
 C     INVCN  INT   Inverse connectivity (1:maxln,1:numnda)
 C     MAXLN  INT   The maximum number of elements connected to any node
@@ -41,14 +41,14 @@ C     L      INT   Dummy vector - used in FRGE and BS
 C     X      REAL  The solution vector - used in BS
 C     G      REAL  Dummy vector - used in FRGE
 C     F      REAL  The load vector for the least squares fit
-C     
+C
 C************************************************************************
-C     
+C
       include 'aexds1.blk'
       include 'amesh.blk'
       include 'ebbyeb.blk'
       include 'tapes.blk'
-C     
+C
       DIMENSION INVCN(MAXLN,*),XA(*),YA(*),ZA(*)
       DIMENSION CNTRA(NUMEBA,*),SOLEA(NUMEBA,*)
       DIMENSION SOLENA(NODESA,NVAREL), ITT(NVAREL,*)
@@ -56,29 +56,29 @@ C
 C     DIMENSION ZLC(8)
       DOUBLE PRECISION S(3,3),G(3),F(3),X(3)
       INTEGER L(3)
-C     
+C
 C************************************************************************
-C     
+C
 C     Zero matrix
-C     
+C
       DO I = 1,3
          IFRST(I) = I
          DO J = 1,3
             S(I,J) = 0.D+00
          end do
       end do
-c     
+c
 c     find distance from interpolation point to element centroids
-c     
+c
       DO I = 1, INVLEN
          A = XA(IGLND) - CNTRA(INVCN(I,NXGLND),1)
          B = YA(IGLND) - CNTRA(INVCN(I,NXGLND),2)
          C = ZA(IGLND) - CNTRA(INVCN(I,NXGLND),3)
          RLENTH(I) = SQRT(A*A + B*B + C*C)
       end do
-C     
+C
 C     find the three closest element centroids
-C     
+C
       IF (INVLEN .EQ. 3) THEN
          DO I = 1, 2
             IF (RLENTH(I) .GT. RLENTH(I+1))THEN
@@ -92,7 +92,7 @@ C
             IFRST(1) = IFRST(2)
             IFRST(2) = ITEMP
          END IF
-C     
+C
       ELSE
          DO I = 2, INVLEN
             IF (RLENTH(I) .LT. RLENTH(IFRST(1))) IFRST(1) = I
@@ -115,11 +115,11 @@ C
  60         CONTINUE
          end do
       END IF
-C     
+C
 C     use three closest element centroids to define a plane
 C     establish coordinate system on this plane centered on
 C     interpolation point
-C     
+C
       A11 = CNTRA(INVCN(IFRST(2),NXGLND),1) -
      &     CNTRA(INVCN(IFRST(1),NXGLND),1)
       A12 = CNTRA(INVCN(IFRST(2),NXGLND),2) -
@@ -130,7 +130,7 @@ C
       A11 = A11/RLN
       A12 = A12/RLN
       A13 = A13/RLN
-C     
+C
       A31 = (CNTRA(INVCN(IFRST(2),NXGLND),2) -
      &     CNTRA(INVCN(IFRST(1),NXGLND),2))
      &     * (CNTRA(INVCN(IFRST(3),NXGLND),3) -
@@ -159,11 +159,11 @@ C
       A31 = A31/RLN
       A32 = A32/RLN
       A33 = A33/RLN
-C     
+C
       A21 = A32*A13 - A33*A12
       A22 = A11*A33 - A31*A13
       A23 = A31*A12 - A11*A32
-C     
+C
       DO I = 1, INVLEN
          XLC(I) = A11 * (CNTRA(INVCN(I,NXGLND),1) - XA(IGLND))
      &        + A12 * (CNTRA(INVCN(I,NXGLND),2) - YA(IGLND))
@@ -172,10 +172,10 @@ C
      &        + A22 * (CNTRA(INVCN(I,NXGLND),2) - YA(IGLND))
      &        + A23 * (CNTRA(INVCN(I,NXGLND),3) - ZA(IGLND))
       end do
-C     
-C     
+C
+C
 C     Set up matrix for linear fit
-C     
+C
       S(1,1) = INVLEN
       DO I = 1, INVLEN
          S(1,2) = S(1,2) + DBLE(XLC(I))
@@ -187,13 +187,13 @@ C
       S(2,1) = S(1,2)
       S(3,1) = S(1,3)
       S(3,2) = S(2,3)
-C     
+C
 C     Forward Gauss elimination (Kincaid pg. 220) (double precision)
-C     
+C
       CALL FRGE(3,S,L,G)
-C     
+C
 C     Set up load vectors - number of element variables
-C     
+C
       DO IVAR = 1, NVAREL
          IF (ITT(IVAR,iblk) .EQ. 0)GO TO 90
          F(1) = 0.D+00
@@ -204,16 +204,16 @@ C
             F(2) = F(2) + DBLE(SOLEA(INVCN(I,NXGLND),IVAR) * XLC(I))
             F(3) = F(3) + DBLE(SOLEA(INVCN(I,NXGLND),IVAR) * YLC(I))
          end do
-C     
+C
 C     Back substitution (Kincaid pg. 223) (double precision)
-C     
+C
          CALL BS(3,S,F,L,X)
-C     
+C
 C     Fill in nodal element value array (SOLENA)
 C     Note: X and Y distances in S and F are centered on node being
 C     interpolated, thus X and Y are zero in the eq.
 C     Value = X(1) + X(2) * X + X(3) * Y
-C     
+C
          SOLENA(IGLND,IVAR) = SNGL(X(1))
  90      CONTINUE
       end do

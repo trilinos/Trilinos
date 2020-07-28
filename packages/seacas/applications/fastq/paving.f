@@ -1,52 +1,9 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: paving.f,v 1.4 2000/11/13 15:39:05 gdsjaar Exp $
-C $Log: paving.f,v $
-C Revision 1.4  2000/11/13 15:39:05  gdsjaar
-C Cleaned up unused variables and labels.
-C
-C Removed some real to int conversion warnings.
-C
-C Revision 1.3  1998/11/24 20:45:08  gdsjaar
-C Added code to avoid array bound read errors and uninitialized
-C variables. In some cases, the correct fix was difficult to determine,
-C so added something that looked like it made sense...
-C
-C This fixes problems with very slow run times on g77-compiled code. It
-C was taking an uninitialized variable to be INT_MAX instead of zero
-C which resulted in lots of iterations through a loop. This variable was
-C initialized to zero since that is what it was being set to on the sun
-C and when compiled with fort77 (f2c-based).  Gives the exact same mesh
-C on linux and sun for several test cases.
-C
-C Revision 1.2  1998/07/14 18:19:28  gdsjaar
-C Removed unused variables, cleaned up a little.
-C
-C Changed BLUE labels to GREEN to help visibility on black background
-C (indirectly requested by a couple users)
-C
-C Revision 1.1.1.1  1990/11/30 11:13:07  gdsjaar
-C FASTQ Version 2.0X
-C
-c Revision 1.1  90/11/30  11:13:05  gdsjaar
-c Initial revision
-c
-C
-CC* FILE: [.PAVING]PAVING.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/31/90
-CC* MODIFICATION: ADDED ARGUMENTS TO CALL TO PAVING TO PASS MINIMUM
-CC**              ELEMENT SIZE (SIZMIN) AND GETSIZ PARAMETERS OF
-CC**              EMIN AND EMAX
-C
       SUBROUTINE PAVING (NBNODE, NPRM, MLN, IPTPER, NUMPER, LPERIM,
      &   XN, YN, ZN, IEXK, INXE, NNN, LLL, KKK, MXND, ANGLE,
      &   BNSIZE, LNODES, LINKPR, NPERIM, LXK, KXL, NXL, LXN, NUID,
@@ -56,14 +13,14 @@ C
      &   NNXK, REMESH, REXMIN, REXMAX, REYMIN, REYMAX, IDIVIS, SIZMIN,
      &   EMAX, EMIN)
 C***********************************************************************
-C
+
 C  SUBROUTINE PAVING = A SUBROUTINE TO PAVE A REGION GIVEN THE INITIAL
 C                      BOUNDARY AS A LIST OF NODES.
-C
+
 C***********************************************************************
-C
+
 C  EXTERNAL VARIABLES:
-C
+
 C     NBNODE = NUMBER OF NODES ON THE INITIAL BOUNDARY
 C     NPRM   = NUMBER OF SEPARATE PERIMETERS IN THE BOUNDARY
 C              (THERE IS ONE OUTSIDE PERIMETER AND ONE PERIMETER FOR
@@ -146,9 +103,9 @@ C     REXMAX = MAX X FOR THE OLD MESH
 C     REYMIN = MIN Y FOR THE OLD MESH
 C     REYMAX = MAX Y FOR THE OLD MESH
 C     IDIVIS = NUMBER OF DIVISIONS IN THE SEARCH GRID LINK
-C
+
 C***********************************************************************
-C
+
 C  INTERNAL VARIABLES:
 C     ANGLE  = ARRAY OF REALS FOR STORING BOUNDARY NODE ANGLES.
 C     BNSIZE = ARRAY OF REALS FOR STORING ELEMENT SIZE PROPAGATION INFO.
@@ -189,43 +146,42 @@ C                 THE FIRST ELEMENT WILL BE NEGATED TO INDICATE THAT THIS IS
 C                 A CONTINUATION ROW.
 C                 A NEGATIVE FLAG IN THE SECOND COLUMN OF THE LXN ARRAY MEANS
 C                 THAT THIS NODE IS AN EXTERIOR BOUNDARY NODE.
-C
+
 C***********************************************************************
-C
-C
+
       COMMON /TIMING/ TIMEA, TIMEP, TIMEC, TIMEPC, TIMEAJ, TIMES
-C
+
       PARAMETER (MXLOOP = 20)
       PARAMETER (MXCORN = 10)
       PARAMETER (MXPICK = 1024)
-C
+
 C  MXPICK MUST BE SET AT (2 ** MXCORN)
-C
+
       DIMENSION ICOMB (MXCORN, MXPICK), ITYPE (MXPICK)
-C
+
       DIMENSION ANGLE (MXND), BNSIZE (2, MXND), LNODES (MLN, MXND)
       DIMENSION LINKPR (3, NPRM), NPERIM (NPRM)
       DIMENSION IPTPER (NPRM), NUMPER (NPRM), LPERIM(NBNODE)
       DIMENSION IEXK (4, MXND), INXE (2, 3*MXND)
-C
+
       DIMENSION LCORN (MXCORN)
       DIMENSION NLOOP (MXLOOP), NEXTN1 (MXLOOP)
-C
+
       DIMENSION XN(MXND), YN(MXND), ZN(MXND), NUID(MXND)
       DIMENSION LXK(4, MXND), KXL(2, 3*MXND)
       DIMENSION NXL(2, 3*MXND), LXN(4, MXND)
-C
+
       DIMENSION AMESUR(NPEOLD), XNOLD(NPNOLD), YNOLD(NPNOLD)
       DIMENSION NXKOLD(NNXK, NPEOLD), MMPOLD(3, NPROLD)
       DIMENSION LINKEG(2, MLINK), LISTEG(2 * NPEOLD), BMESUR(NPNOLD)
-C
+
       LOGICAL ERR, DONE, GRAPH, NOROOM, VIDEO, ADJTED
       LOGICAL SIZEIT, TIMER, CPUBRK, BATCH, REMESH
-C
+
       CHARACTER*3 DEV1
-C
+
       IF (REMESH) SIZEIT = .TRUE.
-C
+
       TIMEA = 0.
       TIMEP = 0.
       TIMEC = 0.
@@ -233,12 +189,12 @@ C
       TIMEAJ = 0.
       TIMES = 0.
       CALL GETIME (TIME1)
-C
+
       ERR = .FALSE.
       DONE = .FALSE.
-C
+
 C  ZERO ALL THE LINK ARRAYS
-C
+
       DO 110 I = 1, MXND
          DO 100 J = 1, 4
             LXK (J, I) = 0
@@ -254,9 +210,9 @@ C
             NXL (J, I) = 0
   130    CONTINUE
   140 CONTINUE
-C
+
 C  ZERO THE LOOP COUNTING AND CONNECTING ARRAYS
-C
+
       DO 150 I = 1, MXLOOP
          NLOOP (I) = 0
          NEXTN1 (I) = 0
@@ -266,9 +222,9 @@ C
          LINKPR (2, I) = 0
          LINKPR (3, I) = 0
   160 CONTINUE
-C
+
 C  FIND THE EXTREMES OF THE PERIMETERS
-C
+
       XMIN = XN (IPTPER (1))
       XMAX = XN (IPTPER (1))
       YMIN = YN (IPTPER (1))
@@ -287,9 +243,8 @@ C
   170    CONTINUE
   180 CONTINUE
 
-C
 C  LINK ALL THE NODES IN THE ORIGINAL PERIMETERS TOGETHER
-C
+
       DO 190 I = 1, NPRM
          CALL PERIML (NBNODE, MXND, NUMPER(I), IPTPER (I), MLN,
      &      XN, YN, ZN, LXK, KXL, NXL, LXN, ANGLE, BNSIZE, LNODES,
@@ -307,9 +262,9 @@ C
          NPERIM (1) = NUMPER (I)
   190 CONTINUE
       ITNPER = NBNODE
-C
+
 C  LINK UP THE REST OF THE LXN ARRAY
-C
+
       NNNOLD = NNN
       LLLOLD = LLL
       IAVAIL = NNN + 1
@@ -320,9 +275,9 @@ C
          LXN (3, I) = 0
          LXN (4, I) = I + 1
   200 CONTINUE
-C
+
 C  PLOT THE INITIAL BOUNDARIES
-C
+
       IF (GRAPH) THEN
          CALL RPLOTL (MXND, XN, YN, ZN, NXL, XMIN, XMAX, YMIN, YMAX,
      &      ZMIN, ZMAX, LLL, DEV1, KREG)
@@ -333,29 +288,29 @@ C
       YMAX1 = YMAX
       ZMIN1 = ZMIN
       ZMAX1 = ZMAX
-C
+
 C  CHECK INPUT FOR ODDNESS
-C
+
       IF (2* (ITNPER/2) .NE. ITNPER) THEN
          CALL MESAGE ('IN PAVING, NO. OF PERIMETER NODES IS ODD')
          ERR = .TRUE.
          GOTO 310
       ENDIF
-C
+
 C  NOW BEGIN TO LOOP THROUGH THE INTERIOR NODE LIST
 C  FILLING ROWS WITH ELEMENTS
-C
+
       N1 = LINKPR (1, 1)
       N0 = LNODES (2, N1)
       KLOOP = 1
       KPERIM = 1
       NLOOP (1) = NUMPER (1)
-C
+
   210 CONTINUE
-C
+
 C  SEE IF IT IS TIME TO SWITCH TO THE NEXT PERIMETER
 C  BY WHETHER THE CURRENT N0 IS INTERIOR OR NOT
-C
+
       IF (IABS (LNODES (4, N0)) .EQ. 2) THEN
          IF (LINKPR (2, KPERIM) .NE. 0) THEN
             LINKPR (3, KPERIM) = NLOOP (1)
@@ -368,19 +323,19 @@ C
             N0 = LNODES (2, N1)
          ENDIF
       ENDIF
-C
+
 C  NOW GET THE BEST CORNERS FOR THE NEXT ROW
-C
+
       CALL GETROW (MXND, MXCORN, MXPICK, MLN, NUID, LXK, KXL,
      &   NXL, LXN, LNODES, NCORN, LCORN, BNSIZE, ANGLE, XN, YN, ZN,
      &   ICOMB, ITYPE, NLOOP (1), N1, NEND, IAVAIL, NAVAIL, LLL, KKK,
      &   NNN, GRAPH, VIDEO, XMIN, XMAX, YMIN, YMAX, ZMIN, ZMAX, DEV1,
      &   KREG, SIZEIT, LINKPR (2, KPERIM), NOROOM, ERR)
       IF ((NOROOM) .OR. (ERR)) GOTO 310
-C
+
 C  CHECK TO SEE IF WE ARE DONE WITH ONLY A QUAD LEFT
 C  (AND THAT THE LOOP IS NOT AN INTERIOR HOLE)
-C
+
       IF ((NLOOP (1) .EQ. 4) .AND. (LINKPR (2, KPERIM) .EQ. 0)) THEN
          CALL CLOSE4 (MXND, MLN, LXK, KXL, NXL, LXN, LNODES,
      &      LNODES (2, N1), N1, LNODES (3, N1),
@@ -394,16 +349,11 @@ C
      &         ZMIN, ZMAX, LLL, DEV1, KREG)
          ENDIF
          GOTO 240
-C
+
 C  CHECK TO SEE IF WE ARE DONE WITH ONLY 6 NODES LEFT
-C
+
       ELSEIF ((NLOOP (1) .EQ. 6) .AND. (LINKPR (2, KPERIM) .EQ. 0)) THEN
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/31/90
-CC* MODIFICATION: ADDED ARGUMENTS TO CALL TO CLOSE6 TO PASS MINIMUM
-CC**              ELEMENT SIZE (SIZMIN) AND GETSIZ PARAMETERS OF
-CC**              EMIN AND EMAX
-C
+
          CALL CLOSE6 (MXND, MXCORN, MLN, NUID, XN, YN, LXK, KXL, NXL,
      &      LXN, ANGLE, BNSIZE, LNODES, N1, NLOOP (1), KKKOLD,
      &      LLLOLD, NNNOLD, NAVAIL, IAVAIL, DONE, XMIN, XMAX, YMIN,
@@ -421,17 +371,11 @@ C
             CALL SFLUSH
          ENDIF
          GOTO 240
-C
+
       ENDIF
-C
+
 C  GENERATE A NEW ROW OF ELEMENTS
-C
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/31/90
-CC* MODIFICATION: ADDED ARGUMENTS TO CALL TO ADDROW TO PASS MINIMUM
-CC**              ELEMENT SIZE (SIZMIN) AND GETSIZ PARAMETERS OF
-CC**              EMIN AND EMAX
-C
+
       CALL ADDROW (MXND, MXCORN * MXPICK, MXLOOP, MLN, NPRM, NUID, XN,
      &   YN, ZN, LXK, KXL, NXL, LXN, ANGLE, BNSIZE, LNODES, N1, NEND,
      &   NLOOP, NEXTN1, LINKPR, KPERIM, KKKOLD, LLLOLD, NNNOLD, IAVAIL,
@@ -442,11 +386,11 @@ C
      &   REXMAX, REYMIN, REYMAX, IDIVIS, SIZMIN, EMAX, EMIN)
       IF ((NOROOM) .OR. (ERR)) GOTO 310
       IF (DONE) GOTO 240
-C
+
 C  TRY COLLAPSING CORNERS WITH SMALL ANGLES AFTER A ROW HAS BEEN
 C  COMPLETED - NOTE THAT THE ICOMB ARRAY IS SENT TO PINCH IN PLACE
 C  OF THE LCORN ARRAY FOR MORE CORNER PROCESSING CAPABILITIES
-C
+
   220 CONTINUE
       CALL PINCH (MXND, MXCORN * MXPICK, MLN, NUID, XN, YN, ZN, LXK,
      &   KXL, NXL, LXN, ANGLE, LNODES, BNSIZE, N1, NLOOP (1), KKKOLD,
@@ -467,9 +411,9 @@ C     &      ISOELM, GRAPH, VIDEO, NOROOM, ERR)
 C         IF ((NOROOM) .OR. (ERR)) GOTO 220
 C         IF (ISOELM) GOTO 180
 C      ENDIF
-C
+
 C  ADJUST THE NEW ROW BY TAKING TUCKS OR INSERTING WEDGES AS NEEDED
-C
+
       IF ((NADJ1 .GT. 0) .AND. (NADJ2 .GT. 0) .AND. (NLOOP(1) .GT. 4))
      &   THEN
          CALL ADJROW (MXND, MLN, NUID, XN, YN, ZN, LXK, KXL, NXL, LXN,
@@ -480,9 +424,9 @@ C
          IF ((NOROOM) .OR. (ERR)) GOTO 310
          IF (ADJTED) GOTO 220
       ENDIF
-C
+
 C  CHECK TO SEE IF ANY OF THE CONCURRENT PERIMETERS OVERLAP
-C
+
       IF (LINKPR (2, KPERIM) .NE. 0) THEN
          LINKPR (3, KPERIM) = NLOOP (1)
          CALL PCROSS (MXND, MXCORN * MXPICK, MLN, MXLOOP, NPRM, NUID,
@@ -493,11 +437,11 @@ C
      &      GRAPH, VIDEO, KREG, NOROOM, ERR)
          IF ((NOROOM) .OR. (ERR)) GOTO 310
       ENDIF
-C
+
 C  TRY COLLAPSING OVERLAPPING SIDES TO FORM TWO LOOPS OUT OF THE
 C  CURRENT SINGLE LOOP - NOTE THAT THE ICOMB ARRAY IS SENT AS
 C  WHEN CALLING PINCH IN PLACE OF THE LCORN ARRAY
-C
+
   230 CONTINUE
       IF (NLOOP (1) .GT. 6) THEN
          CALL COLAPS (MXND, MXCORN * MXPICK, MLN, MXLOOP, NUID, XN,
@@ -509,9 +453,9 @@ C
          IF ((NOROOM) .OR. (ERR)) GOTO 310
          IF (DONE) GOTO 240
       ENDIF
-C
+
 C  ADJUST THE ZOOMS TO FIT THE NEW AREA
-C
+
       IF ((GRAPH) .OR. (CPUBRK (.TRUE.))) THEN
          LINKPR (3, KPERIM) = NLOOP (1)
          CALL FLMNMX (MXND, MLN, NPRM, LINKPR, KPERIM, LNODES,
@@ -521,9 +465,9 @@ C
      &      YMIN, YMAX, ZMIN, ZMAX, LLL, DEV1, KREG)
       ENDIF
       GOTO 210
-C
+
 C  CHECK TO MAKE SURE THAT OTHER LOOPS ARE NOT REMAINING TO BE FILLED
-C
+
   240 CONTINUE
       IF (KLOOP .GT. 1) THEN
          N1 = NEXTN1 (1)
@@ -534,9 +478,9 @@ C
          NLOOP (KLOOP) = 0
          NEXTN1 (KLOOP) = 0
          KLOOP = KLOOP - 1
-C
+
 C  ADJUST THE ZOOMS TO FIT THE NEW AREA
-C
+
          IF (GRAPH) THEN
             CALL FLMNMX (MXND, MLN, NPRM, LINKPR, KPERIM, LNODES,
      &         XN, YN, NLOOP (1), N1, XMIN, XMAX, YMIN, YMAX, ERR)
@@ -545,15 +489,15 @@ C
      &         YMIN, YMAX, ZMIN, ZMAX, LLL, DEV1, KREG)
          ENDIF
          DONE = .FALSE.
-C
+
 C  ENTER THE FILL LOOP WHERE IT CAN CHECK TO SEE IF ANY CROSSINGS
 C  ALREADY EXIST IN THIS LOOP
-C
+
          GOTO 230
       ENDIF
-C
+
 C  THE FILL HAS BEEN COMPLETED - NOW FIX UP ANY BAD SPOTS
-C
+
       DO 260 I = 1, NNN
          LNODES (4, I) = IABS (LNODES (4, I))
   260 CONTINUE
@@ -571,9 +515,9 @@ C
       CALL FILSMO  (MXND, MLN, XN, YN, ZN, LXK, KXL, NXL, LXN,
      &   LLL, NNN, NNN, LNODES, BNSIZE, NLOOP (1), XMIN, XMAX, YMIN,
      &   YMAX, ZMIN, ZMAX, DEV1, KREG)
-C
+
 C  SUCCESSFUL EXIT
-C
+
       IF (GRAPH) THEN
          CALL RPLOTL (MXND, XN, YN, ZN, NXL, XMIN1, XMAX1, YMIN1,
      &      YMAX1, ZMIN1, ZMAX1, LLL, DEV1, KREG)
@@ -594,7 +538,7 @@ C
   301 CONTINUE
 
 C  EXIT WITH ERROR
-C
+
   310 CONTINUE
       IF ((ERR) .AND. (.NOT. BATCH)) THEN
          CALL RPLOTL (MXND, XN, YN, ZN, NXL, XMIN1, XMAX1, YMIN1, YMAX1,
@@ -602,7 +546,7 @@ C
          CALL RINGBL
          CALL SFLUSH
       ENDIF
-C
+
       IF (TIMER) THEN
          CALL GETIME (TIME2)
          WRITE (*, ' (A, F10.5)')'  CPU SECONDS USED: ', TIME2-TIME1
@@ -618,5 +562,5 @@ C
      &      TIMES * 100. / (TIME2 - TIME1)
       ENDIF
       RETURN
-C
+
       END

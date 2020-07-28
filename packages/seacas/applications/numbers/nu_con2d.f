@@ -1,44 +1,24 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: con2d.f,v 1.5 2004/06/29 18:05:32 gdsjaar Exp $
-C $Log: con2d.f,v $
-C Revision 1.5  2004/06/29 18:05:32  gdsjaar
-C General cleanup. Remove unused labels and variables.
-C
-C Revision 1.4  2000/07/06 18:07:42  gdsjaar
-C Fix assumption that variables are saved between subroutine calls
-C
-C Revision 1.3  2000/07/06 16:49:57  gdsjaar
-C Changed real*4 to real
-C
-C Revision 1.2  1991/04/10 19:28:18  gdsjaar
-C Removed vax debug lines
-C
-c Revision 1.1.1.1  1991/02/21  15:42:40  gdsjaar
-c NUMBERS: Greg Sjaardema, initial Unix release
-c
-c Revision 1.1  1991/02/21  15:42:39  gdsjaar
-c Initial revision
-c
 C=======================================================================
       SUBROUTINE CON2D (CRD, NDIM, NUMNP, IX, NNODES, NUMEL, MAT,
      *   NELBLK, SELECT, ASPECT, SKEW, TAPER, AREA,
      *   SUMRY, ISUMRY, DEBUG)
 C=======================================================================
-C
+
 C *** CON2D *** Calculate state of mesh -- Aspect ratio, Skewness,
 C               and Taper
-C
+
 C    (Greg Sjaardema, 16 April, 1989)
-C
+
 C Based on article by John Robinson, "CRE Method of element testing
 C    and the Jacobian shape parameters," Eng. Comput., 1987, Vol. 4,
 C    June, pp 113 - 118
-C
+
 C -- ARRAYS:
 C     CRD(NUMNP, NDIM)  - IN -
 C     IX(NNODES, NUMEL) - IN -
@@ -48,24 +28,24 @@ C     ASPECT(NUMEL)     - OUT- Aspect ratio (1.0 <= AR <= infinity)
 C     SKEW(NUMEL)       - OUT- Skewness of mesh, degrees (0 <= skew <= ?)
 C     TAPER(NUMEL)      - OUT- Taper of mesh, combination of X and Y taper
 C     AREA(NUMEL)       - OUT- Area of element
-C
+
 C -- SCALARS:
 C     NDIM   - Number of spatial dimensions
 C     NUMNP  - Number of nodal points
 C     NNODES - Number of nodes per element
 C     NUMEL  - Number of elements
 C     NELBLK - Number of material/element blocks
-C
+
 C         E2                                               E4
 C     +----------+          +-----------+       +---------+ |
 C     |          | F3      /           /       /           \
 C     |          |        / A         /       /             \
 C     +----------+       +-----------+       +---------------+
-C
+
 C      AR = E2/F3        SKEW = SIN(A)            TAPER Y
-C
+
 C=======================================================================
-C
+
       REAL   CRD(NUMNP, NDIM), ASPECT(*), SKEW(*), TAPER(*), AREA(*)
       INTEGER  IX(NNODES, NUMEL), MAT(6, NELBLK), ISUMRY(2,4,NELBLK)
       REAL   SUMRY(4,4,NELBLK)

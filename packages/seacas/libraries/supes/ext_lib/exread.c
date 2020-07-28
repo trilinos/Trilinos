@@ -2,11 +2,10 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 /*
- * $Id: exread.c,v 1.20 2008/05/05 19:42:09 gdsjaar Exp $
  */
 
 #include "fortranc.h"
@@ -34,7 +33,7 @@ void exread(char *prompt, char *input, FTNINT *iostat, long int PromptLength, lo
 
 /*
 ************************************************************************
-C
+
 C     DESCRIPTION:
 C     This routine prompts, reads, and echos from the standard input
 C     device. For an interactive job, this would prompt for input from
@@ -43,12 +42,12 @@ C     job, this would read from the main input file and echo to the
 C     log file with the prompt string as a prefix. This routine should
 C     assume the burden of assuring that the standard input and output
 C     devices are properly opened.
-C
+
 C     FORMAL PARAMETERS:
 C     PROMPT    CHARACTER       Prompt String
 C     INPUT     CHARACTER       Input String
 C     IOSTAT    INTEGER         I/O Status ( -1 = EOF, 0 = normal )
-C
+
 ************************************************************************
 */
 {

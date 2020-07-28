@@ -1,10 +1,9 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C     $Id: sumelm.f,v 1.8 2005/06/17 16:57:29 gdsjaar Exp $
 C=======================================================================
       SUBROUTINE SUMELM (CRD, DISP, SVAR, MAT, NDIM, NUMNP, INDX,
      *     ELMSEL, NAME, TIME, ITMSEL, AVER, AXI, DOABS, DODENS,
@@ -90,7 +89,6 @@ C ... Determine number of selected elements in each block
          GO TO 120
       ELSE IF (ITMSEL(NLAST)) THEN
 
-
 C     ... If by density, then calculate volume of elements
          IF (DODENS) THEN
 C     ... READ THE STEP AND STORE DISPLACEMENTS
@@ -118,7 +116,6 @@ C     ... Read and store the element variable
            end if
  56      continue
          TREAD = TIME(NLAST)
-
 
          DO 60 I = 1, NELBLK+1
             SUM(I) = 0.0
@@ -156,7 +153,7 @@ C ... Note that volume is set to zero for all non-selected elements
 
       END IF
       GO TO 50
-C
+
  120  CONTINUE
       RETURN
 

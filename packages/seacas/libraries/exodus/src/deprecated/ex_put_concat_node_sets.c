@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 
@@ -70,7 +70,6 @@ Internal node IDs are used in
                                 this list (See Section LocalNodeIds).
 \param[in] node_sets_dist_fact  Array containing the distribution factors for
 all sets.
-
 
 For example, the following code will write out two node sets
 in a concatenated format:

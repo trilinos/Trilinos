@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 
@@ -63,7 +63,6 @@ stored. Maximum
 |  #EX_NODE_MAP   |  Node Map entity type     |
 |  #EX_EDGE_MAP   |  Edge Map entity type     |
 |  #EX_FACE_MAP   |  Face Map entity type     |
-
 
 For an example of code to write an array of object properties, refer
 to the description for ex_put_prop_names().

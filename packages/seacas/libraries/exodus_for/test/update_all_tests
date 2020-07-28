@@ -1,7 +1,7 @@
 # Copyright(C) 1999-2020 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
-# 
+#
 # See packages/seacas/LICENSE for details
 
 # script to run all tests and compare them to saved dump files.
@@ -26,14 +26,14 @@ ${NCDUMP} -d5,5 test.exo | grep -v version > test.dmp
 # testrd - single precision read test
 echo "testrd ..."
 echo "testrd ... [Expect ex_create NOCLOBBER error from this test]"
-${PREFIX} ${SRCDIR}/testrd | grep -v version > testrd.dmp 
+${PREFIX} ${SRCDIR}/testrd | grep -v version > testrd.dmp
 
 # testcp_ss - single-to-single precision copy test
 echo "testcp_ss ..."
 echo "begin testcp_ss" >> test.output
 ${PREFIX} ${SRCDIR}/testcp >> test.output
 echo "end testcp_ss" >> test.output
-${NCDUMP} -d5,5 testcp.exo | grep -v version > testcp_ss.dmp 
+${NCDUMP} -d5,5 testcp.exo | grep -v version > testcp_ss.dmp
 
 # testcpln - single-to-single, large to normal copy test
 echo "testcpln ..."
@@ -47,7 +47,7 @@ echo "testcpnl ..."
 echo "begin testcpnl" >> test.output
 ${PREFIX} ${SRCDIR}/testcpnl >> test.output
 echo "end testcpnl" >> test.output
-${NCDUMP} -d5,5 testcpnl.exo | grep -v version > testcpnl.dmp 
+${NCDUMP} -d5,5 testcpnl.exo | grep -v version > testcpnl.dmp
 
 # testwt1 - single precision write test with multiple side sets
 echo "testwt1 ..."
@@ -76,7 +76,7 @@ ${PREFIX} ${SRCDIR}/testrdd | grep -v version > testrdd.dmp
 # testwt2 - single precision write 2 files (simultaneously open) test
 echo "testwt2 ..."
 echo "begin testwt2" >> test.output
-${PREFIX} ${SRCDIR}/testwt2 >> test.output |&grep -v "property name string" 
+${PREFIX} ${SRCDIR}/testwt2 >> test.output |&grep -v "property name string"
 echo "end testwt2" >> test.output
 ${NCDUMP} -d5,5 test.exo | grep -v version > test2-1.dmp
 ${NCDUMP} -d5,5 test2.exo | grep -v version > test2-2.dmp
@@ -89,7 +89,7 @@ ${NCDUMP} -d5,5 test-nsided.exo | grep -v version > test-nsided.dmp
 
 # testrd_nsid - single precision read test
 echo "testrd_nsid ..."
-${PREFIX} ${SRCDIR}/testrd_nsid | grep -v version > testrd_nsid.dmp 
+${PREFIX} ${SRCDIR}/testrd_nsid | grep -v version > testrd_nsid.dmp
 
 echo "************************************************************************"
 echo "************************************************************************"

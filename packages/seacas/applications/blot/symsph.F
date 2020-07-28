@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
@@ -92,7 +92,7 @@ C   --   Uses NELBLK of /DBNUMS/
         SN(N) = SIN(ANGLE)
         ANGLE = ANGLE + ANGINC
  100  CONTINUE
-C
+
       iel = 0
       IRAD = 1
       ILNK = 1
@@ -132,13 +132,13 @@ C     Sort is based on element center.
       if (is3dim) then
         call indexx (zn, ispsor, numsph, .FALSE.)
       end if
-C
+
 C CHECK TO SEE IF CONTOURING IS ON
-C
+
       CONTOR = (MODDET .EQ. 'CONTOUR')
-C
+
 C IF CONTOURING MODE, SET ALTERNATE COLORS
-C
+
       IF(CONTOR) THEN
          CALL GRCOLU('ALTERNATE')
       END IF
@@ -191,9 +191,9 @@ C    behind this sphere.
         END IF
  130  continue
       call pltflu
-C
+
 C IF CONTOURING MODE, SET STANDARD COLORS
-C
+
       IF(CONTOR) THEN
          CALL GRCOLU('STANDARD')
       END IF

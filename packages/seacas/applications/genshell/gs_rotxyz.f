@@ -1,18 +1,12 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
       SUBROUTINE ROTXYZ (XYZ, ANG, ROTMAT)
 C=======================================================================
-
-C   $Id: rotxyz.f,v 1.1 1990/08/20 12:22:48 gdsjaar Exp $
-C   $Log: rotxyz.f,v $
-C   Revision 1.1  1990/08/20 12:22:48  gdsjaar
-C   Initial revision
-C
 
 C   --*** ROTXYZ *** (GEN3D) Multiply rotation matrix by XYZ rotation
 C   --   Written by Amy Gilkey - revised 05/23/86

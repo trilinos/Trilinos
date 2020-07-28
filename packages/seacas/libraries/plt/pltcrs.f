@@ -1,17 +1,9 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
-C $Id: pltcrs.f,v 1.2 1993/10/14 15:02:37 gdsjaar Exp $
-C $Log: pltcrs.f,v $
-C Revision 1.2  1993/10/14 15:02:37  gdsjaar
-C Removed warp pointer call in location setting
-C
-c Revision 1.1  1993/07/16  16:47:53  gdsjaar
-c Changed plt to library rather than single source file.
-c
 C=======================================================================
       LOGICAL FUNCTION PLTCRS(X,Y,KEY)
       CHARACTER KEY*1

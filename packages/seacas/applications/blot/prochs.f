@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
@@ -28,7 +28,6 @@ C   --   ATRIB  - I/O - array: attribute array
 C   --   LPTR   - IN  - array: link pointer array
 C   --   ISHEX  - IN  - number of element blocks with hex shells
 C   --   KHEXID - IN  - array storing HEXSHELL element block ids
-
 
       DIMENSION A(*),IA(*)
       INTEGER NELBLK

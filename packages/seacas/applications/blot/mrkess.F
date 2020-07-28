@@ -1,37 +1,9 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
-C $Log: mrkess.F,v $
-C Revision 1.6  2009/03/25 12:36:45  gdsjaar
-C Add copyright and license notice to all files.
-C Permission to assert copyright has been granted; blot is now open source, BSD
-C
-C Revision 1.5  2000/07/11 16:50:23  gdsjaar
-C SGI had problems with logical statement function, inlined it
-C
-C Revision 1.4  1997/06/26 17:51:34  caforsy
-C Substituted if NeedsDoubleEscape for ifdef sun.  This define is needed on cougar, sun and ibm platforms
-C
-C Revision 1.3  1996/05/15 16:17:47  caforsy
-C Changed Imakefile.  The cray.cf file has now removed the static heap
-C and the ifdef CrayArchitecture statement is no longer needed.
-C Changed the size of the arrows that mark the side sets.
-C
-C Revision 1.2  1994/04/08 13:25:57  gdsjaar
-C Removed hash mark from comments.
-C
-c Revision 1.1  1994/04/07  20:05:07  gdsjaar
-c Initial checkin of ACCESS/graphics/blotII2
-c
-CRevision 1.3  1993/07/08  21:57:13  gdsjaar
-CReplaced SUN with sun in all ifdef statements.
-C
-CRevision 1.2  1990/12/14  08:53:32  gdsjaar
-CAdded RCS Id and Log to all files
-C
 C=======================================================================
       SUBROUTINE MRKESS (LENF, NLNKF, LINKF,
      &   HIDENP, HIDEF, XN, YN, ZN, XF, YF, ZF,

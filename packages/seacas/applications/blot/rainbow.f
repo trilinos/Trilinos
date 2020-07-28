@@ -8,7 +8,7 @@ C  documentation for such software.
 C  Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C  of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C  NTESS, the U.S. Government retains certain rights in this software.
-C  
+C
 C  See packages/seacas/LICENSE for details
 
 C This routine computes colors suitable for use in color level plots.
@@ -39,7 +39,6 @@ C contact ehg@research.att.com.
 
 C computed from the FMC-1 color difference formula
 C Barco monitor, max(r,g,b)=1, n=61 magenta,  2 Jan 1986
-
 
       H = 60.0 * MOD(H / 1.5, 1.)
       I = INT(H)

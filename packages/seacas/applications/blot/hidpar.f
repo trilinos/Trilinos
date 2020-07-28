@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
@@ -273,7 +273,6 @@ C   --hidden by a visible face
       NPART = NPART + NQUES
       if ((cdebug .eq. 'HIDDEN') .and. (idebug .ge. 1))
      &   write (*, '(1x,a,i5)') 'invisible lines =', NNPART-npart
-
 
 C   --Delete the edges which are totally hidden lines
 

@@ -1,13 +1,13 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
       SUBROUTINE RENELB (NELBLK, IOFFNP, IXNP, NUMELB, NUMLNK, LINK)
 C=======================================================================
-C
+
 C   --*** RENELB *** (GJOIN) Renumber connectivity in element blocks
 C   --   Written by Amy Gilkey - revised 09/29/87
 C   --

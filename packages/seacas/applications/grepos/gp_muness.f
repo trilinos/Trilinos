@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
@@ -11,8 +11,7 @@ C=======================================================================
      &  LTEX, LTSX, TDX, IXESS, IXDSS, NEX, NDX, ISCR,
      *  NAMSCR, NAME)
 C=======================================================================
-C $Id: muness.f,v 1.2 2005/02/07 17:39:05 gdsjaar Exp $
-C
+
 C   --*** MUNESS *** (GJOIN) Compress and rearrange element side sets
 C   --   Written by Amy Gilkey - revised 02/25/88
 C   --

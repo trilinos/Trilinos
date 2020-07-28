@@ -2,31 +2,30 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 /*
- * $Id: exdate.c,v 1.19 2008/03/14 13:22:36 gdsjaar Exp $
  */
 
 /*
 C     DESCRIPTION:
 C     This routine returns the current date in a character string. The
 C     format is as follows:
-C
+
 C       YYYYMMDD
-C
+
 C     MM is a two digit month
 C     DD is a two digit day
 C     YYYY is a four digit year
-C
+
 C     This is known as the "Compact ISO 8601 format"
-C
+
 C     FORMAL PARAMETERS:
 C     STRING    CHARACTER       String to receive the date
-C
+
 ************************************************************************
-C
+
 */
 
 #define STRLEN 8

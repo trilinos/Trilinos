@@ -9,12 +9,12 @@ on the internal operation of SUPES is fully discussed.
 four subroutines: FREFLD (section~\ref{sec:frefld}),
 FFISTR (section~\ref{sec:ffistr}), GETINP
 (section~\ref{sec:getinp}), and STRIPB (section~\ref{sec:stripb}). All of
-these routines are written in fully standard ANSI FORTRAN. 
+these routines are written in fully standard ANSI FORTRAN.
 
 FREFLD calls the extension library routine EXUPCS
 (section~\ref{sec:exupcs}). If only the skeleton version of EXUPCS is
 available, case insensitivity of input data (rule~\ref{itm:case} of
-section~\ref{sec:syntax}) can not be guaranteed. 
+section~\ref{sec:syntax}) can not be guaranteed.
 
 FFISTR is the input line parsing routine.
 It is called by FREFLD,
@@ -24,7 +24,7 @@ The input line may be of arbitrary length.
 GETINP calls the extension library routine EXREAD
 (section~\ref{sec:exread}). If only the skeleton version of EXREAD is
 available, GETINP will not prompt nor guarantee echo when reading from the
-standard input device (KIN = 0). 
+standard input device (KIN = 0).
 
 
 \subsection{Implementation Notes on FREFLD}
@@ -115,7 +115,7 @@ A sample session from a Sun 4/60 Workstation follows:
     4        -1  "                "         0.               0
     5        -1  "                "         0.               0
    5: ^C                         <-- To exit, the user enters a ^C.
-% 
+%
 \end{verbatim}
 
 \section{Memory Manager} \label{sec:table}
@@ -125,11 +125,11 @@ implementation of the memory manager on systems which do not support the
 extension library.
 
 
-\subsection{Table Architecture and Maintenance} 
+\subsection{Table Architecture and Maintenance}
 The bookkeeping for the memory manager is accomplished with three tables; a
 memory block table, a void area table, and a dictionary.
 
-The {\em 
+The {\em
 memory block table} maintains a record of contiguous blocks of memory
 that have been received from the operating system.  If a series of requests
 causes separate blocks to become contiguous, these blocks are joined.  The
@@ -139,7 +139,7 @@ table is sorted in location order.
 Within each memory block, sections of memory that are not currently
 allocated to arrays are recorded in the {\em void area table}.  As in the
 case of the memory block table, contiguous voids are joined and this table
-is sorted in location order. 
+is sorted in location order.
 
 The {\em dictionary} relates storage locations with eight character array
 names. The dictionary is sorted via the default FORTRAN collating sequence.
@@ -147,7 +147,7 @@ All characters (including blanks) are significant.
 All names are converted to upper case then
 blank filled or truncated to eight characters.
 In addition to the array name, the
-dictionary stores the location and length of each dynamic array. 
+dictionary stores the location and length of each dynamic array.
 
 Any call for memory (MDGET or MDRSRV) will be satisfied in one of two ways:
 \begin{enumerate}
@@ -265,7 +265,7 @@ FUNC: mdlist
 
 
  **************************************************
-0 * * * * * * *  D I C T I O N A R Y  * * * * * * * 
+0 * * * * * * *  D I C T I O N A R Y  * * * * * * *
 0                               NUMERIC   CHARACTER
 	 NAME      LOCATION      LENGTH      LENGTH
 
@@ -283,14 +283,14 @@ FUNC: mdlist
 
 
  **************************************************
-0 * * * * * *  O R D E R E D   L I S T  * * * * * * 
+0 * * * * * *  O R D E R E D   L I S T  * * * * * *
 0                               NUMERIC   CHARACTER
 	 NAME      LOCATION      LENGTH      LENGTH
 
     1  CHAR           17664         107         850
     2  REAL1          17771         108          -1
     3  REAL2          17879         108          -1
-    4                 17987          61  
+    4                 17987          61
  BLOCK SIZE                         384         850
 
  ALLOCATED TOTAL                    384         850
@@ -298,8 +298,8 @@ FUNC: mdlist
      GRAND TOTAL                    384         850
 
 FUNC: exit
-   STOP              in MEMTEST 
-% 
+   STOP              in MEMTEST
+%
 \end{verbatim}
 
 
@@ -387,29 +387,29 @@ following order:
 \subsection{Implementation Notes for Modules}
 The format of the date for \underline{EXDATE} must be strictly observed.
 Many systems supply a date service routine which formats the date in a
-different style. Conversion to the SUPES format should be straightforward. 
+different style. Conversion to the SUPES format should be straightforward.
 
 Most systems provide a time of day service routine which formats the time in
 the desired style.  Some systems also return fractional seconds which can
 easily be trimmed off.  In any case, the format specified by
-\underline{EXTIME} must be strictly observed. 
+\underline{EXTIME} must be strictly observed.
 
 \underline{EXCPUS} is intended to measure performance rather than cost.  The
 quantity returned by EXCPUS should be raw CPU seconds; any weighting for
 memory use or priority should be removed.  I/O time should be included only
-if it is performed by the CPU. 
+if it is performed by the CPU.
 
 The hardware ID string for \underline{EXPARM} should reflect both the
 manufacturer and model of the processor.  For example, ``VAX 8600'' rather
 than just ``VAX'' allows the user to make sense of the CPU time returned by
-EXCPUS. 
+EXCPUS.
 
 The software ID string should reflect the release of the operating system in
 use, such as ``COS 1.11''.  It is not a trivial exercise to provide all
 pertinent information in eight characters for ad hoc systems like CTSS which
 vary widely between installations.  For example, the string ``CFTLIB14'' has
 been used to indicate a variation of the SUPES package for CTSS using CFTLIB
-and the CFT 1.14 compiler. 
+and the CFT 1.14 compiler.
 
 On most systems KCSU will give the number of characters per numeric word and
 KNSU will be unity.  For a hypothetical 36-bit processor which allows 8-bit
@@ -423,7 +423,7 @@ The unit/file mode of \underline{EXNAME} should follow as closely as
 possible to whatever convention the particular operating system uses for
 connecting a FORTRAN I/O unit to a file at execution time.  This feature
 should be easy to implement on systems which support pre-connection.  Support
-for units 1-99 should be sufficient. 
+for units 1-99 should be sufficient.
 
 The symbol mode feature of EXNAME should be designed to obtain messages from
 the system level procedure which activates the program.  Eight characters
@@ -437,7 +437,7 @@ possible into normal techniques for writing procedures for the system.
 
 The skeleton version of \underline{EXUPCS} is designed to work on any system
 which supports lower case letters.  This routine will rarely require any
-change. 
+change.
 
 \underline{EXREAD} must provide a prompt for an interactive device and
 guarantee that input is echoed.  This requires a careful determination of
@@ -445,13 +445,13 @@ the current execution environment.  For example, EXREAD must be able to
 handle input from a script file as well as from a terminal.  Any automatic
 echo service provided by the operating system should be employed wherever
 possible, as long as the user supplied prompt appears along with the input
-data echo. 
+data echo.
 
 In all instances,
 the C programming language provides a clean method for returning the
 address for \underline{IXLNUM}\@. In some cases it may be necessary to
 convert the address to numeric units.  For example, addresses on VMS must be
-divided by four to convert from bytes to numeric storage units. 
+divided by four to convert from bytes to numeric storage units.
 The same cannot necessarily be said for a character address
 as returned by \underline{IXLCHR}\@.
 The reader is referred to the source file \verb+ixlchr.c+ for further details
@@ -493,9 +493,9 @@ TST: ldkj        <-- At the SUPES prompt, the user enters a string.
 Input line = LDKJ    <-- The input line is returned in upper case.
 Date = 12/18/89
 Time = 09:58:05
-Unit 1 name = junk.dat 
-Unit 10 name =  
-Symbol 1 =  
+Unit 1 name = junk.dat
+Unit 10 name =
+Symbol 1 =
 Processor = Sun4      System = OS4.0.3c  Mode =   1
 Character, Numeric, D/A Units:   4  1  0
 Memory block location and length:   24700  128

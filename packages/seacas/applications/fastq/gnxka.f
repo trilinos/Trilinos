@@ -1,22 +1,21 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: gnxka.f,v 1.2 2000/11/13 15:41:35 gdsjaar Exp $
       SUBROUTINE GNXKA (MXND, XN, YN, K, NODES, AREA, LXK, NXL, CCW)
 C***********************************************************************
 C  SUBROUTINE GNXKA = GENERATES A LIST OF THE FOUR NODES ASSOCIATED WITH
 C                     ELEMENT K
-C
+
 C***********************************************************************
 C  VARIABLES USED:
 C     CCW    = .TRUE. IF LIST IS TO BE IN CCW ORDER AND AREA DEFINED
 C    (Changed to always put in order and calculate area)
-C
+
 C***********************************************************************
-C
+
       REAL XN (MXND), YN (MXND)
       INTEGER NODES(4)
       INTEGER LXK(4, MXND), NXL(2, 3 * MXND)

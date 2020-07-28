@@ -1,14 +1,9 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: nset.blk,v 1.1 1991/02/21 15:44:27 gdsjaar Exp $
-C $Log: nset.blk,v $
-C Revision 1.1  1991/02/21 15:44:27  gdsjaar
-C Initial revision
-C
       COMMON /NSET/ INS1, INS2, INS3, INS4, INS5
 C -- Node Sets:
 C    INS1 = IDNPS  (NUMNPS) NODAL POINT SET IDS
@@ -16,4 +11,3 @@ C    INS2 = NNNPS  (NUMNPS) NODAL POINT SET COUNTS
 C    INS3 = IPTNPS (NUMNPS) NODAL POINT SET POINTER
 C    INS4 = LSTNPS (LNPSNL) NODAL POINT SET NODE LIST
 C    INS5 = FACNPS (LNPSNL) NODAL POINT DISTRIBUTION FACTORS
-C

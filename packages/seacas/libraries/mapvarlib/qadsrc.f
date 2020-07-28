@@ -1,35 +1,35 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
       SUBROUTINE QADSRC(
      *  NDIM,     NPTS,     NPSRF,    NFSRF,    NISR,
      *  NRSR,     NRSS,     XYZE,     XYZP,     LS,
      *  ISRCHR,   RSRCHR,   IPT,      IELT,     IERR    )
-C
+
 C-----------------------------------------------------------------------
-C
+
 C DESCRIPTION:
-C
+
 C THIS SUBROUTINE CALCULATES THE CLOSEST POINT PROBLEM
 C BETWEEN 'KOUNTS' PAIRS OF POINTS AND SURFACES.
-C
+
 C-----------------------------------------------------------------------
-C
+
 C FORMAL PARAMETERS
-C
+
 C MEMORY      : P=PERMANENT, S=SCRATCH
 C NAME        : IMPLICIT A-H,O-Z REAL, I-N INTEGER
 C TYPE        : INPUT_STATUS/OUTPUT_STATUS (I=INPUT,O=OUTPUT,P=PASSED,
 C               U=UNMODIFIED,-=UNDEFINED)
 C DESCRIPTION : DESCRIPTION OF VARIABLE
-C
+
 C-----------------------------------------------------------------------
-C
+
 C CALLING ARGUMENTS
-C
+
 C MEMORY NAME     TYPE   DESCRIPTION
 C ---    ----     ---    -----------
 C  P     NDIM     I/U    DIMENSION OF PROBLEM=3
@@ -47,27 +47,27 @@ C  P     ISRCHR   I/O    INTEGER SEARCH RESULTS
 C  P     RSRCHR   I/O    REAL SEARCH RESULTS
 C  P     IPT      I/U    POINT PAIRED WITH SURFACE LISTED IN IELT
 C  P     IELT     I/U    SURFACE PAIRED WITH POINT LISTED IN IPT
-C
+
 C-----------------------------------------------------------------------
-C
+
       include 'amesh.blk'
       include 'ebbyeb.blk'
       include 'toldat.blk'
       include 'tapes.blk'
-C
+
 C INPUT/OUTPUT ARRAYS
       DIMENSION
      *  XYZP(NPTS,NDIM)     ,XYZE(NPSRF,NDIM)  ,LS(NELNDA,NFSRF)    ,
      *  ISRCHR(NISR,NPTS)   ,RSRCHR(NRSR,NPTS)
       DIMENSION XX(27), YY(27), ZZ(27)
-C
+
       IF( NISR .LT. 1 .OR. NRSR .LT. 3 .OR. NRSS .LT. 10 )THEN
         IERR = 1
         RETURN
       ENDIF
-C
+
 C check for Mesh-B point coincident with node of element in Mesh-A
-C
+
       SIDE1 = (XYZE(LS(1,IELT),1)-XYZE(LS(2,IELT),1))**2
      &      + (XYZE(LS(1,IELT),2)-XYZE(LS(2,IELT),2))**2
       SIDE2 = (XYZE(LS(2,IELT),1)-XYZE(LS(3,IELT),1))**2
@@ -84,10 +84,10 @@ C
         B = XYZE(LS(I,IELT),2) - XYZP(IPT,2)
         DIST = A**2+B**2
         IF (DIST .LT. COTEST)THEN
-C
+
 C coincident node, so fill search results arrays
 C no need to check for better search result
-C
+
           INODE = I
           ISRCHR(1,IPT) = IELT
           CALL NODE (3,INODE,RSRCHR(1,IPT),RSRCHR(2,IPT),
@@ -95,17 +95,17 @@ C
           GO TO 100
         END IF
  110  CONTINUE
-C
+
 C Mesh-B point not coincident with Mesh-A node so compute isoparametric
 C coordinates. Use Newton's method
-C
+
       SG = 0.
       TG = 0.
       RG = 0.
       ITER = 0
-C
+
 C Build Jacobian and invert
-C
+
       DO 120 I = 1, NELNDA
         XX(I) = XYZE(LS(I,IELT),1)
         YY(I) = XYZE(LS(I,IELT),2)
@@ -116,17 +116,17 @@ C
      &  A31,A32,A33,F1,F2,F3)
       DETA = A11*A22 - A12*A21
       IF (ABS(DETA) .GT. 1.E-25)THEN
-C
+
         AI11 =  A22/DETA
         AI12 = -A12/DETA
         AI21 = -A21/DETA
         AI22 =  A11/DETA
-C
+
         FS = F1 - XYZP(IPT,1)
         FT = F2 - XYZP(IPT,2)
         SNEW = SG - (AI11*FS + AI12*FT)
         TNEW = TG - (AI21*FS + AI22*FT)
-C
+
         ITER = ITER + 1
         DS = ABS(SNEW-SG)
         DT = ABS(TNEW-TG)
@@ -136,9 +136,9 @@ C
         IF (ITER .EQ. ITERMX)GO TO 100
         GO TO 130
       ELSE
-C
+
 C Zero Jacobian - check for degenerate quad (triangular element)
-C
+
         TRITST = EPS*EPS*SIDMAX
         IF (SIDE1 .LT. TRITST)THEN
           XX(1) = XYZE(LS(1,IELT),1)
@@ -176,9 +176,9 @@ C
      &      0,' ',' ',0)
           GO TO 100
         END IF
-C
+
 C Process as triangle
-C
+
  210    CONTINUE
         CALL JACOBN (1,XX,YY,ZZ,SG,TG,RG,A11,A12,A13,A21,A22,A23,
      &    A31,A32,A33,F1,F2,F3)
@@ -190,17 +190,17 @@ C
      &      'TRYING TO PROCESS AS A DEGENERATE QUAD (TRIANGLE)',
      &      0,' ',' ',0)
         END IF
-C
+
         AI11 =  A22/DETA
         AI12 = -A12/DETA
         AI21 = -A21/DETA
         AI22 =  A11/DETA
-C
+
         FS = F1 - XYZP(IPT,1)
         FT = F2 - XYZP(IPT,2)
         SNEW = SG - (AI11*FS + AI12*FT)
         TNEW = TG - (AI21*FS + AI22*FT)
-C
+
         ITER = ITER + 1
         DS = ABS(SNEW-SG)
         DT = ABS(TNEW-TG)
@@ -210,21 +210,21 @@ C
         IF (ITER .EQ. ITERMX)GO TO 100
         GO TO 210
       END IF
-C
+
  300  CONTINUE
-C
+
 C Newton converged, load up search results arrays if appropriate
-C
+
       IF (ABS(SNEW) .LT. STRLMT .AND. ABS(TNEW) .LT. STRLMT)THEN
-C
+
 C Search was adequate
-C
+
         FTEST = MAX(ABS(RSRCHR(1,IPT)),ABS(RSRCHR(2,IPT)))
         FCOMP = MAX(ABS(SNEW),ABS(TNEW))
         IF (FTEST .GT. FCOMP .OR. ISRCHR(1,IPT) .EQ. 0)THEN
-C
+
 C New search is better, replace search results
-C
+
           ISRCHR(1,IPT) = IELT
           RSRCHR(1,IPT) = SNEW
           RSRCHR(2,IPT) = TNEW

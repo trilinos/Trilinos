@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 C=======================================================================
       LOGICAL FUNCTION PLTSTG(INDX,BUFF)
@@ -339,7 +339,7 @@ C=======================================================================
 
       END
 
-C .. Same as PLTSTG 
+C .. Same as PLTSTG
       LOGICAL FUNCTION PLTSTG1(INDX,BUFF)
       REAL DEVCAP(23)
       REAL DEFOUT(7)
@@ -532,4 +532,4 @@ C .. Same as PLTSTG
       RETURN
 
       END
-      
+
