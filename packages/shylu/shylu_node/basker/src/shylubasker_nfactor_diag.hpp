@@ -208,6 +208,9 @@ namespace BaskerNS
    Int c
   )
   {  
+    const Entry zero (0.0);
+    const Entry one (1.0);
+
     Int bcol = BTF_C.scol;
     //Int brow = BTF_C.srow;
     Int btab = btf_tabs_offset;
@@ -218,7 +221,7 @@ namespace BaskerNS
 
     Int k = btf_tabs(c);
     //Int j = M.col_ptr(k+1-bcol)-1; // was assuming the column is sorted in the ascending order of row indexes
-    Entry pivot = (Entry)0.0;
+    Entry pivot = zero;
     for (Int j = M.col_ptr(k-bcol); j < M.col_ptr(k-bcol+1); j++) {
         if (M.row_idx(j) == k) pivot = M.val(j);
     }
@@ -231,7 +234,7 @@ namespace BaskerNS
     //printf("Single blk slv, kid: %d val:%f idx:%d %d \n",
     //	   kid, M.val[j], M.row_idx[j], M.srow);
 
-    if(pivot == (Entry)(0) )
+    if(pivot == zero)
     {
       if (Options.verbose == BASKER_TRUE) {
         printf("Error, zero diag in single factor\n");
@@ -243,7 +246,7 @@ namespace BaskerNS
     //M already has local idxing
     //U.row_idx(0) = M.row_idx(j);
     U.row_idx(0) = 0;
-    L.val(0)     = (Entry) 1.0;
+    L.val(0)     = one;
     //L.row_idx(0) = M.row_idx(j);
     L.row_idx(0) = 0;
     U.col_ptr(0) = 0;
@@ -266,6 +269,12 @@ namespace BaskerNS
    Int c
   )
   {
+    using STS = Teuchos::ScalarTraits<Entry>;
+    using Mag = typename STS::magnitudeType;
+
+    const Entry zero (0.0);
+    const Entry one (1.0);
+
     Int bcol = BTF_C.scol;
     //Int brow = BTF_C.srow;
     Int btab = btf_tabs_offset;
@@ -297,11 +306,10 @@ namespace BaskerNS
     timer_nfactor_tot.reset();
     #endif
 
-    Entry zero = (Entry)0.0;
     Teuchos::LAPACK<int, Entry> lapack;
-    //Entry rmin_ = lapack.LAMCH('E');
-    //Entry rmin_ = lapack.LAMCH('U');
-    Entry rmin_ = zero;
+    //Mag rmin_ = lapack.LAMCH('E');
+    //Mag rmin_ = lapack.LAMCH('U');
+    Mag rmin_ (0.0);
 
     //workspace
     Int ws_size       = thread_array(kid).iws_size;
@@ -320,9 +328,9 @@ namespace BaskerNS
     // Max number of nnz allowed/allocated
     Int llnnz  = L.mnnz;
     Int uunnz  = U.mnnz;
-    double absv = (double) 0;
-    double maxv = (double) 0;
-    double digv = (double) 0;
+    Mag absv = (Mag) 0;
+    Mag maxv = (Mag) 0;
+    Mag digv = (Mag) 0;
 
     Int maxindex = 0;
     Int digindex = 0;
@@ -398,7 +406,7 @@ namespace BaskerNS
           continue;
         }
 
-        if (M.val(i) != (Entry)0.0) 
+        if (M.val(i) != zero) 
         {
           X(j) = M.val(i);
 
@@ -625,12 +633,12 @@ namespace BaskerNS
       timer_nfactor.reset();
       #endif
       L.row_idx(lnnz) = maxindex; // ???
-      L.val(lnnz)     = (Entry) 1.0;
+      L.val(lnnz)     = one;
       ++lnnz;
 
       //printf("Pivot: %f \n", pivot);
 
-      Entry lastU = (Entry) 0.0;
+      Entry lastU = zero;
       for( i = top; i < ws_size; i++)
       {
         j = pattern[i];
@@ -706,7 +714,7 @@ namespace BaskerNS
       //Fill in last element of U
       U.row_idx(unnz) = k - L.scol;
       U.val(unnz)     = lastU; //NDE: lastU init to 0 line 563; only updated if 't < k' and t not BASKER_MAX_IDX; t defined by gperm i.e. pivoting
-      if(lastU == (Entry)(0) )
+      if(lastU == zero)
       {
         printf("Basker t_blk_nfactor: diag btf zero, error, c: %ld k: %ld \n", (long)c, (long)k);
       }
@@ -1045,6 +1053,7 @@ namespace BaskerNS
    Int xnnz
   )
   {
+    const Entry zero (0.0);
     
     INT_1DARRAY   ws = thread_array(kid).iws;
     ENTRY_1DARRAY  X = thread_array(kid).ews;
@@ -1073,7 +1082,7 @@ namespace BaskerNS
       #else
         Entry xj = X[j];
       #endif
-      if(t != BASKER_MAX_IDX && xj != (Entry) 0.0)
+      if(t != BASKER_MAX_IDX && xj != zero)
       { // j is original nonzero in upper-triangullar part of A
         Int k = t - L.scol;
         for(Int p = L.col_ptr(k)+1; p < L.col_ptr(k+1); ++p)

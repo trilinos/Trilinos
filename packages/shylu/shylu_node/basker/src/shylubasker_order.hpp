@@ -634,6 +634,13 @@ namespace BaskerNS
       match_flag = BASKER_FALSE;
     } else {
       match_flag = BASKER_TRUE;
+      /*printf( " A = [\n" );
+      for(Int j = 0; j < A.ncol; j++) {
+        for(Int k = A.col_ptr[j]; k < A.col_ptr[j+1]; k++) {
+          printf( " %d %d %e\n", A.row_idx[k],j,A.val[k]);
+        }
+      }
+      printf("];\n");*/
 
       int num_match = min(A.nrow, A.ncol);
       MALLOC_INT_1DARRAY(order_match_array, A.nrow);

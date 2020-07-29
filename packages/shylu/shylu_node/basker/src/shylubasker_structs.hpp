@@ -3,6 +3,7 @@
 
 #include "shylubasker_types.hpp"
 #include "shylubasker_vector.hpp"
+#include "shylubasker_scalar_traits.hpp"
 
 namespace BaskerNS
 {
@@ -721,6 +722,9 @@ namespace BaskerNS
   template <class Int, class Entry, class Exe_Space>
   struct basker_options
   {
+    using STS = Basker_ScalarTraits<Entry>;
+    using BASKER_MAGNITUDE = typename STS::magnitudeType;
+
     basker_options()
     {
 
@@ -764,8 +768,8 @@ namespace BaskerNS
 
       //Pivot
       no_pivot   = BASKER_FALSE;
-      pivot_tol  = (Entry)BASKER_PIVOT_TOL; 
-      pivot_bias = (Entry)BASKER_PIVOT_BIAS;
+      pivot_tol  = BASKER_PIVOT_TOL; 
+      pivot_bias = BASKER_PIVOT_BIAS;
 
       //Prune (if not pruned, check for numerical cancelatin)
       prune = BASKER_FALSE;
@@ -780,8 +784,7 @@ namespace BaskerNS
       //incomplete_type = BASKER_INCOMPLETE_RLVL_LIMITED;
       inc_lvl    = BASKER_INC_LVL_VALUE;
       inc_tol    = BASKER_INC_TOL_VALUE;
-      //user_fill  = (Entry)BASKER_FILL_USER;
-      user_fill  = (double)BASKER_FILL_USER;
+      user_fill  = BASKER_FILL_USER;
  
     }
 
@@ -809,8 +812,8 @@ namespace BaskerNS
 
     //BTF Ordering Options
     BASKER_BOOL  btf;
-    BASKER_ENTRY btf_max_percent;
-    BASKER_ENTRY btf_large;
+    BASKER_MAGNITUDE btf_max_percent;
+    BASKER_MAGNITUDE btf_large;
     BASKER_BOOL  use_sequential_diag_facto;
     // TODO: remove this (matching during symbolic)
     int btf_matching; // carbinality matching before BTF (Symbolic)
@@ -821,8 +824,8 @@ namespace BaskerNS
     
     //Pivot Options
     BASKER_BOOL  no_pivot;
-    BASKER_ENTRY pivot_tol;
-    BASKER_ENTRY pivot_bias;
+    BASKER_MAGNITUDE pivot_tol;
+    BASKER_MAGNITUDE pivot_bias;
 
     //Prune (if not pruned, check for numerical cancelatin)
     BASKER_BOOL prune;
@@ -834,9 +837,8 @@ namespace BaskerNS
     BASKER_BOOL  incomplete;
     BASKER_INT   incomplete_type;
     BASKER_INT   inc_lvl;
-    BASKER_ENTRY inc_tol;    //Not Used
-    //BASKER_ENTRY user_fill;
-    double user_fill;
+    BASKER_MAGNITUDE inc_tol;    //Not Used
+    BASKER_MAGNITUDE user_fill;
     
     /* ---- todo add more ----*/
   }; // end bask_options
