@@ -5,7 +5,7 @@ SET(${PACKAGE_NAME}_SKIP_INSTALL FALSE CACHE BOOL
   "Set to TRUE to skip the install of Gtest header and library")
 IF (${PACKAGE_NAME}_SKIP_INSTALL)
   SET(Gtest_NO_INSTALL_LIB_OR_HEADERS_ARG NO_INSTALL_LIB_OR_HEADERS CACHE INTERNAL "")
-  SET(INSTALL_GTEST OFF) # referenced by internal googletest package
+  SET(INSTALL_GTEST CACHE BOOL OFF) # referenced by internal googletest package
 ELSE()
   SET(Gtest_NO_INSTALL_LIB_OR_HEADERS_ARG CACHE INTERNAL "")
 ENDIF()
