@@ -211,7 +211,7 @@ namespace MueLu {
 #endif
       ////////////////////////////////////////////////////
 
-      enum decisionAlgoType {defaultAlgo, unscaled_cut, scaled_cut};
+      enum decisionAlgoType {defaultAlgo, unscaled_cut, scaled_cut, scaled_cut_symmetric};
 
       decisionAlgoType distanceLaplacianAlgo = defaultAlgo;
       decisionAlgoType classicalAlgo = defaultAlgo;
@@ -222,6 +222,8 @@ namespace MueLu {
           distanceLaplacianAlgo = unscaled_cut;
         else if (distanceLaplacianAlgoStr == "scaled cut")
           distanceLaplacianAlgo = scaled_cut;
+        else if (distanceLaplacianAlgoStr == "scaled cut symmetric")
+          distanceLaplacianAlgo = scaled_cut_symmetric;
         else
           TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "\"aggregation: distance laplacian algo\" must be one of (default|unscaled cut|scaled cut), not \"" << distanceLaplacianAlgoStr << "\"");
         GetOStream(Runtime0) << "algorithm = \"" << algo << "\" distance laplacian algorithm = \"" << distanceLaplacianAlgoStr << "\": threshold = " << threshold << ", blocksize = " << A->GetFixedBlockSize() << std::endl;
@@ -853,10 +855,20 @@ namespace MueLu {
           ArrayRCP<LO> rows    = ArrayRCP<LO>(numRows+1);
           ArrayRCP<LO> columns = ArrayRCP<LO>(A->getNodeNumEntries());
 
+	  // DEBUGGING
+	  for(LO i=0; i<(LO)columns.size(); i++) columns[i]=-666;
+
+	  // Extra array for if we're allowing symmetrization with cutting
+	  ArrayRCP<LO> rows_stop;
+	  bool use_stop_array = threshold != STS::zero() && distanceLaplacianAlgo == scaled_cut_symmetric;
+	  if(use_stop_array) 
+	    rows_stop.resize(numRows);
+	 
           const ArrayRCP<bool> amalgBoundaryNodes(numRows, false);
 
           LO realnnz = 0;
           rows[0] = 0;
+
           Array<LO> indicesExtra;
           {
           SubFactoryMonitor m1(*this, "Laplacian dropping", currentLevel);
@@ -898,6 +910,11 @@ namespace MueLu {
             numTotal += indices.size();
 
             LO nnz = indices.size(), rownnz = 0;
+
+	    if(use_stop_array) {
+	      rows[row+1] = rows[row]+nnz;
+	      realnnz = rows[row];
+	    }
 
             if (threshold != STS::zero()) {
               // default
@@ -984,7 +1001,7 @@ namespace MueLu {
                     drop_vec[i].drop = drop;
                   }
                 }
-                else if (distanceLaplacianAlgo == scaled_cut) {
+                else if (distanceLaplacianAlgo == scaled_cut || distanceLaplacianAlgo == scaled_cut_symmetric) {
 
                   std::sort( drop_vec.begin(), drop_vec.end()
                            , [](DropTol const& a, DropTol const& b) {
@@ -1055,11 +1072,54 @@ namespace MueLu {
               // and boundary nodes in the aggregation algorithms
               amalgBoundaryNodes[row] = true;
             }
-            rows[row+1] = realnnz;
+
+	    if(use_stop_array) 
+	      rows_stop[row] = rownnz + rows[row];
+	    else
+	      rows[row+1] = realnnz;
           } //for (LO row = 0; row < numRows; row++)
 
           } //subtimer
-          columns.resize(realnnz);
+
+	  if (use_stop_array) {
+	    // Do symmetrization of the cut matrix
+	    // NOTE: We assume nested row/column maps here
+	    for (LO row = 0; row < numRows; row++) {
+	      for (LO col = rows[row]; col < rows_stop[row]; col++) {
+		if(col >= numRows) continue;
+		
+		bool found = false;
+		for(LO t_col = rows[col] ; !found && t_col  < rows_stop[col]; t_col++) {
+		  if (t_col == row) 
+		    found = true;
+		}
+		// We didn't find the transpose buddy, so let's symmetrize, unless we'd be symmetrizing
+		// into a Dirichlet unknown.  In that case don't.
+		if(!found && !pointBoundaryNodes[col] && rows_stop[col] < rows[col+1]) {
+		  LO new_idx = rows_stop[col];
+		  columns[new_idx] = row;
+		  rows_stop[col]++;		  
+		}
+	      }
+	    }	      
+
+	    // Condense everything down
+	    LO current_start=0;
+	    for (LO row = 0; row < numRows; row++) {
+	      LO old_start = current_start;
+	      for (LO col = rows[row]; col < rows_stop[row]; col++) {
+		if(current_start != col) {
+		  columns[current_start] = columns[col];
+		}
+		current_start++;
+	      }
+	      rows[row] = old_start;	      	      	      	      
+	    }
+	    rows[numRows] = realnnz = current_start;
+
+	  }
+
+	  columns.resize(realnnz);
 
           RCP<GraphBase> graph;
           {
