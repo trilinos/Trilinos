@@ -250,14 +250,19 @@ namespace Tacho {
         
         r_val = analyze_condensed_graph();
       } else {
-        Graph graph(_m, _nnz, _h_ap, _h_aj);
-        graph_tools_type G(graph);
-        G.reorder(_verbose);
-        
-        _h_perm = G.PermVector(); 
-        _h_peri = G.InvPermVector();
-        
-        r_val = analyze_linear_system();
+	const bool use_graph_partitioner = (_h_perm.extent(0) == 0 && _h_peri.extent(0) == 0);
+	if (use_graph_partitioner) {
+	  Graph graph(_m, _nnz, _h_ap, _h_aj);
+	  graph_tools_type G(graph);
+	  G.reorder(_verbose);
+	  
+	  _h_perm = G.PermVector(); 
+	  _h_peri = G.InvPermVector();
+	  
+	  r_val = analyze_linear_system();
+	} else {
+	  r_val = analyze_linear_system();
+	} 
       }
     }
     return r_val;

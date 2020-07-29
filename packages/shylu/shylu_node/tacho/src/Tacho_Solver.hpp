@@ -211,6 +211,9 @@ namespace Tacho {
       _h_ap = Kokkos::create_mirror_view(host_memory_space(), ap); Kokkos::deep_copy(_h_ap, ap);
       _h_aj = Kokkos::create_mirror_view(host_memory_space(), aj); Kokkos::deep_copy(_h_aj, aj);
 
+      _h_perm = ordinal_type_array_host();
+      _h_peri = ordinal_type_array_host();
+      
       _nnz = _h_ap(m);
 
       _m_graph = 0;
@@ -225,6 +228,40 @@ namespace Tacho {
       return analyze();
     }
 
+    template<typename arg_size_type_array,
+             typename arg_ordinal_type_array,
+	     typename arg_perm_type_array>
+    int analyze(const ordinal_type m,
+                const arg_size_type_array &ap,
+                const arg_ordinal_type_array &aj,
+		const arg_perm_type_array &perm,
+		const arg_perm_type_array &peri) {
+      _m = m;
+
+      _ap   = Kokkos::create_mirror_view(exec_memory_space(), ap); Kokkos::deep_copy(_ap, ap);
+      _aj   = Kokkos::create_mirror_view(exec_memory_space(), aj); Kokkos::deep_copy(_aj, aj);
+
+      _h_ap = Kokkos::create_mirror_view(host_memory_space(), ap); Kokkos::deep_copy(_h_ap, ap);
+      _h_aj = Kokkos::create_mirror_view(host_memory_space(), aj); Kokkos::deep_copy(_h_aj, aj);
+
+      _h_perm = Kokkos::create_mirror_view(host_memory_space(), perm); Kokkos::deep_copy(_h_perm, perm);
+      _h_peri = Kokkos::create_mirror_view(host_memory_space(), peri); Kokkos::deep_copy(_h_peri, peri);
+      
+      _nnz = _h_ap(m);
+
+      _m_graph = 0;
+      _nnz_graph = 0;
+
+      _h_ap_graph = size_type_array_host();
+      _h_aj_graph = ordinal_type_array_host();
+
+      _h_perm_graph = ordinal_type_array_host();
+      _h_peri_graph = ordinal_type_array_host();
+      
+      return analyze();
+    }
+
+    
     template<typename arg_size_type_array,
              typename arg_ordinal_type_array>
     int analyze(const ordinal_type m,
@@ -242,6 +279,9 @@ namespace Tacho {
       _h_ap = Kokkos::create_mirror_view(host_memory_space(), ap); Kokkos::deep_copy(_h_ap, ap);
       _h_aj = Kokkos::create_mirror_view(host_memory_space(), aj); Kokkos::deep_copy(_h_aj, aj);
 
+      _h_perm = ordinal_type_array_host();
+      _h_peri = ordinal_type_array_host();
+      
       _nnz = _h_ap(m);
 
       _m_graph = m_graph;
@@ -249,6 +289,9 @@ namespace Tacho {
       _h_aj_graph = Kokkos::create_mirror_view(host_memory_space(), aj_graph); Kokkos::deep_copy(_h_aj_graph, aj_graph);
       _h_aw_graph = Kokkos::create_mirror_view(host_memory_space(), aw_graph); Kokkos::deep_copy(_h_aw_graph, aw_graph);
 
+      _h_perm_graph = ordinal_type_array_host();
+      _h_peri_graph = ordinal_type_array_host();
+      
       _nnz_graph = _h_ap_graph(m_graph);
 
       return analyze();
