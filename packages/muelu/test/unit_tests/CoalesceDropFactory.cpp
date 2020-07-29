@@ -1221,6 +1221,12 @@ namespace MueLuTests {
     Teuchos::ParameterList galeriList;
     galeriList.set("nx", Teuchos::as<GlobalOrdinal>(36));
     RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), galeriList);
+    // Now we doctor the coordinates so that the off-diagonal pair row 0 will want to keep (0,1) and row 1 will want to drop (1,0)
+    if(!comm->getRank()) {
+      auto vals = coordinates->getDataNonConst(0);
+      vals[0] = vals[0] - 2000*36;
+    }
+
     fineLevel.Set("Coordinates", coordinates);
 
     CoalesceDropFactory coalesceDropFact;
@@ -1254,7 +1260,7 @@ namespace MueLuTests {
     TEST_EQUALITY(myDomainMap->getMinLocalIndex(),0);
     TEST_EQUALITY(myDomainMap->getGlobalNumElements(),36);
 
-    TEST_EQUALITY(graph->GetGlobalNumEdges(),106);
+    TEST_EQUALITY(graph->GetGlobalNumEdges(),105);
 
   } // DistanceLaplacianCut
 
@@ -1280,6 +1286,13 @@ namespace MueLuTests {
     Teuchos::ParameterList galeriList;
     galeriList.set("nx", Teuchos::as<GlobalOrdinal>(36));
     RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), galeriList);
+
+    // Now we doctor the coordinates so that the off-diagonal pair row 0 will want to keep (0,1) and row 1 will want to drop (1,0)
+    if(!comm->getRank()) {
+      auto vals = coordinates->getDataNonConst(0);
+      vals[0] = vals[0] - 2000*36;
+    }
+
     fineLevel.Set("Coordinates", coordinates);
 
     CoalesceDropFactory coalesceDropFact;
