@@ -1098,7 +1098,8 @@ namespace MueLu {
 		if(!found && !pointBoundaryNodes[col] && rows_stop[col] < rows[col+1]) {
 		  LO new_idx = rows_stop[col];
 		  columns[new_idx] = row;
-		  rows_stop[col]++;		  
+		  rows_stop[col]++;	
+		  numDropped--;
 		}
 	      }
 	    }	      
