@@ -272,6 +272,7 @@ private:
     Kokkos::View<const int*,PHX::Device> offsets; // how to get a particular field
     Kokkos::View<const double**, Kokkos::LayoutLeft,PHX::Device> x_data;
     double seed_value;                            // AD seed information
+    int dos;	                                  // Offset for special interface bc
 
     // output fields
     PHX::MDField<ScalarT,Cell,NODE> field;

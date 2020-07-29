@@ -85,13 +85,15 @@ void StepperLeapfrog<Scalar>::setInitialConditions(
   // Check if we need Stepper storage for xDotDot
   if (initialState->getXDotDot() == Teuchos::null)
     this->setStepperXDotDot(initialState->getX()->clone_v());
+  else
+    this->setStepperXDotDot(initialState->getXDotDot());
 
   StepperExplicit<Scalar>::setInitialConditions(solutionHistory);
 
   if (this->getUseFSAL()) {
     Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
     Teuchos::OSTab ostab(out,1,"StepperLeapfrog::setInitialConditions()");
-    *out << "Warning -- The First-Step-As-Last (FSAL) principle is not "
+    *out << "Warning -- The First-Same-As-Last (FSAL) principle is not "
          << "used with Leapfrog because of the algorithm's prescribed "
          << "order of solution update. The default is to set useFSAL=false, "
          << "however useFSAL=true will also work but have no affect "

@@ -42,7 +42,7 @@ namespace Tempus {
  *  Note that \f$x_n\f$ and \f$\dot{x}_{n-1}\f$ are not at the same time
  *  level at the end of the time step (i.e., they are not sync'ed).
  *
- *  To have them at the same time level, we can use the First-Step-As-Last
+ *  To have them at the same time level, we can use the First-Same-As-Last
  *  (FSAL) principle where the function evaulation from the last time step
  *  can be used as the first function evalulation of the current step.
  *  For the Forward Euler, the FSAL algorithm is
@@ -72,7 +72,7 @@ public:
     std::string ICConsistency,
     bool ICConsistencyCheck);
 #endif
- 
+
   /// Constructor
   StepperForwardEuler(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,

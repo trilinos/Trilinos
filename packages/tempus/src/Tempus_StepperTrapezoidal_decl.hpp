@@ -27,7 +27,7 @@ namespace Tempus {
  *   - Solve \f$\mathcal{F}_n(\dot{x}=(x_n-x_{n-1})/(\Delta t_n/2) - \dot{x}_{n-1}, x_n, t_n)=0\f$ for \f$x_n\f$
  *   - \f$\dot{x}_n \leftarrow (x_n-x_{n-1})/(\Delta t_n/2) - \dot{x}_{n-1}\f$
  *
- *   The First-Step-As-Last (FSAL) principle is required for the Trapezoidal
+ *   The First-Same-As-Last (FSAL) principle is required for the Trapezoidal
  *   Stepper (i.e., useFSAL=true)!  There are at least two ways around this,
  *   but are not implemented.
  *    - Do a solve for xDotOld, xDot_{n-1}, at each time step as for the
