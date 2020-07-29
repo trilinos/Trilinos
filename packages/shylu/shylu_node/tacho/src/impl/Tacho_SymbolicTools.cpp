@@ -681,58 +681,68 @@ namespace Tacho {
                              "Error: SymbolicTools::evaporateSymbolicFactors, # of equations do not match between as and aq");
 
     ///
-    /// Evaporate condensed graph
+    /// Evaporate condensed graph for a debugging purpose
     ///
     const size_type m = as(_m);
-    // size_type_array ap(do_not_initialize_tag("ap"), m+1); 
-    // track_alloc(ap.span());
-      
-    // ap(0) = 0;
-    // {
-    //   ordinal_type ii(0);
-    //   for (ordinal_type i=0;i<_m;++i) {
-    //     ordinal_type cnt(0);
-    //     const ordinal_type 
-    //       jbeg = _ap(i), 
-    //       jend = _ap(i+1);
-    //     for (ordinal_type j=jbeg;j<jend;++j) {
-    //       const ordinal_type idx = _aj(j);
-    //       cnt += (as(idx+1) - as(idx));
-    //     }
-    //     const ordinal_type kbeg = as(i), kend = as(i+1);
-    //     for (ordinal_type k=kbeg;k<kend;++k,++ii) {
-    //       ap(k+1) = ap(k) + cnt;
-    //     }
-    //   }
-    //   TACHO_TEST_FOR_EXCEPTION(ii != m, std::logic_error, 
-    //                            "Error: SymbolicTools::evaporateSymbolicFactors, evaporation of ap fails");      
-    // }
-    
-    // ordinal_type_array aj(do_not_initialize_tag("ap"), ap(m));
-    // track_alloc(aj.span());
-    // {
-    //   for (ordinal_type i=0;i<_m;++i) {
-    //     const ordinal_type 
-    //       jbeg = _ap(i), 
-    //       jend = _ap(i+1), 
-    //       jjbeg = ap(as(i));
-    //     for (ordinal_type j=jbeg,jj=jjbeg;j<jend;++j) {
-    //       const ordinal_type idx = _aj(j);
-    //       const ordinal_type kbeg = as(idx), kend = as(idx+1);
-    //       for (ordinal_type k=kbeg;k<kend;++k,++jj)
-    //         aj(jj) = k;        
-    //     }
-        
-    //     const ordinal_type 
-    //       kbeg = as(i), 
-    //       kend = as(i+1),
-    //       nnz_per_row = ap(kbeg+1)-ap(kbeg);
-    //     for (ordinal_type k=kbeg+1;k<kend;++k) 
-    //       memcpy(aj.data()+ap(k),
-    //              aj.data()+ap(kbeg),
-    //              sizeof(ordinal_type)*nnz_per_row);
-    //   }
-    // }
+#if 0
+    {
+      size_type_array ap(do_not_initialize_tag("ap"), m+1); 
+      ap(0) = 0;
+      {
+        ordinal_type ii(0);
+        for (ordinal_type i=0;i<_m;++i) {
+          ordinal_type cnt(0);
+          const ordinal_type 
+            jbeg = _ap(i), 
+            jend = _ap(i+1);
+          for (ordinal_type j=jbeg;j<jend;++j) {
+            const ordinal_type idx = _aj(j);
+            cnt += (as(idx+1) - as(idx));
+          }
+          const ordinal_type kbeg = as(i), kend = as(i+1);
+          for (ordinal_type k=kbeg;k<kend;++k,++ii) {
+            ap(k+1) = ap(k) + cnt;
+          }
+        }
+        TACHO_TEST_FOR_EXCEPTION(ii != m, std::logic_error, 
+                                 "Error: SymbolicTools::evaporateSymbolicFactors, evaporation of ap fails");      
+      }
+      {
+        printf("Evaporated # of rows: %d\n", m);
+        for (ordinal_type i=0,iend=ap.extent(0);i<iend;++i) 
+          printf("%d\n", ap(i));
+      }
+      ordinal_type_array aj(do_not_initialize_tag("ap"), ap(m));
+      {
+        for (ordinal_type i=0;i<_m;++i) {
+          const ordinal_type 
+            jbeg = _ap(i), 
+            jend = _ap(i+1), 
+            jjbeg = ap(as(i));
+          for (ordinal_type j=jbeg,jj=jjbeg;j<jend;++j) {
+            const ordinal_type idx = _aj(j);
+            const ordinal_type kbeg = as(idx), kend = as(idx+1);
+            for (ordinal_type k=kbeg;k<kend;++k,++jj)
+              aj(jj) = k;        
+          }
+          const ordinal_type 
+            kbeg = as(i), 
+            kend = as(i+1),
+            nnz_per_row = ap(kbeg+1)-ap(kbeg);
+
+          for (ordinal_type k=kbeg+1;k<kend;++k) 
+            memcpy(aj.data()+ap(k),
+                   aj.data()+ap(kbeg),
+                   sizeof(ordinal_type)*nnz_per_row);
+        }
+      }
+      {
+        printf("Evaporated # of nonzeros: %d\n", ordinal_type(aj.extent(0)));
+        for (ordinal_type i=0,iend=aj.extent(0);i<iend;++i) 
+          printf("%d\n", aj(i));
+      }
+    }
+#endif
 
     ///
     /// Evaporate perm and peri
@@ -842,8 +852,7 @@ namespace Tacho {
     track_free(_blk_super_panel_colidx.span());
 
     _m = m;
-    //_ap = ap;
-    //_aj = aj;
+    /// _ap and _aj is not updated and remains as representing the input condensed graph
     _perm = perm;
     _peri = peri;
     _gid_super_panel_ptr = gid_super_panel_ptr;
@@ -856,7 +865,6 @@ namespace Tacho {
     /// verbose output
     ///
     stat.nrows = _m;
-    //stat.nnz_a = _ap(_m);
 
     if (verbose) {
       printf("Summary: EvaporateSymbolicFactors\n");
@@ -871,7 +879,6 @@ namespace Tacho {
         printf("\n");            
         printf("  Linear system A\n");
         printf("             number of equations:                             %10d\n", stat.nrows);
-        //printf("             number of nonzeros:                              %10.0f (%5.2f %% )\n", double(stat.nnz_a), double(stat.nnz_a)/(double(stat.nrows)*double(stat.nrows))*100.0);
         printf("\n");
         printf("  Memory\n");
         printf("             memory used:                                     %10.4f MB\n", m_used/kilo/kilo);

@@ -8,6 +8,13 @@ FILE(GLOB SOURCES *.cpp)
 
 SET(LIBRARIES tacho)
 
+TRIBITS_ADD_EXECUTABLE(
+  Tacho_ExampleCombineDataFileToMatrixMarketFile
+  NOEXEPREFIX
+  SOURCES Tacho_ExampleCombineDataFileToMatrixMarketFile.cpp
+  COMM serial mpi
+)
+
 IF (TACHO_HAVE_KOKKOS_TASK)
   #
   # Supernodes
