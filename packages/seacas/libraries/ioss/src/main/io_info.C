@@ -227,7 +227,7 @@ namespace {
                    sb->get_property("offset_k").get_int());
       }
 
-      fmt::print("{:14n} cells, {:14n} nodes ", num_cell, num_node);
+      fmt::print("  {:14n} cells, {:14n} nodes ", num_cell, num_node);
 
       info_aliases(region, sb, true, false);
       Ioss::Utils::info_fields(sb, Ioss::Field::TRANSIENT, "\n\tTransient:  ");

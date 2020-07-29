@@ -276,6 +276,21 @@ namespace Iocgns {
 
     int ordinal = min_ordinal;
 
+    // One more check to try to produce more "squarish" decompositions.
+    // Check the ratio of max ordinal to selected min_ordinal and if > 3 (hueristic), choose the max ordinal instead.
+    int max_ordinal = -1;
+    int max_ordinal_sz = 0;
+    for (int i=0; i < 3; i++) {
+      if (m_lineOrdinal != i && m_ordinal[i] > max_ordinal_sz) {
+	max_ordinal = i;
+	max_ordinal_sz = m_ordinal[i];
+      }
+    }
+
+    if (max_ordinal != -1 && max_ordinal_sz / m_ordinal[ordinal] > 3) {
+      ordinal = max_ordinal;
+    }
+
     if (m_ordinal[ordinal] <= 1 || (work0 == 0 && work1 == 0 && work2 == 0)) {
       return std::make_pair(nullptr, nullptr);
     }
