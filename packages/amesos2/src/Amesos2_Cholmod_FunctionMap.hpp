@@ -72,13 +72,13 @@ namespace Amesos2 {
     
     static void cholmod_init_sparse(size_t nrow, size_t ncol, size_t nzmax,
 				    int sorted, void *p, void *x, void *i,
-				    cholmod_sparse *sparse)
+				    cholmod_sparse *sparse, int cholmod_itype)
     {
       sparse->nrow = nrow;
       sparse->ncol = ncol;
       sparse->nzmax = nzmax;
       sparse->stype = 1;
-      sparse->itype = CHOLMOD_LONG;
+      sparse->itype = cholmod_itype;
       sparse->sorted = 0;
       sparse->packed = 1;
       sparse->xtype = CHOLMOD_REAL;
@@ -107,13 +107,13 @@ namespace Amesos2 {
   {
     static void cholmod_init_sparse(size_t nrow, size_t ncol, size_t nzmax,
 				    int sorted, void *p, void *x, void*i,
-				    cholmod_sparse* sparse)
+				    cholmod_sparse* sparse, int cholmod_itype)
     {
       sparse->nrow = nrow;
       sparse->ncol = ncol;
       sparse->nzmax = nzmax;
       sparse->stype = 1;
-      sparse->itype = CHOLMOD_LONG;
+      sparse->itype = cholmod_itype;
       sparse->sorted = 0;
       sparse->packed = 1;
       sparse->xtype = CHOLMOD_REAL;
@@ -145,13 +145,13 @@ namespace Amesos2 {
 
     static void cholmod_init_sparse(size_t nrow, size_t ncol, size_t nzmax,
 				    int sorted, void *p, void *x, void *i,
-				    cholmod_sparse* sparse)
+				    cholmod_sparse* sparse, int cholmod_itype)
     {
       sparse->nrow = nrow;
       sparse->ncol = ncol;
       sparse->nzmax = nzmax;
       sparse->stype = 1;
-      sparse->itype = CHOLMOD_LONG;
+      sparse->itype = cholmod_itype;
       sparse->sorted = 0;
       sparse->packed = 1;
       sparse->xtype = CHOLMOD_COMPLEX;
@@ -182,13 +182,13 @@ namespace Amesos2 {
 
     static void cholmod_init_sparse(size_t nrow, size_t ncol, size_t nzmax,
             int sorted, void *p, void *x, void *i,
-            cholmod_sparse* sparse)
+            cholmod_sparse* sparse, int cholmod_itype)
     {
       sparse->nrow = nrow;
       sparse->ncol = ncol;
       sparse->nzmax = nzmax;
       sparse->stype = 1;
-      sparse->itype = CHOLMOD_LONG;
+      sparse->itype = cholmod_itype;
       sparse->sorted = 0;
       sparse->packed = 1;
       sparse->xtype = CHOLMOD_COMPLEX;
