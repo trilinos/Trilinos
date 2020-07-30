@@ -308,7 +308,6 @@ class RILUK:
   //typedef typename KokkosKernels::Experimental::KokkosKernelsHandle
   //    <typename lno_row_view_t::non_const_value_type, typename lno_nonzero_view_t::non_const_value_type, typename scalar_nonzero_view_t::value_type,
   //    HandleExecSpace, TemporaryMemorySpace,PersistentMemorySpace > kk_handle_type;//test
-  Teuchos::RCP<kk_handle_type> KernelHandle_;
   
   /// \brief Constructor that takes a Tpetra::RowMatrix.
   ///
@@ -625,6 +624,9 @@ protected:
   magnitude_type Athresh_;
   magnitude_type Rthresh_;
 
+  //! Optional KokkosKernels implementation.
+  bool isKokkosKernelsSpiluk_;
+  Teuchos::RCP<kk_handle_type> KernelHandle_;
 };
 
 // NOTE (mfh 11 Feb 2015) This used to exist in order to deal with

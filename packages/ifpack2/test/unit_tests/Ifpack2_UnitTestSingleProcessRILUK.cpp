@@ -180,7 +180,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, Test0, Scalar, LO, 
     int fill_level = 1;
     params.set("fact: iluk level-of-fill", fill_level);
     params.set("fact: iluk level-of-overlap", 0);
-    
+    params.set("fact: type", "Serial");    
     TEST_NOTHROW(prec.setParameters(params));
     
     TEST_EQUALITY( prec.getLevelOfFill(), fill_level);
