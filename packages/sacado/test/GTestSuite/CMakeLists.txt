@@ -1,3 +1,5 @@
+add_subdirectory(googletest)
+
 INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/Fad)
 INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/test/utils)
 
