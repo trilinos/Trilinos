@@ -5,16 +5,10 @@ SET(${PACKAGE_NAME}_SKIP_INSTALL FALSE CACHE BOOL
   "Set to TRUE to skip the install of Gtest header and library")
 IF (${PACKAGE_NAME}_SKIP_INSTALL)
   SET(Gtest_NO_INSTALL_LIB_OR_HEADERS_ARG NO_INSTALL_LIB_OR_HEADERS CACHE INTERNAL "")
-  SET(INSTALL_GTEST OFF CACHE BOOL "Install GTest") # referenced by internal googletest package
+  SET(INSTALL_GTEST CACHE BOOL OFF) # referenced by internal googletest package
 ELSE()
   SET(Gtest_NO_INSTALL_LIB_OR_HEADERS_ARG CACHE INTERNAL "")
-  # Internal googltest package uses GNUInstallDirs, which installs in lib64
-  # by default instead of lib like the rest of Trilinos.
-  SET(CMAKE_INSTALL_LIBDIR "lib" CACHE PATH "Object code libraries for GTest")
 ENDIF()
-
-# disable pthreads (not sure why, the previous version here did this)
-SET(gtest_disable_pthreads ON CACHE BOOL "Disable uses of pthreads in gtest")
 
 # Configure googletest
 add_subdirectory(googletest)
