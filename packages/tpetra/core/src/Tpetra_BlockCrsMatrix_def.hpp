@@ -1111,6 +1111,8 @@ public:
     const Scalar one_minus_omega = Teuchos::ScalarTraits<Scalar>::one()-omega;
     const Scalar     minus_omega = -omega;
 
+    Kokkos::fence();
+
     if (numVecs == 1) {
       for (LO lclRow = rowBegin; lclRow != rowEnd; lclRow += rowStride) {
         const LO actlRow = lclRow - 1;
