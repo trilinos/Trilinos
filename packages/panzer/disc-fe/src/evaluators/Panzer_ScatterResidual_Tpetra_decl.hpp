@@ -246,6 +246,9 @@ private:
 
   Kokkos::View<int**,PHX::Device> scratch_lids_;
   std::vector<Kokkos::View<int*,PHX::Device> > scratch_offsets_;
+
+  int my_derivative_size_;
+  int other_derivative_size_;
 };
 
 }

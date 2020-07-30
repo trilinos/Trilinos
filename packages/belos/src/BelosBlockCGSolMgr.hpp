@@ -523,9 +523,11 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   // Check if the user is requesting the single-reduction version of CG (only for blocksize == 1)
   if (params->isParameter("Use Single Reduction")) {
     useSingleReduction_ = params->get("Use Single Reduction", useSingleReduction_default_);
-    if (useSingleReduction_)
-      foldConvergenceDetectionIntoAllreduce_ = params->get("Fold Convergence Detection Into Allreduce",
-                                                           foldConvergenceDetectionIntoAllreduce_default_);
+  }
+
+  if (params->isParameter("Fold Convergence Detection Into Allreduce")) {
+    foldConvergenceDetectionIntoAllreduce_ = params->get("Fold Convergence Detection Into Allreduce",
+                                                         foldConvergenceDetectionIntoAllreduce_default_);
   }
 
   // Check to see if the timer label changed.
@@ -898,9 +900,9 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP,true>::solve() {
     // Standard (nonblock) CG is faster for the special case of a
     // block size of 1.  A single reduction iteration can also be used
     // if collectives are more expensive than vector updates.
+    plist.set("Fold Convergence Detection Into Allreduce",
+              foldConvergenceDetectionIntoAllreduce_);
     if (useSingleReduction_) {
-      plist.set("Fold Convergence Detection Into Allreduce",
-                foldConvergenceDetectionIntoAllreduce_);
       block_cg_iter =
         rcp (new CGSingleRedIter<ScalarType,MV,OP> (problem_, printer_,
                                                     outputTest_, convTest_, plist));
@@ -908,7 +910,7 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP,true>::solve() {
     else {
       block_cg_iter =
         rcp (new CGIter<ScalarType,MV,OP> (problem_, printer_,
-                                           outputTest_, plist));
+                                           outputTest_, convTest_, plist));
     }
   } else {
     block_cg_iter =

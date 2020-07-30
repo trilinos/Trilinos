@@ -2024,6 +2024,7 @@ namespace KB = KokkosBatched::Experimental;
         KB::LU<member_type,
                default_mode_type,KB::Algo::LU::Unblocked>
           ::invoke(member, A , tiny);
+
         if (nrows > 1) {
           auto B = A;
           auto C = A;
@@ -2040,6 +2041,8 @@ namespace KB = KokkosBatched::Experimental;
                      default_mode_type,default_algo_type>
               ::invoke(member, one, A, C);
             A.assign_data( &AA(i+3,0,0,v) );
+
+            member.team_barrier();
             KB::Gemm<member_type,
                      KB::Trans::NoTranspose,KB::Trans::NoTranspose,
                      default_mode_type,default_algo_type>
@@ -2565,6 +2568,7 @@ namespace KB = KokkosBatched::Experimental;
              X, xs0);
 
           for (local_ordinal_type tr=1;tr<nrows;++tr) {
+            member.team_barrier();
             KOKKOSBATCHED_GEMV_NO_TRANSPOSE_INTERNAL_INVOKE
               (default_mode_type,default_algo_type,
                member,
@@ -2574,7 +2578,6 @@ namespace KB = KokkosBatched::Experimental;
                X, xs0,
                one,
                X+1*xstep, xs0);
-
             KOKKOSBATCHED_TRSV_LOWER_NO_TRANSPOSE_INTERNAL_INVOKE
               (default_mode_type,default_algo_type,
                member,
@@ -2600,6 +2603,7 @@ namespace KB = KokkosBatched::Experimental;
 
           for (local_ordinal_type tr=nrows;tr>1;--tr) {
             A -= 3*astep;
+            member.team_barrier();
             KOKKOSBATCHED_GEMV_NO_TRANSPOSE_INTERNAL_INVOKE
               (default_mode_type,default_algo_type,
                member,
@@ -2609,7 +2613,6 @@ namespace KB = KokkosBatched::Experimental;
                X, xs0,
                one,
                X-1*xstep, xs0);
-
             KOKKOSBATCHED_TRSV_UPPER_NO_TRANSPOSE_INTERNAL_INVOKE
               (default_mode_type,default_algo_type,
                member,
@@ -2618,7 +2621,6 @@ namespace KB = KokkosBatched::Experimental;
                one,
                A, as0, as1,
                X-1*xstep,xs0);
-
             X -= 1*xstep;
           }
           // for multiple rhs
@@ -2629,6 +2631,7 @@ namespace KB = KokkosBatched::Experimental;
           KOKKOSBATCHED_COPY_VECTOR_NO_TRANSPOSE_INTERNAL_INVOKE
             (default_mode_type,
              member, blocksize, X, xs0, W, ws0);
+          member.team_barrier();
           KOKKOSBATCHED_GEMV_NO_TRANSPOSE_INTERNAL_INVOKE
             (default_mode_type,default_algo_type,
              member,
@@ -2677,6 +2680,7 @@ namespace KB = KokkosBatched::Experimental;
           for (local_ordinal_type tr=1;tr<nrows;++tr,i+=3) {
             A.assign_data( &D_internal_vector_values(i+2,0,0,v) );
             X2.assign_data( &X_internal_vector_values(++r,0,0,v) );
+            member.team_barrier();
             KB::Gemm<member_type,
                      KB::Trans::NoTranspose,KB::Trans::NoTranspose,
                      default_mode_type,default_algo_type>
@@ -2698,10 +2702,12 @@ namespace KB = KokkosBatched::Experimental;
             i -= 3;
             A.assign_data( &D_internal_vector_values(i+1,0,0,v) );
             X2.assign_data( &X_internal_vector_values(--r,0,0,v) );
+            member.team_barrier();
             KB::Gemm<member_type,
                      KB::Trans::NoTranspose,KB::Trans::NoTranspose,
                      default_mode_type,default_algo_type>
               ::invoke(member, -one, A, X1, one, X2);
+
             A.assign_data( &D_internal_vector_values(i,0,0,v) );
             KB::Trsm<member_type,
                      KB::Side::Left,KB::Uplo::Upper,KB::Trans::NoTranspose,KB::Diag::NonUnit,
@@ -2714,6 +2720,7 @@ namespace KB = KokkosBatched::Experimental;
           auto W = Kokkos::subview(WW, Kokkos::ALL(), Kokkos::ALL(), v);
           KB::Copy<member_type,KB::Trans::NoTranspose,default_mode_type>
             ::invoke(member, X1, W);
+          member.team_barrier();
           KB::Gemm<member_type,
                    KB::Trans::NoTranspose,KB::Trans::NoTranspose,
                    default_mode_type,default_algo_type>

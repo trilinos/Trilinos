@@ -37,7 +37,7 @@ namespace Tempus {
  * the Newmark Beta stepper, the linear solve for the explicit version of
  * this scheme has not been optimized (the mass matrix is not lumped).
  *
- *  The First-Step-As-Last (FSAL) principle is not used with the
+ *  The First-Same-As-Last (FSAL) principle is not used with the
  *  HHT-Alpha method.
  */
 template<class Scalar>
