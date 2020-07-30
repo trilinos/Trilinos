@@ -115,9 +115,15 @@ public:
                  "either a RowMatrix or a CrsMatrix just fine.");
 
   // Use the local matrix types
-  using local_graph_size_type = typename crs_matrix_type::local_graph_type::size_type;
-  using local_matrix_device_type = typename crs_matrix_type::local_matrix_type::device_type;
-  using k_handle = KokkosKernels::Experimental::KokkosKernelsHandle <local_graph_size_type, local_ordinal_type, scalar_type, typename local_matrix_device_type::execution_space, typename local_matrix_device_type::memory_space, typename local_matrix_device_type::memory_space>;
+  using local_matrix_type = typename crs_matrix_type::local_matrix_type;
+  using local_matrix_graph_type = typename local_matrix_type::StaticCrsGraphType;
+  using lno_row_view_t = typename local_matrix_graph_type::row_map_type;
+  using lno_nonzero_view_t = typename local_matrix_graph_type::entries_type;
+  using scalar_nonzero_view_t = typename local_matrix_type::values_type;
+  using TemporaryMemorySpace = typename local_matrix_graph_type::device_type::memory_space;
+  using PersistentMemorySpace = typename local_matrix_graph_type::device_type::memory_space;
+  using HandleExecSpace = typename local_matrix_graph_type::device_type::execution_space;
+  using k_handle = typename KokkosKernels::Experimental::KokkosKernelsHandle<typename lno_row_view_t::const_value_type, typename lno_nonzero_view_t::const_value_type, typename scalar_nonzero_view_t::value_type, HandleExecSpace, TemporaryMemorySpace,PersistentMemorySpace >;
 
   /// \brief Constructor
   ///
