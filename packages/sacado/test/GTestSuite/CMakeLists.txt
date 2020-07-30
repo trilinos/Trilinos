@@ -1,3 +1,8 @@
+# Set some variables controlling the internal googletest package
+SET(INSTALL_GTEST OFF CACHE BOOL "Install GTest")
+SET(gtest_disable_pthreads ON CACHE BOOL "Disable uses of pthreads in gtest")
+
+# Configure googletest
 add_subdirectory(googletest)
 
 INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/Fad)
