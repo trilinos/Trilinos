@@ -656,9 +656,11 @@ namespace Tacho {
       m_used -= out;
     };
     
-    const ordinal_type w_extent(aw.extent(0));
-    if (_m > ordinal_type(aw.extent(0))) {
-      return;
+    {
+      const ordinal_type w_extent(aw.extent(0));
+      if (_m > w_extent) {
+        return;
+      }
     }
 
     timer.reset();
