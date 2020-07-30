@@ -223,7 +223,7 @@ namespace BaskerNS
     //Int j = M.col_ptr(k+1-bcol)-1; // was assuming the column is sorted in the ascending order of row indexes
     Entry pivot = zero;
     for (Int j = M.col_ptr(k-bcol); j < M.col_ptr(k-bcol+1); j++) {
-        if (M.row_idx(j) == k) pivot = M.val(j);
+      if (M.row_idx(j) == k) pivot = M.val(j);
     }
     //Int j = M.row_idx[i];
 
@@ -234,11 +234,14 @@ namespace BaskerNS
     //printf("Single blk slv, kid: %d val:%f idx:%d %d \n",
     //	   kid, M.val[j], M.row_idx[j], M.srow);
 
-    if(pivot == zero)
+    if(pivot == zero || pivot != pivot)
     {
       if (Options.verbose == BASKER_TRUE) {
-        printf("Error, zero diag in single factor\n");
+        printf("Error: zero or NaN diag in single factor\n");
       }
+      thread_array(kid).error_type = BASKER_ERROR_SINGULAR;
+      thread_array(kid).error_blk  = c;
+      thread_array(kid).error_info = k;
       return BASKER_ERROR;
     }
 
@@ -475,6 +478,23 @@ namespace BaskerNS
         t = gperm(j+L.srow);
 
         value = X(j);
+        if (value != value) {
+          // NaN
+          if (Options.verbose == BASKER_TRUE)
+          {
+            cout << endl;
+            cout << "---------------------------"
+              << endl;
+            cout << "Error: NaN found blk: "
+              << c 
+              << " Column: "
+              << k << std::endl;
+          }
+          thread_array(kid).error_type = BASKER_ERROR_NAN;
+          thread_array(kid).error_blk = c;
+          thread_array(kid).error_info = k;
+          return BASKER_ERROR;
+        }
 
       #ifdef BASKER_DEBUG_NFACTOR_DIAG
         {
@@ -524,7 +544,7 @@ namespace BaskerNS
 
       ucnt = ws_size - top - lcnt +1;
 
-      if((maxindex == BASKER_MAX_IDX) || (pivot == zero) )
+      if((maxindex == BASKER_MAX_IDX) || (pivot == zero))
       {
 
         if (Options.verbose == BASKER_TRUE)

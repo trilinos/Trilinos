@@ -40,6 +40,7 @@ enum BASKER_ERROR_CODE
 {
   BASKER_ERROR_NOERROR,     //No error
   BASKER_ERROR_SINGULAR,    //Singular during factorization
+  BASKER_ERROR_NAN,         //NaN during factorization
   BASKER_ERROR_REMALLOC,    //Need to be realloc
   BASKER_ERROR_NOMALLOC,    //Failed with nomalloc option
   BASKER_ERROR_OTHER
