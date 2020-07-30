@@ -110,6 +110,7 @@ public:
         X_out_j[i] = X_in_j[i_perm];
       }
     }
+    X_out.modify_host();
   }
 
   //Gather blocks (contiguous groups of blockSize rows)
@@ -136,6 +137,7 @@ public:
         }
       }
     }
+    X_out.modify_host();
   }
 
   void
@@ -155,6 +157,7 @@ public:
         X_in_j[i_perm] = X_out_j[i];
       }
     }
+    X_out.modify_host();
   }
 
   void
@@ -178,6 +181,7 @@ public:
         }
       }
     }
+    X_out.modify_host();
   }
 
   /******************/
