@@ -16,6 +16,8 @@ namespace Tacho {
   class Graph;
 #if defined(TACHO_HAVE_METIS)
   class GraphTools_Metis;
+#else 
+  class GraphTools;
 #endif
   
   class SymbolicTools;
@@ -56,6 +58,8 @@ namespace Tacho {
 
 #if defined(TACHO_HAVE_METIS)
     typedef GraphTools_Metis graph_tools_type;
+#else
+    typedef GraphTools graph_tools_type;
 #endif
 
     typedef SymbolicTools symbolic_tools_type;

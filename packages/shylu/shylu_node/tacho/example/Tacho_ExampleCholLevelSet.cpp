@@ -117,6 +117,8 @@ int main (int argc, char *argv[]) {
     Tacho::GraphTools_Metis T(G);
 #elif defined(TACHO_HAVE_SCOTCH)
     Tacho::GraphTools_Scotch T(G);
+#else
+    Tacho::GraphTools T(G);
 #endif
     T.reorder(verbose);
     

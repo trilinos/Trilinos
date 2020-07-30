@@ -107,6 +107,8 @@ int main (int argc, char *argv[]) {
     GraphTools_Metis T(G);
 #elif defined(TACHO_HAVE_SCOTCH)
     GraphTools_Scotch T(G);
+#else
+    GraphTools T(G);
 #endif
     T.reorder(verbose);
     
