@@ -1,6 +1,6 @@
 ################################################################################
 #
-# Set up env on waterman for ATMD builds of Trilinos
+# Set up env on weaver for ATMD builds of Trilinos
 #
 # This source script gets the settings from the ATDM_CONFIG_BUILD_NAME var.
 #
@@ -19,6 +19,9 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2_GNU-7.2.0" ]] \
   || [[ "$ATDM_CONFIG_COMPILER" == "CUDA" ]] \
    ; then
   export ATDM_CONFIG_COMPILER=CUDA-9.2-GNU-7.2.0-OPENMPI-2.1.2
+
+elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1" ]]; then
+  export ATDM_CONFIG_COMPILER=CUDA-10.1-GNU-7.2.0-OPENMPI-4.0.1
 
 else
   echo
@@ -75,7 +78,7 @@ else
   return
 fi
 
-echo "Using waterman compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE and KOKKOS_ARCH=$ATDM_CONFIG_KOKKOS_ARCH"
+echo "Using weaver compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE and KOKKOS_ARCH=$ATDM_CONFIG_KOKKOS_ARCH"
 
 export ATDM_CONFIG_ENABLE_SPARC_SETTINGS=ON
 export ATDM_CONFIG_USE_NINJA=ON
@@ -124,6 +127,9 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]] ; then
   if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2-GNU-7.2.0-OPENMPI-2.1.2" ]] ; then
     module load devpack/20180517/openmpi/2.1.2/gcc/7.2.0/cuda/9.2.88
     module swap openblas/0.2.20/gcc/7.2.0 netlib/3.8.0/gcc/7.2.0
+  elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1-GNU-7.2.0-OPENMPI-4.0.1" ]] ; then
+    module load devpack/20190814/openmpi/4.0.1/gcc/7.2.0/cuda/10.1.105
+    module swap openblas/0.2.20/gcc/7.2.0 netlib/3.8.0/gcc/7.2.0
   else
     echo
     echo "***"
@@ -157,7 +163,7 @@ module load ninja/1.7.2
 # CMake
 #module swap cmake/3.6.2 cmake/3.12.3
 module unload cmake/3.6.2
-export PATH=/home/atdm-devops-admin/tools/waterman/cmake-3.17.2/bin:$PATH
+module load cmake/3.12.3
 
 # HWLOC
 
@@ -166,15 +172,6 @@ export ATDM_CONFIG_USE_HWLOC=OFF
 # Let's see if the TPLs loaded by devpack/20180517/openmpi/2.1.2/gcc/7.2.0/cuda/9.2.88 work for SPARC?
 
 export ATDM_CONFIG_BINUTILS_LIBS="${BINUTILS_ROOT}/lib/libbfd.a;${BINUTILS_ROOT}/lib/libiberty.a"
-
-#CGNS_ROOT=/home/projects/sparc/tpls/waterman/cgns-develop/waterman-gpu_gcc-7.2.0_cuda-9.2.88_openmpi-2.1.2
-#HDF5_ROOT=/home/projects/sparc/tpls/waterman/hdf5-1.8.20/waterman-gpu_gcc-7.2.0_cuda-9.2.88_openmpi-2.1.2
-#METIS_ROOT=/home/projects/sparc/tpls/waterman/parmetis-4.0.3/waterman-gpu_gcc-7.2.0_cuda-9.2.88_openmpi-2.1.2
-#NETCDF_ROOT=/home/projects/sparc/tpls/waterman/netcdf-4.6.1/waterman-gpu_gcc-7.2.0_cuda-9.2.88_openmpi-2.1.2
-#PARMETIS_ROOT=/home/projects/sparc/tpls/waterman/parmetis-4.0.3/waterman-gpu_gcc-7.2.0_cuda-9.2.88_openmpi-2.1.2
-#PNETCDF_ROOT=/home/projects/sparc/tpls/waterman/pnetcdf-1.10.0/waterman-gpu_gcc-7.2.0_cuda-9.2.88_openmpi-2.1.2
-#SGM_ROOT=/home/projects/sparc/tpls/waterman/sgm-develop/waterman-gpu_gcc-7.2.0_cuda-9.2.88_openmpi-2.1.2
-#SUPERLUDIST_ROOT=/home/projects/sparc/tpls/waterman/superlu_dist-4.2/waterman-gpu_gcc-7.2.0_cuda-9.2.88_openmpi-2.1.2
 
 # HDF5 and Netcdf
 
