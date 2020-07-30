@@ -72,17 +72,20 @@ private:
     using Teuchos::RCP;
 
     MODIFIER_TYPE modType = X_BEGIN_STEP;
-    RCP<SolutionState<Scalar> > workingState = sh->getWorkingState();
-    const Scalar time = workingState->getTime();
-    const Scalar dt   = workingState->getTimeStep();
     const int stageNumber = stepper->getStageNumber();
+    Teuchos::SerialDenseVector<int,Scalar> c = stepper->getTableau()->c();
+    RCP<SolutionState<Scalar> > currentState = sh->getCurrentState();
+    RCP<SolutionState<Scalar> > workingState = sh->getWorkingState();
+    const Scalar dt = workingState->getTimeStep();
+    Scalar time = currentState->getTime();
+    if (stageNumber >= 0) time += c(stageNumber)*dt;
     RCP<Thyra::VectorBase<Scalar> > x;
 
     switch(actLoc) {
       case StepperRKAppAction<Scalar>::BEGIN_STEP:
       {
         modType = X_BEGIN_STEP;
-        x = workingState->getX();
+        x = currentState->getX();
         break;
       }
       case StepperRKAppAction<Scalar>::BEGIN_STAGE:
@@ -119,6 +122,7 @@ private:
       {
         modType = X_END_STEP;
         x = workingState->getX();
+        time = workingState->getTime();
         break;
       }
       default:

@@ -162,6 +162,8 @@ void StepperBDF2<Scalar>::setInitialConditions(
   // Check if we need Stepper storage for xDot
   if (initialState->getXDot() == Teuchos::null)
     this->setStepperXDot(initialState->getX()->clone_v());
+  else
+    this->setStepperXDot(initialState->getXDot());
 
   StepperImplicit<Scalar>::setInitialConditions(solutionHistory);
 }
@@ -203,7 +205,9 @@ void StepperBDF2<Scalar>::takeStep(
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
 
     RCP<Thyra::VectorBase<Scalar> > x    = workingState->getX();
-    RCP<Thyra::VectorBase<Scalar> > xDot = this->getStepperXDot(workingState);
+    if (workingState->getXDot() != Teuchos::null)
+      this->setStepperXDot(workingState->getXDot());
+    RCP<Thyra::VectorBase<Scalar> > xDot = this->getStepperXDot();
 
     //get time, dt and dtOld
     const Scalar time  = workingState->getTime();

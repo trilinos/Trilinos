@@ -68,7 +68,7 @@ namespace Tempus {
  *     - \f$ \dot{x}_{n+3/2} \leftarrow
  *           \dot{x}_{n+1/2} + \Delta t\, \ddot{x}_{n+1} \f$
  *
- *  The First-Step-As-Last (FSAL) principle is not used with Leapfrog
+ *  The First-Same-As-Last (FSAL) principle is not used with Leapfrog
  *  because of the algorithm's prescribed order of solution update.
  *  The default is to set useFSAL=false, however useFSAL=true will also
  *  work (i.e., no-op), but issue a warning that it will have no affect.

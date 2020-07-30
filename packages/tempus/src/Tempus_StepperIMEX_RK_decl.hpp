@@ -156,8 +156,8 @@ namespace Tempus {
  *  \renewcommand{\thealgorithm}{}
  *  \caption{IMEX RK with the application-action locations indicated.}
  *  \begin{algorithmic}[1]
- *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
  *    \State $X \leftarrow x_{n-1}$ \Comment Set initial guess to last timestep.
+ *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
  *    \For {$i = 0 \ldots s-1$}
  *      \State $\tilde{X} \leftarrow x_{n-1} - \Delta t\,\sum_{j=1}^{i-1} \left(
  *            \hat{a}_{ij}\, f_j + a_{ij}\, g_j \right)$
@@ -266,7 +266,7 @@ namespace Tempus {
  *           \end{array} \f]
  *  </table>
  *
- *  The First-Step-As-Last (FSAL) principle is not valid for IMEX RK.
+ *  The First-Same-As-Last (FSAL) principle is not valid for IMEX RK.
  *  The default is to set useFSAL=false, and useFSAL=true will result
  *  in an error.
  *
