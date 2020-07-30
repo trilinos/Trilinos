@@ -657,6 +657,11 @@ TYPED_TEST_P(FadFadOpsUnitTest, testPowConstB) {
   }
   c = pow(a, b.val().val());
   COMPARE_NESTED_FADS(c, cc);
+
+  // a.val().val() == 0, b == 2, nested expression
+  c = pow(2.0*a,2.0);
+  cc = 4.0*a*a;
+  COMPARE_NESTED_FADS(c, cc);
 }
 
 REGISTER_TYPED_TEST_SUITE_P(

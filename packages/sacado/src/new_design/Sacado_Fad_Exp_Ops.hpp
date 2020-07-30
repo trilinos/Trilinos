@@ -140,6 +140,16 @@ namespace Sacado {                                                      \
       IsSimdType< typename Fad::Exp::OP< T,E >::scalar_type >::value;   \
   };                                                                    \
                                                                         \
+  template <typename T, typename E>                                     \
+  struct ValueType< Fad::Exp::OP< T,E > > {                             \
+    typedef typename Fad::Exp::OP< T,E >::value_type type;              \
+  };                                                                    \
+                                                                        \
+  template <typename T, typename E>                                     \
+  struct ScalarType< Fad::Exp::OP< T,E > > {                            \
+    typedef typename Fad::Exp::OP< T,E >::scalar_type type;             \
+  };                                                                    \
+                                                                        \
 }
 
 FAD_UNARYOP_MACRO(operator+,
@@ -431,6 +441,16 @@ namespace Sacado {
       IsSimdType< typename Fad::Exp::SafeSqrtOp< T,E >::scalar_type >::value;
   };
 
+  template <typename T, typename E>
+  struct ValueType< Fad::Exp::SafeSqrtOp< T,E > > {
+    typedef typename Fad::Exp::SafeSqrtOp< T,E >::value_type type;
+  };
+
+  template <typename T, typename E>
+  struct ScalarType< Fad::Exp::SafeSqrtOp< T,E > > {
+    typedef typename Fad::Exp::SafeSqrtOp< T,E >::scalar_type type;
+  };
+
 }
 
 #undef FAD_UNARYOP_MACRO
@@ -709,6 +729,16 @@ namespace Sacado {                                                      \
   struct IsSimdType< Fad::Exp::OP< T1, T2, c1, c2, E > > {              \
     static const bool value =                                           \
       IsSimdType< typename Fad::Exp::OP< T1, T2, c1, c2, E >::value_type >::value; \
+  };                                                                    \
+                                                                        \
+  template <typename T1, typename T2, bool c1, bool c2, typename E>     \
+  struct ValueType< Fad::Exp::OP< T1, T2, c1, c2, E > > {               \
+    typedef typename Fad::Exp::OP< T1, T2, c1, c2, E >::value_type type;\
+  };                                                                    \
+                                                                        \
+  template <typename T1, typename T2, bool c1, bool c2, typename E>     \
+  struct ScalarType< Fad::Exp::OP< T1, T2, c1, c2, E > > {              \
+    typedef typename Fad::Exp::OP< T1, T2, c1, c2, E >::scalar_type type;\
   };                                                                    \
                                                                         \
 }
@@ -1663,6 +1693,16 @@ namespace Sacado {
       IsSimdType< typename Fad::Exp::PowerOp< T1, T2, c1, c2, E >::value_type >::value;
   };
 
+  template <typename T1, typename T2, bool c1, bool c2, typename E>
+  struct ValueType< Fad::Exp::PowerOp< T1, T2, c1, c2, E > > {
+    typedef typename Fad::Exp::PowerOp< T1, T2, c1, c2, E >::value_type type;
+  };
+
+  template <typename T1, typename T2, bool c1, bool c2, typename E>
+  struct ScalarType< Fad::Exp::PowerOp< T1, T2, c1, c2, E > > {
+    typedef typename Fad::Exp::PowerOp< T1, T2, c1, c2, E >::scalar_type type;
+  };
+
 }
 
 //--------------------------if_then_else operator -----------------------
@@ -1950,6 +1990,25 @@ namespace Sacado {
     typedef typename BaseExprType<T2>::type base_expr_2;
     typedef typename Sacado::Promote<base_expr_1,
                                      base_expr_2>::type type;
+  };
+
+  template <typename CondT, typename T1, typename T2, bool c1, bool c2,
+            typename E>
+  struct IsSimdType< Fad::Exp::IfThenElseOp< CondT, T1, T2, c1, c2, E > > {
+    static const bool value =
+      IsSimdType< typename Fad::Exp::IfThenElseOp< CondT, T1, T2, c1, c2, E >::value_type >::value;
+  };
+
+  template <typename CondT, typename T1, typename T2, bool c1, bool c2,
+            typename E>
+  struct ValueType< Fad::Exp::IfThenElseOp< CondT, T1, T2, c1, c2, E > > {
+    typedef typename Fad::Exp::IfThenElseOp< CondT, T1, T2, c1, c2, E >::value_type type;
+  };
+
+  template <typename CondT, typename T1, typename T2, bool c1, bool c2,
+            typename E>
+  struct ScalarType< Fad::Exp::IfThenElseOp< CondT, T1, T2, c1, c2, E > > {
+    typedef typename Fad::Exp::IfThenElseOp< CondT, T1, T2, c1, c2, E >::scalar_type type;
   };
 }
 
