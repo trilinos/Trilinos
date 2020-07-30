@@ -262,6 +262,7 @@ struct BlockCrsMatrixMaker {
     auto colsum = colsum_mv.getLocalViewHost();
 
     // Get off-diag 1-norms.
+    Kokkos::fence(); // uvm access
     for (LO r = 0; r < nrows; ++r) {
       const auto rgid = row_map->getGlobalElement(r);
       for (size_t j = rowptr(r); j < rowptr(r+1); ++j) {
