@@ -82,8 +82,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Ifpack2IlukGraph, IlukGraphTest0, LocalOrdinal
       <typename lno_row_view_t::const_value_type, typename lno_nonzero_view_t::const_value_type, double,
        HandleExecSpace, TemporaryMemorySpace,PersistentMemorySpace > kk_handle_type;
 
-  Teuchos::RCP<kk_handle_type> KernelHandle0, KernelHandle2;
-
   std::string version = Ifpack2::Version();
   out << "Ifpack2::Version(): " << version << std::endl;
 
@@ -99,65 +97,81 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Ifpack2IlukGraph, IlukGraphTest0, LocalOrdinal
   TEST_EQUALITY( crsgraph->getGlobalNumRows(),crsgraph->getRowMap()->getGlobalNumElements())
   
   LocalOrdinal overlap_levels = 2;
-  LocalOrdinal fill_levels = 0;
 
-#ifdef KOKKOS_ENABLE_SERIAL
-    if( !std::is_same< HandleExecSpace, Kokkos::Serial >::value ) { 
-      KernelHandle0 = Teuchos::rcp (new kk_handle_type ());
-      KernelHandle0->create_spiluk_handle( KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1, 
-                                           crsgraph->getNodeNumRows(),
-                                           2*crsgraph->getNodeNumEntries()*(fill_levels+1), 
-                                           2*crsgraph->getNodeNumEntries()*(fill_levels+1) );
-    }
-#else
+  //Original Serial implementation
+  {
+    LocalOrdinal fill_levels = 0;
+
+    Ifpack2::IlukGraph<crs_graph_type, kk_handle_type> iluk0_graph(crsgraph, fill_levels, overlap_levels);
+    iluk0_graph.initialize();
+
+    //The number of nonzeros in an ILU(0) graph should be the same as the
+    //number of nonzeros in the input graph:
+
+    size_t nnz0 = iluk0_graph.getL_Graph()->getGlobalNumEntries() +
+                  iluk0_graph.getU_Graph()->getGlobalNumEntries() +
+                  iluk0_graph.getNumGlobalDiagonals();
+
+    fill_levels = 2;
+
+    Ifpack2::IlukGraph<crs_graph_type, kk_handle_type> iluk2_graph(crsgraph, fill_levels, overlap_levels);
+    iluk2_graph.initialize();
+
+    //The number of nonzeros in an ILU(2) graph should be greater than the
+    //number of nonzeros in the ILU(0) graph:
+
+    size_t nnz2 = iluk2_graph.getL_Graph()->getGlobalNumEntries() +
+                  iluk2_graph.getU_Graph()->getGlobalNumEntries() +
+                  iluk2_graph.getNumGlobalDiagonals();
+
+    bool nnz2_greater_than_nnz0 = nnz2 > nnz0;
+    TEST_EQUALITY( nnz2_greater_than_nnz0, true)
+  }
+
+  //Kokkos Kernels KSPILUK implementation
+  {
+    Teuchos::RCP<kk_handle_type> KernelHandle0, KernelHandle2;
+
+    LocalOrdinal fill_levels = 0;
+
     KernelHandle0 = Teuchos::rcp (new kk_handle_type ());
     KernelHandle0->create_spiluk_handle( KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1, 
                                          crsgraph->getNodeNumRows(),
                                          2*crsgraph->getNodeNumEntries()*(fill_levels+1), 
                                          2*crsgraph->getNodeNumEntries()*(fill_levels+1) );
-#endif
 
-  Ifpack2::IlukGraph<crs_graph_type, kk_handle_type> iluk0_graph(crsgraph, fill_levels, overlap_levels);
-  iluk0_graph.initialize(KernelHandle0);
+    Ifpack2::IlukGraph<crs_graph_type, kk_handle_type> iluk0_graph(crsgraph, fill_levels, overlap_levels);
+    iluk0_graph.initialize(KernelHandle0);
 
-  //The number of nonzeros in an ILU(0) graph should be the same as the
-  //number of nonzeros in the input graph:
+    //The number of nonzeros in an ILU(0) graph should be the same as the
+    //number of nonzeros in the input graph:
 
-  size_t nnz0 = iluk0_graph.getL_Graph()->getGlobalNumEntries() +
-                iluk0_graph.getU_Graph()->getGlobalNumEntries() +
-                iluk0_graph.getNumGlobalDiagonals();
+    size_t nnz0 = iluk0_graph.getL_Graph()->getGlobalNumEntries() +
+                  iluk0_graph.getU_Graph()->getGlobalNumEntries() +
+                  iluk0_graph.getNumGlobalDiagonals();
 
-  fill_levels = 2;
+    fill_levels = 2;
 
-#ifdef KOKKOS_ENABLE_SERIAL
-    if( !std::is_same< HandleExecSpace, Kokkos::Serial >::value ) { 
-      KernelHandle2 = Teuchos::rcp (new kk_handle_type ());
-      KernelHandle2->create_spiluk_handle( KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1, 
-                                           crsgraph->getNodeNumRows(),
-                                           2*crsgraph->getNodeNumEntries()*(fill_levels+1), 
-                                           2*crsgraph->getNodeNumEntries()*(fill_levels+1) );
-    }
-#else
     KernelHandle2 = Teuchos::rcp (new kk_handle_type ());
     KernelHandle2->create_spiluk_handle( KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1, 
                                          crsgraph->getNodeNumRows(),
                                          2*crsgraph->getNodeNumEntries()*(fill_levels+1), 
                                          2*crsgraph->getNodeNumEntries()*(fill_levels+1) );
-#endif
 
-  Ifpack2::IlukGraph<crs_graph_type, kk_handle_type> iluk2_graph(crsgraph, fill_levels, overlap_levels);
 
-  iluk2_graph.initialize(KernelHandle2);
+    Ifpack2::IlukGraph<crs_graph_type, kk_handle_type> iluk2_graph(crsgraph, fill_levels, overlap_levels);
+    iluk2_graph.initialize(KernelHandle2);
 
-  //The number of nonzeros in an ILU(2) graph should be greater than the
-  //number of nonzeros in the ILU(0) graph:
+    //The number of nonzeros in an ILU(2) graph should be greater than the
+    //number of nonzeros in the ILU(0) graph:
 
-  size_t nnz2 = iluk2_graph.getL_Graph()->getGlobalNumEntries() +
-                iluk2_graph.getU_Graph()->getGlobalNumEntries() +
-                iluk2_graph.getNumGlobalDiagonals();
+    size_t nnz2 = iluk2_graph.getL_Graph()->getGlobalNumEntries() +
+                  iluk2_graph.getU_Graph()->getGlobalNumEntries() +
+                  iluk2_graph.getNumGlobalDiagonals();
 
-  bool nnz2_greater_than_nnz0 = nnz2 > nnz0;
-  TEST_EQUALITY( nnz2_greater_than_nnz0, true)
+    bool nnz2_greater_than_nnz0 = nnz2 > nnz0;
+    TEST_EQUALITY( nnz2_greater_than_nnz0, true)
+  }
 }
 
 #define UNIT_TEST_GROUP_LO_GO(LocalOrdinal,GlobalOrdinal) \

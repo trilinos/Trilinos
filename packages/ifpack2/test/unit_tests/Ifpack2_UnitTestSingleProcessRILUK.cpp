@@ -42,11 +42,10 @@
 */
 
 
-/*! \file Ifpack2_UnitTestRILUK.cpp
+/*! \file Ifpack2_UnitTestSingleProcessRILUK.cpp
 
 \brief Ifpack2 single-process unit tests for the RILUK template.
 */
-
 
 #include "Teuchos_ConfigDefs.hpp"
 #include "Ifpack2_ConfigDefs.hpp"
@@ -65,6 +64,10 @@ namespace { // (anonymous)
 
 using Tpetra::global_size_t;
 typedef tif_utest::Node Node;
+
+struct IlukImplTypeDetails {
+  enum Enum { Serial, KSPILUK };
+};
 
 template<class MatrixType, class VectorType>
 void remove_diags_and_scale(const MatrixType& L, const MatrixType& U,
@@ -147,17 +150,16 @@ void remove_diags_and_scale(const MatrixType& L, const MatrixType& U,
   Un->fillComplete();
 }
 
-//this macro declares the unit-test-class:
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, Test0, Scalar, LO, GO)
-{
-  //we are now in a class method declared by the above macro, and
-  //that method has these input arguments:
-  //Teuchos::FancyOStream& out, bool& success
-
+template<typename Scalar, typename LO, typename GO>
+void Ifpack2RILUKSingleProcess_test0 (bool& success, Teuchos::FancyOStream& out, const IlukImplTypeDetails::Enum ilukimplType) {
   using Teuchos::RCP;
   using std::endl;
 
-  out << "Ifpack2::RILUK: Test0" << endl;
+  if (ilukimplType == IlukImplTypeDetails::Serial)
+    out << "Ifpack2::RILUK: Test0 -- Serial" << endl;
+  else
+    out << "Ifpack2::RILUK: Test0 -- Kokkos Kernels SPILUK" << endl;
+  
   Teuchos::OSTab tab0 (out);
 
   global_size_t num_rows_per_proc = 5;
@@ -180,7 +182,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, Test0, Scalar, LO, 
     int fill_level = 1;
     params.set("fact: iluk level-of-fill", fill_level);
     params.set("fact: iluk level-of-overlap", 0);
-    params.set("fact: type", "Serial");    
+
+    if (ilukimplType == IlukImplTypeDetails::Serial)
+      params.set("fact: type", "Serial");
+    else
+      params.set("fact: type", "KSPILUK");
+	
     TEST_NOTHROW(prec.setParameters(params));
     
     TEST_EQUALITY( prec.getLevelOfFill(), fill_level);
@@ -220,6 +227,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, Test0, Scalar, LO, 
     int fill_level = 1;
     params.set("fact: iluk level-of-fill", fill_level);
     params.set("fact: iluk level-of-overlap", 0);
+
+    if (ilukimplType == IlukImplTypeDetails::Serial)
+      params.set("fact: type", "Serial");
+    else
+      params.set("fact: type", "KSPILUK");
+
     params.set("trisolver: type", "KSPTRSV");
     
     TEST_NOTHROW(prec.setParameters(params));
@@ -255,12 +268,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, Test0, Scalar, LO, 
   }
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, Test1, Scalar, LO, GO)
-{
-  //we are now in a class method declared by the above macro, and
-  //that method has these input arguments:
-  //Teuchos::FancyOStream& out, bool& success
-
+template<typename Scalar, typename LO, typename GO>
+void Ifpack2RILUKSingleProcess_test1 (bool& success, Teuchos::FancyOStream& out, const IlukImplTypeDetails::Enum ilukimplType) {
   using Kokkos::Details::ArithTraits;
   using Teuchos::RCP;
   using std::endl;
@@ -275,7 +284,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, Test1, Scalar, LO, 
   const mag_type oneMag = ArithTraits<mag_type>::one ();
   const mag_type twoMag = oneMag + oneMag;
 
-  out << "Ifpack2::RILUK: Test1" << endl;
+  if (ilukimplType == IlukImplTypeDetails::Serial)
+    out << "Ifpack2::RILUK: Test1 -- Serial" << endl;
+  else
+    out << "Ifpack2::RILUK: Test1 -- Kokkos Kernels SPILUK" << endl;
+
   Teuchos::OSTab tab1 (out);
 
   const global_size_t num_rows_per_proc = 5;
@@ -301,6 +314,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, Test1, Scalar, LO, 
     Teuchos::ParameterList params;
     params.set ("fact: iluk level-of-fill", 1);
     params.set ("fact: iluk level-of-overlap", 0);
+    if (ilukimplType == IlukImplTypeDetails::Serial)
+      params.set("fact: type", "Serial");
+    else
+      params.set("fact: type", "KSPILUK");
     TEST_NOTHROW(prec.setParameters(params));
     
     out << "Calling initialize() and compute()" << endl;
@@ -407,6 +424,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, Test1, Scalar, LO, 
     Teuchos::ParameterList params;
     params.set ("fact: iluk level-of-fill", 1);
     params.set ("fact: iluk level-of-overlap", 0);
+    if (ilukimplType == IlukImplTypeDetails::Serial)
+      params.set("fact: type", "Serial");
+    else
+      params.set("fact: type", "KSPILUK");
     params.set("trisolver: type", "KSPTRSV");
     TEST_NOTHROW(prec.setParameters(params));
     
@@ -507,6 +528,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, Test1, Scalar, LO, 
   }
   out << "Done with test" << endl;
 }
+	
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, Test0, Scalar, LO, GO)
+{
+  Ifpack2RILUKSingleProcess_test0<Scalar, LO, GO> (success, out, IlukImplTypeDetails::Serial);
+  Ifpack2RILUKSingleProcess_test0<Scalar, LO, GO> (success, out, IlukImplTypeDetails::KSPILUK);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, Test1, Scalar, LO, GO)
+{
+  Ifpack2RILUKSingleProcess_test1<Scalar, LO, GO> (success, out, IlukImplTypeDetails::Serial);
+  Ifpack2RILUKSingleProcess_test1<Scalar, LO, GO> (success, out, IlukImplTypeDetails::KSPILUK);
+}
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, FillLevel, Scalar, LO, GO)
 {
@@ -543,81 +576,77 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, FillLevel, Scalar, 
   const RCP<const Tpetra::Map<LO,GO,Node> > rowmap =
     tif_utest::create_tpetra_map<LO,GO,Node>(num_rows_per_proc);
 
-  for (GO lof=0; lof<6; ++lof) {
-
-    RCP<const crs_matrix_type > crsmatrix = tif_utest::create_banded_matrix<Scalar,LO,GO,Node>(rowmap,lof+2);
-    //std::string aFile = "A_bw=" + Teuchos::toString(lof+2) + ".mm";
-    //RCP<crs_matrix_type> crsmatrix = reader_type::readSparseFile (aFile, comm);
-    //crsmatrix->describe(out,Teuchos::VERB_EXTREME);
-    Ifpack2::RILUK<row_matrix_type> prec(crsmatrix);
-
-    Teuchos::ParameterList params;
-    params.set("fact: iluk level-of-fill", lof);
-    params.set("fact: iluk level-of-overlap", 0);
-    params.set("fact: iluk overalloc", 1.01); // Use non-default only to test
-                                              // matrix resizing in IlukGraph;
-                                              // Usually, 1.01 is too small;
-                                              // default value should be used.
-
-    prec.setParameters(params);
-    prec.initialize();
-    prec.compute();
-    //extract incomplete factors
-    const crs_matrix_type &iL = prec.getL();
-    const crs_matrix_type &iU = prec.getU();
-
-    Teuchos::RCP<crs_matrix_type> iLn;
-    Teuchos::RCP<crs_matrix_type> iUn;
-    Teuchos::RCP<vector_type> iDn;
+  for (GO impltype=0; impltype<2; ++impltype) {
+    for (GO lof=0; lof<6; ++lof) {
+      RCP<const crs_matrix_type > crsmatrix = tif_utest::create_banded_matrix<Scalar,LO,GO,Node>(rowmap,lof+2);
+      //std::string aFile = "A_bw=" + Teuchos::toString(lof+2) + ".mm";
+      //RCP<crs_matrix_type> crsmatrix = reader_type::readSparseFile (aFile, comm);
+      //crsmatrix->describe(out,Teuchos::VERB_EXTREME);
+      Ifpack2::RILUK<row_matrix_type> prec(crsmatrix);
+    
+      Teuchos::ParameterList params;
+      params.set("fact: iluk level-of-fill", lof);
+      params.set("fact: iluk level-of-overlap", 0);
+      params.set("fact: iluk overalloc", 1.01); // Use non-default only to test
+                                                // matrix resizing in IlukGraph;
+                                                // Usually, 1.01 is too small;
+                                                // default value should be used.
+      if (impltype == 0)
+        params.set("fact: type", "Serial");
+      else
+        params.set("fact: type", "KSPILUK");
+      prec.setParameters(params);
+      prec.initialize();
+      prec.compute();
+      //extract incomplete factors
+      const crs_matrix_type &iL = prec.getL();
+      const crs_matrix_type &iU = prec.getU();
+    
+      Teuchos::RCP<crs_matrix_type> iLn;
+      Teuchos::RCP<crs_matrix_type> iUn;
+      Teuchos::RCP<vector_type> iDn;
   
-#ifdef KOKKOS_ENABLE_SERIAL
-    if( std::is_same< typename crs_matrix_type::node_type::execution_space, Kokkos::Serial >::value ) {
-      const vector_type &iD = prec.getD();
-      iLn = rcp (new crs_matrix_type (iL));
-      iUn = rcp (new crs_matrix_type (iU));
-      iDn = rcp (new vector_type (iD));
-    }
-    else {
-      iDn = Teuchos::rcp (new vector_type (rowmap));
-      remove_diags_and_scale(iL, iU, iLn, iUn, iDn);
-    }
-#else
-    iDn = Teuchos::rcp (new vector_type (rowmap));
-    remove_diags_and_scale(iL, iU, iLn, iUn, iDn);
-#endif
+      if (impltype == 0) {
+        const vector_type &iD = prec.getD();
+        iLn = rcp (new crs_matrix_type (iL));
+        iUn = rcp (new crs_matrix_type (iU));
+        iDn = rcp (new vector_type (iD));
+      }
+      else {
+        iDn = Teuchos::rcp (new vector_type (rowmap));
+        remove_diags_and_scale(iL, iU, iLn, iUn, iDn);
+      }
 
-    //read L,U, and D factors from file
-    std::string lFile = "Lfactor_bw" + Teuchos::toString(lof+2) + ".mm";
-    std::string uFile = "Ufactor_bw" + Teuchos::toString(lof+2) + ".mm";
-    std::string dFile = "Dfactor_bw" + Teuchos::toString(lof+2) + ".mm";
-    out << "reading " << lFile << ", " << uFile << ", " << dFile << std::endl;
-    RCP<crs_matrix_type> L = reader_type::readSparseFile (lFile, comm);
-    RCP<crs_matrix_type> U = reader_type::readSparseFile (uFile, comm);
-    RCP<const map_type> rm = U->getRowMap();
-    RCP<multivector_type> D = reader_type::readVectorFile (dFile, comm, rm);
-
-    //compare factors
-    out << "bandwidth = " << lof+2 << ", lof = " << lof << std::endl;
-    //D->update(TST::one(),iD,-TST::one());
-    D->update(TST::one(),*iDn,-TST::one());
-    //RCP<crs_matrix_type> matdiff = Tpetra::MatrixMatrix::add(1.,false,*L,-1.,false,iL);
-    RCP<crs_matrix_type> matdiff = Tpetra::MatrixMatrix::add(1.,false,*L,-1.,false,*iLn);
-    magnitudeType mag = matdiff->getFrobeniusNorm();
-    out << "||L - iL||_fro = " << mag << std::endl;
-    TEST_EQUALITY(mag < 1e-12, true);
-    out << std::endl;
-    //matdiff = Tpetra::MatrixMatrix::add(1.,false,*U,-1.,false,iU);
-    matdiff = Tpetra::MatrixMatrix::add(1.,false,*U,-1.,false,*iUn);
-    mag = matdiff->getFrobeniusNorm();
-    out << "||U - iU||_fro = " << mag << std::endl;
-    TEST_EQUALITY(mag < 1e-12, true);
-    out << std::endl;
-    Teuchos::Array<magnitudeType> norms(1);
-    D->norm2(norms);
-    out << "||inverse(D) - inverse(iD)||_2 = " << norms[0] << std::endl;
-    TEST_EQUALITY(norms[0] < 1e-12, true);
-    out << std::endl;
-  } //for (GO lof=0; lof<6; ++lof)
+      //read L,U, and D factors from file
+      std::string lFile = "Lfactor_bw" + Teuchos::toString(lof+2) + ".mm";
+      std::string uFile = "Ufactor_bw" + Teuchos::toString(lof+2) + ".mm";
+      std::string dFile = "Dfactor_bw" + Teuchos::toString(lof+2) + ".mm";
+      out << "reading " << lFile << ", " << uFile << ", " << dFile << std::endl;
+      RCP<crs_matrix_type> L = reader_type::readSparseFile (lFile, comm);
+      RCP<crs_matrix_type> U = reader_type::readSparseFile (uFile, comm);
+      RCP<const map_type> rm = U->getRowMap();
+      RCP<multivector_type> D = reader_type::readVectorFile (dFile, comm, rm);
+      
+      //compare factors
+      out << "bandwidth = " << lof+2 << ", lof = " << lof << std::endl;
+      D->update(TST::one(),*iDn,-TST::one());
+      RCP<crs_matrix_type> matdiff = Tpetra::MatrixMatrix::add(1.,false,*L,-1.,false,*iLn);
+      magnitudeType mag = matdiff->getFrobeniusNorm();
+      out << "||L - iL||_fro = " << mag << std::endl;
+      TEST_EQUALITY(mag < 1e-12, true);
+      out << std::endl;
+      matdiff = Tpetra::MatrixMatrix::add(1.,false,*U,-1.,false,*iUn);
+      mag = matdiff->getFrobeniusNorm();
+      out << "||U - iU||_fro = " << mag << std::endl;
+      TEST_EQUALITY(mag < 1e-12, true);
+      out << std::endl;
+      Teuchos::Array<magnitudeType> norms(1);
+      D->norm2(norms);
+      out << "||inverse(D) - inverse(iD)||_2 = " << norms[0] << std::endl;
+      TEST_EQUALITY(norms[0] < 1e-12, true);
+      out << std::endl;
+    } //for (GO lof=0; lof<6; ++lof)
+  }
 } // unit test FillLevel()
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, IgnoreRowMapGIDs, Scalar, LO, GO)
@@ -674,130 +703,126 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, IgnoreRowMapGIDs, S
   const LO indexBase = 0;
   Teuchos::RCP<const map_type> permRowMap = Teuchos::rcp(new map_type(INVALID, permutedGIDs(), indexBase, comm));
 
-  for (GO lof=0; lof<6; ++lof) {
-
-    RCP<const crs_matrix_type > crsmatrix = tif_utest::create_banded_matrix<Scalar,LO,GO,Node>(rowMap,lof+2);
-
-    //Copy the banded matrix into a new matrix with permuted row map GIDs.
-    //This matrix will have the sparsity pattern as the original matrix.
-    RCP<crs_matrix_type> permutedMatrix = Teuchos::rcp(new crs_matrix_type(permRowMap, 5));
-    Teuchos::Array<GO> Inds(5);
-    Teuchos::Array<GO> pInds(5);
-    Teuchos::Array<Scalar>        Vals(5);
-    Teuchos::Array<Scalar>        pVals(5);
-    size_t numEntries;
-    for (global_size_t i=0; i<num_rows_per_proc; ++i) {
-      crsmatrix->getGlobalRowCopy(i,Inds(),Vals(),numEntries);
-      pInds.resize(numEntries);
-      pVals.resize(numEntries);
-      for (size_t j=0; j<numEntries; ++j) {
-        pInds[j] = origToPerm[Inds[j]];
-        pVals[j] = Vals[j];
+  for (GO impltype=0; impltype<2; ++impltype) {  
+    for (GO lof=0; lof<6; ++lof) {
+    
+      RCP<const crs_matrix_type > crsmatrix = tif_utest::create_banded_matrix<Scalar,LO,GO,Node>(rowMap,lof+2);
+    
+      //Copy the banded matrix into a new matrix with permuted row map GIDs.
+      //This matrix will have the sparsity pattern as the original matrix.
+      RCP<crs_matrix_type> permutedMatrix = Teuchos::rcp(new crs_matrix_type(permRowMap, 5));
+      Teuchos::Array<GO> Inds(5);
+      Teuchos::Array<GO> pInds(5);
+      Teuchos::Array<Scalar>        Vals(5);
+      Teuchos::Array<Scalar>        pVals(5);
+      size_t numEntries;
+      for (global_size_t i=0; i<num_rows_per_proc; ++i) {
+        crsmatrix->getGlobalRowCopy(i,Inds(),Vals(),numEntries);
+        pInds.resize(numEntries);
+        pVals.resize(numEntries);
+        for (size_t j=0; j<numEntries; ++j) {
+          pInds[j] = origToPerm[Inds[j]];
+          pVals[j] = Vals[j];
+        }
+        permutedMatrix->insertGlobalValues(origToPerm[i],pInds(),pVals());
       }
-      permutedMatrix->insertGlobalValues(origToPerm[i],pInds(),pVals());
-    }
-    permutedMatrix->fillComplete();
-
-    Ifpack2::RILUK<row_matrix_type> prec(Teuchos::as< RCP<const crs_matrix_type> >(permutedMatrix));
-
-    Teuchos::ParameterList params;
-    params.set("fact: iluk level-of-fill", lof);
-    params.set("fact: iluk level-of-overlap", 0);
-
-    prec.setParameters(params);
-    prec.initialize();
-    prec.compute();
-    //extract incomplete factors
-    const crs_matrix_type &iL = prec.getL();
-    const crs_matrix_type &iU = prec.getU();
-
-    Teuchos::RCP<crs_matrix_type> iLn;
-    Teuchos::RCP<crs_matrix_type> iUn;
-    Teuchos::RCP<vector_type> iDn;
+      permutedMatrix->fillComplete();
+    
+      Ifpack2::RILUK<row_matrix_type> prec(Teuchos::as< RCP<const crs_matrix_type> >(permutedMatrix));
+    
+      Teuchos::ParameterList params;
+      params.set("fact: iluk level-of-fill", lof);
+      params.set("fact: iluk level-of-overlap", 0);
+      if (impltype == 0)
+        params.set("fact: type", "Serial");
+      else
+        params.set("fact: type", "KSPILUK");
+    
+      prec.setParameters(params);
+      prec.initialize();
+      prec.compute();
+      //extract incomplete factors
+      const crs_matrix_type &iL = prec.getL();
+      const crs_matrix_type &iU = prec.getU();
+    
+      Teuchos::RCP<crs_matrix_type> iLn;
+      Teuchos::RCP<crs_matrix_type> iUn;
+      Teuchos::RCP<vector_type> iDn;
   
-#ifdef KOKKOS_ENABLE_SERIAL
-    if( std::is_same< typename crs_matrix_type::node_type::execution_space, Kokkos::Serial >::value ) {
-      const vector_type &iD = prec.getD();
-      iLn = rcp (new crs_matrix_type (iL));
-      iUn = rcp (new crs_matrix_type (iU));
-      iDn = rcp (new vector_type (iD));
-    }
-    else {
-      iDn = Teuchos::rcp (new vector_type (rowMap));
-      remove_diags_and_scale(iL, iU, iLn, iUn, iDn);
-    }
-#else
-    iDn = Teuchos::rcp (new vector_type (rowMap));
-    remove_diags_and_scale(iL, iU, iLn, iUn, iDn);
-#endif
+      if (impltype == 0) {
+        const vector_type &iD = prec.getD();
+        iLn = rcp (new crs_matrix_type (iL));
+        iUn = rcp (new crs_matrix_type (iU));
+        iDn = rcp (new vector_type (iD));
+      }
+      else {
+        iDn = Teuchos::rcp (new vector_type (rowMap));
+        remove_diags_and_scale(iL, iU, iLn, iUn, iDn);
+      }
 
-    //read L,U, and D factors from file
-    std::string lFile = "Lfactor_bw" + Teuchos::toString(lof+2) + ".mm";
-    std::string uFile = "Ufactor_bw" + Teuchos::toString(lof+2) + ".mm";
-    std::string dFile = "Dfactor_bw" + Teuchos::toString(lof+2) + ".mm";
-    out << "reading " << lFile << ", " << uFile << ", " << dFile << std::endl;
-    RCP<crs_matrix_type> L = reader_type::readSparseFile (lFile, comm);
-    RCP<crs_matrix_type> U = reader_type::readSparseFile (uFile, comm);
-    RCP<const map_type> rm = U->getRowMap();
+      //read L,U, and D factors from file
+      std::string lFile = "Lfactor_bw" + Teuchos::toString(lof+2) + ".mm";
+      std::string uFile = "Ufactor_bw" + Teuchos::toString(lof+2) + ".mm";
+      std::string dFile = "Dfactor_bw" + Teuchos::toString(lof+2) + ".mm";
+      out << "reading " << lFile << ", " << uFile << ", " << dFile << std::endl;
+      RCP<crs_matrix_type> L = reader_type::readSparseFile (lFile, comm);
+      RCP<crs_matrix_type> U = reader_type::readSparseFile (uFile, comm);
+      RCP<const map_type> rm = U->getRowMap();
+      
+      //Compare factors.  We can't use the Frobenius norm, as it uses GIDs.
+      //Instead, we use the trick of multiply by the same random vector and comparing the
+      //two norm of the results.  One of the random vectors is based on the original rowmap,
+      //the other on the permuted row map.  Both contain the same random entries.
+      multivector_type randVec(rowMap,1);
+      randVec.randomize();
+      multivector_type permRandVec(permRowMap,1);
+      Teuchos::ArrayRCP<const Scalar> data  = randVec.getData(0);
+      Teuchos::ArrayRCP<Scalar> pdata = permRandVec.getDataNonConst(0);
+      for (global_size_t i=0; i<num_rows_per_proc; ++i)
+        pdata[i] = data[i];
+      data = pdata = Teuchos::null;
+      
+      out << "bandwidth = " << lof+2 << ", lof = " << lof << std::endl;
+      multivector_type permResult(permRowMap,1);
+      iLn->apply(permRandVec,permResult);
+      Teuchos::Array<magnitudeType> n1(1);
+      permResult.norm2(n1);
+      
+      multivector_type result(rowMap,1);
+      L->apply(randVec,result);
+      Teuchos::Array<magnitudeType> n2(1);
+      result.norm2(n2);
+      
+      out << "||L*randvec||_2 - ||iL*randvec||_2 = " << n1[0]-n2[0] << std::endl;
+      TEST_EQUALITY(n1[0]-n2[0] < 1e-6, true);
+      out << std::endl;
 
-    //Compare factors.  We can't use the Frobenius norm, as it uses GIDs.
-    //Instead, we use the trick of multiply by the same random vector and comparing the
-    //two norm of the results.  One of the random vectors is based on the original rowmap,
-    //the other on the permuted row map.  Both contain the same random entries.
-    multivector_type randVec(rowMap,1);
-    randVec.randomize();
-    multivector_type permRandVec(permRowMap,1);
-    Teuchos::ArrayRCP<const Scalar> data  = randVec.getData(0);
-    Teuchos::ArrayRCP<Scalar> pdata = permRandVec.getDataNonConst(0);
-    for (global_size_t i=0; i<num_rows_per_proc; ++i)
-      pdata[i] = data[i];
-    data = pdata = Teuchos::null;
+      iUn->apply(permRandVec,permResult);
+      permResult.norm2(n1);
+      
+      U->apply(randVec,result);
+      result.norm2(n2);
+      
+      out << "||U*randvec||_2 - ||iU*randvec||_2 = " << n1[0]-n2[0] << std::endl;
+      {
+        typedef typename TST::magnitudeType MT;
+        // Heuristic for rounding error: machine epsilon times square
+        // root of the number of floating-point operations.
+        const MT tol = TST::eps () * TST::squareroot (static_cast<MT> (result.getGlobalLength ()));
+        TEST_ASSERT( n1[0]-n2[0] < tol );
+      }
+      out << std::endl;
+      
+      RCP<multivector_type> D = reader_type::readVectorFile (dFile, comm, rm);
+	  D->update(TST::one(),*iDn,-TST::one());
+      Teuchos::Array<magnitudeType> norms(1);
+      D->norm2(norms);
+      out << "||inverse(D) - inverse(iD)||_2 = " << norms[0] << std::endl;
+      TEST_EQUALITY(norms[0] < 1e-7, true);
+      out << std::endl;
 
-    out << "bandwidth = " << lof+2 << ", lof = " << lof << std::endl;
-    multivector_type permResult(permRowMap,1);
-    //iL.apply(permRandVec,permResult);
-    iLn->apply(permRandVec,permResult);
-    Teuchos::Array<magnitudeType> n1(1);
-    permResult.norm2(n1);
-
-    multivector_type result(rowMap,1);
-    L->apply(randVec,result);
-    Teuchos::Array<magnitudeType> n2(1);
-    result.norm2(n2);
-
-    out << "||L*randvec||_2 - ||iL*randvec||_2 = " << n1[0]-n2[0] << std::endl;
-    TEST_EQUALITY(n1[0]-n2[0] < 1e-6, true);
-    out << std::endl;
-
-    //iU.apply(permRandVec,permResult);
-    iUn->apply(permRandVec,permResult);
-    permResult.norm2(n1);
-
-    U->apply(randVec,result);
-    result.norm2(n2);
-
-    out << "||U*randvec||_2 - ||iU*randvec||_2 = " << n1[0]-n2[0] << std::endl;
-    {
-      typedef typename TST::magnitudeType MT;
-      // Heuristic for rounding error: machine epsilon times square
-      // root of the number of floating-point operations.
-      const MT tol = TST::eps () * TST::squareroot (static_cast<MT> (result.getGlobalLength ()));
-      TEST_ASSERT( n1[0]-n2[0] < tol );
-    }
-    out << std::endl;
-
-    RCP<multivector_type> D = reader_type::readVectorFile (dFile, comm, rm);
-    //D->update(TST::one(),iD,-TST::one());
-	D->update(TST::one(),*iDn,-TST::one());
-    Teuchos::Array<magnitudeType> norms(1);
-    D->norm2(norms);
-    out << "||inverse(D) - inverse(iD)||_2 = " << norms[0] << std::endl;
-    TEST_EQUALITY(norms[0] < 1e-7, true);
-    out << std::endl;
-
-  } //for (GO lof=0; lof<6; ++lof)
-
-
+    } //for (GO lof=0; lof<6; ++lof)
+  }
 } //unit test IgnoreRowMapGIDs()
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, TestGIDConsistency, Scalar, LO, GO)
@@ -874,15 +899,31 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, TestGIDConsistency,
   A->fillComplete ();
 
   RCP<const crs_matrix_type> constA = A;
-  Ifpack2::RILUK<row_matrix_type> prec (constA);
-
-  Teuchos::ParameterList params;
-  GO lof = 1;
-  params.set ("fact: iluk level-of-fill", lof);
-  params.set ("fact: iluk level-of-overlap", 0);
-
-  prec.setParameters (params);
-  TEST_THROW( prec.initialize (), std::runtime_error);
+  
+  {
+    Ifpack2::RILUK<row_matrix_type> prec (constA);
+    
+    Teuchos::ParameterList params;
+    GO lof = 1;
+    params.set ("fact: iluk level-of-fill", lof);
+    params.set ("fact: iluk level-of-overlap", 0);
+    params.set ("fact: type", "Serial");
+      
+    prec.setParameters (params);
+    TEST_THROW( prec.initialize (), std::runtime_error);
+  }
+  {
+    Ifpack2::RILUK<row_matrix_type> prec (constA);
+    
+    Teuchos::ParameterList params;
+    GO lof = 1;
+    params.set ("fact: iluk level-of-fill", lof);
+    params.set ("fact: iluk level-of-overlap", 0);
+    params.set ("fact: type", "KSPILUK");
+      
+    prec.setParameters (params);
+    TEST_THROW( prec.initialize (), std::runtime_error);
+  }
 
 } // unit test TestGIDConsistency()
 
