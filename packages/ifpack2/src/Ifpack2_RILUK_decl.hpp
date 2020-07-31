@@ -292,7 +292,7 @@ class RILUK:
   template <class NewMatrixType> friend class RILUK;
 
   //@}
-  //! \name Implementation of KK ILU(k).
+  //! \name Implementation of Kokkos Kernels ILU(k).
   //@{
 
   typedef typename crs_matrix_type::local_matrix_type local_matrix_type;
@@ -303,11 +303,8 @@ class RILUK:
   typedef typename local_matrix_type::StaticCrsGraphType::device_type::memory_space PersistentMemorySpace;
   typedef typename local_matrix_type::StaticCrsGraphType::device_type::execution_space HandleExecSpace;
   typedef typename KokkosKernels::Experimental::KokkosKernelsHandle
-      <typename lno_row_view_t::const_value_type, typename lno_nonzero_view_t::const_value_type, typename scalar_nonzero_view_t::value_type,
-      HandleExecSpace, TemporaryMemorySpace,PersistentMemorySpace > kk_handle_type;
-  //typedef typename KokkosKernels::Experimental::KokkosKernelsHandle
-  //    <typename lno_row_view_t::non_const_value_type, typename lno_nonzero_view_t::non_const_value_type, typename scalar_nonzero_view_t::value_type,
-  //    HandleExecSpace, TemporaryMemorySpace,PersistentMemorySpace > kk_handle_type;//test
+    <typename lno_row_view_t::const_value_type, typename lno_nonzero_view_t::const_value_type, typename scalar_nonzero_view_t::value_type,
+    HandleExecSpace, TemporaryMemorySpace,PersistentMemorySpace > kk_handle_type;
   
   /// \brief Constructor that takes a Tpetra::RowMatrix.
   ///
