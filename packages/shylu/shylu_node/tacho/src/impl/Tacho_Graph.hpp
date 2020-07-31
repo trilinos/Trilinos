@@ -5,6 +5,7 @@
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "Tacho_Util.hpp"
+#include "Tacho_CrsMatrixBase.hpp"
 
 namespace Tacho {
 

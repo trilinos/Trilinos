@@ -172,8 +172,8 @@ namespace Tacho {
         printf("             total time spent:                                %10.6f s\n", (t_alloc+t_factor));
         printf("\n");
         printf("  Workspace\n");
-        printf("             internal data in MB:                          %10.2f MB\n", double(internalDataInBytes)/1.e6);
-        printf("             workspace in MB:                              %10.2f MB\n", double(workspaceInBytes)/1.e6);
+        printf("             internal data in MB:                          %10.3f MB\n", double(internalDataInBytes)/1.e6);
+        printf("             workspace in MB:                              %10.3f MB\n", double(workspaceInBytes)/1.e6);
         printf("\n");
       }
 
