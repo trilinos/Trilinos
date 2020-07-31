@@ -1,23 +1,18 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: quad.f,v 1.1 1991/02/21 15:45:19 gdsjaar Exp $
-C $Log: quad.f,v $
-C Revision 1.1  1991/02/21 15:45:19  gdsjaar
-C Initial revision
-C
       SUBROUTINE QUAD(XXX, XI, XG, NDIM, NNODES, NQUAD, WT)
       DIMENSION XXX(NDIM+1,NNODES,NQUAD), XI(NDIM,*), XG(NDIM,*)
-C
+
       IF (NQUAD .EQ. 1) THEN
           QUADL = 0.0
       ELSE
           QUADL = 1./SQRT(3.)
       END IF
-C
+
       WT = 2.**NDIM / DBLE(NQUAD)
       IF (NQUAD .EQ. 1) THEN
           XG(1,1) = 0.0
@@ -30,14 +25,14 @@ C
    10         CONTINUE
    20     CONTINUE
       END IF
-C
+
       IF (NDIM .EQ. 3) THEN
           DO 40 I=1, NQUAD
               DO 30 J=1, NNODES
                   TMP1 = (1. + XI(1,J) * XG(1,I))
                   TMP2 = (1. + XI(2,J) * XG(2,I))
                   TMP3 = (1. + XI(3,J) * XG(3,I))
-C
+
                   XXX(1,J,I) = TMP1    * TMP2 * TMP3 / 8.0
                   XXX(2,J,I) = XI(1,J) * TMP2 * TMP3 / 8.0
                   XXX(3,J,I) = XI(2,J) * TMP1 * TMP3 / 8.0
@@ -49,7 +44,7 @@ C
               DO 50 J=1, NNODES
                   TMP1 = (1. + XI(1,J) * XG(1,I))
                   TMP2 = (1. + XI(2,J) * XG(2,I))
-C
+
                   XXX(1,J,I) = TMP1    * TMP2 / 4.0
                   XXX(2,J,I) = XI(1,J) * TMP2 / 4.0
                   XXX(3,J,I) = XI(2,J) * TMP1 / 4.0

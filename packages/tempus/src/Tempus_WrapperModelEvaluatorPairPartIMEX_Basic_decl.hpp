@@ -184,8 +184,8 @@ protected:
   Thyra::ModelEvaluatorBase::OutArgs<Scalar>         wrapperImplicitOutArgs_;
 
   int numExplicitOnlyBlocks_;
-  int parameterIndex_;    //< implicit parameter index for explicit-only vector
-  bool useImplicitModel_; //< if true, use implicitModel_ else explicitModel_
+  int parameterIndex_;    ///< implicit parameter index for explicit-only vector
+  bool useImplicitModel_; ///< if true, use implicitModel_ else explicitModel_
 };
 
 } // namespace Tempus

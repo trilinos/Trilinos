@@ -5,6 +5,22 @@ set +x
 # Need to load env so we define some vars
 source $WORKSPACE/Trilinos/cmake/std/atdm/load-env.sh $JOB_NAME
 
+# Make adjustments for the XL builds
+if atdm_match_buildname_keyword xl ; then
+  echo "This is an XL build!"
+  # For XL, do not build tests and examples by default.
+  if [[ "${Trilinos_INNER_ENABLE_TESTS}" == "" ]]; then
+    export Trilinos_INNER_ENABLE_TESTS=OFF
+  fi
+  # Don't do the cuda-aware build for the XL builds if you are not building
+  # internal tests and examples.
+  if [[ "${Trilinos_INNER_ENABLE_TESTS}" == "OFF" ]]; then
+    export Trilinos_CTEST_RUN_CUDA_AWARE_MPI=0
+  fi
+  # Only enable the SPARC packages by default
+  export ATDM_CONFIG_CONFIGURE_OPTIONS_FILES=cmake/std/atdm/ATDMDevEnv.cmake,cmake/std/atdm/apps/sparc/SPARC_Trilinos_PACKAGES.cmake
+fi
+
 echo
 echo "Current node type: $(atdm_ats2_get_node_type)"
 echo

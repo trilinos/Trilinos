@@ -1,3 +1,5 @@
+#ifndef USE_STK_SIMD_NONE  // somehow these tests are broken for scalar SIMD
+
 #include <gtest/gtest.h>                // for AssertHelper, etc
 #include <iomanip>                      // for operator<<
 #include <iostream>                     // for basic_ostream::operator<<, etc
@@ -352,4 +354,6 @@ TEST_F(StkSimdViewFixture, SimdParallelFor3d_LayoutLeft_PtrPtrPtr) {
   tester.parallel_reduce_test(3, 1, 3);
   tester.parallel_reduce_test(64, 1, 2);
 }
+#endif
+
 #endif

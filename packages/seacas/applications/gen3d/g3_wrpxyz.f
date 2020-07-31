@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
@@ -38,10 +38,9 @@ C   --      CENTER, NUMCOL, NUMROW of /PARAMS/
       INTEGER IXNP(*), NRNP(*)
       REAL ZCORD(NNREPL)
 
-C
 C ... Doing a Warp
 C ... CALCULATE THE THICKNESS INCREMENT FOR EACH TRANSLATION
-C
+
       IF (VEDGE) THEN
          CALL INIGRD (0.0, 1.0, ZGRAD(1), NRTRAN(1), NNREPL, ZCORD)
       ELSE
@@ -82,9 +81,9 @@ C   30    CONTINUE
 C      END IF
 
       IF (IWARP .EQ. 1) THEN
-C
+
 C ... Warp type 1: Point Centered
-C
+
          DO 60 INP = 1, NUMNP
             JNP0 = IXNP(INP) - 1
             DX = XN(INP)
@@ -111,9 +110,9 @@ C
 
          CONTINUE
       ELSE IF (IWARP .EQ. -1) THEN
-C
+
 C ... Warp type -1: X Axis Centered
-C
+
          DO 90 INP = 1, NUMNP
             JNP0 = IXNP(INP) - 1
             THET = YN(INP) / DWARP
@@ -144,9 +143,9 @@ C
    90    CONTINUE
 
       ELSE IF (IWARP .EQ. -2) THEN
-C
+
 C ... Warp type -2: Y Axis Centered
-C
+
          DO 120 INP = 1, NUMNP
             JNP0 = IXNP(INP) - 1
             THET = XN(INP) / DWARP
@@ -177,9 +176,9 @@ C
   120    CONTINUE
 
       ELSE IF (IWARP .EQ. 2) THEN
-C
+
 C ... Warp type 1: Point-Centered Ellipse
-C
+
          DO 360 INP = 1, NUMNP
             JNP0 = IXNP(INP) - 1
             DX = XN(INP)

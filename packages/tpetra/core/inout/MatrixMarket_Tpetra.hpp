@@ -1657,7 +1657,7 @@ namespace Tpetra {
         if (comm->getRank () == 0) {
           try {
             in.open (filename.c_str ());
-            opened = 1;
+            opened = in.is_open();
           }
           catch (...) {
             opened = 0;
@@ -1724,7 +1724,7 @@ namespace Tpetra {
         if (pComm->getRank () == 0) {
           try {
             in.open (filename.c_str ());
-            opened = 1;
+            opened = in.is_open();
           }
           catch (...) {
             opened = 0;
@@ -1817,7 +1817,7 @@ namespace Tpetra {
         if (comm->getRank () == 0) {
           try {
             in.open (filename.c_str ());
-            opened = 1;
+            opened = in.is_open();
           }
           catch (...) {
             opened = 0;
@@ -2149,7 +2149,7 @@ namespace Tpetra {
         if (myRank == 0) {
           try {
             in.open (filename.c_str ());
-            opened = 1;
+            opened = in.is_open();
           }
           catch (...) {
             opened = 0;
@@ -3925,10 +3925,25 @@ namespace Tpetra {
                      const bool tolerant=false,
                      const bool debug=false)
       {
+        using Teuchos::broadcast;
+        using Teuchos::outArg;
+
         std::ifstream in;
-        if (comm->getRank () == 0) { // Only open the file on Proc 0.
-          in.open (filename.c_str ()); // Destructor closes safely
+        int opened = 0;
+        if (comm->getRank() == 0) {
+          try {
+            in.open (filename.c_str ());
+            opened = in.is_open();
+          }
+          catch (...) {
+            opened = 0;
+          }
         }
+        broadcast<int, int> (*comm, 0, outArg (opened));
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          opened == 0, std::runtime_error,
+          "readDenseFile: Failed to open file \"" << filename << "\" on "
+          "Process 0.");
         return readDense (in, comm, map, tolerant, debug);
       }
 
@@ -3969,10 +3984,25 @@ namespace Tpetra {
                       const bool tolerant=false,
                       const bool debug=false)
       {
+        using Teuchos::broadcast;
+        using Teuchos::outArg;
+
         std::ifstream in;
-        if (comm->getRank () == 0) { // Only open the file on Proc 0.
-          in.open (filename.c_str ()); // Destructor closes safely
+        int opened = 0;
+        if (comm->getRank() == 0) {
+          try {
+            in.open (filename.c_str ());
+            opened = in.is_open();
+          }
+          catch (...) {
+            opened = 0;
+          }
         }
+        broadcast<int, int> (*comm, 0, outArg (opened));
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          opened == 0, std::runtime_error,
+          "readVectorFile: Failed to open file \"" << filename << "\" on "
+          "Process 0.");
         return readVector (in, comm, map, tolerant, debug);
       }
 
@@ -5579,7 +5609,7 @@ namespace Tpetra {
             "Please report this bug to the Tpetra developers.");
         }
       }
-    };
+    }; // class Reader
 
     /// \class Writer
     /// \brief Matrix Market file writer for CrsMatrix and MultiVector.

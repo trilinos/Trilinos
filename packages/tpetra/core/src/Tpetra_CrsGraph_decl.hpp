@@ -256,7 +256,9 @@ namespace Tpetra {
     //! The type of the part of the sparse graph on each MPI process.
     using local_graph_type = Kokkos::StaticCrsGraph<local_ordinal_type,
                                                     Kokkos::LayoutLeft,
-                                                    device_type>;
+                                                    device_type,
+                                                    void,
+                                                    size_t>;
 
     //! The Map specialization used by this class.
     using map_type = ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
@@ -1937,7 +1939,6 @@ namespace Tpetra {
     /// Global constants include:
     /// <ul>
     /// <li> globalNumEntries_ </li>
-    /// <li> globalNumDiags_ </li>
     /// <li> globalMaxNumRowEntries_ </li>
     /// </ul>
     ///
@@ -1946,17 +1947,7 @@ namespace Tpetra {
     /// <li> globalNumEntries_ </li>
     /// <li> globalMaxNumRowEntries_ </li>
     /// </ul>
-    ///
-    /// Only compute the following if the input argument
-    /// computeLocalTriangularConstants is true:
-    /// <ul>
-    /// <li> globalNumDiags_ </li>
-    /// </ul>
-    /// The bool input argument comes from an input ParameterList bool
-    /// parameter "compute local triangular constants", named
-    /// analogously to the existing bool parameter "compute global
-    /// constants".
-    void computeGlobalConstants (const bool computeLocalTriangularConstants);
+    void computeGlobalConstants ();
 
   protected:
     /// \brief Compute local constants, if they have not yet been computed.
@@ -1968,9 +1959,6 @@ namespace Tpetra {
     ///
     /// Local constants include:
     /// <ul>
-    /// <li> lowerTriangular_ </li>
-    /// <li> upperTriangular_ </li>
-    /// <li> nodeNumDiags_ </li>
     /// <li> nodeMaxNumRowEntries_ </li>
     /// </ul>
     ///
@@ -1979,21 +1967,9 @@ namespace Tpetra {
     /// <li> nodeMaxNumRowEntries_ </li>
     /// </ul>
     ///
-    /// Only compute the following if the input argument
-    /// computeLocalTriangularConstants is true:
-    /// <ul>
-    /// <li> lowerTriangular_ </li>
-    /// <li> upperTriangular_ </li>
-    /// <li> nodeNumDiags_ </li>
-    /// </ul>
-    /// The bool input argument comes from an input ParameterList bool
-    /// parameter "compute local triangular constants", named
-    /// analogously to the existing bool parameter "compute global
-    /// constants".
-    ///
     /// computeGlobalConstants calls this method, if global constants
     /// have not yet been computed.
-    void computeLocalConstants (const bool computeLocalTriangularConstants);
+    void computeLocalConstants ();
 
     /// \brief Get information about the locally owned row with local
     ///   index myRow.
@@ -2159,11 +2135,6 @@ namespace Tpetra {
     //! Local graph; only initialized after first fillComplete() call.
     local_graph_type lclGraph_;
 
-    /// \brief Local number of (populated) diagonal entries.
-    ///
-    /// Computed in computeLocalConstants(); only valid when isFillComplete().
-    size_t nodeNumDiags_ = Teuchos::OrdinalTraits<size_t>::invalid();
-
     /// \brief Local maximum of the number of entries in each row.
     ///
     /// Computed in computeLocalConstants; only valid when
@@ -2175,13 +2146,6 @@ namespace Tpetra {
     ///
     /// Only valid when isFillComplete() is true.
     global_size_t globalNumEntries_ =
-      Teuchos::OrdinalTraits<global_size_t>::invalid();
-
-    /// \brief Global number of (populated) diagonal entries.
-    ///
-    /// Computed in computeGlobalConstants; only valid when
-    ///   isFillComplete() is true.
-    global_size_t globalNumDiags_ =
       Teuchos::OrdinalTraits<global_size_t>::invalid();
 
     /// \brief Global maximum of the number of entries in each row.
@@ -2321,10 +2285,6 @@ namespace Tpetra {
     bool indicesAreGlobal_ = false;
     bool fillComplete_ = false;
 
-    //! Whether the graph is locally lower triangular.
-    bool lowerTriangular_ = false;
-    //! Whether the graph is locally upper triangular.
-    bool upperTriangular_ = false;
     //! Whether the graph's indices are sorted in each row, on this process.
     bool indicesAreSorted_ = true;
     /// \brief Whether the graph's indices are non-redundant (merged)
@@ -2361,7 +2321,6 @@ namespace Tpetra {
     static bool getDebug();
 
     /// \brief Whether to do extra debug checks.
-    ///
     /// This comes from Tpetra::Details::Behavior::debug("CrsGraph").
     bool debug_ = getDebug();
 

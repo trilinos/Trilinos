@@ -1,21 +1,21 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
       SUBROUTINE PACKT (TITLE,LENGTH)
-C
+
 C ... REMOVE MULTIPLE BLANKS FROM A TITLE OR LABEL
-C
+
       CHARACTER*(*) TITLE
       CHARACTER*1 BLANK
       DATA BLANK/' '/
       I=1
       L=1
-C
+
 C ... SKIP LEADING BLANKS
-C
+
    10 CONTINUE
       IF (TITLE(I:I) .NE. BLANK) GO TO 20
       I=I+1

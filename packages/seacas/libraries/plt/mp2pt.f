@@ -1,14 +1,9 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
-C $Id: mp2pt.f,v 1.1 1993/07/16 16:47:03 gdsjaar Exp $
-C $Log: mp2pt.f,v $
-C Revision 1.1  1993/07/16 16:47:03  gdsjaar
-C Changed plt to library rather than single source file.
-C
 C=======================================================================
       SUBROUTINE MP2PT(N,X0,Y0,PX,PY,MASK)
       COMMON /MAP/MODEL(4,4),VIEW(4,4),PROJ(4,4),CPNEAR,CPFAR,VWPORT(4),

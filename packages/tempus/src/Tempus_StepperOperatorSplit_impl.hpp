@@ -302,6 +302,15 @@ void StepperOperatorSplit<Scalar>::setInitialConditions(
     subStepperIter = subStepperList_.begin();
   for (; subStepperIter < subStepperList_.end(); subStepperIter++)
     (*subStepperIter)->setInitialConditions(solutionHistory);
+
+  Teuchos::RCP<SolutionState<Scalar> > initialState =
+    solutionHistory->getCurrentState();
+
+  // Check if we need Stepper storage for xDot
+  this->setStepperXDot(initialState->getXDot());
+  if (initialState->getXDot() == Teuchos::null)
+    this->setStepperXDot(initialState->getX()->clone_v());
+
 }
 
 template<class Scalar>
@@ -345,9 +354,9 @@ void StepperOperatorSplit<Scalar>::takeStep(
     typename std::vector<Teuchos::RCP<Stepper<Scalar> > >::iterator
       subStepperIter = subStepperList_.begin();
     for (; subStepperIter < subStepperList_.end() and pass; subStepperIter++) {
-      int index = subStepperIter - subStepperList_.begin();
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
+      int index = subStepperIter - subStepperList_.begin();
       stepperOSObserver_->observeBeforeStepper(index, solutionHistory, *this);
 #endif
       stepperOSAppAction_->execute(solutionHistory, thisStepper,
@@ -383,6 +392,7 @@ void StepperOperatorSplit<Scalar>::takeStep(
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
     stepperOSObserver_->observeEndTakeStep(solutionHistory, *this);
 #endif
+
     stepperOSAppAction_->execute(solutionHistory, thisStepper,
       StepperOperatorSplitAppAction<Scalar>::ACTION_LOCATION::END_STEP);
   }

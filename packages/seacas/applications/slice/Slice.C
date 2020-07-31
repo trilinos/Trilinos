@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include <SL_SystemInterface.h>
@@ -1409,7 +1409,7 @@ namespace {
     }
     // Output histogram..
     fmt::print(stderr, "Processor count per node histogram:\n");
-    for (size_t i = 0; i < proc_histo.size(); i++) {
+    for (size_t i = 1; i < proc_histo.size(); i++) {
       if (proc_histo[i] > 0) {
         fmt::print(stderr, "\tNodes on {:2n} processors = {:12n}\t({:2})%\n", i, proc_histo[i],
                    (proc_histo[i] * 100 + node_count / 2) / node_count);

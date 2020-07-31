@@ -56,7 +56,6 @@ echo "Using $ATDM_CONFIG_SYSTEM_NAME compiler stack $ATDM_CONFIG_COMPILER to bui
 
 # Some basic settings
 export ATDM_CONFIG_ENABLE_SPARC_SETTINGS=ON
-export ATDM_CONFIG_USE_NINJA=ON
 export ATDM_CONFIG_BUILD_COUNT=8 # Assume building on the shared login node!
 
 # Set ctest -j parallel level for non-CUDA builds
@@ -72,7 +71,7 @@ fi
 module purge --silent
 module load StdEnv
 
-# Load the sparc-dev/xxx module 
+# Load the sparc-dev/xxx module
 sparc_module_name=$(get_sparc_dev_module_name "$ATDM_CONFIG_COMPILER")
 module load ${sparc_module_name}
 
@@ -88,8 +87,26 @@ if [[ "$ATDM_CONFIG_COMPILER" == *"GNU"* ]]; then
   export INCLUDE=${BINUTILS_ROOT}/include:${INCLUDE}
   export CPATH=${BINUTILS_ROOT}/include:${CPATH}
 
-# ToDo: Add support for xl when needed
+  export ATDM_CONFIG_USE_NINJA=ON
 
+  # Prepend path to updated and patched CMake 3.17.2
+  # Only use updated cmake version for gnu builds. XL compiler tests fail
+  # with this newer cmake version.
+  module unload cmake
+  export PATH=/projects/atdm_devops/vortex/cmake-3.17.2/bin:$PATH
+
+elif [[ "$ATDM_CONFIG_COMPILER" == *"XL"* ]]; then
+
+  # Point to binutils root.
+  export BINUTILS_ROOT=/usr/tce/packages/gcc/gcc-7.3.1
+  export LD_LIBRARY_PATH=${BINUTILS_ROOT}/lib:${LD_LIBRARY_PATH}
+  export LIBRARY_PATH=${BINUTILS_ROOT}/lib
+  export INCLUDE=${BINUTILS_ROOT}/include:${INCLUDE}
+  export CPATH=${BINUTILS_ROOT}/include:${CPATH}
+  export BLAS_ROOT=${CBLAS_ROOT}
+
+  # Don't use ninja as the fortran compiler test is broken.
+  export ATDM_CONFIG_USE_NINJA=OFF
 fi
 
 # Set up stuff related to CUDA
@@ -133,10 +150,6 @@ fi
 
 # Prepend path to ninja after all of the modules are loaded
 export PATH=/projects/atdm_devops/vortex/ninja-fortran-1.8.2:$PATH
-
-# Prepend path to updated and patched CMake 3.17.2
-module unload cmake
-export PATH=/projects/atdm_devops/vortex/cmake-3.17.2/bin:$PATH
 
 # Set a standard git so everyone has the same git
 module load git/2.20.0

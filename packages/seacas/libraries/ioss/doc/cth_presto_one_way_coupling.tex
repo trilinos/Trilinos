@@ -79,7 +79,7 @@ as time-varying boundary conditions to the finite element
 representation of the structural model to calculate the structural
 response.  There is no feedback or communication of data from the
 \code{presto} analysis back to \code{CTH}; all communication is
-one{}-way from \code{CTH} to \code{presto}. 
+one{}-way from \code{CTH} to \code{presto}.
 
 The codes involved in this process include CTH, Presto, and a few
 utility programs (described below) used to facilitate the data
@@ -92,7 +92,7 @@ The one{}-way coupling procedure consists of the following steps:
 Generate finite element mesh of the structural model. The model must
 consist entirely of volume elements (hexes, tetrahedrons, wedges) at
 this time; structural elements (shells, beams, trusses) are not yet
-supported. A workaround for shell models is discussed in Section~\ref{sec:shell}. 
+supported. A workaround for shell models is discussed in Section~\ref{sec:shell}.
 
 \item Generate a model consisting of the exposed surface (`skin') of the
 structural model.
@@ -126,8 +126,8 @@ for output.  The input file format is:
 BEGIN SIERRA \textit{label}
 BEGIN FINITE ELEMENT MODEL \textit{model\_label}
   DATABASE NAME = \file{structural\_model.g}
-  OMIT BLOCK block\_[?]      # optional 
- END 
+  OMIT BLOCK block\_[?]      # optional
+ END
 
  BEGIN MODEL TO SKIN
   USE FINITE ELEMENT MODEL \textit{model\_label}
@@ -287,7 +287,7 @@ CTH--Presto one-way coupling process, the name for this code was
 \code{io\_shell} instead.} is used for this.  The basic minimal
 command line for this is:
 \begin{source}
-sierra cth\_pressure\_map {-}i \file{merge\_file.i} 
+sierra cth\_pressure\_map {-}i \file{merge\_file.i}
 \end{source}
 The \file{merge\_file.i} file contains three lines:
 \begin{source}
@@ -402,8 +402,8 @@ written at time 0.0025 (0.0015 + 0.001).
 \subsection{Step 6: Perform Presto Structural Analysis}\label{sec:step6}
 
 Within Presto, the pressure data and the finite element model are read
-from the same exodusII database 
-(\file{structural\_model\_with\_pressures.g }in the above example). 
+from the same exodusII database
+(\file{structural\_model\_with\_pressures.g }in the above example).
 The following `pressure block' located in the `region scope' tells
 presto where to find the pressure data:
 
@@ -446,11 +446,11 @@ increased flexibility.
 
 \item We recommend having at least three CTH cells through any solid material
 (through thickness) in order to avoid any `bleed through' of pressure
-from one side to the other, e.g on thin plates.  
+from one side to the other, e.g on thin plates.
 
 \item The pressure distributions can be spatially clipped within Presto input
 deck by using the `\cmd{remove surface}' option within the
-\cmd{pressure} block. 
+\cmd{pressure} block.
 
 \item Care must be exercised when solid material in the CTH simulation is in
 contact with the inserted finite{}-element model as only the scalar

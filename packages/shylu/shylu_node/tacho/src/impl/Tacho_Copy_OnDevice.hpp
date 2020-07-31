@@ -1,5 +1,5 @@
 #ifndef __TACHO_COPY_ON_DEVICE_HPP__
-#define __TACHO_COPT_ON_DEVICE_HPP__
+#define __TACHO_COPY_ON_DEVICE_HPP__
 
 
 /// \file  Tacho_COPY_OnDevice.hpp

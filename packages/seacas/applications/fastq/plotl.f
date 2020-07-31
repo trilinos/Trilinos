@@ -1,49 +1,24 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: plotl.f,v 1.3 2007/07/24 13:10:18 gdsjaar Exp $
-C $Log: plotl.f,v $
-C Revision 1.3  2007/07/24 13:10:18  gdsjaar
-C Fix problem with boundary condition memory overwrite.
-C
-C Remove old ls5 and r25 terminal tests
-C
-C Revision 1.2  1998/07/14 18:19:39  gdsjaar
-C Removed unused variables, cleaned up a little.
-C
-C Changed BLUE labels to GREEN to help visibility on black background
-C (indirectly requested by a couple users)
-C
-C Revision 1.1.1.1  1990/11/30 11:13:44  gdsjaar
-C FASTQ Version 2.0X
-C
-c Revision 1.1  90/11/30  11:13:43  gdsjaar
-c Initial revision
-c
-C
-CC* FILE: [.QMESH]PLOTL.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE PLOTL (MXND, XN, YN, NXL, KREG, XMIN, XMAX, YMIN,
      &   YMAX, LLL, DEV1)
 C***********************************************************************
-C
+
 C  SUBROUTINE PLTNXL = PLOTS THE CURRENT MESH FROM THE NXL ARRAY
-C
+
 C***********************************************************************
-C
+
       DIMENSION NXL (2, 3 * MXND), XN (MXND), YN (MXND)
       DIMENSION X (2), Y (2)
-C
+
       CHARACTER * 72 DUMMY, HOLD, DEV1 * 3
-C
+
 C  INITIALIZE THE PLOTTING SURFACE
-C
+
       CALL PLTBGN
       XDIMR = XMAX - XMIN
       YDIMR = YMAX - YMIN
@@ -79,9 +54,9 @@ C
       DUMMY (1:7) = 'REGION '
       LEN = LEN + 7
       CALL PLTXTH (XDIMD * .05, YDIMD * .95, DUMMY (1:LEN))
-C
+
 C  PLOT THE LINES IN NXL ARRAY,  SKIPPING DELETIONS
-C
+
       DO 100 I = 1, LLL
          IF (NXL (1, I) .GT. 0) THEN
             X (2) = XN (NXL (2, I))
@@ -91,9 +66,9 @@ C
             CALL MPD2VC (1, X (1), Y (1), X (2), Y (2))
          ENDIF
   100 CONTINUE
-C
+
       CALL PLTFLU
-C
+
       RETURN
-C
+
       END

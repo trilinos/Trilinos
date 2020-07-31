@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 
@@ -29,7 +29,6 @@ errors include:
   -  variable does not exist for the desired element block.
   -  invalid element block.
 
-
 \param[in] exoid            exodus file ID returned from a previous call to
 ex_create() or ex_open().
 \param[in] time_step        The time step number, as described under
@@ -52,7 +51,6 @@ variable
 elem_var_index
                             element variable for the element block with ID of
                             elem_blk_id at the time_step time step.
-
 
 As an example, the following code segment will read the
 var_index-th element variable at one time step stored in an exodus

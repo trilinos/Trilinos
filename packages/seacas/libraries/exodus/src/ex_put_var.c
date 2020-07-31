@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 
@@ -185,7 +185,6 @@ include:
   -  data file not initialized properly with call to ex_put_init().
   -  ex_put_variable_param() not called previously specifying the number of
 variables.
-
 
 \param[in] exoid
 exodus file ID returned from a previous call to

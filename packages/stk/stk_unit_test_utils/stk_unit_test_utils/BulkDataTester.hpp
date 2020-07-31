@@ -232,7 +232,7 @@ public:
     void my_internal_resolve_shared_modify_delete()
     {
         stk::mesh::EntityVector entitiesNoLongerShared;
-        this->internal_resolve_shared_modify_delete(entitiesNoLongerShared);
+        this->m_meshModification.internal_resolve_shared_modify_delete(entitiesNoLongerShared);
     }
 
     void my_internal_resolve_ghosted_modify_delete()

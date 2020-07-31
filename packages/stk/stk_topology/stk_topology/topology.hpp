@@ -91,6 +91,7 @@ struct topology
     , TRI_4, TRIANGLE_4 = TRI_4
     , TRI_6, TRIANGLE_6 = TRI_6
     , QUAD_4, QUADRILATERAL_4 = QUAD_4
+    , QUAD_6, QUADRILATERAL_6 = QUAD_6
     , QUAD_8, QUADRILATERAL_8 = QUAD_8
     , QUAD_9, QUADRILATERAL_9 = QUAD_9
     //ELEMENT_RANK
@@ -123,6 +124,7 @@ struct topology
     , PYRAMID_13
     , PYRAMID_14
     , WEDGE_6
+    , WEDGE_12
     , WEDGE_15
     , WEDGE_18
     , HEX_8,  HEXAHEDRON_8  = HEX_8
@@ -213,6 +215,10 @@ struct topology
   /// what is the topology of the given edge
   STK_INLINE_FUNCTION
   topology edge_topology() const;
+
+  /// what is the topology of the given edge
+  STK_INLINE_FUNCTION
+  topology edge_topology(unsigned edge_orginal) const;
 
   /// what is the topology of the given face
   STK_INLINE_FUNCTION
@@ -320,7 +326,7 @@ struct topology
     switch(sub_rank)
     {
     case NODE_RANK: return NODE;
-    case EDGE_RANK: return edge_topology();
+    case EDGE_RANK: return edge_topology(sub_ordinal);
     case FACE_RANK: return face_topology(sub_ordinal);
     default: break;
     }

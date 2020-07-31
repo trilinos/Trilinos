@@ -220,8 +220,8 @@ namespace Tempus {
  *  \renewcommand{\thealgorithm}{}
  *  \caption{IMEX RK with the application-action locations indicated.}
  *  \begin{algorithmic}[1]
- *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
  *    \State $Z \leftarrow z_{n-1}$ (Recall $Z_i = \{Y_i,X_i\}^T$)
+ *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
  *      \Comment Set initial guess to last timestep.
  *    \For {$i = 0 \ldots s-1$}
  *      \State $Y_i = y_{n-1} -\Delta t \sum_{j=1}^{i-1} \hat{a}_{ij}\;f^y_j$
@@ -263,7 +263,7 @@ namespace Tempus {
  *
  *  The following table contains the pre-coded IMEX-RK tableaus.
  *  <table>
- *  <caption id="multi_row">Partitioned IMEX-RK Tableaus</caption>
+ *  <caption id="multi_row_part">Partitioned IMEX-RK Tableaus</caption>
  *  <tr><th> Name  <th> Order <th> Implicit Tableau <th> Explicit Tableau
  *  <tr><td> Partitioned IMEX RK 1st order  <td> 1st
  *      <td> \f[ \begin{array}{c|cc}
@@ -302,7 +302,7 @@ namespace Tempus {
  *           \end{array} \f]
  *  </table>
  *
- *  The First-Step-As-Last (FSAL) principle is not valid for IMEX RK Partition.
+ *  The First-Same-As-Last (FSAL) principle is not valid for IMEX RK Partition.
  *  The default is to set useFSAL=false, and useFSAL=true will result
  *  in an error.
  *
@@ -356,14 +356,26 @@ public:
 
   /// \name Basic stepper methods
   //@{
+    /// Returns the explicit tableau!
+    virtual Teuchos::RCP<const RKButcherTableau<Scalar> > getTableau() const
+    { return getExplicitTableau(); }
+
     /// Set both the explicit and implicit tableau from ParameterList
     virtual void setTableaus(std::string stepperType = "",
       Teuchos::RCP<const RKButcherTableau<Scalar> > explicitTableau = Teuchos::null,
       Teuchos::RCP<const RKButcherTableau<Scalar> > implicitTableau = Teuchos::null);
 
+    /// Return explicit tableau.
+    virtual Teuchos::RCP<const RKButcherTableau<Scalar> > getExplicitTableau() const
+    { return explicitTableau_; }
+
     /// Set the explicit tableau from tableau
     virtual void setExplicitTableau(
       Teuchos::RCP<const RKButcherTableau<Scalar> > explicitTableau);
+
+    /// Return implicit tableau.
+    virtual Teuchos::RCP<const RKButcherTableau<Scalar> > getImplicitTableau() const
+    { return implicitTableau_; }
 
     /// Set the implicit tableau from tableau
     virtual void setImplicitTableau(
@@ -417,7 +429,10 @@ public:
     virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}
   //@}
 
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >& getStageZ() {return stageZ_;};
+  /// Return the full stage solution which is Z (the concat of X and Y) for IMEX Partition.
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > getStageX() {return stageZ_;}
+  /// Explicitly return the full stage solution, Z.
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > getStageZ() {return stageZ_;};
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > >& getStageF() {return stageF_;};
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > >& getStageGx() {return stageGx_;};
   Teuchos::RCP<Thyra::VectorBase<Scalar> >& getXTilde() {return xTilde_;};

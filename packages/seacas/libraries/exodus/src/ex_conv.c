@@ -2,21 +2,9 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
-/*****************************************************************************
- *
- * exutils - exodus utilities
- *
- * entry conditions -
- *
- * exit conditions -
- *
- * revision history -
- *
- *
- *****************************************************************************/
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for ex__file_item, EX_FATAL, etc
@@ -72,7 +60,11 @@ int ex__check_multiple_open(const char *path, int mode, const char *func)
                  " File corruption or incorrect behavior can occur.\n",
                  path);
         ex_err(func, errmsg, EX_BADFILEID);
+#if defined BUILT_IN_SIERRA
+        EX_FUNC_LEAVE(EX_NOERR);
+#else
         EX_FUNC_LEAVE(EX_FATAL);
+#endif
       }
     }
     ptr = ptr->next;

@@ -199,6 +199,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: number of times to pre or post smooth\" type=\"int\" value=\"10\"/>"
   "<Parameter name=\"aggregation: penalty parameters\" type=\"Array(double)\" value=\"{12.,-.2,0,0,0} \"/>"
   "<Parameter name=\"aggregation: distance laplacian algo\" type=\"string\" value=\"default\"/>"
+  "<Parameter name=\"aggregation: classical algo\" type=\"string\" value=\"default\"/>"
   "<Parameter name=\"aggregation: drop tol\" type=\"double\" value=\"0.0\"/>"
   "<Parameter name=\"aggregation: min agg size\" type=\"int\" value=\"2\"/>"
   "<Parameter name=\"aggregation: max agg size\" type=\"int\" value=\"-1\"/>"
@@ -282,6 +283,7 @@ namespace MueLu {
   "<Parameter name=\"emin: num reuse iterations\" type=\"int\" value=\"1\"/>"
   "<Parameter name=\"emin: pattern\" type=\"string\" value=\"AkPtent\"/>"
   "<Parameter name=\"emin: pattern order\" type=\"int\" value=\"1\"/>"
+  "<Parameter name=\"emin: use filtered matrix\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"tentative: calculate qr\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"tentative: constant column sums\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"tentative: build coarse coordinates\" type=\"bool\" value=\"true\"/>"
@@ -505,6 +507,8 @@ namespace MueLu {
           
             "<Parameter name=\"sa: use filtered matrix\" type=\"bool\" value=\"true\"/>"
           
+            "<Parameter name=\"emin: use filtered matrix\" type=\"bool\" value=\"true\"/>"
+          
     "</ParameterList>"
   )
 ;
@@ -583,6 +587,8 @@ namespace MueLu {
          ("aggregation: penalty parameters","aggregation: penalty parameters")
       
          ("aggregation: distance laplacian algo","aggregation: distance laplacian algo")
+      
+         ("aggregation: classical algo","aggregation: classical algo")
       
          ("aggregation: threshold","aggregation: drop tol")
       
@@ -749,6 +755,8 @@ namespace MueLu {
          ("emin: pattern","emin: pattern")
       
          ("emin: pattern order","emin: pattern order")
+      
+         ("emin: use filtered matrix","emin: use filtered matrix")
       
          ("tentative: calculate qr","tentative: calculate qr")
       

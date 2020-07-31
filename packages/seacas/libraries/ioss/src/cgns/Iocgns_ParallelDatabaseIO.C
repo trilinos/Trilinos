@@ -6,7 +6,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include <cgns/Iocgns_Defines.h>
@@ -290,8 +290,8 @@ namespace Iocgns {
         double t_end    = Ioss::Utils::timer();
         double duration = util().global_minmax(t_end - t_begin, Ioss::ParallelUtils::DO_MAX);
         if (myProcessor == 0) {
-          fmt::print(Ioss::DEBUG(), "{} Base File Close Time = {}\n", is_input() ? "Input" : "Output",
-                     duration);
+          fmt::print(Ioss::DEBUG(), "{} Base File Close Time = {}\n",
+                     is_input() ? "Input" : "Output", duration);
         }
       }
     }

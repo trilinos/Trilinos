@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
@@ -9,45 +9,6 @@ C=======================================================================
      &   IDNPS, NNNPS, IXNNPS, LTNNPS, FACNPS,
      &   LTNX, FACX, IXNPS, NNX, ISCR, NODSCR, NUMNP)
 C=======================================================================
-C $Id: munnps.f,v 1.2 2008/07/31 20:15:56 gdsjaar Exp $
-C $Log: munnps.f,v $
-C Revision 1.2  2008/07/31 20:15:56  gdsjaar
-C Change the way the nodal point node membership is calculated. For some
-C reason, the locint calls used in the old method became a bottleneck on
-C some compilers (runtime went from ~30 seconds to multiple hours) with
-C no other changes.  Recompiling the same code with 32-bit gcc gives
-C short runtime; 32-bit or 64-bit intel gives long runtimes.
-C
-C Modified the routine to index all active nodes in a NUMNP-long array
-C and then check whether a node is indexed instead of doing a locint
-C call (constant time vs linear time).
-C
-C Revision 1.1  1999/01/18 19:21:23  gdsjaar
-C ExodusII version of gjoin, needs testing and syncing with exodus 1 version, but is being committed to permit easier testing and modifications.  This was created by Dave Fry at Goodyear
-C
-c Revision 1.1.1.1  1998/11/05  16:23:26  a294617
-c Initial import == gjoin 1.36
-c
-C Revision 1.2  1997/11/18 15:55:29  gdsjaar
-C Changes to improve efficiency (factor of 2 to 15 on some Goodyear Treads)
-C
-C Redid nodeset munching to reduce number of locint calls. First do a
-C quick scan on array to get maximum node id in searched array. Then,
-C before doing 'locint' call, ensure that id being searched for is less
-C than maximum (most times it won't be, saves searching entire list).
-C
-C Modified the node matching code to also index the nodes within the
-C overlap region if doing a nodeset match. This has greatest benefit if
-C not all nodes in the nodeset will be matched.
-C
-C Minor change in offset f -- 'dimension' to 'real'
-C
-C Revision 1.1.1.1  1990/11/12 14:35:15  gdsjaar
-C GJOIN - X1.00.40 - 7/17/90
-C
-c Revision 1.1  90/11/12  14:35:14  gdsjaar
-c Initial revision
-c
 
 C   --*** MUNNPS *** (GJOIN) Compress and rearrange nodal point sets
 C   --   Written by Amy Gilkey - revised 02/25/88

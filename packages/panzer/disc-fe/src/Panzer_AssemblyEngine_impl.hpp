@@ -356,13 +356,19 @@ evaluateBCs(const panzer::BCType bc_type,
       if (bc.bcType() == bc_type) {
         std::ostringstream timerName;
         timerName << "panzer::AssemblyEngine::evaluateBCs: " << bc.identifier();
-        PANZER_FUNC_TIME_MONITOR_DIFF(timerName.str(),eval_BCs);
+#ifdef PANZER_TEUCHOS_TIME_MONITOR
+        auto timer1 = Teuchos::TimeMonitor::getNewTimer(timerName.str());
+        Teuchos::TimeMonitor tm1(*timer1);
+#endif
 
         // Loop over local faces
         for (std::map<unsigned,PHX::FieldManager<panzer::Traits> >::const_iterator side = bc_fm.begin(); side != bc_fm.end(); ++side) {
           std::ostringstream timerSideName;
           timerSideName << "panzer::AssemblyEngine::evaluateBCs: " << bc.identifier() << ", side=" << side->first;
-          PANZER_FUNC_TIME_MONITOR_DIFF(timerSideName.str(),Side);
+#ifdef PANZER_TEUCHOS_TIME_MONITOR
+        auto timer2 = Teuchos::TimeMonitor::getNewTimer(timerSideName.str());
+        Teuchos::TimeMonitor tm2(*timer2);
+#endif
 
           // extract field manager for this side  
           unsigned local_side_index = side->first;

@@ -379,7 +379,7 @@ evaluateFields(typename TRAITS::EvalData workset)
   // on host and then deep_copy to device. The sub-blocks are
   // unmanaged since they are allocated and ref counted separately on
   // host.
-  using LocalMatrixType = KokkosSparse::CrsMatrix<double,LO,PHX::Device,Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using LocalMatrixType = KokkosSparse::CrsMatrix<double,LO,PHX::Device,Kokkos::MemoryTraits<Kokkos::Unmanaged>, size_t>;
   typename Kokkos::View<LocalMatrixType**,PHX::Device>::HostMirror 
     hostJacTpetraBlocks("panzer::ScatterResidual_BlockTpetra<Jacobian>::hostJacTpetraBlocks", numFieldBlocks,numFieldBlocks);
 

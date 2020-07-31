@@ -1,7 +1,7 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 C=======================================================================
       SUBROUTINE PRNODE (OPTION, NOUT, NUMNP, LISNP,
@@ -57,7 +57,6 @@ C   --   VARNP - IN - the nodal variables for the time step
            WRITE (*, 10010) irow, icol, NAMENV(LISNV(I))
         END IF
  90   continue
-
 
       DO 100 IX = 1, LISNP(0)
          INP = LISNP(IX)

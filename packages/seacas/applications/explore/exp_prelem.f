@@ -1,7 +1,7 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 C=======================================================================
       SUBROUTINE PRELEM (OPTION, NOUT,
@@ -45,7 +45,6 @@ C   --   VAREL - IN - the selected element variables for the time step
       CHARACTER*32 CVAL(6)
       CHARACTER*40 FMT20,FMT30, FMT40
       INTEGER PRTLEN
-
 
       PRTLEN = GETPRC() + 7
       WRITE(FMT20,20) PRTLEN, PRTLEN-7

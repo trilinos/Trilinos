@@ -222,7 +222,7 @@ void StepperExplicitRK<Scalar>::setObserver(
 template<class Scalar>
 void StepperExplicitRK<Scalar>::initialize()
 {
-  TEUCHOS_TEST_FOR_EXCEPTION( tableau_ == Teuchos::null, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( this->tableau_ == Teuchos::null, std::logic_error,
     "Error - Need to set the tableau, before calling "
     "StepperExplicitRK::initialize()\n");
 
@@ -231,14 +231,14 @@ void StepperExplicitRK<Scalar>::initialize()
     "StepperExplicitRK::initialize()\n");
 
   // Initialize the stage vectors
-  int numStages = tableau_->numStages();
+  int numStages = this->tableau_->numStages();
   stageXDot_.resize(numStages);
   for (int i=0; i<numStages; ++i) {
     stageXDot_[i] = Thyra::createMember(this->appModel_->get_f_space());
     assign(stageXDot_[i].ptr(), Teuchos::ScalarTraits<Scalar>::zero());
   }
 
-  if ( tableau_->isEmbedded() and this->getUseEmbedded() ){
+  if ( this->tableau_->isEmbedded() and this->getUseEmbedded() ){
      ee_ = Thyra::createMember(this->appModel_->get_f_space());
      abs_u0 = Thyra::createMember(this->appModel_->get_f_space());
      abs_u = Thyra::createMember(this->appModel_->get_f_space());
@@ -253,14 +253,7 @@ template<class Scalar>
 void StepperExplicitRK<Scalar>::setInitialConditions(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
-  using Teuchos::RCP;
-
-  RCP<SolutionState<Scalar> > initialState = solutionHistory->getCurrentState();
-
-  // Check if we need Stepper storage for xDot
-  if (initialState->getXDot() == Teuchos::null)
-    this->setStepperXDot(stageXDot_.back());
-
+  this->setStepperXDot(stageXDot_.back());
   StepperExplicit<Scalar>::setInitialConditions(solutionHistory);
 }
 
@@ -283,6 +276,19 @@ void StepperExplicitRK<Scalar>::takeStep(
       "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
       "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
 
+    RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
+    RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
+    const Scalar dt = workingState->getTimeStep();
+    const Scalar time = currentState->getTime();
+
+    const int numStages = this->tableau_->numStages();
+    Teuchos::SerialDenseMatrix<int,Scalar> A = this->tableau_->A();
+    Teuchos::SerialDenseVector<int,Scalar> b = this->tableau_->b();
+    Teuchos::SerialDenseVector<int,Scalar> c = this->tableau_->c();
+
+    this->stageX_ = workingState->getX();
+    Thyra::assign(this->stageX_.ptr(), *(currentState->getX()));
+
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
     this->stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
 #endif
@@ -290,22 +296,17 @@ void StepperExplicitRK<Scalar>::takeStep(
     this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
       StepperRKAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
 
-    RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
-    RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
-    const Scalar dt = workingState->getTimeStep();
-    const Scalar time = currentState->getTime();
-
-    const int numStages = tableau_->numStages();
-    Teuchos::SerialDenseMatrix<int,Scalar> A = tableau_->A();
-    Teuchos::SerialDenseVector<int,Scalar> b = tableau_->b();
-    Teuchos::SerialDenseVector<int,Scalar> c = tableau_->c();
-
-    this->stageX_ = workingState->getX();
-    Thyra::assign(this->stageX_.ptr(), *(currentState->getX()));
-
     // Compute stage solutions
     for (int i=0; i < numStages; ++i) {
       this->setStageNumber(i);
+      Thyra::assign(this->stageX_.ptr(), *(currentState->getX()));
+      for (int j=0; j < i; ++j) {
+        if (A(i,j) != Teuchos::ScalarTraits<Scalar>::zero()) {
+          Thyra::Vp_StV(this->stageX_.ptr(), dt*A(i,j), *stageXDot_[j]);
+        }
+      }
+      this->setStepperXDot(stageXDot_[i]);
+
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
       this->stepperObserver_->observeBeginStage(solutionHistory, *this);
 
@@ -321,34 +322,28 @@ void StepperExplicitRK<Scalar>::takeStep(
       this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
         StepperRKAppAction<Scalar>::ACTION_LOCATION::BEFORE_SOLVE);
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+      // ???: is it a good idea to leave this (no-op) here?
+      this->stepperObserver_->observeAfterSolve(solutionHistory, *this);
+
+      this->stepperObserver_->observeBeforeExplicit(solutionHistory, *this);
+#endif
+      this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
+        StepperRKAppAction<Scalar>::ACTION_LOCATION::AFTER_SOLVE);
+      this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
+        StepperRKAppAction<Scalar>::ACTION_LOCATION::BEFORE_EXPLICIT_EVAL);
+
       if ( i == 0 && this->getUseFSAL() &&
            workingState->getNConsecutiveFailures() == 0 ) {
 
         RCP<Thyra::VectorBase<Scalar> > tmp = stageXDot_[0];
         stageXDot_[0] = stageXDot_.back();
         stageXDot_.back() = tmp;
+        this->setStepperXDot(stageXDot_[0]);
 
       } else {
 
-        Thyra::assign(this->stageX_.ptr(), *(currentState->getX()));
-        for (int j=0; j < i; ++j) {
-          if (A(i,j) != Teuchos::ScalarTraits<Scalar>::zero()) {
-            Thyra::Vp_StV(this->stageX_.ptr(), dt*A(i,j), *stageXDot_[j]);
-          }
-        }
         const Scalar ts = time + c(i)*dt;
-
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-        // ???: is it a good idea to leave this (no-op) here?
-        this->stepperObserver_->observeAfterSolve(solutionHistory, *this);
-
-        this->stepperObserver_->observeBeforeExplicit(solutionHistory, *this);
-#endif
-        this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
-          StepperRKAppAction<Scalar>::ACTION_LOCATION::AFTER_SOLVE);
-        this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
-          StepperRKAppAction<Scalar>::ACTION_LOCATION::BEFORE_EXPLICIT_EVAL);
-
         auto p = Teuchos::rcp(new ExplicitODEParameters<Scalar>(dt));
 
         // Evaluate xDot = f(x,t).
@@ -361,6 +356,8 @@ void StepperExplicitRK<Scalar>::takeStep(
       this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
         StepperRKAppAction<Scalar>::ACTION_LOCATION::END_STAGE);
     }
+    // reset the stage number
+    this->setStageNumber(-1);
 
     // Sum for solution: x_n = x_n-1 + Sum{ b(i) * dt*f(i) }
     Thyra::assign((workingState->getX()).ptr(), *(currentState->getX()));
@@ -376,7 +373,7 @@ void StepperExplicitRK<Scalar>::takeStep(
     // can change the step status
     workingState->setSolutionStatus(Status::PASSED);
 
-    if (tableau_->isEmbedded() and this->getUseEmbedded()) {
+    if (this->tableau_->isEmbedded() and this->getUseEmbedded()) {
 
       const Scalar tolRel = workingState->getTolRel();
       const Scalar tolAbs = workingState->getTolAbs();
@@ -384,7 +381,7 @@ void StepperExplicitRK<Scalar>::takeStep(
       // just compute the error weight vector
       // (all that is needed is the error, and not the embedded solution)
       Teuchos::SerialDenseVector<int,Scalar> errWght = b ;
-      errWght -= tableau_->bstar();
+      errWght -= this->tableau_->bstar();
 
       //compute local truncation error estimate: | u^{n+1} - \hat{u}^{n+1} |
       // Sum for solution: ee_n = Sum{ (b(i) - bstar(i)) * dt*f(i) }
@@ -420,8 +417,6 @@ void StepperExplicitRK<Scalar>::takeStep(
     this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
       StepperRKAppAction<Scalar>::ACTION_LOCATION::END_STEP);
   }
-  // reset the stage number
-  this->setStageNumber(-1);
   return;
 }
 
@@ -452,8 +447,8 @@ void StepperExplicitRK<Scalar>::describe(
   StepperExplicit<Scalar>::describe(out, verbLevel);
 
   out << "--- StepperExplicitRK ---\n";
-  if (tableau_ != Teuchos::null) tableau_->describe(out, verbLevel);
-  out << "  tableau_           = " << tableau_ << std::endl;
+  if (this->tableau_ != Teuchos::null) this->tableau_->describe(out, verbLevel);
+  out << "  tableau_           = " << this->tableau_ << std::endl;
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
   out << "  stepperObserver_   = " << stepperObserver_ << std::endl;
 #endif
@@ -481,7 +476,7 @@ bool StepperExplicitRK<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
   if ( !Stepper<Scalar>::isValidSetup(out) ) isValidSetup = false;
   if ( !StepperExplicit<Scalar>::isValidSetup(out) ) isValidSetup = false;
 
-  if (tableau_ == Teuchos::null) {
+  if (this->tableau_ == Teuchos::null) {
     isValidSetup = false;
     out << "The tableau is not set!\n";
   }

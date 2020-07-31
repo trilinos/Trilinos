@@ -1,58 +1,33 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: listbf.f,v 1.4 1998/07/14 18:19:20 gdsjaar Exp $
-C $Log: listbf.f,v $
-C Revision 1.4  1998/07/14 18:19:20  gdsjaar
-C Removed unused variables, cleaned up a little.
-C
-C Changed BLUE labels to GREEN to help visibility on black background
-C (indirectly requested by a couple users)
-C
-C Revision 1.3  1998/07/14 17:42:17  gdsjaar
-C *** empty log message ***
-C
-C Revision 1.2  1998/04/16 05:06:44  gdsjaar
-C Changed "X" to "1X" in format statement
-C
-C Revision 1.1.1.1  1990/11/30 11:11:20  gdsjaar
-C FASTQ Version 2.0X
-C
-c Revision 1.1  90/11/30  11:11:19  gdsjaar
-c Initial revision
-c
-CC* FILE: [.MAIN]LISTBF.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE LISTBF (MDIM, N, CHOICE, LINK, IFLAG, INUM, IFIRST,
      &   LIST, IWT)
 C***********************************************************************
-C
+
 C  SUBROUTINE LISTBF = LISTS BOUNDARY CONDITIONS BY FLAG NUMBERS
-C
+
 C***********************************************************************
-C
+
 C  SUBROUTINE CALLED BY:
 C     LIST = LISTS POINTS,  LINES,  REGIONS,  SCHEMES,  AND BOUNDARY
 C            DEFINITIONS
-C
+
 C***********************************************************************
-C
+
       DIMENSION LINK (2, MDIM), IFLAG (MDIM), INUM (MDIM), IFIRST (MDIM)
       DIMENSION LIST (2, MDIM), IWT (3, MDIM)
-C
+
       CHARACTER CHOICE*7
-C
+
       LOGICAL ADDLNK, EXTRA, FOUND
-C
+
       ADDLNK = .FALSE.
       FOUND = .FALSE.
-C
+
       IF (CHOICE (1:5) .EQ. 'POINT') THEN
          WRITE (*, 10000)
       ENDIF
@@ -119,7 +94,7 @@ C
          WRITE (*, 10050) CHOICE
       ENDIF
       RETURN
-C
+
 10000 FORMAT ('  FLAG    BOUN.  WEIGHT FIRST  FIRST', /,
      &   ' NUMBER   TYPE    SIDE  WT PNT WT LIN     POINT OR LINE '//
      &   'LISTING', /, ' ------ -------- ------ ------ ------ ',

@@ -1,37 +1,12 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
 C=======================================================================
       SUBROUTINE DBPTIM (OPTION, NSTEPS, TIMES)
 C=======================================================================
-C$Id: dbptim.f,v 1.2 2004/06/29 18:05:32 gdsjaar Exp $
-C$Log: dbptim.f,v $
-CRevision 1.2  2004/06/29 18:05:32  gdsjaar
-CGeneral cleanup. Remove unused labels and variables.
-C
-CRevision 1.1  1999/02/16 21:37:59  gdsjaar
-CConverted to read exodusII database format.  Somewhat tested, not
-Cready for production yet.
-C
-CRevision 1.2  1997/03/20 20:55:05  caforsy
-CUpdated Imakefile for Imake 6.1. Added changed to amod in order to
-Cport to tflop machine
-C
-CRevision 1.1  1995/10/03 21:43:39  mksmith
-CAdding files new to algII for algebra2
-C
-CRevision 1.1.1.1  1990/08/14 16:13:56  gdsjaar
-CTesting
-C
-c Revision 1.1  90/08/14  16:13:55  gdsjaar
-c Initial revision
-c
-c Revision 1.1  90/08/09  13:39:20  gdsjaar
-c Initial revision
-c
 
 C   --*** DBPTIM *** (EXOLIB) Print database steps and min/max times
 C   --   Written by Amy Gilkey - revised 12/18/87

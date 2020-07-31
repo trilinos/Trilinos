@@ -802,8 +802,6 @@ namespace TSQR {
     {
       using std::cerr;
       using std::endl;
-      using STS = Teuchos::ScalarTraits<Scalar>;
-      using mag_type = typename STS::magnitudeType;
       const bool verbose = params.verbose;
 
       const std::string scalarType =
@@ -1455,7 +1453,6 @@ namespace TSQR {
                       const NodeTestParameters& p)
     {
       using Teuchos::TypeNameTraits;
-      using LO = int;
 
       std::vector<int> iseed{{0, 0, 0, 1}};
       if(p.testReal) {

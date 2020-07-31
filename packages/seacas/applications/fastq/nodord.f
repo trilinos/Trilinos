@@ -1,31 +1,20 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: nodord.f,v 1.1 1990/11/30 11:12:46 gdsjaar Exp $
-C $Log: nodord.f,v $
-C Revision 1.1  1990/11/30 11:12:46  gdsjaar
-C Initial revision
-C
-C
-CC* FILE: [.RENUM]NODORD.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE NODORD (NPNODE, XN, YN, LISTN, NUID, NNN)
 C***********************************************************************
-C
+
 C  SUBROUTINE NODORD = ORDER THE NODE TABLE INTO INCREASING VALUES OF
 C                      THE VARIABLE LISTN
-C
+
 C***********************************************************************
-C
+
       DIMENSION LISTN (NPNODE)
       DIMENSION XN (NPNODE), YN (NPNODE), NUID (NPNODE)
-C
+
       NN = NNN
       M = NN
   100 CONTINUE
@@ -55,5 +44,5 @@ C
          ENDIF
   120 CONTINUE
       GOTO 100
-C
+
       END

@@ -1,37 +1,13 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: ovrlap.f,v 1.5 2007/03/21 20:12:37 gdsjaar Exp $
-C $Log: ovrlap.f,v $
-C Revision 1.5  2007/03/21 20:12:37  gdsjaar
-C Several commands which can work on the deformed geometry were only
-C checking whether the file was an exodus file (had timesteps) when
-C requesting deformed coordinates.  Changed to also check whether the
-C file had valid displacements also.
-C
-C Revision 1.4  1999/02/16 21:38:01  gdsjaar
-C Converted to read exodusII database format.  Somewhat tested, not
-C ready for production yet.
-C
-C Revision 1.3  1997/06/20 19:11:28  caforsy
-C Port to ibm
-C
-C Revision 1.2  1992/01/28 19:01:28  gdsjaar
-C Added overlap checking of deformed mesh
-C
-c Revision 1.1.1.1  1991/02/21  15:44:40  gdsjaar
-c NUMBERS: Greg Sjaardema, initial Unix release
-c
-c Revision 1.1  1991/02/21  15:44:39  gdsjaar
-c Initial revision
-c
       SUBROUTINE OVRLAP (A, COORD, IDESS, NEESS, NNESS, IPEESS, IPNESS,
      *   LTEESS, LTNESS, FACESS, DISP, NUMNP, NDIM, NUMESS,
      *   TIME, ITMSEL, TITLE, IMAS, ISLV, NUMEL)
-C
+
       DIMENSION A(*), COORD(NUMNP,*), IDESS(*), NEESS(*),
      *   NNESS(*), IPEESS(*), IPNESS(*), LTEESS(*), LTNESS(*),
      *   FACESS(*), TIME(*), DISP(NUMNP,*)
@@ -44,14 +20,14 @@ C
       LOGICAL ERROR
 
       DIMENSION CPTIME(10)
-C
+
       DO 10 I=1,10
          CPTIME(I) = 0.0
    10 CONTINUE
 
       IFLGM = LOCINT (IMAS, NUMESS, IDESS)
       IFLGS = LOCINT (ISLV, NUMESS, IDESS)
-C
+
       ERROR = .FALSE.
       IF (IFLGM .EQ. 0) THEN
          WRITE (STRA, 30) 'Master', IMAS
@@ -75,34 +51,33 @@ C
    40 CONTINUE
    50 FORMAT ('Checking Master Surface ',I5,' Versus Slave Surface ',I5)
    55 FORMAT (/,1X,A,/)
-C
+
       NSEGM = NEESS(IFLGM)
       IPTRM = IPNESS(IFLGM)
       IEPTM = IPEESS(IFLGM)
-C
+
       NSEGS = NEESS(IFLGS)
       IPTRS = IPNESS(IFLGS)
-C
+
       MULT = 2 * NDIM - 2
-C
+
 C ... PROCESS SLAVE SET TO REMOVE DUPLICATE NODES
-C
+
       CALL MDRSRV ('MAPSLV', IMPSL, MULT*NSEGS)
       CALL MDRSRV ('ITEMP',  ITMP,  MAX(NUMNP,3*NSEGM))
       CALL UNIQUE (LTNESS(IPTRS), MULT*NSEGS, A(IMPSL), A(ITMP),
      *   NIQS, NUMNP)
       CALL MDRSRV ('NIQSLV', INQS, NIQS)
       CALL TRANIQ (LTNESS(IPTRS), A(IMPSL), A(INQS), MULT*NSEGS, 1)
-C
+
       CALL MDRSRV ('MINMAX', IMNMX, 2*NDIM*NSEGM)
       CALL MDRSRV ('LFACE',  ILFAC, 2*NDIM*NUMEL)
       CALL MDSTAT (NERRS, NUSED)
-c
       IF (NERRS .GT. 0) THEN
          CALL MEMERR
          STOP
       END IF
-C
+
 C ... Beginning of Time Step Loop
 
       IF (EXODUS .AND. ISDIS) THEN
@@ -142,7 +117,7 @@ C ... Not EXODUS
      *           NUMIN, NUMFAC, NUMON, NUMEL, A(ILFAC), NUMNP)
          END IF
       END IF
-C
+
       IF (NUMIN .GT. 0) THEN
          DO 70 IO=IOMIN, IOMAX
             WRITE (IO, 80) NUMIN
@@ -168,7 +143,7 @@ C
       END IF
       IF (EXODUS) GO TO 60
  150  CONTINUE
-C
+
       CALL MDDEL ('LFACE')
       CALL MDDEL ('MINMAX')
       CALL MDDEL ('NIQSLV')

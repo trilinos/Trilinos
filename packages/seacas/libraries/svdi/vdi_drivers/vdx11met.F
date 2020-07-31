@@ -1,10 +1,8 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
-
-C $Id: vdx11met.F,v 1.2 2007/01/26 16:25:44 gdsjaar Exp $
 
 C   met driver is the file device
 C   x11 driver is the terminal device
@@ -52,9 +50,9 @@ C   x11 driver is the terminal device
 #endif
 
       DATA TERMON,FILEON,TERMUP,FILEUP /2*.TRUE.,2*.TRUE./
-C
+
       IF( ESCPCD.GE.10000 .AND. ESCPCD.LE.10003 ) THEN
-C
+
 C Special Escape Codes for Dual Device Control:
         KSTAT = ESCPCD - 10000
         TERMON = (KSTAT.EQ.1 .OR. KSTAT.EQ.3) .AND. TERMUP
@@ -78,9 +76,9 @@ C ... This probably needs to be fixed....
         END IF
       END IF
       RETURN
-C
+
       ENTRY VDIQES(ESCPCD,SUPPRT)
-C
+
 C Special Escape Codes for Dual Device Control:
       IF( ESCPCD.EQ.10000 ) THEN
         SUPPRT = 1
@@ -139,9 +137,9 @@ C Special Escape Codes for Dual Device Control:
         END IF
       END IF
       RETURN
-C
+
       ENTRY VDINIT(ASPECT,JUSTIF)
-C
+
 C Check if terminal and hardcopy devices are null:
 #ifdef Build64
       ESC4 = 10000
@@ -161,10 +159,10 @@ C Check if terminal and hardcopy devices are null:
 #endif
       FILEUP = ISTAT .EQ. 0
       FILEON = FILEON .AND. FILEUP
-C
+
 C Stop program if both devices are null.
       IF(.NOT.(TERMUP.OR.FILEUP)) STOP 'No graphics device assigned.'
-C
+
 C      print *, 'About to init x11'
       IF(TERMON) THEN
 #ifdef Build64
@@ -188,7 +186,7 @@ c        print *, 'About to init metafile', aspect, justif
 c        print *, 'Done with init', FILEON
       END IF
       RETURN
-C
+
       ENTRY VDAABU(BTNNUM)
       IF(FILEON) CALL wmetbu(BTNNUM)
       IF(TERMON) THEN
@@ -200,7 +198,7 @@ C ... Not implemented in X11 driver
 #endif
       END IF
       RETURN
-C
+
       ENTRY VDABGL(BTNNUM,X,Y)
       IF(FILEON) CALL wmetbl(BTNNUM,X,Y)
       IF(TERMON) THEN
@@ -212,7 +210,7 @@ C ... Not implemented in X11 driver
 #endif
       END IF
       RETURN
-C
+
       ENTRY VDAKGL(CHAR,X,Y)
       IF(FILEON) THEN
 #ifdef Build64
@@ -235,7 +233,7 @@ C
 #endif
       END IF
       RETURN
-C
+
       ENTRY VDALOC(X,Y)
       IF(FILEON) THEN
 #ifdef Build64
@@ -256,23 +254,23 @@ C
 #endif
       END IF
       RETURN
-C
+
       ENTRY VDBELL
       IF(TERMON) CALL wx11be
       IF(FILEON) CALL wmetbe
       RETURN
-C
+
       ENTRY VDBUFL
       IF(TERMON) CALL wx11fl
       IF(FILEON) CALL wmetfl
       RETURN
-C
+
       ENTRY VDFRAM(ITYPE)
 C ... Doesn't do anything in X11 driver
       IF(TERMON) CALL wx11fr(ITYPE)
       IF(FILEON) CALL wmetfr(ITYPE)
       RETURN
-C
+
       ENTRY VDIQCO(NUM,INDEXA,CLRARY,CLRMOD)
       IF(FILEON) THEN
 #ifdef Build64
@@ -305,7 +303,7 @@ C
 #endif
       END IF
       RETURN
-C
+
       ENTRY VDIQCP(X,Y)
       IF(FILEON) THEN
 #ifdef Build64
@@ -326,7 +324,7 @@ C
 #endif
       END IF
       RETURN
-C
+
       ENTRY VDIQDC(INDEX,VALUE)
       IF(FILEON) THEN
 #ifdef Build64
@@ -347,7 +345,7 @@ C
 #endif
       END IF
       RETURN
-C
+
       ENTRY VDIQND(XNDC,YNDC)
       IF(FILEON) THEN
 #ifdef Build64
@@ -368,7 +366,7 @@ C
 #endif
       END IF
       RETURN
-C
+
       ENTRY VDIQOS(ATTARR)
       IF(FILEON) THEN
 #ifdef Build64
@@ -391,13 +389,13 @@ C
 #endif
       END IF
       RETURN
-C
+
       ENTRY VDLOGE(ERRNUM,ERRSEV)
 C ... Doesn't do anything in X11 driver
       IF(TERMON) CALL wx11le(ERRNUM,ERRSEV)
       IF(FILEON) CALL wmetle(ERRNUM,ERRSEV)
       RETURN
-C
+
       ENTRY VDSTBC(COLOR)
       IF(TERMON) THEN
 #ifdef Build64
@@ -416,7 +414,7 @@ C
 #endif
       END IF
       RETURN
-C
+
       ENTRY VDSTCO(NUM,INDEXA,CLRARY,CLRMOD)
       IF(TERMON) THEN
 #ifdef Build64
@@ -451,7 +449,7 @@ C
 #endif
       END IF
       RETURN
-C
+
       ENTRY VDSTCS(YSIZE)
       IF (TERMON) THEN
 #ifdef Build64
@@ -470,7 +468,7 @@ C
 #endif
       END IF
       RETURN
-C
+
       ENTRY VDSTFC(COLOR)
       IF (TERMON) THEN
 #ifdef Build64
@@ -489,7 +487,7 @@ C
 #endif
       END IF
       RETURN
-C
+
       ENTRY VDSTIN(INTEN)
       IF (TERMON) THEN
 #ifdef Build64
@@ -508,7 +506,7 @@ C
 #endif
       END IF
       RETURN
-C
+
       ENTRY VDSTLA(LOCX,LOCY)
       IF (TERMON) THEN
 #ifdef Build64
@@ -529,7 +527,7 @@ C
 #endif
       END IF
       RETURN
-C
+
       ENTRY VDSTLS(LINSTY)
       IF (TERMON) THEN
 #ifdef Build64
@@ -548,7 +546,7 @@ C
 #endif
       END IF
       RETURN
-C
+
       ENTRY VDSTLW(LINWTH)
       IF (TERMON) THEN
 #ifdef Build64
@@ -567,7 +565,7 @@ C
 #endif
       END IF
       RETURN
-C
+
       ENTRY VDSTOS(ATTARR)
       IF (TERMON) THEN
 #ifdef Build64
@@ -590,12 +588,12 @@ C
 #endif
       END IF
       RETURN
-C
+
       ENTRY VDWAIT
       IF(TERMON) CALL wx11wt
       IF(FILEON) CALL wmetwt
       RETURN
-C
+
       ENTRY VDLINA(X,Y)
       IF (TERMON) THEN
 #ifdef Build64
@@ -616,7 +614,7 @@ C
 #endif
       END IF
       RETURN
-C
+
       ENTRY VDMOVA(X,Y)
       IF (TERMON) THEN
 #ifdef Build64
@@ -637,12 +635,12 @@ C
 #endif
       END IF
       RETURN
-C
+
       ENTRY VDNWPG
       IF(TERMON) CALL wx11pg
       IF(FILEON) CALL wmetpg
       RETURN
-C
+
       ENTRY VDPNTA(X,Y)
       IF (TERMON) THEN
 #ifdef Build64
@@ -663,7 +661,7 @@ C
 #endif
       END IF
       RETURN
-C
+
       ENTRY VDPOLY(XARRAY,YARRAY,NPTS)
       IF (TERMON) THEN
 #ifdef Build64
@@ -692,12 +690,12 @@ C
 #endif
       END IF
       RETURN
-C
+
       ENTRY VDTERM
       IF(TERMON) CALL wx11tr
       IF(FILEON) CALL wmettr
       RETURN
-C
+
       ENTRY VDTEXT(LENGTH,CHARS)
       IF (TERMON) THEN
 #ifdef Build64
@@ -730,5 +728,5 @@ C
 #endif
       END IF
       RETURN
-C
+
       END

@@ -42,6 +42,7 @@
 #include "Tpetra_Details_initializeKokkos.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Kokkos_Core.hpp"
+#include "Tpetra_Details_checkLaunchBlocking.hpp"
 #include <cstdlib> // std::atexit
 #include <string>
 #include <vector>
@@ -64,6 +65,7 @@ initializeKokkos ()
       args_c[k] = const_cast<char*> (args[k].c_str ());
     }
     Kokkos::initialize (narg, narg == 0 ? nullptr : args_c.data ());
+    checkOldCudaLaunchBlocking();
     std::atexit (Kokkos::finalize_all);
   }
 }

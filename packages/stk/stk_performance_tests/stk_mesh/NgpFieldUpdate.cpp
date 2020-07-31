@@ -33,6 +33,7 @@
 // 
 
 #include <string>
+#include <ostream>
 #include <gtest/gtest.h>
 #include <stk_mesh/base/NgpMesh.hpp>
 #include <stk_mesh/base/BulkData.hpp>
@@ -42,6 +43,8 @@
 #include <stk_util/environment/perf_util.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
+#include <stk_unit_test_utils/TextMesh.hpp>
+#include <stk_unit_test_utils/getOption.h>
 #include <stk_performance_tests/stk_mesh/timer.hpp>
 #include <stk_performance_tests/stk_mesh/multi_block.hpp>
 
@@ -64,6 +67,46 @@ public:
     setup_mesh_with_fields("generated:100x100x100", stk::mesh::BulkData::NO_AUTO_AURA);
   }
 
+  std::string generate_stacked_block_mesh_desc(unsigned numBlocks)
+  {
+    std::string meshDesc;
+
+    for(unsigned i = 0; i < numBlocks; i++) {
+      meshDesc += get_nodal_string_for_block(i+1);
+      if(i != numBlocks-1) {
+        meshDesc += "\n";
+      }
+    }
+    return meshDesc;
+  }
+
+  std::string get_nodal_string_for_block(unsigned blockId)
+  {
+    std::ostringstream blockStr;
+    for(unsigned i = 0; i < 2; i++) {
+      blockStr << "0," << blockId*2+i-1 << ",HEX_8,";
+      for(unsigned j = 0; j < 8; j++) {
+        blockStr << j+1 + ((blockId-1)*2 + i) * 8 << ",";
+      }
+      blockStr << "block_" << blockId;
+      if(i != 1) {
+       blockStr << "\n";
+      }
+    }
+    return blockStr.str();
+  }
+  
+  void setup_mesh_with_stacked_blocks(unsigned numBlocks)
+  {
+    double init = 0.0;
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+    std::string meshDesc = generate_stacked_block_mesh_desc(numBlocks);
+
+    stk::mesh::FieldBase* field = &get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEMENT_RANK, "FieldA");
+    stk::mesh::put_field_on_mesh(*field, get_meta().universal_part(), &init);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
+  }
+
   void setup_mesh_with_fields(const std::string &meshSpecification, stk::mesh::BulkData::AutomaticAuraOption auraOption)
   {
     tensorField = &get_meta().declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(stk::topology::ELEMENT_RANK, "TensorField");
@@ -79,11 +122,9 @@ public:
   {
     stk::mesh::NgpField<double>& ngpTensorField = stk::mesh::get_updated_ngp_field<double>(*tensorField);
     ngpTensorField.sync_to_device();
-    ngpTensorField.modify_on_device();
 
     stk::mesh::NgpField<double>& ngpVectorField = stk::mesh::get_updated_ngp_field<double>(*vectorField);
     ngpVectorField.sync_to_device();
-    ngpVectorField.modify_on_device();
   }
 
 protected:
@@ -115,8 +156,6 @@ public:
     get_bulk().change_entity_parts<stk::mesh::ConstPartVector>(get_element(cycle), {get_part()});
     get_bulk().modification_end();
     get_bulk().get_updated_ngp_mesh();
-    tensorField->modify_on_host();
-    vectorField->modify_on_host();
   }
 
 private:
@@ -147,8 +186,6 @@ public:
     get_bulk().declare_element(get_new_entity_id(cycle));
     get_bulk().modification_end();
     get_bulk().get_updated_ngp_mesh();
-    tensorField->modify_on_host();
-    vectorField->modify_on_host();
   }
 
 private:

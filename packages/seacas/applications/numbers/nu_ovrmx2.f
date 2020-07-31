@@ -1,27 +1,13 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C     $Id: ovrmx2.f,v 1.3 1991/08/05 13:44:20 gdsjaar Exp $
-C     $Log: ovrmx2.f,v $
-C     Revision 1.3  1991/08/05 13:44:20  gdsjaar
-C     Reordered penetration distance loops, fixed format statement
-C
-c     Revision 1.2  1991/02/21  16:38:01  gdsjaar
-c     Moved ENGNOT function out of write statements
-c
-c     Revision 1.1.1.1  1991/02/21  15:44:42  gdsjaar
-c     NUMBERS: Greg Sjaardema, initial Unix release
-c
-c     Revision 1.1  1991/02/21  15:44:41  gdsjaar
-c     Initial revision
-c
       SUBROUTINE OVRMX2 (LSTEL, CORD, IX, NSEG, MINMAX, NIQSLV,
      *     NIQS, TEMP, LTNESS, NUMIN, NUMFAC, NUMON,
      *     NUMEL, LFACE, NUMNP)
-C
+
       INTEGER   LSTEL(*), IX(4,*), NIQSLV(*), LTNESS(2,*)
       INTEGER   LFACE(4,*)
       REAL      MINMAX(4,*), CORD(NUMNP,*), TEMP(*)
@@ -31,17 +17,17 @@ C
       LOGICAL   INSIDE, ONFACE, INIT
       PARAMETER (MAXFAC = 4)
       include 'nu_io.blk'
-C
+
       DATA MAP /1, 2,  2, 3,  3, 4,  4, 1/
 
       INIT  = .FALSE.
       NUMIN = 0
       NUMON = 0
       NUMFAC = 0
-C
+
       DO 10 I=1,NSEG
          IEL = LSTEL(I)
-C
+
          MINMAX(1, I) = MIN( CORD(IX(1,IEL),1),  CORD(IX(2,IEL),1),
      *        CORD(IX(3,IEL),1),  CORD(IX(4,IEL),1))
          MINMAX(2, I) = MAX( CORD(IX(1,IEL),1),  CORD(IX(2,IEL),1),
@@ -51,11 +37,11 @@ C
      *        CORD(IX(3,IEL),2),  CORD(IX(4,IEL),2))
          MINMAX(4, I) = MAX( CORD(IX(1,IEL),2),  CORD(IX(2,IEL),2),
      *        CORD(IX(3,IEL),2),  CORD(IX(4,IEL),2))
-C
+
  10   CONTINUE
-C
+
 C     ... DETERMINE WHICH FACES HAVE SSET FLAG
-C
+
       CALL INIINT (MAXFAC * NUMEL, 0, LFACE)
 
       DO 30 ISEG = 1, NSEG
@@ -76,13 +62,13 @@ C
             LFACE(IFAC,IEL) = LFACE(IFAC,IEL) + ITST1 * ITST2
  20      CONTINUE
  30   CONTINUE
-C
+
 C     ... DETERMINE IF NODE IS CLOSE TO ELEMENT
 C     TEMP = 1.0 IF INSIDE MIN/MAX BOX
-C
+
       DO 130 I=1, NSEG
          IEL = LSTEL(I)
-C
+
          DO 40 ISLV = 1, NIQS
             ISN = NIQSLV(ISLV)
             TEMP(ISLV) =
@@ -91,11 +77,11 @@ C
      *           (0.5 + SIGN( 0.5,  CORD (ISN,2) - MINMAX(3,I) )) *
      *           (0.5 + SIGN( 0.5, -CORD (ISN,2) + MINMAX(4,I) ))
  40      CONTINUE
-C
+
 C     ... DETERMINE IF ANY INSIDE BOX ( TEMP = 1.0 )
-C
+
 C     ... FOR EACH NODE INSIDE BOX, DETERMINE IF ACTUALLY INSIDE ELEMENT
-C
+
          DO 120 ISLV = 1, NIQS
             IF (TEMP(ISLV) .EQ. 1.0) THEN
                INOD = NIQSLV(ISLV)
@@ -113,18 +99,17 @@ C
                   X2 = CORD(IX(MAP(2,IPYR),IEL),1)
                   Y2 = CORD(IX(MAP(2,IPYR),IEL),2)
 
-C
 C     ... CALCULATE TRIANGLE AREAS (SHOULD BE DIVIDED BY 2 FOR AREA)
-C
+
                   V(IPYR) = X1 * (Y2 - Y3) + X2 *  (Y3 - Y1)
      *                 + X3 * (Y1 - Y2)
 
                   IF (V(IPYR) .LT. 0.0) INSIDE = .FALSE.
                   IF (V(IPYR) .EQ. 0.0) ONFACE = .TRUE.
  50            CONTINUE
-C
+
 C     ... FLAG NODE AND ELEMENT IF INSIDE
-C
+
                IF (ONFACE .AND. INSIDE) THEN
                   INSIDE = .TRUE.
                   ONFACE = .FALSE.
@@ -136,9 +121,9 @@ C
                      END IF
  60               CONTINUE
                END IF
-C
+
 C     ... CHECK FOR NODE ON BOTH SURFACES
-C
+
                IF (INSIDE) THEN
                   DO 70 INOD = 1, 4
                      IF (IX(INOD,IEL) .EQ. NIQSLV(ISLV)) THEN

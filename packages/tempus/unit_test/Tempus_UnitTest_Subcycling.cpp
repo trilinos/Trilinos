@@ -14,11 +14,12 @@
 #include "Thyra_VectorStdOps.hpp"
 
 #include "Tempus_StepperFactory.hpp"
-//#include "Tempus_UnitTest_Utils.hpp"
 #include "Tempus_StepperSubcyclingModifierBase.hpp"
-#include "Tempus_StepperSubcyclingObserverBase.hpp"
 #include "Tempus_StepperSubcyclingModifierXBase.hpp"
+#include "Tempus_StepperSubcyclingObserverBase.hpp"
 #include "Tempus_StepperSubcyclingModifierDefault.hpp"
+#include "Tempus_StepperSubcyclingModifierXDefault.hpp"
+#include "Tempus_StepperSubcyclingObserverDefault.hpp"
 
 #include "../TestModels/SinCosModel.hpp"
 #include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
@@ -59,6 +60,8 @@ TEUCHOS_UNIT_TEST(Subcycling, Default_Construction)
   auto obs       = rcp(new Tempus::StepperSubcyclingObserver<double>());
 #endif
   auto modifier  = rcp(new Tempus::StepperSubcyclingModifierDefault<double>());
+  auto modifierX = rcp(new Tempus::StepperSubcyclingModifierXDefault<double>());
+  auto observer  = rcp(new Tempus::StepperSubcyclingObserverDefault<double>());
   auto solver    = rcp(new Thyra::NOXNonlinearSolver());
   solver->setParameterList(Tempus::defaultSolverParameters());
 
@@ -72,6 +75,8 @@ TEUCHOS_UNIT_TEST(Subcycling, Default_Construction)
   stepper->setObserver(obs);                           stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 #endif
   stepper->setAppAction(modifier);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setAppAction(modifierX);                    stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setAppAction(observer);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setUseFSAL(useFSAL);                        stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setICConsistency(ICConsistency);            stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setICConsistencyCheck(ICConsistencyCheck);  stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
@@ -245,11 +250,11 @@ TEUCHOS_UNIT_TEST(Subcycling, AppAction_Modifier)
 
   // Testing that values can be set through the Modifier.
   auto x = solutionHistory->getCurrentState()->getX();
-  TEST_FLOATING_EQUALITY(modifier->testCurrentValue, get_ele(*(x), 0), 1.0e-15);
+  TEST_FLOATING_EQUALITY(modifier->testCurrentValue, get_ele(*(x), 0), 1.0e-14);
   x = solutionHistory->getWorkingState()->getX();
-  TEST_FLOATING_EQUALITY(modifier->testWorkingValue, get_ele(*(x), 0), 1.0e-15);
+  TEST_FLOATING_EQUALITY(modifier->testWorkingValue, get_ele(*(x), 0), 1.0e-14);
   auto Dt = solutionHistory->getWorkingState()->getTimeStep();
-  TEST_FLOATING_EQUALITY(modifier->testDt, Dt, 1.0e-15);
+  TEST_FLOATING_EQUALITY(modifier->testDt, Dt, 1.0e-14);
 
   TEST_COMPARE(modifier->testType, ==, "Subcycling - Modifier");
 }
@@ -367,10 +372,10 @@ TEUCHOS_UNIT_TEST(Subcycling, AppAction_Observer)
 
   // Testing that values can be observed through the observer.
   auto x = solutionHistory->getCurrentState()->getX();
-  TEST_FLOATING_EQUALITY(observer->testCurrentValue, get_ele(*(x), 0), 1.0e-15);
+  TEST_FLOATING_EQUALITY(observer->testCurrentValue, get_ele(*(x), 0), 1.0e-14);
   x = solutionHistory->getWorkingState()->getX();
-  TEST_FLOATING_EQUALITY(observer->testWorkingValue, get_ele(*(x), 0), 1.0e-15);
-  TEST_FLOATING_EQUALITY(observer->testDt, 15.0, 1.0e-15);
+  TEST_FLOATING_EQUALITY(observer->testWorkingValue, get_ele(*(x), 0), 1.0e-14);
+  TEST_FLOATING_EQUALITY(observer->testDt, 15.0, 1.0e-14);
 
   TEST_COMPARE(observer->testType, ==, "Subcyling");
 }
@@ -495,15 +500,17 @@ TEUCHOS_UNIT_TEST(Subcycling, AppAction_ModifierX)
 
   // Testing that values can be set through the Modifier.
   auto x = solutionHistory->getCurrentState()->getX();
-  TEST_FLOATING_EQUALITY(modifierX->testX, get_ele(*(x), 0), 1.0e-15);
+  TEST_FLOATING_EQUALITY(modifierX->testX, get_ele(*(x), 0), 1.0e-14);
   // Temporary memory for xDot is not guarranteed to exist outside the Stepper.
-  auto xDot = stepper->getStepperXDot(solutionHistory->getWorkingState());
-  TEST_FLOATING_EQUALITY(modifierX->testXDot, get_ele(*(xDot), 0),1.0e-15);
+  auto xDot = solutionHistory->getWorkingState()->getXDot();
+  if (xDot == Teuchos::null) xDot = stepper->getStepperXDot();
+
+  TEST_FLOATING_EQUALITY(modifierX->testXDot, get_ele(*(xDot), 0),1.0e-14);
   auto Dt = solutionHistory->getWorkingState()->getTimeStep();
-  TEST_FLOATING_EQUALITY(modifierX->testDt, Dt, 1.0e-15);
+  TEST_FLOATING_EQUALITY(modifierX->testDt, Dt, 1.0e-14);
 
   auto time = solutionHistory->getWorkingState()->getTime();
-  TEST_FLOATING_EQUALITY(modifierX->testTime, time, 1.0e-15);
+  TEST_FLOATING_EQUALITY(modifierX->testTime, time, 1.0e-14);
 }
 
 } // namespace Tempus_Test

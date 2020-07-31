@@ -1,24 +1,18 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: lcolor.f,v 1.1 1990/11/30 11:10:59 gdsjaar Exp $
-C $Log: lcolor.f,v $
-C Revision 1.1  1990/11/30 11:10:59  gdsjaar
-C Initial revision
-C
-C
       SUBROUTINE LCOLOR (COLOR)
 C***********************************************************************
-C
+
 C  SUBROUTINE LCOLOR = SETS THE LINE COLOR
-C
+
 C***********************************************************************
-C
+
       CHARACTER*5 COLOR
-C
+
       IF (COLOR .EQ. 'WHITE') THEN
          CALL PLTSTD(1, 7.)
       ELSEIF (COLOR .EQ. 'BLACK') THEN
@@ -33,5 +27,5 @@ C
          CALL PLTSTD(1, 4.)
       ENDIF
       RETURN
-C
+
       END

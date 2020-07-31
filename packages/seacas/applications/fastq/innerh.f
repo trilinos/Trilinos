@@ -1,28 +1,23 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-CC* FILE: [.QMESH]INNERH.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE INNERH (MXND, NXH, NUID, LXK, KXL, NXL, LXN, KKK, LLL,
      &   NNN, NNNOLD, NH, ISTART, IAVAIL, NAVAIL, NOROOM, ERR)
 C***********************************************************************
-C
+
 C  SUBROUTINE INNERH  =  INSERT A ROW OF ELEMENTS AROUND A HOLE
-C
+
 C***********************************************************************
-C
+
       DIMENSION NUID(MXND), LXK(4, MXND)
       DIMENSION KXL(2, 3*MXND), NXL(2, 3*MXND), LXN(4, MXND)
       DIMENSION NXH(MXND)
-C
+
       LOGICAL ERR, NOROOM
-C
+
       ERR = .FALSE.
       IF ((KKK + NH .GT. MXND) .OR. (LLL + 2*NH .GT. 3*MXND) .OR.
      &   (NNN + NH .GT. MXND)) THEN
@@ -31,9 +26,9 @@ C
       ELSE
          NOROOM = .FALSE.
       END IF
-C
+
 C  GENERATE LINES
-C
+
       LLLOLD = LLL
       I1 = ISTART
       DO 100 I = 1, NH
@@ -46,7 +41,7 @@ C
          I1 = I1 + 1
          IF (I1 .GT. NH) I1 = 1
   100 CONTINUE
-C
+
       DO 110 I = 1, NH - 1
          LLL = LLL + 1
          NXL(1, LLL) = NNNOLD + I
@@ -55,9 +50,9 @@ C
       LLL = LLL + 1
       NXL(1, LLL) = NNN
       NXL(2, LLL) = NNNOLD + 1
-C
+
 C  MAKE SPACE IN LXN LIST FOR NEW NODES
-C
+
       IF (IAVAIL .LT. NNNOLD) THEN
          JJ = IAVAIL
          MAXLNK = 0
@@ -93,9 +88,9 @@ C
          IAVAIL = NNN + 1
          NAVAIL = MXND - NNN
       END IF
-C
+
 C  MARK NODES ON HOLE BOUNDARY
-C
+
       LXN(1, NNNOLD + 1) = LLLOLD + 1
       LXN(2, NNNOLD + 1) = -(LLLOLD + 2*NH)
       LXN(3, NNNOLD + 1) = LLLOLD + NH + 1
@@ -108,15 +103,15 @@ C
          LXN(3, NNN) = LLLOLD + NH + I
          LXN(4, NNN) = 0
   160 CONTINUE
-C
+
 C  GENERATE ELEMENTS
-C
+
       DO 180 I = LLLOLD + 1, LLL
          DO 170 J = 1, 2
             KXL(J, I) = 0
   170    CONTINUE
   180 CONTINUE
-C
+
       I1 = ISTART
       I2 = I1 + 1
       IF (I2 .GT. NH) I2 = 1
@@ -132,7 +127,7 @@ C
          IF (I1 .GT. NH) I1 = 1
          I2 = I1 + 1
          IF (I2 .GT. NH) I2 = 1
-C
+
          IF (KXL(1, LINE) .EQ. 0) THEN
             KXL(1, LINE) = KKK
          ELSE IF (KXL(2, LINE) .EQ. 0) THEN
@@ -151,7 +146,7 @@ C
       LXK(2, KKK) = LLLOLD + NH
       LXK(3, KKK) = LLLOLD + 1
       LXK(4, KKK) = LLLOLD + 2*NH
-C
+
       IF (KXL(1, LINE) .EQ. 0) THEN
          KXL(1, LINE) = KKK
       ELSE IF (KXL(2, LINE) .EQ. 0) THEN
@@ -162,7 +157,7 @@ C
       KXL(2, LLLOLD + NH) = KKK
       KXL(1, LLLOLD + 1) = KKK
       KXL(1, LLLOLD + 2*NH) = KKK
-C
+
   200 CONTINUE
       RETURN
       END

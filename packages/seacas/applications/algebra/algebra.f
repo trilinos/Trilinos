@@ -1,12 +1,12 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 C=======================================================================
       PROGRAM ALGEBRA2
 C=======================================================================
-C
+
 C   --This version of ALGEBRA will read and write EXODUSIIV2 database
 C   --format files.  Many changes have occurred since the first version
 C   --of ALGEBRA.  The original database files, genesis and exodusI
@@ -15,7 +15,7 @@ C   --file format. Previous versions of ALGEBRA would have to read the
 C   --input database more than once in order to get the file pointer
 C   --to the desired data.  With random access files we are able to
 C   --select what we want to read or write at anytime.
-C
+
 C                         *** ALGEBRA 2.02 ***
 C   --*** ALGEBRA *** (ALGEBRA) Algebraic Database Manipulation Program
 C   --

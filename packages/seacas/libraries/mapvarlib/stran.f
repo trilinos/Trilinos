@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
       SUBROUTINE STRAN(ISRCHR,NISR,SOLEA,SOLEB,
@@ -9,7 +9,7 @@ C See packages/seacas/LICENSE for details
      &                 ITT,iblk,TIMES,CENTER,
      &                 INSUB,ICOMPL,
      &                 XB,YB,ZB,ICONB,DUME)
-C
+
       include 'aexds1.blk'
       include 'aexds2.blk'
       include 'bmesh.blk'
@@ -17,41 +17,40 @@ C
       include 'ex2tp.blk'
       include 'steps.blk'
       include 'tapes.blk'
-C
+
       DIMENSION SOLEB(NUMEBB,*),SOLEA(NUMEBA,*),ISRCHR(NISR,*),
      &          ITT(NVAREL,*),TIMES(*),CENTER(NUMEBB,*)
       DIMENSION XB(*),YB(*),ZB(*),XX(27),YY(27),ZZ(27),ICONB(NELNDB,*)
       DIMENSION DUME(*)
-C
-C
+
       IF (ISTEP .EQ. -1)THEN
         NTM = NTIMES
       ELSE
         NTM = 1
       END IF
-C
+
       DO 5 IST = 1, NTM
         IF (ISTEP .EQ. -1)THEN
           ISTP = IST
         ELSE
           ISTP = ISTEP
         END IF
-C
+
         DO 10 IVAR = 1, NVAREL
           IF (ITT(IVAR,iblk) .EQ. 0)GO TO 10
-C
+
 C If first time into subroutine for this element block,
 C initialize the SOLEB array
 C If not first time into subroutine for this element block
 C retrieve SOLEB from storage in EXODUS
-C
+
           IF (INSUB .EQ. 1)THEN
             CALL INIELT(SOLEB,IVAR,TIMES,ISTP,IDBLK,CENTER,DUME)
           ELSE
             CALL EXGEV(NTP4EX,IST,IVAR,IDBLKB,NUMEBB,SOLEB(1,IVAR),
      &                 IERR)
           END IF
-C
+
           CALL EXGEV(NTP2EX,ISTP,IVAR,IDBLKA,NUMEBA,SOLEA(1,IVAR),IERR)
           DO 20 IELB = 1, NUMEBB
             IELA = ISRCHR(1,IELB)
@@ -59,26 +58,26 @@ C
               SOLEB(IELB,IVAR) = SOLEA(IELA,IVAR)
             END IF
    20     CONTINUE
-C
+
 C If there is more searching to do (i.e. many blocks to one)
 C use EXODUS as temporary storage
 C don't bother to perform needed adjustments yet
-C
+
           IF (ICOMPL .NE. 1)THEN
             CALL EXPEV(NTP4EX,IST,IVAR,IDBLKB,NUMEBB,SOLEB(1,IVAR),
      &                 IERR)
           ELSE
-C
+
 C Make needed adjustments to element variable data and
 C write element vars out to EXODUS data base
-C
+
 C ELMASS is special
-C
+
             IF (NAMVAR(NVARGP+IVAR)(1:6) .EQ. 'ELMASS')THEN
-C
+
 C ELMASS was changed to nodal density prior to processing.
 C need to go back from density to element mass now
-C
+
               NNODES = 4
               DO 100 IEL = 1, NUMEBB
                 DO 105 I = 1, NNODES
@@ -93,7 +92,7 @@ C
             CALL EXPEV(NTP4EX,IST,IVAR,IDBLKB,NUMEBB,SOLEB(1,IVAR),
      &                 IERR)
           END IF
-C
+
    10   CONTINUE
     5 CONTINUE
       RETURN

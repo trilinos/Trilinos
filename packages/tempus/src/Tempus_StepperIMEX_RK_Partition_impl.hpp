@@ -150,6 +150,8 @@ void StepperIMEX_RK_Partition<Scalar>::setTableaus(
       auto expTableau = Teuchos::rcp(new RKButcherTableau<Scalar>(
         "Explicit Tableau - Partitioned IMEX RK 1st order",
         A,b,c,order,order,order));
+      expTableau->setTVD(true);
+      expTableau->setTVDCoeff(2.0);
 
       this->setExplicitTableau(expTableau);
     }
@@ -157,6 +159,7 @@ void StepperIMEX_RK_Partition<Scalar>::setTableaus(
       // Implicit Tableau
       typedef Teuchos::ScalarTraits<Scalar> ST;
       int NumStages = 2;
+      const Scalar sspcoef =  std::numeric_limits<Scalar>::max();
       Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
       Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
       Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
@@ -178,6 +181,8 @@ void StepperIMEX_RK_Partition<Scalar>::setTableaus(
       auto impTableau = Teuchos::rcp(new RKButcherTableau<Scalar>(
         "Implicit Tableau - Partitioned IMEX RK 1st order",
         A,b,c,order,order,order));
+      impTableau->setTVD(true);
+      impTableau->setTVDCoeff(sspcoef);
 
       this->setImplicitTableau(impTableau);
     }
@@ -490,7 +495,7 @@ void StepperIMEX_RK_Partition<Scalar>::setInitialConditions(
     "        But only 'None' is available for IMEX-RK!\n");
 
   TEUCHOS_TEST_FOR_EXCEPTION( this->getUseFSAL(), std::logic_error,
-    "Error - The First-Step-As-Last (FSAL) principle is not "
+    "Error - The First-Same-As-Last (FSAL) principle is not "
          << "available for IMEX-RK.  Set useFSAL=false.\n");
 }
 
@@ -586,13 +591,6 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
       "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
       "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    this->stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
-#endif
-    RCP<StepperIMEX_RK_Partition<Scalar> > thisStepper = Teuchos::rcpFromRef(*this);
-    this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
-      StepperRKAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
-
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     const Scalar dt = workingState->getTimeStep();
@@ -620,12 +618,16 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
     RCP<Thyra::VectorBase<Scalar> > stageX =
       wrapperModelPairIMEX->getIMEXVector(stageZ_);
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+    this->stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
+#endif
+    RCP<StepperIMEX_RK_Partition<Scalar> > thisStepper = Teuchos::rcpFromRef(*this);
+    this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
+      StepperRKAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
+
     // Compute stage solutions
     for (int i = 0; i < numStages; ++i) {
       this->setStageNumber(i);
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-      this->stepperObserver_->observeBeginStage(solutionHistory, *this);
-#endif
 
       Thyra::assign(stageY.ptr(),
         *(wrapperModelPairIMEX->getExplicitOnlyVector(currentState->getX())));
@@ -644,6 +646,9 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
           Thyra::Vp_StV(xTilde_.ptr(), -dt*A   (i,j), *(stageGx_[j]));
       }
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+      this->stepperObserver_->observeBeginStage(solutionHistory, *this);
+#endif
       this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
         StepperRKAppAction<Scalar>::ACTION_LOCATION::BEGIN_STAGE);
 

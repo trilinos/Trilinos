@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 /* ifdef.h - ifdef file for cdr routines
@@ -853,7 +853,6 @@ Notes and Revisions:
 This routine uses the array KUNTFD, in the FORTRAN common and
 the C external structure, cdrunx, to translate from FORTRAN
 unit number to UNIX/C file descriptors.
-
 
 Parameters:
 ifilcd - IN - the FORTRAN unit number of the file to open

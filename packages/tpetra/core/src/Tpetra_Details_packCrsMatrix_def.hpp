@@ -49,6 +49,7 @@
 #include "Tpetra_Details_getEntryOnHost.hpp"
 #include "Tpetra_Details_OrdinalTraits.hpp"
 #include "Tpetra_Details_PackTraits.hpp"
+#include "Tpetra_Details_Profiling.hpp"
 #include "Tpetra_CrsMatrix_decl.hpp"
 #include <memory>
 #include <sstream>
@@ -733,9 +734,12 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
                const bool pack_pids,
                Distributor& /* dist */)
 {
+  ::Tpetra::Details::ProfilingRegion region_pack_crs_matrix(
+    "Tpetra::Details::PackCrsMatrixImpl::packCrsMatrix",
+    "Import/Export"
+  );
   using Kokkos::View;
   typedef BufferDeviceType DT;
-  typedef typename DT::execution_space execution_space;
   typedef Kokkos::DualView<char*, BufferDeviceType> exports_view_type;
   const char prefix[] = "Tpetra::Details::PackCrsMatrixImpl::packCrsMatrix: ";
   constexpr bool debug = false;
@@ -796,12 +800,7 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
   }
 
   if (num_export_lids == 0) {
-    // FIXME (26 Apr 2016) Fences around (UVM) allocations only
-    // temporarily needed for #227 debugging.  Should be able to
-    // remove them after that's fixed.
-    execution_space().fence ();
     exports = exports_view_type ("exports", 0);
-    execution_space().fence ();
     return;
   }
 
@@ -819,17 +818,12 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
 
   // Resize the output pack buffer if needed.
   if (count > static_cast<size_t> (exports.extent (0))) {
-    // FIXME (26 Apr 2016) Fences around (UVM) allocations only
-    // temporarily needed for #227 debugging.  Should be able to
-    // remove them after that's fixed.
-    execution_space().fence ();
     exports = exports_view_type ("exports", count);
     if (debug) {
       std::ostringstream os;
       os << "*** exports resized to " << count << std::endl;
       std::cerr << os.str ();
     }
-    execution_space().fence ();
   }
   if (debug) {
     std::ostringstream os;
@@ -930,15 +924,14 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
 
 template<typename ST, typename LO, typename GO, typename NT>
 void
-packCrsMatrixNew (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
-                  Kokkos::DualView<char*,
-                    typename DistObject<char, LO, GO, NT>::buffer_device_type>& exports,
-                  const Kokkos::DualView<size_t*,
-                    typename DistObject<char, LO, GO, NT>::buffer_device_type>& numPacketsPerLID,
-                  const Kokkos::DualView<const LO*,
-                    typename DistObject<char, LO, GO, NT>::buffer_device_type>& exportLIDs,
-                  size_t& constantNumPackets,
-                  Distributor& distor)
+packCrsMatrixNew(
+  const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
+  Kokkos::DualView<char*, typename DistObject<char, LO, GO, NT>::buffer_device_type>& exports,
+  const Kokkos::DualView<size_t*, typename DistObject<char, LO, GO, NT>::buffer_device_type>& numPacketsPerLID,
+  const Kokkos::DualView<const LO*, typename DistObject<char, LO, GO, NT>::buffer_device_type>& exportLIDs,
+  size_t& constantNumPackets,
+  Distributor& distor
+)
 {
   using device_type = typename CrsMatrix<ST, LO, GO, NT>::device_type;
   using buffer_device_type = typename DistObject<char, LO, GO, NT>::buffer_device_type;
@@ -957,6 +950,10 @@ packCrsMatrixNew (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
   TEUCHOS_ASSERT( ! exportLIDs.need_sync_device () );
   auto exportLIDs_d = exportLIDs.view_device ();
 
+  ::Tpetra::Details::ProfilingRegion region_pack_crs_matrix_new(
+    "Tpetra::Details::packCrsMatrixNew",
+    "Import/Export"
+  );
   PackCrsMatrixImpl::packCrsMatrix<ST,LO,GO,NT,buffer_device_type> (
       sourceMatrix, exports, numPacketsPerLID_d, exportLIDs_d,
       exportPIDs_d, constantNumPackets, pack_pids, distor);

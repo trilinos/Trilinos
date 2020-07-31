@@ -1,7 +1,7 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
       SUBROUTINE FREFLD( KIN,KOUT,PROMPT,MFIELD,IOSTAT,NFIELD,KVALUE,
      *                   CVALUE,IVALUE,RVALUE )
@@ -10,16 +10,16 @@ C    See packages/seacas/LICENSE for details
       CHARACTER*132 PREFIX
       INTEGER KVALUE(MFIELD),IVALUE(MFIELD)
       REAL RVALUE(MFIELD)
-C
+
 ************************************************************************
-C
+
 C     FREFLD INPUT SYSTEM - ANSI FORTRAN - USER INTERFACE ROUTINE
-C
+
 C     DESCRIPTION:
 C     This routine is the main user interface to the SUPES Free Field
 C     Input system. It obtains a record from the input stream, then
 C     call FFISTR to parse the record into data fields.
-C
+
 C     FORMAL PARAMETERS:
 C     KIN     INTEGER    Unit from which to read input.
 C     KOUT    INTEGER    Unit to which to echo input.
@@ -35,18 +35,17 @@ C                            2 = This is an INTEGER numeric field.
 C     CVALUE  CHARACTER  Character values of the data fields.
 C     RVALUE  REAL       Floating-point values of the data fields.
 C     IVALUE  INTEGER    Integer values of the data fields.
-C
-C
+
 C     ROUTINES CALLED:
 C     GETINP            Get input line.
 C     FFISTR            Parse input line.
-C
+
 ************************************************************************
-C
+
 C PHASE 1: Initialize output arrays to their default values and zero
 C          field counter. Set continuation flag to suppress further
 C          initialization by FFISTR.
-C
+
       DO 300 I = 1 , MFIELD
          KVALUE(I) = -1
          CVALUE(I) = ' '
@@ -55,29 +54,29 @@ C
   300 CONTINUE
       NFIELD = 0
       IDCONT = 1
-C
+
 C Initialize prompt to the caller's -
       PREFIX = PROMPT
       LPRE = LEN( PROMPT )
-C
+
 ************************************************************************
-C
+
 C PHASE 2: Get the next input record via GETINP. Return to caller if an
 C          end-of-file or error was detected by GETINP.
 C          Re-enter here to process a continuation line.
-C
+
   500 CONTINUE
-C
+
 C Get the next input line -
       CALL GETINP( KIN,KOUT,PREFIX(1:LPRE),LINE,IOSTAT )
-C
+
 C Return if I/O error or EOF detected -
       IF ( IOSTAT .NE. 0 ) RETURN
-C
+
 C Call FFISTR to parse input record -
       CALL FFISTR( LINE,MFIELD,IDCONT,NFIELD,KVALUE,CVALUE,IVALUE,
      *             RVALUE )
-C
+
 C If the continuation flag is set, define a continuation prompt and
 C re-enter at phase 2. Otherwise, return to the caller -
       IF ( IDCONT .NE. 0 ) THEN
@@ -90,5 +89,5 @@ C re-enter at phase 2. Otherwise, return to the caller -
          END IF
          GO TO 500
       END IF
-C
+
       END

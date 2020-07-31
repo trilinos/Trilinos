@@ -68,13 +68,10 @@ KLU2<Matrix,Vector>::KLU2(
   Teuchos::RCP<Vector>       X,
   Teuchos::RCP<const Vector> B )
   : SolverCore<Amesos2::KLU2,Matrix,Vector>(A, X, B)
-  , nzvals_()                   // initialize to empty arrays
-  , rowind_()
-  , colptr_()
   , transFlag_(0)
   , is_contiguous_(true)
 {
-  ::KLU2::klu_defaults<slu_type, local_ordinal_type> (&(data_.common_)) ;
+  ::KLU2::klu_defaults<klu2_dtype, local_ordinal_type> (&(data_.common_)) ;
   data_.symbolic_ = NULL;
   data_.numeric_ = NULL;
 
@@ -92,10 +89,10 @@ KLU2<Matrix,Vector>::~KLU2( )
    * - Other data
    */
   if (data_.symbolic_ != NULL)
-      ::KLU2::klu_free_symbolic<slu_type, local_ordinal_type>
+      ::KLU2::klu_free_symbolic<klu2_dtype, local_ordinal_type>
                          (&(data_.symbolic_), &(data_.common_)) ;
   if (data_.numeric_ != NULL)
-      ::KLU2::klu_free_numeric<slu_type, local_ordinal_type>
+      ::KLU2::klu_free_numeric<klu2_dtype, local_ordinal_type>
                          (&(data_.numeric_), &(data_.common_)) ;
 
   // Storage is initialized in numericFactorization_impl()
@@ -134,48 +131,24 @@ int
 KLU2<Matrix,Vector>::symbolicFactorization_impl()
 {
   if (data_.symbolic_ != NULL) {
-      ::KLU2::klu_free_symbolic<slu_type, local_ordinal_type>
+      ::KLU2::klu_free_symbolic<klu2_dtype, local_ordinal_type>
                          (&(data_.symbolic_), &(data_.common_)) ;
   }
 
   if ( single_proc_optimization() ) {
-
-    auto sp_rowptr = this->matrixA_->returnRowPtr(); 
-    TEUCHOS_TEST_FOR_EXCEPTION(sp_rowptr == nullptr,
-        std::runtime_error, "Amesos2 Runtime Error: sp_rowptr returned null ");
-    auto sp_colind = this->matrixA_->returnColInd();
-    TEUCHOS_TEST_FOR_EXCEPTION(sp_colind == nullptr,
-        std::runtime_error, "Amesos2 Runtime Error: sp_colind returned null ");
-#ifndef HAVE_TEUCHOS_COMPLEX
-    auto sp_values = this->matrixA_->returnValues();
-#else
-    // NDE: 09/25/2017
-    // Cannot convert Kokkos::complex<T>* to std::complex<T>*; in this case, use reinterpret_cast
-    using complex_type = typename Util::getStdCplxType< magnitude_type, typename matrix_adapter_type::spmtx_vals_t >::type;
-    complex_type * sp_values = nullptr;
-    sp_values = reinterpret_cast< complex_type * > ( this->matrixA_->returnValues() );
-#endif
-    TEUCHOS_TEST_FOR_EXCEPTION(sp_values == nullptr,
-        std::runtime_error, "Amesos2 Runtime Error: sp_values returned null ");
-
-    // sp_rowptr can cause compile-time matching issues 
-    //   e.g const long unsigned int* , not convertible/compatible with int*
-    // Need sp_rowptr and sp_colind to have same ordinal type for KLU2 interface
-    Teuchos::Array< local_ordinal_type > sp_rowptr_with_common_type( this->globalNumRows_ + 1 );
-    for ( global_size_type i = 0; i < this->globalNumRows_+1; ++i ) {
-      //sp_rowptr_with_common_type[i] = static_cast<local_ordinal_type>(sp_rowptr[i]);
-      sp_rowptr_with_common_type[i] = sp_rowptr[i];
-    }
-
-    data_.symbolic_ = ::KLU2::klu_analyze<slu_type, local_ordinal_type>
-      ((local_ordinal_type)this->globalNumCols_, sp_rowptr_with_common_type.getRawPtr(),
-       sp_colind, &(data_.common_)) ;
+    host_ordinal_type_array host_row_ptr_view;
+    host_ordinal_type_array host_cols_view;
+    this->matrixA_->returnRowPtr_kokkos_view(host_row_ptr_view);
+    this->matrixA_->returnColInd_kokkos_view(host_cols_view);
+    data_.symbolic_ = ::KLU2::klu_analyze<klu2_dtype, local_ordinal_type>
+      ((local_ordinal_type)this->globalNumCols_, host_row_ptr_view.data(),
+       host_cols_view.data(), &(data_.common_)) ;
   }
   else
   {
-    data_.symbolic_ = ::KLU2::klu_analyze<slu_type, local_ordinal_type>
-      ((local_ordinal_type)this->globalNumCols_, colptr_.getRawPtr(),
-       rowind_.getRawPtr(), &(data_.common_)) ;
+    data_.symbolic_ = ::KLU2::klu_analyze<klu2_dtype, local_ordinal_type>
+      ((local_ordinal_type)this->globalNumCols_, host_col_ptr_view_.data(),
+       host_rows_view_.data(), &(data_.common_)) ;
 
   } //end single_process_optim_check = false
 
@@ -201,55 +174,27 @@ KLU2<Matrix,Vector>::numericFactorization_impl()
       Teuchos::TimeMonitor numFactTimer(this->timers_.numFactTime_);
 #endif
 
-#ifdef HAVE_AMESOS2_VERBOSE_DEBUG
-      std::cout << "KLU2:: Before numeric factorization" << std::endl;
-      std::cout << "nzvals_ : " << nzvals_.toString() << std::endl;
-      std::cout << "rowind_ : " << rowind_.toString() << std::endl;
-      std::cout << "colptr_ : " << colptr_.toString() << std::endl;
-#endif
-
       if (data_.numeric_ != NULL) {
-        ::KLU2::klu_free_numeric<slu_type, local_ordinal_type>
-          (&(data_.numeric_), &(data_.common_)) ;
+        ::KLU2::klu_free_numeric<klu2_dtype, local_ordinal_type>
+          (&(data_.numeric_), &(data_.common_));
       }
 
       if ( single_proc_optimization() ) {
-
-        auto sp_rowptr = this->matrixA_->returnRowPtr();
-        TEUCHOS_TEST_FOR_EXCEPTION(sp_rowptr == nullptr,
-            std::runtime_error, "Amesos2 Runtime Error: sp_rowptr returned null ");
-        auto sp_colind = this->matrixA_->returnColInd();
-        TEUCHOS_TEST_FOR_EXCEPTION(sp_colind == nullptr,
-            std::runtime_error, "Amesos2 Runtime Error: sp_colind returned null ");
-#ifndef HAVE_TEUCHOS_COMPLEX
-        auto sp_values = this->matrixA_->returnValues();
-#else
-        // NDE: 09/25/2017
-        // Cannot convert Kokkos::complex<T>* to std::complex<T>*; in this case, use reinterpret_cast
-        using complex_type = typename Util::getStdCplxType< magnitude_type, typename matrix_adapter_type::spmtx_vals_t >::type;
-        complex_type * sp_values = nullptr;
-        sp_values = reinterpret_cast< complex_type * > ( this->matrixA_->returnValues() );
-#endif
-        TEUCHOS_TEST_FOR_EXCEPTION(sp_values == nullptr,
-            std::runtime_error, "Amesos2 Runtime Error: sp_values returned null ");
-
-        // sp_rowptr can cause compile-time matching issues 
-        //   e.g const long unsigned int* , not convertible/compatible with int*
-        // Need sp_rowptr and sp_colind to have same ordinal type for KLU2 interface
-        Teuchos::Array< local_ordinal_type > sp_rowptr_with_common_type( this->globalNumRows_ + 1 );
-        for ( global_size_type i = 0; i < this->globalNumRows_+1; ++i ) {
-          //sp_rowptr_with_common_type[i] = static_cast<local_ordinal_type>(sp_rowptr[i]);
-          sp_rowptr_with_common_type[i] = sp_rowptr[i];
-        }
-
-        data_.numeric_ = ::KLU2::klu_factor<slu_type, local_ordinal_type>
-          (sp_rowptr_with_common_type.getRawPtr(), sp_colind, sp_values,
-           data_.symbolic_, &(data_.common_)) ;
+        host_ordinal_type_array host_row_ptr_view;
+        host_ordinal_type_array host_cols_view;
+        this->matrixA_->returnRowPtr_kokkos_view(host_row_ptr_view);
+        this->matrixA_->returnColInd_kokkos_view(host_cols_view);
+        this->matrixA_->returnValues_kokkos_view(host_nzvals_view_);
+        klu2_dtype * pValues = function_map::convert_scalar(host_nzvals_view_.data());
+        data_.numeric_ = ::KLU2::klu_factor<klu2_dtype, local_ordinal_type>
+          (host_row_ptr_view.data(), host_cols_view.data(), pValues,
+           data_.symbolic_, &(data_.common_));
       }
       else {
-        data_.numeric_ = ::KLU2::klu_factor<slu_type, local_ordinal_type>
-          (colptr_.getRawPtr(), rowind_.getRawPtr(), nzvals_.getRawPtr(),
-           data_.symbolic_, &(data_.common_)) ;
+        klu2_dtype * pValues = function_map::convert_scalar(host_nzvals_view_.data());
+        data_.numeric_ = ::KLU2::klu_factor<klu2_dtype, local_ordinal_type>
+          (host_col_ptr_view_.data(), host_rows_view_.data(), pValues,
+           data_.symbolic_, &(data_.common_));
       } //end single_process_optim_check = false
 
       // To have a test which confirms a throw, we need MPI to throw on all the
@@ -276,21 +221,8 @@ KLU2<Matrix,Vector>::numericFactorization_impl()
   TEUCHOS_TEST_FOR_EXCEPTION(info > 0, std::runtime_error,
       "KLU2 numeric factorization failed");
 
-  //global_size_type info_st = as<global_size_type>(info); // unused
-  /* TODO : Proper error messages
-  TEUCHOS_TEST_FOR_EXCEPTION( (info_st > 0) && (info_st <= this->globalNumCols_),
-    std::runtime_error,
-    "Factorization complete, but matrix is singular. Division by zero eminent");
-  TEUCHOS_TEST_FOR_EXCEPTION( (info_st > 0) && (info_st > this->globalNumCols_),
-    std::runtime_error,
-    "Memory allocation failure in KLU2 factorization");*/
-
-  //data_.options.Fact = SLU::FACTORED;
-  //same_symbolic_ = true;
-
   return(info);
 }
-
 
 template <class Matrix, class Vector>
 int
@@ -304,44 +236,94 @@ KLU2<Matrix,Vector>::solve_impl(
   const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
   const size_t nrhs = X->getGlobalNumVectors();
 
+  {
+#ifdef HAVE_AMESOS2_TIMERS
+    Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
+    Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
+#endif
+    if ( single_proc_optimization() && nrhs == 1 ) {
+      // no msp creation
+      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+        host_solve_array_t>::do_get(B, bValues_, as<size_t>(ld_rhs));
+
+      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+        host_solve_array_t>::do_get(X, xValues_, as<size_t>(ld_rhs));
+    }
+    else {
+      if ( is_contiguous_ == true ) {
+        Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+          host_solve_array_t>::do_get(B, bValues_,
+              as<size_t>(ld_rhs),
+              ROOTED, this->rowIndexBase_);
+      }
+      else {
+        Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+          host_solve_array_t>::do_get(B, bValues_,
+              as<size_t>(ld_rhs),
+              CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
+      }
+
+      // see Amesos2_Tacho_def.hpp for an explanation of why we 'get' X
+      if ( is_contiguous_ == true ) {
+        Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+          host_solve_array_t>::do_get(X, xValues_,
+              as<size_t>(ld_rhs),
+              ROOTED, this->rowIndexBase_);
+      }
+      else {
+        Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+          host_solve_array_t>::do_get(X, xValues_,
+              as<size_t>(ld_rhs),
+              CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
+      }
+
+      // TODO: klu_tsolve is going to put the solution x into the input b.
+      // Copy b to x then solve in x.
+      // We do not want to solve in b, then copy to x, because if b was assigned
+      // then the solve will change b permanently and mess up the next test cycle.
+      // However if b was actually a copy (not assigned) then we can avoid this
+      // deep_copy and just assign xValues_ = bValues_.
+      // This comes up in a few places, see #7158, so planning to fix them all
+      // at the same time with some system to track what get_1d_copy_helper_kokkos_view
+      // actually did.
+      Kokkos::deep_copy(xValues_, bValues_);
+    }
+  }
+
+  klu2_dtype * pxValues = function_map::convert_scalar(xValues_.data());
+  klu2_dtype * pbValues = function_map::convert_scalar(bValues_.data());
+
+  // can be null for non root
+  if( this->root_) {
+    TEUCHOS_TEST_FOR_EXCEPTION(pbValues == nullptr,
+      std::runtime_error, "Amesos2 Runtime Error: b_vector returned null ");
+
+    TEUCHOS_TEST_FOR_EXCEPTION(pxValues == nullptr,
+      std::runtime_error, "Amesos2 Runtime Error: x_vector returned null ");
+  }
+
   if ( single_proc_optimization() && nrhs == 1 ) {
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
 
-#ifndef HAVE_TEUCHOS_COMPLEX
-    auto b_vector = Util::vector_pointer_helper< MultiVecAdapter<Vector>, Vector >::get_pointer_to_vector( B );
-    auto x_vector = Util::vector_pointer_helper< MultiVecAdapter<Vector>, Vector >::get_pointer_to_vector( X );
-#else
-    // NDE: 09/25/2017
-    // Cannot convert Kokkos::complex<T>* to std::complex<T>*; in this case, use reinterpret_cast
-    using complex_type = typename Util::getStdCplxType< magnitude_type, typename matrix_adapter_type::spmtx_vals_t >::type;
-    complex_type * b_vector = reinterpret_cast< complex_type * >( Util::vector_pointer_helper< MultiVecAdapter<Vector>, Vector >::get_pointer_to_vector( B ) );
-    complex_type * x_vector = reinterpret_cast< complex_type * >( Util::vector_pointer_helper< MultiVecAdapter<Vector>, Vector >::get_pointer_to_vector( X ) );
-#endif
-    TEUCHOS_TEST_FOR_EXCEPTION(b_vector == nullptr,
-        std::runtime_error, "Amesos2 Runtime Error: b_vector returned null ");
-
-    TEUCHOS_TEST_FOR_EXCEPTION(x_vector  == nullptr,
-        std::runtime_error, "Amesos2 Runtime Error: x_vector returned null ");
-
-    // For this case, Crs matrix raw pointers wereused, so the non-transpose default solve 
+    // For this case, Crs matrix raw pointers were used, so the non-transpose default solve
     // is actually the transpose solve as klu_solve expects Ccs matrix pointers
     // Thus, if the transFlag_ is true, the non-transpose solve should be used
     if (transFlag_ == 0)
     {
-      ::KLU2::klu_tsolve2<slu_type, local_ordinal_type>
+      ::KLU2::klu_tsolve2<klu2_dtype, local_ordinal_type>
         (data_.symbolic_, data_.numeric_,
          (local_ordinal_type)this->globalNumCols_,
          (local_ordinal_type)nrhs,
-         b_vector, x_vector,  &(data_.common_)) ;
+         pbValues, pxValues, &(data_.common_)) ;
     }
     else {
-      ::KLU2::klu_solve2<slu_type, local_ordinal_type>
+      ::KLU2::klu_solve2<klu2_dtype, local_ordinal_type>
         (data_.symbolic_, data_.numeric_,
          (local_ordinal_type)this->globalNumCols_,
          (local_ordinal_type)nrhs,
-         b_vector, x_vector,  &(data_.common_)) ;
+         pbValues, pxValues, &(data_.common_)) ;
     }
 
     /* All processes should have the same error code */
@@ -351,113 +333,71 @@ KLU2<Matrix,Vector>::solve_impl(
   else  // single proc optimizations but nrhs > 1,
         // or distributed over processes case
   {
-    const size_t val_store_size = as<size_t>(ld_rhs * nrhs);
-    Teuchos::Array<slu_type> bValues(val_store_size);
-
-    {                             // Get values from RHS B
-#ifdef HAVE_AMESOS2_TIMERS
-      Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
-      Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
-#endif
-      if ( is_contiguous_ == true ) {
-        Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
-          slu_type>::do_get(B, bValues(),
-              as<size_t>(ld_rhs),
-              ROOTED, this->rowIndexBase_);
-      }
-      else {
-        Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
-          slu_type>::do_get(B, bValues(),
-              as<size_t>(ld_rhs),
-              CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
-      }
-    } // end Timer scope
-
     if ( this->root_ ) {
-      //local_ordinal_type i_ld_rhs = as<local_ordinal_type>(ld_rhs);
-      {                           // Do solve!
 #ifdef HAVE_AMESOS2_TIMERS
-        Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
+      Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
-        if (transFlag_ == 0)
-        {
-        // For this case, Crs matrix raw pointers wereused, so the non-transpose default solve 
+      if (transFlag_ == 0)
+      {
+        // For this case, Crs matrix raw pointers were used, so the non-transpose default solve
         // is actually the transpose solve as klu_solve expects Ccs matrix pointers
         // Thus, if the transFlag_ is true, the non-transpose solve should be used
-          if ( single_proc_optimization() ) {
-          ::KLU2::klu_tsolve<slu_type, local_ordinal_type>
-            (data_.symbolic_, data_.numeric_,
-             (local_ordinal_type)this->globalNumCols_,
-             (local_ordinal_type)nrhs,
-             bValues.getRawPtr(),  &(data_.common_)) ;
-          }
-          else {
-          ::KLU2::klu_solve<slu_type, local_ordinal_type>
-            (data_.symbolic_, data_.numeric_,
-             (local_ordinal_type)this->globalNumCols_,
-             (local_ordinal_type)nrhs,
-             bValues.getRawPtr(),  &(data_.common_)) ;
-          }
+        if ( single_proc_optimization() ) {
+        ::KLU2::klu_tsolve<klu2_dtype, local_ordinal_type>
+          (data_.symbolic_, data_.numeric_,
+           (local_ordinal_type)this->globalNumCols_,
+           (local_ordinal_type)nrhs,
+           pxValues, &(data_.common_)) ;
         }
-        else
-        {
-        // For this case, Crs matrix raw pointers wereused, so the non-transpose default solve 
+        else {
+        ::KLU2::klu_solve<klu2_dtype, local_ordinal_type>
+          (data_.symbolic_, data_.numeric_,
+           (local_ordinal_type)this->globalNumCols_,
+           (local_ordinal_type)nrhs,
+           pxValues, &(data_.common_)) ;
+        }
+      }
+      else
+      {
+        // For this case, Crs matrix raw pointers were used, so the non-transpose default solve
         // is actually the transpose solve as klu_solve expects Ccs matrix pointers
-        // Thus, if the transFlag_ is true, the non-transpose solve should be used
-          if ( single_proc_optimization() ) {
-          ::KLU2::klu_solve<slu_type, local_ordinal_type>
-            (data_.symbolic_, data_.numeric_,
-             (local_ordinal_type)this->globalNumCols_,
-             (local_ordinal_type)nrhs,
-             bValues.getRawPtr(),  &(data_.common_)) ;
-          }
-          else {
-          ::KLU2::klu_tsolve<slu_type, local_ordinal_type>
-            (data_.symbolic_, data_.numeric_,
-             (local_ordinal_type)this->globalNumCols_,
-             (local_ordinal_type)nrhs,
-             bValues.getRawPtr(),  &(data_.common_)) ;
-          }
+        // Thus, if the transFlag_ is true, the non-  transpose solve should be used
+        if ( single_proc_optimization() ) {
+        ::KLU2::klu_solve<klu2_dtype, local_ordinal_type>
+          (data_.symbolic_, data_.numeric_,
+           (local_ordinal_type)this->globalNumCols_,
+           (local_ordinal_type)nrhs,
+           pxValues, &(data_.common_)) ;
         }
-      } //end Timer scope
+        else {
+        ::KLU2::klu_tsolve<klu2_dtype, local_ordinal_type>
+          (data_.symbolic_, data_.numeric_,
+           (local_ordinal_type)this->globalNumCols_,
+           (local_ordinal_type)nrhs,
+           pxValues, &(data_.common_)) ;
+        }
+      }
     } // end root_
+  } //end else
 
-    /* All processes should have the same error code */
-    // Teuchos::broadcast(*(this->getComm()), 0, &ierr);
-
-    // global_size_type ierr_st = as<global_size_type>(ierr); // unused
-    // TODO
-    //TEUCHOS_TEST_FOR_EXCEPTION( ierr < 0,
-    //std::invalid_argument,
-    //"Argument " << -ierr << " to KLU2 xgssvx had illegal value" );
-    //TEUCHOS_TEST_FOR_EXCEPTION( ierr > 0 && ierr_st <= this->globalNumCols_,
-    //std::runtime_error,
-    //"Factorization complete, but U is exactly singular" );
-    //TEUCHOS_TEST_FOR_EXCEPTION( ierr > 0 && ierr_st > this->globalNumCols_ + 1,
-    //std::runtime_error,
-    //"KLU2 allocated " << ierr - this->globalNumCols_ << " bytes of "
-    //"memory before allocation failure occured." );
-
-    /* Update X's global values */
-    {
+  {
 #ifdef HAVE_AMESOS2_TIMERS
-      Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
+    Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
 #endif
 
-      if ( is_contiguous_ == true ) {
-        Util::put_1d_data_helper<
-          MultiVecAdapter<Vector>,slu_type>::do_put(X, bValues(),
-              as<size_t>(ld_rhs),
-              ROOTED, this->rowIndexBase_);
-      }
-      else {
-        Util::put_1d_data_helper<
-          MultiVecAdapter<Vector>,slu_type>::do_put(X, bValues(),
-              as<size_t>(ld_rhs),
-              CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
-      }
-    } // end Timer scope
-  } //end else
+    if ( is_contiguous_ == true ) {
+      Util::put_1d_data_helper_kokkos_view<
+        MultiVecAdapter<Vector>,host_solve_array_t>::do_put(X, xValues_,
+            as<size_t>(ld_rhs),
+            ROOTED, this->rowIndexBase_);
+    }
+    else {
+      Util::put_1d_data_helper_kokkos_view<
+        MultiVecAdapter<Vector>,host_solve_array_t>::do_put(X, xValues_,
+            as<size_t>(ld_rhs),
+            CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
+    }
+  }
 
   return(ierr);
 }
@@ -552,9 +492,12 @@ KLU2<Matrix,Vector>::loadA_impl(EPhase current_phase)
 
   // Only the root image needs storage allocated
   if( this->root_ ){
-    nzvals_.resize(this->globalNumNonZeros_);
-    rowind_.resize(this->globalNumNonZeros_);
-    colptr_.resize(this->globalNumCols_ + 1);
+    host_nzvals_view_ = host_value_type_array(
+      Kokkos::ViewAllocateWithoutInitializing("host_nzvals_view_"), this->globalNumNonZeros_);
+    host_rows_view_ = host_ordinal_type_array(
+      Kokkos::ViewAllocateWithoutInitializing("host_rows_view_"), this->globalNumNonZeros_);
+    host_col_ptr_view_ = host_ordinal_type_array(
+      Kokkos::ViewAllocateWithoutInitializing("host_col_ptr_view_"), this->globalNumRows_ + 1);
   }
 
   local_ordinal_type nnz_ret = 0;
@@ -564,15 +507,15 @@ KLU2<Matrix,Vector>::loadA_impl(EPhase current_phase)
 #endif
 
     if ( is_contiguous_ == true ) {
-      Util::get_ccs_helper<
-        MatrixAdapter<Matrix>,slu_type,local_ordinal_type,local_ordinal_type>
-        ::do_get(this->matrixA_.ptr(), nzvals_(), rowind_(), colptr_(),
+      Util::get_ccs_helper_kokkos_view<
+        MatrixAdapter<Matrix>,host_value_type_array,host_ordinal_type_array,host_ordinal_type_array>
+        ::do_get(this->matrixA_.ptr(), host_nzvals_view_, host_rows_view_, host_col_ptr_view_,
             nnz_ret, ROOTED, ARBITRARY, this->rowIndexBase_);
     }
     else {
-      Util::get_ccs_helper<
-        MatrixAdapter<Matrix>,slu_type,local_ordinal_type,local_ordinal_type>
-        ::do_get(this->matrixA_.ptr(), nzvals_(), rowind_(), colptr_(),
+      Util::get_ccs_helper_kokkos_view<
+        MatrixAdapter<Matrix>,host_value_type_array,host_ordinal_type_array,host_ordinal_type_array>
+        ::do_get(this->matrixA_.ptr(), host_nzvals_view_, host_rows_view_, host_col_ptr_view_,
             nnz_ret, CONTIGUOUS_AND_ROOTED, ARBITRARY, this->rowIndexBase_);
     }
   }

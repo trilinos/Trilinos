@@ -1,26 +1,12 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
       SUBROUTINE FFREAL (IFLD, INTYP, RFIELD, EXPECT, DEFVAL, RVAL, *)
 C=======================================================================
-C$Id: ffreal.f,v 1.2 2009/03/25 12:46:02 gdsjaar Exp $
-C$Log: ffreal.f,v $
-CRevision 1.2  2009/03/25 12:46:02  gdsjaar
-CAdd copyright and license notice to all files.
-C
-CRevision 1.1.1.1  1990/08/14 16:14:38  gdsjaar
-CTesting
-C
-c Revision 1.1  90/08/14  16:14:37  gdsjaar
-c Initial revision
-c
-c Revision 1.1  90/08/09  13:39:27  gdsjaar
-c Initial revision
-c
 
 C   --*** FFREAL *** (FFLIB) Parse free-field real
 C   --   Written by Amy Gilkey - revised 02/24/86

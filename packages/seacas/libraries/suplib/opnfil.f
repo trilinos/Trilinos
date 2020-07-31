@@ -1,13 +1,12 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
       SUBROUTINE OPNFIL (IUNIT, INOUT, FFORM, IDAPAR, IERR)
 C=======================================================================
-C$Id: opnfil.f,v 1.4 2009/03/25 12:46:02 gdsjaar Exp $
 C   --*** OPNFIL *** (ETCLIB) Open a file
 C   --   Written by Amy Gilkey - revised 04/20/88
 C   --

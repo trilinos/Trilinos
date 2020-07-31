@@ -71,15 +71,9 @@ double SIERRA_FORTRAN(dasum)(const int * n,const double * x,const int * incx);
 int SIERRA_FORTRAN(idamax)(const int *n, const double *vect, const int *inc);
 void SIERRA_FORTRAN(saxpy)(const int *n, const float *xscale, const float x[], const int *incx, float y[],const int *incy); // y=y+sscale*x
 void SIERRA_FORTRAN(scopy)(const int* n, const float* s, const int* inc, float* s1, const int* inc1); // s1 = s
-#if defined(__INTEL_COMPILER) || !defined(STK_BUILT_IN_SIERRA)
 float SIERRA_FORTRAN(sdot)(const int * n, const float* x, const int * incx, const float* y, const int * incy); // < x , y >
 float SIERRA_FORTRAN(snrm2)(const int * n, const float* x, const int * incx); // || x ||
 float SIERRA_FORTRAN(sasum)(const int * n,const float * x,const int * incx);
-#else
-double SIERRA_FORTRAN(sdot)(const int * n, const float* x, const int * incx, const float* y, const int * incy); // < x , y >
-double SIERRA_FORTRAN(snrm2)(const int * n, const float* x, const int * incx); // || x ||
-double SIERRA_FORTRAN(sasum)(const int * n,const float * x,const int * incx);
-#endif
 void SIERRA_FORTRAN(sswap)(const int* n, float* s, const int* inc, float* s1, const int* inc1); // switch s1 , s // D.N.E.
 int SIERRA_FORTRAN(isamax)(const int *n, const float *vect, const int *inc);
 }

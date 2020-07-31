@@ -30,8 +30,6 @@ fi
 
 source ${ATDM_CONFIG_SCRIPT_DIR}/utils/get_system_info_utils.sh
 
-realHostname=`hostname`
-hostNameOverride=false
 if [[ "${ATDM_CONFIG_GET_KNOW_SYSTEM_INFO_REAL_HOSTNAME_OVERRIDE_FOR_UNIT_TESTING}" ]] ; then
   if [[ -z $ATDM_CONFIG_DISABLE_WARNINGS ]]; then
     echo
@@ -44,7 +42,9 @@ if [[ "${ATDM_CONFIG_GET_KNOW_SYSTEM_INFO_REAL_HOSTNAME_OVERRIDE_FOR_UNIT_TESTIN
     echo
   fi
   realHostname=${ATDM_CONFIG_GET_KNOW_SYSTEM_INFO_REAL_HOSTNAME_OVERRIDE_FOR_UNIT_TESTING}
-  hostNameOverride=true
+else
+  realHostname=`hostname`
+  ATDM_CONFIG_SEMS_GET_PLATFORM=/projects/sems/modulefiles/utils/get-platform
 fi
 #echo "Hostname = '$realHostname'"
 
@@ -180,9 +180,8 @@ elif [[ "${SNLSYSTEM}" == "astra" || \
         "${SNLSYSTEM}" == "vortex" ]] ; then
   echo "Don't call get-platform on 'astra' systems" > /dev/null
   # Above logic avoids an 'ERROR: Unrecognized cluster <name>' on these systems
-elif [[ -f /projects/sems/modulefiles/utils/get-platform &&
-        -z $hostNameOverride ]] ; then
-  ATDM_SYSTEM_NAME=`source /projects/sems/modulefiles/utils/get-platform`
+elif [[ -f $ATDM_CONFIG_SEMS_GET_PLATFORM ]] ; then
+  ATDM_SYSTEM_NAME=`source $ATDM_CONFIG_SEMS_GET_PLATFORM`
   if [[ $ATDM_SYSTEM_NAME == "rhel6-x86_64" ]] ; then
     systemNameTypeMatchedList+=(sems-rhel6)
     systemNameTypeMatchedListHostNames[sems-rhel6]=sems-rhel6
