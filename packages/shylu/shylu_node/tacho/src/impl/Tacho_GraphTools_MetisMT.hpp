@@ -4,8 +4,9 @@
 /// \file Tacho_GraphTools_Metis_MT.hpp
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#if defined(TACHO_HAVE_METIS_MT)
 #include "Tacho_Util.hpp"
+#if defined(TACHO_HAVE_METIS_MT)
+
 #include "Tacho_Graph.hpp"
 
 #include "mtmetis.h"

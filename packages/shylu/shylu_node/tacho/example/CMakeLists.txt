@@ -8,6 +8,13 @@ FILE(GLOB SOURCES *.cpp)
 
 SET(LIBRARIES tacho)
 
+TRIBITS_ADD_EXECUTABLE(
+  Tacho_ExampleCombineDataFileToMatrixMarketFile
+  NOEXEPREFIX
+  SOURCES Tacho_ExampleCombineDataFileToMatrixMarketFile.cpp
+  COMM serial mpi
+)
+
 IF (TACHO_HAVE_KOKKOS_TASK)
   #
   # Supernodes
@@ -199,7 +206,7 @@ IF (TACHO_HAVE_KOKKOS_TASK)
   ENDIF()
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Tacho_SimpleSparseTest_File
-          SOURCE_FILES test.mtx
+          SOURCE_FILES test.mtx graph.dat weight.dat graph_test.mtx 
           SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
           DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
   )
