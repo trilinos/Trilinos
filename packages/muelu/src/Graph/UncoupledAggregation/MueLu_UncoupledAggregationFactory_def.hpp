@@ -301,7 +301,8 @@ namespace MueLu {
 	RCP<Xpetra::MultiVector<double,LO,GO,Node>> aggQualities = Get<RCP<Xpetra::MultiVector<double,LO,GO,Node>>>(currentLevel, "AggregateQualities");
     }
 
-    GetOStream(Statistics1) << aggregates->description() << std::endl;
+    if (IsPrint(Statistics1))
+      GetOStream(Statistics1) << aggregates->description() << std::endl;
   }
 
 } //namespace MueLu
