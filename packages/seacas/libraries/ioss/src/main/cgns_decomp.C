@@ -88,7 +88,7 @@ namespace {
         const char *temp = options_.retrieve("ordinal");
         if (temp != nullptr) {
           ordinal = std::stoi(temp);
-          if (ordinal < 1 || ordinal > 2) {
+          if (ordinal < 0 || ordinal > 2) {
             fmt::print("\nERROR: Invalid ordinal specified ({}). Must be 0, 1, or 2.\n", ordinal);
             exit(EXIT_FAILURE);
           }
