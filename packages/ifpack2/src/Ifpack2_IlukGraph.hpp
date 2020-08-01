@@ -176,16 +176,7 @@ public:
   size_t getNumGlobalDiagonals() const { return NumGlobalDiagonals_; }
 
 private:
-  typedef typename GraphType::map_type map_type;
-  
-  typedef typename crs_graph_type::local_graph_type local_graph_type;
-  typedef typename local_graph_type::size_type      size_type;
-  typedef typename local_graph_type::data_type      data_type;
-  typedef typename local_graph_type::array_layout   array_layout;
-  typedef typename local_graph_type::device_type    device_type;
-
-  typedef typename Kokkos::View<size_type*, array_layout, device_type> lno_row_view_t;
-  typedef typename Kokkos::View<data_type*, array_layout, device_type> lno_nonzero_view_t;  
+  typedef typename GraphType::map_type map_type;  
 
   /// \brief Copy constructor (UNIMPLEMENTED; DO NOT USE).
   ///
@@ -573,6 +564,15 @@ void IlukGraph<GraphType, KKHandleType>::initialize(const Teuchos::RCP<KKHandleT
   using Teuchos::REDUCE_SUM;
   using Teuchos::reduceAll;
 
+  typedef typename crs_graph_type::local_graph_type local_graph_type;
+  typedef typename local_graph_type::size_type      size_type;
+  typedef typename local_graph_type::data_type      data_type;
+  typedef typename local_graph_type::array_layout   array_layout;
+  typedef typename local_graph_type::device_type    device_type;
+
+  typedef typename Kokkos::View<size_type*, array_layout, device_type> lno_row_view_t;
+  typedef typename Kokkos::View<data_type*, array_layout, device_type> lno_nonzero_view_t;
+  
   constructOverlapGraph();
 
   // FIXME (mfh 23 Dec 2013) Use size_t or whatever

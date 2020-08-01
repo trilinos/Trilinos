@@ -43,8 +43,10 @@
 
 #include "Ifpack2_LocalFilter.hpp"
 #include "Tpetra_CrsMatrix.hpp"
+#include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Ifpack2_LocalSparseTriangularSolver.hpp"
 #include "Ifpack2_Details_getParamTryingTypes.hpp"
+#include "Kokkos_Sort.hpp"
 
 namespace Ifpack2 {
 
