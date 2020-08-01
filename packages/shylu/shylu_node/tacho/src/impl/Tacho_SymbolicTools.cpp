@@ -4,11 +4,17 @@
 #include "Tacho_Util.hpp"
 #include "Tacho_SymbolicTools.hpp"
 
+//#define TACHO_EVAPORATE_GRAPH
+
 namespace Tacho {
 
   using ordinal_type_array = SymbolicTools::ordinal_type_array;
   using size_type_array = SymbolicTools::size_type_array;
-  
+
+  ///
+  /// supernode tools
+  ///  
+
   void SymbolicTools::
   computeEliminationTree(const ordinal_type m,
                          const size_type_array &ap,
@@ -369,7 +375,7 @@ namespace Tacho {
     const ordinal_type numSupernodes = supernodes.extent(0) - 1;
     const ordinal_type m = supernodes(numSupernodes);
     
-    stree_parent = ordinal_type_array("stree_parent", m);
+    stree_parent = ordinal_type_array("stree_parent", numSupernodes);
     auto flag    = Kokkos::subview(work, range_type(0*m, 1*m));        
     
     // color flag with supernodes (for the ease to detect supernode id from dofs)
@@ -438,7 +444,195 @@ namespace Tacho {
       }
     }
   }
-  
+
+  ///
+  /// evaporation tools
+  ///  
+  void SymbolicTools::
+  scanWeights(const ordinal_type m, 
+              const ordinal_type_array &aw, 
+              const ordinal_type_array &perm, 
+              /* */ size_type_array &as,
+              /* */ size_type_array &aq) {
+    as = size_type_array(do_not_initialize_tag("as"), m+1);
+    aq = size_type_array(do_not_initialize_tag("aq"), m);
+    
+    as(0) = 0; 
+    for (ordinal_type i=0;i<m;++i) as(i+1) = as(i) + aw(i);
+    for (ordinal_type i=0;i<m;++i) aq(i) = as(perm(i));
+  }
+
+  void SymbolicTools::
+  evaporateGraph(const ordinal_type m,
+                 const size_type_array &ap,
+                 const ordinal_type_array &aj,
+                 const size_type_array &as,
+                 /* */ size_type_array &ap_eva,
+                 /* */ ordinal_type_array &aj_eva) {
+    const size_type m_eva = as(m);
+    {
+      ap_eva = size_type_array(do_not_initialize_tag("ap_eva"), m_eva+1); 
+      ap_eva(0) = 0;
+      {
+        ordinal_type ii(0);
+        for (ordinal_type i=0;i<m;++i) {
+          ordinal_type cnt(0);
+          const ordinal_type 
+            jbeg = ap(i), 
+            jend = ap(i+1);
+          for (ordinal_type j=jbeg;j<jend;++j) {
+            const ordinal_type idx = aj(j);
+            cnt += (as(idx+1) - as(idx));
+          }
+          const ordinal_type kbeg = as(i), kend = as(i+1);
+          for (ordinal_type k=kbeg;k<kend;++k,++ii) {
+            ap_eva(k+1) = ap_eva(k) + cnt;
+          }
+        }
+        TACHO_TEST_FOR_EXCEPTION(ii != m_eva, std::logic_error, 
+                                 "Error: SymbolicTools::evaporateGraph, evaporation of ap_eva fails");      
+      }
+      aj_eva = ordinal_type_array(do_not_initialize_tag("aj_eva"), ap_eva(m_eva));
+      {
+        for (ordinal_type i=0;i<m;++i) {
+          const ordinal_type 
+            jbeg = ap(i), 
+            jend = ap(i+1), 
+            jjbeg = ap_eva(as(i));
+          for (ordinal_type j=jbeg,jj=jjbeg;j<jend;++j) {
+            const ordinal_type idx = aj(j);
+            const ordinal_type kbeg = as(idx), kend = as(idx+1);
+            for (ordinal_type k=kbeg;k<kend;++k,++jj)
+              aj_eva(jj) = k;        
+          }
+          const ordinal_type 
+            kbeg = as(i), 
+            kend = as(i+1),
+            nnz_per_row = ap_eva(kbeg+1)-ap_eva(kbeg);
+
+          for (ordinal_type k=kbeg+1;k<kend;++k) 
+            memcpy(aj_eva.data()+ap_eva(k),
+                   aj_eva.data()+ap_eva(kbeg),
+                   sizeof(ordinal_type)*nnz_per_row);
+        }
+      }
+    }
+  }
+
+  void SymbolicTools::
+  evaporatePermutationVectors(const ordinal_type m,
+                              const ordinal_type_array &perm,
+                              const ordinal_type m_eva,
+                              const size_type_array &aw,
+                              const size_type_array &aq,
+                              /* */ ordinal_type_array &perm_eva,
+                              /* */ ordinal_type_array &peri_eva) {    
+    perm_eva = ordinal_type_array(do_not_initialize_tag("perm_eva"), m_eva);
+    peri_eva = ordinal_type_array(do_not_initialize_tag("peri_eva"), m_eva);
+
+    for (ordinal_type i=0,k=0;i<m;++i) {    
+      const ordinal_type jcnt = aw(perm(i));
+      for (ordinal_type j=0;j<jcnt;++j,++k) 
+        perm_eva(k) = aq(i)+j;
+    }
+    for (ordinal_type i=0;i<m_eva;++i)                                                                               
+      peri_eva(perm_eva(i)) = i;  
+  }
+
+  void SymbolicTools::
+  evaporateSupernodes(const ordinal_type_array &supernodes,
+                      const size_type_array &sid_super_panel_ptr,
+                      const size_type_array &gid_super_panel_ptr,
+                      const size_type_array &gid_super_panel_colidx,
+                      const size_type_array &blk_super_panel_colidx,
+                      const ordinal_type_array &perm,
+                      const ordinal_type_array &as,
+                      const ordinal_type_array &peri_eva,                      
+                      /* */ ordinal_type_array &supernodes_eva,
+                      /* */ size_type_array &gid_super_panel_ptr_eva,
+                      /* */ ordinal_type_array &gid_super_panel_colidx_eva,
+                      /* */ ordinal_type_array &blk_super_panel_colidx_eva) {
+    ///
+    /// Evaporate supernodes and gid colidx
+    ///
+    const ordinal_type nsupernodes(supernodes.extent(0) - 1);
+
+    supernodes_eva = ordinal_type_array(do_not_initialize_tag("supernodes_eva"), nsupernodes+1);
+    {
+      supernodes_eva(0) = 0;
+      for (ordinal_type i=0;i<nsupernodes;++i) {
+        const ordinal_type 
+          jbeg = supernodes(i),
+          jend = supernodes(i+1);
+        ordinal_type blk(0);
+        for (ordinal_type j=jbeg;j<jend;++j) {
+          const ordinal_type idx = perm(j);
+          blk += (as(idx+1)-as(idx));
+        }
+        supernodes_eva(i+1) = supernodes_eva(i) + blk;
+      }
+    }
+    
+    gid_super_panel_ptr_eva = size_type_array(do_not_initialize_tag("gid_super_panel_ptr_eva"), nsupernodes+1);
+    {
+      gid_super_panel_ptr_eva(0) = 0;
+      for (ordinal_type i=0;i<nsupernodes;++i) {
+        const ordinal_type
+          kbeg = gid_super_panel_ptr(i),
+          kend = gid_super_panel_ptr(i+1);
+        ordinal_type blk(0);
+        for (ordinal_type k=kbeg;k<kend;++k) { 
+          const ordinal_type idx = perm(gid_super_panel_colidx(k));
+          const ordinal_type ndof = (as(idx+1) - as(idx));
+          blk += ndof;
+        }
+        gid_super_panel_ptr_eva(i+1) = gid_super_panel_ptr_eva(i) + blk;
+      }
+    }
+
+    gid_super_panel_colidx_eva = ordinal_type_array(do_not_initialize_tag("gid_super_panel_colidx_eva"), gid_super_panel_ptr_eva(nsupernodes));
+    {
+      for (ordinal_type i=0;i<nsupernodes;++i) {
+        const ordinal_type
+          jbeg = gid_super_panel_ptr(i),
+          jend = gid_super_panel_ptr(i+1);
+        ordinal_type cnt(gid_super_panel_ptr_eva(i));
+        for (ordinal_type j=jbeg;j<jend;++j) { 
+          const ordinal_type idx = perm(gid_super_panel_colidx(j));
+          const ordinal_type
+            kbeg = as(idx),
+            kend = as(idx+1);
+          for (ordinal_type k=kbeg;k<kend;++k,++cnt) { 
+            gid_super_panel_colidx_eva(cnt) = peri_eva(k);
+          }
+        }
+      }
+    }
+    
+    blk_super_panel_colidx_eva = ordinal_type_array(do_not_initialize_tag("blk_super_panel_colidx_eva"), sid_super_panel_ptr(nsupernodes));
+    {
+      for (ordinal_type i=0;i<nsupernodes;++i) {
+        const ordinal_type 
+          jbeg = sid_super_panel_ptr(i), 
+          jend = sid_super_panel_ptr(i+1)-1;
+        const ordinal_type offs = gid_super_panel_ptr(i);
+        blk_super_panel_colidx_eva(jbeg) = 0;
+        for (ordinal_type j=jbeg;j<jend;++j) {
+          const ordinal_type 
+            kbeg = blk_super_panel_colidx(j),
+            kend = blk_super_panel_colidx(j+1);
+          ordinal_type blk(0);
+          for (ordinal_type k=kbeg;k<kend;++k) {
+            const ordinal_type idx = perm(gid_super_panel_colidx(offs+k));
+            const ordinal_type ndof = as(idx+1) - as(idx);
+            blk += ndof;
+          }
+          blk_super_panel_colidx_eva(j+1) = blk_super_panel_colidx_eva(j) + blk;
+        }
+      }
+    }
+  }
+
   SymbolicTools::SymbolicTools() = default;
   SymbolicTools::SymbolicTools(const SymbolicTools &b) = default;
 
@@ -656,217 +850,203 @@ namespace Tacho {
       m_used -= out;
     };
     
-    {
-      const ordinal_type w_extent(aw.extent(0));
-      if (_m > w_extent) {
-        return;
-      }
-    }
-
+    TACHO_TEST_FOR_EXCEPTION(_m != ordinal_type(aw.extent(0)), std::logic_error, 
+                             "Error: SymbolicTools::evaporateSymbolicFactors, aw extent is not same as _m");      
+    
     timer.reset();
-    
-    ///
-    /// scan weights to compute the size of the system of linear equations
-    ///
-    size_type_array as(do_not_initialize_tag("as"), _m+1); 
-    size_type_array aq(do_not_initialize_tag("aq"), _m+1); 
-    
-    track_alloc(as.span());
-    track_alloc(aq.span());
 
-    as(0) = 0; aq(0) = 0;
-    for (ordinal_type i=0;i<_m;++i) {
-      as(i+1) = as(i) + aw(i);
-      aq(i+1) = aq(i) + aw(_peri(i));
+    ordinal_type minval = aw(0), maxval = aw(0);
+    for (ordinal_type i=1;i<_m;++i) {
+      minval = std::min(minval, aw(i));
+      maxval = std::max(maxval, aw(i));
     }
-    TACHO_TEST_FOR_EXCEPTION(as(_m) != aq(_m), std::logic_error, 
-                             "Error: SymbolicTools::evaporateSymbolicFactors, # of equations do not match between as and aq");
+    const bool use_uniform_dof = (minval == maxval);
+    if (use_uniform_dof) {
+      const ordinal_type ndof = minval;
+      const ordinal_type m(ndof*_m);
+#if defined(TACHO_EVAPORATE_GRAPH)
+      ///
+      /// Evaporate condensed graph for a debugging purpose only
+      ///
+      size_type_array ap("ap_eva", m+1);
+      ordinal_type_array aj("aj_eva", _ap(_m)*ndof*ndof);
 
-    ///
-    /// Evaporate condensed graph for a debugging purpose
-    ///
-    const size_type m = as(_m);
-#if 0
-    {
-      size_type_array ap(do_not_initialize_tag("ap"), m+1); 
+      track_alloc(ap.span()*sizeof(size_type));
+      track_alloc(aj.span()*sizeof(ordinal_type));
+
       ap(0) = 0;
-      {
-        ordinal_type ii(0);
-        for (ordinal_type i=0;i<_m;++i) {
-          ordinal_type cnt(0);
-          const ordinal_type 
-            jbeg = _ap(i), 
-            jend = _ap(i+1);
-          for (ordinal_type j=jbeg;j<jend;++j) {
-            const ordinal_type idx = _aj(j);
-            cnt += (as(idx+1) - as(idx));
-          }
-          const ordinal_type kbeg = as(i), kend = as(i+1);
-          for (ordinal_type k=kbeg;k<kend;++k,++ii) {
-            ap(k+1) = ap(k) + cnt;
-          }
-        }
-        TACHO_TEST_FOR_EXCEPTION(ii != m, std::logic_error, 
-                                 "Error: SymbolicTools::evaporateSymbolicFactors, evaporation of ap fails");      
+      for (ordinal_type i=0,iend=_m;i<iend;++i) {
+        const ordinal_type blk = (_ap(i+1)-_ap(i))*ndof;
+        for (ordinal_type k=0;k<ndof;++k) 
+          ap(i*ndof+k+1) = ap(i*ndof+k) + blk;
       }
-      {
-        printf("Evaporated # of rows: %d\n", m);
-        for (ordinal_type i=0,iend=ap.extent(0);i<iend;++i) 
-          printf("%d\n", ap(i));
-      }
-      ordinal_type_array aj(do_not_initialize_tag("ap"), ap(m));
-      {
-        for (ordinal_type i=0;i<_m;++i) {
-          const ordinal_type 
-            jbeg = _ap(i), 
-            jend = _ap(i+1), 
-            jjbeg = ap(as(i));
-          for (ordinal_type j=jbeg,jj=jjbeg;j<jend;++j) {
-            const ordinal_type idx = _aj(j);
-            const ordinal_type kbeg = as(idx), kend = as(idx+1);
-            for (ordinal_type k=kbeg;k<kend;++k,++jj)
-              aj(jj) = k;        
-          }
-          const ordinal_type 
-            kbeg = as(i), 
-            kend = as(i+1),
-            nnz_per_row = ap(kbeg+1)-ap(kbeg);
 
-          for (ordinal_type k=kbeg+1;k<kend;++k) 
-            memcpy(aj.data()+ap(k),
-                   aj.data()+ap(kbeg),
-                   sizeof(ordinal_type)*nnz_per_row);
+      for (ordinal_type i=0;i<_m;++i) {
+        const ordinal_type j0beg = ap(i*ndof);
+        const ordinal_type j1beg = _ap(i), j1end = _ap(i+1);
+        for (ordinal_type j=j1beg,l=0;j<j1end;++j) 
+          for (ordinal_type k=0;k<ndof;++k,++l) 
+            aj(j0beg+l) = _aj(j)*ndof+k;
+
+        const ordinal_type blk = (j1end-j1beg)*ndof;
+        for (ordinal_type k=1;k<ndof;++k) 
+          memcpy(aj.data()+j0beg+k*blk,
+                 aj.data()+j0beg,
+                 sizeof(ordinal_type)*blk);
+      }
+          
+      _ap = ap;
+      _aj = aj;
+#endif
+      ///
+      /// Evaporate perm and peri
+      ///
+      ordinal_type_array perm(do_not_initialize_tag("perm_eva"), m);
+      ordinal_type_array peri(do_not_initialize_tag("peri_eva"), m);
+      for (ordinal_type i=0;i<_m;++i) {
+        for (ordinal_type k=0;k<ndof;++k) {
+          perm(i*ndof+k) = _perm(i)*ndof+k;
+          peri(i*ndof+k) = _peri(i)*ndof+k;
         }
       }
+      
+      track_alloc(perm.span()*sizeof(ordinal_type));
+      track_alloc(peri.span()*sizeof(ordinal_type));
+      
+      ///
+      /// evaporate supernodes
+      ///
+      ordinal_type_array supernodes(do_not_initialize_tag("supernodes_eva"), _supernodes.extent(0));
+      size_type_array gid_super_panel_ptr(do_not_initialize_tag("gid_super_panel_ptr_eva"), _gid_super_panel_ptr.extent(0));
+      ordinal_type_array gid_super_panel_colidx(do_not_initialize_tag("gid_super_panel_colidx_eva"), _gid_super_panel_colidx.extent(0)*ndof);
+      ordinal_type_array blk_super_panel_colidx(do_not_initialize_tag("blk_super_panel_colidx_eva"), _blk_super_panel_colidx.extent(0));
+      
+      for (ordinal_type i=0,iend=supernodes.extent(0);i<iend;++i) 
+        supernodes(i) = _supernodes(i)*ndof;
+      for (ordinal_type i=0,iend=gid_super_panel_ptr.extent(0);i<iend;++i) 
+        gid_super_panel_ptr(i) = _gid_super_panel_ptr(i)*ndof;
+      for (ordinal_type i=0,iend=_gid_super_panel_colidx.extent(0);i<iend;++i) 
+        for (ordinal_type k=0;k<ndof;++k) 
+          gid_super_panel_colidx(i*ndof+k) = _gid_super_panel_colidx(i)*ndof+k;
+      for (ordinal_type i=0,iend=_blk_super_panel_colidx.extent(0);i<iend;++i) 
+        blk_super_panel_colidx(i) = _blk_super_panel_colidx(i)*ndof;
+
+      track_alloc(supernodes.span()*sizeof(ordinal_type));
+      track_alloc(gid_super_panel_ptr.span()*sizeof(size_type));
+      track_alloc(gid_super_panel_colidx.span()*sizeof(ordinal_type));
+      track_alloc(blk_super_panel_colidx.span()*sizeof(ordinal_type));
+
+      ///
+      /// assign new objects
+      ///
+      track_free(_supernodes.span()*sizeof(ordinal_type));
+      track_free(_gid_super_panel_ptr.span()*sizeof(size_type));
+      track_free(_gid_super_panel_colidx.span()*sizeof(ordinal_type));
+      track_free(_blk_super_panel_colidx.span()*sizeof(ordinal_type));
+
+      _m = m;
+
+      _perm = perm;
+      _peri = peri;
+
+      _supernodes = supernodes;
+      _gid_super_panel_ptr = gid_super_panel_ptr;
+      _gid_super_panel_colidx = gid_super_panel_colidx;
+      _blk_super_panel_colidx = blk_super_panel_colidx;
+
+    } else {    
+      ///
+      /// scan weights to compute the size of the system of linear equations
+      ///
+      size_type_array as, aq;
+      scanWeights(_m, aw, _perm, as, aq);
+    
+      track_alloc(as.span()*sizeof(size_type));
+      track_alloc(aq.span()*sizeof(size_type));
+
+      const ordinal_type m(as(_m));
+#if defined(TACHO_EVAPORATE_GRAPH)
+      ///
+      /// Evaporate condensed graph for a debugging purpose only
+      ///
       {
-        printf("Evaporated # of nonzeros: %d\n", ordinal_type(aj.extent(0)));
-        for (ordinal_type i=0,iend=aj.extent(0);i<iend;++i) 
-          printf("%d\n", aj(i));
+        size_type_array ap;
+        ordinal_type_array aj;
+        evaporateGraph(_m, _ap, _aj, as, ap, aj);
+
+        track_alloc(ap.span()*sizeof(size_type));
+        track_alloc(aj.span()*sizeof(ordinal_type));
+      
+        _ap = ap;
+        _aj = aj;
       }
-    }
 #endif
 
-    ///
-    /// Evaporate perm and peri
-    ///
-    ordinal_type_array perm(do_not_initialize_tag("perm"), m);
-    ordinal_type_array peri(do_not_initialize_tag("peri"), m);
+      ///
+      /// Evaporate perm and peri
+      ///
+      ordinal_type_array perm, peri;
+      evaporatePermutationVectors(_m, _perm,
+                                  m,
+                                  aw, aq,
+                                  perm, peri);
 
-    track_alloc(perm.span());
-    track_alloc(peri.span());
-
-    for (ordinal_type i=0;i<_m;++i) {
-      const ordinal_type idx = _perm(i), ndof = aw(i);
-      const ordinal_type offt = aq(idx), offs = as(i);
-      for (ordinal_type j=0;j<ndof;++j) {
-        const ordinal_type tgt = offt+j, src = offs+j;
-        perm(src) = tgt;
-        peri(tgt) = src;
-      }
-    }
-
-    ///
-    /// Evaporate supernodes and gid colidx
-    ///
-    const ordinal_type nsupernodes = _supernodes.extent(0) - 1;
-    size_type_array gid_super_panel_ptr(do_not_initialize_tag("gid_super_panel_ptr"), nsupernodes+1);
-    track_alloc(gid_super_panel_ptr.span());
-    {
-      gid_super_panel_ptr(0) = 0;
-      ordinal_type jbeg = _supernodes(0);
-      for (ordinal_type i=0;i<nsupernodes;++i) {
-        {
-          const ordinal_type 
-            jend = _supernodes(i+1);
-          ordinal_type blk(0);
-          for (ordinal_type j=jbeg;j<jend;++j) {
-            const ordinal_type idx = _peri(j);
-            blk += aw(idx);
-          }
-          _supernodes(i+1) = _supernodes(i) + blk;
-          jbeg = jend;
-        }
-        {
-          const ordinal_type
-            kbeg = _gid_super_panel_ptr(i),
-            kend = _gid_super_panel_ptr(i+1);
-          ordinal_type blk(0);
-          for (ordinal_type k=kbeg;k<kend;++k) { 
-            const ordinal_type idx = _gid_super_panel_colidx(k);
-            const ordinal_type ndof = (aq(idx+1) - aq(idx));
-            blk += ndof;
-          }
-          gid_super_panel_ptr(i+1) = gid_super_panel_ptr(i) + blk;
-        }
-      }
-    }
-
-    ordinal_type_array gid_super_panel_colidx(do_not_initialize_tag("gid_super_panel_colidx"), gid_super_panel_ptr(nsupernodes));
-    track_alloc(gid_super_panel_colidx.span());
-    {
-      for (ordinal_type i=0;i<nsupernodes;++i) {
-        const ordinal_type
-          jbeg = _gid_super_panel_ptr(i),
-          jend = _gid_super_panel_ptr(i+1);
-        ordinal_type cnt(gid_super_panel_ptr(i));
-        for (ordinal_type j=jbeg;j<jend;++j) { 
-          const ordinal_type idx = _gid_super_panel_colidx(j);
-          const ordinal_type
-            kbeg = aq(idx),
-            kend = aq(idx+1);
-          for (ordinal_type k=kbeg;k<kend;++k,++cnt) 
-            gid_super_panel_colidx(cnt) = k;
-        }
-      }
-    }
+      track_alloc(perm.span()*sizeof(ordinal_type));
+      track_alloc(peri.span()*sizeof(ordinal_type));
     
-    ordinal_type_array blk_super_panel_colidx(do_not_initialize_tag("blk_super_panel_colidx"), _sid_super_panel_ptr(nsupernodes));
-    track_alloc(blk_super_panel_colidx.span());
-    {
-      for (ordinal_type i=0;i<nsupernodes;++i) {
-        const ordinal_type 
-          jbeg = _sid_super_panel_ptr(i), 
-          jend = _sid_super_panel_ptr(i+1)-1;
-        const ordinal_type offs = _gid_super_panel_ptr(i);
-        blk_super_panel_colidx(jbeg) = 0;
-        for (ordinal_type j=jbeg;j<jend;++j) {
-          const ordinal_type 
-            kbeg = _blk_super_panel_colidx(j),
-            kend = _blk_super_panel_colidx(j+1);
-          ordinal_type blk(0);
-          for (ordinal_type k=kbeg;k<kend;++k) {
-            const ordinal_type idx = _gid_super_panel_colidx(offs+k);
-            const ordinal_type ndof = aq(idx+1) - aq(idx);
-            blk += ndof;
-          }
-          blk_super_panel_colidx(j+1) = blk_super_panel_colidx(j) + blk;
-        }
-      }
+      ///
+      /// Evaporate supernodes and gid colidx
+      ///
+      ordinal_type_array supernodes;
+      size_type_array gid_super_panel_ptr;
+      ordinal_type_array gid_super_panel_colidx, blk_super_panel_colidx;
+
+      evaporateSupernodes(_supernodes,
+                          _sid_super_panel_ptr,
+                          _gid_super_panel_ptr,
+                          _gid_super_panel_colidx,
+                          _blk_super_panel_colidx,
+                          _perm,
+                          as,
+                          peri,                      
+                          supernodes,
+                          gid_super_panel_ptr,
+                          gid_super_panel_colidx,
+                          blk_super_panel_colidx);
+
+      track_alloc(supernodes.span()*sizeof(ordinal_type));
+      track_alloc(gid_super_panel_ptr.span()*sizeof(size_type));
+      track_alloc(gid_super_panel_colidx.span()*sizeof(ordinal_type));
+      track_alloc(blk_super_panel_colidx.span()*sizeof(ordinal_type));
+
+      ///
+      /// assign new objects
+      ///
+      track_free(_supernodes.span()*sizeof(ordinal_type));
+      track_free(_gid_super_panel_ptr.span()*sizeof(size_type));
+      track_free(_gid_super_panel_colidx.span()*sizeof(ordinal_type));
+      track_free(_blk_super_panel_colidx.span()*sizeof(ordinal_type));
+
+      track_free(as.span());
+      track_free(aq.span());
+
+      _m = m;
+
+      _perm = perm;
+      _peri = peri;
+
+      _supernodes = supernodes;
+      _gid_super_panel_ptr = gid_super_panel_ptr;
+      _gid_super_panel_colidx = gid_super_panel_colidx;
+      _blk_super_panel_colidx = blk_super_panel_colidx;
     }
-
-    ///
-    /// assign new objects
-    ///
-    track_free(_perm.span());
-    track_free(_peri.span());
-    track_free(_gid_super_panel_ptr.span());
-    track_free(_gid_super_panel_colidx.span());
-    track_free(_blk_super_panel_colidx.span());
-
-    _m = m;
-    /// _ap and _aj is not updated and remains as representing the input condensed graph
-    _perm = perm;
-    _peri = peri;
-    _gid_super_panel_ptr = gid_super_panel_ptr;
-    _gid_super_panel_colidx = gid_super_panel_colidx;
-    _blk_super_panel_colidx = blk_super_panel_colidx;
-
     t_evaporate = timer.seconds();
 
     ///
     /// verbose output
     ///
     stat.nrows = _m;
+
 
     if (verbose) {
       printf("Summary: EvaporateSymbolicFactors\n");
@@ -882,12 +1062,20 @@ namespace Tacho {
         printf("  Linear system A\n");
         printf("             number of equations:                             %10d\n", stat.nrows);
         printf("\n");
-        printf("  Memory\n");
-        printf("             memory used:                                     %10.4f MB\n", m_used/kilo/kilo);
-        printf("             peak memory used:                                %10.4f MB\n", m_peak/kilo/kilo);
-        printf("\n");
+        // printf("  Memory\n");
+        // printf("             memory used:                                     %10.4f MB\n", m_used/kilo/kilo);
+        // printf("             peak memory used:                                %10.4f MB\n", m_peak/kilo/kilo);
+        // printf("\n");
       }          
       }
+#if defined(TACHO_EVAPORATE_GRAPH)
+      {
+        std::ofstream out("tacho_evaporated_graph.dat");        
+        out << ordinal_type(_ap.extent(0)-1) << std::endl;
+        for (ordinal_type i=0,iend=_ap.extent(0);i<iend;++i) out <<  _ap(i) << std::endl;      
+        for (ordinal_type i=0,iend=_aj.extent(0);i<iend;++i) out <<  _aj(i) << std::endl;
+      }
+#endif
     }
   }
 
