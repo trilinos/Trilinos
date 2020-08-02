@@ -330,12 +330,6 @@ namespace MueLuTests {
     norms = Utilities::ResidualNorm(*Op, *X, *RHS);
     out << "||res_" << std::setprecision(2) << iterations << "|| = " << std::setprecision(15) << norms[0] << std::endl;
 
-    // TODO: CUDA_LAUNCH_BLOCKING=0 will result in fluctuating values for the norm
-    // Need to track down the source of the randomness.
-    // Note that the test will fail about 1/5 of the time on white with CUDA_LAUNCH_BLOCKING=0
-    // Changing the scale from 100 to 1000 is sufficient to keep it passing.
-    // But the randomness is probably something that needs to be fixed.
-    // Will address this in a separate PR.
     TEST_EQUALITY(norms[0] < 100*TMT::eps(), true);
 
   } //Iterate
