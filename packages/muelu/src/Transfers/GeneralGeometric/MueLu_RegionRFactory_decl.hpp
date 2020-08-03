@@ -43,67 +43,68 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_GENERICRFACTORY_DECL_HPP
-#define MUELU_GENERICRFACTORY_DECL_HPP
 
-/*
- * MueLu_GenericRFactory.hpp
- *
- *  Created on: 20.09.2011
- *      Author: tobias
- */
+#ifndef MUELU_REGIONRFACTORY_DECL_HPP
+#define MUELU_REGIONRFACTORY_DECL_HPP
 
-#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"
-#include "MueLu_GenericRFactory_fwd.hpp"
-
-#include "MueLu_Level_fwd.hpp"
-#include "MueLu_PFactory_fwd.hpp"
+#include "MueLu_RegionRFactory_fwd.hpp"
 
 namespace MueLu {
 
   /*!
-    @class GenericRFactory class.
-    @brief Factory for building restriction operators using a prolongator factory
+    @class RegionRFactory class
+    @brief Factory that builds a restriction operator for region multigrid
   */
 
   template <class Scalar = DefaultScalar,
             class LocalOrdinal = DefaultLocalOrdinal,
             class GlobalOrdinal = DefaultGlobalOrdinal,
             class Node = DefaultNode>
-  class GenericRFactory : public TwoLevelFactoryBase {
-#undef MUELU_GENERICRFACTORY_SHORT
+  class RegionRFactory : public TwoLevelFactoryBase {
+#undef MUELU_REGIONRFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:
+    using real_type = typename Teuchos::ScalarTraits<SC>::coordinateType;
+    using realvaluedmultivector_type = typename Xpetra::MultiVector<real_type, LO, GO, NO>;
+
     //! @name Constructors/Destructors.
     //@{
 
-    //! Constructor.
-    GenericRFactory() { }
+    //! Default Constructor
+    RegionRFactory() = default;
 
-    //! Destructor.
-    virtual ~GenericRFactory() { }
+    //!Destructor
+    virtual ~RegionRFactory() = default;
     //@}
 
     //! Input
     //@{
     RCP<const ParameterList> GetValidParameterList() const;
 
-    void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
+    void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
 
     //@}
 
     //! @name Build methods.
     //@{
 
-    void Build(Level & fineLevel, Level & coarseLevel) const;
+    void Build(Level& fineLevel, Level& coarseLevel) const;
+
+    void Build3D(const int numDimensions,
+                 Array<LO>& lFineNodesPerDim,
+                 const RCP<Matrix>& A,
+                 const RCP<realvaluedmultivector_type>& fineCoordinates,
+                 RCP<Matrix>& R,
+                 RCP<realvaluedmultivector_type>& coarseCoordinates,
+                 Array<LO>& lCoarseNodesPerDim) const;
 
     //@}
 
-  }; //class GenericRFactory
+  }; // class RegionRFactory
 
-} //namespace MueLu
+} // namespace MueLu
 
-#define MUELU_GENERICRFACTORY_SHORT
-#endif // MUELU_GENERICRFACTORY_DECL_HPP
+#define MUELU_REGIONRFACTORY_SHORT
+#endif // MUELU_REGIONRFACTORY_DECL_HPP
