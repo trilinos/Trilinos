@@ -269,8 +269,13 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(con
     crs_graph_type::fillComplete(this->domainMap_,this->getRowMap());
 
     // In debug mode, we check to make sure the "if you own an element, you own at least one of its nodes"
+    // However, we give the user the ability to bypass this check. This can be useful when dealing with mesh
+    // that are generated and partitioned by a TPL, and/or where it is so complicated to rearrange the
+    // dofs ownership that the customer app might be willing to accept a small performance hit.
     const bool debug = ::Tpetra::Details::Behavior::debug ();
-    if (debug) {
+    const bool enforceAtLeastOneOwnedColIndexPerRow =
+        this->getMyNonconstParamList().is_null() ? true : this->getMyNonconstParamList()->get("Enforce At Least One Owned Col Index Per Row",true);
+    if (debug && enforceAtLeastOneOwnedColIndexPerRow) {
       Teuchos::RCP<const map_type> colmap = this->getColMap();
       Teuchos::Array<bool> flag(colmap->getNodeNumElements(),false);
       Teuchos::Array<LocalOrdinal> indices(this->getNodeMaxNumRowEntries());
