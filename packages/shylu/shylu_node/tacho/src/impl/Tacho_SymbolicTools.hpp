@@ -132,7 +132,7 @@ namespace Tacho {
                           const ordinal_type_array &gid_super_panel_colidx,
                           const ordinal_type_array &blk_super_panel_colidx,
                           const ordinal_type_array &perm,
-                          const ordinal_type_array &as,
+                          const size_type_array &as,
                           const ordinal_type_array &peri_eva,                      
                           /* */ ordinal_type_array &supernodes_eva,
                           /* */ size_type_array &gid_super_panel_ptr_eva,

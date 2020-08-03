@@ -469,7 +469,7 @@ namespace Tacho {
                  const size_type_array &as,
                  /* */ size_type_array &ap_eva,
                  /* */ ordinal_type_array &aj_eva) {
-    const size_type m_eva = as(m);
+    const ordinal_type m_eva = as(m);
     {
       ap_eva = size_type_array(do_not_initialize_tag("ap_eva"), m_eva+1); 
       ap_eva(0) = 0;
