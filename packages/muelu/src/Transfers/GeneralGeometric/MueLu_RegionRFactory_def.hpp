@@ -178,6 +178,9 @@ namespace MueLu {
     Set(coarseLevel, "lNodesPerDim",  lCoarseNodesPerDim);
     Set(coarseLevel, "Nullspace",     coarseNullspace);
     Set(coarseLevel, "Coordinates",   coarseCoordinates);
+    if(pL.get<bool>("keep coarse coords")) {
+      coarseLevel.Set<RCP<realvaluedmultivector_type> >("Coordinates2", coarseCoordinates, NoFactory::get());
+    }
     Set(coarseLevel, "R", R);
     Set(coarseLevel, "P", P);
 
