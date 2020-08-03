@@ -392,6 +392,17 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::beginFill() {
 
 }
 
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<const Teuchos::ParameterList>
+FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::getValidParameters () const
+{
+  auto valid_pl = Teuchos::rcp(new Teuchos::ParameterList("Tpetra::FECrsGraph"));
+  valid_pl->validateParametersAndSetDefaults(*crs_graph_type::getValidParameters());
+  valid_pl->set("Enforce At Least One Owned Col Index Per Row",true);
+
+  return valid_pl;
+}
+
 }  // end namespace Tpetra
 
 
