@@ -59,7 +59,8 @@ namespace Tacho {
         const int ierr = Herk<ArgUplo,ArgTrans,ArgAlgo>
           ::invoke(member, _alpha, _A, _beta, _C);
 
-        Kokkos::single(Kokkos::PerThread(member), [&] () {
+        Kokkos::single(Kokkos::PerThread(member), 
+          [&, ierr] () { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
             _C.set_future();
             r_val = ierr;
           });
