@@ -900,7 +900,6 @@ public:
     Level level;
     TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(level);
     level.Set("A", A);   
-     print_matrix("A",MueLu::Utilities<SC,LO,GO,NO>::Op2NonConstTpetraCrs(A));
 
     RCP<CoalesceDropFactory> dropFact;
     RCP<AmalgamationFactory> amalgFact; 
@@ -932,10 +931,11 @@ public:
     RCP<Matrix> Afiltered = level.Get<RCP<Matrix> >("A",filterFact.get());
 
     // Now check stuff
-    print_matrix("A",MueLu::Utilities<SC,LO,GO,NO>::Op2NonConstTpetraCrs(A));
-    print_matrix("Afiltered",MueLu::Utilities<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Afiltered));
+    //    print_matrix("A",MueLu::Utilities<SC,LO,GO,NO>::Op2NonConstTpetraCrs(A));
+    //    print_matrix("Afiltered",MueLu::Utilities<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Afiltered));
 
-    TEST_EQUALITY(true, true);
+    // We use the full graph for the filtered matrix, so the notional nnz should be the same
+    TEST_EQUALITY(A->getNodeNumRows()==Afiltered->getNodeNumRows(), true);
   }
 
 

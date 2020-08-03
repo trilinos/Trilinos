@@ -33,6 +33,7 @@ Filtered matrix is not being constructed as no filtering is being done
 filtered matrix: use lumping = 1   [default]
 filtered matrix: reuse graph = 1   [default]
 filtered matrix: reuse eigenvalue = 1   [default]
+filtered matrix: use root stencil = 0   [default]
 
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
@@ -129,6 +130,7 @@ Filtered matrix is not being constructed as no filtering is being done
 filtered matrix: use lumping = 1   [default]
 filtered matrix: reuse graph = 1   [default]
 filtered matrix: reuse eigenvalue = 1   [default]
+filtered matrix: use root stencil = 0   [default]
 
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
@@ -225,6 +227,7 @@ Filtered matrix is not being constructed as no filtering is being done
 filtered matrix: use lumping = 1   [default]
 filtered matrix: reuse graph = 1   [default]
 filtered matrix: reuse eigenvalue = 1   [default]
+filtered matrix: use root stencil = 0   [default]
 
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
@@ -321,6 +324,7 @@ Filtered matrix is not being constructed as no filtering is being done
 filtered matrix: use lumping = 1   [default]
 filtered matrix: reuse graph = 1   [default]
 filtered matrix: reuse eigenvalue = 1   [default]
+filtered matrix: use root stencil = 0   [default]
 
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
@@ -417,6 +421,7 @@ Filtered matrix is not being constructed as no filtering is being done
 filtered matrix: use lumping = 1   [default]
 filtered matrix: reuse graph = 1   [default]
 filtered matrix: reuse eigenvalue = 1   [default]
+filtered matrix: use root stencil = 0   [default]
 
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
