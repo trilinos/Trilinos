@@ -131,7 +131,7 @@ namespace Tacho {
 
             Kokkos::parallel_for
               (Kokkos::TeamVectorRange(member, tcnt),
-               [&, tbeg, ip](const ordinal_type &ii) {
+               [&, tbeg, ip](const ordinal_type &ii) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
                 const ordinal_type it = tbeg+ii;
                 const ordinal_type is = ip+ii;
                 //for (ordinal_type it=tbeg;it<tend;++it,++is) {
@@ -193,7 +193,7 @@ namespace Tacho {
           // copy to t
           Kokkos::parallel_for
             (Kokkos::TeamVectorRange(member, m*_nrhs),
-             [&, m](const ordinal_type &k) {
+             [&, m](const ordinal_type &k) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
               const ordinal_type i = k%m, j = k/m;
               tT(i,j) = bT(i,j);
             });
@@ -212,7 +212,7 @@ namespace Tacho {
 
               Kokkos::parallel_for
                 (Kokkos::TeamVectorRange(member, tcnt),
-                 [&, tbeg](const ordinal_type &ii) {
+                 [&, tbeg](const ordinal_type &ii) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
                   const ordinal_type it = tbeg+ii;
                   const ordinal_type is = ip+ii;
                   //for (ordinal_type it=tbeg;it<tend;++it,++is) {
