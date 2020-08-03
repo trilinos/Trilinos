@@ -72,7 +72,7 @@ namespace MueLu {
     const LO size = procWinner.size();
     const GO numAggregates = aggregates.GetNumAggregates();
 
-    std::vector<LO> sizes(numAggregates);
+    Array<LO> sizes(numAggregates);
     if (stridedblocksize_ == 1) {
       for (LO lnode = 0; lnode < size; ++lnode) {
         LO myAgg = vertex2AggId[lnode];
@@ -197,6 +197,33 @@ namespace MueLu {
     // todo plausibility check: entry numDofs[k] == aggToRowMap[k].size()
 
   } //UnamalgamateAggregatesLO
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node>::print(Teuchos::FancyOStream &out,
+      const VerbLevel verbLevel) const
+  {
+    if (!(verbLevel & Debug))
+      return;
+
+    out << "AmalgamationInfo -- Striding information:"
+        << "\n  fullBlockSize = " << fullblocksize_
+        << "\n  blockID = " << blockid_
+        << "\n  stridingOffset = " << nStridedOffset_
+        << "\n  stridedBlockSize = " << stridedblocksize_
+        << "\n  indexBase = " << indexBase_
+        << std::endl;
+
+    out << "AmalgamationInfo -- DOFs to nodes mapping:\n"
+        << "  Mapping of row DOFs to row nodes:" << *rowTranslation_()
+        << "\n\n  Mapping of column DOFs to column nodes:" << *colTranslation_()
+        << std::endl;
+
+    out << "AmalgamationInfo -- row node map:" << std::endl;
+    nodeRowMap_->describe(out, Teuchos::VERB_EXTREME);
+
+    out << "AmalgamationInfo -- column node map:" << std::endl;
+    nodeColMap_->describe(out, Teuchos::VERB_EXTREME);
+  }
 
   /////////////////////////////////////////////////////////////////////////////
 
