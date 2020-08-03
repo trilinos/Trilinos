@@ -55,8 +55,19 @@
 #include "MueLu_Level.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
+#include "MueLu_Aggregates.hpp"
+#include "MueLu_AmalgamationInfo.hpp"
+#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
+
+  template <class T>
+  void sort_and_unique(T & array) {
+    std::sort(array.begin(),array.end());
+    std::unique(array.begin(),array.end());
+  }
+      
+
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const ParameterList> FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
@@ -66,12 +77,17 @@ namespace MueLu {
     SET_VALID_ENTRY("filtered matrix: use lumping");
     SET_VALID_ENTRY("filtered matrix: reuse graph");
     SET_VALID_ENTRY("filtered matrix: reuse eigenvalue");
+    SET_VALID_ENTRY("filtered matrix: use root stencil");
 #undef  SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A used for filtering");
     validParamList->set< RCP<const FactoryBase> >("Graph",          Teuchos::null, "Generating factory for coalesced filtered graph");
     validParamList->set< RCP<const FactoryBase> >("Filtering",      Teuchos::null, "Generating factory for filtering boolean");
 
+    
+    // Only need these for the "use root stencil" option
+    validParamList->set< RCP<const FactoryBase> >("Aggregates",         Teuchos::null, "Generating factory of the aggregates");
+    validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo", Teuchos::null, "Generating factory of UnAmalgamationInfo");
     return validParamList;
   }
 
@@ -80,6 +96,11 @@ namespace MueLu {
     Input(currentLevel, "A");
     Input(currentLevel, "Filtering");
     Input(currentLevel, "Graph");
+    const ParameterList& pL = GetParameterList();
+    if(pL.isParameter("filtered matrix: use root stencil") && pL.get<bool>("filtered matrix: use root stencil") == true){
+      Input(currentLevel, "Aggregates");
+      Input(currentLevel, "UnAmalgamationInfo");
+    }    
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -97,6 +118,9 @@ namespace MueLu {
     bool lumping = pL.get<bool>("filtered matrix: use lumping");
     if (lumping)
       GetOStream(Runtime0) << "Lumping dropped entries" << std::endl;
+    bool use_root_stencil = lumping && pL.get<bool>("filtered matrix: use root stencil");
+    if (use_root_stencil)
+      GetOStream(Runtime0) << "Using root stencil for dropping" << std::endl;
 
     RCP<GraphBase> G = Get< RCP<GraphBase> >(currentLevel, "Graph");
 
@@ -115,7 +139,10 @@ namespace MueLu {
     } else {
       filteredA = MatrixFactory::Build(A->getRowMap(), A->getColMap(), A->getNodeMaxNumRowEntries());
 
-      BuildNew(*A, *G, lumping, *filteredA);
+      if(use_root_stencil)
+	BuildNewUsingRootStencil(*A, *G, currentLevel,*filteredA);
+      else
+	BuildNew(*A, *G, lumping, *filteredA);
 
       filteredA->fillComplete(A->getDomainMap(), A->getRangeMap(), fillCompleteParams);
     }
@@ -322,6 +349,152 @@ namespace MueLu {
           filter[indsG[j]*blkSize+k] = 0;
     }
   }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  BuildNewUsingRootStencil(const Matrix& A, const GraphBase& G, Level& currentLevel, Matrix& filteredA) const {
+    SC ZERO = Teuchos::ScalarTraits<SC>::zero();
+    LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+
+    size_t numNodes = G.GetNodeNumVertices();
+    size_t blkSize  = A.GetFixedBlockSize();
+    size_t numRows  = A.getMap()->getNodeNumElements();
+
+    RCP<const Map> rowMap = A.getRowMap();
+    RCP<const Map> colMap = A.getColMap();
+
+    ArrayView<const LO> indsA;
+    ArrayView<const SC> valsA;
+    Array<LO>           inds(A.getNodeMaxNumRowEntries());
+    Array<SC>           vals(A.getNodeMaxNumRowEntries());
+
+    RCP<Aggregates>            aggregates     = Get< RCP<Aggregates> >           (currentLevel, "Aggregates");
+    RCP<AmalgamationInfo>      amalgInfo      = Get< RCP<AmalgamationInfo> >     (currentLevel, "UnAmalgamationInfo");
+    LO                          numAggs       = aggregates->GetNumAggregates();
+    Teuchos::ArrayRCP<const LO> vertex2AggId  = aggregates->GetVertex2AggId()->getData(0);
+
+    // Lists of nodes in each aggregate
+    struct {
+      Array<LO> ptr,nodes;
+    } nodesInAgg;
+    aggregates->ComputeNodesInAggregate(nodesInAgg.ptr, nodesInAgg.nodes);
+
+    // Unamalgamate
+
+    bool goodMap = MueLu::Utilities<SC,LO,GO,NO>::MapsAreNested(*rowMap, *colMap);
+    TEUCHOS_TEST_FOR_EXCEPTION(goodMap,
+			       Exceptions::RuntimeError,"MueLu::FilteredAFactory::BuildNewUsingRootStencil: Requires nested row/col maps");
+
+
+    // Find the biggest aggregate size in *nodes*
+    LO maxAggSize=0;
+    for(LO i=0; i<numAggs; i++) 
+      maxAggSize = std::max(maxAggSize,nodesInAgg.ptr[i+1] - nodesInAgg.ptr[i]);
+
+
+    // Loop over all the aggregates
+    std::vector<LO> goodAggNeighbors(G.getNodeMaxNumRowEntries());
+    std::vector<LO> badAggNeighbors(std::min(G.getNodeMaxNumRowEntries()*maxAggSize,numNodes));
+
+    for(LO i=0; i<numAggs; i++) {
+      LO numNodesInAggregate = nodesInAgg.ptr[i+1] - nodesInAgg.ptr[i];
+
+      // Find the root *node*
+      LO root_node = INVALID;
+      for (LO k=nodesInAgg.ptr[i]; k < nodesInAgg.ptr[i+1]; k++) {
+	if(aggregates->IsRoot(nodesInAgg.nodes[k])) {
+	  root_node = k; break;
+	}
+      }
+      
+      TEUCHOS_TEST_FOR_EXCEPTION(root_node != INVALID,
+				 Exceptions::RuntimeError,"MueLu::FilteredAFactory::BuildNewUsingRootStencil: Cannot find root node");
+
+      // Find the list of "good" node neighbors (aka nodes which border the root node in the Graph G)      
+      ArrayView<const LO> goodNodeNeighbors  = G.getNeighborVertices(root_node);
+
+      // Now find the list of "good" aggregate neighbors (aka the aggregates neighbor the root node in the Graph G)
+      goodAggNeighbors.resize(0);
+      for (LO k=nodesInAgg.ptr[i]; k < nodesInAgg.ptr[i+1]; k++) {
+	if(k+1 < (LO) nodesInAgg.ptr.size()) {
+	  goodAggNeighbors.push_back(nodesInAgg.nodes[k]);
+	}
+      }
+      sort_and_unique(goodAggNeighbors);
+      
+      // Now we get the list of "bad" aggregate neighbors (aka aggregates which border the 
+      // root node in the original matrix A, which are not goodNodeNeighbors).  Since we
+      // don't have an amalgamated version of the original matrix, we use the matrix directly
+      badAggNeighbors.resize(0);
+      for(LO j = 0; j < (LO)blkSize; j++) {
+	LO row = amalgInfo->ComputeLocalDOF(root_node,j);
+	A.getLocalRowView(row, indsA, valsA);
+	for(LO k=0; k<(LO)indsA.size(); k++) {
+	  if(indsA[k] < (LO)numRows) {
+	    int node = amalgInfo->ComputeLocalNode(indsA[k]);
+	    int agg = vertex2AggId[node];
+	    if(!std::binary_search(goodAggNeighbors.begin(),goodAggNeighbors.end(),agg))
+	      badAggNeighbors.push_back(agg);
+	  }
+	}	
+      }
+      sort_and_unique(badAggNeighbors);
+  
+      
+      // Now lets fill the rows in this aggregate and figure out the diagonal lumping
+      // We loop over each node in the aggregate and then over the neighbors of that node
+      for(LO k=nodesInAgg.ptr[i]; k<nodesInAgg.ptr[i+1]; k++) {
+	ArrayView<const LO> indsG = G.getNeighborVertices(nodesInAgg.nodes[k]);
+	for (LO j = 0; j < (LO)indsG.size(); j++) {
+	  inds.resize(0); vals.resize(0);
+
+	  for (LO m = 0; m < (LO)blkSize; m++) {
+	    LO row = amalgInfo->ComputeLocalDOF(indsG[j],m);
+	    A.getLocalRowView(row, indsA, valsA);
+
+	    LO diagIndex = INVALID;
+	    SC diagExtra = ZERO;
+	    LO numInds = 0;
+	    inds.resize(indsA.size());
+	    vals.resize(valsA.size());
+
+	    for(LO l = 0; l < (LO)indsA.size(); l++) {
+	      bool is_good = true; // Assume off-processor entries are good. FIXME?
+	      if (indsA[l] == row)
+		diagIndex = l;
+
+	      if(indsA[l] < (LO)numRows)  {
+		int node = amalgInfo->ComputeLocalNode(indsA[l]);
+		int agg = vertex2AggId[node];
+		if(std::binary_search(badAggNeighbors.begin(),badAggNeighbors.end(),agg))
+		  is_good = false;
+	      }
+
+	      if(is_good) {
+		inds[numInds] = indsA[l];
+		vals[numInds] = valsA[l];
+		numInds++;
+	      }
+	      else {
+		diagExtra += valsA[l];		
+	      }
+
+	      if (diagIndex != INVALID)
+		vals[diagIndex] += diagExtra;
+	    }//end l "indsA.size()" loop
+
+	    inds.resize(numInds);
+	    vals.resize(numInds);
+	    filteredA.insertLocalValues(row, inds, vals);
+
+	  }//end m "blkSize" loop
+
+
+	} // end the k "row" loop
+      }// end loop over number of nodes in this agg
+    }//end loop over numAggs
+  }
+
 
 } //namespace MueLu
 
