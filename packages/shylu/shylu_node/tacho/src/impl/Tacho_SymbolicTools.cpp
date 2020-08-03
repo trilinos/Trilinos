@@ -523,7 +523,7 @@ namespace Tacho {
   evaporatePermutationVectors(const ordinal_type m,
                               const ordinal_type_array &perm,
                               const ordinal_type m_eva,
-                              const size_type_array &aw,
+                              const ordinal_type_array &aw,
                               const size_type_array &aq,
                               /* */ ordinal_type_array &perm_eva,
                               /* */ ordinal_type_array &peri_eva) {    
@@ -543,8 +543,8 @@ namespace Tacho {
   evaporateSupernodes(const ordinal_type_array &supernodes,
                       const size_type_array &sid_super_panel_ptr,
                       const size_type_array &gid_super_panel_ptr,
-                      const size_type_array &gid_super_panel_colidx,
-                      const size_type_array &blk_super_panel_colidx,
+                      const ordinal_type_array &gid_super_panel_colidx,
+                      const ordinal_type_array &blk_super_panel_colidx,
                       const ordinal_type_array &perm,
                       const ordinal_type_array &as,
                       const ordinal_type_array &peri_eva,                      
@@ -1052,7 +1052,7 @@ namespace Tacho {
       printf("Summary: EvaporateSymbolicFactors\n");
       printf("=================================\n");
 
-      const double kilo(1024);      
+      //const double kilo(1024);      
       switch (verbose) {
       case 1: {
         printf("  Time\n");
