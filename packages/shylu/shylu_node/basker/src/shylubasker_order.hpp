@@ -255,7 +255,9 @@ namespace BaskerNS
         std::cout << " ++ calling match_ordering( " << Options.btf_matching << " )" << std::endl;
     }
     if (match_ordering(Options.btf_matching) != BASKER_SUCCESS) {
-        std::cout << " ++ match_ordering failed ++ " << std::endl;
+        if(Options.verbose == BASKER_TRUE) {
+            std::cout << " ++ match_ordering failed ++ " << std::endl;
+        }
         return BASKER_ERROR;
     }
     /*printf( " P=[\n" );
@@ -671,13 +673,6 @@ namespace BaskerNS
           MALLOC_ENTRY_1DARRAY (scale_row_array, A.nrow);
           MALLOC_ENTRY_1DARRAY (scale_col_array, A.nrow);
           // call mc64
-          /*printf( " A = [\n" );
-          for(Int j = 0; j < A.ncol; j++) {
-            for(Int k = A.col_ptr[j]; k < A.col_ptr[j+1]; k++) {
-              printf( " %d %d %e\n", A.row_idx[k],j,A.val[k]);
-            }
-          }
-          printf("];\n");*/
           if(Options.verbose == BASKER_TRUE) {
             std::cout << " ++ calling MC64 ++ " << std::endl;
           }
@@ -713,10 +708,19 @@ namespace BaskerNS
           order_match_array(i) = i;
         }
       }
+      /*printf( " B = [\n" );
+      for(Int j = 0; j < A.ncol; j++) {
+        for(Int k = A.col_ptr[j]; k < A.col_ptr[j+1]; k++) {
+          printf( " %d %d %e\n", A.row_idx[k],j,A.val[k]);
+        }
+      }
+      printf("];\n");*/
       if(num_match < min(A.nrow, A.ncol)) {
-        std::cout << " ++ Num of matches returned " << num_match
-                  << " is less than nrow = " << A.nrow << " or ncol = " << A.ncol
-                  << std::endl;
+        if(Options.verbose == BASKER_TRUE) {
+          std::cout << " ++ Num of matches returned " << num_match
+                    << " is less than nrow = " << A.nrow << " or ncol = " << A.ncol
+                    << std::endl;
+        }
         return BASKER_ERROR;
       }
 

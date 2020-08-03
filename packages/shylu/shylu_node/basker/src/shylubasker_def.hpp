@@ -354,7 +354,9 @@ namespace BaskerNS
     //Init Matrix A.
     if(matrix_flag == BASKER_TRUE)
     {
-      printf("BASKER: YOU CANNOT RERUN SYMBOLIC\n");
+      if(Options.verbose == BASKER_TRUE) {
+        printf("BASKER: YOU CANNOT RERUN SYMBOLIC\n");
+      }
       return BASKER_ERROR;
     }
     else
@@ -430,7 +432,9 @@ namespace BaskerNS
     //This should also call create tree
     if(order_flag == BASKER_TRUE)
     {
-      printf("BASKER: YOU CANNOT RERUN ORDER\n");
+      if(Options.verbose == BASKER_TRUE) {
+        printf("BASKER: YOU CANNOT RERUN ORDER\n");
+      }
       return BASKER_ERROR;
     }
     else
@@ -492,7 +496,9 @@ namespace BaskerNS
 
     if(symb_flag == BASKER_TRUE)
     {
-      printf("BASKER: YOU CANNOT RERUN SFACTOR\n");
+      if(Options.verbose == BASKER_TRUE) {
+        printf("BASKER: YOU CANNOT RERUN SFACTOR\n");
+      }
       return BASKER_ERROR;
     }
     else
