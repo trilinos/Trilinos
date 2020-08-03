@@ -31,6 +31,7 @@ Lumping dropped entries
 filtered matrix: use lumping = 1   [default]
 filtered matrix: reuse graph = 1   [default]
 filtered matrix: reuse eigenvalue = 1   [default]
+filtered matrix: use root stencil = 0   [default]
 
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
@@ -176,6 +177,7 @@ Lumping dropped entries
 filtered matrix: use lumping = 1   [default]
 filtered matrix: reuse graph = 1   [default]
 filtered matrix: reuse eigenvalue = 1   [default]
+filtered matrix: use root stencil = 0   [default]
 
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
@@ -350,6 +352,7 @@ Lumping dropped entries
 filtered matrix: use lumping = 1   [default]
 filtered matrix: reuse graph = 1   [default]
 filtered matrix: reuse eigenvalue = 1   [default]
+filtered matrix: use root stencil = 0   [default]
 
 sa: damping factor = 1.33   [default]
 sa: calculate eigenvalue estimate = 0   [default]
@@ -436,6 +439,7 @@ Lumping dropped entries
 filtered matrix: use lumping = 1   [default]
 filtered matrix: reuse graph = 1   [default]
 filtered matrix: reuse eigenvalue = 1   [default]
+filtered matrix: use root stencil = 0   [default]
 
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
