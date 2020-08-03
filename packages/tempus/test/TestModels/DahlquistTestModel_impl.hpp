@@ -31,7 +31,7 @@ DahlquistTestModel(Scalar lambda)
 {
   isInitialized_ = false;
   int dim = 1;
-  Scalar xIC_ = Scalar(1.0);
+  xIC_ = Scalar(1.0);
 
   // Create x_space and f_space
   x_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(dim);

@@ -74,54 +74,46 @@ private:
     MODIFIER_TYPE modType = X_BEGIN_STEP;
     const int stageNumber = stepper->getStageNumber();
     Teuchos::SerialDenseVector<int,Scalar> c = stepper->getTableau()->c();
-    RCP<SolutionState<Scalar> > currentState = sh->getCurrentState();
     RCP<SolutionState<Scalar> > workingState = sh->getWorkingState();
     const Scalar dt = workingState->getTimeStep();
-    Scalar time = currentState->getTime();
+    Scalar time = sh->getCurrentState()->getTime();
     if (stageNumber >= 0) time += c(stageNumber)*dt;
-    RCP<Thyra::VectorBase<Scalar> > x;
+    RCP<Thyra::VectorBase<Scalar> > x = workingState->getX();
 
     switch(actLoc) {
       case StepperRKAppAction<Scalar>::BEGIN_STEP:
       {
         modType = X_BEGIN_STEP;
-        x = currentState->getX();
         break;
       }
       case StepperRKAppAction<Scalar>::BEGIN_STAGE:
       {
         modType = X_BEGIN_STAGE;
-        x = workingState->getX();
         break;
       }
       case StepperRKAppAction<Scalar>::BEFORE_SOLVE:
       {
         modType = X_BEFORE_SOLVE;
-        x = workingState->getX();
         break;
       }
       case StepperRKAppAction<Scalar>::AFTER_SOLVE:
       {
         modType = X_AFTER_SOLVE;
-        x = workingState->getX();
         break;
       }
       case StepperRKAppAction<Scalar>::BEFORE_EXPLICIT_EVAL:
       {
         modType = X_BEFORE_EXPLICIT_EVAL;
-        x = stepper->getStageX();
         break;
       }
       case StepperRKAppAction<Scalar>::END_STAGE:
       {
         modType = X_END_STAGE;
-        x = stepper->getStageX();
         break;
       }
       case StepperRKAppAction<Scalar>::END_STEP:
       {
         modType = X_END_STEP;
-        x = workingState->getX();
         time = workingState->getTime();
         break;
       }
