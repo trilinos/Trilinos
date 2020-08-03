@@ -61,7 +61,7 @@ namespace Tacho {
         const int ierr = Gemm<ArgTransA,ArgTransB,ArgAlgo>
           ::invoke(member, _alpha, _A, _B, _beta, _C);
 
-        Kokkos::single(Kokkos::PerTeam(member), [&]() {
+        Kokkos::single(Kokkos::PerTeam(member), [&, ierr]() {
             _C.set_future();
             r_val = ierr;
           });

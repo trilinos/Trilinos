@@ -50,7 +50,7 @@ namespace Tacho {
         const int ierr = Chol<ArgUplo,ArgAlgo>
           ::invoke(member, _A);
 
-        Kokkos::single(Kokkos::PerTeam(member), [&]() {
+        Kokkos::single(Kokkos::PerTeam(member), [&, ierr]() {
             _A.set_future();
             r_val = ierr;
           });

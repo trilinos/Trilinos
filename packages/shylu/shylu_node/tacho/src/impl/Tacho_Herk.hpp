@@ -59,7 +59,7 @@ namespace Tacho {
         const int ierr = Herk<ArgUplo,ArgTrans,ArgAlgo>
           ::invoke(member, _alpha, _A, _beta, _C);
 
-        Kokkos::single(Kokkos::PerThread(member), [&] () {
+        Kokkos::single(Kokkos::PerThread(member), [&, ierr] () {
             _C.set_future();
             r_val = ierr;
           });

@@ -138,7 +138,7 @@ namespace Tacho {
             bufsize = matrix_of_blocks_bufsize + abr_bufsize;
           
           char *buf = NULL;
-          Kokkos::single(Kokkos::PerTeam(member), [&](char *&val) {
+          Kokkos::single(Kokkos::PerTeam(member), [&, bufsize](char *&val) {
               val = (char*)_bufpool.allocate(bufsize);
               if (bufsize) {
                 if (val == NULL) {

@@ -61,7 +61,7 @@ namespace Tacho {
         const size_t bufsize = n*nrhs*sizeof(mat_value_type);
 
         mat_value_type* buf = NULL;
-        Kokkos::single(Kokkos::PerTeam(member), [&](mat_value_type *&val) {        
+        Kokkos::single(Kokkos::PerTeam(member), [&, bufsize](mat_value_type *&val) {        
             val = bufsize > 0 ? (mat_value_type*)_bufpool.allocate(bufsize) : NULL;
           }, buf);
 
@@ -71,7 +71,7 @@ namespace Tacho {
         CholSupernodes<Algo::Workflow::Serial>
           ::solve_upper_recursive_serial(member, _info, _sid, final, buf, bufsize);
 
-        Kokkos::single(Kokkos::PerTeam(member), [&]() {
+        Kokkos::single(Kokkos::PerTeam(member), [&, bufsize]() {
             if (bufsize)
               _bufpool.deallocate(buf, bufsize);
           });

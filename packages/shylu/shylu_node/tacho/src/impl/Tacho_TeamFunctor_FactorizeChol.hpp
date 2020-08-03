@@ -212,7 +212,7 @@ namespace Tacho {
           const value_type *src = (value_type*)ABR.data();
           
           Kokkos::parallel_for
-            (Kokkos::TeamThreadRange(member, srcsize), [&](const ordinal_type &j) {
+            (Kokkos::TeamThreadRange(member, srcsize), [&, srcsize, src, tgt](const ordinal_type &j) {
               const value_type *__restrict__ ss = src + j*srcsize;
               /* */ value_type *__restrict__ tt = tgt + j*srcsize;
               Kokkos::parallel_for
@@ -228,7 +228,7 @@ namespace Tacho {
       
       // loop over target
       //const size_type s2tsize = srcsize*sizeof(ordinal_type)*member.team_size();
-      Kokkos::parallel_for(Kokkos::TeamThreadRange(member, sbeg, send), [&](const ordinal_type &i) {
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(member, sbeg, send), [&, buf, srcsize](const ordinal_type &i) {
           ordinal_type *s2t = ((ordinal_type*)(buf)) + member.team_rank()*srcsize;
           const auto &s = info.supernodes(info.sid_block_colidx(i).first);
           {
@@ -238,7 +238,7 @@ namespace Tacho {
               tgtsize = tgtend - tgtbeg;
             
             const ordinal_type *t_colidx = &info.gid_colidx(s.gid_col_begin + tgtbeg);
-            Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, srcsize), [&](const ordinal_type &k) {
+            Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, srcsize), [&, t_colidx, s_colidx, tgtsize](const ordinal_type &k) {
                 s2t[k] = -1;
                 auto found = lower_bound(&t_colidx[0], &t_colidx[tgtsize-1], s_colidx[k], 
                                          [](ordinal_type left, ordinal_type right) { 
