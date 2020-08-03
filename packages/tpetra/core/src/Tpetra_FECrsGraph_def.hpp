@@ -286,11 +286,20 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(con
           flag[indices[j]] = true;
       }
       
-      bool lclSuccess = true;
+      bool success = true;
       for(size_t i=0; i<(size_t)flag.size(); i++)
-        if(!flag[i]) {lclSuccess=false; break;}
+        if(!flag[i]) {success=false; break;}
+
+      // Perform a reduction over the input comm, so that ranks with success=true won't be hanging.
+      // Note: this only ensures things don't hang 
+      int lclSuccess = success ? 1 : 0;
+      int gblSuccess = lclSuccess;
+      auto comm = this->getComm();
+      if (!comm.is_null()) {
+        Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_MIN, 1, &lclSuccess, &gblSuccess);
+      }
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (lclSuccess ==false,
+        (gblSuccess == 0,
          std::invalid_argument, "if you own an element (in the finite element sense) you "
          "must also own one of the attached nodes.  This assumption has been violated in "
          "your matrix fill.");
