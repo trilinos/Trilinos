@@ -82,7 +82,8 @@ std::map<std::string, int> getListOfValidSmootherTypes()
   smootherTypes.insert(std::pair<std::string, int>("None",      0));
   smootherTypes.insert(std::pair<std::string, int>("Jacobi",    1));
   smootherTypes.insert(std::pair<std::string, int>("Gauss",     2));
-  smootherTypes.insert(std::pair<std::string, int>("Chebyshev", 3));
+  smootherTypes.insert(std::pair<std::string, int>("SymmetricGauss",     3));
+  smootherTypes.insert(std::pair<std::string, int>("Chebyshev", 4));
 
   return smootherTypes;
 }
@@ -196,7 +197,8 @@ void GSIterate(RCP<Teuchos::ParameterList> smootherParams,
                const std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > regionGrpMats, // matrices in true region layout
                const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > revisedRowMapPerGrp, ///< revised row maps in region layout [in] (actually extracted from regionGrpMats)
                const std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > rowImportPerGrp,///< row importer in region layout [in]
-	       bool& zeroInitGuess
+               bool& zeroInitGuess,
+               bool sgs = false
                )
 {
 #include "Xpetra_UseShortNames.hpp"
@@ -260,6 +262,25 @@ void GSIterate(RCP<Teuchos::ParameterList> smootherParams,
       OneregX[k] += ldelta[k];
     }
     zeroInitGuess = false;
+
+    if( sgs ){
+      for (size_t k = numRows; k--;) {
+        // Extract a single row
+        ArrayView<const LO> AAcols;
+        ArrayView<const SC> AAvals;
+        regionGrpMats[0]->getLocalRowView(k, AAcols, AAvals);
+        const int *Acols = AAcols.getRawPtr();
+        const SC  *Avals = AAvals.getRawPtr();
+        const LO RowLeng = AAvals.size();
+
+        // Loop over entries in row k and perform GS iteration
+        for (LO kk = 0; kk < RowLeng; kk++) {
+          OneregRes[k] -= Avals[kk]*ldelta[Acols[kk]];
+        }
+        ldelta[k] = damping*Onediag[k]*OneregRes[k];
+        OneregX[k] += ldelta[k];
+      }
+    }
   }
 
   return;
@@ -521,11 +542,12 @@ void smootherSetup(RCP<Teuchos::ParameterList> params,
   }
   case 1: // Jacobi
   case 2: // Gauss-Seidel
+  case 3: // Symmetric Gauss-Seidel
   {
     computeInverseDiagonal(params, revisedRowMapPerGrp, regionGrpMats, rowImportPerGrp);
     break;
   }
-  case 3: // Chebyshev
+  case 4: // Chebyshev
   {
     computeInverseDiagonal(params, revisedRowMapPerGrp, regionGrpMats, rowImportPerGrp);
     chebyshevSetup(params, regionGrpMats, regionInterfaceScaling, revisedRowMapPerGrp, rowImportPerGrp);
@@ -570,7 +592,12 @@ void smootherApply(RCP<Teuchos::ParameterList> params,
     GSIterate(params, regX, regB, regionGrpMats, revisedRowMapPerGrp, rowImportPerGrp, zeroInitGuess);
     break;
   }
-  case 3: // Chebyshev
+  case 3: // Symmetric Gauss-Seidel
+  {
+    GSIterate(params, regX, regB, regionGrpMats, revisedRowMapPerGrp, rowImportPerGrp, zeroInitGuess, true);
+    break;
+  }
+  case 4: // Chebyshev
     chebyshevIterate(params, regX, regB, regionGrpMats, revisedRowMapPerGrp, rowImportPerGrp, zeroInitGuess);
   {
     break;
