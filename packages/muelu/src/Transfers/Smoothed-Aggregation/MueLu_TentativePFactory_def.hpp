@@ -287,7 +287,7 @@ namespace MueLu {
     // Aggregates map is based on the amalgamated column map
     // We can skip global-to-local conversion if LIDs in row map are
     // same as LIDs in column map
-    bool goodMap = isGoodMap(*rowMap, *colMap);
+    bool goodMap = MueLu::Utilities<SC,LO,GO,NO>::MapsAreNested(*rowMap, *colMap);
 
     // Create a lookup table to determine the rows (fine DOFs) that belong to a given aggregate.
     // aggStart is a pointer into aggToRowMapLO
@@ -959,25 +959,7 @@ namespace MueLu {
     Ptentative->fillComplete(coarseMap, A->getDomainMap());
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::isGoodMap(const Map& rowMap, const Map& colMap) const {
-    ArrayView<const GO> rowElements = rowMap.getNodeElementList();
-    ArrayView<const GO> colElements = colMap.getNodeElementList();
 
-    const size_t numElements = rowElements.size();
-
-    if (size_t(colElements.size()) < numElements)
-      return false;
-
-    bool goodMap = true;
-    for (size_t i = 0; i < numElements; i++)
-      if (rowElements[i] != colElements[i]) {
-        goodMap = false;
-        break;
-      }
-
-    return goodMap;
-  }
 
 } //namespace MueLu
 

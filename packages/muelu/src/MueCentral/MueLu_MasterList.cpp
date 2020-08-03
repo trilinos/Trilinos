@@ -276,6 +276,7 @@ namespace MueLu {
   "<Parameter name=\"pcoarsen: lo basis\" type=\"string\" value=\"\"/>"
   "<Parameter name=\"smoother: neighborhood type\" type=\"string\" value=\"\"/>"
   "<Parameter name=\"filtered matrix: use lumping\" type=\"bool\" value=\"true\"/>"
+  "<Parameter name=\"filtered matrix: use root stencil\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"filtered matrix: reuse eigenvalue\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"filtered matrix: reuse graph\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"emin: iterative method\" type=\"string\" value=\"cg\"/>"
@@ -741,6 +742,8 @@ namespace MueLu {
          ("smoother: neighborhood type","smoother: neighborhood type")
       
          ("filtered matrix: use lumping","filtered matrix: use lumping")
+      
+         ("filtered matrix: use root stencil","filtered matrix: use root stencil")
       
          ("filtered matrix: reuse eigenvalue","filtered matrix: reuse eigenvalue")
       
