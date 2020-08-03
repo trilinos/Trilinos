@@ -62,6 +62,27 @@
 
 namespace MueLuTests {
 
+  template<class T>
+  void print_matrix(const char * label,const Teuchos::RCP<T> &Mat) {
+    ArrayRCP<const size_t> rowptr;
+    ArrayRCP<const typename T::local_ordinal_type> colind;
+    ArrayRCP<const typename T::scalar_type> vals;
+    Mat->getAllValues(rowptr,colind,vals);
+    
+    printf("*** %s ***\n",label);
+    printf("rowptr = ");
+    for(int i=0; i<(int)rowptr.size();i++)
+      printf("%d ",(int)rowptr[i]);
+    printf("\ncolind =");
+    for(int i=0; i<(int)colind.size();i++)
+      printf("%d ",(int)colind[i]);
+    printf("\nvalues =");
+    for(int i=0; i<(int)vals.size();i++)
+      printf("%8.1e ",vals[i]);
+    printf("\n");
+  }
+  
+
 template
 <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 class AggregateGenerator {
@@ -74,9 +95,12 @@ public:
 
   static void gimmeUncoupledAggregates( Level & level, 
 					RCP<CoalesceDropFactory> & dropFact, RCP<AmalgamationFactory> & amalgFact,RCP<UncoupledAggregationFactory> &aggFact,
-bool bPhase1 = true, bool bPhase2a = true, bool bPhase2b = true, bool bPhase3 = true) {
+					bool bPhase1 = true, bool bPhase2a = true, bool bPhase2b = true, bool bPhase3 = true, double dropTol=0.0) {
     amalgFact = rcp(new AmalgamationFactory());
+    Teuchos::ParameterList dropParams;  
     dropFact = rcp(new CoalesceDropFactory());
+    dropParams.set("aggregation: drop tol",dropTol);
+    dropFact->SetParameterList(dropParams);
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
     
     // Setup aggregation factory (use default factory for graph)
@@ -861,42 +885,55 @@ bool bPhase1 = true, bool bPhase2a = true, bool bPhase2b = true, bool bPhase3 = 
     MUELU_TESTING_SET_OSTREAM
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
-    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build2DPoisson(11,11);
+
+    // Make a "hot dog" matrix
+    Teuchos::ParameterList matrixParams;
+    matrixParams.set("matrixType","Laplace2D");
+    double factor=10;
+    matrixParams.set("stretchx",1.0);
+    matrixParams.set("stretchy",factor);
+
+
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildMatrix(matrixParams,TestHelpers::Parameters::getLib());
+									 
     RCP<AmalgamationInfo> amalgInfo;
     Level level;
     TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(level);
     level.Set("A", A);   
- 
+     print_matrix("A",MueLu::Utilities<SC,LO,GO,NO>::Op2NonConstTpetraCrs(A));
+
     RCP<CoalesceDropFactory> dropFact;
     RCP<AmalgamationFactory> amalgFact; 
     RCP<UncoupledAggregationFactory> aggFact;    
-
-    // Now filter
+    double dropTol = 0.025;
+    
+    amalgFact = rcp(new AmalgamationFactory());
+    dropFact = rcp(new CoalesceDropFactory());
+    dropFact->SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(dropTol));
+    dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+    
+    // Setup aggregation factory (use default factory for graph)
+    aggFact = rcp(new UncoupledAggregationFactory());
+    aggFact->SetFactory("Graph", dropFact);
+    
     RCP<FilteredAFactory> filterFact = rcp(new FilteredAFactory);
+    filterFact->SetFactory("UnAmalgamationInfo", amalgFact);
+    filterFact->SetFactory("Aggregates", aggFact);
+    filterFact->SetFactory("Graph",dropFact);
+    filterFact->SetFactory("Filtering",dropFact);
+
     Teuchos::ParameterList params;
     params.set("filtered matrix: use lumping",true);
     params.set("filtered matrix: use root stencil",true);
     filterFact->SetParameterList(params);
     level.Request("A",filterFact.get());
-    
-    AggregateGenerator<SC,LO,GO,NO>::gimmeUncoupledAggregates(level,dropFact,amalgFact,aggFact);
+
     filterFact->Build(level);
-    RCP<Matrix> Afiltered = level.Get("A",filterFact.get());
+    RCP<Matrix> Afiltered = level.Get<RCP<Matrix> >("A",filterFact.get());
 
     // Now check stuff
-    ArrayRCP<size_t> rowptr;
-    ArrayRCP<LO> colind;
-    ArrayRCP<SC> vals;
-    Afiltered->getAllValues(rowptr,colind,vals);
-
-    printf("rowptr = ");
-    for(int i=0; i<(int)rowptr.size();i++)
-      printf("%d ",rowptr[i]);
-    printf("\ncolind =");
-    for(int i=0; i<(int)colind.size();i++)
-      printf("%d ",rowptr[i]);
-    printf("\n");
-
+    print_matrix("A",MueLu::Utilities<SC,LO,GO,NO>::Op2NonConstTpetraCrs(A));
+    print_matrix("Afiltered",MueLu::Utilities<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Afiltered));
 
     TEST_EQUALITY(true, true);
   }
