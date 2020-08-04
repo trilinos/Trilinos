@@ -652,6 +652,8 @@ namespace Tpetra {
     k_lclInds1D_ = lclGraph_.entries;
     k_rowPtrs_ = lclGraph_.row_map;
 
+    set_need_sync_host_uvm_access(); // lclGraph_ potentially still in a kernel
+
     const bool callComputeGlobalConstants = params.get () == nullptr ||
       params->get ("compute global constants", true);
 
@@ -695,6 +697,8 @@ namespace Tpetra {
 
     k_lclInds1D_ = lclGraph_.entries;
     k_rowPtrs_ = lclGraph_.row_map;
+
+    set_need_sync_host_uvm_access(); // lclGraph_ potentially still in a kernel
 
     if (! params.is_null() && params->isParameter("sorted") &&
         ! params->get<bool>("sorted")) {
@@ -2962,6 +2966,9 @@ namespace Tpetra {
     noRedundancies_      = true;
     k_lclInds1D_         = columnIndices;
     k_rowPtrs_           = rowPointers;
+
+    set_need_sync_host_uvm_access(); // columnIndices and rowPointers potentially still in a kernel
+
     // Storage MUST be packed, since the interface doesn't give any
     // way to indicate any extra space at the end of each row.
     storageStatus_       = Details::STORAGE_1D_PACKED;
@@ -4016,6 +4023,8 @@ namespace Tpetra {
 
     // Build the local graph.
     lclGraph_ = local_graph_type (ind_d, ptr_d_const);
+
+    set_need_sync_host_uvm_access(); // make sure kernel setup of indices is fenced before a host access
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -4374,16 +4383,6 @@ namespace Tpetra {
       Teuchos::OrdinalTraits<size_t>::invalid();
 
     using LO = local_ordinal_type;
-
-    // KJ: This one is a bit different from the above. Conservatively thinking,
-    // we also need the fence here as lclGraph_.row_map is on UVM and it can be
-    // still updated. In practice, the local graph construction should be done
-    // before this is called. This routine is computeLocalConstants. If we want
-    // a better code, we need a flag stating that the local graph is completed
-    // and safe to use it without fence.
-    // For now, I recommend to put the fence. Defining the state of local
-    // object can be improvements in the code.
-    execution_space().fence ();
 
     auto ptr = this->lclGraph_.row_map;
     const LO lclNumRows = ptr.extent(0) == 0 ?
@@ -5194,6 +5193,8 @@ namespace Tpetra {
       TEUCHOS_ASSERT( k_rowPtrs_.extent(0) == row_ptrs_beg.extent(0) );
     }
     this->k_rowPtrs_ = row_ptrs_beg;
+
+    set_need_sync_host_uvm_access(); // need fence before host UVM access of k_rowPtrs_
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -5232,14 +5233,6 @@ namespace Tpetra {
     std::unique_ptr<padding_type> padding(
       new padding_type(myRank, numSameIDs,
                        permuteFromLIDs.extent(0)));
-
-    // We're accessing data on host, so make sure all device
-    // computations on the graphs' data are done.
-    //
-    // NOTE (mfh 08 Feb 2020) If we ever get rid of this fence, look
-    // carefully in computeCrsPaddingFor{Same,Permuted}IDs to see if
-    // we need a fence there.
-    Kokkos::fence();
 
     computeCrsPaddingForSameIDs(*padding, source,
                                 static_cast<LO>(numSameIDs));
@@ -5286,6 +5279,8 @@ namespace Tpetra {
 
     std::vector<GO> srcGblColIndsScratch;
     std::vector<GO> tgtGblColIndsScratch;
+
+    execute_sync_host_uvm_access(); // protect host UVM access
     for (LO lclRowInd = 0; lclRowInd < numSameIDs; ++lclRowInd) {
       const GO srcGblRowInd = srcRowMap.getGlobalElement(lclRowInd);
       const GO tgtGblRowInd = tgtRowMap.getGlobalElement(lclRowInd);
@@ -5355,6 +5350,8 @@ namespace Tpetra {
     std::vector<GO> srcGblColIndsScratch;
     std::vector<GO> tgtGblColIndsScratch;
     const LO numPermutes = static_cast<LO>(permuteToLIDs_h.extent(0));
+
+    execute_sync_host_uvm_access(); // protect host UVM access
     for (LO whichPermute = 0; whichPermute < numPermutes; ++whichPermute) {
       const LO srcLclRowInd = permuteFromLIDs_h[whichPermute];
       const GO srcGblRowInd = srcRowMap.getGlobalElement(srcLclRowInd);
@@ -5417,7 +5414,7 @@ namespace Tpetra {
     } ();
     std::unique_ptr<padding_type> padding(
       new padding_type(myRank, numImports));
-    Kokkos::fence(); // Make sure device sees changes made by host
+
     if (imports.need_sync_host()) {
       imports.sync_host();
     }
@@ -5439,6 +5436,7 @@ namespace Tpetra {
 
     std::vector<GO> tgtGblColIndsScratch;
     size_t offset = 0;
+    execute_sync_host_uvm_access(); // protect host UVM access
     for (LO whichImport = 0; whichImport < numImports; ++whichImport) {
       // CrsGraph packs just global column indices, while CrsMatrix
       // packs bytes (first the number of entries in the row, then the
@@ -5514,7 +5512,7 @@ namespace Tpetra {
     } ();
     std::unique_ptr<padding_type> padding(
       new padding_type(myRank, numImports));
-    Kokkos::fence(); // Make sure host sees changes made by device
+
     if (imports.need_sync_host()) {
       imports.sync_host();
     }
@@ -5537,6 +5535,7 @@ namespace Tpetra {
     std::vector<GO> srcGblColIndsScratch;
     std::vector<GO> tgtGblColIndsScratch;
     size_t offset = 0;
+    execute_sync_host_uvm_access(); // protect host UVM access
     for (LO whichImport = 0; whichImport < numImports; ++whichImport) {
       // CrsGraph packs just global column indices, while CrsMatrix
       // packs bytes (first the number of entries in the row, then the
@@ -5788,10 +5787,6 @@ namespace Tpetra {
        "exportLIDs.size() = " << numExportLIDs << " != numPacketsPerLID.size()"
        " = " << numPacketsPerLID.size () << ".");
 
-    // We may be accessing UVM data on host below, so ensure that the
-    // device is done accessing it.
-    device_execution_space().fence ();
-
     const map_type& rowMap = * (this->getRowMap ());
     const map_type* const colMapPtr = this->colMap_.getRawPtr ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -5823,6 +5818,7 @@ namespace Tpetra {
     Kokkos::View<size_t, host_device_type> errCountView (&errCount);
     constexpr size_t ONE = 1;
 
+    execute_sync_host_uvm_access(); // protect host UVM access
     Kokkos::parallel_reduce ("Tpetra::CrsGraph::pack: totalNumPackets",
       inputRange,
       [=] (const LO& i, size_t& curTotalNumPackets) {
@@ -5952,10 +5948,6 @@ namespace Tpetra {
         }
       });
 
-    // We may have accessed UVM data on host above, so ensure that the
-    // device sees these changes.
-    device_execution_space().fence ();
-
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (errCount != 0, std::logic_error, "Packing encountered "
        "one or more errors!  errCount = " << errCount
@@ -6011,10 +6003,6 @@ namespace Tpetra {
     TEUCHOS_ASSERT( ! exportLIDs.need_sync_host () );
     auto exportLIDs_h = exportLIDs.view_host ();
 
-    // We may be accessing UVM data on host below, so ensure that the
-    // device is done accessing it.
-    device_execution_space().fence ();
-
     const map_type& rowMap = * (this->getRowMap ());
     const map_type* const colMapPtr = this->colMap_.getRawPtr ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -6050,6 +6038,7 @@ namespace Tpetra {
       std::cerr << os.str ();
     }
 
+    execute_sync_host_uvm_access(); // protect host UVM access
     Kokkos::parallel_reduce
       ("Tpetra::CrsGraph::pack: totalNumPackets",
        inputRange,
@@ -6108,11 +6097,6 @@ namespace Tpetra {
     exports.clear_sync_state ();
     exports.modify_host ();
     auto exports_h = exports.view_host ();
-
-    // The graph may store its data in UVM memory, so make sure that
-    // any device kernels are done modifying the graph's data before
-    // reading the data.
-    device_execution_space().fence ();
 
     errCount = 0;
     Kokkos::parallel_scan
@@ -7524,6 +7508,8 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   swap(CrsGraph<LocalOrdinal, GlobalOrdinal, Node>& graph)
   {
+    std::swap(graph.need_sync_host_uvm_access, this->need_sync_host_uvm_access);
+
     std::swap(graph.rowMap_, this->rowMap_);
     std::swap(graph.colMap_, this->colMap_);
     std::swap(graph.rangeMap_, this->rangeMap_);

@@ -2332,6 +2332,22 @@ namespace Tpetra {
     /// This comes from Tpetra::Details::Behavior::debug("CrsGraph").
     bool verbose_ = getVerbose();
 
+  private:
+    //! Track if we still might need to fence for the StaticGraph.
+    mutable bool need_sync_host_uvm_access = false;
+
+    //! Request fence before next host access.
+    void set_need_sync_host_uvm_access() {
+      need_sync_host_uvm_access = true;
+    }
+
+    //! Fence if necessary and set flag so we don't duplicate.
+    void execute_sync_host_uvm_access() const {
+      if(need_sync_host_uvm_access) {
+        Kokkos::fence();
+        need_sync_host_uvm_access = false;
+      }
+    }
   }; // class CrsGraph
 
   /// \brief Nonmember function to create an empty CrsGraph given a
