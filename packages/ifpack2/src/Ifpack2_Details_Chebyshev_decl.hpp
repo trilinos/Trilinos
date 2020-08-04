@@ -474,6 +474,9 @@ private:
   //! Number of power method iterations for estimating the max eigenvalue.
   int eigMaxIters_;
 
+  //! Frequency of normalization in the power method.
+  int eigNormalizationFreq_;
+
   //! Whether to assume that the X input to apply() is always zero.
   bool zeroStartingSolution_;
 

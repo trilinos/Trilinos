@@ -39,7 +39,7 @@ namespace Tacho {
             const ordinal_type j = member.league_rank();
             Kokkos::parallel_for
               (Kokkos::TeamVectorRange(member, m),
-               [&](const ordinal_type &i) {
+              [&, diag, zero, A, j](const ordinal_type &i) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
                 A(i,j) = i==j ? diag : zero;
               });
           });
