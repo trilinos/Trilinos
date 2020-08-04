@@ -271,9 +271,11 @@ TEST(StkIo, check_memory)
 class StkIoResultsOutput : public stk::unit_test_util::MeshFixture
 {
 protected:
-    void setup_mesh(const std::string & meshSpec, stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    void setup_mesh(const std::string & meshSpec,
+                    stk::mesh::BulkData::AutomaticAuraOption auraOption,
+                    unsigned bucketCapacity = stk::mesh::impl::BucketRepository::default_bucket_capacity) override
     {
-        setup_empty_mesh(auraOption);
+        setup_empty_mesh(auraOption, bucketCapacity);
 
         stk::mesh::Field<int> & field = get_meta().declare_field<stk::mesh::Field<int>>(stk::topology::NODE_RANK, "nodal_field");
         const int initValue = 0;

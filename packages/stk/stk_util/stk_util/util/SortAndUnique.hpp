@@ -34,7 +34,8 @@
 #ifndef stk_util_util_SortAndUnique_hpp
 #define stk_util_util_SortAndUnique_hpp
 
-#include<algorithm>
+#include <algorithm>
+#include <functional>
 
 namespace stk
 {

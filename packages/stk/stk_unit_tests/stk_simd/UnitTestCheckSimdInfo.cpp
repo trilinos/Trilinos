@@ -33,47 +33,24 @@
 
 #include "gtest/gtest.h"
 
-#ifndef STK_KOKKOS_SIMD
-#define STK_KOKKOS_SIMD
-#endif
-
-#include "Kokkos_Core.hpp"
-#include "stk_simd/Simd.hpp"
-
-int get_float_width_on_device()
-{
-  int result;
-
-  Kokkos::parallel_reduce(1, KOKKOS_LAMBDA(const int& i, int& width) {
-    stk::simd::Float f;
-    width = f._data.size();
-  }, result);
-
-  return result;
-}
-
-int get_double_width_on_device()
-{
-  int result;
-
-  Kokkos::parallel_reduce(1, KOKKOS_LAMBDA(const int& i, int& width) {
-    stk::simd::Double d;
-    width = d._data.size();
-  }, result);
-
-  return result;
-}
+#include "stk_unit_test_utils/SimdDeviceWidths.hpp"
 
 #ifdef KOKKOS_ENABLE_CUDA
-TEST( SimdInfoDevice, checkWidths )
+TEST( SimdInfo, checkDeviceWidths )
 {
-  EXPECT_EQ(get_float_width_on_device(), 1);
-  EXPECT_EQ(get_double_width_on_device(), 1);
-}
-
-TEST( SimdInfoDevice, printWidths )
-{
-  std::cout << "width of stk::simd::Float on device " << get_float_width_on_device() << std::endl;
-  std::cout << "width of stk::simd::Double on device " << get_double_width_on_device() << std::endl;
+  EXPECT_EQ(stk::unit_test_util::get_float_width_on_device(), 1);
+  EXPECT_EQ(stk::unit_test_util::get_double_width_on_device(), 1);
 }
 #endif
+
+using FloatDataNative = SIMD_NAMESPACE::simd<float, SIMD_NAMESPACE::simd_abi::native>;
+using DoubleDataNative = SIMD_NAMESPACE::simd<double, SIMD_NAMESPACE::simd_abi::native>;
+
+TEST( SimdInfo, checkTypes )
+{
+  stk::simd::Float f;
+  EXPECT_TRUE((std::is_same<decltype(f._data), FloatDataNative>::value));
+
+  stk::simd::Double d;
+  EXPECT_TRUE((std::is_same<decltype(d._data), DoubleDataNative>::value));
+}

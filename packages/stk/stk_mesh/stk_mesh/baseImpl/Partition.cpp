@@ -217,11 +217,11 @@ void Partition::remove_impl()
   internal_check_invariants();
 }
 
-void Partition::default_sort_if_needed()
+void Partition::default_sort_if_needed(bool mustSortFacesByNodeIds)
 {
   if (!empty() && m_updated_since_sort)
   {
-      sort(GlobalIdEntitySorter());
+      sort(GlobalIdEntitySorter(mustSortFacesByNodeIds));
   }
 }
 

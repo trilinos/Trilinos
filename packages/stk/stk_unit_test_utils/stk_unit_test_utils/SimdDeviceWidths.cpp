@@ -31,41 +31,35 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "gtest/gtest.h"
+#include "Kokkos_Core.hpp"
 
-#include "stk_unit_test_utils/PrintType.hpp"
+#include "SimdDeviceWidths.hpp"
 
-#ifndef STK_KOKKOS_SIMD
-#define STK_KOKKOS_SIMD
-#endif
+namespace stk {
+namespace unit_test_util {
 
-#include "stk_simd/Simd.hpp"
-
-TEST( SimdInfo, printWidths )
+int get_float_width_on_device()
 {
-  std::cout << "stk::simd::nfloats " << stk::simd::nfloats << std::endl;
-  std::cout << "stk::simd::ndoubles " << stk::simd::ndoubles << std::endl;
+  int result = 0;
+
+  Kokkos::parallel_reduce(1, KOKKOS_LAMBDA(int i, int& width) {
+    stk::simd::Float f;
+    width = f._data.size();
+  }, result);
+
+  return result;
 }
 
-TEST( SimdInfo, printTypes )
+int get_double_width_on_device()
 {
-  std::cout << "Datatype stored by stk::simd::Float is ";
-  stk::simd::Float f;
-  stk::unit_test_util::print_type(f._data);
+  int result = 0;
 
-  std::cout << "Datatype stored by stk::simd::Double is ";
-  stk::simd::Double d;
-  stk::unit_test_util::print_type(d._data);
+  Kokkos::parallel_reduce(1, KOKKOS_LAMBDA(int i, int& width) {
+    stk::simd::Double d;
+    width = d._data.size();
+  }, result);
+
+  return result;
 }
 
-using FloatDataNative = SIMD_NAMESPACE::simd<float, SIMD_NAMESPACE::simd_abi::native>;
-using DoubleDataNative = SIMD_NAMESPACE::simd<double, SIMD_NAMESPACE::simd_abi::native>;
-
-TEST( SimdInfo, checkTypes )
-{
-  stk::simd::Float f;
-  EXPECT_TRUE((std::is_same<decltype(f._data), FloatDataNative>::value));
-
-  stk::simd::Double d;
-  EXPECT_TRUE((std::is_same<decltype(d._data), DoubleDataNative>::value));
-}
+} }

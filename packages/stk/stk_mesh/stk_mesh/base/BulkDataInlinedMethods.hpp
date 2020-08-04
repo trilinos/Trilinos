@@ -563,119 +563,6 @@ void BulkData::internal_check_unpopulated_relations(Entity entity, EntityRank ra
 #endif
 }
 
-struct EntityGhostData
-{
-    enum DIRECTION {
-        INVALID,
-        NONE,
-        SEND,
-        RECEIVE
-    };
-    enum GHOST_LEVEL {
-        LOCALLY_OWNED = -1,
-        SHARED = 0,
-        AURA = 1
-    };
-    DIRECTION direction;
-    int ghostingLevel;
-    int processor;
-    Entity entity;
-    const BulkData * bulkData;
-
-    EntityGhostData()
-    : direction(INVALID)
-    , ghostingLevel(-2)
-    , processor(-1)
-    , entity()
-    , bulkData(NULL) { }
-
-    // insert to any ostream-like s
-    template<class OStream> friend inline OStream& operator << (OStream& s, const DIRECTION& dir)
-    {
-        switch (dir) {
-            case INVALID:
-                s << "INVALID";
-                break;
-            case NONE:
-                s << "NONE";
-                break;
-            case SEND:
-                s << "SEND";
-                break;
-            case RECEIVE:
-                s << "RECEIVE";
-                break;
-            default:
-                s << "INVALID";
-        }
-        return s;
-    }
-    template<class OStream> inline OStream& printGhostLevel(OStream& s, int gl) const
-    {
-        switch (gl) {
-            case LOCALLY_OWNED:
-                s << "LOCALLY_OWNED";
-                break;
-            case SHARED:
-                s << "SHARED";
-                break;
-            case AURA:
-                s << "AURA";
-                break;
-            default:
-                s << "CUSTOM_" << (gl-1);
-        }
-        return s;
-    }
-    template<class OStream> friend inline OStream& operator << (OStream& s, const EntityGhostData& egd)
-    {
-        if (egd.bulkData != NULL) {
-            s << "(Entity_gid=";
-            s << egd.bulkData->identifier(egd.entity)
-              << ", rank=" << static_cast<unsigned int>(egd.bulkData->entity_rank(egd.entity));
-        }
-        else {
-            s << "(Entity_lid=";
-            s << egd.entity;
-        }
-        s << ", direction=" << egd.direction
-          << ", processor=" << egd.processor
-          << ", ghosting level=";
-        egd.printGhostLevel(s,egd.ghostingLevel);
-        s << ")";
-        return s;
-    }
-};
-
-struct StoreEntityInSet
-{
-    StoreEntityInSet() : entity_set() {}
-    void operator()(Entity entity) {
-       entity_set.insert(entity);
-    }
-    std::set<Entity> entity_set;
-};
-
-struct StoreEntityProcInSet
-{
-    StoreEntityProcInSet(const BulkData & mesh_in)
-    :mesh(mesh_in)
-    ,entity_proc_set(EntityLess(mesh_in))
-    ,target(-1) {}
-
-    bool operator()(Entity entity) {
-        EntityProc ep(entity,target);
-        if (entity_proc_set.find(ep) == entity_proc_set.end()) {
-            entity_proc_set.insert(ep);
-            return true;
-        }
-        return false;
-    }
-    const BulkData & mesh;
-    std::set<EntityProc,EntityLess> entity_proc_set;
-    int target;
-};
-
 ////////////////
 
 inline void BulkData::copy_entity_fields(Entity src, Entity dst)
@@ -710,50 +597,13 @@ inline bool BulkData::relation_exist( const Entity entity, EntityRank subcell_ra
   return found;
 }
 
-inline bool BulkData::element_side_polarity( const Entity elem ,
-      const Entity side , unsigned local_side_id ) const
-{
-    // 09/14/10:  TODO:  tscoffe:  Will this work in 1D??
-    const bool is_side = entity_rank(side) != stk::topology::EDGE_RANK;
-    stk::topology elem_top = bucket(elem).topology();
-
-    const unsigned side_count = ! (elem_top != stk::topology::INVALID_TOPOLOGY) ? 0 : (
-        is_side ? elem_top.num_sides()
-            : elem_top.num_edges() );
-
-    ThrowErrorMsgIf( elem_top == stk::topology::INVALID_TOPOLOGY,
-        "For Element[" << identifier(elem) << "], element has no defined topology");
-
-    ThrowErrorMsgIf( static_cast<unsigned>(side_count) <= local_side_id,
-        "For Element[" << identifier(elem) << "], " <<
-        "side: " << identifier(side) << ", " <<
-        "local_side_id = " << local_side_id <<
-        " ; unsupported local_side_id");
-
-    stk::topology side_top =
-        is_side ? elem_top.side_topology( local_side_id )
-            : elem_top.sub_topology( stk::topology::EDGE_RANK, local_side_id );
-
-    std::vector<unsigned> side_map(side_top.num_nodes());
-    elem_top.side_node_ordinals( local_side_id, side_map.data());
-
-    Entity const *elem_nodes = begin_nodes(elem);
-    Entity const *side_nodes = begin_nodes(side);
-    const unsigned n = side_top.num_nodes();
-    bool good = false ;
-    for ( unsigned i = 0 ; !good && i < n ; ++i ) {
-        good = true;
-        for ( unsigned j = 0; good && j < n ; ++j ) {
-          good = side_nodes[(j+i)%n] == elem_nodes[ side_map[j] ];
-        }
-    }
-    return good ;
-}
-
 inline VolatileFastSharedCommMapOneRank const& BulkData::volatile_fast_shared_comm_map(EntityRank rank) const
 {
   ThrowAssert(this->in_synchronized_state());
   ThrowAssertMsg(rank < stk::topology::ELEMENT_RANK, "Cannot shared entities of rank: " << rank);
+  if (m_volatile_fast_shared_comm_map_sync_count < synchronized_count()) {
+    internal_update_fast_comm_maps();
+  }
   return m_volatile_fast_shared_comm_map[rank];
 }
 
