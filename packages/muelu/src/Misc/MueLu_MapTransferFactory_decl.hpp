@@ -49,8 +49,6 @@
 
 #include <Xpetra_Map_fwd.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>
-#include <Xpetra_Matrix_fwd.hpp>
-
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"
