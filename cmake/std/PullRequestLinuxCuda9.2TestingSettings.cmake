@@ -122,3 +122,5 @@ set (KokkosCore_UnitTest_Cuda_MPI_1_EXTRA_ARGS
   CACHE STRING "Temporary disable for CUDA PR testing")
 
 include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")
+
+set (Zoltan_ch_simple_zoltan_parallel_DISABLE ON CACHE BOOL "Disabled for Release 13.0")
