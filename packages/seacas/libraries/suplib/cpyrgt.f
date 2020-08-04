@@ -1,27 +1,12 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
       SUBROUTINE CPYRGT (NOUT, YEAR)
 C=======================================================================
-C $Id: cpyrgt.f,v 1.4 2009/03/25 14:31:47 gdsjaar Exp $
-C $Log: cpyrgt.f,v $
-C Revision 1.4  2009/03/25 14:31:47  gdsjaar
-C Update copyright info
-C
-C Revision 1.3  2009/03/25 12:46:01  gdsjaar
-C Add copyright and license notice to all files.
-C
-C Revision 1.2  1993/07/06 21:57:53  gdsjaar
-C Updated copyright output information based on latest memo from Art Silva
-C
-c Revision 1.1  1992/05/13  16:57:30  gdsjaar
-c Added routine to output copyright notice during execution
-c
-
 C   --*** CPYRGT *** (ETCLIB) Print copyright notice
 C   --   Written by Greg Sjaardema - revised 5-13-92 -
 C   --

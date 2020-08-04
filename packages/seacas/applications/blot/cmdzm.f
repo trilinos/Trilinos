@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
@@ -222,9 +222,9 @@ C            --Calculate the default mesh limits
             MSCTYP = 'ZOOM'
             CALL CPYREA (KTOP, RNUM, RDMESH)
             NZMON = .FALSE.
-C
+
 C ZOOM RADIUS COMMAND " ZOOM RADIUS XZM YZM (ZZM) RADZM "
-C
+
          ELSE IF (MATSTR (WORD, 'RADIUS', 1)) THEN
             CALL FFADDC (WORD, INLINE)
 C -- MAKE SURE THERE ARE VALUES IN THE INPUT
@@ -254,9 +254,9 @@ C -- GET RADIUS OF ZOOM FIELD
             NODEZM = 0
             NZMON = .TRUE.
             MSCTYP = 'ZOOM'
-C
+
 C ZOOM NODE COMMAND " ZOOM NODE NODEID RADIUS" or "ZOOM NODE CURSOR"
-C
+
          ELSE IF (MATSTR (WORD, 'NODE', 1)) THEN
             CALL FFADDC (WORD, INLINE)
 C -- SEE IF CURSOR OPTION IS SELECTED
@@ -281,7 +281,6 @@ C -- 2D PICK OF TWO NODES
 C --  GET DISTANCE FROM CENTER TO RADIUS POINT
                CALL GETDST(NODEZM, NRAD, A(KXN), A(KYN), A(KZN),
      &                        RADZM)
-
 
             ELSE
 C -- INPUT NODE ID AND RADIUS

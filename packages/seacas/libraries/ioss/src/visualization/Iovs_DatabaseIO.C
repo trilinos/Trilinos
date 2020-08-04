@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 /*--------------------------------------------------------------------*/
@@ -84,9 +84,8 @@ namespace Iovs {
                          const Ioss::PropertyManager &props)
       : Ioss::DatabaseIO(region, DatabaseIO::create_output_file_path(filename, props), db_usage,
                          communicator, props),
-        isInput(false), singleProcOnly(false), doLogging(false), enableLogging(0), debugLevel(0),
-        underscoreVectors(0), applyDisplacements(0), createSideSets(0), createNodeSets(0),
-        nodeBlockCount(0), elementBlockCount(0)
+        enableLogging(0), debugLevel(0), underscoreVectors(0), applyDisplacements(0),
+        createSideSets(0), createNodeSets(0), nodeBlockCount(0), elementBlockCount(0)
   {
 
     std::ostringstream errmsg;
@@ -1302,7 +1301,11 @@ namespace {
       return;
     }
 
-    char *      cbuf            = realpath(sierra_ins_dir.c_str(), nullptr);
+#ifdef _WIN32
+    char *cbuf = _fullpath(nullptr, sierra_ins_dir.c_str(), _MAX_PATH);
+#else
+    char *cbuf = realpath(sierra_ins_dir.c_str(), nullptr);
+#endif
     std::string sierra_ins_path = cbuf;
     free(cbuf);
 

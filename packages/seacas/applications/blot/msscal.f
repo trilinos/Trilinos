@@ -1,34 +1,9 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
-C $Log: msscal.f,v $
-C Revision 1.5  2009/03/25 12:36:46  gdsjaar
-C Add copyright and license notice to all files.
-C Permission to assert copyright has been granted; blot is now open source, BSD
-C
-C Revision 1.4  2007/11/14 20:14:53  gdsjaar
-C Added optional 'alive value' to the death on variable command.  The
-C default value is 0.0, but you can now specify a different value to
-C indicate aliveness (for example, the presto DEATH_DUMMY_VAR treats 1.0
-C as the alive value).
-C
-C Example: DEATH ON DEATH_DUMMY_VAR 1
-C
-C Revision 1.3  1997/10/23 12:59:33  gdsjaar
-C Fixed initialization order problem that was affecting zooms.
-C
-C Revision 1.2  1997/09/02 14:52:46  caforsy
-C Changed name from HEX_SHELL to HEXSHELL.  Fixed hexshell bugs
-C
-C Revision 1.1  1994/04/07 20:05:53  gdsjaar
-C Initial checkin of ACCESS/graphics/blotII2
-C
-c Revision 1.2  1990/12/14  08:54:04  gdsjaar
-c Added RCS Id and Log to all files
-c
 C=======================================================================
       SUBROUTINE MSSCAL (DOSCAL, NNPSEL, NPSEL, XN, YN, ZN)
 C=======================================================================

@@ -213,7 +213,10 @@ IF (${PACKAGE_NAME}_ENABLE_Zoltan AND TPL_ENABLE_MPI)
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
-  APPEND_SET(SOURCES_REGION RegionMatrix.cpp RegionVector.cpp)
+  APPEND_SET(SOURCES_REGION
+    RegionMatrix.cpp
+    RegionVector.cpp
+    RegionRFactory.cpp)
 ENDIF()
 
 

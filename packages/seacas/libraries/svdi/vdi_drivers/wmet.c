@@ -2,11 +2,10 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
-/* $Id: wmet.c,v 1.23 2007/02/20 18:06:03 gdsjaar Exp $
- */
+* /
 
 #include <fcntl.h>
 #include <stdio.h>
@@ -54,7 +53,7 @@
 /* #define BUFFER_SIZE 132 */
 #define BUFFER_SIZE 8192
 
-extern char *getenv();
+    extern char *getenv();
 
 static char filename[100];       /* name of file */
 static int  file_d = -1;         /* file descriptor - -1 if file not open */

@@ -1,26 +1,12 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: logs.blk,v 1.2 2007/03/21 20:12:37 gdsjaar Exp $
-C $Log: logs.blk,v $
-C Revision 1.2  2007/03/21 20:12:37  gdsjaar
-C Several commands which can work on the deformed geometry were only
-C checking whether the file was an exodus file (had timesteps) when
-C requesting deformed coordinates.  Changed to also check whether the
-C file had valid displacements also.
-C
-C Revision 1.1.1.1  1991/02/21 15:44:12  gdsjaar
-C NUMBERS: Greg Sjaardema, initial Unix release
-C
-CRevision 1.1  1991/02/21  15:44:11  gdsjaar
-CInitial revision
-C
       COMMON /LOGS/ AXI, EXODUS, ISDIS
       LOGICAL AXI, EXODUS, ISDIS
-C
+
 C     AXI   -  .TRUE. if mesh is axisymmetric
 C     EXODUS   .TRUE. if exodus, .FALSE. if genesis
 C     ISDIS is true iff displacement variables found

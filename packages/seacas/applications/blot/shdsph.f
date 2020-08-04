@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
@@ -93,7 +93,7 @@ C     ISHDCL(3, *) = Starting location in color map (SET)
       IF ( FIRST ) THEN
         FIRST = .FALSE.
       END IF
-C
+
 C ... Calculate surface normals
 C ... On a unit sphere, normals are simply x,y,z coords of point.
       do 30 ip=1, npoly
@@ -184,7 +184,7 @@ C ... Plotting of spheres starts here.
  120    continue
  130  continue
       call pltflu
-C
+
       CALL GRCOLU('STANDARD')
 
       RETURN

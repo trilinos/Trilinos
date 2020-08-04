@@ -1,15 +1,13 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
       SUBROUTINE SHOW (STYP, INTYP, IDNPS, IDESS, IDNSET, IDESET,
      &   IDELB, NAMELB, NUMELB, NUMLNK, ELATTR)
 C=======================================================================
-
-C   $Id: show.f,v 1.9 2001/09/18 18:38:50 gdsjaar Exp $
 
 C   --*** SHOW *** (GEN3D) Display information
 C   --   Written by Amy Gilkey - revised 03/07/88

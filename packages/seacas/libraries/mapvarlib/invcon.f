@@ -1,38 +1,38 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C========================================================================
       SUBROUTINE INVCON(INVLN,MAXLN,INVCN,ICONA)
-C     
+C
 C************************************************************************
-C     
+C
 C     Subroutine INVC0N computes the inverse connectivity (elements connected
 C     to a node).
-C     
+C
 c     Called by MAPVAR
-C     
+C
 C     Calls ERROR
-C     
+C
 C************************************************************************
-C     
+C
 C     INVLN  INT   The number of elements connected to a node (1:numnda)
 C     MAXLN  INT   The maximum number of elements connected to any node
 C     INVCN  INT   The inverse connectivity (1:maxln,1:numnda)
 C     ICONA  INT   The connectivity array (1:nelnda,1:numela)
-C     
+C
 C************************************************************************
-C     
-C     
+C
+C
       include 'amesh.blk'
       include 'ebbyeb.blk'
-C     
+C
       DIMENSION INVLN(*),INVCN(MAXLN,*),ICONA(nelnda,*)
-C     
+C
 C************************************************************************
-C     
+C
       DO I = 1, NODESA
          INVLN(I) = 0
          DO J = 1, MAXLN
@@ -40,7 +40,7 @@ C
          end do
       end do
 
-C     
+C
       NNODES = NELNDA
       IF (ITYPE .EQ. 6) NNODES = 4
       DO J = 1, NUMEBA

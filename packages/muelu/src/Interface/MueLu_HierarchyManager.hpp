@@ -250,6 +250,9 @@ namespace MueLu {
       if (!matvecParams_.is_null())
         H.SetMatvecParams(matvecParams_);
       H.AllocateLevelMultiVectors(sizeOfMultiVectors_);
+      // Set hierarchy description.
+      // This is cached, but involves and MPI_Allreduce.
+      H.description();
       H.describe(H.GetOStream(Runtime0), verbosity_);
 
       // When we reuse hierarchy, it is necessary that we don't

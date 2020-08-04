@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 
@@ -224,44 +224,44 @@ int ex_put_partial_var(int exoid, int time_step, ex_entity_type var_type, int va
     EX_FUNC_LEAVE(status);
     break;
   case EX_ASSEMBLY:
-    ex__look_up_var(exoid, var_type, var_index, obj_id, "", VAR_ASSEMBLY_TAB, DIM_NUM_ASSEMBLY,
-                    DIM_NUM_ASSEMBLY_VAR, &varid);
+    status = ex__look_up_var(exoid, var_type, var_index, obj_id, "", VAR_ASSEMBLY_TAB,
+                             DIM_NUM_ASSEMBLY, DIM_NUM_ASSEMBLY_VAR, &varid);
     break;
   case EX_BLOB:
-    ex__look_up_var(exoid, var_type, var_index, obj_id, "", VAR_BLOB_TAB, DIM_NUM_BLOB,
-                    DIM_NUM_BLOB_VAR, &varid);
+    status = ex__look_up_var(exoid, var_type, var_index, obj_id, "", VAR_BLOB_TAB, DIM_NUM_BLOB,
+                             DIM_NUM_BLOB_VAR, &varid);
     break;
   case EX_EDGE_BLOCK:
-    ex__look_up_var(exoid, var_type, var_index, obj_id, VAR_ID_ED_BLK, VAR_EBLK_TAB, DIM_NUM_ED_BLK,
-                    DIM_NUM_EDG_VAR, &varid);
+    status = ex__look_up_var(exoid, var_type, var_index, obj_id, VAR_ID_ED_BLK, VAR_EBLK_TAB,
+                             DIM_NUM_ED_BLK, DIM_NUM_EDG_VAR, &varid);
     break;
   case EX_FACE_BLOCK:
-    ex__look_up_var(exoid, var_type, var_index, obj_id, VAR_ID_FA_BLK, VAR_FBLK_TAB, DIM_NUM_FA_BLK,
-                    DIM_NUM_FAC_VAR, &varid);
+    status = ex__look_up_var(exoid, var_type, var_index, obj_id, VAR_ID_FA_BLK, VAR_FBLK_TAB,
+                             DIM_NUM_FA_BLK, DIM_NUM_FAC_VAR, &varid);
     break;
   case EX_ELEM_BLOCK:
-    ex__look_up_var(exoid, var_type, var_index, obj_id, VAR_ID_EL_BLK, VAR_ELEM_TAB, DIM_NUM_EL_BLK,
-                    DIM_NUM_ELE_VAR, &varid);
+    status = ex__look_up_var(exoid, var_type, var_index, obj_id, VAR_ID_EL_BLK, VAR_ELEM_TAB,
+                             DIM_NUM_EL_BLK, DIM_NUM_ELE_VAR, &varid);
     break;
   case EX_NODE_SET:
-    ex__look_up_var(exoid, var_type, var_index, obj_id, VAR_NS_IDS, VAR_NSET_TAB, DIM_NUM_NS,
-                    DIM_NUM_NSET_VAR, &varid);
+    status = ex__look_up_var(exoid, var_type, var_index, obj_id, VAR_NS_IDS, VAR_NSET_TAB,
+                             DIM_NUM_NS, DIM_NUM_NSET_VAR, &varid);
     break;
   case EX_EDGE_SET:
-    ex__look_up_var(exoid, var_type, var_index, obj_id, VAR_ES_IDS, VAR_ESET_TAB, DIM_NUM_ES,
-                    DIM_NUM_ESET_VAR, &varid);
+    status = ex__look_up_var(exoid, var_type, var_index, obj_id, VAR_ES_IDS, VAR_ESET_TAB,
+                             DIM_NUM_ES, DIM_NUM_ESET_VAR, &varid);
     break;
   case EX_FACE_SET:
-    ex__look_up_var(exoid, var_type, var_index, obj_id, VAR_FS_IDS, VAR_FSET_TAB, DIM_NUM_FS,
-                    DIM_NUM_FSET_VAR, &varid);
+    status = ex__look_up_var(exoid, var_type, var_index, obj_id, VAR_FS_IDS, VAR_FSET_TAB,
+                             DIM_NUM_FS, DIM_NUM_FSET_VAR, &varid);
     break;
   case EX_SIDE_SET:
-    ex__look_up_var(exoid, var_type, var_index, obj_id, VAR_SS_IDS, VAR_SSET_TAB, DIM_NUM_SS,
-                    DIM_NUM_SSET_VAR, &varid);
+    status = ex__look_up_var(exoid, var_type, var_index, obj_id, VAR_SS_IDS, VAR_SSET_TAB,
+                             DIM_NUM_SS, DIM_NUM_SSET_VAR, &varid);
     break;
   case EX_ELEM_SET:
-    ex__look_up_var(exoid, var_type, var_index, obj_id, VAR_ELS_IDS, VAR_ELSET_TAB, DIM_NUM_ELS,
-                    DIM_NUM_ELSET_VAR, &varid);
+    status = ex__look_up_var(exoid, var_type, var_index, obj_id, VAR_ELS_IDS, VAR_ELSET_TAB,
+                             DIM_NUM_ELS, DIM_NUM_ELSET_VAR, &varid);
     break;
   default:
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: invalid variable type (%d) specified for file id %d",
@@ -269,8 +269,12 @@ int ex_put_partial_var(int exoid, int time_step, ex_entity_type var_type, int va
     ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL);
   }
-  /* store element variable values */
 
+  if (status != EX_NOERR) {
+    EX_FUNC_LEAVE(status);
+  }
+
+  /* store element variable values */
   start[0] = time_step - 1;
   start[1] = start_index - 1;
   if (var_type == EX_GLOBAL) {

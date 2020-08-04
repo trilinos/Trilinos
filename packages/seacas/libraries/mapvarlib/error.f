@@ -1,30 +1,30 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
 *DECK,ERROR
       SUBROUTINE ERROR (SUBNAM,MESSAGE,LABEL1,I,LABEL2,J,LABEL3,WORD,
      1  ISTOP)
-C
+
 C     ******************************************************************
-C
+
 C     SUBROUTINE TO PRINT ERROR MESSAGE AND TERMINATE EXECUTION
-C
+
 C     Calls subroutine CLSFIL
-C
+
 C     Called by everything
-C
+
 C     ******************************************************************
-C
+
       CHARACTER*(*) SUBNAM,MESSAGE,LABEL1,LABEL2,LABEL3,WORD
-C
+
       include 'tapes.blk'
-C
+
 C     ******************************************************************
-C
+
       WRITE (NOUT, 60)
       WRITE (NTPOUT, 60)
       WRITE (NOUT, 10) SUBNAM
@@ -47,13 +47,13 @@ C
       END IF
       WRITE (NOUT, 60)
       WRITE (NTPOUT, 60)
-C
+
       IF (ISTOP.EQ.0) RETURN
-C
+
       CALL CLSFIL
-C
+
       STOP 'ERROR'
-C
+
    10 FORMAT (/,10X,' ERROR FOUND IN - ' ,A)
    20 FORMAT (/,10X,' DESCRIPTION - ' ,A)
    30 FORMAT (/,10X,' RELEVANT PARAMETERS - ')

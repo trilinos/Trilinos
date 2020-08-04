@@ -1,7 +1,7 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 C=======================================================================
       SUBROUTINE WRSTEP (NDBOUT, ISTEP, MAXNE, VARVAL, VISELB,
@@ -53,7 +53,6 @@ C   --upon exit positioned after time step.
 C     write time step
       call exptim(ndbout, istep, VARVAL(IDVAR(ITIME),
      &            ISTVAR(ICURTM,ITIME)), ierr)
-
 
 C      --Write global variables
 

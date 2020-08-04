@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include <cgns/Iocgns_Defines.h>
@@ -298,7 +298,7 @@ namespace Iocgns {
               zone_node_count);
           auto zgcs = zone->m_zoneConnectivity;
 #if 0
-	  // This should work, but doesn't... 
+	  // This should work, but doesn't...
           fmt::print(Ioss::DEBUG(), "{}\n", fmt::join(zgcs, "\n"));
 #else
           for (auto &zgc : zgcs) {

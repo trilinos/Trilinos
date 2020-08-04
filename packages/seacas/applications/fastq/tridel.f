@@ -1,55 +1,29 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: tridel.f,v 1.4 2004/01/21 05:18:40 gdsjaar Exp $
-C $Log: tridel.f,v $
-C Revision 1.4  2004/01/21 05:18:40  gdsjaar
-C Initialized several variables identified by valgrind.
-C
-C Revision 1.3  1998/07/14 18:20:09  gdsjaar
-C Removed unused variables, cleaned up a little.
-C
-C Changed BLUE labels to GREEN to help visibility on black background
-C (indirectly requested by a couple users)
-C
-C Revision 1.2  1991/03/21 15:45:21  gdsjaar
-C Changed all 3.14159... to atan2(0.0, -1.0)
-C
-c Revision 1.1.1.1  1990/11/30  11:17:15  gdsjaar
-c FASTQ Version 2.0X
-c
-c Revision 1.1  90/11/30  11:17:13  gdsjaar
-c Initial revision
-c
-C
-CC* FILE: [.PAVING]TRIDEL.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE TRIDEL (MXND, MLN, XN, YN, ZN, NUID, LXK, KXL, NXL,
      &   LXN, NNN, LLL, KKK, NAVAIL, IAVAIL, ANGLE, LNODES, BNSIZE,
      &   NLOOP, DEV1, KREG, XMIN, XMAX, YMIN, YMAX, ZMIN, ZMAX, GRAPH,
      &   VIDEO, NOROOM, ERR)
 C***********************************************************************
-C
+
 C  SUBROUTINE TRIDEL = CHECKS FOR ANY TRIANGULAR SHAPED QUADS ATTACHED
 C                      TO A THREE NODE ELEMENT AND DELETES THEM WHEN
 C                      FOUND AND POSSIBLE
-C
+
 C***********************************************************************
-C
+
       DIMENSION ANGLE (MXND), BNSIZE (2, MXND), LNODES (MLN, MXND)
       DIMENSION NODES(4), K(3)
       DIMENSION LXK(4, MXND), NXL(2, 3*MXND), KXL(2, 3*MXND)
       DIMENSION LXN(4, MXND), XN(MXND), YN(MXND), ZN(MXND), NUID(MXND)
-C
+
       CHARACTER*3 DEV1
       LOGICAL ERR, DONE, GRAPH, CHECK, REDO, CCW, VIDEO, PASSED, NOROOM
-C
+
       PI = ATAN2(0.0, -1.0)
       TWOPI = 2.0 * PI
 
@@ -60,19 +34,19 @@ C
       KMAX = 30
       KOUNT = 0
       KKKADD = 0
-C
+
   100 CONTINUE
       KOUNT = KOUNT + 1
       IF (KOUNT .GT. KMAX) GOTO 180
   110 CONTINUE
       REDO = .FALSE.
-C
+
       DO 120 I = 1, NNN
          IF ((LXN (1, I) .GT. 0) .AND. (LXN (2, I) .GT. 0) .AND.
      &      (LXN (4, I) .EQ. 0)) THEN
-C
+
 C  SEE IF A 2-LINE NODE NEEDS DELETED
-C
+
             IF (LXN (3, I) .LE. 0) THEN
                NODE = I
                KELEM = KXL (1, LXN (1, NODE))
@@ -85,17 +59,17 @@ C
      &            DONE, CHECK, NOROOM, ERR)
                IF ((NOROOM) .OR. (ERR)) GOTO 180
                IF (DONE) THEN
-C
+
                   IF (VIDEO) THEN
                      CALL RPLOTL (MXND, XN, YN, ZN, NXL, XMIN, XMAX,
      &                  YMIN, YMAX, ZMIN, ZMAX, LLL, DEV1, KREG)
                      CALL SNAPIT (3)
                   ENDIF
-C
+
                   CALL FILSMO (MXND, MLN, XN, YN, ZN, LXK, KXL, NXL,
      &               LXN, LLL, NNN, NNN, LNODES, BNSIZE, NLOOP, XMIN,
      &               XMAX, YMIN, YMAX, ZMIN, ZMAX, DEV1, KREG)
-C
+
                   IF ((GRAPH) .OR. (VIDEO)) THEN
                      CALL RPLOTL (MXND, XN, YN, ZN, NXL, XMIN, XMAX,
      &                  YMIN, YMAX, ZMIN, ZMAX, LLL, DEV1, KREG)
@@ -107,24 +81,23 @@ C
          ENDIF
   120 CONTINUE
       IF (REDO) GOTO 110
-C
+
       DO 170 I = 1, NNN
          IF ((LXN (1, I) .GT. 0) .AND. (LXN (2, I) .GT. 0) .AND.
      &      (LXN (4, I) .EQ. 0)) THEN
-C
-C
+
 C  GET THE ATTACHED LINES AND ELEMENTS
 C  K(1) IS BETWEEN L1 & L2
 C  K(2) IS BETWEEN L2 & L3
 C  K(3) IS BETWEEN L3 & L1
-C
+
             L1 = LXN (1, I)
             L2 = LXN (2, I)
             L3 = LXN (3, I)
             N1 = NXL (1, L1) + NXL (2, L1) - I
             N2 = NXL (1, L2) + NXL (2, L2) - I
             N3 = NXL (1, L3) + NXL (2, L3) - I
-C
+
             IF ( (KXL (1, L1) .EQ. KXL (1, L2)) .OR.
      &         (KXL (1, L1) .EQ. KXL (2, L2)) ) THEN
                K(1) = KXL (1, L1)
@@ -136,7 +109,7 @@ C
                CALL MESAGE ('** PROBLEMS IN TRIDEL FINDING K(1) **')
                GOTO 180
             ENDIF
-C
+
             IF ( (KXL (1, L2) .EQ. KXL (1, L3)) .OR.
      &         (KXL (1, L2) .EQ. KXL (2, L3)) ) THEN
                K(2) = KXL (1, L2)
@@ -148,7 +121,7 @@ C
                CALL MESAGE ('** PROBLEMS IN TRIDEL FINDING K(2) **')
                GOTO 180
             ENDIF
-C
+
             IF ( (KXL (1, L3) .EQ. KXL (1, L1)) .OR.
      &         (KXL (1, L3) .EQ. KXL (2, L1)) ) THEN
                K(3) = KXL (1, L3)
@@ -160,7 +133,7 @@ C
                CALL MESAGE ('** PROBLEMS IN TRIDEL FINDING K(3) **')
                GOTO 180
             ENDIF
-C
+
 C  NOW CHECK K(1)'S, K(2)'S, AND K(3)'S ANGLE AT THE LINE JOINT.
 C  THERE ARE THREE POSSIBILITIES FOR CHANGE:
 C     1) ANYTHING OVER 175 DEGREES GETS THE CORRESPONDING ELEMENT
@@ -169,7 +142,7 @@ C     2) ANYTHING OVER 150 AND HOOKED TO ANOTHER 3-LINE NODE GETS
 C        THE CORRESPONDING ELEMENT DELETED
 C     3) AN ELONGATED ELEMENT OVER 150 DEGREES GETS A 3 ELEMENT
 C        REPLACEMENT FOR THE TWO ELEMENTS THERE
-C
+
             TOLER1 = 2.9670597
             TOLER2 = 2.6179939
             IF ((GRAPH) .AND. (.NOT. VIDEO)) THEN
@@ -181,21 +154,21 @@ C
                YMIN = YN (I) - DIST
                YMAX = YN (I) + DIST
             ENDIF
-C
+
             ANG1 = ATAN2 (YN (N1) - YN (I), XN (N1) - XN (I))
             IF (ANG1 .LT. 0.) ANG1 = ANG1 + TWOPI
             ANG2 = ATAN2 (YN (N2) - YN (I), XN (N2) - XN (I))
             IF (ANG2 .LT. 0.) ANG2 = ANG2 + TWOPI
             ANG3 = ATAN2 (YN (N3) - YN (I), XN (N3) - XN (I))
             IF (ANG3 .LT. 0.) ANG3 = ANG3 + TWOPI
-C
+
 C  CHECK TO SEE IF THE NODES ARE CLOCKWISE OR COUNTERCLOCKWISE
 C  (POSITIVE AREA IS CCW)
-C
+
             AREA = ( (YN (N1) + YN (N3)) * .5 * (XN (N3) - XN (N1)) ) +
      &         ( (YN (N2) + YN (N1)) * .5 * (XN (N1) - XN (N2)) ) +
      &         ( (YN (N3) + YN (N2)) * .5 * (XN (N2) - XN (N3)) )
-C
+
             IF (AREA .GT. 0.) THEN
                ANG12 = ANG2 - ANG1
                ANG23 = ANG3 - ANG2
@@ -208,7 +181,7 @@ C
             IF (ANG12 .LT. 0.) ANG12 = ANG12 + TWOPI
             IF (ANG23 .LT. 0.) ANG23 = ANG23 + TWOPI
             IF (ANG31 .LT. 0.) ANG31 = ANG31 + TWOPI
-C
+
             IF (GRAPH) THEN
                CALL RPLOTL (MXND, XN, YN, ZN, NXL, XMIN, XMAX, YMIN,
      &            YMAX, ZMIN, ZMAX, LLL, DEV1, KREG)
@@ -220,9 +193,9 @@ C  5 IS PINK; 4 IS BLUE; 3 IS YELLOW; 0 IS BLACK ; 7 IS WHITE; 1 IS RED
                CALL LCOLOR ('WHITE')
                CALL SFLUSH
             ENDIF
-C
+
 C  NOW DO THE CHECKS FOR CHANGING THE ELEMENT
-C
+
             IF (AREA .GT. 0) THEN
                CALL ADJTRI (MXND, MLN, LNODES, XN, YN, ZN, NUID, LXK,
      &            KXL, NXL, LXN, NNN, NAVAIL, IAVAIL, I, K(1), ANG12,
@@ -267,10 +240,10 @@ C
      &            VIDEO, NOROOM, ERR, KKKADD)
             ENDIF
             IF ((NOROOM) .OR. (ERR)) GOTO 180
-C
+
   130       CONTINUE
             IF (DONE) THEN
-C
+
                CALL MARKSM (MXND, MLN, LXK, KXL, NXL, LXN, LNODES,
      &            N1, ERR)
                IF (ERR) GOTO 180
@@ -288,7 +261,7 @@ C
      &               YMAX, ZMIN, ZMAX, LLL, DEV1, KREG)
                   CALL SNAPIT (3)
                ENDIF
-C
+
                CALL FILSMO (MXND, MLN, XN, YN, ZN, LXK, KXL, NXL, LXN,
      &            LLL, NNN, NNN, LNODES, BNSIZE, NLOOP, XMIN, XMAX,
      &            YMIN, YMAX, ZMIN, ZMAX, DEV1, KREG)
@@ -301,7 +274,7 @@ C
                REDO = .TRUE.
                GOTO 160
             ENDIF
-C
+
 C  NOW CHECK THE THREE ELEMENTS TO SEE IF AN ELEMENT EXISTS WHICH:
 C    (1) CONTAINS ONLY 2 OPPOSING "LARGE ANGLE" THREE-LINE NODES
 C        AND AT LEAST 1 "SMALL ANGLE" FOUR- OR FIVE-LINE NODE
@@ -316,7 +289,7 @@ C    (5) CONTAINS TWO RELATIVELY SMALL ANGLES AND TWO RELATIVELY
 C        LARGE ANGLES AND IS CONSIDERABLY SMALLER THAN IS
 C        DICTATED BY THE DESIRED SIZE
 C  THIS ELEMENT SHOULD BE DELETED.
-C
+
             TOLER3 = 1.7453293
             TOLER4 = 1.5707963
             TOLER5 = 2.0943951
@@ -331,16 +304,16 @@ C
                   ERR = .TRUE.
                   GOTO 180
                ENDIF
-C
+
 C  ARRANGE NODES SO THE COLLAPSING DIAGONAL IS FROM 1ST TO 3RD NODES
 C  AND INSURE THAT THE NODE TO BE DELETED IS NOT A BOUNDARY NODE
-C
+
                CALL NXKORD (NODES, I)
                N1 = NODES(1)
                N2 = NODES(2)
                N3 = NODES(3)
                N4 = NODES(4)
-C
+
                X21 = XN (N2) - XN (N1)
                X32 = XN (N3) - XN (N2)
                X43 = XN (N4) - XN (N3)
@@ -378,9 +351,9 @@ C
                   THETA4 = ACOS (- ( (X14 * X43) + (Y14 * Y43) ) /
      &               (D14 * D43))
                ENDIF
-C
+
 C  TEST CASE ONE
-C
+
                IF ( (LXN(2, N1) .GT. 0) .AND.
      &            (LXN (2, N3) .GT. 0) .AND.
      &            (LXN (4, N3) .EQ. 0) .AND.
@@ -393,9 +366,9 @@ C     &            (LXN (4, N4) .LT. 0) ) .AND.
      &            (K (J) .NE. KKKADD))
      &            THEN
                   PASSED = .TRUE.
-C
+
 C  TEST CASE 2
-C
+
                ELSEIF ( (LXN(2, N1) .GT. 0) .AND.
      &            (LXN (2, N3) .GT. 0) .AND.
      &            (LXN (4, N3) .GE. 0) .AND.
@@ -408,9 +381,9 @@ C
      &            (K (J) .NE. KKKADD) )
      &            THEN
                   PASSED = .TRUE.
-C
+
 C  TEST CASE 3
-C
+
                ELSEIF ( (LXN(2, N1) .GT. 0) .AND.
      &            (LXN (2, N3) .GT. 0) .AND.
      &            (LXN (4, N3) .GE. 0) .AND.
@@ -421,9 +394,9 @@ C
      &            (K (J) .NE. KKKADD) )
      &            THEN
                   PASSED = .TRUE.
-C
+
 C  TEST CASE 4
-C
+
                ELSEIF ( (LXN(2, N1) .GT. 0) .AND.
      &            (LXN (2, N3) .GT. 0) .AND.
      &            (THETA1 .GT. TOLER5) .AND.
@@ -433,9 +406,9 @@ C
      &            (K (J) .NE. KKKADD) )
      &            THEN
                   PASSED = .TRUE.
-C
+
 C  TEST CASE 5
-C
+
                ELSEIF ( (LXN(2, N1) .GT. 0) .AND.
      &            (LXN (2, N3) .GT. 0) .AND.
      &            (THETA1 .GT. TOLER3) .AND.
@@ -446,11 +419,11 @@ C
      &            (K (J) .NE. KKKADD) )
      &            THEN
                   PASSED = .TRUE.
-C
+
                ELSE
                   PASSED = .FALSE.
                ENDIF
-C
+
                IF (PASSED) THEN
                   IF (GRAPH) THEN
                      CALL RPLOTL (MXND, XN, YN, ZN, NXL, XMIN, XMAX,
@@ -483,25 +456,25 @@ C
      &               DONE, CHECK, NOROOM, ERR)
                   IF ((NOROOM) .OR. (ERR)) GOTO 180
                   IF (DONE) THEN
-C
+
                      IF (VIDEO) THEN
                         CALL RPLOTL (MXND, XN, YN, ZN, NXL, XMIN, XMAX,
      &                     YMIN, YMAX, ZMIN, ZMAX, LLL, DEV1, KREG)
                         CALL SNAPIT (3)
                      ENDIF
-C
+
                      CALL FILSMO (MXND, MLN, XN, YN, ZN, LXK, KXL, NXL,
      &                  LXN, LLL, NNN, NNN, LNODES, BNSIZE, NLOOP, XMIN,
      &                  XMAX, YMIN, YMAX, ZMIN, ZMAX, DEV1, KREG)
-C
+
                      IF ((GRAPH) .OR. (VIDEO)) THEN
                         CALL RPLOTL (MXND, XN, YN, ZN, NXL, XMIN, XMAX,
      &                     YMIN, YMAX, ZMIN, ZMAX, LLL, DEV1, KREG)
                         IF (VIDEO) CALL SNAPIT (3)
                      ENDIF
-C
+
 C  CHECK TO SEE IF WE HAVE MADE A 2-LINE NODE
-C
+
                      IF (LXN (3, NODE1) .LE. 0) THEN
                         NODE = NODE1
                         KELEM = KXL (1, LXN (1, NODE))
@@ -513,7 +486,7 @@ C
                         CHECK = .FALSE.
                         GOTO 140
                      ENDIF
-C
+
                      CHECK = .TRUE.
                      DONE = .FALSE.
                      REDO = .TRUE.
@@ -524,7 +497,7 @@ C
   160       CONTINUE
          ENDIF
   170 CONTINUE
-C
+
       CALL TRIFIX (MXND, MLN, XN, YN, ZN, NUID, LXK, KXL, NXL, LXN,
      &   NNN, LLL, KKK, NAVAIL, IAVAIL, ANGLE, LNODES, BNSIZE,
      &   NLOOP, DEV1, KREG, XMIN, XMAX, YMIN, YMAX, ZMIN, ZMAX, GRAPH,
@@ -532,7 +505,7 @@ C
       IF ((NOROOM) .OR. (ERR)) GOTO 180
       IF (REDO) GOTO 100
   180 CONTINUE
-C
+
       RETURN
-C
+
       END

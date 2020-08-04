@@ -71,7 +71,7 @@ namespace KokkosBatched {
            const int m, const int n, 
            const ValueType *__restrict__ A, const int as0, const int as1,
            /* */ ValueType *__restrict__ B, const int bs0, const int bs1) {
-      if (m > n) { 
+      if (m >= n) { 
         Kokkos::parallel_for
           (Kokkos::TeamThreadRange(member,0,m),[&](const int &i) {
             SerialCopyInternal::invoke(n, A+i*as0, as1, B+i*bs0, bs1);

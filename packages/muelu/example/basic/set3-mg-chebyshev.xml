@@ -1,0 +1,133 @@
+<ParameterList>
+
+  <!-- ================================================== -->
+  <!-- ================================================== -->
+  <!-- KRYLOV SOLVER CONFIGURATION                        -->
+  <!-- ================================================== -->
+  <!-- ================================================== -->
+
+  <Parameter name="Linear Solver Type" type="string" value="Belos"/>
+  <ParameterList name="Linear Solver Types">
+    <ParameterList name="Belos">
+
+      <!-- ========================================= -->
+      <!-- Select which Krylov solver should be used -->
+
+      <Parameter name="Solver Type" type="string" value="Pseudo Block CG"/>
+
+      <!-- ================================== -->
+      <!-- Parameters for the Krylov solvers  -->
+
+      <ParameterList name="Solver Types">
+
+        <ParameterList name="Pseudo Block CG">
+          <Parameter name="Convergence Tolerance" type="double" value="1e-8"/>
+          <Parameter name="Maximum Iterations" type="int" value="100"/>
+          <!-- Verbosity
+              Errors = 0,
+              Warnings = 0x1,
+              IterationDetails = 0x2,
+              OrthoDetails = 0x4,
+              FinalSummary = 0x8,
+              TimingDetails = 0x10 = 16,
+              StatusTestDetails = 0x20 = 32,
+              Debug = 0x40 = 64                -->
+          <Parameter name="Verbosity" type="int" value="41"/>
+          <Parameter name="Output Frequency" type="int" value="1"/>
+          <Parameter name="Output Style" type="int" value="1"/>
+        </ParameterList>
+
+      </ParameterList>
+
+      <ParameterList name="VerboseObject">
+        <Parameter name="Verbosity Level" type="string" value="low"/>
+      </ParameterList>
+
+    </ParameterList>
+  </ParameterList>
+
+
+  <!-- ================================================== -->
+  <!-- ================================================== -->
+  <!-- PRECONDITIONER CONFIGURATION                       -->
+  <!-- ================================================== -->
+  <!-- ================================================== -->
+
+
+  <!-- ========================================== -->
+  <!-- Select which preconditioner should be used -->
+
+  <!-- algebraic multigrid -->
+  <Parameter name="Preconditioner Type" type="string" value="MueLu"/>
+
+
+  <!-- ========================================== -->
+  <!-- Parameters for the preconditioners         -->
+
+  <ParameterList name="Preconditioner Types">
+
+    <!-- Settings for multigrid preconditioner -->
+    <ParameterList name="MueLu">
+
+      <!-- ===========  GENERAL ================ -->
+      <Parameter        name="verbosity"                            type="string"   value="medium"/>
+
+      <Parameter        name="coarse: max size"                     type="int"      value="1000"/>
+      <Parameter        name="coarse: type"                         type="string"   value="Klu2"/>
+
+      <Parameter        name="cycle type"                           type="string"   value="V"/>
+
+      <!-- Options are 'sa' (smoothed aggregation) and 'unsmoothed' -->
+      <Parameter        name="multigrid algorithm"                  type="string"   value="sa"/>
+
+      <!-- reduces setup cost for symmetric problems -->
+      <Parameter        name="transpose: use implicit"              type="bool"     value="true"/>
+
+      <Parameter        name="max levels"                           type="int"      value="10"/>
+      <Parameter        name="number of equations"                  type="int"      value="1"/>
+      <Parameter        name="sa: use filtered matrix"              type="bool"     value="true"/>
+
+      <!-- ===========  AGGREGATION  =========== -->
+      <Parameter        name="aggregation: type"                    type="string"   value="uncoupled"/>
+      <Parameter        name="aggregation: drop scheme"             type="string"   value="classical"/>
+      <!-- Uncomment the next line to enable dropping of weak connections, which can help AMG convergence
+           for anisotropic problems.  The exact value is problem dependent. -->
+      <!--
+      <Parameter        name="aggregation: drop tol"                type="double"   value="0.02"/>
+      -->
+
+      <!-- Aggregates visualization using paraview -->
+      <!-- <Parameter        name="aggregation: export visualization data" type="bool"   value="true"/> -->
+      <!-- <Parameter        name="aggregation: output filename"           type="string" value="aggs.proc=%PROCID.level=%LEVELID.vtk"/> -->
+      <!-- <Parameter        name="aggregation: output file: agg style"    type="string" value="Convex Hulls"/> -->
+
+      <!-- ===========  SMOOTHING  =========== -->
+      <Parameter        name="smoother: type"                       type="string"   value="CHEBYSHEV"/>
+      <ParameterList    name="smoother: params">
+        <Parameter      name="chebyshev: degree"                    type="int"      value="2"/>
+        <Parameter      name="chebyshev: ratio eigenvalue"          type="double"   value="7"/>
+        <Parameter      name="chebyshev: min eigenvalue"            type="double"   value="1.0"/>
+        <Parameter      name="chebyshev: zero starting solution"    type="bool"     value="true"/>
+      </ParameterList>
+
+      <!-- ===========  REPARTITIONING  =========== -->
+      <!--
+       <Parameter        name="repartition: enable"                  type="bool"     value="true"/>
+       <Parameter        name="repartition: partitioner"             type="string"   value="zoltan2"/>
+       <Parameter        name="repartition: start level"             type="int"      value="2"/>
+       <Parameter        name="repartition: min rows per proc"       type="int"      value="800"/>
+       <Parameter        name="repartition: max imbalance"           type="double"   value="1.1"/>
+       <Parameter        name="repartition: remap parts"             type="bool"     value="false"/>
+       <Parameter        name="repartition: rebalance P and R"       type="bool"     value="false"/>
+       <ParameterList name="repartition: params">
+         <Parameter name="algorithm" type="string" value="multijagged"/>
+       </ParameterList>
+      -->
+
+      <!-- for runs on with OpenMP or Cuda backend, enable -->
+      <Parameter        name="use kokkos refactor"                  type="bool"     value="false"/>
+
+    </ParameterList>
+
+  </ParameterList>
+</ParameterList>

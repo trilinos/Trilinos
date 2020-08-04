@@ -1,58 +1,38 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: pickm3.f,v 1.3 1991/03/22 19:57:40 gdsjaar Exp $
-C $Log: pickm3.f,v $
-C Revision 1.3  1991/03/22 19:57:40  gdsjaar
-C Guess: substitute MM1 for MM
-C
-c Revision 1.2  1991/03/21  15:45:01  gdsjaar
-c Changed all 3.14159... to atan2(0.0, -1.0)
-c
-c Revision 1.1.1.1  1990/11/30  11:13:27  gdsjaar
-c FASTQ Version 2.0X
-c
-c Revision 1.1  90/11/30  11:13:25  gdsjaar
-c Initial revision
-c
-C
-CC* FILE: [.QMESH]PICKM3.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE PICKM3 (N, X, Y, ANGLE, M1, M2, IFIRST)
 C***********************************************************************
-C
+
 C  SUBROUTINE PICKM3 = DETERMINES A REASONABLE SHAPE FOR A LOGICAL
 C                      TRIANGLE WITH PERIMETER GIVEN IN X AND Y
-C
+
 C***********************************************************************
-C
+
       PARAMETER  (RLARGE = 100000.)
       DIMENSION X (N), Y (N), ANGLE (N)
       DIMENSION SMANG (7), INDEX (7)
       DIMENSION ISORT (3)
-C
+
 C  FORM THE LIST OF SMALLEST ANGLES
-C
+
       NSA = 6
       DO 100 I = 1, NSA
          SMANG (I) = 10.
          INDEX (I) = 0
   100 CONTINUE
-C
+
       PI = ATAN2(0.0, -1.0)
       TWOPI = PI + PI
       AGOLD = ATAN2 (Y (1) - Y (N), X (1) - X (N))
-C
+
       DO 130 J = 1, N
-C
+
 C  GET THE ANGLE FORMED BY THIS SET OF POINTS
-C
+
          NEXT = J + 1
          IF  (NEXT .GT. N) NEXT = 1
          AGNEW = ATAN2 (Y (NEXT) - Y (J) ,  X (NEXT) - X (J))
@@ -61,10 +41,10 @@ C
          IF (DIFF .LT.  - PI)DIFF = DIFF + TWOPI
          ANGLE (J) = PI - DIFF
          AGOLD = AGNEW
-C
+
 C  SORT THIS ANGLE AGAINST PREVIOUS ANGLES TO SEE IF IT IS ONE OF
 C  THE SMALLEST
-C
+
          SMANG (NSA + 1) = ANGLE (J)
          INDEX (NSA + 1) = J
          DO II = 1, NSA
@@ -78,15 +58,15 @@ C
             INDEX (I + 1) = ITEMP
          end do
   120    CONTINUE
-C
+
   130 CONTINUE
-C
+
 C  DETERMINE OPTIMUM ORIGIN / SHAPE COMBINATION FOR A TRIANGLE
-C
+
       ATOL = PI * 150. / 180.
-C
+
 C  FIND SIDE DIVISION USING 5 SMALLEST ANGLES AND CHECK CONDITION
-C
+
       DO 140 I = 1,  3
          ISORT (I) = INDEX (I)
   140 CONTINUE
@@ -109,9 +89,9 @@ C
       MM3 = N  -  MM1  -  MM2
       MAX = MAX0 (MM1,  MM2,  MM3)
       IF (MAX .LE. N - MAX - 2) THEN
-C
+
 C  ADD UP ASSIGNED ANGLES
-C
+
          IFIRST = I1
          M1 = MM1
          M2 = MM2
@@ -120,38 +100,38 @@ C
          IFIRST = 1
          GBEST = RLARGE
       END IF
-C
+
 C  LIMIT THE SIZE OF ANY SIDE
-C
+
       MMAX = (N - 2) / 2
-C
+
 C  GO AROUND THE PERIMETER USING THE 10 SMALLEST ANGLES AS POSSIBLE
 C  STARTING POINTS,  AND THEN FIND THE BEST COMBINATION OF SIDE LENGTHS
-C
+
       DO 190 ISA = 1, NSA
          IF (SMANG (ISA) .LE. ATOL) THEN
             I1 = INDEX (ISA)
             SUM1 = ANGLE (I1)
             IF (SUM1  .GE.  GBEST) GO TO 190
-C
+
 C  ASSIGN A TRIAL SECOND NODE
-C
+
             DO 180 N1 = 2, MMAX
                I2 = I1 + N1
                IF (I2 .GT. N)I2 = I2 - N
                SUM2 = SUM1 + ANGLE (I2)
                IF (SUM2  .GE.  GBEST) GO TO 180
-C
+
 C  ASSIGN A TRIAL THIRD NODE
-C
+
                DO 170 N2 = 2, N - N1 - 2
                   I3 = I2 + N2
                   IF (I3 .GT. N)I3 = I3 - N
                   GVAL = SUM2 + ANGLE (I3)
                   IF (GVAL  .GE.  GBEST) GO TO 170
-C
+
 C  FIND SIDE DIVISION AND CHECK CONDITION
-C
+
                   MM1 = I2  -  I1
                   IF  (MM1 .LT. 0) MM1 = N + MM1
                   MM2 = I3  -  I2
@@ -160,9 +140,9 @@ C ... Guess by GDS, MM1 substituted for MM?
                   MM3 = N - MM1  - MM2
                   MAX = MAX0 (MM1, MM2, MM3)
                   IF  (MAX .LE. N - MAX - 2) THEN
-C
+
 C  ADD UP ASSIGNED ANGLES AND COMPARE TO PREVIOUS TRIALS
-C
+
                      IFIRST = I1
                      M1 = MM1
                      M2 = MM2
@@ -172,7 +152,7 @@ C
   180       CONTINUE
          ENDIF
   190 CONTINUE
-C
+
       RETURN
-C
+
       END

@@ -1,29 +1,12 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
       SUBROUTINE FFNEED (IFLD, INTYP, FTYPE, NFLD, EXPECT, *)
 C=======================================================================
-C$Id: ffneed.f,v 1.3 2009/03/25 12:46:02 gdsjaar Exp $
-C$Log: ffneed.f,v $
-CRevision 1.3  2009/03/25 12:46:02  gdsjaar
-CAdd copyright and license notice to all files.
-C
-CRevision 1.2  1993/08/19 18:40:54  gdsjaar
-CFixed incorrect itype for integers
-C
-c Revision 1.1.1.1  1990/08/14  16:14:31  gdsjaar
-c Testing
-c
-c Revision 1.1  90/08/14  16:14:29  gdsjaar
-c Initial revision
-c
-c Revision 1.1  90/08/09  13:39:25  gdsjaar
-c Initial revision
-c
 
 C   --*** FFNEED *** (FFLIB) Check free-field fields for type
 C   --   Written by Amy Gilkey - revised 10/21/86

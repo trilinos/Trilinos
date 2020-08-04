@@ -170,32 +170,20 @@ private:
    */
   bool matrixShapeOK_impl() const;
 
-
   /**
    * Currently, the following CHOLMOD parameters/options are
    * recognized and acted upon:
    *
    * <ul>
-   *   <li> \c "Trans" : { \c "NOTRANS" | \c "TRANS" |
-   *     \c "CONJ" }.  Specifies whether to solve with the transpose system.</li>
-   *   <li> \c "Equil" : { \c true | \c false }.  Specifies whether
-   *     the solver to equilibrate the matrix before solving.</li>
-   *   <li> \c "IterRefine" : { \c "NO" | \c "SLU_SINGLE" | \c "SLU_DOUBLE" | \c "EXTRA"
-   *     }. Specifies whether to perform iterative refinement, and in
-   *     what precision to compute the residual.</li>
-   *   <li> \c "SymmetricMode" : { \c true | \c false }.</li>
-   *   <li> \c "DiagPivotThresh" : \c double value. Specifies the threshold
-   *     used for a diagonal to be considered an acceptable pivot.</li>
-   *   <li> \c "ColPerm" which takes one of the following:
-   *     <ul>
-   *     <li> \c "NATURAL" : natural ordering.</li>
-   *     <li> \c "MMD_AT_PLUS_A" : minimum degree ordering on the structure of
-   *       \f$ A^T + A\f$ .</li>
-   *     <li> \c "MMD_ATA" : minimum degree ordering on the structure of
-   *       \f$ A T A \f$ .</li>
-   *     <li> \c "COLAMD" : approximate minimum degree column ordering.
-   *       (default)</li>
-   *     </ul>
+   *   <li> \c "nmethods" : { \c int value }.  Specifies the number of different ordering methods to try.</li>
+   *   <li> \c "print" : \c int value. Specifies the verbosity of the print statements.</li>
+   *   <li> \c "dbound" : \c int value. Specifies the smallest absolute value on the diagonal D for the LDL factorization.</li>
+   *   <li> \c "PreferUpper" : \c int value. Specifies whether the matrix will be stored in upper triangular form.</li>
+   *   <li> \c "useGPU" : \c int value. 1: Use GPU is 1, 0: Do not use GPU, -1: ENV CHOLMOD_USE_GPU set GPU usage..</li>
+   *   <li> \c "Enable_KokkosKernels_TriangularSolves" : \c bool value. Whether to use triangular solves.</li>
+   *   <li> \c "CholmodInt" : \c bool value. Whether to use cholmod int form.</li>Whether GIDs contiguous the
+   *              smallest absolute value on the diagonal D for the LDL factorization.</li>
+   *   <li> \c "SuperNodal" : \c bool value. Whether to use super nodal.</li>
    * </ul>
    */
   void setParameters_impl(
@@ -234,10 +222,21 @@ private:
   typedef Kokkos::DefaultHostExecutionSpace                   HostExecSpaceType;
   typedef typename HostExecSpaceType::memory_space             HostMemSpaceType;
 
-  typedef long size_type;
-  typedef long ordinal_type;
-  typedef Kokkos::View<size_type*, HostExecSpaceType>       host_size_type_array;
-  typedef Kokkos::View<ordinal_type*, HostExecSpaceType> host_ordinal_type_array;
+  // use_cholmod_int_type controls whether we use CHOLMOD_INT or CHOLMOD_LONG.
+  // To preserve a simple interface for the user where this can be picked
+  // simply by setting a parameter, we prepare both types of arrays and just
+  // one will actually be used.
+  typedef int size_int_type;
+  typedef int ordinal_int_type;
+
+  typedef long size_long_type;
+  typedef long ordinal_long_type;
+
+  typedef Kokkos::View<size_long_type*, HostExecSpaceType>       host_size_long_type_array;
+  typedef Kokkos::View<ordinal_long_type*, HostExecSpaceType> host_ordinal_long_type_array;
+
+  typedef Kokkos::View<size_int_type*, HostExecSpaceType>       host_size_int_type_array;
+  typedef Kokkos::View<ordinal_int_type*, HostExecSpaceType> host_ordinal_int_type_array;
 
   typedef Kokkos::View<chol_type*, HostExecSpaceType>      host_value_type_array;
 
@@ -245,9 +244,11 @@ private:
   /// Stores the values of the nonzero entries for CHOLMOD
   host_value_type_array host_nzvals_view_;
   /// Stores the location in \c Ai_ and Aval_ that starts row j
-  host_size_type_array host_rows_view_;
+  host_size_int_type_array host_rows_int_view_;
+  host_size_long_type_array host_rows_long_view_;
   /// Stores the row indices of the nonzero entries
-  host_ordinal_type_array host_col_ptr_view_;
+  host_ordinal_int_type_array host_col_ptr_int_view_;
+  host_ordinal_long_type_array host_col_ptr_long_view_;
 
   typedef typename Kokkos::View<chol_type**, Kokkos::LayoutLeft, HostExecSpaceType>
     host_solve_array_t;
@@ -282,10 +283,14 @@ private:
   device_int_array device_trsv_perm_;
   mutable device_solve_array_t device_trsv_rhs_;
   mutable device_solve_array_t device_trsv_sol_;
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle <size_type, ordinal_type, chol_type,
-    DeviceExecSpaceType, DeviceMemSpaceType, DeviceMemSpaceType> kernel_handle_type;
-  mutable kernel_handle_type device_khL_;
-  mutable kernel_handle_type device_khU_;
+  typedef KokkosKernels::Experimental::KokkosKernelsHandle <size_int_type, ordinal_int_type, chol_type,
+    DeviceExecSpaceType, DeviceMemSpaceType, DeviceMemSpaceType> kernel_handle_int_type;
+  typedef KokkosKernels::Experimental::KokkosKernelsHandle <size_long_type, ordinal_long_type, chol_type,
+    DeviceExecSpaceType, DeviceMemSpaceType, DeviceMemSpaceType> kernel_handle_long_type;
+  mutable kernel_handle_int_type device_int_khL_;
+  mutable kernel_handle_int_type device_int_khU_;
+  mutable kernel_handle_long_type device_long_khL_;
+  mutable kernel_handle_long_type device_long_khU_;
 #endif
 
   bool firstsolve;
@@ -297,6 +302,7 @@ private:
 
   bool is_contiguous_;
   bool use_triangular_solves_;
+  bool use_cholmod_int_type_; // controls if Cholmod is int or long
 
   void triangular_solve_symbolic();
   void triangular_solve_numeric();
@@ -305,15 +311,6 @@ public: // for GPU
   void triangular_solve() const; // Only for internal use - public to support kernels
 };                              // End class Cholmod
 
-
-/* Specialize solver_traits struct for Cholmod
- *
- * Based on the CHOLMOD documentation, the support for
- * single-precision complex numbers is unclear.  Much of the
- * discussion of complex types only makes explicit mention of 'double'
- * types.  So, be pessimistic for now and don't declare
- * single-precision complex support
- */
 template <>
 struct solver_traits<Cholmod> {
 

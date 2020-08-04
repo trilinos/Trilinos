@@ -1,32 +1,21 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: linepr.f,v 1.1 1990/11/30 11:11:02 gdsjaar Exp $
-C $Log: linepr.f,v $
-C Revision 1.1  1990/11/30 11:11:02  gdsjaar
-C Initial revision
-C
-C
-CC* FILE: [.MAIN]LINEPR.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE LINEPR (ML, MP, LINKP, LCON, II, I1, I2, I3, J1, J2,
      &   J3)
 C***********************************************************************
-C
+
 C  SUBROUTINE LINEPR = GETS THE LINE PARAMETERS
 C***********************************************************************
-C
+
       DIMENSION LCON(3, ML)
       DIMENSION LINKP(2, MP)
-C
+
       LOGICAL ADDLNK
-C
+
       ADDLNK = .FALSE.
       I1 = LCON (1, II)
       I2 = LCON (2, II)
@@ -38,7 +27,7 @@ C
       ELSE
          J3 = 0
       ENDIF
-C
+
       RETURN
-C
+
       END

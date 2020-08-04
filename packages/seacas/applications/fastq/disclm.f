@@ -1,37 +1,26 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: disclm.f,v 1.1 1990/11/30 11:06:05 gdsjaar Exp $
-C $Log: disclm.f,v $
-C Revision 1.1  1990/11/30 11:06:05  gdsjaar
-C Initial revision
-C
-C
-CC* FILE: [.MAIN]DISCLM.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE DISCLM (NCOLS)
 C***********************************************************************
-C
+
 C  SUBROUTINE DISCLM = PRINTS THE SANDIA DISCLAIMER
-C
+
 C***********************************************************************
-C
+
       CHARACTER*29 BLANK
-C
+
       DATA BLANK/' '/
-C
+
       NSHIFT = MAX ( (NCOLS-76)/2, 1) + 1
       NSHIFT = MIN (NSHIFT, 29)
       WRITE (*, 10000) (BLANK (1:NSHIFT), I = 1, 9)
       WRITE (*, 10010) (BLANK (1:NSHIFT), I = 1, 5)
       RETURN
-C
+
 10000 FORMAT (' ', A,
      &   '**************************************',
      &   '**************************************'//, A,
@@ -62,5 +51,5 @@ C
      &   'WNED RIGHTS.'//, A,
      &   '**************************************',
      &   '**************************************'/)
-C
+
       END

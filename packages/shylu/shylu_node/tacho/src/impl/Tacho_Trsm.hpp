@@ -61,7 +61,8 @@ namespace Tacho {
         const int ierr = Trsm<ArgSide,ArgUplo,ArgTrans,ArgAlgo>
           ::invoke(member, ArgDiag(), _alpha, _A, _B);
  
-        Kokkos::single(Kokkos::PerTeam(member), [&] () {
+        Kokkos::single(Kokkos::PerTeam(member), 
+          [&, ierr] () { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
             _B.set_future();
             r_val = ierr;
           });

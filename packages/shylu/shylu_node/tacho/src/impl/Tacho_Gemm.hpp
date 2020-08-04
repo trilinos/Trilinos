@@ -61,7 +61,8 @@ namespace Tacho {
         const int ierr = Gemm<ArgTransA,ArgTransB,ArgAlgo>
           ::invoke(member, _alpha, _A, _B, _beta, _C);
 
-        Kokkos::single(Kokkos::PerTeam(member), [&]() {
+        Kokkos::single(Kokkos::PerTeam(member), 
+          [&, ierr]() { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
             _C.set_future();
             r_val = ierr;
           });

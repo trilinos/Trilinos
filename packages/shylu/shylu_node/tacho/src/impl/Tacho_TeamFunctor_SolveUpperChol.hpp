@@ -121,7 +121,7 @@ namespace Tacho {
           const ordinal_type goffset = s.gid_col_begin + s.m;
           Kokkos::parallel_for
             (Kokkos::TeamVectorRange(member, n_m),
-             [&](const ordinal_type &i) {
+             [&, goffset](const ordinal_type &i) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
               //for (ordinal_type i=0;i<n;++i) {
               const ordinal_type row = _gid_colidx(i+goffset);
               for (ordinal_type j=0;j<_nrhs;++j)
@@ -164,7 +164,7 @@ namespace Tacho {
           // copy to t
           Kokkos::parallel_for
             (Kokkos::TeamVectorRange(member, m*_nrhs),
-             [&](const ordinal_type &k) {
+             [&, m](const ordinal_type &k) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
               const ordinal_type i = k%m, j = k/m;
               tT(i,j) = bT(i,j);
             });
@@ -184,11 +184,60 @@ namespace Tacho {
           const ordinal_type goffset = s.gid_col_begin + s.m;
           Kokkos::parallel_for
             (Kokkos::TeamVectorRange(member, n_m),
-             [&](const ordinal_type &i) {
+             [&, goffset](const ordinal_type &i) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
               //for (ordinal_type i=0;i<n;++i) {
               const ordinal_type row = _gid_colidx(i+goffset);
               for (ordinal_type j=0;j<_nrhs;++j)
                 bB(i,j) = _t(row,j);
+            });
+        }
+      }
+    }
+
+    ///
+    /// Algorithm Variant 2: gemv
+    ///
+    template<typename MemberType>
+    KOKKOS_INLINE_FUNCTION
+    void solve_var2(MemberType &member, const supernode_type &s, value_type *bptr) const {
+      const value_type one(1), zero(0);
+      {
+        const ordinal_type m = s.m, n = s.n;
+        if (m > 0 && n > 0) {
+          value_type *aptr = s.buf;
+
+          const UnmanagedViewType<value_type_matrix> A(aptr, m, n); 
+          const UnmanagedViewType<value_type_matrix> b(bptr, n, _nrhs); 
+
+          const ordinal_type offm = s.row_begin;
+          const auto tT = Kokkos::subview(_t, range_type(offm, offm+m), Kokkos::ALL());
+
+          Gemv<Trans::NoTranspose,GemvAlgoType>
+            ::invoke(member, one, A, b, zero, tT);
+        }
+      }
+    }
+
+    template<typename MemberType>
+    KOKKOS_INLINE_FUNCTION
+    void update_var2(MemberType &member, const supernode_type &s, value_type *bptr) const {
+      {
+        const ordinal_type m = s.m, n = s.n;
+        UnmanagedViewType<value_type_matrix> b(bptr, n, _nrhs);
+        if (n > 0) {
+          const ordinal_type offm = s.row_begin;
+          const ordinal_type goffset = s.gid_col_begin + s.m;
+          Kokkos::parallel_for
+            (Kokkos::TeamVectorRange(member, n),
+             [&](const ordinal_type &i) {
+              for (ordinal_type j=0;j<_nrhs;++j) {
+                if (i < m) {
+                  b(i,j) = _t(offm+i,j);
+                } else {
+                  const ordinal_type row = _gid_colidx(i-m+goffset);
+                  b(i,j) = _t(row,j);
+                }
+              }
             });
         }
       }
@@ -210,9 +259,11 @@ namespace Tacho {
         value_type *bptr = _buf.data() + _buf_ptr(member.league_rank());
         if      (solve_tag_type::variant == 0) solve_var0(member, s, bptr);
         else if (solve_tag_type::variant == 1) solve_var1(member, s, bptr);
-        else printf("Error: abort\n");
+        else if (solve_tag_type::variant == 2) solve_var2(member, s, bptr);
+        else 
+          printf("Error: TeamFunctorSolveUpperChol::SolveTag, algorithm variant is not supported\n"); 
       } else if (mode == -1) {
-        printf("Error: abort\n");
+        printf("Error: TeamFunctorSolveUpperChol::SolveTag, computing mode is not determined\n");
       } else {
         // skip
       }
@@ -229,7 +280,9 @@ namespace Tacho {
         value_type *bptr = _buf.data() + _buf_ptr(member.league_rank());
         if      (update_tag_type::variant == 0) update_var0(member, s, bptr);
         else if (update_tag_type::variant == 1) update_var1(member, s, bptr);
-        else printf("Error: abort\n");
+        else if (update_tag_type::variant == 2) update_var2(member, s, bptr);
+        else 
+          printf("Error: TeamFunctorUpdateUpperChol::SolveTag, algorithm variant is not supported\n"); 
       } else {
         // skip
       }

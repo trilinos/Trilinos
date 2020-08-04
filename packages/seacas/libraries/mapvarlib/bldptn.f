@@ -1,25 +1,25 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
       SUBROUTINE BLDPTN(XB,YB,ZB,NDLSTB,XYZPTS)
-C
+
 C***********************************************************************
-C
+
 C BLDPTN CREATES ARRAYS XYZPTS FOR NODES
-C
+
 C Called by MAPVAR
-C
+
 C***********************************************************************
-C
+
       include 'ebbyeb.blk'
       include 'amesh.blk'
-C
+
       DIMENSION XB(*),YB(*),ZB(*),NDLSTB(*)
       DIMENSION XYZPTS(NUMNDB,3)
-C
+
       DO 20 I = 1, NUMNDB
         XYZPTS(I,1) = XB(NDLSTB(I))
         XYZPTS(I,2) = YB(NDLSTB(I))
@@ -29,6 +29,6 @@ C
           XYZPTS(I,3) = ZB(NDLSTB(I))
         END IF
    20 CONTINUE
-C
+
       RETURN
       END

@@ -1,29 +1,12 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
       LOGICAL FUNCTION OKABRT (ISOK)
 C=======================================================================
-C$Id: okabrt.f,v 1.3 2009/03/25 12:46:02 gdsjaar Exp $
-C$Log: okabrt.f,v $
-CRevision 1.3  2009/03/25 12:46:02  gdsjaar
-CAdd copyright and license notice to all files.
-C
-CRevision 1.2  1990/11/30 09:51:00  gdsjaar
-CModified to work on Unicos
-C
-c Revision 1.1.1.1  90/08/14  16:15:56  gdsjaar
-c Testing
-c
-c Revision 1.1  90/08/14  16:15:54  gdsjaar
-c Initial revision
-c
-c Revision 1.1  90/08/09  13:39:41  gdsjaar
-c Initial revision
-c
 
 C   --*** OKABRT *** (ETCLIB) Initialize cancel function
 C   --   Written by Amy Gilkey - revised 12/21/87
@@ -58,23 +41,6 @@ C      --Initialize cancel flag
 C=======================================================================
       ENTRY ISABRT ()
 C=======================================================================
-C$Id: okabrt.f,v 1.3 2009/03/25 12:46:02 gdsjaar Exp $
-C$Log: okabrt.f,v $
-CRevision 1.3  2009/03/25 12:46:02  gdsjaar
-CAdd copyright and license notice to all files.
-C
-CRevision 1.2  1990/11/30 09:51:00  gdsjaar
-CModified to work on Unicos
-C
-c Revision 1.1.1.1  90/08/14  16:15:56  gdsjaar
-c Testing
-c
-c Revision 1.1  90/08/14  16:15:54  gdsjaar
-c Initial revision
-c
-c Revision 1.1  90/08/09  13:39:41  gdsjaar
-c Initial revision
-c
 
 C   --*** ISABRT *** (ETCLIB) Check cancel function
 C   --   Written by Amy Gilkey - revised 12/17/87

@@ -1,21 +1,9 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
-C $Id: lxrnl.f,v 1.3 1993/07/16 18:28:52 gdsjaar Exp $
-C $Log: lxrnl.f,v $
-C Revision 1.3  1993/07/16 18:28:52  gdsjaar
-C Changed real*8 to double precision
-C
-c Revision 1.2  1993/07/16  18:07:49  gdsjaar
-c Added external pltblk statements so that linkers would pull in block
-c data subprogram to initialize constants.
-c
-c Revision 1.1  1993/07/16  16:46:47  gdsjaar
-c Changed plt to library rather than single source file.
-c
 C=======================================================================
       LOGICAL FUNCTION LXRNL(VAL,N,CH)
       DOUBLE PRECISION VAL(*)

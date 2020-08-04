@@ -74,7 +74,11 @@ namespace tacho {
                    /// with TACHO_ENABLE_INT_INT, size_type is "int"
 		   int* rowBegin,
 		   int* columns,
-		   SX* values)
+		   SX* values,
+                   int numGraphRows = 0,
+                   int* graphRowBegin = nullptr,
+                   int* graphColumns = nullptr,
+                   int* graphWeights = nullptr)
     {
       m_numRows = numRows;
       if (m_numRows == 0) return 0;
@@ -82,6 +86,24 @@ namespace tacho {
       const int numTerms = rowBegin[numRows];
       size_type_array_host    ap_host((size_type*)   rowBegin, numRows+1);
       ordinal_type_array_host aj_host((ordinal_type*)columns,  numTerms);
+
+      size_type_array_host graph_ap_host;
+      ordinal_type_array_host graph_aj_host;
+      ordinal_type_array_host graph_aw_host;
+
+      if (numGraphRows > 0) {
+        if (graphRowBegin == nullptr ||
+            graphColumns == nullptr ||
+            graphWeights == nullptr) {
+          std::cout << "ExternalInterface::Error, with non-zero numGraphRows, graph pointers should not be nullptr\n";
+          std::logic_error("Error: one of graph pointers is nullptr");
+        } else {
+          const size_type nnz_graph = graph_ap_host(numGraphRows);
+          graph_ap_host = size_type_array_host((size_type*)graphRowBegin, numGraphRows+1);
+          graph_aj_host = ordinal_type_array_host((ordinal_type*)graphColumns, nnz_graph);
+          graph_aw_host = ordinal_type_array_host((ordinal_type*)graphWeights, nnz_graph);
+        }
+      }
 
 #if defined (KOKKOS_ENABLE_CUDA)
       /// transfer A into device
@@ -97,7 +119,12 @@ namespace tacho {
       Kokkos::Impl::Timer timer; 
       {
         timer.reset();
-	m_Solver.analyze(numRows, ap_host, aj_host);
+        if (numGraphRows > 0) {
+          m_Solver.analyze(numRows, ap_host, aj_host,
+                           numGraphRows, graph_ap_host, graph_aj_host, graph_aw_host);
+        } else {
+          m_Solver.analyze(numRows, ap_host, aj_host);
+        }
         const double t = timer.seconds();
         std::cout << "ExternalInterface:: analyze time " << t << std::endl;
       }

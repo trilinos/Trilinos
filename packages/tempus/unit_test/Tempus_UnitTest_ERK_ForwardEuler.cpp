@@ -29,6 +29,10 @@ TEUCHOS_UNIT_TEST(ERK_ForwardEuler, Default_Construction)
 
   // Test stepper properties.
   TEUCHOS_ASSERT(stepper->getOrder() == 1);
+  const auto rk_fe = stepper->getTableau();
+
+  TEUCHOS_ASSERT( rk_fe->isTVD() );
+  TEUCHOS_ASSERT( rk_fe->getTVDCoeff() == 1 );
 }
 
 

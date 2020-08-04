@@ -253,14 +253,7 @@ template<class Scalar>
 void StepperExplicitRK<Scalar>::setInitialConditions(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
-  using Teuchos::RCP;
-
-  RCP<SolutionState<Scalar> > initialState = solutionHistory->getCurrentState();
-
-  // Check if we need Stepper storage for xDot
-  if (initialState->getXDot() == Teuchos::null)
-    this->setStepperXDot(stageXDot_.back());
-
+  this->setStepperXDot(stageXDot_.back());
   StepperExplicit<Scalar>::setInitialConditions(solutionHistory);
 }
 
@@ -283,13 +276,6 @@ void StepperExplicitRK<Scalar>::takeStep(
       "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
       "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    this->stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
-#endif
-    RCP<StepperExplicitRK<Scalar> > thisStepper = Teuchos::rcpFromRef(*this);
-    this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
-      StepperRKAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
-
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     const Scalar dt = workingState->getTimeStep();
@@ -303,9 +289,24 @@ void StepperExplicitRK<Scalar>::takeStep(
     this->stageX_ = workingState->getX();
     Thyra::assign(this->stageX_.ptr(), *(currentState->getX()));
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+    this->stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
+#endif
+    RCP<StepperExplicitRK<Scalar> > thisStepper = Teuchos::rcpFromRef(*this);
+    this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
+      StepperRKAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
+
     // Compute stage solutions
     for (int i=0; i < numStages; ++i) {
       this->setStageNumber(i);
+      Thyra::assign(this->stageX_.ptr(), *(currentState->getX()));
+      for (int j=0; j < i; ++j) {
+        if (A(i,j) != Teuchos::ScalarTraits<Scalar>::zero()) {
+          Thyra::Vp_StV(this->stageX_.ptr(), dt*A(i,j), *stageXDot_[j]);
+        }
+      }
+      this->setStepperXDot(stageXDot_[i]);
+
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
       this->stepperObserver_->observeBeginStage(solutionHistory, *this);
 
@@ -321,34 +322,28 @@ void StepperExplicitRK<Scalar>::takeStep(
       this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
         StepperRKAppAction<Scalar>::ACTION_LOCATION::BEFORE_SOLVE);
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+      // ???: is it a good idea to leave this (no-op) here?
+      this->stepperObserver_->observeAfterSolve(solutionHistory, *this);
+
+      this->stepperObserver_->observeBeforeExplicit(solutionHistory, *this);
+#endif
+      this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
+        StepperRKAppAction<Scalar>::ACTION_LOCATION::AFTER_SOLVE);
+      this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
+        StepperRKAppAction<Scalar>::ACTION_LOCATION::BEFORE_EXPLICIT_EVAL);
+
       if ( i == 0 && this->getUseFSAL() &&
            workingState->getNConsecutiveFailures() == 0 ) {
 
         RCP<Thyra::VectorBase<Scalar> > tmp = stageXDot_[0];
         stageXDot_[0] = stageXDot_.back();
         stageXDot_.back() = tmp;
+        this->setStepperXDot(stageXDot_[0]);
 
       } else {
 
-        Thyra::assign(this->stageX_.ptr(), *(currentState->getX()));
-        for (int j=0; j < i; ++j) {
-          if (A(i,j) != Teuchos::ScalarTraits<Scalar>::zero()) {
-            Thyra::Vp_StV(this->stageX_.ptr(), dt*A(i,j), *stageXDot_[j]);
-          }
-        }
         const Scalar ts = time + c(i)*dt;
-
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-        // ???: is it a good idea to leave this (no-op) here?
-        this->stepperObserver_->observeAfterSolve(solutionHistory, *this);
-
-        this->stepperObserver_->observeBeforeExplicit(solutionHistory, *this);
-#endif
-        this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
-          StepperRKAppAction<Scalar>::ACTION_LOCATION::AFTER_SOLVE);
-        this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
-          StepperRKAppAction<Scalar>::ACTION_LOCATION::BEFORE_EXPLICIT_EVAL);
-
         auto p = Teuchos::rcp(new ExplicitODEParameters<Scalar>(dt));
 
         // Evaluate xDot = f(x,t).
@@ -361,6 +356,8 @@ void StepperExplicitRK<Scalar>::takeStep(
       this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
         StepperRKAppAction<Scalar>::ACTION_LOCATION::END_STAGE);
     }
+    // reset the stage number
+    this->setStageNumber(-1);
 
     // Sum for solution: x_n = x_n-1 + Sum{ b(i) * dt*f(i) }
     Thyra::assign((workingState->getX()).ptr(), *(currentState->getX()));
@@ -420,8 +417,6 @@ void StepperExplicitRK<Scalar>::takeStep(
     this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
       StepperRKAppAction<Scalar>::ACTION_LOCATION::END_STEP);
   }
-  // reset the stage number
-  this->setStageNumber(-1);
   return;
 }
 

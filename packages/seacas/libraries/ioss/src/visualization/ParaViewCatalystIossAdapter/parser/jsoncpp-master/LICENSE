@@ -99,4 +99,4 @@ void StyledStreamWriter::writeArrayValue(const Value& value) {
   }
 }
 
-bool StyledStreamWriter::isMultineArray(const Value& 
+bool StyledStreamWriter::isMultineArray(const Value&

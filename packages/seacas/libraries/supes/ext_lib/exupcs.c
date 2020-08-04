@@ -2,11 +2,10 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 /*
- * $Id: exupcs.c,v 1.12 2008/03/14 13:22:38 gdsjaar Exp $
  */
 
 #include <ctype.h>

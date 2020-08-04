@@ -43,7 +43,7 @@ namespace Tempus {
  *                -  \frac{\tau_n}{\tau_n + \tau_{n-1}}
  *                   \left[ \frac{x_{n-1}-x_{n-2}}{\tau_{n-1}}\right], \f$
  *
- *  The First-Step-As-Last (FSAL) principle is not needed BDF2.
+ *  The First-Same-As-Last (FSAL) principle is not needed BDF2.
  *  The default is to set useFSAL=false, however useFSAL=true will also work
  *  but have no affect (i.e., no-op).
  *

@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 
@@ -168,7 +168,6 @@ int ex_put_assemblies(int exoid, size_t count, const struct ex_assembly *assembl
 
   /* Assembly are now all defined; see if any set data needs to be output... */
   for (size_t i = 0; i < count; i++) {
-    status = EX_NOERR;
     if (assemblies[i].entity_list != NULL) {
       if ((status = nc_put_var_longlong(exoid, entlst_id[i],
                                         (long long *)assemblies[i].entity_list)) != EX_NOERR) {

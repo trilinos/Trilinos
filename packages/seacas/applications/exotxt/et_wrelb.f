@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
@@ -76,7 +76,7 @@ C        Write connectivity and attributes for this element block
 
 C     WRCONAT - Write the connectivity and attributes to a text file
 C     Written for ExodusIIv2 database format 10/12/95
-C
+
 C     NTXT   - IN - file id
 C     NUMELB - IN - number of element in element block
 C     NUMLNK - IN - number of nodes per element in element block

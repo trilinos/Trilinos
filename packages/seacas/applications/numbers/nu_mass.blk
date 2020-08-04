@@ -1,19 +1,14 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: mass.blk,v 1.1 1991/02/21 15:44:16 gdsjaar Exp $
-C $Log: mass.blk,v $
-C Revision 1.1  1991/02/21 15:44:16  gdsjaar
-C Initial revision
-C
       COMMON /MASS/ IM, IR, IX, IS, ID, IV, IC, IZ, IXXX, IXG,
      *    IXINI, IAJ, IECEN, IW
-C
+
 C POINTERS USED IN MASS PROPERTIES CALCULATION:
-C
+
 C     IM       Material block array
 C     IR       Coordinate array
 C     IX       Connectivity array
@@ -28,4 +23,3 @@ C     IXINI    Sum of shape function functions
 C     IAJ      Jacobian matrix
 C     IECEN    Element Centroid location
 C     IW       Element Wave Speed Array
-C

@@ -221,7 +221,7 @@ preEvaluate(typename TRAITS::PreEvalData d)
   typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
 
   // this is the list of parameters and their names that this scatter has to account for
-  std::vector<std::string> activeParameters = 
+  std::vector<std::string> activeParameters =
     rcp_dynamic_cast<ParameterList_GlobalEvaluationData>(d.gedc->getDataObject("PARAMETER_NAMES"))->getActiveParameters();
 
   dfdp_vectors_.clear();
@@ -280,6 +280,8 @@ ScatterResidual_Tpetra(const Teuchos::RCP<const GlobalIndexer> & indexer,
                        const Teuchos::ParameterList& p)
    : globalIndexer_(indexer)
    , globalDataKey_("Residual Scatter Container")
+   , my_derivative_size_(0)
+   , other_derivative_size_(0)
 {
   std::string scatterName = p.get<std::string>("Scatter Name");
   scatterHolder_ =
@@ -338,8 +340,13 @@ postRegistrationSetup(typename TRAITS::SetupData d,
       scratch_offsets_[fd](i) = offsets[i];
   }
 
+  my_derivative_size_ = globalIndexer_->getElementBlockGIDCount(blockId);
+  if (Teuchos::nonnull(workset_0.other)) {
+    auto otherBlockId = workset_0.other->block_id;
+    other_derivative_size_ = globalIndexer_->getElementBlockGIDCount(otherBlockId);
+  }
   scratch_lids_ = Kokkos::View<LO**,PHX::Device>("lids",scatterFields_[0].extent(0),
-                                                 globalIndexer_->getElementBlockGIDCount(blockId));
+                                                 my_derivative_size_ + other_derivative_size_);
 }
 
 // **********************************************************************
@@ -481,7 +488,18 @@ evaluateFields(typename TRAITS::EvalData workset)
    Teuchos::RCP<typename LOC::VectorType> r = tpetraContainer_->get_f();
    Teuchos::RCP<typename LOC::CrsMatrixType> Jac = tpetraContainer_->get_A();
 
-   globalIndexer_->getElementLIDs(this->wda(workset).cell_local_ids_k,scratch_lids_);
+   // Cache scratch lids. For interface bc problems the derivative
+   // dimension extent spans two cells. Use subviews to get the self
+   // lids and the other lids.
+   if (Teuchos::nonnull(workset.other)) {
+     auto my_scratch_lids = Kokkos::subview(scratch_lids_,Kokkos::ALL,std::make_pair(0,my_derivative_size_));
+     globalIndexer_->getElementLIDs(this->wda(workset).cell_local_ids_k,my_scratch_lids);
+     auto other_scratch_lids = Kokkos::subview(scratch_lids_,Kokkos::ALL,std::make_pair(my_derivative_size_,my_derivative_size_ + other_derivative_size_));
+     globalIndexer_->getElementLIDs(workset.other->cell_local_ids_k,other_scratch_lids);
+   }
+   else {
+     globalIndexer_->getElementLIDs(this->wda(workset).cell_local_ids_k,scratch_lids_);
+   }
 
    ScatterResidual_Jacobian_Functor<ScalarT,LO,GO,NodeT,LocalMatrixT> functor;
    functor.fillResidual = (r!=Teuchos::null);
@@ -497,6 +515,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 
      Kokkos::parallel_for(workset.num_cells,functor);
    }
+
 }
 
 // **********************************************************************

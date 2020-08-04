@@ -16,7 +16,7 @@ an interface which encourages readable coding and efficient use of memory
 resources.  Machine dependencies are isolated through the use of the FORTRAN
 extension library (Chapter~\ref{sec:extlib}). All memory requests are in
 terms of {\em numeric storage units} (the amount of memory occupied by an
-integer, real, or logical datum~\cite{ansi}). 
+integer, real, or logical datum~\cite{ansi}).
 
 The memory manager utility is divided into three categories; basic routines,
 advanced routines, and development aids.  These categories will be discussed
@@ -35,7 +35,7 @@ The base array must comply with the following rules:
 \begin{enumerate}
 \item The array must be of type INTEGER, REAL, or LOGICAL.  Modified word
 length storage arrays such as INTEGER\last2 or REAL\last8 will result in
-invalid pointers with no error message. 
+invalid pointers with no error message.
 
 \item The lower bound of the array subscript must be one.
 \end{enumerate}
@@ -65,12 +65,12 @@ require little understanding of the internal workings of the utility.
 \subsection{Initialize (MDINIT)}
 The memory manager {\em must} be initialized with a call to MDINIT before
 any memory can be allocated.  The main purpose of the initialization is to
-determine the location of the base array in memory. 
+determine the location of the base array in memory.
 
 \verb+CALL MDINIT (BASE)+
 
 \begin{argy}{BASE}{INTEGER, LOGICAL or REAL Array}{Read Only}
-This array is used as a base reference to all dynamically allocated memory. 
+This array is used as a base reference to all dynamically allocated memory.
 \end{argy}
 
 \subsection{Define Dynamic Array (MDRSRV)}
@@ -84,18 +84,18 @@ new storage are undefined.
 This is the name of the new dynamic array. The memory manager will add this
 name to its internal dictionary; each array must have a unique name.  The
 first eight characters are used for comparison, and leading and embedded
-blanks are significant. 
+blanks are significant.
 \end{argy}
 
 \begin{argy}{NEWPNT}{INTEGER}{Write Only}
 This is the pointer to storage allocated to this dynamic array relative to
-the base array. 
+the base array.
 \end{argy}
 
 \begin{argy}{NEWLEN}{INTEGER}{Read Only}
 This is the length to be reserved for the new array. Any nonnegative number
 is acceptable.  A zero length does not cause any storage to be allocated and
-returns a pointer equal to one. 
+returns a pointer equal to one.
 \end{argy}
 
 \subsection{Delete Dynamic Array (MDDEL)}
@@ -107,7 +107,7 @@ MDDEL releases the memory that is allocated to a dynamic array.
 This is the name of the dynamic array which is to be deleted.  The array
 name must match an existing name in the dictionary.  The first eight
 characters are used for comparison, and leading and embedded blanks are
-significant. 
+significant.
 \end{argy}
 
 \subsection{Reserve Memory Block (MDGET)}
@@ -138,12 +138,12 @@ manager to assure no errors have occurred.
 
 \begin{argy}{MNERRS}{INTEGER}{Write Only}
 This is the total number of errors detected by the memory manager during the
-current execution. 
+current execution.
 \end{argy}
 
 \begin{argy}{MNUSED}{INTEGER}{Write Only}
 This is the total number of words that are currently allocated to dynamic
-arrays. 
+arrays.
 \end{argy}
 
 \subsection{Print Error Summary (MDEROR)}
@@ -207,11 +207,11 @@ array is not changed, nor is its length.
 
 \begin{argy}{NAME1}{CHARACTER\last(\last)}{Read Only}
 This is the old name of the array.  The first eight characters are used for
-comparison. 
+comparison.
 \end{argy}
 
 \begin{argy}{NAME2}{CHARACTER\last(\last)}{Read Only}
-This is the new name of the array.  The first eight characters are used. 
+This is the new name of the array.  The first eight characters are used.
 \end{argy}
 
 \subsection{Adjust Dynamic Array Length (MDLONG)}
@@ -224,7 +224,7 @@ the previous pointer to this array if the array is extended.
 
 \begin{argy}{NAME}{CHARACTER\last(\last)}{Read Only}
 This is the name of the dynamic array which the user wishes to extend or
-shorten. 
+shorten.
 \end{argy}
 
 \begin{argy}{NEWPNT}{INTEGER}{Write Only}
@@ -248,7 +248,7 @@ This is the name of the dynamic array to be located.
 
 \begin{argy}{NEWPNT}{INTEGER}{Write Only}
 This is the pointer to the dynamic array relative to the user's reference
-array. 
+array.
 \end{argy}
 
 \begin{argy}{NEWLEN}{INTEGER}{Write Only}
@@ -272,7 +272,7 @@ a mature program.
 
 \subsection{List Storage Tables (MDLIST)}
 MDLIST prints the contents of the memory manager's internal tables.
-Section~\ref{sec:table} describes these tables. 
+Section~\ref{sec:table} describes these tables.
 
 \verb+CALL MDLIST (IUNIT)+
 
@@ -296,5 +296,5 @@ This is the unit number of the output device.
 \begin{argy}{NTYPE}{CHARACTER\last(\last)}{Read Only}
 NTYPE indicates the data type of the data to be printed; "R" for REAL, or
 "I" for INTEGER.  Note that this is not necessarily the declared type of the
-base array. 
+base array.
 \end{argy}

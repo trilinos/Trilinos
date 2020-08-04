@@ -256,6 +256,7 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
   TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyMeshFilesSTK
   SOURCE_FILES unit_cube_10int_hex.exo
                unit_cube_5int_tet.exo
+	       unit_cube_int_tri.exo
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
   )

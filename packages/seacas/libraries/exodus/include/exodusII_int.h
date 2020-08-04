@@ -3,7 +3,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 /*****************************************************************************
@@ -694,7 +694,6 @@ struct ex__file_item
   unsigned int
                         file_type : 2; /**< 0 - classic, 1 -- 64 bit classic, 2 --NetCDF4,  3 --NetCDF4 classic */
   unsigned int          is_write : 1;    /**< for output or append */
-  unsigned int          is_read : 1;     /**< for input */
   unsigned int          is_parallel : 1; /**< 1 true, 0 false */
   unsigned int          is_hdf5 : 1;     /**< 1 true, 0 false */
   unsigned int          is_pnetcdf : 1;  /**< 1 true, 0 false */

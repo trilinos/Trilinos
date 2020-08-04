@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 /*****************************************************************************
@@ -213,8 +213,8 @@ static void invalidate_id_status(int exoid, const char *var_stat, const char *va
 
 int ex_put_init_ext(int exoid, const ex_init_params *model)
 {
-  int numdimdim, numnoddim, elblkdim, edblkdim, fablkdim, esetdim, fsetdim, elsetdim,
-      nsetdim, ssetdim, dim_str_name, dim[2], temp;
+  int numdimdim, numnoddim, elblkdim, edblkdim, fablkdim, esetdim, fsetdim, elsetdim, nsetdim,
+      ssetdim, dim_str_name, dim[2], temp;
   int nmapdim, edmapdim, famapdim, emapdim, timedim;
   int status;
   int title_len;
@@ -222,7 +222,7 @@ int ex_put_init_ext(int exoid, const ex_init_params *model)
   /* used for header size calculations which are turned off for now */
   int header_size, fixed_var_size, iows;
 #endif
-  char                  errmsg[MAX_ERR_LENGTH];
+  char errmsg[MAX_ERR_LENGTH];
 
   EX_FUNC_ENTER();
   ex__check_valid_file_id(exoid, __func__);

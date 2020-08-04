@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 
@@ -131,12 +131,12 @@ C     OPEN statement. If IUNIT .LE. 0, the returned name is the value of
 C     a system symbol. It is assumed that the unit/file name or symbol
 C     linkage will be passed to this routine during program execution.
 C     A null string (LN = 0) will be returned if no name is available.
-C
+
 C     FORMAL PARAMETERS:
 C     IUNIT     INTEGER         Logical Unit Number ( >0 )
 C                            or Symbol ID ( = -IUNIT )
 C     NAME      CHARACTER       File Name
 C     LN        INTEGER         Length of File Name
-C
+
 ************************************************************************
 */

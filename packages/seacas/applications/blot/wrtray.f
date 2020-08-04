@@ -1,29 +1,9 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
-C $Log: wrtray.f,v $
-C Revision 1.3  2009/03/25 12:36:49  gdsjaar
-C Add copyright and license notice to all files.
-C Permission to assert copyright has been granted; blot is now open source, BSD
-C
-C Revision 1.2  1994/07/21 15:28:20  gdsjaar
-C Moved more commons into includes.
-C
-c Revision 1.1  1994/04/07  20:17:45  gdsjaar
-c Initial checkin of ACCESS/graphics/blotII2
-c
-c Revision 1.3  1993/09/20  18:15:40  gdsjaar
-c Changed to output block id instead of number, changed output format slightly
-c
-c Revision 1.2  1993/09/16  21:13:51  gdsjaar
-c Redid method of writing rayshade file. Now, hidden 6 only writes file,
-c but does not do shaded plot.  Also, new file written each time rather
-c than appending on to end of first file.
-c
-c
 C=======================================================================
       SUBROUTINE wrtray (LENF, NLNKF, LINKF, NXFAC, IXFAC,
      &   XN, YN, ZN, IELBST, BLKCOL, IDELB, *)
@@ -135,7 +115,6 @@ C ... Open the output file.
      *  (xpts(i), ypts(i), zpts(i),i=0, nnpf-1)
 
   100 CONTINUE
-
 
       write (*,*) 'RAYSHADE polygon file written to ',filnam(:lnam)
       write (*,*)
