@@ -1043,8 +1043,9 @@ namespace Sacado {
     // Implementation for simd type using if_then_else()
     //
     template <typename T1, typename T2>
-    class PowerOp< T1, T2, false, false, ExprSpecMPVector, true > :
-      public Expr< PowerOp< T1, T2, false, false, ExprSpecMPVector, true > > {
+    class PowerOp< T1, T2, false, false, ExprSpecMPVector, PowerImpl::Simd > :
+      public Expr< PowerOp< T1, T2, false, false, ExprSpecMPVector,
+                            PowerImpl::Simd > > {
     public:
 
       typedef typename std::remove_cv<T1>::type ExprT1;
@@ -1099,7 +1100,7 @@ namespace Sacado {
         else if (sz1 > 0)
           // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
           // It seems less accurate and caused convergence problems in some codes
-          return if_then_else( expr1.val(j) == val_type(0.0), val_type(0.0), val_type(expr2.val(j)*expr1.dx(i,j)/expr1.val(j)*pow(expr1.val(j),expr2.val(j))) );
+          return if_then_else( expr2.val(j) == scalar_type(1.0), expr1.dx(i,j), if_then_else( expr1.val(j) == val_type(0.0), val_type(0.0), val_type(expr2.val(j)*expr1.dx(i,j)/expr1.val(j)*pow(expr1.val(j),expr2.val(j))) ));
         else
           return if_then_else( expr1.val(j) == val_type(0.0), val_type(0.0), val_type(expr2.dx(i,j)*log(expr1.val(j))*pow(expr1.val(j),expr2.val(j))) );
       }
@@ -1118,8 +1119,9 @@ namespace Sacado {
     };
 
     template <typename T1, typename T2>
-    class PowerOp< T1, T2, false, true, ExprSpecMPVector, true >
-      : public Expr< PowerOp< T1, T2, false, true, ExprSpecMPVector, true > > {
+    class PowerOp< T1, T2, false, true, ExprSpecMPVector, PowerImpl::Simd >
+      : public Expr< PowerOp< T1, T2, false, true, ExprSpecMPVector,
+                              PowerImpl::Simd > > {
     public:
 
       typedef typename std::remove_cv<T1>::type ExprT1;
@@ -1162,7 +1164,7 @@ namespace Sacado {
         using std::pow;
         // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
         // It seems less accurate and caused convergence problems in some codes
-        return if_then_else( expr1.val(j) == val_type(0.0), val_type(0.0), val_type(c.fastAccessCoeff(j)*expr1.dx(i,j)/expr1.val(j)*pow(expr1.val(j),c.fastAccessCoeff(j))) );
+        return if_then_else( c.fastAccessCoeff(j) == scalar_type(1.0), expr1.dx(i,j), if_then_else( expr1.val(j) == val_type(0.0), val_type(0.0), val_type(c.fastAccessCoeff(j)*expr1.dx(i,j)/expr1.val(j)*pow(expr1.val(j),c.fastAccessCoeff(j))) ));
       }
 
       KOKKOS_INLINE_FUNCTION
@@ -1170,7 +1172,7 @@ namespace Sacado {
         using std::pow;
         // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
         // It seems less accurate and caused convergence problems in some codes
-        return if_then_else( expr1.val(j) == val_type(0.0), val_type(0.0), val_type(c.fastAccessCoeff(j)*expr1.fastAccessDx(i,j)/expr1.val(j)*pow(expr1.val(j),c.fastAccessCoeff(j))) );
+        return if_then_else( c.fastAccessCoeff(j) == scalar_type(1.0), expr1.fastAccessDx(i,j), if_then_else( expr1.val(j) == val_type(0.0), val_type(0.0), val_type(c.fastAccessCoeff(j)*expr1.fastAccessDx(i,j)/expr1.val(j)*pow(expr1.val(j),c.fastAccessCoeff(j))) ));
       }
 
     protected:
@@ -1180,8 +1182,9 @@ namespace Sacado {
     };
 
     template <typename T1, typename T2>
-    class PowerOp< T1, T2, true, false, ExprSpecMPVector, true >
-      : public Expr< PowerOp< T1, T2, true, false, ExprSpecMPVector, true > > {
+    class PowerOp< T1, T2, true, false, ExprSpecMPVector, PowerImpl::Simd >
+      : public Expr< PowerOp< T1, T2, true, false, ExprSpecMPVector,
+                              PowerImpl::Simd> > {
     public:
 
       typedef typename std::remove_cv<T2>::type ExprT2;
@@ -1238,12 +1241,15 @@ namespace Sacado {
     };
 
     //
-    // Specialization for scalar types using ternary operator
+    // Specialization for nested derivatives.  This version does not use
+    // if_then_else/ternary-operator on the base so that nested derivatives
+    // are correct.
     //
-
     template <typename T1, typename T2>
-    class PowerOp< T1, T2, false, false, ExprSpecMPVector, false > :
-      public Expr< PowerOp< T1, T2, false, false, ExprSpecMPVector, false > > {
+    class PowerOp< T1, T2, false, false, ExprSpecMPVector,
+                   PowerImpl::NestedSimd > :
+      public Expr< PowerOp< T1, T2, false, false, ExprSpecMPVector,
+                   PowerImpl::NestedSimd > > {
     public:
 
       typedef typename std::remove_cv<T1>::type ExprT1;
@@ -1290,23 +1296,21 @@ namespace Sacado {
       }
 
       KOKKOS_INLINE_FUNCTION
-      val_type dx(int i, int j) const {
+      value_type dx(int i, int j) const {
         using std::pow; using std::log;
         const int sz1 = expr1.size(), sz2 = expr2.size();
         if (sz1 > 0 && sz2 > 0)
-          return expr1.val(j) == val_type(0.0) ? val_type(0.0) : val_type((expr2.dx(i,j)*log(expr1.val(j))+expr2.val(j)*expr1.dx(i,j)/expr1.val(j))*pow(expr1.val(j),expr2.val(j)));
+          return (expr2.dx(i,j)*log(expr1.val(j))+expr2.val(j)*expr1.dx(i,j)/expr1.val(j))*pow(expr1.val(j),expr2.val(j));
         else if (sz1 > 0)
-          // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
-          // It seems less accurate and caused convergence problems in some codes
-          return expr1.val(j) == val_type(0.0) ? val_type(0.0) : val_type(expr2.val(j)*expr1.dx(i,j)/expr1.val(j)*pow(expr1.val(j),expr2.val(j)));
+          return if_then_else( expr2.val(j) == scalar_type(0.0), value_type(0.0), value_type((expr2.val(j)*expr1.dx(i,j))*pow(expr1.val(j),expr2.val(j)-scalar_type(1.0))));
         else
-          return expr1.val(j) == val_type(0.0) ? val_type(0.0) : val_type(expr2.dx(i,j)*log(expr1.val(j))*pow(expr1.val(j),expr2.val(j)));
+          return expr2.dx(i,j)*log(expr1.val(j))*pow(expr1.val(j),expr2.val(j));
       }
 
       KOKKOS_INLINE_FUNCTION
-      val_type fastAccessDx(int i, int j) const {
+      value_type fastAccessDx(int i, int j) const {
         using std::pow; using std::log;
-        return expr1.val(j) == val_type(0.0) ? val_type(0.0) : val_type((expr2.fastAccessDx(i,j)*log(expr1.val(j))+expr2.val(j)*expr1.fastAccessDx(i,j)/expr1.val(j))*pow(expr1.val(j),expr2.val(j)));
+        return (expr2.fastAccessDx(i,j)*log(expr1.val(j))+expr2.val(j)*expr1.fastAccessDx(i,j)/expr1.val(j))*pow(expr1.val(j),expr2.val(j));
       }
 
     protected:
@@ -1317,8 +1321,10 @@ namespace Sacado {
     };
 
     template <typename T1, typename T2>
-    class PowerOp< T1, T2, false, true, ExprSpecMPVector, false >
-      : public Expr< PowerOp< T1, T2, false, true, ExprSpecMPVector, false > > {
+    class PowerOp< T1, T2, false, true, ExprSpecMPVector,
+                   PowerImpl::NestedSimd > :
+      public Expr< PowerOp< T1, T2, false, true, ExprSpecMPVector,
+                   PowerImpl::NestedSimd > > {
     public:
 
       typedef typename std::remove_cv<T1>::type ExprT1;
@@ -1357,19 +1363,15 @@ namespace Sacado {
       }
 
       KOKKOS_INLINE_FUNCTION
-      val_type dx(int i, int j) const {
+      value_type dx(int i, int j) const {
         using std::pow;
-        // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
-        // It seems less accurate and caused convergence problems in some codes
-        return expr1.val(j) == val_type(0.0) ? val_type(0.0) : val_type(c.fastAccessCoeff(j)*expr1.dx(i,j)/expr1.val(j)*pow(expr1.val(j),c.fastAccessCoeff(j)));
+        return if_then_else( c.fastAccessCoeff(j) == scalar_type(0.0), value_type(0.0), value_type(c.fastAccessCoeff(j)*expr1.dx(i,j)*pow(expr1.val(j),c.fastAccessCoeff(j)-scalar_type(1.0))));
       }
 
       KOKKOS_INLINE_FUNCTION
-      val_type fastAccessDx(int i, int j) const {
+      value_type fastAccessDx(int i, int j) const {
         using std::pow;
-        // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
-        // It seems less accurate and caused convergence problems in some codes
-        return expr1.val(j) == val_type(0.0) ? val_type(0.0) : val_type(c.fastAccessCoeff(j)*expr1.fastAccessDx(i,j)/expr1.val(j)*pow(expr1.val(j),c.fastAccessCoeff(j)));
+        return if_then_else( c.fastAccessCoeff(j) == scalar_type(0.0), value_type(0.0), value_type(c.fastAccessCoeff(j)*expr1.fastAccessDx(i,j)*pow(expr1.val(j),c.fastAccessCoeff(j)-scalar_type(1.0))));
       }
 
     protected:
@@ -1379,8 +1381,10 @@ namespace Sacado {
     };
 
     template <typename T1, typename T2>
-    class PowerOp< T1, T2, true, false, ExprSpecMPVector, false >
-      : public Expr< PowerOp< T1, T2, true, false, ExprSpecMPVector, false > > {
+    class PowerOp<T1, T2, true, false, ExprSpecMPVector,
+                   PowerImpl::NestedSimd > :
+      public Expr< PowerOp< T1, T2, true, false, ExprSpecMPVector,
+                   PowerImpl::NestedSimd > > {
     public:
 
       typedef typename std::remove_cv<T2>::type ExprT2;
@@ -1419,15 +1423,15 @@ namespace Sacado {
       }
 
       KOKKOS_INLINE_FUNCTION
-      val_type dx(int i, int j) const {
+      value_type dx(int i, int j) const {
         using std::pow; using std::log;
-        return c.fastAccessCoeff(j) == val_type(0.0) ? val_type(0.0) : val_type(expr2.dx(i,j)*log(c.fastAccessCoeff(j))*pow(c.fastAccessCoeff(j),expr2.val(j)));
+        return expr2.dx(i,j)*log(c.fastAccessCoeff(j))*pow(c.fastAccessCoeff(j),expr2.val(j));
       }
 
       KOKKOS_INLINE_FUNCTION
-      val_type fastAccessDx(int i, int j) const {
+      value_type fastAccessDx(int i, int j) const {
         using std::pow; using std::log;
-        return c.fastAccessCoeff(j) == val_type(0.0) ? val_type(0.0) : val_type(expr2.fastAccessDx(i,j)*log(c.fastAccessCoeff(j))*pow(c.fastAccessCoeff(j),expr2.val(j)));
+        return expr2.fastAccessDx(i,j)*log(c.fastAccessCoeff(j))*pow(c.fastAccessCoeff(j),expr2.val(j));
       }
 
     protected:

@@ -30,9 +30,13 @@
 #ifndef SACADO_EXP_FAD_OPS_FWD_HPP
 #define SACADO_EXP_FAD_OPS_FWD_HPP
 
+#include <type_traits>
+
 namespace Sacado {
 
   template <typename T> struct IsSimdType;
+  template <typename T> struct IsFad;
+  template <typename T> struct ValueType;
 
   namespace Fad {
   namespace Exp {
@@ -70,11 +74,39 @@ namespace Sacado {
     template <typename T1, typename T2, bool, bool, typename E>
     class DivisionOp;
     template <typename T1, typename T2, bool, bool, typename E> class Atan2Op;
-    template <typename T1, typename T2, bool, bool, typename E,
-              bool is_simd = IsSimdType<T1>::value || IsSimdType<T2>::value>
-    class PowerOp;
     template <typename T1, typename T2, bool, bool, typename E> class MaxOp;
     template <typename T1, typename T2, bool, bool, typename E> class MinOp;
+
+    namespace PowerImpl {
+      struct Simd {};
+      struct Nested {};
+      struct NestedSimd {};
+      struct Scalar {};
+
+      template <typename T1, typename T2>
+      struct Selector {
+        static constexpr bool is_simd =
+          IsSimdType<T1>::value || IsSimdType<T2>::value;
+        static constexpr bool is_fad =
+          IsFad< typename Sacado::ValueType<T1>::type >::value ||
+          IsFad< typename Sacado::ValueType<T2>::type >::value;
+        typedef typename std::conditional<
+          is_simd && is_fad,
+          NestedSimd,
+          typename std::conditional<
+            is_simd,
+            Simd,
+            typename std::conditional<
+              is_fad,
+              Nested,
+              Scalar>::type
+            >::type
+          >::type type;
+      };
+    }
+    template <typename T1, typename T2, bool, bool, typename E,
+              typename Impl = typename PowerImpl::Selector<T1,T2>::type >
+    class PowerOp;
 
   } // namespace Exp
   } // namespace Fad

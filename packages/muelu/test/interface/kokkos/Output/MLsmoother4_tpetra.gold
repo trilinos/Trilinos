@@ -11,6 +11,7 @@ smoother ->
  chebyshev: boost factor = 1.1   [unused]
  chebyshev: min diagonal value = 2.22045e-16   [default]
  chebyshev: eigenvalue max iterations = 10   [default]
+ chebyshev: eigenvalue normalization frequency = 1   [default]
  chebyshev: zero starting solution = 1   [default]
  chebyshev: assume matrix does not change = 0   [default]
 
@@ -93,6 +94,7 @@ smoother ->
  chebyshev: boost factor = 1.1   [unused]
  chebyshev: min diagonal value = 2.22045e-16   [default]
  chebyshev: eigenvalue max iterations = 10   [default]
+ chebyshev: eigenvalue normalization frequency = 1   [default]
  chebyshev: zero starting solution = 1   [default]
  chebyshev: assume matrix does not change = 0   [default]
 
@@ -178,6 +180,7 @@ smoother ->
  chebyshev: boost factor = 1.1   [unused]
  chebyshev: min diagonal value = 2.22045e-16   [default]
  chebyshev: eigenvalue max iterations = 10   [default]
+ chebyshev: eigenvalue normalization frequency = 1   [default]
  chebyshev: zero starting solution = 1   [default]
  chebyshev: assume matrix does not change = 0   [default]
 
@@ -263,6 +266,7 @@ smoother ->
  chebyshev: boost factor = 1.1   [unused]
  chebyshev: min diagonal value = 2.22045e-16   [default]
  chebyshev: eigenvalue max iterations = 10   [default]
+ chebyshev: eigenvalue normalization frequency = 1   [default]
  chebyshev: zero starting solution = 1   [default]
  chebyshev: assume matrix does not change = 0   [default]
 

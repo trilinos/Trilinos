@@ -97,7 +97,8 @@ namespace Tacho {
             bufsize = n*team_size*sizeof(mat_value_type) + nn*nb*sizeof(mat_value_type);  
 
           mat_value_type *buf = NULL; 
-          Kokkos::single(Kokkos::PerTeam(member), [&](mat_value_type *&val) {
+          Kokkos::single(Kokkos::PerTeam(member), 
+          [&, bufsize](mat_value_type *&val) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
               val = bufsize > 0 ? (mat_value_type*)_bufpool.allocate(bufsize) : NULL;  
               if (val == NULL && bufsize) 
                 Kokkos::respawn(this, sched, Kokkos::TaskPriority::Low);
@@ -129,7 +130,8 @@ namespace Tacho {
           TACHO_TEST_FOR_ABORT(dep == NULL, "sched memory pool allocation fails"); 
           clear(member, (char*)dep, depsize);  
           
-          Kokkos::single(Kokkos::PerTeam(member), [&]() {
+          Kokkos::single(Kokkos::PerTeam(member), 
+          [&, bn, nb]() { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
               const ordinal_type state = 3;
               for (ordinal_type i=0;i<bn;++i) {
                 auto f = Kokkos::task_spawn(Kokkos::TaskTeam(sched, Kokkos::TaskPriority::Regular),
@@ -170,7 +172,8 @@ namespace Tacho {
           // allocation for matrix of blocks
           const size_t bufsize = (bm*bm + bm*bn)*sizeof(dense_block_type);
           char *buf = NULL;
-          Kokkos::single(Kokkos::PerTeam(member), [&](char *&val) {          
+          Kokkos::single(Kokkos::PerTeam(member), 
+          [&, bufsize](char *&val) {           // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/C++14
               val = (char*)_bufpool.allocate(bufsize);
               if (val == NULL && bufsize) 
                 Kokkos::respawn(this, sched, Kokkos::TaskPriority::Low);                  
