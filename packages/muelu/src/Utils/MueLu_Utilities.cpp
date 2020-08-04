@@ -65,13 +65,12 @@ namespace MueLu {
   long ExtractNonSerializableData(const Teuchos::ParameterList& inList, Teuchos::ParameterList& serialList, Teuchos::ParameterList& nonSerialList) {
     using Teuchos::ParameterList;
 
-    ParameterList dummy;
     long maxLevel = 0;
 
     for (ParameterList::ConstIterator inListEntry = inList.begin(); inListEntry != inList.end(); inListEntry++) {
       const std::string& levelName = inListEntry->first;
 
-      // Check for mach of the form "level X" where X is a positive integer
+      // Check for match of the form "level X" where X is a positive integer
       if (inList.isSublist(levelName) && ((levelName.find("level ") == 0 && levelName.size() > 6) || levelName.find("user data") == 0)) {
         int levelID = strtol(levelName.substr(6).c_str(), 0, 0);
         bool userFlag = true;
