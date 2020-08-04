@@ -74,7 +74,7 @@ namespace MueLu {
 
     for (ParameterList::ConstIterator nonSerialEntry = nonSerialList.begin(); nonSerialEntry != nonSerialList.end(); nonSerialEntry++) {
       const std::string& levelName = nonSerialEntry->first;
-      // Check for mach of the form "level X" where X is a positive integer
+      // Check for match of the form "level X" where X is a positive integer
       if (nonSerialList.isSublist(levelName) && levelName.find("level ") == 0 && levelName.size() > 6) {
         int levelID = strtol(levelName.substr(6).c_str(), 0, 0);
         if (levelID > 0)
