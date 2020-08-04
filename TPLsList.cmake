@@ -168,6 +168,7 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   pebbl           "cmake/TPLs/"    EX
   MAGMASparse     "cmake/TPLs/"    EX
   Check           "cmake/TPLs/"    EX
+  SARMA           "cmake/TPLs/"    EX
   )
 
 # NOTES:

@@ -1,0 +1,14 @@
+# Crated by mbenlioglu on Jul 12, 2020.
+# -------------------------------------------------------------
+
+find_package(SARMA QUIET)
+get_target_property(TPL_SARMA_INCLUDE_DIRS SARMA::libsarma INTERFACE_INCLUDE_DIRECTORIES)
+
+TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES(SARMA
+        REQUIRED_HEADERS "sarma.hpp"
+        REQUIRED_LIBS_NAMES "mmio"
+        )
+
+SET(CMAKE_REQUIRED_INCLUDES ${TPL_SARMA_INCLUDE_DIRS})
+SET(CMAKE_REQUIRED_LIBRARIES ${TPL_SARMA_LIBRARIES})
+SET(CMAKE_REQUIRED_FLAGS ${CMAKE_EXE_LINKER_FLAGS})
