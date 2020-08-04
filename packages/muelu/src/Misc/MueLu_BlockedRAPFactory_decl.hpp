@@ -51,8 +51,6 @@
 #include <Xpetra_CrsMatrixWrap_fwd.hpp>
 #include <Xpetra_BlockedCrsMatrix_fwd.hpp>
 #include <Xpetra_MatrixFactory_fwd.hpp>
-#include <Xpetra_Vector_fwd.hpp>
-#include <Xpetra_VectorFactory_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_RAPFactory_fwd.hpp"
