@@ -314,15 +314,14 @@ void CoordinateModel<Adapter>::sharedConstructor(
   env_->localMemoryAssertion(__FILE__, __LINE__, userNumWeights_+coordinateDim_,
     coordArray && (!userNumWeights_|| weightArray));
 
+  ia->getIDsKokkosView(kokkos_gids_);
+  ia->getCoordinatesKokkosView(kokkos_xyz_);
+
+  if(userNumWeights_ > 0) {
+    ia->getWeightsKokkosView(kokkos_weights_);
+  }
 
   if (nLocalIds){
-
-    ia->getIDsKokkosView(kokkos_gids_);
-    ia->getCoordinatesKokkosView(kokkos_xyz_);
-    if(userNumWeights_ > 0) {
-      ia->getWeightsKokkosView(kokkos_weights_);
-    }
-
     const gno_t *gids=NULL;
 
     ia->getIDsView(gids);
