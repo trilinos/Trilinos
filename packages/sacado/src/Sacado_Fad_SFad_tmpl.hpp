@@ -82,7 +82,7 @@ namespace Sacado {
       /*!
        * Initializes value to 0 and derivative array is empty
        */
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SFad() :
         ExprType() {}
 
@@ -91,7 +91,7 @@ namespace Sacado {
        * Initializes value to \c ValueT(x) and derivative array is empty.
        */
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SFad(const S& x, SACADO_ENABLE_VALUE_CTOR_DECL) :
         ExprType(x) {}
 
@@ -99,7 +99,7 @@ namespace Sacado {
       /*!
        * Initializes value to \c x and derivative array 0 of length \c sz
        */
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SFad(const int sz, const ValueT & x, const DerivInit zero_out = InitDerivArray) :
         ExprType(sz,x,zero_out) {}
 
@@ -109,37 +109,37 @@ namespace Sacado {
        * as row \c i of the identity matrix, i.e., sets derivative component
        * \c i to 1 and all other's to zero.
        */
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SFad(const int sz, const int i, const ValueT & x) :
         ExprType(sz,i,x) {}
 
       //! Copy constructor
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SFad(const SFad& x) :
         ExprType(static_cast<const ExprType&>(x)) {}
 
       //! Copy constructor from any Expression object
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SFad(const Expr<S>& x, SACADO_ENABLE_EXPR_CTOR_DECL) :
         ExprType(x) {}
 
       //@}
 
       //! Destructor
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       ~SFad() {}
 
       //! Assignment operator with constant right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_VALUE_FUNC(SFad&) operator=(const S& v) {
         ExprType::operator=(v);
         return *this;
       }
 
       //! Assignment operator with SFad right-hand-side
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SFad& operator=(const SFad& x) {
         ExprType::operator=(static_cast<const ExprType&>(x));
         return *this;
@@ -147,7 +147,7 @@ namespace Sacado {
 
       //! Assignment operator with any expression right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_EXPR_FUNC(SFad&) operator=(const Expr<S>& x)
       {
         ExprType::operator=(x);
@@ -156,7 +156,7 @@ namespace Sacado {
 
       //! Addition-assignment operator with constant right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_VALUE_FUNC(SFad&) operator += (const S& x) {
         ExprType::operator+=(x);
         return *this;
@@ -164,7 +164,7 @@ namespace Sacado {
 
       //! Subtraction-assignment operator with constant right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_VALUE_FUNC(SFad&) operator -= (const S& x) {
         ExprType::operator-=(x);
         return *this;
@@ -172,7 +172,7 @@ namespace Sacado {
 
       //! Multiplication-assignment operator with constant right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_VALUE_FUNC(SFad&) operator *= (const S& x) {
         ExprType::operator*=(x);
         return *this;
@@ -180,35 +180,35 @@ namespace Sacado {
 
       //! Division-assignment operator with constant right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_VALUE_FUNC(SFad&) operator /= (const S& x) {
         ExprType::operator/=(x);
         return *this;
       }
 
       //! Addition-assignment operator with SFad right-hand-side
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SFad& operator += (const SFad& x) {
         ExprType::operator+=(static_cast<const ExprType&>(x));
         return *this;
       }
 
       //! Subtraction-assignment operator with SFad right-hand-side
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SFad& operator -= (const SFad& x) {
         ExprType::operator-=(static_cast<const ExprType&>(x));
         return *this;
       }
 
       //! Multiplication-assignment operator with SFad right-hand-side
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SFad& operator *= (const SFad& x) {
         ExprType::operator*=(static_cast<const ExprType&>(x));
         return *this;
       }
 
       //! Division-assignment operator with SFad right-hand-side
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SFad& operator /= (const SFad& x) {
         ExprType::operator/=(static_cast<const ExprType&>(x));
         return *this;
@@ -216,7 +216,7 @@ namespace Sacado {
 
        //! Addition-assignment operator with Expr right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_EXPR_FUNC(SFad&) operator += (const Expr<S>& x) {
         ExprType::operator+=(x);
         return *this;
@@ -224,7 +224,7 @@ namespace Sacado {
 
       //! Subtraction-assignment operator with Expr right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_EXPR_FUNC(SFad&) operator -= (const Expr<S>& x) {
         ExprType::operator-=(x);
         return *this;
@@ -232,7 +232,7 @@ namespace Sacado {
 
       //! Multiplication-assignment operator with Expr right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_EXPR_FUNC(SFad&) operator *= (const Expr<S>& x) {
         ExprType::operator*=(x);
         return *this;
@@ -240,7 +240,7 @@ namespace Sacado {
 
       //! Division-assignment operator with Expr right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_EXPR_FUNC(SFad&) operator /= (const Expr<S>& x) {
         ExprType::operator/=(x);
         return *this;
@@ -321,7 +321,7 @@ namespace Sacado {
 
     // Overload of Kokkos::atomic_add for Fad types.
     template <typename T, int N>
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     void atomic_add(SFad<T,N>* dst, const SFad<T,N>& x) {
       using Kokkos::atomic_add;
 
