@@ -103,7 +103,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MapTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level& coarseLevel) const {
-    Monitor m(*this, "Contact Map transfer factory");
+    Monitor m(*this, "MapTransferFactory");
 
     const ParameterList & pL = GetParameterList();
     std::string mapName     = pL.get<std::string>("map: name");
