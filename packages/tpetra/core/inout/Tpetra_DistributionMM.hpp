@@ -3,8 +3,8 @@
 //  Karen Devine, SNL 
 //
 
-#ifndef __DISTRIBUTIONMM_HPP
-#define __DISTRIBUTIONMM_HPP
+#ifndef __TPETRA_DISTRIBUTIONMM_HPP
+#define __TPETRA_DISTRIBUTIONMM_HPP
 
 template <typename gno_t, typename scalar_t>
 class DistributionMMFile : public Distribution<gno_t,scalar_t> {

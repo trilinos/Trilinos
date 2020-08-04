@@ -3,8 +3,8 @@
 //  Karen Devine, SNL 
 //
 
-#ifndef __DISTRIBUTION_HPP
-#define __DISTRIBUTION_HPP
+#ifndef __TPETRA_DISTRIBUTION_HPP
+#define __TPETRA_DISTRIBUTION_HPP
 
 #include <cstdio>
 #include <cstdlib>
@@ -88,9 +88,9 @@ protected:
   }
 };
 
-#include "distribution2D.hpp"
-#include "distribution1D.hpp"
-#include "distributionMM.hpp"
-#include "distributionLowerTriangularBlock.hpp"
+#include "Tpetra_Distribution2D.hpp"
+#include "Tpetra_Distribution1D.hpp"
+#include "Tpetra_DistributionMM.hpp"
+#include "Tpetra_DistributionLowerTriangularBlock.hpp"
 
 #endif

@@ -14,6 +14,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  MatrixMarket_Tpetra_CrsMatrix_Dist
+  SOURCES
+    MatrixMarket_Tpetra_CrsMatrix_Dist.cpp
+  ARGS "--file=simple.mtx"
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   MatrixMarket_Tpetra_CrsGraph_InOutTest
   SOURCES
     MatrixMarket_Tpetra_CrsGraph_InOutTest.cpp
@@ -158,3 +167,10 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 2
   STANDARD_PASS_OUTPUT
   )
+
+# Command that copies files to the executable directory.
+TRIBITS_COPY_FILES_TO_BINARY_DIR(TpetraCore_inout_copy_files
+  SOURCE_FILES
+    simple.mtx
+)
+

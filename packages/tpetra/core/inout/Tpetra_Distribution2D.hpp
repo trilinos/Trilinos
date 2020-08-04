@@ -3,8 +3,8 @@
 //  Karen Devine, SNL 
 //
 
-#ifndef __DISTRIBUTION2D_HPP
-#define __DISTRIBUTION2D_HPP
+#ifndef __TPETRA_DISTRIBUTION2D_HPP
+#define __TPETRA_DISTRIBUTION2D_HPP
 
 
 /////////////////////////////////////////////////////////////////////////////

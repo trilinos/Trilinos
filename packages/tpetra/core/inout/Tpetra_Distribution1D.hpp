@@ -3,8 +3,8 @@
 //  Karen Devine, SNL 
 //
 
-#ifndef __DISTRIBUTION1D_HPP
-#define __DISTRIBUTION1D_HPP
+#ifndef __TPETRA_DISTRIBUTION1D_HPP
+#define __TPETRA_DISTRIBUTION1D_HPP
 
 // Forward definition
 template <typename gno_t, typename scalar_t>

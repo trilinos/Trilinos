@@ -1,10 +1,6 @@
+
 #ifndef __MATRIXMARKET_TPETRA_NEW_HPP
 #define __MATRIXMARKET_TPETRA_NEW_HPP
-
-extern "C" {
-#include "mmio_tpetra.h"
-}
-
 
 ///////////////////////////////////////////////////////////////////////////
 // Functions to read a MatrixMarket file and load it into a matrix.
@@ -23,8 +19,11 @@ extern "C" {
 // and greater memory use.
 ///////////////////////////////////////////////////////////////////////////
 
-template <typename gno_t, typename scalar_t>
-Teuchos::RCP<Distribution<gno_t,scalar_t> > 
+private:
+
+template <typename global_ordinal_type, typename scalar_type>
+static 
+Teuchos::RCP<Distribution<global_ordinal_type,scalar_type> > 
 buildDistribution(
   std::string &distribution,  // string indicating whether to use 1D, 2D or
                               // file-based matrix distribution
@@ -41,7 +40,7 @@ buildDistribution(
   int me = comm->getRank();
   int np = comm->getSize();
 
-  using basedist_t = Distribution<gno_t,scalar_t>;
+  using basedist_t = Distribution<global_ordinal_type,scalar_type>;
   basedist_t *retval;
 
   bool randomize = false;   // Randomly permute rows and columns before storing
@@ -63,53 +62,59 @@ buildDistribution(
       // Generate 2D distribution with vector partition file
       TEUCHOS_TEST_FOR_EXCEPTION(randomize, std::logic_error,
               "Randomization not available for 2DVec distributions.");
-      Distribution2DVec<gno_t,scalar_t> *dist =
-              new Distribution2DVec<gno_t, scalar_t>(nRow, comm, params, partitionFile);
+      Distribution2DVec<global_ordinal_type,scalar_type> *dist =
+              new Distribution2DVec<global_ordinal_type, scalar_type>(
+                                    nRow, comm, params, partitionFile);
       retval = dynamic_cast<basedist_t *>(dist);
     }
     else if (randomize) {
       // Randomly assign rows/columns to processors
-      Distribution2DRandom<gno_t,scalar_t> *dist =
-              new Distribution2DRandom<gno_t,scalar_t>(nRow, comm, params);
+      Distribution2DRandom<global_ordinal_type,scalar_type> *dist =
+              new Distribution2DRandom<global_ordinal_type,scalar_type>(
+                                       nRow, comm, params);
       retval = dynamic_cast<basedist_t *>(dist);
     }
     else {
       // The vector will be distributed linearly, with extra vector entries
       // spread among processors to maintain balance in rows and columns.
-      Distribution2DLinear<gno_t,scalar_t> *dist =
-              new Distribution2DLinear<gno_t,scalar_t>(nRow, comm, params);
+      Distribution2DLinear<global_ordinal_type,scalar_type> *dist =
+              new Distribution2DLinear<global_ordinal_type,scalar_type>(
+                                       nRow, comm, params);
       retval = dynamic_cast<basedist_t *>(dist);
     }
   }
   else if (distribution == "1D") {
     if (partitionFile != "") {
       // Generate 1D row-based distribution with vector partition file
-      Distribution1DVec<gno_t,scalar_t> *dist =
-                                 new Distribution1DVec<gno_t,scalar_t>(nRow, comm, params,
-                                                              partitionFile);
+      Distribution1DVec<global_ordinal_type,scalar_type> *dist =
+              new Distribution1DVec<global_ordinal_type,scalar_type>(
+                                    nRow, comm, params, partitionFile);
       retval = dynamic_cast<basedist_t*>(dist);
     }
     else if (randomize) {
       // Randomly assign rows to processors.
-      Distribution1DRandom<gno_t,scalar_t> *dist =
-              new Distribution1DRandom<gno_t,scalar_t>(nRow, comm, params);
+      Distribution1DRandom<global_ordinal_type,scalar_type> *dist =
+              new Distribution1DRandom<global_ordinal_type,scalar_type>(
+                                       nRow, comm, params);
       retval = dynamic_cast<basedist_t *>(dist);
     }
     else {
       // Linear map similar to Trilinos default.
-      Distribution1DLinear<gno_t,scalar_t> *dist =
-              new Distribution1DLinear<gno_t,scalar_t>(nRow, comm, params);
+      Distribution1DLinear<global_ordinal_type,scalar_type> *dist =
+              new Distribution1DLinear<global_ordinal_type,scalar_type>(
+                                       nRow, comm, params);
       retval = dynamic_cast<basedist_t *>(dist);
     }
   }
   else if (distribution == "LowerTriangularBlock") {
     if (randomize && me == 0) {
-      std::cout << "WARNING: Randomization not available for LowerTriangularBlock "
-                << "distributions." << std::endl;
+      std::cout << "WARNING: Randomization not available for "
+                << "LowerTriangularBlock distributions." << std::endl;
     }
 
-    DistributionLowerTriangularBlock<gno_t,scalar_t> *dist = 
-             new DistributionLowerTriangularBlock<gno_t,scalar_t>(nRow, comm, params);
+    DistributionLowerTriangularBlock<global_ordinal_type,scalar_type> *dist = 
+          new DistributionLowerTriangularBlock<global_ordinal_type,scalar_type>(
+                                       nRow, comm, params);
     retval = dynamic_cast<basedist_t*>(dist);
   }
   else if (distribution == "MMFile") {
@@ -118,8 +123,9 @@ buildDistribution(
       std::cout << "WARNING: Randomization not available for MMFile "
                 << "distributions." << std::endl;
     }
-    DistributionMMFile<gno_t,scalar_t> *dist =
-                               new DistributionMMFile<gno_t,scalar_t>(nRow, comm, params);
+    DistributionMMFile<global_ordinal_type,scalar_type> *dist =
+            new DistributionMMFile<global_ordinal_type,scalar_type>(
+                                   nRow, comm, params);
     retval = dynamic_cast<basedist_t*>(dist);
   }
 
@@ -131,18 +137,16 @@ buildDistribution(
   return Teuchos::rcp<basedist_t>(retval);
 }
 
+public:
 
-
-//////////////////////////////////////////////////////////////////////////////
-template <typename scalar_t>
-Teuchos::RCP<Tpetra::CrsMatrix<scalar_t> >
-readSparseFileNew(
+static Teuchos::RCP<sparse_matrix_type>
+readSparseFile(
   const std::string &filename,    // MatrixMarket file to read
   const Teuchos::RCP<const Teuchos::Comm<int> > &comm,  
   const Teuchos::ParameterList &params
 )
 {
-  using gno_t = Tpetra::Map<>::global_ordinal_type;
+  using global_ordinal_type = Tpetra::Map<>::global_ordinal_type;
 
   int me = comm->getRank();
   int np = comm->getSize();
@@ -170,8 +174,6 @@ readSparseFileNew(
   if (pe != NULL) 
     callFillComplete = pe->getValue<bool>(&callFillComplete);
   }
-
-std::cout << "KDDKDD calLFillComplete = " << callFillComplete << std::endl;
 
   std::string timeFillComplete = ""; // use this name for timer of fillComplete
   {
@@ -280,8 +282,10 @@ std::cout << "KDDKDD calLFillComplete = " << callFillComplete << std::endl;
   
   // Create distribution based on nRow, nCol, npRow, npCol
 
-  Teuchos::RCP<Distribution<gno_t,scalar_t> > dist = 
-      buildDistribution<gno_t,scalar_t>(distribution, nRow, nCol, params, comm);
+  Teuchos::RCP<Distribution<global_ordinal_type,scalar_type> > dist = 
+      buildDistribution<global_ordinal_type,scalar_type>(distribution,
+                                                         nRow, nCol, params,
+                                                         comm);
 
   // Don't want to use MatrixMarket's coordinate reader, because don't want
   // entire matrix on one processor.
@@ -290,12 +294,15 @@ std::cout << "KDDKDD calLFillComplete = " << callFillComplete << std::endl;
   // All processors insert nonzeros they own into a std::map
 
   // Storage for this processor's nonzeros.
-  using nzindex_t = typename Distribution<gno_t,scalar_t>::NZindex_t;
-  using localNZmap_t = typename Distribution<gno_t,scalar_t>::LocalNZmap_t;
+  using nzindex_t = 
+        typename Distribution<global_ordinal_type,scalar_type>::NZindex_t;
+  using localNZmap_t = 
+        typename Distribution<global_ordinal_type,scalar_type>::LocalNZmap_t;
   localNZmap_t localNZ;
 
-  std::set<gno_t> diagset;  // If diagonal == require, this set keeps track of 
-                            // which diagonal entries already existing so we can 
+  std::set<global_ordinal_type> diagset;  
+                            // If diagonal == require, this set keeps track of 
+                            // which diagonal entries already existing so we can
                             // add those that don't
 
   // Chunk information and buffers
@@ -339,18 +346,18 @@ std::cout << "KDDKDD calLFillComplete = " << callFillComplete << std::endl;
     for (rlen = 0; rlen < nChunk; rlen++) {
 
       char *next = strchr(lineptr,'\n');
-      gno_t I = atol(strtok(lineptr," \t\n")) 
+      global_ordinal_type I = atol(strtok(lineptr," \t\n")) 
               - 1; // since MatrixMarket files are one-based
-      gno_t J = atol(strtok(NULL," \t\n")) 
+      global_ordinal_type J = atol(strtok(NULL," \t\n")) 
               - 1; // since MatrixMarket files are one-based
 
-      scalar_t V = (patternInput ? -1. : atof(strtok(NULL," \t\n")));
+      scalar_type V = (patternInput ? -1. : atof(strtok(NULL," \t\n")));
       lineptr = next + 1;
 
       // Special processing of nonzero
       if ((I == J) && ignoreDiagonal) continue;
 
-      if (transpose) std::swap<gno_t>(I,J);
+      if (transpose) std::swap<global_ordinal_type>(I,J);
 
       // Add nonzero (I,J) to the map if it should be on this processor
       // Some file-based distributions have processor assignment stored as 
@@ -394,9 +401,9 @@ std::cout << "KDDKDD calLFillComplete = " << callFillComplete << std::endl;
       // All diagonal entries should be present in the file; we cannot create
       // them for file-based data distributions.  
       // Do an error check to ensure they are all there.
-      gno_t localss = diagset.size();
-      gno_t globalss;
-      Teuchos::reduceAll<int, gno_t>(*comm, Teuchos::REDUCE_SUM, 1,
+      global_ordinal_type localss = diagset.size();
+      global_ordinal_type globalss;
+      Teuchos::reduceAll<int, global_ordinal_type>(*comm, Teuchos::REDUCE_SUM, 1,
                                      &localss, &globalss);
       TEUCHOS_TEST_FOR_EXCEPTION(globalss != nRow, std::logic_error,
         "File-based nonzero distribution requires all diagonal "
@@ -405,7 +412,7 @@ std::cout << "KDDKDD calLFillComplete = " << callFillComplete << std::endl;
          << "Number of matrix rows = " << nRow << "\n");
     }
     else {
-      for (gno_t i = 0; i < nRow; i++) {
+      for (global_ordinal_type i = 0; i < nRow; i++) {
         if (dist->Mine(i,i)) {
           if (diagset.find(i) == diagset.end()) {
             nzindex_t idx = std::make_pair(i,i);
@@ -416,7 +423,7 @@ std::cout << "KDDKDD calLFillComplete = " << callFillComplete << std::endl;
     }
   }
   // Done with diagset; free its memory
-  std::set<gno_t>().swap(diagset);
+  std::set<global_ordinal_type>().swap(diagset);
 
   // Redistribute nonzeros as needed to satisfy the Distribution
   // For most Distributions, this is a no-op
@@ -427,18 +434,18 @@ std::cout << "KDDKDD calLFillComplete = " << callFillComplete << std::endl;
   if (verbose && me == 0)
     std::cout << std::endl << "Constructing the matrix" << std::endl;
 
-  Teuchos::Array<gno_t> rowIdx;
+  Teuchos::Array<global_ordinal_type> rowIdx;
   Teuchos::Array<size_t> nnzPerRow;
-  Teuchos::Array<gno_t> colIdx;
-  Teuchos::Array<scalar_t> val;
+  Teuchos::Array<global_ordinal_type> colIdx;
+  Teuchos::Array<scalar_type> val;
   Teuchos::Array<size_t> offsets;
 
   // Exploit fact that map has entries sorted by I, then J
-  gno_t prevI = std::numeric_limits<gno_t>::max();
+  global_ordinal_type prevI = std::numeric_limits<global_ordinal_type>::max();
   for (auto it = localNZ.begin(); it != localNZ.end(); it++) {
-    gno_t I = it->first.first;
-    gno_t J = it->first.second;
-    scalar_t V = it->second;
+    global_ordinal_type I = it->first.first;
+    global_ordinal_type J = it->first.second;
+    scalar_type V = it->second;
     if (prevI != I) {
       prevI = I;
       rowIdx.push_back(I);
@@ -461,10 +468,10 @@ std::cout << "KDDKDD calLFillComplete = " << callFillComplete << std::endl;
   // Create a new RowMap with only rows having non-zero entries.
   size_t dummy = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
   Teuchos::RCP<const Tpetra::Map<> > rowMap = 
-         Teuchos::rcp(new Tpetra::Map<>(dummy, rowIdx(), gno_t(0), comm));
+         Teuchos::rcp(new Tpetra::Map<>(dummy, rowIdx(), 0, comm));
 
-  Teuchos::RCP<Tpetra::CrsMatrix<scalar_t> > A = 
-           rcp(new Tpetra::CrsMatrix<scalar_t>(rowMap, nnzPerRow()));
+  Teuchos::RCP<sparse_matrix_type> A = 
+           rcp(new sparse_matrix_type(rowMap, nnzPerRow()));
 
   //  Insert the global values into the matrix row-by-row.
   if (verbose && me == 0) 
@@ -479,36 +486,35 @@ std::cout << "KDDKDD calLFillComplete = " << callFillComplete << std::endl;
   // free memory that is no longer needed
   Teuchos::Array<size_t>().swap(nnzPerRow);
   Teuchos::Array<size_t>().swap(offsets);
-  Teuchos::Array<gno_t>().swap(rowIdx);
-  Teuchos::Array<gno_t>().swap(colIdx);
-  Teuchos::Array<scalar_t>().swap(val);
+  Teuchos::Array<global_ordinal_type>().swap(rowIdx);
+  Teuchos::Array<global_ordinal_type>().swap(colIdx);
+  Teuchos::Array<scalar_type>().swap(val);
 
-std::cout << "KDDKDD still calLFillComplete = " << callFillComplete << std::endl;
   if (callFillComplete) {
 
     if (verbose && me == 0) 
       std::cout << "Building vector maps" << std::endl;
 
     // Build domain map that corresponds to distribution 
-    Teuchos::Array<gno_t> vectorSet;
-    for (gno_t i = 0; i < nCol; i++) 
+    Teuchos::Array<global_ordinal_type> vectorSet;
+    for (global_ordinal_type i = 0; i < nCol; i++) 
       if (dist->VecMine(i)) vectorSet.push_back(i);
 
     dummy = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
     Teuchos::RCP<const Tpetra::Map<> > domainMap = 
-           Teuchos::rcp(new Tpetra::Map<>(dummy, vectorSet(), gno_t(0), comm));
+           Teuchos::rcp(new Tpetra::Map<>(dummy, vectorSet(), 0, comm));
   
-    Teuchos::Array<gno_t>().swap(vectorSet);
+    Teuchos::Array<global_ordinal_type>().swap(vectorSet);
 
     // Build range map that corresponds to distribution
-    for (gno_t i = 0; i < nRow; i++) 
+    for (global_ordinal_type i = 0; i < nRow; i++) 
       if (dist->VecMine(i)) vectorSet.push_back(i);
   
     dummy = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
     Teuchos::RCP<const Tpetra::Map<> > rangeMap = 
-           Teuchos::rcp(new Tpetra::Map<>(dummy, vectorSet(), gno_t(0), comm));
+           Teuchos::rcp(new Tpetra::Map<>(dummy, vectorSet(), 0, comm));
   
-    Teuchos::Array<gno_t>().swap(vectorSet);
+    Teuchos::Array<global_ordinal_type>().swap(vectorSet);
 
     // FillComplete the matrix
     if (verbose && me == 0) 

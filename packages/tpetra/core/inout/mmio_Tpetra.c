@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-#include "mmio.h"
+#include "mmio_Tpetra.h"
 
 int mm_read_unsymmetric_sparse(const char *fname, int *M_, int *N_, int *nz_,
                 double **val_, int **I_, int **J_)
