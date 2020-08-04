@@ -273,9 +273,10 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(con
     // that are generated and partitioned by a TPL, and/or where it is so complicated to rearrange the
     // dofs ownership that the customer app might be willing to accept a small performance hit.
     const bool debug = ::Tpetra::Details::Behavior::debug ();
-    const bool enforceAtLeastOneOwnedColIndexPerRow =
-        this->getMyNonconstParamList().is_null() ? true : this->getMyNonconstParamList()->get("Enforce At Least One Owned Col Index Per Row",true);
-    if (debug && enforceAtLeastOneOwnedColIndexPerRow) {
+    const bool checkColGIDsInAtLeastOneOwnedRow =
+        this->getMyNonconstParamList().is_null() ? true :
+                  this->getMyNonconstParamList()->get("Check Col GIDs In At Least One Owned Row",true);
+    if (debug && checkColGIDsInAtLeastOneOwnedRow) {
       Teuchos::RCP<const map_type> colmap = this->getColMap();
       Teuchos::Array<bool> flag(colmap->getNodeNumElements(),false);
       Teuchos::Array<LocalOrdinal> indices(this->getNodeMaxNumRowEntries());
@@ -286,23 +287,29 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(con
           flag[indices[j]] = true;
       }
       
-      bool success = true;
+      int lclCount = 0;
       for(size_t i=0; i<(size_t)flag.size(); i++)
-        if(!flag[i]) {success=false; break;}
+        if(!flag[i])
+          ++lclCount;
 
       // Perform a reduction over the input comm, so that ranks with success=true won't be hanging.
       // Note: this only ensures things don't hang 
-      int lclSuccess = success ? 1 : 0;
-      int gblSuccess = lclSuccess;
+      int gblCount = lclCount;
       auto comm = this->getComm();
       if (!comm.is_null()) {
-        Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_MIN, 1, &lclSuccess, &gblSuccess);
+        Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_SUM, 1, &lclCount, &gblCount);
       }
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (gblSuccess == 0,
+        (gblCount > 0,
          std::invalid_argument, "if you own an element (in the finite element sense) you "
          "must also own one of the attached nodes.  This assumption has been violated in "
-         "your matrix fill.");
+         "your matrix fill on at least one MPI rank:\n"
+         "  locally,  there are " + std::to_string(lclCount) + " col gids not connected to any owned gid.\n"
+         "  globally, there are " + std::to_string(gblCount) + " col gids not connected to any owned gid.\n"
+         "NOTE: you can disable this check by setting a parameter list with the option\n"
+         "      'Check Col GIDs In At Least One Owned Row' set to false.\n"
+         "NOTE: the parameter list must be set AFTER construction, since it would not be recognized as valid"
+         "by the base class CrsGraph.\n");
     }
 
     // Time to build an owned localGraph via subviews
@@ -398,7 +405,7 @@ FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::getValidParameters () const
 {
   auto valid_pl = Teuchos::rcp(new Teuchos::ParameterList("Tpetra::FECrsGraph"));
   valid_pl->validateParametersAndSetDefaults(*crs_graph_type::getValidParameters());
-  valid_pl->set("Enforce At Least One Owned Col Index Per Row",true);
+  valid_pl->set("Check Col GIDs In At Least One Owned Row",true);
 
   return valid_pl;
 }
