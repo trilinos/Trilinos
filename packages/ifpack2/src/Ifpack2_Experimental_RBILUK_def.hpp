@@ -870,6 +870,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
         D_block_->applyBlock(cBlock, rBlock);
 
         // Solve U Y = R.
+        Kokkos::fence(); // UVM access
         for (local_ordinal_type imv = 0; imv < numVectors; ++imv)
         {
           const local_ordinal_type numRows = D_block_->getNodeNumRows();
