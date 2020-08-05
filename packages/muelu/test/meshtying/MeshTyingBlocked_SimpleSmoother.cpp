@@ -82,21 +82,17 @@ void read_Lagr2Dof(std::string filemane, std::map<GlobalOrdinal, GlobalOrdinal> 
 int main(int argc, char *argv[])
 {
 #ifdef HAVE_MUELU_TPETRA
-  typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> SparseMatrixType;
-  typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tpetra_mvector_type;
-  typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> tpetra_map_type;
+  using SparseMatrixType = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using tpetra_mvector_type = Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using tpetra_map_type = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
 
-  typedef Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node> xpetra_tmap_type;
-  typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> xpetra_tcrs_type;
-  typedef Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> xpetra_tmvector_type;
-
-#include <MueLu_UseShortNames.hpp>
+  using Hierarchy = MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
   using Teuchos::RCP;
   using Teuchos::rcp;
   using namespace Teuchos;
 
-  typedef ScalarTraits<Scalar> ST;
+  using ST = ScalarTraits<Scalar>;
 
   oblackholestream blackhole;
   GlobalMPISession mpiSession(&argc, &argv, &blackhole);
@@ -166,9 +162,9 @@ int main(int argc, char *argv[])
   RCP<const tpetra_map_type> dualMap = rcp(new tpetra_map_type(globalDualNumDofs, myDualDofs, indexBase, comm));
   RCP<const tpetra_map_type> fullMap = rcp(new tpetra_map_type(globalNumDofs, myDofs, indexBase, comm));
 
-  RCP<const Map> fullXMap = rcp(new xpetra_tmap_type(fullMap));
-  RCP<const Map> primalXMap = rcp(new xpetra_tmap_type(primalMap));
-  RCP<const Map> dualXMap = rcp(new xpetra_tmap_type(dualMap));
+  RCP<const Map> fullXMap = rcp(new TpetraMap(fullMap));
+  RCP<const Map> primalXMap = rcp(new TpetraMap(primalMap));
+  RCP<const Map> dualXMap = rcp(new TpetraMap(dualMap));
 
   std::vector<RCP<const Map>> xsubmaps = {primalXMap, dualXMap};
   RCP<BlockedMap> blockedMap = rcp(new BlockedMap(fullXMap, xsubmaps, true));
@@ -238,8 +234,8 @@ int main(int argc, char *argv[])
   RCP<tpetra_mvector_type> rhsMultiVector = reader_type::readDenseFile("f_mm.txt", comm, fullMap);
   RCP<tpetra_mvector_type> solutionMultiVector = rcp(new tpetra_mvector_type(fullMap, 1));
 
-  RCP<MultiVector> rhsXMultiVector = rcp(new xpetra_tmvector_type(rhsMultiVector));
-  RCP<MultiVector> solutionXMultiVector = rcp(new xpetra_tmvector_type(solutionMultiVector));
+  RCP<MultiVector> rhsXMultiVector = rcp(new TpetraMultiVector(rhsMultiVector));
+  RCP<MultiVector> solutionXMultiVector = rcp(new TpetraMultiVector(solutionMultiVector));
 
   RCP<BLinProb> blinproblem = rcp(new BLinProb(belosOp, solutionXMultiVector, rhsXMultiVector));
 
