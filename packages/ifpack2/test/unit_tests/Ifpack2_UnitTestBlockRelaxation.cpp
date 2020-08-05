@@ -707,6 +707,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestDiagonalBlockCrsMa
 
   const Scalar exactSol = 0.2;
 
+  yBlock.sync_host();
   for (int k = 0; k < num_rows_per_proc; ++k) {
     typename BMV::little_vec_type ylcl = yBlock.getLocalBlock(k,0);
     Scalar* yb = ylcl.data();
@@ -1268,6 +1269,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestLowerTriangularBlo
   exactSol[1] = -0.25;
   exactSol[2] = 0.625;
 
+  yBlock.sync_host();
   for (size_t k = 0; k < num_rows_per_proc; ++k) {
     LO lcl_row = k;
     typename BMV::little_vec_type ylcl = yBlock.getLocalBlock(lcl_row,0);
@@ -1330,6 +1332,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestUpperTriangularBlo
   exactSol[1] = -0.25;
   exactSol[2] = 0.5;
 
+  yBlock.sync_host();
   for (int k = 0; k < num_rows_per_proc; ++k) {
     typename BMV::little_vec_type ylcl = yBlock.getLocalBlock(k,0);
     auto yb = ylcl.data();
