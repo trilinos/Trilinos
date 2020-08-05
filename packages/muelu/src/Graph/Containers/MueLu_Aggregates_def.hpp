@@ -160,21 +160,26 @@ namespace MueLu {
     LO numNodes = vertex2AggId_->getLocalLength();
     Teuchos::ArrayRCP<const LO> vertex2AggId = vertex2AggId_->getData(0);
     Teuchos::ArrayRCP<LO> aggSizes = ComputeAggregateSizes();
-	
+    LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+
     aggPtr.resize(numAggs+1);
     Array<LO> aggCurr(numAggs+1);
     aggNodes.resize(numNodes);
 
     // Construct the "rowptr" and the counter
-    aggPtr[0] = 0; aggCurr[0]=0;
-    for(LO i=0; i<numAggs; i++) 
-      aggCurr[i+1] = aggPtr[i+1] = aggSizes[i] + aggPtr[i];
+    aggPtr[0] = 0; 
+    for(LO i=0; i<numAggs; i++) {
+      aggPtr[i+1] = aggSizes[i] + aggPtr[i];
+      aggCurr[i] = aggPtr[i];
+    }
     
     // Stick the nodes in each aggregate's spot
     for(LO i=0; i<numNodes; i++) {
       LO aggregate = vertex2AggId[i];
-      aggNodes[aggCurr[aggregate]] = i;
-      aggPtr[aggregate]++;
+      if(aggregate !=INVALID) {
+	aggNodes[aggCurr[aggregate]] = i;
+	aggCurr[aggregate]++;
+      }
     }
   }
 
