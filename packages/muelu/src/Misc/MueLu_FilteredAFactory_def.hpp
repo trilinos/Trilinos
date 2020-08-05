@@ -122,6 +122,12 @@ namespace MueLu {
     if (use_root_stencil)
       GetOStream(Runtime0) << "Using root stencil for dropping" << std::endl;
 
+    if(pL.get<bool>("filtered matrix: reuse graph"))
+      GetOStream(Runtime0) << "Reusing graph"<<std::endl;
+    else
+      GetOStream(Runtime0) << "Generating new graph"<<std::endl;
+      
+
     RCP<GraphBase> G = Get< RCP<GraphBase> >(currentLevel, "Graph");
 
     RCP<ParameterList> fillCompleteParams(new ParameterList);
@@ -220,6 +226,12 @@ namespace MueLu {
         vals = Array<SC>(valsA);
 #endif
 
+	SC ZERO = Teuchos::ScalarTraits<SC>::zero();
+	SC ONE = Teuchos::ScalarTraits<SC>::one();
+	SC A_rowsum = ZERO, F_rowsum = ZERO;
+	for(LO l = 0; l < (LO)inds.size(); l++) 
+	  A_rowsum += valsA[l];
+
         if (lumping == false) {
           for (size_t j = 0; j < nnz; j++)
             if (!filter[inds[j]])
@@ -247,8 +259,21 @@ namespace MueLu {
           // NOTE
           //  * Does it make sense to lump for elasticity?
           //  * Is it different for diffusion and elasticity?
-          if (diagIndex != -1)
+	SC diagA = ZERO;
+	if (diagIndex != -1) {
+	  diagA = vals[diagIndex];
+	
             vals[diagIndex] += diagExtra;
+	}
+	if(vals[diagIndex] < 1e-10*ONE) {
+	  printf("WARNING: row %d diag(Afiltered) = %8.2e diag(A)=%8.2e\n",row,vals[diagIndex],diagA);
+	  for(LO l = 0; l < (LO)nnz; l++) 
+	    F_rowsum += vals[l];
+	  printf("       : A rowsum = %8.2e F rowsum = %8.2e\n",A_rowsum,F_rowsum);
+	}
+
+
+
         }
 
 #ifndef ASSUME_DIRECT_ACCESS_TO_ROW
@@ -334,9 +359,27 @@ namespace MueLu {
           //  * Is it different for diffusion and elasticity?
           if (diagIndex != -1)
             vals[diagIndex] += diagExtra;
+
+	  SC ZERO = Teuchos::ScalarTraits<SC>::zero();
+	  SC ONE = Teuchos::ScalarTraits<SC>::one();
+	  
+	  if(vals[diagIndex] < 1e-10*ONE) {
+	    printf("WARNING: row %d diag(Afiltered) = %8.2e diag(A)=%8.2e\n",row,vals[diagIndex],valsA[diagIndex]);
+	    SC A_rowsum = ZERO, F_rowsum = ZERO;
+	    for(LO l = 0; l < (LO)indsA.size(); l++) 
+	      A_rowsum += valsA[l];
+	    for(LO l = 0; l < (LO)numInds; l++) 
+	      F_rowsum += vals[l];
+	    printf("       : A rowsum = %8.2e F rowsum = %8.2e\n",A_rowsum,F_rowsum);
+	  }
+	  
+	  
+
         }
         inds.resize(numInds);
         vals.resize(numInds);
+
+
 
         // Because we used a column map in the construction of the matrix
         // we can just use insertLocalValues here instead of insertGlobalValues
@@ -354,14 +397,15 @@ namespace MueLu {
   void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   BuildNewUsingRootStencil(const Matrix& A, const GraphBase& G, Level& currentLevel, Matrix& filteredA) const {
     SC ZERO = Teuchos::ScalarTraits<SC>::zero();
+    SC ONE = Teuchos::ScalarTraits<SC>::one();
     LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
 
     size_t numNodes = G.GetNodeNumVertices();
     size_t blkSize  = A.GetFixedBlockSize();
     size_t numRows  = A.getMap()->getNodeNumElements();
 
-    RCP<const Map> rowMap = A.getRowMap();
-    RCP<const Map> colMap = A.getColMap();
+    //    RCP<const Map> rowMap = A.getRowMap();
+    //    RCP<const Map> colMap = A.getColMap();
 
     ArrayView<const LO> indsA;
     ArrayView<const SC> valsA;
@@ -381,9 +425,9 @@ namespace MueLu {
 
     // Unamalgamate
 
-    bool goodMap = MueLu::Utilities<SC,LO,GO,NO>::MapsAreNested(*rowMap, *colMap);
-    TEUCHOS_TEST_FOR_EXCEPTION(goodMap,
-			       Exceptions::RuntimeError,"MueLu::FilteredAFactory::BuildNewUsingRootStencil: Requires nested row/col maps");
+    //    bool goodMap = MueLu::Utilities<SC,LO,GO,NO>::MapsAreNested(*rowMap, *colMap);
+    //    TEUCHOS_TEST_FOR_EXCEPTION(goodMap,
+    //			       Exceptions::RuntimeError,"MueLu::FilteredAFactory::BuildNewUsingRootStencil: Requires nested row/col maps");
 
 
     // Find the biggest aggregate size in *nodes*
@@ -396,8 +440,13 @@ namespace MueLu {
     std::vector<LO> goodAggNeighbors(G.getNodeMaxNumRowEntries());
     std::vector<LO> badAggNeighbors(std::min(G.getNodeMaxNumRowEntries()*maxAggSize,numNodes));
 
+    size_t numNewDrops=0;
+    size_t numOldDrops=0;
+    size_t numFixedDiags=0;
+
     for(LO i=0; i<numAggs; i++) {
       LO numNodesInAggregate = nodesInAgg.ptr[i+1] - nodesInAgg.ptr[i];
+      if(numNodesInAggregate == 0) continue;
 
       // Find the root *node*
       LO root_node = INVALID;
@@ -407,7 +456,7 @@ namespace MueLu {
 	}
       }
       
-      TEUCHOS_TEST_FOR_EXCEPTION(root_node != INVALID,
+      TEUCHOS_TEST_FOR_EXCEPTION(root_node == INVALID,
 				 Exceptions::RuntimeError,"MueLu::FilteredAFactory::BuildNewUsingRootStencil: Cannot find root node");
 
       // Find the list of "good" node neighbors (aka nodes which border the root node in the Graph G)      
@@ -443,6 +492,7 @@ namespace MueLu {
       
       // Now lets fill the rows in this aggregate and figure out the diagonal lumping
       // We loop over each node in the aggregate and then over the neighbors of that node
+
       for(LO k=nodesInAgg.ptr[i]; k<nodesInAgg.ptr[i+1]; k++) {
 	ArrayView<const LO> indsG = G.getNeighborVertices(nodesInAgg.nodes[k]);
 	for (LO j = 0; j < (LO)indsG.size(); j++) {
@@ -460,8 +510,13 @@ namespace MueLu {
 
 	    for(LO l = 0; l < (LO)indsA.size(); l++) {
 	      bool is_good = true; // Assume off-processor entries are good. FIXME?
-	      if (indsA[l] == row)
+	      if (indsA[l] == row) {
 		diagIndex = l;
+		inds[numInds] = indsA[l];
+		vals[numInds] = valsA[l];
+		numInds++;
+		continue;
+	      }
 
 	      if(indsA[l] < (LO)numRows)  {
 		int node = amalgInfo->ComputeLocalNode(indsA[l]);
@@ -470,29 +525,61 @@ namespace MueLu {
 		  is_good = false;
 	      }
 
-	      if(is_good) {
+	      if(is_good){
 		inds[numInds] = indsA[l];
 		vals[numInds] = valsA[l];
 		numInds++;
 	      }
 	      else {
+		if(valsA[l] == ZERO) numOldDrops++;
+		else numNewDrops++;
 		diagExtra += valsA[l];		
 	      }
 
-	      if (diagIndex != INVALID)
-		vals[diagIndex] += diagExtra;
 	    }//end l "indsA.size()" loop
 
+	    if (diagIndex != INVALID) {
+	      vals[diagIndex] += diagExtra;
+	      if(vals[diagIndex] == ZERO) {
+		vals[diagIndex] = ONE;
+		numFixedDiags++;
+	      }
+
+	      if(vals[diagIndex] < 1e-10*ONE) {
+		printf("WARNING: row %d diag(Afiltered) = %8.2e diag(A)=%8.2e\n",row,vals[diagIndex],valsA[diagIndex]);
+		SC A_rowsum = ZERO, F_rowsum = ZERO;
+		for(LO l = 0; l < (LO)indsA.size(); l++) 
+		  A_rowsum += valsA[l];
+		for(LO l = 0; l < (LO)numInds; l++) 
+		  F_rowsum += vals[l];
+		printf("       : A rowsum = %8.2e F rowsum = %8.2e\n",A_rowsum,F_rowsum);
+	      }
+
+	    }
+	    else {
+	      GetOStream(Runtime0)<<"WARNING: Row "<<row<<" has no diagonal "<<std::endl;
+	    }
+	      	      
 	    inds.resize(numInds);
 	    vals.resize(numInds);
 	    filteredA.insertLocalValues(row, inds, vals);
 
+	    if(numInds == 0) 
+	      GetOStream(Runtime0)<<"WARNING: Row "<<row<<" has no entries in Afiltered. A has "<<indsA.size()<<" entries"<<std::endl;
 	  }//end m "blkSize" loop
 
 
 	} // end the k "row" loop
       }// end loop over number of nodes in this agg
     }//end loop over numAggs
+
+    size_t g_newDrops = 0, g_oldDrops = 0, g_fixedDiags=0;
+    
+    MueLu_sumAll(A.getRowMap()->getComm(), numNewDrops, g_newDrops);
+    MueLu_sumAll(A.getRowMap()->getComm(), numOldDrops, g_oldDrops);
+    MueLu_sumAll(A.getRowMap()->getComm(), numFixedDiags, g_fixedDiags);
+    GetOStream(Runtime0)<< "Filtering out "<<g_newDrops<<" edges, in addition to the "<<g_oldDrops<<" edges dropped earlier"<<std::endl;
+    GetOStream(Runtime0)<< "Fixing "<< g_fixedDiags<<" zero diagonal values" <<std::endl;
   }
 
 
