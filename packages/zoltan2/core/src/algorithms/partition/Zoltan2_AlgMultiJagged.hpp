@@ -6536,12 +6536,8 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
       auto host_dst_coordinates = Kokkos::create_mirror_view(
         Kokkos::HostSpace(), dst_coordinates);
       for(int i = 0; i < this->coord_dim; ++i) {
-        Kokkos::View<mj_scalar_t*, Kokkos::HostSpace> sub_host_src_coordinates;
-        // view could be size 0 if graph was not distributed
-        if(host_src_coordinates.extent(0) != 0) {
-          sub_host_src_coordinates =
-            Kokkos::subview(host_src_coordinates, Kokkos::ALL, i);
-        }
+        Kokkos::View<mj_scalar_t*, Kokkos::HostSpace> sub_host_src_coordinates
+          = Kokkos::subview(host_src_coordinates, Kokkos::ALL, i);
         Kokkos::View<mj_scalar_t *, Kokkos::HostSpace> sub_host_dst_coordinates
           = Kokkos::subview(host_dst_coordinates, Kokkos::ALL, i);
         // Note Layout Left means we can do these in contiguous blocks
@@ -6692,13 +6688,8 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
       Kokkos::HostSpace(), this->mj_coordinates);
     Kokkos::deep_copy(host_src_coordinates, this->mj_coordinates);
     for(int i = 0; i < this->coord_dim; ++i) {
-      Kokkos::View<mj_scalar_t*, Kokkos::HostSpace> sub_host_src_coordinates;
-      // view could be size 0 if graph was not distributed
-      if(host_src_coordinates.extent(0) != 0) {
-        sub_host_src_coordinates =
-          Kokkos::subview(host_src_coordinates, Kokkos::ALL, i);
-      }
-
+      Kokkos::View<mj_scalar_t*, Kokkos::HostSpace> sub_host_src_coordinates
+        = Kokkos::subview(host_src_coordinates, Kokkos::ALL, i);
       auto sub_host_dst_coordinates
         = Kokkos::subview(host_dst_coordinates, Kokkos::ALL, i);
       // Note Layout Left means we can do these in contiguous blocks
@@ -7899,12 +7890,8 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     // get the coordinate axis along which the partitioning will be done.
     int coordInd = i % this->coord_dim;
 
-    Kokkos::View<mj_scalar_t *, device_t> mj_current_dim_coords;
-    // view could be size 0 if graph was not distributed
-    if(this->mj_coordinates.extent(0) != 0) {
-      mj_current_dim_coords =
-        Kokkos::subview(this->mj_coordinates, Kokkos::ALL, coordInd);
-    }
+    Kokkos::View<mj_scalar_t *, device_t> mj_current_dim_coords =
+      Kokkos::subview(this->mj_coordinates, Kokkos::ALL, coordInd);
 
     this->mj_env->timerStart(MACRO_TIMERS,
       mj_timer_base_string + "Problem_Partitioning_" + istring);
