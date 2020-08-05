@@ -114,8 +114,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( LocalMap, UniformContig, LO, GO, NT )
         // lclMap.getGlobalElement is device only
         GO globalElement;
         Kokkos::parallel_reduce("read GO element", range_type (0, 1),
-          KOKKOS_LAMBDA(int dummy, GO& le) {
-            le = lclMap.getGlobalElement(lid);
+          KOKKOS_LAMBDA(int dummy, GO& ge) {
+            ge = lclMap.getGlobalElement(lid);
           }, globalElement);
         TEST_EQUALITY( globalElement, expectedGid );
 
@@ -198,8 +198,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( LocalMap, NonuniformContig, LO, GO, NT )
         // lclMap.getGlobalElement is device only
         GO globalElement;
         Kokkos::parallel_reduce("read GO element", range_type (0, 1),
-          KOKKOS_LAMBDA(int dummy, GO& le) {
-            le = lclMap.getGlobalElement(lid);
+          KOKKOS_LAMBDA(int dummy, GO& ge) {
+            ge = lclMap.getGlobalElement(lid);
           }, globalElement);
         TEST_EQUALITY( globalElement, expectedGid );
 
@@ -288,8 +288,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( LocalMap, Noncontig, LO, GO, NT )
         // lclMap.getGlobalElement is device only
         GO globalElement;
         Kokkos::parallel_reduce("read GO element", range_type (0, 1),
-          KOKKOS_LAMBDA(int dummy, GO& le) {
-            le = lclMap.getGlobalElement(lid);
+          KOKKOS_LAMBDA(int dummy, GO& ge) {
+            ge = lclMap.getGlobalElement(lid);
           }, globalElement);
         TEST_EQUALITY( globalElement, expectedGid );
 
