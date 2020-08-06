@@ -543,6 +543,7 @@ void GenerateRepresentativeBasisNodes(const Basis & basis, const SCFieldContaine
 
  basis.getValues(LoValues, ReferenceNodeLocations , Intrepid2::OPERATOR_VALUE);
 
+ // FENCE REVIEW: Fails without fence - MueLu_UnitTestsIntrepid2Tpetra_MPI_4
  Kokkos::fence(); // for kernel in getValues
 
 #if 0
@@ -604,6 +605,7 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
   FC LoValues_at_HiDofs("LoValues_at_HiDofs",numFieldsLo,numFieldsHi);
   lo_basis.getValues(LoValues_at_HiDofs, hi_DofCoords, Intrepid2::OPERATOR_VALUE);
 
+  // FENCE REVIEW: Passing without fence - but UVM read of LoValues_at_HiDofs below indicates we need this fence
   Kokkos::fence(); // for kernel in getValues
 
   typedef typename Teuchos::ScalarTraits<SC>::halfPrecision SClo;
@@ -662,6 +664,7 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
   FC LoValues_at_HiDofs("LoValues_at_HiDofs",numFieldsLo,numFieldsHi);
   lo_basis.getValues(LoValues_at_HiDofs, hi_DofCoords, Intrepid2::OPERATOR_VALUE);
 
+  // FENCE REVIEW: Passing without fence - but UVM read of LoValues_at_HiDofs below indicates we needs this fence
   Kokkos::fence(); // for kernel in getValues
 
   typedef typename Teuchos::ScalarTraits<SC>::halfPrecision SClo;
