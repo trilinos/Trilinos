@@ -183,7 +183,7 @@ TEST(UnitTestTimer, UnitTest)
     
     stk::diag::MetricTraits<stk::diag::WallTime>::Type lap_time = lap_timer.getMetric<stk::diag::WallTime>().getLap();
   
-    EXPECT_NEAR(0.02, lap_time, millisecTolerance);
+    EXPECT_GE(lap_time, (0.02 - millisecTolerance));
 
     std::this_thread::sleep_for(std::chrono::milliseconds(20));
 
@@ -191,7 +191,7 @@ TEST(UnitTestTimer, UnitTest)
     
     lap_time = lap_timer.getMetric<stk::diag::WallTime>().getLap();
   
-    EXPECT_NEAR(0.04, lap_time, millisecTolerance);
+    EXPECT_GE(lap_time, (0.04 - millisecTolerance));
   }
 
   {

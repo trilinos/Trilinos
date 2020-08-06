@@ -43,14 +43,15 @@ namespace stk
 template <typename Datatype>
 class NgpVector
 {
+  using HostSpace = Kokkos::DefaultHostExecutionSpace;
 public:
-    NgpVector(const std::string &n) : mSize(0), deviceVals(n, mSize), hostVals(Kokkos::create_mirror_view(deviceVals))
+    NgpVector(const std::string &n) : NgpVector(n, 0)
     {
     }
     NgpVector() : NgpVector(get_default_name())
     {
     }
-    NgpVector(const std::string &n, size_t s) : mSize(s), deviceVals(n, mSize), hostVals(Kokkos::create_mirror_view(deviceVals))
+    NgpVector(const std::string &n, size_t s) : mSize(s), deviceVals(Kokkos::view_alloc(Kokkos::WithoutInitializing, n), mSize), hostVals(Kokkos::create_mirror_view(HostSpace(), deviceVals, Kokkos::WithoutInitializing))
     {
     }
     NgpVector(size_t s) : NgpVector(get_default_name(), s)

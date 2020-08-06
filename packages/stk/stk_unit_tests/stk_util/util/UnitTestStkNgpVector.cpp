@@ -70,7 +70,7 @@ TEST(StkVectorTest, createSizedWithName_getName)
     stk::NgpVector<double> vec("vec", 1);
     EXPECT_EQ("vec", vec.name().substr(0,3));
     EXPECT_EQ(1u, vec.size());
-    EXPECT_EQ(0.0, vec[0]);
+    // values are uninitialized
 }
 TEST(StkVectorTest, createSizedAndInitWithName_getName)
 {
