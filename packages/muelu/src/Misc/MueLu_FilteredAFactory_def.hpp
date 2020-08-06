@@ -48,6 +48,7 @@
 
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MatrixFactory.hpp>
+#include <Xpetra_IO.hpp>
 
 #include "MueLu_FilteredAFactory_decl.hpp"
 
@@ -134,6 +135,8 @@ namespace MueLu {
 
     RCP<GraphBase> G = Get< RCP<GraphBase> >(currentLevel, "Graph");
 
+    //     Xpetra::IO<SC,LO,GO,NO>::Write("graph.mat", *G);
+
     RCP<ParameterList> fillCompleteParams(new ParameterList);
     fillCompleteParams->set("No Nonlocal Changes", true);
 
@@ -155,6 +158,8 @@ namespace MueLu {
 	BuildNew(*A, *G, lumping, dirichlet_threshold,*filteredA);
 
       filteredA->fillComplete(A->getDomainMap(), A->getRangeMap(), fillCompleteParams);
+
+     Xpetra::IO<SC,LO,GO,NO>::Write("filteredA.mat", *filteredA);
     }
 
     filteredA->SetFixedBlockSize(A->GetFixedBlockSize());
@@ -578,13 +583,16 @@ namespace MueLu {
 	      for(LO l = 0; l < (LO)numInds; l++) 
 		F_rowsum += vals[l];
 	      printf("       : A rowsum = %8.2e |A| rowsum = %8.2e rowsum = %8.2e\n",A_rowsum,A_absrowsum,F_rowsum);
-	      if(row==7444) {
-		printf("       vals =");
-		for(LO l = 0; l < (LO)indsA.size(); l++)
-		  printf("%d(%8.2e) ",indsA[l],valsA[l]);
-		printf("\n");
-	      }
-	      
+
+	      printf("        Avals =");
+	      for(LO l = 0; l < (LO)indsA.size(); l++)
+		printf("%d(%8.2e) ",indsA[l],valsA[l]);
+	      printf("\n");
+	      printf("        Fvals =");
+	      for(LO l = 0; l < (LO)inds.size(); l++)
+		if(vals[l] != ZERO)
+		  printf("%d(%8.2e) ",inds[l],vals[l]);
+	      printf("\n");
 	      
 	      vals[diagIndex] = TST::one();
 	      numFixedDiags++;
