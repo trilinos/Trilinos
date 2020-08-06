@@ -417,6 +417,25 @@ namespace MueLu {
     LO                          numAggs       = aggregates->GetNumAggregates();
     Teuchos::ArrayRCP<const LO> vertex2AggId  = aggregates->GetVertex2AggId()->getData(0);
 
+
+    /*
+    // HAX
+    //    BuildNew(A,G,true,filteredA);
+    filteredA = A;
+    std::cout<<"CMS: Hacking the diagonal"<<std::endl;
+    // Stupid hack to get the prolongator to pass
+    for(LO row=0; row<(LO) filteredA.getRowMap()->getNodeNumElements(); row++) {
+      A.getLocalRowView(row, indsA, valsA);
+      SC * valsP = (SC*)(&valsA[0]);
+      for(LO j=0; j<(LO) indsA.size(); j++) {
+	if(row==indsA[j] && valsP[j] < 1e-6) 
+	  valsP[j]=1e-6;
+	  }
+    }*/
+
+
+    return;
+
     // Lists of nodes in each aggregate
     struct {
       Array<LO> ptr,nodes;
@@ -464,11 +483,14 @@ namespace MueLu {
 
       // Now find the list of "good" aggregate neighbors (aka the aggregates neighbor the root node in the Graph G)
       goodAggNeighbors.resize(0);
-      for (LO k=nodesInAgg.ptr[i]; k < nodesInAgg.ptr[i+1]; k++) {
-	if(k+1 < (LO) nodesInAgg.ptr.size()) {
-	  goodAggNeighbors.push_back(nodesInAgg.nodes[k]);
-	}
+      for(LO k=0; k<(LO) goodNodeNeighbors.size(); k++) {
+	goodAggNeighbors.push_back(vertex2AggId[goodNodeNeighbors[k]]);
       }
+      //      for (LO k=nodesInAgg.ptr[i]; k < nodesInAgg.ptr[i+1]; k++) {
+      //	if(k+1 < (LO) nodesInAgg.ptr.size()) {
+      //	  goodAggNeighbors.push_back(nodesInAgg.nodes[k]);
+      //	}
+      //      }
       sort_and_unique(goodAggNeighbors);
       
       // Now we get the list of "bad" aggregate neighbors (aka aggregates which border the 
