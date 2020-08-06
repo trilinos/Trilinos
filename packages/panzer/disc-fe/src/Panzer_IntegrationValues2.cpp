@@ -56,6 +56,7 @@
 
 #include "Panzer_CommonArrayFactories.hpp"
 #include "Panzer_Traits.hpp"
+#include "Panzer_SubcellConnectivity.hpp"
 
 // ***********************************************************
 // * Specializations of setupArrays() for different array types
@@ -261,7 +262,8 @@ getIntrepidCubature(const panzer::IntegrationRule & ir) const
 template <typename Scalar>
 void IntegrationValues2<Scalar>::
 evaluateValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates,
-               const int in_num_cells)
+               const int in_num_cells,
+               const Teuchos::RCP<const SubcellConnectivity> & face_connectivity)
 {
   typedef panzer::IntegrationDescriptor ID;
   const bool is_surface = int_rule->getType() == ID::SURFACE;
@@ -270,7 +272,9 @@ evaluateValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates,
   TEUCHOS_ASSERT(not (is_surface and is_cv));
 
   if(is_surface){
-    generateSurfaceCubatureValues(in_node_coordinates,in_num_cells);
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(face_connectivity == Teuchos::null,
+                                "IntegrationValues2::evaluateValues : Surface integration requires the face connectivity");
+    generateSurfaceCubatureValues(in_node_coordinates,in_num_cells,*face_connectivity);
   } else if (is_cv) {
     getCubatureCV(in_node_coordinates, in_num_cells);
     evaluateValuesCV(in_node_coordinates, in_num_cells);
@@ -315,135 +319,6 @@ getCubature(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates,
                                 dyn_cub_points.get_view(),
                                 s_in_node_coordinates,
                                 *(int_rule->topology));
-}
-
-
-
-
-
-namespace
-{
-
-template <typename array_t, typename scalar_t>
-class point_sorter_t
-{
-public:
-
-  point_sorter_t() = delete;
-  point_sorter_t(const array_t & array, const int cell, const int offset):
-    _array(array),
-    _cell(cell),
-    _offset(offset),
-    _rel_tol(1.e-12)
-  {
-    _num_dims=_array.extent(2);
-  }
-
-
-  // This needs to be optimized
-  bool operator()(const int & point_a, const int & point_b) const
-  {
-
-    if(_num_dims==1){
-
-      const scalar_t & x_a = _array(_cell,_offset+point_a,0);
-      const scalar_t & x_b = _array(_cell,_offset+point_b,0);
-
-      const scalar_t rel = std::max(std::fabs(x_a),std::fabs(x_b));
-
-      return test_less(x_a,x_b,rel);
-
-    } else if(_num_dims==2){
-
-      const scalar_t & x_a = _array(_cell,_offset+point_a,0);
-      const scalar_t & x_b = _array(_cell,_offset+point_b,0);
-
-      const scalar_t & y_a = _array(_cell,_offset+point_a,1);
-      const scalar_t & y_b = _array(_cell,_offset+point_b,1);
-
-      const scalar_t rel_x = std::max(std::fabs(x_a),std::fabs(x_b));
-      const scalar_t rel_y = std::max(std::fabs(y_a),std::fabs(y_b));
-      const scalar_t rel = std::max(rel_x,rel_y);
-
-      if(test_eq(y_a,y_b,rel)){
-        if(test_less(x_a,x_b,rel)){
-          // Sort by x
-          return true;
-        }
-      } else if(test_less(y_a,y_b,rel)){
-        // Sort by y
-        return true;
-      }
-
-      // Otherwise b < a
-      return false;
-
-    } else if(_num_dims==3){
-
-      const scalar_t & x_a = _array(_cell,_offset+point_a,0);
-      const scalar_t & x_b = _array(_cell,_offset+point_b,0);
-
-      const scalar_t & y_a = _array(_cell,_offset+point_a,1);
-      const scalar_t & y_b = _array(_cell,_offset+point_b,1);
-
-      const scalar_t & z_a = _array(_cell,_offset+point_a,2);
-      const scalar_t & z_b = _array(_cell,_offset+point_b,2);
-
-      const scalar_t rel_x = std::max(std::fabs(x_a),std::fabs(x_b));
-      const scalar_t rel_y = std::max(std::fabs(y_a),std::fabs(y_b));
-      const scalar_t rel_z = std::max(std::fabs(z_a),std::fabs(z_b));
-      const scalar_t rel = std::max(rel_x,std::max(rel_y,rel_z));
-
-      if(test_less(z_a,z_b,rel)){
-        // Sort by z
-        return true;
-      } else if(test_eq(z_a,z_b,rel)){
-        if(test_eq(y_a,y_b,rel)){
-          if(test_less(x_a,x_b,rel)){
-            // Sort by x
-            return true;
-          }
-        } else if(test_less(y_a,y_b,rel)){
-          // Sort by y
-          return true;
-        }
-      }
-      // Otherwise b < a
-      return false;
-
-    } else {
-      TEUCHOS_ASSERT(false);
-    }
-  }
-
-protected:
-
-  bool
-  test_eq(const scalar_t & a, const scalar_t & b, const scalar_t & rel) const
-  {
-    if(rel==0){
-      return true;
-    }
-    return std::fabs(a-b) < _rel_tol * rel;
-  }
-
-  bool
-  test_less(const scalar_t & a, const scalar_t & b, const scalar_t & rel) const
-  {
-    if(rel==0){
-      return false;
-    }
-    return (a-b) < -_rel_tol * rel;
-  }
-
-  const array_t & _array;
-  int _cell;
-  int _offset;
-  int _num_dims;
-  scalar_t _rel_tol;
-
-};
-
 }
 
 template <typename Scalar>
@@ -509,6 +384,15 @@ swapQuadraturePoints(int cell,
 
   const int cell_dim = ref_ip_coordinates.extent(2);
 
+#ifdef PANZER_DEBUG
+  TEUCHOS_ASSERT(cell < ip_coordinates.extent_int(0));
+  TEUCHOS_ASSERT(a < ip_coordinates.extent_int(1));
+  TEUCHOS_ASSERT(b < ip_coordinates.extent_int(1));
+  TEUCHOS_ASSERT(cell >= 0);
+  TEUCHOS_ASSERT(a >= 0);
+  TEUCHOS_ASSERT(b >= 0);
+#endif
+  
   Scalar hold;
 
   hold = weighted_measure(cell,new_cell_point);
@@ -544,30 +428,22 @@ swapQuadraturePoints(int cell,
       jac_inv(cell,old_cell_point,dim,dim2) = hold;
     }
   }
-}
 
-template <typename Scalar>
-void IntegrationValues2<Scalar>::
-uniqueCoordOrdering(Array_CellIPDim & coords,
-                    int cell,
-                    int offset,
-                    std::vector<int> & order)
-{
-  for(size_t point_index=0;point_index<order.size();++point_index){
-    order[point_index] = point_index;
+  // Rotation matrices are always in 3D
+  for(int dim=0; dim<3; ++dim){
+    for(int dim2=0; dim2<3; ++dim2){
+      hold = surface_rotation_matrices(cell,new_cell_point,dim,dim2);
+      surface_rotation_matrices(cell,new_cell_point,dim,dim2) = surface_rotation_matrices(cell,old_cell_point,dim,dim2);
+      surface_rotation_matrices(cell,old_cell_point,dim,dim2) = hold;
+    }
   }
-
-  // We need to sort the indexes in point_indexes by their ip_coordinate's position in space.
-  // We will then use that to sort all of our arrays.
-
-  point_sorter_t<Array_CellIPDim,Scalar> sorter(coords,cell,offset);
-  std::sort(order.begin(),order.end(),sorter);
 }
 
 template <typename Scalar>
 void IntegrationValues2<Scalar>::
 generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates,
-                              const int in_num_cells)
+                              const int in_num_cells,
+                              const SubcellConnectivity & face_connectivity)
 {
 
   TEUCHOS_ASSERT(int_rule->getType() == IntegrationDescriptor::SURFACE);
@@ -722,7 +598,6 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
 
       }
 
-
       // Now that we have all these wonderful values, lets copy them to the actual arrays
       for(int cell=0;cell<num_cells;++cell){
         for(int side_point=0; side_point<num_points_on_face;++side_point){
@@ -746,56 +621,228 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
     }
   }
 
-  // Now we need to sort the cubature points for each face so that they will line up between cells
+  // We also need surface rotation matrices in order to enforce alignment
   {
-    for(int subcell_index=0; subcell_index<num_subcells;++subcell_index){
-
-      const int point_offset = ir.getPointOffset(subcell_index);
-      const int num_points_on_face = ir.getPointOffset(subcell_index+1) - point_offset;
-      std::vector<int> point_indexes(num_points_on_face,-1);
-
-      for(int cell=0; cell<num_cells; ++cell){
-
-        // build a  point index array based on point coordinates
-        uniqueCoordOrdering(ip_coordinates,cell,point_offset,point_indexes);
-
-        // Indexes are now sorted, now we swap everything around
-        reorder(point_indexes,[=](int a,int b) { swapQuadraturePoints(cell,point_offset+a,point_offset+b); });
+    const int num_points = ir.getPointOffset(num_subcells);
+    Scalar normal[3];
+    Scalar transverse[3];
+    Scalar binormal[3];
+    for(int i=0;i<3;i++){normal[i]=0.;}
+    for(int i=0;i<3;i++){transverse[i]=0.;}
+    for(int i=0;i<3;i++){binormal[i]=0.;}
+    for(int cell=0; cell<num_cells; ++cell){
+      for(int subcell_index=0; subcell_index<num_subcells; ++subcell_index){
+        for(int point=0; point<num_points; ++point){
+          
+          for(int dim=0; dim<3; ++dim)
+            normal[dim] = 0.0;
+          
+          for(int dim=0; dim<cell_dim; ++dim){
+            normal[dim] = surface_normals(cell,point,dim);
+          }
+          
+          convertNormalToRotationMatrix(normal,transverse,binormal);
+          
+          for(int dim=0; dim<3; ++dim){
+            surface_rotation_matrices(cell,point,0,dim) = normal[dim];
+            surface_rotation_matrices(cell,point,1,dim) = transverse[dim];
+            surface_rotation_matrices(cell,point,2,dim) = binormal[dim];
+          }
+        }
       }
     }
   }
 
-  // We also need surface rotation matrices
-  const int num_points = ir.getPointOffset(num_subcells);
-  Scalar normal[3];
-  Scalar transverse[3];
-  Scalar binormal[3];
-  for(int i=0;i<3;i++){normal[i]=0.;}
-  for(int i=0;i<3;i++){transverse[i]=0.;}
-  for(int i=0;i<3;i++){binormal[i]=0.;}
-  for(int cell=0; cell<num_cells; ++cell){
-    for(int subcell_index=0; subcell_index<num_subcells; ++subcell_index){
-      for(int point=0; point<num_points; ++point){
+  // =========================================================
+  // Enforce alignment across surface quadrature points
+  
+  const int num_points = ip_coordinates.extent_int(1);
+  const int num_faces_per_cell = face_connectivity.numSubcellsOnCell(0);
+  const int num_points_per_face = num_points / num_faces_per_cell;
 
-        for(int dim=0; dim<3; ++dim)
-          normal[dim] = 0.0;
+  // Now we need to align the cubature points for each face
+  // If there is only one point there is no need to align things
+  if(num_points_per_face != 1){
+    // To enforce that quadrature points on faces are aligned properly we will iterate through faces,
+    // map points to a plane shared by the faces, then re-order quadrature points on the "1" face to
+    // line up with the "0" face
 
+    // Utility calls
+#define PANZER_DOT(a,b) (a[0]*b[0] + a[1]*b[1] + a[2]*b[2])
+#define PANZER_CROSS(a,b,c) {c[0] = a[1]*b[2] - a[2]*b[1]; c[1] = a[2]*b[0] - a[0]*b[2]; c[2] = a[0]*b[1] - a[1]*b[0];}
+
+    // Reorder index vector
+    std::vector<int> point_order(num_points_per_face);
+
+    // Iterate through faces
+    for(int face=0; face<face_connectivity.numSubcells(); ++face){
+      // Cells for sides 0 and 1
+      const int cell_0 = face_connectivity.cellForSubcell(face,0);
+      const int cell_1 = face_connectivity.cellForSubcell(face,1);
+
+      // If this face doesn't connect to anything we don't need to worry about alignment
+      if(cell_1 < 0)
+        continue;
+
+      // Local face index for sides 0 and 1
+      const int lidx_0 = face_connectivity.localSubcellForSubcell(face,0);
+      const int lidx_1 = face_connectivity.localSubcellForSubcell(face,1);
+
+      // If the cell exists, then the local face index needs to exist
+      TEUCHOS_ASSERT(lidx_1 >= 0);
+      
+      // To compare points on planes, it is good to center the planes around the origin
+      // Find the face center for the left and right cell (may not be the same point - e.g. periodic conditions)
+      // We also define a length scale r2 which gives an order of magnitude approximation to the cell size squared
+      Scalar xc0[3] = {0}, xc1[3] = {0}, r2 = 0;
+      for(int face_point=0; face_point<num_points_per_face; ++face_point){
+        Scalar dx2 = 0.;
         for(int dim=0; dim<cell_dim; ++dim){
-          normal[dim] = surface_normals(cell,point,dim);
+          xc0[dim] += ip_coordinates(cell_0,lidx_0*num_points_per_face + face_point,dim);
+          xc1[dim] += ip_coordinates(cell_1,lidx_1*num_points_per_face + face_point,dim);
+          const Scalar dx = ip_coordinates(cell_0,lidx_0*num_points_per_face + face_point,dim) - ip_coordinates(cell_0,lidx_0*num_points_per_face,dim); 
+          dx2 += dx*dx;
         }
 
-        convertNormalToRotationMatrix(normal,transverse,binormal);
+        // Check if the distance squared between these two points is larger than the others (doesn't need to be perfect)
+        r2 = std::max(r2, dx2);
+      }
+      for(int dim=0; dim<cell_dim; ++dim){
+        xc0[dim] /= double(num_points_per_face);
+        xc1[dim] /= double(num_points_per_face);
+      }
 
-        for(int dim=0; dim<3; ++dim){
-          surface_rotation_matrices(cell,point,0,dim) = normal[dim];
-          surface_rotation_matrices(cell,point,1,dim) = transverse[dim];
-          surface_rotation_matrices(cell,point,2,dim) = binormal[dim];
+      // TODO: This needs to be adaptable to having curved faces - for now this will work
+
+      // We need to define a plane with two vectors (transverse and binormal)
+      // These will be used with the face centers to construct a local reference frame for aligning points
+
+      // We use the first point on the face to define the normal (may break for curved faces)
+      const int example_point_0 = lidx_0*num_points_per_face;
+      const int example_point_1 = lidx_1*num_points_per_face;
+      
+      // Load the transverse and binormal for the 0 cell (default)
+      Scalar t[3] = {surface_rotation_matrices(cell_0,example_point_0,1,0), surface_rotation_matrices(cell_0,example_point_0,1,1), surface_rotation_matrices(cell_0,example_point_0,1,2)};
+      Scalar b[3] = {surface_rotation_matrices(cell_0,example_point_0,2,0), surface_rotation_matrices(cell_0,example_point_0,2,1), surface_rotation_matrices(cell_0,example_point_0,2,2)};
+
+      // In case the faces are not antiparallel (e.g. periodic wedge), we may need to change the transverse and binormal
+      {
+      
+        // Get the normals for each face for constructing one of the plane vectors (transverse)
+        const Scalar n0[3] = {surface_rotation_matrices(cell_0,example_point_0,0,0), surface_rotation_matrices(cell_0,example_point_0,0,1), surface_rotation_matrices(cell_0,example_point_0,0,2)};
+        const Scalar n1[3] = {surface_rotation_matrices(cell_1,example_point_1,0,0), surface_rotation_matrices(cell_1,example_point_1,0,1), surface_rotation_matrices(cell_1,example_point_1,0,2)};
+
+        // n_0*n_1 == -1 (antiparallel), n_0*n_1 == 1 (parallel - bad), |n_0*n_1| < 1 (other)
+        const Scalar n0_dot_n1 = PANZER_DOT(n0,n1);
+
+        // FIXME: Currently virtual cells will set their surface normal along the same direction as the cell they "reflect"
+        // This causes a host of issues (e.g. identifying 180 degree periodic wedges), but we have to support virtual cells as a priority
+        // Therefore, we will just assume that the ordering is fine (not valid for 180 degree periodic wedges)
+        if(std::fabs(n0_dot_n1 - 1.) < 1.e-8)
+          continue;
+
+        // Rotated faces case (e.g. periodic wedge) we need to check for non-antiparallel face normals
+        if(std::fabs(n0_dot_n1 + 1.) > 1.e-2){
+
+          // Now we need to define an arbitrary transverse and binormal in the plane across which the faces are anti-symmetric
+          // We can do this by setting t = n_0 \times n_1
+          PANZER_CROSS(n0,n1,t);
+
+          // Normalize the transverse vector
+          const Scalar mag_t = std::sqrt(PANZER_DOT(t,t));
+          t[0] /= mag_t;
+          t[1] /= mag_t;
+          t[2] /= mag_t;
+
+          //  The binormal will be the sum of the normals (does not need to be a right handed system)
+          b[0] = n0[0] + n1[0];
+          b[1] = n0[1] + n1[1];
+          b[2] = n0[2] + n1[2];
+
+          // Normalize the binormal vector
+          const Scalar mag_b = std::sqrt(PANZER_DOT(b,b));
+          b[0] /= mag_b;
+          b[1] /= mag_b;
+          b[2] /= mag_b;
+          
+        }
+        
+      }
+
+      // Now that we have a reference coordinate plane in which to align our points
+      // Point on the transverse/binormal plane
+      Scalar p0[2] = {0};
+      Scalar p1[2] = {0};
+
+      // Differential position in mesh
+      Scalar x0[3] = {0};
+      Scalar x1[3] = {0};
+      
+      // Iterate through points in cell 1 and find which point they align with in cell 0
+      for(int face_point_1=0; face_point_1<num_points_per_face; ++face_point_1){
+
+        // Get the point index in the 1 cell
+        const int point_1 = lidx_1*num_points_per_face + face_point_1;
+
+        // Load position shifted by face center
+        for(int dim=0; dim<cell_dim; ++dim)
+          x1[dim] = ip_coordinates(cell_1,point_1,dim) - xc1[dim];
+
+        // Convert position to transverse/binormal plane
+        p1[0] = PANZER_DOT(x1,t);
+        p1[1] = PANZER_DOT(x1,b);
+
+        // Set the default for the point order
+        point_order[face_point_1] = face_point_1;
+        
+        // Compare to points on the other surface
+        for(int face_point_0=0; face_point_0<num_points_per_face; ++face_point_0){
+
+          // Get the point index in the 0 cell
+          const int point_0 = lidx_0*num_points_per_face + face_point_0;
+
+          // Load position shifted by face center
+          for(int dim=0; dim<cell_dim; ++dim)
+            x0[dim] = ip_coordinates(cell_0,point_0,dim) - xc0[dim];
+
+          // Convert position to transverse/binormal plane
+          p0[0] = PANZER_DOT(x0,t);
+          p0[1] = PANZER_DOT(x0,b);
+
+          // Find the distance squared between p0 and p1
+          const Scalar p012 = (p0[0]-p1[0])*(p0[0]-p1[0]) + (p0[1]-p1[1])*(p0[1]-p1[1]);
+
+          // If the distance, compared to the size of the cell, is small, we assume these are the same points
+          if(p012 / r2 < 1.e-12){
+            point_order[face_point_1] = face_point_0;
+            break;
+          }
+
+          // Big problem - there wan't a point that aligned properly
+          TEUCHOS_ASSERT(face_point_0 != num_points_per_face-1);
+
+        }
+      }
+      
+      // Now re-order the points on face 1 to correct the alignment
+      const int point_offset = lidx_1*num_points_per_face;
+      for( int face_point_1 = 0; face_point_1 < num_points_per_face - 1; ++face_point_1 ){
+        // While the point is not yet in place - keep swapping until it is in place (N^2 operations - not great)
+        while( face_point_1 != point_order[face_point_1] ){
+          // We need to swap with the component in this position
+          const int face_point_0 = point_order[face_point_1];
+          swapQuadraturePoints(cell_1,point_offset+face_point_1,point_offset+face_point_0);
+          std::swap( point_order[face_point_1], point_order[face_point_0] );
         }
       }
     }
   }
+    
+#undef PANZER_DOT
+#undef PANZER_CROSS
 
-
+  // =========================================================
+    
   // I'm not sure if these should exist for surface integrals, but here we go!
 
   // Shakib contravarient metric tensor
