@@ -277,6 +277,7 @@ namespace MueLu {
   "<Parameter name=\"smoother: neighborhood type\" type=\"string\" value=\"\"/>"
   "<Parameter name=\"filtered matrix: use lumping\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"filtered matrix: use root stencil\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"filtered matrix: Dirichlet threshold\" type=\"double\" value=\"-1.0\"/>"
   "<Parameter name=\"filtered matrix: reuse eigenvalue\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"filtered matrix: reuse graph\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"emin: iterative method\" type=\"string\" value=\"cg\"/>"
@@ -744,6 +745,8 @@ namespace MueLu {
          ("filtered matrix: use lumping","filtered matrix: use lumping")
       
          ("filtered matrix: use root stencil","filtered matrix: use root stencil")
+      
+         ("filtered matrix: Dirichlet threshold","filtered matrix: Dirichlet threshold")
       
          ("filtered matrix: reuse eigenvalue","filtered matrix: reuse eigenvalue")
       

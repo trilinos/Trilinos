@@ -104,9 +104,9 @@ namespace MueLu {
 
     //@}
   private:
-    void BuildReuse(const Matrix& A, const GraphBase& G, const bool lumping, Matrix& filteredA) const;
-    void BuildNew  (const Matrix& A, const GraphBase& G, const bool lumping, Matrix& filteredA) const;
-    void BuildNewUsingRootStencil(const Matrix& A, const GraphBase& G, Level& currentLevel, Matrix& filteredA) const;
+    void BuildReuse(const Matrix& A, const GraphBase& G, const bool lumping, double dirichletThresh, Matrix& filteredA) const;
+    void BuildNew  (const Matrix& A, const GraphBase& G, const bool lumping, double dirichletThresh, Matrix& filteredA) const;
+    void BuildNewUsingRootStencil(const Matrix& A, const GraphBase& G, double dirichletThresh, Level& currentLevel, Matrix& filteredA) const;
 
   }; //class FilteredAFactory
 
