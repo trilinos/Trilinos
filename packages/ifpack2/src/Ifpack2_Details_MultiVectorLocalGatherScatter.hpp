@@ -101,6 +101,8 @@ public:
     using Teuchos::ArrayRCP;
     const size_t numRows = X_out.getLocalLength ();
     const size_t numVecs = X_in.getNumVectors ();
+
+    // FENCE REVIEW: Not Tested
     Kokkos::fence();
     for (size_t j = 0; j < numVecs; ++j) {
       ArrayRCP<const InScalar> X_in_j = X_in.getData(j);
@@ -126,6 +128,8 @@ public:
     using Teuchos::ArrayRCP;
     const size_t numBlocks = X_out.getLocalLength() / blockSize;
     const size_t numVecs = X_in.getNumVectors ();
+
+    // FENCE REVIEW: Not Tested
     Kokkos::fence();
     for (size_t j = 0; j < numVecs; ++j) {
       ArrayRCP<const InScalar> X_in_j = X_in.getData(j);
@@ -148,6 +152,8 @@ public:
     using Teuchos::ArrayRCP;
     const size_t numRows = X_out.getLocalLength();
     const size_t numVecs = X_in.getNumVectors();
+
+    // FENCE REVIEW: Not Tested
     Kokkos::fence();
     for (size_t j = 0; j < numVecs; ++j) {
       ArrayRCP<InScalar> X_in_j = X_in.getDataNonConst(j);
@@ -170,7 +176,10 @@ public:
     using Teuchos::ArrayRCP;
     const size_t numBlocks = X_out.getLocalLength() / blockSize;
     const size_t numVecs = X_in.getNumVectors ();
+
+    // FENCE REVIEW: Not Tested
     Kokkos::fence();
+
     for (size_t j = 0; j < numVecs; ++j) {
       ArrayRCP<const InScalar> X_in_j = X_in.getData(j);
       ArrayRCP<OutScalar> X_out_j = X_out.getDataNonConst(j);
@@ -193,6 +202,8 @@ public:
                         const Teuchos::ArrayView<const LO> perm) const
   {
     //note: j is col, i is row
+
+    // FENCE REVIEW: Fails without fence Ifpack2_unit_tests_MPI_4
     Kokkos::fence(); // demonstrated via unit test failure
     for(size_t j = 0; j < X_out.extent(1); ++j) {
       for(size_t i = 0; i < X_out.extent(0); ++i) {
@@ -207,6 +218,7 @@ public:
                          const OutView X_out,
                          const Teuchos::ArrayView<const LO> perm) const
   {
+    // FENCE REVIEW: Passing without fence
     Kokkos::fence();
     for(size_t j = 0; j < X_out.extent(1); ++j) {
       for(size_t i = 0; i < X_out.extent(0); ++i) {
@@ -223,6 +235,8 @@ public:
                              LO blockSize) const
   {
     //note: j is col, i is row
+
+    // FENCE REVIEW: Fails without fence Ifpack2_unit_tests_MPI_4
     Kokkos::fence();
     size_t numBlocks = X_out.extent(0) / blockSize;
     for(size_t j = 0; j < X_out.extent(1); ++j) {
@@ -242,6 +256,8 @@ public:
                               LO blockSize) const
   {
     //note: j is col, i is row
+
+    // FENCE REVIEW: Passing without fence
     Kokkos::fence();
     size_t numBlocks = X_out.extent(0) / blockSize;
     for(size_t j = 0; j < X_out.extent(1); ++j) {
@@ -263,6 +279,8 @@ public:
                       const Teuchos::ArrayView<const LO> perm) const
   {
     //note: j is col, i is row
+
+    // FENCE REVIEW: Passing without fence
     Kokkos::fence();
     size_t numRows = X_out.getLocalLength();
     for(size_t j = 0; j < X_out.getNumVectors(); ++j) {
@@ -280,6 +298,8 @@ public:
                        const Teuchos::ArrayView<const LO> perm) const
   {
     size_t numRows = X_out.getLocalLength(); 
+
+    // FENCE REVIEW: Passing without fence
     Kokkos::fence();
     for(size_t j = 0; j < X_in.extent(1); ++j) {
       Teuchos::ArrayRCP<const OutScalar> X_out_j = X_out.getData(j);
@@ -298,6 +318,8 @@ public:
   {
     //note: j is col, i is row
     size_t numBlocks = X_out.getLocalLength() / blockSize;
+
+    // FENCE REVIEW: Not Tested
     Kokkos::fence();
     for(size_t j = 0; j < X_out.getNumVectors(); ++j) {
       Teuchos::ArrayRCP<OutScalar> X_out_j = X_out.getDataNonConst(j);
@@ -317,6 +339,8 @@ public:
                             LO blockSize) const
   {
     size_t numBlocks = X_out.getLocalLength() / blockSize;
+
+    // FENCE REVIEW: Not Tested
     Kokkos::fence();
     for(size_t j = 0; j < X_in.extent(1); ++j) {
       Teuchos::ArrayRCP<const OutScalar> X_out_j = X_out.getData(j);

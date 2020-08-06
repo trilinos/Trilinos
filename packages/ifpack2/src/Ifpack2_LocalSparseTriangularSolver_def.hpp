@@ -442,6 +442,7 @@ initialize ()
     decltype(val)                           newval ("val", val.extent (0));
 
     // FIXME: The code below assumes UVM
+    // FENCE REVIEW: Not Tested
     typename crs_matrix_type::execution_space().fence();
     newptr(0) = 0;
     for (local_ordinal_type row = 0, rowStart = 0; row < numRows; ++row) {
@@ -455,6 +456,8 @@ initialize ()
       rowStart += numEnt;
       newptr(row+1) = rowStart;
     }
+
+    // FENCE REVIEW: Not Tested
     typename crs_matrix_type::execution_space().fence();
 
     // Reverse maps

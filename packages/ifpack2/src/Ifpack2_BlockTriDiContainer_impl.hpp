@@ -804,6 +804,7 @@ namespace KB = KokkosBatched::Experimental;
           // CUDA_SAFE_CALL(cudaStreamAddCallback(stream_at_i, callback_isend, (void*)&data_at_i, 0));
         }
 
+        // FENCE REVIEW: Not Tested (in #ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_CUDA_STREAM)
         Kokkos::fence();
 #if defined (KOKKOS_ENABLE_OPENMP)
 #pragma omp parallel for
@@ -853,6 +854,8 @@ namespace KB = KokkosBatched::Experimental;
         }
 
         // 1. fire up all cuda events
+
+        // FENCE REVIEW: Not Tested (in #ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_CUDA_STREAM)
         Kokkos::fence();
 
         // 2. cleanup all open comm

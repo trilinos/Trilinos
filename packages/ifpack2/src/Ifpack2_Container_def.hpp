@@ -317,6 +317,8 @@ void ContainerImpl<MatrixType, LocalScalarType>::DoGSBlock(
     //Use the KokkosSparse internal matrix for low-overhead values/indices access
     //But, can only do this if the matrix is accessible directly from host, since it's not a DualView
     using container_exec_space = typename ContainerImpl<MatrixType, LocalScalarType>::crs_matrix_type::execution_space;
+
+    // FENCE REVIEW: Not Tested
     container_exec_space().fence();
     auto localA = this->inputCrsMatrix_->getLocalMatrix();
     using size_type = typename crs_matrix_type::local_matrix_type::size_type;
