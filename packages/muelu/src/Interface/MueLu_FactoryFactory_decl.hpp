@@ -101,8 +101,6 @@
 #include "MueLu_IndefBlockedDiagonalSmoother.hpp"
 #include "MueLu_IsorropiaInterface.hpp"
 #include "MueLu_LineDetectionFactory.hpp"
-#include "MueLu_RepartitionInterface.hpp"
-#include "MueLu_RepartitionBlockDiagonalFactory.hpp"
 #include "MueLu_MapTransferFactory.hpp"
 #include "MueLu_MatrixAnalysisFactory.hpp"
 #include "MueLu_MultiVectorTransferFactory.hpp"
@@ -111,15 +109,18 @@
 #include "MueLu_NullspacePresmoothFactory.hpp"
 #include "MueLu_PatternFactory.hpp"
 #include "MueLu_PgPFactory.hpp"
+#include "MueLu_PlaneDetectionFactory.hpp"
+#include "MueLu_RAPFactory.hpp"
+#include "MueLu_RAPShiftFactory.hpp"
 #include "MueLu_RebalanceBlockInterpolationFactory.hpp"
 #include "MueLu_RebalanceBlockRestrictionFactory.hpp"
 #include "MueLu_RebalanceBlockAcFactory.hpp"
 #include "MueLu_RebalanceTransferFactory.hpp"
 #include "MueLu_RegionRFactory.hpp"
+#include "MueLu_RepartitionBlockDiagonalFactory.hpp"
 #include "MueLu_RepartitionFactory.hpp"
 #include "MueLu_RepartitionHeuristicFactory.hpp"
-#include "MueLu_RAPFactory.hpp"
-#include "MueLu_RAPShiftFactory.hpp"
+#include "MueLu_RepartitionInterface.hpp"
 #include "MueLu_RebalanceAcFactory.hpp"
 #include "MueLu_ReorderBlockAFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
@@ -266,6 +267,7 @@ namespace MueLu {
       if (factoryName == "NullspacePresmoothFactory")             return Build2<NullspacePresmoothFactory>             (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "PatternFactory")                        return Build2<PatternFactory>                        (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "PgPFactory")                            return Build2<PgPFactory>                            (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "PlaneDetectionFactory")                 return Build2<PlaneDetectionFactory>                 (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "SaPFactory")                            return Build2<SaPFactory>                            (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "RAPFactory")                            return BuildRAPFactory<RAPFactory>                   (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "RAPShiftFactory")                       return BuildRAPFactory<RAPShiftFactory>              (paramList, factoryMapIn, factoryManagersIn);
