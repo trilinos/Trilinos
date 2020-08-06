@@ -265,21 +265,19 @@ namespace MueLu {
           // NOTE
           //  * Does it make sense to lump for elasticity?
           //  * Is it different for diffusion and elasticity?
-	SC diagA = ZERO;
-	if (diagIndex != -1) {
-	  diagA = vals[diagIndex];	
-	  vals[diagIndex] += diagExtra;
-	  if(dirichletThresh > 0.0 && TST::real(vals[diagIndex]) <= dirichletThresh) {
-	    printf("WARNING: row %d diag(Afiltered) = %8.2e diag(A)=%8.2e\n",row,vals[diagIndex],diagA);
-	    for(LO l = 0; l < (LO)nnz; l++) 
-	      F_rowsum += vals[l];
-	    printf("       : A rowsum = %8.2e F rowsum = %8.2e\n",A_rowsum,F_rowsum);	    	    
-	    vals[diagIndex] = TST::one();
+	  SC diagA = ZERO;
+	  if (diagIndex != -1) {
+	    diagA = vals[diagIndex];	
+	    vals[diagIndex] += diagExtra;
+	    if(dirichletThresh >= 0.0 && TST::real(vals[diagIndex]) <= dirichletThresh) {
+	      printf("WARNING: row %d diag(Afiltered) = %8.2e diag(A)=%8.2e\n",row,vals[diagIndex],diagA);
+	      for(LO l = 0; l < (LO)nnz; l++) 
+		F_rowsum += vals[l];
+	      printf("       : A rowsum = %8.2e F rowsum = %8.2e\n",A_rowsum,F_rowsum);	    	    
+	      vals[diagIndex] = TST::one();
+	    }
 	  }
-	}
-
-
-
+	  	  
         }
 
 #ifndef ASSUME_DIRECT_ACCESS_TO_ROW
@@ -299,6 +297,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   BuildNew(const Matrix& A, const GraphBase& G, const bool lumping, double dirichletThresh, Matrix& filteredA) const {
+    using TST = typename Teuchos::ScalarTraits<SC>;
     SC zero = Teuchos::ScalarTraits<SC>::zero();
 
     size_t blkSize = A.GetFixedBlockSize();
@@ -363,24 +362,18 @@ namespace MueLu {
           // NOTE
           //  * Does it make sense to lump for elasticity?
           //  * Is it different for diffusion and elasticity?
-          if (diagIndex != -1)
+          if (diagIndex != -1) {
             vals[diagIndex] += diagExtra;
-
-	  SC ZERO = Teuchos::ScalarTraits<SC>::zero();
-	  SC ONE = Teuchos::ScalarTraits<SC>::one();
-	  
-	  if(vals[diagIndex] < 1e-10*ONE) {
-	    printf("WARNING: row %d diag(Afiltered) = %8.2e diag(A)=%8.2e\n",row,vals[diagIndex],valsA[diagIndex]);
-	    SC A_rowsum = ZERO, F_rowsum = ZERO;
-	    for(LO l = 0; l < (LO)indsA.size(); l++) 
-	      A_rowsum += valsA[l];
-	    for(LO l = 0; l < (LO)numInds; l++) 
-	      F_rowsum += vals[l];
-	    printf("       : A rowsum = %8.2e F rowsum = %8.2e\n",A_rowsum,F_rowsum);
+	    if(dirichletThresh >= 0.0 && TST::real(vals[diagIndex]) <= dirichletThresh) {
+	      //	      SC A_rowsum = ZERO, F_rowsum = ZERO;
+	      //	      printf("WARNING: row %d diag(Afiltered) = %8.2e diag(A)=%8.2e\n",row,vals[diagIndex],diagA);
+	      //	      for(LO l = 0; l < (LO)nnz; l++) 
+	      //		F_rowsum += vals[l];
+	      //	      printf("       : A rowsum = %8.2e F rowsum = %8.2e\n",A_rowsum,F_rowsum);	    	    
+	      vals[diagIndex] = TST::one();
+	    }
 	  }
-	  
-	  
-
+	      	
         }
         inds.resize(numInds);
         vals.resize(numInds);
@@ -402,6 +395,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   BuildNewUsingRootStencil(const Matrix& A, const GraphBase& G, double dirichletThresh, Level& currentLevel,  Matrix& filteredA) const {
+    using TST = typename Teuchos::ScalarTraits<SC>;
     SC ZERO = Teuchos::ScalarTraits<SC>::zero();
     SC ONE = Teuchos::ScalarTraits<SC>::one();
     LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
@@ -522,86 +516,93 @@ namespace MueLu {
       // We loop over each node in the aggregate and then over the neighbors of that node
 
       for(LO k=nodesInAgg.ptr[i]; k<nodesInAgg.ptr[i+1]; k++) {
-	ArrayView<const LO> indsG = G.getNeighborVertices(nodesInAgg.nodes[k]);
-	for (LO j = 0; j < (LO)indsG.size(); j++) {
-	  inds.resize(0); vals.resize(0);
-
-	  for (LO m = 0; m < (LO)blkSize; m++) {
-	    LO row = amalgInfo->ComputeLocalDOF(indsG[j],m);
-	    A.getLocalRowView(row, indsA, valsA);
-
-	    LO diagIndex = INVALID;
-	    SC diagExtra = ZERO;
-	    LO numInds = 0;
-	    inds.resize(indsA.size());
-	    vals.resize(valsA.size());
-
-	    for(LO l = 0; l < (LO)indsA.size(); l++) {
-	      bool is_good = true; // Assume off-processor entries are good. FIXME?
-	      if (indsA[l] == row) {
-		diagIndex = l;
-		inds[numInds] = indsA[l];
-		vals[numInds] = valsA[l];
-		numInds++;
-		continue;
-	      }
-
-	      if(indsA[l] < (LO)numRows)  {
-		int node = amalgInfo->ComputeLocalNode(indsA[l]);
-		int agg = vertex2AggId[node];
-		if(std::binary_search(badAggNeighbors.begin(),badAggNeighbors.end(),agg))
-		  is_good = false;
-	      }
-
-	      if(is_good){
-		inds[numInds] = indsA[l];
-		vals[numInds] = valsA[l];
-		numInds++;
-	      }
-	      else {
-		if(valsA[l] == ZERO) numOldDrops++;
-		else numNewDrops++;
-		diagExtra += valsA[l];		
-	      }
-
-	    }//end l "indsA.size()" loop
-
-	    if (diagIndex != INVALID) {
-	      vals[diagIndex] += diagExtra;
-	      if(vals[diagIndex] == ZERO) {
-		vals[diagIndex] = ONE;
-		numFixedDiags++;
-	      }
-
-	      if(vals[diagIndex] < 1e-10*ONE) {
-		printf("WARNING: row %d diag(Afiltered) = %8.2e diag(A)=%8.2e\n",row,vals[diagIndex],valsA[diagIndex]);
-		SC A_rowsum = ZERO, F_rowsum = ZERO, A_absrowsum = ZERO;
-		for(LO l = 0; l < (LO)indsA.size(); l++) {
-		  A_rowsum += valsA[l];
-		  A_absrowsum+=std::abs(valsA[l]);
-		}
-		for(LO l = 0; l < (LO)numInds; l++) 
-		  F_rowsum += vals[l];
-		printf("       : A rowsum = %8.2e |A| rowsum = %8.2efF rowsum = %8.2e\n",A_rowsum,A_absrowsum,F_rowsum);
-	      }
-
+	LO node = nodesInAgg.nodes[k];
+	//	ArrayView<const LO> indsG = G.getNeighborVertices(nodesInAgg.nodes[k]);
+	//	for (LO j = 0; j < (LO)indsG.size(); j++) {
+	for (LO m = 0; m < (LO)blkSize; m++) {
+	  LO row = amalgInfo->ComputeLocalDOF(node,m);
+	  //	  if(row ==7651)
+	    //	    printf(" agg = %d blkSize = %d l = %d m = %d\n",
+	  A.getLocalRowView(row, indsA, valsA);
+	  
+	  LO diagIndex = INVALID;
+	  SC diagExtra = ZERO;
+	  LO numInds = 0;
+	  inds.resize(indsA.size());
+	  vals.resize(valsA.size());
+	  
+	  for(LO l = 0; l < (LO)indsA.size(); l++) {
+	    bool is_good = true; // Assume off-processor entries are good. FIXME?
+	    if (indsA[l] == row) {
+	      diagIndex = l;
+	      inds[numInds] = indsA[l];
+	      vals[numInds] = valsA[l];
+	      numInds++;
+	      continue;
+	    }
+	    
+	    if(indsA[l] < (LO)numRows)  {
+	      int Anode = amalgInfo->ComputeLocalNode(indsA[l]);
+	      int agg = vertex2AggId[Anode];
+	      if(std::binary_search(badAggNeighbors.begin(),badAggNeighbors.end(),agg))
+		is_good = false;
+	    }
+	    
+	    if(is_good){
+	      inds[numInds] = indsA[l];
+	      vals[numInds] = valsA[l];
+	      numInds++;
 	    }
 	    else {
-	      GetOStream(Runtime0)<<"WARNING: Row "<<row<<" has no diagonal "<<std::endl;
+	      if(valsA[l] == ZERO) numOldDrops++;
+	      else numNewDrops++;
+	      diagExtra += valsA[l];
+	      inds[numInds] = indsA[l];
+	      vals[numInds]=0;
+	      numInds++;
 	    }
-	      	      
-	    inds.resize(numInds);
-	    vals.resize(numInds);
-	    filteredA.insertLocalValues(row, inds, vals);
-
-	    if(numInds == 0) 
-	      GetOStream(Runtime0)<<"WARNING: Row "<<row<<" has no entries in Afiltered. A has "<<indsA.size()<<" entries"<<std::endl;
-	  }//end m "blkSize" loop
-
-
-	} // end the k "row" loop
-      }// end loop over number of nodes in this agg
-    }//end loop over numAggs
+	  } //end for l "indsA.size()" loop
+	    
+	  if (diagIndex != INVALID) {
+	    SC diagA = valsA[diagIndex];
+	    vals[diagIndex] += diagExtra;
+	    SC A_rowsum=ZERO, A_absrowsum = ZERO, F_rowsum = ZERO;
+	    
+	    if(dirichletThresh >= 0.0 && TST::real(vals[diagIndex]) <= dirichletThresh) {
+	      
+	      printf("WARNING: row %d (diagIndex=%d) diag(Afiltered) = %8.2e diag(A)=%8.2e\n",row,diagIndex,vals[diagIndex],diagA);
+	      for(LO l = 0; l < (LO)indsA.size(); l++) {		  
+		A_rowsum += valsA[l];
+		A_absrowsum+=std::abs(valsA[l]);
+	      }
+	      for(LO l = 0; l < (LO)numInds; l++) 
+		F_rowsum += vals[l];
+	      printf("       : A rowsum = %8.2e |A| rowsum = %8.2e rowsum = %8.2e\n",A_rowsum,A_absrowsum,F_rowsum);
+	      if(row==7444) {
+		printf("       vals =");
+		for(LO l = 0; l < (LO)indsA.size(); l++)
+		  printf("%d(%8.2e) ",indsA[l],valsA[l]);
+		printf("\n");
+	      }
+	      
+	      
+	      vals[diagIndex] = TST::one();
+	      numFixedDiags++;
+	    }
+	  }
+	  else {
+	    GetOStream(Runtime0)<<"WARNING: Row "<<row<<" has no diagonal "<<std::endl;
+	  }
+	  
+	  inds.resize(numInds);
+	  vals.resize(numInds);
+	  filteredA.insertLocalValues(row, inds, vals);
+	  
+	  if(numInds == 0) 
+	    GetOStream(Runtime0)<<"WARNING: Row "<<row<<" has no entries in Afiltered. A has "<<indsA.size()<<" entries"<<std::endl;
+	}//end m "blkSize" loop
+      }// end k loop over number of nodes in this agg
+    }//end i loop over numAggs
 
     size_t g_newDrops = 0, g_oldDrops = 0, g_fixedDiags=0;
     
