@@ -78,6 +78,7 @@ namespace MueLu {
     SET_VALID_ENTRY("filtered matrix: reuse graph");
     SET_VALID_ENTRY("filtered matrix: reuse eigenvalue");
     SET_VALID_ENTRY("filtered matrix: use root stencil");
+    SET_VALID_ENTRY("filtered matrix: Dirichlet threshold");
 #undef  SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A used for filtering");
@@ -121,6 +122,9 @@ namespace MueLu {
     bool use_root_stencil = lumping && pL.get<bool>("filtered matrix: use root stencil");
     if (use_root_stencil)
       GetOStream(Runtime0) << "Using root stencil for dropping" << std::endl;
+    double dirichlet_threshold = pL.get<double>("filtered matrix: Dirichlet threshold");    
+    if(dirichlet_threshold >= 0.0)
+      GetOStream(Runtime0) << "Filtering Dirichlet threshold of "<<dirichlet_threshold << std::endl;
 
     if(pL.get<bool>("filtered matrix: reuse graph"))
       GetOStream(Runtime0) << "Reusing graph"<<std::endl;
@@ -138,7 +142,7 @@ namespace MueLu {
       filteredA = MatrixFactory::Build(A->getCrsGraph());
       filteredA->resumeFill();
 
-      BuildReuse(*A, *G, lumping, *filteredA);
+      BuildReuse(*A, *G, lumping, dirichlet_threshold,*filteredA);
 
       filteredA->fillComplete(fillCompleteParams);
 
@@ -146,9 +150,9 @@ namespace MueLu {
       filteredA = MatrixFactory::Build(A->getRowMap(), A->getColMap(), A->getNodeMaxNumRowEntries());
 
       if(use_root_stencil)
-	BuildNewUsingRootStencil(*A, *G, currentLevel,*filteredA);
+	BuildNewUsingRootStencil(*A, *G, dirichlet_threshold, currentLevel,*filteredA);
       else
-	BuildNew(*A, *G, lumping, *filteredA);
+	BuildNew(*A, *G, lumping, dirichlet_threshold,*filteredA);
 
       filteredA->fillComplete(A->getDomainMap(), A->getRangeMap(), fillCompleteParams);
     }
@@ -183,8 +187,10 @@ namespace MueLu {
   // are ignored during the prolongator smoothing.
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  BuildReuse(const Matrix& A, const GraphBase& G, const bool lumping, Matrix& filteredA) const {
-    SC zero = Teuchos::ScalarTraits<SC>::zero();
+  BuildReuse(const Matrix& A, const GraphBase& G, const bool lumping, double dirichletThresh, Matrix& filteredA) const {
+    using TST = typename Teuchos::ScalarTraits<SC>;
+    SC zero = TST::zero();
+
 
     size_t blkSize = A.GetFixedBlockSize();
 
@@ -261,15 +267,15 @@ namespace MueLu {
           //  * Is it different for diffusion and elasticity?
 	SC diagA = ZERO;
 	if (diagIndex != -1) {
-	  diagA = vals[diagIndex];
-	
-            vals[diagIndex] += diagExtra;
-	}
-	if(vals[diagIndex] < 1e-10*ONE) {
-	  printf("WARNING: row %d diag(Afiltered) = %8.2e diag(A)=%8.2e\n",row,vals[diagIndex],diagA);
-	  for(LO l = 0; l < (LO)nnz; l++) 
-	    F_rowsum += vals[l];
-	  printf("       : A rowsum = %8.2e F rowsum = %8.2e\n",A_rowsum,F_rowsum);
+	  diagA = vals[diagIndex];	
+	  vals[diagIndex] += diagExtra;
+	  if(dirichletThresh > 0.0 && TST::real(vals[diagIndex]) <= dirichletThresh) {
+	    printf("WARNING: row %d diag(Afiltered) = %8.2e diag(A)=%8.2e\n",row,vals[diagIndex],diagA);
+	    for(LO l = 0; l < (LO)nnz; l++) 
+	      F_rowsum += vals[l];
+	    printf("       : A rowsum = %8.2e F rowsum = %8.2e\n",A_rowsum,F_rowsum);	    	    
+	    vals[diagIndex] = TST::one();
+	  }
 	}
 
 
@@ -292,7 +298,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  BuildNew(const Matrix& A, const GraphBase& G, const bool lumping, Matrix& filteredA) const {
+  BuildNew(const Matrix& A, const GraphBase& G, const bool lumping, double dirichletThresh, Matrix& filteredA) const {
     SC zero = Teuchos::ScalarTraits<SC>::zero();
 
     size_t blkSize = A.GetFixedBlockSize();
@@ -395,7 +401,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  BuildNewUsingRootStencil(const Matrix& A, const GraphBase& G, Level& currentLevel, Matrix& filteredA) const {
+  BuildNewUsingRootStencil(const Matrix& A, const GraphBase& G, double dirichletThresh, Level& currentLevel,  Matrix& filteredA) const {
     SC ZERO = Teuchos::ScalarTraits<SC>::zero();
     SC ONE = Teuchos::ScalarTraits<SC>::one();
     LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
@@ -403,10 +409,6 @@ namespace MueLu {
     size_t numNodes = G.GetNodeNumVertices();
     size_t blkSize  = A.GetFixedBlockSize();
     size_t numRows  = A.getMap()->getNodeNumElements();
-
-    //    RCP<const Map> rowMap = A.getRowMap();
-    //    RCP<const Map> colMap = A.getColMap();
-
     ArrayView<const LO> indsA;
     ArrayView<const SC> valsA;
     Array<LO>           inds(A.getNodeMaxNumRowEntries());
@@ -418,23 +420,32 @@ namespace MueLu {
     Teuchos::ArrayRCP<const LO> vertex2AggId  = aggregates->GetVertex2AggId()->getData(0);
 
 
-    /*
+    
+    // HAX
+    RCP<const Map> rowMap = A.getRowMap();
+    RCP<const Map> colMap = A.getColMap();
+    bool goodMap = MueLu::Utilities<SC,LO,GO,NO>::MapsAreNested(*rowMap, *colMap);
+    if(goodMap) printf("CMS: Maps are good\n");
+    else printf("CMS: Maps are NOT good\n");
+
+
     // HAX
     //    BuildNew(A,G,true,filteredA);
-    filteredA = A;
+    //    filteredA = A;
+#ifdef JUST_USE_A
     std::cout<<"CMS: Hacking the diagonal"<<std::endl;
-    // Stupid hack to get the prolongator to pass
     for(LO row=0; row<(LO) filteredA.getRowMap()->getNodeNumElements(); row++) {
       A.getLocalRowView(row, indsA, valsA);
-      SC * valsP = (SC*)(&valsA[0]);
+      vals.resize(valsA.size());
       for(LO j=0; j<(LO) indsA.size(); j++) {
-	if(row==indsA[j] && valsP[j] < 1e-6) 
-	  valsP[j]=1e-6;
-	  }
-    }*/
-
-
+	vals[j] = ((row==indsA[j]) && (valsA[j] < 1e-6)) ? 1e-6 : valsA[j];
+      }
+      filteredA.insertLocalValues(row, indsA, vals);
+    }
     return;
+#endif
+    // END HAX
+
 
     // Lists of nodes in each aggregate
     struct {
@@ -486,11 +497,6 @@ namespace MueLu {
       for(LO k=0; k<(LO) goodNodeNeighbors.size(); k++) {
 	goodAggNeighbors.push_back(vertex2AggId[goodNodeNeighbors[k]]);
       }
-      //      for (LO k=nodesInAgg.ptr[i]; k < nodesInAgg.ptr[i+1]; k++) {
-      //	if(k+1 < (LO) nodesInAgg.ptr.size()) {
-      //	  goodAggNeighbors.push_back(nodesInAgg.nodes[k]);
-      //	}
-      //      }
       sort_and_unique(goodAggNeighbors);
       
       // Now we get the list of "bad" aggregate neighbors (aka aggregates which border the 
@@ -569,12 +575,14 @@ namespace MueLu {
 
 	      if(vals[diagIndex] < 1e-10*ONE) {
 		printf("WARNING: row %d diag(Afiltered) = %8.2e diag(A)=%8.2e\n",row,vals[diagIndex],valsA[diagIndex]);
-		SC A_rowsum = ZERO, F_rowsum = ZERO;
-		for(LO l = 0; l < (LO)indsA.size(); l++) 
+		SC A_rowsum = ZERO, F_rowsum = ZERO, A_absrowsum = ZERO;
+		for(LO l = 0; l < (LO)indsA.size(); l++) {
 		  A_rowsum += valsA[l];
+		  A_absrowsum+=std::abs(valsA[l]);
+		}
 		for(LO l = 0; l < (LO)numInds; l++) 
 		  F_rowsum += vals[l];
-		printf("       : A rowsum = %8.2e F rowsum = %8.2e\n",A_rowsum,F_rowsum);
+		printf("       : A rowsum = %8.2e |A| rowsum = %8.2efF rowsum = %8.2e\n",A_rowsum,A_absrowsum,F_rowsum);
 	      }
 
 	    }
