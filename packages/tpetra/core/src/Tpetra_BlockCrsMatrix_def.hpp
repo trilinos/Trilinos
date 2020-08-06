@@ -1111,6 +1111,13 @@ public:
     const Scalar one_minus_omega = Teuchos::ScalarTraits<Scalar>::one()-omega;
     const Scalar     minus_omega = -omega;
 
+    // FENCE REVIEW - CONFIRMED FAILURE
+    //   Testing: This code is exercised by unit tests.
+    //   White:   Fails Ifpack2Relaxation_double_int_longlong_TestLowerTriangularBlockCrsMatrix_UnitTest
+    //            Ifpack2Relaxation_double_int_longlong_TestUpperTriangularBlockCrsMatrix_UnitTest
+    //   Plan:
+    //   Notes:
+
     Kokkos::fence();
 
     if (numVecs == 1) {
