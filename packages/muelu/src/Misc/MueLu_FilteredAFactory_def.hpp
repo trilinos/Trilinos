@@ -172,7 +172,7 @@ namespace MueLu {
 
      { //original filtered A
        RCP<Matrix> origFilteredA = MatrixFactory::Build(A->getRowMap(), A->getColMap(), A->getNodeMaxNumRowEntries());
-       BuildReuse(*A, *G, lumping, dirichlet_threshold,*origFilteredA);
+       BuildNew(*A, *G, lumping, dirichlet_threshold,*origFilteredA);
        origFilteredA->fillComplete(A->getDomainMap(), A->getRangeMap(), fillCompleteParams);
        Xpetra::IO<SC,LO,GO,NO>::Write("origFilteredA.dat", *origFilteredA);
        
