@@ -46,7 +46,89 @@
 
 #include <iostream>
 
+#include <unistd.h>
+
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_DefaultComm.hpp"
+#include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_StackedTimer.hpp"
+
+class Measurement {
+public:
+  virtual void measure() = 0;
+};
+
+class SleepMeasurement : public Measurement {
+public:
+  void measure() override {
+    Teuchos::TimeMonitor subTimer(*Teuchos::TimeMonitor::getNewTimer("Sleep"));
+    sleep(5);
+  }
+};
+
+class Reporter {
+public:
+  Reporter(std::string n)
+    : name(n),
+      comm(Teuchos::DefaultComm<int>::getComm()),
+      out(Teuchos::rcpFromRef(std::cout)),
+      timer(Teuchos::rcp(new Teuchos::StackedTimer(name.c_str())))
+  {
+    out.setOutputToRootOnly(0);
+    Teuchos::TimeMonitor::setStackedTimer(timer);
+  }
+
+  void record(Measurement& measurement) {
+    comm->barrier();
+    measurement.measure();
+  }
+
+  void finalReport() {
+    timer->stopBaseTimer();
+
+    reportCommandLine();
+    reportXML();
+
+    out << "Run Complete!" << std::endl;
+  }
+
+private:
+  void reportCommandLine() {
+    Teuchos::StackedTimer::OutputOptions options;
+    options.output_fraction = true;
+    options.output_histogram = true;
+    options.output_minmax = true;
+
+    timer->report(out, comm, options);
+  }
+
+  void reportXML() {
+    std::string xmlName = name + " " + std::to_string(comm->getSize()) + " ranks";
+    auto xmlOut = timer->reportWatchrXML(xmlName, comm);
+
+    if(xmlOut.length()) {
+      out << std::endl << "Created Watchr performance report " << xmlOut << std::endl;
+    }
+    else {
+      out << std::endl << "Did not create Watchr performance report" << std::endl;
+    }
+  }
+
+  const std::string name;
+  Teuchos::RCP<const Teuchos::Comm<int>> comm;
+  Teuchos::FancyOStream out;
+  Teuchos::RCP<Teuchos::StackedTimer> timer;
+};
+
 int main(int argc, char* argv[]) {
-  std::cout << "Run Complete!" << std::endl;
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
+  Reporter reporter("SpMV Performance");
+
+  SleepMeasurement sleeping;
+
+  reporter.record(sleeping);
+  reporter.record(sleeping);
+
+  reporter.finalReport();
   return 0;
 }
