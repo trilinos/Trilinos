@@ -159,7 +159,7 @@ namespace MueLu {
     LO numAggs  = GetNumAggregates();
     LO numNodes = vertex2AggId_->getLocalLength();
     Teuchos::ArrayRCP<const LO> vertex2AggId = vertex2AggId_->getData(0);
-    Teuchos::ArrayRCP<LO> aggSizes = ComputeAggregateSizes();
+    Teuchos::ArrayRCP<LO> aggSizes = ComputeAggregateSizes(true);
     LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
 
     aggPtr.resize(numAggs+1);
@@ -175,6 +175,7 @@ namespace MueLu {
     }
 
     // Resize the singletons list
+    printf("numNodes = %d aggPtr[numAggs+1] = %d\n",numNodes,aggPtr[numAggs+1]);
     unaggregated.resize(numNodes - aggPtr[numAggs+1]);
     
     // Stick the nodes in each aggregate's spot
