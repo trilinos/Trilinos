@@ -252,11 +252,14 @@ void Piro::TempusSolver<Scalar>::initialize(
       stepperType == "SSPERK54" ||
       stepperType == "General ERK" ) {
 
-      bool invertMassMatrix = tempusPL->get("Invert Mass Matrix", false); 
+      bool invertMassMatrix = tempusPL->get("Invert Mass Matrix", true);
       if (!invertMassMatrix) {
-        *out_ << "\n WARNING in Piro::TempusSolver!  You are attempting to run \n" 
-             << "Explicit Stepper (" << stepperType << ") with 'Invert Mass Matrix' set to 'false'. \n" 
-             << "This option should be set to 'true' unless your mass matrix is the identiy.\n"; 
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          true,
+          Teuchos::Exceptions::InvalidParameter,
+          "\n Error! Piro::TempusSolver: You are attempting to run \n" 
+	  << "Explicit Stepper (" << stepperType << ") with 'Invert Mass Matrix' set to 'false'. \n" 
+	  << "This option should be set to 'true' for time-integration to work correctly.\n");
       }
       else {
         Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model_;
