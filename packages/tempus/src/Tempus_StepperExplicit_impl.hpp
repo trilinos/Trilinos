@@ -259,10 +259,8 @@ evaluateExplicitODE(Teuchos::RCP<      Thyra::VectorBase<Scalar> > xDot,
   if (inArgs_.supports(MEB::IN_ARG_x_dot)) inArgs_.set_x_dot(Teuchos::null);
 
   outArgs_.set_f(xDot);
- 
-  std::cout << "IKT evaluateExplicitODE before evalModel time = " << time << "\n"; 
+
   appModel_->evalModel(inArgs_, outArgs_);
-  std::cout << "IKT after evalModel \n"; 
 }
 
 template<class Scalar>
@@ -294,9 +292,7 @@ evaluateExplicitODE(Teuchos::RCP<      Thyra::VectorBase<Scalar> > xDotDot,
 
   outArgs_.set_f(xDotDot);
 
-  std::cout << "IKT evaluateExplicitODE before evalModel time = " << time << "\n"; 
   appModel_->evalModel(inArgs_, outArgs_);
-  std::cout << "IKT after evalModel \n"; 
 }
 
 
