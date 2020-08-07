@@ -175,8 +175,11 @@ namespace MueLu {
     }
 
     // Resize the singletons list
+    printf("numAggs = %d vertex2AggId.size() = %d\n",numAggs,vertex2AggId.size());
     printf("numNodes = %d aggPtr[numAggs+1] = %d\n",numNodes,aggPtr[numAggs+1]);
-    unaggregated.resize(numNodes - aggPtr[numAggs+1]);
+    unaggregated.resize(numNodes);
+			
+			
     
     // Stick the nodes in each aggregate's spot
     for(LO i=0; i<numNodes; i++) {
@@ -190,6 +193,8 @@ namespace MueLu {
 	currNumUnaggregated++;
       }
     }
+    unaggregated.resize(currNumUnaggregated);
+
   }
 
 
