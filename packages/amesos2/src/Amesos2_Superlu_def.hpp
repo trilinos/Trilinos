@@ -401,15 +401,17 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
 
     // In general we may want to write directly to the x space without a copy.
     // So we 'get' x which may be a direct view assignment to the MV.
+    const bool initialize_data = true;
+    const bool do_not_initialize_data = false;
     if(use_triangular_solves_) { // to device
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
       bDidAssignX = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-        device_solve_array_t>::do_get(false, X, device_xValues_,
+        device_solve_array_t>::do_get(do_not_initialize_data, X, device_xValues_,
             as<size_t>(ld_rhs),
             (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
             this->rowIndexBase_);
       bDidAssignB = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-        device_solve_array_t>::do_get(true, B, device_bValues_,
+        device_solve_array_t>::do_get(initialize_data, B, device_bValues_,
             as<size_t>(ld_rhs),
             (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
             this->rowIndexBase_);
@@ -417,12 +419,12 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
     }
     else { // to host
       bDidAssignX = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-        host_solve_array_t>::do_get(false, X, host_xValues_,
+        host_solve_array_t>::do_get(do_not_initialize_data, X, host_xValues_,
             as<size_t>(ld_rhs),
             (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
             this->rowIndexBase_);
       bDidAssignB = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-        host_solve_array_t>::do_get(true, B, host_bValues_,
+        host_solve_array_t>::do_get(initialize_data, B, host_bValues_,
             as<size_t>(ld_rhs),
             (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
             this->rowIndexBase_);
@@ -547,7 +549,10 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
                       "memory before allocation failure occured." );
 
   /* Update X's global values */
-  if(!bDidAssignX) { // if bDidAssignX, then we solved straight to the adapter's X memory space
+
+  // if bDidAssignX, then we solved straight to the adapter's X memory space without
+  // requiring additional memory allocation, so the x data is already in place.
+  if(!bDidAssignX) {
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif

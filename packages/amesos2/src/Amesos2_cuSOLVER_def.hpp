@@ -196,14 +196,16 @@ cuSOLVER<Matrix,Vector>::solve_impl(
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif
 
+    const bool initialize_data = true;
+    const bool do_not_initialize_data = false;
     Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-      device_solve_array_t>::do_get(true, B, this->bValues_, Teuchos::as<size_t>(ld_rhs),
+      device_solve_array_t>::do_get(initialize_data, B, this->bValues_, Teuchos::as<size_t>(ld_rhs),
       ROOTED, this->rowIndexBase_);
 
     // In general we may want to write directly to the x space without a copy.
     // So we 'get' x which may be a direct view assignment to the MV.
     bAssignedX = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-      device_solve_array_t>::do_get(false, X, this->xValues_, Teuchos::as<size_t>(ld_rhs),
+      device_solve_array_t>::do_get(do_not_initialize_data, X, this->xValues_, Teuchos::as<size_t>(ld_rhs),
       ROOTED, this->rowIndexBase_);
   }
 
@@ -243,6 +245,9 @@ cuSOLVER<Matrix,Vector>::solve_impl(
   }
 
   /* Update X's global values */
+
+  // if bDidAssignX, then we solved straight to the adapter's X memory space without
+  // requiring additional memory allocation, so the x data is already in place.
   if(!bAssignedX) {
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);

@@ -141,12 +141,14 @@ TachoSolver<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector
     Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif
+    const bool initialize_data = true;
+    const bool do_not_initialize_data = false;
     Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-                             device_solve_array_t>::do_get(true, B, this->bValues_,
+                             device_solve_array_t>::do_get(initialize_data, B, this->bValues_,
                                                as<size_t>(ld_rhs),
                                                ROOTED, this->rowIndexBase_);
     bDidAssignX = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-                             device_solve_array_t>::do_get(false, X, this->xValues_,
+                             device_solve_array_t>::do_get(do_not_initialize_data, X, this->xValues_,
                                                as<size_t>(ld_rhs),
                                                ROOTED, this->rowIndexBase_);
   }
@@ -178,7 +180,10 @@ TachoSolver<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector
     "tacho_solve has error code: " << ierr );
 
   /* Update X's global values */
-  if(!bDidAssignX) { // if bDidAssignX, then we solved straight to the adapter's X memory space
+
+  // if bDidAssignX, then we solved straight to the adapter's X memory space without
+  // requiring additional memory allocation, so the x data is already in place.
+  if(!bDidAssignX) {
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif

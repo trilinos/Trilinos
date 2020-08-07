@@ -74,6 +74,12 @@ update_dst_size(dst_t & dst, const src_t & src) {  // templated just for 2d
 }
 
 // now handle type mismatch for same memory space - here types are same
+// bInitialize:
+//   If bInitialize is false, then the data needs to be allocated but not initialized.
+//   If we are about to solve into x we don't care about setting the original values.
+//   In this case, we are assigning the view directly so bInitialize does not matter.
+// bAssigned:
+//   bAssigned tells the caller if the data was simply assigned, so it is set true in this case.
 template<class dst_t, class src_t> // version for same memory spaces
 typename std::enable_if<std::is_same<typename dst_t::value_type,
   typename src_t::value_type>::value>::type
@@ -83,6 +89,13 @@ implement_copy_or_assign_same_mem_check_types(bool bInitialize, dst_t & dst, con
 }
 
 // now handle type mismatch for same memory space - now types are different
+// bInitialize:
+//   If bInitialize is false, then the data needs to be allocated but not initialized.
+//   If we are about to solve into x we don't care about setting the original values.
+//   In this case, we are allocating so we first make the memory via update_dst_size.
+//   Then we only copy from the source if bInitialize is true.
+// bAssigned:
+//   bAssigned tells the caller if the data was simply assigned, so it is set false in this case.
 template<class dst_t, class src_t> // version for same memory spaces
 typename std::enable_if<!std::is_same<typename dst_t::value_type,
   typename src_t::value_type>::value>::type
