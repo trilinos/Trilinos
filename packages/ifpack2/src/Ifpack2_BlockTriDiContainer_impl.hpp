@@ -955,6 +955,7 @@ namespace KB = KokkosBatched::Experimental;
         for (local_ordinal_type i=0,iend=pids.send.extent(0);i<iend;++i) {
           copy<ToBuffer>(lids.send, buffer.send, offset_host.send(i), offset_host.send(i+1),
                          mv, blocksize);
+          // FENCE REVIEW: I moved this fence here and I think will be permanent for isend
           Kokkos::fence();
           isend(comm,
                 reinterpret_cast<const char*>(buffer.send.data() + offset_host.send[i]*mv_blocksize),
