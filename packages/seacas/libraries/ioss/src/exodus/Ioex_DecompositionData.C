@@ -44,6 +44,10 @@ namespace {
 #if !defined(NO_ZOLTAN_SUPPORT)
   int zoltan_num_dim(void *data, int *ierr)
   {
+int me;
+MPI_Comm_rank(MPI_COMM_WORLD, &me);
+
+    std::cout << " " << me << " KDDKDD in zoltan_num_dim" << std::endl;
     // Return dimensionality of coordinate data.
     Ioex::DecompositionDataBase *zdata = reinterpret_cast<Ioex::DecompositionDataBase *>(data);
 
@@ -57,7 +61,7 @@ namespace {
       return zdata->spatial_dimension();
     }
     else {
-      std::cout << "KDDKDD USING NUM DIM = 1" << std::endl;
+      std::cout << " " << me << " KDDKDD USING NUM DIM = 1" << std::endl;
       return 1;  
     }
   }
@@ -106,7 +110,7 @@ namespace {
     return;
   }
 
-  void zoltan_geom(void *data, int /*ngid_ent*/, int /*nlid_ent*/, int /*nobj*/,
+  void zoltan_geom(void *data, int /*ngid_ent*/, int /*nlid_ent*/, int nobj,
                    ZOLTAN_ID_PTR /*gids*/, ZOLTAN_ID_PTR /*lids*/, int /*ndim*/, double *geom,
                    int *ierr)
   {
@@ -115,19 +119,24 @@ namespace {
 
     // Environment variable HACK_PART_DIMENSION indicates partitioning
     // should be one-dimensional along dimension HACK_PART_DIMENSION
+int me;
+MPI_Comm_rank(MPI_COMM_WORLD, &me);
+std::cout << " " << me << " KDDKDD in zoltan_geom" << std::endl;
+
     const char* varVal = getenv ("HACK_PART_DIMENSION");
     if (varVal == nullptr) {
       // Environment variable is not set; use the Ioss values
       std::copy(zdata->centroids().begin(), zdata->centroids().end(), &geom[0]);
+for (size_t cnt = 0; cnt < zdata->centroids().size(); cnt++)
+  std::cout << " " << me << " " << cnt << " KDDKDD geom[" << cnt << "] = " << geom[cnt] << std::endl;
     }
     else {
       int useThisDim = atoi(varVal);
       auto spatialDim = zdata->spatial_dimension();
-      std::cout << "KDDKDD USING PART DIM " << useThisDim << " of " 
-                << spatialDim << std::endl;
-      for (size_t cnt = 0; cnt < zdata->centroids().size(); cnt++) {
-        geom[cnt] = zdata->centroids()[cnt * spatialDim + useThisDim];
-        std::cout << "KDDKDD geom[" << cnt << "] = " << geom[cnt] << std::endl;
+std::cout << " " << me << " KDDKDD USING PART DIM " << useThisDim << " of " << spatialDim << std::endl;
+      for (size_t cnt = 0; cnt < nobj; cnt++) {
+        geom[cnt] = zdata->centroids()[cnt*spatialDim + useThisDim];
+std::cout << " " << me << " " << cnt << " KDDKDD geom[" << cnt << "] = " << geom[cnt] << std::endl;
       }
     }
 
