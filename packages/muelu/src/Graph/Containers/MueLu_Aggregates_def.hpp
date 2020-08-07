@@ -155,7 +155,7 @@ namespace MueLu {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Aggregates<LocalOrdinal, GlobalOrdinal, Node>::ComputeNodesInAggregate(Array<LO> & aggPtr, Array<LO> & aggNodes) const {
+  void Aggregates<LocalOrdinal, GlobalOrdinal, Node>::ComputeNodesInAggregate(Array<LO> & aggPtr, Array<LO> & aggNodes, Array<LO> & unaggregated) const {
     LO numAggs  = GetNumAggregates();
     LO numNodes = vertex2AggId_->getLocalLength();
     Teuchos::ArrayRCP<const LO> vertex2AggId = vertex2AggId_->getData(0);
@@ -165,6 +165,7 @@ namespace MueLu {
     aggPtr.resize(numAggs+1);
     Array<LO> aggCurr(numAggs+1);
     aggNodes.resize(numNodes);
+    LO currNumUnaggregated=0;
 
     // Construct the "rowptr" and the counter
     aggPtr[0] = 0; 
@@ -172,6 +173,9 @@ namespace MueLu {
       aggPtr[i+1] = aggSizes[i] + aggPtr[i];
       aggCurr[i] = aggPtr[i];
     }
+
+    // Resize the singletons list
+    unaggregated.resize(numNodes - aggPtr[numAggs+1]);
     
     // Stick the nodes in each aggregate's spot
     for(LO i=0; i<numNodes; i++) {
@@ -179,6 +183,10 @@ namespace MueLu {
       if(aggregate !=INVALID) {
 	aggNodes[aggCurr[aggregate]] = i;
 	aggCurr[aggregate]++;
+      }
+      else {
+	unaggregated[currNumUnaggregated] = i;
+	currNumUnaggregated++;
       }
     }
   }

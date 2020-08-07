@@ -134,7 +134,18 @@ namespace MueLu {
       
 
     RCP<GraphBase> G = Get< RCP<GraphBase> >(currentLevel, "Graph");
-
+    {
+      FILE * f = fopen("graph.mat","w");
+      size_t numGRows = G->GetNodeNumVertices();
+      for (size_t i = 0; i < numGRows; i++) {
+	// Set up filtering array
+	ArrayView<const LO> indsG = G->getNeighborVertices(i);
+	for(size_t j=0; j<(size_t)indsG.size(); j++) {
+	  fprintf(f,"%d %d 1.0\n",i,indsG[j]);
+	}
+      }
+      fclose(f);
+    }
     //     Xpetra::IO<SC,LO,GO,NO>::Write("graph.mat", *G);
 
     RCP<ParameterList> fillCompleteParams(new ParameterList);
@@ -275,6 +286,7 @@ namespace MueLu {
 	    diagA = vals[diagIndex];	
 	    vals[diagIndex] += diagExtra;
 	    if(dirichletThresh >= 0.0 && TST::real(vals[diagIndex]) <= dirichletThresh) {
+
 	      printf("WARNING: row %d diag(Afiltered) = %8.2e diag(A)=%8.2e\n",row,vals[diagIndex],diagA);
 	      for(LO l = 0; l < (LO)nnz; l++) 
 		F_rowsum += vals[l];
@@ -448,16 +460,19 @@ namespace MueLu {
 
     // Lists of nodes in each aggregate
     struct {
-      Array<LO> ptr,nodes;
+      Array<LO> ptr,nodes, unaggregated;
     } nodesInAgg;
-    aggregates->ComputeNodesInAggregate(nodesInAgg.ptr, nodesInAgg.nodes);
+    aggregates->ComputeNodesInAggregate(nodesInAgg.ptr, nodesInAgg.nodes, nodesInAgg.unaggregated);
 
-    // Unamalgamate
 
-    //    bool goodMap = MueLu::Utilities<SC,LO,GO,NO>::MapsAreNested(*rowMap, *colMap);
-    //    TEUCHOS_TEST_FOR_EXCEPTION(goodMap,
-    //			       Exceptions::RuntimeError,"MueLu::FilteredAFactory::BuildNewUsingRootStencil: Requires nested row/col maps");
-
+    // Loop over the unaggregated nodes. These guys don't get filtered
+    for(LO i=0; i<nodesInAgg.unaggregated.size(); i++) {
+      for (LO m = 0; m < (LO)blkSize; m++) {
+	LO row = amalgInfo->ComputeLocalDOF(nodesInAgg.unaggregated[i],m);
+	A.getLocalRowView(row, indsA, valsA);
+	filteredA.insertLocalValues(row, indsA, valsA);
+      }
+    }
 
     // Find the biggest aggregate size in *nodes*
     LO maxAggSize=0;
@@ -522,8 +537,6 @@ namespace MueLu {
 
       for(LO k=nodesInAgg.ptr[i]; k<nodesInAgg.ptr[i+1]; k++) {
 	LO node = nodesInAgg.nodes[k];
-	//	ArrayView<const LO> indsG = G.getNeighborVertices(nodesInAgg.nodes[k]);
-	//	for (LO j = 0; j < (LO)indsG.size(); j++) {
 	for (LO m = 0; m < (LO)blkSize; m++) {
 	  LO row = amalgInfo->ComputeLocalDOF(node,m);
 	  //	  if(row ==7651)

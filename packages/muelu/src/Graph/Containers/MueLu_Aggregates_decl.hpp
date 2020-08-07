@@ -202,9 +202,10 @@ namespace MueLu {
     Teuchos::ArrayRCP<LO> ComputeAggregateSizes(bool forceRecompute = false) const;
 
     /*! @brief Generates a compressed list of nodes in each aggregate, where
-      the entries in aggNodes[aggPtr[i]] up to aggNodes[aggPtr[i+1]-1] contain the nodes in aggregate i
+      the entries in aggNodes[aggPtr[i]] up to aggNodes[aggPtr[i+1]-1] contain the nodes in aggregate i.
+      unaggregated contains the list of nodes which are, for whatever reason, not aggregated (e.g. Dirichlet)
      */
-    void ComputeNodesInAggregate(Array<LO> & aggPtr, Array<LO> & aggNodes) const;
+    void ComputeNodesInAggregate(Array<LO> & aggPtr, Array<LO> & aggNodes,Array<LO> & unaggregated) const;
 
     //! @name Overridden from Teuchos::Describable
     //@{

@@ -171,24 +171,28 @@ namespace MueLu {
       {
         SubFactoryMonitor m2(*this, "Fused (I-omega*D^{-1} A)*Ptent", coarseLevel);
 	
-	Xpetra::IO<SC,LO,GO,NO>::Write("sap_A.mat", *A);
+	//	Xpetra::IO<SC,LO,GO,NO>::Write("sap_A.mat", *A);
 
-
+	/*
 	Teuchos::ArrayRCP<SC> diag_data = Utilities::GetMatrixDiagonal(*A);
+
 	printf("SaP diag entries = ");
 	for(int i=0; i<diag_data.size(); i++) {
 	  printf("%d(%8.2e) ",i,diag_data[i]);
 	}
 	printf("\n");
+	*/
 
         Teuchos::RCP<Vector> invDiag = Utilities::GetMatrixDiagonalInverse(*A);
+	/*
 	auto inv_diag_data = invDiag->getData(0);
 	printf("SaP inv diag entries = ");
 	for(int i=0; i<inv_diag_data.size(); i++) {
 	  printf("%d(%8.2e) ",i,diag_data[i]);
 	}
+	*/
 	SC omega = dampingFactor / lambdaMax;
-	//	TEUCHOS_TEST_FOR_EXCEPTION(!std::isfinite(Teuchos::ScalarTraits<SC>::magnitude(omega)), Exceptions::RuntimeError, "Prolongator damping factor needs to be finite.");
+	TEUCHOS_TEST_FOR_EXCEPTION(!std::isfinite(Teuchos::ScalarTraits<SC>::magnitude(omega)), Exceptions::RuntimeError, "Prolongator damping factor needs to be finite.");
 
         // finalP = Ptent + (I - \omega D^{-1}A) Ptent
         finalP = Xpetra::IteratorOps<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Jacobi(omega, *invDiag, *A, *Ptent, finalP,
