@@ -83,15 +83,19 @@ protected:
         allocate_bulk(auraOption, bucketCapacity);
     }
 
-    virtual void setup_mesh(const std::string &meshSpecification, stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    virtual void setup_mesh(const std::string &meshSpecification,
+                            stk::mesh::BulkData::AutomaticAuraOption auraOption,
+                            unsigned bucketCapacity = mesh::impl::BucketRepository::default_bucket_capacity)
     {
-        allocate_bulk(auraOption);
+        allocate_bulk(auraOption, bucketCapacity);
         stk::io::fill_mesh(meshSpecification, *bulkData);
     }
 
-    void setup_mesh_with_cyclic_decomp(const std::string &meshSpecification, stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    void setup_mesh_with_cyclic_decomp(const std::string &meshSpecification,
+                                       stk::mesh::BulkData::AutomaticAuraOption auraOption,
+                                       unsigned bucketCapacity = mesh::impl::BucketRepository::default_bucket_capacity)
     {
-        allocate_bulk(auraOption);
+        allocate_bulk(auraOption, bucketCapacity);
         stk::unit_test_util::generate_mesh_from_serial_spec_and_load_in_parallel_with_auto_decomp(meshSpecification,*bulkData,"cyclic");
     }
 

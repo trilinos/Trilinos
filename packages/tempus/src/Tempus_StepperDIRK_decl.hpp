@@ -226,14 +226,6 @@ public:
 
   virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
 
-  /// \name Accessors methods
-  //@{
-    /** \brief Use embedded if avialable. */
-    virtual void setUseEmbedded(bool a) { useEmbedded_ = a; }
-    virtual bool getUseEmbedded() const { return useEmbedded_; }
-    virtual bool getUseEmbeddedDefault() const { return false; }
-  //@}
-
 
 protected:
 
@@ -270,13 +262,6 @@ protected:
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
   Teuchos::RCP<StepperRKObserverComposite<Scalar> >      stepperObserver_;
 #endif
-
-  // For Embedded RK
-  bool useEmbedded_;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >               ee_;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >               abs_u0;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >               abs_u;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >               sc;
 
   bool resetGuess_ = true;
 };

@@ -146,7 +146,7 @@ std::vector<int> SkinMeshUtil::get_sides_exposed_on_other_procs(stk::mesh::impl:
     for(const stk::mesh::GraphEdge &graphEdge : eeGraph.get_edges_for_element(localId))
         mark_sides_exposed_on_other_procs(graphEdge, isConnectedToRemoteElementInBodyToSkin, isOnlyConnectedRemotely);
 
-    for(const stk::mesh::GraphEdge graphEdge : eeGraph.get_coincident_edges_for_element(localId))
+    for(const stk::mesh::GraphEdge& graphEdge : eeGraph.get_coincident_edges_for_element(localId))
         mark_local_connections(graphEdge, isOnlyConnectedRemotely);
 
     std::vector<int> exposedSides;
@@ -445,4 +445,3 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_all_sides_sideset(bool includeAu
 
 }
 }
-

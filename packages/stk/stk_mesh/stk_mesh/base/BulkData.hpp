@@ -69,6 +69,7 @@
 #include "stk_mesh/baseImpl/MeshModification.hpp"
 #include "stk_mesh/baseImpl/elementGraph/GraphTypes.hpp"
 #include <stk_mesh/baseImpl/elementGraph/MeshDiagnosticObserver.hpp>
+#include "NgpProfilingBlock.hpp"
 #include "stk_mesh/baseImpl/SoloSideIdGenerator.hpp"
 #include "stk_mesh/baseImpl/SideSetImpl.hpp"
 
@@ -237,6 +238,7 @@ public:
    */
   bool modification_begin(const std::string description = std::string("UNSPECIFIED"))
   {
+      ProfilingBlock block("mod begin:" + description);
       notifier.notify_modification_begin();
       m_lastModificationDescription = description;
       return m_meshModification.modification_begin(description);
@@ -262,8 +264,16 @@ public:
 
   bool modification_end(ModEndOptimization modEndOpt = ModEndOptimization::MOD_END_SORT)
   {
-      notifier.notify_started_modification_end();
-      return m_meshModification.modification_end(modEndOpt);
+      bool endStatus = false;
+      {
+          ProfilingBlock block("mod end begin:"+m_lastModificationDescription);
+          notifier.notify_started_modification_end();
+      }
+      {
+          ProfilingBlock block("mod end end:"+m_lastModificationDescription);
+          endStatus = m_meshModification.modification_end(modEndOpt);
+      }
+      return endStatus;
   }
 
   void sort_entities(const stk::mesh::EntitySorterBase& sorter);
@@ -558,7 +568,7 @@ public:
   /** \brief  Determine the polarity of the local side,
    *          more efficient if the local_side_id is known.
    */
-  inline bool element_side_polarity( const Entity elem ,
+  bool element_side_polarity( const Entity elem ,
       const Entity side , unsigned local_side_id ) const;
 
   inline VolatileFastSharedCommMapOneRank const& volatile_fast_shared_comm_map(EntityRank rank) const;  // CLEANUP: only used by FieldParallel.cpp
@@ -1019,7 +1029,8 @@ protected: //functions
                                  bool is_full_regen = false); // Mod Mark
 
   void internal_change_ghosting( Ghosting & ghosts,
-                                 EntityProcMapping& entityProcMapping);
+                                 EntityProcMapping& entityProcMapping,
+                                 const EntityProcMapping& entitySharing);
 
   void internal_add_to_ghosting( Ghosting &ghosting, const std::vector<EntityProc> &add_send); // Mod Mark
 
@@ -1090,12 +1101,6 @@ protected: //functions
   {
       EntityKey key = entity_key(entity);
       std::pair<EntityComm*,bool> result = m_entity_comm_map.insert(key, val, parallel_owner_rank(entity));
-      if (val.ghost_id == 0) {
-        result.first->isShared = true;
-      }
-      else {
-        result.first->isGhost = true;
-      }
       if(result.second)
       {
           m_entitycomm[entity.local_offset()] = result.first;
@@ -1152,10 +1157,12 @@ protected: //functions
    *  - a collective parallel operation.
    */
   void internal_regenerate_aura();
-  void fill_list_of_entities_to_send_for_aura_ghosting(EntityProcMapping& send);
+  void fill_list_of_entities_to_send_for_aura_ghosting(EntityProcMapping& send,
+                                                const EntityProcMapping& entitySharing);
 
   void require_ok_to_modify() const ;
-  void internal_update_fast_comm_maps();
+  void internal_update_fast_comm_maps() const;
+  void internal_update_all_sharing_procs();
 
   impl::BucketRepository& bucket_repository() { return m_bucket_repository; }
 
@@ -1562,6 +1569,8 @@ protected: //data
   mutable std::vector<RelationVector* > m_fmwk_aux_relations;   // Relations that can't be managed by STK such as PARENT/CHILD
   inline bool should_sort_faces_by_node_ids() const { return m_shouldSortFacesByNodeIds; }
   bool m_shouldSortFacesByNodeIds;
+#else
+  inline bool should_sort_faces_by_node_ids() const { return false; }
 #endif
   enum AutomaticAuraOption m_autoAuraOption;
   stk::mesh::impl::MeshModification m_meshModification;
@@ -1580,7 +1589,8 @@ protected: //data
   Parallel m_parallel;
 
 private: // data
-  VolatileFastSharedCommMap m_volatile_fast_shared_comm_map;
+  mutable VolatileFastSharedCommMap m_volatile_fast_shared_comm_map;
+  mutable unsigned m_volatile_fast_shared_comm_map_sync_count;
   std::vector<std::vector<int> > m_all_sharing_procs;
   PartVector m_ghost_parts;
   std::list<Entity::entity_value_type> m_deleted_entities;

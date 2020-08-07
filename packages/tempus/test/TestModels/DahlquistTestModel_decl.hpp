@@ -46,20 +46,21 @@ class DahlquistTestModel
   /// Exact solution
   Thyra::ModelEvaluatorBase::InArgs<Scalar> getExactSolution(double t) const;
 
+  Scalar getLambda() const { return lambda_; }
+
   /** \name Public functions overridden from ModelEvaluator. */
   //@{
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_f_space() const;
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
-  //Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > create_W() const;
-  //Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_W_op() const;
-  //Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > get_W_factory() const;
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
+    Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
+    Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_f_space() const;
+    Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
+    //Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > create_W() const;
+    //Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_W_op() const;
+    //Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > get_W_factory() const;
+    Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
 
-  //Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space(int l) const;
-  //Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int l) const;
-  //Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_g_space(int j) const;
-
+    //Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space(int l) const;
+    //Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int l) const;
+    //Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_g_space(int j) const;
   //@}
 
 private:
