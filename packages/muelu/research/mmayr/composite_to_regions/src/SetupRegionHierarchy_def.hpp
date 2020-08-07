@@ -963,6 +963,7 @@ void createRegionHierarchy(const int maxRegPerProc,
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void vCycle(const int l, ///< ID of current level
             const int numLevels, ///< Total number of levels
+            const std::string cycleType,
             Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& fineRegX, ///< solution
             Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > fineRegB, ///< right hand side
             Array<std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > > regMatrices, ///< Matrices in region layout
@@ -973,7 +974,7 @@ void vCycle(const int l, ///< ID of current level
             Array<std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > > regRowImporters, ///< regional row importers
             Array<Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > > regInterfaceScalings, ///< regional interface scaling factors
             Array<RCP<Teuchos::ParameterList> > smootherParams, ///< region smoother parameter list
-	    bool& zeroInitGuess,
+            bool& zeroInitGuess,
             RCP<ParameterList> coarseSolverData = Teuchos::null,
             RCP<ParameterList> hierarchyData = Teuchos::null)
 {
@@ -985,144 +986,149 @@ void vCycle(const int l, ///< ID of current level
   // Get max number of regions per process
   const int maxRegPerProc = fineRegX.size();
 
+  int cycleCount = 1;
+  if(cycleType == "W" && l > 0) // W cycle and not on finest level
+    cycleCount=2;
   if (l < numLevels - 1) { // fine or intermediate levels
+    for(int cycle=0; cycle < cycleCount; cycle++){
 
 //    std::cout << "level: " << l << std::endl;
 
-    // extract data from hierarchy parameterlist
-    std::string levelName("level" + std::to_string(l));
-    ParameterList levelList;
-    bool useCachedVectors = false;
-    // if(Teuchos::nonnull(hierarchyData) &&  hierarchyData->isSublist(levelName)) {
-    //   levelList = hierarchyData->sublist(levelName);
-    //   if(levelList.isParameter("residual") && levelList.isParameter("solution")) {
-    //     useCachedVectors = true;
-    //   }
-    // }
+      // extract data from hierarchy parameterlist
+      std::string levelName("level" + std::to_string(l));
+      ParameterList levelList;
+      bool useCachedVectors = false;
+      // if(Teuchos::nonnull(hierarchyData) &&  hierarchyData->isSublist(levelName)) {
+      //   levelList = hierarchyData->sublist(levelName);
+      //   if(levelList.isParameter("residual") && levelList.isParameter("solution")) {
+      //     useCachedVectors = true;
+      //   }
+      // }
 
-    RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("vCycle: 1 - pre-smoother")));
+      RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("vCycle: 1 - pre-smoother")));
 
-    // pre-smoothing
-    smootherApply(smootherParams[l], fineRegX, fineRegB, regMatrices[l],
-                  regRowMaps[l], regRowImporters[l], zeroInitGuess);
+      // pre-smoothing
+      smootherApply(smootherParams[l], fineRegX, fineRegB, regMatrices[l],
+                    regRowMaps[l], regRowImporters[l], zeroInitGuess);
 
-    tm = Teuchos::null;
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("vCycle: 2 - compute residual")));
+      tm = Teuchos::null;
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("vCycle: 2 - compute residual")));
 
-    const bool useFastMatVec = smootherParams[l]->get<bool>("Use fast MatVec");
+      const bool useFastMatVec = smootherParams[l]->get<bool>("Use fast MatVec");
 
-    Array<RCP<Vector> > regRes(maxRegPerProc);
-    if(useCachedVectors) {
-      regRes = levelList.get<Teuchos::Array<RCP<Vector> > >("residual");
-    } else {
-      createRegionalVector(regRes, regRowMaps[l]);
-    }
-    if (useFastMatVec)
-      computeResidual(regRes, fineRegX, fineRegB, regMatrices[l], *smootherParams[l]);
-    else
-      computeResidual(regRes, fineRegX, fineRegB, regMatrices[l],
-                      regRowMaps[l], regRowImporters[l]);
-
-    tm = Teuchos::null;
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("vCycle: 3 - scale interface")));
-
-    scaleInterfaceDOFs(regRes, regInterfaceScalings[l], true);
-
-    tm = Teuchos::null;
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("vCycle: 4 - create coarse vectors")));
-
-    // Transfer to coarse level
-    Array<RCP<Vector> > coarseRegX(maxRegPerProc);
-    Array<RCP<Vector> > coarseRegB(maxRegPerProc);
-    if (useFastMatVec)
-    {
-      // Get pre-communicated communication patterns for the fast MatVec
-      const ArrayRCP<LocalOrdinal> regionInterfaceLIDs = smootherParams[l+1]->get<ArrayRCP<LO>>("Fast MatVec: interface LIDs");
-      const RCP<Import> regionInterfaceImporter = smootherParams[l+1]->get<RCP<Import>>("Fast MatVec: interface importer");
-
-      for (int j = 0; j < maxRegPerProc; j++) {
-        coarseRegX[j] = VectorFactory::Build(regRowMaps[l+1][j], true);
-        coarseRegB[j] = VectorFactory::Build(regRowMaps[l+1][j], true);
-
-        ApplyMatVec(SC_ONE, regProlong[l+1][j], regRes[j], SC_ZERO, regionInterfaceImporter,
-            regionInterfaceLIDs, coarseRegB[j], Teuchos::TRANS, true);
-        // TEUCHOS_ASSERT(regProlong[l+1][j]->getRangeMap()->isSameAs(*regRes[j]->getMap()));
-        // TEUCHOS_ASSERT(regProlong[l+1][j]->getDomainMap()->isSameAs(*coarseRegB[j]->getMap()));
+      Array<RCP<Vector> > regRes(maxRegPerProc);
+      if(useCachedVectors) {
+        regRes = levelList.get<Teuchos::Array<RCP<Vector> > >("residual");
+      } else {
+        createRegionalVector(regRes, regRowMaps[l]);
       }
-    }
-    else
-    {
-      for (int j = 0; j < maxRegPerProc; j++) {
-        coarseRegX[j] = VectorFactory::Build(regRowMaps[l+1][j], true);
-        coarseRegB[j] = VectorFactory::Build(regRowMaps[l+1][j], true);
+      if (useFastMatVec)
+        computeResidual(regRes, fineRegX, fineRegB, regMatrices[l], *smootherParams[l]);
+      else
+        computeResidual(regRes, fineRegX, fineRegB, regMatrices[l],
+                        regRowMaps[l], regRowImporters[l]);
 
-        regProlong[l+1][j]->apply(*regRes[j], *coarseRegB[j], Teuchos::TRANS);
-        // TEUCHOS_ASSERT(regProlong[l+1][j]->getRangeMap()->isSameAs(*regRes[j]->getMap()));
-        // TEUCHOS_ASSERT(regProlong[l+1][j]->getDomainMap()->isSameAs(*coarseRegB[j]->getMap()));
+      tm = Teuchos::null;
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("vCycle: 3 - scale interface")));
+
+      scaleInterfaceDOFs(regRes, regInterfaceScalings[l], true);
+
+      tm = Teuchos::null;
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("vCycle: 4 - create coarse vectors")));
+
+      // Transfer to coarse level
+      Array<RCP<Vector> > coarseRegX(maxRegPerProc);
+      Array<RCP<Vector> > coarseRegB(maxRegPerProc);
+      if (useFastMatVec)
+      {
+        // Get pre-communicated communication patterns for the fast MatVec
+        const ArrayRCP<LocalOrdinal> regionInterfaceLIDs = smootherParams[l+1]->get<ArrayRCP<LO>>("Fast MatVec: interface LIDs");
+        const RCP<Import> regionInterfaceImporter = smootherParams[l+1]->get<RCP<Import>>("Fast MatVec: interface importer");
+
+        for (int j = 0; j < maxRegPerProc; j++) {
+          coarseRegX[j] = VectorFactory::Build(regRowMaps[l+1][j], true);
+          coarseRegB[j] = VectorFactory::Build(regRowMaps[l+1][j], true);
+
+          ApplyMatVec(SC_ONE, regProlong[l+1][j], regRes[j], SC_ZERO, regionInterfaceImporter,
+              regionInterfaceLIDs, coarseRegB[j], Teuchos::TRANS, true);
+          // TEUCHOS_ASSERT(regProlong[l+1][j]->getRangeMap()->isSameAs(*regRes[j]->getMap()));
+          // TEUCHOS_ASSERT(regProlong[l+1][j]->getDomainMap()->isSameAs(*coarseRegB[j]->getMap()));
+        }
+      }
+      else
+      {
+        for (int j = 0; j < maxRegPerProc; j++) {
+          coarseRegX[j] = VectorFactory::Build(regRowMaps[l+1][j], true);
+          coarseRegB[j] = VectorFactory::Build(regRowMaps[l+1][j], true);
+
+          regProlong[l+1][j]->apply(*regRes[j], *coarseRegB[j], Teuchos::TRANS);
+          // TEUCHOS_ASSERT(regProlong[l+1][j]->getRangeMap()->isSameAs(*regRes[j]->getMap()));
+          // TEUCHOS_ASSERT(regProlong[l+1][j]->getDomainMap()->isSameAs(*coarseRegB[j]->getMap()));
+        }
+
+        tm = Teuchos::null;
+        tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("vCycle: 5 - sum interface values")));
+
+        sumInterfaceValues(coarseRegB, regRowMaps[l+1], regRowImporters[l+1]);
       }
 
       tm = Teuchos::null;
-      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("vCycle: 5 - sum interface values")));
+      bool coarseZeroInitGuess = true;
 
-      sumInterfaceValues(coarseRegB, regRowMaps[l+1], regRowImporters[l+1]);
-    }
+      // Call V-cycle recursively
+      vCycle(l+1, numLevels, cycleType,
+             coarseRegX, coarseRegB, regMatrices, regProlong, compRowMaps,
+             quasiRegRowMaps, regRowMaps, regRowImporters, regInterfaceScalings,
+             smootherParams, coarseZeroInitGuess, coarseSolverData, hierarchyData);
 
-    tm = Teuchos::null;
-    bool coarseZeroInitGuess = true;
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("vCycle: 6 - transfer coarse to fine")));
 
-    // Call V-cycle recursively
-    vCycle(l+1, numLevels,
-           coarseRegX, coarseRegB, regMatrices, regProlong, compRowMaps,
-           quasiRegRowMaps, regRowMaps, regRowImporters, regInterfaceScalings,
-           smootherParams, coarseZeroInitGuess, coarseSolverData, hierarchyData);
+      // Transfer coarse level correction to fine level
+      Array<RCP<Vector> > regCorrection(maxRegPerProc);
+      if (useFastMatVec)
+      {
+        // Get pre-communicated communication patterns for the fast MatVec
+        const ArrayRCP<LocalOrdinal> regionInterfaceLIDs = smootherParams[l]->get<ArrayRCP<LO>>("Fast MatVec: interface LIDs");
+        const RCP<Import> regionInterfaceImporter = smootherParams[l]->get<RCP<Import>>("Fast MatVec: interface importer");
 
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("vCycle: 6 - transfer coarse to fine")));
-
-    // Transfer coarse level correction to fine level
-    Array<RCP<Vector> > regCorrection(maxRegPerProc);
-    if (useFastMatVec)
-    {
-      // Get pre-communicated communication patterns for the fast MatVec
-      const ArrayRCP<LocalOrdinal> regionInterfaceLIDs = smootherParams[l]->get<ArrayRCP<LO>>("Fast MatVec: interface LIDs");
-      const RCP<Import> regionInterfaceImporter = smootherParams[l]->get<RCP<Import>>("Fast MatVec: interface importer");
-
-      for (int j = 0; j < maxRegPerProc; j++) {
-        regCorrection[j] = VectorFactory::Build(regRowMaps[l][j], true);
-        ApplyMatVec(SC_ONE, regProlong[l+1][j], coarseRegX[j], SC_ZERO, regionInterfaceImporter,
-            regionInterfaceLIDs, regCorrection[j], Teuchos::NO_TRANS, false);
-        // TEUCHOS_ASSERT(regProlong[l+1][j]->getDomainMap()->isSameAs(*coarseRegX[j]->getMap()));
-        // TEUCHOS_ASSERT(regProlong[l+1][j]->getRangeMap()->isSameAs(*regCorrection[j]->getMap()));
+        for (int j = 0; j < maxRegPerProc; j++) {
+          regCorrection[j] = VectorFactory::Build(regRowMaps[l][j], true);
+          ApplyMatVec(SC_ONE, regProlong[l+1][j], coarseRegX[j], SC_ZERO, regionInterfaceImporter,
+              regionInterfaceLIDs, regCorrection[j], Teuchos::NO_TRANS, false);
+          // TEUCHOS_ASSERT(regProlong[l+1][j]->getDomainMap()->isSameAs(*coarseRegX[j]->getMap()));
+          // TEUCHOS_ASSERT(regProlong[l+1][j]->getRangeMap()->isSameAs(*regCorrection[j]->getMap()));
+        }
       }
-    }
-    else{
-      for (int j = 0; j < maxRegPerProc; j++) {
-        regCorrection[j] = VectorFactory::Build(regRowMaps[l][j], true);
-        regProlong[l+1][j]->apply(*coarseRegX[j], *regCorrection[j]);
-        // TEUCHOS_ASSERT(regProlong[l+1][j]->getDomainMap()->isSameAs(*coarseRegX[j]->getMap()));
-        // TEUCHOS_ASSERT(regProlong[l+1][j]->getRangeMap()->isSameAs(*regCorrection[j]->getMap()));
+      else{
+        for (int j = 0; j < maxRegPerProc; j++) {
+          regCorrection[j] = VectorFactory::Build(regRowMaps[l][j], true);
+          regProlong[l+1][j]->apply(*coarseRegX[j], *regCorrection[j]);
+          // TEUCHOS_ASSERT(regProlong[l+1][j]->getDomainMap()->isSameAs(*coarseRegX[j]->getMap()));
+          // TEUCHOS_ASSERT(regProlong[l+1][j]->getRangeMap()->isSameAs(*regCorrection[j]->getMap()));
+        }
       }
-    }
 
-    tm = Teuchos::null;
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("vCycle: 7 - add coarse grid correction")));
+      tm = Teuchos::null;
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("vCycle: 7 - add coarse grid correction")));
 
-    // apply coarse grid correction
-    for (int j = 0; j < maxRegPerProc; j++) {
-      fineRegX[j]->update(SC_ONE, *regCorrection[j], SC_ONE);
-    }
-    if (coarseZeroInitGuess) zeroInitGuess = true;
+      // apply coarse grid correction
+      for (int j = 0; j < maxRegPerProc; j++) {
+        fineRegX[j]->update(SC_ONE, *regCorrection[j], SC_ONE);
+      }
+      if (coarseZeroInitGuess) zeroInitGuess = true;
 
 //    std::cout << "level: " << l << std::endl;
 
-    tm = Teuchos::null;
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("vCycle: 8 - post-smoother")));
+      tm = Teuchos::null;
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("vCycle: 8 - post-smoother")));
 
-    // post-smoothing
-    smootherApply(smootherParams[l], fineRegX, fineRegB, regMatrices[l],
-                  regRowMaps[l], regRowImporters[l], zeroInitGuess);
+      // post-smoothing
+      smootherApply(smootherParams[l], fineRegX, fineRegB, regMatrices[l],
+                    regRowMaps[l], regRowImporters[l], zeroInitGuess);
 
-    tm = Teuchos::null;
+      tm = Teuchos::null;
 
+    }
   } else {
 
     // Coarsest grid solve
