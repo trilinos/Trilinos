@@ -536,7 +536,11 @@ namespace MueLu {
       }
       sort_and_unique(badAggNeighbors);
   
-      
+      // NTS: I we abandon the "new graph" idea, we can pre-fill with a marker and keep the diagExtra/diagIndex as a vector.
+      // Then at this point we can loop through any badAggNeighbors and blitz their entries throwing them on the diagonal.
+      // Finally, after the sweep, we update all the diagonals and check them.
+
+
       // Now lets fill the rows in this aggregate and figure out the diagonal lumping
       // We loop over each node in the aggregate and then over the neighbors of that node
 
@@ -565,6 +569,7 @@ namespace MueLu {
 	      diagIndex = l;
 	      inds[numInds] = indsA[l];
 	      vals[numInds] = valsA[l];
+	      //	      printf("Keeping diagonal w/ value %8.2e\n",vals[numInds]);
 	      numInds++;
 	      continue;
 	    }
@@ -583,7 +588,7 @@ namespace MueLu {
 	      numInds++;
 	    }
 	    else {
-	      if(valsA[l] == ZERO) numOldDrops++;
+	      if(!filter[col_node]) numOldDrops++;
 	      else numNewDrops++;
 	      diagExtra += valsA[l];
 	      inds[numInds] = indsA[l];
@@ -594,30 +599,35 @@ namespace MueLu {
 	    
 	  if (diagIndex != INVALID) {
 	    SC diagA = valsA[diagIndex];
+	    //	    printf("diag_vals pre update =  %8.2e\n", vals[diagIndex] );
 	    vals[diagIndex] += diagExtra;
 	    SC A_rowsum=ZERO, A_absrowsum = ZERO, F_rowsum = ZERO;
 	    
 	    if(dirichletThresh >= 0.0 && TST::real(vals[diagIndex]) <= dirichletThresh) {
-	      
-	      printf("WARNING: row %d (diagIndex=%d) diag(Afiltered) = %8.2e diag(A)=%8.2e\n",row,diagIndex,vals[diagIndex],diagA);
+//#define LOTS_OF_PRINTING
+#ifdef LOTS_OF_PRINTING	      
+	      printf("WARNING: row %d (diagIndex=%d) diag(Afiltered) = %8.2e diag(A)=%8.2e numInds = %d\n",row,diagIndex,vals[diagIndex],diagA,numInds);
+#endif
 	      for(LO l = 0; l < (LO)indsA.size(); l++) {		  
 		A_rowsum += valsA[l];
 		A_absrowsum+=std::abs(valsA[l]);
 	      }
 	      for(LO l = 0; l < (LO)numInds; l++) 
 		F_rowsum += vals[l];
+#ifdef LOTS_OF_PRINTING	      
 	      printf("       : A rowsum = %8.2e |A| rowsum = %8.2e rowsum = %8.2e\n",A_rowsum,A_absrowsum,F_rowsum);
 
 	      printf("        Avals =");
 	      for(LO l = 0; l < (LO)indsA.size(); l++)
-		printf("%d(%8.2e) ",indsA[l],valsA[l]);
+		printf("%d(%8.2e)[%d] ",indsA[l],valsA[l],l);
 	      printf("\n");
 	      printf("        Fvals =");
-	      for(LO l = 0; l < (LO)inds.size(); l++)
+	      for(LO l = 0; l < (LO)numInds; l++)
 		if(vals[l] != ZERO)
-		  printf("%d(%8.2e) ",inds[l],vals[l]);
+		  printf("%d(%8.2e)[%d] ",inds[l],vals[l],l);
 	      printf("\n");
-	      
+#endif
+
 	      vals[diagIndex] = TST::one();
 	      numFixedDiags++;
 	    }

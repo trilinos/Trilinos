@@ -165,6 +165,8 @@ namespace MueLu {
     aggPtr.resize(numAggs+1);
     Array<LO> aggCurr(numAggs+1);
     aggNodes.resize(numNodes);
+    unaggregated.resize(numNodes);
+
     LO currNumUnaggregated=0;
 
     // Construct the "rowptr" and the counter
@@ -173,14 +175,7 @@ namespace MueLu {
       aggPtr[i+1] = aggSizes[i] + aggPtr[i];
       aggCurr[i] = aggPtr[i];
     }
-
-    // Resize the singletons list
-    printf("numAggs = %d vertex2AggId.size() = %d\n",numAggs,vertex2AggId.size());
-    printf("numNodes = %d aggPtr[numAggs+1] = %d\n",numNodes,aggPtr[numAggs+1]);
-    unaggregated.resize(numNodes);
-			
-			
-    
+					           
     // Stick the nodes in each aggregate's spot
     for(LO i=0; i<numNodes; i++) {
       LO aggregate = vertex2AggId[i];
