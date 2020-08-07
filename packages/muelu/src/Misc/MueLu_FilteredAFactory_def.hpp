@@ -141,7 +141,7 @@ namespace MueLu {
 	// Set up filtering array
 	ArrayView<const LO> indsG = G->getNeighborVertices(i);
 	for(size_t j=0; j<(size_t)indsG.size(); j++) {
-	  fprintf(f,"%d %d 1.0\n",i,indsG[j]);
+	  fprintf(f,"%d %d 1.0\n",(int)i,(int)indsG[j]);
 	}
       }
       fclose(f);
@@ -169,8 +169,17 @@ namespace MueLu {
 	BuildNew(*A, *G, lumping, dirichlet_threshold,*filteredA);
 
       filteredA->fillComplete(A->getDomainMap(), A->getRangeMap(), fillCompleteParams);
+      Xpetra::IO<SC,LO,GO,NO>::Write("filteredA.mat", *filteredA);
 
-     Xpetra::IO<SC,LO,GO,NO>::Write("filteredA.mat", *filteredA);
+     { //original filtered A
+       RCP<Matrix> origFilteredA = MatrixFactory::Build(A->getRowMap(), A->getColMap(), A->getNodeMaxNumRowEntries());
+       BuildNew(*A, *G, lumping, dirichlet_threshold,*origFilteredA);
+       origFilteredA->fillComplete(A->getDomainMap(), A->getRangeMap(), fillCompleteParams);
+       Xpetra::IO<SC,LO,GO,NO>::Write("origFilteredA.mat", *origFilteredA);
+       
+     }
+
+
     }
 
     filteredA->SetFixedBlockSize(A->GetFixedBlockSize());
@@ -431,30 +440,12 @@ namespace MueLu {
     Teuchos::ArrayRCP<const LO> vertex2AggId  = aggregates->GetVertex2AggId()->getData(0);
 
 
-    
     // HAX
     RCP<const Map> rowMap = A.getRowMap();
     RCP<const Map> colMap = A.getColMap();
     bool goodMap = MueLu::Utilities<SC,LO,GO,NO>::MapsAreNested(*rowMap, *colMap);
     if(goodMap) printf("CMS: Maps are good\n");
     else printf("CMS: Maps are NOT good\n");
-
-
-    // HAX
-    //    BuildNew(A,G,true,filteredA);
-    //    filteredA = A;
-#ifdef JUST_USE_A
-    std::cout<<"CMS: Hacking the diagonal"<<std::endl;
-    for(LO row=0; row<(LO) filteredA.getRowMap()->getNodeNumElements(); row++) {
-      A.getLocalRowView(row, indsA, valsA);
-      vals.resize(valsA.size());
-      for(LO j=0; j<(LO) indsA.size(); j++) {
-	vals[j] = ((row==indsA[j]) && (valsA[j] < 1e-6)) ? 1e-6 : valsA[j];
-      }
-      filteredA.insertLocalValues(row, indsA, vals);
-    }
-    return;
-#endif
     // END HAX
 
 
@@ -463,14 +454,29 @@ namespace MueLu {
       Array<LO> ptr,nodes, unaggregated;
     } nodesInAgg;
     aggregates->ComputeNodesInAggregate(nodesInAgg.ptr, nodesInAgg.nodes, nodesInAgg.unaggregated);
+    Array<bool> filter(G.GetImportMap()->getNodeNumElements(), false);
 
-
-    // Loop over the unaggregated nodes. These guys don't get filtered
+    // Loop over the unaggregated nodes. These guys don't get the secondary filter.
     for(LO i=0; i<nodesInAgg.unaggregated.size(); i++) {
+      // Set up filtering array
+      ArrayView<const LO> indsG = G.getNeighborVertices(i);
+      for (size_t j = 0; j < as<size_t>(indsG.size()); j++)
+	filter[indsG[j]]=true;
+
       for (LO m = 0; m < (LO)blkSize; m++) {
 	LO row = amalgInfo->ComputeLocalDOF(nodesInAgg.unaggregated[i],m);
 	A.getLocalRowView(row, indsA, valsA);
-	filteredA.insertLocalValues(row, indsA, valsA);
+	vals.resize(valsA.size());
+	for(LO k=0; k<(LO)indsA.size(); k++) {
+	  int node = amalgInfo->ComputeLocalNode(indsA[k]);
+	  vals[k] = (indsA[k] == row || filter[node]) ? valsA[k] : ZERO;
+	}
+	  
+	filteredA.insertLocalValues(row, indsA, vals);
+
+	// Reset filtering array
+	for (size_t j = 0; j < as<size_t>(indsG.size()); j++)
+	  filter[indsG[j]]=false;
       }
     }
 
@@ -536,11 +542,15 @@ namespace MueLu {
       // We loop over each node in the aggregate and then over the neighbors of that node
 
       for(LO k=nodesInAgg.ptr[i]; k<nodesInAgg.ptr[i+1]; k++) {
-	LO node = nodesInAgg.nodes[k];
+	LO row_node = nodesInAgg.nodes[k];
+
+	// Set up filtering array
+	ArrayView<const LO> indsG = G.getNeighborVertices(row_node);
+	for (size_t j = 0; j < as<size_t>(indsG.size()); j++)
+	  filter[indsG[j]]=true;
+	
 	for (LO m = 0; m < (LO)blkSize; m++) {
-	  LO row = amalgInfo->ComputeLocalDOF(node,m);
-	  //	  if(row ==7651)
-	    //	    printf(" agg = %d blkSize = %d l = %d m = %d\n",
+	  LO row = amalgInfo->ComputeLocalDOF(row_node,m);
 	  A.getLocalRowView(row, indsA, valsA);
 	  
 	  LO diagIndex = INVALID;
@@ -550,7 +560,8 @@ namespace MueLu {
 	  vals.resize(valsA.size());
 	  
 	  for(LO l = 0; l < (LO)indsA.size(); l++) {
-	    bool is_good = true; // Assume off-processor entries are good. FIXME?
+	    int col_node = amalgInfo->ComputeLocalNode(indsA[l]);
+	    bool is_good = filter[col_node];
 	    if (indsA[l] == row) {
 	      diagIndex = l;
 	      inds[numInds] = indsA[l];
@@ -559,9 +570,10 @@ namespace MueLu {
 	      continue;
 	    }
 	    
-	    if(indsA[l] < (LO)numRows)  {
-	      int Anode = amalgInfo->ComputeLocalNode(indsA[l]);
-	      int agg = vertex2AggId[Anode];
+	    // FIXME: I'm assuming vertex2AggId is only length of the rowmap, so
+	    // we won'd do secondary dropping on off-processor neighbors
+	    if(is_good && indsA[l] < (LO)numRows)  {
+	      int agg = vertex2AggId[col_node];
 	      if(std::binary_search(badAggNeighbors.begin(),badAggNeighbors.end(),agg))
 		is_good = false;
 	    }
@@ -622,6 +634,11 @@ namespace MueLu {
 	  if(numInds == 0) 
 	    GetOStream(Runtime0)<<"WARNING: Row "<<row<<" has no entries in Afiltered. A has "<<indsA.size()<<" entries"<<std::endl;
 	}//end m "blkSize" loop
+
+	// Clear filtering array
+	for (size_t j = 0; j < as<size_t>(indsG.size()); j++)
+	  filter[indsG[j]]=false;
+
       }// end k loop over number of nodes in this agg
     }//end i loop over numAggs
 
