@@ -61,7 +61,7 @@ namespace {
       return zdata->spatial_dimension();
     }
     else {
-      std::cout << "HACK_PART_DIMENSION:  USING NUM_DIM = 1" << std::endl;
+      std::cout << "HACK_PART_DIMENSION:  USING NUM_DIMS = 1" << std::endl;
       return 1;  
     }
   }
@@ -132,7 +132,7 @@ namespace {
     else {
       int useThisDim = atoi(varVal);
       auto spatialDim = zdata->spatial_dimension();
-      std::cout << " HACK_PART_DIMENSION USING PART DIM " << useThisDim 
+      std::cout << " HACK_PART_DIMENSION USING COORDINATE DIM " << useThisDim 
                 << " of " << spatialDim << std::endl;
       for (size_t cnt = 0; cnt < nobj; cnt++) {
         geom[cnt] = zdata->centroids()[cnt*spatialDim + useThisDim];
