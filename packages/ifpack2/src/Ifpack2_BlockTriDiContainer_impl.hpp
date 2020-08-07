@@ -928,7 +928,6 @@ namespace KB = KokkosBatched::Experimental;
           }
 #endif
         }
-        Kokkos::fence();
       }
 
       void asyncSendRecv(const impl_scalar_type_2d_view_tpetra &mv) {
@@ -953,6 +952,7 @@ namespace KB = KokkosBatched::Experimental;
         for (local_ordinal_type i=0,iend=pids.send.extent(0);i<iend;++i) {
           copy<ToBuffer>(lids.send, buffer.send, offset_host.send(i), offset_host.send(i+1),
                          mv, blocksize);
+          Kokkos::fence();
           isend(comm,
                 reinterpret_cast<const char*>(buffer.send.data() + offset_host.send[i]*mv_blocksize),
                 (offset_host.send[i+1] - offset_host.send[i])*mv_blocksize*sizeof(impl_scalar_type),
