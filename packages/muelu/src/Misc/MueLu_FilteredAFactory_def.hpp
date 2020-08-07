@@ -501,7 +501,7 @@ namespace MueLu {
       LO root_node = INVALID;
       for (LO k=nodesInAgg.ptr[i]; k < nodesInAgg.ptr[i+1]; k++) {
 	if(aggregates->IsRoot(nodesInAgg.nodes[k])) {
-	  root_node = k; break;
+	  root_node = nodesInAgg.nodes[k]; break;
 	}
       }
       
