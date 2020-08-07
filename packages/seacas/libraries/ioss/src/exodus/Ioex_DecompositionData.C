@@ -44,15 +44,15 @@ namespace {
 #if !defined(NO_ZOLTAN_SUPPORT)
   int zoltan_num_dim(void *data, int *ierr)
   {
-int me;
-MPI_Comm_rank(MPI_COMM_WORLD, &me);
-
-    std::cout << " " << me << " KDDKDD in zoltan_num_dim" << std::endl;
     // Return dimensionality of coordinate data.
     Ioex::DecompositionDataBase *zdata = reinterpret_cast<Ioex::DecompositionDataBase *>(data);
 
     *ierr = ZOLTAN_OK;
 
+    // We want to test 1D RCB partitions for 3D geometries, to evaluate
+    // application performance with roughly two neighboring procs per proc
+    // Set the environment variable HACK_PART_DIMENSION to the dimension
+    // (0,1,2) corresponding to (x,y,z) dimension to consider in partitioning.
     // Environment variable HACK_PART_DIMENSION indicates partitioning
     // should be one-dimensional along dimension HACK_PART_DIMENSION
     const char* varVal = getenv ("HACK_PART_DIMENSION");
@@ -61,7 +61,7 @@ MPI_Comm_rank(MPI_COMM_WORLD, &me);
       return zdata->spatial_dimension();
     }
     else {
-      std::cout << " " << me << " KDDKDD USING NUM DIM = 1" << std::endl;
+      std::cout << "HACK_PART_DIMENSION:  USING NUM_DIM = 1" << std::endl;
       return 1;  
     }
   }
@@ -117,26 +117,25 @@ MPI_Comm_rank(MPI_COMM_WORLD, &me);
     // Return coordinates for objects.
     Ioex::DecompositionDataBase *zdata = reinterpret_cast<Ioex::DecompositionDataBase *>(data);
 
+    // We want to test 1D RCB partitions for 3D geometries, to evaluate
+    // application performance with roughly two neighboring procs per proc
+    // Set the environment variable HACK_PART_DIMENSION to the dimension
+    // (0,1,2) corresponding to (x,y,z) dimension to consider in partitioning.
     // Environment variable HACK_PART_DIMENSION indicates partitioning
     // should be one-dimensional along dimension HACK_PART_DIMENSION
-int me;
-MPI_Comm_rank(MPI_COMM_WORLD, &me);
-std::cout << " " << me << " KDDKDD in zoltan_geom" << std::endl;
 
     const char* varVal = getenv ("HACK_PART_DIMENSION");
     if (varVal == nullptr) {
       // Environment variable is not set; use the Ioss values
       std::copy(zdata->centroids().begin(), zdata->centroids().end(), &geom[0]);
-for (size_t cnt = 0; cnt < zdata->centroids().size(); cnt++)
-  std::cout << " " << me << " " << cnt << " KDDKDD geom[" << cnt << "] = " << geom[cnt] << std::endl;
     }
     else {
       int useThisDim = atoi(varVal);
       auto spatialDim = zdata->spatial_dimension();
-std::cout << " " << me << " KDDKDD USING PART DIM " << useThisDim << " of " << spatialDim << std::endl;
+      std::cout << " HACK_PART_DIMENSION USING PART DIM " << useThisDim 
+                << " of " << spatialDim << std::endl;
       for (size_t cnt = 0; cnt < nobj; cnt++) {
         geom[cnt] = zdata->centroids()[cnt*spatialDim + useThisDim];
-std::cout << " " << me << " " << cnt << " KDDKDD geom[" << cnt << "] = " << geom[cnt] << std::endl;
       }
     }
 
