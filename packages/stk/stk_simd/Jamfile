@@ -64,6 +64,7 @@ local installed-end-user-files =
 # be installed for end-users. (This is only intended to be used for testing.)
 local installed-developer-files = 
   stk_simd_unit 
+  stk_simd_old_unit 
   stk_disimd_unit
   stk_simd_docs_tests
   ;
@@ -140,6 +141,15 @@ alias stk_simd_headers
 exe stk_simd_unit
   :
     [ glob $(stk_simd-root)/../stk_unit_tests/stk_simd/*.cpp ]
+    /sierra/stk_unit_test_utils//stk_unit_main
+    /sierra/stk_math//stk_math_headers
+    /tpl/gtest//gtest
+  : <tag>@sierra-exec-tag
+  ;
+
+exe stk_simd_old_unit
+  :
+    [ glob $(stk_simd-root)/../stk_unit_tests/stk_simd_old/*.cpp ]
     /sierra/stk_math//stk_math_headers
     /sierra/stk_unit_test_utils//stk_unit_test_utils
     /tpl/trilinos//kokkoscore
