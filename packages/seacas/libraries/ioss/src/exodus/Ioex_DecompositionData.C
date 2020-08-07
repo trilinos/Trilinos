@@ -48,7 +48,18 @@ namespace {
     Ioex::DecompositionDataBase *zdata = reinterpret_cast<Ioex::DecompositionDataBase *>(data);
 
     *ierr = ZOLTAN_OK;
-    return zdata->spatial_dimension();
+
+    // Environment variable HACK_PART_DIMENSION indicates partitioning
+    // should be one-dimensional along dimension HACK_PART_DIMENSION
+    const char* varVal = getenv ("HACK_PART_DIMENSION");
+    if (varVal == nullptr) {
+      // Environment variable is not set; use the Ioss values
+      return zdata->spatial_dimension();
+    }
+    else {
+      std::cout << "KDDKDD USING NUM DIM = 1" << std::endl;
+      return 1;  
+    }
   }
 
   int zoltan_num_obj(void *data, int *ierr)
@@ -102,7 +113,23 @@ namespace {
     // Return coordinates for objects.
     Ioex::DecompositionDataBase *zdata = reinterpret_cast<Ioex::DecompositionDataBase *>(data);
 
-    std::copy(zdata->centroids().begin(), zdata->centroids().end(), &geom[0]);
+    // Environment variable HACK_PART_DIMENSION indicates partitioning
+    // should be one-dimensional along dimension HACK_PART_DIMENSION
+    const char* varVal = getenv ("HACK_PART_DIMENSION");
+    if (varVal == nullptr) {
+      // Environment variable is not set; use the Ioss values
+      std::copy(zdata->centroids().begin(), zdata->centroids().end(), &geom[0]);
+    }
+    else {
+      int useThisDim = atoi(varVal);
+      auto spatialDim = zdata->spatial_dimension();
+      std::cout << "KDDKDD USING PART DIM " << useThisDim << " of " 
+                << spatialDim << std::endl;
+      for (size_t cnt = 0; cnt < zdata->centroids().size(); cnt++) {
+        geom[cnt] = zdata->centroids()[cnt * spatialDim + useThisDim];
+        std::cout << "KDDKDD geom[" << cnt << "] = " << geom[cnt] << std::endl;
+      }
+    }
 
     *ierr = ZOLTAN_OK;
   }
