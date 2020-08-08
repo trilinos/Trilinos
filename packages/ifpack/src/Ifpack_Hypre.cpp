@@ -74,10 +74,10 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMatrix* A):
   PrecondType_(Euclid),
   UsePreconditioner_(false)
 {
-  IsSolverSetup_ = new bool[1];
-  IsPrecondSetup_ = new bool[1];
-  IsSolverSetup_[0] = false;
-  IsPrecondSetup_[0] = false;
+  IsSolverCreated_ = new bool[1];
+  IsPrecondCreated_ = new bool[1];
+  IsSolverCreated_[0] = false;
+  IsPrecondCreated_[0] = false;
   MPI_Comm comm = GetMpiComm();
   // Check that RowMap and RangeMap are the same.  While this could handle the
   // case where RowMap and RangeMap are permutations, other Ifpack PCs don't
@@ -138,14 +138,14 @@ void Ifpack_Hypre::Destroy(){
   }
   IFPACK_CHK_ERRV(HYPRE_IJVectorDestroy(XHypre_));
   IFPACK_CHK_ERRV(HYPRE_IJVectorDestroy(YHypre_));
-  if(IsSolverSetup_[0]){
+  if(IsSolverCreated_[0]){
     IFPACK_CHK_ERRV(SolverDestroyPtr_(Solver_));
   }
-  if(IsPrecondSetup_[0]){
+  if(IsPrecondCreated_[0]){
     IFPACK_CHK_ERRV(PrecondDestroyPtr_(Preconditioner_));
   }
-  delete[] IsSolverSetup_;
-  delete[] IsPrecondSetup_;
+  delete[] IsSolverCreated_;
+  delete[] IsPrecondCreated_;
 } //Destroy()
 
 //==============================================================================
@@ -163,13 +163,19 @@ int Ifpack_Hypre::Initialize(){
   IFPACK_CHK_ERR(HYPRE_IJMatrixSetObjectType(HypreA_, HYPRE_PARCSR));
   IFPACK_CHK_ERR(HYPRE_IJMatrixInitialize(HypreA_));
   CopyEpetraToHypre();
-  IFPACK_CHK_ERR(SetSolverType(SolverType_));
-  IFPACK_CHK_ERR(SetPrecondType(PrecondType_));
-  CallFunctions();
-  if(UsePreconditioner_){
-    if(SolverPrecondPtr_ != NULL){
+  if(SolveOrPrec_ == Solver){
+    IFPACK_CHK_ERR(SetSolverType(SolverType_));
+    if(SolverPrecondPtr_ != NULL && UsePreconditioner_){
+      // both method allows a PC (first condition) and the user wants a PC (second)
+      IFPACK_CHK_ERR(SetPrecondType(PrecondType_));
+      CallFunctions();
       IFPACK_CHK_ERR(SolverPrecondPtr_(Solver_, PrecondSolvePtr_, PrecondSetupPtr_, Preconditioner_));
-    }
+    } else {
+      CallFunctions();
+    }      
+  } else { // SolveOrPrec_ == Preconditioner
+    IFPACK_CHK_ERR(SetPrecondType(PrecondType_));    
+    CallFunctions();
   }
   // set flags
   IsInitialized_=true;
@@ -278,10 +284,8 @@ int Ifpack_Hypre::Compute(){
   // Hypre Setup must be called after matrix has values
   if(SolveOrPrec_ == Solver){
     IFPACK_CHK_ERR(SolverSetupPtr_(Solver_, ParMatrix_, ParX_, ParY_));
-    IsSolverSetup_[0] = true;
   } else {
     IFPACK_CHK_ERR(PrecondSetupPtr_(Preconditioner_, ParMatrix_, ParX_, ParY_));
-    IsPrecondSetup_[0] = true;
   }
   IsComputed_ = true;
   NumCompute_ = NumCompute_ + 1;
@@ -458,9 +462,9 @@ double Ifpack_Hypre::Condest(const Ifpack_CondestType CT,
 int Ifpack_Hypre::SetSolverType(Hypre_Solver Solver){
   switch(Solver) {
     case BoomerAMG:
-      if(IsSolverSetup_[0]){
+      if(IsSolverCreated_[0]){
         SolverDestroyPtr_(Solver_);
-        IsSolverSetup_[0] = false;
+        IsSolverCreated_[0] = false;
       }
       SolverCreatePtr_ = &Ifpack_Hypre::Hypre_BoomerAMGCreate;
       SolverDestroyPtr_ = &HYPRE_BoomerAMGDestroy;
@@ -469,9 +473,9 @@ int Ifpack_Hypre::SetSolverType(Hypre_Solver Solver){
       SolverSolvePtr_ = &HYPRE_BoomerAMGSolve;
       break;
     case AMS:
-      if(IsSolverSetup_[0]){
+      if(IsSolverCreated_[0]){
         SolverDestroyPtr_(Solver_);
-        IsSolverSetup_[0] = false;
+        IsSolverCreated_[0] = false;
       }
       SolverCreatePtr_ = &Ifpack_Hypre::Hypre_AMSCreate;
       SolverDestroyPtr_ = &HYPRE_AMSDestroy;
@@ -480,9 +484,9 @@ int Ifpack_Hypre::SetSolverType(Hypre_Solver Solver){
       SolverPrecondPtr_ = NULL;
       break;
     case Hybrid:
-      if(IsSolverSetup_[0]){
+      if(IsSolverCreated_[0]){
         SolverDestroyPtr_(Solver_);
-        IsSolverSetup_[0] = false;
+        IsSolverCreated_[0] = false;
       }
       SolverCreatePtr_ = &Ifpack_Hypre::Hypre_ParCSRHybridCreate;
       SolverDestroyPtr_ = &HYPRE_ParCSRHybridDestroy;
@@ -491,9 +495,9 @@ int Ifpack_Hypre::SetSolverType(Hypre_Solver Solver){
       SolverPrecondPtr_ = &HYPRE_ParCSRHybridSetPrecond;
       break;
     case PCG:
-      if(IsSolverSetup_[0]){
+      if(IsSolverCreated_[0]){
         SolverDestroyPtr_(Solver_);
-        IsSolverSetup_[0] = false;
+        IsSolverCreated_[0] = false;
       }
       SolverCreatePtr_ = &Ifpack_Hypre::Hypre_ParCSRPCGCreate;
       SolverDestroyPtr_ = &HYPRE_ParCSRPCGDestroy;
@@ -502,19 +506,20 @@ int Ifpack_Hypre::SetSolverType(Hypre_Solver Solver){
       SolverPrecondPtr_ = &HYPRE_ParCSRPCGSetPrecond;
       break;
     case GMRES:
-      if(IsSolverSetup_[0]){
+      if(IsSolverCreated_[0]){
         SolverDestroyPtr_(Solver_);
-        IsSolverSetup_[0] = false;
+        IsSolverCreated_[0] = false;
       }
       SolverCreatePtr_ = &Ifpack_Hypre::Hypre_ParCSRGMRESCreate;
       SolverDestroyPtr_ = &HYPRE_ParCSRGMRESDestroy;
       SolverSetupPtr_ = &HYPRE_ParCSRGMRESSetup;
+      SolverSolvePtr_ = &HYPRE_ParCSRGMRESSolve;
       SolverPrecondPtr_ = &HYPRE_ParCSRGMRESSetPrecond;
       break;
     case FlexGMRES:
-      if(IsSolverSetup_[0]){
+      if(IsSolverCreated_[0]){
         SolverDestroyPtr_(Solver_);
-        IsSolverSetup_[0] = false;
+        IsSolverCreated_[0] = false;
       }
       SolverCreatePtr_ = &Ifpack_Hypre::Hypre_ParCSRFlexGMRESCreate;
       SolverDestroyPtr_ = &HYPRE_ParCSRFlexGMRESDestroy;
@@ -523,9 +528,9 @@ int Ifpack_Hypre::SetSolverType(Hypre_Solver Solver){
       SolverPrecondPtr_ = &HYPRE_ParCSRFlexGMRESSetPrecond;
       break;
     case LGMRES:
-      if(IsSolverSetup_[0]){
+      if(IsSolverCreated_[0]){
         SolverDestroyPtr_(Solver_);
-        IsSolverSetup_[0] = false;
+        IsSolverCreated_[0] = false;
       }
       SolverCreatePtr_ = &Ifpack_Hypre::Hypre_ParCSRLGMRESCreate;
       SolverDestroyPtr_ = &HYPRE_ParCSRLGMRESDestroy;
@@ -534,9 +539,9 @@ int Ifpack_Hypre::SetSolverType(Hypre_Solver Solver){
       SolverPrecondPtr_ = &HYPRE_ParCSRLGMRESSetPrecond;
       break;
     case BiCGSTAB:
-      if(IsSolverSetup_[0]){
+      if(IsSolverCreated_[0]){
         SolverDestroyPtr_(Solver_);
-        IsSolverSetup_[0] = false;
+        IsSolverCreated_[0] = false;
       }
       SolverCreatePtr_ = &Ifpack_Hypre::Hypre_ParCSRBiCGSTABCreate;
       SolverDestroyPtr_ = &HYPRE_ParCSRBiCGSTABDestroy;
@@ -555,9 +560,9 @@ int Ifpack_Hypre::SetSolverType(Hypre_Solver Solver){
 int Ifpack_Hypre::SetPrecondType(Hypre_Solver Precond){
   switch(Precond) {
     case BoomerAMG:
-      if(IsPrecondSetup_[0]){
+      if(IsPrecondCreated_[0]){
         PrecondDestroyPtr_(Preconditioner_);
-        IsPrecondSetup_[0] = false;
+        IsPrecondCreated_[0] = false;
       }
       PrecondCreatePtr_ = &Ifpack_Hypre::Hypre_BoomerAMGCreate;
       PrecondDestroyPtr_ = &HYPRE_BoomerAMGDestroy;
@@ -565,9 +570,9 @@ int Ifpack_Hypre::SetPrecondType(Hypre_Solver Precond){
       PrecondSolvePtr_ = &HYPRE_BoomerAMGSolve;
       break;
     case ParaSails:
-      if(IsPrecondSetup_[0]){
+      if(IsPrecondCreated_[0]){
         PrecondDestroyPtr_(Preconditioner_);
-        IsPrecondSetup_[0] = false;
+        IsPrecondCreated_[0] = false;
       }
       PrecondCreatePtr_ = &Ifpack_Hypre::Hypre_ParaSailsCreate;
       PrecondDestroyPtr_ = &HYPRE_ParaSailsDestroy;
@@ -575,9 +580,9 @@ int Ifpack_Hypre::SetPrecondType(Hypre_Solver Precond){
       PrecondSolvePtr_ = &HYPRE_ParaSailsSolve;
       break;
     case Euclid:
-      if(IsPrecondSetup_[0]){
+      if(IsPrecondCreated_[0]){
         PrecondDestroyPtr_(Preconditioner_);
-        IsPrecondSetup_[0] = false;
+        IsPrecondCreated_[0] = false;
       }
       PrecondCreatePtr_ = &Ifpack_Hypre::Hypre_EuclidCreate;
       PrecondDestroyPtr_ = &HYPRE_EuclidDestroy;
@@ -585,9 +590,9 @@ int Ifpack_Hypre::SetPrecondType(Hypre_Solver Precond){
       PrecondSolvePtr_ = &HYPRE_EuclidSolve;
       break;
     case AMS:
-      if(IsPrecondSetup_[0]){
+      if(IsPrecondCreated_[0]){
         PrecondDestroyPtr_(Preconditioner_);
-        IsPrecondSetup_[0] = false;
+        IsPrecondCreated_[0] = false;
       }
       PrecondCreatePtr_ = &Ifpack_Hypre::Hypre_AMSCreate;
       PrecondDestroyPtr_ = &HYPRE_AMSDestroy;
@@ -606,14 +611,18 @@ int Ifpack_Hypre::SetPrecondType(Hypre_Solver Precond){
 int Ifpack_Hypre::CreateSolver(){
   MPI_Comm comm;
   HYPRE_ParCSRMatrixGetComm(ParMatrix_, &comm);
-  return (this->*SolverCreatePtr_)(comm, &Solver_);
+  int ierr = (this->*SolverCreatePtr_)(comm, &Solver_);
+  IsSolverCreated_[0] = true;
+  return ierr;  
 } //CreateSolver()
 
 //==============================================================================
 int Ifpack_Hypre::CreatePrecond(){
   MPI_Comm comm;
   HYPRE_ParCSRMatrixGetComm(ParMatrix_, &comm);
-  return (this->*PrecondCreatePtr_)(comm, &Preconditioner_);
+  int ierr = (this->*PrecondCreatePtr_)(comm, &Preconditioner_);
+  IsPrecondCreated_[0] = true;
+  return ierr;  
 } //CreatePrecond()
 
 
