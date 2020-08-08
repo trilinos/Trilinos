@@ -24,6 +24,47 @@ std::string get_mesh_spec(const std::string &optionName)
   return get_mesh_spec(stk::unit_test_util::get_command_line_option<int>(optionName, 20));
 }
 
+inline std::vector<double> get_many_block_coordinates(unsigned numBlocks)
+{
+  std::vector<double> planeCoords = { 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0 };
+
+  std::vector<double> coordinates;
+
+  coordinates.insert(coordinates.end(), planeCoords.begin(), planeCoords.end());
+
+  for(unsigned i = 1; i <= numBlocks; ++i) {
+    for(unsigned point = 0; point < 4; ++point) {
+      planeCoords[3 * point + 2] += 1;
+    }
+
+    coordinates.insert(coordinates.end(), planeCoords.begin(), planeCoords.end());
+  }
+
+  return coordinates;
+}
+
+inline std::string get_many_block_mesh_desc(unsigned numBlocks)
+{
+  std::ostringstream oss;
+  unsigned proc = 0;
+  for(unsigned i = 0; i < numBlocks; ++i) {
+    unsigned elemId = i + 1;
+    unsigned firstNodeId = i * 4 + 1;
+    oss << proc << "," << elemId << ",HEX_8,";
+    for(unsigned node = firstNodeId; node < firstNodeId + 8; ++node) {
+      oss << node << ",";
+    }
+    unsigned blockId = i + 1;
+    oss << "block_" << blockId;
+
+    if(i < numBlocks - 1) {
+      oss << "\n";
+    }
+  }
+
+  return oss.str();
+}
+
 }
 }
 

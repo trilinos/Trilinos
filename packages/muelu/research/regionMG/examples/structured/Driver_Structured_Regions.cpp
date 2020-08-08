@@ -190,6 +190,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   bool useStackedTimer   = false;                          clp.setOption("stacked-timer","no-stacked-timer", &useStackedTimer, "use stacked timer");
   bool showTimerSummary = true;                            clp.setOption("show-timer-summary", "no-show-timer-summary", &showTimerSummary, "Switch on/off the timer summary at the end of the run.");
   bool useFastMatVec = true;                               clp.setOption("fastMV", "no-fastMV", &useFastMatVec, "Use the fast MatVec implementation (or not)");
+  std::string cycleType = "V";                             clp.setOption("cycleType", &cycleType, "{Multigrid cycle type. Possible values: V, W.");
 
   clp.recogniseAllOptions(true);
   switch (clp.parse(argc, argv)) {
@@ -899,7 +900,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
         bool zeroInitGuess = true;
         scaleInterfaceDOFs(regRes, regInterfaceScalings[0], false);
-        vCycle(0, numLevels,
+        vCycle(0, numLevels, cycleType,
                regCorrect, regRes, regMatrices,
                regProlong, compRowMaps, quasiRegRowMaps, regRowMaps, regRowImporters,
                regInterfaceScalings, smootherParams, zeroInitGuess, coarseSolverData, hierarchyData);

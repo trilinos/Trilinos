@@ -154,6 +154,11 @@ public:
     return find(entityProc.first, entityProc.second);
   }
 
+  bool find(Entity entity) const
+  {
+    return (entityOffsets[entity.local_offset()] >= 0);
+  }
+
   size_t get_num_procs(Entity entity) const
   {
     const int offset = entityOffsets[entity.local_offset()];

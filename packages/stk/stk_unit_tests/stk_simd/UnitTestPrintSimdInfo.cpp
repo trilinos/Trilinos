@@ -34,20 +34,15 @@
 #include "gtest/gtest.h"
 
 #include "stk_unit_test_utils/PrintType.hpp"
+#include "SimdDeviceWidths.hpp"
 
-#ifndef STK_KOKKOS_SIMD
-#define STK_KOKKOS_SIMD
-#endif
-
-#include "stk_simd/Simd.hpp"
-
-TEST( SimdInfo, printWidths )
+TEST( PrintSimdInfo, printWidths )
 {
   std::cout << "stk::simd::nfloats " << stk::simd::nfloats << std::endl;
   std::cout << "stk::simd::ndoubles " << stk::simd::ndoubles << std::endl;
 }
 
-TEST( SimdInfo, printTypes )
+TEST( PrintSimdInfo, printTypes )
 {
   std::cout << "Datatype stored by stk::simd::Float is ";
   stk::simd::Float f;
@@ -58,14 +53,10 @@ TEST( SimdInfo, printTypes )
   stk::unit_test_util::print_type(d._data);
 }
 
-using FloatDataNative = SIMD_NAMESPACE::simd<float, SIMD_NAMESPACE::simd_abi::native>;
-using DoubleDataNative = SIMD_NAMESPACE::simd<double, SIMD_NAMESPACE::simd_abi::native>;
-
-TEST( SimdInfo, checkTypes )
+#ifdef KOKKOS_ENABLE_CUDA
+TEST( PrintSimdInfo, printDeviceWidths )
 {
-  stk::simd::Float f;
-  EXPECT_TRUE((std::is_same<decltype(f._data), FloatDataNative>::value));
-
-  stk::simd::Double d;
-  EXPECT_TRUE((std::is_same<decltype(d._data), DoubleDataNative>::value));
+  std::cout << "width of stk::simd::Float on device " << stk::unit_test_util::get_float_width_on_device() << std::endl;
+  std::cout << "width of stk::simd::Double on device " << stk::unit_test_util::get_double_width_on_device() << std::endl;
 }
+#endif
