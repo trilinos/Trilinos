@@ -113,6 +113,8 @@ int main(int narg, char** arg)
   bool isNormalized = false;
   bool isGeneralized = false;
   bool usePoly = false;
+  std::string initialGuess = "random";
+  bool useFullOrtho = true;
 
   ////// Establish session.
   Tpetra::ScopeGuard tscope(&narg, &arg);
@@ -145,6 +147,10 @@ int main(int narg, char** arg)
 		 "indicate whether or not to use a generalized Laplacian.");
   cmdp.setOption("polynomial", "muelu", &usePoly,
 		 "indicate whether or not to use polynomial as preconditioner.");
+  cmdp.setOption("initialGuess", &initialGuess,
+                 "Initial guess for LOBPCG");
+  cmdp.setOption("useFullOrtho", "partialOrtho", &useFullOrtho,
+                 "Use full orthogonalization.");
 
   //////////////////////////////////
   // Even with cmdp option "true", I get errors for having these
@@ -216,6 +222,8 @@ int main(int narg, char** arg)
   params->set("sphynx_skip_preprocessing", true);   // Preprocessing has not been implemented yet.
   params->set("sphynx_preconditioner_poly", usePoly);
   params->set("sphynx_verbosity", verbose ? 1 : 0);
+  params->set("sphynx_initial_guess", initialGuess);
+  params->set("sphynx_use_full_ortho", useFullOrtho);
   std::string problemType = "combinatorial";
   if(isNormalized)
     problemType = "normalized";
