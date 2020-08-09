@@ -135,6 +135,12 @@ namespace {
     Ioss::ParallelUtils par_util(comm);
     common_nodes = par_util.global_minmax(common_nodes, Ioss::ParallelUtils::DO_MIN);
 
+    // Overwrite common_nodes if user wants to set it to 2
+    char *envVar = getenv("IOSS_PARMETIS_TWO_COMMON_NODES");
+    if(envVar != nullptr && common_nodes > 2) {
+      common_nodes = 2;
+    }
+
 #if IOSS_DEBUG_OUTPUT
     fmt::print(Ioss::DEBUG(), "Setting common_nodes to {}\n", common_nodes);
 #endif
