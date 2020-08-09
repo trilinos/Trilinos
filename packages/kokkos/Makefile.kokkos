@@ -448,7 +448,12 @@ kokkos_append_header = $(shell echo $1 >> $(KOKKOS_INTERNAL_CONFIG_TMP))
 # Do not append first line
 tmp := $(shell echo "/* ---------------------------------------------" > KokkosCore_config.tmp)
 tmp := $(call kokkos_append_header,"Makefile constructed configuration:")
-tmp := $(call kokkos_append_header,"$(shell date)")
+ifdef SOURCE_DATE_EPOCH
+    BUILD_DATE ?= $(shell date -u -d "@$(SOURCE_DATE_EPOCH)" 2>/dev/null || date -u -r "$(SOURCE_DATE_EPOCH)" 2>/dev/null || date -u)
+else
+    BUILD_DATE ?= $(shell date)
+endif
+tmp := $(call kokkos_append_header,"$(BUILD_DATE)")
 tmp := $(call kokkos_append_header,"----------------------------------------------*/")
 
 tmp := $(call kokkos_append_header,'\#if !defined(KOKKOS_MACROS_HPP) || defined(KOKKOS_CORE_CONFIG_H)')
