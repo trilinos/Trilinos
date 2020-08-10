@@ -41,19 +41,13 @@
 
 // Creates vectors with different maps; tests results of export into them
 // Bug7758 indicates that incorrect results of export are produced when
-// the source map is NOT a superset of the target map
+// the source map is NOT a superset of the target map #7758
+// Analogous tests for Epetra are in epetra/test/MultiVector/Bug7758.cpp
 
 #include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Teuchos_Array.hpp"
-
-#ifdef HAVE_TPETRACORE_EPETRA
-#include "Epetra_MpiComm.h"
-#include "Epetra_Map.h"
-#include "Epetra_Vector.h"
-#include "Epetra_Export.h"
-#endif
 
 #include "Teuchos_UnitTestHarness.hpp"
 #include "TpetraCore_ETIHelperMacros.h"
@@ -116,61 +110,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, DefaultToDefault, Scalar,LO,GO,Node)
 
   TEST_ASSERT(gerr == 0);
 }
-
-//////////////////////////////////////////////////////////////////////////////
-#ifdef HAVE_TPETRACORE_EPETRA
-TEUCHOS_UNIT_TEST(Bug7758, DefaultToDefaultEpetra)
-{
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int me = comm.MyPID();
-  int np = comm.NumProc();
-  int ierr = 0;
-
-  using vector_t = Epetra_Vector;
-  using map_t = Epetra_Map;
-
-  const int nGlobalEntries = 8 * np;
-  const double tgtScalar = 100. * (me+1);
-  const double srcScalar = 2.;
-  Teuchos::Array<int> myEntries(nGlobalEntries); 
-
-  // Default one-to-one linear block map in Trilinos
-
-  map_t defaultMap(nGlobalEntries, 0, comm);
-
-  std::cout << me << " DEFAULT MAP" << std::endl;
-  defaultMap.Print(std::cout);
-
-  // Create vectors; see what the result is with CombineMode=ADD
-
-  vector_t defaultVecTgt(defaultMap);
-  defaultVecTgt.PutScalar(tgtScalar);
-
-  vector_t defaultVecSrc(defaultMap);
-  defaultVecSrc.PutScalar(srcScalar);
-
-  // Export Default-to-default:  should be a copy of src to tgt
-
-  Epetra_Export defaultToDefault(defaultMap, defaultMap);
-  defaultVecTgt.Export(defaultVecSrc, defaultToDefault, Add);
-
-  std::cout << me << " DEFAULT TO DEFAULT " << std::endl;
-  defaultVecTgt.Print(std::cout);
-
-  // Check result; all vector entries should be srcScalar
-  for (int i = 0; i < defaultVecTgt.MyLength(); i++)
-    if (defaultVecTgt[i] != srcScalar) ierr++;
-
-  if (ierr > 0) 
-    std::cout << "TEST FAILED:  DEFAULT-TO-DEFAULT-EPETRA TEST HAD " << ierr 
-              << " FAILURES ON RANK " << me << std::endl;
-
-  int gerr;
-  comm.SumAll(&ierr, &gerr, 1);
-
-  TEST_ASSERT(gerr == 0);
-}
-#endif
 
 //////////////////////////////////////////////////////////////////////////////
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, CyclicToDefault, Scalar,LO,GO,Node)
@@ -245,76 +184,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, CyclicToDefault, Scalar,LO,GO,Node)
 
   TEST_ASSERT(gerr == 0);
 }
-
-//////////////////////////////////////////////////////////////////////////////
-#ifdef HAVE_TPETRACORE_EPETRA
-TEUCHOS_UNIT_TEST(Bug7758, CyclicToDefaultEpetra)
-{
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int me = comm.MyPID();
-  int np = comm.NumProc();
-  int ierr = 0;
-
-  using vector_t = Epetra_Vector;
-  using map_t = Epetra_Map;
-
-  const int nGlobalEntries = 8 * np;
-  const double tgtScalar = 100. * (me+1);
-  const double srcScalar = 2.;
-  Teuchos::Array<int> myEntries(nGlobalEntries); 
-
-  // Default one-to-one linear block map in Trilinos
-
-  map_t defaultMap(nGlobalEntries, 0, comm);
-
-  std::cout << me << " DEFAULT MAP" << std::endl;
-  defaultMap.Print(std::cout);
-
-  // One-to-one cyclic map:  deal out entries like cards
-
-  int nMyEntries = 0;
-  for (int i = 0; i < nGlobalEntries; i++) {
-    if (i % np == me) {
-      myEntries[nMyEntries++] = i;
-    }
-  }
-
-  int dummy = -1;
-  map_t cyclicMap(dummy, nMyEntries, myEntries.getRawPtr(), 0, comm);
-
-  std::cout << me << " CYCLIC MAP" << std::endl;
-  cyclicMap.Print(std::cout);
-
-  // Create vectors; see what the result is with CombineMode=ADD
-
-  vector_t defaultVecTgt(defaultMap);
-  defaultVecTgt.PutScalar(tgtScalar);
-
-  vector_t cyclicVecSrc(cyclicMap);
-  cyclicVecSrc.PutScalar(srcScalar);
-
-  // Export Cyclic-to-default
-
-  Epetra_Export cyclicToDefault(cyclicMap, defaultMap);
-  defaultVecTgt.Export(cyclicVecSrc, cyclicToDefault, Add);
-
-  std::cout << me << " CYCLIC TO DEFAULT " << std::endl;
-  defaultVecTgt.Print(std::cout);
-
-  // Check result; all vector entries should be srcScalar
-
-  for (int i = 0; i < defaultVecTgt.MyLength(); i++)
-    if (defaultVecTgt[i] != srcScalar) ierr++;
-  if (ierr > 0) 
-    std::cout << "TEST FAILED:  CYCLIC-TO-DEFAULT-EPETRA TEST HAD " << ierr 
-              << " FAILURES ON RANK " << me << std::endl;
-
-  int gerr;
-  comm.SumAll(&ierr, &gerr, 1);
-
-  TEST_ASSERT(gerr == 0);
-}
-#endif
 
 //////////////////////////////////////////////////////////////////////////////
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, OverlapToDefault, Scalar,LO,GO,Node)
@@ -395,81 +264,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, OverlapToDefault, Scalar,LO,GO,Node)
 }
 
 //////////////////////////////////////////////////////////////////////////////
-#ifdef HAVE_TPETRACORE_EPETRA
-TEUCHOS_UNIT_TEST(Bug7758, OverlapToDefaultEpetra)
-{
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int me = comm.MyPID();
-  int np = comm.NumProc();
-  int ierr = 0;
-
-  using vector_t = Epetra_Vector;
-  using map_t = Epetra_Map;
-
-  if (np > 1) {  // Need more than one proc to avoid duplicate entries in maps
-
-    const int nGlobalEntries = 8 * np;
-    const double tgtScalar = 100. * (me+1);
-    const double srcScalar = 2.;
-    Teuchos::Array<int> myEntries(nGlobalEntries); 
-
-    // Default one-to-one linear block map in Trilinos
-
-    map_t defaultMap(nGlobalEntries, 0, comm);
-
-    std::cout << me << " DEFAULT MAP" << std::endl;
-    defaultMap.Print(std::cout);
-
-    // Overlap map; some entries are stored on two procs
-    int nMyEntries = 0;
-    for (int i = 0; i < defaultMap.NumMyElements()/2; i++) {
-      myEntries[nMyEntries++] = defaultMap.GID(i);
-    }
-    for (int i = 0; i < defaultMap.NumMyElements(); i++) {
-      myEntries[nMyEntries++] =
-        (defaultMap.MaxMyGID() + 1 + i) % nGlobalEntries;
-    }
-  
-    int dummy = -1;
-    map_t overlapMap(dummy, nMyEntries, myEntries.getRawPtr(), 0, comm);
-  
-    std::cout << me << " OVERLAP MAP" << std::endl;
-    overlapMap.Print(std::cout);
-
-    // Create vectors; see what the result is with CombineMode=ADD
-
-    vector_t defaultVecTgt(defaultMap);
-    defaultVecTgt.PutScalar(tgtScalar);
-
-    vector_t overlapVecSrc(overlapMap);
-    overlapVecSrc.PutScalar(srcScalar);
-
-    // Export Overlap-to-default
-
-    Epetra_Export overlapToDefault(overlapMap, defaultMap);
-    defaultVecTgt.Export(overlapVecSrc, overlapToDefault, Add);
-
-    std::cout << me << " OVERLAP TO DEFAULT " << std::endl;
-    defaultVecTgt.Print(std::cout);
-
-    for (int i = 0; i < defaultVecTgt.MyLength()/2; i++)
-      if (defaultVecTgt[i] != 2 * srcScalar) ierr++;  // overlapped
-    for (int i = defaultVecTgt.MyLength()/2;
-             i < defaultVecTgt.MyLength(); i++)
-      if (defaultVecTgt[i] != srcScalar) ierr++;  // not overlapped
-    if (ierr > 0) 
-      std::cout << "TEST FAILED:  OVERLAP-TO-DEFAULT-EPETRA TEST HAD " << ierr 
-                << " FAILURES ON RANK " << me << std::endl;
-  }
-
-  int gerr;
-  comm.SumAll(&ierr, &gerr, 1);
-
-  TEST_ASSERT(gerr == 0);
-}
-#endif
-
-//////////////////////////////////////////////////////////////////////////////
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, SupersetToDefault, Scalar,LO,GO,Node)
 {
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
@@ -547,80 +341,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, SupersetToDefault, Scalar,LO,GO,Node)
   TEST_ASSERT(gerr == 0);
 }
 
-//////////////////////////////////////////////////////////////////////////////
-#ifdef HAVE_TPETRACORE_EPETRA
-TEUCHOS_UNIT_TEST(Bug7758, SupersetToDefaultEpetra)
-{
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int me = comm.MyPID();
-  int np = comm.NumProc();
-  int ierr = 0;
-
-  using vector_t = Epetra_Vector;
-  using map_t = Epetra_Map;
-
-  if (np > 1) {  // Need more than one proc to avoid duplicate entries in maps
-
-    const int nGlobalEntries = 8 * np;
-    const double tgtScalar = 100. * (me+1);
-    const double srcScalar = 2.;
-    Teuchos::Array<int> myEntries(nGlobalEntries); 
-
-    // Default one-to-one linear block map in Trilinos
-
-    map_t defaultMap(nGlobalEntries, 0, comm);
-
-    std::cout << me << " DEFAULT MAP" << std::endl;
-    defaultMap.Print(std::cout);
-
-    // Superset map; some entries are stored on two procs
-    int nMyEntries = 0;
-    for (int i = 0; i < defaultMap.NumMyElements(); i++) {
-      myEntries[nMyEntries++] = defaultMap.GID(i);
-    }
-    for (int i = 0; i < defaultMap.NumMyElements()/2; i++) {
-      myEntries[nMyEntries++] =
-        (defaultMap.MaxMyGID() + 1 + i) % nGlobalEntries;
-    }
-  
-    int dummy = -1;
-    map_t supersetMap(dummy, nMyEntries, myEntries.getRawPtr(), 0, comm);
-  
-    std::cout << me << " SUPERSET MAP" << std::endl;
-    supersetMap.Print(std::cout);
-
-    // Create vectors; see what the result is with CombineMode=ADD
-
-    vector_t defaultVecTgt(defaultMap);
-    defaultVecTgt.PutScalar(tgtScalar);
-
-    vector_t supersetVecSrc(supersetMap);
-    supersetVecSrc.PutScalar(srcScalar);
-
-    // Export Superset-to-default
-
-    Epetra_Export supersetToDefault(supersetMap, defaultMap);
-    defaultVecTgt.Export(supersetVecSrc, supersetToDefault, Add);
-
-    std::cout << me << " SUPERSET TO DEFAULT " << std::endl;
-    defaultVecTgt.Print(std::cout);
-
-    for (int i = 0; i < defaultVecTgt.MyLength()/2; i++)
-      if (defaultVecTgt[i] != 2 * srcScalar) ierr++;  // overlapped
-    for (int i = defaultVecTgt.MyLength()/2;
-             i < defaultVecTgt.MyLength(); i++)
-      if (defaultVecTgt[i] != srcScalar) ierr++;  // not overlapped
-    if (ierr > 0) 
-      std::cout << "TEST FAILED:  SUPERSET-TO-DEFAULT-EPETRA TEST HAD " << ierr 
-                << " FAILURES ON RANK " << me << std::endl;
-  }
-
-  int gerr;
-  comm.SumAll(&ierr, &gerr, 1);
-
-  TEST_ASSERT(gerr == 0);
-}
-#endif
 
 #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7758, DefaultToDefault, SCALAR, LO, GO, NODE) \
