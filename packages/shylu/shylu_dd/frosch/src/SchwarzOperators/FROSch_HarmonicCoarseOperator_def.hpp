@@ -63,7 +63,8 @@ namespace FROSch {
     GammaDofs_ (0),
     IDofs_ (0),
     DofsMaps_ (0),
-    NumberOfBlocks_ (0)
+    NumberOfBlocks_ (0),
+    MaxNumNeigh_(0)
     {
         FROSCH_TIMER_START_LEVELID(harmonicCoarseOperatorTime,"HarmonicCoarseOperator::HarmonicCoarseOperator");
     }
@@ -118,6 +119,7 @@ namespace FROSch {
 
         return repeatedMap;
     }
+
 
     template <class SC,class LO,class GO,class NO>
     int HarmonicCoarseOperator<SC,LO,GO,NO>::assembleInterfaceCoarseSpace()
@@ -301,6 +303,29 @@ namespace FROSch {
         }
         return translations;
     }
+
+
+    template <class SC,class LO,class GO,class NO>
+    typename HarmonicCoarseOperator<SC,LO,GO,NO>::XMapPtr HarmonicCoarseOperator<SC,LO,GO,NO>::assembleCoarseMap()
+    {
+        FROSCH_TIMER_START_LEVELID(assembleCoarseMapTime,"HarmonicCoarseOperator::assembleCoarseMap");
+        GOVec mapVector(0);
+        GO tmp = 0;
+        for (UN i=0; i<NumberOfBlocks_; i++) {
+            if (!InterfaceCoarseSpaces_[i].is_null()) {
+                if (InterfaceCoarseSpaces_[i]->hasBasisMap()) {
+                    for (UN j=0; j<InterfaceCoarseSpaces_[i]->getBasisMap()->getNodeNumElements(); j++) {
+                        mapVector.push_back(InterfaceCoarseSpaces_[i]->getBasisMap()->getGlobalElement(j)+tmp);
+                    }
+                    if (InterfaceCoarseSpaces_[i]->getBasisMap()->getMaxAllGlobalIndex()>=0) {
+                        tmp += InterfaceCoarseSpaces_[i]->getBasisMap()->getMaxAllGlobalIndex()+1;
+                    }
+                }
+            }
+        }
+        return MapFactory<LO,GO,NO>::Build(DofsMaps_[0][0]->lib(),-1,mapVector(),0,this->MpiComm_);
+    }
+
 
     template <class SC,class LO,class GO,class NO>
     typename HarmonicCoarseOperator<SC,LO,GO,NO>::XMultiVectorPtrVecPtr HarmonicCoarseOperator<SC,LO,GO,NO>::computeRotations(UN blockId,
@@ -737,6 +762,141 @@ namespace FROSch {
         }
         return mVPhi;
     }
+    // REPMAP-------------------------------------
+    template<class SC,class LO, class GO, class NO>
+    int HarmonicCoarseOperator<SC,LO,GO,NO>::buildGlobalGraph(Teuchos::RCP<DDInterface<SC,LO,GO,NO> > theDDInterface)
+    {
+      FROSCH_TIMER_START_LEVELID(buildGlobalGraphTime,"HarmonicCoarseOperator::buildGlobalGraph");
+      std::map<GO,int> rep;
+      Teuchos::Array<GO> entries;
+      IntVec2D conn;
+      InterfaceEntityPtrVec connVec;
+      int connrank;
+      //get connected subdomains
+      theDDInterface->identifyConnectivityEntities();
+      EntitySetConstPtr connect=  theDDInterface->getConnectivityEntities();
+      connect->buildEntityMap(theDDInterface->getNodesMap());
+      connVec = connect->getEntityVector();
+      connrank = connect->getEntityMap()->getComm()->getRank();
+
+       GO connVecSize = connVec.size();
+       conn.resize(connVecSize);
+       {
+         if (connVecSize>0) {
+           for(GO i = 0;i<connVecSize;i++) {
+               conn[i] = connVec[i]->getSubdomainsVector();
+               for (int j = 0; j<conn[i].size(); j++) rep.insert(std::pair<GO,int>(conn.at(i).at(j),connrank));
+           }
+           for (auto& x: rep) {
+               entries.push_back(x.first);
+           }
+         }
+       }
+
+       Teuchos::RCP<Xpetra::Map<LO,GO,NO> > graphMap = Xpetra::MapFactory<LO,GO,NO>::Build(this->K_->getMap()->lib(),-1,1,0,this->K_->getMap()->getComm());
+
+       //UN maxNumElements = -1;
+       //get the maximum number of neighbors for a subdomain
+       MaxNumNeigh_ = -1;
+       UN numElementsLocal = entries.size();
+       reduceAll(*this->MpiComm_,Teuchos::REDUCE_MAX,numElementsLocal,Teuchos::ptr(&MaxNumNeigh_));
+       this->SubdomainConnectGraph_ = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(graphMap,MaxNumNeigh_);
+       this->SubdomainConnectGraph_->insertGlobalIndices(graphMap->getComm()->getRank(),entries());
+
+       return 0;
+    }
+
+    template <class SC,class LO,class GO, class NO>
+    int HarmonicCoarseOperator<SC,LO,GO,NO>::buildElementNodeList()
+    {
+      //get elements belonging to one subdomain
+      FROSCH_TIMER_START_LEVELID(buildElementNodeListTime,"CoarseOperator::buildElementNodeList");
+
+      Teuchos::ArrayView<const GO> elements =  KRowMap_->getNodeElementList();
+      UN maxNumElements = -1;
+      UN numElementsLocal = elements.size();
+
+      reduceAll(*this->MpiComm_,Teuchos::REDUCE_MAX,numElementsLocal,Teuchos::ptr(&maxNumElements));
+
+
+      GraphPtr elemGraph = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(this->MLGatheringMaps_[0],maxNumElements);
+      Teuchos::ArrayView<const GO> myGlobals = this->SubdomainConnectGraph_->getRowMap()->getNodeElementList();
+
+      for (size_t i = 0; i < this->SubdomainConnectGraph_->getRowMap()->getNodeNumElements(); i++) {
+        elemGraph->insertGlobalIndices(myGlobals[i],elements);
+      }
+      elemGraph->fillComplete();
+
+      GraphPtr tmpElemGraph = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(this->MLGatheringMaps_[1],maxNumElements);
+      GraphPtr elemSGraph;
+      //communicate ElemGrapg to CoarseComm_
+      tmpElemGraph->doExport(*elemGraph,*this->MLCoarseSolveExporters_[1],Xpetra::INSERT);
+      UN gathered = 0;
+      for(int i  = 2;i<this->MLGatheringMaps_.size();i++){
+        gathered = 1;
+        tmpElemGraph->fillComplete();
+        elemSGraph = tmpElemGraph;
+        tmpElemGraph = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(this->MLGatheringMaps_[i],maxNumElements);
+        tmpElemGraph->doExport(*elemSGraph,*this->MLCoarseSolveExporters_[i],Xpetra::INSERT);
+      }
+      //tmpElemGraph->fillComplete();
+      elemSGraph = tmpElemGraph;
+
+      if(gathered == 0){
+        elemSGraph = tmpElemGraph;
+      }
+      this->ElementNodeList_ =Xpetra::CrsGraphFactory<LO,GO,NO>::Build(this->MLCoarseMap_,maxNumElements);
+
+      if(this->OnCoarseSolveComm_){
+        const size_t numMyElementS = this->MLCoarseMap_->getNodeNumElements();
+        Teuchos::ArrayView<const GO> va;
+        for (UN i = 0; i < numMyElementS; i++) {
+          GO kg = this->MLGatheringMaps_[this->MLGatheringMaps_.size()-1]->getGlobalElement(i);
+          tmpElemGraph->getGlobalRowView(kg,va);
+          Teuchos::Array<GO> vva(va);
+          this->ElementNodeList_->insertGlobalIndices(kg,vva());//mal va nehmen
+        }
+        this->ElementNodeList_->fillComplete();
+
+      }
+      return 0;
+    }
+
+    template <class SC,class LO, class GO,class NO>
+    int HarmonicCoarseOperator<SC,LO,GO,NO>::buildCoarseGraph()
+    {
+      //bring graph to CoarseSolveComm_
+      FROSCH_TIMER_START_LEVELID(buildCoarseGraphTime,"CoarseOperator::buildCoarseGraph");
+
+      //create temporary graphs to perform communication (possibly with gathering steps)
+      GraphPtr tmpGraph =  Xpetra::CrsGraphFactory<LO,GO,NO>::Build(this->MLGatheringMaps_[1],MaxNumNeigh_);;
+      GraphPtr tmpGraphGathering;
+
+      tmpGraph->doExport(*this->SubdomainConnectGraph_,*this->MLCoarseSolveExporters_[1],Xpetra::INSERT);
+
+      for(int i  = 2;i<this->MLGatheringMaps_.size();i++){
+        tmpGraph->fillComplete();
+        tmpGraphGathering = tmpGraph;
+        tmpGraph = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(this->MLGatheringMaps_[i],MaxNumNeigh_);
+        tmpGraph->doExport(*tmpGraphGathering,*this->MLCoarseSolveExporters_[i],Xpetra::INSERT);
+     }
+     const size_t numMyElementS = this->MLGatheringMaps_[this->MLGatheringMaps_.size()-1]->getNodeNumElements();
+     this->SubdomainConnectGraph_= Xpetra::CrsGraphFactory<LO,GO,NO>::Build(this->MLCoarseMap_,MaxNumNeigh_);
+
+     if (this->OnCoarseSolveComm_) {
+       for (size_t k = 0; k<numMyElementS; k++) {
+         Teuchos::ArrayView<const LO> in;
+         Teuchos::ArrayView<const GO> vals_graph;
+         GO kg = this->MLGatheringMaps_[this->MLGatheringMaps_.size()-1]->getGlobalElement(k);
+         tmpGraph->getGlobalRowView(kg,vals_graph);
+         Teuchos::Array<GO> vals(vals_graph);
+         this->SubdomainConnectGraph_->insertGlobalIndices(kg,vals());
+       }
+       this->SubdomainConnectGraph_->fillComplete();
+     }
+     return 0;
+    }
+    //----------------------------------------------
 
 }
 

@@ -48,6 +48,19 @@
 // #define FROSCH_COARSEOPERATOR_EXPORT_AND_IMPORT
 
 // TODO: Member sortieren!?
+#include <Zoltan2_MatrixAdapter.hpp>
+#include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
+#include <Zoltan2_PartitioningProblem.hpp>
+#include <Zoltan2_XpetraCrsGraphAdapter.hpp>
+
+#include <Teuchos_DefaultMpiComm.hpp>
+#include "EpetraExt_OperatorOut.h"
+#include "EpetraExt_VectorOut.h"
+#include "EpetraExt_RowMatrixOut.h"
+#include <Teuchos_DefaultMpiComm.hpp>
+#include <Teuchos_GlobalMPISession.hpp>
+#include <Teuchos_CommandLineProcessor.hpp>
+#include <Xpetra_DefaultPlatform.hpp>
 
 
 namespace FROSch {
@@ -70,15 +83,27 @@ namespace FROSch {
         using ConstXMapPtr          = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMapPtr;
         using XMapPtrVecPtr         = typename SchwarzOperator<SC,LO,GO,NO>::XMapPtrVecPtr;
         using ConstXMapPtrVecPtr    = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMapPtrVecPtr;
+        using ConstXMapPtrVecPtr2D  = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMapPtrVecPtr2D;
 
         using XMatrixPtr            = typename SchwarzOperator<SC,LO,GO,NO>::XMatrixPtr;
         using ConstXMatrixPtr       = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMatrixPtr;
 
+        using XCrsGraph             = typename SchwarzOperator<SC,LO,GO,NO>::XCrsGraph;
+        using GraphPtr              = typename SchwarzOperator<SC,LO,GO,NO>::GraphPtr;
+        using ConstXCrsGraphPtr     = typename SchwarzOperator<SC,LO,GO,NO>::ConstXCrsGraphPtr;
+
         using XMultiVector          = typename SchwarzOperator<SC,LO,GO,NO>::XMultiVector;
         using XMultiVectorPtr       = typename SchwarzOperator<SC,LO,GO,NO>::XMultiVectorPtr;
+        using XMultiVectorPtrVecPtr      = typename SchwarzOperator<SC,LO,GO,NO>::XMultiVectorPtrVecPtr;
+        using ConstXMultiVectorPtr       = RCP<const XMultiVector>;
+        using ConstXMultiVectorPtrVecPtr = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMultiVectorPtrVecPtr;
 
+        using XImport               = typename SchwarzOperator<SC,LO,GO,NO>::XImport;
+        using XImportPtr            = typename SchwarzOperator<SC,LO,GO,NO>::XImportPtr;
         using XImportPtrVecPtr      = typename SchwarzOperator<SC,LO,GO,NO>::XImportPtrVecPtr;
 
+        using XExport               = typename SchwarzOperator<SC,LO,GO,NO>::XExport;
+        using XExportPtr            = typename SchwarzOperator<SC,LO,GO,NO>::XExportPtr;
         using XExportPtrVecPtr      = typename SchwarzOperator<SC,LO,GO,NO>::XExportPtrVecPtr;
 
         using ParameterListPtr      = typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr;
@@ -92,6 +117,9 @@ namespace FROSch {
         using GOVec                 = typename SchwarzOperator<SC,LO,GO,NO>::GOVec;
         using GOVecPtr              = typename SchwarzOperator<SC,LO,GO,NO>::GOVecPtr;
 
+        using IntVec                = Teuchos::Array<int>;
+        using IntVec2D              = Teuchos::Array<IntVec>;
+
         using LOVec                 = typename SchwarzOperator<SC,LO,GO,NO>::LOVec;
         using LOVecPtr2D            = typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr2D;
 
@@ -102,6 +130,9 @@ namespace FROSch {
         using ConstGOVecView        = typename SchwarzOperator<SC,LO,GO,NO>::ConstGOVecView;
 
         using ConstSCVecView        = typename SchwarzOperator<SC,LO,GO,NO>::ConstSCVecView;
+
+
+
 
     public:
 
@@ -115,6 +146,15 @@ namespace FROSch {
         virtual int compute();
 
         virtual XMapPtr computeCoarseSpace(CoarseSpacePtr coarseSpace) = 0;
+
+        //Repeated Coarse map
+        virtual int buildElementNodeList() = 0;
+        virtual int buildGlobalGraph(Teuchos::RCP<DDInterface<SC,LO,GO,NO> > theDDInterface_) = 0;
+        virtual int buildCoarseGraph() = 0;
+        virtual XMapPtr BuildRepeatedMapCoarseLevel(ConstXMapPtr &nodesMap,
+                                                    UN dofsPerNode,
+                                                    ConstXMapPtrVecPtr dofsMaps,
+                                                    UN partition) = 0;
 
         virtual int clearCoarseSpace();
 
@@ -145,7 +185,6 @@ namespace FROSch {
 
         int buildCoarseSolveMap(ConstXMapPtr coarseMapUnique);
 
-
         CommPtr CoarseSolveComm_;
 
         bool OnCoarseSolveComm_ = false;
@@ -167,14 +206,27 @@ namespace FROSch {
         mutable XMultiVectorPtr YCoarseSolve_;
         mutable XMultiVectorPtr YCoarseSolveTmp_;
 
+        XMapPtrVecPtr MLGatheringMaps_;
         ConstXMapPtrVecPtr GatheringMaps_ = ConstXMapPtrVecPtr(0);
+
+        XMapPtr CoarseMap_;
         XMapPtr CoarseSolveMap_;
+        XMapPtr CoarseSolveRepeatedMap_;
+        XMapPtr RepMapCoarse_;
+        XMapPtr MLCoarseMap_;
+
+        GraphPtr SubdomainConnectGraph_;
+        GraphPtr ElementNodeList_;
+        UN CoarseDofsPerNode_;
 
         SubdomainSolverPtr CoarseSolver_;
 
         ParameterListPtr DistributionList_;
 
         XExportPtrVecPtr CoarseSolveExporters_ = XExportPtrVecPtr(0);
+        XExportPtrVecPtr MLCoarseSolveExporters_;
+
+        UN PartitionType_;
 #ifdef FROSCH_COARSEOPERATOR_EXPORT_AND_IMPORT
         XImportPtrVecPtr CoarseSolveImporters_ = XImportPtrVecPtr(0);
 #endif
