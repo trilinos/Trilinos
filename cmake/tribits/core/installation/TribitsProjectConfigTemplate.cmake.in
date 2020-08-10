@@ -55,11 +55,11 @@ ${DEFINE_CMAKE_CURRENT_LIST_DIR_CODE_SNIPPET}
 ## Compilers used by ${PROJECT_NAME} build
 ## ---------------------------------------------------------------------------
 
-SET(${PROJECT_NAME}_CXX_COMPILER "${CMAKE_CXX_COMPILER}")
+SET(${PROJECT_NAME}_CXX_COMPILER "${CMAKE_CXX_COMPILER_FOR_CONFIG_FILE}")
 
-SET(${PROJECT_NAME}_C_COMPILER "${CMAKE_C_COMPILER}")
+SET(${PROJECT_NAME}_C_COMPILER "${CMAKE_C_COMPILER_FOR_CONFIG_FILE}")
 
-SET(${PROJECT_NAME}_Fortran_COMPILER "${CMAKE_Fortran_COMPILER}")
+SET(${PROJECT_NAME}_Fortran_COMPILER "${CMAKE_Fortran_COMPILER_FOR_CONFIG_FILE}")
 
 ## ---------------------------------------------------------------------------
 ## Compiler flags used by ${PROJECT_NAME} build
@@ -124,8 +124,6 @@ FOREACH(comp ${PDOLLAR}{COMPONENTS_LIST})
    LIST(APPEND ${PROJECT_NAME}_TPL_LIBRARY_DIRS ${PDOLLAR}{${PDOLLAR}{comp}_TPL_LIBRARY_DIRS})
    LIST(APPEND ${PROJECT_NAME}_TPL_LIBRARIES ${PDOLLAR}{${PDOLLAR}{comp}_TPL_LIBRARIES})
  ELSE()
-   # Component not found.
-   MESSAGE(WARNING "Component \"${PDOLLAR}{comp}\" NOT found.")
    # Set ${PROJECT_NAME}_<component>_FOUND to FALSE.
    SET(${PROJECT_NAME}_${PDOLLAR}{comp}_FOUND FALSE)
    # Set ${PROJECT_NAME}_FOUND to FALSE if component is not optional.

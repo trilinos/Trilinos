@@ -204,19 +204,21 @@ namespace Amesos2{
     }
 
     template <class MV, typename KV>
-    void get_1d_copy_helper_kokkos_view<MV,KV>::
-    do_get (const Teuchos::Ptr<const MV>& mv,
+    bool get_1d_copy_helper_kokkos_view<MV,KV>::
+    do_get (bool bInitialize,
+            const Teuchos::Ptr<const MV>& mv,
             KV& kokkos_vals,
             const size_t ldx,
             Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
             EDistribution distribution)
     {
-      mv->get1dCopy_kokkos_view(kokkos_vals, ldx, distribution_map, distribution);
+      return mv->get1dCopy_kokkos_view(bInitialize, kokkos_vals, ldx, distribution_map, distribution);
     }
 
     template <class MV, typename KV>
-    void get_1d_copy_helper_kokkos_view<MV,KV>::
-    do_get (const Teuchos::Ptr<const MV>& mv,
+    bool get_1d_copy_helper_kokkos_view<MV,KV>::
+    do_get (bool bInitialize,
+            const Teuchos::Ptr<const MV>& mv,
             KV& kokkos_vals,
             const size_t ldx,
             EDistribution distribution,
@@ -238,13 +240,15 @@ namespace Amesos2{
                                                                     indexBase,
                                                                     mv->getMap());
 
-      do_get (mv, kokkos_vals, ldx, Teuchos::ptrInArg (*map), distribution);
+      return do_get (bInitialize, mv, kokkos_vals, ldx, Teuchos::ptrInArg (*map), distribution);
     }
 
     template <class MV, typename KV>
-    void get_1d_copy_helper_kokkos_view<MV,KV>::do_get(const Teuchos::Ptr<const MV>& mv,
-                                          KV& kokkos_vals,
-                                          const size_t ldx)
+    bool get_1d_copy_helper_kokkos_view<MV,KV>::
+    do_get (bool bInitialize,
+            const Teuchos::Ptr<const MV>& mv,
+            KV& kokkos_vals,
+            const size_t ldx)
     {
       typedef Tpetra::Map<typename MV::local_ordinal_t,
                           typename MV::global_ordinal_t,
@@ -258,7 +262,7 @@ namespace Amesos2{
         map.is_null (), std::invalid_argument,
         "Amesos2::get_1d_copy_helper_kokkos_view::do_get(3 args): mv->getMap() is null.");
 
-      do_get (mv, kokkos_vals, ldx, Teuchos::ptrInArg (*map), ROOTED); // ROOTED the default here for now
+      return do_get (bInitialize, mv, kokkos_vals, ldx, Teuchos::ptrInArg (*map), ROOTED); // ROOTED the default here for now
     }
 
 

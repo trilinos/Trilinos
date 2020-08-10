@@ -62,7 +62,7 @@ import cdash_build_testing_date as CBTD
 # 'YYYY-MM-DD' value.
 #
 def convertInputDateArgToYYYYMMDD(cdashProjectTestingDayStartTime, dateText,
-  currentDateTimeStr=None,  # Used for unit testing only
+    currentDateTimeStr=None,  # Used for unit testing only
   ):
   if dateText == "yesterday" or dateText == "today":
     if dateText == "yesterday": dayIncr = -1
@@ -243,10 +243,8 @@ def removeElementsFromListGivenIndexes(list_inout, indexesToRemoveList_in):
   return list_inout
 
 
-#
 # Class CsvFileStructure
 #
-
 class CsvFileStructure(object):
 
   def __init__(self, headersList, rowsList):
@@ -254,10 +252,8 @@ class CsvFileStructure(object):
     self.rowsList = rowsList
 
 
-#
 # Write a CsvFileStructure data to a string
 #
-
 def writeCsvFileStructureToStr(csvFileStruct):
   csvFileStr = ", ".join(csvFileStruct.headersList)+"\n"
   for rowFieldsList in csvFileStruct.rowsList:
@@ -265,15 +261,165 @@ def writeCsvFileStructureToStr(csvFileStruct):
   return csvFileStr
 
 
-#
+########################################
 # CDash Specific stuff
-#
+########################################
 
+
+#
+# Reporting policy, data, and defaults
+# 
+
+
+# Collecton of data used to create the final HTML CDash report that is
+# updated and queried by various functions.
+#
+# NOTE: This is put into a class object so that these vars can be updated in
+# place when passed to a function.
+#
+class CDashReportData(object):
+  def __init__(self):
+    # Gives the final result (assume passing by defualt)
+    self.globalPass = True
+    # This is the top of the HTML body
+    self.htmlEmailBodyTop = ""
+    # This is the bottom of the email body
+    self.htmlEmailBodyBottom = ""
+    # This var will store the list of data numbers for the summary line
+    self.summaryLineDataNumbersList = []
+  def reset(self):
+    self.globalPass = True
+    self.htmlEmailBodyTop = ""
+    self.htmlEmailBodyBottom = ""
+    self.summaryLineDataNumbersList = []
+
+
+# Define standard CDash colors
 def cdashColorPassed(): return 'green'
 def cdashColorFailed(): return 'red'
 def cdashColorNotRun(): return 'orange'
 def cdashColorMissing(): return 'gray'
 # ToDo: Make the above return different colors for a color-blind pallette
+
+
+def getStandardTestsetAcroList():
+  return ['twoif', 'twoinr', 'twip', 'twim', 'twif', 'twinr']
+
+
+# Aggregate info about a test set used for generating the summary and table
+# and to determine global pass/fail.
+#
+# Members:
+#
+# * testsetAcro: e.g. 'twoif'
+# * testsetDescr: e.g. "Tests without issue trackers Failed"
+# * testsetTableType: Values: 'nopass', 'pass', 'missing'
+# * testsetColor: e.g.  'red', 'green' (whatever is accepted by function
+#   colorHtmlText())
+# * existanceTriggersGlobalFail: If 'True' and any of tests fall into this
+#   test-set category, then it shoulid trigger a global 'False'
+class TestsetTypeInfo(object):
+
+  def __init__(self, testsetAcro, testsetDescr, testsetTableType, testsetColor,
+      existanceTriggersGlobalFail=True,
+    ):
+    self.testsetAcro = testsetAcro
+    self.testsetDescr = testsetDescr
+    self.testsetTableType = testsetTableType
+    self.testsetColor = testsetColor
+    self.existanceTriggersGlobalFail = existanceTriggersGlobalFail
+
+
+# Return the TestsetTypeInfo object for the standard types of test sets that get
+# their own tables.
+#
+# testsetArco [in] Acronym for the standard test set (e.g. 'twoif')
+#
+# testsetColor [in] Gives the color to use for the summary line and the table
+# header.  If 'None' is passed in (the default), then a standard color is
+# used.  If the empty string is passed in '', then no color will be applied.
+#
+def getStandardTestsetTypeInfo(testsetAcro, testsetColor=None):
+  if testsetAcro == "twoif":
+    tsti = TestsetTypeInfo(testsetAcro, "Tests without issue trackers Failed", 'nopass',
+      cdashColorFailed())
+  elif testsetAcro == "twoinr":
+    tsti = TestsetTypeInfo(testsetAcro, "Tests without issue trackers Not Run", 'nopass',
+      cdashColorNotRun())
+  elif testsetAcro == "twip":
+    tsti = TestsetTypeInfo(testsetAcro, "Tests with issue trackers Passed", 'pass',
+      cdashColorPassed(), existanceTriggersGlobalFail=False)
+  elif testsetAcro == "twim":
+    tsti = TestsetTypeInfo(testsetAcro, "Tests with issue trackers Missing", 'missing',
+      cdashColorMissing(), existanceTriggersGlobalFail=False)
+  elif testsetAcro == "twif":
+    tsti = TestsetTypeInfo(testsetAcro, "Tests with issue trackers Failed", 'nopass',
+      cdashColorFailed())
+  elif testsetAcro == "twinr":
+    tsti = TestsetTypeInfo(testsetAcro, "Tests with issue trackers Not Run", 'nopass',
+      cdashColorNotRun())
+  else:
+    raise Exception("Error, testsetAcro = '"+str(testsetAcro)+"' is not supported!")
+
+  if testsetColor != None:
+    tsti.testsetColor = testsetColor
+
+  return tsti
+
+
+# Get the Test-set acronym from the fields of a test dict
+#
+def getTestsetAcroFromTestDict(testDict):
+  issueTracker = testDict.get('issue_tracker', None)
+  if isTestFailed(testDict) and issueTracker == None:
+    return 'twoif'
+  if isTestNotRun(testDict) and issueTracker == None:
+    return 'twoinr'
+  if isTestPassed(testDict) and issueTracker != None:
+    return 'twip'
+  if isTestMissing(testDict) and issueTracker != None:
+    return 'twim'
+  if isTestFailed(testDict) and issueTracker != None:
+    return 'twif'
+  if isTestNotRun(testDict) and issueTracker != None:
+    return 'twinr'
+  raise Exception(
+    "Error, testDict = '"+str(testDict)+"' with fields"+\
+    " status = '"+str(testDict.get('status', None))+"' and"+\
+    " issue_tracker = '"+str(testDict.get('issue_tracker', None))+"'"+\
+    " is not a supported test-set type!") 
+
+
+# Returns True if a test has 'status' 'Passed'
+def isTestPassed(testDict):
+  return (testDict.get('status', None) == 'Passed')
+
+
+# Returns True if a test has 'status' 'Failed'
+def isTestFailed(testDict):
+  return (testDict.get('status', None) == 'Failed')
+
+
+# Returns True if a test has 'status' 'Not Run'
+def isTestNotRun(testDict):
+  return (testDict.get('status', None) == 'Not Run')
+
+
+# Return True if a test is missing
+def isTestMissing(testDict):
+  status = testDict.get('status', None)
+  if status == 'Missing': return True
+  if status == 'Missing / Failed': return True
+  return False
+
+
+# Define default test dicts sort order in tables
+def getDefaultTestDictsSortKeyList() : return ['testname', 'buildName', 'site']
+
+
+#
+# Implementation functions
+#
 
 
 # Given a CDash query URL PHP page that returns JSON data, return the JSON
@@ -330,7 +476,7 @@ def extractCDashApiQueryData(cdashApiQueryUrl):
 # expected headers.
 #
 def readCsvFileIntoListOfDicts(csvFileName, requiredColumnHeadersList=[],
-  optionalColumnHeadersList=[],
+    optionalColumnHeadersList=[],
   ):
   listOfDicts = []
   with open(csvFileName, 'r') as csvFile:
@@ -343,7 +489,7 @@ def readCsvFileIntoListOfDicts(csvFileName, requiredColumnHeadersList=[],
     for lineList in csvReader:
       if not lineList: continue # Ingore blank line
       stripWhiltespaceFromStrList(lineList)
-      assertExpectedNumRowsFromCsvFile(csvFileName, dataRow, lineList,
+      assertExpectedNumColsFromCsvFile(csvFileName, dataRow, lineList,
         columnHeadersList)
       # Read the row entries into a new dict
       rowDict = {}
@@ -368,7 +514,7 @@ def getColumnHeadersFromCsvFileReader(csvFileName, csvReader):
 
 
 def assertExpectedColumnHeadersFromCsvFile(csvFileName, requiredColumnHeadersList,
-  optionalColumnHeadersList, columnHeadersList,
+    optionalColumnHeadersList, columnHeadersList,
   ):
 
   if not requiredColumnHeadersList and not optionalColumnHeadersList:
@@ -400,8 +546,8 @@ def assertExpectedColumnHeadersFromCsvFile(csvFileName, requiredColumnHeadersLis
         )
 
 
-def assertExpectedNumRowsFromCsvFile(csvFileName, dataRow, lineList,
-  columnHeadersList,
+def assertExpectedNumColsFromCsvFile(csvFileName, dataRow, lineList,
+    columnHeadersList,
   ):
   if len(lineList) != len(columnHeadersList):
     raise Exception(
@@ -456,7 +602,7 @@ def writeTestsLODToCsvFile(testsLOD, csvFileName):
     csvFile.write(writeCsvFileStructureToStr(csvFileStruct))
 
 
-# Print print a nested Python data-structure to a file
+# Pretty print a nested Python data-structure to a file
 #
 # ToDo: Reimplement this to create a better looking set of indented that that
 # involves less right-drift and the expense of more vertical space.
@@ -466,7 +612,7 @@ def pprintPythonDataToFile(pythonData, filePath):
   pp.pprint(pythonData)
 
 
-# Get data off CDash and cache it or read from previously cached data.
+# Get data off CDash and cache it or read from previously cached data
 #
 # If useCachedCDashData == True, then the file cdashQueryDataCacheFile must
 # exist and will be used to get the data instead of calling CDash
@@ -555,7 +701,7 @@ def copyKeyDictIfExists(sourceDict_in, keyName_in, dict_inout):
     dict_inout.update( { keyName_in : value } )
 
 
-# Extend the set of fields for a CDash index.phpb build dict.
+# Extend the set of fields for a CDash index.phpb build dict
 #
 # buildDict_in [in]: The build dict gotten from cdash/index.php.  This will be
 # modified in place.
@@ -750,7 +896,7 @@ def flattenCDashQueryTestsToListOfDicts(fullCDashQueryTestsJson):
 # SearchableListOfDicts.  Please use that class instead of this raw function.
 #
 def createLookupDictForListOfDicts(listOfDicts, listOfKeys,
-  removeExactDuplicateElements=False, checkDictsAreSame_in=checkDictsAreSame,
+    removeExactDuplicateElements=False, checkDictsAreSame_in=checkDictsAreSame,
   ):
   # Build the lookup dict data-structure. Also, optionally mark any 100%
   # duplicate elements if asked to remove 100% duplicate elements.
@@ -794,7 +940,7 @@ def createLookupDictForListOfDicts(listOfDicts, listOfKeys,
 
 
 def raiseDuplicateDictEleException(idx, dictEle, listOfKeys,
-  lookedUpIdx, lookedUpDict, dictDiffErrorMsg \
+    lookedUpIdx, lookedUpDict, dictDiffErrorMsg,
   ):
   raise Exception(
     "Error, The element\n\n"+\
@@ -839,7 +985,7 @@ def raiseDuplicateDictEleException(idx, dictEle, listOfKeys,
 # SearchableListOfDicts.  Please use that class instead of this raw function.
 #
 def lookupDictGivenLookupDict(lookupDict, listOfKeys, listOfValues,
-  alsoReturnIdx=False,
+    alsoReturnIdx=False,
   ):
   #print("\nlookupDict = "+str(lookupDict))
   #print("\nlistOfKeys = "+str(listOfKeys))
@@ -871,7 +1017,7 @@ def lookupDictGivenLookupDict(lookupDict, listOfKeys, listOfValues,
 
 
 # Class that encapsulates a list of dicts and an efficient lookup of a dict
-# given a list key/value pairs to match.
+# given a list key/value pairs to match
 #
 # Once created, this object acts like a list of dicts in most cases but also
 # contains functions to search for speicfic dicts given a set of key/value
@@ -915,8 +1061,8 @@ class SearchableListOfDicts(object):
   # same outputs as the function checkDictsAreSame() can be passed in.
   #
   def __init__(self, listOfDicts, listOfKeys,
-    removeExactDuplicateElements=False, keyMapList=None,
-    checkDictsAreSame_in=checkDictsAreSame,
+      removeExactDuplicateElements=False, keyMapList=None,
+      checkDictsAreSame_in=checkDictsAreSame,
     ):
     if keyMapList:
       if len(listOfKeys) != len(keyMapList):
@@ -1001,8 +1147,8 @@ def createSearchableListOfTests( testsListOfDicts,
 # lookups that match the 'site' and 'buildname' fields but uses input for the
 # search that are test dicts that have the fiels 'site' and 'buildName'.
 def createTestToBuildSearchableListOfDicts(buildsLOD,
-   removeExactDuplicateElements=False,
-   ):
+    removeExactDuplicateElements=False,
+  ):
   return SearchableListOfDicts( buildsLOD, ('site', 'buildname'),
     removeExactDuplicateElements=removeExactDuplicateElements,
     keyMapList=('site', 'buildName') )
@@ -1090,7 +1236,7 @@ class AddIssueTrackerInfoToTestDictFunctor(object):
 # which tests are missing.
 #
 def testsWithIssueTrackersMatchExpectedBuilds( testsWithIssueTrackersLOD,
-  testToExpectedBuildsSLOD,
+    testToExpectedBuildsSLOD,
   ):
   # Gather up all of the tests that don't match one of the expected builds
   nonmatchingTestsWithIssueTrackersLOD = []
@@ -1175,8 +1321,8 @@ def dateFromBuildStartTime(buildStartTime):
 #     - 'Missing': Most recent test has date before matching curentTestDate
 #
 def sortTestHistoryGetStatistics(testHistoryLOD,
-  currentTestDate, testingDayStartTimeUtc,
-  daysOfHistory,
+    currentTestDate, testingDayStartTimeUtc,
+    daysOfHistory,
   ):
 
   # Helper functions
@@ -1319,10 +1465,19 @@ def getUniqueSortedTestsHistoryLOD(inputSortedTestHistoryLOD):
 # field.
 def extractTestIdAndBuildIdFromTestDetailsLink(testDetailsLink):
   testDetailsLinkList = testDetailsLink.split('?')
-  phpArgsList = testDetailsLinkList[1].split('&')
-  testidArgList = phpArgsList[0].split("=")
-  buildidArgList = phpArgsList[1].split("=")
-  return (testidArgList[1], buildidArgList[1])
+  if (len(testDetailsLinkList) > 1):
+    # Older CDash implementations have ?testid=<testid>&buildid=<buildid>
+    phpArgsList = testDetailsLinkList[1].split('&')
+    testidArgList = phpArgsList[0].split("=")
+    buildidArgList = phpArgsList[1].split("=")
+    testId = testidArgList[1]
+    buildId = buildidArgList[1]
+  else:
+    # Newer CDash implementations have 
+    testDetailsLinkList = testDetailsLink.split('/')
+    testId = testDetailsLinkList[1]
+    buildId = ""
+  return (testId, buildId)
 
 
 # Check if two test dicts returned from CDash are the same, accounting for
@@ -1368,19 +1523,18 @@ def checkCDashTestDictsAreSame(testDict_1, testDict_1_name,
   if sameBuildIdDifferentTestIds:
     testDict_1_copy.pop('testDetailsLink', None)
     testDict_2_copy.pop('testDetailsLink', None)
-  # If the test 'time' is different by a little bit, then delcare them to be
-  # the same and remove 'time' field from comparison.
-  if testDict_1['time'] != testDict_2['time']:
-    time_1 = testDict_1['time'] 
-    time_2 = testDict_2['time'] 
-    rel_err = abs(time_1 - time_2) / ( (time_1 + time_2 + 1e-5)/2.0 )
-    rel_err_max = 1.0  # ToDo: Make this adjustable?
-    #print("rel_err = "+str(rel_err))
-    #print("rel_err_max = "+str(rel_err_max))
-    if rel_err <= rel_err_max:
-      testDict_1_copy.pop('time', None)
-      testDict_2_copy.pop('time', None)
-    # ToDo: Provide a better error message that prints the diff!
+  # Don't require the same test times
+  testDict_1_copy.pop('time', None)
+  testDict_2_copy.pop('time', None)
+  testDict_1_copy.pop('prettyTime', None)
+  testDict_2_copy.pop('prettyTime', None)
+  testDict_1_copy.pop('procTime', None)
+  testDict_2_copy.pop('procTime', None)
+  testDict_1_copy.pop('prettyProcTime', None)
+  testDict_2_copy.pop('prettyProcTime', None)
+  # Don't require identical matching output
+  testDict_1_copy.pop('matchingoutput', None)
+  testDict_2_copy.pop('matchingoutput', None)
   # Compare what ever fields are left that may be different and just use the
   # standard comparison that will give a good error message for differences.
   return checkDictsAreSame(testDict_1_copy, testDict_1_name,
@@ -1405,7 +1559,6 @@ def getTestHistoryCacheFileName(date, site, buildName, testname, daysOfHistory):
 #
 class AddTestHistoryToTestDictFunctor(object):
 
-
   # Constructor which takes additional data needed to get the test history and
   # other stuff.
   #
@@ -1429,7 +1582,6 @@ class AddTestHistoryToTestDictFunctor(object):
     self.__printDetails = printDetails
     self.__requireMatchTestTopTestHistory = requireMatchTestTopTestHistory
     self.__extractCDashApiQueryData_in = extractCDashApiQueryData_in
-
 
   # Get test history off CDash and add test history info and URL to info we
   # find out from that test history
@@ -1627,7 +1779,20 @@ def setTestDictAsMissing(testDict):
   testDict['details'] = "Missing"
   return testDict
 
-# Gather up a list of the missing builds.
+
+# Transform functor that sets the 'cdash_testing_day' field in a test dict.
+#
+class AddCDashTestingDayFunctor(object):
+
+  def __init__(self, cdash_testing_day):
+    self.cdash_testing_day = cdash_testing_day
+
+  def __call__(self, testDict):
+    testDict[u'cdash_testing_day'] = unicode(self.cdash_testing_day)
+    return testDict
+
+
+# Gather up a list of the missing builds
 #
 # Inputs:
 #
@@ -1724,6 +1889,7 @@ def getMissingExpectedBuildsList(buildsSearchableListOfDicts, expectedBuildsList
   # future, it may be better to allow an expected build to say that it does
   # not have expected 'update' results.
 
+
 # Download set of builds from CDash builds and return flattened list of dicts
 #
 # The cdash/api/v1/index.php query selecting the set of builds is provided by
@@ -1745,12 +1911,12 @@ def getMissingExpectedBuildsList(buildsSearchableListOfDicts, expectedBuildsList
 # testing to avoid calling CDash.
 #
 def downloadBuildsOffCDashAndFlatten(
-  cdashIndexBuildsQueryUrl,
-  fullCDashIndexBuildsJsonCacheFile=None,
-  useCachedCDashData=False,
-  alwaysUseCacheFileIfExists = False,
-  verbose=True,
-  extractCDashApiQueryData_in=extractCDashApiQueryData,
+    cdashIndexBuildsQueryUrl,
+    fullCDashIndexBuildsJsonCacheFile=None,
+    useCachedCDashData=False,
+    alwaysUseCacheFileIfExists = False,
+    verbose=True,
+    extractCDashApiQueryData_in=extractCDashApiQueryData,
   ):
   # Get the query data
   fullCDashIndexBuildsJson = getAndCacheCDashQueryDataOrReadFromCache(
@@ -1791,12 +1957,12 @@ def downloadBuildsOffCDashAndFlatten(
 # testing to avoid calling CDash.
 #
 def downloadTestsOffCDashQueryTestsAndFlatten(
-  cdashQueryTestsUrl,
-  fullCDashQueryTestsJsonCacheFile=None,
-  useCachedCDashData=False,
-  alwaysUseCacheFileIfExists = False,
-  verbose=True,
-  extractCDashApiQueryData_in=extractCDashApiQueryData,
+    cdashQueryTestsUrl,
+    fullCDashQueryTestsJsonCacheFile=None,
+    useCachedCDashData=False,
+    alwaysUseCacheFileIfExists = False,
+    verbose=True,
+    extractCDashApiQueryData_in=extractCDashApiQueryData,
   ):
   # Get the query data
   fullCDashQueryTestsJson = getAndCacheCDashQueryDataOrReadFromCache(
@@ -1823,21 +1989,6 @@ def buildHasBuildFailures(buildDict):
   if compilationDict and compilationDict['error'] > 0:
     return True
   return False
-
-
-# Returns True if a test has 'status' 'Passed'
-def isTestPassed(testDict):
-  return (testDict.get('status', None) == 'Passed')
-
-
-# Returns True if a test has 'status' 'Failed'
-def isTestFailed(testDict):
-  return (testDict.get('status', None) == 'Failed')
-
-
-# Returns True if a test has 'status' 'Not Run'
-def isTestNotRun(testDict):
-  return (testDict.get('status', None) == 'Not Run')
 
 
 # Functor class to sort a row of dicts by multiple columns of string data.
@@ -1869,7 +2020,7 @@ class DictSortFunctor(object):
 # limitRowsToDisplay items will be dispalyed after the list is sorted.
 #
 def sortAndLimitListOfDicts(listOfDicts, sortKeyList = None,
-  limitRowsToDisplay = None\
+   limitRowsToDisplay = None\
   ):
   # Sort the list
   if sortKeyList:
@@ -1884,6 +2035,94 @@ def sortAndLimitListOfDicts(listOfDicts, sortKeyList = None,
     listOfDictsLimited = listOfDictsOrdered[0:limitRowsToDisplay]
   # Return the final sorted limited list
   return listOfDictsLimited
+
+
+# Create a final summary line of global passfail
+#
+# cdashReportData [in]: Report data of type CDashReportData
+#
+# buildsetName [in]: The name of the set of builds to report on
+#
+# date [in]: Date string in format "YYYY-MM-DD"
+#
+def getOverallCDashReportSummaryLine(cdashReportData, buildsetName, date):
+  if cdashReportData.globalPass:
+    summaryLine = "PASSED"
+  else:
+    summaryLine = "FAILED"
+
+  if cdashReportData.summaryLineDataNumbersList:
+    summaryLine += " (" + ", ".join(cdashReportData.summaryLineDataNumbersList) + ")"
+
+  summaryLine += ": "+buildsetName+" on "+date
+
+  return summaryLine
+
+
+################################################################################
+# HTML Support Code
+################################################################################
+
+
+def getFullCDashHtmlReportPageStr(cdashReportData, pageTitle="", pageStyle="",
+    detailsBlockSummary=None,
+  ):
+
+  htmlPage = \
+    "<html>\n\n"
+
+  if pageStyle:
+    htmlPage += \
+      "<head>\n"+\
+      pageStyle+\
+      "</head>\n\n"
+
+  htmlPage += \
+    "<body>\n\n"
+
+  if pageTitle:
+    htmlPage += \
+      "<h2>"+pageTitle+"</h2>\n\n"
+
+  htmlPage += \
+    cdashReportData.htmlEmailBodyTop+\
+    "\n"
+
+  if detailsBlockSummary:
+    htmlPage += \
+      "<details>\n\n"+\
+      "<summary><b>"+detailsBlockSummary+":</b> (click to expand)</b></summary>\n\n"
+  htmlPage += \
+    cdashReportData.htmlEmailBodyBottom+\
+    "\n"
+
+  if detailsBlockSummary:
+    htmlPage += \
+      "</details>\n\n"
+
+  htmlPage += \
+    "</body>\n\n"+\
+    "</html>\n"
+
+  return htmlPage
+
+
+def getDefaultHtmlPageStyleStr():
+  return \
+    "<style>\n"+\
+    "h1 {\n"+\
+    "  font-size: 40px;\n"+\
+    "}\n"+\
+    "h2 {\n"+\
+    "  font-size: 30px;\n"+\
+    "}\n"+\
+    "h3 {\n"+\
+    "  font-size: 24px;\n"+\
+    "}\n"+\
+    "p {\n"+\
+    "  font-size: 18px;\n"+\
+    "}\n"+\
+    "</style>\n"
 
 
 # Class to store dict key and table header
@@ -1901,11 +2140,6 @@ class TableColumnData(object):
         "Error, colAlign="+colAlign+" not valid.  Please choose from"+\
         " the list ['" + "', '".join(validColAlignList) + "']!" )
     self.colAlign = colAlign
-
-
-#
-# HTML stuff
-#
 
 
 # Color HTML text supported color
@@ -1932,7 +2166,7 @@ def addHtmlSoftWordBreaks(text_in):
   return text_out
 
 
-# Create an html table string from a list of dicts and column headers.
+# Create an HTML table string from a list of dicts and column headers
 #
 # Arguments:
 #
@@ -1955,7 +2189,8 @@ def addHtmlSoftWordBreaks(text_in):
 # passed in then a default style is provided internally.  NOTE: The default
 # table style uses CSS formatting for boarders but also sets the <table>
 # 'boarder' property since some email clients like Gmail ignore the CSS style
-# sections.
+# sections.  To not set a style at all, pass in the empty string "" (not
+# None).
 #
 # htmlTableStyle [in]: The style for the HTML table used in <table
 #   style=htmlTableStyle>.  If set to None, then a default style is used.  To
@@ -1965,21 +2200,26 @@ def addHtmlSoftWordBreaks(text_in):
 # compressing the produced tables.
 #
 def createHtmlTableStr(tableTitle, colDataList, rowDataList,
-  htmlStyle=None, htmlTableStyle=None \
+    htmlStyle=None, htmlTableStyle=None \
   ):
+
+  htmlStr = ""
 
   # style options for the table
   defaultHtmlStyle=\
-    "table, th, td {\n"+\
+    "<style>table, th, td {\n"+\
     "  padding: 5px;\n"+\
     "  border: 1px solid black;\n"+\
     "  border-collapse: collapse;\n"+\
     "}\n"+\
     "tr:nth-child(even) {background-color: #eee;}\n"+\
-    "tr:nth-child(odd) {background-color: #fff;}\n"
-  if htmlStyle != None: htmlStyleUsed = htmlStyle
+    "tr:nth-child(odd) {background-color: #fff;}\n"+\
+    "</style>"
+  if htmlStyle == "": htmlStyleUsed = ""
+  elif htmlStyle != None: htmlStyleUsed = htmlStyle
   else: htmlStyleUsed = defaultHtmlStyle
-  htmlStr="<style>"+htmlStyleUsed+"</style>\n"
+  if htmlStyleUsed:
+    htmlStr+=htmlStyleUsed+"\n"
 
   # Table title and <table style=...>
   htmlStr+="<h3>"+tableTitle+"</h3>\n"
@@ -2047,7 +2287,7 @@ def createHtmlTableStr(tableTitle, colDataList, rowDataList,
 # numItems [in]: The number of items of data
 #
 def getCDashDataSummaryHtmlTableTitleStr(dataTitle, dataCountAcronym, numItems,
-  limitRowsToDisplay=None,
+    limitRowsToDisplay=None,
   ):
   tableTitle = dataTitle
   if limitRowsToDisplay:
@@ -2068,9 +2308,9 @@ def getCDashDataSummaryHtmlTableTitleStr(dataTitle, dataCountAcronym, numItems,
 #
 # colDataList [in]: List of TableColumnData objects where
 #   colDataList[j].dictKey gives the name of the key for that column of data,
-#   colDataList[j].colHeader is the text name for the column header and
-#   colDataList[j].colAlign gives the HTML alignment.  That columns in the
-#   table will listed in the order given in this list.
+#   colDataList[j].colHeader is the text name for the column header, and
+#   colDataList[j].colAlign gives the HTML alignment.
+#   The columns in the table will listed in the order given in this list.
 #
 # rowDataList [in]: List of dicts that provide the data from the table.  The
 #   dict in each row must have the keys specified by colData[j].dictKey.
@@ -2093,8 +2333,8 @@ def getCDashDataSummaryHtmlTableTitleStr(dataTitle, dataCountAcronym, numItems,
 # NOTE: If len(rowDataList) == 0, then the empty string "" is returned.
 #
 def createCDashDataSummaryHtmlTableStr( dataTitle, dataCountAcronym,
-  colDataList, rowDataList, sortKeyList=None, limitRowsToDisplay=None,
-  htmlStyle=None, htmlTableStyle=None,
+    colDataList, rowDataList, sortKeyList=None, limitRowsToDisplay=None,
+    htmlStyle=None, htmlTableStyle=None,
   ):
   # If no rows, don't create a table
   if len(rowDataList) == 0:
@@ -2112,11 +2352,7 @@ def createCDashDataSummaryHtmlTableStr( dataTitle, dataCountAcronym,
 
 # Create a tests HTML table string
 #
-# testTypeDescr [in]: Description of the test type being tabulated
-# (e.g. "Failing tests without issue trackers")
-#
-# testTypeCountAcronym [in]: Acronym for the test type being tabulated
-# (e.g. "twoif")
+# testsetTypeInfo [in]: Information about the testset of type TestsetTypeInfo
 #
 # testTypeCountNum [in]: Number of total items for the test type, before
 # limiting (e.g. 25)
@@ -2142,31 +2378,24 @@ def createCDashDataSummaryHtmlTableStr( dataTitle, dataCountAcronym,
 # htmlTableStyle [in]: Sytle inside of <table ... > (see createHtmlTableStr())
 # (default None)
 #
-def createCDashTestHtmlTableStr(
-  testSetType,
-  testTypeDescr, testTypeCountAcronym, testTypeCountNum, testsLOD,
-  daysOfHistory, limitRowsToDisplay=None, testSetColor="",
-  htmlStyle=None, htmlTableStyle=None,
+def createCDashTestHtmlTableStr(testsetTypeInfo, testTypeCountNum, testsLOD,
+    limitRowsToDisplay=None, htmlStyle=None, htmlTableStyle=None,
   ):
   # Return empty string if no tests
   if len(testsLOD) == 0:
-     return ""
+    return ""
   # Table title
   tableTitle = colorHtmlText(
     getCDashDataSummaryHtmlTableTitleStr(
-      testTypeDescr, testTypeCountAcronym, testTypeCountNum, limitRowsToDisplay ),
-    testSetColor )
+      testsetTypeInfo.testsetDescr, testsetTypeInfo.testsetAcro,
+      testTypeCountNum, limitRowsToDisplay ),
+    testsetTypeInfo.testsetColor )
   # Consecutive nopass/pass/missing column
-  tcd = TableColumnData
-  if testSetType == 'nopass':
-    consecCol = tcd("Consec&shy;utive Non-pass Days", 'consec_nopass_days', 'right')
-  elif testSetType == 'pass':
-    consecCol = tcd("Consec&shy;utive Pass Days", 'consec_pass_days', 'right')
-  elif testSetType == 'missing':
-    consecCol = tcd("Consec&shy;utive Missing Days", 'consec_missing_days', 'right')
-  else:
-    raise Exception("Error, invalid testSetType="+str(testSetType))
+  consecCol = getCDashTestHtmlTableConsecColData(testsetTypeInfo.testsetTableType)
+  # Get daysOfHistory out of the data
+  daysOfHistory = testsLOD[0]['test_history_num_days']
   # Create column headers
+  tcd = TableColumnData
   testsColDataList = [
     tcd("Site", "site"),
     tcd("Build Name", "buildName"),
@@ -2182,6 +2411,415 @@ def createCDashTestHtmlTableStr(
   return createHtmlTableStr( tableTitle,
     testsColDataList, testsLOD,
     htmlStyle=htmlStyle, htmlTableStyle=htmlTableStyle )
+
+
+def getCDashTestHtmlTableConsecColData(testsetTableType):
+  tcd = TableColumnData
+  if testsetTableType == 'nopass':
+    consecCol = tcd("Consec&shy;utive Non-pass Days", 'consec_nopass_days', 'right')
+  elif testsetTableType == 'pass':
+    consecCol = tcd("Consec&shy;utive Pass Days", 'consec_pass_days', 'right')
+  elif testsetTableType == 'missing':
+    consecCol = tcd("Consec&shy;utive Missing Days", 'consec_missing_days', 'right')
+  else:
+    raise Exception("Error, invalid testsetTableType="+str(testsetTableType))
+  return consecCol
+
+
+# Class to generate the data for an HTML report for all test-sets for a given
+# issue tracker.
+#
+# This class can be reused for multiple issue issue trackers.
+#
+class IssueTrackerTestsStatusReporter(object):
+
+  # Constructor
+  #
+  # cdashReportData [persisting]: Data used to create the final report (of type
+  # CDashReportData).
+  #
+  def __init__(self, verbose=True):
+    self.cdashReportData = CDashReportData()
+    self.testsetsReporter = TestsetsReporter(self.cdashReportData, htmlStyle="",
+      verbose=verbose )
+    self.issueTracker = None
+    self.cdashTestingDay = None
+
+
+  # Generate a report about the status of all of the tests for one issue
+  # tracker
+  #
+  # Inputs:
+  #
+  #   testsLOD [in]: The list of test dicts for one issue tracker.  (The isuse
+  #   tracker info will be extracted from the test dicts field 'issue_tracker'
+  #   and all of the test dicts must have the same value for 'issue_tracker'
+  #   this will throw.)
+  #
+  # Return 'True' if all of the tests match an (internally defined) passing
+  # criteria such that the issue tracker could be closed.  Otherwise, returns
+  # 'False' which means that the tests have not yet mt the passing criteria.
+  # If len(testsLOD) == 0, then 'True' will be returned (which assumes that
+  # there are no tests remaining related to the issue tracker).
+  #
+  # Postconditions:
+  #
+  # * A report about the status of the tests is returned in the function
+  #   self.getIssueTrackerTestsStatusReport().
+  #
+  def reportIssueTrackerTestsStatus(self, testsLOD):
+    self.cdashReportData.reset()
+    if (len(testsLOD) == 0):
+      self.issueTracker = None
+      return True
+    (self.issueTracker, _) = getIssueTrackerFieldsAndAssertAllSame(testsLOD)
+    self.cdashTestingDay = testsLOD[0]['cdash_testing_day']
+    self.testsetsReporter.reportTestsets(testsLOD)
+    # Return the final status
+    return False  # ToDo: Add logic to verify if issue can be closed!
+
+
+  # Generate a pass/fail report HTML string for the last call to
+  # reportIssueTrackerTestsStatus()
+  def getIssueTrackerTestsStatusReport(self):
+    if self.issueTracker == None:
+      return None
+    testsSummaryTitle = \
+      "Test results for issue "+self.issueTracker+" as of "+self.cdashTestingDay
+    return self.testsetsReporter.getTestsHtmlReportStr(testsSummaryTitle,
+      detailsBlockSummary="Detailed test results")
+
+
+# Get the issue tracker fields from a list of test dicts and assert they are
+# all the same.
+#
+# Formal Paremeters:
+#
+#   testsLOD [in]: List of test dicts the must have the 'issue_tracker' and
+#   the 'issuer_tracker_url' fields and they must all be identical to each
+#   other.
+#
+# Returns:
+#
+#   (issue_tracker, issue_tracker_url)
+#
+# Throws:
+#
+#   IssueTrackerFieldError: If the 'issue_tracker' or the 'issuer_tracker_url'
+#   fields are missing from a test dict or if they don't match each other.
+#
+def getIssueTrackerFieldsAndAssertAllSame(testsLOD):
+  if len(testsLOD) == 0:
+    return None
+  issue_tracker = None
+  issue_tracker_url = None
+  i = 0
+  for testDict in testsLOD:
+    (issue_tracker_i, issue_tracker_url_i) = \
+      getIssueTrackerFieldsFromTestDict(testDict, i)
+    if issue_tracker == None and issue_tracker_url == None:
+      issue_tracker = issue_tracker_i
+      issue_tracker_url = issue_tracker_url_i
+    else:
+      assertSameIssueTracker(issue_tracker_i, issue_tracker, testDict, i)
+      assertSameIssueTrackerUrl(issue_tracker_url_i, issue_tracker_url,
+        testDict, i)
+    i += 1
+  return (issue_tracker, issue_tracker_url)
+
+
+def getIssueTrackerFieldsFromTestDict(testDict, idx):
+    issue_tracker = testDict.get('issue_tracker', None)
+    issue_tracker_url = testDict.get('issue_tracker_url', None)
+    if issue_tracker == None:
+      raise IssueTrackerFieldError(
+        "Error, the test dict "+sorted_dict_str(testDict)+" at index "+str(idx)+\
+        " is missing the 'issue_tracker' field!" )
+    if issue_tracker_url == None:
+      raise IssueTrackerFieldError(
+        "Error, the test dict "+sorted_dict_str(testDict)+" at index "+str(idx)+\
+        " is missing the 'issue_tracker_url' field!" )
+    return (issue_tracker, issue_tracker_url)
+
+
+def assertSameIssueTracker(issue_tracker, issue_tracker_expected, testDict, idx):
+  if issue_tracker != issue_tracker_expected:
+    raise IssueTrackerFieldError(
+      "Error, the test dict "+sorted_dict_str(testDict)+" at index "+str(idx)+\
+      " has a different 'issue_tracker' field '"+str(issue_tracker)+"' than the"+\
+      " expected value of '"+str(issue_tracker_expected)+"'!" )
+
+
+def assertSameIssueTrackerUrl(issue_tracker_url, issue_tracker_url_expected,
+    testDict, idx,
+  ):
+  if issue_tracker_url != issue_tracker_url_expected:
+    raise IssueTrackerFieldError(
+      "Error, the test dict "+sorted_dict_str(testDict)+" at index "+str(idx)+\
+      " has a different 'issue_tracker_url' field '"+str(issue_tracker_url)+"' than the"+\
+      " expected value of '"+str(issue_tracker_url_expected)+"'!" )
+
+
+class IssueTrackerFieldError(Exception):
+  pass
+
+
+# Class to optionally get test history and then analyze and report a single
+# test-set.
+#
+# NOTE: The reason this is a class is that the cdashReportData and
+# addTestHistoryStrategy objects are set once and are used for multiple calls
+# to reportSingleTestset().
+#
+class SingleTestsetReporter(object):
+
+  # Constructor
+  #
+  # cdashReportData [persisting]: Data used to create the final report (of type
+  # CDashReportData).
+  #
+  # testDictsSortKeyList [persisting]: The sort order array tests dicts (input
+  # to DictSortFunctor()). (Defualt getDefaultTestDictsSortKeyList()).
+  #
+  # addTestHistoryStrategy [persisting]: Strategy object that can set the test
+  # history on a list of dicts.  Must have member function
+  # getTestHistory(testsLOD).  (Default 'None')
+  #
+  def __init__(self, cdashReportData,
+      testDictsSortKeyList=getDefaultTestDictsSortKeyList(),
+      addTestHistoryStrategy=None,
+      htmlStyle=None, htmlTableStyle=None,
+      verbose=True,
+    ):
+    self.cdashReportData = cdashReportData
+    self.testDictsSortKeyList = testDictsSortKeyList
+    self.addTestHistoryStrategy = addTestHistoryStrategy
+    self.htmlStyle = htmlStyle
+    self.htmlTableStyle = htmlTableStyle
+    self.verbose = verbose
+
+  # Report on a given test-set and write info to self.cdashReportData
+  #
+  # On output, self.cdashReportData data will be updated with the summary and
+  # table of this given testsetTypeInfo data.  In particular, the following
+  # cdashReportData fields will be written to:
+  #
+  #   cdashReportData.summaryLineDataNumbersList: List will be appended with
+  #   the entry ``testsetTypeInfo.testsetAcro+"="+testsetTotalSize``.
+  #
+  #   cdashReportData.htmlEmailBodyTop: The name of the table from
+  #   testsetTypeInfo.testsetDescr, the acronym testsetTypeInfo.testsetAcro and the
+  #   size will be written on one line ending with ``<br>\n``.
+  #
+  #   cdashReportData.htmlEmailBodyBottom: Summary HTML table (with title)
+  #   will be written, along with formatting.
+  #
+  def reportSingleTestset(self, testsetTypeInfo, testsetTotalSize, testsetLOD,
+      sortTests=True,
+      limitTableRows=None,   # Change to 'int' > 0 to limit table rows
+      getTestHistory=False,
+    ):
+
+    testsetSummaryStr = \
+      getCDashDataSummaryHtmlTableTitleStr(testsetTypeInfo.testsetDescr,
+        testsetTypeInfo.testsetAcro, testsetTotalSize)
+
+    if self.verbose:
+      print("")
+      print(testsetSummaryStr)
+
+    if testsetTotalSize > 0:
+
+      if testsetTypeInfo.existanceTriggersGlobalFail:
+        self.cdashReportData.globalPass = False
+
+      self.cdashReportData.summaryLineDataNumbersList.append(
+        testsetTypeInfo.testsetAcro+"="+str(testsetTotalSize))
+
+      self.cdashReportData.htmlEmailBodyTop += \
+        colorHtmlText(testsetSummaryStr, testsetTypeInfo.testsetColor)+"<br>\n"
+
+      if sortTests or limitTableRows:
+        testsetSortedLimitedLOD = sortAndLimitListOfDicts(
+          testsetLOD, self.testDictsSortKeyList, limitTableRows )
+      else:
+        testsetSortedLimitedLOD = testsetLOD
+
+      if getTestHistory and self.addTestHistoryStrategy:
+        self.addTestHistoryStrategy.getTestHistory(testsetSortedLimitedLOD)
+
+      self.cdashReportData.htmlEmailBodyBottom += createCDashTestHtmlTableStr(
+        testsetTypeInfo, testsetTotalSize, testsetSortedLimitedLOD,
+        limitRowsToDisplay=limitTableRows,
+        htmlStyle=self.htmlStyle, htmlTableStyle=self.htmlTableStyle )
+
+
+# Class to generate the data for an HTML report for all test-sets represented
+# in a list of test dicts.
+# 
+class TestsetsReporter(object):
+
+  # Constructor
+  #
+  # cdashReportData [persisting]: Data used to create the final report (of type
+  # CDashReportData).
+  #
+  def __init__(self, cdashReportData, testsetAcroList=getStandardTestsetAcroList(),
+      htmlStyle=None, htmlTableStyle=None, verbose=True,
+    ):
+    self.cdashReportData = cdashReportData
+    self.testsetAcroList = testsetAcroList
+    self.singleTestsetReporter = SingleTestsetReporter(cdashReportData,
+      htmlStyle=htmlStyle, htmlTableStyle=htmlTableStyle, verbose=verbose)
+
+
+  # Separate out and report on all of the test-sets in the input list of test
+  # dicts.
+  # 
+  def reportTestsets(self, testsLOD):
+    testDictsByTestsetAcro = binTestDictsByTestsetAcro(testsLOD)
+    for testsetAcro in self.testsetAcroList:
+      testsetLOD = testDictsByTestsetAcro.get(testsetAcro, None)
+      if testsetLOD:
+        testsetTypeInfo = getStandardTestsetTypeInfo(testsetAcro)
+        self.singleTestsetReporter.reportSingleTestset(testsetTypeInfo,
+          len(testsetLOD), testsetLOD)
+  # ToDo: Modify the above to assert that there are no unexpected test-set
+  # types!
+
+
+  # Generate a pass/fail report for all of the testset analyzed by
+  # reportTestsets().
+  def getTestsHtmlReportStr(self, testsSummaryTitle, detailsBlockSummary=None):
+    cdashReportData = self.cdashReportData
+    cdashReportData.htmlEmailBodyTop = \
+      "<p>\n" + cdashReportData.htmlEmailBodyTop + "</p>\n"
+    return getFullCDashHtmlReportPageStr(
+      cdashReportData, pageTitle=testsSummaryTitle, pageStyle="",
+      detailsBlockSummary=detailsBlockSummary)
+    # NOTE: Above, cdashReportData is a shallow copy of some fields like lists
+    # and other objects but the string fields are deep copied.  Therefore,
+    # this function does not change the state of 'self' at all.!
+
+
+# Bin a list of test dicts by issue tracker
+#
+# Input arguments:
+#
+#   testsLOD [in]: Tests list of dicts
+#
+# Returns (testDictsByIssueTracker, testsWithoutIssueTrackersLOD)
+#
+#  testDictsByIssueTracker [out]: A dict where the keys are the issue tracker
+#  strings (e.g. '#1234') and the values are the sublist test dicts that have
+#  that issue tracker.
+#
+#  testsWithoutIssueTrackersLOD [out]: The remaining list of test dicts that
+#  don't have an issue tracker.
+#
+# For example, the input list of dicts:
+#
+#  testsLOD = [
+#    { 'testname':'test1' ... 'issue_tracker':'#1234' },
+#    { 'testname':'test2' ... },
+#    { 'testname':'test3' ... 'issue_tracker':'#1235' },
+#    { 'testname':'test4' ... 'issue_tracker':'#1234' },
+#    { 'testname':'test5' ... },
+#    { 'testname':'test6' ... 'issue_tracker':'#1235' },
+#    { 'testname':'test7' ... 'issue_tracker':'#1236' },
+#
+# would yeild:
+#
+#   testDictsByIssueTracker = {
+#     '#1234' : [
+#       { 'testname':'test1' ... 'issue_tracker':'#1234' },
+#       { 'testname':'test4' ... 'issue_tracker':'#1234' },
+#       ],
+#     '#1235' : [
+#       { 'testname':'test3' ... 'issue_tracker':'#1235' },
+#       { 'testname':'test6' ... 'issue_tracker':'#1235' },
+#       ],
+#     '#1236' : [
+#       { 'testname':'test7' ... 'issue_tracker':'#1236' },
+#       ],
+#     ]
+#
+#   testsWithoutIssueTrackersLOD = [
+#    { 'testname':'test2' ... },
+#    { 'testname':'test5' ... },
+#    ]
+#
+def binTestDictsByIssueTracker(testsLOD):
+  testDictsByIssueTracker = {}
+  testsWithoutIssueTrackersLOD = []
+  for testDict in testsLOD:
+    issueTracker = testDict.get('issue_tracker', None)
+    if issueTracker:
+      issueTrackerBinTestsLOD = testDictsByIssueTracker.setdefault(issueTracker, [])
+      issueTrackerBinTestsLOD.append(testDict)
+    else:
+      testsWithoutIssueTrackersLOD.append(testDict)
+  return (testDictsByIssueTracker, testsWithoutIssueTrackersLOD)
+
+
+# Bin a list of test dicts based on their test-set acronym
+#
+# Input arguments:
+#
+#   testsLOD [in]: Tests list of dicts
+#
+# Returns testDictsByTestsetAcro
+#
+#  testDictsByTestsetAcro [out]: A dict where the keys are the standard
+#  test-set acronyms ('twoif', 'twoinr', 'twip', etc) and the value for each
+#  is the list of test dicts that below to that test-set category.
+#
+# For example, the input list of dicts:
+#
+#   testsLOD = [
+#     { 'testname':'test1', 'status':'Failed' ... 'issue_tracker':'#1234' },
+#     { 'testname':'test2', 'status':'Failed' ... },
+#     { 'testname':'test3', 'status':'Passed' ... 'issue_tracker':'#1235' },
+#     { 'testname':'test4', 'status':'Failed' ... 'issue_tracker':'#1234' },
+#     { 'testname':'test5', 'status':'Not Run' ... },
+#     { 'testname':'test6', 'status':'Missing' ... 'issue_tracker':'#1235' },
+#     { 'testname':'test7', 'status':'Not Run' ... 'issue_tracker':'#1236' },
+#
+# would yeild:
+#
+#   testDictsByTestsetAcro = {
+#     'twoif' : [
+#       { 'testname':'test2', 'status':'Failed' ... },
+#       ],
+#     'twoinr' : [
+#       { 'testname':'test5', 'status':'Not Run' ... },
+#       ],
+#     'twip' : [
+#       { 'testname':'test3', 'status':'Passed' ... 'issue_tracker':'#1235' },
+#       ],
+#     'twim' : [
+#       { 'testname':'test6', 'status':'Missing' ... 'issue_tracker':'#1235' },
+#       ],
+#     'twif' : [
+#       { 'testname':'test1', 'status':'Failed' ... 'issue_tracker':'#1234' },
+#       { 'testname':'test4', 'status':'Failed' ... 'issue_tracker':'#1234' },
+#       ],
+#     'twinr' : [
+#     { 'testname':'test7', 'status':'Not Run' ... 'issue_tracker':'#1236' },
+#       ],
+#
+def binTestDictsByTestsetAcro(testsLOD):
+  testDictsByTestsetAcro = {}
+  for testDict in testsLOD:
+    testsetAcron = getTestsetAcroFromTestDict(testDict)
+    testsetAcronBinTestsLOD = testDictsByTestsetAcro.setdefault(testsetAcron, [])
+    testsetAcronBinTestsLOD.append(testDict)
+  return testDictsByTestsetAcro
+
+
+#########################################
+# HTML Email stuff
+#########################################
 
 
 #

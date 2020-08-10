@@ -353,7 +353,7 @@ namespace Tacho {
 
           Kokkos::parallel_for
             (Kokkos::TeamVectorRange(member, nk),
-             [&](const ordinal_type &k) {
+             [&,kbeg,colbeg](const ordinal_type &k) { /// compiler bug with c++14 lambda capturing and workaround
               const ordinal_type tk = kbeg+k, sk = colbeg+k;
               aj(tk) = peri(B.Col(sk));
               ax(tk) = B.Value(sk);

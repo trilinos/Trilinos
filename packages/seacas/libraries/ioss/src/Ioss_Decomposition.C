@@ -179,6 +179,10 @@ namespace Ioss {
     if (!m_showProgress) {
       Utils::check_set_bool_property(props, "ENABLE_TRACING", m_showProgress);
     }
+
+    if (props.exists("PARMETIS_COMMON_NODE_COUNT") && props.get("PARMETIS_COMMON_NODE_COUNT").get_int() > 0) {
+      m_commonNodeCount = props.get("PARMETIS_COMMON_NODE_COUNT").get_int();
+    }
   }
 
   template void Decomposition<int>::generate_entity_distributions(size_t globalNodeCount,
@@ -714,7 +718,7 @@ namespace Ioss {
     idx_t *elm_wgt      = nullptr;
     idx_t  ncon         = 1;
     idx_t  num_flag     = 0; // Use C-based numbering
-    idx_t  common_nodes = get_common_node_count(el_blocks, m_comm);
+    idx_t common_nodes = m_commonNodeCount > 0 ? m_commonNodeCount : get_common_node_count(el_blocks, m_comm);
 
     idx_t               nparts = m_processorCount;
     idx_t               ndims  = m_spatialDimension;
