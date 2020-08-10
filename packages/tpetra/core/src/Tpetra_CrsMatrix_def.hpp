@@ -5338,6 +5338,7 @@ namespace Tpetra {
       importMV_->putScalar (ZERO);
       // Do the local computation.
       this->localApply (*X, *importMV_, mode, alpha, ZERO);
+
       if (Y_is_overwritten) {
         Y_in.putScalar (ZERO);
       } else {
@@ -6915,7 +6916,8 @@ namespace Tpetra {
     const SrcDistObject& srcObj,
     const size_t numSameIDs,
     const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
-    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs)
+    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
+    const CombineMode /*CM*/)
   {
     using Details::Behavior;
     using Details::dualViewStatusToString;

@@ -1125,7 +1125,8 @@ namespace Tpetra {
      const Kokkos::DualView<const local_ordinal_type*,
        buffer_device_type>& permuteToLIDs,
      const Kokkos::DualView<const local_ordinal_type*,
-       buffer_device_type>& permuteFromLIDs) override;
+       buffer_device_type>& permuteFromLIDs,
+     const CombineMode CM) override;
 
     using padding_type = Details::CrsPadding<
       local_ordinal_type, global_ordinal_type>;
