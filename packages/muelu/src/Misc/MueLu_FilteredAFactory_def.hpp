@@ -127,7 +127,7 @@ namespace MueLu {
     if(dirichlet_threshold >= 0.0)
       GetOStream(Runtime0) << "Filtering Dirichlet threshold of "<<dirichlet_threshold << std::endl;
 
-    if(pL.get<bool>("filtered matrix: reuse graph"))
+    if(use_root_stencil || pL.get<bool>("filtered matrix: reuse graph"))
       GetOStream(Runtime0) << "Reusing graph"<<std::endl;
     else
       GetOStream(Runtime0) << "Generating new graph"<<std::endl;
@@ -151,7 +151,15 @@ namespace MueLu {
     fillCompleteParams->set("No Nonlocal Changes", true);
 
     RCP<Matrix> filteredA;
-    if (pL.get<bool>("filtered matrix: reuse graph")) {
+    if(use_root_stencil) {      
+      filteredA = MatrixFactory::Build(A->getCrsGraph());
+      filteredA->fillComplete(fillCompleteParams);     
+      filteredA->resumeFill();
+      BuildNewUsingRootStencil(*A, *G, dirichlet_threshold, currentLevel,*filteredA);
+      filteredA->fillComplete(fillCompleteParams);
+      
+    }
+    else if (pL.get<bool>("filtered matrix: reuse graph")) {
       filteredA = MatrixFactory::Build(A->getCrsGraph());
       filteredA->resumeFill();
 
@@ -160,14 +168,13 @@ namespace MueLu {
       filteredA->fillComplete(fillCompleteParams);
 
     } else {
-      filteredA = MatrixFactory::Build(A->getRowMap(), A->getColMap(), A->getNodeMaxNumRowEntries());
 
-      if(use_root_stencil)
-	BuildNewUsingRootStencil(*A, *G, dirichlet_threshold, currentLevel,*filteredA);
-      else
-	BuildNew(*A, *G, lumping, dirichlet_threshold,*filteredA);
-
+      filteredA = MatrixFactory::Build(A->getRowMap(), A->getColMap(), A->getNodeMaxNumRowEntries());      
+      BuildNew(*A, *G, lumping, dirichlet_threshold,*filteredA);
       filteredA->fillComplete(A->getDomainMap(), A->getRangeMap(), fillCompleteParams);
+    }
+
+
       Xpetra::IO<SC,LO,GO,NO>::Write("filteredA.dat", *filteredA);
 
      { //original filtered A
@@ -178,8 +185,6 @@ namespace MueLu {
        
      }
 
-
-    }
 
     filteredA->SetFixedBlockSize(A->GetFixedBlockSize());
 
@@ -421,24 +426,38 @@ namespace MueLu {
   void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   BuildNewUsingRootStencil(const Matrix& A, const GraphBase& G, double dirichletThresh, Level& currentLevel,  Matrix& filteredA) const {
     using TST = typename Teuchos::ScalarTraits<SC>;
+    using Teuchos::arcp_const_cast;
     SC ZERO = Teuchos::ScalarTraits<SC>::zero();
     SC ONE = Teuchos::ScalarTraits<SC>::one();
     LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+    SC SC_INVALID = Teuchos::ScalarTraits<SC>::nan();
 
     size_t numNodes = G.GetNodeNumVertices();
     size_t blkSize  = A.GetFixedBlockSize();
     size_t numRows  = A.getMap()->getNodeNumElements();
     ArrayView<const LO> indsA;
     ArrayView<const SC> valsA;
-    Array<LO>           inds(A.getNodeMaxNumRowEntries());
-    Array<SC>           vals(A.getNodeMaxNumRowEntries());
+    ArrayRCP<const size_t> rowptr;
+    ArrayRCP<const LO> inds;
+    ArrayRCP<const SC> vals_const;
+    ArrayRCP<SC> vals;
 
+    // We're going to grab the vals array from filteredA and then blitz it with NAN as a placeholder for "entries that have
+    // not yey been touched."  If I see an entry in the primary loop that has a zero, then I assume it has been nuked by 
+    // it's symmetric pair, so I add it to the diagonal.  If it has a NAN, process as normal.
+    RCP<CrsMatrix> filteredAcrs = dynamic_cast<const CrsMatrixWrap*>(&filteredA)->getCrsMatrix();
+    filteredAcrs->getAllValues(rowptr,inds,vals_const);
+    vals = arcp_const_cast<SC>(vals_const);
+    vals.assign(vals.size(),SC_INVALID);
+  
+    // In the badAggNeighbors loop, if the entry has any number besides NAN, I add it to the diagExtra and then zero the guy.
+    
     RCP<Aggregates>            aggregates     = Get< RCP<Aggregates> >           (currentLevel, "Aggregates");
     RCP<AmalgamationInfo>      amalgInfo      = Get< RCP<AmalgamationInfo> >     (currentLevel, "UnAmalgamationInfo");
     LO                          numAggs       = aggregates->GetNumAggregates();
     Teuchos::ArrayRCP<const LO> vertex2AggId  = aggregates->GetVertex2AggId()->getData(0);
-
-
+    
+    
     // HAX
     RCP<const Map> rowMap = A.getRowMap();
     RCP<const Map> colMap = A.getColMap();
@@ -447,7 +466,11 @@ namespace MueLu {
     else printf("CMS: Maps are NOT good\n");
     // END HAX
 
-
+  
+    // Since we're going to symmetrize this
+    Array<LO> diagIndex(numRows,INVALID);
+    Array<SC> diagExtra(numRows,ZERO);
+    
     // Lists of nodes in each aggregate
     struct {
       Array<LO> ptr,nodes, unaggregated;
@@ -461,18 +484,17 @@ namespace MueLu {
       ArrayView<const LO> indsG = G.getNeighborVertices(i);
       for (size_t j = 0; j < as<size_t>(indsG.size()); j++)
 	filter[indsG[j]]=true;
-
+      
       for (LO m = 0; m < (LO)blkSize; m++) {
 	LO row = amalgInfo->ComputeLocalDOF(nodesInAgg.unaggregated[i],m);
 	A.getLocalRowView(row, indsA, valsA);
-	vals.resize(valsA.size());
+	size_t index_start = rowptr[row];
+
 	for(LO k=0; k<(LO)indsA.size(); k++) {
 	  int node = amalgInfo->ComputeLocalNode(indsA[k]);
-	  vals[k] = (indsA[k] == row || filter[node]) ? valsA[k] : ZERO;
+	  vals[index_start+k] = (indsA[k] == row || filter[node]) ? valsA[k] : ZERO;
 	}
 	  
-	filteredA.insertLocalValues(row, indsA, vals);
-
 	// Reset filtering array
 	for (size_t j = 0; j < as<size_t>(indsG.size()); j++)
 	  filter[indsG[j]]=false;
@@ -554,23 +576,16 @@ namespace MueLu {
 	
 	for (LO m = 0; m < (LO)blkSize; m++) {
 	  LO row = amalgInfo->ComputeLocalDOF(row_node,m);
+	  size_t index_start = rowptr[row];	
 	  A.getLocalRowView(row, indsA, valsA);
-	  
-	  LO diagIndex = INVALID;
-	  SC diagExtra = ZERO;
-	  LO numInds = 0;
-	  inds.resize(indsA.size());
-	  vals.resize(valsA.size());
 	  
 	  for(LO l = 0; l < (LO)indsA.size(); l++) {
 	    int col_node = amalgInfo->ComputeLocalNode(indsA[l]);
 	    bool is_good = filter[col_node];
 	    if (indsA[l] == row) {
-	      diagIndex = l;
-	      inds[numInds] = indsA[l];
-	      vals[numInds] = valsA[l];
+	      diagIndex[row] = l;
+	      vals[index_start + l] = valsA[l];
 	      //	      printf("Keeping diagonal w/ value %8.2e\n",vals[numInds]);
-	      numInds++;
 	      continue;
 	    }
 	    
@@ -583,52 +598,50 @@ namespace MueLu {
 	    }
 	    
 	    if(is_good){
-	      inds[numInds] = indsA[l];
-	      vals[numInds] = valsA[l];
-	      numInds++;
+	      vals[index_start+l] = valsA[l];
 	    }
 	    else {
 	      if(!filter[col_node]) numOldDrops++;
 	      else numNewDrops++;
-	      diagExtra += valsA[l];
-	      inds[numInds] = indsA[l];
-	      vals[numInds]=0;
-	      numInds++;
+	      diagExtra[row] += valsA[l];
+	      vals[index_start+l]=ZERO;
 	    }
 	  } //end for l "indsA.size()" loop
 	    
-	  if (diagIndex != INVALID) {
-	    SC diagA = valsA[diagIndex];
+	  if (diagIndex[row] != INVALID) {
+	    size_t diagIndexInMatrix =  index_start + diagIndex[row];
+	    SC diagA = valsA[diagIndex[row]];
 	    //	    printf("diag_vals pre update =  %8.2e\n", vals[diagIndex] );
-	    vals[diagIndex] += diagExtra;
+	    vals[diagIndexInMatrix] += diagExtra[row];
 	    SC A_rowsum=ZERO, A_absrowsum = ZERO, F_rowsum = ZERO;
 	    
-	    if(dirichletThresh >= 0.0 && TST::real(vals[diagIndex]) <= dirichletThresh) {
-//#define LOTS_OF_PRINTING
+	    if( (dirichletThresh >= 0.0 && TST::real(vals[diagIndexInMatrix]) <= dirichletThresh) ||  TST::real(vals[diagIndexInMatrix]) == ZERO) {
+	      
+	      //#define LOTS_OF_PRINTING
 #ifdef LOTS_OF_PRINTING	      
-	      printf("WARNING: row %d (diagIndex=%d) diag(Afiltered) = %8.2e diag(A)=%8.2e numInds = %d\n",row,diagIndex,vals[diagIndex],diagA,numInds);
+	      printf("WARNING: row %d (diagIndex=%d) diag(Afiltered) = %8.2e diag(A)=%8.2e numInds = %d\n",row,diagIndex[row],vals[diagIndexInMatrix],diagA,(LO)indsA.size());
 #endif
 	      for(LO l = 0; l < (LO)indsA.size(); l++) {		  
-		A_rowsum += valsA[l];
-		A_absrowsum+=std::abs(valsA[l]);
+	        A_rowsum += valsA[l];
+   	        A_absrowsum+=std::abs(valsA[l]);
 	      }
-	      for(LO l = 0; l < (LO)numInds; l++) 
-		F_rowsum += vals[l];
+	      for(LO l = 0; l < (LO)indsA.size(); l++) 
+		F_rowsum += vals[index_start+l];
 #ifdef LOTS_OF_PRINTING	      
 	      printf("       : A rowsum = %8.2e |A| rowsum = %8.2e rowsum = %8.2e\n",A_rowsum,A_absrowsum,F_rowsum);
 
 	      printf("        Avals =");
 	      for(LO l = 0; l < (LO)indsA.size(); l++)
-		printf("%d(%8.2e)[%d] ",indsA[l],valsA[l],l);
+		printf("%d(%8.2e)[%d] ",(LO)indsA[l],valsA[l],(LO)l);
 	      printf("\n");
 	      printf("        Fvals =");
-	      for(LO l = 0; l < (LO)numInds; l++)
-		if(vals[l] != ZERO)
-		  printf("%d(%8.2e)[%d] ",inds[l],vals[l],l);
+	      for(LO l = 0; l < (LO)indsA.size(); l++)
+		if(vals[index_start+l] != ZERO)
+		  printf("%d(%8.2e)[%d] ",(LO)indsA[l],vals[index_start+l],(LO)l);
 	      printf("\n");
 #endif
 
-	      vals[diagIndex] = TST::one();
+	      vals[diagIndexInMatrix] = TST::one();
 	      numFixedDiags++;
 	    }
 	  }
@@ -636,12 +649,6 @@ namespace MueLu {
 	    GetOStream(Runtime0)<<"WARNING: Row "<<row<<" has no diagonal "<<std::endl;
 	  }
 	  
-	  inds.resize(numInds);
-	  vals.resize(numInds);
-	  filteredA.insertLocalValues(row, inds, vals);
-	  
-	  if(numInds == 0) 
-	    GetOStream(Runtime0)<<"WARNING: Row "<<row<<" has no entries in Afiltered. A has "<<indsA.size()<<" entries"<<std::endl;
 	}//end m "blkSize" loop
 
 	// Clear filtering array
@@ -650,6 +657,12 @@ namespace MueLu {
 
       }// end k loop over number of nodes in this agg
     }//end i loop over numAggs
+
+    // Copy all the goop out
+    for(LO row=0; row<(LO)numRows; row++) {      
+      filteredA.replaceLocalValues(row, inds(rowptr[row],rowptr[row+1]-rowptr[row]), vals(rowptr[row],rowptr[row+1]-rowptr[row]));
+    }
+    //    filteredAcrs->setAllValues(arcp_const_cast<size_t>(rowptr),arcp_const_cast<LO>(inds),vals);	      
 
     size_t g_newDrops = 0, g_oldDrops = 0, g_fixedDiags=0;
     
