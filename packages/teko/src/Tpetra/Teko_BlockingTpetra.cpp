@@ -72,8 +72,10 @@ namespace Blocking {
   */
 const MapPair buildSubMap(const std::vector< GO > & gid, const Teuchos::Comm<int> &comm)
 {
-   Teuchos::RCP<Tpetra::Map<LO,GO,NT> > gidMap = rcp(new Tpetra::Map<LO,GO,NT>(-1,Teuchos::ArrayView<const GO>(gid),0,rcpFromRef(comm)));
-   Teuchos::RCP<Tpetra::Map<LO,GO,NT> > contigMap = rcp(new Tpetra::Map<LO,GO,NT>(-1,gid.size(),0,rcpFromRef(comm)));
+   using GST = Tpetra::global_size_t;
+   const GST invalid = Teuchos::OrdinalTraits<GST>::invalid();
+   Teuchos::RCP<Tpetra::Map<LO,GO,NT> > gidMap = rcp(new Tpetra::Map<LO,GO,NT>(invalid,Teuchos::ArrayView<const GO>(gid),0,rcpFromRef(comm)));
+   Teuchos::RCP<Tpetra::Map<LO,GO,NT> > contigMap = rcp(new Tpetra::Map<LO,GO,NT>(invalid,gid.size(),0,rcpFromRef(comm)));
 
    return std::make_pair(gidMap,contigMap); 
 }
@@ -252,10 +254,12 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildSubBlock(int i,int j,const RCP<const T
    // for counting
    std::vector<size_t> nEntriesPerRow(numMyRows);
 
+   const size_t invalid = Teuchos::OrdinalTraits<size_t>::invalid();
+
    // insert each row into subblock
    // Count the number of entries per row in the new matrix
    for(LO localRow=0;localRow<numMyRows;localRow++) {
-      size_t numEntries = -1;
+      size_t numEntries = invalid;
       GO globalRow = gRowMap->getGlobalElement(localRow);
       LO lid = A->getRowMap()->getLocalElement(globalRow);
       TEUCHOS_ASSERT(lid>-1);
@@ -280,7 +284,7 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildSubBlock(int i,int j,const RCP<const T
    // insert each row into subblock
    // let FillComplete handle column distribution
    for(LO localRow=0;localRow<numMyRows;localRow++) {
-      size_t numEntries = -1;
+      size_t numEntries = invalid;
       GO globalRow = gRowMap->getGlobalElement(localRow);
       LO lid = A->getRowMap()->getLocalElement(globalRow);
       GO contigRow = rowMap->getGlobalElement(localRow);
@@ -347,10 +351,12 @@ void rebuildSubBlock(int i,int j,const RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> 
    std::vector<GO> colIndices(maxNumEntries);
    std::vector<ST> colValues(maxNumEntries);
 
+   const size_t invalid = Teuchos::OrdinalTraits<size_t>::invalid();
+
    // insert each row into subblock
    // let FillComplete handle column distribution
    for(LO localRow=0;localRow<numMyRows;localRow++) {
-      size_t numEntries = -1;
+      size_t numEntries = invalid;
       GO globalRow = gRowMap.getGlobalElement(localRow);
       LO lid = A->getRowMap()->getLocalElement(globalRow);
       GO contigRow = rowMap.getGlobalElement(localRow);
