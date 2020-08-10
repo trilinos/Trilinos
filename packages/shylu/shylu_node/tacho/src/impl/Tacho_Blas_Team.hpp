@@ -116,7 +116,7 @@ namespace Tacho {
                        /* */ T *__restrict__ a, int as0, int as1) {
           Kokkos::parallel_for(Kokkos::TeamThreadRange(member,n),[&](const int &j) {
               const int jj = j + offset;
-              Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,n-j-offset),[&](const int &i) {
+              Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,n-j-offset),[&,alpha,as0,as1,j,jj](const int &i) { /// compiler bug with c++14 lambda capturing and workaround
                   a[(i+jj)*as0+j*as1] = alpha;
                 });
             });
@@ -131,7 +131,7 @@ namespace Tacho {
                          /* */ T *__restrict__ a, int as0, int as1) {
           Kokkos::parallel_for(Kokkos::TeamThreadRange(member,n),[&](const int &j) {
               const int jj = j + offset;
-              Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,n-j-offset),[&](const int &i) {
+              Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,n-j-offset),[&,alpha,as0,as1,j,jj](const int &i) {/// compiler bug with c++14 lambda capturing and workaround
                   a[(i+jj)*as0+j*as1] *= alpha;
                 });
             });
