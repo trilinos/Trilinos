@@ -51,17 +51,7 @@
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_StackedTimer.hpp"
 
-#include "Xpetra_MultiVector.hpp"
-#include "Xpetra_MultiVectorFactory.hpp"
-#include "Xpetra_Matrix.hpp"
-
-#include "Galeri_XpetraMaps.hpp"
-#include "Galeri_XpetraProblemFactory.hpp"
-#include "Galeri_XpetraParameters.hpp"
-
 #include "MatrixLoad.hpp"
-
-#include "MueLu.hpp"
 
 
 class Measurement {
@@ -240,6 +230,7 @@ int main_ETI(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int
 
   int numRuns = 1;
   clp.setOption("num-runs", &numRuns, "number of times to run operation");
+
   int numVectors = 1;
   clp.setOption("multivector", &numVectors, "number of rhs to solve simultaneously");
 
