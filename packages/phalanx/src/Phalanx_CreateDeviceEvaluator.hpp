@@ -24,7 +24,6 @@ namespace PHX {
                          {
                            new (e) DeviceEvaluatorType(evaluator_to_clone_on_device);
                          });
-    ExecutionSpace().fence();
     return e;
   }
 
