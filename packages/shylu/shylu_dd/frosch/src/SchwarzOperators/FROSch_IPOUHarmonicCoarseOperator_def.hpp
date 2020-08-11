@@ -70,6 +70,7 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(initializeTime,"IPOUHarmonicCoarseOperator::initialize");
         int ret = buildCoarseSpace(dimension,dofsPerNode,nodesMap,dofsMaps,nullSpaceBasis,dirichletBoundaryDofs,nodeList);
+        this->CoarseMap_ = this->assembleCoarseMap();
         this->assembleInterfaceCoarseSpace();
         this->buildCoarseSolveMap(this->AssembledInterfaceCoarseSpace_->getBasisMapUnique());
         this->IsInitialized_ = true;
@@ -88,6 +89,7 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(initializeTime,"IPOUHarmonicCoarseOperator::initialize");
         buildCoarseSpace(dimension,dofsPerNodeVec,repeatedNodesMapVec,repeatedDofMapsVec,nullSpaceBasisVec,dirichletBoundaryDofsVec,nodeListVec);
+        this->CoarseMap_ = this->assembleCoarseMap();
         this->assembleInterfaceCoarseSpace();
         this->buildCoarseSolveMap(this->AssembledInterfaceCoarseSpace_->getBasisMapUnique());
         this->IsInitialized_ = true;
@@ -119,7 +121,6 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(buildCoarseSpaceTime,"IPOUHarmonicCoarseOperator::buildCoarseSpace");
         FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode");
-
         // Das könnte man noch ändern
         // LÄNGEN NOCHMAL GEGEN NumberOfBlocks_ checken!!!
         this->GammaDofs_.resize(this->GammaDofs_.size()+1);
@@ -170,6 +171,8 @@ namespace FROSch {
         FROSCH_TIMER_START_LEVELID(resetCoarseSpaceBlockTime,"IPOUHarmonicCoarseOperator::resetCoarseSpaceBlock");
         FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode");
         FROSCH_ASSERT(blockId<this->NumberOfBlocks_,"Block does not exist yet and can therefore not be reset.");
+        this->CoarseDofsPerNode_ = nullSpaceBasis->getNumVectors();
+        //this->CoarseMap_->describe(*fancy,Teuchos::VERB_EXTREME);
 
         if (this->Verbose_) {
             cout << "\n\
@@ -177,8 +180,8 @@ namespace FROSch {
 | IPOUHarmonicCoarseOperator |\n\
 |  Block " << blockId << "                   |\n\
 +----------------------------+\n";
-        }
 
+        }
         // Process the parameter list
         stringstream blockIdStringstream;
         blockIdStringstream << blockId+1;
@@ -195,25 +198,27 @@ namespace FROSch {
         }
 
         bool useForCoarseSpace = coarseSpaceList->get("Use For Coarse Space",true);
-
         if (useForCoarseSpace) {
             this->DofsMaps_[blockId] = dofsMaps;
             this->DofsPerNode_[blockId] = dofsPerNode;
-
             // Compute Interface Partition of Unity
             InterfacePartitionOfUnityPtr interfacePartitionOfUnity;
             if (!coarseSpaceList->sublist("InterfacePartitionOfUnity").get("Type","GDSW").compare("GDSW")) {
                 coarseSpaceList->sublist("InterfacePartitionOfUnity").sublist("GDSW").set("Test Unconnected Interface",this->ParameterList_->get("Test Unconnected Interface",true));
                 interfacePartitionOfUnity = InterfacePartitionOfUnityPtr(new GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>(this->MpiComm_,this->SerialComm_,dimension,this->DofsPerNode_[blockId],nodesMap,this->DofsMaps_[blockId],sublist(sublist(coarseSpaceList,"InterfacePartitionOfUnity"),"GDSW"),verbosity,this->LevelID_));
+                this->PartitionType_ = 0;
             } else if (!coarseSpaceList->sublist("InterfacePartitionOfUnity").get("Type","GDSW").compare("GDSWStar")) {
                 coarseSpaceList->sublist("InterfacePartitionOfUnity").sublist("GDSWStar").set("Test Unconnected Interface",this->ParameterList_->get("Test Unconnected Interface",true));
                 interfacePartitionOfUnity = InterfacePartitionOfUnityPtr(new GDSWStarInterfacePartitionOfUnity<SC,LO,GO,NO>(this->MpiComm_,this->SerialComm_,dimension,this->DofsPerNode_[blockId],nodesMap,this->DofsMaps_[blockId],sublist(sublist(coarseSpaceList,"InterfacePartitionOfUnity"),"GDSWStar"),verbosity,this->LevelID_));
+                this->PartitionType_ = 2;
             } else if (!coarseSpaceList->sublist("InterfacePartitionOfUnity").get("Type","GDSW").compare("RGDSW")) {
                 coarseSpaceList->sublist("InterfacePartitionOfUnity").sublist("RGDSW").set("Test Unconnected Interface",this->ParameterList_->get("Test Unconnected Interface",true));
                 interfacePartitionOfUnity = InterfacePartitionOfUnityPtr(new RGDSWInterfacePartitionOfUnity<SC,LO,GO,NO>(this->MpiComm_,this->SerialComm_,dimension,this->DofsPerNode_[blockId],nodesMap,this->DofsMaps_[blockId],sublist(sublist(coarseSpaceList,"InterfacePartitionOfUnity"),"RGDSW"),verbosity,this->LevelID_));
+                this->PartitionType_ = 1;
             } else {
                 FROSCH_ASSERT(false,"InterfacePartitionOfUnity Type is unknown.");
             }
+
 
             // Extract the interface and the interior from the DDInterface stored in the Interface Partition of Unity object
             InterfaceEntityPtr interface = interfacePartitionOfUnity->getDDInterface()->getInterface()->getEntity(0);
@@ -234,6 +239,7 @@ namespace FROSch {
                                                                                                   this->LevelID_,
                                                                                                   interfacePartitionOfUnity->getDDInterfaceNonConst()));
 
+
                 PartitionOfUnity_->removeDirichletNodes(dirichletBoundaryDofs());
 
                 interface = interior;
@@ -246,10 +252,11 @@ namespace FROSch {
                         this->GammaDofs_[blockId][interface->getGammaDofID(i,k)] = interface->getLocalDofID(i,k);
                     }
                 }
-
                 PartitionOfUnity_->computePartitionOfUnity(nodeList);
+
             } else {
                 interfacePartitionOfUnity->removeDirichletNodes(dirichletBoundaryDofs(),nodeList);
+
                 interfacePartitionOfUnity->sortInterface(this->K_,nodeList);
 
                 // Construct Interface and Interior index sets
@@ -263,11 +270,9 @@ namespace FROSch {
                         this->IDofs_[blockId][interior->getGammaDofID(i,k)] = interior->getLocalDofID(i,k);
                     }
                 }
-
                 interfacePartitionOfUnity->computePartitionOfUnity(nodeList);
                 PartitionOfUnity_ = interfacePartitionOfUnity;
             }
-
             // Construct local Interface nullspace basis (in case the interface was empty before, it was replaced by the interior. Therfore, this should be correct as well)
             ConstXMapPtr nullSpaceBasisMap = nullSpaceBasis->getMap();
             XMapPtr serialInterfaceMap = MapFactory<LO,GO,NO>::Build(nullSpaceBasisMap->lib(),this->GammaDofs_[blockId].size(),this->GammaDofs_[blockId].size(),0,this->SerialComm_);
@@ -282,6 +287,19 @@ namespace FROSch {
                 }
             }
 
+            PartitionOfUnity_->assembledPartitionOfUnityMaps();
+
+           this->KRowMap_ = PartitionOfUnity_->getAssembledPartitionOfUnityMap();
+           NumEnt_ = interfacePartitionOfUnity->getDDInterface()->getNumEnt();
+
+           if (!this->DistributionList_->get("Type","linear").compare("ZoltanDual")) {
+             FROSCH_ASSERT(this->NumberOfBlocks_==1,"Distribution Type ZoltanDual only works for one Block");
+             Teuchos::RCP<DDInterface<SC,LO,GO,NO> > theInterface =Teuchos::rcp_const_cast<DDInterface<SC,LO,GO,NO> >(interfacePartitionOfUnity->getDDInterface());
+             this->buildGlobalGraph(theInterface);
+             int dim = dimension;
+             sublist(this->ParameterList_,"CoarseSolver")->set("Dimension",dim);
+           }
+
             // Build local basis
             LocalPartitionOfUnityBasis_ = LocalPartitionOfUnityBasisPtr(new LocalPartitionOfUnityBasis<SC,LO,GO,NO>(this->MpiComm_,this->SerialComm_,this->DofsPerNode_[blockId],sublist(coarseSpaceList,"LocalPartitionOfUnityBasis"),interfaceNullspaceBasis.getConst(),PartitionOfUnity_->getLocalPartitionOfUnity(),PartitionOfUnity_->getPartitionOfUnityMaps())); // sublist(coarseSpaceList,"LocalPartitionOfUnityBasis") testen
 
@@ -294,6 +312,84 @@ namespace FROSch {
 
         return 0;
     }
+    template <class SC,class LO,class GO,class NO>
+    typename IPOUHarmonicCoarseOperator<SC,LO,GO,NO>::XMapPtr IPOUHarmonicCoarseOperator<SC,LO,GO,NO>::BuildRepeatedMapCoarseLevel(ConstXMapPtr &nodesMap,
+                                                                                                                                   UN dofsPerNode,
+                                                                                                                                   ConstXMapPtrVecPtr dofsMaps,
+                                                                                                                                   UN partition)
+    {
+      //FROSCH_ASSERT(numVert+numEdg+numFac != nodesMap->getGlobalNumElements(),"ERROR: Map does not match number of Entities");
+      UN blockId = 1; //This is not implemented for  Block Variant yet
+      stringstream blockIdStringstream;
+      blockIdStringstream << blockId+1;
+      string blockIdString = blockIdStringstream.str();
+      RCP<ParameterList> coarseSpaceList = sublist(sublist(this->ParameterList_,"Blocks"),blockIdString.c_str());
+
+      Teuchos::Array<GO> nodeEle = nodesMap->getNodeElementList();
+
+      Teuchos::Array<GO> dofEle(nodeEle.size()*dofsPerNode);
+      Teuchos::Array<GO> dmapEle(nodeEle.size());
+      //GDSW Type CoarseOperator
+      if(partition == 0){
+      for(unsigned j = 0;j<dofsPerNode;j++){
+        for(unsigned i = 0;i<nodeEle.size();i++){
+          //vertices
+          if(nodeEle[i]<NumEnt_[0]){
+            dofEle[i*dofsPerNode+j] = nodeEle[i]+j*NumEnt_[0];
+            dmapEle[i] = nodeEle[i]+j*NumEnt_[0];
+          }
+          //shortEdges
+          else if (nodeEle[i]>=NumEnt_[0] && nodeEle[i]<NumEnt_[1]+NumEnt_[0]){
+            dofEle[i*dofsPerNode+j] = nodeEle[i]+j*NumEnt_[1]+(dofsPerNode-1)*NumEnt_[0];
+            dmapEle[i] = nodeEle[i]+j*NumEnt_[1]+(dofsPerNode-1)*NumEnt_[0];
+          }
+          //straightEdges
+          else if (nodeEle[i]<NumEnt_[2]+NumEnt_[0]+NumEnt_[1] && nodeEle[i]>=NumEnt_[1]+NumEnt_[0]){
+            dofEle[i*dofsPerNode+j] = nodeEle[i]+j*NumEnt_[2]+(NumEnt_[0]*(dofsPerNode-1))+(NumEnt_[1]*(dofsPerNode-1));
+            dmapEle[i] = nodeEle[i]+j*NumEnt_[2]+(NumEnt_[0]*(dofsPerNode-1))+(NumEnt_[1]*(dofsPerNode-1));
+          }
+          //edges
+          else if (nodeEle[i]<NumEnt_[3]+NumEnt_[2]+NumEnt_[0]+NumEnt_[1] && nodeEle[i]>=NumEnt_[1]+NumEnt_[0]+NumEnt_[2]){
+            dofEle[i*dofsPerNode+j] = nodeEle[i]+j*NumEnt_[3]+(NumEnt_[0]*(dofsPerNode-1))+(NumEnt_[1]*(dofsPerNode-1))+(NumEnt_[2]*(dofsPerNode-1));
+            dmapEle[i] = nodeEle[i]+j*NumEnt_[3]+(NumEnt_[0]*(dofsPerNode-1))+(NumEnt_[1]*(dofsPerNode-1))+(NumEnt_[2]*(dofsPerNode-1));
+          }
+          //faces
+          else if (nodeEle[i]<NumEnt_[3]+NumEnt_[2]+NumEnt_[0]+NumEnt_[1]+NumEnt_[4] && nodeEle[i]>=NumEnt_[1]+NumEnt_[0]+NumEnt_[2]+NumEnt_[3]){
+            dofEle[i*dofsPerNode+j] = nodeEle[i]+j*NumEnt_[4]+(NumEnt_[0]*(dofsPerNode-1))+(NumEnt_[1]*(dofsPerNode-1))+(NumEnt_[2]*(dofsPerNode-1))+(NumEnt_[3]*(dofsPerNode-1));
+            dmapEle[i] = nodeEle[i]+j*NumEnt_[4]+(NumEnt_[0]*(dofsPerNode-1))+(NumEnt_[1]*(dofsPerNode-1))+(NumEnt_[2]*(dofsPerNode-1))+(NumEnt_[3]*(dofsPerNode-1));
+          } else{
+            if(nodesMap->getComm()->getRank() == 0) std::cout<<"This should never happen\n";
+          }
+        }
+        dofsMaps[j] =   Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,-1,dmapEle,0,nodesMap->getComm());
+      }
+      } //RGDSW type CoarseOperator
+      else if(partition == 1){
+       for(unsigned j = 0;j<dofsPerNode;j++){
+        for(unsigned i = 0;i<nodeEle.size();i++){
+          //roots
+         if(nodeEle[i]<NumEnt_[5]){
+            dofEle[i*dofsPerNode+j] = nodeEle[i]+j*NumEnt_[5];
+            dmapEle[i] = nodeEle[i]+j*NumEnt_[5];
+          }
+          else if (NumEnt_[6] !=-1 &&nodeEle[i]>=NumEnt_[5] && nodeEle[i]<NumEnt_[6]+NumEnt_[5]){
+            dofEle[i*dofsPerNode+j] = nodeEle[i]+j*NumEnt_[6]+(dofsPerNode-1)*NumEnt_[5];
+            dmapEle[i] = nodeEle[i]+j*NumEnt_[6]+(dofsPerNode-1)*NumEnt_[5];
+          }
+        }
+        dofsMaps[j] =   Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,-1,dmapEle,0,nodesMap->getComm());
+      }
+    }else if (partition == 2){
+
+      FROSCH_ASSERT(false,"GDSWStar is not implemented yet!");
+
+    }
+      Teuchos::RCP<Xpetra::Map<LO,GO,NO> > tmpMap =   Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,-1,dofEle,0,nodesMap->getComm());
+      return tmpMap;
+
+    }
+
+
 
 }
 
