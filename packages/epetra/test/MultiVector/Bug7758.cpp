@@ -337,8 +337,8 @@ int main(int argc, char **argv)
   gerr += SupersetToDefaultEpetra(Comm);
 
   if (Comm.MyPID() == 0) {
-    if (gerr > 0) std::cout << "TEST PASSED" << std::endl;
-    else std::cout << "TEST FAILED" << std::endl;
+    if (gerr > 0) std::cout << "TEST FAILED" << std::endl;
+    else std::cout << "TEST PASSED" << std::endl;
   }
 
 #ifdef EPETRA_MPI
