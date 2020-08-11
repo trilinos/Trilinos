@@ -1899,7 +1899,9 @@ RCP<const Tpetra::Map<LO, GO, NT>> buildRandomColMap(
     return zeroBased;
   //zeroBased always has 0 index base - build the real map with given indexBase
   auto indices = zeroBased->getMyGlobalIndices();
-  return rcp(new map_type(zeroBased->getGlobalNumElements(), indices, indexBase, zeroBased->getComm()));
+  typedef typename map_type::device_type device_type;
+  auto device_indices = Kokkos::create_mirror_view_and_copy(device_type(), indices);
+  return rcp(new map_type(zeroBased->getGlobalNumElements(), device_indices, indexBase, zeroBased->getComm()));
 }
 
 template<typename SC, typename LO, typename GO, typename NT>
