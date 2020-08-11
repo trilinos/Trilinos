@@ -9,22 +9,6 @@ if [[ "${ATDM_CONFIG_SYSTEM_NAME}" != "ats2" ]] ; then
   exit 1
 fi
 
-if [[ "$(atdm_ats2_get_node_type)" != "launch_node" ]] ; then
-  echo
-  echo "***"
-  echo "*** ERROR: $0"
-  echo "*** can only be run from launch node '${ATDM_CONFIG_ATS2_LAUNCH_NODE}'"
-  echo "*** and not the current node '$(hostname)'!"
-  echo "***"
-  echo "*** See instructions for the ATS-2 ('ats2') env in the file:"
-  echo "***"
-  echo "***   Trilinos/cmake/std/atdm/README.md"
-  echo "***"
-  echo
-  exit 1
-fi
-
-
 # Globals
 DEBUG_SCRIPT="${DEBUG_SCRIPT-:0}"
 ECHO_CMD="${ECHO_CMD:-1}"
