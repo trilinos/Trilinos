@@ -63,6 +63,7 @@
 
 #include "MueLu.hpp"
 
+
 class Measurement {
 public:
   virtual void measure() = 0;
@@ -122,6 +123,7 @@ private:
   Teuchos::RCP<Teuchos::StackedTimer> timer;
 };
 
+
 class System {
 public:
   virtual void apply() = 0;
@@ -150,14 +152,10 @@ private:
   const std::string name;
 };
 
-template<typename S, typename LO, typename GO, typename N>
+
+template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 class LinearSystem : public System {
 public:
-  using Scalar = S;
-  using LocalOrdinal = LO;
-  using GlobalOrdinal = GO;
-  using Node = N;
-
   using MultiVector = Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using Matrix = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
@@ -182,59 +180,16 @@ public:
   Teuchos::RCP<MultiVector> B;
 };
 
-class DirectSystemLoader {
+template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+class SystemLoader {
 public:
-  template<typename LinearSystem>
-  void fill(LinearSystem& data) {
-    using Scalar = typename LinearSystem::Scalar;
-    using LocalOrdinal = typename LinearSystem::LocalOrdinal;
-    using GlobalOrdinal = typename LinearSystem::GlobalOrdinal;
-    using Node = typename LinearSystem::Node;
-
-    using MultiVector = typename LinearSystem::MultiVector;
-    using Matrix = typename LinearSystem::Matrix;
-
-    using Map = Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
-    using MultiVectorFactory = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-    using Utilities = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-    using CrsMatrixWrap = Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-
-    Teuchos::RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
-    Teuchos::RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector>> Pr;
-    Teuchos::RCP<Map> map;
-
-    Teuchos::ParameterList galeriList;
-    galeriList.set("nx", 100);
-    galeriList.set("ny", 100);
-    map = Galeri::Xpetra::CreateMap<int, int, Node>(data.lib, "Cartesian2D", comm, galeriList);
-
-    Pr = Galeri::Xpetra::BuildProblem<double, int, int, Map, CrsMatrixWrap, MultiVector>("Laplace2D", map, galeriList);
-    data.A = Pr->BuildMatrix();
-
-    int numVecs = 4;
-    Utilities::SetRandomSeed(*comm);
-    data.X = MultiVectorFactory::Build(map, numVecs);
-    data.X->randomize();
-    data.B = MultiVectorFactory::Build(map, numVecs);
-    data.B->randomize();
-  }
-};
-
-class ParameterSystemLoader {
-public:
-  ParameterSystemLoader(Teuchos::CommandLineProcessor& c)
+  SystemLoader(Teuchos::CommandLineProcessor& c)
     : clp(c)
   { }
 
-  template<typename LinearSystem>
-  void fill(LinearSystem& data) {
-    using Scalar = typename LinearSystem::Scalar;
-    using LocalOrdinal = typename LinearSystem::LocalOrdinal;
-    using GlobalOrdinal = typename LinearSystem::GlobalOrdinal;
-    using Node = typename LinearSystem::Node;
-
+  void fill(LinearSystem<Scalar, LocalOrdinal, GlobalOrdinal, Node>& data) {
     using Map = Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
-    using MultiVector = typename LinearSystem::MultiVector;
+    using MultiVector = Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     using CoordScalar = typename Teuchos::ScalarTraits<Scalar>::coordinateType;
     using RealValuedMultiVector = Xpetra::MultiVector<CoordScalar, LocalOrdinal, GlobalOrdinal, Node>;
 
@@ -274,40 +229,36 @@ private:
   Teuchos::CommandLineProcessor& clp;
 };
 
-using EpetraNode = Xpetra::EpetraNode;
-using EpetraSystem = LinearSystem<double, int, int, EpetraNode>;
 
-using TpetraNode = KokkosClassic::DefaultNode::DefaultNodeType;
-using TpetraSystem = LinearSystem<double, int, int, TpetraNode>;
+template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+int main_ETI(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int argc, char* argv[]) {
+  Reporter reporter("SpMV Performance");
 
-int main(int argc, char* argv[]) {
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
+  int numRuns = 1;
+  clp.setOption("num-runs", &numRuns, "number of times to run operation");
 
-  Teuchos::CommandLineProcessor clp(false);
-  clp.recogniseAllOptions(false);
-  switch (clp.parse(argc, argv, NULL)) {
-    case Teuchos::CommandLineProcessor::PARSE_ERROR:                return EXIT_FAILURE;
-    case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION:
-    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:
-    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:         break;
+  clp.recogniseAllOptions(true);
+  switch (clp.parse(argc, argv)) {
+    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
+    case Teuchos::CommandLineProcessor::PARSE_ERROR:
+    case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
+    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
   }
 
-  Reporter reporter("SpMV Performance");
-  DirectSystemLoader systemLoader;
-  //ParameterSystemLoader systemLoader(clp);
+  LinearSystem<Scalar, LocalOrdinal, GlobalOrdinal, Node> system(lib);
+  SystemLoader<Scalar, LocalOrdinal, GlobalOrdinal, Node> systemLoader(clp);
+  systemLoader.fill(system);
 
-  int numRuns = 4;
-
-  EpetraSystem epetraSystem(Xpetra::UseEpetra);
-  systemLoader.fill(epetraSystem);
-  SpMVMeasurement epetraSpMV(epetraSystem, numRuns);
-  reporter.record(epetraSpMV);
-
-  TpetraSystem tpetraSystem(Xpetra::UseTpetra);
-  systemLoader.fill(tpetraSystem);
-  SpMVMeasurement tpetraSpMV(tpetraSystem, numRuns);
-  reporter.record(tpetraSpMV);
+  SpMVMeasurement SpMV(system, numRuns);
+  reporter.record(SpMV);
 
   reporter.finalReport();
   return 0;
+}
+
+#define MUELU_AUTOMATIC_TEST_ETI_NAME main_ETI
+#include "MueLu_Test_ETI.hpp"
+
+int main(int argc, char *argv[]) {
+  return Automatic_Test_ETI(argc, argv);
 }
