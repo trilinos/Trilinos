@@ -226,6 +226,7 @@ private:
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 int main_ETI(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int argc, char* argv[]) {
   Reporter reporter("SpMV Performance");
+  SystemLoader<Scalar, LocalOrdinal, GlobalOrdinal, Node> systemLoader(clp);
 
   int numRuns = 1;
   clp.setOption("num-runs", &numRuns, "number of times to run operation");
@@ -242,7 +243,6 @@ int main_ETI(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int
   }
 
   LinearSystem<Scalar, LocalOrdinal, GlobalOrdinal, Node> system(lib, numVectors);
-  SystemLoader<Scalar, LocalOrdinal, GlobalOrdinal, Node> systemLoader(clp);
   systemLoader.fill(system);
 
   SpMVMeasurement SpMV(system, numRuns);
