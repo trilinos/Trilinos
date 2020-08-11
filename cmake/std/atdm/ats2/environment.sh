@@ -178,17 +178,13 @@ export ATDM_CONFIG_MPI_EXEC=${ATDM_SCRIPT_DIR}/ats2/trilinos_jsrun
 export ATDM_CONFIG_MPI_POST_FLAGS="--rs_per_socket;4"
 export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG="-p"
 
-# System-info for what ATS-2 system we are using
-if [[ "${ATDM_CONFIG_KNOWN_HOSTNAME}" == "vortex" ]] ; then
-  export ATDM_CONFIG_ATS2_LOGIN_NODE=vortex60
-  export ATDM_CONFIG_ATS2_LAUNCH_NODE=vortex59
-  # NOTE: If more login and launch nodes gets added to 'vortex', we will need
-  # to change this to a list of node names instead of just one.  But we will
-  # deal with that later if that occurs.
-else
-  echo "Error, the ats2 env on system '${ATDM_CONFIG_KNOWN_HOSTNAME}'"
-  return
-fi
+# NOTE: We used to check for the launch node but at one point that changed
+# from 'vortex59' to 'vortex5' without warning.  That caused all of the tests
+# run with 'trilinos_jsrun' to fail on 2020-08-11 so we got no test results.
+# Therefore, we will not be checking for running on the launch node anymore in
+# order to avoid having all of the testing break when they change the launch
+# node again.  Therefore, we also removed checks for the login node as well.
+# This makes these scripts more robust to changes on 'vortex'.
 
 
 #
@@ -204,19 +200,6 @@ function atdm_ats2_get_allocated_compute_node_name() {
   fi
 }
 export -f atdm_ats2_get_allocated_compute_node_name
-
-
-function atdm_ats2_get_node_type() {
-  current_hostname=$(hostname)
-  if   [[ "${current_hostname}" == "${ATDM_CONFIG_ATS2_LOGIN_NODE}" ]] ; then
-    echo "login_node"
-  elif [[ "${current_hostname}" == "${ATDM_CONFIG_ATS2_LAUNCH_NODE}" ]] ; then
-    echo "launch_node"
-  else
-    echo "compute_node"
-  fi
-}
-export -f atdm_ats2_get_node_type
 
 
 #
