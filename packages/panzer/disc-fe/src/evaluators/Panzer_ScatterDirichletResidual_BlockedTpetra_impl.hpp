@@ -215,6 +215,8 @@ postRegistrationSetup(typename TRAITS::SetupData d,
     }
 
     maxElementBlockGIDCount = std::max(fieldGlobalIndexers_[fd]->getElementBlockGIDCount(blockId),maxElementBlockGIDCount);
+
+    // FENCE REVIEW
     typename PHX::Device().fence();
   }
 
@@ -452,6 +454,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
                                << "size and recompile!");
   }
 
+  // FENCE REVIEW
   typename PHX::Device().fence();
 }
 
@@ -548,6 +551,8 @@ evaluateFields(typename TRAITS::EvalData workset)
     jacTpetraBlocks("panzer::ScatterResidual_BlockedTpetra<Jacobian>::jacTpetraBlocks",numFieldBlocks,numFieldBlocks);
   Kokkos::deep_copy(jacTpetraBlocks,hostJacTpetraBlocks);
   Kokkos::deep_copy(blockExistsInJac,hostBlockExistsInJac);
+
+  // FENCE REVIEW
   typename PHX::Device().fence();
 
   // worksetLIDs is larger for Jacobian than Residual fill. Need the

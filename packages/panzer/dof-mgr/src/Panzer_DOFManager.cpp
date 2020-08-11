@@ -552,6 +552,7 @@ void DOFManager::buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & ge
     // owned_ is made up of owned_ids.: This doesn't work for high order
     non_overlap_mv->sync_host();
     tagged_non_overlap_mv->sync_host();
+    // FENCE REVIEW
     PHX::Device().fence();
     auto nvals = non_overlap_mv->template getLocalView<PHX::Device>();
     auto tagged_vals = tagged_non_overlap_mv->template getLocalView<PHX::Device>();
@@ -765,6 +766,8 @@ DOFManager::buildGlobalUnknowns_GUN(const Tpetra::MultiVector<panzer::GlobalOrdi
     auto values = non_overlap_mv->getLocalViewDevice();
     auto mv_size = values.extent(0);
     Kokkos::parallel_reduce(mv_size,panzer::dof_functors::SumRank2<panzer::GlobalOrdinal,decltype(values)>(values),localsum);
+
+    // FENCE REVIEW
     PHX::Device().fence();
   }
   
@@ -814,6 +817,8 @@ DOFManager::buildGlobalUnknowns_GUN(const Tpetra::MultiVector<panzer::GlobalOrdi
     }
     non_overlap_mv->modify_host();
     non_overlap_mv->sync_device();
+
+    // FENCE REVIEW
     PHX::Device().fence();
   }
 
@@ -882,6 +887,8 @@ DOFManager::buildTaggedMultiVector(const ElementBlockAccess & ownedAccess)
   }
 
   RCP<const Map> overlapmap       = buildOverlapMapFromElements(ownedAccess);
+
+  // FENCE REVIEW
   PHX::Device().fence();
 
   // LINE 22: In the GUN paper...the overlap_mv is reused for the tagged multivector.
@@ -893,6 +900,8 @@ DOFManager::buildTaggedMultiVector(const ElementBlockAccess & ownedAccess)
 
     overlap_mv = Tpetra::createMultiVector<panzer::GlobalOrdinal>(overlapmap,(size_t)numFields_);
     overlap_mv->putScalar(0); // if tpetra is not initialized with zeros
+
+    // FENCE REVIEW
     PHX::Device().fence();
   }
 
@@ -906,6 +915,8 @@ DOFManager::buildTaggedMultiVector(const ElementBlockAccess & ownedAccess)
     // temporary working vector to fill each row in tagged array
     std::vector<int> working(overlap_mv->getNumVectors());
     overlap_mv->sync_host();
+
+    // FENCE REVIEW
     PHX::Device().fence();
     auto edittwoview_host = overlap_mv->getLocalViewHost();
     for (size_t b = 0; b < blockOrder_.size(); ++b) {
@@ -942,6 +953,8 @@ DOFManager::buildTaggedMultiVector(const ElementBlockAccess & ownedAccess)
     }
     overlap_mv->modify_host();
     overlap_mv->sync_device();
+
+    // FENCE REVIEW
     PHX::Device().fence();
 
     // // verbose output for inspecting overlap_mv
@@ -1283,6 +1296,8 @@ fillGIDsFromOverlappedMV(const ElementBlockAccess & access,
   //To generate elementGIDs we need to go through all of the local elements.
   auto overlap_mv = const_cast<Tpetra::MultiVector<panzer::GlobalOrdinal,panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType>&>(const_overlap_mv);
   overlap_mv.sync_host();
+
+  // FENCE REVIEW
   PHX::Device().fence();
   const auto twoview_host = overlap_mv.getLocalViewHost();
 

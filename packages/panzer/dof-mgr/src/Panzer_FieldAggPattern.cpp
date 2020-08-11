@@ -299,6 +299,8 @@ const Kokkos::View<const int*,PHX::Device> FieldAggPattern::localOffsetsKokkos(i
    for (size_t i=0; i < hostOffsetsStdVector.size(); ++i)
      hostOffsets(i) = hostOffsetsStdVector[i];
    Kokkos::deep_copy(offsets,hostOffsets);
+
+   // FENCE REVIEW
    typename PHX::Device().fence();
 
    fieldOffsetsKokkos_[fieldId] = offsets;

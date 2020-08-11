@@ -169,6 +169,8 @@ postRegistrationSetup(typename TRAITS::SetupData d,
     for(std::size_t i=0; i < offsets.size(); ++i)
       hostFieldOffsets(i) = offsets[i];
     Kokkos::deep_copy(fieldOffsets_[fd],hostFieldOffsets);
+
+    // FENCE REVIEW
     typename PHX::Device().fence();
 
     maxElementBlockGIDCount = std::max(fieldGlobalIndexers_[fd]->getElementBlockGIDCount(blockId),maxElementBlockGIDCount);
@@ -476,6 +478,8 @@ postRegistrationSetup(typename TRAITS::SetupData d,
       hostOffsets(i) = offsets[i];
     Kokkos::deep_copy(fieldOffsets_[fd], hostOffsets);
     maxElementBlockGIDCount = std::max(subGlobalIndexer->getElementBlockGIDCount(blockId),maxElementBlockGIDCount);
+
+    // FENCE REVIEW
     typename PHX::Device().fence();
   }
 
@@ -500,6 +504,8 @@ postRegistrationSetup(typename TRAITS::SetupData d,
   Kokkos::deep_copy(blockOffsets_,hostBlockOffsets);
 
   indexerNames_.clear();  // Don't need this anymore
+
+  // FENCE REVIEW
   typename PHX::Device().fence();
 }
 

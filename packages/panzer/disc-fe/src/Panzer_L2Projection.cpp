@@ -93,6 +93,8 @@ namespace panzer {
     ownedMatrix->setAllToScalar(0.0);
     ghostedMatrix->resumeFill();
     ghostedMatrix->setAllToScalar(0.0);
+
+    // FENCE REVIEW:
     PHX::Device().fence();
 
     auto M = ghostedMatrix->getLocalMatrix();
@@ -125,6 +127,7 @@ namespace panzer {
           for(const auto& i : offsets)
             kOffsets(i) = offsets[i];
 
+          // FENCE REVIEW:
           PHX::Device().fence();
 
           // Local Ids
@@ -227,6 +230,7 @@ namespace panzer {
           for(const auto& i : offsets)
             kOffsets(i) = offsets[i];
 
+          // FENCE REVIEW:
           PHX::Device().fence();
 
           // Local Ids
@@ -268,6 +272,8 @@ namespace panzer {
         }
       }
     }
+
+    // FENCE REVIEW:
     PHX::exec_space().fence();
 
     {
@@ -412,6 +418,8 @@ namespace panzer {
 
     ghostedMatrix->setAllToScalar(0.0);
     ownedMatrix->setAllToScalar(0.0);
+
+    // FENCE REVIEW:
     PHX::Device().fence();
 
     // *******************
@@ -467,6 +475,8 @@ namespace panzer {
           for(size_t i=0; i < offsets.size(); ++i)
             hostOffsets(i) = offsets[i];
           Kokkos::deep_copy(targetFieldOffsets,hostOffsets);
+
+          // FENCE REVIEW:
           PHX::Device().fence();
         }
 
@@ -483,6 +493,8 @@ namespace panzer {
           for(size_t i=0; i <offsets.size(); ++i)
             hostOffsets(i) = offsets[i];
           Kokkos::deep_copy(sourceFieldOffsets,hostOffsets);
+
+          // FENCE REVIEW:
           PHX::Device().fence();
         }
 

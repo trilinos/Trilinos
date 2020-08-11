@@ -372,6 +372,7 @@ evaluateValues_Const(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
 
     // =============================================
     // Load external into cell-local arrays
+    // FENCE REVIEW
     typename PHX::Device().fence();
     for(int p=0;p<num_points;++p)
       for(int d=0;d<num_dim;++d)
@@ -395,6 +396,7 @@ evaluateValues_Const(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
 
     fst::HGRADtransformVALUE(cell_basis_scalar.get_view(),cell_basis_ref_scalar.get_view());
 
+    // FENCE REVIEW
     typename PHX::Device().fence();
     for(int b=0;b<num_basis;++b)
       for(int p=0;p<num_points;++p)
@@ -402,6 +404,8 @@ evaluateValues_Const(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
 
     if(compute_derivatives){
         fst::HGRADtransformGRAD(cell_grad_basis.get_view(),cell_jac_inv.get_view(),cell_grad_basis_ref.get_view());
+
+        // FENCE REVIEW
         typename PHX::Device().fence();
         for(int b=0;b<num_basis;++b)
           for(int p=0;p<num_points;++p)
@@ -459,6 +463,7 @@ evaluateValues_HVol(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
 
     // =============================================
     // Load external into cell-local arrays
+    // FENCE REVIEW
     typename PHX::Device().fence();
     for(int p=0;p<num_points;++p)
       cell_jac_det(0,p)=jac_det(cell,p);
@@ -475,6 +480,7 @@ evaluateValues_HVol(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
     // Transform reference values to physical values
 
     fst::HVOLtransformVALUE(cell_basis_scalar.get_view(),cell_jac_det.get_view(),cell_basis_ref_scalar.get_view());
+    // FENCE REVIEW
     typename PHX::Device().fence();
     for(int b=0;b<num_basis;++b)
       for(int p=0;p<num_points;++p)
@@ -526,6 +532,7 @@ evaluateValues_HGrad(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
 
     // =============================================
     // Load external into cell-local arrays
+    // FENCE REVIEW
     typename PHX::Device().fence();
     for(int p=0;p<num_points;++p)
       for(int d=0;d<num_dim;++d)
@@ -548,6 +555,7 @@ evaluateValues_HGrad(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
     // Transform reference values to physical values
 
     fst::HGRADtransformVALUE(cell_basis_scalar.get_view(),cell_basis_ref_scalar.get_view());
+    // FENCE REVIEW
     typename PHX::Device().fence();
     for(int b=0;b<num_basis;++b)
       for(int p=0;p<num_points;++p)
@@ -555,6 +563,7 @@ evaluateValues_HGrad(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
 
     if(compute_derivatives){
         fst::HGRADtransformGRAD(cell_grad_basis.get_view(),cell_jac_inv.get_view(),cell_grad_basis_ref.get_view());
+        // FENCE REVIEW
         typename PHX::Device().fence();
         for(int b=0;b<num_basis;++b)
           for(int p=0;p<num_points;++p)
@@ -620,6 +629,7 @@ evaluateValues_HCurl(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
 
     // =============================================
     // Load external into cell-local arrays
+    // FENCE REVIEW
     typename PHX::Device().fence();
     for(int p=0;p<num_points;++p)
       for(int d=0;d<num_dim;++d)
@@ -652,6 +662,7 @@ evaluateValues_HCurl(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
     // Transform reference values to physical values
 
     fst::HCURLtransformVALUE(cell_basis_vector.get_view(),cell_jac_inv.get_view(),cell_basis_ref_vector.get_view());
+    // FENCE REVIEW
     typename PHX::Device().fence();
     for(int b=0;b<num_basis;++b)
       for(int p=0;p<num_points;++p)
@@ -664,12 +675,14 @@ evaluateValues_HCurl(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
         // this relates directly to this being in
         // the divergence space in 2D!
         fst::HDIVtransformDIV(cell_curl_basis_scalar.get_view(),cell_jac_det.get_view(),cell_curl_basis_ref_scalar.get_view());
+        // FENCE REVIEW
         typename PHX::Device().fence();
         for(int b=0;b<num_basis;++b)
           for(int p=0;p<num_points;++p)
             curl_basis_scalar(cell,b,p)=cell_curl_basis_scalar(0,b,p);
       } else if(num_dim==3) {
         fst::HCURLtransformCURL(cell_curl_basis_vector.get_view(),cell_jac.get_view(),cell_jac_det.get_view(),cell_curl_basis_ref.get_view());
+        // FENCE REVIEW
         typename PHX::Device().fence();
         for(int b=0;b<num_basis;++b)
           for(int p=0;p<num_points;++p)
@@ -737,6 +750,7 @@ evaluateValues_HDiv(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
 
     // =============================================
     // Load external into cell-local arrays
+    // FENCE REVIEW
     typename PHX::Device().fence();
     for(int p=0;p<num_points;++p)
       for(int d=0;d<num_dim;++d)
@@ -760,6 +774,7 @@ evaluateValues_HDiv(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
     // Transform reference values to physical values
 
     fst::HDIVtransformVALUE(cell_basis_vector.get_view(),cell_jac.get_view(),cell_jac_det.get_view(),cell_basis_ref_vector.get_view());
+    // FENCE REVIEW
     typename PHX::Device().fence();
     for(int b=0;b<num_basis;++b)
       for(int p=0;p<num_points;++p)
@@ -768,6 +783,7 @@ evaluateValues_HDiv(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
 
     if(compute_derivatives){
       fst::HDIVtransformDIV(cell_div_basis.get_view(),cell_jac_det.get_view(),cell_div_basis_ref.get_view());
+      // FENCE REVIEW
       typename PHX::Device().fence();
       for(int b=0;b<num_basis;++b)
         for(int p=0;p<num_points;++p)
@@ -829,6 +845,7 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim> & cell_cub_points,
   // so we evaluate the basis in a loop over cells.
   for (size_type icell = 0; icell < num_cells; ++icell)
   {
+    // FENCE REVIEW
     typename PHX::Device().fence();
     for (int ip = 0; ip < num_ip; ++ip)
       for (int d = 0; d < num_dim; ++d)
@@ -842,6 +859,7 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim> & cell_cub_points,
                                  Intrepid2::OPERATOR_VALUE);
 
        // transform values method just transfers values to array with cell index - no need to call
+       // FENCE REVIEW
        typename PHX::Device().fence();
        for (int b = 0; b < num_card; ++b)
          for (int ip = 0; ip < num_ip; ++ip)
@@ -861,6 +879,7 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim> & cell_cub_points,
       ArrayDynamic dyn_jac_det = af.buildArray<Scalar,Cell,IP>("dyn_jac_det",one_cell,num_ip);
 
       int cellInd = 0;
+      // FENCE REVIEW
       typename PHX::Device().fence();
       for (int ip = 0; ip < num_ip; ++ip)
         dyn_jac_det(cellInd,ip) = jac_det(icell,ip);
@@ -869,6 +888,7 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim> & cell_cub_points,
                                                                                       dyn_jac_det.get_view(),
                                                                                       dyn_basis_ref_scalar.get_view());
 
+       // FENCE REVIEW
        typename PHX::Device().fence();
        for (int b = 0; b < num_card; ++b)
          for (int ip = 0; ip < num_ip; ++ip)
@@ -883,6 +903,7 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim> & cell_cub_points,
                                  Intrepid2::OPERATOR_VALUE);
 
        // transform values method just transfers values to array with cell index - no need to call
+       // FENCE REVIEW
        typename PHX::Device().fence();
        for (int b = 0; b < num_card; ++b)
          for (int ip = 0; ip < num_ip; ++ip)
@@ -899,6 +920,7 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim> & cell_cub_points,
                                     dyn_cub_points.get_view(),
                                     Intrepid2::OPERATOR_GRAD);
 
+          // FENCE REVIEW
           typename PHX::Device().fence();
           int cellInd = 0;
           for (int ip = 0; ip < num_ip; ++ip)
@@ -910,6 +932,7 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim> & cell_cub_points,
                                                                                                   dyn_jac_inv.get_view(),
                                                                                                   dyn_grad_basis_ref.get_view());
 
+          // FENCE REVIEW
           typename PHX::Device().fence();
           for (int b = 0; b < num_card; ++b)
             for (int ip = 0; ip < num_ip; ++ip)
@@ -929,6 +952,7 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim> & cell_cub_points,
       ArrayDynamic dyn_basis_vector = af.buildArray<Scalar,Cell,BASIS,IP,Dim>("dyn_basis_vector",one_cell,num_card,num_ip,num_dim);
       ArrayDynamic dyn_jac_inv = af.buildArray<Scalar,Cell,IP,Dim,Dim>("dyn_jac_inv",one_cell,num_ip,num_dim,num_dim);
 
+      // FENCE REVIEW
       typename PHX::Device().fence();
       const int cellInd = 0;
       for (int ip = 0; ip < num_ip; ++ip)
@@ -940,6 +964,7 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim> & cell_cub_points,
                                                                                        dyn_jac_inv.get_view(),
                                                                                        dyn_basis_ref_vector.get_view());
 
+      // FENCE REVIEW
       typename PHX::Device().fence();
       for (int b = 0; b < num_card; ++b)
         for (int ip = 0; ip < num_ip; ++ip)
@@ -956,6 +981,7 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim> & cell_cub_points,
                                     dyn_cub_points.get_view(),
                                     Intrepid2::OPERATOR_CURL);
 
+          // FENCE REVIEW
           typename PHX::Device().fence();
           for (int ip = 0; ip < num_ip; ++ip)
               dyn_jac_det(cellInd,ip) = jac_det(icell,ip);
@@ -964,6 +990,7 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim> & cell_cub_points,
                                                                                         dyn_jac_det.get_view(),
                                                                                         dyn_curl_basis_ref_scalar.get_view());
 
+          // FENCE REVIEW
           typename PHX::Device().fence();
           for (int b = 0; b < num_card; ++b)
             for (int ip = 0; ip < num_ip; ++ip)
@@ -981,6 +1008,7 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim> & cell_cub_points,
                                     dyn_cub_points.get_view(),
                                     Intrepid2::OPERATOR_CURL);
 
+          // FENCE REVIEW
           typename PHX::Device().fence();
           for (int ip = 0; ip < num_ip; ++ip)
           {
@@ -994,7 +1022,7 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim> & cell_cub_points,
                                                                                           dyn_jac.get_view(),
                                                                                           dyn_jac_det.get_view(),
                                                                                           dyn_curl_basis_ref.get_view());
-
+          // FENCE REVIEW
           typename PHX::Device().fence();
           for (int b = 0; b < num_card; ++b)
             for (int ip = 0; ip < num_ip; ++ip)
@@ -1019,6 +1047,7 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim> & cell_cub_points,
 
       int cellInd = 0;
 
+      // FENCE REVIEW
       typename PHX::Device().fence();
       for (int ip = 0; ip < num_ip; ++ip)
       {
@@ -1032,6 +1061,7 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim> & cell_cub_points,
                                                                                       dyn_jac.get_view(),
                                                                                       dyn_jac_det.get_view(),
                                                                                       dyn_basis_ref_vector.get_view());
+       // FENCE REVIEW
        typename PHX::Device().fence();
        for (int b = 0; b < num_card; ++b)
          for (int ip = 0; ip < num_ip; ++ip)
@@ -1050,6 +1080,7 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim> & cell_cub_points,
            Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::HDIVtransformDIV<Scalar>(dyn_div_basis.get_view(),
                                                                                                  dyn_jac_det.get_view(),
                                                                                                  dyn_div_basis_ref.get_view());
+           // FENCE REVIEW
            typename PHX::Device().fence();
            for (int b = 0; b < num_card; ++b)
              for (int ip = 0; ip < num_ip; ++ip)
@@ -1080,6 +1111,8 @@ evaluateReferenceValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,bool in_c
   int num_card  = basis_layout->cardinality();
 
   ArrayDynamic dyn_cub_points = af.buildArray<Scalar,IP,Dim>("dyn_cub_points",  num_quad,num_dim);
+
+  // FENCE REVIEW
   typename PHX::Device().fence();
   for (int ip = 0; ip < num_quad; ++ip)
     for (int d = 0; d < num_dim; ++d)
@@ -1093,6 +1126,7 @@ evaluateReferenceValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,bool in_c
                               dyn_cub_points.get_view(),
                               Intrepid2::OPERATOR_VALUE);
 
+    // FENCE REVIEW
     typename PHX::Device().fence();
     for (int b = 0; b < num_card; ++b)
       for (int ip = 0; ip < num_quad; ++ip)
@@ -1105,6 +1139,7 @@ evaluateReferenceValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,bool in_c
                               dyn_cub_points.get_view(),
                               Intrepid2::OPERATOR_VALUE);
 
+    // FENCE REVIEW
     typename PHX::Device().fence();
     for (int b = 0; b < num_card; ++b)
       for (int ip = 0; ip < num_quad; ++ip)
@@ -1120,6 +1155,7 @@ evaluateReferenceValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,bool in_c
                               dyn_cub_points.get_view(),
                               Intrepid2::OPERATOR_GRAD);
 
+    // FENCE REVIEW
     typename PHX::Device().fence();
     for (int b = 0; b < num_card; ++b)
       for (int ip = 0; ip < num_quad; ++ip)
@@ -1133,6 +1169,7 @@ evaluateReferenceValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,bool in_c
                               dyn_cub_points.get_view(),
                               Intrepid2::OPERATOR_CURL);
 
+    // FENCE REVIEW
     typename PHX::Device().fence();
     for (int b = 0; b < num_card; ++b)
       for (int ip = 0; ip < num_quad; ++ip)
@@ -1145,6 +1182,7 @@ evaluateReferenceValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,bool in_c
                               dyn_cub_points.get_view(),
                               Intrepid2::OPERATOR_CURL);
 
+    // FENCE REVIEW
     typename PHX::Device().fence();
     for (int b = 0; b < num_card; ++b)
       for (int ip = 0; ip < num_quad; ++ip)
@@ -1158,6 +1196,7 @@ evaluateReferenceValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,bool in_c
                               dyn_cub_points.get_view(),
                               Intrepid2::OPERATOR_DIV);
 
+    // FENCE REVIEW
     typename PHX::Device().fence();
     for (int b = 0; b < num_card; ++b)
       for (int ip = 0; ip < num_quad; ++ip)
@@ -1177,6 +1216,7 @@ evaluateReferenceValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,bool in_c
       intrepid_basis->getDofCoords(dyn_basis_coordinates_ref.get_view());
 
       // fill in basis coordinates
+      // FENCE REVIEW
       typename PHX::Device().fence();
       for (int i = 0; i < basis_coordinates_ref.extent_int(0); ++i)
         for (int j = 0; j < basis_coordinates_ref.extent_int(1); ++j)
@@ -1498,6 +1538,7 @@ applyOrientations(const PHX::MDField<const Scalar,Cell,BASIS> & orientations)
 
     // setup the orientations for the trial space
     // Intrepid2::FunctionSpaceTools::applyFieldSigns<Scalar>(basis_vector,orientations);
+    // FENCE REVIEW
     typename PHX::Device().fence();
     for (int c=0; c<num_cell; c++)
       for (int b=0; b<num_basis; b++)
@@ -1525,6 +1566,7 @@ applyOrientations(const PHX::MDField<const Scalar,Cell,BASIS> & orientations)
 
     // setup the orientations for the trial space
     // Intrepid2::FunctionSpaceTools::applyFieldSigns<Scalar>(basis_vector,orientations);
+    // FENCE REVIEW
     typename PHX::Device().fence();
     for (int c=0; c<num_cell; c++)
       for (int b=0; b<num_basis; b++)
@@ -1552,6 +1594,7 @@ applyOrientations(const PHX::MDField<const Scalar,Cell,BASIS> & orientations)
   else if(elmtspace==PureBasis::HDIV) {
     // setup the orientations for the trial space
     // Intrepid2::FunctionSpaceTools::applyFieldSigns<Scalar>(basis_vector,orientations);
+    // FENCE REVIEW
     typename PHX::Device().fence();
     for (int c=0; c<num_cell; c++)
       for (int b=0; b<num_basis; b++)
