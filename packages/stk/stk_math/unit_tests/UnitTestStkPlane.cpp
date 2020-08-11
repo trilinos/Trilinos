@@ -11,6 +11,7 @@
 #include <cmath>
 #include <string>
 #include <vector>
+#include <array>
 #include "UnitTestStkVectorUtils.hpp"
 
 namespace

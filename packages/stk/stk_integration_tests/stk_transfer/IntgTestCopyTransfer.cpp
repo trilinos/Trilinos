@@ -1013,7 +1013,7 @@ TYPED_TEST(CopyTransferFixture, copy001T011Face)
   const int p_rank = stk::parallel_machine_rank( this->pm );
   auto & mesh_a = *this->meshA;
   auto & mesh_b = *this->meshB;
-  this->run_test([&](const stk::transfer::SearchById::KeyToTargetProcessor & key_to_target_processor)
+  this->run_test([&, p_rank](const stk::transfer::SearchById::KeyToTargetProcessor & key_to_target_processor)
       {
       typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
       KeyToTargetProcessor gold_map;
@@ -1045,7 +1045,7 @@ TYPED_TEST(CopyTransferFixture, copy001T011Face)
       EXPECT_TRUE( gold_map == key_to_target_processor );
       },
 
-      [&](const stk::transfer::SearchById::MeshIDSet & remote_keys){
+      [&, p_rank](const stk::transfer::SearchById::MeshIDSet & remote_keys){
       typedef stk::transfer::SearchById::MeshIDSet MeshIDSet;
       MeshIDSet gold_remote_keys;
       if (1 == p_rank) {
