@@ -142,6 +142,12 @@ private:
 };
 
 
+std::string systemName(const Xpetra::UnderlyingLib& lib) {
+  if (lib == Xpetra::UseEpetra) return "Epetra";
+  if (lib == Xpetra::UseTpetra) return "Tpetra";
+  return "Unknown";
+}
+
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 class LinearSystem : public System {
   using MultiVector = Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
@@ -158,9 +164,7 @@ public:
   }
 
   std::string name() const override {
-    if (lib == Xpetra::UseEpetra) return "Epetra";
-    if (lib == Xpetra::UseTpetra) return "Tpetra";
-    return "Unknown";
+    return systemName(lib);
   }
 
   Xpetra::UnderlyingLib lib;
@@ -225,7 +229,7 @@ private:
 
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 int main_ETI(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int argc, char* argv[]) {
-  Reporter reporter("SpMV Performance");
+  Reporter reporter("SpMV Performance " + systemName(lib));
   SystemLoader<Scalar, LocalOrdinal, GlobalOrdinal, Node> systemLoader(clp);
 
   int numRuns = 1;
